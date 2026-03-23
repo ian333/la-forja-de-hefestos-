@@ -505,6 +505,12 @@ export default function ForgePage() {
   const ctScanning = useForgeStore(s => s.ctScanning);
   const ctScanResult = useForgeStore(s => s.ctScanResult);
   const clearCtScan = useForgeStore(s => s.clearCtScan);
+  // Sketch Fitting
+  const fittedSlices = useForgeStore(s => s.fittedSlices);
+  const sketchFitting = useForgeStore(s => s.sketchFitting);
+  const fitSketches = useForgeStore(s => s.fitSketches);
+  const clearFittedSlices = useForgeStore(s => s.clearFittedSlices);
+  const [sketchFilterAxis, setSketchFilterAxis] = useState<'X' | 'Y' | 'Z' | null>(null);
   // Módulos
   const activeModuleId = useForgeStore(s => s.activeModuleId);
   const addModule     = useForgeStore(s => s.addModule);
@@ -782,6 +788,7 @@ export default function ForgePage() {
       { id: 'section-z', label: 'Sección Eje Z', icon: '✂', category: 'Inspección', keywords: ['section', 'clip'], action: () => { setSectionAxis('Z'); setSectionEnabled(true); } },
       { id: 'reverse-engineer', label: 'Ingeniería Inversa', description: 'Descomponer modelo importado en primitivas SDF' , icon: '🔬', category: 'Inspección', keywords: ['reverse', 'engineer', 'decompose', 'descomponer', 'primitivas', 'feature recognition'], action: () => { if (importedModels.length > 0) reverseEngineerImported(0); } },
       { id: 'ct-scan', label: 'CT-Scan Decomposición', description: 'Descomponer pieza por secciones transversales (3 ejes)' , icon: '🩻', category: 'Inspección', keywords: ['ct', 'scan', 'cross', 'section', 'sección', 'contorno', 'perfil', 'descomponer', 'slice', 'corte'], action: () => { if (importedModels.length > 0) ctScanImported(0); } },
+      { id: 'fit-sketches', label: 'Fit Sketches', description: 'Extraer líneas y arcos de los contornos (CT-Scan → Sketch)' , icon: '✏️', category: 'Inspección', keywords: ['sketch', 'fit', 'line', 'arc', 'circle', 'línea', 'arco', 'círculo', 'contorno'], action: () => { if (importedModels.length > 0) fitSketches(0); } },
 
       // ── Materiales ──
       { id: 'mat-pla', label: 'PLA', description: 'Ácido poliláctico — Impresión 3D FDM', icon: '🧱', category: 'Materiales', keywords: ['plastico', 'filament', 'filamento', 'fdm', 'fff'], action: () => {} },
@@ -830,7 +837,7 @@ export default function ForgePage() {
     ];
 
     return actions;
-  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported]);
+  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches]);
 
   const shortcutTools: ShortcutTool[] = useMemo(() => [
     { label: 'Caja', icon: '■', shortcut: '1', action: () => addPrimitive('box') },
@@ -1098,6 +1105,8 @@ export default function ForgePage() {
                 { divider: true },
                 { label: '🔬 Reverse Engineer', icon: '⚙', action: () => { if (importedModels.length > 0) reverseEngineerImported(0); }, disabled: importedModels.length === 0 || reverseEngineering },
                 { label: '🩻 CT-Scan Decompose', icon: '⚙', action: () => { if (importedModels.length > 0) ctScanImported(0); }, disabled: importedModels.length === 0 || ctScanning },
+                { label: '✏️ Fit Sketches', icon: '⚙', action: () => { if (importedModels.length > 0) fitSketches(0); }, disabled: importedModels.length === 0 || sketchFitting },
+                { label: fittedSlices.length > 0 ? '🧹 Clear Sketches' : '🧹 Clear Sketches', icon: '✕', action: clearFittedSlices, disabled: fittedSlices.length === 0 },
                 { divider: true },
                 { label: 'Component Color Cycling', icon: '🎨', disabled: true },
                 { divider: true },
@@ -1356,6 +1365,8 @@ export default function ForgePage() {
             onSketchCursorMove={(x, y) => setSketchCursor([x, y])}
             targetView={targetView}
             onViewTransitionComplete={() => setTargetView(null)}
+            fittedSlices={fittedSlices}
+            sketchFilterAxis={sketchFilterAxis}
           />
 
           {/* Drag-and-drop overlay */}
@@ -1414,6 +1425,13 @@ export default function ForgePage() {
                     className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#60a5fa] hover:text-[#f0ece4] hover:bg-[#60a5fa]/20 transition-all disabled:opacity-40"
                     title="CT-Scan: descomponer por secciones transversales (3 ejes)">
                     {ctScanning ? '⏳' : '🩻'}
+                  </button>
+                  <button
+                    onClick={() => fitSketches(i)}
+                    disabled={sketchFitting}
+                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#c9a84c] hover:text-[#f0ece4] hover:bg-[#c9a84c]/20 transition-all disabled:opacity-40"
+                    title="Fit Sketches: extraer líneas y arcos">
+                    {sketchFitting ? '⏳' : '✏️'}
                   </button>
                   <button onClick={() => removeImportedModel(i)}
                     className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#4a4035] hover:text-[#f87171] hover:bg-[#f87171]/10 transition-all"
@@ -1569,6 +1587,94 @@ export default function ForgePage() {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Sketch Fitting Results Panel */}
+          {fittedSlices.length > 0 && (
+            <div className="absolute bottom-4 right-4 z-20 w-72 max-h-[40vh] overflow-y-auto rounded-xl bg-[#181c26]/95 border border-[#c9a84c]/30 backdrop-blur-md shadow-2xl animate-scaleIn">
+              <div className="sticky top-0 bg-[#181c26] border-b border-[#c9a84c]/20 px-3 py-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">✏️</span>
+                  <span className="text-[12px] font-bold text-[#c9a84c] tracking-wide">SKETCHES</span>
+                </div>
+                <button onClick={clearFittedSlices}
+                  className="text-[10px] text-[#4a4035] hover:text-[#f87171] px-1.5 py-0.5 rounded hover:bg-[#f87171]/10 transition-all">
+                  ✕
+                </button>
+              </div>
+              {/* Stats */}
+              <div className="px-3 py-2 border-b border-[#c9a84c]/10 text-[10px] grid grid-cols-2 gap-x-3 gap-y-1">
+                <span className="text-[#8a7e6b]">Slices:</span>
+                <span className="text-[#f0ece4] font-medium">{fittedSlices.length}</span>
+                <span className="text-[#8a7e6b]">Contornos:</span>
+                <span className="text-[#f0ece4] font-medium">{fittedSlices.reduce((s, sl) => s + sl.contours.length, 0)}</span>
+                <span className="text-[#8a7e6b]">Entidades:</span>
+                <span className="text-[#f0ece4] font-medium text-[#c9a84c]">
+                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.length, 0), 0)}
+                </span>
+                <span className="text-[#8a7e6b]">Desglose:</span>
+                <span className="text-[#f0ece4] font-medium text-[9px]">
+                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.filter(e => e.type === 'line').length, 0), 0)}L{' '}
+                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.filter(e => e.type === 'arc' && !e.isFullCircle).length, 0), 0)}A{' '}
+                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.filter(e => e.type === 'arc' && e.isFullCircle).length, 0), 0)}⊙
+                </span>
+              </div>
+              {/* Axis filter */}
+              <div className="px-3 py-1.5 border-b border-[#c9a84c]/10 flex items-center gap-1">
+                <span className="text-[9px] text-[#8a7e6b] mr-1">Eje:</span>
+                {(['X', 'Y', 'Z'] as const).map(ax => {
+                  const count = fittedSlices.filter(s => s.axis === ax).length;
+                  return (
+                    <button
+                      key={ax}
+                      onClick={() => setSketchFilterAxis(prev => prev === ax ? null : ax)}
+                      className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all ${
+                        sketchFilterAxis === ax
+                          ? 'bg-[#c9a84c]/20 text-[#c9a84c]'
+                          : 'text-[#4a4035] hover:text-[#8a7e6b]'
+                      }`}
+                    >
+                      {ax} ({count})
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setSketchFilterAxis(null)}
+                  className={`px-2 py-0.5 rounded text-[9px] transition-all ${
+                    sketchFilterAxis === null
+                      ? 'bg-[#c9a84c]/20 text-[#c9a84c]'
+                      : 'text-[#4a4035] hover:text-[#8a7e6b]'
+                  }`}
+                >
+                  ALL
+                </button>
+              </div>
+              {/* Per-slice summary */}
+              <div className="px-2 py-1 space-y-0.5 max-h-[20vh] overflow-y-auto">
+                {(sketchFilterAxis ? fittedSlices.filter(s => s.axis === sketchFilterAxis) : fittedSlices).map((slice, i) => {
+                  const entities = slice.contours.reduce((s, c) => s + c.entities.length, 0);
+                  const lines = slice.contours.reduce((s, c) => s + c.entities.filter(e => e.type === 'line').length, 0);
+                  const arcs = slice.contours.reduce((s, c) => s + c.entities.filter(e => e.type === 'arc').length, 0);
+                  const axColors: Record<string, string> = { X: '#f87171', Y: '#4ade80', Z: '#60a5fa' };
+                  return (
+                    <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[#c9a84c]/5 text-[9px]">
+                      <span style={{ color: axColors[slice.axis] }} className="font-bold w-3">{slice.axis}</span>
+                      <span className="text-[#8a7e6b]">{slice.value.toFixed(1)}</span>
+                      <span className="text-[#f0ece4]">{slice.contours.length}c</span>
+                      <span className="text-[#4a4035]">{entities}e ({lines}L {arcs}A)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Sketch Fitting indicator */}
+          {sketchFitting && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-[#181c26]/95 border border-[#c9a84c]/30 text-[12px] text-[#c9a84c] flex items-center gap-3 backdrop-blur-md shadow-lg z-30">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Fitting sketches...
             </div>
           )}
 

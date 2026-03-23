@@ -20,8 +20,11 @@ import {
   SectionPlaneVisual,
   MeshClipper,
   ViewTransitionController,
+  SketchOverlay,
   type StandardView,
 } from './viewport';
+import type { FittedSlice } from './sketch-fitting';
+import type { SliceAxis } from './cross-section';
 
 // ── Infinite Grid with XYZ Axes ──
 
@@ -225,6 +228,10 @@ export interface ForgeViewportProps {
   targetView?: StandardView | null;
   /** Called when camera transition completes */
   onViewTransitionComplete?: () => void;
+  /** Fitted sketch slices to render as overlays */
+  fittedSlices?: FittedSlice[];
+  /** Filter sketch overlay by axis */
+  sketchFilterAxis?: SliceAxis | null;
 }
 
 export default function ForgeViewport({
@@ -232,6 +239,7 @@ export default function ForgeViewport({
   sketchTool, sketchShapes, onSketchShapeAdd,
   onSketchDrawingChange, onSketchCursorMove,
   targetView, onViewTransitionComplete,
+  fittedSlices, sketchFilterAxis,
 }: ForgeViewportProps) {
   const isSketch = !!sketchPlane;
   const section = useForgeStore(s => s.section);
@@ -291,6 +299,14 @@ export default function ForgeViewport({
             opacity={0.85}
           />
         </GizmoHelper>
+
+        {/* ── Sketch Overlay (fitted Lines + Arcs from CT-Scan) ── */}
+        {fittedSlices && fittedSlices.length > 0 && (
+          <SketchOverlay
+            slices={fittedSlices}
+            filterAxis={sketchFilterAxis ?? null}
+          />
+        )}
 
         {/* ── Section Plane (clip visualization) ── */}
         {section.enabled && <SectionPlaneVisual section={section} />}

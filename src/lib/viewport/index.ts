@@ -13,3 +13,6 @@ export { DEFAULT_SECTION } from './SectionPlane';
 
 export { default as ViewTransitionController, useFlyTo, STANDARD_VIEWS } from './CameraTransitions';
 export type { StandardView } from './CameraTransitions';
+
+export { default as SketchOverlay } from './SketchOverlay';
+export type { SketchOverlayProps } from './SketchOverlay';

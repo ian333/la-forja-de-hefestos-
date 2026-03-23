@@ -36,8 +36,9 @@ import { type ImportedModel, importCADFile } from './step-import';
 import { type MachineConfig, importMachineFile } from './machine-config';
 import { DEFAULT_SECTION, type SectionState, type SectionAxis } from './viewport/SectionPlane';
 import { type ReverseEngineeredModel, reverseEngineerModel, reverseEngineerAssembly } from './reverse-engineer';
-import { decomposeBySlicing, type DecomposedFeatures } from './cross-section';
+import { decomposeBySlicing, sliceMesh, type DecomposedFeatures, type SliceAxis } from './cross-section';
 import { decompositionToScene, type ProfileToSdfResult } from './profile-to-sdf';
+import { fitContour, reconstructionError, type FittedSlice, type FittedContour } from './sketch-fitting';
 
 // ── Types ──
 
@@ -129,6 +130,12 @@ interface ForgeState {
   ctScanImported: (modelIndex: number) => void;
   clearCtScan: () => void;
 
+  // Fitted sketch slices (from CT-scan → sketch fitting)
+  fittedSlices: FittedSlice[];
+  sketchFitting: boolean;
+  fitSketches: (modelIndex: number) => Promise<void>;
+  clearFittedSlices: () => void;
+
   // Machine actions
   importMachine: (file: File) => Promise<void>;
   selectMachine: (id: string | null) => void;
@@ -183,6 +190,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   reverseEngineering: false,
   ctScanResult: null,
   ctScanning: false,
+  fittedSlices: [],
+  sketchFitting: false,
   machines: [],
   selectedMachine: null,
   machineImporting: false,
@@ -498,6 +507,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
     set({ ctScanning: true });
 
+    // Defer heavy work to next frame so UI can show "scanning..." state
+    setTimeout(() => {
     try {
       const isAssembly = model.meshes.length > 1;
       const modelLabel = (model.threeGroup.name || 'Pieza').replace(/\.[^.]+$/, '');
@@ -524,7 +535,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
           const size = new THREE.Vector3();
           bb.getSize(size);
 
-          const decomp = decomposeBySlicing(mesh.geometry, 80);
+          const decomp = decomposeBySlicing(mesh.geometry, 40);
 
           perMeshDecomps.push({ name: mesh.name || `Mesh_${mi}`, decomp, triCount, geo: mesh.geometry });
 
@@ -601,7 +612,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       console.log(`Tamaño global: ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}`);
 
       // Full 3-axis CT scan
-      const decomp = decomposeBySlicing(merged, 100);
+      const decomp = decomposeBySlicing(merged, 50);
 
       console.log(`%cFeatures totales: ${decomp.stats.totalFeatures}`, 'color:#4ade80;font-weight:bold');
       console.log(`  Extrusiones: ${decomp.stats.extrusions}`);
@@ -724,9 +735,116 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         importError: `CT-Scan falló: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
+    }, 16); // defer to next frame
   },
 
-  clearCtScan: () => set({ ctScanResult: null }),
+  clearCtScan: () => set({ ctScanResult: null, fittedSlices: [] }),
+
+  // ── Sketch Fitting Actions ──
+
+  fitSketches: async (modelIndex) => {
+    const state = get();
+    const model = state.importedModels[modelIndex];
+    if (!model) return;
+
+    set({ sketchFitting: true });
+
+    try {
+      // Merge all meshes into one geometry
+      const allPositions: number[] = [];
+      const allIndices: number[] = [];
+      let vertexOffset = 0;
+
+      for (const mesh of model.meshes) {
+        const posAttr = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+        const idx = mesh.geometry.getIndex();
+        if (!posAttr) continue;
+
+        for (let i = 0; i < posAttr.count; i++) {
+          allPositions.push(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        }
+
+        if (idx) {
+          for (let i = 0; i < idx.count; i++) allIndices.push(idx.getX(i) + vertexOffset);
+        } else {
+          for (let i = 0; i < posAttr.count; i++) allIndices.push(i + vertexOffset);
+        }
+        vertexOffset += posAttr.count;
+      }
+
+      const merged = new THREE.BufferGeometry();
+      merged.setAttribute('position', new THREE.BufferAttribute(new Float32Array(allPositions), 3));
+      merged.setIndex(new THREE.BufferAttribute(new Uint32Array(allIndices), 1));
+      merged.computeBoundingBox();
+
+      const bb = merged.boundingBox!;
+      const size = new THREE.Vector3();
+      bb.getSize(size);
+      const diag = size.length();
+      const tol = Math.max(0.1, diag * 0.002);
+
+      const axes: SliceAxis[] = ['X', 'Y', 'Z'];
+      const mins = [bb.min.x, bb.min.y, bb.min.z];
+      const sizes = [size.x, size.y, size.z];
+      const NUM_SLICES = 8; // 8 slices per axis = 24 total
+
+      const fittedSlices: FittedSlice[] = [];
+      let totalEntities = 0;
+
+      console.group('%c✏️ SKETCH FITTING', 'color:#c9a84c;font-size:14px;font-weight:bold');
+
+      for (let ai = 0; ai < 3; ai++) {
+        const axis = axes[ai];
+        const lo = mins[ai];
+        const range = sizes[ai];
+
+        for (let si = 0; si < NUM_SLICES; si++) {
+          const t = (si + 0.5) / NUM_SLICES;
+          const val = lo + range * 0.01 + t * range * 0.98;
+          const result = sliceMesh(merged, axis, val);
+
+          if (result.contours.length === 0) continue;
+
+          const contourResults: FittedContour[] = [];
+
+          for (const contour of result.contours) {
+            if (contour.points.length < 6) continue;
+
+            const { entities, constraints } = fitContour(contour.points, tol);
+            if (entities.length === 0) continue;
+
+            const error = reconstructionError(contour.points, entities, tol);
+            contourResults.push({ entities, constraints, originalPoints: contour.points, error });
+            totalEntities += entities.length;
+          }
+
+          if (contourResults.length > 0) {
+            fittedSlices.push({ axis, value: val, contours: contourResults });
+          }
+
+          // Yield to keep UI responsive every 2 slices
+          if ((si + ai * NUM_SLICES) % 2 === 0) {
+            await new Promise(r => setTimeout(r, 0));
+          }
+        }
+      }
+
+      const lines = fittedSlices.flatMap(s => s.contours.flatMap(c => c.entities.filter(e => e.type === 'line'))).length;
+      const arcs = fittedSlices.flatMap(s => s.contours.flatMap(c => c.entities.filter(e => e.type === 'arc' && !e.isFullCircle))).length;
+      const circles = fittedSlices.flatMap(s => s.contours.flatMap(c => c.entities.filter(e => e.type === 'arc' && e.isFullCircle))).length;
+
+      console.log(`Slices: ${fittedSlices.length} | Entities: ${totalEntities} (${lines}L + ${arcs}A + ${circles}⊙)`);
+      console.groupEnd();
+
+      merged.dispose();
+      set({ fittedSlices, sketchFitting: false });
+    } catch (err) {
+      console.error('[Sketch Fit] Failed:', err);
+      set({ sketchFitting: false });
+    }
+  },
+
+  clearFittedSlices: () => set({ fittedSlices: [] }),
 
   // ── Machine Actions ──
 
