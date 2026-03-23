@@ -1,29 +1,277 @@
+/* ─── 1. Google Fonts ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ─── 2. Tailwind v4 ─── */
 @import 'tailwindcss';
 
-/* Reset */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ══════════════════════════════════════════════════════════════
+   LA FORJA DE HEFESTOS — Design System v5 "Oro Divino"
+   Void black + divine gold — forged by gods
+   ══════════════════════════════════════════════════════════════ */
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* ─── La Forja palette ─── */
+  --color-base:       #08090d;
+  --color-surface:    #0d0f14;
+  --color-surface-up: #12151c;
+  --color-overlay:    #181c26;
+  --color-raised:     #1e2230;
+  --color-border:     #1a1e2c;
+  --color-border-sub: #11141c;
+  --color-border-hi:  #2a2520;
+  --color-text-1:     #f0ece4;
+  --color-text-2:     #8a7e6b;
+  --color-text-3:     #4a4035;
+  --color-text-4:     #2a2520;
+  --color-gold:       #c9a84c;
+  --color-gold-hi:    #e2c97e;
+  --color-teal:       #22d3ee;
+  --color-green:      #4ade80;
+  --color-red:        #f87171;
+  --color-amber:      #fbbf24;
+  --color-purple:     #c084fc;
+  /* ─── shadcn semantic tokens (gold theme) ─── */
+  --color-background:          #08090d;
+  --color-foreground:          #f0ece4;
+  --color-popover:             #0d0f14;
+  --color-popover-foreground:  #f0ece4;
+  --color-primary:             #c9a84c;
+  --color-primary-foreground:  #08090d;
+  --color-secondary:           #12151c;
+  --color-secondary-foreground:#f0ece4;
+  --color-accent:              rgba(201,168,76,0.10);
+  --color-accent-foreground:   #e2c97e;
+  --color-muted:               #12151c;
+  --color-muted-foreground:    #8a7e6b;
+  --color-destructive:         #f87171;
+  --color-border:              rgba(201,168,76,0.08);
+  --color-input:               rgba(201,168,76,0.10);
+  --color-ring:                rgba(201,168,76,0.25);
+  --color-sidebar-primary:     #c9a84c;
+  --color-sidebar-primary-foreground: #08090d;
+  --color-sidebar-accent:      rgba(201,168,76,0.08);
+  --color-sidebar-accent-foreground: #e2c97e;
+  --radius: 0.625rem;
 }
 
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+:root {
+  --c-base:       #08090d;
+  --c-surface:    #0d0f14;
+  --c-surface-up: #12151c;
+  --c-surface-top:#181c26;
+  --c-overlay:    #181c26;
+  --c-raised:     #1e2230;
+  --c-border:     #1a1810;
+  --c-border-sub: #11100c;
+  --c-border-hi:  #2a2520;
+  --c-text-1:     #f0ece4;
+  --c-text-2:     #8a7e6b;
+  --c-text-3:     #4a4035;
+  --c-text-4:     #2a2520;
+  --c-accent:     #c9a84c;
+  --c-accent-hi:  #e2c97e;
+  --c-teal:       #22d3ee;
+  --c-green:      #4ade80;
+  --c-red:        #f87171;
+  --c-amber:      #fbbf24;
+  --c-purple:     #c084fc;
+  /* Gold system */
+  --c-gold:       #c9a84c;
+  --c-gold-hi:    #e2c97e;
+  --c-gold-dim:   rgba(201,168,76,0.10);
+  --c-gold-glow:  rgba(201,168,76,0.06);
+  --c-gold-warm:  #b8943f;
+  /* Panels — REAL glass, not fake */
+  --panel-radius: 10px;
+  --panel-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 1px rgba(201,168,76,0.04);
+  --panel-glass:  rgba(10,12,18,0.65);
+  --panel-glass-border: rgba(201,168,76,0.06);
+  /* Timing — smooth */
+  --t-fast:   100ms cubic-bezier(0.2, 0, 0, 1);
+  --t-normal: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --t-smooth: 350ms cubic-bezier(0.2, 0, 0, 1);
+  /* Fuentes */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Scrollbar styling for dark panels */
-::-webkit-scrollbar {
-  width: 6px;
+/* ─── Reset — MUST be in @layer base so Tailwind utilities can override ─── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--c-base);
+    color: var(--c-text-1);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ─── Scrollbars ─── */
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.06); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+  ::selection { background: rgba(201,168,76,0.22); color: var(--c-accent-hi); }
+  canvas      { outline: none !important; display: block; }
 }
-::-webkit-scrollbar-track {
+
+/* ══════════════════════════════════════════════════════════════
+   Component classes — in @layer components so utilities can override
+   ══════════════════════════════════════════════════════════════ */
+@layer components {
+
+.forge-panel {
+  background: var(--panel-glass);
+  border: 1px solid var(--panel-glass-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+}
+
+.forge-glass {
+  background: rgba(10,12,18,0.70);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--panel-radius);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 1px rgba(255,255,255,0.08), inset 0 0.5px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+}
+
+.forge-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.forge-input {
+  width: 100%;
+  background: rgba(8,9,13,0.6);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--c-text-1);
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  appearance: textfield;
+}
+.forge-input::-webkit-inner-spin-button,
+.forge-input::-webkit-outer-spin-button { appearance: none; }
+.forge-input:focus {
+  border-color: rgba(201,168,76,0.40);
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.08), 0 0 16px rgba(201,168,76,0.06);
+}
+.forge-input::placeholder { color: var(--c-text-4); }
+
+/* ─── Toolbar button — the KEY element that needs weight ─── */
+.forge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  font-family: var(--font-sans);
+  color: var(--c-text-2);
   background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
 }
-::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 3px;
+.forge-btn:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--c-text-1);
+  border-color: rgba(255,255,255,0.06);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #777;
+.forge-btn:active { transform: scale(0.97); opacity: 0.85; }
+.forge-btn:disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
+
+.forge-btn-gold, .forge-btn-accent, .forge-btn-primary {
+  color: var(--c-accent-hi);
+  background: rgba(201,168,76,0.08);
+  border-color: rgba(201,168,76,0.18);
 }
+.forge-btn-gold:hover, .forge-btn-accent:hover, .forge-btn-primary:hover {
+  background: rgba(201,168,76,0.14);
+  border-color: rgba(201,168,76,0.30);
+  color: #f0ece4;
+  box-shadow: 0 0 20px rgba(201,168,76,0.1);
+}
+.forge-btn-red { color: var(--c-red); }
+.forge-btn-red:hover { background: rgba(248,113,113,0.10); border-color: rgba(248,113,113,0.20); }
+
+.forge-divider { height: 1px; background: rgba(255,255,255,0.04); }
+.forge-sep     { width: 1px; height: 16px; background: rgba(255,255,255,0.06); flex-shrink: 0; margin: 0 2px; }
+
+.tree-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; color: var(--c-text-2);
+  transition: all var(--t-fast);
+  user-select: none;
+}
+.tree-row:hover  { background: rgba(255,255,255,0.04); color: var(--c-text-1); }
+.tree-row.active { background: rgba(201,168,76,0.10); color: var(--c-accent-hi); }
+
+} /* end @layer components */
+
+/* ══════════════════════════════════════════════════════════════
+   Animations — smoother, more elegant
+   ══════════════════════════════════════════════════════════════ */
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+@keyframes slideUp   { from { opacity:0; transform:translateY(6px);  } to { opacity:1; transform:translateY(0); } }
+@keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideRight { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+@keyframes glowPulse {
+  0%,100% { box-shadow: 0 0 6px rgba(201,168,76,0.25); }
+  50%     { box-shadow: 0 0 18px rgba(201,168,76,0.45), 0 0 40px rgba(201,168,76,0.08); }
+}
+@keyframes breathe   { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+@keyframes goldShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes borderGlow {
+  0%,100% { border-color: rgba(201,168,76,0.08); }
+  50%     { border-color: rgba(201,168,76,0.18); }
+}
+.animate-goldShimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(201,168,76,0.06) 40%, rgba(226,201,126,0.12) 50%, rgba(201,168,76,0.06) 60%, transparent 100%);
+  background-size: 200% 100%;
+  animation: goldShimmer 6s ease-in-out infinite;
+}
+.animate-borderGlow { animation: borderGlow 4s ease-in-out infinite; }
+
+.animate-fadeIn     { animation: fadeIn    0.18s cubic-bezier(0.2,0,0,1); }
+.animate-scaleIn    { animation: scaleIn   0.2s  cubic-bezier(0.2,0,0,1); }
+.animate-slideUp    { animation: slideUp   0.2s  cubic-bezier(0.2,0,0,1); }
+.animate-slideDown  { animation: slideDown 0.2s  cubic-bezier(0.2,0,0,1); }
+.animate-slideRight { animation: slideRight 0.25s cubic-bezier(0.2,0,0,1); }
+.animate-spin       { animation: spin      0.7s  linear infinite; }
+.animate-pulse      { animation: pulse-dot 2s    ease-in-out infinite; }
+.animate-glowPulse  { animation: glowPulse 3s    ease-in-out infinite; }
+.animate-breathe    { animation: breathe   4s    ease-in-out infinite; }
+
+.cursor-crosshair { cursor: crosshair; }

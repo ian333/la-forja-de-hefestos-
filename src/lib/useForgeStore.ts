@@ -6,9 +6,12 @@
  */
 
 import { create } from 'zustand';
-import type { SdfNode, SdfPrimitive, SdfOperation } from './sdf-engine';
+import * as THREE from 'three';
+import type { SdfNode, SdfPrimitive, SdfOperation, SdfModule } from './sdf-engine';
 import {
   isPrimitive,
+  isModule,
+  isContainer,
   createDefaultScene,
   findNode,
   updateNodeInTree,
@@ -21,22 +24,36 @@ import {
   makeCone,
   makeCapsule,
   makeOp,
+  makeModule,
 } from './sdf-engine';
+import {
+  type GaiaVariable,
+  createVariable,
+  resolveVariables,
+  autoCreateVariablesForPrimitive,
+} from './gaia-variables';
+import { type ImportedModel, importCADFile } from './step-import';
+import { type MachineConfig, importMachineFile } from './machine-config';
+import { DEFAULT_SECTION, type SectionState, type SectionAxis } from './viewport/SectionPlane';
+import { type ReverseEngineeredModel, reverseEngineerModel, reverseEngineerAssembly } from './reverse-engineer';
+import { decomposeBySlicing, type DecomposedFeatures } from './cross-section';
+import { decompositionToScene, type ProfileToSdfResult } from './profile-to-sdf';
 
 // ── Types ──
 
 export interface MeshData {
   positions: Float32Array;
   normals: Float32Array;
+  indices: Uint32Array;
   triCount: number;
 }
 
 export type MeshQuality = 'draft' | 'medium' | 'high';
 
 const RESOLUTION: Record<MeshQuality, number> = {
-  draft: 64,
-  medium: 128,
-  high: 256,
+  draft: 96,
+  medium: 160,
+  high: 288,
 };
 
 interface ForgeState {
@@ -44,10 +61,29 @@ interface ForgeState {
   scene: SdfOperation;
   selectedId: string | null;
 
+  // Módulos — agrupaciones nombradas (concepto tipo Components de Fusion 360)
+  activeModuleId: string | null;
+
+  // Variables — every dimension is a named variable
+  variables: GaiaVariable[];
+
+  // Imported CAD models (STEP/IGES/BREP)
+  importedModels: ImportedModel[];
+  importing: boolean;
+  importError: string | null;
+
+  // Machine configurations (.mch files)
+  machines: MachineConfig[];
+  selectedMachine: MachineConfig | null;
+  machineImporting: boolean;
+
   // Mesh (from worker)
   mesh: MeshData | null;
   meshQuality: MeshQuality;
   meshing: boolean;
+
+  // Section view (clip plane)
+  section: SectionState;
 
   // History
   history: SdfOperation[];
@@ -55,6 +91,10 @@ interface ForgeState {
 
   // Worker
   worker: Worker | null;
+
+  // Camera ref (for CPU ray march / face picking)
+  cameraRef: THREE.PerspectiveCamera | null;
+  setCameraRef: (cam: THREE.PerspectiveCamera) => void;
 
   // Actions
   initWorker: () => void;
@@ -68,8 +108,51 @@ interface ForgeState {
   updateRotation: (id: string, axis: 0 | 1 | 2, value: number) => void;
   addPrimitive: (type: SdfPrimitive['type']) => void;
   addOperation: (type: SdfOperation['type']) => void;
+  addExtrudedPrimitive: (type: SdfPrimitive['type'], position: [number,number,number], rotation: [number,number,number], params: Record<string,number>, label?: string) => void;
   deleteNode: (id: string) => void;
   setScene: (scene: SdfOperation) => void;
+
+  // Import actions
+  importFile: (file: File) => Promise<void>;
+  removeImportedModel: (index: number) => void;
+  clearImportError: () => void;
+
+  // Reverse Engineering
+  reverseEngineeringResult: ReverseEngineeredModel | null;
+  reverseEngineering: boolean;
+  reverseEngineerImported: (modelIndex: number, useAssembly?: boolean) => void;
+  clearReverseEngineering: () => void;
+
+  // CT-Scan Decomposition (v2 — cross-section based)
+  ctScanResult: DecomposedFeatures | null;
+  ctScanning: boolean;
+  ctScanImported: (modelIndex: number) => void;
+  clearCtScan: () => void;
+
+  // Machine actions
+  importMachine: (file: File) => Promise<void>;
+  selectMachine: (id: string | null) => void;
+  removeMachine: (id: string) => void;
+
+  // Módulo actions
+  addModule: (name: string, color?: string) => string;
+  renameModule: (id: string, name: string) => void;
+  removeModule: (id: string) => void;
+  setActiveModule: (id: string | null) => void;
+
+  // Variable actions
+  addVariable: (name: string, expression: string, opts?: Partial<GaiaVariable>) => string;
+  updateVariableExpression: (id: string, expression: string) => void;
+  renameVariable: (id: string, newName: string) => void;
+  removeVariable: (id: string) => void;
+  syncVariablesToScene: () => void;
+
+  // Section actions
+  setSectionEnabled: (enabled: boolean) => void;
+  setSectionAxis: (axis: SectionAxis) => void;
+  setSectionDistance: (distance: number) => void;
+  setSectionFlip: (flip: boolean) => void;
+  toggleSection: () => void;
 
   undo: () => void;
   redo: () => void;
@@ -83,15 +166,35 @@ function pushHistory(state: ForgeState, newScene: SdfOperation) {
   return { scene: newScene, history, historyIndex: history.length - 1 };
 }
 
+function countPrimType(node: SdfNode, type: string): number {
+  if (isPrimitive(node)) return node.type === type ? 1 : 0;
+  return (node as SdfOperation).children.reduce((s, c) => s + countPrimType(c, type), 0);
+}
+
 export const useForgeStore = create<ForgeState>((set, get) => ({
   scene: createDefaultScene(),
   selectedId: null,
+  activeModuleId: null,
+  variables: [],
+  importedModels: [],
+  importing: false,
+  importError: null,
+  reverseEngineeringResult: null,
+  reverseEngineering: false,
+  ctScanResult: null,
+  ctScanning: false,
+  machines: [],
+  selectedMachine: null,
+  machineImporting: false,
   mesh: null,
   meshQuality: 'medium',
   meshing: false,
+  section: DEFAULT_SECTION,
   history: [createDefaultScene()],
   historyIndex: 0,
   worker: null,
+  cameraRef: null,
+  setCameraRef: (cam) => set({ cameraRef: cam }),
 
   initWorker: () => {
     const w = new Worker(new URL('./mc-worker.ts', import.meta.url), { type: 'module' });
@@ -115,6 +218,11 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const q = quality || state.meshQuality;
     const w = state.worker;
     if (!w) return;
+    // Don't mesh if scene is empty
+    if (state.scene.children.length === 0) {
+      set({ mesh: null, meshing: false, meshQuality: q });
+      return;
+    }
     set({ meshing: true, meshQuality: q });
     w.postMessage({ type: 'mesh', scene: state.scene, resolution: RESOLUTION[q] });
   },
@@ -125,7 +233,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const state = get();
     const newScene = updateNodeInTree(state.scene, id, updates) as SdfOperation;
     set(pushHistory(state, newScene));
-    get().requestMesh('draft');
+    // GPU ray march handles visualization; no MC needed for param edits
   },
 
   updateParam: (id, key, value) => {
@@ -136,7 +244,18 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       params: { ...node.params, [key]: value },
     }) as SdfOperation;
     set(pushHistory(state, newScene));
-    get().requestMesh('draft');
+
+    // Sync the linked variable expression
+    const linkedVar = state.variables.find(
+      v => v.linkedPrimId === id && v.linkedParamKey === key,
+    );
+    if (linkedVar) {
+      set(s => ({
+        variables: s.variables.map(v =>
+          v.id === linkedVar.id ? { ...v, expression: String(value), resolvedValue: value } : v,
+        ),
+      }));
+    }
   },
 
   updatePosition: (id, axis, value) => {
@@ -147,7 +266,6 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     pos[axis] = value;
     const newScene = updateNodeInTree(state.scene, id, { position: pos }) as SdfOperation;
     set(pushHistory(state, newScene));
-    get().requestMesh('draft');
   },
 
   updateRotation: (id, axis, value) => {
@@ -158,7 +276,6 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     rot[axis] = value;
     const newScene = updateNodeInTree(state.scene, id, { rotation: rot }) as SdfOperation;
     set(pushHistory(state, newScene));
-    get().requestMesh('draft');
   },
 
   addPrimitive: (type) => {
@@ -174,18 +291,30 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const n = factories[type]();
     let newScene: SdfOperation;
 
-    if (state.selectedId) {
-      const target = findNode(state.scene, state.selectedId);
-      if (target && !isPrimitive(target)) {
-        newScene = addChildToNode(state.scene, state.selectedId, n) as SdfOperation;
-      } else {
-        newScene = { ...state.scene, children: [...state.scene.children, n] };
+    // Priority: selectedId container > activeModuleId > root
+    const targetId = (() => {
+      if (state.selectedId) {
+        const sel = findNode(state.scene, state.selectedId);
+        if (sel && isContainer(sel)) return state.selectedId;
       }
-    } else {
-      newScene = { ...state.scene, children: [...state.scene.children, n] };
-    }
+      if (state.activeModuleId) {
+        const mod = findNode(state.scene, state.activeModuleId);
+        if (mod && isContainer(mod)) return state.activeModuleId;
+      }
+      return state.scene.id;
+    })();
+
+    newScene = addChildToNode(state.scene, targetId, n) as SdfOperation;
 
     set({ ...pushHistory(state, newScene), selectedId: n.id });
+
+    // Auto-create variables for this primitive's dimensions
+    const count = countPrimType(state.scene, type);
+    const newVars = autoCreateVariablesForPrimitive(type, n.id, n.params, count);
+    if (newVars.length > 0) {
+      set(s => ({ variables: [...s.variables, ...newVars] }));
+    }
+
     get().requestMesh('medium');
   },
 
@@ -194,18 +323,45 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const n = makeOp(type, [], 0.2);
     let newScene: SdfOperation;
 
-    if (state.selectedId) {
-      const target = findNode(state.scene, state.selectedId);
-      if (target && !isPrimitive(target)) {
-        newScene = addChildToNode(state.scene, state.selectedId, n) as SdfOperation;
-      } else {
-        newScene = { ...state.scene, children: [...state.scene.children, n] };
+    // Priority: selectedId container > activeModuleId > root
+    const targetId = (() => {
+      if (state.selectedId) {
+        const sel = findNode(state.scene, state.selectedId);
+        if (sel && isContainer(sel)) return state.selectedId;
       }
-    } else {
-      newScene = { ...state.scene, children: [...state.scene.children, n] };
-    }
+      if (state.activeModuleId) {
+        const mod = findNode(state.scene, state.activeModuleId);
+        if (mod && isContainer(mod)) return state.activeModuleId;
+      }
+      return state.scene.id;
+    })();
+
+    newScene = addChildToNode(state.scene, targetId, n) as SdfOperation;
 
     set({ ...pushHistory(state, newScene), selectedId: n.id });
+    get().requestMesh('medium');
+  },
+
+  addExtrudedPrimitive: (type, position, rotation, params, label) => {
+    const state = get();
+    const factories: Record<string, () => SdfPrimitive> = {
+      sphere: () => makeSphere(position),
+      box: () => makeBox(position),
+      cylinder: () => makeCylinder(position),
+      torus: () => makeTorus(position),
+      cone: () => makeCone(position),
+      capsule: () => makeCapsule([0,0,0], [0,1,0]),
+    };
+    const factory = factories[type];
+    if (!factory) return;
+    const prim = factory();
+    prim.position = position;
+    prim.rotation = rotation;
+    prim.params = { ...prim.params, ...params };
+    if (label) prim.label = label;
+
+    const newScene: SdfOperation = { ...state.scene, children: [...state.scene.children, prim] };
+    set({ ...pushHistory(state, newScene), selectedId: prim.id });
     get().requestMesh('medium');
   },
 
@@ -214,7 +370,12 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     if (id === state.scene.id) return;
     const r = removeNodeFromTree(state.scene, id);
     if (!r) return;
-    set({ ...pushHistory(state, r as SdfOperation), selectedId: null });
+    set({
+      ...pushHistory(state, r as SdfOperation),
+      selectedId: null,
+      // Remove variables linked to deleted primitive
+      variables: state.variables.filter(v => v.linkedPrimId !== id),
+    });
     get().requestMesh('medium');
   },
 
@@ -239,4 +400,491 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     set({ scene: state.history[newIdx], historyIndex: newIdx });
     get().requestMesh('medium');
   },
+
+  // ── Section View Actions ──
+
+  setSectionEnabled: (enabled) => set(s => ({ section: { ...s.section, enabled } })),
+  setSectionAxis: (axis) => set(s => ({ section: { ...s.section, axis } })),
+  setSectionDistance: (distance) => set(s => ({ section: { ...s.section, distance } })),
+  setSectionFlip: (flip) => set(s => ({ section: { ...s.section, flip } })),
+  toggleSection: () => set(s => ({ section: { ...s.section, enabled: !s.section.enabled } })),
+
+  // ── Import Actions ──
+
+  importFile: async (file) => {
+    set({ importing: true, importError: null });
+    try {
+      const model = await importCADFile(file);
+      if (!model.success) {
+        set({ importing: false, importError: `Error al importar ${file.name}` });
+        return;
+      }
+      set(s => ({
+        importedModels: [...s.importedModels, model],
+        importing: false,
+      }));
+    } catch (err) {
+      set({ importing: false, importError: `Error: ${err instanceof Error ? err.message : String(err)}` });
+    }
+  },
+
+  removeImportedModel: (index) => {
+    set(s => {
+      const models = [...s.importedModels];
+      // Dispose Three.js resources
+      const model = models[index];
+      if (model) {
+        model.threeGroup.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+            else child.material.dispose();
+          }
+        });
+      }
+      models.splice(index, 1);
+      return { importedModels: models };
+    });
+  },
+
+  clearImportError: () => set({ importError: null }),
+
+  // ── Reverse Engineering Actions ──
+
+  reverseEngineerImported: (modelIndex, useAssembly = true) => {
+    const state = get();
+    const model = state.importedModels[modelIndex];
+    if (!model) return;
+
+    set({ reverseEngineering: true });
+
+    try {
+      // Use requestAnimationFrame to keep UI responsive
+      const result = useAssembly && model.stats.nodeCount > 1
+        ? reverseEngineerAssembly(model)
+        : reverseEngineerModel(model);
+
+      // Replace scene with reverse-engineered SDF tree
+      const newScene = result.scene;
+
+      // Merge variables
+      const merged = resolveVariables([...state.variables, ...result.variables]);
+
+      set({
+        ...pushHistory(state, newScene),
+        variables: merged,
+        reverseEngineeringResult: result,
+        reverseEngineering: false,
+      });
+
+      get().requestMesh('medium');
+    } catch (err) {
+      console.error('[RE] Reverse engineering failed:', err);
+      set({
+        reverseEngineering: false,
+        importError: `Rev. Eng. falló: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    }
+  },
+
+  clearReverseEngineering: () => set({ reverseEngineeringResult: null }),
+
+  // ── CT-Scan Decomposition Actions ──
+
+  ctScanImported: (modelIndex) => {
+    const state = get();
+    const model = state.importedModels[modelIndex];
+    if (!model) return;
+
+    set({ ctScanning: true });
+
+    try {
+      const isAssembly = model.meshes.length > 1;
+      const modelLabel = (model.threeGroup.name || 'Pieza').replace(/\.[^.]+$/, '');
+
+      console.group(`%c🩻 CT-SCAN ANALYSIS: ${modelLabel}`, 'color:#60a5fa;font-size:14px;font-weight:bold');
+      console.log(`%cMeshes: ${model.meshes.length}  |  Triángulos: ${model.stats.triangleCount.toLocaleString()}  |  Vértices: ${model.stats.vertexCount.toLocaleString()}`, 'color:#8a7e6b');
+      console.log(`%cEnsamble: ${isAssembly ? 'SÍ — análisis per-componente' : 'NO — pieza única'}`, 'color:#c9a84c');
+
+      // ═══ Per-component analysis (for assemblies) ═══
+      const perMeshDecomps: { name: string; decomp: ReturnType<typeof decomposeBySlicing>; triCount: number; geo: THREE.BufferGeometry }[] = [];
+
+      if (isAssembly) {
+        console.group('%c📦 Análisis per-componente', 'color:#4ade80;font-weight:bold');
+        for (let mi = 0; mi < model.meshes.length; mi++) {
+          const mesh = model.meshes[mi];
+          const posAttr = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+          if (!posAttr || posAttr.count < 9) continue;
+
+          const idx = mesh.geometry.getIndex();
+          const triCount = idx ? idx.count / 3 : posAttr.count / 3;
+
+          mesh.geometry.computeBoundingBox();
+          const bb = mesh.geometry.boundingBox!;
+          const size = new THREE.Vector3();
+          bb.getSize(size);
+
+          const decomp = decomposeBySlicing(mesh.geometry, 80);
+
+          perMeshDecomps.push({ name: mesh.name || `Mesh_${mi}`, decomp, triCount, geo: mesh.geometry });
+
+          // Per-component console report
+          console.group(`%c[${mi}] ${mesh.name || 'Mesh_' + mi}  (${triCount} △)`, 'color:#f0ece4');
+          console.log(`  BBox: [${bb.min.x.toFixed(2)}, ${bb.min.y.toFixed(2)}, ${bb.min.z.toFixed(2)}] → [${bb.max.x.toFixed(2)}, ${bb.max.y.toFixed(2)}, ${bb.max.z.toFixed(2)}]`);
+          console.log(`  Tamaño: ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}`);
+          console.log(`  Features: ${decomp.stats.totalFeatures} (ext:${decomp.stats.extrusions} rev:${decomp.stats.revolutions} holes:${decomp.stats.holes} unk:${decomp.stats.unknown})`);
+          console.log(`  Tiempo: ${decomp.stats.processingTimeMs.toFixed(1)}ms`);
+
+          // Band summary per axis
+          for (const ax of ['X', 'Y', 'Z'] as const) {
+            const scan = decomp.scans[ax];
+            const filled = scan.slices.filter(s => s.totalArea > 0).length;
+            console.log(`  ${ax}: ${scan.bands.length} bandas, ${filled}/${scan.slices.length} cortes con material, rango [${scan.range[0].toFixed(2)}..${scan.range[1].toFixed(2)}]`);
+          }
+
+          // Feature details
+          if (decomp.features.length > 0 && decomp.features.length <= 20) {
+            console.table(decomp.features.map(f => ({
+              tipo: f.type,
+              eje: f.axis,
+              centro: `(${f.center[0].toFixed(2)}, ${f.center[1].toFixed(2)}, ${f.center[2].toFixed(2)})`,
+              altura: f.height.toFixed(3),
+              radio: f.radius?.toFixed(3) ?? '—',
+              agujeros: f.holes.length,
+              confianza: (f.confidence * 100).toFixed(0) + '%',
+              label: f.label,
+            })));
+          }
+          console.groupEnd();
+        }
+        console.groupEnd();
+      }
+
+      // ═══ Merged (full model) analysis ═══
+      const allPositions: number[] = [];
+      const allNormals: number[] = [];
+      const allIndices: number[] = [];
+      let vertexOffset = 0;
+
+      for (const mesh of model.meshes) {
+        const posAttr = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+        const normAttr = mesh.geometry.getAttribute('normal') as THREE.BufferAttribute;
+        const idx = mesh.geometry.getIndex();
+        if (!posAttr) continue;
+
+        for (let i = 0; i < posAttr.count; i++) {
+          allPositions.push(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+          if (normAttr) allNormals.push(normAttr.getX(i), normAttr.getY(i), normAttr.getZ(i));
+          else allNormals.push(0, 1, 0);
+        }
+
+        if (idx) {
+          for (let i = 0; i < idx.count; i++) allIndices.push(idx.getX(i) + vertexOffset);
+        } else {
+          for (let i = 0; i < posAttr.count; i++) allIndices.push(i + vertexOffset);
+        }
+        vertexOffset += posAttr.count;
+      }
+
+      const merged = new THREE.BufferGeometry();
+      merged.setAttribute('position', new THREE.BufferAttribute(new Float32Array(allPositions), 3));
+      merged.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(allNormals), 3));
+      merged.setIndex(new THREE.BufferAttribute(new Uint32Array(allIndices), 1));
+      merged.computeBoundingBox();
+
+      const bb = merged.boundingBox!;
+      const size = new THREE.Vector3();
+      bb.getSize(size);
+
+      console.group('%c🔬 Análisis global (merged)', 'color:#c084fc;font-weight:bold');
+      console.log(`BBox: [${bb.min.x.toFixed(2)}, ${bb.min.y.toFixed(2)}, ${bb.min.z.toFixed(2)}] → [${bb.max.x.toFixed(2)}, ${bb.max.y.toFixed(2)}, ${bb.max.z.toFixed(2)}]`);
+      console.log(`Tamaño global: ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}`);
+
+      // Full 3-axis CT scan
+      const decomp = decomposeBySlicing(merged, 100);
+
+      console.log(`%cFeatures totales: ${decomp.stats.totalFeatures}`, 'color:#4ade80;font-weight:bold');
+      console.log(`  Extrusiones: ${decomp.stats.extrusions}`);
+      console.log(`  Revoluciones: ${decomp.stats.revolutions}`);
+      console.log(`  Agujeros: ${decomp.stats.holes}`);
+      console.log(`  Desconocidos: ${decomp.stats.unknown}`);
+      console.log(`  Tiempo total: ${decomp.stats.processingTimeMs.toFixed(1)}ms`);
+
+      // Detailed axis analysis
+      for (const ax of ['X', 'Y', 'Z'] as const) {
+        const scan = decomp.scans[ax];
+        const filled = scan.slices.filter(s => s.totalArea > 0).length;
+        console.group(`%c  Eje ${ax}: ${scan.bands.length} bandas, ${filled}/${scan.slices.length} cortes`, 'color:#60a5fa');
+
+        // Band details table
+        if (scan.bands.length <= 30) {
+          console.table(scan.bands.map((b, i) => ({
+            banda: i,
+            desde: b.zStart.toFixed(3),
+            hasta: b.zEnd.toFixed(3),
+            alto: (b.zEnd - b.zStart).toFixed(3),
+            tipo: b.featureType,
+            β0: b.slice.beta0,
+            β1: b.slice.beta1,
+            χ: b.slice.eulerChar,
+            area: b.slice.totalArea.toFixed(2),
+            outers: b.outerContours.length,
+            holes: b.holeContours.length,
+            circular: b.outerContours.some(c => c.isCircular) ? '●' : '',
+          })));
+        }
+        console.groupEnd();
+      }
+
+      // Complete features table
+      if (decomp.features.length <= 60) {
+        console.group('%c📋 Todos los features detectados', 'color:#facc15;font-weight:bold');
+        console.table(decomp.features.map((f, i) => ({
+          '#': i,
+          tipo: f.type,
+          eje: f.axis,
+          cx: f.center[0].toFixed(2),
+          cy: f.center[1].toFixed(2),
+          cz: f.center[2].toFixed(2),
+          altura: f.height.toFixed(3),
+          radio: f.radius?.toFixed(3) ?? '—',
+          n_agujeros: f.holes.length,
+          pts_perfil: f.profile.length,
+          confianza: (f.confidence * 100).toFixed(0) + '%',
+          label: f.label,
+        })));
+        console.groupEnd();
+      }
+
+      // ═══ Cross-axis verification summary ═══
+      console.group('%c✅ Verificación inter-ejes', 'color:#4ade80;font-weight:bold');
+      const circularByAxis: Record<string, number> = { X: 0, Y: 0, Z: 0 };
+      for (const f of decomp.features) {
+        if (f.radius && f.radius > 0.01) circularByAxis[f.axis]++;
+      }
+      console.log(`Features circulares por eje: X=${circularByAxis.X}, Y=${circularByAxis.Y}, Z=${circularByAxis.Z}`);
+
+      // Group features by approximate center location (for cross-validation)
+      const centerBuckets = new Map<string, typeof decomp.features>();
+      for (const f of decomp.features) {
+        const key = `${Math.round(f.center[0] * 2) / 2},${Math.round(f.center[1] * 2) / 2},${Math.round(f.center[2] * 2) / 2}`;
+        if (!centerBuckets.has(key)) centerBuckets.set(key, []);
+        centerBuckets.get(key)!.push(f);
+      }
+      const multiAxisLocations = [...centerBuckets.entries()].filter(([, v]) => {
+        const axes = new Set(v.map(f => f.axis));
+        return axes.size > 1;
+      });
+      console.log(`Ubicaciones detectadas desde múltiples ejes: ${multiAxisLocations.length}`);
+      for (const [pos, feats] of multiAxisLocations.slice(0, 10)) {
+        console.log(`  ${pos}: ${feats.map(f => `${f.axis}:${f.type}`).join(' + ')} → confianza reforzada`);
+      }
+      console.groupEnd();
+
+      // ═══ Assembly decomposition summary (if applicable) ═══
+      if (isAssembly && perMeshDecomps.length > 1) {
+        console.group('%c🧩 Resumen de ensamble', 'color:#ff7043;font-weight:bold');
+        console.table(perMeshDecomps.map(m => ({
+          componente: m.name,
+          triángulos: m.triCount,
+          features: m.decomp.stats.totalFeatures,
+          extrusiones: m.decomp.stats.extrusions,
+          revoluciones: m.decomp.stats.revolutions,
+          agujeros: m.decomp.stats.holes,
+          tiempo_ms: m.decomp.stats.processingTimeMs.toFixed(1),
+        })));
+        console.groupEnd();
+      }
+
+      console.groupEnd(); // end merged analysis
+
+      // ═══ Build SDF scene ═══
+      const result = decompositionToScene(decomp, modelLabel);
+
+      if (result.warnings.length > 0) {
+        console.warn('[CT-Scan] Warnings:', result.warnings);
+      }
+
+      const newScene = result.scene;
+      const mergedVars = resolveVariables([...state.variables, ...result.variables]);
+
+      set({
+        ...pushHistory(state, newScene),
+        variables: mergedVars,
+        ctScanResult: decomp,
+        ctScanning: false,
+      });
+
+      get().requestMesh('medium');
+      merged.dispose();
+    } catch (err) {
+      console.error('[CT-Scan] Failed:', err);
+      set({
+        ctScanning: false,
+        importError: `CT-Scan falló: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    }
+  },
+
+  clearCtScan: () => set({ ctScanResult: null }),
+
+  // ── Machine Actions ──
+
+  importMachine: async (file) => {
+    set({ machineImporting: true });
+    try {
+      const config = await importMachineFile(file);
+      set(s => ({
+        machines: [...s.machines, config],
+        selectedMachine: config,
+        machineImporting: false,
+      }));
+    } catch (err) {
+      set({ machineImporting: false, importError: `Error máquina: ${err instanceof Error ? err.message : String(err)}` });
+    }
+  },
+
+  selectMachine: (id) => {
+    set(s => ({
+      selectedMachine: id ? s.machines.find(m => m.id === id) ?? null : null,
+    }));
+  },
+
+  removeMachine: (id) => {
+    set(s => ({
+      machines: s.machines.filter(m => m.id !== id),
+      selectedMachine: s.selectedMachine?.id === id ? null : s.selectedMachine,
+    }));
+  },
+
+  // ── Módulo Actions ──
+
+  addModule: (name, color) => {
+    const state = get();
+    const m = makeModule(name, color);
+    const newScene = { ...state.scene, children: [...state.scene.children, m] } as SdfOperation;
+    set({ ...pushHistory(state, newScene), activeModuleId: m.id, selectedId: m.id });
+    return m.id;
+  },
+
+  renameModule: (id, name) => {
+    const state = get();
+    const newScene = updateNodeInTree(state.scene, id, { label: name }) as SdfOperation;
+    set(pushHistory(state, newScene));
+  },
+
+  removeModule: (id) => {
+    const state = get();
+    const mod = findNode(state.scene, id);
+    if (!mod || !isModule(mod)) return;
+    // Promueve los hijos del módulo a la raíz y elimina el módulo
+    let rebuilt = removeNodeFromTree(state.scene, id) as SdfOperation;
+    if (rebuilt && mod.children.length > 0) {
+      rebuilt = { ...rebuilt, children: [...rebuilt.children, ...mod.children] };
+    }
+    set({
+      ...pushHistory(state, rebuilt ?? state.scene),
+      activeModuleId: state.activeModuleId === id ? null : state.activeModuleId,
+      selectedId: state.selectedId === id ? null : state.selectedId,
+    });
+    get().requestMesh('medium');
+  },
+
+  setActiveModule: (id) => set({ activeModuleId: id }),
+
+  // ── Variable Actions ──
+
+  addVariable: (name, expression, opts) => {
+    const v = createVariable(name, expression, opts);
+    set(s => ({ variables: resolveVariables([...s.variables, v]) }));
+    return v.id;
+  },
+
+  updateVariableExpression: (id, expression) => {
+    set(s => {
+      const updated = s.variables.map(v =>
+        v.id === id ? { ...v, expression } : v,
+      );
+      return { variables: resolveVariables(updated) };
+    });
+    // Sync resolved values to SDF scene
+    get().syncVariablesToScene();
+  },
+
+  renameVariable: (id, newName) => {
+    set(s => ({
+      variables: s.variables.map(v => v.id === id ? { ...v, name: newName } : v),
+    }));
+  },
+
+  removeVariable: (id) => {
+    set(s => ({ variables: s.variables.filter(v => v.id !== id) }));
+  },
+
+  syncVariablesToScene: () => {
+    const state = get();
+    // Group param updates by primitive ID
+    const paramUpdates = new Map<string, Record<string, number>>();
+    for (const v of state.variables) {
+      if (v.linkedPrimId && v.linkedParamKey && isFinite(v.resolvedValue)) {
+        const existing = paramUpdates.get(v.linkedPrimId) ?? {};
+        existing[v.linkedParamKey] = v.resolvedValue;
+        paramUpdates.set(v.linkedPrimId, existing);
+      }
+    }
+    // Apply all updates to the SDF tree
+    let scene = state.scene;
+    for (const [primId, params] of paramUpdates) {
+      scene = updateNodeInTree(scene, primId, { params }) as SdfOperation;
+    }
+    if (scene !== state.scene) {
+      set(pushHistory(state, scene));
+    }
+  },
 }));
+
+// ═══════════════════════════════════════════════════════════════
+// Multi-Window Session Sync — BroadcastChannel
+// ═══════════════════════════════════════════════════════════════
+// Cualquier cambio en escena/variables/máquinas se propaga a todas
+// las ventanas abiertas del mismo origen (misma sesión, dos monitores).
+
+interface ForgeSync {
+  type: 'forge-state-sync';
+  scene: SdfOperation;
+  variables: GaiaVariable[];
+  machines: MachineConfig[];
+}
+
+let _suppressSync = false;
+const _bc: BroadcastChannel | null =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('forge-session-v1') : null;
+
+if (_bc) {
+  _bc.onmessage = (e: MessageEvent<ForgeSync>) => {
+    if (e.data?.type !== 'forge-state-sync') return;
+    _suppressSync = true;
+    useForgeStore.setState({
+      scene: e.data.scene,
+      variables: e.data.variables,
+      machines: e.data.machines,
+    });
+    // Re-request mesh after scene sync
+    setTimeout(() => useForgeStore.getState().requestMesh(), 10);
+    _suppressSync = false;
+  };
+}
+
+useForgeStore.subscribe((state) => {
+  if (_suppressSync || !_bc) return;
+  const msg: ForgeSync = {
+    type: 'forge-state-sync',
+    scene: state.scene,
+    variables: state.variables,
+    machines: state.machines,
+  };
+  _bc.postMessage(msg);
+});
+
+/** Expose sync channel status for UI indicators */
+export const getSessionSyncActive = () => _bc !== null;

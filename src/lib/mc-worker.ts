@@ -6,7 +6,7 @@
  *
  * Protocol:
  *   Main → Worker: { type: 'mesh', scene: SdfNode, resolution: number, bounds: [[x,y,z],[x,y,z]] }
- *   Worker → Main: { type: 'mesh', positions: Float32Array, normals: Float32Array, triCount: number }
+ *   Worker → Main: { type: 'mesh', positions: Float32Array, normals: Float32Array, indices: Uint32Array, triCount: number }
  */
 
 // ── Inline SDF evaluator (mirrors sdf-engine.ts exactly) ──
@@ -305,7 +305,7 @@ function marchingCubes(
   scene: SdfNode,
   res: number,
   bounds: [V3, V3],
-): { positions: Float32Array; normals: Float32Array; triCount: number } {
+): { positions: Float32Array; normals: Float32Array; indices: Uint32Array; triCount: number } {
   const [bMin, bMax] = bounds;
   const step: V3 = [
     (bMax[0] - bMin[0]) / res,
@@ -397,7 +397,33 @@ function marchingCubes(
     normals[i+2] = nz/l;
   }
 
-  return { positions, normals, triCount };
+  // ── Vertex Welding ──
+  // Merge identical vertices so adjacent triangles share edges → smooth shading
+  const wp = Math.min(step[0], step[1], step[2]) * 0.01;
+  const vmap = new Map<string, number>();
+  const wP: number[] = [];
+  const wN: number[] = [];
+  const wI: number[] = [];
+
+  for (let i = 0; i < positions.length; i += 3) {
+    const px2 = positions[i], py2 = positions[i + 1], pz2 = positions[i + 2];
+    const key = `${Math.round(px2 / wp)},${Math.round(py2 / wp)},${Math.round(pz2 / wp)}`;
+    let vi = vmap.get(key);
+    if (vi === undefined) {
+      vi = wP.length / 3;
+      vmap.set(key, vi);
+      wP.push(px2, py2, pz2);
+      wN.push(normals[i], normals[i + 1], normals[i + 2]);
+    }
+    wI.push(vi);
+  }
+
+  return {
+    positions: new Float32Array(wP),
+    normals: new Float32Array(wN),
+    indices: new Uint32Array(wI),
+    triCount,
+  };
 }
 
 // ── Auto-compute tight bounds from the scene ──
@@ -442,6 +468,9 @@ function computeBounds(scene: SdfNode): [V3, V3] {
   }
   walk(scene);
 
+  // If no primitives found, return safe default bounds
+  if (minX > maxX) return [[-1, -1, -1], [1, 1, 1]];
+
   // Add padding
   const pad = 0.15;
   return [
@@ -465,9 +494,10 @@ self.onmessage = (e: MessageEvent) => {
         type: 'mesh',
         positions: result.positions,
         normals: result.normals,
+        indices: result.indices,
         triCount: result.triCount,
       },
-      [result.positions.buffer, result.normals.buffer] as unknown as Transferable[],
+      [result.positions.buffer, result.normals.buffer, result.indices.buffer] as unknown as Transferable[],
     );
   }
 };

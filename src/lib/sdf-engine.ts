@@ -16,11 +16,17 @@
 export interface SdfPrimitive {
   id: string;
   kind: 'primitive';
-  type: 'sphere' | 'box' | 'cylinder' | 'torus' | 'cone' | 'capsule';
+  type: 'sphere' | 'box' | 'cylinder' | 'torus' | 'cone' | 'capsule' | 'polygon';
   label: string;
   position: [number, number, number];
   rotation: [number, number, number]; // Euler XYZ in radians
   params: Record<string, number>;
+  /**
+   * For type='polygon': the 2D vertices of the cross-section contour.
+   * Stored separately because params is Record<string, number>.
+   * Vertices are in local 2D (the XY plane before extrusion along Z).
+   */
+  polyVerts?: [number, number][];
 }
 
 export interface SdfOperation {
@@ -32,10 +38,31 @@ export interface SdfOperation {
   children: SdfNode[];
 }
 
-export type SdfNode = SdfPrimitive | SdfOperation;
+/**
+ * Módulo — agrupación nombrada (equivalente a un Component de Fusion 360).
+ * Geométricamente se compila como una unión de sus hijos.
+ */
+export interface SdfModule {
+  id: string;
+  kind: 'module';
+  label: string;
+  color: string;    // acento de color en la UI
+  visible: boolean;
+  locked: boolean;
+  children: SdfNode[];
+}
+
+export type SdfNode = SdfPrimitive | SdfOperation | SdfModule;
 
 export function isPrimitive(n: SdfNode): n is SdfPrimitive {
   return n.kind === 'primitive';
+}
+export function isModule(n: SdfNode): n is SdfModule {
+  return n.kind === 'module';
+}
+/** True si el nodo tiene hijos (SdfOperation o SdfModule) */
+export function isContainer(n: SdfNode): n is SdfOperation | SdfModule {
+  return n.kind !== 'primitive';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -102,6 +129,8 @@ float opSmoothUnion(float d1, float d2, float k) {
 // ═══════════════════════════════════════════════════════════════
 
 let _varIdx = 0;
+/** Polygon SDF helper functions generated during compilation */
+let _polyFunctions: string[] = [];
 
 function glf(n: number): string {
   return n.toFixed(5);
@@ -155,6 +184,37 @@ function compileNodeGlsl(node: SdfNode): { code: string; varName: string } {
       case 'cone':
         expr = `sdCone(${pt}, ${glf(p.radius ?? 0.5)}, ${glf(Math.max(p.height ?? 1, 0.001))})`;
         break;
+      case 'polygon': {
+        // Polygon extrusion — generate inline sdPolygon2D + extrude
+        const verts = node.polyVerts ?? [];
+        const N = verts.length;
+        if (N < 3) { expr = '1000.0'; break; }
+        const fnName = `sdPoly${_varIdx}`;
+        const halfH = (p.height ?? 1) * 0.5;
+        // Axis: polygon lies in XY plane, extruded along Z (local coords)
+        // Generate a self-contained polygon SDF function
+        const vertsArr = verts.map(([vx, vy]) => `vec2(${glf(vx)}, ${glf(vy)})`).join(', ');
+        const polyFn = `
+float ${fnName}(vec2 pp) {
+  vec2 vs[${N}] = vec2[${N}](${vertsArr});
+  float dd = dot(pp - vs[0], pp - vs[0]);
+  float ss = 1.0;
+  for (int i = 0, j = ${N - 1}; i < ${N}; j = i, i++) {
+    vec2 ee = vs[j] - vs[i];
+    vec2 ww = pp - vs[i];
+    vec2 bb = ww - ee * clamp(dot(ww, ee) / dot(ee, ee), 0.0, 1.0);
+    dd = min(dd, dot(bb, bb));
+    bvec3 cc = bvec3(pp.y >= vs[i].y, pp.y < vs[j].y, ee.x * ww.y > ee.y * ww.x);
+    if (all(cc) || all(not(cc))) ss *= -1.0;
+  }
+  return ss * sqrt(dd);
+}
+`;
+        // Store the function — we'll prepend it before map()
+        _polyFunctions.push(polyFn);
+        expr = `max(${fnName}(${pt}.xy), abs(${pt}.z) - ${glf(halfH)})`;
+        break;
+      }
       default:
         expr = '1000.0';
     }
@@ -162,8 +222,8 @@ function compileNodeGlsl(node: SdfNode): { code: string; varName: string } {
     return { code: `${preamble}  float ${v} = ${expr};\n`, varName: v };
   }
 
-  // Operation node
-  const op = node as SdfOperation;
+  // Operation / Module node — ambos tienen children[]
+  const op = node as SdfOperation | SdfModule;
   if (op.children.length === 0) {
     return { code: '', varName: '1000.0' };
   }
@@ -174,12 +234,15 @@ function compileNodeGlsl(node: SdfNode): { code: string; varName: string } {
   const compiled = op.children.map(c => compileNodeGlsl(c));
   let code = compiled.map(c => c.code).join('');
 
+  // Módulos se compilan siempre como unión
+  const opType: string = node.kind === 'module' ? 'union' : (node as SdfOperation).type;
+
   let result = compiled[0].varName;
   for (let i = 1; i < compiled.length; i++) {
     const v = `d${_varIdx++}`;
     const b = compiled[i].varName;
 
-    switch (op.type) {
+    switch (opType) {
       case 'union':
         code += `  float ${v} = opUnion(${result}, ${b});\n`;
         break;
@@ -189,9 +252,13 @@ function compileNodeGlsl(node: SdfNode): { code: string; varName: string } {
       case 'intersect':
         code += `  float ${v} = opIntersect(${result}, ${b});\n`;
         break;
-      case 'smoothUnion':
-        code += `  float ${v} = opSmoothUnion(${result}, ${b}, ${glf(op.smoothness)});\n`;
+      case 'smoothUnion': {
+        const sm = node.kind === 'module' ? 0.25 : (node as SdfOperation).smoothness;
+        code += `  float ${v} = opSmoothUnion(${result}, ${b}, ${glf(sm)});\n`;
         break;
+      }
+      default:
+        code += `  float ${v} = opUnion(${result}, ${b});\n`;
     }
 
     result = v;
@@ -202,11 +269,13 @@ function compileNodeGlsl(node: SdfNode): { code: string; varName: string } {
 
 export function compileScene(root: SdfNode): string {
   _varIdx = 0;
+  _polyFunctions = [];
   if (!isPrimitive(root) && (root as SdfOperation).children.length === 0) {
     return `float map(vec3 p) {\n  return 1000.0;\n}`;
   }
   const { code, varName } = compileNodeGlsl(root);
-  return `float map(vec3 p) {\n${code}  return ${varName};\n}`;
+  const polyPreamble = _polyFunctions.join('\n');
+  return `${polyPreamble}\nfloat map(vec3 p) {\n${code}  return ${varName};\n}`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -242,6 +311,30 @@ export function makeCapsule(a: [number, number, number], b: [number, number, num
   return { id: uid(), kind: 'primitive', type: 'capsule', label: 'Tubo', position: [0, 0, 0], rotation: [0, 0, 0], params: { ax: a[0], ay: a[1], az: a[2], bx: b[0], by: b[1], bz: b[2], radius } };
 }
 
+/**
+ * Create a polygon extrusion primitive.
+ * @param verts 2D vertices of the cross-section in the local XY plane
+ * @param height Extrusion height along local Z
+ * @param pos 3D position (center of the extrusion)
+ * @param rot Euler rotation in radians
+ */
+export function makePolygonExtrusion(
+  verts: [number, number][],
+  height: number,
+  pos: [number, number, number] = [0, 0, 0],
+  rot: [number, number, number] = [0, 0, 0],
+  label = 'Perfil Extruido',
+): SdfPrimitive {
+  return {
+    id: uid(), kind: 'primitive', type: 'polygon',
+    label,
+    position: pos,
+    rotation: rot,
+    params: { height, vertexCount: verts.length },
+    polyVerts: verts,
+  };
+}
+
 export function makeRotatedTorus(pos: [number, number, number], rot: [number, number, number], majorRadius = 1, minorRadius = 0.25): SdfPrimitive {
   return { id: uid(), kind: 'primitive', type: 'torus', label: 'Rueda', position: pos, rotation: rot, params: { majorRadius, minorRadius } };
 }
@@ -251,10 +344,22 @@ export function makeOp(type: SdfOperation['type'], children: SdfNode[], smoothne
   return { id: uid(), kind: 'operation', type, label: labels[type] || type, smoothness, children };
 }
 
+const MODULE_COLOR_PALETTE = ['#d4af37', '#ef5350', '#42a5f5', '#66bb6a', '#ab47bc', '#ff7043', '#26c6da', '#ec407a'];
+let _moduleColorIdx = 0;
+
+export function makeModule(name: string, color?: string): SdfModule {
+  const c = color ?? MODULE_COLOR_PALETTE[_moduleColorIdx++ % MODULE_COLOR_PALETTE.length];
+  return { id: uid(), kind: 'module', label: name, color: c, visible: true, locked: false, children: [] };
+}
+
 // ── Default scene: mechanical part (dome + plate with hole + ring) ──
 
+export function createEmptyScene(): SdfOperation {
+  return makeOp('union', []);
+}
+
 export function createDefaultScene(): SdfOperation {
-  return createBicycleScene();
+  return createEmptyScene();
 }
 
 // ── Bicycle demo scene ──
@@ -361,8 +466,8 @@ export function createBicycleScene(): SdfOperation {
 
 export function findNode(root: SdfNode, id: string): SdfNode | null {
   if (root.id === id) return root;
-  if (!isPrimitive(root)) {
-    for (const child of (root as SdfOperation).children) {
+  if (isContainer(root)) {
+    for (const child of root.children) {
       const found = findNode(child, id);
       if (found) return found;
     }
@@ -370,11 +475,10 @@ export function findNode(root: SdfNode, id: string): SdfNode | null {
   return null;
 }
 
-export function findParent(root: SdfNode, childId: string): SdfOperation | null {
-  if (!isPrimitive(root)) {
-    const op = root as SdfOperation;
-    for (const child of op.children) {
-      if (child.id === childId) return op;
+export function findParent(root: SdfNode, childId: string): SdfOperation | SdfModule | null {
+  if (isContainer(root)) {
+    for (const child of root.children) {
+      if (child.id === childId) return root;
       const found = findParent(child, childId);
       if (found) return found;
     }
@@ -390,35 +494,31 @@ export function updateNodeInTree(root: SdfNode, id: string, updates: any): SdfNo
     if (isPrimitive(root)) {
       return { ...root, ...updates, params: { ...root.params, ...(updates.params ?? {}) }, rotation: updates.rotation ?? root.rotation };
     }
-    return { ...(root as SdfOperation), ...updates };
+    return { ...root, ...updates } as SdfNode;
   }
-  if (!isPrimitive(root)) {
-    const op = root as SdfOperation;
-    return { ...op, children: op.children.map(c => updateNodeInTree(c, id, updates)) };
+  if (isContainer(root)) {
+    return { ...root, children: root.children.map(c => updateNodeInTree(c, id, updates)) } as SdfNode;
   }
   return root;
 }
 
 export function addChildToNode(root: SdfNode, parentId: string, child: SdfNode): SdfNode {
-  if (root.id === parentId && !isPrimitive(root)) {
-    const op = root as SdfOperation;
-    return { ...op, children: [...op.children, child] };
+  if (root.id === parentId && isContainer(root)) {
+    return { ...root, children: [...root.children, child] } as SdfNode;
   }
-  if (!isPrimitive(root)) {
-    const op = root as SdfOperation;
-    return { ...op, children: op.children.map(c => addChildToNode(c, parentId, child)) };
+  if (isContainer(root)) {
+    return { ...root, children: root.children.map(c => addChildToNode(c, parentId, child)) } as SdfNode;
   }
   return root;
 }
 
 export function removeNodeFromTree(root: SdfNode, id: string): SdfNode | null {
   if (root.id === id) return null;
-  if (!isPrimitive(root)) {
-    const op = root as SdfOperation;
-    const filtered = op.children
+  if (isContainer(root)) {
+    const filtered = root.children
       .map(c => removeNodeFromTree(c, id))
       .filter(Boolean) as SdfNode[];
-    return { ...op, children: filtered };
+    return { ...root, children: filtered } as SdfNode;
   }
   return root;
 }

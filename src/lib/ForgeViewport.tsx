@@ -1,47 +1,27 @@
 /**
  * ⚒️ La Forja — Three.js Viewport
  * =================================
- * React-Three-Fiber canvas that renders the Marching Cubes mesh
- * with Fusion-style orbit, GizmoHelper, infinite grid, and PBR lighting.
+ * React-Three-Fiber canvas with GPU ray-marched SDF rendering
+ * + imported CAD mesh rendering (STEP/IGES/BREP).
+ * Pixel-perfect surfaces — no triangulation artifacts.
+ * Keeps Fusion-style orbit, GizmoHelper, infinite grid, and construction planes.
  */
 
-import { useRef, useEffect, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, GizmoHelper, GizmoViewcube, Grid, Environment } from '@react-three/drei';
+import { OrbitControls, GizmoHelper, GizmoViewcube, Grid } from '@react-three/drei';
 import * as THREE from 'three';
-import { useForgeStore, type MeshData } from './useForgeStore';
-
-// ── SDF Mesh ──
-
-function SdfMesh() {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const mesh = useForgeStore((s) => s.mesh);
-
-  const geometry = useMemo(() => {
-    const geo = new THREE.BufferGeometry();
-    if (!mesh || mesh.triCount === 0) return geo;
-
-    geo.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
-    geo.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
-    const indices: number[] = [];
-    for (let i = 0; i < mesh.triCount * 3; i++) indices.push(i);
-    geo.setIndex(indices);
-    geo.computeBoundingSphere();
-    return geo;
-  }, [mesh]);
-
-  return (
-    <mesh ref={meshRef} geometry={geometry} castShadow receiveShadow>
-      <meshStandardMaterial
-        color="#b0b0b0"
-        metalness={0.15}
-        roughness={0.55}
-        side={THREE.DoubleSide}
-        flatShading={false}
-      />
-    </mesh>
-  );
-}
+import RayMarchMesh from './RayMarchMesh';
+import { useForgeStore } from './useForgeStore';
+import type { SketchPlane, SketchShape } from './sketch-engine';
+import SketchInViewport, { type SketchTool } from './SketchInViewport';
+import {
+  ForgeEnvironment,
+  SectionPlaneVisual,
+  MeshClipper,
+  ViewTransitionController,
+  type StandardView,
+} from './viewport';
 
 // ── Infinite Grid with XYZ Axes ──
 
@@ -49,91 +29,100 @@ function ForgeGrid() {
   return (
     <>
       <Grid
-        args={[100, 100]}
+        args={[200, 200]}
         cellSize={1}
-        cellThickness={0.5}
-        cellColor="#555"
+        cellThickness={0.15}
+        cellColor="#0a0c12"
         sectionSize={5}
-        sectionThickness={1.2}
-        sectionColor="#888"
-        fadeDistance={60}
-        fadeStrength={1}
+        sectionThickness={0.3}
+        sectionColor="#0f1118"
+        fadeDistance={40}
+        fadeStrength={3}
         infiniteGrid
       />
-      {/* X axis – Red */}
+      {/* X axis – subtle red */}
       <line>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            args={[new Float32Array([-50, 0, 0, 50, 0, 0]), 3]}
+            args={[new Float32Array([-200, 0, 0, 200, 0, 0]), 3]}
             count={2}
             itemSize={3}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#e53e3e" linewidth={2} />
+        <lineBasicMaterial color="#f87171" transparent opacity={0.12} />
       </line>
-      {/* Y axis – Green */}
+      {/* Y axis – subtle green */}
       <line>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            args={[new Float32Array([0, 0, 0, 0, 50, 0]), 3]}
+            args={[new Float32Array([0, 0, 0, 0, 200, 0]), 3]}
             count={2}
             itemSize={3}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#38a169" linewidth={2} />
+        <lineBasicMaterial color="#4ade80" transparent opacity={0.12} />
       </line>
-      {/* Z axis – Blue */}
+      {/* Z axis – subtle blue */}
       <line>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            args={[new Float32Array([0, 0, -50, 0, 0, 50]), 3]}
+            args={[new Float32Array([0, 0, -200, 0, 0, 200]), 3]}
             count={2}
             itemSize={3}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#3182ce" linewidth={2} />
+        <lineBasicMaterial color="#c9a84c" transparent opacity={0.15} />
       </line>
     </>
   );
 }
 
-// ── LOD Controller ──
-// Switch quality: draft while orbiting, medium on release, high after idle 1.5s
+// ── Sketch Plane Overlay — plano matemático infinito en 3D ──
 
-function LodController() {
-  const requestMesh = useForgeStore((s) => s.requestMesh);
-  const meshQuality = useForgeStore((s) => s.meshQuality);
-  const { controls } = useThree();
-  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+const SKETCH_PLANE_CFG: Record<SketchPlane, {
+  rotation: [number, number, number];
+  color: string;
+  axisLabel: string;
+}> = {
+  XY: { rotation: [0,           0, 0], color: '#4299e1', axisLabel: 'XY' },
+  XZ: { rotation: [-Math.PI/2,  0, 0], color: '#ed8936', axisLabel: 'XZ' },
+  YZ: { rotation: [0, 0, Math.PI/2],   color: '#c9a84c', axisLabel: 'YZ' },
+};
 
-  useEffect(() => {
-    if (!controls) return;
-    const ctrl = controls as unknown as { addEventListener: Function; removeEventListener: Function };
-
-    const onStart = () => {
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-      // Only re-mesh to draft if we're already at a higher quality
-      if (meshQuality !== 'draft') requestMesh('draft');
-    };
-
-    const onEnd = () => {
-      requestMesh('medium');
-      idleTimer.current = setTimeout(() => requestMesh('high'), 1500);
-    };
-
-    ctrl.addEventListener('start', onStart);
-    ctrl.addEventListener('end', onEnd);
-    return () => {
-      ctrl.removeEventListener('start', onStart);
-      ctrl.removeEventListener('end', onEnd);
-      if (idleTimer.current) clearTimeout(idleTimer.current);
-    };
-  }, [controls, requestMesh, meshQuality]);
-
-  return null;
+function SketchPlaneOverlay({ plane }: { plane: SketchPlane }) {
+  const cfg = SKETCH_PLANE_CFG[plane];
+  const [r, g, b] = new THREE.Color(cfg.color).toArray();
+  return (
+    <group rotation={new THREE.Euler(...cfg.rotation)}>
+      {/* Fine grid — líneas del sketch */}
+      <Grid
+        args={[200, 200]}
+        cellSize={0.5}
+        cellThickness={0.5}
+        cellColor={cfg.color}
+        sectionSize={5}
+        sectionThickness={1.2}
+        sectionColor={cfg.color}
+        fadeDistance={80}
+        fadeStrength={1.5}
+        infiniteGrid
+      />
+      {/* Plano semitransparente */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[400, 400]} />
+        <meshBasicMaterial
+          color={cfg.color}
+          transparent
+          opacity={0.03}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
 }
 
 // ── FPS Counter ──
@@ -159,45 +148,126 @@ function FpsCounter({ onFps }: FpsCounterProps) {
   return null;
 }
 
+// ── Camera Sync (exposes camera to store for CPU ray march) ──
+
+function CameraSync() {
+  const { camera } = useThree();
+  const setCameraRef = useForgeStore(s => s.setCameraRef);
+  useEffect(() => {
+    setCameraRef(camera as THREE.PerspectiveCamera);
+  }, [camera, setCameraRef]);
+  return null;
+}
+
+// ── Imported CAD Meshes (STEP/IGES/BREP) ──
+
+function ImportedMeshes() {
+  const importedModels = useForgeStore(s => s.importedModels);
+  const groupRef = useRef<THREE.Group>(null!);
+
+  // Sync Three.js groups into the scene
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!group) return;
+
+    // Clear previous children
+    while (group.children.length > 0) {
+      group.remove(group.children[0]);
+    }
+
+    // Add all imported model groups
+    for (const model of importedModels) {
+      if (model.threeGroup) {
+        group.add(model.threeGroup);
+      }
+    }
+
+    return () => {
+      while (group.children.length > 0) {
+        group.remove(group.children[0]);
+      }
+    };
+  }, [importedModels]);
+
+  if (importedModels.length === 0) return null;
+
+  return <group ref={groupRef} />;
+}
+
+// ── Scene Lighting (active when imported meshes exist) ──
+
+function SceneLighting() {
+  const importedModels = useForgeStore(s => s.importedModels);
+  if (importedModels.length === 0) return null;
+
+  return (
+    <>
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[10, 15, 10]} intensity={1.2} castShadow />
+      <directionalLight position={[-5, 8, -5]} intensity={0.4} />
+      <directionalLight position={[0, -3, 8]} intensity={0.2} />
+    </>
+  );
+}
+
 // ── Main Viewport Component ──
 
 export interface ForgeViewportProps {
   onFps?: (fps: number) => void;
   className?: string;
+  sketchPlane?: SketchPlane | null;
+  sketchTool?: SketchTool | null;
+  sketchShapes?: SketchShape[];
+  onSketchShapeAdd?: (shape: SketchShape) => void;
+  onSketchDrawingChange?: (active: boolean) => void;
+  onSketchCursorMove?: (x: number, y: number) => void;
+  /** Trigger a camera fly-to animation to a standard view */
+  targetView?: StandardView | null;
+  /** Called when camera transition completes */
+  onViewTransitionComplete?: () => void;
 }
 
-export default function ForgeViewport({ onFps, className }: ForgeViewportProps) {
+export default function ForgeViewport({
+  onFps, className, sketchPlane,
+  sketchTool, sketchShapes, onSketchShapeAdd,
+  onSketchDrawingChange, onSketchCursorMove,
+  targetView, onViewTransitionComplete,
+}: ForgeViewportProps) {
+  const isSketch = !!sketchPlane;
+  const section = useForgeStore(s => s.section);
   return (
-    <div className={className ?? 'w-full h-full'}>
+    <div className={className ?? 'w-full h-full'} style={{ cursor: isSketch ? 'crosshair' : undefined }}>
       <Canvas
-        shadows
         camera={{ position: [6, 5, 8], fov: 45, near: 0.01, far: 500 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+        gl={{ antialias: true }}
       >
-        {/* Lighting */}
-        <ambientLight intensity={0.35} />
-        <directionalLight
-          position={[8, 12, 6]}
-          intensity={1.4}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-far={50}
-          shadow-camera-left={-10}
-          shadow-camera-right={10}
-          shadow-camera-top={10}
-          shadow-camera-bottom={-10}
-        />
-        <directionalLight position={[-4, 6, -4]} intensity={0.4} />
+        {/* ── Environment Map (HDR reflections for imported meshes) ── */}
+        <ForgeEnvironment />
 
-        {/* HDRI env for reflections */}
-        <Environment preset="city" background={false} />
+        {/* GPU Ray-Marched SDF — pixel-perfect surfaces */}
+        <RayMarchMesh />
 
-        {/* Scene */}
-        <SdfMesh />
+        {/* Imported CAD meshes (STEP/IGES/BREP) with lighting */}
+        <SceneLighting />
+        <ImportedMeshes />
+
+        {/* Grid & Axes */}
         <ForgeGrid />
+        {sketchPlane && <SketchPlaneOverlay plane={sketchPlane} />}
 
-        {/* Controls */}
+        {/* In-viewport sketch drawing */}
+        {sketchPlane && sketchTool && onSketchShapeAdd && (
+          <SketchInViewport
+            plane={sketchPlane}
+            tool={sketchTool}
+            shapes={sketchShapes ?? []}
+            onShapeAdd={onSketchShapeAdd}
+            onDrawingChange={onSketchDrawingChange ?? (() => {})}
+            onCursorMove={onSketchCursorMove}
+          />
+        )}
+
+        {/* Controls — in sketch mode: left=draw, right=orbit, middle=pan */}
         <OrbitControls
           makeDefault
           enableDamping
@@ -205,24 +275,35 @@ export default function ForgeViewport({ onFps, className }: ForgeViewportProps) 
           minDistance={0.5}
           maxDistance={200}
           mouseButtons={{
-            LEFT: THREE.MOUSE.ROTATE,
+            LEFT: isSketch ? (undefined as unknown as THREE.MOUSE) : THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.PAN,
-            RIGHT: THREE.MOUSE.ROTATE,
+            RIGHT: isSketch ? THREE.MOUSE.ROTATE : (undefined as unknown as THREE.MOUSE),
           }}
         />
 
         {/* Gizmo cube (Fusion-style) */}
         <GizmoHelper alignment="top-right" margin={[72, 72]}>
           <GizmoViewcube
-            color="#505050"
-            textColor="#fff"
-            hoverColor="#0696D7"
-            strokeColor="#333"
+            color="#0d0f14"
+            textColor="#7a8399"
+            hoverColor="#c9a84c"
+            strokeColor="#1a1e2c"
+            opacity={0.85}
           />
         </GizmoHelper>
 
+        {/* ── Section Plane (clip visualization) ── */}
+        {section.enabled && <SectionPlaneVisual section={section} />}
+        <MeshClipper section={section} />
+
+        {/* ── Camera Transitions (smooth fly-to) ── */}
+        <ViewTransitionController
+          targetView={targetView ?? null}
+          onComplete={onViewTransitionComplete}
+        />
+
         {/* Helpers */}
-        <LodController />
+        <CameraSync />
         <FpsCounter onFps={onFps} />
       </Canvas>
     </div>
