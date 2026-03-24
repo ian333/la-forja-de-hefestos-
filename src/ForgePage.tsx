@@ -27,7 +27,7 @@ import { downloadSTL } from '@/lib/stl-export';
 import { downloadBlueprint } from '@/lib/blueprint-export';
 import { computeSceneStats, type SceneStats } from '@/lib/simulation';
 import { PARAM_LABELS, type GaiaVariable } from '@/lib/gaia-variables';
-import MarkingMenu, { type MarkingMenuItem } from '@/components/MarkingMenu';
+import MarkingMenu, { type MarkingMenuItem, type MarkingMenuSection } from '@/components/MarkingMenu';
 import Omnibar, { type OmniAction } from '@/components/Omnibar';
 import ShortcutOverlay, { type ShortcutTool } from '@/components/ShortcutOverlay';
 import Timeline, { type TimelineEntry } from '@/components/Timeline';
@@ -849,20 +849,86 @@ export default function ForgePage() {
     { label: 'Resta', icon: '∖', shortcut: 'X', action: () => addOperation('subtract') },
   ], [addPrimitive, addOperation]);
 
-  const markingMenuItems: MarkingMenuItem[] = useMemo(() => {
-    const items: MarkingMenuItem[] = [
-      { label: 'Caja', icon: '■', action: () => addPrimitive('box') },
-      { label: 'Esfera', icon: '●', action: () => addPrimitive('sphere') },
-      { label: 'Cilindro', icon: '◆', action: () => addPrimitive('cylinder') },
-      { label: 'Unión', icon: '∪', action: () => addOperation('union') },
-      { label: 'Resta', icon: '∖', action: () => addOperation('subtract') },
-      { label: 'Sketch', icon: '✎', action: () => setSketchMode({ plane: 'XY' }) },
-    ];
-    if (selectedId && selectedId !== scene.id) {
-      items.push({ label: 'Eliminar', icon: '✕', action: () => deleteNode(selectedId) });
+  const markingMenuSections: MarkingMenuSection[] = useMemo(() => {
+    const hasSelection = selectedId && selectedId !== scene.id;
+
+    const crear: MarkingMenuSection = {
+      label: 'Crear', icon: '✦', items: [
+        { label: 'Caja', icon: '■', shortcut: '1', action: () => { addPrimitive('box'); playCreate(); } },
+        { label: 'Esfera', icon: '●', shortcut: '2', action: () => { addPrimitive('sphere'); playCreate(); } },
+        { label: 'Cilindro', icon: '◆', shortcut: '3', action: () => { addPrimitive('cylinder'); playCreate(); } },
+        { label: 'Toroide', icon: '◎', shortcut: '4', action: () => { addPrimitive('torus'); playCreate(); } },
+        { label: 'Cono', icon: '▲', shortcut: '5', action: () => { addPrimitive('cone'); playCreate(); } },
+        { label: 'Cápsula', icon: '┃', action: () => { addPrimitive('capsule'); playCreate(); } },
+      ],
+    };
+
+    const sketch: MarkingMenuSection = {
+      label: 'Sketch', icon: '✎', items: [
+        { label: 'Plano XY', icon: '⬜', action: () => setSketchMode({ plane: 'XY' }) },
+        { label: 'Plano XZ', icon: '⬜', action: () => setSketchMode({ plane: 'XZ' }) },
+        { label: 'Plano YZ', icon: '⬜', action: () => setSketchMode({ plane: 'YZ' }) },
+        { label: 'En Cara…', icon: '◎', action: () => setFacePicking(true) },
+      ],
+    };
+
+    const booleana: MarkingMenuSection = {
+      label: 'Booleana', icon: '∪', items: [
+        { label: 'Unión', icon: '∪', action: () => { addOperation('union'); playComplete(); } },
+        { label: 'Resta', icon: '∖', action: () => { addOperation('subtract'); playComplete(); } },
+        { label: 'Intersección', icon: '∩', action: () => { addOperation('intersect'); playComplete(); } },
+        { label: 'Suave', icon: '⊕', action: () => { addOperation('smoothUnion'); playComplete(); } },
+      ],
+    };
+
+    const exportar: MarkingMenuSection = {
+      label: 'Exportar', icon: '⬇', items: [
+        { label: 'STL', icon: '⬇', action: handleExportSTL },
+        { label: 'Plano SVG', icon: '📐', action: handleExportBlueprint },
+      ],
+    };
+
+    const vista: MarkingMenuSection = {
+      label: 'Vista', icon: '◇', items: STANDARD_VIEWS.map(v => ({
+        label: v.label, icon: v.icon, shortcut: v.shortcut, action: () => setTargetView(v.key),
+      })),
+    };
+
+    const seccion: MarkingMenuSection = {
+      label: section.enabled ? 'Sección ✂' : 'Sección', icon: '✂',
+      action: () => { toggleSection(); playClick(); },
+    };
+
+    const buscar: MarkingMenuSection = {
+      label: 'Buscar', icon: '⌘', shortcut: '⌘K',
+      action: () => setOmnibarOpen(true),
+    };
+
+    if (hasSelection) {
+      return [
+        crear,
+        booleana,
+        sketch,
+        { label: 'Deshacer', icon: '↶', shortcut: '⌘Z', action: () => { undo(); playUndo(); } },
+        exportar,
+        seccion,
+        buscar,
+        { label: 'Eliminar', icon: '✕', shortcut: 'Del', action: () => { deleteNode(selectedId!); playDelete(); } },
+      ];
     }
-    return items;
-  }, [addPrimitive, addOperation, selectedId, scene.id, deleteNode]);
+
+    return [
+      crear,
+      sketch,
+      booleana,
+      { label: 'Importar', icon: '📦', action: handleImportClick },
+      exportar,
+      vista,
+      seccion,
+      buscar,
+    ];
+  }, [addPrimitive, addOperation, selectedId, scene.id, deleteNode, undo,
+      handleExportSTL, handleExportBlueprint, handleImportClick, section.enabled, toggleSection]);
 
   const timelineEntries: TimelineEntry[] = useMemo(() =>
     history.map((_, i) => ({
@@ -1997,7 +2063,7 @@ export default function ForgePage() {
           OVERLAYS
           ════════════════════════════════════════════════════ */}
       {markingMenu && (
-        <MarkingMenu items={markingMenuItems} position={markingMenu} onClose={() => setMarkingMenu(null)} />
+        <MarkingMenu sections={markingMenuSections} position={markingMenu} onClose={() => setMarkingMenu(null)} />
       )}
       <Omnibar
         actions={omniActions}

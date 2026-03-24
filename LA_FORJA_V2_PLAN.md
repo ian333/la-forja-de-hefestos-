@@ -1188,6 +1188,1208 @@ void loop() {
 
 ---
 
+## 13. SIMULACIONES — EL UNIVERSO COMPLETO
+
+> **Visión**: La Forja no es solo un CAD. Es un simulador universal de fenómenos físicos, químicos y multifísica.
+> Motor F-Rep = todo son funciones matemáticas = podemos simular CUALQUIER COSA que tenga una ecuación.
+>
+> **Referencia competitiva**:
+> - ANSYS: 92 productos ($25K-$100K/año por módulo)
+> - COMSOL Multiphysics: 30+ módulos ($5K-$50K/año)
+> - SolidWorks Simulation: 3 tiers ($3K-$18K/año)
+> - Abaqus: $30K+/año
+> - Moldflow: $15K+/año
+> - OpenFOAM: gratis pero requiere PhD para usarlo
+>
+> **Nuestra ventaja**: Todo corre sobre el MISMO campo SDF. No hay conversión de formatos entre CAD y simulación.
+> El mesh se genera adaptativamente del SDF en la GPU. Los resultados se pintan directamente en el ray marcher.
+
+### 13.1 Tipos de Simulación por Dominio
+
+#### A. MECÁNICA ESTRUCTURAL (como ANSYS Mechanical + SolidWorks Simulation)
+
+| # | Tipo de Estudio | Qué Resuelve | Ecuación Base | Estado en formulas.ts | Usuarios |
+|---|----------------|--------------|---------------|----------------------|----------|
+| 1 | **Estrés Estático Lineal** | "¿Se rompe mi pieza bajo esta carga?" | Kx = F (Hooke generalizado) | ✅ elasticityMatrix3D, tet4Element, solveLinearSystem, conjugateGradient | TODOS |
+| 2 | **Von Mises + Factor de Seguridad** | "¿Qué tan lejos estoy de la fluencia?" | σ_vm = √(½[(σ₁-σ₂)²+...]) | ✅ vonMisesStress, safetyFactorVonMises, principalStresses | TODOS |
+| 3 | **Análisis Modal (Frecuencias Naturales)** | "¿A qué frecuencia vibra mi pieza? ¿Resonará?" | (K - ω²M)φ = 0 | ✅ naturalFrequency, dampedFrequency, beamNaturalFrequency | Automotriz, Aeroespacial, Robótica |
+| 4 | **Pandeo (Buckling)** | "¿A qué carga colapsa esta columna/chapa?" | (K + λK_g)φ = 0 | ✅ eulerBucklingLoad | Estructural, Arquitectura |
+| 5 | **Fatiga (S-N / Goodman)** | "¿Cuántos ciclos aguanta antes de fracturarse?" | S = a·N^b, σ_a/Se + σ_m/Su = 1/n | ✅ basquinSN, goodmanFatigueSafety | Automotriz, Aerospace |
+| 6 | **No Lineal Estático** | Grandes deformaciones, contacto, plasticidad | Iteración Newton-Raphson sobre K(u)·Δu = R(u) | 🔴 FALTA | Elastómeros, Crashworthiness |
+| 7 | **Dinámica Transitoria** | Impacto, caída, choque | M·ü + C·u̇ + K·u = F(t) (Newmark-β) | 🔴 FALTA | Electrónica (drop test), Automotriz |
+| 8 | **Respuesta en Frecuencia** | Vibración forzada harmónica | (-ω²M + iωC + K)·u = F | 🔴 FALTA | NVH automotriz, Acústica |
+| 9 | **Contacto Mecánico** | Superficies que se tocan, fricción | Penalty method / Lagrange multipliers | 🔴 FALTA | Ensambles, Moldes |
+| 10 | **Materiales Compuestos** | Laminados (fibra de carbono, fibra de vidrio) | Teoría clásica de laminados (CLT) | 🔴 FALTA | Aero, Naval, Deportes |
+| 11 | **Concentración de Esfuerzos** | Fillets, esquinas, agujeros | K_t analítico + subrefinamiento | ✅ stressConcentration, ktPlateWithHole | TODOS |
+| 12 | **Cilindros de Pared Gruesa (Lamé)** | Recipientes a presión, cañones | σ_r, σ_θ = f(r_i, r_o, p) | ✅ lameThickCylinder | Química, Petróleo, Hidráulica |
+| 13 | **Deflexión de Vigas** | Deformación bajo carga puntual/distribuida | δ = PL³/(48EI), etc. | ✅ beamDeflectionCenterLoad, cantileverDeflection | Estructura, Educación |
+
+#### B. TRANSFERENCIA DE CALOR (como ANSYS Thermal + COMSOL Heat Transfer)
+
+| # | Tipo de Estudio | Qué Resuelve | Ecuación Base | Estado | Usuarios |
+|---|----------------|--------------|---------------|--------|----------|
+| 14 | **Conducción Estado Estacionario** | "¿Cuál es la distribución de temperatura?" | ∇·(k∇T) = 0 | ✅ thermalTet4, fourierConduction | TODOS |
+| 15 | **Conducción Transitoria** | "¿Cuánto tarda en enfriarse/calentarse?" | ρc_p ∂T/∂t = ∇·(k∇T) + Q | ✅ thermalCapacitanceTet4 | Moldes, Electrónica |
+| 16 | **Convección** | Enfriamiento por fluido (aire, agua, aceite) | q = h·(T_s - T_∞) (Newton) | ✅ newtonConvection, dittusBoelter | TODOS |
+| 17 | **Radiación** | Intercambio térmico por radiación infrarroja | q = εσ(T_s⁴ - T_∞⁴) | ✅ radiationHeat, STEFAN_BOLTZMANN | Hornos, Espacial, Electrónica |
+| 18 | **Resistencia Térmica Multicapa** | Paredes compuestas (aislamiento) | R = Σ(L_i/k_i·A) | ✅ thermalResistanceSeries, convectionResistance | Arquitectura, HVAC |
+| 19 | **Eficiencia de Aletas** | Disipadores de calor, radiadores | η = tanh(mL)/(mL) | ✅ finEfficiency | Electrónica, HVAC |
+| 20 | **Esfuerzo Térmico** | Dilatación restringida → esfuerzo | σ = -E·α·ΔT | ✅ thermalStressConstrained, thermalExpansionFree | Motores, Tuberías |
+| 21 | **Cambio de Fase** | Solidificación/fusión (moldes, fundición) | Stefan problem, enthalpy method | 🔴 FALTA | Fundición, Metalurgia |
+
+#### C. MECÁNICA DE FLUIDOS / CFD (como ANSYS Fluent + COMSOL CFD)
+
+| # | Tipo de Estudio | Qué Resuelve | Ecuación Base | Estado | Usuarios |
+|---|----------------|--------------|---------------|--------|----------|
+| 22 | **Flujo Potencial** | Flujo ideal sin fricción | ∇²φ = 0 (Laplace) | 🔴 FALTA (fácil) | Educación, Aerodinámica básica |
+| 23 | **Bernoulli** | Presión/velocidad en fluidos incompresibles | p₁/ρ + V₁²/2 + gz₁ = const | ✅ bernoulli | Hidráulica, Tuberías |
+| 24 | **Pérdidas en Tuberías** | Caída de presión en sistemas de tuberías | h_f = f·(L/D)·(V²/2g) | ✅ darcyWeisbachLoss, frictionFactorSwameeJain | HVAC, Plomería, Petróleo |
+| 25 | **Número de Reynolds** | ¿Flujo laminar o turbulento? | Re = VD/ν | ✅ reynoldsNumber | TODOS |
+| 26 | **Navier-Stokes Incompresible** | Flujo viscoso completo | ρ(∂v/∂t + v·∇v) = -∇p + μ∇²v + f | 🔴 FALTA (GPU Lattice Boltzmann) | Aerodinámica, Hidráulica |
+| 27 | **Hele-Shaw (flujo en cavidad delgada)** | Llenado de molde de inyección | ∇·(h³/12μ · ∇p) = 0 | 🔴 FALTA | Moldes de Plástico |
+| 28 | **Flujo en Medios Porosos** | Filtración, geotecnia, oil & gas | Ley de Darcy: v = -(k/μ)∇p | 🔴 FALTA | Geotecnia, Petróleo |
+| 29 | **Flujo Multifásico** | Agua+aceite, burbujas, spray | Volume of Fluid (VOF), Level Set | 🔴 FALTA | Petróleo, Alimentaria |
+| 30 | **Transferencia de Calor Conjugada** | Sólido+fluido acoplados | Navier-Stokes + Fourier simultáneo | 🔴 FALTA | Electrónica (cooling), Motores |
+
+#### D. ELECTROMAGNETISMO (como ANSYS HFSS/Maxwell + COMSOL AC/DC)
+
+| # | Tipo de Estudio | Qué Resuelve | Ecuación Base | Estado | Usuarios |
+|---|----------------|--------------|---------------|--------|----------|
+| 31 | **Electrostática** | Campos eléctricos, capacitancia | ∇·(ε∇φ) = -ρ_v (Poisson/Laplace) | 🔴 FALTA | Electrónica, MEMS |
+| 32 | **Magnetostática** | Campos magnéticos, inductancia | ∇×H = J, ∇·B = 0 | 🔴 FALTA | Motores, Transformadores |
+| 33 | **Corrientes Inducidas** | Pérdidas por Eddy currents, calentamiento por inducción | ∇×(1/μ ∇×A) + σ∂A/∂t = J_s | 🔴 FALTA | Motores eléctricos |
+| 34 | **Distribución de Corriente** | Resistencia, calentamiento Joule en PCBs | ∇·(σ∇V) = 0 | 🔴 FALTA | PCB, Electrónica |
+| 35 | **RF/Microondas** | Antenas, guías de onda, filtros | Ecuaciones de Maxwell completas | 🔴 FALTA (largo plazo) | Telecomunicaciones |
+
+#### E. INGENIERÍA QUÍMICA (como COMSOL Chemical Reaction Engineering)
+
+| # | Tipo de Estudio | Qué Resuelve | Ecuación Base | Estado | Usuarios |
+|---|----------------|--------------|---------------|--------|----------|
+| 36 | **Difusión Molecular** | Transporte de especies por gradiente de concentración | ∂C/∂t = D∇²C (Fick) | 🔴 FALTA (pero es Laplace, fácil) | Química, Farmacéutica |
+| 37 | **Reacciones Químicas** | Cinética: A + B → C con velocidad k | dC/dt = -k·Cₐ^n·C_b^m (Arrhenius) | 🔴 FALTA | Petroquímica, Farmacéutica |
+| 38 | **Reactores (CSTR/PFR/Batch)** | Conversión, selectividad, rendimiento | Balance de masa + energía + cinética | 🔴 FALTA | Ingeniería Química |
+| 39 | **Curado de Polímeros** | Grado de cura vs. tiempo + temperatura | dα/dt = A·exp(-Ea/RT)·f(α) (Kamal) | 🔴 FALTA | Inyección de plástico, Composites |
+| 40 | **Electroquímica** | Baterías, celdas de combustible, corrosión | Butler-Volmer, Nernst | 🔴 FALTA | Energía, Automotriz EV |
+| 41 | **Cristalización / Precipitación** | Crecimiento de cristales, nucleación | Modelos de población, Avrami | 🔴 FALTA | Farmacéutica, Alimentaria |
+
+#### F. MULTIFÍSICA (como COMSOL Multiphysics — la joya de la corona)
+
+| # | Tipo de Estudio | Qué Acopla | Estado | Usuarios |
+|---|----------------|------------|--------|----------|
+| 42 | **Termomecánico** | Temperatura → Esfuerzo térmico → Deformación | 🔴 FALTA (datos ✅) | Motores, Electrónica |
+| 43 | **Fluido-Estructura (FSI)** | Presión de fluido → deformación del sólido → cambia el flujo | 🔴 FALTA | Aero, Biomédica, Válvulas |
+| 44 | **Electro-Térmico** | Corriente → calentamiento Joule → cambio de resistividad | 🔴 FALTA | PCBs, Fusibles, Calefacción |
+| 45 | **Termo-Fluido** | Flujo → temperatura → propiedades del fluido | 🔴 FALTA | HVAC, Intercambiadores |
+| 46 | **Piezoeléctrico** | Campo eléctrico ↔ deformación mecánica | 🔴 FALTA | Sensores, Actuadores, MEMS |
+| 47 | **Acústica-Estructura** | Vibración → ondas de sonido → campo acústico | 🔴 FALTA | Automotriz NVH, Audio |
+
+#### G. OPTIMIZACIÓN Y DISEÑO GENERATIVO
+
+| # | Tipo | Qué Hace | Ventaja F-Rep | Estado | Usuarios |
+|---|------|----------|---------------|--------|----------|
+| 48 | **Optimización Topológica (SIMP/BESO)** | Quita material innecesario manteniendo resistencia | El SDF es continuo → gradient descent directo sin remallado | 🔴 FALTA | TODOS |
+| 49 | **Optimización de Forma** | Ajusta la superficie para minimizar esfuerzo/peso | Derivadas del SDF = gradientes naturales | 🔴 FALTA | Aero, Automotriz |
+| 50 | **Diseño Generativo Multi-Objetivo** | Genera N variantes optimizando peso vs. rigidez vs. costo | Variación paramétrica + solver | 🔴 FALTA | TODOS |
+| 51 | **DOE (Design of Experiments)** | Barrido sistemático de variables para entender sensibilidad | Tabla de parámetros → barrido automático | 🔴 FALTA | Manufactura, I+D |
+| 52 | **Optimización de Lattice / Infill** | Estructuras tipo panal, gyroides, TPMS | F-Rep NATIVO — los gyroides son SDFs | 🔴 FALTA | Aditiva, Biomédica, Aero |
+
+#### H. MANUFACTURA Y PROCESO
+
+| # | Tipo | Qué Simula | Estado | Usuarios |
+|---|------|-----------|--------|----------|
+| 53 | **Inyección de Plástico — Llenado** | Frente de flujo de polímero fundido en molde | 🔴 FALTA | Moldes |
+| 54 | **Inyección — Empaque/Holding** | Distribución de presión durante packing | 🔴 FALTA | Moldes |
+| 55 | **Inyección — Enfriamiento** | Ciclo térmico, canales de enfriamiento | 🔴 FALTA (datos térmicos ✅) | Moldes |
+| 56 | **Inyección — Warpage** | Deformación post-desmoldeo por esfuerzos residuales | 🔴 FALTA | Moldes |
+| 57 | **Fundición / Casting** | Solidificación, contracción, rechupe | 🔴 FALTA | Fundición |
+| 58 | **Conformado de Chapa (Stamping)** | Embutición profunda, formabilidad | 🔴 FALTA | Automotriz |
+| 59 | **Soldadura** | Campo térmico, esfuerzo residual, distorsión | 🔴 FALTA | Manufactura |
+| 60 | **Mecanizado (corte)** | Fuerzas de corte, desgaste de herramienta, vibraciones | 🔴 FALTA | CNC |
+
+### 13.2 Priorización de Implementación
+
+**Criterio**: ¿Qué le da más valor a más usuarios con menos esfuerzo, dado que ya tenemos formulas.ts?
+
+#### ONDA 1 — Simulación Fundacional (lo que ya casi está listo)
+1. ✅→🔨 **Estrés Estático + Von Mises** — Tenemos tet4Element, solver CG, material DB. Falta: SDF→mesh adaptativo, ensamble global, UI de cargas/restricciones
+2. ✅→🔨 **Térmica Estado Estacionario** — Tenemos thermalTet4. Falta: igual que arriba
+3. ✅→🔨 **Análisis Modal** — Tenemos fórmulas de frecuencia. Falta: eigenvalue solver generalizado
+4. ✅→🔨 **Pandeo** — Euler ya está. Falta: extensión a 3D general
+5. ✅→🔨 **Fatiga básica** — Goodman y Basquin ya están. Falta: ciclo de carga + acumulación
+
+#### ONDA 2 — Gran Diferenciador (lo que nos separa de Fusion/SolidWorks)
+6. **Diseño Generativo GPU** — Optimización topológica corriendo en tiempo real sobre SDF. NINGÚN otro CAD puede hacer esto sin cloud.
+7. **Inyección de Plástico (Hele-Shaw)** — El mercado de moldes mexicano. Hele-Shaw sobre campo SDF.
+8. **Térmica Transitoria** — Ciclo de enfriamiento de molde. Ya tenemos la matriz de capacitancia.
+9. **Lattice / TPMS** — Gyroides y estructuras celulares son NATIVOS en F-Rep. Código de una línea: `sin(x)*cos(y)+sin(y)*cos(z)+sin(z)*cos(x) - t`
+10. **Multifísica: Termomecánico** — Temperatura → esfuerzo. Acoplar lo que ya tenemos.
+
+#### ONDA 3 — Plataforma de Simulación Universal
+11. **CFD básico (Lattice Boltzmann GPU)** — Flujo incompresible visualizado en tiempo real
+12. **Electrostática + distribución de corriente** — Para diseño de PCBs
+13. **Difusión + Reacciones químicas** — Las ecuaciones de Fick y Arrhenius son fáciles sobre grids SDF
+14. **FSI (fluido-estructura)** — Acoplamiento débil primero
+15. **DOE + Optimización multi-objetivo** — Barrido paramétrico automatizado
+
+#### ONDA 4 — Conquistar la Academia y la Industria
+16. **Navier-Stokes completo** — Motor CFD serio
+17. **No-lineal (plasticidad, grandes deformaciones)** — Newton-Raphson iterativo
+18. **Dinámica transitoria (impacto)** — Drop test, crash
+19. **Electromagnetismo (Maxwell)** — Motores eléctricos, transformadores
+20. **Electroquímica (baterías)** — Butler-Volmer para celdas
+
+---
+
+## 14. CAM / CNC — POST-PROCESADORES Y MANUFACTURA
+
+> **Visión**: Diseñas en La Forja → simulas → generas G-code → conectas a tu máquina → maquinas.
+> Soportar controles Fanuc, Siemens 840D, Haas NGC, GROB, Mazak, Okuma, LinuxCNC, GRBL.
+
+### 14.1 Generación de Toolpaths desde SDF
+
+La ventaja de F-Rep para CAM:
+- No hay mesh → no hay tolerancias de tesselación
+- El SDF te da la distancia exacta a la superficie en cualquier punto
+- La normal del SDF = dirección exacta de la herramienta
+- Detección de colisión = evaluar el SDF en la geometría de la herramienta
+
+| # | Tipo de Toolpath | Descripción | Ejes | Prioridad |
+|---|-----------------|-------------|------|-----------|
+| 1 | **Facing** | Planear superficie superior del stock | 2.5D | 🔴 |
+| 2 | **2D Adaptive / HSM** | Desbaste inteligente con engagement constante | 2.5D | 🔴 |
+| 3 | **2D Pocket** | Vaciar cavidades | 2.5D | 🔴 |
+| 4 | **2D Contour** | Perfilar contorno exterior | 2.5D | 🔴 |
+| 5 | **Drilling (Peck, Chip-break, Tap)** | Ciclos de taladrado | 1D | 🔴 |
+| 6 | **3D Adaptive** | Desbaste 3D con control de carga | 3 ejes | 🟡 |
+| 7 | **3D Pocket** | Acabado de cavidades 3D | 3 ejes | 🟡 |
+| 8 | **Parallel/Scallop/Pencil** | Acabado superficial 3D | 3 ejes | 🟡 |
+| 9 | **Swarf** | Mecanizado con flanco de herramienta | 4-5 ejes | 🟢 |
+| 10 | **Multi-axis Contour** | Trayectoria continua 5 ejes | 5 ejes | 🟢 |
+| 11 | **Turning (Face, Profile, Groove, Thread)** | Torneado | 2 ejes + C | 🟡 |
+| 12 | **Mill-Turn** | Combinación fresado + torneado | Multi | 🟢 |
+
+### 14.2 Post-Procesadores
+
+| Control | Fabricante | Máquinas Ejemplo | Prioridad |
+|---------|-----------|-----------------|-----------|
+| **Fanuc 0i/30i/31i** | FANUC | Robodrill, Partner machines | 🔴 CRÍTICA |
+| **Siemens 840D** | Siemens | DMG MORI, Starrag, Heller | 🔴 CRÍTICA |
+| **Haas NGC** | Haas | VF-2, VF-4, EC-630, VS-3 | ✅ Ya tenemos config |
+| **Mazak Smooth** | Mazak | INTEGREX, VARIAXIS | 🟡 |
+| **Okuma OSP** | Okuma | MULTUS, GENOS | 🟡 |
+| **Hurco WinMax** | Hurco | BX40i, VMX | ✅ Ya tenemos config |
+| **GRBL** | Open Source | CNC routers, hobby | 🟡 |
+| **LinuxCNC** | Open Source | Conversiones, labs | 🟡 |
+| **Mach3/Mach4** | ArtSoft/Newfangled | Hobby, talleres pequeños | 🟢 |
+| **DATRON next** | DATRON | Neo, M10 Pro | ✅ Ya tenemos config |
+| **Brother** | Brother | SPEEDIO M300X3 | ✅ Ya tenemos config |
+
+### 14.3 Simulación de Mecanizado
+
+- **Stock Simulation**: Resta booleana SDF (herramienta vs. stock) en cada paso del toolpath
+- **Collision Detection**: Evaluar SDF de fixture + pieza en punto de herramienta
+- **Machine Kinematics**: Ya parseamos las cinemáticas de 8 máquinas reales
+- **Feed/Speed Calculator**: Material + herramienta + operación → f/s óptimos
+
+### 14.4 Manufactura Aditiva (3D Printing)
+
+| # | Proceso | Qué Necesitamos | Prioridad |
+|---|---------|----------------|-----------|
+| 1 | **FDM/FFF Slicing** | Contornos 2D por capa desde SDF (trivial: slice Z → contorno de sdf=0) | 🔴 |
+| 2 | **SLA/DLP** | Capas de imagen (mismo slice, output como PNG mask) | 🟡 |
+| 3 | **SLS/MJF** | Arrangement + orientación + sinterizado sim | 🟡 |
+| 4 | **Soporte Automático** | Detección de overhang via normal del SDF | 🔴 |
+| 5 | **Infill/Lattice** | ¡F-Rep nativo! Gyroid, Diamond, Schwarz-P como SDFs | 🔴 |
+| 6 | **Compensación de encogimiento** | Offset de SDF por factor de shrinkage material | 🟡 |
+
+---
+
+## 15. USUARIOS Y VERTICALES INDUSTRIALES
+
+> **Visión**: La Forja sirve a TODOS los que diseñan, simulan o fabrican cosas físicas.
+
+### 15.1 Mapa de Usuarios por Industria
+
+| Industria | Rol | Qué Usan Hoy | Qué Usarían de La Forja | Precio Que Pagan Hoy |
+|-----------|-----|-------------|------------------------|---------------------|
+| **Moldes de Inyección** | Diseñador de moldes | SolidWorks + Moldflow + Mastercam | CAD + Sim llenado + CAM | $50K+/año |
+| **Taller CNC** | Operador/Programador | Fusion 360 + Mastercam | CAD + CAM + Post Fanuc/Haas | $5K-$15K/año |
+| **Automotriz** | Ingeniero de diseño | CATIA + ANSYS | CAD + FEA + Fatiga + CFD | $100K+/año |
+| **Aeroespacial** | Stress analyst | NX + Nastran | FEA + Fatiga + Compuestos + Modal | $80K+/año |
+| **Arquitectura** | Arquitecto/Calculista | Revit + Robot Structural | Modelado + Análisis estructural + Térmica de edificio | $10K+/año |
+| **Mecatrónica/Robótica** | Ingeniero de sistemas | SolidWorks + MATLAB + ROS | CAD + Cinemática + IDE firmware + Sim | $15K+/año |
+| **Electrónica** | PCB designer | KiCad/Altium + ANSYS | PCB layout + Thermal + EMI | $5K-$20K/año |
+| **Biomédica** | Ingeniero biomédico | COMSOL + SolidWorks | Implantes + FSI + Biocompat sim | $30K+/año |
+| **Petróleo y Gas** | Ingeniero de proceso | ANSYS + HYSYS | Tuberías + CFD + Corrosión | $50K+/año |
+| **Energía (EV/Baterías)** | Ingeniero de baterías | COMSOL + StarCCM | Electroquímica + Térmica | $40K+/año |
+| **Educación** | Profesor/Estudiante | Versiones educativas | TODO gratis → formar la próxima generación | $0 |
+| **Alimentaria** | Ingeniero de proceso | CFD genérico | Flujo + Transferencia de calor | $20K+/año |
+| **Farmacéutica** | Ingeniero de proceso | COMSOL | Reactores + Difusión + Cristalización | $30K+/año |
+| **3D Printing** | Diseñador/Operador | PrusaSlicer + Fusion | CAD + Slice + Lattice GenDesign | $500/año |
+
+### 15.2 Cómo Sirve La Forja a Cada Vertical
+
+#### Para ARQUITECTOS:
+- Modelado paramétrico de edificios y estructuras
+- Análisis estructural (vigas, columnas, marcos)
+- Simulación térmica de envolventes (aislamiento, puentes térmicos)
+- Cálculo de cargas de viento (CFD simplificado)
+- Análisis sísmico (modal + respuesta espectral)
+- Diseño de alumbrado (ray tracing óptico)
+- Generative design para formas orgánicas (Zaha Hadid style)
+
+#### Para MECATRÓNICOS/ROBOTICISTAS:
+- Diseño mecánico del robot (articulaciones, eslabones)
+- Cinemática directa e inversa (ya en el plan §11)
+- Simulación de trayectorias
+- Análisis FEA de estructura del robot
+- Diseño de PCB del controlador
+- IDE de firmware integrado (ya en el plan §12)
+- Programación ROS2 directa
+- Digital twin con conexión en tiempo real
+
+#### Para DISEÑADORES DE MOLDES DE PLÁSTICO:
+- Diseño de pieza con draft, wall thickness, shrinkage
+- Parting line → core/cavity automático
+- Runner system + gate placement
+- Simulación de llenado (Hele-Shaw)
+- Simulación de enfriamiento (canales conformales = SDF puro)
+- Predicción de warpage
+- CAM para mecanizar el molde
+- Post-procesador para Fanuc/Siemens
+
+#### Para OPERADORES CNC:
+- Importar STEP de cliente → automático feature recognition
+- Generar toolpaths desde el modelo
+- Simulación de mecanizado (stock removal via SDF boolean)
+- Post-procesar para su control (Fanuc, Haas, Siemens...)
+- Verificar colisiones con fixture y máquina
+- Hoja de setup automática
+
+#### Para EDUCACIÓN (La Forja como escuela):
+- **Simulador de Física**: Visualizar esfuerzos, deformaciones, campos de temperatura en tiempo real
+- **Simulador de Química**: Ver cómo difunde un reactante, cómo se mezclan fluidos, cinética de reacciones
+- **Laboratorio Virtual**: Montaje de experimentos paramétricos (cambiar variables y ver resultados al instante)
+- **Tutoriales Interactivos**: Cada simulación tiene un "modo profesor" que explica las ecuaciones
+- **Competencias**: Retos de optimización (¿quién diseña la viga más ligera que soporte 1000N?)
+- **Acceso Gratuito**: Version educativa sin restricciones funcionales
+
+---
+
+## 16. DISEÑO GENERATIVO — LA VENTAJA F-REP
+
+> **Tesis Central**: La optimización topológica sobre F-Rep es FUNDAMENTALMENTE superior a la de B-Rep.
+> En B-Rep necesitas remallado constante. En F-Rep, el campo de densidad ES el SDF.
+
+### 16.1 Cómo Funciona en Otros CADs (lento y caro)
+
+```
+Fusion 360 / nTopology / Altair:
+1. Usuario define geometría preserve + obstacles + cargas
+2. Se sube a la NUBE (Autodesk cloud)
+3. Se mallan millones de elementos
+4. Se corre SIMP (Solid Isotropic Material with Penalization)
+5. Horas/días de compute
+6. Se devuelve un mesh ruidoso
+7. Se suaviza el mesh (pérdida de detalle)
+8. Se convierte a B-Rep (frecuentemente falla)
+9. El usuario recibe N variantes
+```
+
+### 16.2 Cómo Funciona en La Forja (rápido y local)
+
+```
+La Forja (F-Rep nativo):
+1. Usuario define geometría preserve + obstacles + cargas (mismas)
+2. Se corre FEA sobre voxel grid de SDF (GPU compute)
+3. Se calcula sensibilidad: ∂compliance/∂ρ_e por voxel
+4. Se actualiza campo de densidad ρ(x,y,z) (es otro SDF)
+5. Se combina: final_sdf = max(original_sdf, density_field)
+6. Se renderiza INSTANTÁNEAMENTE (el ray marcher ya sabe pintar SDFs)
+7. Convergencia en SEGUNDOS, no horas
+8. No hay conversión a B-Rep — el resultado YA ES un SDF editable
+```
+
+### 16.3 Tipos de Diseño Generativo
+
+| Tipo | Qué Hace | F-Rep Advantage |
+|------|----------|----------------|
+| **Topological Optimization** | Quita material donde no hay esfuerzo | Gradient descent continuo sobre SDF |
+| **Shape Optimization** | Ajusta contornos manteniendo topología | Mueve la superficie SDF=0 via gradiente |
+| **Size Optimization** | Ajusta espesores de paredes, radios | Variables paramétricas → barrido automático |
+| **Lattice Optimization** | Relleno con celdas variables (gyroid, diamond) | `sin(x)cos(y)+... - t` donde `t = f(stress)` |
+| **Multi-material** | Optimiza distribución de 2+ materiales | SDFs superpuestos con diferentes propiedades |
+| **Compliance Minimization** | Maximiza rigidez para peso dado | Formulación estándar SIMP adaptada a SDF |
+| **Stress Constrained** | Ningún punto supera σ_max | Von Mises evaluado en cada voxel |
+| **Thermal Optimization** | Minimiza T_max o uniformiza temperatura | Fourier sobre voxel grid |
+
+### 16.4 Lattice / TPMS Structures (Nativo en F-Rep)
+
+Estas son funciones SDF LITERALES:
+
+```glsl
+// Gyroid — estructura de mínima superficie
+float gyroid(vec3 p, float scale, float thickness) {
+    p *= scale;
+    return abs(sin(p.x)*cos(p.y) + sin(p.y)*cos(p.z) + sin(p.z)*cos(p.x)) - thickness;
+}
+
+// Schwarz-P
+float schwarzP(vec3 p, float scale, float t) {
+    p *= scale;
+    return abs(cos(p.x) + cos(p.y) + cos(p.z)) - t;
+}
+
+// Diamond
+float diamond(vec3 p, float scale, float t) {
+    p *= scale;
+    return abs(sin(p.x)*sin(p.y)*sin(p.z) + sin(p.x)*cos(p.y)*cos(p.z)
+         + cos(p.x)*sin(p.y)*cos(p.z) + cos(p.x)*cos(p.y)*sin(p.z)) - t;
+}
+
+// Conformal lattice: thickness varies with stress field
+float adaptiveLattice(vec3 p, float scale, float stressField) {
+    float t = mix(0.05, 0.4, stressField); // Más grueso donde hay más esfuerzo
+    return gyroid(p, scale, t);
+}
+```
+
+En Fusion 360 / nTopology esto es un proceso de 10 pasos. En La Forja es **una línea de GLSL**.
+
+---
+
+## 17. MOLDES DE INYECCIÓN DE PLÁSTICO — VERTICAL #1
+
+> **Por qué es la vertical #1**: México es el 4to exportador de autopartes del mundo.
+> La industria del molde de inyección paga $50K+/año por herramientas hoy.
+> Ningún CAD une diseño + simulación de llenado + CAM del molde en una sola herramienta.
+
+### 17.1 Workflow Completo de Diseño de Molde
+
+```
+1. Diseñar la pieza (CAD paramétrico)
+     ↓
+2. Análisis de manufacturabilidad
+   - Draft analysis (ángulos de desmoldeo)
+   - Wall thickness (grosores mínimos por material)
+   - Undercut detection (zonas que no desmoldan)
+   - Shrinkage compensation (escalar cavidad)
+     ↓
+3. Definir línea de partición (parting line)
+   - Automática: silueta desde dirección de desmoldeo
+   - Manual: el usuario selecciona aristas
+     ↓
+4. Generar core + cavity
+   - Offset surface hacia afuera → cavity insert
+   - Offset surface hacia adentro → core insert
+   - Ambos son operaciones SDF triviales: sdf_cavity = sdf_part + offset
+     ↓
+5. Diseñar sistema de alimentación (runner + gate)
+   - Cold runner: canales cilíndricos (SDFs)
+   - Hot runner: manifold con heaters
+   - Gate: punto de inyección (pin gate, sub gate, edge gate)
+     ↓
+6. Diseñar canales de enfriamiento
+   - Convencionales: líneas rectas (drilling)
+   - Conformales: siguen la geometría de la pieza (para impresión 3D del inserto)
+   - LOS CANALES CONFORMALES SON SDF PURO — offset del sdf de la pieza
+     ↓
+7. Simular llenado (Hele-Shaw)
+   - Frente de flujo sobre la cavidad (SDF < 0)
+   - Detección de últimas zonas en llenar (air traps)
+   - Líneas de soldadura (weld lines)
+   - Balance de runners
+     ↓
+8. Simular enfriamiento
+   - Transitorio térmico: molde + pieza + canales
+   - Tiempo de ciclo óptimo
+   - Distribución de temperatura al expulsar
+     ↓
+9. Simular warpage
+   - Esfuerzos residuales del enfriamiento diferencial
+   - Shrinkage anisotrópico (fibras orientadas)
+   - Compensación inversa del molde
+     ↓
+10. Calcular fuerza de cierre
+    - Área proyectada × presión de inyección × factor de seguridad
+    - Seleccionar máquina inyectora adecuada (tonnage)
+      ↓
+11. Diseñar sistema de expulsión
+    - Pines de expulsión (fuerza de desmoldeo)
+    - Stripper plates
+    - Lifters para undercuts internos
+    - Slides para undercuts externos
+      ↓
+12. Seleccionar mold base (DME, Hasco, Misumi)
+    - Tamaño de placa
+    - Guías + bushings
+    - Barras expulsoras
+      ↓
+13. Generar CAM para mecanizar insertos
+    - Core: 3D adaptive + acabado
+    - Cavity: 3D adaptive + acabado
+    - Electrodes para EDM (para detalles finos)
+      ↓
+14. Post-procesar para Fanuc/Siemens/Haas
+    - G-code optimizado por control
+    - Hoja de setup con herramientas, origenes, tiempos
+```
+
+### 17.2 Base de Datos de Materiales para Inyección
+
+Ya tenemos ABS, PLA, PETG, Nylon en `formulas.ts`. Necesitamos expandir:
+
+| Material | Shrinkage | T_melt | T_mold | MFI | Min Wall | Prioridad |
+|----------|-----------|--------|--------|-----|----------|-----------|
+| ABS | 0.4-0.7% | 220-260°C | 40-80°C | 10-40 | 1.0mm | ✅ ya |
+| PLA | 0.3-0.5% | 170-220°C | 20-40°C | 6-20 | 0.8mm | ✅ ya |
+| PETG | 0.2-0.5% | 230-260°C | 30-50°C | 15-30 | 1.0mm | ✅ ya |
+| Nylon 6/6 | 0.8-1.5% | 260-290°C | 60-90°C | 15-80 | 0.8mm | ✅ ya |
+| PP (Polipropileno) | 1.0-2.5% | 200-280°C | 20-60°C | 5-50 | 0.8mm | 🔴 FALTA |
+| PE-HD | 1.5-3.0% | 200-280°C | 20-60°C | 0.3-50 | 0.8mm | 🔴 FALTA |
+| PC (Policarbonato) | 0.5-0.7% | 280-320°C | 80-120°C | 5-30 | 1.0mm | 🔴 FALTA |
+| POM (Acetal/Delrin) | 1.8-2.5% | 190-230°C | 60-100°C | 5-30 | 0.8mm | 🔴 FALTA |
+| TPU (Elastómero) | 0.5-1.5% | 190-230°C | 20-40°C | varies | 1.5mm | 🔴 FALTA |
+| PA-GF30 (Nylon + Fibra) | 0.2-0.5% | 275-300°C | 80-100°C | 10-30 | 1.2mm | 🔴 FALTA |
+| PEEK | 1.0-1.5% | 370-400°C | 150-180°C | 5-20 | 1.0mm | 🟡 |
+| LCP | 0.1-0.5% | 280-360°C | 80-130°C | 10-50 | 0.5mm | 🟡 |
+
+---
+
+## 18. ESTÁNDARES Y NORMATIVIDAD
+
+> Instituciones y estándares que debemos cumplir/soportar.
+
+### 18.1 Estándares de Datos CAD
+
+| Estándar | Organismo | Qué Define | Relevancia |
+|----------|-----------|-----------|-----------|
+| **STEP AP203** | ISO 10303 | Geometría 3D + estructura de ensamble | Import ✅ (via occt-import-js) |
+| **STEP AP214** | ISO 10303 | Automotriz: geometría + color + capas | Import 🟡 |
+| **STEP AP242** | ISO 10303 | PMI (tolerancias GD&T) + diseño paramétrico | Import 🟡 (archivos NIST descargados) |
+| **IGES** | ANSI/ASME | Geometría 3D (formato legacy) | Import ✅ |
+| **STL** | 3D Systems | Mallas trianguladas (aditiva) | Export ✅ |
+| **3MF** | 3MF Consortium | Mallas + materiales + colores + soporte | Export 🔴 |
+| **JT** | Siemens | Visualización liviana de ensambles | 🟢 |
+| **IFC** | buildingSMART | Modelo de edificio (arquitectura/MEP) | 🟡 |
+| **QIF** | DMSC | Quality Information Framework (metrología) | 🟢 |
+
+### 18.2 Estándares de Manufactura
+
+| Estándar | Qué Define | Relevancia |
+|----------|-----------|-----------|
+| **ISO 6983 / RS-274** | G-code estándar (lo que leen Fanuc, Haas...) | 🔴 CRÍTICO para CAM |
+| **ISO 14649 (STEP-NC)** | Datos de manufactura inteligentes | 🟡 Futuro |
+| **ISO 286** | Tolerancias y ajustes (H7/g6, etc.) | 🔴 Para dibujos |
+| **ISO 1101** | GD&T — tolerancias geométricas | 🔴 Para dibujos |
+| **ASME Y14.5** | GD&T versión americana | 🔴 Para dibujos |
+| **ISO 2768** | Tolerancias generales (no indicadas) | 🟡 |
+| **SPI Mold Classes** | Clasificación 101-105 de moldes | 🟡 Para vertical moldes |
+| **ISO 294** | Especímenes de prueba para inyección | 🟡 |
+
+### 18.3 Estándares de Simulación
+
+| Estándar / Referencia | Qué Define | Para Qué |
+|----------------------|-----------|----------|
+| **NAFEMS Benchmarks** | Problemas de validación FEA con soluciones exactas | Validar nuestro solver |
+| **ASME V&V 10** | Verificación y Validación de modelos computacionales | Credibilidad de simulaciones |
+| **ISO 12135** | Tenacidad a la fractura | Fatiga avanzada |
+| **ASTM E466** | Pruebas de fatiga | Validación S-N |
+| **NIST PMI Test Cases** | ✅ YA DESCARGADOS — Modelos de prueba para validar lectura de STEP con PMI | Validar import |
+
+### 18.4 Organizaciones Clave
+
+| Organización | Qué Hace | Por Qué Nos Importa |
+|-------------|---------|---------------------|
+| **NIST** (USA) | Estándares de metrología y datos CAD | Modelos de prueba, validación STEP |
+| **ISO TC184/SC4** | Comité que mantiene STEP (ISO 10303) | Interoperabilidad CAD |
+| **NAFEMS** | Asociación internacional de simulación | Benchmarks FEA, credibilidad |
+| **OCC (Open Cascade)** | Kernel CAD open source (B-Rep) | Usamos occt-import-js para STEP |
+| **3MF Consortium** | Formato moderno de impresión 3D | Microsoft, HP, Autodesk, etc. |
+| **MTConnect Institute** | Protocolo de comunicación con máquinas CNC | Conexión en tiempo real |
+| **OPC UA Foundation** | Protocolo industrial IoT | Comunicación con PLCs |
+| **buildingSMART** | IFC para construcción/arquitectura | Si entramos al mercado de AEC |
+| **Khronos Group** | WebGL, glTF, OpenCL | Nuestro rendering y compute |
+| **SPE (Society of Plastics Engineers)** | Comunidad de inyección de plástico | El gremio de nuestro vertical #1 |
+
+---
+
+## 19. INVENTARIO TÉCNICO COMPLETO — QUÉ EXISTE HOY
+
+### 19.1 Código Implementado (32 archivos TS/TSX)
+
+| Archivo | Líneas | Estado | Conectado a UI |
+|---------|--------|--------|----------------|
+| `sdf-engine.ts` | ~600 | ✅ Completo | ✅ Sí |
+| `RayMarchMesh.tsx` | ~400 | ✅ Completo | ✅ Sí |
+| `ForgeViewport.tsx` | ~300 | ✅ Completo | ✅ Sí |
+| `useForgeStore.ts` | ~400 | ✅ Completo | ✅ Sí |
+| `formulas.ts` | 1458 | ✅ Completo | ❌ NO (desconectado) |
+| `gaia-variables.ts` | ~350 | ✅ Completo | ✅ Sí |
+| `simulation.ts` | ~200 | ⚠️ Solo kinematic demo | ⚠️ Parcial |
+| `sdf-cpu.ts` | ~250 | ✅ Completo | ✅ Sí |
+| `sketch-engine.ts` | ~200 | ⚠️ Solo rect/circle | ⚠️ Parcial |
+| `sketch-fitting.ts` | ~500 | ✅ Completo | ❌ Solo scripts |
+| `cross-section.ts` | ~400 | ✅ Completo | ❌ Solo scripts |
+| `step-import.ts` | ~300 | ✅ Completo | ✅ Sí |
+| `stl-export.ts` | ~400 | ✅ Completo | ✅ Sí |
+| `blueprint-export.ts` | ~300 | ✅ Completo | ✅ Sí |
+| `machine-config.ts` | ~400 | ✅ Completo | ✅ Sí |
+| `reverse-engineer.ts` | ~300 | ✅ Completo | ✅ Sí |
+| `mc-worker.ts` | ~200 | ✅ Completo | ✅ Sí |
+| `profile-to-sdf.ts` | ~200 | ✅ Completo | ❌ Solo scripts |
+| `forge-audio.ts` | ~100 | ✅ Completo | ✅ Sí |
+| `ForgePage.tsx` | ~800 | ✅ Funcional | ✅ Sí |
+| 7 UI components | ~1500 | ✅ Funcional | ✅ Sí |
+
+### 19.2 Fórmulas Ya Implementadas en formulas.ts (LISTAS PARA CONECTAR)
+
+| Categoría | Funciones | Estado |
+|-----------|-----------|--------|
+| **Material Database** | 20 materiales con todas las propiedades | ✅ Listo |
+| **Elasticidad** | Matrices 3D, plane stress, plane strain | ✅ Listo |
+| **Esfuerzos** | Von Mises, principales, cortante máximo, safety factor, hidrostático | ✅ Listo |
+| **Elementos FEM** | Truss 3D, Beam Euler-Bernoulli, Beam Timoshenko, CST triangle, Tet4 | ✅ Listo |
+| **Térmica** | Fourier, Newton, Stefan-Boltzmann, resistencia serie, aletas, Tet4 térmico, capacitancia | ✅ Listo |
+| **Fluidos** | Bernoulli, Reynolds, Darcy-Weisbach, Colebrook, Dittus-Boelter | ✅ Listo |
+| **Vibraciones** | Frecuencia natural, amortiguada, viga, pandeo Euler | ✅ Listo |
+| **Diseño Mecánico** | Concentración de esfuerzos, Lamé, deflexión vigas, momentos de inercia, secciones | ✅ Listo |
+| **Fatiga** | Basquin S-N, Goodman modificado | ✅ Listo |
+| **Esfuerzo Térmico** | Barra restringida, expansión libre | ✅ Listo |
+| **Solvers** | Gauss con pivoteo parcial, Gradiente Conjugado Precondicionado (Jacobi) | ✅ Listo |
+| **Mallado** | Generador tetraédrico estructurado (hex → 5 tets) | ✅ Listo |
+| **Secciones** | Rectángulo, Círculo, Tubo, I-Beam (A, I, S, r, J) | ✅ Listo |
+| **Constantes** | g, kB, σ, R, NA, atm, ρ_water, ρ_air, ν_water, ν_air | ✅ Listo |
+| **Unidades** | mm↔m, psi↔Pa, °C↔K↔°F, RPM↔rad/s, hp↔W, etc. | ✅ Listo |
+
+### 19.3 Archivos de Prueba Descargados
+
+| Set | Archivos | Organismo | Para Qué |
+|-----|----------|-----------|---------|
+| **NIST D2MI Models** | 8 archivos (.prt, .stp, .sat) | NIST | Validar reverse engineering |
+| **NIST PMI STEP Files** | 20+ archivos AP242 | NIST | Validar import PMI/GD&T |
+| **NIST MTC Assembly** | NX + SolidWorks formats | NIST | Validar ensambles |
+| **Machine Configs** | 8 archivos .mch de Fusion 360 | Autodesk/OEM | Parsear cinemáticas CNC |
+
+---
+
+## 20. ROADMAP DE DESARROLLO — SECUENCIA COMPLETA
+
+> Orden lógico. Cada onda se construye sobre la anterior. Sin saltos.
+
+### ONDA 0: CIMIENTOS (Lo que falta para que el CAD sea usable) — Sprint 1-4
+
+| # | Feature | Depende de | Resultado |
+|---|---------|-----------|-----------|
+| 0.1 | Sketch: Line tool | — | Dibujar polilíneas |
+| 0.2 | Sketch: Arc 3-point | Line tool | Curvas básicas |
+| 0.3 | Sketch: Trim / Extend | Line + Arc | Editar perfiles |
+| 0.4 | Sketch: Fillet + Chamfer 2D | Trim | Esquinas redondeadas |
+| 0.5 | Sketch: Offset | Perfil cerrado | Paredes, offsets |
+| 0.6 | Sketch: Constraints (H, V, Coincident, Perp, Parallel, Tangent, Equal, Fix) | Entidades 2D | PARAMETRICIDAD |
+| 0.7 | Sketch: Constraint Solver (Newton-Raphson) | Constraints | DOFs resueltos |
+| 0.8 | Sketch: Dimensions → Variables | Solver + Variables | Cada cota es una variable con nombre |
+| 0.9 | Extrude avanzado (cut/join/new body, symmetric, to-face) | Perfil cerrado | Modelado real |
+| 0.10 | Revolve | Perfil + eje | Cilindros, botellas, tornillos |
+| 0.11 | Sweep + Loft | Perfiles + guías | Formas complejas |
+| 0.12 | Fillet 3D (variable radius via SDF smoothMin variable) | Cuerpos 3D | Acabado |
+| 0.13 | Shell (hollow via SDF offset) | Cuerpos 3D | Carcasas |
+| 0.14 | Draft angle | Caras + dirección | Moldes |
+| 0.15 | Pattern (rect + circular) | Features 3D | Repetición |
+| 0.16 | Mirror 3D | Features + plano | Simetría |
+| 0.17 | Assembly: Components + Joints | Múltiples cuerpos | Ensambles |
+| 0.18 | Measure tool | Geometría | Distancias, ángulos, áreas |
+
+### ONDA 1: SIMULACIÓN FUNDACIONAL — Sprint 5-8
+
+| # | Feature | Depende de | Resultado |
+|---|---------|-----------|-----------|
+| 1.1 | SDF → Adaptive Tetrahedral Mesh | SDF engine | Mesh automático desde campo SDF |
+| 1.2 | FEA Global Assembly (K_global, f_global) | Mesh + formulas.ts | Sistema ensamblado |
+| 1.3 | Boundary Conditions UI (cargas + restricciones) | Assembly | Usuario define fuerzas y fijaciones |
+| 1.4 | Estrés Estático completo | 1.1-1.3 | Von Mises, displacement, safety factor |
+| 1.5 | GPU Results Overlay | Resultados FEA | Colores de estrés pintados en ray marcher |
+| 1.6 | Térmica Estado Estacionario | 1.1-1.3 | Distribución de temperatura |
+| 1.7 | Análisis Modal (eigenvalue) | K + M matrices | Frecuencias naturales + mode shapes |
+| 1.8 | Pandeo (eigenvalue de K + K_g) | K + K_geométrica | Carga crítica |
+| 1.9 | Fatiga (Goodman + S-N post-process) | Resultados de estrés | Vida estimada en ciclos |
+| 1.10 | Material Selector UI | Material DB | Panel visual de materiales con propiedades |
+
+### ONDA 2: EL GRAN DIFERENCIADOR — Sprint 9-14
+
+| # | Feature | Depende de | Resultado |
+|---|---------|-----------|-----------|
+| 2.1 | Diseño Generativo (Topological Optimization GPU) | FEA + SDF | Optimización en tiempo real |
+| 2.2 | Lattice/TPMS (Gyroid, Schwarz-P, Diamond) | SDF engine | Estructuras celulares |
+| 2.3 | Adaptive Lattice (grosor = f(esfuerzo)) | 2.1 + 2.2 | Lattice optimizado por carga |
+| 2.4 | Inyección: Hele-Shaw Flow Simulation | SDF field + BC | Simulación de llenado |
+| 2.5 | Inyección: Cooling Simulation (transitoria) | Térmica transitoria | Ciclo de enfriamiento |
+| 2.6 | Inyección: Warpage Prediction | Esfuerzos residuales | Deformación post-desmoldeo |
+| 2.7 | Parting Line + Core/Cavity automático | SDF boolean | Generación de molde |
+| 2.8 | Multifísica: Termomecánico acoplado | FEA + Térmica | Esfuerzos por temperatura |
+| 2.9 | DOE (Design of Experiments) | Variables + Solver | Barrido paramétrico |
+| 2.10 | Reporte automático (PDF) | Cualquier simulación | Documentación profesional |
+
+### ONDA 3: CAM COMPLETO — Sprint 15-20
+
+| # | Feature | Depende de | Resultado |
+|---|---------|-----------|-----------|
+| 3.1 | Facing (planeado) toolpath | SDF stock + tool geometry | Planear |
+| 3.2 | 2D Pocket toolpath | Contornos 2D del SDF slice | Vaciado |
+| 3.3 | 2D Contour toolpath | Contorno exterior | Perfilado |
+| 3.4 | Drilling cycles (peck, tap, bore) | Hole feature detection | Taladrado |
+| 3.5 | 3D Adaptive (HSM) | SDF ray-based tool engagement | Desbaste eficiente |
+| 3.6 | 3D Finishing (scallop, parallel, pencil) | SDF normal + stepover | Acabado |
+| 3.7 | Stock Simulation (SDF boolean removal) | Toolpath + stock SDF | Verificación visual |
+| 3.8 | Post-procesador Fanuc 0i/30i | G-code template engine | G-code Fanuc |
+| 3.9 | Post-procesador Siemens 840D | G-code template engine | G-code Siemens |
+| 3.10 | Post-procesador Haas NGC | G-code template engine | G-code Haas |
+| 3.11 | Post-procesador GRBL / LinuxCNC | G-code template engine | Open CNC |
+| 3.12 | Feed/Speed Calculator | Material + tool + op | Parámetros óptimos |
+| 3.13 | Setup Sheet automático | Toolpath + tools | Hoja de configuración |
+| 3.14 | FDM Slicer (contornos SDF por capa) | SDF slice Z | G-code aditivo |
+| 3.15 | Support generation (overhang detection via SDF normals) | SDF normals | Soportes automáticos |
+
+### ONDA 4: SIMULACIÓN AVANZADA — Sprint 21-30
+
+| # | Feature | Depende de | Resultado |
+|---|---------|-----------|-----------|
+| 4.1 | CFD: Lattice Boltzmann GPU | GPU compute framework | Flujo incompresible visual |
+| 4.2 | CFD: Conjugate heat transfer | CFD + Thermal | Enfriamiento por convección forzada |
+| 4.3 | No-lineal: plasticidad (bilineal) | Newton-Raphson iterativo | Deformación permanente |
+| 4.4 | No-lineal: grandes deformaciones | Updated Lagrangian | Elastómeros, rubber |
+| 4.5 | Dinámica transitoria (Newmark-β) | M + C + K matrices | Impacto, vibración |
+| 4.6 | Materiales compuestos (CLT) | Laminado lay-up | Fibra de carbono/vidrio |
+| 4.7 | Electrostática / corrientes | Laplace solver | PCBs, MEMS |
+| 4.8 | Difusión + reacciones (Fick + Arrhenius) | Scalar field solver | Química, farmacéutica |
+| 4.9 | Fluido-Estructura (FSI) weak coupling | CFD + FEA alternating | Válvulas, aero |
+| 4.10 | Optimización multi-objetivo | DOE + Pareto | N variables, M objetivos |
+
+### ONDA 5: ECOSISTEMA COMPLETO — Sprint 31+
+
+| # | Feature | Resultado |
+|---|---------|-----------|
+| 5.1 | Dibujos técnicos (2D drawings) con GD&T automático | Planos ISO/ASME |
+| 5.2 | Planos de montaje con BOM | Documentación de producción |
+| 5.3 | Export 3MF (con materiales y colores) | Aditiva avanzada |
+| 5.4 | Export STEP AP242 (con PMI) | Interoperabilidad industrial |
+| 5.5 | Sheet Metal (unfold, K-factor) | Corte láser / doblado |
+| 5.6 | Electrónica: esquemático + PCB | Diseño de placas |
+| 5.7 | Plugin system (JS/TS extensions) | Extensibilidad |
+| 5.8 | Collaboration (multi-user) | Trabajo en equipo |
+| 5.9 | Version control (git-like branching) | Historial de diseño |
+| 5.10 | Marketplace de componentes estándar | Tornillos, rodamientos, motores |
+| 5.11 | Conexión MTConnect a máquinas CNC | Digital twin de fábrica |
+| 5.12 | App móvil (viewer + aprobaciones) | Acceso en planta |
+
+---
+
+## 21. LA FORJA COMO ESCUELA — EL SIMULADOR EDUCATIVO
+
+> **Visión**: Cada tipo de simulación tiene un "modo profesor" que explica qué ecuaciones se usan,
+> por qué, y te permite experimentar cambiando variables en tiempo real.
+> El estudiante de mecatrónica, química, civil o industrial puede APRENDER haciendo.
+
+### 21.1 Módulos Educativos
+
+| Curso | Qué Enseña | Con Qué Simulación |
+|-------|----------|-------------------|
+| **Resistencia de Materiales** | Esfertzo, deformación, Hooke, Von Mises, Mohr | Estrés estático + vigas + presión |
+| **Mecánica de Fluidos** | Bernoulli, Reynolds, pérdidas, Navier-Stokes | CFD + tuberías + flujo externo |
+| **Transferencia de Calor** | Fourier, Newton, Stefan-Boltzmann, aletas | Térmica steady + transitoria |
+| **Termodinámica** | Ciclos, eficiencia, entalpía | Thermal + fluid (futuro) |
+| **Vibraciones Mecánicas** | Frecuencia natural, amortiguamiento, resonancia | Modal + dinámica armónica |
+| **Diseño de Máquinas** | Fatiga, concentración, seguridad, rodamientos | Fatiga + estrés + Hertz |
+| **Dinámica de Cuerpo Rígido** | Cinemática, dinámica, Newton-Euler | Multibody dynamics |
+| **Control Automático** | PID, respuesta escalón, Bode, Nyquist | Simulación de sistemas (lazo cerrado) |
+| **Ciencia de Materiales** | Microestructura, fases, tratamientos térmicos | Diagramas de fase + TTT (visual) |
+| **Química General** | Reacciones, equilibrio, cinética | Reactores + difusión |
+| **Procesos de Manufactura** | Maquinado, inyección, fundición, soldadura | CAM + Sim de proceso |
+| **Estructuras (Civil)** | Marcos, armaduras, cimientos | FEA 2D/3D + Pandeo |
+| **Hidráulica** | Tuberías, bombas, canales | Flujo en tuberías + Bernoulli |
+
+### 21.2 Features Educativas
+
+- **Modo Ecuación**: Al pasar el cursor sobre cualquier resultado de simulación, muestra la ecuación que lo generó
+- **Modo Paso-a-Paso**: Ejecuta el solver paso a paso, mostrando cada iteración
+- **Comparador**: "¿Qué pasa si cambio el material de ABS a Acero?" → split-screen con ambos resultados
+- **Retos**: Problemas predefinidos con solución conocida (benchmarks NAFEMS)
+- **Certificaciones**: Al completar módulos, el usuario obtiene badge verificable
+- **Exportar como Reporte**: El estudiante entrega un PDF con modelo + simulación + conclusiones
+
+---
+
+## 22. DISEÑO DE INTERFAZ — EL PLAN VISUAL
+
+> **Diagnóstico brutal**: La interfaz actual SE VE IGUAL QUE TODAS.
+> Tenemos dark theme + gold accent + menubar + tree panel + timeline = es Fusion 360 con otro color.
+> Plasticity triunfa porque se siente diferente. Houdini es diferente.
+> Nosotros somos F-Rep, no B-Rep. La interfaz debe REFLEJAR eso.
+
+### 22.1 Qué Tiene Hoy (y Por Qué Se Siente Genérico)
+
+| Elemento | Qué Hace | Problema |
+|----------|---------|---------|
+| **Header/Menubar** | SKETCH · SOLID · SURFACE · METAL · CONSTRUCT · INSPECT · INSERT · ASSEMBLE | Es la barra de Fusion 360 renombrada. 8 menús que el 95% del tiempo no se tocan. |
+| **Scene Tree (sidebar izq.)** | Árbol jerárquico colapsable con hover-expand | Patrón de Fusion/Blender/Unity. Funcional pero NO innovador. |
+| **Properties Panel** | Panel flotante con posición/rotación/parámetros | Genérico. Cada CAD tiene esto idéntico. |
+| **Timeline (barra inferior)** | Nodos de historial como Fusion 360 | Copia directa. Y además no aporta mucho en F-Rep donde no hay "features" secuenciales. |
+| **Omnibar (Ctrl+K)** | Búsqueda universal estilo VS Code/Spotlight | ✅ Esto SÍ está bien. Mantener. |
+| **Marking Menu (clic derecho)** | Menú radial como Fusion 360 | ✅ Funcional. Pero el diseño visual es básico. |
+| **Shortcut Overlay (S)** | Grid de atajos rápidos | OK pero limitado. |
+| **Variable Bar** | Chips de variables en la parte superior | Buena idea, ejecución plana. |
+| **Viewport** | Three.js + ray marching | ✅ El corazón. Esto funciona bien. |
+
+**Conclusión**: El 80% de la UI es un collage de patrones de otros CADs.
+No hay NADA que al abrirlo digas "esto es de otro planeta".
+
+### 22.2 Principios de Diseño — "Forjado por Dioses"
+
+> La Forja no es un CAD más. Es una herramienta divina. La interfaz debe sentirse como operar
+> un artefacto de civilización avanzada — no como llenar formularios en una ventana de Windows.
+
+#### P1: EL VIEWPORT ES TODO (Viewport-First)
+- El viewport ocupa el **100%** de la pantalla. No hay barras que le roben espacio permanentemente.
+- TODO lo demás son **capas flotantes** que aparecen cuando se necesitan y desaparecen cuando no.
+- Referencia: Plasticity (viewport limpio), videojuegos AAA (HUD mínimo).
+
+#### P2: INVOCACIÓN > NAVEGACIÓN (Command-Driven)
+- No menús para buscar cosas. **Invocas** lo que necesitas.
+- Omnibar (⌘K) = la puerta de entrada universal. Ya lo tenemos, es correcto.
+- Marking Menu (right-click) = acceso contextual rápido.
+- **Gesto + Intención**: arrastras una línea en el viewport → La Forja infiere que quieres sketch → activa el modo.
+
+#### P3: INFORMACIÓN BAJO DEMANDA (Progressive Disclosure)
+- Sin panels permanentes de propiedades. Al seleccionar algo → aparece un **HUD contextual** pegado al objeto.
+- Las dimensiones se muestran SOBRE la geometría (como cotas en un dibujo técnico), no en un panel lateral.
+- La jerarquía de escena se accede vía Omnibar o breadcrumb sutil, no con un panel de árbol siempre abierto.
+
+#### P4: FLUIR, NO CONFIGURAR (Flow State)
+- Cada interacción tiene máximo 1 clic/gesto para empezar. Sin diálogos de confirmación.
+- Feedback inmediato: arrastras y ves el resultado EN TIEMPO REAL. No hay "preview" y luego "apply".
+- Audio sutil confirma acciones (ya lo tenemos con forge-audio.ts ✅).
+
+#### P5: MATERIALIDAD DIVINA (Visual Identity)
+- No es flat design. No es neomorfismo. Es **materia luminosa en el vacío**.
+- Paneles = cristal oscuro con bordes de plasma dorado que respiran.
+- Elementos activos = brillo interior, no solo cambio de color de fondo.
+- Animaciones de estado: las cosas no aparecen/desaparecen — se **materializan** y se **disuelven**.
+- La selección de un objeto hace que su silueta emita un halo dorado en el viewport.
+
+#### P6: TIPOGRAFÍA COMO DATO, NO COMO DECORACIÓN
+- Números = monospace (JetBrains Mono ✅), grande, legible.
+- Labels = casi invisibles hasta que importan.
+- El usuario ve NÚMEROS y GEOMETRÍA, no palabras.
+
+### 22.3 La Nueva Arquitectura de Layout
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     VIEWPORT (100%)                          │
+│                                                              │
+│  ┌─────────┐                              ┌──────────────┐  │
+│  │ Context  │                              │   Inspector  │  │
+│  │ Breadcrumb│                             │   HUD        │  │
+│  │ (top-left)│                             │   (flotante) │  │
+│  └─────────┘                              └──────────────┘  │
+│                                                              │
+│                    ┌──────────────┐                          │
+│                    │  3D OBJECT   │                          │
+│                    │  con cotas   │                          │
+│                    │  inline      │                          │
+│                    └──────────────┘                          │
+│                                                              │
+│                                                              │
+│  ┌─────┐                                     ┌──────────┐  │
+│  │Tools│                                     │ ViewCube │  │
+│  │Strip│                                     │ + camera │  │
+│  │(left)│                                    └──────────┘  │
+│  └─────┘                                                    │
+│                                                              │
+│           ┌──────────────────────────────┐                  │
+│           │     Variable Bar (bottom)    │                  │
+│           └──────────────────────────────┘                  │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │              Status Strip (minimal)                  │    │
+│  └─────────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Elementos de la nueva UI:
+
+| Elemento | Posición | Comportamiento | Reemplaza |
+|----------|---------|---------------|-----------|
+| **Context Breadcrumb** | Top-left, sobre viewport | `Proyecto > Módulo > Componente`: clickable para navegar. Aparece al hover o al seleccionar. | Scene tree sidebar |
+| **Tool Strip** | Left edge, vertical, iconos tenues | 6-8 iconos: Select, Sketch, Create, Boolean, Sim, Export. Al hacer hover se expande con sub-opciones. | Menubar de 8 menús |
+| **Inspector HUD** | Flotante, anclado al objeto seleccionado | Propiedades, dimensiones, material. Se mueve con el objeto al rotar la cámara. Glass effect + gold border. | Properties panel |
+| **Inline Dimensions** | Sobre la geometría 3D | Cotas paramétricas renderizadas en 3D (como un dibujo técnico vivo). Click para editar. | Campos numéricos en panel |
+| **Variable Bar** | Bottom, centrado, colapsable | Chips de variables. Click para expandir y editar. Mantener concepto actual pero más compacto. | Variable bar (mejora) |
+| **Status Strip** | Bottom-left, muy tenue | FPS, mesh quality, mass, volume — solo texto mínimo. | Status bar actual |
+| **Omnibar** | Center, invocable con ⌘K | Sin cambios funcionales. Mejorar visual con glass más profundo y animación de materialización. | Omnibar (mejora visual) |
+| **Marking Menu** | Center, invocable con right-click | Sin cambios funcionales. Mejorar visual: iconos con glow, líneas de conexión al centro como rayos de energía. | Marking Menu (mejora) |
+| **Simulation Overlay** | Right edge, expandible | Al activar sim → panel lateral derecho con controles. Se desliza desde el borde. Solo visible en modo sim. | NUEVO |
+| **Mode Indicator** | Top-center, sutil | Badge: "DESIGN" / "SKETCH" / "SIMULATE" / "CAM" — indica modo actual. | NUEVO |
+
+### 22.4 Matar la Menubar — La Barra de Herramientas Muere
+
+> **Problema central**: SKETCH · SOLID · SURFACE · METAL · CONSTRUCT · INSPECT · INSERT · ASSEMBLE
+> Son 8 categorías. El usuario promedio usa 3. Las otras 5 son ruido visual permanente.
+
+**Solución: Tool Strip + Omnibar**
+
+La **Tool Strip** es una columna vertical izquierda, casi invisible, con 6 iconos:
+
+| Icono | Modo | Qué Expande al Hover | Equivale a |
+|-------|------|---------------------|-----------|
+| ⊘ (cursor) | **Select** | Nada — modo default | Select tool |
+| ✎ | **Sketch** | Sub-strip: Line, Rect, Circle, Arc, Trim, Dimension | Menú SKETCH completo |
+| ⬡ | **Create** | Sub-strip: Extrude, Revolve, Sweep, Primitives, Boolean | Menú SOLID + SURFACE |
+| ⚙ | **Modify** | Sub-strip: Fillet, Chamfer, Shell, Draft, Pattern, Mirror | Menú MODIFY |
+| ▶ | **Simulate** | Abre panel lateral: Structural, Thermal, CFD, Modal... | NUEVO |
+| ⚡ | **Manufacture** | Sub-strip: CAM Setup, Toolpath, G-code, Slice | Menú CAM (nuevo) |
+
+**TODO lo demás** (Insert, Assemble, Inspect, Construct) vive en el **Omnibar**.
+- Quieres insertar un STEP? `⌘K → "import step"` → listo.
+- Quieres crear un plano de construcción? `⌘K → "offset plane"` → listo.
+- Quieres medir? `⌘K → "measure"` → listo.
+
+**No necesitas un menú visible para algo que usas 2 veces al día.**
+
+### 22.5 Inspector HUD — Propiedades Pegadas al Objeto
+
+> En vez de un panel lateral con "Posición X: [___]", las propiedades están en el espacio 3D.
+
+```
+Ejemplo — Seleccionas un cilindro:
+
+                    ┌──────────────────┐
+                    │  ↕ 45.0mm        │  ← altura, click para editar
+           ┌──────────────────────────────────────┐
+           │        │                  │           │
+           │        │   Cilindro       │           │
+           │        │   Steel 4140     │           │  ← nombre + material inline
+           │        └──────────────────┘           │
+           │            ↔ 12.0mm                   │  ← radio, click para editar
+           └───────────────────────────────────────┘
+
+   [ ∪ Unir ]  [ ∖ Restar ]  [ ✕ Eliminar ]    ← Action pills debajo del objeto
+```
+
+**Implementación técnica**:
+- Cada dimensión paramétrica es un `Html` component de `@react-three/drei` posicionado en el espacio 3D.
+- Click en el número → input editable inline → actualiza la variable.
+- Pills de acción rápida debajo del bounding box del objeto.
+- Glass background con blur, se desvanece cuando la cámara se aleja.
+
+### 22.6 Inline Dimensions — Cotas Vivas en 3D
+
+> El modelo siempre muestra sus dimensiones como si fuera un dibujo técnico,
+> pero vivo y editable. Esto NO EXISTE en ningún CAD desktop.
+
+- Líneas de extensión + líneas de cota renderizadas por `THREE.Line2` con material `LineDashedMaterial`.
+- Texto de cota renderizado con `Html` de drei o `Text` de troika-three-text para que sea nítido.
+- Color: dorado tenue cuando no está seleccionado, dorado brillante cuando sí.
+- Click en cualquier cota → se convierte en input → tecleas nuevo valor → geometría se actualiza en tiempo real.
+- Las cotas se posicionan automáticamente para no solaparse (layout de cotas algorítmico).
+
+**Referencia**: Este es el feature #1 que más impresionaría en una demo.
+Nadie más lo tiene en real-time 3D.
+
+### 22.7 Paleta de Colores v2 — "Plasma en el Vacío"
+
+La paleta actual (Oro Divino v5) está bien en concepto pero falta **profundidad** y **vida**.
+
+#### Backgrounds — Más Negros, Más Profundos
+
+| Token | Actual | Nuevo | Razón |
+|-------|--------|-------|-------|
+| `--c-base` | `#08090d` | `#030305` | Más negro = más contraste con el glow |
+| `--c-surface` | `#0d0f14` | `#06070b` | Los paneles flotantes son MÁS oscuros que el viewport background |
+| `--c-surface-up` | `#12151c` | `#0a0c12` | |
+
+#### Gold — Más Cálido, Más Vivo
+
+| Token | Actual | Nuevo | Razón |
+|-------|--------|-------|-------|
+| `--c-gold` | `#c9a84c` | `#d4a843` | Un pelo más saturado/cálido |
+| `--c-gold-hi` | `#e2c97e` | `#f0d68a` | Más luminoso en highlights |
+| `--c-gold-glow` | `rgba(201,168,76,0.06)` | `rgba(212,168,67,0.12)` | Glow más presente |
+
+#### Nuevos Tokens — Simulación y Modos
+
+| Token | Valor | Para Qué |
+|-------|-------|----------|
+| `--c-sim-struct` | `#3b82f6` (azul) | Resultados estructurales (Von Mises) |
+| `--c-sim-thermal` | `#ef4444` → `#3b82f6` (gradiente) | Mapas térmicos (rojo=caliente, azul=frío) |
+| `--c-sim-flow` | `#06b6d4` (cyan) | Líneas de flujo CFD |
+| `--c-sim-mode` | `#a78bfa` (violeta) | Mode shapes (modal) |
+| `--c-cam-path` | `#22c55e` (verde) | Toolpaths de mecanizado |
+| `--c-sketch-active` | `#f59e0b` (ámbar) | Líneas de sketch activas |
+| `--c-error` | `#ef4444` | Errores (ya existe similar) |
+| `--c-success` | `#22c55e` | Confirmaciones |
+
+### 22.8 Glass Effect v2 — Cristal Vivo
+
+El glass actual usa `backdrop-filter: blur(24px)`. Necesita más capas:
+
+```css
+.forge-glass-v2 {
+  /* Base: casi negro, semi-transparente */
+  background: rgba(3,3,5,0.72);
+  
+  /* Borde: DOBLE borde — uno sutil exterior, uno de glow interior */
+  border: 1px solid rgba(212,168,67,0.08);
+  box-shadow:
+    /* Glow exterior sutil */
+    0 0 30px rgba(212,168,67,0.03),
+    /* Sombra profunda */
+    0 16px 64px rgba(0,0,0,0.7),
+    /* Borde interior luminoso (top edge) */
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    /* Glow interior muy sutil */
+    inset 0 0 20px rgba(212,168,67,0.02);
+  
+  /* Blur más fuerte */
+  backdrop-filter: blur(32px) saturate(1.6) brightness(0.95);
+  
+  /* Bordes más redondeados */
+  border-radius: 14px;
+  
+  /* Transición de materialización */
+  animation: materialize 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes materialize {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+    backdrop-filter: blur(0px);
+    border-color: rgba(212,168,67,0.30);
+    box-shadow: 0 0 40px rgba(212,168,67,0.15);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    backdrop-filter: blur(32px);
+    border-color: rgba(212,168,67,0.08);
+    box-shadow: 0 0 30px rgba(212,168,67,0.03), 0 16px 64px rgba(0,0,0,0.7);
+  }
+}
+```
+
+La animación de **materialización** hace que cada panel aparezca con un flash dorado que se desvanece — como si se forjara frente a tus ojos.
+
+### 22.9 Selection Halo — El Objeto Brilla
+
+Cuando seleccionas un objeto en el viewport:
+
+1. **Outline glow**: Post-process pass que dibuja un outline dorado alrededor del objeto (2px, `#d4a843`, blur 6px).
+2. **Fresnel boost**: El shader de ray marching aumenta el término Fresnel del objeto seleccionado → brilla más en los bordes.
+3. **Ambient particles**: Partículas sutiles de polvo dorado flotan alrededor del objeto seleccionado (30-50 partículas, vida 1-3s, opacidad 0.1-0.3).
+4. **Ground shadow**: Sombra suave del objeto en el grid, con un tinte dorado.
+
+Esto transforma "seleccionar un cubo" en una **experiencia sensorial**. No es cosmético — te ayuda a ver EXACTAMENTE qué está seleccionado en escenas complejas.
+
+### 22.10 Modos de Trabajo — Espacios Distintos
+
+> Cuando cambias de Design a Simulate, la interfaz CAMBIA. No es el mismo espacio con más botones.
+
+| Modo | Color del Mode Indicator | Tool Strip | Viewport | Panels Especiales |
+|------|-------------------------|-----------|---------|-------------------|
+| **DESIGN** | Dorado `#d4a843` | Sketch, Create, Modify | Normal: objetos con cotas | Ninguno |
+| **SKETCH** | Ámbar `#f59e0b` | Line, Arc, Rect, Trim, Dim, Constrain | Plano 2D resaltado, grid más visible, resto en wireframe tenue | Constraint panel (bottom) |
+| **SIMULATE** | Azul `#3b82f6` | Structural, Thermal, CFD, Modal | Colormaps sobre geometría, cut-planes, streamlines | Sim Setup panel (right), Legend (left) |
+| **CAM** | Verde `#22c55e` | Setup, Toolpath, Verify, Post | Stock + toolpaths animados, machine envelope wireframe | Tool Library (right), Op list (left) |
+| **LEARN** | Violeta `#a78bfa` | Módulos, Retos, Sandbox | Split: teoría izq + viewport der | Lesson panel (left), Equation overlay |
+
+La transición entre modos es una **animación de 400ms** donde:
+1. El color del viewport background cambia sutilmente (tint del modo).
+2. Los paneles anteriores se disuelven.
+3. Los paneles nuevos se materializan.
+4. El Mode Indicator en top-center hace un flash del color del modo.
+
+### 22.11 Matar el Timeline — Reemplazar con Operation Stack
+
+> El timeline de Fusion 360 tiene sentido en B-Rep donde cada feature depende de la anterior.
+> En F-Rep, el árbol CSG ES la historia. No necesitamos una timeline separada.
+
+**Reemplazo: Operation Stack** — Un breadcrumb vertical en el bottom-left que muestra los últimos 3-5 cambios:
+
+```
+  Últimas acciones:
+  ├─ Extrude 45mm         [↶ undo]
+  ├─ Subtract cylinder    [↶ undo]
+  └─ Fillet R2            [↶ undo]
+```
+
+- Ocupa mínimo espacio (3 líneas de texto).
+- Click en "undo" deshace ESA acción específica.
+- Se colapsa a solo el último cambio después de 3s sin interacción.
+- Ctrl+Z sigue funcionando igual.
+
+### 22.12 Tool Strip — Diseño Visual
+
+```
+┌─────┐
+│  ⊘  │ ← Select (tenue cuando no hover)
+│─────│
+│  ✎  │ ← Sketch → al hover expande sub-strip horizontal
+│─────│
+│  ⬡  │ ← Create
+│─────│
+│  ⚙  │ ← Modify
+│─────│
+│  ▶  │ ← Simulate
+│─────│
+│  ⚡  │ ← Manufacture
+└─────┘
+
+Tamaño: 48px ancho, iconos 20px, padding 14px
+Background: rgba(3,3,5,0.40) con blur
+Border: none (solo 1px right border tenue)
+Hover en icono: glow dorado + expand horizontal con sub-opciones
+Modo activo: icono con color del modo + dot indicator
+```
+
+### 22.13 Viewport Background — No Más Gris Plano
+
+El viewport background actual es un color sólido oscuro. Propuesta:
+
+1. **Gradient radial sutil**: Centro ligeramente más claro que bordes. Como un spotlight apuntando al centro de la escena.
+2. **Grid con perspectiva**: El grid actual es bueno. Añadir líneas de grid que se desvanecen con la distancia (ya probablemente lo hace).
+3. **Ambient particles**: 50-100 partículas de polvo microscópicas flotando lentamente. Casi invisibles (opacidad 0.02-0.05). Dan profundidad y vida.
+4. **Vignette**: Oscurecimiento sutil en los bordes del viewport. Dirige la mirada al centro.
+
+### 22.14 Typography Hierarchy
+
+| Nivel | Font | Size | Weight | Color | Uso |
+|-------|------|------|--------|-------|-----|
+| **H0** | Inter | 10px | 700 | `--c-gold` | Mode indicator: "DESIGN", "SIMULATE" |
+| **H1** | Inter | 13px | 600 | `--c-text-1` | Títulos de paneles flotantes |
+| **H2** | Inter | 11px | 500 | `--c-text-2` | Labels de secciones |
+| **Data** | JetBrains Mono | 13px | 500 | `--c-text-1` | Números: dimensiones, valores, cotas |
+| **Data-sm** | JetBrains Mono | 11px | 400 | `--c-text-2` | Valores secundarios, unidades |
+| **Caption** | Inter | 10px | 400 | `--c-text-3` | Hints, shortcuts, status |
+| **Micro** | Inter | 9px | 400 | `--c-text-4` | Counters, badges diminutos |
+
+### 22.15 Micro-Interacciones Que Importan
+
+| Acción | Feedback Visual | Feedback Audio |
+|--------|----------------|---------------|
+| Hover sobre objeto en viewport | Outline tenue aparece (0.3 opacity) | — |
+| Click para seleccionar | Outline → glow completo + halo + cotas aparecen | Click suave (ya existe) |
+| Drag para mover | Ghost del objeto en posición original + líneas guía | — |
+| Crear primitiva | Flash de materialización dorado en el punto de creación | Create sound (ya existe) |
+| Boolean subtract | Flash rojo en la zona de corte, luego se desvanece | Cut/delete sound |
+| Undo | El objeto restaurado hace un flash inverso (de 0 a 1 opacidad) | Undo sound (ya existe) |
+| Cambio de modo | Transición de color ambiental 400ms + flash en mode badge | Mode transition chime (NUEVO) |
+| Error de constraint | Shake del elemento 50ms + flash rojo | Error beep (ya existe) |
+| Export completado | Toast con progress bar que se llena de dorado | Complete chime (ya existe) |
+| Hover sobre cota | Cota se ilumina + línea de extensión se resalta | — |
+| Editar cota | Input aparece con glow + las líneas de extensión pulsan | — |
+
+### 22.16 Comparación Visual: Antes vs Después
+
+```
+ANTES (actual):
+┌─ Header: [Logo] SKETCH SOLID SURFACE METAL CONSTRUCT INSPECT INSERT ASSEMBLE [Search] [Export] ─┐
+├─ Tree ─├──────────────── Viewport ──────────────────┤─ Properties panel ──┤
+│ ▾ Root │                                             │ Posición X: [___]  │
+│   ● S1 │                                             │ Posición Y: [___]  │
+│   ■ B1 │         (modelo 3D)                         │ Posición Z: [___]  │
+│   ◆ C1 │                                             │ Radio:      [___]  │
+│        │                                             │ Altura:     [___]  │
+├────────┴─────────────────────────────────────────────┴────────────────────┤
+│ Timeline: ◉ ─── ◆ ─── ◆ ─── ◆ ─── ◆ ─── ► [↶] [↷]                     │
+└──────────────────────────────────────────────────────────────────────────┘
+
+DESPUÉS (propuesta):
+┌──────────────────────────────────────────────────────────────────────────┐
+│  [⊘]                    ◆ DESIGN                                 [⊞]  │
+│  [✎]   Root > Module1              ┌─────────────┐                     │
+│  [⬡]                               │  ↕ 45.0mm   │                     │
+│  [⚙]                    ┌──────────┤  Cilindro   ├──────────┐         │
+│  [▶]                    │          │  Steel 4140  │          │         │
+│  [⚡]                    │          └─────────────┘          │         │
+│                         │             ↔ 12.0mm               │         │
+│                         └────────────────────────────────────┘         │
+│                               [∪ Unir] [∖ Restar] [✕]                 │
+│                                                                        │
+│                                                                        │
+│                                                                        │
+│  Extrude 45mm [↶]                                                      │
+│  16 piezas · 34.2 cm³ · 0.27 kg                    60fps · high       │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+El espacio visual se DUPLICA. El usuario se enfoca en la geometría, no en la interfaz.
+
+### 22.17 Prioridad de Implementación — UI
+
+| # | Cambio | Impacto Visual | Esfuerzo | Sprint |
+|---|--------|---------------|----------|--------|
+| 1 | **Matar menubar** → Tool Strip vertical | ⭐⭐⭐⭐⭐ | Medio | 1 |
+| 2 | **Matar timeline** → Operation Stack | ⭐⭐⭐⭐ | Bajo | 1 |
+| 3 | **Matar scene tree** → Breadcrumb + Omnibar | ⭐⭐⭐⭐ | Medio | 1 |
+| 4 | **Glass v2** (materialización + glow) | ⭐⭐⭐⭐⭐ | Bajo | 1 |
+| 5 | **Selection Halo** (outline + Fresnel boost) | ⭐⭐⭐⭐⭐ | Medio | 2 |
+| 6 | **Inspector HUD** (propiedades pegadas al objeto) | ⭐⭐⭐⭐⭐ | Alto | 2 |
+| 7 | **Colores v2** (más negro + gold más vivo) | ⭐⭐⭐ | Bajo | 1 |
+| 8 | **Inline Dimensions** (cotas 3D editables) | ⭐⭐⭐⭐⭐ | Alto | 3 |
+| 9 | **Mode transitions** (Design→Sim→CAM) | ⭐⭐⭐⭐ | Medio | 3 |
+| 10 | **Viewport atmosphere** (gradient + vignette + particles) | ⭐⭐⭐ | Bajo | 2 |
+| 11 | **Ambient particles on selection** | ⭐⭐⭐ | Bajo | 2 |
+| 12 | **Mode indicator** top-center badge | ⭐⭐⭐ | Bajo | 1 |
+| 13 | **Marking Menu v2** (rayos de energía) | ⭐⭐⭐ | Medio | 3 |
+| 14 | **Sim overlay panel** (right slide) | ⭐⭐⭐⭐ | Medio | 3 |
+
+### 22.18 CSS Architecture — Qué Cambia
+
+| Archivo | Qué Cambiar |
+|---------|------------|
+| `main.css` | Nuevos tokens de color, `.forge-glass-v2`, animación `materialize`, `.tool-strip`, `.mode-indicator`, `.operation-stack`, `.inline-dim`, particle keyframes |
+| `ForgePage.tsx` | Eliminar `<header>` menubar completo, eliminar `<aside>` tree sidebar, eliminar `<Timeline>`, añadir `<ToolStrip>`, `<ContextBreadcrumb>`, `<ModeIndicator>`, `<OperationStack>` |
+| `ForgeViewport.tsx` | Añadir post-process selection outline pass, vignette, ambient gradient |
+| `RayMarchMesh.tsx` | Uniform para selección: boost Fresnel, añadir outline data a output |
+| NUEVO: `ToolStrip.tsx` | Componente: columna vertical 48px, iconos, expand-on-hover |
+| NUEVO: `InlineDimension.tsx` | Componente: Html overlay en espacio 3D anclado a SDF bounding box |
+| NUEVO: `InspectorHUD.tsx` | Componente: panel flotante anclado a objeto seleccionado |
+| NUEVO: `ModeIndicator.tsx` | Componente: badge top-center con modo actual |
+| NUEVO: `OperationStack.tsx` | Componente: últimas 3-5 acciones con undo individual |
+| NUEVO: `ContextBreadcrumb.tsx` | Componente: breadcrumb de navegación top-left |
+| `MarkingMenu.tsx` | Visual v2: líneas de energía, glow en iconos |
+| `Omnibar.tsx` | Visual v2: glass más profundo, materialización |
+
+### 22.19 Lo Que NO Cambia
+
+- **Omnibar** (⌘K) — concepto correcto, solo mejora visual
+- **Keyboard shortcuts** — todos se mantienen
+- **Drag & Drop import** — se mantiene
+- **Audio feedback** — se mantiene y se extiende
+- **Variable system** — concepto se mantiene, migra a variable bar v2
+- **Marking Menu** — concepto correcto, solo mejora visual
+- **Zustand store** — sin cambios en estado
+- **SDF engine** — sin cambios
+- **Ray marcher** — solo se añade selection pass
+
+### 22.20 Resumen: De Genérico a Divino
+
+| Antes | Después |
+|-------|---------|
+| Menubar con 8 menús | Tool Strip con 6 iconos + Omnibar |
+| Scene tree sidebar permanente | Breadcrumb mínimo + Omnibar search |
+| Properties panel en sidebar | Inspector HUD flotante anclado al objeto |
+| Timeline horizontal | Operation Stack (3 líneas de texto) |
+| Viewport ocupa ~70% de pantalla | Viewport ocupa **100%** de pantalla |
+| Selección = highlight de color | Selección = halo + glow + Fresnel + particles |
+| Dimensiones en campos de input | Cotas 3D inline editables sobre la geometría |
+| Un solo modo visual para todo | 5 modos con transición de color y paneles distintos |
+| Paneles aparecen instantáneamente | Paneles se **materializan** con flash dorado |
+| Se ve como Fusion 360 con otro color | Se ve como un artefacto de civilización avanzada |
+
+---
+
 *Documento vivo. Actualizar conforme avancemos.*
 *La Forja de Hefestos — Hecho en México 🇲🇽*
-*"La única herramienta del mundo donde diseñas la pieza, cotizas los materiales, simulas la fábrica, programas el robot y flasheas la placa — sin salir."*
+*"La única herramienta del mundo donde diseñas la pieza, cotizas los materiales, simulas la fábrica, programas el robot, flasheas la placa, y APRENDES física, química e ingeniería — sin salir."*
