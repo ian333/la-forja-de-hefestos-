@@ -176,6 +176,85 @@ function circleFrom3Points(p1: Point2D, p2: Point2D, p3: Point2D): { center: Poi
   return { center: { x: ux, y: uy }, radius: dist({ x: ux, y: uy }, p1) };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Geometric Circle Refinement (Gauss-Newton)
+// ═══════════════════════════════════════════════════════════════
+
+/** Solve 3×3 linear system Ax=b via Gaussian elimination with partial pivoting */
+function solve3x3(A: number[][], b: number[]): number[] | null {
+  const a = A.map(row => [...row]);
+  const x = [...b];
+  for (let col = 0; col < 3; col++) {
+    let maxVal = Math.abs(a[col][col]), maxRow = col;
+    for (let row = col + 1; row < 3; row++) {
+      if (Math.abs(a[row][col]) > maxVal) { maxVal = Math.abs(a[row][col]); maxRow = row; }
+    }
+    if (maxVal < 1e-15) return null;
+    if (maxRow !== col) { [a[col], a[maxRow]] = [a[maxRow], a[col]]; [x[col], x[maxRow]] = [x[maxRow], x[col]]; }
+    for (let row = col + 1; row < 3; row++) {
+      const f = a[row][col] / a[col][col];
+      for (let j = col; j < 3; j++) a[row][j] -= f * a[col][j];
+      x[row] -= f * x[col];
+    }
+  }
+  const result = [0, 0, 0];
+  for (let i = 2; i >= 0; i--) {
+    let sum = x[i];
+    for (let j = i + 1; j < 3; j++) sum -= a[i][j] * result[j];
+    if (Math.abs(a[i][i]) < 1e-15) return null;
+    result[i] = sum / a[i][i];
+  }
+  return result;
+}
+
+/**
+ * Gauss-Newton geometric circle refinement.
+ * Kasa is algebraic — this minimizes the TRUE geometric residual:
+ * Σ (dist(pᵢ, center) - r)². Converges to sub-micron precision.
+ */
+function refineCircleGeometric(points: Point2D[], initial: CircleFit, maxIter = 25): CircleFit {
+  let cx = initial.center.x, cy = initial.center.y, r = initial.radius;
+  const n = points.length;
+  for (let iter = 0; iter < maxIter; iter++) {
+    let JtJ00 = 0, JtJ01 = 0, JtJ02 = 0;
+    let JtJ11 = 0, JtJ12 = 0, JtJ22 = 0;
+    let Jtr0 = 0, Jtr1 = 0, Jtr2 = 0;
+    for (const p of points) {
+      const dx = p.x - cx, dy = p.y - cy;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 1e-15) continue;
+      const res = d - r;
+      const j0 = -dx / d, j1 = -dy / d, j2 = -1;
+      JtJ00 += j0 * j0; JtJ01 += j0 * j1; JtJ02 += j0 * j2;
+      JtJ11 += j1 * j1; JtJ12 += j1 * j2; JtJ22 += j2 * j2;
+      Jtr0 += j0 * res; Jtr1 += j1 * res; Jtr2 += j2 * res;
+    }
+    const delta = solve3x3(
+      [[JtJ00, JtJ01, JtJ02], [JtJ01, JtJ11, JtJ12], [JtJ02, JtJ12, JtJ22]],
+      [-Jtr0, -Jtr1, -Jtr2],
+    );
+    if (!delta) break;
+    cx += delta[0]; cy += delta[1]; r += delta[2];
+    if (Math.sqrt(delta[0] ** 2 + delta[1] ** 2 + delta[2] ** 2) < 1e-14) break;
+  }
+  r = Math.abs(r);
+  let maxErr = 0, sumErr = 0;
+  for (const p of points) {
+    const err = Math.abs(dist(p, { x: cx, y: cy }) - r);
+    maxErr = Math.max(maxErr, err);
+    sumErr += err;
+  }
+  return { center: { x: cx, y: cy }, radius: r, maxError: maxErr, avgError: sumErr / n };
+}
+
+/** Project point onto circle circumference (closest point) */
+function projectOntoCircle(pt: Point2D, center: Point2D, radius: number): Point2D {
+  const dx = pt.x - center.x, dy = pt.y - center.y;
+  const d = Math.sqrt(dx * dx + dy * dy);
+  if (d < 1e-15) return { x: center.x + radius, y: center.y };
+  return { x: center.x + (dx / d) * radius, y: center.y + (dy / d) * radius };
+}
+
 /** Local curvature at point i (signed: positive = CCW) */
 function localCurvature(pts: Point2D[], i: number): number {
   const n = pts.length;
@@ -268,13 +347,21 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
   const n = cleaned.length;
   const bbox = bboxOf(cleaned);
   const diag = Math.sqrt((bbox.maxX - bbox.minX) ** 2 + (bbox.maxY - bbox.minY) ** 2);
-  const tol = tolerance ?? Math.max(0.1, diag * 0.002);
+  const tol = tolerance ?? Math.max(0.001, diag * 0.0001);
 
-  // ── Phase 0: Full circle test ──
-  const circleFit = fitCircle(cleaned);
-  if (circleFit && circleFit.maxError < tol * 0.5 && circleFit.radius < diag * 2) {
-    const arc = makeArc(circleFit.center, circleFit.radius, 0, 2 * Math.PI, cleaned[0], cleaned[0]);
-    return { entities: [arc], constraints: [] };
+  // ── Phase 0: Full circle test (Kasa + Gauss-Newton geometric refinement) ──
+  // Adaptive tolerance: tessellated circles have chord error ≈ R·(1 − cos(π/N))
+  // where N = number of polygon vertices. Capped at 2% of contour diagonal.
+  const kasaFit0 = fitCircle(cleaned);
+  if (kasaFit0 && kasaFit0.radius < diag * 2) {
+    const circleFit = refineCircleGeometric(cleaned, kasaFit0);
+    const chordErr = circleFit.radius * (1 - Math.cos(Math.PI / Math.max(6, n)));
+    const circleTol = Math.min(Math.max(tol, chordErr * 2.5), diag * 0.02);
+    const relErr = circleFit.maxError / Math.max(circleFit.radius, 1e-12);
+    if (circleFit.maxError < circleTol || (relErr < 0.03 && circleFit.maxError < diag * 0.01)) {
+      const arc = makeArc(circleFit.center, circleFit.radius, 0, 2 * Math.PI, cleaned[0], cleaned[0]);
+      return { entities: [arc], constraints: [] };
+    }
   }
 
   // ── Phase 1: Find best "open" point ──
@@ -291,17 +378,56 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
   for (let i = 0; i < n; i++) openPts.push(cleaned[(openIdx + i) % n]);
 
   // ── Phase 2: Recursive subdivision ──
-  const entities = recursiveFit(openPts, 0, openPts.length - 1, tol, 0);
+  const entities = recursiveFit(openPts, 0, openPts.length - 1, tol, 0, diag);
 
-  // ── Phase 3: Post-merge ──
-  const merged = mergeEntities(entities, tol);
+  // ── Phase 3: Post-merge + arc→circle upgrade ──
+  let merged = mergeEntities(entities, tol);
 
-  // ── Phase 4: Snap endpoints for C0 continuity ──
+  // Upgrade arcs with sweep ≥ 350° → full circle
+  for (const e of merged) {
+    if (e.type === 'arc' && !e.isFullCircle && Math.abs(sweepAngle(e)) > Math.PI * 1.94) {
+      e.isFullCircle = true;
+      e.endAngle = e.startAngle + 2 * Math.PI;
+      e.end = { ...e.start };
+    }
+  }
+
+  // Wrap-around merge: first+last arcs with same center → circle
+  if (merged.length >= 2) {
+    const first = merged[0], last = merged[merged.length - 1];
+    if (first.type === 'arc' && last.type === 'arc') {
+      const cd = dist(first.center, last.center);
+      const rd = Math.abs(first.radius - last.radius);
+      if (cd < tol * 2 && rd < tol * 2) {
+        const ac = lerp(first.center, last.center, 0.5);
+        const ar = (first.radius + last.radius) / 2;
+        const cs = sweepAngle(last) + sweepAngle(first);
+        if (Math.abs(cs) > Math.PI * 1.94) {
+          // Full circle
+          const circle = makeArc(ac, ar, 0, 2 * Math.PI, last.start, last.start);
+          merged = [circle, ...merged.slice(1, -1)];
+        } else if (Math.abs(cs) > 0.1) {
+          const combinedArc = makeArc(ac, ar, last.startAngle, last.startAngle + cs, last.start, first.end);
+          merged = [combinedArc, ...merged.slice(1, -1)];
+        }
+      }
+    }
+  }
+
+  // ── Phase 4: Snap endpoints — project onto circles for sub-tol precision ──
   for (let i = 0; i < merged.length; i++) {
     const curr = merged[i];
     const next = merged[(i + 1) % merged.length];
     if (!curr || !next) continue;
-    const mid = lerp(getEnd(curr), getStart(next), 0.5);
+    const gap = dist(getEnd(curr), getStart(next));
+    if (gap > tol * 20) continue; // skip topology gaps
+    let mid = lerp(getEnd(curr), getStart(next), 0.5);
+    // Project shared point onto arc circumference when applicable
+    if (curr.type === 'arc' && !curr.isFullCircle) {
+      mid = projectOntoCircle(mid, curr.center, curr.radius);
+    } else if (next.type === 'arc' && !next.isFullCircle) {
+      mid = projectOntoCircle(mid, next.center, next.radius);
+    }
     setEnd(curr, mid);
     setStart(next, mid);
   }
@@ -314,8 +440,9 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
 
 /**
  * Recursive fit on open polyline pts[start..end].
+ * @param diag contour bounding-box diagonal — used to cap degenerate arc radii
  */
-function recursiveFit(pts: Point2D[], start: number, end: number, tol: number, depth: number): SketchEntity[] {
+function recursiveFit(pts: Point2D[], start: number, end: number, tol: number, depth: number, diag = Infinity): SketchEntity[] {
   const count = end - start + 1;
   if (count <= 1) return [];
   if (count === 2) {
@@ -323,29 +450,38 @@ function recursiveFit(pts: Point2D[], start: number, end: number, tol: number, d
     return [makeLine(pts[start], pts[end])];
   }
 
-  // ── Try arc/circle fit (>= 3 points) ──
+  // ── Try arc/circle fit with Gauss-Newton geometric refinement ──
   const sub: Point2D[] = [];
   for (let i = start; i <= end; i++) sub.push(pts[i]);
-  const circFit = fitCircle(sub);
+  const kasaFit = fitCircle(sub);
 
-  if (circFit && circFit.maxError < tol) {
-    const chordLen = dist(pts[start], pts[end]);
-    const isCloseLoop = chordLen < tol * 2;
+  if (kasaFit) {
+    const circFit = refineCircleGeometric(sub, kasaFit);
+    if (circFit.maxError < tol) {
+      const chordLen = dist(pts[start], pts[end]);
+      // Adaptive tolerance ONLY for closed-loop circle detection
+      const arcChordErr = circFit.radius * (1 - Math.cos(Math.PI / Math.max(6, count)));
+      const closeLoopTol = Math.min(Math.max(tol, arcChordErr * 2.5), diag * 0.02);
+      const isCloseLoop = chordLen < closeLoopTol * 2;
 
-    if (isCloseLoop && count >= 6) {
-      return [makeArc(circFit.center, circFit.radius, 0, 2 * Math.PI, pts[start], pts[start])];
-    }
+      if (isCloseLoop && count >= 6) {
+        return [makeArc(circFit.center, circFit.radius, 0, 2 * Math.PI, pts[start], pts[start])];
+      }
 
-    const sa = Math.atan2(pts[start].y - circFit.center.y, pts[start].x - circFit.center.x);
-    const ea = Math.atan2(pts[end].y - circFit.center.y, pts[end].x - circFit.center.x);
-    const midIdx = Math.floor((start + end) / 2);
-    const ma = Math.atan2(pts[midIdx].y - circFit.center.y, pts[midIdx].x - circFit.center.x);
+      const sa = Math.atan2(pts[start].y - circFit.center.y, pts[start].x - circFit.center.x);
+      const ea = Math.atan2(pts[end].y - circFit.center.y, pts[end].x - circFit.center.x);
+      const midIdx = Math.floor((start + end) / 2);
+      const ma = Math.atan2(pts[midIdx].y - circFit.center.y, pts[midIdx].x - circFit.center.x);
 
-    const sweep = computeSweep(sa, ea, ma);
-    const sweepDeg = Math.abs(sweep) * 180 / Math.PI;
+      const sweep = computeSweep(sa, ea, ma);
+      const sweepDeg = Math.abs(sweep) * 180 / Math.PI;
 
-    if (sweepDeg > 5 && circFit.radius < chordLen * 10) {
-      return [makeArc(circFit.center, circFit.radius, sa, sa + sweep, { ...pts[start] }, { ...pts[end] })];
+      if (sweepDeg > 5 && circFit.radius < chordLen * 10 && circFit.radius < diag * 2) {
+        // Project endpoints onto the fitted circle for exact placement
+        const startPt = projectOntoCircle(pts[start], circFit.center, circFit.radius);
+        const endPt = projectOntoCircle(pts[end], circFit.center, circFit.radius);
+        return [makeArc(circFit.center, circFit.radius, sa, sa + sweep, startPt, endPt)];
+      }
     }
   }
 
@@ -362,10 +498,10 @@ function recursiveFit(pts: Point2D[], start: number, end: number, tol: number, d
   }
 
   // ── Split at max deviation ──
-  if (depth > 30) return [makeLine(pts[start], pts[end])];
+  if (depth > 50) return [makeLine(pts[start], pts[end])];
 
-  const left = recursiveFit(pts, start, maxDevIdx, tol, depth + 1);
-  const right = recursiveFit(pts, maxDevIdx, end, tol, depth + 1);
+  const left = recursiveFit(pts, start, maxDevIdx, tol, depth + 1, diag);
+  const right = recursiveFit(pts, maxDevIdx, end, tol, depth + 1, diag);
   return [...left, ...right];
 }
 
@@ -391,7 +527,7 @@ function mergeEntities(entities: SketchEntity[], tol: number): SketchEntity[] {
       if (prev.type === 'line' && curr.type === 'line') {
         const mergedLine = makeLine(prev.start, curr.end);
         const midDev = lineDistToPoint(prev.start, curr.end, prev.end);
-        if (midDev < tol * 0.5 && lineLength(prev.start, curr.end) > 0.01) {
+        if (midDev < tol * 0.3 && lineLength(prev.start, curr.end) > 0.001) {
           next[next.length - 1] = mergedLine;
           changed = true;
           continue;
@@ -402,7 +538,7 @@ function mergeEntities(entities: SketchEntity[], tol: number): SketchEntity[] {
       if (prev.type === 'arc' && curr.type === 'arc') {
         const centerDist = dist(prev.center, curr.center);
         const radiusDiff = Math.abs(prev.radius - curr.radius);
-        if (centerDist < tol && radiusDiff < tol * 0.5) {
+        if (centerDist < tol * 0.3 && radiusDiff < tol * 0.3) {
           const avgCenter = lerp(prev.center, curr.center, 0.5);
           const avgRadius = (prev.radius + curr.radius) / 2;
           const combinedSweep = sweepAngle(prev) + sweepAngle(curr);
@@ -431,14 +567,28 @@ function getEnd(e: SketchEntity): Point2D { return e.end; }
 function setStart(e: SketchEntity, pt: Point2D) {
   e.start = { ...pt };
   if (e.type === 'arc' && !e.isFullCircle) {
-    e.startAngle = Math.atan2(pt.y - e.center.y, pt.x - e.center.x);
+    const raw = Math.atan2(pt.y - e.center.y, pt.x - e.center.x);
+    // Pick the angle representation closest to the old startAngle
+    // to preserve sweep direction across the ±π boundary
+    let best = raw, bestDiff = Math.abs(raw - e.startAngle);
+    for (const c of [raw + 2 * Math.PI, raw - 2 * Math.PI]) {
+      if (Math.abs(c - e.startAngle) < bestDiff) { best = c; bestDiff = Math.abs(c - e.startAngle); }
+    }
+    e.startAngle = best;
   }
 }
 
 function setEnd(e: SketchEntity, pt: Point2D) {
   e.end = { ...pt };
   if (e.type === 'arc' && !e.isFullCircle) {
-    e.endAngle = Math.atan2(pt.y - e.center.y, pt.x - e.center.x);
+    const raw = Math.atan2(pt.y - e.center.y, pt.x - e.center.x);
+    // Pick the angle representation closest to the old endAngle
+    // to preserve sweep direction across the ±π boundary
+    let best = raw, bestDiff = Math.abs(raw - e.endAngle);
+    for (const c of [raw + 2 * Math.PI, raw - 2 * Math.PI]) {
+      if (Math.abs(c - e.endAngle) < bestDiff) { best = c; bestDiff = Math.abs(c - e.endAngle); }
+    }
+    e.endAngle = best;
   }
 }
 
@@ -519,38 +669,39 @@ function detectConstraints(entities: SketchEntity[], tol: number): SketchConstra
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Reconstruction Error
+// Reconstruction Error (analytical point-to-entity distance)
 // ═══════════════════════════════════════════════════════════════
 
-function sampleEntities(entities: SketchEntity[], totalSamples: number): Point2D[] {
-  const points: Point2D[] = [];
-  const totalLength = entities.reduce((s, e) => {
-    if (e.type === 'line') return s + lineLength(e.start, e.end);
-    return s + Math.max(arcLength(e), 0.01);
-  }, 0);
+/** Analytical distance from point to an arc (projects onto arc span or closest endpoint) */
+function pointToArcDist(p: Point2D, arc: SketchArc): number {
+  const dx = p.x - arc.center.x, dy = p.y - arc.center.y;
+  const d = Math.sqrt(dx * dx + dy * dy);
+  const circleDist = Math.abs(d - arc.radius);
+  if (arc.isFullCircle) return circleDist;
 
-  if (totalLength < 1e-10) return points;
+  // Check if point's angle falls within the arc angular span
+  const angle = Math.atan2(dy, dx);
+  const sa = arc.startAngle;
+  const sw = sweepAngle(arc);
 
-  for (const entity of entities) {
-    const len = entity.type === 'line' ? lineLength(entity.start, entity.end) : Math.max(arcLength(entity), 0.01);
-    const n = Math.max(2, Math.round(totalSamples * len / totalLength));
-
-    if (entity.type === 'line') {
-      for (let i = 0; i <= n; i++) {
-        points.push(lerp(entity.start, entity.end, i / n));
-      }
-    } else {
-      const sw = sweepAngle(entity);
-      for (let i = 0; i <= n; i++) {
-        const angle = entity.startAngle + sw * (i / n);
-        points.push({
-          x: entity.center.x + entity.radius * Math.cos(angle),
-          y: entity.center.y + entity.radius * Math.sin(angle),
-        });
-      }
-    }
+  let relAngle = angle - sa;
+  if (sw >= 0) {
+    while (relAngle < 0) relAngle += 2 * Math.PI;
+    while (relAngle > 2 * Math.PI) relAngle -= 2 * Math.PI;
+    if (relAngle <= sw + 1e-9) return circleDist;
+  } else {
+    while (relAngle > 0) relAngle -= 2 * Math.PI;
+    while (relAngle < -2 * Math.PI) relAngle += 2 * Math.PI;
+    if (relAngle >= sw - 1e-9) return circleDist;
   }
-  return points;
+  // Outside arc span — distance to nearest endpoint
+  return Math.min(dist(p, arc.start), dist(p, arc.end));
+}
+
+/** Analytical distance from a point to any sketch entity */
+export function pointToEntityDist(p: Point2D, entity: SketchEntity): number {
+  if (entity.type === 'line') return pointToSegmentDist(p, entity.start, entity.end);
+  return pointToArcDist(p, entity);
 }
 
 export function reconstructionError(
@@ -560,16 +711,13 @@ export function reconstructionError(
 ): { maxError: number; avgError: number; coverage: number } {
   if (entities.length === 0) return { maxError: Infinity, avgError: Infinity, coverage: 0 };
 
-  const reconstructed = sampleEntities(entities, Math.max(200, originalPts.length * 3));
-  if (reconstructed.length === 0) return { maxError: Infinity, avgError: Infinity, coverage: 0 };
-
   let sumErr = 0, maxErr = 0, covered = 0;
   const coverageThreshold = tol ?? 1;
 
   for (const orig of originalPts) {
     let minDist = Infinity;
-    for (const rec of reconstructed) {
-      const d = dist(orig, rec);
+    for (const e of entities) {
+      const d = pointToEntityDist(orig, e);
       if (d < minDist) minDist = d;
     }
     sumErr += minDist;

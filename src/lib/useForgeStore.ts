@@ -39,6 +39,7 @@ import { type ReverseEngineeredModel, reverseEngineerModel, reverseEngineerAssem
 import { decomposeBySlicing, sliceMesh, type DecomposedFeatures, type SliceAxis } from './cross-section';
 import { decompositionToScene, type ProfileToSdfResult } from './profile-to-sdf';
 import { fitContour, reconstructionError, type FittedSlice, type FittedContour } from './sketch-fitting';
+import type { GPUFittedPlane } from './gpu-cross-section';
 
 // ── Types ──
 
@@ -136,6 +137,15 @@ interface ForgeState {
   fitSketches: (modelIndex: number) => Promise<void>;
   clearFittedSlices: () => void;
 
+  // GPU CT Scanner — unified continuous sweep + GPU winding-number rendering
+  gpuFittedPlanes: GPUFittedPlane[];
+  gpuFitting: boolean;
+  rendererRef: THREE.WebGLRenderer | null;
+  setRendererRef: (renderer: THREE.WebGLRenderer) => void;
+  /** Unified scan: geometry-driven planes → GPU rendering → entity fitting */
+  scanModel: (modelIndex: number) => Promise<void>;
+  clearGPUFittedPlanes: () => void;
+
   // Machine actions
   importMachine: (file: File) => Promise<void>;
   selectMachine: (id: string | null) => void;
@@ -192,6 +202,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   ctScanning: false,
   fittedSlices: [],
   sketchFitting: false,
+  gpuFittedPlanes: [],
+  gpuFitting: false,
+  rendererRef: null,
   machines: [],
   selectedMachine: null,
   machineImporting: false,
@@ -781,7 +794,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       const size = new THREE.Vector3();
       bb.getSize(size);
       const diag = size.length();
-      const tol = Math.max(0.1, diag * 0.002);
+      const tol = Math.max(0.001, diag * 0.0001);
 
       const axes: SliceAxis[] = ['X', 'Y', 'Z'];
       const mins = [bb.min.x, bb.min.y, bb.min.z];
@@ -844,7 +857,69 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     }
   },
 
-  clearFittedSlices: () => set({ fittedSlices: [] }),
+  clearFittedSlices: () => set({ fittedSlices: [], gpuFittedPlanes: [] }),
+
+  setRendererRef: (renderer) => set({ rendererRef: renderer }),
+
+  clearGPUFittedPlanes: () => set({ gpuFittedPlanes: [], fittedSlices: [] }),
+
+  scanModel: async (modelIndex) => {
+    const state = get();
+    const model = state.importedModels[modelIndex];
+    const renderer = state.rendererRef;
+    if (!model || !renderer) {
+      console.warn('[Scan] No model or renderer — fallback to CPU');
+      return state.fitSketches(modelIndex);
+    }
+
+    set({ gpuFitting: true, sketchFitting: true });
+
+    try {
+      const { gpuFitPipeline } = await import('./gpu-cross-section');
+
+      console.group('%c⚒️ FORGE SCAN — Geometry-Driven', 'color:#00ff88;font-size:14px;font-weight:bold');
+      console.log('Config: geometry-driven planes, adaptive depth, 2048² GPU render');
+      const t0 = performance.now();
+
+      const results = await gpuFitPipeline(renderer, model.threeGroup, {
+        resolution: 2048,
+        onProgress: (done, total, label) => {
+          if (done % 50 === 0 || done === total) {
+            console.log(`  [${done}/${total}] ${label}`);
+          }
+        },
+      });
+
+      const elapsed = performance.now() - t0;
+
+      // Convert to FittedSlice[] for backward compat
+      const fittedSlices: FittedSlice[] = results.map(r => {
+        const n = r.plane.normal;
+        const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z);
+        let axis: SliceAxis = 'Z';
+        if (ax > ay && ax > az) axis = 'X';
+        else if (ay > ax && ay > az) axis = 'Y';
+        const value = r.plane.origin.dot(r.plane.normal);
+        return { axis, value, contours: r.contours };
+      });
+
+      const totalEntities = results.reduce((s, r) => s + r.entityCount, 0);
+      const totalContours = results.reduce((s, r) => s + r.contours.length, 0);
+      console.log(`⚒️ Scan complete: ${results.length} planes, ${totalContours} contours, ${totalEntities} entities in ${elapsed.toFixed(0)}ms`);
+      console.groupEnd();
+
+      set({
+        gpuFittedPlanes: results,
+        fittedSlices,
+        gpuFitting: false,
+        sketchFitting: false,
+      });
+    } catch (err) {
+      console.error('[Scan] GPU failed, falling back to CPU:', err);
+      set({ gpuFitting: false, sketchFitting: false });
+      return get().fitSketches(modelIndex);
+    }
+  },
 
   // ── Machine Actions ──
 

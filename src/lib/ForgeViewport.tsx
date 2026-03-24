@@ -162,6 +162,17 @@ function CameraSync() {
   return null;
 }
 
+// ── Renderer Sync (exposes WebGL renderer to store for GPU cross-section) ──
+
+function RendererSync() {
+  const { gl } = useThree();
+  const setRendererRef = useForgeStore(s => s.setRendererRef);
+  useEffect(() => {
+    setRendererRef(gl);
+  }, [gl, setRendererRef]);
+  return null;
+}
+
 // ── Imported CAD Meshes (STEP/IGES/BREP) ──
 
 function ImportedMeshes() {
@@ -320,6 +331,7 @@ export default function ForgeViewport({
 
         {/* Helpers */}
         <CameraSync />
+        <RendererSync />
         <FpsCounter onFps={onFps} />
       </Canvas>
     </div>

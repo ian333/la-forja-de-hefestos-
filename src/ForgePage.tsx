@@ -509,6 +509,9 @@ export default function ForgePage() {
   const fittedSlices = useForgeStore(s => s.fittedSlices);
   const sketchFitting = useForgeStore(s => s.sketchFitting);
   const fitSketches = useForgeStore(s => s.fitSketches);
+  const scanModel = useForgeStore(s => s.scanModel);
+  const gpuFittedPlanes = useForgeStore(s => s.gpuFittedPlanes);
+  const gpuFitting = useForgeStore(s => s.gpuFitting);
   const clearFittedSlices = useForgeStore(s => s.clearFittedSlices);
   const [sketchFilterAxis, setSketchFilterAxis] = useState<'X' | 'Y' | 'Z' | null>(null);
   // Módulos
@@ -788,7 +791,7 @@ export default function ForgePage() {
       { id: 'section-z', label: 'Sección Eje Z', icon: '✂', category: 'Inspección', keywords: ['section', 'clip'], action: () => { setSectionAxis('Z'); setSectionEnabled(true); } },
       { id: 'reverse-engineer', label: 'Ingeniería Inversa', description: 'Descomponer modelo importado en primitivas SDF' , icon: '🔬', category: 'Inspección', keywords: ['reverse', 'engineer', 'decompose', 'descomponer', 'primitivas', 'feature recognition'], action: () => { if (importedModels.length > 0) reverseEngineerImported(0); } },
       { id: 'ct-scan', label: 'CT-Scan Decomposición', description: 'Descomponer pieza por secciones transversales (3 ejes)' , icon: '🩻', category: 'Inspección', keywords: ['ct', 'scan', 'cross', 'section', 'sección', 'contorno', 'perfil', 'descomponer', 'slice', 'corte'], action: () => { if (importedModels.length > 0) ctScanImported(0); } },
-      { id: 'fit-sketches', label: 'Fit Sketches', description: 'Extraer líneas y arcos de los contornos (CT-Scan → Sketch)' , icon: '✏️', category: 'Inspección', keywords: ['sketch', 'fit', 'line', 'arc', 'circle', 'línea', 'arco', 'círculo', 'contorno'], action: () => { if (importedModels.length > 0) fitSketches(0); } },
+      { id: 'scan-model', label: 'Escanear Pieza', description: 'GPU Scan: planos guiados por geometría + winding-number → error mínimo', icon: '⚒️', category: 'Inspección', keywords: ['scan', 'escanear', 'ct', 'gpu', 'geometry', 'fit', 'sketch', 'winding', 'plane', 'plano'], action: () => { if (importedModels.length > 0) scanModel(0); } },
 
       // ── Materiales ──
       { id: 'mat-pla', label: 'PLA', description: 'Ácido poliláctico — Impresión 3D FDM', icon: '🧱', category: 'Materiales', keywords: ['plastico', 'filament', 'filamento', 'fdm', 'fff'], action: () => {} },
@@ -837,7 +840,7 @@ export default function ForgePage() {
     ];
 
     return actions;
-  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches]);
+  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches, scanModel]);
 
   const shortcutTools: ShortcutTool[] = useMemo(() => [
     { label: 'Caja', icon: '■', shortcut: '1', action: () => addPrimitive('box') },
@@ -1170,8 +1173,7 @@ export default function ForgePage() {
                 { label: 'Draft Analysis', icon: '◸', disabled: true },
                 { divider: true },
                 { label: '🔬 Reverse Engineer', icon: '⚙', action: () => { if (importedModels.length > 0) reverseEngineerImported(0); }, disabled: importedModels.length === 0 || reverseEngineering },
-                { label: '🩻 CT-Scan Decompose', icon: '⚙', action: () => { if (importedModels.length > 0) ctScanImported(0); }, disabled: importedModels.length === 0 || ctScanning },
-                { label: '✏️ Fit Sketches', icon: '⚙', action: () => { if (importedModels.length > 0) fitSketches(0); }, disabled: importedModels.length === 0 || sketchFitting },
+                { label: '⚒️ Escanear Pieza', icon: '⚙', action: () => { if (importedModels.length > 0) scanModel(0); }, disabled: importedModels.length === 0 || sketchFitting },
                 { label: fittedSlices.length > 0 ? '🧹 Clear Sketches' : '🧹 Clear Sketches', icon: '✕', action: clearFittedSlices, disabled: fittedSlices.length === 0 },
                 { divider: true },
                 { label: 'Component Color Cycling', icon: '🎨', disabled: true },
@@ -1486,18 +1488,11 @@ export default function ForgePage() {
                     {reverseEngineering ? '⏳' : '🔬'}
                   </button>
                   <button
-                    onClick={() => ctScanImported(i)}
-                    disabled={ctScanning}
-                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#60a5fa] hover:text-[#f0ece4] hover:bg-[#60a5fa]/20 transition-all disabled:opacity-40"
-                    title="CT-Scan: descomponer por secciones transversales (3 ejes)">
-                    {ctScanning ? '⏳' : '🩻'}
-                  </button>
-                  <button
-                    onClick={() => fitSketches(i)}
+                    onClick={() => scanModel(i)}
                     disabled={sketchFitting}
-                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#c9a84c] hover:text-[#f0ece4] hover:bg-[#c9a84c]/20 transition-all disabled:opacity-40"
-                    title="Fit Sketches: extraer líneas y arcos">
-                    {sketchFitting ? '⏳' : '✏️'}
+                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-[#00ff88] hover:text-[#f0ece4] bg-[#00ff88]/10 hover:bg-[#00ff88]/25 border border-[#00ff88]/25 transition-all disabled:opacity-40"
+                    title="Escanear: barrido continuo GPU + fitting → error mínimo">
+                    {gpuFitting ? '⏳ Escaneando...' : '⚒️ Escanear'}
                   </button>
                   <button onClick={() => removeImportedModel(i)}
                     className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#4a4035] hover:text-[#f87171] hover:bg-[#f87171]/10 transition-all"
@@ -1656,85 +1651,158 @@ export default function ForgePage() {
             </div>
           )}
 
-          {/* Sketch Fitting Results Panel */}
-          {fittedSlices.length > 0 && (
-            <div className="absolute bottom-4 right-4 z-20 w-72 max-h-[40vh] overflow-y-auto rounded-xl bg-[#181c26]/95 border border-[#c9a84c]/30 backdrop-blur-md shadow-2xl animate-scaleIn">
-              <div className="sticky top-0 bg-[#181c26] border-b border-[#c9a84c]/20 px-3 py-2.5 flex items-center justify-between">
+          {/* Sketch Fitting Results Panel — Precision Dashboard */}
+          {fittedSlices.length > 0 && (() => {
+            const allContours = fittedSlices.flatMap(s => s.contours);
+            const totalEntities = allContours.reduce((s, c) => s + c.entities.length, 0);
+            const totalLines = allContours.reduce((s, c) => s + c.entities.filter(e => e.type === 'line').length, 0);
+            const totalArcs = allContours.reduce((s, c) => s + c.entities.filter(e => e.type === 'arc' && !e.isFullCircle).length, 0);
+            const totalCircles = allContours.reduce((s, c) => s + c.entities.filter(e => e.type === 'arc' && e.isFullCircle).length, 0);
+            const totalConstraints = allContours.reduce((s, c) => s + c.constraints.length, 0);
+            const maxErr = allContours.reduce((m, c) => Math.max(m, c.error?.maxError ?? 0), 0);
+            const avgErr = allContours.length > 0
+              ? allContours.reduce((s, c) => s + (c.error?.avgError ?? 0), 0) / allContours.length
+              : 0;
+            const avgCov = allContours.length > 0
+              ? allContours.reduce((s, c) => s + (c.error?.coverage ?? 0), 0) / allContours.length
+              : 0;
+            const errColor = maxErr < 0.01 ? '#4ade80' : maxErr < 0.1 ? '#facc15' : '#f87171';
+            const errLabel = maxErr < 0.01 ? 'PRECISO' : maxErr < 0.1 ? 'ACEPTABLE' : 'IMPRECISO';
+            // Constraint type counts
+            const cTypes: Record<string, number> = {};
+            for (const c of allContours) for (const con of c.constraints) cTypes[con.type] = (cTypes[con.type] ?? 0) + 1;
+            const cIcons: Record<string, string> = {
+              tangent: '⟛', perpendicular: '⊥', collinear: '∥', horizontal: '─',
+              vertical: '│', concentric: '◎', equal_radius: '⊜',
+            };
+
+            return (
+            <div className="absolute bottom-4 right-4 z-20 w-80 max-h-[50vh] overflow-y-auto rounded-xl bg-[#0d0f14]/95 border border-[#c9a84c]/25 backdrop-blur-md shadow-2xl animate-scaleIn"
+              style={{ boxShadow: '0 0 40px rgba(0,0,0,0.6), 0 0 12px rgba(201,168,76,0.08)' }}>
+              {/* Header */}
+              <div className="sticky top-0 bg-[#0d0f14] border-b border-[#c9a84c]/15 px-3 py-2 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">✏️</span>
-                  <span className="text-[12px] font-bold text-[#c9a84c] tracking-wide">SKETCHES</span>
+                  <span className="text-sm">{'⚒️'}</span>
+                  <span className="text-[11px] font-bold text-[#c9a84c] tracking-wider">
+                    FORGE SCAN
+                  </span>
+                  {gpuFittedPlanes.length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider"
+                      style={{ background: '#00ff8815', color: '#00ff88', border: '1px solid #00ff8830' }}>
+                      {gpuFittedPlanes.length} PLANOS
+                    </span>
+                  )}
+                  <span className="ml-1 px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider"
+                    style={{ background: `${errColor}15`, color: errColor, border: `1px solid ${errColor}30` }}>
+                    {errLabel}
+                  </span>
                 </div>
                 <button onClick={clearFittedSlices}
-                  className="text-[10px] text-[#4a4035] hover:text-[#f87171] px-1.5 py-0.5 rounded hover:bg-[#f87171]/10 transition-all">
-                  ✕
-                </button>
+                  className="text-[10px] text-[#4a4035] hover:text-[#f87171] px-1.5 py-0.5 rounded hover:bg-[#f87171]/10 transition-all">✕</button>
               </div>
-              {/* Stats */}
-              <div className="px-3 py-2 border-b border-[#c9a84c]/10 text-[10px] grid grid-cols-2 gap-x-3 gap-y-1">
-                <span className="text-[#8a7e6b]">Slices:</span>
-                <span className="text-[#f0ece4] font-medium">{fittedSlices.length}</span>
-                <span className="text-[#8a7e6b]">Contornos:</span>
-                <span className="text-[#f0ece4] font-medium">{fittedSlices.reduce((s, sl) => s + sl.contours.length, 0)}</span>
-                <span className="text-[#8a7e6b]">Entidades:</span>
-                <span className="text-[#f0ece4] font-medium text-[#c9a84c]">
-                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.length, 0), 0)}
-                </span>
-                <span className="text-[#8a7e6b]">Desglose:</span>
-                <span className="text-[#f0ece4] font-medium text-[9px]">
-                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.filter(e => e.type === 'line').length, 0), 0)}L{' '}
-                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.filter(e => e.type === 'arc' && !e.isFullCircle).length, 0), 0)}A{' '}
-                  {fittedSlices.reduce((s, sl) => s + sl.contours.reduce((s2, c) => s2 + c.entities.filter(e => e.type === 'arc' && e.isFullCircle).length, 0), 0)}⊙
-                </span>
+
+              {/* Precision Metrics */}
+              <div className="px-3 py-2 border-b border-white/[0.04]">
+                <div className="text-[8px] text-[#4a4035] uppercase tracking-widest mb-1.5 font-semibold">Precisión</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <div className="text-[13px] font-bold font-mono" style={{ color: errColor }}>{maxErr < 0.001 ? maxErr.toExponential(1) : maxErr.toFixed(4)}</div>
+                    <div className="text-[7px] text-[#4a4035] uppercase tracking-wider mt-0.5">Max Error</div>
+                  </div>
+                  <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <div className="text-[13px] font-bold font-mono text-[#60a5fa]">{avgErr < 0.001 ? avgErr.toExponential(1) : avgErr.toFixed(4)}</div>
+                    <div className="text-[7px] text-[#4a4035] uppercase tracking-wider mt-0.5">Avg Error</div>
+                  </div>
+                  <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <div className="text-[13px] font-bold font-mono text-[#c9a84c]">{(avgCov * 100).toFixed(1)}%</div>
+                    <div className="text-[7px] text-[#4a4035] uppercase tracking-wider mt-0.5">Cobertura</div>
+                  </div>
+                </div>
               </div>
+
+              {/* Entity Stats */}
+              <div className="px-3 py-2 border-b border-white/[0.04] flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-0.5 inline-block rounded-full bg-[#f0ece4]" />
+                  <span className="text-[9px] text-[#8a7e6b]">{totalLines} Líneas</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 inline-block rounded-full border border-[#c084fc]" style={{ borderWidth: 1.5 }} />
+                  <span className="text-[9px] text-[#8a7e6b]">{totalArcs} Arcos</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 inline-block rounded-full border border-[#c9a84c]" style={{ borderWidth: 1.5 }} />
+                  <span className="text-[9px] text-[#8a7e6b]">{totalCircles} Círculos</span>
+                </div>
+                <span className="text-[9px] text-[#4a4035] ml-auto font-mono">{totalEntities}e</span>
+              </div>
+
+              {/* Constraint Badges */}
+              {totalConstraints > 0 && (
+                <div className="px-3 py-1.5 border-b border-white/[0.04]">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[8px] text-[#4a4035] uppercase tracking-widest font-semibold mr-1">Constraints</span>
+                    {Object.entries(cTypes).map(([type, count]) => (
+                      <span key={type} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono"
+                        style={{ background: 'rgba(201,168,76,0.08)', color: '#c9a84c', border: '1px solid rgba(201,168,76,0.15)' }}>
+                        <span className="text-[9px]">{cIcons[type] ?? '?'}</span>
+                        <span>{count}</span>
+                      </span>
+                    ))}
+                    <span className="text-[8px] text-[#4a4035] ml-auto">{totalConstraints} total</span>
+                  </div>
+                </div>
+              )}
+
               {/* Axis filter */}
-              <div className="px-3 py-1.5 border-b border-[#c9a84c]/10 flex items-center gap-1">
-                <span className="text-[9px] text-[#8a7e6b] mr-1">Eje:</span>
+              <div className="px-3 py-1.5 border-b border-white/[0.04] flex items-center gap-1">
+                <span className="text-[8px] text-[#4a4035] uppercase tracking-widest font-semibold mr-1">Eje</span>
                 {(['X', 'Y', 'Z'] as const).map(ax => {
                   const count = fittedSlices.filter(s => s.axis === ax).length;
+                  const axCol: Record<string, string> = { X: '#f87171', Y: '#4ade80', Z: '#60a5fa' };
                   return (
-                    <button
-                      key={ax}
+                    <button key={ax}
                       onClick={() => setSketchFilterAxis(prev => prev === ax ? null : ax)}
                       className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all ${
                         sketchFilterAxis === ax
-                          ? 'bg-[#c9a84c]/20 text-[#c9a84c]'
-                          : 'text-[#4a4035] hover:text-[#8a7e6b]'
+                          ? 'ring-1'
+                          : 'opacity-50 hover:opacity-80'
                       }`}
+                      style={sketchFilterAxis === ax ? { background: `${axCol[ax]}15`, color: axCol[ax], boxShadow: `inset 0 0 0 1px ${axCol[ax]}40` } : { color: axCol[ax] }}
                     >
-                      {ax} ({count})
+                      {ax}<span className="font-normal ml-0.5 text-[8px]">{count}</span>
                     </button>
                   );
                 })}
-                <button
-                  onClick={() => setSketchFilterAxis(null)}
+                <button onClick={() => setSketchFilterAxis(null)}
                   className={`px-2 py-0.5 rounded text-[9px] transition-all ${
-                    sketchFilterAxis === null
-                      ? 'bg-[#c9a84c]/20 text-[#c9a84c]'
-                      : 'text-[#4a4035] hover:text-[#8a7e6b]'
-                  }`}
-                >
-                  ALL
-                </button>
+                    sketchFilterAxis === null ? 'bg-[#c9a84c]/15 text-[#c9a84c] font-bold' : 'text-[#4a4035] hover:text-[#8a7e6b]'
+                  }`}>ALL</button>
               </div>
-              {/* Per-slice summary */}
-              <div className="px-2 py-1 space-y-0.5 max-h-[20vh] overflow-y-auto">
+
+              {/* Per-slice rows */}
+              <div className="px-1.5 py-1 space-y-px max-h-[22vh] overflow-y-auto">
                 {(sketchFilterAxis ? fittedSlices.filter(s => s.axis === sketchFilterAxis) : fittedSlices).map((slice, i) => {
                   const entities = slice.contours.reduce((s, c) => s + c.entities.length, 0);
                   const lines = slice.contours.reduce((s, c) => s + c.entities.filter(e => e.type === 'line').length, 0);
                   const arcs = slice.contours.reduce((s, c) => s + c.entities.filter(e => e.type === 'arc').length, 0);
+                  const sliceMaxErr = slice.contours.reduce((m, c) => Math.max(m, c.error?.maxError ?? 0), 0);
+                  const sliceErrCol = sliceMaxErr < 0.01 ? '#4ade80' : sliceMaxErr < 0.1 ? '#facc15' : '#f87171';
                   const axColors: Record<string, string> = { X: '#f87171', Y: '#4ade80', Z: '#60a5fa' };
                   return (
-                    <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[#c9a84c]/5 text-[9px]">
-                      <span style={{ color: axColors[slice.axis] }} className="font-bold w-3">{slice.axis}</span>
-                      <span className="text-[#8a7e6b]">{slice.value.toFixed(1)}</span>
+                    <div key={i} className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-white/[0.02] text-[9px] group">
+                      <span style={{ color: axColors[slice.axis] }} className="font-bold w-3 text-[10px]">{slice.axis}</span>
+                      <span className="text-[#6b6050] font-mono w-10 text-right">{slice.value.toFixed(2)}</span>
                       <span className="text-[#f0ece4]">{slice.contours.length}c</span>
-                      <span className="text-[#4a4035]">{entities}e ({lines}L {arcs}A)</span>
+                      <span className="text-[#4a4035] flex-1">{entities}e <span className="text-[8px]">({lines}L {arcs}A)</span></span>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: sliceErrCol }} title={`maxErr: ${sliceMaxErr.toFixed(6)}`} />
                     </div>
                   );
                 })}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* Sketch Fitting indicator */}
           {sketchFitting && (
