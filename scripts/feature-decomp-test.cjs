@@ -124,7 +124,10 @@ function detectPlanarDirectionsV3(faces, bb) {
   const planar = clusters.filter(cl => {
     const isCop = cl.sigmaTheta<1.5 && cl.sigmaOffsetRel<0.001;
     const hasMass = cl.faceCount>=3 || cl.areaPct>0.3;
-    return (isCop && hasMass) || cl.areaPct>3.0;
+    // High-area fallback requires offset consistency to reject curved surface bands
+    // (tessellated cones/cylinders create normal-bands with high area but spread offsets)
+    const highAreaPlanar = cl.areaPct>3.0 && cl.sigmaOffsetRel<0.005;
+    return (isCop && hasMass) || highAreaPlanar;
   });
 
   planar.sort((a,b)=>b.area-a.area);
@@ -793,6 +796,82 @@ function makeFeature(profile, centroid2d, normal, depth, sliceCount) {
 }
 
 /**
+ * Detect revolution bodies: multiple concentric circles along same axis
+ * with varying radius → 1 revolution feature instead of N holes.
+ */
+function detectRevolutions(features, diag) {
+  // Group circular features by axis direction
+  const dirGroups = new Map();
+  for (let i = 0; i < features.length; i++) {
+    const f = features[i];
+    if (f.profile.type !== 'circle') continue;
+    const n = f.normal;
+    const nKey = `${n[0].toFixed(1)},${n[1].toFixed(1)},${n[2].toFixed(1)}`;
+    if (!dirGroups.has(nKey)) dirGroups.set(nKey, []);
+    dirGroups.get(nKey).push(i);
+  }
+
+  const used = new Set();
+  const revolutions = [];
+
+  for (const [nKey, indices] of dirGroups) {
+    if (indices.length < 3) continue;
+
+    // Sub-group by centroid (concentric circles at same position)
+    const centroidGroups = [];
+    for (const i of indices) {
+      const f = features[i];
+      let found = false;
+      for (const g of centroidGroups) {
+        const ref = features[g[0]].centroid;
+        if (dist2d(ref, f.centroid) < diag * 0.05) {
+          g.push(i);
+          found = true;
+          break;
+        }
+      }
+      if (!found) centroidGroups.push([i]);
+    }
+
+    for (const group of centroidGroups) {
+      if (group.length < 3) continue;
+
+      const fts = group.map(i => features[i]);
+      const radii = fts.map(f => (f.params.diameter || 0) / 2);
+      const avgR = radii.reduce((s, r) => s + r, 0) / radii.length;
+      const maxR = Math.max(...radii);
+      const minR = Math.min(...radii);
+      const rDev = avgR > 0 ? (maxR - minR) / avgR : 0;
+
+      for (const i of group) used.add(i);
+
+      const isTapered = rDev > 0.05;
+      revolutions.push({
+        type: 'revolution',
+        label: isTapered
+          ? `◎ Revolution taper ø${(minR*2).toFixed(1)}→ø${(maxR*2).toFixed(1)}`
+          : `◎ Revolution ø${(avgR*2).toFixed(1)}`,
+        profile: fts[0].profile,
+        normal: fts[0].normal,
+        depth: fts[0].depth,
+        sliceCount: group.length,
+        params: { minDiameter: minR*2, maxDiameter: maxR*2 },
+        confidence: 0.85,
+        centroid: fts[0].centroid,
+        children: fts,
+        count: group.length,
+      });
+    }
+  }
+
+  const result = [...revolutions];
+  for (let i = 0; i < features.length; i++) {
+    if (!used.has(i)) result.push(features[i]);
+  }
+  return result;
+}
+
+/**
  * Detect linear and circular patterns among same-type features.
  */
 function detectPatterns(features, diag) {
@@ -1050,8 +1129,11 @@ async function main() {
       : profilesWithMeta;
     const rawFeatures = clusterProfilesToFeatures(nonBase, diag);
 
-    // ── 5. Detect patterns ──
-    const allFeatures = detectPatterns(rawFeatures, diag);
+    // ── 5. Detect revolutions (collapse concentric circles → 1 feature) ──
+    const withRevolutions = detectRevolutions(rawFeatures, diag);
+
+    // ── 6. Detect patterns ──
+    const allFeatures = detectPatterns(withRevolutions, diag);
 
     // ── Report ──
     console.log(`${B}${CY}═══ ${relName} ═══${RS}`);
@@ -1059,9 +1141,10 @@ async function main() {
     console.log(`  ${MG}Raw: ${totalLines}L + ${totalArcs}A + ${totalCircles}⊙ = ${rawTotal} entities${RS}`);
 
     // Count feature types
-    let nHoles=0, nSlots=0, nPockets=0, nBosses=0, nPatterns=0, nKeyholes=0, nFreeform=0;
+    let nHoles=0, nSlots=0, nPockets=0, nBosses=0, nPatterns=0, nKeyholes=0, nFreeform=0, nRevolutions=0;
     for (const f of allFeatures) {
       if (f.type === 'pattern_circular' || f.type === 'pattern_linear') nPatterns++;
+      else if (f.type === 'revolution') nRevolutions++;
       else if (f.type === 'hole') nHoles++;
       else if (f.type === 'slot') nSlots++;
       else if (f.type === 'rect_pocket' || f.type === 'fillet_pocket' || f.type === 'polygon_pocket') nPockets++;
@@ -1074,6 +1157,7 @@ async function main() {
     const ratio = rawTotal > 0 ? (rawTotal / featureCount).toFixed(0) : '∞';
     console.log(`  ${GR}${B}Features: ${featureCount} total (${ratio}:1 compression)${RS}`);
     if (base) console.log(`    ${BL}█ ${base.label}${RS}`);
+    if (nRevolutions) console.log(`    ${CY}◎ ${nRevolutions} Revolutions${RS}`);
     if (nHoles)    console.log(`    ${YE}⊙ ${nHoles} Holes${RS}`);
     if (nSlots)    console.log(`    ${YE}⊂⊃ ${nSlots} Slots${RS}`);
     if (nPockets)  console.log(`    ${YE}▭ ${nPockets} Pockets${RS}`);
@@ -1084,11 +1168,14 @@ async function main() {
       if (f.type === 'pattern_circular' || f.type === 'pattern_linear') {
         console.log(`      ${MG}${f.label}${RS}`);
       }
+      if (f.type === 'revolution') {
+        console.log(`      ${CY}${f.label}${RS}`);
+      }
     }
     if (nFreeform)  console.log(`    ${D}~ ${nFreeform} Freeform${RS}`);
 
     // Show individual features (compact)
-    const nonPatternFeatures = allFeatures.filter(f => f.type !== 'pattern_circular' && f.type !== 'pattern_linear');
+    const nonPatternFeatures = allFeatures.filter(f => f.type !== 'pattern_circular' && f.type !== 'pattern_linear' && f.type !== 'revolution');
     if (nonPatternFeatures.length <= 20) {
       for (const f of nonPatternFeatures) {
         console.log(`    ${D}  ${f.label}${RS}`);
@@ -1119,6 +1206,7 @@ async function main() {
     globalStats.pockets += nPockets;
     globalStats.bosses += nBosses + (base ? 1 : 0);
     globalStats.patterns += nPatterns;
+    globalStats.revolutions = (globalStats.revolutions || 0) + nRevolutions;
     globalStats.keyholes += nKeyholes;
     globalStats.freeform += nFreeform;
     // Collect freeform diagnostics
@@ -1149,6 +1237,7 @@ async function main() {
   console.log(`  ${GR}${B}Features detected:  ${globalStats.totalFeatures}  (${ratio}:1 compression)${RS}`);
   console.log();
   console.log(`  ${YE}⊙  Holes:     ${globalStats.holes}${RS}`);
+  console.log(`  ${CY}◎  Revolutions: ${globalStats.revolutions || 0}${RS}`);
   console.log(`  ${YE}⊂⊃ Slots:     ${globalStats.slots}${RS}`);
   console.log(`  ${YE}▭  Pockets:   ${globalStats.pockets}${RS}`);
   console.log(`  ${YE}⊙⊂ Keyholes:  ${globalStats.keyholes}${RS}`);
