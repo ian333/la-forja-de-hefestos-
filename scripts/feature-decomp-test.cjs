@@ -184,7 +184,307 @@ function detectPlanarDirectionsV3(faces, bb) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Plane generation
+// Axial Symmetry Detection (Revolution Bodies)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Detect if the part is a body of revolution (turned part).
+ * 
+ * Strategy: For each candidate axis (X, Y, Z), check if face normals
+ * are predominantly radial (perpendicular to axis). A cylinder/cone/torus
+ * has normals that all lie in the plane perpendicular to the axis.
+ *
+ * Returns { isRevolution, axis, axisDirIndex, score, center, extentMin, extentMax }
+ * or null if not a revolution body.
+ */
+function detectAxisymmetry(faces, bb) {
+  if (faces.length < 10) return null;
+
+  const axes = [
+    { dir: [1, 0, 0], label: 'X' },
+    { dir: [0, 1, 0], label: 'Y' },
+    { dir: [0, 0, 1], label: 'Z' },
+  ];
+
+  const bbCenter = scale3(add3(bb.min, bb.max), 0.5);
+  const diag = len3(sub3(bb.max, bb.min));
+  const bbSize = sub3(bb.max, bb.min);
+
+  let bestAxis = null;
+  let bestScore = 0;
+
+  for (const ax of axes) {
+    const d = ax.dir;
+
+    // ── Step 1: Check bounding box aspect ratio ──
+    // Revolution body: the two dims perpendicular to axis should be similar
+    const perpDims = [];
+    for (let i = 0; i < 3; i++) {
+      if (d[i] < 0.5) perpDims.push(bbSize[i]);
+    }
+    if (perpDims.length < 2) continue;
+    const circRatio = Math.min(perpDims[0], perpDims[1]) / Math.max(perpDims[0], perpDims[1]);
+    if (circRatio < 0.85) continue; // perpendicular cross-section not square enough
+
+    // ── Step 2: Normal radiality test ──
+    // For each face, project the normal onto the plane perp to axis.
+    // For a revolution body, this projected normal should point radially
+    // away from the axis (i.e., parallel to the vector from axis to face center).
+    let totalArea = 0;
+    let radialArea = 0;
+    let axialArea = 0; // normals parallel to axis (flat ends)
+
+    for (const f of faces) {
+      const n = f.normal;
+      const area = f.area;
+      totalArea += area;
+
+      // Component of normal along axis
+      const axialComp = Math.abs(dot3(n, d));
+
+      // If normal is mostly along axis → flat end face (ok for revolution)
+      if (axialComp > 0.9) {
+        axialArea += area;
+        continue;
+      }
+
+      // Project face center onto the perpendicular plane
+      const c = f.center;
+      const relC = sub3(c, bbCenter);
+      // Remove axial component
+      const perpC = sub3(relC, scale3(d, dot3(relC, d)));
+      const perpLen = len3(perpC);
+      if (perpLen < diag * 0.001) continue; // too close to axis
+
+      // Projected normal (remove axial component)
+      const perpN = sub3(n, scale3(d, dot3(n, d)));
+      const perpNLen = len3(perpN);
+      if (perpNLen < 0.01) continue;
+
+      // Radial direction = perpC normalized
+      const radialDir = scale3(perpC, 1 / perpLen);
+      const perpNNorm = scale3(perpN, 1 / perpNLen);
+
+      // Dot between projected normal and radial direction
+      // Should be close to ±1 for revolution bodies
+      const radialDot = Math.abs(dot3(perpNNorm, radialDir));
+
+      if (radialDot > 0.8) {
+        radialArea += area;
+      }
+    }
+
+    // Score: fraction of area that's either radial or axial (flat ends)
+    const score = totalArea > 0 ? (radialArea + axialArea) / totalArea : 0;
+
+    if (score > bestScore) {
+      bestScore = score;
+      // Compute extent along axis
+      let extMin = Infinity, extMax = -Infinity;
+      for (const f of faces) {
+        const proj = dot3(f.center, d);
+        extMin = Math.min(extMin, proj);
+        extMax = Math.max(extMax, proj);
+      }
+      bestAxis = {
+        isRevolution: true,
+        axis: d,
+        axisLabel: ax.label,
+        score,
+        center: bbCenter,
+        extentMin: extMin,
+        extentMax: extMax,
+        perpRadius: Math.max(perpDims[0], perpDims[1]) / 2,
+      };
+    }
+  }
+
+  // Threshold: >70% of area must be radial+axial for revolution
+  if (!bestAxis || bestScore < 0.70) return null;
+  return bestAxis;
+}
+
+/**
+ * Generate smart slice planes based on part type.
+ *
+ * For REVOLUTION bodies:
+ *   - Multiple TRANSVERSE slices (perp to axis) to capture diameter profile
+ *   - One LONGITUDINAL slice (through axis) to capture the revolution profile
+ *
+ * For PRISMATIC bodies:
+ *   - Current approach: slice along detected planar directions
+ */
+function generateSmartSlicePlanes(directions, diag, bb, revolution) {
+  if (revolution) {
+    return generateRevolutionPlanes(revolution, diag);
+  }
+  return generateSlicePlanes(directions, diag);
+}
+
+function generateRevolutionPlanes(rev, diag) {
+  const planes = [];
+  const axis = rev.axis;
+  const lo = rev.extentMin;
+  const hi = rev.extentMax;
+  const range = hi - lo;
+
+  // ── Transverse slices (perpendicular to axis) ──
+  // Many slices to capture the diameter profile at each height
+  const nTransverse = Math.min(25, Math.max(8, Math.ceil(range / (diag * 0.02))));
+  const margin = range * 0.02;
+  for (let i = 0; i < nTransverse; i++) {
+    const t = nTransverse === 1 ? 0.5 : i / (nTransverse - 1);
+    const offset = (lo + margin) + ((hi - margin) - (lo + margin)) * t;
+    planes.push({
+      normal: axis,
+      offset,
+      label: `⊥${rev.axisLabel} t${i + 1}/${nTransverse}`,
+      sliceType: 'transverse',
+    });
+  }
+
+  // ── Longitudinal slices (through axis, perpendicular to it) ──
+  // These capture the revolution half-profile
+  // We create 2 perpendicular longitudinal planes
+  const perpAxes = [];
+  if (Math.abs(axis[0]) > 0.9) {
+    perpAxes.push([0, 1, 0], [0, 0, 1]);
+  } else if (Math.abs(axis[1]) > 0.9) {
+    perpAxes.push([1, 0, 0], [0, 0, 1]);
+  } else {
+    perpAxes.push([1, 0, 0], [0, 1, 0]);
+  }
+
+  for (let li = 0; li < perpAxes.length; li++) {
+    const lNormal = perpAxes[li];
+    // Slice through center of revolution
+    const offset = dot3(rev.center, lNormal);
+    const lLabel = lNormal[0] ? 'X' : lNormal[1] ? 'Y' : 'Z';
+    planes.push({
+      normal: lNormal,
+      offset,
+      label: `∥${rev.axisLabel} long-${lLabel}`,
+      sliceType: 'longitudinal',
+    });
+  }
+
+  return planes;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Revolution Profile Analysis
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * From transverse slices of a revolution body, extract the diameter profile.
+ * Each transverse slice should give circles → we track radius vs position.
+ */
+function extractRevolutionProfile(sliceResults, revolution) {
+  const axis = revolution.axis;
+  const profile = []; // { pos (along axis), outerR, innerR (if hole) }
+
+  for (const sr of sliceResults) {
+    if (sr.plane.sliceType !== 'transverse') continue;
+    const contours = sr.sr.contours;
+    if (contours.length === 0) continue;
+
+    const pos = sr.plane.offset;
+
+    // Find largest and smallest contours (outer profile + bore)
+    let maxArea = 0, minArea = Infinity;
+    let outerR = 0, innerR = 0;
+
+    for (const c of contours) {
+      const area = Math.abs(c.area);
+      // Fit circle to contour points
+      const fit = fitCircle(c.points);
+      if (!fit || fit.radius < 0.001) continue;
+
+      if (area > maxArea) {
+        maxArea = area;
+        outerR = fit.radius;
+      }
+      if (area < minArea && contours.length > 1) {
+        minArea = area;
+        innerR = fit.radius;
+      }
+    }
+
+    if (outerR > 0) {
+      profile.push({ pos, outerR, innerR: contours.length > 1 ? innerR : 0 });
+    }
+  }
+
+  // Sort by position along axis
+  profile.sort((a, b) => a.pos - b.pos);
+  return profile;
+}
+
+/**
+ * Analyze revolution profile to detect features:
+ * - Constant radius sections → cylinders
+ * - Radius changes → shoulders/steps
+ * - Smooth radius transitions → fillets/chamfers
+ * - Holes (innerR > 0) → bores
+ */
+function analyzeRevolutionProfile(profile, diag) {
+  if (profile.length < 2) return [];
+
+  const features = [];
+  const rTol = diag * 0.005; // radius tolerance
+
+  // ── Group consecutive points with similar outer radius → cylindrical sections ──
+  let sectionStart = 0;
+  for (let i = 1; i <= profile.length; i++) {
+    const sameR = i < profile.length &&
+      Math.abs(profile[i].outerR - profile[sectionStart].outerR) < rTol;
+
+    if (!sameR) {
+      // Emit section [sectionStart .. i-1]
+      const pts = profile.slice(sectionStart, i);
+      const avgR = pts.reduce((s, p) => s + p.outerR, 0) / pts.length;
+      const avgInnerR = pts.reduce((s, p) => s + p.innerR, 0) / pts.length;
+      const startPos = pts[0].pos;
+      const endPos = pts[pts.length - 1].pos;
+      const length = endPos - startPos;
+
+      features.push({
+        type: avgInnerR > rTol ? 'tube_section' : 'cylinder_section',
+        startPos,
+        endPos,
+        length,
+        outerRadius: avgR,
+        innerRadius: avgInnerR,
+        outerDiameter: avgR * 2,
+        innerDiameter: avgInnerR * 2,
+      });
+
+      sectionStart = i;
+    }
+  }
+
+  // ── Detect transitions between sections ──
+  const transitions = [];
+  for (let i = 1; i < features.length; i++) {
+    const prev = features[i - 1];
+    const curr = features[i];
+    const dR = curr.outerRadius - prev.outerRadius;
+    if (Math.abs(dR) > rTol) {
+      transitions.push({
+        type: dR > 0 ? 'step_up' : 'step_down',
+        position: prev.endPos,
+        fromRadius: prev.outerRadius,
+        toRadius: curr.outerRadius,
+        radiusChange: Math.abs(dR),
+      });
+    }
+  }
+
+  return { sections: features, transitions };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Plane generation (original — for prismatic parts)
 // ═══════════════════════════════════════════════════════════════
 
 function generateSlicePlanes(directions, diag) {
@@ -407,14 +707,17 @@ function fitContour(pts, tolerance) {
   const tol = tolerance ?? Math.max(0.001, diag*0.0001);
 
   const kasaFit0 = fitCircle(cleaned);
-  if (kasaFit0 && kasaFit0.radius < diag*2) {
+  // Guard: radius must be < 1.5× diagonal (prevents almost-straight contours fitting as huge circles)
+  if (kasaFit0 && kasaFit0.radius < diag * 1.5 && kasaFit0.radius > 0.001) {
     const cFit = refineCircle(cleaned, kasaFit0);
-    const chordErr = cFit.radius * (1 - Math.cos(Math.PI / Math.max(6, n)));
-    const circleTol = Math.min(Math.max(tol, chordErr * 2.5), diag * 0.02);
-    const relErr = cFit.maxError / Math.max(cFit.radius, 1e-12);
-    if (cFit.maxError < circleTol || (relErr < 0.03 && cFit.maxError < diag * 0.01)) {
-      const arc = makeArc(cFit.center,cFit.radius,0,2*Math.PI,cleaned[0],cleaned[0]);
-      return { entities: [arc], constraints: [] };
+    if (cFit.radius < diag * 1.5) {
+      const chordErr = cFit.radius * (1 - Math.cos(Math.PI / Math.max(6, n)));
+      const circleTol = Math.min(Math.max(tol, chordErr * 2.5), diag * 0.02);
+      const relErr = cFit.maxError / Math.max(cFit.radius, 1e-12);
+      if (cFit.maxError < circleTol || (relErr < 0.03 && cFit.maxError < diag * 0.01)) {
+        const arc = makeArc(cFit.center,cFit.radius,0,2*Math.PI,cleaned[0],cleaned[0]);
+        return { entities: [arc], constraints: [] };
+      }
     }
   }
 
@@ -451,7 +754,7 @@ function recursiveFit(pts,start,end,tol,depth,contourDiag){
       const arcChordErr=cf.radius*(1-Math.cos(Math.PI/Math.max(6,count)));
       const closeLoopTol=Math.min(Math.max(tol,arcChordErr*2.5),contourDiag*0.02);
       const isClosed=chordLen<closeLoopTol*2;
-      if(isClosed&&count>=6)return[makeArc(cf.center,cf.radius,0,2*Math.PI,pts[start],pts[start])];
+      if(isClosed&&count>=6&&cf.radius<contourDiag*2)return[makeArc(cf.center,cf.radius,0,2*Math.PI,pts[start],pts[start])];
       const sa=Math.atan2(pts[start].y-cf.center.y,pts[start].x-cf.center.x);
       const ea=Math.atan2(pts[end].y-cf.center.y,pts[end].x-cf.center.x);
       const mi=Math.floor((start+end)/2);
@@ -518,8 +821,8 @@ function classifyProfile(entities, contourArea, maxContourArea) {
       if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
       allPts.push(p);
     }
-    // For arcs, also sample along the arc to get true bbox
-    if (e.type === 'arc') {
+    // For arcs, also sample along the arc to get true bbox (skip degenerate huge-radius arcs)
+    if (e.type === 'arc' && e.radius < 1e5) {
       const sw = sweepAng(e);
       for (let i = 0; i <= 16; i++) {
         const a = e.startAngle + sw * (i / 16);
@@ -1051,7 +1354,23 @@ async function main() {
 
   const occt = await occtFactory();
   const modelsDir = path.join(__dirname, '..', 'models', 'step');
-  const files = collectStepFiles(modelsDir).sort();
+
+  // ── CLI: accept individual file(s), --viz flag ──
+  const rawArgs = process.argv.slice(2);
+  const vizMode = rawArgs.includes('--viz');
+  const args = rawArgs.filter(a => a !== '--viz');
+  let files;
+  if (args.length > 0) {
+    files = args.map(a => path.resolve(a)).filter(f => {
+      if (!fs.existsSync(f)) { console.warn(`  ⚠ File not found: ${f}`); return false; }
+      return true;
+    });
+    if (files.length === 0) { console.error('No valid STEP files provided.'); process.exit(1); }
+  } else {
+    files = collectStepFiles(modelsDir).sort();
+  }
+
+  const singleMode = files.length === 1;
 
   console.log(`${GR}${'═'.repeat(80)}${RS}`);
   console.log(`${GR}${B}⚒️  FEATURE DECOMPOSITION: STEP → Dirs → Slice → Fit → Profile → Feature Tree${RS}`);
@@ -1066,7 +1385,6 @@ async function main() {
   };
 
   for (const filePath of files) {
-    const relName = path.relative(modelsDir, filePath);
     let loaded;
     try { loaded = await loadStep(filePath, occt); }
     catch (e) { console.log(`  ${RD}✗${RS} ${relName} — WASM error`); continue; }
@@ -1076,9 +1394,10 @@ async function main() {
     const bb = computeBB3(faces);
     const diag = len3(sub3(bb.max, bb.min));
 
-    // ── 1. Detect planar directions ──
+    // ── 1. Detect symmetry + planar directions ──
+    const revolution = detectAxisymmetry(faces, bb);
     const dirs = detectPlanarDirectionsV3(faces, bb);
-    const planes = generateSlicePlanes(dirs, diag);
+    const planes = generateSmartSlicePlanes(dirs, diag, bb, revolution);
 
     // ── 2. Slice + fit entities ──
     let totalLines = 0, totalArcs = 0, totalCircles = 0;
@@ -1136,9 +1455,86 @@ async function main() {
     const allFeatures = detectPatterns(withRevolutions, diag);
 
     // ── Report ──
+    const relName = path.relative(modelsDir, filePath) || path.basename(filePath);
     console.log(`${B}${CY}═══ ${relName} ═══${RS}`);
+    if (revolution) {
+      console.log(`  ${GR}${B}◎ REVOLUTION BODY${RS} ${D}(axis=${revolution.axisLabel}, score=${(revolution.score*100).toFixed(0)}%)${RS}`);
+    } else {
+      console.log(`  ${D}PRISMATIC body${RS}`);
+    }
     console.log(`  ${D}${faces.length} tris | diag=${diag.toFixed(1)}mm | ${dirs.length} dirs | ${planes.length} planes${RS}`);
     console.log(`  ${MG}Raw: ${totalLines}L + ${totalArcs}A + ${totalCircles}⊙ = ${rawTotal} entities${RS}`);
+
+    // ── Revolution profile analysis ──
+    let revProfile = null, revAnalysis = null;
+    if (revolution) {
+      revProfile = extractRevolutionProfile(sliceResults, revolution);
+      revAnalysis = analyzeRevolutionProfile(revProfile, diag);
+    }
+
+    // ── Single file: verbose output ──
+    if (singleMode) {
+      console.log();
+      console.log(`  ${B}Bounding Box:${RS} [${bb.min.map(v=>v.toFixed(3)).join(', ')}] → [${bb.max.map(v=>v.toFixed(3)).join(', ')}]`);
+      console.log(`  ${B}Diagonal:${RS}     ${diag.toFixed(4)}mm`);
+
+      // ── Revolution body: show diameter profile ──
+      if (revolution && revProfile && revProfile.length > 0) {
+        console.log();
+        console.log(`  ${B}${GR}◎ Revolution Profile (${revolution.axisLabel}-axis):${RS}`);
+        console.log(`    ${D}${'Pos'.padStart(10)}  ${'OD'.padStart(8)}  ${'ID'.padStart(8)}  ${'Wall'.padStart(8)}${RS}`);
+        for (const p of revProfile) {
+          const wall = p.innerR > 0 ? (p.outerR - p.innerR).toFixed(4) : '—';
+          console.log(`    ${p.pos.toFixed(4).padStart(10)}  ${(p.outerR*2).toFixed(4).padStart(8)}  ${(p.innerR > 0 ? (p.innerR*2).toFixed(4) : '—').padStart(8)}  ${wall.padStart(8)}`);
+        }
+        if (revAnalysis) {
+          console.log();
+          console.log(`  ${B}${GR}◎ Revolution Sections:${RS}`);
+          for (let si = 0; si < revAnalysis.sections.length; si++) {
+            const s = revAnalysis.sections[si];
+            const typeIcon = s.type === 'tube_section' ? '◎' : '●';
+            console.log(`    ${GR}${typeIcon}${RS} ${s.type.padEnd(18)} OD=${s.outerDiameter.toFixed(4)}  ${s.innerDiameter > 0.001 ? 'ID=' + s.innerDiameter.toFixed(4) : '       '}  L=${s.length.toFixed(4)}  [${s.startPos.toFixed(3)}..${s.endPos.toFixed(3)}]`);
+          }
+          if (revAnalysis.transitions.length > 0) {
+            console.log();
+            console.log(`  ${B}${YE}◎ Transitions (shoulders/steps):${RS}`);
+            for (const t of revAnalysis.transitions) {
+              console.log(`    ${YE}${t.type === 'step_up' ? '↗' : '↘'}${RS} ${t.type.padEnd(12)} at ${t.position.toFixed(4)}  Ø${(t.fromRadius*2).toFixed(4)} → Ø${(t.toRadius*2).toFixed(4)}  ΔR=${t.radiusChange.toFixed(4)}`);
+            }
+          }
+        }
+      }
+
+      console.log();
+      console.log(`  ${B}${CY}Detected Directions (${dirs.length}):${RS}`);
+      for (let di = 0; di < dirs.length; di++) {
+        const d = dirs[di];
+        const nStr = `[${d.normal.map(v=>v.toFixed(3)).join(', ')}]`;
+        console.log(`    ${GR}#${di+1}${RS} ${d.label.padEnd(12)} n=${nStr}  area=${d.areaPct.toFixed(1)}%  offsets=[${d.offsetRange[0].toFixed(3)}..${d.offsetRange[1].toFixed(3)}]  ${d.isAxis ? '(axis)' : ''}`);
+      }
+      console.log();
+      console.log(`  ${B}${CY}Slice Planes (${planes.length}):${RS}`);
+      for (let pi = 0; pi < planes.length; pi++) {
+        const p = planes[pi];
+        const nStr = `[${p.normal.map(v=>v.toFixed(3)).join(', ')}]`;
+        const sr = sliceResults[pi];
+        const numC = sr.sr.contours.length;
+        console.log(`    ${D}#${(pi+1).toString().padStart(2)}${RS} ${p.label.padEnd(14)} n=${nStr} d=${p.offset.toFixed(4)}  → ${numC} contour${numC!==1?'s':''}`);
+      }
+      console.log();
+      console.log(`  ${B}${CY}Profiles Classified (${profilesWithMeta.length}):${RS}`);
+      for (let pi = 0; pi < profilesWithMeta.length; pi++) {
+        const pm = profilesWithMeta[pi];
+        const p = pm.profile;
+        const nL = p.entities.filter(e=>e.type==='line').length;
+        const nA = p.entities.filter(e=>e.type==='arc'&&!e.isFullCircle).length;
+        const nC = p.entities.filter(e=>e.type==='arc'&&e.isFullCircle).length;
+        const bb2 = p.bbox;
+        const w = (bb2.maxX - bb2.minX).toFixed(3), h = (bb2.maxY - bb2.minY).toFixed(3);
+        console.log(`    ${YE}#${(pi+1).toString().padStart(2)}${RS} ${p.type.padEnd(14)} ${(nL+'L+'+nA+'A+'+nC+'C').padEnd(10)} area=${p.area.toFixed(4)}  bbox=${w}×${h}  ${p.isHole?'(hole)':'(boss)'}  plane=${pm.planeLabel}`);
+      }
+      console.log();
+    }
 
     // Count feature types
     let nHoles=0, nSlots=0, nPockets=0, nBosses=0, nPatterns=0, nKeyholes=0, nFreeform=0, nRevolutions=0;
@@ -1197,6 +1593,98 @@ async function main() {
     }
 
     console.log();
+
+    // ── Single file: detailed feature dump ──
+    if (singleMode) {
+      console.log(`  ${B}${CY}All Features Detail (${allFeatures.length}):${RS}`);
+      for (let fi = 0; fi < allFeatures.length; fi++) {
+        const f = allFeatures[fi];
+        const params = f.params ? Object.entries(f.params).map(([k,v])=>`${k}=${typeof v==='number'?v.toFixed(4):v}`).join(' ') : '';
+        const conf = f.confidence ? ` conf=${f.confidence.toFixed(2)}` : '';
+        const norm = f.normal ? ` n=[${f.normal.map(v=>v.toFixed(2)).join(',')}]` : '';
+        const cent = f.centroid ? ` @(${f.centroid.x.toFixed(3)},${f.centroid.y.toFixed(3)})` : '';
+        const depth = f.depth != null ? ` depth=${f.depth.toFixed(4)}` : '';
+        const slices = f.sliceCount != null ? ` ×${f.sliceCount}slices` : '';
+        console.log(`    ${GR}#${fi+1}${RS} ${B}${f.type}${RS} — ${f.label}`);
+        console.log(`       ${params}${conf}${norm}${cent}${depth}${slices}`);
+        if (f.profile) {
+          const ents = f.profile.entities;
+          for (let ei = 0; ei < ents.length; ei++) {
+            const e = ents[ei];
+            if (e.type === 'line') {
+              console.log(`       ${D}  L: (${e.start.x.toFixed(4)},${e.start.y.toFixed(4)}) → (${e.end.x.toFixed(4)},${e.end.y.toFixed(4)}) len=${dist2d(e.start,e.end).toFixed(4)}${RS}`);
+            } else if (e.isFullCircle) {
+              console.log(`       ${D}  ⊙: c=(${e.center.x.toFixed(4)},${e.center.y.toFixed(4)}) r=${e.radius.toFixed(4)}${RS}`);
+            } else {
+              const sw = (e.endAngle - e.startAngle) * 180 / Math.PI;
+              console.log(`       ${D}  A: c=(${e.center.x.toFixed(4)},${e.center.y.toFixed(4)}) r=${e.radius.toFixed(4)} sweep=${sw.toFixed(1)}°${RS}`);
+            }
+          }
+        }
+      }
+      if (base) {
+        console.log(`    ${BL}#base${RS} ${B}${base.type}${RS} — ${base.label}  area=${base.area.toFixed(4)}`);
+      }
+      console.log();
+    }
+
+    // ── Viz JSON export ──
+    if (vizMode) {
+      const vizData = {
+        fileName: path.basename(filePath),
+        boundingBox: { min: bb.min, max: bb.max },
+        diagonal: diag,
+        revolution: revolution ? { axisLabel: revolution.axisLabel, score: revolution.score } : null,
+        directions: dirs.map(d => ({ label: d.label, normal: d.normal, areaPct: d.areaPct, offsetRange: d.offsetRange, isAxis: d.isAxis })),
+        slices: sliceResults.map(({ plane, sr }, si) => ({
+          label: plane.label,
+          normal: plane.normal,
+          offset: plane.offset,
+          contours: sr.contours.map(c => ({
+            points: c.points.map(p => [p.x, p.y]),
+            area: c.area,
+          })),
+        })),
+        profiles: profilesWithMeta.map(pm => {
+          const p = pm.profile;
+          return {
+            type: p.type,
+            isHole: p.isHole,
+            area: p.area,
+            bbox: p.bbox,
+            centroid: p.centroid,
+            planeLabel: pm.planeLabel,
+            normal: pm.normal,
+            offset: pm.offset,
+            radius: p.radius,
+            rectWidth: p.rectWidth,
+            rectHeight: p.rectHeight,
+            cornerRadius: p.cornerRadius,
+            entities: p.entities.map(e => {
+              if (e.type === 'line') return { type: 'line', start: [e.start.x, e.start.y], end: [e.end.x, e.end.y] };
+              if (e.isFullCircle) return { type: 'circle', center: [e.center.x, e.center.y], radius: e.radius };
+              return { type: 'arc', center: [e.center.x, e.center.y], radius: e.radius, startAngle: e.startAngle, endAngle: e.endAngle };
+            }),
+          };
+        }),
+        features: allFeatures.map(f => ({
+          type: f.type,
+          label: f.label,
+          params: f.params,
+          confidence: f.confidence,
+          normal: f.normal,
+          centroid: f.centroid,
+          depth: f.depth,
+          sliceCount: f.sliceCount,
+          count: f.count,
+          children: f.children ? f.children.map(c => ({ type: c.type, label: c.label, params: c.params, centroid: c.centroid })) : undefined,
+        })),
+        base: base ? { type: base.type, label: base.label, area: base.area, normal: base.normal } : null,
+      };
+      const outPath = path.join(__dirname, '..', 'public', 'viz-data.json');
+      fs.writeFileSync(outPath, JSON.stringify(vizData, null, 2));
+      console.log(`  ${GR}✓ Viz data → ${outPath}${RS}`);
+    }
 
     globalStats.files++;
     globalStats.totalRawEntities += rawTotal;

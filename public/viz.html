@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚒ La Forja — Feature Viz</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1e1e1e; color: #ccc; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; overflow: hidden; height: 100vh; }
+  #app { display: flex; height: 100vh; }
+
+  /* Left panel — slice selector */
+  #sidebar { width: 260px; background: #252526; border-right: 1px solid #3c3c3c; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; }
+  #sidebar h2 { padding: 12px 16px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+  #file-info { padding: 8px 16px; border-bottom: 1px solid #3c3c3c; }
+  #file-info .name { font-size: 14px; font-weight: 600; color: #0696D7; }
+  #file-info .stats { font-size: 11px; color: #888; margin-top: 4px; }
+
+  .slice-list { flex: 1; overflow-y: auto; }
+  .slice-item { padding: 6px 16px; cursor: pointer; border-left: 3px solid transparent; display: flex; justify-content: space-between; align-items: center; }
+  .slice-item:hover { background: #2a2d2e; }
+  .slice-item.active { background: #37373d; border-left-color: #0696D7; }
+  .slice-item .label { font-size: 12px; }
+  .slice-item .count { font-size: 10px; color: #888; background: #333; padding: 1px 6px; border-radius: 8px; }
+
+  #feature-list { border-top: 1px solid #3c3c3c; }
+  .feat-item { padding: 5px 16px; font-size: 11px; cursor: pointer; border-left: 3px solid transparent; }
+  .feat-item:hover { background: #2a2d2e; }
+  .feat-item.active { background: #37373d; border-left-color: #e5c07b; }
+  .feat-item .type-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+  /* Main canvas area */
+  #main { flex: 1; display: flex; flex-direction: column; position: relative; }
+  #toolbar { height: 32px; background: #333; display: flex; align-items: center; padding: 0 12px; gap: 12px; border-bottom: 1px solid #3c3c3c; flex-shrink: 0; }
+  #toolbar label { font-size: 11px; color: #aaa; }
+  #toolbar input[type="checkbox"] { margin-right: 4px; }
+  #toolbar select, #toolbar button { background: #444; border: 1px solid #555; color: #ccc; padding: 2px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; }
+  #toolbar button:hover { background: #555; }
+  #canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+  canvas { position: absolute; top: 0; left: 0; }
+
+  /* Tooltip */
+  #tooltip { position: absolute; background: #1e1e1eee; border: 1px solid #555; padding: 8px 12px; border-radius: 4px; font-size: 11px; pointer-events: none; display: none; max-width: 300px; z-index: 10; }
+  #tooltip .tt-type { color: #e5c07b; font-weight: 600; }
+  #tooltip .tt-dim { color: #98c379; }
+
+  /* Legend */
+  #legend { position: absolute; bottom: 8px; right: 8px; background: #252526dd; border: 1px solid #3c3c3c; border-radius: 4px; padding: 8px 12px; font-size: 10px; z-index: 5; }
+  #legend div { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend .swatch { width: 12px; height: 3px; border-radius: 1px; }
+
+  /* No data */
+  #no-data { display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 16px; flex-direction: column; gap: 8px; }
+  #no-data code { background: #333; padding: 4px 10px; border-radius: 4px; font-size: 12px; color: #98c379; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div id="file-info">
+      <div class="name" id="fname">—</div>
+      <div class="stats" id="fstats"></div>
+    </div>
+    <h2>Slice Planes</h2>
+    <div class="slice-list" id="slice-list"></div>
+    <h2 id="feat-header">Features</h2>
+    <div id="feature-list"></div>
+  </div>
+  <div id="main">
+    <div id="toolbar">
+      <label><input type="checkbox" id="chk-contour" checked> Contornos</label>
+      <label><input type="checkbox" id="chk-entities" checked> Entidades</label>
+      <label><input type="checkbox" id="chk-labels"> Etiquetas</label>
+      <select id="sel-color">
+        <option value="type">Color por tipo</option>
+        <option value="feature">Color por feature</option>
+        <option value="plane">Color por plano</option>
+      </select>
+      <button id="btn-fit">Fit All</button>
+      <button id="btn-reload">↻ Reload</button>
+      <span style="flex:1"></span>
+      <span id="coords" style="font-size:10px;color:#666;font-family:monospace"></span>
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="cv"></canvas>
+      <div id="tooltip"></div>
+      <div id="legend">
+        <div><span class="swatch" style="background:#61afef"></span> Contorno raw</div>
+        <div><span class="swatch" style="background:#98c379"></span> Línea</div>
+        <div><span class="swatch" style="background:#e5c07b"></span> Arco</div>
+        <div><span class="swatch" style="background:#c678dd"></span> Círculo</div>
+        <div><span class="swatch" style="background:#e06c75"></span> Base body</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="no-data" style="display:none">
+  <div>No hay datos de visualización</div>
+  <code>node scripts/feature-decomp-test.cjs --viz "tu_archivo.stp"</code>
+</div>
+
+<script>
+// ═════════════════════════════════════════════════════════════
+// La Forja — Feature Decomposition Visualizer
+// ═════════════════════════════════════════════════════════════
+
+const COLORS = {
+  contour: '#61afef44',
+  contourStroke: '#61afef',
+  line: '#98c379',
+  arc: '#e5c07b',
+  circle: '#c678dd',
+  base: '#e06c75',
+  // Profile types
+  circle_fill: '#c678dd33',
+  rect: '#56b6c2',
+  fillet_rect: '#56b6c2',
+  slot: '#d19a66',
+  keyhole: '#e06c75',
+  polygon: '#be5046',
+  freeform: '#636d83',
+};
+
+const FEATURE_COLORS = [
+  '#e06c75', '#98c379', '#e5c07b', '#61afef', '#c678dd',
+  '#56b6c2', '#d19a66', '#be5046', '#abb2bf', '#ff6b81',
+  '#7bed9f', '#ffa502', '#70a1ff', '#a29bfe', '#fd79a8',
+];
+
+let DATA = null;
+let activeSlice = -1;  // -1 = show all
+let activeFeature = -1;
+let cam = { cx: 0, cy: 0, zoom: 1 };
+let dragging = false, dragStart = { x: 0, y: 0 }, camStart = { cx: 0, cy: 0 };
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+// ── Resize ──
+function resize() {
+  const r = window.devicePixelRatio || 1;
+  cv.width = wrap.clientWidth * r;
+  cv.height = wrap.clientHeight * r;
+  cv.style.width = wrap.clientWidth + 'px';
+  cv.style.height = wrap.clientHeight + 'px';
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ── Load data ──
+async function loadData() {
+  try {
+    const res = await fetch('/viz-data.json?' + Date.now());
+    if (!res.ok) throw new Error('No viz-data.json');
+    DATA = await res.json();
+    buildUI();
+    fitAll();
+    resize();
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('no-data').style.display = 'none';
+  } catch (e) {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('no-data').style.display = 'flex';
+  }
+}
+
+// ── Build sidebar ──
+function buildUI() {
+  document.getElementById('fname').textContent = DATA.fileName;
+  const rev = DATA.revolution ? ` | ◎ ${DATA.revolution.axisLabel}` : '';
+  document.getElementById('fstats').innerHTML =
+    `${DATA.diagonal.toFixed(1)}mm diag | ${DATA.slices.length} slices | ${DATA.profiles.length} profiles | ${DATA.features.length} features${rev}`;
+
+  // Slice list
+  const sl = document.getElementById('slice-list');
+  sl.innerHTML = '';
+  // "All" option
+  const allItem = document.createElement('div');
+  allItem.className = 'slice-item active';
+  allItem.innerHTML = `<span class="label">▣ Todos</span><span class="count">${DATA.profiles.length}</span>`;
+  allItem.onclick = () => selectSlice(-1);
+  sl.appendChild(allItem);
+
+  DATA.slices.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'slice-item';
+    div.innerHTML = `<span class="label">${s.label}</span><span class="count">${s.contours.length}</span>`;
+    div.onclick = () => selectSlice(i);
+    sl.appendChild(div);
+  });
+
+  // Feature list
+  const fl = document.getElementById('feature-list');
+  fl.innerHTML = '';
+  if (DATA.base) {
+    const div = document.createElement('div');
+    div.className = 'feat-item';
+    div.innerHTML = `<span class="type-badge" style="background:${COLORS.base}"></span>${DATA.base.label}`;
+    fl.appendChild(div);
+  }
+  DATA.features.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'feat-item';
+    const col = FEATURE_COLORS[i % FEATURE_COLORS.length];
+    div.innerHTML = `<span class="type-badge" style="background:${col}"></span>${f.label}`;
+    div.onclick = () => selectFeature(i);
+    fl.appendChild(div);
+  });
+  document.getElementById('feat-header').textContent = `Features (${DATA.features.length})`;
+}
+
+function selectSlice(idx) {
+  activeSlice = idx;
+  activeFeature = -1;
+  document.querySelectorAll('.slice-item').forEach((el, i) => el.classList.toggle('active', i === idx + 1));
+  document.querySelectorAll('.feat-item').forEach(el => el.classList.remove('active'));
+  fitAll();
+  draw();
+}
+
+function selectFeature(idx) {
+  activeFeature = activeFeature === idx ? -1 : idx;
+  activeSlice = -1;
+  document.querySelectorAll('.slice-item').forEach((el, i) => el.classList.toggle('active', i === 0));
+  document.querySelectorAll('.feat-item').forEach((el, i) => {
+    // +1 for base
+    const fi = DATA.base ? i - 1 : i;
+    el.classList.toggle('active', fi === activeFeature);
+  });
+  draw();
+}
+
+// ── Camera ──
+function fitAll() {
+  if (!DATA) return;
+  // Compute bounds from all visible profiles
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const profs = getVisibleProfiles();
+  for (const pm of profs) {
+    if (pm.bbox.minX < minX) minX = pm.bbox.minX;
+    if (pm.bbox.minY < minY) minY = pm.bbox.minY;
+    if (pm.bbox.maxX > maxX) maxX = pm.bbox.maxX;
+    if (pm.bbox.maxY > maxY) maxY = pm.bbox.maxY;
+  }
+  if (!isFinite(minX)) { minX = -100; minY = -100; maxX = 100; maxY = 100; }
+  const w = maxX - minX || 1, h = maxY - minY || 1;
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  cam.zoom = Math.min(cw / (w * 1.15), ch / (h * 1.15));
+  cam.cx = (minX + maxX) / 2;
+  cam.cy = (minY + maxY) / 2;
+}
+
+function worldToScreen(wx, wy) {
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  return {
+    x: cw / 2 + (wx - cam.cx) * cam.zoom,
+    y: ch / 2 - (wy - cam.cy) * cam.zoom,  // flip Y
+  };
+}
+
+function screenToWorld(sx, sy) {
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  return {
+    x: cam.cx + (sx - cw / 2) / cam.zoom,
+    y: cam.cy - (sy - ch / 2) / cam.zoom,
+  };
+}
+
+// ── Get visible profiles based on selection ──
+function getVisibleProfiles() {
+  if (!DATA) return [];
+  if (activeSlice >= 0) {
+    const s = DATA.slices[activeSlice];
+    return DATA.profiles.filter(p => p.planeLabel === s.label && Math.abs(p.offset - s.offset) < 0.01);
+  }
+  return DATA.profiles;
+}
+
+// ── Draw ──
+function draw() {
+  if (!DATA) return;
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  ctx.clearRect(0, 0, cw, ch);
+
+  // Background grid
+  drawGrid(cw, ch);
+
+  const showContour = document.getElementById('chk-contour').checked;
+  const showEntities = document.getElementById('chk-entities').checked;
+  const showLabels = document.getElementById('chk-labels').checked;
+  const colorMode = document.getElementById('sel-color').value;
+
+  // Draw contours from slice data
+  if (showContour) {
+    if (activeSlice >= 0) {
+      const s = DATA.slices[activeSlice];
+      for (const c of s.contours) {
+        drawContourRaw(c.points, COLORS.contourStroke + '55', COLORS.contour);
+      }
+    } else {
+      // Draw all contours dimly
+      for (const s of DATA.slices) {
+        for (const c of s.contours) {
+          drawContourRaw(c.points, COLORS.contourStroke + '22', 'transparent');
+        }
+      }
+    }
+  }
+
+  // Draw fitted entities
+  if (showEntities) {
+    const profs = getVisibleProfiles();
+    for (let pi = 0; pi < profs.length; pi++) {
+      const pm = profs[pi];
+      // Determine color
+      let col;
+      if (colorMode === 'feature') {
+        // Find which feature this profile belongs to
+        const fi = findFeatureForProfile(pm);
+        col = fi >= 0 ? FEATURE_COLORS[fi % FEATURE_COLORS.length] : '#636d83';
+      } else if (colorMode === 'plane') {
+        const si = DATA.slices.findIndex(s => s.label === pm.planeLabel);
+        col = FEATURE_COLORS[si % FEATURE_COLORS.length];
+      } else {
+        col = null; // per-entity type
+      }
+
+      for (const e of pm.entities) {
+        const c = col || (e.type === 'line' ? COLORS.line : e.type === 'circle' ? COLORS.circle : COLORS.arc);
+        drawEntity(e, c);
+      }
+
+      // Profile label
+      if (showLabels && pm.centroid) {
+        const sp = worldToScreen(pm.centroid.x, pm.centroid.y);
+        ctx.fillStyle = '#aaa';
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(pm.type, sp.x, sp.y - 4);
+      }
+    }
+  }
+
+  // Highlight active feature
+  if (activeFeature >= 0 && DATA.features[activeFeature]) {
+    const f = DATA.features[activeFeature];
+    if (f.centroid) {
+      const sp = worldToScreen(f.centroid.x, f.centroid.y);
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, 12, 0, Math.PI * 2);
+      ctx.strokeStyle = '#e5c07b';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = 1;
+
+      ctx.fillStyle = '#e5c07b';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.label, sp.x, sp.y - 18);
+    }
+  }
+}
+
+function drawGrid(cw, ch) {
+  // Adaptive grid
+  const gridSizes = [0.1, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+  let gridSize = 10;
+  for (const gs of gridSizes) {
+    if (gs * cam.zoom > 30) { gridSize = gs; break; }
+  }
+
+  const topLeft = screenToWorld(0, ch);
+  const botRight = screenToWorld(cw, 0);
+  const startX = Math.floor(topLeft.x / gridSize) * gridSize;
+  const startY = Math.floor(topLeft.y / gridSize) * gridSize;
+
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 0.5;
+  for (let x = startX; x <= botRight.x; x += gridSize) {
+    const sp = worldToScreen(x, 0);
+    ctx.beginPath(); ctx.moveTo(sp.x, 0); ctx.lineTo(sp.x, ch); ctx.stroke();
+  }
+  for (let y = startY; y <= botRight.y; y += gridSize) {
+    const sp = worldToScreen(0, y);
+    ctx.beginPath(); ctx.moveTo(0, sp.y); ctx.lineTo(cw, sp.y); ctx.stroke();
+  }
+
+  // Axis
+  const ox = worldToScreen(0, 0);
+  ctx.strokeStyle = '#e06c7544';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ox.x, 0); ctx.lineTo(ox.x, ch); ctx.stroke();
+  ctx.strokeStyle = '#98c37944';
+  ctx.beginPath(); ctx.moveTo(0, ox.y); ctx.lineTo(cw, ox.y); ctx.stroke();
+}
+
+function drawContourRaw(pts, strokeColor, fillColor) {
+  if (pts.length < 2) return;
+  ctx.beginPath();
+  const s0 = worldToScreen(pts[0][0], pts[0][1]);
+  ctx.moveTo(s0.x, s0.y);
+  for (let i = 1; i < pts.length; i++) {
+    const sp = worldToScreen(pts[i][0], pts[i][1]);
+    ctx.lineTo(sp.x, sp.y);
+  }
+  ctx.closePath();
+  if (fillColor !== 'transparent') { ctx.fillStyle = fillColor; ctx.fill(); }
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawEntity(e, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  if (e.type === 'line') {
+    const a = worldToScreen(e.start[0], e.start[1]);
+    const b = worldToScreen(e.end[0], e.end[1]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    // Endpoints
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(a.x, a.y, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI * 2); ctx.fill();
+  } else if (e.type === 'circle') {
+    const c = worldToScreen(e.center[0], e.center[1]);
+    const r = e.radius * cam.zoom;
+    ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI * 2); ctx.stroke();
+    // Center cross
+    ctx.strokeStyle = color + '88';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(c.x - 4, c.y); ctx.lineTo(c.x + 4, c.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(c.x, c.y - 4); ctx.lineTo(c.x, c.y + 4); ctx.stroke();
+  } else if (e.type === 'arc') {
+    const c = worldToScreen(e.center[0], e.center[1]);
+    const r = e.radius * cam.zoom;
+    // Canvas arc goes clockwise, our angles are CCW math convention
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r, -e.endAngle, -e.startAngle);
+    ctx.stroke();
+    // Arc endpoints
+    const ax = e.center[0] + e.radius * Math.cos(e.startAngle);
+    const ay = e.center[1] + e.radius * Math.sin(e.startAngle);
+    const bx = e.center[0] + e.radius * Math.cos(e.endAngle);
+    const by = e.center[1] + e.radius * Math.sin(e.endAngle);
+    const sa = worldToScreen(ax, ay), sb = worldToScreen(bx, by);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(sa.x, sa.y, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sb.x, sb.y, 2, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function findFeatureForProfile(pm) {
+  if (!DATA) return -1;
+  for (let fi = 0; fi < DATA.features.length; fi++) {
+    const f = DATA.features[fi];
+    if (!f.centroid || !pm.centroid) continue;
+    const dx = f.centroid.x - pm.centroid.x, dy = f.centroid.y - pm.centroid.y;
+    if (Math.sqrt(dx * dx + dy * dy) < DATA.diagonal * 0.03 && f.type.includes(pm.type.replace('_', ''))) return fi;
+  }
+  return -1;
+}
+
+// ── Mouse interaction ──
+cv.addEventListener('mousedown', e => {
+  dragging = true;
+  dragStart = { x: e.offsetX, y: e.offsetY };
+  camStart = { cx: cam.cx, cy: cam.cy };
+  cv.style.cursor = 'grabbing';
+});
+
+cv.addEventListener('mousemove', e => {
+  const w = screenToWorld(e.offsetX, e.offsetY);
+  document.getElementById('coords').textContent = `(${w.x.toFixed(2)}, ${w.y.toFixed(2)})`;
+  if (dragging) {
+    const dx = e.offsetX - dragStart.x;
+    const dy = e.offsetY - dragStart.y;
+    cam.cx = camStart.cx - dx / cam.zoom;
+    cam.cy = camStart.cy + dy / cam.zoom;
+    draw();
+  }
+  // Tooltip on hover
+  updateTooltip(e.offsetX, e.offsetY, w);
+});
+
+cv.addEventListener('mouseup', () => { dragging = false; cv.style.cursor = 'crosshair'; });
+cv.addEventListener('mouseleave', () => { dragging = false; cv.style.cursor = 'crosshair'; document.getElementById('tooltip').style.display = 'none'; });
+
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const w = screenToWorld(e.offsetX, e.offsetY);
+  const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  cam.zoom *= factor;
+  // Zoom toward cursor
+  cam.cx = w.x - (e.offsetX - wrap.clientWidth / 2) / cam.zoom;
+  cam.cy = w.y + (e.offsetY - wrap.clientHeight / 2) / cam.zoom;
+  draw();
+}, { passive: false });
+
+function updateTooltip(sx, sy, world) {
+  if (!DATA) return;
+  const tt = document.getElementById('tooltip');
+  const profs = getVisibleProfiles();
+  let closest = null, bestDist = 20; // px threshold
+
+  for (const pm of profs) {
+    if (!pm.centroid) continue;
+    const sp = worldToScreen(pm.centroid.x, pm.centroid.y);
+    const d = Math.sqrt((sp.x - sx) ** 2 + (sp.y - sy) ** 2);
+    // Also check if cursor is inside bbox
+    if (world.x >= pm.bbox.minX && world.x <= pm.bbox.maxX && world.y >= pm.bbox.minY && world.y <= pm.bbox.maxY) {
+      if (!closest || pm.area < closest.area) { closest = pm; bestDist = 0; }
+    } else if (d < bestDist) {
+      closest = pm; bestDist = d;
+    }
+  }
+
+  if (closest) {
+    const w = closest.bbox.maxX - closest.bbox.minX;
+    const h = closest.bbox.maxY - closest.bbox.minY;
+    let dims = `${w.toFixed(2)} × ${h.toFixed(2)} mm`;
+    if (closest.radius) dims += ` | ø${(closest.radius * 2).toFixed(2)}`;
+    const nL = closest.entities.filter(e => e.type === 'line').length;
+    const nA = closest.entities.filter(e => e.type === 'arc').length;
+    const nC = closest.entities.filter(e => e.type === 'circle').length;
+    tt.innerHTML = `<div class="tt-type">${closest.type} ${closest.isHole ? '(hole)' : '(boss)'}</div>` +
+      `<div class="tt-dim">${dims}</div>` +
+      `<div>${nL}L + ${nA}A + ${nC}C | area=${closest.area.toFixed(1)}</div>` +
+      `<div style="color:#888">plane: ${closest.planeLabel}</div>`;
+    tt.style.display = 'block';
+    tt.style.left = (sx + 16) + 'px';
+    tt.style.top = (sy + 16) + 'px';
+  } else {
+    tt.style.display = 'none';
+  }
+}
+
+// ── Toolbar ──
+document.getElementById('chk-contour').onchange = draw;
+document.getElementById('chk-entities').onchange = draw;
+document.getElementById('chk-labels').onchange = draw;
+document.getElementById('sel-color').onchange = draw;
+document.getElementById('btn-fit').onclick = () => { fitAll(); draw(); };
+document.getElementById('btn-reload').onclick = loadData;
+
+cv.style.cursor = 'crosshair';
+loadData();
+</script>
+</body>
+</html>
