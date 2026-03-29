@@ -55,6 +55,7 @@ import {
   machineDisplayString,
 } from '@/lib/machine-config';
 import { decomposeAssembly, assemblyStats } from '@/lib/step-import';
+import BlueprintPanel from '@/components/BlueprintPanel';
 import { playClick, playCreate, playComplete, playDelete, playUndo, playError } from '@/lib/forge-audio';
 
 // ═══════════════════════════════════════════════════════════════
@@ -513,6 +514,7 @@ export default function ForgePage() {
   const gpuFittedPlanes = useForgeStore(s => s.gpuFittedPlanes);
   const gpuFitting = useForgeStore(s => s.gpuFitting);
   const clearFittedSlices = useForgeStore(s => s.clearFittedSlices);
+  const setModelMaterial = useForgeStore(s => s.setModelMaterial);
   const [sketchFilterAxis, setSketchFilterAxis] = useState<'X' | 'Y' | 'Z' | null>(null);
   // Módulos
   const activeModuleId = useForgeStore(s => s.activeModuleId);
@@ -552,6 +554,8 @@ export default function ForgePage() {
   const [omnibarOpen, setOmnibarOpen] = useState(false);
   const [shortcutOverlay, setShortcutOverlay] = useState<{ x: number; y: number } | null>(null);
   const [machinePanel, setMachinePanel] = useState(false);
+  const [blueprintPanel, setBlueprintPanel] = useState(false);
+  const [materialPanel, setMaterialPanel] = useState<number | null>(null);
   // Camera transitions
   const [targetView, setTargetView] = useState<StandardView | null>(null);
 
@@ -1176,6 +1180,7 @@ export default function ForgePage() {
                 { label: '⚒️ Escanear Pieza', icon: '⚙', action: () => { if (importedModels.length > 0) scanModel(0); }, disabled: importedModels.length === 0 || sketchFitting },
                 { label: fittedSlices.length > 0 ? '🧹 Clear Sketches' : '🧹 Clear Sketches', icon: '✕', action: clearFittedSlices, disabled: fittedSlices.length === 0 },
                 { divider: true },
+                { label: '📐 Extracción de Planos', icon: '📐', action: () => setBlueprintPanel(true) },
                 { label: 'Component Color Cycling', icon: '🎨', disabled: true },
                 { divider: true },
                 { label: 'Standard Views', icon: '◇', sub: [
@@ -1295,6 +1300,16 @@ export default function ForgePage() {
               </button>
             </TooltipTrigger>
             <TooltipContent>Exportar plano técnico SVG</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={() => setBlueprintPanel(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-[#60a5fa] hover:text-[#f0ece4] hover:bg-[#60a5fa]/15 transition-all">
+                📐
+                <span>Planos 2D</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Extracción de planos — secciones 2D de 37 modelos STEP</TooltipContent>
           </Tooltip>
         </div>
       </header>
@@ -1472,7 +1487,8 @@ export default function ForgePage() {
           {importedModels.length > 0 && !importing && (
             <div className="absolute top-4 right-4 z-20 space-y-2">
               {importedModels.map((model, i) => (
-                <div key={i}
+                <div key={i} className="space-y-1">
+                <div
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#181c26]/90 border border-[#c9a84c]/25 text-[11px] text-[#c9a84c] backdrop-blur-sm shadow-lg animate-scaleIn">
                   <span>📦</span>
                   <span className="text-[#f0ece4] font-medium truncate max-w-[180px]">{model.threeGroup.name}</span>
@@ -1494,11 +1510,64 @@ export default function ForgePage() {
                     title="Escanear: barrido continuo GPU + fitting → error mínimo">
                     {gpuFitting ? '⏳ Escaneando...' : '⚒️ Escanear'}
                   </button>
+                  <button
+                    onClick={() => setBlueprintPanel(true)}
+                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-[#60a5fa] hover:text-[#f0ece4] bg-[#60a5fa]/10 hover:bg-[#60a5fa]/25 border border-[#60a5fa]/25 transition-all"
+                    title="Ver planos extraídos — secciones 2D con cotas">
+                    📐 Planos
+                  </button>
                   <button onClick={() => removeImportedModel(i)}
                     className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#4a4035] hover:text-[#f87171] hover:bg-[#f87171]/10 transition-all"
                     title="Eliminar modelo importado">
                     ✕
                   </button>
+                  <button onClick={() => setMaterialPanel(materialPanel === i ? null : i)}
+                    className={`ml-1 px-1.5 py-0.5 rounded text-[10px] transition-all ${materialPanel === i ? 'text-[#c9a84c] bg-[#c9a84c]/15' : 'text-[#4a4035] hover:text-[#c9a84c] hover:bg-[#c9a84c]/10'}`}
+                    title="Cambiar apariencia / material">
+                    🎨
+                  </button>
+                </div>
+                {/* Material editor row */}
+                {materialPanel === i && (
+                  <div className="flex items-center gap-3 px-3 py-2 mt-1 rounded-lg bg-[#181c26]/80 border border-[#c9a84c]/15 animate-scaleIn">
+                    <label className="flex items-center gap-1.5 text-[9px] text-[#8a7e6b]">
+                      Color
+                      <input type="color" defaultValue="#808c99"
+                        onChange={e => setModelMaterial(i, { color: e.target.value })}
+                        className="w-6 h-5 rounded border border-[#c9a84c]/20 bg-transparent cursor-pointer" />
+                    </label>
+                    <label className="flex items-center gap-1 text-[9px] text-[#8a7e6b]">
+                      Metal
+                      <input type="range" min="0" max="100" defaultValue="20"
+                        onChange={e => setModelMaterial(i, { metalness: +e.target.value / 100 })}
+                        className="w-16 h-1 accent-[#c9a84c]" />
+                    </label>
+                    <label className="flex items-center gap-1 text-[9px] text-[#8a7e6b]">
+                      Rugosidad
+                      <input type="range" min="0" max="100" defaultValue="50"
+                        onChange={e => setModelMaterial(i, { roughness: +e.target.value / 100 })}
+                        className="w-16 h-1 accent-[#c9a84c]" />
+                    </label>
+                    {/* Quick material presets */}
+                    <div className="flex gap-1 ml-auto">
+                      {[
+                        { label: 'Acero', color: '#8a9199', metal: 0.8, rough: 0.3 },
+                        { label: 'Aluminio', color: '#c0c6cc', metal: 0.9, rough: 0.15 },
+                        { label: 'Latón', color: '#c9a84c', metal: 0.7, rough: 0.25 },
+                        { label: 'Plástico', color: '#3a8fd4', metal: 0.0, rough: 0.6 },
+                        { label: 'Mate', color: '#555555', metal: 0.0, rough: 0.95 },
+                      ].map(preset => (
+                        <button key={preset.label}
+                          onClick={() => setModelMaterial(i, { color: preset.color, metalness: preset.metal, roughness: preset.rough })}
+                          className="px-1.5 py-0.5 rounded text-[8px] border border-[#c9a84c]/15 hover:border-[#c9a84c]/40 transition-all"
+                          style={{ color: preset.color }}
+                          title={preset.label}>
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 </div>
               ))}
             </div>
@@ -2198,6 +2267,10 @@ export default function ForgePage() {
 
       {shortcutOverlay && (
         <ShortcutOverlay tools={shortcutTools} position={shortcutOverlay} onClose={() => setShortcutOverlay(null)} />
+      )}
+
+      {blueprintPanel && (
+        <BlueprintPanel onClose={() => setBlueprintPanel(false)} />
       )}
     </div>
     </TooltipProvider>

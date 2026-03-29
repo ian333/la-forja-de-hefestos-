@@ -1,0 +1,705 @@
+[
+  {
+    "slug": "827-9999-904_rev_c",
+    "fileName": "827-9999-904 rev c.stp",
+    "diagonal": 125.42451103171867,
+    "revolution": false,
+    "featureCount": 8,
+    "rawEntities": 69,
+    "features": {
+      "holes": 4,
+      "slots": 0,
+      "pockets": 1,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (rect)"
+  },
+  {
+    "slug": "827-9999-905",
+    "fileName": "827-9999-905.stp",
+    "diagonal": 26.462371929732225,
+    "revolution": true,
+    "featureCount": 6,
+    "rawEntities": 83,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 2,
+      "bosses": 2,
+      "patterns": 0,
+      "revolutions": 1,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (circle)"
+  },
+  {
+    "slug": "827-9999-906",
+    "fileName": "827-9999-906.stp",
+    "diagonal": 125.41699419857784,
+    "revolution": false,
+    "featureCount": 8,
+    "rawEntities": 69,
+    "features": {
+      "holes": 4,
+      "slots": 0,
+      "pockets": 1,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (rect)"
+  },
+  {
+    "slug": "827-9999-907",
+    "fileName": "827-9999-907.stp",
+    "diagonal": 26.462371929732225,
+    "revolution": true,
+    "featureCount": 6,
+    "rawEntities": 83,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 2,
+      "bosses": 2,
+      "patterns": 0,
+      "revolutions": 1,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (circle)"
+  },
+  {
+    "slug": "827-9999-908",
+    "fileName": "827-9999-908.stp",
+    "diagonal": 125.41699419857784,
+    "revolution": false,
+    "featureCount": 8,
+    "rawEntities": 69,
+    "features": {
+      "holes": 4,
+      "slots": 0,
+      "pockets": 1,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (rect)"
+  },
+  {
+    "slug": "nist_ctc_01_asme1_rd",
+    "fileName": "nist_ctc_01_asme1_rd.stp",
+    "diagonal": 930.0537618869137,
+    "revolution": false,
+    "featureCount": 14,
+    "rawEntities": 256,
+    "features": {
+      "holes": 1,
+      "slots": 0,
+      "pockets": 10,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (freeform)"
+  },
+  {
+    "slug": "nist_ctc_02_asme1_rc",
+    "fileName": "nist_ctc_02_asme1_rc.stp",
+    "diagonal": 1166.4968180509252,
+    "revolution": false,
+    "featureCount": 14,
+    "rawEntities": 335,
+    "features": {
+      "holes": 2,
+      "slots": 0,
+      "pockets": 7,
+      "bosses": 1,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 1,
+      "freeform": 2
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ctc_03_asme1_rc",
+    "fileName": "nist_ctc_03_asme1_rc.stp",
+    "diagonal": 594.5477073094365,
+    "revolution": false,
+    "featureCount": 5,
+    "rawEntities": 75,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 1,
+      "bosses": 2,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 1
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ctc_04_asme1_rd",
+    "fileName": "nist_ctc_04_asme1_rd.stp",
+    "diagonal": 935.1781821556854,
+    "revolution": false,
+    "featureCount": 6,
+    "rawEntities": 283,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 4,
+      "bosses": 0,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ctc_05_asme1_rd",
+    "fileName": "nist_ctc_05_asme1_rd.stp",
+    "diagonal": 906.8509411326221,
+    "revolution": true,
+    "featureCount": 31,
+    "rawEntities": 405,
+    "features": {
+      "holes": 2,
+      "slots": 0,
+      "pockets": 12,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 1,
+      "keyholes": 2,
+      "freeform": 11
+    },
+    "base": "█ Base Body (circle)"
+  },
+  {
+    "slug": "nist_ftc_06_asme1_rd",
+    "fileName": "nist_ftc_06_asme1_rd.stp",
+    "diagonal": 404.7177242407126,
+    "revolution": false,
+    "featureCount": 9,
+    "rawEntities": 107,
+    "features": {
+      "holes": 4,
+      "slots": 0,
+      "pockets": 3,
+      "bosses": 0,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ftc_07_asme1_rd",
+    "fileName": "nist_ftc_07_asme1_rd.stp",
+    "diagonal": 404.4752636501997,
+    "revolution": false,
+    "featureCount": 9,
+    "rawEntities": 317,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 2,
+      "bosses": 0,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 5
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ftc_08_asme1_rc",
+    "fileName": "nist_ftc_08_asme1_rc.stp",
+    "diagonal": 386.0220329821232,
+    "revolution": false,
+    "featureCount": 5,
+    "rawEntities": 173,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 4,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ftc_09_asme1_rd",
+    "fileName": "nist_ftc_09_asme1_rd.stp",
+    "diagonal": 338.17722433740255,
+    "revolution": false,
+    "featureCount": 7,
+    "rawEntities": 28,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 5,
+      "bosses": 1,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (rect)"
+  },
+  {
+    "slug": "nist_ftc_10_asme1_rb",
+    "fileName": "nist_ftc_10_asme1_rb.stp",
+    "diagonal": 177.57309589321773,
+    "revolution": false,
+    "featureCount": 20,
+    "rawEntities": 266,
+    "features": {
+      "holes": 6,
+      "slots": 0,
+      "pockets": 10,
+      "bosses": 0,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 1,
+      "freeform": 1
+    },
+    "base": "█ Base Body (keyhole)"
+  },
+  {
+    "slug": "nist_ftc_11_asme1_rb",
+    "fileName": "nist_ftc_11_asme1_rb.stp",
+    "diagonal": 89.06980369735997,
+    "revolution": true,
+    "featureCount": 7,
+    "rawEntities": 58,
+    "features": {
+      "holes": 2,
+      "slots": 0,
+      "pockets": 3,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 1,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (circle)"
+  },
+  {
+    "slug": "nist_ctc_01_asme1_ap203",
+    "fileName": "nist_ctc_01_asme1_ap203.stp",
+    "diagonal": 930.0537618869137,
+    "revolution": false,
+    "featureCount": 14,
+    "rawEntities": 256,
+    "features": {
+      "holes": 1,
+      "slots": 0,
+      "pockets": 10,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (freeform)"
+  },
+  {
+    "slug": "nist_ctc_02_asme1_ap203",
+    "fileName": "nist_ctc_02_asme1_ap203.stp",
+    "diagonal": 1165.5899523647972,
+    "revolution": false,
+    "featureCount": 17,
+    "rawEntities": 392,
+    "features": {
+      "holes": 1,
+      "slots": 0,
+      "pockets": 13,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 1,
+      "freeform": 1
+    },
+    "base": "█ Base Body (keyhole)"
+  },
+  {
+    "slug": "nist_ctc_03_asme1_ap203",
+    "fileName": "nist_ctc_03_asme1_ap203.stp",
+    "diagonal": 594.5477073094365,
+    "revolution": false,
+    "featureCount": 5,
+    "rawEntities": 75,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 1,
+      "bosses": 2,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 1
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ctc_04_asme1_ap203",
+    "fileName": "nist_ctc_04_asme1_ap203.stp",
+    "diagonal": 935.1837463718715,
+    "revolution": false,
+    "featureCount": 6,
+    "rawEntities": 283,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 4,
+      "bosses": 0,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ctc_05_asme1_ap203",
+    "fileName": "nist_ctc_05_asme1_ap203.stp",
+    "diagonal": 906.8032594680425,
+    "revolution": true,
+    "featureCount": 34,
+    "rawEntities": 400,
+    "features": {
+      "holes": 3,
+      "slots": 0,
+      "pockets": 19,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 1,
+      "keyholes": 1,
+      "freeform": 7
+    },
+    "base": "█ Base Body (circle)"
+  },
+  {
+    "slug": "nist_ctc_01_asme1_ap242-e1",
+    "fileName": "nist_ctc_01_asme1_ap242-e1.stp",
+    "diagonal": 930.0537618869137,
+    "revolution": false,
+    "featureCount": 35,
+    "rawEntities": 334,
+    "features": {
+      "holes": 1,
+      "slots": 0,
+      "pockets": 28,
+      "bosses": 1,
+      "patterns": 3,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 1
+    },
+    "base": "█ Base Body (freeform)"
+  },
+  {
+    "slug": "nist_ctc_02_asme1_ap242-e2",
+    "fileName": "nist_ctc_02_asme1_ap242-e2.stp",
+    "diagonal": 1165.6251106001819,
+    "revolution": false,
+    "featureCount": 9,
+    "rawEntities": 375,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 4,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 2,
+      "freeform": 2
+    },
+    "base": "█ Base Body (freeform)"
+  },
+  {
+    "slug": "nist_ctc_03_asme1_ap242-e2",
+    "fileName": "nist_ctc_03_asme1_ap242-e2.stp",
+    "diagonal": 594.5907686926608,
+    "revolution": false,
+    "featureCount": 25,
+    "rawEntities": 391,
+    "features": {
+      "holes": 1,
+      "slots": 0,
+      "pockets": 17,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 0,
+      "keyholes": 3,
+      "freeform": 1
+    },
+    "base": "█ Base Body (rect)"
+  },
+  {
+    "slug": "nist_ctc_04_asme1_ap242-e1",
+    "fileName": "nist_ctc_04_asme1_ap242-e1.stp",
+    "diagonal": 935.1800862514862,
+    "revolution": false,
+    "featureCount": 9,
+    "rawEntities": 332,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 7,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 1,
+      "freeform": 0
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ctc_05_asme1_ap242-e1",
+    "fileName": "nist_ctc_05_asme1_ap242-e1.stp",
+    "diagonal": 906.8509411326221,
+    "revolution": true,
+    "featureCount": 35,
+    "rawEntities": 408,
+    "features": {
+      "holes": 8,
+      "slots": 0,
+      "pockets": 18,
+      "bosses": 0,
+      "patterns": 2,
+      "revolutions": 1,
+      "keyholes": 1,
+      "freeform": 4
+    },
+    "base": "█ Base Body (circle)"
+  },
+  {
+    "slug": "nist_ftc_06_asme1_ap242-e2",
+    "fileName": "nist_ftc_06_asme1_ap242-e2.stp",
+    "diagonal": 404.7177242407126,
+    "revolution": false,
+    "featureCount": 9,
+    "rawEntities": 108,
+    "features": {
+      "holes": 4,
+      "slots": 0,
+      "pockets": 2,
+      "bosses": 1,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (keyhole)"
+  },
+  {
+    "slug": "nist_ftc_07_asme1_ap242-e2",
+    "fileName": "nist_ftc_07_asme1_ap242-e2.stp",
+    "diagonal": 423.76274199167966,
+    "revolution": false,
+    "featureCount": 3,
+    "rawEntities": 95,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 0,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 1,
+      "freeform": 1
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_ftc_08_asme1_ap242-e1-tg",
+    "fileName": "nist_ftc_08_asme1_ap242-e1-tg.stp",
+    "diagonal": null,
+    "revolution": false,
+    "featureCount": 0,
+    "rawEntities": 0,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 0,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": null
+  },
+  {
+    "slug": "nist_ftc_08_asme1_ap242-e2",
+    "fileName": "nist_ftc_08_asme1_ap242-e2.stp",
+    "diagonal": 386.03960444759883,
+    "revolution": false,
+    "featureCount": 5,
+    "rawEntities": 173,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 4,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (keyhole)"
+  },
+  {
+    "slug": "nist_ftc_09_asme1_ap242-e1",
+    "fileName": "nist_ftc_09_asme1_ap242-e1.stp",
+    "diagonal": 338.17722433740255,
+    "revolution": false,
+    "featureCount": 7,
+    "rawEntities": 28,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 5,
+      "bosses": 1,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (rect)"
+  },
+  {
+    "slug": "nist_ftc_10_asme1_ap242-e2",
+    "fileName": "nist_ftc_10_asme1_ap242-e2.stp",
+    "diagonal": 177.56272014843188,
+    "revolution": false,
+    "featureCount": 11,
+    "rawEntities": 154,
+    "features": {
+      "holes": 6,
+      "slots": 0,
+      "pockets": 1,
+      "bosses": 0,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 2
+    },
+    "base": "█ Base Body (freeform)"
+  },
+  {
+    "slug": "nist_ftc_11_asme1_ap242-e2",
+    "fileName": "nist_ftc_11_asme1_ap242-e2.stp",
+    "diagonal": 89.0694321050652,
+    "revolution": true,
+    "featureCount": 7,
+    "rawEntities": 99,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 5,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 1,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (circle)"
+  },
+  {
+    "slug": "nist_stc_06_asme1_ap242-e3",
+    "fileName": "nist_stc_06_asme1_ap242-e3.stp",
+    "diagonal": 404.7177242407126,
+    "revolution": false,
+    "featureCount": 12,
+    "rawEntities": 122,
+    "features": {
+      "holes": 4,
+      "slots": 0,
+      "pockets": 4,
+      "bosses": 1,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 1,
+      "freeform": 0
+    },
+    "base": "█ Base Body (fillet_rect)"
+  },
+  {
+    "slug": "nist_stc_08_asme1_ap242-e3",
+    "fileName": "nist_stc_08_asme1_ap242-e3.stp",
+    "diagonal": 386.0220329821232,
+    "revolution": false,
+    "featureCount": 5,
+    "rawEntities": 174,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 4,
+      "bosses": 0,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (keyhole)"
+  },
+  {
+    "slug": "nist_stc_09_asme1_ap242-e3",
+    "fileName": "nist_stc_09_asme1_ap242-e3.stp",
+    "diagonal": 338.17722433740255,
+    "revolution": false,
+    "featureCount": 7,
+    "rawEntities": 22,
+    "features": {
+      "holes": 2,
+      "slots": 0,
+      "pockets": 3,
+      "bosses": 1,
+      "patterns": 0,
+      "revolutions": 0,
+      "keyholes": 0,
+      "freeform": 0
+    },
+    "base": "█ Base Body (rect)"
+  },
+  {
+    "slug": "nist_stc_10_asme1_ap242-e2",
+    "fileName": "nist_stc_10_asme1_ap242-e2.stp",
+    "diagonal": 177.57309101024327,
+    "revolution": false,
+    "featureCount": 6,
+    "rawEntities": 191,
+    "features": {
+      "holes": 0,
+      "slots": 0,
+      "pockets": 3,
+      "bosses": 0,
+      "patterns": 1,
+      "revolutions": 0,
+      "keyholes": 1,
+      "freeform": 0
+    },
+    "base": "█ Base Body (keyhole)"
+  }
+]

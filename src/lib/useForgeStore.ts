@@ -146,6 +146,9 @@ interface ForgeState {
   scanModel: (modelIndex: number) => Promise<void>;
   clearGPUFittedPlanes: () => void;
 
+  /** Change material appearance of an imported model */
+  setModelMaterial: (modelIndex: number, props: { color?: string; metalness?: number; roughness?: number }) => void;
+
   // Machine actions
   importMachine: (file: File) => Promise<void>;
   selectMachine: (id: string | null) => void;
@@ -863,10 +866,26 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   clearGPUFittedPlanes: () => set({ gpuFittedPlanes: [], fittedSlices: [] }),
 
+  setModelMaterial: (modelIndex, props) => {
+    const model = get().importedModels[modelIndex];
+    if (!model) return;
+    model.threeGroup.traverse((obj: any) => {
+      if (obj.isMesh && obj.material) {
+        const mat = obj.material as THREE.MeshStandardMaterial;
+        if (props.color != null) { mat.color.set(props.color); mat.vertexColors = false; mat.needsUpdate = true; }
+        if (props.metalness != null) mat.metalness = props.metalness;
+        if (props.roughness != null) mat.roughness = props.roughness;
+      }
+    });
+    // Trigger re-render by shallow-copying the array
+    set({ importedModels: [...get().importedModels] });
+  },
+
   scanModel: async (modelIndex) => {
     const state = get();
     const model = state.importedModels[modelIndex];
     const renderer = state.rendererRef;
+    console.log('[Scan] scanModel called — modelIndex:', modelIndex, '| model:', !!model, '| renderer:', !!renderer, '| importedModels.length:', state.importedModels.length);
     if (!model || !renderer) {
       console.warn('[Scan] No model or renderer — fallback to CPU');
       return state.fitSketches(modelIndex);

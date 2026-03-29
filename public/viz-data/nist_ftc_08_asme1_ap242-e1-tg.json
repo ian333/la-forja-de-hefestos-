@@ -1,0 +1,24 @@
+{
+  "fileName": "nist_ftc_08_asme1_ap242-e1-tg.stp",
+  "boundingBox": {
+    "min": [
+      null,
+      null,
+      null
+    ],
+    "max": [
+      null,
+      null,
+      null
+    ]
+  },
+  "diagonal": null,
+  "revolution": null,
+  "revProfile": null,
+  "revAnalysis": null,
+  "directions": [],
+  "slices": [],
+  "profiles": [],
+  "features": [],
+  "base": null
+}

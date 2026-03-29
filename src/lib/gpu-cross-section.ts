@@ -1030,16 +1030,27 @@ export async function gpuFitPipeline(
 
   // Compute global bounding box for tolerance
   const bb = new THREE.Box3();
-  meshSource.traverse(c => { if (c instanceof THREE.Mesh) bb.expandByObject(c); });
+  let meshCount = 0;
+  meshSource.traverse(c => { if (c instanceof THREE.Mesh) { bb.expandByObject(c); meshCount++; } });
   const diag = bb.getSize(new THREE.Vector3()).length();
   const tol = Math.max(0.001, diag * 0.0001);
+
+  console.log(`[gpuFitPipeline] meshCount=${meshCount}, diag=${diag.toFixed(2)}, bb=[${bb.min.toArray().map(v=>v.toFixed(2))}, ${bb.max.toArray().map(v=>v.toFixed(2))}], planes=${slicePlanes.length}`);
+
+  if (meshCount === 0) {
+    console.warn('[gpuFitPipeline] No THREE.Mesh found in meshSource! Children:', meshSource.children.map(c => c.type));
+    return [];
+  }
 
   for (let pi = 0; pi < slicePlanes.length; pi++) {
     const plane = slicePlanes[pi];
     opts?.onProgress?.(pi, slicePlanes.length, `GPU slice: ${plane.label}`);
 
     const sliceResult = gpuSlice(renderer, meshSource, plane, resolution);
-    if (sliceResult.contours.length === 0) continue;
+    if (sliceResult.contours.length === 0) {
+      if (pi === 0) console.log(`[gpuFitPipeline] Plane 0 (${plane.label}): 0 contours, pixelSize=${sliceResult.pixelSize.toFixed(6)}`);
+      continue;
+    }
 
     // ── Step 3: Fit entities to each contour ──
     const fittedContours: GPUFittedPlane['contours'] = [];

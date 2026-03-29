@@ -1384,7 +1384,10 @@ async function main() {
     base: 0, freeformDiag: [],
   };
 
+  const vizIndex = [];
+
   for (const filePath of files) {
+    const relName = path.relative(modelsDir, filePath) || path.basename(filePath);
     let loaded;
     try { loaded = await loadStep(filePath, occt); }
     catch (e) { console.log(`  ${RD}✗${RS} ${relName} — WASM error`); continue; }
@@ -1455,7 +1458,6 @@ async function main() {
     const allFeatures = detectPatterns(withRevolutions, diag);
 
     // ── Report ──
-    const relName = path.relative(modelsDir, filePath) || path.basename(filePath);
     console.log(`${B}${CY}═══ ${relName} ═══${RS}`);
     if (revolution) {
       console.log(`  ${GR}${B}◎ REVOLUTION BODY${RS} ${D}(axis=${revolution.axisLabel}, score=${(revolution.score*100).toFixed(0)}%)${RS}`);
@@ -1635,6 +1637,8 @@ async function main() {
         boundingBox: { min: bb.min, max: bb.max },
         diagonal: diag,
         revolution: revolution ? { axisLabel: revolution.axisLabel, score: revolution.score } : null,
+        revProfile: revProfile || null,
+        revAnalysis: revAnalysis || null,
         directions: dirs.map(d => ({ label: d.label, normal: d.normal, areaPct: d.areaPct, offsetRange: d.offsetRange, isAxis: d.isAxis })),
         slices: sliceResults.map(({ plane, sr }, si) => ({
           label: plane.label,
@@ -1681,9 +1685,30 @@ async function main() {
         })),
         base: base ? { type: base.type, label: base.label, area: base.area, normal: base.normal } : null,
       };
-      const outPath = path.join(__dirname, '..', 'public', 'viz-data.json');
-      fs.writeFileSync(outPath, JSON.stringify(vizData, null, 2));
-      console.log(`  ${GR}✓ Viz data → ${outPath}${RS}`);
+
+      // Multi-file: save each to public/viz-data/<slug>.json + build index
+      // Single-file: also save to public/viz-data.json for backwards compat
+      const vizDir = path.join(__dirname, '..', 'public', 'viz-data');
+      if (!fs.existsSync(vizDir)) fs.mkdirSync(vizDir, { recursive: true });
+      const slug = path.basename(filePath, path.extname(filePath)).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const outFile = path.join(vizDir, `${slug}.json`);
+      fs.writeFileSync(outFile, JSON.stringify(vizData, null, 2));
+      console.log(`  ${GR}✓ Viz data → ${outFile}${RS}`);
+      vizIndex.push({
+        slug,
+        fileName: vizData.fileName,
+        diagonal: diag,
+        revolution: !!revolution,
+        featureCount,
+        rawEntities: rawTotal,
+        features: { holes: nHoles, slots: nSlots, pockets: nPockets, bosses: nBosses, patterns: nPatterns, revolutions: nRevolutions, keyholes: nKeyholes, freeform: nFreeform },
+        base: base ? base.label : null,
+      });
+
+      if (singleMode) {
+        const legacyPath = path.join(__dirname, '..', 'public', 'viz-data.json');
+        fs.writeFileSync(legacyPath, JSON.stringify(vizData, null, 2));
+      }
     }
 
     globalStats.files++;
@@ -1752,6 +1777,14 @@ async function main() {
   }
 
   console.log(`${GR}${'═'.repeat(80)}${RS}\n`);
+
+  // ── Write viz index ──
+  if (vizMode && vizIndex.length > 0) {
+    const vizDir = path.join(__dirname, '..', 'public', 'viz-data');
+    const indexPath = path.join(vizDir, 'index.json');
+    fs.writeFileSync(indexPath, JSON.stringify(vizIndex, null, 2));
+    console.log(`${GR}✓ Viz index (${vizIndex.length} models) → ${indexPath}${RS}`);
+  }
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
