@@ -13,6 +13,7 @@ import { OrbitControls, GizmoHelper, GizmoViewcube, Grid } from '@react-three/dr
 import * as THREE from 'three';
 import RayMarchMesh from './RayMarchMesh';
 import { useForgeStore } from './useForgeStore';
+import { useThemeStore, selectViewport, selectStep } from './useThemeStore';
 import type { SketchPlane, SketchShape } from './sketch-engine';
 import SketchInViewport, { type SketchTool } from './SketchInViewport';
 import {
@@ -20,25 +21,28 @@ import {
   SectionPlaneVisual,
   MeshClipper,
   ViewTransitionController,
+  useFlyTo,
   SketchOverlay,
   type StandardView,
 } from './viewport';
 import type { FittedSlice } from './sketch-fitting';
 import type { SliceAxis } from './cross-section';
+import type { ReconstructionResult } from './sketch-reconstruct';
 
 // ── Infinite Grid with XYZ Axes ──
 
 function ForgeGrid() {
+  const vp = useThemeStore(selectViewport);
   return (
     <>
       <Grid
         args={[200, 200]}
         cellSize={1}
         cellThickness={0.15}
-        cellColor="#0a0c12"
+        cellColor={vp.gridCellColor}
         sectionSize={5}
         sectionThickness={0.3}
-        sectionColor="#0f1118"
+        sectionColor={vp.gridSectionColor}
         fadeDistance={40}
         fadeStrength={3}
         infiniteGrid
@@ -53,7 +57,7 @@ function ForgeGrid() {
             itemSize={3}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#f87171" transparent opacity={0.12} />
+        <lineBasicMaterial color="#f87171" transparent opacity={vp.axisOpacity} />
       </line>
       {/* Y axis – subtle green */}
       <line>
@@ -65,7 +69,7 @@ function ForgeGrid() {
             itemSize={3}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#4ade80" transparent opacity={0.12} />
+        <lineBasicMaterial color="#4ade80" transparent opacity={vp.axisOpacity} />
       </line>
       {/* Z axis – subtle blue */}
       <line>
@@ -77,7 +81,7 @@ function ForgeGrid() {
             itemSize={3}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#c9a84c" transparent opacity={0.15} />
+        <lineBasicMaterial color={vp.gizmoHover} transparent opacity={vp.axisOpacity + 0.03} />
       </line>
     </>
   );
@@ -177,6 +181,7 @@ function RendererSync() {
 
 function ImportedMeshes() {
   const importedModels = useForgeStore(s => s.importedModels);
+  const themeStep = useThemeStore(selectStep);
   const groupRef = useRef<THREE.Group>(null!);
 
   // Sync Three.js groups into the scene
@@ -203,6 +208,23 @@ function ImportedMeshes() {
     };
   }, [importedModels]);
 
+  // Update STEP materials when theme changes (skip user-overridden meshes)
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!group) return;
+    group.traverse(obj => {
+      if (obj instanceof THREE.Mesh && obj.material instanceof THREE.MeshStandardMaterial) {
+        // Skip meshes the user has manually styled via the material panel
+        if (obj.userData._userMaterial) return;
+        const mat = obj.material;
+        mat.metalness = themeStep.metalness;
+        mat.roughness = themeStep.roughness;
+        mat.envMapIntensity = themeStep.envMapIntensity;
+        mat.needsUpdate = true;
+      }
+    });
+  }, [themeStep, importedModels]);
+
   if (importedModels.length === 0) return null;
 
   return <group ref={groupRef} />;
@@ -224,7 +246,67 @@ function SceneLighting() {
   );
 }
 
+// ── Reconstructed 3D Mesh (from sketch extrusion) ──
+
+function ReconstructedMesh({ reconstruction }: { reconstruction: ReconstructionResult | null }) {
+  const groupRef = useRef<THREE.Group>(null!);
+
+  useEffect(() => {
+    const parent = groupRef.current;
+    if (!parent) return;
+    
+    // Clear previous
+    while (parent.children.length > 0) {
+      parent.remove(parent.children[0]);
+    }
+
+    if (reconstruction?.group) {
+      parent.add(reconstruction.group);
+    }
+
+    return () => {
+      while (parent.children.length > 0) {
+        parent.remove(parent.children[0]);
+      }
+    };
+  }, [reconstruction]);
+
+  return <group ref={groupRef} />;
+}
+
 // ── Main Viewport Component ──
+
+// ── Slice Focus Controller — flies camera to selected slice plane ──
+
+function SliceFocusController({ slice }: { slice: FittedSlice | null }) {
+  const flyTo = useFlyTo();
+  const prevSlice = useRef<FittedSlice | null>(null);
+
+  useEffect(() => {
+    if (!slice || slice === prevSlice.current) return;
+    prevSlice.current = slice;
+
+    if (!slice.uAxis || !slice.vAxis || !slice.planeOrigin) return;
+
+    const origin = new THREE.Vector3(...slice.planeOrigin);
+    const u = new THREE.Vector3(...slice.uAxis);
+    const v = new THREE.Vector3(...slice.vAxis);
+    const normal = new THREE.Vector3().crossVectors(u, v).normalize();
+
+    // Camera distance: reasonable default based on model extent
+    const camDist = 12;
+    const camPos: [number, number, number] = [
+      origin.x + normal.x * camDist,
+      origin.y + normal.y * camDist,
+      origin.z + normal.z * camDist,
+    ];
+    const target: [number, number, number] = [origin.x, origin.y, origin.z];
+
+    flyTo(camPos, target, 0.6);
+  }, [slice, flyTo]);
+
+  return null;
+}
 
 export interface ForgeViewportProps {
   onFps?: (fps: number) => void;
@@ -243,6 +325,10 @@ export interface ForgeViewportProps {
   fittedSlices?: FittedSlice[];
   /** Filter sketch overlay by axis */
   sketchFilterAxis?: SliceAxis | null;
+  /** Index of the selected/focused slice (null = show all) */
+  selectedSliceIndex?: number | null;
+  /** 3D reconstruction result to render */
+  reconstruction?: ReconstructionResult | null;
 }
 
 export default function ForgeViewport({
@@ -250,10 +336,11 @@ export default function ForgeViewport({
   sketchTool, sketchShapes, onSketchShapeAdd,
   onSketchDrawingChange, onSketchCursorMove,
   targetView, onViewTransitionComplete,
-  fittedSlices, sketchFilterAxis,
+  fittedSlices, sketchFilterAxis, selectedSliceIndex, reconstruction,
 }: ForgeViewportProps) {
   const isSketch = !!sketchPlane;
   const section = useForgeStore(s => s.section);
+  const themeVp = useThemeStore(selectViewport);
   return (
     <div className={className ?? 'w-full h-full'} style={{ cursor: isSketch ? 'crosshair' : undefined }}>
       <Canvas
@@ -303,10 +390,10 @@ export default function ForgeViewport({
         {/* Gizmo cube (Fusion-style) */}
         <GizmoHelper alignment="top-right" margin={[72, 72]}>
           <GizmoViewcube
-            color="#0d0f14"
-            textColor="#7a8399"
-            hoverColor="#c9a84c"
-            strokeColor="#1a1e2c"
+            color={themeVp.gizmoBg}
+            textColor={themeVp.gizmoText}
+            hoverColor={themeVp.gizmoHover}
+            strokeColor={themeVp.gizmoStroke}
             opacity={0.85}
           />
         </GizmoHelper>
@@ -316,12 +403,21 @@ export default function ForgeViewport({
           <SketchOverlay
             slices={fittedSlices}
             filterAxis={sketchFilterAxis ?? null}
+            selectedSlice={selectedSliceIndex ?? null}
           />
         )}
+
+        {/* ── Slice Focus Controller (fly camera to selected slice) ── */}
+        <SliceFocusController
+          slice={fittedSlices && selectedSliceIndex != null ? fittedSlices[selectedSliceIndex] ?? null : null}
+        />
 
         {/* ── Section Plane (clip visualization) ── */}
         {section.enabled && <SectionPlaneVisual section={section} />}
         <MeshClipper section={section} />
+
+        {/* ── 3D Reconstruction (extruded profiles) ── */}
+        <ReconstructedMesh reconstruction={reconstruction ?? null} />
 
         {/* ── Camera Transitions (smooth fly-to) ── */}
         <ViewTransitionController

@@ -230,23 +230,31 @@ El corazón de Fusion 360. Todo es **paramétrico** — cada operación queda en
 
 ## 2. QUÉ TIENE LA FORJA HOY vs QUÉ NECESITA
 
-| Categoría | La Forja v1 | Fusion 360 | Gap |
+> **Actualizado**: 29 de marzo 2026
+
+| Categoría | La Forja v1.x (actual) | Fusion 360 | Gap |
 |-----------|-------------|------------|-----|
-| **Motor geométrico** | F-Rep/SDF (único diferenciador) | B-Rep + NURBS Parasolid | Nuestro F-Rep es superior para formas orgánicas y booleanas, inferior para precisión de bordes |
-| **Primitivas** | 6 (sphere, box, cylinder, torus, cone, capsule) | Infinitas vía sketch→extrude→revolve→sweep→loft | Necesitamos sketch 2D + operaciones 3D |
-| **Booleanas** | union, subtract, intersect, smooth union | join, cut, intersect | ✅ Estamos bien, `smooth union` es ventaja nuestra |
-| **Renderer** | WebGL2 ray marching (LENTO 💀) | OpenGL rasterization + ray trace render | **CRÍTICO: Cambiar a Three.js/rasterization** |
-| **UI** | Panel flotante simple | Workspace system completo | **CRÍTICO: Rediseñar totalmente** |
-| **Sketch 2D** | ❌ No existe | Completo con constraints | **NECESITA: sistema de sketch** |
-| **Timeline/History** | ❌ No existe | Paramétrico completo | **NECESITA: historial de operaciones** |
-| **Gizmos** | ❌ No existe | Translate/Rotate/Scale 3D | **NECESITA: transform gizmos** |
-| **Export** | STL + SVG blueprint | STEP, IGES, SAT, STL, OBJ, 3MF, DWG, DXF, PDF | Expandir formatos |
+| **Motor geométrico** | F-Rep/SDF (único diferenciador) — 6 primitivas, 4 booleanas, módulos | B-Rep + NURBS Parasolid | Nuestro F-Rep es superior para formas orgánicas y booleanas, inferior para precisión de bordes |
+| **Primitivas** | 6 (sphere, box, cylinder, torus, cone, capsule) + extrusión de sketch rect/circle | Infinitas vía sketch→extrude→revolve→sweep→loft | Necesitamos sketch 2D completo + más operaciones 3D |
+| **Booleanas** | ✅ union, subtract, intersect, smooth union | join, cut, intersect | ✅ Estamos bien, `smooth union` es ventaja nuestra |
+| **Renderer** | ✅ Three.js rasterización + GPU ray marching dual | OpenGL rasterization + ray trace render | ✅ RESUELTO — 60fps |
+| **UI** | ✅ Menubar Fusion-style + Omnibar + Marking Menu + Tree + Timeline + Variable Bar + Blueprint Panel | Workspace system completo | Funcional pero tema demasiado oscuro. Pendiente: Tool Strip, Inspector HUD, Inline Dimensions |
+| **Sketch 2D** | ⚠️ Rect + Circle en 3 planos + face picking | Completo con constraints | NECESITA: constraint solver, más tools |
+| **Timeline/History** | ✅ Undo/redo completo con historial | Paramétrico completo | Funcional. Pendiente migrar a Operation Stack |
+| **Gizmos** | ❌ No hay transform gizmos | Translate/Rotate/Scale 3D | **NECESITA: transform gizmos** |
+| **Import** | ✅ STEP/IGES + .mch (8 máquinas) + drag&drop | STEP, IGES, SAT, STL, OBJ, 3MF, DWG, DXF | Básico pero funcional |
+| **Export** | ✅ STL + SVG blueprint | STEP, IGES, SAT, STL, OBJ, 3MF, DWG, DXF, PDF | Expandir formatos |
+| **Reverse Engineering** | ✅ Modelo→primitivas SDF + CT-scan + GPU plane fitting + sketch fitting | No tiene equivalente | **VENTAJA NUESTRA** |
+| **Feature Recognition** | ✅ Reconocimiento geométrico de features | Limitado | **VENTAJA** |
+| **Búsqueda** | ✅ Omnibar ⌘K con 60+ comandos | Command search | ✅ Competitivo |
+| **Audio** | ✅ Feedback sonoro en todas las acciones | No tiene | **VENTAJA** |
+| **Fórmulas** | ✅ 1,457 líneas (FEA, térmica, fluidos, fatiga, materiales) — NO CONECTADO A UI | FEA completo integrado | Conectar formulas.ts al pipeline de simulación |
 | **Assembly** | ❌ No existe | Joints + Motion Study | Fase posterior |
-| **Simulation** | Stats + kinematics básico | FEA completo | Fase posterior |
-| **CAM** | ❌ No existe | Completo 2-5 ejes | Fase posterior |
-| **Render** | GLSL live (el que es lento) | PBR + ray tracing | Three.js PBR primero |
-| **ViewCube** | ❌ No existe | Completo | NECESITA |
-| **Marking Menu** | ❌ No existe | Radial completo | NECESITA |
+| **Simulation** | ❌ Stats básicas, fórmulas desconectadas | FEA completo | Fase posterior |
+| **CAM** | ⚠️ Parser de 8 máquinas CNC, sin toolpaths | Completo 2-5 ejes | Fase posterior |
+| **ViewCube** | ✅ Implementado + transiciones suaves numpad | Completo | ✅ |
+| **Marking Menu** | ✅ Implementado con secciones contextuales | Radial completo | ✅ |
+| **Blueprint/Dibujos** | ✅ Panel interactivo de planos + export SVG | Drawing workspace completo | Parcial |
 | **Cotizador BOM** | ❌ No existe | ❌ No existe en Fusion | **VENTAJA: lo construimos nosotros** |
 | **Marketplace materiales** | ❌ No existe | ❌ No existe en Fusion | **VENTAJA: 1-click comprar** |
 | **Simulación de planta** | ❌ No existe | ❌ No existe en Fusion | **VENTAJA: digital twin de fábrica** |
@@ -352,40 +360,40 @@ Three.js en web YA maneja escenas de millones de triángulos a 60fps — no hay 
 
 ## 4. ROADMAP DE DESARROLLO
 
-### Fase 0 — Foundation (AHORA)
+### Fase 0 — Foundation (✅ COMPLETADA — Marzo 2026)
 > Objetivo: viewport funcional a 60fps con interactividad real
 
-- [ ] Instalar Three.js + @react-three/fiber + @react-three/drei
-- [ ] Crear `ForgeViewport.tsx` con Three.js canvas
-- [ ] Implementar MC Worker (`mc-worker.ts`) con transferable buffers
-- [ ] Conectar SDF engine → Worker → Three.js mesh
-- [ ] Grid infinito tipo Fusion 360 (gris, XYZ colores)
-- [ ] ViewCube (o usar `GizmoHelper` de drei)
-- [ ] Orbit/Pan/Zoom controls (like Fusion: middle-button orbit)
-- [ ] Escena por defecto: una esfera + un box con boolean subtract
-- [ ] 60fps verificado con 50+ primitivas
+- [x] Instalar Three.js + @react-three/fiber + @react-three/drei
+- [x] Crear `ForgeViewport.tsx` con Three.js canvas
+- [x] Implementar MC Worker (`mc-worker.ts`) con transferable buffers
+- [x] Conectar SDF engine → Worker → Three.js mesh
+- [x] Grid infinito tipo Fusion 360 (gris, XYZ colores)
+- [x] ViewCube (o usar `GizmoHelper` de drei)
+- [x] Orbit/Pan/Zoom controls (like Fusion: middle-button orbit)
+- [x] Escena por defecto: una esfera + un box con boolean subtract
+- [x] 60fps verificado con 50+ primitivas
 
-### Fase 1 — UI Fusion 360 Style
+### Fase 1 — UI Fusion 360 Style (⚠️ PARCIALMENTE COMPLETADA)
 > Objetivo: parecer Fusion 360, no Blender
 
-- [ ] Layout: toolbar top + browser left + viewport center + properties right + timeline bottom
-- [ ] Color scheme: gris medio (#3c3c3c → #505050), highlight azul (#0696D7)
-- [ ] Toolbar con íconos por workspace (solo "Design" para MVP)
-- [ ] Browser tree: componentes, bodies, sketches collapsible
-- [ ] Properties panel: editar parámetros del feature seleccionado
-- [ ] Selection system: hover highlight, click select, multi-select con Shift
+- [x] Layout: toolbar top + browser left + viewport center + properties right + timeline bottom
+- [ ] Color scheme: gris medio (#3c3c3c → #505050), highlight azul (#0696D7) — **NOTA: se implementó con paleta "Oro Divino" (void black + gold), resultado demasiado oscuro. Pendiente ajustar.**
+- [x] Toolbar con íconos por workspace (solo "Design" para MVP)
+- [x] Browser tree: componentes, bodies, sketches collapsible
+- [x] Properties panel: editar parámetros del feature seleccionado
+- [x] Selection system: hover highlight, click select, multi-select con Shift
 - [ ] Transform gizmo (TransformControls de Three.js) → mover/rotar/escalar
-- [ ] Marking menu radial al right-click
+- [x] Marking menu radial al right-click
 
-### Fase 2 — Sketch 2D
+### Fase 2 — Sketch 2D (⚠️ BÁSICO IMPLEMENTADO)
 > Objetivo: dibujar perfiles 2D en cualquier plano
 
-- [ ] Seleccionar plano (cara del modelo o plano de construcción)
-- [ ] Dibujar: línea, rectángulo, círculo, arco, spline
+- [x] Seleccionar plano (cara del modelo o plano de construcción)
+- [ ] Dibujar: línea, ~~rectángulo~~, ~~círculo~~, arco, spline — **rect y circle ya funcionales**
 - [ ] Constraints: horizontal, vertical, coincident, tangent, perpendicular, equal
 - [ ] Dimensiones paramétricas (editables como parámetros)
 - [ ] Trim, Extend, Offset, Mirror, Pattern
-- [ ] Extrude sketch → crea sólido via SDF (sweep del perfil 2D a lo largo de eje)
+- [x] Extrude sketch → crea sólido via SDF (sweep del perfil 2D a lo largo de eje)
 
 ### Fase 3 — Operaciones 3D F-Rep
 > Objetivo: las operaciones de Fusion pero con nuestro motor
@@ -559,16 +567,17 @@ Visual Prog:     Blockly (Google) para programación por bloques de robots
 ### MVP v1 — El CAD que corre en el browser (Fases 0-5)
 Hace que alguien diga: *"Wow, ¿esto corre en el browser?"*
 
-1. **Viewport 60fps** con grid tipo Fusion, ViewCube, orbit/pan/zoom suave
-2. **Árbol de partes** editable con drag-and-drop
-3. **Transform gizmo** para mover/rotar primitivas
-4. **5 primitivas** con parámetros editables en panel de properties
-5. **3 booleanas** (union, subtract, smooth union) — el smooth union que se vea increíble
-6. **LOD automático** — baja resolución al arrastrar, alta al soltar
-7. **Export STL** funcional
-8. **Export SVG blueprint** funcional
-9. **Paleta Fusion 360** — gris medio, azul selección, profesional
-10. **Una escena demo**: pieza mecánica con fillets suaves que diga "yo lo diseñé"
+1. ✅ **Viewport 60fps** con grid tipo Fusion, ViewCube, orbit/pan/zoom suave
+2. ✅ **Árbol de partes** editable con módulos y renombrado
+3. ❌ **Transform gizmo** para mover/rotar primitivas — **PENDIENTE**
+4. ✅ **6 primitivas** con parámetros editables en panel de properties
+5. ✅ **4 booleanas** (union, subtract, intersect, smooth union)
+6. ✅ **LOD automático** — baja resolución al arrastrar, alta al soltar
+7. ✅ **Export STL** funcional
+8. ✅ **Export SVG blueprint** funcional + Blueprint Panel interactivo
+9. ⚠️ **Paleta Fusion 360** — se implementó "Oro Divino" (void black + gold). **Demasiado oscura.** Ajustar.
+10. ✅ **Escena demo** con primitivas y booleanas
+11. ✅ **BONUS**: Import STEP/IGES, reverse engineering, CT-scan, GPU plane fitting, 8 configs de máquinas CNC, Omnibar, Marking Menu, audio, keyboard shortcuts
 
 ### MVP v2 — Más que Fusion 360 (Fases 9-12)
 Hace que alguien diga: *"Esto hace TODO lo que Fusion 360 no puede hacer"*
@@ -585,15 +594,15 @@ Hace que alguien diga: *"Esto hace TODO lo que Fusion 360 no puede hacer"*
 ## 8. PRÓXIMOS PASOS (en orden)
 
 ### Track A — CAD Core (Fases 0-5)
-1. `npm install three @react-three/fiber @react-three/drei zustand`
-2. Crear `mc-worker.ts` — Marching Cubes en Web Worker
-3. Crear `ForgeViewport.tsx` — canvas Three.js con grid + ViewCube
-4. Crear `useForgeStore.ts` — Zustand store con scene graph + history
-5. Reescribir `ForgePage.tsx` con layout Fusion 360
-6. Conectar pipeline: edit → SDF → Worker → mesh → Three.js
-7. Agregar TransformControls (gizmo)
-8. Probar con 50+ primitivas → confirmar 60fps
-9. 🎉 Demo MVP v1 lista
+1. ✅ `npm install three @react-three/fiber @react-three/drei zustand`
+2. ✅ Crear `mc-worker.ts` — Marching Cubes en Web Worker
+3. ✅ Crear `ForgeViewport.tsx` — canvas Three.js con grid + ViewCube
+4. ✅ Crear `useForgeStore.ts` — Zustand store con scene graph + history
+5. ✅ Reescribir `ForgePage.tsx` con layout tipo Fusion 360
+6. ✅ Conectar pipeline: edit → SDF → Worker → mesh → Three.js
+7. ❌ Agregar TransformControls (gizmo) — **PENDIENTE**
+8. ✅ Probar con 50+ primitivas → confirmar 60fps
+9. ⚠️ MVP v1 ~90% lista. Falta: gizmo, ajuste de tema visual, Tool Strip
 
 ### Track B — IDE y Firmware (Fase 12, puede ir en paralelo)
 1. `npm install @monaco-editor/react`
@@ -1716,31 +1725,49 @@ Ya tenemos ABS, PLA, PETG, Nylon en `formulas.ts`. Necesitamos expandir:
 
 ## 19. INVENTARIO TÉCNICO COMPLETO — QUÉ EXISTE HOY
 
-### 19.1 Código Implementado (32 archivos TS/TSX)
+### 19.1 Código Implementado (42 archivos TS/TSX — 18,574 líneas)
+
+> **Actualizado**: 29 de marzo 2026
 
 | Archivo | Líneas | Estado | Conectado a UI |
 |---------|--------|--------|----------------|
-| `sdf-engine.ts` | ~600 | ✅ Completo | ✅ Sí |
-| `RayMarchMesh.tsx` | ~400 | ✅ Completo | ✅ Sí |
-| `ForgeViewport.tsx` | ~300 | ✅ Completo | ✅ Sí |
-| `useForgeStore.ts` | ~400 | ✅ Completo | ✅ Sí |
-| `formulas.ts` | 1458 | ✅ Completo | ❌ NO (desconectado) |
-| `gaia-variables.ts` | ~350 | ✅ Completo | ✅ Sí |
-| `simulation.ts` | ~200 | ⚠️ Solo kinematic demo | ⚠️ Parcial |
-| `sdf-cpu.ts` | ~250 | ✅ Completo | ✅ Sí |
-| `sketch-engine.ts` | ~200 | ⚠️ Solo rect/circle | ⚠️ Parcial |
-| `sketch-fitting.ts` | ~500 | ✅ Completo | ❌ Solo scripts |
-| `cross-section.ts` | ~400 | ✅ Completo | ❌ Solo scripts |
-| `step-import.ts` | ~300 | ✅ Completo | ✅ Sí |
-| `stl-export.ts` | ~400 | ✅ Completo | ✅ Sí |
-| `blueprint-export.ts` | ~300 | ✅ Completo | ✅ Sí |
-| `machine-config.ts` | ~400 | ✅ Completo | ✅ Sí |
-| `reverse-engineer.ts` | ~300 | ✅ Completo | ✅ Sí |
-| `mc-worker.ts` | ~200 | ✅ Completo | ✅ Sí |
-| `profile-to-sdf.ts` | ~200 | ✅ Completo | ❌ Solo scripts |
-| `forge-audio.ts` | ~100 | ✅ Completo | ✅ Sí |
-| `ForgePage.tsx` | ~800 | ✅ Funcional | ✅ Sí |
-| 7 UI components | ~1500 | ✅ Funcional | ✅ Sí |
+| `ForgePage.tsx` | 2,278 | ✅ Completo | ✅ Sí |
+| `formulas.ts` | 1,457 | ✅ Completo | ❌ NO (desconectado) |
+| `useForgeStore.ts` | 1,102 | ✅ Completo | ✅ Sí |
+| `gpu-cross-section.ts` | 1,090 | ✅ Completo | ✅ Sí (via scanModel) |
+| `reverse-engineer.ts` | 897 | ✅ Completo | ✅ Sí |
+| `sketch-fitting.ts` | 789 | ✅ Completo | ✅ Sí (via fitSketches) |
+| `cross-section.ts` | 765 | ✅ Completo | ✅ Sí (via ctScan) |
+| `feature-recognition.ts` | 675 | ✅ Completo | ✅ Sí |
+| `BlueprintPanel.tsx` | 590 | ✅ Completo | ✅ Sí |
+| `machine-config.ts` | 555 | ✅ Completo | ✅ Sí |
+| `sdf-engine.ts` | 524 | ✅ Completo | ✅ Sí |
+| `mc-worker.ts` | 503 | ✅ Completo | ✅ Sí |
+| `stl-export.ts` | 475 | ✅ Completo | ✅ Sí |
+| `profile-to-sdf.ts` | 460 | ✅ Completo | ✅ Sí |
+| `step-import.ts` | 437 | ✅ Completo | ✅ Sí |
+| `gaia-variables.ts` | 392 | ✅ Completo | ✅ Sí |
+| `blueprint-export.ts` | 372 | ✅ Completo | ✅ Sí |
+| `RayMarchMesh.tsx` | 366 | ✅ Completo | ✅ Sí |
+| `ForgeViewport.tsx` | 339 | ✅ Completo | ✅ Sí |
+| `Omnibar.tsx` | 339 | ✅ Completo | ✅ Sí |
+| `SketchInViewport.tsx` | 331 | ✅ Completo | ✅ Sí |
+| `MarkingMenu.tsx` | 282 | ✅ Completo | ✅ Sí |
+| `SketchPanel.tsx` | 285 | ✅ Completo | ✅ Sí |
+| `sdf-cpu.ts` | 242 | ✅ Completo | ✅ Sí |
+| `forge-audio.ts` | 237 | ✅ Completo | ✅ Sí |
+| `simulation.ts` | 212 | ⚠️ Solo stats/kinematics | ⚠️ Parcial |
+| `CommandPalette.tsx` | 210 | ✅ Completo | ✅ Sí |
+| `SectionPlane.tsx` | 207 | ✅ Completo | ✅ Sí |
+| `CameraTransitions.tsx` | 206 | ✅ Completo | ✅ Sí |
+| `SketchOverlay.tsx` | 183 | ✅ Completo | ✅ Sí |
+| `Timeline.tsx` | 140 | ✅ Completo | ✅ Sí |
+| `sketch-engine.ts` | 114 | ⚠️ Solo rect/circle | ⚠️ Parcial |
+| `ShortcutOverlay.tsx` | 106 | ✅ Completo | ✅ Sí |
+| `ToolbarDropdown.tsx` | 91 | ✅ Completo | ✅ Sí |
+| 10 componentes shadcn/ui | ~1,100 | ✅ Completo | ✅ Sí |
+| `main.css` | 277 | ✅ Completo | ✅ Sí |
+| viewport utilities | ~60 | ✅ Completo | ✅ Sí |
 
 ### 19.2 Fórmulas Ya Implementadas en formulas.ts (LISTAS PARA CONECTAR)
 
@@ -1928,17 +1955,25 @@ Ya tenemos ABS, PLA, PETG, Nylon en `formulas.ts`. Necesitamos expandir:
 
 ### 22.1 Qué Tiene Hoy (y Por Qué Se Siente Genérico)
 
-| Elemento | Qué Hace | Problema |
-|----------|---------|---------|
-| **Header/Menubar** | SKETCH · SOLID · SURFACE · METAL · CONSTRUCT · INSPECT · INSERT · ASSEMBLE | Es la barra de Fusion 360 renombrada. 8 menús que el 95% del tiempo no se tocan. |
-| **Scene Tree (sidebar izq.)** | Árbol jerárquico colapsable con hover-expand | Patrón de Fusion/Blender/Unity. Funcional pero NO innovador. |
-| **Properties Panel** | Panel flotante con posición/rotación/parámetros | Genérico. Cada CAD tiene esto idéntico. |
-| **Timeline (barra inferior)** | Nodos de historial como Fusion 360 | Copia directa. Y además no aporta mucho en F-Rep donde no hay "features" secuenciales. |
-| **Omnibar (Ctrl+K)** | Búsqueda universal estilo VS Code/Spotlight | ✅ Esto SÍ está bien. Mantener. |
-| **Marking Menu (clic derecho)** | Menú radial como Fusion 360 | ✅ Funcional. Pero el diseño visual es básico. |
-| **Shortcut Overlay (S)** | Grid de atajos rápidos | OK pero limitado. |
-| **Variable Bar** | Chips de variables en la parte superior | Buena idea, ejecución plana. |
-| **Viewport** | Three.js + ray marching | ✅ El corazón. Esto funciona bien. |
+> **Actualizado**: 29 de marzo 2026 — ForgePage.tsx alcanza 2,278 líneas
+
+| Elemento | Qué Hace | Estado | Problema |
+|----------|---------|--------|---------|
+| **Header/Menubar** | SKETCH · SOLID · SURFACE · METAL · CONSTRUCT · INSPECT · INSERT · ASSEMBLE | ✅ shadcn Menubar con submenús completos | Es la barra de Fusion 360 renombrada. 8 menús que el 95% del tiempo no se tocan. |
+| **Scene Tree (sidebar izq.)** | Árbol jerárquico colapsable con hover-expand, módulos renombrables | ✅ Funcional con módulos y activación | Patrón de Fusion/Blender/Unity. Funcional pero NO innovador. |
+| **Properties Panel** | Panel flotante con posición/rotación/parámetros/variables vinculadas | ✅ Floating con glass effect | Genérico pero bien ejecutado. |
+| **Timeline (barra inferior)** | Nodos de historial con navegación | ✅ Funcional | Copia de Fusion. No aporta mucho en F-Rep. |
+| **Omnibar (Ctrl+K)** | Búsqueda universal con 60+ comandos, categorías, keywords | ✅ **Excelente** | ✅ Mantener. |
+| **Marking Menu (clic derecho)** | Menú radial con secciones contextuales | ✅ Funcional | ✅ Funcional. Visual básico. |
+| **Shortcut Overlay (S)** | Grid de atajos rápidos | ✅ Funcional | OK pero limitado. |
+| **Variable Bar** | Chips de variables editables encima del viewport | ✅ Funcional con VarChip components | Buena idea, ejecución plana. |
+| **Viewport** | Three.js + ray marching dual + grid + ViewCube + camera transitions | ✅ **Core sólido** | ✅ Funciona bien. |
+| **Sketch 2D** | Rect/Circle en 3 planos + face picking + panel de herramientas | ✅ Básico | Solo 2 forms, sin constraints. |
+| **Blueprint Panel** | Visualizador interactivo de planos técnicos extraídos | ✅ Completo | ✅ Bien. |
+| **Import/Export** | STEP/IGES drag&drop + STL/SVG export + 8 máquinas .mch | ✅ Funcional | Buena base. |
+| **Ingeniería Inversa** | Modelo→primitivas SDF + CT-scan + GPU planes + sketch fitting | ✅ Pipeline completo | **Feature único. Ningún otro CAD tiene esto.** |
+| **Audio** | Click, create, delete, undo, error, complete sounds | ✅ Funcional | ✅ Diferenciador. |
+| **Tema Visual** | "Oro Divino" — void black (#08090d) + gold (#c9a84c) + glass panels | ✅ Implementado | **⚠️ DEMASIADO OSCURO. Los fondos son casi negro puro, no navy profundo.** |
 
 **Conclusión**: El 80% de la UI es un collage de patrones de otros CADs.
 No hay NADA que al abrirlo digas "esto es de otro planeta".
@@ -2100,7 +2135,22 @@ Nadie más lo tiene en real-time 3D.
 
 La paleta actual (Oro Divino v5) está bien en concepto pero falta **profundidad** y **vida**.
 
-#### Backgrounds — Más Negros, Más Profundos
+> **NOTA (29 mar 2026)**: La paleta actual se pasó de oscura. Los fondos `#08090d`, `#0d0f14`, `#12151c` 
+> son prácticamente **negro puro** — no "navy profundo" como dice la spec GAIA_FORGE_SPEC §4.2.
+> La propuesta original de la sección abajo sugería ir AÚN MÁS NEGRO (`#030305`), lo cual es incorrecto.
+> **CORRECCIÓN**: Los fondos deben subir hacia navy con más color: los paneles deben tener tinte azulado
+> visible, no ser void black indistinguible. El concepto dorado funciona pero necesita más contraste
+> con fondos que tengan presencia de color.
+> 
+> **Paleta corregida propuesta**:
+> - `--c-base`: `#0c0e16` (navy muy oscuro, pero con tinte azul visible)
+> - `--c-surface`: `#10131c` (superficie con presencia navy)
+> - `--c-surface-up`: `#161a26` (elevada, claramente navy)
+> - `--c-overlay`: `#1c2030` (overlays con más cuerpo)
+> - `--c-raised`: `#222838` (paneles elevados, navy medio)
+> - Los golds se mantienen — funcionan bien contra navy.
+
+#### Backgrounds — ~~Más Negros~~ Más Navy, Con Color
 
 | Token | Actual | Nuevo | Razón |
 |-------|--------|-------|-------|

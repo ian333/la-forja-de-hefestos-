@@ -56,6 +56,9 @@ import {
 } from '@/lib/machine-config';
 import { decomposeAssembly, assemblyStats } from '@/lib/step-import';
 import BlueprintPanel from '@/components/BlueprintPanel';
+import ThemePanel from '@/components/ThemePanel';
+import { useThemeStore } from '@/lib/useThemeStore';
+import { THEME_PROFILES } from '@/lib/theme-profiles';
 import { playClick, playCreate, playComplete, playDelete, playUndo, playError } from '@/lib/forge-audio';
 
 // ═══════════════════════════════════════════════════════════════
@@ -175,7 +178,7 @@ function TreeNode({ node, depth, selectedId, activeModuleId, onSelect, onActivat
     <>
       <div
         className={`group w-full flex items-center gap-1.5 py-1.5 rounded-md text-left transition-all cursor-pointer ${
-          isSel ? 'bg-[#c9a84c]/10' : 'hover:bg-[#12151c]'
+          isSel ? 'bg-gold/10' : 'hover:bg-surface-up'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px`, ...(isActive ? { outline: `1px solid ${modColor}40` } : {}) }}
         onClick={() => onSelect(node.id)}
@@ -183,7 +186,7 @@ function TreeNode({ node, depth, selectedId, activeModuleId, onSelect, onActivat
       >
         {isOp ? (
           <span onClick={e => { e.stopPropagation(); setOpen(p => !p); }}
-            className="w-4 text-center text-[10px] text-[#4a4035] hover:text-[#8a7e6b] cursor-pointer shrink-0">
+            className="w-4 text-center text-[10px] text-text-3 hover:text-text-2 cursor-pointer shrink-0">
             {open ? '▾' : '▸'}
           </span>
         ) : <span className="w-4 shrink-0" />}
@@ -191,7 +194,7 @@ function TreeNode({ node, depth, selectedId, activeModuleId, onSelect, onActivat
         {isMod ? (
           <span className="text-[13px] shrink-0" style={{ color: modColor }}>◈</span>
         ) : (
-          <span className={`text-[13px] shrink-0 ${isContainer(node) ? 'text-[#bc8cff]' : 'text-[#c9a84c]'}`}>
+          <span className={`text-[13px] shrink-0 ${isContainer(node) ? 'text-[#bc8cff]' : 'text-gold'}`}>
             {ICONS[(node as SdfPrimitive | SdfOperation).type]}
           </span>
         )}
@@ -206,11 +209,11 @@ function TreeNode({ node, depth, selectedId, activeModuleId, onSelect, onActivat
               e.stopPropagation();
             }}
             onClick={e => e.stopPropagation()}
-            className="flex-1 bg-[#181c26] border border-[#c9a84c]/50 rounded px-1.5 text-[11px] font-mono text-[#f0ece4] outline-none h-5"
+            className="flex-1 bg-overlay border border-gold/50 rounded px-1.5 text-[11px] font-mono text-text-1 outline-none h-5"
           />
         ) : (
           <span
-            className={`flex-1 truncate text-[12px] ${isSel ? 'text-[#c9a84c]' : isMod ? 'font-medium' : 'text-[#8a7e6b]'} ${isActive ? 'underline decoration-dotted underline-offset-2' : ''}`}
+            className={`flex-1 truncate text-[12px] ${isSel ? 'text-gold' : isMod ? 'font-medium' : 'text-text-2'} ${isActive ? 'underline decoration-dotted underline-offset-2' : ''}`}
             style={isMod && !isSel ? { color: modColor } : undefined}>
             {label}
           </span>
@@ -265,13 +268,13 @@ function VarChip({ variable, onUpdate, onSelect }: {
     <button
       className={`flex items-center gap-1.5 px-3 h-7 rounded-md text-[12px] font-mono transition-all shrink-0 ${
         hasError
-          ? 'bg-[#f87171]/10 border border-[#f87171]/30 text-[#f87171]'
-          : 'bg-[#08090d] border border-[#1a1810] text-[#f0ece4] hover:border-[#c9a84c]/40'
+          ? 'bg-red/10 border border-red/30 text-red'
+          : 'bg-base border border-border-hi text-text-1 hover:border-gold/40'
       }`}
       onClick={() => { if (!editing) { setEditing(true); onSelect(); } }}
     >
-      <span className="text-[11px] text-[#c9a84c] font-semibold">{variable.name}</span>
-      <span className="text-[#4a4035]">=</span>
+      <span className="text-[11px] text-gold font-semibold">{variable.name}</span>
+      <span className="text-text-3">=</span>
       {editing ? (
         <input
           ref={inputRef}
@@ -279,7 +282,7 @@ function VarChip({ variable, onUpdate, onSelect }: {
           onChange={e => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(variable.expression); setEditing(false); } }}
-          className="w-20 bg-transparent border-b border-[#c9a84c] outline-none text-[12px] text-[#f0ece4] font-mono px-0"
+          className="w-20 bg-transparent border-b border-gold outline-none text-[12px] text-text-1 font-mono px-0"
           onClick={e => e.stopPropagation()}
         />
       ) : (
@@ -314,7 +317,7 @@ function FloatingProperties({ node, variables, onClose }: {
     <div className="absolute top-3 left-16 z-20 w-72 forge-glass overflow-hidden animate-scaleIn">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: '1px solid var(--c-border-sub)' }}>
-        <span className="text-[14px]" style={{ color: isPrimitive(node) ? 'var(--c-gold)' : '#a78bfa' }}>
+        <span className="text-[14px]" style={{ color: isPrimitive(node) ? 'var(--c-gold)' : 'var(--c-purple)' }}>
           {ICONS[(node as SdfPrimitive | SdfOperation).type] ?? '◈'}
         </span>
         <input
@@ -323,7 +326,7 @@ function FloatingProperties({ node, variables, onClose }: {
           onChange={e => updateNode(node.id, { label: e.target.value })}
           className="flex-1 bg-transparent text-[13px] font-semibold outline-none transition-colors"
           style={{ color: 'var(--c-text-1)', borderBottom: '1px solid transparent' }}
-          onFocus={e => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')}
+          onFocus={e => (e.target.style.borderBottomColor = 'var(--panel-glass-border)')}
           onBlur={e => (e.target.style.borderBottomColor = 'transparent')}
         />
         <button onClick={onClose} className="forge-btn" style={{ padding: '2px 6px', fontSize: '12px' }}>✕</button>
@@ -339,16 +342,16 @@ function FloatingProperties({ node, variables, onClose }: {
                 const meta = PARAM_LABELS[node.type]?.[v.linkedParamKey ?? ''];
                 return (
                   <div key={v.id} className="flex items-center gap-2">
-                    <span className="text-[12px] text-[#8a7e6b] w-20 shrink-0 truncate">{meta?.label ?? v.linkedParamKey}</span>
+                    <span className="text-[12px] text-text-2 w-20 shrink-0 truncate">{meta?.label ?? v.linkedParamKey}</span>
                     <div className="flex-1 flex items-center gap-1.5">
-                      <span className="text-[10px] text-[#c9a84c] font-mono">$</span>
+                      <span className="text-[10px] text-gold font-mono">$</span>
                       <input
                         type="text"
                         value={v.expression}
                         onChange={e => updateVariableExpression(v.id, e.target.value)}
                         className="forge-input flex-1"
                       />
-                      <span className="text-[10px] text-[#4a4035] shrink-0">{v.unit}</span>
+                      <span className="text-[10px] text-text-3 shrink-0">{v.unit}</span>
                     </div>
                   </div>
                 );
@@ -364,7 +367,7 @@ function FloatingProperties({ node, variables, onClose }: {
             <div className="space-y-2">
               {Object.entries(node.params).map(([key, val]) => (
                 <div key={key} className="flex items-center gap-2">
-                  <span className="text-[12px] text-[#8a7e6b] w-20 shrink-0">{key}</span>
+                  <span className="text-[12px] text-text-2 w-20 shrink-0">{key}</span>
                   <input
                     type="number" step={0.05} value={val}
                     onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) updateParam(node.id, key, v); }}
@@ -383,7 +386,7 @@ function FloatingProperties({ node, variables, onClose }: {
             <div className="grid grid-cols-3 gap-2">
               {(['X', 'Y', 'Z'] as const).map((axis, i) => (
                 <div key={axis}>
-                  <span className="text-[10px] text-[#4a4035] block mb-0.5">{axis}</span>
+                  <span className="text-[10px] text-text-3 block mb-0.5">{axis}</span>
                   <input
                     type="number" step={0.1}
                     value={+node.position[i].toFixed(3)}
@@ -403,7 +406,7 @@ function FloatingProperties({ node, variables, onClose }: {
             <div className="grid grid-cols-3 gap-2">
               {(['X', 'Y', 'Z'] as const).map((axis, i) => (
                 <div key={axis}>
-                  <span className="text-[10px] text-[#4a4035] block mb-0.5">{axis}°</span>
+                  <span className="text-[10px] text-text-3 block mb-0.5">{axis}°</span>
                   <input
                     type="number" step={1}
                     value={+((node.rotation?.[i] ?? 0) * 180 / Math.PI).toFixed(1)}
@@ -426,8 +429,8 @@ function FloatingProperties({ node, variables, onClose }: {
                   onClick={() => updateNode(node.id, { type: t })}
                   className={`flex items-center justify-center gap-1.5 py-2 rounded-md text-[12px] transition-all ${
                     (node as SdfOperation).type === t
-                      ? 'bg-[#c9a84c]/10 text-[#c9a84c] ring-1 ring-[#c9a84c]/25'
-                      : 'text-[#8a7e6b] hover:bg-[#12151c] hover:text-[#f0ece4]'
+                      ? 'bg-gold/10 text-gold ring-1 ring-gold/25'
+                      : 'text-text-2 hover:bg-surface-up hover:text-text-1'
                   }`}>
                   <span className="text-[14px]">{ICONS[t]}</span>
                   {LABELS[t]}
@@ -515,7 +518,13 @@ export default function ForgePage() {
   const gpuFitting = useForgeStore(s => s.gpuFitting);
   const clearFittedSlices = useForgeStore(s => s.clearFittedSlices);
   const setModelMaterial = useForgeStore(s => s.setModelMaterial);
+  // 3D Reconstruction
+  const reconstruction = useForgeStore(s => s.reconstruction);
+  const reconstructing = useForgeStore(s => s.reconstructing);
+  const reconstructModel = useForgeStore(s => s.reconstructModel);
+  const clearReconstruction = useForgeStore(s => s.clearReconstruction);
   const [sketchFilterAxis, setSketchFilterAxis] = useState<'X' | 'Y' | 'Z' | null>(null);
+  const [selectedSliceIndex, setSelectedSliceIndex] = useState<number | null>(null);
   // Módulos
   const activeModuleId = useForgeStore(s => s.activeModuleId);
   const addModule     = useForgeStore(s => s.addModule);
@@ -555,6 +564,7 @@ export default function ForgePage() {
   const [shortcutOverlay, setShortcutOverlay] = useState<{ x: number; y: number } | null>(null);
   const [machinePanel, setMachinePanel] = useState(false);
   const [blueprintPanel, setBlueprintPanel] = useState(false);
+  const [themePanelOpen, setThemePanelOpen] = useState(false);
   const [materialPanel, setMaterialPanel] = useState<number | null>(null);
   // Camera transitions
   const [targetView, setTargetView] = useState<StandardView | null>(null);
@@ -796,6 +806,16 @@ export default function ForgePage() {
       { id: 'reverse-engineer', label: 'Ingeniería Inversa', description: 'Descomponer modelo importado en primitivas SDF' , icon: '🔬', category: 'Inspección', keywords: ['reverse', 'engineer', 'decompose', 'descomponer', 'primitivas', 'feature recognition'], action: () => { if (importedModels.length > 0) reverseEngineerImported(0); } },
       { id: 'ct-scan', label: 'CT-Scan Decomposición', description: 'Descomponer pieza por secciones transversales (3 ejes)' , icon: '🩻', category: 'Inspección', keywords: ['ct', 'scan', 'cross', 'section', 'sección', 'contorno', 'perfil', 'descomponer', 'slice', 'corte'], action: () => { if (importedModels.length > 0) ctScanImported(0); } },
       { id: 'scan-model', label: 'Escanear Pieza', description: 'GPU Scan: planos guiados por geometría + winding-number → error mínimo', icon: '⚒️', category: 'Inspección', keywords: ['scan', 'escanear', 'ct', 'gpu', 'geometry', 'fit', 'sketch', 'winding', 'plane', 'plano'], action: () => { if (importedModels.length > 0) scanModel(0); } },
+      { id: 'reconstruct-3d', label: 'Reconstruir 3D', description: 'Genera pieza 3D extrudiendo perfiles ajustados', icon: '🏗️', category: 'Inspección', keywords: ['reconstruct', 'reconstruir', '3d', 'extrude', 'extruir', 'build', 'pieza', 'solid'], action: reconstructModel },
+      { id: 'clear-reconstruction', label: 'Limpiar Reconstrucción', description: 'Eliminar la reconstrucción 3D actual', icon: '🧹', category: 'Inspección', keywords: ['clear', 'limpiar', 'reconstruction', 'reconstrucción', 'borrar'], action: clearReconstruction },
+
+      // ── Perfiles de Color ──
+      { id: 'theme-open', label: 'Perfiles de Color', description: 'Abrir selector de perfiles de color', icon: '🎨', category: 'Configuración', keywords: ['theme', 'tema', 'color', 'perfil', 'profile', 'dark', 'oscuro', 'settings', 'configuración'], action: () => setThemePanelOpen(true) },
+      ...THEME_PROFILES.map(tp => ({
+        id: `theme-${tp.id}`, label: `${tp.icon} ${tp.name}`, description: tp.description,
+        icon: '🎨', category: 'Perfiles de Color', keywords: ['theme', 'tema', 'color', tp.name.toLowerCase()],
+        action: () => useThemeStore.getState().setTheme(tp.id),
+      })),
 
       // ── Materiales ──
       { id: 'mat-pla', label: 'PLA', description: 'Ácido poliláctico — Impresión 3D FDM', icon: '🧱', category: 'Materiales', keywords: ['plastico', 'filament', 'filamento', 'fdm', 'fff'], action: () => {} },
@@ -844,7 +864,7 @@ export default function ForgePage() {
     ];
 
     return actions;
-  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches, scanModel]);
+  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches, scanModel, reconstructModel, clearReconstruction]);
 
   const shortcutTools: ShortcutTool[] = useMemo(() => [
     { label: 'Caja', icon: '■', shortcut: '1', action: () => addPrimitive('box') },
@@ -959,10 +979,10 @@ export default function ForgePage() {
       {/* ════════════════════════════════════════════════════
           HEADER — shadcn Menubar — La Forja de Hefestos
           ════════════════════════════════════════════════════ */}
-      <header className="h-11 flex items-center pl-3 pr-2 gap-1.5 shrink-0 z-30 border-b border-border" style={{ background: 'rgba(8,9,13,0.88)', backdropFilter: 'blur(32px) saturate(1.5)', WebkitBackdropFilter: 'blur(32px) saturate(1.5)' }}>
+      <header className="h-11 flex items-center pl-3 pr-2 gap-1.5 shrink-0 z-30 border-b border-border" style={{ background: 'var(--panel-glass)', backdropFilter: 'blur(32px) saturate(1.5)', WebkitBackdropFilter: 'blur(32px) saturate(1.5)' }}>
         {/* Brand */}
         <div className="flex items-center gap-2 mr-1">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #c9a84c 0%, #8b6914 100%)', boxShadow: '0 0 12px rgba(201,168,76,0.20)' }}>
+          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `linear-gradient(135deg, var(--c-gold) 0%, var(--c-gold-warm) 100%)`, boxShadow: '0 0 12px var(--c-gold-glow)' }}>
             <svg viewBox="0 0 16 16" className="w-3 h-3" fill="rgba(255,255,255,0.95)">
               <path d="M8 1L2 4v4l6 3 6-3V4L8 1zM3 5l5 2.5L13 5l-5-2.5L3 5zm5 3.7L3 6.2v2.6l5 2.5 5-2.5V6.2L8 8.7z"/>
             </svg>
@@ -1179,9 +1199,12 @@ export default function ForgePage() {
                 { label: '🔬 Reverse Engineer', icon: '⚙', action: () => { if (importedModels.length > 0) reverseEngineerImported(0); }, disabled: importedModels.length === 0 || reverseEngineering },
                 { label: '⚒️ Escanear Pieza', icon: '⚙', action: () => { if (importedModels.length > 0) scanModel(0); }, disabled: importedModels.length === 0 || sketchFitting },
                 { label: fittedSlices.length > 0 ? '🧹 Clear Sketches' : '🧹 Clear Sketches', icon: '✕', action: clearFittedSlices, disabled: fittedSlices.length === 0 },
+                { label: '🏗️ Reconstruir 3D', icon: '⚙', action: reconstructModel, disabled: fittedSlices.length === 0 || reconstructing },
+                { label: '🧹 Clear Reconstrucción', icon: '✕', action: clearReconstruction, disabled: !reconstruction },
                 { divider: true },
                 { label: '📐 Extracción de Planos', icon: '📐', action: () => setBlueprintPanel(true) },
                 { label: 'Component Color Cycling', icon: '🎨', disabled: true },
+                { label: '🎨 Perfiles de Color', icon: '⚙', action: () => setThemePanelOpen(true) },
                 { divider: true },
                 { label: 'Standard Views', icon: '◇', sub: [
                   ...STANDARD_VIEWS.map(v => ({
@@ -1304,12 +1327,24 @@ export default function ForgePage() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={() => setBlueprintPanel(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-[#60a5fa] hover:text-[#f0ece4] hover:bg-[#60a5fa]/15 transition-all">
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-blue hover:text-text-1 hover:bg-blue/15 transition-all">
                 📐
                 <span>Planos 2D</span>
               </button>
             </TooltipTrigger>
             <TooltipContent>Extracción de planos — secciones 2D de 37 modelos STEP</TooltipContent>
+          </Tooltip>
+
+          {/* Theme / color profile selector */}
+          <div className="forge-sep" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={() => setThemePanelOpen(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-muted-foreground hover:text-accent-foreground hover:bg-accent transition-all">
+                🎨
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Perfiles de Color</TooltipContent>
           </Tooltip>
         </div>
       </header>
@@ -1340,14 +1375,14 @@ export default function ForgePage() {
         {/* LEFT — Collapsible Icon Tree */}
         <aside
           className="relative shrink-0 z-20"
-          style={{ background: 'rgba(8,9,13,0.45)', borderRight: '1px solid rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+          style={{ background: 'var(--panel-glass)', borderRight: '1px solid rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
           onMouseEnter={() => { if (!treePinned.current) setTreeExpanded(true); }}
           onMouseLeave={() => { if (!treePinned.current) setTreeExpanded(false); }}
         >
           {/* Collapsed: 48px icons */}
           <div className={`flex flex-col items-center py-3 gap-1 w-12 ${treeExpanded ? 'hidden' : ''}`}>
             {scene.children.length === 0 ? (
-              <span className="text-[20px] text-[#1a1810]/40 mt-8">⬡</span>
+              <span className="text-[20px] text-border-hi/40 mt-8">⬡</span>
             ) : (
               scene.children.map(n => (
                 <button key={n.id}
@@ -1355,8 +1390,8 @@ export default function ForgePage() {
                   title={n.label}
                   className={`w-8 h-8 flex items-center justify-center rounded-lg text-[14px] transition-all ${
                     n.id === selectedId
-                      ? 'bg-[#c9a84c]/10 text-[#c9a84c] shadow-[0_0_12px_rgba(201,168,76,0.1)]'
-                      : 'text-[#4a4035] hover:text-[#8a7e6b] hover:bg-white/[0.03]'
+                      ? 'bg-gold/10 text-gold shadow-[0_0_12px_rgba(201,168,76,0.1)]'
+                      : 'text-text-3 hover:text-text-2 hover:bg-white/[0.03]'
                   }`}>
                   {isModule(n)
                     ? <span style={{ color: (n as SdfModule).color }}>◈</span>
@@ -1369,23 +1404,23 @@ export default function ForgePage() {
 
           {/* Expanded: 240px overlay */}
           {treeExpanded && (
-            <div className="absolute top-0 left-0 bottom-0 w-64 z-30 flex flex-col animate-slideRight" style={{ background: 'rgba(8,9,13,0.60)', borderRight: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(32px) saturate(1.5)', WebkitBackdropFilter: 'blur(32px) saturate(1.5)', boxShadow: '8px 0 48px rgba(0,0,0,0.4), inset 0 0 0.5px rgba(255,255,255,0.06)' }}>
+            <div className="absolute top-0 left-0 bottom-0 w-64 z-30 flex flex-col animate-slideRight" style={{ background: 'var(--panel-glass)', borderRight: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(32px) saturate(1.5)', WebkitBackdropFilter: 'blur(32px) saturate(1.5)', boxShadow: '8px 0 48px rgba(0,0,0,0.4), inset 0 0 0.5px rgba(255,255,255,0.06)' }}>
               <div className="px-4 py-3 flex flex-col gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-[11px] font-semibold tracking-wide" style={{ color: '#8a7e6b', letterSpacing: '0.06em' }}>ESCENA</h2>
+                  <h2 className="text-[11px] font-semibold tracking-wide" style={{ color: 'var(--c-text-2)', letterSpacing: '0.06em' }}>ESCENA</h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#4a4035] font-mono">{nodeCount}</span>
+                    <span className="text-[10px] text-text-3 font-mono">{nodeCount}</span>
                     <button
                       onClick={() => addModule(`Módulo ${scene.children.filter(isModule).length + 1}`)}
                       title="Nuevo Módulo"
-                      className="px-2.5 py-1 rounded-lg text-[10px] border border-[#c9a84c]/20 text-[#c9a84c] bg-[#c9a84c]/5 hover:bg-[#c9a84c]/12 transition-all font-medium">
+                      className="px-2.5 py-1 rounded-lg text-[10px] border border-gold/20 text-gold bg-gold/5 hover:bg-gold/12 transition-all font-medium">
                       + Módulo
                     </button>
                     <button
                       onClick={() => { treePinned.current = !treePinned.current; if (!treePinned.current) setTreeExpanded(false); }}
                       title={treePinned.current ? 'Desfijar panel' : 'Fijar panel'}
                       className={`w-5 h-5 flex items-center justify-center rounded text-[11px] transition-all ${
-                        treePinned.current ? 'text-[#c9a84c] bg-[#c9a84c]/10' : 'text-[#4a4035] hover:text-[#8a7e6b]'
+                        treePinned.current ? 'text-gold bg-gold/10' : 'text-text-3 hover:text-text-2'
                       }`}>
                       📌
                     </button>
@@ -1396,11 +1431,11 @@ export default function ForgePage() {
                   const mod = findNode(scene, activeModuleId);
                   if (!mod || !isModule(mod)) return null;
                   return (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#181c26] border border-[#1a1810]/50">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-overlay border border-border-hi/50">
                       <span className="text-[11px]" style={{ color: (mod as SdfModule).color }}>◉</span>
-                      <span className="text-[11px] text-[#8a7e6b] flex-1 truncate" style={{ color: (mod as SdfModule).color }}>{mod.label}</span>
+                      <span className="text-[11px] text-text-2 flex-1 truncate" style={{ color: (mod as SdfModule).color }}>{mod.label}</span>
                       <button onClick={() => setActiveModule(null)}
-                        className="text-[9px] text-[#4a4035] hover:text-[#8a7e6b] transition-all">✕</button>
+                        className="text-[9px] text-text-3 hover:text-text-2 transition-all">✕</button>
                     </div>
                   );
                 })()}
@@ -1408,9 +1443,9 @@ export default function ForgePage() {
               <div className="flex-1 overflow-y-auto p-1.5">
                 {scene.children.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-[28px] text-[#1a1810]/30 mb-3">⬡</p>
-                    <p className="text-[13px] text-[#4a4035] font-medium">Escena vacía</p>
-                    <p className="text-[11px] text-[#2a2520] mt-2">Presiona <kbd className="font-mono bg-white/[0.03] border border-white/[0.06] rounded px-1.5 py-0.5 text-[10px]">S</kbd> para atajos rápidos</p>
+                    <p className="text-[28px] text-border-hi/30 mb-3">⬡</p>
+                    <p className="text-[13px] text-text-3 font-medium">Escena vacía</p>
+                    <p className="text-[11px] text-text-4 mt-2">Presiona <kbd className="font-mono bg-white/[0.03] border border-white/[0.06] rounded px-1.5 py-0.5 text-[10px]">S</kbd> para atajos rápidos</p>
                   </div>
                 ) : (
                   <TreeNode node={scene} depth={0} selectedId={selectedId}
@@ -1421,7 +1456,7 @@ export default function ForgePage() {
                   />
                 )}
               </div>
-              <div className="px-4 py-2.5 flex justify-between text-[11px]" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', color: '#4a4035' }}>
+              <div className="px-4 py-2.5 flex justify-between text-[11px]" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', color: 'var(--c-text-3)' }}>
                 <span>{stats.totalParts} piezas</span>
                 <span>{stats.estimatedVolumeCm3} cm³</span>
                 <span>{stats.estimatedMassKg} kg</span>
@@ -1450,34 +1485,36 @@ export default function ForgePage() {
             onViewTransitionComplete={() => setTargetView(null)}
             fittedSlices={fittedSlices}
             sketchFilterAxis={sketchFilterAxis}
+            selectedSliceIndex={selectedSliceIndex}
+            reconstruction={reconstruction}
           />
 
           {/* Drag-and-drop overlay */}
           {dragOver && (
-            <div className="absolute inset-0 z-40 bg-[#c9a84c]/5 border-2 border-dashed border-[#c9a84c]/30 flex items-center justify-center backdrop-blur-sm pointer-events-none rounded-2xl m-2">
-              <div className="px-10 py-8 rounded-2xl border border-[#c9a84c]/20 text-center" style={{ background: 'rgba(8,9,13,0.80)', backdropFilter: 'blur(24px)', boxShadow: '0 24px 80px rgba(0,0,0,0.5), 0 0 40px rgba(201,168,76,0.08)' }}>
+            <div className="absolute inset-0 z-40 bg-gold/5 border-2 border-dashed border-gold/30 flex items-center justify-center backdrop-blur-sm pointer-events-none rounded-2xl m-2">
+              <div className="px-10 py-8 rounded-2xl border border-gold/20 text-center" style={{ background: 'var(--panel-glass)', backdropFilter: 'blur(24px)', boxShadow: '0 24px 80px rgba(0,0,0,0.5), 0 0 40px var(--c-gold-glow)' }}>
                 <div className="text-[40px] mb-2">📦</div>
-                <p className="text-[16px] text-[#c9a84c] font-semibold">Soltar archivo CAD</p>
-                <p className="text-[12px] text-[#8a7e6b] mt-1">STEP · IGES · BREP · MCH</p>
+                <p className="text-[16px] text-gold font-semibold">Soltar archivo CAD</p>
+                <p className="text-[12px] text-text-2 mt-1">STEP · IGES · BREP · MCH</p>
               </div>
             </div>
           )}
 
           {/* Importing indicator */}
           {importing && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-[#181c26]/95 border border-[#c9a84c]/30 text-[12px] text-[#c9a84c] flex items-center gap-3 backdrop-blur-md shadow-lg z-30">
-              <div className="w-4 h-4 border-2 border-[#c9a84c]/30 border-t-[#c9a84c] rounded-full animate-spin" />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-overlay/95 border border-gold/30 text-[12px] text-gold flex items-center gap-3 backdrop-blur-md shadow-lg z-30">
+              <div className="w-4 h-4 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
               Importando modelo CAD — Cargando WASM…
             </div>
           )}
 
           {/* Import error toast */}
           {importError && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-[#181c26]/95 border border-[#f87171]/30 text-[12px] text-[#f87171] flex items-center gap-3 backdrop-blur-md shadow-lg z-30 animate-scaleIn">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-overlay/95 border border-red/30 text-[12px] text-red flex items-center gap-3 backdrop-blur-md shadow-lg z-30 animate-scaleIn">
               <span>⚠</span>
               <span>{importError}</span>
               <button onClick={clearImportError}
-                className="ml-2 px-2 py-0.5 rounded text-[11px] bg-[#f87171]/10 hover:bg-[#f87171]/20 transition-all">
+                className="ml-2 px-2 py-0.5 rounded text-[11px] bg-red/10 hover:bg-red/20 transition-all">
                 Cerrar
               </button>
             </div>
@@ -1489,64 +1526,71 @@ export default function ForgePage() {
               {importedModels.map((model, i) => (
                 <div key={i} className="space-y-1">
                 <div
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#181c26]/90 border border-[#c9a84c]/25 text-[11px] text-[#c9a84c] backdrop-blur-sm shadow-lg animate-scaleIn">
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-overlay/90 border border-gold/25 text-[11px] text-gold backdrop-blur-sm shadow-lg animate-scaleIn">
                   <span>📦</span>
-                  <span className="text-[#f0ece4] font-medium truncate max-w-[180px]">{model.threeGroup.name}</span>
-                  <span className="text-[#4a4035]">·</span>
+                  <span className="text-text-1 font-medium truncate max-w-[180px]">{model.threeGroup.name}</span>
+                  <span className="text-text-3">·</span>
                   <span>{model.stats.meshCount} meshes</span>
-                  <span className="text-[#4a4035]">·</span>
+                  <span className="text-text-3">·</span>
                   <span>{(model.stats.triangleCount / 1000).toFixed(1)}K △</span>
                   <button
                     onClick={() => reverseEngineerImported(i)}
                     disabled={reverseEngineering}
-                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#c9a84c] hover:text-[#f0ece4] hover:bg-[#c9a84c]/20 transition-all disabled:opacity-40"
+                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-gold hover:text-text-1 hover:bg-gold/20 transition-all disabled:opacity-40"
                     title="Descomponer en primitivas SDF (Ingeniería Inversa)">
                     {reverseEngineering ? '⏳' : '🔬'}
                   </button>
                   <button
                     onClick={() => scanModel(i)}
                     disabled={sketchFitting}
-                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-[#00ff88] hover:text-[#f0ece4] bg-[#00ff88]/10 hover:bg-[#00ff88]/25 border border-[#00ff88]/25 transition-all disabled:opacity-40"
+                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-green hover:text-text-1 bg-green/10 hover:bg-green/25 border border-green/25 transition-all disabled:opacity-40"
                     title="Escanear: barrido continuo GPU + fitting → error mínimo">
                     {gpuFitting ? '⏳ Escaneando...' : '⚒️ Escanear'}
                   </button>
                   <button
                     onClick={() => setBlueprintPanel(true)}
-                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-[#60a5fa] hover:text-[#f0ece4] bg-[#60a5fa]/10 hover:bg-[#60a5fa]/25 border border-[#60a5fa]/25 transition-all"
+                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-blue hover:text-text-1 bg-blue/10 hover:bg-blue/25 border border-blue/25 transition-all"
                     title="Ver planos extraídos — secciones 2D con cotas">
                     📐 Planos
                   </button>
+                  <button
+                    onClick={reconstructModel}
+                    disabled={fittedSlices.length === 0 || reconstructing}
+                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-orange hover:text-text-1 bg-orange/10 hover:bg-orange/25 border border-orange/25 transition-all disabled:opacity-40"
+                    title="Reconstruir pieza 3D desde sketches ajustados">
+                    {reconstructing ? '⏳ Reconstruyendo...' : '🏗️ 3D'}
+                  </button>
                   <button onClick={() => removeImportedModel(i)}
-                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-[#4a4035] hover:text-[#f87171] hover:bg-[#f87171]/10 transition-all"
+                    className="ml-1 px-1.5 py-0.5 rounded text-[10px] text-text-3 hover:text-red hover:bg-red/10 transition-all"
                     title="Eliminar modelo importado">
                     ✕
                   </button>
                   <button onClick={() => setMaterialPanel(materialPanel === i ? null : i)}
-                    className={`ml-1 px-1.5 py-0.5 rounded text-[10px] transition-all ${materialPanel === i ? 'text-[#c9a84c] bg-[#c9a84c]/15' : 'text-[#4a4035] hover:text-[#c9a84c] hover:bg-[#c9a84c]/10'}`}
+                    className={`ml-1 px-1.5 py-0.5 rounded text-[10px] transition-all ${materialPanel === i ? 'text-gold bg-gold/15' : 'text-text-3 hover:text-gold hover:bg-gold/10'}`}
                     title="Cambiar apariencia / material">
                     🎨
                   </button>
                 </div>
                 {/* Material editor row */}
                 {materialPanel === i && (
-                  <div className="flex items-center gap-3 px-3 py-2 mt-1 rounded-lg bg-[#181c26]/80 border border-[#c9a84c]/15 animate-scaleIn">
-                    <label className="flex items-center gap-1.5 text-[9px] text-[#8a7e6b]">
+                  <div className="flex items-center gap-3 px-3 py-2 mt-1 rounded-lg bg-overlay/80 border border-gold/15 animate-scaleIn">
+                    <label className="flex items-center gap-1.5 text-[9px] text-text-2">
                       Color
                       <input type="color" defaultValue="#808c99"
                         onChange={e => setModelMaterial(i, { color: e.target.value })}
-                        className="w-6 h-5 rounded border border-[#c9a84c]/20 bg-transparent cursor-pointer" />
+                        className="w-6 h-5 rounded border border-gold/20 bg-transparent cursor-pointer" />
                     </label>
-                    <label className="flex items-center gap-1 text-[9px] text-[#8a7e6b]">
+                    <label className="flex items-center gap-1 text-[9px] text-text-2">
                       Metal
                       <input type="range" min="0" max="100" defaultValue="20"
                         onChange={e => setModelMaterial(i, { metalness: +e.target.value / 100 })}
-                        className="w-16 h-1 accent-[#c9a84c]" />
+                        className="w-16 h-1 accent-gold" />
                     </label>
-                    <label className="flex items-center gap-1 text-[9px] text-[#8a7e6b]">
+                    <label className="flex items-center gap-1 text-[9px] text-text-2">
                       Rugosidad
                       <input type="range" min="0" max="100" defaultValue="50"
                         onChange={e => setModelMaterial(i, { roughness: +e.target.value / 100 })}
-                        className="w-16 h-1 accent-[#c9a84c]" />
+                        className="w-16 h-1 accent-gold" />
                     </label>
                     {/* Quick material presets */}
                     <div className="flex gap-1 ml-auto">
@@ -1559,7 +1603,7 @@ export default function ForgePage() {
                       ].map(preset => (
                         <button key={preset.label}
                           onClick={() => setModelMaterial(i, { color: preset.color, metalness: preset.metal, roughness: preset.rough })}
-                          className="px-1.5 py-0.5 rounded text-[8px] border border-[#c9a84c]/15 hover:border-[#c9a84c]/40 transition-all"
+                          className="px-1.5 py-0.5 rounded text-[8px] border border-gold/15 hover:border-gold/40 transition-all"
                           style={{ color: preset.color }}
                           title={preset.label}>
                           {preset.label}
@@ -1575,31 +1619,31 @@ export default function ForgePage() {
 
           {/* Reverse Engineering Results Panel */}
           {reverseEngineeringResult && (
-            <div className="absolute top-4 left-4 z-20 w-72 max-h-[70vh] overflow-y-auto rounded-xl bg-[#181c26]/95 border border-[#c9a84c]/30 backdrop-blur-md shadow-2xl animate-scaleIn">
-              <div className="sticky top-0 bg-[#181c26] border-b border-[#c9a84c]/20 px-3 py-2.5 flex items-center justify-between">
+            <div className="absolute top-4 left-4 z-20 w-72 max-h-[70vh] overflow-y-auto rounded-xl bg-overlay/95 border border-gold/30 backdrop-blur-md shadow-2xl animate-scaleIn">
+              <div className="sticky top-0 bg-overlay border-b border-gold/20 px-3 py-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">🔬</span>
-                  <span className="text-[12px] font-bold text-[#c9a84c] tracking-wide">INGENIERÍA INVERSA</span>
+                  <span className="text-[12px] font-bold text-gold tracking-wide">INGENIERÍA INVERSA</span>
                 </div>
                 <button onClick={clearReverseEngineering}
-                  className="text-[10px] text-[#4a4035] hover:text-[#f87171] px-1.5 py-0.5 rounded hover:bg-[#f87171]/10 transition-all">
+                  className="text-[10px] text-text-3 hover:text-red px-1.5 py-0.5 rounded hover:bg-red/10 transition-all">
                   ✕
                 </button>
               </div>
               {/* Stats */}
-              <div className="px-3 py-2 border-b border-[#c9a84c]/10 text-[10px] grid grid-cols-2 gap-x-3 gap-y-1">
-                <span className="text-[#8a7e6b]">Componentes:</span>
-                <span className="text-[#f0ece4] font-medium">{reverseEngineeringResult.stats.totalComponents}</span>
-                <span className="text-[#8a7e6b]">Features detectados:</span>
-                <span className="text-[#f0ece4] font-medium text-[#4ade80]">{reverseEngineeringResult.stats.detectedFeatures}</span>
-                <span className="text-[#8a7e6b]">Desconocidos:</span>
-                <span className="text-[#f0ece4] font-medium">{reverseEngineeringResult.stats.unknownFeatures}</span>
-                <span className="text-[#8a7e6b]">Confianza prom.:</span>
-                <span className="text-[#f0ece4] font-medium">{(reverseEngineeringResult.stats.averageConfidence * 100).toFixed(0)}%</span>
-                <span className="text-[#8a7e6b]">Tiempo:</span>
-                <span className="text-[#f0ece4] font-medium">{reverseEngineeringResult.stats.processingTimeMs.toFixed(0)}ms</span>
-                <span className="text-[#8a7e6b]">Variables creadas:</span>
-                <span className="text-[#f0ece4] font-medium">{reverseEngineeringResult.variables.length}</span>
+              <div className="px-3 py-2 border-b border-gold/10 text-[10px] grid grid-cols-2 gap-x-3 gap-y-1">
+                <span className="text-text-2">Componentes:</span>
+                <span className="text-text-1 font-medium">{reverseEngineeringResult.stats.totalComponents}</span>
+                <span className="text-text-2">Features detectados:</span>
+                <span className="text-text-1 font-medium text-green">{reverseEngineeringResult.stats.detectedFeatures}</span>
+                <span className="text-text-2">Desconocidos:</span>
+                <span className="text-text-1 font-medium">{reverseEngineeringResult.stats.unknownFeatures}</span>
+                <span className="text-text-2">Confianza prom.:</span>
+                <span className="text-text-1 font-medium">{(reverseEngineeringResult.stats.averageConfidence * 100).toFixed(0)}%</span>
+                <span className="text-text-2">Tiempo:</span>
+                <span className="text-text-1 font-medium">{reverseEngineeringResult.stats.processingTimeMs.toFixed(0)}ms</span>
+                <span className="text-text-2">Variables creadas:</span>
+                <span className="text-text-1 font-medium">{reverseEngineeringResult.variables.length}</span>
               </div>
               {/* Detected Primitives List */}
               <div className="px-2 py-1.5 space-y-1">
@@ -1613,14 +1657,14 @@ export default function ForgePage() {
                   };
                   return (
                     <div key={i}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#c9a84c]/5 text-[10px] transition-colors group">
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gold/5 text-[10px] transition-colors group">
                       <span style={{ color: typeColors[prim.type] ?? '#6b7280' }}
                         className="text-[13px] w-4 text-center flex-shrink-0">
                         {typeIcons[prim.type] ?? '?'}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[#f0ece4] font-medium truncate">{prim.label}</div>
-                        <div className="text-[#4a4035] text-[9px]">
+                        <div className="text-text-1 font-medium truncate">{prim.label}</div>
+                        <div className="text-text-3 text-[9px]">
                           {prim.type === 'box' && `${prim.params.sizeX?.toFixed(2)} × ${prim.params.sizeY?.toFixed(2)} × ${prim.params.sizeZ?.toFixed(2)}`}
                           {prim.type === 'cylinder' && `r=${prim.params.radius?.toFixed(2)} h=${prim.params.height?.toFixed(2)}`}
                           {prim.type === 'sphere' && `r=${prim.params.radius?.toFixed(2)}`}
@@ -1633,7 +1677,7 @@ export default function ForgePage() {
                         <div className="text-[9px]" style={{ color: prim.confidence > 0.7 ? '#4ade80' : prim.confidence > 0.4 ? '#facc15' : '#f87171' }}>
                           {(prim.confidence * 100).toFixed(0)}%
                         </div>
-                        <div className="text-[#4a4035] text-[8px]">{prim.sourceTriCount}△</div>
+                        <div className="text-text-3 text-[8px]">{prim.sourceTriCount}△</div>
                       </div>
                     </div>
                   );
@@ -1644,41 +1688,41 @@ export default function ForgePage() {
 
           {/* CT-Scan Results Panel */}
           {ctScanResult && (
-            <div className="absolute top-4 right-4 z-20 w-80 max-h-[70vh] overflow-y-auto rounded-xl bg-[#181c26]/95 border border-[#60a5fa]/30 backdrop-blur-md shadow-2xl animate-scaleIn">
-              <div className="sticky top-0 bg-[#181c26] border-b border-[#60a5fa]/20 px-3 py-2.5 flex items-center justify-between">
+            <div className="absolute top-4 right-4 z-20 w-80 max-h-[70vh] overflow-y-auto rounded-xl bg-overlay/95 border border-[#60a5fa]/30 backdrop-blur-md shadow-2xl animate-scaleIn">
+              <div className="sticky top-0 bg-overlay border-b border-[#60a5fa]/20 px-3 py-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">🩻</span>
-                  <span className="text-[12px] font-bold text-[#60a5fa] tracking-wide">CT-SCAN DECOMPOSICIÓN</span>
+                  <span className="text-[12px] font-bold text-blue tracking-wide">CT-SCAN DECOMPOSICIÓN</span>
                 </div>
                 <button onClick={clearCtScan}
-                  className="text-[10px] text-[#4a4035] hover:text-[#f87171] px-1.5 py-0.5 rounded hover:bg-[#f87171]/10 transition-all">
+                  className="text-[10px] text-text-3 hover:text-red px-1.5 py-0.5 rounded hover:bg-red/10 transition-all">
                   ✕
                 </button>
               </div>
               {/* Stats */}
               <div className="px-3 py-2 border-b border-[#60a5fa]/10 text-[10px] grid grid-cols-2 gap-x-3 gap-y-1">
-                <span className="text-[#8a7e6b]">Features totales:</span>
-                <span className="text-[#f0ece4] font-medium text-[#4ade80]">{ctScanResult.stats.totalFeatures}</span>
-                <span className="text-[#8a7e6b]">Extrusiones:</span>
-                <span className="text-[#f0ece4] font-medium">{ctScanResult.stats.extrusions}</span>
-                <span className="text-[#8a7e6b]">Revoluciones:</span>
-                <span className="text-[#f0ece4] font-medium">{ctScanResult.stats.revolutions}</span>
-                <span className="text-[#8a7e6b]">Agujeros:</span>
-                <span className="text-[#f0ece4] font-medium">{ctScanResult.stats.holes}</span>
-                <span className="text-[#8a7e6b]">Tiempo:</span>
-                <span className="text-[#f0ece4] font-medium">{ctScanResult.stats.processingTimeMs.toFixed(0)}ms</span>
+                <span className="text-text-2">Features totales:</span>
+                <span className="text-text-1 font-medium text-green">{ctScanResult.stats.totalFeatures}</span>
+                <span className="text-text-2">Extrusiones:</span>
+                <span className="text-text-1 font-medium">{ctScanResult.stats.extrusions}</span>
+                <span className="text-text-2">Revoluciones:</span>
+                <span className="text-text-1 font-medium">{ctScanResult.stats.revolutions}</span>
+                <span className="text-text-2">Agujeros:</span>
+                <span className="text-text-1 font-medium">{ctScanResult.stats.holes}</span>
+                <span className="text-text-2">Tiempo:</span>
+                <span className="text-text-1 font-medium">{ctScanResult.stats.processingTimeMs.toFixed(0)}ms</span>
               </div>
               {/* Axis breakdown */}
               <div className="px-3 py-1.5 border-b border-[#60a5fa]/10 text-[10px]">
-                <div className="text-[#8a7e6b] mb-1">Bandas topológicas por eje:</div>
+                <div className="text-text-2 mb-1">Bandas topológicas por eje:</div>
                 {(['X', 'Y', 'Z'] as const).map(axis => {
                   const scan = ctScanResult.scans[axis];
                   return (
                     <div key={axis} className="flex items-center gap-2 text-[9px] py-0.5">
-                      <span className="text-[#60a5fa] font-bold w-3">{axis}</span>
-                      <span className="text-[#f0ece4]">{scan.bands.length} bandas</span>
-                      <span className="text-[#4a4035]">·</span>
-                      <span className="text-[#4a4035]">{scan.slices.filter(s => s.totalArea > 0).length}/{scan.slices.length} cortes con material</span>
+                      <span className="text-blue font-bold w-3">{axis}</span>
+                      <span className="text-text-1">{scan.bands.length} bandas</span>
+                      <span className="text-text-3">·</span>
+                      <span className="text-text-3">{scan.slices.filter(s => s.totalArea > 0).length}/{scan.slices.length} cortes con material</span>
                     </div>
                   );
                 })}
@@ -1695,14 +1739,14 @@ export default function ForgePage() {
                   };
                   return (
                     <div key={i}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#60a5fa]/5 text-[10px] transition-colors">
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-blue/5 text-[10px] transition-colors">
                       <span style={{ color: typeColors[feat.type] ?? '#6b7280' }}
                         className="text-[13px] w-4 text-center flex-shrink-0">
                         {typeIcons[feat.type] ?? '?'}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[#f0ece4] font-medium truncate">{feat.label}</div>
-                        <div className="text-[#4a4035] text-[9px]">
+                        <div className="text-text-1 font-medium truncate">{feat.label}</div>
+                        <div className="text-text-3 text-[9px]">
                           {feat.axis}-axis · h={feat.height.toFixed(2)}
                           {feat.radius ? ` · r=${feat.radius.toFixed(2)}` : ''}
                           {feat.holes.length > 0 ? ` · ${feat.holes.length} agujero(s)` : ''}
@@ -1746,18 +1790,18 @@ export default function ForgePage() {
             };
 
             return (
-            <div className="absolute bottom-4 right-4 z-20 w-80 max-h-[50vh] overflow-y-auto rounded-xl bg-[#0d0f14]/95 border border-[#c9a84c]/25 backdrop-blur-md shadow-2xl animate-scaleIn"
-              style={{ boxShadow: '0 0 40px rgba(0,0,0,0.6), 0 0 12px rgba(201,168,76,0.08)' }}>
+            <div className="absolute bottom-4 right-4 z-20 w-80 max-h-[50vh] overflow-y-auto rounded-xl bg-surface/95 border border-gold/25 backdrop-blur-md shadow-2xl animate-scaleIn"
+              style={{ boxShadow: '0 0 40px rgba(0,0,0,0.6), 0 0 12px var(--c-gold-glow)' }}>
               {/* Header */}
-              <div className="sticky top-0 bg-[#0d0f14] border-b border-[#c9a84c]/15 px-3 py-2 flex items-center justify-between z-10">
+              <div className="sticky top-0 bg-surface border-b border-gold/15 px-3 py-2 flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">{'⚒️'}</span>
-                  <span className="text-[11px] font-bold text-[#c9a84c] tracking-wider">
+                  <span className="text-[11px] font-bold text-gold tracking-wider">
                     FORGE SCAN
                   </span>
                   {gpuFittedPlanes.length > 0 && (
                     <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider"
-                      style={{ background: '#00ff8815', color: '#00ff88', border: '1px solid #00ff8830' }}>
+                      style={{ background: 'var(--c-green)', color: 'white', opacity: 0.9 }}>
                       {gpuFittedPlanes.length} PLANOS
                     </span>
                   )}
@@ -1767,24 +1811,24 @@ export default function ForgePage() {
                   </span>
                 </div>
                 <button onClick={clearFittedSlices}
-                  className="text-[10px] text-[#4a4035] hover:text-[#f87171] px-1.5 py-0.5 rounded hover:bg-[#f87171]/10 transition-all">✕</button>
+                  className="text-[10px] text-text-3 hover:text-red px-1.5 py-0.5 rounded hover:bg-red/10 transition-all">✕</button>
               </div>
 
               {/* Precision Metrics */}
               <div className="px-3 py-2 border-b border-white/[0.04]">
-                <div className="text-[8px] text-[#4a4035] uppercase tracking-widest mb-1.5 font-semibold">Precisión</div>
+                <div className="text-[8px] text-text-3 uppercase tracking-widest mb-1.5 font-semibold">Precisión</div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
                     <div className="text-[13px] font-bold font-mono" style={{ color: errColor }}>{maxErr < 0.001 ? maxErr.toExponential(1) : maxErr.toFixed(4)}</div>
-                    <div className="text-[7px] text-[#4a4035] uppercase tracking-wider mt-0.5">Max Error</div>
+                    <div className="text-[7px] text-text-3 uppercase tracking-wider mt-0.5">Max Error</div>
                   </div>
                   <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                    <div className="text-[13px] font-bold font-mono text-[#60a5fa]">{avgErr < 0.001 ? avgErr.toExponential(1) : avgErr.toFixed(4)}</div>
-                    <div className="text-[7px] text-[#4a4035] uppercase tracking-wider mt-0.5">Avg Error</div>
+                    <div className="text-[13px] font-bold font-mono text-blue">{avgErr < 0.001 ? avgErr.toExponential(1) : avgErr.toFixed(4)}</div>
+                    <div className="text-[7px] text-text-3 uppercase tracking-wider mt-0.5">Avg Error</div>
                   </div>
                   <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                    <div className="text-[13px] font-bold font-mono text-[#c9a84c]">{(avgCov * 100).toFixed(1)}%</div>
-                    <div className="text-[7px] text-[#4a4035] uppercase tracking-wider mt-0.5">Cobertura</div>
+                    <div className="text-[13px] font-bold font-mono text-gold">{(avgCov * 100).toFixed(1)}%</div>
+                    <div className="text-[7px] text-text-3 uppercase tracking-wider mt-0.5">Cobertura</div>
                   </div>
                 </div>
               </div>
@@ -1793,42 +1837,42 @@ export default function ForgePage() {
               <div className="px-3 py-2 border-b border-white/[0.04] flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   <span className="w-2 h-0.5 inline-block rounded-full bg-[#f0ece4]" />
-                  <span className="text-[9px] text-[#8a7e6b]">{totalLines} Líneas</span>
+                  <span className="text-[9px] text-text-2">{totalLines} Líneas</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-2 h-2 inline-block rounded-full border border-[#c084fc]" style={{ borderWidth: 1.5 }} />
-                  <span className="text-[9px] text-[#8a7e6b]">{totalArcs} Arcos</span>
+                  <span className="text-[9px] text-text-2">{totalArcs} Arcos</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2 h-2 inline-block rounded-full border border-[#c9a84c]" style={{ borderWidth: 1.5 }} />
-                  <span className="text-[9px] text-[#8a7e6b]">{totalCircles} Círculos</span>
+                  <span className="w-2 h-2 inline-block rounded-full border border-gold" style={{ borderWidth: 1.5 }} />
+                  <span className="text-[9px] text-text-2">{totalCircles} Círculos</span>
                 </div>
-                <span className="text-[9px] text-[#4a4035] ml-auto font-mono">{totalEntities}e</span>
+                <span className="text-[9px] text-text-3 ml-auto font-mono">{totalEntities}e</span>
               </div>
 
               {/* Constraint Badges */}
               {totalConstraints > 0 && (
                 <div className="px-3 py-1.5 border-b border-white/[0.04]">
                   <div className="flex items-center gap-1 flex-wrap">
-                    <span className="text-[8px] text-[#4a4035] uppercase tracking-widest font-semibold mr-1">Constraints</span>
+                    <span className="text-[8px] text-text-3 uppercase tracking-widest font-semibold mr-1">Constraints</span>
                     {Object.entries(cTypes).map(([type, count]) => (
                       <span key={type} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-mono"
-                        style={{ background: 'rgba(201,168,76,0.08)', color: '#c9a84c', border: '1px solid rgba(201,168,76,0.15)' }}>
+                        style={{ background: 'var(--c-gold-dim)', color: 'var(--c-gold)', border: '1px solid var(--panel-glass-border)' }}>
                         <span className="text-[9px]">{cIcons[type] ?? '?'}</span>
                         <span>{count}</span>
                       </span>
                     ))}
-                    <span className="text-[8px] text-[#4a4035] ml-auto">{totalConstraints} total</span>
+                    <span className="text-[8px] text-text-3 ml-auto">{totalConstraints} total</span>
                   </div>
                 </div>
               )}
 
               {/* Axis filter */}
               <div className="px-3 py-1.5 border-b border-white/[0.04] flex items-center gap-1">
-                <span className="text-[8px] text-[#4a4035] uppercase tracking-widest font-semibold mr-1">Eje</span>
+                <span className="text-[8px] text-text-3 uppercase tracking-widest font-semibold mr-1">Eje</span>
                 {(['X', 'Y', 'Z'] as const).map(ax => {
                   const count = fittedSlices.filter(s => s.axis === ax).length;
-                  const axCol: Record<string, string> = { X: '#f87171', Y: '#4ade80', Z: '#60a5fa' };
+                  const axCol: Record<string, string> = { X: 'var(--c-red)', Y: 'var(--c-green)', Z: 'var(--c-blue)' };
                   return (
                     <button key={ax}
                       onClick={() => setSketchFilterAxis(prev => prev === ax ? null : ax)}
@@ -1845,13 +1889,16 @@ export default function ForgePage() {
                 })}
                 <button onClick={() => setSketchFilterAxis(null)}
                   className={`px-2 py-0.5 rounded text-[9px] transition-all ${
-                    sketchFilterAxis === null ? 'bg-[#c9a84c]/15 text-[#c9a84c] font-bold' : 'text-[#4a4035] hover:text-[#8a7e6b]'
+                    sketchFilterAxis === null ? 'bg-gold/15 text-gold font-bold' : 'text-text-3 hover:text-text-2'
                   }`}>ALL</button>
               </div>
 
-              {/* Per-slice rows */}
+              {/* Per-slice rows — clickable for focus */}
               <div className="px-1.5 py-1 space-y-px max-h-[22vh] overflow-y-auto">
                 {(sketchFilterAxis ? fittedSlices.filter(s => s.axis === sketchFilterAxis) : fittedSlices).map((slice, i) => {
+                  // Find the real index in the unfiltered fittedSlices array
+                  const realIdx = sketchFilterAxis ? fittedSlices.indexOf(slice) : i;
+                  const isSelected = selectedSliceIndex === realIdx;
                   const entities = slice.contours.reduce((s, c) => s + c.entities.length, 0);
                   const lines = slice.contours.reduce((s, c) => s + c.entities.filter(e => e.type === 'line').length, 0);
                   const arcs = slice.contours.reduce((s, c) => s + c.entities.filter(e => e.type === 'arc').length, 0);
@@ -1859,23 +1906,82 @@ export default function ForgePage() {
                   const sliceErrCol = sliceMaxErr < 0.01 ? '#4ade80' : sliceMaxErr < 0.1 ? '#facc15' : '#f87171';
                   const axColors: Record<string, string> = { X: '#f87171', Y: '#4ade80', Z: '#60a5fa' };
                   return (
-                    <div key={i} className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-white/[0.02] text-[9px] group">
+                    <div key={i}
+                      onClick={() => setSelectedSliceIndex(isSelected ? null : realIdx)}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-gold/15 ring-1 ring-gold/40 shadow-[0_0_8px_rgba(201,168,76,0.15)]'
+                          : 'hover:bg-white/[0.03]'
+                      }`}>
                       <span style={{ color: axColors[slice.axis] }} className="font-bold w-3 text-[10px]">{slice.axis}</span>
                       <span className="text-[#6b6050] font-mono w-10 text-right">{slice.value.toFixed(2)}</span>
-                      <span className="text-[#f0ece4]">{slice.contours.length}c</span>
-                      <span className="text-[#4a4035] flex-1">{entities}e <span className="text-[8px]">({lines}L {arcs}A)</span></span>
+                      <span className="text-text-1">{slice.contours.length}c</span>
+                      <span className="text-text-3 flex-1">{entities}e <span className="text-[8px]">({lines}L {arcs}A)</span></span>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: sliceErrCol }} title={`maxErr: ${sliceMaxErr.toFixed(6)}`} />
+                      {isSelected && (
+                        <span className="text-[8px] text-gold font-bold tracking-wider animate-pulse">◉</span>
+                      )}
                     </div>
                   );
                 })}
+                {selectedSliceIndex != null && (
+                  <button
+                    onClick={() => setSelectedSliceIndex(null)}
+                    className="w-full mt-1 px-2 py-1 rounded-lg text-[9px] text-gold/70 hover:text-gold hover:bg-gold/10 transition-all text-center">
+                    ← Ver todos los sketches
+                  </button>
+                )}
               </div>
             </div>
             );
           })()}
 
+          {/* 3D Reconstruction Info Panel */}
+          {reconstruction && (
+            <div className="absolute bottom-4 left-4 z-20 w-64 rounded-xl bg-surface/95 border border-orange/25 backdrop-blur-md shadow-2xl animate-scaleIn"
+              style={{ boxShadow: '0 0 30px rgba(0,0,0,0.5), 0 0 8px rgba(251,146,60,0.15)' }}>
+              <div className="px-3 py-2 border-b border-orange/15 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">🏗️</span>
+                  <span className="text-[11px] font-bold text-orange tracking-wider">RECONSTRUCCIÓN 3D</span>
+                </div>
+                <button onClick={clearReconstruction}
+                  className="text-[10px] text-text-3 hover:text-red px-1.5 py-0.5 rounded hover:bg-red/10 transition-all">✕</button>
+              </div>
+              <div className="px-3 py-2 space-y-1.5">
+                <div className="flex items-center justify-between text-[9px]">
+                  <span className="text-text-3">Bandas</span>
+                  <span className="text-text-1 font-mono">{reconstruction.bands.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-[9px]">
+                  <span className="text-text-3">Tiempo</span>
+                  <span className="text-text-1 font-mono">{reconstruction.timeMs.toFixed(0)} ms</span>
+                </div>
+                {reconstruction.warnings.length > 0 && (
+                  <div className="mt-1.5 space-y-1">
+                    <div className="text-[8px] text-orange uppercase tracking-widest font-semibold">Warnings</div>
+                    {reconstruction.warnings.map((w, i) => (
+                      <div key={i} className="text-[8px] text-text-3 leading-tight pl-2 border-l border-orange/20">{w}</div>
+                    ))}
+                  </div>
+                )}
+                {reconstruction.bands.map((band, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-[8px] text-text-2">
+                    <span className="font-bold" style={{ color: Math.abs(band.normal[0]) > 0.9 ? '#f87171' : Math.abs(band.normal[1]) > 0.9 ? '#4ade80' : '#60a5fa' }}>
+                      [{band.normal.map(d => d.toFixed(2)).join(', ')}]
+                    </span>
+                    <span>{band.contourCount} slices</span>
+                    <span className="text-text-3">·</span>
+                    <span>depth {band.depthRange[0].toFixed(2)}–{band.depthRange[1].toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Sketch Fitting indicator */}
           {sketchFitting && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-[#181c26]/95 border border-[#c9a84c]/30 text-[12px] text-[#c9a84c] flex items-center gap-3 backdrop-blur-md shadow-lg z-30">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-overlay/95 border border-gold/30 text-[12px] text-gold flex items-center gap-3 backdrop-blur-md shadow-lg z-30">
               <Loader2 className="w-4 h-4 animate-spin" />
               Fitting sketches...
             </div>
@@ -1884,11 +1990,11 @@ export default function ForgePage() {
           {/* Face-picking overlay */}
           {facePicking && (
             <div className="absolute inset-0 z-20 cursor-crosshair" onPointerDown={handleFacePick}>
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-[#181c26]/95 border border-[#c9a84c]/30 text-[12px] text-[#c9a84c] flex items-center gap-2.5 backdrop-blur-md shadow-lg">
-                <span className="w-2 h-2 rounded-full bg-[#c9a84c] animate-pulse" />
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl bg-overlay/95 border border-gold/30 text-[12px] text-gold flex items-center gap-2.5 backdrop-blur-md shadow-lg">
+                <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
                 Clic en una cara para ubicar el Sketch
                 <button onClick={e => { e.stopPropagation(); setFacePicking(false); }}
-                  className="ml-2 px-2.5 py-1 rounded-md text-[11px] text-[#4a4035] hover:text-[#f0ece4] bg-[#1a1810]/50 hover:bg-[#1a1810] transition-all">
+                  className="ml-2 px-2.5 py-1 rounded-md text-[11px] text-text-3 hover:text-text-1 bg-border-hi/50 hover:bg-border-hi transition-all">
                   Cancelar
                 </button>
               </div>
@@ -1897,9 +2003,9 @@ export default function ForgePage() {
 
           {/* Meshing indicator */}
           {meshing && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl flex items-center gap-2.5 z-10" style={{ background: 'rgba(8,9,13,0.70)', border: '1px solid rgba(201,168,76,0.15)', backdropFilter: 'blur(20px)', boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 0 12px rgba(201,168,76,0.06)' }}>
-              <div className="w-2 h-2 rounded-full bg-[#c9a84c] animate-pulse" />
-              <span className="text-[12px] text-[#c9a84c] font-medium">Generando malla — {meshQuality}</span>
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl flex items-center gap-2.5 z-10" style={{ background: 'var(--panel-glass)', border: '1px solid var(--panel-glass-border)', backdropFilter: 'blur(20px)', boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 0 12px var(--c-gold-glow)' }}>
+              <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+              <span className="text-[12px] text-gold font-medium">Generando malla — {meshQuality}</span>
             </div>
           )}
 
@@ -1923,18 +2029,18 @@ export default function ForgePage() {
           {/* ═══ FLOATING SKETCH CONTEXT BAR ═══ */}
           {sketchMode && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-xl shadow-lg animate-scaleIn"
-              style={{ background: 'rgba(8,9,13,0.92)', border: '1px solid rgba(201,168,76,0.12)', backdropFilter: 'blur(24px)' }}>
+              style={{ background: 'var(--panel-glass)', border: '1px solid var(--panel-glass-border)', backdropFilter: 'blur(24px)' }}>
               {/* Tools */}
               <div className="flex items-center gap-1">
                 <button onClick={() => setSketchTool('rect')}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                    sketchTool === 'rect' ? 'bg-[#c9a84c]/15 text-[#c9a84c] ring-1 ring-[#c9a84c]/20' : 'text-[#8a7e6b] hover:text-[#f0ece4] hover:bg-white/[0.04]'
+                    sketchTool === 'rect' ? 'bg-gold/15 text-gold ring-1 ring-gold/20' : 'text-text-2 hover:text-text-1 hover:bg-white/[0.04]'
                   }`}>
                   ■ Rect
                 </button>
                 <button onClick={() => setSketchTool('circle')}
                   className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                    sketchTool === 'circle' ? 'bg-[#c9a84c]/15 text-[#c9a84c] ring-1 ring-[#c9a84c]/20' : 'text-[#8a7e6b] hover:text-[#f0ece4] hover:bg-white/[0.04]'
+                    sketchTool === 'circle' ? 'bg-gold/15 text-gold ring-1 ring-gold/20' : 'text-text-2 hover:text-text-1 hover:bg-white/[0.04]'
                   }`}>
                   ● Círculo
                 </button>
@@ -1943,37 +2049,37 @@ export default function ForgePage() {
               <div className="w-px h-5 bg-white/[0.06]" />
 
               {/* Shape count */}
-              <span className="text-[10px] text-[#4a4035] font-mono">{sketchShapes.length} perfil{sketchShapes.length !== 1 ? 'es' : ''}</span>
+              <span className="text-[10px] text-text-3 font-mono">{sketchShapes.length} perfil{sketchShapes.length !== 1 ? 'es' : ''}</span>
 
               <div className="w-px h-5 bg-white/[0.06]" />
 
               {/* Extrude distance */}
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-[#4a4035]">Ext:</span>
+                <span className="text-[10px] text-text-3">Ext:</span>
                 <input type="number" min={0.1} max={10} step={0.05} value={extrudeDistance}
                   onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v) && v > 0) setExtrudeDistance(v); }}
-                  className="w-14 rounded-md px-2 py-0.5 text-right font-mono text-[11px] text-[#f0ece4] outline-none
+                  className="w-14 rounded-md px-2 py-0.5 text-right font-mono text-[11px] text-text-1 outline-none
                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }} />
-                <span className="text-[10px] text-[#4a4035]">mm</span>
+                <span className="text-[10px] text-text-3">mm</span>
               </div>
 
               <div className="w-px h-5 bg-white/[0.06]" />
 
               {/* Actions */}
               <button onClick={() => { setSketchMode(null); setSketchShapes([]); }}
-                className="px-2.5 py-1 rounded-md text-[11px] text-[#8a7e6b] hover:text-[#f0ece4] hover:bg-white/[0.04] transition-all">
+                className="px-2.5 py-1 rounded-md text-[11px] text-text-2 hover:text-text-1 hover:bg-white/[0.04] transition-all">
                 Cancelar
               </button>
               <button onClick={handleSketchFinish}
                 disabled={sketchShapes.length === 0}
                 className="px-3 py-1 rounded-md text-[11px] font-medium transition-all disabled:opacity-25"
-                style={{ background: 'rgba(201,168,76,0.15)', color: '#c9a84c', border: '1px solid rgba(201,168,76,0.20)' }}>
+                style={{ background: 'var(--c-gold-dim)', color: 'var(--c-gold)', border: '1px solid var(--panel-glass-border)' }}>
                 ▤ Extruir
               </button>
 
               {/* Coords */}
-              <div className="text-[9px] font-mono text-[#4a4035] pl-2 border-l border-white/[0.06] min-w-[70px] text-right">
+              <div className="text-[9px] font-mono text-text-3 pl-2 border-l border-white/[0.06] min-w-[70px] text-right">
                 {sketchCursor[0].toFixed(2)}, {sketchCursor[1].toFixed(2)}
               </div>
             </div>
@@ -1991,8 +2097,8 @@ export default function ForgePage() {
           {/* ═══ FLOATING SECTION CONTROL BAR ═══ */}
           {section.enabled && !sketchMode && (
             <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-xl shadow-lg animate-scaleIn"
-              style={{ background: 'rgba(8,9,13,0.92)', border: '1px solid rgba(248,113,113,0.12)', backdropFilter: 'blur(24px)' }}>
-              <span className="text-[10px] font-bold text-[#f87171]">✂ SECCIÓN</span>
+              style={{ background: 'var(--panel-glass)', border: '1px solid rgba(248,113,113,0.12)', backdropFilter: 'blur(24px)' }}>
+              <span className="text-[10px] font-bold text-red">✂ SECCIÓN</span>
 
               <div className="w-px h-5 bg-white/[0.06]" />
 
@@ -2003,7 +2109,7 @@ export default function ForgePage() {
                     className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition-all ${
                       section.axis === ax
                         ? ax === 'X' ? 'bg-red-500/20 text-red-400' : ax === 'Y' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
-                        : 'text-[#4a4035] hover:text-[#8a7e6b] hover:bg-white/[0.04]'
+                        : 'text-text-3 hover:text-text-2 hover:bg-white/[0.04]'
                     }`}>
                     {ax}
                   </button>
@@ -2014,13 +2120,13 @@ export default function ForgePage() {
 
               {/* Distance slider */}
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-[#4a4035] font-mono">d:</span>
+                <span className="text-[9px] text-text-3 font-mono">d:</span>
                 <input type="range" min={-5} max={5} step={0.01} value={section.distance}
                   onChange={e => setSectionDistance(parseFloat(e.target.value))}
                   className="w-24 h-1 accent-[#f87171] rounded-full cursor-pointer" />
                 <input type="number" min={-10} max={10} step={0.05} value={section.distance}
                   onChange={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) setSectionDistance(v); }}
-                  className="w-12 rounded-md px-1.5 py-0.5 text-right font-mono text-[10px] text-[#f0ece4] outline-none
+                  className="w-12 rounded-md px-1.5 py-0.5 text-right font-mono text-[10px] text-text-1 outline-none
                     [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }} />
               </div>
@@ -2029,14 +2135,14 @@ export default function ForgePage() {
 
               {/* Flip */}
               <button onClick={() => setSectionFlip(!section.flip)}
-                className="px-2 py-0.5 rounded text-[10px] text-[#8a7e6b] hover:text-[#f0ece4] hover:bg-white/[0.04] transition-all"
+                className="px-2 py-0.5 rounded text-[10px] text-text-2 hover:text-text-1 hover:bg-white/[0.04] transition-all"
                 title="Voltear lado del corte">
                 ⇄ Flip
               </button>
 
               {/* Close */}
               <button onClick={() => setSectionEnabled(false)}
-                className="px-2 py-0.5 rounded text-[10px] text-[#8a7e6b] hover:text-[#f0ece4] hover:bg-white/[0.04] transition-all">
+                className="px-2 py-0.5 rounded text-[10px] text-text-2 hover:text-text-1 hover:bg-white/[0.04] transition-all">
                 ✕
               </button>
             </div>
@@ -2048,8 +2154,8 @@ export default function ForgePage() {
               {STANDARD_VIEWS.slice(0, 7).map(v => (
                 <button key={v.key} onClick={() => setTargetView(v.key)}
                   title={v.label}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] text-[#4a4035] hover:text-[#c9a84c] hover:bg-[#c9a84c]/8 transition-all"
-                  style={{ background: 'rgba(8,9,13,0.5)', backdropFilter: 'blur(8px)' }}>
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] text-text-3 hover:text-gold hover:bg-gold/8 transition-all"
+                  style={{ background: 'var(--panel-glass)', backdropFilter: 'blur(8px)' }}>
                   {v.icon}
                 </button>
               ))}
@@ -2058,10 +2164,10 @@ export default function ForgePage() {
                 title={section.enabled ? 'Desactivar sección' : 'Activar sección'}
                 className={`w-7 h-7 rounded-lg flex items-center justify-center text-[12px] transition-all ${
                   section.enabled
-                    ? 'text-[#f87171] bg-[#f87171]/10 ring-1 ring-[#f87171]/20'
-                    : 'text-[#4a4035] hover:text-[#f87171] hover:bg-[#f87171]/8'
+                    ? 'text-red bg-red/10 ring-1 ring-[#f87171]/20'
+                    : 'text-text-3 hover:text-red hover:bg-red/8'
                 }`}
-                style={!section.enabled ? { background: 'rgba(8,9,13,0.5)', backdropFilter: 'blur(8px)' } : undefined}>
+                style={!section.enabled ? { background: 'var(--panel-glass)', backdropFilter: 'blur(8px)' } : undefined}>
                 ✂
               </button>
             </div>
@@ -2070,12 +2176,12 @@ export default function ForgePage() {
           {/* Empty scene — hint mínimo (esquina inferior) */}
           {nodeCount <= 1 && importedModels.length === 0 && !sketchMode && (
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-0 pointer-events-none animate-fadeIn select-none">
-              <div className="flex items-center gap-3 px-5 py-2.5 rounded-xl" style={{ background: 'rgba(8,9,13,0.5)', border: '1px solid rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)' }}>
-                <kbd className="text-[10px] font-mono text-[#4a4035] bg-white/[0.03] border border-white/[0.06] rounded-md px-1.5 py-0.5">⌘K</kbd>
-                <span className="text-[11px] text-[#4a4035]">·</span>
-                <span className="text-[11px] text-[#4a4035]">1–5 primitivas</span>
-                <span className="text-[11px] text-[#4a4035]">·</span>
-                <span className="text-[11px] text-[#4a4035]">arrastra STEP o .mch</span>
+              <div className="flex items-center gap-3 px-5 py-2.5 rounded-xl" style={{ background: 'var(--panel-glass)', border: '1px solid rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)' }}>
+                <kbd className="text-[10px] font-mono text-text-3 bg-white/[0.03] border border-white/[0.06] rounded-md px-1.5 py-0.5">⌘K</kbd>
+                <span className="text-[11px] text-text-3">·</span>
+                <span className="text-[11px] text-text-3">1–5 primitivas</span>
+                <span className="text-[11px] text-text-3">·</span>
+                <span className="text-[11px] text-text-3">arrastra STEP o .mch</span>
               </div>
             </div>
           )}
@@ -2094,8 +2200,8 @@ export default function ForgePage() {
       {/* ════════════════════════════════════════════════════
           VARIABLE BAR — 36px — Editable variable chips
           ════════════════════════════════════════════════════ */}
-      <div className="h-10 border-t flex items-center px-4 gap-3 shrink-0 z-20 overflow-x-auto scrollbar-thin" style={{ background: 'rgba(8,9,13,0.70)', borderColor: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-        <span className="text-[12px] text-[#2a2520] font-mono font-medium shrink-0 select-none">$</span>
+      <div className="h-10 border-t flex items-center px-4 gap-3 shrink-0 z-20 overflow-x-auto scrollbar-thin" style={{ background: 'var(--panel-glass)', borderColor: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <span className="text-[12px] text-text-4 font-mono font-medium shrink-0 select-none">$</span>
 
         {variables.map(v => (
           <VarChip
@@ -2107,7 +2213,7 @@ export default function ForgePage() {
         ))}
 
         {variables.length === 0 && !showNewVarInput && (
-          <span className="text-[11px] text-[#1a1810] italic select-none">
+          <span className="text-[11px] text-border-hi italic select-none">
             Variables se crean automáticamente al agregar geometría
           </span>
         )}
@@ -2116,20 +2222,20 @@ export default function ForgePage() {
           <div className="flex items-center gap-1.5 shrink-0 animate-fadeIn">
             <input autoFocus placeholder="nombre" value={newVarName}
               onChange={e => setNewVarName(e.target.value)}
-              className="w-24 bg-[#0d0f14] border border-[#1a1810] rounded-md px-2 py-1 text-[12px] font-mono text-[#f0ece4] outline-none focus:border-[#c9a84c]/60" />
-            <span className="text-[#2a2520]">=</span>
+              className="w-24 bg-surface border border-border-hi rounded-md px-2 py-1 text-[12px] font-mono text-text-1 outline-none focus:border-gold/60" />
+            <span className="text-text-4">=</span>
             <input placeholder="expresión" value={newVarExpr}
               onChange={e => setNewVarExpr(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleAddVariable(); if (e.key === 'Escape') setShowNewVarInput(false); }}
-              className="w-28 bg-[#0d0f14] border border-[#1a1810] rounded-md px-2 py-1 text-[12px] font-mono text-[#f0ece4] outline-none focus:border-[#c9a84c]/60" />
+              className="w-28 bg-surface border border-border-hi rounded-md px-2 py-1 text-[12px] font-mono text-text-1 outline-none focus:border-gold/60" />
             <button onClick={handleAddVariable}
-              className="px-2 py-0.5 rounded-md text-[11px] text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-all">✓</button>
+              className="px-2 py-0.5 rounded-md text-[11px] text-gold hover:bg-gold/10 transition-all">✓</button>
             <button onClick={() => setShowNewVarInput(false)}
-              className="px-1 py-0.5 rounded-md text-[11px] text-[#2a2520] hover:text-[#8a7e6b] transition-all">✕</button>
+              className="px-1 py-0.5 rounded-md text-[11px] text-text-4 hover:text-text-2 transition-all">✕</button>
           </div>
         ) : (
           <button onClick={() => setShowNewVarInput(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] text-[#2a2520] hover:text-[#c9a84c] hover:bg-[#c9a84c]/8 transition-all shrink-0"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] text-text-4 hover:text-gold hover:bg-gold/8 transition-all shrink-0"
             title="Agregar variable personalizada">
             + Variable
           </button>
@@ -2156,8 +2262,8 @@ export default function ForgePage() {
       {/* ════════════════════════════════════════════════════
           STATUS BAR — 24px
           ════════════════════════════════════════════════════ */}
-      <footer className="h-7 border-t flex items-center justify-between px-4 shrink-0 z-30" style={{ background: 'rgba(8,9,13,0.80)', borderColor: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
-        <div className="flex items-center gap-4 text-[11px] text-[#4a4035]">
+      <footer className="h-7 border-t flex items-center justify-between px-4 shrink-0 z-30" style={{ background: 'var(--panel-glass)', borderColor: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+        <div className="flex items-center gap-4 text-[11px] text-text-3">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4ade80', boxShadow: '0 0 6px rgba(74,222,128,0.3)' }} />
             <span className="font-medium">GPU Ray March</span>
@@ -2169,30 +2275,30 @@ export default function ForgePage() {
           {machines.length > 0 && (
             <>
               <span className="opacity-20">|</span>
-              <span className="text-[#c9a84c]">🏭 {machines.length} máquina{machines.length > 1 ? 's' : ''}</span>
+              <span className="text-gold">🏭 {machines.length} máquina{machines.length > 1 ? 's' : ''}</span>
             </>
           )}
           {importedModels.length > 0 && (
             <>
               <span className="opacity-20">|</span>
-              <span className="text-[#8a7e6b]">📦 {importedModels.length} importado{importedModels.length > 1 ? 's' : ''}</span>
+              <span className="text-text-2">📦 {importedModels.length} importado{importedModels.length > 1 ? 's' : ''}</span>
             </>
           )}
           {section.enabled && (
             <>
               <span className="opacity-20">|</span>
-              <span className="text-[#f87171]">✂ Sección {section.axis}</span>
+              <span className="text-red">✂ Sección {section.axis}</span>
             </>
           )}
         </div>
-        <div className="flex items-center gap-4 text-[11px] text-[#4a4035]">
+        <div className="flex items-center gap-4 text-[11px] text-text-3">
           <span>{stats.estimatedVolumeCm3} cm³</span>
           <span className="opacity-20">|</span>
-          <span className={fps < 30 ? 'text-[#f87171] font-bold' : fps < 55 ? 'text-[#d29922]' : ''}>
+          <span className={fps < 30 ? 'text-red font-bold' : fps < 55 ? 'text-[#d29922]' : ''}>
             {fps} FPS
           </span>
           <span className="opacity-20">|</span>
-          <span className="text-[#2a2520] font-medium">Hefestos v0.1</span>
+          <span className="text-text-4 font-medium">Hefestos v0.1</span>
         </div>
       </footer>
 
@@ -2211,19 +2317,19 @@ export default function ForgePage() {
 
       {machinePanel && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md" onClick={() => setMachinePanel(false)}>
-            <div className="w-[580px] max-h-[70vh] rounded-2xl border overflow-hidden animate-scaleIn" style={{ background: 'rgba(8,9,13,0.80)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(40px) saturate(1.6)', WebkitBackdropFilter: 'blur(40px) saturate(1.6)', boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.1), inset 0 0.5px 0 rgba(255,255,255,0.08)' }} onClick={e => e.stopPropagation()}>
+            <div className="w-[580px] max-h-[70vh] rounded-2xl border overflow-hidden animate-scaleIn" style={{ background: 'var(--panel-glass)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(40px) saturate(1.6)', WebkitBackdropFilter: 'blur(40px) saturate(1.6)', boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.1), inset 0 0.5px 0 rgba(255,255,255,0.08)' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
               <div>
-                <h2 className="text-[15px] font-semibold text-[#f0ece4]">Biblioteca de Máquinas</h2>
-                <p className="text-[11px] text-[#4a4035] mt-0.5">{machines.length} máquina{machines.length !== 1 ? 's' : ''} cargada{machines.length !== 1 ? 's' : ''}</p>
+                <h2 className="text-[15px] font-semibold text-text-1">Biblioteca de Máquinas</h2>
+                <p className="text-[11px] text-text-3 mt-0.5">{machines.length} máquina{machines.length !== 1 ? 's' : ''} cargada{machines.length !== 1 ? 's' : ''}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={handleImportMachine}
-                  className="px-3 py-1.5 rounded-lg text-[12px] border border-[#c9a84c]/30 text-[#c9a84c] bg-[#c9a84c]/8 hover:bg-[#c9a84c]/15 transition-all">
+                  className="px-3 py-1.5 rounded-lg text-[12px] border border-gold/30 text-gold bg-gold/8 hover:bg-gold/15 transition-all">
                   + Importar .mch
                 </button>
                 <button onClick={() => setMachinePanel(false)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[#4a4035] hover:text-[#f0ece4] hover:bg-[#1a1810] transition-all">
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-text-3 hover:text-text-1 hover:bg-border-hi transition-all">
                   ✕
                 </button>
               </div>
@@ -2231,30 +2337,30 @@ export default function ForgePage() {
             {machines.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <div className="text-[40px]">🏭</div>
-                <p className="text-[13px] text-[#4a4035]">No hay máquinas cargadas</p>
+                <p className="text-[13px] text-text-3">No hay máquinas cargadas</p>
                 <button onClick={handleImportMachine}
-                  className="px-4 py-2 rounded-lg text-[12px] border border-[#c9a84c]/30 text-[#c9a84c] bg-[#c9a84c]/8 hover:bg-[#c9a84c]/15 transition-all">
+                  className="px-4 py-2 rounded-lg text-[12px] border border-gold/30 text-gold bg-gold/8 hover:bg-gold/15 transition-all">
                   Importar primera máquina (.mch)
                 </button>
               </div>
             ) : (
-              <div className="overflow-y-auto max-h-[calc(70vh-80px)] divide-y divide-[#1a1810]/50">
+              <div className="overflow-y-auto max-h-[calc(70vh-80px)] divide-y divide-border-hi/50">
                 {machines.map(m => (
-                  <div key={m.id} className={`flex items-center gap-3 px-5 py-3 transition-all hover:bg-[#181c26] cursor-pointer ${
-                    selectedMachine?.id === m.id ? 'bg-[#c9a84c]/5 border-l-2 border-[#c9a84c]' : ''
+                  <div key={m.id} className={`flex items-center gap-3 px-5 py-3 transition-all hover:bg-overlay cursor-pointer ${
+                    selectedMachine?.id === m.id ? 'bg-gold/5 border-l-2 border-gold' : ''
                   }`} onClick={() => selectMachine(m.id)}>
                     <div className="text-[22px]">{machineIcon(m)}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#f0ece4] truncate">{m.model || m.vendor || m.fileName}</p>
-                      <p className="text-[11px] text-[#4a4035] truncate">{machineDisplayString(m)}</p>
+                      <p className="text-[13px] font-medium text-text-1 truncate">{m.model || m.vendor || m.fileName}</p>
+                      <p className="text-[11px] text-text-3 truncate">{machineDisplayString(m)}</p>
                     </div>
                     {(m.workEnvelope.x > 0 || m.workEnvelope.y > 0) && (
                       <div className="text-right shrink-0">
-                        <p className="text-[11px] text-[#8a7e6b] font-mono">{formatEnvelope(m)}</p>
+                        <p className="text-[11px] text-text-2 font-mono">{formatEnvelope(m)}</p>
                       </div>
                     )}
                     <button onClick={e => { e.stopPropagation(); removeMachine(m.id); }}
-                      className="w-6 h-6 flex items-center justify-center rounded text-[#2a2520] hover:text-[#f87171] hover:bg-[#f87171]/10 transition-all text-[11px]">
+                      className="w-6 h-6 flex items-center justify-center rounded text-text-4 hover:text-red hover:bg-red/10 transition-all text-[11px]">
                       ✕
                     </button>
                   </div>
@@ -2272,6 +2378,8 @@ export default function ForgePage() {
       {blueprintPanel && (
         <BlueprintPanel onClose={() => setBlueprintPanel(false)} />
       )}
+
+      <ThemePanel open={themePanelOpen} onOpenChange={setThemePanelOpen} />
     </div>
     </TooltipProvider>
   );

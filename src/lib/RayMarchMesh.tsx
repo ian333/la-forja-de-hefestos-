@@ -17,6 +17,7 @@ import * as THREE from 'three';
 import { compileScene, GLSL_LIB, isPrimitive } from './sdf-engine';
 import type { SdfOperation } from './sdf-engine';
 import { useForgeStore } from './useForgeStore';
+import { useThemeStore, selectMaterial, selectViewport } from './useThemeStore';
 import { sectionToVec4, type SectionState } from './viewport/SectionPlane';
 
 // ══════════════════════════════════════════════════════════════
@@ -58,6 +59,16 @@ uniform mat4 uVP;        // projectionMatrix * viewMatrix (for depth)
 // ═══ Section Plane (Clip) ═══
 uniform int  uClipEnabled;    // 0 or 1
 uniform vec4 uClipPlane;      // (nx, ny, nz, d) — dot(p, n) + d > 0 = clipped
+
+// ═══ Theme Colors (dynamic from profile) ═══
+uniform vec3 uMatBase;        // material base color
+uniform float uMatRoughness;  // material roughness
+uniform vec3 uAmbient;        // ambient light color
+uniform vec3 uEnvColor;       // environment reflection tint
+uniform float uFresnelStr;    // fresnel strength
+uniform vec3 uBgTop;          // background gradient top
+uniform vec3 uBgMid;          // background gradient middle (horizon)
+uniform vec3 uBgBot;          // background gradient bottom (ground)
 
 layout(location = 0) out vec4 fragColor;
 
@@ -130,9 +141,9 @@ void main() {
     // ── Gradient background (Fusion 360-inspired) ──
     vec3 rdn = normalize(rd);
     float horiz = rdn.y;
-    vec3 skyHi  = vec3(0.10, 0.12, 0.17);
-    vec3 skyLo  = vec3(0.18, 0.20, 0.26);
-    vec3 gndCol = vec3(0.07, 0.07, 0.09);
+    vec3 skyHi  = uBgTop;
+    vec3 skyLo  = uBgMid;
+    vec3 gndCol = uBgBot;
     vec3 bg = horiz > 0.0
       ? mix(skyLo, skyHi, smoothstep(0.0, 0.5, horiz))
       : mix(skyLo, gndCol, smoothstep(0.0, -0.4, horiz));
@@ -215,8 +226,8 @@ void main() {
     base = mix(capBase, capLine, hatch * 0.6);
     rough = 0.65;
   } else {
-    base = vec3(0.60, 0.65, 0.74);
-    rough = 0.30;
+    base = uMatBase;
+    rough = uMatRoughness;
   }
 
   // ── 3-Point Lighting (studio setup) ──
@@ -246,7 +257,7 @@ void main() {
   float fresnel = pow(1.0 - max(dot(nor, eye), 0.0), 4.0);
 
   // ── Combine ──
-  vec3 amb = vec3(0.08, 0.10, 0.15);
+  vec3 amb = uAmbient;
   vec3 col = base * (
     amb * ao +
     keyCol  * kDiff * kShad * 0.65 +
@@ -256,7 +267,7 @@ void main() {
 
   col += keyCol  * kSpec * kShad * 0.40;
   col += fillCol * fSpec * 0.10;
-  col += vec3(0.4, 0.6, 1.0) * fresnel * 0.12 * ao;
+  col += vec3(0.4, 0.6, 1.0) * fresnel * uFresnelStr * ao;
 
   // Edge darkening
   float edge = 1.0 - smoothstep(0.0, 0.12, abs(dot(nor, eye)));
@@ -265,7 +276,7 @@ void main() {
   // Environment reflection (sky dome approximation)
   vec3 refl = reflect(-eye, nor);
   float envUp = refl.y * 0.5 + 0.5;
-  vec3 envCol = mix(vec3(0.10, 0.12, 0.16), vec3(0.28, 0.34, 0.44), envUp);
+  vec3 envCol = mix(uAmbient * 1.3, uEnvColor, envUp);
   col += envCol * fresnel * 0.18 * ao;
 
   // ACES tone mapping
@@ -291,6 +302,8 @@ const _vpMat = new THREE.Matrix4();
 export default function RayMarchMesh() {
   const scene = useForgeStore(s => s.scene);
   const section = useForgeStore(s => s.section);
+  const themeMat = useThemeStore(selectMaterial);
+  const themeVp  = useThemeStore(selectViewport);
   const { camera } = useThree();
 
   const geoRef  = useRef<THREE.BufferGeometry | null>(null);
@@ -321,6 +334,16 @@ export default function RayMarchMesh() {
         uVP:          { value: new THREE.Matrix4() },
         uClipEnabled: { value: 0 },
         uClipPlane:   { value: new THREE.Vector4(0, 1, 0, 0) },
+        // Theme material uniforms
+        uMatBase:      { value: new THREE.Vector3(...themeMat.base) },
+        uMatRoughness: { value: themeMat.roughness },
+        uAmbient:      { value: new THREE.Vector3(...themeMat.ambient) },
+        uEnvColor:     { value: new THREE.Vector3(...themeMat.envColor) },
+        uFresnelStr:   { value: themeMat.fresnelStrength },
+        // Theme viewport background
+        uBgTop:        { value: new THREE.Vector3(...themeVp.bgTop) },
+        uBgMid:        { value: new THREE.Vector3(...themeVp.bgMid) },
+        uBgBot:        { value: new THREE.Vector3(...themeVp.bgBottom) },
       },
       depthTest:  false,
       depthWrite: true,
@@ -333,7 +356,7 @@ export default function RayMarchMesh() {
     }
 
     return () => { mat.dispose(); };
-  }, [sceneGlsl, isEmpty]);
+  }, [sceneGlsl, isEmpty, themeMat, themeVp]);
 
   // Update camera uniforms every frame
   useFrame(() => {
@@ -351,6 +374,16 @@ export default function RayMarchMesh() {
       const [nx, ny, nz, d] = sectionToVec4(section);
       mat.uniforms.uClipPlane.value.set(nx, ny, nz, d);
     }
+
+    // Theme material — update every frame (cheap, ensures live theme switching)
+    mat.uniforms.uMatBase.value.set(...themeMat.base);
+    mat.uniforms.uMatRoughness.value = themeMat.roughness;
+    mat.uniforms.uAmbient.value.set(...themeMat.ambient);
+    mat.uniforms.uEnvColor.value.set(...themeMat.envColor);
+    mat.uniforms.uFresnelStr.value = themeMat.fresnelStrength;
+    mat.uniforms.uBgTop.value.set(...themeVp.bgTop);
+    mat.uniforms.uBgMid.value.set(...themeVp.bgMid);
+    mat.uniforms.uBgBot.value.set(...themeVp.bgBottom);
   });
 
   if (isEmpty) return null;

@@ -615,34 +615,114 @@ Benefits:
 
 ## 9. WHAT EXISTS TODAY vs. WHAT WE NEED
 
-### Already Built ✅
-- SDF engine with GLSL compiler (`sdf-engine.ts`)
-- GPU ray march renderer — pixel-perfect surfaces (`RayMarchMesh.tsx`)
-- CPU SDF evaluator for picking (`sdf-cpu.ts`)
-- Material database with 20+ materials (`formulas.ts`)
-- Engineering formula library: stress, strain, thermal, modal (`formulas.ts`)
-- Basic CSG boolean operations (union, subtract, intersect, smooth)
-- STL export via Marching Cubes worker
-- SVG blueprint export
-- Scene graph with undo/redo history
-- React + Three.js viewport with orbit controls
+> **Última actualización**: 29 de marzo 2026
+> **Total**: 18,574 líneas TS/TSX + 13,759 líneas de scripts de prueba
 
-### Needs Rewrite 🔄
-- **ForgePage.tsx** — Complete rewrite with new UI philosophy
-- **useForgeStore.ts** — Replace SdfNode model with GaiaProject/GaiaFeature
-- **Sketch engine** — Real constraint-based sketch system (replace current SVG hack)
-- **Timeline** — Feature-based, not history-based
+### Already Built ✅ (Funcional y conectado a la UI)
+
+**Motor Geométrico (core)**:
+- SDF engine con compilador GLSL — 6 primitivas, 4 booleanas, módulos (`sdf-engine.ts`, 524 líneas)
+- GPU ray march renderer — pixel-perfect a 60fps (`RayMarchMesh.tsx`, 366 líneas)
+- CPU SDF evaluator para picking/selección (`sdf-cpu.ts`, 242 líneas)
+- Marching Cubes en Web Worker con LOD adaptativo 64³→512³ (`mc-worker.ts`, 503 líneas)
+- Viewport Three.js con grid infinito, ViewCube, orbit/pan/zoom (`ForgeViewport.tsx`, 339 líneas)
+
+**Sistema de Variables**:
+- Variables con nombre, expresiones, dependencias, unidades (`gaia-variables.ts`, 392 líneas)
+- Variable Bar UI con chips editables en ForgePage
+- Expression evaluator conectado al scene graph
+
+**Import/Export**:
+- Importación STEP/IGES vía occt-import-js con descomposición de ensambles (`step-import.ts`, 437 líneas)
+- STL export con resolución configurable (`stl-export.ts`, 475 líneas)  
+- SVG blueprint export con vistas ortogonales (`blueprint-export.ts`, 372 líneas)
+- Blueprint Panel interactivo (`BlueprintPanel.tsx`, 590 líneas)
+- Drag & Drop de archivos CAD y .mch
+
+**Ingeniería Inversa y Análisis**:
+- Reverse engineering: modelo → primitivas SDF (`reverse-engineer.ts`, 897 líneas)
+- CT-Scan decomposición multi-eje (`cross-section.ts`, 765 líneas)
+- GPU cross-section con winding number (`gpu-cross-section.ts`, 1,090 líneas)
+- Sketch fitting a secciones transversales (`sketch-fitting.ts`, 789 líneas)
+- Feature recognition geométrico (`feature-recognition.ts`, 675 líneas)
+- Profile-to-SDF conversion (`profile-to-sdf.ts`, 460 líneas)
+
+**Manufactura**:
+- Parser de 8 configuraciones de máquinas CNC reales (`machine-config.ts`, 555 líneas)
+- Máquinas: Haas VF-2/EC-630/VS-3, Hurco BX40i, DATRON Neo, Brother M300X3, GROB G350, Bambu Lab P1P
+
+**Sketch 2D** (básico):
+- Rectángulo y círculo en planos XY/XZ/YZ (`sketch-engine.ts`, 114 líneas)
+- Sketch-in-viewport con overlay SVG (`SketchInViewport.tsx`, 331 líneas)
+- Face picking: CPU ray march → normal → plano → sketch en cara
+- Extrusión de sketches a primitivas SDF
+
+**UI Completa**:
+- ForgePage con menubar Fusion 360-style, variabels bar, tree, properties (`ForgePage.tsx`, 2,278 líneas)
+- Omnibar búsqueda universal ⌘K con 60+ comandos (`Omnibar.tsx`, 339 líneas)
+- Marking Menu radial contextual (`MarkingMenu.tsx`, 282 líneas)
+- Shortcut Overlay (`ShortcutOverlay.tsx`, 106 líneas)
+- Timeline de historial (`Timeline.tsx`, 140 líneas)
+- Sketch Panel de herramientas (`SketchPanel.tsx`, 285 líneas)
+- Vista de sección por eje con flip
+- Transiciones de cámara suaves a vistas estándar (numpad)
+- Audio feedback para todas las acciones (`forge-audio.ts`, 237 líneas)
+- 10 componentes shadcn/ui (menubar, tooltip, dialog, command, button, input, etc.)
+
+**Fórmulas y Materiales** (implementado pero NO conectado a UI):
+- `formulas.ts` (1,457 líneas): 20+ materiales, matrices de elasticidad 3D, Von Mises, 
+  elementos FEA (tet4, beam, truss, CST), térmica (Fourier, Newton, aletas), fluidos 
+  (Bernoulli, Darcy, Reynolds), fatiga (Goodman, Basquin), solver CG precondicionado, 
+  mallado tetraédrico
+
+**Estado Zustand** (1,102 líneas):
+- Scene graph jerárquico con módulos
+- Historial undo/redo completo
+- Variables con resolución de expresiones
+- Imported models + machine configs
+- Reverse engineering + CT scan + sketch fitting
+- Section view state
+- Session sync
+
+### Needs Evolution 🔄
+
+- **ForgePage.tsx** (2,278 líneas) — Funcional pero necesita rediseño de layout:
+  viewport al 100%, eliminar menubar permanente, Tool Strip vertical, Inspector HUD
+- **Tema visual** — Demasiado negro (`#08090d`). Necesita más profundidad navy, no void black.
+  La spec dice `#12151c` base, pero el CSS usa `#08090d`. Corregir.
+- **useForgeStore.ts** — Migrar de SdfNode a modelo GaiaProject/GaiaFeature para features paramétricos
+- **Sketch engine** — De solo rect/circle a constraint-based con solver Newton-Raphson
+- **Timeline** — Reemplazar con Operation Stack (últimos 3-5 cambios con undo)
 
 ### Needs Building 🆕
-- **Variable system** — expression evaluator, dependency graph, variable bar UI
-- **Sketch constraint solver** — Newton-Raphson or similar for geometric constraints
-- **Face/edge picking** — Robust GPU-accelerated SDF picking
-- **Contextual toolbar** — Mode-aware toolbar system
-- **Feature tree** — Bodies/Sketches/Construction organized browser
-- **Properties floating panel** — Near-selection popup editor
-- **Simulation compute pipeline** — GPU voxelization + solve
-- **Material selector panel** — With all properties visible
-- **Injection mold tools** — Draft, wall thickness, shrinkage, etc.
+
+**Prioridad Alta (Phase 1)**:
+- Sketch constraint solver (Newton-Raphson para geometric constraints)
+- Sketch: Line, Arc 3-point, Trim, Extend, Offset, Mirror, Pattern, Constraints, Dimensions
+- Extrude avanzado (cut/join/new body, symmetric, to-face)
+- Revolve, Sweep, Loft
+- Fillet 3D + Shell + Draft via SDF
+- Pattern (rectangular + circular) y Mirror 3D
+- Inline dimensions: cotas 3D editables sobre la geometría
+- Inspector HUD: propiedades flotantes ancladas al objeto seleccionado
+- Tool Strip vertical reemplazando menubar
+
+**Prioridad Media (Phase 2-3)**:
+- FEA conectado: SDF → mesh adaptativo → solver → GPU overlay
+- Simulación de inyección (Hele-Shaw)
+- CAM: toolpaths desde SDF, post-procesadores Fanuc/Siemens/Haas
+- Diseño Generativo / Optimización Topológica GPU
+- Lattice/TPMS nativo (gyroid, Schwarz-P, diamond)
+
+**Prioridad Futura (Phase 4+)**:
+- CFD (Lattice Boltzmann GPU)
+- Assembly con joints
+- Cotizador BOM + integración proveedores
+- Simulación de planta (Digital Twin)
+- Workspace de robótica (URDF + IK/FK + path planning)
+- IDE de firmware (Monaco + WebUSB flash)
+- Dibujos 2D con GD&T
+- Export STEP AP242, 3MF
 
 ---
 

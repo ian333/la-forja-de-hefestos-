@@ -40,6 +40,7 @@ import { decomposeBySlicing, sliceMesh, type DecomposedFeatures, type SliceAxis 
 import { decompositionToScene, type ProfileToSdfResult } from './profile-to-sdf';
 import { fitContour, reconstructionError, type FittedSlice, type FittedContour } from './sketch-fitting';
 import type { GPUFittedPlane } from './gpu-cross-section';
+import type { ReconstructionResult } from './sketch-reconstruct';
 
 // ── Types ──
 
@@ -146,6 +147,12 @@ interface ForgeState {
   scanModel: (modelIndex: number) => Promise<void>;
   clearGPUFittedPlanes: () => void;
 
+  // 3D Reconstruction from fitted sketches
+  reconstruction: ReconstructionResult | null;
+  reconstructing: boolean;
+  reconstructModel: () => void;
+  clearReconstruction: () => void;
+
   /** Change material appearance of an imported model */
   setModelMaterial: (modelIndex: number, props: { color?: string; metalness?: number; roughness?: number }) => void;
 
@@ -208,6 +215,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   gpuFittedPlanes: [],
   gpuFitting: false,
   rendererRef: null,
+  reconstruction: null,
+  reconstructing: false,
   machines: [],
   selectedMachine: null,
   machineImporting: false,
@@ -864,7 +873,41 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   setRendererRef: (renderer) => set({ rendererRef: renderer }),
 
-  clearGPUFittedPlanes: () => set({ gpuFittedPlanes: [], fittedSlices: [] }),
+  clearGPUFittedPlanes: () => set({ gpuFittedPlanes: [], fittedSlices: [], reconstruction: null }),
+
+  reconstructModel: () => {
+    const { fittedSlices } = get();
+    if (fittedSlices.length === 0) return;
+    set({ reconstructing: true });
+    // Use dynamic import to avoid importing Three.js code at store init
+    import('./sketch-reconstruct').then(({ reconstructFromSlices }) => {
+      try {
+        const result = reconstructFromSlices(fittedSlices);
+        console.log(`[Reconstruct] ${result.bands.length} bands, ${result.warnings.length} warnings, ${result.timeMs.toFixed(0)}ms`);
+        if (result.warnings.length > 0) {
+          console.warn('[Reconstruct] Warnings:', result.warnings);
+        }
+        set({ reconstruction: result, reconstructing: false });
+      } catch (err) {
+        console.error('[Reconstruct] Failed:', err);
+        set({ reconstructing: false });
+      }
+    });
+  },
+
+  clearReconstruction: () => {
+    const { reconstruction } = get();
+    if (reconstruction) {
+      // Dispose geometries and materials
+      reconstruction.group.traverse((obj: any) => {
+        if (obj.isMesh) {
+          obj.geometry?.dispose();
+          obj.material?.dispose();
+        }
+      });
+    }
+    set({ reconstruction: null });
+  },
 
   setModelMaterial: (modelIndex, props) => {
     const model = get().importedModels[modelIndex];
@@ -875,6 +918,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         if (props.color != null) { mat.color.set(props.color); mat.vertexColors = false; mat.needsUpdate = true; }
         if (props.metalness != null) mat.metalness = props.metalness;
         if (props.roughness != null) mat.roughness = props.roughness;
+        // Mark as user-overridden so theme changes don't reset it
+        obj.userData._userMaterial = true;
       }
     });
     // Trigger re-render by shallow-copying the array
@@ -911,7 +956,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
       const elapsed = performance.now() - t0;
 
-      // Convert to FittedSlice[] for backward compat
+      // Convert to FittedSlice[] for backward compat — include plane basis for correct 3D mapping
       const fittedSlices: FittedSlice[] = results.map(r => {
         const n = r.plane.normal;
         const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z);
@@ -919,7 +964,13 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         if (ax > ay && ax > az) axis = 'X';
         else if (ay > ax && ay > az) axis = 'Y';
         const value = r.plane.origin.dot(r.plane.normal);
-        return { axis, value, contours: r.contours };
+        const sr = r.sliceResult;
+        return {
+          axis, value, contours: r.contours,
+          uAxis: sr.uAxis.toArray() as [number, number, number],
+          vAxis: sr.vAxis.toArray() as [number, number, number],
+          planeOrigin: sr.planeOrigin.toArray() as [number, number, number],
+        };
       });
 
       const totalEntities = results.reduce((s, r) => s + r.entityCount, 0);

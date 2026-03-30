@@ -58,9 +58,11 @@ export interface GPUSliceResult {
   /** Processing time in ms */
   timeMs: number;
   /** Plane-local coordinate basis for 3D reconstruction:
-   *  worldPos = plane.origin + pt.x * uAxis + pt.y * vAxis */
+   *  worldPos = planeOrigin + pt.x * uAxis + pt.y * vAxis */
   uAxis: THREE.Vector3;
   vAxis: THREE.Vector3;
+  /** Origin for 2D→3D reconstruction (center of rendered region in world space) */
+  planeOrigin: THREE.Vector3;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -551,6 +553,9 @@ export function renderWindingField(
 } {
   const { u: uAxis, v: vAxis } = planeBasis(plane.normal);
 
+  // ── Ensure all world matrices are up-to-date (parent → children) ──
+  meshSource.updateMatrixWorld(true);
+
   // ── Compute mesh bounding box projected onto the plane ──
   const bb = new THREE.Box3();
   meshSource.traverse((child) => {
@@ -614,12 +619,21 @@ export function renderWindingField(
   // Camera is behind the plane (on the -normal side), looking toward +normal
   // Far clip at the slice plane → only count crossings between camera and plane
   const D = rangeN + pad * 2;
+  const halfDepth = D / 2 + pad;       // distance from camera to the slice plane
   const cameraPos = plane.origin.clone()
     .addScaledVector(uAxis, centerU)
     .addScaledVector(vAxis, centerV)
-    .addScaledVector(plane.normal, -(D / 2 + pad));
+    .addScaledVector(plane.normal, -halfDepth);
 
-  const camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.001, D + pad * 2);
+  // Far clip MUST stop at the slice plane so front-face winding from the
+  // camera side accumulates +1 for entering the solid, but the matching
+  // back-face exit (on the far side) is clipped away.  That gives
+  // winding > 0 for pixels inside the solid at the slice plane.
+  const camera = new THREE.OrthographicCamera(
+    -halfW, halfW, halfH, -halfH,
+    0.001,
+    halfDepth + pixelSize,   // stop RIGHT at the slice plane (+ 1 px margin)
+  );
   camera.position.copy(cameraPos);
   camera.up.copy(vAxis);
   const lookTarget = cameraPos.clone().addScaledVector(plane.normal, 1);
@@ -642,12 +656,16 @@ export function renderWindingField(
   });
 
   const renderScene = new THREE.Scene();
+  let triCount = 0;
   meshSource.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       const m = new THREE.Mesh(child.geometry, windingMaterial);
       m.matrixWorld.copy(child.matrixWorld);
       m.matrixAutoUpdate = false;
+      m.matrixWorldAutoUpdate = false;  // prevent render() from overwriting our matrixWorld
       renderScene.add(m);
+      const geo = child.geometry;
+      triCount += geo.index ? geo.index.count / 3 : (geo.getAttribute('position')?.count ?? 0) / 3;
     }
   });
 
@@ -679,8 +697,18 @@ export function renderWindingField(
 
   // Extract just the R channel (winding number)
   const field = new Float32Array(resolution * resolution);
+  let nonZeroCount = 0;
+  let minVal = Infinity, maxVal = -Infinity;
   for (let i = 0; i < field.length; i++) {
     field[i] = buf[i * 4]; // R channel
+    if (Math.abs(field[i]) > 0.01) nonZeroCount++;
+    if (field[i] < minVal) minVal = field[i];
+    if (field[i] > maxVal) maxVal = field[i];
+  }
+  if (nonZeroCount === 0) {
+    console.warn(`[renderWindingField] ALL ZERO winding field! ${plane.label}, res=${resolution}, farClip=${halfDepth + pixelSize}, rangeN=${rangeN.toFixed(3)}, tris=${triCount}, camN=${cameraPos.dot(plane.normal).toFixed(3)}`);
+  } else {
+    console.log(`[renderWindingField] ${plane.label}: ${nonZeroCount} non-zero px (${(nonZeroCount / field.length * 100).toFixed(1)}%), range=[${minVal.toFixed(2)}, ${maxVal.toFixed(2)}]`);
   }
 
   // ── Restore renderer state ──
@@ -728,10 +756,12 @@ function marchingSquares(
   const segments: MarchSegment[] = [];
   const threshold = 0.5;
 
-  // Convert pixel coordinates to plane-local world coordinates
+  // Convert pixel coordinates to plane-local world coordinates.
+  // The camera's right axis = -uAxis (Three.js lookAt convention),
+  // so pixel-x increases in -u direction → negate to get u-space coords.
   function toWorld(px: number, py: number): Point2D {
     return {
-      x: (px / w - 0.5) * 2 * halfW,
+      x: -(px / w - 0.5) * 2 * halfW,
       y: (py / h - 0.5) * 2 * halfH,
     };
   }
@@ -938,7 +968,21 @@ export function gpuSlice(
     return {
       plane, contours: [], resolution, pixelSize: 0,
       timeMs: performance.now() - t0, uAxis: new THREE.Vector3(), vAxis: new THREE.Vector3(),
+      planeOrigin: plane.origin.clone(),
     };
+  }
+
+  // ── Force a 2-pixel zero border on the winding field ──
+  // This ensures marching squares always finds an outside→inside boundary,
+  // even when the cross-section fills the entire viewport (e.g. thin sheet
+  // models viewed face-on → winding = 1 everywhere → case-15 skipped).
+  const BORDER = 2;
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      if (row < BORDER || row >= height - BORDER || col < BORDER || col >= width - BORDER) {
+        field[row * width + col] = 0;
+      }
+    }
   }
 
   // ── Marching squares → segments → contours ──
@@ -961,6 +1005,7 @@ export function gpuSlice(
     timeMs: performance.now() - t0,
     uAxis,
     vAxis,
+    planeOrigin,
   };
 }
 
