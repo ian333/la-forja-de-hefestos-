@@ -609,33 +609,42 @@ export default function ForgePage() {
     setSelectedFeatureIdx(idx);
     if (idx == null || !vizFeatures) { setSelectedSliceIndex(null); return; }
     const feat = vizFeatures[idx];
-    const normal = feat.normal ?? feat.children?.[0]?.centroid ? undefined : undefined;
-    // Try to match to a GPU slice by normal direction
-    if (feat.normal && fittedSlices.length > 0) {
-      const fn = feat.normal;
-      let bestIdx = -1, bestDot = -1;
-      for (let i = 0; i < fittedSlices.length; i++) {
-        const s = fittedSlices[i];
-        if (!s.uAxis || !s.vAxis) continue;
-        // Compute slice normal from cross(u, v)
-        const nx = s.uAxis[1] * s.vAxis[2] - s.uAxis[2] * s.vAxis[1];
-        const ny = s.uAxis[2] * s.vAxis[0] - s.uAxis[0] * s.vAxis[2];
-        const nz = s.uAxis[0] * s.vAxis[1] - s.uAxis[1] * s.vAxis[0];
-        const dot = Math.abs(fn[0] * nx + fn[1] * ny + fn[2] * nz);
-        if (dot > bestDot) { bestDot = dot; bestIdx = i; }
+    if (!feat.normal || fittedSlices.length === 0) {
+      // Fallback: map by axis label
+      if (feat.normal) {
+        const axes = ['X', 'Y', 'Z'] as const;
+        const absN = feat.normal.map(Math.abs);
+        const maxAxis = axes[absN.indexOf(Math.max(...absN))];
+        // Pick the middle slice of that axis (most representative)
+        const candidates = fittedSlices
+          .map((s, i) => ({ s, i }))
+          .filter(({ s }) => s.axis === maxAxis);
+        if (candidates.length > 0) {
+          setSelectedSliceIndex(candidates[Math.floor(candidates.length / 2)].i);
+        }
       }
-      if (bestIdx >= 0 && bestDot > 0.9) {
-        setSelectedSliceIndex(bestIdx);
-        return;
-      }
+      return;
     }
-    // Fallback: map by axis
-    const axes = ['X', 'Y', 'Z'] as const;
-    if (feat.normal) {
-      const absN = feat.normal.map(Math.abs);
-      const maxAxis = axes[absN.indexOf(Math.max(...absN))];
-      const match = fittedSlices.findIndex(s => s.axis === maxAxis);
-      if (match >= 0) setSelectedSliceIndex(match);
+    const fn = feat.normal;
+    // Score each slice by: (1) normal alignment, (2) offset distance to feature
+    let bestIdx = -1;
+    let bestScore = -Infinity;
+    for (let i = 0; i < fittedSlices.length; i++) {
+      const s = fittedSlices[i];
+      if (!s.uAxis || !s.vAxis || !s.planeOrigin) continue;
+      // Slice normal from cross(u, v)
+      const nx = s.uAxis[1] * s.vAxis[2] - s.uAxis[2] * s.vAxis[1];
+      const ny = s.uAxis[2] * s.vAxis[0] - s.uAxis[0] * s.vAxis[2];
+      const nz = s.uAxis[0] * s.vAxis[1] - s.uAxis[1] * s.vAxis[0];
+      const dot = Math.abs(fn[0] * nx + fn[1] * ny + fn[2] * nz);
+      if (dot < 0.85) continue; // Normal must be roughly aligned
+      // Prefer slices with more contours (richer cross-section)
+      const richness = s.contours.length;
+      const score = dot * 100 + richness;
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
+    }
+    if (bestIdx >= 0) {
+      setSelectedSliceIndex(bestIdx);
     }
   }, [vizFeatures, fittedSlices]);
 

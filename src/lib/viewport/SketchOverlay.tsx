@@ -171,9 +171,13 @@ export default function SketchOverlay({
 }: SketchOverlayProps) {
   // Filter slices by axis and/or selection
   const filtered = useMemo(() => {
+    // When a specific slice is selected, show only that one (using global index)
+    if (selectedSlice != null) {
+      const s = slices[selectedSlice];
+      return s ? [s] : [];
+    }
     let result = slices;
     if (filterAxis) result = result.filter(s => s.axis === filterAxis);
-    if (selectedSlice != null) result = [result[selectedSlice]].filter(Boolean);
     return result;
   }, [slices, filterAxis, selectedSlice]);
 

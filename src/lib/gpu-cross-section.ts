@@ -443,10 +443,13 @@ export function generateGeometryPlanes(
     maxDepthSlices?: number;
     /** Minimum area percentage to include direction (default: 0.1) */
     minAreaPct?: number;
+    /** Only use principal axes X/Y/Z — skip angled normals (default: true) */
+    principalAxesOnly?: boolean;
   },
 ): SlicePlane[] {
   const maxDepthSlices = opts?.maxDepthSlices ?? 10;
   const minAreaPct = opts?.minAreaPct ?? 0.1;
+  const principalAxesOnly = opts?.principalAxesOnly ?? true;
 
   const directions = detectPlanarDirections(meshes);
   if (directions.length === 0) return [];
@@ -462,6 +465,8 @@ export function generateGeometryPlanes(
   for (const dir of directions) {
     // Skip very small directions (unless axis-aligned — always include those)
     if (!dir.isAxis && dir.areaPct < minAreaPct) continue;
+    // Skip angled normals when principalAxesOnly is enabled
+    if (principalAxesOnly && !dir.isAxis) continue;
 
     const [minOff, maxOff] = dir.offsetRange;
     const range = maxOff - minOff;

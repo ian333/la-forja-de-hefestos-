@@ -89,14 +89,19 @@ function ForgeGrid() {
 
 // ── Sketch Plane Overlay — plano matemático infinito en 3D ──
 
+// Drei <Grid> renders in the XZ plane by default.
+// To match our raycast planes we rotate the group:
+//   XY (normal Z) → rotate Grid from XZ to XY: pitch -90° around X
+//   XZ (normal Y) → Grid is already XZ: no rotation
+//   YZ (normal X) → rotate Grid from XZ to YZ: roll +90° around Z
 const SKETCH_PLANE_CFG: Record<SketchPlane, {
   rotation: [number, number, number];
   color: string;
   axisLabel: string;
 }> = {
-  XY: { rotation: [0,           0, 0], color: '#4299e1', axisLabel: 'XY' },
-  XZ: { rotation: [-Math.PI/2,  0, 0], color: '#ed8936', axisLabel: 'XZ' },
-  YZ: { rotation: [0, 0, Math.PI/2],   color: '#c9a84c', axisLabel: 'YZ' },
+  XY: { rotation: [-Math.PI / 2, 0, 0], color: '#4299e1', axisLabel: 'XY' },
+  XZ: { rotation: [0, 0, 0],            color: '#ed8936', axisLabel: 'XZ' },
+  YZ: { rotation: [0, 0, Math.PI / 2],  color: '#c9a84c', axisLabel: 'YZ' },
 };
 
 function SketchPlaneOverlay({ plane }: { plane: SketchPlane }) {
@@ -117,7 +122,7 @@ function SketchPlaneOverlay({ plane }: { plane: SketchPlane }) {
         fadeStrength={1.5}
         infiniteGrid
       />
-      {/* Plano semitransparente */}
+      {/* Plano semitransparente — sits on the same plane as the Grid (XZ local) */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[400, 400]} />
         <meshBasicMaterial
@@ -361,6 +366,10 @@ export default function ForgeViewport({
             LEFT: isSketch ? (undefined as unknown as THREE.MOUSE) : THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.PAN,
             RIGHT: isSketch ? THREE.MOUSE.ROTATE : (undefined as unknown as THREE.MOUSE),
+          }}
+          touches={{
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN,
           }}
         />
 
