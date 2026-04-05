@@ -22198,68 +22198,13 @@
       ]
     },
     {
-      "type": "pattern_circular",
-      "label": "⊙× Circular Pattern ×4 (⊙ Hole ø7.91)",
-      "count": 4,
-      "children": [
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø7.91",
-          "params": {
-            "diameter": 7.908853463323715,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -234.94994139610642,
-            "y": 0.00003530934912632233
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø7.91",
-          "params": {
-            "diameter": 7.908853463323715,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -203.19994139610642,
-            "y": 0.00003530934912632233
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø7.91",
-          "params": {
-            "diameter": 7.908853501299399,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 203.20006098593208,
-            "y": 0.00003531946475199277
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø7.91",
-          "params": {
-            "diameter": 7.908853501299399,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 234.95006098593208,
-            "y": 0.00003531946475199277
-          }
-        }
-      ]
-    },
-    {
-      "type": "revolution",
-      "label": "◎ Revolution taper ø63.3→ø304.7",
+      "type": "hole",
+      "label": "⊙ Hole ø254.00",
       "params": {
-        "minDiameter": 63.26904301312308,
-        "maxDiameter": 304.691315355982
+        "diameter": 253.99898497785463,
+        "depth": 173.73600219726563
       },
-      "confidence": 0.85,
+      "confidence": 1,
       "normal": [
         0,
         0,
@@ -22269,227 +22214,8 @@
         "x": 0.00016818562085063604,
         "y": 0
       },
-      "depth": 0,
-      "sliceCount": 18,
-      "count": 18,
-      "children": [
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø254.00",
-          "params": {
-            "diameter": 253.99898497785463,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.00016818562085063604,
-            "y": 0
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø253.88",
-          "params": {
-            "diameter": 253.87695671029135,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.01975110065872343,
-            "y": 0
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø253.82",
-          "params": {
-            "diameter": 253.8196039118672,
-            "depth": 19.304000244140617
-          },
-          "centroid": {
-            "x": 0.027847716051297766,
-            "y": 0
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø304.65",
-          "params": {
-            "diameter": 304.6528201118027,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.011350428315125782,
-            "y": 0.007617550423674402
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø304.63",
-          "params": {
-            "diameter": 304.62631131424445,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.013159871472993245,
-            "y": 0.007388337294116809
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø253.90",
-          "params": {
-            "diameter": 253.90028824173686,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.014097120025937215,
-            "y": 0
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø304.69",
-          "params": {
-            "diameter": 304.691315355982,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.008315679785056318,
-            "y": 0.004258354055053815
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø295.00",
-          "params": {
-            "diameter": 295.00269410819567,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.0198607488976279,
-            "y": -0.010151016207487373
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø71.22",
-          "params": {
-            "diameter": 71.21926494850638,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.000030896166762772737,
-            "y": -0.00017805746652044263
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.44",
-          "params": {
-            "diameter": 63.43940044530139,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.0011321018542531647,
-            "y": -0.0004294062479424099
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.37",
-          "params": {
-            "diameter": 63.36839516497028,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.0018743244539116688,
-            "y": -0.0007120733239780463
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.32",
-          "params": {
-            "diameter": 63.316260425248345,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.0018037167857229974,
-            "y": -0.0006863680792221771
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.28",
-          "params": {
-            "diameter": 63.28311727406181,
-            "depth": 38.60800048828122
-          },
-          "centroid": {
-            "x": -0.0011736875976851024,
-            "y": -0.00044736385056864947
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.27",
-          "params": {
-            "diameter": 63.26904301312308,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.0002385038739625145,
-            "y": -0.0000910607618287429
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.30",
-          "params": {
-            "diameter": 63.298187552202606,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.0015388057553451517,
-            "y": 0.0005895015907668721
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.34",
-          "params": {
-            "diameter": 63.34133801987273,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.0018870500213061803,
-            "y": 0.0007241288770067911
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.40",
-          "params": {
-            "diameter": 63.403421898079166,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.0015564456585011044,
-            "y": 0.0005982624954725679
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø63.48",
-          "params": {
-            "diameter": 63.48429706122086,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.00031859549361712425,
-            "y": 0.00012265665420585492
-          }
-        }
-      ]
+      "depth": 173.73600219726563,
+      "sliceCount": 20
     },
     {
       "type": "freeform_pocket",
@@ -22509,7 +22235,47 @@
         "y": -0.004659592112574273
       },
       "depth": 0,
-      "sliceCount": 1
+      "sliceCount": 2
+    },
+    {
+      "type": "hole",
+      "label": "⊙ Hole ø7.91",
+      "params": {
+        "diameter": 7.908853463323715,
+        "depth": 0
+      },
+      "confidence": 0.7,
+      "normal": [
+        0,
+        0,
+        1
+      ],
+      "centroid": {
+        "x": -234.94994139610642,
+        "y": 0.00003530934912632233
+      },
+      "depth": 0,
+      "sliceCount": 2
+    },
+    {
+      "type": "hole",
+      "label": "⊙ Hole ø7.91",
+      "params": {
+        "diameter": 7.908853501299399,
+        "depth": 0
+      },
+      "confidence": 0.7,
+      "normal": [
+        0,
+        0,
+        1
+      ],
+      "centroid": {
+        "x": 203.20006098593208,
+        "y": 0.00003531946475199277
+      },
+      "depth": 0,
+      "sliceCount": 2
     },
     {
       "type": "freeform_pocket",
@@ -22550,90 +22316,7 @@
         "y": -2.2201369438083205
       },
       "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "rect_pocket",
-      "label": "▭ Pocket 177.8×152.6",
-      "params": {
-        "width": 177.8000030517578,
-        "height": 152.56067357451616,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        0,
-        1
-      ],
-      "centroid": {
-        "x": 0,
-        "y": -0.08033983901589181
-      },
-      "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "rect_pocket",
-      "label": "▭ Pocket 177.8×148.3",
-      "params": {
-        "width": 177.8000030517578,
-        "height": 148.28107936493132,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        0,
-        1
-      ],
-      "centroid": {
-        "x": 0,
-        "y": 2.0594572657765298
-      },
-      "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "freeform_pocket",
-      "label": "~ Freeform Pocket (26 ents)",
-      "params": {
-        "entities": 26,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        0,
-        1
-      ],
-      "centroid": {
-        "x": 0,
-        "y": 4.199254370568951
-      },
-      "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "rect_pocket",
-      "label": "▭ Pocket 177.8×139.7",
-      "params": {
-        "width": 177.8000030517578,
-        "height": 139.72189094576163,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        0,
-        1
-      ],
-      "centroid": {
-        "x": 0,
-        "y": 6.3390514753613765
-      },
-      "depth": 0,
-      "sliceCount": 1
+      "sliceCount": 6
     },
     {
       "type": "keyhole",
@@ -22673,48 +22356,6 @@
       "centroid": {
         "x": -72.05025672912598,
         "y": -32.620898217580134
-      },
-      "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "rect_pocket",
-      "label": "▭ Pocket 177.8×104.1",
-      "params": {
-        "width": 177.8000030517578,
-        "height": 104.10653495788574,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        0,
-        1
-      ],
-      "centroid": {
-        "x": 0,
-        "y": 24.146729469299316
-      },
-      "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "rect_pocket",
-      "label": "▭ Pocket 177.8×131.2",
-      "params": {
-        "width": 177.8000030517578,
-        "height": 131.16270252659194,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        0,
-        1
-      ],
-      "centroid": {
-        "x": 0,
-        "y": 10.618645684946223
       },
       "depth": 0,
       "sliceCount": 1
@@ -22883,7 +22524,7 @@
         "y": -88.9000015258789
       },
       "depth": 0,
-      "sliceCount": 1
+      "sliceCount": 2
     },
     {
       "type": "freeform_pocket",
@@ -22941,26 +22582,6 @@
       "centroid": {
         "x": 285.75000011370804,
         "y": -38.1000075397257
-      },
-      "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "freeform_pocket",
-      "label": "~ Freeform Pocket (3 ents)",
-      "params": {
-        "entities": 3,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        1,
-        0
-      ],
-      "centroid": {
-        "x": 282.57499694824156,
-        "y": -60.32500003671107
       },
       "depth": 0,
       "sliceCount": 1

@@ -20167,13 +20167,13 @@
   ],
   "features": [
     {
-      "type": "revolution",
-      "label": "◎ Revolution taper ø32.0→ø37.7",
+      "type": "hole",
+      "label": "⊙ Hole ø32.00",
       "params": {
-        "minDiameter": 31.980484971820307,
-        "maxDiameter": 37.69948066808306
+        "diameter": 31.996528798346013,
+        "depth": 2.0510527747017995
       },
-      "confidence": 0.85,
+      "confidence": 1,
       "normal": [
         0,
         0,
@@ -20183,119 +20183,8 @@
         "x": -0.0000021347634131529958,
         "y": -0.00000419110649474419
       },
-      "depth": 0,
-      "sliceCount": 9,
-      "count": 9,
-      "children": [
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø32.00",
-          "params": {
-            "diameter": 31.996528798346013,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.0000021347634131529958,
-            "y": -0.00000419110649474419
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø31.98",
-          "params": {
-            "diameter": 31.980484971820307,
-            "depth": 0.8204211098807197
-          },
-          "centroid": {
-            "x": -0.0000047814205963447876,
-            "y": -0.000009603250106238193
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø32.04",
-          "params": {
-            "diameter": 32.04026633215451,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.00004281564287822448,
-            "y": 0.0000011203908272250374
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø37.70",
-          "params": {
-            "diameter": 37.69948066808306,
-            "depth": 0
-          },
-          "centroid": {
-            "x": -0.000023987701037953002,
-            "y": -0.000260647201614006
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø32.27",
-          "params": {
-            "diameter": 32.269047981233484,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.00006838478265791537,
-            "y": 0.000021684408778810393
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø32.81",
-          "params": {
-            "diameter": 32.81494232182615,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.0002235879838110577,
-            "y": -0.000007153149915950507
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø37.16",
-          "params": {
-            "diameter": 37.16048372053256,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.00025457603523193484,
-            "y": -0.0001445003613333995
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø34.16",
-          "params": {
-            "diameter": 34.1587830369476,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.00029900590695319806,
-            "y": -0.000016913844195443062
-          }
-        },
-        {
-          "type": "hole",
-          "label": "⊙ Hole ø35.87",
-          "params": {
-            "diameter": 35.872343636053785,
-            "depth": 0
-          },
-          "centroid": {
-            "x": 0.000090766176118251,
-            "y": 0.000008313451893116053
-          }
-        }
-      ]
+      "depth": 2.0510527747017995,
+      "sliceCount": 11
     },
     {
       "type": "fillet_pocket",
@@ -20306,7 +20195,7 @@
         "cornerRadius": 1.170075158923277,
         "depth": 0
       },
-      "confidence": 0.6,
+      "confidence": 0.7,
       "normal": [
         1,
         0,
@@ -20317,7 +20206,7 @@
         "y": -23.72993591862491
       },
       "depth": 0,
-      "sliceCount": 1
+      "sliceCount": 2
     },
     {
       "type": "fillet_pocket",
@@ -20337,28 +20226,6 @@
       "centroid": {
         "x": 0.000003253615870058013,
         "y": 23.72993591862491
-      },
-      "depth": 0,
-      "sliceCount": 1
-    },
-    {
-      "type": "fillet_pocket",
-      "label": "▭ Fillet Pocket 3.0×15.5 R0.8",
-      "params": {
-        "width": 2.9997808901611975,
-        "height": 15.521798074855322,
-        "cornerRadius": 0.8105022459670966,
-        "depth": 0
-      },
-      "confidence": 0.6,
-      "normal": [
-        0,
-        1,
-        0
-      ],
-      "centroid": {
-        "x": -0.00010955491940334294,
-        "y": -23.760899037427663
       },
       "depth": 0,
       "sliceCount": 1

@@ -21,8 +21,8 @@ import {
   SectionPlaneVisual,
   MeshClipper,
   ViewTransitionController,
-  useFlyTo,
   SketchOverlay,
+  SketchModeController,
   type StandardView,
 } from './viewport';
 import type { FittedSlice } from './sketch-fitting';
@@ -179,6 +179,9 @@ function RendererSync() {
 
 // ── Imported CAD Meshes (STEP/IGES/BREP) ──
 
+// Shared ref so SketchModeController can ghost the imported meshes
+export const importedMeshGroupRef = { current: null as THREE.Group | null };
+
 function ImportedMeshes() {
   const importedModels = useForgeStore(s => s.importedModels);
   const themeStep = useThemeStore(selectStep);
@@ -224,6 +227,12 @@ function ImportedMeshes() {
       }
     });
   }, [themeStep, importedModels]);
+
+  // Sync the shared ref for SketchModeController ghosting
+  useEffect(() => {
+    importedMeshGroupRef.current = groupRef.current;
+    return () => { importedMeshGroupRef.current = null; };
+  });
 
   if (importedModels.length === 0) return null;
 
@@ -275,38 +284,6 @@ function ReconstructedMesh({ reconstruction }: { reconstruction: ReconstructionR
 }
 
 // ── Main Viewport Component ──
-
-// ── Slice Focus Controller — flies camera to selected slice plane ──
-
-function SliceFocusController({ slice }: { slice: FittedSlice | null }) {
-  const flyTo = useFlyTo();
-  const prevSlice = useRef<FittedSlice | null>(null);
-
-  useEffect(() => {
-    if (!slice || slice === prevSlice.current) return;
-    prevSlice.current = slice;
-
-    if (!slice.uAxis || !slice.vAxis || !slice.planeOrigin) return;
-
-    const origin = new THREE.Vector3(...slice.planeOrigin);
-    const u = new THREE.Vector3(...slice.uAxis);
-    const v = new THREE.Vector3(...slice.vAxis);
-    const normal = new THREE.Vector3().crossVectors(u, v).normalize();
-
-    // Camera distance: reasonable default based on model extent
-    const camDist = 12;
-    const camPos: [number, number, number] = [
-      origin.x + normal.x * camDist,
-      origin.y + normal.y * camDist,
-      origin.z + normal.z * camDist,
-    ];
-    const target: [number, number, number] = [origin.x, origin.y, origin.z];
-
-    flyTo(camPos, target, 0.6);
-  }, [slice, flyTo]);
-
-  return null;
-}
 
 export interface ForgeViewportProps {
   onFps?: (fps: number) => void;
@@ -407,9 +384,10 @@ export default function ForgeViewport({
           />
         )}
 
-        {/* ── Slice Focus Controller (fly camera to selected slice) ── */}
-        <SliceFocusController
+        {/* ── Sketch Mode Controller (Fusion 360-style camera flight + ghosting) ── */}
+        <SketchModeController
           slice={fittedSlices && selectedSliceIndex != null ? fittedSlices[selectedSliceIndex] ?? null : null}
+          meshGroupRef={importedMeshGroupRef}
         />
 
         {/* ── Section Plane (clip visualization) ── */}

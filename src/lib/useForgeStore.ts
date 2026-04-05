@@ -939,6 +939,10 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     set({ gpuFitting: true, sketchFitting: true });
 
     try {
+      // Force matrixWorld update — Three.js only computes this during render,
+      // but we need correct world transforms for GPU slicing
+      model.threeGroup.updateMatrixWorld(true);
+
       const { gpuFitPipeline } = await import('./gpu-cross-section');
 
       console.group('%c⚒️ FORGE SCAN — Geometry-Driven', 'color:#00ff88;font-size:14px;font-weight:bold');

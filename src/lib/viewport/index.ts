@@ -16,3 +16,6 @@ export type { StandardView } from './CameraTransitions';
 
 export { default as SketchOverlay } from './SketchOverlay';
 export type { SketchOverlayProps } from './SketchOverlay';
+
+export { default as SketchModeController } from './SketchModeController';
+export type { SketchModeControllerProps } from './SketchModeController';

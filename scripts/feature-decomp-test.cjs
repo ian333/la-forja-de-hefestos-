@@ -318,7 +318,7 @@ function generateSmartSlicePlanes(directions, diag, bb, revolution) {
   if (revolution) {
     return generateRevolutionPlanes(revolution, diag);
   }
-  return generateSlicePlanes(directions, diag);
+  return generateSlicePlanes(directions, diag, bb);
 }
 
 function generateRevolutionPlanes(rev, diag) {
@@ -487,21 +487,42 @@ function analyzeRevolutionProfile(profile, diag) {
 // Plane generation (original — for prismatic parts)
 // ═══════════════════════════════════════════════════════════════
 
-function generateSlicePlanes(directions, diag) {
-  const maxSlices=10, minAreaPct=0.1, minSpacing=diag*0.01;
+function generateSlicePlanes(directions, diag, bb) {
+  const maxSlices=20, minAreaPct=0.1, minSpacing=diag*0.005;
   const planes=[];
   for(const dir of directions){
     if(!dir.isAxis&&dir.areaPct<minAreaPct)continue;
-    const [lo,hi]=dir.offsetRange;
+    // Use full bbox extent along this normal (not just face offsets)
+    // This enables depth measurement for pockets/holes
+    const n = dir.normal;
+    let lo, hi;
+    if (bb) {
+      // Project all 8 bbox corners onto normal and take min/max
+      const corners = [
+        bb.min,
+        [bb.max[0], bb.min[1], bb.min[2]],
+        [bb.min[0], bb.max[1], bb.min[2]],
+        [bb.min[0], bb.min[1], bb.max[2]],
+        [bb.max[0], bb.max[1], bb.min[2]],
+        [bb.max[0], bb.min[1], bb.max[2]],
+        [bb.min[0], bb.max[1], bb.max[2]],
+        bb.max,
+      ];
+      const projs = corners.map(c => dot3(c, n));
+      lo = Math.min(...projs);
+      hi = Math.max(...projs);
+    } else {
+      [lo, hi] = dir.offsetRange;
+    }
     const range=hi-lo;
-    // For thin parts: ensure at least 3 planes even when range < minSpacing
-    const minPlanes = 3;
+    const minPlanes = 5;
     if(range<1e-6){planes.push({normal:dir.normal,offset:(lo+hi)/2,label:dir.label});continue;}
-    const n=Math.min(maxSlices,Math.max(minPlanes,Math.ceil(range/minSpacing)));
-    const margin=range*0.05;
-    for(let i=0;i<n;i++){
-      const t=n===1?0.5:i/(n-1);
-      planes.push({normal:dir.normal,offset:(lo+margin)+((hi-margin)-(lo+margin))*t,label:`${dir.label} d${i+1}/${n}`});
+    const nSlices=Math.min(maxSlices,Math.max(minPlanes,Math.ceil(range/minSpacing)));
+    const margin=range*0.02;
+    for(let i=0;i<nSlices;i++){
+      const t=nSlices===1?0.5:i/(nSlices-1);
+      const offset=(lo+margin)+((hi-margin)-(lo+margin))*t;
+      planes.push({normal:dir.normal,offset,label:`${dir.label} d${i+1}/${nSlices}`});
     }
   }
   return planes;
@@ -960,12 +981,15 @@ function entityEndpoints(e) {
  * Profiles with similar type + dimensions = "same feature" at different depths.
  */
 function profileSignature(profile) {
-  if (profile.type === 'circle') return `circle|r=${profile.radius.toFixed(2)}`;
-  if (profile.type === 'slot') return `slot|w=${profile.slotWidth.toFixed(2)}|l=${profile.slotLength.toFixed(2)}`;
-  if (profile.type === 'rect') return `rect|w=${profile.rectWidth.toFixed(2)}|h=${profile.rectHeight.toFixed(2)}`;
-  if (profile.type === 'fillet_rect') return `fillet_rect|w=${profile.rectWidth.toFixed(2)}|h=${profile.rectHeight.toFixed(2)}|r=${profile.cornerRadius.toFixed(2)}`;
-  // For freeform/polygon: use entity count + area as fingerprint
-  return `${profile.type}|ents=${profile.entities.length}|area=${profile.area.toFixed(1)}`;
+  // Round to 1 decimal to tolerate fillet/chamfer variations across slices
+  const r1 = v => Math.round(v * 2) / 2; // round to nearest 0.5
+  if (profile.type === 'circle') return `circle|r=${r1(profile.radius)}`;
+  if (profile.type === 'slot') return `slot|w=${r1(profile.slotWidth)}|l=${r1(profile.slotLength)}`;
+  if (profile.type === 'rect') return `rect|w=${r1(profile.rectWidth)}|h=${r1(profile.rectHeight)}`;
+  if (profile.type === 'fillet_rect') return `fillet_rect|w=${r1(profile.rectWidth)}|h=${r1(profile.rectHeight)}`;
+  // For freeform/polygon: use entity count bucket + area bucket as fingerprint
+  const areaBucket = Math.round(profile.area / 10) * 10;
+  return `${profile.type}|ents=${profile.entities.length}|area=${areaBucket}`;
 }
 
 /**
@@ -973,7 +997,7 @@ function profileSignature(profile) {
  * Same profile type + dimensions + similar 2D centroid → one feature.
  */
 function clusterProfilesToFeatures(profilesWithMeta, diag) {
-  const posTol = diag * 0.03; // 3% of diagonal for "same position"
+  const posTol = diag * 0.05; // 5% of diagonal for "same position" (generous for depth sweeps)
   const dimTol = 0.15; // 15% relative tolerance for dimensions
 
   // Group by signature
@@ -1019,6 +1043,52 @@ function clusterProfilesToFeatures(profilesWithMeta, diag) {
   }
 
   return features;
+}
+
+/**
+ * Merge duplicate features that arise from slightly different cross-section profiles
+ * at different depths. Two features merge if they share the same base type (hole, rect_pocket, etc.)
+ * and their 2D centroid is within tolerance. Keep the one with highest sliceCount, take max depth.
+ */
+function mergeNearbyFeatures(features, diag) {
+  const mergeTol = diag * 0.05;
+  const merged = [];
+  const used = new Set();
+
+  for (let i = 0; i < features.length; i++) {
+    if (used.has(i)) continue;
+    let best = features[i];
+    for (let j = i + 1; j < features.length; j++) {
+      if (used.has(j)) continue;
+      const other = features[j];
+      // Same base type (ignore detail differences)
+      const typeA = best.type.replace(/fillet_/, '').replace(/rounded_/, '');
+      const typeB = other.type.replace(/fillet_/, '').replace(/rounded_/, '');
+      if (typeA !== typeB) continue;
+      // Same normal direction
+      if (!best.normal || !other.normal) continue;
+      const nDot = Math.abs(dot3(best.normal, other.normal));
+      if (nDot < 0.95) continue;
+      // Close centroid
+      if (!best.centroid || !other.centroid) continue;
+      const cd = dist2d(best.centroid, other.centroid);
+      if (cd > mergeTol) continue;
+      // Merge: keep best evidence, take max depth
+      if (other.sliceCount > best.sliceCount) {
+        const bestDepth = Math.max(best.depth || 0, other.depth || 0);
+        best = { ...other, depth: bestDepth };
+        if (best.params) best.params.depth = bestDepth;
+      } else {
+        best.depth = Math.max(best.depth || 0, other.depth || 0);
+        if (best.params) best.params.depth = best.depth;
+      }
+      best.sliceCount = (best.sliceCount || 1) + (other.sliceCount || 1);
+      used.add(j);
+    }
+    merged.push(best);
+    used.add(i);
+  }
+  return merged;
 }
 
 function makeFeature(profile, centroid2d, normal, depth, sliceCount) {
@@ -1361,10 +1431,17 @@ async function main() {
   const args = rawArgs.filter(a => a !== '--viz');
   let files;
   if (args.length > 0) {
-    files = args.map(a => path.resolve(a)).filter(f => {
-      if (!fs.existsSync(f)) { console.warn(`  ⚠ File not found: ${f}`); return false; }
-      return true;
-    });
+    const expanded = [];
+    for (const a of args) {
+      const resolved = path.resolve(a);
+      if (!fs.existsSync(resolved)) { console.warn(`  ⚠ Not found: ${resolved}`); continue; }
+      if (fs.statSync(resolved).isDirectory()) {
+        expanded.push(...collectStepFiles(resolved));
+      } else {
+        expanded.push(resolved);
+      }
+    }
+    files = expanded;
     if (files.length === 0) { console.error('No valid STEP files provided.'); process.exit(1); }
   } else {
     files = collectStepFiles(modelsDir).sort();
@@ -1450,9 +1527,10 @@ async function main() {
       ? profilesWithMeta.filter(pm => pm.profile.area < base.area * 0.8)
       : profilesWithMeta;
     const rawFeatures = clusterProfilesToFeatures(nonBase, diag);
+    const dedupedFeatures = mergeNearbyFeatures(rawFeatures, diag);
 
     // ── 5. Detect revolutions (collapse concentric circles → 1 feature) ──
-    const withRevolutions = detectRevolutions(rawFeatures, diag);
+    const withRevolutions = detectRevolutions(dedupedFeatures, diag);
 
     // ── 6. Detect patterns ──
     const allFeatures = detectPatterns(withRevolutions, diag);

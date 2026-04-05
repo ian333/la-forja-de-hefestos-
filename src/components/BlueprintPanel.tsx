@@ -124,6 +124,8 @@ export default function BlueprintPanel({ onClose }: BlueprintPanelProps) {
   const [selectedSlice, setSelectedSlice] = useState(0);
   const [showFeatures, setShowFeatures] = useState(true);
   const [showDimensions, setShowDimensions] = useState(true);
+  const [showDecomp, setShowDecomp] = useState(false);
+  const [highlightFeature, setHighlightFeature] = useState<number | null>(null);
   // Force re-render counter for canvas
   const [drawTick, setDrawTick] = useState(0);
 
@@ -418,6 +420,25 @@ export default function BlueprintPanel({ onClose }: BlueprintPanelProps) {
     return () => window.removeEventListener('keydown', handler);
   }, [prevSlice, nextSlice, onClose]);
 
+  // Export current canvas as JPG
+  const exportJPG = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const name = vizData ? vizData.fileName.replace(/\.\w+$/, '') : 'plano';
+      const sliceLabel = vizData?.slices[selectedSlice]?.label ?? '';
+      a.download = `${name}_${sliceLabel}.jpg`.replace(/[^a-zA-Z0-9._-]/g, '_');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 'image/jpeg', 0.95);
+  }, [vizData, selectedSlice]);
+
   // ── Render ──
   if (loading) {
     return (
@@ -448,12 +469,28 @@ export default function BlueprintPanel({ onClose }: BlueprintPanelProps) {
             <span style={{ fontSize: 16 }}>📐</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: GOLD, letterSpacing: '0.06em' }}>EXTRACCIÓN DE PLANOS</span>
           </div>
-          <button onClick={onClose}
-            style={{ fontSize: 14, color: DIM, padding: '2px 6px', borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
-            onMouseLeave={e => (e.currentTarget.style.color = DIM)}>
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button onClick={() => setShowDecomp(d => !d)}
+              title="Descomposición de features"
+              style={{ fontSize: 12, color: showDecomp ? GOLD : DIM, padding: '2px 6px', borderRadius: 4, border: 'none', background: showDecomp ? 'rgba(201,168,76,0.1)' : 'transparent', cursor: 'pointer' }}
+              onMouseEnter={e => { if (!showDecomp) e.currentTarget.style.color = GOLD; }}
+              onMouseLeave={e => { if (!showDecomp) e.currentTarget.style.color = DIM; }}>
+              🔧
+            </button>
+            <button onClick={exportJPG}
+              title="Exportar JPG"
+              style={{ fontSize: 12, color: DIM, padding: '2px 6px', borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.color = GOLD)}
+              onMouseLeave={e => (e.currentTarget.style.color = DIM)}>
+              📷
+            </button>
+            <button onClick={onClose}
+              style={{ fontSize: 14, color: DIM, padding: '2px 6px', borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
+              onMouseLeave={e => (e.currentTarget.style.color = DIM)}>
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Model selector */}
@@ -550,6 +587,10 @@ export default function BlueprintPanel({ onClose }: BlueprintPanelProps) {
             <input type="checkbox" checked={showDimensions} onChange={e => setShowDimensions(e.target.checked)} style={{ width: 12, height: 12, accentColor: GOLD }} />
             Cotas
           </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: '#8a7e6b', cursor: 'pointer' }}>
+            <input type="checkbox" checked={showDecomp} onChange={e => setShowDecomp(e.target.checked)} style={{ width: 12, height: 12, accentColor: GOLD }} />
+            Proceso
+          </label>
         </div>
 
         {/* Stats */}
@@ -585,6 +626,183 @@ export default function BlueprintPanel({ onClose }: BlueprintPanelProps) {
           ← → navegar cortes · scroll zoom · arrastrar pan · ESC cerrar
         </div>
       </div>
+
+      {/* RIGHT SIDEBAR — Feature Decomposition / Manufacturing Process */}
+      {showDecomp && vizData && (
+        <div style={{ width: 320, display: 'flex', flexDirection: 'column', borderLeft: '1px solid rgba(201,168,76,0.12)', background: PANEL_BG, overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(201,168,76,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14 }}>🔧</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: '0.06em' }}>DESCOMPOSICIÓN</span>
+            </div>
+            <button onClick={() => setShowDecomp(false)}
+              style={{ fontSize: 12, color: DIM, padding: '2px 6px', borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.color = GOLD)}
+              onMouseLeave={e => (e.currentTarget.style.color = DIM)}>
+              ✕
+            </button>
+          </div>
+
+          {/* Model summary */}
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(201,168,76,0.08)' }}>
+            <div style={{ fontSize: 11, color: TEXT, fontWeight: 600, marginBottom: 4 }}>{vizData.fileName}</div>
+            <div style={{ fontSize: 9, color: DIM, display: 'flex', flexWrap: 'wrap', gap: '4px 12px' }}>
+              {vizData.boundingBox && (() => {
+                const bb = vizData.boundingBox;
+                const w = (bb.max[0] - bb.min[0]).toFixed(1);
+                const h = (bb.max[1] - bb.min[1]).toFixed(1);
+                const d = (bb.max[2] - bb.min[2]).toFixed(1);
+                return <span>{w} × {h} × {d} mm</span>;
+              })()}
+              <span>ø{(vizData.diagonal ?? 0).toFixed(1)}mm</span>
+              {vizData.revolution && <span style={{ color: '#c084fc' }}>◎ Revolución</span>}
+            </div>
+          </div>
+
+          {/* Manufacturing timeline */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+            <div style={{ fontSize: 9, color: '#8a7e6b', padding: '0 12px', marginBottom: 8, letterSpacing: '0.06em' }}>
+              PROCESO DE MANUFACTURA ({(vizData.features.length + (vizData.base ? 1 : 0))} pasos)
+            </div>
+
+            {/* Step 0: Base body */}
+            {vizData.base && (
+              <div
+                onMouseEnter={() => setHighlightFeature(-1)}
+                onMouseLeave={() => setHighlightFeature(null)}
+                style={{
+                  padding: '8px 12px', marginBottom: 2, cursor: 'pointer',
+                  background: highlightFeature === -1 ? 'rgba(96,165,250,0.08)' : 'transparent',
+                  borderLeft: `3px solid ${highlightFeature === -1 ? '#60a5fa' : 'rgba(96,165,250,0.2)'}`,
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(96,165,250,0.15)', color: '#60a5fa', fontSize: 10, fontWeight: 700, flexShrink: 0,
+                  }}>0</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 10, color: TEXT, fontWeight: 600 }}>Cuerpo Base</div>
+                    <div style={{ fontSize: 9, color: DIM }}>{vizData.base.label}</div>
+                    <div style={{ fontSize: 8, color: DIM, marginTop: 2 }}>
+                      Área: {vizData.base.area.toFixed(0)}mm² · Sketch → Extrude
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 11, color: '#60a5fa' }}>█</span>
+                </div>
+              </div>
+            )}
+
+            {/* Feature steps */}
+            {vizData.features.map((f, i) => {
+              const icon = FEATURE_ICONS[f.type] || '?';
+              const isPattern = f.type.startsWith('pattern_');
+              const color = TYPE_COLORS[f.type] || GOLD;
+              const stepNum = i + (vizData.base ? 1 : 0);
+              const isHighlighted = highlightFeature === i;
+
+              // Build operation description
+              let operation = 'Sketch → Extrude-Cut';
+              if (f.type === 'hole') operation = 'Hole';
+              else if (f.type === 'slot') operation = 'Sketch → Extrude-Cut (slot)';
+              else if (f.type.includes('pocket')) operation = 'Sketch → Pocket';
+              else if (f.type === 'boss' || f.type === 'freeform_boss') operation = 'Sketch → Extrude (boss)';
+              else if (isPattern) operation = f.type === 'pattern_circular' ? 'Circular Pattern' : 'Linear Pattern';
+              else if (f.type === 'revolution') operation = 'Sketch → Revolve';
+
+              // Build params string
+              const paramParts: string[] = [];
+              if (f.params) {
+                if (f.params.diameter) paramParts.push(`ø${f.params.diameter.toFixed(2)}mm`);
+                if (f.params.width && f.params.height) paramParts.push(`${f.params.width.toFixed(1)} × ${f.params.height.toFixed(1)}mm`);
+                if (f.params.cornerRadius) paramParts.push(`R${f.params.cornerRadius.toFixed(1)}`);
+                if (f.params.depth && f.params.depth > 0) paramParts.push(`↧ ${f.params.depth.toFixed(2)}mm`);
+              }
+              if (!paramParts.some(p => p.startsWith('↧')) && f.depth && f.depth > 0) paramParts.push(`↧ ${f.depth.toFixed(2)}mm`);
+              if (f.count) paramParts.push(`×${f.count} instancias`);
+
+              return (
+                <div
+                  key={i}
+                  onMouseEnter={() => setHighlightFeature(i)}
+                  onMouseLeave={() => setHighlightFeature(null)}
+                  style={{
+                    padding: '8px 12px', marginBottom: 2, cursor: 'pointer',
+                    background: isHighlighted ? `${color}11` : 'transparent',
+                    borderLeft: `3px solid ${isHighlighted ? color : `${color}33`}`,
+                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: `${color}22`, color, fontSize: 10, fontWeight: 700, flexShrink: 0,
+                    }}>{stepNum}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10, color: TEXT, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.label}</div>
+                      <div style={{ fontSize: 9, color: DIM }}>{operation}</div>
+                      {paramParts.length > 0 && (
+                        <div style={{ fontSize: 8, color: DIM, marginTop: 2, fontFamily: 'JetBrains Mono, monospace' }}>
+                          {paramParts.join(' · ')}
+                        </div>
+                      )}
+                      {f.centroid && (
+                        <div style={{ fontSize: 8, color: DIM, fontFamily: 'JetBrains Mono, monospace' }}>
+                          @({f.centroid.x.toFixed(1)}, {f.centroid.y.toFixed(1)})
+                        </div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 12, color, flexShrink: 0 }}>{icon}</span>
+                  </div>
+
+                  {/* Pattern children */}
+                  {isPattern && f.children && f.children.length > 0 && isHighlighted && (
+                    <div style={{ marginTop: 6, paddingLeft: 30, borderLeft: `1px dashed ${color}44` }}>
+                      {f.children.map((child, ci) => (
+                        <div key={ci} style={{ fontSize: 8, color: DIM, padding: '2px 0', display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span style={{ color: `${color}88`, fontSize: 9 }}>·</span>
+                          <span>{child.label}</span>
+                          {child.centroid && (
+                            <span style={{ fontFamily: 'JetBrains Mono, monospace', opacity: 0.6 }}>
+                              @({child.centroid.x.toFixed(1)}, {child.centroid.y.toFixed(1)})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Summary footer */}
+          <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(201,168,76,0.08)', fontSize: 9, color: DIM }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+              <span>Entidades totales</span>
+              <span style={{ color: TEXT, fontFamily: 'JetBrains Mono, monospace' }}>
+                {vizData.profiles.reduce((sum, p) => sum + (p.entities?.length || 0), 0)}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+              <span>Features detectados</span>
+              <span style={{ color: GOLD, fontFamily: 'JetBrains Mono, monospace' }}>{vizData.features.length}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+              <span>Compresión</span>
+              <span style={{ color: '#4ade80', fontFamily: 'JetBrains Mono, monospace' }}>
+                {vizData.profiles.reduce((sum, p) => sum + (p.entities?.length || 0), 0)}→{vizData.features.length} ({
+                  Math.round(vizData.profiles.reduce((sum, p) => sum + (p.entities?.length || 0), 0) / Math.max(vizData.features.length, 1))
+                }:1)
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Profundidades medidas</span>
+              <span style={{ color: '#60a5fa', fontFamily: 'JetBrains Mono, monospace' }}>
+                {vizData.features.filter(f => (f.depth ?? (f.params as Record<string,unknown>)?.depth as number) > 0.001).length}/{vizData.features.length}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

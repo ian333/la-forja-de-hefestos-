@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+<rect width="1200" height="900" fill="#08090d"/>
+<text x="40" y="30" fill="#c9a84c" font-family="monospace" font-size="16" font-weight="bold">nist_ftc_11_asme1_ap242-e2.stp  [REVOLUTION]</text>
+<text x="40" y="50" fill="#786432" font-family="monospace" font-size="11">BBox: 62.9 x 63.0 x 3.0 mm   Diag: 89.1mm</text>
+<rect x="40" y="70" width="365" height="740" fill="none" stroke="#1e1e23" stroke-width="1"/>
+<text x="48" y="86" fill="#dcdcdc" font-family="monospace" font-size="11">Plane ⊥Z t1/8 (2 profiles)</text>
+<defs><clipPath id="clip-0-nist_ftc_11_asme1_ap242-e2"><rect x="41" y="71" width="363" height="738"/></clipPath></defs>
+<g clip-path="url(#clip-0-nist_ftc_11_asme1_ap242-e2)">
+<line x1="22.5" y1="70" x2="22.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="72.5" y1="70" x2="72.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="122.5" y1="70" x2="122.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="172.5" y1="70" x2="172.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="222.5" y1="70" x2="222.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="272.5" y1="70" x2="272.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="322.5" y1="70" x2="322.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="372.5" y1="70" x2="372.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="422.5" y1="70" x2="422.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="647.5" x2="413" y2="647.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="597.5" x2="413" y2="597.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="547.5" x2="413" y2="547.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="497.5" x2="413" y2="497.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="447.5" x2="413" y2="447.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="397.5" x2="413" y2="397.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="347.5" x2="413" y2="347.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="297.5" x2="413" y2="297.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="40" y1="247.5" x2="413" y2="247.5" stroke="#1e1e23" stroke-width="0.5"/>
+<circle cx="222.5" cy="447.5" r="157.5" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+<text x="384.0" y="451.5" fill="#c9a84c" font-family="monospace" font-size="8">ø63.00</text>
+<circle cx="222.5" cy="447.5" r="80.0" fill="none" stroke="#508ce0" stroke-width="1.5"/>
+<text x="306.5" y="451.5" fill="#508ce0" font-family="monospace" font-size="8">ø32.00</text>
+</g>
+<text x="48" y="802" fill="#786432" font-family="monospace" font-size="9">Range: 63.0 x 63.0 mm</text>
+<rect x="413" y="70" width="365" height="740" fill="none" stroke="#1e1e23" stroke-width="1"/>
+<text x="421" y="86" fill="#dcdcdc" font-family="monospace" font-size="11">Plane ⊥Z t2/8 (2 profiles)</text>
+<defs><clipPath id="clip-1-nist_ftc_11_asme1_ap242-e2"><rect x="414" y="71" width="363" height="738"/></clipPath></defs>
+<g clip-path="url(#clip-1-nist_ftc_11_asme1_ap242-e2)">
+<line x1="395.4" y1="70" x2="395.4" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="445.5" y1="70" x2="445.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="495.5" y1="70" x2="495.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="545.5" y1="70" x2="545.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="595.5" y1="70" x2="595.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="645.5" y1="70" x2="645.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="695.5" y1="70" x2="695.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="745.5" y1="70" x2="745.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="795.6" y1="70" x2="795.6" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="647.6" x2="786" y2="647.6" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="597.5" x2="786" y2="597.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="547.5" x2="786" y2="547.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="497.5" x2="786" y2="497.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="447.5" x2="786" y2="447.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="397.5" x2="786" y2="397.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="347.5" x2="786" y2="347.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="297.5" x2="786" y2="297.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="413" y1="247.4" x2="786" y2="247.4" stroke="#1e1e23" stroke-width="0.5"/>
+<circle cx="595.5" cy="447.5" r="157.5" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+<text x="757.0" y="451.5" fill="#c9a84c" font-family="monospace" font-size="8">ø62.98</text>
+<circle cx="595.5" cy="447.5" r="80.0" fill="none" stroke="#508ce0" stroke-width="1.5"/>
+<text x="679.5" y="451.5" fill="#508ce0" font-family="monospace" font-size="8">ø31.98</text>
+</g>
+<text x="421" y="802" fill="#786432" font-family="monospace" font-size="9">Range: 63.0 x 63.0 mm</text>
+<rect x="786" y="70" width="365" height="740" fill="none" stroke="#1e1e23" stroke-width="1"/>
+<text x="794" y="86" fill="#dcdcdc" font-family="monospace" font-size="11">Plane ⊥Z t3/8 (2 profiles)</text>
+<defs><clipPath id="clip-2-nist_ftc_11_asme1_ap242-e2"><rect x="787" y="71" width="363" height="738"/></clipPath></defs>
+<g clip-path="url(#clip-2-nist_ftc_11_asme1_ap242-e2)">
+<line x1="768.4" y1="70" x2="768.4" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="818.4" y1="70" x2="818.4" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="868.5" y1="70" x2="868.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="918.5" y1="70" x2="918.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="968.5" y1="70" x2="968.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="1018.5" y1="70" x2="1018.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="1068.5" y1="70" x2="1068.5" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="1118.6" y1="70" x2="1118.6" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="1168.6" y1="70" x2="1168.6" y2="810" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="647.6" x2="1159" y2="647.6" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="597.6" x2="1159" y2="597.6" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="547.5" x2="1159" y2="547.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="497.5" x2="1159" y2="497.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="447.5" x2="1159" y2="447.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="397.5" x2="1159" y2="397.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="347.5" x2="1159" y2="347.5" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="297.4" x2="1159" y2="297.4" stroke="#1e1e23" stroke-width="0.5"/>
+<line x1="786" y1="247.4" x2="1159" y2="247.4" stroke="#1e1e23" stroke-width="0.5"/>
+<circle cx="968.5" cy="447.5" r="157.5" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+<text x="1130.0" y="451.5" fill="#c9a84c" font-family="monospace" font-size="8">ø62.98</text>
+<circle cx="968.5" cy="447.5" r="80.0" fill="none" stroke="#508ce0" stroke-width="1.5"/>
+<text x="1052.5" y="451.5" fill="#508ce0" font-family="monospace" font-size="8">ø31.98</text>
+</g>
+<text x="794" y="802" fill="#786432" font-family="monospace" font-size="9">Range: 63.0 x 63.0 mm</text>
+<text x="40" y="880" fill="#c9a84c" font-family="monospace" font-size="9">Features (6): ◎ Revolution taper ø32.0→ø37.7 | ▭ Fillet Pocket 3.0×15.5 R1.2 | ▭ Fillet Pocket 3.0×15.5 R1.3 | ▭ Fillet Pocket 3.0×15.5 R0.8 | ▭ Fillet Pocket 3.0×12.5 R0.8 | △ Polygon Pocket (3 sides)</text>
+</svg>

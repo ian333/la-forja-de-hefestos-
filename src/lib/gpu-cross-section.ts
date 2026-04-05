@@ -707,6 +707,14 @@ export function renderWindingField(
   }
   if (nonZeroCount === 0) {
     console.warn(`[renderWindingField] ALL ZERO winding field! ${plane.label}, res=${resolution}, farClip=${halfDepth + pixelSize}, rangeN=${rangeN.toFixed(3)}, tris=${triCount}, camN=${cameraPos.dot(plane.normal).toFixed(3)}`);
+    // Early exit — no geometry intersected this plane
+    renderer.setRenderTarget(prevRT);
+    renderer.setClearColor(prevClearColor, prevClearAlpha);
+    renderer.autoClear = prevAutoClear;
+    rt.dispose();
+    windingMaterial.dispose();
+    renderScene.clear();
+    return { field: new Float32Array(0), width: 0, height: 0, uAxis, vAxis, planeOrigin: plane.origin.clone(), pixelSize, halfW, halfH };
   } else {
     console.log(`[renderWindingField] ${plane.label}: ${nonZeroCount} non-zero px (${(nonZeroCount / field.length * 100).toFixed(1)}%), range=[${minVal.toFixed(2)}, ${maxVal.toFixed(2)}]`);
   }

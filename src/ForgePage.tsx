@@ -56,6 +56,7 @@ import {
 } from '@/lib/machine-config';
 import { decomposeAssembly, assemblyStats } from '@/lib/step-import';
 import BlueprintPanel from '@/components/BlueprintPanel';
+import ManufacturingTimeline, { type VizFeature } from '@/components/ManufacturingTimeline';
 import ThemePanel from '@/components/ThemePanel';
 import { useThemeStore } from '@/lib/useThemeStore';
 import { THEME_PROFILES } from '@/lib/theme-profiles';
@@ -525,6 +526,10 @@ export default function ForgePage() {
   const clearReconstruction = useForgeStore(s => s.clearReconstruction);
   const [sketchFilterAxis, setSketchFilterAxis] = useState<'X' | 'Y' | 'Z' | null>(null);
   const [selectedSliceIndex, setSelectedSliceIndex] = useState<number | null>(null);
+  // Inline feature decomposition (Fusion 360-style)
+  const [vizFeatures, setVizFeatures] = useState<VizFeature[] | null>(null);
+  const [selectedFeatureIdx, setSelectedFeatureIdx] = useState<number | null>(null);
+  const [scanViewMode, setScanViewMode] = useState<'slices' | 'features'>('slices');
   // Módulos
   const activeModuleId = useForgeStore(s => s.activeModuleId);
   const addModule     = useForgeStore(s => s.addModule);
@@ -576,6 +581,63 @@ export default function ForgePage() {
 
   // ── Init/destroy worker ──
   useEffect(() => { initWorker(); return () => destroyWorker(); }, [initWorker, destroyWorker]);
+
+  // ── Load viz-data features after scan completes ──
+  useEffect(() => {
+    if (fittedSlices.length === 0 || importedModels.length === 0) {
+      setVizFeatures(null);
+      setSelectedFeatureIdx(null);
+      return;
+    }
+    const slug = (importedModels[0].threeGroup.name || 'model')
+      .replace(/\.(step|stp|iges|igs)$/i, '')
+      .replace(/\s+/g, '_')
+      .toLowerCase();
+    fetch(`/viz-data/${slug}.json`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.features) {
+          setVizFeatures(data.features);
+          setScanViewMode('features');
+        }
+      })
+      .catch(() => {});
+  }, [fittedSlices.length, importedModels]);
+
+  // ── Feature click → find matching slice and fly camera ──
+  const handleFeatureSelect = useCallback((idx: number | null) => {
+    setSelectedFeatureIdx(idx);
+    if (idx == null || !vizFeatures) { setSelectedSliceIndex(null); return; }
+    const feat = vizFeatures[idx];
+    const normal = feat.normal ?? feat.children?.[0]?.centroid ? undefined : undefined;
+    // Try to match to a GPU slice by normal direction
+    if (feat.normal && fittedSlices.length > 0) {
+      const fn = feat.normal;
+      let bestIdx = -1, bestDot = -1;
+      for (let i = 0; i < fittedSlices.length; i++) {
+        const s = fittedSlices[i];
+        if (!s.uAxis || !s.vAxis) continue;
+        // Compute slice normal from cross(u, v)
+        const nx = s.uAxis[1] * s.vAxis[2] - s.uAxis[2] * s.vAxis[1];
+        const ny = s.uAxis[2] * s.vAxis[0] - s.uAxis[0] * s.vAxis[2];
+        const nz = s.uAxis[0] * s.vAxis[1] - s.uAxis[1] * s.vAxis[0];
+        const dot = Math.abs(fn[0] * nx + fn[1] * ny + fn[2] * nz);
+        if (dot > bestDot) { bestDot = dot; bestIdx = i; }
+      }
+      if (bestIdx >= 0 && bestDot > 0.9) {
+        setSelectedSliceIndex(bestIdx);
+        return;
+      }
+    }
+    // Fallback: map by axis
+    const axes = ['X', 'Y', 'Z'] as const;
+    if (feat.normal) {
+      const absN = feat.normal.map(Math.abs);
+      const maxAxis = axes[absN.indexOf(Math.max(...absN))];
+      const match = fittedSlices.findIndex(s => s.axis === maxAxis);
+      if (match >= 0) setSelectedSliceIndex(match);
+    }
+  }, [vizFeatures, fittedSlices]);
 
   // ── Reset sketch shapes when entering/leaving sketch mode ──
   useEffect(() => {
@@ -1867,6 +1929,94 @@ export default function ForgePage() {
                 </div>
               )}
 
+              {/* View mode toggle: Slices vs Features */}
+              {vizFeatures && vizFeatures.length > 0 && (
+                <div className="px-3 py-1.5 border-b border-white/[0.04] flex items-center gap-1">
+                  <button onClick={() => setScanViewMode('slices')}
+                    className={`px-2.5 py-0.5 rounded text-[9px] font-bold transition-all ${
+                      scanViewMode === 'slices' ? 'bg-gold/15 text-gold' : 'text-text-3 hover:text-text-2'
+                    }`}>Slices</button>
+                  <button onClick={() => setScanViewMode('features')}
+                    className={`px-2.5 py-0.5 rounded text-[9px] font-bold transition-all ${
+                      scanViewMode === 'features' ? 'bg-gold/15 text-gold' : 'text-text-3 hover:text-text-2'
+                    }`}>
+                    Features
+                    <span className="ml-1 text-[8px] font-mono opacity-70">{vizFeatures.length}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* ── Features view ── */}
+              {scanViewMode === 'features' && vizFeatures && vizFeatures.length > 0 ? (
+                <div className="px-1.5 py-1 space-y-px max-h-[30vh] overflow-y-auto">
+                  {vizFeatures.map((feat, i) => {
+                    const isSelected = selectedFeatureIdx === i;
+                    const fIcons: Record<string, string> = {
+                      hole: '⊙', slot: '▬', rect_pocket: '▭', fillet_pocket: '▭',
+                      polygon_pocket: '⬡', freeform_pocket: '◇', circle: '○', keyhole: '⊚',
+                      pattern_circular: '⊙×', pattern_linear: '▤', revolution: '◉',
+                    };
+                    const fColors: Record<string, string> = {
+                      hole: '#f87171', slot: '#facc15', rect_pocket: '#4ade80', fillet_pocket: '#4ade80',
+                      polygon_pocket: '#a78bfa', freeform_pocket: '#38bdf8', circle: '#60a5fa',
+                      keyhole: '#fb923c', pattern_circular: '#c084fc', pattern_linear: '#c084fc',
+                    };
+                    const icon = fIcons[feat.type] ?? '◆';
+                    const color = fColors[feat.type] ?? '#c9a84c';
+                    const isPattern = feat.type.startsWith('pattern_');
+                    // Build param string
+                    const parts: string[] = [];
+                    if (feat.params) {
+                      if (feat.params.diameter) parts.push(`ø${feat.params.diameter.toFixed(1)}`);
+                      if (feat.params.width && feat.params.height) parts.push(`${feat.params.width.toFixed(1)}×${feat.params.height.toFixed(1)}`);
+                      if (feat.params.depth && feat.params.depth > 0) parts.push(`↧${feat.params.depth.toFixed(1)}`);
+                    }
+                    if (!parts.some(p => p.startsWith('↧')) && feat.depth && feat.depth > 0) {
+                      parts.push(`↧${feat.depth.toFixed(1)}`);
+                    }
+
+                    return (
+                      <div key={i}
+                        onClick={() => handleFeatureSelect(isSelected ? null : i)}
+                        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[9px] cursor-pointer transition-all ${
+                          isSelected
+                            ? 'ring-1 ring-gold/40 shadow-[0_0_8px_rgba(201,168,76,0.15)]'
+                            : 'hover:bg-white/[0.03]'
+                        }`}
+                        style={isSelected ? { background: `${color}10` } : undefined}>
+                        <span className="font-mono w-4 text-right text-[8px]" style={{ color: 'var(--c-text-3)' }}>{i + 1}</span>
+                        <span style={{ color, fontSize: 11 }}>{icon}</span>
+                        <span className="text-text-1 flex-1 truncate">{feat.label}</span>
+                        {parts.length > 0 && (
+                          <span className="font-mono text-[8px] shrink-0" style={{ color: 'var(--c-text-3)' }}>
+                            {parts.join(' ')}
+                          </span>
+                        )}
+                        {isPattern && feat.count && (
+                          <span className="text-[7px] font-bold px-1 rounded"
+                            style={{ background: `${color}20`, color }}>×{feat.count}</span>
+                        )}
+                        {feat.confidence != null && (
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ background: feat.confidence > 0.7 ? '#4ade80' : feat.confidence > 0.4 ? '#facc15' : '#f87171' }}
+                            title={`${(feat.confidence * 100).toFixed(0)}%`} />
+                        )}
+                        {isSelected && (
+                          <span className="text-[8px] font-bold tracking-wider animate-pulse" style={{ color }}>◉</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {selectedFeatureIdx != null && (
+                    <button
+                      onClick={() => handleFeatureSelect(null)}
+                      className="w-full mt-1 px-2 py-1 rounded-lg text-[9px] text-gold/70 hover:text-gold hover:bg-gold/10 transition-all text-center">
+                      ← Ver todos los features
+                    </button>
+                  )}
+                </div>
+              ) : (
+              <>
               {/* Axis filter */}
               <div className="px-3 py-1.5 border-b border-white/[0.04] flex items-center gap-1">
                 <span className="text-[8px] text-text-3 uppercase tracking-widest font-semibold mr-1">Eje</span>
@@ -1932,6 +2082,8 @@ export default function ForgePage() {
                   </button>
                 )}
               </div>
+              </>
+              )}
             </div>
             );
           })()}
@@ -2241,6 +2393,17 @@ export default function ForgePage() {
           </button>
         )}
       </div>
+
+      {/* ════════════════════════════════════════════════════
+          MANUFACTURING TIMELINE (Fusion 360-style)
+          ════════════════════════════════════════════════════ */}
+      {vizFeatures && vizFeatures.length > 0 && (
+        <ManufacturingTimeline
+          features={vizFeatures}
+          selectedIdx={selectedFeatureIdx}
+          onSelect={handleFeatureSelect}
+        />
+      )}
 
       {/* ════════════════════════════════════════════════════
           TIMELINE — 32px
