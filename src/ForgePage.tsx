@@ -650,7 +650,17 @@ export default function ForgePage() {
 
   // ── Reset sketch shapes when entering/leaving sketch mode ──
   useEffect(() => {
-    if (sketchMode) { setSketchShapes([]); setSketchTool('rect'); }
+    if (sketchMode) {
+      setSketchShapes([]);
+      setSketchTool('rect');
+      // Fly camera to face the sketch plane orthogonally
+      const planeToView: Record<SketchPlane, StandardView> = {
+        XY: 'front',  // look along -Z → see XY
+        XZ: 'top',    // look along -Y → see XZ
+        YZ: 'right',  // look along -X → see YZ
+      };
+      setTargetView(planeToView[sketchMode.plane]);
+    }
   }, [sketchMode?.plane]);
 
   // ── Keyboard shortcuts ──
@@ -685,7 +695,7 @@ export default function ForgePage() {
         toggleSection();
         playClick();
       }
-      // Number pad views
+      // Number pad views (for desktops with numpad)
       if (e.code === 'Numpad1' && !e.ctrlKey) { e.preventDefault(); setTargetView('front'); }
       if (e.code === 'Numpad1' && e.ctrlKey)  { e.preventDefault(); setTargetView('back'); }
       if (e.code === 'Numpad7' && !e.ctrlKey) { e.preventDefault(); setTargetView('top'); }
@@ -693,6 +703,13 @@ export default function ForgePage() {
       if (e.code === 'Numpad3' && !e.ctrlKey) { e.preventDefault(); setTargetView('right'); }
       if (e.code === 'Numpad3' && e.ctrlKey)  { e.preventDefault(); setTargetView('left'); }
       if (e.code === 'Numpad0') { e.preventDefault(); setTargetView('iso'); }
+      // F-key views (for laptops without numpad)
+      if (e.key === 'F1' && !isInput) { e.preventDefault(); setTargetView('front'); }
+      if (e.key === 'F2' && !isInput) { e.preventDefault(); setTargetView('right'); }
+      if (e.key === 'F3' && !isInput) { e.preventDefault(); setTargetView('top'); }
+      if (e.key === 'F4' && !isInput) { e.preventDefault(); setTargetView('iso'); }
+      // Home key → reset to isometric
+      if (e.key === 'Home' && !isInput) { e.preventDefault(); setTargetView('iso'); }
       if (e.key === '1') { addPrimitive('box'); playCreate(); }
       if (e.key === '2') { addPrimitive('sphere'); playCreate(); }
       if (e.key === '3') { addPrimitive('cylinder'); playCreate(); }

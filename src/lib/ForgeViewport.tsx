@@ -109,7 +109,7 @@ function SketchPlaneOverlay({ plane }: { plane: SketchPlane }) {
   const [r, g, b] = new THREE.Color(cfg.color).toArray();
   return (
     <group rotation={new THREE.Euler(...cfg.rotation)}>
-      {/* Fine grid — líneas del sketch */}
+      {/* Fine grid — front side */}
       <Grid
         args={[200, 200]}
         cellSize={0.5}
@@ -121,8 +121,9 @@ function SketchPlaneOverlay({ plane }: { plane: SketchPlane }) {
         fadeDistance={80}
         fadeStrength={1.5}
         infiniteGrid
+        side={THREE.DoubleSide}
       />
-      {/* Plano semitransparente — sits on the same plane as the Grid (XZ local) */}
+      {/* Plano semitransparente — visible from both sides */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[400, 400]} />
         <meshBasicMaterial
@@ -355,7 +356,7 @@ export default function ForgeViewport({
           />
         )}
 
-        {/* Controls — in sketch mode: left=draw, right=orbit, middle=pan */}
+        {/* Controls — drag=orbit, shift+drag=pan, scroll=zoom */}
         <OrbitControls
           makeDefault
           enableDamping
@@ -365,7 +366,14 @@ export default function ForgeViewport({
           mouseButtons={{
             LEFT: isSketch ? (undefined as unknown as THREE.MOUSE) : THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.PAN,
-            RIGHT: isSketch ? THREE.MOUSE.ROTATE : (undefined as unknown as THREE.MOUSE),
+            RIGHT: THREE.MOUSE.PAN,
+          }}
+          keyPanSpeed={15}
+          keys={{
+            LEFT: 'ArrowLeft',
+            UP: 'ArrowUp',
+            RIGHT: 'ArrowRight',
+            BOTTOM: 'ArrowDown',
           }}
           touches={{
             ONE: THREE.TOUCH.ROTATE,
