@@ -52,6 +52,8 @@ interface TransitionState {
   toPos: THREE.Vector3;
   fromTarget: THREE.Vector3;
   toTarget: THREE.Vector3;
+  fromFov: number;
+  toFov: number;
 }
 
 // ── Hook: useFlyTo ──
@@ -78,6 +80,8 @@ export function useFlyTo() {
     toPos: new THREE.Vector3(),
     fromTarget: new THREE.Vector3(),
     toTarget: new THREE.Vector3(),
+    fromFov: 45,
+    toFov: 45,
   });
 
   const flyTo = useCallback((
@@ -118,6 +122,8 @@ export function useFlyTo() {
     t.toPos.copy(toPos);
     t.fromTarget.copy(ctrl?.target ?? new THREE.Vector3(0, 0, 0));
     t.toTarget.copy(toTarget);
+    t.fromFov = (camera as THREE.PerspectiveCamera).fov ?? 45;
+    t.toFov = 45;
   }, [camera, controls]);
 
   // Animate every frame
@@ -129,7 +135,7 @@ export function useFlyTo() {
     const progress = Math.min(elapsed / t.duration, 1);
     const eased = easeInOutCubic(progress);
 
-    // Interpolate position and target
+    // Interpolate position, target, and FOV
     camera.position.lerpVectors(t.fromPos, t.toPos, eased);
 
     const ctrl = controls as OrbitControlsImpl | null;
@@ -137,6 +143,10 @@ export function useFlyTo() {
       ctrl.target.lerpVectors(t.fromTarget, t.toTarget, eased);
     }
 
+    // Restore FOV (fixes stuck pseudo-ortho from SketchModeController)
+    if (camera instanceof THREE.PerspectiveCamera && t.fromFov !== t.toFov) {
+      camera.fov = THREE.MathUtils.lerp(t.fromFov, t.toFov, eased);
+    }
     camera.updateProjectionMatrix();
 
     // Complete
