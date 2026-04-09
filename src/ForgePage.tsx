@@ -56,6 +56,7 @@ import {
 } from '@/lib/machine-config';
 import { decomposeAssembly, assemblyStats } from '@/lib/step-import';
 import BlueprintPanel from '@/components/BlueprintPanel';
+import SweepPanel from '@/components/SweepPanel';
 import ManufacturingTimeline, { type VizFeature } from '@/components/ManufacturingTimeline';
 import ThemePanel from '@/components/ThemePanel';
 import { useThemeStore } from '@/lib/useThemeStore';
@@ -524,6 +525,12 @@ export default function ForgePage() {
   const reconstructing = useForgeStore(s => s.reconstructing);
   const reconstructModel = useForgeStore(s => s.reconstructModel);
   const clearReconstruction = useForgeStore(s => s.clearReconstruction);
+  // Adaptive Sweep
+  const sweepResult = useForgeStore(s => s.sweepResult);
+  const sweeping = useForgeStore(s => s.sweeping);
+  const sweepModel = useForgeStore(s => s.sweepModel);
+  const clearSweep = useForgeStore(s => s.clearSweep);
+  const [sweepPanelOpen, setSweepPanelOpen] = useState(false);
   const [sketchFilterAxis, setSketchFilterAxis] = useState<'X' | 'Y' | 'Z' | null>(null);
   const [selectedSliceIndex, setSelectedSliceIndex] = useState<number | null>(null);
   // Inline feature decomposition (Fusion 360-style)
@@ -894,6 +901,7 @@ export default function ForgePage() {
       { id: 'reverse-engineer', label: 'Ingeniería Inversa', description: 'Descomponer modelo importado en primitivas SDF' , icon: '🔬', category: 'Inspección', keywords: ['reverse', 'engineer', 'decompose', 'descomponer', 'primitivas', 'feature recognition'], action: () => { if (importedModels.length > 0) reverseEngineerImported(0); } },
       { id: 'ct-scan', label: 'CT-Scan Decomposición', description: 'Descomponer pieza por secciones transversales (3 ejes)' , icon: '🩻', category: 'Inspección', keywords: ['ct', 'scan', 'cross', 'section', 'sección', 'contorno', 'perfil', 'descomponer', 'slice', 'corte'], action: () => { if (importedModels.length > 0) ctScanImported(0); } },
       { id: 'scan-model', label: 'Escanear Pieza', description: 'GPU Scan: planos guiados por geometría + winding-number → error mínimo', icon: '⚒️', category: 'Inspección', keywords: ['scan', 'escanear', 'ct', 'gpu', 'geometry', 'fit', 'sketch', 'winding', 'plane', 'plano'], action: () => { if (importedModels.length > 0) scanModel(0); } },
+      { id: 'sweep-model', label: 'Barrido Adaptivo', description: 'Bisección recursiva en 3 ejes → features corroborados', icon: '⚒️', category: 'Inspección', keywords: ['sweep', 'barrido', 'barrer', 'adaptivo', 'bisección', 'biseccion', 'cross', 'axis', 'correlation', 'feature'], action: async () => { if (importedModels.length > 0) { await sweepModel(0); setSweepPanelOpen(true); } } },
       { id: 'reconstruct-3d', label: 'Reconstruir 3D', description: 'Genera pieza 3D extrudiendo perfiles ajustados', icon: '🏗️', category: 'Inspección', keywords: ['reconstruct', 'reconstruir', '3d', 'extrude', 'extruir', 'build', 'pieza', 'solid'], action: reconstructModel },
       { id: 'clear-reconstruction', label: 'Limpiar Reconstrucción', description: 'Eliminar la reconstrucción 3D actual', icon: '🧹', category: 'Inspección', keywords: ['clear', 'limpiar', 'reconstruction', 'reconstrucción', 'borrar'], action: clearReconstruction },
 
@@ -952,7 +960,7 @@ export default function ForgePage() {
     ];
 
     return actions;
-  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches, scanModel, reconstructModel, clearReconstruction]);
+  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches, scanModel, sweepModel, reconstructModel, clearReconstruction]);
 
   const shortcutTools: ShortcutTool[] = useMemo(() => [
     { label: 'Caja', icon: '■', shortcut: '1', action: () => addPrimitive('box') },
@@ -1634,6 +1642,13 @@ export default function ForgePage() {
                     className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-green hover:text-text-1 bg-green/10 hover:bg-green/25 border border-green/25 transition-all disabled:opacity-40"
                     title="Escanear: barrido continuo GPU + fitting → error mínimo">
                     {gpuFitting ? '⏳ Escaneando...' : '⚒️ Escanear'}
+                  </button>
+                  <button
+                    onClick={async () => { await sweepModel(i); setSweepPanelOpen(true); }}
+                    disabled={sweeping}
+                    className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-gold hover:text-text-1 bg-gold/10 hover:bg-gold/25 border border-gold/25 transition-all disabled:opacity-40"
+                    title="Barrido adaptivo: bisección en 3 ejes → features corroborados">
+                    {sweeping ? '⏳ Barriendo...' : '⚒️ Barrido'}
                   </button>
                   <button
                     onClick={() => setBlueprintPanel(true)}
@@ -2566,6 +2581,13 @@ export default function ForgePage() {
 
       {blueprintPanel && (
         <BlueprintPanel onClose={() => setBlueprintPanel(false)} />
+      )}
+
+      {sweepPanelOpen && sweepResult && (
+        <SweepPanel
+          result={sweepResult}
+          onClose={() => setSweepPanelOpen(false)}
+        />
       )}
 
       <ThemePanel open={themePanelOpen} onOpenChange={setThemePanelOpen} />

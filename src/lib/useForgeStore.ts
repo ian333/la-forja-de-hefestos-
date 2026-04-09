@@ -147,6 +147,13 @@ interface ForgeState {
   scanModel: (modelIndex: number) => Promise<void>;
   clearGPUFittedPlanes: () => void;
 
+  // Continuous Sweep (barrido continuo)
+  sweepResult: import('./gpu-cross-section').CrossAxisResult | null;
+  sweeping: boolean;
+  /** Continuous sweep: dense sampling on all 3 axes + cross-axis correlation */
+  sweepModel: (modelIndex: number) => Promise<void>;
+  clearSweep: () => void;
+
   // 3D Reconstruction from fitted sketches
   reconstruction: ReconstructionResult | null;
   reconstructing: boolean;
@@ -215,6 +222,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   gpuFittedPlanes: [],
   gpuFitting: false,
   rendererRef: null,
+  sweepResult: null,
+  sweeping: false,
   reconstruction: null,
   reconstructing: false,
   machines: [],
@@ -874,6 +883,139 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   setRendererRef: (renderer) => set({ rendererRef: renderer }),
 
   clearGPUFittedPlanes: () => set({ gpuFittedPlanes: [], fittedSlices: [], reconstruction: null }),
+
+  sweepModel: async (modelIndex) => {
+    const state = get();
+    const model = state.importedModels[modelIndex];
+    const renderer = state.rendererRef;
+    if (!model || !renderer) {
+      console.warn('[Sweep] No model or renderer');
+      return;
+    }
+
+    set({ sweeping: true });
+
+    try {
+      model.threeGroup.updateMatrixWorld(true);
+      const { gpuContinuousSweep, gpuSlice } = await import('./gpu-cross-section');
+      const { fitContour, reconstructionError } = await import('./sketch-fitting');
+
+      console.group('%c⚒️ FORGE SWEEP — Adaptive 3-Axis Bisection', 'color:#c9a84c;font-size:14px;font-weight:bold');
+      const result = await gpuContinuousSweep(renderer, model.threeGroup, {
+        sweepResolution: 512,
+        onProgress: (phase, done, total) => {
+          console.log(`  [${done}/${total}] ${phase}`);
+        },
+      });
+
+      console.log(`⚒️ Sweep: ${result.features.length} features, ${result.discoveredPlanes.length} boundary planes, ${result.totalMs.toFixed(0)}ms`);
+
+      // ── Phase 2: Generate gpuFittedPlanes at discovered positions ──
+      // For each axis, take transition boundaries → build stable intervals → 
+      // place a representative slice at the midpoint of each interval.
+      const THREE = await import('three');
+      const bb = new THREE.Box3();
+      model.threeGroup.traverse((c: any) => { if (c.isMesh) bb.expandByObject(c); });
+      const diag = bb.getSize(new THREE.Vector3()).length();
+      const tol = Math.max(0.001, diag * 0.0001);
+
+      const axes: ('X' | 'Y' | 'Z')[] = ['X', 'Y', 'Z'];
+      type SliceAxis = 'X' | 'Y' | 'Z';
+      const representativePlanes: { normal: THREE.Vector3; depth: number; axis: SliceAxis; label: string }[] = [];
+
+      for (const axis of axes) {
+        const sweep = result.sweeps[axis];
+        const normal = new THREE.Vector3(
+          axis === 'X' ? 1 : 0, axis === 'Y' ? 1 : 0, axis === 'Z' ? 1 : 0,
+        );
+        const bbMin = axis === 'X' ? bb.min.x : axis === 'Y' ? bb.min.y : bb.min.z;
+        const bbMax = axis === 'X' ? bb.max.x : axis === 'Y' ? bb.max.y : bb.max.z;
+        const range = bbMax - bbMin;
+        const margin = range * 0.02;
+
+        // Sort transitions by depth to get interval boundaries
+        const boundaries = sweep.transitions
+          .map(t => (t.fromDepth + t.toDepth) / 2)
+          .sort((a, b) => a - b);
+
+        // Build intervals: [start, b1, b2, ..., bn, end]
+        const edges = [bbMin + margin, ...boundaries, bbMax - margin];
+
+        for (let i = 0; i < edges.length - 1; i++) {
+          const lo = edges[i], hi = edges[i + 1];
+          const width = hi - lo;
+          if (width < range * 0.005) continue; // skip tiny intervals
+
+          const mid = (lo + hi) / 2;
+          representativePlanes.push({
+            normal: normal.clone(),
+            depth: mid,
+            axis,
+            label: `${axis} @${mid.toFixed(1)} [${lo.toFixed(1)}→${hi.toFixed(1)}]`,
+          });
+        }
+      }
+
+      console.log(`⚒️ Generating ${representativePlanes.length} high-res slices from stable intervals...`);
+
+      // ── Phase 3: GPU slice + entity fitting at 2048 res ──
+      const gpuPlanes: import('./gpu-cross-section').GPUFittedPlane[] = [];
+      const fitted: FittedSlice[] = [];
+
+      for (let pi = 0; pi < representativePlanes.length; pi++) {
+        const rp = representativePlanes[pi];
+        const plane = {
+          origin: rp.normal.clone().multiplyScalar(rp.depth),
+          normal: rp.normal.clone(),
+          label: rp.label,
+        };
+
+        const sr = gpuSlice(renderer, model.threeGroup, plane, 2048);
+        if (sr.contours.length === 0) continue;
+
+        const fittedContours: import('./gpu-cross-section').GPUFittedPlane['contours'] = [];
+
+        for (const contour of sr.contours) {
+          if (contour.points.length < 6) continue;
+          const { entities, constraints } = fitContour(contour.points, tol);
+          if (entities.length === 0) continue;
+          const error = reconstructionError(contour.points, entities, tol);
+          fittedContours.push({ entities, constraints, originalPoints: contour.points, error });
+        }
+
+        if (fittedContours.length > 0) {
+          gpuPlanes.push({ plane, sliceResult: sr, contours: fittedContours, entityCount: fittedContours.reduce((s, c) => s + c.entities.length, 0) });
+          fitted.push({
+            axis: rp.axis,
+            value: rp.depth,
+            contours: fittedContours,
+            uAxis: sr.uAxis.toArray() as [number, number, number],
+            vAxis: sr.vAxis.toArray() as [number, number, number],
+            planeOrigin: sr.planeOrigin.toArray() as [number, number, number],
+          });
+        }
+
+        // Yield every 3 planes
+        if (pi % 3 === 0) await new Promise(r => setTimeout(r, 0));
+      }
+
+      const totalEntities = gpuPlanes.reduce((s, p) => s + p.entityCount, 0);
+      console.log(`⚒️ Done: ${gpuPlanes.length} planes, ${totalEntities} entities (${fitted.reduce((s, f) => s + f.contours.reduce((ss, c) => ss + c.entities.filter(e => e.type === 'line').length, 0), 0)}L + ${fitted.reduce((s, f) => s + f.contours.reduce((ss, c) => ss + c.entities.filter(e => e.type === 'arc').length, 0), 0)}A)`);
+      console.groupEnd();
+
+      set({
+        sweepResult: result,
+        gpuFittedPlanes: gpuPlanes,
+        fittedSlices: fitted,
+        sweeping: false,
+      });
+    } catch (err) {
+      console.error('[Sweep] Failed:', err);
+      set({ sweeping: false });
+    }
+  },
+
+  clearSweep: () => set({ sweepResult: null }),
 
   reconstructModel: () => {
     const { fittedSlices } = get();

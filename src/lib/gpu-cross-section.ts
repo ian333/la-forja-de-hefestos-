@@ -1146,3 +1146,508 @@ export async function gpuFitPipeline(
   opts?.onProgress?.(slicePlanes.length, slicePlanes.length, 'Done');
   return results;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Continuous Sweep + Cross-Axis Correlation
+// ═══════════════════════════════════════════════════════════════
+
+/** A single depth sample from a continuous sweep */
+export interface SweepSample {
+  /** Depth along the sweep axis (world coordinate) */
+  depth: number;
+  /** Number of contours at this depth */
+  contourCount: number;
+  /** Contour signatures: centroid, area, bbox in 2D plane coords */
+  contours: SweepContour[];
+  /** Sum of absolute contour areas */
+  totalArea: number;
+  /** GPU slice time in ms */
+  timeMs: number;
+}
+
+export interface SweepContour {
+  /** Centroid in plane-local 2D coords */
+  cx: number;
+  cy: number;
+  /** Signed area */
+  area: number;
+  /** Bounding box in plane-local 2D */
+  bbox: { minX: number; minY: number; maxX: number; maxY: number };
+  /** Circularity = 4π·area / perimeter² */
+  circularity: number;
+  /** Number of contour points */
+  nPoints: number;
+  /** 3D world centroid (reconstructed from plane basis) */
+  world: [number, number, number];
+}
+
+/** Result of sweeping one axis */
+export interface AxisSweepResult {
+  axis: 'X' | 'Y' | 'Z';
+  /** All samples along this axis */
+  samples: SweepSample[];
+  /** Offsets where contour topology changes */
+  transitions: SweepTransition[];
+  /** Total sweep time */
+  totalMs: number;
+}
+
+export interface SweepTransition {
+  fromDepth: number;
+  toDepth: number;
+  fromCount: number;
+  toCount: number;
+  type: 'APPEAR' | 'DISAPPEAR' | 'MORPH';
+}
+
+/** A feature corroborated across multiple axes */
+export interface CorroboratedFeature {
+  /** 3D world position */
+  world: [number, number, number];
+  /** Number of axes that see this feature (2 or 3) */
+  corroboration: number;
+  /** Which axes confirmed it */
+  axes: ('X' | 'Y' | 'Z')[];
+  /** Best area estimate */
+  area: number;
+  /** Circularity (1 = perfect circle) */
+  circularity: number;
+  /** Depth range where feature exists (along its primary axis) */
+  depthRange: [number, number] | null;
+  /** How many depth samples contained this feature */
+  depthCount: number;
+  /** Feature type guess */
+  type: 'hole' | 'boss' | 'slot' | 'pocket' | 'feature';
+  /** Is this a hole (negative space)? */
+  isHole: boolean;
+}
+
+/** Full cross-axis correlation result */
+export interface CrossAxisResult {
+  sweeps: Record<'X' | 'Y' | 'Z', AxisSweepResult>;
+  features: CorroboratedFeature[];
+  /** Natural slice positions discovered from transitions */
+  discoveredPlanes: SlicePlane[];
+  totalMs: number;
+}
+
+/**
+ * Compute contour signature from raw points.
+ */
+function contourSignature(
+  pts: Point2D[],
+  area: number,
+  uAxis: THREE.Vector3,
+  vAxis: THREE.Vector3,
+  planeOrigin: THREE.Vector3,
+  offset: number,
+  normal: THREE.Vector3,
+): SweepContour | null {
+  if (pts.length < 3) return null;
+
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  let cx = 0, cy = 0;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= pts.length;
+  cy /= pts.length;
+
+  const absArea = Math.abs(area);
+
+  // Perimeter
+  let perimeter = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    perimeter += Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+  }
+  const circularity = perimeter > 0 ? (4 * Math.PI * absArea) / (perimeter ** 2) : 0;
+
+  // Reconstruct 3D world centroid: worldPos = cx*uAxis + cy*vAxis + offset*normal
+  const world: [number, number, number] = [
+    cx * uAxis.x + cy * vAxis.x + offset * normal.x,
+    cx * uAxis.y + cy * vAxis.y + offset * normal.y,
+    cx * uAxis.z + cy * vAxis.z + offset * normal.z,
+  ];
+
+  return {
+    cx, cy, area, circularity, nPoints: pts.length,
+    bbox: { minX, minY, maxX, maxY },
+    world,
+  };
+}
+
+/**
+ * ⚒️ Adaptive GPU sweep along a single axis.
+ *
+ * Uses bisection refinement instead of fixed N samples:
+ *   1. Coarse uniform scan (16 samples)
+ *   2. Bisect wherever contour count changes until |interval| < ε
+ *   3. Guard-check wide stable intervals for hidden transitions
+ *
+ * Zero parameters — ε and guardWidth derived from range.
+ */
+export function gpuSweepAxis(
+  renderer: THREE.WebGLRenderer,
+  meshSource: THREE.Object3D,
+  axis: 'X' | 'Y' | 'Z',
+  bb: THREE.Box3,
+  resolution = 512,
+): AxisSweepResult {
+  const t0 = performance.now();
+
+  const normal = new THREE.Vector3(
+    axis === 'X' ? 1 : 0,
+    axis === 'Y' ? 1 : 0,
+    axis === 'Z' ? 1 : 0,
+  );
+
+  const bbMin = axis === 'X' ? bb.min.x : axis === 'Y' ? bb.min.y : bb.min.z;
+  const bbMax = axis === 'X' ? bb.max.x : axis === 'Y' ? bb.max.y : bb.max.z;
+  const range = bbMax - bbMin;
+  const margin = range * 0.02;
+  const lo = bbMin + margin;
+  const hi = bbMax - margin;
+  const effectiveRange = hi - lo;
+
+  // Auto-derived parameters
+  const eps = Math.max(effectiveRange * 1e-5, 1e-6);
+  const guardWidth = effectiveRange / 64;
+
+  const { u: uAxis, v: vAxis } = planeBasis(normal);
+
+  // Memoized GPU slicer
+  const cache = new Map<number, SweepSample>();
+  let sliceCount = 0;
+
+  function doSlice(depth: number): SweepSample {
+    const qd = Math.round(depth / eps) * eps;
+    if (cache.has(qd)) return cache.get(qd)!;
+
+    const plane: SlicePlane = {
+      origin: normal.clone().multiplyScalar(qd),
+      normal: normal.clone(),
+      label: `${axis}-sweep`,
+    };
+
+    const st = performance.now();
+    const sr = gpuSlice(renderer, meshSource, plane, resolution);
+    const timeMs = performance.now() - st;
+
+    const contours: SweepContour[] = sr.contours
+      .map(c => contourSignature(c.points, c.area, sr.uAxis, sr.vAxis, sr.planeOrigin, qd, normal))
+      .filter((s): s is SweepContour => s !== null);
+
+    const totalArea = contours.reduce((s, c) => s + Math.abs(c.area), 0);
+    const entry: SweepSample = { depth: qd, contourCount: contours.length, contours, totalArea, timeMs };
+    cache.set(qd, entry);
+    sliceCount++;
+    return entry;
+  }
+
+  // Phase 1: Coarse uniform scan
+  const N0 = 16;
+  const coarse: SweepSample[] = [];
+  for (let i = 0; i < N0; i++) {
+    coarse.push(doSlice(lo + effectiveRange * (i / (N0 - 1))));
+  }
+
+  // Phase 2: Adaptive bisection (iterative)
+  const transitions: SweepTransition[] = [];
+
+  interface WorkItem { sLo: SweepSample; sHi: SweepSample; depth: number }
+  const queue: WorkItem[] = [];
+  for (let i = 0; i < coarse.length - 1; i++) {
+    queue.push({ sLo: coarse[i], sHi: coarse[i + 1], depth: 0 });
+  }
+
+  while (queue.length > 0) {
+    const { sLo, sHi, depth } = queue.pop()!;
+    const width = sHi.depth - sLo.depth;
+
+    // Comparison: count change OR significant area delta (5%)
+    const AREA_DELTA_THRESHOLD = 0.05;
+    const countDiff = sLo.contourCount !== sHi.contourCount;
+    let areaDiff = false;
+    if (!countDiff && sLo.contourCount > 0) {
+      const maxA = Math.max(sLo.totalArea, sHi.totalArea);
+      areaDiff = maxA > 1e-10 && Math.abs(sHi.totalArea - sLo.totalArea) / maxA > AREA_DELTA_THRESHOLD;
+    }
+    const isDifferent = countDiff || areaDiff;
+
+    if (isDifferent) {
+      if (width < eps || depth > 50) {
+        const type = countDiff
+          ? (sHi.contourCount > sLo.contourCount ? 'APPEAR' : 'DISAPPEAR')
+          : 'MORPH' as const;
+        transitions.push({
+          fromDepth: sLo.depth,
+          toDepth: sHi.depth,
+          fromCount: sLo.contourCount,
+          toCount: sHi.contourCount,
+          type,
+        });
+        continue;
+      }
+      const mid = doSlice((sLo.depth + sHi.depth) / 2);
+      if (mid.depth <= sLo.depth || mid.depth >= sHi.depth) {
+        const type = countDiff
+          ? (sHi.contourCount > sLo.contourCount ? 'APPEAR' : 'DISAPPEAR')
+          : 'MORPH' as const;
+        transitions.push({
+          fromDepth: sLo.depth, toDepth: sHi.depth,
+          fromCount: sLo.contourCount, toCount: sHi.contourCount,
+          type,
+        });
+        continue;
+      }
+      queue.push({ sLo: mid, sHi, depth: depth + 1 });
+      queue.push({ sLo, sHi: mid, depth: depth + 1 });
+    } else {
+      if (width > guardWidth && depth < 50) {
+        const mid = doSlice((sLo.depth + sHi.depth) / 2);
+        if (mid.depth > sLo.depth && mid.depth < sHi.depth) {
+          queue.push({ sLo: mid, sHi, depth: depth + 1 });
+          queue.push({ sLo, sHi: mid, depth: depth + 1 });
+        }
+      }
+    }
+  }
+
+  const samples = [...cache.values()].sort((a, b) => a.depth - b.depth);
+
+  return {
+    axis,
+    samples,
+    transitions,
+    totalMs: performance.now() - t0,
+  };
+}
+
+/**
+ * ⚒️ Full adaptive sweep on all 3 axes + cross-axis correlation.
+ *
+ * Bisection refinement on each axis — zero parameters.
+ * 1. Sweep X, Y, Z with adaptive bisection
+ * 2. Detect transitions (where features start/end)
+ * 3. Cross-reference 3D world coordinates across axes
+ * 4. Features confirmed by 2+ axes are "corroborated"
+ * 5. Transition points become natural slice positions
+ */
+export async function gpuContinuousSweep(
+  renderer: THREE.WebGLRenderer,
+  meshSource: THREE.Object3D,
+  opts?: {
+    /** Resolution for sweep (default: 512 — fast) */
+    sweepResolution?: number;
+    /** Tolerance for cross-axis matching as fraction of diagonal (default: 0.02) */
+    matchTolerance?: number;
+    onProgress?: (phase: string, done: number, total: number) => void;
+  },
+): Promise<CrossAxisResult> {
+  const t0 = performance.now();
+  const sweepRes = opts?.sweepResolution ?? 512;
+  const tolFrac = opts?.matchTolerance ?? 0.02;
+
+  // Bounding box
+  meshSource.updateMatrixWorld(true);
+  const bb = new THREE.Box3();
+  meshSource.traverse(c => { if (c instanceof THREE.Mesh) bb.expandByObject(c); });
+  const diag = bb.getSize(new THREE.Vector3()).length();
+  const TOL = diag * tolFrac;
+
+  console.log(`[sweep] BBox: [${bb.min.toArray().map(v => v.toFixed(1))}] → [${bb.max.toArray().map(v => v.toFixed(1))}], diag=${diag.toFixed(1)}, adaptive mode @ ${sweepRes}px`);
+
+  // ── Phase 1: Sweep all 3 axes (adaptive bisection) ──
+  const sweeps: Record<'X' | 'Y' | 'Z', AxisSweepResult> = {} as any;
+  const axes: ('X' | 'Y' | 'Z')[] = ['X', 'Y', 'Z'];
+
+  for (let ai = 0; ai < 3; ai++) {
+    const axis = axes[ai];
+    opts?.onProgress?.(`Sweeping ${axis}`, ai, 3);
+    sweeps[axis] = gpuSweepAxis(renderer, meshSource, axis, bb, sweepRes);
+    console.log(`[sweep] ${axis}: ${sweeps[axis].samples.length} slices (auto), ${sweeps[axis].transitions.length} transitions in ${sweeps[axis].totalMs.toFixed(0)}ms`);
+
+    // Yield to keep UI responsive
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  // ── Phase 2: Collect all contour world positions ──
+  opts?.onProgress?.('Cross-correlating', 3, 4);
+
+  interface WorldContour {
+    axis: 'X' | 'Y' | 'Z';
+    depth: number;
+    world: [number, number, number];
+    area: number;
+    circularity: number;
+    isHole: boolean; // area < 0 means inner contour
+  }
+
+  const allContours: WorldContour[] = [];
+  for (const axis of axes) {
+    for (const sample of sweeps[axis].samples) {
+      for (const c of sample.contours) {
+        allContours.push({
+          axis,
+          depth: sample.depth,
+          world: c.world,
+          area: Math.abs(c.area),
+          circularity: c.circularity,
+          isHole: c.area < 0,
+        });
+      }
+    }
+  }
+
+  // ── Phase 3: Cross-axis correlation ──
+  // For each axis, contours know 2 of 3 world coordinates precisely.
+  // The 3rd coordinate = the sweep depth.
+  //
+  // X-sweep: knows worldY + worldZ, depth = worldX
+  // Y-sweep: knows worldX + worldZ, depth = worldY
+  // Z-sweep: knows worldX + worldY, depth = worldZ
+  //
+  // Match strategy: for each Z-contour at (wx,wy), find X-contours
+  // with matching worldY and Y-contours with matching worldX.
+
+  const zContours = allContours.filter(c => c.axis === 'Z');
+  const xContours = allContours.filter(c => c.axis === 'X');
+  const yContours = allContours.filter(c => c.axis === 'Y');
+
+  const rawFeatures: CorroboratedFeature[] = [];
+
+  for (const zc of zContours) {
+    const wx = zc.world[0], wy = zc.world[1];
+
+    // X-sweep contours that match worldY
+    const xHits = xContours.filter(xc => Math.abs(xc.world[1] - wy) < TOL);
+    // Y-sweep contours that match worldX
+    const yHits = yContours.filter(yc => Math.abs(yc.world[0] - wx) < TOL);
+
+    const seenAxes: Set<'X' | 'Y' | 'Z'> = new Set(['Z']);
+    if (xHits.length > 0) seenAxes.add('X');
+    if (yHits.length > 0) seenAxes.add('Y');
+
+    if (seenAxes.size >= 2) {
+      rawFeatures.push({
+        world: [wx, wy, zc.depth],
+        corroboration: seenAxes.size,
+        axes: [...seenAxes],
+        area: zc.area,
+        circularity: zc.circularity,
+        depthRange: null,
+        depthCount: 1,
+        type: zc.circularity > 0.85 ? (zc.isHole ? 'hole' : 'boss')
+            : zc.area > diag * diag * 0.01 ? 'pocket'
+            : 'feature',
+        isHole: zc.isHole,
+      });
+    }
+  }
+
+  // Also X↔Y pairs not covered by Z
+  const zCoveredKeys = new Set(rawFeatures.map(f =>
+    `${Math.round(f.world[0] / TOL)},${Math.round(f.world[1] / TOL)}`
+  ));
+
+  for (const xc of xContours) {
+    const wy = xc.world[1], wz = xc.world[2];
+    const yHits = yContours.filter(yc => Math.abs(yc.world[2] - wz) < TOL);
+    if (yHits.length > 0) {
+      const wx = yHits[0].world[0];
+      const key = `${Math.round(wx / TOL)},${Math.round(wy / TOL)}`;
+      if (!zCoveredKeys.has(key)) {
+        rawFeatures.push({
+          world: [wx, wy, wz],
+          corroboration: 2,
+          axes: ['X', 'Y'],
+          area: xc.area,
+          circularity: xc.circularity,
+          depthRange: null,
+          depthCount: 1,
+          type: xc.circularity > 0.85 ? (xc.isHole ? 'hole' : 'boss') : 'feature',
+          isHole: xc.isHole,
+        });
+      }
+    }
+  }
+
+  // ── Phase 4: Deduplicate by proximity ──
+  const features: CorroboratedFeature[] = [];
+  const used = new Set<number>();
+
+  for (let i = 0; i < rawFeatures.length; i++) {
+    if (used.has(i)) continue;
+    const group = [rawFeatures[i]];
+    used.add(i);
+
+    for (let j = i + 1; j < rawFeatures.length; j++) {
+      if (used.has(j)) continue;
+      const dx = rawFeatures[i].world[0] - rawFeatures[j].world[0];
+      const dy = rawFeatures[i].world[1] - rawFeatures[j].world[1];
+      if (Math.sqrt(dx * dx + dy * dy) < TOL * 2) {
+        group.push(rawFeatures[j]);
+        used.add(j);
+      }
+    }
+
+    // Merge group
+    group.sort((a, b) => b.corroboration - a.corroboration);
+    const best = { ...group[0] };
+    best.depthCount = group.length;
+    const allAxes = new Set<'X' | 'Y' | 'Z'>();
+    const depths: number[] = [];
+    for (const g of group) {
+      for (const a of g.axes) allAxes.add(a);
+      depths.push(g.world[2]);
+    }
+    best.axes = [...allAxes];
+    best.corroboration = allAxes.size;
+    best.area = Math.max(...group.map(g => g.area));
+    if (depths.length > 0) {
+      best.depthRange = [Math.min(...depths), Math.max(...depths)];
+    }
+    features.push(best);
+  }
+
+  features.sort((a, b) => (b.corroboration - a.corroboration) || (b.area - a.area));
+
+  // ── Phase 5: Generate discovered slice planes from transitions ──
+  const discoveredPlanes: SlicePlane[] = [];
+  for (const axis of axes) {
+    const normal = new THREE.Vector3(
+      axis === 'X' ? 1 : 0,
+      axis === 'Y' ? 1 : 0,
+      axis === 'Z' ? 1 : 0,
+    );
+    for (const tr of sweeps[axis].transitions) {
+      // Place a slice plane at the midpoint of each transition
+      const midDepth = (tr.fromDepth + tr.toDepth) / 2;
+      discoveredPlanes.push({
+        origin: normal.clone().multiplyScalar(midDepth),
+        normal: normal.clone(),
+        label: `${axis}-transition @${midDepth.toFixed(1)}`,
+      });
+    }
+  }
+
+  const totalMs = performance.now() - t0;
+  console.log(`[sweep] Complete: ${features.length} corroborated features (${features.filter(f => f.corroboration === 3).length} triple, ${features.filter(f => f.corroboration === 2).length} double), ${discoveredPlanes.length} discovered planes, ${totalMs.toFixed(0)}ms total`);
+
+  opts?.onProgress?.('Done', 4, 4);
+
+  return {
+    sweeps,
+    features,
+    discoveredPlanes,
+    totalMs,
+  };
+}
