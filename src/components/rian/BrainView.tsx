@@ -304,12 +304,13 @@ export default function BrainView() {
     init();
   }, [init]);
 
+  // Start the pulse loop once on mount — the loop itself now probes for
+  // reconnection when offline, so we never need to tear it down on daemon
+  // restarts (kernel rebuilds, trainer swaps, etc).
   useEffect(() => {
-    if (conn !== 'online') return;
-    // Full snapshot polling — both module labels and phases.
     startPulse(80, 3, { phases: true, modules: true });
     return () => stopPulse();
-  }, [conn, startPulse, stopPulse]);
+  }, [startPulse, stopPulse]);
 
   // Append R_glob / R_mod to the rolling history on every new pulse.
   useEffect(() => {

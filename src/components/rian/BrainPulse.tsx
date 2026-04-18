@@ -25,10 +25,11 @@ export default function BrainPulse() {
   }, [init]);
 
   useEffect(() => {
-    if (conn !== 'online') return;
+    // Loop auto-reconnects on daemon restart, so we keep it mounted and
+    // don't gate on conn.
     startPulse(100, 4);
     return () => stopPulse();
-  }, [conn, startPulse, stopPulse]);
+  }, [startPulse, stopPulse]);
 
   const modules = pulse?.R_mod ?? [];
   const rGlob = pulse?.R_glob ?? 0;

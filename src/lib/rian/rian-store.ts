@@ -83,13 +83,34 @@ export const useRianStore = create<RianState>((set, get) => ({
   startPulse: (intervalMs = 100, stepsPerTick = 4, opts = {}) => {
     if (pulseTimer) return;
     set({ polling: true });
+    let consecutiveErrors = 0;
     const tick = async () => {
-      if (get().conn !== 'online') return;
+      // If we fell offline (e.g. kernel rebuild dropped the daemon), keep
+      // probing with ping() so the view reconnects without a page refresh.
+      if (get().conn !== 'online') {
+        const alive = await rian.ping();
+        if (!alive) return;
+        try {
+          const s = await rian.ensureBrain(get().brain, DEFAULT_BRAIN_CFG);
+          set({ conn: 'online', status: s, error: null });
+          consecutiveErrors = 0;
+        } catch {
+          return;
+        }
+      }
       try {
         const p = await rian.pulse(get().brain, stepsPerTick, opts);
         set({ pulse: p, error: null });
+        consecutiveErrors = 0;
       } catch (e) {
-        set({ error: e instanceof Error ? e.message : String(e) });
+        consecutiveErrors++;
+        const msg = e instanceof Error ? e.message : String(e);
+        // Three misses in a row → mark offline; the next tick will rediscover.
+        if (consecutiveErrors >= 3) {
+          set({ conn: 'offline', error: msg });
+        } else {
+          set({ error: msg });
+        }
       }
     };
     void tick();
