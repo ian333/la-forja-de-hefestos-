@@ -32,6 +32,7 @@ import Omnibar, { type OmniAction } from '@/components/Omnibar';
 import ShortcutOverlay, { type ShortcutTool } from '@/components/ShortcutOverlay';
 import Timeline, { type TimelineEntry } from '@/components/Timeline';
 import SketchPanel from '@/components/SketchPanel';
+import BrainPulse from '@/components/rian/BrainPulse';
 import type { SketchTool } from '@/lib/SketchInViewport';
 import { STANDARD_VIEWS, type StandardView } from '@/lib/viewport';
 import type { SectionAxis } from '@/lib/viewport';
@@ -1584,6 +1585,8 @@ export default function ForgePage() {
             selectedSliceIndex={selectedSliceIndex}
             reconstruction={reconstruction}
           />
+
+          <BrainPulse />
 
           {/* Drag-and-drop overlay */}
           {dragOver && (

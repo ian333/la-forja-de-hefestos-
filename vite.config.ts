@@ -19,6 +19,10 @@ export default defineConfig({
     sourcemap: false,
     minify: "esbuild",
     rollupOptions: {
+      input: {
+        main: resolve(import.meta.dirname, "index.html"),
+        brain: resolve(import.meta.dirname, "brain.html"),
+      },
       output: {
         manualChunks: {
           three: ["three"],
