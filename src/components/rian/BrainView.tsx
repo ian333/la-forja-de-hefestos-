@@ -242,6 +242,51 @@ function renderRStrip(
   return out;
 }
 
+// ----- Small HUD helpers -----------------------------------------------------
+
+function LabSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-2 border-t border-zinc-800 pt-1.5 first:mt-0 first:border-0 first:pt-0">
+      <div className="mb-1 text-[9px] uppercase tracking-[0.2em] text-zinc-500">
+        {title}
+      </div>
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  );
+}
+
+function Row({
+  k,
+  v,
+  color,
+  mono,
+}: {
+  k: string;
+  v: string;
+  color?: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="text-zinc-500">{k}</span>
+      <span
+        className={`${color ?? 'text-zinc-100'} ${
+          mono ? 'truncate text-[10px]' : ''
+        }`}
+        title={v}
+      >
+        {v}
+      </span>
+    </div>
+  );
+}
+
 // ----- HUD + scene orchestrator ----------------------------------------------
 
 function ModuleRings({ R_mod, R_glob }: { R_mod: number[]; R_glob: number }) {
@@ -297,8 +342,44 @@ export default function BrainView() {
 
   /** Rolling history of R_glob + R_mod[] for the top timeline strip. */
   const HIST_LEN = 240;
-  const historyRef = useRef<{ g: number[]; m: number[][] }>({ g: [], m: [] });
+  const historyRef = useRef<{ g: number[]; m: number[][]; wall: number[] }>({
+    g: [],
+    m: [],
+    wall: [],
+  });
   const [histTick, setHistTick] = useState(0);
+
+  /** Rolling pair-count for training rate (pairs / s). */
+  const pairsHistRef = useRef<{ t: number; pairs: number }[]>([]);
+  const [pairsPerSec, setPairsPerSec] = useState(0);
+
+  /** ── Recording state ──
+   *  startedAt = wall-ms at press; null when idle. fullFidelity dumps theta
+   *  + modules per frame (big); otherwise only R signals. events[] holds
+   *  inject actions interleaved in the same JSONL so replay can see cause
+   *  and response. */
+  type RecEvent = {
+    t: number;
+    kind: 'ask' | 'ingest';
+    prefix: string[];
+    out?: string[];
+    pairs?: number;
+  };
+  type RecFrame = {
+    t: number;
+    dt: number;
+    R_glob: number;
+    R_mod: number[];
+    status?: { V: number; pairs: number; traces: number };
+    theta?: number[];
+    modules?: number[];
+  };
+  const [recording, setRecording] = useState(false);
+  const [recFullFidelity, setRecFullFidelity] = useState(false);
+  const recFramesRef = useRef<RecFrame[]>([]);
+  const recEventsRef = useRef<RecEvent[]>([]);
+  const recStartedAtRef = useRef<number | null>(null);
+  const [recCount, setRecCount] = useState(0);
 
   useEffect(() => {
     init();
@@ -313,31 +394,70 @@ export default function BrainView() {
   }, [startPulse, stopPulse]);
 
   // Append R_glob / R_mod to the rolling history on every new pulse.
+  // Also appends a frame to the active recording, if any.
   useEffect(() => {
     if (!pulse) return;
+    const now = performance.now();
     const h = historyRef.current;
     h.g.push(pulse.R_glob);
-    if (h.g.length > HIST_LEN) h.g.shift();
+    h.wall.push(now);
+    if (h.g.length > HIST_LEN) {
+      h.g.shift();
+      h.wall.shift();
+    }
     const M = pulse.R_mod.length;
     if (h.m.length !== M) h.m = Array.from({ length: M }, () => []);
     for (let k = 0; k < M; k++) {
       h.m[k].push(pulse.R_mod[k]);
       if (h.m[k].length > HIST_LEN) h.m[k].shift();
     }
-    setHistTick((t) => (t + 1) & 0xffff); // force re-render of svg strip
+    setHistTick((t) => (t + 1) & 0xffff);
+
+    if (recording && recStartedAtRef.current != null) {
+      const frame: RecFrame = {
+        t: now - recStartedAtRef.current,
+        dt: pulse.t,
+        R_glob: pulse.R_glob,
+        R_mod: pulse.R_mod.slice(),
+      };
+      if (recFullFidelity && pulse.theta) frame.theta = Array.from(pulse.theta);
+      if (recFullFidelity && pulse.modules) frame.modules = Array.from(pulse.modules);
+      if (brainStatus) {
+        frame.status = {
+          V: brainStatus.V,
+          pairs: brainStatus.n_pairs_seen,
+          traces: brainStatus.n_traces,
+        };
+      }
+      recFramesRef.current.push(frame);
+      setRecCount(recFramesRef.current.length);
+    }
   }, [pulse]);
 
   // Refresh vocab/pairs counters after every ingest/ask and on connect.
   // Fast poll (500ms) picks up trainers mutating the brain in the background.
+  // Also computes pairs/s (training rate) from a 5-sample rolling window.
   useEffect(() => {
     if (conn !== 'online') return;
     let alive = true;
     const tick = async () => {
       try {
         const s = await rian.status(brain);
-        if (alive) setBrainStatus(s);
+        if (!alive) return;
+        setBrainStatus(s);
+        const now = performance.now();
+        const hist = pairsHistRef.current;
+        hist.push({ t: now, pairs: s.n_pairs_seen });
+        while (hist.length > 10) hist.shift();
+        if (hist.length >= 2) {
+          const first = hist[0];
+          const last = hist[hist.length - 1];
+          const dt = (last.t - first.t) / 1000;
+          const dp = last.pairs - first.pairs;
+          setPairsPerSec(dt > 0 ? dp / dt : 0);
+        }
       } catch {
-        /* ignore; pulse overlay already surfaces connection state */
+        /* ignore */
       }
     };
     void tick();
@@ -371,7 +491,8 @@ export default function BrainView() {
 
   // Reset history when switching brains — stale R curves are misleading.
   useEffect(() => {
-    historyRef.current = { g: [], m: [] };
+    historyRef.current = { g: [], m: [], wall: [] };
+    pairsHistRef.current = [];
     setHistTick((t) => t + 1);
   }, [brain]);
 
@@ -395,18 +516,76 @@ export default function BrainView() {
     setLastPrefix(tokens);
     setInjectFlash(Date.now());
     try {
+      let result: { out?: string[]; pairs?: number } = {};
       if (mode === 'ingest') {
         const pairs = await rian.ingest(brain, tokens);
         setLastTokens([`(+${pairs} pairs learned)`]);
+        result.pairs = pairs;
       } else {
         const out = await rian.ask(brain, tokens, 8);
         setLastTokens(out);
+        result.out = out;
+      }
+      if (recording && recStartedAtRef.current != null) {
+        recEventsRef.current.push({
+          t: performance.now() - recStartedAtRef.current,
+          kind: mode,
+          prefix: tokens,
+          ...result,
+        });
       }
     } catch (err) {
       setLastTokens([`(error) ${err instanceof Error ? err.message : String(err)}`]);
     } finally {
       setInjectBusy(false);
     }
+  }
+
+  function startRecording() {
+    recFramesRef.current = [];
+    recEventsRef.current = [];
+    recStartedAtRef.current = performance.now();
+    setRecCount(0);
+    setRecording(true);
+  }
+
+  function stopAndDownload() {
+    setRecording(false);
+    const frames = recFramesRef.current;
+    const events = recEventsRef.current;
+    if (frames.length === 0 && events.length === 0) {
+      recStartedAtRef.current = null;
+      return;
+    }
+    // JSONL: header + one row per frame/event, time-sorted.
+    const header = {
+      kind: 'rian.recording.v1',
+      brain,
+      daemon_url: RIAN_URL,
+      started_at_iso: new Date(
+        Date.now() - (performance.now() - (recStartedAtRef.current ?? 0)),
+      ).toISOString(),
+      full_fidelity: recFullFidelity,
+      n_frames: frames.length,
+      n_events: events.length,
+    };
+    const rows: string[] = [JSON.stringify(header)];
+    const merged: Array<{ t: number; row: string }> = [
+      ...frames.map((f) => ({ t: f.t, row: JSON.stringify({ type: 'frame', ...f }) })),
+      ...events.map((e) => ({ t: e.t, row: JSON.stringify({ type: 'event', ...e }) })),
+    ].sort((a, b) => a.t - b.t);
+    for (const r of merged) rows.push(r.row);
+    const blob = new Blob([rows.join('\n') + '\n'], { type: 'application/x-ndjson' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `rian-${brain}-${stamp}.jsonl`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    recStartedAtRef.current = null;
   }
 
   // Inject flash fades out over 1.2s — used to colour-pulse the canvas
@@ -418,6 +597,61 @@ export default function BrainView() {
   }, [injectFlash, histTick]); // histTick drives re-render as pulses arrive
 
   const strip = useMemo(() => renderRStrip(historyRef.current, HIST_LEN), [histTick]);
+
+  /** Per-frame derived metrics over the R history buffer. */
+  const metrics = useMemo(() => {
+    const h = historyRef.current;
+    const M = h.m.length;
+    const out = {
+      meanMod: 0,
+      stdMod: 0,
+      entropyMod: 0,
+      dRdt: 0, // last-frame delta / dt in s
+      fps: 0,
+    };
+    if (pulse && M > 0) {
+      let sum = 0;
+      for (let k = 0; k < M; k++) sum += pulse.R_mod[k];
+      const mean = sum / M;
+      let v = 0;
+      for (let k = 0; k < M; k++) {
+        const d = pulse.R_mod[k] - mean;
+        v += d * d;
+      }
+      out.meanMod = mean;
+      out.stdMod = Math.sqrt(v / M);
+      // Normalised module coherence → module-distribution entropy.
+      // Near log(M) = uniform activity; near 0 = one module dominates.
+      const eps = 1e-9;
+      let s = 0;
+      for (let k = 0; k < M; k++) s += pulse.R_mod[k] + eps;
+      let ent = 0;
+      for (let k = 0; k < M; k++) {
+        const p = (pulse.R_mod[k] + eps) / s;
+        ent -= p * Math.log(p);
+      }
+      out.entropyMod = ent;
+    }
+    const g = h.g;
+    const w = h.wall;
+    if (g.length >= 2 && w.length >= 2) {
+      const dR = g[g.length - 1] - g[g.length - 2];
+      const dt = (w[w.length - 1] - w[w.length - 2]) / 1000;
+      out.dRdt = dt > 0 ? dR / dt : 0;
+    }
+    if (w.length >= 2) {
+      const span = (w[w.length - 1] - w[0]) / 1000;
+      out.fps = span > 0 ? (w.length - 1) / span : 0;
+    }
+    return out;
+  }, [histTick, pulse]);
+
+  /** Approximate in-memory size of the recording buffer in KB. */
+  const recSizeKB = useMemo(() => {
+    if (!recording) return 0;
+    const perFrame = recFullFidelity ? 9 * 1024 : 64; // rough bytes per frame
+    return (recCount * perFrame) / 1024;
+  }, [recording, recFullFidelity, recCount]);
 
   return (
     <div className="fixed inset-0 bg-black text-zinc-100">
@@ -462,59 +696,151 @@ export default function BrainView() {
         </svg>
       </div>
 
-      {/* ── Top-left: status ── */}
-      <div className="pointer-events-none absolute left-4 top-4 font-mono text-[11px] text-zinc-300">
-        <div className="mb-1 text-[10px] uppercase tracking-[0.2em] text-emerald-400">
-          RIAN · reservoir field
+      {/* ── Left: lab panel ── */}
+      <div className="absolute left-4 top-4 w-[260px] rounded-lg border border-zinc-800 bg-black/70 p-3 font-mono text-[11px] text-zinc-300 backdrop-blur">
+        <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.2em]">
+          <span className="text-emerald-400">RIAN · lab</span>
+          <span className={`font-mono ${conn === 'online' ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {conn === 'online' ? '● live' : conn === 'offline' ? '○ offline' : '· wait'}
+          </span>
         </div>
-        {conn === 'offline' && (
-          <div className="text-amber-300">daemon offline {error ? `· ${error}` : ''}</div>
-        )}
-        {pulse && (
-          <div className="space-y-0.5">
-            <div className="text-zinc-500">daemon: <span className="text-zinc-300">{RIAN_URL}</span></div>
-            <div className="pointer-events-auto flex items-center gap-2">
-              <span>brain:</span>
-              <select
-                value={brain}
-                onChange={(e) => setBrain(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 text-zinc-100 text-[11px] px-1 py-0 rounded font-mono"
-              >
-                {!brainList.includes(brain) && <option value={brain}>{brain}</option>}
-                {brainList.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>t = {pulse.t.toFixed(2)} s · {pulse.steps} steps</div>
-            <div>
-              R<sub>glob</sub> ={' '}
-              <span className="text-amber-300">{pulse.R_glob.toFixed(4)}</span>
-            </div>
-            <div>
-              R<sub>mod</sub> = [
-              {pulse.R_mod.map((r, i) => (
-                <span key={i} className="ml-1">
-                  <span className="text-emerald-300">{r.toFixed(3)}</span>
-                  {i < pulse.R_mod.length - 1 ? ',' : ''}
-                </span>
-              ))}
-              ]
-            </div>
-            <div className="text-zinc-500">
-              N = {pulse.theta?.length ?? '?'} · M = {pulse.R_mod.length}
-              {brainStatus && (
-                <>
-                  {' · '}V = <span className="text-zinc-300">{brainStatus.V}</span>
-                  {' · '}pairs = <span className="text-zinc-300">{brainStatus.n_pairs_seen}</span>
-                  {' · '}traces = <span className="text-zinc-300">{brainStatus.n_traces}</span>
-                </>
-              )}
-            </div>
+        {conn === 'offline' && error && (
+          <div className="mb-2 rounded bg-amber-900/30 px-2 py-1 text-[10px] text-amber-200">
+            {error}
           </div>
         )}
+
+        {/* Daemon + brain */}
+        <LabSection title="target">
+          <Row k="daemon" v={RIAN_URL.replace(/^https?:\/\//, '')} mono />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-zinc-500">brain</span>
+            <select
+              value={brain}
+              onChange={(e) => setBrain(e.target.value)}
+              className="flex-1 rounded border border-zinc-700 bg-zinc-900 px-1 py-0 font-mono text-[11px] text-zinc-100"
+            >
+              {!brainList.includes(brain) && <option value={brain}>{brain}</option>}
+              {brainList.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+        </LabSection>
+
+        {/* Live dynamics */}
+        <LabSection title="dynamics">
+          {pulse ? (
+            <>
+              <Row k="t" v={`${pulse.t.toFixed(2)} s`} />
+              <Row k="steps" v={pulse.steps.toString()} />
+              <Row k="N · M" v={`${pulse.theta?.length ?? '?'} · ${pulse.R_mod.length}`} />
+              <Row k="fps" v={metrics.fps.toFixed(1)} />
+            </>
+          ) : (
+            <Row k="" v="waiting for pulse…" />
+          )}
+        </LabSection>
+
+        {/* R metrics */}
+        {pulse && (
+          <LabSection title="coherence (R)">
+            <Row
+              k="R_glob"
+              v={pulse.R_glob.toFixed(4)}
+              color="text-amber-300"
+            />
+            <Row
+              k="dR/dt"
+              v={`${metrics.dRdt >= 0 ? '+' : ''}${metrics.dRdt.toFixed(4)}/s`}
+              color={metrics.dRdt >= 0 ? 'text-emerald-300' : 'text-rose-300'}
+            />
+            <Row
+              k="R_mod μ · σ"
+              v={`${metrics.meanMod.toFixed(3)} · ${metrics.stdMod.toFixed(3)}`}
+            />
+            <Row
+              k="H(R_mod)"
+              v={`${metrics.entropyMod.toFixed(3)} / ${Math.log(pulse.R_mod.length).toFixed(3)}`}
+            />
+            <div className="mt-1 flex gap-0.5">
+              {pulse.R_mod.map((r, i) => (
+                <div
+                  key={i}
+                  title={`module ${i}: R=${r.toFixed(3)}`}
+                  className="h-4 flex-1 rounded-sm"
+                  style={{
+                    background: `rgba(110,231,183,${0.12 + r * 0.75})`,
+                    border: '1px solid rgba(110,231,183,0.2)',
+                  }}
+                />
+              ))}
+            </div>
+          </LabSection>
+        )}
+
+        {/* Training */}
+        {brainStatus && (
+          <LabSection title="training">
+            <Row k="V" v={brainStatus.V.toString()} />
+            <Row k="pairs" v={brainStatus.n_pairs_seen.toLocaleString()} />
+            <Row k="traces" v={brainStatus.n_traces.toString()} />
+            <Row
+              k="pairs/s"
+              v={pairsPerSec >= 1 ? pairsPerSec.toFixed(1) : pairsPerSec.toFixed(2)}
+              color={pairsPerSec > 0.5 ? 'text-emerald-300' : 'text-zinc-400'}
+            />
+            <Row
+              k="W"
+              v={brainStatus.w_fresh ? 'fresh' : 'stale'}
+              color={brainStatus.w_fresh ? 'text-emerald-300' : 'text-amber-300'}
+            />
+          </LabSection>
+        )}
+
+        {/* Recording */}
+        <LabSection title="recording">
+          <div className="flex items-center gap-2">
+            {!recording ? (
+              <button
+                onClick={startRecording}
+                disabled={conn !== 'online'}
+                className="rounded bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-black hover:bg-rose-500 disabled:bg-zinc-700 disabled:text-zinc-500"
+              >
+                ● REC
+              </button>
+            ) : (
+              <button
+                onClick={stopAndDownload}
+                className="animate-pulse rounded bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-black hover:bg-rose-400"
+              >
+                ■ STOP + save
+              </button>
+            )}
+            <label
+              className="flex cursor-pointer select-none items-center gap-1 text-[10px] text-zinc-400"
+              title="incluye theta[] y modules[] por frame — pesado, ~10KB/frame"
+            >
+              <input
+                type="checkbox"
+                checked={recFullFidelity}
+                disabled={recording}
+                onChange={(e) => setRecFullFidelity(e.target.checked)}
+                className="h-3 w-3 accent-rose-500"
+              />
+              full fidelity
+            </label>
+          </div>
+          {recording && (
+            <div className="mt-1 text-[10px] text-zinc-400">
+              frames <span className="text-zinc-200">{recCount}</span> · events{' '}
+              <span className="text-zinc-200">{recEventsRef.current.length}</span> ·{' '}
+              <span className="text-zinc-500">~{recSizeKB.toFixed(0)} KB</span>
+            </div>
+          )}
+        </LabSection>
       </div>
 
       {/* ── Bottom-left: inject prefix ── */}
@@ -592,7 +918,7 @@ export default function BrainView() {
 
       {/* ── Bottom-right: helptext ── */}
       <div className="pointer-events-none absolute bottom-4 right-4 max-w-xs font-mono text-[10px] leading-relaxed text-zinc-500">
-        arrastra para rotar · rueda para zoom · color = fase θ · blobs = módulos
+        arrastra para rotar · rueda para zoom · color = fase θ · brillo = |dθ/dt|
       </div>
     </div>
   );
