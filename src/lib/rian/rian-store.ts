@@ -34,6 +34,7 @@ interface RianState {
   polling: boolean;
 
   init: () => Promise<void>;
+  setBrain: (name: string) => Promise<void>;
   startPulse: (
     intervalMs?: number,
     stepsPerTick?: number,
@@ -63,6 +64,19 @@ export const useRianStore = create<RianState>((set, get) => ({
       set({ conn: 'online', status: s, error: null });
     } catch (e) {
       set({ conn: 'offline', error: e instanceof Error ? e.message : String(e) });
+    }
+  },
+
+  /** Switch which brain the pulse loop and ask/ingest target.
+   *  Opens the brain on the daemon (does NOT create it) so this never
+   *  clobbers a trainer mid-run. */
+  setBrain: async (name: string) => {
+    if (!name || name === get().brain) return;
+    try {
+      const s = await rian.open(name);
+      set({ brain: name, status: s, pulse: null, error: null });
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : String(e) });
     }
   },
 

@@ -91,6 +91,15 @@ function buildLayout(modules: number[], M: number): Float32Array {
 
 // ----- point cloud component -------------------------------------------------
 
+/** Wrap angular delta into (-π, π] so dθ captures the true phase velocity
+ *  even when θ wraps around the 2π boundary between pulses. */
+function wrapDelta(d: number): number {
+  let x = d;
+  while (x >  Math.PI) x -= 2 * Math.PI;
+  while (x < -Math.PI) x += 2 * Math.PI;
+  return x;
+}
+
 function ReservoirPoints({
   positions,
   phases,
@@ -100,6 +109,9 @@ function ReservoirPoints({
 }) {
   const geomRef = useRef<THREE.BufferGeometry>(null);
   const colorAttr = useRef<THREE.BufferAttribute | null>(null);
+  const prevPhases = useRef<Float32Array | null>(null);
+  /** Per-neuron low-pass filtered |dθ|, scaled to roughly [0,1]. */
+  const velocity = useRef<Float32Array | null>(null);
 
   const colors = useMemo(() => new Float32Array(positions.length), [positions.length]);
 
@@ -114,11 +126,26 @@ function ReservoirPoints({
   useFrame(() => {
     if (!colorAttr.current) return;
     const N = phases.length;
+    if (!prevPhases.current || prevPhases.current.length !== N) {
+      prevPhases.current = new Float32Array(phases);
+      velocity.current = new Float32Array(N);
+    }
+    const prev = prevPhases.current!;
+    const vel = velocity.current!;
+    const alpha = 0.25; // EMA smoothing
     const col = new THREE.Color();
     for (let i = 0; i < N; i++) {
       const th = phases[i];
+      const d = Math.abs(wrapDelta(th - prev[i]));
+      // Typical per-pulse phase step is ~dt*spc*ω ~ O(0.5 rad); clamp to 1.
+      const dn = Math.min(1, d / 0.8);
+      vel[i] = vel[i] * (1 - alpha) + dn * alpha;
+      prev[i] = th;
+      // Hue = phase → color-cycles with rotation.
+      // Lightness tracks velocity: fast rotators light up, idle ones fade.
       const hue = ((th / (Math.PI * 2)) % 1 + 1) % 1;
-      col.setHSL(hue, 0.8, 0.55);
+      const light = 0.18 + vel[i] * 0.55;
+      col.setHSL(hue, 0.85, light);
       colors[i * 3    ] = col.r;
       colors[i * 3 + 1] = col.g;
       colors[i * 3 + 2] = col.b;
@@ -130,15 +157,89 @@ function ReservoirPoints({
     <points>
       <bufferGeometry ref={geomRef} />
       <pointsMaterial
-        size={0.055}
+        size={0.06}
         vertexColors
         transparent
-        opacity={0.9}
+        opacity={0.95}
         sizeAttenuation
         depthWrite={false}
       />
     </points>
   );
+}
+
+// ----- R history strip -------------------------------------------------------
+
+/** Render a polyline plot of R_glob (amber) and R_mod[k] (green tints)
+ *  over the rolling history buffer. Pure function of the buffer snapshot so
+ *  it memoizes cleanly in the parent. */
+function renderRStrip(
+  hist: { g: number[]; m: number[][] },
+  len: number,
+): React.ReactElement[] {
+  const W = 480;
+  const H = 56;
+  const out: React.ReactElement[] = [];
+
+  // Horizontal grid at R=0, 0.5, 1.
+  for (let k = 0; k <= 2; k++) {
+    const y = H - (k * 0.5) * H;
+    out.push(
+      <line
+        key={`grid-${k}`}
+        x1={0}
+        y1={y}
+        x2={W}
+        y2={y}
+        stroke="rgb(39 39 42)"
+        strokeWidth={0.5}
+      />,
+    );
+  }
+
+  const toPath = (arr: number[]): string => {
+    if (arr.length < 2) return '';
+    const step = W / Math.max(1, len - 1);
+    let d = '';
+    for (let i = 0; i < arr.length; i++) {
+      const x = i * step;
+      const y = H - Math.max(0, Math.min(1, arr[i])) * H;
+      d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    }
+    return d;
+  };
+
+  // Per-module curves, faded.
+  hist.m.forEach((arr, k) => {
+    const d = toPath(arr);
+    if (!d) return;
+    out.push(
+      <path
+        key={`m-${k}`}
+        d={d}
+        fill="none"
+        stroke={`hsl(${140 + k * 35}, 65%, 55%)`}
+        strokeWidth={1}
+        opacity={0.6}
+      />,
+    );
+  });
+
+  // Global curve on top.
+  const gd = toPath(hist.g);
+  if (gd) {
+    out.push(
+      <path
+        key="g"
+        d={gd}
+        fill="none"
+        stroke="rgb(250 204 21)"
+        strokeWidth={1.5}
+      />,
+    );
+  }
+
+  return out;
 }
 
 // ----- HUD + scene orchestrator ----------------------------------------------
@@ -182,6 +283,9 @@ export default function BrainView() {
   const startPulse = useRianStore((s) => s.startPulse);
   const stopPulse = useRianStore((s) => s.stopPulse);
   const brain = useRianStore((s) => s.brain);
+  const setBrain = useRianStore((s) => s.setBrain);
+
+  const [brainList, setBrainList] = useState<string[]>([]);
 
   const [injectText, setInjectText] = useState('box w80 h40 d20');
   const [injectBusy, setInjectBusy] = useState(false);
@@ -189,6 +293,12 @@ export default function BrainView() {
   const [lastPrefix, setLastPrefix] = useState<string[]>([]);
   const [lastTokens, setLastTokens] = useState<string[]>([]);
   const [brainStatus, setBrainStatus] = useState<RianStatus | null>(null);
+  const [injectFlash, setInjectFlash] = useState(0); // t wall-clock of last inject
+
+  /** Rolling history of R_glob + R_mod[] for the top timeline strip. */
+  const HIST_LEN = 240;
+  const historyRef = useRef<{ g: number[]; m: number[][] }>({ g: [], m: [] });
+  const [histTick, setHistTick] = useState(0);
 
   useEffect(() => {
     init();
@@ -201,7 +311,23 @@ export default function BrainView() {
     return () => stopPulse();
   }, [conn, startPulse, stopPulse]);
 
+  // Append R_glob / R_mod to the rolling history on every new pulse.
+  useEffect(() => {
+    if (!pulse) return;
+    const h = historyRef.current;
+    h.g.push(pulse.R_glob);
+    if (h.g.length > HIST_LEN) h.g.shift();
+    const M = pulse.R_mod.length;
+    if (h.m.length !== M) h.m = Array.from({ length: M }, () => []);
+    for (let k = 0; k < M; k++) {
+      h.m[k].push(pulse.R_mod[k]);
+      if (h.m[k].length > HIST_LEN) h.m[k].shift();
+    }
+    setHistTick((t) => (t + 1) & 0xffff); // force re-render of svg strip
+  }, [pulse]);
+
   // Refresh vocab/pairs counters after every ingest/ask and on connect.
+  // Fast poll (500ms) picks up trainers mutating the brain in the background.
   useEffect(() => {
     if (conn !== 'online') return;
     let alive = true;
@@ -214,12 +340,39 @@ export default function BrainView() {
       }
     };
     void tick();
-    const h = setInterval(tick, 2000);
+    const h = setInterval(tick, 500);
     return () => {
       alive = false;
       clearInterval(h);
     };
   }, [conn, brain, lastTokens]);
+
+  // Poll the list of brains on disk so the selector picks up trainer brains
+  // spawned/wiped while this tab is open.
+  useEffect(() => {
+    if (conn !== 'online') return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const { on_disk } = await rian.list();
+        if (alive) setBrainList(on_disk);
+      } catch {
+        /* ignore */
+      }
+    };
+    void tick();
+    const h = setInterval(tick, 3000);
+    return () => {
+      alive = false;
+      clearInterval(h);
+    };
+  }, [conn]);
+
+  // Reset history when switching brains — stale R curves are misleading.
+  useEffect(() => {
+    historyRef.current = { g: [], m: [] };
+    setHistTick((t) => t + 1);
+  }, [brain]);
 
   const layout = useMemo(() => {
     if (!pulse?.modules || !pulse?.R_mod) return null;
@@ -239,6 +392,7 @@ export default function BrainView() {
     if (tokens.length === 0) return;
     setInjectBusy(true);
     setLastPrefix(tokens);
+    setInjectFlash(Date.now());
     try {
       if (mode === 'ingest') {
         const pairs = await rian.ingest(brain, tokens);
@@ -253,6 +407,16 @@ export default function BrainView() {
       setInjectBusy(false);
     }
   }
+
+  // Inject flash fades out over 1.2s — used to colour-pulse the canvas
+  // border when the user fires ask/teach so they see cause → response.
+  const flashAlpha = useMemo(() => {
+    if (!injectFlash) return 0;
+    const age = (Date.now() - injectFlash) / 1200;
+    return Math.max(0, 1 - age);
+  }, [injectFlash, histTick]); // histTick drives re-render as pulses arrive
+
+  const strip = useMemo(() => renderRStrip(historyRef.current, HIST_LEN), [histTick]);
 
   return (
     <div className="fixed inset-0 bg-black text-zinc-100">
@@ -271,6 +435,32 @@ export default function BrainView() {
         )}
       </Canvas>
 
+      {/* Inject flash — thin animated border glow over the canvas. */}
+      {flashAlpha > 0 && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            boxShadow: `inset 0 0 120px 16px rgba(${
+              mode === 'ask' ? '110,231,183' : '250,204,21'
+            }, ${flashAlpha * 0.45})`,
+          }}
+        />
+      )}
+
+      {/* ── Top-center: R history strip ── */}
+      <div className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-md bg-black/60 px-3 py-1.5 backdrop-blur">
+        <div className="mb-0.5 flex items-center justify-between text-[9px] uppercase tracking-[0.2em] text-zinc-500">
+          <span>R history · {HIST_LEN} frames</span>
+          <span className="font-mono text-zinc-600">
+            {historyRef.current.g.length}/{HIST_LEN}
+          </span>
+        </div>
+        <svg width={480} height={56} className="block">
+          <rect x={0} y={0} width={480} height={56} fill="rgba(24,24,27,0.5)" />
+          {strip}
+        </svg>
+      </div>
+
       {/* ── Top-left: status ── */}
       <div className="pointer-events-none absolute left-4 top-4 font-mono text-[11px] text-zinc-300">
         <div className="mb-1 text-[10px] uppercase tracking-[0.2em] text-emerald-400">
@@ -282,7 +472,21 @@ export default function BrainView() {
         {pulse && (
           <div className="space-y-0.5">
             <div className="text-zinc-500">daemon: <span className="text-zinc-300">{RIAN_URL}</span></div>
-            <div>brain: <span className="text-zinc-100">{brain}</span></div>
+            <div className="pointer-events-auto flex items-center gap-2">
+              <span>brain:</span>
+              <select
+                value={brain}
+                onChange={(e) => setBrain(e.target.value)}
+                className="bg-zinc-900 border border-zinc-700 text-zinc-100 text-[11px] px-1 py-0 rounded font-mono"
+              >
+                {!brainList.includes(brain) && <option value={brain}>{brain}</option>}
+                {brainList.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>t = {pulse.t.toFixed(2)} s · {pulse.steps} steps</div>
             <div>
               R<sub>glob</sub> ={' '}
