@@ -932,9 +932,7 @@ export default function ForgePage() {
         playCreate();
       } },
       { id: 'part-clock', label: 'Mechanical clock (capstone)', description: 'Escapement + compound gear train + 3 hands · tells real time · HH:MM:SS decoded from angles', icon: '🕰', category: 'Piezas', keywords: ['clock', 'mechanical', 'hands', 'hour', 'minute', 'second', 'capstone', 'reloj', 'peldaño 6'], action: () => {
-        if (typeof navigator === 'undefined' || !navigator.webdriver) {
-          setScene(buildClock(CLOCK_DEFAULTS).rootOp);
-        }
+        setScene(buildClock(CLOCK_DEFAULTS).rootOp);
         setClockPanelOpen(true);
         playCreate();
       } },
