@@ -519,7 +519,7 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
         const avgStep = (2 * Math.PI) / n;
         const gapRad = maxAngStep > avgStep * 1.5 ? maxAngStep : 0;
         const spanDeg = (360 - gapRad * 180 / Math.PI);
-        if (spanDeg > 355) {
+        if (spanDeg > 350) {
           const startPt = projectOntoCircle(cleaned[0], circleFit.center, circleFit.radius);
           const arc = makeArc(circleFit.center, circleFit.radius, 0, 2 * Math.PI, startPt, startPt);
           arc.isFullCircle = true;
@@ -587,7 +587,7 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
   // genuine corner points (sharp angle changes), split at those corners,
   // and fit each segment as a SINGLE entity (line or arc).
   // Only if a segment can't be fit as one entity do we fall back to recursion.
-  const cornerIndices = detectCorners(openPts, tol);
+  const cornerIndices = detectCorners(openPts, tol, !isOpen);
   const breakPts = [0, ...cornerIndices, openPts.length - 1];
   // Dedupe + sort
   const uniqueBreaks = [...new Set(breakPts)].sort((a, b) => a - b);
@@ -705,12 +705,8 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
   }
 
   // ── Phase 4d: Proportional precision snap ──
-  // Mechanical parts have "nice" numbers. A radius of 31.684 should be 31.7.
-  // The snap grid is proportional to the largest dimension:
-  //   maxDim ~ 100  → grid = 0.1
-  //   maxDim ~ 10   → grid = 0.01
-  //   maxDim ~ 1000 → grid = 1.0
-  // This ensures numerical precision scales with part size.
+  // CNC precision: coordinates rounded to max 0.001mm.
+  // For larger parts, a proportional grid is used.
   merged = snapEntities(merged, diag);
 
   // ── Phase 4e: Post-snap C0 repair ──
@@ -733,6 +729,21 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
     }
   }
 
+  // ── Phase 4f: Coordinate registry snap ──
+  // CNC machines work with 0.001mm precision. Any two coordinates
+  // within 0.001 of each other are the same point. Build a registry
+  // of unique coordinate values and snap everything to it.
+  const cncGrid = 0.001;
+  merged = snapCoordinatesToRegistry(merged, cncGrid);
+
+  // ── Phase 4g: Remove degenerate entities after snapping ──
+  // Zero-length lines or zero-radius arcs can appear when endpoints snap together.
+  merged = merged.filter(e => {
+    if (e.type === 'line') return dist(e.start, e.end) > cncGrid * 0.5;
+    if (e.type === 'arc' && !e.isFullCircle) return e.radius > cncGrid * 0.5;
+    return true;
+  });
+
   // ── Phase 5: Detect constraints ──
   const constraints = detectConstraints(merged, tol);
 
@@ -745,16 +756,18 @@ export function fitContour(pts: Point2D[], tolerance?: number): SketchFitResult 
 
 /**
  * Compute a "smart" snap grid proportional to the reference dimension.
- * The grid is 10^(floor(log10(refDim)) - 3), so:
- *   refDim ~ 100  → grid = 0.1     (4.999 → 5.0)
- *   refDim ~ 10   → grid = 0.01    (1.998 → 2.0)
- *   refDim ~ 1000 → grid = 1.0     (999.3 → 999.0)
- *   refDim ~ 1    → grid = 0.001
+ * CNC machines have 0.001mm precision, so the grid is clamped to
+ * a minimum of 0.001. For larger parts, we use a proportional grid:
+ *   refDim ~ 100  → grid = 0.01    (99.876 → 99.88)
+ *   refDim ~ 10   → grid = 0.001   (CNC precision floor)
+ *   refDim ~ 1000 → grid = 0.1     (999.34 → 999.3)
+ *   refDim ~ 1    → grid = 0.001   (CNC precision floor)
  */
 function snapGrid(refDim: number): number {
-  if (refDim < 1e-9) return 0;
+  if (refDim < 1e-9) return 0.001;
   const order = Math.pow(10, Math.floor(Math.log10(refDim)));
-  return order / 1000;
+  // Proportional grid: ~3 significant figures of precision, clamped to CNC minimum
+  return Math.max(0.001, order / 1000);
 }
 
 /** Round a value to the nearest grid step. */
@@ -830,6 +843,66 @@ function snapEntities(entities: SketchEntity[], diag: number): SketchEntity[] {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Phase 4f: Coordinate Registry Snap (CNC Precision)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Build a registry of all coordinate values (x, y, radius, center coords)
+ * rounded to the given grid (default 0.001mm = CNC precision).
+ * Any value within `grid` of another is snapped to the same representative.
+ * This ensures: same hole radius = same number, aligned edges = exact match.
+ */
+function snapCoordinatesToRegistry(entities: SketchEntity[], grid: number): SketchEntity[] {
+  // Round a value to grid
+  const snap = (v: number) => Math.round(v / grid) * grid;
+
+  return entities.map(e => {
+    if (e.type === 'line') {
+      return makeLine(
+        { x: snap(e.start.x), y: snap(e.start.y) },
+        { x: snap(e.end.x), y: snap(e.end.y) },
+      );
+    }
+    if (e.type === 'arc') {
+      const cx = snap(e.center.x);
+      const cy = snap(e.center.y);
+      const r = snap(e.radius);
+      const center = { x: cx, y: cy };
+
+      if (e.isFullCircle) {
+        const sp = projectOntoCircle(e.start, center, r);
+        const arc = makeArc(center, r, 0, 2 * Math.PI, sp, sp);
+        arc.isFullCircle = true;
+        return arc;
+      }
+
+      // Re-project endpoints onto snapped circle
+      const startPt = projectOntoCircle(e.start, center, r);
+      const endPt = projectOntoCircle(e.end, center, r);
+      // Snap projected endpoints too
+      startPt.x = snap(startPt.x);
+      startPt.y = snap(startPt.y);
+      endPt.x = snap(endPt.x);
+      endPt.y = snap(endPt.y);
+
+      // Recompute angles
+      const sa = Math.atan2(startPt.y - cy, startPt.x - cx);
+      const ea = Math.atan2(endPt.y - cy, endPt.x - cx);
+      const origSweep = sweepAngle(e);
+      let newSweep = ea - sa;
+      while (Math.sign(origSweep) > 0 && newSweep < 0) newSweep += 2 * Math.PI;
+      while (Math.sign(origSweep) < 0 && newSweep > 0) newSweep -= 2 * Math.PI;
+      if (Math.abs(newSweep) < 0.01 && Math.abs(origSweep) > Math.PI) {
+        newSweep = Math.sign(origSweep) * 2 * Math.PI;
+      }
+
+      return makeArc(center, r, sa, sa + newSweep, startPt, endPt);
+    }
+    return e;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Arc Trajectory Verification
 // ═══════════════════════════════════════════════════════════════
 
@@ -887,21 +960,28 @@ function verifyArcTrajectory(
  *
  * Returns sorted array of point indices where the contour has a sharp turn.
  */
-function detectCorners(pts: Point2D[], tol: number): number[] {
+function detectCorners(pts: Point2D[], tol: number, isClosed: boolean = true): number[] {
   const n = pts.length;
-  if (n < 10) return [];
+  if (n < 4) return [];
 
-  // Adaptive window: needs to be big enough to smooth out tessellation noise
-  // ~5% of contour, clamped [4, 60]
-  const w = Math.max(4, Math.min(60, Math.floor(n * 0.05)));
+  // Adaptive window: bigger smooths tessellation zigzag, smaller finds sharp
+  // corners on sparse contours. For n<25 use w=1 (no smoothing needed, any
+  // zigzag is significant). Otherwise ~8% of n, capped at 60.
+  const w = n < 25 ? 1 : Math.max(1, Math.min(60, Math.floor(n * 0.08)));
 
-  // Compute windowed angle change at each interior point
+  const idx = (i: number) => isClosed ? ((i % n) + n) % n : i;
+
+  // Compute windowed angle change at each point. For closed contours, wrap
+  // around so corners at index 0 and n-1 are inspected too.
   const angleChanges: number[] = new Array(n).fill(0);
-  for (let i = w; i < n - w; i++) {
-    const bx = pts[i].x - pts[i - w].x;
-    const by = pts[i].y - pts[i - w].y;
-    const fx = pts[i + w].x - pts[i].x;
-    const fy = pts[i + w].y - pts[i].y;
+  const lo = isClosed ? 0 : w;
+  const hi = isClosed ? n : n - w;
+  for (let i = lo; i < hi; i++) {
+    const bi = idx(i - w), fi = idx(i + w);
+    const bx = pts[i].x - pts[bi].x;
+    const by = pts[i].y - pts[bi].y;
+    const fx = pts[fi].x - pts[i].x;
+    const fy = pts[fi].y - pts[i].y;
     const bLen = Math.sqrt(bx * bx + by * by);
     const fLen = Math.sqrt(fx * fx + fy * fy);
     if (bLen < 1e-12 || fLen < 1e-12) continue;
@@ -911,31 +991,84 @@ function detectCorners(pts: Point2D[], tol: number): number[] {
     ));
   }
 
-  // Threshold: 35° — only genuine corners, not fillet curves
-  // A fillet with ~45° bend over many points will have each point's
-  // windowed angle be much less than 35° because the bend is gradual.
-  // A real corner (line→line) concentrates the angle change sharply.
+  // Threshold: 35° — only genuine corners, not fillet curves.
   const thresh = 35 * Math.PI / 180;
 
-  // Collect candidates above threshold
+  // Local-maxima filter: on a smooth arc, windowed angle-change is roughly
+  // uniform across all arc points (each ≈ per-step curvature). On a sharp
+  // corner, angleChanges[k] ≫ neighbors. We require:
+  //   1. ac[i] >= ac at every point within ±w (strict peak in the window), AND
+  //   2. ac[i] >= 1.5 × avg(ac[i-1], ac[i+1]) when w>=2 (rejects arc interiors,
+  //      where immediate neighbors carry similar ac; corners have at least one
+  //      near-zero neighbor so the ratio explodes).
+  const isLocalMax = (i: number): boolean => {
+    const ac = angleChanges[i];
+    if (ac <= thresh) return false;
+    for (let k = 1; k <= w; k++) {
+      if (ac < angleChanges[idx(i - k)] || ac < angleChanges[idx(i + k)]) return false;
+    }
+    if (w >= 2) {
+      const avgNeigh = (angleChanges[idx(i - 1)] + angleChanges[idx(i + 1)]) / 2;
+      if (ac < avgNeigh * 1.5) return false;
+    }
+    return true;
+  };
+
   const candidates: { idx: number; angle: number }[] = [];
-  for (let i = w; i < n - w; i++) {
-    if (angleChanges[i] > thresh) {
-      candidates.push({ idx: i, angle: angleChanges[i] });
+  for (let i = lo; i < hi; i++) {
+    if (isLocalMax(i)) candidates.push({ idx: i, angle: angleChanges[i] });
+  }
+
+  // Curvature-jump detection: line↔arc transitions on fillets are tangent-
+  // continuous (angleChanges stays below threshold) but the CURVATURE jumps
+  // from ~0 (line) to 1/R (arc). Compare SMOOTHED κ on each side of point i,
+  // averaged over a small window, to reject zigzag tessellation noise where
+  // instantaneous κ alternates 0 / 1/R_chord and per-point jumps are huge
+  // but the smoothed averages are equal.
+  if (isClosed && n >= 6) {
+    const kappa = new Float64Array(n);
+    let kappaMax = 0;
+    for (let i = 0; i < n; i++) {
+      kappa[i] = Math.abs(localCurvature(pts, i));
+      if (kappa[i] > kappaMax) kappaMax = kappa[i];
+    }
+    if (kappaMax > 1e-6) {
+      const smoothW = Math.max(2, Math.min(4, Math.floor(n / 10)));
+      const leftAvg = new Float64Array(n);
+      const rightAvg = new Float64Array(n);
+      for (let i = 0; i < n; i++) {
+        let lSum = 0, rSum = 0;
+        for (let k = 1; k <= smoothW; k++) {
+          lSum += kappa[idx(i - k)];
+          rSum += kappa[idx(i + k)];
+        }
+        leftAvg[i] = lSum / smoothW;
+        rightAvg[i] = rSum / smoothW;
+      }
+      const jumps = new Float64Array(n);
+      for (let i = 0; i < n; i++) jumps[i] = Math.abs(rightAvg[i] - leftAvg[i]);
+      const jumpThresh = kappaMax * 0.35;
+      for (let i = 0; i < n; i++) {
+        if (jumps[i] < jumpThresh) continue;
+        if (jumps[i] < jumps[idx(i - 1)] || jumps[i] < jumps[idx(i + 1)]) continue;
+        const score = thresh + (jumps[i] / kappaMax) * (Math.PI / 2 - thresh);
+        if (candidates.some(c => c.idx === i)) continue;
+        candidates.push({ idx: i, angle: score });
+      }
     }
   }
 
-  // Non-maximum suppression: keep sharpest within (3×window) radius
+  // Non-maximum suppression: keep sharpest within ±w. Use circular distance
+  // for closed contours so corners near the wrap seam aren't double-counted.
   candidates.sort((a, b) => b.angle - a.angle);
-  const suppressionRadius = w * 3;
+  const suppressionRadius = Math.max(1, w);
   const corners: number[] = [];
   for (const c of candidates) {
     let tooClose = false;
     for (const existing of corners) {
-      if (Math.abs(c.idx - existing) < suppressionRadius) {
-        tooClose = true;
-        break;
-      }
+      let d = Math.abs(c.idx - existing);
+      if (isClosed) d = Math.min(d, n - d);
+      if (d < suppressionRadius) { tooClose = true; break; }
     }
     if (!tooClose) corners.push(c.idx);
   }
@@ -1016,6 +1149,24 @@ function fitSegment(
       const sweepDeg = Math.abs(sweepAcc) * 180 / Math.PI;
       const sagitta = circFit.radius * (1 - Math.cos(Math.abs(sweepAcc) / 2));
 
+      // Point-density check on the fit arc: a polyline whose vertices
+      // happen to lie on a common circle (e.g. 4 rectangle corners span
+      // ~180° → 60° per step) is NOT an arc sample. A genuine arc has
+      // fine sampling (<25° per step for reasonable tessellation).
+      // Max angular step > 35° → chords deviate significantly from the
+      // fit arc → reject.
+      let maxAngStep = 0;
+      let prevAng = sa;
+      for (let i = start + 1; i <= end; i++) {
+        const ai = Math.atan2(pts[i].y - circFit.center.y, pts[i].x - circFit.center.x);
+        let delta = ai - prevAng;
+        while (delta > Math.PI) delta -= 2 * Math.PI;
+        while (delta < -Math.PI) delta += 2 * Math.PI;
+        if (Math.abs(delta) > maxAngStep) maxAngStep = Math.abs(delta);
+        prevAng = ai;
+      }
+      const chordFollowsArc = maxAngStep < 35 * Math.PI / 180;
+
       // For near-full-circle arcs (>340° sweep), apply the base tol:
       // if Phase 0 already rejected this as not-a-full-circle, we should
       // not allow a relaxed arcTol to make it one via a different code path.
@@ -1025,13 +1176,19 @@ function fitSegment(
       // radius-to-chord is sane (not a "line on giant circle"),
       // sagitta must be significantly larger than line deviation
       // (prevents straight-line segments with tiny noise from becoming arcs),
+      // arc must explain data SIGNIFICANTLY better than a line (error < 50% of line deviation),
       // and trajectory verified against real data
       const chordLen = dist(pts[start], pts[end]);
       const radiusSane = chordLen < tol || circFit.radius < chordLen * 5 || sweepDeg > 45;
       // Arc must explain significantly more curvature than a line would miss.
       // If line deviation is close to tolerance, the "arc" is really just a noisy line.
       const arcWorthIt = sagitta > maxDev * 0.8;
-      if (sweepDeg > 3 && sagitta > tol && radiusSane && arcWorthIt &&
+      // KEY FIX: arc fit error must be substantially better than line fit error.
+      // For genuine arcs: maxError ≈ noise << maxDev (line deviation ≈ sagitta).
+      // For noisy lines: maxError ≈ maxDev → ratio ≈ 1.0 → rejected.
+      const arcBetterThanLine = circFit.maxError < maxDev * 0.5;
+      if (sweepDeg > 3 && sagitta > tol && radiusSane && arcWorthIt && arcBetterThanLine &&
+          chordFollowsArc &&
           circFit.maxError < effectiveTol &&
           verifyArcTrajectory(circFit.center, circFit.radius, sa, sweepAcc, sub, effectiveTol)) {
         const startPt = projectOntoCircle(pts[start], circFit.center, circFit.radius);
@@ -1138,13 +1295,15 @@ function recursiveFit(pts: Point2D[], start: number, end: number, tol: number, d
       //  - sweep > 5°  (not a degenerate sliver)
       //  - sagitta > tol  (genuinely curved — a line can't cover it)
       //  - radius < 5× diagonal (sanity cap)
+      //  - arc fit is substantially better than line (error < 50% of line deviation)
       //  - for near-full-circle sweeps (>340°), apply base tolerance to prevent
       //    egg/oval shapes from becoming circles via generous arcTol
       //  - TRAJECTORY VERIFIED: sampled arc points match real data points
       const sagitta = circFit.radius * (1 - Math.cos(Math.abs(sweep) / 2));
       const baseTolArc = Math.max(0.001, diag * 0.002);
       const nearFullCircle = sweepDeg > 340 && circFit.maxError > baseTolArc;
-      if (sweepDeg > 5 && sagitta > tol && circFit.radius < diag * 5 && !nearFullCircle) {
+      const arcBetterRL = circFit.maxError < maxDev * 0.5;
+      if (sweepDeg > 5 && sagitta > tol && circFit.radius < diag * 5 && !nearFullCircle && arcBetterRL) {
         if (verifyArcTrajectory(circFit.center, circFit.radius, sa, sweep, sub, tol)) {
           const startPt = projectOntoCircle(pts[start], circFit.center, circFit.radius);
           const endPt = projectOntoCircle(pts[end], circFit.center, circFit.radius);
@@ -1366,23 +1525,45 @@ function promoteArcsToCircles(entities: SketchEntity[], tol: number): SketchEnti
       continue;
     }
 
-    // Single arc > 355° → circle (matches Phase 0 angular span threshold)
-    if (Math.abs(sweepAngle(e)) * 180 / Math.PI > 355) {
-      const circle = makeArc(e.center, e.radius, 0, 2 * Math.PI, e.start, e.start);
-      circle.isFullCircle = true;
-      result.push(circle);
-      i++;
-      continue;
+    // Single arc > 340° with endpoints close together → circle
+    // Phase 0 uses a 355° angular-span threshold, but marching squares on small
+    // circles can produce gaps of 5-15° at pixel-aligned edges. This catches
+    // those near-complete arcs that Phase 0 missed.
+    const singleSweep = Math.abs(sweepAngle(e)) * 180 / Math.PI;
+    if (singleSweep > 340) {
+      const endpointGap = dist(e.start, e.end);
+      const expectedGap = 2 * e.radius * Math.sin((360 - singleSweep) / 2 * Math.PI / 180);
+      // If endpoints are close (within expected gap + tolerance), it's a circle
+      if (endpointGap < expectedGap + tol * 3 || singleSweep > 355) {
+        const circle = makeArc(e.center, e.radius, 0, 2 * Math.PI, e.start, e.start);
+        circle.isFullCircle = true;
+        result.push(circle);
+        i++;
+        continue;
+      }
     }
 
     // Try to collect a chain of arcs with similar center/radius
+    // Allow short lines to be interleaved (tessellation artifacts on circles)
     let chainEnd = i;
     let totalSweep = Math.abs(sweepAngle(e));
     let sumCx = e.center.x, sumCy = e.center.y, sumR = e.radius;
     let count = 1;
+    const chainArcIndices: number[] = [i];
 
     for (let j = i + 1; j < entities.length; j++) {
       const next = entities[j];
+      // Allow short lines if they connect arcs on the same circle
+      if (next.type === 'line') {
+        const lineLen = dist(next.start, next.end);
+        const avgR = sumR / count;
+        // Short line: length < 10% of avg radius or < 3× tolerance
+        if (lineLen < Math.max(avgR * 0.1, tol * 3)) {
+          chainEnd = j; // tentatively include
+          continue;
+        }
+        break;
+      }
       if (next.type !== 'arc' || next.isFullCircle) break;
       const avgCx = sumCx / count, avgCy = sumCy / count, avgR = sumR / count;
       const cd = dist(next.center, { x: avgCx, y: avgCy });
@@ -1396,17 +1577,19 @@ function promoteArcsToCircles(entities: SketchEntity[], tol: number): SketchEnti
       totalSweep += Math.abs(sweepAngle(next));
       sumCx += next.center.x; sumCy += next.center.y; sumR += next.radius;
       count++;
+      chainArcIndices.push(j);
     }
 
-    // Check if the chain (including wrap-around through other entities)
-    // spans enough of a circle
+    // Check if the chain spans enough of a circle
     const totalDeg = totalSweep * 180 / Math.PI;
-    if (totalDeg > 350 && count >= 2) {
-      // Fit a circle through all the start/end points
+    if (totalDeg > 330 && count >= 2) {
+      // FIX: Only use ARC endpoints for circle fit — interleaved lines
+      // are tessellation artifacts and their endpoints pollute the fit.
       const chainPts: Point2D[] = [];
-      for (let j = i; j <= chainEnd; j++) {
-        chainPts.push(entities[j].start);
-        chainPts.push(entities[j].end);
+      for (const idx of chainArcIndices) {
+        const arc = entities[idx] as SketchArc;
+        chainPts.push(arc.start);
+        chainPts.push(arc.end);
       }
       const fit = fitCircle(chainPts);
       if (fit) {

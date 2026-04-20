@@ -44,6 +44,7 @@ import { decompositionToScene, type ProfileToSdfResult } from './profile-to-sdf'
 import { fitContour, reconstructionError, type FittedSlice, type FittedContour } from './sketch-fitting';
 import type { GPUFittedPlane } from './gpu-cross-section';
 import type { ReconstructionResult } from './sketch-reconstruct';
+import { consolidateFeatures, toVizFeatures, type ConsolidationResult } from './feature-consolidation';
 
 // ── Types ──
 
@@ -159,9 +160,13 @@ interface ForgeState {
   // Continuous Sweep (barrido continuo)
   sweepResult: import('./gpu-cross-section').CrossAxisResult | null;
   sweeping: boolean;
+  sweepProgress: string;
   /** Continuous sweep: dense sampling on all 3 axes + cross-axis correlation */
   sweepModel: (modelIndex: number) => Promise<void>;
   clearSweep: () => void;
+
+  // ⚒️ Consolidated features (deduplicated manufacturing operations)
+  consolidation: ConsolidationResult | null;
 
   // 3D Reconstruction from fitted sketches
   reconstruction: ReconstructionResult | null;
@@ -245,6 +250,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   rendererRef: null,
   sweepResult: null,
   sweeping: false,
+  sweepProgress: '',
+  consolidation: null,
   reconstruction: null,
   reconstructing: false,
   machines: [],
@@ -928,7 +935,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       return;
     }
 
-    set({ sweeping: true });
+    set({ sweeping: true, sweepProgress: 'Iniciando barrido...' });
 
     try {
       model.threeGroup.updateMatrixWorld(true);
@@ -936,6 +943,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       const { fitContour, reconstructionError } = await import('./sketch-fitting');
 
       console.group('%c⚒️ FORGE SWEEP — Adaptive 3-Axis Bisection', 'color:#c9a84c;font-size:14px;font-weight:bold');
+      set({ sweepProgress: 'Phase 1: Barrido 3 ejes...' });
       const result = await gpuContinuousSweep(renderer, model.threeGroup, {
         sweepResolution: 512,
         onProgress: (phase, done, total) => {
@@ -992,10 +1000,12 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       }
 
       console.log(`⚒️ Generating ${representativePlanes.length} high-res slices from stable intervals...`);
+      set({ sweepProgress: `Phase 2: 0/${representativePlanes.length} planos...` });
 
-      // ── Phase 3: GPU slice + entity fitting at 2048 res ──
+      // ── Phase 3: GPU slice + entity fitting at 1024 res ──
       const gpuPlanes: import('./gpu-cross-section').GPUFittedPlane[] = [];
       const fitted: FittedSlice[] = [];
+      const t3 = performance.now();
 
       for (let pi = 0; pi < representativePlanes.length; pi++) {
         const rp = representativePlanes[pi];
@@ -1005,7 +1015,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
           label: rp.label,
         };
 
-        const sr = gpuSlice(renderer, model.threeGroup, plane, 2048);
+        const sr = gpuSlice(renderer, model.threeGroup, plane, 1024);
         if (sr.contours.length === 0) continue;
 
         const fittedContours: import('./gpu-cross-section').GPUFittedPlane['contours'] = [];
@@ -1030,18 +1040,33 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
           });
         }
 
-        // Yield every 3 planes
-        if (pi % 3 === 0) await new Promise(r => setTimeout(r, 0));
+        // Yield every 3 planes + update progress
+        if (pi % 3 === 0) {
+          set({ sweepProgress: `Phase 2: ${pi + 1}/${representativePlanes.length} planos...` });
+          await new Promise(r => setTimeout(r, 0));
+        }
       }
 
       const totalEntities = gpuPlanes.reduce((s, p) => s + p.entityCount, 0);
-      console.log(`⚒️ Done: ${gpuPlanes.length} planes, ${totalEntities} entities (${fitted.reduce((s, f) => s + f.contours.reduce((ss, c) => ss + c.entities.filter(e => e.type === 'line').length, 0), 0)}L + ${fitted.reduce((s, f) => s + f.contours.reduce((ss, c) => ss + c.entities.filter(e => e.type === 'arc').length, 0), 0)}A)`);
+      const t3end = performance.now();
+      console.log(`⚒️ Phase 3: ${gpuPlanes.length} planes, ${totalEntities} entities in ${(t3end - t3).toFixed(0)}ms`);
+
+      // ── Phase 4: Consolidate features ──
+      set({ sweepProgress: 'Phase 3: Consolidando...' });
+      const t4 = performance.now();
+      const consolidation = consolidateFeatures(fitted, diag);
+      const t4end = performance.now();
+      console.log(`⚒️ Phase 4: ${consolidation.stats.inputContours} contours → ${consolidation.stats.outputFeatures} features (${consolidation.stats.reductionRatio.toFixed(1)}× reduction) in ${(t4end - t4).toFixed(0)}ms`);
+      if (consolidation.patterns.length > 0) {
+        console.log(`⚒️ Patterns: ${consolidation.patterns.map(p => `${p.type}×${p.count}`).join(', ')}`);
+      }
       console.groupEnd();
 
       set({
         sweepResult: result,
         gpuFittedPlanes: gpuPlanes,
         fittedSlices: fitted,
+        consolidation,
         sweeping: false,
       });
     } catch (err) {

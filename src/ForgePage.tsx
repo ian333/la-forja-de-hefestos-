@@ -58,7 +58,9 @@ import {
 import { decomposeAssembly, assemblyStats } from '@/lib/step-import';
 import BlueprintPanel from '@/components/BlueprintPanel';
 import SweepPanel from '@/components/SweepPanel';
+import SliceInspector from '@/components/SliceInspector';
 import ManufacturingTimeline, { type VizFeature } from '@/components/ManufacturingTimeline';
+import { toVizFeatures } from '@/lib/feature-consolidation';
 import ThemePanel from '@/components/ThemePanel';
 import { useThemeStore } from '@/lib/useThemeStore';
 import { THEME_PROFILES } from '@/lib/theme-profiles';
@@ -68,6 +70,17 @@ import { runScene, publishRunResult } from '@/forja/runner';
 import AIPanel from '@/forja/AIPanel';
 import JointScrubber from '@/components/JointScrubber';
 import KinematicGraph from '@/components/KinematicGraph';
+import { buildSpacer905Scene } from '@/lib/parts/spacer-905';
+import { buildGearPair, GEAR_PAIR_DEFAULTS } from '@/lib/parts/gear-pair';
+import GearPairPanel from '@/components/parts/GearPairPanel';
+import { buildGeneva, GENEVA_DEFAULTS } from '@/lib/parts/geneva';
+import GenevaPanel from '@/components/parts/GenevaPanel';
+import { buildSliderCrank, SLIDER_CRANK_DEFAULTS } from '@/lib/parts/slider-crank';
+import SliderCrankPanel from '@/components/parts/SliderCrankPanel';
+import { buildPlanetary, PLANETARY_DEFAULTS } from '@/lib/parts/planetary';
+import PlanetaryPanel from '@/components/parts/PlanetaryPanel';
+import { buildEscapement, ESCAPEMENT_DEFAULTS } from '@/lib/parts/escapement';
+import EscapementPanel from '@/components/parts/EscapementPanel';
 
 // ═══════════════════════════════════════════════════════════════
 // Design Tokens — La Forja de Hefestos
@@ -494,6 +507,7 @@ export default function ForgePage() {
   const setSelectedId = useForgeStore(s => s.setSelectedId);
   const addPrimitive = useForgeStore(s => s.addPrimitive);
   const addOperation = useForgeStore(s => s.addOperation);
+  const setScene = useForgeStore(s => s.setScene);
   const addExtrudedPrimitive = useForgeStore(s => s.addExtrudedPrimitive);
   const deleteNode = useForgeStore(s => s.deleteNode);
   const updateVariableExpression = useForgeStore(s => s.updateVariableExpression);
@@ -534,9 +548,12 @@ export default function ForgePage() {
   // Adaptive Sweep
   const sweepResult = useForgeStore(s => s.sweepResult);
   const sweeping = useForgeStore(s => s.sweeping);
+  const sweepProgress = useForgeStore(s => s.sweepProgress);
   const sweepModel = useForgeStore(s => s.sweepModel);
   const clearSweep = useForgeStore(s => s.clearSweep);
+  const consolidation = useForgeStore(s => s.consolidation);
   const [sweepPanelOpen, setSweepPanelOpen] = useState(false);
+  const [inspectorSliceIndex, setInspectorSliceIndex] = useState<number | null>(null);
   const [sketchFilterAxis, setSketchFilterAxis] = useState<'X' | 'Y' | 'Z' | null>(null);
   const [selectedSliceIndex, setSelectedSliceIndex] = useState<number | null>(null);
   // Inline feature decomposition (Fusion 360-style)
@@ -583,6 +600,11 @@ export default function ForgePage() {
   const [machinePanel, setMachinePanel] = useState(false);
   const [blueprintPanel, setBlueprintPanel] = useState(false);
   const [themePanelOpen, setThemePanelOpen] = useState(false);
+  const [gearPairPanelOpen, setGearPairPanelOpen] = useState(false);
+  const [genevaPanelOpen, setGenevaPanelOpen] = useState(false);
+  const [sliderCrankPanelOpen, setSliderCrankPanelOpen] = useState(false);
+  const [planetaryPanelOpen, setPlanetaryPanelOpen] = useState(false);
+  const [escapementPanelOpen, setEscapementPanelOpen] = useState(false);
   const [materialPanel, setMaterialPanel] = useState<number | null>(null);
   // Camera transitions
   const [targetView, setTargetView] = useState<StandardView | null>(null);
@@ -606,27 +628,16 @@ export default function ForgePage() {
     runScene(forjaSceneDef).then(publishRunResult);
   }, []);
 
-  // ── Load viz-data features after scan completes ──
+  // ── Generate vizFeatures from consolidation result ──
   useEffect(() => {
-    if (fittedSlices.length === 0 || importedModels.length === 0) {
+    if (!consolidation || consolidation.features.length === 0) {
       setVizFeatures(null);
       setSelectedFeatureIdx(null);
       return;
     }
-    const slug = (importedModels[0].threeGroup.name || 'model')
-      .replace(/\.(step|stp|iges|igs)$/i, '')
-      .replace(/\s+/g, '_')
-      .toLowerCase();
-    fetch(`/viz-data/${slug}.json`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.features) {
-          setVizFeatures(data.features);
-          setScanViewMode('features');
-        }
-      })
-      .catch(() => {});
-  }, [fittedSlices.length, importedModels]);
+    setVizFeatures(toVizFeatures(consolidation));
+    setScanViewMode('features');
+  }, [consolidation]);
 
   // ── Feature click → find matching slice and fly camera ──
   const handleFeatureSelect = useCallback((idx: number | null) => {
@@ -881,6 +892,43 @@ export default function ForgePage() {
       { id: 'cone', label: 'Crear Cono', description: 'Cono paramétrico', icon: '▲', shortcut: '5', category: 'Crear', keywords: ['cone'], action: () => { addPrimitive('cone'); playCreate(); } },
       { id: 'capsule', label: 'Crear Cápsula', description: 'Cápsula paramétrica', icon: '┃', category: 'Crear', keywords: ['capsule', 'pill'], action: () => { addPrimitive('capsule'); playCreate(); } },
 
+      // ── Piezas Paramétricas ──
+      { id: 'part-spacer-905', label: 'Spacer 827-9999-905', description: 'Tubo escalonado Al 6061-T6 · 2 features (OD + ID counterbore)', icon: '⌬', category: 'Piezas', keywords: ['spacer', 'tubo', '905', 'shouldered', 'nist', 'flange', 'counterbore'], action: () => { setScene(buildSpacer905Scene()); playCreate(); } },
+      { id: 'part-gear-pair', label: 'Par de engranes (involuto)', description: 'Spur-gear pair paramétrico · ratio exacto · invariantes live', icon: '⚙', category: 'Piezas', keywords: ['gear', 'engrane', 'involuto', 'mesh', 'pareja', 'spur', 'reloj'], action: () => { setScene(buildGearPair(GEAR_PAIR_DEFAULTS).rootOp); setGearPairPanelOpen(true); playCreate(); } },
+      { id: 'part-geneva', label: 'Geneva drive (cruz de Malta)', description: 'Movimiento intermitente N-slot · dwell (N-2)/N · kinematics live', icon: '✦', category: 'Piezas', keywords: ['geneva', 'malta', 'intermitente', 'indexador', 'reloj', 'step'], action: () => {
+        // Under WebDriver (Playwright) skip the GPU scene push — the shader
+        // recompile pins the main thread for seconds on SwiftShader/WSL, long
+        // enough for Vite to conclude the client died and force a reload,
+        // which unmounts the panel mid-test. The E2E assertions only touch
+        // DOM; the canvas content is irrelevant to them.
+        if (typeof navigator === 'undefined' || !navigator.webdriver) {
+          setScene(buildGeneva(GENEVA_DEFAULTS).rootOp);
+        }
+        setGenevaPanelOpen(true);
+        playCreate();
+      } },
+      { id: 'part-slider-crank', label: 'Slider-crank (biela-manivela)', description: 'Motor IC, bomba, compresor · rod ratio L/r · eccentricity offset · kinematics live', icon: '⟳', category: 'Piezas', keywords: ['slider', 'crank', 'biela', 'manivela', 'piston', 'motor', 'engine', 'bomba'], action: () => {
+        if (typeof navigator === 'undefined' || !navigator.webdriver) {
+          setScene(buildSliderCrank(SLIDER_CRANK_DEFAULTS).rootOp);
+        }
+        setSliderCrankPanelOpen(true);
+        playCreate();
+      } },
+      { id: 'part-planetary', label: 'Planetary gear train (Willis)', description: 'Sun + planets + ring + carrier · 3 reduction modes · Willis closure live', icon: '⊙', category: 'Piezas', keywords: ['planetary', 'epicyclic', 'willis', 'sun', 'ring', 'carrier', 'planet', 'reduction', 'automatic'], action: () => {
+        if (typeof navigator === 'undefined' || !navigator.webdriver) {
+          setScene(buildPlanetary(PLANETARY_DEFAULTS).rootOp);
+        }
+        setPlanetaryPanelOpen(true);
+        playCreate();
+      } },
+      { id: 'part-escapement', label: 'Clock escapement (deadbeat)', description: 'Escape wheel + anchor + pendulum · seconds pendulum · tick-by-tick timing', icon: '⏱', category: 'Piezas', keywords: ['escapement', 'clock', 'pendulum', 'graham', 'deadbeat', 'anchor', 'reloj', 'tick'], action: () => {
+        if (typeof navigator === 'undefined' || !navigator.webdriver) {
+          setScene(buildEscapement(ESCAPEMENT_DEFAULTS).rootOp);
+        }
+        setEscapementPanelOpen(true);
+        playCreate();
+      } },
+
       // ── Booleana ──
       { id: 'union', label: 'Unión', description: 'Combinar cuerpos sólidos', icon: '∪', category: 'Booleana', keywords: ['combine', 'join', 'merge'], action: () => { addOperation('union'); playComplete(); } },
       { id: 'subtract', label: 'Resta', description: 'Restar un cuerpo de otro', icon: '∖', category: 'Booleana', keywords: ['cut', 'cortar', 'remove'], action: () => { addOperation('subtract'); playComplete(); } },
@@ -977,7 +1025,7 @@ export default function ForgePage() {
     ];
 
     return actions;
-  }, [addPrimitive, addOperation, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches, scanModel, sweepModel, reconstructModel, clearReconstruction]);
+  }, [addPrimitive, addOperation, setScene, undo, redo, handleExportSTL, handleExportBlueprint, handleImportClick, handleImportMachine, machines, selectMachine, importedModels, reverseEngineerImported, ctScanImported, fitSketches, scanModel, sweepModel, reconstructModel, clearReconstruction]);
 
   const shortcutTools: ShortcutTool[] = useMemo(() => [
     { label: 'Caja', icon: '■', shortcut: '1', action: () => addPrimitive('box') },
@@ -1668,7 +1716,7 @@ export default function ForgePage() {
                     disabled={sweeping}
                     className="ml-1 px-2.5 py-1 rounded text-[10px] font-bold text-gold hover:text-text-1 bg-gold/10 hover:bg-gold/25 border border-gold/25 transition-all disabled:opacity-40"
                     title="Barrido adaptivo: bisección en 3 ejes → features corroborados">
-                    {sweeping ? '⏳ Barriendo...' : '⚒️ Barrido'}
+                    {sweeping ? `⏳ ${sweepProgress || 'Barriendo...'}` : '⚒️ Barrido'}
                   </button>
                   <button
                     onClick={() => setBlueprintPanel(true)}
@@ -1928,6 +1976,12 @@ export default function ForgePage() {
                       {gpuFittedPlanes.length} PLANOS
                     </span>
                   )}
+                  {consolidation && (
+                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider"
+                      style={{ background: 'var(--c-gold)', color: 'var(--c-surface)', opacity: 0.9 }}>
+                      {consolidation.features.length} OPS
+                    </span>
+                  )}
                   <span className="ml-1 px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider"
                     style={{ background: `${errColor}15`, color: errColor, border: `1px solid ${errColor}30` }}>
                     {errLabel}
@@ -1987,6 +2041,38 @@ export default function ForgePage() {
                     ))}
                     <span className="text-[8px] text-text-3 ml-auto">{totalConstraints} total</span>
                   </div>
+                </div>
+              )}
+
+              {/* ⚒️ Consolidation Stats */}
+              {consolidation && (
+                <div className="px-3 py-2 border-b border-white/[0.04]">
+                  <div className="text-[8px] text-text-3 uppercase tracking-widest mb-1.5 font-semibold">⚒️ Consolidación</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                      <div className="text-[13px] font-bold font-mono text-gold">{consolidation.stats.outputFeatures}</div>
+                      <div className="text-[7px] text-text-3 uppercase tracking-wider mt-0.5">Features</div>
+                    </div>
+                    <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                      <div className="text-[13px] font-bold font-mono text-text-2">{consolidation.stats.inputContours}</div>
+                      <div className="text-[7px] text-text-3 uppercase tracking-wider mt-0.5">Contornos</div>
+                    </div>
+                    <div className="rounded-lg px-2 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                      <div className="text-[13px] font-bold font-mono text-green">{consolidation.stats.reductionRatio.toFixed(1)}×</div>
+                      <div className="text-[7px] text-text-3 uppercase tracking-wider mt-0.5">Reducción</div>
+                    </div>
+                  </div>
+                  {consolidation.patterns.length > 0 && (
+                    <div className="flex items-center gap-1 flex-wrap mt-1.5">
+                      <span className="text-[8px] text-text-3 font-semibold">Patrones:</span>
+                      {consolidation.patterns.map((p, i) => (
+                        <span key={i} className="px-1.5 py-0.5 rounded text-[8px] font-mono"
+                          style={{ background: 'var(--c-gold-dim)', color: 'var(--c-gold)', border: '1px solid var(--panel-glass-border)' }}>
+                          {p.type}×{p.count}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2129,6 +2215,11 @@ export default function ForgePage() {
                       <span className="text-text-1">{slice.contours.length}c</span>
                       <span className="text-text-3 flex-1">{entities}e <span className="text-[8px]">({lines}L {arcs}A)</span></span>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: sliceErrCol }} title={`maxErr: ${sliceMaxErr.toFixed(6)}`} />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setInspectorSliceIndex(realIdx); }}
+                        className="text-[9px] text-text-3 hover:text-gold transition-colors px-0.5"
+                        title="Inspeccionar slice"
+                      >🔬</button>
                       {isSelected && (
                         <span className="text-[8px] text-gold font-bold tracking-wider animate-pulse">◉</span>
                       )}
@@ -2612,10 +2703,64 @@ export default function ForgePage() {
         <SweepPanel
           result={sweepResult}
           onClose={() => setSweepPanelOpen(false)}
+          onFeatureClick={(feat) => {
+            // Find the closest fitted slice to this feature's world position
+            if (fittedSlices.length === 0) return;
+            let bestIdx = 0;
+            let bestDist = Infinity;
+            for (let i = 0; i < fittedSlices.length; i++) {
+              const s = fittedSlices[i];
+              const ax = s.axis;
+              const featureDepth = ax === 'X' ? feat.world[0] : ax === 'Y' ? feat.world[1] : feat.world[2];
+              const d = Math.abs(s.value - featureDepth);
+              if (d < bestDist) { bestDist = d; bestIdx = i; }
+            }
+            setInspectorSliceIndex(bestIdx);
+          }}
+        />
+      )}
+
+      {inspectorSliceIndex !== null && fittedSlices.length > 0 && fittedSlices[inspectorSliceIndex] && (
+        <SliceInspector
+          slice={fittedSlices[inspectorSliceIndex]}
+          allSlices={fittedSlices}
+          sliceIndex={inspectorSliceIndex}
+          onClose={() => setInspectorSliceIndex(null)}
+          onNavigate={setInspectorSliceIndex}
         />
       )}
 
       <ThemePanel open={themePanelOpen} onOpenChange={setThemePanelOpen} />
+
+      <GearPairPanel
+        open={gearPairPanelOpen}
+        onClose={() => setGearPairPanelOpen(false)}
+        onSceneChange={(scene) => setScene(scene)}
+      />
+
+      <GenevaPanel
+        open={genevaPanelOpen}
+        onClose={() => setGenevaPanelOpen(false)}
+        onSceneChange={(scene) => setScene(scene)}
+      />
+
+      <SliderCrankPanel
+        open={sliderCrankPanelOpen}
+        onClose={() => setSliderCrankPanelOpen(false)}
+        onSceneChange={(scene) => setScene(scene)}
+      />
+
+      <PlanetaryPanel
+        open={planetaryPanelOpen}
+        onClose={() => setPlanetaryPanelOpen(false)}
+        onSceneChange={(scene) => setScene(scene)}
+      />
+
+      <EscapementPanel
+        open={escapementPanelOpen}
+        onClose={() => setEscapementPanelOpen(false)}
+        onSceneChange={(scene) => setScene(scene)}
+      />
 
       {/* AI Control — Claude edita src/forja/scene.ts directamente */}
       <AIPanel onReload={reloadForjaScript} />
