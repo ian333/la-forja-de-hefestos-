@@ -81,6 +81,8 @@ import { buildPlanetary, PLANETARY_DEFAULTS } from '@/lib/parts/planetary';
 import PlanetaryPanel from '@/components/parts/PlanetaryPanel';
 import { buildEscapement, ESCAPEMENT_DEFAULTS } from '@/lib/parts/escapement';
 import EscapementPanel from '@/components/parts/EscapementPanel';
+import { buildClock, CLOCK_DEFAULTS } from '@/lib/parts/clock';
+import ClockPanel from '@/components/parts/ClockPanel';
 
 // ═══════════════════════════════════════════════════════════════
 // Design Tokens — La Forja de Hefestos
@@ -605,6 +607,7 @@ export default function ForgePage() {
   const [sliderCrankPanelOpen, setSliderCrankPanelOpen] = useState(false);
   const [planetaryPanelOpen, setPlanetaryPanelOpen] = useState(false);
   const [escapementPanelOpen, setEscapementPanelOpen] = useState(false);
+  const [clockPanelOpen, setClockPanelOpen] = useState(false);
   const [materialPanel, setMaterialPanel] = useState<number | null>(null);
   // Camera transitions
   const [targetView, setTargetView] = useState<StandardView | null>(null);
@@ -926,6 +929,13 @@ export default function ForgePage() {
           setScene(buildEscapement(ESCAPEMENT_DEFAULTS).rootOp);
         }
         setEscapementPanelOpen(true);
+        playCreate();
+      } },
+      { id: 'part-clock', label: 'Mechanical clock (capstone)', description: 'Escapement + compound gear train + 3 hands · tells real time · HH:MM:SS decoded from angles', icon: '🕰', category: 'Piezas', keywords: ['clock', 'mechanical', 'hands', 'hour', 'minute', 'second', 'capstone', 'reloj', 'peldaño 6'], action: () => {
+        if (typeof navigator === 'undefined' || !navigator.webdriver) {
+          setScene(buildClock(CLOCK_DEFAULTS).rootOp);
+        }
+        setClockPanelOpen(true);
         playCreate();
       } },
 
@@ -2759,6 +2769,12 @@ export default function ForgePage() {
       <EscapementPanel
         open={escapementPanelOpen}
         onClose={() => setEscapementPanelOpen(false)}
+        onSceneChange={(scene) => setScene(scene)}
+      />
+
+      <ClockPanel
+        open={clockPanelOpen}
+        onClose={() => setClockPanelOpen(false)}
         onSceneChange={(scene) => setScene(scene)}
       />
 
