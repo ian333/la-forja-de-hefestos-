@@ -28,6 +28,7 @@ import { GPUMDEngine, type GPUMDConfig, type GPUMDStats } from '@/lib/chem/quant
 import {
   RENDER_VERTEX_SHADER, RENDER_FRAGMENT_SHADER, SPECIES_PALETTE,
 } from './gpu-md-shaders';
+import StatisticsPanel from './StatisticsPanel';
 
 // ═══════════════════════════════════════════════════════════════
 // Engine owner — crea el engine con acceso al renderer y hace step
@@ -204,6 +205,16 @@ export default function GPUParticleSandbox({ height = 620 }: GPUParticleSandboxP
   const [displayStats, setDisplayStats] = useState<GPUMDStats | null>(null);
 
   const controllerRef = useRef<GPUSimControllerHandle | null>(null);
+  const engineRef = useRef<GPUMDEngine | null>(null);
+  const [showStats, setShowStats] = useState(true);
+
+  // Sync engineRef from controllerRef for StatisticsPanel
+  useEffect(() => {
+    const id = setInterval(() => {
+      engineRef.current = controllerRef.current?.engine ?? null;
+    }, 500);
+    return () => clearInterval(id);
+  }, []);
 
   // Config del engine — cambio de resolution triggereará re-init
   const config: GPUMDConfig = useMemo(() => {
@@ -379,7 +390,20 @@ export default function GPUParticleSandbox({ height = 620 }: GPUParticleSandboxP
             </div>
           );
         })}
+        <button
+          onClick={() => setShowStats((v) => !v)}
+          className="mt-1 text-[9px] text-[#64748B] hover:text-[#4FC3F7] transition font-mono"
+        >
+          {showStats ? 'Ocultar stats' : 'Mostrar stats'}
+        </button>
       </div>
+
+      {/* Panel de estadística física (izquierda, sobre la caja) */}
+      {showStats && (
+        <div className="absolute top-28 left-3 z-10">
+          <StatisticsPanel engineRef={engineRef} />
+        </div>
+      )}
 
       {/* Indicador de fase (gas/líquido/sólido) */}
       <div className="absolute bottom-24 left-3 bg-black/65 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-white/10">
