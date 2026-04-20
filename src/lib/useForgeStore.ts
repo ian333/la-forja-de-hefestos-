@@ -34,6 +34,9 @@ import {
 } from './gaia-variables';
 import { type ImportedModel, importCADFile } from './step-import';
 import { type MachineConfig, importMachineFile } from './machine-config';
+import { type Joint, clampDrive } from './joints';
+import { bakeJointTransforms, collectModules } from './joint-transforms';
+import { detectCollisions, rigidPairKeys } from './collisions';
 import { DEFAULT_SECTION, type SectionState, type SectionAxis } from './viewport/SectionPlane';
 import { type ReverseEngineeredModel, reverseEngineerModel, reverseEngineerAssembly } from './reverse-engineer';
 import { decomposeBySlicing, sliceMesh, type DecomposedFeatures, type SliceAxis } from './cross-section';
@@ -69,6 +72,12 @@ interface ForgeState {
 
   // Variables — every dimension is a named variable
   variables: GaiaVariable[];
+
+  // Joints — kinematic connections between modules (assembly)
+  joints: Joint[];
+  selectedJointId: string | null;
+  /** Module ids currently interpenetrating (non-rigid pairs only). */
+  collidingModuleIds: Set<string>;
 
   // Imported CAD models (STEP/IGES/BREP)
   importedModels: ImportedModel[];
@@ -181,6 +190,15 @@ interface ForgeState {
   removeVariable: (id: string) => void;
   syncVariablesToScene: () => void;
 
+  // Joint actions
+  addJoint: (joint: Joint) => void;
+  removeJoint: (id: string) => void;
+  renameJoint: (id: string, label: string) => void;
+  /** Set the drive value of a revolute/slider joint (clamped to limits). */
+  driveJoint: (id: string, value: number) => void;
+  setJoints: (joints: Joint[]) => void;
+  setSelectedJoint: (id: string | null) => void;
+
   // Section actions
   setSectionEnabled: (enabled: boolean) => void;
   setSectionAxis: (axis: SectionAxis) => void;
@@ -210,6 +228,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   selectedId: null,
   activeModuleId: null,
   variables: [],
+  joints: [],
+  selectedJointId: null,
+  collidingModuleIds: new Set<string>(),
   importedModels: [],
   importing: false,
   importError: null,
@@ -267,7 +288,11 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       return;
     }
     set({ meshing: true, meshQuality: q });
-    w.postMessage({ type: 'mesh', scene: state.scene, resolution: RESOLUTION[q] });
+    // Bake joint drives into the scene before meshing so worker ignores joints.
+    const baked = state.joints.length > 0
+      ? bakeJointTransforms(state.scene, state.joints)
+      : state.scene;
+    w.postMessage({ type: 'mesh', scene: baked, resolution: RESOLUTION[q] });
   },
 
   setSelectedId: (id) => set({ selectedId: id }),
@@ -334,7 +359,8 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const n = factories[type]();
     let newScene: SdfOperation;
 
-    // Priority: selectedId container > activeModuleId > root
+    // Unified Body/Component policy: every primitive lives inside a module.
+    // Priority: selectedId container > activeModuleId > auto-create "Cuerpo N".
     const targetId = (() => {
       if (state.selectedId) {
         const sel = findNode(state.scene, state.selectedId);
@@ -344,10 +370,19 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         const mod = findNode(state.scene, state.activeModuleId);
         if (mod && isContainer(mod)) return state.activeModuleId;
       }
-      return state.scene.id;
+      return null; // signal: create a fresh module
     })();
 
-    newScene = addChildToNode(state.scene, targetId, n) as SdfOperation;
+    if (targetId) {
+      newScene = addChildToNode(state.scene, targetId, n) as SdfOperation;
+    } else {
+      // Auto-wrap: create a new module "Cuerpo N" and place the primitive inside.
+      const bodyCount = state.scene.children.filter(c => c.kind === 'module').length;
+      const mod = makeModule(`Cuerpo ${bodyCount + 1}`);
+      mod.children = [n];
+      newScene = { ...state.scene, children: [...state.scene.children, mod] } as SdfOperation;
+      set({ activeModuleId: mod.id });
+    }
 
     set({ ...pushHistory(state, newScene), selectedId: n.id });
 
@@ -1229,6 +1264,37 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
   removeVariable: (id) => {
     set(s => ({ variables: s.variables.filter(v => v.id !== id) }));
   },
+
+  // ── Joint Actions ──
+
+  addJoint: (joint) => set(s => ({ joints: [...s.joints, joint] })),
+
+  removeJoint: (id) => set(s => ({ joints: s.joints.filter(j => j.id !== id) })),
+
+  renameJoint: (id, label) => set(s => ({
+    joints: s.joints.map(j => j.id === id ? { ...j, label } : j),
+  })),
+
+  driveJoint: (id, value) => {
+    set(s => ({
+      joints: s.joints.map(j => {
+        if (j.id !== id) return j;
+        if (j.type === 'rigid') return j;
+        return { ...j, drive: clampDrive(j, value) };
+      }),
+    }));
+    // Bake, mesh, and detect collisions on the new configuration.
+    const st = get();
+    const baked = bakeJointTransforms(st.scene, st.joints);
+    const modules = collectModules(baked);
+    const colliding = detectCollisions(baked, modules, rigidPairKeys(st.joints));
+    set({ collidingModuleIds: colliding });
+    get().requestMesh('draft'); // low-res during scrub for responsiveness
+  },
+
+  setJoints: (joints) => set({ joints }),
+
+  setSelectedJoint: (id) => set({ selectedJointId: id }),
 
   syncVariablesToScene: () => {
     const state = get();

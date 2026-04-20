@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="4567" viewBox="0 0 1200 4567">
+<rect width="100%" height="100%" fill="#1a1a2e"/>
+<text x="10" y="18" fill="#888" font-size="11" font-family="monospace">nist_ctc_01_asme1_ap242-e1 — contour #10 — +Y d3/3=-118.04</text>
+<text x="10" y="32" fill="#888" font-size="11" font-family="monospace">51 pts → 4 entities (tol=0.5449, diag=272.43)</text>
+<text x="10" y="46" fill="#ff4444" font-size="11" font-family="monospace">maxErr=10.5839 avgErr=2.9837 highErrPts=29/51</text>
+<text x="10" y="60" fill="#888" font-size="11" font-family="monospace">3 lines, 1 arcs, 0 circles</text>
+<line x1="824.97" y1="259.61" x2="989.13" y2="4356.10" stroke="#e0e0e0" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="824.97" cy="259.61" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="989.13" cy="4356.10" r="3" fill="#00ccff" opacity="0.7"/>
+<line x1="989.13" y1="4356.10" x2="210.34" y2="4356.10" stroke="#e0e0e0" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="989.13" cy="4356.10" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="210.34" cy="4356.10" r="3" fill="#00ccff" opacity="0.7"/>
+<line x1="210.34" y1="4356.10" x2="211.04" y2="372.62" stroke="#e0e0e0" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="210.34" cy="4356.10" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="211.04" cy="372.62" r="3" fill="#00ccff" opacity="0.7"/>
+<path d="M 211.04 372.62 A 312.75 312.75 0 0 0 824.97 259.61" fill="none" stroke="#cc44ff" stroke-width="2" stroke-opacity="0.8"/>
+<circle cx="211.04" cy="372.62" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="824.97" cy="259.61" r="3" fill="#00ccff" opacity="0.7"/>
+<circle cx="210.90" cy="4339.39" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="210.90" cy="4338.14" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="210.90" cy="1899.20" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="1880.04" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="1878.89" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="1854.52" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="1852.92" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="1509.45" r="1.5" fill="rgb(0,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="1499.80" r="1.5" fill="rgb(0,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="1489.83" r="1.5" fill="rgb(0,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="379.91" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="373.02" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="365.14" r="1.5" fill="rgb(45,105,82)" opacity="0.4"/>
+<circle cx="210.90" cy="210.50" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="215.9" y="207.5" fill="#ff4444" font-size="8" font-family="monospace">10.471</text>
+<circle cx="823.83" cy="246.58" r="4" fill="rgb(79,88,69)" opacity="0.9"/>
+<circle cx="989.10" cy="256.31" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="253.31" fill="#ff4444" font-size="8" font-family="monospace">10.584</text>
+<circle cx="989.10" cy="341.85" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="338.85" fill="#ff4444" font-size="8" font-family="monospace">10.380</text>
+<circle cx="989.10" cy="346.21" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="343.21" fill="#ff4444" font-size="8" font-family="monospace">10.369</text>
+<circle cx="989.10" cy="350.02" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="347.02" fill="#ff4444" font-size="8" font-family="monospace">10.359</text>
+<circle cx="989.10" cy="1559.88" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1556.88" fill="#ff4444" font-size="8" font-family="monospace">7.230</text>
+<circle cx="989.10" cy="1565.39" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1562.39" fill="#ff4444" font-size="8" font-family="monospace">7.216</text>
+<circle cx="989.10" cy="1570.73" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1567.73" fill="#ff4444" font-size="8" font-family="monospace">7.202</text>
+<circle cx="989.10" cy="1575.49" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1572.49" fill="#ff4444" font-size="8" font-family="monospace">7.189</text>
+<circle cx="989.10" cy="1660.75" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1657.75" fill="#ff4444" font-size="8" font-family="monospace">6.969</text>
+<circle cx="989.10" cy="1742.54" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1739.54" fill="#ff4444" font-size="8" font-family="monospace">6.757</text>
+<circle cx="989.10" cy="1747.48" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1744.48" fill="#ff4444" font-size="8" font-family="monospace">6.745</text>
+<circle cx="989.10" cy="1826.17" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1823.17" fill="#ff4444" font-size="8" font-family="monospace">6.541</text>
+<circle cx="989.10" cy="1895.23" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="1892.23" fill="#ff4444" font-size="8" font-family="monospace">6.362</text>
+<circle cx="989.10" cy="2027.54" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="2024.54" fill="#ff4444" font-size="8" font-family="monospace">6.020</text>
+<circle cx="989.10" cy="2120.78" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="2117.78" fill="#ff4444" font-size="8" font-family="monospace">5.779</text>
+<circle cx="989.10" cy="3123.57" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="3120.57" fill="#ff4444" font-size="8" font-family="monospace">3.186</text>
+<circle cx="989.10" cy="3168.27" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="3165.27" fill="#ff4444" font-size="8" font-family="monospace">3.070</text>
+<circle cx="989.10" cy="3215.08" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="3212.08" fill="#ff4444" font-size="8" font-family="monospace">2.949</text>
+<circle cx="989.10" cy="3236.00" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="3233" fill="#ff4444" font-size="8" font-family="monospace">2.895</text>
+<circle cx="989.10" cy="3281.64" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="3278.64" fill="#ff4444" font-size="8" font-family="monospace">2.777</text>
+<circle cx="989.10" cy="3301.47" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="994.1" y="3298.47" fill="#ff4444" font-size="8" font-family="monospace">2.726</text>
+<circle cx="989.10" cy="3343.23" r="4" fill="rgb(245,5,4)" opacity="0.9"/>
+<text x="994.1" y="3340.23" fill="#ff4444" font-size="8" font-family="monospace">2.618</text>
+<circle cx="989.10" cy="3991.68" r="4" fill="rgb(88,83,65)" opacity="0.9"/>
+<circle cx="989.10" cy="4019.55" r="4" fill="rgb(81,87,68)" opacity="0.9"/>
+<circle cx="989.10" cy="4044.01" r="4" fill="rgb(75,90,70)" opacity="0.9"/>
+<circle cx="989.10" cy="4063.59" r="4" fill="rgb(71,92,72)" opacity="0.9"/>
+<circle cx="989.10" cy="4077.36" r="4" fill="rgb(67,94,74)" opacity="0.9"/>
+<circle cx="989.10" cy="4356.10" r="1.5" fill="rgb(0,127,100)" opacity="0.4"/>
+<circle cx="835.18" cy="4356.10" r="1.5" fill="rgb(0,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="4356.10" r="1.5" fill="rgb(0,127,100)" opacity="0.4"/>
+<circle cx="210.90" cy="4344.96" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="210.90" cy="4344.23" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="210.90" cy="4343.25" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="210.90" cy="4342.06" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="210.90" cy="4340.74" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="210.90" cy="4339.39" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<text x="913.05" y="2310.855" fill="#666" font-size="9" font-family="monospace">#0</text>
+<text x="605.735" y="4359.1" fill="#666" font-size="9" font-family="monospace">#1</text>
+<text x="216.69" y="2367.36" fill="#666" font-size="9" font-family="monospace">#2</text>
+<text x="463.21" y="-12.74" fill="#666" font-size="9" font-family="monospace">#3</text>
+</svg>

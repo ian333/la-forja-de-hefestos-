@@ -15,6 +15,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { compileScene, GLSL_LIB, isPrimitive } from './sdf-engine';
+import { bakeJointTransforms } from './joint-transforms';
 import type { SdfOperation } from './sdf-engine';
 import { useForgeStore } from './useForgeStore';
 import { useThemeStore, selectMaterial, selectViewport } from './useThemeStore';
@@ -301,6 +302,7 @@ const _vpMat = new THREE.Matrix4();
 
 export default function RayMarchMesh() {
   const scene = useForgeStore(s => s.scene);
+  const joints = useForgeStore(s => s.joints);
   const section = useForgeStore(s => s.section);
   const themeMat = useThemeStore(selectMaterial);
   const themeVp  = useThemeStore(selectViewport);
@@ -317,8 +319,12 @@ export default function RayMarchMesh() {
   const isEmpty = !isPrimitive(scene)
     && (scene as SdfOperation).children.length === 0;
 
-  // Compile scene → GLSL map()
-  const sceneGlsl = useMemo(() => compileScene(scene), [scene]);
+  // Bake joint drives into the scene, then compile to GLSL map().
+  // joints.length short-circuits: no joints = no baking allocation.
+  const sceneGlsl = useMemo(() => {
+    const baked = joints.length > 0 ? bakeJointTransforms(scene, joints) : scene;
+    return compileScene(baked);
+  }, [scene, joints]);
 
   // (Re)create material whenever GLSL changes
   useEffect(() => {

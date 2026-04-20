@@ -19,7 +19,8 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRianStore } from '@/lib/rian/rian-store';
-import { rian, type RianStatus } from '@/lib/rian/rian-client';
+import { rian, type RianStatus, type RianGeometry } from '@/lib/rian/rian-client';
+import { pca3d, type Pca3dResult } from '@/lib/rian/pca3d';
 
 const RIAN_URL =
   (import.meta.env.VITE_RIAN_URL as string | undefined) ?? 'http://127.0.0.1:9876/rpc';
@@ -338,6 +339,13 @@ export default function BrainView() {
   const [lastPrefix, setLastPrefix] = useState<string[]>([]);
   const [lastTokens, setLastTokens] = useState<string[]>([]);
   const [brainStatus, setBrainStatus] = useState<RianStatus | null>(null);
+  /** Frozen reservoir geometry (positions, omega, modules). Fetched once per
+   *  brain open — never changes unless the brain is re-created. */
+  const [geom, setGeom] = useState<RianGeometry | null>(null);
+  const [geomPca, setGeomPca] = useState<Pca3dResult | null>(null);
+  /** 'module' = tetraedral fake layout (each module is a blob); 'real' = the
+   *  actual reservoir positions projected to 3D via PCA of n_dim space. */
+  const [layoutMode, setLayoutMode] = useState<'module' | 'real'>('module');
   const [injectFlash, setInjectFlash] = useState(0); // t wall-clock of last inject
 
   /** Rolling history of R_glob + R_mod[] for the top timeline strip. */
@@ -494,12 +502,40 @@ export default function BrainView() {
     historyRef.current = { g: [], m: [], wall: [] };
     pairsHistRef.current = [];
     setHistTick((t) => t + 1);
+    setGeom(null);
+    setGeomPca(null);
   }, [brain]);
 
+  // Fetch real geometry once the brain is online. Positions are frozen so one
+  // call per brain open is enough; PCA happens here (not in a worker) because
+  // n_dim is tiny (≤64) and N≤few thousand → < 20ms on a cold run.
+  useEffect(() => {
+    if (conn !== 'online') return;
+    let alive = true;
+    rian.geometry(brain)
+      .then((g) => {
+        if (!alive) return;
+        setGeom(g);
+        setGeomPca(pca3d(g.positions, g.n_res, g.n_dim));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [brain, conn]);
+
   const layout = useMemo(() => {
+    if (layoutMode === 'real' && geomPca && geom) {
+      // Rescale PCA output so the cloud fills roughly the same volume as the
+      // tetraedral layout (diag ≈ 5), otherwise the camera framing is off.
+      const src = geomPca.xyz;
+      const target = 3.6;
+      const scale = geomPca.diag > 1e-6 ? target / geomPca.diag : 1;
+      const out = new Float32Array(src.length);
+      for (let i = 0; i < src.length; i++) out[i] = src[i] * scale;
+      return out;
+    }
     if (!pulse?.modules || !pulse?.R_mod) return null;
     return buildLayout(pulse.modules, pulse.R_mod.length);
-  }, [pulse?.modules, pulse?.R_mod?.length]);
+  }, [layoutMode, geomPca, geom, pulse?.modules, pulse?.R_mod?.length]);
 
   const phases = useMemo(() => {
     if (!pulse?.theta) return null;
@@ -664,7 +700,9 @@ export default function BrainView() {
         <directionalLight position={[5, 8, 5]} intensity={0.6} />
         <OrbitControls enableDamping dampingFactor={0.1} />
         <axesHelper args={[3]} />
-        {pulse?.R_mod && <ModuleRings R_mod={pulse.R_mod} R_glob={pulse.R_glob} />}
+        {pulse?.R_mod && layoutMode === 'module' && (
+          <ModuleRings R_mod={pulse.R_mod} R_glob={pulse.R_glob} />
+        )}
         {layout && phases && phases.length === layout.length / 3 && (
           <ReservoirPoints positions={layout} phases={phases} />
         )}
@@ -728,6 +766,37 @@ export default function BrainView() {
               ))}
             </select>
           </div>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <span className="text-zinc-500">layout</span>
+            <div className="flex overflow-hidden rounded border border-zinc-700 font-mono text-[10px]">
+              <button
+                type="button"
+                onClick={() => setLayoutMode('module')}
+                className={`px-2 py-0.5 ${layoutMode === 'module' ? 'bg-amber-500/20 text-amber-200' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'}`}
+                title="Tetraedral blobs, one per module (original)"
+              >
+                module
+              </button>
+              <button
+                type="button"
+                onClick={() => setLayoutMode('real')}
+                disabled={!geomPca}
+                className={`px-2 py-0.5 ${layoutMode === 'real' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed'}`}
+                title={geomPca
+                  ? `Real n_dim=${geom?.n_dim} positions projected via PCA (${(geomPca.variance_explained * 100).toFixed(0)}% variance)`
+                  : 'waiting for geometry…'}
+              >
+                real · PCA
+              </button>
+            </div>
+          </div>
+          {layoutMode === 'real' && geomPca && (
+            <Row
+              k="var. expl."
+              v={`${(geomPca.variance_explained * 100).toFixed(1)}%`}
+              color="text-emerald-200"
+            />
+          )}
         </LabSection>
 
         {/* Live dynamics */}

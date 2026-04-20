@@ -30,6 +30,17 @@ export interface RianPulse {
   modules?: number[];
 }
 
+/** Frozen reservoir geometry — constant for the lifetime of an open brain.
+ *  `positions` is row-major N×D (N=n_res, D=n_dim); client projects to 3D. */
+export interface RianGeometry {
+  n_res: number;
+  n_dim: number;
+  n_modules: number;
+  positions: number[];
+  omega: number[];
+  modules: number[];
+}
+
 export interface RianBrainConfig {
   n_input?: number;
   n_res?: number;
@@ -136,6 +147,20 @@ export const rian = {
       R_glob: r.R_glob,
       R_mod: r.R_mod,
       theta: r.theta,
+      modules: r.modules,
+    };
+  },
+
+  async geometry(brain: string): Promise<RianGeometry> {
+    const r = await rpc<
+      { ok: boolean } & RianGeometry
+    >({ cmd: 'geometry', brain });
+    return {
+      n_res: r.n_res,
+      n_dim: r.n_dim,
+      n_modules: r.n_modules,
+      positions: r.positions,
+      omega: r.omega,
       modules: r.modules,
     };
   },

@@ -104,11 +104,17 @@ const SKETCH_PLANE_CFG: Record<SketchPlane, {
   YZ: { rotation: [0, 0, Math.PI / 2],  color: '#c9a84c', axisLabel: 'YZ' },
 };
 
-function SketchPlaneOverlay({ plane }: { plane: SketchPlane }) {
+function SketchPlaneOverlay({ plane, offset = 0 }: { plane: SketchPlane; offset?: number }) {
   const cfg = SKETCH_PLANE_CFG[plane];
   const [r, g, b] = new THREE.Color(cfg.color).toArray();
+  // Offset the entire overlay group along the plane normal so the grid
+  // sits on the picked face, not at origin.
+  const pos: [number, number, number] =
+    plane === 'XY' ? [0, 0, offset] :
+    plane === 'XZ' ? [0, offset, 0] :
+                     [offset, 0, 0]; // YZ
   return (
-    <group rotation={new THREE.Euler(...cfg.rotation)}>
+    <group position={pos} rotation={new THREE.Euler(...cfg.rotation)}>
       {/* Fine grid — front side */}
       <Grid
         args={[200, 200]}
@@ -295,6 +301,8 @@ export interface ForgeViewportProps {
   onFps?: (fps: number) => void;
   className?: string;
   sketchPlane?: SketchPlane | null;
+  /** Offset along plane normal (when sketch-on-face picks a non-origin face) */
+  sketchPlaneOffset?: number;
   sketchTool?: SketchTool | null;
   sketchShapes?: SketchShape[];
   onSketchShapeAdd?: (shape: SketchShape) => void;
@@ -315,7 +323,7 @@ export interface ForgeViewportProps {
 }
 
 export default function ForgeViewport({
-  onFps, className, sketchPlane,
+  onFps, className, sketchPlane, sketchPlaneOffset = 0,
   sketchTool, sketchShapes, onSketchShapeAdd,
   onSketchDrawingChange, onSketchCursorMove,
   targetView, onViewTransitionComplete,
@@ -342,12 +350,13 @@ export default function ForgeViewport({
 
         {/* Grid & Axes */}
         <ForgeGrid />
-        {sketchPlane && <SketchPlaneOverlay plane={sketchPlane} />}
+        {sketchPlane && <SketchPlaneOverlay plane={sketchPlane} offset={sketchPlaneOffset} />}
 
         {/* In-viewport sketch drawing */}
         {sketchPlane && sketchTool && onSketchShapeAdd && (
           <SketchInViewport
             plane={sketchPlane}
+            offset={sketchPlaneOffset}
             tool={sketchTool}
             shapes={sketchShapes ?? []}
             onShapeAdd={onSketchShapeAdd}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="5568" viewBox="0 0 1200 5568">
+<rect width="100%" height="100%" fill="#1a1a2e"/>
+<text x="10" y="18" fill="#888" font-size="11" font-family="monospace">nist_ctc_01_asme1_ap242-e1 — contour #41 — +Z=-25.00</text>
+<text x="10" y="32" fill="#888" font-size="11" font-family="monospace">7 pts → 2 entities (tol=0.0989, diag=49.46)</text>
+<text x="10" y="46" fill="#44ff44" font-size="11" font-family="monospace">maxErr=0.0233 avgErr=0.0065 highErrPts=0/7</text>
+<text x="10" y="60" fill="#888" font-size="11" font-family="monospace">2 lines, 0 arcs, 0 circles</text>
+<line x1="944.67" y1="5312.79" x2="944.67" y2="668.82" stroke="#e0e0e0" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="944.67" cy="5312.79" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="944.67" cy="668.82" r="3" fill="#00ccff" opacity="0.7"/>
+<line x1="944.67" y1="668.82" x2="255.30" y2="254.99" stroke="#e0e0e0" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="944.67" cy="668.82" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="255.30" cy="254.99" r="3" fill="#00ccff" opacity="0.7"/>
+<circle cx="944.79" cy="5312.79" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="944.79" cy="991.84" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="944.79" cy="668.82" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="644.14" cy="489.54" r="1.5" fill="rgb(5,125,98)" opacity="0.4"/>
+<circle cx="595.67" cy="462.12" r="1.5" fill="rgb(12,121,95)" opacity="0.4"/>
+<circle cx="276.31" cy="268.24" r="1.5" fill="rgb(3,126,99)" opacity="0.4"/>
+<circle cx="255.21" cy="255.43" r="1.5" fill="rgb(2,126,99)" opacity="0.4"/>
+<text x="950.67" y="2993.805" fill="#666" font-size="9" font-family="monospace">#0</text>
+<text x="605.985" y="464.90500000000003" fill="#666" font-size="9" font-family="monospace">#1</text>
+</svg>

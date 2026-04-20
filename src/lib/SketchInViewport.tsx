@@ -25,6 +25,8 @@ export type SketchTool = 'rect' | 'circle';
 
 interface Props {
   plane: SketchPlane;
+  /** Offset along the plane normal (world units). 0 = sketch on origin plane. */
+  offset?: number;
   tool: SketchTool;
   shapes: SketchShape[];
   onShapeAdd: (shape: SketchShape) => void;
@@ -60,32 +62,37 @@ function to2D(v: THREE.Vector3, p: SketchPlane): [number, number] {
   }
 }
 
-function to3D(x: number, y: number, p: SketchPlane): [number, number, number] {
+/**
+ * Map 2D sketch coords to world 3D, with optional offset along the plane
+ * normal. `E` is a sub-millimeter anti-z-fighting nudge so lines sit above
+ * the grid.
+ */
+function to3D(x: number, y: number, p: SketchPlane, offset = 0): [number, number, number] {
   switch (p) {
-    case 'XY': return [x, y, E];
-    case 'XZ': return [x, E, y];
-    case 'YZ': return [E, x, y];
+    case 'XY': return [x, y, offset + E];
+    case 'XZ': return [x, offset + E, y];
+    case 'YZ': return [offset + E, x, y];
   }
 }
 
 // ── Geometry generators ──
 
-function rectPts(cx: number, cy: number, w: number, h: number, p: SketchPlane): [number, number, number][] {
+function rectPts(cx: number, cy: number, w: number, h: number, p: SketchPlane, off = 0): [number, number, number][] {
   const hw = w / 2, hh = h / 2;
   return [
-    to3D(cx - hw, cy - hh, p),
-    to3D(cx + hw, cy - hh, p),
-    to3D(cx + hw, cy + hh, p),
-    to3D(cx - hw, cy + hh, p),
-    to3D(cx - hw, cy - hh, p), // close loop
+    to3D(cx - hw, cy - hh, p, off),
+    to3D(cx + hw, cy - hh, p, off),
+    to3D(cx + hw, cy + hh, p, off),
+    to3D(cx - hw, cy + hh, p, off),
+    to3D(cx - hw, cy - hh, p, off), // close loop
   ];
 }
 
-function circlePts(cx: number, cy: number, r: number, p: SketchPlane): [number, number, number][] {
+function circlePts(cx: number, cy: number, r: number, p: SketchPlane, off = 0): [number, number, number][] {
   const pts: [number, number, number][] = [];
   for (let i = 0; i <= CSEG; i++) {
     const a = (i / CSEG) * Math.PI * 2;
-    pts.push(to3D(cx + r * Math.cos(a), cy + r * Math.sin(a), p));
+    pts.push(to3D(cx + r * Math.cos(a), cy + r * Math.sin(a), p, off));
   }
   return pts;
 }
@@ -136,7 +143,7 @@ function SketchLine({ points, color, opacity = 1 }: {
 // ── Main component ──
 
 export default function SketchInViewport({
-  plane, tool, shapes, onShapeAdd, onDrawingChange, onCursorMove,
+  plane, offset = 0, tool, shapes, onShapeAdd, onDrawingChange, onCursorMove,
 }: Props) {
   const { camera, gl } = useThree();
   const [drawStart, setDrawStart] = useState<[number, number] | null>(null);
@@ -162,7 +169,8 @@ export default function SketchInViewport({
   useEffect(() => {
     const canvas = gl.domElement;
     const rc = new THREE.Raycaster();
-    const p3 = new THREE.Plane(getPlaneNormal(plane), 0);
+    // THREE.Plane constant = -dot(normal, point-on-plane); here point = normal * offset
+    const p3 = new THREE.Plane(getPlaneNormal(plane), -offset);
 
     const hit = (e: PointerEvent): [number, number] | null => {
       const rect = canvas.getBoundingClientRect();
@@ -235,7 +243,7 @@ export default function SketchInViewport({
       canvas.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
-  }, [gl, camera, plane]);
+  }, [gl, camera, plane, offset]);
 
   // ── Computed: preview shape while drawing ──
   const preview = useMemo((): [number, number, number][] | null => {
@@ -245,13 +253,13 @@ export default function SketchInViewport({
       const w = Math.abs(cx - drawStart[0]);
       const h = Math.abs(cy - drawStart[1]);
       if (w < 0.01 && h < 0.01) return null;
-      return rectPts((drawStart[0] + cx) / 2, (drawStart[1] + cy) / 2, w, h, plane);
+      return rectPts((drawStart[0] + cx) / 2, (drawStart[1] + cy) / 2, w, h, plane, offset);
     } else {
       const r = Math.sqrt((cx - drawStart[0]) ** 2 + (cy - drawStart[1]) ** 2);
       if (r < 0.01) return null;
-      return circlePts(drawStart[0], drawStart[1], r, plane);
+      return circlePts(drawStart[0], drawStart[1], r, plane, offset);
     }
-  }, [drawStart, cursor, tool, plane]);
+  }, [drawStart, cursor, tool, plane, offset]);
 
   // ── Computed: preview dimension labels ──
   const prevDims = useMemo(() => {
@@ -264,25 +272,25 @@ export default function SketchInViewport({
       const mcx = (drawStart[0] + cx) / 2;
       const mcy = (drawStart[1] + cy) / 2;
       return [
-        { pos: to3D(mcx, mcy + h / 2 + 0.3, plane), text: w.toFixed(2) },
-        { pos: to3D(mcx + w / 2 + 0.4, mcy, plane), text: h.toFixed(2) },
+        { pos: to3D(mcx, mcy + h / 2 + 0.3, plane, offset), text: w.toFixed(2) },
+        { pos: to3D(mcx + w / 2 + 0.4, mcy, plane, offset), text: h.toFixed(2) },
       ];
     } else {
       const r = Math.sqrt((cx - drawStart[0]) ** 2 + (cy - drawStart[1]) ** 2);
       if (r < 0.05) return [];
-      return [{ pos: to3D(drawStart[0] + r / 2, drawStart[1] + 0.3, plane), text: `R${r.toFixed(2)}` }];
+      return [{ pos: to3D(drawStart[0] + r / 2, drawStart[1] + 0.3, plane, offset), text: `R${r.toFixed(2)}` }];
     }
-  }, [drawStart, cursor, tool, plane]);
+  }, [drawStart, cursor, tool, plane, offset]);
 
   // ── Computed: cursor crosshair line points ──
   const cursorLines = useMemo(() => {
     const [x, y] = cursor;
     const s = 0.18;
     return {
-      h: [to3D(x - s, y, plane), to3D(x + s, y, plane)],
-      v: [to3D(x, y - s, plane), to3D(x, y + s, plane)],
+      h: [to3D(x - s, y, plane, offset), to3D(x + s, y, plane, offset)],
+      v: [to3D(x, y - s, plane, offset), to3D(x, y + s, plane, offset)],
     };
-  }, [cursor, plane]);
+  }, [cursor, plane, offset]);
 
   // ── Render ──
   return (
@@ -292,7 +300,7 @@ export default function SketchInViewport({
       <SketchLine points={cursorLines.v} color={color} opacity={0.6} />
 
       {/* Snap dot */}
-      <mesh position={to3D(cursor[0], cursor[1], plane)} renderOrder={1000}>
+      <mesh position={to3D(cursor[0], cursor[1], plane, offset)} renderOrder={1000}>
         <sphereGeometry args={[0.035, 8, 8]} />
         <meshBasicMaterial color={color} depthTest={false} />
       </mesh>
@@ -303,19 +311,19 @@ export default function SketchInViewport({
           const r = s as SketchRect;
           return (
             <group key={s.id}>
-              <SketchLine points={rectPts(r.cx, r.cy, r.width, r.height, plane)} color={color} />
-              <Dim position={to3D(r.cx, r.cy + r.height / 2 + 0.25, plane)} text={r.width.toFixed(2)} color={color} />
-              <Dim position={to3D(r.cx + r.width / 2 + 0.3, r.cy, plane)} text={r.height.toFixed(2)} color={color} />
+              <SketchLine points={rectPts(r.cx, r.cy, r.width, r.height, plane, offset)} color={color} />
+              <Dim position={to3D(r.cx, r.cy + r.height / 2 + 0.25, plane, offset)} text={r.width.toFixed(2)} color={color} />
+              <Dim position={to3D(r.cx + r.width / 2 + 0.3, r.cy, plane, offset)} text={r.height.toFixed(2)} color={color} />
             </group>
           );
         } else {
           const c = s as SketchCircle;
           return (
             <group key={s.id}>
-              <SketchLine points={circlePts(c.cx, c.cy, c.radius, plane)} color={color} />
+              <SketchLine points={circlePts(c.cx, c.cy, c.radius, plane, offset)} color={color} />
               {/* Radius line (dashed via lower opacity) */}
-              <SketchLine points={[to3D(c.cx, c.cy, plane), to3D(c.cx + c.radius, c.cy, plane)]} color={color} opacity={0.4} />
-              <Dim position={to3D(c.cx + c.radius / 2, c.cy + 0.25, plane)} text={`R${c.radius.toFixed(2)}`} color={color} />
+              <SketchLine points={[to3D(c.cx, c.cy, plane, offset), to3D(c.cx + c.radius, c.cy, plane, offset)]} color={color} opacity={0.4} />
+              <Dim position={to3D(c.cx + c.radius / 2, c.cy + 0.25, plane, offset)} text={`R${c.radius.toFixed(2)}`} color={color} />
             </group>
           );
         }

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="3697" viewBox="0 0 1200 3697">
+<rect width="100%" height="100%" fill="#1a1a2e"/>
+<text x="10" y="18" fill="#888" font-size="11" font-family="monospace">nist_ctc_01_asme1_ap242-e1 — contour #23 — +Y d2/3=-118.03</text>
+<text x="10" y="32" fill="#888" font-size="11" font-family="monospace">18 pts → 2 entities (tol=0.3096, diag=154.80)</text>
+<text x="10" y="46" fill="#ff4444" font-size="11" font-family="monospace">maxErr=38.2417 avgErr=8.8600 highErrPts=6/18</text>
+<text x="10" y="60" fill="#888" font-size="11" font-family="monospace">1 lines, 1 arcs, 0 circles</text>
+<path d="M 173.11 165.81 A 1702.47 1702.47 0 0 0 173.02 3499.73" fill="none" stroke="#cc44ff" stroke-width="2" stroke-opacity="0.8"/>
+<circle cx="173.11" cy="165.81" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="173.02" cy="3499.73" r="3" fill="#00ccff" opacity="0.7"/>
+<line x1="173.02" y1="3499.73" x2="173.11" y2="165.81" stroke="#e0e0e0" stroke-width="1.5" stroke-opacity="0.9"/>
+<circle cx="173.02" cy="3499.73" r="3" fill="#00ff00" opacity="0.7"/>
+<circle cx="173.11" cy="165.81" r="3" fill="#00ccff" opacity="0.7"/>
+<circle cx="1027.08" cy="3524.08" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="1032.08" y="3521.08" fill="#ff4444" font-size="8" font-family="monospace">38.242</text>
+<circle cx="172.92" cy="3524.08" r="4" fill="rgb(180,38,30)" opacity="0.9"/>
+<text x="177.92" y="3521.08" fill="#ff4444" font-size="8" font-family="monospace">1.090</text>
+<circle cx="172.92" cy="3399.25" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="172.92" cy="3382.43" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="172.92" cy="3363.58" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="172.92" cy="3344.71" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="172.92" cy="3328.55" r="1.5" fill="rgb(1,127,100)" opacity="0.4"/>
+<circle cx="172.92" cy="378.01" r="1.5" fill="rgb(1,127,99)" opacity="0.4"/>
+<circle cx="172.92" cy="366.32" r="1.5" fill="rgb(1,127,99)" opacity="0.4"/>
+<circle cx="172.92" cy="349.61" r="1.5" fill="rgb(1,127,99)" opacity="0.4"/>
+<circle cx="172.92" cy="330.59" r="1.5" fill="rgb(1,127,99)" opacity="0.4"/>
+<circle cx="172.92" cy="311.93" r="1.5" fill="rgb(1,127,99)" opacity="0.4"/>
+<circle cx="172.92" cy="295.50" r="1.5" fill="rgb(1,127,99)" opacity="0.4"/>
+<circle cx="172.92" cy="172.76" r="1.5" fill="rgb(1,127,99)" opacity="0.4"/>
+<circle cx="293.26" cy="172.76" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="298.26" y="169.76" fill="#ff4444" font-size="8" font-family="monospace">5.378</text>
+<circle cx="1027.08" cy="172.76" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="1032.08" y="169.76" fill="#ff4444" font-size="8" font-family="monospace">38.222</text>
+<circle cx="1027.08" cy="3359.14" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="1032.08" y="3356.14" fill="#ff4444" font-size="8" font-family="monospace">38.226</text>
+<circle cx="1027.08" cy="3524.08" r="4" fill="rgb(255,0,0)" opacity="0.9"/>
+<text x="1032.08" y="3521.08" fill="#ff4444" font-size="8" font-family="monospace">38.242</text>
+<text x="2225.94" y="1835.82" fill="#666" font-size="9" font-family="monospace">#0</text>
+<text x="179.065" y="1835.77" fill="#666" font-size="9" font-family="monospace">#1</text>
+</svg>

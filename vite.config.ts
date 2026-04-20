@@ -22,6 +22,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, "index.html"),
         brain: resolve(import.meta.dirname, "brain.html"),
+        lab: resolve(import.meta.dirname, "lab.html"),
       },
       output: {
         manualChunks: {
