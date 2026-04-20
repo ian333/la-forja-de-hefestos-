@@ -341,11 +341,26 @@ export function buildClock(params: ClockParams = CLOCK_DEFAULTS): ClockBuild {
   const g = clockGeometry(params);
   const k = clockKinematics(params);
 
-  // Dial: a shallow cylinder, axis = Z.
+  // Dial: a shallow cylinder plus 12 hour-mark blocks at the 12/3/6/9 etc. angles.
   const dialCyl = makeCylinder([0, 0, -params.dialThickness / 2], params.dialRadius, params.dialThickness);
   dialCyl.rotation = [Math.PI / 2, 0, 0];
   dialCyl.label = 'Dial — plate';
-  const dialUnion = makeOp('union', [dialCyl]);
+
+  const dialChildren: SdfNode[] = [dialCyl];
+  const tickLen = params.dialRadius * 0.08;
+  const tickHalfW = params.dialRadius * 0.012;
+  const tickRadius = params.dialRadius * 0.92;
+  for (let h = 0; h < 12; h++) {
+    const angle = (2 * Math.PI * h) / 12;
+    const cx = tickRadius * Math.sin(angle);
+    const cy = tickRadius * Math.cos(angle);
+    const tick = makeBox([cx, cy, 0], [tickHalfW * 2, tickLen, params.handThickness]);
+    tick.rotation = [0, 0, -angle];
+    tick.label = `Tick ${h === 0 ? 12 : h}`;
+    dialChildren.push(tick);
+  }
+
+  const dialUnion = makeOp('union', dialChildren);
   dialUnion.label = 'Dial — union';
   const dial = makeModule('Dial');
   dial.children = [dialUnion];
