@@ -31,7 +31,7 @@ import {
   type Variable,
 } from 'three/examples/jsm/misc/GPUComputationRenderer.js';
 import {
-  POSITION_SHADER, VELOCITY_SHADER,
+  POSITION_SHADER, VELOCITY_SHADER, REACTION_SHADER,
 } from '@/labs/components/gpu-md-shaders';
 
 // ═══════════════════════════════════════════════════════════════
@@ -45,6 +45,21 @@ export interface GPUSpeciesDef {
   epsilon: number;
   /** Masa */
   mass: number;
+}
+
+export interface ReactionRule {
+  /** ID de la primera especie reactiva (0..3) */
+  reactantA: number;
+  /** ID de la segunda especie reactiva */
+  reactantB: number;
+  /** ID del producto en el sitio de reactantA */
+  productA: number;
+  /** ID del producto en el sitio de reactantB */
+  productB: number;
+  /** Distancia máxima de colisión [σ] */
+  collisionRadius: number;
+  /** Energía de activación (unidades reducidas ε) */
+  activationEnergy: number;
 }
 
 export interface GPUMDConfig {
@@ -66,6 +81,10 @@ export interface GPUMDConfig {
   species: GPUSpeciesDef[];
   /** Fracciones iniciales de cada especie (suman 1) */
   speciesFractions: number[];
+  /** Regla de reacción opcional (si se define, se activa el paso reactivo) */
+  reactionRule?: ReactionRule;
+  /** Cada cuántos steps ejecutar el shader reactivo (default 3) */
+  reactionEvery?: number;
 }
 
 export interface GPUMDStats {
@@ -93,6 +112,16 @@ export class GPUMDEngine {
   private positionVariable!: Variable;
   private velocityVariable!: Variable;
   private config: GPUMDConfig;
+
+  /** Pass de reacción (opcional) — fragment shader que muta species ids */
+  private reactionPass: THREE.ShaderMaterial | null = null;
+  private reactionScene: THREE.Scene | null = null;
+  private reactionCamera: THREE.Camera | null = null;
+  private reactionQuad: THREE.Mesh | null = null;
+  private reactionTargetA: THREE.WebGLRenderTarget | null = null;
+  private reactionTargetB: THREE.WebGLRenderTarget | null = null;
+  private reactionTargetFlip = false;
+  private reactionCount: number = 0;
 
   /** Buffer auxiliar para leer de vuelta posiciones a CPU (estadísticas) */
   private readBuf: Float32Array;
@@ -162,6 +191,61 @@ export class GPUMDEngine {
     if (err !== null) {
       throw new Error(`GPU MD init: ${err}`);
     }
+
+    // Setup pass reactivo si hay regla
+    if (this.config.reactionRule) {
+      this.setupReactionPass();
+    }
+  }
+
+  /** Pipeline extra: un fullscreen quad con REACTION_SHADER que muta posiciones. */
+  private setupReactionPass(): void {
+    const rule = this.config.reactionRule!;
+    const res = this.config.resolution;
+
+    this.reactionPass = new THREE.ShaderMaterial({
+      uniforms: {
+        texturePosition:  { value: null },
+        textureVelocity:  { value: null },
+        resolution:       { value: new THREE.Vector2(res, res) },
+        boxSize:          { value: this.config.boxSize },
+        reactionRadius:   { value: rule.collisionRadius },
+        activationEnergy: { value: rule.activationEnergy },
+        reactantA:        { value: rule.reactantA },
+        reactantB:        { value: rule.reactantB },
+        productA:         { value: rule.productA },
+        productB:         { value: rule.productB },
+        enabled:          { value: 1.0 },
+      },
+      vertexShader: `
+        void main() {
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: REACTION_SHADER(res),
+    });
+
+    this.reactionScene = new THREE.Scene();
+    this.reactionCamera = new THREE.Camera();
+    this.reactionQuad = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      this.reactionPass,
+    );
+    this.reactionScene.add(this.reactionQuad);
+
+    // Render targets propios para el pass reactivo (ping-pong entre ellos)
+    const rtOpts = {
+      wrapS: THREE.ClampToEdgeWrapping,
+      wrapT: THREE.ClampToEdgeWrapping,
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      format: THREE.RGBAFormat,
+      type: THREE.FloatType,
+      stencilBuffer: false,
+      depthBuffer: false,
+    };
+    this.reactionTargetA = new THREE.WebGLRenderTarget(res, res, rtOpts);
+    this.reactionTargetB = new THREE.WebGLRenderTarget(res, res, rtOpts);
   }
 
   /** Rellena posiciones (grid + jitter) y velocidades (Maxwell-Boltzmann). */
@@ -261,6 +345,103 @@ export class GPUMDEngine {
   public step(): void {
     this.gpuCompute.compute();
     this.steps++;
+
+    // Pass reactivo cada N steps
+    if (this.reactionPass && this.config.reactionRule) {
+      const every = this.config.reactionEvery ?? 3;
+      if (this.steps % every === 0) {
+        this.runReactionPass();
+      }
+    }
+  }
+
+  /**
+   * Aplica el REACTION_SHADER: lee las texturas actuales de posición y
+   * velocidad, y escribe una nueva textura de posición (con species ids
+   * potencialmente alterados). Luego copiamos ese resultado de vuelta al
+   * render target actual del positionVariable.
+   */
+  private runReactionPass(): void {
+    if (!this.reactionPass || !this.reactionScene || !this.reactionCamera) return;
+    if (!this.reactionTargetA || !this.reactionTargetB) return;
+
+    const posTarget = this.gpuCompute.getCurrentRenderTarget(this.positionVariable) as unknown as THREE.WebGLRenderTarget;
+    const velTarget = this.gpuCompute.getCurrentRenderTarget(this.velocityVariable) as unknown as THREE.WebGLRenderTarget;
+
+    const uniforms = this.reactionPass.uniforms;
+    uniforms.texturePosition.value = posTarget.texture;
+    uniforms.textureVelocity.value = velTarget.texture;
+
+    const outTarget = this.reactionTargetFlip ? this.reactionTargetA : this.reactionTargetB;
+    this.reactionTargetFlip = !this.reactionTargetFlip;
+
+    // Preservar el target actual del renderer
+    const prevTarget = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(outTarget);
+    this.renderer.render(this.reactionScene, this.reactionCamera);
+    this.renderer.setRenderTarget(prevTarget);
+
+    // Copiar el resultado de vuelta al positionVariable render target.
+    // Nota: En lugar de copiar texturas (API cambió entre versiones de Three),
+    // usamos un blit-like approach re-ejecutando un shader que copia.
+    this.blitToTarget(outTarget.texture, posTarget);
+
+    this.reactionCount++;
+  }
+
+  /** Copia contenido de srcTexture al dstTarget usando un fullscreen quad. */
+  private blitMaterial: THREE.ShaderMaterial | null = null;
+  private blitScene: THREE.Scene | null = null;
+  private blitCamera: THREE.Camera | null = null;
+
+  private blitToTarget(srcTexture: THREE.Texture, dstTarget: THREE.WebGLRenderTarget): void {
+    if (!this.blitMaterial) {
+      this.blitMaterial = new THREE.ShaderMaterial({
+        uniforms: { tSrc: { value: srcTexture }, resolution: { value: new THREE.Vector2(this.config.resolution, this.config.resolution) } },
+        vertexShader: `void main() { gl_Position = vec4(position, 1.0); }`,
+        fragmentShader: `
+          uniform sampler2D tSrc;
+          uniform vec2 resolution;
+          void main() {
+            vec2 uv = gl_FragCoord.xy / resolution;
+            gl_FragColor = texture2D(tSrc, uv);
+          }
+        `,
+      });
+      this.blitScene = new THREE.Scene();
+      this.blitCamera = new THREE.Camera();
+      const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.blitMaterial);
+      this.blitScene.add(quad);
+    }
+    this.blitMaterial.uniforms.tSrc.value = srcTexture;
+
+    const prev = this.renderer.getRenderTarget();
+    this.renderer.setRenderTarget(dstTarget);
+    this.renderer.render(this.blitScene!, this.blitCamera!);
+    this.renderer.setRenderTarget(prev);
+  }
+
+  /** Habilita/deshabilita el pass reactivo en vivo. */
+  public setReactionsEnabled(enabled: boolean): void {
+    if (this.reactionPass) {
+      this.reactionPass.uniforms.enabled.value = enabled ? 1.0 : 0.0;
+    }
+  }
+
+  /** Actualiza los parámetros de la regla de reacción en vivo. */
+  public updateReactionRule(rule: Partial<ReactionRule>): void {
+    if (!this.reactionPass) return;
+    const u = this.reactionPass.uniforms;
+    if (rule.collisionRadius !== undefined) u.reactionRadius.value = rule.collisionRadius;
+    if (rule.activationEnergy !== undefined) u.activationEnergy.value = rule.activationEnergy;
+    if (rule.reactantA !== undefined) u.reactantA.value = rule.reactantA;
+    if (rule.reactantB !== undefined) u.reactantB.value = rule.reactantB;
+    if (rule.productA !== undefined) u.productA.value = rule.productA;
+    if (rule.productB !== undefined) u.productB.value = rule.productB;
+  }
+
+  public get totalReactionPasses(): number {
+    return this.reactionCount;
   }
 
   /** Textura con posiciones actuales (para pasar al renderer) */
@@ -360,6 +541,10 @@ export class GPUMDEngine {
 
   public dispose(): void {
     this.gpuCompute.dispose();
+    this.reactionTargetA?.dispose();
+    this.reactionTargetB?.dispose();
+    this.reactionPass?.dispose();
+    this.blitMaterial?.dispose();
   }
 }
 

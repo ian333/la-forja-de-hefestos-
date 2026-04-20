@@ -24,7 +24,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { GPUMDEngine, type GPUMDConfig, type GPUMDStats } from '@/lib/chem/quantum/gpu-md';
+import { GPUMDEngine, type GPUMDConfig, type GPUMDStats, type ReactionRule } from '@/lib/chem/quantum/gpu-md';
 import {
   RENDER_VERTEX_SHADER, RENDER_FRAGMENT_SHADER, SPECIES_PALETTE,
 } from './gpu-md-shaders';
@@ -202,6 +202,8 @@ export default function GPUParticleSandbox({ height = 620 }: GPUParticleSandboxP
   const [fracA, setFracA] = useState(0.6);
   const [fracB, setFracB] = useState(0.4);
   const [playing, setPlaying] = useState(true);
+  const [reactionsEnabled, setReactionsEnabled] = useState(false);
+  const [activationEnergy, setActivationEnergy] = useState(0.8);
   const [displayStats, setDisplayStats] = useState<GPUMDStats | null>(null);
 
   const controllerRef = useRef<GPUSimControllerHandle | null>(null);
@@ -219,6 +221,12 @@ export default function GPUParticleSandbox({ height = 620 }: GPUParticleSandboxP
   // Config del engine — cambio de resolution triggereará re-init
   const config: GPUMDConfig = useMemo(() => {
     const boxSize = resolution <= 48 ? 10 : resolution <= 64 ? 14 : resolution <= 96 ? 18 : 22;
+    const reactionRule: ReactionRule = {
+      reactantA: 0, reactantB: 1,
+      productA: 2,  productB: 3,
+      collisionRadius: 1.2,
+      activationEnergy,
+    };
     return {
       resolution,
       boxSize,
@@ -234,9 +242,11 @@ export default function GPUParticleSandbox({ height = 620 }: GPUParticleSandboxP
         { sigma: 1.0, epsilon: 0.8, mass: 1.0 },
       ],
       speciesFractions: [fracA, fracB, 0, 0],
+      reactionRule,
+      reactionEvery: 4,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolution, fracA, fracB]);
+  }, [resolution, fracA, fracB, activationEnergy]);
 
   // Poll stats para UI cada 300ms
   useEffect(() => {
@@ -246,6 +256,12 @@ export default function GPUParticleSandbox({ height = 620 }: GPUParticleSandboxP
     }, 300);
     return () => clearInterval(id);
   }, []);
+
+  // Propagar toggle de reacciones al engine
+  useEffect(() => {
+    const eng = controllerRef.current?.engine;
+    if (eng) eng.setReactionsEnabled(reactionsEnabled);
+  }, [reactionsEnabled]);
 
   const handleReset = () => {
     controllerRef.current?.engine?.reset(targetTemp);
@@ -376,11 +392,37 @@ export default function GPUParticleSandbox({ height = 620 }: GPUParticleSandboxP
           />
           <span className="font-mono text-[11px] text-white">{(fracA * 100).toFixed(0)}%</span>
         </label>
+
+        <div className="h-5 w-px bg-white/10" />
+
+        <label className="text-[11px] text-[#CBD5E1] flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={reactionsEnabled}
+            onChange={(e) => setReactionsEnabled(e.target.checked)}
+            className="accent-[#F87171]"
+          />
+          <span className="font-mono">A+B → C+D</span>
+          {reactionsEnabled && (
+            <>
+              <span className="font-mono text-[#64748B] ml-1">Eₐ</span>
+              <input
+                type="range" min={0.1} max={3} step={0.05}
+                value={activationEnergy}
+                onChange={(e) => setActivationEnergy(Number(e.target.value))}
+                className="w-16 accent-[#F87171]"
+              />
+              <span className="font-mono text-[10px] text-white w-8 text-right">
+                {activationEnergy.toFixed(2)}
+              </span>
+            </>
+          )}
+        </label>
       </div>
 
-      {/* Leyenda de especies */}
+      {/* Leyenda de especies — 4 especies si reacciones activas */}
       <div className="absolute bottom-24 right-3 bg-black/65 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-white/10 flex flex-col gap-1">
-        {SPECIES_PALETTE.slice(0, 2).map((sp, i) => {
+        {SPECIES_PALETTE.slice(0, reactionsEnabled ? 4 : 2).map((sp, i) => {
           const count = displayStats?.speciesCounts[i] ?? 0;
           return (
             <div key={sp.label} className="flex items-center gap-2 text-[10px] font-mono">
