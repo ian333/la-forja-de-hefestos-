@@ -127,11 +127,11 @@ void main() {
   vec3 rd = normalize(mat3(uCamWorld) * normalize(vd.xyz));
   vec3 ro = uCamWorld[3].xyz;                       // camera world position
 
-  // ── Sphere Tracing (256 steps max) ──
+  // ── Sphere Tracing (128 steps max — enough for typical CAD scenes) ──
   float t = 0.0;
   bool hit = false;
 
-  for (int i = 0; i < 256; i++) {
+  for (int i = 0; i < 128; i++) {
     float d = map(ro + rd * t);
     if (abs(d) < 0.0002 * (1.0 + t * 0.05)) { hit = true; break; }
     t += d;
@@ -274,7 +274,7 @@ void main() {
   float edge = 1.0 - smoothstep(0.0, 0.12, abs(dot(nor, eye)));
   col *= 1.0 - edge * 0.25;
 
-  // Environment reflection (sky dome approximation)
+  // Environment reflection (procedural sky dome)
   vec3 refl = reflect(-eye, nor);
   float envUp = refl.y * 0.5 + 0.5;
   vec3 envCol = mix(uAmbient * 1.3, uEnvColor, envUp);

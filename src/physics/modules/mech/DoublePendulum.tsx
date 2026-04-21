@@ -113,7 +113,7 @@ export default function DoublePendulum() {
   const L = Math.max(params.L1 + params.L2, 1);
 
   return (
-    <div className="grid grid-cols-[1fr_340px] gap-0 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] grid-rows-[minmax(220px,1fr)_minmax(180px,45vh)] lg:grid-rows-1 gap-0 h-full">
       <div className="relative">
         <Stage cameraDistance={L * 3.0} bloomIntensity={0.85} bloomThreshold={0.12}>
           <Scene stateA={stateA} stateB={stateB} params={params} />

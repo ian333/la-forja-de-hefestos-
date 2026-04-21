@@ -82,7 +82,7 @@ export default function DoubleHelix() {
   const duplex = useMemo(() => buildDuplex(preset.sequence), [preset.sequence]);
 
   return (
-    <div className="grid grid-cols-[1fr_340px] gap-0 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] grid-rows-[minmax(220px,1fr)_minmax(180px,45vh)] lg:grid-rows-1 gap-0 h-full">
       <div className="relative">
         <HelixViewport
           duplex={duplex}

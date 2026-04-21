@@ -77,8 +77,8 @@ export default function PhysicsLab() {
           </div>
         </header>
 
-        <main className="relative z-10 flex-1 grid grid-cols-[280px_1fr] min-h-0">
-          <aside className="border-r border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+        <main className="relative z-10 flex-1 grid grid-cols-1 md:grid-cols-[220px_1fr] lg:grid-cols-[260px_1fr] min-h-0">
+          <aside className="hidden md:block border-r border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
             <div className="p-3 border-b border-[#1E293B]">
               <div className="text-[10px] uppercase tracking-[0.14em] text-[#64748B]">Ramas</div>
               <div className="text-[11px] text-[#94A3B8] mt-1 leading-relaxed">
@@ -91,6 +91,28 @@ export default function PhysicsLab() {
               onSelect={(branchId, moduleId) => setSelected({ branchId, moduleId })}
             />
           </aside>
+
+          {/* Dropdown de ramas/módulos para móvil */}
+          <div className="md:hidden border-b border-[#1E293B] bg-[#0B0F17] p-3 space-y-2">
+            <select
+              value={`${selected.branchId}:${selected.moduleId}`}
+              onChange={e => {
+                const [b, m] = e.target.value.split(':');
+                setSelected({ branchId: b, moduleId: m });
+              }}
+              className="w-full bg-[#05060A] border border-[#1E293B] rounded-md px-2 py-1.5 text-[12px] text-[#E2E8F0]"
+            >
+              {BRANCHES.map(b => (
+                <optgroup key={b.id} label={`${b.icon} ${b.name}`}>
+                  {b.modules.map(m => (
+                    <option key={m.id} value={`${b.id}:${m.id}`}>
+                      {m.name} {m.status !== 'live' ? `(${m.status})` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
 
           <section className="overflow-hidden min-h-0">
             {!branch || !mod ? (

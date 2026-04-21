@@ -90,7 +90,7 @@ export default function Schwarzschild() {
   const SCENE_SCALE = 3 / rMax;
 
   return (
-    <div className="grid grid-cols-[1fr_340px] gap-0 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] grid-rows-[minmax(220px,1fr)_minmax(180px,45vh)] lg:grid-rows-1 gap-0 h-full">
       <div className="relative">
         <Stage cameraDistance={6.5} bloomIntensity={0.95} bloomThreshold={0.08} autoRotate>
           <SpacetimeWell rs={data.rs} rMax={rMax} scale={SCENE_SCALE} />

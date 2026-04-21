@@ -390,6 +390,15 @@ export default function ForgeViewport({
           }}
         />
 
+        {/*
+          Post-processing intentionally OFF by default.
+          Ray-march over 256 steps already taxes integrated GPUs; layering
+          SMAA + Bloom (mipmap downsamples) on top caused freezes on
+          common student hardware. The HDRI + PBR work in the shader
+          itself already delivers the "realistic" win without the cost.
+          Re-enable via a settings toggle once we have GPU-tier detection.
+        */}
+
         {/* Gizmo cube (Fusion-style) */}
         <GizmoHelper alignment="top-right" margin={[72, 72]}>
           <GizmoViewcube

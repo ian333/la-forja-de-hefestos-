@@ -72,7 +72,7 @@ export default function CentralDogma() {
   useEffect(() => { setState(initialState()); }, [presetId]);
 
   return (
-    <div className="grid grid-cols-[1fr_360px] gap-0 h-full min-h-0 overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-1 lg:grid-cols-[1fr_320px] grid-rows-[minmax(220px,1fr)_minmax(180px,45vh)] lg:grid-rows-1 grid-rows-[minmax(220px,1fr)_minmax(180px,45vh)] lg:grid-rows-1 gap-0 h-full min-h-0 overflow-hidden">
       <div className="relative min-h-0">
         <DogmaViewport data={data} state={state} />
 

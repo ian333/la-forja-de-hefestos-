@@ -25,6 +25,17 @@ const Docking         = lazy(() => import('./modules/bio/Docking'));
 const CentralDogma    = lazy(() => import('./modules/bio/CentralDogma'));
 const BiologyScales   = lazy(() => import('./modules/bio/BiologyScales'));
 const AtomToBond      = lazy(() => import('./modules/bio/AtomToBond'));
+const Regeneration    = lazy(() => import('./modules/bio/Regeneration'));
+const DrugDiscovery   = lazy(() => import('./modules/bio/DrugDiscovery'));
+const RegenReplica    = lazy(() => import('./modules/bio/RegenReplica'));
+const RegenFit        = lazy(() => import('./modules/bio/RegenFit'));
+const IdealGasGPU     = lazy(() => import('./modules/thermo/IdealGasGPU'));
+const MoleculeGPU     = lazy(() => import('./modules/matter/MoleculeGPU'));
+const MultiScale      = lazy(() => import('./modules/matter/MultiScale'));
+const TissueField     = lazy(() => import('./modules/matter/TissueField'));
+const ScaleLimit      = lazy(() => import('./modules/matter/ScaleLimit'));
+const ChemicalScaleLimit = lazy(() => import('./modules/matter/ChemicalScaleLimit'));
+const TissueScaleLimit = lazy(() => import('./modules/matter/TissueScaleLimit'));
 
 export const BRANCHES: PhysicsBranch[] = [
   {
@@ -163,13 +174,11 @@ export const BRANCHES: PhysicsBranch[] = [
     accent: '#EF5350',
     blurb: 'Entropía, distribuciones de Boltzmann, transiciones de fase.',
     modules: [
-      { id: 'ideal-gas', name: 'Gas ideal (MD)', status: 'planned',
-        blurb: 'Partículas Lennard-Jones 2D/3D. Temperatura, presión, MB.',
-        roadmap: [
-          'N-cuerpos con potencial LJ 12-6',
-          'Termostato de Berendsen o Nosé-Hoover',
-          'Histograma de velocidades → Maxwell-Boltzmann',
-        ] },
+      { id: 'ideal-gas', name: 'Gas ideal (GPU MD)', status: 'live',
+        blurb: '1K–9K átomos LJ 3D en GPU. Gas → líquido → sólido al enfriar.',
+        childHint: 'Cada punto es un átomo. Sube T y se dispersan, baja T y se apilan en red.',
+        researcherHint: 'Verlet kick-drift, Berendsen thermostat, PBC cúbica. Motor: src/lib/gpu/pairwise-engine — mismo kernel sirve para LJ/Coulomb/grav/Morse.',
+        component: IdealGasGPU },
       { id: 'ising', name: 'Modelo de Ising 2D', status: 'planned',
         blurb: 'Transición de fase ferromagnética. Metropolis. T_c ≈ 2.269 J/k_B.',
         roadmap: [
@@ -333,8 +342,38 @@ export const BRANCHES: PhysicsBranch[] = [
     name: 'Química (GAIA)',
     icon: '⚗',
     accent: '#81C784',
-    blurb: 'Química desde la cuántica: átomos, enlaces, reacciones.',
+    blurb: 'Química desde la cuántica: átomos, enlaces, reacciones. Escalera ascendente.',
     modules: [
+      { id: 'molecule-gpu', name: 'Moléculas diatómicas (GPU)', status: 'live',
+        blurb: 'Nivel 1 de la escalera: dímeros LJ+Morse en baño condensado, 1 024 átomos.',
+        childHint: 'Cada par cyan+rosa es una molécula. Súbeles la temperatura y los enlaces se rompen.',
+        researcherHint: 'LJ + Morse con skip-bonded, 512 dímeros, bond-list texture RGBA32F. Motor: src/lib/gpu/pairwise-engine.',
+        component: MoleculeGPU },
+      { id: 'multi-scale', name: 'Multi-escala — átomos ↔ continuum', status: 'live',
+        blurb: 'Nivel 0 y nivel 1 lado a lado: átomos y campo ρ,T emergente del coarse-graining Irving-Kirkwood.',
+        childHint: 'Izquierda cada punto es un átomo. Derecha lo mismo "borroso" como lo ve un termodinámico.',
+        researcherHint: 'Bridge atómico → campo vía PairwiseEngine + BridgeEngine. 4K átomos → 6³-8³ blobs, 3D periódico.',
+        component: MultiScale },
+      { id: 'tissue-field', name: 'Tejido — átomo → bridge → PDE', status: 'live',
+        blurb: 'Nivel 2: campo de reacción-difusión acoplado al MD vía el bridge.',
+        childHint: 'La derecha es una ecuación que "escucha" a los átomos. Ajusta τ: bajo sigue al MD, alto tiene vida propia.',
+        researcherHint: 'stencilStepCpu con fuente (T_bridge − u)/τ. Presets heat, Fisher-KPP, Gray-Scott. Escalera completa nivel 0→1→2.',
+        component: TissueField },
+      { id: 'scale-limit', name: 'Límite de escala — ¿cuántos átomos?', status: 'live',
+        blurb: 'Mide σ_T/⟨T⟩ vs N en MD LJ y compara con √(2/(3N)). Gráfico log-log.',
+        childHint: 'Cada punto es una simulación con distinto tamaño. La línea amarilla es la física pura. Si coinciden, el promedio es legítimo.',
+        researcherHint: 'Sweep N ∈ {16…1024}, burn-in 120, producción 1200 pasos. Umbral 5% empírico cruza N ≈ 270. Tests: 16/16 verdes contra predicción analítica.',
+        component: ScaleLimit },
+      { id: 'chem-scale-limit', name: 'Química estocástica — SSA vs ODE', status: 'live',
+        blurb: 'Gillespie exacto vs mass-action ODE. Mide σ/⟨X⟩ = 1/√⟨X⟩. Crossover a N ≈ 100.',
+        childHint: 'Con 10 moléculas, la reacción zigzaguea (ruido). Con 1000, la ODE la captura bien. Ve cómo la desviación cae con N.',
+        researcherHint: 'Birth-death sweep α ∈ {5…5000}. Propensity con combinatoria binomial. 15 tests: Poisson exact, LV agreement, LLN. Ref: Gillespie 1976, van Kampen 2007.',
+        component: ChemicalScaleLimit },
+      { id: 'tissue-scale-limit', name: 'Tejido — ABM vs Fisher-KPP', status: 'live',
+        blurb: 'Onda invasora 1D: células individuales vs PDE continuum. c = 2√(rD) con corrección Brunet-Derrida.',
+        childHint: 'Arriba células, abajo ecuación. Con pocas células la onda va más lenta; con muchas coinciden.',
+        researcherHint: 'ABM: birth-death-diffusion, localBin=4%. PDE: FTCS Fisher-KPP. 8 tests: ⟨x²⟩=2Dt, logistic, c ±25%. Ref: Fisher 1937, Brunet-Derrida 1997.',
+        component: TissueScaleLimit },
       { id: 'gaia', name: 'Abrir GAIA Lab completo', status: 'external',
         blurb: 'Motor stiff + MD + cuántico con ~376 tests verdes.',
         childHint: 'El laboratorio donde mezclas cosas y ves qué pasa de verdad.',
@@ -380,6 +419,26 @@ export const BRANCHES: PhysicsBranch[] = [
         childHint: 'Una célula es gigante al lado del DNA. Mira cuánto hay que acercarse para ver las letras.',
         researcherHint: 'Escalas canónicas (Alberts 7ª): célula 20 µm → núcleo 6 µm → cromosoma 1.4 µm → fibra 30 nm → nucleosoma 11 nm → hélice B 2 nm → par de bases 10 Å.',
         component: BiologyScales },
+      { id: 'regeneration', name: 'Regeneración — salamandra vs humano', status: 'live',
+        blurb: 'Gray-Scott dos veces, distintos (F, k). Misma química, distinta regulación → blastema o cicatriz.',
+        childHint: 'Pulsa "Lesionar" y observa: la salamandra reconstruye el patrón, el humano lo cicatriza.',
+        researcherHint: 'RD activador-inhibidor. Régimen α (F=0.037,k=0.06) vs uniforme (F=0.09,k=0.057). Ref: Pearson 1993, Tanaka 2016.',
+        component: Regeneration },
+      { id: 'drug-discovery', name: 'Descubrimiento de terapia (drug discovery)', status: 'live',
+        blurb: 'Biblioteca de proteínas + farmacocinética + auto-search. ¿Qué combinación sana sin volvernos reptiles?',
+        childHint: 'Elige drogas de la biblioteca. Gana la que da heal alto sin quedarse en régimen peligroso. Pulsa Auto-search para ver qué encuentra la máquina.',
+        researcherHint: 'Gray-Scott paciente humano + PK Bateman + score heal·safety. Random search sobre schedules (24 trials). Ref: Rowland & Tozer, Tanaka 2016.',
+        component: DrugDiscovery },
+      { id: 'regen-replica', name: 'Réplica Heber-Katz 2004 — MRL vs B6', status: 'live',
+        blurb: 'Cierre de biopsia 2 mm modelado con Fisher-KPP. Datos publicados superpuestos.',
+        childHint: 'Experimento real de 2002: biopsia oreja del ratón. La cepa MRL sana entera; la B6 deja cicatriz. Aquí lo simulamos con UNA ecuación.',
+        researcherHint: 'Fisher-KPP 2D radial, D=1.5e-3 mm²/d (Clark 1996), r=1.4 vs 0.45/d (Bedelbaeva 2010). RMSE vs Heber-Katz 2004 Fig 2 datapoints calculado en vivo.',
+        component: RegenReplica },
+      { id: 'regen-fit', name: 'Fit Bayesian — posterior P(D, r | datos)', status: 'live',
+        blurb: 'Inferencia rigurosa de parámetros: heatmap de posterior + posterior predictive band.',
+        childHint: 'En vez de elegir parámetros a ojo, calculamos qué tan probable es cada combinación dado los datos. Las áreas brillantes son las posibles.',
+        researcherHint: 'Grid 14×14 sobre log(D), log(r). Likelihood Gaussian con σ ajustable. CI 95% en marginales. Detecta la degeneración Fisher-KPP rD=const.',
+        component: RegenFit },
       { id: 'folding', name: 'Plegamiento de proteínas', status: 'planned',
         blurb: 'Modelo HP de Dill en lattice 2D/3D. Energía por contacto.',
         roadmap: [

@@ -115,7 +115,7 @@ export default function ProteinViewer() {
   }, [structure]);
 
   return (
-    <div className="grid grid-cols-[1fr_340px] gap-0 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] grid-rows-[minmax(220px,1fr)_minmax(180px,45vh)] lg:grid-rows-1 gap-0 h-full">
       <div className="relative">
         <ProteinViewport
           structure={structure}
