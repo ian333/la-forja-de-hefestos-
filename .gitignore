@@ -26,3 +26,7 @@ npm-debug.log*
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Ephemeral debug artifacts
+fit-diagnostics/
+test-results/
