@@ -70,6 +70,46 @@ function sdTorus(p: Vec3, t: [number, number]): number {
   return Math.sqrt(qx * qx + p[1] * p[1]) - t[1];
 }
 
+/**
+ * 2D signed distance from a point to a polygon contour, mirrors the
+ * GLSL inline `sdPoly` used by the polygon primitive. Positive outside,
+ * negative inside. Works on non-convex polygons; expects CCW winding.
+ */
+function sdPolygon2D(px: number, py: number, verts: [number, number][]): number {
+  const N = verts.length;
+  if (N < 3) return 1000;
+  let d = (px - verts[0][0]) ** 2 + (py - verts[0][1]) ** 2;
+  let s = 1;
+  let j = N - 1;
+  for (let i = 0; i < N; j = i, i++) {
+    const ex = verts[j][0] - verts[i][0];
+    const ey = verts[j][1] - verts[i][1];
+    const wx = px - verts[i][0];
+    const wy = py - verts[i][1];
+    const t = Math.max(0, Math.min(1, (wx * ex + wy * ey) / (ex * ex + ey * ey)));
+    const bx = wx - ex * t;
+    const by = wy - ey * t;
+    d = Math.min(d, bx * bx + by * by);
+    const c0 = py >= verts[i][1];
+    const c1 = py < verts[j][1];
+    const c2 = ex * wy > ey * wx;
+    if ((c0 && c1 && c2) || (!c0 && !c1 && !c2)) s = -s;
+  }
+  return s * Math.sqrt(d);
+}
+
+/**
+ * 3D SDF for an extruded polygon: polygon lies in local XY, extruded
+ * symmetrically along local Z by ± h/2.
+ */
+function sdExtrudedPolygon(p: Vec3, verts: [number, number][], h: number): number {
+  const d2 = sdPolygon2D(p[0], p[1], verts);
+  const dz = Math.abs(p[2]) - h * 0.5;
+  const outside = Math.sqrt(Math.max(d2, 0) ** 2 + Math.max(dz, 0) ** 2);
+  const inside = Math.min(Math.max(d2, dz), 0);
+  return outside + inside;
+}
+
 function sdCone(p: Vec3, r: number, h: number): number {
   h = Math.max(h, 0.001);
   const qx = r / h, qy = -1.0;
@@ -124,9 +164,22 @@ export function evaluateSdf(node: SdfNode, point: Vec3): number {
         return sdTorus(p, [pr.majorRadius ?? 1, pr.minorRadius ?? 0.25]);
       case 'cone':
         return sdCone(p, pr.radius ?? 0.5, Math.max(pr.height ?? 1, 0.001));
+      case 'polygon':
+        return sdExtrudedPolygon(p, prim.polyVerts ?? [], pr.height ?? 1);
       default:
         return 1000;
     }
+  }
+
+  // Module node — evaluate as union of children (matches GLSL compiler behavior).
+  if ((node as { kind: string }).kind === 'module') {
+    const mod = node as SdfOperation & { children: SdfNode[] };
+    if (mod.children.length === 0) return 1000;
+    let r = evaluateSdf(mod.children[0], point);
+    for (let i = 1; i < mod.children.length; i++) {
+      r = Math.min(r, evaluateSdf(mod.children[i], point));
+    }
+    return r;
   }
 
   // Operation node

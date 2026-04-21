@@ -212,6 +212,14 @@ float ${fnName}(vec2 pp) {
 `;
         // Store the function — we'll prepend it before map()
         _polyFunctions.push(polyFn);
+        // Swizzles require a named vec3 — `(p - vec3(…)).xy` parses as
+        // `p - vec2(…)` because `.xy` binds to the vec3 literal, not the
+        // difference. Materialize the transformed point into a local var.
+        if (!hasRot) {
+          const ptVar = `pt${_varIdx}`;
+          preamble += `  vec3 ${ptVar} = ${pt};\n`;
+          pt = ptVar;
+        }
         expr = `max(${fnName}(${pt}.xy), abs(${pt}.z) - ${glf(halfH)})`;
         break;
       }

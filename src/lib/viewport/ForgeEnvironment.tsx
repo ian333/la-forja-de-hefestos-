@@ -23,14 +23,16 @@ export interface ForgeEnvironmentProps {
 }
 
 export default function ForgeEnvironment({
-  preset = 'studio',
+  preset: _preset = 'studio',
   backgroundBlurriness = 1,
   backgroundIntensity = 0,
   environmentIntensity = 0.8,
 }: ForgeEnvironmentProps) {
+  // Serve the HDR from `/public/hdri/` so the scene still renders when the
+  // drei CDN is blocked (Playwright/WSL flakiness, offline dev, etc.).
   return (
     <Environment
-      preset={preset}
+      files="/hdri/studio_small_03_1k.hdr"
       backgroundBlurriness={backgroundBlurriness}
       backgroundIntensity={backgroundIntensity}
       environmentIntensity={environmentIntensity}
