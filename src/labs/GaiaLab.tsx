@@ -70,10 +70,10 @@ export default function GaiaLab() {
 
           <div className="ml-auto flex items-center gap-3 text-[11px] text-[#64748B] font-mono">
             <span>corre local · 343 tests</span>
-            <a
-              href="/"
-              className="text-[#64748B] hover:text-[#4FC3F7] transition"
-            >
+            <a href="/physics.html" className="text-[#64748B] hover:text-[#4FC3F7] transition">
+              Φ Física →
+            </a>
+            <a href="/" className="text-[#64748B] hover:text-[#4FC3F7] transition">
               ← La Forja
             </a>
           </div>

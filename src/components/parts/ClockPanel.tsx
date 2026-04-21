@@ -103,7 +103,6 @@ export default function ClockPanel({ open, onClose, onSceneChange }: ClockPanelP
   const firstRunRef = useRef(true);
   useEffect(() => {
     if (firstRunRef.current) { firstRunRef.current = false; return; }
-    if (typeof navigator !== 'undefined' && navigator.webdriver) return;
     if (derived.error) return;
     const id = window.setTimeout(() => {
       const b = buildClock(params);

@@ -117,12 +117,12 @@ export const CLOCK_DEFAULTS: ClockParams = {
   escapeToSecondsRatio: 0.5,
   secondsToMinuteRatio: 1 / 60,
   minuteToHourRatio: 1 / 12,
-  dialRadius: 0.4,
-  hourHandLength: 0.22,
-  minuteHandLength: 0.32,
-  secondsHandLength: 0.36,
-  dialThickness: 0.02,
-  handThickness: 0.008,
+  dialRadius: 1.6,
+  hourHandLength: 0.9,
+  minuteHandLength: 1.3,
+  secondsHandLength: 1.45,
+  dialThickness: 0.08,
+  handThickness: 0.04,
   time: 0,
 };
 
@@ -319,9 +319,16 @@ export interface ClockBuild {
   params: ClockParams;
 }
 
-/** A thin hand: a box of (length × 2·halfWidth × thickness) rotated about the
- *  clock center. 12 o'clock is +Y; positive rotation is clockwise on screen
- *  (i.e. the rotation angle is negated when composing the drive). */
+/** A thin hand: a box of (length × 2·halfWidth × thickness) whose base lives
+ *  at the world origin and whose tip points at angle `rotation` clockwise from
+ *  12 o'clock (12 = +Y).
+ *
+ *  Why the midpoint is computed here and not by just setting `box.rotation`:
+ *  the SDF engine applies rotation *around the primitive's position* — i.e.
+ *  its own center — so rotating a box positioned at `[0, length/2, 0]` just
+ *  spins it in place; it never pivots around the clock hub. To make the hand
+ *  swing around the origin we must translate the box to the **midpoint of the
+ *  post-rotation hand**: (½ L sin θ, ½ L cos θ, 0) with θ = rotation. */
 function makeHand(
   length: number,
   halfWidth: number,
@@ -329,9 +336,9 @@ function makeHand(
   rotation: number,
   label: string,
 ): SdfNode {
-  // Place the hand so its pivot is at the origin, extending +Y by default;
-  // we offset the box center by length/2 along +Y then rotate.
-  const box = makeBox([0, length / 2, 0], [halfWidth * 2, length, thickness]);
+  const cx = (length / 2) * Math.sin(rotation);
+  const cy = (length / 2) * Math.cos(rotation);
+  const box = makeBox([cx, cy, 0], [halfWidth * 2, length, thickness]);
   box.rotation = [0, 0, -rotation];
   box.label = label;
   return box;
@@ -367,7 +374,7 @@ export function buildClock(params: ClockParams = CLOCK_DEFAULTS): ClockBuild {
 
   const hourHandNode = makeHand(
     params.hourHandLength,
-    params.dialRadius * 0.025,
+    params.dialRadius * 0.06,
     params.handThickness,
     k.hourDisplay,
     'Hour hand',
@@ -379,7 +386,7 @@ export function buildClock(params: ClockParams = CLOCK_DEFAULTS): ClockBuild {
 
   const minuteHandNode = makeHand(
     params.minuteHandLength,
-    params.dialRadius * 0.018,
+    params.dialRadius * 0.04,
     params.handThickness,
     k.minuteDisplay,
     'Minute hand',
@@ -391,7 +398,7 @@ export function buildClock(params: ClockParams = CLOCK_DEFAULTS): ClockBuild {
 
   const secondsHandNode = makeHand(
     params.secondsHandLength,
-    params.dialRadius * 0.008,
+    params.dialRadius * 0.018,
     params.handThickness,
     k.secondsDisplay,
     'Seconds hand',

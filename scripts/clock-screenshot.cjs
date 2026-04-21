@@ -1,13 +1,21 @@
 #!/usr/bin/env node
 /**
- * Quick visual verification: open the mechanical clock panel, scrub to
- * t = 3723 s, capture a screenshot to /tmp/clock-verification.
+ * Visual verification: capture the clock at four different times so we can
+ * SEE the hands rotate — the real test that the scene update plumbing works.
  */
 const { chromium } = require('playwright');
 const fs = require('fs');
 
 const OUT = '/tmp/clock-verification';
 fs.mkdirSync(OUT, { recursive: true });
+
+const SHOTS = [
+  { name: 't0',     time: 0,     expect: '12:00 (all hands up)' },
+  { name: 't15',    time: 15,    expect: 'seconds at 3-o-clock' },
+  { name: 't30',    time: 30,    expect: 'seconds at 6-o-clock' },
+  { name: 't900',   time: 900,   expect: 'minute at 3-o-clock (15 min)' },
+  { name: 't3723',  time: 3723,  expect: '01:02:03' },
+];
 
 (async () => {
   const browser = await chromium.launch({
@@ -25,32 +33,40 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.waitForSelector('canvas', { timeout: 15000 });
   await page.waitForTimeout(1000);
 
-  // Open omnibar, search, click.
   const input = page.locator('input[placeholder*="Buscar"]').first();
-  for (let i = 0; i < 5; i++) {
-    await page.keyboard.press('Control+K');
-    if (await input.isVisible({ timeout: 1500 }).catch(() => false)) break;
+  const panel = page.getByTestId('clock-panel');
+  for (let attempt = 0; attempt < 5; attempt++) {
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Control+K');
+      if (await input.isVisible({ timeout: 1500 }).catch(() => false)) break;
+    }
+    if (!(await input.isVisible().catch(() => false))) continue;
+    await input.fill('mechanical clock');
+    const option = page.getByText('Mechanical clock (capstone)');
+    if (!(await option.isVisible({ timeout: 3000 }).catch(() => false))) continue;
+    await option.click();
+    if (await panel.isVisible({ timeout: 5000 }).catch(() => false)) break;
   }
-  await input.click();
-  await input.pressSequentially('mechanical clock', { delay: 20 });
-  await page.getByText('Mechanical clock (capstone)').click();
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1200);
 
-  await page.screenshot({ path: `${OUT}/clock-t0.png`, fullPage: false });
+  const setTime = async (t) => {
+    const slider = page.getByTestId('time-slider');
+    await slider.evaluate((el, v) => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      setter.call(el, String(v));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }, t);
+    await page.waitForTimeout(600);
+  };
 
-  // Scrub to t = 3723.
-  const timeSlider = page.getByTestId('time-slider');
-  await timeSlider.evaluate((el, v) => {
-    const input = el;
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    setter.call(input, String(v));
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  }, 3723);
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: `${OUT}/clock-t3723.png`, fullPage: false });
+  for (const s of SHOTS) {
+    await setTime(s.time);
+    await page.screenshot({ path: `${OUT}/clock-${s.name}.png`, fullPage: false });
+    const display = await page.getByTestId('clock-time').textContent();
+    console.log(`t=${s.time}s → ${display.trim()}   (${s.expect})`);
+  }
 
-  console.log('screenshots →', OUT);
-  if (logs.length) console.log('logs:\n' + logs.join('\n'));
+  if (logs.length) console.log('logs:\n' + logs.slice(0, 8).join('\n'));
   await browser.close();
 })();
