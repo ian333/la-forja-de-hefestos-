@@ -103,13 +103,14 @@ export default function ClockPanel({ open, onClose, onSceneChange }: ClockPanelP
   const firstRunRef = useRef(true);
   useEffect(() => {
     if (firstRunRef.current) { firstRunRef.current = false; return; }
+    if (!open) return;          // never push a scene unless the panel is visible
     if (derived.error) return;
     const id = window.setTimeout(() => {
       const b = buildClock(params);
       onSceneChange(b.rootOp, params);
     }, 0);
     return () => window.clearTimeout(id);
-  }, [params, onSceneChange, derived.error]);
+  }, [params, onSceneChange, derived.error, open]);
 
   function update(patch: Partial<ClockParams>) {
     setParams((prev) => ({ ...prev, ...patch }));

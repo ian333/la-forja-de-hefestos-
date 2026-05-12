@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>👶 Baby — Token Cloud</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #ddd; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100vh; }
+  #app { display: flex; height: 100vh; }
+  #canvas-wrap { flex: 1; position: relative; }
+  canvas { display: block; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  #panel { width: 320px; background: #111; border-left: 1px solid #222; padding: 14px; overflow-y: auto; font-size: 12px; }
+  h1 { font-size: 16px; color: #0696D7; margin-bottom: 8px; }
+  h2 { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 12px 0 4px; }
+  #status { position: absolute; bottom: 8px; left: 8px; padding: 4px 10px; background: #1a1a1aee; border-radius: 4px; font-size: 10px; }
+  #info { background: #0a1620; padding: 10px; border: 1px solid #1a3550; border-radius: 4px; min-height: 70px; font-size: 11px; }
+  .nav { display: flex; gap: 6px; margin-bottom: 10px; }
+  .nav a { color: #61afef; text-decoration: none; padding: 4px 8px; background: #1a1a1a; border-radius: 3px; font-size: 11px; }
+  .nav a.active { background: #0696D7; color: #fff; }
+  .legend { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; font-size: 10px; }
+  .leg-row { display: flex; align-items: center; gap: 6px; }
+  .leg-color { width: 14px; height: 14px; border-radius: 50%; }
+  .pair { padding: 4px 6px; margin: 2px 0; background: #1a1a1a; border-left: 2px solid #61afef; font-size: 11px; }
+  .pair .tok { color: #e5c07b; }
+  .pair .arrow { color: #61afef; }
+  .pair .w { color: #98c379; float: right; font-size: 10px; }
+  button { background: #0696D7; color: #fff; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-family: inherit; font-size: 11px; margin: 1px; }
+  button:hover { background: #0a7fb6; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="status">conectando...</div>
+  </div>
+  <div id="panel">
+    <div class="nav">
+      <a href="/baby.html">grafo</a>
+      <a href="/matrix.html">matriz</a>
+      <a href="/tokens.html" class="active">tokens</a>
+    </div>
+    <h1>📝 Tokens</h1>
+    <div style="font-size:10px;color:#888;margin-bottom:6px">
+      Cada palabra = un TOKEN emitido por brains.<br>
+      Tamaño = total degree de los brains que lo emiten.<br>
+      Líneas = co-fire fuerte entre los brains que los emiten.<br>
+      Color por categoría semántica.
+    </div>
+
+    <h2>Categorías</h2>
+    <div class="legend">
+      <div class="leg-row"><div class="leg-color" style="background:#e5c07b"></div>número / dígito</div>
+      <div class="leg-row"><div class="leg-color" style="background:#0696D7"></div>aritmética / operador</div>
+      <div class="leg-row"><div class="leg-color" style="background:#c678dd"></div>lógica / procedural</div>
+      <div class="leg-row"><div class="leg-color" style="background:#98c379"></div>palabra (lengua)</div>
+      <div class="leg-row"><div class="leg-color" style="background:#888"></div>estructural / otro</div>
+    </div>
+
+    <h2>Token seleccionado</h2>
+    <div id="info">click en token</div>
+
+    <h2>📡 Asociaciones top</h2>
+    <div id="pairs"></div>
+
+    <button onclick="refresh()">🔄 refresh</button>
+  </div>
+</div>
+
+<script>
+let canvas, ctx, W, H;
+let tokens = [];   // [{tok, size, color, x, y, vx, vy, brains:[]}]
+let pairs = [];    // [{a, b, w}]
+let camera = { x: 0, y: 0, zoom: 1 };
+let dragging = false, dragX = 0, dragY = 0;
+let selected = null;
+
+async function rpc(body) {
+  const r = await fetch('/rpc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(`http ${r.status}`);
+  return await r.json();
+}
+
+function categorizeToken(t) {
+  if (!t || t === '·' || t === '?') return ['#888', 'estructural'];
+  if (/^\d+$/.test(t)) return ['#e5c07b', 'número'];
+  if (['add','sub','mul','div','sum','carry','plus','minus','times','result','derive','integral','factor','exponent','+','-','*','/','=','%'].includes(t)) return ['#0696D7', 'aritmética'];
+  if (['rule','call','create','step','step_1','step_2','let','for_all','exists','if','then','true','false','truth','succ','prev','next','and','or','not','iff','because','to'].includes(t)) return ['#c678dd', 'procedural'];
+  if (/^[A-Za-zÁÉÍÓÚñ]{3,}$/.test(t)) return ['#98c379', 'palabra'];
+  return ['#888', 'estructural'];
+}
+
+async function refresh() {
+  document.getElementById('status').textContent = 'fetching synapses...';
+  try {
+    const syn = await rpc({cmd:'synapses', top_k: 2000});
+    const edges = (syn.top || []).filter(x => x.w >= 0.05);
+
+    // Top brains por degree
+    const deg = new Map();
+    for (const e of edges) {
+      deg.set(e.src, (deg.get(e.src)||0)+1);
+      deg.set(e.dst, (deg.get(e.dst)||0)+1);
+    }
+    const topBrains = [...deg.entries()].sort((a,b) => b[1]-a[1]).slice(0, 100);
+
+    document.getElementById('status').textContent = 'fetching tokens...';
+    // Fetch tokens en paralelo (batched)
+    const brainTokens = new Map();
+    const promises = topBrains.map(async ([name, d]) => {
+      try {
+        const r = await rpc({cmd:'ask', brain:name, prefix:['x'], max_steps:1});
+        const tok = (r.tokens||[''])[0] || '';
+        brainTokens.set(name, tok);
+      } catch(e) {}
+    });
+    await Promise.all(promises);
+
+    // Agrupar por token
+    const groups = new Map();  // token → {brains:[], totalDegree:0}
+    for (const [name, deg_] of topBrains) {
+      const tok = brainTokens.get(name);
+      if (!tok) continue;
+      if (!groups.has(tok)) groups.set(tok, { brains: [], totalDegree: 0 });
+      const g = groups.get(tok);
+      g.brains.push(name);
+      g.totalDegree += deg_;
+    }
+
+    // Tokens con deterministic position
+    const oldByTok = new Map(tokens.map(t => [t.tok, t]));
+    const newTokens = [];
+    let i = 0;
+    const tokList = [...groups.entries()].sort((a,b) => b[1].totalDegree - a[1].totalDegree);
+    for (const [tok, info] of tokList) {
+      const old = oldByTok.get(tok);
+      const [color, cat] = categorizeToken(tok);
+      // Position: spiral por rank
+      const angle = i * 2.4;
+      const radius = 50 + Math.sqrt(i) * 70;
+      const n = old || {
+        tok,
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+        vx: 0, vy: 0,
+      };
+      n.size = 12 + Math.sqrt(info.totalDegree) * 4;
+      n.color = color;
+      n.category = cat;
+      n.brains = info.brains;
+      n.totalDegree = info.totalDegree;
+      newTokens.push(n);
+      i++;
+    }
+    tokens = newTokens;
+
+    // Pairs: si un token A y B tienen brains que co-firan fuerte → línea entre tokens
+    const tokOf = new Map();
+    for (const [name, tok] of brainTokens) tokOf.set(name, tok);
+    const pairWeights = new Map();
+    for (const e of edges) {
+      const ta = tokOf.get(e.src);
+      const tb = tokOf.get(e.dst);
+      if (!ta || !tb || ta === tb) continue;
+      const k = [ta, tb].sort().join('|');
+      pairWeights.set(k, (pairWeights.get(k)||0) + e.w);
+    }
+    pairs = [...pairWeights.entries()]
+      .map(([k, w]) => { const [a, b] = k.split('|'); return { a, b, w }; })
+      .filter(p => p.w >= 50)
+      .sort((a, b) => b.w - a.w);
+
+    // Render pairs sidebar
+    const pairsDiv = document.getElementById('pairs');
+    pairsDiv.innerHTML = pairs.slice(0, 12).map(p =>
+      `<div class="pair"><span class="tok">${p.a}</span> <span class="arrow">⇋</span> <span class="tok">${p.b}</span><span class="w">${p.w.toFixed(0)}</span></div>`
+    ).join('') || '<div style="font-size:10px;color:#666">sin pares fuertes</div>';
+
+    document.getElementById('status').textContent = `✓ ${tokens.length} tokens · ${pairs.length} pares · ${new Date().toLocaleTimeString()}`;
+  } catch(err) {
+    document.getElementById('status').textContent = '✗ ' + err.message;
+    console.error(err);
+  }
+}
+
+function selectToken(t) {
+  selected = t;
+  const info = document.getElementById('info');
+  info.innerHTML = `
+    <div style="color:#e5c07b;font-size:18px"><b>${t.tok}</b></div>
+    <div style="color:#888">${t.category}</div>
+    <div style="margin-top:6px"><b>${t.brains.length}</b> brains lo emiten</div>
+    <div style="margin-top:4px;color:#555;font-size:10px">total degree: ${t.totalDegree}</div>
+    <div style="margin-top:4px;font-size:10px;max-height:60px;overflow-y:auto">${t.brains.slice(0,8).map(b => `<div style="color:#777">${b}</div>`).join('')}${t.brains.length>8 ? `<div style="color:#555">+${t.brains.length-8} más</div>` : ''}</div>
+  `;
+}
+
+function tick() {
+  // Suave force-directed
+  for (let i = 0; i < tokens.length; i++) {
+    let fx = 0, fy = 0;
+    for (let j = 0; j < tokens.length; j++) {
+      if (i === j) continue;
+      const dx = tokens[i].x - tokens[j].x;
+      const dy = tokens[i].y - tokens[j].y;
+      const d2 = dx*dx + dy*dy + 1;
+      const f = 800 / d2;
+      fx += dx * f;
+      fy += dy * f;
+    }
+    tokens[i].vx = (tokens[i].vx + fx*0.1) * 0.7;
+    tokens[i].vy = (tokens[i].vy + fy*0.1) * 0.7;
+  }
+  const tokIdx = new Map(tokens.map((t,i) => [t.tok, t]));
+  for (const p of pairs.slice(0, 30)) {
+    const ta = tokIdx.get(p.a), tb = tokIdx.get(p.b);
+    if (!ta || !tb) continue;
+    const dx = tb.x - ta.x;
+    const dy = tb.y - ta.y;
+    const d = Math.sqrt(dx*dx + dy*dy + 0.01);
+    const target = 150;
+    const stretch = (d - target) * 0.02 * Math.min(1, p.w/500);
+    ta.vx += (dx/d) * stretch;
+    ta.vy += (dy/d) * stretch;
+    tb.vx -= (dx/d) * stretch;
+    tb.vy -= (dy/d) * stretch;
+  }
+  for (const n of tokens) {
+    n.vx -= n.x * 0.0005;
+    n.vy -= n.y * 0.0005;
+    const v = Math.sqrt(n.vx*n.vx + n.vy*n.vy);
+    if (v > 4) { n.vx *= 4/v; n.vy *= 4/v; }
+    n.x += n.vx;
+    n.y += n.vy;
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(W/2 + camera.x, H/2 + camera.y);
+  ctx.scale(camera.zoom, camera.zoom);
+
+  // Pairs
+  const tokIdx = new Map(tokens.map(t => [t.tok, t]));
+  for (const p of pairs.slice(0, 30)) {
+    const ta = tokIdx.get(p.a), tb = tokIdx.get(p.b);
+    if (!ta || !tb) continue;
+    const a = Math.min(1, p.w / 800);
+    ctx.strokeStyle = `rgba(120,160,200,${a*0.5})`;
+    ctx.lineWidth = Math.min(3, p.w/300);
+    ctx.beginPath();
+    ctx.moveTo(ta.x, ta.y);
+    ctx.lineTo(tb.x, tb.y);
+    ctx.stroke();
+  }
+
+  // Token labels (sizing matters)
+  for (const t of tokens) {
+    ctx.fillStyle = t === selected ? '#fff' : t.color;
+    ctx.font = `bold ${t.size}px JetBrains Mono`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t.tok, t.x, t.y);
+    if (t === selected) {
+      ctx.strokeStyle = '#0696D7';
+      ctx.lineWidth = 2;
+      const m = ctx.measureText(t.tok);
+      ctx.strokeRect(t.x - m.width/2 - 4, t.y - t.size/2 - 4, m.width + 8, t.size + 8);
+    }
+  }
+  ctx.restore();
+}
+
+function loop() {
+  tick();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+window.onload = () => {
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  W = canvas.width = window.innerWidth - 320;
+  H = canvas.height = window.innerHeight;
+
+  canvas.onmousedown = (e) => { dragging = true; dragX = e.clientX; dragY = e.clientY; };
+  canvas.onmouseup = () => { dragging = false; };
+  canvas.onmousemove = (e) => {
+    if (dragging) {
+      camera.x += e.clientX - dragX;
+      camera.y += e.clientY - dragY;
+      dragX = e.clientX; dragY = e.clientY;
+    }
+  };
+  canvas.onwheel = (e) => {
+    e.preventDefault();
+    camera.zoom *= e.deltaY < 0 ? 1.1 : 0.9;
+    camera.zoom = Math.max(0.2, Math.min(5, camera.zoom));
+  };
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const x = (cx - W/2 - camera.x) / camera.zoom;
+    const y = (cy - H/2 - camera.y) / camera.zoom;
+    let best = null, bestD = 50;
+    for (const t of tokens) {
+      const d = Math.hypot(t.x - x, t.y - y);
+      if (d < bestD) { bestD = d; best = t; }
+    }
+    if (best) selectToken(best);
+  };
+
+  window.onresize = () => { W = canvas.width = window.innerWidth - 320; H = canvas.height = window.innerHeight; };
+
+  refresh();
+  loop();
+  setInterval(refresh, 15000);
+};
+</script>
+</body>
+</html>

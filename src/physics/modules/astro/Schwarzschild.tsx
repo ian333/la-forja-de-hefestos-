@@ -18,6 +18,107 @@ import { useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
 import Stage from '@/physics/components/Stage';
 import { useAudience } from '@/physics/context';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface GRLessonState {
+  presetId: string;
+  nOrbits: number;
+}
+
+const LESSON_GR: Lesson<GRLessonState> = {
+  hook: {
+    title: 'Mercurio rompió a Newton. 43 arcosegundos por siglo.',
+    body: `Por más de 200 años la mecánica de Newton fue PERFECTA. Los planetas obedecían F = GMm/r², se podían predecir eclipses al segundo, lanzar cohetes a la Luna.
+
+Pero Mercurio tenía un secreto: su órbita PRECESABA. El punto más cercano al Sol (perihelio) no volvía exactamente al mismo lugar — se desplazaba muy lentamente. 574 arcosegundos por siglo en total. De esos, 531 venían de perturbaciones de otros planetas. Pero 43 — exactamente 43 — NO se podían explicar.
+
+Le Verrier propuso un planeta nuevo cerca del Sol ("Vulcano"). Lo buscaron 60 años. No existe.
+
+Einstein, 1915. Su teoría general de la relatividad predijo EXACTAMENTE 43"/siglo. La gravedad no era una fuerza — era curvatura del espacio-tiempo.`,
+  },
+
+  steps: [
+    {
+      title: 'Mercurio real — la precesión está ahí pero es invisible',
+      duration: 5500,
+      body: `Empezamos con valores REALES: M = M☉, a = 0.387 UA, e = 0.206 (excentricidad de Mercurio).
+
+La órbita dorada (GR) precesa, pero la precesión es ~5×10⁻⁷ rad por órbita. En 4 órbitas, casi no se nota visualmente. Necesitarías miles de años de observación para verla.
+
+Es por eso que pasó 60 años desde Le Verrier (1859) hasta Einstein (1915) para entenderla.`,
+      formula: 'Δφ = 6πGM / (c²·a·(1−e²))\n= 5×10⁻⁷ rad/órbita',
+      keyframes: [
+        { at: 0, state: { presetId: 'mercury', nOrbits: 4 } },
+        { at: 1, state: { presetId: 'mercury', nOrbits: 4 } },
+      ],
+    },
+    {
+      title: 'Bajamos c × 1000 — ahora SÍ la ves',
+      duration: 6500,
+      body: `Hacemos un experimento pedagógico: bajamos c (velocidad de la luz) por un factor 1000.
+
+Eso amplifica la corrección relativista por (1000)² = 10⁶. Ahora la precesión es VISIBLE: la órbita dorada gira claramente entre cada periapsis.
+
+Mirá cómo el eje mayor de la elipse rota lentamente. Es el efecto Schwarzschild — geometría no euclídea cerca de una masa.
+
+El embudo gris debajo te muestra el embedding de Flamm: la métrica espacial cerca del Sol.`,
+      formula: 'd²u/dφ² + u = GM/h² + (3GM/c²)·u²',
+      keyframes: [
+        { at: 0, state: { presetId: 'mercury-exagerado', nOrbits: 6 } },
+        { at: 1, state: { presetId: 'mercury-exagerado', nOrbits: 6 } },
+      ],
+    },
+    {
+      title: 'Sirius B — enana blanca',
+      duration: 5500,
+      body: `Cambiá a una órbita cerca de Sirius B, una enana blanca con masa similar al Sol pero radio ~Tierra.
+
+Su gravedad superficial es ~10⁵× la del Sol. La corrección relativista es proporcionalmente mayor — la precesión es mucho más fuerte.
+
+Las enanas blancas son donde la GR empieza a ser fuerte. Más allá: estrellas de neutrones, agujeros negros.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'sirius', nOrbits: 6 } },
+        { at: 1, state: { presetId: 'sirius', nOrbits: 6 } },
+      ],
+    },
+    {
+      title: 'Agujero negro — órbitas violentas',
+      duration: 6500,
+      body: `Última: órbita a 10·r_s de un agujero negro estelar (10 M☉).
+
+A esta distancia, la corrección relativista NO es pequeña: la precesión por órbita es de DECENAS DE GRADOS. La órbita newtoniana cyan (elipse cerrada) y la GR dorada divergen totalmente.
+
+Más cerca (~3·r_s) hay órbitas INESTABLES que pueden caer al horizonte. La última órbita estable circular (ISCO) está exactamente a 6·G·M/c² = 6·G·M_BH/c².
+
+Esto es lo que detectaron LIGO/Virgo en 2015 — colisión de dos BH a 1.3 billones de años luz.`,
+      formula: 'r_ISCO = 6·G·M/c²\nperihelio precesa decenas°/órbita',
+      keyframes: [
+        { at: 0, state: { presetId: 'close-bh', nOrbits: 4 } },
+        { at: 1, state: { presetId: 'close-bh', nOrbits: 4 } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `La relatividad general de Einstein no quedó ahí. Sus predicciones, una tras otra, se cumplieron:
+
+• 1919 — Eclipse en Príncipe (Eddington): la luz se desvía cerca del Sol exactamente como Einstein predijo
+• 1959 — Pound-Rebka: corrimiento gravitacional al rojo medido en un sótano de Harvard (22 metros)
+• 1972 — Hafele-Keating: relojes atómicos voladores muestran dilatación temporal
+• 2015 — LIGO detecta ondas gravitacionales de dos BH fusionándose
+• 2019 — Event Horizon Telescope fotografía la sombra del BH en M87
+• 2020 — Penrose, Genzel, Ghez Nobel por trabajo en Sgr A* (BH del centro galáctico)
+
+GPS hoy día CORRIGE relativisticamente. Sin GR el GPS daría errores de kilómetros tras un día.
+
+Mercurio fue solo el principio.`,
+    links: [
+      { label: 'Sistema Solar — donde Newton aún funciona', href: '#solar-system' },
+      { label: 'Plano tangente — geometría diferencial', href: '/math.html#tangent-plane' },
+      { label: 'Eigenvectores — tensor de curvatura', href: '/math.html#eigen-3d' },
+    ],
+  },
+};
 import { SUN, PLANETS, AU, c as c0, G } from '@/lib/physics/constants';
 import {
   integrateSchwarzschild, analyticPrecession, orbitalPeriod,
@@ -115,34 +216,32 @@ export default function Schwarzschild() {
         </div>
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
-        <Section title="Sistema">
-          <div className="grid grid-cols-1 gap-1.5">
-            {PRESETS.map(p => (
-              <button key={p.id} onClick={() => setPresetId(p.id)}
-                data-testid={`preset-${p.id}`}
-                className={`text-left px-3 py-2 rounded-md border text-[12px] transition ${
-                  presetId === p.id
-                    ? 'bg-gradient-to-br from-[#1E40AF]/30 to-[#7E22CE]/30 border-[#4FC3F7]/40 text-white'
-                    : 'border-[#1E293B] text-[#94A3B8] hover:border-[#334155] hover:text-white'
-                }`}>
-                {p.name}
-              </button>
-            ))}
-          </div>
-          <div className="mt-3 text-[11px] text-[#94A3B8] leading-relaxed italic">{preset.note}</div>
-        </Section>
-
-        <Section title={audience === 'child' ? 'Lo que ves' : 'Órbita comparada'}>
-          {audience === 'child' ? (
-            <div className="text-[12px] text-[#CBD5E1] leading-relaxed space-y-2">
-              <p>El embudo es <span className="text-white">espacio-tiempo</span> — cerca de la masa el espacio "se estira".</p>
-              <p>La línea <span className="text-[#4FC3F7]">cyan</span> es la órbita de Newton: óvalo cerrado.</p>
-              <p>La línea <span className="text-[#FDB813]">dorada</span> es la órbita real (Einstein): no cierra, gira {grArcPerOrb.toFixed(3)}″ cada vuelta.</p>
-              <p>Esa diferencia es la prueba de que la gravedad no es una fuerza — es curvatura.</p>
+      <LessonPanel<GRLessonState>
+        lesson={LESSON_GR}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId as PresetId);
+          if (patch.nOrbits !== undefined) setNOrbits(Math.round(patch.nOrbits));
+        }}
+        sandbox={<>
+          <Section title="Sistema">
+            <div className="grid grid-cols-1 gap-1.5">
+              {PRESETS.map(p => (
+                <button key={p.id} onClick={() => setPresetId(p.id)}
+                  data-testid={`preset-${p.id}`}
+                  className={`text-left px-3 py-2 rounded-md border text-[12px] transition ${
+                    presetId === p.id
+                      ? 'bg-gradient-to-br from-[#1E40AF]/30 to-[#7E22CE]/30 border-[#4FC3F7]/40 text-white'
+                      : 'border-[#1E293B] text-[#94A3B8] hover:border-[#334155] hover:text-white'
+                  }`}>
+                  {p.name}
+                </button>
+              ))}
             </div>
-          ) : (
-            <>
+            <div className="mt-3 text-[11px] text-[#94A3B8] leading-relaxed italic">{preset.note}</div>
+          </Section>
+
+          {audience === 'researcher' && (
+            <Section title="Órbita comparada">
               <Row label="a"                 value={`${(preset.a/AU).toFixed(4)} AU`} />
               <Row label="e"                 value={preset.e.toFixed(4)} />
               <Row label="T newtoniano"      value={`${(data.T / (365.25*86400)).toFixed(4)} yr`} />
@@ -150,40 +249,27 @@ export default function Schwarzschild() {
               <Row label="Δφ sim / órb"      value={`${grArcPerOrb.toFixed(5)} ″`} />
               <Row label="Δφ teórico / órb"  value={`${analyticArcPerOrb.toFixed(5)} ″`} />
               <Row label="error relativo"    value={`${(err*100).toFixed(4)} %`} highlight={err > 0.01} />
-            </>
+            </Section>
           )}
-        </Section>
 
-        <Section title="Integración">
-          <label className="block text-[11px] text-[#94A3B8] mt-1">
-            Órbitas integradas — <span className="font-mono text-white">{nOrbits}</span>
-          </label>
-          <input type="range" min={2} max={30} step={1} value={nOrbits}
-                 onChange={e => setNOrbits(Number(e.target.value))} className="w-full mt-1" />
-          <div className="mt-2 text-[10px] text-[#64748B]">
-            Más órbitas = precesión más larga y medida promediada sobre más periapsis.
-          </div>
-        </Section>
+          <Section title="Integración">
+            <label className="block text-[11px] text-[#94A3B8] mt-1">
+              Órbitas — <span className="font-mono text-white">{nOrbits}</span>
+            </label>
+            <input type="range" min={2} max={30} step={1} value={nOrbits}
+                   onChange={e => setNOrbits(Number(e.target.value))} className="w-full mt-1" />
+          </Section>
 
-        <Section title="Ecuación">
-          <div className="text-[12px] font-mono text-[#CBD5E1] leading-relaxed">
-            <div className="text-white">d²u/dφ² + u = GM/h² + (3GM/c²) u²</div>
-            <div className="mt-2 text-[11px] text-[#64748B]">
-              El segundo término es la corrección relativista. Con c → ∞ recuperas Kepler exacto.
-            </div>
-          </div>
-        </Section>
-
-        {audience === 'researcher' && (
-          <Section title="¿Por qué 43″/siglo?">
-            <div className="text-[11px] text-[#94A3B8] leading-relaxed space-y-2">
-              <p>Analítico: <span className="font-mono text-white">Δφ = 6πGM/(c²a(1−e²))</span> rad/órbita.</p>
-              <p>Mercurio: 5.019×10⁻⁷ rad × 415 órb/siglo × 206 265 ″/rad ≈ 43.0″/siglo.</p>
-              <p>Primera confirmación de la relatividad general — 18 de noviembre 1915.</p>
+          <Section title="Ecuación">
+            <div className="text-[12px] font-mono text-[#CBD5E1] leading-relaxed">
+              <div className="text-white">d²u/dφ² + u = GM/h² + (3GM/c²) u²</div>
+              <div className="mt-2 text-[11px] text-[#64748B]">
+                Con c → ∞ recuperas Kepler exacto.
+              </div>
             </div>
           </Section>
-        )}
-      </aside>
+        </>}
+      />
     </div>
   );
 }

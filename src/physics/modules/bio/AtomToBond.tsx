@@ -17,6 +17,126 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface AtomBondLessonState {
+  presetId: string;
+  R: number;
+}
+
+const LESSON_AB: Lesson<AtomBondLessonState> = {
+  hook: {
+    title: '¿Qué cosa REALMENTE pega dos átomos? Spoiler: no es magia.',
+    body: `Tomá dos átomos de hidrógeno. Si los acercás MUCHO, se repelen (sus núcleos positivos se odian). Si los alejás MUCHO, se ignoran. Pero a UNA distancia justa — alrededor de 0.74 Å — se forma un ENLACE. Una molécula H₂ estable.
+
+¿Por qué a esa distancia y no otra? ¿Qué fuerza neta los mantiene ahí?
+
+La respuesta requirió a Heisenberg, Heitler, London, Pauling — los pioneros cuánticos de los 1920-30. La clave: la NUBE ELECTRÓNICA se redistribuye, baja la energía total, y eso compensa la repulsión nuclear.
+
+Aquí lo verás resolviendo Hartree-Fock con base STO-3G — el método que usan todos los químicos cuánticos. Sin trucos: la curva E(R) sale del cálculo SCF, no de un ajuste a datos.`,
+  },
+
+  steps: [
+    {
+      title: 'Equilibrio — donde H₂ vive de verdad',
+      duration: 5500,
+      body: `Empezamos con R = 1.35 bohr ≈ 0.71 Å. Casi exactamente la distancia experimental de H₂ (0.741 Å).
+
+Mirá la NUBE ELECTRÓNICA entre los dos núcleos: hay DENSIDAD compartida. Los dos electrones forman una "nube de pegamento" que mantiene unidos los protones.
+
+Esa densidad compartida es lo que baja la energía total. Cuando los electrones están entre los núcleos, sus repulsiones mutuas son mínimas y atraen efectivamente a ambos núcleos.
+
+R_eq predicho por HF/STO-3G ≈ 1.39 bohr. La diferencia con el real (1.40 bohr) es 0.7% — y la corrección viene de "correlación electrónica" (no tratada por HF puro).`,
+      formula: 'R_eq ≈ 1.40 bohr ≈ 0.74 Å',
+      keyframes: [
+        { at: 0, state: { presetId: 'equilibrium', R: 1.3466 } },
+        { at: 1, state: { presetId: 'equilibrium', R: 1.3466 } },
+      ],
+    },
+    {
+      title: 'Acércalos demasiado — repulsión NUCLEAR',
+      duration: 5500,
+      body: `Bajamos R a 0.85 bohr. Los dos protones están ahora muy cerca.
+
+La energía SUBE drásticamente. La nube electrónica intenta apantallar la repulsión, pero ya no alcanza — la repulsión 1/R de los protones domina.
+
+Esto es la "pared" izquierda de la curva E(R). Energéticamente prohibitivo acercarse más.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'compressed', R: 0.85 } },
+        { at: 1, state: { presetId: 'compressed', R: 0.85 } },
+      ],
+    },
+    {
+      title: 'Estirá el enlace — pero aún compartido',
+      duration: 5500,
+      body: `R = 2.3 bohr. Casi el doble de la distancia de equilibrio.
+
+La energía SUBIÓ pero no mucho. La nube electrónica se "estira" entre los núcleos. Todavía hay densidad compartida — el enlace es DÉBIL pero existe.
+
+Este régimen es el que ocurre en estados vibracionales excitados — el H₂ "respira" alrededor de R_eq con amplitudes de fracciones de Å. Y en moléculas a alta temperatura.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'stretched', R: 2.3 } },
+        { at: 1, state: { presetId: 'stretched', R: 2.3 } },
+      ],
+    },
+    {
+      title: 'Disociación — el enlace se rompe',
+      duration: 5500,
+      body: `R = 4.0 bohr. Los dos átomos están casi aislados.
+
+Mirá: las nubes electrónicas se separan en dos lóbulos. Ya no hay densidad compartida significativa. Energéticamente, casi como dos átomos H aislados.
+
+La energía de disociación D₀ = E(∞) − E(R_eq) ≈ 4.5 eV (experimental). Esa es la energía que necesitarías para romper H₂ en dos átomos. Es alta — por eso H₂ es estable a temperatura ambiente.
+
+La fotólisis del H₂ requiere luz UV (λ < 270 nm) — energía suficiente para superar D₀.`,
+      formula: 'D₀ = E(∞) − E(R_eq) ≈ 4.5 eV',
+      keyframes: [
+        { at: 0, state: { presetId: 'dissociated', R: 4.0 } },
+        { at: 1, state: { presetId: 'dissociated', R: 4.0 } },
+      ],
+    },
+    {
+      title: 'Vibración — la frecuencia ν̃ sale del cálculo',
+      duration: 6500,
+      body: `Cerca del mínimo, E(R) se ve como parábola: ≈ ½k(R − R_eq)².
+
+Eso es un OSCILADOR ARMÓNICO. Con masa reducida μ = m_H/2, la frecuencia de vibración es ν = (1/2π)·√(k/μ).
+
+Predicción HF: ν̃ ≈ 4640 cm⁻¹. Experimental: 4401 cm⁻¹. Error 5% — bastante bueno para HF/STO-3G sin correlación.
+
+Esa frecuencia es la que ve un espectro IR. Cuando rocías luz infrarroja sobre H₂ gas, la absorbe a 2.27 µm (4401 cm⁻¹) — exactamente como predice esta cuenta.
+
+Toda la química computacional moderna empieza con cuentas como esta y las extiende a moléculas grandes.`,
+      formula: 'k = d²E/dR² en R_eq\nν̃ = (1/2πc)·√(k/μ) cm⁻¹\nHF predice 4640, exp 4401 (5% err)',
+      keyframes: [
+        { at: 0,   state: { presetId: 'equilibrium', R: 1.20 } },
+        { at: 0.5, state: { presetId: 'equilibrium', R: 1.45 } },
+        { at: 1,   state: { presetId: 'equilibrium', R: 1.20 } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `El cálculo de H₂ que acabás de ver es el "eslabón cero" de toda la química computacional.
+
+Sus extensiones cambiaron todo:
+• H₂O, NH₃, CH₄ — pequeñas moléculas, todavía HF puro
+• Métodos post-HF: MP2, CCSD(T) — recuperan correlación electrónica
+• DFT (Density Functional Theory): aproximación más rápida, base de cálculos para drogas y materiales
+• AlphaFold (2020): predice estructuras de proteínas usando aprendizaje sobre datos cuánticos
+• Diseño de fármacos: cribados de millones de moléculas usando DFT/MP2
+• Catálisis industrial: mecanismos de reacción ahora se diseñan computacionalmente
+
+Los premios Nobel de Química de Pople (1998), Kohn (1998), y Karplus/Levitt/Warshel (2013) son todos por estas técnicas.
+
+Lo que viste con H₂ — la densidad compartida que pega los átomos — es exactamente lo que pasa en CADA enlace de CADA molécula del universo.`,
+    links: [
+      { label: 'Double Helix — moléculas más grandes', href: '#double-helix' },
+      { label: 'Protein Viewer — máquinas biológicas', href: '#protein-viewer' },
+      { label: 'Sistema Solar — orden cuántico → clásico', href: '#solar-system' },
+    ],
+  },
+};
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -67,7 +187,13 @@ export default function AtomToBond() {
         <HUD R={R} hf={hf} fit={fit} />
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<AtomBondLessonState>
+        lesson={LESSON_AB}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId);
+          if (patch.R !== undefined) setR(patch.R);
+        }}
+        sandbox={<>
         <Section title="Preset">
           <div className="grid grid-cols-1 gap-1">
             {PRESETS.map(p => (
@@ -194,7 +320,8 @@ export default function AtomToBond() {
             <span className="text-[#64748B]">Cada flecha: modelo derivado, no ajustado.</span>
           </div>
         </Section>
-      </aside>
+        </>}
+      />
 
       <VibrationTicker playVib={playVib} fit={fit} setR={setR} />
     </div>

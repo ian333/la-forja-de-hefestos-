@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>👶 Baby RIAN — Conectoma vivo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #ddd; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100vh; }
+  #app { display: flex; height: 100vh; }
+  #canvas-wrap { flex: 1; position: relative; }
+  canvas { display: block; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  #panel {
+    width: 360px; background: #111; border-left: 1px solid #222;
+    padding: 14px; overflow-y: auto; font-size: 12px;
+  }
+  h1 { font-size: 16px; color: #0696D7; margin-bottom: 8px; }
+  h2 { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 12px 0 4px; }
+  .stat { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dashed #222; font-size: 11px; }
+  .stat .v { color: #fff; font-weight: 500; }
+  .delta-up { color: #98c379; }
+  .delta-dn { color: #e06c75; }
+
+  #status { position: absolute; bottom: 8px; left: 8px; padding: 4px 10px; background: #1a1a1aee; border-radius: 4px; font-size: 10px; color: #888; }
+  #stats-overlay { position: absolute; top: 8px; left: 8px; padding: 6px 12px; background: #0a1620ee; border: 1px solid #1a3550; border-radius: 4px; font-size: 11px; pointer-events: none; }
+
+  .legend { display: flex; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 3px; font-size: 10px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  #info { background: #0a1620; padding: 10px; border: 1px solid #1a3550; border-radius: 4px; margin-top: 6px; min-height: 50px; }
+  #info .name { color: #0696D7; font-size: 12px; font-weight: 600; }
+  #info .tok { color: #98c379; font-size: 16px; margin: 4px 0; }
+  #info .meta { color: #777; font-size: 10px; }
+
+  button { background: #0696D7; color: #fff; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-family: inherit; font-size: 11px; margin: 1px; }
+  button:hover { background: #0a7fb6; }
+  button.off { background: #444; }
+  input { background: #1a1a1a; border: 1px solid #333; color: #ddd; padding: 4px 8px; font-family: inherit; font-size: 11px; width: 70px; }
+
+  .hub { padding: 4px 8px; margin: 2px 0; background: #1a1a1a; border-left: 3px solid #0696D7; font-size: 11px; cursor: pointer; }
+  .hub:hover { background: #252525; }
+  .hub .name { color: #e5c07b; }
+  .hub .tok { color: #98c379; }
+  .hub .deg { color: #888; float: right; font-size: 10px; }
+
+  .live-edge {
+    padding: 3px 6px; margin: 1px 0; background: #0a1620;
+    border-left: 2px solid #61afef; font-size: 10px;
+    animation: flash 1s ease;
+  }
+  @keyframes flash {
+    0% { background: #1a3550; border-left-color: #fff; }
+    100% { background: #0a1620; border-left-color: #61afef; }
+  }
+  .live-edge .tok { color: #e5c07b; }
+  .live-edge .arrow { color: #61afef; }
+  .live-edge .w { color: #98c379; float: right; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="stats-overlay">
+      <span id="ovl-loaded">—</span> brains  ·
+      <span id="ovl-conn">—</span> conn  ·
+      <span id="ovl-edges">—</span> edges  ·
+      w_max <span id="ovl-wmax">—</span>
+    </div>
+    <div id="status">conectando...</div>
+  </div>
+
+  <div id="panel">
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <a href="/baby.html" style="color:#fff;text-decoration:none;padding:4px 8px;background:#0696D7;border-radius:3px;font-size:11px">grafo</a>
+      <a href="/matrix.html" style="color:#61afef;text-decoration:none;padding:4px 8px;background:#1a1a1a;border-radius:3px;font-size:11px">matriz</a>
+      <a href="/tokens.html" style="color:#61afef;text-decoration:none;padding:4px 8px;background:#1a1a1a;border-radius:3px;font-size:11px">tokens</a>
+    </div>
+    <h1>👶 Baby RIAN</h1>
+
+    <h2>Conectoma vivo</h2>
+    <div class="stat"><span>brains con sinapsis</span><span class="v" id="m-loaded">—</span></div>
+    <div class="stat"><span>= conectados</span><span class="v" id="m-conn">—</span></div>
+    <div style="font-size:9px;color:#666;margin-bottom:4px">↑ daemon real tiene muchos más loaded</div>
+    <div class="stat"><span>edges</span><span class="v" id="m-edges">—</span></div>
+    <div class="stat"><span>peso máx</span><span class="v" id="m-wmax">—</span></div>
+    <div class="stat"><span>cross-pool</span><span class="v" id="m-cross">—</span></div>
+    <div class="stat"><span>Δ edges (5s)</span><span class="v" id="m-delta">—</span></div>
+
+    <h2>Pools</h2>
+    <div class="legend">
+      <div class="legend-item"><div class="dot" style="background:#e5c07b"></div>t-pool (originales)</div>
+      <div class="legend-item"><div class="dot" style="background:#98c379"></div>u-pool (ampliación)</div>
+      <div class="legend-item"><div class="dot" style="background:#61afef"></div>g-pool (recientes)</div>
+      <div class="legend-item"><div class="dot" style="background:#c678dd"></div>otro</div>
+    </div>
+
+    <h2>📡 Sinapsis activas</h2>
+    <div id="live-edges" style="max-height:200px;overflow-y:auto"></div>
+
+    <h2>🎯 Brain seleccionado</h2>
+    <div id="info">click en un nodo</div>
+
+    <h2>Top hubs</h2>
+    <div id="hubs"></div>
+
+    <h2>Controles</h2>
+    <div>
+      <button onclick="refresh()">🔄</button>
+      <button onclick="toggleAuto()" id="btn-auto">⏸ auto</button>
+      <button onclick="resetCam()">📷 fit</button>
+      <button onclick="reheat()">🔥 reheat</button>
+      top_k <input id="inp-topk" type="number" value="10000" min="50" max="100000">
+      <button onclick="setTopK()">ok</button>
+      <button onclick="topK=parseInt(document.getElementById('inp-topk').value=99999); refresh()">∞ todas</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// /rpc relativo: vite proxy redirige a ian-gpu
+const RPC_URL = '/rpc';
+
+let canvas, ctx, W, H;
+let nodes = [], edges = [], byName = new Map();
+let edgeKey = e => `${e.src.name}|${e.dst.name}`;
+let prevEdgeWs = new Map();
+let prevTotalEdges = 0;
+let camera = { x: 0, y: 0, zoom: 0.8 };
+let dragging = false, dragX = 0, dragY = 0;
+let selected = null;
+let autoRefresh = true;
+let topK = 10000;  // sin "límite": pide hasta 10K edges (daemon trunca al total real)
+let pulsingEdges = new Map();
+let cooling = 1.0;       // factor de movimiento, decae con tiempo
+let lastPhysicsRefresh = Date.now();
+
+// Hash determinístico string → [x, y] inicial
+function nameHash(name) {
+  let h1 = 5381, h2 = 1313;
+  for (let i = 0; i < name.length; i++) {
+    h1 = ((h1 * 33) ^ name.charCodeAt(i)) >>> 0;
+    h2 = ((h2 * 31) ^ name.charCodeAt(i+1 || 0)) >>> 0;
+  }
+  return [(h1 % 1000) / 1000, (h2 % 1000) / 1000];
+}
+
+// Posición inicial: cada pool en una REGIÓN del canvas
+function initPos(name) {
+  const c = name[0];
+  const [hx, hy] = nameHash(name);
+  let cx = 0, cy = 0;
+  if (c === 't')      { cx = -350; cy =    0; }
+  else if (c === 'u') { cx =    0; cy = -350; }
+  else if (c === 'g') { cx =  350; cy =    0; }
+  else                { cx =    0; cy =  350; }
+  // Spread within region — radio 250
+  return {
+    x: cx + (hx - 0.5) * 500,
+    y: cy + (hy - 0.5) * 500,
+  };
+}
+
+async function rpc(body) {
+  const r = await fetch(RPC_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(`http ${r.status}`);
+  return await r.json();
+}
+
+function poolColor(name) {
+  if (!name) return '#888';
+  const c = name[0];
+  if (c === 't') return '#e5c07b';
+  if (c === 'u') return '#98c379';
+  if (c === 'g') return '#61afef';
+  return '#c678dd';
+}
+
+async function refresh() {
+  document.getElementById('status').textContent = 'fetching…';
+  try {
+    // NO list (1MB de nombres, lento) — solo synapses
+    const syn = await rpc({cmd:'synapses', top_k: topK});
+    const e = (syn.top || []).filter(x => x.w >= 0.05);
+
+    // Delta detection: edges que SUBIERON o son NUEVAS
+    const newEdgeWs = new Map();
+    const liveEdges = [];
+    for (const ed of e) {
+      const k = `${ed.src}|${ed.dst}`;
+      newEdgeWs.set(k, ed.w);
+      const prev = prevEdgeWs.get(k);
+      // Threshold MÁS sensible: Δw ≥ 0.5 (antes 5)
+      if (prev === undefined || ed.w - prev > 0.5) {
+        liveEdges.push({ ...ed, delta: prev === undefined ? ed.w : ed.w - prev });
+      }
+    }
+    prevEdgeWs = newEdgeWs;
+
+    // Compute degree
+    const deg = new Map();
+    for (const ed of e) {
+      deg.set(ed.src, (deg.get(ed.src)||0)+1);
+      deg.set(ed.dst, (deg.get(ed.dst)||0)+1);
+    }
+
+    // Update nodes — preservar posiciones existentes
+    const nameSet = new Set();
+    for (const ed of e) { nameSet.add(ed.src); nameSet.add(ed.dst); }
+    const newNodes = [];
+    const newByName = new Map();
+    for (const name of nameSet) {
+      const old = byName.get(name);
+      let n = old;
+      if (!n) {
+        const p = initPos(name);  // pool-aware deterministic position
+        n = { name, x: p.x, y: p.y, vx: 0, vy: 0, token: '?' };
+      }
+      n.degree = deg.get(name) || 0;
+      n.color = poolColor(name);
+      newNodes.push(n);
+      newByName.set(name, n);
+    }
+    // Reset cooling cuando entran muchos nodos nuevos
+    if (newNodes.length > nodes.length + 20) cooling = 1.0;
+    nodes = newNodes;
+    byName = newByName;
+    edges = e.map(ed => ({ src: byName.get(ed.src), dst: byName.get(ed.dst), w: ed.w }));
+
+    // Marcar edges nuevas/cambiadas para flash
+    for (const le of liveEdges) {
+      const k = `${le.src}|${le.dst}`;
+      pulsingEdges.set(k, { until: Date.now() + 2000, w: le.w });
+    }
+
+    // Stats — distinguir loaded (todos en daemon) vs connected (con sinapsis)
+    const connN = syn.n_brains || 0;
+    // No tenemos `cmd:list` para evitar latencia. n_brains es proxy.
+    // El daemon real tiene MUCHOS más brains loaded; aquí solo vemos los con sinapsis.
+    const loaded = connN;  // alias temporal — debería ser cmd:list_count cheap
+    const totalE = syn.total_edges || 0;
+    const wmax = e.length ? Math.max(...e.map(x=>x.w)) : 0;
+    let cross = 0, intra = 0;
+    for (const ed of e) {
+      if (ed.src[0] === ed.dst[0]) intra++; else cross++;
+    }
+    const crossPct = ((cross/(intra+cross||1))*100).toFixed(0);
+    const dEdges = totalE - prevTotalEdges;
+    prevTotalEdges = totalE;
+
+    setText('m-loaded', loaded.toLocaleString());
+    setText('m-conn', connN.toLocaleString());
+    setText('m-edges', totalE.toLocaleString());
+    setText('m-wmax', wmax.toFixed(1));
+    setText('m-cross', crossPct + '%');
+    const dEl = document.getElementById('m-delta');
+    if (dEdges !== 0) {
+      dEl.textContent = (dEdges>0?'+':'') + dEdges.toLocaleString();
+      dEl.className = 'v ' + (dEdges > 0 ? 'delta-up' : 'delta-dn');
+    } else {
+      dEl.textContent = '—';
+      dEl.className = 'v';
+    }
+
+    setText('ovl-loaded', loaded.toLocaleString());
+    setText('ovl-conn', connN.toLocaleString());
+    setText('ovl-edges', totalE.toLocaleString());
+    setText('ovl-wmax', wmax.toFixed(0));
+
+    // Live edges — fetch tokens for top-N que cambiaron
+    liveEdges.sort((a,b) => b.delta - a.delta);
+    const topLive = liveEdges.slice(0, 8);
+    const liveDiv = document.getElementById('live-edges');
+
+    // Get tokens for them (cheap)
+    const namesNeedTok = new Set();
+    for (const le of topLive) {
+      if (!byName.get(le.src)?.token || byName.get(le.src).token === '?') namesNeedTok.add(le.src);
+      if (!byName.get(le.dst)?.token || byName.get(le.dst).token === '?') namesNeedTok.add(le.dst);
+    }
+    for (const name of namesNeedTok) {
+      rpc({cmd:'ask', brain:name, prefix:['x'], max_steps:1}).then(r => {
+        const tok = (r.tokens||[''])[0] || '·';
+        const node = byName.get(name);
+        if (node) node.token = tok;
+      }).catch(()=>{});
+    }
+    setTimeout(() => {
+      const html = topLive.map(le => {
+        const stok = byName.get(le.src)?.token || '?';
+        const dtok = byName.get(le.dst)?.token || '?';
+        return `<div class="live-edge"><span class="tok">${stok}</span> <span class="arrow">⇋</span> <span class="tok">${dtok}</span> <span class="w">w=${le.w.toFixed(0)} (+${le.delta.toFixed(0)})</span></div>`;
+      }).join('');
+      liveDiv.innerHTML = html || '<div style="color:#666;font-size:10px">sin cambios significativos</div>';
+    }, 800);
+
+    // Top hubs
+    const hubsDiv = document.getElementById('hubs');
+    hubsDiv.innerHTML = '';
+    const sorted = [...deg.entries()].sort((a,b) => b[1]-a[1]).slice(0, 10);
+    for (const [name, d] of sorted) {
+      const div = document.createElement('div');
+      div.className = 'hub';
+      div.innerHTML = `<span class="name">${name}</span><span class="deg">${d}</span><br><span class="tok" id="tok-${name}">…</span>`;
+      div.onclick = () => selectByName(name);
+      hubsDiv.appendChild(div);
+      rpc({cmd:'ask', brain:name, prefix:['x'], max_steps:1}).then(r => {
+        const tok = (r.tokens||[''])[0] || '·';
+        const node = byName.get(name);
+        if (node) node.token = tok;
+        const span = document.getElementById('tok-'+name);
+        if (span) span.textContent = `→ ${tok}`;
+      }).catch(()=>{});
+    }
+
+    document.getElementById('status').textContent = `✓ ${nodes.length} nodos · ${edges.length}/${totalE} edges (top_k=${topK}) · ${liveEdges.length} cambios · ${new Date().toLocaleTimeString()}`;
+  } catch(err) {
+    document.getElementById('status').textContent = '✗ ' + err.message;
+    console.error(err);
+  }
+}
+
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+function selectByName(name) {
+  const n = byName.get(name);
+  if (!n) return;
+  selected = n;
+  const info = document.getElementById('info');
+  info.innerHTML = `<div class="name">${n.name}</div><div class="tok">→ "${n.token}"</div><div class="meta">degree: ${n.degree}</div>`;
+}
+
+// Force-directed con cooling progresivo
+function tick() {
+  // Cooling: cada frame baja un poco. Refresh re-añade calor.
+  cooling *= 0.998;
+  if (cooling < 0.05) cooling = 0.05;  // no se congela del todo
+
+  const N = nodes.length;
+  const repK = 600;
+  const maxRepDist2 = 200*200;
+
+  // 1) Repulsion (cercana)
+  for (let i = 0; i < N; i++) {
+    let fx = 0, fy = 0;
+    for (let j = 0; j < N; j++) {
+      if (i === j) continue;
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const d2 = dx*dx + dy*dy + 0.1;
+      if (d2 > maxRepDist2) continue;
+      const f = repK / d2;
+      fx += dx * f;
+      fy += dy * f;
+    }
+    nodes[i].vx = (nodes[i].vx + fx * cooling) * 0.7;
+    nodes[i].vy = (nodes[i].vy + fy * cooling) * 0.7;
+  }
+  // 2) Attraction por edges
+  for (const e of edges) {
+    if (!e.src || !e.dst) continue;
+    const dx = e.dst.x - e.src.x;
+    const dy = e.dst.y - e.src.y;
+    const d = Math.sqrt(dx*dx + dy*dy + 0.01);
+    const target = Math.max(40, 200 - e.w/5);
+    const stretch = (d - target) * 0.05 * Math.min(1, e.w/100) * cooling;
+    const fx = (dx/d) * stretch;
+    const fy = (dy/d) * stretch;
+    e.src.vx += fx;
+    e.src.vy += fy;
+    e.dst.vx -= fx;
+    e.dst.vy -= fy;
+  }
+  // 3) Center pull SUAVE — mantiene grafo en pantalla
+  for (const n of nodes) {
+    n.vx -= n.x * 0.0006 * cooling;
+    n.vy -= n.y * 0.0006 * cooling;
+  }
+  // 4) Hub anchor — los nodos con degree alto se mueven MENOS
+  //    (los hubs son anclas, los pequeños orbitan)
+  for (const n of nodes) {
+    if (n.degree >= 8) {
+      n.vx *= 0.3;  // hubs gigantes: casi inmóviles
+      n.vy *= 0.3;
+    } else if (n.degree >= 3) {
+      n.vx *= 0.6;  // hubs medianos
+      n.vy *= 0.6;
+    }
+  }
+  // 5) Velocity cap + integration
+  const VCAP = 6;
+  for (const n of nodes) {
+    const v = Math.sqrt(n.vx*n.vx + n.vy*n.vy);
+    if (v > VCAP) { n.vx *= VCAP/v; n.vy *= VCAP/v; }
+    n.x += n.vx;
+    n.y += n.vy;
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(W/2 + camera.x, H/2 + camera.y);
+  ctx.scale(camera.zoom, camera.zoom);
+
+  // Edges normales
+  for (const e of edges) {
+    if (!e.src || !e.dst) continue;
+    const k = `${e.src.name}|${e.dst.name}`;
+    const pulse = pulsingEdges.get(k);
+    const isPulse = pulse && pulse.until > Date.now();
+    const a = Math.min(1, e.w / 200);
+    if (isPulse) {
+      const t = (pulse.until - Date.now()) / 2000;
+      ctx.strokeStyle = `rgba(255,200,80,${0.3 + 0.7*t})`;
+      ctx.lineWidth = 1 + Math.min(3, e.w/100);
+    } else {
+      ctx.strokeStyle = `rgba(120,120,120,${a*0.4})`;
+      ctx.lineWidth = Math.min(2, e.w/250);
+    }
+    ctx.beginPath();
+    ctx.moveTo(e.src.x, e.src.y);
+    ctx.lineTo(e.dst.x, e.dst.y);
+    ctx.stroke();
+  }
+
+  // Limpiar pulses viejos
+  const now = Date.now();
+  for (const [k, p] of pulsingEdges) {
+    if (p.until < now) pulsingEdges.delete(k);
+  }
+
+  // Top hubs absolutos (sin halos rojos invasivos)
+  const sortedByDeg = [...nodes].sort((a,b) => b.degree - a.degree);
+  const top5 = new Set(sortedByDeg.slice(0, 5).map(n => n.name));
+  const top20 = new Set(sortedByDeg.slice(0, 20).map(n => n.name));
+
+  // Nodes — versión limpia
+  for (const n of nodes) {
+    const r = 2 + Math.sqrt(n.degree);
+    ctx.fillStyle = n.color;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, 2*Math.PI);
+    ctx.fill();
+    if (top5.has(n.name)) {
+      ctx.strokeStyle = '#ffeb50';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r+2, 0, 2*Math.PI);
+      ctx.stroke();
+    }
+    if (n === selected) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r+3, 0, 2*Math.PI);
+      ctx.stroke();
+    }
+  }
+
+  // Labels limpios — top-20 hubs con halo legible
+  ctx.font = 'bold 11px JetBrains Mono';
+  for (const n of nodes) {
+    if (!top20.has(n.name)) continue;
+    if (!n.token || n.token === '?') continue;
+    const isTop5 = top5.has(n.name);
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillText(n.token, n.x + 7, n.y - 5);
+    ctx.fillStyle = isTop5 ? '#ffeb50' : '#fff';
+    ctx.fillText(n.token, n.x + 8, n.y - 6);
+  }
+  ctx.restore();
+}
+
+function loop() {
+  tick();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function resize() {
+  W = window.innerWidth - 360;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+}
+
+function toggleAuto() {
+  autoRefresh = !autoRefresh;
+  const btn = document.getElementById('btn-auto');
+  btn.textContent = autoRefresh ? '⏸ auto' : '▶ auto';
+  btn.classList.toggle('off', !autoRefresh);
+}
+
+function resetCam() {
+  camera.x = 0; camera.y = 0; camera.zoom = 0.8;
+}
+
+function reheat() {
+  cooling = 1.0;
+  // Reset positions to deterministic by-pool layout
+  for (const n of nodes) {
+    const p = initPos(n.name);
+    n.x = p.x; n.y = p.y; n.vx = 0; n.vy = 0;
+  }
+}
+
+function setTopK() {
+  const v = parseInt(document.getElementById('inp-topk').value);
+  if (v >= 50 && v <= 5000) topK = v;
+  refresh();
+}
+
+window.onload = () => {
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  resize();
+  window.onresize = resize;
+
+  canvas.onmousedown = (e) => { dragging = true; dragX = e.clientX; dragY = e.clientY; };
+  canvas.onmouseup = () => { dragging = false; };
+  canvas.onmousemove = (e) => {
+    if (dragging) {
+      camera.x += e.clientX - dragX;
+      camera.y += e.clientY - dragY;
+      dragX = e.clientX; dragY = e.clientY;
+    }
+  };
+  canvas.onwheel = (e) => {
+    e.preventDefault();
+    const f = e.deltaY < 0 ? 1.15 : 0.85;
+    camera.zoom *= f;
+    camera.zoom = Math.max(0.05, Math.min(20, camera.zoom));
+  };
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const x = (cx - W/2 - camera.x) / camera.zoom;
+    const y = (cy - H/2 - camera.y) / camera.zoom;
+    let best = null, bestD = 30 / camera.zoom;
+    for (const n of nodes) {
+      const d = Math.hypot(n.x - x, n.y - y);
+      if (d < bestD) { bestD = d; best = n; }
+    }
+    if (best) selectByName(best.name);
+  };
+
+  refresh();
+  loop();
+  // Polling más rápido para ver actividad — cada 5s
+  setInterval(() => { if (autoRefresh) refresh(); }, 5000);
+};
+</script>
+</body>
+</html>

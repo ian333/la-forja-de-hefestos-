@@ -84,9 +84,10 @@ export default function GaiaLab() {
 
           <div className="ml-auto flex items-center gap-3 text-[10px] text-[#64748B] font-mono">
             <span className="hidden md:inline">{element.symbol} · Z={element.Z} · {configCompact(element.Z)}</span>
+            <a href="/escuela.html" className="text-[#64748B] hover:text-[#FDB813] transition">← Γ Escuela</a>
             <a href="/math.html" className="text-[#64748B] hover:text-[#4FC3F7] transition">Σ Mate</a>
             <a href="/physics.html" className="text-[#64748B] hover:text-[#4FC3F7] transition">Φ Física</a>
-            <a href="/" className="text-[#64748B] hover:text-[#4FC3F7] transition">← La Forja</a>
+            <a href="/" className="text-[#64748B] hover:text-[#4FC3F7] transition">La Forja</a>
           </div>
         </div>
       </header>

@@ -6,7 +6,7 @@
  */
 
 import { makeOp, type SdfOperation } from '@/lib/sdf-engine';
-import { createVariable } from '@/lib/gaia-variables';
+import { createVariable, resolveVariables } from '@/lib/gaia-variables';
 import { useForgeStore } from '@/lib/useForgeStore';
 import {
   ForjaContext,
@@ -62,15 +62,17 @@ export async function runScene(def: unknown): Promise<RunResult> {
 
   const built = ctx._build();
   const scene = assembleScene(built);
-  const variables = built.variables.map((v) =>
-    createVariable(v.name, v.expression, {
-      unit: v.opts.unit ?? 'none',
-      group: v.opts.group ?? 'script',
-      description: v.opts.description ?? '',
-      min: v.opts.min,
-      max: v.opts.max,
-      source: 'user',
-    }),
+  const variables = resolveVariables(
+    built.variables.map((v) =>
+      createVariable(v.name, v.expression, {
+        unit: v.opts.unit ?? 'none',
+        group: v.opts.group ?? 'script',
+        description: v.opts.description ?? '',
+        min: v.opts.min,
+        max: v.opts.max,
+        source: 'user',
+      }),
+    ),
   );
 
   const store = useForgeStore.getState();

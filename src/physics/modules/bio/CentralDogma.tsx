@@ -19,6 +19,96 @@ import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BlendFunction, KernelSize } from 'postprocessing';
 import { useAudience } from '@/physics/context';
 import { getParticleTexture } from '@/labs/components/sprite-texture';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface DogmaLessonState {
+  presetId: string;
+}
+
+const LESSON_DOGMA: Lesson<DogmaLessonState> = {
+  hook: {
+    title: 'Cómo tu DNA se convierte en TI — el flujo central de la biología.',
+    body: `Tenés 3,200 millones de letras de DNA. Pero el DNA no HACE nada por sí mismo — es solo información. Las que HACEN cosas son las proteínas: enzimas, transportadores, hormonas, estructura.
+
+¿Cómo se convierte una receta (DNA) en una proteína? Dos pasos:
+
+1. TRANSCRIPCIÓN. Una enzima (RNA polimerasa II) copia el DNA en una molécula similar — el mRNA. Es como sacar una fotocopia de un capítulo del libro maestro.
+
+2. TRADUCCIÓN. Otra máquina (el ribosoma) LEE el mRNA codón por codón (3 bases por aminoácido) y arma una cadena de aminoácidos — la proteína.
+
+Crick lo llamó el "dogma central de la biología molecular" (1958). Es el flujo de información: DNA → RNA → proteína.`,
+  },
+
+  steps: [
+    {
+      title: 'Sintético corto — los pasos visibles',
+      duration: 6500,
+      body: `Empezamos con una secuencia artificial: solo 8 codones + STOP.
+
+Mirá tres carriles superpuestos:
+1. DNA doble hélice (arriba) — la fuente
+2. RNA polimerasa + mRNA naciente (medio) — la transcripción
+3. Ribosoma + aminoácidos siendo añadidos (abajo) — la traducción
+
+La RNAP II copia el DNA a ~30 nucleótidos por segundo. El ribosoma lee 3 nt → 1 aa a ~6 aa/s.
+
+Inicio: ATG (= Met). Stop: TAA, TAG o TGA. Entre ellos: la "frame de lectura" (ORF).`,
+      formula: 'DNA →[RNAP II]→ mRNA →[ribosoma]→ proteína\n3 nt = 1 codón = 1 aa',
+      keyframes: [
+        { at: 0, state: { presetId: 'synth' } },
+        { at: 1, state: { presetId: 'synth' } },
+      ],
+    },
+    {
+      title: 'Insulina (cadena B) — humana real',
+      duration: 6500,
+      body: `Cambio a la cadena B de la insulina humana — 30 aminoácidos del gen INS en cromosoma 11p15.5.
+
+La insulina regula la glucosa en sangre. Cada vez que comés, tu páncreas la libera; sin ella tendrías diabetes tipo 1.
+
+Banting y Best la descubrieron en 1921 (Nobel 1923, salvó millones). Genentech la produjo recombinante en 1982 — primera proteína comercial hecha por bacterias modificadas.
+
+Hoy todos los diabéticos usan insulina recombinante.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'insulin-b' } },
+        { at: 1, state: { presetId: 'insulin-b' } },
+      ],
+    },
+    {
+      title: 'p53 — el "guardián del genoma"',
+      duration: 6500,
+      body: `Cambio al gen TP53, hotspot R175 (R175H es la mutación más común en cánceres humanos).
+
+p53 normalmente PAUSA la célula cuando hay daño en el DNA, le da tiempo a repararse, o si el daño es grave, activa apoptosis (suicidio celular controlado).
+
+CASI LA MITAD de los cánceres tienen p53 mutado. Cuando falla, células dañadas se siguen dividiendo → tumor.
+
+Aquí ves la traducción del contexto R175. UN cambio (CGC→CAC, Arg→His) cambia la proteína y pierde su función supresora.`,
+      formula: 'p53 R175H: CGC → CAC\n→ pérdida de función supresora',
+      keyframes: [
+        { at: 0, state: { presetId: 'tp53-r175' } },
+        { at: 1, state: { presetId: 'tp53-r175' } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `El dogma central rige TODA la biología:
+
+• ENCODE: mapeó dónde se transcribe en tu genoma
+• CRISPR-Cas9: edita DNA con precisión
+• mRNA terapia: vacunas COVID-19 usan mRNA sintético que tu ribosoma traduce
+• Cáncer: drogas que apuntan a transcripción anómala (tamoxifeno bloquea ERα)
+• Senescencia: telómeros se acortan → bloqueo de transcripción → vejez
+
+Toda la medicina molecular moderna empieza acá: DNA → RNA → proteína.`,
+    links: [
+      { label: 'Double Helix — la fuente', href: '#double-helix' },
+      { label: 'Protein Viewer — el producto', href: '#protein-viewer' },
+      { label: 'Biology Scales — del átomo al organismo', href: '#scales' },
+    ],
+  },
+};
 import {
   CENTRAL_DOGMA_PRESETS,
   DEFAULT_RATES,
@@ -93,7 +183,12 @@ export default function CentralDogma() {
         />
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<DogmaLessonState>
+        lesson={LESSON_DOGMA}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId);
+        }}
+        sandbox={<>
         <Section title="Secuencia">
           <div className="grid grid-cols-1 gap-1.5">
             {CENTRAL_DOGMA_PRESETS.map(p => (
@@ -217,7 +312,8 @@ export default function CentralDogma() {
             })}
           </div>
         </Section>
-      </aside>
+        </>}
+      />
     </div>
   );
 }

@@ -12,6 +12,112 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface EMLessonState {
+  presetId: 'dipole' | 'capacitor' | 'wire' | 'cyclotron';
+}
+
+const LESSON_EM: Lesson<EMLessonState> = {
+  hook: {
+    title: 'Maxwell unió la electricidad y el magnetismo en 4 ecuaciones.',
+    body: `Antes de Maxwell (1865), la electricidad y el magnetismo eran fenómenos SEPARADOS. Ampère medía corrientes, Faraday hacía bobinas, Coulomb estudiaba cargas. Todos tenían sus reglas.
+
+Maxwell escribió las 4 ecuaciones que unifican TODO:
+• ∇·E = ρ/ε₀     (las cargas crean campo eléctrico)
+• ∇·B = 0       (no hay monopolos magnéticos)
+• ∇×E = −∂B/∂t  (campo magnético variable induce eléctrico)
+• ∇×B = μ₀J + μ₀ε₀ ∂E/∂t (corrientes y E variable inducen magnético)
+
+De ahí salió: la LUZ es onda electromagnética. Las radios, microondas, WiFi, rayos X — TODO sigue estas 4 reglas.
+
+Esta clase recorre las configuraciones canónicas.`,
+  },
+
+  steps: [
+    {
+      title: 'Dipolo eléctrico — la unidad básica',
+      duration: 5500,
+      body: `Dos cargas iguales y opuestas. Es la configuración más simple después de una carga sola.
+
+Mirá las líneas naranjas (campo E): salen de la carga positiva y entran a la negativa. Cerca de las cargas son radiales; lejos forman el patrón clásico del dipolo.
+
+Los dipolos están en todas partes: moléculas polares (agua), antenas de radio (típicamente dipolos), barras imantadas (dipolos magnéticos).
+
+El potencial cae como 1/r² lejos (no 1/r como una sola carga) — propiedad clave de los dipolos.`,
+      formula: 'V_dipolo(r) = (1/4πε₀) · p·r̂/r²',
+      keyframes: [
+        { at: 0, state: { presetId: 'dipole' } },
+        { at: 1, state: { presetId: 'dipole' } },
+      ],
+    },
+    {
+      title: 'Capacitor — placas paralelas',
+      duration: 5500,
+      body: `Dos placas con cargas opuestas. ENTRE las placas el campo E es prácticamente UNIFORME.
+
+Esa uniformidad es lo que hace al capacitor útil — un campo controlable de magnitud predecible. La capacitancia C = ε₀·A/d es lineal en área y inversa en separación.
+
+Los capacitores guardan energía: U = ½CV². De ahí salen los flashes de cámara, los desfibriladores, los filtros de circuitos.
+
+Maxwell agregó la corriente de desplazamiento ∂E/∂t — y eso permitió que las ondas EM se propagaran. Es la "pieza faltante" que se entiende mirando capacitores.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'capacitor' } },
+        { at: 1, state: { presetId: 'capacitor' } },
+      ],
+    },
+    {
+      title: 'Corriente recta — Biot-Savart',
+      duration: 5500,
+      body: `Un cable con corriente I. El campo magnético B forma CÍRCULOS alrededor del cable, con magnitud que decae como 1/r.
+
+Mirá las flechas cyan formando anillos. Ley de Biot-Savart: B = μ₀·I/(2π·r). A más corriente, más B. A más lejos, menos B.
+
+Dos cables paralelos se atraen (mismo sentido) o repelen (opuesto) — esa atracción ES la definición histórica del Ampere.
+
+El Sol tiene cables enormes de plasma cargado — su campo magnético sale de ahí. La Tierra tiene corrientes en el núcleo líquido — eso genera nuestro campo magnético que nos protege de los rayos cósmicos.`,
+      formula: 'B = μ₀ I / (2π r)  (Biot-Savart)',
+      keyframes: [
+        { at: 0, state: { presetId: 'wire' } },
+        { at: 1, state: { presetId: 'wire' } },
+      ],
+    },
+    {
+      title: 'Ciclotrón — partícula girando en B uniforme',
+      duration: 6500,
+      body: `Una carga negativa con velocidad v se mete en un campo magnético B uniforme.
+
+La fuerza de Lorentz F = q·v×B es SIEMPRE perpendicular a v — entonces NO hace trabajo, solo CURVA la trayectoria. La partícula gira en círculo, llamado radio de Larmor r = mv/(qB).
+
+Es el principio del ciclotrón (Lawrence 1932) y de los aceleradores de partículas modernos. El LHC en CERN usa la misma idea pero a 7 TeV.
+
+También es por qué los rayos cósmicos espirales en el campo magnético terrestre — y eso causa las auroras polares.`,
+      formula: 'F = q(E + v×B)  (Lorentz)\nr_Larmor = mv / (|q|B)\nT_cyc = 2πm / (|q|B)',
+      keyframes: [
+        { at: 0, state: { presetId: 'cyclotron' } },
+        { at: 1, state: { presetId: 'cyclotron' } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `Maxwell + Lorentz es TODO el electromagnetismo clásico. Sus consecuencias:
+
+• La LUZ es una onda EM (v = 1/√(μ₀ε₀) = c, exactamente)
+• Radio y TV — Hertz (1888) confirmó las ondas EM
+• Motores y generadores — Faraday + Maxwell aplicados
+• Rayos X (Röntgen 1895), microondas, GPS — todo EM
+• Antenas modernas — diseño basado en distribución de E y B
+• Resonancia magnética (MRI): protones girando en campos B
+
+La cuántica vino después y modificó esto: la luz también es FOTONES. Pero para casi todo lo que ves, Maxwell sigue siendo perfecto.`,
+    links: [
+      { label: 'Campos vectoriales — base matemática', href: '/math.html#vector-fields' },
+      { label: 'Plano tangente — gradiente del potencial', href: '/math.html#tangent-plane' },
+      { label: 'Schwarzschild — luz curvada por gravedad', href: '#schwarzschild' },
+    ],
+  },
+};
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -165,7 +271,12 @@ export default function EMFields() {
         </div>
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<EMLessonState>
+        lesson={LESSON_EM}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId);
+        }}
+        sandbox={<>
         <Section title="Escena">
           <div className="grid grid-cols-1 gap-1.5">
             {PRESETS.map(p => (
@@ -260,7 +371,8 @@ export default function EMFields() {
             </div>
           )}
         </Section>
-      </aside>
+        </>}
+      />
     </div>
   );
 }

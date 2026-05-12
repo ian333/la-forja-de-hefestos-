@@ -150,6 +150,7 @@ export default function PlanetaryPanel({ open, onClose, onSceneChange }: Planeta
   const firstRunRef = useRef(true);
   useEffect(() => {
     if (firstRunRef.current) { firstRunRef.current = false; return; }
+    if (!open) return;          // never push a scene unless the panel is visible
     if (typeof navigator !== 'undefined' && navigator.webdriver) return;
     if (derived.error) return;
     const id = window.setTimeout(() => {
@@ -157,7 +158,7 @@ export default function PlanetaryPanel({ open, onClose, onSceneChange }: Planeta
       onSceneChange(b.rootOp, params);
     }, 0);
     return () => window.clearTimeout(id);
-  }, [params, onSceneChange, derived.error]);
+  }, [params, onSceneChange, derived.error, open]);
 
   function update(patch: Partial<PlanetaryParams>) {
     setParams((prev) => ({ ...prev, ...patch }));

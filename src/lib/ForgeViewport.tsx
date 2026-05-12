@@ -336,7 +336,19 @@ export default function ForgeViewport({
     <div className={className ?? 'w-full h-full'} style={{ cursor: isSketch ? 'crosshair' : undefined }}>
       <Canvas
         camera={{ position: [6, 5, 8], fov: 45, near: 0.01, far: 500 }}
-        gl={{ antialias: true }}
+        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        onCreated={({ gl }) => {
+          const canvas = gl.domElement;
+          canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            // eslint-disable-next-line no-console
+            console.error('[forja] WebGL context lost — recargá la página (Ctrl+Shift+R)');
+          });
+          canvas.addEventListener('webglcontextrestored', () => {
+            // eslint-disable-next-line no-console
+            console.warn('[forja] WebGL context restored');
+          });
+        }}
       >
         {/* ── Environment Map (HDR reflections for imported meshes) ── */}
         <ForgeEnvironment />

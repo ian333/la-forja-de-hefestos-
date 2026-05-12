@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>👶 Baby — Matriz brain×brain</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #ddd; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100vh; }
+  #app { display: flex; height: 100vh; }
+  #canvas-wrap { flex: 1; position: relative; }
+  canvas { display: block; cursor: crosshair; }
+  #panel { width: 320px; background: #111; border-left: 1px solid #222; padding: 14px; overflow-y: auto; font-size: 12px; }
+  h1 { font-size: 16px; color: #0696D7; margin-bottom: 8px; }
+  h2 { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 12px 0 4px; }
+  #status { position: absolute; bottom: 8px; left: 8px; padding: 4px 10px; background: #1a1a1aee; border-radius: 4px; font-size: 10px; }
+  #info { background: #0a1620; padding: 10px; border: 1px solid #1a3550; border-radius: 4px; min-height: 80px; font-size: 11px; }
+  .legend { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+  .leg-row { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+  .leg-color { width: 14px; height: 14px; border-radius: 2px; }
+  .nav { display: flex; gap: 6px; margin-bottom: 10px; }
+  .nav a { color: #61afef; text-decoration: none; padding: 4px 8px; background: #1a1a1a; border-radius: 3px; font-size: 11px; }
+  .nav a.active { background: #0696D7; color: #fff; }
+  button { background: #0696D7; color: #fff; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-family: inherit; font-size: 11px; margin: 1px; }
+  button:hover { background: #0a7fb6; }
+  input { background: #1a1a1a; border: 1px solid #333; color: #ddd; padding: 4px 8px; font-family: inherit; font-size: 11px; width: 60px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="status">conectando...</div>
+  </div>
+  <div id="panel">
+    <div class="nav">
+      <a href="/baby.html">grafo</a>
+      <a href="/matrix.html" class="active">matriz</a>
+      <a href="/tokens.html">tokens</a>
+    </div>
+    <h1>📊 Matriz brain × brain</h1>
+    <div style="font-size:10px;color:#888;margin-bottom:6px">
+      Top-N brains ordenados por degree.<br>
+      Cada celda = peso de la sinapsis A→B.<br>
+      Bloques densos = COMUNIDADES.
+    </div>
+
+    <h2>Leyenda peso</h2>
+    <div class="legend">
+      <div class="leg-row"><div class="leg-color" style="background:#0a0a0a"></div>0 (sin sinapsis)</div>
+      <div class="leg-row"><div class="leg-color" style="background:#1a3550"></div>1-50</div>
+      <div class="leg-row"><div class="leg-color" style="background:#2c5d80"></div>50-200</div>
+      <div class="leg-row"><div class="leg-color" style="background:#0696D7"></div>200-500</div>
+      <div class="leg-row"><div class="leg-color" style="background:#e5c07b"></div>500-1000</div>
+      <div class="leg-row"><div class="leg-color" style="background:#fff"></div>1000+</div>
+    </div>
+
+    <h2>Celda seleccionada</h2>
+    <div id="info">hover sobre celda</div>
+
+    <h2>Controles</h2>
+    <div>
+      Top-N brains <input id="inp-n" type="number" value="80" min="20" max="200">
+      <button onclick="refresh()">aplicar</button>
+    </div>
+    <div style="margin-top:6px">
+      <button onclick="setSort('degree')">orden: degree</button>
+      <button onclick="setSort('pool')">orden: pool</button>
+      <button onclick="setSort('token')">orden: token</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let canvas, ctx;
+let topN = 80;
+let sortMode = 'degree';
+let brains = [];   // [{name, token, degree, pool}]
+let matrix = [];   // matrix[i][j] = peso
+let cellSize = 0;
+
+async function rpc(body) {
+  const r = await fetch('/rpc', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(`http ${r.status}`);
+  return await r.json();
+}
+
+function colorForWeight(w) {
+  if (w <= 0) return '#0a0a0a';
+  if (w < 50) return `rgba(26,53,80,${0.3 + w*0.014})`;
+  if (w < 200) return `rgba(44,93,128,${0.5 + (w-50)/300})`;
+  if (w < 500) return `rgba(6,150,215,${0.7 + (w-200)/600})`;
+  if (w < 1000) return `rgba(229,192,123,${0.8 + (w-500)/2500})`;
+  return '#fff';
+}
+
+async function refresh() {
+  document.getElementById('status').textContent = 'fetching…';
+  try {
+    const syn = await rpc({cmd:'synapses', top_k: 5000});
+    const edges = (syn.top || []).filter(x => x.w >= 0.05);
+
+    // Compute degree
+    const deg = new Map();
+    const ws = new Map(); // src|dst → w
+    for (const e of edges) {
+      deg.set(e.src, (deg.get(e.src)||0)+1);
+      deg.set(e.dst, (deg.get(e.dst)||0)+1);
+      ws.set(`${e.src}|${e.dst}`, e.w);
+    }
+
+    // Top-N
+    const top = [...deg.entries()].sort((a,b) => b[1]-a[1]).slice(0, topN);
+    brains = top.map(([name,d]) => ({ name, degree: d, pool: name[0], token: '?' }));
+
+    // Sort
+    if (sortMode === 'pool') {
+      brains.sort((a,b) => a.pool.localeCompare(b.pool) || (b.degree - a.degree));
+    } else if (sortMode === 'token') {
+      // Wait for tokens then sort
+      await Promise.all(brains.map(async b => {
+        try {
+          const r = await rpc({cmd:'ask', brain:b.name, prefix:['x'], max_steps:1});
+          b.token = (r.tokens||[''])[0] || '·';
+        } catch(e) { b.token = '?'; }
+      }));
+      brains.sort((a,b) => (a.token||'').localeCompare(b.token||''));
+    }
+    // else degree: already sorted
+
+    // Build matrix
+    const idx = new Map();
+    brains.forEach((b,i) => idx.set(b.name, i));
+    matrix = Array.from({length: brains.length}, () => new Array(brains.length).fill(0));
+    for (const [k, w] of ws) {
+      const [s, d] = k.split('|');
+      const i = idx.get(s), j = idx.get(d);
+      if (i !== undefined && j !== undefined) matrix[i][j] = w;
+    }
+
+    // Fetch tokens (if not already)
+    if (sortMode !== 'token') {
+      brains.forEach(b => {
+        if (b.token === '?') {
+          rpc({cmd:'ask', brain:b.name, prefix:['x'], max_steps:1}).then(r => {
+            b.token = (r.tokens||[''])[0] || '·';
+            draw();
+          }).catch(()=>{});
+        }
+      });
+    }
+
+    draw();
+    document.getElementById('status').textContent = `✓ ${brains.length}×${brains.length} matriz · ${edges.length} edges · ${new Date().toLocaleTimeString()}`;
+  } catch(err) {
+    document.getElementById('status').textContent = '✗ ' + err.message;
+  }
+}
+
+function draw() {
+  const W = canvas.width = window.innerWidth - 320;
+  const H = canvas.height = window.innerHeight;
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!brains.length) return;
+
+  const labelW = 70;
+  const labelH = 70;
+  const availW = W - labelW - 20;
+  const availH = H - labelH - 20;
+  cellSize = Math.min(availW, availH) / brains.length;
+
+  // Pool divider colors
+  const poolColors = { t: '#e5c07b', u: '#98c379', g: '#61afef' };
+
+  // Cells
+  for (let i = 0; i < brains.length; i++) {
+    for (let j = 0; j < brains.length; j++) {
+      const w = matrix[i][j];
+      ctx.fillStyle = colorForWeight(w);
+      ctx.fillRect(labelW + j*cellSize, labelH + i*cellSize, cellSize+1, cellSize+1);
+    }
+  }
+
+  // Diagonal stripe (i=j) — más visible
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < brains.length; i++) {
+    ctx.strokeRect(labelW + i*cellSize, labelH + i*cellSize, cellSize, cellSize);
+  }
+
+  // Pool boundaries (líneas si sortMode='pool')
+  if (sortMode === 'pool') {
+    let prevPool = brains[0].pool;
+    for (let i = 1; i < brains.length; i++) {
+      if (brains[i].pool !== prevPool) {
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(labelW, labelH + i*cellSize);
+        ctx.lineTo(labelW + brains.length*cellSize, labelH + i*cellSize);
+        ctx.moveTo(labelW + i*cellSize, labelH);
+        ctx.lineTo(labelW + i*cellSize, labelH + brains.length*cellSize);
+        ctx.stroke();
+        prevPool = brains[i].pool;
+      }
+    }
+  }
+
+  // Labels (top + left)
+  ctx.font = `${Math.min(10, cellSize)}px JetBrains Mono`;
+  ctx.fillStyle = '#aaa';
+  for (let i = 0; i < brains.length; i++) {
+    const b = brains[i];
+    const cellY = labelH + i*cellSize + cellSize*0.7;
+    ctx.fillStyle = poolColors[b.pool] || '#888';
+    // Label izquierda
+    ctx.textAlign = 'right';
+    ctx.fillText(b.token.slice(0, 8), labelW - 4, cellY);
+    // Label arriba (rotado)
+    ctx.save();
+    ctx.translate(labelW + i*cellSize + cellSize*0.7, labelH - 4);
+    ctx.rotate(-Math.PI/2.2);
+    ctx.textAlign = 'left';
+    ctx.fillText(b.token.slice(0, 10), 0, 0);
+    ctx.restore();
+  }
+}
+
+let mouseX = 0, mouseY = 0;
+canvas.addEventListener?.('mousemove', () => {});
+
+function setSort(mode) {
+  sortMode = mode;
+  refresh();
+}
+
+window.onload = () => {
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth - 320;
+  canvas.height = window.innerHeight;
+
+  // Hover
+  canvas.onmousemove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const labelW = 70, labelH = 70;
+    const i = Math.floor((y - labelH) / cellSize);
+    const j = Math.floor((x - labelW) / cellSize);
+    const info = document.getElementById('info');
+    if (i >= 0 && i < brains.length && j >= 0 && j < brains.length) {
+      const a = brains[i], b = brains[j];
+      const w = matrix[i][j];
+      info.innerHTML = `
+        <div><b style="color:#e5c07b">${a.name}</b> "${a.token}"</div>
+        <div style="color:#888">↕ peso: <b style="color:#fff">${w.toFixed(1)}</b></div>
+        <div><b style="color:#61afef">${b.name}</b> "${b.token}"</div>
+      `;
+    } else {
+      info.innerHTML = 'hover sobre celda';
+    }
+  };
+
+  window.onresize = () => { canvas.width = window.innerWidth - 320; canvas.height = window.innerHeight; draw(); };
+  refresh();
+  setInterval(refresh, 10000);
+};
+</script>
+</body>
+</html>

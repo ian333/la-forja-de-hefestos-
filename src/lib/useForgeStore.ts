@@ -228,6 +228,29 @@ function countPrimType(node: SdfNode, type: string): number {
   return (node as SdfOperation).children.reduce((s, c) => s + countPrimType(c, type), 0);
 }
 
+// rAF-coalesced post-update after driveJoint. Collision detection is O(n²)
+// over modules and meshing structured-clones the scene to a worker — running
+// either on every 60 Hz slider tick freezes the UI. Coalesce to one per frame.
+let _jointUpdatePending = false;
+function _scheduleJointPostUpdate() {
+  if (_jointUpdatePending) return;
+  _jointUpdatePending = true;
+  const run = () => {
+    _jointUpdatePending = false;
+    const st = useForgeStore.getState();
+    const baked = bakeJointTransforms(st.scene, st.joints);
+    const modules = collectModules(baked);
+    const colliding = detectCollisions(baked, modules, rigidPairKeys(st.joints));
+    useForgeStore.setState({ collidingModuleIds: colliding });
+    useForgeStore.getState().requestMesh('draft');
+  };
+  if (typeof requestAnimationFrame !== 'undefined') {
+    requestAnimationFrame(run);
+  } else {
+    setTimeout(run, 16);
+  }
+}
+
 export const useForgeStore = create<ForgeState>((set, get) => ({
   scene: createDefaultScene(),
   selectedId: null,
@@ -1308,13 +1331,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         return { ...j, drive: clampDrive(j, value) };
       }),
     }));
-    // Bake, mesh, and detect collisions on the new configuration.
-    const st = get();
-    const baked = bakeJointTransforms(st.scene, st.joints);
-    const modules = collectModules(baked);
-    const colliding = detectCollisions(baked, modules, rigidPairKeys(st.joints));
-    set({ collidingModuleIds: colliding });
-    get().requestMesh('draft'); // low-res during scrub for responsiveness
+    // Defer collision detection + meshing to next frame so 60 Hz scrubbing
+    // doesn't run an O(n²) sweep + structured-clone-to-worker on every tick.
+    _scheduleJointPostUpdate();
   },
 
   setJoints: (joints) => set({ joints }),
@@ -1356,9 +1375,19 @@ interface ForgeSync {
   machines: MachineConfig[];
 }
 
+// Multi-window sync is OPT-IN: set `localStorage.forgeMultiTab = '1'` to enable.
+// Off by default — even with rAF coalescing the cross-tab postMessage flood
+// has been the source of three separate freeze regressions, and most users
+// only ever open one tab.
+const _MULTI_TAB =
+  typeof localStorage !== 'undefined' &&
+  localStorage.getItem('forgeMultiTab') === '1';
+
 let _suppressSync = false;
 const _bc: BroadcastChannel | null =
-  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('forge-session-v1') : null;
+  _MULTI_TAB && typeof BroadcastChannel !== 'undefined'
+    ? new BroadcastChannel('forge-session-v1')
+    : null;
 
 if (_bc) {
   _bc.onmessage = (e: MessageEvent<ForgeSync>) => {
@@ -1375,15 +1404,44 @@ if (_bc) {
   };
 }
 
+// Reference-equality short-circuit + rAF coalescing avoids hammering the
+// BroadcastChannel with full-scene structured clones on every set(). Without
+// this, scrubbing a joint (60 Hz) deep-clones the whole scene 120×/sec and
+// freezes the main thread.
+let _lastBcScene: SdfOperation | null = null;
+let _lastBcVars: GaiaVariable[] | null = null;
+let _lastBcMachines: MachineConfig[] | null = null;
+let _bcRafPending = false;
+
 useForgeStore.subscribe((state) => {
   if (_suppressSync || !_bc) return;
-  const msg: ForgeSync = {
-    type: 'forge-state-sync',
-    scene: state.scene,
-    variables: state.variables,
-    machines: state.machines,
+  if (
+    state.scene === _lastBcScene &&
+    state.variables === _lastBcVars &&
+    state.machines === _lastBcMachines
+  ) return;
+  if (_bcRafPending) return;
+  _bcRafPending = true;
+  const flush = () => {
+    _bcRafPending = false;
+    if (!_bc) return;
+    const s = useForgeStore.getState();
+    _lastBcScene = s.scene;
+    _lastBcVars = s.variables;
+    _lastBcMachines = s.machines;
+    const msg: ForgeSync = {
+      type: 'forge-state-sync',
+      scene: s.scene,
+      variables: s.variables,
+      machines: s.machines,
+    };
+    try { _bc.postMessage(msg); } catch { /* channel closed */ }
   };
-  _bc.postMessage(msg);
+  if (typeof requestAnimationFrame !== 'undefined') {
+    requestAnimationFrame(flush);
+  } else {
+    setTimeout(flush, 16);
+  }
 });
 
 /** Expose sync channel status for UI indicators */

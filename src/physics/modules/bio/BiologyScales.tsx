@@ -26,6 +26,105 @@ import { useAudience } from '@/physics/context';
 import { getParticleTexture } from '@/labs/components/sprite-texture';
 import { BIO_SCALES, formatLength, getScale } from '@/lib/bio/scales';
 import { BASE_COLOR, buildDuplex } from '@/lib/bio/dna';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface ScalesLessonState {
+  level: number;
+}
+
+const LESSON_SCALES: Lesson<ScalesLessonState> = {
+  hook: {
+    title: 'De una célula (20 µm) hasta una letra de DNA (10 Å) — 4 órdenes de magnitud.',
+    body: `Imaginate que tomás una célula de tu cuerpo. Si la agrandás hasta hacerla del tamaño de un estadio (100 m), entonces el núcleo sería del tamaño de la cancha (30 m), una proteína sería como una pelota de fútbol, y un átomo de hidrógeno sería del tamaño de una hormiga.
+
+Ese rango es DEMASIADO grande para imaginar de una vez. Por eso "vemos" la biología en niveles: célula → orgánulos → moléculas → átomos.
+
+Charles y Ray Eames lo hicieron famoso en su film "Powers of Ten" (1977) — zoom continuo desde el cosmos hasta los protones.
+
+Acá hacés ese zoom pero EN BIOLOGÍA. 7 niveles canónicos, sacados del Alberts "Molecular Biology of the Cell".`,
+  },
+
+  steps: [
+    {
+      title: 'Nivel 0 — Célula completa (~20 µm)',
+      duration: 5500,
+      body: `Una célula eucariota típica mide ~20 micrómetros (1 µm = 0.001 mm).
+
+Mirá: en este nivel ves la célula entera con su membrana y orgánulos visibles. Para humanos: tenés ~37 billones de células así.
+
+Una células bacteriana es ~10× más chica (~1-2 µm). Las células más grandes son las óvulos humanos (~100 µm) y las neuronas con axones (que pueden ser de un metro de largo).`,
+      keyframes: [
+        { at: 0, state: { level: 0 } },
+        { at: 1, state: { level: 0 } },
+      ],
+    },
+    {
+      title: 'Nivel 1-2 — Núcleo y cromosoma',
+      duration: 6000,
+      body: `Bajamos al núcleo (~6 µm) y después al cromosoma (~1.4 µm).
+
+El núcleo contiene TODOS los 46 cromosomas humanos. Cada uno empaquetado en una "fibra de cromatina" de 30 nm.
+
+¿Cómo se mete 2 metros de DNA en una célula de 20 µm? PLEGÁNDOLO ULTRA-DENSO. Cada cromosoma está enrollado 10,000× — primero alrededor de nucleosomas, después fibra, después loops, después dominios topológicos.`,
+      formula: 'núcleo 6 µm · cromosoma 1.4 µm · fibra 30 nm',
+      keyframes: [
+        { at: 0,   state: { level: 1 } },
+        { at: 0.5, state: { level: 2 } },
+        { at: 1,   state: { level: 2 } },
+      ],
+    },
+    {
+      title: 'Nivel 3-4 — Fibra de cromatina + nucleosoma',
+      duration: 6000,
+      body: `Fibra de 30 nm → nucleosoma (~11 nm).
+
+El nucleosoma es la unidad básica de empaquetamiento: 147 bp de DNA envueltos 1.65 veces alrededor de un OCTÁMERO DE HISTONAS (H2A, H2B, H3, H4 × 2).
+
+Las histonas tienen "colitas" químicamente modificables: metilación, acetilación, fosforilación. Esas marcas son el CÓDIGO EPIGENÉTICO — heredable sin tocar la secuencia.
+
+Esa es la razón por la que tu hígado y tu cerebro tienen el MISMO DNA pero hacen cosas distintas: distintos genes están "abiertos" (acetilados) o "cerrados" (metilados) en cada tipo celular.`,
+      formula: 'nucleosoma: 147 bp + octámero histónico',
+      keyframes: [
+        { at: 0,   state: { level: 3 } },
+        { at: 0.5, state: { level: 4 } },
+        { at: 1,   state: { level: 4 } },
+      ],
+    },
+    {
+      title: 'Nivel 5-6 — Doble hélice B + par de bases',
+      duration: 6000,
+      body: `Bajamos al DNA mismo. B-form: 2 nm de diámetro, 3.4 Å por par de bases.
+
+A nivel 6, ves UN par de bases. La A-T tiene 2 puentes de hidrógeno; G-C tiene 3. Eso es por qué genomas ricos en GC son más termoestables.
+
+10 Å por par de bases es donde la biología "se vuelve química". Los átomos son visibles (radio vdW ~1.5 Å). Las reglas son cuánticas. Hartree-Fock.
+
+7 niveles. 4 órdenes de magnitud (20 µm → 10 Å = 20,000×). Y todo eso vive en CADA célula tuya.`,
+      formula: 'B-form: rise 3.4 Å, twist 34.3°, ~10.5 bp/vuelta',
+      keyframes: [
+        { at: 0,   state: { level: 5 } },
+        { at: 0.5, state: { level: 6 } },
+        { at: 1,   state: { level: 6 } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `Las escalas son la herramienta más importante de la biología:
+
+• Las terapias actúan a nivel molecular (drogas, anticuerpos) pero curan organismos (multi-nivel)
+• El cáncer empieza con UN cambio molecular (mutación) y termina con metástasis multi-órgano
+• El plegamiento de proteínas: misfolding causa Alzheimer, Parkinson, ELA — toda la cascada está en escalas
+• Los virus operan a varios niveles: célula (entrar), molecular (replicarse), tisular (propagarse)
+
+Si entendiste el zoom multi-escala, ya entendiste por qué la medicina necesita modelos físicos a TODOS los niveles. La Forja existe para que ese viaje sea visible.`,
+    links: [
+      { label: 'Double Helix — el nivel 6 expandido', href: '#double-helix' },
+      { label: 'Protein Viewer — nivel molecular', href: '#protein-viewer' },
+      { label: 'Atom to Bond — un nivel más abajo', href: '#atom-to-bond' },
+    ],
+  },
+};
 
 export default function BiologyScales() {
   const { audience } = useAudience();
@@ -68,7 +167,12 @@ export default function BiologyScales() {
         </div>
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<ScalesLessonState>
+        lesson={LESSON_SCALES}
+        onApplyState={(patch) => {
+          if (patch.level !== undefined) setLevel(Math.round(patch.level));
+        }}
+        sandbox={<>
         <Section title="Ruta de zoom">
           <div className="grid grid-cols-1 gap-1">
             {BIO_SCALES.map((s, i) => (
@@ -129,7 +233,8 @@ export default function BiologyScales() {
             longitud, 12 en volumen.
           </div>
         </Section>
-      </aside>
+        </>}
+      />
     </div>
   );
 }

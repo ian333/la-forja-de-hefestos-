@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>👶 Baby — 3D conectoma</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #050511; color: #ddd; font-family: 'JetBrains Mono', monospace; overflow: hidden; height: 100vh; }
+  #app { display: flex; height: 100vh; }
+  #scene-wrap { flex: 1; position: relative; }
+  #panel { width: 320px; background: #0d0d18; border-left: 1px solid #222; padding: 14px; overflow-y: auto; font-size: 12px; z-index: 10; }
+  h1 { font-size: 16px; color: #61afef; margin-bottom: 8px; }
+  h2 { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 12px 0 4px; }
+  #status { position: absolute; bottom: 8px; left: 8px; padding: 4px 10px; background: #111e; border-radius: 4px; font-size: 10px; z-index: 10; }
+  .nav { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .nav a { color: #61afef; text-decoration: none; padding: 4px 8px; background: #1a1a1a; border-radius: 3px; font-size: 11px; }
+  .nav a.active { background: #0696D7; color: #fff; }
+  .stat { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dashed #222; font-size: 11px; }
+  .stat .v { color: #fff; font-weight: 500; }
+  .hub { padding: 4px 6px; margin: 2px 0; background: #1a1a1a; border-left: 3px solid #61afef; cursor: pointer; font-size: 11px; }
+  .hub .name { color: #e5c07b; }
+  .hub .tok { color: #98c379; }
+  .hub .deg { color: #888; float: right; }
+  button { background: #0696D7; color: #fff; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-family: inherit; font-size: 11px; margin: 1px; }
+  button:hover { background: #0a7fb6; }
+  #info { background: #0a1620; padding: 10px; border: 1px solid #1a3550; border-radius: 4px; min-height: 50px; font-size: 11px; }
+  #info .name { color: #61afef; font-weight: 600; }
+  #info .tok { color: #98c379; font-size: 16px; margin: 4px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+  .leg-item { display: flex; align-items: center; gap: 3px; font-size: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="scene-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="status">conectando…</div>
+  </div>
+  <div id="panel">
+    <div class="nav">
+      <a href="/baby.html">grafo 2D</a>
+      <a href="/matrix.html">matriz</a>
+      <a href="/tokens.html">tokens</a>
+      <a href="/baby3d.html" class="active">3D ⚡</a>
+    </div>
+    <h1>🌌 Conectoma 3D</h1>
+    <div style="font-size:10px;color:#888;margin-bottom:8px">
+      Three.js force-directed 3D.<br>
+      Drag = rotar · Scroll = zoom · Click = info
+    </div>
+
+    <h2>Stats</h2>
+    <div class="stat"><span>loaded</span><span class="v" id="m-loaded">—</span></div>
+    <div class="stat"><span>conectados</span><span class="v" id="m-conn">—</span></div>
+    <div class="stat"><span>edges drawn</span><span class="v" id="m-edges">—</span></div>
+    <div class="stat"><span>peso máx</span><span class="v" id="m-wmax">—</span></div>
+    <div class="stat"><span>cross-pool</span><span class="v" id="m-cross">—</span></div>
+
+    <h2>Pools</h2>
+    <div class="legend">
+      <div class="leg-item"><div class="dot" style="background:#e5c07b"></div>t-pool</div>
+      <div class="leg-item"><div class="dot" style="background:#98c379"></div>u-pool</div>
+      <div class="leg-item"><div class="dot" style="background:#61afef"></div>g-pool</div>
+    </div>
+
+    <h2>Brain seleccionado</h2>
+    <div id="info">click en una esfera</div>
+
+    <h2>Top-10 hubs</h2>
+    <div id="hubs"></div>
+
+    <h2>Controles</h2>
+    <button onclick="refresh()">🔄</button>
+    <button onclick="toggleAuto()" id="btn-auto">⏸ auto</button>
+    <button onclick="resetCam()">📷 reset</button>
+    <button onclick="reheat()">🔥 reheat</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.166.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.166.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const canvas = document.getElementById('canvas');
+let scene, camera, renderer, controls;
+let nodeGroup, edgeGroup;
+let nodes = [], edges = [], byName = new Map();
+let topK = 10000;
+let autoRefresh = true;
+let selected = null;
+let cooling = 1.0;
+
+const POOL_COLOR = {
+  t: 0xe5c07b,
+  u: 0x98c379,
+  g: 0x61afef,
+  '?': 0xc678dd,
+};
+
+function poolOf(name) { return name && (name[0] === 't' || name[0] === 'u' || name[0] === 'g') ? name[0] : '?'; }
+
+function nameHash(name) {
+  let h1 = 5381, h2 = 1313, h3 = 7919;
+  for (let i = 0; i < name.length; i++) {
+    h1 = ((h1 * 33) ^ name.charCodeAt(i)) >>> 0;
+    h2 = ((h2 * 31) ^ name.charCodeAt(i+1 || 0)) >>> 0;
+    h3 = ((h3 * 37) ^ name.charCodeAt(i+2 || 0)) >>> 0;
+  }
+  return [(h1 % 1000)/1000, (h2 % 1000)/1000, (h3 % 1000)/1000];
+}
+
+// 3 esferas separadas para cada pool
+function initPos(name) {
+  const c = poolOf(name);
+  const [x, y, z] = nameHash(name);
+  let cx = 0, cy = 0, cz = 0;
+  if (c === 't')      { cx = -200; cy =    0; cz =  100; }
+  else if (c === 'u') { cx =  100; cy = -200; cz = -100; }
+  else if (c === 'g') { cx =  200; cy =  100; cz = -50; }
+  // Spread within sphere
+  const r = 150;
+  return {
+    x: cx + (x - 0.5) * r,
+    y: cy + (y - 0.5) * r,
+    z: cz + (z - 0.5) * r,
+  };
+}
+
+async function rpc(body) {
+  const r = await fetch('/rpc', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`http ${r.status}`);
+  return r.json();
+}
+
+function setupScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x050511);
+  scene.fog = new THREE.Fog(0x050511, 400, 1200);
+
+  const W = window.innerWidth - 320;
+  const H = window.innerHeight;
+  camera = new THREE.PerspectiveCamera(60, W/H, 1, 5000);
+  camera.position.set(0, 0, 600);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+
+  // Light
+  scene.add(new THREE.AmbientLight(0x404060, 1.2));
+  const pt = new THREE.PointLight(0xffffff, 1.5, 1500);
+  pt.position.set(0, 0, 0);
+  scene.add(pt);
+
+  // Pool reference spheres (hint visual)
+  for (const [pool, color] of Object.entries(POOL_COLOR)) {
+    if (pool === '?') continue;
+    const ref = new THREE.Mesh(
+      new THREE.SphereGeometry(80, 16, 12),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.04, wireframe: true })
+    );
+    const c = pool === 't' ? [-200, 0, 100] : pool === 'u' ? [100, -200, -100] : [200, 100, -50];
+    ref.position.set(...c);
+    scene.add(ref);
+  }
+
+  nodeGroup = new THREE.Group();
+  scene.add(nodeGroup);
+  edgeGroup = new THREE.Group();
+  scene.add(edgeGroup);
+
+  window.addEventListener('resize', () => {
+    const w = window.innerWidth - 320, h = window.innerHeight;
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+
+  // Click selection (raycasting)
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(nodeGroup.children);
+    if (hits.length) {
+      const m = hits[0].object;
+      selectNode(m.userData.brain);
+    }
+  });
+}
+
+function selectNode(brain) {
+  selected = brain;
+  const info = document.getElementById('info');
+  info.innerHTML = `
+    <div class="name">${brain.name}</div>
+    <div class="tok">→ "${brain.token || '?'}"</div>
+    <div style="color:#777;font-size:10px">degree: ${brain.degree}</div>
+  `;
+}
+
+async function refresh() {
+  document.getElementById('status').textContent = 'fetching…';
+  try {
+    const syn = await rpc({cmd:'synapses', top_k: topK});
+    const e = (syn.top || []).filter(x => x.w >= 0.05);
+
+    const deg = new Map();
+    for (const ed of e) {
+      deg.set(ed.src, (deg.get(ed.src)||0)+1);
+      deg.set(ed.dst, (deg.get(ed.dst)||0)+1);
+    }
+
+    const nameSet = new Set();
+    for (const ed of e) { nameSet.add(ed.src); nameSet.add(ed.dst); }
+
+    // Update nodes preserving positions
+    const newByName = new Map();
+    const newNodes = [];
+    for (const name of nameSet) {
+      const old = byName.get(name);
+      let n = old;
+      if (!n) {
+        const p = initPos(name);
+        n = { name, x: p.x, y: p.y, z: p.z, vx:0, vy:0, vz:0, token:'?' };
+      }
+      n.degree = deg.get(name) || 0;
+      newNodes.push(n);
+      newByName.set(name, n);
+    }
+    nodes = newNodes;
+    byName = newByName;
+    edges = e.map(ed => ({ src: byName.get(ed.src), dst: byName.get(ed.dst), w: ed.w }));
+
+    rebuild();
+    if (newNodes.length > (oldCount + 30)) cooling = 1.0;
+    oldCount = newNodes.length;
+
+    // Stats
+    const loaded = syn.n_brains || 0;
+    const totalE = syn.total_edges || 0;
+    const wmax = e.length ? Math.max(...e.map(x=>x.w)) : 0;
+    let cross = 0, intra = 0;
+    for (const ed of e) {
+      if (ed.src[0] === ed.dst[0]) intra++; else cross++;
+    }
+    document.getElementById('m-loaded').textContent = loaded.toLocaleString();
+    document.getElementById('m-conn').textContent = (syn.n_brains||0).toLocaleString();
+    document.getElementById('m-edges').textContent = e.length.toLocaleString() + '/' + totalE.toLocaleString();
+    document.getElementById('m-wmax').textContent = wmax.toFixed(0);
+    document.getElementById('m-cross').textContent = ((cross/(intra+cross||1))*100).toFixed(0) + '%';
+
+    // Top hubs sidebar
+    const sorted = [...deg.entries()].sort((a,b) => b[1]-a[1]).slice(0, 10);
+    const hubsDiv = document.getElementById('hubs');
+    hubsDiv.innerHTML = '';
+    for (const [name, d] of sorted) {
+      const div = document.createElement('div');
+      div.className = 'hub';
+      div.innerHTML = `<span class="name">${name}</span><span class="deg">${d}</span><br><span class="tok" id="tok-3d-${name}">…</span>`;
+      div.onclick = () => {
+        const b = byName.get(name);
+        if (b) selectNode(b);
+      };
+      hubsDiv.appendChild(div);
+      rpc({cmd:'ask', brain:name, prefix:['x'], max_steps:1}).then(r => {
+        const tok = (r.tokens||[''])[0] || '·';
+        const node = byName.get(name);
+        if (node) node.token = tok;
+        const span = document.getElementById('tok-3d-' + name);
+        if (span) span.textContent = `→ ${tok}`;
+      }).catch(()=>{});
+    }
+
+    document.getElementById('status').textContent = `✓ ${nodes.length} nodos · ${e.length} edges · ${new Date().toLocaleTimeString()}`;
+  } catch(err) {
+    document.getElementById('status').textContent = '✗ ' + err.message;
+    console.error(err);
+  }
+}
+
+let oldCount = 0;
+
+function rebuild() {
+  // Limpiar grupos
+  while (nodeGroup.children.length) {
+    const m = nodeGroup.children[0];
+    nodeGroup.remove(m);
+    m.geometry?.dispose();
+    m.material?.dispose();
+  }
+  while (edgeGroup.children.length) {
+    const m = edgeGroup.children[0];
+    edgeGroup.remove(m);
+    m.geometry?.dispose();
+    m.material?.dispose();
+  }
+
+  // Edges como Line2 (más eficiente que cylinders)
+  const positions = [];
+  const colors = [];
+  for (const e of edges) {
+    if (!e.src || !e.dst) continue;
+    positions.push(e.src.x, e.src.y, e.src.z, e.dst.x, e.dst.y, e.dst.z);
+    const a = Math.min(1, e.w / 200) * 0.6;
+    // Cross-pool: hilos dorados; intra-pool: gris
+    const cross = poolOf(e.src.name) !== poolOf(e.dst.name);
+    const r = cross ? 1.0 : 0.5, g = cross ? 0.85 : 0.5, b = cross ? 0.3 : 0.5;
+    colors.push(r, g, b, r, g, b);
+  }
+  if (positions.length) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    const mat = new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.55
+    });
+    const lines = new THREE.LineSegments(geom, mat);
+    edgeGroup.add(lines);
+  }
+
+  // Nodes — instanced spheres por pool (más eficiente)
+  // Por simplicidad uso meshes individuales ahora (≤ ~3000 nodes OK)
+  const sortedByDeg = [...nodes].sort((a,b) => b.degree - a.degree);
+  const top5 = new Set(sortedByDeg.slice(0, 5).map(n => n.name));
+
+  const sphereGeo = new THREE.SphereGeometry(1, 12, 8);
+  for (const n of nodes) {
+    const r = 1.5 + Math.sqrt(n.degree) * 0.9;
+    const color = POOL_COLOR[poolOf(n.name)];
+    const mat = new THREE.MeshLambertMaterial({
+      color, emissive: color, emissiveIntensity: top5.has(n.name) ? 0.5 : 0.2
+    });
+    const m = new THREE.Mesh(sphereGeo, mat);
+    m.position.set(n.x, n.y, n.z);
+    m.scale.setScalar(r);
+    m.userData.brain = n;
+    nodeGroup.add(m);
+  }
+}
+
+// Force-directed 3D simplificado
+function tick() {
+  cooling *= 0.999;
+  if (cooling < 0.05) cooling = 0.05;
+
+  const N = nodes.length;
+  const repK = 1500;
+  const maxRep2 = 200*200;
+
+  for (let i = 0; i < N; i++) {
+    let fx = 0, fy = 0, fz = 0;
+    // sample 30 vecinos al azar para repulsion (Barnes-Hut simplificado)
+    for (let k = 0; k < 30; k++) {
+      const j = (i + 1 + k * 7919) % N;
+      if (j === i) continue;
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dz = nodes[i].z - nodes[j].z;
+      const d2 = dx*dx + dy*dy + dz*dz + 0.1;
+      if (d2 > maxRep2) continue;
+      const f = repK / d2;
+      fx += dx * f; fy += dy * f; fz += dz * f;
+    }
+    nodes[i].vx = (nodes[i].vx + fx*cooling) * 0.7;
+    nodes[i].vy = (nodes[i].vy + fy*cooling) * 0.7;
+    nodes[i].vz = (nodes[i].vz + fz*cooling) * 0.7;
+  }
+  for (const e of edges) {
+    if (!e.src || !e.dst) continue;
+    const dx = e.dst.x - e.src.x;
+    const dy = e.dst.y - e.src.y;
+    const dz = e.dst.z - e.src.z;
+    const d = Math.sqrt(dx*dx + dy*dy + dz*dz + 0.01);
+    const target = Math.max(40, 200 - e.w/5);
+    const stretch = (d - target) * 0.05 * Math.min(1, e.w/100) * cooling;
+    const fx = (dx/d)*stretch, fy = (dy/d)*stretch, fz = (dz/d)*stretch;
+    e.src.vx += fx; e.src.vy += fy; e.src.vz += fz;
+    e.dst.vx -= fx; e.dst.vy -= fy; e.dst.vz -= fz;
+  }
+  for (const n of nodes) {
+    n.vx -= n.x * 0.0005 * cooling;
+    n.vy -= n.y * 0.0005 * cooling;
+    n.vz -= n.z * 0.0005 * cooling;
+    // Hub anchor
+    if (n.degree >= 8) { n.vx *= 0.3; n.vy *= 0.3; n.vz *= 0.3; }
+    else if (n.degree >= 3) { n.vx *= 0.6; n.vy *= 0.6; n.vz *= 0.6; }
+    const v = Math.sqrt(n.vx*n.vx + n.vy*n.vy + n.vz*n.vz);
+    if (v > 5) { n.vx *= 5/v; n.vy *= 5/v; n.vz *= 5/v; }
+    n.x += n.vx; n.y += n.vy; n.z += n.vz;
+  }
+  // Update mesh positions
+  for (const m of nodeGroup.children) {
+    const n = m.userData.brain;
+    if (n) m.position.set(n.x, n.y, n.z);
+  }
+  // Update edges geometry positions (in place)
+  if (edgeGroup.children.length) {
+    const lines = edgeGroup.children[0];
+    const posAttr = lines.geometry.attributes.position;
+    let idx = 0;
+    for (const e of edges) {
+      if (!e.src || !e.dst) { idx += 6; continue; }
+      posAttr.array[idx++] = e.src.x; posAttr.array[idx++] = e.src.y; posAttr.array[idx++] = e.src.z;
+      posAttr.array[idx++] = e.dst.x; posAttr.array[idx++] = e.dst.y; posAttr.array[idx++] = e.dst.z;
+    }
+    posAttr.needsUpdate = true;
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  tick();
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.toggleAuto = () => {
+  autoRefresh = !autoRefresh;
+  document.getElementById('btn-auto').textContent = autoRefresh ? '⏸ auto' : '▶ auto';
+};
+window.resetCam = () => { camera.position.set(0, 0, 600); controls.target.set(0,0,0); };
+window.reheat = () => {
+  cooling = 1.0;
+  for (const n of nodes) {
+    const p = initPos(n.name);
+    n.x = p.x; n.y = p.y; n.z = p.z; n.vx=0; n.vy=0; n.vz=0;
+  }
+};
+window.refresh = refresh;
+
+setupScene();
+refresh();
+animate();
+setInterval(() => { if (autoRefresh) refresh(); }, 8000);
+</script>
+</body>
+</html>

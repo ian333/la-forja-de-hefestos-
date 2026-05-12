@@ -13,6 +13,111 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface DnaLessonState {
+  presetId: string;
+}
+
+const LESSON_DNA: Lesson<DnaLessonState> = {
+  hook: {
+    title: 'Las "letras" que te hacen vos: A, T, C, G — y la doble hélice que las protege.',
+    body: `Tu DNA contiene 3,200 millones de letras. Cada célula del cuerpo (excepto glóbulos rojos) lleva una copia COMPLETA. Estiradas, las moléculas de DNA de una sola célula medirían 2 metros.
+
+Y todo eso lo descubrieron en 1953 — Watson, Crick, Franklin, Wilkins — mirando patrones de difracción de rayos X.
+
+La estructura es BRUTALMENTE elegante: dos hebras antiparalelas, trenzadas en una hélice, con las "letras" (bases) apareadas por puentes de hidrógeno HACIA ADENTRO. A se aparea con T (2 puentes H). G con C (3 puentes H). Esa regla — Chargaff's rule — fue la clave.
+
+La geometría B-form que verás aquí viene directo del paper de Arnott-Hukins (1972) — rise 3.4 Å por par de bases, twist 34.3° por paso, ~10.5 pares por vuelta.`,
+  },
+
+  steps: [
+    {
+      title: 'Síntesis ATCG×12 — la geometría pura',
+      duration: 5500,
+      body: `Secuencia artificial ATCGATCG... 48 pares de bases. Útil para apreciar la geometría sin distracciones.
+
+Mirá: dos hebras de fosfato-azúcar (los "rieles" del rosa y celeste) trenzadas. Entre ellas, las bases A-T y G-C apareadas — los "escalones".
+
+Surco mayor (major groove) y surco menor (minor groove) visibles: 22 Å y 12 Å respectivamente. Las proteínas que regulan genes "leen" el DNA por el surco mayor — ahí están expuestos los grupos funcionales que distinguen A de T y G de C.
+
+Cada vuelta = ~10.5 pares = ~36 Å de altura. Cada base sube 3.4 Å y rota 34.3°. Esto te lo daría experimentalmente la fibra DXR (difracción de rayos X).`,
+      formula: 'B-form: rise 3.4 Å, twist 34.3°, ~10.5 bp/vuelta',
+      keyframes: [
+        { at: 0, state: { presetId: 'synthetic' } },
+        { at: 1, state: { presetId: 'synthetic' } },
+      ],
+    },
+    {
+      title: 'Telómero humano TTAGGG — los extremos protegidos',
+      duration: 5500,
+      body: `Cambio a la secuencia (TTAGGG)×8 — el telómero humano real descubierto por Blackburn (1978, Nobel 2009).
+
+Esta hexada se repite ~3000 veces al final de cada cromosoma humano. Su función: PROTEGER el extremo del cromosoma de degradarse.
+
+Rica en G — eso le permite formar estructuras G-quadruplex (G4) in vivo: 4 guaninas que se aparean por puentes de hidrógeno en un PLANO. Una arquitectura no canónica clave para regulación.
+
+Cada vez que tu célula se divide, los telómeros se acortan ~50 bp. Cuando son demasiado cortos, la célula entra en senescencia o muerte programada — es uno de los relojes biológicos del envejecimiento.`,
+      formula: 'Telómero humano: (TTAGGG)ₙ con n ≈ 3000',
+      keyframes: [
+        { at: 0, state: { presetId: 'telomere' } },
+        { at: 1, state: { presetId: 'telomere' } },
+      ],
+    },
+    {
+      title: 'Caja TATA — donde empieza la transcripción',
+      duration: 5500,
+      body: `Cambio a la caja TATA (TATAAAA). 18 bp del promotor núcleo eucariota.
+
+Es donde se UNE la TBP (TATA-binding protein) — el primer paso de la transcripción de cualquier gen. La proteína curva el DNA aquí ~90°.
+
+Las cajas TATA están río arriba de la mayoría de genes — típicamente 25-30 bp antes del sitio de inicio. Cuando una célula necesita expresar un gen, su maquinaria empieza buscando TATAs (y otros motivos).
+
+Aunque pequeña, el motivo TATA es ICÓNICO: aparece en biología desde levadura hasta humano. Conservación profunda — el "stop sign" universal de la transcripción.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'tata' } },
+        { at: 1, state: { presetId: 'tata' } },
+      ],
+    },
+    {
+      title: 'BRCA1 — un gen real, humano, supresor de tumores',
+      duration: 6000,
+      body: `60 bp del CDS de BRCA1, exón 11 (NM_007294). Es secuencia REAL del genoma humano — no sintética.
+
+BRCA1 codifica una proteína de reparación de DNA. Cuando alguien hereda una versión defectuosa, su riesgo de cáncer de mama y ovario sube DRÁSTICAMENTE — el famoso "gen BRCA" que pruebas como Mary-Claire King's permitieron descubrir.
+
+Mirá: la secuencia luce ALEATORIA (a diferencia del telómero o TATA). Eso es porque codifica una proteína — los codones llevan información, no patrones geométricos.
+
+Cada 3 bp = 1 codón = 1 aminoácido en la proteína. Los 60 bp aquí codifican 20 aminoácidos. La proteína completa tiene 1863 aa.
+
+UN cambio puntual en una sola base de BRCA1 puede ser la diferencia entre cáncer y vida sana.`,
+      formula: 'BRCA1 humano: 5592 bp CDS → 1863 aa\n3 bp = 1 codón = 1 aminoácido',
+      keyframes: [
+        { at: 0, state: { presetId: 'brca1' } },
+        { at: 1, state: { presetId: 'brca1' } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `El DNA es la molécula más estudiada de la biología. Sus historias:
+
+• 1953 — Watson, Crick, Franklin, Wilkins descubren la estructura (Nobel 1962)
+• 1977 — Sanger inventa secuenciación (Nobel 1980)
+• 1990-2003 — Proyecto Genoma Humano: 3.2 Gbp por $3B USD
+• 2007 — Secuenciación masivamente paralela: $1000 por genoma en 2020
+• 2009 — CRISPR-Cas9: edición precisa de DNA (Nobel 2020)
+• 2012 — Telómeros y senescencia (Blackburn, Greider, Szostak — Nobel)
+• 2020 — AlphaFold: predicción de estructuras de proteínas (Hassabis Nobel 2024)
+
+Y todo se construye sobre lo que viste: dos hebras, A-T, G-C, 3.4 Å por escalón, 34° por giro. Estos números físicos son los cimientos de toda la biología molecular.`,
+    links: [
+      { label: 'Central Dogma — DNA → RNA → proteína', href: '#central-dogma' },
+      { label: 'Protein Viewer — qué hace una proteína', href: '#protein-viewer' },
+      { label: 'Biology Scales — del átomo al organismo', href: '#scales' },
+    ],
+  },
+};
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -100,7 +205,12 @@ export default function DoubleHelix() {
         </div>
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<DnaLessonState>
+        lesson={LESSON_DNA}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId);
+        }}
+        sandbox={<>
         <Section title="Secuencia">
           <div className="grid grid-cols-1 gap-1.5">
             {PRESETS.map(p => (
@@ -176,7 +286,8 @@ export default function DoubleHelix() {
             {reverseComplement(preset.sequence)}
           </div>
         </Section>
-      </aside>
+        </>}
+      />
     </div>
   );
 }

@@ -21,6 +21,109 @@ import { PRESETS, type PresetId } from '@/lib/physics/presets';
 import { stateToElements } from '@/lib/physics/kepler';
 import SolarViewport from '@/physics/components/SolarViewport';
 import { useAudience } from '@/physics/context';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface SolarLessonState {
+  presetId: PresetId;
+}
+
+const LESSON: Lesson<SolarLessonState> = {
+  hook: {
+    title: '¿Cómo se mueven los planetas? Newton lo respondió en 1687.',
+    body: `Antes de Newton, Kepler ya había descubierto empíricamente que los planetas se mueven en ELIPSES con el Sol en un foco. Pero NO sabía POR QUÉ.
+
+Newton dio la respuesta en su Principia: una fuerza gravitatoria F = G·m₁·m₂/r² entre cualquier par de masas. La misma fuerza que hace caer una manzana es la que mantiene a la Luna orbitando la Tierra.
+
+Aquí integramos esa fuerza con el método de Verlet (simpléctico — conserva energía a 1 parte en 10¹³). Sin datos pre-cargados de astrónomos: las órbitas EMERGEN solas de Newton, con valores reales de masas y distancias del JPL.`,
+  },
+
+  steps: [
+    {
+      title: 'Sol + Tierra — la elipse de Kepler',
+      duration: 5500,
+      body: `Empezamos con el caso más simple: el Sol y la Tierra. Distancia 1 UA = 149.6 millones de km. Velocidad tangencial 29.78 km/s.
+
+Mirá: la Tierra dibuja una elipse casi-circular. Esa es la PRIMERA LEY de Kepler: "los planetas se mueven en elipses con el Sol en un foco".
+
+La segunda ley (áreas iguales en tiempos iguales) también está en vivo — cerca del Sol va más rápido. La tercera (T² ∝ a³) la verificas comparando con otros presets.
+
+Newton necesitó cálculo para demostrar que F ∝ 1/r² implica órbita elíptica.`,
+      formula: 'F = G m₁ m₂ / r²  →  Kepler I (elipses)',
+      keyframes: [
+        { at: 0, state: { presetId: 'sun-earth' } },
+        { at: 1, state: { presetId: 'sun-earth' } },
+      ],
+    },
+    {
+      title: 'Tierra + Luna — sistema de 3 cuerpos',
+      duration: 6000,
+      body: `Añadí la Luna. Ahora 3 cuerpos interactuando.
+
+La Luna NO orbita al Sol directamente — orbita la Tierra. Pero juntos (centro de masa) orbitan al Sol.
+
+Esto es el "problema de 3 cuerpos" de Newton. En 1887 Poincaré probó que NO tiene solución cerrada — solo numérica. Y el caos asoma.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'sun-earth-moon' } },
+        { at: 1, state: { presetId: 'sun-earth-moon' } },
+      ],
+    },
+    {
+      title: 'Planetas interiores — Kepler III en vivo',
+      duration: 6500,
+      body: `Mercurio + Venus + Tierra + Marte. Los 4 rocosos.
+
+Períodos: Mercurio 88d, Venus 225d, Tierra 365d, Marte 687d. Saliendo del Sol, cada planeta es MÁS LENTO — Kepler III: T² = (4π²/GM)·a³.
+
+Las pequeñas perturbaciones mutuas (Júpiter, no aquí) acumulan precesión en los milenios — la base de mecánica celeste moderna.`,
+      formula: 'T² = (4π²/GM_☉) · a³\nMercurio 88d · Tierra 365d · Marte 687d',
+      keyframes: [
+        { at: 0, state: { presetId: 'inner' } },
+        { at: 1, state: { presetId: 'inner' } },
+      ],
+    },
+    {
+      title: 'Binaria estelar — la mitad del universo',
+      duration: 5500,
+      body: `Dos estrellas iguales. Casi la mitad de las estrellas del cielo son BINARIOS, no solitarias.
+
+Ambas estrellas orbitan el centro de masas común. Sirio A y Sirio B son ejemplo real.
+
+Cecilia Payne (1925) usó binarios para demostrar que las estrellas son mayoría hidrógeno — midiendo masas vs tipos espectrales.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'binary' } },
+        { at: 1, state: { presetId: 'binary' } },
+      ],
+    },
+    {
+      title: 'Órbita en ocho — milagro de 3 cuerpos',
+      duration: 6000,
+      body: `Tres masas iguales recorren la MISMA curva en forma de ∞, desfasadas.
+
+Descubierto en 1993 por Cris Moore — ¡tan reciente! Antes se creía imposible.
+
+Perfectamente sintonizada: cualquier perturbación rompe la simetría y aparece caos. El problema de N-cuerpos sigue sorprendiendo después de 300 años.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'figure-8' } },
+        { at: 1, state: { presetId: 'figure-8' } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `Newton fue el primer "modelo del cosmos" que funcionó. Sus extensiones cambiaron el mundo:
+
+• Descubrimiento de Neptuno por matemáticas puras (Le Verrier, 1846)
+• La paradoja de Mercurio (43"/siglo) que Newton NO podía explicar — llevó a Einstein y la GR
+• Apolo 11, Voyager, New Horizons — toda su navegación es Newton con corrección GR
+• Exoplanetas: detección por tránsito y velocidad radial — todo es Newton
+• Caos en sistemas planetarios: Mercurio podría escapar en los próximos billones de años`,
+    links: [
+      { label: 'Schwarzschild — donde Newton falla', href: '#schwarzschild' },
+      { label: 'Phase Portrait — geometría de EDOs', href: '/math.html#phase-portrait' },
+      { label: 'Double Pendulum — caos clásico', href: '#double-pendulum' },
+    ],
+  },
+};
 
 function fmtSci(x: number, digits = 3): string {
   if (!isFinite(x)) return 'NaN';
@@ -179,7 +282,12 @@ export default function SolarSystem() {
         </div>
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<SolarLessonState>
+        lesson={LESSON}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId);
+        }}
+        sandbox={<>
         <Section title="Sistema">
           <div className="grid grid-cols-1 gap-1.5">
             {PRESETS.map(p => (
@@ -304,7 +412,8 @@ export default function SolarSystem() {
             ))}
           </div>
         </Section>
-      </aside>
+        </>}
+      />
     </div>
   );
 }

@@ -13,6 +13,14 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5001,
+    proxy: {
+      // /rpc → daemon lab1k en ian-gpu vía tailscale (64K edges activos)
+      // Esto elimina CORS porque el navegador habla con localhost:5001/rpc
+      "/rpc": {
+        target: "http://127.0.0.1:9877",
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     target: "esnext",
@@ -24,6 +32,8 @@ export default defineConfig({
         brain: resolve(import.meta.dirname, "brain.html"),
         lab: resolve(import.meta.dirname, "lab.html"),
         physics: resolve(import.meta.dirname, "physics.html"),
+        math: resolve(import.meta.dirname, "math.html"),
+        escuela: resolve(import.meta.dirname, "escuela.html"),
       },
       output: {
         manualChunks: {

@@ -15,6 +15,111 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface DockingLessonState {
+  showGhost: boolean;
+  pivotMode: 'both' | 'translate' | 'rotate';
+}
+
+const LESSON_DOCK: Lesson<DockingLessonState> = {
+  hook: {
+    title: 'Diseñá una medicina contra el VIH — encajá la pieza en la cerradura.',
+    body: `En 1995, el SIDA mataba sin pausa. Los investigadores ya conocían el enemigo: la PROTEASA viral, una enzima de 99 aminoácidos que el VIH usa para cortar sus poliproteínas y madurar.
+
+¿Cómo PARAR esa proteasa? La idea simple: encontrar una molécula pequeña que se META en su SITIO ACTIVO — un bolsillo específico donde la proteasa hace su trabajo. Si tapás el bolsillo, la proteasa no puede cortar, y el virus no madura.
+
+Saquinavir fue la primera. Diseñada por Roche con químicos cuánticos y miles de horas de modelado.
+
+Aquí arrastrás saquinavir con el mouse. El score (escala Vina) te dice qué tan bien encaja en cada posición. Tu objetivo: llevar el score a < -4.5 kcal/mol = "docking exitoso".`,
+  },
+
+  steps: [
+    {
+      title: 'La proteasa — el blanco enemigo',
+      duration: 5500,
+      body: `Mirá la estructura: una proteasa homodimérica (dos copias idénticas de ~99 aa). En el centro hay un BOLSILLO ACTIVO bañado por residuos catalíticos (Asp25 de cada cadena).
+
+Esta es la enzima que el VIH usa para procesar sus proteínas estructurales (gag, pol). Si no funciona, el virus produce partículas inmaduras NO infectivas.
+
+La forma del bolsillo es muy específica — pequeña, hidrofóbica, con residuos catalíticos. Las moléculas que encajen aquí bloquearán el VIH.
+
+Notá el fantasma blanco — es la posición NATIVA del saquinavir (de la estructura cristalográfica 1HSG). Ese es tu objetivo: arrastrar el saquinavir REAL hasta ahí.`,
+      formula: 'HIV-1 PR · homodímero · Asp25-Asp25\\\' catalíticos',
+      keyframes: [
+        { at: 0, state: { showGhost: true, pivotMode: 'both' } },
+        { at: 1, state: { showGhost: true, pivotMode: 'both' } },
+      ],
+    },
+    {
+      title: 'El ligando — saquinavir',
+      duration: 5500,
+      body: `Saquinavir es una molécula compleja de 670 Da. Diseñada para imitar el ESTADO DE TRANSICIÓN de la reacción enzimática — el momento de máxima inestabilidad cuando la proteasa corta un enlace peptídico.
+
+Mirá: tiene anillos aromáticos (los azules), grupos hidroxilo (rojos), nitrógenos (azules más claros). Toda esa química está sintonizada PARA el bolsillo de la proteasa VIH.
+
+Es lo que llamamos un PEPTIDOMIMÉTICO — imita un péptido sin SER uno. Las proteasas lo confunden con un sustrato, intentan cortarlo, fallan, y quedan atascadas.`,
+      keyframes: [
+        { at: 0, state: { showGhost: true, pivotMode: 'both' } },
+        { at: 1, state: { showGhost: true, pivotMode: 'both' } },
+      ],
+    },
+    {
+      title: 'El score Vina — cuantificá el ajuste',
+      duration: 6000,
+      body: `Cada vez que movés el saquinavir, se recalcula un SCORE de afinidad (estilo AutoDock Vina, Trott & Olson 2010).
+
+5 términos:
+• gauss1 / gauss2 — atracciones electrostáticas y de van der Waals
+• repulsion — choques estéricos (átomos chocando)
+• hydrophobic — contactos C-C apolares (favorables en agua)
+• hbond — puentes de hidrógeno (donante-aceptor a ~3 Å)
+
+Total < -4.5 kcal/mol = "buen docking". Saquinavir nativo en su sitio: ~-9 kcal/mol (excelente). Tu mejor score depende de qué tan cerca estés del fantasma.
+
+Esto es lo que hacen los algoritmos automáticos de docking (AutoDock Vina, Glide, Gold) — pero acá VOS sos el algoritmo. Aprendés la intuición espacial del químico.`,
+      formula: 'ΔG = w_1·gauss1 + w_2·gauss2 + w_3·rep + w_4·hyd + w_5·hbond',
+      keyframes: [
+        { at: 0, state: { showGhost: true, pivotMode: 'both' } },
+        { at: 1, state: { showGhost: true, pivotMode: 'both' } },
+      ],
+    },
+    {
+      title: 'Modo translation/rotation — afinar el ajuste',
+      duration: 5500,
+      body: `Activá "translate" para mover el ligando sin girarlo. Activá "rotate" para girarlo en su lugar.
+
+Esa separación de movimientos es como funcionan los algoritmos de docking automatizados: alternan rotación y traducción, optimizando el score localmente. Lo llamamos "búsqueda local conjugada".
+
+Vina hace miles de tales búsquedas desde puntos iniciales aleatorios, y reporta los TOP scores. Acá vos hacés UNA — y aprendés a sentir qué partes del ligando importan.`,
+      keyframes: [
+        { at: 0,   state: { showGhost: true, pivotMode: 'translate' } },
+        { at: 0.5, state: { showGhost: true, pivotMode: 'rotate' } },
+        { at: 1,   state: { showGhost: true, pivotMode: 'both' } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `El docking es el primer paso en el descubrimiento racional de fármacos. Sus historias:
+
+• 1995 — Saquinavir aprobado por FDA, primer inhibidor de proteasa VIH
+• Cambió el SIDA de "sentencia de muerte" a "enfermedad crónica manejable"
+• 2020s — Paxlovid (nirmatrelvir) usa el mismo principio contra SARS-CoV-2 (inhibe la proteasa Mpro)
+• Cribados virtuales: hoy se ENERGE millones de compuestos en silico antes de tocar el lab
+• AlphaFold + docking automatizado: pipeline acelerado de descubrimiento
+• Investigación contra cáncer: drogas dirigidas a kinasas mutadas (imatinib/Gleevec)
+
+Todo empieza con UNA estructura 3D del PDB y UNA molécula candidata.
+
+Y vos ya lo hiciste — drag-and-drop, science.`,
+    links: [
+      { label: 'Protein Viewer — más estructuras del PDB', href: '#protein-viewer' },
+      { label: 'Atom to Bond — qué hace un enlace covalente', href: '#atom-to-bond' },
+      { label: 'Central Dogma — donde nace la proteasa', href: '#central-dogma' },
+    ],
+  },
+};
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PivotControls } from '@react-three/drei';
@@ -145,7 +250,13 @@ export default function Docking() {
         )}
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<DockingLessonState>
+        lesson={LESSON_DOCK}
+        onApplyState={(patch) => {
+          if (patch.showGhost !== undefined) setShowGhost(patch.showGhost);
+          if (patch.pivotMode !== undefined) setPivotMode(patch.pivotMode);
+        }}
+        sandbox={<>
         <Section title="Función de score">
           <ScoreRow label="ΔG total" value={`${deltaKcal.toFixed(2)} kcal/mol`} bold highlight={docked} />
           <Bar label="gauss 1 (atractivo d≈0)" v={uiScore.gauss1}     max={60} color="#4FC3F7" unit="" />
@@ -210,7 +321,8 @@ export default function Docking() {
             n contactos &gt; 40 → en el bolsillo
           </div>
         </Section>
-      </aside>
+        </>}
+      />
     </div>
   );
 }

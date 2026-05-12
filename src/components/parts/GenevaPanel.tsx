@@ -95,13 +95,14 @@ export default function GenevaPanel({ open, onClose, onSceneChange }: GenevaPane
   const firstRunRef = useRef(true);
   useEffect(() => {
     if (firstRunRef.current) { firstRunRef.current = false; return; }
+    if (!open) return;          // never push a scene unless the panel is visible
     if (typeof navigator !== 'undefined' && navigator.webdriver) return;
     const id = window.setTimeout(() => {
       const b = buildGeneva(params);
       onSceneChange(b.rootOp, params);
     }, 0);
     return () => window.clearTimeout(id);
-  }, [params, onSceneChange]);
+  }, [params, onSceneChange, open]);
 
   function update(patch: Partial<GenevaParams>) {
     setParams((prev) => ({ ...prev, ...patch }));

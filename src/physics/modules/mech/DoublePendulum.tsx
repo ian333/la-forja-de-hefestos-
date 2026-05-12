@@ -18,6 +18,107 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import Stage from '@/physics/components/Stage';
 import { useAudience } from '@/physics/context';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface PenduLessonState {
+  presetId: string;
+}
+
+const LESSON: Lesson<PenduLessonState> = {
+  hook: {
+    title: 'Dos péndulos casi idénticos. En 3 segundos, IRRECONOCIBLES.',
+    body: `Tomá dos péndulos dobles. En el primero, los ángulos iniciales son θ₁=2.0 rad, θ₂=2.5 rad. En el segundo, los mismos PERO con un cambio diminuto: θ₁ = 2.0 + 0.000001 rad. Un micro-radián.
+
+Las ecuaciones son DETERMINISTAS — Lagrange clásico, sin ruido. La conservación de energía es perfecta (ΔE/E < 10⁻¹²).
+
+Y sin embargo: en 3 segundos, el péndulo rosa y el cyan están en posiciones totalmente distintas. La diferencia entre ellos crece EXPONENCIALMENTE — un comportamiento llamado caos determinista.
+
+Esta es la lección más importante de la dinámica no-lineal: predecir el futuro PUEDE ser imposible aunque las leyes sean simples y perfectas.`,
+  },
+
+  steps: [
+    {
+      title: 'Régimen lineal — todo es predecible',
+      duration: 5500,
+      body: `Empezamos con ángulos PEQUEÑOS: θ₁=0.2 rad, θ₂=0.15 rad (~11°, 9°).
+
+Los dos péndulos rosa/cyan se quedan PEGADOS. La diferencia entre ellos crece linealmente (no exponencialmente).
+
+Esto es porque para ángulos pequeños, sin θ ≈ θ — el sistema se vuelve LINEAL. Dos modos normales casi independientes. Es como dos columpios desacoplados.
+
+En este régimen, la mecánica es predecible: Galileo y Huygens pudieron diseñar relojes con péndulos. La era de la cronometría se basó en este principio.`,
+      formula: 'sin θ ≈ θ  (régimen lineal)\n→ dos modos normales independientes',
+      keyframes: [
+        { at: 0, state: { presetId: 'small-angle' } },
+        { at: 1, state: { presetId: 'small-angle' } },
+      ],
+    },
+    {
+      title: 'Amplitud grande — el caos despierta',
+      duration: 6000,
+      body: `Cambio a amplitudes GRANDES: θ₁=2.0, θ₂=2.5 rad (~115°, 143°). Casi de cabeza.
+
+Ahora sin θ ya NO es ≈ θ. Aparecen términos no lineales. Los modos se acoplan brutalmente.
+
+Mirá: los dos péndulos rosa/cyan empiezan IDÉNTICOS pero rápidamente divergen. La distancia entre ellos (|A−B|) crece como e^(λt) con λ ≈ 1.5 — exponente de Lyapunov.
+
+Después de 5 segundos, una décima de milímetro de error en las condiciones iniciales se vuelve MEDIO METRO de diferencia.`,
+      formula: '|A−B|(t) ≈ |A−B|(0) · e^(λt)\nλ ≈ 1.5 /s  (Lyapunov)',
+      keyframes: [
+        { at: 0, state: { presetId: 'classic' } },
+        { at: 1, state: { presetId: 'classic' } },
+      ],
+    },
+    {
+      title: 'Bob exterior pesado — domina el sistema',
+      duration: 5500,
+      body: `Cambio a m₂ = 4·m₁ (el bob exterior 4 veces más pesado).
+
+Mirá: el péndulo se comporta como un CARRUSEL. La masa pesada lleva al brazo interior dando vueltas casi rígidamente.
+
+La asimetría de masas cambia la geometría del caos. Los atractores cambian. Pero el sistema sigue siendo caótico — los rosa y cyan siguen divergiendo.
+
+Esto enseña: los DETALLES de los parámetros importan. No puedes "promediarlos" — la dinámica cualitativa cambia.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'heavy-outer' } },
+        { at: 1, state: { presetId: 'heavy-outer' } },
+      ],
+    },
+    {
+      title: 'Geometría asimétrica — L₁ = 2·L₂',
+      duration: 5500,
+      body: `Brazo interior largo (L₁=2, L₂=0.5). Ahora la dinámica está dominada por el brazo más largo — su período es ~√L₁ ≈ 1.4× el normal.
+
+El bob exterior (más liviano y de brazo corto) "se sacude" más rápido alrededor del brazo lento.
+
+Cada configuración geométrica te da un retrato distinto en el espacio de fase. Si dibujás (θ₁, θ₂, θ̇₁, θ̇₂) — un espacio 4D — el caos llena UNA estructura específica para cada parámetro.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'long-inner' } },
+        { at: 1, state: { presetId: 'long-inner' } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `El péndulo doble fue históricamente el "ejemplo de bolsillo" que destruyó la creencia decimonónica de que "ecuaciones simples = comportamiento simple".
+
+Henri Poincaré (1890) demostró matemáticamente que problemas de 3+ cuerpos newtoniano NO tienen solución cerrada. El péndulo doble es la versión más simple de esa imposibilidad.
+
+Y abrió la puerta a:
+• Teoría del caos (Lorenz 1963 — clima)
+• Atractores extraños (Mandelbrot, Strogatz)
+• Computación reversible (caos como fuente de aleatoriedad)
+• Predictibilidad meteorológica con horizonte máximo ~2 semanas (efecto mariposa)
+• Modelos de mercados financieros y epidemias
+
+Si entendiste el péndulo doble, ya entendiste el corazón de por qué el clima es difícil de predecir.`,
+    links: [
+      { label: 'Phase Portrait — geometría de EDOs', href: '/math.html#phase-portrait' },
+      { label: 'Sistema Solar — N-body Newton', href: '#solar-system' },
+      { label: 'Eigenvectores — modos normales linealizados', href: '/math.html#eigen-3d' },
+    ],
+  },
+};
 import {
   dpStep, dpEnergy, dpPositions,
   type DoublePendulumState, type DoublePendulumParams,
@@ -133,78 +234,81 @@ export default function DoublePendulum() {
         </div>
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
-        <Section title="Preset">
-          <div className="grid grid-cols-1 gap-1.5">
-            {PRESETS.map(p => (
-              <button key={p.id} onClick={() => setPresetId(p.id)}
-                data-testid={`preset-${p.id}`}
-                className={`text-left px-3 py-2 rounded-md border text-[12px] transition ${
-                  presetId === p.id
-                    ? 'bg-gradient-to-br from-[#1E40AF]/30 to-[#7E22CE]/30 border-[#4FC3F7]/40 text-white'
-                    : 'border-[#1E293B] text-[#94A3B8] hover:border-[#334155] hover:text-white'
-                }`}>{p.name}</button>
-            ))}
-          </div>
-          <div className="mt-3 text-[11px] text-[#94A3B8] leading-relaxed italic">{preset.note}</div>
-        </Section>
+      <LessonPanel<PenduLessonState>
+        lesson={LESSON}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId);
+        }}
+        sandbox={
+          <>
+            <Section title="Preset">
+              <div className="grid grid-cols-1 gap-1.5">
+                {PRESETS.map(p => (
+                  <button key={p.id} onClick={() => setPresetId(p.id)}
+                    data-testid={`preset-${p.id}`}
+                    className={`text-left px-3 py-2 rounded-md border text-[12px] transition ${
+                      presetId === p.id
+                        ? 'bg-gradient-to-br from-[#1E40AF]/30 to-[#7E22CE]/30 border-[#4FC3F7]/40 text-white'
+                        : 'border-[#1E293B] text-[#94A3B8] hover:border-[#334155] hover:text-white'
+                    }`}>{p.name}</button>
+                ))}
+              </div>
+              <div className="mt-3 text-[11px] text-[#94A3B8] leading-relaxed italic">{preset.note}</div>
+            </Section>
 
-        {audience === 'child' ? (
-          <Section title="Lo que ves">
-            <div className="text-[12px] text-[#CBD5E1] leading-relaxed space-y-2">
-              <p>Dos péndulos <span className="text-[#4FC3F7]">cyan</span> y <span className="text-[#F472B6]">rosa</span> empiezan casi idénticos.</p>
-              <p>En milisegundos se separan <em>exponencialmente</em> — eso es <span className="text-white">caos determinista</span>.</p>
-              <p>Pero la energía total casi no cambia: la física es perfecta, el futuro es impredecible.</p>
-            </div>
-          </Section>
-        ) : (
-          <Section title="Estado (A)">
-            <Row label="t"     value={`${fmt(stateA.current.t,3)} s`} />
-            <Row label="θ₁"    value={`${fmt(stateA.current.th1,4)} rad`} />
-            <Row label="θ₂"    value={`${fmt(stateA.current.th2,4)} rad`} />
-            <Row label="E(A)"  value={`${fmt(eA,4)} J`} />
-            <Row label="ΔE/E"  value={fmtSci(dE,3)} highlight={dE > 1e-4} />
-            <Row label="|A−B|" value={fmtSci(sepDist,3)} />
-            <div className="mt-2 text-[10px] text-[#64748B]">
-              Lyapunov empírico λ = log(|Δ|)/t — con Δ₀=1e-6 crece como e^(λt), λ ≈ 1.5 /s.
-            </div>
-          </Section>
-        )}
+            {audience === 'child' ? (
+              <Section title="Lo que ves">
+                <div className="text-[12px] text-[#CBD5E1] leading-relaxed space-y-2">
+                  <p>Dos péndulos <span className="text-[#4FC3F7]">cyan</span> y <span className="text-[#F472B6]">rosa</span> empiezan casi idénticos.</p>
+                  <p>En milisegundos se separan <em>exponencialmente</em> — eso es <span className="text-white">caos determinista</span>.</p>
+                </div>
+              </Section>
+            ) : (
+              <Section title="Estado (A)">
+                <Row label="t"     value={`${fmt(stateA.current.t,3)} s`} />
+                <Row label="θ₁"    value={`${fmt(stateA.current.th1,4)} rad`} />
+                <Row label="θ₂"    value={`${fmt(stateA.current.th2,4)} rad`} />
+                <Row label="E(A)"  value={`${fmt(eA,4)} J`} />
+                <Row label="ΔE/E"  value={fmtSci(dE,3)} highlight={dE > 1e-4} />
+                <Row label="|A−B|" value={fmtSci(sepDist,3)} />
+                <div className="mt-2 text-[10px] text-[#64748B]">
+                  λ = log(|Δ|)/t — Δ₀=1e-6, λ ≈ 1.5 /s (Lyapunov).
+                </div>
+              </Section>
+            )}
 
-        {audience === 'researcher' && (
-          <Section title="Parámetros físicos">
-            <Slider label="m₁" v={params.m1} min={0.1} max={5}  step={0.01} on={v => setParams(p => ({ ...p, m1: v }))} />
-            <Slider label="m₂" v={params.m2} min={0.1} max={5}  step={0.01} on={v => setParams(p => ({ ...p, m2: v }))} />
-            <Slider label="L₁" v={params.L1} min={0.2} max={3}  step={0.01} on={v => setParams(p => ({ ...p, L1: v }))} />
-            <Slider label="L₂" v={params.L2} min={0.2} max={3}  step={0.01} on={v => setParams(p => ({ ...p, L2: v }))} />
-            <Slider label="g"  v={params.g}  min={0}   max={25} step={0.01} on={v => setParams(p => ({ ...p, g: v }))} />
-          </Section>
-        )}
+            {audience === 'researcher' && (
+              <Section title="Parámetros físicos">
+                <Slider label="m₁" v={params.m1} min={0.1} max={5}  step={0.01} on={v => setParams(p => ({ ...p, m1: v }))} />
+                <Slider label="m₂" v={params.m2} min={0.1} max={5}  step={0.01} on={v => setParams(p => ({ ...p, m2: v }))} />
+                <Slider label="L₁" v={params.L1} min={0.2} max={3}  step={0.01} on={v => setParams(p => ({ ...p, L1: v }))} />
+                <Slider label="L₂" v={params.L2} min={0.2} max={3}  step={0.01} on={v => setParams(p => ({ ...p, L2: v }))} />
+                <Slider label="g"  v={params.g}  min={0}   max={25} step={0.01} on={v => setParams(p => ({ ...p, g: v }))} />
+              </Section>
+            )}
 
-        {audience === 'researcher' && (
-          <Section title="Integrador">
-            <label className="block text-[11px] text-[#94A3B8]">
-              dt — <span className="font-mono text-white">{fmtSci(dt, 2)}</span> s
-            </label>
-            <input type="range" min={Math.log10(1e-5)} max={Math.log10(1e-2)} step={0.01}
-                   value={Math.log10(dt)}
-                   onChange={e => setDt(Math.pow(10, Number(e.target.value)))}
-                   className="w-full mt-1" />
-            <div className="mt-2 text-[10px] text-[#64748B]">
-              RK4 clásico. 10 sub-pasos/frame → dt efectivo ≈ {fmtSci(dt*10,1)} s.
-              Para amplitud ∼π baja dt a 1e-4 si quieres ΔE/E &lt; 1e-12.
-            </div>
-          </Section>
-        )}
+            {audience === 'researcher' && (
+              <Section title="Integrador">
+                <label className="block text-[11px] text-[#94A3B8]">
+                  dt — <span className="font-mono text-white">{fmtSci(dt, 2)}</span> s
+                </label>
+                <input type="range" min={Math.log10(1e-5)} max={Math.log10(1e-2)} step={0.01}
+                       value={Math.log10(dt)}
+                       onChange={e => setDt(Math.pow(10, Number(e.target.value)))}
+                       className="w-full mt-1" />
+                <div className="mt-2 text-[10px] text-[#64748B]">RK4, 10 sub-pasos/frame.</div>
+              </Section>
+            )}
 
-        <Section title="Ecuación">
-          <div className="text-[11px] font-mono text-[#CBD5E1] leading-snug">
-            <div className="text-white">L = T − U</div>
-            <div className="mt-1 text-[#94A3B8]">con T, U clásicos.</div>
-            <div className="mt-1">→ θ̈₁, θ̈₂ via ∂L/∂θ − d/dt(∂L/∂θ̇) = 0.</div>
-          </div>
-        </Section>
-      </aside>
+            <Section title="Ecuación">
+              <div className="text-[11px] font-mono text-[#CBD5E1] leading-snug">
+                <div className="text-white">L = T − U</div>
+                <div className="mt-1">→ θ̈₁, θ̈₂ via ∂L/∂θ − d/dt(∂L/∂θ̇) = 0.</div>
+              </div>
+            </Section>
+          </>
+        }
+      />
     </div>
   );
 }

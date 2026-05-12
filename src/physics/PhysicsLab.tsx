@@ -70,7 +70,9 @@ export default function PhysicsLab() {
                 Verlet · RK4 · SI · invariantes en vivo
               </span>
               <div className="flex items-center gap-3 text-[11px] text-[#64748B] font-mono">
-                <a href="/lab.html"   className="hover:text-[#4FC3F7] transition">GAIA (Química) →</a>
+                <a href="/escuela.html" className="hover:text-[#FDB813] transition">← Γ Escuela</a>
+                <a href="/math.html"  className="hover:text-[#4FC3F7] transition">Σ Mate →</a>
+                <a href="/lab.html"   className="hover:text-[#4FC3F7] transition">⚗ Química →</a>
                 <a href="/"           className="hover:text-[#4FC3F7] transition">La Forja →</a>
               </div>
             </div>

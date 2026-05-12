@@ -18,6 +18,108 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+
+interface PvLessonState {
+  presetId: string;
+}
+
+const LESSON_PV: Lesson<PvLessonState> = {
+  hook: {
+    title: 'Las máquinas más pequeñas de la naturaleza — proteínas con forma 3D.',
+    body: `Una proteína es una CADENA de aminoácidos. En tu cuerpo hay ~20,000 proteínas distintas. Cada una se "pliega" en una forma 3D única — y esa FORMA decide qué hace.
+
+Cambiá un aminoácido en mil → puede ser irrelevante. Cambiá el aminoácido correcto → puede ser cáncer o muerte. La estructura ES la función.
+
+Aquí cargás estructuras REALES del RCSB Protein Data Bank — coordenadas atómicas determinadas por cristalografía de rayos X o NMR. Sin trucos, sin modelos: las posiciones exactas medidas en laboratorios.
+
+Recorré 4 proteínas icónicas, cada una con su historia.`,
+  },
+
+  steps: [
+    {
+      title: 'Ubiquitina (1UBQ) — la etiqueta "destruir"',
+      duration: 6000,
+      body: `76 aminoácidos. Pequeña pero universal — está en TODOS los eucariotas, desde levadura hasta humanos.
+
+Su función: marcar otras proteínas como "obsoletas, mandar al proteasoma para reciclar". Las células degradan ~30% de sus proteínas cada día — la ubiquitina dirige ese tráfico.
+
+Mirá su forma: una mezcla de α-hélices (rojo) y β-láminas (amarillo). Es lo que se llama un "barril" estructural — fold ubiquitin-like, una de las arquitecturas más conservadas en biología.
+
+Hershko, Ciechanover, Rose ganaron el Nobel de Química 2004 por descubrir este sistema. Hoy hay drogas (lenalidomida, p.ej.) que reprograman quién es ubiquitinado — terapia anti-cáncer.`,
+      formula: '76 aa · ubiquitin fold · degradación dirigida',
+      keyframes: [
+        { at: 0, state: { presetId: 'ubiquitin' } },
+        { at: 1, state: { presetId: 'ubiquitin' } },
+      ],
+    },
+    {
+      title: 'Crambina (1CRN) — alta resolución, didáctica',
+      duration: 5500,
+      body: `46 residuos. Cristal a 0.48 Å de resolución — una de las estructuras MÁS NÍTIDAS del PDB.
+
+Es de las semillas de Crambe abyssinica (una planta). Funcionalmente irrelevante para humanos, pero ESTRUCTURALMENTE PERFECTA — la usás para enseñar plegamiento y para benchmarks de software.
+
+Notá los enlaces de disulfuro (S-S) entre cisteínas — son los "remaches" que rigidizan la proteína. Las cisteínas con su grupo -SH pueden formar puentes covalentes.`,
+      keyframes: [
+        { at: 0, state: { presetId: 'crambin' } },
+        { at: 1, state: { presetId: 'crambin' } },
+      ],
+    },
+    {
+      title: 'Hemoglobina (4HHB) — transporta tu oxígeno',
+      duration: 6500,
+      body: `4 cadenas (α₂β₂) + 4 grupos hemo con hierro.
+
+Esta es LA proteína de la sangre. Cada glóbulo rojo lleva ~270 millones de copias. Cada Fe se une a una molécula de O₂ en los pulmones, y la suelta en los tejidos.
+
+El truco: cooperatividad. Cuando UN hemo se une al O₂, los otros 3 se vuelven MÁS receptivos. Cuando uno suelta, los otros sueltan también. Por eso la curva de saturación de O₂ es sigmoidea, no lineal.
+
+Una mutación en una sola base — Glu6→Val en la cadena β — causa la ANEMIA FALCIFORME. Las hemoglobinas se polimerizan, los glóbulos rojos se deforman, falla circulatoria. Es el primer ejemplo de "enfermedad molecular" (Pauling 1949).`,
+      formula: 'α₂β₂ + 4 hemo · cooperatividad allostérica',
+      keyframes: [
+        { at: 0, state: { presetId: 'hemoglobin' } },
+        { at: 1, state: { presetId: 'hemoglobin' } },
+      ],
+    },
+    {
+      title: 'Proteasa VIH + saquinavir (1HSG) — diseño racional',
+      duration: 7000,
+      body: `La proteasa del VIH (homodímero ~99 aa por cadena) con saquinavir UNIDO en su sitio activo.
+
+Esta es una de las VICTORIAS del drug design estructural. En los 1990s, el SIDA mataba a casi todos los infectados. Los investigadores resolvieron la estructura de la proteasa viral, identificaron el bolsillo activo, y diseñaron pequeñas moléculas que se encajan AHÍ.
+
+Saquinavir (1995) fue la primera. Bloquea el sitio activo → la proteasa no corta poliproteínas virales → el virus no madura → no se replica.
+
+Hoy con el HAART moderno (combinación de inhibidores), la mortalidad del SIDA bajó 10×. Y todo empezó con UNA estructura del PDB.`,
+      formula: 'Proteasa VIH (HIV-1 PR) · inhibidor competitivo\nsaquinavir IC₅₀ ≈ 6 nM',
+      keyframes: [
+        { at: 0, state: { presetId: 'hiv-protease' } },
+        { at: 1, state: { presetId: 'hiv-protease' } },
+      ],
+    },
+  ],
+
+  connect: {
+    body: `Las proteínas son las máquinas que HACEN todo en tu cuerpo:
+
+• Enzimas (catalizan reacciones — pepsina digiere, ATP sintasa fabrica energía)
+• Transportadoras (hemoglobina O₂, mioglobina, canales iónicos)
+• Estructurales (colágeno, queratina, actina)
+• Señalización (receptores, hormonas como insulina)
+• Defensa (anticuerpos contra patógenos)
+• Motor (miosina mueve el músculo)
+
+Y la BÚSQUEDA SUPREMA — predecir estructura desde secuencia — fue resuelta esencialmente por AlphaFold 2 (2020). Hoy tenemos estructuras predichas para CASI TODAS las proteínas conocidas. Es uno de los logros científicos del siglo.
+
+Pero conocer la estructura es solo el principio. Diseñar drogas, entender enfermedades, ingeniería de novo — la ciencia de las proteínas apenas empezó.`,
+    links: [
+      { label: 'Double Helix — donde nace la proteína', href: '#double-helix' },
+      { label: 'Central Dogma — secuencia → proteína', href: '#central-dogma' },
+      { label: 'Docking — diseño de fármacos en vivo', href: '#docking' },
+    ],
+  },
+};
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -135,7 +237,12 @@ export default function ProteinViewer() {
         </div>
       </div>
 
-      <aside className="border-l border-[#1E293B] bg-[#0B0F17] overflow-y-auto">
+      <LessonPanel<PvLessonState>
+        lesson={LESSON_PV}
+        onApplyState={(patch) => {
+          if (patch.presetId !== undefined) setPresetId(patch.presetId);
+        }}
+        sandbox={<>
         <Section title="Estructura">
           <div className="grid grid-cols-1 gap-1.5">
             {PRESETS.map(p => (
@@ -212,7 +319,8 @@ export default function ProteinViewer() {
             <Row label="aguas"    value={`${stats.nWater}`} />
           </Section>
         )}
-      </aside>
+        </>}
+      />
     </div>
   );
 }
