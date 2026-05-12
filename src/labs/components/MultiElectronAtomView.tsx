@@ -27,7 +27,7 @@ import { getParticleTexture } from './sprite-texture';
 interface MultiElectronAtomViewProps {
   element: Element;
   nPoints?: number;
-  height?: number;
+  height?: number | string;
 }
 
 function PointCloud({ samples, subshellVisible }: {

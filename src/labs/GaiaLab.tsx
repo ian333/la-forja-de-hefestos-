@@ -1,9 +1,21 @@
 /**
  * GaiaLab — Workspace unificado, construido desde la física cuántica.
  *
- * Flujo: tabla periódica (entry) → clic elemento → AtomView multi-electrón.
- * Opcional: segundas pestañas (Reacciones, Sandbox) para capas superiores,
- * pero el punto de entrada y la primitiva visual es el átomo real.
+ * Layout chemistry-first (Fase 1 del ROADMAP_CHEMISTRY.md):
+ *   ┌─────────────────────────────────────────────────────────────────┐
+ *   │ Header (sticky)                                                  │
+ *   ├──────────────┬──────────────────────────────────────────────────┤
+ *   │ Dock         │                                                  │
+ *   │  ┌────────┐  │           HERO VIEWPORT 3D                       │
+ *   │  │PeriodTb│  │           (el héroe; no se tapa)                 │
+ *   │  └────────┘  │                                                  │
+ *   │  ┌────────┐  │  ┌──────────────────────────────────────┐        │
+ *   │  │HoverInf│  │  │ Overlay panel (info, controles)      │        │
+ *   │  └────────┘  │  └──────────────────────────────────────┘        │
+ *   └──────────────┴──────────────────────────────────────────────────┘
+ *
+ * La PeriodicTable es "ley absoluta": dock permanente colapsable, click
+ * cambia el elemento activo para CUALQUIER tab (átomo, enlace, reacción).
  *
  * Filosofía: construimos la química desde abajo — ψ(r,θ,φ), configuración
  * electrónica real, orbitales, valencia. Todo lo demás es consecuencia.
@@ -22,11 +34,15 @@ type Tab = 'atom' | 'bond' | 'reaction' | 'sandbox';
 export default function GaiaLab() {
   const [tab, setTab] = useState<Tab>('atom');
   const [selectedZ, setSelectedZ] = useState(6); // Carbono por defecto (más interesante que H)
+  const [dockOpen, setDockOpen] = useState(true);
+  const [hoverZ, setHoverZ] = useState<number | null>(null);
 
   const element = elementByZ(selectedZ) ?? PERIODIC_TABLE[0];
+  const previewZ = hoverZ ?? selectedZ;
+  const previewElement = elementByZ(previewZ) ?? element;
 
   return (
-    <div className="min-h-screen bg-[#05060A] text-[#E2E8F0] font-sans">
+    <div className="h-screen w-screen bg-[#05060A] text-[#E2E8F0] font-sans flex flex-col overflow-hidden">
       {/* Grid textura sutil de fondo */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.03]"
@@ -36,73 +52,135 @@ export default function GaiaLab() {
         }}
       />
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#05060A]/85 backdrop-blur-xl border-b border-[#1E293B]">
-        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center gap-6 flex-wrap">
+      {/* Header — sticky, slim */}
+      <header className="shrink-0 bg-[#05060A]/85 backdrop-blur-xl border-b border-[#1E293B] z-40">
+        <div className="px-4 py-2 flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#4FC3F7] to-[#7E57C2] flex items-center justify-center font-bold text-[#0B0F17]">
+            <button
+              onClick={() => setDockOpen(o => !o)}
+              className="w-7 h-7 rounded-md bg-[#0B0F17] border border-[#1E293B] hover:border-[#4FC3F7] flex items-center justify-center text-[#94A3B8] hover:text-white transition"
+              title={dockOpen ? 'Ocultar tabla' : 'Mostrar tabla'}
+              aria-label="Toggle dock"
+            >
+              {dockOpen ? '⊣' : '⊢'}
+            </button>
+            <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#4FC3F7] to-[#7E57C2] flex items-center justify-center font-bold text-[#0B0F17] text-[14px]">
               Γ
             </div>
             <div>
-              <div className="text-[15px] font-semibold tracking-tight leading-none">
-                GAIA Lab
-              </div>
-              <div className="text-[10px] text-[#64748B] font-medium leading-none mt-1 uppercase tracking-wider">
+              <div className="text-[13px] font-semibold tracking-tight leading-none">GAIA Lab</div>
+              <div className="text-[9px] text-[#64748B] font-medium leading-none mt-0.5 uppercase tracking-wider">
                 química desde la cuántica
               </div>
             </div>
           </div>
 
-          <nav className="flex items-center gap-1 p-1 rounded-lg bg-[#0B0F17] border border-[#1E293B]">
-            <TabButton active={tab === 'atom'} onClick={() => setTab('atom')}>
-              ψ &nbsp;Átomo
-            </TabButton>
-            <TabButton active={tab === 'bond'} onClick={() => setTab('bond')}>
-              ⟮⟯ &nbsp;Enlace
-            </TabButton>
-            <TabButton active={tab === 'reaction'} onClick={() => setTab('reaction')}>
-              ⇌ &nbsp;Reacción
-            </TabButton>
-            <TabButton active={tab === 'sandbox'} onClick={() => setTab('sandbox')}>
-              ✧ &nbsp;Sandbox
-            </TabButton>
+          <nav className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[#0B0F17] border border-[#1E293B]">
+            <TabButton active={tab === 'atom'} onClick={() => setTab('atom')}>ψ Átomo</TabButton>
+            <TabButton active={tab === 'bond'} onClick={() => setTab('bond')}>⟮⟯ Enlace</TabButton>
+            <TabButton active={tab === 'reaction'} onClick={() => setTab('reaction')}>⇌ Reacción</TabButton>
+            <TabButton active={tab === 'sandbox'} onClick={() => setTab('sandbox')}>✧ Sandbox</TabButton>
           </nav>
 
-          <div className="ml-auto flex items-center gap-3 text-[11px] text-[#64748B] font-mono">
-            <span>corre local · 343 tests</span>
-            <a href="/physics.html" className="text-[#64748B] hover:text-[#4FC3F7] transition">
-              Φ Física →
-            </a>
-            <a href="/" className="text-[#64748B] hover:text-[#4FC3F7] transition">
-              ← La Forja
-            </a>
+          <div className="ml-auto flex items-center gap-3 text-[10px] text-[#64748B] font-mono">
+            <span className="hidden md:inline">{element.symbol} · Z={element.Z} · {configCompact(element.Z)}</span>
+            <a href="/math.html" className="text-[#64748B] hover:text-[#4FC3F7] transition">Σ Mate</a>
+            <a href="/physics.html" className="text-[#64748B] hover:text-[#4FC3F7] transition">Φ Física</a>
+            <a href="/" className="text-[#64748B] hover:text-[#4FC3F7] transition">← La Forja</a>
           </div>
         </div>
       </header>
 
-      {tab === 'bond' ? (
-        // El tab Enlace usa layout CAD-like: viewport full-screen + paneles flotantes.
-        // No hay max-width ni padding aquí — el workspace ES el viewport.
-        <main className="relative px-6 py-6">
-          <BondTab />
-        </main>
-      ) : (
-        <>
-          <main className="max-w-[1600px] mx-auto px-6 py-6 relative">
-            {tab === 'atom'     && <AtomTab selectedZ={selectedZ} onSelect={setSelectedZ} element={element} />}
-            {tab === 'reaction' && <ReactionTab />}
-            {tab === 'sandbox'  && <SandboxTab />}
-          </main>
+      {/* Main: dock + hero */}
+      <div className="flex-1 flex min-h-0">
+        {/* DOCK — siempre visible (colapsable). PeriodicTable + hover info + nav */}
+        {dockOpen && (
+          <aside className="shrink-0 w-[336px] border-r border-[#1E293B] bg-[#070A11]/60 backdrop-blur-md overflow-y-auto">
+            <div className="p-3 space-y-3">
+              <div>
+                <div className="flex items-baseline justify-between mb-2">
+                  <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#64748B]">
+                    Tabla periódica
+                  </div>
+                  <div className="text-[9px] font-mono text-[#64748B]">
+                    {selectedZ}/118
+                  </div>
+                </div>
+                <PeriodicTable
+                  selectedZ={selectedZ}
+                  onSelect={setSelectedZ}
+                  onHover={setHoverZ}
+                  compact
+                  showLegend={false}
+                />
+              </div>
 
-          <footer className="max-w-[1600px] mx-auto px-6 py-4 border-t border-[#1E293B] mt-6 text-[11px] text-[#475569] font-mono flex items-center justify-between flex-wrap gap-3">
-            <div>GAIA Lab · motor stiff + MD + cuántico · 376 tests verdes</div>
-            <div>Construido abajo-arriba desde |ψ|²</div>
-          </footer>
-        </>
+              <HoverInfoCard element={previewElement} isPreview={previewZ !== selectedZ} />
+              <NavButtons selectedZ={selectedZ} onSelect={setSelectedZ} />
+              <ReferencePanel />
+            </div>
+          </aside>
+        )}
+
+        {/* HERO — el viewport llena lo que sobra */}
+        <main className="flex-1 min-w-0 relative overflow-hidden">
+          {tab === 'atom'     && <AtomHero element={element} />}
+          {tab === 'bond'     && <BondTab />}
+          {tab === 'reaction' && <ReactionTab />}
+          {tab === 'sandbox'  && <SandboxTab />}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HERO: tab Átomo — viewport ocupa todo, overlays compactos
+// ═══════════════════════════════════════════════════════════════
+
+function AtomHero({ element }: { element: ReturnType<typeof elementByZ> extends infer E ? NonNullable<E> : never }) {
+  const [showEdu, setShowEdu] = useState(true);
+
+  return (
+    <div className="absolute inset-0 flex flex-col">
+      {/* Viewport 3D ocupa todo el espacio disponible */}
+      <div className="flex-1 min-h-0 relative">
+        <MultiElectronAtomView element={element} height="100%" nPoints={15000} />
+
+        {/* Overlay título de la molécula/átomo, arriba a la izquierda */}
+        <div className="absolute top-3 left-3 rounded-lg border border-[#1E293B] bg-[#05060A]/70 backdrop-blur px-3 py-2 pointer-events-none">
+          <div className="text-[10px] uppercase tracking-wider text-[#64748B]">Átomo activo</div>
+          <div className="flex items-baseline gap-2 mt-0.5">
+            <span className="text-[24px] font-bold text-white leading-none">{element.symbol}</span>
+            <span className="text-[13px] text-[#CBD5E1]">{element.name}</span>
+          </div>
+          <div className="mt-1 text-[10px] font-mono text-[#7DD3FC]">{configCompact(element.Z)}</div>
+        </div>
+
+        {/* Botón mostrar/ocultar panel educacional */}
+        <button
+          onClick={() => setShowEdu(v => !v)}
+          className="absolute top-3 right-3 rounded-md border border-[#1E293B] bg-[#05060A]/70 backdrop-blur px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-[#94A3B8] hover:text-white hover:border-[#4FC3F7] transition"
+        >
+          {showEdu ? 'Ocultar nota' : 'Mostrar nota'}
+        </button>
+      </div>
+
+      {/* Panel educacional — overlay inferior, colapsable */}
+      {showEdu && (
+        <div className="shrink-0 border-t border-[#1E293B] bg-[#0B0F17]/80 backdrop-blur-md">
+          <div className="px-4 py-2.5 max-w-[900px]">
+            <EducationalNote element={element} />
+          </div>
+        </div>
       )}
     </div>
   );
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Componentes del dock + overlay
+// ═══════════════════════════════════════════════════════════════
 
 function TabButton({
   active, onClick, children,
@@ -114,7 +192,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-md text-[13px] font-semibold transition ${
+      className={`px-3 py-1 rounded-md text-[12px] font-semibold transition ${
         active
           ? 'bg-gradient-to-br from-[#1E40AF]/40 to-[#7E22CE]/40 text-white ring-1 ring-[#4FC3F7]/40'
           : 'text-[#94A3B8] hover:text-white'
@@ -125,57 +203,6 @@ function TabButton({
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TAB: ÁTOMO — layout lado-a-lado: átomo IZQ (estrella), tabla DER
-// ═══════════════════════════════════════════════════════════════
-
-function AtomTab({
-  selectedZ, onSelect, element,
-}: {
-  selectedZ: number;
-  onSelect: (z: number) => void;
-  element: ReturnType<typeof elementByZ> extends infer E ? NonNullable<E> : never;
-}) {
-  // Hover previsualiza elemento sobre el panel de info sin cambiar la selección.
-  const [hoverZ, setHoverZ] = useState<number | null>(null);
-  const previewZ = hoverZ ?? selectedZ;
-  const previewElement = elementByZ(previewZ) ?? element;
-
-  return (
-    <div className="grid grid-cols-12 gap-5">
-      {/* ═══════════════════ IZQUIERDA: átomo grande (estrella) ═══════════════════ */}
-      <section className="col-span-12 lg:col-span-7 space-y-4">
-        <MultiElectronAtomView element={element} height={620} nPoints={15000} />
-        <EducationalPanel element={element} />
-      </section>
-
-      {/* ═══════════════════ DERECHA: tabla + hover info + nav ═══════════════════ */}
-      <aside className="col-span-12 lg:col-span-5 space-y-4">
-        <div className="rounded-xl border border-[#1E293B] bg-[#0B0F17]/70 backdrop-blur-md p-4">
-          <div className="flex items-baseline justify-between mb-3">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#64748B]">
-              Tabla periódica · clic para seleccionar
-            </div>
-          </div>
-          <PeriodicTable
-            selectedZ={selectedZ}
-            onSelect={onSelect}
-            onHover={setHoverZ}
-            compact
-            showLegend
-          />
-        </div>
-
-        {/* Info del elemento bajo hover (o seleccionado si no hay hover) */}
-        <HoverInfoCard element={previewElement} isPreview={previewZ !== selectedZ} />
-
-        <NavButtons selectedZ={selectedZ} onSelect={onSelect} />
-        <ReferencePanel />
-      </aside>
-    </div>
-  );
-}
-
 function HoverInfoCard({
   element, isPreview,
 }: {
@@ -183,25 +210,19 @@ function HoverInfoCard({
   isPreview: boolean;
 }) {
   return (
-    <div className={`rounded-xl border ${isPreview ? 'border-[#4FC3F7]/40' : 'border-[#1E293B]'} bg-[#0B0F17]/70 backdrop-blur-md p-4 transition`}>
+    <div className={`rounded-xl border ${isPreview ? 'border-[#4FC3F7]/40' : 'border-[#1E293B]'} bg-[#0B0F17]/70 backdrop-blur-md p-3 transition`}>
       <div className="flex items-baseline justify-between">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#64748B]">
-          {isPreview ? 'Previsualización (hover)' : 'Elemento seleccionado'}
+        <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#64748B]">
+          {isPreview ? 'Hover' : 'Activo'}
         </div>
-        <div className="text-[10px] font-mono text-[#64748B]">
-          Z = {element.Z}
-        </div>
+        <div className="text-[9px] font-mono text-[#64748B]">Z = {element.Z}</div>
       </div>
-      <div className="flex items-baseline gap-3 mt-2">
-        <div className="text-[36px] font-bold leading-none text-white">
-          {element.symbol}
-        </div>
-        <div className="text-[15px] text-[#CBD5E1]">{element.name}</div>
+      <div className="flex items-baseline gap-2 mt-1">
+        <div className="text-[28px] font-bold leading-none text-white">{element.symbol}</div>
+        <div className="text-[12px] text-[#CBD5E1]">{element.name}</div>
       </div>
-      <div className="mt-2 text-[11px] font-mono text-[#7DD3FC]">
-        {configCompact(element.Z)}
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-mono">
+      <div className="mt-1 text-[10px] font-mono text-[#7DD3FC]">{configCompact(element.Z)}</div>
+      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">
         <MiniProp label="m" value={`${element.mass.toFixed(3)} u`} />
         <MiniProp label="EN" value={element.electronegativity?.toFixed(2) ?? '—'} />
         <MiniProp label="IE₁" value={element.ionizationEnergy ? `${element.ionizationEnergy.toFixed(2)} eV` : '—'} />
@@ -220,36 +241,22 @@ function MiniProp({ label, value }: { label: string; value: string }) {
   );
 }
 
-function EducationalPanel({ element }: { element: typeof PERIODIC_TABLE[0] }) {
+function EducationalNote({ element }: { element: typeof PERIODIC_TABLE[0] }) {
   const ion = element.ionizationEnergy;
   return (
-    <div className="rounded-xl border border-[#1E293B] bg-[#0B0F17]/70 backdrop-blur-md p-4">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#64748B]">
-        Qué ves en este átomo
-      </div>
-      <div className="mt-3 space-y-3 text-[12px] leading-relaxed text-[#CBD5E1]">
-        <p>
-          El núcleo amarillo contiene <strong className="text-white">{element.Z} protones</strong>.
-          Alrededor, cada punto de color es una muestra del lugar donde los
-          electrones tienen probabilidad de estar (ψ²), sampleado con las
-          funciones de onda exactas de Schrödinger y apantallamiento Slater.
-        </p>
-        <p>
-          <strong className="text-[#4FC3F7]">Azul = s</strong> ·
-          <strong className="text-[#FF7043]"> naranja = p</strong> ·
-          <strong className="text-[#66BB6A]"> verde = d</strong> ·
-          <strong className="text-[#AB47BC]"> violeta = f</strong>.
-          Puedes ocultar subshells con los toggles abajo del viewport.
-        </p>
+    <div className="space-y-1 text-[11px] leading-snug text-[#CBD5E1]">
+      <p>
+        Núcleo con <strong className="text-white">{element.Z} protones</strong>; cada punto es una muestra ψ²
+        (orbitales hidrogenoides + apantallamiento Slater).
+        <strong className="text-[#4FC3F7]"> azul s</strong> ·
+        <strong className="text-[#FF7043]"> naranja p</strong> ·
+        <strong className="text-[#66BB6A]"> verde d</strong> ·
+        <strong className="text-[#AB47BC]"> violeta f</strong>.
         {ion && (
-          <p className="pt-2 border-t border-[#1E293B]">
-            <strong className="text-white">Arrancar un electrón</strong> de este átomo cuesta{' '}
-            <span className="font-mono text-[#7DD3FC]">{ion.toFixed(2)} eV</span>.
-            En Joules eso es {(ion * 1.602e-19).toExponential(2)} J — la energía
-            de un fotón de longitud de onda λ = {(1240 / ion).toFixed(0)} nm.
-          </p>
+          <> Arrancar un e⁻ cuesta <span className="font-mono text-[#7DD3FC]">{ion.toFixed(2)} eV</span>{' '}
+          (λ = {(1240 / ion).toFixed(0)} nm).</>
         )}
-      </div>
+      </p>
     </div>
   );
 }
@@ -265,22 +272,22 @@ function NavButtons({
   const prevEl = prev ? elementByZ(prev) : null;
   const nextEl = next ? elementByZ(next) : null;
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1.5">
       <button
         disabled={!prev}
         onClick={() => prev && onSelect(prev)}
-        className="flex-1 rounded-lg border border-[#1E293B] bg-[#0B0F17] text-[#E2E8F0] px-3 py-2 text-[12px] disabled:opacity-30 hover:border-[#4FC3F7] transition text-left"
+        className="flex-1 rounded-md border border-[#1E293B] bg-[#0B0F17] text-[#E2E8F0] px-2 py-1.5 text-[11px] disabled:opacity-30 hover:border-[#4FC3F7] transition text-left"
       >
-        <div className="text-[9px] text-[#64748B] uppercase tracking-wider">Anterior</div>
-        <div className="font-semibold">{prevEl ? `← ${prevEl.symbol} ${prevEl.name}` : '—'}</div>
+        <div className="text-[8px] text-[#64748B] uppercase tracking-wider leading-none">Anterior</div>
+        <div className="font-semibold leading-tight">{prevEl ? `← ${prevEl.symbol}` : '—'}</div>
       </button>
       <button
         disabled={!next}
         onClick={() => next && onSelect(next)}
-        className="flex-1 rounded-lg border border-[#1E293B] bg-[#0B0F17] text-[#E2E8F0] px-3 py-2 text-[12px] disabled:opacity-30 hover:border-[#4FC3F7] transition text-right"
+        className="flex-1 rounded-md border border-[#1E293B] bg-[#0B0F17] text-[#E2E8F0] px-2 py-1.5 text-[11px] disabled:opacity-30 hover:border-[#4FC3F7] transition text-right"
       >
-        <div className="text-[9px] text-[#64748B] uppercase tracking-wider">Siguiente</div>
-        <div className="font-semibold">{nextEl ? `${nextEl.symbol} ${nextEl.name} →` : '—'}</div>
+        <div className="text-[8px] text-[#64748B] uppercase tracking-wider leading-none">Siguiente</div>
+        <div className="font-semibold leading-tight">{nextEl ? `${nextEl.symbol} →` : '—'}</div>
       </button>
     </div>
   );
@@ -288,24 +295,18 @@ function NavButtons({
 
 function ReferencePanel() {
   return (
-    <div className="rounded-xl border border-[#1E293B] bg-[#0B0F17]/70 backdrop-blur-md p-4">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#64748B]">
-        Referencias
+    <div className="rounded-xl border border-[#1E293B] bg-[#0B0F17]/50 backdrop-blur-md p-3">
+      <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#64748B]">
+        Fuentes
       </div>
-      <ul className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-[#94A3B8]">
-        <li>Griffiths, <em>Introduction to Quantum Mechanics</em>, 3ª ed. (2018)</li>
-        <li>Levine, <em>Quantum Chemistry</em>, 7ª ed. (2014)</li>
-        <li>Slater, <em>Phys. Rev.</em> 36, 57 (1930) — apantallamiento</li>
-        <li>Clementi & Raimondi, <em>J. Chem. Phys.</em> 38, 2686 (1963)</li>
+      <ul className="mt-1.5 space-y-0.5 text-[10px] leading-snug text-[#94A3B8]">
+        <li>Griffiths, <em>Quantum Mech.</em> 3e (2018)</li>
+        <li>Levine, <em>Quantum Chem.</em> 7e (2014)</li>
+        <li>Slater, <em>Phys. Rev.</em> 36, 57 (1930)</li>
         <li>IUPAC <em>Atomic weights 2021</em></li>
-        <li>NIST Atomic Spectra Database v5.10</li>
+        <li>NIST ASD v5.10</li>
+        <li>Cordero, <em>Dalton Trans.</em> 2008</li>
       </ul>
-      <div className="mt-3 pt-3 border-t border-[#1E293B] text-[10px] text-[#64748B] italic">
-        Este visualizador no resuelve Hartree-Fock ni DFT — usa orbitales
-        hidrogenoides con Z efectiva de Slater. Suficiente para forma y
-        tendencias; para energías espectroscópicas precisas se necesita
-        una capa superior.
-      </div>
     </div>
   );
 }

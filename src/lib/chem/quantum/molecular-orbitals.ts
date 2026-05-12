@@ -697,9 +697,18 @@ export const CO: Molecule3D = (() => {
   };
 })();
 
+// Las poliatómicas canónicas viven en canonical-molecules.ts; las
+// importamos via lazy require para no crear ciclo de import (este archivo
+// es importado desde allá).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import { CANONICAL_CATALOG } from './canonical-molecules';
+
 export const MOLECULE_CATALOG: Molecule3D[] = [
+  // Diatómicas (LCAO simple, históricamente las primeras)
   H2, H2_CATION, HE_H_CATION, HE2_HYPOTHETICAL, LI2,
   N2, O2, HF, CO,
+  // Poliatómicas canónicas (Fase 2 del ROADMAP — geometrías NIST CCCBDB)
+  ...CANONICAL_CATALOG,
 ];
 
 export function moleculeByFormula(formula: string): Molecule3D | undefined {
