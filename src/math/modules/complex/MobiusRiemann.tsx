@@ -120,18 +120,24 @@ En la esfera de Riemann arriba, esto es simplemente una rotación específica. T
   ],
 
   connect: {
-    body: `Las transformaciones de Möbius aparecen en:
+    body: `Las transformaciones de Möbius son TANTO matemáticas como herramienta de ingeniería:
 
-• Geometría hiperbólica: el disco de Poincaré usa Möbius como isometrías del plano hiperbólico
-• Relatividad especial: las transformaciones de Lorentz proyectivas son Möbius en la esfera celeste
-• Teoría de números: las Möbius enteras (SL(2,ℤ)) generan el grupo modular — clave en la prueba del Último Teorema de Fermat por Wiles
-• Óptica paraxial: el grupo de transformaciones de rayos es Möbius
+• Carta de Smith (RF / impedancia) — TODA línea de transmisión se diseña sobre una carta que es geométricamente una Möbius del semi-plano derecho al disco unitario (exactamente Cayley). Z → Γ = (Z − Z₀)/(Z + Z₀). En el lab de EM ves las cargas y campos que generan esa Z.
+
+• Óptica paraxial — la matriz ABCD de un sistema óptico actúa sobre el rayo como una Möbius. Concatenar lentes es multiplicar Möbius.
+
+• Relatividad especial — las transformaciones de Lorentz proyectivas son Möbius en la esfera celeste. El "cielo" rotado de un astronauta a velocidad relativista se calcula con Möbius.
+
+• Geometría hiperbólica — el disco de Poincaré usa Möbius como isometrías. El módulo de Mapas Conformes muestra el disco en vivo.
+
+• Teoría de números — las Möbius enteras (SL(2,ℤ)) generan el grupo modular — clave en la prueba del Último Teorema de Fermat por Wiles.
 
 Si recordás solo una cosa: "círculos a círculos" — eso encierra toda la teoría.`,
     links: [
-      { label: 'Eigenvectores — rotaciones complejas en matrices', href: '#eigen-3d' },
-      { label: 'Phase Portrait — singularidades en el plano', href: '#phase-portrait' },
-      { label: 'Plano tangente — geometría diferencial', href: '#tangent-plane' },
+      { label: 'Campos EM — impedancia compleja Z = R + iωL', href: '/physics.html#em/fields' },
+      { label: 'Newton fractals — la otra cara de ℂ', href: '#complex/roots' },
+      { label: 'Mapas conformes — Joukowski y el disco de Poincaré', href: '#complex/conformal' },
+      { label: 'Eigenvectores 3D — rotaciones reales en matrices', href: '#linalg/eigen-3d' },
     ],
   },
 };
