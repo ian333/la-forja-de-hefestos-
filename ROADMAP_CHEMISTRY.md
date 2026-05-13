@@ -234,14 +234,16 @@ Ya existe `src/physics/modules/bio/Docking.tsx` — extender con scoring real.
 
 ## Estado de fases (vivo)
 
-- [ ] **Fase 1** — Layout chemistry-first
-- [ ] **Fase 2** — Moléculas canónicas (H₂O, CH₄, NH₃, CO₂, C₂H₄, C₂H₂, HCl, NaCl, C₆H₆)
-- [ ] **Fase 3** — Verificación visual + tests de fidelidad
-- [ ] **Fase 4** — Reacciones clásicas con mecanismo
-- [ ] **Fase 5** — Espectros vibracionales (IR/Raman)
-- [ ] **Fase 6** — Fusión nuclear (largo)
-- [ ] **Fase 7** — Drug discovery (largo)
+- [x] **Fase 1** — Layout chemistry-first (commit 29d6986)
+- [x] **Fase 2** — Moléculas canónicas H₂O, CH₄, NH₃, CO₂, C₂H₄, C₂H₂, HCl, NaCl, C₆H₆ (commit 29d6986)
+- [x] **Fase 3** — Verificación visual + VSEPR + 28 tests NIST CCCBDB (commit 29d6986)
+- [x] **Fase 4** — 4 reacciones clásicas (CH₄, Fe+CuSO₄, SN2, Fischer) con NIST/CRC (commit ad1c281, +27 tests)
+- [x] **Fase 5** — IR/Raman Hessian + Jacobi + 5 moléculas vs NIST (commit 68b7554, +27 tests)
+- [x] **Fase 6** — Bosch-Hale fusion + Gamow + Lawson (commit b25698a, +28 tests)
+- [x] **Fase 7** — Vinardo + Monte Carlo conformational search (commit 564b60d, +18 tests)
+
+**Suite total**: 814 tests pasando (baseline pre-Fase 4 = 714 → +100 nuevos).
 
 ---
 
-*Última actualización: 2026-05-12 — Roadmap inicial.*
+*Última actualización: 2026-05-12 — Fases 1-7 completas.*
