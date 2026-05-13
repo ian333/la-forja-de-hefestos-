@@ -15,6 +15,7 @@ import { BRANCHES, findModule } from './registry';
 import Sidebar from '@/physics/components/Sidebar';
 import AudienceToggle from '@/physics/components/AudienceToggle';
 import ModuleStub from '@/physics/components/ModuleStub';
+import { useHashRoute } from '@/physics/useHashRoute';
 
 const FIRST_LIVE = (() => {
   for (const b of BRANCHES) {
@@ -27,6 +28,7 @@ const FIRST_LIVE = (() => {
 export default function MathLab() {
   const [audience, setAudience] = useState<Audience>('researcher');
   const [selected, setSelected] = useState<{ branchId: string; moduleId: string }>(FIRST_LIVE);
+  useHashRoute(BRANCHES, setSelected);
 
   const { branch, module: mod } = useMemo(
     () => findModule(selected.branchId, selected.moduleId),
