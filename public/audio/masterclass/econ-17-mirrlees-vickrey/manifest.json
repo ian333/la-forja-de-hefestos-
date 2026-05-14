@@ -1,0 +1,280 @@
+{
+  "id": "econ-17-mirrlees-vickrey",
+  "title": "Vickrey: la subasta donde mentir no paga",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "vickrey",
+      "audio": "01-pregunta.mp3",
+      "text": "Mira la subasta. Seis postores. Cada uno tiene un valor privado: cuánto vale para ellos el objeto. Y cada uno tiene que decidir qué declarar. ¿Decir la verdad? ¿Mentir para pagar menos? Vickrey diseñó una subasta donde no importa: decir la verdad es siempre lo mejor. Y ese descubrimiento le ganó el Nobel."
+    },
+    {
+      "id": "02-persona",
+      "scene": "econ-board",
+      "audio": "02-persona.mp3",
+      "text": "William Vickrey fue un economista canadiense-estadounidense que pasó la mayor parte de su carrera en Columbia. Era un teórico raro: trabajaba en problemas que parecían demasiado abstractos para ser útiles. Hasta que resultaron ser todo lo contrario. James Mirrlees fue un escocés que enseñó en Oxford y Cambridge. Trabajaba en la teoría de impuestos óptimos. Los dos compartieron el Nobel en mil novecientos noventa y seis. Vickrey murió tres días después de que se lo anunciaran.",
+      "board": [
+        "\\textbf{William Vickrey} \\quad (1914\\text{–}1996)",
+        "\\text{Columbia, Nobel 1996}",
+        "\\text{Murió 3 días después del anuncio}",
+        "",
+        "\\textbf{James Mirrlees} \\quad (1936\\text{–}2018)",
+        "\\text{Oxford, Cambridge}",
+        "\\text{Teoría de impuestos óptimos}",
+        "",
+        "\\text{Nobel compartido por: incentivos bajo}",
+        "\\text{información asimétrica}"
+      ]
+    },
+    {
+      "id": "03-problema",
+      "scene": "econ-board",
+      "audio": "03-problema.mp3",
+      "text": "El problema central que estudiaron ambos es el mismo: ¿cómo diseñas un mecanismo cuando los participantes saben más que tú? Tú quieres asignar un bien al que más lo valora. Pero los postores saben sus valores y tú no. Si les pides que digan, tienen incentivo a mentir. ¿Cómo los obligas a decir la verdad sin obligarlos? Esa pregunta abrió un campo entero.",
+      "board": [
+        "\\textbf{Problema central}",
+        "",
+        "\\text{Información PRIVADA:}",
+        "\\text{cada agente conoce su tipo (valor, costo, productividad)}",
+        "",
+        "\\text{Diseñador NO sabe los tipos}",
+        "",
+        "\\textbf{Reto:}",
+        "\\text{Diseña reglas tales que decir la verdad}",
+        "\\text{sea la estrategia óptima de cada agente}"
+      ]
+    },
+    {
+      "id": "04-vickrey-mecanica",
+      "scene": "vickrey",
+      "audio": "04-vickrey-mecanica.mp3",
+      "text": "Esta es la mecánica de Vickrey. Cada postor mete su bid en un sobre sellado. Mira los sobres flotando. Nadie ve qué hay en los sobres ajenos. Cuando termina la subasta, todos se abren al mismo tiempo. El mayor bid gana el objeto. Pero aquí está el truco: el ganador NO paga su bid. Paga el segundo más alto. Por eso se llama subasta de segundo precio."
+    },
+    {
+      "id": "05-truth-telling",
+      "scene": "vickrey",
+      "audio": "05-truth-telling.mp3",
+      "text": "Lo mágico es que en esta subasta, tu mejor estrategia es decir la verdad. Si tu valor es cincuenta, debes pujar cincuenta. ¿Por qué? Imagina que pujas menos, digamos cuarenta. Si el segundo más alto es cuarenta y cinco, ese pujador gana y tú perdiste algo que valías cincuenta. Pierdes. Imagina que pujas más, digamos sesenta. Si el segundo más alto es cincuenta y cinco, ganas pero pagas cincuenta y cinco por algo que valías cincuenta. Pierdes. Solo decir la verdad nunca te lastima."
+    },
+    {
+      "id": "06-formalizacion",
+      "scene": "econ-board",
+      "audio": "06-formalizacion.mp3",
+      "text": "Matemáticamente: la utilidad esperada del postor i con valor v_i pujando b_i es la probabilidad de ganar por v_i menos el segundo precio esperado. La probabilidad de ganar solo depende de si b_i es mayor que el máximo de los demás. El precio que paga si gana, no depende de su propio b_i. Por lo tanto, la única manera de optimizar es elegir b_i para ganar exactamente cuando v_i excede el segundo precio. Eso es: b_i igual a v_i. Es una estrategia dominante.",
+      "board": [
+        "\\textbf{Equilibrio dominante en Vickrey}",
+        "",
+        "U_i(b_i) = \\mathbb{P}[\\text{ganar}](v_i - p_{(2)})",
+        "",
+        "\\text{Si } b_i > \\max_{j \\neq i} b_j : \\text{gana}",
+        "\\text{Paga } p_{(2)} = \\max_{j \\neq i} b_j",
+        "\\text{(no depende de } b_i \\text{)}",
+        "",
+        "\\Rightarrow b_i = v_i \\text{ es dominante}",
+        "\\text{(no hay ninguna otra estrategia mejor)}"
+      ]
+    },
+    {
+      "id": "07-mentiras",
+      "scene": "vickrey",
+      "audio": "07-mentiras.mp3",
+      "text": "Compara con esta versión donde los postores intentan mentir. Algunos sub-pujan, algunos sobre-pujan. Mira el resultado: el objeto a veces termina con quien no lo valoraba más. La eficiencia se rompe. Y todos terminan perdiendo, en promedio. La subasta de Vickrey solo funciona si los postores entienden la matemática. Si no, la cagan. Por eso eBay tuvo que enseñar a sus usuarios."
+    },
+    {
+      "id": "08-vs-english",
+      "scene": "econ-board",
+      "audio": "08-vs-english.mp3",
+      "text": "Compárala con la subasta inglesa, la de toda la vida. Subastador grita un precio. Alguien levanta la mano. Otro sube. Y otro. Hasta que solo queda uno. El ganador paga su última puja. Resulta que el equilibrio de la inglesa es: cada postor sigue pujando hasta su valor verdadero. Y el precio final es el segundo valor más alto. Misma asignación, mismo ingreso, mismo equilibrio que Vickrey. Eso es la equivalencia de ingresos.",
+      "board": [
+        "\\textbf{Inglesa vs Vickrey}",
+        "",
+        "\\text{Inglesa (open ascending):}",
+        "\\text{Cada uno puja hasta su valor verdadero}",
+        "\\text{Precio final = 2° valor más alto}",
+        "",
+        "\\text{Vickrey (sealed 2nd-price):}",
+        "\\text{Cada uno declara valor verdadero}",
+        "\\text{Precio = 2° bid más alto}",
+        "",
+        "\\textbf{Revenue Equivalence Theorem}",
+        "\\text{(Vickrey 1961, Myerson 1981)}"
+      ]
+    },
+    {
+      "id": "09-aplicaciones",
+      "scene": "econ-board",
+      "audio": "09-aplicaciones.mp3",
+      "text": "Las aplicaciones de Vickrey son enormes. eBay usa una subasta de segundo precio: tu bid máximo se va subiendo automáticamente solo hasta el necesario para vencer al siguiente. Google AdWords usa una generalización: la subasta de Vickrey-Clarke-Groves para asignar slots de anuncios. Mil millones de subastas al día. Cada vez que buscas algo en Google, hay una subasta de Vickrey decidiendo qué anuncios ves.",
+      "board": [
+        "\\textbf{Aplicaciones de Vickrey:}",
+        "",
+        "\\text{• eBay: 2nd-price proxy bidding}",
+        "\\text{• Google AdWords: VCG generalizado}",
+        "\\text{• Facebook Ads: similar}",
+        "\\text{• Subastas de espectro (FCC)}",
+        "\\text{• Cap-and-trade de emisiones}",
+        "",
+        "\\text{Mil millones de subastas/día en internet}"
+      ]
+    },
+    {
+      "id": "10-mirrlees-impuestos",
+      "scene": "econ-board",
+      "audio": "10-mirrlees-impuestos.mp3",
+      "text": "Mirrlees atacó un problema parecido desde otro lado. Si quieres cobrar impuestos, idealmente le cobras más al que gana más. Pero solo el trabajador sabe cuánto puede producir. Si subes mucho la tasa, los más productivos trabajan menos. Si la bajas, recaudas poco. Mirrlees calculó la tasa óptima dado que no observas productividad, solo ingreso. Y obtuvo un resultado sorprendente: la tasa marginal óptima en el tope debe ser cero.",
+      "board": [
+        "\\textbf{Mirrlees (1971): Optimal Income Tax}",
+        "",
+        "\\text{Problema:}",
+        "\\text{• Productividad } w_i \\text{ es PRIVADA}",
+        "\\text{• Solo observas ingreso } Y = w \\cdot L",
+        "\\text{• Trabajadores eligen } L \\text{ ante el impuesto}",
+        "",
+        "\\text{Resultado: la tasa marginal en el TOPE} = 0",
+        "\\text{(porque ya no afecta a nadie marginal)}",
+        "",
+        "\\text{Curva en U invertida: alta en medio}"
+      ]
+    },
+    {
+      "id": "11-revelation",
+      "scene": "econ-board",
+      "audio": "11-revelation.mp3",
+      "text": "Mirrlees también demostró el Principio de Revelación. Si existe cualquier mecanismo que implementa una asignación, existe también un mecanismo directo donde cada agente simplemente revela su tipo y el diseñador implementa. Eso reduce un problema infinito-dimensional a uno finito. Es una de las herramientas más poderosas en mechanism design. Maskin y Myerson, dos discípulos suyos, ganaron el Nobel en dos mil siete por extender estas ideas.",
+      "board": [
+        "\\textbf{Principio de Revelación (Mirrlees, Myerson)}",
+        "",
+        "\\text{Si CUALQUIER mecanismo implementa una asignación,}",
+        "\\text{existe un mecanismo DIRECTO equivalente:}",
+        "\\text{1. Cada agente revela su tipo } \\theta_i",
+        "\\text{2. El diseñador implementa } f(\\theta_1, \\dots, \\theta_n)",
+        "",
+        "\\text{Reduce problema infinito-dim → finito-dim}",
+        "",
+        "\\text{Base de mechanism design (Nobel 2007)}"
+      ]
+    },
+    {
+      "id": "12-VCG",
+      "scene": "econ-board",
+      "audio": "12-VCG.mp3",
+      "text": "Vickrey, Clarke y Groves generalizaron la subasta de segundo precio a cualquier problema de asignación. El mecanismo VCG cobra a cada agente exactamente el daño que causa a los demás. Si tu participación cambia la asignación óptima de los otros, pagas la diferencia. Es la forma más general de hacer truth-telling dominante. Maravilloso en teoría. Computacionalmente difícil en la práctica. Por eso Google usa una versión simplificada.",
+      "board": [
+        "\\textbf{VCG: Vickrey-Clarke-Groves}",
+        "",
+        "\\text{Cada agente paga el daño que causa a otros:}",
+        "p_i = \\max_a \\sum_{j \\neq i} v_j(a) - \\sum_{j \\neq i} v_j(a^*)",
+        "",
+        "\\text{Truth-telling es DOMINANTE}",
+        "",
+        "\\text{Generaliza Vickrey a }",
+        "\\text{ cualquier mecanismo de asignación}",
+        "",
+        "\\text{Costos computacionales pueden ser altos}"
+      ]
+    },
+    {
+      "id": "13-FCC",
+      "scene": "econ-board",
+      "audio": "13-FCC.mp3",
+      "text": "En mil novecientos noventa y cuatro, la FCC en Estados Unidos hizo la primera subasta de espectro radioeléctrico para telefonía. Los diseñadores fueron Paul Milgrom, Robert Wilson y Preston McAfee, asesorados por la tradición de Vickrey. Recaudaron veinte mil millones de dólares. Hoy las subastas de espectro mueven cientos de miles de millones. El 5G de tu celular se vendió con un mecanismo descendiente directo de la subasta de Vickrey.",
+      "board": [
+        "\\textbf{Subastas de espectro FCC (1994→)}",
+        "",
+        "\\text{Diseñadores: Milgrom, Wilson, McAfee}",
+        "\\text{Basado en tradición de Vickrey}",
+        "",
+        "\\text{Primera subasta: \\$20B recaudados}",
+        "\\text{Hoy: cientos de miles de millones global}",
+        "",
+        "\\text{El 5G de tu celular se vendió con}",
+        "\\text{un mecanismo basado en Vickrey-VCG}",
+        "",
+        "\\text{Milgrom \\& Wilson: Nobel 2020}"
+      ]
+    },
+    {
+      "id": "14-mexico-COFETEL",
+      "scene": "econ-board",
+      "audio": "14-mexico-COFETEL.mp3",
+      "text": "En México, las subastas de espectro las hace el IFT, antes COFETEL. Han usado mecanismos parecidos a los de la FCC para asignar bandas de telefonía celular. Telcel, AT&T, Movistar compraron espectro en estas subastas. Las recaudaciones llegaron a miles de millones de pesos. Sin un buen mecanismo, esas asignaciones se habrían hecho a dedo, con corrupción y precios mucho peores. Vickrey resolvió el problema teórico. México aplica la solución.",
+      "board": [
+        "\\textbf{México: IFT y subastas de espectro}",
+        "",
+        "\\text{Antes COFETEL → ahora IFT (Instituto Federal de Telecomunicaciones)}",
+        "",
+        "\\text{Telcel, AT\\&T, Movistar compraron espectro}",
+        "\\text{a través de subastas de tipo Vickrey/VCG}",
+        "",
+        "\\text{Recaudaciones de miles de millones de pesos}",
+        "",
+        "\\text{Sin subasta: asignación a dedo → corrupción}",
+        "\\text{Con subasta: precios eficientes}"
+      ]
+    },
+    {
+      "id": "15-critica",
+      "scene": "econ-board",
+      "audio": "15-critica.mp3",
+      "text": "Las críticas a Vickrey son técnicas pero importantes. Primera: en la práctica, la gente NO entiende segundo precio. Sub-pujan o pagan demás. eBay tuvo que educar usuarios por años. Segunda: con valores correlacionados (tu valor depende del valor de otros, como en bienes raíces), Vickrey deja de ser tan dominante. Tercera: con múltiples bienes complementarios, el VCG puede tener resultados extraños. Por eso se inventaron las subastas combinatorias.",
+      "board": [
+        "\\textbf{Críticas a Vickrey:}",
+        "",
+        "\\text{1. En la práctica, la gente no entiende}",
+        "\\text{   sub-pujan o sobre-pujan}",
+        "\\text{   eBay tuvo que educar}",
+        "",
+        "\\text{2. Valores correlacionados rompen dominancia}",
+        "\\text{   (bienes raíces, derivados)}",
+        "",
+        "\\text{3. Bienes complementarios → resultados raros}",
+        "\\text{   → subastas combinatorias (Milgrom)}"
+      ]
+    },
+    {
+      "id": "16-nobel",
+      "scene": "econ-board",
+      "audio": "16-nobel.mp3",
+      "text": "En mil novecientos noventa y seis, Vickrey y Mirrlees recibieron el Nobel por sus contribuciones fundamentales a la teoría económica de los incentivos bajo información asimétrica. Vickrey había publicado sus papers fundadores en mil novecientos sesenta y uno, treinta y cinco años antes. Nadie le hizo caso por décadas. Cuando ganó el premio, dijo: estoy contento, pero más por mis ideas que por mí mismo. Murió tres días después, sin recoger el premio físicamente.",
+      "board": [
+        "\\textbf{Nobel 1996}",
+        "\\text{Vickrey \\& Mirrlees}",
+        "\\text{\"Por contribuciones fundamentales a la}",
+        "\\text{teoría económica de incentivos bajo}",
+        "\\text{información asimétrica\"}",
+        "",
+        "\\text{Vickrey publicó su paper clave en 1961}",
+        "\\text{Nobel 35 años después}",
+        "\\text{Murió 3 días después del anuncio}",
+        "",
+        "\\text{Sus ideas viven en cada subasta digital}"
+      ]
+    },
+    {
+      "id": "17-conexion",
+      "scene": "econ-board",
+      "audio": "17-conexion.mp3",
+      "text": "Vickrey y Mirrlees abrieron un campo entero. Maskin y Myerson lo extendieron en mil novecientos setenta y siete. Roth y Shapley usaron las ideas para matching sin precios. Milgrom y Wilson para subastas de telecomunicaciones. Es la única familia de Nobel que se cita continuamente entre ellos. Y todos comparten una intuición: si entiendes los incentivos, puedes diseñar el resultado. La economía deja de describir y empieza a construir.",
+      "board": [
+        "\\textbf{La familia mechanism design (Nobel)}",
+        "",
+        "\\text{1996: Vickrey, Mirrlees (incentivos)}",
+        "\\text{2007: Hurwicz, Maskin, Myerson (mech. design)}",
+        "\\text{2012: Roth, Shapley (matching)}",
+        "\\text{2020: Milgrom, Wilson (subastas)}",
+        "",
+        "\\text{Misma intuición: diseña las reglas}",
+        "\\text{para obtener el resultado que quieres}",
+        "",
+        "\\text{Economía deja de describir, empieza a construir}"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "vickrey",
+      "audio": "18-cierre.mp3",
+      "text": "Mira esta última subasta. El objeto va a quien más lo valora. El precio es justo. Nadie tiene incentivo a mentir. Y todo eso emerge de una sola idea: cobrarle al ganador el segundo precio, no el primero. Una idea minúscula. Cambió cómo Google gana dinero. Cambió cómo se asigna el espectro. Cambió cómo eBay funciona. Y le tomó treinta y cinco años a Vickrey para que el mundo le hiciera caso. La economía no es lenta. Las buenas ideas son pacientes."
+    }
+  ]
+}

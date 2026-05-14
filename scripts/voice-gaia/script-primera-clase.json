@@ -1,0 +1,245 @@
+{
+  "id": "i-primera-clase",
+  "title": "La Primera Clase — el número que no debería existir",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "void",
+      "text": "Antes de empezar, hagámonos una pregunta. Si elevas cualquier número al cuadrado, ¿qué obtienes?",
+      "board": []
+    },
+    {
+      "id": "02-paradoja",
+      "scene": "void",
+      "text": "Cero da cero. Uno da uno. Menos dos también da cuatro. Siempre positivo. Como si el universo nos negara la posibilidad de un cuadrado negativo.",
+      "board": [
+        "$ 0^2 = 0",
+        "$ 1^2 = 1",
+        "$ (-2)^2 = 4",
+        "",
+        "$ x^2 \\geq 0 \\quad \\forall \\, x \\in \\mathbb{R}",
+        "",
+        "$ \\boxed{\\,?^2 = -1\\,}"
+      ]
+    },
+    {
+      "id": "03-bombelli",
+      "scene": "void",
+      "text": "Hasta que en mil quinientos setenta y dos, un ingeniero italiano llamado Rafael Bombelli, mientras intentaba resolver una ecuación cúbica, escribió en su cuaderno tres palabras prohibidas: raíz de menos uno.",
+      "board": [
+        "1572 · Bologna",
+        "Rafael Bombelli",
+        "",
+        "$ \\sqrt{-1} \\;\\equiv\\; i"
+      ]
+    },
+    {
+      "id": "04-imaginario",
+      "scene": "void",
+      "text": "Le pusieron imaginario, como insulto. Tres siglos después, Bombelli tendría la última palabra. Porque esa cosa imaginaria, i, resulta ser lo más físicamente real que tenemos.",
+      "board": [
+        "\"imaginario\" ← insulto",
+        "",
+        "3 siglos después…",
+        "",
+        "$ i \\;\\longrightarrow\\; \\text{física real}"
+      ]
+    },
+    {
+      "id": "05-rotacion",
+      "scene": "complex-plane",
+      "text": "Aquí lo primero que tienes que entender. Multiplicar por i no es imaginar. Es rotar. Toma un punto, multiplícalo por i una vez: gira noventa grados. Dos veces: ciento ochenta, al lado contrario. Cuatro veces: vuelve al inicio. i no es imaginario. Es el operador gira.",
+      "board": [
+        "$ z \\cdot i = \\text{rotación } 90°",
+        "",
+        "$ 1 \\to i \\to -1 \\to -i \\to 1",
+        "",
+        "$ i^4 = 1",
+        "",
+        "$ i = e^{i\\pi/2}"
+      ]
+    },
+    {
+      "id": "06-mobius-intro",
+      "scene": "complex/mobius",
+      "text": "Pero i no se queda quieto. Combinémoslo con división. Esta fórmula: w igual a, a zeta más be, entre, ce zeta más de. Aparentemente, una fracción simple.",
+      "board": [
+        "August Möbius · 1850",
+        "",
+        "$ w(z) = \\dfrac{az + b}{cz + d}",
+        "",
+        "$ a,b,c,d \\in \\mathbb{C}",
+        "$ ad - bc \\neq 0"
+      ]
+    },
+    {
+      "id": "07-mobius-magia",
+      "scene": "complex/mobius",
+      "text": "Lo asombroso es esto: toma cualquier círculo del plano de la izquierda. Lo manda a otro círculo en el plano de la derecha. Siempre. Las rectas son círculos de radio infinito. Las leyes geométricas del universo respetan esta fórmula.",
+      "board": [
+        "círculo → círculo",
+        "recta → círculo (r = ∞)",
+        "",
+        "$ \\text{ángulos preservados}",
+        "",
+        "SIEMPRE"
+      ]
+    },
+    {
+      "id": "08-riemann",
+      "scene": "complex/mobius",
+      "text": "Y si proyectas el plano sobre una esfera, la esfera de Riemann, todas estas transformaciones son simplemente rotaciones. El infinito se vuelve el polo norte. Una sola cosa más para mirar girando.",
+      "board": [
+        "Bernhard Riemann",
+        "",
+        "$ \\mathbb{C} \\cup \\{\\infty\\} \\;\\cong\\; S^2",
+        "",
+        "Möbius = rotar $S^2$",
+        "",
+        "$ \\infty = $ polo norte"
+      ]
+    },
+    {
+      "id": "09-newton-pregunta",
+      "scene": "complex/roots",
+      "text": "Segunda parada. Una pregunta de cálculo. Zeta al cubo igual a uno. ¿Cuántas soluciones tiene? Tres. Una real, dos complejas. Pero la pregunta interesante es otra.",
+      "board": [
+        "$ z^3 = 1",
+        "",
+        "$ z_1 = 1",
+        "$ z_2 = -\\tfrac{1}{2} + i\\tfrac{\\sqrt{3}}{2}",
+        "$ z_3 = -\\tfrac{1}{2} - i\\tfrac{\\sqrt{3}}{2}"
+      ]
+    },
+    {
+      "id": "10-newton-fractal",
+      "scene": "complex/roots",
+      "text": "Si arrancas desde un punto cualquiera del plano y aplicas el método de Newton, ¿a qué raíz vas a caer? La frontera entre las tres cuencas no es una línea. Es un fractal infinito. Tres colores entretejidos en cada escala. Donde quiera que dos cuencas se toquen, también está la tercera. Esto es caos clásico, y nace de una iteración simple sobre i.",
+      "board": [
+        "Newton-Raphson en $\\mathbb{C}$:",
+        "",
+        "$ z_{n+1} = z_n - \\dfrac{p(z_n)}{p'(z_n)}",
+        "",
+        "frontera = fractal de Julia",
+        "propiedad de Wada"
+      ]
+    },
+    {
+      "id": "11-conformal-formula",
+      "scene": "complex/conformal",
+      "text": "Tercera parada. Otra fórmula pequeña. w igual a zeta, más uno entre zeta. Si la aplicas a un círculo común, no pasa nada interesante.",
+      "board": [
+        "Nikolái Joukowski",
+        "1910 · Moscú",
+        "",
+        "$ w = z + \\dfrac{1}{z}"
+      ]
+    },
+    {
+      "id": "12-airfoil",
+      "scene": "complex/conformal",
+      "text": "Pero si la aplicas a un círculo ligeramente descentrado, lo que sale es el perfil de un ala. Bombelli soñó esta forma en mil quinientos setenta y dos, sin saberlo. Cien millones de aviones la usan hoy.",
+      "board": [
+        "círculo + offset",
+        "",
+        "$ w = z + \\dfrac{1}{z}",
+        "",
+        "→ perfil de ala",
+        "",
+        "cusp = borde de salida"
+      ]
+    },
+    {
+      "id": "13-flujo",
+      "scene": "complex/conformal",
+      "text": "Y todavía no es lo mejor. En el plano del círculo, resolver el flujo de aire es trivial: pasa por arriba y por abajo simétricamente. La misma fórmula te regala el flujo alrededor del ala. Las líneas se aprietan arriba, se relajan abajo, y la presión genera sustentación. Eso es exactamente lo que un avión hace en el aire.",
+      "board": [
+        "$ \\Phi(z) = U\\!\\left(z + \\dfrac{R^2}{z}\\right)",
+        "",
+        "arriba: $v \\uparrow$,  $p \\downarrow$",
+        "abajo: $v \\downarrow$,  $p \\uparrow$",
+        "",
+        "Kutta-Joukowski:",
+        "$ L' = \\rho \\, U \\, \\Gamma"
+      ]
+    },
+    {
+      "id": "14-em-puente",
+      "scene": "complex/conformal",
+      "text": "Bombelli en mil quinientos setenta y dos. Möbius en mil ochocientos cincuenta. Joukowski en mil novecientos diez. Tres siglos de matemática pura. Y todavía no llegamos a lo más impactante.",
+      "board": [
+        "1572 · Bombelli → $i$",
+        "1850 · Möbius → círculos",
+        "1910 · Joukowski → ala",
+        "",
+        "3 siglos de matemática",
+        "y todavía…"
+      ]
+    },
+    {
+      "id": "15-motor-tres-fases",
+      "scene": "em/ac-motor",
+      "text": "Cuarta parada. Un motor de corriente alterna trifásico tiene tres bobinas. Cada una recibe una corriente que oscila, pero desfasadas ciento veinte grados entre sí. Es decir: tres exponenciales de i, omega, té. Separadas un tercio de vuelta en el plano complejo.",
+      "board": [
+        "Motor AC trifásico",
+        "",
+        "$ I_1 = I_0 \\cos(\\omega t)",
+        "$ I_2 = I_0 \\cos(\\omega t - \\tfrac{2\\pi}{3})",
+        "$ I_3 = I_0 \\cos(\\omega t - \\tfrac{4\\pi}{3})",
+        "",
+        "$ 3 \\times e^{i\\omega t}, \\; \\Delta\\varphi = 120°"
+      ]
+    },
+    {
+      "id": "16-b-field",
+      "scene": "em/ac-motor",
+      "text": "El campo magnético que generan, todas sumadas, rota. No por arte de magia: porque tres vectores en el plano complejo, sumados con desfase de ciento veinte grados, dan un vector que gira a velocidad constante. Pura álgebra de i.",
+      "board": [
+        "$ \\vec{B} = \\sum_k I_k \\, \\hat{n}_k",
+        "",
+        "$ |\\vec{B}| = \\tfrac{3}{2} I_0",
+        "$ \\angle \\vec{B} = \\omega t",
+        "",
+        "→ GIRA ✓"
+      ]
+    },
+    {
+      "id": "17-rotor",
+      "scene": "em/ac-motor",
+      "text": "El rotor, el imán que está adentro, sigue ese campo. Y gira. Tu refrigerador, tu lavadora, los trenes de alta velocidad, los autos eléctricos. Todos. Giran exactamente por i.",
+      "board": [
+        "rotor sigue $\\vec{B}$",
+        "",
+        "· refrigerador",
+        "· lavadora",
+        "· trenes alta velocidad",
+        "· autos eléctricos",
+        "",
+        "todo gira por $i$"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "void",
+      "text": "Bombelli inventó algo imaginario en mil quinientos setenta y dos. Hoy, sin esa idea, no habría electricidad rotando, ni aviones volando, ni teléfonos celulares. Lo más imaginario terminó siendo lo más real. Y este es el tipo de cosas que vas a aprender en esta escuela. Ahora elige tu primer módulo de matemáticas, y empieza a jugar.",
+      "board": [
+        "1572 → 2026",
+        "",
+        "lo imaginario",
+        "se volvió",
+        "lo más real",
+        "",
+        "↓ elige un módulo"
+      ]
+    }
+  ]
+}

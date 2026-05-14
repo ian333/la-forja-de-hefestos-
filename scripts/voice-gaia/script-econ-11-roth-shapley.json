@@ -1,0 +1,242 @@
+{
+  "id": "econ-11-roth-shapley",
+  "title": "Matching: cuando no hay precio",
+  "voice_name": "Matilda",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-riñon",
+      "scene": "econ-board",
+      "text": "Imagina que necesitas un riñón. Tu hermana quiere donarte el suyo, pero no es compatible. En otro hospital, un señor tiene el mismo problema: su hijo no es compatible con él... pero sí contigo. Y tu hermana es compatible con ese señor. Si los cuatro se ponen de acuerdo, los dos viven. Eso es matching. Y no hay un solo peso de por medio.",
+      "board": [
+        "\\text{Paciente A} \\leftarrow \\text{Donante B (incompatible)}",
+        "\\text{Paciente B} \\leftarrow \\text{Donante A (incompatible)}",
+        "\\text{Solución: intercambio cruzado}",
+        "A \\leftarrow \\text{Donante B} \\quad B \\leftarrow \\text{Donante A}",
+        "\\textbf{Nadie paga. Los dos viven.}"
+      ]
+    },
+    {
+      "id": "02-persona",
+      "scene": "econ-board",
+      "text": "Lloyd Shapley era un matemático puro. En 1962, junto con David Gale, publicó un artículo que parecía un juego de salón: cómo emparejar hombres y mujeres de forma que nadie quisiera desertar. Alvin Roth era ingeniero de matching real: tomó esa teoría y la usó para asignar médicos residentes, niños a escuelas, y riñones a pacientes. Shapley puso la estructura. Roth la hizo funcionar. Nobel 2012.",
+      "board": [
+        "\\textbf{Lloyd Shapley} \\quad (1923\\text{–}2016)",
+        "\\text{Matemático, UCLA/RAND}",
+        "\\text{Gale-Shapley 1962: algoritmo de aceptación diferida}",
+        "",
+        "\\textbf{Alvin Roth} \\quad (1951\\text{–})",
+        "\\text{Economista, Stanford/Harvard}",
+        "\\text{Matching de residentes, escuelas, riñones}"
+      ]
+    },
+    {
+      "id": "03-problema",
+      "scene": "econ-board",
+      "text": "El problema central es este: hay bienes que no puedes comprar ni vender. No puedes comprar tu lugar en la universidad. No puedes vender un riñón. No puedes subastar una plaza de residencia médica. Son mercados sin precio. Pero alguien tiene que decidir quién va a dónde. Y si lo decides mal, la gente se rebela: hacen tratos por abajo, mienten sobre sus preferencias, o simplemente no participan.",
+      "board": [
+        "\\textbf{Mercados sin precio:}",
+        "\\text{• Riñones — prohibido vender}",
+        "\\text{• Escuelas públicas — derecho, no compra}",
+        "\\text{• Residencias médicas — asignación centralizada}",
+        "\\text{• Universidades — admisión, no subasta}",
+        "",
+        "\\text{Problema: sin precio, ¿cómo asignas?}"
+      ]
+    },
+    {
+      "id": "04-gale-shapley",
+      "scene": "matching",
+      "text": "Gale y Shapley lo plantearon como un problema de matrimonios. Mira esto: a la izquierda los proponentes, a la derecha quienes deciden. Cada uno tiene un ranking de preferencias. Quieres encontrar un emparejamiento estable: que no exista ninguna pareja que prefiera cambiarse mutuamente. Que nadie quiera divorciarse para irse con alguien que también lo prefiere. El algoritmo se llama aceptación diferida."
+    },
+    {
+      "id": "05-algoritmo",
+      "scene": "matching",
+      "text": "Mira el algoritmo correr. Ronda uno: cada proponente le manda una propuesta a su favorito, los rayos dorados. Cada receptor que recibe más de una propuesta retiene la mejor y rechaza el resto. Los aceptados quedan como vínculos verdes. Ronda dos: los rechazados proponen a su segunda opción. Y así, hasta que todos quedan emparejados. El resultado, demostrado por Gale y Shapley, es siempre estable."
+    },
+    {
+      "id": "06-estabilidad",
+      "scene": "matching",
+      "text": "Mira los vínculos verdes finales. Estabilidad significa esto: no existe ninguna pareja que ambos prefieran sobre los que tienen. Si no fuera estable, esas dos personas se irían por fuera del sistema. Y si mucha gente hace tratos por fuera, el sistema entero colapsa. Pasó en Estados Unidos antes de mil novecientos cincuenta y dos, cuando no había algoritmo: el mercado de residentes era un caos."
+    },
+    {
+      "id": "07-NRMP",
+      "scene": "matching",
+      "text": "En mil novecientos cincuenta y dos, los hospitales crearon el NRMP, el National Resident Matching Program. Cuarenta mil médicos al año, asignados con un algoritmo que resultó ser equivalente a este Gale-Shapley que estás viendo. Roth descubrió la equivalencia décadas después y mostró algo crucial: el lado que propone obtiene su mejor resultado posible entre todos los matchings estables. Por eso, los residentes hoy proponen — no los hospitales."
+    },
+    {
+      "id": "08-school-choice",
+      "scene": "econ-board",
+      "text": "Roth llevó el matching a las escuelas públicas. En Boston, el sistema asignaba alumnos a escuelas con un algoritmo que parecía justo pero que incentivaba a los padres a mentir sobre sus preferencias. Si ponías tu verdadera favorita y no te quedabas, perdías prioridad. Roth y sus estudiantes diseñaron un nuevo mecanismo basado en aceptación diferida. La diferencia: decir la verdad es tu mejor estrategia. Se implementó en Boston en dos mil cinco.",
+      "board": [
+        "\\textbf{Boston pre-2005:}",
+        "\\text{Padres mentían sobre preferencias}",
+        "\\text{Poner tu favorita era riesgoso}",
+        "\\text{Familias informadas → ventaja injusta}",
+        "",
+        "\\textbf{Roth (2005): nuevo mecanismo}",
+        "\\text{Deferred acceptance adaptado}",
+        "\\textbf{Strategy-proof: decir la verdad es óptimo}"
+      ]
+    },
+    {
+      "id": "09-kidney",
+      "scene": "econ-board",
+      "text": "Pero el logro más espectacular de Roth es el intercambio de riñones. Recuerda: vender órganos es ilegal en todo el mundo. Pero si tu donante no es compatible contigo, puedes intercambiarlo con otro par paciente-donante. Roth diseñó el algoritmo del New England Program for Kidney Exchange. Cadenas de dos, tres, hasta veinte pares encadenados. Cada año salva cientos de vidas. Literalmente.",
+      "board": [
+        "\\textbf{Kidney Exchange (Roth, Sönmez, Ünver 2004)}",
+        "\\text{Par }(A, D_A)\\text{: donante incompatible}",
+        "\\text{Par }(B, D_B)\\text{: donante incompatible}",
+        "",
+        "\\text{Si }D_A \\to B\\text{ y }D_B \\to A\\text{: intercambio}",
+        "",
+        "\\text{Cadenas: 2, 3, … hasta 20+ pares}",
+        "\\text{NEPKE → cientos de trasplantes/año}"
+      ]
+    },
+    {
+      "id": "10-shapley-value",
+      "scene": "econ-board",
+      "text": "Shapley no solo hizo matching. Antes, en mil novecientos cincuenta y tres, definió el valor de Shapley: la forma justa de repartir las ganancias de una coalición. Imagina tres empresas que juntas ganan cien. ¿Cuánto le toca a cada una? Shapley demostró que hay una única división que cumple cuatro axiomas razonables de justicia. Hoy se usa en inteligencia artificial para explicar modelos: SHAP values, los valores de Shapley aplicados a features.",
+      "board": [
+        "\\textbf{Valor de Shapley (1953)}",
+        "\\phi_i(v) = \\sum_{S \\subseteq N \\setminus \\{i\\}} \\frac{|S|!(n-|S|-1)!}{n!}[v(S \\cup \\{i\\}) - v(S)]",
+        "",
+        "\\text{La contribución marginal promedio}",
+        "\\text{de cada jugador, sobre todas las coaliciones}",
+        "",
+        "\\text{Hoy: SHAP values en ML}",
+        "\\text{Explica cuánto contribuye cada feature}"
+      ]
+    },
+    {
+      "id": "11-top-trading",
+      "scene": "econ-board",
+      "text": "Hay otro mecanismo de Shapley y Scarf: el Top Trading Cycles. Funciona así: cada persona señala su objeto favorito. Se forman ciclos: A quiere lo de B, B quiere lo de C, C quiere lo de A. Intercambias el ciclo entero. Todos mejoran. Repites con los que quedan. Este mecanismo es a la vez estable y strategy-proof: nadie gana mintiendo. Se usa para asignar viviendas sociales y en algunos distritos escolares.",
+      "board": [
+        "\\textbf{Top Trading Cycles (Shapley-Scarf 1974)}",
+        "\\text{1. Cada persona señala su objeto favorito}",
+        "\\text{2. Se forman ciclos → intercambio}",
+        "\\text{3. Repite con los que quedan}",
+        "",
+        "\\textbf{Propiedades:}",
+        "\\text{• Pareto eficiente}",
+        "\\text{• Strategy-proof (decir la verdad es óptimo)}",
+        "\\text{• Único mecanismo con ambas (Ma 1994)}"
+      ]
+    },
+    {
+      "id": "12-imposibilidad",
+      "scene": "econ-board",
+      "text": "Aquí viene el resultado negativo más importante. Roth demostró en mil novecientos ochenta y dos que no puedes tener todo. No existe ningún mecanismo de matching que sea simultáneamente estable y strategy-proof para ambos lados. Si el mecanismo es estable, al menos un lado puede ganar manipulando. Es como el teorema de Arrow pero para matching. Puedes elegir: estabilidad o verdad, pero no ambas para todos.",
+      "board": [
+        "\\textbf{Imposibilidad de Roth (1982)}",
+        "\\text{No existe mecanismo que sea:}",
+        "\\text{(1) Estable}",
+        "\\text{(2) Strategy-proof para AMBOS lados}",
+        "",
+        "\\text{Gale-Shapley: estable + SP para quien propone}",
+        "\\text{Pero el otro lado puede manipular}",
+        "",
+        "\\text{Análogo a Arrow en teoría de la elección}"
+      ]
+    },
+    {
+      "id": "13-market-design",
+      "scene": "econ-board",
+      "text": "Roth creó un campo nuevo: market design. La idea es que los mercados no aparecen solos. Alguien tiene que diseñarlos. Y hay tres condiciones para que funcionen: grosor, que haya suficientes participantes. Seguridad, que nadie gane mintiendo. Y velocidad, que los participantes tengan tiempo de evaluar. Si falla cualquiera de las tres, el mercado muere. Roth lo aprendió estudiando mercados que fracasaron.",
+      "board": [
+        "\\textbf{Market Design (Roth)}",
+        "\\text{Tres condiciones para un mercado funcional:}",
+        "",
+        "\\text{1. }\\textbf{Grosor}\\text{ — suficientes participantes}",
+        "\\text{2. }\\textbf{Seguridad}\\text{ — no ganas mintiendo}",
+        "\\text{3. }\\textbf{Velocidad}\\text{ — tiempo para decidir}",
+        "",
+        "\\text{Si falla una → unraveling, colapso}"
+      ]
+    },
+    {
+      "id": "14-mexico",
+      "scene": "econ-board",
+      "text": "En México, la asignación de escuelas públicas sigue usando métodos que incentivan mentir. El COMIPEMS de la Ciudad de México le pide a cada estudiante que ordene veinte opciones. Pero no es strategy-proof: poner tu verdadera favorita arriba te puede costar la segunda. Familias con información lo saben y juegan estratégicamente. Las que no, pierden. Roth y Shapley resolvieron esto hace sesenta años. México aún no lo implementa.",
+      "board": [
+        "\\textbf{COMIPEMS (Ciudad de México)}",
+        "\\text{~320,000 estudiantes/año → bachillerato}",
+        "",
+        "\\text{Problema: NO es strategy-proof}",
+        "\\text{Poner tu favorita arriba es riesgoso}",
+        "\\text{Familias informadas → ventaja}",
+        "\\text{Familias pobres → peor asignación}",
+        "",
+        "\\text{Solución: deferred acceptance (ya existe)}"
+      ]
+    },
+    {
+      "id": "15-mas-alla",
+      "scene": "econ-board",
+      "text": "El matching va mucho más allá de escuelas y hospitales. Hoy se usa para asignar refugiados a ciudades de acogida, optimizando compatibilidad lingüística y laboral. Se usa para emparejar donantes de médula ósea. Se usa dentro de empresas para asignar proyectos a equipos. Y en la era digital, cada vez que una plataforma conecta dos lados sin usar precio, está resolviendo un problema de matching. Uber, Airbnb, Tinder: Shapley está en tu teléfono.",
+      "board": [
+        "\\textbf{Matching en el siglo XXI:}",
+        "\\text{• Refugiados → ciudades (GeoMatch)}",
+        "\\text{• Donantes de médula ósea}",
+        "\\text{• Equipos ↔ proyectos en empresas}",
+        "\\text{• Uber, Airbnb, Tinder}",
+        "",
+        "\\text{Cada plataforma que conecta sin precio}",
+        "\\text{está resolviendo un Gale-Shapley}"
+      ]
+    },
+    {
+      "id": "16-nobel",
+      "scene": "econ-board",
+      "text": "En dos mil doce, la Academia le dio el Nobel a Roth y Shapley por la teoría de asignaciones estables y la práctica del diseño de mercado. Es uno de los premios más bonitos de la historia: un teórico puro que nunca pensó en aplicaciones, y un ingeniero que tomó la teoría y salvó vidas con ella. Shapley tenía ochenta y nueve años cuando lo recibió. Dijo: yo no hago economía, hago matemáticas. La realidad es que hizo las dos.",
+      "board": [
+        "\\textbf{Nobel 2012}",
+        "\\text{Roth \\& Shapley}",
+        "\\text{\"Por la teoría de asignaciones estables}",
+        "\\text{y la práctica del diseño de mercado\"}",
+        "",
+        "\\text{Shapley: la estructura matemática}",
+        "\\text{Roth: la implementación que salva vidas}",
+        "\\text{Teoría + práctica = Nobel}"
+      ]
+    },
+    {
+      "id": "17-conexion",
+      "scene": "econ-board",
+      "text": "Roth y Shapley cerraron un arco que empezó con Nash. Nash te da el equilibrio: nadie quiere desviarse. Shapley te da la estabilidad: nadie quiere desertar. Y Roth te da el diseño: cómo construir las reglas para que el equilibrio estable ocurra en la práctica. Es la diferencia entre describir el mundo y construirlo. Y esa es la esencia del market design: no preguntas qué pasa en el mercado, sino qué mercado debería existir.",
+      "board": [
+        "\\text{Nash → equilibrio: nadie se desvía}",
+        "\\text{Shapley → estabilidad: nadie deserta}",
+        "\\text{Roth → diseño: construye las reglas}",
+        "",
+        "\\textbf{Market Design:}",
+        "\\text{No preguntas qué pasa en el mercado}",
+        "\\text{Preguntas qué mercado debería existir}"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "text": "Un riñón no tiene precio. Tu lugar en la universidad tampoco. Pero alguien tiene que decidir quién va a dónde. Shapley demostró que hay una forma matemáticamente estable de hacerlo. Roth demostró que funciona en la práctica. Y entre los dos crearon un campo que hoy salva cientos de vidas al año. Todo con un algoritmo que cabe en media página.",
+      "board": [
+        "\\text{Un riñón no tiene precio.}",
+        "\\text{Tu lugar en la universidad tampoco.}",
+        "",
+        "\\text{Shapley: existe una asignación estable.}",
+        "\\text{Roth: funciona en la práctica.}",
+        "",
+        "\\textbf{Matching: cuando no hay precio,}",
+        "\\textbf{el diseño es todo.}"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,353 @@
+{
+  "id": "econ-07-solow",
+  "title": "Crecimiento económico — Robert Solow · Nobel 1987",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "econ-board",
+      "text": "En mil novecientos cuarenta y cinco, Japón estaba en ruinas. Literalmente. Dos bombas atómicas, ciudades arrasadas, industria destruida. Cuarenta años después era la segunda economía del mundo. Alemania, lo mismo: partida en dos, bombardeada, y luego el milagro económico. ¿Cómo es posible que países destruidos crezcan más rápido que los que nunca fueron tocados? Esa pregunta tiene una respuesta matemática. Se llama el modelo de Solow.",
+      "board": [
+        "# La pregunta",
+        "",
+        "Japón 1945 $\\to$ ruinas",
+        "Japón 1985 $\\to$ 2a economía",
+        "",
+        "Alemania: igual",
+        "",
+        "¿cómo?",
+        "",
+        "Robert Solow, 1956"
+      ]
+    },
+    {
+      "id": "02-solow-persona",
+      "scene": "econ-board",
+      "text": "Robert Merton Solow, nacido en Brooklyn en mil novecientos veinticuatro. Estudió sociología en Harvard y luego se cambió a economía. Su maestro fue Wassily Leontief, el de las tablas input-output. Pero Solow no quería contar qué había en la economía. Quería entender por qué crece. En mil novecientos cincuenta y seis publicó un paper de quince páginas que refundó la macroeconomía.",
+      "board": [
+        "# Solow · Brooklyn 1924",
+        "",
+        "Harvard $\\to$ Leontief",
+        "",
+        "1956: ``A Contribution to the",
+        "$\\;$ Theory of Economic Growth''",
+        "",
+        "15 páginas",
+        "",
+        "refundó la macro"
+      ]
+    },
+    {
+      "id": "03-produccion",
+      "scene": "econ-board",
+      "text": "La economía produce cosas. Bienes y servicios. ¿Con qué? Con capital — máquinas, fábricas, computadoras — y con trabajo — personas. Solow lo escribe así: Y es igual a F de K y L. Y es la producción total, K es el capital acumulado, L son los trabajadores. La función F tiene rendimientos constantes a escala: si duplicas capital y trabajo, duplicas producción. Pero si solo duplicas capital dejando L fijo, cada unidad extra de K rinde menos. Eso es lo clave.",
+      "board": [
+        "# Función de producción",
+        "",
+        "$ Y = F(K, L)$",
+        "",
+        "$K$ = capital (máquinas)",
+        "$L$ = trabajo (personas)",
+        "",
+        "rendimientos constantes:",
+        "$ F(2K, 2L) = 2F(K, L)$",
+        "",
+        "rendimientos decrecientes en $K$"
+      ]
+    },
+    {
+      "id": "04-per-capita",
+      "scene": "econ-board",
+      "text": "El truco matemático de Solow es dividir todo entre L. Defines y minúscula como Y sobre L — producción por trabajador — y k minúscula como K sobre L — capital por trabajador. Entonces la función de producción se simplifica: y es igual a f de k. Una sola variable. Toda la economía de un país capturada en una curva cóncava que sube pero se va aplanando. Eso ya te dice algo profundo: acumular más capital da cada vez menos.",
+      "board": [
+        "# Per cápita",
+        "",
+        "$ y = Y/L \\quad k = K/L$",
+        "",
+        "$ y = f(k)$",
+        "",
+        "ejemplo Cobb-Douglas:",
+        "$ f(k) = k^\\alpha \\quad \\alpha \\approx 1/3$",
+        "",
+        "cóncava $\\to$ rendimientos",
+        "$\\;$ decrecientes"
+      ]
+    },
+    {
+      "id": "05-diagrama",
+      "scene": "econ-chart",
+      "text": "Mira el diagrama. En el eje horizontal está k — el capital por trabajador. En el vertical, la producción y la inversión. La curva azul es f de k — lo que produces. La curva dorada es s veces f de k — lo que ahorras e inviertes, donde s es la tasa de ahorro del país. La línea roja es delta por k — la depreciación, lo que se desgasta cada año. Donde la curva de inversión cruza la línea de depreciación, la economía para de crecer. Ese punto es el estado estacionario.",
+      "board": [
+        "# Diagrama de Solow",
+        "",
+        "$ \\Delta k = s \\cdot f(k) - \\delta k$",
+        "",
+        "$s$ = tasa de ahorro",
+        "$\\delta$ = depreciación",
+        "",
+        "$ sf(k^*) = \\delta k^*$",
+        "",
+        "$ \\boxed{\\text{estado estacionario}}$"
+      ]
+    },
+    {
+      "id": "06-convergencia",
+      "scene": "econ-board",
+      "text": "Y aquí viene lo poderoso. Si empiezas con poco capital — a la izquierda del diagrama — la inversión es mayor que la depreciación. El capital crece. La economía crece rápido. Pero conforme te acercas al estado estacionario, la brecha se cierra. El crecimiento se desacelera. Y cuando llegas a k estrella, se detiene. Japón y Alemania arrancaron desde cero después de la guerra. Estaban a la izquierda. Crecieron brutalmente rápido. Ese es el secreto de la convergencia condicional.",
+      "board": [
+        "# Convergencia",
+        "",
+        "si $k < k^*$:",
+        "$ sf(k) > \\delta k$",
+        "$\\to$ capital crece rápido",
+        "",
+        "si $k \\to k^*$:",
+        "$\\to$ crecimiento baja",
+        "",
+        "Japón 1945 $\\to$ $k$ bajo",
+        "$\\to$ crecimiento alto",
+        "",
+        "$ \\boxed{\\text{convergencia condicional}}$"
+      ]
+    },
+    {
+      "id": "07-regla-oro",
+      "scene": "econ-board",
+      "text": "¿Cuál es la tasa de ahorro óptima? Si ahorras cero, no inviertes, el capital se deprecia y te quedas sin nada. Si ahorras todo, inviertes mucho pero no consumes nada. El óptimo está en medio. Phelps lo llamó la regla de oro: la tasa de ahorro que maximiza el consumo por trabajador en el estado estacionario. La condición es que la productividad marginal del capital iguale la depreciación. f prima de k dorada es igual a delta.",
+      "board": [
+        "# Regla de oro · Phelps",
+        "",
+        "maximizar consumo:",
+        "$ c^* = f(k^*) - \\delta k^*$",
+        "",
+        "condición:",
+        "$ f'(k_{gold}) = \\delta$",
+        "",
+        "$ s=0 \\to$ sin capital",
+        "$ s=1 \\to$ sin consumo",
+        "",
+        "$ \\boxed{s_{gold} \\approx \\alpha \\approx 1/3}$"
+      ]
+    },
+    {
+      "id": "08-residuo",
+      "scene": "econ-board",
+      "text": "Pero aquí viene la bomba. Solow hizo las cuentas para Estados Unidos entre mil novecientos nueve y mil novecientos cuarenta y nueve. Calculó cuánto del crecimiento venía de acumular capital y cuánto de aumentar trabajadores. El resultado fue devastador. El capital y el trabajo juntos explicaban menos de la mitad del crecimiento. El resto — más de la mitad — venía de algo que no estaba en el modelo. Solow lo llamó A. El residuo. La tecnología.",
+      "board": [
+        "# El residuo de Solow",
+        "",
+        "$ Y = A \\cdot F(K, L)$",
+        "",
+        "EE.UU. 1909–1949:",
+        "",
+        "crecimiento de $K$ $\\to$ 12.5\\%",
+        "crecimiento de $L$ $\\to$ 34\\%",
+        "residuo $A$ $\\to$ 53.5\\%",
+        "",
+        "$ \\boxed{A > K + L}$",
+        "",
+        "más de la mitad = ``tecnología''"
+      ]
+    },
+    {
+      "id": "09-tecnologia",
+      "scene": "econ-board",
+      "text": "Eso significa que lo que más importa para el crecimiento no es cuánto ahorras ni cuántas máquinas compras. Es la tecnología, el conocimiento, la productividad total de los factores. Sin progreso tecnológico, toda economía converge a un estado estacionario y deja de crecer. El capital tiene rendimientos decrecientes. Solo A puede subir la curva entera. Solo A puede mover el techo. Solow demostró que la riqueza de las naciones no está en el oro — está en las ideas.",
+      "board": [
+        "# La tecnología es todo",
+        "",
+        "sin $A$: economía converge",
+        "$\\to$ deja de crecer",
+        "",
+        "con $A$ creciendo:",
+        "$ k^*$ sube continuamente",
+        "",
+        "$ \\boxed{\\text{ideas} > \\text{capital}}$",
+        "",
+        "la riqueza está",
+        "en el conocimiento"
+      ]
+    },
+    {
+      "id": "10-convergencia-datos",
+      "scene": "econ-chart",
+      "text": "Mira la gráfica. En el eje horizontal, el PIB per cápita en mil novecientos sesenta. En el vertical, la tasa de crecimiento posterior. Si Solow tiene razón, los países pobres deberían crecer más rápido y converger a los ricos. Y para los países con instituciones y ahorro similares — los de la OECD — esto se cumple espectacularmente. Pero para el mundo entero la nube se dispersa. Algunos pobres siguen pobres. La convergencia es condicional: funciona solo si las condiciones de base son similares.",
+      "board": [
+        "# Convergencia · datos",
+        "",
+        "OECD: sí converge",
+        "todos: no siempre",
+        "",
+        "$ \\to$ condicional",
+        "",
+        "depende de $s$, $\\delta$, $n$, $A$",
+        "",
+        "mismas condiciones $\\to$ converge",
+        "distintas $\\to$ diverge"
+      ]
+    },
+    {
+      "id": "11-tigres",
+      "scene": "econ-board",
+      "text": "Los tigres asiáticos — Corea del Sur, Taiwán, Singapur, Hong Kong — son el triunfo del modelo. Arrancaron con k bajo en los años sesenta. Tasas de ahorro altísimas, del treinta y cinco por ciento del PIB. Inversión masiva en educación. Y crecieron al siete u ocho por ciento durante décadas. Krugman luego argumentó que el milagro asiático era en gran parte acumulación de capital, no tecnología. Y por eso se desaceleraría. Tenía razón. Pero aun así, pasaron de la pobreza a la riqueza en una generación.",
+      "board": [
+        "# Tigres asiáticos",
+        "",
+        "Corea, Taiwán, Singapur, HK",
+        "",
+        "$s \\approx 35\\%$ del PIB",
+        "educación masiva",
+        "",
+        "crecimiento: 7–8\\% anual",
+        "por 30 años",
+        "",
+        "Krugman: acumulación,",
+        "$\\;$ no tecnología",
+        "",
+        "aún así: pobreza $\\to$ riqueza"
+      ]
+    },
+    {
+      "id": "12-mexico",
+      "scene": "econ-board",
+      "text": "Y México. Entre mil novecientos cuarenta y mil novecientos ochenta, México creció al seis por ciento anual. El milagro mexicano. Industrialización por sustitución de importaciones. Pero después del ochenta y dos — la crisis de la deuda — el crecimiento se estancó. Treinta años de crecimiento mediocre. ¿Qué pasó en el modelo de Solow? La inversión no se detuvo, pero la productividad sí. El residuo A dejó de crecer. México invierte pero no innova. Ese es el diagnóstico Solow.",
+      "board": [
+        "# México · el estancamiento",
+        "",
+        "1940–1980: 6\\% anual",
+        "1982–2020: $\\sim$2\\% anual",
+        "",
+        "$ K$ siguió creciendo",
+        "$ A$ se estancó",
+        "",
+        "inversión sin innovación",
+        "",
+        "$ \\boxed{\\Delta A / A \\approx 0}$",
+        "",
+        "diagnóstico Solow"
+      ]
+    },
+    {
+      "id": "13-romer",
+      "scene": "econ-board",
+      "text": "La debilidad del modelo es que A es exógena. Cae del cielo. Solow lo sabía. Treinta años después, Paul Romer — Nobel dos mil dieciocho — endogeneizó la tecnología. Las ideas son bienes no rivales: si tú usas una idea, yo también puedo. Y las ideas se producen invirtiendo en investigación. Por eso el gasto en I más D importa tanto. Romer convirtió la A de Solow en una variable que depende de decisiones. Solow puso el mapa; Romer puso el motor.",
+      "board": [
+        "# Romer · Nobel 2018",
+        "",
+        "Solow: $A$ exógena (``cae'')",
+        "Romer: $A$ endógena",
+        "",
+        "ideas = bienes no rivales",
+        "$ \\to$ rendimientos crecientes",
+        "",
+        "gasto en I+D $\\to$ más $A$",
+        "",
+        "$ \\boxed{\\text{Solow: mapa}}$",
+        "$ \\boxed{\\text{Romer: motor}}$"
+      ]
+    },
+    {
+      "id": "14-nordhaus",
+      "scene": "econ-board",
+      "text": "Y William Nordhaus, que compartió el Nobel con Romer, añadió la otra dimensión: el cambio climático. Si el crecimiento económico destruye el planeta, ¿de qué sirve? Nordhaus construyó el modelo DICE — un modelo integrado de economía y clima — para calcular el impuesto óptimo al carbono. Nordhaus dice: crecer sí, pero pagando el costo ambiental. El modelo de Solow extendido incluye ahora ideas y límites planetarios.",
+      "board": [
+        "# Nordhaus · Nobel 2018",
+        "",
+        "crecimiento + clima",
+        "",
+        "modelo DICE:",
+        "$\\;$ economía $\\leftrightarrow$ temperatura",
+        "",
+        "impuesto al carbono óptimo",
+        "",
+        "$ \\boxed{\\text{crecer sin destruir}}$"
+      ]
+    },
+    {
+      "id": "15-prescripcion",
+      "scene": "econ-board",
+      "text": "¿Qué dice Solow para un país que quiere crecer? Primero: ahorra e invierte. La tasa de ahorro eleva el estado estacionario. Segundo: invierte en capital humano — educación, salud — porque es parte de K ampliado. Tercero: y esto es lo más importante — invierte en tecnología. Investigación, desarrollo, patentes, universidades. Sin A creciendo, llegas al techo y te detienes. Cuarto: las instituciones importan, porque determinan si A puede florecer.",
+      "board": [
+        "# Prescripción Solow",
+        "",
+        "1. ahorra e invierte ($\\uparrow s$)",
+        "2. capital humano ($\\uparrow K_h$)",
+        "3. tecnología ($\\uparrow A$)",
+        "4. instituciones",
+        "",
+        "sin 3 $\\to$ techo",
+        "sin 4 $\\to$ sin 3",
+        "",
+        "$ \\boxed{\\text{crecimiento sostenido}}$",
+        "$ \\boxed{\\text{requiere ideas}}$"
+      ]
+    },
+    {
+      "id": "16-datos-mundiales",
+      "scene": "econ-board",
+      "text": "Los datos mundiales son abrumadores. En el año mil, China, India y Europa tenían PIBs per cápita similares. Todo cambió con la Revolución Industrial. Entre mil setecientos sesenta y hoy, el PIB per cápita de los países ricos se multiplicó por treinta. Los pobres por tres o cuatro. La divergencia fue explosiva. Y Solow te dice que la diferencia clave no fue el capital — fue la tecnología. La A. Los países que innovaron escaparon. Los que no, se quedaron.",
+      "board": [
+        "# Historia del crecimiento",
+        "",
+        "año 1000: todos similares",
+        "1760: Revolución Industrial",
+        "",
+        "ricos: $\\times 30$",
+        "pobres: $\\times 3$",
+        "",
+        "diferencia clave: $A$",
+        "",
+        "quienes innovaron $\\to$ escaparon",
+        "",
+        "$ \\boxed{\\text{el Gran Escape}}$"
+      ]
+    },
+    {
+      "id": "17-nobel",
+      "scene": "econ-board",
+      "text": "Mil novecientos ochenta y siete. Robert Solow recibe el Nobel por sus contribuciones a la teoría del crecimiento económico. Tenía sesenta y tres años. En su discurso dijo que lo más importante no era la fórmula sino la manera de pensar: separar lo que puedes acumular de lo que solo puedes descubrir. Hoy tiene ciento un años. Su modelo sigue siendo la primera herramienta que abre cualquier curso de macroeconomía en cualquier universidad del mundo.",
+      "board": [
+        "# Nobel · 1987",
+        "",
+        "Robert Solow · 1924 —",
+        "",
+        "``separar lo que puedes",
+        "$\\;$ acumular de lo que",
+        "$\\;$ solo puedes descubrir''",
+        "",
+        "101 años",
+        "",
+        "el primer modelo de macro",
+        "en todas las universidades"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "text": "El modelo de Solow no te da la receta exacta para crecer. Pero te da el diagnóstico. Si un país acumula capital pero no innova, se estanca. Si innova pero no ahorra, no puede implementar. Y si destruye sus instituciones, ni una cosa ni otra funciona. Quince páginas publicadas en mil novecientos cincuenta y seis cambiaron cómo entendemos la riqueza y la pobreza de las naciones. Estamos en el bloque de macroeconomía y crecimiento. Sigue Acemoglu: por qué las instituciones lo explican todo.",
+      "board": [
+        "# Macro y crecimiento",
+        "",
+        "Solow (1987) ✓",
+        "",
+        "siguiente:",
+        "Acemoglu, Johnson, Robinson (2024)",
+        "Lucas (1995)",
+        "Kydland, Prescott (2004)",
+        "Phelps (2006)",
+        "Romer, Nordhaus (2018)",
+        "Kuznets (1971)",
+        "",
+        "$ \\boxed{\\text{siete más}}$"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "id": "econ-16-lucas",
+  "title": "Expectativas racionales: cuando la gente sabe lo que vas a hacer",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "expectations",
+      "audio": "01-pregunta.mp3",
+      "text": "Esto es la economía. Cada eje es real: desempleo abajo, inflación arriba. El punto verde es el estado actual. El gobierno anuncia que va a imprimir dinero para bajar el desempleo. ¿Qué pasa? Según Lucas, lo que pasa depende de algo que nadie había modelado bien: lo que la gente espera. Y esa idea ganó un Nobel."
+    },
+    {
+      "id": "02-persona",
+      "scene": "econ-board",
+      "audio": "02-persona.mp3",
+      "text": "Robert Lucas estudió y enseñó en la Universidad de Chicago durante medio siglo. No fue el primero en hablar de expectativas: ese fue John Muth en mil novecientos sesenta y uno. Pero Lucas tomó la idea y la convirtió en una revolución. Su crítica a la macroeconomía keynesiana en mil novecientos setenta y seis cambió el campo para siempre. Nobel mil novecientos noventa y cinco.",
+      "board": [
+        "\\textbf{Robert Lucas Jr.} \\quad (1937\\text{–}2023)",
+        "\\text{Universidad de Chicago, medio siglo}",
+        "",
+        "\\text{Heredero intelectual de Friedman}",
+        "\\text{Pero más radical}",
+        "",
+        "\\text{Nobel 1995: expectativas racionales}",
+        "\\text{\"Por la hipótesis de expectativas racionales}",
+        "\\text{en el análisis macroeconómico\"}"
+      ]
+    },
+    {
+      "id": "03-phillips-viejo",
+      "scene": "econ-board",
+      "audio": "03-phillips-viejo.mp3",
+      "text": "En los años sesenta, los keynesianos pensaban que tenían un trato. La curva de Phillips decía: si toleras un poco más de inflación, bajas el desempleo. Los políticos lo amaron. Era un menú: ¿quieres dos por ciento de inflación con seis de desempleo? ¿O cuatro y cuatro? Tú escoges. Esa era la promesa. Y por una década, pareció funcionar.",
+      "board": [
+        "\\textbf{Phillips Curve original (1958)}",
+        "",
+        "\\pi = f(u), \\quad f' < 0",
+        "",
+        "\\text{Trade-off keynesiano:}",
+        "\\text{• Tolera +π → -u}",
+        "\\text{• Sacrifica +u → -π}",
+        "",
+        "\\text{Política: elige tu punto en la curva}",
+        "\\text{Funcionó en los 60s. Falló en los 70s.}"
+      ]
+    },
+    {
+      "id": "04-estanflacion",
+      "scene": "econ-board",
+      "audio": "04-estanflacion.mp3",
+      "text": "Los años setenta rompieron el modelo. Estados Unidos tuvo inflación de doce por ciento con desempleo de nueve por ciento al mismo tiempo. Estanflación. Imposible según la curva de Phillips clásica. Friedman ya había advertido: la curva se desplaza si las expectativas cambian. Pero Lucas fue más lejos. Lucas dijo: no es que se desplaza después, es que la gente prevé el desplazamiento antes.",
+      "board": [
+        "\\textbf{Estanflación de los 70s}",
+        "",
+        "\\text{EE.UU. 1975:}",
+        "\\pi \\approx 12\\%, \\quad u \\approx 9\\%",
+        "",
+        "\\text{Imposible según Phillips clásica}",
+        "",
+        "\\text{Friedman: la curva se desplaza ex-post}",
+        "\\text{Lucas: la gente prevé el desplazamiento ex-ante}",
+        "\\text{Eso lo cambia TODO}"
+      ]
+    },
+    {
+      "id": "05-adaptativas",
+      "scene": "expectations",
+      "audio": "05-adaptativas.mp3",
+      "text": "Mira primero el modelo de Friedman: expectativas adaptativas. La gente aprende lentamente de la inflación pasada. El gobierno anuncia: vamos a expandir el dinero. La inflación esperada se queda baja al principio. Por un rato, el punto baja a la izquierda: menos desempleo. Pero conforme la gente nota la inflación, ajusta sus expectativas. La curva sube. El desempleo regresa. Termina en peor: mismo desempleo, más inflación. Esto toma años."
+    },
+    {
+      "id": "06-racionales",
+      "scene": "expectations",
+      "audio": "06-racionales.mp3",
+      "text": "Ahora mira el modelo de Lucas: expectativas racionales. La gente NO espera a ver: anticipa. El gobierno anuncia expansión. Pero los trabajadores saben que va a haber inflación. Suben sus pretensiones salariales hoy. Las empresas saben que el costo va a subir. Suben precios hoy. La inflación esperada salta inmediatamente. El punto se mueve directo a la nueva tasa de inflación, SIN bajar el desempleo. La política no tuvo efecto real. Cero."
+    },
+    {
+      "id": "07-formalizacion",
+      "scene": "econ-board",
+      "audio": "07-formalizacion.mp3",
+      "text": "Matemáticamente, expectativas racionales significa que los agentes usan toda la información disponible para formar sus pronósticos. No solo el pasado: también lo que saben del modelo, de la política, de los incentivos. En notación: la expectativa es el valor esperado condicional dado el conjunto de información. No es perfecta. Pero no se sesga sistemáticamente. La gente puede equivocarse, pero no de la misma manera todo el tiempo.",
+      "board": [
+        "\\textbf{Expectativas racionales (Muth 1961, Lucas 1972)}",
+        "",
+        "\\mathbb{E}_t[X] = E[X | I_t]",
+        "",
+        "\\text{donde } I_t \\text{ es toda la información en tiempo } t",
+        "",
+        "\\textbf{NO} \\text{ significa: perfecta}",
+        "\\textbf{SÍ} \\text{ significa: sin sesgo sistemático}",
+        "",
+        "\\text{Los errores son aleatorios, no predecibles}"
+      ]
+    },
+    {
+      "id": "08-policy-ineffec",
+      "scene": "econ-board",
+      "audio": "08-policy-ineffec.mp3",
+      "text": "De aquí sale la proposición más explosiva de Lucas: la ineficacia de la política. Si la política monetaria es anticipada por todos, no tiene efecto real. Es como un truco de magia que ya viste cien veces. Solo las acciones SORPRESIVAS pueden mover la economía real. Pero las sorpresas, por definición, no se pueden planear. Por lo tanto: la política sistemática es inútil.",
+      "board": [
+        "\\textbf{Policy Ineffectiveness Proposition}",
+        "\\text{(Lucas 1972, Sargent-Wallace 1975)}",
+        "",
+        "\\text{Si la política es anticipada}",
+        "\\to \\text{no tiene efecto real}",
+        "",
+        "\\text{Solo las SORPRESAS mueven la economía}",
+        "",
+        "\\text{Sorpresas} \\neq \\text{planeables}",
+        "\\Rightarrow \\text{política sistemática} = \\text{inútil}"
+      ]
+    },
+    {
+      "id": "09-critica-lucas",
+      "scene": "econ-board",
+      "audio": "09-critica-lucas.mp3",
+      "text": "En mil novecientos setenta y seis, Lucas escribió un paper que demolió la macroeconomía aplicada de su tiempo. Se llama La crítica de Lucas. El argumento: los modelos macroeconométricos asumían que las relaciones son estables. Pero si cambias la política, los agentes cambian sus expectativas, y por lo tanto sus comportamientos. Los parámetros estimados con datos antiguos no aplican bajo el nuevo régimen. Es como medir velocidad con un reloj que cambia cuando lo miras.",
+      "board": [
+        "\\textbf{Lucas Critique (1976)}",
+        "",
+        "\\text{Los modelos macroeconométricos eran:}",
+        "Y_t = \\beta X_t + \\epsilon_t",
+        "\\text{con } \\beta \\text{ supuestamente fijo}",
+        "",
+        "\\text{Lucas: } \\beta \\text{ depende de la política}",
+        "\\text{Cambias política} \\to \\text{cambian las expectativas}",
+        "\\text{Cambian las expectativas} \\to \\text{cambian } \\beta",
+        "",
+        "\\text{Los modelos viejos eran INSERVIBLES}"
+      ]
+    },
+    {
+      "id": "10-microfoundations",
+      "scene": "econ-board",
+      "audio": "10-microfoundations.mp3",
+      "text": "La consecuencia metodológica fue enorme. Si las relaciones macro dependen de cómo deciden los individuos, hay que modelar individuos primero. Lucas y Prescott impulsaron las microfundaciones: empezar con agentes optimizadores y derivar la macroeconomía. Es como en física: derivar la termodinámica de las moléculas. Es harder, pero más profundo. Cambió cómo se enseña macro hasta hoy.",
+      "board": [
+        "\\textbf{Microfundaciones}",
+        "",
+        "\\text{Antes: ecuaciones macro agregadas}",
+        "\\text{Después: agentes individuales optimizando}",
+        "",
+        "Y_t = f(\\text{decisiones de hogares y firmas})",
+        "",
+        "\\text{Cada hogar maximiza utilidad}",
+        "\\text{Cada firma maximiza beneficio}",
+        "\\text{La macro EMERGE de ahí}",
+        "",
+        "\\text{Igual que termodinámica desde moléculas}"
+      ]
+    },
+    {
+      "id": "11-RBC",
+      "scene": "econ-board",
+      "audio": "11-RBC.mp3",
+      "text": "Los discípulos de Lucas, Kydland y Prescott, llevaron las microfundaciones al extremo. Crearon los modelos de Real Business Cycles. La idea radical: los ciclos económicos NO vienen del dinero ni de la política, sino de shocks reales de productividad. Una sequía. Una nueva tecnología. Un cambio en precios del petróleo. El dinero no importa en absoluto. Es la postura monetaria más extrema que ha existido. Y ganó otro Nobel: dos mil cuatro.",
+      "board": [
+        "\\textbf{Real Business Cycles}",
+        "\\text{(Kydland \\& Prescott 1982 → Nobel 2004)}",
+        "",
+        "\\text{Ciclos económicos vienen de:}",
+        "\\text{• Shocks tecnológicos}",
+        "\\text{• Cambios en precios reales}",
+        "\\text{• NO de política monetaria}",
+        "\\text{• NO de demanda agregada}",
+        "",
+        "\\text{El dinero es irrelevante (extremo Lucas)}"
+      ]
+    },
+    {
+      "id": "12-contraargumento",
+      "scene": "expectations",
+      "audio": "12-contraargumento.mp3",
+      "text": "Pero observa lo que muestra esta simulación: en el régimen racional puro, la inflación sube y el desempleo no se mueve. Eso es lo que dice Lucas. La realidad empírica es más matizada. La gente NO tiene información perfecta. Las empresas demoran en ajustar precios. Los salarios están atados por contratos. En la práctica, hay algo de adjustment, no es instantáneo. Por eso los keynesianos nuevos respondieron: las expectativas son racionales, sí, pero hay fricciones."
+    },
+    {
+      "id": "13-keynesianos-nuevos",
+      "scene": "econ-board",
+      "audio": "13-keynesianos-nuevos.mp3",
+      "text": "Los Nuevos Keynesianos aceptaron a Lucas. Aceptaron que las expectativas son racionales. Pero le añadieron fricciones del mundo real: precios pegajosos, salarios pegajosos, contratos largos. Su modelo, el New Keynesian DSGE, es lo que usan los bancos centrales hoy: Fed, BCE, Banxico. Le dieron razón a Lucas pero rescataron al keynesianismo. La síntesis es lo que enseñamos en posgrado.",
+      "board": [
+        "\\textbf{Nuevos Keynesianos (Mankiw, Romer, Blanchard)}",
+        "",
+        "\\text{Aceptan: expectativas racionales}",
+        "\\text{Añaden: fricciones reales}",
+        "\\text{• Precios pegajosos (Calvo)}",
+        "\\text{• Salarios contratados}",
+        "\\text{• Información asimétrica}",
+        "",
+        "\\text{Resultado: New Keynesian DSGE}",
+        "\\text{El modelo que usan Fed, BCE, Banxico}"
+      ]
+    },
+    {
+      "id": "14-banxico",
+      "scene": "econ-board",
+      "audio": "14-banxico.mp3",
+      "text": "Banxico publica un objetivo de inflación: tres por ciento más menos uno. Eso es Lucas en acción. La idea: si los agentes anticipan que Banxico cumplirá, la inflación esperada se ancla al objetivo. Y si la inflación esperada se ancla, la inflación realizada también. Es self-fulfilling. Banxico ha logrado anclar la inflación esperada mexicana cerca del cuatro por ciento por años. Esa es la herencia de Lucas: la política funciona por su credibilidad, no por sus acciones.",
+      "board": [
+        "\\textbf{Targeting de inflación (Banxico, 2001→)}",
+        "",
+        "\\text{Objetivo: }\\pi = 3\\% \\pm 1\\%",
+        "",
+        "\\text{Mecanismo:}",
+        "\\text{1. Banxico se compromete públicamente}",
+        "\\text{2. Agentes creen → } \\pi^e \\to 3\\%",
+        "\\text{3. } \\pi^e \\text{ anclada} \\to \\pi \\text{ realizada} \\to 3\\%",
+        "",
+        "\\text{Self-fulfilling, gracias a Lucas}"
+      ]
+    },
+    {
+      "id": "15-critica-lucas-tambien",
+      "scene": "econ-board",
+      "audio": "15-critica-lucas-tambien.mp3",
+      "text": "Las críticas a Lucas son fuertes también. Primera: los humanos no son tan racionales. Kahneman ya demostró que tenemos sesgos sistemáticos. Las expectativas racionales asumen lo que la psicología refuta. Segunda: la información es desigual. Algunos saben más que otros. Tercera: los modelos DSGE basados en Lucas fallaron espectacularmente al predecir dos mil ocho. Nadie vio venir la crisis financiera. La hipótesis funciona en tiempos calmos, no en crisis.",
+      "board": [
+        "\\textbf{Críticas a Lucas:}",
+        "",
+        "\\text{1. Kahneman: humanos no son racionales}",
+        "\\text{   Tenemos sesgos sistemáticos}",
+        "",
+        "\\text{2. Información asimétrica}",
+        "\\text{   Algunos saben más (Akerlof, Stiglitz)}",
+        "",
+        "\\text{3. Modelos DSGE fallaron en 2008}",
+        "\\text{   Nadie vio venir la crisis financiera}",
+        "\\text{   La hipótesis funciona en tiempos calmos}"
+      ]
+    },
+    {
+      "id": "16-nobel",
+      "scene": "econ-board",
+      "audio": "16-nobel.mp3",
+      "text": "En mil novecientos noventa y cinco, Robert Lucas recibió el Nobel por desarrollar y aplicar la hipótesis de expectativas racionales. Cambió no solo la macroeconomía sino la metodología de la economía toda. Después de Lucas, los modelos macro DEBÍAN tener microfundaciones. Después de Lucas, los bancos centrales hablan de credibilidad y comunicación, no solo de tasas. Es uno de los Nobel más influyentes del siglo veinte.",
+      "board": [
+        "\\textbf{Nobel 1995}",
+        "\\text{Robert Lucas Jr.}",
+        "\\text{\"Por desarrollar y aplicar la hipótesis}",
+        "\\text{de expectativas racionales\"}",
+        "",
+        "\\text{Impacto:}",
+        "\\text{• Macro con microfundaciones (estándar hoy)}",
+        "\\text{• Política como comunicación (BC modernos)}",
+        "\\text{• Inflación targeting (Banxico, BCE)}"
+      ]
+    },
+    {
+      "id": "17-conexion",
+      "scene": "econ-board",
+      "audio": "17-conexion.mp3",
+      "text": "Lucas cierra el arco monetario. Friedman dijo: el dinero importa. Lucas dijo: importa cómo lo anuncias. Kydland y Prescott dijeron: el dinero no importa, solo lo real. Los keynesianos nuevos dijeron: importa, pero con fricciones. Cuatro respuestas a la misma pregunta, todas con Nobel. La macroeconomía moderna es una conversación entre estas posturas. Y Banxico, cuando comunica, vive en todas ellas a la vez.",
+      "board": [
+        "\\text{Friedman (1976): el dinero importa}",
+        "\\text{Lucas (1995): importa cómo lo anuncias}",
+        "\\text{Kydland-Prescott (2004): no importa, solo lo real}",
+        "\\text{Nuevos Keynesianos: importa, con fricciones}",
+        "",
+        "\\textbf{Cuatro respuestas, cuatro Nobel}",
+        "\\text{La macro moderna es esta conversación}",
+        "\\text{Banxico opera en todas ellas a la vez}"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "expectations",
+      "audio": "18-cierre.mp3",
+      "text": "Lucas nos enseñó algo profundo: en economía, lo que la gente PIENSA que va a pasar es parte de lo que pasa. No puedes separar al observador del fenómeno. El banco central que entiende esto no manipula la economía: la convence. Y a veces, convencer es suficiente. Esa es la economía después de Lucas: no solo física, también psicología colectiva."
+    }
+  ]
+}

@@ -1,0 +1,307 @@
+{
+  "id": "econ-03-spence",
+  "title": "La señalización — por qué existe el título universitario",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "econ-board",
+      "text": "Una pregunta incómoda para empezar. Tú estudiaste cinco años. La empresa te contrata. ¿Cuánto de lo que aprendiste en la universidad usas realmente en tu trabajo? Si eres honesto, menos del veinte por ciento. Entonces, ¿para qué sirvió la carrera?",
+      "board": [
+        "# La pregunta incómoda",
+        "",
+        "5 años de carrera",
+        "$ \\to$ $\\sim 20\\%$ aplicable",
+        "",
+        "¿para qué la carrera?",
+        "",
+        "$\\;$ — Michael Spence, 1973"
+      ]
+    },
+    {
+      "id": "02-recordatorio",
+      "scene": "econ-board",
+      "text": "Acuérdate de Akerlof. Cuando el comprador no puede distinguir un carro bueno de uno malo, los buenos se retiran del mercado. ¿Y si fueras el dueño de un cherry? Te enojaría perder ventas porque te confunden con un limón. Querrías una forma de gritar yo soy bueno, distinto.",
+      "board": [
+        "# Recordatorio · Akerlof",
+        "",
+        "comprador no distingue",
+        "$ \\Rightarrow$ los buenos huyen",
+        "",
+        "pregunta del cherry:",
+        "¿cómo demuestro",
+        "que soy distinto?"
+      ]
+    },
+    {
+      "id": "03-spence-mit",
+      "scene": "econ-board",
+      "text": "Mil novecientos setenta y tres. Otro economista joven, Michael Spence, doctorado en Harvard, escribe su tesis. Tiene treinta años. Lo que escribe se llama Job Market Signaling. Es la respuesta a Akerlof. Si el bueno no puede ser identificado, debe hacer algo costoso que solo él pueda permitirse. A eso se le llama señal.",
+      "board": [
+        "# Spence · Harvard 1973",
+        "",
+        "Michael Spence, 30 años",
+        "tesis doctoral",
+        "",
+        "``Job Market Signaling''",
+        "",
+        "$ \\text{respuesta a Akerlof}$"
+      ]
+    },
+    {
+      "id": "04-trabajadores",
+      "scene": "econ-board",
+      "text": "Pensemos el mercado laboral. Dos tipos de trabajadores. El productivo, llamémosle alto, que genera un valor de cuarenta mil al año. Y el menos productivo, bajo, que genera diez mil. Mitad y mitad. Tú eres el que vas a contratar. No tienes idea quién es quién. ¿Cuánto pagas?",
+      "board": [
+        "# El mercado laboral",
+        "",
+        "tipo alto · valor $\\$40$k",
+        "tipo bajo · valor $\\$10$k",
+        "",
+        "50% / 50%",
+        "",
+        "$ \\text{empleador no distingue}$"
+      ]
+    },
+    {
+      "id": "05-pooling",
+      "scene": "econ-chart",
+      "text": "Si no puedes distinguir, pagas el promedio. Veinticinco mil. Pero ahora pasa algo conocido. El trabajador alto, que vale cuarenta, está ganando menos de lo que debería. Está furioso. Quiere demostrarte que es distinto. El trabajador bajo, en cambio, está felicísimo. Cobra más de lo que merece.",
+      "board": [
+        "# Equilibrio pooling",
+        "",
+        "$ \\mathbb{E}[\\text{valor}] = \\$25$k",
+        "",
+        "alto: paga $\\$25$, vale $\\$40$",
+        "$ \\to$ subsidia al bajo",
+        "",
+        "bajo: paga $\\$25$, vale $\\$10$",
+        "$ \\to$ se sale con la suya"
+      ]
+    },
+    {
+      "id": "06-senal",
+      "scene": "econ-board",
+      "text": "El alto necesita una señal. Algo que pueda hacer él y el bajo no. Aquí está el genio de Spence. La señal no tiene que ser productiva. No tiene que enseñarte nada útil. Solo tiene que ser más cara para el bajo que para el alto. Eso basta. La educación universitaria cumple esa condición.",
+      "board": [
+        "# La señal correcta",
+        "",
+        "no tiene que ser útil",
+        "no tiene que enseñar",
+        "",
+        "solo necesita",
+        "ser más cara",
+        "para el bajo",
+        "",
+        "$ c_{bajo} > c_{alto}$"
+      ]
+    },
+    {
+      "id": "07-costos",
+      "scene": "econ-chart",
+      "text": "Mira la gráfica. En el eje horizontal está la cantidad de años de educación. En el vertical, el costo personal de obtenerlos. Para el trabajador alto, la curva sube despacio. Le es relativamente fácil estudiar. Para el bajo, la curva sube rápido. Le cuesta horrores. Esa diferencia en pendientes es todo lo que necesitamos.",
+      "board": [
+        "# Costos por tipo",
+        "",
+        "$ c_A(s) = s$",
+        "$ c_B(s) = 2s$",
+        "",
+        "para el alto",
+        "es más barato",
+        "",
+        "$ \\text{slope}_B > \\text{slope}_A$"
+      ]
+    },
+    {
+      "id": "08-equilibrio",
+      "scene": "econ-chart",
+      "text": "Y aquí está el equilibrio separating. Diseñas el contrato así. Si te muestro un título con s estrella años de estudio, te pago cuarenta mil. Si no lo tienes, te pago diez mil. Si s estrella está entre las dos curvas, solo el alto se va a tomar la molestia. El bajo decide que no le conviene. Y por fin se distinguen.",
+      "board": [
+        "# Equilibrio separating",
+        "",
+        "$ \\Delta w = \\$30$k",
+        "$ c_A(s^*) < \\Delta w < c_B(s^*)$",
+        "",
+        "$ \\Rightarrow$ alto estudia $s^*$",
+        "$ \\Rightarrow$ bajo no estudia",
+        "",
+        "se separan ✓"
+      ]
+    },
+    {
+      "id": "09-conclusion",
+      "scene": "econ-board",
+      "text": "Aquí viene lo que indigna a la mitad del mundo cuando lo entiende por primera vez. Spence acaba de demostrar que la educación puede ser puramente una señal. No te enseña nada. Solo prueba que pudiste aguantarla. Y aún así, la sociedad gana, porque ahora los empleadores pueden distinguir y pagar bien al productivo.",
+      "board": [
+        "# Conclusión polémica",
+        "",
+        "la educación",
+        "puede ser",
+        "$ 100\\%$ señal",
+        "",
+        "no enseña nada",
+        "solo demuestra que",
+        "lo pudiste terminar",
+        "",
+        "y aún así sirve"
+      ]
+    },
+    {
+      "id": "10-mexico",
+      "scene": "econ-board",
+      "text": "Mira lo que pasa en México y en toda Latinoamérica. La inflación de credenciales. Hace cincuenta años bastaba con la secundaria para tener un trabajo decente. Después se requirió preparatoria. Después licenciatura. Ahora la licenciatura ya no alcanza y todos buscan maestría. ¿Es porque los trabajos son cada vez más complejos? Spence dice no. Es porque más gente está enviando la señal y entonces la señal sube de nivel.",
+      "board": [
+        "# Inflación de credenciales",
+        "",
+        "1970 · secundaria",
+        "1990 · preparatoria",
+        "2010 · licenciatura",
+        "2026 · maestría",
+        "",
+        "$ \\text{no es complejidad}$",
+        "$ \\text{es Spence}$"
+      ]
+    },
+    {
+      "id": "11-marca",
+      "scene": "econ-board",
+      "text": "Y de ahí salen las marcas educativas. Tec de Monterrey, Anáhuac, ITAM, Ibero, UADE, Andes, PUC. La universidad cara hace tu señal todavía más fuerte, porque solo los altos pueden pagarla o se atreven a endeudarse para hacerlo. La marca de la universidad no es una franquicia. Es la garantía de que tu señal vale más.",
+      "board": [
+        "# La universidad de marca",
+        "",
+        "Tec · ITAM · Anáhuac",
+        "Ibero · UADE · Andes",
+        "",
+        "$ \\text{caro} \\Rightarrow$ señal más fuerte",
+        "",
+        "no es publicidad,",
+        "es Spence"
+      ]
+    },
+    {
+      "id": "12-otros-mercados",
+      "scene": "econ-board",
+      "text": "Una vez que entiendes la señal, la ves en todos lados. El traje de oficina que tú no necesitas pero todos llevan. El currículum hermosamente formateado. El reloj caro del CEO. El portafolio de fotos del fotógrafo. La iglesia que invierte en arquitectura. Las uniformes militares con medallas. Cada uno de esos es Spence. Costoso. Discriminante. Real.",
+      "board": [
+        "# Señales en todos lados",
+        "",
+        "· traje en oficina",
+        "· reloj caro de CEO",
+        "· portafolio fotógrafo",
+        "· arquitectura iglesia",
+        "· medallas militares",
+        "",
+        "$ \\text{cada una: Spence}$"
+      ]
+    },
+    {
+      "id": "13-honest",
+      "scene": "econ-board",
+      "text": "Otra parte fascinante. Las señales también funcionan en la biología, y Amotz Zahavi lo descubrió antes que Spence, en mil novecientos setenta y cinco. La cola del pavo real es absurdamente costosa, dice Zahavi. Justamente por eso comunica fitness real. Lo que llaman handicap principle. Cosa preciosa, porque conecta la economía con la evolución por sexual selection.",
+      "board": [
+        "# Biología paralela",
+        "",
+        "Amotz Zahavi · 1975",
+        "``handicap principle''",
+        "",
+        "cola del pavo real",
+        "$ \\text{absurda} \\Rightarrow$ creíble",
+        "",
+        "economía $\\cap$ evolución"
+      ]
+    },
+    {
+      "id": "14-critica",
+      "scene": "econ-board",
+      "text": "Algunos economistas, como Caplan, fueron al extremo. Dicen que el ochenta por ciento del valor económico de la universidad es señalización, y solo el veinte por ciento es capital humano real. Otros, como Heckman, dicen que es lo opuesto. La verdad probablemente está en medio. Pero pocos discuten que al menos una parte importante de tu título es Spence.",
+      "board": [
+        "# Cuánto es señal",
+        "",
+        "Caplan: $80\\%$ señal",
+        "Heckman: $80\\%$ capital",
+        "",
+        "$ \\boxed{\\text{verdad} \\in \\text{medio}}$",
+        "",
+        "pero todos coinciden:",
+        "una parte real es señal"
+      ]
+    },
+    {
+      "id": "15-implicacion",
+      "scene": "econ-board",
+      "text": "La implicación para ti, como persona, es delicada. Si vas a invertir en una señal cara, asegúrate de que sea genuinamente costosa para los demás. Una maestría de un programa fácil no señala nada. Pero también, si encuentras una forma alternativa de demostrar que eres alto sin pagar veinte años de educación, has descubierto una arbitrage espectacular. Programadores autodidactas que muestran código en GitHub son exactamente eso.",
+      "board": [
+        "# Implicaciones",
+        "",
+        "señal cara $\\Leftrightarrow$ creíble",
+        "señal fácil $\\Leftrightarrow$ nada",
+        "",
+        "$ \\boxed{\\text{GitHub} = \\text{nueva señal}}$",
+        "",
+        "código real",
+        "$\\to$ demuestra capacidad",
+        "$\\to$ sin necesidad de título"
+      ]
+    },
+    {
+      "id": "16-stiglitz",
+      "scene": "econ-board",
+      "text": "Mientras Spence pensaba en señales, Joseph Stiglitz pensaba en lo opuesto. Si yo soy el que NO tiene la información, ¿qué hago? Stiglitz mostró que puedo diseñar menús de opciones para que el otro me revele quién es. A eso le llamó screening. Por eso las aseguradoras te ofrecen distintos planes con distintas franquicias. Los sanos eligen el deducible alto y los enfermos el bajo. Sin que ellos te lo digan, te lo dicen.",
+      "board": [
+        "# Stiglitz · screening",
+        "",
+        "señal: el bueno demuestra",
+        "screening: el malo se delata",
+        "",
+        "menú de pólizas:",
+        "$ \\text{deducible alto} \\to$ sanos",
+        "$ \\text{deducible bajo} \\to$ enfermos",
+        "",
+        "se revelan solos"
+      ]
+    },
+    {
+      "id": "17-nobel",
+      "scene": "econ-board",
+      "text": "Y por eso, en dos mil uno, los tres compartieron el Nobel. Akerlof, por mostrar que la información asimétrica mata mercados. Spence, por mostrar cómo los informados se señalan a sí mismos. Stiglitz, por mostrar cómo los no informados pueden hacer que los demás se delaten. Tres respuestas a la misma pregunta. Tres décadas. Un Nobel compartido.",
+      "board": [
+        "# Nobel 2001 · trilogía",
+        "",
+        "Akerlof · 1970",
+        "el problema",
+        "",
+        "Spence · 1973",
+        "el informado señala",
+        "",
+        "Stiglitz · 1976",
+        "el no-informado filtra"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "text": "Antes de cerrar, una pregunta para ti. La próxima vez que veas a alguien gastar mucho dinero en algo que no necesita estrictamente, no juzgues rápido. Quizás está mandando una señal. La pregunta es si la señal vale lo que cuesta, y si el receptor la entiende. Esa es la economía real. La que no se enseña en los libros de autoayuda. La que ganó el Nobel en dos mil uno.",
+      "board": [
+        "# Cierre",
+        "",
+        "todo lo caro",
+        "que no necesitas",
+        "",
+        "$ \\downarrow$",
+        "",
+        "puede ser señal",
+        "",
+        "¿vale lo que cuesta?",
+        "¿el receptor la lee?"
+      ]
+    }
+  ]
+}

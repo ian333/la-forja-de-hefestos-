@@ -1,143 +1,73 @@
 /**
- * Mapas conformes — Needham §4-5 / Kreyszig "Advanced Engineering Math" §17.
+ * Mapas conformes — Joukowski airfoil + Poincaré disk.
  *
- * Una función holomorfa f: ℂ → ℂ con f'(z) ≠ 0 es CONFORME: localmente
- * preserva los ángulos. Eso es lo que la convierte en la herramienta de
- * ingeniería más subestimada del siglo XX.
+ * Una función holomorfa con f'(z) ≠ 0 es CONFORME: preserva ángulos. Para
+ * Joukowski w = z + 1/z, un círculo descentrado se vuelve un ala.
  *
- * EL caso canónico: la transformación de Joukowski
+ * Animación continua: partículas advectadas en tiempo real por el campo de
+ * velocidad alrededor del cilindro. Las MISMAS partículas se muestran
+ * transformadas por w(z) alrededor del ala — vés el viento moviéndose por
+ * ambas geometrías sincronizadas.
  *
- *   w = z + c²/z
- *
- * Mapea un círculo en el plano z a un perfil de ala en el plano w. Si en el
- * plano z resolvés flujo potencial alrededor del círculo (problema trivial),
- * el mapeo te REGALA el flujo alrededor del ala correspondiente (problema
- * que de otro modo necesita CFD).
- *
- * Pero la magia más profunda es esta: la MISMA matemática describe
- *   - Flujo aerodinámico 2D irrotacional (función de corriente ψ)
- *   - Campo electrostático 2D en vacío (potencial complejo Φ + iψ)
- *   - Conducción de calor estacionario en 2D
- *   - Sumideros/fuentes de fluido (= cargas eléctricas)
- *
- * Es decir: si entendés el mapa de Joukowski para alas, también podés diseñar
- * la geometría de un capacitor con campo uniforme.
- *
- * Tercera vista: el disco de Poincaré. La misma familia conforme da la
- * geometría hiperbólica de Lobachevsky — donde la suma de ángulos del
- * triángulo es < π y las rectas son arcos perpendiculares al borde.
+ * Conexión EM real: el potencial complejo Φ = ϕ + iψ describe simultáneamente
+ *   - flujo de aire 2D irrotacional (ψ = streamline)
+ *   - campo electrostático 2D (ϕ = potencial, líneas-ψ = líneas-E)
+ *   - conducción térmica estacionaria
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import * as THREE from 'three';
 import { Line } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import Stage from '@/physics/components/Stage';
 import { useAudience } from '@/math/context';
 import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
 
 interface ConformalLessonState {
   preset: string;
-  alpha: number;       // ángulo de ataque (rad)
-  offsetX: number;     // descentrado del círculo en X (genera asimetría)
-  offsetY: number;     // descentrado en Y (genera lift)
+  alpha: number;
+  offsetX: number;
+  offsetY: number;
 }
 
 // ── Complex helpers ────────────────────────────────────────────────────
 
 type C = [number, number];
 
-const c = {
-  add: (a: C, b: C): C => [a[0] + b[0], a[1] + b[1]],
-  sub: (a: C, b: C): C => [a[0] - b[0], a[1] - b[1]],
-  mul: (a: C, b: C): C => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]],
-  div: (a: C, b: C): C => {
-    const denom = b[0] * b[0] + b[1] * b[1];
-    if (denom < 1e-12) return [NaN, NaN];
-    return [(a[0] * b[0] + a[1] * b[1]) / denom, (a[1] * b[0] - a[0] * b[1]) / denom];
-  },
-  abs: (a: C): number => Math.hypot(a[0], a[1]),
-  exp: (a: C): C => {
-    const e = Math.exp(a[0]);
-    return [e * Math.cos(a[1]), e * Math.sin(a[1])];
-  },
+const cAdd = (a: C, b: C): C => [a[0] + b[0], a[1] + b[1]];
+const cSub = (a: C, b: C): C => [a[0] - b[0], a[1] - b[1]];
+const cMul = (a: C, b: C): C => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+const cDiv = (a: C, b: C): C => {
+  const d = b[0] * b[0] + b[1] * b[1];
+  if (d < 1e-12) return [NaN, NaN];
+  return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d];
 };
 
-// ── Joukowski ─────────────────────────────────────────────────────────
-
-// w = z + c²/z. Aquí fijamos c = 1.
 const JOUK_C = 1;
+const joukowski = (z: C): C => cAdd(z, cDiv([JOUK_C * JOUK_C, 0], z));
 
-function joukowski(z: C): C {
-  return c.add(z, c.div([JOUK_C * JOUK_C, 0], z));
-}
+// ── Potential flow past a cylinder ─────────────────────────────────────
 
-// ── Streamline trace for flow past a cylinder ─────────────────────────
-//
-// Potential flow past a cylinder of radius R at angle α:
-//   Φ(z) = U·(z·e^(-iα) + R²·e^(iα)/z)
-//   Complex velocity (conjugate of velocity vector):
-//     dΦ/dz = U·(e^(-iα) − R²·e^(iα)/z²)
-//   Real velocity (u, v) = (Re(dΦ/dz), -Im(dΦ/dz))
-
-function flowVelocity(
-  z: C, R: number, alpha: number, zc: C, gamma: number
-): { u: number; v: number } {
-  // Move into the cylinder's frame
-  const zRel = c.sub(z, zc);
-  // Far-field velocity at angle α
+function flowVelocity(z: C, R: number, alpha: number, zc: C, gamma: number): { u: number; v: number } {
+  const zRel = cSub(z, zc);
   const eMinusIα: C = [Math.cos(alpha), -Math.sin(alpha)];
   const ePlusIα: C  = [Math.cos(alpha), +Math.sin(alpha)];
-  const RsqOverZsq = c.div([R * R, 0], c.mul(zRel, zRel));
-  // dΦ/dz = e^(-iα) - R²e^(iα)/z² + (Γ/2πi)/z
-  // Vortex term (gamma) puts circulation — gives lift (Kutta condition)
-  const vortexTerm = c.div([0, -gamma / (2 * Math.PI)], zRel);
-  const dPhi = c.add(
-    c.sub(eMinusIα, c.mul(ePlusIα, RsqOverZsq)),
-    vortexTerm,
-  );
+  const RsqOverZsq = cDiv([R * R, 0], cMul(zRel, zRel));
+  const vortexTerm = cDiv([0, -gamma / (2 * Math.PI)], zRel);
+  const dPhi = cAdd(cSub(eMinusIα, cMul(ePlusIα, RsqOverZsq)), vortexTerm);
   return { u: dPhi[0], v: -dPhi[1] };
 }
 
-function traceStreamline(
-  startX: number, startY: number, R: number, alpha: number, zc: C, gamma: number,
-  steps: number, dt: number,
-): C[] {
-  const pts: C[] = [];
-  let x = startX, y = startY;
-  for (let i = 0; i < steps; i++) {
-    pts.push([x, y]);
-    // RK4
-    const k1 = flowVelocity([x, y], R, alpha, zc, gamma);
-    const k2 = flowVelocity([x + 0.5 * dt * k1.u, y + 0.5 * dt * k1.v], R, alpha, zc, gamma);
-    const k3 = flowVelocity([x + 0.5 * dt * k2.u, y + 0.5 * dt * k2.v], R, alpha, zc, gamma);
-    const k4 = flowVelocity([x + dt * k3.u, y + dt * k3.v], R, alpha, zc, gamma);
-    x += (dt / 6) * (k1.u + 2 * k2.u + 2 * k3.u + k4.u);
-    y += (dt / 6) * (k1.v + 2 * k2.v + 2 * k3.v + k4.v);
-    if (Math.abs(x) > 3 || Math.abs(y) > 3) { pts.push([x, y]); break; }
-    // Don't enter the cylinder
-    const drx = x - zc[0], dry = y - zc[1];
-    if (drx * drx + dry * dry < R * R * 0.98) break;
-  }
-  return pts;
-}
-
-// ── Joukowski airfoil from circle ─────────────────────────────────────
-// Pick a circle that passes through z = +1 (so its image has a cusp = trailing edge).
-// Center zc = (offsetX, offsetY); radius R = |zc - (1, 0)|.
-
-function airfoilCircleParams(offsetX: number, offsetY: number): { zc: C; R: number } {
+function airfoilParams(offsetX: number, offsetY: number): { zc: C; R: number } {
   const zc: C = [offsetX, offsetY];
   const R = Math.hypot(1 - offsetX, -offsetY);
   return { zc, R };
 }
 
-// Kutta condition gives circulation Γ = -4πU·R·sin(α + β) where β = atan2(offsetY, 1 - offsetX)
 function kuttaCirculation(R: number, alpha: number, zc: C): number {
   const beta = Math.atan2(zc[1], 1 - zc[0]);
   return -4 * Math.PI * R * Math.sin(alpha + beta);
 }
-
-// ── Sample a closed curve along the airfoil contour ────────────────────
 
 function sampleCircleContour(zc: C, R: number, n: number): C[] {
   const out: C[] = [];
@@ -148,33 +78,43 @@ function sampleCircleContour(zc: C, R: number, n: number): C[] {
   return out;
 }
 
-// ── Hyperbolic geodesics on Poincaré disk ──────────────────────────────
-// A "line" in the Poincaré disk model is either a diameter or a circular
-// arc that meets the unit boundary at right angles.
-//
-// Build a geodesic between two boundary points e^(iφ₁), e^(iφ₂):
-//   Center is at (cos((φ₁+φ₂)/2)/cos((φ₂-φ₁)/2), sin(...)/cos(...))
-//   Radius = tan((φ₂-φ₁)/2)
-// If the two points are antipodal (φ₂ = φ₁ + π), it's a diameter.
+// ── Streamline traces (static background) ─────────────────────────────
+
+function traceStreamline(
+  startX: number, startY: number, R: number, alpha: number, zc: C, gamma: number,
+  steps: number, dt: number,
+): C[] {
+  const pts: C[] = [];
+  let x = startX, y = startY;
+  for (let i = 0; i < steps; i++) {
+    pts.push([x, y]);
+    const k1 = flowVelocity([x, y], R, alpha, zc, gamma);
+    const k2 = flowVelocity([x + 0.5 * dt * k1.u, y + 0.5 * dt * k1.v], R, alpha, zc, gamma);
+    const k3 = flowVelocity([x + 0.5 * dt * k2.u, y + 0.5 * dt * k2.v], R, alpha, zc, gamma);
+    const k4 = flowVelocity([x + dt * k3.u, y + dt * k3.v], R, alpha, zc, gamma);
+    x += (dt / 6) * (k1.u + 2 * k2.u + 2 * k3.u + k4.u);
+    y += (dt / 6) * (k1.v + 2 * k2.v + 2 * k3.v + k4.v);
+    if (Math.abs(x) > 3 || Math.abs(y) > 3) { pts.push([x, y]); break; }
+    const drx = x - zc[0], dry = y - zc[1];
+    if (drx * drx + dry * dry < R * R * 0.98) break;
+  }
+  return pts;
+}
+
+// ── Hyperbolic geodesics ──────────────────────────────────────────────
 
 function geodesicArc(phi1: number, phi2: number, n: number): C[] {
   const half = (phi2 - phi1) / 2;
   const mid = (phi1 + phi2) / 2;
-  // Diameter case
   if (Math.abs(Math.sin(half)) < 1e-3) {
-    return [
-      [Math.cos(phi1), Math.sin(phi1)],
-      [Math.cos(phi2), Math.sin(phi2)],
-    ];
+    return [[Math.cos(phi1), Math.sin(phi1)], [Math.cos(phi2), Math.sin(phi2)]];
   }
   const cx = Math.cos(mid) / Math.cos(half);
   const cy = Math.sin(mid) / Math.cos(half);
   const r = Math.abs(Math.tan(half));
-  // Find the arc parameters that go from one boundary point to the other
   const a1 = Math.atan2(Math.sin(phi1) - cy, Math.cos(phi1) - cx);
   const a2 = Math.atan2(Math.sin(phi2) - cy, Math.cos(phi2) - cx);
   let da = a2 - a1;
-  // Normalize to short arc
   while (da > Math.PI) da -= 2 * Math.PI;
   while (da < -Math.PI) da += 2 * Math.PI;
   const out: C[] = [];
@@ -193,33 +133,32 @@ const LESSON: Lesson<ConformalLessonState> = {
     title: 'Una sola fórmula convierte un círculo en un ala — y resuelve el flujo de aire gratis.',
     body: `La transformación de Joukowski:    w = z + 1/z
 
-Aplicale eso a un círculo levemente descentrado del origen y obtenés el perfil de un ALA. Pero la verdadera magia es esta:
+Aplicale eso a un círculo descentrado y obtenés el perfil de un ALA.
 
-En el plano z (con el círculo), resolvés algo aburrido: flujo de fluido alrededor de un cilindro. Lo sabés desde la facultad: las líneas se deforman, vuelven a juntarse, no hay sustentación.
+En el plano z resolvés flujo de fluido alrededor de un cilindro (problema trivial). En el plano w aparece automáticamente el MISMO flujo, pero ahora alrededor del ALA correspondiente.
 
-En el plano w (con el ala), el MISMO flujo aparece automáticamente — pero ahora alrededor de un ALA. Con ángulo de ataque, las líneas son ASIMÉTRICAS arriba/abajo, y eso es exactamente el origen de la sustentación.
+Las partículas que ves moverse son las MISMAS en ambos planos — solo el espacio se transforma. Eso es "conforme": preserva ángulos localmente.
 
-Y aquí viene el SHOCK: la misma matemática (función de corriente ψ = Im(Φ), potencial φ = Re(Φ)) describe:
-  • Flujo aerodinámico 2D
-  • Campo electrostático 2D (las líneas de campo eléctrico son las "streamlines")
-  • Conducción de calor estacionario
-  • Difusión
+Y aquí viene el shock: la misma matemática describe
+  • Flujo aerodinámico 2D irrotacional
+  • Campo electrostático 2D en vacío
+  • Conducción de calor estacionario en 2D
 
-Es decir — i (la unidad imaginaria) NO es un truco; es la herramienta que UNIFICA aerodinámica y electromagnetismo en el plano.`,
+i (la unidad imaginaria) unifica aerodinámica y electromagnetismo en el plano.`,
   },
 
   steps: [
     {
-      title: 'Mapeo geométrico puro — círculo → ala',
+      title: 'Mapeo geométrico — círculo → ala',
       duration: 5500,
       body: `Empezá sin flujo. Solo el contorno.
 
-A la izquierda: un círculo descentrado a (-0.1, 0.05), radio elegido para pasar por z = 1 (eso fabrica la "punta" del borde de salida — el famoso "cusp").
+Izquierda: círculo descentrado a (-0.1, 0.05), radio elegido para pasar por z = 1 — eso fabrica la "punta" del borde de salida (cusp).
 
-A la derecha: lo mismo después de w = z + 1/z. Lo que era un círculo es ahora un perfil de ala — borde de ataque redondo, borde de salida puntiagudo.
+Derecha: después de w = z + 1/z. Lo que era círculo es ahora perfil de ala con borde de ataque redondo y borde de salida puntiagudo.
 
-La transformación NO destruye los ángulos locales — eso es lo que "conforme" significa. Solo los enrolla.`,
-      formula: 'w = z + 1/z      (círculo con cusp → airfoil)',
+Conforme NO destruye los ángulos locales — solo los enrolla.`,
+      formula: 'w = z + 1/z',
       keyframes: [
         { at: 0, state: { preset: 'joukowski-geometric', alpha: 0, offsetX: -0.1, offsetY: 0.05 } },
         { at: 1, state: { preset: 'joukowski-geometric', alpha: 0, offsetX: -0.1, offsetY: 0.05 } },
@@ -228,14 +167,12 @@ La transformación NO destruye los ángulos locales — eso es lo que "conforme"
     {
       title: 'Flujo simétrico — sin sustentación',
       duration: 5500,
-      body: `Ahora viento horizontal U sobre el círculo. α = 0, sin circulación.
+      body: `Ahora viento horizontal U sobre el círculo. α = 0, Γ = 0.
 
-A la izquierda ves las streamlines clásicas: el aire se separa en el frente, abraza el círculo, se recombina atrás. Patrón simétrico arriba/abajo → empuje neto vertical = 0.
+Izquierda: partículas se separan al frente, abrazan el círculo, se recombinan atrás. Patrón simétrico arriba/abajo → empuje neto vertical = 0.
 
-A la derecha, las MISMAS streamlines aparecen alrededor del ala. Pero como α = 0 y el ala es casi simétrica, tampoco hay sustentación.
-
-Esto es lo que Newton creyó (mal) que pasaba siempre. Los aviones no volarían.`,
-      formula: 'Φ(z) = U·(z + R²/z)        (sin ángulo de ataque)',
+Derecha: las MISMAS partículas (vía Joukowski) corren alrededor del ala. Pero α = 0 → tampoco hay sustentación.`,
+      formula: 'Φ(z) = U·(z + R²/z)        α = 0',
       keyframes: [
         { at: 0, state: { preset: 'joukowski-flow', alpha: 0, offsetX: -0.1, offsetY: 0.05 } },
         { at: 1, state: { preset: 'joukowski-flow', alpha: 0, offsetX: -0.1, offsetY: 0.05 } },
@@ -244,44 +181,44 @@ Esto es lo que Newton creyó (mal) que pasaba siempre. Los aviones no volarían.
     {
       title: 'Ángulo de ataque → SUSTENTACIÓN nace',
       duration: 6500,
-      body: `Inclino el viento un ángulo α = 15° respecto al ala. Ahora las streamlines del LADO superior se aprietan, las del INFERIOR se relajan — Bernoulli dice que arriba la presión BAJA y abajo SUBE.
+      body: `Inclino el viento α = 15°. Las streamlines superiores se APRIETAN, las inferiores se RELAJAN — Bernoulli: presión arriba BAJA, abajo SUBE.
 
-Resultado: fuerza neta hacia ARRIBA. Eso es sustentación.
+Fuerza neta hacia ARRIBA. Sustentación.
 
-La condición de Kutta impone una circulación específica Γ = −4πUR·sin(α + β) para que el flujo salga LIMPIO por el borde de salida (sin oscilación infinita).
+La condición de Kutta impone Γ = −4πUR·sin(α + β) para que el flujo salga LIMPIO por el borde de salida.
 
-En la realidad esto se logra por la viscosidad que arranca al despegar — el famoso "starting vortex" que queda detrás del avión.`,
-      formula: 'Γ_Kutta = −4πUR·sin(α + β)\nL = ρ·U·Γ    (Kutta-Joukowski)',
+En realidad esto sale de la viscosidad al despegar — el "starting vortex" detrás del avión.`,
+      formula: 'Γ_Kutta = −4πUR·sin(α + β)\nL\' = ρ·U·Γ    (Kutta-Joukowski)',
       keyframes: [
         { at: 0, state: { preset: 'joukowski-flow', alpha: 0.0,  offsetX: -0.1, offsetY: 0.05 } },
         { at: 1, state: { preset: 'joukowski-flow', alpha: 0.26, offsetX: -0.1, offsetY: 0.05 } },
       ],
     },
     {
-      title: 'Curvatura del ala — más asimetría, más lift',
+      title: 'Camber — curvatura del ala = más lift',
       duration: 6000,
-      body: `Aumento el descentrado vertical del círculo. El ala se vuelve más CURVA (más camber). Más asimetría → más sustentación por el mismo ángulo de ataque.
+      body: `Aumento el descentrado vertical del círculo. El ala se vuelve más CURVA. Más camber → más sustentación para el mismo α.
 
-Esto es por qué las alas reales NO son simétricas, son curvas hacia abajo en la parte inferior. La curvatura ya da sustentación incluso sin ángulo de ataque.
+Por eso las alas reales NO son simétricas — son curvas. La curvatura da lift incluso sin ángulo de ataque.
 
-Sliders en sandbox: jugá con α y con la posición del centro del círculo. Ves directamente cómo cambia la forma del ala y su comportamiento aerodinámico.`,
-      formula: 'L = ρUΓ\nΓ = −4πUR·sin(α + atan(y₀/(1-x₀)))',
+Ves la flecha verde de sustentación crecer.`,
+      formula: 'L\' = ρUΓ\nΓ = −4πUR·sin(α + atan(y₀/(1-x₀)))',
       keyframes: [
         { at: 0, state: { preset: 'joukowski-flow', alpha: 0.18, offsetX: -0.1,  offsetY: 0.05 } },
         { at: 1, state: { preset: 'joukowski-flow', alpha: 0.18, offsetX: -0.15, offsetY: 0.18 } },
       ],
     },
     {
-      title: 'El plano hiperbólico — Poincaré disk',
+      title: 'Plano hiperbólico — Poincaré disk',
       duration: 5000,
       body: `Cambio de escena. Mismo análisis complejo, otra geometría: el disco de Poincaré.
 
-Cada arco coloreado es una RECTA en geometría hiperbólica — la "recta" más corta entre dos puntos del disco. Las rectas son arcos circulares perpendiculares al borde unitario.
+Cada arco coloreado es una RECTA hiperbólica — la geodésica entre dos puntos del disco. Las rectas son arcos circulares perpendiculares al borde unitario.
 
-En este mundo, la suma de los ángulos de un triángulo es MENOR que π. Los modelos de Escher con peces que se hacen infinitamente chiquitos hacia el borde están dibujados acá.
+Aquí la suma de los ángulos del triángulo es MENOR que π. Los modelos de Escher con peces decrecientes hacia el borde están dibujados acá.
 
-Y todas las isometrías de este plano son... transformaciones de Möbius. Bumeang teórico: lo de la primera clase.`,
-      formula: 'd_hyper(z, w) = arctanh(|z − w|/|1 − z̄w|)\nIsometrías = SU(1,1) ≅ subgrupo de Möbius',
+Las isometrías de este plano son Möbius. Bumeang teórico: lo de la primera clase.`,
+      formula: 'd_hyper(z, w) = arctanh(|z − w|/|1 − z̄w|)',
       keyframes: [
         { at: 0, state: { preset: 'poincare', alpha: 0, offsetX: 0, offsetY: 0 } },
         { at: 1, state: { preset: 'poincare', alpha: 0, offsetX: 0, offsetY: 0 } },
@@ -292,29 +229,295 @@ Y todas las isometrías de este plano son... transformaciones de Möbius. Bumean
   connect: {
     body: `Mapas conformes son la base de:
 
-• Diseño aerodinámico clásico — antes del CFD, TODA ala se calculaba con Joukowski + correcciones (Theodorsen, Karman-Trefftz). El método sigue siendo el "first cut" en aero educativa.
+• Diseño aerodinámico clásico — antes del CFD, TODA ala se calculaba con Joukowski + correcciones. Sigue siendo el "first cut" educativo.
 
-• Electromagnetismo 2D — un capacitor de cualquier forma se calcula resolviendo flujo potencial alrededor del electrodo y aplicando el mapeo conforme. Las "streamlines" SON las líneas de campo eléctrico. Idéntico math.
+• Electromagnetismo 2D — un capacitor de cualquier forma se calcula resolviendo flujo potencial alrededor del electrodo + mapeo conforme. Las streamlines SON las líneas de campo eléctrico. Idéntico math.
 
-• Conducción térmica — Φ = T da el campo de temperatura estacionario, ψ = flujo de calor.
+• Conducción térmica — Φ = T da campo de temperatura estacionario, ψ = flujo de calor.
 
-• Cartografía — la proyección Mercator es CONFORME. Los meridianos y paralelos siguen siendo perpendiculares (preserva ángulos). Por eso navegar con compás funciona en un mapa Mercator.
+• Cartografía — proyección Mercator es CONFORME. Los meridianos y paralelos siguen siendo perpendiculares. Por eso se navega con compás sobre un Mercator.
 
-• Geometría hiperbólica — relatividad general en 2+1D, modelos de Escher, sustrato de la cuántica de cuerdas.
+• Geometría hiperbólica — relatividad en 2+1D, modelos de Escher, teoría de cuerdas.
 
-El truco común: una vez que tenés una solución analítica en geometría simple (cilindro, semi-plano, disco), CUALQUIER otra geometría con la misma topología sale por composición conforme. Es magia, pero es magia con licencia profesional.`,
+Magia con licencia profesional.`,
     links: [
-      { label: 'Campos EM (líneas de E = streamlines)', href: '/physics.html#em/fields' },
+      { label: 'Campos EM — líneas de E = streamlines', href: '/physics.html#em/fields' },
       { label: 'Möbius — isometrías del disco de Poincaré', href: '#complex/mobius' },
       { label: 'Newton fractals — la otra mitad de Análisis Complejo', href: '#complex/roots' },
     ],
   },
 };
 
-// ── Component ─────────────────────────────────────────────────────────
+// ── Scene component (with useFrame for animation) ──────────────────────
 
 const Z_OFFSET = -2.8;
 const W_OFFSET = 2.8;
+const N_PARTICLES = 70;
+
+function clamp(v: number) { return Math.max(-2.5, Math.min(2.5, v)); }
+
+function JoukowskiFlowScene({
+  preset, alpha, offsetX, offsetY,
+}: {
+  preset: 'joukowski-geometric' | 'joukowski-flow';
+  alpha: number; offsetX: number; offsetY: number;
+}) {
+  const { zc, R } = useMemo(() => airfoilParams(offsetX, offsetY), [offsetX, offsetY]);
+  const gamma = useMemo(
+    () => preset === 'joukowski-flow' ? kuttaCirculation(R, alpha, zc) : 0,
+    [preset, R, alpha, zc],
+  );
+
+  const cylinderPts = useMemo(() => sampleCircleContour(zc, R, 120), [zc, R]);
+  const airfoilPts  = useMemo(() => cylinderPts.map(joukowski), [cylinderPts]);
+
+  // Static streamlines (background reference)
+  const streamlines = useMemo(() => {
+    if (preset !== 'joukowski-flow') return [];
+    const lines: { color: string; zPts: C[]; wPts: C[] }[] = [];
+    const startsY = [-1.7, -1.2, -0.8, -0.45, -0.15, 0.15, 0.45, 0.8, 1.2, 1.7];
+    const palette = ['#82B1FF', '#A78BFA', '#F472B6', '#FB7185', '#FDB813',
+                     '#A3E635', '#34D399', '#22D3EE', '#60A5FA', '#A78BFA'];
+    for (let i = 0; i < startsY.length; i++) {
+      const zPts = traceStreamline(-2.6, startsY[i], R, alpha, zc, gamma, 380, 0.022);
+      const wPts = zPts.map(joukowski);
+      lines.push({ color: palette[i % palette.length], zPts, wPts });
+    }
+    return lines;
+  }, [preset, R, alpha, zc, gamma]);
+
+  // Animated particles in z plane (advected). Each particle has [x, y].
+  const particlesRef = useRef<Float32Array>(
+    new Float32Array(N_PARTICLES * 2),
+  );
+  // Initialize particle positions on first render
+  const initParticles = useRef(false);
+  if (!initParticles.current) {
+    for (let i = 0; i < N_PARTICLES; i++) {
+      particlesRef.current[i * 2 + 0] = -2.6 - Math.random() * 0.4;
+      particlesRef.current[i * 2 + 1] = -1.9 + (i / N_PARTICLES) * 3.8;
+    }
+    initParticles.current = true;
+  }
+
+  // Mesh refs for the particle instances (z plane and w plane)
+  const zPartsRef = useRef<THREE.InstancedMesh>(null);
+  const wPartsRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  // Pulsating lift arrow
+  const liftArrowRef = useRef<THREE.Group>(null);
+
+  useFrame((_, delta) => {
+    if (preset !== 'joukowski-flow') return;
+    const dt = Math.min(0.05, delta) * 0.85;
+    const arr = particlesRef.current;
+
+    for (let i = 0; i < N_PARTICLES; i++) {
+      const x = arr[i * 2 + 0];
+      const y = arr[i * 2 + 1];
+
+      // RK2 step
+      const v1 = flowVelocity([x, y], R, alpha, zc, gamma);
+      const xMid = x + 0.5 * dt * v1.u;
+      const yMid = y + 0.5 * dt * v1.v;
+      const v2 = flowVelocity([xMid, yMid], R, alpha, zc, gamma);
+      let nx = x + dt * v2.u;
+      let ny = y + dt * v2.v;
+
+      // Recycle particles that exit the domain
+      if (nx > 2.5 || Math.abs(ny) > 2.2 || !isFinite(nx)) {
+        nx = -2.6 - Math.random() * 0.3;
+        ny = -1.9 + Math.random() * 3.8;
+      }
+      // Bounce particles that enter the cylinder
+      const drx = nx - zc[0], dry = ny - zc[1];
+      if (drx * drx + dry * dry < R * R * 1.02) {
+        const ang = Math.atan2(dry, drx);
+        nx = zc[0] + R * 1.05 * Math.cos(ang);
+        ny = zc[1] + R * 1.05 * Math.sin(ang);
+      }
+
+      arr[i * 2 + 0] = nx;
+      arr[i * 2 + 1] = ny;
+
+      // Update z-plane instance
+      if (zPartsRef.current) {
+        dummy.position.set(Z_OFFSET + clamp(nx), ny, 0.02);
+        dummy.updateMatrix();
+        zPartsRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Update w-plane instance (same particle, transformed)
+      if (wPartsRef.current) {
+        const wz = joukowski([nx, ny]);
+        if (isFinite(wz[0]) && isFinite(wz[1])) {
+          dummy.position.set(W_OFFSET + clamp(wz[0]), clamp(wz[1]), 0.02);
+          dummy.updateMatrix();
+          wPartsRef.current.setMatrixAt(i, dummy.matrix);
+        }
+      }
+    }
+    if (zPartsRef.current) zPartsRef.current.instanceMatrix.needsUpdate = true;
+    if (wPartsRef.current) wPartsRef.current.instanceMatrix.needsUpdate = true;
+
+    // Lift arrow pulse
+    if (liftArrowRef.current) {
+      const t = performance.now() * 0.003;
+      const pulse = 1 + 0.06 * Math.sin(t * 2);
+      liftArrowRef.current.scale.y = pulse;
+    }
+  });
+
+  return (
+    <>
+      <PlaneBackdrop center={[Z_OFFSET, 0, 0]} />
+      <PlaneBackdrop center={[W_OFFSET, 0, 0]} />
+
+      {/* Cylinder + Airfoil */}
+      <Line
+        points={cylinderPts.map(p => [Z_OFFSET + p[0], p[1], 0] as [number, number, number])}
+        color="#FDB813"
+        lineWidth={2}
+      />
+      <Line
+        points={airfoilPts.map(p => [W_OFFSET + clamp(p[0]), p[1], 0] as [number, number, number])}
+        color="#FDB813"
+        lineWidth={2}
+      />
+
+      {/* Static streamlines */}
+      {streamlines.flatMap((sl, i) => {
+        const zSegs = splitFiniteSegs(sl.zPts, Z_OFFSET);
+        const wSegs = splitFiniteSegs(sl.wPts, W_OFFSET);
+        return [
+          ...zSegs.map((seg, k) => (
+            <Line key={`zsl-${i}-${k}`} points={seg} color={sl.color} lineWidth={1} transparent opacity={0.4} />
+          )),
+          ...wSegs.map((seg, k) => (
+            <Line key={`wsl-${i}-${k}`} points={seg} color={sl.color} lineWidth={1} transparent opacity={0.4} />
+          )),
+        ];
+      })}
+
+      {/* Animated particles */}
+      {preset === 'joukowski-flow' && (
+        <>
+          <instancedMesh ref={zPartsRef} args={[undefined, undefined, N_PARTICLES]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshStandardMaterial color="#FFFFFF" emissive="#7DD3FC" emissiveIntensity={1.2} />
+          </instancedMesh>
+          <instancedMesh ref={wPartsRef} args={[undefined, undefined, N_PARTICLES]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshStandardMaterial color="#FFFFFF" emissive="#FBBF77" emissiveIntensity={1.2} />
+          </instancedMesh>
+        </>
+      )}
+
+      {/* Lift arrow on w plane */}
+      {preset === 'joukowski-flow' && Math.abs(gamma) > 0.05 && (
+        <group ref={liftArrowRef} position={[W_OFFSET + 0.2, 0, 0.06]}>
+          <LiftArrow L={-gamma} />
+        </group>
+      )}
+
+      {/* Axes */}
+      <Axes center={[Z_OFFSET, 0, 0]} />
+      <Axes center={[W_OFFSET, 0, 0]} />
+    </>
+  );
+}
+
+function PoincareScene() {
+  const geodesics = useMemo(() => {
+    const arcs: { color: string; pts: C[] }[] = [];
+    const palette = ['#F472B6', '#4FC3F7', '#FDB813', '#34D399', '#A78BFA', '#FB7185', '#60A5FA', '#A3E635'];
+    const N = 8;
+    for (let i = 0; i < N; i++) {
+      const phi1 = (2 * Math.PI * i) / N;
+      const phi2 = phi1 + 2 * Math.PI * 3 / 7;
+      arcs.push({ color: palette[i % palette.length], pts: geodesicArc(phi1, phi2, 60) });
+    }
+    return arcs;
+  }, []);
+
+  // Animated "traveler" along a geodesic
+  const travelerRef = useRef<THREE.Mesh>(null);
+  const trailGeomRef = useRef<THREE.BufferGeometry>(null);
+  const TRAIL_CAP = 24;
+  const trailBuffer = useMemo(() => new Float32Array(TRAIL_CAP * 3), []);
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    // Travel along a chosen geodesic
+    const arc = geodesicArc(0.4, 0.4 + Math.PI * 1.0, 200);
+    const cycle = (t * 0.18) % 1;
+    const idx = Math.floor(cycle * (arc.length - 1));
+    const p = arc[idx];
+    if (travelerRef.current) {
+      travelerRef.current.position.set(p[0] * 1.5, p[1] * 1.5, 0.05);
+    }
+    // Trail
+    for (let i = 0; i < TRAIL_CAP; i++) {
+      const k = Math.max(0, idx - i);
+      const q = arc[k];
+      trailBuffer[i * 3 + 0] = q[0] * 1.5;
+      trailBuffer[i * 3 + 1] = q[1] * 1.5;
+      trailBuffer[i * 3 + 2] = 0.03;
+    }
+    if (trailGeomRef.current) {
+      (trailGeomRef.current.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    }
+  });
+
+  return (
+    <>
+      {/* Unit disk boundary */}
+      <Line
+        points={Array.from({ length: 96 }, (_, i) => {
+          const θ = (i / 95) * 2 * Math.PI;
+          return [Math.cos(θ) * 1.5, Math.sin(θ) * 1.5, 0] as [number, number, number];
+        })}
+        color="#FDB813"
+        lineWidth={2}
+      />
+      {geodesics.map((arc, i) => (
+        <Line
+          key={i}
+          points={arc.pts.map(p => [p[0] * 1.5, p[1] * 1.5, 0] as [number, number, number])}
+          color={arc.color}
+          lineWidth={1.5}
+          transparent
+          opacity={0.85}
+        />
+      ))}
+      {/* Center dot */}
+      <mesh position={[0, 0, 0]}>
+        <sphereGeometry args={[0.04, 16, 16]} />
+        <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={1} />
+      </mesh>
+      {/* Animated traveler */}
+      <mesh ref={travelerRef}>
+        <sphereGeometry args={[0.05, 16, 16]} />
+        <meshStandardMaterial color="#FFFFFF" emissive="#F472B6" emissiveIntensity={2} />
+      </mesh>
+      {/* Trail */}
+      <line>
+        <bufferGeometry ref={trailGeomRef}>
+          <bufferAttribute
+            attach="attributes-position"
+            count={TRAIL_CAP}
+            array={trailBuffer}
+            itemSize={3}
+            args={[trailBuffer, 3]}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial color="#F472B6" transparent opacity={0.7} />
+      </line>
+    </>
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────
 
 export default function ConformalMaps() {
   const { audience } = useAudience();
@@ -323,128 +526,16 @@ export default function ConformalMaps() {
   const [offsetX, setOffsetX] = useState(-0.1);
   const [offsetY, setOffsetY] = useState(0.05);
 
-  const { zc, R } = useMemo(() => airfoilCircleParams(offsetX, offsetY), [offsetX, offsetY]);
+  const { zc, R } = useMemo(() => airfoilParams(offsetX, offsetY), [offsetX, offsetY]);
   const gamma = useMemo(() => kuttaCirculation(R, alpha, zc), [R, alpha, zc]);
-
-  // Airfoil contour (in z plane and w plane)
-  const cylinderPts = useMemo(() => sampleCircleContour(zc, R, 120), [zc, R]);
-  const airfoilPts = useMemo(() => cylinderPts.map(joukowski), [cylinderPts]);
-
-  // Streamlines (only when flow is on)
-  const streamlines = useMemo(() => {
-    if (preset !== 'joukowski-flow') return [];
-    const lines: { color: string; zPts: C[]; wPts: C[] }[] = [];
-    const startsY = [-1.8, -1.4, -1.0, -0.65, -0.3, 0.0, 0.3, 0.65, 1.0, 1.4, 1.8];
-    const palette = ['#4FC3F7', '#82B1FF', '#A78BFA', '#F472B6', '#FB7185', '#FDB813', '#A3E635', '#34D399', '#22D3EE', '#60A5FA', '#A78BFA'];
-    for (let i = 0; i < startsY.length; i++) {
-      const y0 = startsY[i];
-      const zPts = traceStreamline(-2.6, y0, R, alpha, zc, gamma, 380, 0.022);
-      const wPts = zPts.map(joukowski);
-      lines.push({ color: palette[i % palette.length], zPts, wPts });
-    }
-    return lines;
-  }, [preset, R, alpha, zc, gamma]);
-
-  // Poincaré geodesics (only when active)
-  const geodesics = useMemo(() => {
-    if (preset !== 'poincare') return [];
-    const arcs: { color: string; pts: C[] }[] = [];
-    const palette = ['#F472B6', '#4FC3F7', '#FDB813', '#34D399', '#A78BFA', '#FB7185', '#60A5FA', '#A3E635'];
-    // A pencil of geodesics through different boundary pairs
-    const N = 8;
-    for (let i = 0; i < N; i++) {
-      const phi1 = (2 * Math.PI * i) / N;
-      const phi2 = phi1 + 2 * Math.PI * 3 / 7;  // irrational-ish to give variety
-      arcs.push({ color: palette[i % palette.length], pts: geodesicArc(phi1, phi2, 60) });
-    }
-    return arcs;
-  }, [preset]);
-
-  // 3D rendering helpers
-  const lift = useMemo(() => {
-    if (preset !== 'joukowski-flow') return 0;
-    // L' = ρ U Γ → per unit span; we'll display in arbitrary "units" with ρ=U=1
-    return -gamma; // magnitude (gamma is negative for positive lift in this sign convention)
-  }, [preset, gamma]);
 
   return (
     <div className="w-full h-full grid grid-cols-[1fr_360px] gap-3">
       <div className="relative rounded-lg overflow-hidden border border-[#1E293B]">
-        <Stage cameraDistance={preset === 'poincare' ? 4 : 7.5} bloomIntensity={0.45} bloomThreshold={0.6}>
-          {preset !== 'poincare' && (
-            <>
-              {/* z plane backdrop */}
-              <PlaneBackdrop center={[Z_OFFSET, 0, 0]} label="plano z (cilindro)" />
-              {/* w plane backdrop */}
-              <PlaneBackdrop center={[W_OFFSET, 0, 0]} label="plano w (ala)" />
-
-              {/* Cylinder on left */}
-              <Line
-                points={cylinderPts.map(p => [Z_OFFSET + p[0], p[1], 0] as [number, number, number])}
-                color="#FDB813"
-                lineWidth={2}
-              />
-              {/* Airfoil on right */}
-              <Line
-                points={airfoilPts.map(p => [W_OFFSET + clamp(p[0]) , p[1], 0] as [number, number, number])}
-                color="#FDB813"
-                lineWidth={2}
-              />
-
-              {/* Streamlines */}
-              {streamlines.flatMap((sl, i) => {
-                const zSegs = splitFiniteSegs(sl.zPts, Z_OFFSET);
-                const wSegs = splitFiniteSegs(sl.wPts, W_OFFSET);
-                return [
-                  ...zSegs.map((seg, k) => (
-                    <Line key={`zsl-${i}-${k}`} points={seg} color={sl.color} lineWidth={1.2} transparent opacity={0.85} />
-                  )),
-                  ...wSegs.map((seg, k) => (
-                    <Line key={`wsl-${i}-${k}`} points={seg} color={sl.color} lineWidth={1.2} transparent opacity={0.85} />
-                  )),
-                ];
-              })}
-
-              {/* Axes (subtle) */}
-              <Axes center={[Z_OFFSET, 0, 0]} />
-              <Axes center={[W_OFFSET, 0, 0]} />
-
-              {/* Lift indicator on w plane */}
-              {preset === 'joukowski-flow' && Math.abs(lift) > 0.05 && (
-                <LiftArrow center={[W_OFFSET, 0, 0]} L={lift} />
-              )}
-            </>
-          )}
-
-          {preset === 'poincare' && (
-            <>
-              {/* Unit disk boundary */}
-              <Line
-                points={Array.from({ length: 96 }, (_, i) => {
-                  const θ = (i / 95) * 2 * Math.PI;
-                  return [Math.cos(θ) * 1.5, Math.sin(θ) * 1.5, 0] as [number, number, number];
-                })}
-                color="#FDB813"
-                lineWidth={2}
-              />
-              {/* Geodesics */}
-              {geodesics.map((arc, i) => (
-                <Line
-                  key={i}
-                  points={arc.pts.map(p => [p[0] * 1.5, p[1] * 1.5, 0] as [number, number, number])}
-                  color={arc.color}
-                  lineWidth={1.5}
-                  transparent
-                  opacity={0.9}
-                />
-              ))}
-              {/* Center dot */}
-              <mesh position={[0, 0, 0]}>
-                <sphereGeometry args={[0.04, 16, 16]} />
-                <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={1} />
-              </mesh>
-            </>
-          )}
+        <Stage cameraDistance={preset === 'poincare' ? 4 : 7.5} bloomIntensity={0.5} bloomThreshold={0.55}>
+          {preset === 'poincare'
+            ? <PoincareScene />
+            : <JoukowskiFlowScene preset={preset} alpha={alpha} offsetX={offsetX} offsetY={offsetY} />}
         </Stage>
 
         <div className="absolute top-3 left-3 text-[11px] font-mono space-y-1 text-[#CBD5E1]
@@ -454,15 +545,16 @@ export default function ConformalMaps() {
               <div>α = {(alpha * 180 / Math.PI).toFixed(1)}°</div>
               <div>centro círculo = ({offsetX.toFixed(2)}, {offsetY.toFixed(2)})</div>
               <div>R = {R.toFixed(3)}</div>
-              <div className={lift > 0.1 ? 'text-[#34D399]' : 'text-[#94A3B8]'}>
-                Γ = {gamma.toFixed(3)} → L' = {(-gamma).toFixed(3)} ρU²
+              <div className={(-gamma) > 0.1 ? 'text-[#34D399]' : 'text-[#94A3B8]'}>
+                Γ = {gamma.toFixed(3)} → L'/ρU² = {(-gamma).toFixed(3)}
               </div>
+              <div className="text-[#64748B] text-[10px] mt-1">partículas advectadas en tiempo real</div>
             </>
           )}
           {preset === 'joukowski-geometric' && (
             <>
               <div>w = z + 1/z</div>
-              <div>círculo descentrado pasa por z=1 → cusp</div>
+              <div>círculo descentrado → cusp → ala</div>
             </>
           )}
           {preset === 'poincare' && (
@@ -477,7 +569,7 @@ export default function ConformalMaps() {
       <LessonPanel<ConformalLessonState>
         lesson={LESSON}
         onApplyState={patch => {
-          if (patch.preset !== undefined) setPreset(patch.preset as typeof preset);
+          if (typeof patch.preset === 'string') setPreset(patch.preset as typeof preset);
           if (typeof patch.alpha === 'number') setAlpha(patch.alpha);
           if (typeof patch.offsetX === 'number') setOffsetX(patch.offsetX);
           if (typeof patch.offsetY === 'number') setOffsetY(patch.offsetY);
@@ -519,7 +611,7 @@ export default function ConformalMaps() {
 
             {audience !== 'child' && (
               <div className="border-t border-[#1E293B] pt-3 text-[11px] text-[#64748B] leading-relaxed">
-                Potencial Φ = U·(zR + R²·e^(2iα)/zR) + (Γ/2πi)·log(zR) en frame relativo. zR = z − zc. RK4 con dt = 0.022.
+                Φ = U·(zR e^(-iα) + R²e^(iα)/zR) + (Γ/2πi)·log(zR). RK2 sobre {N_PARTICLES} partículas a ~60 fps.
               </div>
             )}
           </>
@@ -530,8 +622,6 @@ export default function ConformalMaps() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────
-
-function clamp(v: number) { return Math.max(-2.5, Math.min(2.5, v)); }
 
 function splitFiniteSegs(pts: C[], xOffset: number): [number, number, number][][] {
   const segs: [number, number, number][][] = [];
@@ -548,28 +638,15 @@ function splitFiniteSegs(pts: C[], xOffset: number): [number, number, number][][
   return segs;
 }
 
-function PlaneBackdrop({ center, label }: { center: [number, number, number]; label: string }) {
+function PlaneBackdrop({ center }: { center: [number, number, number] }) {
   const [cx, cy, cz] = center;
   const size = 2.4;
   return (
-    <>
-      <mesh position={[cx, cy, cz - 0.005]}>
-        <planeGeometry args={[size * 2, size * 2]} />
-        <meshBasicMaterial color="#0B1220" transparent opacity={0.55} />
-      </mesh>
-      <mesh position={[cx, cy + size + 0.15, cz]}>
-        <planeGeometry args={[3, 0.3]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
-      <PlaneLabel position={[cx, cy + size + 0.18, cz]} text={label} />
-    </>
+    <mesh position={[cx, cy, cz - 0.005]}>
+      <planeGeometry args={[size * 2, size * 2]} />
+      <meshBasicMaterial color="#0B1220" transparent opacity={0.55} />
+    </mesh>
   );
-}
-
-function PlaneLabel({ position }: { position: [number, number, number]; text: string }) {
-  // Defer to a tiny THREE Sprite via mesh; since drei <Text> can hang fonts in
-  // headless contexts, we just hide the label and rely on the HUD overlay.
-  return <mesh position={position}><planeGeometry args={[0.001, 0.001]} /><meshBasicMaterial transparent opacity={0} /></mesh>;
 }
 
 function Axes({ center }: { center: [number, number, number] }) {
@@ -577,27 +654,21 @@ function Axes({ center }: { center: [number, number, number] }) {
   const size = 2.4;
   return (
     <>
-      <Line points={[[cx - size, cy, cz], [cx + size, cy, cz]]} color="#334155" lineWidth={0.8} transparent opacity={0.6} />
-      <Line points={[[cx, cy - size, cz], [cx, cy + size, cz]]} color="#334155" lineWidth={0.8} transparent opacity={0.6} />
+      <Line points={[[cx - size, cy, cz], [cx + size, cy, cz]]} color="#334155" lineWidth={0.8} transparent opacity={0.55} />
+      <Line points={[[cx, cy - size, cz], [cx, cy + size, cz]]} color="#334155" lineWidth={0.8} transparent opacity={0.55} />
     </>
   );
 }
 
-function LiftArrow({ center, L }: { center: [number, number, number]; L: number }) {
-  const [cx, cy, cz] = center;
+function LiftArrow({ L }: { L: number }) {
   const len = Math.min(1.4, Math.abs(L) * 0.4);
   const sign = L >= 0 ? 1 : -1;
   return (
     <>
-      <Line
-        points={[[cx, cy, cz + 0.05], [cx, cy + sign * len, cz + 0.05]]}
-        color="#34D399"
-        lineWidth={3}
-      />
-      {/* Arrowhead */}
-      <mesh position={[cx, cy + sign * (len + 0.1), cz + 0.05]} rotation={[0, 0, sign > 0 ? 0 : Math.PI]}>
+      <Line points={[[0, 0, 0], [0, sign * len, 0]]} color="#34D399" lineWidth={3} />
+      <mesh position={[0, sign * (len + 0.1), 0]} rotation={[0, 0, sign > 0 ? 0 : Math.PI]}>
         <coneGeometry args={[0.08, 0.18, 16]} />
-        <meshStandardMaterial color="#34D399" emissive="#34D399" emissiveIntensity={0.6} />
+        <meshStandardMaterial color="#34D399" emissive="#34D399" emissiveIntensity={0.8} />
       </mesh>
     </>
   );

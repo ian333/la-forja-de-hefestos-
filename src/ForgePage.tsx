@@ -32,7 +32,6 @@ import Omnibar, { type OmniAction } from '@/components/Omnibar';
 import ShortcutOverlay, { type ShortcutTool } from '@/components/ShortcutOverlay';
 import Timeline, { type TimelineEntry } from '@/components/Timeline';
 import SketchPanel from '@/components/SketchPanel';
-import BrainPulse from '@/components/rian/BrainPulse';
 import type { SketchTool } from '@/lib/SketchInViewport';
 import { STANDARD_VIEWS, type StandardView } from '@/lib/viewport';
 import type { SectionAxis } from '@/lib/viewport';
@@ -65,24 +64,7 @@ import ThemePanel from '@/components/ThemePanel';
 import { useThemeStore } from '@/lib/useThemeStore';
 import { THEME_PROFILES } from '@/lib/theme-profiles';
 import { playClick, playCreate, playComplete, playDelete, playUndo, playError } from '@/lib/forge-audio';
-import forjaSceneDef from '@/forja/scene';
-import { runScene, publishRunResult } from '@/forja/runner';
-import AIPanel from '@/forja/AIPanel';
-import JointScrubber from '@/components/JointScrubber';
-import KinematicGraph from '@/components/KinematicGraph';
 import { buildSpacer905Scene } from '@/lib/parts/spacer-905';
-import { buildGearPair, GEAR_PAIR_DEFAULTS } from '@/lib/parts/gear-pair';
-import GearPairPanel from '@/components/parts/GearPairPanel';
-import { buildGeneva, GENEVA_DEFAULTS } from '@/lib/parts/geneva';
-import GenevaPanel from '@/components/parts/GenevaPanel';
-import { buildSliderCrank, SLIDER_CRANK_DEFAULTS } from '@/lib/parts/slider-crank';
-import SliderCrankPanel from '@/components/parts/SliderCrankPanel';
-import { buildPlanetary, PLANETARY_DEFAULTS } from '@/lib/parts/planetary';
-import PlanetaryPanel from '@/components/parts/PlanetaryPanel';
-import { buildEscapement, ESCAPEMENT_DEFAULTS } from '@/lib/parts/escapement';
-import EscapementPanel from '@/components/parts/EscapementPanel';
-import { buildClock, CLOCK_DEFAULTS } from '@/lib/parts/clock';
-import ClockPanel from '@/components/parts/ClockPanel';
 
 // ═══════════════════════════════════════════════════════════════
 // Design Tokens — La Forja de Hefestos
@@ -583,7 +565,7 @@ export default function ForgePage() {
   const [exporting, setExporting] = useState<string | null>(null);
   const [treeExpanded, setTreeExpanded] = useState(false);
   const treePinned = useRef(false);
-  const [sketchMode, setSketchMode] = useState<{ plane: SketchPlane; offset: number } | null>(null);
+  const [sketchMode, setSketchMode] = useState<{ plane: SketchPlane } | null>(null);
   const [sketchShapes, setSketchShapes] = useState<SketchShape[]>([]);
   const [sketchTool, setSketchTool] = useState<SketchTool>('rect');
   const [sketchCursor, setSketchCursor] = useState<[number, number]>([0, 0]);
@@ -602,12 +584,6 @@ export default function ForgePage() {
   const [machinePanel, setMachinePanel] = useState(false);
   const [blueprintPanel, setBlueprintPanel] = useState(false);
   const [themePanelOpen, setThemePanelOpen] = useState(false);
-  const [gearPairPanelOpen, setGearPairPanelOpen] = useState(false);
-  const [genevaPanelOpen, setGenevaPanelOpen] = useState(false);
-  const [sliderCrankPanelOpen, setSliderCrankPanelOpen] = useState(false);
-  const [planetaryPanelOpen, setPlanetaryPanelOpen] = useState(false);
-  const [escapementPanelOpen, setEscapementPanelOpen] = useState(false);
-  const [clockPanelOpen, setClockPanelOpen] = useState(false);
   const [materialPanel, setMaterialPanel] = useState<number | null>(null);
   // Camera transitions
   const [targetView, setTargetView] = useState<StandardView | null>(null);
@@ -619,17 +595,6 @@ export default function ForgePage() {
 
   // ── Init/destroy worker ──
   useEffect(() => { initWorker(); return () => destroyWorker(); }, [initWorker, destroyWorker]);
-
-  // ── AI-driven scene script (src/forja/scene.ts) ──
-  const reloadForjaScript = useCallback(async () => {
-    const mod = await import('@/forja/scene');
-    const result = await runScene(mod.default);
-    publishRunResult(result);
-  }, []);
-
-  useEffect(() => {
-    runScene(forjaSceneDef).then(publishRunResult);
-  }, []);
 
   // ── Generate vizFeatures from consolidation result ──
   useEffect(() => {
@@ -779,7 +744,7 @@ export default function ForgePage() {
     if (hit.hit) {
       const face = detectFace(hit.normal, hit.position);
       setFacePicking(false);
-      setSketchMode({ plane: face.plane, offset: face.offset });
+      setSketchMode({ plane: face.plane });
     }
   }, [facePicking, scene]);
 
@@ -802,12 +767,12 @@ export default function ForgePage() {
     for (const shape of sketchShapes) {
       if (shape.kind === 'rect') {
         const r = shape as SketchRect;
-        const res = extrudeRect(r, sketchMode.plane, extrudeDistance, sketchMode.offset);
+        const res = extrudeRect(r, sketchMode.plane, extrudeDistance);
         addExtrudedPrimitive(res.type, res.position, res.rotation, res.params,
           `Ext. ${r.width.toFixed(1)}×${r.height.toFixed(1)}×${extrudeDistance.toFixed(1)}`);
       } else {
         const c = shape as SketchCircle;
-        const res = extrudeCircle(c, sketchMode.plane, extrudeDistance, sketchMode.offset);
+        const res = extrudeCircle(c, sketchMode.plane, extrudeDistance);
         addExtrudedPrimitive(res.type, res.position, res.rotation, res.params,
           `Cil. R${c.radius.toFixed(2)}×${extrudeDistance.toFixed(1)}`);
       }
@@ -897,45 +862,6 @@ export default function ForgePage() {
 
       // ── Piezas Paramétricas ──
       { id: 'part-spacer-905', label: 'Spacer 827-9999-905', description: 'Tubo escalonado Al 6061-T6 · 2 features (OD + ID counterbore)', icon: '⌬', category: 'Piezas', keywords: ['spacer', 'tubo', '905', 'shouldered', 'nist', 'flange', 'counterbore'], action: () => { setScene(buildSpacer905Scene()); playCreate(); } },
-      { id: 'part-gear-pair', label: 'Par de engranes (involuto)', description: 'Spur-gear pair paramétrico · ratio exacto · invariantes live', icon: '⚙', category: 'Piezas', keywords: ['gear', 'engrane', 'involuto', 'mesh', 'pareja', 'spur', 'reloj'], action: () => { setScene(buildGearPair(GEAR_PAIR_DEFAULTS).rootOp); setGearPairPanelOpen(true); playCreate(); } },
-      { id: 'part-geneva', label: 'Geneva drive (cruz de Malta)', description: 'Movimiento intermitente N-slot · dwell (N-2)/N · kinematics live', icon: '✦', category: 'Piezas', keywords: ['geneva', 'malta', 'intermitente', 'indexador', 'reloj', 'step'], action: () => {
-        // Under WebDriver (Playwright) skip the GPU scene push — the shader
-        // recompile pins the main thread for seconds on SwiftShader/WSL, long
-        // enough for Vite to conclude the client died and force a reload,
-        // which unmounts the panel mid-test. The E2E assertions only touch
-        // DOM; the canvas content is irrelevant to them.
-        if (typeof navigator === 'undefined' || !navigator.webdriver) {
-          setScene(buildGeneva(GENEVA_DEFAULTS).rootOp);
-        }
-        setGenevaPanelOpen(true);
-        playCreate();
-      } },
-      { id: 'part-slider-crank', label: 'Slider-crank (biela-manivela)', description: 'Motor IC, bomba, compresor · rod ratio L/r · eccentricity offset · kinematics live', icon: '⟳', category: 'Piezas', keywords: ['slider', 'crank', 'biela', 'manivela', 'piston', 'motor', 'engine', 'bomba'], action: () => {
-        if (typeof navigator === 'undefined' || !navigator.webdriver) {
-          setScene(buildSliderCrank(SLIDER_CRANK_DEFAULTS).rootOp);
-        }
-        setSliderCrankPanelOpen(true);
-        playCreate();
-      } },
-      { id: 'part-planetary', label: 'Planetary gear train (Willis)', description: 'Sun + planets + ring + carrier · 3 reduction modes · Willis closure live', icon: '⊙', category: 'Piezas', keywords: ['planetary', 'epicyclic', 'willis', 'sun', 'ring', 'carrier', 'planet', 'reduction', 'automatic'], action: () => {
-        if (typeof navigator === 'undefined' || !navigator.webdriver) {
-          setScene(buildPlanetary(PLANETARY_DEFAULTS).rootOp);
-        }
-        setPlanetaryPanelOpen(true);
-        playCreate();
-      } },
-      { id: 'part-escapement', label: 'Clock escapement (deadbeat)', description: 'Escape wheel + anchor + pendulum · seconds pendulum · tick-by-tick timing', icon: '⏱', category: 'Piezas', keywords: ['escapement', 'clock', 'pendulum', 'graham', 'deadbeat', 'anchor', 'reloj', 'tick'], action: () => {
-        if (typeof navigator === 'undefined' || !navigator.webdriver) {
-          setScene(buildEscapement(ESCAPEMENT_DEFAULTS).rootOp);
-        }
-        setEscapementPanelOpen(true);
-        playCreate();
-      } },
-      { id: 'part-clock', label: 'Mechanical clock (capstone)', description: 'Escapement + compound gear train + 3 hands · tells real time · HH:MM:SS decoded from angles', icon: '🕰', category: 'Piezas', keywords: ['clock', 'mechanical', 'hands', 'hour', 'minute', 'second', 'capstone', 'reloj', 'peldaño 6'], action: () => {
-        setScene(buildClock(CLOCK_DEFAULTS).rootOp);
-        setClockPanelOpen(true);
-        playCreate();
-      } },
 
       // ── Booleana ──
       { id: 'union', label: 'Unión', description: 'Combinar cuerpos sólidos', icon: '∪', category: 'Booleana', keywords: ['combine', 'join', 'merge'], action: () => { addOperation('union'); playComplete(); } },
@@ -944,9 +870,9 @@ export default function ForgePage() {
       { id: 'smooth', label: 'Unión Suave', description: 'Combinar con redondeo suave', icon: '⊕', category: 'Booleana', keywords: ['fillet', 'blend', 'smooth'], action: () => { addOperation('smoothUnion'); playComplete(); } },
 
       // ── Sketch ──
-      { id: 'sketch-xy', label: 'Sketch — Plano XY', icon: '✎', category: 'Sketch', keywords: ['draw', 'dibujar'], action: () => setSketchMode({ plane: 'XY', offset: 0 }) },
-      { id: 'sketch-xz', label: 'Sketch — Plano XZ', icon: '✎', category: 'Sketch', action: () => setSketchMode({ plane: 'XZ', offset: 0 }) },
-      { id: 'sketch-yz', label: 'Sketch — Plano YZ', icon: '✎', category: 'Sketch', action: () => setSketchMode({ plane: 'YZ', offset: 0 }) },
+      { id: 'sketch-xy', label: 'Sketch — Plano XY', icon: '✎', category: 'Sketch', keywords: ['draw', 'dibujar'], action: () => setSketchMode({ plane: 'XY' }) },
+      { id: 'sketch-xz', label: 'Sketch — Plano XZ', icon: '✎', category: 'Sketch', action: () => setSketchMode({ plane: 'XZ' }) },
+      { id: 'sketch-yz', label: 'Sketch — Plano YZ', icon: '✎', category: 'Sketch', action: () => setSketchMode({ plane: 'YZ' }) },
       { id: 'sketch-face', label: 'Sketch en Cara…', description: 'Clic en una cara para ubicar sketch', icon: '◎', category: 'Sketch', action: () => setFacePicking(true) },
 
       // ── Archivo ──
@@ -1061,9 +987,9 @@ export default function ForgePage() {
 
     const sketch: MarkingMenuSection = {
       label: 'Sketch', icon: '✎', items: [
-        { label: 'Plano XY', icon: '⬜', action: () => setSketchMode({ plane: 'XY', offset: 0 }) },
-        { label: 'Plano XZ', icon: '⬜', action: () => setSketchMode({ plane: 'XZ', offset: 0 }) },
-        { label: 'Plano YZ', icon: '⬜', action: () => setSketchMode({ plane: 'YZ', offset: 0 }) },
+        { label: 'Plano XY', icon: '⬜', action: () => setSketchMode({ plane: 'XY' }) },
+        { label: 'Plano XZ', icon: '⬜', action: () => setSketchMode({ plane: 'XZ' }) },
+        { label: 'Plano YZ', icon: '⬜', action: () => setSketchMode({ plane: 'YZ' }) },
         { label: 'En Cara…', icon: '◎', action: () => setFacePicking(true) },
       ],
     };
@@ -1169,21 +1095,21 @@ export default function ForgePage() {
             </MenubarTrigger>
             <MenubarContent className="min-w-[240px]">
               {renderMenuItems([
-                { label: 'Create Sketch', icon: '✎', action: () => setSketchMode({ plane: 'XY', offset: 0 }) },
+                { label: 'Create Sketch', icon: '✎', action: () => setSketchMode({ plane: 'XY' }) },
                 { label: 'Sketch en Cara…', icon: '◎', action: () => setFacePicking(true) },
                 { divider: true },
-                { label: 'Plano XY', icon: '⬜', action: () => setSketchMode({ plane: 'XY', offset: 0 }) },
-                { label: 'Plano XZ', icon: '⬜', action: () => setSketchMode({ plane: 'XZ', offset: 0 }) },
-                { label: 'Plano YZ', icon: '⬜', action: () => setSketchMode({ plane: 'YZ', offset: 0 }) },
+                { label: 'Plano XY', icon: '⬜', action: () => setSketchMode({ plane: 'XY' }) },
+                { label: 'Plano XZ', icon: '⬜', action: () => setSketchMode({ plane: 'XZ' }) },
+                { label: 'Plano YZ', icon: '⬜', action: () => setSketchMode({ plane: 'YZ' }) },
                 { divider: true },
                 { label: 'Line', icon: '╱', disabled: true },
                 { label: 'Rectangle', icon: '▭', sub: [
-                  { label: 'Center Rectangle', icon: '⊞', action: () => setSketchMode({ plane: 'XY', offset: 0 }) },
+                  { label: 'Center Rectangle', icon: '⊞', action: () => setSketchMode({ plane: 'XY' }) },
                   { label: '2-Point Rectangle', icon: '▭', disabled: true },
                   { label: '3-Point Rectangle', icon: '▱', disabled: true },
                 ]},
                 { label: 'Circle', icon: '○', sub: [
-                  { label: 'Center Diameter', icon: '○', action: () => setSketchMode({ plane: 'XY', offset: 0 }) },
+                  { label: 'Center Diameter', icon: '○', action: () => setSketchMode({ plane: 'XY' }) },
                   { label: '2-Point Circle', icon: '◯', disabled: true },
                   { label: '3-Point Circle', icon: '◯', disabled: true },
                 ]},
@@ -1231,7 +1157,7 @@ export default function ForgePage() {
             <MenubarContent className="min-w-[240px]">
               {renderMenuItems([
                 { label: 'Create', icon: '🧊', sub: [
-                  { label: 'Extrude', icon: '⬆', shortcut: 'E', action: () => setSketchMode({ plane: 'XY', offset: 0 }) },
+                  { label: 'Extrude', icon: '⬆', shortcut: 'E', action: () => setSketchMode({ plane: 'XY' }) },
                   { label: 'Revolve', icon: '↻', disabled: true },
                   { label: 'Sweep', icon: '⤴', disabled: true },
                   { label: 'Loft', icon: '⋔', disabled: true },
@@ -1645,7 +1571,6 @@ export default function ForgePage() {
             className="absolute inset-0"
             onFps={setFps}
             sketchPlane={sketchMode?.plane ?? null}
-            sketchPlaneOffset={sketchMode?.offset ?? 0}
             sketchTool={sketchMode ? sketchTool : null}
             sketchShapes={sketchShapes}
             onSketchShapeAdd={s => setSketchShapes(prev => [...prev, s])}
@@ -1658,8 +1583,6 @@ export default function ForgePage() {
             selectedSliceIndex={selectedSliceIndex}
             reconstruction={reconstruction}
           />
-
-          <BrainPulse />
 
           {/* Drag-and-drop overlay */}
           {dragOver && (
@@ -2334,11 +2257,6 @@ export default function ForgePage() {
                 }}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: PLANE_COLORS[sketchMode.plane] }} />
                 Sketch — {sketchMode.plane}
-                {Math.abs(sketchMode.offset) > 1e-4 && (
-                  <span className="opacity-60 font-mono text-[11px]">
-                    @ {sketchMode.offset >= 0 ? '+' : ''}{sketchMode.offset.toFixed(3)}
-                  </span>
-                )}
               </div>
             </div>
           )}
@@ -2739,61 +2657,7 @@ export default function ForgePage() {
       )}
 
       <ThemePanel open={themePanelOpen} onOpenChange={setThemePanelOpen} />
-
-      <GearPairPanel
-        open={gearPairPanelOpen}
-        onClose={() => setGearPairPanelOpen(false)}
-        onSceneChange={(scene) => setScene(scene)}
-      />
-
-      <GenevaPanel
-        open={genevaPanelOpen}
-        onClose={() => setGenevaPanelOpen(false)}
-        onSceneChange={(scene) => setScene(scene)}
-      />
-
-      <SliderCrankPanel
-        open={sliderCrankPanelOpen}
-        onClose={() => setSliderCrankPanelOpen(false)}
-        onSceneChange={(scene) => setScene(scene)}
-      />
-
-      <PlanetaryPanel
-        open={planetaryPanelOpen}
-        onClose={() => setPlanetaryPanelOpen(false)}
-        onSceneChange={(scene) => setScene(scene)}
-      />
-
-      <EscapementPanel
-        open={escapementPanelOpen}
-        onClose={() => setEscapementPanelOpen(false)}
-        onSceneChange={(scene) => setScene(scene)}
-      />
-
-      <ClockPanel
-        open={clockPanelOpen}
-        onClose={() => setClockPanelOpen(false)}
-        onSceneChange={(scene) => setScene(scene)}
-      />
-
-      {/* AI Control — Claude edita src/forja/scene.ts directamente */}
-      <AIPanel onReload={reloadForjaScript} />
-
-      {/* Kinematic graph — components + joints */}
-      <KinematicGraph />
-
-      {/* Joint scrubber — appears when a revolute/slider joint is selected */}
-      <JointScrubber />
     </div>
     </TooltipProvider>
   );
-}
-
-// ── Vite HMR: re-run scene when src/forja/scene.ts changes ──
-if (import.meta.hot) {
-  import.meta.hot.accept('@/forja/scene', (newMod) => {
-    if (newMod && 'default' in newMod) {
-      runScene(newMod.default as Parameters<typeof runScene>[0]).then(publishRunResult);
-    }
-  });
 }

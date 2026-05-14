@@ -1,0 +1,334 @@
+{
+  "id": "econ-06-nash",
+  "title": "El equilibrio de Nash — Nash, Harsanyi, Selten · Nobel 1994",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "econ-board",
+      "text": "Empezamos con una pregunta concreta. Tu vas a manejar de regreso a casa. La aplicación te dice que la ruta uno tarda treinta minutos y la ruta dos también. ¿Y si todos en la ciudad eligieran la misma ruta? Las dos se volverían lentas. Entonces, ¿cómo es que en una ciudad de veinte millones, las dos rutas tardan lo mismo? Hay alguien escondido detrás de esa coincidencia. Se llama equilibrio de Nash.",
+      "board": [
+        "# La pregunta",
+        "",
+        "ruta 1: 30 min",
+        "ruta 2: 30 min",
+        "",
+        "¿coincidencia?",
+        "",
+        "$ \\to$ equilibrio de Nash",
+        "",
+        "John Nash, 1950"
+      ]
+    },
+    {
+      "id": "02-nash-persona",
+      "scene": "econ-board",
+      "text": "Mil novecientos cincuenta. Princeton, Nueva Jersey. John Forbes Nash Junior, un estudiante de doctorado de veintiún años, terminó una tesis de veintiocho páginas. Su director le dijo que era trivial. Nash la entregó igual. Cuarenta y cuatro años después le valió el Nobel. Era un genio. También sufrió esquizofrenia paranoide durante treinta años. Y aún así regresó. Si viste Una mente brillante, ya conoces parte de la historia.",
+      "board": [
+        "# Nash · Princeton 1950",
+        "",
+        "tesis: 28 páginas",
+        "edad: 21 años",
+        "",
+        "director: ``trivial''",
+        "Nobel: 44 años después",
+        "",
+        "esquizofrenia $\\to$ 30 años",
+        "luego regresó"
+      ]
+    },
+    {
+      "id": "03-juego",
+      "scene": "econ-board",
+      "text": "Antes de Nash, los economistas usaban juegos de suma cero. Lo que uno gana el otro pierde. Ajedrez, póker. Pero Nash dijo que la economía real es distinta. La mayoría de los juegos económicos no son de suma cero. Pueden cooperar y los dos ganan. Pueden traicionarse y los dos pierden. Necesitamos teoría para esos. Eso es lo que él hizo.",
+      "board": [
+        "# Antes de Nash",
+        "",
+        "ajedrez, póker",
+        "$ \\to$ suma cero",
+        "",
+        "uno gana = otro pierde",
+        "",
+        "$ \\boxed{\\text{economía real}}$",
+        "$ \\to$ no es suma cero",
+        "",
+        "ambos pueden ganar",
+        "ambos pueden perder"
+      ]
+    },
+    {
+      "id": "04-prisionero",
+      "scene": "econ-board",
+      "text": "El ejemplo clásico es el dilema del prisionero. Dos sospechosos arrestados. Los aíslan. A cada uno la policía le dice: si confiesas y tu amigo no, te suelto. Si tú no confiesas y él sí, te dan diez años. Si los dos confiesan, cinco años cada uno. Si ninguno confiesa, un año cada uno. Tú estás solo en tu celda. ¿Qué haces?",
+      "board": [
+        "# Dilema del prisionero",
+        "",
+        "$ \\begin{array}{c|cc}",
+        " & \\text{calla} & \\text{habla} \\\\ \\hline",
+        "\\text{calla} & 1, 1 & 10, 0 \\\\",
+        "\\text{habla} & 0, 10 & 5, 5",
+        "\\end{array}",
+        "",
+        "(años de cárcel)"
+      ]
+    },
+    {
+      "id": "05-mejor-respuesta",
+      "scene": "econ-board",
+      "text": "Aquí está la trampa fascinante. Si tu amigo va a callarse, te conviene confesar para salir libre. Si tu amigo va a confesar, te conviene también confesar para no comerte los diez años. Independientemente de lo que él haga, te conviene confesar. Y él piensa lo mismo. Los dos confiesan. Los dos van cinco años a la cárcel. Si hubieran cooperado, solo un año. Pero no pueden coordinarse.",
+      "board": [
+        "# Mejor respuesta",
+        "",
+        "él calla $\\to$ tú: hablar (0 vs 1)",
+        "él habla $\\to$ tú: hablar (5 vs 10)",
+        "",
+        "$ \\Rightarrow$ siempre conviene hablar",
+        "",
+        "ambos hablan $\\to$ 5 años",
+        "",
+        "$ \\boxed{\\text{ambos calla} \\to 1 \\text{ año}}$",
+        "",
+        "no se logra"
+      ]
+    },
+    {
+      "id": "06-definicion",
+      "scene": "econ-board",
+      "text": "Esto que acabas de ver es exactamente la idea de Nash. Un equilibrio de Nash es una combinación de estrategias donde ningún jugador tiene incentivo de cambiar la suya, dado lo que los otros están haciendo. En el dilema del prisionero, ambos confesar es Nash. Si tú dejas de confesar mientras él confiesa, te vas peor. Por eso te quedas. Aunque sea peor para ambos.",
+      "board": [
+        "# Equilibrio de Nash",
+        "",
+        "$ \\sigma^* = (\\sigma_1^*, \\ldots, \\sigma_n^*)$",
+        "",
+        "$\\,\\forall i$:",
+        "$ u_i(\\sigma^*) \\geq u_i(\\sigma_i, \\sigma_{-i}^*)$",
+        "",
+        "nadie quiere cambiar",
+        "$ \\;$ dado lo que el otro hace"
+      ]
+    },
+    {
+      "id": "07-existe",
+      "scene": "econ-board",
+      "text": "Y aquí viene la parte matemática brutal. Nash demostró, en su tesis de veintiocho páginas, que TODO juego finito tiene al menos un equilibrio. Siempre. Para cualquier número de jugadores, cualquier estrategia, cualquier pago. La demostración usa un teorema de punto fijo de Kakutani, hermana del de Brouwer. Profundo. Pero el resultado es asombroso. Hay equilibrio garantizado.",
+      "board": [
+        "# Existencia · Nash 1950",
+        "",
+        "todo juego finito",
+        "$ \\;$ tiene equilibrio",
+        "",
+        "siempre · siempre",
+        "",
+        "$ \\to$ punto fijo de Kakutani",
+        "",
+        "$ \\boxed{\\text{teorema fuerte}}$"
+      ]
+    },
+    {
+      "id": "08-mixtas",
+      "scene": "econ-board",
+      "text": "A veces ese equilibrio requiere estrategias mixtas. Cada jugador no escoge una sola acción, sino una distribución de probabilidad sobre acciones. El portero de penales no se lanza siempre al mismo lado. El delantero no patea siempre al mismo lado. Cada uno juega una mezcla, y en equilibrio, la mezcla óptima es justo la que deja al rival indiferente.",
+      "board": [
+        "# Estrategias mixtas",
+        "",
+        "no siempre acción pura",
+        "$ \\to$ distribución $\\sigma$",
+        "",
+        "portero: $p$ de saltar izquierda",
+        "delantero: $q$ de patear izq.",
+        "",
+        "$ p^*, q^*$ dejan al",
+        "$ \\;$ rival indiferente"
+      ]
+    },
+    {
+      "id": "09-mejores-resp",
+      "scene": "econ-chart",
+      "text": "Mira la gráfica. En el eje horizontal está la probabilidad con que tu rival juega cooperar. En el vertical, tu mejor respuesta. La línea verde es tu mejor estrategia. La línea rosa es la de él. Las dos se cruzan en exactamente un punto. Ese cruce es el equilibrio de Nash. Visible. Calculable. Geométrico.",
+      "board": [
+        "# Mejor respuesta",
+        "",
+        "$ \\beta_A(\\sigma_B) = ?$",
+        "$ \\beta_B(\\sigma_A) = ?$",
+        "",
+        "Nash: $\\,\\sigma^* = \\beta_A \\cap \\beta_B$",
+        "",
+        "$ \\boxed{\\text{cruce} = \\text{equilibrio}}$",
+        "",
+        "visible · geométrico"
+      ]
+    },
+    {
+      "id": "10-coordinacion",
+      "scene": "econ-board",
+      "text": "Otro ejemplo famoso. Caminas por un pasillo angosto y viene alguien en sentido contrario. ¿Por qué lado pasas? La regla social te dice que por la derecha, pero también podría ser por la izquierda. Las dos son equilibrios de Nash. Una vez establecida la convención, nadie quiere desviarse. Por eso en Inglaterra manejan por la izquierda y en México por la derecha. Las dos son equilibrios. Solo distintos.",
+      "board": [
+        "# Juego de coordinación",
+        "",
+        "ambos derecha $\\to$ ✓",
+        "ambos izquierda $\\to$ ✓",
+        "",
+        "uno cada lado $\\to$ choque",
+        "",
+        "$ \\boxed{\\text{2 equilibrios}}$",
+        "",
+        "México: derecha",
+        "UK: izquierda"
+      ]
+    },
+    {
+      "id": "11-ciervo",
+      "scene": "econ-board",
+      "text": "La caza del ciervo, de Rousseau. Dos cazadores en el bosque. Si cooperan para cazar un ciervo, los dos comen bien por una semana. Si uno se distrae con un conejo, gana algo pero el otro se queda sin nada porque el ciervo se escapa. Hay dos equilibrios. Ambos al ciervo, o cada uno al conejo. El primero es mejor. Pero el segundo es más seguro. Una sociedad puede atorarse en el equilibrio malo.",
+      "board": [
+        "# Caza del ciervo",
+        "",
+        "ambos ciervo $\\to$ (5, 5)",
+        "ambos conejo $\\to$ (2, 2)",
+        "mezcla $\\to$ (0, 2) o (2, 0)",
+        "",
+        "$ \\boxed{2\\text{ equilibrios}}$",
+        "",
+        "$ \\;$ ciervo: mejor pero arriesgado",
+        "$ \\;$ conejo: peor pero seguro",
+        "",
+        "→ trampa de pobreza"
+      ]
+    },
+    {
+      "id": "12-trampa-latam",
+      "scene": "econ-board",
+      "text": "Esto es Latinoamérica al desnudo. ¿Por qué los países latinoamericanos se atascan en equilibrios de baja productividad? Porque romperlos requiere coordinación. Si nadie paga impuestos, no me conviene a mí pagar solo. Si la corrupción es la norma, no me conviene ser honesto. Cada uno toma su mejor respuesta y todos perdemos. La pobreza no es accidente. Es Nash con malas reglas.",
+      "board": [
+        "# Trampa de coordinación",
+        "",
+        "todos pagan $\\to$ servicios",
+        "todos evaden $\\to$ informal",
+        "",
+        "tú solo no cambias nada",
+        "",
+        "$ \\to$ pobreza estructural",
+        "",
+        "$ \\boxed{\\text{no es accidente}}$",
+        "$ \\boxed{\\text{es Nash + reglas}}$"
+      ]
+    },
+    {
+      "id": "13-cournot",
+      "scene": "econ-board",
+      "text": "Augustin Cournot, en mil ochocientos treinta y ocho, había hecho algo extraño. Modeló cómo deciden producir dos empresas que compiten en un mercado. Cada una calcula la mejor respuesta a la producción de la otra. Sin saberlo, Cournot había escrito un equilibrio de Nash ciento doce años antes que Nash. Hoy se le llama equilibrio de Cournot-Nash. La teoría andaba en el aire.",
+      "board": [
+        "# Cournot · 1838",
+        "",
+        "duopolio en agua",
+        "$ \\to$ cantidad óptima de cada uno",
+        "",
+        "$ q_1^* = \\beta(q_2^*)$",
+        "$ q_2^* = \\beta(q_1^*)$",
+        "",
+        "112 años antes de Nash",
+        "",
+        "$ \\boxed{\\text{equilibrio Cournot-Nash}}$"
+      ]
+    },
+    {
+      "id": "14-subastas",
+      "scene": "econ-board",
+      "text": "Las subastas también son juegos. Cuánto pujar depende de cuánto creas que pujarán los otros. Y todos están haciendo la misma cuenta. El equilibrio de Nash en subastas determina cuánto se debe pujar. Por eso Vickrey ganó el Nobel en mil novecientos noventa y seis, y Milgrom en dos mil veinte. Sus subastas se basan, todas, en encontrar equilibrios de Nash que les convengan a los gobiernos.",
+      "board": [
+        "# Subastas · 5G",
+        "",
+        "cada pujador piensa:",
+        "$ \\;$ ``¿cuánto pujará el otro?''",
+        "",
+        "Nash $\\to$ punto donde",
+        "$ \\;$ nadie quiere revisar",
+        "",
+        "Vickrey 1996",
+        "Milgrom 2020",
+        "$ \\to$ subastas óptimas"
+      ]
+    },
+    {
+      "id": "15-harsanyi-selten",
+      "scene": "econ-board",
+      "text": "Nash no compartió solo el Nobel. Lo compartió con dos genios. John Harsanyi, húngaro-americano, extendió la teoría a juegos con información incompleta. ¿Y si no sabes el pago del rival? Selten, alemán, perfeccionó la noción de equilibrio para descartar los que no resisten temblores. Solo los equilibrios robustos sobreviven. Los tres construyeron el aparato que aún usamos.",
+      "board": [
+        "# Trío del Nobel",
+        "",
+        "Nash · existencia 1950",
+        "Harsanyi · info incompleta",
+        "Selten · refinement",
+        "",
+        "$ \\boxed{\\text{el trípode}}$",
+        "",
+        "los tres",
+        "construyeron",
+        "el aparato moderno"
+      ]
+    },
+    {
+      "id": "16-critica",
+      "scene": "econ-board",
+      "text": "La crítica vino de la psicología experimental. Los humanos NO siempre juegan Nash. En el ultimátum, la gente rechaza ofertas injustas aunque le convenga aceptarlas. En el bien público, la gente coopera más de lo que predice Nash. La teoría no es descriptiva al cien por ciento. Pero sigue siendo el punto de partida obligado. Kahneman después ganaría el Nobel por mostrarte por qué.",
+      "board": [
+        "# Crítica · psicología",
+        "",
+        "humanos $\\neq$ jugadores Nash",
+        "",
+        "ultimátum: rechazan injustos",
+        "bien público: cooperan más",
+        "",
+        "$ \\to$ punto de partida,",
+        "$ \\;$ no descripción",
+        "",
+        "Kahneman 2002 (próxima)"
+      ]
+    },
+    {
+      "id": "17-nobel",
+      "scene": "econ-board",
+      "text": "Mil novecientos noventa y cuatro. Nash, recuperándose de décadas de esquizofrenia, recibe el Nobel junto con Harsanyi y Selten. Su esposa Alicia lo había acompañado toda la enfermedad sin recibir mérito. La ceremonia en Estocolmo fue catártica. Nash murió en dos mil quince en un accidente de auto, junto con Alicia. Su matrimonio había sido tan complejo como su pensamiento. Dejaron el equilibrio que llevaba su nombre y una vida que ningún economista podrá imitar.",
+      "board": [
+        "# Nobel · 1994",
+        "",
+        "John Nash · 1928 — 2015",
+        "Alicia Nash",
+        "",
+        "Harsanyi · 1920 — 2000",
+        "Selten · 1930 — 2016",
+        "",
+        "ceremonia: 1994",
+        "",
+        "$ \\boxed{\\text{equilibrio} \\to \\text{vida}}$"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "text": "Cada vez que dos rutas tardan lo mismo, cada vez que dos empresas cobran lo mismo, cada vez que dos países llegan a la misma política tributaria, está actuando Nash. La economía no se descubre solo con curvas de oferta y demanda. Se descubre entendiendo qué estrategias se sostienen porque nadie quiere desviarse. Estamos terminando el segundo bloque del curso. Las primeras cinco clases fueron información. Esta es la primera de juegos. Sigue Aumann y Schelling.",
+      "board": [
+        "# El segundo bloque",
+        "",
+        "ya viste · información",
+        "ahora · juegos",
+        "",
+        "Nash (1994)",
+        "Aumann, Schelling (2005)",
+        "Hurwicz, Maskin, Myerson (2007)",
+        "Roth, Shapley (2012)",
+        "Milgrom, Wilson (2020)",
+        "",
+        "$ \\boxed{\\text{cinco más}}$"
+      ]
+    }
+  ]
+}

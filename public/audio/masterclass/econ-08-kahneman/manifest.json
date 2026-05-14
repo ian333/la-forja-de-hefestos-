@@ -1,0 +1,383 @@
+{
+  "id": "econ-08-kahneman",
+  "title": "Sesgos cognitivos y prospect theory — Kahneman & Smith · Nobel 2002",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "01-bate",
+      "scene": "econ-board",
+      "audio": "01-bate.mp3",
+      "text": "Un bate y una pelota cuestan un dólar con diez centavos en total. El bate cuesta un dólar más que la pelota. ¿Cuánto cuesta la pelota? Si dijiste diez centavos, te equivocaste. La respuesta es cinco centavos. El bate cuesta un dólar cinco. Más del cincuenta por ciento de los estudiantes de Harvard y MIT se equivocan en este problema. Tu cerebro tiene un atajo que te da una respuesta rápida. Y esa respuesta es incorrecta. Daniel Kahneman dedicó su vida a estudiar esos atajos.",
+      "board": [
+        "# El bate y la pelota",
+        "",
+        "bate + pelota = \\$1.10",
+        "bate = pelota + \\$1.00",
+        "",
+        "pelota = ?",
+        "",
+        "respuesta intuitiva: \\$0.10 ✗",
+        "respuesta correcta: \\$0.05 ✓",
+        "",
+        "$ \\boxed{\\text{tu cerebro miente}}$"
+      ]
+    },
+    {
+      "id": "02-kahneman-persona",
+      "scene": "econ-board",
+      "audio": "02-kahneman-persona.mp3",
+      "text": "Daniel Kahneman nació en Tel Aviv en mil novecientos treinta y cuatro, creció en Francia durante la ocupación nazi, y estudió psicología en la Universidad Hebrea. Su compañero de vida intelectual fue Amos Tversky, un israelí brillante, exuberante, lo opuesto a Kahneman. Juntos publicaron entre mil novecientos setenta y mil novecientos setenta y nueve una serie de papers que destruyeron el supuesto de racionalidad de la economía. Tversky murió de cáncer en mil novecientos noventa y seis. El Nobel no se da póstumo. Kahneman lo recibió solo.",
+      "board": [
+        "# Kahneman · Tel Aviv 1934",
+        "",
+        "psicólogo, no economista",
+        "",
+        "Amos Tversky · 1937–1996",
+        "",
+        "juntos: 1970–1979",
+        "destruyeron la racionalidad",
+        "",
+        "Nobel solo para Kahneman",
+        "(no se da póstumo)",
+        "",
+        "Kahneman: 1934–2024"
+      ]
+    },
+    {
+      "id": "03-sistema-1-2",
+      "scene": "econ-board",
+      "audio": "03-sistema-1-2.mp3",
+      "text": "Kahneman propone que tenemos dos sistemas de pensamiento. El Sistema Uno es rápido, automático, intuitivo. Es el que te dijo que la pelota costaba diez centavos. Funciona con atajos — heurísticas — que normalmente dan buenas respuestas pero a veces fallan sistemáticamente. El Sistema Dos es lento, deliberado, lógico. Es el que hace la álgebra y llega a cinco centavos. Pero es perezoso. No se activa si el Uno ya dio una respuesta que se siente correcta.",
+      "board": [
+        "# Sistema 1 y Sistema 2",
+        "",
+        "S1: rápido, automático",
+        "$\\;$ heurísticas",
+        "$\\;$ siempre encendido",
+        "",
+        "S2: lento, deliberado",
+        "$\\;$ álgebra, lógica",
+        "$\\;$ perezoso",
+        "",
+        "S1 responde primero",
+        "S2 no lo corrige",
+        "",
+        "$ \\to$ sesgos sistemáticos"
+      ]
+    },
+    {
+      "id": "04-anclaje",
+      "scene": "econ-board",
+      "audio": "04-anclaje.mp3",
+      "text": "Uno de los sesgos más poderosos es el anclaje. En un experimento clásico, Kahneman y Tversky giraron una ruleta frente a los participantes. La ruleta se detuvo en un número aleatorio — digamos sesenta y cinco. Luego preguntaron: ¿qué porcentaje de los países de la ONU son africanos? Los que vieron sesenta y cinco respondieron en promedio cuarenta y cinco por ciento. Los que vieron diez respondieron en promedio veinticinco. Un número completamente irrelevante movió la estimación veinte puntos. El ancla funciona aunque sepas que es absurda.",
+      "board": [
+        "# Anclaje",
+        "",
+        "ruleta $\\to$ 65",
+        "pregunta: \\% de países africanos",
+        "",
+        "ancla 65 $\\to$ respuesta $\\sim$45\\%",
+        "ancla 10 $\\to$ respuesta $\\sim$25\\%",
+        "",
+        "diferencia: 20 puntos",
+        "",
+        "$ \\boxed{\\text{número irrelevante}}$",
+        "$ \\boxed{\\text{mueve tu juicio}}$"
+      ]
+    },
+    {
+      "id": "05-moneda",
+      "scene": "econ-board",
+      "audio": "05-moneda.mp3",
+      "text": "Ahora un juego. Te propongo lanzar una moneda. Si sale cara, ganas ciento cincuenta pesos. Si sale cruz, pierdes cien. El valor esperado es positivo — veinticinco pesos a tu favor. Pero la mayoría de la gente rechaza esta apuesta. ¿Por qué? Porque perder cien duele más que ganar ciento cincuenta alegra. Kahneman y Tversky lo midieron: el dolor de perder es entre dos y dos punto cinco veces más intenso que el placer de ganar la misma cantidad. Se llama aversión a la pérdida.",
+      "board": [
+        "# Aversión a la pérdida",
+        "",
+        "cara: $+$\\$150",
+        "cruz: $-$\\$100",
+        "",
+        "$ E[X] = 0.5(150) + 0.5(-100)$",
+        "$ = +\\$25$",
+        "",
+        "la mayoría rechaza",
+        "",
+        "perder $\\times 2.5$ vs ganar",
+        "",
+        "$ \\boxed{\\lambda \\approx 2.25}$"
+      ]
+    },
+    {
+      "id": "06-prospect",
+      "scene": "econ-chart",
+      "audio": "06-prospect.mp3",
+      "text": "Mira la función de valor de prospect theory. No es la utilidad clásica del siglo dieciocho. Es una curva en forma de S, centrada en un punto de referencia — lo que ya tienes. A la derecha, en ganancias, es cóncava — cada peso extra vale menos. A la izquierda, en pérdidas, es convexa y mucho más empinada. Esa asimetría es aversión a la pérdida hecha geometría. Es por lo que la gente compra seguros caros y rechaza apuestas favorables.",
+      "board": [
+        "# Prospect theory",
+        "",
+        "$ v(x) = \\begin{cases} x^\\alpha & x \\geq 0 \\\\ -\\lambda(-x)^\\beta & x < 0 \\end{cases}$",
+        "",
+        "$\\alpha \\approx 0.88$",
+        "$\\beta \\approx 0.88$",
+        "$\\lambda \\approx 2.25$",
+        "",
+        "Kahneman & Tversky, 1979"
+      ]
+    },
+    {
+      "id": "07-probabilidades",
+      "scene": "econ-chart",
+      "audio": "07-probabilidades.mp3",
+      "text": "Y hay otra pieza. La gente no procesa probabilidades como son. Sobrevalora las probabilidades pequeñas y subvalora las grandes. Compras un billete de lotería — probabilidad ínfima — porque tu cerebro magnifica esa probabilidad pequeña. Y al mismo tiempo, subestimas la probabilidad de que tu casa se inunde — noventa y ocho por ciento en treinta años — porque tu cerebro aplasta las probabilidades cercanas a uno. La curva de ponderación sube rápido al inicio y se aplana al final.",
+      "board": [
+        "# Ponderación de probabilidades",
+        "",
+        "$ \\pi(p) \\neq p$",
+        "",
+        "$ p$ pequeña $\\to$ $\\pi(p) > p$",
+        "$ p$ grande $\\to$ $\\pi(p) < p$",
+        "",
+        "lotería: $p = 0.00001$",
+        "cerebro: $\\pi \\gg p$",
+        "",
+        "inundación: $p = 0.98$",
+        "cerebro: $\\pi < p$"
+      ]
+    },
+    {
+      "id": "08-framing",
+      "scene": "econ-board",
+      "audio": "08-framing.mp3",
+      "text": "El efecto framing. Una epidemia va a matar a seiscientas personas. Programa A: salva doscientas. Programa B: un tercio de probabilidad de salvar a todos, dos tercios de que no se salve nadie. La gente prefiere A — la opción segura. Ahora reformulo. Programa C: mueren cuatrocientas. Programa D: un tercio de que no muera nadie, dos tercios de que mueran todas. Ahora la gente prefiere D. Pero A es igual a C, y B es igual a D. Lo único que cambió fue la palabra salvar versus morir. La racionalidad no sobrevive al reencuadre.",
+      "board": [
+        "# Efecto framing",
+        "",
+        "600 personas en riesgo",
+        "",
+        "GANANCIAS:",
+        "A: salva 200 (seguro) ← prefieren",
+        "B: 1/3 salva 600 (lotería)",
+        "",
+        "PÉRDIDAS:",
+        "C: mueren 400 (seguro)",
+        "D: 1/3 nadie muere ← prefieren",
+        "",
+        "$ A = C, \\; B = D$",
+        "",
+        "$ \\boxed{\\text{misma opción, otra elección}}$"
+      ]
+    },
+    {
+      "id": "09-endowment",
+      "scene": "econ-board",
+      "audio": "09-endowment.mp3",
+      "text": "El efecto dotación. En un experimento, Kahneman le dio una taza de café a la mitad de los participantes. Luego preguntó a los dueños: ¿por cuánto la venderían? Siete dólares en promedio. A los no dueños: ¿cuánto pagarían? Tres dólares. Misma taza. Pero el solo hecho de poseerla duplicó su valor percibido. Perderla dolería — aversión a la pérdida otra vez. Por eso cuesta tanto vender acciones perdedoras, casas que bajaron de precio, o relaciones que ya no funcionan.",
+      "board": [
+        "# Efecto dotación",
+        "",
+        "dueños: vendo a \\$7",
+        "no dueños: pago \\$3",
+        "",
+        "misma taza de café",
+        "",
+        "poseer = punto de referencia",
+        "vender = pérdida",
+        "",
+        "$ \\to$ WTA $>$ WTP",
+        "",
+        "acciones, casas, relaciones"
+      ]
+    },
+    {
+      "id": "10-sunk-cost",
+      "scene": "econ-board",
+      "audio": "10-sunk-cost.mp3",
+      "text": "El costo hundido. Ya pagaste el boleto del cine. La película es pésima. ¿Te quedas o te vas? Si eres racional, te vas — el boleto ya lo pagaste y no lo recuperas. Pero la mayoría se queda. Porque irse se siente como perder el dinero del boleto, y la pérdida duele. Los costos hundidos no deberían afectar decisiones futuras. Pero lo hacen. En las empresas, en los proyectos de gobierno, en las relaciones. Seguir invirtiendo en algo malo porque ya invertiste mucho.",
+      "board": [
+        "# Costo hundido",
+        "",
+        "boleto pagado: \\$200",
+        "película: pésima",
+        "",
+        "racional: te vas",
+        "real: te quedas",
+        "",
+        "$ \\text{sunk cost} \\neq \\text{decisión futura}$",
+        "",
+        "empresas, gobiernos:",
+        "``ya invertimos demasiado''",
+        "",
+        "$ \\boxed{\\text{trampa del compromiso}}$"
+      ]
+    },
+    {
+      "id": "11-disponibilidad",
+      "scene": "econ-board",
+      "audio": "11-disponibilidad.mp3",
+      "text": "La heurística de disponibilidad. ¿Qué es más frecuente, morir por un rayo o por un ataque de tiburón? Instintivamente dices tiburón, porque las noticias cubren ataques de tiburones. Pero los rayos matan seis veces más gente. Tu cerebro juzga la probabilidad de un evento por lo fácil que es recordar un ejemplo. Y los ejemplos dramáticos, recientes o emocionales se recuerdan mejor. Por eso después de un accidente de avión baja la venta de boletos, aunque estadísticamente es el transporte más seguro.",
+      "board": [
+        "# Heurística de disponibilidad",
+        "",
+        "¿más frecuente?",
+        "rayo vs tiburón",
+        "",
+        "respuesta real: rayos $\\times 6$",
+        "respuesta intuitiva: tiburón",
+        "",
+        "$ \\to$ juzgas por facilidad",
+        "$\\;$ de recordar",
+        "",
+        "dramático = probable",
+        "reciente = probable",
+        "",
+        "$ \\boxed{\\text{noticias} \\neq \\text{datos}}$"
+      ]
+    },
+    {
+      "id": "12-smith",
+      "scene": "econ-board",
+      "audio": "12-smith.mp3",
+      "text": "Pero el Nobel de dos mil dos no fue solo para Kahneman. Lo compartió con Vernon Smith, un economista de Arizona que hizo algo opuesto. Smith metió a humanos en un laboratorio, les dio dinero real, y los puso a comprar y vender en un mercado controlado. Y descubrió algo sorprendente: aunque cada individuo tiene sesgos, cuando se juntan en un mercado con reglas claras, el precio converge al equilibrio competitivo. El mercado es más racional que las personas que lo componen.",
+      "board": [
+        "# Vernon Smith · el laboratorio",
+        "",
+        "mercado experimental:",
+        "$\\;$ humanos + dinero real",
+        "",
+        "resultado:",
+        "individuos: irracionales",
+        "mercado: converge a $p^*$",
+        "",
+        "$ \\boxed{\\text{mercado} > \\text{individuo}}$",
+        "",
+        "Nobel compartido 2002"
+      ]
+    },
+    {
+      "id": "13-doble-subasta",
+      "scene": "econ-board",
+      "audio": "13-doble-subasta.mp3",
+      "text": "Smith usó un formato llamado doble subasta continua. Los compradores gritan lo que están dispuestos a pagar. Los vendedores gritan lo que están dispuestos a aceptar. Cuando coinciden, se hace la transacción. Después de unas cuantas rondas, el precio se estabiliza exactamente en el equilibrio predicho por oferta y demanda. Con solo seis compradores y seis vendedores. Sin información perfecta. Sin racionalidad completa. El mercado agrega la información y converge. Adam Smith tenía razón — la mano invisible funciona, al menos en el laboratorio.",
+      "board": [
+        "# Doble subasta",
+        "",
+        "compradores: ``pago \\$X''",
+        "vendedores: ``acepto \\$Y''",
+        "",
+        "3–5 rondas:",
+        "$ p \\to p^*$ (equilibrio)",
+        "",
+        "6 compradores, 6 vendedores",
+        "sin info perfecta",
+        "",
+        "$ \\boxed{\\text{la mano invisible}}$",
+        "funciona en el lab"
+      ]
+    },
+    {
+      "id": "14-tension",
+      "scene": "econ-board",
+      "audio": "14-tension.mp3",
+      "text": "La tensión entre Kahneman y Smith es profunda. Kahneman dice: los humanos son sistemáticamente irracionales. Smith dice: pero los mercados sí son racionales. ¿Quién tiene razón? Los dos. Los sesgos individuales importan enormemente en decisiones personales — matrimonio, salud, jubilación, donde no hay mercado que te corrija. Pero en mercados competitivos con muchos agentes, la irracionalidad se cancela en promedio. La clave es dónde estás decidiendo.",
+      "board": [
+        "# Kahneman vs Smith",
+        "",
+        "K: individuos $\\to$ irracionales",
+        "S: mercados $\\to$ racionales",
+        "",
+        "¿quién tiene razón?",
+        "",
+        "$ \\boxed{\\text{los dos}}$",
+        "",
+        "sin mercado $\\to$ sesgos mandan",
+        "con mercado $\\to$ se cancelan",
+        "",
+        "depende del contexto"
+      ]
+    },
+    {
+      "id": "15-nudges",
+      "scene": "econ-board",
+      "audio": "15-nudges.mp3",
+      "text": "De la obra de Kahneman nació una escuela entera: la economía del comportamiento. Richard Thaler — Nobel dos mil diecisiete — la convirtió en política pública. Los nudges. Un empujón. Si cambias el default de no donar órganos a sí donar, la tasa de donación salta de quince a ochenta y cinco por ciento. Si pones la fruta a la altura de los ojos en la cafetería, la gente come más fruta. No prohíbes. No obligas. Solo cambias la arquitectura de la decisión. Thaler y Sunstein lo llamaron paternalismo libertario.",
+      "board": [
+        "# Nudges · Thaler 2017",
+        "",
+        "cambiar el default",
+        "",
+        "donación órganos:",
+        "opt-out: 15\\%",
+        "opt-in: 85\\%",
+        "",
+        "cafetería: fruta a la vista",
+        "",
+        "$ \\to$ no prohíbes",
+        "$ \\to$ no obligas",
+        "$ \\to$ solo rediseñas",
+        "",
+        "$ \\boxed{\\text{paternalismo libertario}}$"
+      ]
+    },
+    {
+      "id": "16-mexico-afores",
+      "scene": "econ-board",
+      "audio": "16-mexico-afores.mp3",
+      "text": "En México las AFORES son un ejemplo perfecto de sesgo conductual. La gente no cambia su AFORE aunque le convenga. Por qué. Sesgo de statu quo — el default gana. No leen las comisiones — heurística de disponibilidad. Y no ahorran voluntariamente — descuento hiperbólico, el sesgo del presente. Kahneman te explica por qué millones de mexicanos se van a retirar con pensiones miserables sin haber hecho nada al respecto, teniendo la opción de hacerlo.",
+      "board": [
+        "# México · AFORES",
+        "",
+        "nadie cambia de AFORE",
+        "$\\to$ sesgo de statu quo",
+        "",
+        "nadie lee comisiones",
+        "$\\to$ disponibilidad",
+        "",
+        "nadie ahorra voluntario",
+        "$\\to$ descuento hiperbólico",
+        "",
+        "$ \\beta\\delta$ model: el presente",
+        "pesa demasiado",
+        "",
+        "$ \\boxed{\\text{pensiones miserables}}$"
+      ]
+    },
+    {
+      "id": "17-nobel",
+      "scene": "econ-board",
+      "audio": "17-nobel.mp3",
+      "text": "Dos mil dos. Estocolmo. Daniel Kahneman, un psicólogo, recibe el Nobel de economía. Es la primera vez que un no economista lo gana. Vernon Smith lo recibe por mostrar que los mercados funcionan aun con humanos imperfectos. Kahneman vivió el resto de su vida entre Princeton y Jerusalén. Murió en marzo de dos mil veinticuatro a los noventa años. Tversky nunca supo del Nobel. Kahneman siempre dijo que el trabajo era de los dos.",
+      "board": [
+        "# Nobel · 2002",
+        "",
+        "Daniel Kahneman · 1934–2024",
+        "Vernon Smith · 1927 —",
+        "",
+        "primer psicólogo Nobel econ",
+        "",
+        "Kahneman: ``el trabajo",
+        "$\\;$ era de Amos y mío''",
+        "",
+        "Tversky: 1937–1996",
+        "nunca supo del Nobel"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "audio": "18-cierre.mp3",
+      "text": "Kahneman cambió la economía al demostrarle que la gente no es como sus modelos. No maximizamos utilidad — usamos atajos que a veces fallan catastróficamente. Y esos fallos no son aleatorios — son sistemáticos y predecibles. Pero Smith mostró que el mercado puede ser más sabio que sus partes. La lección es doble: desconfía de tu intuición individual, pero no subestimes las instituciones bien diseñadas. Estamos en el bloque de comportamiento. Sigue Thaler con los nudges y Simon con la racionalidad acotada.",
+      "board": [
+        "# Comportamiento",
+        "",
+        "Simon (1978) — racionalidad acotada",
+        "Kahneman (2002) ✓",
+        "Thaler (2017) — nudges",
+        "",
+        "$ \\boxed{\\text{tres Nobels}}$",
+        "$ \\boxed{\\text{una revolución}}$",
+        "",
+        "desconfía de tu intuición",
+        "confía en buenas instituciones"
+      ]
+    }
+  ]
+}

@@ -34,6 +34,12 @@ export default defineConfig({
         physics: resolve(import.meta.dirname, "physics.html"),
         math: resolve(import.meta.dirname, "math.html"),
         escuela: resolve(import.meta.dirname, "escuela.html"),
+        masterclass: resolve(import.meta.dirname, "masterclass.html"),
+        cad: resolve(import.meta.dirname, "cad.html"),
+        economia: resolve(import.meta.dirname, "economia.html"),
+        "econ-lab": resolve(import.meta.dirname, "econ-lab.html"),
+        "physics-nobel": resolve(import.meta.dirname, "physics-nobel.html"),
+        "math-prizes": resolve(import.meta.dirname, "math-prizes.html"),
       },
       output: {
         manualChunks: {

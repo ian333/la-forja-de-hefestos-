@@ -2,21 +2,25 @@
  * Stage — Canvas R3F compartido con la misma calidad visual que el átomo de GaiaLab.
  *
  * Lo que te da "gratis":
- *   - Bloom + Vignette postprocessing.
+ *   - Bloom + Vignette postprocessing (tolerante a fallos).
  *   - Fondo con gradiente radial (vignette tipográfico).
  *   - Iluminación ambiental + direccional + point lights.
  *   - OrbitControls con damping suave y auto-rotate opcional.
  *   - Cámara con buena distancia default, near=0.001 para escalas atómicas.
  *
- * El hijo decide qué geometría va dentro; el chrome visual es idéntico en todos
- * los módulos de la forja. No queremos que el usuario sienta el cambio de lab.
+ * Nota: `@react-three/postprocessing` tiene un bug de carrera en
+ * EffectComposer.addPass (lee pass.alpha de un buffer null) que dispara
+ * "Cannot read properties of null (reading 'alpha')". Envolvemos los effects
+ * en un ErrorBoundary mudo que cae a "sin postprocessing" si falla — la
+ * escena se sigue viendo, solo sin bloom.
  */
 
-import { Canvas, type CanvasProps } from '@react-three/fiber';
+import { Canvas, useThree, type CanvasProps } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BlendFunction, KernelSize } from 'postprocessing';
-import type { ReactNode } from 'react';
+import { Component, useEffect, useState, type ReactNode, type ErrorInfo } from 'react';
+import { HalfFloatType } from 'three';
 
 interface StageProps {
   /** Distancia inicial de la cámara. Default = 5. */
@@ -38,6 +42,46 @@ interface StageProps {
   canvasProps?: Partial<CanvasProps>;
   /** Hijos son la escena 3D. */
   children: ReactNode;
+}
+
+/**
+ * Silent error boundary specifically for postprocessing.
+ * If EffectComposer fails to mount, we just render nothing — the scene
+ * stays intact, only the bloom/vignette is missing.
+ */
+class PostprocessingShield extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('[Stage] Postprocessing falló, renderizando sin bloom:', error.message, info.componentStack);
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/**
+ * Defers mounting of EffectComposer until after the renderer is fully
+ * initialized — sidesteps a race in @react-three/postprocessing v3 where
+ * EffectComposer's constructor reads from a null render target.
+ */
+function DeferredEffects({ children }: { children: ReactNode }) {
+  const gl = useThree(state => state.gl);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!gl) return;
+    // Wait two RAF ticks so the renderer's render target is allocated.
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [gl]);
+  if (!ready) return null;
+  return <>{children}</>;
 }
 
 export default function Stage({
@@ -84,20 +128,28 @@ export default function Stage({
         {children}
 
         {bloomIntensity > 0 && (
-          <EffectComposer multisampling={4}>
-            <Bloom
-              intensity={bloomIntensity}
-              luminanceThreshold={bloomThreshold}
-              luminanceSmoothing={0.4}
-              mipmapBlur
-              kernelSize={KernelSize.LARGE}
-            />
-            <Vignette
-              offset={0.25}
-              darkness={0.65}
-              blendFunction={BlendFunction.NORMAL}
-            />
-          </EffectComposer>
+          <PostprocessingShield>
+            <DeferredEffects>
+              <EffectComposer
+                multisampling={4}
+                enableNormalPass={false}
+                frameBufferType={HalfFloatType}
+              >
+                <Bloom
+                  intensity={bloomIntensity}
+                  luminanceThreshold={bloomThreshold}
+                  luminanceSmoothing={0.4}
+                  mipmapBlur
+                  kernelSize={KernelSize.LARGE}
+                />
+                <Vignette
+                  offset={0.25}
+                  darkness={0.65}
+                  blendFunction={BlendFunction.NORMAL}
+                />
+              </EffectComposer>
+            </DeferredEffects>
+          </PostprocessingShield>
         )}
       </Canvas>
     </div>

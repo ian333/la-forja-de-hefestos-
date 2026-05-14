@@ -17,6 +17,7 @@ import { BRANCHES, findModule } from './registry';
 import Sidebar from './components/Sidebar';
 import AudienceToggle from './components/AudienceToggle';
 import ModuleStub from './components/ModuleStub';
+import ModuleErrorBoundary from './components/ModuleErrorBoundary';
 import { useHashRoute } from './useHashRoute';
 
 const FIRST_LIVE = (() => {
@@ -72,10 +73,11 @@ export default function PhysicsLab() {
                 Verlet · RK4 · SI · invariantes en vivo
               </span>
               <div className="flex items-center gap-3 text-[11px] text-[#64748B] font-mono">
-                <a href="/escuela.html" className="hover:text-[#FDB813] transition">← Γ Escuela</a>
-                <a href="/math.html"  className="hover:text-[#4FC3F7] transition">Σ Mate →</a>
-                <a href="/lab.html"   className="hover:text-[#4FC3F7] transition">⚗ Química →</a>
-                <a href="/"           className="hover:text-[#4FC3F7] transition">La Forja →</a>
+                <a href="/escuela.html"       className="hover:text-[#FDB813] transition">← Γ Escuela</a>
+                <a href="/physics-nobel.html" className="hover:text-[#A78BFA] transition">Nobel Física →</a>
+                <a href="/math.html"          className="hover:text-[#4FC3F7] transition">Σ Mate →</a>
+                <a href="/lab.html"           className="hover:text-[#4FC3F7] transition">⚗ Química →</a>
+                <a href="/"                   className="hover:text-[#4FC3F7] transition">La Forja →</a>
               </div>
             </div>
           </div>
@@ -122,9 +124,15 @@ export default function PhysicsLab() {
             {!branch || !mod ? (
               <NotFound />
             ) : mod.component ? (
-              <Suspense fallback={<LoadingModule branchAccent={branch.accent} name={mod.name} />}>
-                <mod.component />
-              </Suspense>
+              <ModuleErrorBoundary
+                key={`${selected.branchId}/${selected.moduleId}`}
+                moduleName={mod.name}
+                branchAccent={branch.accent}
+              >
+                <Suspense fallback={<LoadingModule branchAccent={branch.accent} name={mod.name} />}>
+                  <mod.component />
+                </Suspense>
+              </ModuleErrorBoundary>
             ) : (
               <ModuleStub branch={branch} module={mod} />
             )}

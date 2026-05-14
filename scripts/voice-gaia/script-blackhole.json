@@ -1,0 +1,476 @@
+{
+  "id": "blackhole",
+  "title": "Agujeros negros — Gargantua, TON 618 y el monstruo del centro",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "void",
+      "text": "Imagínate que pudieras comprimir al Sol. Apretarlo. Apretarlo. Apretarlo. Hasta que entero quepa en una esfera de tres kilómetros de radio. Lo que sale ahí adentro deja de obedecer a la física que conoces. La luz, lo más rápido del universo, no escapa.",
+      "board": [
+        "# pregunta inicial",
+        "comprime el Sol",
+        "$ r \\to 3 \\, \\text{km}",
+        "",
+        "ni la luz escapa.",
+        "eso es un",
+        "$ \\boxed{\\text{agujero negro}}"
+      ]
+    },
+    {
+      "id": "02-einstein",
+      "scene": "void",
+      "text": "Mil novecientos quince. Albert Einstein publica una idea que tomó diez años en armar. La gravedad no es una fuerza. Es geometría. La masa dobla el espacio y el tiempo a su alrededor, y los demás cuerpos simplemente siguen ese terreno doblado.",
+      "board": [
+        "# 1915 · Einstein",
+        "gravedad ≠ fuerza",
+        "gravedad = geometría",
+        "",
+        "$ G_{\\mu\\nu} = \\dfrac{8\\pi G}{c^4} T_{\\mu\\nu}",
+        "",
+        "masa ⟹ curvatura"
+      ]
+    },
+    {
+      "id": "03-schwarzschild",
+      "scene": "void",
+      "text": "Solo unas semanas después, un oficial alemán en el frente ruso, Karl Schwarzschild, resuelve la ecuación de Einstein para una masa esférica. Y encuentra algo aterrador: si todo se aplasta dentro de un radio crítico, dos G eme entre ce al cuadrado, el espacio se enrosca sobre sí mismo. La luz no puede salir.",
+      "board": [
+        "# 1916 · Schwarzschild",
+        "frente ruso",
+        "",
+        "$ r_s = \\dfrac{2 G M}{c^2}",
+        "",
+        "Sol → 3 km",
+        "Tierra → 9 mm",
+        "tú → 10⁻²⁵ m"
+      ]
+    },
+    {
+      "id": "04-horizonte",
+      "scene": "bh/well",
+      "text": "Ese radio crítico tiene nombre: horizonte de eventos. Es una superficie matemática, no algo físico. Pero cruzarlo es definitivo. Una vez adentro, todos los caminos futuros llevan al centro. El centro deja de ser un lugar y se vuelve un instante.",
+      "board": [
+        "# horizonte de eventos",
+        "$ r = r_s",
+        "",
+        "no hay regreso.",
+        "todo camino futuro",
+        "termina en r=0",
+        "",
+        "el centro es un",
+        "$ \\textit{tiempo}, $ no un lugar"
+      ]
+    },
+    {
+      "id": "05-foton",
+      "scene": "bh/photon",
+      "text": "Pero antes del horizonte hay otra superficie mágica. A una vez y media el radio de Schwarzschild, la luz puede orbitar. Literalmente. Un fotón, de pie en esa esfera, daría vueltas eternamente. Si caminaras por ahí, verías la parte de atrás de tu cabeza al frente.",
+      "board": [
+        "# esfera de fotones",
+        "",
+        "$ r_{ph} = \\tfrac{3}{2} \\, r_s",
+        "",
+        "la luz orbita",
+        "ahí mismo",
+        "",
+        "te ves la nuca."
+      ]
+    },
+    {
+      "id": "06-isco",
+      "scene": "bh/well",
+      "text": "Y un poco más afuera, a tres veces el radio de Schwarzschild, está la última órbita estable. Cualquier cosa más cerca y la órbita se desestabiliza. Todo lo que entra ahí adentro, cae. Le decimos ISCO: Innermost Stable Circular Orbit.",
+      "board": [
+        "# ISCO",
+        "última órbita estable",
+        "",
+        "$ r_{ISCO}^{a=0} = 3 \\, r_s",
+        "",
+        "Schwarzschild no-rotante",
+        "",
+        "más cerca → caes."
+      ]
+    },
+    {
+      "id": "07-formacion",
+      "scene": "bh/collapse",
+      "text": "¿Cómo se forma uno de estos? Una estrella muy grande, más de veinte veces nuestro Sol, agota su combustible. Pierde la batalla contra su propia gravedad. La cubierta explota como supernova, y el núcleo cae sobre sí mismo hasta cruzar su propio radio de Schwarzschild. Nace un agujero negro estelar.",
+      "board": [
+        "# supernova",
+        "estrella ≥ 20 M☉",
+        "",
+        "1. agota combustible",
+        "2. núcleo colapsa",
+        "3. cubierta explota",
+        "4. núcleo cruza $r_s$",
+        "",
+        "→ BH estelar"
+      ]
+    },
+    {
+      "id": "08-cygnus",
+      "scene": "bh/collapse",
+      "text": "El primer agujero negro confirmado, Cygnus X uno, descubierto en mil novecientos sesenta y cuatro, pesa veintiún veces lo que el Sol. Su radio de Schwarzschild es de sesenta y dos kilómetros. Toda esa masa, en un objeto del tamaño de la Ciudad de México.",
+      "board": [
+        "# Cygnus X-1",
+        "1964 · descubrimiento",
+        "",
+        "$ M = 21 \\, M_\\odot",
+        "$ r_s = 62 \\, \\text{km}",
+        "",
+        "todo el Sol × 21,",
+        "en un punto del tamaño",
+        "de CDMX"
+      ]
+    },
+    {
+      "id": "09-lensing",
+      "scene": "bh/lensing",
+      "text": "Si te paras lejos y miras hacia un agujero negro, no ves un círculo negro. Ves algo más raro. La luz de las estrellas que pasan cerca se dobla. Las imágenes de atrás aparecen multiplicadas, estiradas en anillo. A esto Einstein lo llamó la lente gravitacional.",
+      "board": [
+        "# lente gravitacional",
+        "",
+        "deflexión:",
+        "$ \\alpha = \\dfrac{4 G M}{c^2 b}",
+        "",
+        "Einstein 1936",
+        "",
+        "→ anillo de Einstein"
+      ]
+    },
+    {
+      "id": "10-sombra",
+      "scene": "bh/lensing",
+      "text": "El círculo negro que sí ves, ese no es el horizonte. Es la sombra. Por la geometría del espacio doblado, todo rayo que pasa más cerca de raíz de veintisiete veces ge eme entre ce al cuadrado, cae adentro. La sombra mide cinco coma dos radios de Schwarzschild. Mayor que el horizonte mismo.",
+      "board": [
+        "# sombra",
+        "",
+        "$ r_{\\rm sombra} = \\sqrt{27} \\dfrac{GM}{c^2}",
+        "$ \\approx 2.6 \\, r_s",
+        "",
+        "MAYOR que el horizonte",
+        "",
+        "(geometría, no física)"
+      ]
+    },
+    {
+      "id": "11-disco",
+      "scene": "bh/disk",
+      "text": "Casi nunca un agujero negro está solo. Lo que cae alrededor forma un disco. Gas, polvo, restos de estrellas. Antes de cruzar el horizonte, ese material se calienta a millones de grados y brilla con todo el espectro. Esto es un disco de acreción.",
+      "board": [
+        "# disco de acreción",
+        "",
+        "material en órbita",
+        "↓",
+        "fricción + viscosidad",
+        "↓",
+        "calienta a 10⁶ K",
+        "↓",
+        "rayos X y gamma"
+      ]
+    },
+    {
+      "id": "12-doppler",
+      "scene": "bh/disk",
+      "text": "Mira el disco. Un lado es muchísimo más brillante que el otro. No es ilusión: es el efecto Doppler relativista. La parte del disco que viene hacia ti emite con cuatro veces más intensidad. Le decimos Doppler beaming. Es lo que ves arriba en pantalla, calculado con la fórmula real.",
+      "board": [
+        "# Doppler beaming",
+        "",
+        "$ \\delta = \\dfrac{1}{\\gamma(1 - \\beta \\cos\\theta)}",
+        "",
+        "intensidad ∝ δ⁴",
+        "",
+        "lado acercándose:",
+        "× ~4 más brillante"
+      ]
+    },
+    {
+      "id": "13-temperatura",
+      "scene": "bh/disk",
+      "text": "El disco brilla de adentro hacia afuera con un gradiente de temperatura. En el borde interior, cerca del ISCO, está blanco-azul, casi violeta. Hacia el exterior se vuelve amarillo, luego naranja, luego rojo. Es la misma física del cuerpo negro de Planck que enseña la mecánica cuántica.",
+      "board": [
+        "# Shakura-Sunyaev 1973",
+        "",
+        "$ T(r) \\propto r^{-3/4}",
+        "",
+        "inner ISCO → azul",
+        "outer ring → rojo",
+        "",
+        "(cuerpo negro de Planck)"
+      ]
+    },
+    {
+      "id": "14-redshift",
+      "scene": "bh/disk",
+      "text": "Pero hay otro efecto más sutil. La luz que sale cerca del horizonte sube por el pozo de gravedad. Pierde energía. Se corre al rojo. Si pudieras ver un reloj cayendo al horizonte, lo verías ponerse cada vez más rojo, y latir cada vez más lento. Tic. Tic. Tic.",
+      "board": [
+        "# redshift gravitacional",
+        "",
+        "$ 1 + z = (1 - r_s/r)^{-1/2}",
+        "",
+        "$ r \\to r_s \\Rightarrow z \\to \\infty",
+        "",
+        "luz ↓ energía",
+        "tiempo ↓ velocidad"
+      ]
+    },
+    {
+      "id": "15-sgrA",
+      "scene": "bh/scale",
+      "text": "En el centro de cada galaxia grande vive un monstruo. En la nuestra, en el centro de la Vía Láctea, hay un agujero negro de cuatro millones ciento cincuenta mil masas solares. Le decimos Sagitario A estrella. Lo vimos por primera vez en dos mil veintidós, con el telescopio del horizonte de eventos.",
+      "board": [
+        "# Sgr A*",
+        "",
+        "Vía Láctea, centro",
+        "$ M = 4.15 \\times 10^6 \\, M_\\odot",
+        "$ r_s = 12 \\, \\text{Gm}",
+        "",
+        "EHT · mayo 2022",
+        "primera imagen"
+      ]
+    },
+    {
+      "id": "16-m87",
+      "scene": "bh/scale",
+      "text": "El primero al que le tomamos foto no fue el de la Vía Láctea. Fue el de la galaxia M ochenta y siete, a cincuenta y cinco millones de años luz. Pesa seis mil quinientos millones de soles. El diez de abril de dos mil diecinueve, el mundo vio por primera vez la sombra de uno.",
+      "board": [
+        "# M87*",
+        "",
+        "55 millones de a.l.",
+        "$ M = 6.5 \\times 10^9 \\, M_\\odot",
+        "$ r_s = 38 \\, \\text{Tm}",
+        "",
+        "10 abril 2019",
+        "primera foto",
+        "Nobel implícito"
+      ]
+    },
+    {
+      "id": "17-gargantua-intro",
+      "scene": "bh/gargantua",
+      "text": "Cuando Christopher Nolan estaba haciendo Interstellar, le pidió a Kip Thorne, físico ganador del Nobel, que diseñara un agujero negro real para la película. No para que se viera bonito. Para que fuera correcto. Lo llamaron Gargantua.",
+      "board": [
+        "# Gargantua",
+        "Interstellar · 2014",
+        "",
+        "Kip Thorne, asesor",
+        "Nobel 2017 (LIGO)",
+        "",
+        "ley NO negociable:",
+        "$ \\text{cinemática} \\subset \\text{física}"
+      ]
+    },
+    {
+      "id": "18-gargantua-disco",
+      "scene": "bh/gargantua",
+      "text": "Mira esa imagen. La ceja brillante encima del disco, ese arco curvo que pasa sobre el agujero negro. Ese no es un anillo nuevo. Es el mismo disco, visto por debajo, con la luz doblada por gravedad y subiendo hacia ti. Lo que ves arriba está físicamente abajo. Es la curvatura del espacio.",
+      "board": [
+        "# la ceja superior",
+        "",
+        "= imagen del disco",
+        "doblada por gravedad",
+        "",
+        "la luz que sale por",
+        "ABAJO del disco",
+        "sube por encima del BH",
+        "y llega a tus ojos."
+      ]
+    },
+    {
+      "id": "19-gargantua-numeros",
+      "scene": "bh/gargantua",
+      "text": "Los números de Gargantua. Cien millones de masas solares. Espín de cero punto nueve nueve nueve nueve nueve nueve nueve. Casi exactamente el máximo permitido. Si fuera más, dejaría de ser un agujero negro y tendría una singularidad desnuda. Eso, Thorne dice, la naturaleza no lo permite.",
+      "board": [
+        "# parámetros Gargantua",
+        "",
+        "$ M = 10^8 \\, M_\\odot",
+        "$ a^* = 0.9999999",
+        "",
+        "casi extremal Kerr",
+        "$ a^* = 1 $ prohibido",
+        "(censura cósmica · Penrose)"
+      ]
+    },
+    {
+      "id": "20-kerr",
+      "scene": "bh/kerr",
+      "text": "Cuando un agujero negro rota, el espacio mismo gira con él. Le decimos frame dragging, arrastre de marcos. Una región externa al horizonte, la ergosfera, es donde el espacio se mueve más rápido que la luz local. Allí ni siquiera puedes estar quieto: te obliga a girar con el monstruo.",
+      "board": [
+        "# Kerr · 1963",
+        "rotación",
+        "",
+        "horizonte: $ r_+ = M(1+\\sqrt{1-a^2})",
+        "ergosfera:",
+        "$ r_e(\\theta) = M(1+\\sqrt{1-a^2\\cos^2\\theta})",
+        "",
+        "frame dragging"
+      ]
+    },
+    {
+      "id": "21-isco-kerr",
+      "scene": "bh/kerr",
+      "text": "Y este es el detalle que cambió Interstellar. En un agujero negro rotando casi al máximo, el ISCO se acerca al horizonte. En Gargantua, está a uno coma cuarenta y nueve radios de Schwarzschild. El planeta de Miller orbita ahí. Y ahí dentro, el tiempo se dilata sesenta y un mil trescientas diecisiete veces.",
+      "board": [
+        "# Miller's planet",
+        "",
+        "$ r_{ISCO}^{a^* \\to 1} \\to \\tfrac{1}{2} r_s",
+        "",
+        "$ r_{Miller} \\approx 1.49 \\, r_s",
+        "",
+        "dilatación temporal:",
+        "$ \\gamma = 61{,}317",
+        "",
+        "1 h ⟹ 7 años"
+      ]
+    },
+    {
+      "id": "22-tidal",
+      "scene": "bh/tidal",
+      "text": "Caer en un agujero negro estelar te mata antes de cruzar el horizonte. La diferencia de gravedad entre tu cabeza y tus pies es tan brutal que te estira como espagueti. Le llamamos spaghettification. Es exactamente lo que dice la palabra.",
+      "board": [
+        "# spaghettification",
+        "",
+        "$ \\Delta a = \\dfrac{2 G M L}{r^3}",
+        "",
+        "BH estelar @ horizonte:",
+        "$ \\Delta a \\sim 10^{10}\\, g",
+        "",
+        "te rompes mucho antes"
+      ]
+    },
+    {
+      "id": "23-tidal-grande",
+      "scene": "bh/tidal",
+      "text": "Pero aquí está el truco maravilloso. Para un agujero negro supermasivo, la marea gravitacional en el horizonte es despreciable. Cooper, en Interstellar, sí podía cruzar Gargantua y seguir vivo, al menos por un rato. La marea le pegaba menos que la luna a la Tierra. Es por eso que Kip Thorne eligió un agujero negro grande para la película.",
+      "board": [
+        "# por qué Cooper sobrevive",
+        "",
+        "$ \\Delta a \\propto M/r^3",
+        "$ r_s \\propto M",
+        "$ \\therefore \\Delta a|_{r_s} \\propto 1/M^2",
+        "",
+        "Gargantua: Δa ~ 10⁻³ g",
+        "",
+        "el monstruo grande perdona"
+      ]
+    },
+    {
+      "id": "24-time",
+      "scene": "bh/time",
+      "text": "Detén un segundo en eso. Una hora en Miller equivale a siete años en el Endurance. Cuando Cooper vuelve a la nave, Romilly tiene la barba blanca. No es ficción. Es la fórmula de Einstein evaluada exactamente: raíz de uno menos r ese sobre r. Cuanto más cerca del horizonte, más lento camina tu reloj para el resto del universo.",
+      "board": [
+        "# tiempo deformado",
+        "",
+        "$ \\tau = t \\sqrt{1 - r_s/r}",
+        "",
+        "$ r = 1.49 \\, r_s",
+        "$ \\Rightarrow \\tau / t = 1/61317",
+        "",
+        "Cooper: 3 h",
+        "Romilly: 23 años"
+      ]
+    },
+    {
+      "id": "25-ton618",
+      "scene": "bh/scale",
+      "text": "Y ahora, el rey. El agujero negro más masivo que hemos descubierto. Le llamamos TON seis dieciocho. Está en un cuásar a diez mil cuatrocientos millones de años luz de aquí. Su masa: sesenta y seis mil millones de soles. Su radio de Schwarzschild: mil trescientas unidades astronómicas.",
+      "board": [
+        "# TON 618",
+        "",
+        "$ d = 10.4 \\, \\text{Gly}",
+        "$ M = 6.6 \\times 10^{10} \\, M_\\odot",
+        "$ r_s \\approx 1{,}300 \\, \\text{UA}",
+        "",
+        "(la órbita de Neptuno",
+        "cabe DENTRO del horizonte)"
+      ]
+    },
+    {
+      "id": "26-ton618-escala",
+      "scene": "bh/scale",
+      "text": "Para que tengas idea: mil trescientas unidades astronómicas son cuarenta veces la distancia entre el Sol y Plutón. Si pusieras a TON seis dieciocho donde está el Sol, su horizonte cubriría todo el sistema solar conocido, y el cinturón de Kuiper, y la nube de Oort. Todo, dentro.",
+      "board": [
+        "# escala",
+        "",
+        "$ r_s^{TON} \\approx 40 \\times d_\\text{Sol-Plutón}",
+        "",
+        "horizonte cubre:",
+        "· planetas",
+        "· cinturón de Kuiper",
+        "· nube de Oort",
+        "",
+        "todo, adentro."
+      ]
+    },
+    {
+      "id": "27-hawking",
+      "scene": "bh/hawking",
+      "text": "Y un último regalo de Stephen Hawking, mil novecientos setenta y cuatro. Los agujeros negros no son negros del todo. Por un efecto cuántico cerca del horizonte, brillan. Emiten radiación. Le decimos radiación de Hawking. Para un agujero negro estelar, su temperatura es de un milmillonésimo de grado por encima del cero absoluto. Pero la radiación sale.",
+      "board": [
+        "# Hawking · 1974",
+        "",
+        "$ T_H = \\dfrac{\\hbar c^3}{8\\pi G M k_B}",
+        "",
+        "$ M = 10 M_\\odot$:",
+        "$ T_H \\approx 6 \\, \\text{nK}",
+        "",
+        "sí brilla."
+      ]
+    },
+    {
+      "id": "28-evaporacion",
+      "scene": "bh/hawking",
+      "text": "Y como la radiación sale, la masa baja. Lentamente, larguísimamente, el agujero negro se evapora. Para uno estelar, esa evaporación toma diez a la setenta años. El universo solo tiene catorce mil millones. Faltan, todavía, muchísimos. Pero un día, dicen los cálculos, todos los agujeros negros se irán.",
+      "board": [
+        "# evaporación",
+        "",
+        "$ \\tau = \\dfrac{5120 \\pi G^2 M^3}{\\hbar c^4}",
+        "",
+        "$ M = 10 M_\\odot$:",
+        "$ \\tau \\sim 10^{67}\\, \\text{años}",
+        "",
+        "(universo: 1.4 × 10¹⁰ años)"
+      ]
+    },
+    {
+      "id": "29-merge",
+      "scene": "bh/merger",
+      "text": "El catorce de septiembre de dos mil quince, dos agujeros negros se chocaron a mil trescientos millones de años luz. La onda gravitacional que generaron hizo vibrar nuestro espacio-tiempo. La detectamos. LIGO. Por primera vez, escuchamos el universo. La señal duró doscientos milisegundos. Salió un solo agujero negro nuevo, de sesenta y dos masas solares, girando en su lugar.",
+      "board": [
+        "# LIGO · 14 sep 2015",
+        "",
+        "$ M_1 = 36 M_\\odot$, $ M_2 = 29 M_\\odot",
+        "$ M_f = 62 M_\\odot",
+        "$ \\Delta M = 3 M_\\odot \\to E$",
+        "",
+        "Nobel 2017",
+        "Thorne, Weiss, Barish"
+      ]
+    },
+    {
+      "id": "30-cierre",
+      "scene": "bh/gargantua",
+      "text": "Schwarzschild lo dedujo de un papel. Einstein le tenía miedo a la idea. Cuando Penrose demostró en mil novecientos sesenta y cinco que los agujeros negros son inevitables si la relatividad general es correcta, le dieron el Nobel cincuenta y cinco años después. Hoy los vemos, los escuchamos, y los fotografiamos. Ahora dale al simulador y prende uno tú mismo. Cambia la masa. Mueve el espín. Y mira lo que pasa.",
+      "board": [
+        "# cierre",
+        "",
+        "Schwarzschild 1916",
+        "Penrose 1965 (Nobel 2020)",
+        "EHT 2019 · LIGO 2015",
+        "",
+        "ahora tú:",
+        "↓ elige tu simulador",
+        "↓ y juega"
+      ]
+    }
+  ]
+}

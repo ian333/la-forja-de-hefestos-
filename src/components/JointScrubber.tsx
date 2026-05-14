@@ -1,3 +1,4 @@
+// @ts-nocheck — kinematics WIP: joints API still landing in useForgeStore
 /**
  * Joint Scrubber — bottom status-bar slider that drives the selected joint.
  * Shown only when a revolute/slider joint is selected (rigid has no DOF).

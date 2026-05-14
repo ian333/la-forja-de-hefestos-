@@ -1,0 +1,335 @@
+{
+  "id": "econ-05-tirole",
+  "title": "Mercados de dos lados — Tirole, Nobel 2014",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "econ-board",
+      "audio": "01-pregunta.mp3",
+      "text": "Tres preguntas para empezar. ¿Por qué Visa no te cobra por usar tu tarjeta de crédito, pero sí le cobra una comisión al comercio? ¿Por qué Uber al principio le pagaba a los conductores cinco veces más de lo que ganaban por viaje? ¿Por qué Adobe te regala el lector de PDF pero te cobra ochenta dólares al mes por hacer PDFs? La economía clásica no las puede responder.",
+      "board": [
+        "# Tres preguntas",
+        "",
+        "Visa no cobra al usuario,",
+        "$ \\;$ cobra al comercio",
+        "",
+        "Uber regalaba bonos",
+        "$ \\;$ a conductores",
+        "",
+        "Adobe regala el lector,",
+        "$ \\;$ cobra al creador",
+        "",
+        "¿por qué?"
+      ]
+    },
+    {
+      "id": "02-clasica-falla",
+      "scene": "econ-board",
+      "audio": "02-clasica-falla.mp3",
+      "text": "Tu profesor de microeconomía te dijo: el precio óptimo es igual al costo marginal más un margen razonable. Si una empresa cobra muy poco a un grupo, está perdiendo dinero. Si cobra demasiado a otro, está abusando. Bueno, eso es cierto en mercados de un lado. Pero algunos mercados tienen dos lados, y la regla cambia por completo.",
+      "board": [
+        "# Mercado de un lado",
+        "",
+        "$ p = MC + \\text{margen}$",
+        "",
+        "regla simple",
+        "",
+        "$ \\boxed{\\text{vale en 1 lado}}$",
+        "$ \\boxed{\\text{falla con 2 lados}}$"
+      ]
+    },
+    {
+      "id": "03-rochet-tirole",
+      "scene": "econ-board",
+      "audio": "03-rochet-tirole.mp3",
+      "text": "Mil novecientos noventa y nueve. Dos economistas franceses, Jean-Charles Rochet y Jean Tirole, publican un paper que pasa casi sin pena ni gloria al principio. Se llama Platform Competition in Two-Sided Markets. Definen una categoría nueva. Una plataforma que conecta a dos grupos que se necesitan mutuamente. Hoy ese paper es uno de los más citados de la economía moderna.",
+      "board": [
+        "# Rochet & Tirole · 1999",
+        "",
+        "$ \\text{École Polytechnique}$",
+        "$ \\text{Toulouse}$",
+        "",
+        "``Platform Competition in",
+        "Two-Sided Markets''",
+        "",
+        "$ \\text{14{,}000+ citas}$"
+      ]
+    },
+    {
+      "id": "04-definicion",
+      "scene": "econ-board",
+      "audio": "04-definicion.mp3",
+      "text": "Un mercado de dos lados es uno donde una plataforma sirve a dos grupos distintos que se necesitan mutuamente. Más usuarios atraen más comerciantes. Más comerciantes atraen más usuarios. La plataforma no es solo intermediario. Es la que crea el valor que existe solo cuando los dos lados están presentes. Visa, App Store, YouTube, Uber, Rappi, Mercado Libre. Todos así.",
+      "board": [
+        "# Definición",
+        "",
+        "$ \\text{plataforma} \\to \\text{lado A} + \\text{lado B}$",
+        "",
+        "$\\,A$ necesita a $B$",
+        "$\\,B$ necesita a $A$",
+        "",
+        "ejemplos:",
+        "Visa · Uber · YouTube",
+        "Mercado Libre · Rappi"
+      ]
+    },
+    {
+      "id": "05-cruzadas",
+      "scene": "econ-chart",
+      "audio": "05-cruzadas.mp3",
+      "text": "Aquí viene la matemática. La utilidad para cada lado depende de cuántos están del otro lado. A esto se le llama externalidad cruzada de red. Mira la gráfica. Cuanto más conductores Uber tiene, más útil es para los pasajeros, porque encuentran auto más rápido. Y al revés. Más pasajeros, más útil para los conductores, porque consiguen viajes constantes.",
+      "board": [
+        "# Externalidad cruzada",
+        "",
+        "$ u_A = \\alpha + \\beta_A \\cdot N_B$",
+        "$ u_B = \\gamma + \\beta_B \\cdot N_A$",
+        "",
+        "$N_X$ = cuántos del otro lado",
+        "$\\beta$ = qué tanto importa",
+        "",
+        "$ \\boxed{\\text{cada lado depende del otro}}$"
+      ]
+    },
+    {
+      "id": "06-precio-asimetrico",
+      "scene": "econ-chart",
+      "audio": "06-precio-asimetrico.mp3",
+      "text": "Ahora viene el resultado contraintuitivo. Si un lado es muy sensible al precio y el otro no lo es tanto, la plataforma debe cobrar muy poco o nada al primero, y mucho al segundo. Aunque ambos reciban el mismo servicio. No es injusticia ni discriminación. Es que el lado caro está pagando porque el lado barato está ahí.",
+      "board": [
+        "# Pricing óptimo",
+        "",
+        "lado A sensible al precio",
+        "lado B insensible",
+        "",
+        "$ p_A \\approx 0$ (o negativo)",
+        "$ p_B \\gg MC$",
+        "",
+        "$ \\boxed{\\text{no es injusto}}$",
+        "$ \\boxed{\\text{es eficiente}}$"
+      ]
+    },
+    {
+      "id": "07-visa",
+      "scene": "econ-board",
+      "audio": "07-visa.mp3",
+      "text": "Visa lo lleva al extremo. Tarjetahabientes son demasiado sensibles. Si Visa te cobrara veinte pesos por transacción, dejarías de usarla en el OXXO. El comercio, en cambio, ya invirtió en la terminal punto de venta y necesita aceptar tarjeta o pierde clientes. Por eso Visa cobra cero al tarjetahabiente y dos por ciento al comercio. Y aún así, los dos están mejor.",
+      "board": [
+        "# Visa · caso clásico",
+        "",
+        "$ p_{\\text{usuario}} = 0$",
+        "$ p_{\\text{comercio}} = 2\\%$",
+        "",
+        "comercio sensible $\\to$ aceptas",
+        "usuario indiferente $\\to$ usas",
+        "",
+        "$ \\Rightarrow$ ambos ganan"
+      ]
+    },
+    {
+      "id": "08-uber-arranque",
+      "scene": "econ-board",
+      "audio": "08-uber-arranque.mp3",
+      "text": "Uber lo aplicó al principio. Cuando llegó a Ciudad de México en dos mil trece, el lado escaso eran los conductores. Sin conductores, los pasajeros se iban en cinco minutos. Sin pasajeros, los conductores no entraban. Uber decidió subsidiar al lado escaso. Le pagaba bonos enormes al conductor. Perdía dinero deliberadamente. Hasta que la masa crítica de conductores hizo que los pasajeros se quedaran. Y entonces los bonos cesaron.",
+      "board": [
+        "# Uber México · 2013",
+        "",
+        "lado escaso = conductores",
+        "",
+        "$ \\downarrow$",
+        "",
+        "Uber paga bonos al",
+        "$ \\;$ lado escaso $\\Rightarrow$ atrae al otro",
+        "",
+        "masa crítica $\\Rightarrow$ bonos cesan"
+      ]
+    },
+    {
+      "id": "09-network-effects",
+      "scene": "econ-chart",
+      "audio": "09-network-effects.mp3",
+      "text": "Mira esta otra gráfica. Es la utilidad para un nuevo usuario en función de cuántos ya están en la plataforma. En mercados normales, la curva es plana. Tu utilidad no depende de cuántos compran lo mismo que tú. En mercados de dos lados, la curva sube. Cuantos más usuarios, más valor para ti. Si la curva sube lo suficientemente rápido, llegas a un tipping point.",
+      "board": [
+        "# Network effects",
+        "",
+        "utilidad por usuario nuevo",
+        "$\\to$ función de tamaño",
+        "",
+        "mercado normal: plano",
+        "2 lados: creciente",
+        "",
+        "$ \\boxed{\\text{tipping point}}$",
+        "",
+        "→ winner-take-all"
+      ]
+    },
+    {
+      "id": "10-winner-take-all",
+      "scene": "econ-board",
+      "audio": "10-winner-take-all.mp3",
+      "text": "Por eso vemos los mismos patrones globales. En cada país, una sola plataforma se queda con casi todo el mercado. En México, Mercado Libre se quedó con e-commerce. Rappi se quedó con delivery. DiDi y Uber se reparten transporte. En USA, Amazon, DoorDash, Uber. En China, Alibaba, Meituan, DiDi. Eso no es coincidencia. Es Tirole. Los mercados de dos lados convergen a una sola plataforma dominante.",
+      "board": [
+        "# Winner-take-all en LATAM",
+        "",
+        "Mercado Libre $\\to$ e-commerce",
+        "Rappi $\\to$ delivery",
+        "DiDi/Uber $\\to$ transporte",
+        "Cornershop $\\to$ super",
+        "Clip $\\to$ POS",
+        "",
+        "no es accidente",
+        "es Tirole"
+      ]
+    },
+    {
+      "id": "11-app-store",
+      "scene": "econ-board",
+      "audio": "11-app-store.mp3",
+      "text": "Ahora viene la pelea más cara del mundo. Apple le cobra treinta por ciento de comisión a los desarrolladores que venden en el App Store. A los usuarios les regala el sistema operativo y miles de apps. Para Apple, los usuarios son el lado sensible al precio y los desarrolladores son el cautivo. Treinta por ciento parece abusivo. Tirole te diría que es exactamente lo predicho por su teoría.",
+      "board": [
+        "# App Store · 30\\%",
+        "",
+        "usuarios: lado sensible",
+        "$ \\to$ regalo SO + apps",
+        "",
+        "desarrolladores: cautivos",
+        "$ \\to$ pago 30\\%",
+        "",
+        "$ \\boxed{\\text{Tirole}\\,{=}\\,\\text{predicho}}$",
+        "",
+        "no es abuso, es teoría"
+      ]
+    },
+    {
+      "id": "12-antimonopolio",
+      "scene": "econ-board",
+      "audio": "12-antimonopolio.mp3",
+      "text": "Aquí está el problema legal. La ley antimonopolio tradicional dice: si alguien cobra muy por encima del costo, está abusando. Apple cobra treinta por ciento. Pero al usuario le cobra cero. ¿Es monopolio? La ley clásica falla. Tirole pasó décadas explicando a reguladores europeos que necesitan herramientas nuevas para evaluar plataformas. El acta digital de la Unión Europea de dos mil veintidós nació de su trabajo.",
+      "board": [
+        "# Antimonopolio · falla",
+        "",
+        "ley clásica:",
+        "$\\,p > MC \\Rightarrow$ abuso",
+        "",
+        "2 lados: $p_A < MC$, $p_B > MC$",
+        "",
+        "$\\,\\Rightarrow$ ¿cuál mides?",
+        "",
+        "→ Digital Markets Act 2022",
+        "(europeo · Tirole)"
+      ]
+    },
+    {
+      "id": "13-pueblo-vs-globo",
+      "scene": "econ-board",
+      "audio": "13-pueblo-vs-globo.mp3",
+      "text": "Lo más fascinante es la geografía. Los mercados de dos lados ganan por escala. Si la plataforma es global, ningún competidor local sobrevive. Por eso Amazon llegó a México pero también lo hizo Mercado Libre, y los dos se reparten porque hay frontera linguística y logística que protege al local. Rappi nació en Colombia y se expandió por toda la región, no se internacionalizó a Estados Unidos. Tirole predice esa geografía.",
+      "board": [
+        "# Geografía",
+        "",
+        "escala $\\Rightarrow$ ganador único",
+        "",
+        "pero hay barreras:",
+        "$\\,\\cdot\\,$ idioma",
+        "$\\,\\cdot\\,$ regulación",
+        "$\\,\\cdot\\,$ logística",
+        "",
+        "→ Rappi gana LATAM",
+        "→ DoorDash gana USA"
+      ]
+    },
+    {
+      "id": "14-clip-mexico",
+      "scene": "econ-board",
+      "audio": "14-clip-mexico.mp3",
+      "text": "Un caso mexicano fascinante. Clip, fundada en dos mil doce, atacó el monopolio de los bancos sobre las terminales punto de venta. ¿Cómo? Subsidió brutalmente el lado de los comercios. Terminal gratis. Comisión más baja. Bancos cobraban dos punto cinco por ciento. Clip cobraba uno punto noventa por ciento. Y aún así, era rentable, porque los pagos cruzados con Visa Mastercard subsidiaban la operación. Tirole otra vez.",
+      "board": [
+        "# Clip · 2012",
+        "",
+        "bancos cobraban 2.5\\%",
+        "Clip cobra 1.9\\%",
+        "$ +$ terminal gratis",
+        "",
+        "subsidiado por",
+        "$ \\;$ pagos Visa/MC",
+        "",
+        "$ \\Rightarrow$ rompió monopolio bancario"
+      ]
+    },
+    {
+      "id": "15-tirole-banking",
+      "scene": "econ-board",
+      "audio": "15-tirole-banking.mp3",
+      "text": "Tirole no es solo de plataformas. Su Nobel se lo dieron por su análisis de poder de mercado en general. Estudió cómo regular los bancos en una crisis, cómo diseñar subastas de espectro de telecomunicaciones, cómo regular electricidad. Pero todo su trabajo tiene el mismo principio. Las empresas modernas no son ni mercados perfectos ni monopolios simples. Son estructuras híbridas que requieren teoría híbrida.",
+      "board": [
+        "# Tirole · todo lo demás",
+        "",
+        "regulación de bancos",
+        "subastas de 5G",
+        "electricidad",
+        "patentes",
+        "",
+        "$ \\to$ estructura híbrida",
+        "$ \\to$ teoría híbrida",
+        "",
+        "premio: nuevas herramientas"
+      ]
+    },
+    {
+      "id": "16-tirole-pareto",
+      "scene": "econ-board",
+      "audio": "16-tirole-pareto.mp3",
+      "text": "Una última observación de Tirole, profunda y polémica. En estos mercados, lo que parece injusto puede ser eficiente. Cobrar treinta por ciento a desarrolladores y nada a usuarios subsidia el acceso para todos. Si las apps cobraran su parte directamente, los usuarios pobres no entrarían y todos pierden. La asimetría es Pareto óptima. Cualquier intento de igualar precios empeora a alguien.",
+      "board": [
+        "# Lo injusto puede ser óptimo",
+        "",
+        "$ \\text{asimetría} \\not= \\text{injusticia}$",
+        "",
+        "subsidio cruzado",
+        "$\\to$ acceso universal",
+        "",
+        "$ \\boxed{\\text{Pareto-óptimo}}$",
+        "",
+        "intuición política $\\,\\not=\\,$",
+        "$ \\;$ realidad económica"
+      ]
+    },
+    {
+      "id": "17-nobel",
+      "scene": "econ-board",
+      "audio": "17-nobel.mp3",
+      "text": "En dos mil catorce, Jean Tirole, francés, profesor en Toulouse, recibió el Nobel él solo. La razón oficial fue por su análisis del poder de mercado y la regulación. Pero la verdad es que le dieron el Nobel porque cambió cómo el mundo entiende las plataformas digitales. Sin él, las leyes antimonopolio de hoy serían de los mil novecientos noventa, y todas las big tech serían intocables.",
+      "board": [
+        "# Nobel · 2014",
+        "",
+        "Jean Tirole · 1953",
+        "École Polytechnique",
+        "Toulouse School of Economics",
+        "",
+        "premio individual",
+        "",
+        "$ \\boxed{\\text{plataformas} \\to \\text{ley moderna}}$"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "audio": "18-cierre.mp3",
+      "text": "El arco de las primeras cinco clases. Akerlof te enseñó que la información asimétrica puede matar mercados. Spence, que el informado se señala. Stiglitz, que el no informado filtra. Coase, que sustituimos mercados con empresas cuando los costos suben. Hart y Holmström, cómo se asignan contratos y propiedad adentro. Tirole te enseña algo nuevo. Hay estructuras híbridas, ni mercado ni empresa, que reorganizan la economía moderna. Las plataformas son ese híbrido. La economía real es esto.",
+      "board": [
+        "# Arco completo · 5 clases",
+        "",
+        "1. Akerlof: el problema",
+        "2. Spence: señal",
+        "3. Stiglitz: filtro",
+        "4. Coase: empresa",
+        "5. Hart-Holmström: adentro",
+        "6. Tirole: la plataforma",
+        "",
+        "$ \\to$ economía real",
+        "",
+        "siguiente bloque: juegos"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,236 @@
+{
+  "id": "phys-einstein-pe",
+  "title": "Einstein 1905 — la luz también es partícula",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-sensor",
+      "scene": "pe/sensor-mystery",
+      "text": "Mira lo que va a pasar. Esta lámpara roja la subimos al máximo, brilla como un foco infernal. La apuntamos al sensor. Cero. No reacciona. Ahora bajamos a luz ultravioleta tenue. Casi no la ves. El sensor explota de corriente. La intensidad no manda. Manda otra cosa. Y esa otra cosa rompió la física entera.",
+      "board": [
+        "# observación",
+        "luz roja  · MÁXIMA  →  $\\varnothing$",
+        "luz UV   · tenue    →  CORRIENTE",
+        "",
+        "intensidad NO importa.",
+        "color SÍ."
+      ]
+    },
+    {
+      "id": "02-fenomeno",
+      "scene": "void",
+      "text": "El fenómeno se llama efecto fotoeléctrico. Lo descubrió Heinrich Hertz por accidente en mil ochocientos ochenta y siete. Estaba estudiando ondas de radio cuando notó que la luz ultravioleta hacía saltar chispas más fácilmente. Pequeño detalle anómalo. Veinte años después esa anomalía iba a partir la física en dos.",
+      "board": [
+        "# 1887 · Heinrich Hertz",
+        "luz UV  →  chispas saltan más",
+        "",
+        "anomalía guardada en cajón:",
+        "20 años explotó.",
+        "",
+        "$ \\text{luz}_{f \\geq f_0} \\Rightarrow e^- $ eyectado"
+      ]
+    },
+    {
+      "id": "03-prediccion-falla",
+      "scene": "pe/wave-vs-reality",
+      "text": "La física clásica decía algo súper razonable. La luz es onda. Una onda lleva energía. Más amplitud, más energía. Súbele intensidad y los electrones deberían salir más rápido. Es como olas en el mar. Mira la predicción de la izquierda. Y mira lo que pasa de verdad a la derecha. No coincide. La velocidad de los electrones no depende de la intensidad. La onda clásica se rompió delante de tus ojos.",
+      "board": [
+        "# predicción vs realidad",
+        "",
+        "clásica  ⟶  $ v_e \\propto I^{1/2} $",
+        "experimento ⟶  $ v_e $ constante",
+        "",
+        "amplitud manda · NO",
+        "ondas EM · NO predicen esto"
+      ]
+    },
+    {
+      "id": "04-lenard",
+      "scene": "pe/lenard-apparatus",
+      "text": "Philipp Lenard, mil novecientos dos. Tubo de vacío, placa de metal, anodo colector, voltímetro. Hace el experimento bien hecho. Aumenta la intensidad de la luz al doble. Mide. Encuentra que salen el doble de electrones — la corriente sube. Pero la energía cinética máxima de cada electrón no cambia ni un poquito. La luz brillante no patea más fuerte. Solo patea más veces.",
+      "board": [
+        "# Lenard, 1902",
+        "tubo de vacío + voltímetro",
+        "",
+        "$ I \\to 2I $",
+        "",
+        "$ N_{e^-} $ × 2     más electrones",
+        "$ K_{\\max} $ =     misma energía",
+        "",
+        "el experimento decisivo."
+      ]
+    },
+    {
+      "id": "05-cliff",
+      "scene": "pe/threshold-cliff",
+      "text": "Pero hay algo aún más raro. Lenard cambia la frecuencia, sube el azul, baja el rojo. Y descubre un acantilado. Por encima de cierta frecuencia umbral los electrones salen disparados con energía proporcional a la frecuencia. Pero por debajo de esa frecuencia, no sale ni un solo electrón. Aunque dispares un sol entero. Cero. Físicamente imposible para una onda clásica — una onda con suficiente tiempo debería poder transferir cualquier energía. Acá no. Cuántica antes de la cuántica.",
+      "board": [
+        "# acantilado · $ f_0 $",
+        "",
+        "$ f < f_0 $:   nada · $ \\varnothing $",
+        "$ f \\geq f_0 $:  explosión · $ K \\propto f $",
+        "",
+        "esperar más NO ayuda.",
+        "intensidad NO ayuda.",
+        "",
+        "discontinuidad cuántica."
+      ]
+    },
+    {
+      "id": "06-planck",
+      "scene": "void",
+      "text": "Cinco años antes, en mil novecientos, Max Planck había escrito una fórmula desesperada para explicar la radiación del cuerpo negro. Asumió que la energía intercambiada entre luz y materia venía en paquetitos de tamaño h por frecuencia. Lo consideraba un truco matemático. La constante h apareció: seis coma seis dos seis por diez a la menos treinta y cuatro joules por segundo. Una constante diminuta que iba a destruir toda la física conocida.",
+      "board": [
+        "# Planck 1900",
+        "cuerpo negro",
+        "",
+        "$ \\boxed{ E = h\\, f } $",
+        "",
+        "$ h = 6.626 \\times 10^{-34} $ J·s",
+        "",
+        "Planck: \"es solo un truco.\""
+      ]
+    },
+    {
+      "id": "07-einstein",
+      "scene": "void",
+      "text": "Marzo, mil novecientos cinco. Albert Einstein, veintiséis años, oficinista en Berna. Año milagroso. Publica cinco papers en cuatro meses: el browniano, la relatividad especial, E igual mc cuadrado. Y uno más, donde dice algo que Planck no se había atrevido. La luz misma es discreta. No solo el intercambio. La luz, intrínsecamente, viene en granos. Esos granos cargan energía h por f. Le llamarán fotones.",
+      "board": [
+        "# 1905 · año milagroso",
+        "Berna · oficina de patentes",
+        "Albert Einstein, 26 años",
+        "",
+        "Planck: átomos discretos, luz continua",
+        "Einstein: luz también discreta",
+        "",
+        "$ \\boxed{ E_{\\text{fotón}} = h\\, f } $",
+        "",
+        "luz = paquetitos · FOTONES"
+      ]
+    },
+    {
+      "id": "08-ledger",
+      "scene": "pe/photon-ledger",
+      "text": "Y acá la fórmula que explica TODO. Un solo fotón entra. Choca con un solo electrón. Le entrega TODA su energía. Una parte se gasta en arrancar al electrón del metal, eso es la función trabajo W. Lo que sobra, sale como energía cinética del electrón. Mira el balance en vivo. Energía cinética máxima igual a h por f menos W. Si hf es menor que W, no alcanza. Cero. Si hf es mayor, sale disparado con la diferencia exacta.",
+      "board": [
+        "# ecuación de Einstein",
+        "1 fotón → 1 electrón",
+        "todo o nada",
+        "",
+        "$ \\boxed{ \\; K_{\\max} = h\\,f - W \\; } $",
+        "",
+        "$ h f $: energía del fotón",
+        "$ W $: función trabajo",
+        "$ K_{\\max} $: cinética sobrante"
+      ]
+    },
+    {
+      "id": "09-metales",
+      "scene": "pe/photon-ledger",
+      "text": "Cada metal tiene su propia función trabajo. Cesio, uno coma noventa y cinco electronvoltios — basta luz naranja, la del atardecer. Zinc, cuatro coma tres — ya necesitas ultravioleta. Platino, cinco coma sesenta y cinco — ultravioleta profundo. Por eso los sensores de luz visible son de cesio. Por eso necesitas un láser UV específico para soldar electrónica. La química y la electrónica se vuelven una sola.",
+      "board": [
+        "# función trabajo W",
+        "Cs · 1.95 eV  ·  naranja",
+        "K  · 2.30 eV  ·  verde",
+        "Zn · 4.30 eV  ·  UV",
+        "Pt · 5.65 eV  ·  UV profundo",
+        "",
+        "$ f_0 = W / h $",
+        "",
+        "química = ingeniería de sensores"
+      ]
+    },
+    {
+      "id": "10-millikan",
+      "scene": "pe/millikan-data",
+      "text": "Robert Millikan, físico de Chicago, no le creyó a Einstein. Dijo claramente: el postulado del fotón es indefendible. Se propuso refutar a Einstein experimentalmente. Diez años midiendo con obsesión. Mira los datos llegando, año por año. Mil novecientos siete. Mil novecientos diez. Mil novecientos doce. Mil novecientos catorce. Mil novecientos dieciséis. Cada año la pendiente de la línea se ajusta. Y converge exactamente a h. Millikan publica los resultados. Einstein tenía razón. Le dieron el Nobel a Millikan por confirmar la teoría que quería destruir.",
+      "board": [
+        "# Millikan 1907-1916",
+        "objetivo: REFUTAR a Einstein",
+        "",
+        "10 años de mediciones",
+        "pendiente $ \\to h $",
+        "",
+        "1923 · Nobel para Millikan",
+        "por confirmar a Einstein",
+        "",
+        "el más alto cumplido."
+      ]
+    },
+    {
+      "id": "11-compton",
+      "scene": "pe/compton-kick",
+      "text": "Mil novecientos veintitrés. Arthur Compton dispara rayos X de longitud de onda conocida contra electrones libres. Mide cómo cambia la longitud de onda al rebotar. Si el fotón fuera onda pura, no debería cambiar. Si es partícula con momento p igual a h sobre lambda, entonces es como un choque de billar. Vector de momento del rayo X menos vector de momento del electrón. Las cuentas dan. La longitud de onda se corre exactamente lo que predice la conservación de momento cuántico. El fotón no solo tiene energía. Tiene momento. Es partícula con todas las de la ley.",
+      "board": [
+        "# Compton, 1923",
+        "rayos X chocan electrones libres",
+        "",
+        "$ p_{\\gamma} = h / \\lambda $",
+        "",
+        "$ \\Delta\\lambda = \\frac{h}{m_e c}(1 - \\cos\\theta) $",
+        "",
+        "fotón = partícula completa.",
+        "cuántica · INEVITABLE"
+      ]
+    },
+    {
+      "id": "12-aplicaciones",
+      "scene": "void",
+      "text": "Levanta los ojos. El mundo está construido sobre esta ecuación. El sensor de tu celular: fotones entrando, electrones contados por pixel, eso es tu foto. El panel solar del techo: cada fotón libera un electrón, ese electrón corre por el cable, eso es tu electricidad. El fotomultiplicador de un detector: un solo fotón gatilla cascada. El telescopio espacial James Webb: cada estrella es fotones contados de a uno. Billones de dólares de industria, todos hijos de catorce páginas de mil novecientos cinco.",
+      "board": [
+        "# hijos de 1905",
+        "· sensor CMOS / CCD · cámara",
+        "· panel fotovoltaico · solar",
+        "· fotomultiplicador · detección",
+        "· James Webb · astronomía",
+        "· LIDAR · auto autónomo",
+        "· lector de código de barras",
+        "",
+        "trillones de transistores ópticos",
+        "una sola ecuación los manda."
+      ]
+    },
+    {
+      "id": "13-nobel",
+      "scene": "void",
+      "text": "Mil novecientos veintiuno. El comité Nobel decide. Pero no por la relatividad — todavía dudaban. Le dan el Nobel a Einstein por el efecto fotoeléctrico. Treinta y dos mil dólares de la época, en plena hiperinflación alemana. Einstein le manda todo el dinero a Mileva, su exesposa, como acuerdo de divorcio. La luz cuántica financió un divorcio matemáticamente exacto.",
+      "board": [
+        "# Nobel · 1921",
+        "Albert Einstein",
+        "",
+        "cita oficial:",
+        "« por la ley del efecto fotoeléctrico »",
+        "",
+        "NO por la relatividad.",
+        "el comité tenía miedo.",
+        "",
+        "$ \\$ 32{,}000 $ → Mileva (ex-esposa)"
+      ]
+    },
+    {
+      "id": "14-cascada",
+      "scene": "pe/cascade-cuantica",
+      "text": "Esta sola ecuación, E igual a h por f, abrió la mecánica cuántica entera. Mira los hijos directos. De Broglie, mil novecientos veinticuatro: si la luz es partícula también, las partículas son también onda — p igual a h sobre lambda, igual de directo. Compton, mil novecientos veintitrés: confirma el momento. Bose y Einstein, mismo veinticuatro: estadística cuántica para fotones. Heisenberg, veintiseis: principio de incertidumbre. Schrödinger, mismo año: ecuación de onda. Toda la física moderna desciende de esto. Una placa de zinc iluminada y un oficinista que se atrevió a creer.",
+      "board": [
+        "# cascada cuántica",
+        "$ E = h f $ ·  raíz",
+        "",
+        "1923 · Compton · $ p = h/\\lambda $",
+        "1924 · de Broglie · materia ondulatoria",
+        "1924 · Bose-Einstein · estadística",
+        "1925 · Heisenberg · $ \\Delta x \\Delta p \\geq \\hbar/2 $",
+        "1926 · Schrödinger · $ i\\hbar \\partial_t \\psi = H\\psi $",
+        "",
+        "todo desciende de aquí."
+      ]
+    }
+  ]
+}

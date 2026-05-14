@@ -1,0 +1,314 @@
+{
+  "id": "econ-04-hart-holmstrom",
+  "title": "Contratos incompletos — Hart y Holmström, Nobel 2016",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-trampa",
+      "scene": "econ-board",
+      "text": "Imagina que firmas un contrato perfecto con tu empleado. Especifica cada tarea, cada métrica, cada bono. ¿Vas a dormir tranquilo? Bueno, te tengo malas noticias. En el momento mismo en que lo firmas, el contrato ya está incompleto. Y peor, va a empezar a engañar a alguien.",
+      "board": [
+        "# La trampa del contrato",
+        "",
+        "$ \\text{firma}$ contrato perfecto",
+        "$ \\downarrow$",
+        "$ \\text{contrato} \\to$ incompleto",
+        "$ \\downarrow$",
+        "$ \\text{alguien} \\to$ engañado",
+        "",
+        "siempre"
+      ]
+    },
+    {
+      "id": "02-coase-recuerdo",
+      "scene": "econ-board",
+      "text": "Acuérdate de Coase. Las empresas existen porque hay cosas que es más eficiente hacer adentro, con jerarquía, que afuera con un contrato. Pero adentro de la empresa también hay contratos. Tu sueldo es un contrato. Tu bono es un contrato. Tus reglas internas son contratos. Y todos son incompletos.",
+      "board": [
+        "# Recordatorio · Coase",
+        "",
+        "afuera: mercado",
+        "adentro: jerarquía",
+        "",
+        "pero adentro $\\Rightarrow$ contratos",
+        "",
+        "$ \\boxed{\\text{todo contrato es incompleto}}$"
+      ]
+    },
+    {
+      "id": "03-holmstrom",
+      "scene": "econ-board",
+      "text": "Mil novecientos setenta y nueve. Bengt Holmström, finlandés, publica un paper llamado Moral Hazard and Observability. Pregunta clave: si el jefe no puede ver el esfuerzo del empleado, solo el resultado, ¿cómo le paga? Tu jefe ve cuánto vendiste. No ve si trabajaste duro o si tuviste suerte. ¿Cómo diferencia?",
+      "board": [
+        "# Holmström · 1979",
+        "",
+        "Bengt Holmström, Finlandia",
+        "MIT, escribió el paper",
+        "",
+        "``Moral Hazard and",
+        "Observability''",
+        "",
+        "$ \\text{jefe ve resultado}$",
+        "$ \\text{no ve esfuerzo}$"
+      ]
+    },
+    {
+      "id": "04-tradeoff",
+      "scene": "econ-chart",
+      "text": "Aquí está el conflicto fundamental. Si te pago un sueldo fijo, no tienes riesgo, pero tampoco tienes razón para esforzarte. Si te pago solo comisión sobre tus resultados, tienes todo el incentivo del mundo, pero también todo el riesgo, incluso el riesgo que no controlas. La fórmula óptima es una mezcla.",
+      "board": [
+        "# El trade-off",
+        "",
+        "$ w = a + b \\cdot y$",
+        "",
+        "$a$ = sueldo fijo",
+        "$b$ = comisión",
+        "$y$ = output observado",
+        "",
+        "$ b = 0 \\Rightarrow$ no incentivo",
+        "$ b = 1 \\Rightarrow$ todo riesgo"
+      ]
+    },
+    {
+      "id": "05-formula",
+      "scene": "econ-chart",
+      "text": "Holmström derivó la fórmula óptima. La parte variable de tu sueldo debe subir cuanto más productivo seas, cuanto menos averso al riesgo seas, y cuanto menos ruidoso sea el resultado. Si tu output dependiera puramente de tu esfuerzo, tu sueldo debería ser cien por ciento comisión. Pero como el output depende también de la suerte, el sueldo debe absorber parte de ese ruido.",
+      "board": [
+        "# La fórmula óptima",
+        "",
+        "$ b^* = \\dfrac{1}{1 + r \\sigma^2 / k}$",
+        "",
+        "$r$ = aversión al riesgo",
+        "$\\sigma^2$ = ruido del resultado",
+        "$k$ = productividad esfuerzo",
+        "",
+        "menos ruido $\\Rightarrow$ más comisión"
+      ]
+    },
+    {
+      "id": "06-ceo",
+      "scene": "econ-board",
+      "text": "Esta fórmula explica por qué los CEOs cobran tanto en acciones. Su decisión afecta el valor de la empresa, así que el resultado SÍ depende de su esfuerzo. Su riqueza personal es grande, así que tolera el riesgo. Y aunque hay ruido bursátil, parte importante del cambio en el precio refleja sus decisiones. Por eso b debe ser alto. Mucha comisión, poco fijo.",
+      "board": [
+        "# CEOs y stock options",
+        "",
+        "decisión $\\to$ resultado claro",
+        "tolera riesgo (rica)",
+        "ruido relativo bajo",
+        "",
+        "$ \\Rightarrow b^* \\text{ alto}$",
+        "",
+        "80\\% acciones",
+        "20\\% sueldo"
+      ]
+    },
+    {
+      "id": "07-cajera",
+      "scene": "econ-board",
+      "text": "Y al revés, una cajera de OXXO o de la unidad médica. Su esfuerzo apenas mueve los ingresos totales. Es averso al riesgo, no puede absorber semanas malas. El ruido en su output viene de quién entró a la tienda ese día. Su sueldo es casi cien por ciento fijo. Y eso es óptimo, no es injusticia. Es Holmström.",
+      "board": [
+        "# Cajera vs CEO",
+        "",
+        "esfuerzo $\\to$ poco efecto",
+        "aversa al riesgo",
+        "ruido alto (clientela)",
+        "",
+        "$ \\Rightarrow b^* \\text{ bajo}$",
+        "",
+        "100\\% sueldo, 0\\% comisión"
+      ]
+    },
+    {
+      "id": "08-multiproducto",
+      "scene": "econ-board",
+      "text": "Holmström vio algo todavía más sutil. Si pagas comisión sobre lo que sí mides, el empleado va a descuidar lo que no mides. Imagina que pagas a un profesor solo por calificaciones de exámenes. Va a descuidar enseñar curiosidad, dar tutoría, mejorar pedagogía. Eso se llama multi-tasking problem.",
+      "board": [
+        "# Multi-tasking · 1991",
+        "",
+        "pagas por A · mides A",
+        "$ \\to$ descuida B",
+        "",
+        "ejemplo: profesores",
+        "$ \\to$ calificaciones $\\uparrow$",
+        "$ \\to$ curiosidad $\\downarrow$",
+        "$ \\to$ tutoría $\\downarrow$",
+        "",
+        "óptimo: $b \\to$ bajo"
+      ]
+    },
+    {
+      "id": "09-hart-entra",
+      "scene": "econ-board",
+      "text": "Pero el verdadero golpe viene en mil novecientos ochenta y seis. Oliver Hart, británico que dio clases en Harvard, dice algo aún más radical. La realidad es que ningún contrato puede prever todo. Lluvias, pandemias, guerras, tecnologías nuevas. Siempre va a haber situaciones que no estaban escritas. ¿Entonces qué pasa cuando aparecen?",
+      "board": [
+        "# Hart · 1986",
+        "",
+        "Oliver Hart, británico, Harvard",
+        "",
+        "``Incomplete Contracts''",
+        "",
+        "ningún contrato",
+        "anticipa todo",
+        "",
+        "¿qué pasa entonces?"
+      ]
+    },
+    {
+      "id": "10-quien-manda",
+      "scene": "econ-board",
+      "text": "Aquí está la idea genial. Hart dice: cuando el contrato calla, el que decide es el dueño. Eso es lo que significa ser dueño. La propiedad NO es solamente un papel. Es el derecho a tomar decisiones en todas las situaciones no escritas. Por eso ser dueño de la fábrica importa, aunque firmes contratos con todos.",
+      "board": [
+        "# Quién decide cuando calla",
+        "",
+        "$ \\boxed{\\text{dueño} = \\text{quien decide}}$",
+        "",
+        "no es papel",
+        "es ``residual rights",
+        "$ \\;$ of control''",
+        "",
+        "todo lo no escrito"
+      ]
+    },
+    {
+      "id": "11-hold-up",
+      "scene": "econ-board",
+      "text": "Esto explica el problema del hold up. Imagina que tú inviertes en una máquina específica para producirle un componente a una sola empresa. Una vez que la máquina está ahí, esa empresa puede renegociar el precio a la baja. Tu inversión es prisionera. ¿Cómo se previene? Una opción es ser propiedad de la misma empresa. Integración vertical, como decía Coase.",
+      "board": [
+        "# El hold-up problem",
+        "",
+        "inviertes en activo",
+        "específico al cliente",
+        "",
+        "$ \\Rightarrow$ cliente renegocia",
+        "$ \\to$ baja precio",
+        "",
+        "antídoto: ser propios",
+        "$ \\to$ integración"
+      ]
+    },
+    {
+      "id": "12-mexico-pymes",
+      "scene": "econ-board",
+      "text": "Mira lo que pasa en México con las pymes que venden a una sola gran cadena. Bimbo, Walmart, Liverpool. La pyme invierte capital, capacitación, software específico para ese cliente. Pasa el tiempo y el cliente le pide bajar el precio. La pyme acepta, porque no tiene a quién más venderle. Eso es hold up clásico. Hart lo predijo.",
+      "board": [
+        "# Hold-up en LATAM",
+        "",
+        "pyme vende a Walmart",
+        "$ \\downarrow$",
+        "inversión específica",
+        "$ \\downarrow$",
+        "Walmart renegocia",
+        "$ \\downarrow$",
+        "pyme pierde márgenes"
+      ]
+    },
+    {
+      "id": "13-modelos-decision",
+      "scene": "econ-board",
+      "text": "Hart también explicó por qué algunas decisiones se delegan en gerentes y otras se las queda el dueño. Si la decisión es predecible y observable, se puede contratar. Si es impredecible y consecuente, la decisión la toma quien tenga los derechos residuales. Por eso el dueño se queda con las decisiones grandes, no las pequeñas.",
+      "board": [
+        "# Qué se delega · qué no",
+        "",
+        "decisión predecible",
+        "$ \\to$ contrato la cubre",
+        "",
+        "decisión impredecible",
+        "$ \\to$ dueño decide",
+        "",
+        "$ \\boxed{\\text{control residual}}$"
+      ]
+    },
+    {
+      "id": "14-prisiones",
+      "scene": "econ-board",
+      "text": "Una aplicación impresionante. Hart estudió las prisiones privadas en Estados Unidos. La pregunta era: si el contrato no puede especificar trato humano de detalle, ¿conviene privatizarlas? Su respuesta fue no. Las prisiones privadas, sin observabilidad perfecta, recortan costos exactamente en las dimensiones no contratables. Es Holmström multi-tasking aplicado a derechos humanos.",
+      "board": [
+        "# Aplicación · prisiones",
+        "",
+        "contrato no puede medir",
+        "trato humano $\\to$ no observable",
+        "",
+        "$ \\Rightarrow$ privatización recorta",
+        "$ \\;$ exactamente eso",
+        "",
+        "Hart: no privatices",
+        "lo no observable"
+      ]
+    },
+    {
+      "id": "15-startups",
+      "scene": "econ-board",
+      "text": "Y para terminar, una aplicación moderna. ¿Por qué los fundadores de startups venden parte de sus acciones a Sequoia o Y Combinator? Porque están firmando un contrato incompleto. No puedes prever cada decisión futura. Compartir propiedad alinea incentivos sin tener que escribir todas las cláusulas. Es Hart en Silicon Valley.",
+      "board": [
+        "# Startups · acciones",
+        "",
+        "fundador + VC",
+        "$ \\downarrow$",
+        "contrato incompleto",
+        "$ \\downarrow$",
+        "compartir propiedad",
+        "$ \\downarrow$",
+        "alinea sin escribir todo"
+      ]
+    },
+    {
+      "id": "16-nobel-2016",
+      "scene": "econ-board",
+      "text": "En dos mil dieciséis, Hart y Holmström compartieron el Nobel. La razón, escrita literalmente por el comité, fue por sus contribuciones a la teoría de los contratos. Pero la lección profunda es otra. Los contratos son siempre incompletos. La organización económica resuelve esa incompletud asignando propiedad y diseñando incentivos. Eso es lo que estructura la economía real.",
+      "board": [
+        "# Nobel · 2016",
+        "",
+        "Oliver Hart · 1948",
+        "Bengt Holmström · 1949",
+        "",
+        "$ \\boxed{\\text{contratos incompletos}}$",
+        "",
+        "$ \\downarrow$",
+        "",
+        "propiedad + incentivos",
+        "$ \\to$ estructura económica"
+      ]
+    },
+    {
+      "id": "17-implicacion",
+      "scene": "econ-board",
+      "text": "La implicación para ti, como emprendedor o trabajador o ciudadano, es clara. Cuando firmas un contrato, no preguntes solo qué dice. Pregunta también qué NO dice, y quién decide cuando no dice. Esa pregunta vale más que cualquier cláusula escrita. La propiedad es el residual del lenguaje, y Hart nos enseñó a mirar ese residual.",
+      "board": [
+        "# Implicaciones",
+        "",
+        "lee el contrato:",
+        "",
+        "$\\,1.$ qué dice",
+        "$\\,2.$ qué NO dice",
+        "$\\,3.$ ¿quién decide entonces?",
+        "",
+        "$ \\boxed{(3) > (1) + (2)}$"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "text": "Akerlof te enseñó que la información asimétrica puede matar mercados. Spence, que el informado puede señalarse. Stiglitz, que el no informado puede filtrar. Coase, que el mercado se sustituye por jerarquía cuando los costos de transactar son altos. Y ahora Hart y Holmström te enseñan qué pasa adentro de la jerarquía. Cómo se pagan, cómo se decide, cómo se asigna lo que el contrato no escribe. Te estamos construyendo, pieza por pieza, la economía real.",
+      "board": [
+        "# El arco",
+        "",
+        "1. Akerlof: el problema",
+        "2. Spence: señal",
+        "3. Stiglitz: filtro",
+        "4. Coase: la empresa",
+        "5. Hart, Holmström: $\\;$adentro",
+        "",
+        "$ \\to$ economía real",
+        "",
+        "siguiente: Tirole"
+      ]
+    }
+  ]
+}

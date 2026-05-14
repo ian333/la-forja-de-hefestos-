@@ -1,0 +1,312 @@
+{
+  "id": "econ-12-sen",
+  "title": "Capabilities: la libertad como desarrollo",
+  "voice_name": "Matilda",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-hambruna",
+      "scene": "econ-board",
+      "text": "Bengala, mil novecientos cuarenta y tres. Tres millones de personas murieron de hambre. Pero no había escasez de comida. La producción de arroz fue normal ese año. Lo que pasó fue que los precios subieron, los salarios no, y los trabajadores rurales simplemente no podían comprar. La comida existía. Lo que no existía era el derecho de acceso. Esa distinción cambiará cómo entiendes la pobreza para siempre.",
+      "board": [
+        "\\textbf{Gran Hambruna de Bengala (1943)}",
+        "\\text{~3 millones de muertos}",
+        "",
+        "\\text{Producción de arroz: NORMAL}",
+        "\\text{Precios: se dispararon}",
+        "\\text{Salarios: estancados}",
+        "",
+        "\\textbf{No fue falta de comida.}",
+        "\\textbf{Fue falta de acceso.}"
+      ]
+    },
+    {
+      "id": "02-persona",
+      "scene": "econ-board",
+      "text": "Amartya Sen nació en Santiniketan, India, en mil novecientos treinta y tres. Tenía nueve años cuando vio la hambruna de Bengala. Esa imagen lo marcó de por vida. Estudió en Calcuta y Cambridge. Fue profesor en Harvard, Oxford, Cambridge. Pero toda su carrera gira alrededor de una sola pregunta: ¿qué significa realmente ser pobre? Nobel mil novecientos noventa y ocho.",
+      "board": [
+        "\\textbf{Amartya Sen} \\quad (1933\\text{–})",
+        "\\text{Santiniketan, India}",
+        "\\text{Cambridge, Harvard, Oxford}",
+        "",
+        "\\text{Economía del bienestar}",
+        "\\text{Elección social, desarrollo, hambrunas}",
+        "",
+        "\\text{Nobel 1998: contribuciones a la}",
+        "\\text{economía del bienestar}"
+      ]
+    },
+    {
+      "id": "03-entitlements",
+      "scene": "econ-board",
+      "text": "Sen empezó con las hambrunas. Su libro de mil novecientos ochenta y uno, Poverty and Famines, demolió la teoría convencional. La idea vieja era simple: hambruna es igual a falta de comida. Sen mostró que no. Las hambrunas ocurren cuando un grupo pierde su entitlement, su derecho de acceso a la comida. Puedes perder tu derecho porque tu salario baja, porque los precios suben, porque pierdes tu tierra, o porque el gobierno no te protege. La comida puede estar ahí. Si no puedes acceder, mueres igual.",
+      "board": [
+        "\\textbf{Entitlement Approach (Sen 1981)}",
+        "\\text{Hambruna } \\neq \\text{ falta de comida}",
+        "\\text{Hambruna } = \\text{ falta de derechos de acceso}",
+        "",
+        "\\textbf{Formas de perder acceso:}",
+        "\\text{• Salario real baja}",
+        "\\text{• Precios relativos cambian}",
+        "\\text{• Pierdes tu tierra / activos}",
+        "\\text{• El Estado no interviene}"
+      ]
+    },
+    {
+      "id": "04-capabilities",
+      "scene": "econ-board",
+      "text": "Pero Sen fue más lejos. No basta con medir ingreso. No basta con medir utilidad. Lo que importa es qué puedes ser y qué puedes hacer. A eso le llamó capabilities. Una persona con mucho dinero pero sin educación tiene capabilities limitadas. Una persona con educación pero enferma también. La pobreza no es solo ganar poco: es no poder vivir la vida que valoras. Es una revolución filosófica disfrazada de economía.",
+      "board": [
+        "\\textbf{Capabilities Approach}",
+        "\\text{No midas ingreso. No midas utilidad.}",
+        "\\text{Mide qué puedes SER y qué puedes HACER.}",
+        "",
+        "\\textbf{Functionings:} \\text{ lo que logras}",
+        "\\text{(estar nutrido, leer, participar)}",
+        "",
+        "\\textbf{Capabilities:} \\text{ lo que PODRÍAS lograr}",
+        "\\text{(tus oportunidades reales)}"
+      ]
+    },
+    {
+      "id": "05-ejemplo",
+      "scene": "econ-board",
+      "text": "Piensa en dos personas que no comen. Una es un monje que ayuna por elección. La otra es una madre que no tiene dinero para comprar comida. El resultado observable es el mismo: no comen. Pero las capabilities son completamente distintas. El monje eligió. La madre no. Si solo mides el resultado, son iguales. Si mides la libertad de elegir, la madre es pobre y el monje no. Esa distinción es la esencia de Sen.",
+      "board": [
+        "\\textbf{Monje que ayuna vs madre que no come}",
+        "",
+        "\\text{Mismo functioning: no come}",
+        "\\text{Distinta capability: uno eligió, la otra no}",
+        "",
+        "\\textbf{Pobreza = falta de capabilities}",
+        "\\text{No falta de ingreso}",
+        "\\text{No falta de utilidad}",
+        "\\text{Falta de libertad real}"
+      ]
+    },
+    {
+      "id": "06-social-choice",
+      "scene": "econ-board",
+      "text": "Sen también reformuló la teoría de la elección social. Arrow había demostrado en mil novecientos cincuenta y uno que no existe un sistema de votación perfecto. Sen aceptó eso, pero mostró que si enriqueces la información disponible, puedes escapar de la imposibilidad. En particular, si permites comparaciones interpersonales parciales, puedes hacer juicios sociales razonables. No necesitas resolver todo para resolver algo.",
+      "board": [
+        "\\textbf{Arrow (1951): imposibilidad}",
+        "\\text{No hay votación \"perfecta\"}",
+        "",
+        "\\textbf{Sen: escape parcial}",
+        "\\text{Si permites comparar ALGO entre personas}",
+        "\\text{(no todo, solo algo)}",
+        "\\text{puedes hacer juicios razonables}",
+        "",
+        "\\text{\"Más vale aproximar lo importante}",
+        "\\text{que medir lo irrelevante con precisión\"}"
+      ]
+    },
+    {
+      "id": "07-libertad",
+      "scene": "econ-board",
+      "text": "En mil novecientos setenta, Sen publicó un resultado devastador: la paradoja del liberal. Mostró que es imposible respetar simultáneamente los derechos individuales mínimos y la eficiencia de Pareto. Si todos tienen al menos un poco de poder sobre su propia vida, puede haber resultados que todo el mundo preferiría cambiar. Es un conflicto fundamental entre libertad personal y bienestar colectivo.",
+      "board": [
+        "\\textbf{La paradoja del liberal (Sen 1970)}",
+        "\\text{No puedes tener simultáneamente:}",
+        "",
+        "\\text{(1) Libertad mínima: cada persona}",
+        "\\text{    decide al menos ALGO sobre su vida}",
+        "",
+        "\\text{(2) Pareto: si todos prefieren A a B,}",
+        "\\text{    la sociedad elige A}",
+        "",
+        "\\text{Conflicto irresoluble entre}",
+        "\\text{derechos y eficiencia}"
+      ]
+    },
+    {
+      "id": "08-IDH",
+      "scene": "econ-board",
+      "text": "Las ideas de Sen no se quedaron en la academia. En mil novecientos noventa, junto con Mahbub ul Haq, creó el Índice de Desarrollo Humano para las Naciones Unidas. El IDH combina ingreso, esperanza de vida y educación. No es perfecto, pero rompió el monopolio del PIB per cápita como única medida de progreso. Antes del IDH, un país que crecía en PIB estaba bien por definición. Después del IDH, ya no.",
+      "board": [
+        "\\textbf{Índice de Desarrollo Humano (1990)}",
+        "\\text{Sen + Mahbub ul Haq → PNUD}",
+        "",
+        "\\text{IDH} = \\frac{1}{3}(I_{salud} + I_{educación} + I_{ingreso})",
+        "",
+        "\\text{Salud: esperanza de vida}",
+        "\\text{Educación: años promedio + esperados}",
+        "\\text{Ingreso: GNI per cápita (log)}",
+        "",
+        "\\text{Rompió el monopolio del PIB}"
+      ]
+    },
+    {
+      "id": "09-democracia",
+      "scene": "econ-board",
+      "text": "Sen hizo otra observación que parece simple pero es profunda: nunca ha habido una hambruna en una democracia con prensa libre. Ni una sola. India tuvo hambrunas bajo el dominio británico. Dejó de tenerlas cuando se independizó y tuvo elecciones y periódicos. China tuvo la peor hambruna de la historia bajo Mao, entre mil novecientos cincuenta y nueve y mil novecientos sesenta y uno. Treinta millones de muertos. Sin prensa, sin elecciones, sin rendición de cuentas.",
+      "board": [
+        "\\textbf{Democracia y hambrunas}",
+        "\\text{\"Ninguna democracia con prensa libre}",
+        "\\text{ha tenido una hambruna\" — Sen}",
+        "",
+        "\\text{India: hambrunas bajo el imperio británico}",
+        "\\text{Cero hambrunas después de 1947}",
+        "",
+        "\\text{China: Gran Hambruna (1959-61)}",
+        "\\text{~30 millones de muertos}",
+        "\\text{Sin prensa, sin elecciones, sin rendición}"
+      ]
+    },
+    {
+      "id": "10-genero",
+      "scene": "econ-board",
+      "text": "Sen acuñó una frase que se volvió célebre: las mujeres desaparecidas. En mil novecientos noventa, calculó que faltan más de cien millones de mujeres en Asia y el norte de África. La razón: discriminación en nutrición, salud y atención médica desde la infancia. En países donde las niñas reciben la misma atención que los niños, las mujeres viven más que los hombres. Donde no, desaparecen de las estadísticas.",
+      "board": [
+        "\\textbf{\"Missing Women\" (Sen 1990)}",
+        "\\text{>100 millones de mujeres \"desaparecidas\"}",
+        "",
+        "\\text{Proporción natural: ~105 mujeres por 100 hombres}",
+        "\\text{India, China: <95 mujeres por 100 hombres}",
+        "",
+        "\\textbf{Causa:}",
+        "\\text{Discriminación en nutrición y salud}",
+        "\\text{desde la infancia}",
+        "\\text{No es biología. Es política.}"
+      ]
+    },
+    {
+      "id": "11-nussbaum",
+      "scene": "econ-board",
+      "text": "La filósofa Martha Nussbaum tomó las capabilities de Sen y les puso estructura. Definió una lista de diez capabilities centrales: vida, salud corporal, integridad física, sentidos e imaginación, emociones, razón práctica, afiliación, relación con la naturaleza, juego y control del entorno. La diferencia con Sen: Nussbaum dice que hay un mínimo universal. Sen se resiste a fijar la lista porque cree que cada comunidad debe decidir qué valora.",
+      "board": [
+        "\\textbf{Nussbaum: 10 capabilities centrales}",
+        "\\text{1. Vida}",
+        "\\text{2. Salud corporal}",
+        "\\text{3. Integridad física}",
+        "\\text{4. Sentidos, imaginación, pensamiento}",
+        "\\text{5. Emociones}",
+        "\\text{6. Razón práctica}",
+        "\\text{7. Afiliación}",
+        "\\text{8. Relación con la naturaleza}",
+        "\\text{9. Juego}",
+        "\\text{10. Control del entorno}"
+      ]
+    },
+    {
+      "id": "12-critica",
+      "scene": "econ-board",
+      "text": "Las críticas a Sen son serias. Primera: si no mides utilidad ni ingreso sino capabilities, ¿cómo las mides en la práctica? Es difícil. El IDH es un proxy burdo. Segunda: Friedman diría que la libertad económica es la capability más importante y que Sen la subestima. Tercera: los RCTs de Duflo y Banerjee pueden medir intervenciones concretas, pero Sen habla de libertades abstractas. La tensión es real: ¿diseñas política con filosofía o con datos?",
+      "board": [
+        "\\textbf{Críticas:}",
+        "\\text{1. Medición: capabilities son difíciles de cuantificar}",
+        "\\text{   IDH es proxy burdo}",
+        "",
+        "\\text{2. Friedman: libertad económica = capability clave}",
+        "\\text{   Sen la subestima}",
+        "",
+        "\\text{3. Duflo/Banerjee: RCTs miden intervenciones}",
+        "\\text{   Sen habla de libertades abstractas}",
+        "",
+        "\\text{¿Filosofía o datos?}"
+      ]
+    },
+    {
+      "id": "13-mexico",
+      "scene": "econ-board",
+      "text": "En México, el CONEVAL mide la pobreza multidimensional desde dos mil ocho. No solo ingreso: también acceso a salud, educación, vivienda, alimentación y seguridad social. Es uno de los pocos países que adopta el espíritu de Sen a nivel oficial. El resultado es revelador: hay mexicanos que no son pobres por ingreso pero sí por carencias sociales. Y viceversa. Medir solo dinero te engaña.",
+      "board": [
+        "\\textbf{CONEVAL (México, 2008→)}",
+        "\\text{Pobreza multidimensional:}",
+        "\\text{• Ingreso}",
+        "\\text{• Acceso a salud}",
+        "\\text{• Educación}",
+        "\\text{• Vivienda}",
+        "\\text{• Alimentación}",
+        "\\text{• Seguridad social}",
+        "",
+        "\\text{Espíritu de Sen: medir MÁS que dinero}"
+      ]
+    },
+    {
+      "id": "14-desarrollo-libertad",
+      "scene": "econ-board",
+      "text": "El libro más influyente de Sen es Development as Freedom, publicado en mil novecientos noventa y nueve. La tesis central: el desarrollo no es crecer en PIB. El desarrollo es expandir las libertades reales que disfrutan las personas. La libertad es al mismo tiempo el fin y el medio del desarrollo. Una persona educada produce más, pero también vive mejor. Ambas cosas importan. No hay que elegir.",
+      "board": [
+        "\\textbf{Development as Freedom (1999)}",
+        "",
+        "\\text{Desarrollo} \\neq \\text{crecimiento del PIB}",
+        "\\text{Desarrollo} = \\text{expansión de libertades reales}",
+        "",
+        "\\textbf{La libertad es:}",
+        "\\text{• El FIN del desarrollo}",
+        "\\text{• El MEDIO del desarrollo}",
+        "",
+        "\\text{Educación → produce más Y vive mejor}"
+      ]
+    },
+    {
+      "id": "15-conexion-solow",
+      "scene": "econ-board",
+      "text": "Solow dijo: el crecimiento depende de la tecnología. Acemoglu dijo: la tecnología depende de las instituciones. Sen dijo: las instituciones solo importan si expanden la libertad de las personas. Es una cadena: capital, instituciones, libertad. Sen no contradice a Solow ni a Acemoglu. Los complementa con una pregunta más profunda: ¿crecimiento para qué? Si el PIB sube pero la gente no puede elegir cómo vivir, no hay desarrollo.",
+      "board": [
+        "\\text{Solow: crecimiento} \\leftarrow \\text{tecnología}",
+        "\\text{Acemoglu: tecnología} \\leftarrow \\text{instituciones}",
+        "\\text{Sen: instituciones} \\leftarrow \\text{libertad}",
+        "",
+        "\\textbf{La cadena completa:}",
+        "K \\to A \\to \\text{instituciones} \\to \\text{libertad}",
+        "",
+        "\\text{¿Crecimiento para qué?}",
+        "\\text{Si no expande libertad, no es desarrollo.}"
+      ]
+    },
+    {
+      "id": "16-nobel",
+      "scene": "econ-board",
+      "text": "En mil novecientos noventa y ocho, Amartya Sen recibió el Nobel por sus contribuciones a la economía del bienestar. El comité destacó tres cosas: su trabajo sobre hambrunas y entitlements, su contribución a la teoría de la elección social, y su definición de pobreza como privación de capabilities. Es el Nobel que cambió la pregunta: de cuánto tiene la gente a qué puede hacer la gente.",
+      "board": [
+        "\\textbf{Nobel 1998}",
+        "\\text{Amartya Sen}",
+        "\\text{\"Por sus contribuciones a la}",
+        "\\text{economía del bienestar\"}",
+        "",
+        "\\text{• Hambrunas y entitlements}",
+        "\\text{• Teoría de la elección social}",
+        "\\text{• Pobreza como privación de capabilities}"
+      ]
+    },
+    {
+      "id": "17-legado",
+      "scene": "econ-board",
+      "text": "El legado de Sen es invisible pero está en todas partes. Cada vez que alguien dice que el PIB no mide bienestar, está citando a Sen. Cada vez que un gobierno mide pobreza con más de un indicador, está aplicando a Sen. Los Objetivos de Desarrollo Sostenible de la ONU son hijos directos de su enfoque. Y cuando alguien dice que la libertad no es solo votar sino poder vivir dignamente, esa es la voz de Sen.",
+      "board": [
+        "\\textbf{Legado:}",
+        "\\text{• IDH y medición multidimensional de pobreza}",
+        "\\text{• CONEVAL, OPHI, MPI global}",
+        "\\text{• Objetivos de Desarrollo Sostenible (ODS)}",
+        "\\text{• Capabilities en filosofía política}",
+        "",
+        "\\text{\"El PIB no mide bienestar\" → Sen}",
+        "\\text{\"Pobreza es más que ingreso\" → Sen}"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "text": "Las hambrunas no son por falta de comida. La pobreza no es por falta de dinero. La desigualdad no se mide solo en pesos. Sen nos obligó a mirar más profundo: a preguntarnos no cuánto tiene la gente, sino qué puede hacer con lo que tiene. Si la economía es la ciencia de la escasez, Sen nos recordó que la escasez más importante no es de recursos, sino de libertad.",
+      "board": [
+        "\\text{Las hambrunas no son por falta de comida.}",
+        "\\text{La pobreza no es por falta de dinero.}",
+        "",
+        "\\text{La pregunta no es cuánto tienes.}",
+        "\\text{La pregunta es qué puedes hacer.}",
+        "",
+        "\\textbf{Sen: la escasez más importante}",
+        "\\textbf{no es de recursos. Es de libertad.}"
+      ]
+    }
+  ]
+}

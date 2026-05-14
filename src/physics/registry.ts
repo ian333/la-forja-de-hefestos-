@@ -17,6 +17,7 @@ import type { PhysicsBranch } from './types';
 
 const SolarSystem     = lazy(() => import('./modules/astro/SolarSystem'));
 const Schwarzschild   = lazy(() => import('./modules/astro/Schwarzschild'));
+const BlackHole       = lazy(() => import('./modules/astro/BlackHole'));
 const EMFields        = lazy(() => import('./modules/em/Fields'));
 const DoublePendulum  = lazy(() => import('./modules/mech/DoublePendulum'));
 const DoubleHelix     = lazy(() => import('./modules/bio/DoubleHelix'));
@@ -91,14 +92,11 @@ export const BRANCHES: PhysicsBranch[] = [
         childHint: 'Einstein dijo que la gravedad curva el tiempo. Aquí lo ves.',
         researcherHint: 'd²u/dφ² + u = GM/h² + 3GMu²/c². Integrador RK4.',
         component: Schwarzschild },
-      { id: 'blackhole-disk', name: 'Agujero negro — disco de acreción', status: 'planned',
-        blurb: 'Métrica de Kerr, ISCO, disco visual con redshift gravitacional.',
-        roadmap: [
-          'r_s, r_ph, r_ISCO ya en src/lib/physics/relativity.ts',
-          'Trazado de rayos Schwarzschild: integrar geodésicas nulas',
-          'Disco de Novikov-Thorne: T(r), L(r), espectro multi-color BB',
-          'Deflección y lente de Einstein, anillo de fotones',
-        ] },
+      { id: 'blackhole', name: 'Agujero negro — Schwarzschild + Kerr', status: 'live',
+        blurb: 'Sombra, anillo de fotones, disco Doppler-beamed. Cygnus X-1, Sgr A*, M87*, Gargantua, TON 618.',
+        childHint: 'Cambia la masa: 21 soles → 66 mil millones. La luz se dobla y un disco gira a casi velocidad c.',
+        researcherHint: 'r_s = 2GM/c², ISCO Kerr (Bardeen 72), Shakura-Sunyaev T∝r⁻³ᐟ⁴, δ = 1/[γ(1-βcosθ)], lensing screen-space.',
+        component: BlackHole },
       { id: 'stellar', name: 'Estructura estelar', status: 'planned',
         blurb: 'Ecuaciones de Lane-Emden, cadena pp, secuencia principal.',
         roadmap: [

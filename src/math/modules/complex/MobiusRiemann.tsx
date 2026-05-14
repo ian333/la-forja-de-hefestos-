@@ -17,9 +17,10 @@
  * Y que sobre la esfera, todas las transformaciones son simplemente movimientos.
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Line, Text } from '@react-three/drei';
+import { Line } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import Stage from '@/physics/components/Stage';
 import { useAudience } from '@/math/context';
 import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
@@ -306,6 +307,14 @@ export default function MobiusRiemann() {
 
           {/* Riemann sphere (above the planes) */}
           <RiemannSphere center={[0, 4.5, 0]} grid={grid} transformed={transformed} />
+
+          {/* Animated probe: a point that orbits in z and shows up in w + on sphere */}
+          <AnimatedProbe
+            a={a} b={b} d={d} e={e}
+            zOffset={Z_OFFSET}
+            wOffset={W_OFFSET}
+            sphereCenter={[0, 4.5, 0]}
+          />
         </Stage>
 
         <div className="absolute top-3 left-3 text-[11px] font-mono space-y-1 text-[#CBD5E1]
@@ -388,7 +397,7 @@ export default function MobiusRiemann() {
 
 // ── Sub-components ────────────────────────────────────────────────────
 
-function Plane({ center, label }: { center: [number, number, number]; label: string }) {
+function Plane({ center }: { center: [number, number, number]; label?: string }) {
   const [cx, cy, cz] = center;
   const size = 3.5;
   return (
@@ -399,9 +408,6 @@ function Plane({ center, label }: { center: [number, number, number]; label: str
       </mesh>
       <Line points={[[cx - size, cy, cz], [cx + size, cy, cz]]} color="#334155" lineWidth={1} />
       <Line points={[[cx, cy - size, cz], [cx, cy + size, cz]]} color="#334155" lineWidth={1} />
-      <Text position={[cx, cy + size + 0.25, cz]} fontSize={0.25} color="#94A3B8" anchorX="center" anchorY="bottom">
-        {label}
-      </Text>
     </>
   );
 }
@@ -458,7 +464,6 @@ function RiemannSphere({
         <sphereGeometry args={[0.07, 16, 16]} />
         <meshStandardMaterial color="#FDB813" emissive="#FDB813" emissiveIntensity={1} />
       </mesh>
-      <Text position={[cx, cy + R + 0.25, cz]} fontSize={0.18} color="#FDB813" anchorX="center" anchorY="bottom">∞</Text>
       {/* South pole = 0 */}
       <mesh position={[cx, cy - R, cz]}>
         <sphereGeometry args={[0.05, 16, 16]} />
@@ -478,6 +483,105 @@ function RiemannSphere({
           <Line key={`ws${i}-${k}`} points={seg} color={curve.color} lineWidth={1.5} transparent opacity={0.95} />
         ))
       )}
+    </>
+  );
+}
+
+// ── Animated probe — orbits in z plane, shows transformed in w + on sphere ────
+
+function AnimatedProbe({
+  a, b, d, e,
+  zOffset, wOffset, sphereCenter,
+}: {
+  a: C; b: C; d: C; e: C;
+  zOffset: number;
+  wOffset: number;
+  sphereCenter: [number, number, number];
+}) {
+  const zMeshRef = useRef<THREE.Mesh>(null);
+  const wMeshRef = useRef<THREE.Mesh>(null);
+  const sphereMeshRef = useRef<THREE.Mesh>(null);
+  const trailRefZ = useRef<THREE.BufferGeometry>(null);
+  const trailRefW = useRef<THREE.BufferGeometry>(null);
+  const TRAIL_N = 36;
+  const trailBufZ = useMemo(() => new Float32Array(TRAIL_N * 3), []);
+  const trailBufW = useMemo(() => new Float32Array(TRAIL_N * 3), []);
+
+  const R_SPHERE = 1.5;
+  const [cx, cy, cz] = sphereCenter;
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    // The probe traces a slow circle in z plane with growing radius
+    const r = 0.8 + 0.7 * (0.5 + 0.5 * Math.sin(t * 0.21));
+    const θ = t * 0.55;
+    const z: C = [r * Math.cos(θ), r * Math.sin(θ)];
+
+    // Position on z plane
+    if (zMeshRef.current) {
+      zMeshRef.current.position.set(zOffset + z[0], z[1], 0.05);
+    }
+    // Transformed position
+    const w = mobius(z, a, b, d, e);
+    const wx = isFinite(w[0]) ? Math.max(-3, Math.min(3, w[0])) : 0;
+    const wy = isFinite(w[1]) ? Math.max(-3, Math.min(3, w[1])) : 0;
+    if (wMeshRef.current) {
+      wMeshRef.current.position.set(wOffset + wx, wy, 0.05);
+      wMeshRef.current.visible = isFinite(w[0]) && isFinite(w[1]);
+    }
+    // Sphere position (stereographic of w)
+    if (sphereMeshRef.current) {
+      const [px, py, pz] = stereo(w);
+      sphereMeshRef.current.position.set(cx + R_SPHERE * px, cy + R_SPHERE * pz, cz + R_SPHERE * py);
+      sphereMeshRef.current.visible = isFinite(w[0]) && isFinite(w[1]);
+    }
+
+    // Trails: shift back by 1 step and write current at front
+    for (let i = TRAIL_N - 1; i > 0; i--) {
+      trailBufZ[i * 3 + 0] = trailBufZ[(i - 1) * 3 + 0];
+      trailBufZ[i * 3 + 1] = trailBufZ[(i - 1) * 3 + 1];
+      trailBufZ[i * 3 + 2] = trailBufZ[(i - 1) * 3 + 2];
+      trailBufW[i * 3 + 0] = trailBufW[(i - 1) * 3 + 0];
+      trailBufW[i * 3 + 1] = trailBufW[(i - 1) * 3 + 1];
+      trailBufW[i * 3 + 2] = trailBufW[(i - 1) * 3 + 2];
+    }
+    trailBufZ[0] = zOffset + z[0]; trailBufZ[1] = z[1]; trailBufZ[2] = 0.04;
+    trailBufW[0] = wOffset + wx;   trailBufW[1] = wy;  trailBufW[2] = 0.04;
+    if (trailRefZ.current) (trailRefZ.current.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    if (trailRefW.current) (trailRefW.current.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+  });
+
+  return (
+    <>
+      {/* Probe on z */}
+      <mesh ref={zMeshRef}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} />
+      </mesh>
+      {/* Probe on w */}
+      <mesh ref={wMeshRef}>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial color="#FFFFFF" emissive="#FDB813" emissiveIntensity={2} />
+      </mesh>
+      {/* Probe on sphere */}
+      <mesh ref={sphereMeshRef}>
+        <sphereGeometry args={[0.07, 16, 16]} />
+        <meshStandardMaterial color="#FFFFFF" emissive="#34D399" emissiveIntensity={2} />
+      </mesh>
+      {/* Trail z */}
+      <line>
+        <bufferGeometry ref={trailRefZ}>
+          <bufferAttribute attach="attributes-position" count={TRAIL_N} array={trailBufZ} itemSize={3} args={[trailBufZ, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial color="#FFFFFF" transparent opacity={0.6} />
+      </line>
+      {/* Trail w */}
+      <line>
+        <bufferGeometry ref={trailRefW}>
+          <bufferAttribute attach="attributes-position" count={TRAIL_N} array={trailBufW} itemSize={3} args={[trailBufW, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial color="#FDB813" transparent opacity={0.6} />
+      </line>
     </>
   );
 }

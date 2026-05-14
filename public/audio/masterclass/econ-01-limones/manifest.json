@@ -1,0 +1,301 @@
+{
+  "id": "econ-01-limones",
+  "title": "Los Limones — por qué los mercados a veces se mueren solos",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "void",
+      "audio": "01-pregunta.mp3",
+      "text": "Antes de empezar, una pregunta. Compras un carro nuevo. Sales del lote. Manejas una cuadra. Decides venderlo. ¿Cuánto te dan por él? Veinte por ciento menos. Es físicamente el mismo carro. ¿Qué cambió?",
+      "board": []
+    },
+    {
+      "id": "02-paradoja",
+      "scene": "void",
+      "audio": "02-paradoja.mp3",
+      "text": "No es desgaste. No es kilometraje. Es algo más profundo. En el momento en que cruzaste la puerta del lote, algo invisible pasó. Y esa cosa invisible, hoy te lo prometo, está matando mercados enteros mientras hablamos.",
+      "board": [
+        "carro nuevo en lote",
+        "→ una cuadra",
+        "→ pierde 20%",
+        "",
+        "$ \\Delta\\text{kilómetros} \\approx 0",
+        "$ \\Delta\\text{valor} = -20\\%",
+        "",
+        "¿qué cambió?"
+      ]
+    },
+    {
+      "id": "03-akerlof",
+      "scene": "void",
+      "audio": "03-akerlof.mp3",
+      "text": "Mil novecientos setenta. George Akerlof, economista joven en Berkeley, escribe un artículo de catorce páginas. Lo manda a la primera revista. Lo rechazan. Lo manda a la segunda. Lo rechazan. Tercera. Rechazado. Dicen que es trivial, que no es economía. Treinta y un años después, le dan el Nobel por ese mismo paper.",
+      "board": [
+        "1970 · Berkeley",
+        "George Akerlof, 29 años",
+        "",
+        "\"The Market for Lemons\"",
+        "14 páginas",
+        "",
+        "rechazos: 3",
+        "Nobel: 2001"
+      ]
+    },
+    {
+      "id": "04-mercado",
+      "scene": "market-grid",
+      "audio": "04-mercado.mp3",
+      "text": "Imagina un mercado de carros usados. Cien carros. Algunos son joyas, los gringos les dicen cherries, cerezas. Otros son basura, limones. El dueño de cada carro sabe perfectamente cuál es el suyo, porque lo manejó dos años. Tú, el comprador, no tienes idea. Solo ves la pintura.",
+      "board": [
+        "Mercado · 100 carros",
+        "",
+        "cherries 🍒  (buenos)",
+        "lemons 🍋  (malos)",
+        "",
+        "vendedor: SABE",
+        "comprador: NO SABE",
+        "",
+        "información asimétrica"
+      ]
+    },
+    {
+      "id": "05-distribucion",
+      "scene": "market-grid",
+      "audio": "05-distribucion.mp3",
+      "text": "Digamos que mitad y mitad. Un cherry vale veinte mil pesos para su dueño. Un limón vale cinco mil. ¿Cuánto pagarías tú por un carro al azar de este mercado? Si eres racional, el promedio. Doce mil quinientos. Y aquí es donde todo se rompe.",
+      "board": [
+        "cherry: vale $\\$20{,}000$",
+        "lemon:  vale $\\$5{,}000$",
+        "",
+        "50/50",
+        "",
+        "$ \\mathbb{E}[\\text{valor}] = \\tfrac{1}{2}(20) + \\tfrac{1}{2}(5)",
+        "$ \\phantom{\\mathbb{E}[\\text{valor}]} = \\$12{,}500"
+      ]
+    },
+    {
+      "id": "06-comprador",
+      "scene": "asymmetric-info",
+      "audio": "06-comprador.mp3",
+      "text": "Tú ofreces doce mil quinientos. Sensato. Promedio justo. Pero piensa quién acepta y quién no. El que tiene un cherry, que para él vale veinte, no te lo vende por doce. Se queda con su carro. El que tiene un limón, que para él vale cinco, acepta tu oferta felizmente. Acabas de comprar un limón.",
+      "board": [
+        "ofreces: $\\$12{,}500$",
+        "",
+        "dueño cherry: \"no, vale más\"",
+        "→ NO vende",
+        "",
+        "dueño lemon: \"¡sí, ya!\"",
+        "→ vende",
+        "",
+        "compras: limón seguro 🍋"
+      ]
+    },
+    {
+      "id": "07-cherries-huyen",
+      "scene": "quality-collapse",
+      "audio": "07-cherries-huyen.mp3",
+      "text": "Los cherries se retiran del mercado. Sin querer, sin que nadie haga nada malicioso, simplemente porque su precio justo no se alcanza. Lo que queda en el lote ya no es un mercado promedio. Es un mercado de puros limones disfrazados.",
+      "board": [
+        "cherries SALEN del mercado",
+        "",
+        "no hay traición,",
+        "no hay engaño",
+        "",
+        "solo economía",
+        "",
+        "queda → solo limones"
+      ]
+    },
+    {
+      "id": "08-nuevo-promedio",
+      "scene": "quality-collapse",
+      "audio": "08-nuevo-promedio.mp3",
+      "text": "Pero tú no eres tonto. Te das cuenta. Si solo hay limones, ¿por qué ibas a pagar doce mil? Pagas cinco mil, el valor real del limón. Y ese precio ahora también expulsa a los carros un poquito mejores que el limón puro. Y así sucesivamente.",
+      "board": [
+        "nuevo promedio:",
+        "$ \\mathbb{E}[\\text{valor}\\,|\\,\\text{queda}] = \\$5{,}000$",
+        "",
+        "→ precio baja a $\\$5{,}000$",
+        "",
+        "los menos-malos también huyen",
+        "",
+        "espiral ↓ ↓ ↓"
+      ]
+    },
+    {
+      "id": "09-colapso",
+      "scene": "quality-collapse",
+      "audio": "09-colapso.mp3",
+      "text": "Esto se llama selección adversa. Y el resultado, en el modelo puro de Akerlof, es brutal: el mercado entero colapsa. No por estafadores, no por mala fe. Por información asimétrica. Cuando una parte sabe más que la otra, los buenos huyen y solo quedan los malos. Hasta que no queda nadie.",
+      "board": [
+        "selección adversa",
+        "",
+        "no hay villanos",
+        "solo asimetría",
+        "",
+        "$ \\text{precio} \\downarrow \\Rightarrow \\text{calidad} \\downarrow",
+        "$ \\Rightarrow \\text{precio} \\downarrow \\downarrow",
+        "",
+        "→ mercado muere"
+      ]
+    },
+    {
+      "id": "10-garantia",
+      "scene": "void",
+      "audio": "10-garantia.mp3",
+      "text": "Pero los mercados existen. Compras carros usados. ¿Cómo? Solución uno: garantía. El que tiene un cherry te dice, mira, te devuelvo el dinero si en seis meses sale falla. El dueño de un limón no puede ofrecer eso, le saldría carísimo. La garantía se vuelve una señal de calidad.",
+      "board": [
+        "Solución 1 · garantía",
+        "",
+        "cherry: ofrece garantía",
+        "(barata, no falla)",
+        "",
+        "lemon: no ofrece",
+        "(saldría carísima)",
+        "",
+        "garantía = señal"
+      ]
+    },
+    {
+      "id": "11-marca",
+      "scene": "void",
+      "audio": "11-marca.mp3",
+      "text": "Solución dos: marca. Toyota construye reputación durante cincuenta años. Si tú vendes carros bajo la marca Toyota y vendes un limón, pierdes algo más caro que un carro: pierdes la marca. Esa pérdida es la garantía implícita de que la marca te está cobrando para protegerte.",
+      "board": [
+        "Solución 2 · marca",
+        "",
+        "Toyota · 50 años",
+        "",
+        "vender limón",
+        "→ destruye marca",
+        "",
+        "valor marca \\;\\gg\\; valor 1 carro",
+        "",
+        "→ no te conviene mentir"
+      ]
+    },
+    {
+      "id": "12-certificacion",
+      "scene": "market-grid",
+      "audio": "12-certificacion.mp3",
+      "text": "Solución tres: terceros certificadores. Carfax revisa el historial. El mecánico de confianza inspecciona. eBay te da una calificación de cero a cinco estrellas. Lo que estos servicios venden no es un carro ni un producto. Venden información. Información para romper la asimetría.",
+      "board": [
+        "Solución 3 · tercero certifica",
+        "",
+        "· Carfax → historial",
+        "· mecánico → inspección",
+        "· eBay → ⭐⭐⭐⭐⭐",
+        "· OXXO → marca confiable",
+        "",
+        "venden: INFORMACIÓN"
+      ]
+    },
+    {
+      "id": "13-salud",
+      "scene": "void",
+      "audio": "13-salud.mp3",
+      "text": "Ahora la idea se vuelve peligrosa. Seguro médico. ¿Quién busca más un seguro médico caro? La gente enferma. El sano dice, yo no lo necesito, ahorro. Si la aseguradora cobra el promedio de la población, la gente enferma se afilia y los sanos se salen. El promedio sube. Más sanos salen. Espiral.",
+      "board": [
+        "Seguro médico",
+        "",
+        "enfermos: quieren seguro",
+        "sanos: \"yo no lo necesito\"",
+        "",
+        "aseguradora cobra promedio",
+        "",
+        "$ \\Rightarrow$ solo enfermos compran",
+        "$ \\Rightarrow$ prima sube",
+        "$ \\Rightarrow$ más sanos salen"
+      ]
+    },
+    {
+      "id": "14-mandato",
+      "scene": "void",
+      "audio": "14-mandato.mp3",
+      "text": "Por eso, en muchos países, comprar seguro médico no es opcional. Es obligación legal. No es comunismo. Es Akerlof. Si dejas que la gente elija, los sanos se salen, los enfermos colapsan al seguro, y al final nadie tiene cobertura. El mandato no es ideológico. Es la única forma de que el mercado sobreviva.",
+      "board": [
+        "Mandato legal",
+        "",
+        "Obamacare · IMSS",
+        "·  Alemania ·  Suiza",
+        "",
+        "no es ideología,",
+        "es Akerlof",
+        "",
+        "→ rompe la espiral"
+      ]
+    },
+    {
+      "id": "15-credito",
+      "scene": "void",
+      "audio": "15-credito.mp3",
+      "text": "Mismo modelo, otro mercado. Pides un préstamo al banco. Tú sabes si vas a pagar. El banco no. Si el banco le presta al promedio, los buenos pagadores se ofenden por la tasa alta y se salen. Solo quedan los riesgosos. El banco quiebra. Por eso te piden aval, colateral, historial. Información, otra vez, para romper la asimetría.",
+      "board": [
+        "Crédito",
+        "",
+        "tú sabes si pagarás",
+        "banco no sabe",
+        "",
+        "$ \\Rightarrow$ tasa promedio",
+        "$ \\Rightarrow$ buenos huyen",
+        "$ \\Rightarrow$ quedan riesgosos",
+        "",
+        "antídotos:",
+        "aval · colateral · buró"
+      ]
+    },
+    {
+      "id": "16-trabajo",
+      "scene": "asymmetric-info",
+      "audio": "16-trabajo.mp3",
+      "text": "Mismo modelo, mercado laboral. Tú sabes si eres buen trabajador. La empresa no. ¿Por qué piden título universitario? Michael Spence, en mil novecientos setenta y tres, demostró que el título es una señal. No importa lo que aprendiste. Importa que pudiste terminarlo. Eso pone una capa de información donde no había.",
+      "board": [
+        "Mercado laboral",
+        "",
+        "tú: \"soy bueno\"",
+        "empresa: ¿cómo sabe?",
+        "",
+        "Spence · 1973",
+        "señalización · job market signaling",
+        "",
+        "título = señal",
+        "(no importa lo que aprendiste)"
+      ]
+    },
+    {
+      "id": "17-nobel",
+      "scene": "nobel-timeline",
+      "audio": "17-nobel.mp3",
+      "text": "Año dos mil uno. La Academia Sueca le da el Nobel de Economía a tres personas. Akerlof por los limones. Spence por la señalización. Stiglitz por la teoría general de mercados con información asimétrica. Una sola idea, tres formulaciones, tres décadas. Y debajo de casi todo lo que vas a aprender en este curso.",
+      "board": [
+        "Nobel Economía · 2001",
+        "",
+        "George Akerlof · limones",
+        "Michael Spence · señales",
+        "Joseph Stiglitz · screening",
+        "",
+        "una idea:",
+        "$ \\text{info} \\neq \\text{simétrica}",
+        "$ \\Rightarrow \\text{mercados raros}"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "void",
+      "audio": "18-cierre.mp3",
+      "text": "El carro nuevo perdió veinte por ciento al salir del lote porque, en el momento en que tú lo manejaste, te volviste el único que sabe si manejaste como animal o con cuidado. La asimetría te volvió sospechoso. No tienes la culpa. Es solo Akerlof. La economía real, la que vas a ver en este curso, no se trata de gurús. Se trata de información, de incentivos y de mecánicas que cualquier persona racional puede entender. Bienvenido.",
+      "board": [
+        "tu carro perdió 20%",
+        "porque ahora",
+        "tú eres",
+        "el único que sabe",
+        "",
+        "la economía es",
+        "información",
+        "",
+        "bienvenido"
+      ]
+    }
+  ]
+}

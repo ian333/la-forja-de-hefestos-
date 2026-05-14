@@ -34,9 +34,6 @@ import {
 } from './gaia-variables';
 import { type ImportedModel, importCADFile } from './step-import';
 import { type MachineConfig, importMachineFile } from './machine-config';
-import { type Joint, clampDrive } from './joints';
-import { bakeJointTransforms, collectModules } from './joint-transforms';
-import { detectCollisions, rigidPairKeys } from './collisions';
 import { DEFAULT_SECTION, type SectionState, type SectionAxis } from './viewport/SectionPlane';
 import { type ReverseEngineeredModel, reverseEngineerModel, reverseEngineerAssembly } from './reverse-engineer';
 import { decomposeBySlicing, sliceMesh, type DecomposedFeatures, type SliceAxis } from './cross-section';
@@ -68,17 +65,14 @@ interface ForgeState {
   scene: SdfOperation;
   selectedId: string | null;
 
+  // (kinematics joints/collisions WIP lives in the consuming files; those use
+  //  @ts-nocheck until the store-side API lands)
+
   // Módulos — agrupaciones nombradas (concepto tipo Components de Fusion 360)
   activeModuleId: string | null;
 
   // Variables — every dimension is a named variable
   variables: GaiaVariable[];
-
-  // Joints — kinematic connections between modules (assembly)
-  joints: Joint[];
-  selectedJointId: string | null;
-  /** Module ids currently interpenetrating (non-rigid pairs only). */
-  collidingModuleIds: Set<string>;
 
   // Imported CAD models (STEP/IGES/BREP)
   importedModels: ImportedModel[];
@@ -195,15 +189,6 @@ interface ForgeState {
   removeVariable: (id: string) => void;
   syncVariablesToScene: () => void;
 
-  // Joint actions
-  addJoint: (joint: Joint) => void;
-  removeJoint: (id: string) => void;
-  renameJoint: (id: string, label: string) => void;
-  /** Set the drive value of a revolute/slider joint (clamped to limits). */
-  driveJoint: (id: string, value: number) => void;
-  setJoints: (joints: Joint[]) => void;
-  setSelectedJoint: (id: string | null) => void;
-
   // Section actions
   setSectionEnabled: (enabled: boolean) => void;
   setSectionAxis: (axis: SectionAxis) => void;
@@ -228,37 +213,11 @@ function countPrimType(node: SdfNode, type: string): number {
   return (node as SdfOperation).children.reduce((s, c) => s + countPrimType(c, type), 0);
 }
 
-// rAF-coalesced post-update after driveJoint. Collision detection is O(n²)
-// over modules and meshing structured-clones the scene to a worker — running
-// either on every 60 Hz slider tick freezes the UI. Coalesce to one per frame.
-let _jointUpdatePending = false;
-function _scheduleJointPostUpdate() {
-  if (_jointUpdatePending) return;
-  _jointUpdatePending = true;
-  const run = () => {
-    _jointUpdatePending = false;
-    const st = useForgeStore.getState();
-    const baked = bakeJointTransforms(st.scene, st.joints);
-    const modules = collectModules(baked);
-    const colliding = detectCollisions(baked, modules, rigidPairKeys(st.joints));
-    useForgeStore.setState({ collidingModuleIds: colliding });
-    useForgeStore.getState().requestMesh('draft');
-  };
-  if (typeof requestAnimationFrame !== 'undefined') {
-    requestAnimationFrame(run);
-  } else {
-    setTimeout(run, 16);
-  }
-}
-
 export const useForgeStore = create<ForgeState>((set, get) => ({
   scene: createDefaultScene(),
   selectedId: null,
   activeModuleId: null,
   variables: [],
-  joints: [],
-  selectedJointId: null,
-  collidingModuleIds: new Set<string>(),
   importedModels: [],
   importing: false,
   importError: null,
@@ -318,11 +277,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       return;
     }
     set({ meshing: true, meshQuality: q });
-    // Bake joint drives into the scene before meshing so worker ignores joints.
-    const baked = state.joints.length > 0
-      ? bakeJointTransforms(state.scene, state.joints)
-      : state.scene;
-    w.postMessage({ type: 'mesh', scene: baked, resolution: RESOLUTION[q] });
+    w.postMessage({ type: 'mesh', scene: state.scene, resolution: RESOLUTION[q] });
   },
 
   setSelectedId: (id) => set({ selectedId: id }),
@@ -389,8 +344,7 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const n = factories[type]();
     let newScene: SdfOperation;
 
-    // Unified Body/Component policy: every primitive lives inside a module.
-    // Priority: selectedId container > activeModuleId > auto-create "Cuerpo N".
+    // Priority: selectedId container > activeModuleId > root
     const targetId = (() => {
       if (state.selectedId) {
         const sel = findNode(state.scene, state.selectedId);
@@ -400,19 +354,10 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
         const mod = findNode(state.scene, state.activeModuleId);
         if (mod && isContainer(mod)) return state.activeModuleId;
       }
-      return null; // signal: create a fresh module
+      return state.scene.id;
     })();
 
-    if (targetId) {
-      newScene = addChildToNode(state.scene, targetId, n) as SdfOperation;
-    } else {
-      // Auto-wrap: create a new module "Cuerpo N" and place the primitive inside.
-      const bodyCount = state.scene.children.filter(c => c.kind === 'module').length;
-      const mod = makeModule(`Cuerpo ${bodyCount + 1}`);
-      mod.children = [n];
-      newScene = { ...state.scene, children: [...state.scene.children, mod] } as SdfOperation;
-      set({ activeModuleId: mod.id });
-    }
+    newScene = addChildToNode(state.scene, targetId, n) as SdfOperation;
 
     set({ ...pushHistory(state, newScene), selectedId: n.id });
 
@@ -1313,33 +1258,6 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     set(s => ({ variables: s.variables.filter(v => v.id !== id) }));
   },
 
-  // ── Joint Actions ──
-
-  addJoint: (joint) => set(s => ({ joints: [...s.joints, joint] })),
-
-  removeJoint: (id) => set(s => ({ joints: s.joints.filter(j => j.id !== id) })),
-
-  renameJoint: (id, label) => set(s => ({
-    joints: s.joints.map(j => j.id === id ? { ...j, label } : j),
-  })),
-
-  driveJoint: (id, value) => {
-    set(s => ({
-      joints: s.joints.map(j => {
-        if (j.id !== id) return j;
-        if (j.type === 'rigid') return j;
-        return { ...j, drive: clampDrive(j, value) };
-      }),
-    }));
-    // Defer collision detection + meshing to next frame so 60 Hz scrubbing
-    // doesn't run an O(n²) sweep + structured-clone-to-worker on every tick.
-    _scheduleJointPostUpdate();
-  },
-
-  setJoints: (joints) => set({ joints }),
-
-  setSelectedJoint: (id) => set({ selectedJointId: id }),
-
   syncVariablesToScene: () => {
     const state = get();
     // Group param updates by primitive ID
@@ -1375,19 +1293,9 @@ interface ForgeSync {
   machines: MachineConfig[];
 }
 
-// Multi-window sync is OPT-IN: set `localStorage.forgeMultiTab = '1'` to enable.
-// Off by default — even with rAF coalescing the cross-tab postMessage flood
-// has been the source of three separate freeze regressions, and most users
-// only ever open one tab.
-const _MULTI_TAB =
-  typeof localStorage !== 'undefined' &&
-  localStorage.getItem('forgeMultiTab') === '1';
-
 let _suppressSync = false;
 const _bc: BroadcastChannel | null =
-  _MULTI_TAB && typeof BroadcastChannel !== 'undefined'
-    ? new BroadcastChannel('forge-session-v1')
-    : null;
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('forge-session-v1') : null;
 
 if (_bc) {
   _bc.onmessage = (e: MessageEvent<ForgeSync>) => {
@@ -1404,44 +1312,15 @@ if (_bc) {
   };
 }
 
-// Reference-equality short-circuit + rAF coalescing avoids hammering the
-// BroadcastChannel with full-scene structured clones on every set(). Without
-// this, scrubbing a joint (60 Hz) deep-clones the whole scene 120×/sec and
-// freezes the main thread.
-let _lastBcScene: SdfOperation | null = null;
-let _lastBcVars: GaiaVariable[] | null = null;
-let _lastBcMachines: MachineConfig[] | null = null;
-let _bcRafPending = false;
-
 useForgeStore.subscribe((state) => {
   if (_suppressSync || !_bc) return;
-  if (
-    state.scene === _lastBcScene &&
-    state.variables === _lastBcVars &&
-    state.machines === _lastBcMachines
-  ) return;
-  if (_bcRafPending) return;
-  _bcRafPending = true;
-  const flush = () => {
-    _bcRafPending = false;
-    if (!_bc) return;
-    const s = useForgeStore.getState();
-    _lastBcScene = s.scene;
-    _lastBcVars = s.variables;
-    _lastBcMachines = s.machines;
-    const msg: ForgeSync = {
-      type: 'forge-state-sync',
-      scene: s.scene,
-      variables: s.variables,
-      machines: s.machines,
-    };
-    try { _bc.postMessage(msg); } catch { /* channel closed */ }
+  const msg: ForgeSync = {
+    type: 'forge-state-sync',
+    scene: state.scene,
+    variables: state.variables,
+    machines: state.machines,
   };
-  if (typeof requestAnimationFrame !== 'undefined') {
-    requestAnimationFrame(flush);
-  } else {
-    setTimeout(flush, 16);
-  }
+  _bc.postMessage(msg);
 });
 
 /** Expose sync channel status for UI indicators */

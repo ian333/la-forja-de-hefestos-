@@ -19,6 +19,8 @@ const Matrix3D         = lazy(() => import('./modules/linalg/Matrix3D'));
 const Rotations        = lazy(() => import('./modules/linalg/Rotations'));
 const PCA              = lazy(() => import('./modules/linalg/PCA'));
 const MobiusRiemann    = lazy(() => import('./modules/complex/MobiusRiemann'));
+const NewtonFractals   = lazy(() => import('./modules/complex/NewtonFractals'));
+const ConformalMaps    = lazy(() => import('./modules/complex/ConformalMaps'));
 const PhasePortrait    = lazy(() => import('./modules/diffeq/PhasePortrait'));
 
 export const BRANCHES: LabBranch[] = [
@@ -99,12 +101,16 @@ export const BRANCHES: LabBranch[] = [
         childHint: 'Círculos siempre se convierten en círculos o rectas — y arriba todo es solo girar la esferita.',
         researcherHint: 'Edición compleja de a,b,c,d. Proyección estereográfica a S² con ∞ en el polo norte. Presets: Cayley, parabólica.',
         component: MobiusRiemann },
-      { id: 'roots', name: 'Raíces y fractales de Newton', status: 'planned',
-        blurb: 'Newton-Raphson en ℂ → fractales por cuenca de atracción.',
-        roadmap: ['Polinomio editable', 'Coloreado por raíz alcanzada + iteraciones'] },
-      { id: 'conformal', name: 'Mapas conformes', status: 'planned',
-        blurb: 'Preservan ángulos. Aerodinámica de Joukowski, planos hiperbólicos.',
-        roadmap: ['Transformación de Joukowski airfoil', 'Disco de Poincaré con teselaciones'] },
+      { id: 'roots', name: 'Raíces y fractales de Newton', status: 'live',
+        blurb: 'Newton-Raphson en ℂ → fractales por cuenca de atracción. Heightmap 3D real.',
+        childHint: 'Cada color es "a dónde acabás" si empezás ahí. Las fronteras son infinitas.',
+        researcherHint: '5 polinomios canónicos (z³−1, z⁴−1, z⁵−1, z³−z, Smale patológica). 121×121 vértices con altura ∝ iters.',
+        component: NewtonFractals },
+      { id: 'conformal', name: 'Mapas conformes', status: 'live',
+        blurb: 'w = z + 1/z (Joukowski airfoil) + flujo potencial con condición de Kutta + disco de Poincaré.',
+        childHint: 'Un círculo se vuelve un ala. Y el aire le pasa "gratis" alrededor.',
+        researcherHint: 'Potencial Φ = U(z + R²e^(2iα)/z) + (Γ/2πi)log(z). Kutta: Γ = −4πUR·sin(α+β). RK4 sobre streamlines.',
+        component: ConformalMaps },
     ],
   },
 

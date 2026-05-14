@@ -1,0 +1,310 @@
+{
+  "id": "econ-02-coase",
+  "title": "Por qué existen las empresas — Coase, 1937",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "01-paradoja",
+      "scene": "econ-board",
+      "audio": "01-paradoja.mp3",
+      "text": "Tu profesor de economía te dijo que los mercados son la forma más eficiente de organizar la producción. La oferta y la demanda encuentran el precio justo. Todo se autorregula. Bueno, entonces hazte una pregunta. Apple tiene ciento sesenta y cinco mil empleados. ¿Por qué no contrata ciento sesenta y cinco mil freelancers cada vez que hace un iPhone?",
+      "board": [
+        "# La paradoja",
+        "",
+        "Apple Inc.",
+        "165{,}000 empleados",
+        "",
+        "$ \\text{mercado} \\;\\stackrel{?}{=}\\; \\text{empresa}",
+        "",
+        "¿por qué no contratar",
+        "freelancers para cada iPhone?"
+      ]
+    },
+    {
+      "id": "02-contradiccion",
+      "scene": "econ-board",
+      "audio": "02-contradiccion.mp3",
+      "text": "Porque algo no cuadra. Si el mercado es tan eficiente, ¿por qué dentro de las empresas vives en un sistema de jerarquía? Tu jefe te manda. No te pregunta el precio. Te dice qué hacer y tú obedeces. Eso no es un mercado. Es lo contrario.",
+      "board": [
+        "Apple: 165{,}000 empleados",
+        "",
+        "afuera → mercado · precios",
+        "adentro → jerarquía · órdenes",
+        "",
+        "¿por qué coexisten?"
+      ]
+    },
+    {
+      "id": "03-coase-joven",
+      "scene": "econ-board",
+      "audio": "03-coase-joven.mp3",
+      "text": "Mil novecientos treinta y dos. Un inglés de veintiún años llamado Ronald Coase viaja a Estados Unidos. Visita fábricas. Pregunta a los gerentes: ¿por qué deciden hacer esta pieza adentro en lugar de comprarla afuera? Las respuestas que recibe no caben en ningún libro de economía existente.",
+      "board": [
+        "1932 · Ronald Coase, 21 años",
+        "Inglaterra → EE.UU.",
+        "",
+        "visita fábricas",
+        "pregunta a gerentes",
+        "escucha respuestas",
+        "que no caben",
+        "en ningún libro"
+      ]
+    },
+    {
+      "id": "04-paper",
+      "scene": "econ-board",
+      "audio": "04-paper.mp3",
+      "text": "Cinco años después, en mil novecientos treinta y siete, publica el artículo. Once páginas. Se llama La naturaleza de la empresa. Casi nadie le presta atención durante tres décadas. Pero ese paper, junto con uno de mil novecientos sesenta sobre externalidades, le va a ganar el Nobel cincuenta y cuatro años más tarde.",
+      "board": [
+        "1937 · ``The Nature of the Firm''",
+        "11 páginas",
+        "",
+        "1960 · ``The Problem of",
+        "Social Cost''",
+        "",
+        "Nobel: 1991"
+      ]
+    },
+    {
+      "id": "05-costos-ocultos",
+      "scene": "transaction-flow",
+      "audio": "05-costos-ocultos.mp3",
+      "text": "La respuesta de Coase es elegante. Toda transacción de mercado tiene costos invisibles. Buscar al proveedor. Negociar el precio. Escribir un contrato. Verificar la calidad. Vigilar que se cumpla. Resolver disputas si no se cumple. Cada uno de esos pasos cuesta tiempo, dinero, atención. Son los costos de transacción.",
+      "board": [
+        "Costos de transacción",
+        "",
+        "· buscar",
+        "· negociar",
+        "· contratar",
+        "· verificar",
+        "· vigilar",
+        "· hacer cumplir",
+        "",
+        "todos invisibles",
+        "todos reales"
+      ]
+    },
+    {
+      "id": "06-decision",
+      "scene": "econ-chart",
+      "audio": "06-decision.mp3",
+      "text": "Entonces cada empresa, para cada actividad, se hace una pregunta. ¿La hago adentro o la compro afuera? Adentro pagas el costo de coordinar a tu equipo. Afuera pagas el costo de transactar en el mercado. La empresa elige la opción más barata. Y así, sin diseñarlo nadie, surge el tamaño óptimo de cada empresa.",
+      "board": [
+        "Make vs Buy",
+        "",
+        "adentro: costo de coordinar",
+        "afuera: costo de transactar",
+        "",
+        "$ C_{adentro} \\;\\lessgtr\\; C_{afuera}",
+        "",
+        "elige el menor",
+        "→ tamaño óptimo"
+      ]
+    },
+    {
+      "id": "07-tamano-optimo",
+      "scene": "econ-chart",
+      "audio": "07-tamano-optimo.mp3",
+      "text": "Visualízalo así. Una empresa pequeña hace casi todo afuera. Compra cada cosa al mercado. A medida que crece, va internalizando: contrata, integra, fusiona. Pero llega un punto donde coordinar internamente, con su burocracia y sus juntas, cuesta más que pagar el mercado. Ahí frena. Ese es el tamaño donde se queda.",
+      "board": [
+        "tamaño 1: todo afuera",
+        "tamaño 10: algunas dentro",
+        "tamaño 1000: muchas dentro",
+        "tamaño 10000: burocracia ↑",
+        "",
+        "$ \\boxed{\\,C'_{adentro} = C'_{afuera}\\,}",
+        "",
+        "tamaño óptimo"
+      ]
+    },
+    {
+      "id": "08-ford",
+      "scene": "econ-board",
+      "audio": "08-ford.mp3",
+      "text": "Mil novecientos veinte. Henry Ford lo lleva al extremo. Compra minas de hierro, fundiciones, plantaciones de hule, ferrocarriles, fábricas, distribución. Todo. Lo llaman integración vertical. ¿Por qué Ford hace esto? Porque en mil novecientos veinte, los costos de transactar en el mercado eran enormes. Era más barato dueñearlo todo.",
+      "board": [
+        "1920 · Henry Ford",
+        "",
+        "minas → acero",
+        "→ hule → caucho",
+        "→ trenes",
+        "→ fábrica",
+        "→ tiendas",
+        "",
+        "integración vertical · total"
+      ]
+    },
+    {
+      "id": "09-toyota",
+      "scene": "econ-board",
+      "audio": "09-toyota.mp3",
+      "text": "Cincuenta años después, Toyota hace exactamente lo opuesto. Coordina cientos de proveedores especializados que no son suyos. Justo a tiempo. Kanban. Relaciones de largo plazo. ¿Por qué le funciona? Porque para los años setenta, los costos de transactar son mucho menores. La confianza repetida reemplaza el contrato escrito.",
+      "board": [
+        "1970 · Toyota",
+        "",
+        "proveedores externos",
+        "kanban · just-in-time",
+        "",
+        "relación de largo plazo",
+        "reemplaza al contrato",
+        "",
+        "modelo lean"
+      ]
+    },
+    {
+      "id": "10-apple",
+      "scene": "econ-board",
+      "audio": "10-apple.mp3",
+      "text": "Apple, hoy, es híbrido. Diseña adentro, en Cupertino. Produce afuera, en Foxconn. ¿Por qué? Diseñar requiere coordinación intensa, secretos, iteración rápida. Producir es una receta repetible. Lo de adentro tiene altos costos de transacción si lo subcontrata. Lo de afuera, no. La empresa moderna escoge bisturí por bisturí.",
+      "board": [
+        "Hoy · Apple",
+        "",
+        "diseño: adentro · alto control",
+        "producción: Foxconn · escala",
+        "",
+        "híbrido moderno",
+        "",
+        "Coase escoge",
+        "bisturí por bisturí"
+      ]
+    },
+    {
+      "id": "11-internet",
+      "scene": "econ-board",
+      "audio": "11-internet.mp3",
+      "text": "Y aquí viene la profecía cumplida. Coase predijo, sin saberlo, lo que iba a pasar con el internet. Cuando los costos de transacción caen, las empresas encogen. Hoy, gracias a Stripe, AWS, Notion, Figma, un solo emprendedor puede competir con corporaciones gigantes. Uber tiene treinta mil empleados moviendo a cinco millones de conductores que no son empleados. Eso es Coase.",
+      "board": [
+        "Internet 2026",
+        "",
+        "Stripe · AWS · Notion · Figma",
+        "→ costos de transacción $\\downarrow$",
+        "",
+        "Uber: 30k empleados",
+        "5M conductores externos",
+        "",
+        "empresas $\\downarrow$ · solos $\\uparrow$"
+      ]
+    },
+    {
+      "id": "12-teorema",
+      "scene": "transaction-flow",
+      "audio": "12-teorema.mp3",
+      "text": "Pero Coase tenía otra idea, más profunda y más controvertida. La publicó en mil novecientos sesenta. Se llama el teorema de Coase. Dice algo asombroso. Si los costos de transacción fueran cero, no importaría a quién le asignes la propiedad: las dos partes negociarían hasta llegar al resultado óptimo, sin que el gobierno intervenga.",
+      "board": [
+        "Teorema de Coase · 1960",
+        "",
+        "si costos = 0:",
+        "",
+        "$ \\text{propiedad inicial}",
+        "$ \\not\\Rightarrow \\text{resultado final}",
+        "",
+        "las partes negocian",
+        "→ óptimo"
+      ]
+    },
+    {
+      "id": "13-externalidad",
+      "scene": "transaction-flow",
+      "audio": "13-externalidad.mp3",
+      "text": "Ejemplo clásico. Una fábrica contamina un río. Río abajo, un pescador pierde su pesca. La solución tradicional: el gobierno multa a la fábrica. Coase dice: si la fábrica y el pescador pueden negociar libremente, llegan al óptimo solos. Quizás el pescador le paga a la fábrica para que limpie. Quizás la fábrica le paga al pescador para que se mude. El mercado encuentra la solución.",
+      "board": [
+        "Externalidad",
+        "",
+        "fábrica → contamina",
+        "pescador → pierde pesca",
+        "",
+        "tradicional: gobierno multa",
+        "",
+        "Coase: que negocien",
+        "→ pago bilateral",
+        "→ óptimo"
+      ]
+    },
+    {
+      "id": "14-pero-realidad",
+      "scene": "econ-board",
+      "audio": "14-pero-realidad.mp3",
+      "text": "Pero hay un pero gigante. En el mundo real, los costos de transacción casi nunca son cero. Negociar entre miles de pescadores y una fábrica es imposible. Por eso, dice Coase, sí importa a quién le das el derecho inicial. La asignación legal de la propiedad determina quién paga el costo de la externalidad. Eso, irónicamente, justifica la regulación.",
+      "board": [
+        "Mundo real:",
+        "$ \\text{costos} > 0",
+        "",
+        "$ \\Rightarrow$ propiedad inicial",
+        "$ \\;$ SÍ importa",
+        "",
+        "asignar derechos",
+        "→ asignar costos",
+        "",
+        "justifica regulación"
+      ]
+    },
+    {
+      "id": "15-criticas",
+      "scene": "econ-board",
+      "audio": "15-criticas.mp3",
+      "text": "El teorema fue criticado desde los dos lados. La izquierda dijo: ¿de verdad propones que los pobres negocien con las corporaciones? No tienen poder de negociación. La derecha, en cambio, lo abrazó como argumento contra la regulación. Coase pasó cincuenta años aclarando que su teorema no era una receta, sino un experimento mental para mostrar cuándo importan los costos de transacción.",
+      "board": [
+        "Críticas",
+        "",
+        "izquierda: \"no hay poder",
+        "$ \\;$ de negociación real\"",
+        "",
+        "derecha: \"¡fuera el Estado!\"",
+        "",
+        "Coase: \"era un",
+        "$ \\;$ experimento mental,",
+        "$ \\;$ no una receta\""
+      ]
+    },
+    {
+      "id": "16-williamson",
+      "scene": "econ-board",
+      "audio": "16-williamson.mp3",
+      "text": "Otro economista, Oliver Williamson, llevó esto adelante y ganó el Nobel en dos mil nueve. Identificó tipos específicos de costos de transacción. La especificidad de los activos: si haces inversiones que solo sirven con un proveedor específico, ese proveedor te puede chantajear después. Es el problema del hold-up. Por eso las empresas integran verticalmente: para evitarlo.",
+      "board": [
+        "Oliver Williamson · 2009",
+        "",
+        "específicos de activos",
+        "→ hold-up problem",
+        "",
+        "Apple compra un dado",
+        "específico → vulnerable",
+        "",
+        "$ \\Rightarrow$ integra adentro"
+      ]
+    },
+    {
+      "id": "17-legado",
+      "scene": "econ-board",
+      "audio": "17-legado.mp3",
+      "text": "Coase tenía veintiún años cuando empezó a hacer las preguntas. Tenía noventa y nueve cuando murió, en dos mil trece. Su pregunta original — ¿por qué existen las empresas? — sigue siendo la mejor manera de entender qué pasa cuando los costos de Internet, las plataformas, la inteligencia artificial, las criptomonedas hacen colapsar el costo de transactar. Cada vez que un costo de transacción cae, una empresa se acorta o se rompe.",
+      "board": [
+        "1910 — 2013",
+        "",
+        "$ \\boxed{\\text{costo transacción} \\downarrow}",
+        "$ \\Rightarrow$ empresas $\\downarrow$",
+        "",
+        "AI, crypto, plataformas",
+        "→ siguiente ola",
+        "",
+        "Coase es el lente"
+      ]
+    },
+    {
+      "id": "18-cierre",
+      "scene": "econ-board",
+      "audio": "18-cierre.mp3",
+      "text": "Akerlof, en la clase anterior, te enseñó que los mercados pueden morirse cuando hay información asimétrica. Coase, aquí, te enseña qué pasa después. Cuando los mercados no alcanzan, los humanos no se rinden. Construyen empresas, escriben contratos, inventan instituciones. La economía, en serio, no es la ciencia del mercado. Es la ciencia de las instituciones que sustituyen al mercado cuando este falla. Y eso es justo donde vamos a meternos en las próximas clases.",
+      "board": [
+        "Akerlof: mercados fallan",
+        "Coase: por eso hay empresas",
+        "",
+        "economía =",
+        "ciencia de las",
+        "instituciones",
+        "",
+        "siguiente lección…"
+      ]
+    }
+  ]
+}
