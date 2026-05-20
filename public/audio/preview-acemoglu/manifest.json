@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena-acemoglu-nogales",
+  "title": "Acemoglu · Nogales · Two Worlds",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "acemoglu-nogales",
+      "scene": "acemoglu-nogales",
+      "audio": "acemoglu-nogales.mp3",
+      "text": "Una barda. En medio del desierto de Sonora. De un lado, Nogales, Arizona. Del otro, Nogales, Sonora. Misma latitud. Mismo clima. Misma gente — familias partidas por la frontera. Del lado americano, el ingreso promedio es tres veces mayor. La esperanza de vida, cinco años más larga. Las casas se ven distintas. Las calles también. ¿Por qué? No es la tierra. Es la institución."
+    }
+  ]
+}

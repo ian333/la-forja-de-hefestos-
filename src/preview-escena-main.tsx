@@ -18,7 +18,9 @@ import LimonesEscena04 from './masterclass/preview/LimonesEscena04';
 import LimonesEscena05 from './masterclass/preview/LimonesEscena05';
 import LimonesEscena06 from './masterclass/preview/LimonesEscena06';
 import LimonesEscena07 from './masterclass/preview/LimonesEscena07';
+import LimonesEscena08 from './masterclass/preview/LimonesEscena08';
 import OstromTragedia from './masterclass/preview/OstromTragedia';
+import AcemogluNogales from './masterclass/preview/AcemogluNogales';
 
 function readAspect(): '9:16' | '16:9' | 'auto' {
   if (typeof window === 'undefined') return 'auto';
@@ -29,11 +31,13 @@ function readAspect(): '9:16' | '16:9' | 'auto' {
   return 'auto';
 }
 
-function readScene(): '01' | '02' | '03' | '04' | '05' | '06' | '07' | 'ostrom' {
+function readScene(): '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | 'ostrom' | 'acemoglu' {
   if (typeof window === 'undefined') return '01';
   const params = new URLSearchParams(window.location.search);
   const s = params.get('scene') || '01';
+  if (s === 'acemoglu') return 'acemoglu';
   if (s === 'ostrom') return 'ostrom';
+  if (s === '08' || s === '8') return '08';
   if (s === '07' || s === '7') return '07';
   if (s === '06' || s === '6') return '06';
   if (s === '05' || s === '5') return '05';
@@ -47,7 +51,9 @@ const aspect = readAspect();
 const scene = readScene();
 
 const SceneComponent =
+  scene === 'acemoglu' ? AcemogluNogales :
   scene === 'ostrom' ? OstromTragedia :
+  scene === '08' ? LimonesEscena08 :
   scene === '07' ? LimonesEscena07 :
   scene === '06' ? LimonesEscena06 :
   scene === '05' ? LimonesEscena05 :

@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T20:25:38.694Z",
+  "script": "script-escena-acemoglu-nogales.json",
+  "script_id": "preview-escena-acemoglu-nogales",
+  "total_duration_sec": 29.806,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "acemoglu-nogales.mp3",
+      "duration_sec": 29.806
+    }
+  ]
+}
