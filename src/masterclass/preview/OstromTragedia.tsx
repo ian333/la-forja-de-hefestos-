@@ -23,6 +23,16 @@ import AtomModel from '../assets/gltf/AtomModel';
 import { LIBRARY } from '../assets/gltf/manifest';
 import { MasterclassEnv } from '../assets/hdri';
 import PostFX from '../scenes/_postFX';
+import type { ShapeMode } from '../assets/shapes/_BaseShape';
+
+function readInitialMode(): ShapeMode {
+  if (typeof window === 'undefined') return 'atom';
+  try {
+    const m = localStorage.getItem('ostromMode');
+    if (m === 'solid' || m === 'wireframe' || m === 'edges' || m === 'atom') return m;
+  } catch {}
+  return 'atom';
+}
 
 const AUDIO_URL = '/audio/preview-ostrom/ostrom-tragedia.mp3';
 
@@ -55,13 +65,13 @@ interface ForestItemProps {
   rotationY: number;
   src: string;
   color: string;
-  tDeathRef: { current: number }; // shared timeline ref
+  tDeathRef: { current: number };
   myTDeath: number;
+  mode: ShapeMode;
 }
 
-function ForestItem({ position, scale, rotationY, src, color, tDeathRef, myTDeath }: ForestItemProps) {
+function ForestItem({ position, scale, rotationY, src, color, tDeathRef, myTDeath, mode }: ForestItemProps) {
   const groupRef = useRef<THREE.Group>(null);
-  // Sin useState — todo via ref para evitar re-renders y mantener AtomModel montado
   useFrame(() => {
     if (!groupRef.current) return;
     const t = tDeathRef.current;
@@ -79,7 +89,7 @@ function ForestItem({ position, scale, rotationY, src, color, tDeathRef, myTDeat
   });
   return (
     <group ref={groupRef} position={position} rotation={[0, rotationY, 0]} scale={scale}>
-      <AtomModel src={src} color={color} glow={1.2} mode="atom" scale={1} />
+      <AtomModel src={src} color={color} glow={1.2} mode={mode} scale={1} />
     </group>
   );
 }
@@ -120,10 +130,11 @@ const TREES_COUNT = 36;
 const FILLER_COUNT = 14;
 const FOREST_RADIUS = 6.0;
 
-function SceneContent({ aspect: _aspect, audioRef, isPlaying }: {
+function SceneContent({ aspect: _aspect, audioRef, isPlaying, mode }: {
   aspect: '9:16' | '16:9';
   audioRef: React.RefObject<HTMLAudioElement | null>;
   isPlaying: boolean;
+  mode: ShapeMode;
 }) {
   void _aspect;
   // Soporta ?t=N en URL para empezar en timestamp arbitrario (modo screenshot)
@@ -227,6 +238,7 @@ function SceneContent({ aspect: _aspect, audioRef, isPlaying }: {
           color={t.color}
           tDeathRef={timeRef}
           myTDeath={t.tDeath}
+          mode={mode}
         />
       ))}
 
@@ -241,51 +253,52 @@ function SceneContent({ aspect: _aspect, audioRef, isPlaying }: {
           color={f.color}
           tDeathRef={timeRef}
           myTDeath={f.tDeath}
+          mode={mode}
         />
       ))}
 
       {/* Astronautas cosechadores (no mueren, observan) */}
       {harvesters.map((h, i) => (
-        <Harvester key={`h-${i}`} {...h} timeRef={timeRef} />
+        <Harvester key={`h-${i}`} {...h} timeRef={timeRef} mode={mode} />
       ))}
 
       {/* Log stack central — el "recurso extraído" que crece con cada árbol caído */}
-      <LogPile timeRef={timeRef} />
+      <LogPile timeRef={timeRef} mode={mode} />
     </>
   );
 }
 
 // Astronauta cosechador — siempre montado, controlamos visibilidad via ref
 // (evita re-mount que dispararía Suspense mid-animation)
-function Harvester({ pos, rotY, tAppear, timeRef }: {
+function Harvester({ pos, rotY, tAppear, timeRef, mode }: {
   pos: [number, number, number];
   rotY: number;
   tAppear: number;
   timeRef: { current: number };
+  mode: ShapeMode;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   useFrame(() => {
     if (!groupRef.current) return;
     const t = timeRef.current;
-    // Fade-in en 1.5s después de tAppear
     const a = clamp((t - tAppear) / 1.5, 0, 1);
     groupRef.current.visible = a > 0.01;
     groupRef.current.scale.setScalar(0.8 * a);
   });
   return (
     <group ref={groupRef} position={pos} rotation={[0, rotY, 0]} scale={0.001}>
-      <AtomModel src={LIBRARY.astronaut.src} color="#E8E8F5" glow={0.9} mode="atom" />
+      {/* Astronautas SÍ con halo — son "actores" (hero-level), no crowd */}
+      <AtomModel src={LIBRARY.astronaut.src} color="#E8E8F5" glow={0.9} mode={mode} />
     </group>
   );
 }
 
 // Pila de logs creciente — siempre montada, scale via ref
-function LogPile({ timeRef }: { timeRef: { current: number } }) {
+function LogPile({ timeRef, mode }: { timeRef: { current: number }; mode: ShapeMode }) {
   const groupRef = useRef<THREE.Group>(null);
   useFrame(() => {
     if (!groupRef.current) return;
     const t = timeRef.current;
-    // Crece desde t=13 hasta t=30 (sincronizado con extracción)
     const grow = clamp((t - 13) / 17, 0, 1);
     const target = Math.max(0.001, grow * 1.4);
     groupRef.current.scale.setScalar(target);
@@ -293,7 +306,7 @@ function LogPile({ timeRef }: { timeRef: { current: number } }) {
   });
   return (
     <group ref={groupRef} position={[0, 0, 0]} scale={0.001}>
-      <AtomModel src={LIBRARY.log_stack.src} color="#A0522D" glow={1.2} mode="atom" />
+      <AtomModel src={LIBRARY.log_stack.src} color="#A0522D" glow={1.2} mode={mode} />
     </group>
   );
 }
@@ -323,6 +336,7 @@ export default function OstromTragedia({ forceAspect = 'auto' }: OstromTragediaP
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [mode, setMode] = useState<ShapeMode>(readInitialMode);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -369,7 +383,7 @@ export default function OstromTragedia({ forceAspect = 'auto' }: OstromTragediaP
         dpr={[1, 2]}
       >
         <Suspense fallback={null}>
-          <SceneContent aspect={aspect} audioRef={audioRef} isPlaying={isPlaying} />
+          <SceneContent aspect={aspect} audioRef={audioRef} isPlaying={isPlaying} mode={mode} />
         </Suspense>
         <PostFX
           intensity={1.6}
@@ -394,6 +408,24 @@ export default function OstromTragedia({ forceAspect = 'auto' }: OstromTragediaP
         <div className="absolute top-6 left-6 text-[10px] uppercase tracking-[0.3em] text-[#FFE5A0]/55 font-mono">
           Ostrom · 2009 · Tragedia de los Comunes
         </div>
+
+        {/* Mode toggle — esquina superior derecha, pointer-events activas */}
+        <div className="absolute top-6 right-6 flex gap-1 font-mono pointer-events-auto">
+          {(['solid', 'wireframe', 'edges', 'atom'] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`px-2 py-1 text-[10px] uppercase tracking-wider border transition-all ${
+                mode === m
+                  ? 'border-[#FDB813] text-[#FDB813] bg-[#FDB813]/10'
+                  : 'border-[#FFE5A0]/20 text-[#FFE5A0]/40 hover:text-[#FFE5A0]/70 hover:border-[#FFE5A0]/40'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+
         <div className="absolute bottom-10 left-0 right-0 text-center font-mono">
           <div className="text-[#FFE5A0]/70 text-sm tracking-wider">
             seis pastores · un mismo bosque · ninguna regla
