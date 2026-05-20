@@ -1,0 +1,108 @@
+{
+  "$schema": "./MASTERCLASS_RULES.md#section-11",
+  "_comment": "Plantilla para una nueva masterclass cinematográfica. Lee MASTERCLASS_RULES.md antes de llenar esto. Borra todos los campos _comment y los _example al producir la clase final. Borra capítulos no usados.",
+
+  "id": "econ-XX-name",
+  "title": "Título corto que NO empieza con 'aprende' ni 'cómo'",
+  "central_emotion": "asombro",
+  "_central_emotion_options": "asombro | inquietud | calidez | adrenalina",
+  "aspect_ratio_primary": "9:16",
+  "total_duration_target_sec": 720,
+  "_duration_note": "8-15 min típico (480-900s). Hasta 25min solo para Nobel mayores.",
+
+  "voice_name": "Matilda",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.45,
+    "use_speaker_boost": true
+  },
+
+  "cross_references": [
+    { "to_class": "econ-XX-other", "type": "antecedente" },
+    { "to_class": "econ-YY-other", "type": "extension" }
+  ],
+  "_cross_references_note": "type: antecedente | extension | contraste | aplicacion. Mínimo 2 por clase.",
+
+  "chapters": [
+    {
+      "id": "ch1-problema",
+      "title": "El problema invisible",
+      "duration_target_sec": 150,
+      "central_gap": "[Pregunta concreta y temporal que abre curiosidad. NO genérica.]",
+      "misconception": "[La intuición errónea que el alumno trae. Una sola frase.]",
+      "mood": "inquietud productiva",
+      "_mood_options": "inquietud productiva | asombro contemplativo | calidez humana | adrenalina | claridad mental",
+      "cliffhanger": "[Lo que dejas abierto para el siguiente capítulo.]",
+      "scenes": [
+        {
+          "id": "01-hook",
+          "scene": "[nombre del componente R3F o econ-board]",
+          "template": "reveal",
+          "_template_options": "two-worlds | zoom-out | zoom-in | reveal | inversion | collapse | cascade | bridge",
+          "story_beat": "hook",
+          "_story_beat_options": "hook | develop | turn | payoff | cliffhanger",
+          "visual_intent": "[Una frase: ¿qué emoción carga la luz/cámara/movimiento de esta escena?]",
+          "duration_target_sec": 22,
+          "text": "[Narración. Frases cortas. Pausa interna con punto + doble espacio. NO definiciones aquí.]",
+          "board": [
+            "[Opcional. Solo si scene == 'econ-board'. Líneas LaTeX cortas.]"
+          ],
+          "beats": [
+            { "at_sec": 0.0,  "action": "camera-push-in",      "intensity": 0.3 },
+            { "at_sec": 3.5,  "action": "flash-amber",         "intensity": 0.6 },
+            { "at_sec": 8.0,  "action": "reveal-second-element" },
+            { "at_sec": 14.0, "action": "hold-with-vignette" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "ch2-intuicion-falla",
+      "title": "Tu intuición te falla",
+      "duration_target_sec": 150,
+      "central_gap": "...",
+      "misconception": "...",
+      "mood": "adrenalina",
+      "cliffhanger": "...",
+      "scenes": []
+    },
+
+    {
+      "id": "ch3-descubrimiento",
+      "title": "El descubrimiento",
+      "duration_target_sec": 180,
+      "central_gap": "...",
+      "misconception": "...",
+      "mood": "asombro contemplativo",
+      "cliffhanger": "...",
+      "scenes": []
+    },
+
+    {
+      "id": "ch4-consecuencia",
+      "title": "La consecuencia",
+      "duration_target_sec": 150,
+      "central_gap": "...",
+      "misconception": "...",
+      "mood": "claridad mental",
+      "cliffhanger": "...",
+      "scenes": []
+    },
+
+    {
+      "id": "ch5-mexico",
+      "title": "Tu vida ya cambió",
+      "duration_target_sec": 90,
+      "central_gap": "[Cómo este Nobel toca la vida diaria en México/LatAm — concreto, no genérico]",
+      "misconception": "...",
+      "mood": "calidez humana",
+      "cliffhanger": null,
+      "_cliffhanger_note": "Último capítulo: no hay cliffhanger, hay cierre emocional.",
+      "scenes": []
+    }
+  ]
+}

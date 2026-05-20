@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena-ostrom-tragedia",
+  "title": "Ostrom · Cap 1 · La Tragedia (Hardin)",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "ostrom-tragedia",
+      "scene": "ostrom-tragedia",
+      "audio": "ostrom-tragedia.mp3",
+      "text": "Un bosque. Seis pastores. Un mismo terreno. Nadie es dueño: es común. Mil novecientos sesenta y ocho. Garrett Hardin publica un ensayo en Science. Su predicción es brutal. Si nadie controla el acceso, cada quien extrae al máximo. Si yo no como el pasto, lo come el otro. Lo que era una pradera ahora es un desierto. Los pastores no son malos. Cada uno tomó la decisión racional. Pero la suma de decisiones racionales destruyó el recurso."
+    }
+  ]
+}

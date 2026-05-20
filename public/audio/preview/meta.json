@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-05-20T05:31:21.087Z",
+  "script": "script-escena06-limones.json",
+  "script_id": "preview-escena06-limones",
+  "total_duration_sec": 187.951,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "01-hook.mp3",
+      "duration_sec": 14.367
+    },
+    {
+      "file": "02-misconception.mp3",
+      "duration_sec": 19.644
+    },
+    {
+      "file": "03-reveal-interno.mp3",
+      "duration_sec": 27.951
+    },
+    {
+      "file": "04-cien-carros.mp3",
+      "duration_sec": 27.873
+    },
+    {
+      "file": "05-cliffhanger.mp3",
+      "duration_sec": 28.447
+    },
+    {
+      "file": "06-matematica.mp3",
+      "duration_sec": 35.474
+    },
+    {
+      "file": "07-exodus.mp3",
+      "duration_sec": 34.194
+    }
+  ]
+}

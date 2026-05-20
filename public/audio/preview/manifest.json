@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena06-limones",
+  "title": "Cap 2 · Escena 6 — La matemática que mata",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "06-matematica",
+      "scene": "limones-escena-06",
+      "audio": "06-matematica.mp3",
+      "text": "[wondering] El comprador... no es tonto. [pause] Sabe que algunos carros valen doscientos mil. [pause] Y otros... valen ochenta. [pause] [slowly] Entonces ofrece... el promedio. [pause] [firmly] Cincuenta por ciento de doscientos mil... [pause] más cincuenta por ciento de ochenta mil... [pause] es ciento cuarenta mil pesos. [pause] [softly] Suena razonable. [pause] Pero aquí está la trampa: [pause] [whispers] el dueño del carro bueno, [pause] el que VALE doscientos mil... [pause] [slowly] no acepta ciento cuarenta. [pause] [firmly] Se va. [pause] Y cuando los buenos se van... [pause] solo quedan... los malos."
+    }
+  ]
+}

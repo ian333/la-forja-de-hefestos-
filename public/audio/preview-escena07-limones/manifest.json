@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena07-limones",
+  "title": "Cap 2 · Escena 7 — Los cherries huyen",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "07-exodus",
+      "scene": "limones-escena-07",
+      "audio": "07-exodus.mp3",
+      "text": "[softly] Ciento cuarenta mil. [pause] Eso ofrece el comprador. [pause] [wondering] Pero si tu carro vale doscientos mil... [pause] [firmly] ¿aceptarías ciento cuarenta? [pause] [slowly] No. [pause] Te vas. [pause] [softly] Y el que vale ciento ochenta... también se va. [pause] [whispers] Y el de ciento sesenta. [pause] [firmly] Uno por uno, los buenos abandonan el lote. [pause] [slowly] Y cada vez que uno se va... [pause] el promedio de los que quedan... [pause] baja. [pause] [softly] Ciento veinte... [pause] cien... [pause] [whispers] ochenta. [pause] [firmly] Hasta que solo quedan... los limones."
+    }
+  ]
+}

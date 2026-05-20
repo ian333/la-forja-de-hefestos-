@@ -40,6 +40,8 @@ export default defineConfig({
         "econ-lab": resolve(import.meta.dirname, "econ-lab.html"),
         "physics-nobel": resolve(import.meta.dirname, "physics-nobel.html"),
         "math-prizes": resolve(import.meta.dirname, "math-prizes.html"),
+        "preview-escena": resolve(import.meta.dirname, "preview-escena.html"),
+        library: resolve(import.meta.dirname, "library.html"),
       },
       output: {
         manualChunks: {
