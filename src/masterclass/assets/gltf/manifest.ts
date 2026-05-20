@@ -22,7 +22,8 @@ export type LibraryCategory =
   | 'physics'     // espacio, relatividad, mecánica
   | 'math'        // marble, funnel, helix — para Thaler/Markowitz/Galton
   | 'nature'      // Solow (capital arbolado), Ostrom (commons), Sen (cosecha)
-  | 'lab';        // instrumentos científicos — reservado, hay que hand-craft
+  | 'animals'     // Ostrom (pasture/marine), Sen (livestock), game theory
+  | 'lab';        // factory machines (Coase/Solow), instruments científicos
 
 export interface LibraryEntry {
   /** Nombre canónico (kebab-case). Usado como id. */
@@ -586,6 +587,280 @@ export const LIBRARY: Record<string, LibraryEntry> = {
     available: true,
     primaryUse: 'Sen · personaje genérico amable, narrativa cálida',
   },
+
+  // ─── CIVILIANS (Blocky Characters) — Nash, Ostrom, multi-player scenes ─
+  civilian_a: {
+    name: 'civilian_a',
+    src: '/models/library/people/civilian_a.glb',
+    category: 'people',
+    color: '#FBBF24',
+    defaultScale: 1.0,
+    source: 'Kenney — Blocky Characters (CC0)',
+    available: true,
+    primaryUse: 'Nash · jugador genérico, Ostrom · pastor',
+  },
+  civilian_b: {
+    name: 'civilian_b',
+    src: '/models/library/people/civilian_b.glb',
+    category: 'people',
+    color: '#3B82F6',
+    defaultScale: 1.0,
+    source: 'Kenney — Blocky Characters (CC0)',
+    available: true,
+    primaryUse: 'Nash · jugador 2, Ostrom · pastor 2',
+  },
+  civilian_c: {
+    name: 'civilian_c',
+    src: '/models/library/people/civilian_c.glb',
+    category: 'people',
+    color: '#34D399',
+    defaultScale: 1.0,
+    source: 'Kenney — Blocky Characters (CC0)',
+    available: true,
+    primaryUse: 'Nash · jugador 3, escenas multi-agent',
+  },
+  civilian_d: {
+    name: 'civilian_d',
+    src: '/models/library/people/civilian_d.glb',
+    category: 'people',
+    color: '#A78BFA',
+    defaultScale: 1.0,
+    source: 'Kenney — Blocky Characters (CC0)',
+    available: true,
+    primaryUse: 'Nash · jugador 4, diversidad demográfica',
+  },
+  skeleton: {
+    name: 'skeleton',
+    src: '/models/library/people/skeleton.glb',
+    category: 'people',
+    color: '#E8E8E8',
+    defaultScale: 1.0,
+    source: 'Kenney — Graveyard Kit (CC0)',
+    available: true,
+    primaryUse: 'Akerlof · selección adversa (mercado muerto), Hardin tragedia',
+  },
+  ghost: {
+    name: 'ghost',
+    src: '/models/library/people/ghost.glb',
+    category: 'people',
+    color: '#C8C8E0',
+    defaultScale: 1.0,
+    source: 'Kenney — Graveyard Kit (CC0)',
+    available: true,
+    primaryUse: 'Lucas · expectativas racionales (fantasma del futuro), externalidades',
+  },
+
+  // ─── ANIMALS (Cube Pets) — Ostrom commons, Sen agriculture, game theory ─
+  cow: {
+    name: 'cow',
+    src: '/models/library/animals/cow.glb',
+    category: 'animals',
+    color: '#F5F5F5',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Ostrom · tragedia del pastor (Hardin), Sen · ganadería',
+  },
+  pig: {
+    name: 'pig',
+    src: '/models/library/animals/pig.glb',
+    category: 'animals',
+    color: '#FFB6C1',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Ostrom · commons agrícola, Sen',
+  },
+  fish: {
+    name: 'fish',
+    src: '/models/library/animals/fish.glb',
+    category: 'animals',
+    color: '#7FB0FF',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Ostrom · marine commons, Tirole · monopolio pesquero',
+  },
+  bee: {
+    name: 'bee',
+    src: '/models/library/animals/bee.glb',
+    category: 'animals',
+    color: '#FFD86B',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Coase · externalidades (apicultor vs huerto), polinización',
+  },
+  deer: {
+    name: 'deer',
+    src: '/models/library/animals/deer.glb',
+    category: 'animals',
+    color: '#A0522D',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Ostrom · forest commons (caza), Solow · recurso natural',
+  },
+  fox: {
+    name: 'fox',
+    src: '/models/library/animals/fox.glb',
+    category: 'animals',
+    color: '#FF7A45',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Nash · fox in henhouse, game theory predator',
+  },
+  bunny: {
+    name: 'bunny',
+    src: '/models/library/animals/bunny.glb',
+    category: 'animals',
+    color: '#F5F5F5',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Population dynamics, growth models',
+  },
+  dog: {
+    name: 'dog',
+    src: '/models/library/animals/dog.glb',
+    category: 'animals',
+    color: '#A0522D',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Spence · signaling loyalty, Sen · companion',
+  },
+  cat: {
+    name: 'cat',
+    src: '/models/library/animals/cat.glb',
+    category: 'animals',
+    color: '#3A3A3A',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Game theory · cat-and-mouse, ambivalencia',
+  },
+  crab: {
+    name: 'crab',
+    src: '/models/library/animals/crab.glb',
+    category: 'animals',
+    color: '#D7263D',
+    defaultScale: 1.0,
+    source: 'Kenney — Cube Pets (CC0)',
+    available: true,
+    primaryUse: 'Ostrom · marine commons (Maine lobster real-world ref)',
+  },
+
+  // ─── LAB (Factory Kit) — Coase, Solow industrial ───────
+  machine: {
+    name: 'machine',
+    src: '/models/library/lab/machine.glb',
+    category: 'lab',
+    color: '#B0B8C0',
+    defaultScale: 1.0,
+    source: 'Kenney — Factory Kit (CC0)',
+    available: true,
+    primaryUse: 'Coase · firma (mecanización), Solow · capital físico',
+  },
+  conveyor: {
+    name: 'conveyor',
+    src: '/models/library/lab/conveyor.glb',
+    category: 'lab',
+    color: '#A89B8C',
+    defaultScale: 1.0,
+    source: 'Kenney — Factory Kit (CC0)',
+    available: true,
+    primaryUse: 'Coase · cadena de producción, Friedman · oferta',
+  },
+
+  // ─── BUILDINGS extras — house variants para diversidad ───
+  house_a: {
+    name: 'house_a',
+    src: '/models/library/buildings/house_a.glb',
+    category: 'buildings',
+    color: '#E8B888',
+    defaultScale: 1.0,
+    source: 'Kenney — Modular Buildings (CC0)',
+    available: true,
+    primaryUse: 'Acemoglu · variante constructiva, Coase',
+  },
+  house_b: {
+    name: 'house_b',
+    src: '/models/library/buildings/house_b.glb',
+    category: 'buildings',
+    color: '#A89B8C',
+    defaultScale: 1.0,
+    source: 'Kenney — Modular Buildings (CC0)',
+    available: true,
+    primaryUse: 'Acemoglu · variante 2, diversidad demográfica',
+  },
+
+  // ─── VEHICLES extras — race cars (Akerlof diversidad) ────
+  race_red: {
+    name: 'race_red',
+    src: '/models/library/vehicles/race_red.glb',
+    category: 'vehicles',
+    color: '#D7263D',
+    defaultScale: 1.0,
+    source: 'Kenney — Racing Kit (CC0)',
+    available: true,
+    primaryUse: 'Akerlof · variedad de mercado, Tirole · competencia',
+  },
+  race_green: {
+    name: 'race_green',
+    src: '/models/library/vehicles/race_green.glb',
+    category: 'vehicles',
+    color: '#34D399',
+    defaultScale: 1.0,
+    source: 'Kenney — Racing Kit (CC0)',
+    available: true,
+    primaryUse: 'Akerlof · cherry car, Tirole · entrante',
+  },
+
+  // ─── DOCS extras — shields, gravestone ───────────────────
+  shield_square: {
+    name: 'shield_square',
+    src: '/models/library/docs/shield_square.glb',
+    category: 'docs',
+    color: '#A89B8C',
+    defaultScale: 1.0,
+    source: 'Kenney — Mini Dungeon (CC0)',
+    available: true,
+    primaryUse: 'Nash · defensa, Acemoglu · enforcement',
+  },
+  shield_round: {
+    name: 'shield_round',
+    src: '/models/library/docs/shield_round.glb',
+    category: 'docs',
+    color: '#C8B89B',
+    defaultScale: 1.0,
+    source: 'Kenney — Mini Dungeon (CC0)',
+    available: true,
+    primaryUse: 'Nash · defensa colectiva, instituciones',
+  },
+  gravestone: {
+    name: 'gravestone',
+    src: '/models/library/docs/gravestone.glb',
+    category: 'docs',
+    color: '#9CA3AF',
+    defaultScale: 1.0,
+    source: 'Kenney — Graveyard Kit (CC0)',
+    available: true,
+    primaryUse: 'Akerlof · mercado muerto, Hardin tragedia final',
+  },
+
+  // ─── NATURE extras — candle ─────────────────────────────
+  candle: {
+    name: 'candle',
+    src: '/models/library/nature/candle.glb',
+    category: 'nature',
+    color: '#FFE5A0',
+    defaultScale: 1.0,
+    source: 'Kenney — Graveyard Kit (CC0)',
+    available: true,
+    primaryUse: 'Sen · luz/dignidad, memorial / vigilia',
+  },
 };
 
 export const LIBRARY_LIST: LibraryEntry[] = Object.values(LIBRARY);
@@ -594,4 +869,4 @@ export function entriesByCategory(category: LibraryCategory): LibraryEntry[] {
   return LIBRARY_LIST.filter(e => e.category === category);
 }
 
-export const CATEGORIES: LibraryCategory[] = ['food', 'buildings', 'docs', 'vehicles', 'people', 'physics', 'math', 'nature', 'lab'];
+export const CATEGORIES: LibraryCategory[] = ['food', 'buildings', 'docs', 'vehicles', 'people', 'physics', 'math', 'nature', 'animals', 'lab'];
