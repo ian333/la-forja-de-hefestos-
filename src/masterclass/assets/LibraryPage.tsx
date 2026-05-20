@@ -22,6 +22,7 @@
 
 import { useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRef } from 'react';
 import { Lemon, Apple, Cherry, Bill, Coin } from './shapes';
@@ -129,20 +130,7 @@ function gridPosition(index: number, totalRows: number): [number, number, number
 }
 
 // ─────────────────────────────────────────────────────────────
-// Camera director — slow orbital sobre toda la grid.
-
-function CameraOrbit() {
-  useFrame(({ camera, clock }) => {
-    const t = clock.elapsedTime;
-    // Slow orbit, vista alta tipo top-down isométrica para ver todo el grid
-    const orbit = 0.05 + t * 0.025;
-    const dist = 24;
-    const height = 28 + 2 * Math.sin(t * 0.08);
-    camera.position.set(Math.sin(orbit) * dist, height, Math.cos(orbit) * dist);
-    camera.lookAt(0, 0, 0);
-  });
-  return null;
-}
+// (cámara controlada por OrbitControls del usuario — sin auto-orbit)
 
 // ─────────────────────────────────────────────────────────────
 // Scene content
@@ -172,14 +160,12 @@ function SceneContent({ mode }: SceneProps) {
 
   return (
     <>
-      <ambientLight intensity={0.30} />
+      <ambientLight intensity={0.35} />
       <directionalLight position={[5, 12, 5]} intensity={0.6} color="#FFB870" />
       <directionalLight position={[-5, 8, -5]} intensity={0.4} color="#7FB0FF" />
 
-      <CameraOrbit />
-
-      {/* Fondo: starfield muy sutil */}
-      <fog attach="fog" args={['#050308', 10, 50]} />
+      {/* Fondo: fog muy lejano para no recortar la grid grande */}
+      <fog attach="fog" args={['#050308', 30, 150]} />
 
       {/* Shapes row */}
       <group position={[0, 0, SHAPES_ZOFFSET]}>
@@ -235,7 +221,7 @@ export default function LibraryPage() {
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
       <Canvas
-        camera={{ position: [10, 12, 18], fov: 45, near: 0.1, far: 200 }}
+        camera={{ position: [0, 40, 50], fov: 45, near: 0.1, far: 500 }}
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
@@ -244,6 +230,16 @@ export default function LibraryPage() {
         }}
         dpr={[1, 2]}
       >
+        {/* Free camera controls — arrastra para rotar, scroll para zoom,
+            right-drag para pan. Sin auto-rotate (el usuario manda). */}
+        <OrbitControls
+          enableDamping
+          dampingFactor={0.08}
+          minDistance={2}
+          maxDistance={200}
+          target={[0, 0, 0]}
+          makeDefault
+        />
         <SceneContent mode={mode} />
         <PostFX
           intensity={1.6}
@@ -288,11 +284,15 @@ export default function LibraryPage() {
 
         {/* Footer stats */}
         <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end font-mono text-[10px]">
-          <div className="text-[#FFE5A0]/40 max-w-md leading-relaxed">
-            <div>orbita auto · sin controles</div>
-            <div className="mt-1 opacity-70">
+          <div className="text-[#FFE5A0]/50 max-w-md leading-relaxed">
+            <div className="text-[#FFE5A0]/80">
+              <span className="text-[#FDB813]">drag</span> rotar ·{' '}
+              <span className="text-[#FDB813]">scroll</span> zoom ·{' '}
+              <span className="text-[#FDB813]">right-drag</span> pan
+            </div>
+            <div className="mt-1 opacity-60">
               capa 2 (shapes propios) → siempre disponible<br/>
-              capa 3 (GLBs Quaternius/Kenney) → ver MASTERCLASS_ASSETS.md
+              capa 3 (GLBs Kenney) → 203 disponibles
             </div>
           </div>
           <div className="text-[#FFE5A0]/50 text-right">
