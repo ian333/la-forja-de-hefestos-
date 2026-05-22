@@ -1,6 +1,7 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import Player from './masterclass/Player';
+import './lib/telemetry';  // auto-arranca · captura errores/clicks/fetches
 import './main.css';
 
 // econ-01-limones está siendo reescrita como clase cinematográfica con 7 escenas
