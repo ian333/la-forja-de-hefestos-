@@ -31,8 +31,13 @@ export interface GLAttrs {
 
 let reportedVersion: string | null = null;
 
+interface R3FGLDefaults {
+  canvas: HTMLCanvasElement | OffscreenCanvas;
+}
+
 export function makeRenderer(attrs: GLAttrs = {}) {
-  return (canvas: HTMLCanvasElement) => {
+  return (defaults: R3FGLDefaults) => {
+    const canvas = defaults.canvas as HTMLCanvasElement;
     const ctxAttrs: WebGLContextAttributes = {
       antialias: attrs.antialias ?? false,
       alpha: attrs.alpha ?? true,
