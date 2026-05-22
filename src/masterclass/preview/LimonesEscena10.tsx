@@ -269,7 +269,7 @@ function SceneContent({ audioRef, isPlaying }: {
         text="la respuesta existe... pero nadie quiere oírla"
         position={[0, 1.1, -2]}
         width={8.5}
-        height={0.45}
+        height={0.85}
         color="#A89580"
         fontWeight={400}
       />
