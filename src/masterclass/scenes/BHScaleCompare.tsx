@@ -55,12 +55,13 @@ export default function BHScaleCompare() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0B0F17 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 0.4, 6.5], fov: 38 }}>
+      <Canvas camera={{ position: [0, 2, 14], fov: 38 }}>
         <ambientLight intensity={0.3} />
         <directionalLight position={[3, 4, 5]} intensity={0.35} />
         <Scene />
-        <OrbitControls enablePan={false} enableZoom={false}
-                       minPolarAngle={1.05} maxPolarAngle={1.55} />
+        <OrbitControls enablePan={false} enableZoom
+                       minDistance={4} maxDistance={40}
+                       minPolarAngle={0.6} maxPolarAngle={2.2} />
       </Canvas>
 
       {/* HTML overlays alineadas con cada BH */}

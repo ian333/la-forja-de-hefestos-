@@ -234,13 +234,14 @@ export default function BHMerger() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F0628 0%, #05060A 80%)',
     }}>
-      <Canvas camera={{ position: [0, 4.5, 7], fov: 38 }}>
+      <Canvas camera={{ position: [0, 6, 14], fov: 38 }}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[3, 5, 4]} intensity={0.5} />
         <MergerScene />
-        <OrbitControls enablePan={false} enableZoom={false}
+        <OrbitControls enablePan={false} enableZoom
                        autoRotate autoRotateSpeed={0.2}
-                       minPolarAngle={0.4} maxPolarAngle={1.4} />
+                       minDistance={4} maxDistance={40}
+                       minPolarAngle={0.3} maxPolarAngle={2.2} />
       </Canvas>
       <div className="absolute top-6 left-1/2 -translate-x-1/2 text-center text-[11px] font-mono text-[#94A3B8]">
         <div>GW150914 · 14 sep 2015 · 1.3 Gly · LIGO Livingston + Hanford</div>

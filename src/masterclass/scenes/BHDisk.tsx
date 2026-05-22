@@ -14,7 +14,7 @@ export default function BHDisk() {
       background: '#000',
     }}>
       <Canvas
-        camera={{ position: [0, 3.5, 5.5], fov: 48, near: 0.001, far: 200 }}
+        camera={{ position: [0, 5, 40], fov: 48, near: 0.001, far: 300 }}
         gl={{ antialias: false, alpha: false, powerPreference: 'high-performance' }}
         dpr={[0.55, 1]}
       >
@@ -32,11 +32,13 @@ export default function BHDisk() {
         />
         <OrbitControls
           enablePan={false}
-          enableZoom={false}
+          enableZoom
           autoRotate
           autoRotateSpeed={0.22}
-          minPolarAngle={1.15}
-          maxPolarAngle={1.55}
+          minDistance={6}
+          maxDistance={120}
+          minPolarAngle={0.8}
+          maxPolarAngle={2.2}
         />
       </Canvas>
     </div>

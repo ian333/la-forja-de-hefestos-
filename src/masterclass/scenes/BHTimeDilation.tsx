@@ -62,13 +62,14 @@ export default function BHTimeDilation() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F1B2C 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 0, 6], fov: 38 }}>
+      <Canvas camera={{ position: [0, 1, 12], fov: 38 }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[3, 4, 5]} intensity={0.5} />
         <pointLight position={[-1.8, 0, 1]} intensity={1.0} distance={3} color="#F472B6" />
         <pointLight position={[ 1.8, 0, 1]} intensity={1.0} distance={3} color="#4FC3F7" />
         <TimeScene />
-        <OrbitControls enablePan={false} enableZoom={false} enableRotate={false} />
+        <OrbitControls enablePan={false} enableZoom
+                       minDistance={4} maxDistance={40} />
       </Canvas>
 
       <div className="absolute inset-0 pointer-events-none">

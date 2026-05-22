@@ -209,13 +209,14 @@ export default function BHWell() {
     <div className="w-full h-full" style={{
       background: 'radial-gradient(ellipse at center, #1B0F20 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [3, 2.5, 4.5], fov: 45 }}>
+      <Canvas camera={{ position: [5, 4, 9], fov: 45 }}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[3, 5, 4]} intensity={0.6} />
         <pointLight position={[0, 0, 0]} intensity={1.0} distance={5} color="#FDB813" />
         <Well />
-        <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.3}
-                       minPolarAngle={0.4} maxPolarAngle={1.4} />
+        <OrbitControls enablePan={false} enableZoom autoRotate autoRotateSpeed={0.3}
+                       minDistance={3} maxDistance={40}
+                       minPolarAngle={0.3} maxPolarAngle={2.2} />
       </Canvas>
       <div className="absolute bottom-6 left-6 text-[11px] font-mono text-[#94A3B8] space-y-1">
         <div><span className="text-[#F472B6]">●</span> esfera de fotones · 1.5 r_s</div>

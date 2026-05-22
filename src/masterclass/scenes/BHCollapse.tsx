@@ -127,13 +127,14 @@ export default function BHCollapse() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #100018 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 1.5, 6], fov: 40 }}>
+      <Canvas camera={{ position: [0, 3, 12], fov: 40 }}>
         <ambientLight intensity={0.35} />
         <directionalLight position={[3, 4, 5]} intensity={0.4} />
         <Collapse />
-        <OrbitControls enablePan={false} enableZoom={false}
+        <OrbitControls enablePan={false} enableZoom
                        autoRotate autoRotateSpeed={0.15}
-                       minPolarAngle={1.0} maxPolarAngle={1.6} />
+                       minDistance={4} maxDistance={40}
+                       minPolarAngle={0.6} maxPolarAngle={2.2} />
       </Canvas>
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-[11px] font-mono text-[#94A3B8]">
         estrella → supernova → núcleo colapsa a r_s — un agujero negro estelar

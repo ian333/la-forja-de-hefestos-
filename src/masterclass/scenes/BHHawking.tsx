@@ -91,11 +91,12 @@ export default function BHHawking() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F0E22 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 0, 5.2], fov: 40 }}>
+      <Canvas camera={{ position: [0, 2, 11], fov: 40 }}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[3, 4, 5]} intensity={0.4} />
         <HawkingScene />
-        <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.3} />
+        <OrbitControls enablePan={false} enableZoom autoRotate autoRotateSpeed={0.3}
+                       minDistance={4} maxDistance={40} />
       </Canvas>
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-[11px] font-mono text-[#94A3B8]">
         <div>T_H = ℏc³ / (8π G M k_B) — más caliente cuanto más pequeño</div>

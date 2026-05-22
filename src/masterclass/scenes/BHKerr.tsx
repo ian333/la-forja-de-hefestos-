@@ -223,14 +223,15 @@ export default function BHKerr() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #18081A 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [4.5, 3, 5.5], fov: 38 }}>
+      <Canvas camera={{ position: [6, 5, 10], fov: 38 }}>
         <ambientLight intensity={0.35} />
         <directionalLight position={[3, 5, 4]} intensity={0.6} />
         <pointLight position={[0, 0, 0]} intensity={1.2} distance={4} color="#F472B6" />
         <KerrScene />
-        <OrbitControls enablePan={false} enableZoom={false}
+        <OrbitControls enablePan={false} enableZoom
                        autoRotate autoRotateSpeed={0.35}
-                       minPolarAngle={0.5} maxPolarAngle={1.6} />
+                       minDistance={4} maxDistance={40}
+                       minPolarAngle={0.3} maxPolarAngle={2.2} />
       </Canvas>
       <div className="absolute bottom-6 left-6 text-[11px] font-mono text-[#94A3B8] space-y-1">
         <div><span className="text-[#22D3EE]">↑</span> eje de rotación · a* = 0.95</div>

@@ -12,7 +12,7 @@ export default function BHLensing() {
   return (
     <div className="w-full h-full relative" style={{ background: '#000' }}>
       <Canvas
-        camera={{ position: [0, 1.0, 6.5], fov: 45, near: 0.001, far: 200 }}
+        camera={{ position: [0, 4, 40], fov: 45, near: 0.001, far: 300 }}
         gl={{ antialias: false, alpha: false, powerPreference: 'high-performance' }}
         dpr={[0.55, 1]}
       >
@@ -28,11 +28,13 @@ export default function BHLensing() {
         />
         <OrbitControls
           enablePan={false}
-          enableZoom={false}
+          enableZoom
           autoRotate
           autoRotateSpeed={0.14}
-          minPolarAngle={1.3}
-          maxPolarAngle={1.7}
+          minDistance={6}
+          maxDistance={120}
+          minPolarAngle={0.8}
+          maxPolarAngle={2.2}
         />
       </Canvas>
       <div className="absolute top-6 left-6 text-[11px] font-mono text-[#94A3B8]">

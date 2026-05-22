@@ -105,13 +105,14 @@ export default function BHTidal() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #1A0F08 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 2.5, 5.5], fov: 36 }}>
+      <Canvas camera={{ position: [0, 4, 11], fov: 36 }}>
         <ambientLight intensity={0.35} />
         <directionalLight position={[5, 6, 3]} intensity={0.7} />
         <pointLight position={[0, 0, 0]} intensity={2.0} distance={3} color="#FDB813" />
         <TidalScene />
-        <OrbitControls enablePan={false} enableZoom={false} autoRotate autoRotateSpeed={0.2}
-                       minPolarAngle={0.6} maxPolarAngle={1.4} />
+        <OrbitControls enablePan={false} enableZoom autoRotate autoRotateSpeed={0.2}
+                       minDistance={4} maxDistance={40}
+                       minPolarAngle={0.4} maxPolarAngle={2.2} />
       </Canvas>
       <div className="absolute top-6 left-1/2 -translate-x-1/2 text-center text-[11px] font-mono text-[#94A3B8]">
         <div>tidal Δa = 2 G M L / r³ — diverge cuando r → r_s para BHs estelares</div>

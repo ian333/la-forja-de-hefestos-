@@ -82,13 +82,14 @@ export default function BHPhotonSphere() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #1F0F12 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [3.5, 2.5, 4], fov: 38 }}>
+      <Canvas camera={{ position: [5, 4, 8], fov: 38 }}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[3, 4, 5]} intensity={0.5} />
         <PhotonScene />
-        <OrbitControls enablePan={false} enableZoom={false}
+        <OrbitControls enablePan={false} enableZoom
                        autoRotate autoRotateSpeed={0.4}
-                       minPolarAngle={0.3} maxPolarAngle={1.6} />
+                       minDistance={3} maxDistance={40}
+                       minPolarAngle={0.3} maxPolarAngle={2.2} />
       </Canvas>
       <div className="absolute top-6 left-1/2 -translate-x-1/2 text-center text-[11px] font-mono text-[#94A3B8]">
         <div>esfera de fotones · r = 1.5 r_s · órbita circular de la luz</div>
