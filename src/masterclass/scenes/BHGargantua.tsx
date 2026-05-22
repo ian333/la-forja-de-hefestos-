@@ -16,7 +16,7 @@ export default function BHGargantua() {
   return (
     <div className="w-full h-full relative" style={{ background: '#000' }}>
       <Canvas
-        camera={{ position: [0, 3, 22], fov: 45, near: 0.001, far: 200 }}
+        camera={{ position: [0, 5, 45], fov: 45, near: 0.001, far: 300 }}
         gl={{ antialias: false, alpha: false, powerPreference: 'high-performance' }}
         dpr={[0.55, 1]}
       >
@@ -37,8 +37,8 @@ export default function BHGargantua() {
           enableZoom
           autoRotate
           autoRotateSpeed={0.18}
-          minDistance={8}
-          maxDistance={50}
+          minDistance={6}
+          maxDistance={120}
           minPolarAngle={0.8}
           maxPolarAngle={2.2}
         />
