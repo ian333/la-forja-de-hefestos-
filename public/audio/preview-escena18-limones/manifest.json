@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena18-limones",
+  "title": "Cap 4 · Escena 18 — El crédito bancario",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "18-credito",
+      "scene": "limones-escena-18",
+      "audio": "18-credito.mp3",
+      "text": "[softly] Banco. [pause] [wondering] ¿Quién pide crédito al veinte por ciento? [pause] [firmly] El que sabe que va a quebrar. [pause] [slowly] El que tiene un buen negocio... [pause] [whispers] consigue prestado al diez. [pause] [softly] El banco lo entiende. [pause] [firmly] Sube las tasas... [pause] [slowly] para cubrir el riesgo. [pause] [softly] Y entonces... [pause] los buenos negocios... [pause] [whispers] dejan de pedir. [pause] [firmly] Y al banco solo le quedan... [pause] [whispers] los malos."
+    }
+  ]
+}

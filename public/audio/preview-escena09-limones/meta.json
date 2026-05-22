@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T20:45:54.832Z",
+  "script": "script-escena09-limones.json",
+  "script_id": "preview-escena09-limones",
+  "total_duration_sec": 36.911,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "09-colapso.mp3",
+      "duration_sec": 36.911
+    }
+  ]
+}

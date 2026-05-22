@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena14-limones",
+  "title": "Cap 3 · Escena 14 — El Nobel, 31 años después",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "14-nobel",
+      "scene": "limones-escena-14",
+      "audio": "14-nobel.mp3",
+      "text": "[softly] Pasaron treinta y un años. [pause] [slowly] El paper que rechazaron tres veces... [pause] [firmly] se convirtió en uno de los más citados de la historia. [pause] [softly] En el año dos mil uno... [pause] [whispers] Estocolmo. [pause] [firmly] Premio Nobel de Economía. [pause] [slowly] Compartido con Michael Spence... [pause] y Joseph Stiglitz. [pause] [softly] Los tres habían trabajado en lo mismo. [pause] [firmly] La asimetría de información. [pause] [whispers] Akerlof la nombró. [pause] [slowly] Spence... [pause] empezó a buscar la solución."
+    }
+  ]
+}

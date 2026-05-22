@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena08-limones",
+  "title": "Cap 2 · Escena 8 — El nuevo promedio cae",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "08-nuevo-promedio",
+      "scene": "limones-escena-08",
+      "audio": "08-nuevo-promedio.mp3",
+      "text": "[softly] Los buenos se fueron. [pause] Quedan... limones. [pause] [wondering] Y el comprador no es ciego. [pause] [firmly] Recalcula. [pause] [slowly] Si solo quedan malos... [pause] ya no ofrezco ciento cuarenta. [pause] Ofrezco... ochenta mil. [pause] [softly] Pero entre los limones también hay diferencias. [pause] [whispers] El menos malo... valía cien. [pause] [firmly] No acepta ochenta. [pause] Se va. [pause] [slowly] Y el precio baja otra vez. [pause] [softly] Setenta. [pause] Sesenta. [pause] [whispers] Cincuenta."
+    }
+  ]
+}

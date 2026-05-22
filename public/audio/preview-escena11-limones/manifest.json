@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena11-limones",
+  "title": "Cap 3 · Escena 11 — Berkeley, 1970",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "11-berkeley",
+      "scene": "limones-escena-11",
+      "audio": "11-berkeley.mp3",
+      "text": "[softly] Berkeley, California. [pause] [whispers] Mil novecientos setenta. [pause] [softly] Un joven economista llega a su oficina. [pause] [wondering] Tiene una pregunta... [pause] aparentemente trivial. [pause] [slowly] ¿Por qué un carro nuevo... [pause] pierde tanto valor al salir del lote? [pause] [softly] Nadie en Harvard la ha tomado en serio. [pause] [firmly] Nadie en MIT. [pause] [softly] Pero él decide escribirlo. [pause] [whispers] Tres semanas. [pause] [softly] Catorce páginas. [pause] [firmly] Y ahí... [pause] cambia la economía para siempre."
+    }
+  ]
+}

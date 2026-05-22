@@ -1,14 +1,36 @@
 const { chromium } = require('playwright');
+const url = process.argv[2];
+const t = parseFloat(process.argv[3] || '8');
+const fullUrl = `${url}&t=${t}`;
 (async () => {
-  const b = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
-  const ctx = await b.newContext({ viewport: { width: 1600, height: 1100 } });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-webgl'],
+  });
+  const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto('https://university.gaiaprime.com.mx/escuela.html', { waitUntil: 'networkidle', timeout: 30000 });
-  await page.waitForTimeout(2000);
-  await page.screenshot({ path: '/tmp/prod-escuela.png' });
-  // Also screenshot the masterclass landing
-  await page.goto('https://university.gaiaprime.com.mx/masterclass.html', { waitUntil: 'networkidle', timeout: 30000 });
-  await page.waitForTimeout(3500);
-  await page.screenshot({ path: '/tmp/prod-masterclass.png' });
-  await b.close();
+  const errors = [];
+  page.on('pageerror', e => errors.push(`PAGEERR: ${e.message}`));
+  page.on('console', m => {
+    if (m.type() === 'error' || m.type() === 'warning') {
+      errors.push(`${m.type().toUpperCase()}: ${m.text().substring(0, 400)}`);
+    }
+  });
+  page.on('response', r => {
+    if (r.status() >= 400) errors.push(`HTTP ${r.status()}: ${r.url()}`);
+  });
+  console.log(`-> Loading ${fullUrl}`);
+  await page.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  console.log('-> DOM loaded, waiting for __sceneTime...');
+  try {
+    await page.waitForFunction(() => typeof window.__sceneTime === 'number', { timeout: 30000 });
+    console.log('-> __sceneTime set, taking screenshot');
+  } catch (e) {
+    console.log(`-> TIMEOUT waiting __sceneTime: ${e.message}`);
+  }
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: '/tmp/prod-shot.png', fullPage: false });
+  console.log('--- console/errors ---');
+  errors.forEach(e => console.log(e));
+  await browser.close();
 })();

@@ -1,0 +1,46 @@
+{
+  "id": "econ-18-duflo",
+  "title": "Cap 18 · Esther Duflo — La evidencia contra la pobreza",
+  "voice_name": "Matilda",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "model_id": "eleven_v3",
+  "voice_settings": {
+    "stability": 0.50,
+    "similarity_boost": 0.75,
+    "style": 0.40,
+    "speed": 1.0,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "duflo/pregunta",
+      "text": "[softly] Hay mil seiscientos millones de personas... [pause] viviendo en pobreza extrema. [pause] [firmly] Y la pregunta más urgente de la economía... [pause] [slowly] no es si podemos ayudarlos. [pause] [whispers] Es: ¿qué funciona... y qué no?"
+    },
+    {
+      "id": "02-mito",
+      "scene": "duflo/mito",
+      "text": "[slowly] Durante décadas... [pause] las decisiones se tomaron por intuición. [pause] ¿Microcrédito ayuda? [pause] [softly] suena obvio que sí. [pause] ¿Cobrar por mosquiteros, aunque sea poco? [pause] [softly] suena más sustentable. [pause] [firmly] Pero la intuición... [pause] [slowly] miente."
+    },
+    {
+      "id": "03-rct",
+      "scene": "duflo/rct",
+      "text": "[firmly] Esther Duflo aplicó algo distinto. [pause] [slowly] Tomas una comunidad. [pause] La divides al azar. [pause] [whispers] Grupo A: recibe la intervención. [pause] Grupo B: no recibe nada. [pause] [softly] Después... [pause] mides la diferencia. [pause] [firmly] Eso es un ensayo controlado aleatorizado."
+    },
+    {
+      "id": "04-kenya",
+      "scene": "duflo/kenya",
+      "text": "[softly] Kenya, dos mil cuatro. [pause] [slowly] Niños con parásitos intestinales... [pause] no pueden aprender. [pause] [softly] Una pastilla. [pause] Cincuenta centavos por niño. [pause] [firmly] Veinticinco por ciento más asistencia escolar. [pause] [whispers] Capacitar maestros: cero impacto."
+    },
+    {
+      "id": "05-mexico",
+      "scene": "duflo/mexico",
+      "text": "[firmly] México fue de los primeros. [pause] Progresa, mil novecientos noventa y siete. [pause] [softly] Pagar a las familias... [pause] si mandan al niño a la escuela. [pause] [slowly] Evaluado con un RCT. [pause] [firmly] Inscripción escolar: subió diez por ciento. [pause] [whispers] La evidencia... [pause] cambió la política."
+    },
+    {
+      "id": "06-cierre",
+      "scene": "duflo/cierre",
+      "text": "[slowly] La pobreza no se combate con intuición. [pause] Se combate con evidencia. [pause] [softly] Esther Duflo. [pause] [firmly] Nobel de Economía. [pause] [whispers] Dos mil diecinueve."
+    }
+  ]
+}

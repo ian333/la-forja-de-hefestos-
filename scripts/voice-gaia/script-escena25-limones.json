@@ -1,0 +1,25 @@
+{
+  "id": "preview-escena25-limones",
+  "title": "Cap 5 · Escena 25 — Fin de la primera clase",
+  "central_emotion": "calidez",
+  "aspect_ratio_primary": "9:16",
+  "voice_name": "Matilda",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "model_id": "eleven_v3",
+  "voice_settings": {
+    "stability": 0.50,
+    "similarity_boost": 0.78,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "25-cierre",
+      "scene": "limones-escena-25",
+      "template": "bridge",
+      "story_beat": "cliffhanger",
+      "text": "[softly] Recuerda esto. [pause] [slowly] La próxima vez que veas un precio... [pause] que no te cuadra... [pause] [whispers] piensa en Akerlof. [pause] [softly] La próxima vez que califiques un producto... [pause] piensa en Spence. [pause] [softly] La próxima vez que un amigo te diga... [pause] [whispers] que el mercado se rompió solo... [pause] [firmly] tú ya sabrás por qué. [pause] [slowly] Esto fue una clase. [pause] [softly] Vienen cincuenta y seis Nobel más. [pause] [whispers] Bienvenido... [pause] [firmly] a GAIA Escuela.",
+      "duration_target_sec": 30
+    }
+  ]
+}

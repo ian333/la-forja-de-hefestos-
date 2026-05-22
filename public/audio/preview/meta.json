@@ -2,7 +2,7 @@
   "generated_at": "2026-05-20T05:31:21.087Z",
   "script": "script-escena06-limones.json",
   "script_id": "preview-escena06-limones",
-  "total_duration_sec": 187.951,
+  "total_duration_sec": 314.253,
   "model_id": "eleven_v3",
   "voice_id": "XrExE9yKIg1WjnnlVkGX",
   "tracks": [
@@ -33,6 +33,78 @@
     {
       "file": "07-exodus.mp3",
       "duration_sec": 34.194
+    },
+    {
+      "file": "08-nuevo-promedio.mp3",
+      "duration_sec": 33.150
+    },
+    {
+      "file": "09-colapso.mp3",
+      "duration_sec": 36.911
+    },
+    {
+      "file": "10-hay-solucion.mp3",
+      "duration_sec": 26.122
+    },
+    {
+      "file": "11-berkeley.mp3",
+      "duration_sec": 30.119
+    },
+    {
+      "file": "12-pregunta-absurda.mp3",
+      "duration_sec": 26.593
+    },
+    {
+      "file": "13-rechazado.mp3",
+      "duration_sec": 33.411
+    },
+    {
+      "file": "14-nobel.mp3",
+      "duration_sec": 28.447
+    },
+    {
+      "file": "15-pero-akerlof.mp3",
+      "duration_sec": 31.948
+    },
+    {
+      "file": "16-no-es-solo-carros.mp3",
+      "duration_sec": 25.809
+    },
+    {
+      "file": "17-seguros-medicos.mp3",
+      "duration_sec": 32.287
+    },
+    {
+      "file": "18-credito.mp3",
+      "duration_sec": 24.033
+    },
+    {
+      "file": "19-subprime-2008.mp3",
+      "duration_sec": 35.788
+    },
+    {
+      "file": "20-que-mercado.mp3",
+      "duration_sec": 30.851
+    },
+    {
+      "file": "21-tu-vida.mp3",
+      "duration_sec": 30.589
+    },
+    {
+      "file": "22-la-senal.mp3",
+      "duration_sec": 31.086
+    },
+    {
+      "file": "23-como-no-ser-limon.mp3",
+      "duration_sec": 32.366
+    },
+    {
+      "file": "24-economia-info.mp3",
+      "duration_sec": 32.758
+    },
+    {
+      "file": "25-cierre.mp3",
+      "duration_sec": 26.593
     }
   ]
 }

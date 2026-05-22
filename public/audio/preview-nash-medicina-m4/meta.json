@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-21T21:36:10.727Z",
+  "script": "script-escena-nash-medicina-m4.json",
+  "script_id": "preview-escena-nash-medicina-m4",
+  "total_duration_sec": 29.571,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "nash-medicina-m4.mp3",
+      "duration_sec": 29.571
+    }
+  ]
+}

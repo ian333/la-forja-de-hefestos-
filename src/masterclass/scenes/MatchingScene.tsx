@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import PostFX from './_postFX';
 
 const N = 6;
 
@@ -490,6 +491,9 @@ export default function MatchingScene({ phase }: { phase: string }) {
       >
         <GaleShapleySim phase={phase} />
         <CinematicCamera />
+        {/* Bloom alto: la escena es 100% emisiva, queremos que se sienta etérea.
+            Aberración cromática sutil para sensación cuántica/datos. */}
+        <PostFX intensity={1.8} threshold={0.25} smoothing={0.45} vignette={0.7} vignetteOffset={0.18} aberration={0.0015} />
       </Canvas>
 
       {/* HUD */}

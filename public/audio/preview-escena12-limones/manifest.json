@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena12-limones",
+  "title": "Cap 3 · Escena 12 — La pregunta absurda",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "12-pregunta-absurda",
+      "scene": "limones-escena-12",
+      "audio": "12-pregunta-absurda.mp3",
+      "text": "[wondering] Su pregunta era simple. [pause] [softly] Y al mismo tiempo... absurda. [pause] [slowly] Si el vendedor sabe... [pause] y el comprador no sabe... [pause] [firmly] ¿qué pasa con el precio? [pause] [softly] Akerlof escribió la ecuación. [pause] [slowly] El precio que el comprador ofrece... [pause] depende de la calidad promedio. [pause] [whispers] Pero la calidad promedio... [pause] [firmly] depende del precio. [pause] [softly] Es un bucle. [pause] [slowly] Y los bucles malos... [pause] [whispers] colapsan."
+    }
+  ]
+}

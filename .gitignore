@@ -31,3 +31,9 @@ npm-debug.log*
 # Ephemeral debug artifacts
 fit-diagnostics/
 test-results/
+
+# Video render outputs (multi-GB MKV/MP4) — keep out of git, archive elsewhere
+dist-video/
+
+# Local probe/smoke scripts (cualquier script con prefijo _ en scripts/)
+scripts/_*

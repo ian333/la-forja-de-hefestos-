@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T21:29:30.918Z",
+  "script": "script-escena25-limones.json",
+  "script_id": "preview-escena25-limones",
+  "total_duration_sec": 26.593,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "25-cierre.mp3",
+      "duration_sec": 26.593
+    }
+  ]
+}

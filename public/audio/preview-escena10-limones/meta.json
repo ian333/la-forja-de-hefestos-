@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T20:51:08.463Z",
+  "script": "script-escena10-limones.json",
+  "script_id": "preview-escena10-limones",
+  "total_duration_sec": 26.122,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "10-hay-solucion.mp3",
+      "duration_sec": 26.122
+    }
+  ]
+}

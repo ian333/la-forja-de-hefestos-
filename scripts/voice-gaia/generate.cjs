@@ -4,6 +4,25 @@
  * Omite escenas que ya tienen su archivo en disco (re-runs baratos).
  *
  *   ELEVEN_KEY=sk_... node scripts/voice-gaia/generate.cjs <script.json> <out_dir>
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │ ANTES DE ESCRIBIR UNA NUEVA CLASE → LEE MASTERCLASS_RULES.md             │
+ * │ (en este mismo directorio)                                               │
+ * │                                                                          │
+ * │ Las reglas son fuente de verdad operacional:                             │
+ * │   • Hook curiosity-gap en los primeros 5 segundos                        │
+ * │   • Misconception-first (Veritasium PhD)                                 │
+ * │   • Show, don't define (3Blue1Brown)                                     │
+ * │   • Story spine + capítulos modulares                                    │
+ * │   • 8 plantillas narrativas reutilizables (Two Worlds, Zoom Out, Reveal, │
+ * │     Inversion, Collapse, Cascade, Bridge, Zoom In)                       │
+ * │   • Pacing strict (rule of 8 — pattern interrupt cada 5-8s)              │
+ * │   • Mobile-first 9:16, desktop 16:9                                      │
+ * │   • Voz Matilda, español mexicano (cero voseo)                           │
+ * │                                                                          │
+ * │ Schema JSON extendido: ver MASTERCLASS_RULES.md §11                      │
+ * │ Checklist final antes de publicar: §12                                   │
+ * └──────────────────────────────────────────────────────────────────────────┘
  */
 
 const fs = require('fs');

@@ -398,7 +398,7 @@ export default function LimonesEscena05({ forceAspect = 'auto' }: LimonesEscena0
           smoothing={0.45}
           vignette={0.70}
           vignetteOffset={0.22}
-          aberration={0.0012}
+          aberration={0.0003}
         />
       </Canvas>
 

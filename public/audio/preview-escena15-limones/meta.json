@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T21:20:18.173Z",
+  "script": "script-escena15-limones.json",
+  "script_id": "preview-escena15-limones",
+  "total_duration_sec": 31.948,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "15-pero-akerlof.mp3",
+      "duration_sec": 31.948
+    }
+  ]
+}

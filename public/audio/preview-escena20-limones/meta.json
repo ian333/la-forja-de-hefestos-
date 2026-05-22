@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T21:26:40.221Z",
+  "script": "script-escena20-limones.json",
+  "script_id": "preview-escena20-limones",
+  "total_duration_sec": 30.851,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "20-que-mercado.mp3",
+      "duration_sec": 30.851
+    }
+  ]
+}

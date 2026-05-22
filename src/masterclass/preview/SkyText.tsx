@@ -5,6 +5,10 @@
  * cliffhanger entre capítulos, etc). Materializa con opacity + scale via
  * imperative API.
  *
+ * IMPORTANTE: el canvas se genera con el MISMO ratio width/height que el
+ * plane 3D, así el texto no se aplasta ni estira aunque el plane sea
+ * extremadamente ancho o cuadrado.
+ *
  * Posición típica: y alto (cielo), z atrás (lejos), centered en x.
  */
 
@@ -28,24 +32,39 @@ interface SkyTextProps {
   fontWeight?: number;
 }
 
-function makeSkyTexture(text: string, color: string, fontWeight: number): THREE.CanvasTexture {
-  const W = 2048;
+function makeSkyTexture(
+  text: string,
+  color: string,
+  fontWeight: number,
+  ratio: number,
+): THREE.CanvasTexture {
+  // Canvas dimensions con el MISMO ratio que el plane 3D (width/height).
+  // Eso garantiza que el texto se renderiza sin aplastarse/estirarse al
+  // mapear la textura sobre el plane.
+  //
+  // Base H fija para mantener calidad pareja. W deriva del ratio.
+  // Clamp el ratio a un rango razonable para evitar canvases gigantes.
+  const safeRatio = Math.max(0.5, Math.min(20, ratio));
   const H = 384;
+  const W = Math.round(H * safeRatio);
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
   ctx.clearRect(0, 0, W, H);
 
-  // Auto-fit font: medimos con un tamaño grande inicial y escalamos a la baja
-  // si el texto excede el ancho disponible (con margen del 6%).
-  const maxWidth = W * 0.94;
-  let fontSize = 220;
-  ctx.font = fontWeight + ' ' + fontSize + 'px "Inter", "Helvetica", sans-serif';
+  // Auto-fit font:
+  //   - El tamaño máximo está limitado por la altura disponible (line height ~70% H)
+  //   - Y por el ancho disponible (94% W)
+  // Empezamos con un tamaño basado en H y bajamos si excede el ancho.
+  const maxHeightPx = H * 0.72;
+  const maxWidthPx = W * 0.94;
+  let fontSize = Math.floor(maxHeightPx);
+  ctx.font = `${fontWeight} ${fontSize}px "Inter", "Helvetica", sans-serif`;
   let measured = ctx.measureText(text).width;
-  if (measured > maxWidth) {
-    fontSize = Math.floor(fontSize * (maxWidth / measured));
-    ctx.font = fontWeight + ' ' + fontSize + 'px "Inter", "Helvetica", sans-serif';
+  if (measured > maxWidthPx) {
+    fontSize = Math.floor(fontSize * (maxWidthPx / measured));
+    ctx.font = `${fontWeight} ${fontSize}px "Inter", "Helvetica", sans-serif`;
   }
 
   ctx.fillStyle = color;
@@ -77,9 +96,10 @@ const SkyText = forwardRef<SkyTextHandle, SkyTextProps>(
     rotation = [0, 0, 0],
     fontWeight = 600,
   }, ref) {
+    const ratio = width / Math.max(0.01, height);
     const texture = useMemo(
-      () => makeSkyTexture(text, color, fontWeight),
-      [text, color, fontWeight],
+      () => makeSkyTexture(text, color, fontWeight, ratio),
+      [text, color, fontWeight, ratio],
     );
     useEffect(() => () => { texture.dispose(); }, [texture]);
 

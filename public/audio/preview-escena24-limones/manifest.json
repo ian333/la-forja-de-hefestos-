@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena24-limones",
+  "title": "Cap 5 · Escena 24 — La economía de la información",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "24-economia-info",
+      "scene": "limones-escena-24",
+      "audio": "24-economia-info.mp3",
+      "text": "[softly] Akerlof abrió una puerta. [pause] [slowly] Detrás de esa puerta... [pause] está toda la economía del siglo veintiuno. [pause] [firmly] La economía de la información. [pause] [softly] Google es una solución a un mercado de limones. [pause] [whispers] Te ayuda a no buscar a ciegas. [pause] [slowly] Amazon también. [pause] [softly] Reseñas, calificaciones, rankings... [pause] [firmly] son señales. [pause] [slowly] Las plataformas que dominan hoy... [pause] [softly] dominan porque solucionan asimetría. [pause] [whispers] Akerlof fue el primero en escribirlo. [pause] [firmly] Pero todos lo estamos viviendo."
+    }
+  ]
+}

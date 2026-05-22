@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import PostFX from './_postFX';
 
 const N_BIDDERS = 6;
 const RADIUS = 4.5;
@@ -620,6 +621,10 @@ export default function VickreyScene({ phase }: { phase: string }) {
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
       >
         <AuctionSim key={phase} phase={phase} onState={setHud} confettiRef={confettiRef} trailRef={trailRef} />
+        {/* Bloom MUY alto + vignette fuerte: drama teatral. El spotlight, el
+            item, el confetti, la gema central — todo debe brillar como aurora.
+            Aberración cromática moderada para el feeling de cine. */}
+        <PostFX intensity={2.0} threshold={0.30} smoothing={0.45} vignette={0.80} vignetteOffset={0.16} aberration={0.0018} />
       </Canvas>
 
       <div className="absolute top-6 left-6 text-[11px] font-mono pointer-events-none">

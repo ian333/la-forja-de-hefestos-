@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>GAIA · outro bumper</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; background: #000; overflow: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #E2E8F0;
+    cursor: none;
+  }
+  body { display: flex; align-items: center; justify-content: center; }
+
+  .bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at center, rgba(34,211,238,0.10) 0%, rgba(0,0,0,0) 55%),
+      #000;
+    animation: bgPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes bgPulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.18); }
+  }
+  .stars {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 17% 23%, rgba(34,211,238,0.7), transparent 60%),
+      radial-gradient(1.2px 1.2px at 31% 67%, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(1px 1px at 73% 41%, rgba(253,184,19,0.5), transparent 60%),
+      radial-gradient(1.5px 1.5px at 87% 78%, rgba(34,211,238,0.6), transparent 60%),
+      radial-gradient(1px 1px at 52% 12%, rgba(255,255,255,0.4), transparent 60%);
+    animation: drift 4s linear infinite;
+  }
+  @keyframes drift {
+    0% { transform: translateY(0); opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-30px); opacity: 0.7; }
+  }
+  .grain {
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' /></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.5'/></svg>");
+    opacity: 0.04; mix-blend-mode: overlay;
+  }
+
+  .stack {
+    position: relative; z-index: 2; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 32px;
+  }
+
+  /* Thanks block */
+  .thanks {
+    font-size: 56px;
+    font-weight: 300;
+    color: rgba(226,232,240,0.85);
+    letter-spacing: -0.01em;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: thanksIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards,
+               thanksOut 0.6s cubic-bezier(0.55, 0, 0.55, 0.2) 1.6s forwards;
+  }
+
+  /* Next block (appears after thanks fades) */
+  .next-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 48px;
+    opacity: 0;
+    animation: nextIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 2.0s forwards;
+  }
+  .arrow {
+    font-size: 40px;
+    color: #FDB813;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .arrow .glow { display: inline-block; animation: arrowPulse 1.4s ease-in-out infinite; }
+
+  .next-title {
+    font-size: 76px;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    max-width: 1800px;
+    text-shadow: 0 4px 28px rgba(0,0,0,0.6);
+  }
+  .next-title .gamma {
+    color: #FDB813;
+    margin-right: 24px;
+    text-shadow: 0 0 30px rgba(253,184,19,0.55);
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 88px;
+    left: 50%; transform: translateX(-50%);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 18px;
+    color: rgba(226,232,240,0.45);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: footIn 0.6s ease 2.6s forwards;
+  }
+
+  @keyframes thanksIn  { to { opacity: 1; transform: translateY(0); } }
+  @keyframes thanksOut { to { opacity: 0; transform: translateY(-20px); } }
+  @keyframes nextIn    { to { opacity: 1; } }
+  @keyframes footIn    { to { opacity: 1; } }
+  @keyframes arrowPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="stars"></div>
+  <div class="grain"></div>
+
+  <div class="stack">
+    <div class="thanks">gracias por mirar</div>
+  </div>
+
+  <div class="next-wrap">
+    <div class="arrow"><span class="glow">→</span></div>
+    <div class="next-title"><span class="gamma">Γ</span><span id="next">la siguiente clase</span></div>
+  </div>
+
+  <div class="footer">university.gaiaprime.com.mx</div>
+
+  <script>
+    (function() {
+      const p = new URLSearchParams(window.location.search);
+      const next = p.get('next');
+      if (next) document.getElementById('next').textContent = next;
+      window.__bumperReady = true;
+    })();
+  </script>
+</body>
+</html>

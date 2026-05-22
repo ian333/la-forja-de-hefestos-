@@ -1,211 +1,198 @@
 /**
- * SensorMysteryScene — el hook del primer scene.
+ * SensorMysteryScene — un sensor en el vacío bajo dos luces que alternan.
  *
- *   Una lámpara que alterna: ROJA MÁXIMA → UV TENUE.
- *   Un sensor a la derecha. Bajo luz roja brillante: 0 mA.
- *   Bajo luz UV débil: explosión de corriente.
+ *   Una lámpara roja gigante a la izquierda, una violeta diminuta a la
+ *   derecha. La luz roja crece, baña al sensor — nada pasa. La luz
+ *   violeta tenue toca al sensor y un cardumen de electrones cian
+ *   estalla hacia arriba. Alternancia silenciosa cada 5 segundos.
  *
- *   Es un misterio puro. ¿Por qué? El resto de la clase lo explica.
- *
- *   Fase: '01-sensor'
+ *   Wallpaper. Sin laboratorio.
  */
 
-import { useEffect, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
-interface Props { phase?: string }
-
-interface State {
-  mode: 'red-bright' | 'uv-dim';
-  t: number;
+interface Particle {
+  pos: THREE.Vector3;
+  vel: THREE.Vector3;
+  age: number;
+  life: number;
 }
 
-function Lamp({ stateRef }: { stateRef: React.MutableRefObject<State> }) {
-  const bulbRef = useRef<THREE.Mesh>(null);
-  const haloRef = useRef<THREE.Mesh>(null);
-  const haloMatRef = useRef<THREE.MeshBasicMaterial>(null);
-  useFrame(() => {
-    const s = stateRef.current;
-    const color = s.mode === 'red-bright' ? '#EF4444' : '#A78BFA';
-    const intensity = s.mode === 'red-bright' ? 4.0 : 0.7;
-    const haloOpacity = s.mode === 'red-bright' ? 0.45 : 0.18;
-    if (bulbRef.current) {
-      const mat = bulbRef.current.material as THREE.MeshStandardMaterial;
-      mat.color.set(color);
-      mat.emissive.set(color);
-      mat.emissiveIntensity = intensity;
-    }
-    if (haloMatRef.current) {
-      haloMatRef.current.color.set(color);
-      haloMatRef.current.opacity = haloOpacity;
+const N_ELECTRONS = 50;
+
+function ModePulse() {
+  // pulsa la fase global: 0..1 ciclo de 6s
+  const ref = useRef({ mode: 'red' as 'red' | 'uv', tInMode: 0 });
+  useFrame((_, dt) => {
+    ref.current.tInMode += dt;
+    if (ref.current.tInMode > 4.0) {
+      ref.current.tInMode = 0;
+      ref.current.mode = ref.current.mode === 'red' ? 'uv' : 'red';
     }
   });
-  return (
-    <group position={[-2.5, 0.5, 0]}>
-      <mesh ref={haloRef}>
-        <sphereGeometry args={[0.9, 24, 24]} />
-        <meshBasicMaterial ref={haloMatRef as any} color="#EF4444" transparent opacity={0.45} depthWrite={false} toneMapped={false} />
-      </mesh>
-      <mesh ref={bulbRef}>
-        <sphereGeometry args={[0.42, 28, 28]} />
-        <meshStandardMaterial color="#EF4444" emissive="#EF4444" emissiveIntensity={4} toneMapped={false} />
-      </mesh>
-      <mesh position={[0, -0.55, 0]}>
-        <cylinderGeometry args={[0.18, 0.22, 0.3, 16]} />
-        <meshStandardMaterial color="#475569" metalness={0.7} />
-      </mesh>
-    </group>
-  );
+  return ref;
 }
 
-function LightBeam({ stateRef }: { stateRef: React.MutableRefObject<State> }) {
-  const matRef = useRef<THREE.MeshBasicMaterial>(null);
-  const meshRef = useRef<THREE.Mesh>(null);
+function Sensor({ modeRef }: { modeRef: React.MutableRefObject<{ mode: 'red' | 'uv'; tInMode: number }> }) {
+  const matRef = useRef<THREE.MeshStandardMaterial>(null);
   useFrame(() => {
-    const s = stateRef.current;
-    const color = s.mode === 'red-bright' ? '#EF4444' : '#A78BFA';
-    const opacity = s.mode === 'red-bright' ? 0.32 : 0.18;
-    if (matRef.current) {
-      matRef.current.color.set(color);
-      matRef.current.opacity = opacity;
-    }
-  });
-  // cono que va de la lámpara al sensor
-  return (
-    <mesh ref={meshRef} position={[0, 0.5, 0]} rotation={[0, 0, -Math.PI / 2]}>
-      <coneGeometry args={[0.4, 4.0, 24, 1, true]} />
-      <meshBasicMaterial
-        ref={matRef as any}
-        color="#EF4444"
-        transparent
-        opacity={0.32}
-        side={THREE.DoubleSide}
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </mesh>
-  );
-}
-
-function Sensor({ stateRef }: { stateRef: React.MutableRefObject<State> }) {
-  const ledRef = useRef<THREE.Mesh>(null);
-  useFrame(() => {
-    const s = stateRef.current;
-    const lit = s.mode === 'uv-dim';
-    if (ledRef.current) {
-      const mat = ledRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissive.set(lit ? '#22D3EE' : '#1E293B');
-      mat.emissiveIntensity = lit ? 3.0 : 0.1;
-    }
+    if (!matRef.current) return;
+    const lit = modeRef.current.mode === 'uv';
+    matRef.current.emissive.set(lit ? '#22D3EE' : '#1E293B');
+    matRef.current.emissiveIntensity = lit ? 2.0 : 0.4;
   });
   return (
-    <group position={[2.5, 0.4, 0]}>
-      {/* base del sensor */}
+    <group>
       <mesh>
-        <boxGeometry args={[1.4, 1.2, 0.4]} />
-        <meshStandardMaterial color="#0F172A" metalness={0.5} roughness={0.6} emissive="#1E293B" emissiveIntensity={0.4} />
+        <boxGeometry args={[1.2, 0.8, 0.6]} />
+        <meshStandardMaterial
+          ref={matRef as any}
+          color="#0F172A"
+          metalness={0.6}
+          roughness={0.5}
+          emissive="#1E293B"
+          emissiveIntensity={0.4}
+          toneMapped={false}
+        />
       </mesh>
-      {/* ventana fotosensitiva */}
-      <mesh position={[-0.71, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <circleGeometry args={[0.35, 24]} />
-        <meshStandardMaterial color="#1E293B" emissive="#0EA5E9" emissiveIntensity={0.2} />
-      </mesh>
-      {/* LED indicador (se enciende cuando hay corriente) */}
-      <mesh ref={ledRef} position={[0.45, 0.35, 0.21]}>
-        <sphereGeometry args={[0.09, 16, 16]} />
-        <meshStandardMaterial color="#22D3EE" emissive="#22D3EE" emissiveIntensity={3.0} toneMapped={false} />
+      {/* Ventana óptica */}
+      <mesh position={[0, 0.55, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.32, 32]} />
+        <meshStandardMaterial color="#0EA5E9" emissive="#0EA5E9" emissiveIntensity={1.0} toneMapped={false} />
       </mesh>
     </group>
   );
 }
 
-function Scene({ stateRef }: { stateRef: React.MutableRefObject<State> }) {
+function LampHalo({ side, modeRef }: { side: 'red' | 'uv'; modeRef: React.MutableRefObject<{ mode: 'red' | 'uv'; tInMode: number }> }) {
+  const haloRef = useRef<THREE.Mesh>(null);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null);
+  const bulbMatRef = useRef<THREE.MeshStandardMaterial>(null);
+  const x = side === 'red' ? -3.5 : 3.5;
+  const color = side === 'red' ? '#EF4444' : '#A78BFA';
+
+  useFrame(() => {
+    if (!haloRef.current || !matRef.current || !bulbMatRef.current) return;
+    const active = modeRef.current.mode === side;
+    // tamaño / intensidad dependen del modo
+    const scale = active ? 1.0 : 0.3;
+    const opacity = active ? 0.55 : 0.1;
+    haloRef.current.scale.setScalar(scale * 1.0);
+    matRef.current.opacity = opacity;
+    bulbMatRef.current.emissiveIntensity = active ? 4.0 : 0.6;
+  });
+
+  return (
+    <group position={[x, 0.6, 0]}>
+      <mesh ref={haloRef}>
+        <sphereGeometry args={[2.2, 28, 28]} />
+        <meshBasicMaterial ref={matRef as any} color={color} transparent opacity={0.55} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[0.35, 24, 24]} />
+        <meshStandardMaterial ref={bulbMatRef as any} color={color} emissive={color} emissiveIntensity={4.0} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function ElectronBurst({ modeRef, poolRef }: {
+  modeRef: React.MutableRefObject<{ mode: 'red' | 'uv'; tInMode: number }>;
+  poolRef: React.MutableRefObject<Particle[]>;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const spawnAccum = useRef(0);
+  useFrame((_, dt) => {
+    if (!meshRef.current) return;
+    const pool = poolRef.current;
+    if (modeRef.current.mode === 'uv') {
+      spawnAccum.current += dt * 30;
+      while (spawnAccum.current > 1) {
+        spawnAccum.current -= 1;
+        const slot = pool.findIndex(p => p.age >= p.life);
+        if (slot >= 0) {
+          const p = pool[slot];
+          p.pos.set((Math.random() - 0.5) * 0.4, 0.55, (Math.random() - 0.5) * 0.4);
+          const swirl = (Math.random() - 0.5) * 0.4;
+          p.vel.set(swirl, 2.0, swirl);
+          p.age = 0;
+          p.life = 1.8;
+        }
+      }
+    }
+    for (let i = 0; i < pool.length; i++) {
+      const p = pool[i];
+      p.age += dt;
+      if (p.age >= p.life) {
+        dummy.position.set(0, -50, 0);
+        dummy.scale.setScalar(0.001);
+      } else {
+        p.pos.addScaledVector(p.vel, dt);
+        dummy.position.copy(p.pos);
+        dummy.scale.setScalar(0.085 * Math.max(0.001, 1 - p.age / p.life));
+      }
+      dummy.updateMatrix();
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, N_ELECTRONS]}>
+      <sphereGeometry args={[1, 12, 12]} />
+      <meshStandardMaterial color="#22D3EE" emissive="#22D3EE" emissiveIntensity={3.5} toneMapped={false} />
+    </instancedMesh>
+  );
+}
+
+function Scene() {
+  const modeRef = ModePulse();
+  const electronPool = useRef<Particle[]>(
+    Array.from({ length: N_ELECTRONS }, () => ({
+      pos: new THREE.Vector3(0, -50, 0),
+      vel: new THREE.Vector3(0, 0, 0),
+      age: 999, life: 1,
+    })),
+  );
   return (
     <>
-      <ambientLight intensity={0.45} />
-      <directionalLight position={[3, 5, 4]} intensity={0.6} />
-      <pointLight position={[-2.5, 0.5, 1]} intensity={2.0} color="#EF4444" />
-      <pointLight position={[2.5, 1, 1]} intensity={0.4} color="#22D3EE" />
-      <Lamp stateRef={stateRef} />
-      <LightBeam stateRef={stateRef} />
-      <Sensor stateRef={stateRef} />
+      <ambientLight intensity={0.28} />
+      <pointLight position={[-3, 0, 1]} intensity={2.0} color="#EF4444" />
+      <pointLight position={[ 3, 0, 1]} intensity={1.2} color="#A78BFA" />
+      <Sensor modeRef={modeRef} />
+      <LampHalo side="red" modeRef={modeRef} />
+      <LampHalo side="uv" modeRef={modeRef} />
+      <ElectronBurst modeRef={modeRef} poolRef={electronPool} />
     </>
   );
 }
 
-export default function SensorMysteryScene({ phase: _phase = '01-sensor' }: Props) {
-  const stateRef = useRef<State>({ mode: 'red-bright', t: 0 });
-  const modeHudRef = useRef<HTMLSpanElement>(null);
-  const currentHudRef = useRef<HTMLSpanElement>(null);
-  const verdictRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    let raf = 0;
-    const start = performance.now();
-    const tick = () => {
-      const t = (performance.now() - start) / 1000;
-      // alternar cada 3 segundos
-      const mode: State['mode'] = Math.floor(t / 3) % 2 === 0 ? 'red-bright' : 'uv-dim';
-      stateRef.current.mode = mode;
-      stateRef.current.t = t;
-      if (modeHudRef.current) {
-        modeHudRef.current.textContent = mode === 'red-bright'
-          ? 'ROJA · intensidad MÁXIMA'
-          : 'UV · tenue';
-      }
-      if (currentHudRef.current) {
-        currentHudRef.current.textContent = mode === 'red-bright'
-          ? '0.00 mA · sensor inerte'
-          : '12.4 mA · corriente';
-      }
-      if (verdictRef.current) {
-        verdictRef.current.textContent = mode === 'red-bright'
-          ? '∅ no reacciona'
-          : '✓ electrones eyectados';
-        verdictRef.current.style.color = mode === 'red-bright' ? '#EF4444' : '#22D3EE';
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
+export default function SensorMysteryScene(_props: { phase?: string } = {}) {
   return (
-    <div
-      className="w-full h-full relative"
-      style={{ background: 'radial-gradient(ellipse at center, #0A0E1A 0%, #03050A 80%)' }}
-    >
-      <Canvas camera={{ position: [0, 1.6, 6.5], fov: 42 }}>
-        <Scene stateRef={stateRef} />
-        <OrbitControls enableDamping enableZoom={false} enablePan={false} enableRotate={false} target={[0, 0.5, 0]} />
+    <div className="w-full h-full relative" style={{ background: '#000' }}>
+      <Canvas
+        camera={{ position: [0, 1.2, 6.0], fov: 42, near: 0.001, far: 100 }}
+        gl={{ antialias: false, alpha: false, powerPreference: 'high-performance' }}
+        dpr={[0.55, 1]}
+      >
+        <Scene />
+        <OrbitControls
+          enablePan={false}
+          enableZoom={false}
+          autoRotate
+          autoRotateSpeed={0.28}
+          minPolarAngle={1.25}
+          maxPolarAngle={1.55}
+        />
       </Canvas>
-
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 text-center pointer-events-none">
-        <div className="text-[10px] font-mono text-[#FDB813] tracking-[0.3em] uppercase">
-          Lámpara · ventana óptica · sensor de cesio
-        </div>
-        <div className="text-[10px] font-mono text-[#64748B] mt-1">
-          intensidad ROJA máxima vs UV tenue · ¿quién gana?
-        </div>
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 text-center text-[11px] font-mono text-[#94A3B8]">
+        sensor de cesio · dos colores
       </div>
-
-      <div className="absolute bottom-6 left-6 pointer-events-none">
-        <div className="px-5 py-3 rounded-md border border-[#FDB813]/30 bg-black/55 backdrop-blur-sm space-y-1.5">
-          <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#FDB813]">
-            Estado actual
-          </div>
-          <div className="text-[13px] font-mono text-white">
-            luz: <span ref={modeHudRef} className="text-[#EF4444] font-bold">ROJA · intensidad MÁXIMA</span>
-          </div>
-          <div className="text-[13px] font-mono text-white">
-            sensor: <span ref={currentHudRef} className="text-[#94A3B8]">0.00 mA · sensor inerte</span>
-          </div>
-          <div className="text-[11px] font-mono pt-1 border-t border-[#1E293B]">
-            <span ref={verdictRef} style={{ color: '#EF4444' }}>∅ no reacciona</span>
-          </div>
-        </div>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-[12px] font-mono text-[#CBD5E1]">
+        intensidad no manda · color sí
       </div>
     </div>
   );

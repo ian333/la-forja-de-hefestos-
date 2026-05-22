@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena25-limones",
+  "title": "Cap 5 · Escena 25 — Fin de la primera clase",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "25-cierre",
+      "scene": "limones-escena-25",
+      "audio": "25-cierre.mp3",
+      "text": "[softly] Recuerda esto. [pause] [slowly] La próxima vez que veas un precio... [pause] que no te cuadra... [pause] [whispers] piensa en Akerlof. [pause] [softly] La próxima vez que califiques un producto... [pause] piensa en Spence. [pause] [softly] La próxima vez que un amigo te diga... [pause] [whispers] que el mercado se rompió solo... [pause] [firmly] tú ya sabrás por qué. [pause] [slowly] Esto fue una clase. [pause] [softly] Vienen cincuenta y seis Nobel más. [pause] [whispers] Bienvenido... [pause] [firmly] a GAIA Escuela."
+    }
+  ]
+}

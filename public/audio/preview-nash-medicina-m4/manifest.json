@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena-nash-medicina-m4",
+  "title": "Nash · Cap 5 · La Medicina M4 (Ostrom-style, coordinación local)",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "nash-medicina-m4",
+      "scene": "nash-medicina-m4",
+      "audio": "nash-medicina-m4.mp3",
+      "text": "Lo que estás a punto de ver lo descubrió una mujer en mil novecientos noventa. Y le dio el Nobel de Economía. Elinor Ostrom no aceptó la tragedia de los comunes. Recorrió pesqueros en Filipinas. Pastores en los Alpes. Ejidos en Oaxaca. Donde la gente se conoce, donde puede acordar reglas propias, el bien común no muere. Se cuida. Sin estado. Sin privatizar. La medicina del equilibrio de Nash existe. Y se llama comunidad."
+    }
+  ]
+}

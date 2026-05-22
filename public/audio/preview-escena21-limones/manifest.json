@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena21-limones",
+  "title": "Cap 5 · Escena 21 — Tu vida ya cambió",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "21-tu-vida",
+      "scene": "limones-escena-21",
+      "audio": "21-tu-vida.mp3",
+      "text": "[softly] Vamos a aterrizarlo. [pause] [slowly] Aquí. [pause] [firmly] En México. [pause] [softly] Sales del concesionario. [pause] Manejas una cuadra. [pause] [whispers] Tu Tsuru pierde veinte por ciento. [pause] [softly] Eso es Akerlof. [pause] [slowly] Buscas refacciones en Tepito. [pause] [wondering] ¿Originales? [pause] [softly] ¿Genéricas? [pause] [whispers] No sabes. [pause] [firmly] Eso es Akerlof. [pause] [slowly] Mercado Libre te muestra cien vendedores. [pause] [softly] Todos prometen lo mismo. [pause] [firmly] Akerlof."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena10-limones",
+  "title": "Cap 2 · Escena 10 — ¿Hay solución?",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "10-hay-solucion",
+      "scene": "limones-escena-10",
+      "audio": "10-hay-solucion.mp3",
+      "text": "[wondering] Y ahora la pregunta. [pause] [softly] Si esto pasa solo... [pause] sin que nadie quiera... [pause] [firmly] ¿hay forma de pararlo? [pause] [slowly] La respuesta... existe. [pause] [softly] Pero requiere algo... [pause] que nadie quiere oír. [pause] [whispers] El hombre que descubrió esto... [pause] [softly] tenía veintinueve años. [pause] Y su paper... fue rechazado tres veces. [pause] [firmly] Capítulo tres. [pause] [whispers] George Akerlof."
+    }
+  ]
+}

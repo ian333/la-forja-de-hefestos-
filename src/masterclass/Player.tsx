@@ -60,8 +60,11 @@ import PhotonLedgerScene from './scenes/PhotonLedgerScene';
 import MillikanDataScene from './scenes/MillikanDataScene';
 import ComptonKickScene from './scenes/ComptonKickScene';
 import CascadeQuanticaScene from './scenes/CascadeQuanticaScene';
+import DufloScene from './scenes/DufloScene';
+import { NarratorOverlay, NARRATOR_REGISTRY } from './narrator';
 import Chalkboard from './Chalkboard';
 import ModulePicker from './ModulePicker';
+import { RenderClockContext, useRenderClockController } from './render-clock';
 
 interface Scene {
   id: string;
@@ -85,7 +88,21 @@ function readClassId(): string {
   return params.get('id') || 'i';
 }
 
+function readRenderMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('render') === '1';
+}
+
+function readDeterministicMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('deterministic') === '1';
+}
+
 const CLASS_ID = readClassId();
+const RENDER_MODE = readRenderMode();
+const DETERMINISTIC_MODE = RENDER_MODE && readDeterministicMode();
 const AUDIO_BASE = `/audio/masterclass/${CLASS_ID}`;
 
 // Maps manifest.id → picker class identifier (used for the end-screen module picker).
@@ -110,6 +127,7 @@ const PICKER_BY_MANIFEST: Record<string, string> = {
   'econ-15-ostrom': 'econ-15-ostrom',
   'econ-16-lucas': 'econ-16-lucas',
   'econ-17-mirrlees-vickrey': 'econ-17-mirrlees-vickrey',
+  'econ-18-duflo': 'econ-18-duflo',
   'blackhole': 'blackhole',
   'phys-einstein-pe': 'phys-einstein-pe',
 };
@@ -125,6 +143,22 @@ export default function Player() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const fallbackTimerRef = useRef<number | null>(null);
 
+  // Render mode determinista: clock externo controlado por Playwright.
+  // En modo normal este controlador no hace nada (enabled=false).
+  const sceneDurations = (manifest?.scenes ?? []).map(
+    s => s.durationSec ?? 12
+  );
+  const { state: clockState } = useRenderClockController({
+    enabled: DETERMINISTIC_MODE,
+    sceneDurations,
+    onSceneChange: (newIdx) => {
+      // En modo determinista, el clock determina idx, no el audio.
+      // Clamp a [0, length-1] para evitar idx=-1 cuando sceneDurations=[]
+      // antes de que manifest cargue (race condition).
+      if (newIdx >= 0) setIdx(newIdx);
+    },
+  });
+
   // Load manifest once
   useEffect(() => {
     fetch(`${AUDIO_BASE}/manifest.json`)
@@ -132,6 +166,27 @@ export default function Player() {
       .then(setManifest)
       .catch(e => console.error('manifest fail', e));
   }, []);
+
+  // Render mode: auto-start as soon as manifest loads.
+  useEffect(() => {
+    if (RENDER_MODE && manifest && !started) {
+      setStarted(true);
+      setIdx(0);
+    }
+  }, [manifest, started]);
+
+  // Render mode: expose progress to window for Playwright synchronization.
+  useEffect(() => {
+    if (!RENDER_MODE || typeof window === 'undefined') return;
+    (window as any).__renderStatus = {
+      manifestId: manifest?.id ?? null,
+      total: manifest?.scenes.length ?? 0,
+      idx,
+      started,
+      ended: endReached,
+      audioDuration,
+    };
+  }, [manifest, idx, started, endReached, audioDuration]);
 
   // When idx changes, swap the audio source and play (if started)
   useEffect(() => {
@@ -210,6 +265,7 @@ export default function Player() {
   const total = manifest.scenes.length;
 
   return (
+    <RenderClockContext.Provider value={clockState}>
     <div className="w-screen h-screen bg-black text-[#E2E8F0] overflow-hidden relative font-sans">
       {/* Audio element (hidden) */}
       <audio
@@ -242,6 +298,11 @@ export default function Player() {
             audioDurationSec={audioDuration ?? undefined}
           />
         </Suspense>
+        {/* Narrator overlay — flechas + labels + big-numbers sync con audio */}
+        <NarratorOverlay
+          config={NARRATOR_REGISTRY[manifest.id]?.[scene.id]}
+          audioRef={audioRef}
+        />
       </div>
 
       {/* Chalkboard — floating panel top-right (only when scene doesn't own it). */}
@@ -274,27 +335,32 @@ export default function Player() {
           <div className="text-[10px] uppercase tracking-[0.25em] text-[#64748B]">Masterclass · GAIA</div>
           <div className="text-white font-semibold text-[14px] mt-1">{manifest.title}</div>
         </div>
-        <a href="/escuela.html" className="text-[#64748B] hover:text-white transition text-[11px]">
-          ✕ salir
-        </a>
+        {!RENDER_MODE && (
+          <a href="/escuela.html" className="text-[#64748B] hover:text-white transition text-[11px]">
+            ✕ salir
+          </a>
+        )}
       </div>
 
       {/* Subtitle */}
       <div className="absolute bottom-24 left-0 right-0 px-12 pointer-events-none">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-[20px] leading-snug text-white font-medium tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-            {started ? scene.text : 'Pon los audífonos. Una sola idea, llevada hasta el final.'}
+            {started ? scene.text.replace(/\[[^\]]+\]/g, '').replace(/\.\.\./g, '…').replace(/\s+/g, ' ').trim() : 'Pon los audífonos. Una sola idea, llevada hasta el final.'}
           </p>
         </div>
       </div>
 
-      {/* Module Picker (end screen) — math classes only */}
-      <ModulePicker
-        visible={endReached && PICKER_BY_MANIFEST[manifest.id] !== undefined}
-        classId={PICKER_BY_MANIFEST[manifest.id] ?? 'i'}
-      />
+      {/* Module Picker (end screen) — math classes only, hidden in render mode */}
+      {!RENDER_MODE && (
+        <ModulePicker
+          visible={endReached && PICKER_BY_MANIFEST[manifest.id] !== undefined}
+          classId={PICKER_BY_MANIFEST[manifest.id] ?? 'i'}
+        />
+      )}
 
-      {/* Controls + progress at the bottom */}
+      {/* Controls + progress at the bottom — hidden in render mode */}
+      {!RENDER_MODE && (
       <div className="absolute bottom-6 left-0 right-0 px-12">
         <div className="max-w-4xl mx-auto">
           {/* Scene chiclet bar */}
@@ -347,7 +413,9 @@ export default function Player() {
           )}
         </div>
       </div>
+      )}
     </div>
+    </RenderClockContext.Provider>
   );
 }
 
@@ -416,5 +484,12 @@ function SceneSwitch({
   if (sceneId === 'pe/millikan-data')    return <MillikanDataScene key={key} phase={phase} />;
   if (sceneId === 'pe/compton-kick')     return <ComptonKickScene key={key} phase={phase} />;
   if (sceneId === 'pe/cascade-cuantica') return <CascadeQuanticaScene key={key} phase={phase} />;
+  // Duflo Nobel Economía 2019 — 6 phases en una sola escena
+  if (sceneId === 'duflo/pregunta')   return <DufloScene key={key} phase={0} />;
+  if (sceneId === 'duflo/mito')       return <DufloScene key={key} phase={1} />;
+  if (sceneId === 'duflo/rct')        return <DufloScene key={key} phase={2} />;
+  if (sceneId === 'duflo/kenya')      return <DufloScene key={key} phase={3} />;
+  if (sceneId === 'duflo/mexico')     return <DufloScene key={key} phase={4} />;
+  if (sceneId === 'duflo/cierre')     return <DufloScene key={key} phase={5} />;
   return <Void key={key} />;
 }

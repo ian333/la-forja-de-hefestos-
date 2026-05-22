@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena16-limones",
+  "title": "Cap 4 · Escena 16 — Esto no es solo carros",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "16-no-es-solo-carros",
+      "scene": "limones-escena-16",
+      "audio": "16-no-es-solo-carros.mp3",
+      "text": "[softly] Akerlof empezó con carros. [pause] [slowly] Pero el problema... [pause] está en todos lados. [pause] [firmly] En cualquier mercado donde uno sepa más que el otro... [pause] hay limones. [pause] [softly] Seguros médicos. [pause] Créditos bancarios. [pause] Empleos. [pause] Casas. [pause] [whispers] Hasta el amor. [pause] [firmly] Cada uno... [pause] tiene su versión del colapso. [pause] [slowly] Y la mayoría... [pause] [whispers] no la ves."
+    }
+  ]
+}

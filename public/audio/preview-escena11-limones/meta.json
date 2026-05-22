@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T20:54:05.780Z",
+  "script": "script-escena11-limones.json",
+  "script_id": "preview-escena11-limones",
+  "total_duration_sec": 30.119,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "11-berkeley.mp3",
+      "duration_sec": 30.119
+    }
+  ]
+}

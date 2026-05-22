@@ -217,6 +217,8 @@ echo -e "${BOLD}  5a. Código + audios ligeros${NC}"
 RSYNC_FLAGS_CODE="-az --delete \
   --exclude=node_modules/ \
   --exclude=dist/ \
+  --exclude=dist-video/ \
+  --exclude=_shots-phases/ \
   --exclude=.git/ \
   --exclude=.claude/ \
   --exclude=.npm/ \

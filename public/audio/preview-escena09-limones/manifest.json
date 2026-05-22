@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena09-limones",
+  "title": "Cap 2 · Escena 9 — El colapso",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "09-colapso",
+      "scene": "limones-escena-09",
+      "audio": "09-colapso.mp3",
+      "text": "[whispers] El lote queda casi vacío. [pause] [slowly] Solo... el peor de los carros. [pause] [softly] Y el precio... toca fondo. [pause] [firmly] Treinta mil pesos. [pause] [wondering] ¿Treinta mil? [pause] [slowly] Por un carro que pudo valer doscientos mil. [pause] [softly] El comprador finalmente acepta. [pause] El vendedor finalmente vende. [pause] [firmly] Pero algo se rompió. [pause] [whispers] Mira lo que perdimos. [pause] [slowly] Los carros buenos... [pause] todos. [pause] El precio justo... [pause] desapareció. [pause] [firmly] El mercado... [pause] se rompió matemáticamente. [pause] [whispers] Sin que nadie hiciera trampa."
+    }
+  ]
+}

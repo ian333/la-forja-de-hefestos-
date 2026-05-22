@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena22-limones",
+  "title": "Cap 5 · Escena 22 — La señal que sí funciona",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "22-la-senal",
+      "scene": "limones-escena-22",
+      "audio": "22-la-senal.mp3",
+      "text": "[softly] Pero los mercados aprendieron. [pause] [slowly] Uber te da una calificación. [pause] [firmly] Cinco estrellas... [pause] [whispers] o no manejas. [pause] [softly] Airbnb te muestra reseñas. [pause] [slowly] Mercado Libre tiene MercadoPuntos. [pause] [softly] Tu calificación... [pause] es tu señal. [pause] [firmly] Costosa de obtener. [pause] [slowly] Imposible de imitar. [pause] [whispers] Exactamente lo que Spence predijo. [pause] [softly] Cuando ves cinco estrellas... [pause] [firmly] estás viendo... [pause] [slowly] el Nobel del dos mil uno... [pause] [whispers] aplicado."
+    }
+  ]
+}

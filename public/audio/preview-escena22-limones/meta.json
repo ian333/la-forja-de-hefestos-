@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T21:27:50.127Z",
+  "script": "script-escena22-limones.json",
+  "script_id": "preview-escena22-limones",
+  "total_duration_sec": 31.086,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "22-la-senal.mp3",
+      "duration_sec": 31.086
+    }
+  ]
+}

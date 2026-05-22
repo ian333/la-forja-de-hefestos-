@@ -1,0 +1,25 @@
+{
+  "id": "preview-escena13-limones",
+  "title": "Cap 3 · Escena 13 — Rechazado tres veces",
+  "central_emotion": "inquietud productiva",
+  "aspect_ratio_primary": "9:16",
+  "voice_name": "Matilda",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "model_id": "eleven_v3",
+  "voice_settings": {
+    "stability": 0.50,
+    "similarity_boost": 0.78,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "13-rechazado",
+      "scene": "limones-escena-13",
+      "template": "inversion",
+      "story_beat": "turn",
+      "text": "[whispers] Akerlof terminó el paper. [pause] [softly] Lo mandó a la primera revista. [pause] [firmly] American Economic Review. [pause] [slowly] Rechazado. [pause] [softly] Lo mandó a la segunda. [pause] [firmly] Journal of Political Economy. [pause] [slowly] Rechazado. [pause] [whispers] Tercera. [pause] [firmly] Review of Economic Studies. [pause] [slowly] Rechazado. [pause] [wondering] ¿La razón? [pause] [softly] Decían que era trivial. [pause] [slowly] Que no era economía. [pause] [whispers] Que cualquiera podía verlo. [pause] [firmly] Cuatro años después... [pause] una cuarta revista aceptó.",
+      "duration_target_sec": 34
+    }
+  ]
+}

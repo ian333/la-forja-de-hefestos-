@@ -13,6 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import PostFX from './_postFX';
 
 const U_NATURAL = 5.0;
 const BETA = 0.8;
@@ -432,6 +433,9 @@ export default function ExpectationsScene({ phase }: { phase: string }) {
       >
         <PhillipsSim key={phase} phase={phase} onState={setHud} />
         <CinematicCamera />
+        {/* Bloom alto sobre las curvas pulsantes + ChromAberration para
+            sensación de datos cuánticos / energía económica. */}
+        <PostFX intensity={1.6} threshold={0.30} smoothing={0.50} vignette={0.65} vignetteOffset={0.20} aberration={0.0020} />
       </Canvas>
 
       <div className="absolute inset-0 pointer-events-none">

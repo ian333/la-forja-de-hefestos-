@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena20-limones",
+  "title": "Cap 4 · Escena 20 — ¿Qué mercado se está rompiendo ahora?",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "20-que-mercado",
+      "scene": "limones-escena-20",
+      "audio": "20-que-mercado.mp3",
+      "text": "[wondering] Y ahora... [pause] piensa. [pause] [softly] ¿Dónde estás tú? [pause] [slowly] ¿En qué mercado eres comprador... [pause] sin saber lo que compras? [pause] [whispers] Tu app de citas. [pause] [softly] Tu plataforma de freelance. [pause] La universidad que elegiste. [pause] [firmly] El doctor que te atendió. [pause] [slowly] Los influencers que sigues. [pause] [softly] Cada uno es un mercado. [pause] [whispers] Cada uno tiene asimetría. [pause] [firmly] La pregunta es... [pause] [slowly] ¿cómo te proteges? [pause] [whispers] Capítulo cinco."
+    }
+  ]
+}

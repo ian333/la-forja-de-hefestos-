@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena15-limones",
+  "title": "Cap 3 · Escena 15 — Akerlof solo describió el problema",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "15-pero-akerlof",
+      "scene": "limones-escena-15",
+      "audio": "15-pero-akerlof.mp3",
+      "text": "[softly] Pero Akerlof... [pause] [slowly] solo describió el problema. [pause] [whispers] No dio la solución. [pause] [wondering] ¿Cómo evitas el colapso? [pause] [softly] ¿Cómo le demuestras al comprador... [pause] que tu carro sí es bueno? [pause] [firmly] Necesitas... señalizar. [pause] [whispers] Mandar una señal costosa. [pause] [slowly] Tan costosa... [pause] que el vendedor del carro malo... [pause] no podría imitarte. [pause] [softly] Un joven economista en Harvard... [pause] [firmly] vio el patrón. [pause] [slowly] Capítulo cuatro. [pause] [whispers] Michael Spence."
+    }
+  ]
+}

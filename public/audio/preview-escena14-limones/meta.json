@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T21:19:25.654Z",
+  "script": "script-escena14-limones.json",
+  "script_id": "preview-escena14-limones",
+  "total_duration_sec": 28.447,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "14-nobel.mp3",
+      "duration_sec": 28.447
+    }
+  ]
+}

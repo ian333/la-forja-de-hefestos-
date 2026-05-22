@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena23-limones",
+  "title": "Cap 5 · Escena 23 — Cómo no ser limón",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "23-como-no-ser-limon",
+      "scene": "limones-escena-23",
+      "audio": "23-como-no-ser-limon.mp3",
+      "text": "[softly] Y tú... [pause] [wondering] ¿qué señal mandas? [pause] [slowly] Tu CV. [pause] Tu portfolio. [pause] Tu certificación. [pause] [firmly] Cada cosa que costó esfuerzo... [pause] es una señal. [pause] [softly] Si fue fácil de conseguir... [pause] [whispers] no señaliza nada. [pause] [softly] Cualquiera puede tener un curso de Udemy de cinco horas. [pause] [firmly] Pocos pueden tener... [pause] [slowly] dos años de proyectos publicados en GitHub. [pause] [whispers] La diferencia es esa. [pause] [firmly] El esfuerzo... [pause] es lo que el malo no puede imitar."
+    }
+  ]
+}

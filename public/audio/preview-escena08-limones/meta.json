@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-05-20T20:24:48.051Z",
+  "script": "script-escena08-limones.json",
+  "script_id": "preview-escena08-limones",
+  "total_duration_sec": 33.149,
+  "model_id": "eleven_v3",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "tracks": [
+    {
+      "file": "08-nuevo-promedio.mp3",
+      "duration_sec": 33.149
+    }
+  ]
+}

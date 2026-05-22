@@ -1,0 +1,49 @@
+{
+  "id": "econ-18-duflo",
+  "title": "Cap 18 · Esther Duflo — La evidencia contra la pobreza",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "01-pregunta",
+      "scene": "duflo/pregunta",
+      "audio": "01-pregunta.mp3",
+      "text": "[softly] Hay mil seiscientos millones de personas... [pause] viviendo en pobreza extrema. [pause] [firmly] Y la pregunta más urgente de la economía... [pause] [slowly] no es si podemos ayudarlos. [pause] [whispers] Es: ¿qué funciona... y qué no?",
+      "durationSec": 14.3
+    },
+    {
+      "id": "02-mito",
+      "scene": "duflo/mito",
+      "audio": "02-mito.mp3",
+      "text": "[slowly] Durante décadas... [pause] las decisiones se tomaron por intuición. [pause] ¿Microcrédito ayuda? [pause] [softly] suena obvio que sí. [pause] ¿Cobrar por mosquiteros, aunque sea poco? [pause] [softly] suena más sustentable. [pause] [firmly] Pero la intuición... [pause] [slowly] miente.",
+      "durationSec": 16.0
+    },
+    {
+      "id": "03-rct",
+      "scene": "duflo/rct",
+      "audio": "03-rct.mp3",
+      "text": "[firmly] Esther Duflo aplicó algo distinto. [pause] [slowly] Tomas una comunidad. [pause] La divides al azar. [pause] [whispers] Grupo A: recibe la intervención. [pause] Grupo B: no recibe nada. [pause] [softly] Después... [pause] mides la diferencia. [pause] [firmly] Eso es un ensayo controlado aleatorizado.",
+      "durationSec": 19.1
+    },
+    {
+      "id": "04-kenya",
+      "scene": "duflo/kenya",
+      "audio": "04-kenya.mp3",
+      "text": "[softly] Kenya, dos mil cuatro. [pause] [slowly] Niños con parásitos intestinales... [pause] no pueden aprender. [pause] [softly] Una pastilla. [pause] Cincuenta centavos por niño. [pause] [firmly] Veinticinco por ciento más asistencia escolar. [pause] [whispers] Capacitar maestros: cero impacto.",
+      "durationSec": 19.5
+    },
+    {
+      "id": "05-mexico",
+      "scene": "duflo/mexico",
+      "audio": "05-mexico.mp3",
+      "text": "[firmly] México fue de los primeros. [pause] Progresa, mil novecientos noventa y siete. [pause] [softly] Pagar a las familias... [pause] si mandan al niño a la escuela. [pause] [slowly] Evaluado con un RCT. [pause] [firmly] Inscripción escolar: subió diez por ciento. [pause] [whispers] La evidencia... [pause] cambió la política.",
+      "durationSec": 19.6
+    },
+    {
+      "id": "06-cierre",
+      "scene": "duflo/cierre",
+      "audio": "06-cierre.mp3",
+      "text": "[slowly] La pobreza no se combate con intuición. [pause] Se combate con evidencia. [pause] [softly] Esther Duflo. [pause] [firmly] Nobel de Economía. [pause] [whispers] Dos mil diecinueve.",
+      "durationSec": 12.2
+    }
+  ]
+}

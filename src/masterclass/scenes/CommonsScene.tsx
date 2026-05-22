@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import PostFX from './_postFX';
 
 const GRID = 32;
 const GRID_HALF = GRID / 2;
@@ -697,6 +698,9 @@ export default function CommonsScene({ phase }: { phase: string }) {
       >
         <CommonsSim key={phase} phase={phase} onStats={setStats} />
         <CinematicCamera />
+        {/* Bloom moderado: el sol y las partículas brillan, pero el campo
+            mantiene legibilidad. Vignette suave + sin aberración cromática. */}
+        <PostFX intensity={1.1} threshold={0.55} smoothing={0.5} vignette={0.45} vignetteOffset={0.3} />
       </Canvas>
 
       {/* HUD top-left */}

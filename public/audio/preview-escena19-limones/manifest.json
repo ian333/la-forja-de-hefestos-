@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena19-limones",
+  "title": "Cap 4 · Escena 19 — Hipotecas subprime, 2008",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "19-subprime-2008",
+      "scene": "limones-escena-19",
+      "audio": "19-subprime-2008.mp3",
+      "text": "[softly] Año dos mil siete. [pause] [firmly] Estados Unidos. [pause] [slowly] Bancos venden hipotecas a personas... [pause] que no pueden pagarlas. [pause] [whispers] Pero las disfrazan. [pause] [softly] Las empaquetan. [pause] Las mezclan con buenas. [pause] [firmly] Las califican AAA. [pause] [slowly] Los compradores institucionales... [pause] no saben qué hay dentro. [pause] [whispers] Información asimétrica. [pause] [softly] A escala global. [pause] [firmly] En septiembre del dos mil ocho... [pause] [slowly] el sistema colapsa. [pause] [whispers] Lehman Brothers cae. [pause] [softly] Y el mundo descubre... [pause] [firmly] que los paquetes... [pause] eran limones."
+    }
+  ]
+}

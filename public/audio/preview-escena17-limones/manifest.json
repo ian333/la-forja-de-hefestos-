@@ -1,0 +1,13 @@
+{
+  "id": "preview-escena17-limones",
+  "title": "Cap 4 · Escena 17 — Los seguros médicos",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "17-seguros-medicos",
+      "scene": "limones-escena-17",
+      "audio": "17-seguros-medicos.mp3",
+      "text": "[softly] Aseguradora médica. [pause] [wondering] ¿Quién quiere un seguro caro? [pause] [firmly] El que sabe que está enfermo. [pause] [slowly] ¿Quién no lo necesita? [pause] [whispers] El que se siente bien. [pause] [softly] El sano... [pause] no compra. [pause] [firmly] El enfermo... compra. [pause] [slowly] La aseguradora calcula el promedio. [pause] [softly] Y como solo le entran enfermos... [pause] sube el precio. [pause] [whispers] Y los menos enfermos... se van. [pause] [firmly] Hasta que el seguro... [pause] [slowly] solo lo pueden pagar... [pause] [whispers] los terminales."
+    }
+  ]
+}
