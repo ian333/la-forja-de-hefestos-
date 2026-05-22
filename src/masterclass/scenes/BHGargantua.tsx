@@ -11,13 +11,14 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import BHRaytraced from '@/labs/components/BHRaytraced';
+import { makeRenderer } from '@/lib/webgl-fallback';
 
 export default function BHGargantua() {
   return (
     <div className="w-full h-full relative" style={{ background: '#000' }}>
       <Canvas
         camera={{ position: [0, 5, 45], fov: 45, near: 0.001, far: 300 }}
-        gl={{ antialias: false, alpha: false, powerPreference: 'high-performance' }}
+        gl={makeRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' })}
         dpr={[0.55, 1]}
       >
         <BHRaytraced

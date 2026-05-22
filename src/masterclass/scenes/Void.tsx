@@ -5,6 +5,7 @@
 
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { makeRenderer } from '@/lib/webgl-fallback';
 import * as THREE from 'three';
 
 function Pulse() {
@@ -40,7 +41,7 @@ export default function Void() {
     <div className="w-full h-full" style={{
       background: 'radial-gradient(ellipse at center, #14111A 0%, #05060A 80%)',
     }}>
-      <Canvas camera={{ position: [0, 0, 4], fov: 40 }}>
+      <Canvas camera={{ position: [0, 0, 4], fov: 40 }} gl={makeRenderer()}>
         <ambientLight intensity={0.2} />
         <pointLight position={[0, 0, 0]} intensity={1.5} color="#FDB813" distance={5} />
         <Pulse />

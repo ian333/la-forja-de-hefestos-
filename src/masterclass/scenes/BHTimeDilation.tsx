@@ -7,6 +7,7 @@
 
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -62,7 +63,7 @@ export default function BHTimeDilation() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F1B2C 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 1, 12], fov: 38 }}>
+      <Canvas camera={{ position: [0, 1, 12], fov: 38 }} gl={makeRenderer()}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[3, 4, 5]} intensity={0.5} />
         <pointLight position={[-1.8, 0, 1]} intensity={1.0} distance={3} color="#F472B6" />

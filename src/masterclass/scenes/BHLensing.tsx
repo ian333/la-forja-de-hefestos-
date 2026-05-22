@@ -5,6 +5,7 @@
  */
 
 import { Canvas } from '@react-three/fiber';
+import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
 import BHRaytraced from '@/labs/components/BHRaytraced';
 
@@ -13,7 +14,7 @@ export default function BHLensing() {
     <div className="w-full h-full relative" style={{ background: '#000' }}>
       <Canvas
         camera={{ position: [0, 4, 40], fov: 45, near: 0.001, far: 300 }}
-        gl={{ antialias: false, alpha: false, powerPreference: 'high-performance' }}
+        gl={makeRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' })}
         dpr={[0.55, 1]}
       >
         <BHRaytraced

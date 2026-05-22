@@ -9,6 +9,7 @@
 
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -209,7 +210,7 @@ export default function BHWell() {
     <div className="w-full h-full" style={{
       background: 'radial-gradient(ellipse at center, #1B0F20 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [5, 4, 9], fov: 45 }}>
+      <Canvas camera={{ position: [5, 4, 9], fov: 45 }} gl={makeRenderer()}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[3, 5, 4]} intensity={0.6} />
         <pointLight position={[0, 0, 0]} intensity={1.0} distance={5} color="#FDB813" />

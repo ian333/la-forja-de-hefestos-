@@ -11,6 +11,7 @@
 
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -127,7 +128,7 @@ export default function BHCollapse() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #100018 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 3, 12], fov: 40 }}>
+      <Canvas camera={{ position: [0, 3, 12], fov: 40 }} gl={makeRenderer()}>
         <ambientLight intensity={0.35} />
         <directionalLight position={[3, 4, 5]} intensity={0.4} />
         <Collapse />
