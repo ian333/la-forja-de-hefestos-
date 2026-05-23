@@ -250,6 +250,116 @@ function buildParticles(): ParticleSet {
   return { positions, compId, logR, baseSize };
 }
 
+// ── Campo magnético — líneas de campo Blandford-Znajek ───────────────
+//
+// Geometría: misma parabólica McKinney-Narayan z ∝ R^1.6 que usan las
+// streamlines del jet (BZ monopole field anchored al horizonte, força-libre
+// hasta el inflexion en luz-cilindro).
+//
+// Lo que renderizamos:
+//   • LineSegments: ~50 field lines, cada una ~70 puntos → ~3500 segments
+//   • Particles streaming along the lines: ~3000 puntos animados que se
+//     desplazan a lo largo de B en cada frame. Brillo modulado por la
+//     emisividad de jet_sync en banda radio (component 5 en el tensor).
+//
+// Refs: Blandford-Znajek 1977, McKinney-Narayan 2007.
+
+interface BFieldData {
+  linePositions: Float32Array;    // line segments: 2 endpoints per segment, 3 coords
+  lineColors:    Float32Array;    // RGB per vertex, faded by distance
+  particles:     {
+    positions:  Float32Array;     // N × 3
+    lineIdx:    Float32Array;     // N (which field line this particle is on)
+    t:          Float32Array;     // N (param ∈ [0,1] along the line)
+    speed:      Float32Array;     // N (advection speed in t-space per second)
+    logR:       Float32Array;     // N (for tensor lookup, brightness in radio)
+  };
+  // Sampled positions per line (for animating particles along)
+  linePaths: Float32Array;        // N_LINES × N_PTS × 3
+  N_LINES:   number;
+  N_PTS:     number;
+}
+
+function buildBField(): BFieldData {
+  const N_LINES = 56;          // azimuthal field lines around jet axis
+  const N_PTS   = 72;          // points along each line
+  const linePaths = new Float32Array(N_LINES * N_PTS * 3);
+
+  // Cada línea sale de un radio base R0 en el horizonte y va a +Z, otra a -Z
+  for (let li = 0; li < N_LINES; li++) {
+    const phi    = (li / N_LINES) * Math.PI * 2;
+    // Radio base en el horizonte: 0.5 a 1.2 r_g (en world: log_r ∈ [-0.3, 0.08])
+    const R0_wu  = 0.5 + 0.7 * (li % 7) / 6;          // world units
+    const side   = (li % 2 === 0) ? 1 : -1;            // half lines up, half down
+    // z varía log-spaced: log_z ∈ [0.4, 7] world ≈ partículas en log_r jet
+    for (let i = 0; i < N_PTS; i++) {
+      const t      = i / (N_PTS - 1);
+      // z world (log) crece de 0.4 a 7. R sigue parabólica R = R0·(z/z0)^(1/1.6)
+      const log_z  = 0.4 + t * (6.6);                  // world units
+      const log_R  = Math.log10(R0_wu) + (log_z - 0.4) / 1.6;
+      const R      = Math.pow(10, log_R);
+      const z_world = log_z * side;
+      linePaths[(li * N_PTS + i) * 3 + 0] = R * Math.cos(phi);
+      linePaths[(li * N_PTS + i) * 3 + 1] = z_world;
+      linePaths[(li * N_PTS + i) * 3 + 2] = R * Math.sin(phi);
+    }
+  }
+
+  // LineSegments: por cada line, N_PTS-1 segments = 2 vertices each
+  const N_SEG = N_LINES * (N_PTS - 1);
+  const linePositions = new Float32Array(N_SEG * 2 * 3);
+  const lineColors    = new Float32Array(N_SEG * 2 * 3);
+  for (let li = 0; li < N_LINES; li++) {
+    for (let i = 0; i < N_PTS - 1; i++) {
+      const segIdx = li * (N_PTS - 1) + i;
+      const off = segIdx * 6;
+      // endpoint A
+      linePositions[off + 0] = linePaths[(li * N_PTS + i) * 3 + 0];
+      linePositions[off + 1] = linePaths[(li * N_PTS + i) * 3 + 1];
+      linePositions[off + 2] = linePaths[(li * N_PTS + i) * 3 + 2];
+      // endpoint B
+      linePositions[off + 3] = linePaths[(li * N_PTS + (i+1)) * 3 + 0];
+      linePositions[off + 4] = linePaths[(li * N_PTS + (i+1)) * 3 + 1];
+      linePositions[off + 5] = linePaths[(li * N_PTS + (i+1)) * 3 + 2];
+      // Color fades with z (campo más débil lejos del horizonte: B ∝ 1/r²)
+      const fade = Math.max(0.15, 1.0 - i / (N_PTS - 1) * 0.9);
+      lineColors[off + 0] = 0.45 * fade;   // R
+      lineColors[off + 1] = 0.78 * fade;   // G  — cyan-blue
+      lineColors[off + 2] = 1.00 * fade;   // B
+      lineColors[off + 3] = 0.45 * fade;
+      lineColors[off + 4] = 0.78 * fade;
+      lineColors[off + 5] = 1.00 * fade;
+    }
+  }
+
+  // Particles streaming along lines
+  const N_PART = 3000;
+  const positions = new Float32Array(N_PART * 3);
+  const lineIdx   = new Float32Array(N_PART);
+  const t_arr     = new Float32Array(N_PART);
+  const speed     = new Float32Array(N_PART);
+  const logRp     = new Float32Array(N_PART);
+  for (let i = 0; i < N_PART; i++) {
+    const li = Math.floor(Math.random() * N_LINES);
+    lineIdx[i] = li;
+    t_arr[i]   = Math.random();
+    speed[i]   = 0.18 + 0.22 * Math.random();   // t/sec
+    // Position: sample line at t
+    const idx = li * N_PTS + Math.min(Math.floor(t_arr[i] * (N_PTS - 1)), N_PTS - 2);
+    positions[i*3+0] = linePaths[idx*3+0];
+    positions[i*3+1] = linePaths[idx*3+1];
+    positions[i*3+2] = linePaths[idx*3+2];
+    // log_r world ≈ log magnitude of position
+    logRp[i] = Math.log10(Math.max(0.5, Math.hypot(positions[i*3+0], positions[i*3+1], positions[i*3+2])));
+  }
+
+  return {
+    linePositions, lineColors,
+    particles: { positions, lineIdx, t: t_arr, speed, logR: logRp },
+    linePaths, N_LINES, N_PTS,
+  };
+}
+
 // ── Component colors (visible in legend) ─────────────────────────────
 const COMP_COLOR_HEX = [
   '#FFE08A',   // 0 disk    — UV/optical, warm gold
@@ -363,6 +473,140 @@ function ParticleQuasar({ data, logNu, particles }: { data: SEDData; logNu: numb
         `}
       />
     </points>
+  );
+}
+
+// ── Magnetic field component ──────────────────────────────────────────
+function MagneticField({ data, logNu, bField, visible }: {
+  data: SEDData;
+  logNu: number;
+  bField: BFieldData;
+  visible: boolean;
+}) {
+  const matLineRef = useRef<THREE.LineBasicMaterial>(null);
+  const matPartRef = useRef<THREE.ShaderMaterial>(null);
+  const partGeomRef = useRef<THREE.BufferGeometry>(null);
+  const tRef = useRef<Float32Array>(bField.particles.t);
+
+  // Sync field intensity to current band — jet_sync is component 5
+  // Synchrotron peaks in radio, so the field "lights up" in radio.
+  const synchroIntensity = useMemo(() => {
+    let max = 0;
+    for (let ir = 0; ir < data.N_R; ir++) {
+      const logR = data.logRMin + ir * (data.logRMax - data.logRMin) / (data.N_R - 1);
+      const v = lookup(data, 5, logNu, logR);
+      if (v > max) max = v;
+    }
+    return Math.min(1, max * 4);
+  }, [data, logNu]);
+
+  // Update line material opacity per frame target
+  useEffect(() => {
+    if (!matLineRef.current) return;
+    matLineRef.current.opacity = 0.12 + 0.55 * synchroIntensity;
+  }, [synchroIntensity]);
+
+  // Animate particles streaming along their field lines
+  useFrame(({ clock }, dt) => {
+    if (!visible) return;
+    if (!partGeomRef.current) return;
+    const t = tRef.current;
+    const { lineIdx, speed, positions, logR } = bField.particles;
+    const N = lineIdx.length;
+    const NP = bField.N_PTS;
+    for (let i = 0; i < N; i++) {
+      t[i] += speed[i] * dt;
+      if (t[i] >= 1) t[i] -= 1;
+      const li = lineIdx[i] | 0;
+      const idxF = t[i] * (NP - 1);
+      const ia = Math.floor(idxF);
+      const ib = Math.min(ia + 1, NP - 1);
+      const f = idxF - ia;
+      const aoff = (li * NP + ia) * 3;
+      const boff = (li * NP + ib) * 3;
+      positions[i*3+0] = bField.linePaths[aoff]   * (1-f) + bField.linePaths[boff]   * f;
+      positions[i*3+1] = bField.linePaths[aoff+1] * (1-f) + bField.linePaths[boff+1] * f;
+      positions[i*3+2] = bField.linePaths[aoff+2] * (1-f) + bField.linePaths[boff+2] * f;
+      logR[i] = Math.log10(Math.max(0.5, Math.hypot(positions[i*3+0], positions[i*3+1], positions[i*3+2])));
+    }
+    (partGeomRef.current.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    (partGeomRef.current.attributes.logR as THREE.BufferAttribute).needsUpdate = true;
+    if (matPartRef.current) {
+      matPartRef.current.uniforms.uSyncBoost.value = synchroIntensity;
+      matPartRef.current.uniforms.uTime.value = clock.elapsedTime;
+    }
+  });
+
+  if (!visible) return null;
+
+  return (
+    <group>
+      <lineSegments>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[bField.linePositions, 3]}
+                           count={bField.linePositions.length / 3} itemSize={3} array={bField.linePositions} />
+          <bufferAttribute attach="attributes-color"    args={[bField.lineColors, 3]}
+                           count={bField.lineColors.length / 3} itemSize={3} array={bField.lineColors} />
+        </bufferGeometry>
+        <lineBasicMaterial
+          ref={matLineRef}
+          vertexColors
+          transparent
+          opacity={0.3}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </lineSegments>
+
+      <points>
+        <bufferGeometry ref={partGeomRef}>
+          <bufferAttribute attach="attributes-position" args={[bField.particles.positions, 3]}
+                           count={bField.particles.lineIdx.length} itemSize={3} array={bField.particles.positions} />
+          <bufferAttribute attach="attributes-logR"     args={[bField.particles.logR, 1]}
+                           count={bField.particles.lineIdx.length} itemSize={1} array={bField.particles.logR} />
+        </bufferGeometry>
+        <shaderMaterial
+          ref={matPartRef}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          uniforms={{
+            uTime:      { value: 0 },
+            uSyncBoost: { value: 0 },
+            uPixelRatio:{ value: window.devicePixelRatio },
+          }}
+          vertexShader={`
+            attribute float logR;
+            uniform float uSyncBoost;
+            uniform float uPixelRatio;
+            varying vec3 vColor;
+            varying float vAlpha;
+            void main() {
+              // Color cian-blanco; intensifica si uSyncBoost > 0 (radio band)
+              vec3 base = vec3(0.55, 0.85, 1.0);
+              float lift = clamp(uSyncBoost, 0.0, 1.0);
+              vColor = base * (0.45 + 0.9 * lift);
+              vAlpha = 0.25 + 0.7 * lift;
+              vec4 mv = modelViewMatrix * vec4(position, 1.0);
+              float dist = -mv.z;
+              gl_PointSize = clamp(8.0 * uPixelRatio * (0.8 + lift) / dist, 1.0, 14.0);
+              gl_Position = projectionMatrix * mv;
+            }
+          `}
+          fragmentShader={`
+            varying vec3 vColor;
+            varying float vAlpha;
+            void main() {
+              vec2 d = gl_PointCoord - vec2(0.5);
+              float r2 = dot(d, d);
+              if (r2 > 0.25) discard;
+              float fall = exp(-r2 * 14.0);
+              gl_FragColor = vec4(vColor * fall, vAlpha * fall);
+            }
+          `}
+        />
+      </points>
+    </group>
   );
 }
 
@@ -484,7 +728,7 @@ function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; set
 }
 
 // ── Legend ────────────────────────────────────────────────────────────
-function Legend() {
+function Legend({ showB, setShowB }: { showB: boolean; setShowB: (b: boolean) => void }) {
   return (
     <div className="absolute top-6 right-6 bg-black/65 border border-[#334155] rounded p-2 font-mono text-[10px] backdrop-blur-sm">
       <div className="text-[#94A3B8] mb-1.5 text-[9px] uppercase tracking-wider">componentes</div>
@@ -494,15 +738,33 @@ function Legend() {
           <span style={{ color: col }}>{COMP_LABELS[i]}</span>
         </div>
       ))}
+      <div className="mt-2 pt-2 border-t border-[#334155]">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showB}
+            onChange={(e) => setShowB(e.target.checked)}
+            className="accent-[#8FCEFF]"
+          />
+          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: '#8FCEFF', boxShadow: '0 0 8px #8FCEFF' }} />
+          <span style={{ color: '#8FCEFF' }}>campo B (Blandford-Znajek)</span>
+        </label>
+        <div className="text-[#475569] text-[9px] mt-1 leading-tight max-w-[180px]">
+          líneas de campo + plasma streaming. brilla en banda radio (sincrotrón).
+        </div>
+      </div>
     </div>
   );
 }
 
 // ── Scene ────────────────────────────────────────────────────────────
-function Scene({ data, logNu, particles }: { data: SEDData; logNu: number; particles: ParticleSet }) {
+function Scene({ data, logNu, particles, bField, showB }: {
+  data: SEDData; logNu: number; particles: ParticleSet; bField: BFieldData; showB: boolean;
+}) {
   return (
     <>
       <CentralBH />
+      <MagneticField data={data} logNu={logNu} bField={bField} visible={showB} />
       <ParticleQuasar data={data} logNu={logNu} particles={particles} />
     </>
   );
@@ -513,6 +775,7 @@ const gl = makeRenderer({ antialias: false, alpha: false, powerPreference: 'high
 function QuasarSED() {
   const [data, setData] = useState<SEDData | null>(null);
   const [logNu, setLogNu] = useState(15.2);
+  const [showB, setShowB] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -521,6 +784,7 @@ function QuasarSED() {
 
   // Generate particles ONCE (heavy: ~38k)
   const particles = useMemo(() => buildParticles(), []);
+  const bField    = useMemo(() => buildBField(), []);
 
   if (err)  return <div className="text-red-400 p-6 font-mono">SED load failed: {err}</div>;
   if (!data) return <div className="text-[#94A3B8] p-6 font-mono">loading SED tensor…</div>;
@@ -532,7 +796,7 @@ function QuasarSED() {
         gl={gl}
         dpr={[0.55, 1]}
       >
-        <Scene data={data} logNu={logNu} particles={particles} />
+        <Scene data={data} logNu={logNu} particles={particles} bField={bField} showB={showB} />
         <OrbitControls
           enablePan={false}
           enableZoom
@@ -558,7 +822,7 @@ function QuasarSED() {
         </div>
       </div>
 
-      <Legend />
+      <Legend showB={showB} setShowB={setShowB} />
       <SEDGraph data={data} logNu={logNu} setLogNu={setLogNu} />
     </div>
   );
