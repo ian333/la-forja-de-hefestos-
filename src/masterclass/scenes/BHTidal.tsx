@@ -7,10 +7,6 @@
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
-
-// Referencia estable — fuera del componente para no recrear el gl factory
-// en cada render (R3F re-monta Canvas/OrbitControls si `gl` cambia).
-const gl = makeRenderer();
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -110,7 +106,7 @@ export default function BHTidal() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #1A0F08 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 4, 11], fov: 36 }} gl={gl}>
+      <Canvas camera={{ position: [0, 4, 11], fov: 36 }} gl={makeRenderer()}>
         <ambientLight intensity={0.35} />
         <directionalLight position={[5, 6, 3]} intensity={0.7} />
         <pointLight position={[0, 0, 0]} intensity={2.0} distance={3} color="#FDB813" />

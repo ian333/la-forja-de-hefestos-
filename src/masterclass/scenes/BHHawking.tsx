@@ -9,10 +9,6 @@
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
-
-// Referencia estable — fuera del componente para no recrear el gl factory
-// en cada render (R3F re-monta Canvas/OrbitControls si `gl` cambia).
-const gl = makeRenderer();
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -96,7 +92,7 @@ export default function BHHawking() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F0E22 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 2, 11], fov: 40 }} gl={gl}>
+      <Canvas camera={{ position: [0, 2, 11], fov: 40 }} gl={makeRenderer()}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[3, 4, 5]} intensity={0.4} />
         <HawkingScene />

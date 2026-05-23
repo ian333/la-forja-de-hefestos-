@@ -13,16 +13,12 @@ import { OrbitControls } from '@react-three/drei';
 import BHRaytraced from '@/labs/components/BHRaytraced';
 import { makeRenderer } from '@/lib/webgl-fallback';
 
-// Referencia estable — fuera del componente para no recrear el gl factory
-// en cada render (R3F re-monta Canvas/OrbitControls si `gl` cambia).
-const gl = makeRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
-
 export default function BHGargantua() {
   return (
     <div className="w-full h-full relative" style={{ background: '#000' }}>
       <Canvas
         camera={{ position: [0, 5, 45], fov: 45, near: 0.001, far: 300 }}
-        gl={gl}
+        gl={makeRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' })}
         dpr={[0.55, 1]}
       >
         <BHRaytraced

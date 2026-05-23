@@ -6,10 +6,6 @@
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
-
-// Referencia estable — fuera del componente para no recrear el gl factory
-// en cada render (R3F re-monta Canvas/OrbitControls si `gl` cambia).
-const gl = makeRenderer();
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -60,7 +56,7 @@ export default function BHScaleCompare() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0B0F17 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [0, 2, 14], fov: 38 }} gl={gl}>
+      <Canvas camera={{ position: [0, 2, 14], fov: 38 }} gl={makeRenderer()}>
         <ambientLight intensity={0.3} />
         <directionalLight position={[3, 4, 5]} intensity={0.35} />
         <Scene />

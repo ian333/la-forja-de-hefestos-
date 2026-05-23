@@ -6,8 +6,6 @@
 
 import { Canvas } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
-
-const gl = makeRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
 import { OrbitControls } from '@react-three/drei';
 import BHRaytraced from '@/labs/components/BHRaytraced';
 
@@ -18,7 +16,7 @@ export default function BHDisk() {
     }}>
       <Canvas
         camera={{ position: [0, 5, 40], fov: 48, near: 0.001, far: 300 }}
-        gl={gl}
+        gl={makeRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' })}
         dpr={[0.55, 1]}
       >
         <BHRaytraced
