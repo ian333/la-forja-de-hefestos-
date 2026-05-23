@@ -8,7 +8,7 @@
  * por scripts/voice-gaia/generate.cjs.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy } from 'react';
 import { Suspense } from 'react';
 import Void from './scenes/Void';
 import ComplexPlane from './scenes/ComplexPlane';
@@ -24,7 +24,11 @@ import TransactionFlowScene from './scenes/TransactionFlowScene';
 import MakeVsBuyScene from './scenes/MakeVsBuyScene';
 import EconBoardScene from './scenes/EconBoardScene';
 import EconChartScene from './scenes/EconChartScene';
-import CommonsScene from './scenes/CommonsScene';
+// Lazy-load: estas escenas importan @react-three/postprocessing, una librería
+// pesada con side-effects WebGL (en Brave + algunos Chrome rompe la creación
+// de contexto WebGL2 si está cargada eager). Solo se carga cuando la clase
+// realmente la usa, no para todos los masterclass.
+const CommonsScene = lazy(() => import('./scenes/CommonsScene'));
 import MatchingScene from './scenes/MatchingScene';
 import ExpectationsScene from './scenes/ExpectationsScene';
 import VickreyScene from './scenes/VickreyScene';
@@ -60,7 +64,7 @@ import PhotonLedgerScene from './scenes/PhotonLedgerScene';
 import MillikanDataScene from './scenes/MillikanDataScene';
 import ComptonKickScene from './scenes/ComptonKickScene';
 import CascadeQuanticaScene from './scenes/CascadeQuanticaScene';
-import DufloScene from './scenes/DufloScene';
+const DufloScene = lazy(() => import('./scenes/DufloScene'));
 import { NarratorOverlay, NARRATOR_REGISTRY } from './narrator';
 import Chalkboard from './Chalkboard';
 import ModulePicker from './ModulePicker';
