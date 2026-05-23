@@ -378,8 +378,10 @@ function buildBField(): BFieldData {
     }
   }
 
-  // GPU-instanced particles: 60,000 streaks (2 vertices each = 120k verts)
-  const N_PART = 60000;
+  // GPU-instanced particles: 28,000 streaks (2 vertices each = 56k verts)
+  // Densidad ajustada para no saturar additive blending — con tanto particle
+  // el alpha per-particle debe ser bajo (~0.10–0.15).
+  const N_PART = 28000;
   const pLineIdx = new Float32Array(N_PART * 2);
   const pPhase   = new Float32Array(N_PART * 2);
   const pSpeed   = new Float32Array(N_PART * 2);
@@ -718,11 +720,11 @@ function MagneticField({ data, logNu, bField, visible }: {
               vec3 hot  = vec3(1.00, 1.00, 0.95);
               vec3 col  = mix(base, hot, knotActive * 0.85);
 
-              float headBright = mix(1.0, 0.06, isTail);   // tail muy tenue
-              float syncLift   = 0.35 + 0.95 * uSyncBoost;
-              float knotLift   = 1.0 + knotActive * 2.5;
+              float headBright = mix(1.0, 0.04, isTail);   // tail muy tenue
+              float syncLift   = 0.18 + 0.55 * uSyncBoost;
+              float knotLift   = 1.0 + knotActive * 2.2;
               vColor = col * headBright * syncLift * knotLift;
-              vAlpha = 0.7 + 0.3 * uSyncBoost + knotActive * 0.5;
+              vAlpha = 0.10 + 0.18 * uSyncBoost + knotActive * 0.35;
 
               gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
             }
@@ -934,7 +936,7 @@ function QuasarSED() {
           maxDistance={30}
         />
         <EffectComposer>
-          <Bloom intensity={1.8} luminanceThreshold={0.05} luminanceSmoothing={0.7} radius={0.95} />
+          <Bloom intensity={1.1} luminanceThreshold={0.25} luminanceSmoothing={0.7} radius={0.85} />
         </EffectComposer>
       </Canvas>
 
