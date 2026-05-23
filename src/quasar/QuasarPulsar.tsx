@@ -25,6 +25,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { makeRenderer } from '@/lib/webgl-fallback';
+import { createPulsarAudio, type PulsarAudioConfig } from './quasar-pulsar-audio';
 
 interface PulsarData {
   N_E: number;
@@ -104,7 +105,7 @@ function buildParticles(): ParticleSet {
   // 1. RADIO BEAM (comp 0) — cono delgado emergiendo de cada polo magnético
   for (let side = -1; side <= 1; side += 2) {
     const axis = side > 0 ? magUp : magDn;
-    for (let i = 0; i < 8000; i++) {
+    for (let i = 0; i < 18000; i++) {
       const r = R_NS + Math.pow(Math.random(), 0.6) * R_LC * 0.95;
       const halfAngle = 8 * Math.PI / 180;   // cono 8°
       const rPerp = r * Math.tan(halfAngle) * Math.sqrt(Math.random());
@@ -120,7 +121,7 @@ function buildParticles(): ParticleSet {
   // 2. POLAR CAP X (comp 1) — hot spot en cada polo magnético, ~5% R_NS radio
   for (let side = -1; side <= 1; side += 2) {
     const axis = side > 0 ? magUp : magDn;
-    for (let i = 0; i < 2000; i++) {
+    for (let i = 0; i < 5000; i++) {
       const r = R_NS * (0.95 + Math.random() * 0.10);
       const halfAngle = 12 * Math.PI / 180;
       const rPerp = r * Math.tan(halfAngle) * Math.sqrt(Math.random());
@@ -134,7 +135,7 @@ function buildParticles(): ParticleSet {
   }
 
   // 3. OUTER GAP gamma (comp 2) — anillo a ~0.7 R_LC en el plano rotación-magnético
-  for (let i = 0; i < 6000; i++) {
+  for (let i = 0; i < 14000; i++) {
     const r = R_LC * 0.65 + gauss() * R_LC * 0.05;
     const phi = rand(0, 2 * Math.PI);
     // Plano perpendicular al eje spin (Y) — donde estaría el null surface del Goldreich-Julian
@@ -151,7 +152,7 @@ function buildParticles(): ParticleSet {
   // 4. BRIDGE emission (comp 3) — entre polar cap y outer gap, sigue líneas de campo
   for (let side = -1; side <= 1; side += 2) {
     const axis = side > 0 ? magUp : magDn;
-    for (let i = 0; i < 2500; i++) {
+    for (let i = 0; i < 6000; i++) {
       // Líneas dipolar r(θ)=r₀sin²θ, sample θ ∈ [0.3, 1.4]
       const r0 = 5 + Math.random() * 15;
       const theta = 0.3 + Math.random() * 1.1;
@@ -171,7 +172,7 @@ function buildParticles(): ParticleSet {
   }
 
   // 5. NEBULA sincrotrón (comp 4) — cloud disperso lejos del light cylinder
-  for (let i = 0; i < 12000; i++) {
+  for (let i = 0; i < 22000; i++) {
     const r = R_LC * 1.5 + Math.random() * R_LC * 1.0;
     const phi = rand(0, 2 * Math.PI);
     const cosTh = rand(-1, 1);
@@ -314,9 +315,13 @@ function ParticlePulsar({ data, logE, phase, rotAngle, particles }: {
             void main() {
               vec2 d = gl_PointCoord - vec2(0.5);
               float r2 = dot(d, d);
-              if (r2 > 0.25) discard;
-              float fall = exp(-r2 * 8.0);
-              gl_FragColor = vec4(vColor * fall, vAlpha * fall);
+              if (r2 > 0.245) discard;
+              // Fall más agresivo (14) → bordes muy suaves, los puntos
+              // se fusionan en bloom como nubes, no cuadrados pixelados
+              float fall = exp(-r2 * 14.0);
+              // Smoothstep extra para soft halo
+              float edge = smoothstep(0.245, 0.05, r2);
+              gl_FragColor = vec4(vColor * fall * edge, vAlpha * fall);
             }
           `}
         />
@@ -477,9 +482,11 @@ function PulseProfile({ data, logE, phase, setPhase }: {
 }
 
 /* ─── Legend top-right ──────────────────────────────────────────────── */
-function Legend({ logE, setLogE, data, autoSpin, setAutoSpin }: {
+function Legend({ logE, setLogE, data, autoSpin, setAutoSpin, audioOn, setAudioOn, onGW }: {
   logE: number; setLogE: (v: number) => void; data: PulsarData;
   autoSpin: boolean; setAutoSpin: (b: boolean) => void;
+  audioOn: boolean; setAudioOn: (b: boolean) => void;
+  onGW: () => void;
 }) {
   return (
     <div className="absolute top-6 right-6 bg-black/65 border border-[#334155] rounded p-3 font-mono text-[10px] backdrop-blur-sm">
@@ -506,6 +513,26 @@ function Legend({ logE, setLogE, data, autoSpin, setAutoSpin }: {
           on = lighthouse rota a Ω real. off = fase manual con slider.
         </div>
       </div>
+      <div className="mt-3 pt-2 border-t border-[#334155]">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={audioOn} onChange={e => setAudioOn(e.target.checked)}
+                 className="accent-[#FFD46B]" />
+          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: '#FFD46B', boxShadow: '0 0 8px #FFD46B' }} />
+          <span style={{ color: '#FFD46B' }}>audio · sonificación EM → sonora</span>
+        </label>
+        <div className="text-[#475569] text-[9px] mt-1 leading-tight max-w-[200px]">
+          cada componente = timbre. kick drum cada pulsación. volumen = emisión a la
+          banda actual. ondas EM ≠ sonoras, pero el ritmo y la intensidad sí.
+        </div>
+        <button
+          onClick={onGW}
+          disabled={!audioOn}
+          className="mt-2 w-full px-2 py-1 border border-[#9F7FFF] text-[#9F7FFF] hover:bg-[#9F7FFF]/15 disabled:opacity-30 disabled:cursor-not-allowed rounded text-[10px]"
+          title="GW chirp pulsar-NS merger inspirante (35 → 450 Hz, ringdown 180 Hz)"
+        >
+          ⚡ GW chirp (NS-NS merger)
+        </button>
+      </div>
     </div>
   );
 }
@@ -518,12 +545,44 @@ function QuasarPulsar() {
   const [logE, setLogE] = useState(2);            // ~100 eV ~ X-ray default
   const [phase, setPhase] = useState(0);
   const [autoSpin, setAutoSpin] = useState(true);
+  const [audioOn, setAudioOn] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const tRef = useRef(0);
+  const audioRef = useRef<PulsarAudioConfig | null>(null);
 
   useEffect(() => {
     loadPulsar().then(setData).catch(e => setErr(String(e)));
   }, []);
+
+  // Audio lifecycle
+  useEffect(() => {
+    if (audioOn && !audioRef.current) {
+      try { audioRef.current = createPulsarAudio(); }
+      catch (e) { console.error('audio init fail', e); }
+    } else if (!audioOn && audioRef.current) {
+      audioRef.current.destroy();
+      audioRef.current = null;
+    }
+    return () => { audioRef.current?.destroy(); audioRef.current = null; };
+  }, [audioOn]);
+
+  // Sync intensidades + phase kick al audio
+  useEffect(() => {
+    if (!audioRef.current || !data) return;
+    for (let c = 0; c < data.N_C; c++) {
+      // intensidad pico en la banda actual
+      let max = 0;
+      for (let ip = 0; ip < data.N_PHASE; ip++) {
+        const v = lookup(data, c, logE, ip / data.N_PHASE);
+        if (v > max) max = v;
+      }
+      audioRef.current.setIntensity(c, Math.min(1, max * 1.5));
+    }
+  }, [data, logE]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.setSpinPhase(phase);
+  }, [phase]);
 
   const particles = useMemo(() => buildParticles(), []);
 
@@ -577,7 +636,10 @@ function QuasarPulsar() {
         </div>
       </div>
 
-      <Legend logE={logE} setLogE={setLogE} data={data} autoSpin={autoSpin} setAutoSpin={setAutoSpin} />
+      <Legend logE={logE} setLogE={setLogE} data={data}
+              autoSpin={autoSpin} setAutoSpin={setAutoSpin}
+              audioOn={audioOn} setAudioOn={setAudioOn}
+              onGW={() => audioRef.current?.triggerGW()} />
       <PulseProfile data={data} logE={logE} phase={usedPhase} setPhase={setPhase} />
     </div>
   );
