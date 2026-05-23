@@ -102,26 +102,28 @@ function buildParticles(): ParticleSet {
 
   // 1. DISK — particles in equatorial plane, log-r distributed
   //    r ∈ [r_ISCO ≈ 2.3 r_g, 100 r_g] → log_r ∈ [0.36, 2.0]
-  for (let i = 0; i < 9000; i++) {
-    const logR_phys = rand(0.36, 2.0);
-    const R_world = logR_phys + 0.4;           // shift away from BH
+  //    DENSIDAD ALTA para que se vea como un disco continuo, no puntos:
+  //    distribución sesgada hacia el interior (r^(-3/4) emissivity weighting)
+  for (let i = 0; i < 45000; i++) {
+    // Sample logR with bias toward ISCO (hot inner edge)
+    const u = Math.random();
+    const logR_phys = 0.36 + (2.0 - 0.36) * Math.pow(u, 1.3);    // skewed inner
+    const R_world = logR_phys + 0.4;
     const phi = rand(0, Math.PI * 2);
-    const thinness = 0.04 * R_world;           // disk thickness ~ 4% R
+    const thinness = 0.035 * R_world;           // ~3.5% R (geometrically thin)
     all.push({
       x: R_world * Math.cos(phi),
       y: gauss() * thinness,
       z: R_world * Math.sin(phi),
       c: 0, logR: logR_phys,
-      size: 1.0 + Math.random() * 0.4,
+      size: 0.55 + Math.random() * 0.4,
     });
   }
 
   // 2. CORONA — small puffy cloud above/below disk inner
-  //    r ~ 10 r_g → log_r ~ 1.0
-  for (let i = 0; i < 2500; i++) {
-    const logR_phys = 1.0 + gauss() * 0.25;
+  for (let i = 0; i < 9000; i++) {
+    const logR_phys = 1.0 + gauss() * 0.28;
     const r = logR_phys + 0.4;
-    // Spherical-ish: random direction, |z| > 0.3 to be above/below disk
     const cosTheta = rand(-0.95, 0.95);
     const sinTheta = Math.sqrt(1 - cosTheta*cosTheta);
     const phi = rand(0, Math.PI * 2);
@@ -130,32 +132,32 @@ function buildParticles(): ParticleSet {
       y: r * cosTheta + (cosTheta > 0 ? 0.18 : -0.18),
       z: r * sinTheta * Math.sin(phi),
       c: 1, logR: logR_phys,
-      size: 1.4 + Math.random() * 0.5,
+      size: 0.7 + Math.random() * 0.6,
     });
   }
 
-  // 3. REFLECTION — same locations as disk but slightly off-plane (reflective surface)
-  for (let i = 0; i < 2500; i++) {
-    const logR_phys = rand(0.36, 1.5);
+  // 3. REFLECTION — superficie iluminada del disco (densa, suave)
+  for (let i = 0; i < 9000; i++) {
+    const u = Math.random();
+    const logR_phys = 0.36 + (1.5 - 0.36) * Math.pow(u, 1.4);
     const R_world = logR_phys + 0.4;
     const phi = rand(0, Math.PI * 2);
     all.push({
       x: R_world * Math.cos(phi),
-      y: (Math.random() < 0.5 ? 1 : -1) * (0.05 + 0.06 * R_world),
+      y: (Math.random() < 0.5 ? 1 : -1) * (0.04 + 0.05 * R_world),
       z: R_world * Math.sin(phi),
       c: 2, logR: logR_phys,
-      size: 0.8 + Math.random() * 0.3,
+      size: 0.5 + Math.random() * 0.3,
     });
   }
 
-  // 4. TORUS — thick doughnut at r_sub ≈ 10⁴.⁵ r_g → log_r ≈ 4.5
-  for (let i = 0; i < 7000; i++) {
-    const logR_phys = 4.5 + gauss() * 0.55;       // r ∈ [10⁴, 10⁵]
+  // 4. TORUS — thick doughnut at r_sub ≈ 10⁴.⁵ r_g
+  for (let i = 0; i < 28000; i++) {
+    const logR_phys = 4.5 + gauss() * 0.6;
     const R_world = logR_phys + 0.4;
     const phi = rand(0, Math.PI * 2);
-    // Torus cross-section angle
     const tubeAng = rand(0, Math.PI * 2);
-    const tubeR  = (0.20 + 0.25 * Math.random()) * Math.min(2.5, R_world * 0.25);
+    const tubeR  = (0.20 + 0.30 * Math.random()) * Math.min(2.8, R_world * 0.28);
     const tubeOffR = tubeR * Math.cos(tubeAng);
     const tubeY    = tubeR * Math.sin(tubeAng);
     all.push({
@@ -163,42 +165,44 @@ function buildParticles(): ParticleSet {
       y: tubeY,
       z: (R_world + tubeOffR) * Math.sin(phi),
       c: 3, logR: logR_phys,
-      size: 1.6 + Math.random() * 0.7,
+      size: 0.9 + Math.random() * 0.7,
     });
   }
 
-  // 5. BLR — isotropic shell at log_r ≈ 4.2
-  for (let i = 0; i < 4500; i++) {
-    const logR_phys = 4.2 + gauss() * 0.4;
-    const R_world = logR_phys + 0.4;
-    // Random direction
+  // 5. BLR — isotropic shell, ahora con MÁS clouds densas en clusters
+  const N_BLR_CLUMPS = 18;
+  const PARTICLES_PER_CLUMP = 800;
+  for (let cl = 0; cl < N_BLR_CLUMPS; cl++) {
+    const clumpLogR = 4.2 + gauss() * 0.35;
     const cosTheta = rand(-1, 1);
     const sinTheta = Math.sqrt(1 - cosTheta*cosTheta);
     const phi = rand(0, Math.PI * 2);
-    // Clumpy: many particles per "cloud"
-    const cloudJitter = 0.08;
-    all.push({
-      x: R_world * sinTheta * Math.cos(phi) + gauss() * cloudJitter,
-      y: R_world * cosTheta + gauss() * cloudJitter,
-      z: R_world * sinTheta * Math.sin(phi) + gauss() * cloudJitter,
-      c: 4, logR: logR_phys,
-      size: 1.3 + Math.random() * 0.4,
-    });
+    const cR = clumpLogR + 0.4;
+    const cx = cR * sinTheta * Math.cos(phi);
+    const cy = cR * cosTheta;
+    const cz = cR * sinTheta * Math.sin(phi);
+    const clumpSize = 0.18 + 0.20 * Math.random();
+    for (let i = 0; i < PARTICLES_PER_CLUMP; i++) {
+      all.push({
+        x: cx + gauss() * clumpSize,
+        y: cy + gauss() * clumpSize,
+        z: cz + gauss() * clumpSize,
+        c: 4, logR: clumpLogR,
+        size: 0.7 + Math.random() * 0.5,
+      });
+    }
   }
 
-  // 6. JET SYNCHROTRON — bipolar parabolic, log_r ∈ [1.7, 7]
-  //    Geometry: R(z) ∝ z^(1/p) con p = 1.6 (McKinney-Narayan)
+  // 6. JET SYNCHROTRON — bipolar parabolic, mucha más densidad
   for (let side = -1; side <= 1; side += 2) {
-    for (let i = 0; i < 5500; i++) {
+    for (let i = 0; i < 22000; i++) {
       const z_logR = rand(1.7, 7.0);
-      // Width: parabolic R ∝ z^(1/1.6), in log world: log R = log R0 + (1/1.6)·(log z − log z0)
       const z_world = (z_logR + 0.4) * side;
       const widthScale = 0.16 * Math.pow(Math.pow(10, z_logR) / 50, 1/1.6) /
                           Math.pow(10, z_logR);
       const widthW = (widthScale + 0.04) * (1 + 0.5 * Math.abs(z_world));
       const phi = rand(0, Math.PI * 2);
       const r = widthW * Math.sqrt(Math.random()) * 1.3;
-      // Knots: extra particles concentrated at log-spaced positions
       const knotZ = [2.0, 2.6, 3.3, 4.0, 4.8, 5.7];
       let knotBoost = 0;
       for (const kz of knotZ) {
@@ -209,14 +213,14 @@ function buildParticles(): ParticleSet {
         y: z_world,
         z: r * Math.sin(phi),
         c: 5, logR: z_logR,
-        size: 1.1 + Math.random() * 0.4 + knotBoost * 0.5,
+        size: 0.6 + Math.random() * 0.35 + knotBoost * 0.4,
       });
     }
   }
 
-  // 7. JET IC — más compacto cerca de la base, log_r ∈ [1.7, 4.5]
+  // 7. JET IC — más compacto cerca de la base
   for (let side = -1; side <= 1; side += 2) {
-    for (let i = 0; i < 2000; i++) {
+    for (let i = 0; i < 8500; i++) {
       const z_logR = rand(1.7, 4.5);
       const z_world = (z_logR + 0.4) * side;
       const widthScale = 0.10 * Math.pow(Math.pow(10, z_logR) / 50, 1/1.6) /
@@ -229,7 +233,7 @@ function buildParticles(): ParticleSet {
         y: z_world,
         z: r * Math.sin(phi),
         c: 6, logR: z_logR,
-        size: 1.0 + Math.random() * 0.3,
+        size: 0.55 + Math.random() * 0.25,
       });
     }
   }
@@ -495,16 +499,15 @@ function ParticleQuasar({ data, logNu, particles }: { data: SEDData; logNu: numb
           void main() {
             int cId = int(compId + 0.5);
             vec3 base = uColors[cId];
-            // Brightness pow para mejor contraste perceptual
             float vis = pow(brightness, 0.45);
-            vColor = base * (0.4 + 0.8 * vis);
-            vAlpha = clamp(vis * 0.9 + 0.05, 0.05, 1.0);
+            vColor = base * (0.32 + 0.78 * vis);
+            // ~165k partículas — alpha bajo individual + densidad alta = continuous look
+            vAlpha = clamp(vis * 0.32 + 0.022, 0.022, 0.55);
 
             vec4 mv = modelViewMatrix * vec4(position, 1.0);
             float dist = -mv.z;
-            // Size attenuated by distance + scaled by visibility
-            float sz = baseSize * (1.0 + 1.6 * vis) * 18.0 * uPixelRatio / dist;
-            gl_PointSize = clamp(sz, 1.0, 24.0);
+            float sz = baseSize * (1.0 + 1.4 * vis) * 16.0 * uPixelRatio / dist;
+            gl_PointSize = clamp(sz, 1.0, 22.0);
             gl_Position = projectionMatrix * mv;
           }
         `}
@@ -512,11 +515,11 @@ function ParticleQuasar({ data, logNu, particles }: { data: SEDData; logNu: numb
           varying vec3 vColor;
           varying float vAlpha;
           void main() {
-            // Round soft sprite
             vec2 d = gl_PointCoord - vec2(0.5);
             float r2 = dot(d, d);
             if (r2 > 0.25) discard;
-            float fall = exp(-r2 * 12.0);
+            // Falloff más suave (12 → 8) → bordes blandos, las partículas se fusionan
+            float fall = exp(-r2 * 8.0);
             gl_FragColor = vec4(vColor * fall, vAlpha * fall);
           }
         `}
