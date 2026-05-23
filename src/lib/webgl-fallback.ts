@@ -101,17 +101,40 @@ export function makeRenderer(attrs: GLAttrs = {}) {
       // Pintamos un mensaje claro encima del canvas para que el usuario sepa
       // exactamente qué pasa (no se queda en negro silencioso).
       try {
-        const msg = webgl1Available
-          ? 'Tu browser solo da WebGL1. Three.js requiere WebGL2.\nHabilita aceleración de hardware en chrome://settings/system y verifica chrome://gpu.'
-          : 'Tu browser no soporta WebGL. Verifica chrome://gpu y la aceleración de hardware.';
+        // Detectar Brave (la causa más común de WebGL2 bloqueado: Shields)
+        const nav = navigator as Navigator & { brave?: { isBrave: () => Promise<boolean> } };
+        const isBrave = !!nav.brave?.isBrave || /Brave/i.test(navigator.userAgent);
+
+        let msg: string;
+        if (webgl1Available && isBrave) {
+          msg = 'Brave Shields está bloqueando WebGL2.\n\n' +
+            '1. Click el león 🦁 en la barra de URL\n' +
+            '2. Desactiva Shields para este sitio\n' +
+            '3. Recarga la página\n\n' +
+            'Alternativa: brave://settings/shields → Block fingerprinting → Disabled';
+        } else if (webgl1Available) {
+          msg = 'Tu browser solo da WebGL1. Three.js requiere WebGL2.\n' +
+            'Habilita aceleración de hardware en settings y verifica chrome://gpu.';
+        } else {
+          msg = 'Tu browser no soporta WebGL. Verifica chrome://gpu y la aceleración de hardware.';
+        }
+
         const wrap = canvas.parentElement;
         if (wrap && !wrap.querySelector('.webgl-error-overlay')) {
           const div = document.createElement('div');
           div.className = 'webgl-error-overlay';
-          div.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fbbf24;background:#0a0e1a;text-align:center;padding:32px;font-family:ui-monospace,monospace;font-size:13px;line-height:1.5;white-space:pre-line;z-index:100';
+          div.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fbbf24;background:#0a0e1a;text-align:center;padding:32px;font-family:ui-monospace,monospace;font-size:14px;line-height:1.7;white-space:pre-line;z-index:100';
           div.textContent = msg;
           wrap.appendChild(div);
         }
+
+        // Reportar a telemetría con detalle del browser
+        const tele = (window as { telemetry?: { event: (t: string, d: object) => void } }).telemetry;
+        tele?.event('webgl2_blocked', {
+          is_brave: isBrave,
+          webgl1_available: webgl1Available,
+          ua: navigator.userAgent,
+        });
       } catch (_) { /* ignore */ }
       throw new Error(`webgl-fallback: WebGL2 unavailable (webgl1=${webgl1Available})`);
     }
