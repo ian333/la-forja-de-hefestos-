@@ -1,31 +1,20 @@
 /**
- * QuasarSED — el cuásar visto en TODAS las bandas, con framework Operador 𝔄.
+ * QuasarSED — el cuásar como sistema de PARTÍCULAS (plasma + nubes + fotones).
  *
- * Carga /precomputed/quasar-sed.bin (generado por scripts/quasar/precompute-sed.cjs):
- *   tensor j[componente, log_ν, log_r] = 7 × 256 × 128 floats
- *   con cara-Mellin doble (radial + espectral) precomputada.
+ * Cada componente físico es una nube de partículas con distribución espacial
+ * REAL (en log-r world coords para que todas las escalas convivan en un mismo
+ * frame: BH ~ 1 r_g, disco ~ 100 r_g, BLR ~ 10⁴, torus ~ 10⁵, jet ~ 10⁶-10⁷).
  *
- * Aplica el Operador 𝔄: las simetrías de escala (r→λr y ν→λν) generan caras
- * diagonales (Mellin). En la cara, j se factoriza como producto de LUTs 1D.
- * El runtime es lookup en lugar de evaluar fórmulas.
+ * El brillo de cada partícula se LEE del tensor precomputado
+ *   j[componente, log_ν, log_r]
+ * con cara-Mellin radial × cara-Mellin espectral (Operador 𝔄, ver MHD_FROM_OPERATOR.md).
  *
- * "Ver con otros ojos": el slider de ν barre la cara-Mellin espectral. En
- * cada banda diferente físicamente domina:
- *   • Radio (10⁹ Hz):       jet synchrotron
- *   • Sub-mm (10¹² Hz):     dust torus + jet
- *   • Mid-IR (10¹⁴ Hz):     dust torus
- *   • Optical (10¹⁵ Hz):    disco Big Blue Bump
- *   • UV (10¹⁶ Hz):         disco peak + BLR lines
- *   • Soft X (10¹⁷ Hz):     corona soft + reflection blurred
- *   • Hard X (10¹⁹ Hz):     corona Comptonization
- *   • Gamma (10²² Hz):      jet IC (SSC + EC)
+ * Cuando arrastras el slider de log ν, mantienes la MISMA materia en su sitio
+ * pero la ves "con otros ojos" — solo el componente físicamente activo en esa
+ * banda emite. En radio solo el jet brilla; en IR el torus; en óptico/UV el
+ * disco; en X la corona; en γ el jet IC.
  *
- * Doppler boost: traslación δ → log δ en la cara-Mellin = corrimiento del
- * eje log_ν. Sin recomputar nada.
- *
- * Refs: docs/QUASAR-PHYSICS-REFERENCE.md
- *       RIAN/papers/operador_ian/lab/MHD_FROM_OPERATOR.md
- *       RIAN/papers/operador_ian/lab/PROCESO_CARAS.md
+ * Refs: docs/QUASAR-PHYSICS-REFERENCE.md, RIAN/papers/operador_ian/.
  */
 
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -44,7 +33,7 @@ interface SEDData {
   logRMin: number;
   logRMax: number;
   components: string[];
-  tensor: Float32Array;  // (N_C × N_NU × N_R), normalized [0,1]
+  tensor: Float32Array;
 }
 
 async function loadSED(): Promise<SEDData> {
@@ -52,10 +41,9 @@ async function loadSED(): Promise<SEDData> {
   if (!res.ok) throw new Error(`failed: ${res.status}`);
   const buf = await res.arrayBuffer();
   const dv = new DataView(buf);
-  const N_NU = dv.getUint32(0,  true);
-  const N_R  = dv.getUint32(4,  true);
-  const N_C  = dv.getUint32(8,  true);
-  // skip pad u32
+  const N_NU = dv.getUint32(0, true);
+  const N_R  = dv.getUint32(4, true);
+  const N_C  = dv.getUint32(8, true);
   const logNuMin = dv.getFloat32(16, true);
   const logNuMax = dv.getFloat32(20, true);
   const logRMin  = dv.getFloat32(24, true);
@@ -65,15 +53,13 @@ async function loadSED(): Promise<SEDData> {
   for (let i = 0; i < N_C; i++) {
     const slice = new Uint8Array(buf, off, 16);
     const z = slice.indexOf(0);
-    const name = new TextDecoder().decode(slice.subarray(0, z < 0 ? 16 : z)).trim();
-    components.push(name);
+    components.push(new TextDecoder().decode(slice.subarray(0, z < 0 ? 16 : z)).trim());
     off += 16;
   }
-  const tensor = new Float32Array(buf, off, N_C * N_NU * N_R);
+  const tensor = new Float32Array(buf.slice(off));
   return { N_NU, N_R, N_C, logNuMin, logNuMax, logRMin, logRMax, components, tensor };
 }
 
-// ── Helpers: query the tensor ─────────────────────────────────────────
 function lookup(data: SEDData, c: number, logNu: number, logR: number): number {
   const fNu = (logNu - data.logNuMin) / (data.logNuMax - data.logNuMin);
   const fR  = (logR  - data.logRMin)  / (data.logRMax  - data.logRMin);
@@ -84,181 +70,323 @@ function lookup(data: SEDData, c: number, logNu: number, logR: number): number {
   const ir  = Math.floor(irf), ir1 = Math.min(ir + 1, data.N_R  - 1);
   const tν = iνf - iν, tr = irf - ir;
   const base = c * data.N_NU * data.N_R;
-  const a = data.tensor[base + iν  * data.N_R + ir ];
-  const b = data.tensor[base + iν1 * data.N_R + ir ];
+  const a = data.tensor[base + iν  * data.N_R + ir];
+  const b = data.tensor[base + iν1 * data.N_R + ir];
   const cc = data.tensor[base + iν  * data.N_R + ir1];
   const d = data.tensor[base + iν1 * data.N_R + ir1];
   return (1-tν)*(1-tr)*a + tν*(1-tr)*b + (1-tν)*tr*cc + tν*tr*d;
 }
 
-/** Pico (peak emission radius) de un componente a una ν dada. */
-function peakRadius(data: SEDData, c: number, logNu: number): { logR: number; intensity: number } {
-  let best = -Infinity, bestR = data.logRMin;
-  for (let ir = 0; ir < data.N_R; ir++) {
-    const logR = data.logRMin + ir * (data.logRMax - data.logRMin) / (data.N_R - 1);
-    const v = lookup(data, c, logNu, logR);
-    if (v > best) { best = v; bestR = logR; }
+// ── Generación de partículas por componente ──────────────────────────
+//
+// world coords:  y = log10(r/r_g) · sign(z_physical)
+//                x, z = R_log · {cos φ, sin φ}  con R_log = log10(R/r_g)
+// El BH queda en (0,0,0), disco equatorial en plano XZ, jet sale a ±Y.
+//
+// Esto comprime las 9 décadas de escala física a un volumen visualizable
+// sin distorsionar las relaciones topológicas (disco equatorial, jet axial,
+// etc).
+
+interface ParticleSet {
+  positions: Float32Array;   // N × 3
+  compId:    Float32Array;   // N (0..N_C-1)
+  logR:      Float32Array;   // N (used for tensor lookup)
+  baseSize:  Float32Array;   // N (different sizes per component)
+}
+
+function buildParticles(): ParticleSet {
+  const all: { x:number; y:number; z:number; c:number; logR:number; size:number }[] = [];
+
+  const rand = (a: number, b: number) => a + Math.random() * (b - a);
+  const gauss = () => { let s = 0; for (let i=0;i<3;i++) s += Math.random()-0.5; return s/1.5; };
+
+  // 1. DISK — particles in equatorial plane, log-r distributed
+  //    r ∈ [r_ISCO ≈ 2.3 r_g, 100 r_g] → log_r ∈ [0.36, 2.0]
+  for (let i = 0; i < 9000; i++) {
+    const logR_phys = rand(0.36, 2.0);
+    const R_world = logR_phys + 0.4;           // shift away from BH
+    const phi = rand(0, Math.PI * 2);
+    const thinness = 0.04 * R_world;           // disk thickness ~ 4% R
+    all.push({
+      x: R_world * Math.cos(phi),
+      y: gauss() * thinness,
+      z: R_world * Math.sin(phi),
+      c: 0, logR: logR_phys,
+      size: 1.0 + Math.random() * 0.4,
+    });
   }
-  return { logR: bestR, intensity: best };
-}
 
-/** Intensidad integrada del componente sobre todos los radios a una ν dada. */
-function bandIntensity(data: SEDData, c: number, logNu: number): number {
-  let sum = 0;
-  for (let ir = 0; ir < data.N_R; ir++) {
-    const logR = data.logRMin + ir * (data.logRMax - data.logRMin) / (data.N_R - 1);
-    sum += lookup(data, c, logNu, logR);
+  // 2. CORONA — small puffy cloud above/below disk inner
+  //    r ~ 10 r_g → log_r ~ 1.0
+  for (let i = 0; i < 2500; i++) {
+    const logR_phys = 1.0 + gauss() * 0.25;
+    const r = logR_phys + 0.4;
+    // Spherical-ish: random direction, |z| > 0.3 to be above/below disk
+    const cosTheta = rand(-0.95, 0.95);
+    const sinTheta = Math.sqrt(1 - cosTheta*cosTheta);
+    const phi = rand(0, Math.PI * 2);
+    all.push({
+      x: r * sinTheta * Math.cos(phi),
+      y: r * cosTheta + (cosTheta > 0 ? 0.18 : -0.18),
+      z: r * sinTheta * Math.sin(phi),
+      c: 1, logR: logR_phys,
+      size: 1.4 + Math.random() * 0.5,
+    });
   }
-  return sum / data.N_R;
+
+  // 3. REFLECTION — same locations as disk but slightly off-plane (reflective surface)
+  for (let i = 0; i < 2500; i++) {
+    const logR_phys = rand(0.36, 1.5);
+    const R_world = logR_phys + 0.4;
+    const phi = rand(0, Math.PI * 2);
+    all.push({
+      x: R_world * Math.cos(phi),
+      y: (Math.random() < 0.5 ? 1 : -1) * (0.05 + 0.06 * R_world),
+      z: R_world * Math.sin(phi),
+      c: 2, logR: logR_phys,
+      size: 0.8 + Math.random() * 0.3,
+    });
+  }
+
+  // 4. TORUS — thick doughnut at r_sub ≈ 10⁴.⁵ r_g → log_r ≈ 4.5
+  for (let i = 0; i < 7000; i++) {
+    const logR_phys = 4.5 + gauss() * 0.55;       // r ∈ [10⁴, 10⁵]
+    const R_world = logR_phys + 0.4;
+    const phi = rand(0, Math.PI * 2);
+    // Torus cross-section angle
+    const tubeAng = rand(0, Math.PI * 2);
+    const tubeR  = (0.20 + 0.25 * Math.random()) * Math.min(2.5, R_world * 0.25);
+    const tubeOffR = tubeR * Math.cos(tubeAng);
+    const tubeY    = tubeR * Math.sin(tubeAng);
+    all.push({
+      x: (R_world + tubeOffR) * Math.cos(phi),
+      y: tubeY,
+      z: (R_world + tubeOffR) * Math.sin(phi),
+      c: 3, logR: logR_phys,
+      size: 1.6 + Math.random() * 0.7,
+    });
+  }
+
+  // 5. BLR — isotropic shell at log_r ≈ 4.2
+  for (let i = 0; i < 4500; i++) {
+    const logR_phys = 4.2 + gauss() * 0.4;
+    const R_world = logR_phys + 0.4;
+    // Random direction
+    const cosTheta = rand(-1, 1);
+    const sinTheta = Math.sqrt(1 - cosTheta*cosTheta);
+    const phi = rand(0, Math.PI * 2);
+    // Clumpy: many particles per "cloud"
+    const cloudJitter = 0.08;
+    all.push({
+      x: R_world * sinTheta * Math.cos(phi) + gauss() * cloudJitter,
+      y: R_world * cosTheta + gauss() * cloudJitter,
+      z: R_world * sinTheta * Math.sin(phi) + gauss() * cloudJitter,
+      c: 4, logR: logR_phys,
+      size: 1.3 + Math.random() * 0.4,
+    });
+  }
+
+  // 6. JET SYNCHROTRON — bipolar parabolic, log_r ∈ [1.7, 7]
+  //    Geometry: R(z) ∝ z^(1/p) con p = 1.6 (McKinney-Narayan)
+  for (let side = -1; side <= 1; side += 2) {
+    for (let i = 0; i < 5500; i++) {
+      const z_logR = rand(1.7, 7.0);
+      // Width: parabolic R ∝ z^(1/1.6), in log world: log R = log R0 + (1/1.6)·(log z − log z0)
+      const z_world = (z_logR + 0.4) * side;
+      const widthScale = 0.16 * Math.pow(Math.pow(10, z_logR) / 50, 1/1.6) /
+                          Math.pow(10, z_logR);
+      const widthW = (widthScale + 0.04) * (1 + 0.5 * Math.abs(z_world));
+      const phi = rand(0, Math.PI * 2);
+      const r = widthW * Math.sqrt(Math.random()) * 1.3;
+      // Knots: extra particles concentrated at log-spaced positions
+      const knotZ = [2.0, 2.6, 3.3, 4.0, 4.8, 5.7];
+      let knotBoost = 0;
+      for (const kz of knotZ) {
+        knotBoost += Math.exp(-Math.pow((z_logR - kz)/0.15, 2)) * 1.4;
+      }
+      all.push({
+        x: r * Math.cos(phi),
+        y: z_world,
+        z: r * Math.sin(phi),
+        c: 5, logR: z_logR,
+        size: 1.1 + Math.random() * 0.4 + knotBoost * 0.5,
+      });
+    }
+  }
+
+  // 7. JET IC — más compacto cerca de la base, log_r ∈ [1.7, 4.5]
+  for (let side = -1; side <= 1; side += 2) {
+    for (let i = 0; i < 2000; i++) {
+      const z_logR = rand(1.7, 4.5);
+      const z_world = (z_logR + 0.4) * side;
+      const widthScale = 0.10 * Math.pow(Math.pow(10, z_logR) / 50, 1/1.6) /
+                          Math.pow(10, z_logR);
+      const widthW = (widthScale + 0.03);
+      const phi = rand(0, Math.PI * 2);
+      const r = widthW * Math.sqrt(Math.random());
+      all.push({
+        x: r * Math.cos(phi),
+        y: z_world,
+        z: r * Math.sin(phi),
+        c: 6, logR: z_logR,
+        size: 1.0 + Math.random() * 0.3,
+      });
+    }
+  }
+
+  const N = all.length;
+  const positions = new Float32Array(N * 3);
+  const compId    = new Float32Array(N);
+  const logR      = new Float32Array(N);
+  const baseSize  = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    positions[i*3+0] = all[i].x;
+    positions[i*3+1] = all[i].y;
+    positions[i*3+2] = all[i].z;
+    compId[i]    = all[i].c;
+    logR[i]      = all[i].logR;
+    baseSize[i]  = all[i].size;
+  }
+  return { positions, compId, logR, baseSize };
 }
 
-// ── Component visual definitions ──────────────────────────────────────
-interface ComponentViz {
-  name: string;
-  shape: 'sphere' | 'disk' | 'ring' | 'jet' | 'cloud';
-  color: THREE.Color;
-  size: number;          // characteristic size in world units (scales with peak r)
-  bandIdx: number;       // index into tensor
-}
-
-const COMPONENT_VIZ: ComponentViz[] = [
-  { name: 'disk',       shape: 'disk',  color: new THREE.Color('#FFE08A'), size: 1.0, bandIdx: 0 },
-  { name: 'corona',     shape: 'sphere',color: new THREE.Color('#A8E0FF'), size: 0.5, bandIdx: 1 },
-  { name: 'reflection', shape: 'ring',  color: new THREE.Color('#FF7B5A'), size: 0.7, bandIdx: 2 },
-  { name: 'torus',      shape: 'ring',  color: new THREE.Color('#FFAA5A'), size: 5.0, bandIdx: 3 },
-  { name: 'blr',        shape: 'cloud', color: new THREE.Color('#FF6F9A'), size: 3.5, bandIdx: 4 },
-  { name: 'jet_sync',   shape: 'jet',   color: new THREE.Color('#6FB5FF'), size: 6.0, bandIdx: 5 },
-  { name: 'jet_ic',     shape: 'jet',   color: new THREE.Color('#C97FFF'), size: 4.0, bandIdx: 6 },
+// ── Component colors (visible in legend) ─────────────────────────────
+const COMP_COLOR_HEX = [
+  '#FFE08A',   // 0 disk    — UV/optical, warm gold
+  '#A8E0FF',   // 1 corona  — soft X, ice blue
+  '#FF7B5A',   // 2 reflect — hard X reflection, fiery orange
+  '#FFB070',   // 3 torus   — mid-IR, warm amber
+  '#FF6F9A',   // 4 BLR     — emission lines, pink
+  '#6FB5FF',   // 5 jet sync — radio, blue
+  '#C97FFF',   // 6 jet IC  — gamma, violet
 ];
+const COMP_LABELS = ['disco', 'corona', 'reflection', 'torus polvo', 'BLR (líneas)', 'jet sincrotrón', 'jet IC γ'];
 
-// ── Component meshes ──────────────────────────────────────────────────
-function ComponentMesh({ viz, data, logNu }: { viz: ComponentViz; data: SEDData; logNu: number }) {
-  const matRef = useRef<THREE.MeshBasicMaterial>(null);
-  const groupRef = useRef<THREE.Group>(null);
+// ── Points mesh ──────────────────────────────────────────────────────
+function ParticleQuasar({ data, logNu, particles }: { data: SEDData; logNu: number; particles: ParticleSet }) {
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const brightnessRef = useRef<Float32Array | null>(null);
+  const geomRef = useRef<THREE.BufferGeometry>(null);
 
-  // Compute intensity at current band
-  const intensity = useMemo(() => bandIntensity(data, viz.bandIdx, logNu), [data, viz, logNu]);
+  // Pre-build color palette uniform (vec3 array)
+  const colorPalette = useMemo(() => {
+    return COMP_COLOR_HEX.map(hex => {
+      const c = new THREE.Color(hex);
+      return new THREE.Vector3(c.r, c.g, c.b);
+    });
+  }, []);
 
-  // Smooth fade — animate emissive
-  const targetOpacity = Math.min(1, intensity * 8.5);
+  // Initialize brightness buffer
+  useMemo(() => {
+    brightnessRef.current = new Float32Array(particles.compId.length);
+  }, [particles]);
 
-  useFrame(() => {
-    if (!matRef.current) return;
-    const cur = matRef.current.opacity;
-    matRef.current.opacity += (targetOpacity - cur) * 0.12;
-    if (groupRef.current) {
-      groupRef.current.rotation.y += 0.0015;
+  // Recompute brightness when logNu changes
+  useEffect(() => {
+    if (!brightnessRef.current || !geomRef.current) return;
+    const N = particles.compId.length;
+    for (let i = 0; i < N; i++) {
+      const c = particles.compId[i] | 0;
+      const lr = particles.logR[i];
+      brightnessRef.current[i] = lookup(data, c, logNu, lr);
+    }
+    // Normalize to bring out per-frame contrast
+    let maxB = 0;
+    for (let i = 0; i < N; i++) if (brightnessRef.current[i] > maxB) maxB = brightnessRef.current[i];
+    if (maxB > 0) {
+      for (let i = 0; i < N; i++) brightnessRef.current[i] /= maxB;
+    }
+    const attr = geomRef.current.attributes.brightness as THREE.BufferAttribute;
+    attr.needsUpdate = true;
+  }, [data, logNu, particles]);
+
+  useFrame(({ clock }) => {
+    if (matRef.current) {
+      matRef.current.uniforms.uTime.value = clock.elapsedTime;
     }
   });
 
-  // Shape geometry
-  const geom = useMemo(() => {
-    switch (viz.shape) {
-      case 'sphere':
-        return new THREE.SphereGeometry(viz.size, 32, 24);
-      case 'disk':
-        return new THREE.RingGeometry(viz.size * 0.3, viz.size * 1.4, 64);
-      case 'ring':
-        return new THREE.TorusGeometry(viz.size, viz.size * 0.18, 16, 64);
-      case 'jet': {
-        // Bicone narrow
-        const g = new THREE.CylinderGeometry(0.05, viz.size * 0.25, viz.size * 4, 16, 1, true);
-        return g;
-      }
-      case 'cloud': {
-        // Multiple sphere placeholder geom — use ico
-        return new THREE.IcosahedronGeometry(viz.size, 1);
-      }
-    }
-  }, [viz]);
-
-  // Material
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: viz.color,
-    transparent: true,
-    opacity: 0,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    side: viz.shape === 'disk' || viz.shape === 'cloud' ? THREE.DoubleSide : THREE.FrontSide,
-    wireframe: viz.shape === 'cloud',
-  }), [viz]);
-  matRef.current = mat;
-
-  // Layout — disk equatorial, jet axial, BLR scattered, etc.
-  const groupTransform = useMemo(() => {
-    if (viz.shape === 'disk' || viz.shape === 'ring') {
-      return { rotation: [Math.PI / 2 - 0.18, 0, 0] as [number, number, number], position: [0, 0, 0] as [number, number, number] };
-    }
-    return { rotation: [0, 0, 0] as [number, number, number], position: [0, 0, 0] as [number, number, number] };
-  }, [viz]);
-
-  // Jet: render as two cylinders (above + below disk)
-  if (viz.shape === 'jet') {
-    return (
-      <group ref={groupRef}>
-        <mesh geometry={geom} material={mat} position={[0,  viz.size * 2, 0]} />
-        <mesh geometry={geom} material={mat} position={[0, -viz.size * 2, 0]} rotation={[Math.PI, 0, 0]} />
-      </group>
-    );
-  }
-
-  // BLR — render as a cluster of small clouds
-  if (viz.shape === 'cloud') {
-    return (
-      <group ref={groupRef}>
-        {Array.from({ length: 18 }, (_, i) => {
-          const phi = (i / 18) * Math.PI * 2 + (i % 3) * 0.4;
-          const r = viz.size * (1.1 + 0.18 * (i % 4));
-          const y = (i % 5 - 2) * 0.4;
-          return (
-            <mesh
-              key={i}
-              geometry={geom}
-              material={mat}
-              position={[r * Math.cos(phi), y, r * Math.sin(phi)]}
-              scale={0.18 + (i % 3) * 0.06}
-            />
-          );
-        })}
-      </group>
-    );
-  }
-
   return (
-    <group ref={groupRef} rotation={groupTransform.rotation} position={groupTransform.position}>
-      <mesh geometry={geom} material={mat} />
-    </group>
+    <points>
+      <bufferGeometry ref={geomRef}>
+        <bufferAttribute attach="attributes-position"   args={[particles.positions, 3]} count={particles.compId.length} itemSize={3} array={particles.positions} />
+        <bufferAttribute attach="attributes-compId"     args={[particles.compId,    1]} count={particles.compId.length} itemSize={1} array={particles.compId} />
+        <bufferAttribute attach="attributes-baseSize"   args={[particles.baseSize,  1]} count={particles.compId.length} itemSize={1} array={particles.baseSize} />
+        <bufferAttribute attach="attributes-brightness" args={[brightnessRef.current!, 1]} count={particles.compId.length} itemSize={1} array={brightnessRef.current!} />
+      </bufferGeometry>
+      <shaderMaterial
+        ref={matRef}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        uniforms={{
+          uTime: { value: 0 },
+          uPixelRatio: { value: window.devicePixelRatio },
+          uColors: { value: colorPalette },
+        }}
+        vertexShader={`
+          attribute float compId;
+          attribute float baseSize;
+          attribute float brightness;
+          uniform float uTime;
+          uniform float uPixelRatio;
+          uniform vec3 uColors[7];
+          varying vec3 vColor;
+          varying float vAlpha;
+          void main() {
+            int cId = int(compId + 0.5);
+            vec3 base = uColors[cId];
+            // Brightness pow para mejor contraste perceptual
+            float vis = pow(brightness, 0.45);
+            vColor = base * (0.4 + 0.8 * vis);
+            vAlpha = clamp(vis * 0.9 + 0.05, 0.05, 1.0);
+
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            float dist = -mv.z;
+            // Size attenuated by distance + scaled by visibility
+            float sz = baseSize * (1.0 + 1.6 * vis) * 18.0 * uPixelRatio / dist;
+            gl_PointSize = clamp(sz, 1.0, 24.0);
+            gl_Position = projectionMatrix * mv;
+          }
+        `}
+        fragmentShader={`
+          varying vec3 vColor;
+          varying float vAlpha;
+          void main() {
+            // Round soft sprite
+            vec2 d = gl_PointCoord - vec2(0.5);
+            float r2 = dot(d, d);
+            if (r2 > 0.25) discard;
+            float fall = exp(-r2 * 12.0);
+            gl_FragColor = vec4(vColor * fall, vAlpha * fall);
+          }
+        `}
+      />
+    </points>
   );
 }
 
-// ── Central BH (event horizon + photon ring sketch) ──────────────────
+// ── Central BH — small black sphere with photon ring outline ────────
 function CentralBH() {
   return (
     <group>
       <mesh>
-        <sphereGeometry args={[0.34, 32, 24]} />
+        <sphereGeometry args={[0.12, 24, 18]} />
         <meshBasicMaterial color="#000" />
-      </mesh>
-      <mesh rotation={[Math.PI / 2 - 0.18, 0, 0]}>
-        <torusGeometry args={[0.6, 0.012, 8, 64]} />
-        <meshBasicMaterial color="#FFCB7F" transparent opacity={0.8} />
       </mesh>
     </group>
   );
 }
 
-// ── SED Graph overlay (HTML, no R3F) ─────────────────────────────────
+// ── SED Graph overlay ─────────────────────────────────────────────────
 function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; setLogNu: (v: number) => void }) {
-  // Per-component curve: integrate over log_r for each log_ν
   const curves = useMemo(() => {
-    const out: { name: string; color: string; points: { x: number; y: number }[] }[] = [];
-    const colors = ['#FFE08A', '#A8E0FF', '#FF7B5A', '#FFAA5A', '#FF6F9A', '#6FB5FF', '#C97FFF'];
+    const colors = COMP_COLOR_HEX;
+    const out: { name: string; color: string; points: { x: number; y: number }[]; max: number }[] = [];
     for (let c = 0; c < data.N_C; c++) {
-      const points: { x: number; y: number }[] = [];
-      let maxV = 0;
       const vals: number[] = [];
+      let maxV = 0;
       for (let iν = 0; iν < data.N_NU; iν++) {
-        const lν = data.logNuMin + iν * (data.logNuMax - data.logNuMin) / (data.N_NU - 1);
         let sum = 0;
         for (let ir = 0; ir < data.N_R; ir++) {
           sum += data.tensor[c * data.N_NU * data.N_R + iν * data.N_R + ir];
@@ -266,22 +394,34 @@ function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; set
         vals.push(sum);
         if (sum > maxV) maxV = sum;
       }
-      for (let i = 0; i < vals.length; i++) {
-        const lν = data.logNuMin + i * (data.logNuMax - data.logNuMin) / (data.N_NU - 1);
-        const y = vals[i] / Math.max(1e-30, maxV);
-        points.push({ x: lν, y });
-      }
-      out.push({ name: data.components[c], color: colors[c % colors.length], points });
+      const points = vals.map((v, i) => ({
+        x: data.logNuMin + i * (data.logNuMax - data.logNuMin) / (data.N_NU - 1),
+        y: v / Math.max(1e-30, maxV),
+      }));
+      out.push({ name: data.components[c], color: colors[c], points, max: maxV });
     }
     return out;
   }, [data]);
 
-  const w = 560, h = 140;
-  const padX = 38, padY = 16;
-  const x = (lν: number) => padX + ((lν - data.logNuMin) / (data.logNuMax - data.logNuMin)) * (w - padX - 14);
-  const y = (v: number) => h - padY - v * (h - padY - 20);
+  // Dominant component at current ν
+  const dominant = useMemo(() => {
+    let bestC = -1, bestV = -Infinity;
+    for (let c = 0; c < data.N_C; c++) {
+      let v = 0;
+      for (let ir = 0; ir < data.N_R; ir++) {
+        const logR = data.logRMin + ir * (data.logRMax - data.logRMin) / (data.N_R - 1);
+        v += lookup(data, c, logNu, logR);
+      }
+      if (v > bestV) { bestV = v; bestC = c; }
+    }
+    return bestC;
+  }, [data, logNu]);
 
-  const bandLabels: { lν: number; label: string }[] = [
+  const w = 580, h = 130, padX = 40, padY = 14;
+  const x = (lν: number) => padX + ((lν - data.logNuMin) / (data.logNuMax - data.logNuMin)) * (w - padX - 14);
+  const y = (v: number) => h - padY - v * (h - padY - 18);
+
+  const bandLabels = [
     { lν: 9,  label: 'radio' },
     { lν: 12, label: 'sub-mm' },
     { lν: 14, label: 'IR' },
@@ -292,35 +432,42 @@ function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; set
     { lν: 22, label: 'γ' },
   ];
 
+  const nu_now = Math.pow(10, logNu);
+  const E_keV = 6.626e-27 * nu_now / 1.602e-12 / 1000;
+  const wavelength_m = 2.998e8 / nu_now;
+  let wavestr = '';
+  if (E_keV > 0.5)                    wavestr = `${E_keV.toFixed(2)} keV`;
+  else if (wavelength_m > 1e-3)       wavestr = `λ ${(wavelength_m*1000).toFixed(1)} mm`;
+  else if (wavelength_m > 1e-6)       wavestr = `λ ${(wavelength_m*1e6).toFixed(2)} μm`;
+  else if (wavelength_m > 1e-9)       wavestr = `λ ${(wavelength_m*1e9).toFixed(0)} nm`;
+  else                                wavestr = `λ ${(wavelength_m*1e10).toExponential(1)} Å`;
+
   return (
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/70 border border-[#334155] rounded p-3 font-mono">
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/75 border border-[#334155] rounded p-3 font-mono backdrop-blur-sm">
       <svg width={w} height={h} style={{ display: 'block' }}>
-        {/* Background grid */}
+        {/* Band labels + grid */}
         {bandLabels.map(b => (
           <g key={b.lν}>
             <line x1={x(b.lν)} y1={padY} x2={x(b.lν)} y2={h - padY} stroke="#1e293b" strokeWidth={1} />
             <text x={x(b.lν)} y={h - 2} fontSize={9} fill="#64748b" textAnchor="middle">{b.label}</text>
           </g>
         ))}
-        {/* Component curves */}
-        {curves.map(c => (
+        {/* Curves */}
+        {curves.map((c, i) => (
           <polyline
             key={c.name}
             fill="none"
             stroke={c.color}
-            strokeWidth={1.3}
-            strokeOpacity={0.85}
+            strokeWidth={i === dominant ? 2 : 1.2}
+            strokeOpacity={i === dominant ? 1 : 0.5}
             points={c.points.map(p => `${x(p.x)},${y(p.y)}`).join(' ')}
           />
         ))}
         {/* Current ν vertical line */}
         <line x1={x(logNu)} y1={padY} x2={x(logNu)} y2={h - padY} stroke="#FFE5A0" strokeWidth={1.5} />
-        {/* Y axis label */}
-        <text x={padX - 28} y={h / 2} fontSize={9} fill="#64748b" transform={`rotate(-90 ${padX - 28} ${h / 2})`}>L_ν (norm)</text>
       </svg>
-      {/* Slider */}
       <div className="flex items-center gap-3 mt-1 text-[10px] text-[#94A3B8]">
-        <span>log ν = <span className="text-[#FFE5A0]">{logNu.toFixed(2)}</span>  →  ν = {(10**logNu).toExponential(1)} Hz  ({(c_lambda(10**logNu))})</span>
+        <span>log ν = <span className="text-[#FFE5A0]">{logNu.toFixed(2)}</span> · ν = {nu_now.toExponential(1)} Hz · {wavestr}</span>
         <input
           type="range"
           min={data.logNuMin}
@@ -330,32 +477,33 @@ function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; set
           onChange={(e) => setLogNu(parseFloat(e.target.value))}
           className="flex-1 accent-[#FFE5A0]"
         />
+        <span>dominante: <span style={{color: COMP_COLOR_HEX[dominant]}}>{COMP_LABELS[dominant]}</span></span>
       </div>
     </div>
   );
 }
 
-function c_lambda(nu_Hz: number): string {
-  // Returns a human label for the wavelength/energy
-  const E_keV = 6.626e-27 * nu_Hz / 1.602e-12 / 1000;
-  if (E_keV > 0.5) return `${E_keV.toFixed(2)} keV`;
-  const lambda_m = 2.998e8 / nu_Hz;
-  if (lambda_m > 1e-3)   return `λ = ${(lambda_m*1000).toFixed(1)} mm`;
-  if (lambda_m > 1e-6)   return `λ = ${(lambda_m*1e6).toFixed(2)} μm`;
-  if (lambda_m > 1e-9)   return `λ = ${(lambda_m*1e9).toFixed(0)} nm`;
-  return `${(lambda_m*1e10).toExponential(1)} Å`;
+// ── Legend ────────────────────────────────────────────────────────────
+function Legend() {
+  return (
+    <div className="absolute top-6 right-6 bg-black/65 border border-[#334155] rounded p-2 font-mono text-[10px] backdrop-blur-sm">
+      <div className="text-[#94A3B8] mb-1.5 text-[9px] uppercase tracking-wider">componentes</div>
+      {COMP_COLOR_HEX.map((col, i) => (
+        <div key={i} className="flex items-center gap-2 leading-tight">
+          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: col, boxShadow: `0 0 8px ${col}` }} />
+          <span style={{ color: col }}>{COMP_LABELS[i]}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ── Scene ────────────────────────────────────────────────────────────
-function Scene({ data, logNu }: { data: SEDData; logNu: number }) {
+function Scene({ data, logNu, particles }: { data: SEDData; logNu: number; particles: ParticleSet }) {
   return (
     <>
-      <ambientLight intensity={0.05} />
-      <pointLight position={[0, 0, 0]} intensity={2} color="#FFE08A" distance={5} />
       <CentralBH />
-      {COMPONENT_VIZ.map(v => (
-        <ComponentMesh key={v.name} viz={v} data={data} logNu={logNu} />
-      ))}
+      <ParticleQuasar data={data} logNu={logNu} particles={particles} />
     </>
   );
 }
@@ -364,49 +512,53 @@ const gl = makeRenderer({ antialias: false, alpha: false, powerPreference: 'high
 
 function QuasarSED() {
   const [data, setData] = useState<SEDData | null>(null);
-  const [logNu, setLogNu] = useState(15.2);   // start at optical
+  const [logNu, setLogNu] = useState(15.2);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     loadSED().then(setData).catch(e => setErr(String(e)));
   }, []);
 
-  if (err) return <div className="text-red-400 p-6 font-mono">SED load failed: {err}</div>;
+  // Generate particles ONCE (heavy: ~38k)
+  const particles = useMemo(() => buildParticles(), []);
+
+  if (err)  return <div className="text-red-400 p-6 font-mono">SED load failed: {err}</div>;
   if (!data) return <div className="text-[#94A3B8] p-6 font-mono">loading SED tensor…</div>;
 
   return (
-    <div className="w-full h-full relative" style={{ background: '#000' }}>
+    <div className="w-full h-full relative" style={{ background: '#05060A' }}>
       <Canvas
-        camera={{ position: [12, 6, 18], fov: 42, near: 0.001, far: 200 }}
+        camera={{ position: [6, 3, 9], fov: 50, near: 0.001, far: 200 }}
         gl={gl}
         dpr={[0.55, 1]}
       >
-        <Scene data={data} logNu={logNu} />
+        <Scene data={data} logNu={logNu} particles={particles} />
         <OrbitControls
           enablePan={false}
           enableZoom
           autoRotate
-          autoRotateSpeed={0.16}
-          minDistance={3}
-          maxDistance={60}
+          autoRotateSpeed={0.14}
+          minDistance={2}
+          maxDistance={30}
         />
         <EffectComposer>
-          <Bloom intensity={1.4} luminanceThreshold={0.1} luminanceSmoothing={0.7} radius={0.9} />
+          <Bloom intensity={1.8} luminanceThreshold={0.05} luminanceSmoothing={0.7} radius={0.95} />
         </EffectComposer>
       </Canvas>
 
-      <div className="absolute top-6 left-6 text-[11px] font-mono text-[#94A3B8] max-w-md space-y-1">
+      <div className="absolute top-6 left-6 text-[11px] font-mono text-[#94A3B8] max-w-md space-y-1 pointer-events-none">
         <div className="text-[#FFE5A0] font-semibold">Quasar SED · Operador 𝔄</div>
         <div>M_BH = 10⁹ M☉ · Ṁ = 0.1·Ṁ_Edd · a* = 0.9</div>
-        <div>Tensor j[c, log_ν, log_r] = 7 × 256 × 128 (~900 KB)</div>
-        <div className="text-[10px] text-[#475569] mt-2 leading-snug">
-          cara-Mellin radial × cara-Mellin espectral, ambas conmutan con axisimetría<br/>
-          → factorización tensor producto → runtime: 1 lookup 3D + producto<br/>
-          slide el slider para barrer la cara-Mellin de ν — el cuásar literalmente<br/>
-          se transforma según qué componente domina en cada banda
+        <div className="text-[10px] text-[#475569] mt-2 leading-snug max-w-sm">
+          ~38k partículas. La posición (en log r world) es FIJA — disco
+          equatorial, corona arriba/abajo, BLR shell, torus polvo,
+          jet bipolar parabólico (z ∝ R^1.6). El brillo lee tensor
+          j[componente, log ν, log r] vía cara-Mellin doble. Arrastra el
+          slider para ver el cuásar en cada banda.
         </div>
       </div>
 
+      <Legend />
       <SEDGraph data={data} logNu={logNu} setLogNu={setLogNu} />
     </div>
   );
