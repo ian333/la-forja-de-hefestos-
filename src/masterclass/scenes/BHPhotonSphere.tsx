@@ -10,6 +10,10 @@
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
+
+// Referencia estable — fuera del componente para no recrear el gl factory
+// en cada render (R3F re-monta Canvas/OrbitControls si `gl` cambia).
+const gl = makeRenderer();
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -83,7 +87,7 @@ export default function BHPhotonSphere() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #1F0F12 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [5, 4, 8], fov: 38 }} gl={makeRenderer()}>
+      <Canvas camera={{ position: [5, 4, 8], fov: 38 }} gl={gl}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[3, 4, 5]} intensity={0.5} />
         <PhotonScene />

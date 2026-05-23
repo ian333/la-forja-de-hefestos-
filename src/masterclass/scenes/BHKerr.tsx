@@ -8,6 +8,10 @@
 import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
+
+// Referencia estable — fuera del componente para no recrear el gl factory
+// en cada render (R3F re-monta Canvas/OrbitControls si `gl` cambia).
+const gl = makeRenderer();
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -224,7 +228,7 @@ export default function BHKerr() {
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #18081A 0%, #05060A 85%)',
     }}>
-      <Canvas camera={{ position: [6, 5, 10], fov: 38 }} gl={makeRenderer()}>
+      <Canvas camera={{ position: [6, 5, 10], fov: 38 }} gl={gl}>
         <ambientLight intensity={0.35} />
         <directionalLight position={[3, 5, 4]} intensity={0.6} />
         <pointLight position={[0, 0, 0]} intensity={1.2} distance={4} color="#F472B6" />
