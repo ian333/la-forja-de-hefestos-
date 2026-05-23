@@ -264,109 +264,146 @@ function buildParticles(): ParticleSet {
 //
 // Refs: Blandford-Znajek 1977, McKinney-Narayan 2007.
 
+/**
+ * Operador 𝔄 aplicado al campo magnético del BH:
+ *
+ * Cada partícula tiene coords separables (line_idx, t). Las "line paths" son
+ * una LUT 2D — DataTexture float que el shader samplea por (t, line_idx/N)
+ * para obtener (x,y,z). El runtime es UN texture-lookup por vertex.
+ *
+ * CPU work per frame: 1 uniform update (uTime). Eso es todo.
+ * Particle count: limitado solo por GPU triangle/line throughput → 60k+
+ *
+ * Líneas con cierre físico: ancla foot point al DISCO (no al horizonte).
+ * Las field lines BZ no salen del horizonte directamente — el monopole
+ * field se establece en el disco, frame-drag del BH las tuerce hacia +z y
+ * forma el jet. Anclar al disco hace la GENERACIÓN visible.
+ */
 interface BFieldData {
-  linePositions: Float32Array;    // line segments: 2 endpoints per segment, 3 coords
-  lineColors:    Float32Array;    // RGB per vertex, faded by distance
-  particles:     {
-    // Cada streak = 2 vertices (head + tail) renderizados como lineSegments
-    streakPositions: Float32Array; // N · 2 · 3  (head, tail)
-    streakColors:    Float32Array; // N · 2 · 3
-    lineIdx:    Float32Array;     // N (which field line this particle is on)
-    t:          Float32Array;     // N (param ∈ [0,1] along the line)
-    speed:      Float32Array;     // N (advection speed in t-space per second)
-    logR:       Float32Array;     // N (for tensor lookup, brightness in radio)
-    knotBurst:  Float32Array;     // N (0=field plasma, 1=knot burst, decays)
-  };
-  // Sampled positions per line
-  linePaths: Float32Array;        // N_LINES × N_PTS × 3
-  N_LINES:   number;
-  N_PTS:     number;
+  N_LINES:    number;
+  N_PTS:      number;
+  // Texture data for line paths (N_PTS × N_LINES × RGBA float, padding A=0)
+  pathsTexData: Float32Array;
+  // Static field lines (faint background overlay)
+  linePositions: Float32Array;
+  lineColors:    Float32Array;
+  // Foot points: ring of small spheres at the disk anchoring each line
+  footPositions: Float32Array;
+  // GPU-instanced particle attributes (head+tail vertices per particle)
+  N_PART:   number;
+  pLineIdx: Float32Array;   // N_PART · 2
+  pPhase:   Float32Array;   // N_PART · 2
+  pSpeed:   Float32Array;   // N_PART · 2
+  pIsKnot:  Float32Array;   // N_PART · 2
+  pIsTail:  Float32Array;   // N_PART · 2  (0 = head, 1 = tail)
 }
 
 function buildBField(): BFieldData {
-  const N_LINES = 56;          // azimuthal field lines around jet axis
-  const N_PTS   = 72;          // points along each line
-  const linePaths = new Float32Array(N_LINES * N_PTS * 3);
+  const N_LINES = 80;
+  const N_PTS   = 96;
+  const linePaths   = new Float32Array(N_LINES * N_PTS * 3);
+  const footPositions = new Float32Array(N_LINES * 3);
 
-  // Cada línea sale de un radio base R0 en el horizonte y va a +Z, otra a -Z
+  // Lineas se anclan al DISCO en R_foot ∈ [0.5, 1.8] r_g (world units después de log)
+  // y suben con parabolica McKinney-Narayan z ∝ R^1.6.
   for (let li = 0; li < N_LINES; li++) {
-    const phi    = (li / N_LINES) * Math.PI * 2;
-    // Radio base en el horizonte: 0.5 a 1.2 r_g (en world: log_r ∈ [-0.3, 0.08])
-    const R0_wu  = 0.5 + 0.7 * (li % 7) / 6;          // world units
-    const side   = (li % 2 === 0) ? 1 : -1;            // half lines up, half down
-    // z varía log-spaced: log_z ∈ [0.4, 7] world ≈ partículas en log_r jet
+    const phi = (li / N_LINES) * Math.PI * 2 + (li % 3) * 0.13;
+    // 5 capas radiales × ~16 azimutales = 80 lines total
+    const radialLayer = Math.floor(li / 16);
+    const R_foot_phys = 0.5 + 0.32 * radialLayer;       // r_g
+    const R_foot_world = R_foot_phys + 0.3;             // shift to match disk particles
+    const side = (li % 2) === 0 ? 1 : -1;
+
+    // Foot point at disk plane
+    footPositions[li * 3 + 0] = R_foot_world * Math.cos(phi);
+    footPositions[li * 3 + 1] = side * 0.04;            // just above/below disk
+    footPositions[li * 3 + 2] = R_foot_world * Math.sin(phi);
+
     for (let i = 0; i < N_PTS; i++) {
-      const t      = i / (N_PTS - 1);
-      // z world (log) crece de 0.4 a 7. R sigue parabólica R = R0·(z/z0)^(1/1.6)
-      const log_z  = 0.4 + t * (6.6);                  // world units
-      const log_R  = Math.log10(R0_wu) + (log_z - 0.4) / 1.6;
-      const R      = Math.pow(10, log_R);
-      const z_world = log_z * side;
-      linePaths[(li * N_PTS + i) * 3 + 0] = R * Math.cos(phi);
+      const t = i / (N_PTS - 1);
+      // Trayectoria: parte del disco, sube parabólica, llega a z_max
+      // Smooth blend so it doesn't have a kink at the disk:
+      //   z_world(t) = z_max · sigmoid_like(t)
+      //   R_world(t) = R_foot · (1 + grow(t))    grow=0 at t=0, grow=large at t=1
+      const z_max_world = 7.0;
+      const z_world = side * (0.04 + (z_max_world - 0.04) * Math.pow(t, 1.0));
+      // R parabólica: log(R) = log(R_foot) + log_z/1.6 (en world coords) pero suavizado
+      const log_z_eff = Math.max(0.04, Math.abs(z_world));
+      const log_R_world = Math.log10(R_foot_world) + (Math.log10(log_z_eff) - Math.log10(0.04)) / 1.6;
+      const R_world = Math.max(R_foot_world, Math.pow(10, log_R_world));
+      linePaths[(li * N_PTS + i) * 3 + 0] = R_world * Math.cos(phi);
       linePaths[(li * N_PTS + i) * 3 + 1] = z_world;
-      linePaths[(li * N_PTS + i) * 3 + 2] = R * Math.sin(phi);
+      linePaths[(li * N_PTS + i) * 3 + 2] = R_world * Math.sin(phi);
     }
   }
 
-  // LineSegments: por cada line, N_PTS-1 segments = 2 vertices each
+  // Texture data: pack into RGBA (alpha unused). Layout (N_PTS, N_LINES)
+  const pathsTexData = new Float32Array(N_PTS * N_LINES * 4);
+  for (let li = 0; li < N_LINES; li++) {
+    for (let i = 0; i < N_PTS; i++) {
+      // Row major: y = li (height), x = i (width)
+      // index in tex = (li * N_PTS + i) * 4
+      const tIdx = (li * N_PTS + i) * 4;
+      const lIdx = (li * N_PTS + i) * 3;
+      pathsTexData[tIdx + 0] = linePaths[lIdx + 0];
+      pathsTexData[tIdx + 1] = linePaths[lIdx + 1];
+      pathsTexData[tIdx + 2] = linePaths[lIdx + 2];
+      pathsTexData[tIdx + 3] = 0;
+    }
+  }
+
+  // Static lines for background reference (much fewer points)
   const N_SEG = N_LINES * (N_PTS - 1);
   const linePositions = new Float32Array(N_SEG * 2 * 3);
   const lineColors    = new Float32Array(N_SEG * 2 * 3);
   for (let li = 0; li < N_LINES; li++) {
     for (let i = 0; i < N_PTS - 1; i++) {
-      const segIdx = li * (N_PTS - 1) + i;
-      const off = segIdx * 6;
-      // endpoint A
-      linePositions[off + 0] = linePaths[(li * N_PTS + i) * 3 + 0];
-      linePositions[off + 1] = linePaths[(li * N_PTS + i) * 3 + 1];
-      linePositions[off + 2] = linePaths[(li * N_PTS + i) * 3 + 2];
-      // endpoint B
-      linePositions[off + 3] = linePaths[(li * N_PTS + (i+1)) * 3 + 0];
-      linePositions[off + 4] = linePaths[(li * N_PTS + (i+1)) * 3 + 1];
-      linePositions[off + 5] = linePaths[(li * N_PTS + (i+1)) * 3 + 2];
-      // Color fades with z (campo más débil lejos del horizonte: B ∝ 1/r²)
-      const fade = Math.max(0.15, 1.0 - i / (N_PTS - 1) * 0.9);
-      lineColors[off + 0] = 0.45 * fade;   // R
-      lineColors[off + 1] = 0.78 * fade;   // G  — cyan-blue
-      lineColors[off + 2] = 1.00 * fade;   // B
-      lineColors[off + 3] = 0.45 * fade;
-      lineColors[off + 4] = 0.78 * fade;
-      lineColors[off + 5] = 1.00 * fade;
+      const seg = li * (N_PTS - 1) + i;
+      const off = seg * 6;
+      const aIdx = (li * N_PTS + i) * 3;
+      const bIdx = (li * N_PTS + (i+1)) * 3;
+      linePositions[off+0] = linePaths[aIdx+0];
+      linePositions[off+1] = linePaths[aIdx+1];
+      linePositions[off+2] = linePaths[aIdx+2];
+      linePositions[off+3] = linePaths[bIdx+0];
+      linePositions[off+4] = linePaths[bIdx+1];
+      linePositions[off+5] = linePaths[bIdx+2];
+      const fade = Math.max(0.06, 1.0 - i / (N_PTS - 1) * 0.85);
+      lineColors[off+0] = 0.40 * fade;
+      lineColors[off+1] = 0.70 * fade;
+      lineColors[off+2] = 1.00 * fade;
+      lineColors[off+3] = 0.40 * fade;
+      lineColors[off+4] = 0.70 * fade;
+      lineColors[off+5] = 1.00 * fade;
     }
   }
 
-  // Particles streaming along lines — STREAKS (cada uno es head+tail)
-  const N_PART = 9000;
-  const streakPositions = new Float32Array(N_PART * 2 * 3);   // head + tail
-  const streakColors    = new Float32Array(N_PART * 2 * 3);
-  const lineIdx   = new Float32Array(N_PART);
-  const t_arr     = new Float32Array(N_PART);
-  const speed     = new Float32Array(N_PART);
-  const logRp     = new Float32Array(N_PART);
-  const knotBurst = new Float32Array(N_PART);
+  // GPU-instanced particles: 60,000 streaks (2 vertices each = 120k verts)
+  const N_PART = 60000;
+  const pLineIdx = new Float32Array(N_PART * 2);
+  const pPhase   = new Float32Array(N_PART * 2);
+  const pSpeed   = new Float32Array(N_PART * 2);
+  const pIsKnot  = new Float32Array(N_PART * 2);
+  const pIsTail  = new Float32Array(N_PART * 2);
   for (let i = 0; i < N_PART; i++) {
     const li = Math.floor(Math.random() * N_LINES);
-    lineIdx[i] = li;
-    t_arr[i]   = Math.random();
-    speed[i]   = 0.55 + 0.5 * Math.random();   // t/sec — 3× faster, relativistic
-    knotBurst[i] = 0;
-    const idx = li * N_PTS + Math.min(Math.floor(t_arr[i] * (N_PTS - 1)), N_PTS - 2);
-    streakPositions[i*6+0] = linePaths[idx*3+0];
-    streakPositions[i*6+1] = linePaths[idx*3+1];
-    streakPositions[i*6+2] = linePaths[idx*3+2];
-    streakPositions[i*6+3] = linePaths[idx*3+0];
-    streakPositions[i*6+4] = linePaths[idx*3+1];
-    streakPositions[i*6+5] = linePaths[idx*3+2];
-    logRp[i] = Math.log10(Math.max(0.5, Math.hypot(streakPositions[i*6+0], streakPositions[i*6+1], streakPositions[i*6+2])));
+    const phase = Math.random();
+    const speed = 0.45 + 0.5 * Math.random();        // 0.45–0.95 t/sec
+    const isKnot = (Math.random() < 0.08) ? 1 : 0;   // 8% son knot particles
+    // Two vertices (head, tail)
+    pLineIdx[i*2+0] = li;            pLineIdx[i*2+1] = li;
+    pPhase[i*2+0]   = phase;         pPhase[i*2+1]   = phase;
+    pSpeed[i*2+0]   = speed;         pSpeed[i*2+1]   = speed;
+    pIsKnot[i*2+0]  = isKnot;        pIsKnot[i*2+1]  = isKnot;
+    pIsTail[i*2+0]  = 0;             pIsTail[i*2+1]  = 1;
   }
 
   return {
+    N_LINES, N_PTS,
+    pathsTexData,
     linePositions, lineColors,
-    particles: {
-      streakPositions, streakColors,
-      lineIdx, t: t_arr, speed, logR: logRp, knotBurst,
-    },
-    linePaths, N_LINES, N_PTS,
+    footPositions,
+    N_PART, pLineIdx, pPhase, pSpeed, pIsKnot, pIsTail,
   };
 }
 
@@ -486,20 +523,35 @@ function ParticleQuasar({ data, logNu, particles }: { data: SEDData; logNu: numb
   );
 }
 
-// ── Magnetic field component ──────────────────────────────────────────
+// ── Magnetic field component (GPU-driven, 60k partículas) ─────────────
 function MagneticField({ data, logNu, bField, visible }: {
   data: SEDData;
   logNu: number;
   bField: BFieldData;
   visible: boolean;
 }) {
-  const matLineRef = useRef<THREE.LineBasicMaterial>(null);
   const matStreakRef = useRef<THREE.ShaderMaterial>(null);
-  const streakGeomRef = useRef<THREE.BufferGeometry>(null);
-  const lastBurstRef = useRef<number>(0);
-  const burstInterval = 2.2;   // segundos entre flares
+  const matLineRef = useRef<THREE.LineBasicMaterial>(null);
+  const matFootRef = useRef<THREE.ShaderMaterial>(null);
 
-  // Synchrotron boost: lookup component 5 (jet_sync) at current ν, max over r
+  // Build DataTexture for line paths (RGBA float)
+  const pathsTexture = useMemo(() => {
+    const tex = new THREE.DataTexture(
+      bField.pathsTexData,
+      bField.N_PTS,
+      bField.N_LINES,
+      THREE.RGBAFormat,
+      THREE.FloatType
+    );
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.needsUpdate = true;
+    return tex;
+  }, [bField]);
+
+  // Synchrotron boost
   const synchroIntensity = useMemo(() => {
     let max = 0;
     for (let ir = 0; ir < data.N_R; ir++) {
@@ -511,91 +563,20 @@ function MagneticField({ data, logNu, bField, visible }: {
   }, [data, logNu]);
 
   useEffect(() => {
-    if (matLineRef.current) {
-      matLineRef.current.opacity = 0.10 + 0.5 * synchroIntensity;
-    }
+    if (matLineRef.current) matLineRef.current.opacity = 0.12 + 0.45 * synchroIntensity;
   }, [synchroIntensity]);
 
-  // Sample line at t ∈ [0,1] for line li, output to (x,y,z)
-  const sampleLine = (li: number, t: number, out: { x:number; y:number; z:number }) => {
-    const NP = bField.N_PTS;
-    const tc = Math.max(0, Math.min(1, t));
-    const idxF = tc * (NP - 1);
-    const ia = Math.floor(idxF);
-    const ib = Math.min(ia + 1, NP - 1);
-    const f = idxF - ia;
-    const aoff = (li * NP + ia) * 3;
-    const boff = (li * NP + ib) * 3;
-    out.x = bField.linePaths[aoff]   * (1-f) + bField.linePaths[boff]   * f;
-    out.y = bField.linePaths[aoff+1] * (1-f) + bField.linePaths[boff+1] * f;
-    out.z = bField.linePaths[aoff+2] * (1-f) + bField.linePaths[boff+2] * f;
-  };
-
-  useFrame(({ clock }, dt) => {
-    if (!visible || !streakGeomRef.current) return;
-    const { t, lineIdx, speed, streakPositions, streakColors, logR, knotBurst } = bField.particles;
-    const N = lineIdx.length;
-    const STREAK_DT = 0.045;   // longitud temporal del streak en t-space
-
-    // Knot burst: cada burstInterval s, reciclamos N_BURST partículas al inicio
-    const now = clock.elapsedTime;
-    if (now - lastBurstRef.current > burstInterval) {
-      lastBurstRef.current = now;
-      const N_BURST = 280;
-      for (let k = 0; k < N_BURST; k++) {
-        const i = Math.floor(Math.random() * N);
-        t[i] = 0.01 + 0.04 * Math.random();          // re-spawn near base
-        speed[i] = 0.85 + 0.45 * Math.random();      // boost speed
-        knotBurst[i] = 1.0;                          // mark as knot
-      }
-    }
-
-    const head = { x:0, y:0, z:0 };
-    const tail = { x:0, y:0, z:0 };
-    for (let i = 0; i < N; i++) {
-      // Decay knot marker
-      if (knotBurst[i] > 0) knotBurst[i] = Math.max(0, knotBurst[i] - dt * 0.35);
-
-      t[i] += speed[i] * dt;
-      if (t[i] >= 1) {
-        t[i] -= 1;
-        knotBurst[i] = 0;
-      }
-
-      const li = lineIdx[i] | 0;
-      sampleLine(li, t[i], head);
-      sampleLine(li, Math.max(0, t[i] - STREAK_DT), tail);
-
-      streakPositions[i*6+0] = head.x;
-      streakPositions[i*6+1] = head.y;
-      streakPositions[i*6+2] = head.z;
-      streakPositions[i*6+3] = tail.x;
-      streakPositions[i*6+4] = tail.y;
-      streakPositions[i*6+5] = tail.z;
-
-      // Color: head bright (cian-blanco), tail dim. Knot = blanco hot.
-      const sync = synchroIntensity;
-      const knot = knotBurst[i];
-      const baseR = 0.55 + knot * 0.5;
-      const baseG = 0.85 + knot * 0.2;
-      const baseB = 1.00;
-      const lift  = 0.35 + 0.85 * sync;
-      // Head
-      streakColors[i*6+0] = baseR * lift * (1 + knot * 0.8);
-      streakColors[i*6+1] = baseG * lift * (1 + knot * 0.5);
-      streakColors[i*6+2] = baseB * lift;
-      // Tail (mucho más tenue)
-      streakColors[i*6+3] = baseR * lift * 0.10;
-      streakColors[i*6+4] = baseG * lift * 0.10;
-      streakColors[i*6+5] = baseB * lift * 0.10;
-
-      logR[i] = Math.log10(Math.max(0.5, Math.hypot(head.x, head.y, head.z)));
-    }
-    (streakGeomRef.current.attributes.position as THREE.BufferAttribute).needsUpdate = true;
-    (streakGeomRef.current.attributes.color    as THREE.BufferAttribute).needsUpdate = true;
-
+  // Per-frame uniform updates only (zero CPU per-particle work)
+  useFrame(({ clock }) => {
+    if (!visible) return;
+    const t = clock.elapsedTime;
     if (matStreakRef.current) {
+      matStreakRef.current.uniforms.uTime.value = t;
       matStreakRef.current.uniforms.uSyncBoost.value = synchroIntensity;
+    }
+    if (matFootRef.current) {
+      matFootRef.current.uniforms.uTime.value = t;
+      matFootRef.current.uniforms.uSyncBoost.value = synchroIntensity;
     }
   });
 
@@ -603,7 +584,7 @@ function MagneticField({ data, logNu, bField, visible }: {
 
   return (
     <group>
-      {/* Static field lines (faint background) */}
+      {/* Static field lines (faint background, shows the geometry) */}
       <lineSegments>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[bField.linePositions, 3]}
@@ -615,46 +596,141 @@ function MagneticField({ data, logNu, bField, visible }: {
           ref={matLineRef}
           vertexColors
           transparent
-          opacity={0.25}
+          opacity={0.22}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </lineSegments>
 
-      {/* Plasma streaks — each is a line from head to tail */}
-      <lineSegments>
-        <bufferGeometry ref={streakGeomRef}>
-          <bufferAttribute attach="attributes-position" args={[bField.particles.streakPositions, 3]}
-                           count={bField.particles.streakPositions.length / 3} itemSize={3} array={bField.particles.streakPositions} />
-          <bufferAttribute attach="attributes-color"    args={[bField.particles.streakColors, 3]}
-                           count={bField.particles.streakColors.length / 3} itemSize={3} array={bField.particles.streakColors} />
+      {/* Foot points: bright pulsing dots at the disk anchor of each line */}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[bField.footPositions, 3]}
+                           count={bField.footPositions.length / 3} itemSize={3} array={bField.footPositions} />
         </bufferGeometry>
         <shaderMaterial
-          ref={matStreakRef}
-          vertexColors
+          ref={matFootRef}
           transparent
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           uniforms={{
-            uSyncBoost: { value: 0 },
+            uTime:       { value: 0 },
+            uSyncBoost:  { value: 0 },
+            uPixelRatio: { value: window.devicePixelRatio },
           }}
           vertexShader={`
-            // 'color' attribute is auto-injected por Three cuando vertexColors=true.
+            uniform float uTime;
             uniform float uSyncBoost;
-            varying vec3 vColor;
+            uniform float uPixelRatio;
             varying float vAlpha;
             void main() {
-              vColor = color * (0.6 + 1.4 * uSyncBoost);
-              vAlpha = 0.6 + 0.4 * uSyncBoost;
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              // Pulsing: cada foot point pulsa con period ~1.2s, fase basada en posición
+              float phase = position.x * 7.0 + position.z * 3.3;
+              float pulse = 0.5 + 0.5 * sin(uTime * 4.5 + phase);
+              vAlpha = (0.4 + 0.6 * pulse) * (0.5 + 0.8 * uSyncBoost);
+              vec4 mv = modelViewMatrix * vec4(position, 1.0);
+              float dist = -mv.z;
+              gl_PointSize = clamp(16.0 * uPixelRatio * (1.0 + pulse) / dist, 2.0, 24.0);
+              gl_Position = projectionMatrix * mv;
+            }
+          `}
+          fragmentShader={`
+            varying float vAlpha;
+            void main() {
+              vec2 d = gl_PointCoord - vec2(0.5);
+              float r2 = dot(d, d);
+              if (r2 > 0.25) discard;
+              float fall = exp(-r2 * 16.0);
+              // Cyan-white: foot is the line generation point
+              vec3 col = vec3(0.8, 0.95, 1.0);
+              gl_FragColor = vec4(col * fall, vAlpha * fall);
+            }
+          `}
+        />
+      </points>
+
+      {/* Plasma streaks: 60k particles, GPU-driven via DataTexture lookup */}
+      <lineSegments>
+        <bufferGeometry>
+          {/* dummy position attribute required by Three.js; pos computed in shader */}
+          <bufferAttribute attach="attributes-position" args={[new Float32Array(bField.N_PART * 2 * 3), 3]}
+                           count={bField.N_PART * 2} itemSize={3} array={new Float32Array(bField.N_PART * 2 * 3)} />
+          <bufferAttribute attach="attributes-lineIdx" args={[bField.pLineIdx, 1]}
+                           count={bField.N_PART * 2} itemSize={1} array={bField.pLineIdx} />
+          <bufferAttribute attach="attributes-phase"   args={[bField.pPhase, 1]}
+                           count={bField.N_PART * 2} itemSize={1} array={bField.pPhase} />
+          <bufferAttribute attach="attributes-pSpeed"  args={[bField.pSpeed, 1]}
+                           count={bField.N_PART * 2} itemSize={1} array={bField.pSpeed} />
+          <bufferAttribute attach="attributes-isKnot"  args={[bField.pIsKnot, 1]}
+                           count={bField.N_PART * 2} itemSize={1} array={bField.pIsKnot} />
+          <bufferAttribute attach="attributes-isTail"  args={[bField.pIsTail, 1]}
+                           count={bField.N_PART * 2} itemSize={1} array={bField.pIsTail} />
+        </bufferGeometry>
+        <shaderMaterial
+          ref={matStreakRef}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          uniforms={{
+            uTime:       { value: 0 },
+            uSyncBoost:  { value: 0 },
+            uPaths:      { value: pathsTexture },
+            uN_LINES:    { value: bField.N_LINES },
+          }}
+          vertexShader={`
+            attribute float lineIdx;
+            attribute float phase;
+            attribute float pSpeed;
+            attribute float isKnot;
+            attribute float isTail;
+            uniform float uTime;
+            uniform float uSyncBoost;
+            uniform sampler2D uPaths;
+            uniform float uN_LINES;
+            varying vec3 vColor;
+            varying float vAlpha;
+
+            const float STREAK_DT = 0.085;       // streak length in t-space
+            const float BURST_PERIOD = 1.6;      // sec entre knot bursts
+            const float BURST_WINDOW = 0.35;     // fraction with active knots
+
+            void main() {
+              // tail está 'detrás' del head en la línea
+              float dt_back = isTail * STREAK_DT;
+              float t = mod(uTime * pSpeed + phase - dt_back, 1.0);
+
+              // Knot burst: durante BURST_WINDOW del ciclo, los knots se respawnean
+              // cerca de la base con velocidad alta. Modelamos como: si isKnot y
+              // estamos en burst window, comprimimos t para que esté cerca de 0.
+              float burstT = mod(uTime / BURST_PERIOD, 1.0);
+              float inBurst = step(burstT, BURST_WINDOW);
+              float knotActive = isKnot * inBurst;
+              // Re-map t for active knots: hace que t avance mucho rápido desde 0
+              float t_knot = burstT / BURST_WINDOW * 0.7;      // recorre 70% de la línea
+              t = mix(t, mod(t_knot * pSpeed * 2.0 + phase * 0.1 - dt_back, 1.0), knotActive);
+
+              // Sample line path texture
+              vec2 uv = vec2(t, (lineIdx + 0.5) / uN_LINES);
+              vec3 pos = texture2D(uPaths, uv).xyz;
+
+              // Color: bright head, dim tail. Knots = white-hot when active.
+              vec3 base = vec3(0.55, 0.85, 1.0);
+              vec3 hot  = vec3(1.00, 1.00, 0.95);
+              vec3 col  = mix(base, hot, knotActive * 0.85);
+
+              float headBright = mix(1.0, 0.06, isTail);   // tail muy tenue
+              float syncLift   = 0.35 + 0.95 * uSyncBoost;
+              float knotLift   = 1.0 + knotActive * 2.5;
+              vColor = col * headBright * syncLift * knotLift;
+              vAlpha = 0.7 + 0.3 * uSyncBoost + knotActive * 0.5;
+
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
             }
           `}
           fragmentShader={`
             varying vec3 vColor;
             varying float vAlpha;
-            void main() {
-              gl_FragColor = vec4(vColor, vAlpha);
-            }
+            void main() { gl_FragColor = vec4(vColor, vAlpha); }
           `}
         />
       </lineSegments>
