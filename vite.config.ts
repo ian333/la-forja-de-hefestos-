@@ -42,6 +42,7 @@ export default defineConfig({
         "math-prizes": resolve(import.meta.dirname, "math-prizes.html"),
         "preview-escena": resolve(import.meta.dirname, "preview-escena.html"),
         library: resolve(import.meta.dirname, "library.html"),
+        quasar: resolve(import.meta.dirname, "quasar.html"),
       },
       output: {
         manualChunks: {
