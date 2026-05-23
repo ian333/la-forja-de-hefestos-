@@ -326,12 +326,23 @@ function buildBField(): BFieldData {
     return ((h * 1103515245 + 12345) >>> 0) / 0xFFFFFFFF - 0.5;     // ∈ [-0.5, 0.5]
   };
 
+  // VOGEL SUNFLOWER (golden angle) para foot points: KAM-stable rotational
+  // transform → física honrada de tokamak/MHD optimum confinement.
+  //   θ_n = n · 2π / φ²   (φ = 1.618...)
+  //   golden angle ≈ 137.508°
+  // Radio crece sub-lineal como en sunflower: r_n = c·√n
+  const PHI = (1 + Math.sqrt(5)) / 2;
+  const GOLDEN_ANGLE = 2 * Math.PI / (PHI * PHI);      // ≈ 137.508°
+
   for (let li = 0; li < N_LINES; li++) {
     const base = li % N_LINES_BASE;
     const side = (li < N_LINES_BASE) ? 1 : -1;     // primera mitad sube, segunda baja
-    const phi0 = (base / N_LINES_BASE) * Math.PI * 2 + (base % 3) * 0.13;
-    const radialLayer = Math.floor(base / 8);      // 5 capas × 8 lines = 40 base
-    const R_foot_logR = 0.5 + 0.32 * radialLayer + jitter(base, 0) * 0.12;
+    // Vogel: phi_n = n · golden_angle (mod 2π implícito en cos/sin)
+    const phi0 = base * GOLDEN_ANGLE;
+    // Radio en distribución sunflower: r = R_min + (R_max-R_min) · √(n/N)
+    // Esto da la disposición más densa-uniforme posible (KAM optimum)
+    const u = base / N_LINES_BASE;
+    const R_foot_logR = 0.5 + 1.28 * Math.sqrt(u) + jitter(base, 0) * 0.06;
     const R_foot_world = R_foot_logR + 0.3;
 
     // Jitter per-line para romper uniformidad (current sheets reales son caóticas)
