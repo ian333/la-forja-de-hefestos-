@@ -972,7 +972,7 @@ function QuasarSED() {
     };
   }, [audioOn]);
 
-  // Update audio channel intensities when logNu or data changes
+  // Update audio channel intensities + spectrum scanner pitch when logNu or data changes
   useEffect(() => {
     if (!audioRef.current || !data) return;
     for (let c = 0; c < data.N_C; c++) {
@@ -984,6 +984,7 @@ function QuasarSED() {
       }
       audioRef.current.setIntensity(c, Math.min(1, max * 5));
     }
+    audioRef.current.setLogNu(logNu);
   }, [data, logNu]);
 
   // Generate particles ONCE (heavy: ~38k)
