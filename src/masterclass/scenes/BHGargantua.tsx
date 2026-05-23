@@ -1,3 +1,4 @@
+import { memo } from 'react';
 /**
  * BHGargantua — homenaje al frame icónico de Interstellar usando raytracing
  * real de geodésicas. Las cejas superior e inferior NO son anillos pegados:
@@ -13,7 +14,7 @@ import { OrbitControls } from '@react-three/drei';
 import BHRaytraced from '@/labs/components/BHRaytraced';
 import { makeRenderer } from '@/lib/webgl-fallback';
 
-export default function BHGargantua() {
+function BHGargantua() {
   return (
     <div className="w-full h-full relative" style={{ background: '#000' }}>
       <Canvas
@@ -53,3 +54,5 @@ export default function BHGargantua() {
     </div>
   );
 }
+
+export default memo(BHGargantua);

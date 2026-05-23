@@ -5,7 +5,7 @@
  * que evidencian el "arrastre" — la ergosfera achatada por el spin.
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -219,7 +219,7 @@ function makeRing(r: number, n: number): Float32Array {
   return arr;
 }
 
-export default function BHKerr() {
+function BHKerr() {
   return (
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #18081A 0%, #05060A 85%)',
@@ -242,3 +242,5 @@ export default function BHKerr() {
     </div>
   );
 }
+
+export default memo(BHKerr);

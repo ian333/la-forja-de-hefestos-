@@ -11,7 +11,7 @@
  * El loop dura ~12s para que se vea claro: inspiral, merger, ringdown.
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -230,7 +230,7 @@ function MergerScene() {
   );
 }
 
-export default function BHMerger() {
+function BHMerger() {
   return (
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F0628 0%, #05060A 80%)',
@@ -255,3 +255,5 @@ export default function BHMerger() {
     </div>
   );
 }
+
+export default memo(BHMerger);

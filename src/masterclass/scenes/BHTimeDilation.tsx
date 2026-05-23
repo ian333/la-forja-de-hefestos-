@@ -5,7 +5,7 @@
  * 1 h en el planeta = 7 años fuera.
  */
 
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -58,7 +58,7 @@ function TimeScene() {
   );
 }
 
-export default function BHTimeDilation() {
+function BHTimeDilation() {
   return (
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F1B2C 0%, #05060A 85%)',
@@ -93,3 +93,5 @@ export default function BHTimeDilation() {
     </div>
   );
 }
+
+export default memo(BHTimeDilation);

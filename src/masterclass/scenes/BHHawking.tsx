@@ -6,7 +6,7 @@
  * colores complementarios (par-anti-par).
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -87,7 +87,7 @@ function HawkingScene() {
   );
 }
 
-export default function BHHawking() {
+function BHHawking() {
   return (
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0F0E22 0%, #05060A 85%)',
@@ -110,3 +110,5 @@ export default function BHHawking() {
     </div>
   );
 }
+
+export default memo(BHHawking);

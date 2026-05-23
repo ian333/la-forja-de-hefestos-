@@ -3,7 +3,7 @@
  * Solo un punto luminoso pulsando con halos, fondo oscuro radial.
  */
 
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import * as THREE from 'three';
@@ -36,7 +36,7 @@ function Pulse() {
   );
 }
 
-export default function Void() {
+function Void() {
   return (
     <div className="w-full h-full" style={{
       background: 'radial-gradient(ellipse at center, #14111A 0%, #05060A 80%)',
@@ -49,3 +49,5 @@ export default function Void() {
     </div>
   );
 }
+
+export default memo(Void);

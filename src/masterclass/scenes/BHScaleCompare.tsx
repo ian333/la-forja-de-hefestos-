@@ -3,7 +3,7 @@
  * Etiquetas en HTML overlay (drei <Text> dispara el crash de EffectComposer).
  */
 
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -51,7 +51,7 @@ function Scene() {
   );
 }
 
-export default function BHScaleCompare() {
+function BHScaleCompare() {
   return (
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #0B0F17 0%, #05060A 85%)',
@@ -89,3 +89,5 @@ export default function BHScaleCompare() {
     </div>
   );
 }
+
+export default memo(BHScaleCompare);

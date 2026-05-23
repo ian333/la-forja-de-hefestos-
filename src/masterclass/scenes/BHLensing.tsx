@@ -1,3 +1,4 @@
+import { memo } from 'react';
 /**
  * BHLensing — agujero negro SIN disco, sólo para mostrar el lensing del fondo
  * de estrellas. Cada estrella detrás del BH genera una imagen replicada en
@@ -9,7 +10,7 @@ import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
 import BHRaytraced from '@/labs/components/BHRaytraced';
 
-export default function BHLensing() {
+function BHLensing() {
   return (
     <div className="w-full h-full relative" style={{ background: '#000' }}>
       <Canvas
@@ -44,3 +45,5 @@ export default function BHLensing() {
     </div>
   );
 }
+
+export default memo(BHLensing);

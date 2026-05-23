@@ -4,7 +4,7 @@
  * geodésicas radiales — los pies aceleran más que la cabeza.
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -101,7 +101,7 @@ function RadialField() {
   );
 }
 
-export default function BHTidal() {
+function BHTidal() {
   return (
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #1A0F08 0%, #05060A 85%)',
@@ -127,3 +127,5 @@ export default function BHTidal() {
     </div>
   );
 }
+
+export default memo(BHTidal);

@@ -7,7 +7,7 @@
  * La cámara orbita lento para mostrar la profundidad del pozo.
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -205,7 +205,7 @@ function makeRingPoints(r: number, n: number) {
   return arr;
 }
 
-export default function BHWell() {
+function BHWell() {
   return (
     <div className="w-full h-full" style={{
       background: 'radial-gradient(ellipse at center, #1B0F20 0%, #05060A 85%)',
@@ -227,3 +227,5 @@ export default function BHWell() {
     </div>
   );
 }
+
+export default memo(BHWell);

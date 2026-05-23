@@ -7,7 +7,7 @@
  * evidenciar la órbita inestable.
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, memo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
@@ -78,7 +78,7 @@ function PhotonScene() {
   );
 }
 
-export default function BHPhotonSphere() {
+function BHPhotonSphere() {
   return (
     <div className="w-full h-full relative" style={{
       background: 'radial-gradient(ellipse at center, #1F0F12 0%, #05060A 85%)',
@@ -99,3 +99,5 @@ export default function BHPhotonSphere() {
     </div>
   );
 }
+
+export default memo(BHPhotonSphere);

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 /**
  * BHDisk — disco de acreción visto con inclinación oblicua, raytracing real.
  * El Doppler beaming surge automáticamente: el lado que se acerca al
@@ -9,7 +10,7 @@ import { makeRenderer } from '@/lib/webgl-fallback';
 import { OrbitControls } from '@react-three/drei';
 import BHRaytraced from '@/labs/components/BHRaytraced';
 
-export default function BHDisk() {
+function BHDisk() {
   return (
     <div className="w-full h-full relative" style={{
       background: '#000',
@@ -45,3 +46,5 @@ export default function BHDisk() {
     </div>
   );
 }
+
+export default memo(BHDisk);
