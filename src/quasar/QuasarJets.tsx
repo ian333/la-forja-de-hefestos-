@@ -97,30 +97,15 @@ function Jet({
   color: string;
   brightnessScale: number;
 }) {
-  const matRef = useRef<THREE.ShaderMaterial>(null);
-
   const geom = useMemo(() => {
     const pts = helixPoints(axisDir, origin, length, baseRadius, openingAngle, turns, 200);
     const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-    // Tube radius decae con la distancia (plasma cooling/expanding)
     return new THREE.TubeGeometry(curve, 220, baseRadius * 0.45, 14, false);
   }, [axisDir, origin, length, baseRadius, openingAngle, turns]);
 
-  // Boost de brillo por Doppler, aplicado uniformly al jet (aprox para el rendering).
-  // En realidad varía pixel-a-pixel por el ángulo local, pero para AGN típicos
-  // con jets bien colimados y γ alto, el ángulo varía poco a lo largo del jet.
+  // Boost de brillo por Doppler aplicado a la opacidad del jet entero.
+  // Approaching jet: D≈2γ → boost^3.5 enorme. Counter-jet: D<<1 → casi invisible.
   const boost = useMemo(() => dopplerBoost(gamma, losAngle), [gamma, losAngle]);
-
-  useFrame(({ clock }) => {
-    if (matRef.current) {
-      matRef.current.uniforms.uTime.value = clock.elapsedTime;
-    }
-  });
-
-  const colorVec = useMemo(() => {
-    const c = new THREE.Color(color);
-    return new THREE.Vector3(c.r, c.g, c.b);
-  }, [color]);
 
   return (
     <mesh geometry={geom} renderOrder={10}>

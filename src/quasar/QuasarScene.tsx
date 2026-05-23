@@ -63,12 +63,6 @@ export default function QuasarScene() {
           helixTurns={5}
         />
 
-        {/* DEBUG: cone rojo en la pos del jet para confirmar pipeline */}
-        <mesh position={[0, 10, 0]} rotation={[0, 0, 0]} renderOrder={20}>
-          <coneGeometry args={[3, 20, 16]} />
-          <meshBasicMaterial color="#FF0000" transparent opacity={0.9} depthTest={false} />
-        </mesh>
-
         {/* Postprocessing: bloom intenso para el plasma sincrotrón.
             Sin esto los jets se ven dim — el bloom es esencial. */}
         <EffectComposer multisampling={0}>
