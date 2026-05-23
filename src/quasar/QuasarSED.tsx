@@ -312,22 +312,34 @@ function buildBField(): BFieldData {
   const linePaths   = new Float32Array(N_LINES * N_PTS * 3);
   const footPositions = new Float32Array(N_LINES_BASE * 3);  // foot único por par bipolar
 
-  // Frame-dragging: spin retuerce el campo azimutalmente. Calibrado visualmente
-  // para spin a*=0.95 → Ω_drag ≈ 0.5 rad/world-unit cerca de la base, decae lejos
-  const omega_drag_base = 0.55;          // rad/world_z near disk
-  const omega_decay = 5.0;                // characteristic z scale of decay
+  // Frame-dragging: spin retuerce el campo azimutalmente. Calibrado para
+  // que el twist sea VISIBLE cerca del disco pero NO domine el look entero
+  // (antes 0.55 + decay 5 → reloj de arena, demasiado uniforme).
+  // Ahora: twist suave cerca de la base, líneas casi rectas en el campo lejano.
+  const omega_drag_base = 0.18;          // rad/world_z (3× menos)
+  const omega_decay = 2.0;                // decae más rápido (cuasi-asíntota libre)
+
+  // Hash determinista por línea para jitter reproducible (no Math.random
+  // porque queremos el mismo "look" en cada deploy)
+  const jitter = (li: number, axis: number) => {
+    const h = (li * 374761393 + axis * 668265263) >>> 0;
+    return ((h * 1103515245 + 12345) >>> 0) / 0xFFFFFFFF - 0.5;     // ∈ [-0.5, 0.5]
+  };
 
   for (let li = 0; li < N_LINES; li++) {
     const base = li % N_LINES_BASE;
     const side = (li < N_LINES_BASE) ? 1 : -1;     // primera mitad sube, segunda baja
     const phi0 = (base / N_LINES_BASE) * Math.PI * 2 + (base % 3) * 0.13;
     const radialLayer = Math.floor(base / 8);      // 5 capas × 8 lines = 40 base
-    // R_foot interpretado como log_r (world units = log_r + 0.4 en disk coords)
-    const R_foot_logR = 0.5 + 0.32 * radialLayer;  // log_r ∈ [0.5, 1.78]
-    const R_foot_world = R_foot_logR + 0.3;        // → world ∈ [0.8, 2.08]
+    const R_foot_logR = 0.5 + 0.32 * radialLayer + jitter(base, 0) * 0.12;
+    const R_foot_world = R_foot_logR + 0.3;
+
+    // Jitter per-line para romper uniformidad (current sheets reales son caóticas)
+    const line_twist_mult = 0.75 + jitter(base, 1) * 0.5;    // 0.50–1.00 × base
+    const line_R_mult     = 0.85 + jitter(base, 2) * 0.3;    // 0.70–1.00 × base
+    const line_phase_offset = jitter(base, 3) * 0.4;          // sutil shift en phi
 
     if (li < N_LINES_BASE) {
-      // Solo footpoint para la mitad up (compartido con down)
       footPositions[base * 3 + 0] = R_foot_world * Math.cos(phi0);
       footPositions[base * 3 + 1] = 0;
       footPositions[base * 3 + 2] = R_foot_world * Math.sin(phi0);
@@ -335,21 +347,15 @@ function buildBField(): BFieldData {
 
     for (let i = 0; i < N_PTS; i++) {
       const t = i / (N_PTS - 1);
-      // z grows linearly to z_max=7 (world units = log_r physical from disk to ~10⁷ r_g)
       const z_max_world = 7.0;
       const z_abs = 0.04 + (z_max_world - 0.04) * Math.pow(t, 1.0);
       const z_world = side * z_abs;
 
-      // R grows SLOWLY (sub-linear) → jet visualmente narrow, no abanico.
-      // Calibrado para que z/R ratio en el top ≈ 3-4 (jet look correcto).
-      // Conserva el espíritu McKinney-Narayan (collimation parabólica) sin
-      // explotar visualmente por el coord-mapping mismatch.
-      const R_world = R_foot_world + 0.22 * Math.pow(z_abs, 0.7);
+      const R_world = R_foot_world + 0.22 * line_R_mult * Math.pow(z_abs, 0.7);
 
-      // Frame-dragging twist: phi azimuthal crece con z (más cerca del horizonte,
-      // más twist; decae al alejarse). Helix cónico realista.
-      const twist = omega_drag_base * z_abs * Math.exp(-z_abs / omega_decay);
-      const phi = phi0 + side * twist;
+      // Twist suavizado: solo notable cerca del disco, decae rápido al campo lejano
+      const twist = omega_drag_base * line_twist_mult * z_abs * Math.exp(-z_abs / omega_decay);
+      const phi = phi0 + line_phase_offset + side * twist;
 
       linePaths[(li * N_PTS + i) * 3 + 0] = R_world * Math.cos(phi);
       linePaths[(li * N_PTS + i) * 3 + 1] = z_world;
