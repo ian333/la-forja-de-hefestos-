@@ -23,6 +23,7 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { makeRenderer } from '@/lib/webgl-fallback';
+import { createSedAudio, type SedAudioConfig } from './quasar-sed-audio';
 
 interface SEDData {
   N_NU: number;
@@ -861,7 +862,13 @@ function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; set
 }
 
 // ── Legend ────────────────────────────────────────────────────────────
-function Legend({ showB, setShowB }: { showB: boolean; setShowB: (b: boolean) => void }) {
+function Legend({
+  showB, setShowB, audioOn, setAudioOn, onGWChirp,
+}: {
+  showB: boolean; setShowB: (b: boolean) => void;
+  audioOn: boolean; setAudioOn: (b: boolean) => void;
+  onGWChirp: () => void;
+}) {
   return (
     <div className="absolute top-6 right-6 bg-black/65 border border-[#334155] rounded p-2 font-mono text-[10px] backdrop-blur-sm">
       <div className="text-[#94A3B8] mb-1.5 text-[9px] uppercase tracking-wider">componentes</div>
@@ -886,6 +893,30 @@ function Legend({ showB, setShowB }: { showB: boolean; setShowB: (b: boolean) =>
           líneas de campo + plasma streaming. brilla en banda radio (sincrotrón).
         </div>
       </div>
+      <div className="mt-2 pt-2 border-t border-[#334155]">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={audioOn}
+            onChange={(e) => setAudioOn(e.target.checked)}
+            className="accent-[#FFD46B]"
+          />
+          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: '#FFD46B', boxShadow: '0 0 8px #FFD46B' }} />
+          <span style={{ color: '#FFD46B' }}>audio · sonificación SED</span>
+        </label>
+        <div className="text-[#475569] text-[9px] mt-1 leading-tight max-w-[180px]">
+          cada componente físico es un timbre. volumen = emisión a la ν actual.
+          knot bursts cada 1.6s = kick drum sub-bass.
+        </div>
+        <button
+          onClick={onGWChirp}
+          disabled={!audioOn}
+          className="mt-2 w-full px-2 py-1 border border-[#9F7FFF] text-[#9F7FFF] hover:bg-[#9F7FFF]/15 disabled:opacity-30 disabled:cursor-not-allowed rounded text-[10px]"
+          title="GW150914-like binary BH merger chirp: 30 Hz → 250 Hz inspiral + 220 Hz ringdown"
+        >
+          ⚡ GW chirp (binary BH merger)
+        </button>
+      </div>
     </div>
   );
 }
@@ -909,11 +940,51 @@ function QuasarSED() {
   const [data, setData] = useState<SEDData | null>(null);
   const [logNu, setLogNu] = useState(15.2);
   const [showB, setShowB] = useState(true);
+  const [audioOn, setAudioOn] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const audioRef = useRef<SedAudioConfig | null>(null);
+  const knotTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     loadSED().then(setData).catch(e => setErr(String(e)));
   }, []);
+
+  // Initialize / destroy audio when toggled
+  useEffect(() => {
+    if (audioOn && !audioRef.current) {
+      try {
+        audioRef.current = createSedAudio();
+        // Trigger knot burst kick every 1.6s (matches the visual burst interval)
+        const tick = () => {
+          if (audioRef.current) audioRef.current.triggerKnotBurst();
+        };
+        knotTimerRef.current = window.setInterval(tick, 1600);
+      } catch (e) { console.error('audio init fail', e); }
+    } else if (!audioOn && audioRef.current) {
+      if (knotTimerRef.current) { clearInterval(knotTimerRef.current); knotTimerRef.current = null; }
+      audioRef.current.destroy();
+      audioRef.current = null;
+    }
+    return () => {
+      if (knotTimerRef.current) clearInterval(knotTimerRef.current);
+      audioRef.current?.destroy();
+      audioRef.current = null;
+    };
+  }, [audioOn]);
+
+  // Update audio channel intensities when logNu or data changes
+  useEffect(() => {
+    if (!audioRef.current || !data) return;
+    for (let c = 0; c < data.N_C; c++) {
+      let max = 0;
+      for (let ir = 0; ir < data.N_R; ir++) {
+        const logR = data.logRMin + ir * (data.logRMax - data.logRMin) / (data.N_R - 1);
+        const v = lookup(data, c, logNu, logR);
+        if (v > max) max = v;
+      }
+      audioRef.current.setIntensity(c, Math.min(1, max * 5));
+    }
+  }, [data, logNu]);
 
   // Generate particles ONCE (heavy: ~38k)
   const particles = useMemo(() => buildParticles(), []);
@@ -955,7 +1026,11 @@ function QuasarSED() {
         </div>
       </div>
 
-      <Legend showB={showB} setShowB={setShowB} />
+      <Legend
+        showB={showB} setShowB={setShowB}
+        audioOn={audioOn} setAudioOn={setAudioOn}
+        onGWChirp={() => audioRef.current?.triggerGWChirp()}
+      />
       <SEDGraph data={data} logNu={logNu} setLogNu={setLogNu} />
     </div>
   );
