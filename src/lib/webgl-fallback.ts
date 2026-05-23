@@ -49,29 +49,41 @@ export function makeRenderer(attrs: GLAttrs = {}) {
       failIfMajorPerformanceCaveat: false,
     };
 
-    let ctx: WebGL2RenderingContext | WebGLRenderingContext | null = null;
+    let ctx: WebGL2RenderingContext | null = null;
     let version = 'none';
+    let attemptDetail = '';
 
-    // WebGL2 primero
-    try {
-      ctx = canvas.getContext('webgl2', ctxAttrs);
-      if (ctx) version = 'webgl2';
-    } catch (_) { /* sigue */ }
+    // Three.js r163+ requiere WebGL2 estrictamente. Intentamos varios sets
+    // de attributes — algunas combinaciones (típicamente powerPreference)
+    // pueden hacer fallar getContext con ciertos drivers/browsers.
+    const attempts: Array<[string, WebGLContextAttributes]> = [
+      ['full',          ctxAttrs],
+      ['no-power',      { ...ctxAttrs, powerPreference: 'default' }],
+      ['low-power',     { ...ctxAttrs, powerPreference: 'low-power' }],
+      ['minimal',       { failIfMajorPerformanceCaveat: false }],
+      ['no-attrs',      {}],
+    ];
 
-    // Fallback WebGL1
-    if (!ctx) {
+    for (const [name, attrs] of attempts) {
       try {
-        ctx = canvas.getContext('webgl', ctxAttrs);
-        if (ctx) version = 'webgl';
+        const candidate = canvas.getContext('webgl2', attrs) as WebGL2RenderingContext | null;
+        if (candidate) {
+          ctx = candidate;
+          version = 'webgl2';
+          attemptDetail = name;
+          break;
+        }
       } catch (_) { /* sigue */ }
     }
 
-    // Last resort
+    // Si WebGL2 falló todo, probamos WebGL1 para diagnóstico — Three.js lo
+    // rechazará pero al menos sabemos que ESA GPU sí da WebGL1.
+    let webgl1Available = false;
     if (!ctx) {
       try {
-        ctx = canvas.getContext('experimental-webgl', ctxAttrs) as WebGLRenderingContext;
-        if (ctx) version = 'experimental-webgl';
-      } catch (_) { /* sigue */ }
+        const w1 = canvas.getContext('webgl');
+        if (w1) webgl1Available = true;
+      } catch (_) { /* ignore */ }
     }
 
     // Reportar una vez por sesión qué versión usamos
@@ -79,14 +91,29 @@ export function makeRenderer(attrs: GLAttrs = {}) {
       reportedVersion = version;
       try {
         const tele = (window as { telemetry?: { event: (t: string, d: object) => void } }).telemetry;
-        tele?.event('renderer_init', { version, attrs: ctxAttrs });
+        tele?.event('renderer_init', {
+          version, attempt: attemptDetail, webgl1_available: webgl1Available,
+        });
       } catch (_) { /* ignore */ }
     }
 
     if (!ctx) {
-      // Sin contexto — Three.js lanzará el mismo error pero al menos
-      // intentamos. R3F maneja el throw con su error boundary.
-      throw new Error('webgl-fallback: no WebGL/WebGL2/experimental-webgl context');
+      // Pintamos un mensaje claro encima del canvas para que el usuario sepa
+      // exactamente qué pasa (no se queda en negro silencioso).
+      try {
+        const msg = webgl1Available
+          ? 'Tu browser solo da WebGL1. Three.js requiere WebGL2.\nHabilita aceleración de hardware en chrome://settings/system y verifica chrome://gpu.'
+          : 'Tu browser no soporta WebGL. Verifica chrome://gpu y la aceleración de hardware.';
+        const wrap = canvas.parentElement;
+        if (wrap && !wrap.querySelector('.webgl-error-overlay')) {
+          const div = document.createElement('div');
+          div.className = 'webgl-error-overlay';
+          div.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fbbf24;background:#0a0e1a;text-align:center;padding:32px;font-family:ui-monospace,monospace;font-size:13px;line-height:1.5;white-space:pre-line;z-index:100';
+          div.textContent = msg;
+          wrap.appendChild(div);
+        }
+      } catch (_) { /* ignore */ }
+      throw new Error(`webgl-fallback: WebGL2 unavailable (webgl1=${webgl1Available})`);
     }
 
     return new THREE.WebGLRenderer({
