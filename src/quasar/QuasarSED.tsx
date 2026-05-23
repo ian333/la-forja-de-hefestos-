@@ -820,17 +820,63 @@ function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; set
   else if (wavelength_m > 1e-9)       wavestr = `λ ${(wavelength_m*1e9).toFixed(0)} nm`;
   else                                wavestr = `λ ${(wavelength_m*1e10).toExponential(1)} Å`;
 
+  // Band descriptors — qué pasa físicamente en cada banda + qué se observa
+  const bandInfo = (lν: number): { name: string; what: string } => {
+    if (lν < 10)        return { name: 'Radio',    what: 'sincrotrón del jet (VLBA, ALMA observan aquí)' };
+    if (lν < 13)        return { name: 'Sub-mm',   what: 'polvo frío del torus + sincrotrón self-absorbed' };
+    if (lν < 14.5)      return { name: 'Infrarrojo',what: 'polvo caliente del torus (sublimación 1500 K)' };
+    if (lν < 15.7)      return { name: 'Óptico',   what: 'disco S-S Big Blue Bump + líneas BLR (Hα, Hβ)' };
+    if (lν < 16.5)      return { name: 'UV',       what: 'pico del disco (~10⁵ K) + Lyα BLR' };
+    if (lν < 17.5)      return { name: 'Soft X',   what: 'corona warm + reflection ionizado' };
+    if (lν < 20)        return { name: 'Hard X',   what: 'corona Compton + Fe-Kα + Compton hump 30 keV' };
+    return                     { name: 'Gamma',    what: 'jet IC (SSC + EC) — Fermi-LAT, HESS observan aquí' };
+  };
+  const cur = bandInfo(logNu);
+
+  // Gradient de color real del espectro EM (mapeo educacional, no físico)
+  // bajo el slider para que sea OBVIO qué estás moviendo
+  const spectrumGradient =
+    'linear-gradient(to right, ' +
+    '#5D2A7A 0%, '       +     // radio violeta-oscuro
+    '#7B3FB3 8%, '       +     // sub-mm
+    '#B53E6F 22%, '      +     // far-IR
+    '#FF6F4A 39%, '      +     // mid-IR / near-IR
+    '#FFB845 47%, '      +     // óptico amarillo
+    '#FFE680 51%, '      +     // óptico
+    '#A8E5FF 60%, '      +     // UV
+    '#5B9DFF 70%, '      +     // soft X
+    '#4870D9 82%, '      +     // hard X
+    '#7A3FE0 95%, '      +     // gamma
+    '#FFFFFF 100%)';            // gamma alto
+
   return (
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/75 border border-[#334155] rounded p-3 font-mono backdrop-blur-sm">
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/85 border border-[#334155] rounded-lg p-4 font-mono backdrop-blur-sm shadow-2xl" style={{ width: w + 24 }}>
+      {/* Header: qué se está viendo + por qué */}
+      <div className="flex items-baseline justify-between mb-2.5">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-[#64748B]">arrastra el slider · barre el espectro</div>
+          <div className="text-[16px] font-semibold mt-0.5">
+            <span style={{ color: COMP_COLOR_HEX[dominant] }}>{cur.name}</span>
+            <span className="text-[#475569] text-[11px] ml-2">· {wavestr} · {nu_now.toExponential(1)} Hz</span>
+          </div>
+          <div className="text-[11px] text-[#94A3B8] mt-0.5">{cur.what}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-[9px] uppercase tracking-wider text-[#64748B]">dominante</div>
+          <div className="text-[13px] font-semibold" style={{ color: COMP_COLOR_HEX[dominant] }}>
+            {COMP_LABELS[dominant]}
+          </div>
+        </div>
+      </div>
+
+      {/* SED curve graph */}
       <svg width={w} height={h} style={{ display: 'block' }}>
-        {/* Band labels + grid */}
         {bandLabels.map(b => (
           <g key={b.lν}>
             <line x1={x(b.lν)} y1={padY} x2={x(b.lν)} y2={h - padY} stroke="#1e293b" strokeWidth={1} />
             <text x={x(b.lν)} y={h - 2} fontSize={9} fill="#64748b" textAnchor="middle">{b.label}</text>
           </g>
         ))}
-        {/* Curves */}
         {curves.map((c, i) => (
           <polyline
             key={c.name}
@@ -841,21 +887,25 @@ function SEDGraph({ data, logNu, setLogNu }: { data: SEDData; logNu: number; set
             points={c.points.map(p => `${x(p.x)},${y(p.y)}`).join(' ')}
           />
         ))}
-        {/* Current ν vertical line */}
-        <line x1={x(logNu)} y1={padY} x2={x(logNu)} y2={h - padY} stroke="#FFE5A0" strokeWidth={1.5} />
+        <line x1={x(logNu)} y1={padY} x2={x(logNu)} y2={h - padY} stroke="#FFE5A0" strokeWidth={1.8} />
       </svg>
-      <div className="flex items-center gap-3 mt-1 text-[10px] text-[#94A3B8]">
-        <span>log ν = <span className="text-[#FFE5A0]">{logNu.toFixed(2)}</span> · ν = {nu_now.toExponential(1)} Hz · {wavestr}</span>
+
+      {/* Spectrum bar (gradient) + slider directly above */}
+      <div className="relative mt-2" style={{ height: 28 }}>
+        <div
+          className="absolute inset-x-0 top-3 h-3 rounded-full pointer-events-none"
+          style={{ background: spectrumGradient, opacity: 0.85 }}
+        />
         <input
           type="range"
           min={data.logNuMin}
           max={data.logNuMax}
-          step={0.05}
+          step={0.01}
           value={logNu}
           onChange={(e) => setLogNu(parseFloat(e.target.value))}
-          className="flex-1 accent-[#FFE5A0]"
+          className="absolute inset-x-0 top-0 w-full h-7 appearance-none bg-transparent accent-[#FFE5A0] cursor-pointer"
+          style={{ WebkitAppearance: 'none' }}
         />
-        <span>dominante: <span style={{color: COMP_COLOR_HEX[dominant]}}>{COMP_LABELS[dominant]}</span></span>
       </div>
     </div>
   );
