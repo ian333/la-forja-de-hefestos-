@@ -999,28 +999,37 @@ function QuasarSED() {
     loadSED().then(setData).catch(e => setErr(String(e)));
   }, []);
 
-  // Initialize / destroy audio when toggled
-  useEffect(() => {
-    if (audioOn && !audioRef.current) {
+  // Toggle audio. Init/destroy synchronous en el click handler para que
+  // el browser cuente como user gesture (Web Audio policy).
+  const toggleAudio = (on: boolean) => {
+    if (on && !audioRef.current) {
       try {
         audioRef.current = createSedAudio();
-        // Trigger knot burst kick every 1.6s (matches the visual burst interval)
+        // Re-call resume defensively (some browsers requieren múltiple)
+        if (audioRef.current.ctx.state === 'suspended') {
+          audioRef.current.ctx.resume().catch(() => { /* ignore */ });
+        }
         const tick = () => {
           if (audioRef.current) audioRef.current.triggerKnotBurst();
         };
         knotTimerRef.current = window.setInterval(tick, 1600);
       } catch (e) { console.error('audio init fail', e); }
-    } else if (!audioOn && audioRef.current) {
+    } else if (!on && audioRef.current) {
       if (knotTimerRef.current) { clearInterval(knotTimerRef.current); knotTimerRef.current = null; }
       audioRef.current.destroy();
       audioRef.current = null;
     }
+    setAudioOn(on);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (knotTimerRef.current) clearInterval(knotTimerRef.current);
       audioRef.current?.destroy();
       audioRef.current = null;
     };
-  }, [audioOn]);
+  }, []);
 
   // Update audio channel intensities + spectrum scanner pitch when logNu or data changes
   useEffect(() => {
@@ -1079,7 +1088,7 @@ function QuasarSED() {
 
       <Legend
         showB={showB} setShowB={setShowB}
-        audioOn={audioOn} setAudioOn={setAudioOn}
+        audioOn={audioOn} setAudioOn={toggleAudio}
         onGWChirp={() => audioRef.current?.triggerGWChirp()}
       />
       <SEDGraph data={data} logNu={logNu} setLogNu={setLogNu} />

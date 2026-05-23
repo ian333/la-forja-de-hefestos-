@@ -51,6 +51,12 @@ const HZ = {
 
 export function createSedAudio(): SedAudioConfig {
   const ctx = new (window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!)();
+  // CRÍTICO: resume explícito. AudioContext creado fuera de click handler
+  // directo arranca en 'suspended'. Sin esto el próximo click "lo despierta"
+  // de golpe con todos los osciladores ya corriendo → hitch visible como freeze.
+  if (ctx.state === 'suspended') {
+    ctx.resume().catch(() => { /* user gesture requirement, retry on next interaction */ });
+  }
   const master = ctx.createGain();
   master.gain.value = 0.32;
   master.connect(ctx.destination);
