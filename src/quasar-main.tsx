@@ -16,12 +16,13 @@ import QuasarZoom from './quasar/QuasarZoom';
 import QuasarKerr from './quasar/QuasarKerr';
 import QuasarBZ from './quasar/QuasarBZ';
 import QuasarSED from './quasar/QuasarSED';
+import QuasarPulsar from './quasar/QuasarPulsar';
 
-type Look = 'eht' | 'm87' | 'hercules' | 'zoom' | 'kerr' | 'bz' | 'sed';
+type Look = 'eht' | 'm87' | 'hercules' | 'zoom' | 'kerr' | 'bz' | 'sed' | 'pulsar';
 function readLook(): Look {
   if (typeof window === 'undefined') return 'eht';
   const p = new URLSearchParams(window.location.search).get('look');
-  if (p === 'm87' || p === 'hercules' || p === 'zoom' || p === 'kerr' || p === 'bz' || p === 'sed') return p;
+  if (p === 'm87' || p === 'hercules' || p === 'zoom' || p === 'kerr' || p === 'bz' || p === 'sed' || p === 'pulsar') return p;
   return 'eht';
 }
 
@@ -33,6 +34,7 @@ const Scene =
   look === 'kerr' ? QuasarKerr :
   look === 'bz' ? QuasarBZ :
   look === 'sed' ? QuasarSED :
+  look === 'pulsar' ? QuasarPulsar :
   QuasarEHT;
 
 function Chrome() {
@@ -44,6 +46,7 @@ function Chrome() {
     { k: 'kerr', label: 'Kerr' },
     { k: 'bz', label: 'BZ precomp' },
     { k: 'sed', label: 'SED 𝔄' },
+    { k: 'pulsar', label: 'Pulsar' },
   ];
   return (
     <div className="absolute top-6 right-6 flex gap-3 text-[11px] font-mono">

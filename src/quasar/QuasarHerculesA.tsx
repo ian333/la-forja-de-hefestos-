@@ -391,7 +391,13 @@ function PlasmaSimulation() {
       state.ages[i] += clampDt;
       const { inJet, modeIdx, modeAbs } = stepIntegrate(p, clampDt, ctx);
 
-      if (p.length() > JET_LENGTH + 18 || state.ages[i] > 220) {
+      // Respawn conditions:
+      //  - escapó el lobe terminus (length > LIMIT)
+      //  - vieja (age > 35s — antes 220s era exceso, dejaba al jet sin nuevas)
+      //  - estancada en outside region (speed casi 0 → reciclar ya)
+      const speedNow = _k1.length();
+      const dist = p.length();
+      if (dist > JET_LENGTH + 18 || state.ages[i] > 35 || (state.ages[i] > 2 && speedNow < 0.02)) {
         spawnParticle(p);
         state.ages[i] = 0;
       }
@@ -446,62 +452,64 @@ function AGNCore() {
   );
 }
 
-/* ─── CocoonShocks — los dos pares de shock fronts observados por Chandra.
- *  Renderizados como anillos de partículas brillantes en las posiciones
- *  medidas. Color naranja-rojo (sincrotrón comprimido shock-heated).
- *  Densidad ∝ Mach number → frente E-W (Mach 1.9) más brillante que N-S (1.65).
+/* ─── CocoonShocks — dos pares de shock fronts observados por Chandra 2024.
+ *  Anillo N-S perpendicular al jet axis a r=150 kpc (Mach 1.65).
+ *  Discos E-W a lo largo del jet axis a r=280 kpc (Mach 1.90).
+ *  Renderizado con InstancedMesh + sphereGeometry — los <points> con
+ *  sizeAttenuation se ven como cuadrados pixelados.
  */
+const N_NS = 600;
+const N_EW = 400;
 function CocoonShocks() {
-  // Anillo N-S: en plano perpendicular al jet axis (XZ plane), radio = 41.25 wu
-  // Anillo E-W: a lo largo del jet axis, dos discos a y = ±77 wu, radio = 12 wu
-  const N_NS = 600;
-  const N_EW = 400;
+  const nsRef = useRef<THREE.InstancedMesh>(null);
+  const ewRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  const nsPositions = useMemo(() => {
-    const pos = new Float32Array(N_NS * 3);
+  // Populate one time on first frame (refs available)
+  const populated = useRef(false);
+  useFrame(() => {
+    if (populated.current || !nsRef.current || !ewRef.current) return;
+    // N-S ring: perpendicular al jet axis, en plano XZ con espesor pequeño en Y
     for (let i = 0; i < N_NS; i++) {
       const theta = (i / N_NS) * 2 * Math.PI;
-      const jitter = 0.85 + Math.random() * 0.30;        // jitter radial ±15%
-      const r = SHOCK_NS_WU * jitter;
-      pos[i * 3]     = r * Math.cos(theta);
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 4;        // thin ring (Mach-discontinuity ~4 wu thick)
-      pos[i * 3 + 2] = r * Math.sin(theta);
+      const radJitter = 0.92 + Math.sin(i * 17.3) * 0.08;
+      const r = SHOCK_NS_WU * radJitter;
+      dummy.position.set(r * Math.cos(theta), Math.sin(i * 7.13) * 2.0, r * Math.sin(theta));
+      dummy.scale.setScalar(0.45 + (Math.sin(i * 3.7) * 0.5 + 0.5) * 0.20);
+      dummy.updateMatrix();
+      nsRef.current.setMatrixAt(i, dummy.matrix);
     }
-    return pos;
-  }, []);
-
-  const ewPositions = useMemo(() => {
-    const pos = new Float32Array(N_EW * 3);
+    nsRef.current.instanceMatrix.needsUpdate = true;
+    // E-W discs: dos arcos a y = ± SHOCK_EW_WU, perpendiculares al jet axis
     for (let i = 0; i < N_EW; i++) {
       const side = i < N_EW / 2 ? 1 : -1;
-      const theta = (i / (N_EW / 2)) * 2 * Math.PI;
-      const jitter = 0.85 + Math.random() * 0.30;
-      const r = 12 * jitter;
-      pos[i * 3]     = r * Math.cos(theta);
-      pos[i * 3 + 1] = side * SHOCK_EW_WU * (0.92 + Math.random() * 0.16);
-      pos[i * 3 + 2] = r * Math.sin(theta);
+      const theta = ((i % (N_EW / 2)) / (N_EW / 2)) * 2 * Math.PI;
+      const r = 14 * (0.85 + (Math.sin(i * 11.7) * 0.5 + 0.5) * 0.25);
+      dummy.position.set(
+        r * Math.cos(theta),
+        side * SHOCK_EW_WU * (0.94 + Math.sin(i * 5.3) * 0.06),
+        r * Math.sin(theta),
+      );
+      dummy.scale.setScalar(0.60 + (Math.sin(i * 2.9) * 0.5 + 0.5) * 0.20);
+      dummy.updateMatrix();
+      ewRef.current.setMatrixAt(i, dummy.matrix);
     }
-    return pos;
-  }, []);
+    ewRef.current.instanceMatrix.needsUpdate = true;
+    populated.current = true;
+  });
 
   return (
     <group>
-      <points renderOrder={6}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[nsPositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial color="#FF8050" size={0.45} sizeAttenuation
-          transparent opacity={0.55} depthWrite={false}
-          blending={THREE.AdditiveBlending} toneMapped={false} />
-      </points>
-      <points renderOrder={6}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[ewPositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial color="#FFA060" size={0.50} sizeAttenuation
-          transparent opacity={0.70} depthWrite={false}
-          blending={THREE.AdditiveBlending} toneMapped={false} />
-      </points>
+      <instancedMesh ref={nsRef} args={[undefined, undefined, N_NS]} frustumCulled={false} renderOrder={6}>
+        <sphereGeometry args={[1.0, 8, 8]} />
+        <meshBasicMaterial color="#FF8050" transparent opacity={0.55}
+          depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </instancedMesh>
+      <instancedMesh ref={ewRef} args={[undefined, undefined, N_EW]} frustumCulled={false} renderOrder={6}>
+        <sphereGeometry args={[1.0, 8, 8]} />
+        <meshBasicMaterial color="#FFA060" transparent opacity={0.75}
+          depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </instancedMesh>
     </group>
   );
 }
