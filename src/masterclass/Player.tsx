@@ -144,10 +144,8 @@ export default function Player() {
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [audioMissing, setAudioMissing] = useState(false);
   const [endReached, setEndReached] = useState(false);
-  const [transitioning, setTransitioning] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const fallbackTimerRef = useRef<number | null>(null);
-  const prevSceneIdRef = useRef<string | null>(null);
 
   // Render mode determinista: clock externo controlado por Playwright.
   // En modo normal este controlador no hace nada (enabled=false).
@@ -180,23 +178,6 @@ export default function Player() {
       setIdx(0);
     }
   }, [manifest, started]);
-
-  // Scene transition mask: cuando el sceneId (componente visual) cambia, el
-  // Canvas se desmonta/remonta y compila shaders de nuevo. Ese hueco se nota
-  // como un congelamiento de ~200-800ms. Cubrimos con un overlay negro que
-  // fade-in rápido y fade-out después de que el nuevo Canvas tuvo tiempo de
-  // inicializar.
-  useEffect(() => {
-    if (!manifest) return;
-    const newSceneId = manifest.scenes[idx]?.scene ?? null;
-    const prevSceneId = prevSceneIdRef.current;
-    prevSceneIdRef.current = newSceneId;
-    if (prevSceneId !== null && prevSceneId !== newSceneId) {
-      setTransitioning(true);
-      const timer = window.setTimeout(() => setTransitioning(false), 550);
-      return () => window.clearTimeout(timer);
-    }
-  }, [manifest, idx]);
 
   // Render mode: expose progress to window for Playwright synchronization.
   useEffect(() => {
@@ -321,17 +302,6 @@ export default function Player() {
             audioDurationSec={audioDuration ?? undefined}
           />
         </Suspense>
-        {/* Transition mask — cubre el remount del Canvas WebGL entre escenas */}
-        <div
-          className="absolute inset-0 bg-black pointer-events-none"
-          style={{
-            opacity: transitioning ? 1 : 0,
-            transition: transitioning
-              ? 'opacity 120ms ease-in'
-              : 'opacity 450ms ease-out',
-            zIndex: 5,
-          }}
-        />
         {/* Narrator overlay — flechas + labels + big-numbers sync con audio */}
         <NarratorOverlay
           config={NARRATOR_REGISTRY[manifest.id]?.[scene.id]}
