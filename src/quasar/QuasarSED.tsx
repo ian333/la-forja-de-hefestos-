@@ -639,7 +639,7 @@ function MagneticField({ data, logNu, bField, visible }: {
             uSyncBoost: { value: 0 },
           }}
           vertexShader={`
-            attribute vec3 color;
+            // 'color' attribute is auto-injected por Three cuando vertexColors=true.
             uniform float uSyncBoost;
             varying vec3 vColor;
             varying float vAlpha;
