@@ -728,7 +728,7 @@ function MagneticField({ data, logNu, bField, visible }: {
             varying vec3 vColor;
             varying float vAlpha;
 
-            const float STREAK_DT = 0.085;       // streak length in t-space
+            const float STREAK_DT = 0.20;        // streak length in t-space
             const float BURST_PERIOD = 1.6;      // sec entre knot bursts
             const float BURST_WINDOW = 0.35;     // fraction with active knots
 
@@ -756,7 +756,7 @@ function MagneticField({ data, logNu, bField, visible }: {
               vec3 hot  = vec3(1.00, 1.00, 0.95);
               vec3 col  = mix(base, hot, knotActive * 0.85);
 
-              float headBright = mix(1.0, 0.04, isTail);   // tail muy tenue
+              float headBright = mix(1.0, 0.15, isTail);   // tail visible trail
               float syncLift   = 0.18 + 0.55 * uSyncBoost;
               float knotLift   = 1.0 + knotActive * 2.2;
               vColor = col * headBright * syncLift * knotLift;
