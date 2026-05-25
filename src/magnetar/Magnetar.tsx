@@ -748,7 +748,7 @@ function BFieldSlider({ logB, onChange }: { logB: number; onChange: (v: number) 
          style={{ width: 440 }}>
       <div className="flex items-baseline justify-between mb-2">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-[#64748B]">campo magnético superficial</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-[#64748B]">intensidad del campo magnético</div>
           <div className="text-[15px] font-semibold mt-0.5">
             <span style={{ color: regime.color }}>B = {bGauss.toExponential(1)} G</span>
             <span className="text-[#475569] text-[11px] ml-2">· log₁₀B = {logB.toFixed(2)}</span>
@@ -822,28 +822,36 @@ export default memo(function MagnetarScene() {
   const [quakeCount, setQuakeCount] = useState(0);
   const [audioOn, setAudioOn] = useState(false);
   const audioRef = useRef<MagnetarAudioConfig | null>(null);
+  const logBRef = useRef(logB);
+  logBRef.current = logB;
+
+  const initAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.ctx.resume().catch(() => {});
+      return;
+    }
+    try {
+      audioRef.current = createMagnetarAudio();
+      audioRef.current.setB(logBRef.current);
+      setAudioOn(true);
+    } catch (err) { console.error('audio init fail', err); }
+  }, []);
 
   const handleQuake = useCallback(() => {
     setQuakeCount(c => c + 1);
     audioRef.current?.triggerQuake();
   }, []);
 
-  // Audio teardown si se apaga
   useEffect(() => {
-    if (!audioOn && audioRef.current) {
-      audioRef.current.destroy();
-      audioRef.current = null;
-    }
     return () => { audioRef.current?.destroy(); audioRef.current = null; };
-  }, [audioOn]);
+  }, []);
 
-  // Sync B → audio drone intensity
   useEffect(() => {
     if (audioRef.current) audioRef.current.setB(logB);
   }, [logB]);
 
   return (
-    <div className="w-full h-full relative" style={{ background: '#030408' }}>
+    <div className="w-full h-full relative" style={{ background: '#030408' }} onClick={initAudio}>
       <Canvas
         gl={makeRenderer()}
         camera={{ position: [0, 4, 18], fov: 45, near: 0.1, far: 200 }}
@@ -893,59 +901,31 @@ export default memo(function MagnetarScene() {
 
       {/* Audio panel — top-right debajo de Legend */}
       <div className="absolute top-6 right-6 mt-44 bg-black/65 border border-[#334155] rounded p-2.5 font-mono text-[10px] backdrop-blur-sm w-[200px]">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={audioOn} onChange={e => {
-            const b = e.target.checked;
-            if (b && !audioRef.current) {
-              try {
-                audioRef.current = createMagnetarAudio();
-                audioRef.current.ctx.resume().catch(() => {});
-                audioRef.current.setB(logB);
-              } catch (err) { console.error('audio init fail', err); }
-            }
-            setAudioOn(b);
-          }} className="accent-[#FFD46B]" />
-          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: '#FFD46B', boxShadow: '0 0 8px #FFD46B' }} />
-          <span style={{ color: '#FFD46B' }}>audio · sonificación</span>
-        </label>
+        {!audioOn && (
+          <div className="text-[#FFD46B] text-[10px] mb-1 animate-pulse">
+            click en cualquier parte para activar audio
+          </div>
+        )}
+        {audioOn && (
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 rounded-full bg-[#FFD46B] animate-pulse" style={{ boxShadow: '0 0 8px #FFD46B' }} />
+            <span style={{ color: '#FFD46B' }}>audio activo</span>
+          </div>
+        )}
         <div className="text-[#475569] text-[9px] mt-1 leading-tight">
-          drone sub-bass (B), heartbeat 6s rotacional, kick por starquake,
-          static cuando B &gt; B_QED.
+          drone sub-bass responde a B. Kick percusivo en cada starquake.
+          Static crackle cuando B &gt; B_QED.
         </div>
         <button
-          onClick={() => {
-            audioRef.current?.ctx.resume().catch(() => {});
-            audioRef.current?.triggerFRB();
+          onClick={(e) => {
+            e.stopPropagation();
+            initAudio();
+            setTimeout(() => audioRef.current?.triggerFRB(), 100);
           }}
-          disabled={!audioOn}
-          className="mt-2 w-full px-2 py-1 border border-[#FF6FBA] text-[#FF6FBA] hover:bg-[#FF6FBA]/15 disabled:opacity-30 disabled:cursor-not-allowed rounded text-[10px]"
+          className="mt-2 w-full px-2 py-1 border border-[#FF6FBA] text-[#FF6FBA] hover:bg-[#FF6FBA]/15 rounded text-[10px]"
           title="Fast Radio Burst — chirp 1200→200 Hz simula sweep MHz real (SGR 1935 FRB 200428)"
         >
-          ⚡ FRB burst (SGR 1935+2154)
-        </button>
-        <button
-          onClick={() => {
-            // TEST DIRECTO sin pasar por magnetar-audio module
-            try {
-              const c = new (window.AudioContext || (window as any).webkitAudioContext)();
-              c.resume().catch(() => {});
-              const o = c.createOscillator();
-              const g = c.createGain();
-              o.type = 'sine';
-              o.frequency.value = 880;
-              g.gain.setValueAtTime(0.40, c.currentTime);
-              g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 1.0);
-              o.connect(g); g.connect(c.destination);
-              o.start();
-              o.stop(c.currentTime + 1.05);
-              console.log('[TEST BEEP] ctx.state =', c.state, ' sampleRate =', c.sampleRate);
-              setTimeout(() => c.close(), 2000);
-            } catch (e) { console.error('test beep fail', e); }
-          }}
-          className="mt-2 w-full px-2 py-1 border border-[#94A3B8] text-[#94A3B8] hover:bg-[#94A3B8]/15 rounded text-[10px]"
-          title="Test directo: crea AudioContext + beep A5 880Hz 1s. Si NO suena, el browser bloquea audio."
-        >
-          🔔 test beep (diagnóstico)
+          FRB burst (SGR 1935+2154)
         </button>
       </div>
 
