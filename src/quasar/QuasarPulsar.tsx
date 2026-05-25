@@ -554,30 +554,32 @@ function QuasarPulsar() {
     loadPulsar().then(setData).catch(e => setErr(String(e)));
   }, []);
 
-  // Audio lifecycle
+  // Audio lifecycle. NOTA: NO se crea en useEffect (perdería user gesture
+  // → AudioContext suspended). Se crea en el handler onChange del checkbox.
+  // Aquí solo manejamos teardown si el toggle se apaga.
   useEffect(() => {
-    if (audioOn && !audioRef.current) {
-      try { audioRef.current = createPulsarAudio(); }
-      catch (e) { console.error('audio init fail', e); }
-    } else if (!audioOn && audioRef.current) {
+    if (!audioOn && audioRef.current) {
       audioRef.current.destroy();
       audioRef.current = null;
     }
     return () => { audioRef.current?.destroy(); audioRef.current = null; };
   }, [audioOn]);
 
-  // Sync intensidades + phase kick al audio
-  useEffect(() => {
-    if (!audioRef.current || !data) return;
-    for (let c = 0; c < data.N_C; c++) {
-      // intensidad pico en la banda actual
+  // Sync intensidades cuando cambia banda o datos. Si el audio se creó
+  // recién, también seteamos al instante.
+  const syncIntensities = (audio: PulsarAudioConfig, d: PulsarData, logE_now: number) => {
+    for (let c = 0; c < d.N_C; c++) {
       let max = 0;
-      for (let ip = 0; ip < data.N_PHASE; ip++) {
-        const v = lookup(data, c, logE, ip / data.N_PHASE);
+      for (let ip = 0; ip < d.N_PHASE; ip++) {
+        const v = lookup(d, c, logE_now, ip / d.N_PHASE);
         if (v > max) max = v;
       }
-      audioRef.current.setIntensity(c, Math.min(1, max * 1.5));
+      audio.setIntensity(c, Math.min(1, max * 2.5));   // boost a 2.5× para audible
     }
+  };
+  useEffect(() => {
+    if (!audioRef.current || !data) return;
+    syncIntensities(audioRef.current, data, logE);
   }, [data, logE]);
 
   useEffect(() => {
@@ -638,8 +640,26 @@ function QuasarPulsar() {
 
       <Legend logE={logE} setLogE={setLogE} data={data}
               autoSpin={autoSpin} setAutoSpin={setAutoSpin}
-              audioOn={audioOn} setAudioOn={setAudioOn}
-              onGW={() => audioRef.current?.triggerGW()} />
+              audioOn={audioOn}
+              setAudioOn={(b) => {
+                if (b && !audioRef.current) {
+                  // Crear AudioContext DENTRO del click handler — garantiza user gesture.
+                  // Sin esto el ctx queda suspended y no suena nada.
+                  try {
+                    audioRef.current = createPulsarAudio();
+                    // Resume defensivo
+                    audioRef.current.ctx.resume().catch(() => {});
+                    // Setear intensidades inmediatamente (no esperar próximo useEffect)
+                    syncIntensities(audioRef.current, data, logE);
+                  } catch (e) { console.error('audio init fail', e); }
+                }
+                setAudioOn(b);
+              }}
+              onGW={() => {
+                // Resume defensivo antes del trigger por si el ctx se suspendió
+                audioRef.current?.ctx.resume().catch(() => {});
+                audioRef.current?.triggerGW();
+              }} />
       <PulseProfile data={data} logE={logE} phase={usedPhase} setPhase={setPhase} />
     </div>
   );
