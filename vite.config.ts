@@ -43,6 +43,7 @@ export default defineConfig({
         "preview-escena": resolve(import.meta.dirname, "preview-escena.html"),
         library: resolve(import.meta.dirname, "library.html"),
         quasar: resolve(import.meta.dirname, "quasar.html"),
+        magnetar: resolve(import.meta.dirname, "magnetar.html"),
       },
       output: {
         manualChunks: {
