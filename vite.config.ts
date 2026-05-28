@@ -44,6 +44,7 @@ export default defineConfig({
         library: resolve(import.meta.dirname, "library.html"),
         quasar: resolve(import.meta.dirname, "quasar.html"),
         magnetar: resolve(import.meta.dirname, "magnetar.html"),
+        "cinematic-atom": resolve(import.meta.dirname, "cinematic-atom.html"),
       },
       output: {
         manualChunks: {
