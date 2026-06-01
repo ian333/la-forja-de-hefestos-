@@ -289,11 +289,16 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   nonane:       { name: 'Nonano', formula: 'C₉H₂₀', fact: 'Nueve eslabones: ya entra en el diésel.' },
   decane:       { name: 'Decano', formula: 'C₁₀H₂₂', fact: 'Diez eslabones de carbono, puro enlace σ.' },
   dodecane:     { name: 'Dodecano', formula: 'C₁₂H₂₆', fact: 'Doce carbonos: queroseno, lo que vuela los aviones.' },
+  pentadecane:  { name: 'Pentadecano', formula: 'C₁₅H₃₂', fact: 'Quince carbonos: en feromonas de insectos.' },
   hexadecane:   { name: 'Hexadecano', formula: 'C₁₆H₃₄', fact: 'Dieciséis carbonos: el patrón del diésel (cetano).' },
+  heptadecane:  { name: 'Heptadecano', formula: 'C₁₇H₃₆', fact: 'Diecisiete carbonos: cera líquida.' },
+  eicosane:     { name: 'Eicosano', formula: 'C₂₀H₄₂', fact: 'Veinte carbonos: ya es cera sólida, vaselina.' },
   hexatriene:   { name: 'Hexatrieno', formula: 'C₆H₈', fact: 'Tres dobles enlaces conjugados: los electrones π se sueltan.' },
   octatetraene: { name: 'Octatetraeno', formula: 'C₈H₁₀', fact: 'Cuatro dobles en fila: el río π se alarga.' },
   decapentaene: { name: 'Decapentaeno', formula: 'C₁₀H₁₂', fact: 'Cinco dobles en fila: un río de electrones π.' },
   dodecahexaene:{ name: 'Dodecahexaeno', formula: 'C₁₂H₁₄', fact: 'Seis dobles conjugados: ya empieza a tener color.' },
+  tetradecaheptaene: { name: 'Tetradecaheptaeno', formula: 'C₁₄H₁₆', fact: 'Siete dobles: el río π más largo, casi rojo.' },
+  hexadecaoctaene:   { name: 'Hexadecaoctaeno', formula: 'C₁₆H₁₈', fact: 'Ocho dobles conjugados: absorbe color visible.' },
   caroteno:     { name: 'Caroteno (cromóforo)', formula: 'cadena π', fact: 'La cadena conjugada que pinta la zanahoria — y la que te deja VER.' },
   // ── ADN — doble hélice B-form real ──
   brca1:    { name: 'ADN · BRCA1', formula: 'doble hélice', fact: 'Un trozo de tu gen BRCA1: cuando falla, aumenta el riesgo de cáncer.' },
@@ -303,9 +308,9 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
 const META: Record<string, { name: string; formula: string; fact: string }> = { ...BASE_META, ...CATALOG_META };
 
 // Cadenas: se cargan de chain-<key>.bin y disparan la cámara TRAVERSAL.
-const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'hexadecane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'caroteno']);
+const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno']);
 // Conjugadas (con sistema π): llevan campo de CARAS π (MEP). Los alcanos NO (apolares, planos eléctricamente → inertes).
-const CONJUGATED_KEYS = new Set(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'caroteno']);
+const CONJUGATED_KEYS = new Set(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno']);
 // ADN: doble hélice B-form real (dna-<key>.bin). Alargada → cámara traversal vuela por el eje.
 const DNA_KEYS = new Set(['brca1', 'telomero', 'tata']);
 
@@ -396,10 +401,10 @@ function MoleculeTitle({ mkey, time, vertical }: { mkey: string; time: number; v
 interface ScaleInfo { what: string; measure: string; meaning: string; }
 const BASE_SCALE: Record<string, ScaleInfo> = {
   // cadenas — alcanos (σ): todos comparten la misma medida de enlace
-  ...Object.fromEntries(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'hexadecane'].map(k => [k,
+  ...Object.fromEntries(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane'].map(k => [k,
     { what: 'Lo que ves: la nube de electrones', measure: 'enlace C–C · 1.54 Å', meaning: '1 Å = 0.1 nm, el tamaño de un átomo' }])),
   // cadenas — conjugadas (σ + π)
-  ...Object.fromEntries(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene'].map(k => [k,
+  ...Object.fromEntries(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene'].map(k => [k,
     { what: 'Lo que ves: la nube de electrones σ y π', measure: 'C=C 1.34 Å · C–C 1.45 Å', meaning: 'doble y simple alternados = "conjugado"' }])),
   caroteno: { what: 'Lo que ves: la nube π conjugada', measure: 'cadena π ≈ 2.4 nm', meaning: 'absorbe la luz azul → la ves naranja' },
   // ── ADN — medidas B-form reales (Arnott-Hukins 1972) ──
@@ -525,6 +530,11 @@ const BASE_FIELD_SUB: Record<string, string> = {
   hexadecane: 'σ pareja de punta a punta',
   octatetraene: 'las caras π, más largas, más ricas',
   dodecahexaene: 'el río π ya casi tiene color propio',
+  pentadecane: 'σ pareja, cadena larga: inerte',
+  heptadecane: 'la nube σ envuelve toda la cadena',
+  eicosane: 'σ uniforme de punta a punta: cera inerte',
+  tetradecaheptaene: 'caras π largas: el río ya casi es rojo',
+  hexadecaoctaene: 'el río π más largo, absorbe color',
 };
 const FIELD_SUB: Record<string, string> = { ...BASE_FIELD_SUB, ...CATALOG_FIELD_SUB };
 

@@ -826,6 +826,24 @@ async function main() {
       (hook) => window[hook] && window[hook].ready === true, opts.hook,
       { timeout: opts.readyTimeout },
     );
+    // FIX PARPADEO: 'ready' puede ser true ANTES de que el <canvas> de R3F crezca
+    // a la resolución completa (arranca chico y el ResizeObserver lo agranda en el
+    // primer tick) → 1 frame sale "más pequeño/raro" justo tras el reciclaje. Aquí
+    // esperamos a que el canvas mida el backing COMPLETO (W*super × H*super) y
+    // damos 3 RAF de settle para que el primer draw a tamaño pleno ya esté listo.
+    const wantW = opts.width * opts.super, wantH = opts.height * opts.super;
+    await pg.waitForFunction(
+      ({ w, h }) => {
+        const c = document.querySelector('canvas');
+        return c && c.width >= w - 2 && c.height >= h - 2;
+      },
+      { w: wantW, h: wantH },
+      { timeout: 30000 },
+    ).catch(() => { /* si el canvas reporta otro tamaño, seguimos: el settle cubre */ });
+    await pg.evaluate(() => new Promise((r) => {
+      let n = 0; const tick = () => (++n >= 3 ? r(null) : requestAnimationFrame(tick));
+      requestAnimationFrame(tick);
+    }));
     return pg;
   }
 

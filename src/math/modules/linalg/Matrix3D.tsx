@@ -14,6 +14,9 @@ import { Line } from '@react-three/drei';
 import Stage from '@/physics/components/Stage';
 import { useAudience } from '@/math/context';
 import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+import { useSolverFor } from '@/math/solver-bridge/useSolverFor';
+import SolverTab from '@/math/components/SolverTab';
+import CanvasCapture from '@/math/components/CanvasCapture';
 
 type Mat3 = [number, number, number, number, number, number, number, number, number];
 
@@ -202,6 +205,22 @@ export default function Matrix3D() {
   const cloud = useMemo(() => buildCloud(), []);
   const detA = useMemo(() => det3(M), [M]);
 
+  // Puente al resolvedor simbolico: A reshaped 3x3 (row-major), op determinante.
+  // Los pasos exactos comparten EXACTAMENTE la misma matriz que la viz 3D.
+  const Areshaped = useMemo<number[][]>(
+    () => [
+      [M[0], M[1], M[2]],
+      [M[3], M[4], M[5]],
+      [M[6], M[7], M[8]],
+    ],
+    [M],
+  );
+  const resultado = useSolverFor(
+    { op: 'determinante', A: Areshaped },
+    { nombre: 'Matriz 3×3 como transformación', rama: 'linalg', moduleId: 'matrix-3d',
+      marco: 'Una matriz 3×3 es una transformación lineal ℝ³→ℝ³; sus columnas son A·i, A·j, A·k y det(A) es el factor de cambio de volumen (signo = orientación).' },
+  );
+
   function loadPreset(id: string) {
     const p = PRESETS.find(x => x.id === id);
     if (!p) return;
@@ -250,7 +269,8 @@ export default function Matrix3D() {
   return (
     <div className="w-full h-full grid grid-cols-[1fr_360px] gap-3">
       <div className="relative rounded-lg overflow-hidden border border-[#1E293B]">
-        <Stage cameraDistance={5.5} bloomIntensity={0.55} bloomThreshold={0.55}>
+        <Stage cameraDistance={5.5} bloomIntensity={0.55} bloomThreshold={0.55} captureMode>
+          <CanvasCapture />
           {/* Reference axes */}
           <Line points={[[-2, 0, 0], [2, 0, 0]]} color="#334155" lineWidth={1} />
           <Line points={[[0, -2, 0], [0, 2, 0]]} color="#334155" lineWidth={1} />
@@ -329,6 +349,7 @@ export default function Matrix3D() {
           if (patch.preset !== undefined) loadPreset(patch.preset);
           if (patch.progress !== undefined) setProgress(patch.progress);
         }}
+        stepsContent={<SolverTab resultado={resultado} titulo="det(A) paso a paso" />}
         sandbox={
           <>
             <div>

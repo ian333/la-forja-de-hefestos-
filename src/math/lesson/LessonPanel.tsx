@@ -58,6 +58,12 @@ interface LessonPanelProps<S> {
   lesson: Lesson<S>;
   onApplyState: (patch: Partial<S>) => void;
   sandbox: ReactNode;
+  /**
+   * Contenido del TERCER tab '∑ Pasos' (los pasos del solver). OPCIONAL: si el
+   * modulo no lo pasa, el tab no aparece — retrocompatible con los modulos que
+   * no mapean al resolvedor simbolico.
+   */
+  stepsContent?: ReactNode;
 }
 
 // ── Easing ────────────────────────────────────────────────────────────
@@ -116,9 +122,10 @@ function interpolate<S>(
 
 // ── Component ─────────────────────────────────────────────────────────
 
-export default function LessonPanel<S>({ lesson, onApplyState, sandbox }: LessonPanelProps<S>) {
+export default function LessonPanel<S>({ lesson, onApplyState, sandbox, stepsContent }: LessonPanelProps<S>) {
   const [page, setPage] = useState<number>(-1);  // -1 hook, 0..N-1 step, N connect
-  const [mode, setMode] = useState<'lesson' | 'sandbox'>('lesson');
+  const [mode, setMode] = useState<'lesson' | 'sandbox' | 'steps'>('lesson');
+  const hasSteps = stepsContent != null;
   const [progress, setProgress] = useState(0);   // 0..1 within current step
   const [replayKey, setReplayKey] = useState(0); // bump to replay animation
 
@@ -169,12 +176,17 @@ export default function LessonPanel<S>({ lesson, onApplyState, sandbox }: Lesson
       <div className="flex border-b border-[#1E293B] shrink-0">
         <TabButton active={mode === 'lesson'} onClick={() => setMode('lesson')}>📖 Clase</TabButton>
         <TabButton active={mode === 'sandbox'} onClick={() => setMode('sandbox')}>🎛 Sandbox</TabButton>
+        {hasSteps && (
+          <TabButton active={mode === 'steps'} onClick={() => setMode('steps')}>∑ Pasos</TabButton>
+        )}
       </div>
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-4">
         {mode === 'sandbox' ? (
           <div className="space-y-3">{sandbox}</div>
+        ) : mode === 'steps' ? (
+          <div className="space-y-3">{stepsContent}</div>
         ) : (
           <div className="space-y-3">
             {atHook && <HookView hook={lesson.hook} />}

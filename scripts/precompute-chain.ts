@@ -135,11 +135,16 @@ const CHAINS: Record<string, () => Chain> = {
   nonane: () => alkane(9),
   decane: () => alkane(10),
   dodecane: () => alkane(12),
+  pentadecane: () => alkane(15),
   hexadecane: () => alkane(16),
+  heptadecane: () => alkane(17),
+  eicosane: () => alkane(20),
   hexatriene: () => polyene(6),
   octatetraene: () => polyene(8),
   decapentaene: () => polyene(10),
   dodecahexaene: () => polyene(12),
+  tetradecaheptaene: () => polyene(14),
+  hexadecaoctaene: () => polyene(16),
   caroteno: () => polyene(22),     // el cromóforo poliénico del β-caroteno (lo que da el naranja y deja VER)
 };
 

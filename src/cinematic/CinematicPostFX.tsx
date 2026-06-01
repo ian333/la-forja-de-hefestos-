@@ -118,11 +118,11 @@ const PRESETS: Record<CinematicPreset, PresetDefaults> = {
     dofFocusDistance: 0.012,
     dofFocalLength: 0.04,
     dofBokehScale: 4.0,
-    caOffset: 0.0005,
+    caOffset: 0.0,        // 0: la aberración cromática sobre el starfield = confeti verde
     grainOpacity: 0.03,
     vignetteDarkness: 0.9,
     anamorphic: true,
-    saturation: 0.12,
+    saturation: 0.04,     // bajo: no empujar el residual de color (evita el morado/verde)
     contrast: 0.18,
     brightness: -0.02,
   },

@@ -17,6 +17,8 @@ import AudienceToggle from '@/physics/components/AudienceToggle';
 import ModuleStub from '@/physics/components/ModuleStub';
 import ModuleErrorBoundary from '@/physics/components/ModuleErrorBoundary';
 import { useHashRoute } from '@/physics/useHashRoute';
+import { ReportProvider } from './report/ReportContext';
+import ExportReportButton from './report/ExportReportButton';
 
 const FIRST_LIVE = (() => {
   for (const b of BRANCHES) {
@@ -40,6 +42,7 @@ export default function MathLab() {
 
   return (
     <AudienceContext.Provider value={audienceValue}>
+     <ReportProvider>
       <div className="min-h-screen bg-[#05060A] text-[#E2E8F0] font-sans flex flex-col">
         <div
           className="fixed inset-0 pointer-events-none opacity-[0.03] z-0"
@@ -66,6 +69,7 @@ export default function MathLab() {
             </div>
 
             <div className="ml-auto flex items-center gap-4">
+              <ExportReportButton />
               <AudienceToggle />
               <span className="text-[11px] text-[#64748B] font-mono hidden md:inline">
                 Spivak · Strang · Needham · Hatcher
@@ -115,6 +119,7 @@ export default function MathLab() {
           </section>
         </main>
       </div>
+     </ReportProvider>
     </AudienceContext.Provider>
   );
 }

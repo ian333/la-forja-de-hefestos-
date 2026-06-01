@@ -24,9 +24,10 @@ const PRECOMPUTE = path.join(ROOT, 'scripts', 'precompute-chain.ts');
 const CHAINS = [
   ['butane', 'chain-butane'], ['pentane', 'chain-pentane'], ['hexane', 'chain-hexane'], ['heptane', 'chain-heptane'],
   ['octane', 'chain-octane'], ['nonane', 'chain-nonane'], ['decane', 'chain-decane'], ['dodecane', 'chain-dodecane'],
-  ['hexadecane', 'chain-hexadecane'],
+  ['pentadecane', 'chain-pentadecane'], ['hexadecane', 'chain-hexadecane'], ['heptadecane', 'chain-heptadecane'], ['eicosane', 'chain-eicosane'],
   ['hexatriene', 'chain-hexatriene'], ['octatetraene', 'chain-octatetraene'], ['decapentaene', 'chain-decapentaene'],
-  ['dodecahexaene', 'chain-dodecahexaene'], ['caroteno', 'chain-caroteno'],
+  ['dodecahexaene', 'chain-dodecahexaene'], ['tetradecaheptaene', 'chain-tetradecaheptaene'], ['hexadecaoctaene', 'chain-hexadecaoctaene'],
+  ['caroteno', 'chain-caroteno'],
 ];
 
 const only = process.env.ONLY ? process.env.ONLY.split(',').map(s => s.trim()) : null;

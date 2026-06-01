@@ -25,6 +25,9 @@ import { Line } from '@react-three/drei';
 import Stage from '@/physics/components/Stage';
 import { useAudience } from '@/math/context';
 import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+import { useSolverFor } from '@/math/solver-bridge/useSolverFor';
+import SolverTab from '@/math/components/SolverTab';
+import CanvasCapture from '@/math/components/CanvasCapture';
 
 interface DerivState {
   fnId: string;
@@ -171,6 +174,12 @@ interface FuncDef {
   defaultX0: number;
   /** true if f is differentiable everywhere in xRange */
   smooth: boolean;
+  /**
+   * Expresion ASCII para el resolvedor simbolico (parser: + - * / ^, sin cos tan
+   * exp ln sqrt). undefined ⇒ el motor no cubre esta funcion (p.ej. |x|), el tab
+   * de Pasos mostrara el mensaje honesto en vez de inventar.
+   */
+  solverExpr?: string;
 }
 
 const FUNCS: FuncDef[] = [
@@ -178,16 +187,19 @@ const FUNCS: FuncDef[] = [
     id: 'sq',  label: 'x²',  expr: 'f(x) = x²',  exprPrime: "f'(x) = 2x",
     f: x => x * x, fPrime: x => 2 * x,
     xRange: [-2.5, 2.5], yRange: [-1, 6.5], defaultX0: 1.2, smooth: true,
+    solverExpr: 'x^2',
   },
   {
     id: 'sin', label: 'sin x', expr: 'f(x) = sin(x)', exprPrime: "f'(x) = cos(x)",
     f: Math.sin, fPrime: Math.cos,
     xRange: [-Math.PI * 1.2, Math.PI * 1.2], yRange: [-1.5, 1.5], defaultX0: Math.PI / 4, smooth: true,
+    solverExpr: 'sin(x)',
   },
   {
     id: 'exp', label: 'e^x', expr: 'f(x) = eˣ', exprPrime: "f'(x) = eˣ",
     f: Math.exp, fPrime: Math.exp,
     xRange: [-2, 2], yRange: [-1, 8], defaultX0: 0.6, smooth: true,
+    solverExpr: 'exp(x)',
   },
   {
     id: 'abs', label: '|x|', expr: 'f(x) = |x|', exprPrime: "f'(x) = sign(x)  ✗ en x=0",
@@ -199,11 +211,13 @@ const FUNCS: FuncDef[] = [
     f: x => x >= 0 ? Math.sqrt(x) : NaN,
     fPrime: x => x > 0 ? 0.5 / Math.sqrt(x) : NaN,
     xRange: [-0.5, 4], yRange: [-0.5, 2.5], defaultX0: 1.5, smooth: false,
+    solverExpr: 'sqrt(x)',
   },
   {
     id: 'cubic', label: 'x³−3x', expr: 'f(x) = x³ − 3x', exprPrime: "f'(x) = 3x² − 3",
     f: x => x * x * x - 3 * x, fPrime: x => 3 * x * x - 3,
     xRange: [-2.5, 2.5], yRange: [-4, 4], defaultX0: 0.5, smooth: true,
+    solverExpr: 'x^3 - 3*x',
   },
 ];
 
@@ -239,6 +253,15 @@ export default function Derivative1D() {
   const fn = useMemo(() => FUNCS.find(f => f.id === fnId)!, [fnId]);
   const [xMin, xMax] = fn.xRange;
   const [yMin, yMax] = fn.yRange;
+
+  // Puente al resolvedor simbolico: derivada de la funcion del preset activo.
+  // El expr ASCII es EXACTAMENTE la curva que la viz dibuja (mismo f). Si el
+  // preset no es parseable (|x|), pasamos null -> el tab de Pasos lo dice honesto.
+  const resultado = useSolverFor(
+    fn.solverExpr ? { op: 'derivada', expr: fn.solverExpr, variable: 'x' } : null,
+    { nombre: 'Derivada como recta tangente', rama: 'calc', moduleId: 'derivative-1d',
+      marco: "Definicion de derivada por limite: f'(x₀)=lim_{h→0}[f(x₀+h)−f(x₀)]/h. La recta secante converge a la tangente cuando h→0 (Spivak cap. 10)." },
+  );
 
   // When the function changes, jump x₀ to the default
   // (without this the slider could be outside the new xRange).
@@ -285,7 +308,8 @@ export default function Derivative1D() {
   return (
     <div className="w-full h-full grid grid-cols-[1fr_360px] gap-3">
       <div className="relative rounded-lg overflow-hidden border border-[#1E293B]">
-        <Stage cameraDistance={span * 1.5} bloomIntensity={0.55} bloomThreshold={0.55}>
+        <Stage cameraDistance={span * 1.5} bloomIntensity={0.55} bloomThreshold={0.55} captureMode>
+          <CanvasCapture />
           {/* Axes */}
           <Line points={[[xMin, 0, 0], [xMax, 0, 0]]} color="#64748B" lineWidth={1} />
           <Line points={[[0, yMin, 0], [0, yMax, 0]]} color="#64748B" lineWidth={1} />
@@ -353,6 +377,7 @@ export default function Derivative1D() {
           if (patch.x0 !== undefined) setX0(patch.x0);
           if (patch.logH !== undefined) setLogH(patch.logH);
         }}
+        stepsContent={<SolverTab resultado={resultado} titulo={`f'(x) paso a paso · ${fn.label}`} />}
         sandbox={
           <>
             <div>

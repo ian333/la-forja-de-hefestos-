@@ -243,6 +243,7 @@ function ResidualBars({ start, end }: { start: number; end: number }) {
 function MysteryReveal({ start, end }: { start: number; end: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
+  const blob = useRef<THREE.Mesh>(null);
   const blobMat = useRef<THREE.MeshStandardMaterial>(null);
   const idea = useRef<THREE.Mesh>(null);
   const ideaMat = useRef<THREE.MeshStandardMaterial>(null);
@@ -251,13 +252,16 @@ function MysteryReveal({ start, end }: { start: number; end: number }) {
     const t = timeRef.current;
     if (!fadeGroup(g.current, t, start, end)) return;
     const r = smooth(local(t, reveal, reveal + 1.2));
+    // El fantasma ENCOGE al revelar (si solo bajara emisión seguiría siendo un
+    // sólido opaco que tapa el glyph que tiene adentro).
+    if (blob.current) { blob.current.scale.setScalar(Math.max(0.0001, 1 - r)); blob.current.rotation.y += 0.012; blob.current.rotation.x += 0.006; }
     if (blobMat.current) blobMat.current.emissiveIntensity = lerpN(0.7, 0.0, r);
     if (idea.current) { idea.current.visible = r > 0.01; idea.current.scale.setScalar(0.0001 + r); idea.current.rotation.y += 0.05; idea.current.rotation.x += 0.02; }
     if (ideaMat.current) ideaMat.current.emissiveIntensity = 0.3 + r * 2.6;
   });
   return (
     <group ref={g} position={[0, 2.2, 0]}>
-      <mesh><icosahedronGeometry args={[1.0, 2]} /><meshStandardMaterial ref={blobMat} color="#0C0F18" emissive="#8A6A30" emissiveIntensity={0.7} roughness={0.9} flatShading toneMapped={false} /></mesh>
+      <mesh ref={blob}><icosahedronGeometry args={[1.0, 2]} /><meshStandardMaterial ref={blobMat} color="#0C0F18" emissive="#8A6A30" emissiveIntensity={0.7} roughness={0.9} flatShading toneMapped={false} /></mesh>
       <mesh ref={idea} visible={false}><icosahedronGeometry args={[0.85, 0]} /><meshStandardMaterial ref={ideaMat} color="#0E2236" emissive={GOLD} emissiveIntensity={0.3} toneMapped={false} /></mesh>
     </group>
   );
@@ -365,10 +369,14 @@ function CombineTwo({ start, end }: { start: number; end: number }) {
   useFrame(() => {
     const t = timeRef.current;
     if (!fadeGroup(g.current, t, start, end)) return;
-    const merge = smooth(local(t, start + 0.8, start + (end - start) * 0.55));
-    if (a.current) { a.current.position.x = lerpN(-3, 0, merge); a.current.rotation.y += 0.05; a.current.visible = merge < 0.98; }
-    if (b.current) { b.current.position.x = lerpN(3, 0, merge); b.current.rotation.y -= 0.05; b.current.visible = merge < 0.98; }
-    const born = smooth(local(t, start + (end - start) * 0.5, start + (end - start) * 0.8));
+    const span = end - start;
+    const merge = smooth(local(t, start + 0.8, start + span * 0.55));
+    // La tercera nace MIENTRAS las dos convergen, y ellas se encogen al fundirse
+    // (sin esto hay un frame muerto: las dos desaparecen antes de que aparezca la 3ª).
+    const born = smooth(local(t, start + span * 0.42, start + span * 0.78));
+    const ab = Math.max(0.0001, 1 - born);
+    if (a.current) { a.current.position.x = lerpN(-3, 0, merge); a.current.rotation.y += 0.05; a.current.scale.setScalar(ab); a.current.visible = born < 0.99; }
+    if (b.current) { b.current.position.x = lerpN(3, 0, merge); b.current.rotation.y -= 0.05; b.current.scale.setScalar(ab); b.current.visible = born < 0.99; }
     if (c.current) { c.current.visible = born > 0.01; c.current.scale.setScalar(0.0001 + born * 1.1); c.current.rotation.y += 0.04; }
     if (cMat.current) cMat.current.emissiveIntensity = 0.3 + born * 2.8;
   });
@@ -399,8 +407,8 @@ function CombineChain({ start, end }: { start: number; end: number }) {
     }
   });
   const X = [-6, -2, 2, 6];
-  const wheel = (x: number, y: number, s = 0.28) => <mesh position={[x, y, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[s, s * 0.4, 8, 16]} /><meshStandardMaterial color="#11151F" emissive={GOLD} emissiveIntensity={1.4} toneMapped={false} /></mesh>;
-  const box = (x: number, y: number, w: number, h: number, d: number, c = GOLD, e = 1.4) => <mesh position={[x, y, 0]}><boxGeometry args={[w, h, d]} /><meshStandardMaterial color="#11151F" emissive={c} emissiveIntensity={e} toneMapped={false} /></mesh>;
+  const wheel = (x: number, y: number, s = 0.28) => <mesh position={[x, y, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[s, s * 0.34, 10, 20]} /><meshStandardMaterial color="#2A2208" emissive={GOLD} emissiveIntensity={0.8} metalness={0.3} roughness={0.5} toneMapped={false} /></mesh>;
+  const box = (x: number, y: number, w: number, h: number, d: number, c = GOLD, e = 0.8) => <mesh position={[x, y, 0]}><boxGeometry args={[w, h, d]} /><meshStandardMaterial color="#2A2208" emissive={c} emissiveIntensity={e} metalness={0.3} roughness={0.5} toneMapped={false} /></mesh>;
   return (
     <group ref={g} position={[0, 1.6, 0]}>
       {/* 0: rueda */}
@@ -410,7 +418,7 @@ function CombineChain({ start, end }: { start: number; end: number }) {
       {/* 2: coche = cuerpo + cabina + 2 ruedas */}
       <group ref={(gg) => { if (gg) groups.current[2] = gg; }} position={[X[2], 0, 0]} visible={false}>{box(0, 0.45, 1.5, 0.45, 0.7)}{box(0.1, 0.85, 0.8, 0.4, 0.6)}{wheel(-0.5, 0.05)}{wheel(0.5, 0.05)}</group>
       {/* 3: teléfono = slab oscuro + pantalla brillante */}
-      <group ref={(gg) => { if (gg) groups.current[3] = gg; }} position={[X[3], 0.5, 0]} visible={false}>{box(0, 0, 0.7, 1.4, 0.12, '#1A2030', 0.4)}{box(0, 0, 0.56, 1.2, 0.16, BLUE, 2.2)}</group>
+      <group ref={(gg) => { if (gg) groups.current[3] = gg; }} position={[X[3], 0.5, 0]} visible={false}>{box(0, 0, 0.7, 1.4, 0.12, '#1A2030', 0.3)}{box(0, 0, 0.56, 1.2, 0.16, BLUE, 1.4)}</group>
     </group>
   );
 }

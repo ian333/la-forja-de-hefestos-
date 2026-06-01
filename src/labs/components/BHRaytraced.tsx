@@ -305,11 +305,15 @@ const FRAGMENT_SHADER = /* glsl */`
       }
     }
 
-    // Vía Láctea: banda de polvo + nubes nebulares
+    // Vía Láctea: banda de polvo + nubes nebulares.
+    // FIX MORADO: el tinte era vec3(0.55,0.45,0.7) = LAVANDA (azul 0.7 > rojo) y
+    // cubría TODO el cielo vía 'band' → el "negro" del void leía MORADO. Ahora un
+    // gris-azulado MUY tenue y frío (sin exceso de azul) y MITAD de intensidad:
+    // el polvo se intuye pero el void se mantiene NEGRO de verdad.
     float band = exp(- dir.y * dir.y * 4.5);
     float dust = fbm(vec2(theta * 6.0, phi * 4.0)) * band;
-    col += vec3(0.55, 0.45, 0.7) * dust * 0.18;
-    col += vec3(0.85, 0.75, 0.60) * pow(band, 1.6) * 0.06;
+    col += vec3(0.34, 0.36, 0.42) * dust * 0.09;   // gris-azulado frío, tenue
+    col += vec3(0.80, 0.78, 0.70) * pow(band, 1.6) * 0.05;  // núcleo galáctico cálido-neutro
     // Polvo oscuro: silhouettes
     float darkBand = smoothstep(0.3, 0.55, fbm(vec2(theta * 5.0, phi * 3.0 + uStarSeed))) * band;
     col *= 1.0 - darkBand * 0.4;

@@ -511,10 +511,11 @@ function programB4(tLocal: number, scaleAnchor: number, diskPhase: number): Beat
 
   return {
     cam: { pos, target, fov },
-    // CA a 0 rápido: el zoom-out de revelación muestra TODO el starfield; cualquier
-    // aberración aquí = confeti verde/rojo sobre las estrellas. Arranca en 0.26
-    // (continuo con B3) y cae a 0 en el primer cuarto.
-    bh: { exposure: expo, chromaticAberration: lerp(0.26, 0.0, smooth(clamp01(p / 0.25))), ...BASE_DISK, diskTime: diskPhase },
+    // CA = 0 SIEMPRE en B4: en la cadena comercial (B1→B4) el corte cae al plano
+    // lejano que muestra TODO el starfield; cualquier aberración = CONFETI verde/
+    // rojo sobre las estrellas (visto en el frame del corte). El plano del abismo
+    // es limpio, sin aberración.
+    bh: { exposure: expo, chromaticAberration: 0.0, ...BASE_DISK, diskTime: diskPhase },
     scaleT: scaleAnchor,
   };
 }

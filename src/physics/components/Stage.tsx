@@ -40,6 +40,15 @@ interface StageProps {
   maxDistance?: number;
   /** Opciones extras para el canvas (near/far, fov, etc.). */
   canvasProps?: Partial<CanvasProps>;
+  /**
+   * OPT-IN: cuando true, el WebGL context se crea con
+   * `preserveDrawingBuffer: true` para que `gl.domElement.toDataURL()` capture
+   * el frame (si no, el navegador limpia el backbuffer tras el composite y el
+   * PNG sale EN BLANCO). Tiene un costo de rendimiento pequeño, por eso es
+   * opt-in: solo los modulos exportables del Math Lab lo activan. Los 14
+   * modulos de fisica/quimica siguen sin pagarlo.
+   */
+  captureMode?: boolean;
   /** Hijos son la escena 3D. */
   children: ReactNode;
 }
@@ -57,6 +66,7 @@ export default function Stage({
   minDistance,
   maxDistance,
   canvasProps,
+  captureMode = false,
   children,
 }: StageProps) {
   return (
@@ -68,7 +78,13 @@ export default function Stage({
     >
       <Canvas
         camera={{ position: [0, cameraDistance * 0.35, cameraDistance], fov: 45, near: 0.001, far: 10000 }}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+          // Solo en captureMode: deja el frame disponible para toDataURL().
+          preserveDrawingBuffer: captureMode,
+        }}
         style={{ background: 'transparent', width: '100%', height: '100%' }}
         dpr={[1, 2]}
         onCreated={({ gl }) => {
