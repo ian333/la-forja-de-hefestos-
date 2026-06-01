@@ -60,21 +60,22 @@ function arg(name, def) {
   console.log('[gl]', String(gl).slice(0, 60));
 
   for (const id of ids) {
+    // id viene como "branch/module" (formato del router). Sanea el nombre de
+    // archivo y reinicia el hash para forzar el hashchange aunque repita.
+    const fileId = id.replace(/\//g, '-');
     try {
-      // Forzar el switch de módulo: limpiar hash y volver a setearlo dispara
-      // hashchange aunque el id sea el mismo del estado previo.
       await page.evaluate((mid) => {
         window.location.hash = '';
         window.location.hash = mid;
       }, id);
       // Esperar a que el módulo nuevo monte su canvas (suspense + lazy import).
-      await page.waitForTimeout(1200);
+      await page.waitForTimeout(1400);
       await page.waitForFunction(() => {
         const c = document.querySelector('canvas');
         return c && c.width > 100 && c.height > 100;
       }, { timeout: 20000 });
       await page.waitForTimeout(settle);   // dejar evolucionar la simulación
-      const f = `phys_${id}.png`;
+      const f = `phys_${fileId}.png`;
       await page.screenshot({ path: f, type: 'png', animations: 'disabled', timeout: 0 });
       console.log(`[ok] ${id}`);
     } catch (e) {
