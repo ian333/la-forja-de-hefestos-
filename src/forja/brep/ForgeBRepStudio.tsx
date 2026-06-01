@@ -213,14 +213,49 @@ function SolidMesh({
   const edgesGeo = useMemo(() => new THREE.EdgesGeometry(geom, 25), [geom]);
   useEffect(() => () => { geom.dispose(); edgesGeo.dispose(); }, [geom, edgesGeo]);
 
-  // Picking: el raycast da el punto 3D; elegimos la cara/arista cuyo centroide
-  // (FaceRef.center / EdgeRef.mid) está más cerca. Es robusto y barato; el
-  // ID que devuelve es el ÍNDICE estable del kernel (occt.enumerate*).
+  // Geometría de RESALTE: por cada cara seleccionada, extraemos sus grupos
+  // (faceGroups del kernel) y construimos una sub-malla con los MISMOS
+  // triángulos. Render con emissive de oro encima del sólido → la cara se
+  // "enciende". (No usamos vertex colors para que el material brille con bloom.)
+  const highlightGeo = useMemo(() => {
+    if (!selFaces.length) return null;
+    const sel = new Set(selFaces);
+    const idx: number[] = [];
+    for (const grp of mesh.faceGroups) {
+      if (sel.has(grp.faceId)) {
+        for (let k = grp.start; k < grp.start + grp.count; k++) {
+          idx.push(mesh.indices[k]);
+        }
+      }
+    }
+    if (!idx.length) return null;
+    const g = new THREE.BufferGeometry();
+    // Atributos PROPIOS (no compartidos con `geom`) sobre los mismos datos: así
+    // disponer un geometry no libera el buffer GPU del otro.
+    g.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+    return g;
+  }, [mesh, selFaces]);
+  useEffect(() => () => { highlightGeo?.dispose(); }, [highlightGeo]);
+
+  // Picking REAL: el raycast de three.js entrega el ÍNDICE DEL TRIÁNGULO
+  // intersectado (e.faceIndex). El kernel etiquetó cada triángulo con su cara
+  // OCCT (mesh.faceIds), así que triángulo → faceId es directo y exacto
+  // (no heurístico): la cara que devolvemos es la que está REALMENTE bajo el
+  // cursor, no la del centroide más cercano. Para aristas seguimos por
+  // proximidad al punto-medio (las aristas no se teselan como triángulos).
   const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
     if (pickMode === 'none') return;
     e.stopPropagation();
-    const p = e.point;
     if (pickMode === 'face') {
+      const ti = e.faceIndex;
+      if (ti != null && ti >= 0 && ti < mesh.faceIds.length) {
+        onPickFace(mesh.faceIds[ti]);
+        return;
+      }
+      // Fallback (raro): si no hubo faceIndex, usa el centroide más cercano.
+      const p = e.point;
       let best = -1, bd = Infinity;
       for (const f of faces) {
         const d = (f.center[0] - p.x) ** 2 + (f.center[1] - p.y) ** 2 + (f.center[2] - p.z) ** 2;
@@ -228,6 +263,7 @@ function SolidMesh({
       }
       if (best >= 0) onPickFace(best);
     } else {
+      const p = e.point;
       let best = -1, bd = Infinity;
       for (const ed of edges) {
         const d = (ed.mid[0] - p.x) ** 2 + (ed.mid[1] - p.y) ** 2 + (ed.mid[2] - p.z) ** 2;
@@ -235,7 +271,7 @@ function SolidMesh({
       }
       if (best >= 0) onPickEdge(best);
     }
-  }, [pickMode, faces, edges, onPickFace, onPickEdge]);
+  }, [pickMode, mesh, faces, edges, onPickFace, onPickEdge]);
 
   return (
     <group>
@@ -249,12 +285,31 @@ function SolidMesh({
           envMapIntensity={0.9}
         />
       </mesh>
+
+      {/* CARA RESALTADA: misma topología, material de oro emisivo encima. */}
+      {highlightGeo && (
+        <mesh geometry={highlightGeo} renderOrder={2}>
+          <meshStandardMaterial
+            color={'#ffd24a'}
+            emissive={GOLD}
+            emissiveIntensity={0.9}
+            metalness={0.3}
+            roughness={0.35}
+            transparent
+            opacity={0.92}
+            polygonOffset
+            polygonOffsetFactor={-2}
+            polygonOffsetUnits={-2}
+          />
+        </mesh>
+      )}
+
       <lineSegments geometry={edgesGeo}>
         <lineBasicMaterial color={GOLD} transparent opacity={0.5} />
       </lineSegments>
 
-      {/* Marcadores de SELECCIÓN: esfera de oro en el centroide de la
-          cara/arista elegida (feedback inmediato del picking). */}
+      {/* Marcador puntual de cara seleccionada (esfera verde en su centroide),
+          además del resalte de superficie — doble feedback del picking. */}
       {selFaces.map((i) => {
         const f = faces.find((x) => x.index === i);
         if (!f) return null;
@@ -335,6 +390,21 @@ function Dim({ label, value, unit, onChange, min, max, step, testid }: {
 let opCounter = 0;
 const newId = (t: string) => `${t}-${++opCounter}`;
 
+/**
+ * Etiqueta semántica de una cara para la lista determinista (Playwright):
+ * superior/inferior por la normal en Z (planos), lateral para el resto. Permite
+ * que el test elija "la cara superior" sin depender de coordenadas del viewport.
+ */
+function faceLabel(f: FaceRef): string {
+  if (f.kind === 'plane') {
+    const nz = f.normal[2];
+    if (nz > 0.7) return 'superior';
+    if (nz < -0.7) return 'inferior';
+    return 'lateral';
+  }
+  return f.kind === 'cylinder' ? 'cilíndrica' : f.kind;
+}
+
 // ──────────────────────────────────────────────────────────────────
 // Componente principal
 // ──────────────────────────────────────────────────────────────────
@@ -358,6 +428,10 @@ export default function ForgeBRepStudio() {
   const [showSketch, setShowSketch] = useState(true);
   const [hideChrome, setHideChrome] = useState(false);
   const [pickMode, setPickMode] = useState<'none' | 'face' | 'edge'>('none');
+  // Última CARA elegida por clic (índice estable OCCT) — se resalta SIEMPRE y se
+  // muestra en el HUD, independiente de que haya una op de Shell activa.
+  const [selectedFaceId, setSelectedFaceId] = useState<number | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<number | null>(null);
   const stepBlobUrl = useRef<string | null>(null);
 
   // Perfil vivo (ghost del sketch base).
@@ -418,6 +492,11 @@ export default function ForgeBRepStudio() {
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 
+  // Al cambiar la ESTRUCTURA del documento (nº de ops) la topología cambia y los
+  // índices de cara/arista dejan de ser válidos: limpia la selección puntual.
+  const opCount = ops.length;
+  useEffect(() => { setSelectedFaceId(null); setSelectedEdgeId(null); }, [opCount]);
+
   // Tecla H: chrome on/off.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -454,8 +533,11 @@ export default function ForgeBRepStudio() {
     setPickMode('none');
   }, []);
 
-  // Selección (toggle) de cara/arista para la op activa.
+  // Selección (toggle) de cara/arista para la op activa. SIEMPRE fija el
+  // selectedFaceId/selectedEdgeId (para el HUD + resalte), y además, si hay una
+  // op que consume caras/aristas (Shell / Fillet / Chamfer), togglea su lista.
   const togglePickFace = useCallback((i: number) => {
+    setSelectedFaceId(i);
     const op = ops.find((o) => o.id === activeOp);
     if (!op || op.type !== 'shell') return;
     const cur = (op as ShellOp).faces;
@@ -463,6 +545,7 @@ export default function ForgeBRepStudio() {
     updateOp(op.id, { faces: next } as Partial<Op>);
   }, [ops, activeOp, updateOp]);
   const togglePickEdge = useCallback((i: number) => {
+    setSelectedEdgeId(i);
     const op = ops.find((o) => o.id === activeOp);
     if (!op || (op.type !== 'fillet' && op.type !== 'chamfer')) return;
     const cur = (op as FilletOp | ChamferOp).edges;
@@ -470,10 +553,29 @@ export default function ForgeBRepStudio() {
     updateOp(op.id, { edges: next } as Partial<Op>);
   }, [ops, activeOp, updateOp]);
 
-  // Caras/aristas resaltadas = selección de la op activa.
+  // El picking se puede activar SIN una op (modo "inspección"): permite elegir
+  // cara/arista para ver el ID en el HUD antes de crear el feature.
+  const enableFacePick = useCallback(() => {
+    setActiveOp(null);
+    setPickMode((m) => (m === 'face' ? 'none' : 'face'));
+  }, []);
+
+  // Caras/aristas resaltadas = selección de la op activa ∪ la cara/arista que
+  // se acaba de elegir por clic (selectedFaceId/Id). Así el resalte aparece
+  // incluso en modo inspección (sin op de Shell/Fillet activa).
   const activeOpObj = ops.find((o) => o.id === activeOp) ?? null;
-  const selFaces = activeOpObj?.type === 'shell' ? activeOpObj.faces : [];
-  const selEdges = activeOpObj && (activeOpObj.type === 'fillet' || activeOpObj.type === 'chamfer') ? activeOpObj.edges : [];
+  const selFaces = useMemo(() => {
+    const s = new Set<number>(activeOpObj?.type === 'shell' ? activeOpObj.faces : []);
+    if (selectedFaceId != null) s.add(selectedFaceId);
+    return [...s];
+  }, [activeOpObj, selectedFaceId]);
+  const selEdges = useMemo(() => {
+    const s = new Set<number>(
+      activeOpObj && (activeOpObj.type === 'fillet' || activeOpObj.type === 'chamfer') ? activeOpObj.edges : [],
+    );
+    if (selectedEdgeId != null) s.add(selectedEdgeId);
+    return [...s];
+  }, [activeOpObj, selectedEdgeId]);
 
   // ── QA hook headless (Playwright) ──
   useEffect(() => {
@@ -498,23 +600,42 @@ export default function ForgeBRepStudio() {
         } : null;
       },
       get error() { return opErr; },
+      get selectedFaceId() { return selectedFaceId; },
+      get selectedEdgeId() { return selectedEdgeId; },
       addOp,
       updateOp,
       setSketch,
       setMaterial,
+      setPickMode,
       pickFace: togglePickFace,
       pickEdge: togglePickEdge,
       listFaces: () => result?.faces ?? [],
       listEdges: () => result?.edges ?? [],
+      // Diagnóstico del teselado etiquetado: nº de grupos por cara + faceIds.
+      get tessTags() {
+        return result ? {
+          n_groups: result.mesh.faceGroups.length,
+          n_face_ids: result.mesh.faceIds.length,
+          distinct_face_ids: new Set(Array.from(result.mesh.faceIds)).size,
+        } : null;
+      },
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge]);
+  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId]);
 
   const cameraDist = useMemo(() => {
     const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, 30);
     return Math.max(60, span * 2.6);
   }, [sketch]);
+
+  // El <canvas> lo crea R3F dentro del viewport; le ponemos data-testid para
+  // que Playwright pueda clicar por COORDENADAS del viewport de forma estable.
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const cv = viewportRef.current?.querySelector('canvas');
+    if (cv) cv.setAttribute('data-testid', 'viewport-canvas');
+  }, [result]);
 
   const ok = result ? result.topo.euler === 2 : false;
   const mat = MATERIALS[material];
@@ -524,7 +645,7 @@ export default function ForgeBRepStudio() {
       <style>{CSS}</style>
 
       {/* ── VIEWPORT ── */}
-      <div className="fb-viewport" data-testid="viewport">
+      <div className="fb-viewport" data-testid="viewport" ref={viewportRef}>
         <Stage
           cameraDistance={cameraDist}
           autoRotate={pickMode === 'none'}
@@ -559,6 +680,26 @@ export default function ForgeBRepStudio() {
             Clic en {pickMode === 'face' ? 'una CARA' : 'una ARISTA'} del sólido para seleccionarla
           </div>
         )}
+
+        {/* HUD de selección: el faceId/edgeId que el picking acaba de fijar.
+            Playwright lee este nodo para verificar que el clic cambió la cara. */}
+        <div className="fb-hud-sel" data-testid="hud-selected-face">
+          {selectedFaceId != null ? (
+            <>
+              <span className="lbl">Cara</span>
+              <b>#{selectedFaceId}</b>
+              {(() => {
+                const f = result?.faces.find((x) => x.index === selectedFaceId);
+                return f ? <span className="meta">{f.kind} · {f.area.toFixed(0)}mm²</span> : null;
+              })()}
+            </>
+          ) : (
+            <span className="lbl">Ninguna cara seleccionada</span>
+          )}
+          {selectedEdgeId != null && (
+            <span className="meta edge" data-testid="hud-selected-edge">Arista #{selectedEdgeId}</span>
+          )}
+        </div>
       </div>
 
       {!hideChrome && (
@@ -622,6 +763,34 @@ export default function ForgeBRepStudio() {
                 </div>
               </div>
             ))}
+          </aside>
+
+          {/* ── Lista SIEMPRE disponible de caras (selección determinista) ──
+              Independiente de la op activa: clic en una entrada fija
+              selectedFaceId (y, si hay Shell activo, togglea su cara abierta).
+              Playwright elige la cara superior/inferior/lateral por testid sin
+              depender de coordenadas del viewport. */}
+          <aside className="fb-facelist" data-testid="face-list">
+            <div className="fb-feat-head">
+              Caras del sólido <b>{result?.faces.length ?? 0}</b>
+            </div>
+            <button className="fb-pick-btn" data-testid="btn-pick-face-global"
+              onClick={enableFacePick}>
+              {pickMode === 'face' ? '◉ Picking de cara activo' : '○ Activar picking en viewport'}
+            </button>
+            <div className="fb-facelist-items">
+              {(result?.faces ?? []).map((f) => (
+                <button key={f.index}
+                  data-testid={`face-item-${f.index}`}
+                  className={selFaces.includes(f.index) ? 'sel' : ''}
+                  onClick={() => togglePickFace(f.index)}
+                  title={`Cara ${f.index} · ${f.kind}`}>
+                  <span className="fi-idx">#{f.index}</span>
+                  <span className="fi-lbl">{faceLabel(f)}</span>
+                  <span className="fi-meta">{f.kind} · {f.area.toFixed(0)}mm²</span>
+                </button>
+              ))}
+            </div>
           </aside>
 
           {/* ── Panel derecho: OPCIONES de la op activa ── */}
@@ -879,6 +1048,29 @@ const CSS = `
   background:${GOLD};color:#1a1206;font-size:12px;font-weight:600;padding:7px 16px;
   border-radius:20px;box-shadow:0 4px 20px ${GOLD}66;z-index:6;pointer-events:none;}
 
+.fb-hud-sel{position:absolute;top:112px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;z-index:6;pointer-events:none;
+  background:rgba(13,18,28,0.78);border:1px solid ${GOLD}44;border-radius:20px;
+  padding:6px 14px;backdrop-filter:blur(10px);font-size:12px;color:#e9eef5;}
+.fb-hud-sel .lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:${STEEL};opacity:.7;}
+.fb-hud-sel b{color:${GOLD};font-family:'JetBrains Mono',monospace;font-size:14px;}
+.fb-hud-sel .meta{font-size:11px;color:${STEEL};font-family:'JetBrains Mono',monospace;}
+.fb-hud-sel .meta.edge{color:#8ff0a4;}
+
+.fb-facelist{position:absolute;left:18px;bottom:18px;width:210px;padding:12px;max-height:34vh;
+  overflow:auto;display:flex;flex-direction:column;gap:8px;}
+.fb-facelist .fb-feat-head{display:flex;justify-content:space-between;}
+.fb-facelist .fb-feat-head b{color:${GOLD};}
+.fb-facelist-items{display:flex;flex-direction:column;gap:3px;overflow:auto;}
+.fb-facelist-items button{display:flex;align-items:baseline;gap:8px;text-align:left;
+  border:1px solid rgba(159,179,200,0.1);background:rgba(255,255,255,0.02);color:${STEEL};
+  font-size:10px;padding:5px 8px;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;}
+.fb-facelist-items button:hover{border-color:${GOLD}55;}
+.fb-facelist-items button.sel{background:${GOLD};color:#1a1206;border-color:${GOLD};font-weight:600;}
+.fb-facelist-items .fi-idx{font-weight:700;min-width:26px;}
+.fb-facelist-items .fi-lbl{flex:1;}
+.fb-facelist-items .fi-meta{opacity:.7;font-size:9px;}
+
 .fb-header,.fb-features,.fb-params,.fb-invariants,.fb-toolbar,.fb-analysis{
   position:absolute;backdrop-filter:blur(14px) saturate(1.2);
   background:rgba(13,18,28,0.66);border:1px solid rgba(159,179,200,0.12);
@@ -903,7 +1095,7 @@ const CSS = `
   transition:.13s;}
 .fb-toolbar button:hover{border-color:${GOLD}77;background:${GOLD}18;color:${GOLD};}
 
-.fb-features{top:78px;left:18px;width:210px;padding:12px;max-height:62vh;overflow:auto;}
+.fb-features{top:78px;left:18px;width:210px;padding:12px;max-height:38vh;overflow:auto;}
 .fb-feat-head{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:${STEEL};
   opacity:.6;margin-bottom:10px;}
 .fb-feat-node{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;

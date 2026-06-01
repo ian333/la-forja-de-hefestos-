@@ -38,6 +38,19 @@ export interface TessellatedMesh {
   indices: Uint32Array; // 3 índices por triángulo
   vertexCount: number;
   triangleCount: number;
+  /**
+   * faceId por TRIÁNGULO (longitud = triangleCount). El valor es el ÍNDICE
+   * ESTABLE de cara del kernel (mismo orden que `enumerateFaces` /
+   * `uniqueSubShapes(FACE)`), de modo que un raycast → triángulo → faceId
+   * mapea directo al `index` que consumen `shellSolid`/`enumerateFaces`.
+   */
+  faceIds: Uint32Array;
+  /**
+   * Grupos contiguos por cara para `BufferGeometry.addGroup` en three.js:
+   * `{ faceId, start, count }` donde start/count están en ÍNDICES (no triángulos).
+   * Permiten asignar un material por cara o resaltar una cara entera por raycast.
+   */
+  faceGroups: Array<{ faceId: number; start: number; count: number }>;
 }
 
 /** Conteo topológico (TopExp_Explorer). */
@@ -893,13 +906,23 @@ export function enumerateEdges(oc: OC, shape: Shape): EdgeRef[] {
 // ─────────────────────────────────────────────────────────────────
 
 /**
- * Tesela la forma B-Rep a malla triangular indexada con normales por vértice.
+ * Tesela la forma B-Rep a malla triangular indexada con normales por vértice,
+ * ETIQUETANDO cada triángulo con el ÍNDICE ESTABLE de su cara OCCT.
  * `deflection` = error de cuerda máximo (mm); menor = más fino.
  * `angle` = desviación angular máxima (rad) en superficies curvas.
  *
- * Recorre cada cara (TopExp_Explorer), lee su Poly_Triangulation, transforma
- * por la TopLoc_Location de la cara y orienta los triángulos según la
- * orientación de la cara (REVERSED ⇒ invierte el winding).
+ * Recorre cada cara (TopExp_Explorer en el MISMO orden que `uniqueSubShapes`
+ * /`enumerateFaces`), lee su Poly_Triangulation, transforma por la
+ * TopLoc_Location de la cara y orienta los triángulos según la orientación de
+ * la cara (REVERSED ⇒ invierte el winding). Por cada cara emite un GRUPO
+ * contiguo `{faceId, start, count}` y un `faceIds[triángulo]` para que el
+ * picking por raycast (three.js da el índice del triángulo) mapee a faceId.
+ *
+ * Nota de corrección: para un SÓLIDO cada cara aparece UNA sola vez en el
+ * TopExp_Explorer (a diferencia de aristas/vértices, que se comparten). Por eso
+ * el contador en orden de exploración == índice único de cara, idéntico al de
+ * `enumerateFaces`. Aun así deduplicamos con IsSame por robustez ante shapes
+ * compuestos (p. ej. resultados booleanos con sub-sólidos).
  */
 export function tessellate(
   oc: OC,
@@ -921,6 +944,8 @@ export function tessellate(
   const positions: number[] = [];
   const normals: number[] = [];
   const indices: number[] = [];
+  const faceIds: number[] = [];
+  const faceGroups: Array<{ faceId: number; start: number; count: number }> = [];
   let vertexOffset = 0;
 
   const exp = new oc.TopExp_Explorer_2(
@@ -931,12 +956,23 @@ export function tessellate(
 
   const ORIENT_REVERSED = oc.TopAbs_Orientation.TopAbs_REVERSED.value as number;
 
+  // Lista de caras únicas para asignar el índice estable por IsSame. Es el
+  // MISMO orden/criterio que enumerateFaces y que consume shellSolid.
+  const uniqueFaces = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_FACE);
+  const faceIdOf = (s: Shape): number => {
+    for (let k = 0; k < uniqueFaces.length; k++) {
+      if (uniqueFaces[k].IsSame(s)) return k;
+    }
+    return -1;
+  };
+
   while (exp.More()) {
     const rawShape = exp.Current(); // TopoDS_Shape: expone Orientation_1()
     // La orientación vive en la TopoDS_Shape cruda; el downcast Face_1 solo
     // sirve para que BRep_Tool::Triangulation resuelva la superficie.
     const reversed =
       (rawShape.Orientation_1().value as number) === ORIENT_REVERSED;
+    const faceId = faceIdOf(rawShape);
     const face = oc.TopoDS.Face_1(rawShape);
     const loc = new oc.TopLoc_Location_1();
     const triHandle = oc.BRep_Tool.Triangulation(face, loc);
@@ -1000,15 +1036,24 @@ export function tessellate(
         const len = Math.hypot(nx, ny, nz) || 1;
         normals.push(nx / len, ny / len, nz / len);
       }
+      // Grupo contiguo de ESTA cara (en índices, base del addGroup de three).
+      const groupStart = indices.length;
       for (const [a, b, c] of localTris) {
         indices.push(vertexOffset + a, vertexOffset + b, vertexOffset + c);
+        faceIds.push(faceId);
       }
+      faceGroups.push({
+        faceId,
+        start: groupStart,
+        count: indices.length - groupStart,
+      });
       vertexOffset += nbNodes;
     }
     loc.delete?.();
     exp.Next();
   }
   exp.delete?.();
+  for (const f of uniqueFaces) f.delete?.();
   mesh.delete?.();
 
   return {
@@ -1017,6 +1062,8 @@ export function tessellate(
     indices: new Uint32Array(indices),
     vertexCount: vertexOffset,
     triangleCount: indices.length / 3,
+    faceIds: new Uint32Array(faceIds),
+    faceGroups,
   };
 }
 
