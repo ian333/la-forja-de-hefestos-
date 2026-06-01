@@ -30,7 +30,20 @@ export default function CanvasCapture() {
       try {
         // Render sincronico antes de leer el buffer.
         gl.render(scene, camera);
-        return gl.domElement.toDataURL('image/png');
+        const src = gl.domElement;
+        // El canvas va con alpha:true (para conservar el gradiente en vivo), así
+        // que su backbuffer es TRANSPARENTE. Si lo metiéramos tal cual al PDF, el
+        // fondo de la figura saldría BLANCO (la hoja). Lo componemos sobre el mismo
+        // oscuro del Stage para que la figura del reporte conserve su fondo negro.
+        const out = document.createElement('canvas');
+        out.width = src.width;
+        out.height = src.height;
+        const ctx = out.getContext('2d');
+        if (!ctx) return src.toDataURL('image/png');
+        ctx.fillStyle = '#05060A';
+        ctx.fillRect(0, 0, out.width, out.height);
+        ctx.drawImage(src, 0, 0);
+        return out.toDataURL('image/png');
       } catch {
         return null;
       }
