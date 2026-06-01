@@ -34,6 +34,7 @@ import {
   chamferEdges,
   shellSolid,
   revolvePolygon,
+  PLANE_XY,
   tessellate,
   topology,
   volume,
@@ -41,6 +42,7 @@ import {
   massProperties,
   enumerateFaces,
   enumerateEdges,
+  enumerateEdgesGeom,
   exportSTEP,
   type OC,
   type Pt2,
@@ -48,8 +50,17 @@ import {
   type TessellatedMesh,
   type FaceRef,
   type EdgeRef,
+  type EdgeGeom,
+  type RevolveAxis,
   type MassProperties,
 } from './occt';
+
+// Ejes GLOBALES preestablecidos para el revolve (gp_Ax1 deterministas).
+const GLOBAL_AXES: Record<'x' | 'y' | 'z', RevolveAxis> = {
+  x: { origin: [0, 0, 0], dir: [1, 0, 0] },
+  y: { origin: [0, 0, 0], dir: [0, 1, 0] },
+  z: { origin: [0, 0, 0], dir: [0, 0, 1] },
+};
 
 // ──────────────────────────────────────────────────────────────────
 // Paleta GAIA
@@ -74,7 +85,10 @@ const MATERIALS: Record<string, { label: string; density: number }> = {
 // ──────────────────────────────────────────────────────────────────
 // El documento = grafo de features (sketch base + operaciones ordenadas)
 // ──────────────────────────────────────────────────────────────────
-type SketchKind = 'rect' | 'circle' | 'lprofile';
+type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile';
+
+/** Un escalón del perfil de revolución: radio exterior r y longitud axial L. */
+interface RevStep { r: number; L: number; }
 
 interface SketchFeature {
   id: 'sketch';
@@ -83,6 +97,9 @@ interface SketchFeature {
   height: number;  // rect / L
   radius: number;  // circle
   legW: number;    // L: ancho de pata
+  // Perfil de revolución ESCALONADO (croquis poligonal a UN lado del eje Y).
+  // Cada escalón i aporta un cilindro de vol = π·r_i²·L_i; el total es su suma.
+  steps: RevStep[];
 }
 
 type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve';
@@ -92,7 +109,7 @@ interface HoleOp { id: string; type: 'hole'; x: number; y: number; diameter: num
 interface FilletOp { id: string; type: 'fillet'; radius: number; edges: number[]; }
 interface ChamferOp { id: string; type: 'chamfer'; dist: number; edges: number[]; }
 interface ShellOp { id: string; type: 'shell'; thickness: number; faces: number[]; }
-interface RevolveOp { id: string; type: 'revolve'; angle: number; }
+interface RevolveOp { id: string; type: 'revolve'; angle: number; axis: 'x' | 'y' | 'z' | 'edge'; }
 type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp;
 
 interface BuildResult {
@@ -104,6 +121,7 @@ interface BuildResult {
   mass: MassProperties;
   faces: FaceRef[];
   edges: EdgeRef[];
+  edgeGeoms: EdgeGeom[];
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -135,10 +153,43 @@ function circleGhost(radius: number): Pt2[] {
   return pts;
 }
 
+/**
+ * Perfil de REVOLUCIÓN ESCALONADO (croquis poligonal a UN lado del eje Y, x≥0).
+ * Cada escalón i tiene radio exterior r_i y longitud axial L_i, apilados en +Y.
+ * El polígono recorre: sube por la ESCALERA exterior (x=r_i, jogs entre niveles)
+ * y vuelve a bajar por el EJE (x=0). Queda CCW, cerrado y todo a x≥0, así que su
+ * revolución 360° alrededor de +Y (x=0) es un sólido axisimétrico válido.
+ *
+ * Invariante: Vol(revolve 360°) = Σ π·r_i²·L_i (suma de cilindros coaxiales).
+ *   1 escalón  → CILINDRO (π·r²·L).
+ *   2-3 escalones de radios distintos → FLECHA con hombros / asientos de balero.
+ */
+function revProfile(steps: RevStep[]): Pt2[] {
+  const pts: Pt2[] = [];
+  // Escalera exterior, de abajo hacia arriba.
+  let y = 0;
+  pts.push({ x: 0, y: 0 }); // base sobre el eje
+  for (const s of steps) {
+    pts.push({ x: s.r, y });        // jog horizontal hacia el radio del escalón
+    y += s.L;
+    pts.push({ x: s.r, y });        // sube la longitud del escalón
+  }
+  // Cierra por el eje: del tope exterior al tope del eje y de regreso al origen.
+  pts.push({ x: 0, y }); // tope sobre el eje (de aquí baja recto a (0,0))
+  return pts;
+}
+
 // ──────────────────────────────────────────────────────────────────
 // Replay del grafo de features a través del kernel → Shape final
 // ──────────────────────────────────────────────────────────────────
-function buildShape(oc: OC, sketch: SketchFeature, ops: Op[]): Shape {
+function buildShape(
+  oc: OC,
+  sketch: SketchFeature,
+  ops: Op[],
+  // Eje de revolución elegido por clic en una arista RECTA (o null si la op usa
+  // un preset global). Lo resuelve el componente desde el EdgeGeom seleccionado.
+  edgeAxis: RevolveAxis | null,
+): Shape {
   // 1) Sketch base → primer sólido (extrude implícito lo hace la op 'extrude').
   //    El sketch por sí solo no es sólido; el grafo SIEMPRE empieza por extrude
   //    o revolve. Aquí preparamos el perfil; la primera op lo solidifica.
@@ -146,10 +197,22 @@ function buildShape(oc: OC, sketch: SketchFeature, ops: Op[]): Shape {
   const profile = (): Pt2[] => {
     if (sketch.kind === 'rect') return rectProfile(sketch.width, sketch.height);
     if (sketch.kind === 'lprofile') return lProfile(sketch.width, sketch.height, sketch.legW);
+    if (sketch.kind === 'revprofile') return revProfile(sketch.steps);
     return circleGhost(sketch.radius); // solo para revolve poligonal; circle usa extrudeCircle
   };
 
-  for (const op of ops) {
+  // El sólido BASE lo crea la primera op solidificante. Si el documento contiene
+  // un REVOLVE, éste tiene PRIORIDAD como base (y el extrude se ignora): así el
+  // usuario puede agregar Revolve sin tener que borrar primero el extrude inicial
+  // — el grafo nunca queda vacío y la UI no se cae. Reordenamos para que el/los
+  // revolve se procesen antes que el/los extrude; el resto conserva su orden.
+  const hasRevolve = ops.some((o) => o.type === 'revolve');
+  const ordered = hasRevolve
+    ? [...ops.filter((o) => o.type === 'revolve'),
+       ...ops.filter((o) => o.type !== 'revolve' && o.type !== 'extrude')]
+    : ops;
+
+  for (const op of ordered) {
     if (op.type === 'extrude') {
       if (shape) continue; // primer sólido ya creado; ignora extrudes posteriores
       // Simétrico: el plano de boceto se baja −depth/2 y se extruye depth, así
@@ -164,8 +227,13 @@ function buildShape(oc: OC, sketch: SketchFeature, ops: Op[]): Shape {
       }
     } else if (op.type === 'revolve') {
       if (shape) continue;
-      // Revolve usa el perfil como medio-perfil a un lado del eje Y.
-      shape = revolvePolygon(oc, profile(), op.angle);
+      // Eje de revolución: arista recta elegida por clic (op.axis==='edge') o un
+      // preset GLOBAL X/Y/Z. El perfil es el medio-perfil a un lado del eje.
+      const axis =
+        op.axis === 'edge'
+          ? (edgeAxis ?? GLOBAL_AXES.y)
+          : GLOBAL_AXES[op.axis];
+      shape = revolvePolygon(oc, profile(), op.angle, PLANE_XY, axis);
     } else if (op.type === 'hole' && shape) {
       // zTop = altura del sólido extruido (depende del extrude previo).
       const ex = ops.find((o) => o.type === 'extrude') as ExtrudeOp | undefined;
@@ -190,12 +258,12 @@ function buildShape(oc: OC, sketch: SketchFeature, ops: Op[]): Shape {
 // Render del sólido teselado + picking de cara/arista (raycast)
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
-  mesh, faded, faces, edges, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
+  mesh, faded, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
   faces: FaceRef[];
-  edges: EdgeRef[];
+  edgeGeoms: EdgeGeom[];
   selFaces: number[];
   selEdges: number[];
   pickMode: 'none' | 'face' | 'edge';
@@ -212,6 +280,36 @@ function SolidMesh({
   }, [mesh]);
   const edgesGeo = useMemo(() => new THREE.EdgesGeometry(geom, 25), [geom]);
   useEffect(() => () => { geom.dispose(); edgesGeo.dispose(); }, [geom, edgesGeo]);
+
+  // Radio del tubo PICKEABLE de arista, escalado al tamaño del modelo: ni tan
+  // fino que el raycast falle, ni tan grueso que tape la geometría. La esfera de
+  // contorno del sólido da la escala; ~1.3% del radio es cómodo para clicar.
+  const tubeR = useMemo(() => {
+    const r = geom.boundingSphere?.radius ?? 30;
+    return Math.max(0.35, r * 0.013);
+  }, [geom]);
+
+  // Geometría PICKEABLE de cada arista (tubo a lo largo de su polilínea EXACTA
+  // del kernel) en DOS radios: uno FINO (objetivo de raycast, casi invisible) y
+  // uno GRUESO (resalte de la arista seleccionada, sobresale del sólido). El
+  // raycast de three.js contra estos tubos devuelve la arista REAL bajo el
+  // cursor (no la del punto-medio más cercano): igual de exacto que el picking
+  // de cara por triángulo. Cada tubo lleva su edgeId.
+  const edgeTubes = useMemo(() => {
+    return edgeGeoms.map((eg) => {
+      const pts = eg.polyline.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
+      // CatmullRom con tension 0 sobre ≥2 puntos = polilínea recta entre nodos
+      // (no “redondea” las rectas); para curvas sigue la discretización fina.
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0);
+      const segs = Math.max(1, pts.length - 1);
+      const geoPick = new THREE.TubeGeometry(curve, segs, tubeR, 6, false);
+      const geoSel = new THREE.TubeGeometry(curve, segs, tubeR * 2.4, 8, false);
+      return { edgeId: eg.edgeId, geoPick, geoSel };
+    });
+  }, [edgeGeoms, tubeR]);
+  useEffect(() => () => {
+    for (const t of edgeTubes) { t.geoPick.dispose(); t.geoSel.dispose(); }
+  }, [edgeTubes]);
 
   // Geometría de RESALTE: por cada cara seleccionada, extraemos sus grupos
   // (faceGroups del kernel) y construimos una sub-malla con los MISMOS
@@ -239,39 +337,36 @@ function SolidMesh({
   }, [mesh, selFaces]);
   useEffect(() => () => { highlightGeo?.dispose(); }, [highlightGeo]);
 
-  // Picking REAL: el raycast de three.js entrega el ÍNDICE DEL TRIÁNGULO
-  // intersectado (e.faceIndex). El kernel etiquetó cada triángulo con su cara
-  // OCCT (mesh.faceIds), así que triángulo → faceId es directo y exacto
-  // (no heurístico): la cara que devolvemos es la que está REALMENTE bajo el
-  // cursor, no la del centroide más cercano. Para aristas seguimos por
-  // proximidad al punto-medio (las aristas no se teselan como triángulos).
+  // Picking de CARA REAL: el raycast de three.js entrega el ÍNDICE DEL TRIÁNGULO
+  // (e.faceIndex). El kernel etiquetó cada triángulo con su cara OCCT
+  // (mesh.faceIds), así que triángulo → faceId es directo y exacto: la cara que
+  // devolvemos es la que está REALMENTE bajo el cursor.
   const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
-    if (pickMode === 'none') return;
+    if (pickMode !== 'face') return;
     e.stopPropagation();
-    if (pickMode === 'face') {
-      const ti = e.faceIndex;
-      if (ti != null && ti >= 0 && ti < mesh.faceIds.length) {
-        onPickFace(mesh.faceIds[ti]);
-        return;
-      }
-      // Fallback (raro): si no hubo faceIndex, usa el centroide más cercano.
-      const p = e.point;
-      let best = -1, bd = Infinity;
-      for (const f of faces) {
-        const d = (f.center[0] - p.x) ** 2 + (f.center[1] - p.y) ** 2 + (f.center[2] - p.z) ** 2;
-        if (d < bd) { bd = d; best = f.index; }
-      }
-      if (best >= 0) onPickFace(best);
-    } else {
-      const p = e.point;
-      let best = -1, bd = Infinity;
-      for (const ed of edges) {
-        const d = (ed.mid[0] - p.x) ** 2 + (ed.mid[1] - p.y) ** 2 + (ed.mid[2] - p.z) ** 2;
-        if (d < bd) { bd = d; best = ed.index; }
-      }
-      if (best >= 0) onPickEdge(best);
+    const ti = e.faceIndex;
+    if (ti != null && ti >= 0 && ti < mesh.faceIds.length) {
+      onPickFace(mesh.faceIds[ti]);
+      return;
     }
-  }, [pickMode, mesh, faces, edges, onPickFace, onPickEdge]);
+    // Fallback (raro): si no hubo faceIndex, usa el centroide más cercano.
+    const p = e.point;
+    let best = -1, bd = Infinity;
+    for (const f of faces) {
+      const d = (f.center[0] - p.x) ** 2 + (f.center[1] - p.y) ** 2 + (f.center[2] - p.z) ** 2;
+      if (d < bd) { bd = d; best = f.index; }
+    }
+    if (best >= 0) onPickFace(best);
+  }, [pickMode, mesh, faces, onPickFace]);
+
+  // Picking de ARISTA EXACTO: el clic golpea un TUBO concreto (raycast a su malla
+  // triangulada). Cada tubo conoce su edgeId, así que devolvemos la arista REAL
+  // bajo el cursor — no la del punto-medio más cercano (heurística vieja).
+  const handleEdgeClick = useCallback((edgeId: number) => (e: ThreeEvent<MouseEvent>) => {
+    if (pickMode !== 'edge') return;
+    e.stopPropagation();
+    onPickEdge(edgeId);
+  }, [pickMode, onPickEdge]);
 
   return (
     <group>
@@ -308,6 +403,29 @@ function SolidMesh({
         <lineBasicMaterial color={GOLD} transparent opacity={0.5} />
       </lineSegments>
 
+      {/* ARISTAS PICKEABLES: tubo FINO por arista (objetivo de raycast, casi
+          invisible). Solo aceptan clic en modo 'edge'; siguen siendo objetivo
+          del raycast cuando el picking está activo. */}
+      {edgeTubes.map(({ edgeId, geoPick }) => (
+        <mesh
+          key={`etp${edgeId}`}
+          geometry={geoPick}
+          renderOrder={3}
+          onClick={handleEdgeClick(edgeId)}
+          visible={pickMode === 'edge'}
+        >
+          <meshBasicMaterial color={STEEL} transparent opacity={0.3} />
+        </mesh>
+      ))}
+
+      {/* ARISTA(S) SELECCIONADA(S): tubo GRUESO de oro emisivo SIEMPRE encima del
+          sólido (depthTest off) — visible aunque el bloom queme la cara. */}
+      {edgeTubes.filter((t) => selEdges.includes(t.edgeId)).map(({ edgeId, geoSel }) => (
+        <mesh key={`ets${edgeId}`} geometry={geoSel} renderOrder={5} onClick={handleEdgeClick(edgeId)}>
+          <meshBasicMaterial color={GOLD} toneMapped={false} depthTest={false} />
+        </mesh>
+      ))}
+
       {/* Marcador puntual de cara seleccionada (esfera verde en su centroide),
           además del resalte de superficie — doble feedback del picking. */}
       {selFaces.map((i) => {
@@ -317,16 +435,6 @@ function SolidMesh({
           <mesh key={`sf${i}`} position={f.center}>
             <sphereGeometry args={[1.6, 16, 16]} />
             <meshBasicMaterial color={'#4ade80'} transparent opacity={0.9} />
-          </mesh>
-        );
-      })}
-      {selEdges.map((i) => {
-        const ed = edges.find((x) => x.index === i);
-        if (!ed) return null;
-        return (
-          <mesh key={`se${i}`} position={ed.mid}>
-            <sphereGeometry args={[1.4, 16, 16]} />
-            <meshBasicMaterial color={GOLD} transparent opacity={0.95} />
           </mesh>
         );
       })}
@@ -415,6 +523,8 @@ export default function ForgeBRepStudio() {
 
   const [sketch, setSketch] = useState<SketchFeature>({
     id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
+    // Perfil de revolución por defecto: 3 escalones (flecha con hombros).
+    steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
   });
   // El grafo arranca con un extrude (el "primer momento": sketch→sólido).
   const [ops, setOps] = useState<Op[]>([
@@ -433,11 +543,18 @@ export default function ForgeBRepStudio() {
   const [selectedFaceId, setSelectedFaceId] = useState<number | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<number | null>(null);
   const stepBlobUrl = useRef<string | null>(null);
+  // Eje de revolución resuelto desde la arista RECTA clicada (su EdgeGeom.axis).
+  // Un ref para que `rebuild` lo lea SIN re-crear el callback en cada clic.
+  const edgeAxisRef = useRef<RevolveAxis | null>(null);
+  // Último resultado en un ref: los callbacks de picking leen las EdgeGeom
+  // actuales sin depender de `result` (evita re-crear handlers en cada rebuild).
+  const resultRef = useRef<BuildResult | null>(null);
 
   // Perfil vivo (ghost del sketch base).
   const profilePts = useMemo<Pt2[]>(() => {
     if (sketch.kind === 'rect') return rectProfile(sketch.width, sketch.height);
     if (sketch.kind === 'lprofile') return lProfile(sketch.width, sketch.height, sketch.legW);
+    if (sketch.kind === 'revprofile') return revProfile(sketch.steps);
     return circleGhost(sketch.radius);
   }, [sketch]);
 
@@ -465,7 +582,7 @@ export default function ForgeBRepStudio() {
     setOpErr(null);
     requestAnimationFrame(() => {
       try {
-        const shape = buildShape(oc, sketch, ops);
+        const shape = buildShape(oc, sketch, ops, edgeAxisRef.current);
         const mesh = tessellate(oc, shape, 0.08, 0.3);
         const topo = topology(oc, shape);
         const volKernel = volume(oc, shape);
@@ -473,6 +590,7 @@ export default function ForgeBRepStudio() {
         const mass = massProperties(oc, shape, MATERIALS[material].density);
         const faces = enumerateFaces(oc, shape);
         const edges = enumerateEdges(oc, shape);
+        const edgeGeoms = enumerateEdgesGeom(oc, shape);
         const step = exportSTEP(oc, shape, 'forja-part.step');
 
         if (stepBlobUrl.current) URL.revokeObjectURL(stepBlobUrl.current);
@@ -480,7 +598,9 @@ export default function ForgeBRepStudio() {
           new Blob([step], { type: 'application/step' }),
         );
 
-        setResult({ mesh, topo, volKernel, area, stepBytes: step.length, mass, faces, edges });
+        const built: BuildResult = { mesh, topo, volKernel, area, stepBytes: step.length, mass, faces, edges, edgeGeoms };
+        resultRef.current = built;
+        setResult(built);
         shape.delete?.();
       } catch (e) {
         setOpErr(String((e as Error)?.message ?? e));
@@ -506,6 +626,22 @@ export default function ForgeBRepStudio() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // ── Mutadores del PERFIL ESCALONADO de revolución (croquis poligonal) ──
+  const updateStep = useCallback((i: number, patch: Partial<RevStep>) => {
+    setSketch((s) => ({ ...s, steps: s.steps.map((st, k) => (k === i ? { ...st, ...patch } : st)) }));
+  }, []);
+  const addStep = useCallback(() => {
+    setSketch((s) => ({ ...s, steps: [...s.steps, { r: 10, L: 20 }] }));
+  }, []);
+  const removeStep = useCallback((i: number) => {
+    setSketch((s) => (s.steps.length <= 1 ? s : { ...s, steps: s.steps.filter((_, k) => k !== i) }));
+  }, []);
+  // Aplica un perfil escalonado completo de una vez (atajo determinista para QA:
+  // cilindro = 1 escalón; flecha = 3 escalones). Sigue siendo estado de UI.
+  const setSteps = useCallback((steps: RevStep[]) => {
+    setSketch((s) => ({ ...s, kind: 'revprofile', steps }));
+  }, []);
+
   // ── Mutadores del grafo ──
   const updateOp = useCallback((id: string, patch: Partial<Op>) => {
     setOps((cur) => cur.map((o) => (o.id === id ? ({ ...o, ...patch } as Op) : o)));
@@ -519,7 +655,7 @@ export default function ForgeBRepStudio() {
       case 'fillet': op = { id: newId('fillet'), type, radius: 3, edges: [] }; break;
       case 'chamfer': op = { id: newId('chamfer'), type, dist: 2, edges: [] }; break;
       case 'shell': op = { id: newId('shell'), type, thickness: 2, faces: [] }; break;
-      case 'revolve': op = { id: newId('revolve'), type, angle: 360 }; break;
+      case 'revolve': op = { id: newId('revolve'), type, angle: 360, axis: 'y' }; break;
     }
     setOps((cur) => [...cur, op]);
     setActiveOp(op.id);
@@ -546,12 +682,22 @@ export default function ForgeBRepStudio() {
   }, [ops, activeOp, updateOp]);
   const togglePickEdge = useCallback((i: number) => {
     setSelectedEdgeId(i);
+    // Si la arista clicada es RECTA, su eje (gp_Ax1) queda disponible para el
+    // revolve por-arista. Lo guardamos en el ref que `rebuild` consulta.
+    const eg = resultRef.current?.edgeGeoms.find((g) => g.edgeId === i);
+    if (eg?.axis) edgeAxisRef.current = eg.axis;
     const op = ops.find((o) => o.id === activeOp);
     if (!op || (op.type !== 'fillet' && op.type !== 'chamfer')) return;
     const cur = (op as FilletOp | ChamferOp).edges;
     const next = cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i];
     updateOp(op.id, { edges: next } as Partial<Op>);
   }, [ops, activeOp, updateOp]);
+
+  // Activa el picking de ARISTA en modo inspección (sin op que consuma aristas),
+  // para elegir el EJE del revolve clicando una arista recta del sólido actual.
+  const enableEdgePick = useCallback(() => {
+    setPickMode((m) => (m === 'edge' ? 'none' : 'edge'));
+  }, []);
 
   // El picking se puede activar SIN una op (modo "inspección"): permite elegir
   // cara/arista para ver el ID en el HUD antes de crear el feature.
@@ -605,12 +751,21 @@ export default function ForgeBRepStudio() {
       addOp,
       updateOp,
       setSketch,
+      // Perfil escalonado de revolución (croquis poligonal) — driver de QA.
+      setSteps,
+      addStep,
+      updateStep,
+      get steps() { return sketch.steps; },
       setMaterial,
       setPickMode,
       pickFace: togglePickFace,
       pickEdge: togglePickEdge,
       listFaces: () => result?.faces ?? [],
       listEdges: () => result?.edges ?? [],
+      // Geometría pickeable de aristas (polilínea + eje si es recta).
+      listEdgeGeoms: () => result?.edgeGeoms ?? [],
+      // Eje de revolución resuelto desde la arista recta clicada (gp_Ax1).
+      get selectedEdgeAxis() { return edgeAxisRef.current; },
       // Diagnóstico del teselado etiquetado: nº de grupos por cara + faceIds.
       get tessTags() {
         return result ? {
@@ -622,10 +777,12 @@ export default function ForgeBRepStudio() {
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId]);
+  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps]);
 
   const cameraDist = useMemo(() => {
-    const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, 30);
+    const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
+    const stepR = Math.max(0, ...sketch.steps.map((s) => s.r));
+    const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, stepLen, stepR * 2, 30);
     return Math.max(60, span * 2.6);
   }, [sketch]);
 
@@ -664,7 +821,7 @@ export default function ForgeBRepStudio() {
                 mesh={result.mesh}
                 faded={building}
                 faces={result.faces}
-                edges={result.edges}
+                edgeGeoms={result.edgeGeoms}
                 selFaces={selFaces}
                 selEdges={selEdges}
                 pickMode={pickMode}
@@ -696,8 +853,25 @@ export default function ForgeBRepStudio() {
           ) : (
             <span className="lbl">Ninguna cara seleccionada</span>
           )}
-          {selectedEdgeId != null && (
-            <span className="meta edge" data-testid="hud-selected-edge">Arista #{selectedEdgeId}</span>
+        </div>
+
+        {/* HUD de ARISTA SIEMPRE presente (incluso vacío): Playwright lee este
+            nodo antes/después del clic para confirmar el cambio de edgeId. */}
+        <div className="fb-hud-edge" data-testid="hud-selected-edge">
+          {selectedEdgeId != null ? (
+            (() => {
+              const eg = result?.edgeGeoms.find((g) => g.edgeId === selectedEdgeId);
+              return (
+                <>
+                  <span className="lbl">Arista</span>
+                  <b>#{selectedEdgeId}</b>
+                  {eg && <span className="meta">{eg.kind} · {eg.length.toFixed(1)}mm</span>}
+                  {eg?.axis && <span className="meta axis">eje ✓</span>}
+                </>
+              );
+            })()
+          ) : (
+            <span className="lbl">Ninguna arista seleccionada</span>
           )}
         </div>
       </div>
@@ -739,7 +913,7 @@ export default function ForgeBRepStudio() {
               <span className="ico">▣</span>
               <div>
                 <strong>Sketch 1</strong>
-                <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo' : 'Perfil L'} · Plano XY</em>
+                <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo' : sketch.kind === 'revprofile' ? `Perfil escalón ×${sketch.steps.length}` : 'Perfil L'} · Plano XY</em>
               </div>
             </div>
             {ops.map((op, i) => (
@@ -805,10 +979,49 @@ export default function ForgeBRepStudio() {
                     onClick={() => setSketch((s) => ({ ...s, kind: 'circle' }))}>Círculo</button>
                   <button data-testid="seg-lprofile" className={sketch.kind === 'lprofile' ? 'on' : ''}
                     onClick={() => setSketch((s) => ({ ...s, kind: 'lprofile' }))}>L</button>
+                  <button data-testid="seg-revprofile" className={sketch.kind === 'revprofile' ? 'on' : ''}
+                    onClick={() => setSketch((s) => ({ ...s, kind: 'revprofile' }))}>Escalón</button>
                 </div>
                 {sketch.kind === 'circle' ? (
                   <Dim label="Radio" value={sketch.radius} unit="mm" min={3} max={50} step={1} testid="input-radio"
                     onChange={(v) => setSketch((s) => ({ ...s, radius: v }))} />
+                ) : sketch.kind === 'revprofile' ? (
+                  <>
+                    {/* CROQUIS POLIGONAL ESCALONADO para revolución: cada escalón es
+                        un par (radio r, longitud L) a UN lado del eje Y. El sólido
+                        revolvido tiene vol = Σ π·r_i²·L_i. */}
+                    <p className="fb-hint-txt">
+                      Perfil a un lado del eje Y. Revolve 360° → cilindro (1 escalón)
+                      o flecha con hombros (varios). Vol = Σ π·r²·L.
+                    </p>
+                    <div className="fb-seg">
+                      <button data-testid="preset-cilindro"
+                        onClick={() => setSteps([{ r: 14, L: 40 }])}>Cilindro</button>
+                      <button data-testid="preset-flecha"
+                        onClick={() => setSteps([{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }])}>Flecha 3</button>
+                    </div>
+                    <div className="fb-steps" data-testid="rev-steps">
+                      {sketch.steps.map((st, i) => (
+                        <div className="fb-step-row" data-testid={`step-row-${i}`} key={i}>
+                          <span className="fb-step-idx">#{i}</span>
+                          <Dim label={`r${i}`} value={st.r} unit="mm" min={2} max={50} step={1}
+                            testid={`step-r-${i}`} onChange={(v) => updateStep(i, { r: v })} />
+                          <Dim label={`L${i}`} value={st.L} unit="mm" min={2} max={80} step={1}
+                            testid={`step-l-${i}`} onChange={(v) => updateStep(i, { L: v })} />
+                          <button className="fb-step-del" data-testid={`step-del-${i}`}
+                            onClick={() => removeStep(i)} title="Quitar escalón">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button className="fb-pick-btn" data-testid="btn-add-step" onClick={addStep}>
+                      + Agregar escalón
+                    </button>
+                    <div className="fb-sel-head">
+                      Vol esperado <b data-testid="vol-esperado-steps">
+                        {(sketch.steps.reduce((a, s) => a + Math.PI * s.r * s.r * s.L, 0)).toFixed(1)}
+                      </b> mm³
+                    </div>
+                  </>
                 ) : (
                   <>
                     <Dim label="Ancho" value={sketch.width} unit="mm" min={6} max={100} step={1} testid="input-ancho"
@@ -880,7 +1093,7 @@ export default function ForgeBRepStudio() {
                 <div className="fb-sel-list" data-testid="edge-list">
                   {(result?.edges ?? []).map((ed) => (
                     <button key={ed.index}
-                      data-testid={`edge-${ed.index}`}
+                      data-testid={`edge-item-${ed.index}`}
                       className={activeOpObj.edges.includes(ed.index) ? 'sel' : ''}
                       onClick={() => togglePickEdge(ed.index)}>
                       Arista {ed.index} · {ed.kind} · {ed.length.toFixed(1)}mm
@@ -920,7 +1133,47 @@ export default function ForgeBRepStudio() {
                 <div className="fb-panel-title">Revolve · Revolución</div>
                 <Dim label="Ángulo" value={activeOpObj.angle} unit="°" min={10} max={360} step={5} testid="input-angulo"
                   onChange={(v) => updateOp(activeOpObj.id, { angle: v } as Partial<Op>)} />
-                <p className="fb-hint-txt">El perfil gira alrededor del eje Y (x=0). Usa el sketch a un lado del eje.</p>
+
+                {/* EJE de revolución (gp_Ax1): presets GLOBALES X/Y/Z o la arista
+                    RECTA elegida por clic. El perfil debe quedar a UN lado del eje. */}
+                <div className="fb-sel-head">Eje de revolución</div>
+                <div className="fb-seg">
+                  <button data-testid="axis-x" className={activeOpObj.axis === 'x' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { axis: 'x' } as Partial<Op>)}>X</button>
+                  <button data-testid="axis-y" className={activeOpObj.axis === 'y' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { axis: 'y' } as Partial<Op>)}>Y</button>
+                  <button data-testid="axis-z" className={activeOpObj.axis === 'z' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { axis: 'z' } as Partial<Op>)}>Z</button>
+                  <button data-testid="axis-edge" className={activeOpObj.axis === 'edge' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { axis: 'edge' } as Partial<Op>)}>Arista</button>
+                </div>
+                {activeOpObj.axis === 'edge' && (
+                  <>
+                    <button className="fb-pick-btn" data-testid="btn-pick-edge"
+                      onClick={enableEdgePick}>
+                      {pickMode === 'edge' ? '◉ Picking de arista activo' : '○ Clic en arista (viewport)'}
+                    </button>
+                    <div className="fb-sel-head">
+                      Eje = arista <b>{selectedEdgeId != null ? `#${selectedEdgeId}` : '—'}</b>
+                      {selectedEdgeId != null &&
+                        !result?.edgeGeoms.find((g) => g.edgeId === selectedEdgeId)?.axis &&
+                        <em> (no es recta)</em>}
+                    </div>
+                    <div className="fb-sel-list" data-testid="edge-list">
+                      {(result?.edgeGeoms ?? []).filter((g) => g.kind === 'line').map((g) => (
+                        <button key={g.edgeId}
+                          data-testid={`edge-item-${g.edgeId}`}
+                          className={selectedEdgeId === g.edgeId ? 'sel' : ''}
+                          onClick={() => togglePickEdge(g.edgeId)}>
+                          Arista {g.edgeId} · recta · {g.length.toFixed(1)}mm
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <p className="fb-hint-txt">
+                  Eje global X/Y/Z o una arista recta del sólido actual. El perfil gira a UN lado del eje.
+                </p>
               </>
             )}
 
@@ -1057,6 +1310,15 @@ const CSS = `
 .fb-hud-sel .meta{font-size:11px;color:${STEEL};font-family:'JetBrains Mono',monospace;}
 .fb-hud-sel .meta.edge{color:#8ff0a4;}
 
+.fb-hud-edge{position:absolute;top:148px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;z-index:6;pointer-events:none;
+  background:rgba(13,18,28,0.78);border:1px solid #8ff0a455;border-radius:20px;
+  padding:6px 14px;backdrop-filter:blur(10px);font-size:12px;color:#e9eef5;}
+.fb-hud-edge .lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:${STEEL};opacity:.7;}
+.fb-hud-edge b{color:#8ff0a4;font-family:'JetBrains Mono',monospace;font-size:14px;}
+.fb-hud-edge .meta{font-size:11px;color:${STEEL};font-family:'JetBrains Mono',monospace;}
+.fb-hud-edge .meta.axis{color:${GOLD};font-weight:600;}
+
 .fb-facelist{position:absolute;left:18px;bottom:18px;width:210px;padding:12px;max-height:34vh;
   overflow:auto;display:flex;flex-direction:column;gap:8px;}
 .fb-facelist .fb-feat-head{display:flex;justify-content:space-between;}
@@ -1129,6 +1391,14 @@ const CSS = `
 .fb-check{display:flex;align-items:center;gap:8px;font-size:11px;color:${STEEL};margin-bottom:12px;cursor:pointer;}
 .fb-check input{accent-color:${GOLD};}
 .fb-hint-txt{font-size:10px;color:${STEEL};opacity:.7;line-height:1.4;margin:4px 0 0;}
+
+.fb-steps{display:flex;flex-direction:column;gap:6px;margin:8px 0;max-height:240px;overflow:auto;}
+.fb-step-row{display:grid;grid-template-columns:auto 1fr 1fr auto;align-items:end;gap:6px;
+  padding:6px;border:1px solid rgba(159,179,200,0.12);border-radius:8px;background:rgba(255,255,255,0.02);}
+.fb-step-row .fb-dim{margin-bottom:0;}
+.fb-step-idx{font-size:10px;color:${GOLD};font-family:'JetBrains Mono',monospace;padding-bottom:6px;}
+.fb-step-del{border:0;background:transparent;color:${STEEL};cursor:pointer;font-size:12px;padding:0 2px 6px;}
+.fb-step-del:hover{color:#ff6b6b;}
 
 .fb-sel-head{font-size:11px;color:${STEEL};margin:6px 0 8px;}
 .fb-sel-head b{color:${GOLD};}.fb-sel-head em{font-style:normal;opacity:.6;font-size:10px;}

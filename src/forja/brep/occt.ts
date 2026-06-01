@@ -514,28 +514,39 @@ export function shellSolid(
 // Revolve (BRepPrimAPI_MakeRevol) — sólido de revolución
 // ─────────────────────────────────────────────────────────────────
 
+/** Eje de revolución arbitrario (gp_Ax1): origen + dirección. */
+export interface RevolveAxis {
+  origin: [number, number, number];
+  dir: [number, number, number];
+}
+
 /**
- * Revoluciona un PERFIL POLIGONAL cerrado (puntos 2D, plano XY) alrededor del
- * eje Y (x=0) un ángulo `angleDeg`. El perfil debe estar TODO a un lado del
- * eje (x ≥ 0) para generar un sólido axisimétrico válido (eje, polea, botella).
+ * Revoluciona un PERFIL POLIGONAL cerrado (puntos 2D, plano XY) un ángulo
+ * `angleDeg` alrededor de un EJE. Por defecto el eje es el V del plano (+Y, x=0);
+ * `axis` lo sobrescribe con un gp_Ax1 arbitrario — típicamente derivado de una
+ * arista RECTA elegida por clic (su `EdgeGeom.axis`) o de un preset global X/Y/Z.
+ * El perfil debe quedar TODO a UN lado del eje para un sólido axisimétrico válido.
  *
- * Invariante para 360°: volumen = teorema de Pappus = 2π · A · x̄.
+ * Invariante para 360° con eje +Y: volumen = teorema de Pappus = 2π · A · x̄.
  */
 export function revolvePolygon(
   oc: OC,
   pts: Pt2[],
   angleDeg: number,
   plane: SketchPlane3D = PLANE_XY,
+  axis?: RevolveAxis,
 ): Shape {
   if (pts.length < 3) {
     throw new Error('revolvePolygon: se requieren ≥3 puntos');
   }
   const wire = makePolygonWire(oc, plane, pts);
   const face = new oc.BRepBuilderAPI_MakeFace_15(wire, true).Face();
-  // Eje de revolución = eje V del plano (por defecto +Y) anclado en el origen.
-  const [ox, oy, oz] = plane.origin;
-  const o = new oc.gp_Pnt_3(ox, oy, oz);
-  const d = new oc.gp_Dir_4(plane.vDir[0], plane.vDir[1], plane.vDir[2]);
+  // Eje de revolución: el `axis` explícito (arista/preset) o, por defecto, el
+  // eje V del plano (+Y) anclado en el origen del plano.
+  const origin = axis ? axis.origin : plane.origin;
+  const dir = axis ? axis.dir : plane.vDir;
+  const o = new oc.gp_Pnt_3(origin[0], origin[1], origin[2]);
+  const d = new oc.gp_Dir_4(dir[0], dir[1], dir[2]);
   const ax1 = new oc.gp_Ax1_2(o, d);
   const ang = (angleDeg * Math.PI) / 180;
   const full = Math.abs(angleDeg - 360) < 1e-6;
@@ -827,6 +838,32 @@ export interface EdgeRef {
   mid: [number, number, number];
 }
 
+/**
+ * Geometría PICKEABLE de una arista: su polilínea 3D (discretización exacta de
+ * la curva) y, si es recta, su eje (punto + dirección unitaria) para usarla de
+ * gp_Ax1 en el revolve. `edgeId` es el índice ESTABLE (mismo orden que
+ * `enumerateEdges` / `uniqueSubShapes(EDGE)`), de modo que un raycast contra
+ * la geometría de la arista → edgeId mapea directo a la lista de la UI.
+ */
+export interface EdgeGeom {
+  edgeId: number;
+  /** 'line' | 'circle' | 'other' */
+  kind: string;
+  length: number;
+  /** Vértices 3D de la polilínea que aproxima la curva (≥2 puntos). */
+  polyline: Array<[number, number, number]>;
+  /** punto medio [x,y,z] (mm) — ancla del label / HUD. */
+  mid: [number, number, number];
+  /**
+   * Solo para aristas RECTAS: eje (origen + dirección unitaria) listo para
+   * construir un gp_Ax1 de revolución. Ausente en curvas (círculos, etc.).
+   */
+  axis?: {
+    origin: [number, number, number];
+    dir: [number, number, number];
+  };
+}
+
 /** Lista de caras con tipo/área/centroide en el orden estable del explorer. */
 export function enumerateFaces(oc: OC, shape: Shape): FaceRef[] {
   const faces = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_FACE);
@@ -896,6 +933,68 @@ export function enumerateEdges(oc: OC, shape: Shape): EdgeRef[] {
     props.delete?.();
     adaptor.delete?.();
     out.push({ index: i, kind, length, mid });
+  }
+  for (const e of edges) e.delete?.();
+  return out;
+}
+
+/**
+ * Emite la GEOMETRÍA PICKEABLE de cada arista (orden estable, dedup por IsSame):
+ * discretiza la curva subyacente (BRepAdaptor_Curve) a una polilínea 3D
+ * muestreando `Value(t)` en el rango paramétrico [first,last]. Las RECTAS se
+ * etiquetan con un eje (origen + dirección unitaria) listo para usarse como
+ * gp_Ax1 en el revolve; las curvas se muestrean con más segmentos para que el
+ * raycast contra los tubos finos de la UI sea fiel.
+ *
+ * `segments` = número de segmentos por arista CURVA (rectas: 1 segmento, 2 pts).
+ * Devuelve {edgeId, kind, length, polyline, mid, axis?} con edgeId == índice de
+ * `enumerateEdges` (misma enumeración), para que la UI mapee raycast → edgeId.
+ */
+export function enumerateEdgesGeom(
+  oc: OC,
+  shape: Shape,
+  segments = 48,
+): EdgeGeom[] {
+  const edges = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_EDGE);
+  const out: EdgeGeom[] = [];
+  const lineEnum = oc.GeomAbs_CurveType.GeomAbs_Line.value as number;
+  const circleEnum = oc.GeomAbs_CurveType.GeomAbs_Circle.value as number;
+
+  for (let i = 0; i < edges.length; i++) {
+    const e = oc.TopoDS.Edge_1(edges[i]);
+    const adaptor = new oc.BRepAdaptor_Curve_2(e);
+    const gt = adaptor.GetType().value as number;
+    const kind = gt === lineEnum ? 'line' : gt === circleEnum ? 'circle' : 'other';
+
+    const t0 = adaptor.FirstParameter() as number;
+    const t1 = adaptor.LastParameter() as number;
+    // Recta: 2 puntos (extremos). Curva: muestreo uniforme en el parámetro.
+    const n = kind === 'line' ? 1 : Math.max(2, segments);
+    const polyline: Array<[number, number, number]> = [];
+    for (let k = 0; k <= n; k++) {
+      const t = t0 + ((t1 - t0) * k) / n;
+      const p = adaptor.Value(t);
+      polyline.push([p.X(), p.Y(), p.Z()]);
+    }
+
+    const props = new oc.GProp_GProps_1();
+    oc.BRepGProp.LinearProperties(edges[i], props, false, false);
+    const length = props.Mass() as number;
+    const c = props.CentreOfMass();
+    const mid: [number, number, number] = [c.X(), c.Y(), c.Z()];
+    props.delete?.();
+
+    let axis: EdgeGeom['axis'] | undefined;
+    if (kind === 'line') {
+      const a = polyline[0];
+      const b = polyline[polyline.length - 1];
+      const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+      const len = Math.hypot(dx, dy, dz) || 1;
+      axis = { origin: a, dir: [dx / len, dy / len, dz / len] };
+    }
+
+    adaptor.delete?.();
+    out.push({ edgeId: i, kind, length, polyline, mid, axis });
   }
   for (const e of edges) e.delete?.();
   return out;
