@@ -8,10 +8,10 @@
 import LegalShell, { Bullets, type LegalSection } from '../legal/LegalShell';
 
 // ── Datos del responsable (REEMPLAZA antes de publicar) ──
-const EMPRESA = '[RAZÓN SOCIAL]';
+const EMPRESA = 'Sebastián Vázquez Andrade';
 const NOMBRE_COMERCIAL = 'GAIA';
-const DOMICILIO = '[DOMICILIO FISCAL]';
-const CORREO_ARCO = '[correo de privacidad]';
+const DOMICILIO = 'C.P. 15000, Ciudad de México';
+const CORREO_ARCO = 'privacidad@gaiaprime.com.mx';
 const SITIO = 'university.gaiaprime.com.mx';
 
 const SECTIONS: LegalSection[] = [

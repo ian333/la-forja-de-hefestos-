@@ -52,4 +52,14 @@ _out/
 _cine_out/
 _phys/
 _phys_out/
+_reel/
+_reel_out/
 *.bak
+
+# render scratch dirs (sesión)
+_b3/
+_bhv2/
+_comercial_out/
+_jit_out/
+_solo_out/
+_*_out/

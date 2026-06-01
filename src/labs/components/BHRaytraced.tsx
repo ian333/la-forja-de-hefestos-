@@ -61,6 +61,22 @@ export interface BHRaytracedProps {
   nebulaBoost?: number;
   /** Separación R/G/B (aberración cromática) en los bordes muy lensados. Default 0. */
   chromaticAberration?: number;
+  /**
+   * Inyección SÍNCRONA opcional (render determinista frame-a-frame): si se pasa,
+   * su retorno SOBREESCRIBE animTime/exposure/chromaticAberration en CADA useFrame,
+   * leyendo de un ref escrito en el mismo tick (cero skew de 1 frame vs la cámara,
+   * cero setState en el camino de render). NO toca la física del shader: solo son
+   * los mismos uniforms ya existentes, alimentados por un ref en vez de por estado.
+   * Si devuelve undefined para un campo, se usa el prop normal.
+   */
+  getDynamic?: () => { animTime?: number; exposure?: number; chromaticAberration?: number } | undefined;
+  /**
+   * Tope de pasos del raymarch de geodésicas. Default 200 (precisión científica
+   * de la photon sphere). Bajarlo (p.ej. 110) ALIGERA el shader para render 4K sin
+   * disparar el TDR del GPU (WSL/D3D12 resetea la GPU si un frame tarda >~2s). 110
+   * basta para el disco/lensing cinemático; 200 para la precisión del anillo.
+   */
+  maxSteps?: number;
 }
 
 export default function BHRaytraced({
@@ -79,6 +95,8 @@ export default function BHRaytraced({
   linearOutput = false,
   nebulaBoost = 1,
   chromaticAberration = 0,
+  getDynamic,
+  maxSteps = 200,
 }: BHRaytracedProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { size } = useThree();
@@ -119,16 +137,23 @@ export default function BHRaytraced({
     uLinearOut:  { value: linearOutput ? 1.0 : 0.0 },
     uNebulaBoost:{ value: nebulaBoost },
     uChromAb:    { value: chromaticAberration },
+    uMaxSteps:   { value: maxSteps },
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // refs a los props vivos → se leen en useFrame sin recrear los uniforms
-  const propsRef = useRef({ rs, rIn, rOut, diskOpacity, dopplerStrength, starDensity, starSeed, photonRing, animTime, diskTintVec, diskNormal, exposure, linearOutput, nebulaBoost, chromaticAberration });
-  propsRef.current = { rs, rIn, rOut, diskOpacity, dopplerStrength, starDensity, starSeed, photonRing, animTime, diskTintVec, diskNormal, exposure, linearOutput, nebulaBoost, chromaticAberration };
+  const propsRef = useRef({ rs, rIn, rOut, diskOpacity, dopplerStrength, starDensity, starSeed, photonRing, animTime, diskTintVec, diskNormal, exposure, linearOutput, nebulaBoost, chromaticAberration, getDynamic, maxSteps });
+  propsRef.current = { rs, rIn, rOut, diskOpacity, dopplerStrength, starDensity, starSeed, photonRing, animTime, diskTintVec, diskNormal, exposure, linearOutput, nebulaBoost, chromaticAberration, getDynamic, maxSteps };
 
   useFrame(({ clock, camera }) => {
     const u = uniforms;
     const c = propsRef.current;
-    u.uTime.value = (c.animTime !== undefined && c.animTime >= 0) ? c.animTime : clock.elapsedTime;
+    // Inyección síncrona opcional (render determinista): sobreescribe los mismos
+    // uniforms con valores leídos de un ref en el MISMO tick (cero skew, cero state).
+    const dyn = c.getDynamic ? c.getDynamic() : undefined;
+    const animTimeV = dyn?.animTime ?? c.animTime;
+    const exposureV = dyn?.exposure ?? c.exposure;
+    const chromAbV = dyn?.chromaticAberration ?? c.chromaticAberration;
+    u.uTime.value = (animTimeV !== undefined && animTimeV >= 0) ? animTimeV : clock.elapsedTime;
     u.uRs.value = c.rs;
     u.uRIn.value = c.rIn * c.rs;
     u.uROut.value = c.rOut * c.rs;
@@ -139,10 +164,11 @@ export default function BHRaytraced({
     u.uPhotonRing.value = c.photonRing ? 1.0 : 0.0;
     u.uDiskTint.value.copy(c.diskTintVec);
     u.uDiskNormal.value.copy(c.diskNormal);
-    u.uExposure.value = c.exposure;
+    u.uExposure.value = exposureV;
     u.uLinearOut.value = c.linearOutput ? 1.0 : 0.0;
     u.uNebulaBoost.value = c.nebulaBoost;
-    u.uChromAb.value = c.chromaticAberration;
+    u.uChromAb.value = chromAbV;
+    u.uMaxSteps.value = c.maxSteps;
     u.uCamPos.value.copy(camera.position);
     // Camera basis for ray construction in shader
     const fwd = new THREE.Vector3();
@@ -208,6 +234,7 @@ const FRAGMENT_SHADER = /* glsl */`
   uniform float uLinearOut;    // 1.0 = emite HDR lineal (postFX hace ACES); 0.0 = ACES inline
   uniform float uNebulaBoost;  // brillo del fondo nebular lensado
   uniform float uChromAb;      // separación R/G/B en bordes muy lensados
+  uniform float uMaxSteps;     // tope de pasos del raymarch (200 default; 110 para 4K)
 
   // ── Hashes ──────────────────────────────────────────────────────────
   float hash13(vec3 p3) {
@@ -397,6 +424,9 @@ const FRAGMENT_SHADER = /* glsl */`
     bool absorbed = false;
 
     for (int i = 0; i < 200; i++) {
+      // Tope dinámico: el loop GLSL debe tener cota constante (200), pero cortamos
+      // antes si uMaxSteps es menor — aligera el shader para render 4K sin TDR.
+      if (float(i) >= uMaxSteps) break;
       float r = length(rayPos);
       if (r < uRs * 1.01) {
         absorbed = true;

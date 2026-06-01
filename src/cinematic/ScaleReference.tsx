@@ -72,6 +72,13 @@ export interface ScaleReferenceProps {
   /** tiempo de la escena (seg). El parent lo pasa dentro de su renderAt(t). */
   t: number;
   /**
+   * Fuente SÍNCRONA opcional del t: si se pasa, el useFrame lee getT() en cada
+   * tick en vez del prop `t` (cero skew de 1 frame vs la cámara, cero setState en
+   * el camino de render determinista). PURA en t igual: la deriva sigue siendo
+   * función pura del tiempo que devuelve getT.
+   */
+  getT?: () => number;
+  /**
    * escala global del derelicto. Mantenlo DIMINUTO frente al sujeto:
    * debe ser una mota apenas reconocible como artificial. Default ~0.05.
    */
@@ -105,12 +112,17 @@ function driftPosition(t: number, p: Required<DriftPath>, out: THREE.Vector3): T
  */
 export function ScaleReference({
   t,
+  getT,
   scale = 0.05,
   emissiveColor = '#cdd6ff',
   path,
   seed = 0,
 }: ScaleReferenceProps) {
   const groupRef = useRef<THREE.Group>(null);
+
+  // ref vivo a getT para leerlo en useFrame sin closure stale.
+  const getTRef = useRef(getT);
+  getTRef.current = getT;
 
   // path resuelto una sola vez (estable). Si cambia el prop, se recalcula.
   const cfg = useMemo<Required<DriftPath>>(() => ({ ...DEFAULT_PATH, ...path }), [path]);
@@ -150,12 +162,15 @@ export function ScaleReference({
     const g = groupRef.current;
     if (!g) return;
 
+    // t SÍNCRONO: si hay getT, lo leemos del ref en este mismo tick; si no, el prop.
+    const tt = getTRef.current ? getTRef.current() : t;
+
     // ---- posicion: funcion PURA de t ----
-    driftPosition(t, cfg, posScratch);
+    driftPosition(tt, cfg, posScratch);
     g.position.copy(posScratch);
 
     // ---- tumbo: rotacion = funcion PURA de t ----
-    g.rotation.set(t * cfg.tumble[0], t * cfg.tumble[1], t * cfg.tumble[2]);
+    g.rotation.set(tt * cfg.tumble[0], tt * cfg.tumble[1], tt * cfg.tumble[2]);
 
     // escala global aplicada al grupo (cuerpo modelado a ~1 unidad)
     g.scale.setScalar(scale);
@@ -164,7 +179,7 @@ export function ScaleReference({
     for (let i = 0; i < beacons.length; i++) {
       const mat = beaconRefs.current[i];
       if (!mat) continue;
-      mat.emissiveIntensity = blink(t, beacons[i].seed, beacons[i].hz, 0.0, beacons[i].peak);
+      mat.emissiveIntensity = blink(tt, beacons[i].seed, beacons[i].hz, 0.0, beacons[i].peak);
     }
   });
 

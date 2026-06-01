@@ -40,8 +40,11 @@ export default defineConfig({
         privacidad: resolve(import.meta.dirname, "privacidad.html"),
         masterclass: resolve(import.meta.dirname, "masterclass.html"),
         cad: resolve(import.meta.dirname, "cad.html"),
+        solver: resolve(import.meta.dirname, "solver.html"),
+        reporte: resolve(import.meta.dirname, "reporte.html"),
         economia: resolve(import.meta.dirname, "economia.html"),
         premio: resolve(import.meta.dirname, "premio.html"),
+        clase: resolve(import.meta.dirname, "clase.html"),
         "econ-lab": resolve(import.meta.dirname, "econ-lab.html"),
         "physics-nobel": resolve(import.meta.dirname, "physics-nobel.html"),
         "math-prizes": resolve(import.meta.dirname, "math-prizes.html"),
@@ -52,6 +55,7 @@ export default defineConfig({
         "cinematic-atom": resolve(import.meta.dirname, "cinematic-atom.html"),
         "cinematic-molecule": resolve(import.meta.dirname, "cinematic-molecule.html"),
         "cinematic-bh": resolve(import.meta.dirname, "cinematic-bh.html"),
+        "cinematic-bh-reel": resolve(import.meta.dirname, "cinematic-bh-reel.html"),
       },
       output: {
         manualChunks: {

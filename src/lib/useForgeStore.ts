@@ -14,6 +14,7 @@ import {
   isContainer,
   createDefaultScene,
   findNode,
+  findParent,
   updateNodeInTree,
   addChildToNode,
   removeNodeFromTree,
@@ -303,11 +304,17 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
       v => v.linkedPrimId === id && v.linkedParamKey === key,
     );
     if (linkedVar) {
+      // B1: don't hard-set resolvedValue — let resolveVariables recompute so
+      // any variable that references this one (e.g. b = a/2) propagates too.
       set(s => ({
-        variables: s.variables.map(v =>
-          v.id === linkedVar.id ? { ...v, expression: String(value), resolvedValue: value } : v,
+        variables: resolveVariables(
+          s.variables.map(v =>
+            v.id === linkedVar.id ? { ...v, expression: String(value) } : v,
+          ),
         ),
       }));
+      // Propagate to any primitives driven by dependent variables.
+      get().syncVariablesToScene();
     }
   },
 
@@ -365,7 +372,9 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
     const count = countPrimType(state.scene, type);
     const newVars = autoCreateVariablesForPrimitive(type, n.id, n.params, count);
     if (newVars.length > 0) {
-      set(s => ({ variables: [...s.variables, ...newVars] }));
+      // B1: resolve immediately so auto-created dimension vars get a numeric
+      // resolvedValue (createVariable inits it to NaN → chip renders 'ERR').
+      set(s => ({ variables: resolveVariables([...s.variables, ...newVars]) }));
     }
 
     get().requestMesh('medium');
@@ -373,25 +382,82 @@ export const useForgeStore = create<ForgeState>((set, get) => ({
 
   addOperation: (type) => {
     const state = get();
-    const n = makeOp(type, [], 0.2);
-    let newScene: SdfOperation;
 
-    // Priority: selectedId container > activeModuleId > root
-    const targetId = (() => {
-      if (state.selectedId) {
-        const sel = findNode(state.scene, state.selectedId);
-        if (sel && isContainer(sel)) return state.selectedId;
+    // ── B3/B4: a boolean must WRAP existing bodies, not insert an empty
+    // container. We pick a base + one-or-more tools, pull them out of their
+    // parent, and re-insert them as children of the new op in order
+    // [base, ...tools]. For 'subtract' the base is the body that gets the
+    // hole; the tools are subtracted from it.
+
+    // Candidate parent + the two bodies to wrap.
+    let parent: SdfNode | null = null;
+    let baseId: string | null = null;
+    let toolIds: string[] = [];
+
+    const selected = state.selectedId ? findNode(state.scene, state.selectedId) : null;
+
+    // A usable base is any body that is not the scene root (primitives and
+    // already-existing operations both qualify — you can subtract from a result).
+    if (selected && selected.id !== state.scene.id) {
+      // Use it as the base and grab a sibling inside the same parent as tool.
+      const p = findParent(state.scene, selected.id);
+      if (p && isContainer(p)) {
+        const siblings = p.children;
+        const idx = siblings.findIndex(c => c.id === selected.id);
+        const others = siblings.filter(c => c.id !== selected.id);
+        if (others.length >= 1) {
+          parent = p;
+          baseId = selected.id;
+          // Prefer the sibling immediately after the selection; fall back to
+          // the last other sibling so a hole is always cut by *something*.
+          const after = siblings.slice(idx + 1).filter(c => c.id !== selected.id);
+          toolIds = after.length > 0 ? [after[0].id] : [others[others.length - 1].id];
+        }
       }
-      if (state.activeModuleId) {
-        const mod = findNode(state.scene, state.activeModuleId);
-        if (mod && isContainer(mod)) return state.activeModuleId;
+    }
+
+    // Fallback: no usable selection → take the two last bodies of the most
+    // relevant container (active module or root); first = base, second = tool.
+    if (!parent || !baseId) {
+      const containerId = (() => {
+        if (state.activeModuleId) {
+          const mod = findNode(state.scene, state.activeModuleId);
+          if (mod && isContainer(mod)) return state.activeModuleId;
+        }
+        return state.scene.id;
+      })();
+      const container = findNode(state.scene, containerId);
+      if (container && isContainer(container) && container.children.length >= 2) {
+        const kids = container.children;
+        parent = container;
+        baseId = kids[kids.length - 2].id;
+        toolIds = [kids[kids.length - 1].id];
       }
-      return state.scene.id;
-    })();
+    }
 
-    newScene = addChildToNode(state.scene, targetId, n) as SdfOperation;
+    // Guard: need at least a base + one tool, else no-op (can't wrap nothing).
+    if (!parent || !baseId || toolIds.length === 0) {
+      return;
+    }
 
-    set({ ...pushHistory(state, newScene), selectedId: n.id });
+    const base = findNode(state.scene, baseId)!;
+    const tools = toolIds.map(id => findNode(state.scene, id)!).filter(Boolean);
+
+    // Remove base + tools from the tree.
+    let stripped: SdfNode | null = state.scene;
+    stripped = removeNodeFromTree(stripped, baseId);
+    for (const id of toolIds) {
+      if (stripped) stripped = removeNodeFromTree(stripped, id);
+    }
+    if (!stripped) return;
+
+    // Build the op wrapping [base, ...tools] and insert it where the parent is.
+    // The parent node still exists in `stripped` (we only removed its
+    // children), so its id is still a valid insertion target.
+    const op = makeOp(type, [base, ...tools], type === 'smoothUnion' ? 0.25 : 0.2);
+    const newScene = addChildToNode(stripped, parent.id, op) as SdfOperation;
+
+    set({ ...pushHistory(state, newScene), selectedId: op.id });
     get().requestMesh('medium');
   },
 
@@ -1325,3 +1391,10 @@ useForgeStore.subscribe((state) => {
 
 /** Expose sync channel status for UI indicators */
 export const getSessionSyncActive = () => _bc !== null;
+
+// ── QA hook: expose the store on window so headless drivers (Playwright on
+// iangpu) can invoke the exact same actions the palette/menu call
+// (addPrimitive, addOperation, updateNode, …) and read computed scene stats.
+if (typeof window !== 'undefined') {
+  (window as unknown as { __forge?: typeof useForgeStore }).__forge = useForgeStore;
+}

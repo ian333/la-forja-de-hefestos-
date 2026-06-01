@@ -318,12 +318,12 @@ export default function RayMarchMesh() {
 
   // Is the scene empty?
   const isEmpty = !isPrimitive(scene)
-    && (scene as SdfOperation).children.length === 0;
+    && ((scene as SdfOperation).children?.length ?? 0) === 0;
 
   // Bake joint drives into the scene, then compile to GLSL map().
   // joints.length short-circuits: no joints = no baking allocation.
   const sceneGlsl = useMemo(() => {
-    const baked = joints.length > 0 ? bakeJointTransforms(scene, joints) : scene;
+    const baked = joints && joints.length > 0 ? bakeJointTransforms(scene, joints) : scene;
     return compileScene(baked);
   }, [scene, joints]);
 

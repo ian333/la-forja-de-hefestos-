@@ -12,6 +12,8 @@ const PORT = parseInt(process.env.PORT || '5001', 10);
 createServer({
   configFile: path.join(ROOT, 'vite.config.ts'),
   root: ROOT,
-  server: { port: PORT, host: '0.0.0.0', watch: null },
+  // watch:null + hmr:false → SIN file-watcher y SIN page-reloads. El HMR mandaba
+  // reloads a media grabación y tumbaba window.__cinematicAtom (render FATAL).
+  server: { port: PORT, host: '0.0.0.0', watch: null, hmr: false },
 }).then(s => s.listen()).then(() => console.log(`ready on :${PORT}`))
   .catch(e => { console.error('vite failed:', e.message); process.exit(1); });

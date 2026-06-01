@@ -23,6 +23,8 @@ import {
 } from '@/lib/sdf-engine';
 import { useForgeStore, getSessionSyncActive } from '@/lib/useForgeStore';
 import ForgeViewport from '@/lib/ForgeViewport';
+import sceneDef from '@/forja/scene';
+import { runScene, publishRunResult } from '@/forja/runner';
 import { downloadSTL } from '@/lib/stl-export';
 import { downloadBlueprint } from '@/lib/blueprint-export';
 import { computeSceneStats, type SceneStats } from '@/lib/simulation';
@@ -61,6 +63,7 @@ import SliceInspector from '@/components/SliceInspector';
 import ManufacturingTimeline, { type VizFeature } from '@/components/ManufacturingTimeline';
 import { toVizFeatures } from '@/lib/feature-consolidation';
 import ThemePanel from '@/components/ThemePanel';
+import AIPanel from '@/forja/AIPanel';
 import { useThemeStore } from '@/lib/useThemeStore';
 import { THEME_PROFILES } from '@/lib/theme-profiles';
 import { playClick, playCreate, playComplete, playDelete, playUndo, playError } from '@/lib/forge-audio';
@@ -595,6 +598,31 @@ export default function ForgePage() {
 
   // ── Init/destroy worker ──
   useEffect(() => { initWorker(); return () => destroyWorker(); }, [initWorker, destroyWorker]);
+
+  // ── DSL scene runner: hydrate the store from src/forja/scene.ts ──
+  // Runs the declarative scene on mount; re-runs on Vite HMR when available.
+  useEffect(() => {
+    let cancelled = false;
+    const apply = async (def: unknown) => {
+      const result = await runScene(def);
+      if (!cancelled) publishRunResult(result);
+    };
+    apply(sceneDef);
+    if (import.meta.hot) {
+      import.meta.hot.accept('@/forja/scene', (mod) => {
+        if (mod?.default) apply(mod.default);
+      });
+    }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── AI panel: re-run the scene script on demand (↻ recargar) ──
+  const handleReloadScene = useCallback(async () => {
+    const fn = (globalThis as { __forjaRunScene?: typeof runScene }).__forjaRunScene;
+    const result = fn ? await fn(sceneDef) : await runScene(sceneDef);
+    publishRunResult(result);
+  }, []);
 
   // ── Generate vizFeatures from consolidation result ──
   useEffect(() => {
@@ -2657,6 +2685,9 @@ export default function ForgePage() {
       )}
 
       <ThemePanel open={themePanelOpen} onOpenChange={setThemePanelOpen} />
+
+      {/* AI control panel — floats top-right next to STL/export controls */}
+      <AIPanel onReload={handleReloadScene} />
     </div>
     </TooltipProvider>
   );

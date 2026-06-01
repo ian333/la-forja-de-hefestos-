@@ -1,0 +1,2853 @@
+[
+ {
+  "key": "metanol",
+  "name": "Metanol",
+  "formula": "CH3OH",
+  "category": "Alcoholes y éteres",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.092,
+    "y": -0.307,
+    "z": -0.2
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 0.733,
+    "y": 0.519,
+    "z": 0.626
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.537,
+    "y": -0.936,
+    "z": -0.829
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.722,
+    "y": 0.322,
+    "z": -0.829
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.722,
+    "y": -0.936,
+    "z": 0.43
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.265,
+    "y": 1.338,
+    "z": 0.802
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 5,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 1,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: el alcohol más simple, un solo carbono unido a un grupo –OH.",
+   "measure": "C–O · 1.43 Å",
+   "meaning": "Apenas seis átomos: es el ladrillo mínimo de toda la familia de los alcoholes."
+  },
+  "fact": "El metanol es venenoso: tu cuerpo lo convierte en formaldehído y ácido fórmico, que atacan el nervio óptico. Por eso un trago puede dejarte ciego. No te confíes, se parece muchísimo al etanol pero le falta un solo carbono.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "¿Sabías que este 'primo' del alcohol te puede dejar ciego? Le falta UN solo carbono para ser etanol, y esa diferencia es entre brindar o ir al hospital. Aprende en university.gaiaprime.com.mx #quimica #metanol #ciencia #moleculas #stem #aprendeentiktok"
+ },
+ {
+  "key": "etanol",
+  "name": "Etanol",
+  "formula": "C2H5OH",
+  "category": "Alcoholes y éteres",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.028,
+    "y": 0.184,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.512,
+    "y": 0.184,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 0.989,
+    "y": -1.164,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.949,
+    "y": -1.148,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.392,
+    "y": 0.697,
+    "z": -0.89
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.392,
+    "y": -0.844,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.392,
+    "y": 0.697,
+    "z": 0.89
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.876,
+    "y": 0.697,
+    "z": -0.89
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.876,
+    "y": 0.697,
+    "z": 0.89
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 8,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 2,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: dos carbonos en cadena y un grupo –OH en la punta: el alcohol que se bebe.",
+   "measure": "C–C · 1.54 Å",
+   "meaning": "El grupo –OH se lleva bien con el agua, por eso el etanol y el agua se mezclan en cualquier proporción."
+  },
+  "fact": "Este es EL alcohol: el de la cerveza, el tequila y el vino. Solo le sobra un carbono frente al metanol, y por eso tu hígado sí lo puede procesar (lo vuelve acetaldehído, el de la cruda). Las levaduras lo fabrican fermentando azúcar sin oxígeno.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Esta es la molécula que hay en tu cerveza, tu tequila y tu vino: el etanol. Mira de cerca el grupo –OH que lo hace mezclarse perfecto con el agua... y la cruda viene de aquí. Aprende en university.gaiaprime.com.mx #etanol #alcohol #quimica #ciencia #tequila #stem"
+ },
+ {
+  "key": "isopropanol",
+  "name": "Isopropanol",
+  "formula": "C3H8O",
+  "category": "Alcoholes y éteres",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.213,
+    "y": -0.119,
+    "z": -0.415
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.327,
+    "y": -0.119,
+    "z": -0.415
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.727,
+    "y": -0.119,
+    "z": 1.036
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": -0.69,
+    "y": 1.048,
+    "z": -1.089
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.577,
+    "y": -1.009,
+    "z": -0.929
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.65,
+    "y": 1.034,
+    "z": -1.081
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.691,
+    "y": 0.771,
+    "z": 0.099
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.691,
+    "y": -1.009,
+    "z": 0.099
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.691,
+    "y": -0.119,
+    "z": -1.443
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.817,
+    "y": -0.12,
+    "z": 1.036
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.363,
+    "y": -1.009,
+    "z": 1.551
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.364,
+    "y": 0.771,
+    "z": 1.551
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 9,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 10,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 11,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 3,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: el –OH cuelga del carbono de en medio, con dos metilos abriéndose como una V.",
+   "measure": "C–C–C · 109.5°",
+   "meaning": "El ángulo de 109.5° entre los carbonos es la firma de un carbono sp3: cuatro enlaces apuntando a las esquinas de un tetraedro."
+  },
+  "fact": "Es el alcohol de tu botiquín, el que huele a hospital. Se evapora rapidísimo y se lleva el calor de tu piel, por eso te sientes fresco. A diferencia del etanol, el –OH está en el carbono CENTRAL, no en la punta: por eso es 'iso'.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Ese olor a hospital que ya conoces tiene cara: el isopropanol del alcohol de farmacia. El truco está en dónde se cuelga el –OH (justo en el carbono de en medio). Aprende en university.gaiaprime.com.mx #isopropanol #quimica #ciencia #moleculas #stem #datocurioso"
+ },
+ {
+  "key": "dimetileter",
+  "name": "Dimetil éter",
+  "formula": "CH3OCH3",
+  "category": "Alcoholes y éteres",
+  "atoms": [
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 0,
+    "y": -0.84,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.167,
+    "y": -0.048,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.167,
+    "y": -0.048,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.967,
+    "y": -0.58,
+    "z": 0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.468,
+    "y": 0.156,
+    "z": -1.027
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.968,
+    "y": 0.892,
+    "z": 0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.968,
+    "y": 0.892,
+    "z": 0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.468,
+    "y": 0.156,
+    "z": -1.027
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.967,
+    "y": -0.58,
+    "z": 0.514
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 8,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 0,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: un oxígeno haciendo de puente entre dos metilos: no hay –OH, hay –O–.",
+   "measure": "C–O–C · 111.7°",
+   "meaning": "El oxígeno doblado a 111.7° es el corazón de un éter: el mismo número de átomos que el etanol, pero acomodados distinto."
+  },
+  "fact": "Mismos átomos que el etanol (C2H6O), pero el oxígeno va EN MEDIO en vez de en la punta. Son isómeros: misma fórmula, molécula diferente. Por eso el dimetil éter es un gas que hierve a –24°C mientras el etanol es líquido: sin –OH, no hay puentes de hidrógeno que lo amarren.",
+  "audioAtoms": [
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Tiene EXACTAMENTE los mismos átomos que el alcohol de tu cerveza... pero es un gas. ¿Cómo? El oxígeno se mudó al centro y todo cambió: te presento a los isómeros. Aprende en university.gaiaprime.com.mx #isomeros #quimica #eter #ciencia #moleculas #stem"
+ },
+ {
+  "key": "formaldehido",
+  "name": "Formaldehído",
+  "formula": "CH2O",
+  "category": "Ácidos y carbonilos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 0,
+    "y": 1.21,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.934,
+    "y": -0.561,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.934,
+    "y": -0.561,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 1,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: el carbonilo más simple, un carbono plano con un oxígeno colgando por un enlace doble corto y tenso.",
+   "measure": "C=O · 1.21 Å",
+   "meaning": "Ese doble enlace mide apenas 1.21 Å: por eso es tan corto y reactivo, el oxígeno jala los electrones y deja al carbono hambriento."
+  },
+  "fact": "El formaldehído es el carbonilo más pequeño que existe: solo un carbono, un oxígeno y dos hidrógenos, todos en un mismo plano perfecto. Tú lo conoces como conservador y desinfectante, pero en el espacio interestelar flota en nubes de gas y se cree que fue uno de los ladrillos químicos que precedieron a la vida.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "¿Sabías que el conservador de los laboratorios también flota entre las estrellas? El formaldehído: 4 átomos, un plano perfecto y un doble enlace de 1.21 Å. Aprende en university.gaiaprime.com.mx #quimica #ciencia #formaldehido #carbonilo #moleculas #cienciaentiktok"
+ },
+ {
+  "key": "acido-formico",
+  "name": "Ácido fórmico",
+  "formula": "HCOOH",
+  "category": "Ácidos y carbonilos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.372,
+    "y": 0.196,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 1.582,
+    "y": 0.196,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": -0.395,
+    "y": -0.903,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.245,
+    "y": 1.106,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.314,
+    "y": -0.594,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 4,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 1,
+    "count": 2
+   },
+   {
+    "atom": 2,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: el ácido más simple con su grupo carboxilo, dos oxígenos distintos sobre un mismo carbono plano.",
+   "measure": "C=O · 1.21 Å vs C–O · 1.34 Å",
+   "meaning": "Fíjate en los dos oxígenos: uno está pegado por doble enlace (1.21 Å) y otro por enlace sencillo más largo (1.34 Å) que sostiene al hidrógeno ácido."
+  },
+  "fact": "El ácido fórmico es el ácido orgánico más sencillo, y su nombre viene del latín formica: hormiga. Es literalmente la sustancia que las hormigas y las abejas inyectan cuando te pican y arde. Su grupo carboxilo (–COOH), con un oxígeno por doble enlace y otro sosteniendo el hidrógeno, es el mismo motor que define a todos los ácidos grasos de tu cuerpo.",
+  "audioAtoms": [
+   {
+    "symbol": "H",
+    "Z": 1
+   },
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   }
+  ],
+  "caption": "El ardor de una picadura de hormiga cabe en 5 átomos. El ácido fórmico te enseña qué es un grupo carboxilo: dos oxígenos, dos distancias, un solo hidrógeno ácido. Aprende en university.gaiaprime.com.mx #quimica #acidoformico #hormigas #carboxilo #ciencia #moleculas"
+ },
+ {
+  "key": "propano",
+  "name": "Propano",
+  "formula": "C3H8",
+  "category": "Combustibles y alcanos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.277,
+    "y": 0.238,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0,
+    "y": -0.623,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.277,
+    "y": 0.238,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0,
+    "y": -1.252,
+    "z": -0.89
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0,
+    "y": -1.252,
+    "z": 0.89
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.578,
+    "y": 0.442,
+    "z": -1.028
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.076,
+    "y": -0.296,
+    "z": 0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.08,
+    "y": 1.179,
+    "z": 0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.578,
+    "y": 0.442,
+    "z": -1.028
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.08,
+    "y": 1.179,
+    "z": 0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 2.076,
+    "y": -0.296,
+    "z": 0.514
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 9,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 10,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: tres carbonos en zig-zag, cada uno rodeado de hidrógenos como una pelusa tetraédrica.",
+   "measure": "C–C · 1.54 Å",
+   "meaning": "Una cadena diminuta: si la estiraras, mil millones de propanos en fila apenas medirían medio metro."
+  },
+  "fact": "El propano es el gas de tu tanque estacionario y de los encendedores. Solo tres carbonos, pero al quemarse cada molécula libera el calor que necesitas para cocinar. Lo guardamos líquido a presión y se vuelve gas en cuanto abres la válvula.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "¿Sabías que el gas de tu estufa son solo 3 carbonos? El propano cabe mil millones de veces en medio metro y aun así calienta tu comida. Aprende en university.gaiaprime.com.mx #química #propano #gas #combustibles #ciencia #STEM"
+ },
+ {
+  "key": "isobutano",
+  "name": "Isobutano (2-metilpropano)",
+  "formula": "C4H10",
+  "category": "Combustibles y alcanos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.254,
+    "y": -0.254,
+    "z": 0.254
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.635,
+    "y": 0.635,
+    "z": 1.143
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.635,
+    "y": -1.143,
+    "z": -0.635
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.143,
+    "y": 0.635,
+    "z": -0.635
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.883,
+    "y": -0.883,
+    "z": 0.883
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.845,
+    "y": 1.572,
+    "z": 0.626
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.118,
+    "y": 0.845,
+    "z": 2.08
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.572,
+    "y": 0.118,
+    "z": 1.353
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.845,
+    "y": -2.08,
+    "z": -0.118
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.118,
+    "y": -1.353,
+    "z": -1.572
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.572,
+    "y": -0.626,
+    "z": -0.845
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.353,
+    "y": 0.118,
+    "z": -1.572
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.08,
+    "y": 0.845,
+    "z": -0.118
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.626,
+    "y": 1.572,
+    "z": -0.845
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 9,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 10,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 11,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 12,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 13,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: un carbono central con un solo hidrógeno y tres metilos abriéndose como las aspas de un molinete.",
+   "measure": "C–C–C · 109.5°",
+   "meaning": "Mismos átomos que el butano normal pero ramificado: la forma compacta hace que hierva más bajo y arda diferente."
+  },
+  "fact": "El isobutano tiene la misma fórmula que el butano (C4H10) pero con la cadena doblada en T. Ese pequeño cambio de forma lo hace más volátil, por eso se usa como refrigerante ecológico (R-600a) en tu refri y como propelente en aerosoles. Misma receta, distinta arquitectura.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Mismos átomos que el butano, pero doblado en T: así nace el isobutano. Esa forma enfría tu refrigerador sin dañar la capa de ozono. Aprende en university.gaiaprime.com.mx #química #isobutano #isómeros #refrigerante #ciencia #STEM"
+ },
+ {
+  "key": "ciclohexano",
+  "name": "Ciclohexano (silla)",
+  "formula": "C6H12",
+  "category": "Combustibles y alcanos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.46,
+    "y": 0,
+    "z": 0.25
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.73,
+    "y": 1.264,
+    "z": -0.25
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.73,
+    "y": 1.264,
+    "z": 0.25
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.46,
+    "y": 0,
+    "z": -0.25
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.73,
+    "y": -1.264,
+    "z": 0.25
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.73,
+    "y": -1.264,
+    "z": -0.25
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 2.482,
+    "y": 0,
+    "z": -0.129
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.476,
+    "y": 0,
+    "z": 1.34
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.738,
+    "y": 1.279,
+    "z": -1.34
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.241,
+    "y": 2.15,
+    "z": 0.129
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.241,
+    "y": 2.15,
+    "z": -0.129
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.738,
+    "y": 1.279,
+    "z": 1.34
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.476,
+    "y": 0,
+    "z": -1.34
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.482,
+    "y": 0,
+    "z": 0.129
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.241,
+    "y": -2.15,
+    "z": -0.129
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.738,
+    "y": -1.279,
+    "z": 1.34
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.738,
+    "y": -1.279,
+    "z": -1.34
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.241,
+    "y": -2.15,
+    "z": 0.129
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 5,
+    "j": 0,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 9,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 10,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 11,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 12,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 13,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 14,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 15,
+    "order": 1
+   },
+   {
+    "i": 5,
+    "j": 16,
+    "order": 1
+   },
+   {
+    "i": 5,
+    "j": 17,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: un anillo de seis carbonos que NO es plano, sino plegado como una silla, con hidrógenos apuntando arriba-abajo (axiales) y hacia los lados (ecuatoriales).",
+   "measure": "C–C · 1.54 Å · 110°",
+   "meaning": "El anillo se dobla en 'silla' justo para que cada ángulo sea el tetraédrico perfecto: cero tensión, máxima estabilidad."
+  },
+  "fact": "El ciclohexano parece un hexágono plano en los dibujos, pero en la realidad se pliega en forma de silla. ¿Por qué? Porque así cada carbono conserva su ángulo tetraédrico de 109.5° sin forzar nada. Un anillo plano tendría ángulos de 120° y estaría tensionado; la silla es la naturaleza eligiendo la geometría sin estrés. Sus átomos hasta saltan entre dos sillas miles de millones de veces por segundo.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "El ciclohexano NO es el hexágono plano que dibujabas en la escuela: es una silla en 3D. Se pliega así para que sus átomos no sufran tensión. Aprende en university.gaiaprime.com.mx #química #ciclohexano #conformación #química3D #ciencia #STEM"
+ },
+ {
+  "key": "etileno",
+  "name": "Etileno",
+  "formula": "C2H4",
+  "category": "Insaturados y aromáticos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.6695,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.6695,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.2342,
+    "y": 0.9288,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.2342,
+    "y": -0.9288,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.2342,
+    "y": 0.9288,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.2342,
+    "y": -0.9288,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 5,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: dos carbonos atados por un doble enlace plano, con cuatro hidrógenos abiertos como una estrella.",
+   "measure": "C=C · 1.34 Å",
+   "meaning": "El doble enlace acorta y endurece la unión: los dos carbonos quedan más juntos que en un enlace simple y ya no pueden girar libremente."
+  },
+  "fact": "El etileno es la molécula orgánica que más se produce en el mundo, pero también es una hormona vegetal: es el gas que tu plátano libera para madurar. Si guardas frutas juntas, el etileno de una apura a las demás. Su doble enlace plano congela toda la molécula en un solo plano: aquí no hay giro, y de esa rigidez nace casi todo el plástico de tu casa.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "El gas que madura tu plátano es la misma molécula que hace el plástico de tu casa. Un solo doble enlace plano, y ya no puede girar. La química que tocas todos los días sin saberlo. Aprende en university.gaiaprime.com.mx #quimica #etileno #ciencia #moleculas #stem #aprendeentiktok"
+ },
+ {
+  "key": "acetileno",
+  "name": "Acetileno",
+  "formula": "C2H2",
+  "category": "Insaturados y aromáticos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.6015,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.6015,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.6645,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.6645,
+    "y": 0,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 3
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 3,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: una varilla perfectamente recta, dos carbonos unidos por un triple enlace y un hidrógeno en cada punta.",
+   "measure": "C≡C · 1.20 Å",
+   "meaning": "El triple enlace es la unión más corta y fuerte entre dos carbonos; obliga a toda la molécula a quedar en línea recta (180°)."
+  },
+  "fact": "El acetileno es la molécula totalmente lineal: cuatro átomos en una sola línea recta. Su triple enlace guarda tanta energía que al quemarlo con oxígeno la llama llega a más de 3000 °C, suficiente para cortar acero. Por eso el soplete del soldador es de acetileno. Esa misma molécula recta y energética es el ladrillo con el que la química construye plásticos y medicinas.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Cuatro átomos en una línea perfectamente recta. Su triple enlace arde a más de 3000 grados: es el soplete que corta acero. Toda esa energía en la molécula más simple y flaca de la química. Aprende en university.gaiaprime.com.mx #quimica #acetileno #ciencia #moleculas #stem #fisica"
+ },
+ {
+  "key": "benceno",
+  "name": "Benceno",
+  "formula": "C6H6",
+  "category": "Insaturados y aromáticos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.397,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.6985,
+    "y": 1.2098,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.6985,
+    "y": 1.2098,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.397,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.6985,
+    "y": -1.2098,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.6985,
+    "y": -1.2098,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 2.481,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.2405,
+    "y": 2.1486,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.2405,
+    "y": 2.1486,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.481,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.2405,
+    "y": -2.1486,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.2405,
+    "y": -2.1486,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 1,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 3,
+    "order": 2
+   },
+   {
+    "i": 3,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 5,
+    "order": 2
+   },
+   {
+    "i": 5,
+    "j": 0,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 9,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 10,
+    "order": 1
+   },
+   {
+    "i": 5,
+    "j": 11,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": true,
+  "scale": {
+   "what": "Lo que ves: un hexágono plano perfecto de seis carbonos, cada uno con su hidrógeno apuntando hacia afuera como rayos de sol.",
+   "measure": "C–C anillo · 1.40 Å",
+   "meaning": "Todos los enlaces del anillo miden exactamente lo mismo: no son ni simples ni dobles. Los seis electrones π forman un solo aro de carga que envuelve al hexágono."
+  },
+  "fact": "El benceno esconde un truco: aunque lo dibujamos con dobles enlaces alternados, en la realidad TODOS sus enlaces miden lo mismo (1.40 Å), entre un simple y un doble. Sus seis electrones π no pertenecen a ningún enlace: flotan como un anillo continuo arriba y abajo del hexágono. Esa aromaticidad lo hace extraordinariamente estable y es el esqueleto de la aspirina, el TNT y la mayoría de los medicamentos que conoces.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Lo dibujamos con dobles enlaces alternados, pero TODOS sus enlaces miden lo mismo. Seis electrones flotan como un anillo continuo: eso es aromaticidad, el esqueleto de la aspirina y casi toda medicina. Aprende en university.gaiaprime.com.mx #quimica #benceno #aromatico #ciencia #moleculas #stem"
+ },
+ {
+  "key": "hcn",
+  "name": "Cianuro de hidrógeno",
+  "formula": "HCN",
+  "category": "Cotidianos e inorgánicos",
+  "atoms": [
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.11,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.046,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "N",
+    "Z": 7,
+    "x": 1.11,
+    "y": 0,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 2,
+    "order": 3
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 2,
+    "count": 1
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: una molécula perfectamente recta de tres átomos, con un triple enlace carbono-nitrógeno muy corto y tenso.",
+   "measure": "C≡N · 1.156 Å · 180°",
+   "meaning": "El triple enlace C≡N es de los más cortos y fuertes que existen; por eso el cianuro es tan estable y reactivo a la vez."
+  },
+  "fact": "El olor a almendras amargas que algunos detectan en el cianuro viene de esta molécula lineal: el carbono y el nitrógeno comparten tres pares de electrones, el enlace más apretado de la química orgánica común. Ese mismo triple enlace bloquea la respiración celular al pegarse al hierro de tu mitocondria.",
+  "audioAtoms": [
+   {
+    "symbol": "H",
+    "Z": 1
+   },
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "N",
+    "Z": 7
+   }
+  ],
+  "caption": "El veneno más famoso del cine es solo TRES átomos en línea recta. Un triple enlace C≡N que para tu respiración a nivel celular en segundos. Aprende en university.gaiaprime.com.mx #química #cianuro #ciencia #moléculas #HCN #cienciaentiktok"
+ },
+ {
+  "key": "o3",
+  "name": "Ozono",
+  "formula": "O3",
+  "category": "Cotidianos e inorgánicos",
+  "atoms": [
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 0,
+    "y": 0.402,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": -1.089,
+    "y": -0.268,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 1.089,
+    "y": -0.268,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 0,
+    "count": 1
+   },
+   {
+    "atom": 1,
+    "count": 2
+   },
+   {
+    "atom": 2,
+    "count": 3
+   }
+  ],
+  "conjugated": true,
+  "scale": {
+   "what": "Lo que ves: tres oxígenos en forma de V abierta, con el par π repartido por igual entre los dos enlaces (resonancia real).",
+   "measure": "O–O · 1.278 Å · 116.8°",
+   "meaning": "No es ni enlace simple ni doble: el ozono es un híbrido, los dos enlaces miden lo mismo aunque lo dibujemos con uno simple y uno doble."
+  },
+  "fact": "El ozono que te protege del Sol allá arriba es la misma molécula que te irrita los pulmones aquí abajo. Su ángulo de 116.8° y sus enlaces idénticos (1.278 Å) son una resonancia: el par de electrones π flota entre los dos enlaces, ni totalmente simple ni doble. Por eso el oxígeno central queda con carga parcial positiva.",
+  "audioAtoms": [
+   {
+    "symbol": "O",
+    "Z": 8
+   }
+  ],
+  "caption": "La misma molécula te salva del cáncer de piel y te quema los pulmones según dónde esté. Tres oxígenos doblados a 116.8° con electrones que flotan entre dos enlaces. Aprende en university.gaiaprime.com.mx #ozono #química #capadeozono #ciencia #O3 #cienciaentiktok"
+ },
+ {
+  "key": "so2",
+  "name": "Dióxido de azufre",
+  "formula": "SO2",
+  "category": "Cotidianos e inorgánicos",
+  "atoms": [
+   {
+    "el": "S",
+    "Z": 16,
+    "x": 0,
+    "y": 0.455,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": -1.234,
+    "y": -0.272,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 1.234,
+    "y": -0.272,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 2
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 0,
+    "count": 1
+   },
+   {
+    "atom": 1,
+    "count": 2
+   },
+   {
+    "atom": 2,
+    "count": 2
+   }
+  ],
+  "conjugated": true,
+  "scale": {
+   "what": "Lo que ves: un azufre con un par libre solitario que empuja a los dos oxígenos hacia abajo, formando una V ancha.",
+   "measure": "S=O · 1.432 Å · 119.0°",
+   "meaning": "El par libre del azufre abre el ángulo casi a 120°; los enlaces S=O son cortos y con carácter doble repartido por resonancia."
+  },
+  "fact": "Cuando hueles un cerillo recién apagado o la lluvia ácida, hueles esta V de azufre y oxígeno. El azufre guarda un par de electrones libre que empuja a los oxígenos y deja la molécula doblada a 119°. Sus dos enlaces S=O son idénticos por resonancia, más cortos que un enlace simple normal.",
+  "audioAtoms": [
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "S",
+    "Z": 16
+   }
+  ],
+  "caption": "El olor del cerillo apagado y la lluvia ácida es esta V de azufre. Un par de electrones libre dobla la molécula a 119° exactos. Aprende en university.gaiaprime.com.mx #química #lluviaácida #azufre #ciencia #SO2 #cienciaentiktok"
+ },
+ {
+  "key": "ch3nh2",
+  "name": "Metilamina",
+  "formula": "CH3NH2",
+  "category": "Cotidianos e inorgánicos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0,
+    "y": 0,
+    "z": -0.736
+   },
+   {
+    "el": "N",
+    "Z": 7,
+    "x": 0,
+    "y": 0,
+    "z": 0.736
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.516,
+    "y": 0.893,
+    "z": -1.101
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.031,
+    "y": 0,
+    "z": -1.101
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.516,
+    "y": -0.893,
+    "z": -1.101
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.5,
+    "y": 0.807,
+    "z": 1.081
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.5,
+    "y": -0.807,
+    "z": 1.081
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 6,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 1,
+    "count": 1
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: un carbono con tres hidrógenos (un metilo) pegado a un nitrógeno piramidal con su par libre apuntando hacia afuera.",
+   "measure": "C–N · 1.471 Å · 109.5° (sp³)",
+   "meaning": "Es amoniaco al que le cambiaron un hidrógeno por un grupo CH3; el nitrógeno conserva su par libre y su forma de pirámide."
+  },
+  "fact": "El olor a pescado podrido es básicamente esta molécula: amoniaco con un metilo pegado. El nitrógeno mantiene su par de electrones libre y su geometría piramidal (ángulos de ~107°), lo que la hace básica y capaz de robar protones. Tu cerebro la detecta en cantidades minúsculas porque señala comida descompuesta.",
+  "audioAtoms": [
+   {
+    "symbol": "H",
+    "Z": 1
+   },
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "N",
+    "Z": 7
+   }
+  ],
+  "caption": "El olor a pescado podrido es amoniaco con un metilo pegado. Un nitrógeno piramidal con su par libre listo para robar protones. Aprende en university.gaiaprime.com.mx #química #metilamina #ciencia #moléculas #aminas #cienciaentiktok"
+ },
+ {
+  "key": "isooctano",
+  "name": "Isooctano (2,2,4-trimetilpentano)",
+  "formula": "C8H18",
+  "category": "Combustibles y alcanos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -2.475,
+    "y": -0.61,
+    "z": 0.193
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.935,
+    "y": -0.61,
+    "z": 0.193
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.409,
+    "y": 0.837,
+    "z": 0.193
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.131,
+    "y": 0.837,
+    "z": 0.193
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.658,
+    "y": 1.212,
+    "z": 1.591
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.425,
+    "y": -1.338,
+    "z": -1.064
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.425,
+    "y": -1.338,
+    "z": 1.451
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.641,
+    "y": 1.863,
+    "z": -0.836
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.839,
+    "y": -0.961,
+    "z": -0.772
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.839,
+    "y": -1.271,
+    "z": 0.98
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.839,
+    "y": 0.402,
+    "z": 0.372
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.77,
+    "y": 1.353,
+    "z": 1.083
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.77,
+    "y": 1.353,
+    "z": -0.697
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.492,
+    "y": -0.156,
+    "z": -0.074
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.876,
+    "y": 1.046,
+    "z": 2.331
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 2.522,
+    "y": 0.592,
+    "z": 1.831
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.95,
+    "y": 2.262,
+    "z": 1.6
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.305,
+    "y": -0.62,
+    "z": -1.875
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.535,
+    "y": -1.806,
+    "z": -0.848
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.144,
+    "y": -2.102,
+    "z": -1.359
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.473,
+    "y": -0.664,
+    "z": 2.306
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.048,
+    "y": -2.212,
+    "z": 1.642
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.606,
+    "y": -1.654,
+    "z": 1.295
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.429,
+    "y": 2.871,
+    "z": -0.479
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 2.716,
+    "y": 1.742,
+    "z": -0.967
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.138,
+    "y": 1.702,
+    "z": -1.789
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 9,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 10,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 11,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 12,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 13,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 14,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 15,
+    "order": 1
+   },
+   {
+    "i": 4,
+    "j": 16,
+    "order": 1
+   },
+   {
+    "i": 5,
+    "j": 17,
+    "order": 1
+   },
+   {
+    "i": 5,
+    "j": 18,
+    "order": 1
+   },
+   {
+    "i": 5,
+    "j": 19,
+    "order": 1
+   },
+   {
+    "i": 6,
+    "j": 20,
+    "order": 1
+   },
+   {
+    "i": 6,
+    "j": 21,
+    "order": 1
+   },
+   {
+    "i": 6,
+    "j": 22,
+    "order": 1
+   },
+   {
+    "i": 7,
+    "j": 23,
+    "order": 1
+   },
+   {
+    "i": 7,
+    "j": 24,
+    "order": 1
+   },
+   {
+    "i": 7,
+    "j": 25,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: una cadena de cinco carbonos con un nudo cuaternario (un carbono que sostiene cuatro carbonos) y otra rama más adelante. Pura ramificación.",
+   "measure": "C–C · 1.54 Å",
+   "meaning": "Esta forma rechoncha y ramificada es justo lo que define el octanaje 100: arde de manera controlada, sin detonar antes de tiempo."
+  },
+  "fact": "El isooctano ES la referencia de la gasolina: por definición su octanaje es 100. Su carbono cuaternario (el que carga cuatro carbonos sin un solo hidrógeno) y sus ramas hacen que se queme suave y parejo dentro del motor, sin el golpeteo destructivo del 'cascabeleo'. Cuando ves '91' en la bomba, mides qué tanto se parece tu gasolina a esta molécula.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Esta es LA gasolina: el isooctano, octanaje 100 por definición. Su carbono cuaternario evita que tu motor cascabelee y se destruya. Cada vez que ves '91' en la bomba, mides esta molécula. Aprende en university.gaiaprime.com.mx #gasolina #química #isooctano #octanaje #motores #STEM"
+ },
+ {
+  "key": "acetona",
+  "name": "Acetona",
+  "formula": "CH3COCH3",
+  "category": "Ácidos y carbonilos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0,
+    "y": 0.408,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 0,
+    "y": 1.618,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 1.285,
+    "y": -0.395,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.285,
+    "y": -0.395,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.593,
+    "y": -0.587,
+    "z": 1.028
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 2.065,
+    "y": 0.167,
+    "z": -0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.121,
+    "y": -1.342,
+    "z": -0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.593,
+    "y": -0.587,
+    "z": 1.028
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.121,
+    "y": -1.342,
+    "z": -0.514
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -2.065,
+    "y": 0.167,
+    "z": -0.514
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 9,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 1,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: una cetona simétrica, el carbonilo C=O en el centro con dos metilos sp3 abriéndose a 116°.",
+   "measure": "C=O · 1.21 Å · ∠C–C–C 116°",
+   "meaning": "El carbono del carbonilo es plano (sp2) y abre sus dos metilos a 116°, mientras cada CH3 forma su propio tetraedro a 109.5°."
+  },
+  "fact": "La acetona es la cetona más pequeña y la más famosa: es el quitaesmalte y el disolvente que huele tan fuerte. Pero tu propio cuerpo la fabrica: cuando ayunas o haces mucho ejercicio, el hígado produce acetona como cuerpo cetónico para darte energía, y por eso el aliento puede oler dulce. Su carbonilo central plano es el mismo grupo que define a miles de cetonas.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "El quitaesmalte que tu propio cuerpo fabrica cuando ayunas. La acetona: carbonilo plano al centro, dos metilos tetraédricos, perfecta simetría. Aprende en university.gaiaprime.com.mx #quimica #acetona #cetonas #ciencia #moleculas #cienciaentiktok"
+ },
+ {
+  "key": "acido-acetico",
+  "name": "Ácido acético",
+  "formula": "CH3COOH",
+  "category": "Ácidos y carbonilos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.516,
+    "y": -0.245,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -0.386,
+    "y": 0.953,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 1.726,
+    "y": -0.245,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": -0.213,
+    "y": -1.368,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.141,
+    "y": -1.085,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.216,
+    "y": 1.861,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.015,
+    "y": 0.934,
+    "z": 0.89
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.015,
+    "y": 0.934,
+    "z": -0.89
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 2,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 3,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 7,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 2,
+    "count": 2
+   },
+   {
+    "atom": 3,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: el vinagre molecular, un metilo tetraédrico pegado a un grupo carboxilo plano con sus dos oxígenos.",
+   "measure": "C=O · 1.21 Å vs C–O · 1.34 Å",
+   "meaning": "El carboxilo (–COOH) reúne un oxígeno doble corto (1.21 Å) y un O–H largo (1.34 Å): de ahí sale el hidrógeno que da lo agrio del vinagre."
+  },
+  "fact": "El ácido acético es el alma del vinagre: cuando lo hueles agrio, estás oliendo esta molécula. Es lo que producen las bacterias al fermentar el vino o la sidra, y la humanidad lo usa desde hace miles de años para conservar comida. Su grupo carboxilo es idéntico al del ácido fórmico, solo que cambia el hidrógeno por un metilo, mostrándote cómo la química construye familias enteras a partir de la misma pieza.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "El olor agrio del vinagre es esta molécula entrando a tu nariz. El ácido acético: metilo tetraédrico + carboxilo plano, la misma pieza que el ácido fórmico pero con un toque más. Aprende en university.gaiaprime.com.mx #quimica #vinagre #acidoacetico #ciencia #moleculas #carboxilo"
+ },
+ {
+  "key": "butadieno",
+  "name": "1,3-Butadieno",
+  "formula": "C4H6",
+  "category": "Insaturados y aromáticos",
+  "atoms": [
+   {
+    "el": "C",
+    "Z": 6,
+    "x": -1.2645,
+    "y": -0.9247,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.0725,
+    "y": -0.9247,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.8721,
+    "y": 0.3159,
+    "z": 0
+   },
+   {
+    "el": "C",
+    "Z": 6,
+    "x": 0.3198,
+    "y": 1.5335,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.8095,
+    "y": 0.0193,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -1.8095,
+    "y": -1.8687,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.5943,
+    "y": -1.8817,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 1.9592,
+    "y": 0.2361,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.9543,
+    "y": 2.4198,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.765,
+    "y": 1.6399,
+    "z": 0
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 2
+   },
+   {
+    "i": 1,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 3,
+    "order": 2
+   },
+   {
+    "i": 0,
+    "j": 4,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 5,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 6,
+    "order": 1
+   },
+   {
+    "i": 2,
+    "j": 7,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 8,
+    "order": 1
+   },
+   {
+    "i": 3,
+    "j": 9,
+    "order": 1
+   }
+  ],
+  "lonePairs": [],
+  "conjugated": true,
+  "scale": {
+   "what": "Lo que ves: un zigzag plano de cuatro carbonos con dos dobles enlaces alternados; toda la molécula vive en un mismo plano.",
+   "measure": "C–C central · 1.47 Å",
+   "meaning": "El enlace simple del centro sale más corto que un C–C normal (1.54 Å): los electrones π no se quedan quietos en sus dobles, se reparten por toda la cadena."
+  },
+  "fact": "El butadieno parece tener dos dobles enlaces separados, pero en realidad sus electrones π se extienden por los cuatro carbonos a la vez: eso es la conjugación. La pista está en el enlace del medio, que se acorta porque no es del todo \"simple\". Esa nube de electrones compartida es la razón de que el butadieno se enlace consigo mismo y forme el caucho sintético de las llantas de tu coche.",
+  "audioAtoms": [
+   {
+    "symbol": "C",
+    "Z": 6
+   },
+   {
+    "symbol": "H",
+    "Z": 1
+   }
+  ],
+  "caption": "Parecen dos dobles enlaces separados, pero sus electrones se reparten por toda la cadena: eso es conjugación. Esa nube compartida es lo que vuelve al butadieno el caucho de tus llantas. Aprende en university.gaiaprime.com.mx #quimica #butadieno #conjugacion #ciencia #moleculas #stem"
+ },
+ {
+  "key": "h2o2",
+  "name": "Peróxido de hidrógeno",
+  "formula": "H2O2",
+  "category": "Cotidianos e inorgánicos",
+  "atoms": [
+   {
+    "el": "O",
+    "Z": 8,
+    "x": -0.7375,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "O",
+    "Z": 8,
+    "x": 0.7375,
+    "y": 0,
+    "z": 0
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": -0.8182,
+    "y": 0.7944,
+    "z": 0.5419
+   },
+   {
+    "el": "H",
+    "Z": 1,
+    "x": 0.8182,
+    "y": 0.7944,
+    "z": -0.5419
+   }
+  ],
+  "bonds": [
+   {
+    "i": 0,
+    "j": 1,
+    "order": 1
+   },
+   {
+    "i": 0,
+    "j": 2,
+    "order": 1
+   },
+   {
+    "i": 1,
+    "j": 3,
+    "order": 1
+   }
+  ],
+  "lonePairs": [
+   {
+    "atom": 0,
+    "count": 2
+   },
+   {
+    "atom": 1,
+    "count": 2
+   }
+  ],
+  "conjugated": false,
+  "scale": {
+   "what": "Lo que ves: dos oxígenos unidos como un eslabón, con los hidrógenos torcidos en planos diferentes (forma de libro abierto).",
+   "measure": "O–O · 1.475 Å · diedro 111.5°",
+   "meaning": "Los hidrógenos NO están en el mismo plano: la molécula está retorcida 111.5° para que los pares libres de los oxígenos no choquen."
+  },
+  "fact": "El agua oxigenada de tu botiquín tiene una geometría rarísima: no es plana. Los dos hidrógenos están torcidos 111.5° uno respecto al otro, como un libro a medio abrir. Esa torsión existe porque los cuatro pares libres de los oxígenos se repelen. El enlace O–O es débil (1.475 Å) y por eso se descompone burbujeando sobre tu herida.",
+  "audioAtoms": [
+   {
+    "symbol": "H",
+    "Z": 1
+   },
+   {
+    "symbol": "O",
+    "Z": 8
+   }
+  ],
+  "caption": "El agua oxigenada de tu casa es la única molécula simple que está RETORCIDA en 3D, como un libro a medio abrir. Por eso burbujea sobre tus heridas. Aprende en university.gaiaprime.com.mx #química #aguaoxigenada #peróxido #ciencia #H2O2 #cienciaentiktok"
+ }
+]

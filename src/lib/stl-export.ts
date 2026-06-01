@@ -9,7 +9,7 @@
  */
 
 import type { SdfNode, SdfPrimitive, SdfOperation } from './sdf-engine';
-import { isPrimitive } from './sdf-engine';
+import { isPrimitive, isContainer } from './sdf-engine';
 
 // ═══════════════════════════════════════════════════════════════
 // CPU SDF Evaluator (mirrors GLSL but in JS)
@@ -120,6 +120,182 @@ function evalNode(node: SdfNode, p: V3): number {
     }
   }
   return result;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Automatic AABB — tight world-space bounds of the SDF
+// ═══════════════════════════════════════════════════════════════
+//
+// The marching-cubes grid MUST enclose the whole part, otherwise the
+// surface gets sliced flat against the grid walls (the "recortado" bug)
+// and the mesh is no longer watertight. We derive the AABB analytically
+// from the primitives instead of hardcoding it.
+//
+// Rules:
+//   - Every primitive contributes the box that encloses its geometry.
+//   - Rotation is applied by transforming the 8 local corners to world.
+//   - `subtract` *tools* (children[1..] of a subtract op) only remove
+//     material, so they never grow the outer bound — we skip them.
+//   - `intersect` clips, so the result is at most the first child's box;
+//     we conservatively keep the first child only.
+//   - union / smoothUnion / module: take all children.
+
+interface AABB { min: V3; max: V3; }
+
+const INF = Infinity;
+function emptyAABB(): AABB { return { min: [INF, INF, INF], max: [-INF, -INF, -INF] }; }
+function isEmptyAABB(b: AABB): boolean { return b.min[0] > b.max[0]; }
+
+function expandPoint(b: AABB, p: V3): void {
+  for (let i = 0; i < 3; i++) {
+    if (p[i] < b.min[i]) b.min[i] = p[i];
+    if (p[i] > b.max[i]) b.max[i] = p[i];
+  }
+}
+function mergeAABB(a: AABB, b: AABB): void {
+  if (isEmptyAABB(b)) return;
+  expandPoint(a, b.min);
+  expandPoint(a, b.max);
+}
+
+/** Local half-extents of a primitive before rotation/translation. */
+function primitiveHalfExtents(pr: SdfPrimitive): V3 | null {
+  const p = pr.params;
+  switch (pr.type) {
+    case 'sphere': {
+      const r = p.radius ?? 1;
+      return [r, r, r];
+    }
+    case 'box':
+      return [(p.sizeX ?? 1) * 0.5, (p.sizeY ?? 1) * 0.5, (p.sizeZ ?? 1) * 0.5];
+    case 'cylinder': {
+      const r = p.radius ?? 0.5;
+      return [r, (p.height ?? 1) * 0.5, r];
+    }
+    case 'torus': {
+      const R = (p.majorRadius ?? 1) + (p.minorRadius ?? 0.25);
+      const r = p.minorRadius ?? 0.25;
+      return [R, r, R];
+    }
+    case 'cone': {
+      // sdCone here spans y in [0, h] with base radius r at the tip plane.
+      const r = p.radius ?? 0.5;
+      // handled specially below (asymmetric in Y) — return null to signal that
+      return null;
+    }
+    case 'polygon': {
+      const verts = pr.polyVerts ?? [];
+      if (verts.length === 0) return null;
+      let mx = 0, my = 0;
+      for (const [vx, vy] of verts) {
+        mx = Math.max(mx, Math.abs(vx));
+        my = Math.max(my, Math.abs(vy));
+      }
+      return [mx, my, (p.height ?? 1) * 0.5];
+    }
+    default:
+      return null;
+  }
+}
+
+/** World-space AABB of a single primitive (rotation-aware). */
+function primitiveAABB(pr: SdfPrimitive): AABB {
+  const box = emptyAABB();
+
+  // Capsule: two world-space endpoints inflated by the radius.
+  if (pr.type === 'capsule') {
+    const p = pr.params;
+    const a: V3 = [p.ax ?? 0, p.ay ?? 0, p.az ?? 0];
+    const b: V3 = [p.bx ?? 0, p.by ?? 1, p.bz ?? 0];
+    const r = p.radius ?? 0.05;
+    expandPoint(box, [a[0] - r, a[1] - r, a[2] - r]);
+    expandPoint(box, [a[0] + r, a[1] + r, a[2] + r]);
+    expandPoint(box, [b[0] - r, b[1] - r, b[2] - r]);
+    expandPoint(box, [b[0] + r, b[1] + r, b[2] + r]);
+    return box;
+  }
+
+  const rot = pr.rotation || [0, 0, 0];
+  const hasRot = rot[0] !== 0 || rot[1] !== 0 || rot[2] !== 0;
+  // The GLSL/CPU evaluator rotates the *query point* by
+  // rotZ*rotY*rotX*(p - pos); the inverse (object→world) is the transpose,
+  // i.e. rotX(-rx)*rotY(-ry)*rotZ(-rz). We just transform local corners.
+  const toWorld = (lp: V3): V3 => {
+    let v = lp;
+    if (hasRot) v = rotX(-rot[0], rotY(-rot[1], rotZ(-rot[2], v)));
+    return [v[0] + pr.position[0], v[1] + pr.position[1], v[2] + pr.position[2]];
+  };
+
+  // Cone is asymmetric in Y (spans [0, h]); handle its local corners directly.
+  if (pr.type === 'cone') {
+    const r = pr.params.radius ?? 0.5;
+    const h = pr.params.height ?? 1;
+    const ys = [0, h];
+    for (const sx of [-r, r]) for (const sz of [-r, r]) for (const y of ys) {
+      expandPoint(box, toWorld([sx, y, sz]));
+    }
+    return box;
+  }
+
+  const he = primitiveHalfExtents(pr);
+  if (!he) {
+    // Unknown — contribute a small symmetric guess so it isn't ignored.
+    expandPoint(box, toWorld([-0.05, -0.05, -0.05]));
+    expandPoint(box, toWorld([0.05, 0.05, 0.05]));
+    return box;
+  }
+  for (const sx of [-he[0], he[0]]) for (const sy of [-he[1], he[1]]) for (const sz of [-he[2], he[2]]) {
+    expandPoint(box, toWorld([sx, sy, sz]));
+  }
+  return box;
+}
+
+/** Recursively compute the world-space AABB of any SDF node. */
+function nodeAABB(node: SdfNode): AABB {
+  if (isPrimitive(node)) return primitiveAABB(node);
+
+  const box = emptyAABB();
+  if (!isContainer(node)) return box;
+  const children = node.children;
+  if (children.length === 0) return box;
+
+  const type = node.kind === 'operation' ? (node as SdfOperation).type : 'union';
+
+  if (type === 'subtract') {
+    // Only the base (first child) defines the outer bound; tools remove.
+    return nodeAABB(children[0]);
+  }
+  if (type === 'intersect') {
+    // Result is contained in the first operand (conservative & safe).
+    return nodeAABB(children[0]);
+  }
+  // union / smoothUnion / module → enclose everything.
+  for (const c of children) mergeAABB(box, nodeAABB(c));
+  return box;
+}
+
+/**
+ * Compute marching-cubes bounds for a scene: the SDF's AABB padded by a
+ * margin so the surface never touches the grid wall. `marginFrac` is a
+ * fraction of the largest axis span (also acts as a floor for flat axes).
+ */
+export function computeSceneBounds(scene: SdfNode, marginFrac = 0.08): [V3, V3] {
+  const box = nodeAABB(scene);
+  if (isEmptyAABB(box)) {
+    // Fallback to the historical default if we couldn't infer anything.
+    return [[-1.2, -0.2, -0.5], [1.2, 1.4, 0.5]];
+  }
+  const span: V3 = [
+    box.max[0] - box.min[0],
+    box.max[1] - box.min[1],
+    box.max[2] - box.min[2],
+  ];
+  const maxSpan = Math.max(span[0], span[1], span[2], 1e-4);
+  const m = maxSpan * marginFrac;
+  return [
+    [box.min[0] - m, box.min[1] - m, box.min[2] - m],
+    [box.max[0] + m, box.max[1] + m, box.max[2] + m],
+  ];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -323,15 +499,22 @@ export interface MarchingCubesResult {
 export function marchingCubes(
   scene: SdfNode,
   res = 128,
-  bounds: [V3, V3] = [[-1.2, -0.2, -0.5], [1.2, 1.4, 0.5]],
+  bounds: [V3, V3] | null = null,
   onProgress?: (pct: number) => void,
 ): MarchingCubesResult {
-  const [bMin, bMax] = bounds;
+  // When no bounds are supplied, fit them to the scene so nothing gets
+  // clipped flat against the grid (watertight result).
+  const [bMin, bMax] = bounds ?? computeSceneBounds(scene);
   const step: V3 = [
     (bMax[0] - bMin[0]) / res,
     (bMax[1] - bMin[1]) / res,
     (bMax[2] - bMin[2]) / res,
   ];
+
+  // Degeneracy threshold for (2·area)² — scaled to the grid cell so it
+  // tracks part size. A face thinner than ~1e-4 of a cell is dropped.
+  const minStep = Math.min(step[0], step[1], step[2]);
+  const DEGEN_EPS2 = (minStep * minStep * 1e-4) ** 2;
 
   // Evaluate grid
   const grid = new Float32Array((res + 1) * (res + 1) * (res + 1));
@@ -390,15 +573,18 @@ export function marchingCubes(
           }
         }
 
-        // Emit triangles
+        // Emit triangles — skip degenerate (zero-area) ones so every kept
+        // edge is shared by exactly 2 real faces (closed manifold mesh).
         const row = TRI_TABLE[cubeIndex];
         for (let i = 0; i < row.length; i += 3) {
           if (row[i] === -1) break;
-          tris.push(
-            ...edgeVerts[row[i]],
-            ...edgeVerts[row[i + 1]],
-            ...edgeVerts[row[i + 2]],
-          );
+          const a = edgeVerts[row[i]];
+          const b = edgeVerts[row[i + 1]];
+          const c = edgeVerts[row[i + 2]];
+          // Twice the triangle area = |(b-a) × (c-a)|.
+          const n = cross(sub(b, a), sub(c, a));
+          if (n[0] * n[0] + n[1] * n[1] + n[2] * n[2] < DEGEN_EPS2) continue;
+          tris.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
         }
       }
     }
@@ -460,10 +646,23 @@ export function toSTL(result: MarchingCubesResult, scaleMM = 100): ArrayBuffer {
   return buf;
 }
 
-/** Trigger STL download in the browser */
-export function downloadSTL(scene: SdfNode, filename = 'forja-export.stl', res = 128) {
-  const result = marchingCubes(scene, res);
-  const buf = toSTL(result);
+/**
+ * Trigger STL download in the browser.
+ *
+ * Bounds are computed automatically from the scene's AABB (+margin) so the
+ * part is never clipped flat against the grid — the export stays watertight
+ * regardless of how big the piece is. `res` is the grid count per axis;
+ * 160 captures servo holes / finger joints without hanging the CPU.
+ */
+export function downloadSTL(
+  scene: SdfNode,
+  filename = 'forja-export.stl',
+  res = 160,
+  opts: { scaleMM?: number; bounds?: [V3, V3] } = {},
+) {
+  const bounds = opts.bounds ?? computeSceneBounds(scene);
+  const result = marchingCubes(scene, res, bounds);
+  const buf = toSTL(result, opts.scaleMM);
   const blob = new Blob([buf], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

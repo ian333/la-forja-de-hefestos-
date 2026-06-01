@@ -24,6 +24,8 @@ const OUTRO = path.join(ROOT, 'assets', 'gaia-prime-outro-vertical-4k.mp4');
 const SONIFY = path.join(ROOT, 'scripts', 'atom-sonify.py');
 const VIBES = path.join(ROOT, 'scripts', 'sonify-water-vibes.py');
 const MOLSONIFY = path.join(ROOT, 'scripts', 'sonify-molecule.py');
+const DNASONIFY = path.join(ROOT, 'scripts', 'sonify-dna.py');
+const IS_DNA = ['brca1', 'telomero', 'tata'].includes(MOL);
 const PAGE_URL = MOL ? `cinematic-molecule.html?m=${MOL}` : `cinematic-atom.html?z=${Z}`;
 
 function run(cmd, args) {
@@ -36,7 +38,8 @@ function ffdur(f){ const r=spawnSync('ffprobe',['-v','error','-show_entries','fo
 (async () => {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.mkdirSync(TMP, { recursive: true });
-  const framesDir = path.join(TMP, `frames-${SYM}`);
+  const TAG = process.env.OUTNAME || SYM;          // único por render → paralelo-seguro
+  const framesDir = path.join(TMP, `frames-${TAG}`);
   if (fs.existsSync(framesDir)) fs.rmSync(framesDir, { recursive: true });
   fs.mkdirSync(framesDir, { recursive: true });
 
@@ -70,7 +73,13 @@ function ffdur(f){ const r=spawnSync('ffprobe',['-v','error','-show_entries','fo
   });
   const settle = () => page.evaluate(() => new Promise(r =>
     requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => r(null))))));
-  const renderAt = (tt) => page.evaluate((t) => window.__cinematicAtom.renderAt(t), tt);
+  const ensureReady = () => page.waitForFunction(() => window.__cinematicAtom && window.__cinematicAtom.ready === true, null, { timeout: 20000 });
+  // Resiliente: si la página se recargó (HMR) y window.__cinematicAtom desapareció,
+  // re-espera ready y reintenta — así un reload no mata el render a media grabación.
+  const renderAt = async (tt) => {
+    try { await page.evaluate((t) => window.__cinematicAtom.renderAt(t), tt); }
+    catch { await ensureReady().catch(() => {}); await page.waitForTimeout(300); await page.evaluate((t) => window.__cinematicAtom.renderAt(t), tt); }
+  };
 
   const t0 = Date.now(); let last = t0; let reshot = 0; let prevLuma = null;
   for (let i = 0; i < total; i++) {
@@ -96,7 +105,7 @@ function ffdur(f){ const r=spawnSync('ffprobe',['-v','error','-show_entries','fo
   console.log(`  ✓ ${total} frames en ${((Date.now()-t0)/60000).toFixed(1)} min`);
 
   // Encode H.264 (CPU)
-  const clip = path.join(TMP, `clip-${SYM}.mp4`);
+  const clip = path.join(TMP, `clip-${TAG}.mp4`);
   const venc = process.env.VENC || 'libx264';
   const encArgs = venc === 'h264_nvenc'
     ? ['-c:v','h264_nvenc','-preset','p7','-tune','hq','-profile:v','high','-rc','vbr','-cq','19','-b:v','16M','-maxrate','22M','-bufsize','44M']
@@ -111,10 +120,10 @@ function ffdur(f){ const r=spawnSync('ffprobe',['-v','error','-show_entries','fo
   let silent = clip;
   if (fs.existsSync(OUTRO)) {
     const EW = W * DPR, EH = H * DPR;
-    const om = path.join(TMP, 'outro.mp4');
+    const om = path.join(TMP, `outro-${TAG}.mp4`);
     run('ffmpeg',['-y','-i',OUTRO,'-vf',`scale=${EW}:${EH}:force_original_aspect_ratio=decrease,pad=${EW}:${EH}:(ow-iw)/2:(oh-ih)/2,fps=${FPS},format=yuv420p`,
       ...encArgs,'-pix_fmt','yuv420p','-an', om]);
-    const merged = path.join(TMP, `merged-${SYM}.mp4`);
+    const merged = path.join(TMP, `merged-${TAG}.mp4`);
     const clipDur = ffdur(clip) || DURATION;
     const xf = 0.7, off = Math.max(0, clipDur - xf);
     run('ffmpeg',['-y','-i',clip,'-i',om,'-filter_complex',
@@ -127,13 +136,15 @@ function ffdur(f){ const r=spawnSync('ffprobe',['-v','error','-show_entries','fo
   const finalFile = path.join(OUT_DIR, `${process.env.OUTNAME || SYM}.mp4`);
   const dur = ffdur(silent) || (DURATION+3);
   const dry = path.join(TMP, `audio-${process.env.OUTNAME || SYM}.wav`);
-  // Audio: AGUA → sus modos vibracionales reales; otras moléculas → mezcla de las
-  // voces de sus átomos (distinta por molécula); átomos → espectro de emisión.
-  const ar = MOL === 'h2o'
-    ? spawnSync('python3', [VIBES, dry, String(dur)], { stdio:'pipe' })
-    : MOL
-      ? spawnSync('python3', [MOLSONIFY, MOL, dry, String(dur)], { stdio:'pipe' })
-      : spawnSync('python3', [SONIFY, SYM, dry, String(dur), Z], { stdio:'pipe' });
+  // Audio: ADN → su CÁNTICO (secuencia→melodía + coro); AGUA → modos vibracionales;
+  // otras moléculas → mezcla de voces de sus átomos; átomos → espectro de emisión.
+  const ar = IS_DNA
+    ? spawnSync('python3', [DNASONIFY, MOL, dry, String(dur)], { stdio:'pipe' })
+    : MOL === 'h2o'
+      ? spawnSync('python3', [VIBES, dry, String(dur)], { stdio:'pipe' })
+      : MOL
+        ? spawnSync('python3', [MOLSONIFY, MOL, dry, String(dur)], { stdio:'pipe' })
+        : spawnSync('python3', [SONIFY, SYM, dry, String(dur), Z], { stdio:'pipe' });
   if (ar.status === 0) {
     run('ffmpeg',['-y','-i',silent,'-i',dry,'-map','0:v','-map','1:a',
       '-af','highpass=f=28, aecho=0.8:0.9:83|137|211|307:0.45|0.36|0.28|0.2, aecho=0.85:0.9:431|617:0.16|0.1, lowpass=f=3400, loudnorm=I=-18:TP=-2:LRA=10',

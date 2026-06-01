@@ -17,8 +17,19 @@ export const PREMIO_LABS: Record<string, LazyExoticComponent<ComponentType<unkno
   'econ-1970-samuelson': lazy(() => import('./SamuelsonTazon')),
   'econ-1971-kuznets': lazy(() => import('./KuznetsPIB')),
   'econ-2005-aumann-schelling': lazy(() => import('./SchellingCiudad')),
+  'econ-2008-krugman': lazy(() => import('@/masterclass/cine/scenes/KrugmanClase')),
+  'econ-15-ostrom': lazy(() => import('@/masterclass/cine/scenes/OstromClase')),
+  'econ-2018-romer-nordhaus': lazy(() => import('@/masterclass/cine/scenes/RomerClase')),
 };
 
 export function hasLab(id: string): boolean {
   return id in PREMIO_LABS;
 }
+
+// Escenas cine (estándar `cine/`): se pueden ver a pantalla completa en /clase.html?id=.
+export const CINE_CLASES = new Set<string>([
+  'econ-2008-krugman',
+  'econ-15-ostrom',
+  'econ-2018-romer-nordhaus',
+]);
+export const esClaseCine = (id: string) => CINE_CLASES.has(id);

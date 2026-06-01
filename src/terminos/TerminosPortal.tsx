@@ -8,13 +8,13 @@
 import LegalShell, { Bullets, type LegalSection } from '../legal/LegalShell';
 
 // ── Datos del negocio (REEMPLAZA antes de publicar) ──
-const EMPRESA = '[RAZÓN SOCIAL]';
+const EMPRESA = 'Sebastián Vázquez Andrade';
 const NOMBRE_COMERCIAL = 'GAIA';
-const RFC = '[RFC]';
-const DOMICILIO = '[DOMICILIO FISCAL]';
-const CORREO_CONTACTO = '[correo de contacto]';
+const RFC = 'VAAS980311U25';
+const DOMICILIO = 'C.P. 15000, Ciudad de México';
+const CORREO_CONTACTO = 'contacto@gaiaprime.com.mx';
 const SITIO = 'university.gaiaprime.com.mx';
-const JURISDICCION = '[CIUDAD], México';
+const JURISDICCION = 'Ciudad de México, México';
 
 const SECTIONS: LegalSection[] = [
   {

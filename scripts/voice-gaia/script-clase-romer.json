@@ -1,0 +1,42 @@
+{
+  "id": "clase-romer",
+  "title": "Romer · El hack para crecer",
+  "central_emotion": "esperanza con filo",
+  "aspect_ratio_primary": "16:9",
+  "voice_name": "Matilda",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "model_id": "eleven_v3",
+  "voice_settings": {
+    "stability": 0.48,
+    "similarity_boost": 0.78,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    { "id": "romer-01", "scene": "romer", "text": "Corea del Sur, mil novecientos sesenta. Más pobre que Ghana. Más pobre que casi toda África. Hoy es veinte veces más rica. ¿Qué demonios pasó ahí?" },
+    { "id": "romer-02", "scene": "romer", "text": "No fue el petróleo. No fue el oro. No fue la suerte. Corea no tenía nada de eso." },
+    { "id": "romer-03", "scene": "romer", "text": "Lo que pasó adentro de Corea te incluye a ti. Al taquero de la esquina. Y a México entero. Es un truco, y se aprende." },
+    { "id": "romer-04", "scene": "romer", "text": "Durante años la receta para crecer fue una sola. Acumula fierros. Más máquinas, más fábricas, más capital." },
+    { "id": "romer-05", "scene": "romer", "text": "Pero el capital tiene una trampa. La primera máquina te cambia la vida. La décima ya casi no suma. Cada fierro nuevo rinde menos que el anterior." },
+    { "id": "romer-06", "scene": "romer", "text": "Le sigues metiendo dinero, y llega un punto en que ya no creces. Te estancas. A eso le dicen rendimientos decrecientes." },
+    { "id": "romer-07", "scene": "romer", "text": "Y aquí está el misterio. Si el capital fuera todo, el crecimiento del mundo se habría apagado hace siglos. Pero no se apagó." },
+    { "id": "romer-08", "scene": "romer", "text": "Los economistas hicieron la cuenta. Sumaron todo el capital, todo el trabajo… y solo les explicaba la mitad del crecimiento. ¿Y la otra mitad?" },
+    { "id": "romer-09", "scene": "romer", "text": "La otra mitad venía de algo que no podían tocar ni pesar. Un fantasma en los números. Lo llamaron, nomás, el residuo." },
+    { "id": "romer-10", "scene": "romer", "text": "Paul Romer agarró ese fantasma y le puso nombre. El residuo eran las ideas. El conocimiento. Las recetas para hacer las cosas." },
+    { "id": "romer-11", "scene": "romer", "text": "Y las ideas tienen una propiedad mágica que ningún fierro del mundo tiene. Míralo bien." },
+    { "id": "romer-12", "scene": "romer", "text": "Si te doy mi taco, me quedo sin taco. Si te paso mi lana, ya no es mía. Las cosas son rivales. O las tienes tú, o las tengo yo." },
+    { "id": "romer-13", "scene": "romer", "text": "Pero si te doy mi receta… los dos la tenemos. No perdí nada. Eso es una idea. Es no-rival." },
+    { "id": "romer-14", "scene": "romer", "text": "Una sola receta la pueden usar mil cocinas a la vez, en mil ciudades, y no se gasta ni tantito. Se copia, gratis, hasta el infinito." },
+    { "id": "romer-15", "scene": "romer", "text": "Y todavía falta lo mejor. Las ideas se combinan. Juntas dos, y nace una tercera que antes no existía." },
+    { "id": "romer-16", "scene": "romer", "text": "La rueda, más una caja: carreta. La carreta, más un motor: coche. El coche, más un chip: eso que traes en la bolsa." },
+    { "id": "romer-17", "scene": "romer", "text": "Entre más ideas hay sobre la mesa, más combinaciones nuevas son posibles. No es una suma. Es una bola de nieve." },
+    { "id": "romer-18", "scene": "romer", "text": "Por eso el crecimiento no se frena. El capital tiene rendimientos decrecientes. Las ideas tienen rendimientos crecientes." },
+    { "id": "romer-19", "scene": "romer", "text": "Pero espérate. Si las ideas se copian gratis… ¿quién se va a romper la cabeza inventándolas?" },
+    { "id": "romer-20", "scene": "romer", "text": "Por eso existen las patentes, las marcas, los secretos. Un ratito de exclusiva, para que valga la pena crear algo nuevo." },
+    { "id": "romer-21", "scene": "romer", "text": "Ese es el equilibrio fino de Romer. Proteger lo suficiente para que inventen. Compartir lo suficiente para que el mundo crezca." },
+    { "id": "romer-22", "scene": "romer", "text": "Y ojo, esto no lo inventaron los economistas. Una mona en Japón aprendió a lavar el camote en el mar. La tropa entera la copió." },
+    { "id": "romer-23", "scene": "romer", "text": "Nadie le quitó nada a nadie. Comieron mejor para siempre. Somos el animal que acumula recetas. A eso le decimos cultura." },
+    { "id": "romer-24", "scene": "romer", "text": "Por eso un país sin capital puede despegar. No necesitas tenerlo todo. Necesitas ideas. Se copian gratis y se combinan sin fin." },
+    { "id": "romer-25", "scene": "romer", "text": "El taquero que de verdad la pega no compra más comales. Franquicia la receta. Eso, exactamente eso, le ganó el Nobel a Paul Romer." }
+  ]
+}

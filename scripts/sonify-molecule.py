@@ -39,13 +39,37 @@ MOL_ATOMS = {
     'nh3':  [('N', 7), ('H', 1)],
     # cadenas — voz del carbono con armónico de hidrógeno
     'butane':       [('C', 6), ('H', 1)],
+    'pentane':      [('C', 6), ('H', 1)],
     'hexane':       [('C', 6), ('H', 1)],
+    'heptane':      [('C', 6), ('H', 1)],
     'octane':       [('C', 6), ('H', 1)],
+    'nonane':       [('C', 6), ('H', 1)],
     'decane':       [('C', 6), ('H', 1)],
+    'dodecane':     [('C', 6), ('H', 1)],
+    'hexadecane':   [('C', 6), ('H', 1)],
     'hexatriene':   [('C', 6), ('H', 1)],
+    'octatetraene': [('C', 6), ('H', 1)],
     'decapentaene': [('C', 6), ('H', 1)],
+    'dodecahexaene':[('C', 6), ('H', 1)],
     'caroteno':     [('C', 6), ('H', 1)],
+    # ADN — voz de sus elementos (fosfato P, bases N/O/C)
+    'brca1':    [('P', 15), ('N', 7), ('O', 8), ('C', 6)],
+    'telomero': [('P', 15), ('N', 7), ('O', 8), ('C', 6)],
+    'tata':     [('P', 15), ('N', 7), ('O', 8), ('C', 6)],
 }
+
+
+# Moléculas del catálogo: sus átomos vienen de catalog-audio.json (generado de
+# catalog.json). Se fusionan con MOL_ATOMS (las del catálogo no pisan a las base).
+import json
+_cat_audio = os.path.join(_here, 'catalog-audio.json')
+if os.path.exists(_cat_audio):
+    try:
+        with open(_cat_audio) as _f:
+            for _k, _atoms in json.load(_f).items():
+                MOL_ATOMS.setdefault(_k, [tuple(a) for a in _atoms])
+    except Exception:
+        pass
 
 
 def main():

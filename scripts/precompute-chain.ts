@@ -128,11 +128,18 @@ function completeTetra(occupied: V3[]): V3[] {
 // ── catálogo de cadenas ──────────────────────────────────────────────────────
 const CHAINS: Record<string, () => Chain> = {
   butane: () => alkane(4),
+  pentane: () => alkane(5),
   hexane: () => alkane(6),
+  heptane: () => alkane(7),
   octane: () => alkane(8),
+  nonane: () => alkane(9),
   decane: () => alkane(10),
+  dodecane: () => alkane(12),
+  hexadecane: () => alkane(16),
   hexatriene: () => polyene(6),
+  octatetraene: () => polyene(8),
   decapentaene: () => polyene(10),
+  dodecahexaene: () => polyene(12),
   caroteno: () => polyene(22),     // el cromóforo poliénico del β-caroteno (lo que da el naranja y deja VER)
 };
 
@@ -146,9 +153,9 @@ function colHot(base: V3, density: number): V3 {
   const bright = 0.24 + 0.55 * density;                // tenue: aditivo ya no satura a blanco
   return [r * bright, g * bright, b * bright];
 }
-const SIGMA: V3 = [0.36, 0.86, 1.0];   // σ cian
-const SIGMA_CH: V3 = [0.55, 0.92, 1.0];// σ C–H, más claro
-const PI: V3 = [0.74, 0.42, 1.0];      // π violeta
+const SIGMA: V3 = [0.26, 0.86, 0.96];   // σ C–C teal
+const SIGMA_CH: V3 = [1.0, 0.60, 0.26]; // σ C–H ámbar cálido (color = info: distingue C–H de C–C)
+const PI: V3 = [0.78, 0.40, 1.0];       // π violeta
 
 // ─────────────────────────────────────────────────────────────────────────────
 const key = (process.argv[2] || 'octane').toLowerCase();

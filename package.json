@@ -21,6 +21,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
     "katex": "^0.16.45",
     "lucide-react": "^1.7.0",
     "occt-import-js": "^0.0.23",

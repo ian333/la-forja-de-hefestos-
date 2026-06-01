@@ -40,7 +40,9 @@ export default function AIPanel({ onReload }: AIPanelProps) {
   const [copied, setCopied] = useState(false);
   const scene = useForgeStore((s) => s.scene);
   const variables = useForgeStore((s) => s.variables);
-  const joints = useForgeStore((s) => s.joints);
+  // joints is injected dynamically by the runner (runner.ts) and isn't part of
+  // the static ForgeState; default to [] so .map() never explodes before a run.
+  const joints = useForgeStore((s) => (s as any).joints) ?? [];
 
   useEffect(() => {
     const handler = (e: Event) => setRun((e as CustomEvent<RunResult>).detail);

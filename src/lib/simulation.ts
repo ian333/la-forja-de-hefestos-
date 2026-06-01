@@ -11,6 +11,7 @@
 
 import type { SdfNode, SdfPrimitive, SdfOperation } from './sdf-engine';
 import { isPrimitive } from './sdf-engine';
+import { evaluateSdf, type Vec3 } from './sdf-cpu';
 
 // ═══════════════════════════════════════════════════════════════
 // Simulation State
@@ -155,58 +156,115 @@ function collectPrimitives(node: SdfNode): SdfPrimitive[] {
   return (node as SdfOperation).children.flatMap(collectPrimitives);
 }
 
-export function computeSceneStats(root: SdfNode, densityKgPerCm3 = 0.00785): SceneStats {
-  const prims = collectPrimitives(root);
-  const types: Record<string, number> = {};
-  let minB: [number, number, number] = [Infinity, Infinity, Infinity];
-  let maxB: [number, number, number] = [-Infinity, -Infinity, -Infinity];
-  let totalVol = 0;
+// ── Unit convention ─────────────────────────────────────────────
+// 1 scene unit = 1 mm. This matches the variable system: auto-created
+// dimension variables (box1_ancho, etc.) carry the raw param value and are
+// labeled 'mm' (PARAM_LABELS in gaia-variables.ts). So a box param of 1 == 1 mm.
+//   1 mm³ = 1e-3 cm³  →  volume_cm3 = volume_units³ * 1e-3
+const MM3_PER_UNIT3 = 1;       // 1 unit³ = 1 mm³
+const CM3_PER_MM3 = 1e-3;      // 1 mm³ = 0.001 cm³
 
+/**
+ * Loose bounding box of the scene, derived from primitive params. This is only
+ * used to bound the voxel sampling grid, so over-estimating is safe.
+ */
+function looseBoundingBox(prims: SdfPrimitive[]): { min: Vec3; max: Vec3 } {
+  let minB: Vec3 = [Infinity, Infinity, Infinity];
+  let maxB: Vec3 = [-Infinity, -Infinity, -Infinity];
   for (const p of prims) {
-    types[p.type] = (types[p.type] || 0) + 1;
-
-    // Rough bounding box from position + params
     const r = Math.max(
       p.params.radius ?? 0,
-      p.params.majorRadius ?? 0,
+      (p.params.majorRadius ?? 0) + (p.params.minorRadius ?? 0),
       (p.params.sizeX ?? 0) / 2,
+      (p.params.sizeY ?? 0) / 2,
+      (p.params.sizeZ ?? 0) / 2,
       (p.params.height ?? 0) / 2,
       0.1,
     );
+    if (p.type === 'capsule') {
+      const cr = p.params.radius ?? 0.05;
+      for (let axis = 0; axis < 3; axis++) {
+        const a = [p.params.ax, p.params.ay, p.params.az][axis] ?? 0;
+        const b = [p.params.bx, p.params.by, p.params.bz][axis] ?? 0;
+        minB[axis] = Math.min(minB[axis], Math.min(a, b) - cr);
+        maxB[axis] = Math.max(maxB[axis], Math.max(a, b) + cr);
+      }
+      continue;
+    }
     for (let axis = 0; axis < 3; axis++) {
-      const center = p.type === 'capsule'
-        ? (([p.params.ax, p.params.ay, p.params.az][axis] ?? 0) + ([p.params.bx, p.params.by, p.params.bz][axis] ?? 0)) / 2
-        : p.position[axis];
+      const center = p.position[axis] ?? 0;
       minB[axis] = Math.min(minB[axis], center - r);
       maxB[axis] = Math.max(maxB[axis], center + r);
     }
+  }
+  if (!isFinite(minB[0])) { minB = [0, 0, 0]; maxB = [0, 0, 0]; }
+  return { min: minB, max: maxB };
+}
 
-    // Rough volume estimate per primitive (in scene units³)
-    switch (p.type) {
-      case 'sphere': totalVol += (4/3) * Math.PI * (p.params.radius ?? 1) ** 3; break;
-      case 'box': totalVol += (p.params.sizeX ?? 1) * (p.params.sizeY ?? 1) * (p.params.sizeZ ?? 1); break;
-      case 'cylinder': totalVol += Math.PI * (p.params.radius ?? 0.5) ** 2 * (p.params.height ?? 1); break;
-      case 'torus': totalVol += 2 * Math.PI ** 2 * (p.params.majorRadius ?? 1) * (p.params.minorRadius ?? 0.25) ** 2; break;
-      case 'capsule': {
-        const a: [number,number,number] = [p.params.ax??0,p.params.ay??0,p.params.az??0];
-        const b: [number,number,number] = [p.params.bx??0,p.params.by??1,p.params.bz??0];
-        const l = Math.sqrt((b[0]-a[0])**2+(b[1]-a[1])**2+(b[2]-a[2])**2);
-        const cr = p.params.radius ?? 0.02;
-        totalVol += Math.PI * cr ** 2 * l + (4/3) * Math.PI * cr ** 3;
-        break;
+/**
+ * Volume of the *boolean-resolved* solid, in scene units³, by voxel occupancy.
+ * Samples the compiled SDF tree (evaluateSdf already applies union/subtract/
+ * intersect/smoothUnion correctly), so a subtraction REMOVES volume and an
+ * overlapping union is NOT double-counted. Returns units³.
+ */
+function voxelVolumeUnits3(root: SdfNode, bbox: { min: Vec3; max: Vec3 }, res = 72): number {
+  const raw: Vec3 = [
+    bbox.max[0] - bbox.min[0],
+    bbox.max[1] - bbox.min[1],
+    bbox.max[2] - bbox.min[2],
+  ];
+  // Pad proportionally (3% of the largest extent) so surface voxels aren't
+  // clipped while keeping cells tight to the solid (better volume convergence).
+  const pad = Math.max(raw[0], raw[1], raw[2], 1e-4) * 0.03;
+  const min: Vec3 = [bbox.min[0] - pad, bbox.min[1] - pad, bbox.min[2] - pad];
+  const max: Vec3 = [bbox.max[0] + pad, bbox.max[1] + pad, bbox.max[2] + pad];
+  const ext: Vec3 = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
+  if (ext[0] <= 0 || ext[1] <= 0 || ext[2] <= 0) return 0;
+
+  const cell: Vec3 = [ext[0] / res, ext[1] / res, ext[2] / res];
+  const cellVol = cell[0] * cell[1] * cell[2];
+
+  let inside = 0;
+  for (let i = 0; i < res; i++) {
+    const x = min[0] + (i + 0.5) * cell[0];
+    for (let j = 0; j < res; j++) {
+      const y = min[1] + (j + 0.5) * cell[1];
+      for (let k = 0; k < res; k++) {
+        const z = min[2] + (k + 0.5) * cell[2];
+        if (evaluateSdf(root, [x, y, z]) < 0) inside++;
       }
     }
   }
+  return inside * cellVol;
+}
 
-  // Convert volume: scene units → cm (×10 scale)
-  const volCm3 = totalVol * 1000; // 1 scene unit = 10cm → 1 unit³ = 1000cm³
+export function computeSceneStats(root: SdfNode, densityKgPerCm3 = 0.00785): SceneStats {
+  const prims = collectPrimitives(root);
+  const types: Record<string, number> = {};
+  for (const p of prims) types[p.type] = (types[p.type] || 0) + 1;
+
+  const bbox = looseBoundingBox(prims);
+
+  // Volume via SDF voxelization — honors booleans automatically.
+  const volUnits3 = prims.length > 0 ? voxelVolumeUnits3(root, bbox) : 0;
+  const volCm3 = volUnits3 * MM3_PER_UNIT3 * CM3_PER_MM3; // units³ → mm³ → cm³
   const massKg = volCm3 * densityKgPerCm3;
 
+  // Keep ~4 significant figures: small (sub-cm³) parts otherwise round to a flat
+  // value and boolean deltas (a drilled hole) vanish from the status bar.
   return {
     totalParts: prims.length,
     primitiveTypes: types,
-    boundingBox: { min: minB, max: maxB },
-    estimatedVolumeCm3: Math.round(volCm3 * 100) / 100,
-    estimatedMassKg: Math.round(massKg * 1000) / 1000,
+    boundingBox: { min: bbox.min, max: bbox.max },
+    estimatedVolumeCm3: round4sig(volCm3),
+    estimatedMassKg: round4sig(massKg),
   };
+}
+
+/** Round to 4 significant figures (keeps precision across magnitudes). */
+function round4sig(x: number): number {
+  if (!isFinite(x) || x === 0) return 0;
+  const mag = Math.ceil(Math.log10(Math.abs(x)));
+  const factor = Math.pow(10, 4 - mag);
+  return Math.round(x * factor) / factor;
 }

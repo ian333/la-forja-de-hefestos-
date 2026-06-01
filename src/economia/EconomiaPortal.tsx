@@ -240,8 +240,9 @@ function NobelCard({ entry, block, onHover }: { entry: NobelLaureate; block: Blo
   const isLive = entry.status === 'live';
   const playable = hasLab(entry.id);
   const explained = !playable && hasPremioContent(entry.id);
-  // Live → masterclass narrada. Pending → hub del premio (entrar y jugar).
-  const href = isLive ? `/masterclass.html?id=${entry.classId}` : `/premio.html?id=${entry.id}`;
+  // Live sin lab → masterclass narrada directa. Si tiene lab (o es pending) →
+  // hub del premio, que embebe el cine + el botón a la masterclass narrada.
+  const href = (isLive && !playable) ? `/masterclass.html?id=${entry.classId}` : `/premio.html?id=${entry.id}`;
   const conexiones = relacionesDe(entry.id);
 
   const highlighted = isLive || playable || explained;

@@ -18,7 +18,7 @@
 import { Suspense, useEffect } from 'react';
 import { BLOCKS, NOBEL_CATALOG } from './nobel-catalog';
 import { getPremioContent } from './premio-content';
-import { PREMIO_LABS } from './labs/registry';
+import { PREMIO_LABS, esClaseCine } from './labs/registry';
 
 function nobelUrl(year: number): string {
   return `https://www.nobelprize.org/prizes/economic-sciences/${year}/summary/`;
@@ -140,9 +140,18 @@ export default function PremioPage() {
           <div className="text-[10px] uppercase tracking-[0.25em] font-mono mb-2" style={{ color: accent }}>
             🎮 El click
           </div>
-          <h2 className="text-[24px] md:text-[32px] font-extrabold text-white tracking-tight mb-5">
-            {content?.playPrompt ?? 'Pruébalo tú'}
-          </h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-3 mb-5">
+            <h2 className="text-[24px] md:text-[32px] font-extrabold text-white tracking-tight">
+              {content?.playPrompt ?? 'Pruébalo tú'}
+            </h2>
+            {esClaseCine(entry.id) && (
+              <a href={`/clase.html?id=${entry.id}`}
+                 className="shrink-0 px-4 py-2 rounded-lg text-[12px] font-mono transition"
+                 style={{ background: `${accent}1F`, border: `1px solid ${accent}66`, color: accent }}>
+                ⛶ Ver a pantalla completa →
+              </a>
+            )}
+          </div>
           <Suspense fallback={<LabLoading accent={accent} />}>
             <Lab />
           </Suspense>

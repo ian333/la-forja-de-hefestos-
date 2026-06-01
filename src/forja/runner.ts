@@ -78,7 +78,13 @@ export async function runScene(def: unknown): Promise<RunResult> {
 
   const store = useForgeStore.getState();
   store.setScene(scene);
-  store.setJoints(built.joints);
+  // setJoints/joints are part of the kinematics WIP and may not exist on the
+  // CAD store yet — guard so a jointed scene still renders its geometry.
+  if (typeof (store as { setJoints?: (j: unknown[]) => void }).setJoints === 'function') {
+    (store as { setJoints: (j: unknown[]) => void }).setJoints(built.joints);
+  } else {
+    useForgeStore.setState({ joints: built.joints } as Record<string, unknown>);
+  }
   useForgeStore.setState({ variables });
 
   const primCount = countPrimitives(scene);
