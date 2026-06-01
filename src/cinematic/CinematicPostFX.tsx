@@ -25,7 +25,7 @@
 
 import { Component, useEffect, useState, useMemo, type ReactNode, type ErrorInfo, type ComponentProps, type FC } from 'react'
 import { useThree } from '@react-three/fiber'
-import { HalfFloatType, Vector2 } from 'three'
+import { HalfFloatType, Vector2, NoToneMapping } from 'three'
 import {
   EffectComposer,
   Bloom,
@@ -51,7 +51,7 @@ const FXComposer = EffectComposer as unknown as FC<
 /* Presets por escena                                                  */
 /* ------------------------------------------------------------------ */
 
-export type CinematicPreset = 'bh' | 'magnetar' | 'quasar'
+export type CinematicPreset = 'bh' | 'magnetar' | 'quasar' | 'physics'
 
 export interface CinematicPostFXProps {
   /** Preset que fija defaults sensatos por escena. */
@@ -158,6 +158,27 @@ const PRESETS: Record<CinematicPreset, PresetDefaults> = {
     contrast: 0.2,
     brightness: -0.01,
   },
+  // Fisica (lab INTERACTIVO): lift cinematografico SIN sacrificar legibilidad.
+  // El usuario ORBITA y lee el experimento -> NADA de DOF (no desenfocar
+  // geometria educativa), NADA de flare anamorfico, vineta SUAVE (hay que ver el
+  // experimento), aberracion casi nula (evita confeti sobre lineas/puntos). El
+  // bloom de threshold bajo hace que la emision REVIENTE, con intensidad moderada
+  // para no lavar el contenido. El salto vs el Stage viejo es el ACES + grade.
+  physics: {
+    bloomIntensity: 1.1,
+    bloomThreshold: 0.22,
+    bloomRadius: 0.7,
+    dofFocusDistance: 0.02,
+    dofFocalLength: 0.05,
+    dofBokehScale: 0,
+    caOffset: 0.0004,
+    grainOpacity: 0.025,
+    vignetteDarkness: 0.6,
+    anamorphic: false,
+    saturation: 0.12,
+    contrast: 0.12,
+    brightness: 0.0,
+  },
 }
 
 /* ------------------------------------------------------------------ */
@@ -239,6 +260,19 @@ export function CinematicPostFX(props: CinematicPostFXProps) {
   // Vector2 estable para la aberración cromática — evita un alloc por frame en
   // el render offline (miles de frames). Solo se recrea si caOffset cambia.
   const caVec = useMemo(() => new Vector2(caOffset, caOffset), [caOffset])
+
+  // ESTE componente hace el ÚNICO tonemap (ACES). Forzamos NoToneMapping en el
+  // renderer para que R3F no aplique su ACES por default ENCIMA del nuestro
+  // (doble tonemap = lavado). Idempotente: las escenas que ya lo fijan en
+  // onCreated no cambian. Esto hace que migrar un módulo a CinematicPostFX sea
+  // solo cambiar el bloque de postFX, SIN tocar el <Canvas>.
+  const gl = useThree((s) => s.gl)
+  useEffect(() => {
+    if (!gl) return
+    const prev = gl.toneMapping
+    gl.toneMapping = NoToneMapping
+    return () => { gl.toneMapping = prev }
+  }, [gl])
 
   return (
     <PostprocessingShield>

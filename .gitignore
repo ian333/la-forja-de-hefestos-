@@ -50,4 +50,6 @@ scripts/.synccheck.txt
 _cine/
 _out/
 _cine_out/
+_phys/
+_phys_out/
 *.bak

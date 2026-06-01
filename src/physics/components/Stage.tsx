@@ -15,21 +15,21 @@
  * escena se sigue viendo, solo sin bloom.
  */
 
-import { Canvas, useThree, type CanvasProps } from '@react-three/fiber';
+import { Canvas, type CanvasProps } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
-import { BlendFunction, KernelSize } from 'postprocessing';
-import { Component, useEffect, useState, type ReactNode, type ErrorInfo } from 'react';
-import { HalfFloatType } from 'three';
+import { type ReactNode } from 'react';
+import { NoToneMapping } from 'three';
+import CinematicPostFX from '@/cinematic/CinematicPostFX';
 
 interface StageProps {
   /** Distancia inicial de la cámara. Default = 5. */
   cameraDistance?: number;
   /** Rotación automática muy lenta (como el átomo). Default false. */
   autoRotate?: boolean;
-  /** Intensidad de bloom (glow). 0 = sin glow. Default 0.9. */
+  /** Intensidad de bloom (glow). Sin pasar = la del preset 'physics'. 0 = sin glow. */
   bloomIntensity?: number;
-  /** Umbral luminoso para bloom. Default 0.1 (suave, captura colores emisivos). */
+  /** Umbral de bloom. Opcional: si no se pasa manda el preset. Compatibilidad
+      con callers (math lab + física) que aún lo especifican. */
   bloomThreshold?: number;
   /** Color del fondo. Default mezcla de la forja. */
   bgColor?: string;
@@ -44,51 +44,14 @@ interface StageProps {
   children: ReactNode;
 }
 
-/**
- * Silent error boundary specifically for postprocessing.
- * If EffectComposer fails to mount, we just render nothing — the scene
- * stays intact, only the bloom/vignette is missing.
- */
-class PostprocessingShield extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.warn('[Stage] Postprocessing falló, renderizando sin bloom:', error.message, info.componentStack);
-  }
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
-
-/**
- * Defers mounting of EffectComposer until after the renderer is fully
- * initialized — sidesteps a race in @react-three/postprocessing v3 where
- * EffectComposer's constructor reads from a null render target.
- */
-function DeferredEffects({ children }: { children: ReactNode }) {
-  const gl = useThree(state => state.gl);
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    if (!gl) return;
-    // Wait two RAF ticks so the renderer's render target is allocated.
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => setReady(true));
-    });
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-    };
-  }, [gl]);
-  if (!ready) return null;
-  return <>{children}</>;
-}
+// Los guards anti-crash del EffectComposer (PostprocessingShield + DeferredEffects)
+// ahora viven DENTRO de CinematicPostFX — Stage ya no los necesita aquí.
 
 export default function Stage({
   cameraDistance = 5,
   autoRotate = false,
-  bloomIntensity = 0.9,
-  bloomThreshold = 0.1,
+  bloomIntensity,   // sin default: si el módulo no lo pasa, manda el preset 'physics'
+  bloomThreshold,   // idem; forward opcional al preset
   bgColor = '#05060A',
   enablePan = true,
   minDistance,
@@ -108,6 +71,11 @@ export default function Stage({
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         style={{ background: 'transparent', width: '100%', height: '100%' }}
         dpr={[1, 2]}
+        onCreated={({ gl }) => {
+          // NoToneMapping: el tonemap ACES lo hace CinematicPostFX UNA sola vez.
+          // R3F aplica ACES por default; sin esto habría DOBLE tonemap (lavado).
+          gl.toneMapping = NoToneMapping;
+        }}
         {...canvasProps}
       >
         <ambientLight intensity={0.35} />
@@ -127,29 +95,18 @@ export default function Stage({
 
         {children}
 
-        {bloomIntensity > 0 && (
-          <PostprocessingShield>
-            <DeferredEffects>
-              <EffectComposer
-                multisampling={4}
-                enableNormalPass={false}
-                frameBufferType={HalfFloatType}
-              >
-                <Bloom
-                  intensity={bloomIntensity}
-                  luminanceThreshold={bloomThreshold}
-                  luminanceSmoothing={0.4}
-                  mipmapBlur
-                  kernelSize={KernelSize.LARGE}
-                />
-                <Vignette
-                  offset={0.25}
-                  darkness={0.65}
-                  blendFunction={BlendFunction.NORMAL}
-                />
-              </EffectComposer>
-            </DeferredEffects>
-          </PostprocessingShield>
+        {/* Postproceso cinematográfico UNIFORME para todo el lab — preset
+            'physics': ACES (lo que faltaba) + bloom de threshold bajo (la
+            emisión REVIENTA) + grade sutil + viñeta suave. Restringido para no
+            estorbar la lectura educativa (sin DOF, sin flare). Trae sus propios
+            guards anti-crash (PostprocessingShield + DeferredEffects).
+            bloomIntensity opcional: si el módulo no lo pasa, manda el preset. */}
+        {(bloomIntensity === undefined || bloomIntensity > 0) && (
+          <CinematicPostFX
+            preset="physics"
+            bloomIntensity={bloomIntensity}
+            bloomThreshold={bloomThreshold}
+          />
         )}
       </Canvas>
     </div>
