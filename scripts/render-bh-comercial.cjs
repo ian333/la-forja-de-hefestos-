@@ -183,6 +183,11 @@ function parseArgs() {
     readyTimeout: 120000,
     chrome: '/usr/bin/google-chrome-stable',
     outroPath: path.join(ROOT, 'assets', 'gaia-prime-outro-vertical-4k.mp4'),
+    // MODO WORKER: si se pasa, este proceso renderiza SOLO ese beat (Chrome propio,
+    // GPU fresca) a su .mkv y SALE. El orquestador lo invoca por beat vía spawn →
+    // cada beat tiene Chrome limpio enganchado a la RTX (sin herencia de SwiftShader).
+    workerBeat: null,   // id del beat a renderizar en modo worker
+    workerOut: null,    // ruta del .mkv de salida del worker
   };
   for (let i = 0; i < a.length; i++) {
     const k = a[i];
@@ -208,6 +213,8 @@ function parseArgs() {
     else if (k === '--captions') o.captions = true;
     else if (k === '--ready-timeout') o.readyTimeout = parseInt(a[++i], 10);
     else if (k === '--chrome') o.chrome = a[++i];
+    else if (k === '--worker-beat') o.workerBeat = a[++i];
+    else if (k === '--worker-out') o.workerOut = a[++i];
     // --outro-path = RUTA al mp4 del outro (distinta del toggle --no-outro). Antes
     // se llamaba --outro y se confundía con el toggle. Validamos que exista.
     else if (k === '--outro-path') {
@@ -793,9 +800,8 @@ async function main() {
   const frameRoot = path.join(tmpDir, 'frames');
   fs.mkdirSync(frameRoot, { recursive: true });
 
-  // --- Lanzar Chrome con GPU real (receta iangpu RTX). El env GALLIUM_DRIVER /
-  //     MESA_D3D12_DEFAULT_ADAPTER_NAME lo pone el OPERADOR antes de node (ver
-  //     cabecera); aquí pasamos los flags de ANGLE/GL.
+  // Flags de Chrome GPU (receta iangpu RTX). El env GALLIUM_DRIVER /
+  // MESA_D3D12_DEFAULT_ADAPTER_NAME lo pone el OPERADOR antes de node.
   const gpuArgs = [
     '--no-sandbox', '--disable-setuid-sandbox', '--headless=new',
     '--ignore-gpu-blocklist', '--enable-gpu', '--enable-gpu-rasterization',
@@ -804,68 +810,73 @@ async function main() {
     '--disable-background-timer-throttling', '--hide-scrollbars',
     `--window-size=${opts.width},${opts.height}`,
   ];
-  const browser = await chromium.launch({ headless: false, executablePath: opts.chrome, args: gpuArgs });
 
-  // openPage: abre un contexto+página fresco en la URL y espera el hook ready.
-  // Se usa al inicio Y en cada reciclaje (drena la fuga de memoria del WebGL 4K).
-  async function openPage() {
+  // openPageIn: abre Chrome→contexto→página fresca en la URL, espera ready + canvas
+  // a tamaño pleno (anti-parpadeo) + settle. Verifica que ENGANCHÓ la GPU (no
+  // SwiftShader); si cayó a software, lo reporta para reintentar.
+  async function openPageIn(browser) {
     const ctx = await browser.newContext({
       viewport: { width: opts.width, height: opts.height },
-      deviceScaleFactor: opts.super,   // supersampling (1 = 4K nativo, GPU pura)
-      bypassCSP: true,
+      deviceScaleFactor: opts.super, bypassCSP: true,
     });
     const pg = await ctx.newPage();
     pg.on('pageerror', (e) => console.error('[pageerror]', e.message));
     await pg.goto(opts.url, { waitUntil: 'networkidle', timeout: 90000 });
-    await pg.waitForFunction(
-      (hook) => window[hook] && window[hook].ready === true, opts.hook,
-      { timeout: opts.readyTimeout },
-    );
-    // FIX PARPADEO: 'ready' puede ser true ANTES de que el <canvas> de R3F crezca
-    // a la resolución completa (arranca chico y el ResizeObserver lo agranda en el
-    // primer tick) → 1 frame sale "más pequeño/raro" justo tras el reciclaje. Aquí
-    // esperamos a que el canvas mida el backing COMPLETO (W*super × H*super) y
-    // damos 3 RAF de settle para que el primer draw a tamaño pleno ya esté listo.
+    await pg.waitForFunction((hook) => window[hook] && window[hook].ready === true, opts.hook, { timeout: opts.readyTimeout });
     const wantW = opts.width * opts.super, wantH = opts.height * opts.super;
-    await pg.waitForFunction(
-      ({ w, h }) => {
-        const c = document.querySelector('canvas');
-        return c && c.width >= w - 2 && c.height >= h - 2;
-      },
-      { w: wantW, h: wantH },
-      { timeout: 30000 },
-    ).catch(() => { /* si el canvas reporta otro tamaño, seguimos: el settle cubre */ });
-    await pg.evaluate(() => new Promise((r) => {
-      let n = 0; const tick = () => (++n >= 3 ? r(null) : requestAnimationFrame(tick));
-      requestAnimationFrame(tick);
-    }));
-    return pg;
+    await pg.waitForFunction(({ w, h }) => { const c = document.querySelector('canvas'); return c && c.width >= w - 2 && c.height >= h - 2; }, { w: wantW, h: wantH }, { timeout: 30000 }).catch(() => {});
+    await pg.evaluate(() => new Promise((r) => { let n = 0; const tk = () => (++n >= 3 ? r(null) : requestAnimationFrame(tk)); requestAnimationFrame(tk); }));
+    // Verificar renderer: si NO es la RTX (cayó a SwiftShader/llvmpipe) → señalar.
+    const renderer = await pg.evaluate(() => {
+      try { const c = document.createElement('canvas'); const g = c.getContext('webgl2'); if (!g) return 'NULL';
+        const e = g.getExtension('WEBGL_debug_renderer_info'); return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : 'masked';
+      } catch (err) { return 'err'; }
+    });
+    const onGPU = /NVIDIA|RTX|D3D12/i.test(renderer) && !/SwiftShader|llvmpipe/i.test(renderer);
+    return { pg, renderer, onGPU };
   }
 
-  // Página inicial SOLO para leer la biblioteca de beats (ids/rangos/captions).
-  // El render real de cada beat usa su PROPIO contexto fresco (aislamiento 4K).
-  const page = await openPage();
-  page.on('console', (m) => console.log('[page]', m.text()));
-  // Leer la biblioteca de beats de la cadena ACTIVA (ids + rango t global +
-  // caption). El caption viene de la ESCENA (window.__cinematicBHReel.beats[].caption),
-  // NO hardcodeado aquí (DRY: una sola fuente de verdad para el texto del beat).
-  const info = await page.evaluate((hook) => ({
-    duration: window[hook].duration,
-    beats: window[hook].beats,
+  // ── MODO WORKER ───────────────────────────────────────────────────────────
+  // Renderiza UN beat (Chrome propio = GPU fresca garantizada) a --worker-out y SALE.
+  // El orquestador lo invoca por beat. Si Chrome cae a SwiftShader, sale con code 3
+  // → el orquestador reintenta (Chrome nuevo suele re-enganchar la RTX).
+  if (opts.workerBeat) {
+    const browser = await chromium.launch({ headless: false, executablePath: opts.chrome, args: gpuArgs });
+    const { pg, renderer, onGPU } = await openPageIn(browser);
+    console.log(`[worker ${opts.workerBeat}] renderer=${String(renderer).slice(0, 50)} onGPU=${onGPU}`);
+    if (!onGPU) { console.error(`[worker] CAYÓ A SOFTWARE (${renderer}) — abortar para reintento`); await browser.close(); process.exit(3); }
+    const allBeats = await pg.evaluate((hook) => window[hook].beats, opts.hook);
+    const beat = allBeats.find((b) => b.id === opts.workerBeat);
+    if (!beat) { console.error(`[worker] beat ${opts.workerBeat} no existe`); await browser.close(); process.exit(2); }
+    beat.caption = beat.caption || '';
+    await renderBeatBase(pg, beat, opts, opts.workerOut, frameRoot);
+    await browser.close();
+    console.log(`[worker ${opts.workerBeat}] ✓ ${opts.workerOut}`);
+    if (!opts.keepFrames) fs.rmSync(tmpDir, { recursive: true, force: true });
+    return;   // worker termina aquí
+  }
+
+  // ── MODO ORQUESTADOR ──────────────────────────────────────────────────────
+  // Lee los beats (Chrome efímero), y por cada beat NO cacheado lanza un WORKER en
+  // PROCESO SEPARADO (Chrome propio → GPU fresca, sin herencia de SwiftShader).
+  const infoBrowser = await chromium.launch({ headless: false, executablePath: opts.chrome, args: gpuArgs });
+  const { pg: infoPage } = await openPageIn(infoBrowser);
+  const info = await infoPage.evaluate((hook) => ({
+    duration: window[hook].duration, beats: window[hook].beats,
     hasRenderAt: typeof window[hook].renderAt === 'function',
   }), opts.hook);
-  if (!info.hasRenderAt) { console.error(`[comercial] window.${opts.hook}.renderAt no es función`); await browser.close(); process.exit(1); }
-  if (!info.beats || !info.beats.length) { console.error('[comercial] window.__cinematicBHReel.beats vacío'); await browser.close(); process.exit(1); }
+  await infoBrowser.close();
+  if (!info.hasRenderAt) { console.error(`[comercial] window.${opts.hook}.renderAt no es función`); process.exit(1); }
+  if (!info.beats || !info.beats.length) { console.error('[comercial] beats vacío'); process.exit(1); }
   console.log(`[scene] cadena = ${info.duration.toFixed(2)}s · ${info.beats.length} beats:`);
   info.beats.forEach((b) => console.log(`        ${b.id.padEnd(24)} t∈[${b.start.toFixed(2)},${b.end.toFixed(2)})  (${b.kind})`));
 
-  // --- ETAPA A + B por beat, con cache. El caption se lee de beat.caption (lo
-  // expone la escena). Si un beat no trae caption → degrada a sin-caption (no
-  // falla, no inventa texto).
+  const selfPath = __filename;
+  // Reconstruye los args originales (menos worker-*) para pasar al subproceso.
+  const baseArgs = process.argv.slice(2).filter((a, i, arr) =>
+    a !== '--worker-beat' && a !== '--worker-out' && arr[i - 1] !== '--worker-beat' && arr[i - 1] !== '--worker-out');
+
   const gradedBeats = [];
-  // frameOffset acumulado = frame GLOBAL donde arranca cada beat en la cadena.
-  // Se deriva de la SUMA de las duraciones de los beats previos (función pura del
-  // orden de la cadena, sin reloj) → grano + gate-weave continuos entre cortes.
   let frameOffset = 0;
   for (const beat of info.beats) {
     beat.caption = beat.caption || '';
@@ -873,24 +884,18 @@ async function main() {
     const hA = hashA(beat, opts);
     const baseMkv = path.join(cacheDir, `A_${beat.id}_${hA}.mkv`);
 
-    // AISLAMIENTO POR BEAT (fix 4K): si el beat NO está en cache, lo renderizamos
-    // en un CONTEXTO FRESCO y lo CERRAMOS al terminar → la GPU/VRAM se libera entre
-    // beats, cero fuga acumulada (probado: 80+ frames estables por contexto fresco).
     if (opts.force || !fs.existsSync(baseMkv)) {
-      const beatCtx = await browser.newContext({
-        viewport: { width: opts.width, height: opts.height },
-        deviceScaleFactor: opts.super, bypassCSP: true,
-      });
-      const beatPage = await beatCtx.newPage();
-      beatPage.on('pageerror', (e) => console.error('[pageerror]', e.message));
-      await beatPage.goto(opts.url, { waitUntil: 'networkidle', timeout: 90000 });
-      await beatPage.waitForFunction((hook) => window[hook] && window[hook].ready === true, opts.hook, { timeout: opts.readyTimeout });
-      // esperar canvas a tamaño pleno (anti-parpadeo) + settle
-      const wantW = opts.width * opts.super, wantH = opts.height * opts.super;
-      await beatPage.waitForFunction(({ w, h }) => { const c = document.querySelector('canvas'); return c && c.width >= w - 2 && c.height >= h - 2; }, { w: wantW, h: wantH }, { timeout: 30000 }).catch(() => {});
-      await beatPage.evaluate(() => new Promise((r) => { let n = 0; const tk = () => (++n >= 3 ? r(null) : requestAnimationFrame(tk)); requestAnimationFrame(tk); }));
-      await renderBeatBase(beatPage, beat, opts, baseMkv, frameRoot);
-      await beatCtx.close();   // ← libera la VRAM del beat antes del siguiente
+      // Lanzar WORKER en proceso separado, con hasta 3 reintentos si cae a software.
+      let ok = false;
+      for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+        console.log(`[orq] beat ${beat.id} → worker (intento ${attempt}/3)`);
+        const r = spawnSync('node', [selfPath, ...baseArgs, '--worker-beat', beat.id, '--worker-out', baseMkv, '--force'],
+          { stdio: 'inherit', env: process.env });
+        if (r.status === 0 && fs.existsSync(baseMkv)) { ok = true; }
+        else if (r.status === 3) { console.warn(`[orq] beat ${beat.id} cayó a software, reintentando con Chrome nuevo…`); }
+        else { console.warn(`[orq] beat ${beat.id} worker status=${r.status}; reintento`); }
+      }
+      if (!ok) { console.error(`[orq] beat ${beat.id} FALLÓ tras 3 intentos`); process.exit(1); }
     } else {
       console.log(`[A] CACHE HIT  ${beat.id} → ${path.basename(baseMkv)}`);
     }
@@ -901,8 +906,6 @@ async function main() {
     gradedBeats.push(out);
     frameOffset += beatFrames;
   }
-
-  await browser.close();
 
   // --- Ensamble final.
   const { masterPath, deliveryPath } = assemble(gradedBeats, opts, tmpDir);

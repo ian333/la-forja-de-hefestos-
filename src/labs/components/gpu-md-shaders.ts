@@ -41,7 +41,7 @@ export const POSITION_SHADER = (RES: number) => /* glsl */ `
   uniform float boxSize;
 
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec2 uv = gl_FragCoord.xy / vec2(float(${RES}));
     vec4 pos = texture2D(texturePosition, uv);
     vec4 vel = texture2D(textureVelocity, uv);
 
@@ -84,7 +84,7 @@ export const VELOCITY_SHADER = (RES: number) => /* glsl */ `
   }
 
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec2 uv = gl_FragCoord.xy / vec2(float(${RES}));
     vec4 posI = texture2D(texturePosition, uv);
     vec4 velI = texture2D(textureVelocity, uv);
 
@@ -98,12 +98,12 @@ export const VELOCITY_SHADER = (RES: number) => /* glsl */ `
     vec3 force = vec3(0.0);
 
     // Self-UV (para skip self)
-    vec2 selfUV = (gl_FragCoord.xy) / resolution.xy;
+    vec2 selfUV = (gl_FragCoord.xy) / vec2(float(${RES}));
 
     // O(N²) loop sobre todas las partículas
     for (int y = 0; y < RES; y++) {
       for (int x = 0; x < RES; x++) {
-        vec2 uvJ = (vec2(float(x), float(y)) + 0.5) / resolution.xy;
+        vec2 uvJ = (vec2(float(x), float(y)) + 0.5) / vec2(float(${RES}));
         // Skip self
         if (abs(uvJ.x - uv.x) < 0.5 / RES_F && abs(uvJ.y - uv.y) < 0.5 / RES_F) continue;
 
@@ -266,6 +266,8 @@ export const SPECIES_PALETTE: { color: string; label: string }[] = [
 // reacción "greedy" que a nivel estadístico sigue Arrhenius.
 
 export const REACTION_SHADER = (RES: number) => /* glsl */ `
+  uniform sampler2D texturePosition;
+  uniform sampler2D textureVelocity;
   uniform float boxSize;
   uniform float reactionRadius;
   uniform float activationEnergy;
@@ -279,7 +281,7 @@ export const REACTION_SHADER = (RES: number) => /* glsl */ `
   const float RES_F = ${RES}.0;
 
   void main() {
-    vec2 uv = gl_FragCoord.xy / resolution.xy;
+    vec2 uv = gl_FragCoord.xy / vec2(float(${RES}));
     vec4 posI = texture2D(texturePosition, uv);
     vec4 velI = texture2D(textureVelocity, uv);
 
@@ -302,7 +304,7 @@ export const REACTION_SHADER = (RES: number) => /* glsl */ `
     // Buscar el primer socio de reacción que cumple
     for (int y = 0; y < RES; y++) {
       for (int x = 0; x < RES; x++) {
-        vec2 uvJ = (vec2(float(x), float(y)) + 0.5) / resolution.xy;
+        vec2 uvJ = (vec2(float(x), float(y)) + 0.5) / vec2(float(${RES}));
         if (abs(uvJ.x - uv.x) < 0.5/RES_F && abs(uvJ.y - uv.y) < 0.5/RES_F) continue;
 
         vec4 posJ = texture2D(texturePosition, uvJ);

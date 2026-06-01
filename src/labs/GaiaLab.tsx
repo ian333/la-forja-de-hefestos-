@@ -25,11 +25,13 @@ import { useState } from 'react';
 import { PERIODIC_TABLE, elementByZ, configCompact } from '@/lib/chem/quantum/periodic-table';
 import PeriodicTable from './components/PeriodicTable';
 import MultiElectronAtomView from './components/MultiElectronAtomView';
+import CinematicAtom from '@/cinematic/CinematicAtom';
+import CinematicMolecule, { MOLECULE_GALLERY, molMeta } from '@/cinematic/CinematicMolecule';
 import BondTab from './components/BondTab';
 import ReactionTab from './components/ReactionTab';
 import SandboxTab from './components/SandboxTab';
 
-type Tab = 'atom' | 'bond' | 'reaction' | 'sandbox';
+type Tab = 'atom' | 'molecule' | 'bond' | 'reaction' | 'sandbox';
 
 export default function GaiaLab() {
   const [tab, setTab] = useState<Tab>('atom');
@@ -77,6 +79,7 @@ export default function GaiaLab() {
 
           <nav className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[#0B0F17] border border-[#1E293B]">
             <TabButton active={tab === 'atom'} onClick={() => setTab('atom')}>ψ Átomo</TabButton>
+            <TabButton active={tab === 'molecule'} onClick={() => setTab('molecule')}>⬡ Molécula</TabButton>
             <TabButton active={tab === 'bond'} onClick={() => setTab('bond')}>⟮⟯ Enlace</TabButton>
             <TabButton active={tab === 'reaction'} onClick={() => setTab('reaction')}>⇌ Reacción</TabButton>
             <TabButton active={tab === 'sandbox'} onClick={() => setTab('sandbox')}>✧ Sandbox</TabButton>
@@ -126,6 +129,7 @@ export default function GaiaLab() {
         {/* HERO — el viewport llena lo que sobra */}
         <main className="flex-1 min-w-0 relative overflow-hidden">
           {tab === 'atom'     && <AtomHero element={element} />}
+          {tab === 'molecule' && <MoleculeHero />}
           {tab === 'bond'     && <BondTab />}
           {tab === 'reaction' && <ReactionTab />}
           {tab === 'sandbox'  && <SandboxTab />}
@@ -141,12 +145,23 @@ export default function GaiaLab() {
 
 function AtomHero({ element }: { element: ReturnType<typeof elementByZ> extends infer E ? NonNullable<E> : never }) {
   const [showEdu, setShowEdu] = useState(true);
+  // 'lab' = MultiElectronAtomView interactivo (paneles educativos) ·
+  // 'cine' = la escena CINEMATIC viva (bloom + núcleo molten, contemplativa)
+  const [view, setView] = useState<'lab' | 'cine'>('lab');
 
   return (
     <div className="absolute inset-0 flex flex-col">
       {/* Viewport 3D ocupa todo el espacio disponible */}
       <div className="flex-1 min-h-0 relative">
-        <MultiElectronAtomView element={element} height="100%" nPoints={15000} />
+        {view === 'cine'
+          ? <CinematicAtom Z={element.Z} live />
+          : <MultiElectronAtomView element={element} height="100%" nPoints={15000} />}
+
+        {/* Toggle ψ Lab ↔ Cinematic */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex rounded-md border border-[#1E293B] bg-[#05060A]/70 backdrop-blur overflow-hidden text-[10px] uppercase tracking-wider">
+          <button onClick={() => setView('lab')} className={`px-3 py-1.5 transition ${view === 'lab' ? 'bg-[#4FC3F7] text-[#05060A] font-semibold' : 'text-[#94A3B8] hover:text-white'}`}>ψ Lab</button>
+          <button onClick={() => setView('cine')} className={`px-3 py-1.5 transition ${view === 'cine' ? 'bg-[#FDB813] text-[#05060A] font-semibold' : 'text-[#94A3B8] hover:text-white'}`}>✦ Cinematic</button>
+        </div>
 
         {/* Overlay título de la molécula/átomo, arriba a la izquierda */}
         <div className="absolute top-3 left-3 rounded-lg border border-[#1E293B] bg-[#05060A]/70 backdrop-blur px-3 py-2 pointer-events-none">
@@ -172,6 +187,82 @@ function AtomHero({ element }: { element: ReturnType<typeof elementByZ> extends 
         <div className="shrink-0 border-t border-[#1E293B] bg-[#0B0F17]/80 backdrop-blur-md">
           <div className="px-4 py-2.5 max-w-[900px]">
             <EducationalNote element={element} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HERO: tab Molécula — la escena CINEMATIC viva + galería de selección
+// (mismas .bin que los videos 4K: moléculas, cadenas, catálogo, ADN)
+// ═══════════════════════════════════════════════════════════════
+
+function MoleculeHero() {
+  const [molKey, setMolKey] = useState('h2o');
+  const [galleryOpen, setGalleryOpen] = useState(true);
+  const meta = molMeta(molKey);
+
+  return (
+    <div className="absolute inset-0 flex flex-col">
+      <div className="flex-1 min-h-0 relative">
+        {/* La escena cinematic viva (reusa el Canvas; re-fetchea la nube al cambiar molKey) */}
+        <CinematicMolecule molKey={molKey} live />
+
+        {/* Título de la molécula activa — arriba a la izquierda */}
+        {meta && (
+          <div className="absolute top-3 left-3 z-10 rounded-lg border border-[#1E293B] bg-[#05060A]/70 backdrop-blur px-3 py-2 pointer-events-none max-w-[280px]">
+            <div className="text-[10px] uppercase tracking-wider text-[#64748B]">Molécula activa</div>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span className="text-[22px] font-bold text-white leading-none">{meta.formula}</span>
+              <span className="text-[13px] text-[#CBD5E1]">{meta.name}</span>
+            </div>
+            <div className="mt-1 text-[10px] leading-snug text-[#94A3B8]">{meta.fact}</div>
+          </div>
+        )}
+
+        {/* Toggle galería */}
+        <button
+          onClick={() => setGalleryOpen(v => !v)}
+          className="absolute top-3 right-3 z-10 rounded-md border border-[#1E293B] bg-[#05060A]/70 backdrop-blur px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-[#94A3B8] hover:text-white hover:border-[#4FC3F7] transition"
+        >
+          {galleryOpen ? 'Ocultar galería' : '⬡ Galería'}
+        </button>
+      </div>
+
+      {/* Galería — strip inferior scrollable, agrupado por sección */}
+      {galleryOpen && (
+        <div className="shrink-0 border-t border-[#1E293B] bg-[#0B0F17]/85 backdrop-blur-md max-h-[38%] overflow-y-auto">
+          <div className="px-3 py-2.5 space-y-2.5">
+            {MOLECULE_GALLERY.map(section => (
+              <div key={section.label}>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#7DD3FC]">{section.label}</span>
+                  <span className="text-[9px] text-[#64748B]">{section.hint}</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {section.keys.map(k => {
+                    const m = molMeta(k);
+                    const active = k === molKey;
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => setMolKey(k)}
+                        title={m?.name}
+                        className={`px-2 py-1 rounded-md text-[11px] font-mono border transition ${
+                          active
+                            ? 'bg-[#FDB813] text-[#05060A] border-[#FDB813] font-semibold'
+                            : 'bg-[#0B0F17] text-[#CBD5E1] border-[#1E293B] hover:border-[#4FC3F7] hover:text-white'
+                        }`}
+                      >
+                        {m?.formula ?? k}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

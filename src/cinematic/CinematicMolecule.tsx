@@ -314,6 +314,27 @@ const CONJUGATED_KEYS = new Set(['hexatriene', 'octatetraene', 'decapentaene', '
 // ADN: doble hélice B-form real (dna-<key>.bin). Alargada → cámara traversal vuela por el eje.
 const DNA_KEYS = new Set(['brca1', 'telomero', 'tata']);
 
+// ── Metadata pública para la galería del quimilab (montaje LIVE) ──
+// nombre + fórmula de cualquier clave montable. Devuelve null si no la conocemos.
+export function molMeta(key: string): { name: string; formula: string; fact: string } | null {
+  return META[key] ?? null;
+}
+
+// Galería curada: SOLO claves con .bin precomputado (las que renderizan en vivo).
+// El orden y agrupación reflejan el viaje conceptual: molécula → cadena → catálogo → vida.
+export const MOLECULE_GALLERY: { label: string; hint: string; keys: string[] }[] = [
+  { label: 'Moléculas', hint: 'geometría VSEPR · enlaces σ/π · pares libres',
+    keys: ['h2o', 'co2', 'nh3', 'ch4', 'o2', 'n2', 'co', 'hcl', 'hf', 'nacl', 'hehp'] },
+  { label: 'Cadenas · alcanos', hint: 'la cámara ATRAVIESA el esqueleto de carbono',
+    keys: ['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane'] },
+  { label: 'Cadenas · π conjugadas', hint: 'el río de electrones π — y el color',
+    keys: ['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno'] },
+  { label: 'Catálogo', hint: 'lo cotidiano: alcoholes, ácidos, gasolina, aromáticos',
+    keys: ['metanol', 'etanol', 'isopropanol', 'acetona', 'acido-acetico', 'acido-formico', 'formaldehido', 'dimetileter', 'propano', 'isobutano', 'isooctano', 'ciclohexano', 'etileno', 'acetileno', 'benceno', 'butadieno', 'hcn', 'ch3nh2', 'h2o2', 'o3', 'so2'] },
+  { label: 'ADN · la vida', hint: 'doble hélice B-form real — viaje de escala',
+    keys: ['brca1', 'telomero', 'tata'] },
+];
+
 function parseBin(buf: ArrayBuffer): MolData {
   const dv = new DataView(buf);
   let off = 0;
@@ -770,7 +791,7 @@ function ChainField({ frame, time, alkane }: { frame: Frame; time: number; alkan
   );
 }
 
-function CinematicMoleculeInner({ molKey }: { molKey: string }) {
+function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live?: boolean }) {
   const [data, setData] = useState<MolData | null>(null);
   const [time, setTime] = useState(0);
   const modes = useMemo(() => (molKey === 'h2o' ? computeWaterModes() : null), [molKey]);
@@ -797,34 +818,56 @@ function CinematicMoleculeInner({ molKey }: { molKey: string }) {
   // Cargar la nube precomputada (cadenas → chain-…, catálogo → catalog-…, resto → mol-…)
   useEffect(() => {
     let alive = true;
+    if (live) setData(null);   // al cambiar de molécula en el lab, no dejar la anterior visible
     const prefix = isDNA ? 'dna' : isCatalog ? 'catalog' : isChain ? 'chain' : 'mol';
     fetch(`/precomputed/${prefix}-${molKey}.bin`)
       .then(r => r.arrayBuffer())
       .then(buf => { if (alive) setData(parseBin(buf)); })
       .catch(e => console.error('mol load failed', e));
     return () => { alive = false; };
-  }, [molKey, isChain, isCatalog, isDNA]);
+  }, [molKey, isChain, isCatalog, isDNA, live]);
 
   // Marco geométrico (eje principal, elongación) → decide orbit vs traversal.
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA }), [data, isDNA]);
 
-  // API determinista — ready solo cuando la nube cargó
+  const dur = isDNA ? DNA_DURATION : DURATION;
+
+  // API determinista (render headless) — ready solo cuando la nube cargó.
+  // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
   useEffect(() => {
+    if (live) return;
     const api = {
-      renderAt: (t: number) => setTime(Math.max(0, Math.min(DURATION, t))),
-      ready: !!data, duration: isDNA ? DNA_DURATION : DURATION, molecule: molKey,
+      renderAt: (t: number) => setTime(Math.max(0, Math.min(dur, t))),
+      ready: !!data, duration: dur, molecule: molKey,
     };
     (window as unknown as { __cinematicAtom: typeof api }).__cinematicAtom = api;
     return () => { delete (window as unknown as { __cinematicAtom?: unknown }).__cinematicAtom; };
-  }, [molKey, data]);
+  }, [molKey, data, live, dur]);
+
+  // Modo vivo: loop continuo (cuando se monta interactivo en el lab).
+  useEffect(() => {
+    if (!live) return;
+    let raf = 0, start = 0;
+    const loop = (now: number) => { if (!start) start = now; setTime(((now - start) / 1000) % dur); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [live, dur]);
+
+  // En el lab se cambia de pestaña seguido; cada Canvas crea un contexto WebGL y
+  // Chrome limita ~16 → si no se liberan al desmontar, el más viejo se pierde
+  // ("Context Lost") y la escena se ennegrece. Al desmontar (solo live) forzamos
+  // la liberación inmediata del contexto. El render headless 4K NO toca esto.
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
+  useEffect(() => () => { if (live) { try { glRef.current?.forceContextLoss(); glRef.current?.dispose(); } catch { /* noop */ } } }, [live]);
 
   void tv;
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000' }}>
+    <div style={{ position: live ? 'absolute' : 'fixed', inset: 0, background: '#000' }}>
       <Canvas
         flat
+        onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, (data?.extent ?? 8) * 0.5], fov: 35, near: 0.01, far: 400 }}
-        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
+        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: !live }}
         dpr={[1, 2]} frameloop="always" style={{ background: '#000' }}
       >
         <color attach="background" args={['#000']} />
@@ -857,12 +900,14 @@ function CinematicMoleculeInner({ molKey }: { molKey: string }) {
         <MolPostFX />
       </Canvas>
       <CinemaVignette />
-      <ScaleNote molKey={molKey} time={time} vertical={vertical} />
-      {isDNA && <AudioNote time={time} vertical={vertical} />}
-      <ModeLabel modes={modes} time={time} vertical={vertical} />
-      <FieldLabel molKey={molKey} polar={isChain || (isCatalog && catField !== 'none') || (!isCatalog && !isDNA && !!data && partialCharges(data.nuclei).some(v => Math.abs(v) > 0.05))} time={time} vertical={vertical} />
-      <MoleculeTitle mkey={molKey} time={time} vertical={vertical} />
-      <Letterbox vertical={vertical} />
+      {!live && <>
+        <ScaleNote molKey={molKey} time={time} vertical={vertical} />
+        {isDNA && <AudioNote time={time} vertical={vertical} />}
+        <ModeLabel modes={modes} time={time} vertical={vertical} />
+        <FieldLabel molKey={molKey} polar={isChain || (isCatalog && catField !== 'none') || (!isCatalog && !isDNA && !!data && partialCharges(data.nuclei).some(v => Math.abs(v) > 0.05))} time={time} vertical={vertical} />
+        <MoleculeTitle mkey={molKey} time={time} vertical={vertical} />
+        <Letterbox vertical={vertical} />
+      </>}
     </div>
   );
 }

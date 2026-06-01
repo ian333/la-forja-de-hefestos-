@@ -881,7 +881,7 @@ function AtomTitle({ element, shells, time, vertical }: {
 
 
 // ── Main ────────────────────────────────────────────────────────────
-function CinematicAtomInner({ Z }: { Z: number }) {
+function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) {
   const element = useMemo(() => elementByZ(Z) ?? elementByZ(1)!, [Z]);
   const bundle = useMemo(() => buildAtomBundle(element), [element]);
   // Duración variable por # de subcapas (define la longitud del zoom-out). Se fija
@@ -913,7 +913,9 @@ function CinematicAtomInner({ Z }: { Z: number }) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // API determinista para el RENDER offline de video (no en modo live).
   useEffect(() => {
+    if (live) return;
     const api = {
       renderAt: (t: number) => setTime(Math.max(0, Math.min(duration, t))),
       ready: true,
@@ -925,14 +927,34 @@ function CinematicAtomInner({ Z }: { Z: number }) {
     return () => {
       delete (window as unknown as { __cinematicAtom?: unknown }).__cinematicAtom;
     };
-  }, [Z, element.symbol, duration]);
+  }, [Z, element.symbol, duration, live]);
+
+  // Modo LIVE (lab): reloj propio que reproduce la coreografía en LOOP eterno.
+  useEffect(() => {
+    if (!live) return;
+    let raf = 0, start = 0;
+    const loop = (now: number) => {
+      if (!start) start = now;
+      setTime(((now - start) / 1000) % duration);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [live, duration]);
+
+  // Liberar el contexto WebGL al desmontar (solo live): el lab cambia de pestaña
+  // seguido y Chrome limita ~16 contextos; sin esto el más viejo se pierde y la
+  // escena se ennegrece. El render headless 4K no toca esto.
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
+  useEffect(() => () => { if (live) { try { glRef.current?.forceContextLoss(); glRef.current?.dispose(); } catch { /* noop */ } } }, [live]);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#000' }}>
+    <div style={{ position: live ? 'absolute' : 'fixed', inset: 0, background: '#000' }}>
       <Canvas
         flat
+        onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, extent * 0.5], fov: 35, near: 0.01, far: 200 }}
-        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
+        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: !live }}
         dpr={[1, 2]}
         frameloop="always"
         style={{ background: '#000' }}
@@ -947,10 +969,14 @@ function CinematicAtomInner({ Z }: { Z: number }) {
         <DynamicPostFX time={time} />
       </Canvas>
       <CinemaVignette />
-      <DatoCurioso element={element} time={time} vertical={vertical} />
-      <ScaleNote element={element} time={time} vertical={vertical} />
-      <AtomTitle element={element} shells={bundle.shells} time={time} vertical={vertical} />
-      <Letterbox vertical={vertical} />
+      {/* En el lab (live) ocultamos los overlays/letterbox: el dock ya muestra la
+          info y el viewport no es 9:16 fullscreen. Solo el átomo contemplativo. */}
+      {!live && <>
+        <DatoCurioso element={element} time={time} vertical={vertical} />
+        <ScaleNote element={element} time={time} vertical={vertical} />
+        <AtomTitle element={element} shells={bundle.shells} time={time} vertical={vertical} />
+        <Letterbox vertical={vertical} />
+      </>}
     </div>
   );
 }
