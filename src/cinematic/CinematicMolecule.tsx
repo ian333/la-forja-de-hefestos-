@@ -868,7 +868,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, (data?.extent ?? 8) * 0.5], fov: 35, near: 0.01, far: 400 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
-        dpr={[1, 2]} frameloop="always" style={{ background: '#000' }}
+        dpr={live ? 2 : [1, 2]} frameloop="always" style={{ background: '#000' }}
       >
         <color attach="background" args={['#000']} />
         <FrameDriver time={time} />

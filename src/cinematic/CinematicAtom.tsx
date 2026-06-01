@@ -668,7 +668,7 @@ export function DynamicPostFX({ time }: { time: number }) {
   const caBase = chromaOn ? 0.0026 : 0.0010;
 
   return (
-    <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
+    <EffectComposer multisampling={4}>
       <Bloom
         intensity={bloomIntensity * 1.12}
         luminanceThreshold={0.18}
@@ -955,7 +955,11 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, extent * 0.5], fov: 35, near: 0.01, far: 200 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
-        dpr={[1, 2]}
+        /* En el lab forzamos buffer alta-res (dpr 2): el tamaño de punto de la nube
+           (gl_PointSize, const 520) está calibrado para alta-res; en monitor DPR1 los
+           puntos cubren el doble de pantalla → la nube se satura a blanco. dpr=2 los
+           deja finos como en el render 4K. Headless (live=false): sin tocar. */
+        dpr={live ? 2 : [1, 2]}
         frameloop="always"
         style={{ background: '#000' }}
       >
