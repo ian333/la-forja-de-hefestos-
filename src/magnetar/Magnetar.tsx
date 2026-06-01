@@ -13,7 +13,7 @@
  * Refs: Thompson & Duncan 1995, 1996; Kaspi & Beloborodov 2017 (ARA&A).
  */
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -205,10 +205,11 @@ void main() {
   float pulse = 0.25 + 0.75 * pow(sin(flow * 3.14159), 2.0);
   float rFade = 1.0 / (1.0 + r * 0.12);
 
-  // Alpha responde a B con piso visible (0.15) para que se vean a B bajo
-  vAlpha = pulse * rFade * (0.15 + uBIntensity * 1.20);
-  // Color: azul a B bajo, violeta-magenta a B alto (matching field lines)
-  vCol = mix(vec3(0.30, 0.55, 0.90), vec3(0.85, 0.45, 1.0), uBIntensity) * (0.6 + 0.4 * rFade);
+  vAlpha = pulse * rFade * (0.04 + uBIntensity * 1.30);
+  // Color matching cuerpo NS: amber a B bajo (plasma frío T~0.5 keV),
+  // violeta-magenta a B alto (pair cascade e+e-). Sin esto las líneas pintan
+  // pink encima del cuerpo amber via additive blend.
+  vCol = mix(vec3(0.90, 0.45, 0.12), vec3(0.85, 0.45, 1.0), uBIntensity) * (0.6 + 0.4 * rFade);
 
   vec4 mvp = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   gl_Position = mvp;
@@ -261,10 +262,10 @@ void main() {
   vec3 p = rotY(uRotAngle) * rotX(uTilt) * lpos;
 
   float rFade = 1.0 / (1.0 + r * 0.15);
-  // Alpha responde fuerte a B: bajo B = casi invisible (0.10), alto B = saturado (1.0)
-  vAlpha = rFade * (0.08 + uBIntensity * 1.10);
-  // Color shift: bajo B = azul pálido, alto B = violeta-magenta brillante
-  vCol = mix(vec3(0.30, 0.55, 0.90), vec3(0.85, 0.55, 1.0), uBIntensity);
+  vAlpha = rFade * (0.03 + uBIntensity * 1.20);
+  // Color shift matching NS body: amber a B bajo, violeta-magenta a B alto.
+  // Esto evita que las partículas streaming pinten pink encima del cuerpo amber.
+  vCol = mix(vec3(0.95, 0.50, 0.15), vec3(0.85, 0.55, 1.0), uBIntensity);
 
   vec4 mvp = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   gl_Position = mvp;
@@ -336,9 +337,11 @@ const surfaceVert = /* glsl */ `
 uniform float uRotAngle;
 uniform float uTilt;
 uniform float uQuakeFlash;
+uniform float uBIntensity;
 attribute float aSize;
 varying vec3 vCol;
 varying float vFlash;
+varying float vBI;
 
 mat3 rotY(float a) {
   float c = cos(a), s = sin(a);
@@ -353,6 +356,7 @@ void main() {
   vec3 p = rotY(uRotAngle) * rotX(uTilt) * position;
   vCol = color;
   vFlash = uQuakeFlash;
+  vBI = uBIntensity;
 
   vec4 mvp = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   gl_Position = mvp;
@@ -363,10 +367,11 @@ void main() {
 const surfaceFrag = /* glsl */ `
 varying vec3 vCol;
 varying float vFlash;
+varying float vBI;
 void main() {
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
-  float a = smoothstep(0.5, 0.1, d) * 0.85;
+  float a = smoothstep(0.5, 0.1, d) * (0.05 + 0.80 * vBI);
   vec3 c = mix(vCol, vec3(1.0), vFlash * 0.7);
   gl_FragColor = vec4(c * (1.0 + vFlash * 2.0), a);
 }
@@ -409,46 +414,135 @@ void main() {
 
 // ── Scene components ─────────────────────────────────────────────────
 
+/* ─── NS shader: superficie con noise + hot spots magnéticos polares ───
+ *  Físicamente: los polos magnéticos son las únicas regiones de la corteza
+ *  donde el campo emerge perpendicular → ahí la magnetosfera deposita energía
+ *  → hot spots brillantes de pocos km de radio (~5% del R_NS).
+ *  Latitudinal: la rotación + tilt hace que los polos pasen frente al
+ *  observador → modula brillo visible (efecto pulsar).
+ */
+const nsVert = /* glsl */ `
+varying vec3 vNormalLocal;
+varying vec3 vNormalWorld;
+varying vec3 vPosLocal;
+void main() {
+  vNormalLocal = normal;
+  vNormalWorld = normalize(normalMatrix * normal);
+  vPosLocal = position;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`;
+const nsFrag = /* glsl */ `
+varying vec3 vNormalLocal;
+varying vec3 vNormalWorld;
+varying vec3 vPosLocal;
+uniform float uBNorm;        // 0..1 (campo magnético normalizado)
+uniform float uQuakeFlash;
+uniform float uTime;
+
+// Hash + noise simple para textura procedural de superficie
+float hash3(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+float noise3(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  vec3 u = f * f * (3.0 - 2.0 * f);
+  float n000 = hash3(i);
+  float n100 = hash3(i + vec3(1,0,0));
+  float n010 = hash3(i + vec3(0,1,0));
+  float n110 = hash3(i + vec3(1,1,0));
+  float n001 = hash3(i + vec3(0,0,1));
+  float n101 = hash3(i + vec3(1,0,1));
+  float n011 = hash3(i + vec3(0,1,1));
+  float n111 = hash3(i + vec3(1,1,1));
+  return mix(
+    mix(mix(n000, n100, u.x), mix(n010, n110, u.x), u.y),
+    mix(mix(n001, n101, u.x), mix(n011, n111, u.x), u.y),
+    u.z);
+}
+float fbm(vec3 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) { v += a * noise3(p); p *= 2.07; a *= 0.5; }
+  return v;
+}
+
+void main() {
+  vec3 n = normalize(vNormalLocal);
+
+  // Hot spots polares: el eje magnético en el local frame es Y (después del
+  // tilt se rota external). dot(n, ±Y) ≈ 1 en los polos magnéticos.
+  float polarN = abs(n.y);                       // 0 en ecuador, 1 en polos
+  float hotSpot = smoothstep(0.85, 1.0, polarN); // solo casquete polar
+  // Latitudinal banding sutil (efecto temperatura)
+  float latBand = 0.6 + 0.4 * pow(polarN, 2.5);
+
+  // Surface texture: cracks + noise grano
+  float crust = fbm(vPosLocal * 6.5);
+  float cracks = smoothstep(0.45, 0.55, fbm(vPosLocal * 14.0 + crust * 2.0));
+  // Cracks aparecen MÁS visibles cuando hay quake — la corteza acaba de ceder
+  float crackVis = mix(0.15, 0.65, uQuakeFlash);
+
+  // Color base: amber cálido a B bajo, violeta-blanco a B alto.
+  vec3 colCold = vec3(1.0, 0.55, 0.08);    // amber dorado
+  vec3 colHot  = vec3(0.45, 0.25, 1.20);   // violeta profundo
+  vec3 baseCol = mix(colCold, colHot, uBNorm);
+
+  // Hot spots polares: temperatura keV
+  vec3 hotColCool = vec3(1.2, 0.5, 0.08);   // naranja cálido
+  vec3 hotColHot  = vec3(0.7, 0.8, 2.0);    // blanco-azul
+  vec3 hotCol     = mix(hotColCool, hotColHot, uBNorm) * (0.8 + uBNorm * 1.5);
+
+  // Composición
+  vec3 col = baseCol * latBand;
+  col *= (0.62 + 0.55 * crust);
+  col *= (1.0 - cracks * crackVis * 0.75);
+  col = mix(col, hotCol, hotSpot);
+
+  // Quake flash
+  col += vec3(1.0, 0.85, 0.4) * uQuakeFlash * 0.5;
+
+  float emInt = (0.8 + 1.2 * uBNorm) + uQuakeFlash * 1.4;
+  gl_FragColor = vec4(col * emInt, 1.0);
+}
+`;
+
 function NeutronStarCore({ rotAngle, tilt, quakeFlash, logB }: {
   rotAngle: number; tilt: number; quakeFlash: number; logB: number;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(() => ({
+    uBNorm:      { value: 0 },
+    uQuakeFlash: { value: 0 },
+    uTime:       { value: 0 },
+  }), []);
 
-  useFrame(() => {
-    if (!meshRef.current) return;
-    meshRef.current.rotation.set(tilt, rotAngle, 0, 'YXZ');
+  useFrame(({ clock }) => {
+    if (meshRef.current) meshRef.current.rotation.set(tilt, rotAngle, 0, 'YXZ');
+    const bNorm = Math.min(1, Math.max(0, (logB - 12) / 4));
+    uniforms.uTime.value = clock.elapsedTime;
+    uniforms.uBNorm.value = bNorm;
+    uniforms.uQuakeFlash.value = quakeFlash;
   });
-
-  // Color de superficie shifteado por B: bajo B → naranja-amber (pulsar normal,
-  // T_eff ~ 0.5 keV), alto B → blanco-azul (T más alta + cyclotron emission
-  // shift al X duro, magnetar surface ~1 keV+). Es físicamente correcto que
-  // T_eff de magnetares jóvenes sea mayor por heating del campo magnético.
-  const bNorm = Math.min(1, Math.max(0, (logB - 12) / 4));   // 0 en 10¹², 1 en 10¹⁶
-  const emissiveIntensity = (0.6 + 1.8 * bNorm) + quakeFlash * 4;
-  const emissiveColor = quakeFlash > 0.1
-    ? new THREE.Color(1, 0.8 + quakeFlash * 0.2, 0.6 + quakeFlash * 0.4)
-    : new THREE.Color(
-        0.9 - 0.3 * bNorm,                     // R: naranja → violeta
-        0.55 + 0.10 * bNorm,                   // G: estable warm
-        0.2 + 0.85 * bNorm,                    // B: ↑ con B (azul/violeta)
-      );
 
   return (
     <mesh ref={meshRef}>
-      <sphereGeometry args={[R_STAR * 0.98, 48, 48]} />
-      <meshStandardMaterial
-        color="#442200"
-        emissive={emissiveColor}
-        emissiveIntensity={emissiveIntensity}
-        roughness={0.6}
-        metalness={0.3}
+      <sphereGeometry args={[R_STAR * 0.98, 96, 96]} />
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={nsVert}
+        fragmentShader={nsFrag}
+        uniforms={uniforms}
       />
     </mesh>
   );
 }
 
-function SurfaceParticles({ rotAngle, tilt, quakeFlash }: {
-  rotAngle: number; tilt: number; quakeFlash: number;
+function SurfaceParticles({ rotAngle, tilt, quakeFlash, bIntensity }: {
+  rotAngle: number; tilt: number; quakeFlash: number; bIntensity: number;
 }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const { pos, col, sizes } = useMemo(() => buildSurfaceParticles(), []);
@@ -461,10 +555,17 @@ function SurfaceParticles({ rotAngle, tilt, quakeFlash }: {
     return g;
   }, [pos, col, sizes]);
 
+  const uniforms = useMemo(() => ({
+    uRotAngle: { value: 0 },
+    uTilt: { value: tilt },
+    uQuakeFlash: { value: 0 },
+    uBIntensity: { value: 0 },
+  }), []);
+
   useFrame(() => {
-    if (!matRef.current) return;
-    matRef.current.uniforms.uRotAngle.value = rotAngle;
-    matRef.current.uniforms.uQuakeFlash.value = quakeFlash;
+    uniforms.uRotAngle.value = rotAngle;
+    uniforms.uQuakeFlash.value = quakeFlash;
+    uniforms.uBIntensity.value = bIntensity;
   });
 
   return (
@@ -473,11 +574,7 @@ function SurfaceParticles({ rotAngle, tilt, quakeFlash }: {
         ref={matRef}
         vertexShader={surfaceVert}
         fragmentShader={surfaceFrag}
-        uniforms={{
-          uRotAngle: { value: 0 },
-          uTilt: { value: tilt },
-          uQuakeFlash: { value: 0 },
-        }}
+        uniforms={uniforms}
         transparent
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -510,11 +607,18 @@ function FieldLines({ fieldTex, rotAngle, tilt, bIntensity }: {
     return g;
   }, []);
 
+  const fieldUniforms = useMemo(() => ({
+    uFieldData: { value: fieldTex },
+    uTime: { value: 0 },
+    uRotAngle: { value: 0 },
+    uTilt: { value: tilt },
+    uBIntensity: { value: 0 },
+  }), []);
+
   useFrame(({ clock }) => {
-    if (!matRef.current) return;
-    matRef.current.uniforms.uTime.value = clock.elapsedTime;
-    matRef.current.uniforms.uRotAngle.value = rotAngle;
-    matRef.current.uniforms.uBIntensity.value = bIntensity;
+    fieldUniforms.uTime.value = clock.elapsedTime;
+    fieldUniforms.uRotAngle.value = rotAngle;
+    fieldUniforms.uBIntensity.value = bIntensity;
   });
 
   return (
@@ -523,13 +627,7 @@ function FieldLines({ fieldTex, rotAngle, tilt, bIntensity }: {
         ref={matRef}
         vertexShader={fieldLineVert}
         fragmentShader={fieldLineFrag}
-        uniforms={{
-          uFieldData: { value: fieldTex },
-          uTime: { value: 0 },
-          uRotAngle: { value: 0 },
-          uTilt: { value: tilt },
-          uBIntensity: { value: 1 },
-        }}
+        uniforms={fieldUniforms}
         transparent
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -553,11 +651,18 @@ function StreamingParticles({ fieldTex, rotAngle, tilt, bIntensity }: {
     return g;
   }, [lineIdx, phase, speed]);
 
+  const streamUniforms = useMemo(() => ({
+    uFieldData: { value: fieldTex },
+    uTime: { value: 0 },
+    uRotAngle: { value: 0 },
+    uTilt: { value: tilt },
+    uBIntensity: { value: 0 },
+  }), []);
+
   useFrame(({ clock }) => {
-    if (!matRef.current) return;
-    matRef.current.uniforms.uTime.value = clock.elapsedTime;
-    matRef.current.uniforms.uRotAngle.value = rotAngle;
-    matRef.current.uniforms.uBIntensity.value = bIntensity;
+    streamUniforms.uTime.value = clock.elapsedTime;
+    streamUniforms.uRotAngle.value = rotAngle;
+    streamUniforms.uBIntensity.value = bIntensity;
   });
 
   return (
@@ -566,13 +671,7 @@ function StreamingParticles({ fieldTex, rotAngle, tilt, bIntensity }: {
         ref={matRef}
         vertexShader={streamVert}
         fragmentShader={streamFrag}
-        uniforms={{
-          uFieldData: { value: fieldTex },
-          uTime: { value: 0 },
-          uRotAngle: { value: 0 },
-          uTilt: { value: tilt },
-          uBIntensity: { value: 1 },
-        }}
+        uniforms={streamUniforms}
         transparent
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -596,11 +695,18 @@ function PairCascade({ fieldTex, rotAngle, tilt, cascadeVis }: {
     return g;
   }, [lineIdx, phase, speed]);
 
+  const cascadeUniforms = useMemo(() => ({
+    uFieldData: { value: fieldTex },
+    uTime: { value: 0 },
+    uRotAngle: { value: 0 },
+    uTilt: { value: tilt },
+    uCascadeVis: { value: 0 },
+  }), []);
+
   useFrame(({ clock }) => {
-    if (!matRef.current) return;
-    matRef.current.uniforms.uTime.value = clock.elapsedTime;
-    matRef.current.uniforms.uRotAngle.value = rotAngle;
-    matRef.current.uniforms.uCascadeVis.value = cascadeVis;
+    cascadeUniforms.uTime.value = clock.elapsedTime;
+    cascadeUniforms.uRotAngle.value = rotAngle;
+    cascadeUniforms.uCascadeVis.value = cascadeVis;
   });
 
   return (
@@ -609,13 +715,7 @@ function PairCascade({ fieldTex, rotAngle, tilt, cascadeVis }: {
         ref={matRef}
         vertexShader={cascadeVert}
         fragmentShader={cascadeFrag}
-        uniforms={{
-          uFieldData: { value: fieldTex },
-          uTime: { value: 0 },
-          uRotAngle: { value: 0 },
-          uTilt: { value: tilt },
-          uCascadeVis: { value: 0 },
-        }}
+        uniforms={cascadeUniforms}
         transparent
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -637,11 +737,16 @@ function StarquakeBurst({ quakeTime, quakeOrigin }: {
     return g;
   }, [dirs]);
 
+  const burstUniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uQuakeTime: { value: -99 },
+    uQuakeOrigin: { value: new THREE.Vector3() },
+  }), []);
+
   useFrame(({ clock }) => {
-    if (!matRef.current) return;
-    matRef.current.uniforms.uTime.value = clock.elapsedTime;
-    matRef.current.uniforms.uQuakeTime.value = quakeTime;
-    matRef.current.uniforms.uQuakeOrigin.value.set(...quakeOrigin);
+    burstUniforms.uTime.value = clock.elapsedTime;
+    burstUniforms.uQuakeTime.value = quakeTime;
+    burstUniforms.uQuakeOrigin.value.set(...quakeOrigin);
   });
 
   return (
@@ -650,11 +755,7 @@ function StarquakeBurst({ quakeTime, quakeOrigin }: {
         ref={matRef}
         vertexShader={burstVert}
         fragmentShader={burstFrag}
-        uniforms={{
-          uTime: { value: 0 },
-          uQuakeTime: { value: -99 },
-          uQuakeOrigin: { value: new THREE.Vector3() },
-        }}
+        uniforms={burstUniforms}
         transparent
         depthWrite={false}
         blending={THREE.AdditiveBlending}
@@ -675,7 +776,7 @@ function MagnetarInner({ logB, onQuake }: {
   const [quakeFlash, setQuakeFlash] = useState(0);
 
   const { tex: fieldTex } = useMemo(() => buildFieldLines(), []);
-  const bIntensity = useMemo(() => 0.3 + 0.7 * ((logB - 12) / 4), [logB]);
+  const bIntensity = useMemo(() => Math.max(0, (logB - 12) / 4), [logB]);
   const cascadeVis = useMemo(() => {
     if (logB < B_QED) return 0;
     return Math.min(1, (logB - B_QED) / 1.5);
@@ -717,7 +818,7 @@ function MagnetarInner({ logB, onQuake }: {
   return (
     <>
       <NeutronStarCore rotAngle={rotAngle} tilt={MAGNETIC_TILT} quakeFlash={quakeFlash} logB={logB} />
-      <SurfaceParticles rotAngle={rotAngle} tilt={MAGNETIC_TILT} quakeFlash={quakeFlash} />
+      <SurfaceParticles rotAngle={rotAngle} tilt={MAGNETIC_TILT} quakeFlash={quakeFlash} bIntensity={bIntensity} />
       <FieldLines fieldTex={fieldTex} rotAngle={rotAngle} tilt={MAGNETIC_TILT} bIntensity={bIntensity} />
       <StreamingParticles fieldTex={fieldTex} rotAngle={rotAngle} tilt={MAGNETIC_TILT} bIntensity={bIntensity} />
       <PairCascade fieldTex={fieldTex} rotAngle={rotAngle} tilt={MAGNETIC_TILT} cascadeVis={cascadeVis} />
@@ -859,8 +960,6 @@ export default memo(function MagnetarScene() {
       >
         <ambientLight intensity={0.05} />
         <pointLight position={[0, 0, 0]} intensity={0.3} color="#FFA040" />
-
-        {/* Background: Vía Láctea (~29k estrellas) + magnetares reales catálogo */}
         <MilkyWay />
         <MagnetarMarkers />
         <MagnetarInner logB={logB} onQuake={handleQuake} />
@@ -877,12 +976,7 @@ export default memo(function MagnetarScene() {
         />
 
         <EffectComposer>
-          <Bloom
-            intensity={1.8}
-            luminanceThreshold={0.15}
-            luminanceSmoothing={0.7}
-            mipmapBlur
-          />
+          <Bloom intensity={0.6} luminanceThreshold={1.2} luminanceSmoothing={0.2} mipmapBlur />
         </EffectComposer>
       </Canvas>
 

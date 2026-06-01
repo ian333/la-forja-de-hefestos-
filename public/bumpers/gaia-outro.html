@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>GAIA · outro wordmark</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; background: #000; overflow: hidden; cursor: none;
+    font-family: 'Inter', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  }
+  body { display: flex; align-items: center; justify-content: center; }
+
+  /* Fondo negro con bokeh cálido/frío sutil (como el asset original) */
+  .bokeh {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(440px 440px at 79% 40%, rgba(253,184,19,0.12), transparent 60%),
+      radial-gradient(380px 380px at 19% 62%, rgba(255,150,168,0.08), transparent 60%),
+      radial-gradient(640px 640px at 50% 50%, rgba(40,200,220,0.05), transparent 62%),
+      #000;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { filter: brightness(0.94); } 50% { filter: brightness(1.12); } }
+
+  .wrap { position: relative; z-index: 2; }
+
+  /* Wordmark VECTORIAL — gradiente recortado al texto, nítido a cualquier resolución */
+  .word {
+    font-weight: 900; font-size: 300px; letter-spacing: -0.02em; line-height: 1;
+    background: linear-gradient(95deg,
+      #ff9eb0 0%, #ff92a3 18%, #57dbe6 43%, #6ae9d3 57%, #ffce5e 80%, #fdb813 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+    opacity: 0; transform: translateY(26px) scale(0.975);
+    animation: wordIn 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+  }
+  /* Glow de color detrás (copia desenfocada del mismo gradiente) */
+  .word::before {
+    content: 'GAIA'; position: absolute; inset: 0; z-index: -1;
+    background: inherit; -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+    filter: blur(20px) saturate(1.45); opacity: 0.6;
+  }
+
+  .foot {
+    position: absolute; bottom: 168px; left: 50%; transform: translateX(-50%);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 30px; color: rgba(226,232,240,0.5);
+    letter-spacing: 0.42em; text-transform: uppercase; white-space: nowrap;
+    opacity: 0; animation: footIn 0.8s ease 1.5s forwards;
+  }
+
+  @keyframes wordIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes footIn { to { opacity: 1; } }
+</style>
+</head>
+<body>
+  <div class="bokeh"></div>
+  <div class="wrap"><div class="word">GAIA</div></div>
+  <div class="foot">university.gaiaprime.com.mx</div>
+  <script>window.__bumperReady = true;</script>
+</body>
+</html>

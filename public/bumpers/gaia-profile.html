@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>GAIA · perfil</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1080px; overflow: hidden;
+    background: #05060A;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+  body { display: flex; align-items: center; justify-content: center; position: relative; }
+
+  /* luz divina — halo de oro muy suave detrás del símbolo */
+  .bg { position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 50% 46%, rgba(253,184,19,0.13), rgba(253,184,19,0.0) 44%),
+      radial-gradient(circle at 50% 46%, rgba(253,184,19,0.05), rgba(0,0,0,0) 62%),
+      #05060A; }
+
+  .wrap { position: relative; z-index: 2; text-align: center; }
+
+  /* ALFA — oro metálico (claro arriba → ámbar profundo abajo), majestuoso y limpio */
+  .alpha {
+    font-family: 'Cormorant Garamond', 'Georgia', 'Times New Roman', serif;
+    font-weight: 600; font-size: 560px; line-height: 0.9;
+    background: linear-gradient(180deg, #FFE9B0 0%, #FFD05A 34%, #FDB813 60%, #E0930C 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  .alpha::before {
+    content: 'α'; position: absolute; inset: 0; z-index: -1;
+    background: inherit; -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+    filter: blur(34px) saturate(1.15); opacity: 0.5;
+  }
+
+  .tag { margin-top: 18px; font-size: 30px; font-weight: 500;
+    letter-spacing: 0.46em; text-transform: uppercase; color: rgba(226,232,240,0.46);
+    font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  /* variantes */
+  body.upper .alpha, body.upper .alpha::before { font-size: 480px; }
+  body.sans .alpha { font-family: 'Inter', system-ui, sans-serif; font-weight: 800; }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="wrap">
+    <div class="alpha" id="g">α</div>
+    <div class="tag">GAIA PRIME</div>
+  </div>
+  <script>
+    const p = new URLSearchParams(location.search);
+    const ch = p.get('mark') === 'upper' ? 'Α' : 'α';
+    document.getElementById('g').textContent = ch;
+    // sincroniza el ::before con el contenido
+    const st = document.createElement('style');
+    st.textContent = '.alpha::before{content:"' + ch + '"}';
+    document.head.appendChild(st);
+    if (p.get('mark') === 'upper') document.body.classList.add('upper');
+    if (p.get('font') === 'sans') document.body.classList.add('sans');
+    if (p.get('tag') === 'off') document.querySelector('.tag').style.display = 'none';
+    window.__ready = true;
+  </script>
+</body>
+</html>

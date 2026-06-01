@@ -34,9 +34,14 @@ export default defineConfig({
         physics: resolve(import.meta.dirname, "physics.html"),
         math: resolve(import.meta.dirname, "math.html"),
         escuela: resolve(import.meta.dirname, "escuela.html"),
+        precios: resolve(import.meta.dirname, "precios.html"),
+        cuenta: resolve(import.meta.dirname, "cuenta.html"),
+        terminos: resolve(import.meta.dirname, "terminos.html"),
+        privacidad: resolve(import.meta.dirname, "privacidad.html"),
         masterclass: resolve(import.meta.dirname, "masterclass.html"),
         cad: resolve(import.meta.dirname, "cad.html"),
         economia: resolve(import.meta.dirname, "economia.html"),
+        premio: resolve(import.meta.dirname, "premio.html"),
         "econ-lab": resolve(import.meta.dirname, "econ-lab.html"),
         "physics-nobel": resolve(import.meta.dirname, "physics-nobel.html"),
         "math-prizes": resolve(import.meta.dirname, "math-prizes.html"),
@@ -45,6 +50,8 @@ export default defineConfig({
         quasar: resolve(import.meta.dirname, "quasar.html"),
         magnetar: resolve(import.meta.dirname, "magnetar.html"),
         "cinematic-atom": resolve(import.meta.dirname, "cinematic-atom.html"),
+        "cinematic-molecule": resolve(import.meta.dirname, "cinematic-molecule.html"),
+        "cinematic-bh": resolve(import.meta.dirname, "cinematic-bh.html"),
       },
       output: {
         manualChunks: {

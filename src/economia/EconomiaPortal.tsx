@@ -15,7 +15,7 @@
  *   - Footer con enlace a Escuela y al README de Forja
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BLOCKS,
   NOBEL_CATALOG,
@@ -24,6 +24,18 @@ import {
   type NobelLaureate,
   type BlockMeta,
 } from './nobel-catalog';
+import { hasLab } from './labs/registry';
+import { hasPremioContent } from './premio-content';
+import { relacionesDe, otroLado } from './relaciones';
+
+// Índice id → premio, para etiquetar las conexiones de cada card.
+const CATALOG_BY_ID: Record<string, NobelLaureate> = Object.fromEntries(
+  NOBEL_CATALOG.map(n => [n.id, n]),
+);
+const apellido = (laureates: string[]) => {
+  const parts = (laureates[0] || '').split(' ');
+  return parts[parts.length - 1];
+};
 
 export default function EconomiaPortal() {
   // El CSS global ata html/body a overflow:hidden para apps full-screen.
@@ -41,19 +53,25 @@ export default function EconomiaPortal() {
     html.style.height = 'auto';
     body.style.overflow = 'auto';
     body.style.height = 'auto';
+    const prevScroll = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'smooth';  // saltar entre conexiones con suavidad
     return () => {
       html.style.overflow = prev.htmlOverflow;
       html.style.height = prev.htmlHeight;
       body.style.overflow = prev.bodyOverflow;
       body.style.height = prev.bodyHeight;
+      html.style.scrollBehavior = prevScroll;
     };
   }, []);
 
   const stats = getCatalogStats();
   const grouped = getCatalogByBlock();
+  const [activeCard, setActiveCard] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-[#05060A] text-[#E2E8F0] font-sans relative overflow-x-hidden">
+      {/* Hilos suaves entre premios conectados — el viaje */}
+      <ConnectionLines activeId={activeCard} />
       {/* Background grid + ambient lights */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.04]"
@@ -114,7 +132,7 @@ export default function EconomiaPortal() {
           <span className="px-3 py-1 rounded-full border border-[#475569] bg-[#0B0F17] text-[#94A3B8]">
             ○ {stats.pending} en producción
           </span>
-          <span className="text-[#64748B]">· 12 bloques temáticos</span>
+          <span className="text-[#64748B]">· 12 bloques temáticos · todos conectados</span>
         </div>
       </section>
 
@@ -159,7 +177,7 @@ export default function EconomiaPortal() {
       {/* Bloques temáticos */}
       <section id="bloques" className="relative z-10 px-6 max-w-[1400px] mx-auto pb-24">
         {grouped.map(({ block, entries }) => (
-          <BlockSection key={block.id} block={block} entries={entries} />
+          <BlockSection key={block.id} block={block} entries={entries} onHover={setActiveCard} />
         ))}
       </section>
 
@@ -180,7 +198,7 @@ export default function EconomiaPortal() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function BlockSection({ block, entries }: { block: BlockMeta; entries: NobelLaureate[] }) {
+function BlockSection({ block, entries, onHover }: { block: BlockMeta; entries: NobelLaureate[]; onHover: (id: string | null) => void }) {
   const liveCount = entries.filter(e => e.status === 'live').length;
 
   return (
@@ -210,28 +228,34 @@ function BlockSection({ block, entries }: { block: BlockMeta; entries: NobelLaur
       {/* Cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {entries.map(entry => (
-          <NobelCard key={entry.id} entry={entry} block={block} />
+          <NobelCard key={entry.id} entry={entry} block={block} onHover={onHover} />
         ))}
       </div>
     </div>
   );
 }
 
-function NobelCard({ entry, block }: { entry: NobelLaureate; block: BlockMeta }) {
+function NobelCard({ entry, block, onHover }: { entry: NobelLaureate; block: BlockMeta; onHover: (id: string | null) => void }) {
+  const [hoverPor, setHoverPor] = useState<string | null>(null);
   const isLive = entry.status === 'live';
-  const href = isLive ? `/masterclass.html?id=${entry.classId}` : undefined;
+  const playable = hasLab(entry.id);
+  const explained = !playable && hasPremioContent(entry.id);
+  // Live → masterclass narrada. Pending → hub del premio (entrar y jugar).
+  const href = isLive ? `/masterclass.html?id=${entry.classId}` : `/premio.html?id=${entry.id}`;
+  const conexiones = relacionesDe(entry.id);
 
+  const highlighted = isLive || playable || explained;
   const baseCardStyle: React.CSSProperties = {
-    background: isLive
+    background: highlighted
       ? `linear-gradient(135deg, ${block.colorBg} 0%, #0B0F17 70%)`
       : 'linear-gradient(135deg, #0B0F17 0%, #0A0E15 100%)',
-    borderColor: isLive ? `${block.color}55` : '#1E293B',
+    borderColor: highlighted ? `${block.color}55` : '#1E293B',
   };
 
   const inner = (
     <>
-      {/* Glow accent for live cards */}
-      {isLive && (
+      {/* Glow accent for live / playable cards */}
+      {(isLive || playable) && (
         <div
           className="absolute -top-12 -right-12 w-[180px] h-[180px] rounded-full opacity-30 blur-[60px] pointer-events-none"
           style={{ background: `radial-gradient(circle, ${block.colorEmissive} 0%, transparent 70%)` }}
@@ -243,7 +267,7 @@ function NobelCard({ entry, block }: { entry: NobelLaureate; block: BlockMeta })
         <div className="flex items-center justify-between mb-3">
           <div
             className="text-[11px] font-mono tracking-[0.2em]"
-            style={{ color: isLive ? block.color : '#475569' }}
+            style={{ color: highlighted ? block.color : '#475569' }}
           >
             NOBEL · {entry.year}
           </div>
@@ -252,9 +276,19 @@ function NobelCard({ entry, block }: { entry: NobelLaureate; block: BlockMeta })
                  style={{ background: `${block.color}22`, color: block.color }}>
               ▶ lista
             </div>
+          ) : playable ? (
+            <div className="text-[9px] font-mono uppercase tracking-[0.3em] px-2 py-0.5 rounded"
+                 style={{ background: `${block.color}22`, color: block.color }}>
+              🎮 jugable
+            </div>
+          ) : explained ? (
+            <div className="text-[9px] font-mono uppercase tracking-[0.3em] px-2 py-0.5 rounded"
+                 style={{ background: `${block.color}1A`, color: block.color }}>
+              ✦ explicado
+            </div>
           ) : (
-            <div className="text-[9px] font-mono uppercase tracking-[0.3em] text-[#475569]">
-              · próximamente
+            <div className="text-[9px] font-mono uppercase tracking-[0.3em] text-[#64748B]">
+              ▶ entrar
             </div>
           )}
         </div>
@@ -265,43 +299,133 @@ function NobelCard({ entry, block }: { entry: NobelLaureate; block: BlockMeta })
         </div>
 
         {/* Title */}
-        <h4 className={`text-[18px] font-bold leading-tight mb-3 ${isLive ? 'text-white' : 'text-[#94A3B8]'}`}>
-          {entry.title}
-        </h4>
+        <a href={href}>
+          <h4 className={`text-[18px] font-bold leading-tight mb-3 hover:underline ${isLive || playable ? 'text-white' : 'text-[#CBD5E1]'}`}>
+            {entry.title}
+          </h4>
+        </a>
 
         {/* Impact phrase */}
-        <p className={`text-[13px] leading-relaxed ${isLive ? 'text-[#CBD5E1]' : 'text-[#64748B]'}`}>
+        <p className={`text-[13px] leading-relaxed ${isLive ? 'text-[#CBD5E1]' : 'text-[#94A3B8]'}`}>
           {entry.impact}
         </p>
 
-        {/* CTA */}
-        {isLive ? (
-          <div
-            className="mt-5 inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] transition-all group-hover:gap-3"
-            style={{ color: block.color }}
-          >
-            ▶ Empezar clase →
-          </div>
-        ) : (
-          <div className="mt-5 text-[10px] font-mono text-[#475569]">
-            En producción · narración + animaciones
+        {/* CTA al hub */}
+        <a
+          href={href}
+          className="mt-5 inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.2em] transition-all group-hover:gap-3"
+          style={{ color: highlighted ? block.color : '#64748B' }}
+        >
+          {isLive ? '▶ Empezar clase →' : playable ? '🎮 Entrar y jugar →' : explained ? '✦ Entrar al premio →' : '▶ Entrar al premio →'}
+        </a>
+
+        {/* Conexiones — con qué otros Nobel se toca este premio */}
+        {conexiones.length > 0 && (
+          <div className="mt-5 pt-4 border-t border-[#1E293B]/70">
+            <div className="text-[9px] uppercase tracking-[0.25em] text-[#64748B] font-mono mb-2">
+              ↔ conecta con {conexiones.length}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {conexiones.map((r, i) => {
+                const otherId = otroLado(r, entry.id);
+                const other = CATALOG_BY_ID[otherId];
+                if (!other) return null;
+                const oc = (BLOCKS.find(b => b.id === other.block) ?? block).color;
+                return (
+                  <a
+                    key={i}
+                    href={`#${otherId}`}
+                    onMouseEnter={() => setHoverPor(r.por)}
+                    onMouseLeave={() => setHoverPor(null)}
+                    className="text-[10px] font-mono px-2 py-1 rounded-md border transition hover:-translate-y-px"
+                    style={{ borderColor: `${oc}40`, color: oc, background: `${oc}12` }}
+                  >
+                    {apellido(other.laureates)} ’{String(other.year).slice(2)}
+                  </a>
+                );
+              })}
+            </div>
+            {/* El por qué de la conexión */}
+            <div className="mt-2.5 text-[11px] leading-snug min-h-[30px] transition-colors"
+                 style={{ color: hoverPor ? '#CBD5E1' : '#475569' }}>
+              {hoverPor ?? '· pasa el cursor por una conexión para ver por qué se tocan'}
+            </div>
           </div>
         )}
       </div>
     </>
   );
 
-  const className = `group relative rounded-xl border p-6 transition-all overflow-hidden ${
-    isLive ? 'hover:-translate-y-0.5 hover:shadow-lg' : 'opacity-65 hover:opacity-90'
+  const className = `group relative rounded-xl border p-6 transition-all overflow-hidden hover:-translate-y-0.5 hover:shadow-lg scroll-mt-20 [&:target]:outline [&:target]:outline-2 [&:target]:outline-offset-2 [&:target]:[outline-color:var(--cx)] ${
+    isLive || playable || explained ? '' : 'opacity-80 hover:opacity-100'
   }`;
 
-  return href ? (
-    <a href={href} className={`${className} block cursor-pointer`} style={baseCardStyle}>
-      {inner}
-    </a>
-  ) : (
-    <div className={className} style={baseCardStyle}>
+  return (
+    <div
+      id={entry.id}
+      className={className}
+      style={{ ...baseCardStyle, ['--cx' as string]: block.color }}
+      onMouseEnter={() => onHover(entry.id)}
+      onMouseLeave={() => onHover(null)}
+    >
       {inner}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hilos suaves entre el premio activo y sus conexiones (overlay sobre todo el
+// documento, en coordenadas de documento para que sigan a las cards al hacer scroll).
+
+function ConnectionLines({ activeId }: { activeId: string | null }) {
+  const [paths, setPaths] = useState<{ d: string; color: string }[]>([]);
+  const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  useEffect(() => {
+    if (!activeId) { setPaths([]); return; }
+    const id = activeId;
+    const compute = () => {
+      const el = document.getElementById(id);
+      if (!el) { setPaths([]); return; }
+      const root = document.documentElement;
+      setSize({ w: root.scrollWidth, h: root.scrollHeight });
+      const r = el.getBoundingClientRect();
+      const sx = r.left + r.width / 2 + window.scrollX;
+      const sy = r.top + r.height / 2 + window.scrollY;
+      const out: { d: string; color: string }[] = [];
+      for (const rel of relacionesDe(id)) {
+        const otherId = otroLado(rel, id);
+        const oel = document.getElementById(otherId);
+        const other = CATALOG_BY_ID[otherId];
+        if (!oel || !other) continue;
+        const rr = oel.getBoundingClientRect();
+        const ex = rr.left + rr.width / 2 + window.scrollX;
+        const ey = rr.top + rr.height / 2 + window.scrollY;
+        const dx = ex - sx, dy = ey - sy;
+        const mx = (sx + ex) / 2, my = (sy + ey) / 2;
+        // control perpendicular → curva suave
+        const cx = mx - dy * 0.16, cy = my + dx * 0.16;
+        const color = (BLOCKS.find(b => b.id === other.block) ?? BLOCKS[0]).color;
+        out.push({ d: `M ${sx.toFixed(1)} ${sy.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`, color });
+      }
+      setPaths(out);
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, [activeId]);
+
+  if (!paths.length) return null;
+  return (
+    <svg
+      className="absolute top-0 left-0 pointer-events-none z-30"
+      width={size.w} height={size.h}
+      style={{ position: 'absolute' }}
+    >
+      {paths.map((p, i) => (
+        <path key={i} d={p.d} fill="none" stroke={p.color} strokeWidth={1.4} strokeOpacity={0.4} strokeLinecap="round"
+              style={{ filter: `drop-shadow(0 0 3px ${p.color}aa)` }} />
+      ))}
+    </svg>
   );
 }

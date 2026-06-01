@@ -77,6 +77,7 @@ export default function EscuelaPortal() {
           <a href="#misiones" className="hover:text-[#FDB813] transition">Misiones</a>
           <a href="#software" className="hover:text-[#FDB813] transition">Software</a>
           <a href="/cad.html" className="hover:text-[#FDB813] transition">CAD →</a>
+          <a href="/precios.html" className="hover:text-[#FDB813] transition">Planes →</a>
         </nav>
       </header>
 

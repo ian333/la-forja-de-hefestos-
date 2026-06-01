@@ -224,6 +224,7 @@ RSYNC_FLAGS_CODE="-az --delete \
   --exclude=.npm/ \
   --exclude=.lockhash \
   --exclude=*.log \
+  --exclude=*.mp4 \
   --exclude=test-results/ \
   --exclude=fit-diagnostics/ \
   --exclude=public/viz-data/ \
@@ -464,6 +465,7 @@ SMOKE_PATHS=(
   "math.html"
   "economia.html"
   "econ-lab.html"
+  "premio.html"
   "physics-nobel.html"
   "math-prizes.html"
   "masterclass.html"
@@ -471,7 +473,7 @@ SMOKE_PATHS=(
   "audio/masterclass/blackhole/manifest.json"
   "audio/masterclass/blackhole/01-pregunta.mp3"
   "audio/masterclass/phys-einstein-pe/manifest.json"
-  "audio/masterclass/phys-einstein-pe/01-pregunta.mp3"
+  "audio/masterclass/phys-einstein-pe/01-sensor.mp3"
 )
 for path in "${SMOKE_PATHS[@]}"; do
   code=$(curl -sI -m 12 -o /dev/null -w '%{http_code}|%{size_download}|%{time_total}' "${URL}/${path}" 2>/dev/null || echo "ERR|0|0")

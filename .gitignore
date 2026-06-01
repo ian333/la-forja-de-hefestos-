@@ -34,6 +34,20 @@ test-results/
 
 # Video render outputs (multi-GB MKV/MP4) — keep out of git, archive elsewhere
 dist-video/
+# Reels renderizados en la raíz (átomos/moléculas, 40-200MB c/u). Van a CDN/R2,
+# NUNCA a git. (3 ya trackeados: git rm --cached atom-001-H/atom-026-Fe/atom-079-Au.mp4)
+*.mp4
+*.mov
+*.mkv
+# Precomputado pesado de moléculas
+public/precomputed/*.bin
 
 # Local probe/smoke scripts (cualquier script con prefijo _ en scripts/)
 scripts/_*
+scripts/.synccheck.txt
+
+# Stills/clips de revisión de render (PNG de juicio visual). Van fuera de git.
+_cine/
+_out/
+_cine_out/
+*.bak

@@ -47,6 +47,20 @@ export interface BHRaytracedProps {
   diskTint?: string;
   /** Mostrar el anillo de fotones (boost luminoso en el rim de la sombra) */
   photonRing?: boolean;
+  /** Si se define (≥0), fuerza el tiempo de animación del disco (render determinista). */
+  animTime?: number;
+  /** Exposición global del HDR antes del tonemap. Reemplaza el *1.5 hardcodeado. Default 1.5. */
+  exposure?: number;
+  /**
+   * Si true: NO aplica ACES inline; emite HDR LINEAL para que el postFX externo
+   * (CinematicPostFX) haga el tonemap UNA sola vez. Evita el doble tonemap.
+   * Default false (comportamiento legacy: ACES inline + gamma).
+   */
+  linearOutput?: boolean;
+  /** Brillo del fondo nebular lensado (estrellas + Vía Láctea). Default 1. */
+  nebulaBoost?: number;
+  /** Separación R/G/B (aberración cromática) en los bordes muy lensados. Default 0. */
+  chromaticAberration?: number;
 }
 
 export default function BHRaytraced({
@@ -60,10 +74,14 @@ export default function BHRaytraced({
   starSeed = 0.0,
   diskTint = '#FFE0A0',
   photonRing = true,
+  animTime,
+  exposure = 1.5,
+  linearOutput = false,
+  nebulaBoost = 1,
+  chromaticAberration = 0,
 }: BHRaytracedProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const matRef = useRef<THREE.ShaderMaterial>(null);
-  const { size, camera } = useThree();
+  const { size } = useThree();
 
   const diskTintVec = useMemo(() => {
     const c = new THREE.Color(diskTint);
@@ -76,12 +94,57 @@ export default function BHRaytraced({
     return new THREE.Vector3(0, Math.cos(incl), Math.sin(incl)).normalize();
   }, [inclinationDeg]);
 
+  // Uniforms ESTABLES (creados una sola vez). NUNCA inline en el JSX: un objeto
+  // nuevo por render hace que R3F reasigne material.uniforms y se pierdan las
+  // updates GPU — sobre todo si el componente re-renderiza (p.ej. animTime prop).
+  const uniforms = useMemo(() => ({
+    uTime:       { value: 0 },
+    uRs:         { value: rs },
+    uRIn:        { value: rIn * rs },
+    uROut:       { value: rOut * rs },
+    uDiskAlpha:  { value: diskOpacity },
+    uDopplerK:   { value: dopplerStrength },
+    uStarDensity:{ value: starDensity },
+    uStarSeed:   { value: starSeed },
+    uDiskTint:   { value: diskTintVec.clone() },
+    uPhotonRing: { value: photonRing ? 1.0 : 0.0 },
+    uDiskNormal: { value: diskNormal.clone() },
+    uCamPos:     { value: new THREE.Vector3() },
+    uCamFwd:     { value: new THREE.Vector3() },
+    uCamRight:   { value: new THREE.Vector3() },
+    uCamUp:      { value: new THREE.Vector3() },
+    uTanHalfFov: { value: 0.4 },
+    uAspect:     { value: 1.0 },
+    uExposure:   { value: exposure },
+    uLinearOut:  { value: linearOutput ? 1.0 : 0.0 },
+    uNebulaBoost:{ value: nebulaBoost },
+    uChromAb:    { value: chromaticAberration },
+  }), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // refs a los props vivos → se leen en useFrame sin recrear los uniforms
+  const propsRef = useRef({ rs, rIn, rOut, diskOpacity, dopplerStrength, starDensity, starSeed, photonRing, animTime, diskTintVec, diskNormal, exposure, linearOutput, nebulaBoost, chromaticAberration });
+  propsRef.current = { rs, rIn, rOut, diskOpacity, dopplerStrength, starDensity, starSeed, photonRing, animTime, diskTintVec, diskNormal, exposure, linearOutput, nebulaBoost, chromaticAberration };
+
   useFrame(({ clock, camera }) => {
-    if (!matRef.current) return;
-    const u = matRef.current.uniforms;
-    u.uTime.value = clock.elapsedTime;
+    const u = uniforms;
+    const c = propsRef.current;
+    u.uTime.value = (c.animTime !== undefined && c.animTime >= 0) ? c.animTime : clock.elapsedTime;
+    u.uRs.value = c.rs;
+    u.uRIn.value = c.rIn * c.rs;
+    u.uROut.value = c.rOut * c.rs;
+    u.uDiskAlpha.value = c.diskOpacity;
+    u.uDopplerK.value = c.dopplerStrength;
+    u.uStarDensity.value = c.starDensity;
+    u.uStarSeed.value = c.starSeed;
+    u.uPhotonRing.value = c.photonRing ? 1.0 : 0.0;
+    u.uDiskTint.value.copy(c.diskTintVec);
+    u.uDiskNormal.value.copy(c.diskNormal);
+    u.uExposure.value = c.exposure;
+    u.uLinearOut.value = c.linearOutput ? 1.0 : 0.0;
+    u.uNebulaBoost.value = c.nebulaBoost;
+    u.uChromAb.value = c.chromaticAberration;
     u.uCamPos.value.copy(camera.position);
-    // Compute camera basis for ray construction in shader
+    // Camera basis for ray construction in shader
     const fwd = new THREE.Vector3();
     camera.getWorldDirection(fwd);
     const right = new THREE.Vector3().crossVectors(fwd, camera.up).normalize();
@@ -89,7 +152,6 @@ export default function BHRaytraced({
     u.uCamFwd.value.copy(fwd);
     u.uCamRight.value.copy(right);
     u.uCamUp.value.copy(up);
-    // Tan(half-fov) for ray construction
     const fovY = (camera as THREE.PerspectiveCamera).fov * Math.PI / 180;
     u.uTanHalfFov.value = Math.tan(fovY / 2);
     u.uAspect.value = size.width / size.height;
@@ -99,29 +161,11 @@ export default function BHRaytraced({
     <mesh ref={meshRef} renderOrder={-100} frustumCulled={false}>
       <planeGeometry args={[2, 2]} />
       <shaderMaterial
-        ref={matRef}
         depthWrite={false}
         depthTest={false}
         transparent={false}
-        uniforms={{
-          uTime:       { value: 0 },
-          uRs:         { value: rs },
-          uRIn:        { value: rIn * rs },
-          uROut:       { value: rOut * rs },
-          uDiskAlpha:  { value: diskOpacity },
-          uDopplerK:   { value: dopplerStrength },
-          uStarDensity:{ value: starDensity },
-          uStarSeed:   { value: starSeed },
-          uDiskTint:   { value: diskTintVec },
-          uPhotonRing: { value: photonRing ? 1.0 : 0.0 },
-          uDiskNormal: { value: diskNormal },
-          uCamPos:     { value: new THREE.Vector3() },
-          uCamFwd:     { value: new THREE.Vector3() },
-          uCamRight:   { value: new THREE.Vector3() },
-          uCamUp:      { value: new THREE.Vector3() },
-          uTanHalfFov: { value: 0.4 },
-          uAspect:     { value: 1.0 },
-        }}
+        toneMapped={false}
+        uniforms={uniforms}
         vertexShader={VERTEX_SHADER}
         fragmentShader={FRAGMENT_SHADER}
       />
@@ -160,6 +204,10 @@ const FRAGMENT_SHADER = /* glsl */`
   uniform vec3  uCamUp;
   uniform float uTanHalfFov;
   uniform float uAspect;
+  uniform float uExposure;     // exposición global del HDR antes del tonemap
+  uniform float uLinearOut;    // 1.0 = emite HDR lineal (postFX hace ACES); 0.0 = ACES inline
+  uniform float uNebulaBoost;  // brillo del fondo nebular lensado
+  uniform float uChromAb;      // separación R/G/B en bordes muy lensados
 
   // ── Hashes ──────────────────────────────────────────────────────────
   float hash13(vec3 p3) {
@@ -258,6 +306,12 @@ const FRAGMENT_SHADER = /* glsl */`
     return mix(c4, c5, (t - 0.85) / 0.15);
   }
 
+  // ── ACES filmic tonemap (Narkowicz 2015): comprime HDR y lava picos a blanco
+  vec3 acesFilmic(vec3 x) {
+    const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+  }
+
   // ── Texture del disco en coordenadas locales (r, phi) ───────────────
   // Devuelve emisión (HDR) + alpha cubriendo el plano del disco.
   vec4 sampleDiskLocal(float r, float phi, vec3 viewDir, vec3 vTangent) {
@@ -282,30 +336,33 @@ const FRAGMENT_SHADER = /* glsl */`
     // Redshift gravitacional: factor (1 - rs/r)^(1/2)
     float zFactor = sqrt(max(1e-3, 1.0 - uRs / r));
 
-    // Streamers logarítmicos
+    // Streamers logarítmicos + filamentos finos (textura sedosa tipo Schnittman)
     float lr = log(r / uRIn + 0.1);
     vec2 swirl = vec2(phi * 4.0 + lr * 6.0 - uTime * 0.7,
                       lr * 5.0 - uTime * 0.3);
     float turb1 = fbm(swirl);
     float turb2 = fbm(swirl * 3.5 + vec2(uTime * 0.6, 0.0));
+    float fine  = fbm(swirl * 8.0 + vec2(uTime * 0.9, lr * 2.0));
     float turb = mix(turb1, turb2, 0.42);
-    float streamer = pow(0.5 + 0.5 * turb, 1.4);
+    float streamer = pow(0.5 + 0.5 * turb, 1.7) * (0.60 + 0.55 * fine);
 
     // Bordes y densidad
     float u = (r - uRIn) / (uROut - uRIn);
     float edge = smoothstep(0.0, 0.03, u) * (1.0 - smoothstep(0.85, 1.0, u));
     float density = pow(uRIn / r, 1.4) * 1.0 + 0.3;
 
-    // Color
-    float tColor = clamp(tNorm * zFactor + 0.08, 0.0, 1.0);
-    vec3 col = blackbody(tColor) * uDiskTint * 1.4;
+    // Color — la temperatura define el hue; el tinte solo da un sesgo cálido
+    // suave para que el borde interno caliente pueda llegar a BLANCO (ACES lo lava).
+    float tColor = clamp(tNorm * zFactor + 0.05, 0.0, 1.0);
+    vec3 warmBias = mix(vec3(1.0), uDiskTint, 0.30);
+    vec3 col = blackbody(tColor) * warmBias * 2.4;
 
-    // Aplica Doppler
-    col *= boost * streamer * density * edge * 1.8;
+    // Aplica Doppler — HDR sin clamp (ACES comprime los picos al final)
+    col *= boost * streamer * density * edge;
 
-    // Hot inner edge
-    float hotRim = exp(-pow((r - uRIn) / (uRIn * 0.18), 2.0)) * 1.4;
-    col += vec3(1.0, 0.85, 0.55) * hotRim * density * edge * boost * 0.6;
+    // Hot inner edge — blanco incandescente cerca de ISCO
+    float hotRim = exp(-pow((r - uRIn) / (uRIn * 0.16), 2.0));
+    col += vec3(1.0, 0.96, 0.90) * hotRim * density * edge * boost * 2.0;
 
     float alpha = clamp(edge * density * (0.55 + 0.45 * streamer), 0.0, 1.0)
                  * uDiskAlpha;
@@ -328,6 +385,7 @@ const FRAGMENT_SHADER = /* glsl */`
 
     vec3 accumulated = vec3(0.0);
     float transmittance = 1.0;
+    float totalDeflect = 0.0;   // ángulo de flexión acumulado (para aberración cromática)
 
     // ── Raymarch ───────────────────────────────────────────────────
     float maxR = length(uCamPos) + 60.0;
@@ -338,7 +396,7 @@ const FRAGMENT_SHADER = /* glsl */`
     bool escaped = false;
     bool absorbed = false;
 
-    for (int i = 0; i < 90; i++) {
+    for (int i = 0; i < 200; i++) {
       float r = length(rayPos);
       if (r < uRs * 1.01) {
         absorbed = true;
@@ -376,7 +434,11 @@ const FRAGMENT_SHADER = /* glsl */`
       // tenga el radio correcto √27/2 rs en weak-field también.
       vec3 toBh = -rayPos / r;
       float strength = 2.0 * uRs / (r * r);
-      rayDir = normalize(rayDir + toBh * strength * dt);
+      vec3 bentDir = normalize(rayDir + toBh * strength * dt);
+      // magnitud del giro de esta sub-etapa = ángulo entre rayDir y bentDir.
+      // se acumula → mide cuánto se lensó el rayo (máximo cerca del photon ring).
+      totalDeflect += length(bentDir - rayDir);
+      rayDir = bentDir;
 
       dt = max(0.04 * uRs, r * 0.06);
 
@@ -389,7 +451,22 @@ const FRAGMENT_SHADER = /* glsl */`
 
     // ── Si escapó: samplea starfield en dirección final ────────
     if (escaped) {
-      finalColor += stars(rayDir) * transmittance;
+      // Aberración cromática FÍSICA en bordes muy lensados: donde el rayo se
+      // dobló más (totalDeflect grande, cerca de la sombra) las componentes
+      // R/G/B se separan, como una lente real estirada por la gravedad. Cada
+      // canal samplea el fondo en una dirección ligeramente girada en el plano
+      // tangente al rayo. Cero costo si uChromAb=0 (caso por defecto).
+      vec3 nebula;
+      if (uChromAb > 1e-5) {
+        float sep = uChromAb * totalDeflect;
+        vec3 tangent = normalize(cross(rayDir, uCamUp) + vec3(1e-5));
+        vec3 dirR = normalize(rayDir + tangent * sep);
+        vec3 dirB = normalize(rayDir - tangent * sep);
+        nebula = vec3(stars(dirR).r, stars(rayDir).g, stars(dirB).b);
+      } else {
+        nebula = stars(rayDir);
+      }
+      finalColor += nebula * transmittance * 0.55 * uNebulaBoost;
     }
 
     // ── Photon ring: boost luminoso al final de la línea si el rayo
@@ -403,12 +480,21 @@ const FRAGMENT_SHADER = /* glsl */`
       float sinTheta = length(cross(rayDir, radial));
       float b = rNow * sinTheta;
       float bcrit = 2.598 * uRs;   // √27/2 · rs
-      float dband = abs(b - bcrit) / (0.12 * uRs);
-      float pr = exp(-dband * dband) * 0.55 * transmittance;
-      finalColor += vec3(1.0, 0.92, 0.65) * pr;
+      float dband = abs(b - bcrit) / (0.07 * uRs);
+      float pr = exp(-dband * dband) * 1.7 * transmittance;
+      finalColor += vec3(1.0, 0.95, 0.82) * pr;
     }
 
-    finalColor = finalColor / (1.0 + finalColor * 0.6);
+    // Exposición global (reemplaza el *1.5 hardcodeado).
+    finalColor *= uExposure;
+
+    // DOBLE TONEMAP GUARD: si linearOutput, emitimos HDR LINEAL y dejamos que el
+    // postFX externo (CinematicPostFX) haga el ACES UNA sola vez. Si no, ACES
+    // inline + gamma (comportamiento legacy para los labs sin postFX cinemático).
+    if (uLinearOut < 0.5) {
+      finalColor = acesFilmic(finalColor);
+      finalColor = pow(finalColor, vec3(0.92));
+    }
     gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
