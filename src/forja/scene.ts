@@ -1,4 +1,5 @@
 import { defineScene } from './api';
+import type { SdfPrimitive } from '@/lib/sdf-engine';
 
 /**
  * RIN 5 RAYOS — rueda de aleacion (alloy wheel), estilo deportivo
@@ -74,7 +75,7 @@ export default defineScene((f) => {
   //   - largo = (Rin - hubR*0.6), centrado a mitad de camino.
   const spokeLen = (Rin + lugR) - hubR * 0.5;
   const spokeMidR = hubR * 0.5 + spokeLen / 2; // radio del centro del rayo
-  const spokes = [];
+  const spokes: SdfPrimitive[] = [];
   for (let i = 0; i < nSpokes; i++) {
     const ang = (i / nSpokes) * Math.PI * 2 + Math.PI / 2; // primer rayo hacia +Y
     const cx = Math.cos(ang) * spokeMidR;
@@ -114,7 +115,7 @@ export default defineScene((f) => {
   // 5 birlos (lug holes) sobre el PCD, alineados ENTRE los rayos no — en un
   // rin 5 rayos los birlos suelen quedar en la base de cada rayo. Los ponemos
   // alineados con cada rayo (mismo angulo) para que perforen material solido.
-  const lugs = [];
+  const lugs: SdfPrimitive[] = [];
   for (let i = 0; i < nSpokes; i++) {
     const ang = (i / nSpokes) * Math.PI * 2 + Math.PI / 2;
     const lx = Math.cos(ang) * pcdR;

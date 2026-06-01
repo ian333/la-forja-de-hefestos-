@@ -20,5 +20,5 @@
     }
   },
   "include": ["src"],
-  "exclude": ["src/cinematic/CinematicBHReel.tsx", "src/reporte"]
+  "exclude": ["src/cinematic/CinematicBHReel.tsx", "src/reporte", "src/forja/brep/occt.ts"]
 }
