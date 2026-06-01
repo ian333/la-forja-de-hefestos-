@@ -443,6 +443,31 @@ function ScaleNote({ molKey, time, vertical }: { molKey: string; time: number; v
   );
 }
 
+// Explica el SONIDO (solo ADN): la secuencia real convertida en música. Aparece
+// tras el placard, para que el espectador sepa qué está oyendo.
+function AudioNote({ time, vertical }: { time: number; vertical: boolean }) {
+  const opacity = smoothstep((time - 12.5) / 0.9) * (1 - smoothstep((time - 19.0) / 0.9));
+  if (opacity < 0.01) return null;
+  return (
+    <div style={{
+      position: 'absolute', top: vertical ? '10.5%' : '9%', left: '8%', right: '8%',
+      zIndex: 11, pointerEvents: 'none', opacity, textAlign: 'center',
+      fontFamily: "'Inter', system-ui, sans-serif",
+    }}>
+      <div style={{ fontWeight: 300, color: 'rgba(255,255,255,0.94)',
+        fontSize: vertical ? '4.4vw' : '1.6vw', lineHeight: 1.25,
+        textShadow: '0 2px 30px rgba(0,0,0,0.92)' }}>♪ Lo que oyes: tu ADN hecho música</div>
+      <div style={{ fontWeight: 600, color: 'rgba(127,212,255,0.96)', marginTop: vertical ? '1.7vw' : 8,
+        fontSize: vertical ? '4.2vw' : '1.45vw', letterSpacing: '0.03em',
+        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+        textShadow: '0 2px 22px rgba(0,0,0,0.92)' }}>cada letra · A · T · G · C · es una nota</div>
+      <div style={{ fontWeight: 400, color: 'rgba(222,227,238,0.74)', marginTop: vertical ? '1.0vw' : 5,
+        fontSize: vertical ? '3.1vw' : '1.05vw', lineHeight: 1.2,
+        textShadow: '0 2px 20px rgba(0,0,0,0.92)' }}>la melodía ES tu secuencia real, leída 5′→3′</div>
+    </div>
+  );
+}
+
 // Etiqueta del modo vibracional activo — "se entiende qué vibra con qué".
 function ModeLabel({ modes, time, vertical }: { modes: VibMode[] | null; time: number; vertical: boolean }) {
   if (!modes) return null;
@@ -823,6 +848,7 @@ function CinematicMoleculeInner({ molKey }: { molKey: string }) {
       </Canvas>
       <CinemaVignette />
       <ScaleNote molKey={molKey} time={time} vertical={vertical} />
+      {isDNA && <AudioNote time={time} vertical={vertical} />}
       <ModeLabel modes={modes} time={time} vertical={vertical} />
       <FieldLabel molKey={molKey} polar={isChain || (isCatalog && catField !== 'none') || (!isCatalog && !isDNA && !!data && partialCharges(data.nuclei).some(v => Math.abs(v) > 0.05))} time={time} vertical={vertical} />
       <MoleculeTitle mkey={molKey} time={time} vertical={vertical} />

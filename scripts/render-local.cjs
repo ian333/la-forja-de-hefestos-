@@ -96,7 +96,7 @@ function ffdur(f){ const r=spawnSync('ffprobe',['-v','error','-show_entries','fo
       luma = await canvasLuma();
       if (luma >= 0.45 * prevLuma) reshot++;
     }
-    await page.screenshot({ path: path.join(framesDir, `${String(i).padStart(6,'0')}.jpg`), type:'jpeg', quality:95, animations:'disabled' });
+    await page.screenshot({ path: path.join(framesDir, `${String(i).padStart(6,'0')}.jpg`), type:'jpeg', quality: parseInt(process.env.JPGQ || '95'), animations:'disabled' });
     prevLuma = luma;
     if (Date.now()-last > 10000) { console.log(`  ${((i/total)*100).toFixed(0)}% · ${i}/${total} · ${((Date.now()-t0)/1000/Math.max(1,i)).toFixed(1)}s/frame · reshot=${reshot}`); last = Date.now(); }
   }
@@ -107,9 +107,12 @@ function ffdur(f){ const r=spawnSync('ffprobe',['-v','error','-show_entries','fo
   // Encode H.264 (CPU)
   const clip = path.join(TMP, `clip-${TAG}.mp4`);
   const venc = process.env.VENC || 'libx264';
+  // Calidad: por defecto alta; el batch nocturno sube CQ/bitrate al máximo.
+  const CQ = process.env.CQ || '18';
+  const VB = process.env.VBITRATE || '20M';
   const encArgs = venc === 'h264_nvenc'
-    ? ['-c:v','h264_nvenc','-preset','p7','-tune','hq','-profile:v','high','-rc','vbr','-cq','19','-b:v','16M','-maxrate','22M','-bufsize','44M']
-    : ['-c:v','libx264','-preset','medium','-crf','18'];
+    ? ['-c:v','h264_nvenc','-preset','p7','-tune','hq','-profile:v','high','-rc','vbr','-cq',CQ,'-b:v',VB,'-maxrate','40M','-bufsize','80M']
+    : ['-c:v','libx264','-preset','medium','-crf','17'];
   run('ffmpeg', ['-y','-framerate',String(FPS),'-i',path.join(framesDir,'%06d.jpg'),
     ...encArgs,'-pix_fmt','yuv420p','-movflags','+faststart','-an', clip]);
   fs.rmSync(framesDir, { recursive: true, force: true });

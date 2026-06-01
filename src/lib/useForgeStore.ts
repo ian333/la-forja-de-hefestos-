@@ -1395,6 +1395,6 @@ export const getSessionSyncActive = () => _bc !== null;
 // ── QA hook: expose the store on window so headless drivers (Playwright on
 // iangpu) can invoke the exact same actions the palette/menu call
 // (addPrimitive, addOperation, updateNode, …) and read computed scene stats.
-if (typeof window !== 'undefined') {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as unknown as { __forge?: typeof useForgeStore }).__forge = useForgeStore;
 }

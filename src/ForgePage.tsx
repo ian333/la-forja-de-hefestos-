@@ -779,7 +779,10 @@ export default function ForgePage() {
   const handleExportSTL = useCallback(async () => {
     setExporting('STL');
     await new Promise(r => requestAnimationFrame(r));
-    downloadSTL(scene, 'gaia-forge-pieza.stl', 128);
+    // scaleMM=50: the scene uses MM=0.02 (1mm → 0.02 units), so 1 unit = 50mm.
+    // This makes the exported STL land at REAL millimetres (so an MG996R servo
+    // and M3 screws actually fit). res=192 captures the Ø3.2mm holes cleanly.
+    downloadSTL(scene, 'gaia-forge-pieza.stl', 192, { scaleMM: 50 });
     setExporting(null);
   }, [scene]);
 

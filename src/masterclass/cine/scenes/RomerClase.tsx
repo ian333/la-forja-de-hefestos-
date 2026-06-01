@@ -701,7 +701,7 @@ export default function RomerClase() {
     <CineStage
       mood="starry_night"
       envIntensity={0.42}
-      audio="/audio/clase-romer/narration.mp3"
+      audio="/audio/clase-romer/narration.mp3?v=25"
       duration={END}
       chapter="Romer · 2018 · el hack para crecer"
       fov={50}

@@ -455,7 +455,7 @@ function captionFilter(text, opts) {
 // Renderiza solo los frames del rango t [start,end) del beat, con supersample +
 // motion blur por subframes, y los encodea a un .mkv lossless intermedio.
 // ---------------------------------------------------------------------------
-async function renderBeatBase(page, beat, opts, cachePath, frameRoot) {
+async function renderBeatBase(page, beat, opts, cachePath, frameRoot, recycle) {
   if (!opts.force && fs.existsSync(cachePath)) {
     console.log(`[A] CACHE HIT  ${beat.id} → ${path.basename(cachePath)}`);
     return cachePath;
@@ -480,7 +480,19 @@ async function renderBeatBase(page, beat, opts, cachePath, frameRoot) {
     () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
   );
 
+  // RECICLAJE DE CONTEXTO (fix 4K GPU pura): a 4K el contexto WebGL acumula una
+  // fuga de memoria que, tras ~100 frames, hace que Chrome recicle a SwiftShader o
+  // CIERRE la página (visto: el render moría en el frame ~109). Cada RECYCLE_EVERY
+  // frames cerramos y reabrimos la página → drena la fuga, el contexto vuelve
+  // fresco a la RTX. recycle() lo provee main() (cierra page vieja, abre nueva en
+  // la misma URL, espera ready). Mantiene 4K NATIVO en GPU pura, sin escalar.
+  const RECYCLE_EVERY = 40;
+
   for (let f = 0; f < totalFrames; f++) {
+    if (recycle && f > 0 && f % RECYCLE_EVERY === 0) {
+      page = await recycle();
+      console.log(`[A] ${beat.id} contexto reciclado en frame ${f}/${totalFrames} (drena fuga 4K)`);
+    }
     const tCenter = beat.start + f / opts.fps;
     // N subframes simétricos dentro de la ventana de obturador (motion blur real).
     for (let s = 0; s < opts.subframes; s++) {
@@ -798,19 +810,36 @@ async function main() {
     `--window-size=${opts.width},${opts.height}`,
   ];
   const browser = await chromium.launch({ headless: false, executablePath: opts.chrome, args: gpuArgs });
-  const page = await (await browser.newContext({
-    viewport: { width: opts.width, height: opts.height },
-    deviceScaleFactor: opts.super,   // supersampling
-    bypassCSP: true,
-  })).newPage();
-  page.on('console', (m) => console.log('[page]', m.text()));
-  page.on('pageerror', (e) => console.error('[pageerror]', e.message));
 
-  await page.goto(opts.url, { waitUntil: 'networkidle', timeout: 90000 });
-  await page.waitForFunction(
-    (hook) => window[hook] && window[hook].ready === true, opts.hook,
-    { timeout: opts.readyTimeout },
-  );
+  // openPage: abre un contexto+página fresco en la URL y espera el hook ready.
+  // Se usa al inicio Y en cada reciclaje (drena la fuga de memoria del WebGL 4K).
+  async function openPage() {
+    const ctx = await browser.newContext({
+      viewport: { width: opts.width, height: opts.height },
+      deviceScaleFactor: opts.super,   // supersampling (1 = 4K nativo, GPU pura)
+      bypassCSP: true,
+    });
+    const pg = await ctx.newPage();
+    pg.on('pageerror', (e) => console.error('[pageerror]', e.message));
+    await pg.goto(opts.url, { waitUntil: 'networkidle', timeout: 90000 });
+    await pg.waitForFunction(
+      (hook) => window[hook] && window[hook].ready === true, opts.hook,
+      { timeout: opts.readyTimeout },
+    );
+    return pg;
+  }
+
+  let page = await openPage();
+  page.on('console', (m) => console.log('[page]', m.text()));
+
+  // recycle: cierra el contexto actual y abre uno fresco → libera la memoria GPU
+  // acumulada. Lo llama renderBeatBase cada N frames para sostener 4K en la RTX.
+  const recycle = async () => {
+    const ctx = page.context();
+    await ctx.close();
+    page = await openPage();
+    return page;
+  };
   // Leer la biblioteca de beats de la cadena ACTIVA (ids + rango t global +
   // caption). El caption viene de la ESCENA (window.__cinematicBHReel.beats[].caption),
   // NO hardcodeado aquí (DRY: una sola fuente de verdad para el texto del beat).
@@ -837,7 +866,7 @@ async function main() {
     const beatFrames = Math.max(1, Math.round(Math.max(0, beat.end - beat.start) * opts.fps));
     const hA = hashA(beat, opts);
     const baseMkv = path.join(cacheDir, `A_${beat.id}_${hA}.mkv`);
-    await renderBeatBase(page, beat, opts, baseMkv, frameRoot);
+    await renderBeatBase(page, beat, opts, baseMkv, frameRoot, recycle);
 
     const hB = hashB(hA, opts, frameOffset);
     const gradedMkv = path.join(cacheDir, `B_${beat.id}_${hB}.${opts.codec === 'prores' ? 'mov' : 'mkv'}`);

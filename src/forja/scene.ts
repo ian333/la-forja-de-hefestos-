@@ -5,42 +5,41 @@ import { defineScene } from './api';
  * ===========================================================
  * La pieza MAS representativa, imprimible y didactica del ecosistema de
  * androides de plastico (InMoov / Poppy): el soporte que sujeta un
- * servomotor. Enseña lo esencial de mecatronica en una sola pieza:
+ * servomotor al chasis. Enseña lo esencial de mecatronica en UNA sola pieza:
  *   - cavidad con la forma EXACTA del cuerpo del MG996R (40.7 × 19.7 × 42.9 mm)
- *   - barrenos M3 (Ø3) en el patron de montaje real del servo (49.5 × 10 mm)
- *   - barrenos M3 en la base para atornillar el bed al chasis / antebrazo
- *   - ventana frontal para que asome el eje + corneta (horn) del servo
- *   - paredes de 3 mm: rigidas e imprimibles sin soporte (FDM)
+ *   - barrenos M3 (Ø3.2) en el patron de montaje real del servo (49.5 × 10 mm)
+ *   - barrenos M3 en la pestaña base para atornillar el bed al chasis/antebrazo
+ *   - ventana cilindrica frontal para que asome el eje + corneta (horn)
+ *   - paredes y piso de 3 mm: rigidos e imprimibles sin soporte (FDM)
  *
- * Convencion de unidades del CAD: MM = 0.02 u/mm (igual que la escena del
- * brazo robotico). Todo se parametriza en mm para que el alumno juegue.
+ * UNIDADES: MM = 0.02 u/mm  (⇒ 1 u = 50 mm). El exportador usa scaleMM=50,
+ * asi que el STL sale en MILIMETROS REALES y un servo de verdad encaja.
+ * Todo parametrico: edita las 10 variables (en mm) en el panel de Variables.
  */
 export default defineScene((f) => {
-  const MM = 0.02; // 1 mm  →  0.02 unidades de escena
+  const MM = 0.02; // 1 mm → 0.02 unidades de escena
 
-  // ── Servo MG996R (medidas reales) ────────────────────────────
-  const servoL = f.variable('servo_largo_mm',  40.7 * MM); // X  cuerpo
-  const servoW = f.variable('servo_ancho_mm',  19.7 * MM); // Z  cuerpo
-  const servoH = f.variable('servo_alto_mm',   42.9 * MM); // Y  cuerpo (con tapa)
-  const holeDx = f.variable('barreno_x_mm',    49.5 * MM); // sep. larga de barrenos
-  const holeDz = f.variable('barreno_z_mm',    10.0 * MM); // sep. corta de barrenos
-  const m3     = f.variable('m3_diam_mm',       3.2 * MM); // taladro M3 holgado
+  // ── Servo MG996R (medidas reales del cuerpo) ─────────────────
+  const servoL = f.variable('servo_largo_mm', 40.7 * MM, { unit: 'mm' }); // X  cuerpo
+  const servoW = f.variable('servo_ancho_mm', 19.7 * MM, { unit: 'mm' }); // Z  cuerpo
+  const servoH = f.variable('servo_alto_mm',  42.9 * MM, { unit: 'mm' }); // Y  cuerpo
+  const holeDx = f.variable('barreno_x_mm',   49.5 * MM, { unit: 'mm' }); // sep. larga
+  const holeDz = f.variable('barreno_z_mm',   10.0 * MM, { unit: 'mm' }); // sep. corta
+  const m3     = f.variable('m3_diam_mm',      3.2 * MM, { unit: 'mm' }); // M3 holgado
 
   // ── Parametros del bed ───────────────────────────────────────
-  const wall   = f.variable('pared_mm',         3.0 * MM); // grosor de pared
-  const floor  = f.variable('piso_mm',          3.0 * MM); // base inferior
-  const cradleH= f.variable('cuna_alto_mm',    24.0 * MM); // cuanto abraza el cuerpo
-  const flange = f.variable('pestana_mm',       7.0 * MM); // saliente para barrenos base
+  const wall    = f.variable('pared_mm',       3.0 * MM, { unit: 'mm' }); // grosor de pared
+  const floor   = f.variable('piso_mm',        3.0 * MM, { unit: 'mm' }); // base inferior
+  const cradleH = f.variable('cuna_alto_mm',  24.0 * MM, { unit: 'mm' }); // cuanto abraza
+  const flange  = f.variable('pestana_mm',     7.0 * MM, { unit: 'mm' }); // saliente base
 
   // Caja exterior del bed = cavidad del servo + paredes en X/Z, abierta arriba.
   const outL = servoL + 2 * wall;
   const outW = servoW + 2 * wall;
   const outH = floor + cradleH;
+  const cy = outH / 2; // centro de la pieza en Y
 
-  // Centro de la cuna a media altura de la pieza.
-  const cy = outH / 2;
-
-  // ── Cuerpo macizo (caja con base ancha tipo pestaña) ─────────
+  // ── Cuerpo macizo (carcasa) ──────────────────────────────────
   const shell = f.box({ w: outL, h: outH, d: outW, at: [0, cy, 0], name: 'Carcasa' });
 
   // Pestaña inferior (mas ancha) para atornillar el bed al chasis.
@@ -49,31 +48,31 @@ export default defineScene((f) => {
     at: [0, floor / 2, 0], name: 'Base',
   });
 
-  // ── Cavidad del servo (resta) ────────────────────────────────
-  // Hueco con la forma del cuerpo, desde el piso hacia arriba y ABIERTO arriba.
+  // ── Cavidad del servo (resta) — abierta arriba ───────────────
+  // Hueco con la forma del cuerpo, desde encima del piso y abierto por arriba.
+  const pocketH = cradleH + servoH; // sobra hacia arriba ⇒ techo abierto
   const pocket = f.box({
-    w: servoL, h: cradleH + servoH, d: servoW,
-    at: [0, floor + (cradleH + servoH) / 2, 0], name: 'Cavidad',
+    w: servoL, h: pocketH, d: servoW,
+    at: [0, floor + pocketH / 2, 0], name: 'Cavidad',
   });
 
-  // ── Ventana frontal: deja pasar el eje + la corneta del servo ─
-  // En el MG996R el eje esta descentrado hacia un extremo (a ~10 mm del borde).
+  // ── Ventana frontal: eje + corneta (horn) del servo ──────────
+  // En el MG996R el eje esta descentrado a ~10 mm de un extremo.
   const axisX = servoL / 2 - 10 * MM;
-  const window = f.cylinder({
-    r: 9 * MM, h: outW + 4 * wall,            // atraviesa todo el ancho
+  const ventana = f.cylinder({
+    r: 9 * MM, h: outW + 4 * wall,     // atraviesa todo el ancho en Z
     at: [axisX, floor + cradleH, 0],
-    rot: [Math.PI / 2, 0, 0],                 // eje del cilindro = Z
+    rot: [Math.PI / 2, 0, 0],          // eje del cilindro = Z
     name: 'VentanaCorneta',
   });
 
-  // ── Barrenos M3 del patron de montaje del servo ──────────────
-  // 4 taladros verticales en el plano de las pestañas del MG996R.
-  const servoHoles = [
+  // ── Barrenos M3 del patron de montaje del servo (4) ──────────
+  const servoHoles = ([
     [ holeDx / 2,  holeDz / 2],
     [ holeDx / 2, -holeDz / 2],
     [-holeDx / 2,  holeDz / 2],
     [-holeDx / 2, -holeDz / 2],
-  ].map(([hx, hz], i) =>
+  ] as [number, number][]).map(([hx, hz], i) =>
     f.cylinder({
       r: m3 / 2, h: outH + 4 * wall,
       at: [hx, cy, hz],
@@ -81,14 +80,14 @@ export default defineScene((f) => {
     }),
   );
 
-  // ── Barrenos M3 en la pestaña base (fijar el bed al chasis) ──
+  // ── Barrenos M3 en la pestaña base (fijar al chasis) (4) ─────
   const baseHoleX = outL / 2 + flange / 2;
-  const baseHoles = [
-    [ baseHoleX,  outW / 2 - wall],
-    [ baseHoleX, -outW / 2 + wall],
-    [-baseHoleX,  outW / 2 - wall],
-    [-baseHoleX, -outW / 2 + wall],
-  ].map(([hx, hz], i) =>
+  const baseHoles = ([
+    [ baseHoleX,  outW / 2 - wall / 2],
+    [ baseHoleX, -outW / 2 + wall / 2],
+    [-baseHoleX,  outW / 2 - wall / 2],
+    [-baseHoleX, -outW / 2 + wall / 2],
+  ] as [number, number][]).map(([hx, hz], i) =>
     f.cylinder({
       r: m3 / 2, h: floor + 4 * wall,
       at: [hx, floor / 2, hz],
@@ -96,9 +95,9 @@ export default defineScene((f) => {
     }),
   );
 
-  // ── Ensamble: solido (carcasa ∪ base) menos todos los huecos ──
+  // ── Ensamble: (carcasa ∪ base) menos todos los huecos ────────
   const solid = f.union(shell, baseSlab);
-  const bed = f.subtract(solid, pocket, window, ...servoHoles, ...baseHoles);
+  const bed = f.subtract(solid, pocket, ventana, ...servoHoles, ...baseHoles);
 
   f.add(f.group('ServoBed_MG996R', bed));
 });
