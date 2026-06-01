@@ -42,6 +42,7 @@ export default defineConfig({
         cad: resolve(import.meta.dirname, "cad.html"),
         solver: resolve(import.meta.dirname, "solver.html"),
         reporte: resolve(import.meta.dirname, "reporte.html"),
+        tutoriales: resolve(import.meta.dirname, "tutoriales.html"),
         economia: resolve(import.meta.dirname, "economia.html"),
         premio: resolve(import.meta.dirname, "premio.html"),
         clase: resolve(import.meta.dirname, "clase.html"),
