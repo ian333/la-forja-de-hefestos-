@@ -455,7 +455,7 @@ function captionFilter(text, opts) {
 // Renderiza solo los frames del rango t [start,end) del beat, con supersample +
 // motion blur por subframes, y los encodea a un .mkv lossless intermedio.
 // ---------------------------------------------------------------------------
-async function renderBeatBase(page, beat, opts, cachePath, frameRoot, recycle) {
+async function renderBeatBase(page, beat, opts, cachePath, frameRoot) {
   if (!opts.force && fs.existsSync(cachePath)) {
     console.log(`[A] CACHE HIT  ${beat.id} → ${path.basename(cachePath)}`);
     return cachePath;
@@ -480,19 +480,12 @@ async function renderBeatBase(page, beat, opts, cachePath, frameRoot, recycle) {
     () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
   );
 
-  // RECICLAJE DE CONTEXTO (fix 4K GPU pura): a 4K el contexto WebGL acumula una
-  // fuga de memoria que, tras ~100 frames, hace que Chrome recicle a SwiftShader o
-  // CIERRE la página (visto: el render moría en el frame ~109). Cada RECYCLE_EVERY
-  // frames cerramos y reabrimos la página → drena la fuga, el contexto vuelve
-  // fresco a la RTX. recycle() lo provee main() (cierra page vieja, abre nueva en
-  // la misma URL, espera ready). Mantiene 4K NATIVO en GPU pura, sin escalar.
-  const RECYCLE_EVERY = 40;
-
+  // 4K GPU PURA (probado empíricamente 2026-06-01): a super=1 (2160×3840 nativo,
+  // 8.3MP) page.screenshot SOSTIENE 80+ frames en un proceso/contexto fresco SIN
+  // colgarse (RSS sube y BAJA, no fuga monotónica; ~1.2s/frame estable). El cuelgue
+  // anterior era el reciclaje cada-40 (frágil) + timeout:0. Ahora: NADA de reciclaje
+  // intra-beat; el aislamiento es POR BEAT (main abre contexto fresco por beat).
   for (let f = 0; f < totalFrames; f++) {
-    if (recycle && f > 0 && f % RECYCLE_EVERY === 0) {
-      page = await recycle();
-      console.log(`[A] ${beat.id} contexto reciclado en frame ${f}/${totalFrames} (drena fuga 4K)`);
-    }
     const tCenter = beat.start + f / opts.fps;
     // N subframes simétricos dentro de la ventana de obturador (motion blur real).
     for (let s = 0; s < opts.subframes; s++) {
@@ -512,7 +505,9 @@ async function renderBeatBase(page, beat, opts, cachePath, frameRoot, recycle) {
       // con gl.readPixels en half-float (RGBA16F) o exportar EXR por subframe y
       // promediar en lineal antes del tonemap; reemplazaría este screenshot PNG.
       // No bloquea el pipeline: el camino actual ya da un degradado liso.
-      await page.screenshot({ path: subFile, type: 'png', animations: 'disabled', timeout: 0 });
+      // timeout FINITO (30s): si el contexto se degrada, FALLA rápido y se reintenta
+      // el beat en proceso fresco — NUNCA cuelgue infinito (la causa del pegado a 4K).
+      await page.screenshot({ path: subFile, type: 'png', animations: 'disabled', timeout: 30000 });
     }
     // PROMEDIAR los subframes → media verdadera (motion blur de cine), NO alpha.
     //
@@ -847,17 +842,10 @@ async function main() {
     return pg;
   }
 
-  let page = await openPage();
+  // Página inicial SOLO para leer la biblioteca de beats (ids/rangos/captions).
+  // El render real de cada beat usa su PROPIO contexto fresco (aislamiento 4K).
+  const page = await openPage();
   page.on('console', (m) => console.log('[page]', m.text()));
-
-  // recycle: cierra el contexto actual y abre uno fresco → libera la memoria GPU
-  // acumulada. Lo llama renderBeatBase cada N frames para sostener 4K en la RTX.
-  const recycle = async () => {
-    const ctx = page.context();
-    await ctx.close();
-    page = await openPage();
-    return page;
-  };
   // Leer la biblioteca de beats de la cadena ACTIVA (ids + rango t global +
   // caption). El caption viene de la ESCENA (window.__cinematicBHReel.beats[].caption),
   // NO hardcodeado aquí (DRY: una sola fuente de verdad para el texto del beat).
@@ -884,7 +872,28 @@ async function main() {
     const beatFrames = Math.max(1, Math.round(Math.max(0, beat.end - beat.start) * opts.fps));
     const hA = hashA(beat, opts);
     const baseMkv = path.join(cacheDir, `A_${beat.id}_${hA}.mkv`);
-    await renderBeatBase(page, beat, opts, baseMkv, frameRoot, recycle);
+
+    // AISLAMIENTO POR BEAT (fix 4K): si el beat NO está en cache, lo renderizamos
+    // en un CONTEXTO FRESCO y lo CERRAMOS al terminar → la GPU/VRAM se libera entre
+    // beats, cero fuga acumulada (probado: 80+ frames estables por contexto fresco).
+    if (opts.force || !fs.existsSync(baseMkv)) {
+      const beatCtx = await browser.newContext({
+        viewport: { width: opts.width, height: opts.height },
+        deviceScaleFactor: opts.super, bypassCSP: true,
+      });
+      const beatPage = await beatCtx.newPage();
+      beatPage.on('pageerror', (e) => console.error('[pageerror]', e.message));
+      await beatPage.goto(opts.url, { waitUntil: 'networkidle', timeout: 90000 });
+      await beatPage.waitForFunction((hook) => window[hook] && window[hook].ready === true, opts.hook, { timeout: opts.readyTimeout });
+      // esperar canvas a tamaño pleno (anti-parpadeo) + settle
+      const wantW = opts.width * opts.super, wantH = opts.height * opts.super;
+      await beatPage.waitForFunction(({ w, h }) => { const c = document.querySelector('canvas'); return c && c.width >= w - 2 && c.height >= h - 2; }, { w: wantW, h: wantH }, { timeout: 30000 }).catch(() => {});
+      await beatPage.evaluate(() => new Promise((r) => { let n = 0; const tk = () => (++n >= 3 ? r(null) : requestAnimationFrame(tk)); requestAnimationFrame(tk); }));
+      await renderBeatBase(beatPage, beat, opts, baseMkv, frameRoot);
+      await beatCtx.close();   // ← libera la VRAM del beat antes del siguiente
+    } else {
+      console.log(`[A] CACHE HIT  ${beat.id} → ${path.basename(baseMkv)}`);
+    }
 
     const hB = hashB(hA, opts, frameOffset);
     const gradedMkv = path.join(cacheDir, `B_${beat.id}_${hB}.${opts.codec === 'prores' ? 'mov' : 'mkv'}`);

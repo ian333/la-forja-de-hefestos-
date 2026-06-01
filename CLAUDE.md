@@ -1,0 +1,80 @@
+# La Forja — instrucciones del proyecto (LÉEME SIEMPRE)
+
+Visualizadores científicos R3F (física/astrofísica/química/bio) + cine para YouTube/IG/TikTok.
+Render en **iangpu** (RTX 4070 Ti, WSL). El operador es **ian**.
+
+> Toda instancia de Claude que trabaje aquí DEBE seguir estas reglas. No son sugerencias.
+
+---
+
+## 🎬 MANDATO 4K (regla #1, dura)
+
+**TODO el video que se entregue va en 4K.** Vertical (reels) = **2160×3840**. Horizontal = **3840×2160**.
+10-bit (`yuv420p10le`) + NVENC. Nada se entrega en 1080 como master. El 1080 solo existe como
+derivado/preview, jamás como entregable final.
+
+El usuario también quiere **60 fps** donde aplique (cine puede ir 24; reels de acción 60). Confirmar fps por pieza.
+
+## 🖥️ PIPELINE DE RENDER 4K — CANÓNICO (no improvisar otro)
+
+El render headless 4K en WSL es delicado; ya pagamos caro descubrir lo que funciona. **USA ESTO:**
+
+**Receta GPU (iangpu):** lanzar node con env `DISPLAY=:0 GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA`
+y Chrome con flags `--headless=new --use-angle=gl --enable-gpu --ignore-gpu-blocklist --disable-software-rasterizer`
+(Playwright `headless:false` + esos flags = GPU real; verificar con `WEBGL_debug_renderer_info` → debe decir
+`ANGLE (... D3D12 (NVIDIA GeForce RTX 4070 Ti) ...)`, NUNCA SwiftShader/llvmpipe).
+
+**Lo que SÍ funciona (probado empíricamente):**
+- **super=1** (4K nativo 2160×3840 = 8.3 MP). NUNCA super=2 (33 MP/screenshot satura y cuelga).
+- **Un CONTEXTO de browser FRESCO por beat/lote**, cerrado al terminar (`ctx.close()`) → libera VRAM, cero fuga acumulada. Probado: 80+ frames estables por contexto, RSS sube y baja, ~1.2 s/frame.
+- **`page.screenshot({ timeout: 30000 })`** — timeout FINITO. NUNCA `timeout: 0` (cuelgue infinito si el contexto se degrada).
+- Encode con **NVENC**: `-c:v hevc_nvenc -pix_fmt yuv420p10le` (4K 10-bit en GPU, instantáneo). `h264_nvenc` para entrega.
+- Determinismo: la escena expone `window.__cinematic*.renderAt(t)` PURO en t (sin random runtime, sin reloj) → cache por beat reproducible.
+
+**Lo que NO funciona / NO usar:**
+- ❌ `HeadlessExperimental.beginFrame` — removido en Chrome 147+ (tenemos 148).
+- ❌ `headless-gl` puro — solo WebGL1 y rompe EffectComposer/drei/postFX.
+- ❌ Reciclar el contexto a mitad de un beat (frágil, cuelga). Aislar POR beat, no intra-beat.
+- ❌ `--headless` con super≥2 a 4K, o screenshots PNG uno-por-uno sin aislar contexto (fuga → cuelgue ~frame 110).
+
+**Scripts canónicos** (`scripts/`): `render-bh-comercial.cjs` (render 4K por beat + grade DaVinci 10-bit + NVENC + audio + outro GAIA — es la plantilla a copiar para nuevas escenas), `bh-sound-design.py` (sonido determinista), `grab-stills.cjs` (stills rápidos de verificación).
+
+## 👁️ GATE DE CALIDAD (correr ANTES de cada render 4K)
+
+Antes de invertir ~45 min en un render 4K, pasar el **portero**:
+`node scripts/critic-gate.cjs --url <preview> --hook <hook>` → captura 1 still por beat y FALLA (exit 1) si detecta:
+**morado** (negro teñido), **confeti** (verde/rojo por chromaticAberration sobre starfield), o **frame-negro**
+(sombra que llena el cuadro por la ley geométrica). Para crítica de fotografía con un agente que VE las imágenes:
+`scripts/critic-eye.cjs` (captura + manifiesto Markdown que un agente Opus abre con Read y juzga).
+
+## ⚠️ DEFECTOS CONOCIDOS Y SUS CAUSAS (no re-descubrir)
+
+- **Negro morado** → la nebulosa del shader (`BHRaytraced.tsx stars()`) NO debe tener tinte lavanda (azul>rojo); usar gris-frío tenue. Y `saturation` del postFX baja (~0.04).
+- **Confeti verde/rojo** → `chromaticAberration > ~0.1` sobre el starfield. Mantener 0 (o ≤0.05) en planos con muchas estrellas.
+- **Frame negro en POV cerca del horizonte** → LEY GEOMÉTRICA: si `asin(b_crit/r) ≥ fov/2`, la sombra (b_crit=2.598·rs) llena el cuadro. Mantener la cámara donde el disco/anillo llena el frame.
+- **Doble tonemap** → el shader emite HDR lineal (`linearOutput`) y `CinematicPostFX` hace el ÚNICO ACES. Nunca dos.
+- **maxSteps** en BHRaytraced: 200 (científico) / 110 (alivia 4K). No bajar globalmente (otros módulos lo usan).
+
+## 🔬 FÍSICA REAL (regla dura del proyecto)
+
+Toda viz científica usa fórmulas reales (Kepler, Shakura-Sunyaev T∝r^-3/4, Doppler δ⁴, Blandford-Znajek,
+Schwarzschild, photon ring √27/2·rs, etc.). NUNCA inventar ni hardcodear curvas. Datos reales (NASA/USGS/PDB)
+para Tierra/Luna/planetas/proteínas — no estilizar. Lo evocativo se ETIQUETA como tal. El wow EMERGE de la corrección.
+
+## 🛠️ OPERACIÓN
+
+- **iangpu** = `ssh ian@100.65.173.85`, repo en **`/home/ian/Orkesta/la-forja`** (mismo path que la laptop).
+  REGLA: SIEMPRE `cd /home/ian/Orkesta/la-forja &&` o usar rutas absolutas — un ssh pelón cae en `$HOME`.
+- iangpu tiene su PROPIO filesystem → **rsync/scp el source editado ANTES de cada `npm run build`** o el video sale con código viejo.
+- **NO builds/tsc/dev locales** (RAM limitada). Build y render se hacen en iangpu (`npx vite build` + `npx vite preview --port 4173`).
+- Convención de uniforms: NUNCA inline en `<shaderMaterial>`; `useMemo` una vez + mutar `.value` en `useFrame`.
+- NO `drei <Text>` dentro de un Canvas con EffectComposer (crashea). Captions = overlay DOM o quemados en ffmpeg.
+- Copy/voiceover/comentarios: **español mexicano** (tú/tienes/eleva, NUNCA vos/tenés/elevás).
+
+## 📐 DOCTRINA DE CINE (cuando se renderiza video)
+
+1 objeto principal, fondo negro real, bloom de threshold bajo (los picos REVIENTAN), grade tipo DaVinci 10-bit
+(halación rojo-ámbar real, grano de película, split-tone, dither anti-banding). Cámara con PESO determinista
+(`CinematicCamera.WeightedRig`, pura en t). Escala por contraste (objeto de referencia + parallax). El SILENCIO
+es recurso dramático (sonido de golpe → silencio en el zoom-out). Cortes secos motivados, no crossfades.
+Cada escena de cine = biblioteca de **beats reutilizables y cacheables** (ver `CinematicBHReel.tsx`).
