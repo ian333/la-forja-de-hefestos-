@@ -63,8 +63,11 @@ export default function PeriodicTable({
     onHover?.(Z);
   };
 
+  // compact (dock lateral fijo 336px): la celda DEBE llenar su columna del grid
+  // (1fr ≈ 16px) y ser cuadrada. Un ancho fijo md:w-7 (28px) depende del viewport,
+  // no del contenedor → en pantallas anchas la celda excede su columna y se encima.
   const cellSize = compact
-    ? 'w-6 h-6 md:w-7 md:h-7'
+    ? 'w-full aspect-square min-w-0'
     : 'w-10 h-10 md:w-11 md:h-11';
 
   const grid: (Element | null)[][] = Array.from({ length: 10 }, () =>

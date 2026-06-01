@@ -954,7 +954,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         flat
         onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, extent * 0.5], fov: 35, near: 0.01, far: 200 }}
-        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: !live }}
+        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
         dpr={[1, 2]}
         frameloop="always"
         style={{ background: '#000' }}
