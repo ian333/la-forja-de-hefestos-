@@ -363,6 +363,14 @@ function nodeColor(mass: number, maxMass: number): string {
 
 // ── Componente ─────────────────────────────────────────────────────────
 
+// Corre el loop de iteración DENTRO del Canvas (useFrame solo vive bajo <Canvas>).
+function FrameTick({ cb }: { cb: () => void }) {
+  const ref = useRef(cb);
+  ref.current = cb;
+  useFrame(() => ref.current());
+  return null;
+}
+
 export default function Markov() {
   const { audience } = useAudience();
   const [presetId, setPresetId] = useState('clima');
@@ -408,7 +416,7 @@ export default function Markov() {
   // Auto-iteración a ritmo constante (independiente del frame rate).
   const accRef = useRef(0);
   const lastRef = useRef<number | null>(null);
-  useFrame(() => {
+  const markovTick = () => {
     if (!autoIterate) { lastRef.current = null; return; }
     const now = performance.now();
     if (lastRef.current == null) { lastRef.current = now; return; }
@@ -424,7 +432,7 @@ export default function Markov() {
       });
       setIter((k) => k + 1);
     }
-  });
+  };
 
   const maxMass = Math.max(...pi, 1e-9);
   const residual = l1(pi, piStar);
@@ -447,6 +455,7 @@ export default function Markov() {
       <div className="relative rounded-lg overflow-hidden border border-[#1E293B]">
         <Stage cameraDistance={6.2} bloomIntensity={0.6} bloomThreshold={0.5} bgColor="#05060A" captureMode autoRotate={false}>
           <CanvasCapture />
+          <FrameTick cb={markovTick} />
 
           {/* Aristas dirigidas con peso (grosor ∝ probabilidad) */}
           {edges.map((e, k) => {

@@ -335,6 +335,14 @@ function profileToColors(u: Float64Array): [number, number, number][] {
 
 // ── Componente ─────────────────────────────────────────────────────────
 
+// Corre el loop de simulación DENTRO del Canvas (useFrame solo vive bajo <Canvas>).
+function FrameTick({ cb }: { cb: () => void }) {
+  const ref = useRef(cb);
+  ref.current = cb;
+  useFrame(() => ref.current());
+  return null;
+}
+
 export default function Heat1D() {
   const { audience } = useAudience();
   const [alpha, setAlpha] = useState(0.6);
@@ -386,7 +394,7 @@ export default function Heat1D() {
   };
 
   // Bucle de integración: avanza Crank-Nicolson cada frame.
-  useFrame(() => {
+  const heatTick = () => {
     if (!running) return;
     let u = uRef.current;
     for (let s = 0; s < STEPS_PER_FRAME; s++) {
@@ -403,7 +411,7 @@ export default function Heat1D() {
     } else if (fourierPts.length > 0) {
       setFourierPts([]);
     }
-  });
+  };
 
   // Geometría de la "barra" (losa fina bajo la curva) coloreada por la base.
   const barColors = useMemo(() => colors, [colors]);
@@ -413,6 +421,7 @@ export default function Heat1D() {
       <div className="relative rounded-lg overflow-hidden border border-[#1E293B]">
         <Stage cameraDistance={5.2} bloomIntensity={0.6} bloomThreshold={0.5} bgColor="#05060A" captureMode>
           <CanvasCapture />
+          <FrameTick cb={heatTick} />
 
           {/* Eje base de la barra */}
           <Line
