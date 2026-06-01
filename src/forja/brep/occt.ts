@@ -354,6 +354,86 @@ export function common(oc: OC, a: Shape, b: Shape): Shape {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Transformaciones rígidas (gp_Trsf) — para POSICIONAR instancias en un
+// ENSAMBLE (cada componente = su shape + su transform propio). Es la primitiva
+// del MATE: el engrane 2 se coloca a C sobre la línea de centros y se rota su
+// faseo con un gp_Trsf compuesto (rotación ∘ traslación), aplicado por
+// BRepBuilderAPI_Transform (geometría exacta, no malla).
+// ─────────────────────────────────────────────────────────────────
+
+/** Transform rígido de un componente del ensamble: rotación (rad, eje Z por
+ *  defecto) seguida de traslación. El orden físico es: primero FASEAR el engrane
+ *  alrededor de su propio eje, luego TRASLADARLO al centro de distancia C. */
+export interface RigidTransform {
+  /** Traslación [tx,ty,tz] (mm) — posición del centro del componente. */
+  translate: [number, number, number];
+  /** Ángulo de rotación (rad) alrededor del eje. 0 = sin faseo. */
+  rotateAngle?: number;
+  /** Eje de rotación (origen + dirección). Default: eje Z en el origen LOCAL. */
+  rotateAxis?: RevolveAxis;
+}
+
+/**
+ * Aplica un gp_Trsf (rotación ∘ traslación) a una forma y devuelve la forma
+ * transformada (copia profunda: BRepBuilderAPI_Transform con copy=true, para
+ * que el original siga siendo válido). La rotación se aplica PRIMERO (faseo
+ * alrededor del eje local del componente), después la traslación lo lleva a su
+ * posición en el ensamble. Geometría EXACTA — el volumen se conserva.
+ */
+export function transformShape(oc: OC, shape: Shape, t: RigidTransform): Shape {
+  const trsf = new oc.gp_Trsf_1();
+  // 1) Rotación (faseo). Eje por defecto: Z en el origen local (el centro del
+  //    engrane antes de trasladarlo), que es donde está su eje de giro.
+  if (t.rotateAngle && Math.abs(t.rotateAngle) > 1e-15) {
+    const ax = t.rotateAxis ?? { origin: [0, 0, 0], dir: [0, 0, 1] };
+    const o = new oc.gp_Pnt_3(ax.origin[0], ax.origin[1], ax.origin[2]);
+    const d = new oc.gp_Dir_4(ax.dir[0], ax.dir[1], ax.dir[2]);
+    const ax1 = new oc.gp_Ax1_2(o, d);
+    trsf.SetRotation_1(ax1, t.rotateAngle);
+  }
+  // 2) Traslación al centro del componente. Se compone POR LA IZQUIERDA con un
+  //    segundo gp_Trsf (Multiply: this = trans · this), de modo que el punto se
+  //    rota primero y se traslada después.
+  const [tx, ty, tz] = t.translate;
+  if (Math.hypot(tx, ty, tz) > 1e-15) {
+    const trans = new oc.gp_Trsf_1();
+    const vec = new oc.gp_Vec_4(tx, ty, tz);
+    trans.SetTranslation_1(vec);
+    trans.Multiply(trsf); // trans = trans · trsf  → rota, luego traslada
+    const out = applyTrsf(oc, shape, trans);
+    return out;
+  }
+  return applyTrsf(oc, shape, trsf);
+}
+
+function applyTrsf(oc: OC, shape: Shape, trsf: Shape): Shape {
+  // copy=true → forma independiente (no comparte TShape con el original).
+  const mk = new oc.BRepBuilderAPI_Transform_2(shape, trsf, true);
+  const out = mk.Shape();
+  mk.delete?.();
+  return out;
+}
+
+/**
+ * Compone varias formas en UN TopoDS_Compound (ensamble multi-sólido). NO es una
+ * booleana: cada componente conserva su identidad y sus caras/aristas (no se
+ * fusionan superficies en contacto), justo lo que queremos para un ensamble de
+ * engranes que se TOCAN pero no se sueldan. El compound se tesela/exporta como
+ * un todo, pero el volumen de cada parte sigue siendo exacto e independiente.
+ *
+ * Invariante: Vol(compound) = Σ Vol(parte_i)  (las partes no se solapan; el
+ * mate de engrane lo garantiza con Common≈0).
+ */
+export function makeCompound(oc: OC, shapes: Shape[]): Shape {
+  const builder = new oc.BRep_Builder();
+  const compound = new oc.TopoDS_Compound();
+  builder.MakeCompound(compound);
+  for (const s of shapes) builder.Add(compound, s);
+  builder.delete?.();
+  return compound;
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Fillet (BRepFilletAPI) — redondeo de aristas
 // ─────────────────────────────────────────────────────────────────
 

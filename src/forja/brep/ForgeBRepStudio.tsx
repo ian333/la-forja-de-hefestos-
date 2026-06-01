@@ -34,6 +34,12 @@ import {
   chamferEdges,
   shellSolid,
   revolvePolygon,
+  transformShape,
+  makeCompound,
+  makeBox,
+  makeCylinder,
+  cut,
+  common,
   PLANE_XY,
   tessellate,
   topology,
@@ -141,6 +147,75 @@ const GEAR_DEFAULTS: GearParams = {
 };
 
 /**
+ * ESTADO DEL ENSAMBLE de DOS engranes engranados (la caja de velocidades).
+ * El engrane 1 ES el sketch 'gear' del documento (su pieza base, centro en el
+ * origen). El engrane 2 es una SEGUNDA instancia, que comparte m y α con el 1
+ * pero tiene su propio nº de dientes Z₂ y su propio gp_Trsf (posición + faseo).
+ *
+ * La FÍSICA del engranado (validada con invariantes, no "se ve bien"):
+ *   (1) Distancia entre centros  C = rp₁ + rp₂ = m·(Z₁+Z₂)/2   (engrane externo).
+ *   (2) Faseo: para que un DIENTE del 2 entre en un VALLE del 1, el engrane 2 se
+ *       rota medio paso angular respecto al alineamiento ingenuo. Con el centro
+ *       del 2 sobre +X (γ = π visto desde el 2), el faseo es
+ *         φ₂ = π − π/Z₂            (= gear-pair.ts phase2Base, drive=0)
+ *       que pone un VALLE del engrane 2 apuntando a −X (hacia el engrane 1),
+ *       intercalado con la PUNTA del engrane 1 que apunta a +X.
+ *   (3) No-interferencia: Common(sólido₁, sólido₂) ≈ 0 (contacto línea/punto).
+ */
+interface AssemblyState {
+  /** ¿Hay un segundo engrane en escena? (btn-add-gear2). */
+  enabled: boolean;
+  /** Dientes del engrane 2 (Z₂). Comparte m, α, espesor con el engrane 1. */
+  teeth2: number;
+  /** ¿Se aplicó el mate (posición + faseo calculados)? (btn-gear-mate). */
+  mated: boolean;
+  /**
+   * ÁNGULO DE ENTRADA θ (rad) del DRIVER cinemático (slider input-angulo-entrada).
+   * El engrane 1 (entrada) gira θ alrededor de su eje; el engrane 2 (salida) gira
+   * −θ·(Z₁/Z₂) — la relación i = Z₂/Z₁ hace que la salida gire MÁS LENTO y en
+   * SENTIDO OPUESTO (engrane externo). El faseo de embonado se mantiene durante
+   * todo el giro: el diente sigue entrando en el valle (Common≈0 en el barrido).
+   */
+  driveAngle: number;
+  /**
+   * ¿Montar una FLECHA por engrane? (cilindro coaxial al barreno, ajuste con
+   * holgura: r_flecha = bore/2 − holgura, así NO interfiere con su propio
+   * engrane por construcción). Cada flecha sobresale del espesor por ambos
+   * lados para apoyarse en los baleros de la carcasa.
+   */
+  shafts: boolean;
+  /**
+   * ¿Encerrar el par en una CARCASA? (caja + shell de pared delgada + 2 barrenos
+   * de balero en los ejes de las dos flechas, separados exactamente la distancia
+   * entre centros C). Es la pieza que mantiene C fijo en el mundo real.
+   */
+  housing: boolean;
+}
+
+const ASSEMBLY_DEFAULTS: AssemblyState = {
+  enabled: false, teeth2: 40, mated: false, driveAngle: 0, shafts: false, housing: false,
+};
+
+/**
+ * Geometría DERIVADA del mate de dos engranes externos (matemática pura, sin
+ * kernel). El engrane 1 está en el origen; el 2 se coloca a C sobre +X.
+ *   C    = m·(Z₁+Z₂)/2          (distancia entre centros)
+ *   i    = Z₂/Z₁                (relación de transmisión)
+ *   φ₂   = π − π/Z₂             (faseo a drive=0: valle del 2 ↔ punta del 1)
+ */
+function gearMateGeometry(g1: GearParams, teeth2: number) {
+  const m = g1.module;
+  const z1 = Math.round(g1.teeth);
+  const z2 = Math.round(teeth2);
+  const rp1 = (m * z1) / 2;
+  const rp2 = (m * z2) / 2;
+  const centerDistance = (m * (z1 + z2)) / 2; // = rp1 + rp2
+  const ratio = z2 / z1;
+  const phase2 = Math.PI - Math.PI / z2;
+  return { m, z1, z2, rp1, rp2, centerDistance, ratio, phase2 };
+}
+
+/**
  * Traduce los GearParams de la UI a los GearSketchParams de la librería de
  * matemática (involute-gear-sketch.ts) y construye el perfil cerrado Point2D[].
  * Resolución MODERADA (no la default pesada): suficiente para un sólido B-Rep
@@ -165,6 +240,28 @@ function gearProfile(g: GearParams): Pt2[] {
   return buildGearSketch(gearSketchParams(g)).map((p) => ({ x: p.x, y: p.y }));
 }
 
+/**
+ * Construye UN engrane sólido B-Rep (perfil de involuta → extrudePolygon →
+ * resta del barreno central). Es la pieza atómica del Part Studio y de cada
+ * INSTANCIA del ensamble. `phaseRad` rota el perfil del croquis antes de
+ * extruir (faseo del mate); 0 = sin faseo. El barreno se talla coaxial al eje Z.
+ */
+function buildGearSolid(oc: OC, g: GearParams, phaseRad = 0): Shape {
+  const thick = g.thickness;
+  const gp = gearSketchParams(g);
+  // Faseo: se hornea como `rotation` del croquis (rota todos los dientes
+  // alrededor del centro del engrane), exactamente como spur-gear.ts.
+  const verts = buildGearSketch({ ...gp, rotation: phaseRad }).map((p) => ({ x: p.x, y: p.y }));
+  let gear = extrudePolygon(oc, verts, thick, PLANE_XY);
+  if (g.bore > 0) {
+    gear = drillHole(oc, gear, {
+      x: 0, y: 0, diameter: g.bore, zTop: thick,
+      depth: thick, through: true,
+    });
+  }
+  return gear;
+}
+
 type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve';
 
 interface ExtrudeOp { id: string; type: 'extrude'; depth: number; symmetric: boolean; }
@@ -185,6 +282,206 @@ interface BuildResult {
   faces: FaceRef[];
   edges: EdgeRef[];
   edgeGeoms: EdgeGeom[];
+  /** Presente sólo en modo ENSAMBLE: datos del segundo engrane + el mate. */
+  assembly?: AssemblyResult;
+}
+
+/**
+ * Resultado del ENSAMBLE de dos engranes engranados. El compound (engrane1 ∪
+ * engrane2 SIN soldar) se tesela como `mesh` del BuildResult; aquí guardamos lo
+ * específico del mate: la distancia entre centros C medida del modelo, el faseo
+ * aplicado, los volúmenes de cada parte y —el invariante CLAVE— el volumen de
+ * interferencia Common(g1,g2), que debe ser ≈0 para probar que EMBONAN sin
+ * solaparse (donde el intento previo con SDF fallaba).
+ */
+interface AssemblyResult {
+  teeth1: number;
+  teeth2: number;
+  /** C teórico = m·(Z₁+Z₂)/2 (mm). */
+  centerDistanceExpected: number;
+  /** C medido = distancia entre los centros de masa de ambas instancias (mm). */
+  centerDistanceMeasured: number;
+  /** Faseo aplicado al engrane 2 (rad) y si el mate ya está aplicado. */
+  phase2: number;
+  mated: boolean;
+  ratio: number;
+  volGear1: number;
+  volGear2: number;
+  /** Volumen de la booleana Common(g1,g2): el invariante de NO-interferencia. */
+  interferenceVolume: number;
+  /** interferenceVolume / min(vol1,vol2): fracción adimensional de solape. */
+  interferenceFraction: number;
+  /** Ángulo de entrada θ (rad) con el que se construyó este estado. */
+  driveAngle: number;
+  /** Ángulo de salida θ₂ = −θ·(Z₁/Z₂) (rad) — la salida gira a la relación i. */
+  outputAngle: number;
+  /** Volumen de un solo diente (≈ volumen del engrane más chico / Z) — escala
+   *  de referencia para la tolerancia de interferencia del barrido. */
+  toothVolumeRef: number;
+  /** Componentes presentes en el ensamble (en orden de montaje). */
+  components: string[];
+  /** ¿Hay flechas montadas? Volumen total de ambas (mm³). */
+  shafts: boolean;
+  volShafts: number;
+  /** ¿Hay carcasa? Volumen de la caja vaciada con baleros (mm³). */
+  housing: boolean;
+  volHousing: number;
+  /** Volumen del compound completo (Σ partes — no se solapan). */
+  volCompound: number;
+}
+
+/**
+ * Construye los DOS sólidos del engranado para un ángulo de entrada θ dado, ya
+ * COLOCADOS en sus poses del ensamble (engrane 1 en el origen, engrane 2 a C
+ * sobre +X). Esta es la primitiva cinemática compartida por el render vivo Y por
+ * el barrido de verificación de embonado: garantiza que ambos midan exactamente
+ * el mismo movimiento.
+ *
+ * Cinemática del engranado (engrane externo):
+ *   · Engrane 1 (entrada): rota θ alrededor de su eje Z (origen).
+ *   · Engrane 2 (salida):  rota φ₂ − θ·(Z₁/Z₂) alrededor de su eje Z (en X=C).
+ *     El término φ₂ es el faseo de embonado; el término −θ·(Z₁/Z₂) es la relación
+ *     de transmisión i = Z₂/Z₁ (salida más lenta, sentido opuesto). Mantener el
+ *     faseo SUMADO a la rotación cinemática es lo que conserva el embonado
+ *     (punta-en-valle) durante TODO el giro → Common≈0 en el barrido.
+ *
+ * El faseo y la rotación cinemática se HORNEAN en el `rotation` del croquis del
+ * engrane 2 (geometría exacta, igual que el mate estático). Devuelve los dos
+ * Shape; el llamador es dueño y debe .delete() ambos.
+ */
+function buildMeshedPair(
+  oc: OC,
+  g1Params: GearParams,
+  teeth2: number,
+  mated: boolean,
+  driveAngle: number,
+): { gear1: Shape; gear2: Shape; mate: ReturnType<typeof gearMateGeometry> } {
+  const mate = gearMateGeometry(g1Params, teeth2);
+  const g2Params: GearParams = { ...g1Params, teeth: mate.z2 };
+
+  // Engrane 1 (entrada): rota θ alrededor de su propio eje (origen).
+  const gear1 = buildGearSolid(oc, g1Params, driveAngle);
+
+  // Engrane 2 (salida): faseo de embonado + rotación cinemática −θ·(Z₁/Z₂).
+  // Sin mate (φ₂=0 y sin acoplar la cinemática) se ve punta-contra-punta.
+  const phase2 = mated ? mate.phase2 : 0;
+  const kin = mated ? -driveAngle * (mate.z1 / mate.z2) : 0;
+  const gear2Local = buildGearSolid(oc, g2Params, phase2 + kin);
+  // Coloca el engrane 2 a C sobre +X (su eje de giro sigue siendo Z, ahora en X=C).
+  const gear2 = transformShape(oc, gear2Local, {
+    translate: [mate.centerDistance, 0, 0],
+    rotateAngle: 0, // el faseo+cinemática ya se hornearon en el croquis (rotation)
+  });
+  gear2Local.delete?.();
+  return { gear1, gear2, mate };
+}
+
+// ──────────────────────────────────────────────────────────────────
+// COMPONENTES MECÁNICOS del ensamble (flechas + carcasa), VÍA primitivas
+// del kernel — la misma matemática que un diseñador haría con clics:
+//   · FLECHA: cilindro coaxial al barreno, r = bore/2 − holgura → entra en el
+//     barreno SIN interferir con su propio engrane (radio estrictamente menor).
+//     Sobresale del espesor por ambos lados (overhang) para apoyarse en baleros.
+//   · CARCASA: caja que envuelve el par + shell (pared delgada, tapa abierta) +
+//     2 barrenos de balero EN LOS EJES de las flechas, separados exactamente C.
+// Cada componente es un sólido independiente del compound (no se suelda): el
+// invariante de embonado engrane↔engrane (Common≈0) queda intacto.
+// ──────────────────────────────────────────────────────────────────
+
+/** Holgura radial flecha↔barreno (mm): la flecha es algo más fina que el
+ *  barreno para deslizar (ajuste con juego). Garantiza r_flecha < r_barreno. */
+const SHAFT_CLEARANCE = 0.4;
+/** Cuánto sobresale la flecha del espesor del engrane por cada cara (mm). */
+const SHAFT_OVERHANG = 8;
+/** Pared de la carcasa (mm) y holgura de la caja al perímetro de los engranes. */
+const HOUSING_WALL = 3;
+const HOUSING_GAP = 4;
+
+/**
+ * Construye las DOS flechas (entrada y salida), coaxiales a los barrenos de los
+ * engranes, a la distancia entre centros C. Ejes paralelos a +Z (igual que los
+ * engranes). Devuelve los Shape ya posicionados (el llamador es dueño).
+ */
+function buildShafts(
+  oc: OC,
+  g1: GearParams,
+  thickness: number,
+  centerDistance: number,
+): Shape[] {
+  const r = Math.max(1, g1.bore / 2 - SHAFT_CLEARANCE);
+  const len = thickness + 2 * SHAFT_OVERHANG;
+  const shaftIn = makeCylinder(oc, r, len, {
+    origin: [0, 0, -SHAFT_OVERHANG], dir: [0, 0, 1],
+  });
+  const shaftOut = makeCylinder(oc, r, len, {
+    origin: [centerDistance, 0, -SHAFT_OVERHANG], dir: [0, 0, 1],
+  });
+  return [shaftIn, shaftOut];
+}
+
+/**
+ * Construye la CARCASA: caja vaciada (shell) que abraza el par engranado, con
+ * 2 barrenos de balero en los ejes de las flechas (separados C). La caja se
+ * dimensiona por el radio de cabeza del engrane mayor + holgura + pared.
+ *   · ancho X  = C + 2·(ra2) + 2·gap + 2·wall   (cubre ambos engranes en X)
+ *   · ancho Y  = 2·(ra_max) + 2·gap + 2·wall
+ *   · alto  Z  = espesor + 2·gap + 2·wall
+ * El balero es un barreno pasante de ⌀ = bore (la flecha lo atraviesa con juego).
+ */
+function buildHousing(
+  oc: OC,
+  g1: GearParams,
+  teeth2: number,
+  thickness: number,
+  centerDistance: number,
+): Shape {
+  const m = g1.module;
+  const z1 = Math.round(g1.teeth);
+  const z2 = Math.round(teeth2);
+  // Radio de cabeza (addendum) ra = m·(z/2 + 1).
+  const ra1 = m * (z1 / 2 + 1);
+  const ra2 = m * (z2 / 2 + 1);
+  const raMax = Math.max(ra1, ra2);
+
+  // Caja: cubre el engrane 1 (centrado en x=0, radio ra1) y el 2 (centrado en
+  // x=C, radio ra2). Extremos en X: x_min = −ra1 − gap − wall, x_max = C + ra2 + gap + wall.
+  const xMin = -ra1 - HOUSING_GAP - HOUSING_WALL;
+  const xMax = centerDistance + ra2 + HOUSING_GAP + HOUSING_WALL;
+  const dx = xMax - xMin;
+  const dy = 2 * (raMax + HOUSING_GAP + HOUSING_WALL);
+  const dz = thickness + 2 * (HOUSING_GAP + HOUSING_WALL);
+  const zMin = -(HOUSING_GAP + HOUSING_WALL);
+
+  // makeBox crea la caja con esquina en el origen → la trasladamos a su sitio.
+  let box = makeBox(oc, dx, dy, dz);
+  box = transformShape(oc, box, { translate: [xMin, -dy / 2, zMin], rotateAngle: 0 });
+
+  // Vaciado: quitamos la cara SUPERIOR (la de mayor z) para que sea una carcasa
+  // abierta por arriba (tapa removible) con pared HOUSING_WALL.
+  const faces = enumerateFaces(oc, box);
+  // La cara superior es la de centroide z máximo.
+  let topIdx = 0; let topZ = -Infinity;
+  for (const f of faces) {
+    if (f.center && f.center[2] > topZ) { topZ = f.center[2]; topIdx = f.index; }
+  }
+  let housing: Shape;
+  try {
+    housing = shellSolid(oc, box, HOUSING_WALL, [topIdx]);
+    box.delete?.();
+  } catch {
+    housing = box; // si el shell degenera, dejamos la caja sólida (sigue siendo carcasa)
+  }
+
+  // Baleros: barreno pasante de ⌀ = bore en los ejes de ambas flechas (la flecha
+  // pasa con juego). zTop por encima de la caja; pasante para atravesar ambas paredes.
+  const dBearing = g1.bore;
+  housing = drillHole(oc, housing, {
+    x: 0, y: 0, diameter: dBearing, zTop: zMin + dz, depth: dz, through: true, spanBelow: dz,
+  });
+  housing = drillHole(oc, housing, {
+    x: centerDistance, y: 0, diameter: dBearing, zTop: zMin + dz, depth: dz, through: true, spanBelow: dz,
+  });
+  return housing;
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -285,16 +582,7 @@ function buildShape(
         // 2) resta el barreno central pasante (cilindro coaxial en el eje Z).
         // El espesor lo manda el PARÁMETRO del engrane (no el slider del extrude),
         // para que vol = area_perfil·espesor − π·(bore/2)²·espesor sea exacto.
-        const g = sketch.gear;
-        const thick = g.thickness;
-        let gear = extrudePolygon(oc, gearProfile(g), thick, PLANE_XY);
-        if (g.bore > 0) {
-          gear = drillHole(oc, gear, {
-            x: 0, y: 0, diameter: g.bore, zTop: thick,
-            depth: thick, through: true,
-          });
-        }
-        shape = gear;
+        shape = buildGearSolid(oc, sketch.gear);
         continue;
       }
       // Simétrico: el plano de boceto se baja −depth/2 y se extruye depth, así
@@ -334,6 +622,207 @@ function buildShape(
   }
   if (!shape) throw new Error('El documento no tiene sólido: agrega Extrude o Revolve.');
   return shape;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// ENSAMBLE de DOS engranes engranados (la caja de velocidades)
+// ──────────────────────────────────────────────────────────────────
+/**
+ * Construye el ENSAMBLE multi-componente: engrane 1 (sketch.gear) en el origen
+ * + engrane 2 (mismo m/α, Z₂ propio) colocado por el MATE a C = m·(Z₁+Z₂)/2
+ * sobre +X y faseado φ₂ = π − π/Z₂ para que sus dientes EMBONEN en los valles
+ * del 1. Devuelve:
+ *   · `compound`  TopoDS_Compound (g1 ∪ g2 SIN soldar) — se tesela como la escena.
+ *   · `assembly`  metadatos + invariantes del mate (C medido, faseo, interferencia).
+ *
+ * El INVARIANTE que prueba que embonan: Common(g1,g2) tiene volumen ≈0 (contacto
+ * línea/punto, no solape). Aquí lo medimos con la booleana exacta del kernel.
+ * Si el mate NO está aplicado, el engrane 2 se coloca igual a C pero SIN faseo
+ * (φ₂=0): así se ve la diferencia (dientes punta-contra-punta, interferencia >0).
+ */
+function buildAssembly(
+  oc: OC,
+  g1Params: GearParams,
+  asm: AssemblyState,
+): { compound: Shape; assembly: AssemblyResult } {
+  // Par engranado en la pose actual del DRIVER (ángulo de entrada θ).
+  const { gear1, gear2, mate } = buildMeshedPair(
+    oc, g1Params, asm.teeth2, asm.mated, asm.driveAngle,
+  );
+  const phase2 = asm.mated ? mate.phase2 : 0;
+
+  // Volúmenes exactos de cada parte (independientes).
+  const volGear1 = volume(oc, gear1);
+  const volGear2 = volume(oc, gear2);
+
+  // INVARIANTE de NO-INTERFERENCIA: Common(g1,g2). Si embonan, ≈0.
+  let interferenceVolume = 0;
+  try {
+    const inter = common(oc, gear1, gear2);
+    interferenceVolume = Math.abs(volume(oc, inter));
+    inter.delete?.();
+  } catch {
+    interferenceVolume = NaN; // booleana degeneró (contacto exacto): se reporta
+  }
+  const minVol = Math.max(1e-9, Math.min(volGear1, volGear2));
+  const interferenceFraction = Number.isFinite(interferenceVolume)
+    ? interferenceVolume / minVol
+    : NaN;
+
+  // C MEDIDO = distancia entre los centros de masa reales de cada instancia.
+  const c1 = massProperties(oc, gear1, 1).centerOfMass;
+  const c2 = massProperties(oc, gear2, 1).centerOfMass;
+  const centerDistanceMeasured = Math.hypot(c2[0] - c1[0], c2[1] - c1[1], c2[2] - c1[2]);
+
+  // Volumen de UN diente (referencia de tolerancia para el barrido): el cuerpo
+  // del engrane más chico repartido entre sus Z dientes. Es la escala física
+  // contra la que «< 0.5% de un diente» tiene sentido.
+  const toothVolumeRef = Math.min(volGear1, volGear2) / Math.max(1, mate.z1);
+
+  // ── Componentes mecánicos opcionales (flechas + carcasa) ──
+  // Se añaden como sólidos independientes del compound; el invariante de
+  // embonado engrane↔engrane queda intacto (no se sueldan ni se intersecan
+  // con los engranes por construcción: la flecha es más fina que el barreno).
+  const extraShapes: Shape[] = [];
+  const components: string[] = ['engrane-entrada (Z₁)', 'engrane-salida (Z₂)'];
+  let volShafts = 0;
+  if (asm.shafts) {
+    const shafts = buildShafts(oc, g1Params, g1Params.thickness, mate.centerDistance);
+    for (const s of shafts) { volShafts += Math.abs(volume(oc, s)); extraShapes.push(s); }
+    components.push('flecha-entrada', 'flecha-salida');
+  }
+  let volHousing = 0;
+  if (asm.housing) {
+    const housing = buildHousing(oc, g1Params, mate.z2, g1Params.thickness, mate.centerDistance);
+    volHousing = Math.abs(volume(oc, housing));
+    extraShapes.push(housing);
+    components.push('carcasa (caja + shell + 2 baleros)');
+  }
+
+  const compound = makeCompound(oc, [gear1, gear2, ...extraShapes]);
+  const volCompound = volGear1 + volGear2 + volShafts + volHousing;
+
+  const assembly: AssemblyResult = {
+    teeth1: mate.z1,
+    teeth2: mate.z2,
+    centerDistanceExpected: mate.centerDistance,
+    centerDistanceMeasured,
+    phase2,
+    mated: asm.mated,
+    ratio: mate.ratio,
+    volGear1,
+    volGear2,
+    interferenceVolume,
+    interferenceFraction,
+    driveAngle: asm.driveAngle,
+    outputAngle: asm.mated ? -asm.driveAngle * (mate.z1 / mate.z2) : 0,
+    toothVolumeRef,
+    components,
+    shafts: asm.shafts,
+    volShafts,
+    housing: asm.housing,
+    volHousing,
+    volCompound,
+  };
+  return { compound, assembly };
+}
+
+/**
+ * BARRIDO de verificación de EMBONADO (el invariante CLAVE). Gira la entrada por
+ * un PASO DE DIENTE completo (2π/Z₁) en `samples` ángulos y, en cada uno, mide el
+ * volumen de la booleana Common(g1,g2) de los dos sólidos engranados en esa pose.
+ * Si los engranes EMBONAN de verdad, el contacto es línea/punto en todo el giro y
+ * max(vol_Common) ≈ 0 (muy por debajo del volumen de un diente). Si se solapan
+ * (como fallaba el SDF), algún ángulo del barrido dispara la interferencia.
+ *
+ * Devuelve el máximo, el promedio, la muestra peor, la referencia de un diente y
+ * la fracción max_interf/tooth — todo lo que la UI/Playwright necesita para
+ * dictaminar honestamente si embonan.
+ */
+function sweepMeshingInterference(
+  oc: OC,
+  g1Params: GearParams,
+  teeth2: number,
+  samples = 10,
+): {
+  z1: number;
+  samples: number;
+  toothPitchRad: number;
+  toothVolume: number;
+  maxInterference: number;
+  meanInterference: number;
+  worstAngleRad: number;
+  maxInterferenceFraction: number;
+  perAngle: Array<{ angleRad: number; interference: number }>;
+} {
+  const mate = gearMateGeometry(g1Params, teeth2);
+  const g2Params: GearParams = { ...g1Params, teeth: mate.z2 };
+  const toothPitch = (2 * Math.PI) / mate.z1; // un paso de diente de la entrada
+
+  // OPTIMIZACIÓN: construye los sólidos BASE de cada engrane UNA sola vez (la
+  // generación del perfil de involuta + extrude es lo caro). Cada muestra del
+  // barrido aplica una ROTACIÓN RÍGIDA (gp_Trsf, barata y EXACTA) alrededor del
+  // eje Z propio de cada engrane — geométricamente idéntico a hornear la rotación
+  // en el croquis, pero sin re-generar la involuta. El faseo φ₂ se hornea una vez
+  // en la base del engrane 2.
+  //   · gear1 base: en el origen, sin faseo.   Eje de giro Z en (0,0).
+  //   · gear2 base: faseado φ₂ y trasladado a X=C.  Eje de giro Z en (C,0).
+  const gear1Base = buildGearSolid(oc, g1Params, 0);
+  const gear2Local = buildGearSolid(oc, g2Params, mate.phase2);
+  const gear2Base = transformShape(oc, gear2Local, {
+    translate: [mate.centerDistance, 0, 0], rotateAngle: 0,
+  });
+  gear2Local.delete?.();
+
+  // Referencia de un diente: cuerpo del engrane de entrada / Z₁.
+  const toothVolume = volume(oc, gear1Base) / Math.max(1, mate.z1);
+  const axis1: RevolveAxis = { origin: [0, 0, 0], dir: [0, 0, 1] };
+  const axis2: RevolveAxis = { origin: [mate.centerDistance, 0, 0], dir: [0, 0, 1] };
+
+  const perAngle: Array<{ angleRad: number; interference: number }> = [];
+  let maxInterference = 0;
+  let sumInterference = 0;
+  let worstAngleRad = 0;
+
+  for (let k = 0; k < samples; k++) {
+    const theta = (toothPitch * k) / samples; // [0, paso) — un periodo del engranado
+    // Entrada: gira θ alrededor de su eje. Salida: −θ·(Z₁/Z₂) alrededor del suyo.
+    const gear1 = transformShape(oc, gear1Base, {
+      translate: [0, 0, 0], rotateAngle: theta, rotateAxis: axis1,
+    });
+    const gear2 = transformShape(oc, gear2Base, {
+      translate: [0, 0, 0], rotateAngle: -theta * (mate.z1 / mate.z2), rotateAxis: axis2,
+    });
+    let interf = 0;
+    try {
+      const inter = common(oc, gear1, gear2);
+      interf = Math.abs(volume(oc, inter));
+      inter.delete?.();
+    } catch {
+      interf = NaN; // contacto exacto degeneró la booleana: se reporta tal cual
+    }
+    gear1.delete?.();
+    gear2.delete?.();
+    perAngle.push({ angleRad: theta, interference: interf });
+    const finite = Number.isFinite(interf) ? interf : 0;
+    sumInterference += finite;
+    if (finite > maxInterference) { maxInterference = finite; worstAngleRad = theta; }
+  }
+  gear1Base.delete?.();
+  gear2Base.delete?.();
+
+  const maxInterferenceFraction = toothVolume > 0 ? maxInterference / toothVolume : NaN;
+  return {
+    z1: mate.z1,
+    samples,
+    toothPitchRad: toothPitch,
+    toothVolume,
+    maxInterference,
+    meanInterference: sumInterference / Math.max(1, samples),
+    worstAngleRad,
+    maxInterferenceFraction,
+    perAngle,
+  };
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -756,6 +1245,14 @@ export default function ForgeBRepStudio() {
   ]);
   const [activeOp, setActiveOp] = useState<string | null>(ops[0].id);
   const [material, setMaterial] = useState<keyof typeof MATERIALS>('alu');
+  // ENSAMBLE de dos engranes engranados (la caja de velocidades). Vacío hasta
+  // que el diseñador agrega el 2º engrane (btn-add-gear2) y aplica el mate.
+  const [assembly, setAssembly] = useState<AssemblyState>({ ...ASSEMBLY_DEFAULTS });
+  // Resultado del BARRIDO de verificación de embonado (btn-verificar-embonado):
+  // max(Common) sobre un paso de diente. null hasta que se corre la verificación.
+  type SweepResult = ReturnType<typeof sweepMeshingInterference>;
+  const [meshSweep, setMeshSweep] = useState<SweepResult | null>(null);
+  const [meshSweepBusy, setMeshSweepBusy] = useState(false);
 
   const [result, setResult] = useState<BuildResult | null>(null);
   const [building, setBuilding] = useState(false);
@@ -807,7 +1304,18 @@ export default function ForgeBRepStudio() {
     setOpErr(null);
     requestAnimationFrame(() => {
       try {
-        const shape = buildShape(oc, sketch, ops, edgeAxisRef.current);
+        // ── MODO ENSAMBLE: dos engranes engranados (sketch=gear + 2º agregado) ──
+        const isAssembly = assembly.enabled && sketch.kind === 'gear';
+        let shape: Shape;
+        let assemblyResult: AssemblyResult | undefined;
+        if (isAssembly) {
+          const built = buildAssembly(oc, sketch.gear, assembly);
+          shape = built.compound;
+          assemblyResult = built.assembly;
+        } else {
+          shape = buildShape(oc, sketch, ops, edgeAxisRef.current);
+        }
+
         const mesh = tessellate(oc, shape, 0.08, 0.3);
         const topo = topology(oc, shape);
         const volKernel = volume(oc, shape);
@@ -823,7 +1331,7 @@ export default function ForgeBRepStudio() {
           new Blob([step], { type: 'application/step' }),
         );
 
-        const built: BuildResult = { mesh, topo, volKernel, area, stepBytes: step.length, mass, faces, edges, edgeGeoms };
+        const built: BuildResult = { mesh, topo, volKernel, area, stepBytes: step.length, mass, faces, edges, edgeGeoms, assembly: assemblyResult };
         resultRef.current = built;
         setResult(built);
         shape.delete?.();
@@ -833,7 +1341,7 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, sketch, ops, material]);
+  }, [oc, sketch, ops, material, assembly]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 
@@ -920,6 +1428,70 @@ export default function ForgeBRepStudio() {
     setActiveOp('sketch');
     setPickMode('none');
   }, []);
+
+  // ── ENSAMBLE: agregar el 2º engrane (btn-add-gear2). Garantiza que el sketch
+  // base sea un engrane (si no lo es, lo convierte) y enciende la 2ª instancia.
+  // El engrane 2 hereda m/α/espesor del 1; solo cambia Z₂. Aún SIN mate (φ₂=0):
+  // se ve a C pero punta-contra-punta hasta que se aplique btn-gear-mate. ──
+  const addGear2 = useCallback(() => {
+    setSketch((s) => ({ ...s, kind: 'gear' }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude')
+      ? cur
+      : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+    setAssembly((a) => ({ ...a, enabled: true }));
+    setActiveOp('sketch');
+    setPickMode('none');
+  }, []);
+  const setTeeth2 = useCallback((z: number) => {
+    // Cambiar Z₂ rompe el faseo previo: hay que re-aplicar el mate.
+    setAssembly((a) => ({ ...a, teeth2: Math.round(z), mated: false }));
+  }, []);
+  // Aplica el MATE de engrane: posiciona el engrane 2 a C = m(Z₁+Z₂)/2 y lo
+  // FASEA φ₂ = π − π/Z₂ para que los dientes embonen. (La geometría la hace
+  // buildAssembly; aquí solo marcamos `mated` y el rebuild la recalcula.)
+  const applyGearMate = useCallback(() => {
+    setAssembly((a) => ({ ...a, enabled: true, mated: true }));
+  }, []);
+  const removeGear2 = useCallback(() => {
+    setAssembly((a) => ({ ...a, enabled: false, mated: false }));
+    setMeshSweep(null);
+  }, []);
+
+  // ── DRIVER CINEMÁTICO: ángulo de entrada θ (rad). Gira la entrada θ y la
+  // salida −θ·(Z₁/Z₂) (lo resuelve buildAssembly). El slider expone θ en GRADOS;
+  // aquí lo guardamos en radianes. Cambiar θ NO invalida el faseo: el embonado se
+  // mantiene en todo el giro (la cinemática suma a φ₂). ──
+  const setDriveAngleDeg = useCallback((deg: number) => {
+    setAssembly((a) => ({ ...a, driveAngle: (deg * Math.PI) / 180 }));
+  }, []);
+
+  // ── MONTAJE DE COMPONENTES (flechas / carcasa). Mismo efecto que los checkboxes
+  // de UI; expuesto en el API para que el QA pueda montarlos de forma determinista. ──
+  const setShafts = useCallback((on: boolean) => {
+    setAssembly((a) => ({ ...a, shafts: on }));
+  }, []);
+  const setHousing = useCallback((on: boolean) => {
+    setAssembly((a) => ({ ...a, housing: on }));
+  }, []);
+
+  // ── VERIFICACIÓN RIGUROSA DE EMBONADO (el invariante CLAVE). Corre el barrido
+  // de Common(g1,g2) sobre un paso de diente y guarda max_interferencia. El botón
+  // btn-verificar-embonado dispara esto; Playwright lee max-interferencia del DOM.
+  const verifyMeshing = useCallback(() => {
+    if (!oc || sketch.kind !== 'gear' || !assembly.enabled) return;
+    setMeshSweepBusy(true);
+    // requestAnimationFrame: deja pintar el "calculando…" antes del barrido pesado.
+    requestAnimationFrame(() => {
+      try {
+        const sweep = sweepMeshingInterference(oc, sketch.gear, assembly.teeth2, 10);
+        setMeshSweep(sweep);
+      } catch (e) {
+        setOpErr(String((e as Error)?.message ?? e));
+      } finally {
+        setMeshSweepBusy(false);
+      }
+    });
+  }, [oc, sketch.kind, sketch.gear, assembly.enabled, assembly.teeth2]);
 
   // Selección (toggle) de cara/arista para la op activa. SIEMPRE fija el
   // selectedFaceId/selectedEdgeId (para el HUD + resalte), y además, si hay una
@@ -1035,6 +1607,68 @@ export default function ForgeBRepStudio() {
           symmetryError: symErr, volExpected,
         };
       },
+      // ── ENSAMBLE de DOS engranes engranados — driver + invariantes de QA ──
+      addGear2, setTeeth2, applyGearMate, removeGear2,
+      // DRIVER cinemático: fija el ángulo de entrada θ (grados) y corre el
+      // barrido de verificación de embonado (lo mismo que los controles de UI).
+      setDriveAngleDeg, verifyMeshing,
+      // Montaje de componentes mecánicos del ensamble (flechas + carcasa).
+      setShafts, setHousing,
+      get driveAngleDeg() { return (assembly.driveAngle * 180) / Math.PI; },
+      // Barrido de Common(g1,g2) sobre un paso de diente — invocable directo por
+      // Playwright (síncrono, devuelve el reporte) además de por el botón de UI.
+      runMeshingSweep: (samples = 10) =>
+        (oc && sketch.kind === 'gear' && assembly.enabled)
+          ? sweepMeshingInterference(oc, sketch.gear, assembly.teeth2, samples)
+          : null,
+      // Último barrido corrido por la UI (btn-verificar-embonado), o null.
+      get meshSweep() { return meshSweep; },
+      get assemblyState() { return assembly; },
+      // Geometría DERIVADA del mate (matemática pura): C teórico, relación i,
+      // faseo φ₂. Playwright la compara contra C_medido del modelo real.
+      get mateInfo() {
+        if (sketch.kind !== 'gear') return null;
+        const mate = gearMateGeometry(sketch.gear, assembly.teeth2);
+        return {
+          enabled: assembly.enabled, mated: assembly.mated,
+          m: mate.m, z1: mate.z1, z2: mate.z2,
+          rp1: mate.rp1, rp2: mate.rp2,
+          C_expected: mate.centerDistance, ratio: mate.ratio,
+          phase2: mate.phase2,
+        };
+      },
+      // Resultado del mate MEDIDO del modelo B-Rep real (C entre centros de masa,
+      // volúmenes de cada parte, e interferencia Common(g1,g2) — el invariante de
+      // que EMBONAN sin solaparse).
+      get assemblyInfo() {
+        const a = result?.assembly;
+        return a ? {
+          teeth1: a.teeth1, teeth2: a.teeth2,
+          C_expected: a.centerDistanceExpected,
+          C_measured: a.centerDistanceMeasured,
+          phase2: a.phase2, mated: a.mated, ratio: a.ratio,
+          vol_gear1: a.volGear1, vol_gear2: a.volGear2,
+          interference_volume: a.interferenceVolume,
+          interference_fraction: a.interferenceFraction,
+          // ── DRIVER cinemático ──
+          drive_angle: a.driveAngle,        // θ entrada (rad)
+          output_angle: a.outputAngle,      // θ₂ salida (rad) = −θ·(Z₁/Z₂)
+          // RELACIÓN MEDIDA i = θ_entrada / θ_salida (debe = Z₂/Z₁). Solo válida
+          // si la entrada se movió (θ≠0); en θ=0 ambos son 0 y i es la teórica.
+          ratio_measured: Math.abs(a.outputAngle) > 1e-9
+            ? Math.abs(a.driveAngle / a.outputAngle)
+            : a.ratio,
+          tooth_volume_ref: a.toothVolumeRef,
+          // ── Componentes mecánicos montados (flechas + carcasa) ──
+          components: a.components,
+          n_components: a.components.length,
+          shafts: a.shafts,
+          vol_shafts: a.volShafts,
+          housing: a.housing,
+          vol_housing: a.volHousing,
+          vol_compound: a.volCompound,
+        } : null;
+      },
       setMaterial,
       setPickMode,
       pickFace: togglePickFace,
@@ -1056,17 +1690,25 @@ export default function ForgeBRepStudio() {
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear]);
+  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
     const stepR = Math.max(0, ...sketch.steps.map((s) => s.r));
     // Engrane: diámetro de cabeza ≈ (rp + m)·2 = m·(Z + 2).
     const gearD = sketch.gear.module * (Math.round(sketch.gear.teeth) + 2) * 2;
+    // ENSAMBLE: el tramo abarca C + radio de cabeza de cada engrane sobre +X.
+    let asmSpan = 0;
+    if (sketch.kind === 'gear' && assembly.enabled) {
+      const mate = gearMateGeometry(sketch.gear, assembly.teeth2);
+      const ra1 = mate.rp1 + sketch.gear.module;
+      const ra2 = mate.rp2 + sketch.gear.module;
+      asmSpan = mate.centerDistance + ra1 + ra2;
+    }
     const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, stepLen, stepR * 2,
-      sketch.kind === 'gear' ? gearD : 0, 30);
+      sketch.kind === 'gear' ? gearD : 0, asmSpan, 30);
     return Math.max(60, span * 2.6);
-  }, [sketch]);
+  }, [sketch, assembly]);
 
   // El <canvas> lo crea R3F dentro del viewport; le ponemos data-testid para
   // que Playwright pueda clicar por COORDENADAS del viewport de forma estable.
@@ -1152,6 +1794,30 @@ export default function ForgeBRepStudio() {
             <span className="lbl">Ninguna arista seleccionada</span>
           )}
         </div>
+
+        {/* HUD del ENSAMBLE: C entre centros + estado del mate + interferencia.
+            Siempre visible cuando hay 2º engrane → aparece en el screenshot. */}
+        {result?.assembly && (
+          <div className="fb-hud-asm" data-testid="hud-assembly">
+            <span className="lbl">Caja de velocidades</span>
+            <span className="seg">Z₁ <b data-testid="hud-z1">{result.assembly.teeth1}</b></span>
+            <span className="seg">Z₂ <b data-testid="hud-z2">{result.assembly.teeth2}</b></span>
+            <span className="seg">C <b data-testid="hud-C">{result.assembly.centerDistanceMeasured.toFixed(2)}</b> mm</span>
+            <span className="seg">i <b>{result.assembly.ratio.toFixed(2)}</b></span>
+            <span className="seg">θ <b data-testid="hud-drive">{((result.assembly.driveAngle * 180) / Math.PI).toFixed(0)}</b>°
+              → <b data-testid="hud-output">{((result.assembly.outputAngle * 180) / Math.PI).toFixed(0)}</b>°</span>
+            <span className={`seg mesh ${result.assembly.mated && result.assembly.interferenceFraction < 1e-3 ? 'ok' : 'warn'}`}>
+              {result.assembly.mated ? 'faseado ✓' : 'sin fasear'} ·
+              interf. <b data-testid="hud-interf">{result.assembly.interferenceVolume.toFixed(2)}</b> mm³
+            </span>
+            {meshSweep && (
+              <span className={`seg mesh ${meshSweep.maxInterferenceFraction < 5e-3 ? 'ok' : 'warn'}`}>
+                barrido max <b data-testid="hud-max-interf">{meshSweep.maxInterference.toFixed(3)}</b> mm³
+                {meshSweep.maxInterferenceFraction < 5e-3 ? ' · EMBONAN ✓' : ' · INTERFIEREN ✕'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {!hideChrome && (
@@ -1297,6 +1963,141 @@ export default function ForgeBRepStudio() {
                         </div>
                       );
                     })()}
+
+                    {/* ── ENSAMBLE: CAJA DE VELOCIDADES (dos engranes que embonan) ──
+                        El engrane 1 es ESTE sketch (centro en el origen). El 2 es una
+                        2ª instancia con su propio Z₂; el MATE lo coloca a
+                        C = m·(Z₁+Z₂)/2 sobre +X y lo fasea π−π/Z₂ para que embonen.
+                        El invariante de que EMBONAN: interferencia Common(g1,g2)≈0. */}
+                    <div className="fb-divider" />
+                    <div className="fb-panel-title" style={{ marginTop: 0 }}>Ensamble · Caja de velocidades</div>
+                    {!assembly.enabled ? (
+                      <button className="fb-pick-btn" data-testid="btn-add-gear2" onClick={addGear2}>
+                        + Agregar 2º engrane
+                      </button>
+                    ) : (
+                      <>
+                        <Dim label="Dientes Z₂" value={assembly.teeth2} unit="" min={8} max={80} step={1}
+                          testid="input-dientes2" onChange={(v) => setTeeth2(v)} />
+                        {(() => {
+                          const mate = gearMateGeometry(sketch.gear, assembly.teeth2);
+                          const asm = result?.assembly;
+                          return (
+                            <>
+                              <div className="fb-sel-head">
+                                C = m·(Z₁+Z₂)/2 = <b data-testid="mate-C">{mate.centerDistance.toFixed(2)}</b> mm
+                                {asm && <span> · medido <b data-testid="mate-C-measured">{asm.centerDistanceMeasured.toFixed(2)}</b></span>}
+                              </div>
+                              <div className="fb-sel-head">
+                                Relación i = Z₂/Z₁ = <b data-testid="mate-ratio">{mate.ratio.toFixed(3)}</b> ·
+                                faseo φ₂ = <b data-testid="mate-phase">{(mate.phase2 * 180 / Math.PI).toFixed(1)}</b>°
+                              </div>
+                              <div className="fb-sel-head">
+                                Faseado <b data-testid="mate-faseado">{assembly.mated ? 'aplicado ✓' : 'pendiente'}</b>
+                                {asm && (
+                                  <span> · interferencia <b data-testid="mate-interference">{asm.interferenceVolume.toFixed(3)}</b> mm³
+                                    {' '}({(asm.interferenceFraction * 100).toFixed(3)}%)</span>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
+                        <button className="fb-pick-btn" data-testid="btn-gear-mate" onClick={applyGearMate}>
+                          {assembly.mated ? '↻ Re-aplicar mate de engrane' : '⚙ Aplicar mate de engrane'}
+                        </button>
+
+                        {/* DRIVER CINEMÁTICO: ángulo de entrada θ. La entrada gira
+                            θ y la salida −θ·(Z₁/Z₂) automáticamente (relación i). */}
+                        {assembly.mated && (() => {
+                          const mate = gearMateGeometry(sketch.gear, assembly.teeth2);
+                          const asm = result?.assembly;
+                          const inDeg = (assembly.driveAngle * 180) / Math.PI;
+                          const outDeg = asm ? (asm.outputAngle * 180) / Math.PI : 0;
+                          const iMeasured = asm && Math.abs(asm.outputAngle) > 1e-9
+                            ? Math.abs(asm.driveAngle / asm.outputAngle)
+                            : mate.ratio;
+                          return (
+                            <>
+                              <div className="fb-divider" />
+                              <div className="fb-panel-title" style={{ marginTop: 0 }}>Driver · ángulo de entrada</div>
+                              <Dim label="θ entrada" value={inDeg} unit="°" min={-180} max={180} step={1}
+                                testid="input-angulo-entrada" onChange={(v) => setDriveAngleDeg(v)} />
+                              <div className="fb-sel-head">
+                                θ salida = −θ·(Z₁/Z₂) = <b data-testid="disp-angulo-salida">{outDeg.toFixed(1)}</b>°
+                              </div>
+                              <div className="fb-sel-head">
+                                Relación i = ω₁/ω₂ = <b data-testid="disp-relacion">{iMeasured.toFixed(3)}</b>
+                                {' '}(= Z₂/Z₁ = {mate.ratio.toFixed(3)})
+                              </div>
+                            </>
+                          );
+                        })()}
+
+                        {/* VERIFICACIÓN RIGUROSA DE EMBONADO: barrido de Common(g1,g2)
+                            sobre un paso de diente → max_interferencia ≈ 0 ⇒ embonan. */}
+                        {assembly.mated && (
+                          <>
+                            <div className="fb-divider" />
+                            <button className="fb-pick-btn" data-testid="btn-verificar-embonado"
+                              onClick={verifyMeshing} disabled={meshSweepBusy}>
+                              {meshSweepBusy ? '⏳ Barriendo rotación…' : '🔍 Verificar embonado (barrido)'}
+                            </button>
+                            {meshSweep && (() => {
+                              const embonan = Number.isFinite(meshSweep.maxInterferenceFraction)
+                                && meshSweep.maxInterferenceFraction < 5e-3; // < 0.5% de un diente
+                              return (
+                                <div className={`fb-sel-head ${embonan ? 'ok' : 'warn'}`}>
+                                  max interferencia = <b data-testid="disp-max-interferencia">{meshSweep.maxInterference.toFixed(4)}</b> mm³
+                                  {' '}({(meshSweep.maxInterferenceFraction * 100).toFixed(3)}% de un diente,
+                                  {' '}{meshSweep.samples} ángulos) ·{' '}
+                                  <b data-testid="disp-embonan">{embonan ? 'EMBONAN ✓' : 'INTERFIEREN ✕'}</b>
+                                </div>
+                              );
+                            })()}
+                          </>
+                        )}
+
+                        {/* MONTAJE DE COMPONENTES: flechas (una por engrane, coaxial
+                            al barreno, con holgura) + carcasa (caja vaciada con 2
+                            baleros a la distancia C). Se añaden al compound del
+                            ensamble sin tocar el embonado engrane↔engrane. */}
+                        {assembly.mated && (
+                          <>
+                            <div className="fb-divider" />
+                            <div className="fb-panel-title" style={{ marginTop: 0 }}>Ensamble · Componentes</div>
+                            <label className="fb-check">
+                              <input type="checkbox" data-testid="chk-shafts"
+                                checked={assembly.shafts}
+                                onChange={(e) => setAssembly((a) => ({ ...a, shafts: e.target.checked }))} />
+                              <span>Montar 2 flechas (⌀{(Math.max(1, sketch.gear.bore - 2 * 0.4)).toFixed(1)} mm, coaxiales a los barrenos)</span>
+                            </label>
+                            <label className="fb-check">
+                              <input type="checkbox" data-testid="chk-housing"
+                                checked={assembly.housing}
+                                onChange={(e) => setAssembly((a) => ({ ...a, housing: e.target.checked }))} />
+                              <span>Montar carcasa (caja + shell + 2 baleros a C)</span>
+                            </label>
+                            {(() => {
+                              const asm = result?.assembly;
+                              if (!asm) return null;
+                              return (
+                                <div className="fb-sel-head" data-testid="asm-componentes">
+                                  Componentes: <b data-testid="asm-n-componentes">{asm.components.length}</b>
+                                  {' '}({asm.components.join(' · ')})
+                                  {asm.shafts && <span> · flechas <b data-testid="asm-vol-flechas">{asm.volShafts.toFixed(0)}</b> mm³</span>}
+                                  {asm.housing && <span> · carcasa <b data-testid="asm-vol-carcasa">{asm.volHousing.toFixed(0)}</b> mm³</span>}
+                                  {' '}· compound <b data-testid="asm-vol-compound">{asm.volCompound.toFixed(0)}</b> mm³
+                                </div>
+                              );
+                            })()}
+                          </>
+                        )}
+
+                        <button className="fb-del-btn" data-testid="btn-remove-gear2" onClick={removeGear2}>
+                          ✕ Quitar 2º engrane
+                        </button>
+                      </>
+                    )}
                   </>
                 ) : sketch.kind === 'revprofile' ? (
                   <>
@@ -1631,6 +2432,17 @@ const CSS = `
 .fb-hud-edge b{color:#8ff0a4;font-family:'JetBrains Mono',monospace;font-size:14px;}
 .fb-hud-edge .meta{font-size:11px;color:${STEEL};font-family:'JetBrains Mono',monospace;}
 .fb-hud-edge .meta.axis{color:${GOLD};font-weight:600;}
+
+.fb-hud-asm{position:absolute;top:184px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:12px;z-index:6;pointer-events:none;
+  background:rgba(13,18,28,0.82);border:1px solid ${GOLD}55;border-radius:20px;
+  padding:7px 16px;backdrop-filter:blur(10px);font-size:12px;color:#e9eef5;
+  box-shadow:0 4px 24px rgba(0,0,0,0.5);}
+.fb-hud-asm .lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:${GOLD};opacity:.9;font-weight:600;}
+.fb-hud-asm .seg{font-size:11px;color:${STEEL};font-family:'JetBrains Mono',monospace;}
+.fb-hud-asm .seg b{color:#e9eef5;font-weight:600;}
+.fb-hud-asm .seg.mesh.ok{color:#8ff0a4;}.fb-hud-asm .seg.mesh.ok b{color:#8ff0a4;}
+.fb-hud-asm .seg.mesh.warn{color:#fbbf24;}.fb-hud-asm .seg.mesh.warn b{color:#fbbf24;}
 
 .fb-facelist{position:absolute;left:18px;bottom:18px;width:210px;padding:12px;max-height:34vh;
   overflow:auto;display:flex;flex-direction:column;gap:8px;}

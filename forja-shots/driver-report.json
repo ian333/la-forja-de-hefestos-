@@ -1,0 +1,170 @@
+{
+  "url": "http://localhost:5002/forja-brep.html",
+  "params": {
+    "m": 2,
+    "z1": 20,
+    "z2": 40,
+    "alpha": 20,
+    "espesor": 10,
+    "bore": 8
+  },
+  "C_esperado": 60,
+  "i_esperado": 2,
+  "errs": [],
+  "pasos": [
+    "Clic toolbar → ⚙ Engrane",
+    "input-modulo = 2",
+    "input-dientes = 20",
+    "input-presion = 20",
+    "input-espesor-engrane = 10",
+    "input-bore = 8",
+    "Clic → + Agregar 2º engrane",
+    "input-dientes2 = 40",
+    "Clic → ⚙ Aplicar mate de engrane",
+    "Clic → Ocultar boceto (dientes nítidos)",
+    "Clic (dispatch) → 🔍 Verificar embonado (barrido)"
+  ],
+  "shots": [
+    "/tmp/forja-caja/embonado.png",
+    "/tmp/forja-caja/rotacion_90.png"
+  ],
+  "driver_samples": [
+    {
+      "theta_in_deg": 30,
+      "hud_in": 30,
+      "hud_out": -15,
+      "disp_relacion": 2,
+      "out_expected_deg": -15,
+      "out_ok": true,
+      "ratio_measured": 2
+    },
+    {
+      "theta_in_deg": 90,
+      "hud_in": 90,
+      "hud_out": -45,
+      "disp_relacion": 2,
+      "out_expected_deg": -45,
+      "out_ok": true,
+      "ratio_measured": 2
+    },
+    {
+      "theta_in_deg": 180,
+      "hud_in": 180,
+      "hud_out": -90,
+      "disp_relacion": 2,
+      "out_expected_deg": -90,
+      "out_ok": true,
+      "ratio_measured": 2
+    }
+  ],
+  "mate_info": {
+    "enabled": true,
+    "mated": true,
+    "m": 2,
+    "z1": 20,
+    "z2": 40,
+    "rp1": 20,
+    "rp2": 40,
+    "C_expected": 60,
+    "ratio": 2,
+    "phase2": 3.0630528372500483
+  },
+  "assembly_info_static": {
+    "teeth1": 20,
+    "teeth2": 40,
+    "C_expected": 60,
+    "C_measured": 60.00000000000009,
+    "phase2": 3.0630528372500483,
+    "mated": true,
+    "ratio": 2,
+    "vol_gear1": 11796.918630606919,
+    "vol_gear2": 49303.55461873471,
+    "interference_volume": 0.006226545233876148,
+    "interference_fraction": 5.278111538144778e-7,
+    "drive_angle": 0,
+    "output_angle": 0,
+    "ratio_measured": 2,
+    "tooth_volume_ref": 589.845931530346
+  },
+  "C_medido": 60.00000000000009,
+  "C_ok": true,
+  "sweep": {
+    "z1": 20,
+    "samples": 10,
+    "toothPitchRad": 0.3141592653589793,
+    "toothVolume": 589.845931530346,
+    "maxInterference": 0.01549342187500979,
+    "meanInterference": 0.002208196882081207,
+    "worstAngleRad": 0.2827433388230814,
+    "maxInterferenceFraction": 0.000026266896229685523,
+    "perAngle": [
+      {
+        "angleRad": 0,
+        "interference": 0.006226545233876148
+      },
+      {
+        "angleRad": 0.031415926535897934,
+        "interference": 0
+      },
+      {
+        "angleRad": 0.06283185307179587,
+        "interference": 0
+      },
+      {
+        "angleRad": 0.09424777960769379,
+        "interference": 0
+      },
+      {
+        "angleRad": 0.12566370614359174,
+        "interference": 0
+      },
+      {
+        "angleRad": 0.15707963267948966,
+        "interference": 0
+      },
+      {
+        "angleRad": 0.18849555921538758,
+        "interference": 0
+      },
+      {
+        "angleRad": 0.21991148575128552,
+        "interference": 0
+      },
+      {
+        "angleRad": 0.25132741228718347,
+        "interference": 0.0003620017119261319
+      },
+      {
+        "angleRad": 0.2827433388230814,
+        "interference": 0.01549342187500979
+      }
+    ]
+  },
+  "max_interferencia_dom": 0.0155,
+  "shot_embonado": "/tmp/forja-caja/embonado.png",
+  "driver_ok": true,
+  "relacion_medida": 2,
+  "relacion_ok": true,
+  "max_interferencia": 0.01549342187500979,
+  "tooth_volume": 589.845931530346,
+  "max_interferencia_fraccion": 0.000026266896229685523,
+  "interferencia_ok": true,
+  "VERDICT": {
+    "driver_ok": true,
+    "relacion_medida": 2,
+    "relacion_esperada": 2,
+    "C_medido": 60.00000000000009,
+    "C_esperado": 60,
+    "C_ok": true,
+    "max_interferencia": 0.01549342187500979,
+    "tooth_volume": 589.845931530346,
+    "max_interferencia_fraccion": 0.000026266896229685523,
+    "interferencia_ok": true,
+    "embonan": true,
+    "shots": [
+      "/tmp/forja-caja/embonado.png",
+      "/tmp/forja-caja/rotacion_90.png"
+    ],
+    "error": null
+  }
+}
