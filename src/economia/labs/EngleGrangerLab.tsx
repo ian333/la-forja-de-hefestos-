@@ -155,8 +155,7 @@ export default function EngleGrangerLab() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext('2d')!;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width  = W * dpr;
@@ -558,7 +557,7 @@ export default function EngleGrangerLab() {
               accent="#F59E0B"
             />
             <div className="mt-2 text-[10px] font-mono rounded bg-[#0f1420] border border-[#1E293B] px-3 py-2 text-[#F59E0B]">
-              σ²_t = ω + α·ε²_{t-1} + β·σ²_{t-1}
+              {'σ²_t = ω + α·ε²_{t-1} + β·σ²_{t-1}'}
               <span className="text-[#475569] ml-2">(α+β {'<'} 1)</span>
             </div>
           </div>

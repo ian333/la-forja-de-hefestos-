@@ -302,8 +302,7 @@ export default function TiroleLab() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext('2d')!;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = W * dpr;
@@ -319,7 +318,7 @@ export default function TiroleLab() {
     const offscreen = document.createElement('canvas');
     offscreen.width = 180 * dpr;
     offscreen.height = 180 * dpr;
-    const offCtx = offscreen.getContext('2d');
+    const offCtx = offscreen.getContext('2d')!;
 
     function loop() {
       const { preset: pr, pA: pa, pB: pb } = stateRef.current;
