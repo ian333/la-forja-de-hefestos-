@@ -668,7 +668,7 @@ export function DynamicPostFX({ time }: { time: number }) {
   const caBase = chromaOn ? 0.0026 : 0.0010;
 
   return (
-    <EffectComposer multisampling={4}>
+    <EffectComposer multisampling={4} frameBufferType={THREE.HalfFloatType}>
       <Bloom
         intensity={bloomIntensity * 1.12}
         luminanceThreshold={0.18}

@@ -19,11 +19,11 @@
  * Playwright haga clic de forma estable (btn-extrude, input-altura, …).
  */
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from 'react';
 import * as THREE from 'three';
-import { Environment } from '@react-three/drei';
-import { ThreeEvent } from '@react-three/fiber';
-import Stage from '@/physics/components/Stage';
+import { ACESFilmicToneMapping } from 'three';
+import { Canvas, type ThreeEvent } from '@react-three/fiber';
+import { OrbitControls, Environment, Grid, ContactShadows } from '@react-three/drei';
 import {
   initOCCT,
   _setActiveOCCT,
@@ -54,6 +54,14 @@ import {
   type RevolveAxis,
   type MassProperties,
 } from './occt';
+import {
+  buildGearSketch,
+  deriveGearGeometry,
+  sketchSignedArea,
+  sketchRotationalSymmetryError,
+  GEAR_SKETCH_DEFAULTS,
+  type GearSketchParams,
+} from '../../lib/parts/involute-gear-sketch';
 
 // Ejes GLOBALES preestablecidos para el revolve (gp_Ax1 deterministas).
 const GLOBAL_AXES: Record<'x' | 'y' | 'z', RevolveAxis> = {
@@ -71,6 +79,15 @@ const STEEL = '#9fb3c8';
 const INK = '#05060A';
 
 // ──────────────────────────────────────────────────────────────────
+// Paleta del VIEWPORT CAD (claridad estilo Onshape/Plasticity/Fusion).
+// Nada de cine aquí: la geometría manda. Sólido gris-acero MATE neutro,
+// aristas oscuras crujientes para leer la topología, fondo de estudio.
+// ──────────────────────────────────────────────────────────────────
+const CAD_SOLID = '#b3bcc7';   // gris-acero medio neutro (no espejo, no quema)
+const CAD_EDGE = '#0c1219';    // arista B-Rep oscura, crujiente (casi negro)
+const CAD_BG = '#10151c';      // fondo de estudio (oscuro, no negro puro)
+
+// ──────────────────────────────────────────────────────────────────
 // Materiales (densidad en g/mm³) — para el análisis de masa exacto
 // ──────────────────────────────────────────────────────────────────
 const MATERIALS: Record<string, { label: string; density: number }> = {
@@ -85,10 +102,24 @@ const MATERIALS: Record<string, { label: string; density: number }> = {
 // ──────────────────────────────────────────────────────────────────
 // El documento = grafo de features (sketch base + operaciones ordenadas)
 // ──────────────────────────────────────────────────────────────────
-type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile';
+type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear';
 
 /** Un escalón del perfil de revolución: radio exterior r y longitud axial L. */
 interface RevStep { r: number; L: number; }
+
+/**
+ * Parámetros del croquis de ENGRANE de involuta (el 7º clásico). La matemática
+ * vive en lib/parts/involute-gear-sketch.ts (deriveGearGeometry/buildGearSketch):
+ *   rp = m·Z/2   ·   rb = rp·cos α   ·   inv(α) = tan α − α.
+ * El perfil cerrado Point2D[] se extruye a sólido B-Rep y se le resta el barreno.
+ */
+interface GearParams {
+  module: number;       // módulo m (mm por par de dientes de arco)
+  teeth: number;        // número de dientes Z
+  pressureDeg: number;  // ángulo de presión α en grados (default 20°)
+  thickness: number;    // espesor axial del engrane (extrude)
+  bore: number;         // diámetro del barreno central
+}
 
 interface SketchFeature {
   id: 'sketch';
@@ -100,6 +131,38 @@ interface SketchFeature {
   // Perfil de revolución ESCALONADO (croquis poligonal a UN lado del eje Y).
   // Cada escalón i aporta un cilindro de vol = π·r_i²·L_i; el total es su suma.
   steps: RevStep[];
+  // Engrane de involuta (7º clásico). El perfil sale de buildGearSketch().
+  gear: GearParams;
+}
+
+/** Defaults del engrane (m=2, Z=20, α=20°, espesor 10, barreno 8). */
+const GEAR_DEFAULTS: GearParams = {
+  module: 2, teeth: 20, pressureDeg: 20, thickness: 10, bore: 8,
+};
+
+/**
+ * Traduce los GearParams de la UI a los GearSketchParams de la librería de
+ * matemática (involute-gear-sketch.ts) y construye el perfil cerrado Point2D[].
+ * Resolución MODERADA (no la default pesada): suficiente para un sólido B-Rep
+ * exacto y para que extrudePolygon no cuelgue con cientos de vértices.
+ */
+function gearSketchParams(g: GearParams): GearSketchParams {
+  return {
+    ...GEAR_SKETCH_DEFAULTS,
+    module: g.module,
+    teethCount: Math.round(g.teeth),
+    pressureAngle: (g.pressureDeg * Math.PI) / 180,
+    // ~6 muestras por flanco + 3 por arco → ≈ 22 vértices/diente. Para Z=20
+    // son ≈ 440 verts: B-Rep exacto lo aguanta (el límite ~400 era del SDF).
+    profileResolution: 6,
+    arcResolution: 3,
+    filletRadius: 0,
+  };
+}
+
+/** Perfil 2D cerrado del engrane (Point2D[] → Pt2[] para el kernel). */
+function gearProfile(g: GearParams): Pt2[] {
+  return buildGearSketch(gearSketchParams(g)).map((p) => ({ x: p.x, y: p.y }));
 }
 
 type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve';
@@ -198,6 +261,7 @@ function buildShape(
     if (sketch.kind === 'rect') return rectProfile(sketch.width, sketch.height);
     if (sketch.kind === 'lprofile') return lProfile(sketch.width, sketch.height, sketch.legW);
     if (sketch.kind === 'revprofile') return revProfile(sketch.steps);
+    if (sketch.kind === 'gear') return gearProfile(sketch.gear);
     return circleGhost(sketch.radius); // solo para revolve poligonal; circle usa extrudeCircle
   };
 
@@ -215,6 +279,24 @@ function buildShape(
   for (const op of ordered) {
     if (op.type === 'extrude') {
       if (shape) continue; // primer sólido ya creado; ignora extrudes posteriores
+      if (sketch.kind === 'gear') {
+        // ── ENGRANE de involuta (7º clásico) ──
+        // 1) perfil de involuta (buildGearSketch) → extrudePolygon a sólido.
+        // 2) resta el barreno central pasante (cilindro coaxial en el eje Z).
+        // El espesor lo manda el PARÁMETRO del engrane (no el slider del extrude),
+        // para que vol = area_perfil·espesor − π·(bore/2)²·espesor sea exacto.
+        const g = sketch.gear;
+        const thick = g.thickness;
+        let gear = extrudePolygon(oc, gearProfile(g), thick, PLANE_XY);
+        if (g.bore > 0) {
+          gear = drillHole(oc, gear, {
+            x: 0, y: 0, diameter: g.bore, zTop: thick,
+            depth: thick, through: true,
+          });
+        }
+        shape = gear;
+        continue;
+      }
       // Simétrico: el plano de boceto se baja −depth/2 y se extruye depth, así
       // el sólido queda centrado en z=0 (no cambia volumen ni topología).
       const plane = op.symmetric
@@ -371,13 +453,16 @@ function SolidMesh({
   return (
     <group>
       <mesh geometry={geom} castShadow receiveShadow onClick={handleClick}>
+        {/* PBR MATE de precisión (Onshape/Plasticity): metalness baja + roughness
+            media → NO espejo, las caras planas no reflejan un softbox quemado.
+            Sin emissive: el sólido NO debe brillar en un CAD. envMap suave solo
+            para dar volumen a las curvas, no para encandilar. */}
         <meshStandardMaterial
-          color={faded ? '#8a96a4' : '#bcc6d2'}
-          metalness={0.82}
-          roughness={0.52}
-          emissive={'#16110a'}
-          emissiveIntensity={0.2}
-          envMapIntensity={0.9}
+          color={faded ? '#aab3bd' : CAD_SOLID}
+          metalness={0.35}
+          roughness={0.55}
+          envMapIntensity={0.35}
+          flatShading={false}
         />
       </mesh>
 
@@ -399,8 +484,19 @@ function SolidMesh({
         </mesh>
       )}
 
-      <lineSegments geometry={edgesGeo}>
-        <lineBasicMaterial color={GOLD} transparent opacity={0.5} />
+      {/* ARISTAS B-Rep CRUJIENTES (clave para leer la topología, como TODO CAD).
+          Líneas oscuras finas dibujadas ENCIMA del sólido con polygonOffset para
+          que no z-fighteen contra las caras. Esto, no el brillo, es lo que hace
+          legible la pieza: cada cambio de cara se ve como una arista nítida. */}
+      <lineSegments geometry={edgesGeo} renderOrder={1}>
+        <lineBasicMaterial
+          color={CAD_EDGE}
+          transparent
+          opacity={0.92}
+          polygonOffset
+          polygonOffsetFactor={-1}
+          polygonOffsetUnits={-1}
+        />
       </lineSegments>
 
       {/* ARISTAS PICKEABLES: tubo FINO por arista (objetivo de raycast, casi
@@ -464,12 +560,138 @@ function ProfileGhost({ pts }: { pts: Pt2[] }) {
 }
 
 function SketchPlane() {
+  // Rejilla del PLANO DE BOCETO (XY local del sketch), sutil — referencia, no
+  // protagonista. Vive en el group rotado del modelo; el piso de estudio de
+  // referencia espacial lo pone CadViewport en coordenadas de mundo.
   return (
     <gridHelper
-      args={[160, 32, new THREE.Color('#243140'), new THREE.Color('#161e29')]}
+      args={[160, 32, new THREE.Color('#2a3744'), new THREE.Color('#1a232d')]}
       rotation={[Math.PI / 2, 0, 0]}
       position={[0, 0, -0.01]}
     />
+  );
+}
+
+/**
+ * CadViewport — viewport LIMPIO de CAD de precisión (Onshape/Plasticity/Fusion).
+ * NO usa el Stage cinematográfico de los labs (ese se queda con su bloom/grade);
+ * este es su propio <Canvas> diseñado para LEER geometría, no para wow:
+ *   · SIN bloom / SIN postFX de cine — solo ACES para una exposición neutra.
+ *   · Luz de estudio pareja (key + fill + rim suaves) + HDR neutro a baja
+ *     intensidad → caras planas con tono uniforme, sin softbox quemado.
+ *   · Piso/grid sutil + contact shadow suave para anclar la pieza en el espacio.
+ *   · Cámara 3/4 por default.
+ * El acento dorado GAIA queda solo en selección/HUD (fuera del Canvas).
+ */
+function CadViewport({
+  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, children,
+}: {
+  cameraDistance: number;
+  autoRotate: boolean;
+  minDistance?: number;
+  maxDistance?: number;
+  enablePan?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="relative w-full h-full"
+      style={{
+        // Degradado de estudio MUY sutil: un poco más claro al centro para dar
+        // profundidad sin viñeta cinematográfica.
+        background: `radial-gradient(ellipse at 50% 42%, #18202a 0%, ${CAD_BG} 70%, #0b0f14 100%)`,
+      }}
+    >
+      <Canvas
+        shadows
+        camera={{
+          // 3/4 clásico de CAD: ligeramente arriba y al frente-derecha. Encuadre
+          // ajustado (la pieza llena el viewport) → aristas más crujientes.
+          position: [cameraDistance * 0.58, cameraDistance * 0.5, cameraDistance * 0.72],
+          fov: 35,
+          near: 0.01,
+          far: 20000,
+        }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        style={{ background: 'transparent', width: '100%', height: '100%' }}
+        dpr={[1, 2]}
+        onCreated={({ gl }) => {
+          // ACES para una exposición neutra y agradable de PBR — SIN el grade
+          // cinematográfico (sin Bloom/Vignette/Grain/CA). Tonemap suave, no quema.
+          gl.toneMapping = ACESFilmicToneMapping;
+          gl.toneMappingExposure = 0.82;
+        }}
+      >
+        {/* HDR neutro a BAJA intensidad: da reflejos suaves para volumen en las
+            curvas, pero no ilumina con un softbox quemado (environmentIntensity
+            bajo). Sin background (fondo lo pone el div). */}
+        <Environment files="/hdri/studio_small_03_1k.hdr" background={false} environmentIntensity={0.45} />
+
+        {/* LUZ DE ESTUDIO PAREJA — key + fill + rim suaves, expuestos para VER
+            detalle (no para wow). El key proyecta sombra suave al piso. */}
+        <ambientLight intensity={0.55} />
+        <directionalLight
+          position={[cameraDistance, cameraDistance * 1.4, cameraDistance * 0.8]}
+          intensity={0.85}
+          color="#ffffff"
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-bias={-0.0004}
+        />
+        <directionalLight position={[-cameraDistance, cameraDistance * 0.3, -cameraDistance * 0.6]} intensity={0.4} color="#cfe0f0" />
+        <directionalLight position={[0, -cameraDistance * 0.6, cameraDistance]} intensity={0.25} color="#ffffff" />
+
+        <OrbitControls
+          makeDefault
+          enablePan={enablePan}
+          enableDamping
+          dampingFactor={0.08}
+          autoRotate={autoRotate}
+          autoRotateSpeed={0.45}
+          minDistance={minDistance ?? cameraDistance * 0.15}
+          maxDistance={maxDistance ?? cameraDistance * 6}
+        />
+
+        {children}
+
+        {/* PISO de referencia espacial — grid infinito sutil + sombra de contacto
+            suave bajo la pieza. Anclan la geometría en el espacio (como Onshape)
+            sin competir con ella. En el suelo del modelo (y=0 de mundo, el group
+            del modelo está rotado para que su base quede sobre este plano). */}
+        <CadGround size={Math.max(60, cameraDistance * 1.2)} />
+      </Canvas>
+    </div>
+  );
+}
+
+/** Piso de estudio: grid sutil + contact shadow suave para profundidad barata. */
+function CadGround({ size }: { size: number }) {
+  return (
+    <group position={[0, -0.02, 0]}>
+      <Grid
+        args={[size, size]}
+        cellSize={size / 60}
+        cellThickness={0.6}
+        cellColor="#28333f"
+        sectionSize={size / 12}
+        sectionThickness={1.0}
+        sectionColor="#3a4a5a"
+        fadeDistance={size * 1.1}
+        fadeStrength={2.2}
+        infiniteGrid
+        followCamera={false}
+      />
+      <ContactShadows
+        position={[0, 0.005, 0]}
+        scale={size * 0.9}
+        far={size * 0.6}
+        blur={2.6}
+        opacity={0.5}
+        color="#05080c"
+        resolution={1024}
+      />
+    </group>
   );
 }
 
@@ -525,6 +747,8 @@ export default function ForgeBRepStudio() {
     id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
     // Perfil de revolución por defecto: 3 escalones (flecha con hombros).
     steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
+    // Engrane de involuta por defecto (m=2, Z=20, α=20°, espesor 10, barreno 8).
+    gear: { ...GEAR_DEFAULTS },
   });
   // El grafo arranca con un extrude (el "primer momento": sketch→sólido).
   const [ops, setOps] = useState<Op[]>([
@@ -555,6 +779,7 @@ export default function ForgeBRepStudio() {
     if (sketch.kind === 'rect') return rectProfile(sketch.width, sketch.height);
     if (sketch.kind === 'lprofile') return lProfile(sketch.width, sketch.height, sketch.legW);
     if (sketch.kind === 'revprofile') return revProfile(sketch.steps);
+    if (sketch.kind === 'gear') return gearProfile(sketch.gear);
     return circleGhost(sketch.radius);
   }, [sketch]);
 
@@ -642,6 +867,20 @@ export default function ForgeBRepStudio() {
     setSketch((s) => ({ ...s, kind: 'revprofile', steps }));
   }, []);
 
+  // ── Mutadores del croquis de ENGRANE (7º clásico) ──
+  const updateGear = useCallback((patch: Partial<GearParams>) => {
+    setSketch((s) => ({ ...s, gear: { ...s.gear, ...patch } }));
+  }, []);
+  // Aplica un engrane completo de una vez (atajo determinista para QA). Pasa el
+  // croquis a 'gear' y, si el grafo no tiene un extrude que lo solidifique, lo
+  // garantiza (un único extrude = el feature 'Engrane': perfil→sólido→barreno).
+  const setGear = useCallback((patch: Partial<GearParams>) => {
+    setSketch((s) => ({ ...s, kind: 'gear', gear: { ...s.gear, ...patch } }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude')
+      ? cur
+      : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+  }, []);
+
   // ── Mutadores del grafo ──
   const updateOp = useCallback((id: string, patch: Partial<Op>) => {
     setOps((cur) => cur.map((o) => (o.id === id ? ({ ...o, ...patch } as Op) : o)));
@@ -666,6 +905,19 @@ export default function ForgeBRepStudio() {
   const removeOp = useCallback((id: string) => {
     setOps((cur) => cur.filter((o) => o.id !== id));
     setActiveOp(null);
+    setPickMode('none');
+  }, []);
+
+  // ── Feature ENGRANE (botón btn-gear): pasa el croquis a 'gear', garantiza el
+  // extrude que lo solidifica (perfil de involuta → sólido → resta del barreno)
+  // y enfoca el panel del croquis para editar m/Z/α/espesor/barreno. El
+  // FeatureNode resultante en el grafo es el Sketch 'Engrane' + su Extrude. ──
+  const applyGear = useCallback(() => {
+    setSketch((s) => ({ ...s, kind: 'gear' }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude')
+      ? cur
+      : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+    setActiveOp('sketch');
     setPickMode('none');
   }, []);
 
@@ -756,6 +1008,33 @@ export default function ForgeBRepStudio() {
       addStep,
       updateStep,
       get steps() { return sketch.steps; },
+      // ── ENGRANE de involuta (7º clásico) — driver + invariantes de QA ──
+      setGear,
+      updateGear,
+      get gear() { return sketch.gear; },
+      // Geometría DERIVADA del engrane (matemática pura, sin tocar el kernel):
+      // rp, rb, área del perfil cerrado, error de simetría rotacional Z-fold y el
+      // VOLUMEN ESPERADO = A·espesor − π·(bore/2)²·espesor. Playwright compara
+      // esto contra el volumen exacto del panel Análisis (an-volumen).
+      get gearInfo() {
+        const g = sketch.gear;
+        const gp = gearSketchParams(g);
+        const geo = deriveGearGeometry(gp);
+        const verts = buildGearSketch(gp);
+        const area = Math.abs(sketchSignedArea(verts));
+        const symErr = sketchRotationalSymmetryError(verts, Math.round(g.teeth));
+        const boreArea = Math.PI * (g.bore / 2) ** 2;
+        const volExpected = (area - boreArea) * g.thickness;
+        return {
+          m: g.module, Z: Math.round(g.teeth), alphaDeg: g.pressureDeg,
+          thickness: g.thickness, bore: g.bore,
+          rp: geo.pitchRadius, rb: geo.baseRadius,
+          pitchDiameter: geo.pitchRadius * 2,
+          addendumRadius: geo.addendumRadius, dedendumRadius: geo.dedendumRadius,
+          profileVertices: verts.length, profileArea: area,
+          symmetryError: symErr, volExpected,
+        };
+      },
       setMaterial,
       setPickMode,
       pickFace: togglePickFace,
@@ -777,12 +1056,15 @@ export default function ForgeBRepStudio() {
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps]);
+  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
     const stepR = Math.max(0, ...sketch.steps.map((s) => s.r));
-    const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, stepLen, stepR * 2, 30);
+    // Engrane: diámetro de cabeza ≈ (rp + m)·2 = m·(Z + 2).
+    const gearD = sketch.gear.module * (Math.round(sketch.gear.teeth) + 2) * 2;
+    const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, stepLen, stepR * 2,
+      sketch.kind === 'gear' ? gearD : 0, 30);
     return Math.max(60, span * 2.6);
   }, [sketch]);
 
@@ -803,16 +1085,12 @@ export default function ForgeBRepStudio() {
 
       {/* ── VIEWPORT ── */}
       <div className="fb-viewport" data-testid="viewport" ref={viewportRef}>
-        <Stage
+        <CadViewport
           cameraDistance={cameraDist}
           autoRotate={pickMode === 'none'}
-          bgColor={INK}
-          bloomIntensity={0.42}
-          bloomThreshold={0.95}
           minDistance={cameraDist * 0.2}
           maxDistance={cameraDist * 4}
         >
-          <Environment files="/hdri/studio_small_03_1k.hdr" backgroundIntensity={0} environmentIntensity={1.0} />
           <group rotation={[-Math.PI / 2, 0, 0]}>
             {showSketch && <SketchPlane />}
             {showSketch && <ProfileGhost pts={profilePts} />}
@@ -830,7 +1108,7 @@ export default function ForgeBRepStudio() {
               />
             )}
           </group>
-        </Stage>
+        </CadViewport>
 
         {pickMode !== 'none' && (
           <div className="fb-pick-hint" data-testid="pick-hint">
@@ -900,6 +1178,7 @@ export default function ForgeBRepStudio() {
             <button data-testid="btn-chamfer" onClick={() => addOp('chamfer')} title="Bisel de aristas">◹ Chamfer</button>
             <button data-testid="btn-shell" onClick={() => addOp('shell')} title="Vaciado / pared delgada">▢ Shell</button>
             <button data-testid="btn-revolve" onClick={() => addOp('revolve')} title="Revolución del perfil">⟳ Revolve</button>
+            <button data-testid="btn-gear" onClick={applyGear} title="Engrane de involuta (m, Z, α, espesor, barreno)">⚙ Engrane</button>
           </div>
 
           {/* ── Panel izquierdo: GRAFO de features (clic = editar) ── */}
@@ -913,7 +1192,7 @@ export default function ForgeBRepStudio() {
               <span className="ico">▣</span>
               <div>
                 <strong>Sketch 1</strong>
-                <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo' : sketch.kind === 'revprofile' ? `Perfil escalón ×${sketch.steps.length}` : 'Perfil L'} · Plano XY</em>
+                <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo' : sketch.kind === 'revprofile' ? `Perfil escalón ×${sketch.steps.length}` : sketch.kind === 'gear' ? `Engrane Z${sketch.gear.teeth} m${sketch.gear.module}` : 'Perfil L'} · Plano XY</em>
               </div>
             </div>
             {ops.map((op, i) => (
@@ -981,10 +1260,44 @@ export default function ForgeBRepStudio() {
                     onClick={() => setSketch((s) => ({ ...s, kind: 'lprofile' }))}>L</button>
                   <button data-testid="seg-revprofile" className={sketch.kind === 'revprofile' ? 'on' : ''}
                     onClick={() => setSketch((s) => ({ ...s, kind: 'revprofile' }))}>Escalón</button>
+                  <button data-testid="seg-gear" className={sketch.kind === 'gear' ? 'on' : ''}
+                    onClick={applyGear}>Engrane</button>
                 </div>
                 {sketch.kind === 'circle' ? (
                   <Dim label="Radio" value={sketch.radius} unit="mm" min={3} max={50} step={1} testid="input-radio"
                     onChange={(v) => setSketch((s) => ({ ...s, radius: v }))} />
+                ) : sketch.kind === 'gear' ? (
+                  <>
+                    {/* ── ENGRANE de INVOLUTA (7º clásico) ──────────────────────
+                        Perfil de involuta real (rb = rp·cos α, inv α = tan α − α)
+                        desde lib/parts/involute-gear-sketch.ts → extrudePolygon →
+                        resta del barreno. rp = m·Z/2 (diámetro primitivo = m·Z). */}
+                    <p className="fb-hint-txt">
+                      Involuta real: rp = m·Z/2, rb = rp·cos α, inv α = tan α − α.
+                      Perfil → extrude → barreno central. Vol = A·esp − π(bore/2)²·esp.
+                    </p>
+                    <Dim label="Módulo m" value={sketch.gear.module} unit="mm" min={0.5} max={6} step={0.5}
+                      testid="input-modulo" onChange={(v) => updateGear({ module: v })} />
+                    <Dim label="Dientes Z" value={sketch.gear.teeth} unit="" min={8} max={60} step={1}
+                      testid="input-dientes" onChange={(v) => updateGear({ teeth: Math.round(v) })} />
+                    <Dim label="Áng. presión α" value={sketch.gear.pressureDeg} unit="°" min={14} max={30} step={1}
+                      testid="input-presion" onChange={(v) => updateGear({ pressureDeg: v })} />
+                    <Dim label="Espesor" value={sketch.gear.thickness} unit="mm" min={2} max={40} step={1}
+                      testid="input-espesor-engrane" onChange={(v) => updateGear({ thickness: v })} />
+                    <Dim label="Barreno ⌀" value={sketch.gear.bore} unit="mm" min={0} max={40} step={0.5}
+                      testid="input-bore" onChange={(v) => updateGear({ bore: v })} />
+                    {(() => {
+                      const gp = gearSketchParams(sketch.gear);
+                      const geo = deriveGearGeometry(gp);
+                      return (
+                        <div className="fb-sel-head">
+                          rp <b data-testid="gear-rp">{geo.pitchRadius.toFixed(2)}</b> mm ·
+                          ⌀prim <b data-testid="gear-dp">{(geo.pitchRadius * 2).toFixed(1)}</b> ·
+                          rb <b>{geo.baseRadius.toFixed(2)}</b> mm
+                        </div>
+                      );
+                    })()}
+                  </>
                 ) : sketch.kind === 'revprofile' ? (
                   <>
                     {/* CROQUIS POLIGONAL ESCALONADO para revolución: cada escalón es
