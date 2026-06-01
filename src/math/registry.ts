@@ -22,6 +22,18 @@ const MobiusRiemann    = lazy(() => import('./modules/complex/MobiusRiemann'));
 const NewtonFractals   = lazy(() => import('./modules/complex/NewtonFractals'));
 const ConformalMaps    = lazy(() => import('./modules/complex/ConformalMaps'));
 const PhasePortrait    = lazy(() => import('./modules/diffeq/PhasePortrait'));
+const Heat1D           = lazy(() => import('./modules/diffeq/Heat1D'));
+const Wave1D           = lazy(() => import('./modules/diffeq/Wave1D'));
+const Genus            = lazy(() => import('./modules/topology/Genus'));
+const MobiusStrip      = lazy(() => import('./modules/topology/MobiusStrip'));
+const Geodesics        = lazy(() => import('./modules/topology/Geodesics'));
+const Knots            = lazy(() => import('./modules/topology/Knots'));
+const CentralLimit     = lazy(() => import('./modules/probability/CentralLimit'));
+const Markov           = lazy(() => import('./modules/probability/Markov'));
+const MonteCarlo       = lazy(() => import('./modules/probability/MonteCarlo'));
+const Sets             = lazy(() => import('./modules/foundations/Sets'));
+const Logic            = lazy(() => import('./modules/foundations/Logic'));
+const Proof            = lazy(() => import('./modules/foundations/Proof'));
 
 export const BRANCHES: LabBranch[] = [
   {
@@ -126,12 +138,16 @@ export const BRANCHES: LabBranch[] = [
         childHint: 'Click en el plano → sueltas una hojita que sigue la corriente del río.',
         researcherHint: 'RK4 fwd+bck, picard-lindelöf (no se cruzan). 6 presets canónicos.',
         component: PhasePortrait },
-      { id: 'heat-1d', name: 'Ecuación del calor 1D', status: 'planned',
+      { id: 'heat-1d', name: 'Ecuación del calor 1D', status: 'live',
         blurb: '∂u/∂t = α ∂²u/∂x². Difusión visualizada en tiempo real.',
-        roadmap: ['Crank-Nicolson + condiciones Dirichlet/Neumann', 'Comparar con solución por Fourier'] },
-      { id: 'wave-1d', name: 'Ecuación de onda 1D', status: 'planned',
+        childHint: 'Mira cómo el calor de la barra se reparte hasta quedar parejito.',
+        researcherHint: 'Crank-Nicolson implícito (tridiagonal por Thomas), Dirichlet/Neumann, contraste con Fourier.',
+        component: Heat1D },
+      { id: 'wave-1d', name: 'Ecuación de onda 1D', status: 'live',
         blurb: 'Pulso que viaja, reflexión, ondas estacionarias.',
-        roadmap: ['FDTD + medios con velocidad variable'] },
+        childHint: 'Pellizca la cuerda y mira cómo la onda viaja y rebota.',
+        researcherHint: 'FDTD leapfrog 2º orden, condición CFL C=c·Δt/Δx≤1, bordes Dirichlet/Neumann y modos estacionarios.',
+        component: Wave1D },
     ],
   },
 
@@ -142,18 +158,26 @@ export const BRANCHES: LabBranch[] = [
     accent: '#34D399',
     blurb: 'Hatcher y Needham geometría: forma sin distancia.',
     modules: [
-      { id: 'genus', name: 'Género de superficies', status: 'planned',
+      { id: 'genus', name: 'Género de superficies', status: 'live',
         blurb: 'Esfera, toro, doble toro. Característica de Euler.',
-        roadmap: ['Mallas triangulares con V−E+F', 'Deformación continua → invariancia'] },
-      { id: 'mobius-strip', name: 'Banda de Möbius y Klein', status: 'planned',
+        childHint: 'Cuenta puntas, lados y caritas: a la esfera le sale 2, ¡a la dona le sale 0!',
+        researcherHint: 'χ = V − E + F contada sobre triangulaciones reales; verifica χ = 2 − 2g e invariancia bajo deformación.',
+        component: Genus },
+      { id: 'mobius-strip', name: 'Banda de Möbius', status: 'live',
         blurb: 'Orientabilidad. Visualización 3D + corte longitudinal.',
-        roadmap: ['Banda paramétrica + animación de "viajero" cruzando el borde'] },
-      { id: 'geodesics', name: 'Geodésicas en superficies curvas', status: 'planned',
+        childHint: 'Una cinta con un solo lado: la flecha da la vuelta y regresa al revés.',
+        researcherHint: 'Parametrización exacta + normal analítica N=∂P/∂u×∂P/∂v; N(2π)=−N(0) prueba la no-orientabilidad.',
+        component: MobiusStrip },
+      { id: 'geodesics', name: 'Geodésicas en superficies curvas', status: 'live',
         blurb: 'Camino más corto en una esfera, toro, silla. ¿Por qué los aviones vuelan así?',
-        roadmap: ['Integrar ecuación geodésica con símbolos de Christoffel'] },
-      { id: 'knots', name: 'Nudos', status: 'planned',
-        blurb: 'Trébol, ocho, suma conexa. Invariantes elementales.',
-        roadmap: ['Diagramas + cálculo de invariantes básicos (crossing number, polinomio de Alexander)'] },
+        childHint: 'El camino más corto sobre una pelota no es recto: es un arco, como vuela el avión.',
+        researcherHint: 'Ecuación geodésica d²qᵏ/dt²+Γᵏᵢⱼq̇ⁱq̇ʲ=0 por RK4 con Christoffel reales de esfera y toro.',
+        component: Geodesics },
+      { id: 'knots', name: 'Nudos', status: 'live',
+        blurb: 'Trébol, ocho, círculo. Invariantes elementales.',
+        childHint: 'Una cuerda anudada: cuenta cuántas veces se cruza su sombra.',
+        researcherHint: 'Nudos como encajes de S¹ en R³; crossing number sobre la proyección regular (Rolfsen 0₁/3₁/4₁).',
+        component: Knots },
     ],
   },
 
@@ -164,15 +188,21 @@ export const BRANCHES: LabBranch[] = [
     accent: '#EF5350',
     blurb: 'Distribuciones, teorema del límite central, Markov.',
     modules: [
-      { id: 'central-limit', name: 'Teorema del límite central', status: 'planned',
+      { id: 'central-limit', name: 'Teorema del límite central', status: 'live',
         blurb: 'Cualquier suma → gaussiana. Demo en vivo con muchas distribuciones.',
-        roadmap: ['Slider N + selector de distribución base', 'Convergencia visual del histograma'] },
-      { id: 'markov', name: 'Cadenas de Markov', status: 'planned',
+        childHint: 'Sumas muchas cosas raras y siempre aparece la misma campana.',
+        researcherHint: 'Muestreo real de M medias de N i.i.d.; histograma vs densidad exacta N(μ, σ²/N) (Lindeberg-Lévy).',
+        component: CentralLimit },
+      { id: 'markov', name: 'Cadenas de Markov', status: 'live',
         blurb: 'Estados → matriz → distribución estacionaria. PageRank.',
-        roadmap: ['Editor de grafo dirigido con pesos', 'Iteración de potencias'] },
-      { id: 'monte-carlo', name: 'Monte Carlo', status: 'planned',
-        blurb: 'Integración por sorteo. π con dardos, Buffon.',
-        roadmap: ['Visualizar dardos cayendo en el cuadrado/disco'] },
+        childHint: 'Saltas entre estados siguiendo flechas y a la larga siempre acabas igual.',
+        researcherHint: 'Iteración de potencias πₙ₊₁=πₙP → eigenvector izquierdo λ=1; presets clima, random walk, PageRank.',
+        component: Markov },
+      { id: 'monte-carlo', name: 'Monte Carlo', status: 'live',
+        blurb: 'Integración por sorteo. π con dardos.',
+        childHint: 'Tiras dardos al azar y, contando los que caen dentro del círculo, sale π.',
+        researcherHint: 'π̂ = 4·(dentro/N) por muestreo uniforme en [−1,1]²; error σ ≈ 1.642/√N con bandas teóricas.',
+        component: MonteCarlo },
     ],
   },
 
@@ -183,15 +213,21 @@ export const BRANCHES: LabBranch[] = [
     accent: '#94A3B8',
     blurb: 'Conjuntos, lógica, demostración constructiva.',
     modules: [
-      { id: 'sets', name: 'Conjuntos y operaciones', status: 'planned',
-        blurb: 'Unión, intersección, complemento. Diagramas de Venn 3D para 4+ conjuntos.',
-        roadmap: ['Venn de 3, 4, 5 conjuntos', 'Editor interactivo de elementos'] },
-      { id: 'logic', name: 'Lógica proposicional', status: 'planned',
-        blurb: 'Tablas de verdad, Karnaugh, circuitos lógicos.',
-        roadmap: ['Editor de fórmula → tabla + mapa K + circuito'] },
-      { id: 'proof', name: 'Asistente de demostración', status: 'planned',
-        blurb: 'Inducción, contradicción, casos. Verificación paso a paso.',
-        roadmap: ['Mini-lenguaje tipo Lean educativo'] },
+      { id: 'sets', name: 'Conjuntos y operaciones', status: 'live',
+        blurb: 'Unión, intersección, complemento. Diagramas de Venn 3D.',
+        childHint: 'Pinta qué bolitas se encienden cuando juntas o cruzas A, B y C.',
+        researcherHint: 'Partición de U en 2³ celdas por bitmask de membresía; cada operación (∪ ∩ \\ ᶜ △) selecciona celdas.',
+        component: Sets },
+      { id: 'logic', name: 'Lógica proposicional', status: 'live',
+        blurb: 'Tablas de verdad, tautologías, conectivos.',
+        childHint: 'Prende y apaga las variables y mira cuándo la frase entera es verdadera.',
+        researcherHint: 'Evalúa la fórmula sobre las 2ⁿ combinaciones → tabla de verdad; detecta tautología/contradicción.',
+        component: Logic },
+      { id: 'proof', name: 'Inducción matemática', status: 'live',
+        blurb: 'Paso base + paso inductivo = efecto dominó.',
+        childHint: 'Tira el primer dominó y míralos caer todos: así es la inducción.',
+        researcherHint: 'Inducción verificada numéricamente (Σk=n(n+1)/2, Σk²=n(n+1)(2n+1)/6, 2ⁿ>n): base + paso n→n+1.',
+        component: Proof },
     ],
   },
 ];

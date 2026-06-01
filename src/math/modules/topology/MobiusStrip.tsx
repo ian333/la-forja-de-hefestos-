@@ -301,8 +301,7 @@ interface TravelerProps {
 function Traveler({ twist, travelerT, autoRun, onAdvance }: TravelerProps) {
   const bodyRef = useRef<THREE.Mesh>(null);
   const arrowRef = useRef<THREE.Group>(null);
-  // Color de la flecha en estado: ámbar (normal original) → rosa (invertida).
-  const [flipped, setFlipped] = useState(false);
+  // Color de la flecha tintado imperativamente (ámbar→rosa) en cada frame.
   const stemRef = useRef<THREE.MeshStandardMaterial>(null);
   const tipRef = useRef<THREE.MeshStandardMaterial>(null);
 
@@ -321,10 +320,8 @@ function Traveler({ twist, travelerT, autoRun, onAdvance }: TravelerProps) {
     // con N(0). Para twist=1 va de +1 (igual) a −1 (opuesta) en u:0→2π.
     const n0 = surfaceNormal(0, 0, twist);
     const dot = THREE.MathUtils.clamp(n.dot(n0), -1, 1);
-    const isFlipped = dot < 0; // normal apuntando al lado contrario
-    if (isFlipped !== flipped) setFlipped(isFlipped);
 
-    // Tinte continuo: ámbar→rosa según el ángulo (sin esperar al setState).
+    // Tinte continuo: ámbar→rosa según el ángulo.
     const t = (1 - dot) / 2;
     const col = new THREE.Color(TRAVELER).lerp(new THREE.Color(FLIP), t);
     if (stemRef.current) { stemRef.current.color.copy(col); stemRef.current.emissive.copy(col); }
@@ -387,12 +384,6 @@ export default function MobiusStrip() {
   }, [twist]);
   const isOrientable = orientCos > 0.5;
 
-  // Auto-run del viajero (driver simple con rAF vía useFrame en un hijo "tick").
-  useFrame((_, delta) => {
-    if (!autoRun) return;
-    setTravelerT((t) => (t + delta * 0.18) % 1);
-  });
-
   return (
     <div className="w-full h-full grid grid-cols-[1fr_360px] gap-3">
       <div className="relative rounded-lg overflow-hidden border border-[#1E293B]">
@@ -432,8 +423,14 @@ export default function MobiusStrip() {
             <Line points={cutPoints} color="#FBCFE8" lineWidth={2.5} dashed dashSize={0.12} gapSize={0.08} />
           )}
 
-          {/* Viajero con normal (demostración de no-orientabilidad) */}
-          <Traveler twist={twist} travelerT={travelerT} />
+          {/* Viajero con normal (demostración de no-orientabilidad). El driver
+              del auto-run vive aquí dentro porque useFrame solo corre en el Canvas. */}
+          <Traveler
+            twist={twist}
+            travelerT={travelerT}
+            autoRun={autoRun}
+            onAdvance={(dt) => setTravelerT((t) => (t + dt * 0.18) % 1)}
+          />
         </Stage>
 
         <div className="absolute top-3 left-3 text-[11px] font-mono space-y-1 text-[#CBD5E1]

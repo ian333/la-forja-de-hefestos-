@@ -3,10 +3,10 @@
  *
  *   χ = V − E + F
  *
- * Para CUALQUIER triangulación (o malla cerrada) de una superficie orientable
- * cerrada, el número de vértices menos aristas más caras da SIEMPRE el mismo
- * número, sin importar cuán fina sea la malla ni cómo la deformes. Ese número
- * solo depende del GÉNERO g (cantidad de "asas"/agujeros):
+ * Para CUALQUIER triangulación de una superficie orientable cerrada, vértices
+ * menos aristas más caras da SIEMPRE el mismo número, sin importar cuán fina
+ * sea la malla ni cómo la deformes. Ese número solo depende del GÉNERO g
+ * (cantidad de "asas"/agujeros):
  *
  *   χ = 2 − 2g
  *
@@ -14,15 +14,15 @@
  *   toro          g = 1  →  χ = 0
  *   doble toro    g = 2  →  χ = −2
  *
- * Acá NO se hardcodea χ. Se construye una malla real de cada superficie (grid
- * paramétrico → quads → conteo combinatorio EXACTO de V, E, F) y se verifica
- * que V − E + F coincide con 2 − 2g. Como el conteo es combinatorio (entero),
- * sale exacto: la torsión de la malla, su finura (resolución u×v) y su forma 3D
- * NO cambian χ. Eso es justamente lo que significa "invariante".
- *
- * La escena muestra la superficie 3D real (esfera, toro, doble toro
- * parametrizados) que se deforma en vivo con un slider; el HUD muestra V, E, F
- * y χ recalculados al vuelo y la verificación χ = 2 − 2g.
+ * Acá NO se hardcodea χ. Se construye una malla real de cada superficie y se
+ * cuentan V, E, F directamente de ESA triangulación:
+ *   - V = vértices distintos usados,
+ *   - E = aristas no-dirigidas únicas (deduplicadas),
+ *   - F = número de triángulos.
+ * El conteo es combinatorio (entero) sobre la misma malla que se dibuja, así
+ * que χ = V − E + F sale exacto e independiente de la resolución y de la
+ * deformación. El doble toro se construye como SUMA CONEXA de dos toros
+ * (quitar una cara a cada uno y pegar los bordes), que es genuinamente g = 2.
  */
 
 import { useMemo, useState } from 'react';
@@ -33,181 +33,238 @@ import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
 import CanvasCapture from '@/math/components/CanvasCapture';
 
 const ACCENT = '#22D3EE'; // acento topología (cian)
+const TWO_PI = Math.PI * 2;
 
 interface GenusState {
   surfaceId: string;
   deform: number; // 0..1 cantidad de deformación (la χ NO cambia)
-  resU: number;   // resolución del grid en u
+  res: number;    // resolución base de la malla
 }
 
-// ── Tipos de superficie ────────────────────────────────────────────────
+// ── Resultado de construir una superficie: malla 3D real + conteo exacto ──
 
-interface Surface {
-  id: string;
-  label: string;
-  genus: number;
-  blurb: string;
-  /** ¿el grid u×v se cierra (wrap) en la dirección u? */
-  wrapU: boolean;
-  /** ¿el grid u×v se cierra (wrap) en la dirección v? */
-  wrapV: boolean;
-  /**
-   * Parametrización (u,v) ∈ [0,1]² → punto 3D. `deform` ∈ [0,1] mete una
-   * deformación continua (ondular la superficie) que NO altera la topología.
-   */
-  param: (u: number, v: number, deform: number) => THREE.Vector3;
-}
-
-const TWO_PI = Math.PI * 2;
-
-const SURFACES: Surface[] = [
-  {
-    id: 'sphere',
-    label: 'Esfera  (g = 0)',
-    genus: 0,
-    blurb: 'Sin agujeros. La superficie cerrada más simple. χ = 2.',
-    wrapU: true,
-    wrapV: false,
-    param: (u, v, d) => {
-      // u → longitud [0, 2π), v → latitud [0, π]
-      const lon = u * TWO_PI;
-      const lat = v * Math.PI;
-      const r = 1.5 * (1 + 0.18 * d * Math.sin(4 * lat) * Math.cos(3 * lon));
-      const sinLat = Math.sin(lat);
-      return new THREE.Vector3(
-        r * sinLat * Math.cos(lon),
-        r * Math.cos(lat),
-        r * sinLat * Math.sin(lon),
-      );
-    },
-  },
-  {
-    id: 'torus',
-    label: 'Toro  (g = 1)',
-    genus: 1,
-    blurb: 'Un agujero (una rosca). El asa baja χ en 2: χ = 0.',
-    wrapU: true,
-    wrapV: true,
-    param: (u, v, d) => {
-      const R = 1.55, r = 0.6;
-      const a = u * TWO_PI; // alrededor del agujero
-      const b = v * TWO_PI; // alrededor del tubo
-      const rr = r * (1 + 0.28 * d * Math.sin(3 * a));
-      const ring = R + rr * Math.cos(b);
-      return new THREE.Vector3(
-        ring * Math.cos(a),
-        rr * Math.sin(b),
-        ring * Math.sin(a),
-      );
-    },
-  },
-  {
-    id: 'double-torus',
-    label: 'Doble toro  (g = 2)',
-    genus: 2,
-    blurb: 'Dos agujeros. Cada asa resta 2: χ = 2 − 2·2 = −2.',
-    wrapU: true,
-    wrapV: true,
-    param: (u, v, d) => {
-      // Doble toro: dos lóbulos. Topológicamente toro con 2 asas → tomamos un
-      // toro y modulamos el radio mayor para abrir DOS agujeros (figura de 8).
-      const r = 0.42;
-      const a = u * TWO_PI; // ángulo a lo largo de la figura-8
-      const b = v * TWO_PI; // alrededor del tubo
-      // Curva guía en forma de ocho (lemniscata de Gerono) en el plano XZ.
-      const cx = 1.55 * Math.sin(a);
-      const cz = 1.15 * Math.sin(a) * Math.cos(a);
-      // Tangente de la curva guía para orientar el tubo.
-      const tx = 1.55 * Math.cos(a);
-      const tz = 1.15 * (Math.cos(a) * Math.cos(a) - Math.sin(a) * Math.sin(a));
-      const tlen = Math.hypot(tx, tz) || 1;
-      // Normal en el plano (perpendicular a la tangente, dentro de XZ).
-      const nx = -tz / tlen, nz = tx / tlen;
-      const rr = r * (1 + 0.22 * d * Math.sin(5 * a));
-      const ringR = rr * Math.cos(b);
-      return new THREE.Vector3(
-        cx + ringR * nx,
-        rr * Math.sin(b),
-        cz + ringR * nz,
-      );
-    },
-  },
-];
-
-// ── Conteo combinatorio EXACTO de V, E, F de una malla de quads ──────────
-//
-// Un grid paramétrico de (nu)×(nv) celdas tiene vértices en los nodos. Si la
-// dirección se "cierra" (wrap), el último nodo coincide con el primero, así
-// que hay nu nodos distintos en esa dirección (no nu+1). En la dirección que
-// no cierra hay nu+1 nodos. Cada quad lo partimos en 2 triángulos (una malla
-// honesta de triángulos), así obtenemos una TRIANGULACIÓN y contamos V, E, F
-// como ENTEROS exactos (sin tocar geometría flotante).
-//
-// Para una triangulación cerrada: cada cara triangular tiene 3 aristas y cada
-// arista es compartida por exactamente 2 caras ⇒ 3F = 2E ⇒ E = 3F/2.
-
-interface MeshCount {
+interface BuiltSurface {
+  geometry: THREE.BufferGeometry;
   V: number;
   E: number;
   F: number;
   chi: number;
 }
 
-function countMesh(nu: number, nv: number, wrapU: boolean, wrapV: boolean): MeshCount {
-  // Nodos distintos por dirección.
-  const nodesU = wrapU ? nu : nu + 1;
-  const nodesV = wrapV ? nv : nv + 1;
-  const V = nodesU * nodesV;
-
-  // Celdas (quads): nu × nv (al cerrar, la celda que cruza la costura existe).
-  const quads = nu * nv;
-  const F = quads * 2; // dos triángulos por quad
-
-  // En una triangulación cerrada orientable: 3F = 2E.
-  const E = (3 * F) / 2;
-
+/**
+ * Cuenta V, E, F EXACTOS de una lista de triángulos (índices de vértice ya
+ * deduplicados). E = aristas no-dirigidas únicas; F = #triángulos; V = vértices
+ * realmente usados. Es la misma malla que se renderiza, así que el HUD describe
+ * literalmente lo que ves.
+ */
+function countTriangulation(tris: number[][]): { V: number; E: number; F: number; chi: number } {
+  const F = tris.length;
+  const edges = new Set<string>();
+  const used = new Set<number>();
+  const key = (x: number, y: number) => (x < y ? `${x}_${y}` : `${y}_${x}`);
+  for (const [a, b, c] of tris) {
+    edges.add(key(a, b));
+    edges.add(key(b, c));
+    edges.add(key(c, a));
+    used.add(a); used.add(b); used.add(c);
+  }
+  const V = used.size;
+  const E = edges.size;
   return { V, E, F, chi: V - E + F };
 }
 
-// ── Geometría 3D real (BufferGeometry desde la parametrización) ──────────
-
-function buildGeometry(surf: Surface, nu: number, nv: number, deform: number): THREE.BufferGeometry {
-  const nodesU = surf.wrapU ? nu : nu + 1;
-  const nodesV = surf.wrapV ? nv : nv + 1;
-  const positions: number[] = [];
-  const idx = (i: number, j: number) => (i % nodesU) * nodesV + (j % nodesV);
-
-  for (let i = 0; i < nodesU; i++) {
-    for (let j = 0; j < nodesV; j++) {
-      const u = i / nu;
-      const v = j / nv;
-      const p = surf.param(u, v, deform);
-      positions.push(p.x, p.y, p.z);
-    }
-  }
-
-  const indices: number[] = [];
-  for (let i = 0; i < nu; i++) {
-    for (let j = 0; j < nv; j++) {
-      // Solo conectamos a (i+1)/(j+1) si existe el nodo (o si hay wrap).
-      const i1 = i + 1, j1 = j + 1;
-      if (!surf.wrapU && i1 >= nodesU) continue;
-      if (!surf.wrapV && j1 >= nodesV) continue;
-      const a = idx(i, j);
-      const b = idx(i1, j);
-      const c = idx(i1, j1);
-      const d = idx(i, j1);
-      // dos triángulos: (a,b,c) y (a,c,d)
-      indices.push(a, b, c, a, c, d);
-    }
-  }
-
+// Construye una BufferGeometry desde posiciones + índices de triángulo.
+function geometryFrom(positions: number[], tris: number[][]): THREE.BufferGeometry {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setIndex(indices);
+  geo.setIndex(tris.flat());
   geo.computeVertexNormals();
   return geo;
 }
+
+// ── Esfera (UV) — polos como un único vértice (fans), interior con wrap ────
+//
+// nv anillos de latitud: polo norte (1 vtx) + (nv−1) anillos interiores de nu
+// vértices + polo sur (1 vtx). Tapas = triángulos; medio = quads → 2 tri c/u.
+
+function buildSphere(nu: number, nv: number, deform: number): BuiltSurface {
+  const positions: number[] = [];
+  const R = 1.6;
+  const sample = (lon: number, lat: number) => {
+    const r = R * (1 + 0.18 * deform * Math.sin(4 * lat) * Math.cos(3 * lon));
+    const sinLat = Math.sin(lat);
+    positions.push(
+      r * sinLat * Math.cos(lon),
+      r * Math.cos(lat),
+      r * sinLat * Math.sin(lon),
+    );
+  };
+
+  // polo norte = índice 0, polo sur = índice 1
+  sample(0, 0);            // norte (lat 0)
+  sample(0, Math.PI);      // sur   (lat π)
+  let next = 2;
+  const ring: number[][] = []; // ring[j-1][i], j = 1..nv-1
+  for (let j = 1; j <= nv - 1; j++) {
+    const lat = (j / nv) * Math.PI;
+    const row: number[] = [];
+    for (let i = 0; i < nu; i++) {
+      const lon = (i / nu) * TWO_PI;
+      sample(lon, lat);
+      row.push(next++);
+    }
+    ring.push(row);
+  }
+
+  const tris: number[][] = [];
+  const NORTH = 0, SOUTH = 1;
+  const r1 = ring[0];
+  for (let i = 0; i < nu; i++) tris.push([NORTH, r1[i], r1[(i + 1) % nu]]);
+  for (let j = 1; j <= nv - 2; j++) {
+    const a = ring[j - 1], b = ring[j];
+    for (let i = 0; i < nu; i++) {
+      const i1 = (i + 1) % nu;
+      tris.push([a[i], a[i1], b[i1]]);
+      tris.push([a[i], b[i1], b[i]]);
+    }
+  }
+  const rL = ring[nv - 2];
+  for (let i = 0; i < nu; i++) tris.push([SOUTH, rL[(i + 1) % nu], rL[i]]);
+
+  const { V, E, F, chi } = countTriangulation(tris);
+  return { geometry: geometryFrom(positions, tris), V, E, F, chi };
+}
+
+// ── Toro — wrap en ambas direcciones ──────────────────────────────────────
+
+function buildTorus(nu: number, nv: number, deform: number): BuiltSurface {
+  const positions: number[] = [];
+  const R = 1.55, r0 = 0.62;
+  const id = (i: number, j: number) => (i % nu) * nv + (j % nv);
+  for (let i = 0; i < nu; i++) {
+    const a = (i / nu) * TWO_PI; // alrededor del agujero
+    for (let j = 0; j < nv; j++) {
+      const b = (j / nv) * TWO_PI; // alrededor del tubo
+      const rr = r0 * (1 + 0.28 * deform * Math.sin(3 * a));
+      const ringR = R + rr * Math.cos(b);
+      positions.push(ringR * Math.cos(a), rr * Math.sin(b), ringR * Math.sin(a));
+    }
+  }
+  const tris: number[][] = [];
+  for (let i = 0; i < nu; i++) {
+    for (let j = 0; j < nv; j++) {
+      const a = id(i, j), b = id(i + 1, j), c = id(i + 1, j + 1), d = id(i, j + 1);
+      tris.push([a, b, c]);
+      tris.push([a, c, d]);
+    }
+  }
+  const { V, E, F, chi } = countTriangulation(tris);
+  return { geometry: geometryFrom(positions, tris), V, E, F, chi };
+}
+
+// ── Doble toro — SUMA CONEXA de dos toros ─────────────────────────────────
+//
+// Construimos dos toros (genus 1 cada uno, χ = 0), les quitamos UNA cara
+// (un quad = 2 triángulos) a cada uno, y pegamos los dos bordes resultantes
+// con una banda tubular. Conexa: χ = χ₁ + χ₂ − 2 = 0 + 0 − 2 = −2  ⇒ g = 2.
+
+function buildDoubleTorus(nu: number, nv: number, deform: number): BuiltSurface {
+  const positions: number[] = [];
+  const R = 1.05, r0 = 0.5;
+
+  // Toro 1 desplazado a −X, toro 2 a +X; el agujero a quitar mira hacia el otro.
+  const emitTorus = (cx: number, sign: number, offset: number) => {
+    const id = (i: number, j: number) => offset + (i % nu) * nv + (j % nv);
+    for (let i = 0; i < nu; i++) {
+      const a = (i / nu) * TWO_PI;
+      for (let j = 0; j < nv; j++) {
+        const b = (j / nv) * TWO_PI;
+        const rr = r0 * (1 + 0.22 * deform * Math.sin(5 * a));
+        const ringR = R + rr * Math.cos(b);
+        // toro en plano XY, eje del agujero = Z; desplazado en X
+        positions.push(cx + sign * ringR * Math.cos(a), ringR * Math.sin(a), rr * Math.sin(b));
+      }
+    }
+    return id;
+  };
+
+  const gap = 1.35;
+  const id1 = emitTorus(-gap, 1, 0);
+  const id2 = emitTorus(gap, -1, nu * nv);
+
+  // Cara (quad) a quitar en cada toro: la celda (i0, j0). La elegimos en el
+  // borde interno que mira al otro toro (i0 cerca de a=0 / a=π por el signo).
+  const i0a = 0, j0 = 0;
+  const i0b = 0, j0b = 0;
+
+  const quad = (id: (i: number, j: number) => number, i0: number, jj: number) =>
+    [id(i0, jj), id(i0 + 1, jj), id(i0 + 1, jj + 1), id(i0, jj + 1)] as const;
+
+  const tris: number[][] = [];
+  const emitQuads = (
+    id: (i: number, j: number) => number,
+    skipI: number,
+    skipJ: number,
+  ) => {
+    for (let i = 0; i < nu; i++) {
+      for (let j = 0; j < nv; j++) {
+        if (i === skipI && j === skipJ) continue; // dejar el agujero
+        const a = id(i, j), b = id(i + 1, j), c = id(i + 1, j + 1), d = id(i, j + 1);
+        tris.push([a, b, c]);
+        tris.push([a, c, d]);
+      }
+    }
+  };
+  emitQuads(id1, i0a, j0);
+  emitQuads(id2, i0b, j0b);
+
+  // Bordes de los dos agujeros (ciclos de 4 vértices) y banda que los une.
+  const q1 = quad(id1, i0a, j0);   // [a,b,c,d]
+  const q2 = quad(id2, i0b, j0b);
+  for (let k = 0; k < 4; k++) {
+    const a = q1[k], b = q1[(k + 1) % 4];
+    const c = q2[k], d = q2[(k + 1) % 4];
+    tris.push([a, b, d]);
+    tris.push([a, d, c]);
+  }
+
+  const { V, E, F, chi } = countTriangulation(tris);
+  return { geometry: geometryFrom(positions, tris), V, E, F, chi };
+}
+
+// ── Catálogo de superficies ───────────────────────────────────────────────
+
+interface SurfaceDef {
+  id: string;
+  label: string;
+  genus: number;
+  blurb: string;
+  build: (nu: number, nv: number, deform: number) => BuiltSurface;
+}
+
+const SURFACES: SurfaceDef[] = [
+  {
+    id: 'sphere',
+    label: 'Esfera  (g = 0)',
+    genus: 0,
+    blurb: 'Sin agujeros. La superficie cerrada más simple. χ = 2.',
+    build: buildSphere,
+  },
+  {
+    id: 'torus',
+    label: 'Toro  (g = 1)',
+    genus: 1,
+    blurb: 'Un agujero (una rosca). El asa baja χ en 2: χ = 0.',
+    build: buildTorus,
+  },
+  {
+    id: 'double-torus',
+    label: 'Doble toro  (g = 2)',
+    genus: 2,
+    blurb: 'Dos agujeros (suma conexa de dos toros). χ = 2 − 2·2 = −2.',
+    build: buildDoubleTorus,
+  },
+];
 
 // ── Lección ──────────────────────────────────────────────────────────────
 
@@ -236,8 +293,8 @@ Calcula V − E + F. Da 2. Sube la resolución con el slider: V, E y F cambian t
 Esa es la magia de un invariante: las piezas cambian, el total no.`,
       formula: 'χ = V − E + F = 2\ng = 0  ⇒  χ = 2 − 2·0 = 2',
       keyframes: [
-        { at: 0, state: { surfaceId: 'sphere', deform: 0, resU: 24 } },
-        { at: 1, state: { surfaceId: 'sphere', deform: 0, resU: 24 } },
+        { at: 0, state: { surfaceId: 'sphere', deform: 0, res: 22 } },
+        { at: 1, state: { surfaceId: 'sphere', deform: 0, res: 22 } },
       ],
     },
     {
@@ -250,10 +307,10 @@ Mira el HUD: por más que la superficie se retuerza, χ sigue siendo 2. Mientras
 Eso es lo que significa "invariante bajo deformación" (homeomorfismo). Una taza y una dona son lo mismo para la topología porque ambas tienen exactamente un agujero. La esfera abollada y la esfera perfecta también: χ = 2 las dos.
 
 La geometría (distancias, ángulos, curvatura) cambia. La topología (χ, el género) no.`,
-      formula: 'deformación continua  ⇒  χ invariante\nesfera abollada ≈ esfera ⇒ χ = 2',
+      formula: 'deformación continua  ⇒  χ invariante\nesfera abollada ≅ esfera ⇒ χ = 2',
       keyframes: [
-        { at: 0, state: { surfaceId: 'sphere', deform: 0, resU: 28 } },
-        { at: 1, state: { surfaceId: 'sphere', deform: 1, resU: 28 } },
+        { at: 0, state: { surfaceId: 'sphere', deform: 0, res: 26 } },
+        { at: 1, state: { surfaceId: 'sphere', deform: 1, res: 26 } },
       ],
     },
     {
@@ -268,24 +325,24 @@ Cuenta: V − E + F = 0. El agujero le restó exactamente 2 a la característica
 Pega un asa a cualquier superficie y χ baja en 2. Es como un peaje topológico: cada agujero cuesta 2.`,
       formula: 'toro:  V − E + F = 0\ng = 1  ⇒  χ = 2 − 2·1 = 0',
       keyframes: [
-        { at: 0, state: { surfaceId: 'torus', deform: 0, resU: 30 } },
-        { at: 1, state: { surfaceId: 'torus', deform: 0.6, resU: 30 } },
+        { at: 0, state: { surfaceId: 'torus', deform: 0, res: 26 } },
+        { at: 1, state: { surfaceId: 'torus', deform: 0.6, res: 26 } },
       ],
     },
     {
       title: 'El doble toro — dos asas, χ = −2',
       duration: 6000,
-      body: `Subimos a género g = 2: el doble toro, una figura de ocho hueca con DOS agujeros.
+      body: `Subimos a género g = 2: el doble toro. Lo armamos como SUMA CONEXA de dos toros: a cada toro le quitamos una cara y pegamos los bordes con un tubo.
 
-Construimos el tubo siguiendo una curva en forma de 8 (lemniscata) que se cierra sobre sí misma, así que tenemos efectivamente dos asas.
+Quitar y pegar de ese modo resta exactamente 2 a la suma de las características: χ = χ₁ + χ₂ − 2 = 0 + 0 − 2.
 
-Cuenta en el HUD: V − E + F = −2. Dos agujeros, dos veces el peaje: 2·2 = 4 menos que la esfera, que valía 2. Por eso χ = 2 − 4 = −2.
+Cuenta en el HUD: V − E + F = −2. Dos agujeros, dos veces el peaje. Por eso χ = 2 − 4 = −2.
 
-La fórmula general queda comprobada con tres mallas distintas. Cualquier superficie orientable cerrada cae en esta escalera: 2, 0, −2, −4, … una por cada género.`,
-      formula: 'doble toro:  V − E + F = −2\ng = 2  ⇒  χ = 2 − 2·2 = −2',
+La fórmula general queda comprobada con tres mallas distintas. Cualquier superficie orientable cerrada cae en esta escalera.`,
+      formula: 'doble toro:  V − E + F = −2\nχ = χ₁ + χ₂ − 2 = 0 + 0 − 2\ng = 2  ⇒  χ = 2 − 2·2 = −2',
       keyframes: [
-        { at: 0, state: { surfaceId: 'double-torus', deform: 0, resU: 40 } },
-        { at: 1, state: { surfaceId: 'double-torus', deform: 0.7, resU: 40 } },
+        { at: 0, state: { surfaceId: 'double-torus', deform: 0, res: 30 } },
+        { at: 1, state: { surfaceId: 'double-torus', deform: 0.7, res: 30 } },
       ],
     },
     {
@@ -303,8 +360,8 @@ Contar V − E + F de CUALQUIER malla de la superficie te dice su género al ins
 Por eso χ es uno de los primeros invariantes topológicos de verdad: distingue formas que ninguna deformación puede igualar.`,
       formula: 'g = (2 − χ) / 2\nχ ∈ { 2, 0, −2, −4, … }',
       keyframes: [
-        { at: 0, state: { surfaceId: 'double-torus', deform: 0.3, resU: 40 } },
-        { at: 1, state: { surfaceId: 'double-torus', deform: 0.3, resU: 40 } },
+        { at: 0, state: { surfaceId: 'double-torus', deform: 0.3, res: 30 } },
+        { at: 1, state: { surfaceId: 'double-torus', deform: 0.3, res: 30 } },
       ],
     },
   ],
@@ -320,8 +377,8 @@ Por eso χ es uno de los primeros invariantes topológicos de verdad: distingue 
 Explora el sandbox: cambia de superficie, deforma con el slider, sube y baja la resolución. χ nunca se mueve de 2 − 2g. Eso es un invariante.`,
     links: [
       { label: 'Campos vectoriales — el teorema del erizo en acción', href: '#vector-fields' },
-      { label: 'Curvatura y geometría diferencial — Gauss-Bonnet', href: '#tangent-plane' },
-      { label: 'Grafos planares — la fórmula de Euler V−E+F=2', href: '#pca' },
+      { label: 'Plano tangente — curvatura y Gauss-Bonnet', href: '#tangent-plane' },
+      { label: 'PCA — los grafos planares y la fórmula de Euler', href: '#pca' },
     ],
   },
 };
@@ -332,26 +389,24 @@ export default function Genus() {
   const { audience } = useAudience();
   const [surfaceId, setSurfaceId] = useState('sphere');
   const [deform, setDeform] = useState(0);
-  const [resU, setResU] = useState(24);
+  const [res, setRes] = useState(22);
 
   const surf = useMemo(() => SURFACES.find(s => s.id === surfaceId)!, [surfaceId]);
 
-  // nv (resolución del tubo/latitud) escala con resU pero acotada.
-  const nu = Math.max(6, Math.round(resU));
-  const nv = Math.max(6, Math.round(resU * 0.55));
+  // nu (a lo largo / longitud) y nv (tubo / latitud): nv menor pero ≥ 6.
+  const nu = Math.max(6, Math.round(res));
+  const nv = Math.max(6, Math.round(res * 0.55));
 
-  const count = useMemo(() => countMesh(nu, nv, surf.wrapU, surf.wrapV), [nu, nv, surf]);
-
-  const geometry = useMemo(
-    () => buildGeometry(surf, nu, nv, deform),
+  const built = useMemo(
+    () => surf.build(nu, nv, deform),
     [surf, nu, nv, deform],
   );
 
-  // Geometría de aristas (wireframe) para que se vean V/E/F sobre la superficie.
-  const wireframe = useMemo(() => new THREE.WireframeGeometry(geometry), [geometry]);
+  // Aristas (wireframe) para que se vean V/E/F sobre la superficie.
+  const wireframe = useMemo(() => new THREE.WireframeGeometry(built.geometry), [built.geometry]);
 
   const expectedChi = 2 - 2 * surf.genus;
-  const matches = count.chi === expectedChi;
+  const matches = built.chi === expectedChi;
 
   return (
     <div className="w-full h-full grid grid-cols-[1fr_360px] gap-3">
@@ -360,7 +415,7 @@ export default function Genus() {
           <CanvasCapture />
 
           {/* Superficie 3D real — cuerpo emisivo para que el bloom la encienda */}
-          <mesh geometry={geometry}>
+          <mesh geometry={built.geometry}>
             <meshStandardMaterial
               color={ACCENT}
               emissive={ACCENT}
@@ -370,7 +425,6 @@ export default function Genus() {
               side={THREE.DoubleSide}
               transparent
               opacity={0.92}
-              flatShading={false}
             />
           </mesh>
 
@@ -384,13 +438,13 @@ export default function Genus() {
         <div className="absolute top-3 left-3 text-[12px] font-mono space-y-1 text-[#CBD5E1]
                         bg-[#05060A]/75 backdrop-blur px-3 py-2.5 rounded border border-[#1E293B]">
           <div className="text-[10px] uppercase tracking-wider text-[#64748B] mb-1">conteo de la malla</div>
-          <div className="flex justify-between gap-6"><span className="text-[#94A3B8]">V (vértices)</span><span className="text-white">{count.V.toLocaleString('es-MX')}</span></div>
-          <div className="flex justify-between gap-6"><span className="text-[#94A3B8]">E (aristas)</span><span className="text-white">{count.E.toLocaleString('es-MX')}</span></div>
-          <div className="flex justify-between gap-6"><span className="text-[#94A3B8]">F (caras)</span><span className="text-white">{count.F.toLocaleString('es-MX')}</span></div>
+          <div className="flex justify-between gap-6"><span className="text-[#94A3B8]">V (vértices)</span><span className="text-white">{built.V.toLocaleString('es-MX')}</span></div>
+          <div className="flex justify-between gap-6"><span className="text-[#94A3B8]">E (aristas)</span><span className="text-white">{built.E.toLocaleString('es-MX')}</span></div>
+          <div className="flex justify-between gap-6"><span className="text-[#94A3B8]">F (caras)</span><span className="text-white">{built.F.toLocaleString('es-MX')}</span></div>
           <div className="border-t border-[#1E293B] my-1.5" />
           <div className="flex justify-between gap-6">
             <span style={{ color: ACCENT }}>χ = V − E + F</span>
-            <span className="text-white font-bold">{count.chi}</span>
+            <span className="text-white font-bold">{built.chi}</span>
           </div>
           <div className="flex justify-between gap-6">
             <span className="text-[#94A3B8]">2 − 2g (g={surf.genus})</span>
@@ -421,7 +475,7 @@ export default function Genus() {
         onApplyState={(patch) => {
           if (patch.surfaceId !== undefined) setSurfaceId(patch.surfaceId);
           if (patch.deform !== undefined) setDeform(patch.deform);
-          if (patch.resU !== undefined) setResU(patch.resU);
+          if (patch.res !== undefined) setRes(patch.res);
         }}
         sandbox={
           <>
@@ -467,9 +521,9 @@ export default function Genus() {
                 <span className="text-[11px] font-mono text-white">{nu}×{nv}</span>
               </div>
               <input
-                type="range" min={6} max={64} step={1}
-                value={resU}
-                onChange={e => setResU(parseInt(e.target.value, 10))}
+                type="range" min={8} max={48} step={1}
+                value={res}
+                onChange={e => setRes(parseInt(e.target.value, 10))}
                 className="w-full accent-[#22D3EE]"
               />
               <div className="text-[10px] text-[#64748B] leading-snug">
@@ -480,7 +534,7 @@ export default function Genus() {
             <div className="border-t border-[#1E293B] pt-3 space-y-1.5">
               <div className="text-[10px] uppercase tracking-wider text-[#64748B]">Conteo combinatorio</div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                {([['V', count.V], ['E', count.E], ['F', count.F]] as const).map(([k, val]) => (
+                {([['V', built.V], ['E', built.E], ['F', built.F]] as const).map(([k, val]) => (
                   <div key={k} className="rounded border border-[#1E293B] py-1.5">
                     <div className="text-[10px] text-[#64748B]">{k}</div>
                     <div className="text-[12px] font-mono text-white">{val.toLocaleString('es-MX')}</div>
@@ -489,7 +543,7 @@ export default function Genus() {
               </div>
               <div className="flex items-center justify-between text-[12px] font-mono pt-1">
                 <span style={{ color: ACCENT }}>χ = V − E + F</span>
-                <span className="text-white font-bold">{count.chi}</span>
+                <span className="text-white font-bold">{built.chi}</span>
               </div>
               <div className="flex items-center justify-between text-[12px] font-mono">
                 <span className="text-[#94A3B8]">2 − 2g</span>
@@ -502,8 +556,9 @@ export default function Genus() {
 
             {audience !== 'child' && (
               <div className="border-t border-[#1E293B] pt-3 text-[11px] text-[#64748B] leading-relaxed">
-                Triangulación cerrada orientable: 3F = 2E ⇒ E = 3F/2. El conteo es entero, así que
-                χ = V − E + F sale exacto e independiente de la resolución. g = (2 − χ)/2.
+                V, E, F se cuentan de la MISMA malla que se dibuja (E = aristas no-dirigidas únicas,
+                F = #triángulos). χ = V − E + F sale entero, exacto e independiente de la resolución.
+                Doble toro = suma conexa: χ = χ₁ + χ₂ − 2. Género: g = (2 − χ)/2.
               </div>
             )}
           </>
