@@ -369,9 +369,241 @@ export function filletAllEdges(oc: OC, shape: Shape, radius: number): Shape {
   return out;
 }
 
+/**
+ * Redondea SOLO las aristas cuyo índice (en el orden estable de
+ * `enumerateEdges`) está en `edgeIndices`. Es el fillet SELECTIVO que el
+ * diseñador usa al clicar aristas en el viewport / panel.
+ *
+ * Si `edgeIndices` está vacío, redondea todas (equivale a filletAllEdges).
+ */
+export function filletEdges(
+  oc: OC,
+  shape: Shape,
+  radius: number,
+  edgeIndices: number[],
+): Shape {
+  const mk = new oc.BRepFilletAPI_MakeFillet(
+    shape,
+    oc.ChFi3d_FilletShape.ChFi3d_Rational,
+  );
+  const want = new Set(edgeIndices);
+  const all = want.size === 0;
+  const edges = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_EDGE);
+  let added = 0;
+  for (let i = 0; i < edges.length; i++) {
+    if (all || want.has(i)) {
+      mk.Add_2(radius, oc.TopoDS.Edge_1(edges[i]));
+      added++;
+    }
+  }
+  if (added === 0) {
+    mk.delete?.();
+    for (const e of edges) e.delete?.();
+    throw new Error('filletEdges: ninguna arista seleccionada');
+  }
+  const out = mk.Shape();
+  mk.delete?.();
+  for (const e of edges) e.delete?.();
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Chamfer (BRepFilletAPI_MakeChamfer) — bisel de aristas
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Bisela aristas (chamfer simétrico de distancia `dist`). Selección por índice
+ * estable de `enumerateEdges`; vacío = todas las aristas.
+ */
+export function chamferEdges(
+  oc: OC,
+  shape: Shape,
+  dist: number,
+  edgeIndices: number[],
+): Shape {
+  const mk = new oc.BRepFilletAPI_MakeChamfer(shape);
+  const want = new Set(edgeIndices);
+  const all = want.size === 0;
+  const edges = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_EDGE);
+  let added = 0;
+  for (let i = 0; i < edges.length; i++) {
+    if (all || want.has(i)) {
+      // Add_2(dist, edge): chamfer simétrico de la arista.
+      mk.Add_2(dist, oc.TopoDS.Edge_1(edges[i]));
+      added++;
+    }
+  }
+  if (added === 0) {
+    mk.delete?.();
+    for (const e of edges) e.delete?.();
+    throw new Error('chamferEdges: ninguna arista seleccionada');
+  }
+  const out = mk.Shape();
+  mk.delete?.();
+  for (const e of edges) e.delete?.();
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Shell / vaciado (BRepOffsetAPI_MakeThickSolid) — pared delgada
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Vacía un sólido dejando pared delgada de espesor `thickness`, removiendo
+ * la(s) cara(s) `faceIndices` (índices estables de `enumerateFaces`) para
+ * abrir el hueco. `thickness` > 0 deja la pared HACIA ADENTRO (offset
+ * negativo en OCCT). Es el feature "dog bowl / tray".
+ *
+ * Implementa BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin con una
+ * TopTools_ListOfShape de caras a remover.
+ */
+export function shellSolid(
+  oc: OC,
+  shape: Shape,
+  thickness: number,
+  faceIndices: number[],
+): Shape {
+  if (!faceIndices.length) {
+    throw new Error('shellSolid: hay que indicar al menos una cara abierta');
+  }
+  const faces = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_FACE);
+  const facesToRemove = new oc.TopTools_ListOfShape_1();
+  for (const idx of faceIndices) {
+    if (idx >= 0 && idx < faces.length) {
+      facesToRemove.Append_1(faces[idx]);
+    }
+  }
+  // Constructor por defecto (variante _1 en este build) + MakeThickSolidByJoin.
+  // ⚠️ Este build NO expone Message_ProgressRange: la firma es de 9 args
+  // (sin el rango de progreso). offset NEGATIVO = pared hacia adentro.
+  const mk = new oc.BRepOffsetAPI_MakeThickSolid_1();
+  // MakeThickSolidByJoin(shape, closingFaces, offset, tol, mode, intersection,
+  //   selfInter, joinType, removeIntEdges)
+  mk.MakeThickSolidByJoin(
+    shape,
+    facesToRemove,
+    -Math.abs(thickness),
+    1e-3,
+    oc.BRepOffset_Mode.BRepOffset_Skin,
+    false,
+    false,
+    oc.GeomAbs_JoinType.GeomAbs_Arc,
+    false,
+  );
+  const out = mk.Shape();
+  mk.delete?.();
+  facesToRemove.delete?.();
+  for (const f of faces) f.delete?.();
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Revolve (BRepPrimAPI_MakeRevol) — sólido de revolución
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Revoluciona un PERFIL POLIGONAL cerrado (puntos 2D, plano XY) alrededor del
+ * eje Y (x=0) un ángulo `angleDeg`. El perfil debe estar TODO a un lado del
+ * eje (x ≥ 0) para generar un sólido axisimétrico válido (eje, polea, botella).
+ *
+ * Invariante para 360°: volumen = teorema de Pappus = 2π · A · x̄.
+ */
+export function revolvePolygon(
+  oc: OC,
+  pts: Pt2[],
+  angleDeg: number,
+  plane: SketchPlane3D = PLANE_XY,
+): Shape {
+  if (pts.length < 3) {
+    throw new Error('revolvePolygon: se requieren ≥3 puntos');
+  }
+  const wire = makePolygonWire(oc, plane, pts);
+  const face = new oc.BRepBuilderAPI_MakeFace_15(wire, true).Face();
+  // Eje de revolución = eje V del plano (por defecto +Y) anclado en el origen.
+  const [ox, oy, oz] = plane.origin;
+  const o = new oc.gp_Pnt_3(ox, oy, oz);
+  const d = new oc.gp_Dir_4(plane.vDir[0], plane.vDir[1], plane.vDir[2]);
+  const ax1 = new oc.gp_Ax1_2(o, d);
+  const ang = (angleDeg * Math.PI) / 180;
+  const full = Math.abs(angleDeg - 360) < 1e-6;
+  const mk = full
+    ? new oc.BRepPrimAPI_MakeRevol_2(face, ax1, true)
+    : new oc.BRepPrimAPI_MakeRevol_1(face, ax1, ang, true);
+  const shape = mk.Shape();
+  mk.delete?.();
+  return shape;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Hole / barreno: resta de un cilindro pasante o ciego
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Perfora un barreno cilíndrico en `shape`. El barreno se posiciona en
+ * (x, y) del plano XY y baja en −Z desde `zTop` una profundidad `depth`
+ * (o `through` = pasante: lo extendemos generosamente más allá del sólido).
+ * Diámetro `diameter`. Devuelve shape − cilindro.
+ */
+export function drillHole(
+  oc: OC,
+  shape: Shape,
+  opts: {
+    x: number;
+    y: number;
+    diameter: number;
+    zTop: number;
+    depth: number;
+    through: boolean;
+    spanBelow?: number;
+  },
+): Shape {
+  const r = opts.diameter / 2;
+  const margin = 1e-3;
+  // Para "pasante" el cilindro debe sobrar por arriba y por abajo del sólido.
+  const span = opts.through ? (opts.spanBelow ?? 0) + opts.zTop + 2 * margin : opts.depth;
+  const top = opts.zTop + margin;
+  const tool = makeCylinder(oc, r, span, {
+    origin: [opts.x, opts.y, top],
+    dir: [0, 0, -1],
+  });
+  const out = cut(oc, shape, tool);
+  tool.delete?.();
+  return out;
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Topología (TopExp_Explorer) — invariante de Euler–Poincaré
 // ─────────────────────────────────────────────────────────────────
+
+/**
+ * Devuelve las sub-formas ÚNICAS (por IsSame) de un tipo dado, en orden de
+ * recorrido del TopExp_Explorer. Este ORDEN es estable para una misma forma
+ * y es el que usamos como "nombre" de cara/arista en la selección de la UI
+ * (índice 0..n-1). El llamador es dueño de los wrappers y debe .delete().
+ */
+export function uniqueSubShapes(oc: OC, shape: Shape, kind: number): Shape[] {
+  const exp = new oc.TopExp_Explorer_2(
+    shape,
+    kind,
+    oc.TopAbs_ShapeEnum.TopAbs_SHAPE,
+  );
+  const unique: Shape[] = [];
+  while (exp.More()) {
+    const sub = exp.Current();
+    let dup = false;
+    for (const prev of unique) {
+      if (prev.IsSame(sub)) {
+        dup = true;
+        break;
+      }
+    }
+    if (dup) sub.delete?.();
+    else unique.push(sub);
+    exp.Next();
+  }
+  exp.delete?.();
+  return unique;
+}
 
 function countSubShapes(oc: OC, shape: Shape, kind: number): number {
   const exp = new oc.TopExp_Explorer_2(
@@ -455,6 +687,205 @@ export function surfaceArea(oc: OC, shape: Shape): number {
   const a = props.Mass();
   props.delete?.();
   return a;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Propiedades de masa EXACTAS — el primer "análisis" del diseñador
+// (GProp_GProps: centro de masa + tensor de inercia + radio de giro)
+// ─────────────────────────────────────────────────────────────────
+
+export interface MassProperties {
+  /** Volumen exacto (mm³). */
+  volume: number;
+  /** Masa (g) = volumen·densidad. densidad en g/mm³. */
+  mass: number;
+  /** Centro de masa [x,y,z] (mm). */
+  centerOfMass: [number, number, number];
+  /** Tensor de inercia 3×3 respecto al centro de masa (g·mm²). */
+  inertia: [[number, number, number], [number, number, number], [number, number, number]];
+  /** Momentos principales de inercia (g·mm²). */
+  principal: [number, number, number];
+}
+
+/**
+ * Calcula masa/centro-de-masa/inercia EXACTOS vía GProp_GProps. La inercia que
+ * devuelve OCCT es respecto al origen; la trasladamos al centro de masa con el
+ * teorema de ejes paralelos para reportar el tensor físico de la pieza, y la
+ * escalamos por la densidad (g/mm³) para dar masa real.
+ */
+export function massProperties(
+  oc: OC,
+  shape: Shape,
+  density: number,
+): MassProperties {
+  const props = new oc.GProp_GProps_1();
+  oc.BRepGProp.VolumeProperties_1(shape, props, false, false, false);
+  const vol = props.Mass(); // "Mass" de GProp con densidad 1 = volumen
+  const com = props.CentreOfMass();
+  const cx = com.X();
+  const cy = com.Y();
+  const cz = com.Z();
+
+  // Matriz de inercia respecto al origen (densidad 1), gp_Mat 1-indexada.
+  const m = props.MatrixOfInertia();
+  const I0 = (i: number, j: number) => m.Value(i, j) as number;
+
+  // Teorema de ejes paralelos para mover I del origen al centro de masa.
+  // I_cm = I_0 − m·(d² I − d⊗d), con m=vol (densidad 1), d = centro de masa.
+  const d2 = cx * cx + cy * cy + cz * cz;
+  const dd = [
+    [cx * cx, cx * cy, cx * cz],
+    [cy * cx, cy * cy, cy * cz],
+    [cz * cx, cz * cy, cz * cz],
+  ];
+  const delta = (i: number, j: number) => (i === j ? 1 : 0);
+  const Icm: number[][] = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      const i0 = I0(i + 1, j + 1);
+      Icm[i][j] = (i0 - vol * (d2 * delta(i, j) - dd[i][j])) * density;
+    }
+  }
+
+  // Momentos principales = eigenvalores del tensor de inercia simétrico (3×3),
+  // forma cerrada de Smith (1961) para matrices simétricas — exacta y estable.
+  const principal = symEigenvalues3(Icm) as [number, number, number];
+
+  props.delete?.();
+  return {
+    volume: vol,
+    mass: vol * density,
+    centerOfMass: [cx, cy, cz],
+    inertia: Icm as MassProperties['inertia'],
+    principal,
+  };
+}
+
+/** Eigenvalores de una matriz simétrica 3×3 (Smith, forma cerrada). */
+function symEigenvalues3(A: number[][]): number[] {
+  const p1 = A[0][1] ** 2 + A[0][2] ** 2 + A[1][2] ** 2;
+  if (p1 < 1e-18) {
+    return [A[0][0], A[1][1], A[2][2]].sort((a, b) => b - a);
+  }
+  const q = (A[0][0] + A[1][1] + A[2][2]) / 3;
+  const p2 =
+    (A[0][0] - q) ** 2 + (A[1][1] - q) ** 2 + (A[2][2] - q) ** 2 + 2 * p1;
+  const p = Math.sqrt(p2 / 6);
+  const B = [
+    [(A[0][0] - q) / p, A[0][1] / p, A[0][2] / p],
+    [A[1][0] / p, (A[1][1] - q) / p, A[1][2] / p],
+    [A[2][0] / p, A[2][1] / p, (A[2][2] - q) / p],
+  ];
+  const detB =
+    B[0][0] * (B[1][1] * B[2][2] - B[1][2] * B[2][1]) -
+    B[0][1] * (B[1][0] * B[2][2] - B[1][2] * B[2][0]) +
+    B[0][2] * (B[1][0] * B[2][1] - B[1][1] * B[2][0]);
+  let r = detB / 2;
+  r = Math.max(-1, Math.min(1, r));
+  const phi = Math.acos(r) / 3;
+  const e1 = q + 2 * p * Math.cos(phi);
+  const e3 = q + 2 * p * Math.cos(phi + (2 * Math.PI) / 3);
+  const e2 = 3 * q - e1 - e3;
+  return [e1, e2, e3].sort((a, b) => b - a);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Enumeración de caras / aristas con descriptor geométrico
+// (para la SELECCIÓN del diseñador: lista nombrada + picking por raycast)
+// ─────────────────────────────────────────────────────────────────
+
+export interface FaceRef {
+  index: number;
+  /** 'plane' | 'cylinder' | 'cone' | 'sphere' | 'other' */
+  kind: string;
+  area: number;
+  /** centroide de la cara [x,y,z] (mm) — ancla del label y target del picking. */
+  center: [number, number, number];
+  /** normal aproximada en el centroide (solo planos; [0,0,0] si no aplica). */
+  normal: [number, number, number];
+}
+
+export interface EdgeRef {
+  index: number;
+  /** 'line' | 'circle' | 'other' */
+  kind: string;
+  length: number;
+  /** punto medio de la arista [x,y,z] (mm). */
+  mid: [number, number, number];
+}
+
+/** Lista de caras con tipo/área/centroide en el orden estable del explorer. */
+export function enumerateFaces(oc: OC, shape: Shape): FaceRef[] {
+  const faces = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_FACE);
+  const out: FaceRef[] = [];
+  for (let i = 0; i < faces.length; i++) {
+    const f = oc.TopoDS.Face_1(faces[i]);
+    const adaptor = new oc.BRepAdaptor_Surface_2(f, true);
+    const gt = adaptor.GetType().value as number;
+    const kindMap: Record<number, string> = {
+      [oc.GeomAbs_SurfaceType.GeomAbs_Plane.value]: 'plane',
+      [oc.GeomAbs_SurfaceType.GeomAbs_Cylinder.value]: 'cylinder',
+      [oc.GeomAbs_SurfaceType.GeomAbs_Cone.value]: 'cone',
+      [oc.GeomAbs_SurfaceType.GeomAbs_Sphere.value]: 'sphere',
+    };
+    const kind = kindMap[gt] ?? 'other';
+
+    const props = new oc.GProp_GProps_1();
+    oc.BRepGProp.SurfaceProperties_1(faces[i], props, false, false);
+    const area = props.Mass();
+    const c = props.CentreOfMass();
+    const center: [number, number, number] = [c.X(), c.Y(), c.Z()];
+    props.delete?.();
+
+    // Normal en el centroide (para planos; usamos parámetros medios u,v).
+    let normal: [number, number, number] = [0, 0, 0];
+    try {
+      const u0 = adaptor.FirstUParameter();
+      const u1 = adaptor.LastUParameter();
+      const v0 = adaptor.FirstVParameter();
+      const v1 = adaptor.LastVParameter();
+      const slp = new oc.BRepLProp_SLProps_1(adaptor, (u0 + u1) / 2, (v0 + v1) / 2, 1, 1e-6);
+      if (slp.IsNormalDefined()) {
+        const n = slp.Normal();
+        normal = [n.X(), n.Y(), n.Z()];
+      }
+      slp.delete?.();
+    } catch {
+      /* superficie sin normal definida (raro) */
+    }
+    adaptor.delete?.();
+    out.push({ index: i, kind, area, center, normal });
+  }
+  for (const f of faces) f.delete?.();
+  return out;
+}
+
+/** Lista de aristas con tipo/longitud/punto-medio en orden estable. */
+export function enumerateEdges(oc: OC, shape: Shape): EdgeRef[] {
+  const edges = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_EDGE);
+  const out: EdgeRef[] = [];
+  for (let i = 0; i < edges.length; i++) {
+    const e = oc.TopoDS.Edge_1(edges[i]);
+    const adaptor = new oc.BRepAdaptor_Curve_2(e);
+    const gt = adaptor.GetType().value as number;
+    const kindMap: Record<number, string> = {
+      [oc.GeomAbs_CurveType.GeomAbs_Line.value]: 'line',
+      [oc.GeomAbs_CurveType.GeomAbs_Circle.value]: 'circle',
+    };
+    const kind = kindMap[gt] ?? 'other';
+
+    const props = new oc.GProp_GProps_1();
+    // Este build expone LinearProperties (sin sufijo _1): (shape, props, skipShared, useTri).
+    oc.BRepGProp.LinearProperties(edges[i], props, false, false);
+    const length = props.Mass();
+    const c = props.CentreOfMass();
+    const mid: [number, number, number] = [c.X(), c.Y(), c.Z()];
+    props.delete?.();
+    adaptor.delete?.();
+    out.push({ index: i, kind, length, mid });
+  }
+  for (const e of edges) e.delete?.();
+  return out;
 }
 
 // ─────────────────────────────────────────────────────────────────
