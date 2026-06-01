@@ -73,18 +73,33 @@ export async function initOCCT(opts: InitOptions = {}): Promise<OC> {
 
   _ocPromise = (async () => {
     let factory = opts.factory;
+    let locateFile = opts.locateFile;
+
     if (!factory) {
-      // Navegador / bundler: el paquete expone el glue como default ESM.
-      // El .wasm se sirve como asset; locateFile lo resuelve.
+      // Navegador / bundler (Vite): el paquete expone el glue como default ESM.
       const mod = await import(
         /* @vite-ignore */ 'opencascade.js/dist/opencascade.wasm.js'
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       factory = ((mod as any).default ?? mod) as (c: unknown) => Promise<OC>;
+
+      if (!locateFile) {
+        // Vite sirve el .wasm como asset; `?url` nos da la URL final con hash.
+        // Así el `locateFile` de Emscripten apunta al binario correcto en dev
+        // y en build.
+        const wasmUrl = (
+          await import(
+            /* @vite-ignore */ 'opencascade.js/dist/opencascade.wasm.wasm?url'
+          )
+        ).default as string;
+        locateFile = (p: string) =>
+          p.endsWith('.wasm') ? wasmUrl : p;
+      }
     }
+
     const config: Record<string, unknown> = {};
     if (opts.wasmBinary) config.wasmBinary = opts.wasmBinary;
-    if (opts.locateFile) config.locateFile = opts.locateFile;
+    if (locateFile) config.locateFile = locateFile;
     const oc = await factory(config);
     return oc;
   })();
@@ -141,6 +156,157 @@ export function makeCylinder(
   }
   const shape = maker.Shape();
   maker.delete?.();
+  return shape;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Extrusión de perfil 2D → sólido B-Rep (el PRIMER MOMENTO del diseñador)
+// ─────────────────────────────────────────────────────────────────
+//
+// Flujo CAD canónico (Onshape/Fusion "Sketch → Extrude"):
+//   1. El diseñador dibuja un perfil 2D cerrado en un plano (cotas paramétricas).
+//   2. El kernel lo convierte en una CARA plana exacta (no malla):
+//        puntos → aristas (segmentos) → wire cerrado → cara.
+//      (Para círculos: una sola arista circular geom_circle → wire → cara.)
+//   3. BRepPrimAPI_MakePrism barre la cara una distancia `height` a lo largo
+//      de la normal del plano → sólido cerrado exacto.
+//
+// El resultado tiene volumen y topología analíticos:
+//   - Rectángulo w·h extruido d  → caja, V = w·h·d, Euler = 2.
+//   - Círculo r  extruido d      → cilindro, V = π·r²·d, Euler = 2.
+
+/** Punto 2D en el plano de boceto (unidades = mm). */
+export interface Pt2 {
+  x: number;
+  y: number;
+}
+
+/**
+ * Plano de boceto: origen + dos ejes ortonormales (u, v) y la normal w = u×v.
+ * Por defecto, plano XY (u=+X, v=+Y, w=+Z) anclado en el origen.
+ */
+export interface SketchPlane3D {
+  origin: [number, number, number];
+  /** Eje local U (mapea x del perfil 2D). */
+  uDir: [number, number, number];
+  /** Eje local V (mapea y del perfil 2D). */
+  vDir: [number, number, number];
+}
+
+export const PLANE_XY: SketchPlane3D = {
+  origin: [0, 0, 0],
+  uDir: [1, 0, 0],
+  vDir: [0, 1, 0],
+};
+
+function map2Dto3D(
+  plane: SketchPlane3D,
+  p: Pt2,
+): [number, number, number] {
+  const [ox, oy, oz] = plane.origin;
+  const [ux, uy, uz] = plane.uDir;
+  const [vx, vy, vz] = plane.vDir;
+  return [
+    ox + ux * p.x + vx * p.y,
+    oy + uy * p.x + vy * p.y,
+    oz + uz * p.x + vz * p.y,
+  ];
+}
+
+function crossUnit(
+  a: [number, number, number],
+  b: [number, number, number],
+): [number, number, number] {
+  const c: [number, number, number] = [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+  const len = Math.hypot(c[0], c[1], c[2]) || 1;
+  return [c[0] / len, c[1] / len, c[2] / len];
+}
+
+/**
+ * Construye un wire cerrado a partir de un polígono 2D (segmentos rectos)
+ * mapeado al plano 3D. El polígono debe ser cerrado en intención: el último
+ * vértice se une al primero automáticamente.
+ */
+function makePolygonWire(oc: OC, plane: SketchPlane3D, pts: Pt2[]): Shape {
+  const wireMaker = new oc.BRepBuilderAPI_MakeWire_1();
+  const n = pts.length;
+  // Evita una arista degenerada si el perfil ya repite el primer punto al final.
+  const last = pts[n - 1];
+  const first = pts[0];
+  const closed =
+    Math.abs(last.x - first.x) < 1e-9 && Math.abs(last.y - first.y) < 1e-9;
+  const count = closed ? n - 1 : n;
+  for (let i = 0; i < count; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % count];
+    const [ax, ay, az] = map2Dto3D(plane, a);
+    const [bx, by, bz] = map2Dto3D(plane, b);
+    const pa = new oc.gp_Pnt_3(ax, ay, az);
+    const pb = new oc.gp_Pnt_3(bx, by, bz);
+    const edge = new oc.BRepBuilderAPI_MakeEdge_3(pa, pb).Edge();
+    wireMaker.Add_1(edge);
+  }
+  const wire = wireMaker.Wire();
+  wireMaker.delete?.();
+  return wire;
+}
+
+/**
+ * Extruye un PERFIL POLIGONAL cerrado (lista de puntos 2D) por una distancia
+ * `height` a lo largo de la normal del plano. Devuelve un sólido B-Rep exacto.
+ *
+ * Invariante: para un rectángulo de área A, V = A·height; Euler del sólido = 2.
+ */
+export function extrudePolygon(
+  oc: OC,
+  pts: Pt2[],
+  height: number,
+  plane: SketchPlane3D = PLANE_XY,
+): Shape {
+  if (pts.length < 3) {
+    throw new Error('extrudePolygon: se requieren ≥3 puntos para un perfil');
+  }
+  const wire = makePolygonWire(oc, plane, pts);
+  const face = new oc.BRepBuilderAPI_MakeFace_15(wire, true).Face();
+  const w = crossUnit(plane.uDir, plane.vDir);
+  const vec = new oc.gp_Vec_4(w[0] * height, w[1] * height, w[2] * height);
+  const prism = new oc.BRepPrimAPI_MakePrism_1(face, vec, false, true);
+  const shape = prism.Shape();
+  prism.delete?.();
+  return shape;
+}
+
+/**
+ * Extruye un CÍRCULO (centro 2D + radio) por `height`. Construye la arista
+ * circular exacta (Geom_Circle, no facetada) → wire → cara → prisma.
+ * Invariante: V = π·r²·height; el cilindro resultante tiene Euler = 2.
+ */
+export function extrudeCircle(
+  oc: OC,
+  center: Pt2,
+  radius: number,
+  height: number,
+  plane: SketchPlane3D = PLANE_XY,
+): Shape {
+  const [cx, cy, cz] = map2Dto3D(plane, center);
+  const w = crossUnit(plane.uDir, plane.vDir);
+  const centerPnt = new oc.gp_Pnt_3(cx, cy, cz);
+  const normalDir = new oc.gp_Dir_4(w[0], w[1], w[2]);
+  const ax2 = new oc.gp_Ax2_3(centerPnt, normalDir);
+  const circle = new oc.gp_Circ_2(ax2, radius);
+  const edge = new oc.BRepBuilderAPI_MakeEdge_8(circle).Edge();
+  const wireMaker = new oc.BRepBuilderAPI_MakeWire_2(edge);
+  const wire = wireMaker.Wire();
+  wireMaker.delete?.();
+  const face = new oc.BRepBuilderAPI_MakeFace_15(wire, true).Face();
+  const vec = new oc.gp_Vec_4(w[0] * height, w[1] * height, w[2] * height);
+  const prism = new oc.BRepPrimAPI_MakePrism_1(face, vec, false, true);
+  const shape = prism.Shape();
+  prism.delete?.();
   return shape;
 }
 
@@ -220,40 +386,35 @@ function countSubShapes(oc: OC, shape: Shape, kind: number): number {
   // Este build de opencascade.js NO expone TopTools_*Map, así que deduplicamos
   // en JS: bucket por HashCode (rápido) y se confirma con IsSame() —que ignora
   // la orientación pero distingue ubicación/geometría— dentro del bucket.
-  // Para evitar fragmentar el heap de WASM (cada exp.Current() es un wrapper
-  // TopoDS_Shape que OCCT asigna y que hay que liberar), deduplicamos por
-  // HashCode pero solo CONSERVAMOS una forma representativa por bucket;
-  // las demás se borran de inmediato. Confirmamos identidad con IsSame().
-  const buckets = new Map<number, Shape[]>();
-  let count = 0;
+  // TopExp_Explorer enumera con repetición. Para el conteo topológico único
+  // deduplicamos por IDENTIDAD de sub-forma con IsSame() —que compara TShape +
+  // Location e ignora la orientación, justo el criterio topológico correcto.
+  //
+  // No usamos HashCode como llave de bucket porque en OCCT puede variar para
+  // la MISMA arista vista desde caras distintas (depende de orientación en
+  // algunos casos), lo que rompería el agrupamiento y SUBCONTARÍA la fusión
+  // (síntoma observado: fillet con Euler=-6). El número de sub-formas únicas
+  // por sólido es pequeño, así que una comparación O(n²) con IsSame es exacta
+  // y suficientemente rápida.
+  const unique: Shape[] = [];
   while (exp.More()) {
     const sub = exp.Current();
-    const h: number = sub.HashCode(1_000_000_000);
-    const bucket = buckets.get(h);
-    if (!bucket) {
-      buckets.set(h, [sub]);
-      count++;
+    let dup = false;
+    for (const prev of unique) {
+      if (prev.IsSame(sub)) {
+        dup = true;
+        break;
+      }
+    }
+    if (dup) {
+      sub.delete?.(); // libera el wrapper duplicado de inmediato
     } else {
-      let dup = false;
-      for (const prev of bucket) {
-        if (prev.IsSame(sub)) {
-          dup = true;
-          break;
-        }
-      }
-      if (!dup) {
-        bucket.push(sub);
-        count++;
-      } else {
-        sub.delete?.(); // duplicado: libera el wrapper de inmediato
-      }
+      unique.push(sub);
     }
     exp.Next();
   }
-  // Libera los representantes conservados.
-  for (const bucket of buckets.values()) {
-    for (const s of bucket) s.delete?.();
-  }
+  const count = unique.length;
+  for (const s of unique) s.delete?.();
   exp.delete?.();
   return count;
 }
@@ -337,16 +498,21 @@ export function tessellate(
     oc.TopAbs_ShapeEnum.TopAbs_SHAPE,
   );
 
+  const ORIENT_REVERSED = oc.TopAbs_Orientation.TopAbs_REVERSED.value as number;
+
   while (exp.More()) {
-    const face = oc.TopoDS.Face_1(exp.Current());
+    const rawShape = exp.Current(); // TopoDS_Shape: expone Orientation_1()
+    // La orientación vive en la TopoDS_Shape cruda; el downcast Face_1 solo
+    // sirve para que BRep_Tool::Triangulation resuelva la superficie.
+    const reversed =
+      (rawShape.Orientation_1().value as number) === ORIENT_REVERSED;
+    const face = oc.TopoDS.Face_1(rawShape);
     const loc = new oc.TopLoc_Location_1();
     const triHandle = oc.BRep_Tool.Triangulation(face, loc);
 
     if (!triHandle.IsNull()) {
       const tri = triHandle.get();
       const trsf = loc.Transformation();
-      const reversed =
-        face.Orientation() === oc.TopAbs_Orientation.TopAbs_REVERSED;
 
       const nbNodes = tri.NbNodes();
       const nbTris = tri.NbTriangles();

@@ -12,11 +12,24 @@
  * o reimplementando las llamadas idénticas. Aquí usamos tsx para cargar occt.ts
  * directamente y probar el código de producción real.
  */
-const { readFileSync } = require('fs');
+const { readFileSync, writeFileSync, existsSync } = require('fs');
 const path = require('path');
 
 const distDir = path.resolve(__dirname, '..', 'node_modules', 'opencascade.js', 'dist');
-const factory = require(path.join(distDir, 'opencascade.wasm.cjs'));
+
+// El glue de opencascade.js es ESM (`export default`) PERO su cuerpo contiene
+// `var module` minificado, lo que hace que Node lo marque como
+// ERR_AMBIGUOUS_MODULE_SYNTAX al importarlo. Para el test en Node generamos
+// (una sola vez) una copia CJS equivalente reemplazando el export por
+// module.exports. En el NAVEGADOR esto no aplica: Vite consume el .js ESM tal
+// cual (ver occt.ts → initOCCT()).
+const cjsGlue = path.join(distDir, 'opencascade.wasm.cjs');
+if (!existsSync(cjsGlue)) {
+  let s = readFileSync(path.join(distDir, 'opencascade.wasm.js'), 'utf8');
+  s = s.replace(/export default opencascade;\s*$/, '') + '\nmodule.exports = opencascade;\n';
+  writeFileSync(cjsGlue, s);
+}
+const factory = require(cjsGlue);
 const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
 
 (async () => {
@@ -76,6 +89,41 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
     }
   }
 
+  // ── 5. FUSE / COMMON / FILLET (volúmenes analíticos) ───────────
+  // Dos cajas que se solapan: A=[0,10]^3 (vol 1000), B desplazada +5 en X
+  // (también 10^3). Solape = 5×10×10 = 500.  Fuse = 1000+1000−500 = 1500.
+  // Common (intersección) = 500.
+  const a = occt.makeBox(oc, 10, 10, 10);
+  const bRaw = occt.makeBox(oc, 10, 10, 10);
+  // Traslada B +5 en X usando gp_Trsf + BRepBuilderAPI_Transform.
+  const trsf = new oc.gp_Trsf_1();
+  trsf.SetTranslation_1(new oc.gp_Vec_4(5, 0, 0));
+  const bMoved = new oc.BRepBuilderAPI_Transform_2(bRaw, trsf, true).Shape();
+  const fused = occt.fuse(oc, a, bMoved);
+  const inter = occt.common(oc, a, bMoved);
+  const volFuse = occt.volume(oc, fused);
+  const volCommon = occt.volume(oc, inter);
+
+  // Fillet r=2 sobre TODAS las aristas de una caja 20³.
+  const cube = occt.makeBox(oc, 20, 20, 20);
+  const filleted = occt.filletAllEdges(oc, cube, 2);
+  const volFillet = occt.volume(oc, filleted);
+  const topoFillet = occt.topology(oc, filleted);
+  // Validez del sólido filleteado: debe ser UN solo solid/shell cerrado.
+  function countKind(shape, kind) {
+    const e = new oc.TopExp_Explorer_2(shape, kind, oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+    const u = [];
+    while (e.More()) { const c = e.Current(); if (!u.some((p) => p.IsSame(c))) u.push(c); e.Next(); }
+    return u.length;
+  }
+  const filletSolids = countKind(filleted, oc.TopAbs_ShapeEnum.TopAbs_SOLID);
+  const filletShells = countKind(filleted, oc.TopAbs_ShapeEnum.TopAbs_SHELL);
+  // Volumen analítico del cubo con TODAS las aristas redondeadas r:
+  //   V = a³ − 12·(a·(4−π)·r²/4) [aristas] − 8·((8−3π)/12)·r³ [esquinas... compleja]
+  // Lo acotamos físicamente: por debajo de 8000 (se quita material) y por
+  // encima de 7000 (un fillet r=2 en cubo 20 quita poco).
+  const filletVolApprox = volFillet;
+
   // ── Invariantes booleanas ───────────────────────────────────────
   const inv = {
     box_faces: topoBox.faces,
@@ -98,6 +146,15 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
     re_vol: volRe,
     mesh_verts: mesh.vertexCount,
     mesh_tris: mesh.triangleCount,
+    vol_fuse: volFuse,
+    vol_common: volCommon,
+    vol_fillet: volFillet,
+    fillet_faces: topoFillet.faces,
+    fillet_solids: filletSolids,
+    fillet_shells: filletShells,
+    // Euler crudo del sólido filleteado: NO es 2 por las caras periódicas
+    // (cilíndricas/esféricas) con aristas-costura; se reporta por honestidad.
+    fillet_euler_raw: topoFillet.euler,
   };
 
   const checks = {
@@ -106,13 +163,21 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
     box_verts_8: topoBox.vertices === 8,
     box_euler_2: topoBox.euler === 2,
     box_vol_30000: approx(volBox, 30000, 1e-6),
-    box_area_7400: approx(areaBox, areaBoxExact, 1e-6),
+    box_area_6200: approx(areaBox, areaBoxExact, 1e-6),
     cyl_vol_exact: approx(volCyl, volCylExact, 1e-6),
     cut_euler_2: topoCut.euler === 2,
     cut_vol_exact: approx(volCut, volCutExact, 1e-3),
     step_roundtrip_ok: roundtripOk,
     mesh_nonempty: mesh.triangleCount > 0,
     mesh_normals_unit: normUnit,
+    fuse_vol_1500: approx(volFuse, 1500, 1e-6),
+    common_vol_500: approx(volCommon, 500, 1e-6),
+    // Validez del fillet: UN solo sólido/shell cerrado y volumen físicamente
+    // correcto (se removió material de aristas/esquinas: <8000, >7000).
+    // (No se exige Euler=2 naive: las caras periódicas tienen aristas-costura.)
+    fillet_is_single_solid: filletSolids === 1 && filletShells === 1,
+    fillet_has_26_faces: topoFillet.faces === 26,
+    fillet_vol_reduced: volFillet < 8000 && volFillet > 7000,
   };
 
   const allPass = Object.values(checks).every(Boolean);

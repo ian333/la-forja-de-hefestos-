@@ -10,6 +10,14 @@ export default defineConfig({
       "@": resolve(import.meta.dirname, "src"),
     },
   },
+  // opencascade.js es un módulo WASM grande (~66 MB) con glue Emscripten.
+  // No debe pre-bundlearse (esbuild no lo maneja bien) y su .wasm debe servirse
+  // tal cual. El kernel B-Rep (src/forja/brep/occt.ts) lo carga vía import
+  // dinámico del glue ESM; Vite resuelve la URL del .wasm como asset.
+  optimizeDeps: {
+    exclude: ["opencascade.js"],
+  },
+  assetsInclude: ["**/*.wasm"],
   server: {
     host: "0.0.0.0",
     port: 5001,
