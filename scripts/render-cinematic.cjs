@@ -217,7 +217,10 @@ async function main() {
       await page.evaluate(({ tt, hook }) => window[hook].renderAt(tt), { tt: tSub, hook: opts.hook });
       await settle();
       const subFile = path.join(subDir, `sub_${String(s).padStart(3, '0')}.png`);
-      await page.screenshot({ path: subFile, type: 'png', animations: 'disabled', timeout: 0 });
+      // timeout FINITO (30s): nunca timeout:0 — si el contexto se degrada a 4K
+      // un screenshot infinito cuelga TODA la tanda nocturna. Mejor que falle el
+      // job y el watchdog pase al siguiente. (Ver CLAUDE.md, pipeline 4K canónico.)
+      await page.screenshot({ path: subFile, type: 'png', animations: 'disabled', timeout: 30000 });
     }
 
     // --- 2) PROMEDIAR los subframes -> media verdadera (motion blur de cine).

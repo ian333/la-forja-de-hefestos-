@@ -140,7 +140,7 @@ const crypto = require('crypto');
 
 // Bump esto cuando cambie la receta del grade (invalida SOLO la etapa B → re-grade
 // barato, sin re-render). El render base (etapa A) tiene su propio hash.
-const GRADE_VERSION = 'davinci-v1';
+const GRADE_VERSION = 'davinci-v2-negros';
 
 // Seed FIJO derivado de la fecha del beat (brief). JAMÁS random() — rompería el
 // cache. Se usa para el grano de cine y el gate-weave.
@@ -333,7 +333,7 @@ function encoderFinal(opts) {
 function buildGradeFilter(opts, frameOffset = 0) {
   const W = opts.width, H = opts.height;
   // sigma de la halación escala con resolución: a 2160w, ~18 px = tamaño del halo.
-  const haloSigma = Math.round((W / 2160) * 18);
+  const haloSigma = Math.round((W / 2160) * 11);
 
   // frameOffset = frame GLOBAL donde arranca este beat en la cadena (= round(start*fps)).
   // Cada beat se gradúa en un PROCESO ffmpeg independiente cuyo contador de frame
@@ -365,18 +365,21 @@ function buildGradeFilter(opts, frameOffset = 0) {
     parts.push(`[base0]null[base1]`);
   }
 
-  // (3) GRADE: NEGROS NEGROS + altas cálidas. El split-tone previo teñía las
-  //     sombras de morado (bs=0.08, gs=0.02 → cian/azul) y levantaba el negro a
-  //     0.02 (lechoso) — el user pidió negros REALES. Ahora:
-  //     · colorbalance: sombras NEUTRAS (rs/gs/bs=0), solo las ALTAS van cálidas
-  //       (ámbar) — el disco incandescente conserva su calidez sin morado en el void.
-  //     · curves: negro anclado en 0 (sin lift) + crush del punto negro (0.04/0→0)
-  //       para que el void caiga a negro PURO; S-curve suave en mids/altas.
+  // (3) GRADE: NEGROS NEGROS + altas cálidas (v2). En 16:9 (mucho más void que el
+  //     9:16) el crush a 0.04 dejaba VIVO el tenue polvo nebular azulado, y la
+  //     halación roja lo bañaba → MORADO en el void (medido: BASE negro, GRADED
+  //     morado; el morado lo metía el GRADE, no la escena). Fix v2 (validado en still):
+  //     · colorbalance: sombras NEUTRAS (rs/gs/bs=0), solo ALTAS cálidas (ámbar).
+  //     · curves: crush del punto negro a 0.14 → el polvo tenue cae a negro PURO
+  //       (las estrellas brillantes sobreviven); S-curve suave en mids/altas.
+  //     · eq saturation 0.88 (baja el residual de color del void).
+  //     · halación CONTENIDA (sigma×11 no ×18, opacity 0.16 no 0.28, highs aislados
+  //       0.78) → el glo cálido ABRAZA el disco en vez de teñir todo el cuadro.
   parts.push(
     `[base1]` +
     `colorbalance=rs=0.00:gs=0.00:bs=0.00:rm=0.00:gm=0.00:bm=0.00:rh=0.10:gh=0.04:bh=-0.08,` +
-    `curves=master='0/0 0.04/0 0.25/0.21 0.5/0.5 0.75/0.80 1/1',` +
-    `eq=saturation=0.96:contrast=1.10:gamma=0.98` +
+    `curves=master='0/0 0.14/0 0.34/0.18 0.5/0.5 0.75/0.80 1/1',` +
+    `eq=saturation=0.88:contrast=1.12:gamma=0.97` +
     `[graded]`
   );
 
@@ -389,13 +392,13 @@ function buildGradeFilter(opts, frameOffset = 0) {
   parts.push(
     `[ghi]` +
     // aislar altas: todo lo medio/bajo a 0, solo el tope sobrevive
-    `curves=master='0/0 0.62/0 0.8/0.5 1/1',` +
+    `curves=master='0/0 0.78/0 0.9/0.5 1/1',` +
     // sangrado al ámbar: R intacto, G y B aplastados (curva por canal)
-    `curves=green='0/0 1/0.45':blue='0/0 1/0.22',` +
+    `curves=green='0/0 1/0.42':blue='0/0 1/0.18',` +
     `gblur=sigma=${haloSigma}:steps=3,` +
     `format=gbrp[glow]`
   );
-  parts.push(`[gbase][glow]blend=all_mode=screen:all_opacity=0.28[halated]`);
+  parts.push(`[gbase][glow]blend=all_mode=screen:all_opacity=0.16[halated]`);
 
   // (5) GRANO de cine DETERMINISTA: all_seed derivado del SEED fijo + frameOffset
   //     del beat (JAMÁS random). Atado a luma (allf=t+u temporal + uniforme),

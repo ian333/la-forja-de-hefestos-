@@ -68,6 +68,14 @@ import {
   GEAR_SKETCH_DEFAULTS,
   type GearSketchParams,
 } from '../../lib/parts/involute-gear-sketch';
+import {
+  runFEA,
+  vonMisesVertexColors,
+  jetColor,
+  type FEAResult,
+  type FaceBC,
+} from './fea';
+import { MATERIAL_DATABASE } from '../../lib/formulas';
 
 // Ejes GLOBALES preestablecidos para el revolve (gp_Ax1 deterministas).
 const GLOBAL_AXES: Record<'x' | 'y' | 'z', RevolveAxis> = {
@@ -123,6 +131,21 @@ const MATERIALS: Record<string, { label: string; density: number }> = {
   pla: { label: 'PLA (impresión)', density: 1.24e-3 },
   brass: { label: 'Latón', density: 8.50e-3 },
   ti: { label: 'Titanio Ti-6Al-4V', density: 4.43e-3 },
+};
+
+// ──────────────────────────────────────────────────────────────────
+// Puente del selector de material de la UI → clave de MATERIAL_DATABASE
+// (E, ν, σ_y REALES de src/lib/formulas.ts) que consume el FEA. El selector
+// ya elige densidad para la masa; aquí mapeamos a las constantes elásticas.
+// (No hay latón propio en la DB; el cobre C11000 es el aleado más cercano.)
+// ──────────────────────────────────────────────────────────────────
+const FEA_MATERIAL_KEY: Record<string, keyof typeof MATERIAL_DATABASE> = {
+  alu: 'aluminio_6061',
+  steel: 'acero_1045',
+  brass: 'cobre_c11000',
+  ti: 'titanio_ti6al4v',
+  abs: 'abs',
+  pla: 'pla',
 };
 
 // ──────────────────────────────────────────────────────────────────
@@ -850,6 +873,7 @@ function sweepMeshingInterference(
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
   mesh, faded, matKey, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
+  feaColors,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
@@ -861,6 +885,8 @@ function SolidMesh({
   pickMode: 'none' | 'face' | 'edge';
   onPickFace: (i: number) => void;
   onPickEdge: (i: number) => void;
+  /** Colores por vértice del campo de von Mises (RGB 0..1, 3·N). null = sin overlay. */
+  feaColors: Float32Array | null;
 }) {
   const pbr = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
   const geom = useMemo(() => {
@@ -871,6 +897,19 @@ function SolidMesh({
     g.computeBoundingSphere();
     return g;
   }, [mesh]);
+
+  // OVERLAY FEA: si hay colores de von Mises, los pegamos como atributo `color`
+  // del geometry (vertexColors). Coincide 1:1 con los vértices de `positions`
+  // (vonMisesVertexColors muestrea EXACTAMENTE en mesh.positions). Se actualiza
+  // al recalcular el FEA; al apagar el overlay se remueve el atributo.
+  useEffect(() => {
+    if (feaColors && feaColors.length === mesh.positions.length) {
+      geom.setAttribute('color', new THREE.BufferAttribute(feaColors, 3));
+    } else if (geom.getAttribute('color')) {
+      geom.deleteAttribute('color');
+    }
+    geom.attributes.color && (geom.attributes.color.needsUpdate = true);
+  }, [geom, feaColors, mesh.positions.length]);
   const edgesGeo = useMemo(() => new THREE.EdgesGeometry(geom, 25), [geom]);
   useEffect(() => () => { geom.dispose(); edgesGeo.dispose(); }, [geom, edgesGeo]);
 
@@ -964,21 +1003,35 @@ function SolidMesh({
   return (
     <group>
       <mesh geometry={geom} castShadow receiveShadow onClick={handleClick}>
-        {/* METAL PBR REAL (KeyShot/Plasticity): metalness alto + roughness de
-            maquinado satinado → la pieza REFLEJA el HDRI de estudio (envMap
-            fuerte) y lee como aluminio/acero/latón torneado, NO yeso gris.
-            clearcoat sutil da vida a las curvas (anodizado/laca fina). El color
-            y el acabado salen de MATERIAL_PBR → el selector por fin se VE.
-            Sin emissive: en un CAD la pieza no brilla, REFLEJA. */}
-        <meshPhysicalMaterial
-          color={faded ? '#9aa3ad' : pbr.color}
-          metalness={pbr.metalness}
-          roughness={pbr.roughness}
-          clearcoat={pbr.clearcoat}
-          clearcoatRoughness={pbr.clearcoatRoughness}
-          envMapIntensity={1.15}
-          flatShading={false}
-        />
+        {feaColors ? (
+          /* OVERLAY FEA: la pieza se pinta por von Mises (vertexColors azul→rojo).
+             meshBasicMaterial = SIN luz: el color del esfuerzo se ve EXACTO en
+             cualquier ángulo y con la luz tenue del viewport CAD (un mapa de
+             color FEM debe leerse fiel, no teñido por el HDRI ni por sombras).
+             vertexColors multiplica `color`, así que color=blanco. Las aristas
+             B-Rep oscuras encima siguen dando la forma. */
+          <meshBasicMaterial
+            vertexColors
+            color="#ffffff"
+            toneMapped={false}
+          />
+        ) : (
+          /* METAL PBR REAL (KeyShot/Plasticity): metalness alto + roughness de
+             maquinado satinado → la pieza REFLEJA el HDRI de estudio (envMap
+             fuerte) y lee como aluminio/acero/latón torneado, NO yeso gris.
+             clearcoat sutil da vida a las curvas (anodizado/laca fina). El color
+             y el acabado salen de MATERIAL_PBR → el selector por fin se VE.
+             Sin emissive: en un CAD la pieza no brilla, REFLEJA. */
+          <meshPhysicalMaterial
+            color={faded ? '#9aa3ad' : pbr.color}
+            metalness={pbr.metalness}
+            roughness={pbr.roughness}
+            clearcoat={pbr.clearcoat}
+            clearcoatRoughness={pbr.clearcoatRoughness}
+            envMapIntensity={1.15}
+            flatShading={false}
+          />
+        )}
       </mesh>
 
       {/* CARA RESALTADA: misma topología, material de oro emisivo encima. */}
@@ -1253,6 +1306,18 @@ function faceLabel(f: FaceRef): string {
   return f.kind === 'cylinder' ? 'cilíndrica' : f.kind;
 }
 
+/** Gradiente CSS de la barra de escala FEA: muestrea el MISMO jet del overlay. */
+function feaLegendGradient(): string {
+  const stops: string[] = [];
+  const N = 8;
+  for (let i = 0; i <= N; i++) {
+    const [r, g, b] = jetColor(i / N);
+    const c = `rgb(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)})`;
+    stops.push(`${c} ${((i / N) * 100).toFixed(0)}%`);
+  }
+  return `linear-gradient(90deg, ${stops.join(', ')})`;
+}
+
 // ──────────────────────────────────────────────────────────────────
 // Componente principal
 // ──────────────────────────────────────────────────────────────────
@@ -1288,6 +1353,22 @@ export default function ForgeBRepStudio() {
   const [showSketch, setShowSketch] = useState(true);
   const [hideChrome, setHideChrome] = useState(false);
   const [pickMode, setPickMode] = useState<'none' | 'face' | 'edge'>('none');
+
+  // ── SIMULACIÓN FEA (von Mises real sobre el sólido) ──
+  // Caras de borde elegidas por face-picking: la FIJA (empotramiento u=0) y la
+  // de CARGA (fuerza repartida). El destino del próximo clic de cara lo decide
+  // feaPickTarget ('fija' | 'carga'); null = el picking va a la selección normal.
+  const [feaFixedFace, setFeaFixedFace] = useState<number | null>(null);
+  const [feaLoadFace, setFeaLoadFace] = useState<number | null>(null);
+  const [feaPickTarget, setFeaPickTarget] = useState<'fija' | 'carga' | null>(null);
+  const [feaLoadN, setFeaLoadN] = useState(500); // magnitud de carga [N]
+  const [feaResult, setFeaResult] = useState<FEAResult | null>(null);
+  const [feaColors, setFeaColors] = useState<Float32Array | null>(null);
+  const [feaBusy, setFeaBusy] = useState(false);
+  const [feaErr, setFeaErr] = useState<string | null>(null);
+  // Picking de cara/arista pero dirigido al panel FEA (no a la op activa).
+  const feaPickTargetRef = useRef<'fija' | 'carga' | null>(null);
+  feaPickTargetRef.current = feaPickTarget;
   // Última CARA elegida por clic (índice estable OCCT) — se resalta SIEMPRE y se
   // muestra en el HUD, independiente de que haya una op de Shell activa.
   const [selectedFaceId, setSelectedFaceId] = useState<number | null>(null);
@@ -1522,11 +1603,110 @@ export default function ForgeBRepStudio() {
     });
   }, [oc, sketch.kind, sketch.gear, assembly.enabled, assembly.teeth2]);
 
+  // ── CORRER EL FEA (botón btn-fea): reconstruye el sólido, monta las BC del
+  // face-pick (cara fija = empotramiento u=0; cara de carga = fuerza repartida a
+  // lo largo de su normal, magnitud input-carga en N), corre malla→solve→von
+  // Mises (runFEA, que REUSA el motor de src/lib/formulas.ts) y colorea la malla
+  // de render por el campo nodal (vonMisesVertexColors). El material elástico
+  // (E, ν, σ_y) sale de MATERIAL_DATABASE vía FEA_MATERIAL_KEY. ──
+  const runFeaAnalysis = useCallback((loadDirOverride?: [number, number, number]) => {
+    if (!oc || feaFixedFace == null) {
+      setFeaErr(feaFixedFace == null ? 'Elige una cara FIJA (btn-pick-fija).' : 'Kernel no listo.');
+      return;
+    }
+    setFeaBusy(true);
+    setFeaErr(null);
+    requestAnimationFrame(() => {
+      let shape: Shape | null = null;
+      try {
+        // Reconstruye el MISMO sólido del documento (rebuild ya borró su Shape).
+        const isAssembly = assembly.enabled && sketch.kind === 'gear';
+        shape = isAssembly
+          ? buildAssembly(oc, sketch.gear, assembly).compound
+          : buildShape(oc, sketch, ops, edgeAxisRef.current);
+
+        // Dirección de la carga = normal OCCT de la cara de carga (si es plana);
+        // si no hay cara de carga o su normal es degenerada, empuja en −Z (peso).
+        const faces = enumerateFaces(oc, shape);
+        let dir: [number, number, number] = [0, 0, -1];
+        if (Array.isArray(loadDirOverride) && Math.hypot(...loadDirOverride) > 1e-6) {
+          // Dirección de carga EXPLÍCITA (p.ej. carga TRANSVERSAL al eje de la
+          // viga sobre la cara libre = caso cantilever canónico). Tiene prioridad
+          // sobre la normal de la cara. Misma física: la fuerza total se reparte
+          // a los nodos de la cara de carga en runFEA.
+          dir = loadDirOverride;
+        } else if (feaLoadFace != null) {
+          const lf = faces.find((f) => f.index === feaLoadFace);
+          if (lf && Math.hypot(lf.normal[0], lf.normal[1], lf.normal[2]) > 1e-6) {
+            dir = [lf.normal[0], lf.normal[1], lf.normal[2]];
+          }
+        }
+        const dlen = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+        const F = feaLoadN;
+        const totalForce: [number, number, number] = [
+          (dir[0] / dlen) * F, (dir[1] / dlen) * F, (dir[2] / dlen) * F,
+        ];
+
+        const bc: FaceBC = {
+          fixedFaces: [feaFixedFace],
+          loadFaces: feaLoadFace != null ? [feaLoadFace] : [],
+          totalForce,
+        };
+        const res = runFEA(oc, shape, bc, {
+          material: FEA_MATERIAL_KEY[material] ?? 'aluminio_6061',
+          resolution: 18,
+        });
+
+        // Colorea la malla de RENDER (la teselada que se ve) por von Mises.
+        const renderPos = resultRef.current?.mesh.positions;
+        if (renderPos) {
+          const { colors } = vonMisesVertexColors(res, renderPos);
+          setFeaColors(colors);
+        }
+        setFeaResult(res);
+      } catch (e) {
+        setFeaErr(String((e as Error)?.message ?? e));
+        setFeaResult(null);
+        setFeaColors(null);
+      } finally {
+        shape?.delete?.();
+        setFeaBusy(false);
+      }
+    });
+  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops]);
+
+  // Inicia el picking de cara dirigido al panel FEA (fija o carga).
+  const startFeaPick = useCallback((target: 'fija' | 'carga') => {
+    setActiveOp(null);
+    setFeaPickTarget(target);
+    setPickMode('face');
+  }, []);
+
+  // Apaga el overlay FEA (vuelve al render metálico normal) sin perder las BC.
+  const clearFeaOverlay = useCallback(() => {
+    setFeaColors(null);
+    setFeaResult(null);
+  }, []);
+
+  // Si cambia la geometría del documento, el FEA previo deja de ser válido:
+  // limpiamos overlay + resultado (las BC por índice de cara también caducan).
+  useEffect(() => {
+    setFeaColors(null);
+    setFeaResult(null);
+    setFeaFixedFace(null);
+    setFeaLoadFace(null);
+  }, [opCount, sketch.kind]);
+
   // Selección (toggle) de cara/arista para la op activa. SIEMPRE fija el
   // selectedFaceId/selectedEdgeId (para el HUD + resalte), y además, si hay una
   // op que consume caras/aristas (Shell / Fillet / Chamfer), togglea su lista.
   const togglePickFace = useCallback((i: number) => {
     setSelectedFaceId(i);
+    // Si el picking está dirigido al panel FEA, el clic asigna la cara FIJA o la
+    // de CARGA (y NO toca la selección de la op activa). Un solo clic basta.
+    const feaTarget = feaPickTargetRef.current;
+    if (feaTarget === 'fija') { setFeaFixedFace(i); setFeaPickTarget(null); setPickMode('none'); return; }
+    if (feaTarget === 'carga') { setFeaLoadFace(i); setFeaPickTarget(null); setPickMode('none'); return; }
     const op = ops.find((o) => o.id === activeOp);
     if (!op || op.type !== 'shell') return;
     const cur = (op as ShellOp).faces;
@@ -1604,6 +1784,10 @@ export default function ForgeBRepStudio() {
       addOp,
       updateOp,
       setSketch,
+      // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
+      // extrude por su id real y la edite (updateOp) sin depender del clamp del
+      // slider de la UI. Solo lectura; no cambia la lógica del documento.
+      get opsList() { return ops.map((o) => ({ id: o.id, type: o.type, depth: (o as { depth?: number }).depth })); },
       // Perfil escalonado de revolución (croquis poligonal) — driver de QA.
       setSteps,
       addStep,
@@ -1699,6 +1883,38 @@ export default function ForgeBRepStudio() {
         } : null;
       },
       setMaterial,
+      // ── SIMULACIÓN FEA (von Mises) — driver + resultado para QA ──
+      // Fija las BC por índice de cara y corre el análisis (lo mismo que la UI).
+      setFeaFixedFace: (i: number) => { setFeaFixedFace(i); },
+      setFeaLoadFace: (i: number) => { setFeaLoadFace(i); },
+      setFeaLoad: (n: number) => { setFeaLoadN(n); },
+      runFEA: runFeaAnalysis,
+      // Corre el FEA con dirección de carga EXPLÍCITA (transversal al eje) — caso
+      // cantilever canónico (carga perpendicular sobre la cara libre). Mismo
+      // solver/estado/DOM que el botón Analizar.
+      runFEADir: (dir: [number, number, number]) => runFeaAnalysis(dir),
+      clearFeaOverlay,
+      get feaReady() { return !!feaResult; },
+      get feaBusy() { return feaBusy; },
+      get feaError() { return feaErr; },
+      get feaResult() {
+        return feaResult ? {
+          maxVonMises_Pa: feaResult.maxVonMises,
+          maxVonMises_MPa: feaResult.maxVonMises / 1e6,
+          minSafetyFactor: feaResult.minSafetyFactor,
+          maxDisplacement_mm: feaResult.maxDisplacement,
+          n_nodes: feaResult.mesh.nNodes,
+          n_tets: feaResult.mesh.nTets,
+          iterations: feaResult.solver.iterations,
+          residual: feaResult.solver.residual,
+          converged: feaResult.solver.converged,
+          fixedFace: feaFixedFace,
+          loadFace: feaLoadFace,
+          loadN: feaLoadN,
+          material: FEA_MATERIAL_KEY[material] ?? 'aluminio_6061',
+          hasOverlay: !!feaColors,
+        } : null;
+      },
       setPickMode,
       pickFace: togglePickFace,
       pickEdge: togglePickEdge,
@@ -1719,7 +1935,7 @@ export default function ForgeBRepStudio() {
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep]);
+  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -1777,6 +1993,7 @@ export default function ForgeBRepStudio() {
                 pickMode={pickMode}
                 onPickFace={togglePickFace}
                 onPickEdge={togglePickEdge}
+                feaColors={feaColors}
               />
             )}
           </group>
@@ -1846,6 +2063,21 @@ export default function ForgeBRepStudio() {
                 {meshSweep.maxInterferenceFraction < 5e-3 ? ' · EMBONAN ✓' : ' · INTERFIEREN ✕'}
               </span>
             )}
+          </div>
+        )}
+
+        {/* BARRA DE ESCALA del overlay FEA (von Mises, MPa). Aparece sobre el
+            viewport cuando hay análisis: gradiente azul→rojo con los topes 0 y
+            σ_max, para que el screenshot LEA cuánto vale cada color. */}
+        {feaResult && feaColors && (
+          <div className="fb-fea-legend" data-testid="fea-legend">
+            <div className="fb-fea-legend-title">von Mises (MPa)</div>
+            <div className="fb-fea-bar" style={{ background: feaLegendGradient() }} />
+            <div className="fb-fea-ticks">
+              <span>0</span>
+              <span>{((feaResult.maxVonMises / 1e6) / 2).toFixed(0)}</span>
+              <span data-testid="fea-legend-max">{(feaResult.maxVonMises / 1e6).toFixed(0)}</span>
+            </div>
           </div>
         )}
       </div>
@@ -2371,6 +2603,87 @@ export default function ForgeBRepStudio() {
             )}
           </aside>
 
+          {/* ── Panel de SIMULACIÓN (FEA von Mises REAL) ──
+              El CAD pasa de "ver" a "ANALIZAR": resuelve K·u=f sobre una malla
+              tet del sólido (reusa el motor de src/lib/formulas.ts) y colorea la
+              pieza por von Mises. Cara FIJA = empotramiento; cara de CARGA +
+              magnitud (N) a lo largo de su normal. Material = el del análisis de
+              masa (E, ν, σ_y de MATERIAL_DATABASE). */}
+          <aside className="fb-sim" data-testid="sim-panel">
+            <div className="fb-panel-title">Simulación · von Mises (FEA real)</div>
+            <p className="fb-hint-txt">
+              Resuelve K·u = f en malla tet del sólido (no es heatmap: es FEM).
+              σ_vM, factor de seguridad σ_y/σ_max y deflexión máx.
+            </p>
+
+            <div className="fb-sim-bc">
+              <div className="fb-sim-bc-row">
+                <button className="fb-pick-btn" data-testid="btn-pick-fija"
+                  onClick={() => startFeaPick('fija')}
+                  style={feaPickTarget === 'fija' ? { background: `${GOLD}33` } : undefined}>
+                  {feaPickTarget === 'fija' ? '◉ Clic en cara FIJA…' : '○ Cara FIJA (empotrar)'}
+                </button>
+                <span className="fb-sim-tag" data-testid="fea-fija-id">
+                  {feaFixedFace != null ? `#${feaFixedFace}` : '—'}
+                </span>
+              </div>
+              <div className="fb-sim-bc-row">
+                <button className="fb-pick-btn" data-testid="btn-pick-carga"
+                  onClick={() => startFeaPick('carga')}
+                  style={feaPickTarget === 'carga' ? { background: `${GOLD}33` } : undefined}>
+                  {feaPickTarget === 'carga' ? '◉ Clic en cara de CARGA…' : '○ Cara de CARGA'}
+                </button>
+                <span className="fb-sim-tag" data-testid="fea-carga-id">
+                  {feaLoadFace != null ? `#${feaLoadFace}` : '—'}
+                </span>
+              </div>
+            </div>
+
+            <Dim label="Carga" value={feaLoadN} unit="N" min={10} max={50000} step={10}
+              testid="input-carga" onChange={(v) => setFeaLoadN(v)} />
+
+            <button className="fb-fea-run" data-testid="btn-fea"
+              onClick={runFeaAnalysis} disabled={feaBusy || !oc || feaFixedFace == null}>
+              {feaBusy ? '⏳ Resolviendo K·u = f…' : '▶ Analizar (von Mises)'}
+            </button>
+            {feaColors && (
+              <button className="fb-sim-clear" data-testid="btn-fea-clear" onClick={clearFeaOverlay}>
+                Quitar overlay (volver a metal)
+              </button>
+            )}
+            {feaErr && <div className="fb-sim-err" data-testid="fea-error">{feaErr}</div>}
+
+            {feaResult ? (
+              <div className="fb-sim-out">
+                <div className="fb-row hi">
+                  <span className="rk">Máx von Mises</span>
+                  <span className="rv" data-testid="fea-max-vm">{(feaResult.maxVonMises / 1e6).toFixed(2)} MPa</span>
+                </div>
+                <div className={`fb-row ${feaResult.minSafetyFactor < 1 ? 'fs-bad' : 'fs-ok'}`}>
+                  <span className="rk">Factor de seguridad</span>
+                  <span className="rv" data-testid="fea-fs">
+                    {Number.isFinite(feaResult.minSafetyFactor) ? feaResult.minSafetyFactor.toFixed(2) : '∞'}
+                  </span>
+                </div>
+                <div className="fb-row">
+                  <span className="rk">Deflexión máx</span>
+                  <span className="rv" data-testid="fea-deflexion">{feaResult.maxDisplacement.toFixed(4)} mm</span>
+                </div>
+                <div className="fb-row">
+                  <span className="rk">Malla / solver</span>
+                  <span className="rv" data-testid="fea-mesh">
+                    {feaResult.mesh.nNodes}n · {feaResult.mesh.nTets}t · {feaResult.solver.iterations}it
+                    {feaResult.solver.converged ? ' ✓' : ' ✕'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="fb-sim-out">
+                <div className="fb-row"><span className="rk">Estado</span><span className="rv">{feaBusy ? 'calculando…' : 'elige cara fija + Analizar'}</span></div>
+              </div>
+            )}
+          </aside>
+
           {/* ── Invariantes (la corrección visible) ── */}
           <footer className={`fb-invariants ${ok ? 'ok' : 'pending'}`} data-testid="invariants">
             {result ? (
@@ -2618,4 +2931,39 @@ const CSS = `
   border:1px solid rgba(159,179,200,0.15);background:rgba(13,18,28,0.7);color:${STEEL};
   font-size:15px;cursor:pointer;backdrop-filter:blur(10px);z-index:5;}
 .fb-hide:hover{color:${GOLD};border-color:${GOLD}55;}
+
+/* ── Panel de SIMULACIÓN FEA (von Mises) ── */
+.fb-sim{position:absolute;left:236px;top:78px;width:240px;padding:14px;
+  backdrop-filter:blur(18px) saturate(1.25);
+  background:linear-gradient(180deg,rgba(20,27,38,0.72),rgba(11,15,22,0.74));
+  border:1px solid rgba(159,179,200,0.14);border-radius:15px;
+  box-shadow:0 10px 44px rgba(0,0,0,0.55),0 1px 0 rgba(255,255,255,0.04) inset;
+  max-height:62vh;overflow:auto;}
+.fb-sim-bc{display:flex;flex-direction:column;gap:6px;margin:6px 0 8px;}
+.fb-sim-bc-row{display:flex;align-items:center;gap:8px;}
+.fb-sim-bc-row .fb-pick-btn{margin-bottom:0;flex:1;}
+.fb-sim-tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:${GOLD};min-width:30px;text-align:right;}
+.fb-fea-run{width:100%;border:1px solid ${GOLD};background:${GOLD};color:#1a1206;font-weight:700;
+  font-size:12px;padding:9px;border-radius:9px;cursor:pointer;margin-top:8px;transition:.13s;}
+.fb-fea-run:hover{filter:brightness(1.06);}
+.fb-fea-run:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4);}
+.fb-sim-clear{width:100%;border:1px solid rgba(159,179,200,0.2);background:rgba(255,255,255,0.04);
+  color:${STEEL};font-size:10px;padding:6px;border-radius:8px;cursor:pointer;margin-top:6px;}
+.fb-sim-clear:hover{border-color:${GOLD}55;color:${GOLD};}
+.fb-sim-err{font-size:10px;color:#fca5a5;background:rgba(248,113,113,0.1);border-radius:7px;
+  padding:6px 8px;margin-top:8px;line-height:1.35;}
+.fb-sim-out{display:flex;flex-direction:column;gap:2px;margin-top:10px;
+  border-top:1px solid rgba(159,179,200,0.12);padding-top:8px;}
+.fb-sim-out .fb-row.fs-bad .rv{color:#ff7373;}
+.fb-sim-out .fb-row.fs-ok .rv{color:#8ff0a4;}
+
+/* ── Barra de escala (leyenda) del overlay FEA ── */
+.fb-fea-legend{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;width:260px;z-index:7;pointer-events:none;
+  background:rgba(13,18,28,0.82);border:1px solid ${GOLD}44;border-radius:12px;padding:9px 11px;
+  backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.fb-fea-legend-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:${STEEL};
+  opacity:.85;margin-bottom:6px;}
+.fb-fea-bar{height:13px;border-radius:4px;border:1px solid rgba(0,0,0,0.5);}
+.fb-fea-ticks{display:flex;justify-content:space-between;margin-top:4px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:#e9eef5;}
 `;
