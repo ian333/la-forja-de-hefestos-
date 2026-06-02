@@ -85,13 +85,33 @@ const STEEL = '#9fb3c8';
 const INK = '#05060A';
 
 // ──────────────────────────────────────────────────────────────────
-// Paleta del VIEWPORT CAD (claridad estilo Onshape/Plasticity/Fusion).
-// Nada de cine aquí: la geometría manda. Sólido gris-acero MATE neutro,
-// aristas oscuras crujientes para leer la topología, fondo de estudio.
+// Paleta del VIEWPORT CAD (realista estilo KeyShot/Plasticity/Fusion).
+// La pieza es METAL DE VERDAD: refleja un HDRI de estudio (metalness alto +
+// roughness de maquinado satinado), no gris plano. Las aristas B-Rep oscuras
+// crujientes ENCIMA mantienen la legibilidad de la topología.
 // ──────────────────────────────────────────────────────────────────
-const CAD_SOLID = '#b3bcc7';   // gris-acero medio neutro (no espejo, no quema)
-const CAD_EDGE = '#0c1219';    // arista B-Rep oscura, crujiente (casi negro)
+const CAD_EDGE = '#0a0f16';    // arista B-Rep oscura, crujiente (casi negro)
 const CAD_BG = '#10151c';      // fondo de estudio (oscuro, no negro puro)
+
+// ──────────────────────────────────────────────────────────────────
+// ACABADO PBR por material (lo que el render REFLEJA). El selector de
+// material ya no solo cambia la densidad de masa: cambia cómo se VE la
+// pieza — aluminio claro pulido, acero azulado satinado, latón dorado.
+// color  = albedo del metal (tinte de reflexión).
+// metal  = ~0.9-1.0 (es METAL: refleja el HDRI de estudio).
+// rough  = acabado de maquinado satinado (0.18 espejo → 0.55 mate impreso).
+// coat   = clearcoat sutil (anodizado/laca fina) para vida en las curvas.
+// ──────────────────────────────────────────────────────────────────
+interface PBRFinish { color: string; metalness: number; roughness: number; clearcoat: number; clearcoatRoughness: number; }
+const MATERIAL_PBR: Record<string, PBRFinish> = {
+  alu:   { color: '#d3d8de', metalness: 0.95, roughness: 0.30, clearcoat: 0.15, clearcoatRoughness: 0.30 }, // aluminio pulido claro
+  steel: { color: '#aeb8c6', metalness: 0.96, roughness: 0.26, clearcoat: 0.10, clearcoatRoughness: 0.25 }, // acero satinado azulado
+  brass: { color: '#caa23a', metalness: 0.92, roughness: 0.33, clearcoat: 0.12, clearcoatRoughness: 0.30 }, // latón dorado
+  ti:    { color: '#9aa0a8', metalness: 0.90, roughness: 0.40, clearcoat: 0.08, clearcoatRoughness: 0.40 }, // titanio grisáceo mate-satín
+  abs:   { color: '#c9ccd2', metalness: 0.05, roughness: 0.62, clearcoat: 0.35, clearcoatRoughness: 0.55 }, // plástico ABS (mate con laca)
+  pla:   { color: '#d8d3c4', metalness: 0.04, roughness: 0.66, clearcoat: 0.30, clearcoatRoughness: 0.60 }, // plástico PLA
+};
+const DEFAULT_PBR: PBRFinish = MATERIAL_PBR.alu;
 
 // ──────────────────────────────────────────────────────────────────
 // Materiales (densidad en g/mm³) — para el análisis de masa exacto
@@ -829,10 +849,11 @@ function sweepMeshingInterference(
 // Render del sólido teselado + picking de cara/arista (raycast)
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
-  mesh, faded, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
+  mesh, faded, matKey, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
+  matKey: string;
   faces: FaceRef[];
   edgeGeoms: EdgeGeom[];
   selFaces: number[];
@@ -841,6 +862,7 @@ function SolidMesh({
   onPickFace: (i: number) => void;
   onPickEdge: (i: number) => void;
 }) {
+  const pbr = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
   const geom = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
@@ -942,15 +964,19 @@ function SolidMesh({
   return (
     <group>
       <mesh geometry={geom} castShadow receiveShadow onClick={handleClick}>
-        {/* PBR MATE de precisión (Onshape/Plasticity): metalness baja + roughness
-            media → NO espejo, las caras planas no reflejan un softbox quemado.
-            Sin emissive: el sólido NO debe brillar en un CAD. envMap suave solo
-            para dar volumen a las curvas, no para encandilar. */}
-        <meshStandardMaterial
-          color={faded ? '#aab3bd' : CAD_SOLID}
-          metalness={0.35}
-          roughness={0.55}
-          envMapIntensity={0.35}
+        {/* METAL PBR REAL (KeyShot/Plasticity): metalness alto + roughness de
+            maquinado satinado → la pieza REFLEJA el HDRI de estudio (envMap
+            fuerte) y lee como aluminio/acero/latón torneado, NO yeso gris.
+            clearcoat sutil da vida a las curvas (anodizado/laca fina). El color
+            y el acabado salen de MATERIAL_PBR → el selector por fin se VE.
+            Sin emissive: en un CAD la pieza no brilla, REFLEJA. */}
+        <meshPhysicalMaterial
+          color={faded ? '#9aa3ad' : pbr.color}
+          metalness={pbr.metalness}
+          roughness={pbr.roughness}
+          clearcoat={pbr.clearcoat}
+          clearcoatRoughness={pbr.clearcoatRoughness}
+          envMapIntensity={1.15}
           flatShading={false}
         />
       </mesh>
@@ -981,7 +1007,7 @@ function SolidMesh({
         <lineBasicMaterial
           color={CAD_EDGE}
           transparent
-          opacity={0.92}
+          opacity={0.82}
           polygonOffset
           polygonOffsetFactor={-1}
           polygonOffsetUnits={-1}
@@ -1105,31 +1131,34 @@ function CadViewport({
         style={{ background: 'transparent', width: '100%', height: '100%' }}
         dpr={[1, 2]}
         onCreated={({ gl }) => {
-          // ACES para una exposición neutra y agradable de PBR — SIN el grade
-          // cinematográfico (sin Bloom/Vignette/Grain/CA). Tonemap suave, no quema.
+          // ACES para PBR de metal — SIN grade cinematográfico (sin Bloom/Vignette/
+          // Grain/CA). Exposición algo más baja para que el highlight del metal
+          // tenga ROLL-OFF (no clipee a blanco): el brillo conserva textura.
           gl.toneMapping = ACESFilmicToneMapping;
-          gl.toneMappingExposure = 0.82;
+          gl.toneMappingExposure = 0.70;
         }}
       >
-        {/* HDR neutro a BAJA intensidad: da reflejos suaves para volumen en las
-            curvas, pero no ilumina con un softbox quemado (environmentIntensity
-            bajo). Sin background (fondo lo pone el div). */}
-        <Environment files="/hdri/studio_small_03_1k.hdr" background={false} environmentIntensity={0.45} />
+        {/* HDRI de estudio que el METAL REFLEJA (es lo que lo hace ver real, como
+            KeyShot/Plasticity). environmentIntensity ~1.0 → reflejos vivos en las
+            caras; los directionales bajan para no doblar el highlight. Sin
+            background (el fondo lo pone el div en degradado). */}
+        <Environment files="/hdri/studio_small_03_1k.hdr" background={false} environmentIntensity={1.0} />
 
-        {/* LUZ DE ESTUDIO PAREJA — key + fill + rim suaves, expuestos para VER
-            detalle (no para wow). El key proyecta sombra suave al piso. */}
-        <ambientLight intensity={0.55} />
+        {/* LUZ DE ESTUDIO SUAVE — el HDRI hace el grueso del modelado; estos solo
+            dan dirección y la sombra de contacto al piso. Intensidades bajas para
+            que el reflejo del entorno mande y el highlight no se queme. */}
+        <ambientLight intensity={0.18} />
         <directionalLight
           position={[cameraDistance, cameraDistance * 1.4, cameraDistance * 0.8]}
-          intensity={0.85}
+          intensity={0.55}
           color="#ffffff"
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
           shadow-bias={-0.0004}
         />
-        <directionalLight position={[-cameraDistance, cameraDistance * 0.3, -cameraDistance * 0.6]} intensity={0.4} color="#cfe0f0" />
-        <directionalLight position={[0, -cameraDistance * 0.6, cameraDistance]} intensity={0.25} color="#ffffff" />
+        <directionalLight position={[-cameraDistance, cameraDistance * 0.3, -cameraDistance * 0.6]} intensity={0.22} color="#cfe0f0" />
+        <directionalLight position={[0, -cameraDistance * 0.6, cameraDistance]} intensity={0.15} color="#ffffff" />
 
         <OrbitControls
           makeDefault
@@ -1173,11 +1202,11 @@ function CadGround({ size }: { size: number }) {
       />
       <ContactShadows
         position={[0, 0.005, 0]}
-        scale={size * 0.9}
-        far={size * 0.6}
-        blur={2.6}
-        opacity={0.5}
-        color="#05080c"
+        scale={size * 0.85}
+        far={size * 0.55}
+        blur={2.4}
+        opacity={0.62}
+        color="#04060a"
         resolution={1024}
       />
     </group>
@@ -1740,6 +1769,7 @@ export default function ForgeBRepStudio() {
               <SolidMesh
                 mesh={result.mesh}
                 faded={building}
+                matKey={material}
                 faces={result.faces}
                 edgeGeoms={result.edgeGeoms}
                 selFaces={selFaces}
@@ -2313,12 +2343,15 @@ export default function ForgeBRepStudio() {
             <div className="fb-panel-title">Análisis · Propiedades de masa</div>
             <label className="fb-mat">
               <span>Material</span>
-              <select data-testid="select-material" value={material}
-                onChange={(e) => setMaterial(e.target.value as keyof typeof MATERIALS)}>
-                {Object.entries(MATERIALS).map(([k, m]) => (
-                  <option key={k} value={k}>{m.label}</option>
-                ))}
-              </select>
+              <span className="fb-mat-pick">
+                <i className="fb-mat-swatch" style={{ background: (MATERIAL_PBR[material] ?? DEFAULT_PBR).color }} />
+                <select data-testid="select-material" value={material}
+                  onChange={(e) => setMaterial(e.target.value as keyof typeof MATERIALS)}>
+                  {Object.entries(MATERIALS).map(([k, m]) => (
+                    <option key={k} value={k}>{m.label}</option>
+                  ))}
+                </select>
+              </span>
             </label>
             {result ? (
               <div className="fb-mass">
@@ -2459,9 +2492,10 @@ const CSS = `
 .fb-facelist-items .fi-meta{opacity:.7;font-size:9px;}
 
 .fb-header,.fb-features,.fb-params,.fb-invariants,.fb-toolbar,.fb-analysis{
-  position:absolute;backdrop-filter:blur(14px) saturate(1.2);
-  background:rgba(13,18,28,0.66);border:1px solid rgba(159,179,200,0.12);
-  border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,0.5);}
+  position:absolute;backdrop-filter:blur(18px) saturate(1.25);
+  background:linear-gradient(180deg,rgba(20,27,38,0.72),rgba(11,15,22,0.74));
+  border:1px solid rgba(159,179,200,0.14);
+  border-radius:15px;box-shadow:0 10px 44px rgba(0,0,0,0.55),0 1px 0 rgba(255,255,255,0.04) inset;}
 
 .fb-header{top:18px;left:18px;display:flex;align-items:center;gap:14px;padding:11px 16px;}
 .fb-mark{font-size:22px;color:${GOLD};filter:drop-shadow(0 0 8px ${GOLD}88);}
@@ -2492,8 +2526,8 @@ const CSS = `
 .fb-feat-node.active{border-color:${GOLD};background:${GOLD}1a;box-shadow:0 0 0 1px ${GOLD}55 inset;}
 .fb-feat-node.accent .ico{color:${GOLD};}
 .fb-feat-node .ico{font-size:16px;color:${GOLD_DIM};}
-.fb-feat-node strong{display:block;font-size:12px;font-weight:600;}
-.fb-feat-node em{display:block;font-size:10px;color:${STEEL};opacity:.78;font-style:normal;margin-top:1px;}
+.fb-feat-node strong{display:block;font-size:12px;font-weight:600;color:#eef3f9;}
+.fb-feat-node em{display:block;font-size:10px;color:${STEEL};opacity:.9;font-style:normal;margin-top:1px;}
 .fb-feat-arrow{text-align:center;font-size:11px;color:${STEEL};opacity:.4;margin:3px 0;}
 
 .fb-params{right:18px;top:18px;width:230px;padding:14px;max-height:64vh;overflow:auto;}
@@ -2548,17 +2582,24 @@ const CSS = `
 .fb-actions button:hover,.fb-export:hover{border-color:${GOLD}66;background:${GOLD}14;}
 .fb-export[aria-disabled=true]{opacity:.4;pointer-events:none;}
 
-.fb-analysis{right:18px;bottom:18px;width:230px;padding:14px;}
-.fb-mat{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;font-size:11px;color:${STEEL};}
-.fb-mat select{flex:1;background:rgba(0,0,0,0.4);color:#e9eef5;border:1px solid rgba(159,179,200,0.18);
-  border-radius:7px;padding:6px;font-size:11px;cursor:pointer;}
+.fb-analysis{right:18px;bottom:18px;width:236px;padding:15px;}
+.fb-mat{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;font-size:11px;color:${STEEL};}
+.fb-mat>span:first-child{font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:.85;}
+.fb-mat-pick{display:flex;align-items:center;gap:7px;flex:1;background:rgba(0,0,0,0.42);
+  border:1px solid rgba(159,179,200,0.2);border-radius:8px;padding:0 8px 0 9px;}
+.fb-mat-swatch{width:13px;height:13px;border-radius:50%;flex:none;
+  box-shadow:0 0 0 1px rgba(0,0,0,0.5),0 1px 4px rgba(0,0,0,0.6),0 0 7px rgba(255,255,255,0.12) inset;}
+.fb-mat select{flex:1;background:transparent;color:#eef3f9;border:0;outline:none;
+  padding:7px 2px;font-size:11px;font-weight:500;cursor:pointer;}
 .fb-mass{display:flex;flex-direction:column;gap:2px;}
-.fb-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 0;
-  border-bottom:1px solid rgba(159,179,200,0.07);}
+.fb-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:6px 0;
+  border-bottom:1px solid rgba(159,179,200,0.09);}
 .fb-row:last-child{border-bottom:0;}
-.fb-row .rk{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:${STEEL};opacity:.65;}
-.fb-row .rv{font-size:12px;font-family:'JetBrains Mono',monospace;text-align:right;}
-.fb-row.hi .rv{color:${GOLD};font-weight:600;font-size:14px;}
+.fb-row .rk{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:${STEEL};opacity:.82;}
+.fb-row .rv{font-size:12.5px;font-family:'JetBrains Mono',monospace;text-align:right;color:#eef3f9;}
+.fb-row.hi{padding:8px 0;}
+.fb-row.hi .rk{opacity:.95;color:#cdd8e4;}
+.fb-row.hi .rv{color:${GOLD};font-weight:700;font-size:16px;letter-spacing:-.2px;}
 
 .fb-invariants{left:50%;transform:translateX(-50%);bottom:18px;max-width:640px;
   display:flex;gap:0;padding:0;overflow:hidden;}
@@ -2566,11 +2607,11 @@ const CSS = `
   border-right:1px solid rgba(159,179,200,0.1);}
 .fb-invariants .inv:last-child{border-right:0;}
 .fb-invariants .inv.err{background:rgba(248,113,113,0.1);}
-.fb-invariants .k{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:${STEEL};opacity:.6;}
-.fb-invariants .v{font-size:13px;font-weight:600;}
+.fb-invariants .k{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:${STEEL};opacity:.78;}
+.fb-invariants .v{font-size:13px;font-weight:600;color:#eef3f9;}
 .fb-invariants .v.mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
 .fb-invariants .v b{color:${GOLD};}
-.fb-invariants .chk{font-size:10px;color:${STEEL};opacity:.85;}
+.fb-invariants .chk{font-size:10px;color:${STEEL};opacity:.92;}
 .fb-invariants.ok{border-color:${GOLD}44;}
 
 .fb-hide{position:absolute;bottom:18px;right:260px;width:34px;height:34px;border-radius:9px;

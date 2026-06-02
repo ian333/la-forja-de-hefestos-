@@ -296,7 +296,23 @@ export function useWeightedCamera(
       ...opts,
       lagState: lagState.current,
     });
-    cameraAt(camera as THREE.PerspectiveCamera, pos, target, prog.fov);
+    // CORRECCIÓN DE FOV POR ASPECT RATIO (Hor+): los programAt fueron afinados para
+    // 9:16 (aspect ≈ 0.5625). three.js usa FOV VERTICAL, así que en 16:9 (aspect
+    // ancho) el mismo FOV vertical mostraría el sujeto gigante. Recalculamos el FOV
+    // vertical para PRESERVAR el FOV horizontal que la composición pretendía → el
+    // sujeto respira a lo ancho en landscape, sin re-afinar cada beat. Determinista
+    // (solo depende del aspect del render y del prog.fov puro en t).
+    let fov = prog.fov;
+    const cam = camera as THREE.PerspectiveCamera;
+    if (fov != null && cam.aspect) {
+      const DESIGN_ASPECT = 9 / 16; // los programas se diseñaron para vertical 9:16
+      if (Math.abs(cam.aspect - DESIGN_ASPECT) > 0.01) {
+        // FOV horizontal que tendría la toma a 9:16, preservado al nuevo aspect.
+        const hHalf = Math.atan(Math.tan((fov * Math.PI / 180) / 2) * DESIGN_ASPECT);
+        fov = (2 * Math.atan(Math.tan(hHalf) / cam.aspect)) * 180 / Math.PI;
+      }
+    }
+    cameraAt(cam, pos, target, fov);
   });
 }
 
