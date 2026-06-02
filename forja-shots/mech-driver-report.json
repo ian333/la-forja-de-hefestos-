@@ -1,0 +1,93 @@
+{
+  "url": "http://localhost:5002/forja-mecanismos.html",
+  "errs": [],
+  "gpu": {
+    "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Ti), OpenGL 4.6)",
+    "real": true
+  },
+  "funcs": [
+    {
+      "funcion": "1. Crear four-bar (preset crank-rocker, clic)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "gate-class=\"crank-rocker\"; a=[16.00,4.00,14.00,12.00]"
+    },
+    {
+      "funcion": "1b. Crear four-bar (preset kidney, clic)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "curva acopladora puntos=pose ok"
+    },
+    {
+      "funcion": "2. ANIMAR vía slider θ2 0→360 (arrastre mouse, varias poses)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "θ4 recorre 38.0°; juntas A,B viajan min 6.63u; poses=7; hud-theta4 coherente con θ2"
+    },
+    {
+      "funcion": "2b. Botón ▶ Animar / ⏸ Pausar (clic)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "θ2 58.5→152.0° corriendo; tras pausa estable en 156.2°"
+    },
+    {
+      "funcion": "2c. Rama abierta/cruzada (branch-toggle, clic)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "θ4 abierta=222.4° → cruzada=109.4°"
+    },
+    {
+      "funcion": "3. GATE caso Grashof VERDE (preset crank-rocker)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "Grashof=\"● Grashof\" · transmisión=\"● OK\" · rama=\"● válida\" · clase=\"crank-rocker\" · μ∈[54.3,89.8]°"
+    },
+    {
+      "funcion": "4. SINTETIZAR Freudenstein — default Grashof (clava 3 puntos)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "puntos=[{\"in\":40,\"out\":236.099},{\"in\":90,\"out\":222.197},{\"in\":150,\"out\":219.341}] → a=[4.000, 1.000, 3.500, 3.000]; error vs 3 objetivos=0.00e+0 (<1e-9 EXACTO); K=[3.9997,1.3333,2.2914]"
+    },
+    {
+      "funcion": "4b. Verificación forward POR UI (slider exacto a θ2_i, leer hud-theta4)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "el four-bar sintetizado clava los 3 θ4 al correr el forward en la UI. Residuo (descontado el desfase de granularidad 0.5° del slider) máx=0.041°; la prueba EXACTA es synth-error=0 (forward del UI en θ2_i exactos). [{\"targetT2\":40,\"realT2\":40,\"targetT4\":236.099,\"uiT4\":236.1,\"rawErrDeg\":0.001,\"sliderOffsetDeg\":0,\"residualDeg\":0.001},{\"targetT2\":90,\"realT2\":90,\"targetT4\":222.197,\"uiT4\":222.2,\"rawErrDeg\":0.003,\"sliderOffsetDeg\":0,\"residualDeg\":0.003},{\"targetT2\":150,\"realT2\":150,\"targetT4\":219.341,\"uiT4\":219.3,\"rawErrDeg\":0.041,\"sliderOffsetDeg\":0,\"residualDeg\":0.041}]"
+    },
+    {
+      "funcion": "3b. GATE caso NO-Grashof ROJO (síntesis de puntos no-Grashof, vía UI)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "puntos=[{\"in\":30,\"out\":80},{\"in\":70,\"out\":110},{\"in\":110,\"out\":150}] → Grashof=\"○ no-Grashof\" (rojo) · clase=\"triple-rocker\" · rama=\"○ se desarma\" · transmisión=\"○ se traba\" · grashof.bool=false"
+    },
+    {
+      "funcion": "4c. SINTETIZAR Freudenstein — no-Grashof (clava 3 puntos igual)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "a=[4.000, 3.708, 7.005, 4.840]; error vs 3 objetivos=2.22e-16 (<1e-9 EXACTO)"
+    },
+    {
+      "funcion": "5. Curva del acoplador (séxtica) trazada en el viewport",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "preset kidney: ciclo ensambla 100%, cierre de lazo máx=4.8e-15 → la <Line> dorada de P(θ) se dibuja (ver screenshot)"
+    },
+    {
+      "funcion": "INVARIANTE: cierre de lazo ~0 (recomputado por UI desde juntas)",
+      "via_mouse": true,
+      "resultado": "PASA",
+      "detalle": "hud-loop-max=6.4e-15; recomputado desde posiciones de junta=1.8e-15 (< 1e-6)"
+    }
+  ],
+  "shots": [
+    "/tmp/forja-mech/mech-fourbar-preset-kidney.png",
+    "/tmp/forja-mech/mech-fourbar-anima.png",
+    "/tmp/forja-mech/mech-gate-grashof-verde.png",
+    "/tmp/forja-mech/mech-sintesis.png",
+    "/tmp/forja-mech/mech-gate-no-grashof-rojo.png",
+    "/tmp/forja-mech/mech-curva-acoplador.png"
+  ],
+  "notes": [],
+  "todo_via_mouse": true,
+  "allFuncsPass": true
+}
