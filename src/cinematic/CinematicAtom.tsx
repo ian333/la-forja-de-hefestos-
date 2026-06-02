@@ -654,7 +654,7 @@ export function FrameDriver({ time }: { time: number }) {
   return null;
 }
 
-export function DynamicPostFX({ time }: { time: number }) {
+export function DynamicPostFX({ time, live = false }: { time: number; live?: boolean }) {
   // Resolve cut-driven postFX params for current time
   const { cut, isCutBoundary } = findCut(time);
   const bloomIntensity = cut.bloom;
@@ -667,8 +667,13 @@ export function DynamicPostFX({ time }: { time: number }) {
   // golpe en los cortes. La modulación radial la hace sentir como vidrio real.
   const caBase = chromaOn ? 0.0026 : 0.0010;
 
+  // En live (lab, GPUs diversas) MSAA=0: el combo multisampling + render target
+  // HDR-float es lo MENOS soportado entre GPUs/drivers (Intel, ANGLE, software) y
+  // suele reventar el postFX a blanco aunque la GPU de dev lo renderee bien. El
+  // render headless 4K (live=false) conserva MSAA=4. frameBufferType explícito =
+  // HDR consistente (no depender de la auto-detección).
   return (
-    <EffectComposer multisampling={4}>
+    <EffectComposer multisampling={live ? 0 : 4} frameBufferType={THREE.HalfFloatType}>
       <Bloom
         intensity={bloomIntensity * 1.12}
         luminanceThreshold={0.18}
@@ -955,11 +960,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, extent * 0.5], fov: 35, near: 0.01, far: 200 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
-        /* En el lab forzamos buffer alta-res (dpr 2): el tamaño de punto de la nube
-           (gl_PointSize, const 520) está calibrado para alta-res; en monitor DPR1 los
-           puntos cubren el doble de pantalla → la nube se satura a blanco. dpr=2 los
-           deja finos como en el render 4K. Headless (live=false): sin tocar. */
-        dpr={live ? 2 : [1, 2]}
+        dpr={[1, 2]}
         frameloop="always"
         style={{ background: '#000' }}
       >
@@ -970,7 +971,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
           brightness={Math.min(1, 4.2 / Math.sqrt(element.Z))} />
-        <DynamicPostFX time={time} />
+        <DynamicPostFX time={time} live={live} />
       </Canvas>
       <CinemaVignette />
       {/* En el lab (live) ocultamos los overlays/letterbox: el dock ya muestra la

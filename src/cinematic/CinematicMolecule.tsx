@@ -193,9 +193,12 @@ function MolCameraRig({ frame, time, vertical }: { frame: Frame; time: number; v
 
 // ── PostFX de molécula — grado de cine (ACES, grano, contraste, lente). El
 // bokeh lo hace el shader de la nube (uBokeh), no aquí. ──
-function MolPostFX() {
+function MolPostFX({ live = false }: { live?: boolean }) {
+  // MSAA=0 en live: el combo multisampling + render target HDR-float revienta el
+  // postFX a blanco en muchas GPUs (Intel, ANGLE, software) aunque la GPU de dev
+  // lo renderee bien. Headless 4K (live=false) conserva MSAA=4. HDR buffer explícito.
   return (
-    <EffectComposer multisampling={4}>
+    <EffectComposer multisampling={live ? 0 : 4} frameBufferType={THREE.HalfFloatType}>
       <Bloom intensity={0.9} luminanceThreshold={0.22} luminanceSmoothing={0.5} radius={0.82} mipmapBlur />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
       <BrightnessContrast brightness={0.02} contrast={0.18} />
@@ -868,7 +871,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, (data?.extent ?? 8) * 0.5], fov: 35, near: 0.01, far: 400 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
-        dpr={live ? 2 : [1, 2]} frameloop="always" style={{ background: '#000' }}
+        dpr={[1, 2]} frameloop="always" style={{ background: '#000' }}
       >
         <color attach="background" args={['#000']} />
         <FrameDriver time={time} />
@@ -897,7 +900,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             {isCatalog && catField === 'sigma' && <ChainField frame={frame} time={time} alkane={true} />}
           </>;
         })()}
-        <MolPostFX />
+        <MolPostFX live={live} />
       </Canvas>
       <CinemaVignette />
       {!live && <>
