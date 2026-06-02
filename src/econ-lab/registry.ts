@@ -15,13 +15,49 @@
  * 2D (sliders + gráficas SVG/Canvas), no R3F 3D. Eso es deliberado y
  * pedagógico: en economía los conceptos viven en plano (oferta/demanda,
  * Phillips curve, frontera eficiente) y no se ganaría nada con 3D forzado.
+ *
+ * Los componentes `live` reutilizan los labs por-premio de `@/economia/labs/`
+ * (los mismos que monta `premio.html?id=`), aquí organizados por TEMA en vez
+ * de por año/premio. Un lab, dos puertas de entrada.
  */
 
 import { lazy } from 'react';
 import type { LabBranch } from './types';
 
-// Live modules (the ones already implemented)
+// Módulo nativo del EconLab.
 const MarketForLemons = lazy(() => import('./modules/info/MarketForLemons'));
+
+// Labs por-premio reutilizados (viven en @/economia/labs/, también en premio.html).
+const SpenceLab          = lazy(() => import('@/economia/labs/SpenceLab'));
+const CoaseLab           = lazy(() => import('@/economia/labs/CoaseLab'));
+const HartHolmstromLab   = lazy(() => import('@/economia/labs/HartHolmstromLab'));
+const TiroleLab          = lazy(() => import('@/economia/labs/TiroleLab'));
+const NashLab            = lazy(() => import('@/economia/labs/NashLab'));
+const SchellingCiudad    = lazy(() => import('@/economia/labs/SchellingCiudad'));
+const MilgromWilsonLab   = lazy(() => import('@/economia/labs/MilgromWilsonLab'));
+const RothShapleyLab     = lazy(() => import('@/economia/labs/RothShapleyLab'));
+const MechanismDesignLab = lazy(() => import('@/economia/labs/MechanismDesignLab'));
+const SolowLab           = lazy(() => import('@/economia/labs/SolowLab'));
+const PhelpsLab          = lazy(() => import('@/economia/labs/PhelpsLab'));
+const AcemogluLab        = lazy(() => import('@/economia/labs/AcemogluLab'));
+const MarkowitzSharpeLab = lazy(() => import('@/economia/labs/MarkowitzSharpeLab'));
+const MertonScholesLab   = lazy(() => import('@/economia/labs/MertonScholesLab'));
+const BankRunLab         = lazy(() => import('@/economia/labs/BernankeDiamondDybvigLab'));
+const FamaShillerLab     = lazy(() => import('@/economia/labs/FamaHansenShillerLab'));
+const MundellLab         = lazy(() => import('@/economia/labs/MundellLab'));
+const FriedmanLab        = lazy(() => import('@/economia/labs/FriedmanLab'));
+const DeatonLab          = lazy(() => import('@/economia/labs/DeatonLab'));
+const DufloLab           = lazy(() => import('@/economia/labs/DufloBanerjeeKremerLab'));
+const SenLab             = lazy(() => import('@/economia/labs/SenLab'));
+const KahnemanLab        = lazy(() => import('@/economia/labs/KahnemanLab'));
+const ThalerLab          = lazy(() => import('@/economia/labs/ThalerLab'));
+const SimonLab           = lazy(() => import('@/economia/labs/SimonLab'));
+const BeckerLab          = lazy(() => import('@/economia/labs/BeckerLab'));
+const CardLab            = lazy(() => import('@/economia/labs/CardAngristImbensLab'));
+const GoldinLab          = lazy(() => import('@/economia/labs/GoldinLab'));
+const SearchMatchingLab  = lazy(() => import('@/economia/labs/DiamondMortensenPissaridesLab'));
+const FrischLab          = lazy(() => import('@/economia/labs/CaballitoFrisch'));
+const EngleGrangerLab    = lazy(() => import('@/economia/labs/EngleGrangerLab'));
 
 export const BRANCHES: LabBranch[] = [
   // ═══════════════════════ 1 · MERCADOS E INFORMACIÓN ═══════════════════════
@@ -44,13 +80,11 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'spence-signaling',
         name: 'Señalización de Spence',
-        status: 'planned',
-        blurb: 'La escalera de educación como costly signal. Equilibrios pooling vs separating.',
-        roadmap: [
-          '2 tipos de trabajador (alto/bajo) con costo de educación distinto',
-          'Slider: salario ofrecido por nivel educativo',
-          'Identificar zona donde existe equilibrio separating',
-        ],
+        status: 'live',
+        blurb: 'La educación como señal costosa. Equilibrios pooling vs separating.',
+        childHint: 'El título no prueba que sabes — prueba que aguantaste lo que otros no.',
+        researcherHint: 'Dos tipos con costo de educación distinto; e* tal que solo el tipo alto señaliza.',
+        component: SpenceLab,
       },
       {
         id: 'screening',
@@ -66,35 +100,29 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'coase-firm',
         name: 'Make-vs-Buy (Coase)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Tamaño óptimo de la empresa: costos de transacción vs costos de coordinación.',
-        roadmap: [
-          'Sliders: costo de mercado, costo de coordinar internamente',
-          'Curva de costo total → tamaño óptimo',
-          'Casos clásicos: Ford vertical, Apple horizontal',
-        ],
+        childHint: 'Tu jefe existe porque negociar en el mercado cuesta. Si ese costo fuera 0, no habría empresas.',
+        researcherHint: 'Umbral n* = F/(τ−m): make-vs-buy + teorema de Coase con costo de transacción variable.',
+        component: CoaseLab,
       },
       {
         id: 'principal-agent',
         name: 'Principal-Agent (Holmström)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Diseñar el contrato óptimo cuando el agente puede esconder esfuerzo.',
-        roadmap: [
-          'Sliders: aversión al riesgo, varianza del ruido, productividad',
-          'Contrato óptimo: salario fijo + comisión sobre output',
-          'Trade-off insurance vs incentivos',
-        ],
+        childHint: 'Pagar puro sueldo fijo = nadie se esfuerza; pura comisión = le cargas todo el riesgo.',
+        researcherHint: 'β* = 1/(1+ρcσ²): trade-off seguro vs incentivo (Holmström-Milgrom).',
+        component: HartHolmstromLab,
       },
       {
         id: 'two-sided-markets',
         name: 'Mercados de dos lados (Tirole)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Visa, App Store, Uber: por qué un lado subsidia al otro.',
-        roadmap: [
-          'Slider: precio a cada lado',
-          'Network effects cruzados',
-          'Equilibrio de adopción + welfare',
-        ],
+        childHint: 'Uber no le cobra lo mismo al conductor que al pasajero — y a veces uno paga negativo.',
+        researcherHint: 'Externalidades de red cruzadas + punto fijo; precio óptimo por lado puede ser negativo.',
+        component: TiroleLab,
       },
     ],
   },
@@ -110,14 +138,11 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'nash-2x2',
         name: 'Equilibrio Nash 2×2',
-        status: 'planned',
+        status: 'live',
         blurb: 'Matriz de pagos editable. Estrategias dominantes, equilibrios mixtos, mejor respuesta.',
-        roadmap: [
-          'Editor de matriz 2×2',
-          'Cálculo automático de equilibrios puros + mixtos',
-          'Visualización del simplejo de estrategias',
-          'Presets: Prisionero, Halcón-Paloma, Stag-Hunt, Battle of Sexes',
-        ],
+        childHint: 'Cambia los pagos y mira dónde ninguno de los dos quiere cambiar su jugada solo.',
+        researcherHint: 'Equilibrios puros + mixto por indiferencia; presets Prisionero/Halcón-Paloma/Stag-Hunt.',
+        component: NashLab,
       },
       {
         id: 'prisoners-iterated',
@@ -133,46 +158,38 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'schelling-segregation',
         name: 'Segregación de Schelling',
-        status: 'planned',
+        status: 'live',
         blurb: 'Cómo preferencias individuales débiles producen segregación extrema.',
-        roadmap: [
-          'Grid 2D con dos tipos de agente',
-          'Slider: tolerancia individual',
-          'Métrica de segregación agregada',
-        ],
+        childHint: 'Aunque cada quien acepte ser minoría leve, la ciudad termina totalmente separada.',
+        researcherHint: 'Grid con umbral de tolerancia individual; segregación agregada emergente.',
+        component: SchellingCiudad,
       },
       {
         id: 'auctions',
-        name: 'Subastas: English / Dutch / Vickrey / 1st-price',
-        status: 'planned',
-        blurb: 'Cuatro formatos. Mismo objeto. ¿Cuándo coinciden los ingresos esperados? Revenue Equivalence.',
-        roadmap: [
-          'N bidders con valuaciones IID',
-          'Simulación de cada formato',
-          'Histograma de precio final + winner curse',
-        ],
+        name: 'Subastas (Milgrom-Wilson)',
+        status: 'live',
+        blurb: 'Cuatro formatos, mismo objeto. Revenue equivalence, shading, winner curse.',
+        childHint: 'En la subasta de segundo precio te conviene decir la verdad; en la de primer precio, mentir tantito.',
+        researcherHint: 'Bidders IID; shading b=v(N−1)/N en 1er precio; verdad dominante en Vickrey.',
+        component: MilgromWilsonLab,
       },
       {
         id: 'matching-gale-shapley',
         name: 'Matching Gale-Shapley',
-        status: 'planned',
+        status: 'live',
         blurb: 'Estudiantes ↔ escuelas, médicos ↔ hospitales. El algoritmo que Roth llevó a la práctica.',
-        roadmap: [
-          'Editor de preferencias para ambos lados',
-          'Animación del algoritmo paso a paso',
-          'Demostración de stability + strategy-proofness',
-        ],
+        childHint: 'Todos proponen, los rechazados vuelven a intentar, y nadie queda con ganas de cambiar.',
+        researcherHint: 'Deferred acceptance: estabilidad + a prueba de estrategia para el lado que propone.',
+        component: RothShapleyLab,
       },
       {
         id: 'mechanism-design',
         name: 'Mechanism design playground',
-        status: 'planned',
+        status: 'live',
         blurb: 'Diseña la regla. Los participantes mienten. ¿Qué regla los hace decir la verdad?',
-        roadmap: [
-          'Subastas, votación, asignación pública',
-          'VCG mechanism + median voter',
-          'Visualizar incentive compatibility',
-        ],
+        childHint: 'Cambia las reglas del juego hasta que a todos les convenga ser honestos.',
+        researcherHint: 'VCG + compatibilidad de incentivos; el principio de revelación en acción.',
+        component: MechanismDesignLab,
       },
     ],
   },
@@ -188,14 +205,11 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'solow',
         name: 'Modelo de Solow',
-        status: 'planned',
+        status: 'live',
         blurb: 'Sliders: tasa de ahorro, depreciación, crecimiento poblacional, tecnología. Ver el steady state.',
-        roadmap: [
-          'Función de producción Cobb-Douglas',
-          'Gráfica k(t) en el tiempo',
-          'Golden rule de ahorro',
-          'Convergencia condicional entre países',
-        ],
+        childHint: 'Más fábricas ayudan… hasta que el desgaste se come lo nuevo y te estancas.',
+        researcherHint: 'Cobb-Douglas; k* donde s·f(k)=(δ+n)k; golden rule de ahorro.',
+        component: SolowLab,
       },
       {
         id: 'romer-endogenous',
@@ -209,14 +223,12 @@ export const BRANCHES: LabBranch[] = [
       },
       {
         id: 'phillips-curve',
-        name: 'Curva de Phillips',
-        status: 'planned',
-        blurb: 'Inflación vs desempleo. Phelps: a largo plazo no existe.',
-        roadmap: [
-          'Sliders: shocks de oferta, expectativas',
-          'Comparar Phillips estática vs ampliada por expectativas',
-          'Stagflación visible',
-        ],
+        name: 'Curva de Phillips (Phelps)',
+        status: 'live',
+        blurb: 'Inflación vs desempleo. Phelps: a largo plazo no existe el trade-off.',
+        childHint: 'Imprimir dinero baja el desempleo… solo hasta que todos esperan la inflación.',
+        researcherHint: 'Phillips ampliada por expectativas; tasa natural; stagflación visible.',
+        component: PhelpsLab,
       },
       {
         id: 'is-lm-as-ad',
@@ -231,13 +243,11 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'acemoglu-institutions',
         name: 'Instituciones y prosperidad (Acemoglu)',
-        status: 'planned',
-        blurb: 'Datos reales: Nogales-Nogales, las dos Coreas, herencia colonial. Inclusivo vs extractivo.',
-        roadmap: [
-          'Dataset de instituciones (Polity IV) + PIB per cápita',
-          'Scatter plot interactivo con país hover',
-          'Diferencia en diferencias por reforma institucional',
-        ],
+        status: 'live',
+        blurb: 'Nogales-Nogales, las dos Coreas, herencia colonial. Inclusivo vs extractivo.',
+        childHint: 'Misma gente, mismo clima, una línea en el mapa — y un lado es 5 veces más rico.',
+        researcherHint: 'Instituciones inclusivas vs extractivas; instrumento settler mortality (AJR).',
+        component: AcemogluLab,
       },
     ],
   },
@@ -253,13 +263,11 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'portfolio-frontier',
         name: 'Frontera eficiente (Markowitz)',
-        status: 'planned',
-        blurb: '2-3 activos con retornos y covarianzas. Frontera de varianza mínima + capital market line.',
-        roadmap: [
-          'Sliders: retornos esperados + matriz de covarianza',
-          'Frontera dibujada + portafolio tangente',
-          'Datos reales SPX/IPC/BOVESPA opcional',
-        ],
+        status: 'live',
+        blurb: 'Activos con retornos y covarianzas. Frontera de varianza mínima + capital market line.',
+        childHint: 'No pongas todos los huevos en una canasta: mezclar baja el riesgo sin bajar el premio.',
+        researcherHint: 'Frontera media-varianza + portafolio tangente; diversificación por covarianza.',
+        component: MarkowitzSharpeLab,
       },
       {
         id: 'capm',
@@ -274,36 +282,30 @@ export const BRANCHES: LabBranch[] = [
       },
       {
         id: 'black-scholes',
-        name: 'Black-Scholes',
-        status: 'planned',
-        blurb: 'Pricing de opciones. Sliders: precio strike, tiempo, volatilidad, tasa libre de riesgo.',
-        roadmap: [
-          'Fórmula + las greeks (delta, gamma, vega, theta)',
-          'Árbol binomial converge a B-S',
-          'Volatility smile',
-        ],
+        name: 'Black-Scholes-Merton',
+        status: 'live',
+        blurb: 'Pricing de opciones. Sliders: strike, tiempo, volatilidad, tasa libre de riesgo.',
+        childHint: 'El precio justo de una apuesta sobre el futuro, sin adivinar a dónde va el mercado.',
+        researcherHint: 'Fórmula B-S + las griegas; árbol binomial converge a la solución cerrada.',
+        component: MertonScholesLab,
       },
       {
         id: 'bank-run',
         name: 'Corrida bancaria (Diamond-Dybvig)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Dos equilibrios: nadie corre, todos corren. Cómo el seguro de depósitos los elimina.',
-        roadmap: [
-          'Agentes deciden retirar/no en T1, T2',
-          'Equilibrio simétrico',
-          'Cambio de régimen con seguro',
-        ],
+        childHint: 'El banco es sano… hasta que todos creen que todos van a sacar su dinero.',
+        researcherHint: 'Dos equilibrios de Nash; el seguro de depósitos elimina el malo.',
+        component: BankRunLab,
       },
       {
         id: 'shiller-bubbles',
-        name: 'Burbujas (Shiller)',
-        status: 'planned',
-        blurb: 'Precio vs dividendos descontados. CAPE ratio histórico. ¿Estamos en una burbuja?',
-        roadmap: [
-          'Series históricas SPX/IPC desde 1900',
-          'CAPE de Shiller calculado',
-          'Predicción de retornos a 10 años',
-        ],
+        name: 'Eficiencia y burbujas (Fama-Shiller)',
+        status: 'live',
+        blurb: 'Precio vs dividendos descontados. Mercados eficientes vs exuberancia irracional.',
+        childHint: '¿El precio refleja todo lo conocido… o a veces es pura euforia?',
+        researcherHint: 'Random walk de Fama vs exceso de volatilidad de Shiller; CAPE histórico.',
+        component: FamaShillerLab,
       },
     ],
   },
@@ -319,12 +321,11 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'monetary-trilemma',
         name: 'Trilemma monetaria (Mundell)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Tipo de cambio fijo, libre flujo de capital, política monetaria autónoma — elige dos.',
-        roadmap: [
-          'Tres ejes seleccionables',
-          'Ejemplos: Argentina 1991 (currency board), China (capital control), USA (free float)',
-        ],
+        childHint: 'No puedes tener las tres a la vez: algo tienes que soltar.',
+        researcherHint: 'Trilema de Mundell-Fleming; ejemplos currency board / control de capital / free float.',
+        component: MundellLab,
       },
       {
         id: 'fisher-equation',
@@ -335,10 +336,12 @@ export const BRANCHES: LabBranch[] = [
       },
       {
         id: 'hyperinflation',
-        name: 'Hiperinflación',
-        status: 'planned',
-        blurb: 'Modelo de Cagan. Por qué Argentina, Venezuela, Zimbabwe colapsaron.',
-        roadmap: ['Slider: déficit fiscal, demanda de dinero', 'Punto de ignición'],
+        name: 'Hiperinflación (Friedman)',
+        status: 'live',
+        blurb: 'Por qué imprimir dinero sin freno colapsa la moneda. Cagan.',
+        childHint: 'Cuando el gobierno imprime para pagar, los precios corren más rápido que tú.',
+        researcherHint: 'Teoría cuantitativa + demanda de dinero de Cagan; punto de ignición del déficit.',
+        component: FriedmanLab,
       },
     ],
   },
@@ -353,28 +356,30 @@ export const BRANCHES: LabBranch[] = [
     modules: [
       {
         id: 'gini-lorenz',
-        name: 'Gini y curva de Lorenz',
-        status: 'planned',
-        blurb: 'Cómo medir desigualdad. Datos reales de México, Brasil, Chile vs. EE.UU., Noruega.',
-        roadmap: ['Distribución del ingreso editable', 'Curva de Lorenz + Gini', 'Comparador de países'],
+        name: 'Desigualdad y consumo (Deaton)',
+        status: 'live',
+        blurb: 'Cómo medir desigualdad y consumo. Gini, curva de Lorenz, datos reales.',
+        childHint: 'Dos países con el mismo ingreso promedio pueden ser mundos distintos según cómo se reparte.',
+        researcherHint: 'Curva de Lorenz + coeficiente de Gini; consumo vs ingreso (Deaton).',
+        component: DeatonLab,
       },
       {
         id: 'rct',
-        name: 'RCT: tratamiento vs control',
-        status: 'planned',
-        blurb: 'El método experimental aplicado a pobreza. PROSPERA México como caso real.',
-        roadmap: [
-          'Sliders: tamaño de muestra, efecto, varianza',
-          'P-value y intervalo de confianza',
-          'Caso: efecto educativo de PROGRESA',
-        ],
+        name: 'RCT: tratamiento vs control (Duflo)',
+        status: 'live',
+        blurb: 'El método experimental aplicado a pobreza. PROGRESA México como caso real.',
+        childHint: 'Para saber si una ayuda sirve, la das al azar a unos y a otros no, y comparas.',
+        researcherHint: 'Aleatorización + diferencia de medias; p-value e intervalo de confianza.',
+        component: DufloLab,
       },
       {
         id: 'capabilities-sen',
         name: 'Capabilities (Sen)',
-        status: 'planned',
+        status: 'live',
         blurb: 'IDH y más allá. Por qué medir solo ingreso miente.',
-        roadmap: ['Comparador multidimensional', 'IDH vs PIB per cápita'],
+        childHint: 'Ser rico no es tener dinero, es poder elegir la vida que quieres.',
+        researcherHint: 'Enfoque de capacidades; IDH multidimensional vs PIB per cápita.',
+        component: SenLab,
       },
     ],
   },
@@ -390,30 +395,29 @@ export const BRANCHES: LabBranch[] = [
       {
         id: 'prospect-theory',
         name: 'Prospect theory (Kahneman)',
-        status: 'planned',
+        status: 'live',
         blurb: 'La función de valor. Loss aversion. Por qué $100 perdidos duelen más que $100 ganados.',
-        roadmap: [
-          'Función S asimétrica',
-          'Probability weighting',
-          'Comparar con expected utility',
-        ],
+        childHint: 'Perder mil pesos duele más de lo que alegra ganarlos. Tu cerebro no es una calculadora.',
+        researcherHint: 'Función de valor en S + ponderación de probabilidad; comparar con utilidad esperada.',
+        component: KahnemanLab,
       },
       {
         id: 'nudges',
         name: 'Nudges (Thaler)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Default sí donas / default no donas. Cómo el menú cambia el comportamiento.',
-        roadmap: [
-          'Simulación: opt-in vs opt-out en pensiones, donación de órganos',
-          'Comparador internacional real',
-        ],
+        childHint: 'Cambia cuál es la opción “por defecto” y cambias lo que hace la mayoría.',
+        researcherHint: 'Arquitectura de elección; opt-in vs opt-out en pensiones y donación de órganos.',
+        component: ThalerLab,
       },
       {
         id: 'bounded-rationality',
         name: 'Racionalidad acotada (Simon)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Satisficing vs optimizing. El alumno se vuelve un agente con tiempo finito de cálculo.',
-        roadmap: ['Decision tree con costo de búsqueda', 'Comparar resultados'],
+        childHint: 'No buscas LO mejor: buscas algo suficientemente bueno y ya. Eso es ser humano.',
+        researcherHint: 'Satisficing con costo de búsqueda; comparar contra el óptimo global.',
+        component: SimonLab,
       },
     ],
   },
@@ -428,31 +432,39 @@ export const BRANCHES: LabBranch[] = [
     modules: [
       {
         id: 'mincer',
-        name: 'Ecuación de Mincer',
-        status: 'planned',
-        blurb: 'log(salario) = α + β·educación + γ·experiencia. Estimación con datos reales.',
-        roadmap: ['Dataset INEGI/ENIGH', 'Regresión OLS + intervalos', 'Retorno por año extra de escuela'],
+        name: 'Capital humano (Becker)',
+        status: 'live',
+        blurb: 'log(salario) = α + β·educación + γ·experiencia. El retorno de estudiar un año más.',
+        childHint: 'Estudiar es invertir en ti: cada año de escuela paga un porcentaje extra de por vida.',
+        researcherHint: 'Ecuación de Mincer; retorno marginal de la educación.',
+        component: BeckerLab,
       },
       {
         id: 'did',
         name: 'Differences-in-Differences (Card)',
-        status: 'planned',
+        status: 'live',
         blurb: 'El experimento natural. Card y el salario mínimo en New Jersey.',
-        roadmap: ['Dataset Card-Krueger', 'Visualización DiD', 'Test de paralelismo previo'],
+        childHint: 'Compara antes-y-después de dos grupos para aislar el efecto de una política.',
+        researcherHint: 'DiD + test de tendencias paralelas (Card-Krueger).',
+        component: CardLab,
       },
       {
         id: 'gender-gap-decomp',
-        name: 'Descomposición de la brecha de género (Goldin)',
-        status: 'planned',
+        name: 'Brecha de género (Goldin)',
+        status: 'live',
         blurb: 'Cuánto es educación, ocupación, hijos. La brecha residual.',
-        roadmap: ['Oaxaca-Blinder decomposition', 'Datos reales de mercado laboral mexicano'],
+        childHint: 'Gran parte de la brecha salarial aparece justo cuando llega el primer hijo.',
+        researcherHint: 'Descomposición Oaxaca-Blinder; penalización por maternidad.',
+        component: GoldinLab,
       },
       {
         id: 'search-matching',
         name: 'Search & matching (Mortensen-Pissarides)',
-        status: 'planned',
+        status: 'live',
         blurb: 'Cómo coexisten vacantes y desempleo. La curva de Beveridge.',
-        roadmap: ['Matching function', 'Slider de costo de búsqueda', 'Curva de Beveridge en vivo'],
+        childHint: 'Hay vacantes Y hay desempleados al mismo tiempo: encontrarse cuesta tiempo.',
+        researcherHint: 'Función de emparejamiento + curva de Beveridge; fricción de búsqueda.',
+        component: SearchMatchingLab,
       },
     ],
   },
@@ -467,17 +479,21 @@ export const BRANCHES: LabBranch[] = [
     modules: [
       {
         id: 'ols',
-        name: 'Regresión lineal interactiva',
-        status: 'planned',
-        blurb: 'Mueve puntos, mira cómo cambia la recta. R², residuos, intervalos de confianza.',
-        roadmap: ['Drag-and-drop de puntos', 'Comparar OLS vs robust regression'],
+        name: 'Regresión lineal (Frisch-Tinbergen)',
+        status: 'live',
+        blurb: 'La recta que mejor pasa por los datos. R², residuos, intervalos.',
+        childHint: 'Una línea que aprende la tendencia de una nube de puntos.',
+        researcherHint: 'Mínimos cuadrados; los padres de la econometría (Frisch-Tinbergen).',
+        component: FrischLab,
       },
       {
         id: 'time-series',
-        name: 'AR, MA, ARMA',
-        status: 'planned',
-        blurb: 'Procesos de Engle-Granger. ACF/PACF interactivos.',
-        roadmap: ['Generar serie con parámetros', 'ACF/PACF en tiempo real', 'Estacionariedad'],
+        name: 'Series de tiempo (Engle-Granger)',
+        status: 'live',
+        blurb: 'Volatilidad que se agrupa, series que caminan juntas. ARCH/GARCH, cointegración.',
+        childHint: 'Después de un susto, la bolsa sigue nerviosa un rato: la volatilidad se contagia.',
+        researcherHint: 'ARCH/GARCH (Engle) + cointegración (Granger); σ²ₜ = ω + α·ε²ₜ₋₁ + β·σ²ₜ₋₁.',
+        component: EngleGrangerLab,
       },
       {
         id: 'iv',
