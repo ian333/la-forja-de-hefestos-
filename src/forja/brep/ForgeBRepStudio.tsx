@@ -2643,7 +2643,7 @@ export default function ForgeBRepStudio() {
               testid="input-carga" onChange={(v) => setFeaLoadN(v)} />
 
             <button className="fb-fea-run" data-testid="btn-fea"
-              onClick={runFeaAnalysis} disabled={feaBusy || !oc || feaFixedFace == null}>
+              onClick={() => runFeaAnalysis()} disabled={feaBusy || !oc || feaFixedFace == null}>
               {feaBusy ? '⏳ Resolviendo K·u = f…' : '▶ Analizar (von Mises)'}
             </button>
             {feaColors && (
