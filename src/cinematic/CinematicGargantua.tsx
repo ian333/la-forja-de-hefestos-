@@ -44,8 +44,42 @@ import {
   WeightedRig, type CameraState, type Vec3,
 } from './CinematicCamera';
 
-const DURATION = 30;
 const RS = 1.0;
+
+/**
+ * Parámetros de cámara/escena por URL (?mode=&az=&el=&d=&fov=&incl=&dur=&sweep=).
+ * Leídos UNA sola vez al cargar → renderAt sigue siendo función PURA de t. Permite
+ * generar MUCHOS reels de Gargantua con vantage distinto desde el MISMO build, sin
+ * recompilar (cada render = una URL con query distinto). Sin query = el plano
+ * "caída" original idéntico.
+ */
+function readCamParams() {
+  const q =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams('');
+  const n = (k: string, d: number) => {
+    const v = parseFloat(q.get(k) ?? '');
+    return Number.isFinite(v) ? v : d;
+  };
+  const mode = q.get('mode') || 'fall';
+  return {
+    mode: (['fall', 'orbit', 'pull', 'push'].includes(mode) ? mode : 'fall') as
+      | 'fall'
+      | 'orbit'
+      | 'pull'
+      | 'push',
+    az: n('az', -0.55), // azimut base (rad) — desde qué lado se ve
+    el: n('el', 40), // elevación (°): ~10 edge-on "ceja", ~60 de frente (anillo lensado)
+    d: n('d', 70), // distancia base (·rs)
+    fov: n('fov', 40), // campo de visión (°)
+    incl: n('incl', 90), // inclinación del disco (°)
+    dur: n('dur', 30), // duración del programa (s) — reels cortos = 12
+    sweep: n('sweep', 1.0), // barrido de azimut a lo largo del plano (rad)
+  };
+}
+const CAM = readCamParams();
+const DURATION = Math.max(2, CAM.dur);
 
 /**
  * Programa de cámara — caída continua far→near, ahora PESADA y lenta.
@@ -64,33 +98,46 @@ const RS = 1.0;
 function cameraProgram(t: number): CameraState {
   const p = t / DURATION; // 0..1
 
-  // Caída: exponencial con freno final (easeExp k negativo desacelera al final).
-  const d0 = 130, d1 = 40;
+  // ORBIT: distancia y elevación FIJAS, el azimut barre → plano contemplativo.
+  // Con sweep=2π el último frame == el primero = LOOP perfecto. La asimetría
+  // Doppler del disco (lado que se acerca = más brillante) gira en el cuadro.
+  if (CAM.mode === 'orbit') {
+    const dist = CAM.d * RS;
+    const azim = CAM.az + p * CAM.sweep;
+    const pos = spherical(azim, (CAM.el * Math.PI) / 180, dist);
+    return { pos, target: [0, 0, 0], fov: CAM.fov };
+  }
+
+  // PULL: reveal cerca→lejos (la joya emerge del cosmos) + leve parallax.
+  if (CAM.mode === 'pull') {
+    const dist = lerp(CAM.d * 0.42, CAM.d, smootherstep(p)) * RS;
+    const azim = CAM.az + p * CAM.sweep * 0.5;
+    const pos = spherical(azim, (CAM.el * Math.PI) / 180, dist);
+    return { pos, target: [0, 0, 0], fov: CAM.fov };
+  }
+
+  // PUSH: empuje lejos→cerca suave (sin la salida de cuadro del modo fall).
+  if (CAM.mode === 'push') {
+    const dist = lerp(CAM.d, CAM.d * 0.5, smootherstep(p)) * RS;
+    const azim = CAM.az + p * CAM.sweep * 0.5;
+    const elev = lerp(CAM.el + 8, CAM.el - 8, smooth(p));
+    const pos = spherical(azim, (elev * Math.PI) / 180, dist);
+    return { pos, target: [0, 0, 0], fov: lerp(CAM.fov + 3, CAM.fov - 4, smooth(p)) };
+  }
+
+  // FALL (default): caída exponencial far→near con CAM como punto medio + salida
+  // de cuadro al final (escala por "no cabe"). easeExp k<0 = se frena al final.
+  const d0 = CAM.d * 1.85, d1 = CAM.d * 0.57;
   const dEase = easeExp(smootherstep(p), -2.2);
   const dist = d0 * Math.pow(d1 / d0, dEase) * RS;
-
-  // Elevación: de disco abierto a casi edge-on, sin rasar (>24°).
-  const elev = lerp(54, 26, smooth(p));
-
-  // Azimut: órbita lenta (más lenta que el 1.6 rad original → más peso).
-  const azim = -0.55 + p * 1.15;
-
-  // FOV: push sutil.
-  const fov = lerp(44, 33, smooth(p));
-
+  const elev = lerp(CAM.el + 14, CAM.el - 14, smooth(p)); // disco abierto → edge-on
+  const azim = CAM.az + p * 1.15;
+  const fov = lerp(CAM.fov + 4, CAM.fov - 7, smooth(p));
   const pos = spherical(azim, (elev * Math.PI) / 180, dist);
-
-  // Target: arranca centrado y, en el último tercio, se DESLIZA fuera del
-  // centro para que Gargantua salga del encuadre (escala por "no cabe").
-  // Mantengo el sujeto en la columna central segura el 70% del plano para que
-  // el recorte vertical 9:16 funcione; la salida ocurre solo al final.
-  const exit = smootherstep((p - 0.72) / 0.28); // 0 hasta 72%, →1 al cierre
-  const target: Vec3 = [
-    exit * dist * 0.16,   // se corre a la derecha
-    exit * dist * -0.10,  // y un poco hacia abajo
-    0,
-  ];
-
+  // Target: centrado el 72% del plano (recorte 9:16 seguro) y al final DESLIZA
+  // fuera del centro → Gargantua sale del encuadre (escala por "no cabe").
+  const exit = smootherstep((p - 0.72) / 0.28);
+  const target: Vec3 = [exit * dist * 0.16, exit * dist * -0.1, 0];
   return { pos, target, fov };
 }
 
@@ -154,7 +201,7 @@ export default function CinematicGargantua() {
           rs={RS}
           rIn={2.5}
           rOut={14.0}
-          inclinationDeg={90}   /* disco en el plano XZ, normal +Y → la cámara hace el trabajo */
+          inclinationDeg={CAM.incl}   /* disco en plano XZ (default 90); ?incl varía el ladeo */
           diskOpacity={1.0}
           dopplerStrength={1.0}
           starDensity={0.6}
