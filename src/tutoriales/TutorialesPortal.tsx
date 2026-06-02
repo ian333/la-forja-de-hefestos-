@@ -96,13 +96,13 @@ const TUTORIALES: Tutorial[] = [
     materia: 'Dibujo Mecánico / CAD',
     inst: 'IPN UPIITA · UNAM FI · 3.º sem',
     tarea: 'Modelar una pieza paramétrica y exportarla para impresión 3D.',
-    tool: 'CAD Hefestos', url: '/cad.html',
+    tool: 'La Forja', url: '/forja-brep.html',
     pasos: [
-      'Abre Hefestos (el CAD). Verás una pieza de muestra en 3D real.',
-      'En la barra SOLID → Create agrega primitivas (Caja = 1, Cilindro = 3, Esfera = 2).',
-      'Selecciona dos cuerpos y aplica una booleana (Resta) para hacer barrenos.',
-      'Usa Variables para parametrizar tus medidas en milímetros (puedes escribir expresiones, ej. lado/2).',
-      'Pulsa “STL” para exportar tu pieza lista para imprimir.',
+      'Abre La Forja (Part Studio). Empieza un Croquis: rectángulo o círculo con tus medidas en milímetros.',
+      'Pulsa Extrude y dale profundidad: tu croquis se vuelve un sólido B-Rep exacto (kernel OpenCASCADE).',
+      'Agrega Barrenos (Hole) haciendo clic en la cara y dando diámetro — pasante o ciego.',
+      'Redondea aristas con Fillet o biséllalas con Chamfer haciendo clic en la arista real.',
+      'Revisa masa, volumen y centro de masa en el panel Análisis, y exporta STEP para fabricar.',
     ],
   },
   {
@@ -110,12 +110,12 @@ const TUTORIALES: Tutorial[] = [
     materia: 'Proyecto de robótica',
     inst: 'IPN UPIITA · Mecatrónica',
     tarea: 'Diseñar una pieza de tu robot (estilo InMoov) para imprimir y montarle un servo.',
-    tool: 'CAD Hefestos', url: '/cad.html',
+    tool: 'La Forja', url: '/forja-brep.html',
     pasos: [
-      'En Hefestos, parte de un bloque y réstale los barrenos del servo (cilindros) y el eje.',
-      'Redondea las uniones con “Suave” (blend) para que imprima mejor.',
-      'Verifica el volumen en la barra de estado (te sirve para estimar material/peso).',
-      'Exporta el STL y mándalo a tu impresora 3D. Eso es el proceso completo, sin pagar Fusion.',
+      'En La Forja, parte de un croquis rectangular, extrúyelo y réstale los barrenos del servo (Hole por cara).',
+      'Redondea las uniones con Fillet para que imprima mejor y concentre menos esfuerzo.',
+      'Selecciona material, fija una cara y aplica una carga: el FEA (von Mises) te dice si aguanta y con qué factor de seguridad.',
+      'Si el factor < 1.5, engrosa o redondea y vuelve a analizar. Exporta STEP. Eso es el proceso completo, sin pagar Fusion.',
     ],
   },
 ];
@@ -127,7 +127,7 @@ const TOOL_COLOR: Record<string, string> = {
   'Reporte de lab': '#34D399',
   'Lab + Reporte': '#34D399',
   'Labs de átomos': '#A78BFA',
-  'CAD Hefestos': '#FDB813',
+  'La Forja': '#FDB813',
 };
 
 function TutorialCard({ t }: { t: Tutorial }) {

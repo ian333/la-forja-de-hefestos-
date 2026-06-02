@@ -469,6 +469,8 @@ SMOKE_PATHS=(
   "physics-nobel.html"
   "math-prizes.html"
   "masterclass.html"
+  "forja-brep.html"
+  "forja-mecanismos.html"
   "occt-import-js.wasm"
   "audio/masterclass/blackhole/manifest.json"
   "audio/masterclass/blackhole/01-pregunta.mp3"

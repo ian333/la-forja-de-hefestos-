@@ -47,7 +47,6 @@ export default defineConfig({
         terminos: resolve(import.meta.dirname, "terminos.html"),
         privacidad: resolve(import.meta.dirname, "privacidad.html"),
         masterclass: resolve(import.meta.dirname, "masterclass.html"),
-        cad: resolve(import.meta.dirname, "cad.html"),
         solver: resolve(import.meta.dirname, "solver.html"),
         reporte: resolve(import.meta.dirname, "reporte.html"),
         tutoriales: resolve(import.meta.dirname, "tutoriales.html"),
@@ -65,6 +64,8 @@ export default defineConfig({
         "cinematic-molecule": resolve(import.meta.dirname, "cinematic-molecule.html"),
         "cinematic-bh": resolve(import.meta.dirname, "cinematic-bh.html"),
         "cinematic-bh-reel": resolve(import.meta.dirname, "cinematic-bh-reel.html"),
+        "forja-brep": resolve(import.meta.dirname, "forja-brep.html"),
+        "forja-mecanismos": resolve(import.meta.dirname, "forja-mecanismos.html"),
       },
       output: {
         manualChunks: {

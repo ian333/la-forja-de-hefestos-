@@ -4,7 +4,7 @@ import './main.css';
 import EscuelaPortal from './escuela/EscuelaPortal';
 
 // La raíz (university.gaiaprime.com.mx/) es la ESCUELA, no el CAD.
-// El CAD vive en /cad.html y se enlaza desde el atrio.
+// La Forja (CAD B-Rep) vive en /forja-brep.html y se enlaza desde el atrio.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <EscuelaPortal />

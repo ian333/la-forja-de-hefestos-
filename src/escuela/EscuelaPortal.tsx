@@ -76,7 +76,7 @@ export default function EscuelaPortal() {
           <a href="#carreras" className="hover:text-[#FDB813] transition">Carreras</a>
           <a href="#misiones" className="hover:text-[#FDB813] transition">Misiones</a>
           <a href="#software" className="hover:text-[#FDB813] transition">Software</a>
-          <a href="/cad.html" className="hover:text-[#FDB813] transition">CAD →</a>
+          <a href="/forja-brep.html" className="hover:text-[#FDB813] transition">Forja →</a>
           <a href="/solver.html" className="hover:text-[#FDB813] transition">Resolver →</a>
           <a href="/reporte.html" className="hover:text-[#FDB813] transition">Reporte →</a>
           <a href="/tutoriales.html" className="hover:text-[#FDB813] transition">Tutoriales →</a>
@@ -585,11 +585,11 @@ export default function EscuelaPortal() {
             accent="#4FC3F7"
           />
           <SoftwareCard
-            href="/cad.html"
+            href="/forja-brep.html"
             glyph="⚒"
-            name="Forja CAD"
-            tagline="F-Rep · STEP import"
-            highlights={['SDF puro', 'OCCT import', 'Reverse engineering']}
+            name="La Forja · CAD"
+            tagline="B-Rep · kernel OpenCASCADE"
+            highlights={['Sketch → Extrude exacto', 'FEA von Mises', 'Engranes que embonan', 'Export STEP']}
             accent="#FDB813"
             pro
           />
