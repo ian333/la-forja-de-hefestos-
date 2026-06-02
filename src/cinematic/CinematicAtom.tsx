@@ -956,7 +956,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   return (
     <div style={{ position: live ? 'absolute' : 'fixed', inset: 0, background: '#000' }}>
       <Canvas
-        flat
+        flat={!live}
         onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, extent * 0.5], fov: 35, near: 0.01, far: 200 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
@@ -971,7 +971,11 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
           brightness={Math.min(1, 4.2 / Math.sqrt(element.Z))} />
-        <DynamicPostFX time={time} live={live} />
+        {/* En el lab (live) NO usamos el EffectComposer: su pipeline HDR-float+MSAA
+            revienta a blanco en GPUs diversas (Intel/ANGLE D3D11). flat={!live} deja
+            que el renderer haga el tonemap ACES directo → negro garantizado en toda
+            GPU. El postFX cinematográfico se conserva SOLO para el render 4K headless. */}
+        {!live && <DynamicPostFX time={time} />}
       </Canvas>
       <CinemaVignette />
       {/* En el lab (live) ocultamos los overlays/letterbox: el dock ya muestra la

@@ -867,7 +867,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   return (
     <div style={{ position: live ? 'absolute' : 'fixed', inset: 0, background: '#000' }}>
       <Canvas
-        flat
+        flat={!live}
         onCreated={({ gl }) => { glRef.current = gl; }}
         camera={{ position: [0, 0, (data?.extent ?? 8) * 0.5], fov: 35, near: 0.01, far: 400 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
@@ -900,7 +900,9 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             {isCatalog && catField === 'sigma' && <ChainField frame={frame} time={time} alkane={true} />}
           </>;
         })()}
-        <MolPostFX live={live} />
+        {/* live: sin EffectComposer (HDR-float+MSAA revienta a blanco en GPUs
+            diversas). flat={!live} → tonemap ACES del renderer. PostFX solo headless. */}
+        {!live && <MolPostFX />}
       </Canvas>
       <CinemaVignette />
       {!live && <>
