@@ -18,8 +18,7 @@
 import { Canvas, type CanvasProps } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { type ReactNode } from 'react';
-import { NoToneMapping } from 'three';
-import CinematicPostFX from '@/cinematic/CinematicPostFX';
+import { ACESFilmicToneMapping } from 'three';
 
 interface StageProps {
   /** Distancia inicial de la cámara. Default = 5. */
@@ -88,9 +87,11 @@ export default function Stage({
         style={{ background: 'transparent', width: '100%', height: '100%' }}
         dpr={[1, 2]}
         onCreated={({ gl }) => {
-          // NoToneMapping: el tonemap ACES lo hace CinematicPostFX UNA sola vez.
-          // R3F aplica ACES por default; sin esto habría DOBLE tonemap (lavado).
-          gl.toneMapping = NoToneMapping;
+          // El renderer hace el tonemap ACES directo (UNA vez). Antes lo hacía
+          // CinematicPostFX vía EffectComposer, pero ese pipeline HDR-float+MSAA
+          // revienta a BLANCO en GPUs diversas (Intel/ANGLE D3D11) — afectaba TODOS
+          // los sims del lab. Sin EffectComposer = negro/oscuro garantizado en toda GPU.
+          gl.toneMapping = ACESFilmicToneMapping;
         }}
         {...canvasProps}
       >
@@ -111,19 +112,13 @@ export default function Stage({
 
         {children}
 
-        {/* Postproceso cinematográfico UNIFORME para todo el lab — preset
-            'physics': ACES (lo que faltaba) + bloom de threshold bajo (la
-            emisión REVIENTA) + grade sutil + viñeta suave. Restringido para no
-            estorbar la lectura educativa (sin DOF, sin flare). Trae sus propios
-            guards anti-crash (PostprocessingShield + DeferredEffects).
-            bloomIntensity opcional: si el módulo no lo pasa, manda el preset. */}
-        {(bloomIntensity === undefined || bloomIntensity > 0) && (
-          <CinematicPostFX
-            preset="physics"
-            bloomIntensity={bloomIntensity}
-            bloomThreshold={bloomThreshold}
-          />
-        )}
+        {/* SIN EffectComposer en el lab interactivo: el postFX cinematográfico
+            (CinematicPostFX: HDR-float + MSAA + bloom) reventaba a BLANCO en GPUs
+            diversas (Intel integrada / ANGLE D3D11) — rompía TODOS los sims a la vez.
+            El renderer hace el tonemap ACES directo (onCreated) → fondo oscuro
+            garantizado en toda GPU. El glow lo cargan los materiales emisivos.
+            El postFX completo se conserva para los renders de video 4K (escenas
+            dedicadas, no Stage). bloomIntensity/Threshold quedan como no-ops compat. */}
       </Canvas>
     </div>
   );
