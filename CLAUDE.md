@@ -49,7 +49,7 @@ Antes de invertir ~45 min en un render 4K, pasar el **portero**:
 
 ## ⚠️ DEFECTOS CONOCIDOS Y SUS CAUSAS (no re-descubrir)
 
-- **Negro morado** → la nebulosa del shader (`BHRaytraced.tsx stars()`) NO debe tener tinte lavanda (azul>rojo); usar gris-frío tenue. Y `saturation` del postFX baja (~0.04).
+- **Negro morado** → DOS causas distintas (medir cuál antes de tocar): (1) la nebulosa del shader (`BHRaytraced.tsx stars()`) con tinte lavanda (azul>rojo) — usar gris-frío tenue + `saturation` postFX ~0.04. (2) **EL GRADE ffmpeg** (`render-bh-comercial.cjs buildGradeFilter`): el crush flojo (0.04) dejaba VIVO el polvo nebular azul tenue y la halación roja lo bañaba → morado. **Prueba decisiva: extraer un frame del cache A_ (base, sin grade) vs B_ (graded). Si A=negro y B=morado, el morado lo mete el GRADE, NO la escena** (¡no pierdas horas en el shader!). Fix (davinci-v2-negros): crush a 0.14, eq saturation 0.88, halación CONTENIDA (sigma×11, opacity 0.16, highs aislados 0.78) → el void cae a negro PURO y el glo cálido abraza el disco. Más visible en 16:9 (más void) que en 9:16.
 - **Confeti verde/rojo** → `chromaticAberration > ~0.1` sobre el starfield. Mantener 0 (o ≤0.05) en planos con muchas estrellas.
 - **Frame negro en POV cerca del horizonte** → LEY GEOMÉTRICA: si `asin(b_crit/r) ≥ fov/2`, la sombra (b_crit=2.598·rs) llena el cuadro. Mantener la cámara donde el disco/anillo llena el frame.
 - **Doble tonemap** → el shader emite HDR lineal (`linearOutput`) y `CinematicPostFX` hace el ÚNICO ACES. Nunca dos.
