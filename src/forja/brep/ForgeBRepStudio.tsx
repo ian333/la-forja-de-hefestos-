@@ -24,6 +24,7 @@ import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
+import ShortcutOverlay from '../../components/ShortcutOverlay';
 import {
   initOCCT,
   _setActiveOCCT,
@@ -1806,6 +1807,44 @@ export default function ForgeBRepStudio() {
     setPickMode((m) => (m === 'face' ? 'none' : 'face'));
   }, []);
 
+  // ── ATAJOS DE TECLADO (keymap bilingüe) + paleta estilo Fusion "S" ──
+  // "Clickear es difícil" → cada herramienta tiene una tecla mnemónica EN/ES que
+  // reusa el MISMO handler que su botón (cero lógica nueva, no infla código).
+  // "S" abre/cierra la cajita de atajos en el cursor. Se ignora la tecla si el
+  // foco está en un input/textarea (no robarla mientras editas una cota).
+  const mouseRef = useRef({ x: 420, y: 180 });
+  const [shortcutPos, setShortcutPos] = useState<{ x: number; y: number } | null>(null);
+  const KEYMAP = useMemo(() => [
+    { key: 'r', icon: '▭', label: 'Rectángulo', action: () => setSketch((s) => ({ ...s, kind: 'rect' })) },
+    { key: 'c', icon: '◯', label: 'Círculo', action: () => setSketch((s) => ({ ...s, kind: 'circle' })) },
+    { key: 'l', icon: '∟', label: 'Perfil L', action: () => setSketch((s) => ({ ...s, kind: 'lprofile' })) },
+    { key: 'e', icon: '⬆', label: 'Extruir', action: () => addOp('extrude') },
+    { key: 'b', icon: '⊙', label: 'Barreno', action: () => addOp('hole') },
+    { key: 'f', icon: '◜', label: 'Fillet', action: () => addOp('fillet') },
+    { key: 'x', icon: '◣', label: 'Chaflán', action: () => addOp('chamfer') },
+    { key: 'w', icon: '▢', label: 'Vaciado', action: () => addOp('shell') },
+    { key: 'v', icon: '⟳', label: 'Revolución', action: () => addOp('revolve') },
+    { key: 'g', icon: '⚙', label: 'Engrane', action: () => applyGear() },
+    { key: 'p', icon: '◧', label: 'Pick cara', action: () => enableFacePick() },
+    { key: 'k', icon: '╱', label: 'Pick arista', action: () => enableEdgePick() },
+  ], [setSketch, addOp, applyGear, enableFacePick, enableEdgePick]);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'Escape') { setShortcutPos(null); setPickMode('none'); return; }
+      const k = e.key.toLowerCase();
+      if (k === 's') { e.preventDefault(); setShortcutPos((p) => (p ? null : { ...mouseRef.current })); return; }
+      const item = KEYMAP.find((m) => m.key === k);
+      if (item) { e.preventDefault(); item.action(); setShortcutPos(null); }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('keydown', onKey); };
+  }, [KEYMAP]);
+
   // Caras/aristas resaltadas = selección de la op activa ∪ la cara/arista que
   // se acaba de elegir por clic (selectedFaceId/Id). Así el resalte aparece
   // incluso en modo inspección (sin op de Shell/Fillet activa).
@@ -2065,6 +2104,29 @@ export default function ForgeBRepStudio() {
             )}
           </group>
         </CadViewport>
+
+        {/* PALETA DE ATAJOS estilo Fusion "S" en el cursor (se abre con la tecla S). */}
+        {shortcutPos && (
+          <ShortcutOverlay
+            tools={KEYMAP.map((m) => ({ label: m.label, icon: m.icon, shortcut: m.key.toUpperCase(), action: m.action }))}
+            position={shortcutPos}
+            onClose={() => setShortcutPos(null)}
+          />
+        )}
+
+        {/* HINT descubrible: la tecla S abre la paleta de atajos. */}
+        <div
+          data-testid="shortcut-hint"
+          style={{
+            position: 'absolute', left: 240, bottom: 20, zIndex: 6, pointerEvents: 'none',
+            display: 'flex', alignItems: 'center', gap: 7,
+            background: 'rgba(13,18,28,0.7)', border: `1px solid ${GOLD}33`, borderRadius: 8,
+            padding: '5px 11px', fontSize: 11, color: '#cdd6e2', fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          <span style={{ color: GOLD, fontWeight: 700 }}>S</span>
+          <span>atajos · teclas C B L E F…</span>
+        </div>
 
         {pickMode !== 'none' && (
           <div className="fb-pick-hint" data-testid="pick-hint">
