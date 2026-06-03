@@ -1,0 +1,594 @@
+{
+  "meta": {
+    "workflow": "forja-biblioteca-isbn",
+    "agents": 12
+  },
+  "result": {
+    "dominios": [
+      {
+        "dominio": "Geometría computacional / NURBS / CAGD (matemática de curvas y superficies del CAD)",
+        "libros": [
+          {
+            "titulo": "The NURBS Book",
+            "autores": "Les Piegl, Wayne Tiller",
+            "isbn13": "9783540615453",
+            "edicion": "2a edicion",
+            "anio": "1997",
+            "editorial": "Springer-Verlag (Monographs in Visual Communication)",
+            "porque": "Es LA biblia industrial de NURBS: deriva todo el formalismo (funciones base B-spline, Cox-de Boor, NURBS como proyectivas de B-splines en 4D) y, lo decisivo, da los ALGORITMOS pseudocodificados que todo kernel CAD/CAM/CAE implementa: evaluacion (de Boor), insercion/eliminacion de nudos, elevacion de grado, ajuste/interpolacion, descomposicion en Bezier. Si vas a programar el motor de curvas y superficies de un CAD (La Forja/Hefestos), este es el referente directo de implementacion. Citado universalmente en industria y academia.",
+            "disponibilidad": "Compra legal via Springer (link.springer.com/book/10.1007/978-3-642-59223-2), Barnes & Noble y libreria tecnica; tapa blanda ISBN verificado. No hay PDF gratuito legal del autor/editorial. Existe copia de prestamo digital en Internet Archive (archive.org/details/nurbsbook00pieg) para consulta.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "Curves and Surfaces for CAGD: A Practical Guide",
+            "autores": "Gerald Farin",
+            "isbn13": "9781558607378",
+            "edicion": "5a edicion",
+            "anio": "2002",
+            "editorial": "Morgan Kaufmann (The Morgan Kaufmann Series in Computer Graphics and Geometric Modeling)",
+            "porque": "El texto de ENSENANZA canonico del area, el que usan profesores para cursos de CAGD. Construye la intuicion geometrica desde cero: interpolacion lineal repetida, de Casteljau, curvas y parches de Bezier, B-splines via blossoming (forma polar), continuidad geometrica, subdivision, B-splines racionales. Incluye implementaciones en C. Para construir intuicion de como un humano modela curvas (mandato de La Forja: sketch->acotar->extrude pensado geometricamente), es el complemento pedagogico ideal del NURBS Book.",
+            "disponibilidad": "Compra legal via Morgan Kaufmann/Elsevier (sciencedirect.com/book/9781558607378) y librerias; materiales docentes y programas en C gratis en la pagina del autor farinhansford.com/books/cagd. Hay un reissue posterior con ISBN-13 9781493303625 (mismo contenido, 5a ed). No hay PDF integro gratuito legal del libro.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "A Practical Guide to Splines",
+            "autores": "Carl de Boor",
+            "isbn13": "9780387953663",
+            "edicion": "Edicion revisada (Revised Edition)",
+            "anio": "2001",
+            "editorial": "Springer (Applied Mathematical Sciences, vol. 27)",
+            "porque": "La fuente original y rigurosa de la teoria de splines y del algoritmo de de Boor que sustenta toda evaluacion de B-splines/NURBS. De Boor es el autor de la recurrencia (Cox-de Boor) y del codigo de splines de referencia. Indispensable cuando necesitas la matematica solida y estable numericamente detras de la implementacion (condicionamiento, B-splines como base, interpolacion con splines). Es el cimiento teorico que el NURBS Book asume.",
+            "disponibilidad": "Compra legal via Springer (link.springer.com/book/9780387953663), Amazon, Blackwell's. No hay PDF gratuito legal completo del autor/editorial.",
+            "libre_legal": false,
+            "prioridad": "P1"
+          },
+          {
+            "titulo": "Fundamentals of Computer Aided Geometric Design",
+            "autores": "Josef Hoschek, Dieter Lasser (trad. Larry L. Schumaker)",
+            "isbn13": "9781568810072",
+            "edicion": "1a edicion en ingles",
+            "anio": "1993",
+            "editorial": "A K Peters (hoy A K Peters/CRC Press)",
+            "porque": "Tratado de referencia europeo, muy amplio en cobertura: ademas de Bezier/B-splines/NURBS cubre temas que faltan en otros (interpolacion y aproximacion de superficies, blending, parches Coons/Gordon, interseccion de superficies, conversion entre representaciones, offsets). Util como segundo referente exhaustivo cuando necesitas un mecanismo concreto (p.ej. interseccion superficie-superficie u offsets para CAM) que Piegl/Farin tocan menos.",
+            "disponibilidad": "Compra legal via A K Peters/CRC Press (Taylor & Francis), AbeBooks, Amazon; descatalogado/segunda mano comun. No hay PDF gratuito legal del editor.",
+            "libre_legal": false,
+            "prioridad": "P1"
+          }
+        ]
+      },
+      {
+        "dominio": "Método de Elementos Finitos — fundamentos (de dónde sale K·u=f)",
+        "libros": [
+          {
+            "titulo": "The Finite Element Method: Its Basis and Fundamentals",
+            "autores": "O. C. Zienkiewicz, R. L. Taylor, J. Z. Zhu",
+            "edicion": "7a",
+            "anio": "2013",
+            "editorial": "Butterworth-Heinemann (Elsevier)",
+            "isbn13": "9781856176330",
+            "prioridad": "P0",
+            "porque": "El tratado de referencia mundial del MEF. El Volumen 1 'Its Basis and Fundamentals' deriva K·u=f desde la forma debil/variacional (residuos ponderados, Galerkin) y funciones de forma — es exactamente 'de donde sale K·u=f'. Citado por practicamente todos los textos posteriores; punto de partida canonico tanto para ingenieros como para profesores.",
+            "disponibilidad": "Compra en Elsevier/Butterworth-Heinemann (shop.elsevier.com), Amazon y librerias tecnicas. No hay PDF gratuito legal del editor; es libro comercial bajo copyright de Elsevier.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "The Finite Element Method: Linear Static and Dynamic Finite Element Analysis",
+            "autores": "Thomas J. R. Hughes",
+            "edicion": "1a (reimpresion Dover; orig. Prentice-Hall 1987)",
+            "anio": "2000",
+            "editorial": "Dover Publications",
+            "isbn13": "9780486411811",
+            "prioridad": "P0",
+            "porque": "El texto matematicamente solido sobre los FUNDAMENTOS: forma fuerte→forma debil→aproximacion de Galerkin→ensamblaje del sistema K·u=f, con el rigor de un matematico-ingeniero. Estandar en cursos de posgrado (Stanford/Caltech). Barato (Dover) y por eso muy usado por estudiantes y profesores para entender de donde emerge la matriz de rigidez.",
+            "disponibilidad": "Edicion Dover economica, compra en Dover, Amazon, AbeBooks. No hay PDF oficial gratuito; copyright Dover.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Concepts and Applications of Finite Element Analysis",
+            "autores": "Robert D. Cook, David S. Malkus, Michael E. Plesha, Robert J. Witt",
+            "edicion": "4a",
+            "anio": "2001",
+            "editorial": "John Wiley & Sons",
+            "isbn13": "9780471356059",
+            "prioridad": "P1",
+            "porque": "El texto de pregrado mas usado en ingenieria mecanica/civil en EE.UU. Explica con claridad el metodo directo de rigidez (como se arma K elemento por elemento y como se ensambla K·u=f) sin perderse en abstraccion. Es 'el que de verdad usan' profesores para introducir a estudiantes al porque del sistema lineal del MEF.",
+            "disponibilidad": "Compra en Wiley (wiley.com), Amazon, AbeBooks. Sin PDF oficial gratuito; copyright Wiley.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Finite Element Procedures",
+            "autores": "Klaus-Jürgen Bathe",
+            "edicion": "2a",
+            "anio": "2014",
+            "editorial": "Klaus-Jürgen Bathe (auto-editado, Watertown MA; orig. Prentice-Hall 1996)",
+            "isbn13": "9780979004957",
+            "prioridad": "P1",
+            "porque": "Referente del MEF en analisis de solidos/estructuras y multifisica (MIT). Presenta de forma rigurosa el principio de los trabajos virtuales y la formulacion variacional que da origen a K·u=f, mas tecnicas de solucion del sistema. Muy usado por profesores e ingenieros de calculo estructural; complementa a Hughes/Zienkiewicz en lo computacional.",
+            "disponibilidad": "Compra en Amazon/AbeBooks (2a ed. auto-editada por el autor). El propio sitio del Prof. Bathe en el MIT ofrece videos del curso 2.092/2.093 gratis; el LIBRO sigue siendo de pago, no hay PDF oficial gratuito.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Introduction to Finite Element Methods (IFEM, ASEN 5007 lecture notes)",
+            "autores": "Carlos A. Felippa",
+            "edicion": "Notas de curso (edicion convergida, Univ. of Colorado Boulder)",
+            "anio": "2004",
+            "editorial": "University of Colorado Boulder (auto-publicado por el autor)",
+            "isbn13": "",
+            "prioridad": "P1",
+            "porque": "Notas del curso de Felippa (CU Boulder) que enseñan el metodo directo de rigidez paso a paso — literalmente 'de donde sale K·u=f' a nivel pedagogico, capitulo por capitulo. Excelente recurso gratuito y legal recomendado en CLAUDE.md; ideal como referencia abierta junto a los textos de pago.",
+            "disponibilidad": "PDF OFICIAL Y GRATUITO del autor: capitulos publicados por la Univ. of Colorado Boulder (pagina del curso ASEN 5007 / sitio del autor; espejo en quickfem.com/wp-content/uploads/IFEM.Ch00.pdf). No tiene ISBN-13 por ser notas de curso, no libro comercial — por eso isbn13 queda vacio (no inventado).",
+            "libre_legal": true
+          }
+        ]
+      },
+      {
+        "dominio": "FEA no-lineal / mecánica computacional de sólidos (contacto, plasticidad, grandes deformaciones)",
+        "libros": [
+          {
+            "titulo": "Nonlinear Finite Elements for Continua and Structures",
+            "autores": "Ted Belytschko, Wing Kam Liu, Brian Moran, Khalil I. Elkhodary",
+            "isbn13": "9781118632703",
+            "edicion": "2nd",
+            "anio": "2014",
+            "editorial": "Wiley",
+            "prioridad": "P0",
+            "porque": "Es EL libro de texto de referencia mundial para FEA no-lineal de continuos y estructuras. Cubre de forma unificada cinemática de grandes deformaciones (deformaciones logaritmicas, tensores de tension Cauchy/PK1/PK2), formulaciones Lagrangiana total y actualizada, ecuaciones constitutivas (hiperelasticidad, plasticidad J2, viscoplasticidad), solucion implicita/explicita, contacto e impacto, y estabilidad de elementos. Belytschko fue de los padres del campo; es el texto base de cursos de posgrado en MIT, Northwestern, Stanford y la base teorica de codigos como LS-DYNA y Abaqus/Explicit.",
+            "disponibilidad": "Compra legal directa en Wiley (impreso y eTextbook), VitalSource, Amazon. No hay PDF oficial gratuito; existe solo solution manual parcial circulando. ISBN verificado en Open Library y catalogos de Wiley/VitalSource/Amazon.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Nonlinear Solid Mechanics for Finite Element Analysis: Statics",
+            "autores": "Javier Bonet, Antonio J. Gil, Richard D. Wood",
+            "isbn13": "9781107115798",
+            "edicion": "1st (sucesora de 'Nonlinear Continuum Mechanics for Finite Element Analysis', 2nd ed. 2008)",
+            "anio": "2016",
+            "editorial": "Cambridge University Press",
+            "prioridad": "P0",
+            "porque": "El referente didactico para APRENDER e IMPLEMENTAR el metodo: deriva con rigor la mecanica del continuo no-lineal (linealizacion direccional, derivada de Lie, push-forward/pull-back), hiperelasticidad y plasticidad finita, y la traduce directamente a codigo. Acompana el programa MATLAB FLagSHyP (codigo abierto del autor) que materializa cada ecuacion en ensamblaje de residuo y matriz tangente. Es el puente teoria-implementacion que usan profesores y estudiantes para construir su propio solver.",
+            "disponibilidad": "Compra legal en Cambridge University Press (cambridge.org) y Amazon; frontmatter oficial verificable en assets.cambridge.org. El CODIGO MATLAB FLagSHyP es descarga gratuita legal del autor en www.flagshyp.com (el libro no es gratis, el software si). La 2da ed. previa (Bonet & Wood, 2008, ISBN 9780521838702) sigue disponible como alternativa mas economica. ISBN verificado en frontmatter oficial de Cambridge.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Computational Inelasticity",
+            "autores": "J. C. Simo, T. J. R. Hughes",
+            "isbn13": "9780387975207",
+            "edicion": "1st (Interdisciplinary Applied Mathematics, Vol. 7)",
+            "anio": "1998",
+            "editorial": "Springer",
+            "prioridad": "P0",
+            "porque": "La biblia de la PLASTICIDAD COMPUTACIONAL. Define los algoritmos canonicos que todo codigo implementa hoy: return mapping / closest-point projection, radial return, integracion implicita de plasticidad/viscoplasticidad J2, el operador tangente algoritmico consistente (clave para convergencia cuadratica de Newton), y la plasticidad finita por descomposicion multiplicativa F=Fe·Fp. Es la fuente original citada en manuales de Abaqus/ANSYS para sus algoritmos constitutivos inelasticos.",
+            "disponibilidad": "Compra legal en Springer (link.springer.com), Amazon, Barnes & Noble, AbeBooks. Impreso y eBook por capitulos en SpringerLink (acceso via institucion/biblioteca). No hay PDF oficial gratuito del autor. ISBN verificado en catalogos de Springer/Amazon/AbeBooks coincidentes.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Computational Contact Mechanics",
+            "autores": "Peter Wriggers (con contribuciones de Tod A. Laursen)",
+            "isbn13": "9783540326083",
+            "edicion": "2nd",
+            "anio": "2006",
+            "editorial": "Springer",
+            "prioridad": "P1",
+            "porque": "El tratado de referencia para el CONTACTO en FEA no-lineal, el subdominio mas dificil y especifico. Cubre formulacion variacional del contacto (multiplicadores de Lagrange, penalizacion, Lagrangiano aumentado), deteccion y discretizacion (node-to-segment, mortar), friccion de Coulomb, y la linealizacion consistente del problema de contacto. Es P1 (no P0) porque es especializado: se anade cuando el dominio especifico es contacto/friccion; para los fundamentos basta Belytschko + Bonet.",
+            "disponibilidad": "Compra legal en Springer (link.springer.com) y Amazon; impreso y eBook por capitulos en SpringerLink via institucion. No hay PDF oficial gratuito. ISBN verificado en Open Library y Springer.",
+            "libre_legal": false
+          }
+        ]
+      },
+      {
+        "dominio": "CFD / dinámica de fluidos computacional (Navier-Stokes, volumen finito, turbulencia)",
+        "libros": [
+          {
+            "titulo": "An Introduction to Computational Fluid Dynamics: The Finite Volume Method",
+            "autores": "H. K. Versteeg, W. Malalasekera",
+            "edicion": "2ª",
+            "anio": "2007",
+            "editorial": "Pearson Education / Prentice Hall",
+            "isbn13": "9780131274983",
+            "prioridad": "P0",
+            "porque": "Es EL libro de texto introductorio de CFD por volumen finito que usan ingenieros y profesores en cursos de grado. Construye el método (discretización FVM, esquemas de convección-difusión upwind/QUICK, acoplamiento presión-velocidad SIMPLE/SIMPLEC/PISO, turbulencia k-epsilon/k-omega) exactamente como lo implementan los solvers comerciales (Fluent/OpenFOAM). Lenguaje claro y directamente accionable: es la puerta de entrada estándar al volumen finito.",
+            "disponibilidad": "Comprar en Pearson / Amazon / Barnes & Noble (ISBN Pearson global 9780131274983). OJO: existe un reimpreso de Pearson India con ISBN distinto (9788131720486) que es el MISMO libro. No hay PDF oficial gratuito legal del autor/editorial.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Computational Methods for Fluid Dynamics",
+            "autores": "Joel H. Ferziger, Milovan Perić, Robert L. Street",
+            "edicion": "4ª",
+            "anio": "2019",
+            "editorial": "Springer",
+            "isbn13": "9783319996912",
+            "prioridad": "P0",
+            "porque": "La referencia rigurosa y moderna de métodos numéricos para flujos (volumen finito y diferencias finitas), con tratamiento serio de discretización, mallas no estructuradas/móviles, solución de sistemas, métodos de presión-velocidad, simulación de turbulencia (DNS/LES/RANS) y verificación-validación. Es el complemento técnico al Versteeg que profesores y posgrado usan como texto/consulta canónico. La 4ª ed (2019, con Street) es la vigente.",
+            "disponibilidad": "Comprar en Springer (link.springer.com, DOI 10.1007/978-3-319-99693-6) impreso o eBook; Amazon/AbeBooks. Sin PDF oficial gratuito legal (acceso solo vía suscripción institucional SpringerLink).",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Computational Fluid Dynamics: The Basics with Applications",
+            "autores": "John D. Anderson Jr.",
+            "edicion": "1ª",
+            "anio": "1995",
+            "editorial": "McGraw-Hill",
+            "isbn13": "9780070016859",
+            "prioridad": "P1",
+            "porque": "El clásico de pedagogía CFD a nivel ingeniería aeroespacial/mecánica: deriva las ecuaciones gobernantes (Navier-Stokes en formas conservativa/no conservativa), explica la naturaleza matemática de las PDEs (elíptica/parabólica/hiperbólica), MacCormack y métodos clásicos, con ejemplos resueltos paso a paso. Es el que da la INTUICIÓN física-matemática antes de pasar a FVM; muy usado como primer curso.",
+            "disponibilidad": "Comprar en McGraw-Hill / Amazon / AbeBooks (ISBN 9780070016859). Sin PDF oficial gratuito legal.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Turbulent Flows",
+            "autores": "Stephen B. Pope",
+            "edicion": "1ª",
+            "anio": "2000",
+            "editorial": "Cambridge University Press",
+            "isbn13": "9780521598866",
+            "prioridad": "P1",
+            "porque": "El referente canónico de turbulencia para CFD: define el marco riguroso de RANS, cierre de turbulencia (k-epsilon, modelos de tensiones de Reynolds, PDF), LES y las escalas (cascada de Kolmogorov). Cuando un módulo de CFD toca turbulencia (la mayoría), este es el libro al que recurren profesores y posgrado para la física correcta detrás del modelado. Imprescindible para no inventar curvas/cierres.",
+            "disponibilidad": "Comprar en Cambridge University Press / Amazon / AbeBooks (ISBN paperback 9780521598866; hardback 9780521591256). Sin PDF oficial gratuito legal.",
+            "libre_legal": false
+          }
+        ]
+      },
+      {
+        "dominio": "Diseño de máquinas + mecánica de materiales + fatiga (estilo Shigley / Norton)",
+        "libros": [
+          {
+            "titulo": "Shigley's Mechanical Engineering Design",
+            "autores": "Richard G. Budynas; J. Keith Nisbett",
+            "edicion": "11th",
+            "anio": "2020",
+            "editorial": "McGraw-Hill Education",
+            "isbn13": "9780073398211",
+            "porque": "Es EL libro de texto de referencia mundial para diseño de máquinas a nivel licenciatura desde hace ~50 años. Integra mecánica de materiales aplicada (esfuerzos combinados, círculo de Mohr), teorías de falla estática (von Mises/MSST), un tratamiento canónico de fatiga (Marin, factores ka..kf, criterios Goodman/Gerber/ASME/Soderberg, diagrama S-N) y el diseño de elementos (ejes, engranes, rodamientos, tornillos, soldadura, resortes). Es la columna vertebral del curso y el lenguaje común de profesores e ingenieros.",
+            "disponibilidad": "McGraw-Hill (mheducation.com): tapa dura, suelta (loose-leaf ISBN 9781260407648) y eTextbook Connect. Sin PDF gratuito legal del editor. Edición 11 reimpresa en 2024 con ISBN 9781265472696 (mismo contenido). Biblioteca universitaria / acceso institucional para versión legal.",
+            "prioridad": "P0",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Machine Design: An Integrated Approach",
+            "autores": "Robert L. Norton",
+            "edicion": "6th",
+            "anio": "2019",
+            "editorial": "Pearson",
+            "isbn13": "9780135184233",
+            "porque": "El gran complemento (o alternativa) a Shigley. Su sello es el énfasis en TEORÍA DE FALLA Y FATIGA con enfoque integrado: tensiones fluctuantes, mecánica de fractura (factor de intensidad de esfuerzos, crecimiento de grieta, Paris), análisis de esfuerzos de contacto Hertziano y un flujo de diseño/síntesis muy ligado al cálculo numérico. Muchos programas lo usan precisamente por su tratamiento más profundo y moderno de la falla que da nombre a la categoría 'estilo Norton'.",
+            "disponibilidad": "Pearson (pearson.com): tapa dura print ISBN 9780135184233 y eTextbook/Pearson+ ISBN 9780137516872. Sin PDF gratuito legal del autor/editor. Biblioteca o suscripción Pearson+.",
+            "prioridad": "P0",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Mechanics of Materials",
+            "autores": "Russell C. Hibbeler",
+            "edicion": "10th",
+            "anio": "2016",
+            "editorial": "Pearson",
+            "isbn13": "9780134319650",
+            "porque": "El texto fundacional de mecánica de materiales (resistencia de materiales) sobre el que se construye todo el diseño de máquinas: esfuerzo y deformación axial, torsión, flexión, esfuerzo cortante, transformación de esfuerzos (Mohr), recipientes a presión, deflexión de vigas y pandeo. Hibbeler es el estándar de facto por su claridad pedagógica y enorme banco de problemas; es el prerequisito que Shigley/Norton asumen. (Gere & Goodno, 9.ª ed., Cengage, ISBN 9781337093347, es la alternativa equivalente igual de canónica.)",
+            "disponibilidad": "Pearson (pearson.com): tapa dura ISBN 9780134319650, loose-leaf 9780134321189, paquete con Mastering 9780134583235. Sin PDF gratuito legal del editor. Biblioteca o Pearson+.",
+            "prioridad": "P1",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Metal Fatigue in Engineering",
+            "autores": "Ralph I. Stephens; Ali Fatemi; Robert R. Stephens; Henry O. Fuchs",
+            "edicion": "2nd",
+            "anio": "2000",
+            "editorial": "Wiley (Wiley-Interscience)",
+            "isbn13": "9780471510598",
+            "porque": "La referencia DEDICADA y profunda de fatiga que va más allá de lo que cabe en Shigley/Norton: enfoques esfuerzo-vida (S-N), deformación-vida (epsilon-N, Coffin-Manson, Neuber), mecánica de fractura aplicada a fatiga (da/dN-deltaK, Paris), efectos de muesca, esfuerzos residuales, carga multiaxial y de amplitud variable (Miner, conteo rainflow). Es el libro al que recurren ingenieros y profesores cuando la fatiga es el tema central, no un capítulo.",
+            "disponibilidad": "Wiley (wiley.com, ISBN 9780471510598). Sin PDF gratuito legal del editor. Hay copia en préstamo digital legal en Internet Archive (archive.org/details/metalfatigueinen0000unse, préstamo controlado, no descarga libre). Biblioteca o compra Wiley.",
+            "prioridad": "P1",
+            "libre_legal": false
+          }
+        ]
+      },
+      {
+        "dominio": "Diseño de moldes de plástico e inyección (mold design / injection molding)",
+        "libros": [
+          {
+            "titulo": "How to Make Injection Molds",
+            "autores": "Georg Menges, Walter Michaeli, Paul Mohren",
+            "edicion": "3rd",
+            "anio": "2001",
+            "editorial": "Carl Hanser Verlag / Hanser Publications",
+            "isbn13": "9781569902820",
+            "porque": "Es EL texto puente entre el diseño y la fabricacion del molde: cubre desde principios fisicos (reologia, transferencia de calor, contraccion) hasta runners, gating, sistemas de enfriamiento, expulsion y mecanizado real del molde. Escrito por la escuela de Aachen (IKV), es referencia obligada en universidades y en la industria. Tratamiento riguroso y a la vez constructivo.",
+            "prioridad": "P0",
+            "disponibilidad": "Comprar via Hanser Publications / Hanser Verlag (edicion en ingles). Disponible nuevo y usado en AbeBooks, Amazon, ThriftBooks. No existe PDF oficial gratuito.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Injection Molding Handbook",
+            "autores": "Tim A. Osswald, Lih-Sheng Turng, Paul J. Gramann (eds.)",
+            "edicion": "2nd",
+            "anio": "2007",
+            "editorial": "Carl Hanser Verlag / Hanser Publications",
+            "isbn13": "9781569904206",
+            "porque": "El manual de referencia mas completo y moderno del proceso: maquina, materiales y reologia, control de proceso, simulacion CAE (Moldflow), diseno de pieza y molde, y troubleshooting. Editado por Osswald (Univ. Wisconsin-Madison) y Turng, autoridades en procesamiento de polimeros. Es el que profesores e ingenieros usan como referencia de escritorio para fundamentar decisiones de diseno con la fisica del proceso.",
+            "prioridad": "P0",
+            "disponibilidad": "Comprar via Hanser. ISBN europeo equivalente de la 2a ed.: 9783446407817 (mismo libro). Disponible nuevo/usado en AbeBooks, Amazon, eCampus. No hay PDF oficial gratuito.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Mold Engineering",
+            "autores": "Herbert Rees",
+            "edicion": "2nd",
+            "anio": "2002",
+            "editorial": "Carl Hanser Verlag / Hanser Gardner Publications",
+            "isbn13": "9781569903223",
+            "porque": "Tratado clasico de ingenieria de moldes desde la optica del diseñador-constructor (Rees fue 'Mold Designer of the Year' de la SPE). Profundiza en tipos de molde, sistemas de mazarotas/coladas, expulsion, alineacion, materiales del molde y desempeno. Backbone mecanico solido que complementa los textos enfocados en proceso/CAE.",
+            "prioridad": "P1",
+            "disponibilidad": "Comprar via Hanser. ISBN europeo de la 2a ed.: 9783446216594. Nuevo/usado en AbeBooks, Amazon, eBay. No hay PDF oficial gratuito.",
+            "libre_legal": false
+          },
+          {
+            "titulo": "Injection Mould Design (A Textbook for the Novice and a Design Manual for the Thermoplastics Industry)",
+            "autores": "R. G. W. Pye",
+            "edicion": "4th",
+            "anio": "1989",
+            "editorial": "Longman Scientific & Technical / Wiley",
+            "isbn13": "9780470214138",
+            "porque": "El manual didactico clasico que generaciones de proyectistas y estudiantes usaron para aprender diseño de molde paso a paso: de los componentes basicos a moldes especiales (correderas, desenroscado, etc.) con dibujo tecnico detallado. Aunque antiguo, sigue citandose como introduccion canonica por su claridad pedagogica.",
+            "prioridad": "P1",
+            "disponibilidad": "Descatalogado (out of print); conseguir usado en AbeBooks/Amazon/eBay o en bibliotecas. Hay copia de prestamo digital en Internet Archive (archive.org/details/injectionmouldde0000pyer) pero es prestamo controlado, no PDF libre legal.",
+            "libre_legal": false
+          }
+        ]
+      },
+      {
+        "dominio": "Manufactura / CNC / CAM / procesos de fabricación",
+        "libros": [
+          {
+            "titulo": "Manufacturing Engineering and Technology",
+            "autores": "Serope Kalpakjian, Steven R. Schmid",
+            "isbn13": "9780136681656",
+            "edicion": "8a",
+            "anio": "2020",
+            "editorial": "Pearson",
+            "prioridad": "P0",
+            "libre_legal": false,
+            "porque": "Es EL libro de texto de referencia para cursos de procesos de manufactura en ingenieria mecanica/industrial en todo el mundo. Cobertura enciclopedica y balanceada de TODOS los procesos (fundicion, conformado, maquinado, union, manufactura de polimeros/composites, microfabricacion, MEMS) con la fisica/mecanica real de cada uno (deformacion plastica, fuerzas de corte de Merchant, vida de herramienta de Taylor). El estandar tanto para profesores como para la practica industrial.",
+            "disponibilidad": "Comprar en Pearson (pearson.com) impreso o eText/Pearson+; tambien edicion en unidades SI (Global Edition, ISBN 9781292422244). No hay PDF oficial gratuito del autor o editorial."
+          },
+          {
+            "titulo": "Fundamentals of Modern Manufacturing: Materials, Processes, and Systems",
+            "autores": "Mikell P. Groover",
+            "isbn13": "9781119722014",
+            "edicion": "7a",
+            "anio": "2020",
+            "editorial": "John Wiley & Sons",
+            "prioridad": "P0",
+            "libre_legal": false,
+            "porque": "El otro pilar canonico junto con Kalpakjian, preferido por su enfasis cuantitativo: modelos matematicos y ecuaciones de la ciencia de manufactura (mecanica de corte ortogonal, fuerzas, potencia, tolerancias, sistemas de manufactura/automatizacion, NC/CNC, control numerico). Integra materiales, procesos Y sistemas, lo que lo hace el texto preferido en programas de ingenieria industrial/de manufactura.",
+            "disponibilidad": "Comprar en Wiley (wiley.com), impreso o eText (VitalSource); existe edicion impresa 9781119633969 e International Adaptation 9781119706427. No hay PDF oficial gratuito legal."
+          },
+          {
+            "titulo": "Fundamentals of Metal Machining and Machine Tools",
+            "autores": "Geoffrey Boothroyd, Winston A. Knight",
+            "isbn13": "9781574446593",
+            "edicion": "3a",
+            "anio": "2006",
+            "editorial": "CRC Press / Taylor & Francis",
+            "prioridad": "P1",
+            "libre_legal": false,
+            "porque": "La referencia profunda y especializada para la TEORIA del maquinado y maquinas-herramienta: mecanica del corte de metales (modelo de Merchant, zonas de cizalla, fuerzas), temperatura y desgaste de herramienta, fluidos de corte, acabado superficial, economia del maquinado y dinamica/chatter de la maquina-herramienta. Donde Kalpakjian/Groover dan amplitud, Boothroyd da la fisica rigurosa del corte que sustenta CNC/CAM. Clasico de posgrado y de cabecera para ingenieros de proceso.",
+            "disponibilidad": "Comprar en Routledge/CRC Press (routledge.com); eText en VitalSource (ISBN digitales 9781420056303 / 9781498732642). No hay PDF oficial gratuito legal."
+          },
+          {
+            "titulo": "CNC Machining Handbook: Building, Programming, and Implementation",
+            "autores": "Alan Overby",
+            "isbn13": "9780071623018",
+            "edicion": "1a",
+            "anio": "2010",
+            "editorial": "McGraw-Hill",
+            "prioridad": "P1",
+            "libre_legal": false,
+            "porque": "Referente practico orientado a CNC/CAM aplicado: arquitectura de una maquina CNC (guias, transmisiones, motores, controlador, drives), flujo CAD a CAM a codigo G/M, y la implementacion real en taller. Complementa la teoria de los textos academicos con el know-how de programacion e implementacion que de verdad se usa en piso de produccion y makerspaces.",
+            "disponibilidad": "Comprar en McGraw-Hill / AccessEngineering, impreso o eText (VitalSource, ISBN digital 9780071623025). No hay PDF oficial gratuito legal."
+          }
+        ]
+      },
+      {
+        "dominio": "Optimización estructural / topológica / diseño generativo",
+        "libros": [
+          {
+            "titulo": "Topology Optimization: Theory, Methods, and Applications",
+            "autores": "Martin P. Bendsøe, Ole Sigmund",
+            "edicion": "2.ª edición (revisada y ampliada)",
+            "anio": "2003",
+            "editorial": "Springer (Springer-Verlag, Berlin/Heidelberg)",
+            "isbn13": "9783540429920",
+            "porque": "ES el referente absoluto de optimización topológica. Sigmund (DTU) y Bendsøe codificaron el método SIMP (densidad-material) que usa todo motor de topology optimization en la industria (Altair OptiStruct, Ansys, nTopology). Cubre el método de distribución de material con FEM y programación matemática de forma unificada: compliance, filtros de independencia de malla, homogeneización, aplicaciones a continuo, MEMS y diseño de materiales. Si solo se lee un libro del dominio, es este.",
+            "disponibilidad": "Comprar en Springer (link.springer.com, DOI 10.1007/978-3-662-05086-6). Hardcover 2.ª ed ISBN 9783540429920; reimpresión corregida en softcover ISBN 9783642076985 y eBook 9783662050866 (verificados en Springer, Waterstones, Amazon, AbeBooks). El libro NO es de descarga gratuita legal, pero su herramienta docente acompañante SÍ lo es: el código MATLAB de Sigmund '99 line topology optimization' (Struct Multidisc Optim 21, 2001) y la versión 'top88' de Andreassen et al. 2011 están publicados abiertamente por el grupo TopOpt de DTU (topopt.mek.dtu.dk) — es el estándar de facto para aprender el método del libro.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "An Introduction to Structural Optimization",
+            "autores": "Peter W. Christensen, Anders Klarbring",
+            "edicion": "1.ª edición (Solid Mechanics and Its Applications, vol. 153)",
+            "anio": "2009",
+            "editorial": "Springer (Springer Science+Business Media B.V.)",
+            "isbn13": "9781402086656",
+            "porque": "Es el libro de texto canónico para CURSAR el dominio: el que profesores de ingeniería mecánica/estructural ponen como manual base de posgrado e introducción. Cubre de forma pedagógica y autocontenida las tres clases de problemas geométricos —sizing (dimensionamiento), shape (forma) y topology— sobre estructuras elásticas lineales discretizadas por FEM, con prerrequisitos matemáticos mínimos y métodos numéricos concretos (OC, SLP, SQP, dualidad). Puente didáctico perfecto antes de Bendsøe-Sigmund.",
+            "disponibilidad": "Comprar en Springer (link.springer.com, DOI 10.1007/978-1-4020-8666-3) o eTextbook en VitalSource (ISBN-e 9781402086663). Print ISBN 9781402086656 verificado en Springer/Google Books/AbeBooks/VitalSource. Sin versión gratuita oficial del autor o editorial.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "Elements of Structural Optimization",
+            "autores": "Raphael T. Haftka, Zafer Gürdal",
+            "edicion": "3.ª edición (revisada y ampliada; Solid Mechanics and Its Applications, vol. 11)",
+            "anio": "1992",
+            "editorial": "Kluwer Academic Publishers (hoy Springer)",
+            "isbn13": "9780792315056",
+            "porque": "El clásico de referencia sobre los fundamentos de optimización estructural y multidisciplinaria (MDO): programación matemática (KKT, lineal, no lineal), criterios de optimalidad, ANÁLISIS DE SENSIBILIDAD (su tratamiento sigue siendo el referente didáctico), aproximaciones y dualidad. Es la base teórica de los métodos basados en gradiente que sostienen tanto el sizing/shape clásico como el diseño generativo moderno. Citado en casi todo programa de posgrado del área.",
+            "disponibilidad": "Comprar/licenciar vía Springer (Kluwer fue absorbida por Springer). Print ISBN 9780792315056 (3.ª ed. rev., hardcover/softcover 1991-1992) verificado en Google Books/AbeBooks/Amazon; existe reimpresión softcover posterior ISBN 9789401125505. Sin PDF gratuito legal oficial.",
+            "libre_legal": false,
+            "prioridad": "P1"
+          }
+        ]
+      },
+      {
+        "dominio": "Diseño de PCB / electrónica (señal e integridad de potencia, EMC, fabricación) — base teórica para integrar EasyEDA / KiCad",
+        "libros": [
+          {
+            "titulo": "High-Speed Digital Design: A Handbook of Black Magic",
+            "autores": "Howard W. Johnson; Martin Graham",
+            "edicion": "1.ª",
+            "anio": "1993",
+            "editorial": "Prentice Hall (Pearson) — serie Modern Semiconductor Design",
+            "isbn13": "9780133957242",
+            "porque": "El referente fundacional ('la biblia') de la integridad de señal en alta velocidad: reflexiones, terminación, impedancia controlada, crosstalk, planos, vías y ruteo. Es el origen de las reglas que un EDA (KiCad/EasyEDA) implementa como constraints. Profesores y SI engineers lo citan como punto de partida obligado.",
+            "disponibilidad": "Comprar en Pearson/InformIT (papel y eText). El propio autor lo lista en sigcon.com. NO hay PDF oficial gratuito del autor/editorial; copia de préstamo digital (1-a-1) en Internet Archive (archive.org/details/highspeeddigital0000john), que no es libre.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "Electromagnetic Compatibility Engineering",
+            "autores": "Henry W. Ott",
+            "edicion": "1.ª (revisión/expansión de 'Noise Reduction Techniques in Electronic Systems')",
+            "anio": "2009",
+            "editorial": "Wiley (John Wiley & Sons)",
+            "isbn13": "9780470189306",
+            "porque": "Canon absoluto de EMC, grounding, blindaje, desacoplo y reducción de ruido aplicado al diseño de circuitos y PCBs. Es la fuente de las prácticas de planos de tierra, partición y decoupling que se traducen directo a un layout en KiCad/EasyEDA y a aprobar pruebas de compatibilidad.",
+            "disponibilidad": "Comprar en Wiley (papel y eText, ISBN-13 digital 9781118210659). Sin PDF oficial gratuito; el sitio del autor (hottconsultants.com) ofrece artículos/errata gratis, pero no el libro completo.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "Signal and Power Integrity - Simplified",
+            "autores": "Eric Bogatin",
+            "edicion": "3.ª",
+            "anio": "2018",
+            "editorial": "Prentice Hall / Pearson — Signal Integrity Library",
+            "isbn13": "9780134513416",
+            "porque": "El texto moderno y pedagógico para SI/PI: las seis familias de problemas de integridad de señal y potencia, redes de distribución de energía (PDN), pares diferenciales, enlaces serie de alta velocidad. Es el libro de curso actual que conecta la teoría con el stackup y las reglas de ruteo que se configuran en el EDA.",
+            "disponibilidad": "Comprar en Pearson/InformIT/O'Reilly (papel, eText 9780137582266). Sin versión gratuita legal del editor.",
+            "libre_legal": false,
+            "prioridad": "P1"
+          },
+          {
+            "titulo": "Printed Circuits Handbook, Seventh Edition",
+            "autores": "Clyde F. Coombs, Jr.; Happy Holden",
+            "edicion": "7.ª",
+            "anio": "2016",
+            "editorial": "McGraw-Hill Education",
+            "isbn13": "9780071833950",
+            "porque": "El manual de referencia de la industria para el lado físico/manufactura del PCB: materiales, stackup, fabricación, ensamblaje, soldadura, vías, DFM y prueba. Indispensable para que los outputs del EDA (gerbers, reglas de fabricación, clases IPC) sean manufacturables de verdad.",
+            "disponibilidad": "Comprar en McGraw-Hill (papel y eText 9780071833967), también vía AccessEngineering. Sin PDF oficial gratuito.",
+            "libre_legal": false,
+            "prioridad": "P1"
+          }
+        ]
+      },
+      {
+        "dominio": "Vibraciones mecánicas / dinámica de máquinas / multicuerpo",
+        "libros": [
+          {
+            "titulo": "Mechanical Vibrations",
+            "autores": "Singiresu S. Rao",
+            "edicion": "6.ª edición",
+            "anio": "2016",
+            "editorial": "Pearson",
+            "isbn13": "9780134361307",
+            "porque": "Es el texto de referencia mundial para el curso de vibraciones mecánicas a nivel licenciatura/posgrado en ingeniería. Cobertura completa y rigurosa: SDOF/MDOF libre y forzado, sistemas continuos, modos y frecuencias naturales, métodos numéricos (Holzer, matriz de transferencia, elementos finitos), control de vibraciones y análisis modal. Usa formulación matemática real (Newton-Euler, energía/Lagrange) y aborda aplicaciones de maquinaria (balanceo, aislamiento, absorbedores). Es el libro que más profesores adoptan como texto base del curso.",
+            "disponibilidad": "Comprar vía Pearson (impreso 9780134361307; eText 6.ª ed. 9780137515288). Sin PDF oficial gratuito; copias legales de bibliotecas universitarias y préstamo digital controlado en Internet Archive (archive.org).",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "Engineering Vibration",
+            "autores": "Daniel J. Inman",
+            "edicion": "4.ª edición",
+            "anio": "2014",
+            "editorial": "Pearson",
+            "isbn13": "9780132871693",
+            "porque": "El otro pilar del curso de vibraciones en ingeniería, complementario a Rao. Destaca por su enfoque físico-intuitivo, integración fuerte con MATLAB/Mathematica, y tratamiento moderno de análisis modal experimental, identificación de sistemas y control de vibraciones. Es el texto preferido en muchos programas de aeroespacial/mecánica por su claridad y su puente directo entre teoría y la práctica de medición (FRF, modal testing).",
+            "disponibilidad": "Comprar vía Pearson. Edición internacional (9780273768449). Sin PDF oficial gratuito del autor/editorial; préstamo digital legal en Internet Archive y bibliotecas universitarias.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "Dynamics of Multibody Systems",
+            "autores": "Ahmed A. Shabana",
+            "edicion": "5.ª edición",
+            "anio": "2020",
+            "editorial": "Cambridge University Press",
+            "isbn13": "9781108485647",
+            "porque": "EL texto canónico de dinámica multicuerpo (multibody dynamics), tanto rígida como flexible. Desarrolla la cinemática y dinámica con coordenadas generalizadas, ecuaciones de restricción, multiplicadores de Lagrange, formulación de cuerpos flexibles y el Absolute Nodal Coordinate Formulation (ANCF) del propio autor. Es la referencia obligada para simulación de mecanismos, vehículos y robótica, y la base teórica de los solvers MBD comerciales (Adams, etc.).",
+            "disponibilidad": "Comprar vía Cambridge University Press (hardback 9781108485647; eBook 9781108757553). Acceso institucional vía Cambridge Aspire/Cambridge Core en universidades. Sin versión gratuita legal.",
+            "libre_legal": false,
+            "prioridad": "P0"
+          },
+          {
+            "titulo": "Theory of Vibration with Applications",
+            "autores": "William T. Thomson; Marie Dillon Dahleh",
+            "edicion": "5.ª edición",
+            "anio": "1998",
+            "editorial": "Prentice Hall (Pearson)",
+            "isbn13": "9780136510680",
+            "porque": "Clásico fundacional del campo: durante décadas fue EL texto estándar de vibraciones y sigue siendo referencia por su tratamiento limpio y físicamente claro de SDOF/MDOF, sistemas continuos, métodos de Lagrange, transformada de Laplace, vibración aleatoria e introducción al análisis modal. Muchos profesores e ingenieros lo citan como la base canónica sobre la que se construyeron Rao e Inman.",
+            "disponibilidad": "Comprar vía Pearson/Prentice Hall (puede estar descatalogado; mercado de usado y ediciones internacionales como 9788131704820). Préstamo digital legal en Internet Archive. La 1.ª ed. está reeditada por CRC Press/Routledge. Sin PDF oficial gratuito.",
+            "libre_legal": false,
+            "prioridad": "P1"
+          }
+        ]
+      },
+      {
+        "dominio": "GD&T / metrología / tolerancias (ASME Y14.5 / ISO GPS)",
+        "libros": [
+          {
+            "titulo": "ASME Y14.5-2018: Dimensioning and Tolerancing",
+            "autores": "The American Society of Mechanical Engineers (ASME)",
+            "isbn13": "9780791872192",
+            "edicion": "Edicion 2018 (revision de Y14.5-2009; reafirmada R2024)",
+            "anio": "2018",
+            "editorial": "ASME (American Society of Mechanical Engineers)",
+            "disponibilidad": "Documento normativo de pago, NO libro de texto comercial. Se compra directo en ASME (asme.org, Order No. N00518 impreso / N0051Q PDF, ~USD 380) o via distribuidores ANSI/IHS Markit, Techstreet. Acceso institucional comun en bibliotecas de ingenieria. NO hay version gratuita legal (es la norma maestra con copyright ASME). ISBN-13 verificado en DirectTextbook/distribucion ANSI, Amazon, AbeBooks y BooksRun.",
+            "libre_legal": false,
+            "prioridad": "P0",
+            "porque": "ES la norma raiz del dominio en EE.UU. y referencia global: define simbolos, reglas, marcos de control de caracteristicas (FCF), datums, modificadores (MMC/LMC/RFS), reglas #1 y #2. Todo libro de texto, software CAD/CMM y curso de GD&T se escribe 'segun Y14.5'. No es opcional: es la fuente de verdad que los demas libros explican."
+          },
+          {
+            "titulo": "Geometric Dimensioning and Tolerancing for Mechanical Design",
+            "autores": "Gene R. Cogorno",
+            "isbn13": "9781260453782",
+            "edicion": "3a edicion (alineada a ASME Y14.5-2018)",
+            "anio": "2020",
+            "editorial": "McGraw-Hill Education",
+            "disponibilidad": "Disponible nuevo/digital en McGraw-Hill, Amazon, Barnes & Noble, Blackwell's; eBook en VitalSource y AccessEngineering (McGraw-Hill) con acceso por biblioteca universitaria. Sin version gratuita legal del autor/editorial. ISBN-13 verificado en Open Library (Gene R. Cogorno, McGraw-Hill, 2020) y confirmado en booksellers.",
+            "libre_legal": false,
+            "prioridad": "P0",
+            "porque": "El libro de texto canonico para ENSENAR/aprender GD&T conforme a Y14.5-2018: traduce la norma a teoria didactica con ejemplos, reglas paso a paso y problemas. Es la referencia mas usada en cursos universitarios y formacion industrial ya actualizada a la edicion 2018 (la edicion mas reciente del estandar)."
+          },
+          {
+            "titulo": "Fundamentals of Geometric Dimensioning and Tolerancing (Using Critical Thinking Skills)",
+            "autores": "Alex Krulikowski",
+            "isbn13": "9781111129828",
+            "edicion": "3a edicion (basada en ASME Y14.5M-2009)",
+            "anio": "2012",
+            "editorial": "Delmar / Cengage Learning",
+            "disponibilidad": "Disponible nuevo, usado y eBook en Cengage, Amazon, VitalSource (9781285401973 e-version) y rental (ecampus/Biblio). Sin version gratuita legal. ISBN-13 verificado en Open Library (Alex Krulikowski, Delmar Cengage, 2012) y en pagina de Cengage. Nota: sigue la edicion 2009 del estandar, no la 2018.",
+            "libre_legal": false,
+            "prioridad": "P1",
+            "porque": "Texto pedagogico de referencia historica de Krulikowski ('Doctor of Dimensioning'), con objetivos medibles, unidades cortas y banco de problemas; ampliamente adoptado en tecnologia industrial y CAD. P1 porque su gran fortaleza didactica esta anclada a Y14.5-2009; util como apoyo/ejercicios pero conviene complementar con material 2018 (Cogorno)."
+          },
+          {
+            "titulo": "Dimensioning and Tolerancing Handbook",
+            "autores": "Paul J. Drake, Jr. (editor)",
+            "isbn13": "9780070181311",
+            "edicion": "1a edicion",
+            "anio": "1999",
+            "editorial": "McGraw-Hill",
+            "disponibilidad": "Descatalogado en nuevo; disponible usado (AbeBooks, Amazon) y como eBook institucional en McGraw-Hill AccessEngineering. ISBN-13 verificado en AbeBooks, Amazon y AccessEngineering. Sin version gratuita legal del editor.",
+            "libre_legal": false,
+            "prioridad": "P1",
+            "porque": "Handbook enciclopedico de consulta sobre gestion de variacion: tolerance stack-up (worst-case y estadistico/RSS), tolerancias de ajuste, metrologia, GD&T aplicado y diseno para fabricacion. Es la referencia de cabecera de ingenieros de tolerancias mas alla del estandar; P1 por ser de 1999 (Y14.5M-1994), pero su contenido de analisis de cadenas de tolerancias sigue siendo canonico."
+          }
+        ]
+      }
+    ],
+    "markdown": "# Biblioteca de La Forja — Referencia Técnica (CAD, FEA, CFD, manufactura, diseño)\n\n> Curaduría de los textos canónicos por dominio. Cada tabla trae **Título · Autores · Ed./Año · Editorial · ISBN-13 · Prioridad · Por qué · Disponibilidad**. La columna **PDF libre legal** marca con ✅ los que se pueden descargar/leer gratis de forma legal (autor o editorial), y con ❌ los que no (compra, préstamo controlado o norma de pago).\n>\n> Convención de prioridad: **P0** = imprescindible / referente raíz del dominio · **P1** = profundización o especialización.\n\n---\n\n## ⭐ Si compras 8 libros, estos 8 (los P0 que sostienen el motor)\n\nEstos son los pilares mínimos para construir y entender La Forja de punta a punta: matemática del CAD, de dónde sale `K·u=f`, no-lineal/contacto, fluidos, diseño de máquinas, manufactura, optimización topológica y la norma raíz de tolerancias.\n\n| # | Libro | Dominio | ¿Por qué entra al top 8? |\n|---|-------|---------|---------------------------|\n| 1 | **The NURBS Book** (Piegl & Tiller) | CAGD / NURBS | La biblia industrial: trae los algoritmos pseudocodificados (de Boor, inserción de nudos, elevación de grado) que implementa todo kernel CAD. Es el plano directo del motor de curvas y superficies de La Forja/Hefestos. |\n| 2 | **The Finite Element Method: Its Basis and Fundamentals** (Zienkiewicz, Taylor & Zhu) | FEM fundamentos | El tratado de referencia mundial del MEF; deriva `K·u=f` desde la forma débil/Galerkin. Punto de partida canónico. |\n| 3 | **Nonlinear Finite Elements for Continua and Structures** (Belytschko et al.) | FEA no-lineal | El texto de referencia mundial para no-lineal: grandes deformaciones, hiperelasticidad, plasticidad J2, contacto. Base teórica de LS-DYNA/Abaqus Explicit. |\n| 4 | **An Introduction to Computational Fluid Dynamics: The Finite Volume Method** (Versteeg & Malalasekera) | CFD | La puerta de entrada estándar al volumen finito: discretización FVM, SIMPLE/PISO, turbulencia, tal como lo hacen Fluent/OpenFOAM. |\n| 5 | **Shigley's Mechanical Engineering Design** (Budynas & Nisbett) | Diseño de máquinas | La columna vertebral del diseño mecánico desde hace ~50 años: fallas estáticas, fatiga (Marin, Goodman, S-N), elementos de máquina. Lenguaje común de la profesión. |\n| 6 | **Manufacturing Engineering and Technology** (Kalpakjian & Schmid) | Manufactura / CNC / CAM | El texto de referencia mundial de procesos de manufactura, con la física real de cada proceso (Merchant, Taylor). El estándar para entender qué es fabricable. |\n| 7 | **Topology Optimization: Theory, Methods, and Applications** (Bendsøe & Sigmund) | Optimización topológica | El referente absoluto: codificó el método SIMP que usan todos los motores (OptiStruct, Ansys, nTopology). Si solo lees uno del dominio, es este. |\n| 8 | **ASME Y14.5-2018: Dimensioning and Tolerancing** (ASME) | GD&T / metrología | La norma raíz del dominio: define símbolos, datums, FCF, MMC/LMC. Todo CAD, CMM y curso de GD&T se escribe \"según Y14.5\". No es opcional: es la fuente de verdad. |\n\n> **Recursos gratis legales que acompañan a este top 8 (no son el libro, pero enseñan su método):**\n> - **IFEM** de Felippa (CU Boulder) — notas abiertas que enseñan el método directo de rigidez paso a paso (`K·u=f` pedagógico). ✅\n> - **Código TopOpt de DTU** — el `99 line` de Sigmund y `top88` de Andreassen et al., estándar de facto para aprender el método del libro de Bendsøe-Sigmund. ✅ (código, no libro)\n> - **FLagSHyP** (Bonet, Gil & Wood) — código MATLAB abierto que materializa cada ecuación del FEA no-lineal en residuo + matriz tangente. ✅ (código, no libro)\n\n---\n\n## 1. Geometría computacional / NURBS / CAGD (matemática de curvas y superficies del CAD)\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| The NURBS Book | Les Piegl, Wayne Tiller | 2.ª / 1997 | Springer-Verlag (Monographs in Visual Communication) | 9783540615453 | **P0** | ❌ | La biblia industrial de NURBS: deriva todo el formalismo (funciones base B-spline, Cox-de Boor, NURBS como proyectivas de B-splines en 4D) y da los **algoritmos pseudocodificados** que todo kernel CAD/CAM/CAE implementa (de Boor, inserción/eliminación de nudos, elevación de grado, ajuste, descomposición en Bézier). Referente directo para programar el motor de curvas y superficies. | Compra legal vía Springer, Barnes & Noble y librería técnica; tapa blanda con ISBN verificado. Sin PDF gratuito legal del autor/editorial. Préstamo digital en Internet Archive (`archive.org/details/nurbsbook00pieg`) para consulta. |\n| Curves and Surfaces for CAGD: A Practical Guide | Gerald Farin | 5.ª / 2002 | Morgan Kaufmann (Series in Computer Graphics and Geometric Modeling) | 9781558607378 | **P0** | ❌ | El texto de **enseñanza** canónico del área. Construye la intuición geométrica desde cero: de Casteljau, parches de Bézier, B-splines vía blossoming, continuidad geométrica, subdivisión, B-splines racionales. Incluye implementaciones en C. Complemento pedagógico ideal del NURBS Book para modelar como humano (sketch→acotar→extrude). | Compra legal vía Morgan Kaufmann/Elsevier y librerías; materiales docentes y programas en C gratis en `farinhansford.com/books/cagd`. Reissue posterior ISBN 9781493303625 (mismo contenido). Sin PDF íntegro gratuito legal. |\n| A Practical Guide to Splines | Carl de Boor | Rev. / 2001 | Springer (Applied Mathematical Sciences, vol. 27) | 9780387953663 | P1 | ❌ | La fuente original y rigurosa de la teoría de splines y del algoritmo de de Boor que sustenta toda evaluación de B-splines/NURBS. De Boor es el autor de la recurrencia (Cox-de Boor). Indispensable para la matemática estable numéricamente (condicionamiento, interpolación) que el NURBS Book asume. | Compra legal vía Springer, Amazon, Blackwell's. Sin PDF gratuito legal completo del autor/editorial. |\n| Fundamentals of Computer Aided Geometric Design | Josef Hoschek, Dieter Lasser (trad. Larry L. Schumaker) | 1.ª (inglés) / 1993 | A K Peters (hoy A K Peters/CRC Press) | 9781568810072 | P1 | ❌ | Tratado de referencia europeo, amplísimo: además de Bézier/B-splines/NURBS cubre lo que falta en otros (interpolación/aproximación de superficies, blending, parches Coons/Gordon, intersección superficie-superficie, conversión entre representaciones, offsets). Segundo referente para mecanismos concretos (offsets para CAM, SSI). | Compra legal vía A K Peters/CRC Press (Taylor & Francis), AbeBooks, Amazon; descatalogado/segunda mano común. Sin PDF gratuito legal del editor. |\n\n---\n\n## 2. Método de Elementos Finitos — fundamentos (de dónde sale `K·u=f`)\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| The Finite Element Method: Its Basis and Fundamentals | O. C. Zienkiewicz, R. L. Taylor, J. Z. Zhu | 7.ª / 2013 | Butterworth-Heinemann (Elsevier) | 9781856176330 | **P0** | ❌ | El tratado de referencia mundial del MEF. El Vol. 1 deriva `K·u=f` desde la forma débil/variacional (residuos ponderados, Galerkin) y funciones de forma — literalmente \"de dónde sale `K·u=f`\". Citado por casi todos los textos posteriores. | Compra en Elsevier/Butterworth-Heinemann, Amazon, librerías técnicas. Sin PDF gratuito legal del editor (copyright Elsevier). |\n| The Finite Element Method: Linear Static and Dynamic Finite Element Analysis | Thomas J. R. Hughes | 1.ª (reimp. Dover; orig. Prentice-Hall 1987) / 2000 | Dover Publications | 9780486411811 | **P0** | ❌ | El texto matemáticamente sólido sobre los fundamentos: forma fuerte→débil→Galerkin→ensamblaje de `K·u=f`, con rigor de matemático-ingeniero. Estándar en posgrado (Stanford/Caltech). Barato (Dover), muy usado por estudiantes y profesores. | Edición Dover económica; Dover, Amazon, AbeBooks. Sin PDF oficial gratuito (copyright Dover). |\n| Concepts and Applications of Finite Element Analysis | Robert D. Cook, David S. Malkus, Michael E. Plesha, Robert J. Witt | 4.ª / 2001 | John Wiley & Sons | 9780471356059 | P1 | ❌ | El texto de pregrado más usado en mecánica/civil en EE.UU. Explica con claridad el método directo de rigidez (cómo se arma K elemento por elemento y se ensambla `K·u=f`) sin perderse en abstracción. \"El que de verdad usan\" los profesores para introducir el sistema lineal del MEF. | Compra en Wiley, Amazon, AbeBooks. Sin PDF oficial gratuito (copyright Wiley). |\n| Finite Element Procedures | Klaus-Jürgen Bathe | 2.ª / 2014 | K.-J. Bathe (auto-editado, Watertown MA; orig. Prentice-Hall 1996) | 9780979004957 | P1 | ❌ | Referente del MEF en sólidos/estructuras y multifísica (MIT). Presenta con rigor el principio de los trabajos virtuales y la formulación variacional que da origen a `K·u=f`, más técnicas de solución del sistema. Complementa a Hughes/Zienkiewicz en lo computacional. | Compra en Amazon/AbeBooks (2.ª ed. auto-editada). El sitio del Prof. Bathe (MIT) ofrece **videos del curso 2.092/2.093 gratis**, pero el libro sigue siendo de pago. |\n| Introduction to Finite Element Methods (IFEM, ASEN 5007 lecture notes) | Carlos A. Felippa | Notas de curso (ed. convergida, CU Boulder) / 2004 | University of Colorado Boulder (auto-publicado) | — (sin ISBN, son notas de curso) | P1 | ✅ | Notas que enseñan el método directo de rigidez paso a paso — literalmente \"de dónde sale `K·u=f`\" a nivel pedagógico, capítulo por capítulo. Recurso gratuito y legal ideal junto a los textos de pago. | **PDF oficial y gratuito** del autor (CU Boulder, curso ASEN 5007; espejo en `quickfem.com/wp-content/uploads/IFEM.Ch00.pdf`). Sin ISBN por ser notas de curso, no libro comercial (no inventado). |\n\n---\n\n## 3. FEA no-lineal / mecánica computacional de sólidos (contacto, plasticidad, grandes deformaciones)\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| Nonlinear Finite Elements for Continua and Structures | Ted Belytschko, Wing Kam Liu, Brian Moran, Khalil I. Elkhodary | 2.ª / 2014 | Wiley | 9781118632703 | **P0** | ❌ | El libro de texto de referencia mundial para FEA no-lineal: cinemática de grandes deformaciones (Cauchy/PK1/PK2), formulaciones Lagrangiana total y actualizada, hiperelasticidad, plasticidad J2, viscoplasticidad, solución implícita/explícita, contacto e impacto, estabilidad de elementos. Base teórica de LS-DYNA y Abaqus/Explicit. | Compra legal en Wiley (impreso y eTextbook), VitalSource, Amazon. Sin PDF oficial gratuito (solo solution manual parcial circulando). ISBN verificado en Open Library y catálogos Wiley/VitalSource/Amazon. |\n| Nonlinear Solid Mechanics for Finite Element Analysis: Statics | Javier Bonet, Antonio J. Gil, Richard D. Wood | 1.ª (sucesora de \"Nonlinear Continuum Mechanics for FEA\", 2.ª ed. 2008) / 2016 | Cambridge University Press | 9781107115798 | **P0** | ❌ | El referente didáctico para **aprender e implementar** el método: linealización direccional, derivada de Lie, push-forward/pull-back, hiperelasticidad y plasticidad finita, traducidos directamente a código. Puente teoría-implementación para construir tu propio solver. | Compra legal en Cambridge University Press y Amazon. **El código MATLAB FLagSHyP es descarga gratuita legal** del autor en `www.flagshyp.com` (el software sí, el libro no). 2.ª ed. previa (Bonet & Wood, 2008, ISBN 9780521838702) como alternativa económica. |\n| Computational Inelasticity | J. C. Simo, T. J. R. Hughes | 1.ª (Interdisciplinary Applied Mathematics, vol. 7) / 1998 | Springer | 9780387975207 | **P0** | ❌ | La biblia de la **plasticidad computacional**. Define los algoritmos canónicos: return mapping / closest-point projection, radial return, integración implícita de plasticidad/viscoplasticidad J2, operador tangente algorítmico consistente (clave para convergencia cuadrática de Newton), plasticidad finita por F=Fe·Fp. Fuente citada en manuales de Abaqus/ANSYS. | Compra legal en Springer, Amazon, Barnes & Noble, AbeBooks. eBook por capítulos en SpringerLink (vía institución). Sin PDF oficial gratuito del autor. ISBN verificado en Springer/Amazon/AbeBooks. |\n| Computational Contact Mechanics | Peter Wriggers (con contrib. de Tod A. Laursen) | 2.ª / 2006 | Springer | 9783540326083 | P1 | ❌ | El tratado de referencia para el **contacto** en FEA no-lineal, el subdominio más difícil: formulación variacional (multiplicadores de Lagrange, penalización, Lagrangiano aumentado), detección y discretización (node-to-segment, mortar), fricción de Coulomb, linealización consistente. P1 por especializado: se añade cuando el dominio es contacto/fricción. | Compra legal en Springer y Amazon; impreso y eBook por capítulos en SpringerLink vía institución. Sin PDF oficial gratuito. ISBN verificado en Open Library y Springer. |\n\n---\n\n## 4. CFD / dinámica de fluidos computacional (Navier-Stokes, volumen finito, turbulencia)\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| An Introduction to Computational Fluid Dynamics: The Finite Volume Method | H. K. Versteeg, W. Malalasekera | 2.ª / 2007 | Pearson Education / Prentice Hall | 9780131274983 | **P0** | ❌ | El libro de texto introductorio de CFD por volumen finito que usan ingenieros y profesores. Construye el método (discretización FVM, esquemas convección-difusión upwind/QUICK, acoplamiento presión-velocidad SIMPLE/SIMPLEC/PISO, turbulencia k-ε/k-ω) tal como lo implementan Fluent/OpenFOAM. Puerta de entrada estándar. | Compra en Pearson/Amazon/Barnes & Noble. **OJO:** reimpreso de Pearson India ISBN 9788131720486 es el MISMO libro. Sin PDF oficial gratuito legal. |\n| Computational Methods for Fluid Dynamics | Joel H. Ferziger, Milovan Perić, Robert L. Street | 4.ª / 2019 | Springer | 9783319996912 | **P0** | ❌ | La referencia rigurosa y moderna de métodos numéricos para flujos (volumen finito y diferencias finitas): discretización, mallas no estructuradas/móviles, solución de sistemas, presión-velocidad, turbulencia DNS/LES/RANS, verificación-validación. Complemento técnico al Versteeg. La 4.ª ed. (con Street) es la vigente. | Compra en Springer (DOI 10.1007/978-3-319-99693-6) impreso o eBook; Amazon/AbeBooks. Sin PDF oficial gratuito (acceso solo vía suscripción institucional SpringerLink). |\n| Computational Fluid Dynamics: The Basics with Applications | John D. Anderson Jr. | 1.ª / 1995 | McGraw-Hill | 9780070016859 | P1 | ❌ | El clásico de pedagogía CFD a nivel aeroespacial/mecánica: deriva las ecuaciones gobernantes (Navier-Stokes conservativa/no conservativa), naturaleza matemática de las PDEs (elíptica/parabólica/hiperbólica), MacCormack, ejemplos resueltos paso a paso. Da la **intuición** físico-matemática antes del FVM. | Compra en McGraw-Hill/Amazon/AbeBooks. Sin PDF oficial gratuito legal. |\n| Turbulent Flows | Stephen B. Pope | 1.ª / 2000 | Cambridge University Press | 9780521598866 | P1 | ❌ | El referente canónico de turbulencia para CFD: marco riguroso de RANS, cierre (k-ε, tensiones de Reynolds, PDF), LES, escalas (cascada de Kolmogorov). El libro al que recurren profesores y posgrado para la física correcta del modelado — imprescindible para no inventar cierres. | Compra en Cambridge University Press/Amazon/AbeBooks (paperback 9780521598866; hardback 9780521591256). Sin PDF oficial gratuito legal. |\n\n---\n\n## 5. Diseño de máquinas + mecánica de materiales + fatiga (estilo Shigley / Norton)\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| Shigley's Mechanical Engineering Design | Richard G. Budynas, J. Keith Nisbett | 11.ª / 2020 | McGraw-Hill Education | 9780073398211 | **P0** | ❌ | El libro de texto de referencia mundial de diseño de máquinas (~50 años). Integra mecánica de materiales aplicada (Mohr), fallas estáticas (von Mises/MSST), fatiga canónica (Marin ka..kf, Goodman/Gerber/ASME/Soderberg, S-N) y elementos (ejes, engranes, rodamientos, tornillos, soldadura, resortes). La columna vertebral del curso. | McGraw-Hill: tapa dura, loose-leaf (9781260407648), eTextbook Connect. Sin PDF gratuito legal. Ed. 11 reimpresa 2024 con ISBN 9781265472696 (mismo contenido). |\n| Machine Design: An Integrated Approach | Robert L. Norton | 6.ª / 2019 | Pearson | 9780135184233 | **P0** | ❌ | El gran complemento/alternativa a Shigley. Su sello: **teoría de falla y fatiga** con enfoque integrado — tensiones fluctuantes, mecánica de fractura (intensidad de esfuerzos, crecimiento de grieta, Paris), contacto Hertziano, síntesis ligada al cálculo numérico. Da nombre al \"estilo Norton\" por su tratamiento profundo y moderno de la falla. | Pearson: tapa dura print 9780135184233 y eTextbook/Pearson+ 9780137516872. Sin PDF gratuito legal. |\n| Mechanics of Materials | Russell C. Hibbeler | 10.ª / 2016 | Pearson | 9780134319650 | P1 | ❌ | El texto fundacional de mecánica de materiales sobre el que se construye el diseño de máquinas: esfuerzo/deformación axial, torsión, flexión, cortante, transformación de esfuerzos (Mohr), recipientes a presión, deflexión, pandeo. Estándar de facto por claridad y banco de problemas; prerequisito que Shigley/Norton asumen. (Alt. equivalente: Gere & Goodno, 9.ª ed., Cengage, 9781337093347.) | Pearson: tapa dura 9780134319650, loose-leaf 9780134321189, paquete Mastering 9780134583235. Sin PDF gratuito legal. |\n| Metal Fatigue in Engineering | Ralph I. Stephens, Ali Fatemi, Robert R. Stephens, Henry O. Fuchs | 2.ª / 2000 | Wiley (Wiley-Interscience) | 9780471510598 | P1 | ❌ | La referencia **dedicada** y profunda de fatiga, más allá de un capítulo de Shigley/Norton: esfuerzo-vida (S-N), deformación-vida (ε-N, Coffin-Manson, Neuber), mecánica de fractura (da/dN-ΔK, Paris), muescas, esfuerzos residuales, carga multiaxial y de amplitud variable (Miner, rainflow). | Wiley (9780471510598). Sin PDF gratuito legal. Copia en préstamo digital legal en Internet Archive (`archive.org/details/metalfatigueinen0000unse`, préstamo controlado, no descarga libre). |\n\n---\n\n## 6. Diseño de moldes de plástico e inyección (mold design / injection molding)\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| How to Make Injection Molds | Georg Menges, Walter Michaeli, Paul Mohren | 3.ª / 2001 | Carl Hanser Verlag / Hanser Publications | 9781569902820 | **P0** | ❌ | El texto puente entre diseño y fabricación del molde: de principios físicos (reología, transferencia de calor, contracción) a runners, gating, enfriamiento, expulsión y mecanizado real del molde. Escrito por la escuela de Aachen (IKV); referencia obligada en universidad e industria. | Compra vía Hanser Publications / Hanser Verlag (ed. inglés). Nuevo y usado en AbeBooks, Amazon, ThriftBooks. Sin PDF oficial gratuito. |\n| Injection Molding Handbook | Tim A. Osswald, Lih-Sheng Turng, Paul J. Gramann (eds.) | 2.ª / 2007 | Carl Hanser Verlag / Hanser Publications | 9781569904206 | **P0** | ❌ | El manual de referencia más completo y moderno del proceso: máquina, materiales y reología, control de proceso, simulación CAE (Moldflow), diseño de pieza y molde, troubleshooting. Editado por autoridades (Osswald/Turng). Referencia de escritorio para fundamentar decisiones con la física del proceso. | Compra vía Hanser. ISBN europeo equivalente 2.ª ed.: 9783446407817 (mismo libro). Nuevo/usado en AbeBooks, Amazon, eCampus. Sin PDF oficial gratuito. |\n| Mold Engineering | Herbert Rees | 2.ª / 2002 | Carl Hanser Verlag / Hanser Gardner Publications | 9781569903223 | P1 | ❌ | Tratado clásico desde la óptica del diseñador-constructor (Rees fue \"Mold Designer of the Year\" de la SPE). Profundiza en tipos de molde, mazarotas/coladas, expulsión, alineación, materiales y desempeño. Backbone mecánico sólido que complementa los textos de proceso/CAE. | Compra vía Hanser. ISBN europeo 2.ª ed.: 9783446216594. Nuevo/usado en AbeBooks, Amazon, eBay. Sin PDF oficial gratuito. |\n| Injection Mould Design (Textbook for the Novice and Design Manual for the Thermoplastics Industry) | R. G. W. Pye | 4.ª / 1989 | Longman Scientific & Technical / Wiley | 9780470214138 | P1 | ❌ | El manual didáctico clásico con el que generaciones aprendieron diseño de molde paso a paso: de componentes básicos a moldes especiales (correderas, desenroscado) con dibujo técnico detallado. Aunque antiguo, se sigue citando como introducción canónica por su claridad. | Descatalogado; usado en AbeBooks/Amazon/eBay o bibliotecas. Préstamo digital controlado en Internet Archive (`archive.org/details/injectionmouldde0000pyer`), no PDF libre legal. |\n\n---\n\n## 7. Manufactura / CNC / CAM / procesos de fabricación\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| Manufacturing Engineering and Technology | Serope Kalpakjian, Steven R. Schmid | 8.ª / 2020 | Pearson | 9780136681656 | **P0** | ❌ | El libro de texto de referencia para procesos de manufactura en mecánica/industrial en todo el mundo. Cobertura enciclopédica y balanceada de TODOS los procesos (fundición, conformado, maquinado, unión, polímeros/composites, microfabricación, MEMS) con la física real (corte de Merchant, vida de herramienta de Taylor). Estándar académico e industrial. | Compra en Pearson, impreso o eText/Pearson+; edición SI (Global Edition, 9781292422244). Sin PDF oficial gratuito. |\n| Fundamentals of Modern Manufacturing: Materials, Processes, and Systems | Mikell P. Groover | 7.ª / 2020 | John Wiley & Sons | 9781119722014 | **P0** | ❌ | El otro pilar canónico junto a Kalpakjian, preferido por su énfasis **cuantitativo**: modelos y ecuaciones (corte ortogonal, fuerzas, potencia, tolerancias, sistemas/automatización, NC/CNC). Integra materiales, procesos Y sistemas — preferido en ingeniería industrial/de manufactura. | Compra en Wiley, impreso o eText (VitalSource); ed. impresa 9781119633969 e International Adaptation 9781119706427. Sin PDF oficial gratuito legal. |\n| Fundamentals of Metal Machining and Machine Tools | Geoffrey Boothroyd, Winston A. Knight | 3.ª / 2006 | CRC Press / Taylor & Francis | 9781574446593 | P1 | ❌ | La referencia profunda de la **teoría del maquinado** y máquinas-herramienta: mecánica del corte (Merchant, zonas de cizalla, fuerzas), temperatura y desgaste, fluidos de corte, acabado, economía del maquinado, dinámica/chatter. Donde Kalpakjian/Groover dan amplitud, Boothroyd da la física rigurosa que sustenta CNC/CAM. | Compra en Routledge/CRC Press; eText en VitalSource (digitales 9781420056303 / 9781498732642). Sin PDF oficial gratuito legal. |\n| CNC Machining Handbook: Building, Programming, and Implementation | Alan Overby | 1.ª / 2010 | McGraw-Hill | 9780071623018 | P1 | ❌ | Referente **práctico** orientado a CNC/CAM aplicado: arquitectura de máquina CNC (guías, transmisiones, motores, controlador, drives), flujo CAD→CAM→código G/M, implementación real en taller. Aporta el know-how de programación e implementación de piso de producción y makerspaces. | Compra en McGraw-Hill / AccessEngineering, impreso o eText (VitalSource, digital 9780071623025). Sin PDF oficial gratuito legal. |\n\n---\n\n## 8. Optimización estructural / topológica / diseño generativo\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| Topology Optimization: Theory, Methods, and Applications | Martin P. Bendsøe, Ole Sigmund | 2.ª (rev. y ampl.) / 2003 | Springer (Berlin/Heidelberg) | 9783540429920 | **P0** | ❌ | El referente absoluto de optimización topológica. Sigmund (DTU) y Bendsøe codificaron el método **SIMP** (densidad-material) que usa todo motor de la industria (Altair OptiStruct, Ansys, nTopology). Cubre distribución de material con FEM y programación matemática: compliance, filtros de independencia de malla, homogeneización, continuo, MEMS, diseño de materiales. Si solo lees uno, es este. | Compra en Springer (DOI 10.1007/978-3-662-05086-6). Hardcover 9783540429920; softcover 9783642076985 y eBook 9783662050866. **El código MATLAB de Sigmund (\"99 line\", 2001) y \"top88\" de Andreassen et al. (2011) son abiertos** en el grupo TopOpt de DTU (`topopt.mek.dtu.dk`) — estándar de facto para aprender el método. |\n| An Introduction to Structural Optimization | Peter W. Christensen, Anders Klarbring | 1.ª (Solid Mechanics and Its Applications, vol. 153) / 2009 | Springer | 9781402086656 | **P0** | ❌ | El libro de texto canónico para **cursar** el dominio (manual base de posgrado). Pedagógico y autocontenido: las tres clases de problemas geométricos —sizing, shape, topology— sobre estructuras elásticas lineales por FEM, con métodos numéricos concretos (OC, SLP, SQP, dualidad). Puente didáctico perfecto antes de Bendsøe-Sigmund. | Compra en Springer (DOI 10.1007/978-1-4020-8666-3) o eTextbook VitalSource (e-ISBN 9781402086663). Print 9781402086656 verificado. Sin versión gratuita oficial. |\n| Elements of Structural Optimization | Raphael T. Haftka, Zafer Gürdal | 3.ª (rev. y ampl.; Solid Mechanics and Its Applications, vol. 11) / 1992 | Kluwer Academic Publishers (hoy Springer) | 9780792315056 | P1 | ❌ | El clásico de fundamentos de optimización estructural y multidisciplinaria (MDO): programación matemática (KKT, lineal, no lineal), criterios de optimalidad, **análisis de sensibilidad** (referente didáctico), aproximaciones, dualidad. Base teórica de los métodos basados en gradiente que sostienen sizing/shape clásico y el diseño generativo moderno. | Compra/licencia vía Springer (Kluwer absorbida por Springer). Print 9780792315056 verificado; reimpresión softcover posterior 9789401125505. Sin PDF gratuito legal oficial. |\n\n---\n\n## 9. Diseño de PCB / electrónica (integridad de señal y potencia, EMC, fabricación) — base teórica para integrar EasyEDA / KiCad\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| High-Speed Digital Design: A Handbook of Black Magic | Howard W. Johnson, Martin Graham | 1.ª / 1993 | Prentice Hall (Pearson) — Modern Semiconductor Design | 9780133957242 | **P0** | ❌ | El referente fundacional (\"la biblia\") de la integridad de señal en alta velocidad: reflexiones, terminación, impedancia controlada, crosstalk, planos, vías, ruteo. Es el origen de las reglas que un EDA (KiCad/EasyEDA) implementa como constraints. Punto de partida obligado para SI engineers. | Compra en Pearson/InformIT (papel y eText). El autor lo lista en `sigcon.com`. Sin PDF oficial gratuito; préstamo digital 1-a-1 en Internet Archive (`archive.org/details/highspeeddigital0000john`), no libre. |\n| Electromagnetic Compatibility Engineering | Henry W. Ott | 1.ª (revisión/expansión de \"Noise Reduction Techniques in Electronic Systems\") / 2009 | Wiley (John Wiley & Sons) | 9780470189306 | **P0** | ❌ | Canon absoluto de EMC, grounding, blindaje, desacoplo y reducción de ruido aplicado a circuitos y PCBs. Fuente de las prácticas de planos de tierra, partición y decoupling que se traducen directo a un layout en KiCad/EasyEDA y a aprobar pruebas de compatibilidad. | Compra en Wiley (papel y eText, digital 9781118210659). Sin PDF oficial gratuito; el sitio del autor (`hottconsultants.com`) ofrece artículos/errata gratis, no el libro completo. |\n| Signal and Power Integrity – Simplified | Eric Bogatin | 3.ª / 2018 | Prentice Hall / Pearson — Signal Integrity Library | 9780134513416 | P1 | ❌ | El texto moderno y pedagógico de SI/PI: las seis familias de problemas de integridad, redes de distribución de energía (PDN), pares diferenciales, enlaces serie de alta velocidad. Conecta la teoría con el stackup y las reglas de ruteo que se configuran en el EDA. | Compra en Pearson/InformIT/O'Reilly (papel, eText 9780137582266). Sin versión gratuita legal del editor. |\n| Printed Circuits Handbook, Seventh Edition | Clyde F. Coombs, Jr., Happy Holden | 7.ª / 2016 | McGraw-Hill Education | 9780071833950 | P1 | ❌ | El manual de referencia de la industria para el lado físico/manufactura del PCB: materiales, stackup, fabricación, ensamblaje, soldadura, vías, DFM, prueba. Indispensable para que los outputs del EDA (gerbers, reglas de fabricación, clases IPC) sean manufacturables de verdad. | Compra en McGraw-Hill (papel y eText 9780071833967), también AccessEngineering. Sin PDF oficial gratuito. |\n\n---\n\n## 10. Vibraciones mecánicas / dinámica de máquinas / multicuerpo\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| Mechanical Vibrations | Singiresu S. Rao | 6.ª / 2016 | Pearson | 9780134361307 | **P0** | ❌ | El texto de referencia mundial del curso de vibraciones (licenciatura/posgrado). Cobertura completa y rigurosa: SDOF/MDOF libre y forzado, sistemas continuos, modos y frecuencias naturales, métodos numéricos (Holzer, matriz de transferencia, FEM), control de vibraciones, análisis modal. Formulación real (Newton-Euler, Lagrange) y aplicaciones (balanceo, aislamiento, absorbedores). El más adoptado como texto base. | Compra vía Pearson (impreso 9780134361307; eText 6.ª ed. 9780137515288). Sin PDF oficial gratuito; copias legales en bibliotecas universitarias y préstamo digital controlado en Internet Archive. |\n| Engineering Vibration | Daniel J. Inman | 4.ª / 2014 | Pearson | 9780132871693 | **P0** | ❌ | El otro pilar del curso, complementario a Rao. Destaca por enfoque físico-intuitivo, integración fuerte con MATLAB/Mathematica y tratamiento moderno de análisis modal experimental, identificación de sistemas y control. Preferido en aeroespacial/mecánica por su puente teoría↔medición (FRF, modal testing). | Compra vía Pearson. Edición internacional 9780273768449. Sin PDF oficial gratuito; préstamo digital legal en Internet Archive y bibliotecas. |\n| Dynamics of Multibody Systems | Ahmed A. Shabana | 5.ª / 2020 | Cambridge University Press | 9781108485647 | **P0** | ❌ | El texto canónico de dinámica multicuerpo (rígida y flexible): cinemática y dinámica con coordenadas generalizadas, ecuaciones de restricción, multiplicadores de Lagrange, cuerpos flexibles y el ANCF del propio autor. Referencia obligada para mecanismos, vehículos y robótica, y base teórica de los solvers MBD (Adams, etc.). | Compra vía Cambridge University Press (hardback 9781108485647; eBook 9781108757553). Acceso institucional vía Cambridge Core. Sin versión gratuita legal. |\n| Theory of Vibration with Applications | William T. Thomson, Marie Dillon Dahleh | 5.ª / 1998 | Prentice Hall (Pearson) | 9780136510680 | P1 | ❌ | Clásico fundacional: durante décadas EL texto estándar de vibraciones, sigue siendo referencia por su tratamiento limpio de SDOF/MDOF, sistemas continuos, Lagrange, Laplace, vibración aleatoria, introducción al análisis modal. Citado como la base sobre la que se construyeron Rao e Inman. | Compra vía Pearson/Prentice Hall (puede estar descatalogado; usado y ed. internacionales como 9788131704820). Préstamo digital legal en Internet Archive. 1.ª ed. reeditada por CRC Press/Routledge. Sin PDF oficial gratuito. |\n\n---\n\n## 11. GD&T / metrología / tolerancias (ASME Y14.5 / ISO GPS)\n\n| Título | Autores | Ed./Año | Editorial | ISBN-13 | Prio. | PDF libre legal | Por qué | Disponibilidad |\n|--------|---------|---------|-----------|---------|:-----:|:---------------:|---------|----------------|\n| ASME Y14.5-2018: Dimensioning and Tolerancing | The American Society of Mechanical Engineers (ASME) | Ed. 2018 (rev. de Y14.5-2009; reafirmada R2024) | ASME | 9780791872192 | **P0** | ❌ | **Es la norma raíz** del dominio en EE.UU. y referencia global: define símbolos, reglas, marcos de control de características (FCF), datums, modificadores (MMC/LMC/RFS), reglas #1 y #2. Todo libro, software CAD/CMM y curso de GD&T se escribe \"según Y14.5\". Es la fuente de verdad que los demás libros explican. | Documento normativo de pago (no libro de texto comercial). Compra directa en ASME (Order No. N00518 impreso / N0051Q PDF, ~USD 380) o vía ANSI/IHS Markit, Techstreet. Acceso institucional común en bibliotecas. Sin versión gratuita legal (copyright ASME). ISBN verificado en DirectTextbook/ANSI, Amazon, AbeBooks, BooksRun. |\n| Geometric Dimensioning and Tolerancing for Mechanical Design | Gene R. Cogorno | 3.ª (alineada a ASME Y14.5-2018) / 2020 | McGraw-Hill Education | 9781260453782 | **P0** | ❌ | El libro de texto canónico para **enseñar/aprender** GD&T conforme a Y14.5-2018: traduce la norma a teoría didáctica con ejemplos, reglas paso a paso y problemas. La referencia más usada en cursos universitarios y formación industrial, ya actualizada a la edición 2018. | Nuevo/digital en McGraw-Hill, Amazon, Barnes & Noble, Blackwell's; eBook en VitalSource y AccessEngineering (vía biblioteca universitaria). Sin versión gratuita legal. ISBN verificado en Open Library y booksellers. |\n| Fundamentals of Geometric Dimensioning and Tolerancing (Using Critical Thinking Skills) | Alex Krulikowski | 3.ª (basada en ASME Y14.5M-2009) / 2012 | Delmar / Cengage Learning | 9781111129828 | P1 | ❌ | Texto pedagógico de referencia histórica de Krulikowski (\"Doctor of Dimensioning\"): objetivos medibles, unidades cortas, banco de problemas; muy adoptado en tecnología industrial y CAD. P1 porque su fortaleza didáctica está anclada a Y14.5-**2009**; útil como apoyo/ejercicios pero conviene complementar con material 2018 (Cogorno). | Nuevo, usado y eBook en Cengage, Amazon, VitalSource (9781285401973) y rental (ecampus/Biblio). Sin versión gratuita legal. ISBN verificado en Open Library y Cengage. |\n| Dimensioning and Tolerancing Handbook | Paul J. Drake, Jr. (editor) | 1.ª / 1999 | McGraw-Hill | 9780070181311 | P1 | ❌ | Handbook enciclopédico de consulta sobre gestión de variación: tolerance stack-up (worst-case y estadístico/RSS), tolerancias de ajuste, metrología, GD&T aplicado, diseño para fabricación. Referencia de cabecera del ingeniero de tolerancias más allá del estándar. P1 por ser de 1999 (Y14.5M-1994), pero su análisis de cadenas de tolerancias sigue siendo canónico. | Descatalogado en nuevo; usado (AbeBooks, Amazon) y eBook institucional en McGraw-Hill AccessEngineering. Sin versión gratuita legal. ISBN verificado en AbeBooks, Amazon, AccessEngineering. |\n\n---\n\n## Notas de uso\n\n- **Gratis y legal de verdad (✅):** solo el **IFEM de Felippa** (PDF completo del autor) es un \"libro\" descargable libre. Los acompañantes valiosísimos que NO son libros pero sí gratis legales: el **código TopOpt de DTU** (método del Bendsøe-Sigmund) y **FLagSHyP** (código del Bonet/Gil/Wood). El sitio del Prof. **Bathe** en el MIT ofrece **videos de curso gratis** (el libro no).\n- **Préstamo digital controlado** (no es descarga libre, pero es acceso legal sin comprar): Internet Archive tiene The NURBS Book, Metal Fatigue in Engineering, Injection Mould Design (Pye), High-Speed Digital Design, y varios de vibraciones (Rao, Inman, Thomson).\n- **Norma vs. libro:** ASME Y14.5-2018 no es un libro comercial sino el documento normativo de pago. Cómpralo si vas a implementar el motor de GD&T de La Forja en serio; para aprender/enseñar usa Cogorno (alineado a 2018).\n- **ISBN duplicados / reimpresiones a vigilar:** Versteeg India 9788131720486 = mismo libro que 9780131274983; Shigley 11.ª reimpresa 2024 9781265472696 = mismo contenido que 9780073398211; Injection Molding Handbook europeo 9783446407817 = 9781569904206.\n"
+  }
+}
