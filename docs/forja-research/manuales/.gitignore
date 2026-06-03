@@ -1,0 +1,8 @@
+# Manuales/PDFs descargados: NO inflar git con binarios grandes.
+# El usuario los lee localmente; el repo guarda solo el índice (INDICE.md).
+*.pdf
+*.epub
+*.zip
+*.tar.gz
+!INDICE.md
+!.gitignore
