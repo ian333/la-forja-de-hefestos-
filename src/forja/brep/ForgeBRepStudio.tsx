@@ -983,7 +983,6 @@ function SolidMesh({
   // (mesh.faceIds), así que triángulo → faceId es directo y exacto: la cara que
   // devolvemos es la que está REALMENTE bajo el cursor.
   const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
-    if (pickMode !== 'face') return;
     e.stopPropagation();
     const ti = e.faceIndex;
     if (ti != null && ti >= 0 && ti < mesh.faceIds.length) {
@@ -1004,34 +1003,38 @@ function SolidMesh({
   // triangulada). Cada tubo conoce su edgeId, así que devolvemos la arista REAL
   // bajo el cursor — no la del punto-medio más cercano (heurística vieja).
   const handleEdgeClick = useCallback((edgeId: number) => (e: ThreeEvent<MouseEvent>) => {
-    if (pickMode !== 'edge') return;
     e.stopPropagation();
     onPickEdge(edgeId);
-  }, [pickMode, onPickEdge]);
+  }, [onPickEdge]);
 
-  // HOVER de cara: en modo 'face', la cara bajo el cursor se pre-resalta en oro
-  // tenue cálido (lo que VAS a clicar) y el cursor pasa a pointer — el feedback
-  // de pre-selección que todo CAD tiene. Distinto del oro saturado de la cara ya
-  // seleccionada. Se apaga fuera del modo face o al salir del sólido.
+  // SELECCIÓN DIRECTA estilo Fusion: SIEMPRE activa (sin "modo"). Pasas el mouse y
+  // la cara/arista bajo el cursor se pre-resalta; clic la selecciona. La ARISTA tiene
+  // prioridad sobre la cara (su tubo de pick está al frente y hace stopPropagation).
   const [hoverFace, setHoverFace] = useState<number | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<number | null>(null);
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
-    if (pickMode !== 'face') return;
     const ti = e.faceIndex;
     if (ti != null && ti >= 0 && ti < mesh.faceIds.length) {
       const fid = mesh.faceIds[ti];
       setHoverFace((h) => (h === fid ? h : fid));
+      setHoveredEdge(null);
     }
-  }, [pickMode, mesh]);
-  const handlePointerOver = useCallback(() => {
-    if (pickMode === 'face' && typeof document !== 'undefined') document.body.style.cursor = 'pointer';
-  }, [pickMode]);
-  const handlePointerOut = useCallback(() => {
+  }, [mesh]);
+  const handleEdgeMove = useCallback((edgeId: number) => (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHoveredEdge((h) => (h === edgeId ? h : edgeId));
     setHoverFace(null);
+  }, []);
+  const handlePointerOver = useCallback(() => {
+    if (typeof document !== 'undefined') document.body.style.cursor = 'pointer';
+  }, []);
+  const handlePointerOut = useCallback(() => {
+    setHoverFace(null); setHoveredEdge(null);
     if (typeof document !== 'undefined') document.body.style.cursor = '';
   }, []);
-  // Sub-malla de la cara en hover (misma técnica que highlightGeo, una sola cara).
+  // Cara en hover (la arista manda: si hay arista en hover, no resaltamos cara).
   const hoverGeo = useMemo(() => {
-    if (pickMode !== 'face' || hoverFace == null || selFaces.includes(hoverFace)) return null;
+    if (hoverFace == null || hoveredEdge != null || selFaces.includes(hoverFace)) return null;
     const idx: number[] = [];
     for (const grp of mesh.faceGroups) {
       if (grp.faceId === hoverFace) {
@@ -1044,7 +1047,7 @@ function SolidMesh({
     g.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
     g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
     return g;
-  }, [mesh, hoverFace, pickMode, selFaces]);
+  }, [mesh, hoverFace, hoveredEdge, selFaces]);
   useEffect(() => () => { hoverGeo?.dispose(); }, [hoverGeo]);
 
   return (
@@ -1147,9 +1150,18 @@ function SolidMesh({
           geometry={geoPick}
           renderOrder={3}
           onClick={handleEdgeClick(edgeId)}
-          visible={pickMode === 'edge'}
+          onPointerMove={handleEdgeMove(edgeId)}
+          onPointerOut={handlePointerOut}
         >
-          <meshBasicMaterial color={STEEL} transparent opacity={0.3} />
+          {/* invisible (opacity 0) pero SIEMPRE objetivo de raycast → hover/clic directo */}
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      ))}
+
+      {/* ARISTA en HOVER: tubo de oro tenue (pre-selección, distinto del seleccionado). */}
+      {hoveredEdge != null && !selEdges.includes(hoveredEdge) && edgeTubes.filter((t) => t.edgeId === hoveredEdge).map(({ edgeId, geoSel }) => (
+        <mesh key={`eth${edgeId}`} geometry={geoSel} renderOrder={4}>
+          <meshBasicMaterial color={'#f3bf8e'} transparent opacity={0.85} toneMapped={false} depthTest={false} />
         </mesh>
       ))}
 
@@ -2252,7 +2264,7 @@ export default function ForgeBRepStudio() {
       <div className="fb-viewport" data-testid="viewport" ref={viewportRef}>
         <CadViewport
           cameraDistance={cameraDist}
-          autoRotate={pickMode === 'none'}
+          autoRotate={false}
           minDistance={cameraDist * 0.2}
           maxDistance={cameraDist * 4}
         >
