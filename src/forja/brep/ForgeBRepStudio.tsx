@@ -71,11 +71,13 @@ import {
   type GearSketchParams,
 } from '../../lib/parts/involute-gear-sketch';
 import {
-  runFEA,
+  prepareFeaSession,
+  solveLoadOnSession,
   vonMisesVertexColors,
   jetColor,
   type FEAResult,
   type FaceBC,
+  type FEASession,
 } from './fea';
 import { MATERIAL_DATABASE } from '../../lib/formulas';
 
@@ -1446,6 +1448,14 @@ export default function ForgeBRepStudio() {
   const [feaColors, setFeaColors] = useState<Float32Array | null>(null);
   const [feaBusy, setFeaBusy] = useState(false);
   const [feaErr, setFeaErr] = useState<string | null>(null);
+  // ── FEA INCREMENTAL ("análisis mientras diseñas") ──
+  // La sesión cachea la parte cara (malla + K + B); cambiar SOLO la carga reusa la
+  // sesión y re-resuelve con warm-start (rápido). feaDirRef = dirección unitaria de
+  // la carga; feaSigRef = firma de geometría/material para invalidar la sesión.
+  const feaSessionRef = useRef<FEASession | null>(null);
+  const feaDirRef = useRef<[number, number, number]>([0, 0, -1]);
+  const feaSigRef = useRef<string>('');
+  const [feaLiveMs, setFeaLiveMs] = useState<number | null>(null);
   // Picking de cara/arista pero dirigido al panel FEA (no a la op activa).
   const feaPickTargetRef = useRef<'fija' | 'carga' | null>(null);
   feaPickTargetRef.current = feaPickTarget;
@@ -1751,20 +1761,21 @@ export default function ForgeBRepStudio() {
           }
         }
         const dlen = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+        const dirUnit: [number, number, number] = [dir[0] / dlen, dir[1] / dlen, dir[2] / dlen];
         const F = feaLoadN;
-        const totalForce: [number, number, number] = [
-          (dir[0] / dlen) * F, (dir[1] / dlen) * F, (dir[2] / dlen) * F,
-        ];
 
         const bc: FaceBC = {
           fixedFaces: [feaFixedFace],
           loadFaces: feaLoadFace != null ? [feaLoadFace] : [],
-          totalForce,
         };
-        const res = runFEA(oc, shape, bc, {
-          material: FEA_MATERIAL_KEY[material] ?? 'aluminio_6061',
-          resolution: 18,
-        });
+        // Prepara la SESIÓN (caro: malla + K + B, se cachea) y resuelve la carga
+        // (barato). Cambiar luego solo la magnitud reusa la sesión (feaLiveSetLoad).
+        const matKey = FEA_MATERIAL_KEY[material] ?? 'aluminio_6061';
+        const session = prepareFeaSession(oc, shape, bc, { material: matKey, resolution: 18 });
+        feaSessionRef.current = session;
+        feaDirRef.current = dirUnit;
+        feaSigRef.current = `${sketch.kind}|${opCount}|${matKey}|${feaFixedFace}|${feaLoadFace}`;
+        const res = solveLoadOnSession(session, { totalForce: [dirUnit[0] * F, dirUnit[1] * F, dirUnit[2] * F] });
 
         // Colorea la malla de RENDER (la teselada que se ve) por von Mises.
         const renderPos = resultRef.current?.mesh.positions;
@@ -1782,7 +1793,25 @@ export default function ForgeBRepStudio() {
         setFeaBusy(false);
       }
     });
-  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops]);
+  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops, opCount]);
+
+  // ── FEA EN VIVO: cambia SOLO la magnitud de la carga reusando la sesión cacheada
+  // + warm-start del CG. Es el "análisis mientras diseñas": mover el slider repinta
+  // el von Mises en milisegundos sin re-mallar ni re-ensamblar. Si no hay sesión
+  // (aún no corriste el FEA una vez), cae al análisis completo. ──
+  const feaLiveSetLoad = useCallback((N: number) => {
+    setFeaLoadN(N);
+    const session = feaSessionRef.current;
+    if (!session) { runFeaAnalysis(); return; }
+    const d = feaDirRef.current;
+    const t0 = typeof performance !== 'undefined' ? performance.now() : 0;
+    const res = solveLoadOnSession(session, { totalForce: [d[0] * N, d[1] * N, d[2] * N] });
+    const ms = (typeof performance !== 'undefined' ? performance.now() : 0) - t0;
+    const renderPos = resultRef.current?.mesh.positions;
+    if (renderPos) { const { colors } = vonMisesVertexColors(res, renderPos); setFeaColors(colors); }
+    setFeaResult(res);
+    setFeaLiveMs(ms);
+  }, [runFeaAnalysis]);
 
   // Inicia el picking de cara dirigido al panel FEA (fija o carga).
   const startFeaPick = useCallback((target: 'fija' | 'carga') => {
@@ -1795,6 +1824,7 @@ export default function ForgeBRepStudio() {
   const clearFeaOverlay = useCallback(() => {
     setFeaColors(null);
     setFeaResult(null);
+    feaSessionRef.current = null;
   }, []);
 
   // Si cambia la geometría del documento, el FEA previo deja de ser válido:
@@ -1804,6 +1834,7 @@ export default function ForgeBRepStudio() {
     setFeaResult(null);
     setFeaFixedFace(null);
     setFeaLoadFace(null);
+    feaSessionRef.current = null; // la geometría cambió → la sesión cacheada caduca
   }, [opCount, sketch.kind]);
 
   // Selección (toggle) de cara/arista para la op activa. SIEMPRE fija el
@@ -2051,6 +2082,11 @@ export default function ForgeBRepStudio() {
       // cantilever canónico (carga perpendicular sobre la cara libre). Mismo
       // solver/estado/DOM que el botón Analizar.
       runFEADir: (dir: [number, number, number]) => runFeaAnalysis(dir),
+      // FEA EN VIVO: re-resuelve SOLO cambiando la carga, reusando la sesión cacheada
+      // (warm-start). Para QA: devuelve nada, pero deja feaLiveMs y feaResult listos.
+      feaLiveSetLoad: (n: number) => { feaLiveSetLoad(n); },
+      get feaSessionReady() { return !!feaSessionRef.current; },
+      get feaLiveMs() { return feaLiveMs; },
       clearFeaOverlay,
       get feaReady() { return !!feaResult; },
       get feaBusy() { return feaBusy; },
@@ -2093,7 +2129,7 @@ export default function ForgeBRepStudio() {
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN]);
+  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2829,7 +2865,8 @@ export default function ForgeBRepStudio() {
             </div>
 
             <Dim label="Carga" value={feaLoadN} unit="N" min={10} max={50000} step={10}
-              testid="input-carga" onChange={(v) => setFeaLoadN(v)} />
+              testid="input-carga"
+              onChange={(v) => { if (feaSessionRef.current) feaLiveSetLoad(v); else setFeaLoadN(v); }} />
 
             <button className="fb-fea-run" data-testid="btn-fea"
               onClick={() => runFeaAnalysis()} disabled={feaBusy || !oc || feaFixedFace == null}>

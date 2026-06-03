@@ -432,14 +432,26 @@ function sparseCG(
   f: Float64Array,
   tol: number,
   maxIter: number,
+  u0?: Float64Array,
 ): { u: Float64Array; iterations: number; residual: number; converged: boolean } {
   const n = K.n;
-  const u = new Float64Array(n);
+  // WARM-START: si se pasa u0 (solución anterior), el CG arranca de ahí. No cambia
+  // la solución (CG es exacto) — solo el nº de iteraciones: un cambio chico de carga
+  // converge en ~decenas en vez de cientos. Es la clave del "FEA mientras diseñas".
+  const u = u0 && u0.length === n ? Float64Array.from(u0) : new Float64Array(n);
   const Minv = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     Minv[i] = 1 / Math.max(Math.abs(K.rows[i].get(i) ?? 0), 1e-30);
   }
-  const r = new Float64Array(f); // r = f - K·0 = f
+  // r = f − K·u (con warm-start u puede ≠ 0; sin él u=0 ⇒ r=f).
+  const r = new Float64Array(n);
+  if (u0 && u0.length === n) {
+    const Ku = new Float64Array(n);
+    sparseMatVec(K, u, Ku);
+    for (let i = 0; i < n; i++) r[i] = f[i] - Ku[i];
+  } else {
+    r.set(f);
+  }
   const z = new Float64Array(n);
   for (let i = 0; i < n; i++) z[i] = r[i] * Minv[i];
   const p = new Float64Array(z);
@@ -723,6 +735,191 @@ export function runFEA(
     solver: { iterations: sol.iterations, residual: sol.residual, converged: sol.converged },
     fixedNodes: [...fixedNodesSet],
     loadedNodes: loadNodes,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// 4b. ANÁLISIS INCREMENTAL — "FEA mientras diseñas"
+// ─────────────────────────────────────────────────────────────────
+// runFEA (arriba) hace TODO en frío cada vez. Para el modo vivo separamos:
+//   · lo que NO cambia con la carga (malla, K con Dirichlet, B por tet) — caro,
+//     se cachea en una FEASession.
+//   · lo que SÍ cambia (vector f + solve) — barato, con WARM-START del CG.
+// Mover solo la magnitud de la carga (slider) reusa K y converge en pocas
+// iteraciones. MISMA física que runFEA (mismo ensamble, Dirichlet y recovery)
+// → los mismos números; la viga lo verifica contra σ=Mc/I.
+
+export interface FEASession {
+  mesh: VolumeTetMesh;
+  K: SparseSym;                          // con Dirichlet (u=0) YA aplicado
+  tetB: number[][][];
+  D: number[][];
+  material: MaterialProperties;
+  nDOF: number;
+  fixedDOF: number[];
+  fixedNodes: number[];
+  loadNodes: number[];
+  loadArea: number;                      // mm² de loadFaces (modo presión)
+  loadNormal: [number, number, number];
+  tol: number;
+  maxIter: number;
+  uPrev: Float64Array | null;            // warm-start del CG (solución anterior)
+}
+
+/** Fase CARA del FEA incremental: malla + K(Dirichlet) + B. Caro; se cachea. */
+export function prepareFeaSession(
+  oc: OC, shape: Shape, bc: FaceBC, opts: FEAOptions,
+): FEASession {
+  const material = resolveMaterial(opts.material);
+  const resolution = opts.resolution ?? 16;
+  const deflection = opts.deflection ?? 0.1;
+
+  const mesh = brepToVolumeTetMesh(oc, shape, resolution, deflection);
+  if (mesh.nTets === 0) throw new Error('FEA: la malla quedó vacía (sube la resolución o revisa el sólido).');
+
+  const tess = tessellate(oc, shape, deflection, 0.5);
+  const faces = enumerateFaces(oc, shape);
+
+  const collectFaceNodes = (faceIds: number[]): Set<number> => {
+    const set = new Set<number>();
+    for (const fid of faceIds) {
+      const fref = faces.find((f) => f.index === fid);
+      const bbox = faceTriBBox(tess, fid);
+      if (!fref || !bbox) continue;
+      let normal = fref.normal;
+      if (Math.hypot(normal[0], normal[1], normal[2]) < 1e-6) {
+        const ext = [bbox.max[0] - bbox.min[0], bbox.max[1] - bbox.min[1], bbox.max[2] - bbox.min[2]];
+        const axis = ext.indexOf(Math.min(...ext));
+        normal = [axis === 0 ? 1 : 0, axis === 1 ? 1 : 0, axis === 2 ? 1 : 0];
+      }
+      for (const n of nodesOnFace(mesh, fref.center, normal, bbox.min, bbox.max)) set.add(n);
+    }
+    return set;
+  };
+
+  const fixedNodesSet = collectFaceNodes(bc.fixedFaces);
+  const loadNodesSet = collectFaceNodes(bc.loadFaces);
+  if (fixedNodesSet.size === 0) throw new Error('FEA: ninguna cara fija capturó nodos (revisa fixedFaces).');
+
+  let loadArea = 0;
+  let loadNormal: [number, number, number] = [0, 0, 0];
+  for (const fid of bc.loadFaces) {
+    const fref = faces.find((ff) => ff.index === fid);
+    if (!fref) continue;
+    loadArea += fref.area;
+    if (Math.hypot(fref.normal[0], fref.normal[1], fref.normal[2]) > 1e-6) loadNormal = fref.normal;
+  }
+
+  const nDOF = mesh.nNodes * 3;
+  const D = elasticityMatrix3D(material.youngsModulus, material.poissonsRatio);
+  const K = sparseInit(nDOF);
+  const tetB: number[][][] = new Array(mesh.nTets);
+  for (let e = 0; e < mesh.nTets; e++) {
+    const a = mesh.tets[e * 4], b = mesh.tets[e * 4 + 1], c = mesh.tets[e * 4 + 2], d = mesh.tets[e * 4 + 3];
+    const idx = [a, b, c, d];
+    const coords: [
+      [number, number, number], [number, number, number],
+      [number, number, number], [number, number, number]
+    ] = [
+      [mesh.nodes[a * 3] * MM_TO_M, mesh.nodes[a * 3 + 1] * MM_TO_M, mesh.nodes[a * 3 + 2] * MM_TO_M],
+      [mesh.nodes[b * 3] * MM_TO_M, mesh.nodes[b * 3 + 1] * MM_TO_M, mesh.nodes[b * 3 + 2] * MM_TO_M],
+      [mesh.nodes[c * 3] * MM_TO_M, mesh.nodes[c * 3 + 1] * MM_TO_M, mesh.nodes[c * 3 + 2] * MM_TO_M],
+      [mesh.nodes[d * 3] * MM_TO_M, mesh.nodes[d * 3 + 1] * MM_TO_M, mesh.nodes[d * 3 + 2] * MM_TO_M],
+    ];
+    const { K: Ke, B } = tet4Element(coords, D);
+    tetB[e] = B;
+    for (let ri = 0; ri < 4; ri++) for (let rj = 0; rj < 3; rj++) {
+      const gi = idx[ri] * 3 + rj, li = ri * 3 + rj;
+      for (let ci = 0; ci < 4; ci++) for (let cj = 0; cj < 3; cj++) {
+        const gj = idx[ci] * 3 + cj, lj = ci * 3 + cj;
+        sparseAdd(K, gi, gj, Ke[li][lj]);
+      }
+    }
+  }
+
+  // Dirichlet (u=0 en nodos fijos) por eliminación simétrica — NO depende de la carga.
+  const fixedDOFset = new Set<number>();
+  for (const n of fixedNodesSet) { fixedDOFset.add(n * 3); fixedDOFset.add(n * 3 + 1); fixedDOFset.add(n * 3 + 2); }
+  for (const dd of fixedDOFset) {
+    const row = K.rows[dd];
+    for (const [j] of row) { if (j !== dd && K.rows[j].has(dd)) K.rows[j].delete(dd); }
+    K.rows[dd] = new Map([[dd, 1]]);
+  }
+
+  return {
+    mesh, K, tetB, D, material, nDOF,
+    fixedDOF: [...fixedDOFset], fixedNodes: [...fixedNodesSet], loadNodes: [...loadNodesSet],
+    loadArea, loadNormal,
+    tol: opts.tol ?? 1e-6, maxIter: opts.maxIter ?? Math.max(2000, 4 * nDOF),
+    uPrev: null,
+  };
+}
+
+/** Fase CARGA del FEA incremental: arma f, resuelve (warm-start) y recupera σ. Barato. */
+export function solveLoadOnSession(
+  s: FEASession,
+  load: { totalForce?: [number, number, number]; pressure?: number; pressureDir?: [number, number, number] },
+  warmStart = true,
+): FEAResult {
+  const { K, mesh, tetB, D, material, nDOF, loadNodes } = s;
+
+  // vector de fuerza (N)
+  const f = new Float64Array(nDOF);
+  let force: [number, number, number] = load.totalForce ?? [0, 0, 0];
+  if (load.pressure !== undefined) {
+    const dir = load.pressureDir ?? s.loadNormal;
+    const dlen = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+    const Fmag = load.pressure * (s.loadArea * MM_TO_M * MM_TO_M); // N
+    force = [(dir[0] / dlen) * Fmag, (dir[1] / dlen) * Fmag, (dir[2] / dlen) * Fmag];
+  }
+  if (loadNodes.length > 0) {
+    const per = [force[0] / loadNodes.length, force[1] / loadNodes.length, force[2] / loadNodes.length];
+    for (const n of loadNodes) { f[n * 3] += per[0]; f[n * 3 + 1] += per[1]; f[n * 3 + 2] += per[2]; }
+  }
+  for (const dd of s.fixedDOF) f[dd] = 0;
+
+  const u0 = warmStart && s.uPrev && s.uPrev.length === nDOF ? s.uPrev : undefined;
+  const sol = sparseCG(K, f, s.tol, s.maxIter, u0);
+  s.uPrev = sol.u;
+  const uM = sol.u;
+
+  // recuperar esfuerzos (idéntico a runFEA): ε=B·u, σ=D·ε, von Mises
+  const vmElem = new Float64Array(mesh.nTets);
+  const vmNodalAcc = new Float64Array(mesh.nNodes);
+  const vmNodalCnt = new Float64Array(mesh.nNodes);
+  for (let e = 0; e < mesh.nTets; e++) {
+    const idx = [mesh.tets[e * 4], mesh.tets[e * 4 + 1], mesh.tets[e * 4 + 2], mesh.tets[e * 4 + 3]];
+    const ue = new Array(12);
+    for (let r = 0; r < 4; r++) { ue[r * 3] = uM[idx[r] * 3]; ue[r * 3 + 1] = uM[idx[r] * 3 + 1]; ue[r * 3 + 2] = uM[idx[r] * 3 + 2]; }
+    const B = tetB[e];
+    const eps = new Array(6).fill(0);
+    for (let i = 0; i < 6; i++) { let ss = 0; for (let j = 0; j < 12; j++) ss += B[i][j] * ue[j]; eps[i] = ss; }
+    const sig = new Array(6).fill(0) as unknown as StressTensor;
+    for (let i = 0; i < 6; i++) { let ss = 0; for (let j = 0; j < 6; j++) ss += D[i][j] * eps[j]; (sig as number[])[i] = ss; }
+    const vm = vonMisesStress(sig);
+    vmElem[e] = vm;
+    for (const n of idx) { vmNodalAcc[n] += vm; vmNodalCnt[n] += 1; }
+  }
+  const vmNodal = new Float64Array(mesh.nNodes);
+  for (let i = 0; i < mesh.nNodes; i++) vmNodal[i] = vmNodalCnt[i] > 0 ? vmNodalAcc[i] / vmNodalCnt[i] : 0;
+
+  const disp = new Float64Array(nDOF);
+  const dispMag = new Float64Array(mesh.nNodes);
+  let maxDisp = 0;
+  for (let i = 0; i < mesh.nNodes; i++) {
+    const ux = uM[i * 3] / MM_TO_M, uy = uM[i * 3 + 1] / MM_TO_M, uz = uM[i * 3 + 2] / MM_TO_M;
+    disp[i * 3] = ux; disp[i * 3 + 1] = uy; disp[i * 3 + 2] = uz;
+    const m = Math.hypot(ux, uy, uz); dispMag[i] = m; if (m > maxDisp) maxDisp = m;
+  }
+  let maxVM = 0;
+  for (let e = 0; e < mesh.nTets; e++) if (vmElem[e] > maxVM) maxVM = vmElem[e];
+
+  return {
+    mesh, displacements: disp, vonMisesNodal: vmNodal, vonMisesElem: vmElem,
+    dispMagNodal: dispMag, maxVonMises: maxVM, maxDisplacement: maxDisp,
+    minSafetyFactor: maxVM > 0 ? material.yieldStrength / maxVM : Infinity,
+    solver: { iterations: sol.iterations, residual: sol.residual, converged: sol.converged },
+    fixedNodes: s.fixedNodes, loadedNodes: loadNodes,
   };
 }
 
