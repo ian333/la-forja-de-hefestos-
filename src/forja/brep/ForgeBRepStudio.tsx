@@ -25,6 +25,7 @@ import { ACESFilmicToneMapping } from 'three';
 import { Canvas, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import ShortcutOverlay from '../../components/ShortcutOverlay';
+import SketchEditor from './SketchEditor';
 import {
   initOCCT,
   _setActiveOCCT,
@@ -152,7 +153,7 @@ const FEA_MATERIAL_KEY: Record<string, keyof typeof MATERIAL_DATABASE> = {
 // ──────────────────────────────────────────────────────────────────
 // El documento = grafo de features (sketch base + operaciones ordenadas)
 // ──────────────────────────────────────────────────────────────────
-type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear';
+type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom';
 
 /** Un escalón del perfil de revolución: radio exterior r y longitud axial L. */
 interface RevStep { r: number; L: number; }
@@ -183,6 +184,9 @@ interface SketchFeature {
   steps: RevStep[];
   // Engrane de involuta (7º clásico). El perfil sale de buildGearSketch().
   gear: GearParams;
+  // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
+  // resuelto por el solver de restricciones. Reemplaza las plantillas.
+  customProfile?: Pt2[];
 }
 
 /** Defaults del engrane (m=2, Z=20, α=20°, espesor 10, barreno 8). */
@@ -603,6 +607,7 @@ function buildShape(
     if (sketch.kind === 'lprofile') return lProfile(sketch.width, sketch.height, sketch.legW);
     if (sketch.kind === 'revprofile') return revProfile(sketch.steps);
     if (sketch.kind === 'gear') return gearProfile(sketch.gear);
+    if (sketch.kind === 'custom') return sketch.customProfile ?? [];
     return circleGhost(sketch.radius); // solo para revolve poligonal; circle usa extrudeCircle
   };
 
@@ -1426,6 +1431,8 @@ export default function ForgeBRepStudio() {
   // lo lee el callback de picking sin closure viejo; el estado alimenta el hint.
   const placingHoleRef = useRef<string | null>(null);
   const [placingHole, setPlacingHole] = useState(false);
+  // Editor de croquis 2D (dibujar perfil con restricciones, kind 'custom').
+  const [sketchOpen, setSketchOpen] = useState(false);
 
   // ── SIMULACIÓN FEA (von Mises real sobre el sólido) ──
   // Caras de borde elegidas por face-picking: la FIJA (empotramiento u=0) y la
@@ -1460,6 +1467,7 @@ export default function ForgeBRepStudio() {
     if (sketch.kind === 'lprofile') return lProfile(sketch.width, sketch.height, sketch.legW);
     if (sketch.kind === 'revprofile') return revProfile(sketch.steps);
     if (sketch.kind === 'gear') return gearProfile(sketch.gear);
+    if (sketch.kind === 'custom') return sketch.customProfile ?? [];
     return circleGhost(sketch.radius);
   }, [sketch]);
 
@@ -1609,6 +1617,14 @@ export default function ForgeBRepStudio() {
     setPlacingHole(true);
     setPickMode('face');
   }, [ops]);
+  // Editor de croquis: al Terminar, el perfil dibujado (resuelto por el solver) pasa
+  // a kind 'custom' y se garantiza un extrude que lo solidifica.
+  const onSketchFinish = useCallback((prof: Pt2[]) => {
+    setSketch((s) => ({ ...s, kind: 'custom', customProfile: prof }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude') ? cur : [...cur, { id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }]));
+    setActiveOp(null);
+    setSketchOpen(false);
+  }, []);
 
   // ── Feature ENGRANE (botón btn-gear): pasa el croquis a 'gear', garantiza el
   // extrude que lo solidifica (perfil de involuta → sólido → resta del barreno)
@@ -2132,6 +2148,11 @@ export default function ForgeBRepStudio() {
           </group>
         </CadViewport>
 
+        {/* EDITOR DE CROQUIS 2D — dibujar perfil con restricciones (solver en vivo). */}
+        {sketchOpen && (
+          <SketchEditor onFinish={onSketchFinish} onCancel={() => setSketchOpen(false)} />
+        )}
+
         {/* PALETA DE ATAJOS estilo Fusion "S" en el cursor (se abre con la tecla S). */}
         {shortcutPos && (
           <ShortcutOverlay
@@ -2258,6 +2279,7 @@ export default function ForgeBRepStudio() {
           {/* ── TOOLBAR de operaciones (botones) ── */}
           <div className="fb-toolbar" data-testid="toolbar">
             <span className="fb-tb-label">Operaciones</span>
+            <button data-testid="btn-sketch" onClick={() => setSketchOpen(true)} title="Croquis: dibuja el perfil con restricciones (azul→negro)">✎ Croquis</button>
             <button data-testid="btn-extrude" onClick={() => addOp('extrude')} title="Extrude (boss/base)">⬓ Extrude</button>
             <button data-testid="btn-hole" onClick={() => startHole()} title="Barreno / corte cilíndrico — clic en la cara para colocarlo">◎ Hole</button>
             <button data-testid="btn-fillet" onClick={() => addOp('fillet')} title="Redondeo de aristas">◜ Fillet</button>
