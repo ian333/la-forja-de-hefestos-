@@ -1,0 +1,202 @@
+{
+  "keymap": [
+    {
+      "key": "S",
+      "es": "croquiS / Sketch",
+      "en": "Sketch",
+      "accion": "Entrar al croquis sobre el plano/cara activo (y abrir la caja de atajos en el cursor, estilo Fusion 'S'). Reusa enableFacePick para inferir el plano si hay cara seleccionada."
+    },
+    {
+      "key": "L",
+      "es": "Línea",
+      "en": "Line",
+      "accion": "Herramienta de línea: traza segmentos del perfil cerrado. Abre el croquis solo si no estaba abierto."
+    },
+    {
+      "key": "C",
+      "es": "Círculo",
+      "en": "Circle",
+      "accion": "Círculo por centro+diámetro (mnemónico Círculo/Circle, idéntico en ambos idiomas)."
+    },
+    {
+      "key": "R",
+      "es": "Rectángulo",
+      "en": "Rectangle",
+      "accion": "Rectángulo de 2 puntos (mnemónico Rectángulo/Rectangle, idéntico en ambos idiomas)."
+    },
+    {
+      "key": "D",
+      "es": "Dimensión / acotar (cota)",
+      "en": "Dimension",
+      "accion": "Acotar: fija cotas dimensionales y deja el croquis fully-defined. (D vale para Dimensión y Dimension.)"
+    },
+    {
+      "key": "E",
+      "es": "Extruir",
+      "en": "Extrude",
+      "accion": "Extruye el perfil cerrado a sólido (boss/base). Cierra el croquis solo y auto-selecciona las regiones cerradas. addOp('extrude')."
+    },
+    {
+      "key": "B",
+      "es": "Barreno (boring)",
+      "en": "Boring / hole",
+      "accion": "Barreno cilíndrico: tras pulsar B se entra a pickMode='face' y el SIGUIENTE clic en la cara FIJA el centro del barreno en el punto del clic (no en sliders). addOp('hole'). (B=Barreno/Boring en ambos idiomas; se reserva H para 'hide'.)"
+    },
+    {
+      "key": "F",
+      "es": "Fillet (redondeo)",
+      "en": "Fillet",
+      "accion": "Redondeo de aristas: entra a pickMode='edge' para elegir las aristas. addOp('fillet'). (F=Fillet, término aceptado también en español técnico.)"
+    },
+    {
+      "key": "X",
+      "es": "chaflán (X de biSECa el ángulo)",
+      "en": "Chamfer",
+      "accion": "Bisel/chaflán de aristas: entra a pickMode='edge'. addOp('chamfer'). X libre de choque (C ya es círculo)."
+    },
+    {
+      "key": "W",
+      "es": "Wall / vaciado (shell)",
+      "en": "Wall / Shell",
+      "accion": "Vaciado a pared delgada: entra a pickMode='face' para elegir las caras abiertas. addOp('shell'). W=Wall (pared) en ambos idiomas; S ya es sketch."
+    },
+    {
+      "key": "V",
+      "es": "reVolución",
+      "en": "reVolve",
+      "accion": "Revolución del perfil alrededor de un eje (o arista recta seleccionada). addOp('revolve'). V por reVolve/reVolución (R ya es rectángulo)."
+    },
+    {
+      "key": "G",
+      "es": "enGrane",
+      "en": "Gear",
+      "accion": "Feature de engrane de involuta (m, Z, α, espesor, barreno). applyGear(). G=Gear/enGrane en ambos idiomas."
+    },
+    {
+      "key": "P",
+      "es": "Plano / Pick de cara",
+      "en": "Plane / Pick face",
+      "accion": "Activa el picking de cara para elegir el plano de trabajo / cara base (paso 1 del espinazo). enableFacePick()."
+    },
+    {
+      "key": "K",
+      "es": "acotar arista (picK de arista)",
+      "en": "picK edge",
+      "accion": "Activa el picking de arista (para revolve por eje, o seleccionar aristas de fillet/chamfer). enableEdgePick()."
+    },
+    {
+      "key": "Esc",
+      "es": "salir / cancelar",
+      "en": "escape / cancel",
+      "accion": "Sale del croquis o cancela el picking activo (pickMode='none', activeOp=null). Cierra la caja de atajos."
+    },
+    {
+      "key": "Enter",
+      "es": "repetir / confirmar",
+      "en": "repeat / confirm",
+      "accion": "Confirma el feature en edición y re-ejecuta la última herramienta (estilo SOLIDWORKS Repeat Last Command)."
+    }
+  ],
+  "commandPalette": [
+    {
+      "es": "Croquis: entrar / nuevo croquis",
+      "en": "Sketch: enter / new sketch",
+      "accion": "Abre el entorno de croquis sobre el plano o cara activos (auto-infiere el plano si hay una cara seleccionada)."
+    },
+    {
+      "es": "Línea",
+      "en": "Line",
+      "accion": "Traza segmentos rectos del perfil."
+    },
+    {
+      "es": "Círculo (centro-diámetro)",
+      "en": "Circle (center-diameter)",
+      "accion": "Círculo por centro y diámetro."
+    },
+    {
+      "es": "Rectángulo (2 puntos)",
+      "en": "Rectangle (2-point)",
+      "accion": "Rectángulo por dos esquinas."
+    },
+    {
+      "es": "Acotar / Dimensión",
+      "en": "Dimension",
+      "accion": "Aplica cotas dimensionales hasta dejar el croquis totalmente definido."
+    },
+    {
+      "es": "Restricción: coincidente / horizontal / vertical / tangente / igual",
+      "en": "Constraint: coincident / horizontal / vertical / tangent / equal",
+      "accion": "Aplica relaciones geométricas para definir el croquis (auto-inferencia mientras dibujas)."
+    },
+    {
+      "es": "Extruir (boss/base)",
+      "en": "Extrude (boss/base)",
+      "accion": "Convierte el perfil cerrado en sólido; auto-selecciona regiones cerradas y cierra el croquis."
+    },
+    {
+      "es": "Barreno / Boring (clic-en-cara fija el centro)",
+      "en": "Hole / Boring (click face sets center)",
+      "accion": "Taladra un cilindro; el centro se fija con el clic sobre la cara, no con sliders."
+    },
+    {
+      "es": "Fillet / Redondeo de aristas",
+      "en": "Fillet / Edge round",
+      "accion": "Redondea las aristas seleccionadas (vacío = todas)."
+    },
+    {
+      "es": "Chamfer / Bisel de aristas",
+      "en": "Chamfer / Edge bevel",
+      "accion": "Bisela las aristas seleccionadas."
+    },
+    {
+      "es": "Shell / Vaciado a pared delgada",
+      "en": "Shell / Thin-wall hollow",
+      "accion": "Vacía el sólido dejando pared delgada; las caras clicadas quedan abiertas."
+    },
+    {
+      "es": "Revolve / Revolución del perfil",
+      "en": "Revolve profile",
+      "accion": "Gira el perfil alrededor de un eje o arista recta seleccionada."
+    },
+    {
+      "es": "Engrane de involuta",
+      "en": "Involute gear",
+      "accion": "Genera el engrane (módulo m, dientes Z, ángulo α, espesor, barreno)."
+    },
+    {
+      "es": "Seleccionar cara / plano de trabajo",
+      "en": "Select face / work plane",
+      "accion": "Activa el picking de cara (paso 1 del espinazo: elegir el plano)."
+    },
+    {
+      "es": "Seleccionar arista / eje",
+      "en": "Select edge / axis",
+      "accion": "Activa el picking de arista (eje de revolve, aristas de fillet/chamfer)."
+    },
+    {
+      "es": "Ensamble: agregar 2º engrane",
+      "en": "Assembly: add 2nd gear",
+      "accion": "Activa la 2ª instancia a distancia entre centros C."
+    },
+    {
+      "es": "Mate de engrane (embonar dientes)",
+      "en": "Gear mate (mesh teeth)",
+      "accion": "Posiciona y fasea el 2º engrane para que los dientes embonen."
+    },
+    {
+      "es": "Análisis FEA (von Mises)",
+      "en": "FEA analysis (von Mises)",
+      "accion": "Selecciona cara fija + cara de carga y corre el FEA; pinta el esfuerzo."
+    },
+    {
+      "es": "Exportar STEP",
+      "en": "Export STEP",
+      "accion": "Exporta el sólido B-Rep como archivo STEP."
+    },
+    {
+      "es": "Ocultar interfaz (modo limpio)",
+      "en": "Hide chrome (clean mode)",
+      "accion": "Oculta la UI para captura/render."
+    }
+  ]
+}
