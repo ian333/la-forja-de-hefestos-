@@ -1,0 +1,519 @@
+{
+  "meta": {
+    "workflow": "forja-carencias-visual",
+    "agents": 43,
+    "logs": [
+      "Convenciones visuales leidas: 5/5",
+      "Carencias visuales propuestas: 10",
+      "Carencias visuales confirmadas: 9"
+    ]
+  },
+  "result": {
+    "references": [
+      {
+        "software": "Autodesk Fusion 360",
+        "visualConventions": [
+          "Sketch constraint state via geometry color: under-constrained geometry shows in a non-black color (default blue / orange for selected) and changes to BLACK once fully constrained; a red lock icon appears on the sketch node in the Browser when fully constrained. Doctrine for a CAD viz: animate lines snapping from blue to black to communicate 'this is now solved/locked'. (help.autodesk.com Fully define and constrain sketches)",
+          "Closed sketch profiles get a translucent BLUE shading fill (Sketch Palette > Show Profile) to signal a region that can be extruded; open/unclosed loops get no fill. The blue profile shade is the canonical 'this is a valid face you can build on' cue. (help.autodesk.com Sketch Palette reference)",
+          "Sketch plane shows a finite reference GRID with snap-to-grid; Sketch Palette toggles Sketch Grid and Snap. The grid plus the colored origin triad orient the user in the active 2D plane. Slice temporarily cuts bodies at the sketch plane so the sketch is never hidden behind solid. (help.autodesk.com Sketch Palette reference)",
+          "Selection priority filter (Body / Face / Edge / Component / Vertex) — only one can be active at a time — gates what the cursor pre-highlights and picks; the canonical Fusion selectable types are Bodies, Body Faces, Body Edges, Body Vertices, Components, Features, Joints, Sketch Curves. (help.autodesk.com Selection in Fusion)",
+          "Window/box selection: drag LEFT-to-RIGHT selects only objects fully enclosed; drag RIGHT-to-LEFT (and freeform counterclockwise) selects anything the boundary encloses OR crosses. The selection region itself is drawn as a translucent colored area: 'The background inside the area changes color and becomes translucent.' (help.autodesk.com Selection in Fusion)",
+          "Live in-canvas manipulators are the primary editing surface: a DistanceValueCommandInput draws a draggable ARROW in the graphics window for extrude depth / plane offset; AngleValueCommandInput draws a draggable angle WIDGET; DirectionCommandInput draws an arrow whose direction you flip; a TriadCommandInput draws a full position/rotation/scale/flip triad. Manipulators stay invisible until prerequisite input is supplied, then appear. (Fusion 360 API Command Inputs)",
+          "Operation preview-before-commit: dragging the extrude manipulator builds a live preview solid in the canvas and a Flip icon mirrors the extrusion over the profile plane before clicking OK — the result is shown, not just described, prior to confirmation. (help.autodesk.com Extrude a solid body)",
+          "ViewCube (top-right): a labeled cube whose faces, edges, and corners orient the camera; click a face for an ortho view, an edge/corner for an iso view; orbit by dragging it. A Home icon resets to the default view and the cube reflects the model Up direction (Z-up default, indicates Y-up when changed). (help.autodesk.com Fusion interface / Navigation)",
+          "Navigation Bar holds Zoom, Pan, Orbit plus the Display Settings menu that controls visual style and canvas appearance; middle-mouse Pan/Zoom/Orbit behavior is remappable to Fusion/Alias/Inventor/SolidWorks schemes. (help.autodesk.com Navigation / Pan Zoom Orbit preferences)",
+          "Realistic material display: Appearances (color, patterns, texture images, bump maps) override the physical-material color WITHOUT changing engineering properties, and come in Opaque, Transparent, Metal (high specularity/glossiness), Layered (carbon fiber, metallic paint), and Solid Wood categories — applied by drag-drop onto components, bodies, or faces. (help.autodesk.com Materials and appearances)",
+          "Canvas environment/lighting cues, all toggleable: Object Shadow (bodies cast onto bodies), Ground Shadow (bodies cast onto the ground plane), Ground Reflection (bodies reflected on the ground plane), Ambient Occlusion (contact-based shading from ambient light exposure), Environment Dome (virtual sky + horizon), and Anti-Aliasing (smooths curved edges/surfaces). Ground Plane enables both ground shadows and reflections. (help.autodesk.com Display preferences reference)",
+          "Component/feature color-coding (Inspect > Display Component Colors, Shift+N): each component renders as a distinct color in the canvas, Browser, AND Timeline simultaneously; a feature touching multiple components shows a color swatch per component. Cycle Component Color recolors a part. This is the canonical way structure is read at a glance. (help.autodesk.com Color code components and features)",
+          "Dimensions/measurements render as an OVERLAY directly on the geometry in the canvas (not only in a dialog): the Measure tool shows results both in the dialog and on the model, can display X/Y/Z deltas relative to a chosen coordinate system, and hovering a result value highlights the corresponding distance/angle on the geometry. (help.autodesk.com Measure objects)"
+        ],
+        "feedbackPatterns": [
+          "Hover / rollover (pre-highlight): placing the cursor over geometry pre-highlights the single entity under the priority filter before any click; with the Measure tool, Show Snap Points displays candidate snap points on the face/edge/sketch curve under the pointer, and Ctrl/Cmd locks to a snap point while Shift hides snap points. (help.autodesk.com Selection / Measure)",
+          "Click to select: the picked face/edge/body/vertex is highlighted as selected (distinct from the hover pre-highlight); Ctrl/Cmd toggles objects into/out of the selection set, Shift only adds without removing. (help.autodesk.com Selection in Fusion)",
+          "Box/lasso drag feedback: the active marquee or freeform lasso paints a translucent colored fill over its interior in real time ('the background inside the area changes color and becomes translucent'), and the fill color/behavior signals enclose-only (L-to-R / clockwise) vs enclose-or-cross (R-to-L / counterclockwise). (help.autodesk.com Selection in Fusion)",
+          "Drag-to-edit feedback: dragging a value manipulator (arrow for distance, widget for angle, triad for move) live-updates a preview of the resulting body in the canvas; a Flip icon lets you reverse direction mid-operation — the model redraws continuously so the user sees the outcome before committing. (help.autodesk.com Extrude / API Command Inputs)",
+          "Success / solved feedback (sketch): when the last degree of freedom is removed, the sketch geometry flips from its working color to BLACK and a red lock icon appears on the sketch in the Browser — the unambiguous 'fully constrained / done' signal. (help.autodesk.com Fully define and constrain sketches)",
+          "Under-defined feedback: geometry that still has freedom stays in its non-black working color (blue), inviting more constraints/dimensions; this persistent color difference is the running 'not done yet' indicator. (help.autodesk.com Fully define and constrain sketches)",
+          "Performance-adaptive feedback: when Dynamic graphics is on, canvas effects (shadows, AO, reflections, anti-aliasing) are automatically reduced or toggled off in priority order during orbit/pan to hold the target frame rate, then restored when navigation stops. (help.autodesk.com Display preferences reference)"
+        ],
+        "sources": [
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Sketch/files/SKT-FULLY-DEFINE-CONSTRAIN-SKETCH.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Sketch/files/GUID-4183A4B7-E002-4396-AD5A-7FF3C8B2F33A.htm",
+          "https://help.autodesk.com/view/fusion360/ENU/?guid=SLD-SELECTION",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Model/files/SLD-SELECTION.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-360-API/files/CommandInputs_UM.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Model/files/SLD-EXTRUDE-SOLID.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-GetStarted/files/GS-THE-FUSION-INTERFACE.htm",
+          "https://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7B742BB2-65B3-4ADA-9B11-9D57E1E31292",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Render/files/RND-MATS-APPEARANCES.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-GetStarted/files/GUID-878489CD-3A23-4303-8450-C2F4F8E410B1.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Model/files/GUID-4969CAA2-5C5F-4E84-B046-92EB480D5024.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Model/files/SLD-MEASURE.htm",
+          "https://help.autodesk.com/view/fusion360/ENU/courses/AP-TIP-PAN-ZOOM-ORBIT-PREFERENCES"
+        ]
+      },
+      {
+        "software": "SOLIDWORKS (Dassault Systèmes) — lenguaje visual extraído de la documentación oficial (help.solidworks.com)",
+        "visualConventions": [
+          "Selección de cara/arista: los elementos en el área gráfica se RESALTAN al seleccionarlos. El color de selección es configurable en Tools > Options > System Options > Colors, donde existen los slots 'Selected Item 1' y 'Selected Item 2'. SOLIDWORKS trae tres esquemas de resaltado predefinidos: Blue, Green y Orange (más esquemas personalizados guardables). En patrones, las instancias se resaltan con 'Selected Item 1' y la semilla (seed) con 'Selected Item 2' para distinguir la cara/feature origen.",
+          "Preselección (hover): los elementos se 'dynamically highlighted' (resaltado dinámico) cuando el puntero pasa por encima, ANTES de hacer clic. El hover usa un color distinto al de selección confirmada (slot 'Dynamic highlighting' en System Options > Colors), de modo que pre-resaltado-al-pasar-el-mouse y seleccionado-al-hacer-clic se ven diferentes.",
+          "Preview en vivo de la operación (Instant3D): geometría se crea y modifica arrastrando 'drag handles' y 'rulers' (reglas en pantalla) que miden con precisión la modificación mientras se arrastra; aparece una regla angular para revoluciones, drafts y al usar los anillos del triad para rotar Live Section Planes. El modelo se actualiza dinámicamente en tiempo real durante el drag (preview antes de soltar).",
+          "Confirmación de operación: toda operación se ejecuta vía PropertyManager con un preview en vivo en el área gráfica; OK (acepta) y Cancel (descarta) aparecen DOS veces — en la esquina superior izquierda del PropertyManager y en la 'Confirmation Corner' (esquina superior derecha del área gráfica) para confirmar sin mover el puntero de vuelta al panel.",
+          "Reference Triad: un triad aparece en documentos de pieza y ensamble para orientar al ver el modelo; muestra las direcciones globales X, Y, Z y sirve para cambiar la orientación de vista (clic en un eje del triad re-orienta la cámara). Se puede ocultar, pero no usar como punto de inferencia. Convención de color de ejes estándar (rojo X, verde Y, azul Z).",
+          "Cotas/dimensiones — driving vs driven: las dimensiones de referencia (driven, no manejan el modelo) son GRISES y aparecen entre paréntesis por defecto; las driving (que controlan el modelo) usan otro color. Los colores de cada tipo de cota se configuran en Tools > Options > System Options > Colors, y los paréntesis en Document Properties > Dimensions.",
+          "Estado de geometría de sketch por COLOR: azul = entidad no totalmente definida (under defined); negro = totalmente definida (fully defined); el origen del sketch se dibuja en rojo. Existen además estados over defined, dangling y no-resuelto con sus colores (rojo / amarillo / rosa / café-brown), donde el café aparece para relaciones en el PropertyManager Display/Delete Relations y en el FeatureManager. El estado del sketch (entidad por entidad) se comunica puramente por color.",
+          "Rejilla del plano de sketch: se puede mostrar una grid en el sketch o dibujo activo; espaciado y 'minor grid lines per major' se configuran en Document Properties > Grid/Snap, con opciones de snap independientes. La misma config de espaciado aplica a las reglas (rulers) del dibujo.",
+          "Materiales realistas / sombras / ambiente: RealView Graphics da soporte por hardware (GPU) de shading avanzado en tiempo real, incluyendo self-shadowing (auto-sombras desde la primera luz direccional), reflejos de escena y de entorno (environment reflections). Se complementa con Ambient Occlusion para añadir realismo sin renderizar. Si la GPU es compatible con RealView, está activado por defecto. Las apariencias (appearances) aplican el material visual sobre la geometría.",
+          "Geometría válida vs sobre-restringida: en sketches, las entidades resueltas y bien definidas van en negro (fully defined); las sobre-restringidas (over defined) se marcan en rojo y disparan el mensaje de error 'Over Defined Sketch', con herramientas de diagnóstico ('Diagnosing/Resolving Over Defined Sketches'). En el FeatureManager, los errores de rebuild se distinguen de las advertencias por iconos (vía 'What's Wrong?')."
+        ],
+        "feedbackPatterns": [
+          "Hover (preselección): el elemento bajo el puntero se 'dynamically highlighted' con el color de 'Dynamic highlighting' antes del clic — feedback de qué se va a seleccionar.",
+          "Selección (clic): el elemento se resalta con el color de 'Selected Item 1' (o 'Selected Item 2' para semillas de patrón); esquema por defecto Blue/Green/Orange configurable.",
+          "Drag (Instant3D): preview en vivo con drag handles + reglas en pantalla que muestran la medida exacta mientras se arrastra; regla angular para revoluciones/drafts/rotación de planos de sección — la geometría se recalcula en tiempo real.",
+          "Éxito / confirmación: OK (verde, marca de visto) en PropertyManager y en la Confirmation Corner del área gráfica aplica la operación; el preview se materializa en geometría final.",
+          "Cancelar / descartar: Cancel (X) en PropertyManager / Confirmation Corner descarta el preview sin modificar el modelo.",
+          "Error de sketch (over defined): entidades sobre-restringidas en rojo + mensaje 'Over Defined Sketch'; las no totalmente definidas quedan en azul como aviso de que faltan relaciones/cotas; el negro confirma 'fully defined' (estado sano).",
+          "Error/advertencia de feature (rebuild): tras un rebuild, el FeatureManager Design Tree marca features con iconos de error vs advertencia; el comando 'What's Wrong?' lista los problemas — con errores no se genera geometría, con solo advertencias sí.",
+          "Relaciones problemáticas: las relaciones colgantes/inválidas (dangling) se muestran en café (brown) en el área gráfica y en el panel Display/Delete Relations, señalando referencias rotas."
+        ],
+        "sources": [
+          "https://help.solidworks.com/2024/english/SolidWorks/sldworks/c_highlighting.htm",
+          "https://help.solidworks.com/2024/english/SolidWorks/sldworks/HIDD_OPTIONS_SYSTEM_COLORS.htm",
+          "https://help.solidworks.com/2025/English/SolidWorks/sldworks/r_reference_triad.htm",
+          "https://help.solidworks.com/2024/English/SolidWorks/sldworks/c_realview_graphics.htm",
+          "https://help.solidworks.com/2018/english/SolidWorks/sldworks/t_ambient_occlusion.htm",
+          "https://help.solidworks.com/2024/English/SolidWorks/sldworks/c_instant3d_rulers.htm",
+          "https://help.solidworks.com/2022/english/solidworks/sldworks/c_instant3d.htm",
+          "https://help.solidworks.com/2024/English/SolidWorks/sldworks/c_Sketch_Geometry_Status.htm",
+          "https://help.solidworks.com/2021/english/SolidWorks/sldworks/t_Diagnosing_Over_Defined_Sketches.htm",
+          "https://help.solidworks.com/2020/English/SolidWorks/sldworks/c_Resolving_Over_Defined_Sketches.htm",
+          "https://help.solidworks.com/2012/english/solidworks/sldworks/hide_overdefinedsketch.htm",
+          "https://help.solidworks.com/2024/english/SolidWorks/sldworks/HIDD_OPTIONS_GRID.htm",
+          "https://help.solidworks.com/2023/English/SolidWorks/sldworks/c_Reference_Dimensions.htm",
+          "https://help.solidworks.com/2020/english/SolidWorks/sldworks/c_Formatting_Dimensions_in_Drawings.htm",
+          "https://help.solidworks.com/2016/english/solidworks/sldworks/r_pm_overview.htm",
+          "https://help.solidworks.com/2016/english/WhatsNew/c_command_confirmation.htm",
+          "https://help.solidworks.com/2017/english/solidworks/sldworks/hidd_new_whats_wrong.htm",
+          "https://help.solidworks.com/2024/english/SolidWorks/sldworks/c_component_icons_fmdt.htm"
+        ]
+      },
+      {
+        "software": "Onshape (cloud CAD by PTC) — visual language extracted from official help docs at cad.onshape.com/help",
+        "visualConventions": [
+          "SELECTION HIGHLIGHT — selected part, surface, edge, or vertex in the graphics area turns Vivid Yellow #ffc107 (this is the single 'this is selected' signal across faces/edges/sketch entities). Selection is a click-toggle: click to select, click again to deselect, no modifier key needed for multi-select.",
+          "CREATE-SELECTION TWO-TONE — when a selection auto-propagates (e.g. tangent-connected or adjacent loop), the entity you originally picked is ORANGE and the entities Onshape auto-added are YELLOW, so the user can read 'mine vs derived' at a glance.",
+          "SKETCH GEOMETRY STATE BY COLOR (core convention) — in an ACTIVE sketch: Pure Blue #0000ff = under-defined/draggable (you can move it or resize it); Black #000000 = fully defined/constrained (locked, cannot drag); Moderate Red #bd3039 = over-defined / contains an error / unresolvable. A sketch becoming fully constrained is signaled purely by entities turning from blue to BLACK.",
+          "INACTIVE SKETCH — lines/curves of a sketch you're not editing render in muted Dark Grayish Blue #949ba0; closed sketch regions get a faint Light Grayish Blue #E3E6E9 fill so closed profiles read as fillable.",
+          "SKETCH PLANE / GRID — the sketch plane lines and plane text render in Very Soft Blue #90cef1; planes appear as a translucent bounded rectangle you sketch onto (the plane edges in #90cef1).",
+          "HOVER / PRE-HIGHLIGHT — hovering a sketch edge tints it Very Soft Orange #f3bf8e; hovering a sketch dimension tints it Very Soft Orange #d9bfa0. Hover is a softer/warmer tone, distinct from the saturated yellow of an actual selection. Hovering an entity also reveals ONLY that entity's constraint glyphs (decluttered feedback).",
+          "DIMENSIONS — driving dimensions, their arrows and witness/extension lines render in Black #000000; DRIVEN (reference) dimensions render in light gray, making driving-vs-driven readable by color alone. Dimension value is an inline editable field placed on the drawing/sketch.",
+          "CONSTRAINT GLYPHS — drawn as a small square badge: normal/well-defined = gray square with a black icon inside; cross-sketch constraint = blue-background badge; on hover the referenced constraint goes a darker blue. Problem constraint = red square with a white icon.",
+          "MATE CONNECTOR / WORLD TRIAD AXES — color-coded axes: X = Strong Red #cd0000, Y = Dark Lime Green #009500, Z = Strong Blue #0000d0 (standard RGB-XYZ mapping). The Triad Manipulator is three perpendicular arrows aligned to world axes specifying a 3D position (appears in assemblies; its origin can snap to implicit mate-connector points).",
+          "VIEW CUBE — sits in the upper-right corner of the graphics area; a labeled cube whose SIDES (Top/Bottom/Front/Back/Left/Right) snap to orthographic plane views and whose CORNERS snap to trimetric views; surrounding arrow buttons rotate the model in 15-degree increments (90 or 5 degrees with modifiers). It also exposes the view menu: Isometric/Dimetric/Trimetric, Zoom to Fit, and render modes.",
+          "RENDER / SHADE MODES — Shaded (default, faces + edges), Shaded without edges, Shaded with hidden edges, Hidden edges removed, Hidden edges visible, and Translucent (part shown see-through). Perspective view is a toggle (relative-distance camera) vs default orthographic.",
+          "REALISTIC MATERIALS live in a separate Render Studio (photoreal) — appearances are real material categories (Fabric/Glass/Masonry/brushed aluminum) with parameters that change per material; environments are HDRI-style backdrops that ALSO supply scene illumination; placeable diffuse area lights (shaped, movable, resizable, direction in degrees); ground shadows/contact shadows, reflections, indirect/bounce lighting, bloom (glow/glare around bright sources), and matte fog (Koschmieder atmospheric falloff) for depth. The editing viewport uses flat studio lighting; photoreal look is reserved for Render Studio.",
+          "ALERT / MESSAGE STYLING — info alerts: Dark Blue #094174 text on a light-blue background; warning & error alerts: Very Dark Gray #333333 text on an orange/red background. General system errors surface as a bubble notification at the top of the window."
+        ],
+        "feedbackPatterns": [
+          "HOVER (pre-select) — entity warms to a soft orange (#f3bf8e edges / #d9bfa0 dimensions) and reveals only its own constraint glyphs; midpoints of edges/sketch lines become grabbable on hover; this warm tint is deliberately distinct from the saturated yellow of an actual selection.",
+          "SELECT (click) — entity snaps to Vivid Yellow #ffc107; click again toggles it off. With Create Selection active, your pick is ORANGE and auto-propagated geometry is YELLOW.",
+          "BOX / WINDOW SELECT — direction-encoded: drag LEFT-to-RIGHT = solid BLUE outline + blue-shaded box, selects only fully-enclosed entities; drag RIGHT-to-LEFT = dotted YELLOW outline + yellow-shaded box, selects everything the box touches.",
+          "DRAG (sketch) — only blue (under-defined) geometry responds to dragging; black (fully constrained) geometry is immovable, so the cursor/no-move is itself the feedback that a sketch is locked. As you add constraints/dimensions, entities flip blue→black in real time.",
+          "LIVE OPERATION PREVIEW — while a feature dialog (e.g. Extrude) is open, the result previews live in the graphics area and updates in real time as parameters change; an on-screen manipulator ARROW sets depth/direction (click the arrow to flip direction); a Preview opacity slider (0% = before / 100% = after) lets you blend the proposed result against the current model before committing.",
+          "ACCEPT vs CANCEL — a green CHECKMARK (or Enter) commits the feature; a red X (or Esc) cancels and discards. Dialog TITLE color doubles as a readiness signal: black title = parameters valid/ready to accept, red title = incomplete or erroneous input.",
+          "FIELD-LEVEL ERROR — an invalid input field is outlined in RED; a bad selection shows red in the selection list AND turns the corresponding part/sketch entity red in the graphics area, linking the dialog error to the 3D geometry.",
+          "FEATURE-TREE ERROR/WARNING — problems surface as ORANGE text on the feature in the list and on the dialog title; hovering the orange text pops a tooltip summarizing the issue.",
+          "ERROR-STATE GEOMETRY — an entity in error renders RED #bd3039; selecting an already-red entity deepens it to a darker shade of red (so 'selected + still broken' stays distinguishable).",
+          "CONSTRAINT SUCCESS vs PROBLEM — a healthy constraint badge is a gray square with a black icon; a broken one becomes a red square with a white icon, so constraint health is readable without opening a panel.",
+          "MATE STATUS (assemblies) — mate indicators glow Very Soft Blue #90cef1 when good, Moderate Red #bd3039 when problematic, and Dark Gray #999999 when suppressed/inactive.",
+          "NAVIGATION RESPONSIVENESS (Render Studio) — progressive rendering: resolution drops during camera move for responsiveness then refines back up when the view settles, and an AI denoiser cleans the final frame — the temporary low-res-then-sharpen behavior is itself the 'still computing' cue."
+        ],
+        "sources": [
+          "https://cad.onshape.com/help/Content/Home/colors.htm",
+          "https://cad.onshape.com/help/Content/Home/selection.htm",
+          "https://cad.onshape.com/help/Content/Home/create_selection.htm",
+          "https://cad.onshape.com/help/Content/Primer/viewing_and_selecting.htm",
+          "https://cad.onshape.com/help/Content/Sketch/working_with_constraints.htm",
+          "https://cad.onshape.com/help/Content/errorindicators.htm",
+          "https://cad.onshape.com/help/Content/View/view_navigation_and_the_view_cube.htm",
+          "https://cad.onshape.com/help/Content/triad.htm",
+          "https://cad.onshape.com/help/Content/moving.htm",
+          "https://cad.onshape.com/help/Content/extrude.htm",
+          "https://cad.onshape.com/help/Content/feature-basics.htm",
+          "https://cad.onshape.com/help/Content/render-studio-interface.htm",
+          "https://cad.onshape.com/help/Content/RenderStudio/render_studio_interface_scene_panel.htm",
+          "https://cad.onshape.com/help/Content/RenderStudio/render_studios.htm"
+        ]
+      },
+      {
+        "software": "FreeCAD (official documentation — wiki.freecad.org)",
+        "visualConventions": [
+          "SELECTION HIGHLIGHT IN 3D VIEW: FreeCAD distinguishes two states with distinct colors set on the Edit > Preferences > Std Base > Selection preferences page (Ctrl+,). 'Preselection' = the color shown when hovering the cursor over an object/sub-element (face, edge, vertex) BEFORE clicking; 'Selection' = the color of an object/sub-element once clicked. Both default to green and are user-configurable. The highlight applies at sub-element granularity: a single hovered face, edge, or vertex lights up, not just the whole body. (Preferences Editor; Selection view)",
+          "NAVIGATION CUBE: persistent gizmo in the TOP-RIGHT corner of the 3D view that both shows current camera orientation and changes it. The main cube has 26 clickable zones: 6 main square faces, 12 rectangular edge faces (since v0.20), and 8 triangular corner faces — each reorients the camera perpendicular to that zone. Surrounded by 4 triangular directional arrows (rotate view 90 deg about a perpendicular axis) and 2 curved arrows (roll). A small mini-cube/round button in the lower-right opens a drop-down menu (Orthographic, Perspective, Isometric, View All, View Selection); a separate corner button flips the view 180 deg about the vertical axis. Faces/buttons highlight on hover with parameter HiliteColor, default 0xaae2ffff (a light cyan-blue, RGBA where AA byte = transparency). (Navigation Cube)",
+          "AXIS CROSS / TRIAD: a color-coded coordinate triad shown via View > Toggle axis cross (Std AxisCross). Axes are color-coded X/Y/Z (conventionally red/green/blue). Inside the Sketcher the origin is a red dot at the center of the coordinate cross, with a pink X-axis and a light-green Y-axis drawn on the sketch plane. (Std AxisCross; Sketcher Tutorial; Glossary)",
+          "SKETCH GEOMETRY COLOR-CODING (state communicated by color): WHITE = normal geometry that still has degrees of freedom (under-constrained); GREEN = the whole sketch (all lines and vertices) once it is FULLY constrained (zero DoF); BLUE = construction geometry (toggled with Sketcher_ToggleConstruction) which only exists to help define constraints/other geometry and is not visible outside the sketch; external/projected geometry uses its own dedicated color. All of these are defaults and are individually re-configurable in Preferences > Sketcher. (Sketcher Workbench; Sketcher_ToggleConstruction; Sketcher Tutorial; Sketcher requirement for a sketch)",
+          "OVER/REDUNDANT/CONFLICTING CONSTRAINTS: if the solver detects a REDUNDANT constraint the sketch turns ORANGE; redundant and conflicting constraints are also reported textually in the 'Solver messages' section of the Sketcher task panel as underlined links — clicking the link selects the offending constraints in the view so they can be deleted. The Sketcher provides dedicated Select Redundant Constraints and Select Conflicting Constraints tools for this. (Sketcher Workbench; Sketcher_SelectConflictingConstraints; Sketcher_SelectRedundantConstraints; Sketcher Micro Tutorial - Constraint Practices)",
+          "DEGREES-OF-FREEDOM READOUT: the Solver messages panel always reports the remaining number of degrees of freedom; Sketcher_SelectElementsWithDoFs highlights exactly which elements are still free, complementing the white-vs-green geometry color. (Sketcher requirement for a sketch; Sketcher_SelectElementsWithDoFs)",
+          "DIMENSIONS / DIMENSIONAL CONSTRAINTS: dimensional (datum) constraints are drawn in the sketch with their numeric value as a label and can be repositioned by holding the left mouse button over the value and dragging. A dimension can be toggled between DRIVING and REFERENCE (driven) mode — reference dimensions do not constrain the sketch and their value is derived from the geometry, visually distinguishing controlling vs. reported dimensions. The doctrine favors geometric constraints over datum/dimensional ones. (Sketcher_ConstrainDistance; Sketcher_ToggleDrivingConstraint; Sketcher Micro Tutorial - Constraint Practices)",
+          "DRAW STYLE / SHADING (how solids are rendered): View > Draw style (Std_DrawStyle) offers As is, Points, Wireframe, Hidden line, No shading, Shaded, and Flat lines (default Flat lines = shaded surfaces + black edges). Per-object Display Mode (Flat lines / Shaded / Wireframe / Points) is set in View > Appearance. (Std_DrawStyle; Std_SetAppearance)",
+          "REALISTIC MATERIALS / APPEARANCE: View > Appearance (Std_SetAppearance, Ctrl+D) sets per-object material from a named material list (filterable by category) plus manual material properties: ambient color (described in the docs as 'the color of shadows on the object'), diffuse color ('the actual/base color of the object'), specular/shininess, and transparency — producing a shaded, lit appearance rather than flat fill. (Std_SetAppearance)",
+          "SKETCH / WORKING-PLANE GRID: a grid is drawn on the working plane to aid placement; spacing, the interval of emphasized 'main lines', and the snapping radius (max distance at which grid snap engages) are all configurable (Draft: Preferences > Draft > Grid and snapping; Sketcher has its own Toggle grid / Toggle snap). The Sketcher also has a 'Switch virtual space' helper to show/hide a secondary layer of constraints. (Draft_Snap_Grid; Sketcher Workbench)",
+          "LIVE PREVIEW BEFORE CONFIRM: feature operations (e.g. PartDesign Pad/Pocket/Revolution, fillet/chamfer) open a Task panel in the combo view and render the resulting solid live in the 3D view as parameters (length, direction, etc.) are edited, so the user sees the outcome before pressing OK; the operation is committed on OK and abandoned on Cancel. (PartDesign Workbench; Basic Part Design Tutorial; PartDesign Hole)"
+        ],
+        "feedbackPatterns": [
+          "HOVER (preselection): moving the cursor over geometry highlights the specific sub-element under it (face/edge/vertex) in the Preselection color before any click, previewing what a click would select. In the Navigation Cube, the hovered face/arrow/button lights up with HiliteColor (default light-cyan aae2ffff). (Selection view; Navigation Cube)",
+          "CLICK / SELECT: clicking turns the element to the Selection color; the selection is mirrored in the model tree and the Selection view panel. Clicking an underlined solver-message link in the Sketcher selects the corresponding (conflicting/redundant) constraints. Clicking a Navigation Cube face/arrow animates the camera to that orientation. (Selection view; Navigation Cube; Sketcher Workbench)",
+          "DRAWING WITH AUTO-CONSTRAINTS (snap feedback): while drawing in the Sketcher with Auto constraints enabled (default), a proposed-constraint icon appears next to the cursor whenever the cursor is positioned such that a constraint would be applied (e.g. horizontal/vertical/coincident); when approaching an existing point or the origin, that point highlights and the coincident-constraint icon appears by the cursor — telling the user the new geometry will snap/attach there. (Sketcher Tutorial)",
+          "DRAG: dimensional-constraint labels are repositioned by press-and-drag on the value; geometry/points can be dragged to reshape an under-constrained sketch, and the docs recommend dragging a freshly drawn line to visually confirm whether it is actually attached to neighbors (it moves independently if not constrained). Feature task panels update the live 3D preview continuously as values are dragged/typed. (Sketcher_ConstrainDistance; Sketcher Tutorial; PartDesign Workbench)",
+          "ERROR / CONFLICT STATE: adding a constraint that over-constrains the sketch raises a warning in the combo view asking the user to undo the conflicting constraint; a redundant constraint turns the whole sketch ORANGE; conflicting/redundant constraints are listed as clickable links in the Solver messages section so the user can jump to and delete them. (Sketcher Micro Tutorial - Constraint Practices; Sketcher Workbench)",
+          "SUCCESS / COMPLETION STATE: a sketch with all degrees of freedom removed flips entirely to GREEN and the Solver messages report 'fully constrained' (0 DoF) — the unambiguous 'done/valid' signal. Committing a feature with OK closes the task panel and replaces the live preview with the final shaded solid in the tree and 3D view. (Sketcher Tutorial; Sketcher requirement for a sketch; PartDesign Workbench)"
+        ],
+        "sources": [
+          "https://wiki.freecad.org/Navigation_Cube",
+          "https://wiki.freecad.org/Preferences_Editor",
+          "https://wiki.freecad.org/Selection_view",
+          "https://wiki.freecad.org/Fine-tuning",
+          "https://wiki.freecad.org/Sketcher_Workbench",
+          "https://wiki.freecad.org/Sketcher_Tutorial/en",
+          "https://wiki.freecad.org/Sketcher_requirement_for_a_sketch",
+          "https://wiki.freecad.org/Sketcher_ToggleConstruction",
+          "https://wiki.freecad.org/Sketcher_SelectConflictingConstraints",
+          "https://wiki.freecad.org/Sketcher_SelectRedundantConstraints",
+          "https://wiki.freecad.org/Sketcher_SelectElementsWithDoFs",
+          "https://wiki.freecad.org/Sketcher_ConstrainDistance/en",
+          "https://wiki.freecad.org/Sketcher_ToggleDrivingConstraint/en",
+          "https://wiki.freecad.org/Sketcher_Micro_Tutorial_-_Constraint_Practices",
+          "https://wiki.freecad.org/Std_AxisCross",
+          "https://wiki.freecad.org/Std_DrawStyle",
+          "https://wiki.freecad.org/Std_SetAppearance",
+          "https://wiki.freecad.org/Draft_Snap_Grid/tr",
+          "https://wiki.freecad.org/PartDesign_Workbench",
+          "https://wiki.freecad.org/Basic_Part_Design_Tutorial",
+          "https://wiki.freecad.org/Glossary"
+        ]
+      },
+      {
+        "software": "Blender",
+        "visualConventions": [
+          "SELECCION POR VERTICE: vertices NO seleccionados en negro, seleccionados en NARANJA, y el vertice ACTIVO en BLANCO (punto/dot). El tamano del punto del vertice es configurable en el tema del 3D Viewport.",
+          "SELECCION POR ARISTA: aristas no seleccionadas en negro, aristas seleccionadas en AMARILLO, y la arista ACTIVA en BLANCO.",
+          "SELECCION POR CARA: las caras seleccionadas se sombrean (shade) en NARANJA traslucido sobre la geometria; la cara ACTIVA ademas lleva un BORDE BLANCO que la distingue del resto de las seleccionadas. (docs: modeling/meshes/selecting/introduction)",
+          "Codigo de COLOR DE EJES universal y consistente en todos los gizmos: X = ROJO, Y = VERDE, Z = AZUL. Mismo mapeo en la triada de transformacion, el navigation gizmo y el grid floor.",
+          "NAVIGATION GIZMO en la esquina superior derecha del viewport: 'orbit gizmo' esferico que muestra la orientacion actual de la vista; los extremos de los ejes son etiquetas/bolas coloreadas (X rojo, Y verde, Z azul). El eje positivo es una bola rellena y el negativo una bola hueca/contorno. Arrastrar con LMB orbita; clic en una etiqueta de eje ALINEA la vista a ese eje, y un segundo clic salta al lado opuesto del mismo eje.",
+          "Junto al orbit gizmo, controles flotantes de navegacion: zoom (lupa), pan (mano), toggle camara y toggle perspectiva/ortografica.",
+          "PREVIEW EN VIVO DE LA OPERACION: las herramientas modales (Grab/Mover, Rotate, Scale) muestran el resultado en tiempo real en el viewport mientras se arrastra ANTES de confirmar; el LMB/Enter confirma y RMB/Esc cancela devolviendo todo a su estado original.",
+          "PANEL 'Adjust Last Operation' (redo panel): tras ejecutar una operacion aparece un panel HUD plegable en la esquina INFERIOR IZQUIERDA del viewport con los parametros editables de la ultima operacion; reabrible con F9 como popup. Editar un valor recalcula el resultado al instante (preview no destructivo).",
+          "ENTRADA NUMERICA durante el transform: al teclear numeros durante Grab/Rotate/Scale, los valores aparecen en el FOOTER (pie) del 3D Viewport; Tab/Ctrl-Tab cambia de eje. El eje restringido se resalta con su color (rojo/verde/azul) y una linea-guia de ese eje.",
+          "COTAS / DIMENSIONES via overlay de medicion (grupo Measurement de Viewport Overlays en Edit Mode): muestra NUMERICAMENTE longitud de aristas seleccionadas, area de caras, angulo entre caras y angulo en esquinas de cara, con las unidades definidas en Scene Properties; al transformar, la geometria conectada a la seleccion muestra sus medidas en vivo (p.ej. mover un vertice actualiza las longitudes de aristas conectadas).",
+          "Herramienta interactiva MEASURE (regla): se arrastran lineas en la escena para medir distancias/angulos, con snapping a geometria para precision.",
+          "MATERIALES REALISTAS: el viewport tiene modos de shading; 'Material Preview' renderiza con EEVEE + un HDRI de entorno para previsualizar materiales y pintar texturas; 'Rendered' usa el motor de render real de la escena para preview interactivo del resultado final.",
+          "SHADING SOLIDO (Workbench): geometria solida con iluminacion simplificada sin shader nodes; iluminacion por 'Studio lights' o 'MatCap' (material capture, volteable horizontalmente). Bueno para modelar/esculpir.",
+          "SOMBRAS/AMBIENTE en modo Solid: opcion 'Shadow' (controla el falloff cerca del borde de la sombra), 'Cavity' (resalta crestas y valles de la geometria, metodo preciso-lento o rapido), Ambient Occlusion, y 'Outline' (dibuja un contorno alrededor de los objetos con color ajustable). 'Object Color' usa el color de Viewport Display del objeto.",
+          "REJILLA DEL PLANO (grid/floor): en vista ortografica lateral se muestra una REJILLA (grid); en perspectiva se muestra el PLANO de suelo (ground/floor plane). La distancia entre lineas, el numero de subdivisiones entre lineas mayores, el tamano del grid y el COLOR de las lineas son configurables. Los ejes del mundo se dibujan tambien en el grid floor (lineas roja=X y verde=Y atravesando el origen).",
+          "VALIDEZ DE GEOMETRIA: a diferencia de un CAD parametrico, Blender (malla) NO tiene un solver de restricciones con estado 'sobre-restringido'; la validez se comunica con (a) Face Orientation overlay: caras con normal hacia la camara en AZUL, normal invertida (hacia afuera) en ROJO -> error de normal evidente por color; (b) Mesh Analysis (en Edit Mode + Solid shading): mapea atributos de la malla de ROJO (valor alto) a AZUL (valor bajo), gris para fuera de rango; (c) Select All by Trait > Non-manifold resalta en seleccion aristas/vertices problematicos (sueltos, de borde, de 3+ caras, normales opuestas)."
+        ],
+        "feedbackPatterns": [
+          "HOVER de seleccion: el elemento bajo el cursor se pre-resalta; el clic selecciona y lo pinta con el color de seleccion (naranja vertice/cara, amarillo arista).",
+          "SELECCION ACTIVA vs seleccionada: el ultimo elemento clicado (activo) se distingue en BLANCO (vertice/arista) o con BORDE BLANCO (cara) frente al naranja/amarillo del resto seleccionado.",
+          "DRAG de transform (Grab/Rotate/Scale): preview en vivo continuo en el viewport; aparece linea-guia del eje restringido en su color (rojo/verde/azul) y los valores numericos en el footer; soltar = exito (se aplica), Esc/RMB = cancelar (vuelve al estado original).",
+          "EXITO de una operacion: aparece el panel 'Adjust Last Operation' abajo-izquierda con los parametros, confirmando que la operacion corrio y permitiendo afinarla con recalculo inmediato (preview).",
+          "ERROR / advertencia de operador: mensajes de reporte se muestran en la barra de estado / footer; un operador puede fallar sin registrarse en el redo si no aplica.",
+          "ERROR de geometria (normal invertida): se comunica por color en el Face Orientation overlay -> cara ROJA = normal hacia afuera (problema), AZUL = correcta hacia camara.",
+          "PROBLEMAS de malla (no-manifold): se DETECTAN y se RESALTAN como seleccion al usar Select All by Trait > Non-manifold; Mesh Analysis los pinta en gradiente rojo->azul (rojo = valor alto/critico).",
+          "ENTRADA NUMERICA: feedback inmediato de los digitos tecleados en el footer del 3D Viewport mientras la operacion sigue activa (p.ej. S 2 Enter duplica la escala), confirmando el valor antes de aplicar.",
+          "ALINEAR VISTA: clic en una etiqueta de eje del navigation gizmo alinea la camara a ese eje; segundo clic en el mismo eje voltea al lado opuesto (feedback de orientacion inmediato en el orbit gizmo).",
+          "PERSONALIZACION en tiempo real: cambiar colores en Preferences > Themes se refleja al instante en pantalla, confirmando visualmente cada ajuste."
+        ],
+        "sources": [
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/selecting/introduction.html",
+          "https://docs.blender.org/manual/en/2.80/modeling/meshes/selecting.html",
+          "https://docs.blender.org/manual/en/latest/editors/preferences/themes.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/navigate/introduction.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/display/gizmo.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/navigate/navigation.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/display/overlays.html",
+          "https://docs.blender.org/manual/en/latest/scene_layout/object/editing/transform/control/numeric_input.html",
+          "https://docs.blender.org/manual/en/2.83/interface/undo_redo.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/toolbar/measure.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/display/shading.html",
+          "https://docs.blender.org/manual/en/latest/render/eevee/introduction.html",
+          "https://docs.blender.org/manual/en/latest/render/workbench/options.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/selecting/all_by_trait.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/mesh_analysis.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/controls/orientation.html"
+        ]
+      }
+    ],
+    "critiques": [
+      {
+        "shot": "maquina-diseno.png",
+        "observed": [
+          "Una pieza metalica en forma de L (tipo mensula o repisa de pared) flotando en el centro del encuadre, vista en perspectiva isometrica desde arriba.",
+          "El cuerpo es gris azulado con un acabado semi-pulido; la cara superior tiene reflejos especulares suaves tipo metal cepillado/satinado.",
+          "Dos agujeros circulares (perforaciones avellanadas) en la cara superior de la seccion vertical alta, a la derecha.",
+          "Una franja/borde amarillo brillante (naranja-amarillo saturado) corre por la base del frente de la pieza, parece resaltar una arista o un chamfer seleccionado.",
+          "Fondo casi negro/gris azulado muy oscuro con una retícula (grid) tenue apenas visible en el piso.",
+          "Arriba al centro hay dos pildoras de HUD oscuras con texto pequeño naranja/blanco, ilegibles a esta resolucion (se alcanza a leer algo como 'plane', 'cube?', 'mm chen vyx?').",
+          "Abajo a la derecha hay un pequeno icono/boton cuadrado gris apenas perceptible.",
+          "No hay sombra de contacto, ni piso, ni iluminacion de estudio definida; la pieza parece recortada y pegada sobre el fondo."
+        ],
+        "problems": [
+          "La pieza FLOTA sin sombra de contacto ni plano de apoyo: rompe por completo la sensacion de realidad. Un CAD pro (Fusion, SolidWorks Visualize, Onshape) siempre da ground shadow / contact shadow y un piso reflejante. Esto solo grita 'render incompleto'.",
+          "El material gris-azulado plano es exactamente la 'estetica blanca/incompleta' que el fundador odia: lee como plastico de juguete o clay-render por defecto, no como acero/aluminio mecanizado. Falta anisotropia de cepillado real, micro-rayones, mapa de rugosidad y tinte metalico (no hay color de metal, solo gris).",
+          "Iluminacion plana y sin direccion: una sola luz difusa lava toda la cara superior. No hay key/fill/rim, no hay HDRI de estudio, no hay specular highlight nitido que defina las aristas. El metal se ve mate y muerto, sin 'pop'.",
+          "Los chaflanes/aristas no tienen el bevel-highlight fino que delata geometria CAD precisa; las esquinas se ven blandas y redondeadas de mas, sin la linea especular de un edge real.",
+          "La franja amarilla es agresiva, sobre-saturada y AMBIGUA: no se entiende si es una seleccion de arista, una cota, un warning o decoracion. No tiene etiqueta, ni glow controlado, ni numero asociado. Parece un sticker pegado, rompe la paleta tecnica.",
+          "El HUD es ILEGIBLE: dos pildoras con texto minusculo de bajo contraste (naranja sobre gris oscuro) que no se pueden leer. Sin jerarquia, sin iconos, sin unidades visibles, sin nombre de pieza claro. Un CAD pro muestra arbol de features, cotas, material y estado de forma legible.",
+          "CERO feedback de ingenieria visible: no hay cotas, no hay ejes/triada XYZ, no hay plano de origen, no hay datos de masa/volumen/material, ni resultado FEA. La imagen no comunica que esto sea una 'maquina de diseno' — parece un thumbnail estatico.",
+          "El boton inferior-derecho es un cuadro gris fantasma, sin affordance, sin tooltip, sin icono reconocible: no se sabe que hace.",
+          "El fondo es un degradado oscuro plano con un grid apenas perceptible: se ve vacio y barato, no como un viewport de estudio. Falta profundidad, vignette controlada y un piso con reflejo que ancle la pieza.",
+          "Composicion descentrada y con mucho aire muerto: la pieza ocupa poco del encuadre, sesgada hacia arriba-derecha, dejando una franja inferior negra inutil. No hay encuadre de producto intencional.",
+          "Banding/posterizacion en el fondo oscuro y en los degradados del metal: delata 8-bit sin dither, contradice el mandato de 10-bit y mata el realismo en zonas oscuras.",
+          "Falta de escala/contexto: nada indica el tamano real de la pieza (sin objeto de referencia, sin cota, sin grid con medidas), asi que no se lee si es de 2 cm o 2 m."
+        ]
+      },
+      {
+        "shot": "maquina-fea.png",
+        "observed": [
+          "Vista isométrica de una pieza tipo ménsula/escuadra en L (placa vertical + brazo superior), centrada sobre fondo azul-negro muy oscuro con una grilla de piso tenue.",
+          "La cara superior del brazo es un plano color crema/beige claro y completamente plano, sin variación de sombreado.",
+          "El cuerpo de la pieza está coloreado con un degradado vertical azul-oscuro arriba a cian-verdoso abajo, presentado como mapa 'VON MISES (FEA REAL)'.",
+          "Una barra de color (colorbar) 'VON MISES (MPA)' en el centro-abajo va de azul(0) a rojo(47) con marcas 0, 24, 47.",
+          "Panel izquierdo HUD: 'La Forja - Part Studio', árbol de DOCUMENTO (Sketch 1, Extrude 1 40mm, Hole 2, Fillet 3), y lista 'CARAS DEL SOLIDO 12' con filas #0-#5 (superior plane, lateral, cilindrica...).",
+          "Panel de simulacion: botones 'Cara FIJA (empotrar) #5', 'Cara de CARGA #4', slider de carga '1100 N', boton naranja 'Analizar (von Mises)', y resultados MAX VON MISES 47.33 MPa, FACTOR DE SEGURIDAD 5.83, DEFLEXION MAX 0.2259 mm, MALLA 730n/1890t.",
+          "Barra superior de OPERACIONES con tabs: Extrude, Hole, Fillet, Chamfer, Shell, Revolve, Engrane; arriba-izq badge 'OCCT-WASM listo'.",
+          "Panel derecho: botones 'Ocultar boceto' y 'Exportar STEP'; tarjeta 'ANALISIS - PROPIEDADES DE MASA' con MATERIAL Aluminio 6061, VOLUMEN 36236.29 mm3, AREA 14792.6 mm2, DENSIDAD 2.70 g/cm3, MASA 97.838 g, CENTRO DE MASA e INERCIA PRINCIPAL.",
+          "Tarjeta inferior 'TOPOLOGIA' con Euler V20-E30+F12=2, 'solido simple', volumen exacto 36236.292 mm3, y 'MALLA/STEP 176 triangulos - 38.4 KB, CPU(OCCT)->GPU(R3F)'.",
+          "Una viga/haz naranja brillante cruza por encima de la cara superior del brazo, parcialmente detras de los chips de HUD 'CARA #4 plane' y 'ARISTA #24 line - 80.0mm eje'.",
+          "Lineas de arista negras duras y delgadas delimitan todas las caras del modelo.",
+          "Un pequeno punto/fragmento verde aparece flotando sobre la cara crema superior."
+        ],
+        "problems": [
+          "El mapa de 'VON MISES (FEA REAL)' NO parece un campo de esfuerzos real: es un degradado vertical liso azul->cian de arriba a abajo, sin concentracion de esfuerzo en el filete interior de la L (donde fisicamente DEBE picar el rojo). Se ve como un degradado UV/altura, no un heatmap de elementos finitos.",
+          "La colorbar llega hasta rojo (47 MPa) pero en TODA la pieza no aparece ni un solo pixel rojo/naranja de esfuerzo: el rango de color esta desperdiciado y delata que la simulacion o el shading no estan conectados al campo real. Contradice el 'MAX VON MISES 47.33 MPa' del HUD.",
+          "La cara superior crema/beige es exactamente la 'estetica blanca incompleta' que rechaza el fundador: plano mate, sin material PBR, sin reflejo metalico, sin textura de aluminio. No parece metal, parece carton/papel.",
+          "Cero realismo de material: no hay specular, ni reflejos, ni anisotropia de aluminio mecanizado, ni environment map. Un CAD pro (Fusion/SolidWorks/KeyShot) muestra metal con highlights; aqui se ve como un solido de juguete plano.",
+          "No hay oclusion ambiental (AO) ni sombra de contacto en el rincon interior de la L ni contra el piso: la pieza flota sin peso, sin sombra proyectada, rompiendo la sensacion de objeto real.",
+          "Aliasing visible en las aristas: lineas negras duras y dentadas, sin suavizado; las esquinas se ven 'render de demo', no foto de producto.",
+          "Hay una viga/haz NARANJA brillante atravesando la parte superior sin explicacion: parece un gizmo de eje o datum mal colocado que se encima con la geometria y con los chips de HUD -> lectura ambigua, parece un bug de overlay.",
+          "Un fragmento verde flotante sobre la cara superior parece artefacto de seleccion o geometria basura -> delata falta de pulido y rompe la limpieza de un CAD serio.",
+          "Los chips de HUD 'CARA #4 plane 1927mm2' y 'ARISTA #24 line 80.0mm eje' se enciman con la viga naranja y entre si (el chip CARA queda medio cortado por el de ARISTA), pobre jerarquia y legibilidad.",
+          "Iluminacion plana y unica: las dos caras laterales tienen casi el mismo tono, no hay key/fill/rim que defina volumen; la pieza se lee plana, casi 2D, pese a ser isometrica.",
+          "El feedback de estado es debil: tras 'Analizar' no hay indicador claro de que la malla/colormap mostrada corresponde al resultado; el degradado uniforme hace dudar si realmente corrio el FEA o es placeholder.",
+          "Contraste cromatico chillon y poco pro: azul saturado + cian + crema + naranja neon compiten; un CAD/producto serio usa paleta sobria. La mezcla se ve a 'tema oscuro de hobby', no a software de ingenieria.",
+          "La cara superior beige es enorme y vacia (sin malla visible, sin isolineas, sin vectores de carga), desperdicia el centro del encuadre y refuerza la sensacion de 'incompleto'.",
+          "Sin escala/regla/ground real ni objeto de referencia: la grilla del piso es apenas visible y no comunica tamano fisico de la pieza."
+        ]
+      },
+      {
+        "shot": "mech-fourbar-anima.png",
+        "observed": [
+          "Mecanismo de cuatro barras renderizado en 3D sobre fondo azul-marino muy oscuro casi negro, ocupando solo el tercio central-izquierdo del lienzo.",
+          "Tres barras metalicas grises/plateadas (tierra, acoplador, balancin) y una barra amarilla brillante (manivela/eslabon de entrada) con una curva-traza amarilla fina dibujada a la derecha.",
+          "Tres pivotes representados como pequenos cilindros/discos grises en los extremos de las barras.",
+          "HUD superior izquierdo: panel oscuro con θ2 entrada 58.5°, θ4 salida 229.8° (en ambar), µ transmision 66.3°, cierre de lazo 4.4e-15, cierre max (ciclo) 6.4e-15.",
+          "Titulo arriba 'Sintetizador de Mecanismos · Cuatro barras', pestanas 'cuatro barras / double-rocker / leva'.",
+          "Panel derecho: slider 'ANGULO DE ENTRADA θ2' en ambar a 58.5°, botones 'Animar' y 'Rama: abierta'.",
+          "Tabla ESLABONES: a1 tierra 4.000, a2 manivela 1.000, a3 acoplador 3.500, a4 balancin 3.000.",
+          "GATE DE VALIDEZ: 'Ang. transmision µ ∈ [54.3°, 89.8°]' con badge verde OK; 'Rama valida cos φ ∈ [-1,1] ∀θ, ensambla 100% del ciclo' con badge verde valida.",
+          "Bloque SINTESIS EXACTA · FREUDENSTEIN con tabla de 3 puntos de precision P1/P2/P3 (θ2 IN 40/90/150 → θ4 OUT 236.099/222.197/219.341).",
+          "Toda la interfaz vive en una sola columna oscura; no hay grid, regla, cota acotada ni eje visible en la escena 3D."
+        ],
+        "problems": [
+          "La escena 3D se ve VACIA e incompleta: el mecanismo flota en una mancha de vacio negro-azulado que ocupa >60% del cuadro; no hay piso, grid, horizonte ni referencia de escala, asi que el objeto parece recortado y suelto, no un modelo CAD montado.",
+          "Composicion descentrada y mal balanceada: el mecanismo se apretuja arriba-izquierda dejando un enorme hueco muerto abajo-derecha; un render de producto centraria y respiraria el objeto, aqui parece un screenshot de debug.",
+          "Las barras lucen como tubos cilindricos genericos sin geometria real de eslabon: sin espesor de placa, sin chaflanes, sin agujeros de perno, sin bujes — no comunica una pieza mecanica manufacturable, parece un alambre estilizado.",
+          "Materiales planos y poco realistas: el metal gris no tiene reflejo de entorno (sin HDRI/reflejos), highlights pobres; se ve mate-plasticoso, no acero pulido. La barra amarilla esta sobre-saturada y compite por atencion como si fuera el unico elemento iluminado.",
+          "Iluminacion pobre y de un solo lado: sombras inexistentes bajo el mecanismo, los pivotes no proyectan contacto al piso (no hay piso), por lo que el objeto no se asienta en el espacio — delata falta de oclusion ambiental/sombras de contacto.",
+          "La curva-traza amarilla (acoplador) es una linea hilo casi invisible, sin grosor ni glow; no se lee como la firma del mecanismo, parece un artefacto suelto colgando a la derecha.",
+          "Pivotes/juntas mal resueltos: discos grises diminutos sin pernos, sin clip, sin diferenciacion entre junta fija (tierra) y junta movil; un CAD pro mostraria los ejes de rotacion y los anclajes a tierra (hatching/ground symbol).",
+          "No hay ningun anclaje a 'tierra' visible: los dos pivotes fijos no tienen simbolo de bancada/empotramiento, asi que el mecanismo entero parece levitar sin saber que esta sujeto.",
+          "HUD con jerarquia confusa: el dato θ2=58.5° aparece TRES veces (HUD izquierdo, slider derecho, eslabones) — redundancia que satura; los valores cientificos 4.4e-15/6.4e-15 son ruido para un espectador, no aportan wow ni se explican.",
+          "Contraste de la UI debil: textos gris-medio sobre fondo gris-oscuro (labels 'θ2 entrada', 'µ transmision', cabeceras 'θ2 IN/θ4 OUT') casi se pierden; legibilidad pobre, no AAA.",
+          "El defecto que el fundador odia (estetica 'blanca/incompleta') reaparece como 'estetica negra incompleta': el inmenso vacio oscuro sin textura ni profundidad lee como un lienzo a medio terminar, no como un estudio de producto iluminado.",
+          "Cero sensacion de profundidad/3D real desde este angulo: la vista es casi ortografica-plana, las barras se ven como un dibujo 2D de alambre; falta perspectiva, parallax o un giro que revele que es un solido tridimensional.",
+          "Falta feedback de movimiento/estado: es un frame 'anima' pero nada indica direccion de giro, velocidad ni el punto del ciclo (sin flecha de rotacion en la manivela, sin barra de progreso del ciclo, sin estela de fase).",
+          "Sin acotaciones ni unidades en la escena: las longitudes (4.000, 3.500…) viven solo en una tabla; un CAD pro las mostraria como cotas dimensionadas sobre las barras, aqui la escena 3D no esta acotada.",
+          "Tipografia de numeros monoespaciada cruda (4.4e-15, 236.099) mezclada con sans en labels — se siente a herramienta interna de ingenieria, no a producto pulido; los badges verdes 'OK/valida' son el unico color de feedback y son genericos de framework."
+        ]
+      },
+      {
+        "shot": "mech-sintesis.png",
+        "observed": [
+          "Layout de 3 columnas sobre fondo gris-azulado oscuro casi uniforme (#1c2230 aprox): HUD izquierdo flotante, viewport 3D central, y panel derecho alto con controles y datos.",
+          "El viewport central muestra un mecanismo de cuatro barras (four-bar) muy pequeño, ubicado bajo el centro: manivela/acoplador amarillos y eslabones/tierra plateados, con un arco amarillo fino que insinúa la trayectoria del punto acoplador.",
+          "HUD izquierdo lista datos cinematicos: theta2 entrada 0.0 grados, theta4 salida 251.4 grados (en amarillo), mu transmision 54.3 grados, cierre de lazo 4.0e-15 y cierre max ciclo 7.2e-15.",
+          "Panel derecho superior: slider 'ANGULO DE ENTRADA theta2' al minimo (0.0 grados en amarillo), botones 'Animar' y 'Rama: abierta'.",
+          "Bloque 'ESLABONES (GEOMETRIA)' con etiqueta 'sintetizado': a1 tierra 4.000, a2 manivela 1.000, a3 acoplador 3.500, a4 balancin 3.000.",
+          "Bloque 'GATE DE VALIDEZ CINEMATICA' con tres chequeos en pildoras verdes: Grashof (5.00<=6.50, crank-rocker, 1 motor), Angulo de transmision OK (mu en [54.3, 89.8]), Rama valida (ensambla 100% del ciclo).",
+          "Bloque inferior 'SINTESIS EXACTA - FREUDENSTEIN' con tabla de 3 puntos de precision (P1 40/236.099, P2 90/222.197, P3 150/219.341), botones 'Sintetizar' (relleno ambar) y 'Preset', y salida K1,K2,K3 = 4.000, 1.333, 2.291, longitudes y 'Error vs 3 objetivos 0.00e+0 EXACTO' en verde.",
+          "Resolucion del archivo: 1500x940 px, RGB de 8 bits."
+        ],
+        "problems": [
+          "El protagonista (el mecanismo 3D) ocupa quiza el 8-10% del cuadro y esta arrinconado abajo-centro; el 60% del viewport es vacio muerto. Un CAD pro encuadra y centra la pieza; aqui parece que el objeto se renderizo fuera de cuadro por accidente.",
+          "El mecanismo es minusculo e ilegible: no se distinguen los 4 pivotes, no hay junturas/pasadores modelados, los eslabones se ven como palitos planos sin grosor ni chaflanes. No transmite 'pieza mecanica real', parece un sketch de alambre.",
+          "Iluminacion plana y sin caracter: una sola fuente debil arriba-izquierda, sin sombra de contacto, sin oclusion ambiental, sin reflejo especular nitido en el metal. El plateado se ve gris mate, no acero. No hay sensacion de profundidad ni material PBR creible.",
+          "El fondo NO es negro real ni un estudio: es un gris-azulado plano y sucio que llena casi todo el frame. Esto es exactamente el sintoma de 'estetica blanca/lavada, incompleta e irreal' — falta vignette, gradiente de estudio, piso/grid o HDRI que de contexto. El void se ve vacio, no intencional.",
+          "Cero piso o grid de referencia bajo el mecanismo: flota en la nada, sin escala ni sombra proyectada. Un CAD profesional (Fusion/SolidWorks/Onshape) siempre da plano de trabajo, grid o sombra que ancle la pieza.",
+          "El arco amarillo de la trayectoria es un hilo finisimo, casi invisible, sin glow ni grosor; el 'wow' del coupler curve se pierde. Compite en color con los eslabones amarillos y no se lee como dato distinto.",
+          "Desbalance brutal de composicion: dos paneles de UI densos (izq y der) con tipografia y el centro casi vacio. El peso visual esta en la data, no en el producto. Se ve como un dashboard de debug, no como un render de producto.",
+          "El HUD izquierdo flota suelto sin titulo ni jerarquia clara; valores como 'cierre de lazo 4.0e-15' son jerga cruda sin contexto/unidades amigables — ilegible para cualquiera que no sea el autor. Notacion cientifica e-15 grita 'salida de consola', no UI pulida.",
+          "Inconsistencia de mayusculas y estilo entre paneles (HUD izq en minusculas/sentence case vs panel der en MAYUSCULAS tracking-wide). Falta de sistema tipografico unificado delata producto a medio terminar.",
+          "Las pildoras verdes de 'gate' y el ambar de los botones chocan con el plateado/amarillo del modelo: paleta sin direccion de arte, mezcla de verde semaforo + ambar + amarillo + azul sin coherencia. Se ve mas a panel de ingenieria que a CAD premium.",
+          "Falta de antialiasing/AO visible en los bordes del metal del mecanismo a este tamano; los eslabones se ven duros y pixelados al acercar, sin la limpieza de un viewport CAD real.",
+          "No hay indicadores 3D estandar de CAD pro: ni gizmo de ejes/orientacion (view cube), ni triada XYZ, ni indicador de escala/cota en pantalla. Refuerza la sensacion de demo improvisada, no de herramienta seria.",
+          "El estado 'theta2 = 0.0' con slider al tope izquierdo sugiere un frame estatico/inicial sin movimiento ni feedback de animacion; no comunica que es un mecanismo dinamico. Un still de producto deberia capturar una pose mas expresiva (cerca de un punto de precision), no el frame cero."
+        ]
+      },
+      {
+        "shot": "mech-curva-acoplador.png",
+        "observed": [
+          "Escena de un mecanismo de cuatro barras (four-bar linkage) flotando sobre un fondo casi negro azulado, ocupando solo la franja superior-central del viewport 3D; los dos tercios inferiores del lienzo estan completamente vacios.",
+          "Las barras del mecanismo son cilindros metalicos gris-plata (tierra, acoplador, balancin) y una barra/curva amarilla brillante (manivela y trayectoria del acoplador). La curva acopladora amarilla forma un lazo cerrado tipo 'rinon' (kidney) a la derecha.",
+          "Las articulaciones son pequenos cilindros/pivotes metalicos sin esferas ni detalle de pasador; los extremos se ven cortados en seco.",
+          "HUD superior-izquierdo: panel con θ2 entrada 70.5°, θ4 salida 222.8° (en ambar), μ transmision 59.9°, cierre de lazo 0.0e+0, cierre max (ciclo) 4.8e-15.",
+          "HUD derecho: pestanas crank-rocker / double-rocker / kidney (kidney activa, borde ambar); slider 'ANGULO DE ENTRADA θ2' con valor 70.5°; botones 'Animar' y 'Rama: abierta'; tabla ESLABONES con tierra 2.500, manivela 1.000 (ambar), acoplador 2.500, balancin 2.200; bloque TEST DE VALIDEZ CINEMATICA con Grashof (verde), ang. transmision 'se traba' (rojo), rama valida (verde); seccion SINTESIS EXACTA FREUDENSTEIN con seis campos θ2 IN / θ4 OUT (030/080, 070/0110, 0110/0150) y boton ambar 'Sintetizar'.",
+          "Iluminacion: un unico highlight especular suave sobre los cilindros plateados, sin sombras proyectadas, sin oclusion de contacto, sin reflejos del entorno. La paleta es monocroma azul-grafito + acentos amarillo/ambar."
+        ],
+        "problems": [
+          "Composicion vacia y desbalanceada: el modelo 3D ocupa ~15% del lienzo (solo la franja superior), dejando los dos tercios inferiores como un vacio negro muerto. Delata un viewport sin auto-encuadre/zoom-to-fit; un CAD pro centra y llena el frame con el objeto.",
+          "El objeto se ve INCOMPLETO tal como teme el fundador: las barras son cilindros flotantes sin base, sin bancada (frame/ground), sin mesa ni plano de referencia. No hay soporte fisico para 'tierra' — el eslabon fijo no se distingue visualmente del movil, parece que todo flota en el aire.",
+          "Articulaciones pobres: los pivotes son cilindros cortados en seco, sin pasadores, sin bujes, sin esferas de union, sin tornilleria. Donde las barras se cruzan no hay clevis ni horquilla — se ven dos cilindros que se atraviesan sin junta real. Esto mata la lectura de 'pieza mecanica real'.",
+          "Materiales planos y sin realismo: el metal plateado tiene un solo highlight difuso, cero reflejos de entorno (sin IBL/environment map), cero anisotropia de metal torneado, cero variacion de rugosidad. Parece plastico gris mate, no acero/aluminio CAD. La barra amarilla es un color plano emisivo sin shading metalico.",
+          "Sin sombras ni oclusion de contacto: nada proyecta sombra al suelo (no hay suelo), no hay AO en los cruces ni en las juntas. Sin sombras el objeto no tiene peso ni profundidad — se ve como un sprite 2D flotando, no como un cuerpo 3D solido.",
+          "La 'curva acopladora' amarilla (el dato estrella del shot) es ambigua: el lazo kidney se confunde con la barra de la manivela, ambos amarillos y del mismo grosor. No se distingue trayectoria (linea fina/traza) de eslabon (cilindro grueso). El protagonista del frame compite con su propio mecanismo en vez de destacar.",
+          "Profundidad/perspectiva plana: angulo de camara casi de canto, el mecanismo se ve aplastado y de perfil; sin un encuadre 3/4 claro la geometria espacial del four-bar no se lee. Falta DOF o separacion figura-fondo.",
+          "HUD sobrecargado e ilegible a este tamano: el panel derecho amontona pestanas + slider + 2 botones + tabla de 4 eslabones + 3 tests + 6 campos de sintesis + boton, todo en una columna densa. Tipografia diminuta, jerarquia debil; '0.0e+0' y '4.8e-15' son ruido de debug, no UI de producto. Mas datos en pantalla que cualquier CAD comercial mostraria de golpe.",
+          "Inconsistencia de datos que delata estado a medio cocer: el test dice 'ang. transmision SE TRABA' (rojo, defecto) mientras 'Grashof' y 'rama valida' estan en verde — el mecanismo mostrado esta en una pose que se atasca, mala eleccion para una foto de producto (debe lucir el caso BUENO).",
+          "Campos de sintesis con formato crudo: '030', '0110', '0150' con ceros a la izquierda y sin unidades visibles en el campo — se ve como input sin validar/formatear, no como UI pulida.",
+          "Estetica 'incompleta' confirmada: aunque el fondo NO es blanco, el reclamo del fundador aplica igual — la escena se siente vacia, sin entorno, sin acabado de render (sin bloom en los specular, sin grano, sin gradiente sutil de fondo), con un look de 'preview de dev' antes que de render final de producto.",
+          "Antialiasing/bordes: los cilindros delgados muestran bordes algo duros y el lazo amarillo tiene aliasing en las curvas — falta MSAA/SSAA o un postFX que suavice y de acabado cinematografico."
+        ]
+      },
+      {
+        "shot": "codigo-render",
+        "observed": [
+          "MATERIAL: meshPhysicalMaterial (lineas 1025-1033) con metalness 0.90-0.96, roughness 0.26-0.40, clearcoat 0.08-0.15, envMapIntensity 1.15. SIN emissive (comentario: 'en CAD no brilla, REFLEJA'). El reflejo depende 100% de UN solo HDRI 1k (/hdri/studio_small_03_1k.hdr, Environment intensity 1.0, background=false) + 3 directionalLight debiles (0.55/0.22/0.15) + ambient 0.18. toneMappingExposure=0.70 (linea 1191).",
+          "ARISTAS B-Rep: lineSegments con EdgesGeometry(geom, 25) color CAD_EDGE #0a0f16, opacity 0.82, polygonOffset -1 (lineas 913, 1059-1068). Es el unico mecanismo de legibilidad topologica.",
+          "PREVIEW EN VIVO: cada cambio de sketch/op dispara rebuild() completo en un requestAnimationFrame (lineas 1411-1454) que corre tessellate+topology+volume+surfaceArea+massProperties+enumerateFaces+enumerateEdges+enumerateEdgesGeom+exportSTEP SINCRONO. NO hay preview ligero del feature en curso; durante el calculo solo se hace 'faded' (mesh gris plano #9aa3ad, linea 1026) sobre el solido ANTERIOR.",
+          "FEEDBACK DE SELECCION: cara=submalla con meshStandardMaterial emissive GOLD intensity 0.9 opacity 0.92 (lineas 1038-1053) + esfera verde 1.6mm en el centroide (lineas 1095-1104). Arista=tubo grueso GOLD toneMapped=false depthTest=false renderOrder 5 (lineas 1087-1091). Tubos pickeables finos solo visible cuando pickMode==='edge' (linea 1079). NO hay estado hover (solo onClick, lineas 976-1001); el cursor no cambia.",
+          "HUD/OVERLAY: 4 pildoras centradas apiladas y traslapables en el top-center (fb-pick-hint top:74px, fb-hud-sel top:112px, fb-hud-edge top:148px, fb-hud-asm top:184px, lineas 2760-2791) + 8 paneles de vidrio flotantes que tilean todo el viewport (header, toolbar, features, facelist, params, analysis, sim, invariants). Leyenda FEA (fb-fea-legend) tambien centrada bottom:84px. Casi todo texto es JetBrains Mono 9-12px denso.",
+          "OVERLAY FEA: meshBasicMaterial vertexColors (SIN luz, toneMapped=false, lineas 1013-1017) tinte por jetColor azul->rojo, muestreado en mesh.positions (vonMisesVertexColors). Leyenda con 8 stops y ticks 0 / max/2 / max (lineas 2072-2082, 1310-1319).",
+          "REJILLA/SKETCH: SketchPlane = gridHelper 160x32 rotado (lineas 1130-1141) + CadGround con drei Grid infinito + ContactShadows blur 2.4 opacity 0.62 (lineas 1240-1267). El croquis NO es editable en el viewport: solo ProfileGhost (linea como lineBasicMaterial GOLD, lineas 1109-1128) sin cotas, sin snapping, sin arrastre de vertices; toda edicion via sliders Dim.",
+          "CANVAS/CAMARA: fov 35, posicion 3/4 fija (linea 1178), OrbitControls con autoRotate cuando pickMode==='none' (linea 1977) y autoRotateSpeed 0.45 — la pieza gira sola mientras se trabaja. dpr [1,2], antialias true, shadows on. SIN postFX (sin bloom) por diseno CAD."
+        ],
+        "problems": [
+          "Material poco convincente / reflejos pobres: el metal depende de UN HDRI 1k unico a intensity 1.0 con exposure bajado a 0.70 y 3 luces direccionales muy debiles (0.55/0.22/0.15). Sin softboxes/Lightformers, sin AccumulativeShadows, sin anisotropy ni clearcoatNormal: el aluminio/acero leera como gris plano-satinado sin highlights especulares marcados ni rolloff de torneado. Un HDRI 1k da reflejos borrosos/baja-frecuencia — no hay nitidez tipo KeyShot/Plasticity que el comentario promete.",
+          "El selector de material casi no se nota: los 6 PBRFinish difieren poco (alu #d3d8de vs steel #aeb8c6 vs ti #9aa0a8 son casi el mismo gris; metalness 0.90-0.96 y roughness 0.26-0.40 muy juntos). Con un solo HDRI tenue, aluminio/acero/titanio se veran practicamente identicos; solo el laton se distingue.",
+          "Sin preview en vivo: arrastrar un slider re-ejecuta TODO el pipeline OCCT (tessellate+masa+area+STEP export+enumeraciones) en cada frame de requestAnimationFrame. En piezas pesadas (engrane Z alto, ensamble con carcasa) esto bloquea y el unico feedback es la pieza vieja en gris (faded). No hay ghost del extrude/hole/fillet en construccion antes de commitear.",
+          "Feedback de seleccion debil/incoherente: cara seleccionada usa emissive gold con bloom-look PERO el viewport NO tiene bloom (CAD limpio), asi que el 'encendido' no revienta; la esfera verde 1.6mm en el centroide es un marcador arbitrario que flota dentro/sobre la pieza y choca con el resalte dorado (dos colores/dos metaforas para una sola seleccion). Sin estado HOVER: el usuario no sabe que cara/arista va a clicar hasta despues; el cursor no cambia. Los tubos pickeables solo aparecen en modo edge, no en modo face.",
+          "HUD denso y traslapable: 4 pildoras centradas a alturas fijas (74/112/148/184px) se encof3iman entre si y con la toolbar (top:18) — si aparecen pick-hint + sel + edge + asm a la vez tapan el centro-superior del viewport. 8 paneles de vidrio cubren las 4 esquinas + ambos costados, dejando muy poco viewport limpio para contemplar la pieza. Densidad tipografica alta (mono 9-12px). Hay un data-testid DUPLICADO 'face-list' (fb-facelist linea 2154 y el panel Shell linea 2494) que ademas implica UI redundante (lista de caras en dos lugares).",
+          "Falta de sketch interactivo: no hay rejilla de croquis con cotas ni edicion directa en el viewport — el ProfileGhost es solo una linea dorada sin dimensiones visibles, sin snapping, sin vertices arrastrables; toda la geometria se define con sliders Dim (rangos clampados, p.ej. radio max 50). El gridHelper del SketchPlane es decorativo (sin numeros, sin escala anotada). No comunica 'plano de croquis' con medidas como Onshape/Fusion.",
+          "AutoRotate mientras se edita: autoRotate se activa siempre que pickMode==='none' (autoRotateSpeed 0.45). La pieza gira sola durante el ajuste de parametros, lo que dificulta leer una cara concreta o comparar antes/despues de una operacion; mas distractor que contemplativo en un CAD de precision.",
+          "Aristas posiblemente ruidosas o incompletas: EdgesGeometry con thresholdAngle 25 deg genera lineas por todo cambio >25 deg — en superficies curvas teseladas (cilindros del barreno, involuta del engrane, fillets) puede dibujar facetas falsas o, al reves, perder aristas suaves; el color casi-negro #0a0f16 a opacity 0.82 sobre fondo oscuro #10151c puede leerse con bajo contraste en zonas en sombra.",
+          "ContactShadow/grid pueden chocar con la pieza: el group del modelo esta rotado -PI/2 (linea 1981) para apoyar la base en y=0, pero CadGround/ContactShadows asumen el plano y=0 de mundo; para piezas no extruidas-desde-base (revolve, ensamble desplazado en +X, perfiles centrados) la sombra de contacto y el grid pueden quedar desalineados o la pieza flotando/atravesando el piso.",
+          "Overlay FEA pierde la forma 3D: con vertexColors meshBasicMaterial SIN luz, la pieza coloreada se aplana (sin sombreado) y solo las aristas B-Rep oscuras dan volumen; en zonas de color uniforme (azul de baja tension) la geometria se lee plana. La leyenda FEA centrada bottom:84px puede solaparse con la barra de invariantes (bottom:18) y el boton hide."
+        ]
+      }
+    ],
+    "survivors": [
+      {
+        "titulo": "No hay ViewCube ni triada de orientación XYZ (todo CAD pro la tiene: Fusion, SolidWorks, Onshape, FreeCAD)",
+        "fix": "Añadir <GizmoHelper alignment='top-right' margin={[64,64]}> con <GizmoViewcube color='#1a2230' textColor='#e9eef5' hoverColor={GOLD} faces={['DERECHA','IZQ','ARRIBA','ABAJO','FRENTE','ATRÁS']}/> dentro del <Canvas> de ForgeBRepStudio (línea ~1227, junto a OrbitControls makeDefault) y de ForgeMechStudio (línea ~83). Click en cara=vista orto, esquina=iso, y refleja la orientación actual. En el mech, sumar también un pequeño <GizmoViewport> con ejes rojo-X/verde-Y/azul-Z para leer el plano del mecanismo. Es ~10 LOC, drei ya está importado."
+      },
+      {
+        "titulo": "FEA usa colormap jet/arcoíris (no perceptual) sobre meshBasicMaterial SIN luz → el campo se aplana y la forma 3D se pierde en zonas de tensión uniforme",
+        "fix": "En fea.ts cambiar jetColor() por TURBO o VIRIDIS (perceptualmente uniforme, estándar en ANSYS/Abaqus modernos): reemplazar las 5 paradas por la LUT turbo (azul-marino→cian→verde→amarillo→naranja→rojo carmín con luminancia monótona). Y en ForgeBRepStudio línea 1013, NO usar meshBasicMaterial: usar meshStandardMaterial vertexColors con metalness 0, roughness 0.85 y envMapIntensity 0.25 para que el HDRI dé un sombreado tenue que revele el volumen sin teñir el color FEM (multiplica ~0.9-1.0). Así el heatmap conserva relieve."
+      },
+      {
+        "titulo": "El campo von Mises no 'pica' en rojo en el filete reentrante de la L (el rango de color hasta 47 MPa queda desperdiciado, todo se ve azul-cian) — delata que la concentración de esfuerzo no se está resolviendo/mostrando",
+        "fix": "En fea.ts el solver K·u=f es real pero la malla teselada es gruesa en el filete: subdividir adaptativamente la malla en aristas cóncavas (donde Kt>1, σ_local=Kt·σ_nominal con Kt de Peterson para filete L) o, mínimo, refinar la teselación OCCT cerca del filete antes de samplear el campo nodal. Además normalizar el colormap por percentil P98 (no por max global, que un nodo singular dispara) para que el gradiente real del filete use todo el rango cian→rojo y se vea el hot-spot."
+      },
+      {
+        "titulo": "Material metálico lee plano: un solo HDRI 1k tenue + 3 direccionales débiles → aluminio/acero/titanio casi idénticos, sin highlights especulares marcados (la 'estética blanca/incompleta' que el fundador odia)",
+        "fix": "En ForgeBRepStudio y ForgeMechStudio: (1) subir Environment a un HDRI de estudio 2k-4k con softboxes definidos, o añadir <Lightformer form='rect' intensity={2} scale={[8,3,1]} position={[5,8,5]}/> dentro de <Environment resolution={512}> para reflejos nítidos tipo KeyShot/Plasticity. (2) Separar más los presets PBR (aumentar contraste de color y roughness entre alu/steel/ti, p.ej. ti roughness 0.55 mate vs alu 0.18 pulido). (3) Subir toneMappingExposure de 0.70 a ~0.95 y envMapIntensity a 1.4 para que el metal tenga 'pop' y roll-off de highlight."
+      },
+      {
+        "titulo": "Doble metáfora redundante de selección de cara: highlight de superficie dorado emisivo + esfera verde de 1.6mm en el centroide flotando dentro/sobre la pieza → dos colores para una sola selección, lee como artefacto",
+        "fix": "En ForgeBRepStudio quitar el bloque de la esfera verde de centroide (líneas 1095-1104). Dejar SOLO el resalte de superficie. Para el feedback de 'qué se va a clicar', añadir estado HOVER (onPointerOver/Out en la mesh) que tinte la cara pre-seleccionada en un dorado más tenue/cálido (#f3bf8e, como el hover naranja-suave de Onshape) distinto del dorado saturado de selección confirmada, y cambiar document.body.style.cursor a 'pointer'."
+      },
+      {
+        "titulo": "HUD ilegible y solapable: pills con texto 9-12px de bajo contraste (naranja/steel sobre gris oscuro), posicionadas a alturas fijas (top 74/112/148/184px) que se encof​man entre sí y con la toolbar",
+        "fix": "En ForgeBRepStudio: (1) subir fontSize de .fb-hud-sel/.fb-hud-edge a 13-14px y el .meta a 12px, con color #e9eef5 (no STEEL) para AAA contraste. (2) Reemplazar las posiciones top fijas por un único contenedor flex column con gap:8px anclado top-left, así nunca se solapan aunque aparezcan pick-hint+sel+edge+asm a la vez. (3) Añadir un encabezado claro con nombre de pieza + material + unidades (mm) visible siempre, no solo al seleccionar."
+      },
+      {
+        "titulo": "El mecanismo four-bar flota sin anclaje a 'tierra': los pivotes fijos no tienen símbolo de bancada/empotramiento, no se distingue el eslabón fijo del móvil, y las juntas son cilindros que se atraviesan sin pasador real",
+        "fix": "En ForgeMechStudio: (1) en GroundPivot añadir el símbolo CAD de tierra (hatching): un grupo de líneas diagonales bajo el pivote + un bloque de bancada, para que los 2 anclajes O2/O4 se lean como fijos. (2) Modelar las juntas como pasador real: cilindro de perno que atraviesa + dos bujes/arandelas, no dos cilindros cruzados. (3) Dar a cada eslabón sección de placa con espesor y chaflán (no cylinderGeometry pelón): usar una placa extruida con agujeros de perno en los extremos."
+      },
+      {
+        "titulo": "La curva acopladora (el dato estrella del shot) es un hilo casi invisible que compite en color/grosor con los eslabones amarillos → no se lee como la 'firma' del mecanismo",
+        "fix": "En ForgeMechStudio FourBarMesh: subir lineWidth de la <Line> a ~4-5, darle un color distinto del latón (p.ej. cian #38d6ff o el dorado GAIA reservado SOLO a la traza), y añadir un glow sutil (segunda Line más gruesa, opacity 0.25, mismo color) detrás. Cambiar el color del eslabón acoplador a un gris/acero neutro para que NO compita con su propia curva. Opcional: animar un punto P brillante recorriendo la curva para comunicar dirección/fase del ciclo."
+      },
+      {
+        "titulo": "Banding/posterización en el fondo radial oscuro y en los degradados del metal (8-bit sin dither) — contradice el mandato 10-bit y mata el realismo en las zonas oscuras",
+        "fix": "El <Canvas> usa antialias:true pero sin manejo de banding. Añadir un postFX mínimo NO-cinematográfico: un EffectComposer con solo <Dither>/ruido azul muy tenue (o un <Noise opacity={0.012} premultiply/>) que rompa el banding sin grade, MÁS asegurar el div de fondo con un degradado dithered (background-image con una textura de ruido 1% encima del radial-gradient). Verificar también que el render target sea half-float (gl={{ ..., outputColorSpace: SRGBColorSpace }} ya, pero forzar logarithmicDepthBuffer off y un grano de ~1% en el fondo) para eliminar la posterización en el void."
+      }
+    ],
+    "plan": {
+      "markdown": "## La Forja — Auditoría visual de los estudios CAD (B-Rep + Mecanismos)\n\nFundador: revisé el código real de los dos visores (`ForgeBRepStudio.tsx`, `ForgeMechStudio.tsx` y el solver `fea.ts`). Todo lo que reportaron está confirmado en el código, aunque algunos números de línea de la lista original no cuadraban con el archivo actual (el B-Rep tiene 2969 líneas, no ~1227); abajo te doy las líneas reales. Lo bueno: las dos dependencias que necesitamos ya están instaladas (`@react-three/drei ^10.7.7` trae los gizmos, `@react-three/postprocessing ^3.0.4` trae el `Noise`), así que ningún fix requiere instalar nada.\n\n### Qué se ve mal hoy (lo que un usuario de Fusion/SolidWorks nota en 2 segundos)\n1. **No hay ViewCube ni triada XYZ.** Ningún CAD pro existe sin esto. El usuario no sabe a qué cara está viendo ni cómo volver a una vista orto. Es lo primero que delata \"esto no es CAD serio\". Confirmado: cero `GizmoHelper` en ambos `<Canvas>`.\n2. **El FEA se ve plano y falso.** Dos problemas juntos: (a) usa colormap **jet/arcoíris** (`jetColor` en `fea.ts:814`), que no es perceptual y aplana el campo; ANSYS/Abaqus modernos usan turbo/viridis. (b) Se pinta con `meshBasicMaterial` **SIN luz** (`ForgeBRepStudio.tsx:1013`), así que el volumen 3D desaparece. Y normaliza por el **máximo global** (`fea.ts:854`), no por percentil — un nodo singular dispara la escala y todo el filete reentrante (donde DEBERÍA picar en rojo) se queda azul-cian. El dato estrella del shot no se ve.\n3. **Los metales se ven idénticos y planos.** Aluminio (`metalness 0.95 / rough 0.30`), acero (`0.96 / 0.26`), titanio (`0.90 / 0.40`) están casi pegados (`ForgeBRepStudio.tsx:115-118`). Con un solo HDRI 1k tenue y exposición baja (`0.70`), el selector de material \"no se ve\". Esa es la estética blanca/incompleta que odias.\n4. **Doble metáfora de selección.** Al elegir una cara aparecen DOS cosas: el resalte dorado de la superficie Y una esfera verde flotando en el centroide (`ForgeBRepStudio.tsx:1095-1104`). Dos colores para una sola selección = lee como bug.\n5. **HUD ilegible y encimado.** Las pills están a alturas FIJAS (top 74/112/148/184px), todas centradas, con texto 10-12px en gris STEEL de bajo contraste (`ForgeBRepStudio.tsx:2760-2791`). Cuando aparecen varias a la vez se montan entre sí.\n6. **El mecanismo flota sin tierra.** Los pivotes fijos son conos pelones (`GroundPivot`, mech:152), sin símbolo de bancada/hatching. Las barras son cilindros pelados, las juntas se atraviesan sin pasador real.\n7. **La curva acopladora (el dato estrella del mech) es invisible.** Es una línea dorada de `lineWidth 2.2` (mech:218) que compite en color con el efector dorado (mech:202, 213) y casi no se lee.\n8. **Banding en fondo y metal.** El fondo es un `radial-gradient` de 3 paradas sin dither (brep:1170, mech:55) y el render es 8-bit sin ruido azul. Contradice el mandato 10-bit y posteriza las zonas oscuras.\n\n### Qué cambiar y en qué orden\nEmpieza por lo que más eleva la percepción con menos riesgo: **ViewCube + arreglar el FEA + separar los metales**. Eso por sí solo cambia \"demo de hobby\" a \"CAD\". Después limpia la selección doble y el HUD (rápidos), luego el mecanismo (más LOC), y al final el dither anti-banding (cosmético).\n\nTodo es R3F local — recuerda: NO builds locales, el render/QA va en iangpu.",
+      "ranked": [
+        {
+          "titulo": "Añadir ViewCube + triada XYZ a los dos estudios",
+          "fix": "En el <Canvas> de ForgeBRepStudio (junto a <OrbitControls makeDefault>, ~línea 1216) y en ForgeMechStudio (~línea 80) montar <GizmoHelper alignment='top-right' margin={[64,64]}><GizmoViewcube color='#1a2230' textColor='#e9eef5' hoverColor={GOLD} faces={['DER','IZQ','ARRIBA','ABAJO','FRENTE','ATRÁS']}/></GizmoHelper>. En el mech sumar además <GizmoViewport axisColors={['#cd0000','#009500','#0000d0']}/> para leer el plano del mecanismo (rojo-X/verde-Y/azul-Z, convención universal). Importar GizmoHelper, GizmoViewcube, GizmoViewport de @react-three/drei (ya en deps ^10.7.7). El gizmo refleja la orientación viva y al hacer click en una cara salta a vista orto.",
+          "prioridad": "P0",
+          "costo": "barato",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (línea ~1216) y /home/ian/Orkesta/la-forja/src/forja/mech/ForgeMechStudio.tsx (línea ~80)"
+        },
+        {
+          "titulo": "FEA: colormap turbo perceptual + material con luz + normalización por percentil P98",
+          "fix": "En fea.ts: (1) reemplazar las 5 paradas de jetColor() por la LUT TURBO (azul-marino→cian→verde→amarillo→naranja→rojo con luminancia monótona). (2) En vonMisesVertexColors (fea.ts:854) cambiar denom = result.maxVonMises por el percentil P98 del campo nodal (ordenar vonMisesNodal y tomar el índice 0.98·N), para que el hot-spot del filete use todo el rango cian→rojo en vez de quedar aplastado por un nodo singular. (3) En ForgeBRepStudio:1013 cambiar el <meshBasicMaterial vertexColors> del overlay FEA por <meshStandardMaterial vertexColors metalness={0} roughness={0.85} envMapIntensity={0.25}/> para que el HDRI dé sombreado tenue que revele el volumen sin teñir el color FEM. Quitar toneMapped={false} o compensar para no lavar el mapa.",
+          "prioridad": "P0",
+          "costo": "medio",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/fea.ts (jetColor línea 814, vonMisesVertexColors línea 846-862) y /home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (línea 1013)"
+        },
+        {
+          "titulo": "Metal con pop: separar presets PBR, subir exposición e intensidad de entorno, añadir softbox",
+          "fix": "En ForgeBRepStudio MATERIAL_PBR (líneas 115-118) separar de verdad los acabados: alu pulido roughness 0.18, steel 0.30, brass 0.33, ti MATE roughness 0.55 (hoy están todos pegados en 0.26-0.40). Subir envMapIntensity de 1.15 a ~1.4 (brep:1031). Subir gl.toneMappingExposure de 0.70→~0.95 (brep:1191) y 0.72→~0.95 (mech:68) para roll-off de highlight. Dentro de <Environment resolution={512}> añadir <Lightformer form='rect' intensity={2} scale={[8,3,1]} position={[5,8,5]}/> para reflejos nítidos tipo KeyShot/Plasticity (importar Lightformer de drei). En el mech separar igual BAR_PBR/CRANK_PBR.",
+          "prioridad": "P1",
+          "costo": "medio",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (líneas 115-118, 1031, 1191, 1198) y /home/ian/Orkesta/la-forja/src/forja/mech/ForgeMechStudio.tsx (líneas 41-42, 68, 71)"
+        },
+        {
+          "titulo": "Quitar la esfera verde de centroide y añadir hover dorado-tenue de pre-selección",
+          "fix": "En ForgeBRepStudio eliminar el bloque selFaces.map de la esfera verde (líneas 1095-1104) — deja SOLO el resalte de superficie dorado. Para feedback de 'qué se va a clicar', añadir estado HOVER: onPointerOver/onPointerOut en la mesh principal que tinte la cara pre-seleccionada en dorado tenue cálido (#f3bf8e, el naranja-suave de Onshape) distinto del dorado saturado de selección confirmada, y poner document.body.style.cursor='pointer' en hover, '' al salir.",
+          "prioridad": "P1",
+          "costo": "barato",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (líneas 1095-1104 y mesh principal línea 1005)"
+        },
+        {
+          "titulo": "HUD: contenedor flex anclado, fuentes 13-14px y contraste AAA, encabezado de pieza siempre visible",
+          "fix": "En el CSS de ForgeBRepStudio (líneas 2764-2791): reemplazar los top fijos (112/148/184px) de .fb-hud-sel/.fb-hud-edge/.fb-hud-asm por un único contenedor flex column con gap:8px anclado top-left, así nunca se solapan aunque salgan pick-hint+sel+edge+asm a la vez. Subir font-size de .fb-hud-sel/.fb-hud-edge a 13-14px y .meta a 12px, color #e9eef5 (no STEEL) para contraste AAA. Añadir un header fijo con nombre de pieza + material + unidades (mm) visible siempre, no solo al seleccionar.",
+          "prioridad": "P1",
+          "costo": "barato",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (CSS líneas 2760-2791 + markup HUD líneas 2010-2048)"
+        },
+        {
+          "titulo": "Mecanismo: anclar a tierra (hatching+bancada), pasador real, eslabones de placa",
+          "fix": "En ForgeMechStudio GroundPivot (línea 152): cambiar el cono pelón por el símbolo CAD de tierra — bloque de bancada + grupo de líneas diagonales (hatching) bajo el pivote, para que O2/O4 se lean fijos. Modelar las juntas como pasador real (Pin, línea 140): perno que atraviesa + dos bujes/arandelas, no cilindros que se cruzan. Dar a cada eslabón sección de placa con espesor y chaflán (placa extruida con agujeros de perno) en vez de cylinderGeometry pelón (Bar, línea 110).",
+          "prioridad": "P2",
+          "costo": "medio",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/mech/ForgeMechStudio.tsx (GroundPivot 152, Pin 140, Bar 110)"
+        },
+        {
+          "titulo": "Resaltar la curva acopladora (cian + glow) y bajar el eslabón acoplador a acero neutro",
+          "fix": "En ForgeMechStudio FourBarMesh: subir lineWidth de la <Line> de 2.2 a ~4-5 y cambiar color de GOLD a cian #38d6ff (reservar el dorado SOLO al efector P), con una segunda <Line> más gruesa opacity 0.25 detrás como glow (línea 218). Cambiar el color del eslabón acoplador A→B a acero neutro (no latón) para que no compita con su propia curva. Opcional: animar un punto brillante recorriendo la curva para comunicar fase del ciclo.",
+          "prioridad": "P2",
+          "costo": "barato",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/mech/ForgeMechStudio.tsx (línea 218, eslabón acoplador línea 196)"
+        },
+        {
+          "titulo": "Anti-banding: ruido azul tenue (postFX NO cinematográfico) + dither en el fondo",
+          "fix": "Añadir un EffectComposer con SOLO <Noise opacity={0.012} premultiply/> (de @react-three/postprocessing, ya en deps ^3.0.4) para romper el banding sin grade cinematográfico. OJO con el known-issue del proyecto: EffectComposer+MSAA pone fondo blanco en GPUs diversas — montar con multisampling={0} o validar en iangpu con --use-angle=swiftshader. Alternativa más segura: meter un ruido ~1% como background-image PNG encima del radial-gradient del div (brep:1170, mech:55) sin tocar el pipeline R3F.",
+          "prioridad": "P2",
+          "costo": "medio",
+          "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (Canvas línea 1173, fondo div 1170) y /home/ian/Orkesta/la-forja/src/forja/mech/ForgeMechStudio.tsx (Canvas 57, fondo 55)"
+        }
+      ]
+    }
+  }
+}

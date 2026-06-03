@@ -1,0 +1,753 @@
+{
+  "meta": {
+    "workflow": "forja-carencias-click",
+    "agents": 39,
+    "logs": [
+      "Referencias leidas: 5/5 CAD",
+      "Carencias propuestas: 10",
+      "Carencias confirmadas tras debate: 1"
+    ]
+  },
+  "result": {
+    "references": [
+      {
+        "software": "Autodesk Fusion 360 (Autodesk Fusion) — Design workspace, Solid tab",
+        "canonicalSteps": [
+          "1) Elegir plano: en el espacio de trabajo Design, pestaña Solid, seleccionar Create Sketch (Crear boceto). [Fuente oficial: SKT-CREATE-3D-SKETCH]",
+          "2) Entrar al boceto: seleccionar el plano inicial o una cara plana existente sobre la que dibujar — Fusion abre el entorno de sketch y muestra la Sketch Palette. Los planos base disponibles son XY, YZ y ZX. [Fuente oficial: GUID-88CC0E51 / SKT-CREATE-3D-SKETCH]",
+          "3) Dibujar geometría: en la Sketch toolbar (barra de boceto) seleccionar una herramienta de boceto (Line, Circle, Rectangle, etc.) y colocar los puntos del boceto en el plano. [Fuente oficial: SKT-CREATE-3D-SKETCH]",
+          "4) Acotar / restringir: aplicar constraints (coincident, parallel, perpendicular, tangent, equal, horizontal/vertical, etc.) desde el panel Sketch > Constraints, y/o Sketch Dimension (D) para fijar medidas; el objetivo es definir totalmente el boceto (fully constrained / fully defined). [Fuente oficial: SKT-CONSTRAINTS]",
+          "5) Salir del sketch: en la barra de herramientas hacer clic en Finish Sketch (Finalizar boceto) para volver al modelado. [Fuente oficial: SKT-CREATE-3D-SKETCH]",
+          "6) Extruir: con el perfil cerrado del boceto, usar Create > Extrude (atajo E) para convertir el perfil 2D en un sólido 3D. [Fuente oficial: GUID-F0491540 keyboard shortcuts reference]",
+          "7) Editar sobre una cara: seleccionar Create Sketch otra vez y elegir una cara plana del cuerpo recién creado como nuevo plano de boceto, o usar Press Pull (Q) / Fillet (F) directamente sobre caras y aristas del modelo. [Fuente oficial: GUID-88CC0E51 'create sketches on a plane or existing planar face on a body' + GUID-F0491540]"
+        ],
+        "constraintModel": [
+          "Horizontal/Vertical — restringe una sola línea, o dos puntos, para que queden sobre el eje horizontal o vertical",
+          "Coincident (coincidente) — restringe la posición de dos puntos, o un punto y una línea/curva, para que coincidan",
+          "Tangent (tangente) — restringe una curva y otro objeto para que se toquen en un solo punto sin cruzarse",
+          "Equal (igual) — restringe objetos similares para que sus tamaños sean idénticos (si cambia uno, cambian los demás)",
+          "Parallel (paralelo) — restringe dos líneas para que vayan en la misma dirección y nunca se intersecten",
+          "Perpendicular (perpendicular) — restringe dos objetos para que queden perpendiculares (90 grados) entre sí",
+          "Fix/UnFix (fijar/desfijar) — bloquea el tamaño y la ubicación de un punto u objeto",
+          "Midpoint (punto medio) — restringe un punto u objeto al punto medio de otro objeto",
+          "Concentric (concéntrico) — restringe dos o más arcos, círculos o elipses al mismo centro",
+          "Collinear (colineal) — restringe dos o más objetos para que compartan una línea común",
+          "Symmetry (simetría) — restringe dos o más objetos para que sean simétricos respecto de un eje común",
+          "Curvature (curvatura) — restringe un spline y otra curva de boceto para crear continuidad de curvatura suave G2",
+          "Dimension (Sketch Dimension) — no es una restricción geométrica sino una cota paramétrica; fija distancia/ángulo/radio y, junto con las constraints, define totalmente el boceto"
+        ],
+        "shortcuts": [
+          {
+            "action": "Line (boceto)",
+            "key": "L"
+          },
+          {
+            "action": "Center Diameter Circle (círculo)",
+            "key": "C"
+          },
+          {
+            "action": "2-point Rectangle (rectángulo)",
+            "key": "R"
+          },
+          {
+            "action": "Sketch Dimension (acotar)",
+            "key": "D"
+          },
+          {
+            "action": "Extrude (extruir)",
+            "key": "E"
+          },
+          {
+            "action": "Fillet (redondeo)",
+            "key": "F"
+          },
+          {
+            "action": "Press Pull",
+            "key": "Q"
+          },
+          {
+            "action": "Create Sketch (crear boceto) — sin atajo de teclado por defecto en la referencia oficial; se invoca por menú/toolbar o marking menu",
+            "key": "(ninguno por defecto)"
+          }
+        ],
+        "commandInvocation": "Los comandos se invocan de varias formas oficiales documentadas: (1) Marking menu — un menú radial que aparece al hacer clic derecho en cualquier parte del canvas alrededor del cursor; se arrastra el cursor hacia el comando y se hace clic en la cuña resaltada (nivel 1 con 8 comandos por defecto, nivel 2 para operaciones de sketch). (2) Toolbar/barra de herramientas del espacio de trabajo (p. ej. Solid > Create Sketch, Sketch toolbar > Line/Circle/Rectangle). (3) Atajos de teclado por defecto (L, C, R, D, E, F, Q...) según la 'Fusion keyboard shortcuts reference' oficial. Nota: Create Sketch no tiene atajo de teclado por defecto en la referencia oficial. (El 'shortcut bar' tipo tecla S de productos como Inventor/AutoCAD NO aparece documentado como mecanismo oficial en la ayuda de Fusion; no se afirma.)",
+        "sources": [
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Sketch/files/SKT-CREATE-3D-SKETCH.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Sketch/files/GUID-88CC0E51-AD05-4028-BF59-FACA5EC0FA2B.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-Sketch/files/SKT-CONSTRAINTS.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-GetStarted/files/GUID-F0491540-0324-470A-B651-2238D0EFAC30.htm",
+          "https://help.autodesk.com/cloudhelp/ENU/Fusion-GetStarted/files/GUID-6514ABC1-CB75-4F0B-AB0E-316FAD36BA93.htm"
+        ]
+      },
+      {
+        "software": "SOLIDWORKS (Dassault Systèmes) — official help documentation (help.solidworks.com)",
+        "canonicalSteps": [
+          "1) Crear/abrir un documento de pieza (New > Part). El sketch es la base de todo modelo 3D, según la documentación oficial.",
+          "2) ELEGIR EL PLANO: seleccionar uno de los planos por defecto (Front Plane, Top Plane o Right Plane) o un plano creado. Oficial: 'you can create a sketch on any of the default planes (Front Plane, Top Plane, and Right Plane), or a created plane' (Sketch / Where to Start a Sketch).",
+          "3) ENTRAR AL SKETCH: abrir un sketch sobre ese plano (Sketch en la pestaña Sketch del CommandManager, o seleccionar primero una herramienta de entidad —line, circle...— que abre el sketch automáticamente). La vista normalmente se orienta normal al plano.",
+          "4) DIBUJAR LA GEOMETRÍA: usar herramientas de entidad de sketch — Line, Corner Rectangle, Circle, etc. (p. ej. el rectángulo de la base en Lesson 1 - Parts).",
+          "5) ACOTAR / RESTRINGIR: aplicar relaciones geométricas (Add Relations — coincident, horizontal, etc.) y cotas con Smart Dimension hasta dejar el sketch 'fully defined' (negro). Oficial: Dimensioning a 2D Sketch / Smart Dimension / Add Relations.",
+          "6) SALIR DEL SKETCH (Exit Sketch): cerrar el sketch. Oficial: 'You exit a sketch when you create a feature from a sketched profile' — al extruir base/boss/cut desde el sketch se sale de él.",
+          "7) EXTRUIR: convertir el contorno cerrado en sólido con Extruded Boss/Base (Features), fijando la profundidad/Direction 1; aparece como Boss-Extrude con su Sketch1 en el FeatureManager (Lesson 1 - Extruding the Base).",
+          "8) EDITAR SOBRE UNA CARA: seleccionar una cara plana del modelo y abrir un nuevo sketch sobre ella ('Sketching on the Face of a Part') para añadir el siguiente feature (otro Extruded Boss/Base, Cut o Fillet), repitiendo el ciclo plano/cara -> sketch -> geometría -> cotas -> feature."
+        ],
+        "constraintModel": [
+          "Horizontal — una o más líneas, o dos o más puntos; las líneas quedan horizontales (relativas al sistema de coordenadas del sketch), los puntos se alinean horizontalmente.",
+          "Vertical — una o más líneas, o dos o más puntos; las líneas quedan verticales, los puntos se alinean verticalmente.",
+          "Collinear — dos o más líneas; quedan sobre la misma línea infinita.",
+          "Coradial — dos o más arcos; comparten el mismo centro y radio.",
+          "Perpendicular — dos líneas; quedan a 90° entre sí.",
+          "Parallel — dos o más líneas; quedan paralelas.",
+          "Tangent — un arco/elipse/spline y una línea o arco; quedan tangentes.",
+          "Concentric — dos o más arcos, o un punto y un arco; comparten el mismo centro.",
+          "Midpoint — un punto y una línea; el punto queda en el punto medio de la línea.",
+          "Intersection — dos líneas y un punto; el punto queda en la intersección.",
+          "Coincident — un punto y una línea/arco/elipse; el punto queda sobre la entidad (también punto-a-punto).",
+          "Equal — dos o más líneas, o dos o más arcos; iguala longitudes (líneas) o radios (arcos).",
+          "Symmetric — una línea central y dos puntos/líneas/arcos/elipses; quedan simétricos respecto a la línea central y equidistantes.",
+          "Parallel/Perpendicular to plane/axis y relaciones con modelo 3D existen para 3D y referencias, pero el núcleo 2D es el listado anterior.",
+          "Fix — cualquier entidad; queda fijada en su posición/tamaño actual.",
+          "Pierce — un punto de sketch y un eje/arista/línea/spline; el punto coincide donde el eje/curva atraviesa el plano del sketch.",
+          "Merge Points — dos puntos finales (endpoints) o puntos de sketch; se fusionan en un solo punto.",
+          "NOTA UX: las relaciones se aplican (a) automáticamente al dibujar (inferencia) o (b) manualmente con Add Relations (Tools > Relations > Add o barra Dimensions/Relations); las cotas (Smart Dimension) son la otra forma de restringir hasta 'fully defined'."
+        ],
+        "shortcuts": [
+          {
+            "action": "Shortcut Bar (barra de comandos no-contextuales por modo: sketch/part/assembly/drawing) — mecanismo OFICIAL de atajos; la tecla por defecto es S y es re-asignable",
+            "key": "S"
+          },
+          {
+            "action": "Sketch — SOLIDWORKS NO trae atajo de teclado por defecto; se asigna por el usuario en Tools > Customize > Keyboard (o se invoca desde el Shortcut Bar 'S' / CommandManager)",
+            "key": "(sin asignar por defecto; asignable en Customize > Keyboard)"
+          },
+          {
+            "action": "Line — sin atajo de teclado por defecto; asignable por el usuario en Customize > Keyboard (típicamente vía Shortcut Bar 'S')",
+            "key": "(sin asignar por defecto; asignable)"
+          },
+          {
+            "action": "Circle — sin atajo de teclado por defecto; asignable por el usuario en Customize > Keyboard",
+            "key": "(sin asignar por defecto; asignable)"
+          },
+          {
+            "action": "Rectangle / Corner Rectangle — sin atajo por defecto; asignable. Truco oficial: mantener Shift al dibujar el rectángulo de esquina lo fuerza a cuadrado",
+            "key": "(sin asignar por defecto; asignable) — Shift = forzar cuadrado"
+          },
+          {
+            "action": "Smart Dimension (acotar) — sin atajo de teclado por defecto; asignable en Customize > Keyboard",
+            "key": "(sin asignar por defecto; asignable)"
+          },
+          {
+            "action": "Extruded Boss/Base (Extrude) — sin atajo de teclado por defecto; asignable en Customize > Keyboard",
+            "key": "(sin asignar por defecto; asignable)"
+          },
+          {
+            "action": "Fillet (constant size fillet / redondeo) — sin atajo de teclado por defecto; asignable en Customize > Keyboard",
+            "key": "(sin asignar por defecto; asignable)"
+          },
+          {
+            "action": "Repeat Last Command (re-ejecuta la última herramienta usada) — atajo integrado documentado",
+            "key": "Enter"
+          }
+        ],
+        "commandInvocation": "\"SOLIDWORKS ofrece varias vías OFICIALES para invocar comandos, según la doc: (1) CommandManager / toolbars / menús con las pestañas Sketch y Features. (2) Shortcut Bar: tecla 'S' (re-asignable) abre una barra de comandos no-contextuales propia de cada modo —sketch, part, assembly, drawing— que el usuario personaliza; también permite buscar comandos. (3) Mouse Gestures (marking menu radial): se hace right-drag en el área gráfica para acceder a una herramienta/macro preasignada; el número de gestos configurable es 2, 3, 4, 8 o 12 (right-drag en las direcciones del 'guide'). (4) Búsqueda de comandos (Search Commands / 'Search SOLIDWORKS Commands'): encuentra y ejecuta un comando o lo localiza en la UI; también accesible pulsando 'S'. (5) Context toolbar / menú contextual al hacer click derecho o seleccionar una entidad/cara. (6) Keyboard shortcuts personalizados asignados por el usuario en Tools > Customize > Keyboard (SOLIDWORKS NO preasigna atajos por herramienta de sketch/feature como Line/Circle/Extrude/Fillet — la tecla 'S' del Shortcut Bar es el mecanismo de atajo provisto de fábrica).\"",
+        "sources": [
+          "https://help.solidworks.com/2023/english/SolidWorks/sldworks/c_Sketch.htm",
+          "https://help.solidworks.com/2014/english/solidworks/sldworks/c_where_to_start_a_sketch.htm",
+          "https://help.solidworks.com/2021/english/SolidWorks/sldworks/c_commandmanager.htm",
+          "https://help.solidworks.com/2026/english/SolidWorks/sldworks/t_Sketching_Corner_Rectangles.htm",
+          "https://help.solidworks.com/2016/english/solidworks/sldworks/c_rectangles.htm",
+          "https://help.solidworks.com/2021/english/SolidWorks/sldworks/t_Dimensioning_a_2D_Sketch.htm",
+          "https://help.solidworks.com/2023/english/SolidWorks/Sldworks/c_Description_of_Sketch_Relations.htm",
+          "https://help.solidworks.com/2021/english/SolidWorks/sldworks/c_description_of_sketch_relations.htm",
+          "https://help.solidworks.com/2025/English/Solidworks/sldworks/c_horizontal_vertical_sketch_relations.htm",
+          "https://help.solidworks.com/2012/english/SolidWorks/sldworks/Exit_Sketch.htm",
+          "https://help.solidworks.com/2025/English/swtutorialonline/t_tut_lesson1_extrudingbase.htm",
+          "https://help.solidworks.com/2024/english/swconntutorial/c_tut_lesson1_start.htm",
+          "https://help.solidworks.com/2018/english/SolidWorks/sldworks/t_creating_an_extrude_feature.htm",
+          "https://help.solidworks.com/2024/English/SolidWorks/sldworks/t_Sketching_on_the_Face_of_a_Part.htm",
+          "https://help.solidworks.com/2024/english/SolidWorks/sldworks/r_constant_size_fillets.htm",
+          "https://help.solidworks.com/2021/English/SolidWorks/sldworks/c_fillet_overview.htm",
+          "https://help.solidworks.com/2017/english/SolidWorks/sldworks/c_shortcut_bars.htm",
+          "https://help.solidworks.com/2025/english/solidworks/sldworks/HIDD_CUSTOMIZE_KEYBOARD.htm",
+          "https://help.solidworks.com/2021/english/SolidWorks/sldworks/c_mouse_sestures.htm",
+          "https://help.solidworks.com/2018/English/SolidWorks/sldworks/t_using_mouse_gestures.htm",
+          "https://help.solidworks.com/2025/English/SolidWorks/sldworks/c_command_search.htm",
+          "https://help.solidworks.com/2021/english/SolidWorks/sldworks/t_searching_command.htm",
+          "https://help.solidworks.com/2022/english/SolidWorks/sldworks/c_time_saving_keyboard_shortcuts.htm",
+          "https://help.solidworks.com/2021/english/SolidWorks/acadhelp/t_Repeat_Last_Command.htm"
+        ]
+      },
+      {
+        "software": "Onshape",
+        "canonicalSteps": [
+          "1) Click Sketch in the Feature toolbar to open the Sketch dialog (or press the Sketch shortcut).",
+          "2) Select the sketch plane: pick a standard plane (Top/Front/Right), an existing planar part face, or a Mate connector (only one plane at a time).",
+          "3) Choose a sketch tool from the Sketch toolbar (Line, Circle, Rectangle, etc.) and click in the graphics area to draw geometry; Onshape applies automatic inferencing to add constraints (e.g. coplanar vertices) while you draw.",
+          "4) Dimension and constrain: enter dimension values inline as geometry is drawn, or use the Dimension tool afterward, and add constraints manually from the toolbar constraints menu (coincident, parallel, equal, etc.) until the sketch is fully defined.",
+          "5) Accept/close the sketch by clicking the green checkmark, which records the sketch as a feature in the Features list.",
+          "6) Extrude: click the Extrude tool (Shift+e); choose Solid creation type and a result operation, then select the faces / closed sketch regions to extrude (when a sketch is open, closed regions are auto-selected).",
+          "7) Edit on a face: select an existing planar part face as the sketch plane and start a new sketch on it, then repeat the draw -> dimension/constrain -> exit -> extrude cycle to add or remove material."
+        ],
+        "constraintModel": [
+          "Coincident",
+          "Concentric",
+          "Parallel",
+          "Perpendicular",
+          "Tangent",
+          "Equal",
+          "Horizontal",
+          "Vertical",
+          "Midpoint",
+          "Normal",
+          "Pierce",
+          "Symmetric",
+          "Fix",
+          "Curvature",
+          "Dimension (dimensional constraint)",
+          "Quadrant (auto-created)",
+          "Use (auto-created)",
+          "Intersection (auto-created)"
+        ],
+        "shortcuts": [
+          {
+            "action": "Open shortcut toolbar at the mouse cursor location",
+            "key": "s"
+          },
+          {
+            "action": "Sketch line tool (select or exit Line)",
+            "key": "l"
+          },
+          {
+            "action": "Sketch circle tool (select or exit Center point circle)",
+            "key": "c"
+          },
+          {
+            "action": "Sketch center point rectangle tool",
+            "key": "r"
+          },
+          {
+            "action": "Sketch corner rectangle tool",
+            "key": "g"
+          },
+          {
+            "action": "Sketch dimension tool (select or exit Dimension)",
+            "key": "d"
+          },
+          {
+            "action": "Extrude feature (opens while working on a sketch)",
+            "key": "Shift+e"
+          },
+          {
+            "action": "Fillet (opens Edge in Fillet dialog)",
+            "key": "Shift+f"
+          },
+          {
+            "action": "Toggle the keyboard shortcuts map open/closed",
+            "key": "Shift+/"
+          },
+          {
+            "action": "Open command/feature Search tools dialog",
+            "key": "Alt+c"
+          }
+        ],
+        "commandInvocation": "Onshape exposes four official ways to invoke a command: (1) Feature/Sketch toolbar -- click the tool icon directly (e.g. click Sketch, then a sketch tool, then Extrude). (2) Shortcut toolbar -- press 's' to open a customizable shortcut toolbox at the mouse cursor, contextual to the active tab/toolbar (Sketch, Features, Assembly, Drawing); set up in account Preferences. (3) Direct keyboard hotkeys -- single-letter keys while a sketch plane is selected (l, c, r, g, d) and modified keys for features (Shift+e Extrude, Shift+f Fillet). (4) Command/feature Search tools -- click the Search tools button to the right of the toolbar or press Alt+c, then type a word/phrase and click the matching tool or vetted custom feature in the results list.",
+        "sources": [
+          "https://cad.onshape.com/help/Content/Home/keyboard_shortcuts_and_hotkeys.htm",
+          "https://cad.onshape.com/help/Content/Sketch/sketch_basics.htm",
+          "https://cad.onshape.com/help/Content/Primer/creating_a_sketch.htm",
+          "https://cad.onshape.com/help/Content/Sketch/working_with_constraints.htm",
+          "https://cad.onshape.com/help/Content/extrude.htm",
+          "https://cad.onshape.com/help/Content/Home/search_tools.htm",
+          "https://cad.onshape.com/help/Content/ui-basics.htm"
+        ]
+      },
+      {
+        "software": "FreeCAD (Sketcher + PartDesign workbenches) — FreeCAD 1.0",
+        "canonicalSteps": [
+          "1. Crear/activar un Body: PartDesign -> Create body (un cuerpo es el contenedor del solido paramétrico).",
+          "2. Elegir el plano: PartDesign -> Create sketch, y en el panel de tareas seleccionar el plano de origen (XY_Plane / XZ_Plane / YZ_Plane) y pulsar OK. Tambien se puede seleccionar primero el plano/cara y luego Create sketch.",
+          "3. Entrar a edicion de sketch: al crear el sketch FreeCAD abre automaticamente el modo de edicion del Sketcher (la vista se alinea al plano).",
+          "4. Dibujar la geometria: usar las herramientas Sketcher (Create line G,L / Create rectangle G,R / Create circle G,C / Create polyline, etc.) para trazar el perfil 2D.",
+          "5. ACOTAR y restringir: aplicar restricciones geométricas (coincident, horizontal, vertical, parallel, perpendicular, tangent, equal, symmetric) y restricciones dimensionales (Dimension D / Constrain distance K,D, radius, diameter, angle) hasta dejar el sketch totalmente restringido (fully constrained, sin grados de libertad).",
+          "6. Salir del sketch: pulsar el boton Close en el panel de tareas (o Sketch -> Leave/Edit sketch) para cerrar el modo de edicion.",
+          "7. Extruir: con el sketch seleccionado, PartDesign -> Pad (extruir el perfil a un solido); fijar Length/Type (Dimension, Two dimensions, Symmetric to plane) y OK. (Equivalente en Part WB: Extrude.)",
+          "8. Editar sobre una cara: girar la vista, hacer clic en una cara plana del solido, PartDesign -> Create sketch (el nuevo sketch nace sobre esa cara); dibujar/acotar; Close; y aplicar la siguiente operacion (Pad aditivo, Pocket sustractivo, etc.). Detalles: Fillet/Chamfer sobre aristas del solido. Repetir cara->sketch->acotar->feature."
+        ],
+        "constraintModel": [
+          "Geométricas — Coincident (puntos coincidentes / concéntrico)",
+          "Geométricas — Point on object (punto sobre arista o eje)",
+          "Geométricas — Horizontal (linea o par de puntos horizontal)",
+          "Geométricas — Vertical (linea o par de puntos vertical)",
+          "Geométricas — Parallel (lineas paralelas)",
+          "Geométricas — Perpendicular (lineas/aristas perpendiculares)",
+          "Geométricas — Tangent (o colineal: aristas tangentes, o arista y eje)",
+          "Geométricas — Equal (igual longitud o igual radio/curvatura)",
+          "Geométricas — Symmetric (dos puntos simétricos respecto a una linea/eje)",
+          "Geométricas — Block (bloquea una arista en su lugar con una sola restriccion)",
+          "Geométricas — Refraction / Snell's law (refraccion, ley de Snell)",
+          "Dimensionales — Dimension (herramienta unificada contextual 1.0: ofrece la restriccion dimensional o geométrica adecuada segun la seleccion)",
+          "Dimensionales — Distance (longitud de linea o distancia entre puntos / punto-linea)",
+          "Dimensionales — Horizontal distance (distancia horizontal entre dos puntos)",
+          "Dimensionales — Vertical distance (distancia vertical entre dos puntos)",
+          "Dimensionales — Radius (radio de circulos/arcos)",
+          "Dimensionales — Diameter (diametro de circulos/arcos)",
+          "Dimensionales — Radiam (aplica radio o diametro automáticamente)",
+          "Dimensionales — Angle (angulo entre aristas / angulo de linea con el eje / apertura de arco)",
+          "Dimensionales — Lock (aplica distancia horizontal + vertical de golpe)",
+          "Internal alignment (alineacion interna, p. ej. ejes de una elipse)"
+        ],
+        "shortcuts": [
+          {
+            "action": "Sketcher: Create line",
+            "key": "G, L"
+          },
+          {
+            "action": "Sketcher: Create circle (center and rim point)",
+            "key": "G, C"
+          },
+          {
+            "action": "Sketcher: Create rectangle",
+            "key": "G, R"
+          },
+          {
+            "action": "Sketcher: Create fillet (raiz del submenu de filetes)",
+            "key": "G, F"
+          },
+          {
+            "action": "Sketcher: Dimension (herramienta de acotado unificada, contextual)",
+            "key": "D"
+          },
+          {
+            "action": "Sketcher: Dimension — ciclar entre las restricciones disponibles para la seleccion",
+            "key": "M"
+          },
+          {
+            "action": "Sketcher: Constrain distance (acotar distancia explícita)",
+            "key": "K, D"
+          },
+          {
+            "action": "PartDesign: Pad (extruir) — sin atajo de teclado por defecto; via menu/toolbar",
+            "key": "(sin atajo por defecto)"
+          }
+        ],
+        "commandInvocation": "Los comandos del Sketcher se invocan de cuatro formas oficiales, todas equivalentes: (1) boton en las toolbars del Sketcher (visibles solo en modo edicion de sketch); (2) menu Sketch -> submenus 'Sketcher geometries', 'Sketcher tools' y 'Sketcher constraints'; (3) menu contextual con clic derecho en la vista 3D; y (4) atajos de teclado de DOS pulsaciones con prefijo de categoria: 'G' inicia la familia de geometrias (G,L=line, G,C=circle, G,R=rectangle, G,F=fillet) y 'K' inicia la familia de restricciones (K,D=constrain distance). Las restricciones dimensionales en FreeCAD 1.0 se concentran en la herramienta unificada Dimension (atajo 'D'), que es contextual: segun lo seleccionado ofrece la restriccion adecuada y se cicla con 'M'. La mayoria de herramientas de creacion entran en 'continue mode' (siguen activas para crear varias) y se terminan con Esc o clic derecho.",
+        "sources": [
+          "https://wiki.freecad.org/Sketcher_Workbench",
+          "https://github.com/FreeCAD/FreeCAD-documentation/blob/main/wiki/Sketcher_Workbench.md",
+          "https://wiki.freecad.org/Basic_Part_Design_Tutorial",
+          "https://wiki.freecad.org/Sketcher_Tutorial/en",
+          "https://wiki.freecad.org/Sketcher_CreateLine",
+          "https://wiki.freecad.org/Sketcher_CreateCircle",
+          "https://wiki.freecad.org/Sketcher_CreateRectangle",
+          "https://wiki.freecad.org/Sketcher_CreateFillet",
+          "https://wiki.freecad.org/Sketcher_Dimension",
+          "https://wiki.freecad.org/Sketcher_ConstrainDistance",
+          "https://wiki.freecad.org/PartDesign_Pad",
+          "https://wiki.freecad.org/PartDesign_Workbench"
+        ]
+      },
+      {
+        "software": "Blender (5.1 manual / latest) — polygon MESH modeler, not a parametric CAD sketcher. There is NO sketch-plane + dimensional-constraint-solver paradigm like Fusion 360 / SolidWorks. Modeling happens by adding a primitive in Object Mode and editing its vertices/edges/faces in Edit Mode. The requested CAD step sequence is mapped below onto Blender's REAL equivalents, and where Blender has no equivalent (e.g. solver constraints, true dimensions) that is stated explicitly rather than invented.",
+        "canonicalSteps": [
+          "CHOOSE-PLANE (Blender analog): there is no 'sketch plane'. You set the 3D Cursor (where new geometry spawns) and the viewport/view axis. Added primitives appear at the location of the 3D Cursor (Mesh Primitives page). Orientation/working axis is governed by the transform orientation and view, not by a selected datum plane.",
+          "ENTER-TO-SKETCH (Blender analog = enter Edit Mode): Blender has no sketch entity. You first ADD a base mesh primitive (Add menu, Shift-A, Add > Mesh; primitives are 'starting points for modeling' and can be added in both Object Mode and Edit Mode). Then press Tab to toggle from Object Mode into Edit Mode, 'the main mode where modeling takes place' (Modeling Introduction / Object Modes).",
+          "DRAW GEOMETRY (Blender analog = edit mesh elements): in Edit Mode you build/shape geometry by selecting and editing vertices/edges/faces (Vertex/Edge/Face select). New geometry is created by adding primitives, extruding, loop-cutting, etc.; popovers Ctrl-V (Vertex), Ctrl-E (Edge), Ctrl-F (Face) expose the per-element operators (Editing Introduction).",
+          "ACOTAR / RESTRINGIR (Blender analog = numeric input + axis locking + snapping; NOT a constraint solver): Blender has NO dimensional/geometric constraint solver. 'Dimensioning' = Numeric Input: after a transform shortcut type the exact value (e.g. S 2 Return doubles scale; G 1 Tab 1 Tab 1 moves 1 unit on each axis). 'Constraining' = Axis Locking ('axis constraint'): press X / Y / Z (or hold MMB) to lock a transform to one axis (Numeric Input + Axis Locking pages). Alignment to other geometry = Snapping (Shift-Tab) to Vertex / Edge / Face / Volume / Increment / Grid (Snapping page).",
+          "SALIR DEL SKETCH (Blender analog = exit Edit Mode): press Tab again to toggle back to Object Mode (Object Modes page). There is no 'close sketch / consume profile' step — the mesh you edited simply becomes the editable object.",
+          "EXTRUIR (real Blender tool): in Edit Mode select the face(s)/edge(s)/vertices and press E (Extrude Region). Extrusion duplicates the selection and keeps it connected to the original geometry; movement can be axis-locked and given a numeric value (Extrude Region page).",
+          "EDIT ON A FACE (real Blender workflow): stay in Edit Mode, switch to Face select, select the target face. Common per-face operations: Inset Faces (I) to make a smaller bordered face, then Extrude (E) it in/out; subdivide/loop-cut (Ctrl-R) to add detail; Bevel (Ctrl-B) to round/chamfer the bordering edges. Newly extruded primitives also appear at the 3D Cursor when added in Edit Mode."
+        ],
+        "constraintModel": [
+          "IMPORTANT: Blender (mesh modeling) does NOT provide a 2D sketch constraint SOLVER. There are no coincident / parallel / perpendicular / tangent / equal / horizontal / vertical relational constraints that a solver maintains, as in parametric CAD. Per the official manual the modeling primitives are vertices/edges/faces edited directly, not constrained sketch entities.",
+          "Axis Locking ('axis constraint') — the closest official 'constraint': X, Y, Z (or hold MMB) restrict a Move/Rotate/Scale/Extrude to a single axis (or forbid two axes). This is what the manual literally calls a 'constraint'.",
+          "Numeric Input — exact magnitude entry after a transform (the 'dimension' analog): type a number after G/R/S; Tab / Ctrl-Tab to enter values for the next axis; combine with axis locking for precise placement.",
+          "Snapping (Shift-Tab) — alignment relations (the 'coincident/mate' analog), with snap targets: Vertex (snap to nearest vertex), Edge (snap to nearest edge), Face (snap to face surface, used for retopology), Volume, Increment (snap to an imaginary grid at the selection's origin), and Grid. Hold Ctrl to snap temporarily.",
+          "Precision modifier — hold Shift during a transform for fine, non-incremental control; Ctrl+Shift combines snapping with 0.1-unit precision increments (Precision / Snapping pages).",
+          "No true parametric 'dimension' object: distances/angles are set via numeric input at edit time; the Measure tool (Spacebar M in the configurable keymap) only reports distances, it does not constrain them."
+        ],
+        "shortcuts": [
+          {
+            "action": "Enter/exit 'sketch' (toggle Object <-> Edit Mode, where modeling happens)",
+            "key": "Tab"
+          },
+          {
+            "action": "Add a base primitive (Add > Mesh menu; primitives spawn at the 3D Cursor) — Blender's 'start a profile'",
+            "key": "Shift A"
+          },
+          {
+            "action": "Line / draw geometry — no line tool; new geometry comes from primitives or from Extrude Vertices (extrude a selected vertex to add a connected edge)",
+            "key": "E"
+          },
+          {
+            "action": "Circle — added as a primitive via the Add > Mesh > Circle menu (no dedicated hotkey; opened with Shift A)",
+            "key": "Shift A"
+          },
+          {
+            "action": "Rectangle / plane — added as a primitive via Add > Mesh > Plane (no dedicated hotkey; opened with Shift A)",
+            "key": "Shift A"
+          },
+          {
+            "action": "Dimension / set exact size or distance — Numeric Input: press transform key then type the value (e.g. S 2 Return), Tab for next axis",
+            "key": "G / R / S then type number (Tab between axes)"
+          },
+          {
+            "action": "Extrude (Extrude Region) — pull a face/edge/vertex out as connected geometry",
+            "key": "E"
+          },
+          {
+            "action": "Inset Faces — edit on a face: make a smaller bordered face inside the selected face",
+            "key": "I"
+          },
+          {
+            "action": "Fillet / rounded corner — Bevel with multiple segments (press S during bevel to set segment count; profile 0.5 = circular arc). Blender has no separate parametric mesh fillet tool",
+            "key": "Ctrl B"
+          },
+          {
+            "action": "Bevel Edges (chamfer/round an edge)",
+            "key": "Ctrl B"
+          },
+          {
+            "action": "Bevel Vertices",
+            "key": "Shift Ctrl B"
+          },
+          {
+            "action": "Loop Cut (add an edge loop across faces, for adding detail on a face)",
+            "key": "Ctrl R"
+          },
+          {
+            "action": "Snapping toggle (align to Vertex/Edge/Face/Increment/Grid) — the 'constrain to existing geometry' action",
+            "key": "Shift Tab"
+          },
+          {
+            "action": "Axis constraint (lock transform/extrude to one axis)",
+            "key": "X / Y / Z (or hold MMB)"
+          },
+          {
+            "action": "Menu / Operator Search (invoke any tool by name)",
+            "key": "F3"
+          },
+          {
+            "action": "Vertex / Edge / Face context popover in Edit Mode",
+            "key": "Ctrl V / Ctrl E / Ctrl F"
+          }
+        ],
+        "commandInvocation": "\"Blender commands are invoked four official ways (per the manual): (1) KEYBOARD SHORTCUT directly — e.g. E extrude, I inset, Ctrl-B bevel, Ctrl-R loop cut; most modeling is hotkey-driven. (2) MENU SEARCH / OPERATOR SEARCH via F3 (Edit > Menu Search) — a pop-up that lists every operator by name (also shows which menu it lives in); Operator Search (Edit > Operator Search, needs Developer Extras) reaches operators not exposed in any menu. (3) HEADER / TOPBAR + Toolbar menus and tool buttons — each mode shows its own menus (e.g. Add menu, Vertex/Edge/Face menus) and a left Toolbar of active tools. (4) SPACEBAR — all pop-up menus are searchable by pressing Spacebar and typing; the Spacebar Action preference can map Spacebar to open Menu Search, or to act like a modifier key (Spacebar T = Transform, Spacebar M = Measure, etc.). Blender does NOT use a Fusion-style 'marking menu / shortcut bar (S)'; its radial menus are Pie Menus and tool selection is via the Toolbar + F3 search.\"",
+        "sources": [
+          "https://docs.blender.org/manual/en/latest/modeling/introduction.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/introduction.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/modes.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/primitives.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/editing/introduction.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/tools/extrude_region.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/editing/face/inset_faces.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/editing/edge/bevel.html",
+          "https://docs.blender.org/manual/en/latest/modeling/meshes/tools/loop.html",
+          "https://docs.blender.org/manual/en/latest/editors/3dview/controls/snapping.html",
+          "https://docs.blender.org/manual/en/latest/scene_layout/object/editing/transform/control/numeric_input.html",
+          "https://docs.blender.org/manual/en/latest/scene_layout/object/editing/transform/control/axis_locking.html",
+          "https://docs.blender.org/manual/en/4.1/interface/controls/templates/operator_search.html"
+        ]
+      }
+    ],
+    "current": {
+      "currentOps": [
+        "Toolbar de features (btn-extrude, btn-hole, btn-fillet, btn-chamfer, btn-shell, btn-revolve, btn-gear) — cada boton hace addOp() y agrega un FeatureNode al grafo del documento (history-replay via buildShape).",
+        "Sketch base con 5 'kinds' elegidos por botones segmentados (seg-rect, seg-circle, seg-lprofile/'L', seg-revprofile/'Escalon', seg-gear): cada kind es una FUNCION parametrica pura (rectProfile, circleGhost, lProfile, revProfile, gearProfile) que genera el perfil Pt2[] a partir de numeros.",
+        "Extrude: depth + checkbox simetrico (chk-simetrico) via sliders.",
+        "Hole/Barreno: x, y, diametro, profundidad, checkbox pasante (chk-pasante) — TODO por numeros/sliders, sin clic de posicion en el viewport.",
+        "Fillet / Chamfer: radio/dist + seleccion de aristas por PICKING (raycast a tubos de arista en el viewport: btn-pick-edge, edge-item-*).",
+        "Shell: thickness + seleccion de caras abiertas por picking (btn-pick-face, face-*).",
+        "Revolve: angle + eje por preset global (axis-x/y/z) O por clic en una arista recta (axis-edge + btn-pick-edge).",
+        "Perfil de revolucion ESCALONADO ('Escalon'): filas de escalones {r, L} con presets (preset-cilindro, preset-flecha) y add/del de escalon (btn-add-step, step-del-*); volumen esperado mostrado.",
+        "Engrane de involuta (btn-gear / seg-gear): parametros m, Z, alpha, espesor, barreno por sliders; deriva rp, rb, dp con formulas reales (involute-gear-sketch).",
+        "Ensamble de 2 engranes: addGear2, slider teeth2, applyGearMate (calcula C, ratio, faseo), driveAngle slider, btn-verificar-embonado (barrido de interferencia Common~0), checkboxes flechas/carcasa.",
+        "Picking de cara/arista por raycast (OrbitControls + tubos pickeables) para seleccionar entidades de operaciones — NO para dibujar.",
+        "Analisis exacto: masa/volumen/area/centro-de-masa/inercia por GProp (select-material cambia densidad y PBR).",
+        "FEA von Mises: btn-pick-fija + btn-pick-carga (BC por picking de caras), btn-fea, overlay de colores, factor de seguridad/deflexion.",
+        "Export STEP (btn-export-step), toggle de boceto (btn-toggle-sketch), invariantes visibles (data-testid=invariants)."
+      ],
+      "fake": [
+        "El sketch base NO se dibuja: se ELIGE de 5 figuras pre-fabricadas (rect/circle/L/escalon/engrane) con botones segmentados. Cada figura es una funcion parametrica pura (rectProfile/circleGhost/lProfile/revProfile/gearProfile) que CONSTRUYE el perfil directo desde numeros — el usuario nunca traza una linea ni un arco.",
+        "Las 'cotas' son sliders type='range' (componente Dim, lineas 1272-1289): mueves un slider y el numero cambia. NO es acotar una entidad dibujada; es teclear/arrastrar un parametro en un panel. El comentario del codigo dice 'estilo Onshape' pero es un slider, no una cota de croquis.",
+        "btn-gear / seg-gear es el caso mas claro de ATAJO: un boton fabrica un engrane de involuta COMPLETO (perfil + barreno) desde 5 numeros. Igual el preset-cilindro y preset-flecha del modo Escalon: un clic produce la geometria entera.",
+        "El 'boceto' del viewport es DECORATIVO y read-only: SketchPlane (linea 1130) es un gridHelper estatico; ProfileGhost (linea 1109) es una <line> que solo DIBUJA el perfil ya calculado. Ninguno tiene onPointer/onDrag/onMouseDown — no puedes clicar para poner un punto ni arrastrar un vertice.",
+        "La posicion del Hole NO se pone clicando en la cara: se teclea x,y en sliders. Igual el centro del engrane/barreno: fijo en el origen por construccion (buildGearSolid talla coaxial al eje Z).",
+        "El Hole 'x' fijo del perfil de revolucion, el faseo del engrane y la distancia entre centros C se HORNEAN matematicamente (no se acomodan a mano). Es correcto fisicamente, pero confirma que el usuario no posiciona geometria con el mouse.",
+        "El picking de cara/arista (btn-pick-edge/btn-pick-face) SI usa el mouse, pero solo para SELECCIONAR una entidad ya existente como argumento de Fillet/Chamfer/Shell/Revolve/FEA — no para crear ni dibujar geometria nueva. El 'test de mouse' que el fundador detecto como trampa cae aqui: el raycast prueba seleccion, no diseño-por-dibujo."
+      ],
+      "missing": [
+        "Sketch interactivo DIBUJADO en el viewport: herramientas de linea/arco/circulo/rectangulo/spline/polilinea que coloquen vertices con clics y arrastres sobre el plano de boceto. Hoy NO existe ni un handler de pointer en SketchPlane/ProfileGhost.",
+        "Acotacion (dimensioning) real: clicar dos entidades y teclear/arrastrar una cota que MUEVE la geometria dibujada. Hoy solo hay sliders de parametros pre-cableados, no cotas sobre un croquis libre.",
+        "Solver de restricciones geometricas (coincidente, paralelo, perpendicular, tangente, horizontal/vertical, igual, concentrico, simetrico) con grados-de-libertad y deteccion de croquis sub/sobre-restringido. Inexistente; el unico 'solver' del archivo es el FEA (CG).",
+        "Eleccion de plano de boceto arbitrario: hoy todo croquis vive en PLANO_XY fijo (PLANE_XY). Falta elegir plano XY/YZ/ZX, una cara plana del solido, o un plano offset/angulado como datum.",
+        "Edicion del sketch despues de creado: arrastrar un vertice/arista del croquis, agregar/quitar segmentos, re-acotar. Hoy solo puedes cambiar parametros globales de la figura entera (w/h/r), no editar topologia del perfil.",
+        "Geometria de croquis arbitraria/cerrada-multiple: regiones con islas, perfiles compuestos dibujados a mano, lineas de construccion/ejes. Hoy son 5 plantillas fijas.",
+        "Snap/inferencias mientras dibujas (punto medio, endpoint, interseccion, grid snap), barra de entrada de cota tipo Fusion/Onshape, y restriccion automatica al trazar.",
+        "Extrude/Revolve/Hole que tomen como entrada un PERFIL DIBUJADO Y RESTRINGIDO por el usuario (region seleccionada del sketch), en vez de un kind enumerado parametrico.",
+        "Posicionar features clicando en el modelo: ubicar un barreno clicando el punto en la cara (con cotas al borde), no tecleando x,y en sliders.",
+        "Croquis posicionado y proyeccion de aristas existentes al plano de boceto (convert/project entities) para referenciar geometria previa al dibujar."
+      ],
+      "notes": "Archivo: /home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (2970 lineas). Veredicto honesto: La Forja HOY es un modelador PARAMETRICO-POR-BOTONES con history-replay sobre el kernel OCCT exacto (geometria, STEP y masa por GProp son reales y correctos; el engrane/ensamble usan formulas reales m·Z/2, faseo, C, e invariante Common~0). NO es un CAD de croquis-humano tipo Fusion/Onshape. El usuario NUNCA dibuja: elige una de 5 figuras pre-fabricadas (rect/circle/L/escalon/engrane) y ajusta numeros con sliders (componente Dim = input type=range, NO una cota). El 'boceto' en el viewport (SketchPlane=gridHelper, ProfileGhost=<line>) es read-only sin ningun handler de pointer/drag (grep confirma 0 onPointer/onDrag/onMouseDown). El mouse SI funciona, pero solo para orbitar (OrbitControls) y para SELECCIONAR caras/aristas existentes por raycast como argumento de Fillet/Chamfer/Shell/Revolve/FEA — esto es lo que el fundador correctamente marco como 'trampa': el test de mouse probaba seleccion-por-picking, no diseño-por-dibujo. Falta TODO el corazon de un sketcher humano: dibujar entidades, acotar, solver de restricciones, eleccion de plano, y edicion del croquis. Screenshots (maquina-diseno.png = repisa en L con barrenos y fillet dorado; maquina-fea.png = panel completo con toolbar de ops arriba, feature-tree a la izquierda, op-panel/Dim sliders, overlay von Mises 47.32 MPa, propiedades de masa) confirman 100% el flujo de paneles + sliders, sin lienzo de dibujo."
+    },
+    "repetition": {
+      "commonSpine": [
+        "1) Elegir plano de trabajo (datum XY/YZ/ZX o cara plana del cuerpo) — Fusion: plano base/cara; SOLIDWORKS: Front/Top/Right o plano creado; Onshape: standard plane/face/mate connector; FreeCAD: XY/XZ/YZ_Plane; Blender (analogo, sin plano real): 3D cursor + eje de vista",
+        "2) Entrar al boceto / modo de edicion sobre ese plano — abre el entorno de sketch alineado normal al plano (Blender: Tab a Edit Mode tras anadir un primitivo)",
+        "3) Dibujar la geometria 2D (Line/Circle/Rectangle...) colocando los puntos del perfil cerrado (Blender: editar vertices/aristas/caras)",
+        "4) Acotar y restringir: relaciones geometricas (coincident/parallel/perpendicular/tangent/equal/horizontal/vertical) + cotas dimensionales hasta dejarlo totalmente definido/fully constrained (Blender: numeric input + axis lock + snapping, sin solver real)",
+        "5) Salir / cerrar el boceto (Finish/Exit/Close sketch; Blender: Tab de vuelta a Object Mode)",
+        "6) Extruir el perfil cerrado a solido 3D (Extrude E / Boss-Base / Pad; Blender: E Extrude Region)",
+        "7) Editar sobre una cara: seleccionar una cara plana del solido nuevo, iniciar otro sketch sobre ella y repetir el ciclo (anadir Boss/Pad, cortar Cut/Pocket, o Fillet/Chamfer en aristas)"
+      ],
+      "automatable": [
+        "1) Elegir plano -> default inteligente: arrancar en el plano mas usado (Front/XY) y, si el usuario ya tiene una cara plana seleccionada o el cursor sobre ella, auto-inferir ese plano. Mata el dialogo de 'selecciona un plano' (el friction #1).",
+        "2) Entrar al boceto -> fundirlo con la accion de dibujar: elegir cualquier herramienta de entidad abre el sketch automaticamente (SOLIDWORKS y Onshape ya lo hacen). El paso 'abrir sketch' deja de existir como click separado.",
+        "4) Acotar/restringir -> auto-constraint por inferencia mientras dibujas (coincident/horizontal/vertical/coplanar) + snapping a vertice/arista/grid + cota inline; el solver propone el set que deja el boceto fully-defined y el usuario solo corrige. Onshape ('automatic inferencing'), Fusion (auto-constraints) y Blender (snapping) ya tienen las piezas.",
+        "5) Salir del boceto -> auto-exit al lanzar el feature: SOLIDWORKS ya define 'sales del sketch cuando creas un feature'. Bakearlo: pulsar Extrude cierra el sketch solo, sin Finish/Close manual.",
+        "6) Extruir -> UNA tecla (E) con auto-seleccion de las regiones cerradas del boceto activo (Onshape ya auto-selecciona closed regions). El perfil cerrado se vuelve solido sin elegir caras a mano.",
+        "7) Editar sobre una cara -> un click en la cara plana arranca un sketch nuevo sobre ella (saltando el dialogo de plano), reanudando el ciclo dibujar->extruir como macro."
+      ]
+    },
+    "survivors": [
+      {
+        "titulo": "El Hole y el centro del engrane/barreno NO se posicionan clicando la cara: se teclea x,y en sliders o se hornea coaxial al origen (buildGearSolid talla en Z=0 por construcción).",
+        "fix": "Reusa el raycast de cara que YA funciona (handleClick línea 976 entrega faceId + e.point en coords de mundo). Al pedir un barreno, entra a pickMode='face' (ya existe el modo, líneas 1519-1521), proyecta e.point al plano de la cara y usa ESA coordenada como centro del hole en vez de los sliders x,y. Es reemplazar la lectura de dos sliders por la lectura del punto del clic que el sistema ya calcula: menos UI, no más."
+      }
+    ],
+    "spec": {
+      "ranked": [
+        {
+          "titulo": "El centro del barreno (Hole) y del engrane NO se fija clicando la cara — se teclea x,y en sliders, o se hornea coaxial al origen.",
+          "fix": "En ForgeBRepStudio.tsx el raycast YA calcula el punto de mundo: handleClick (línea 985, const p = e.point) lo descarta salvo en el fallback. Cambiar la firma de onPickFace de (i:number) a (i:number, p?:THREE.Vector3) y pasar e.point desde handleClick. En togglePickFace, si la op activa es 'hole', proyectar p al plano de la cara clicada (usar la normal de faces[ti] que el kernel ya etiqueta) y escribir updateOp(op.id,{x:px,y:py}) con esa coordenada en vez de leer los sliders. Para buildGearSolid, dejar de hardcodear x:0,y:0 (línea 301) y aceptar el centro del clic. Resultado: se reemplaza la lectura de DOS sliders por la lectura del punto que el sistema YA tiene. Los sliders quedan como ajuste fino opcional (numeric input al estilo CAD), no como única vía.",
+          "prioridad": "P0",
+          "impactoCodigo": "reduce"
+        },
+        {
+          "titulo": "El plano de trabajo del croquis no se auto-infiere de la cara seleccionada — el barreno asume siempre el eje Z (drillHole talla con zTop fijo, perfil en PLANE_XY).",
+          "fix": "buildGearSolid usa PLANE_XY y drillHole asume corte en Z (zTop). Para que el clic-en-cara funcione en CUALQUIER cara (no solo la cara superior), el HoleOp necesita guardar también la NORMAL y el ORIGEN de la cara clicada (faces[ti].normal/center que el kernel ya tesela con faceIds exactos, líneas 974-981) y drillHole debe taladrar a lo largo de esa normal, no de Z global. Mientras no exista esto, restringir el click-to-place a caras cuya normal ≈ Z (la cara plana superior del engrane/extrude) y etiquetar el resto como 'requiere datum'. Es el cimiento del paso 1 del espinazo (elegir plano = la cara que clicaste).",
+          "prioridad": "P1",
+          "impactoCodigo": "neutral"
+        },
+        {
+          "titulo": "No hay atajos de teclado de una tecla para el espinazo (Sketch/Line/Circle/Rect/Dim/Extrude/Hole/Fillet/Chamfer): todo es clic en botón con testid, y el overlay 'S' existe pero no dispara los features.",
+          "fix": "ShortcutOverlay.tsx ya implementa la caja flotante estilo Fusion 'S' en el cursor, pero su prop tools llega vacía. Cablear un window keydown global en ForgeBRepStudio que mapee el keymap propuesto (C=círculo, B=barreno/boring, L=línea, R=rect, E=extrude, D=dimension, F=fillet, X=chamfer, V=revolve, G=gear, S=abre el overlay) a addOp/applyGear/enableFacePick. Reusa los mismos handlers que ya tienen los botones; cero lógica nueva, solo un dispatcher tecla→handler. Ignorar el keydown cuando el foco está en un input (no robar la tecla mientras editas una cota).",
+          "prioridad": "P1",
+          "impactoCodigo": "infla"
+        },
+        {
+          "titulo": "Sigue habiendo un paso 'abrir/cerrar sketch' y un 'Finish' implícito separado del feature; el ciclo dibujar→extruir no es una macro de una pulsación.",
+          "fix": "Como hacen SOLIDWORKS/Onshape: elegir una herramienta de entidad (C/L/R) debe ABRIR el sketch solo, y pulsar E (Extrude) debe CERRARLO solo y auto-seleccionar las regiones cerradas del croquis activo. En el código, applyGear/setGear ya garantizan el extrude si no existe (líneas 1497-1499, 1535-1537) — generalizar ese patrón 'garantiza el feature' a todas las entidades para que el usuario nunca pulse un Finish manual.",
+          "prioridad": "P2",
+          "impactoCodigo": "neutral"
+        },
+        {
+          "titulo": "Auto-constraint / inferencia al dibujar (coincident, horizontal, vertical, snapping a vértice/arista) no existe: el perfil no se deja 'fully-defined' solo.",
+          "fix": "Al colocar puntos del perfil cerrado, inferir las restricciones obvias (horizontal/vertical si el segmento está a <~3° del eje, coincident al snapear a un vértice/arista existentes, equal entre lados similares) y proponer el set que deja el croquis fully-defined, dejando que el usuario solo corrija. Es el paso 4 del espinazo y el friction real tras el plano; Onshape (automatic inferencing) y Fusion (auto-constraints) ya tienen las piezas conceptuales. P2 porque el motor B-Rep actual arranca de perfiles ya cerrados (engrane/involuta), no de croquis libre.",
+          "prioridad": "P2",
+          "impactoCodigo": "infla"
+        }
+      ],
+      "keymap": [
+        {
+          "key": "S",
+          "es": "croquiS / Sketch",
+          "en": "Sketch",
+          "accion": "Entrar al croquis sobre el plano/cara activo (y abrir la caja de atajos en el cursor, estilo Fusion 'S'). Reusa enableFacePick para inferir el plano si hay cara seleccionada."
+        },
+        {
+          "key": "L",
+          "es": "Línea",
+          "en": "Line",
+          "accion": "Herramienta de línea: traza segmentos del perfil cerrado. Abre el croquis solo si no estaba abierto."
+        },
+        {
+          "key": "C",
+          "es": "Círculo",
+          "en": "Circle",
+          "accion": "Círculo por centro+diámetro (mnemónico Círculo/Circle, idéntico en ambos idiomas)."
+        },
+        {
+          "key": "R",
+          "es": "Rectángulo",
+          "en": "Rectangle",
+          "accion": "Rectángulo de 2 puntos (mnemónico Rectángulo/Rectangle, idéntico en ambos idiomas)."
+        },
+        {
+          "key": "D",
+          "es": "Dimensión / acotar (cota)",
+          "en": "Dimension",
+          "accion": "Acotar: fija cotas dimensionales y deja el croquis fully-defined. (D vale para Dimensión y Dimension.)"
+        },
+        {
+          "key": "E",
+          "es": "Extruir",
+          "en": "Extrude",
+          "accion": "Extruye el perfil cerrado a sólido (boss/base). Cierra el croquis solo y auto-selecciona las regiones cerradas. addOp('extrude')."
+        },
+        {
+          "key": "B",
+          "es": "Barreno (boring)",
+          "en": "Boring / hole",
+          "accion": "Barreno cilíndrico: tras pulsar B se entra a pickMode='face' y el SIGUIENTE clic en la cara FIJA el centro del barreno en el punto del clic (no en sliders). addOp('hole'). (B=Barreno/Boring en ambos idiomas; se reserva H para 'hide'.)"
+        },
+        {
+          "key": "F",
+          "es": "Fillet (redondeo)",
+          "en": "Fillet",
+          "accion": "Redondeo de aristas: entra a pickMode='edge' para elegir las aristas. addOp('fillet'). (F=Fillet, término aceptado también en español técnico.)"
+        },
+        {
+          "key": "X",
+          "es": "chaflán (X de biSECa el ángulo)",
+          "en": "Chamfer",
+          "accion": "Bisel/chaflán de aristas: entra a pickMode='edge'. addOp('chamfer'). X libre de choque (C ya es círculo)."
+        },
+        {
+          "key": "W",
+          "es": "Wall / vaciado (shell)",
+          "en": "Wall / Shell",
+          "accion": "Vaciado a pared delgada: entra a pickMode='face' para elegir las caras abiertas. addOp('shell'). W=Wall (pared) en ambos idiomas; S ya es sketch."
+        },
+        {
+          "key": "V",
+          "es": "reVolución",
+          "en": "reVolve",
+          "accion": "Revolución del perfil alrededor de un eje (o arista recta seleccionada). addOp('revolve'). V por reVolve/reVolución (R ya es rectángulo)."
+        },
+        {
+          "key": "G",
+          "es": "enGrane",
+          "en": "Gear",
+          "accion": "Feature de engrane de involuta (m, Z, α, espesor, barreno). applyGear(). G=Gear/enGrane en ambos idiomas."
+        },
+        {
+          "key": "P",
+          "es": "Plano / Pick de cara",
+          "en": "Plane / Pick face",
+          "accion": "Activa el picking de cara para elegir el plano de trabajo / cara base (paso 1 del espinazo). enableFacePick()."
+        },
+        {
+          "key": "K",
+          "es": "acotar arista (picK de arista)",
+          "en": "picK edge",
+          "accion": "Activa el picking de arista (para revolve por eje, o seleccionar aristas de fillet/chamfer). enableEdgePick()."
+        },
+        {
+          "key": "Esc",
+          "es": "salir / cancelar",
+          "en": "escape / cancel",
+          "accion": "Sale del croquis o cancela el picking activo (pickMode='none', activeOp=null). Cierra la caja de atajos."
+        },
+        {
+          "key": "Enter",
+          "es": "repetir / confirmar",
+          "en": "repeat / confirm",
+          "accion": "Confirma el feature en edición y re-ejecuta la última herramienta (estilo SOLIDWORKS Repeat Last Command)."
+        }
+      ],
+      "commandPalette": [
+        {
+          "es": "Croquis: entrar / nuevo croquis",
+          "en": "Sketch: enter / new sketch",
+          "accion": "Abre el entorno de croquis sobre el plano o cara activos (auto-infiere el plano si hay una cara seleccionada)."
+        },
+        {
+          "es": "Línea",
+          "en": "Line",
+          "accion": "Traza segmentos rectos del perfil."
+        },
+        {
+          "es": "Círculo (centro-diámetro)",
+          "en": "Circle (center-diameter)",
+          "accion": "Círculo por centro y diámetro."
+        },
+        {
+          "es": "Rectángulo (2 puntos)",
+          "en": "Rectangle (2-point)",
+          "accion": "Rectángulo por dos esquinas."
+        },
+        {
+          "es": "Acotar / Dimensión",
+          "en": "Dimension",
+          "accion": "Aplica cotas dimensionales hasta dejar el croquis totalmente definido."
+        },
+        {
+          "es": "Restricción: coincidente / horizontal / vertical / tangente / igual",
+          "en": "Constraint: coincident / horizontal / vertical / tangent / equal",
+          "accion": "Aplica relaciones geométricas para definir el croquis (auto-inferencia mientras dibujas)."
+        },
+        {
+          "es": "Extruir (boss/base)",
+          "en": "Extrude (boss/base)",
+          "accion": "Convierte el perfil cerrado en sólido; auto-selecciona regiones cerradas y cierra el croquis."
+        },
+        {
+          "es": "Barreno / Boring (clic-en-cara fija el centro)",
+          "en": "Hole / Boring (click face sets center)",
+          "accion": "Taladra un cilindro; el centro se fija con el clic sobre la cara, no con sliders."
+        },
+        {
+          "es": "Fillet / Redondeo de aristas",
+          "en": "Fillet / Edge round",
+          "accion": "Redondea las aristas seleccionadas (vacío = todas)."
+        },
+        {
+          "es": "Chamfer / Bisel de aristas",
+          "en": "Chamfer / Edge bevel",
+          "accion": "Bisela las aristas seleccionadas."
+        },
+        {
+          "es": "Shell / Vaciado a pared delgada",
+          "en": "Shell / Thin-wall hollow",
+          "accion": "Vacía el sólido dejando pared delgada; las caras clicadas quedan abiertas."
+        },
+        {
+          "es": "Revolve / Revolución del perfil",
+          "en": "Revolve profile",
+          "accion": "Gira el perfil alrededor de un eje o arista recta seleccionada."
+        },
+        {
+          "es": "Engrane de involuta",
+          "en": "Involute gear",
+          "accion": "Genera el engrane (módulo m, dientes Z, ángulo α, espesor, barreno)."
+        },
+        {
+          "es": "Seleccionar cara / plano de trabajo",
+          "en": "Select face / work plane",
+          "accion": "Activa el picking de cara (paso 1 del espinazo: elegir el plano)."
+        },
+        {
+          "es": "Seleccionar arista / eje",
+          "en": "Select edge / axis",
+          "accion": "Activa el picking de arista (eje de revolve, aristas de fillet/chamfer)."
+        },
+        {
+          "es": "Ensamble: agregar 2º engrane",
+          "en": "Assembly: add 2nd gear",
+          "accion": "Activa la 2ª instancia a distancia entre centros C."
+        },
+        {
+          "es": "Mate de engrane (embonar dientes)",
+          "en": "Gear mate (mesh teeth)",
+          "accion": "Posiciona y fasea el 2º engrane para que los dientes embonen."
+        },
+        {
+          "es": "Análisis FEA (von Mises)",
+          "en": "FEA analysis (von Mises)",
+          "accion": "Selecciona cara fija + cara de carga y corre el FEA; pinta el esfuerzo."
+        },
+        {
+          "es": "Exportar STEP",
+          "en": "Export STEP",
+          "accion": "Exporta el sólido B-Rep como archivo STEP."
+        },
+        {
+          "es": "Ocultar interfaz (modo limpio)",
+          "en": "Hide chrome (clean mode)",
+          "accion": "Oculta la UI para captura/render."
+        }
+      ],
+      "markdown": "## La Forja CAD — carencia de repetición, keymap propio y qué automatizar\n\n### Resumen ejecutivo\n\nTu motor B-Rep ya tiene lo difícil resuelto: el raycast de cara **YA** te entrega tanto el `faceId` exacto (cada triángulo está etiquetado con su cara OCCT) como el **punto exacto del clic en coordenadas de mundo** (`e.point`, en `handleClick`, `ForgeBRepStudio.tsx:985`). El problema no es que falte información — es que la estás **tirando**. Para colocar un barreno el usuario teclea X,Y en dos sliders, y el engrane se hornea siempre coaxial al origen (`buildGearSolid` clava `x:0, y:0` en la línea 301). En todo CAD de verdad eso se hace **clicando la cara**. Ya tienes el clic; solo no lo conectas al centro del barreno.\n\n### Carencia #1 (P0) — el clic ya existe, conéctalo al centro del barreno\n\nEl handler `onPickFace` hoy recibe solo un entero (el `faceId`) y olvida el punto. El fix es chico y **reduce** UI:\n\n1. Cambia la firma `onPickFace: (i: number)` → `(i: number, p?: THREE.Vector3)` y pasa `e.point` desde `handleClick`.\n2. En `togglePickFace`, si la op activa es `'hole'`, proyecta ese punto al plano de la cara clicada (usa la normal/centro de la cara, que el kernel ya tesela) y escribe `updateOp(op.id, { x, y })` con la coordenada del clic **en vez de leer los sliders**.\n3. En `buildGearSolid` deja de hardcodear `x:0, y:0` y acepta el centro del clic.\n\nLos sliders X/Y no se borran: bajan a **ajuste fino opcional** (numeric input al estilo CAD), ya no son la única vía. Menos fricción, menos UI, cero motor nuevo.\n\n### Carencia #2 (P1) — auto-inferir el plano desde la cara\n\nHoy el barreno asume siempre el eje Z (`drillHole` con `zTop` fijo, perfil en `PLANE_XY`). Para que el clic funcione en **cualquier** cara, el `HoleOp` debe guardar también la **normal** y el **origen** de la cara (que el teselado ya conoce) y taladrar a lo largo de esa normal. Mientras eso no exista, limita el click-to-place a la cara superior (normal ≈ Z) y marca el resto como \"requiere datum\". Esto es literalmente el paso 1 de tu espinazo: **el plano de trabajo es la cara que clicaste**.\n\n### Keymap propio — bilingüe, una tecla, sin choques\n\nMnemónicos que funcionan en **español y en inglés** a la vez, sin colisiones:\n\n| Tecla | ES | EN | Acción |\n|---|---|---|---|\n| **S** | croquiS | Sketch | Entrar al croquis + caja de atajos al cursor |\n| **L** | Línea | Line | Línea |\n| **C** | Círculo | Circle | Círculo centro-diámetro |\n| **R** | Rectángulo | Rectangle | Rectángulo 2 puntos |\n| **D** | Dimensión | Dimension | Acotar (cota) |\n| **E** | Extruir | Extrude | Perfil → sólido (cierra el croquis solo) |\n| **B** | Barreno | Boring/hole | Barreno: el siguiente clic en la cara fija el centro |\n| **F** | Fillet | Fillet | Redondeo de aristas |\n| **X** | chaflán | Chamfer | Bisel (X biseca el ángulo; C ya es círculo) |\n| **W** | Wall/vaciado | Wall/Shell | Vaciado a pared delgada (S ya es sketch) |\n| **V** | reVolución | reVolve | Revolución del perfil |\n| **G** | enGrane | Gear | Engrane de involuta |\n| **P** | Plano/Pick | Plane/Pick face | Picking de cara = elegir plano |\n| **K** | acotar (picK) | picK edge | Picking de arista (eje del revolve) |\n| **Esc** | salir | escape | Salir del croquis / cancelar picking |\n| **Enter** | repetir | repeat | Confirma + repite la última herramienta |\n\nLas parejas clave son las que pediste: **C = círculo/circle** y **B = barreno/boring**, ambas idénticas en los dos idiomas. La caja `ShortcutOverlay` estilo Fusion (tecla **S**) ya existe en `src/components/ShortcutOverlay.tsx`; solo le llega la lista `tools` vacía. Cablear un `keydown` global que mapee estas teclas a los handlers que **ya tienen los botones** (`addOp`, `applyGear`, `enableFacePick`) — cero lógica nueva, solo un despachador tecla→handler — y que ignore la tecla cuando el foco está en un input (para no robarla mientras editas una cota).\n\n### Qué automatizar de la repetición (el espinazo, horneado)\n\n1. **Elegir plano** → arranca en el plano más usado y, si ya hay una cara seleccionada o el cursor está sobre ella, **auto-infiérelo**. Mata el diálogo de \"selecciona un plano\".\n2. **Abrir croquis** → fúndelo con dibujar: elegir C/L/R **abre el croquis solo** (como SOLIDWORKS y Onshape).\n3. **Acotar/restringir** → auto-constraint por inferencia (horizontal/vertical/coincident/snapping) que proponga el set que deja el croquis fully-defined; el usuario solo corrige.\n4. **Salir del croquis** → pulsar **E** lo cierra solo y **auto-selecciona las regiones cerradas**. Tu código ya tiene este patrón en `setGear`/`applyGear` (\"garantiza el extrude si no existe\", líneas 1497-1499); generalízalo a todas las entidades para que nunca exista un \"Finish\" manual.\n5. **Editar sobre una cara** → un clic en la cara plana arranca un croquis nuevo sobre ella, reanudando el ciclo dibujar→extruir como macro.\n\n### Orden recomendado\n\nP0 ya: cablear el clic → centro del barreno (es la joya, y es el fix más barato). Luego P1: keymap + caja de atajos, y guardar normal/origen de cara para barrenos fuera del eje Z. Lo de auto-constraint del croquis libre (P2) puede esperar porque tu motor hoy arranca de perfiles ya cerrados (involuta/engrane)."
+    }
+  }
+}
