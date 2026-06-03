@@ -79,7 +79,7 @@ import {
   type FaceBC,
   type FEASession,
 } from './fea';
-import { runTopOpt, type TopOptResult } from './topopt';
+import { runTopOpt, densityToMesh, type TopOptResult } from './topopt';
 import { MATERIAL_DATABASE } from '../../lib/formulas';
 
 // Ejes GLOBALES preestablecidos para el revolve (gp_Ax1 deterministas).
@@ -1210,6 +1210,27 @@ function GenerativeVoxels({ result, threshold }: { result: TopOptResult; thresho
   );
 }
 
+// Superficie SUAVE del resultado generativo (orgánica, manufacturable — NO bloques).
+// densityToMesh extrae la frontera del blob y la suaviza (Laplaciano). Esto es lo que
+// hace que se vea como Fusion y se pueda vender / exportar a STL.
+function GenerativeSurface({ result, threshold }: { result: TopOptResult; threshold: number }) {
+  const geom = useMemo(() => {
+    const { positions, indices } = densityToMesh(result, threshold, 6);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setIndex(new THREE.BufferAttribute(indices, 1));
+    g.computeVertexNormals();
+    g.computeBoundingSphere();
+    return g;
+  }, [result, threshold]);
+  useEffect(() => () => geom.dispose(), [geom]);
+  return (
+    <mesh geometry={geom} castShadow receiveShadow>
+      <meshStandardMaterial color="#cfd6df" metalness={0.85} roughness={0.32} envMapIntensity={1.2} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
 function ProfileGhost({ pts }: { pts: Pt2[] }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -1506,6 +1527,7 @@ export default function ForgeBRepStudio() {
   const [genErr, setGenErr] = useState<string | null>(null);
   const [genVolfrac, setGenVolfrac] = useState(0.4);   // fracción de material objetivo
   const [genThreshold, setGenThreshold] = useState(0.4); // umbral de densidad visible
+  const [genSmooth, setGenSmooth] = useState(true);      // superficie suave (orgánica) vs voxeles crudos
   // Picking de cara/arista pero dirigido al panel FEA (no a la op activa).
   const feaPickTargetRef = useRef<'fija' | 'carga' | null>(null);
   feaPickTargetRef.current = feaPickTarget;
@@ -2272,7 +2294,9 @@ export default function ForgeBRepStudio() {
             {showSketch && <SketchPlane />}
             {showSketch && <ProfileGhost pts={profilePts} />}
             {genResult ? (
-              <GenerativeVoxels result={genResult} threshold={genThreshold} />
+              genSmooth
+                ? <GenerativeSurface result={genResult} threshold={genThreshold} />
+                : <GenerativeVoxels result={genResult} threshold={genThreshold} />
             ) : result && (
               <SolidMesh
                 mesh={result.mesh}
@@ -2994,6 +3018,9 @@ export default function ForgeBRepStudio() {
                     <span className="rk">Material quitado</span>
                     <span className="rv" data-testid="gen-void">{Math.round(genVoidPct)}%</span>
                   </div>
+                  <button className="fb-sim-clear" data-testid="btn-gen-smooth" onClick={() => setGenSmooth((s) => !s)}>
+                    {genSmooth ? '◼ Ver voxeles (crudo)' : '⬭ Ver superficie suave'}
+                  </button>
                   <button className="fb-sim-clear" data-testid="btn-gen-clear" onClick={clearGenerative}>
                     Volver al sólido
                   </button>

@@ -248,3 +248,77 @@ export function runTopOpt(
 
   return { xPhys, compliance, history, mesh, cells, nCells: N };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Salida SUAVE: campo de densidad → superficie ORGÁNICA (no bloques)
+// ─────────────────────────────────────────────────────────────────
+// Lo que Fusion muestra liso, no en cubos. Extraemos la malla de FRONTERA del
+// blob de voxeles sólidos (caras entre sólido y vacío, vértices soldados) y la
+// SUAVIZAMOS con Laplaciano → forma orgánica manufacturable. El motor (la física)
+// no cambia; solo la representación de salida.
+export function densityToMesh(
+  result: TopOptResult, iso = 0.5, smoothPasses = 6,
+): { positions: Float32Array; indices: Uint32Array } {
+  const { mesh, cells, xPhys } = result;
+  const [ax, ay, az] = mesh.aabb.min;
+  const sizeX = mesh.aabb.max[0] - ax, sizeY = mesh.aabb.max[1] - ay, sizeZ = mesh.aabb.max[2] - az;
+  const v = mesh.voxel;
+  const nx = Math.max(1, Math.round(sizeX / v)), ny = Math.max(1, Math.round(sizeY / v)), nz = Math.max(1, Math.round(sizeZ / v));
+  const hx = sizeX / nx, hy = sizeY / ny, hz = sizeZ / nz;
+  const vIdx = (i: number, j: number, k: number) => i + nx * (j + ny * k);
+  // voxeles sólidos (densidad ≥ iso)
+  const solid = new Set<number>();
+  for (let e = 0; e < cells.length; e++) {
+    if (xPhys[e] < iso) continue;
+    const c = cells[e];
+    const i = Math.min(nx - 1, Math.max(0, Math.round((c.cx - ax) / hx - 0.5)));
+    const j = Math.min(ny - 1, Math.max(0, Math.round((c.cy - ay) / hy - 0.5)));
+    const k = Math.min(nz - 1, Math.max(0, Math.round((c.cz - az) / hz - 0.5)));
+    solid.add(vIdx(i, j, k));
+  }
+  // nodos de esquina soldados
+  const gnx = nx + 1, gny = ny + 1;
+  const cIdx = (i: number, j: number, k: number) => i + gnx * (j + gny * k);
+  const nodeMap = new Map<number, number>();
+  const pos: number[] = [];
+  const node = (i: number, j: number, k: number) => {
+    const g = cIdx(i, j, k); let n = nodeMap.get(g);
+    if (n === undefined) { n = pos.length / 3; nodeMap.set(g, n); pos.push(ax + i * hx, ay + j * hy, az + k * hz); }
+    return n;
+  };
+  const tris: number[] = [];
+  const quad = (a: number, b: number, c: number, d: number) => { tris.push(a, b, c, a, c, d); };
+  const has = (i: number, j: number, k: number) => i >= 0 && j >= 0 && k >= 0 && i < nx && j < ny && k < nz && solid.has(vIdx(i, j, k));
+  for (const key of solid) {
+    const i = key % nx, j = Math.floor(key / nx) % ny, k = Math.floor(key / (nx * ny));
+    if (!has(i + 1, j, k)) quad(node(i + 1, j, k), node(i + 1, j + 1, k), node(i + 1, j + 1, k + 1), node(i + 1, j, k + 1));      // +X
+    if (!has(i - 1, j, k)) quad(node(i, j, k), node(i, j, k + 1), node(i, j + 1, k + 1), node(i, j + 1, k));                      // −X
+    if (!has(i, j + 1, k)) quad(node(i, j + 1, k), node(i, j + 1, k + 1), node(i + 1, j + 1, k + 1), node(i + 1, j + 1, k));      // +Y
+    if (!has(i, j - 1, k)) quad(node(i, j, k), node(i + 1, j, k), node(i + 1, j, k + 1), node(i, j, k + 1));                      // −Y
+    if (!has(i, j, k + 1)) quad(node(i, j, k + 1), node(i + 1, j, k + 1), node(i + 1, j + 1, k + 1), node(i, j + 1, k + 1));      // +Z
+    if (!has(i, j, k - 1)) quad(node(i, j, k), node(i, j + 1, k), node(i + 1, j + 1, k), node(i + 1, j, k));                      // −Z
+  }
+  const nV = pos.length / 3;
+  // adyacencia para Laplaciano
+  const adj: Set<number>[] = Array.from({ length: nV }, () => new Set<number>());
+  for (let t = 0; t < tris.length; t += 3) {
+    const a = tris[t], b = tris[t + 1], c = tris[t + 2];
+    adj[a].add(b); adj[a].add(c); adj[b].add(a); adj[b].add(c); adj[c].add(a); adj[c].add(b);
+  }
+  // suavizado Laplaciano (λ=0.5) → redondea los bloques a orgánico
+  let P = new Float64Array(pos);
+  for (let pass = 0; pass < smoothPasses; pass++) {
+    const Q = new Float64Array(P);
+    for (let n = 0; n < nV; n++) {
+      const nb = adj[n]; if (nb.size === 0) continue;
+      let sx = 0, sy = 0, sz = 0;
+      for (const m of nb) { sx += P[m * 3]; sy += P[m * 3 + 1]; sz += P[m * 3 + 2]; }
+      const inv = 1 / nb.size, l = 0.5;
+      Q[n * 3] = P[n * 3] + l * (sx * inv - P[n * 3]);
+      Q[n * 3 + 1] = P[n * 3 + 1] + l * (sy * inv - P[n * 3 + 1]);
+      Q[n * 3 + 2] = P[n * 3 + 2] + l * (sz * inv - P[n * 3 + 2]);
+    }
+    P = Q;
+  }
+  return { positions: Float32Array.from(P), indices: Uint32Array.from(tris) };
+}
