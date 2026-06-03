@@ -1619,9 +1619,18 @@ export default function ForgeBRepStudio() {
   }, [ops]);
   // Editor de croquis: al Terminar, el perfil dibujado (resuelto por el solver) pasa
   // a kind 'custom' y se garantiza un extrude que lo solidifica.
-  const onSketchFinish = useCallback((prof: Pt2[]) => {
-    setSketch((s) => ({ ...s, kind: 'custom', customProfile: prof }));
-    setOps((cur) => (cur.some((o) => o.type === 'extrude') ? cur : [...cur, { id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }]));
+  const onSketchFinish = useCallback((result: { profile: Pt2[]; holes: { x: number; y: number; d: number }[] }) => {
+    setSketch((s) => ({ ...s, kind: 'custom', customProfile: result.profile }));
+    setOps((cur) => {
+      const next: Op[] = cur.some((o) => o.type === 'extrude')
+        ? [...cur]
+        : [...cur, { id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }];
+      // Cada círculo del croquis → un barreno pasante en su centro (mismo plano local).
+      for (const h of result.holes) {
+        next.push({ id: newId('hole'), type: 'hole', x: h.x, y: h.y, diameter: h.d, through: true, depth: 12 });
+      }
+      return next;
+    });
     setActiveOp(null);
     setSketchOpen(false);
   }, []);

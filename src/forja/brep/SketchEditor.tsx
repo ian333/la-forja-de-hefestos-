@@ -29,7 +29,7 @@ const clone = (s: Sketch): Sketch => ({
 });
 
 export default function SketchEditor({ onFinish, onCancel }: {
-  onFinish: (profile: XY[]) => void;
+  onFinish: (result: { profile: XY[]; holes: { x: number; y: number; d: number }[] }) => void;
   onCancel: () => void;
 }) {
   const [model, setModel] = useState<Sketch>({ points: [], lines: [], circles: [], constraints: [] });
@@ -221,8 +221,8 @@ export default function SketchEditor({ onFinish, onCancel }: {
   // Perfil cerrado para el extrude: recorre el lazo de líneas; si solo hay un
   // círculo, lo teselamos.
   const finish = () => {
-    const prof = extractProfile(model);
-    if (prof.length >= 3) onFinish(prof);
+    const r = extractProfileAndHoles(model);
+    if (r.profile.length >= 3) onFinish(r);
   };
 
   // Color según DOF global. En tema OSCURO lo "clavado" va en BLANCO (la tinta
@@ -243,7 +243,8 @@ export default function SketchEditor({ onFinish, onCancel }: {
       points() { return model.points.map((p) => ({ x: p.x, y: p.y, fixed: !!p.fixed })); },
       toPx, // (x,y) -> {px,py} relativo al SVG
       svgRect() { return svgRef.current?.getBoundingClientRect(); },
-      profile() { return extractProfile(model); },
+      profile() { return extractProfileAndHoles(model).profile; },
+      holes() { return extractProfileAndHoles(model).holes; },
     };
     return () => { delete (window as unknown as { __sketchEditor?: unknown }).__sketchEditor; };
   }, [model, res, toPx]);
@@ -359,24 +360,34 @@ function distToSeg(p: XY, a: XY, b: XY): number {
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 function firstChainPoint(s: Sketch): number { return s.lines.length ? s.lines[0].a : -1; }
-// Recorre el lazo de líneas para devolver el perfil ordenado (mm). Si no hay
-// líneas pero sí un círculo, lo tesela en 64 puntos.
-function extractProfile(s: Sketch): XY[] {
+function tessCircle(cx: number, cy: number, r: number): XY[] {
+  const out: XY[] = [];
+  for (let k = 0; k < 64; k++) { const a = (k / 64) * Math.PI * 2; out.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }); }
+  return out;
+}
+/**
+ * Separa el croquis en PERFIL EXTERIOR + BARRENOS. Si hay un lazo de líneas, ese
+ * es el exterior y TODO círculo dentro es un barreno (se taladra al extruir). Si
+ * solo hay círculos, el primero es el exterior (disco) y los demás son barrenos.
+ */
+function extractProfileAndHoles(s: Sketch): { profile: XY[]; holes: { x: number; y: number; d: number }[] } {
+  let profile: XY[] = [];
+  let circlesForHoles = s.circles;
   if (s.lines.length >= 3) {
     const adj = new Map<number, number[]>();
     for (const l of s.lines) { (adj.get(l.a) ?? adj.set(l.a, []).get(l.a)!).push(l.b); (adj.get(l.b) ?? adj.set(l.b, []).get(l.b)!).push(l.a); }
     const start = s.lines[0].a; const loop: number[] = [start]; let prev = -1, cur = start;
     for (let guard = 0; guard < s.points.length + 2; guard++) {
       const nbrs = adj.get(cur) ?? []; const nxt = nbrs.find((n) => n !== prev);
-      if (nxt == null) break; if (nxt === start) break;
+      if (nxt == null || nxt === start) break;
       loop.push(nxt); prev = cur; cur = nxt;
     }
-    return loop.map((i) => ({ x: s.points[i].x, y: s.points[i].y }));
+    profile = loop.map((i) => ({ x: s.points[i].x, y: s.points[i].y }));
+  } else if (s.circles.length >= 1) {
+    const c = s.circles[0]; const cp = s.points[c.c];
+    profile = tessCircle(cp.x, cp.y, c.r);
+    circlesForHoles = s.circles.slice(1);
   }
-  if (s.circles.length === 1) {
-    const c = s.circles[0]; const cp = s.points[c.c]; const out: XY[] = [];
-    for (let k = 0; k < 64; k++) { const a = (k / 64) * Math.PI * 2; out.push({ x: cp.x + c.r * Math.cos(a), y: cp.y + c.r * Math.sin(a) }); }
-    return out;
-  }
-  return [];
+  const holes = circlesForHoles.map((c) => ({ x: s.points[c.c].x, y: s.points[c.c].y, d: 2 * c.r }));
+  return { profile, holes };
 }
