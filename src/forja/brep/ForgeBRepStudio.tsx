@@ -1508,6 +1508,11 @@ export default function ForgeBRepStudio() {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [editingOpId, setEditingOpId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  // ── P1: rollback (construir hasta op N) + menú contextual (clic derecho) ──
+  // rollbackIdx = nº de ops a construir (null = punta/todas). Permite editar a la
+  // mitad de la historia viendo el sólido en ese punto (paridad Timeline marker).
+  const [rollbackIdx, setRollbackIdx] = useState<number | null>(null);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; opId: string } | null>(null);
   // Click-to-place del barreno: tras pulsar B / el botón Hole, el SIGUIENTE clic en
   // una cara fija el centro (x,y) del barreno en ese punto (no en sliders). El ref
   // lo lee el callback de picking sin closure viejo; el estado alimenta el hint.
@@ -1601,7 +1606,9 @@ export default function ForgeBRepStudio() {
           shape = built.compound;
           assemblyResult = built.assembly;
         } else {
-          shape = buildShape(oc, sketch, ops, edgeAxisRef.current);
+          // ROLLBACK: construye solo las primeras `rollbackIdx` ops (null = todas).
+          const builtOps = rollbackIdx == null ? ops : ops.slice(0, Math.max(1, rollbackIdx));
+          shape = buildShape(oc, sketch, builtOps, edgeAxisRef.current);
         }
 
         const mesh = tessellate(oc, shape, 0.08, 0.3);
@@ -1629,14 +1636,72 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, sketch, ops, material, assembly]);
+  }, [oc, sketch, ops, material, assembly, rollbackIdx]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
+
+  // ── UNDO / REDO ──────────────────────────────────────────────────────
+  // Historial del documento {sketch,ops,material,assembly}. Las mutaciones
+  // reemplazan refs inmutables, así que un snapshot es captura superficial de
+  // las 4 refs. Un efecto observa los cambios y empuja el estado ANTERIOR a
+  // `past`; undo/redo restauran un snapshot marcando applyingRef para no
+  // re-capturar el propio salto.
+  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState };
+  const histRef = useRef<{ past: DocSnap[]; future: DocSnap[]; last: DocSnap | null }>({ past: [], future: [], last: null });
+  const applyingRef = useRef(false);
+  const [histVer, setHistVer] = useState(0);
+  useEffect(() => {
+    const snap: DocSnap = { sketch, ops, material, assembly };
+    const h = histRef.current;
+    if (applyingRef.current) { applyingRef.current = false; h.last = snap; return; }
+    if (h.last === null) { h.last = snap; return; } // montaje inicial: no es un cambio
+    h.past.push(h.last);
+    if (h.past.length > 120) h.past.shift();
+    h.future = [];
+    h.last = snap;
+    setHistVer((v) => v + 1);
+  }, [sketch, ops, material, assembly]);
+  const undo = useCallback(() => {
+    const h = histRef.current;
+    if (!h.past.length || h.last == null) return;
+    const prev = h.past.pop()!;
+    h.future.push(h.last);
+    applyingRef.current = true;
+    setSketch(prev.sketch); setOps(prev.ops); setMaterial(prev.material); setAssembly(prev.assembly);
+    setActiveOp((a) => (a && prev.ops.some((o) => o.id === a)) ? a : (prev.ops[0]?.id ?? null));
+    setHistVer((v) => v + 1);
+  }, []);
+  const redo = useCallback(() => {
+    const h = histRef.current;
+    if (!h.future.length || h.last == null) return;
+    const nxt = h.future.pop()!;
+    h.past.push(h.last);
+    applyingRef.current = true;
+    setSketch(nxt.sketch); setOps(nxt.ops); setMaterial(nxt.material); setAssembly(nxt.assembly);
+    setActiveOp((a) => (a && nxt.ops.some((o) => o.id === a)) ? a : (nxt.ops[0]?.id ?? null));
+    setHistVer((v) => v + 1);
+  }, []);
+  const canUndo = useMemo(() => { void histVer; return histRef.current.past.length > 0; }, [histVer]);
+  const canRedo = useMemo(() => { void histVer; return histRef.current.future.length > 0; }, [histVer]);
+  // Ctrl+Z = undo · Ctrl+Y / Ctrl+Shift+Z = redo (ignora si se escribe en un input).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      const k = e.key.toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
 
   // Al cambiar la ESTRUCTURA del documento (nº de ops) la topología cambia y los
   // índices de cara/arista dejan de ser válidos: limpia la selección puntual.
   const opCount = ops.length;
   useEffect(() => { setSelectedFaceId(null); setSelectedEdgeId(null); }, [opCount]);
+  // Si el marcador de rollback cubre todas (o más) las ops, vuelve a la punta.
+  useEffect(() => { setRollbackIdx((r) => (r != null && r >= opCount ? null : r)); }, [opCount]);
 
   // Tecla H: chrome on/off.
   useEffect(() => {
@@ -1717,6 +1782,26 @@ export default function ForgeBRepStudio() {
   // SUPRIMIR / reactivar un nodo (ojo) — lo salta buildShape sin borrarlo.
   const toggleSuppressOp = useCallback((id: string) => {
     setOps((cur) => cur.map((o) => (o.id === id ? { ...o, suppressed: !o.suppressed } : o)));
+  }, []);
+  // REORDENAR (↑/↓): intercambia ops adyacentes → cambia el orden de CÁLCULO
+  // (p.ej. fillet antes/después de un hole da resultados distintos). El sólido
+  // base (extrude/revolve) buildShape lo procesa primero de todos modos.
+  const moveOp = useCallback((id: string, dir: -1 | 1) => {
+    setOps((cur) => {
+      const i = cur.findIndex((o) => o.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= cur.length) return cur;
+      const next = cur.slice();
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  }, []);
+  // ROLLBACK: construir el sólido solo hasta la op `n` (1..ops.length). null=punta.
+  const rollTo = useCallback((n: number | null) => {
+    setRollbackIdx((prev) => {
+      if (n === null) return null;
+      return prev === n ? null : n; // re-clic en el mismo punto = restaurar punta
+    });
   }, []);
   // Barreno POR CLIC (como un humano): crea el hole y entra a modo colocación →
   // el siguiente clic en una cara fija su centro. Reemplaza teclear x,y en sliders.
@@ -2124,6 +2209,14 @@ export default function ForgeBRepStudio() {
       removeOp,
       renameOp,
       toggleSuppressOp,
+      // P1: reordenar, rollback, undo/redo — drivers de QA
+      moveOp,
+      rollTo,
+      get rollbackIdx() { return rollbackIdx; },
+      undo,
+      redo,
+      get canUndo() { return histRef.current.past.length > 0; },
+      get canRedo() { return histRef.current.future.length > 0; },
       // colapsar/expandir un panel por id (features|params|faces|analysis) — driver de QA
       toggleCollapse,
       get collapsed() { return collapsed; },
@@ -2301,7 +2394,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, toggleCollapse, exportSTL, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, toggleCollapse, exportSTL, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2495,6 +2588,11 @@ export default function ForgeBRepStudio() {
               <span className="dot" />
               {oc ? 'OCCT-WASM listo' : bootErr ? 'kernel falló' : 'cargando kernel…'}
             </div>
+            {/* ── Undo / Redo (Ctrl+Z · Ctrl+Y) ── */}
+            <div className="fb-undo">
+              <button data-testid="btn-undo" onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)">↶</button>
+              <button data-testid="btn-redo" onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Y)">↷</button>
+            </div>
           </header>
 
           {/* ── TOOLBAR de operaciones (botones) ── */}
@@ -2557,11 +2655,13 @@ export default function ForgeBRepStudio() {
                 <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo' : sketch.kind === 'revprofile' ? `Perfil escalón ×${sketch.steps.length}` : sketch.kind === 'gear' ? `Engrane Z${sketch.gear.teeth} m${sketch.gear.module}` : 'Perfil L'} · Plano XY</em>
               </div>
             </div>
-            {ops.map((op, i) => (
+            {ops.map((op, i) => {
+              const rolled = rollbackIdx != null && i >= rollbackIdx; // tras el marcador
+              return (
               <div key={op.id}>
                 <div className="fb-feat-arrow">↓</div>
                 <div
-                  className={`fb-feat-node accent ${activeOp === op.id ? 'active' : ''} ${op.suppressed ? 'suppressed' : ''}`}
+                  className={`fb-feat-node accent ${activeOp === op.id ? 'active' : ''} ${op.suppressed ? 'suppressed' : ''} ${rolled ? 'rolled' : ''}`}
                   data-testid={`feat-${op.type}`}
                   onClick={() => {
                     setActiveOp(op.id);
@@ -2569,6 +2669,7 @@ export default function ForgeBRepStudio() {
                     else if (op.type === 'shell') setPickMode('face');
                     else setPickMode('none');
                   }}
+                  onContextMenu={(e) => { e.preventDefault(); setActiveOp(op.id); setCtxMenu({ x: e.clientX, y: e.clientY, opId: op.id }); }}
                 >
                   <span className="ico">{opIcon(op.type)}</span>
                   <div className="fb-feat-body">
@@ -2584,14 +2685,20 @@ export default function ForgeBRepStudio() {
                         }} />
                     ) : (
                       <strong onDoubleClick={(e) => { e.stopPropagation(); setEditingOpId(op.id); setEditingName(op.name ?? `${opTitle(op.type)} ${i + 1}`); }}
-                        title="Doble-clic para renombrar">
+                        title="Doble-clic para renombrar · clic derecho para más">
                         {op.name ?? `${opTitle(op.type)} ${i + 1}`}
                       </strong>
                     )}
-                    <em>{op.suppressed ? 'suprimido' : opSubtitle(op)}</em>
+                    <em>{op.suppressed ? 'suprimido' : rolled ? 'rolled back' : opSubtitle(op)}</em>
                   </div>
-                  {/* acciones por-nodo: suprimir (ojo) + borrar (✕) — paridad Timeline */}
+                  {/* acciones por-nodo: reordenar (↑↓) + suprimir (ojo) + borrar (✕) */}
                   <div className="fb-feat-actions">
+                    <button className="fb-feat-act" data-testid={`feat-up-${op.type}`} disabled={i === 0}
+                      onClick={(e) => { e.stopPropagation(); moveOp(op.id, -1); }}
+                      title="Subir (calcular antes)">↑</button>
+                    <button className="fb-feat-act" data-testid={`feat-down-${op.type}`} disabled={i === ops.length - 1}
+                      onClick={(e) => { e.stopPropagation(); moveOp(op.id, 1); }}
+                      title="Bajar (calcular después)">↓</button>
                     <button className="fb-feat-act" data-testid={`feat-suppress-${op.type}`}
                       onClick={(e) => { e.stopPropagation(); toggleSuppressOp(op.id); }}
                       title={op.suppressed ? 'Reactivar feature' : 'Suprimir feature (no se calcula)'}>
@@ -2602,9 +2709,43 @@ export default function ForgeBRepStudio() {
                       title="Eliminar feature (purga dependientes)">✕</button>
                   </div>
                 </div>
+                {/* marcador de ROLLBACK: el sólido se construye hasta aquí */}
+                {rollbackIdx === i + 1 && (
+                  <div className="fb-rollback-bar" data-testid="rollback-bar"
+                    onClick={() => rollTo(null)} title="Clic para volver a la punta">
+                    ⟲ rollback · clic = punta
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </aside>
+
+          {/* ── Menú CONTEXTUAL (clic derecho en un nodo del árbol) ── */}
+          {ctxMenu && (() => {
+            const op = ops.find((o) => o.id === ctxMenu.opId);
+            if (!op) return null;
+            const idx = ops.findIndex((o) => o.id === ctxMenu.opId);
+            return (
+              <>
+                <div className="fb-ctx-scrim" onClick={() => setCtxMenu(null)}
+                  onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }} />
+                <div className="fb-ctx" data-testid="ctx-menu" role="menu"
+                  style={{ left: Math.min(ctxMenu.x, window.innerWidth - 200), top: Math.min(ctxMenu.y, window.innerHeight - 280) }}>
+                  <div className="fb-ctx-head">{op.name ?? `${opTitle(op.type)} ${idx + 1}`}</div>
+                  <button data-testid="ctx-edit" onClick={() => { setActiveOp(op.id); setCtxMenu(null); }}>✎ Editar</button>
+                  <button data-testid="ctx-rename" onClick={() => { setEditingOpId(op.id); setEditingName(op.name ?? `${opTitle(op.type)} ${idx + 1}`); setCtxMenu(null); }}>✏ Renombrar</button>
+                  <div className="fb-menu-sep" />
+                  <button data-testid="ctx-up" disabled={idx === 0} onClick={() => { moveOp(op.id, -1); setCtxMenu(null); }}>↑ Subir</button>
+                  <button data-testid="ctx-down" disabled={idx === ops.length - 1} onClick={() => { moveOp(op.id, 1); setCtxMenu(null); }}>↓ Bajar</button>
+                  <button data-testid="ctx-suppress" onClick={() => { toggleSuppressOp(op.id); setCtxMenu(null); }}>{op.suppressed ? '◌ Reactivar' : '👁 Suprimir'}</button>
+                  <button data-testid="ctx-rollback" onClick={() => { rollTo(idx + 1); setCtxMenu(null); }}>⟲ Rollback aquí</button>
+                  <div className="fb-menu-sep" />
+                  <button className="danger" data-testid="ctx-delete" onClick={() => { removeOp(op.id); setCtxMenu(null); }}>✕ Eliminar</button>
+                </div>
+              </>
+            );
+          })()}
 
           {/* ── Lista SIEMPRE disponible de caras (selección determinista) ──
               Independiente de la op activa: clic en una entrada fija
@@ -3428,8 +3569,39 @@ const CSS = `
   width:20px;height:20px;border-radius:5px;cursor:pointer;line-height:1;padding:0;transition:.1s;}
 .fb-feat-act:hover{background:${GOLD}22;color:${GOLD};}
 .fb-feat-act.del:hover{background:rgba(248,113,113,0.2);color:#fca5a5;}
+.fb-feat-act:disabled{opacity:.25;pointer-events:none;}
 .fb-feat-node.suppressed{opacity:.5;}
 .fb-feat-node.suppressed strong{text-decoration:line-through;}
+/* nodos por DEBAJO del marcador de rollback: en gris, fuera del cálculo */
+.fb-feat-node.rolled{opacity:.4;filter:grayscale(.6);}
+.fb-feat-node.rolled .ico{color:${STEEL};}
+.fb-rollback-bar{display:flex;align-items:center;gap:6px;justify-content:center;margin:4px 0;
+  font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:${GOLD};cursor:pointer;
+  border:1px dashed ${GOLD}66;border-radius:6px;padding:4px 6px;background:${GOLD}10;}
+.fb-rollback-bar:hover{background:${GOLD}1e;}
+
+/* ── Undo / Redo en el header ── */
+.fb-undo{display:flex;gap:3px;margin-left:6px;}
+.fb-undo button{border:1px solid rgba(159,179,200,0.18);background:rgba(255,255,255,0.04);
+  color:#e9eef5;font-size:15px;width:30px;height:28px;border-radius:8px;cursor:pointer;
+  line-height:1;transition:.12s;}
+.fb-undo button:hover:not(:disabled){border-color:${GOLD}77;background:${GOLD}18;color:${GOLD};}
+.fb-undo button:disabled{opacity:.3;cursor:default;}
+
+/* ── Menú contextual (clic derecho) — flotante en el cursor ── */
+.fb-ctx-scrim{position:fixed;inset:0;z-index:60;}
+.fb-ctx{position:fixed;z-index:61;min-width:184px;padding:6px;
+  background:linear-gradient(180deg,rgba(24,31,43,0.98),rgba(13,17,25,0.99));
+  border:1px solid rgba(159,179,200,0.2);border-radius:11px;
+  box-shadow:0 16px 50px rgba(0,0,0,0.62);display:flex;flex-direction:column;gap:1px;}
+.fb-ctx-head{font-size:10px;font-weight:600;color:${GOLD};padding:4px 9px 6px;
+  border-bottom:1px solid rgba(159,179,200,0.12);margin-bottom:3px;
+  text-transform:uppercase;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fb-ctx button{display:flex;align-items:center;gap:7px;text-align:left;border:0;background:transparent;
+  color:#e9eef5;font-size:12px;padding:7px 9px;border-radius:7px;cursor:pointer;font-weight:500;width:100%;}
+.fb-ctx button:hover:not(:disabled){background:${GOLD}1a;color:${GOLD};}
+.fb-ctx button:disabled{opacity:.3;pointer-events:none;}
+.fb-ctx button.danger:hover{background:rgba(248,113,113,0.16);color:#fca5a5;}
 
 .fb-params{right:18px;top:18px;width:230px;padding:14px;max-height:64vh;overflow:auto;}
 .fb-panel-title{font-size:11px;font-weight:600;color:${GOLD};margin-bottom:12px;
