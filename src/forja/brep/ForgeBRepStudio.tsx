@@ -884,7 +884,7 @@ function SolidMesh({
   selFaces: number[];
   selEdges: number[];
   pickMode: 'none' | 'face' | 'edge';
-  onPickFace: (i: number) => void;
+  onPickFace: (i: number, p?: THREE.Vector3) => void;
   onPickEdge: (i: number) => void;
   /** Colores por vértice del campo de von Mises (RGB 0..1, 3·N). null = sin overlay. */
   feaColors: Float32Array | null;
@@ -979,7 +979,7 @@ function SolidMesh({
     e.stopPropagation();
     const ti = e.faceIndex;
     if (ti != null && ti >= 0 && ti < mesh.faceIds.length) {
-      onPickFace(mesh.faceIds[ti]);
+      onPickFace(mesh.faceIds[ti], e.point);
       return;
     }
     // Fallback (raro): si no hubo faceIndex, usa el centroide más cercano.
@@ -1421,6 +1421,11 @@ export default function ForgeBRepStudio() {
   const [showSketch, setShowSketch] = useState(true);
   const [hideChrome, setHideChrome] = useState(false);
   const [pickMode, setPickMode] = useState<'none' | 'face' | 'edge'>('none');
+  // Click-to-place del barreno: tras pulsar B / el botón Hole, el SIGUIENTE clic en
+  // una cara fija el centro (x,y) del barreno en ese punto (no en sliders). El ref
+  // lo lee el callback de picking sin closure viejo; el estado alimenta el hint.
+  const placingHoleRef = useRef<string | null>(null);
+  const [placingHole, setPlacingHole] = useState(false);
 
   // ── SIMULACIÓN FEA (von Mises real sobre el sólido) ──
   // Caras de borde elegidas por face-picking: la FIJA (empotramiento u=0) y la
@@ -1593,6 +1598,17 @@ export default function ForgeBRepStudio() {
     setActiveOp(null);
     setPickMode('none');
   }, []);
+  // Barreno POR CLIC (como un humano): crea el hole y entra a modo colocación →
+  // el siguiente clic en una cara fija su centro. Reemplaza teclear x,y en sliders.
+  const startHole = useCallback(() => {
+    const ex = (ops.find((o) => o.type === 'extrude') as ExtrudeOp | undefined)?.depth ?? 12;
+    const op: HoleOp = { id: newId('hole'), type: 'hole', x: 0, y: 0, diameter: 8, through: true, depth: ex };
+    setOps((cur) => [...cur, op]);
+    setActiveOp(op.id);
+    placingHoleRef.current = op.id;
+    setPlacingHole(true);
+    setPickMode('face');
+  }, [ops]);
 
   // ── Feature ENGRANE (botón btn-gear): pasa el croquis a 'gear', garantiza el
   // extrude que lo solidifica (perfil de involuta → sólido → resta del barreno)
@@ -1768,8 +1784,19 @@ export default function ForgeBRepStudio() {
   // Selección (toggle) de cara/arista para la op activa. SIEMPRE fija el
   // selectedFaceId/selectedEdgeId (para el HUD + resalte), y además, si hay una
   // op que consume caras/aristas (Shell / Fillet / Chamfer), togglea su lista.
-  const togglePickFace = useCallback((i: number) => {
+  const togglePickFace = useCallback((i: number, p?: THREE.Vector3) => {
     setSelectedFaceId(i);
+    // COLOCACIÓN DE BARRENO por clic: el punto del mundo se mapea a (x,y) local.
+    // El grupo del modelo está rotado -90° en X → mundo (X,Y,Z) = local (x, z, -y),
+    // así que local x = mundo.x, local y = -mundo.z (el barreno se taladra en Z).
+    const placing = placingHoleRef.current;
+    if (placing && p) {
+      updateOp(placing, { x: +p.x.toFixed(3), y: +(-p.z).toFixed(3) } as Partial<Op>);
+      placingHoleRef.current = null;
+      setPlacingHole(false);
+      setPickMode('none');
+      return;
+    }
     // Si el picking está dirigido al panel FEA, el clic asigna la cara FIJA o la
     // de CARGA (y NO toca la selección de la op activa). Un solo clic basta.
     const feaTarget = feaPickTargetRef.current;
@@ -1819,7 +1846,7 @@ export default function ForgeBRepStudio() {
     { key: 'c', icon: '◯', label: 'Círculo', action: () => setSketch((s) => ({ ...s, kind: 'circle' })) },
     { key: 'l', icon: '∟', label: 'Perfil L', action: () => setSketch((s) => ({ ...s, kind: 'lprofile' })) },
     { key: 'e', icon: '⬆', label: 'Extruir', action: () => addOp('extrude') },
-    { key: 'b', icon: '⊙', label: 'Barreno', action: () => addOp('hole') },
+    { key: 'b', icon: '⊙', label: 'Barreno', action: () => startHole() },
     { key: 'f', icon: '◜', label: 'Fillet', action: () => addOp('fillet') },
     { key: 'x', icon: '◣', label: 'Chaflán', action: () => addOp('chamfer') },
     { key: 'w', icon: '▢', label: 'Vaciado', action: () => addOp('shell') },
@@ -1827,14 +1854,14 @@ export default function ForgeBRepStudio() {
     { key: 'g', icon: '⚙', label: 'Engrane', action: () => applyGear() },
     { key: 'p', icon: '◧', label: 'Pick cara', action: () => enableFacePick() },
     { key: 'k', icon: '╱', label: 'Pick arista', action: () => enableEdgePick() },
-  ], [setSketch, addOp, applyGear, enableFacePick, enableEdgePick]);
+  ], [setSketch, addOp, startHole, applyGear, enableFacePick, enableEdgePick]);
   useEffect(() => {
     const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'Escape') { setShortcutPos(null); setPickMode('none'); return; }
+      if (e.key === 'Escape') { setShortcutPos(null); setPickMode('none'); placingHoleRef.current = null; setPlacingHole(false); return; }
       const k = e.key.toLowerCase();
       if (k === 's') { e.preventDefault(); setShortcutPos((p) => (p ? null : { ...mouseRef.current })); return; }
       const item = KEYMAP.find((m) => m.key === k);
@@ -1893,7 +1920,7 @@ export default function ForgeBRepStudio() {
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
       // slider de la UI. Solo lectura; no cambia la lógica del documento.
-      get opsList() { return ops.map((o) => ({ id: o.id, type: o.type, depth: (o as { depth?: number }).depth })); },
+      get opsList() { return ops.map((o) => ({ id: o.id, type: o.type, depth: (o as { depth?: number }).depth, x: (o as { x?: number }).x, y: (o as { y?: number }).y })); },
       // Perfil escalonado de revolución (croquis poligonal) — driver de QA.
       setSteps,
       addStep,
@@ -2130,7 +2157,9 @@ export default function ForgeBRepStudio() {
 
         {pickMode !== 'none' && (
           <div className="fb-pick-hint" data-testid="pick-hint">
-            Clic en {pickMode === 'face' ? 'una CARA' : 'una ARISTA'} del sólido para seleccionarla
+            {placingHole
+              ? 'Clic en la cara superior para COLOCAR el barreno'
+              : `Clic en ${pickMode === 'face' ? 'una CARA' : 'una ARISTA'} del sólido para seleccionarla`}
           </div>
         )}
 
@@ -2230,7 +2259,7 @@ export default function ForgeBRepStudio() {
           <div className="fb-toolbar" data-testid="toolbar">
             <span className="fb-tb-label">Operaciones</span>
             <button data-testid="btn-extrude" onClick={() => addOp('extrude')} title="Extrude (boss/base)">⬓ Extrude</button>
-            <button data-testid="btn-hole" onClick={() => addOp('hole')} title="Barreno / corte cilíndrico">◎ Hole</button>
+            <button data-testid="btn-hole" onClick={() => startHole()} title="Barreno / corte cilíndrico — clic en la cara para colocarlo">◎ Hole</button>
             <button data-testid="btn-fillet" onClick={() => addOp('fillet')} title="Redondeo de aristas">◜ Fillet</button>
             <button data-testid="btn-chamfer" onClick={() => addOp('chamfer')} title="Bisel de aristas">◹ Chamfer</button>
             <button data-testid="btn-shell" onClick={() => addOp('shell')} title="Vaciado / pared delgada">▢ Shell</button>
