@@ -11,7 +11,7 @@
  * SVG en vez de three.js: un croquis es 2D; SVG es nítido, hit-testeable y fácil de
  * manejar con el mouse (y de verificar con Playwright clicando coordenadas).
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { solveSketch, type Sketch, type Constraint, type SolveResult } from './sketch-solver';
 
 const GOLD = '#FDB813';
@@ -42,6 +42,10 @@ export default function SketchEditor({ onFinish, onCancel }: {
   const [dim, setDim] = useState<{ kind: 'dist'; p: number; q: number; sx: number; sy: number; val: string } | { kind: 'rad'; c: number; sx: number; sy: number; val: string } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 1000, h: 700 });
+  const modelRef = useRef<Sketch>(model);                                  // último modelo (para el drag sin closure viejo)
+  const dragRef = useRef<{ i: number; moved: boolean } | null>(null);      // punto que se está arrastrando
+  const suppressClick = useRef(false);                                     // un drag NO debe disparar el click de selección
+  useEffect(() => { modelRef.current = model; }, [model]);
 
   useEffect(() => {
     const el = svgRef.current; if (!el) return;
@@ -59,9 +63,41 @@ export default function SketchEditor({ onFinish, onCancel }: {
   const commit = useCallback((next: Sketch) => {
     const copy = clone(next);
     const r = solveSketch(copy);
-    setModel(copy);
+    setModel(copy); modelRef.current = copy;
     setRes(r);
   }, []);
+
+  // ── ARRASTRAR PUNTOS (en herramienta Seleccionar) ──────────────────
+  // Agarras un vértice y la geometría lo SIGUE: lo fijamos al cursor y resolvemos
+  // en vivo, así los demás puntos se mueven para mantener las restricciones (lo que
+  // hace que un croquis "esté vivo", como Fusion). El pin es temporal (no persiste).
+  const mmFromEvent = useCallback((e: ReactPointerEvent) => {
+    const r = svgRef.current!.getBoundingClientRect();
+    return toMM(e.clientX - r.left, e.clientY - r.top);
+  }, [toMM]);
+  const onPointerDown = useCallback((e: ReactPointerEvent) => {
+    if (tool !== 'select' || dim) return;
+    const i = nearestPoint(modelRef.current, mmFromEvent(e), 12 / SCALE);
+    if (i >= 0) { dragRef.current = { i, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }
+  }, [tool, dim, mmFromEvent]);
+  const onPointerMove = useCallback((e: ReactPointerEvent) => {
+    const d = dragRef.current; if (!d) return;
+    d.moved = true;
+    const mm = mmFromEvent(e);
+    const next = clone(modelRef.current);
+    next.points[d.i].x = mm.x; next.points[d.i].y = mm.y;
+    const wasFixed = next.points[d.i].fixed;          // recordar si tenía fix real
+    next.points[d.i].fixed = true;                    // pin temporal al cursor
+    const r = solveSketch(next);                       // los demás siguen
+    next.points[d.i].fixed = wasFixed;                 // quitar el pin temporal
+    modelRef.current = next; setModel(next); setRes(r);
+  }, [mmFromEvent]);
+  const onPointerUp = useCallback(() => {
+    // Al soltar: re-resolver SIN el pin temporal para que el DOF mostrado sea el
+    // real (durante el arrastre el punto cuenta como fijo → −2 DOF).
+    if (dragRef.current?.moved) { suppressClick.current = true; commit(modelRef.current); }
+    dragRef.current = null;
+  }, [commit]);
 
   // Snap a un punto existente (umbral en px) o crea uno nuevo. Devuelve el índice.
   const snapOrAdd = useCallback((next: Sketch, mm: XY): number => {
@@ -74,6 +110,7 @@ export default function SketchEditor({ onFinish, onCancel }: {
   }, []);
 
   const onSvgClick = useCallback((e: ReactMouseEvent) => {
+    if (suppressClick.current) { suppressClick.current = false; return; } // venía de un drag
     if (dim) return;
     const rect = svgRef.current!.getBoundingClientRect();
     const mm = toMM(e.clientX - rect.left, e.clientY - rect.top);
@@ -203,6 +240,7 @@ export default function SketchEditor({ onFinish, onCancel }: {
       get nPoints() { return model.points.length; },
       get nLines() { return model.lines.length; },
       get nCircles() { return model.circles.length; },
+      points() { return model.points.map((p) => ({ x: p.x, y: p.y, fixed: !!p.fixed })); },
       toPx, // (x,y) -> {px,py} relativo al SVG
       svgRect() { return svgRef.current?.getBoundingClientRect(); },
       profile() { return extractProfile(model); },
@@ -239,7 +277,8 @@ export default function SketchEditor({ onFinish, onCancel }: {
 
       {/* Lienzo SVG */}
       <div style={{ flex: 1, position: 'relative' }}>
-        <svg ref={svgRef} onClick={onSvgClick} style={{ width: '100%', height: '100%', display: 'block', cursor: tool === 'select' ? 'default' : 'crosshair' }}>
+        <svg ref={svgRef} onClick={onSvgClick} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp}
+          style={{ width: '100%', height: '100%', display: 'block', cursor: tool === 'select' ? 'grab' : 'crosshair' }}>
           {grid}
           {/* círculos */}
           {model.circles.map((c, i) => { const p = toPx(model.points[c.c].x, model.points[c.c].y); return (
