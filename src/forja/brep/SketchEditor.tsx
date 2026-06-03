@@ -225,11 +225,13 @@ export default function SketchEditor({ onFinish, onCancel }: {
     if (r.profile.length >= 3) onFinish(r);
   };
 
-  // Color según DOF global. En tema OSCURO lo "clavado" va en BLANCO (la tinta
-  // natural), no negro: el negro de Fusion es porque su lienzo es blanco. Azul =
-  // sub-restringido (se mueve), blanco = totalmente definido, rojo = conflicto.
+  // Estado GLOBAL (barra de abajo). En tema OSCURO lo "clavado" va BLANCO (la tinta
+  // natural), no negro: el negro de Fusion es porque su lienzo es blanco.
   const dofColor = !res ? '#5b6b7e' : res.status === 'full' ? '#22c55e' : res.status === 'over' ? '#ef4444' : '#3b82f6';
-  const entColor = !res ? '#9fb3c8' : res.status === 'full' ? '#eef2f7' : res.status === 'over' ? '#ef4444' : '#3b82f6';
+  // Color POR-ENTIDAD (DOF del espacio nulo): azul si ESA entidad aún se mueve,
+  // blanco si está clavada, rojo en conflicto. Así solo lo suelto se ve azul.
+  const colFor = (free: boolean | undefined) =>
+    !res ? '#9fb3c8' : res.status === 'over' ? '#ef4444' : free ? '#3b82f6' : '#eef2f7';
 
   // Hook QA para Playwright.
   useEffect(() => {
@@ -237,6 +239,7 @@ export default function SketchEditor({ onFinish, onCancel }: {
       get ready() { return true; },
       get dof() { return res?.dof ?? null; },
       get status() { return res?.status ?? null; },
+      free() { return res?.free ?? null; },
       get nPoints() { return model.points.length; },
       get nLines() { return model.lines.length; },
       get nCircles() { return model.circles.length; },
@@ -283,16 +286,17 @@ export default function SketchEditor({ onFinish, onCancel }: {
           {grid}
           {/* círculos */}
           {model.circles.map((c, i) => { const p = toPx(model.points[c.c].x, model.points[c.c].y); return (
-            <circle key={`c${i}`} cx={p.px} cy={p.py} r={c.r * SCALE} fill="none" stroke={entColor} strokeWidth={1.6} />
+            <circle key={`c${i}`} cx={p.px} cy={p.py} r={c.r * SCALE} fill="none" stroke={colFor(res?.free?.circles[i])} strokeWidth={1.6} />
           ); })}
           {/* líneas */}
           {model.lines.map((l, i) => { const a = toPx(model.points[l.a].x, model.points[l.a].y), b = toPx(model.points[l.b].x, model.points[l.b].y);
             const seld = sel.some((s) => s.kind === 'line' && s.i === i);
-            return <line key={`l${i}`} x1={a.px} y1={a.py} x2={b.px} y2={b.py} stroke={seld ? GOLD : entColor} strokeWidth={seld ? 3 : 1.8} />;
+            const free = !!(res?.free?.points[l.a] || res?.free?.points[l.b]);
+            return <line key={`l${i}`} x1={a.px} y1={a.py} x2={b.px} y2={b.py} stroke={seld ? GOLD : colFor(free)} strokeWidth={seld ? 3 : 1.8} />;
           })}
           {/* puntos */}
           {model.points.map((pt, i) => { const p = toPx(pt.x, pt.y); const seld = sel.some((s) => s.kind === 'point' && s.i === i);
-            return <circle key={`p${i}`} cx={p.px} cy={p.py} r={seld ? 5 : 3.2} fill={seld ? GOLD : pt.fixed ? '#22c55e' : entColor} stroke="#0b0f14" strokeWidth={1} />;
+            return <circle key={`p${i}`} cx={p.px} cy={p.py} r={seld ? 5 : 3.2} fill={seld ? GOLD : pt.fixed ? '#22c55e' : colFor(res?.free?.points[i])} stroke="#0b0f14" strokeWidth={1} />;
           })}
         </svg>
 

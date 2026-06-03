@@ -47,6 +47,9 @@ export interface SolveResult {
   dof: number;            // grados de libertad (nVars − rank J)
   status: 'full' | 'under' | 'over';
   iters: number;
+  // DOF POR-ENTIDAD: qué puntos/círculos AÚN se pueden mover (tienen componente en
+  // el espacio nulo de J). Lo usa el UI para pintar de azul solo lo sub-restringido.
+  free: { points: boolean[]; circles: boolean[] };
 }
 
 // ── Mapa de variables ───────────────────────────────────────────────
@@ -148,12 +151,19 @@ function solveDense(A: number[][], b: number[]): number[] {
   return M.map((row) => row[n]);
 }
 
-// Rango numérico por eliminación de Gauss con tolerancia (para contar DOF).
-function matrixRank(A: number[][], tol = 1e-7): number {
-  const m = A.length; if (m === 0) return 0;
-  const n = A[0].length; const M = A.map((row) => [...row]);
-  let rank = 0;
+// Rango numérico + VARIABLES MÓVILES por eliminación de Gauss-Jordan (RREF) con
+// tolerancia. Una columna sin pivote es una variable LIBRE (parámetro del espacio
+// nulo); un pivote que depende (RREF≠0) de una columna libre TAMBIÉN se mueve. El
+// conjunto `movable` = variables con componente no nula en el espacio nulo de J.
+function rankAndMovable(A: number[][], n: number, tol = 1e-7): { rank: number; movable: boolean[] } {
+  const movable = new Array(n).fill(false);
+  const m = A.length;
+  if (m === 0) { movable.fill(true); return { rank: 0, movable }; }
+  const M = A.map((row) => [...row]);
   const scale = Math.max(1e-12, ...M.flat().map(Math.abs));
+  const colIsPivot = new Array(n).fill(false);
+  const pivotColOfRow: number[] = [];
+  let rank = 0;
   for (let col = 0; col < n && rank < m; col++) {
     let piv = rank;
     for (let r = rank + 1; r < m; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
@@ -166,9 +176,14 @@ function matrixRank(A: number[][], tol = 1e-7): number {
       const f = M[r][col];
       for (let c = col; c < n; c++) M[r][c] -= f * M[rank][c];
     }
-    rank++;
+    colIsPivot[col] = true; pivotColOfRow[rank] = col; rank++;
   }
-  return rank;
+  for (let col = 0; col < n; col++) {
+    if (colIsPivot[col]) continue;
+    movable[col] = true; // variable libre
+    for (let pr = 0; pr < rank; pr++) if (Math.abs(M[pr][col]) > tol) movable[pivotColOfRow[pr]] = true;
+  }
+  return { rank, movable };
 }
 
 const norm2 = (a: number[]) => Math.sqrt(a.reduce((s, x) => s + x * x, 0));
@@ -189,7 +204,8 @@ export function solveSketch(sketch: Sketch, opts: { maxIters?: number; tol?: num
   const vm = buildVarMap(sketch);
   if (vm.n === 0) {
     const r = residuals(sketch);
-    return { converged: normInf(r) < 1e-6, residual: normInf(r), dof: 0, status: 'full', iters: 0 };
+    return { converged: normInf(r) < 1e-6, residual: normInf(r), dof: 0, status: 'full', iters: 0,
+      free: { points: sketch.points.map(() => false), circles: sketch.circles.map(() => false) } };
   }
 
   let v = pack(sketch, vm);
@@ -229,12 +245,18 @@ export function solveSketch(sketch: Sketch, opts: { maxIters?: number; tol?: num
   }
 
   const converged = normInf(r) < 1e-6;
-  // DOF en la solución: nVars − rank(J).
+  // DOF en la solución: nVars − rank(J), y qué entidades aún se mueven.
   const Jfin = jacobian(sketch, vm, v, r);
-  const rank = matrixRank(Jfin);
+  const { rank, movable } = rankAndMovable(Jfin, vm.n);
   const dof = Math.max(0, vm.n - rank);
+  const freePoints = sketch.points.map((p, i) => {
+    if (p.fixed) return false;
+    const [ix, iy] = vm.pxy[i];
+    return (ix >= 0 && movable[ix]) || (iy >= 0 && movable[iy]);
+  });
+  const freeCircles = sketch.circles.map((c, j) => (vm.cr[j] >= 0 && movable[vm.cr[j]]) || freePoints[c.c]);
   const status: SolveResult['status'] = !converged ? 'over' : dof > 0 ? 'under' : 'full';
-  return { converged, residual: normInf(r), dof, status, iters: iter };
+  return { converged, residual: normInf(r), dof, status, iters: iter, free: { points: freePoints, circles: freeCircles } };
 }
 
 /** Conveniencia: ¿el croquis quedó totalmente restringido (negro, como Fusion)? */
