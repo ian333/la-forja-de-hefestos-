@@ -1,0 +1,274 @@
+{
+  "refs": [
+    {
+      "cad": "Autodesk Fusion 360 (Fusion) — Design workspace",
+      "estructura": [
+        "APPLICATION BAR (franja superior, izq→der): Home (cambiar hubs/abrir diseños), toggle del DATA PANEL, menú File (crear/abrir/guardar/EXPORTAR), Save, Undo/Redo, pestañas de diseños abiertos, New Design, Autodesk Assistant, Extensions, Job Status, Notification Center, Help, y My Profile (cuenta/Preferences/sign out). Es el shell de documento, NO de modelado.",
+        "DATA PANEL (lateral IZQUIERDO, se muestra/oculta con el toggle de la Application Bar): hubs, projects y designs; gestión de datos del diseño y colaboración. Es la 'barra de datos/documento' (no es el árbol del modelo).",
+        "TOOLBAR / RIBBON (debajo de la Application Bar): selector de WORKSPACE (Design, Render, Manufacture, Animation, Simulation, Drawing...) + pestañas (tabs) organizadas por familia de comandos (Solid, Surface, Mesh, Sheet Metal, Plastic, Assemble, Construct, Inspect, Insert, Select, Utilities). Las pestañas CONTEXTUALES (p.ej. Sketch) APARECEN junto a las default al entrar a un modo; los ENTORNOS contextuales (p.ej. Form) REEMPLAZAN temporalmente las pestañas default mientras están activos. Es ribbon-por-workspace, no un solo ribbon fijo.",
+        "BROWSER (lateral IZQUIERDO, bajo el Data Panel) = ÁRBOL DE OBJETOS/COMPONENTES: lista components, bodies, sketches, origins (planos/ejes/origen base), joints, construction geometry y Document Settings/Named Views; controla la VISIBILIDAD de cada objeto. Es el árbol de ESTRUCTURA jerárquica (qué hay y su anidamiento), distinto del Timeline.",
+        "TIMELINE (franja INFERIOR del canvas) = ÁRBOL/LÍNEA DE HISTORIA PARAMÉTRICA: lista cada operación/feature en orden cronológico como nodos; contiene el Timeline Marker. Es el 'feature tree' de HISTORIA (orden de cálculo), distinto del Browser. Existe solo en modo paramétrico (Capture Design History).",
+        "PANEL DE PROPIEDADES DEL COMANDO = el COMMAND DIALOG flotante (Sketch Palette para sketch; diálogos como Extrude/Hole para features), con preview EN VIVO sobre el canvas y manipuladores arrastrables (flecha de distancia, widget de ángulo, triad) directamente en la geometría; se confirma con OK / se descarta con Cancel.",
+        "VIEWCUBE (esquina SUPERIOR DERECHA del canvas): cubo etiquetado; clic en cara=vista orto, arista/esquina=iso, arrastrar=orbitar; ícono Home resetea; refleja el Up del modelo.",
+        "NAVIGATION BAR (borde INFERIOR del canvas): Zoom, Pan, Orbit + el menú Display Settings (estilo visual, sombras, ground, AO, grid, cámara). Pan/Zoom/Orbit remapeable a esquemas Fusion/Alias/Inventor/SolidWorks.",
+        "CANVAS (centro): área gráfica de selección/edición; filtro de prioridad de selección (Body/Face/Edge/Component/Vertex) gobierna el pre-resaltado."
+      ],
+      "menus": [
+        "MENÚ DE APLICACIÓN / DOCUMENTO: el menú File en la Application Bar (New/Open/Save/Save As/Recover/EXPORT/3D Print/Share/Capture Image/View Details). Opciones globales del programa en My Profile > Preferences (General > Design tiene el toggle por-defecto de capturar Design History; esquemas de navegación; unidades; etc.).",
+        "MARKING MENU (clic DERECHO en el canvas) = menú RADIAL contextual alrededor del cursor. Dos partes: (1) el RADIAL MENU / wheel — 8 comandos frecuentes en direcciones de brújula (en Design: Repeat last command, Press Pull, Redo, Hole, Sketch, Move/Copy, Undo, Delete); se activa arrastrando hacia la cuña y soltando (soporta GESTURES: un flick direccional ejecuta sin desplegar el menú). Hay un SEGUNDO NIVEL radial (p.ej. al pasar sobre el comando inferior aparecen 8 comandos de Sketch: Finish Sketch, Line, 2-Point Rectangle...). (2) el CONTEXT MENU / overflow — una LISTA LINEAL bajo el radial con Pan/Zoom/Orbit y más comandos. El contenido CAMBIA por workspace, pestaña, entorno contextual y comando activo (p.ej. Surface reemplaza Hole por Patch).",
+        "CLIC DERECHO CONTEXTUAL sobre nodos del BROWSER: Visibility (ocultar/mostrar, equivalente al ícono de foco/eye), Show All Components, Isolate, Rename, propiedades de componente/cuerpo. Sobre el componente raíz: 'Do not capture Design History' / 'Change to Direct Modeling Mode' (apaga el Timeline; muestra el diálogo Delete Parametric History).",
+        "CLIC DERECHO CONTEXTUAL sobre features del TIMELINE: Edit Feature, Edit Sketch, Suppress Features / Unsuppress, Delete, Rename, Move (reordenar arrastrando), agrupar (Group), y mover el Marker (rollback).",
+        "EXPORTAR / 3D PRINT vive en DOS lugares: (a) File > Export y File > 3D Print en la Application Bar; (b) clic derecho sobre un body/component en el Browser > 'Save As Mesh' (antes 'Save As STL'; formatos STL/3MF/OBJ, refinamiento High/Medium/Low/Custom, Preview Mesh, envío directo al slicer).",
+        "OCULTAR objetos vive en: ícono de foco/visibility por nodo del Browser (toggle), clic derecho > Visibility, o Show All Components en el nodo superior."
+      ],
+      "colapsable": "[\"BROWSER: cada nodo (Document Settings, Named Views, Origin, Bodies, Sketches, Construction, Joints y cada Component) EXPANDE/COLAPSA con el triángulo/flecha de despliegue; jerarquía anidada de componentes/subcomponentes. La VISIBILIDAD por objeto se togglea con el ícono de foco (light-bulb)/eye junto al nombre (foco encendido=visible, apagado/punteado=oculto); togglear el foco en una carpeta (p.ej. Joints) oculta/muestra todo el grupo.\", \"DATA PANEL: se MUESTRA/OCULTA por completo con su botón toggle en la Application Bar (se desliza desde el borde izquierdo; comportamiento de panel plegable, no anclado permanentemente).\", \"TIMELINE: se puede OCULTAR/APAGAR — desaparece al pasar a Direct Modeling ('Do not capture Design History'); su visibilidad también se controla desde Preferences (capturar historia o no). El Timeline Marker se ARRASTRA a lo largo de la línea para rodar el estado del modelo (rollback) y se puede saltar a inicio/fin, reproducir o avanzar paso a paso.\", \"TOOLBAR/RIBBON: las pestañas contextuales (Sketch) APARECEN y DESAPARECEN según el modo; los entornos contextuales (Form) REEMPLAZAN temporalmente las pestañas y se cierran con 'Finish Form'. La barra cambia entera al cambiar de workspace.\", \"MARKING MENU: aparece flotante en el cursor con clic derecho y se cierra al soltar/elegir; su overflow (context menu) es una lista que se despliega bajo el radial.\", \"COMMAND DIALOG (panel de propiedades del comando): flota cerca del canvas durante la operación y se cierra al confirmar (OK) o cancelar; sus manipuladores aparecen sobre la geometría solo cuando se cumple el input previo.\"]",
+      "featureTree": [
+        "DOS árboles con roles distintos: el TIMELINE (historia paramétrica, abajo) para editar FEATURES, y el BROWSER (estructura/objetos, izquierda) para visibilidad/estructura/renombre de objetos.",
+        "EDITAR FEATURE: doble-clic sobre el nodo en el Timeline, o clic derecho > Edit Feature (reabre el command dialog con sus parámetros y preview en vivo); Edit Sketch para sketches.",
+        "REORDENAR (drag): arrastrar features dentro del Timeline cambia el ORDEN de cálculo (para lograr resultados distintos o arreglar errores).",
+        "SUPRIMIR: clic derecho > Suppress Features deja la feature y sus dependientes temporalmente inactivas (recalculo lo omite); reversible con Unsuppress.",
+        "ROLLBACK: arrastrar el Timeline Marker hacia atrás/adelante muestra el diseño en ese punto de la historia; botones para ir al inicio/fin, Play y avanzar/retroceder paso a paso.",
+        "BORRAR: clic derecho > Delete elimina la feature (y propaga a dependientes).",
+        "RENOMBRAR: clic derecho > Rename (en el Timeline para features; en el Browser para bodies/components/sketches/joints).",
+        "AGRUPAR: agrupar features contiguas del Timeline para colapsar visualmente la historia.",
+        "EN EL BROWSER el usuario además: controla VISIBILIDAD (foco/eye), Isolate, Show All Components, reorganiza la jerarquía de componentes, y conmuta Capture/Do-not-Capture Design History (paramétrico vs direct modeling) desde el nodo raíz — al apagar la historia se borra el Timeline (diálogo Delete Parametric History)."
+      ],
+      "sources": [
+        "https://help.autodesk.com/cloudhelp/ENU/Fusion-GetStarted/files/GS-THE-FUSION-INTERFACE.htm",
+        "https://help.autodesk.com/cloudhelp/ENU/Fusion-GetStarted/files/GUID-6514ABC1-CB75-4F0B-AB0E-316FAD36BA93.htm",
+        "https://help.autodesk.com/view/fusion360/ENU/courses/AP-MARKING-MENU",
+        "https://help.autodesk.com/cloudhelp/ENU/Fusion-Assemble/files/ASM-USE-TIMELINE.htm",
+        "https://help.autodesk.com/view/fusion360/ENU/?guid=ASM-TIMELINE",
+        "https://help.autodesk.com/cloudhelp/ENU/Fusion-Assemble/files/ASM-DO-NOT-CAPTURE-DESIGN-HISTORY.htm",
+        "https://help.autodesk.com/view/fusion360/ENU/?contextId=ASM-VISIBILITY",
+        "https://help.autodesk.com/view/fusion360/ENU/?guid=GUID-8F87BBD2-8E7C-4C90-9787-9EB8AA6CFFAC",
+        "https://help.autodesk.com/view/fusion360/ENU/?guid=MESH-SAVE-AS-MESH",
+        "https://help.autodesk.com/cloudhelp/ENU/Fusion-Model/files/SLD-SELECTION.htm",
+        "https://help.autodesk.com/cloudhelp/ENU/Fusion-GetStarted/files/GUID-878489CD-3A23-4303-8450-C2F4F8E410B1.htm",
+        "/home/ian/Orkesta/la-forja/docs/forja-research/referencias-cad.md"
+      ]
+    },
+    {
+      "cad": "SOLIDWORKS (Dassault Systèmes) — caracterización de la ESTRUCTURA FUNCIONAL de la UI (no color), desde doc oficial help.solidworks.com + corpus la-forja/docs/forja-research/referencias-cad.md.\n\nLAYOUT GLOBAL (de arriba a abajo, izquierda a derecha):\n- TOP: Menu Bar (Menu Bar Toolbar + Menu Bar Menu). Es una barra fina arriba con el logo de SOLIDWORKS a la izquierda; al pasar el cursor o fijar (pin) sobre el logo se despliega el Menu Bar Menu (File, Edit, View, Insert, Tools, Window, Help). A la derecha del logo: Quick Access Tools (New/Open/Save/Print/Undo/Rebuild), Search SOLIDWORKS Commands, y Help. Es lo análogo a una barra de aplicación + menú clásico fusionados.\n- TOP (debajo del menú): CommandManager — el \"ribbon\" contextual de SOLIDWORKS. Es una barra grande con PESTAÑAS por contexto (Features, Sketch, Evaluate, Surfaces, Sheet Metal, etc., distintas según Part/Assembly/Drawing). Cambia su contenido según la pestaña activa. Acoplado arriba por defecto; reubicable (top/left/right/floating). Puede usar texto bajo iconos o no.\n- IZQUIERDA: Manager Pane (panel de gestión) con 4-5 PESTAÑAS en la cabecera del panel: FeatureManager (árbol de diseño, activo por defecto), PropertyManager (parámetros del comando activo), ConfigurationManager (configuraciones del modelo), DimXpertManager (MBD/cotas automáticas) y DisplayManager (apariencias/calcomanías/luces). El panel es DINÁMICO: al iniciar un comando de feature/sketch salta solo al PropertyManager; al editar apariencia salta al DisplayManager; al terminar vuelve al FeatureManager.\n- CENTRO: Graphics Area (área de modelado 3D). En su parte superior central flota la Heads-Up View Toolbar (transparente, controles de vista: Zoom to Fit, Zoom to Area, Previous View, Section View, View Orientation, Display Style, Hide/Show Items, Edit Appearance, Apply Scene, View Settings). En la esquina inferior izquierda está la Reference Triad (X/Y/Z; rota CON el modelo; clic en un eje reorienta la vista — NO es un ViewCube, SOLIDWORKS no usa ViewCube). Existe además el View Selector (cubo opcional, Ctrl+Espacio). Al seleccionar geometría aparecen los Selection Breadcrumbs (arriba-izquierda del área, invocables con tecla D).\n- DERECHA: Task Pane — panel lateral acoplado a la derecha con pestañas verticales: Design Library (features de biblioteca, Toolbox, 3D ContentCentral), File Explorer, View Palette (solo en Drawings), Appearances/Scenes/Decals (arrastrar a piezas), Custom Properties, y SOLIDWORKS Forum/Resources. Es de DRAG-AND-DROP hacia el área gráfica.\n- BOTTOM: Status Bar — info del documento: estado del sketch (Under Defined / Fully Defined / Over Defined), unidades, coordenadas, \"rebuild needed\", peso/medidas rápidas (Measure), Overwrite/Tags.\n\nDATOS DEL DOCUMENTO: no hay una \"barra de datos\" tipo Onshape; los metadatos viven en File > Properties (Custom Properties) y en la pestaña Custom Properties del Task Pane; las unidades/material en el Status Bar y en el árbol (nodo Material).\n\nENTRADA DE COMANDO (varias vías oficiales): CommandManager/toolbars/menús; Shortcut Bar (tecla S, barra contextual reasignable que aparece junto al cursor); Mouse Gestures (menú radial tipo marking-menu con 2/3/4/8/12 direcciones al hacer right-drag en el área gráfica — el equivalente SOLIDWORKS al marking menu); Search Commands (S o el cuadro de búsqueda); Context Toolbar al seleccionar; atajos de teclado personalizables (Tools > Customize > Keyboard). SOLIDWORKS NO preasigna atajos por herramienta de sketch/feature (Line/Circle/Extrude); la tecla S es el mecanismo de fábrica.",
+      "estructura": [
+        "FeatureManager design tree (ÁRBOL DE FEATURES): panel acoplado en la IZQUIERDA, primera pestaña del Manager Pane. Jerarquía cronológica de sketches y features; contiene Origin, los 3 planos por defecto (Front/Top/Right), Material, carpetas de Annotations/Sensors/Equations, Lights/Cameras, sólidos y el historial completo. Tiene en su cabecera un Filter (caja de filtrado) para buscar features por nombre.",
+        "PropertyManager (PANEL DE PROPIEDADES DEL COMANDO): segunda pestaña del Manager Pane (IZQUIERDA, mismo lugar que el árbol). Es DINÁMICO: aparece automáticamente al activar cualquier comando de sketch o feature y muestra sus parámetros y referencias (p. ej. Direction 1/profundidad de un Extrude). Tiene cabecera con OK (check verde) / Cancel (X roja) y secciones colapsables (rollups).",
+        "ConfigurationManager: tercera pestaña del Manager Pane (IZQUIERDA). Administra configuraciones (variantes paramétricas) del modelo y tablas de diseño. Solo se activa al hacer clic en su pestaña.",
+        "DimXpertManager: cuarta pestaña del Manager Pane (IZQUIERDA), para Model Based Definition (MBD): cotas/tolerancias manuales o Auto Dimension Scheme.",
+        "DisplayManager: quinta pestaña del Manager Pane (IZQUIERDA), administra Appearances, Decals, Scene/Lights/Cameras del modelo.",
+        "CommandManager (TOOLBAR/RIBBON): banda superior con pestañas contextuales (Features, Sketch, Evaluate, etc.); es la barra primaria para iniciar comandos. Acoplado arriba por defecto, reubicable.",
+        "Menu Bar / Menu Bar Menu (BARRA DE APLICACIÓN + MENÚ): franja superior con el logo SOLIDWORKS (despliega File/Edit/View/Insert/Tools/Window/Help), Quick Access Tools, Search y Help.",
+        "Heads-Up View Toolbar (BARRA DE VISTA): toolbar transparente flotante en el centro-superior del Graphics Area; controla orientación, estilo de display, secciones, hide/show, zoom.",
+        "Reference Triad (NAVEGACIÓN DE ESQUINA, NO ViewCube): esquina inferior-izquierda del Graphics Area; muestra X/Y/Z, rota con el modelo y al hacer clic en un eje reorienta la vista. El View Selector (cubo, Ctrl+Espacio) es el navegador tipo-cubo opcional.",
+        "Task Pane: panel lateral DERECHO con pestañas (Design Library, File Explorer, View Palette, Appearances/Scenes/Decals, Custom Properties, Forum). Drag-and-drop al área gráfica.",
+        "Status Bar (BARRA DE DATOS/DOCUMENTO): borde inferior; estado del sketch (Fully/Under/Over Defined), unidades, coordenadas, rebuild-needed, Measure rápido.",
+        "Graphics Area: viewport 3D central; aloja Reference Triad, Heads-Up toolbar, Selection Breadcrumbs y los Context Toolbars al seleccionar."
+      ],
+      "colapsable": "[\"Manager Pane (panel izquierdo): se PLIEGA/EXPANDE con el control de flecha en el borde entre el panel y el Graphics Area; se puede contraer para dar más espacio al modelo. El ancho es arrastrable.\", \"Flyout FeatureManager: dentro del Graphics Area se puede mostrar una versión flotante/transparente del árbol superpuesta sobre el modelo (útil para seleccionar features sin perder el PropertyManager activo en el panel izquierdo) — el árbol y el PropertyManager pueden coexistir vía Split (dividir el panel izquierdo en dos partes, árbol arriba y PropertyManager abajo).\", \"Secciones del PropertyManager: cada grupo es un rollup colapsable/expandible (chevron).\", \"Task Pane (derecho): por defecto está en AUTO-HIDE — se expande al hacer clic en una pestaña y se colapsa al hacer clic en el Graphics Area; con el PIN (alfiler) en la cabecera queda ANCLADO abierto. Se puede arrastrar para FLOTAR o re-acoplar (snap) al borde derecho. Clic derecho en la cabecera oculta/muestra pestañas individuales.\", \"CommandManager: se puede mostrar/ocultar, hacer FLOTAR o re-acoplar (top/left/right); colapsar el texto bajo los iconos; las pestañas se pueden activar/ocultar con clic derecho.\", \"Toolbars clásicas: acoplables a cualquier borde o flotantes; cada una se activa/desactiva en View > Toolbars o clic derecho en zona de toolbars.\", \"Heads-Up View Toolbar: se puede ocultar/mostrar como cualquier toolbar (clic derecho).\", \"Rollback Bar y Freeze Bar dentro del árbol: barras arrastrables (ver featureTree).\", \"Menu Bar Menu: se despliega al pasar el cursor sobre el logo y se puede FIJAR (pin/tachuela) para que quede permanentemente visible.\", \"Flyouts de toolbar: la flechita junto a un icono despliega un menú flotante con comandos relacionados (p. ej. tipos de rectángulo).\"]",
+      "menus": [
+        "Menú de aplicación / opciones: el Menu Bar Menu bajo el logo SOLIDWORKS expone File, Edit, View, Insert, Tools, Window, Help. Las OPCIONES globales viven en Tools > Options (System Options + Document Properties). La PERSONALIZACIÓN de UI/atajos/menús en Tools > Customize (pestañas Toolbars, Commands, Menus, Keyboard, Mouse Gestures).",
+        "Búsqueda de comandos (overflow/launcher): Search SOLIDWORKS Commands en la Menu Bar y la tecla S; encuentra y ejecuta un comando o lo localiza en la UI.",
+        "CLIC DERECHO contextual: al seleccionar una entidad/cara/feature en el Graphics Area o en el árbol aparece un menú contextual. Por defecto muestra un subconjunto y un chevron 'expandir' / opción Customize Menu (Show All) para ver el menú completo; el conjunto de items es contextual al objeto.",
+        "Context Toolbar: junto al cursor, al seleccionar en Graphics Area o FeatureManager, aparece una mini-barra de iconos con las acciones más probables del contexto (incl. Edit Feature, Edit Sketch, Suppress, Hide/Show, Change Transparency).",
+        "Marking menu / radial: Mouse Gestures — right-drag en el área gráfica abre un menú radial (2/3/4/8/12 direcciones, configurable) con comandos/macros preasignados por modo (Sketch/Part/Assembly/Drawing). Es el equivalente SOLIDWORKS al marking menu.",
+        "Selection Breadcrumbs: al hacer clic en el modelo aparece (arriba-izquierda, o en el cursor con tecla D) una miga de pan que muestra la selección en contexto (sketch → feature → body → part → assembly) para navegar sin abrir el árbol.",
+        "EXPORTAR vive en File > Save As (elegir tipo: STEP, IGES, STL, Parasolid, 3MF, etc.) con un botón Options para opciones del formato; algunas versiones exponen File > Export As. No hay un comando 'Export' separado del Save As para sólidos.",
+        "OCULTAR/MOSTRAR vive en: (a) el menú contextual / Context Toolbar de una cara, body, feature o componente (Hide / Show); (b) Heads-Up View Toolbar > Hide/Show Items (alternar visibilidad de tipos: planos, ejes, sketches, etc.); (c) árbol: clic derecho > Hide/Show, e Isolate para aislar la selección.",
+        "Shortcut Bar (tecla S): barra de comandos no-contextual por modo, reasignable, que aparece junto al cursor; también permite buscar comandos."
+      ],
+      "featureTree": [
+        "EDITAR FEATURE: clic derecho en el feature > Edit Feature (reabre su PropertyManager con todos los parámetros)."
+      ],
+      "sources": [
+        "https://help.solidworks.com/2023/english/SolidWorks/sldworks/c_management_panel.htm",
+        "https://help.solidworks.com/2026/English/SolidWorks/sldworks/c_featuremanager_design_tree_overview.htm",
+        "https://help.solidworks.com/2023/English/SolidWorks/sldworks/c_featuremanager_design_tree.htm",
+        "https://help.solidworks.com/2024/english/SolidWorks/sldworks/c_reordering_features_dragging.htm",
+        "https://help.solidworks.com/2021/english/SolidWorks/sldworks/c_commandmanager.htm",
+        "https://help.solidworks.com/2024/English/SWConnected/swdotworks/c_menu_bar.htm",
+        "https://help.solidworks.com/2024/english/solidworks/sldworks/c_heads_up_view_toolbar.htm",
+        "https://help.solidworks.com/2016/English/SolidWorks/sldworks/r_task_pane.htm",
+        "https://help.solidworks.com/2021/english/SolidWorks/sldworks/t_controlling_appearance_task_pane.htm",
+        "https://help.solidworks.com/2025/English/SolidWorks/sldworks/r_reference_triad.htm",
+        "https://help.solidworks.com/2023/English/SolidWorks/sldworks/c_view_selector.htm",
+        "https://help.solidworks.com/2024/English/SolidWorks/sldworks/c_context_toolbars.htm",
+        "https://help.solidworks.com/2017/english/SolidWorks/sldworks/c_shortcut_bars.htm",
+        "https://help.solidworks.com/2018/English/SolidWorks/sldworks/t_using_mouse_gestures.htm",
+        "https://help.solidworks.com/2025/English/SolidWorks/sldworks/c_command_search.htm",
+        "https://help.solidworks.com/2021/english/SolidWorks/sldworks/HIDD_CUSTOMIZE_MENUS.htm",
+        "https://help.solidworks.com/2023/English/SolidWorks/sldworks/hidd_export_options_step.htm",
+        "https://help.solidworks.com/2024/english/SolidWorks/sldworks/r_configurationmanager_configurations.htm",
+        "/home/ian/Orkesta/la-forja/docs/forja-research/referencias-cad.md"
+      ]
+    },
+    {
+      "cad": "Onshape",
+      "estructura": [
+        "DOCUMENT TOOLBAR (barra superior, full-width, top): IZQUIERDA -> logo Onshape (vuelve a la pagina Documents), icono del Document menu, nombre del documento (negritas, editable), nombre del workspace/version (gris). CENTRO/DERECHA -> Copy link, nombre de la carpeta padre (link), FeatureScript notices, Notifications. DERECHA -> App Store, Learning Center, boton Share, Help (signo de interrogacion), menu de cuenta del usuario.",
+        "DOCUMENT PANEL (riel vertical, lado IZQUIERDO, pegado al logo): coleccion de paneles conmutables por iconos -> Versions and history (versiones/ramas/merges), Create version, Release drafts, Comments, Document notes, Where used, Performance, AI Advisor, Explore Onshape, Action items y el Tab manager.",
+        "FEATURE LIST + PARTS LIST (panel del Part Studio, lado IZQUIERDO del area grafica): seccion superior Features y seccion inferior Parts/Surfaces/Curves/Meshes/Composite parts, separadas por una barra arrastrable. Arriba: selector de Configuration (si hay), conteo de features, caja de busqueda/filtro. Contiene Origin + 3 planos por defecto, todos los sketches/features con su icono de herramienta, y la Rollback bar.",
+        "FEATURE TOOLBAR / SKETCH TOOLBAR (ribbon contextual en la PARTE SUPERIOR del area grafica): cambia segun el flujo -> Feature toolbar en Part Studio; al entrar a Sketch aparece la Sketch toolbar; Assembly toolbar en ensambles; Drawing toolbar en planos. A la derecha del toolbar vive el boton Search tools (Alt+c).",
+        "DIALOG / PANEL DE PROPIEDADES DEL COMANDO: ventana FLOTANTE (no anclada) que aparece al crear/editar un feature; campos de seleccion resaltados en azul (se llenan al seleccionar en el area grafica), campos de entrada numerica con borde azul, nombre editable (icono lapiz), toggles, slider de Preview/opacidad, palomita verde (aceptar) y X roja (cancelar). Se puede MOVER y REDIMENSIONAR.",
+        "GRAPHICS AREA (centro): muestra el Part Studio/Assembly/tab activo con Origin y los planos de referencia por defecto.",
+        "VIEW CUBE (esquina SUPERIOR DERECHA del area grafica): cubo de orientacion; junto a el viven la lista de orientaciones y el menu Camera and render options.",
+        "VIEW / DISPLAY TOOLBAR (parte INFERIOR del area grafica; en modo view-only es la View Only toolbar): Home, Rotate, Pan, Zoom to fit (+ Zoom to window/Zoom), Section view, Measure, Inspection table, Properties, Appearance, Display states, Mass properties, Exploded views, Comments, Export, Print, Show analysis tools, etc. (hasta ~18 herramientas segun tipo de tab y permisos).",
+        "TABS BAR / Document Tabs (parte INFERIOR IZQUIERDA, full-width abajo): tabs de Part Studios, Assemblies, Drawings e imports; solo un tab activo por ventana de navegador."
+      ],
+      "colapsable": "[\"FEATURE LIST + PARTS LIST: se COLAPSA por completo con el icono 'Features and parts' a la derecha de la lista (volver a clic = reabrir). La BARRA SEPARADORA entre Features y Parts se ARRASTRA para repartir el espacio. Los grupos/folders y features con flecha se EXPANDEN/COLAPSAN (Expand selected/all, Collapse selected/all via clic derecho). En movil (iOS/Android) se abre/cierra con el handle y se redimensiona arrastrando el handle o la esquina.\", \"DOCUMENT PANEL (riel izquierdo): es un conmutador de paneles por icono -> al hacer clic en un icono se ABRE el panel flotante/lateral (Comments, Versions, Tab manager, etc.) y al volver a hacer clic o cambiar de icono se cierra/cambia; un solo panel activo a la vez.\", \"DIALOG del comando: ventana FLOTANTE; se puede MOVER y REDIMENSIONAR con el mouse. Las selection lists se AUTO-EXPANDEN segun el contenido, y si el usuario las redimensiona manualmente se deshabilita la auto-expansion.\", \"TAB MANAGER: panel lateral que se abre/cierra desde su icono (a la izquierda del +); incluye busqueda type-ahead, vistas List/detail, ordenamiento y reordenado por drag-and-drop.\", \"TOOLBARS (Feature/Sketch ribbon): toolbars contextuales que aparecen/desaparecen segun el tab activo (Part Studio vs Sketch vs Assembly vs Drawing).\", \"ROLLBACK BAR: se arrastra arriba/abajo dentro de la Feature list (suprime temporalmente lo que queda por debajo), funcionando como un colapso temporal del historial.\"]",
+      "menus": [
+        "DOCUMENT MENU (icono junto al nombre del doc, arriba a la izquierda): comandos del workspace/version activo -> ver/editar propiedades, lista de tabs, partes, descripciones, part numbers, revisiones, estados, etc.",
+        "MENU DE CUENTA / Preferences (extremo derecho del Document toolbar): preferencias del usuario (incl. configuracion de la Shortcut toolbar y tema claro/oscuro) y ajustes de suscripcion.",
+        "HELP MENU (signo de interrogacion, derecha): online Help, videos, tutoriales, documentacion de FeatureScript, atajos de teclado, soporte y compatibilidad.",
+        "SHORTCUT TOOLBAR (equivalente al marking menu): tecla 's' abre una caja de atajos PERSONALIZABLE en la posicion del cursor, contextual al toolbar activo (Sketch/Features/Assembly/Drawing).",
+        "SEARCH TOOLS (boton a la derecha del toolbar o Alt+c): buscar y ejecutar cualquier comando/feature o custom feature aprobada por nombre.",
+        "CLIC DERECHO en un FEATURE (Feature list): Rename, Suppress/Unsuppress, Dynamic suppression, Hide/Show, Show dependencies, Expand/Collapse, Add selection to folder..., Roll to here. Clic derecho sobre la Rollback bar -> Roll to end.",
+        "CLIC DERECHO en un FOLDER: Unpack folder, Suppress (todo lo contenido), folders anidados.",
+        "CLIC DERECHO en una PART/Surface/Curve: Rename, Properties, Assign material, Edit appearance, Copy, Create drawing, EXPORT (descargar archivo), Release / Release all configurations, Revision history, Hide/Hide other/Hide all, Isolate, Make transparent, Add comment, Zoom to selection, DELETE.",
+        "CLIC DERECHO en un TAB (Tabs bar): Open in new browser tab, Rename, Properties/Description, View FeatureScript code (solo Part Studios), Duplicate, Copy to clipboard, Select as document thumbnail, Move to another document, EXPORT, Delete, Create task.",
+        "OVERFLOW (tres puntos por feature, sobre todo movil): acciones contextuales del feature como 'Roll to here'.",
+        "OCULTAR (Hide/Show): clic derecho en feature/part, icono de OJO junto al nombre, o el ojo del titulo de categoria (Parts/Surfaces/Curves/Meshes) para todo el grupo.",
+        "VIEW CUBE / orientacion (esquina sup. der.): clic en caras (Top/Bottom/Front/Back/Left/Right), esquinas (iso/dimetric/trimetric), flechas (15 grados, Shift=90, Ctrl=5); menu Camera and render options con modos Shaded / shaded sin aristas / aristas ocultas / Translucent / Wireframe, Perspective y Section View.",
+        "MENU + (Insert new tab, Tabs bar abajo-izquierda): Part Studio, Assembly, Drawing, Variable Studio, Feature Studio, Render Studio, PCB Studio, CAM Studio, Material library, folders, Applications (App Store) e importar archivos."
+      ],
+      "featureTree": [
+        "EDITAR FEATURE: doble clic (o clic) sobre el feature en la Feature list reabre su Dialog flotante para editar parametros; al seleccionar un feature/sketch tambien sirve como input de seleccion para otros dialogs.",
+        "RENOMBRAR: clic derecho -> Rename (edicion del nombre in-place, sin abrir dialog).",
+        "REORDENAR: arrastrar uno o varios items (no necesitan ser contiguos) para reordenarlos parametricamente; se pueden mover arriba/abajo o DENTRO de folders. En movil: boton Reorder, arrastrar, Done.",
+        "SUPRIMIR (Suppress/Unsuppress): clic derecho -> Suppress (el feature queda inactivo, texto TACHADO); para folders suprime todo lo contenido.",
+        "DYNAMIC SUPPRESSION: clic derecho -> Dynamic suppression > Add expression: condiciones logicas para que un feature se suprima automaticamente (aparece icono de expresion junto al feature).",
+        "ROLLBACK: arrastrar la Rollback bar (suprime temporalmente lo de abajo para ver el modelo en ese punto); clic derecho en feature -> 'Roll to here'; clic derecho en la barra -> 'Roll to end'; tambien con flechas arriba/abajo del teclado al seleccionar la barra (avanza/retrocede un paso).",
+        "AGRUPAR EN FOLDERS: seleccionar varios -> clic derecho -> 'Add selection to folder...' (nombrar el folder); 'Unpack folder' para deshacer; folders anidados.",
+        "OCULTAR/MOSTRAR: clic derecho -> Hide/Show, o icono de OJO al pasar el cursor junto al feature; por categoria (Parts/Surfaces/Curves/Meshes/Composite) con el ojo del titulo.",
+        "VER DEPENDENCIAS: clic derecho -> 'Show dependencies' abre un dialog con features padre (flecha arriba) e hijos (flecha abajo).",
+        "BORRAR (Delete): disponible para parts (clic derecho -> Delete) y features; tambien tecla Suprimir sobre el item seleccionado.",
+        "BUSCAR/FILTRAR: caja de busqueda por nombre/tipo y comandos con prefijo ':' -> :part, :type, :name, :errors, :folder, :variable, :suppressed, :hidden, :shown; icono de filtro con opciones extra; icono de error arriba-izquierda filtra los features con error.",
+        "DIAGNOSTICO Y RENDIMIENTO: indicadores de estado (icono de error, triangulo amarillo = selecciones faltantes, indicador azul = no totalmente definido, tachado = suprimido); 'Pause regeneration' (Regenerate / Regenerate and exit / Discard); 'Show regeneration times' para ver el costo de cada feature.",
+        "EXPANDIR/COLAPSAR (jerarquia): clic derecho en items con flecha -> Expand selected/all, Collapse selected/all."
+      ],
+      "sources": [
+        "https://cad.onshape.com/help/Content/ui-basics.htm",
+        "https://cad.onshape.com/help/Content/document_toolbar.htm",
+        "https://cad.onshape.com/help/Content/document_menu.htm",
+        "https://cad.onshape.com/help/Content/document_panel.htm",
+        "https://cad.onshape.com/help/Content/feature_list.htm",
+        "https://cad.onshape.com/help/Content/dialogs.htm",
+        "https://cad.onshape.com/help/Content/elementtabs.htm",
+        "https://cad.onshape.com/help/Content/toolbars.htm",
+        "https://cad.onshape.com/help/Content/Home/search_tools.htm",
+        "https://cad.onshape.com/help/Content/Home/keyboard_shortcuts_and_hotkeys.htm",
+        "https://cad.onshape.com/help/Content/View/view_navigation_and_the_view_cube.htm",
+        "https://cad.onshape.com/help/Content/View/named_views.htm",
+        "https://cad.onshape.com/help/Content/moving.htm",
+        "https://cad.onshape.com/help/Content/Collaboration/using_the_view_only_toolbar.htm",
+        "https://cad.onshape.com/help/Content/Collaboration/share_documents.htm",
+        "/home/ian/Orkesta/la-forja/docs/forja-research/referencias-cad.md"
+      ]
+    }
+  ],
+  "crit": {
+    "tiene": [
+      "Estetica solida y consistente: paleta GAIA (oro #FDB813 + acero + tinta), paneles de vidrio (backdrop-filter blur+saturate, gradiente, border sutil, sombra) — es el punto fuerte real. El fundador tiene razon: 'tiene bonito color'.",
+      "Viewport CAD realista: PBR por material (metalness/roughness/clearcoat por aluminio/acero/laton/titanio/ABS/PLA), Environment HDRI, Grid, ContactShadows, GizmoViewcube, aristas B-Rep oscuras encima para legibilidad de topologia.",
+      "Operaciones reales contra kernel OCCT/WASM: Croquis, Extrude (con simetrico), Hole por clic en cara, Fillet, Chamfer, Shell, Revolve (eje X/Y/Z/arista por clic), Engrane de involuta — geometria EXACTA, no estilizada.",
+      "Analisis de masa EXACTO via GProp: volumen, area, densidad por material, masa, centro de masa, inercia principal (no malla, integracion geometrica).",
+      "FEA von Mises real (K·u=f sobre malla tet) con cara fija/carga por clic, carga en N, factor de seguridad, overlay de color por vertice + leyenda; y Diseno generativo (topopt) con fraccion de volumen, umbral, suave/voxel.",
+      "Ensamble caja de velocidades con fisica validada por invariantes (distancia entre centros C=m(Z1+Z2)/2, relacion i, faseo, interferencia Common≈0, barrido de embonado, flechas + carcasa).",
+      "Picking determinista doble: lista de caras/aristas SIEMPRE disponible por testid + picking en viewport (raycast a tubos de arista). Buena testabilidad Playwright (muchos data-testid).",
+      "HUD informativo de seleccion (cara/arista con kind+area/longitud) y de ensamble (Z1/Z2/C/i/theta).",
+      "Panel 'Documento' aceptable: muestra Sketch 1 + cadena de ops con icono, titulo, subtitulo y flecha ↓; clic en un nodo lo activa y entra al modo de picking correcto. Coincide con 'documento no esta mal'."
+    ],
+    "falta_funcional": [
+      "NINGUN panel es colapsable ni minimizable. .fb-header/.fb-features/.fb-params/.fb-toolbar/.fb-analysis son todos position:absolute con ancho fijo (fb-features width:210px, max-height:38vh) — no hay <details>/<summary>, ni boton de colapso, ni acordeon. Confirma textual 'no hay nada colapsable'. Con 6 paneles flotando a la vez, en pantallas chicas se enciman.",
+      "Paneles NO redimensionables ni reposicionables (no draggable, sin resize handles). Layout rigido por coordenadas absolutas; no se adapta.",
+      "El arbol de features (Documento) es CASI solo-lectura: no se puede REORDENAR (sin drag-and-drop ni botones subir/bajar — no existe moveOp/reorder), no se puede RENOMBRAR un feature (titulos autogenerados 'Extrude 1', sin doble-clic para editar), no se puede SUPRIMIR/desactivar temporalmente (sin suppress/toggle), no hay barra de ROLLBACK para retroceder el historial y editar en medio. Confirma 'operaciones (el arbol) esta incompleto'.",
+      "BORRAR feature solo es posible indirectamente: hay que hacer clic en el nodo para activarlo y entonces aparece '✕ Eliminar feature' (btn-del-op) en el panel derecho, o el del activeOpObj. No hay boton de borrar EN el nodo del arbol, ni tecla Supr, ni confirmacion. removeOp ademas no valida dependencias (borrar el extrude base deja huerfanos hole/fillet → el documento puede romperse).",
+      "CERO menu contextual de clic derecho (no hay onContextMenu en ningun lado). En CAD real, clic derecho sobre un feature/cara/arista es esperado (Editar, Suprimir, Renombrar, Rollback aqui, Aislar, etc.). No existe.",
+      "Sin menu de opciones / overflow (kebab ⋮). 'Ocultar boceto' (btn-toggle-sketch) y 'Exportar STEP' (btn-export-step) estan SUELTOS como dos botones planos en .fb-actions al pie del panel de parametros — deberian vivir en un menu de opciones/archivo. Confirma textual 'deberian estar en opciones, no sueltos'.",
+      "Export limitado y mal ubicado: solo STEP, sin menu de formatos (STL/IGES/3MF/PNG), sin opciones de export (unidades, tolerancia de malla). El <a download> queda deshabilitado por aria-disabled pero sigue siendo un enlace, no un boton de comando con feedback.",
+      "El panel de parametros (.fb-params, 'op-panel') es un volcado de toda la op activa sin estructura de comando: sin boton OK/Cancelar/Aplicar (los cambios mutan en vivo, no hay forma de cancelar una edicion), sin estado de error/validacion por campo, sin colapsar secciones largas (Engrane+Ensamble+Driver+Componentes se apilan en un panel angosto). No es un verdadero 'panel de propiedades del comando'.",
+      "Sin Undo/Redo (no hay historial de comandos ni Ctrl+Z). En CAD es funcionalidad de mesa.",
+      "Sin gestion de documento: no se puede crear pieza nueva, abrir, guardar/cargar el grafo de features (no hay persistencia/serializacion del documento en la UI), ni renombrar la pieza ('La Forja - Part Studio' es fijo).",
+      "Toolbar plana sin agrupacion ni overflow: 8 botones en fila centrada; no hay grupos (Croquis | Solidos | Modificar | Ensamble), ni dropdowns para variantes, ni se desborda con gracia. Sin estado deshabilitado contextual (p.ej. Hole/Fillet sin solido base no se atenuan).",
+      "Seleccion pobre en el viewport: no hay hover highlight de cara/arista antes de clicar, no hay multiseleccion con caja/Shift consistente para fillet (la lista existe pero el viewport no resalta), no hay 'aislar/ocultar' geometria, ni medicion (distancia/angulo).",
+      "Sin navegacion de camara asistida: hay GizmoViewcube pero faltan vistas estandar accesibles (frente/superior/iso por boton o tecla), encuadrar-a-seleccion, y modo seccion/corte.",
+      "Sin feedback de proceso/errores a nivel comando: buildShape lanza Error si no hay solido pero la UI no muestra un panel de errores de regeneracion del feature ni marca el nodo que fallo en rojo.",
+      "Accesibilidad/teclado: los nodos del arbol son <div> con onClick (no <button>/role), sin foco por teclado ni navegacion con flechas; los paneles flotantes no atrapan ni gestionan foco."
+    ],
+    "notas": "Codigo: /home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx. Evidencia clave por linea: toolbar 2447-2457 (8 botones planos sin grupos/overflow); arbol 'Documento' 2460-2494 (nodos <div> clicables, sin reorder/rename/suppress/borrar-en-nodo, sin onContextMenu); borrar via panel 2904-2907 (btn-del-op solo aparece con op activa); acciones sueltas 2909-2917 (btn-toggle-sketch 'Ocultar boceto' + btn-export-step 'Exportar STEP' planos en .fb-actions); removeOp 1686-1690 (no purga features dependientes huerfanos). CSS 3183-3208: TODOS los paneles son position:absolute, ancho fijo, sin <details>/<summary>/clase de colapso. grep confirma: 0 ocurrencias de reorder/moveOp/suppress/rollback/onContextMenu/draggable/collaps/details/summary/rename/onDoubleClick. Veredicto: el fundador acierta en los cuatro puntos — la capa visual (color/vidrio/PBR) y el motor (OCCT exacto + FEA + ensamble por invariantes) son fuertes, pero la CAPA DE INTERACCION CAD (gestion de features, paneles colapsables, menus de opciones/contexto, undo, panel de comando con OK/Cancelar) esta esencialmente ausente. 'Bonito color, poca funcionalidad de UI' es una descripcion justa."
+  },
+  "ranked": [
+    {
+      "titulo": "Paneles colapsables/minimizables (lo #1 que pidió el fundador)",
+      "fix": "Envolver cada panel .fb-features / .fb-params(op-panel) / .fb-analysis / .fb-toolbar / .fb-facelist en un componente <CollapsiblePanel> (o <details><summary>) con botón de flecha que togglea una clase .collapsed; persistir el estado abierto/cerrado en useState/localStorage. En el CSS (línea 3183) reemplazar el ancho/alto fijo por min/max + transición de altura para que al colapsar solo quede la cabecera. Esto soluciona el enimamiento de 6 paneles absolutos en pantallas chicas.",
+      "prioridad": "P0",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (JSX ~2446-2921; CSS 3183-3208)"
+    },
+    {
+      "titulo": "Menú de opciones (⋮/Archivo) para Exportar y Ocultar boceto (no sueltos)",
+      "fix": "Crear un menú desplegable (botón kebab ⋮ o 'Archivo' en el header ~2444) que agrupe: Exportar (submenú STEP/STL/3MF/PNG), Mostrar/Ocultar boceto, y futuro Guardar/Abrir/Nueva pieza. Mover ahí los botones hoy sueltos en .fb-actions (btn-toggle-sketch línea 2911 y btn-export-step 2914). Convertir el <a download> en un botón de comando con feedback (genera el blob al hacer clic, no enlace aria-disabled). Es literal 'deberían estar en opciones, no sueltos'.",
+      "prioridad": "P0",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (.fb-actions 2909-2917; header 2444)"
+    },
+    {
+      "titulo": "Completar el árbol de operaciones: borrar-en-nodo + purga de dependientes",
+      "fix": "Añadir botón de borrar (✕) dentro de cada fb-feat-node (2473-2493) en vez de solo el btn-del-op del panel (2904). Arreglar removeOp (1686-1690): al borrar una op, eliminar también las ops que dependen de su geometría (p.ej. borrar el extrude base debe arrastrar hole/fillet/shell huérfanos, o bloquear con confirmación). Agregar tecla Supr sobre el nodo activo y un diálogo de confirmación.",
+      "prioridad": "P0",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (feature-tree 2460-2494; removeOp 1686-1690)"
+    },
+    {
+      "titulo": "Renombrar y suprimir features en el árbol",
+      "fix": "RENOMBRAR: doble-clic (onDoubleClick) en el <strong> del nodo → input in-place; guardar un campo op.name opcional y usarlo en opTitle. SUPRIMIR: agregar op.suppressed:boolean con toggle (icono ojo/check); el pipeline buildShape debe saltarse las ops suprimidas y el nodo mostrarse tachado. Hoy los títulos son autogenerados ('Extrude 1') y no hay forma de desactivar temporalmente.",
+      "prioridad": "P0",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (nodos 2473-2493; tipos de Op + buildShape)"
+    },
+    {
+      "titulo": "Menú contextual de clic derecho (feature/cara/arista)",
+      "fix": "Añadir onContextMenu (preventDefault) en los nodos del árbol y en el viewport, que abra un menú flotante posicionado en el cursor con: Editar, Renombrar, Suprimir/Activar, Eliminar, 'Rollback aquí', Aislar/Ocultar. Hoy hay CERO onContextMenu en todo el archivo; en CAD real el clic derecho es esperado (paridad con Context Toolbar de SOLIDWORKS / clic derecho de Onshape).",
+      "prioridad": "P1",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (feature-tree 2460-2494; CadViewport handlers)"
+    },
+    {
+      "titulo": "Reordenar features y barra de Rollback",
+      "fix": "REORDENAR: drag-and-drop (o botones ↑/↓) sobre los nodos para cambiar el orden de cálculo; añadir moveOp(id, dir) que reordena el array ops y re-regenera. ROLLBACK: una barra arrastrable en el árbol (o 'Roll to here' por nodo) que limita hasta qué op se construye el sólido, para editar en medio del historial. Paridad directa con Timeline de Fusion / Rollback bar de SW y Onshape.",
+      "prioridad": "P1",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (feature-tree + pipeline de regeneración)"
+    },
+    {
+      "titulo": "Panel de propiedades del comando con OK/Cancelar + validación",
+      "fix": "Convertir .fb-params (op-panel) en un verdadero command dialog: editar sobre una COPIA temporal de la op, con botones ✓ Aplicar / ✗ Cancelar (paridad PropertyManager de SW / Command Dialog de Fusion). Marcar campos inválidos en rojo y bloquear OK. Hoy los cambios mutan en vivo sin posibilidad de cancelar una edición.",
+      "prioridad": "P1",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (.fb-params / op-panel)"
+    },
+    {
+      "titulo": "Undo/Redo (Ctrl+Z / Ctrl+Y)",
+      "fix": "Implementar una pila de historial de comandos sobre el estado de documento (ops, sketch, material) con push en cada mutación; atajos Ctrl+Z/Ctrl+Shift+Z y botones en el header. Es funcionalidad de mesa que hoy no existe (0 ocurrencias de undo/redo en el archivo).",
+      "prioridad": "P1",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (estado de documento: ops/sketch/material)"
+    },
+    {
+      "titulo": "Gestión de documento: nueva pieza / guardar / cargar / renombrar",
+      "fix": "Serializar el grafo de features (ops + sketch + material) a JSON con guardar/cargar (localStorage o archivo) y 'Nueva pieza'; hacer editable el título 'La Forja - Part Studio' (hoy fijo en el header). Vivir dentro del menú Archivo del P0 #2.",
+      "prioridad": "P2",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (header 2444; menú Archivo)"
+    },
+    {
+      "titulo": "Toolbar agrupada con overflow y estados deshabilitados",
+      "fix": "Agrupar los 8 botones planos (2447-2457) en familias (Croquis | Sólidos | Modificar | Ensamble) con separadores y dropdowns para variantes; atenuar (disabled) Hole/Fillet/Shell cuando no hay sólido base. Hoy es una fila centrada sin grupos ni overflow.",
+      "prioridad": "P2",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (toolbar 2447-2457)"
+    },
+    {
+      "titulo": "Selección en viewport: hover highlight, aislar/ocultar, medir, vistas estándar",
+      "fix": "Agregar pre-resaltado (hover) de cara/arista antes de clicar; aislar/ocultar geometría; medición de distancia/ángulo; botones de vista frente/superior/iso + encuadrar-a-selección + modo sección (ya hay GizmoViewcube pero faltan vistas accesibles). Mejora la paridad con Heads-Up de SW / View toolbar de Onshape.",
+      "prioridad": "P2",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (CadViewport + raycast de picking)"
+    },
+    {
+      "titulo": "Panel de errores de regeneración + accesibilidad de teclado",
+      "fix": "Cuando buildShape lanza Error (sin sólido), mostrar un panel de errores y marcar el nodo del feature en rojo en el árbol (en vez de fallar silencioso). Accesibilidad: convertir los nodos <div onClick> del árbol (2462-2493) en <button>/role=treeitem con foco por teclado y navegación con flechas.",
+      "prioridad": "P2",
+      "archivo": "/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx (feature-tree 2460-2494; buildShape)"
+    }
+  ],
+  "markdown": "## La Forja vs Fusion / SOLIDWORKS / Onshape — veredicto honesto\n\n### Dónde estamos parados (lo que sí tenemos, y es fuerte)\nEl fundador tiene razón en el diagnóstico: **\"bonito color, poca funcionalidad de UI\"**. Y tiene razón en algo más importante — *lo difícil ya está hecho*:\n- **Motor real**: OCCT-WASM con Sketch, Extrude (simétrico), Hole por clic en cara, Fillet, Chamfer, Shell, Revolve, Engrane de involuta — geometría EXACTA, no estilizada.\n- **Análisis exacto**: masa/volumen/CdG/inercia por GProp (integración geométrica, no malla), FEA von Mises real (K·u=f sobre tets), diseño generativo (topopt), ensamble de engranes validado por invariantes (C, i, faseo, interferencia≈0).\n- **Estética y picking**: paneles de vidrio (blur+saturate) con paleta GAIA, PBR por material, HDRI, ContactShadows; picking doble determinista (lista por testid + raycast a tubos de arista) → testeable en Playwright.\n\nEsa base es **mejor que la de muchos clones de CAD web**. El problema no es el kernel: es la **capa de interacción CAD**, justo donde Fusion/SW/Onshape llevan 20+ años.\n\n### Dónde estamos VS ellos (la brecha real)\n| Capacidad | Fusion | SOLIDWORKS | Onshape | **La Forja hoy** |\n|---|---|---|---|---|\n| Paneles colapsables/redimensionables | sí | sí (Manager Pane plegable, Task Pane auto-hide) | sí (Feature list colapsable, dialog movible) | **no — todo `position:absolute`, ancho fijo** |\n| Árbol de features editable (reorder/rename/suppress) | sí (Timeline) | sí (FeatureManager) | sí (Feature list) | **no — solo lectura + clic para activar** |\n| Rollback / editar en medio del historial | sí (marker) | sí (Rollback bar) | sí (Rollback bar) | **no existe** |\n| Menú de opciones / clic derecho contextual | sí (marking menu) | sí (Mouse Gestures + Context Toolbar) | sí (Shortcut toolbar + clic derecho) | **cero** |\n| Panel de comando con OK/Cancelar | sí (Command Dialog) | sí (PropertyManager con ✓/✗) | sí (dialog flotante ✓/✗) | **no — muta en vivo, sin cancelar** |\n| Undo/Redo (Ctrl+Z) | sí | sí | sí | **no** |\n| Export multi-formato en menú Archivo | STL/3MF/OBJ/STEP… | STEP/IGES/STL/3MF… | menú Export | **solo STEP, botón suelto al pie** |\n\n**Verificado en código** (`/home/ian/Orkesta/la-forja/src/forja/brep/ForgeBRepStudio.tsx`): `grep` da 0 ocurrencias de reorder/moveOp/suppress/rollback/onContextMenu/draggable/collaps/details/summary/onDoubleClick/undo. CSS 3183 mete los 6 paneles en `position:absolute`; `removeOp` (1686-1690) no purga dependientes (borrar el extrude base deja huérfanos hole/fillet → documento roto).\n\n### El plan (orden = lo que pidió el fundador primero)\n1. **P0 — Hacer TODOS los paneles colapsables** (lo que dijo textual). Envolver cada `.fb-*` en `<details><summary>` o un `<CollapsiblePanel>` con flecha; persistir abierto/cerrado en estado. Mata el enimamiento en pantallas chicas.\n2. **P0 — Menú de opciones (⋮ / Archivo)** que absorba \"Ocultar boceto\" y \"Exportar\" (hoy sueltos en `.fb-actions`), con submenú de formatos (STEP/STL/3MF/PNG). Es exactamente \"deberían estar en opciones, no sueltos\".\n3. **P0 — Completar el árbol de operaciones**: borrar EN el nodo (con purga de dependientes en `removeOp`), renombrar (doble-clic), suprimir (toggle tachado), reordenar (drag o ↑/↓), clic derecho contextual.\n4. **P1 — Undo/Redo + panel de comando con OK/Cancelar + rollback bar.**\n5. **P2 — Toolbar agrupada con overflow, hover-highlight en viewport, vistas estándar/seccion, panel de errores de regeneración, accesibilidad (nodos `<button>`, foco por teclado).**\n\nLa buena noticia: nada de esto toca el kernel. Es UI sobre un motor que ya es correcto — el camino más barato a \"se siente como CAD de verdad\"."
+}

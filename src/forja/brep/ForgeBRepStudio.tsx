@@ -315,12 +315,16 @@ function buildGearSolid(oc: OC, g: GearParams, phaseRad = 0): Shape {
 
 type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve';
 
-interface ExtrudeOp { id: string; type: 'extrude'; depth: number; symmetric: boolean; }
-interface HoleOp { id: string; type: 'hole'; x: number; y: number; diameter: number; through: boolean; depth: number; }
-interface FilletOp { id: string; type: 'fillet'; radius: number; edges: number[]; }
-interface ChamferOp { id: string; type: 'chamfer'; dist: number; edges: number[]; }
-interface ShellOp { id: string; type: 'shell'; thickness: number; faces: number[]; }
-interface RevolveOp { id: string; type: 'revolve'; angle: number; axis: 'x' | 'y' | 'z' | 'edge'; }
+// Campos comunes a TODA op del árbol: nombre editable (rename) + supresión
+// (suppress) temporal. Un op suprimido se conserva en el grafo pero buildShape
+// lo SALTA (no entra al cálculo del sólido) — paridad con el Timeline de Fusion.
+interface OpBase { id: string; name?: string; suppressed?: boolean; }
+interface ExtrudeOp extends OpBase { type: 'extrude'; depth: number; symmetric: boolean; }
+interface HoleOp extends OpBase { type: 'hole'; x: number; y: number; diameter: number; through: boolean; depth: number; }
+interface FilletOp extends OpBase { type: 'fillet'; radius: number; edges: number[]; }
+interface ChamferOp extends OpBase { type: 'chamfer'; dist: number; edges: number[]; }
+interface ShellOp extends OpBase { type: 'shell'; thickness: number; faces: number[]; }
+interface RevolveOp extends OpBase { type: 'revolve'; angle: number; axis: 'x' | 'y' | 'z' | 'edge'; }
 type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp;
 
 interface BuildResult {
@@ -619,11 +623,13 @@ function buildShape(
   // usuario puede agregar Revolve sin tener que borrar primero el extrude inicial
   // — el grafo nunca queda vacío y la UI no se cae. Reordenamos para que el/los
   // revolve se procesen antes que el/los extrude; el resto conserva su orden.
-  const hasRevolve = ops.some((o) => o.type === 'revolve');
+  // Las ops SUPRIMIDAS se omiten del cálculo (siguen en el árbol, tachadas).
+  const active = ops.filter((o) => !o.suppressed);
+  const hasRevolve = active.some((o) => o.type === 'revolve');
   const ordered = hasRevolve
-    ? [...ops.filter((o) => o.type === 'revolve'),
-       ...ops.filter((o) => o.type !== 'revolve' && o.type !== 'extrude')]
-    : ops;
+    ? [...active.filter((o) => o.type === 'revolve'),
+       ...active.filter((o) => o.type !== 'revolve' && o.type !== 'extrude')]
+    : active;
 
   for (const op of ordered) {
     if (op.type === 'extrude') {
@@ -1477,7 +1483,10 @@ export default function ForgeBRepStudio() {
   const [ops, setOps] = useState<Op[]>([
     { id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false },
   ]);
-  const [activeOp, setActiveOp] = useState<string | null>(ops[0].id);
+  // Inicializador LAZY: `ops[0].id` se evaluaría en CADA render con la forma
+  // eager y reventaría al vaciar el documento (ops=[] → ops[0] undefined). Con
+  // `() => …` solo corre al montar, y el `?.` cubre un arranque sin ops.
+  const [activeOp, setActiveOp] = useState<string | null>(() => ops[0]?.id ?? null);
   const [material, setMaterial] = useState<keyof typeof MATERIALS>('alu');
   // ENSAMBLE de dos engranes engranados (la caja de velocidades). Vacío hasta
   // que el diseñador agrega el 2º engrane (btn-add-gear2) y aplica el mate.
@@ -1493,6 +1502,12 @@ export default function ForgeBRepStudio() {
   const [showSketch, setShowSketch] = useState(true);
   const [hideChrome, setHideChrome] = useState(false);
   const [pickMode, setPickMode] = useState<'none' | 'face' | 'edge'>('none');
+  // ── UI: paneles colapsables + menú de opciones + renombrar nodo in-place ──
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleCollapse = useCallback((id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] })), []);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [editingOpId, setEditingOpId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
   // Click-to-place del barreno: tras pulsar B / el botón Hole, el SIGUIENTE clic en
   // una cara fija el centro (x,y) del barreno en ese punto (no en sliders). El ref
   // lo lee el callback de picking sin closure viejo; el estado alimenta el hint.
@@ -1684,9 +1699,24 @@ export default function ForgeBRepStudio() {
     else setPickMode('none');
   }, [ops]);
   const removeOp = useCallback((id: string) => {
-    setOps((cur) => cur.filter((o) => o.id !== id));
+    setOps((cur) => {
+      const next = cur.filter((o) => o.id !== id);
+      // Si al borrar ya no queda un sólido BASE (extrude/revolve), las ops
+      // dependientes (hole/fillet/chamfer/shell) quedan HUÉRFANAS → se purgan:
+      // un barreno/redondeo no puede existir sin el cuerpo sobre el que opera.
+      const hasBase = next.some((o) => o.type === 'extrude' || o.type === 'revolve');
+      return hasBase ? next : next.filter((o) => o.type === 'extrude' || o.type === 'revolve');
+    });
     setActiveOp(null);
     setPickMode('none');
+  }, []);
+  // RENOMBRAR un nodo del árbol (doble-clic) — nombre vacío vuelve al autotítulo.
+  const renameOp = useCallback((id: string, name: string) => {
+    setOps((cur) => cur.map((o) => (o.id === id ? { ...o, name: name.trim() || undefined } : o)));
+  }, []);
+  // SUPRIMIR / reactivar un nodo (ojo) — lo salta buildShape sin borrarlo.
+  const toggleSuppressOp = useCallback((id: string) => {
+    setOps((cur) => cur.map((o) => (o.id === id ? { ...o, suppressed: !o.suppressed } : o)));
   }, []);
   // Barreno POR CLIC (como un humano): crea el hole y entra a modo colocación →
   // el siguiente clic en una cara fija su centro. Reemplaza teclear x,y en sliders.
@@ -1914,6 +1944,17 @@ export default function ForgeBRepStudio() {
     });
   }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops, genVolfrac]);
   const clearGenerative = useCallback(() => setGenResult(null), []);
+  // EXPORTAR STL (manufacturable): si hay resultado generativo, exporta la
+  // SUPERFICIE vaciada (densityToMesh, misma que se ve); si no, el sólido B-Rep
+  // teselado. Va al menú ⋮ Opciones, junto al STEP.
+  const exportSTL = useCallback(() => {
+    if (genResult) {
+      const { positions, indices } = densityToMesh(genResult, genThreshold, 6);
+      triggerDownload(meshToStlBlob(positions, indices), 'forja-generativo.stl');
+    } else if (result) {
+      triggerDownload(meshToStlBlob(result.mesh.positions, result.mesh.indices), 'forja-part.stl');
+    }
+  }, [genResult, genThreshold, result]);
   const genVoidPct = useMemo(() => {
     if (!genResult) return 0;
     let v = 0; for (let e = 0; e < genResult.xPhys.length; e++) if (genResult.xPhys[e] < 0.1) v++;
@@ -2080,11 +2121,21 @@ export default function ForgeBRepStudio() {
       get selectedEdgeId() { return selectedEdgeId; },
       addOp,
       updateOp,
+      removeOp,
+      renameOp,
+      toggleSuppressOp,
+      // colapsar/expandir un panel por id (features|params|faces|analysis) — driver de QA
+      toggleCollapse,
+      get collapsed() { return collapsed; },
+      // menú de opciones + export STL (driver de QA del menú ⋮)
+      setOptionsOpen: (v: boolean) => setOptionsOpen(v),
+      get optionsOpen() { return optionsOpen; },
+      exportSTL,
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
       // slider de la UI. Solo lectura; no cambia la lógica del documento.
-      get opsList() { return ops.map((o) => ({ id: o.id, type: o.type, depth: (o as { depth?: number }).depth, x: (o as { x?: number }).x, y: (o as { y?: number }).y })); },
+      get opsList() { return ops.map((o) => ({ id: o.id, type: o.type, name: o.name, suppressed: !!o.suppressed, depth: (o as { depth?: number }).depth, x: (o as { x?: number }).x, y: (o as { y?: number }).y })); },
       // Perfil escalonado de revolución (croquis poligonal) — driver de QA.
       setSteps,
       addStep,
@@ -2247,7 +2298,10 @@ export default function ForgeBRepStudio() {
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+    // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
+    // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
+    // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, toggleCollapse, exportSTL, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2454,18 +2508,51 @@ export default function ForgeBRepStudio() {
             <button data-testid="btn-shell" onClick={() => addOp('shell')} title="Vaciado / pared delgada">▢ Shell</button>
             <button data-testid="btn-revolve" onClick={() => addOp('revolve')} title="Revolución del perfil">⟳ Revolve</button>
             <button data-testid="btn-gear" onClick={applyGear} title="Engrane de involuta (m, Z, α, espesor, barreno)">⚙ Engrane</button>
+            {/* ── Menú ⋮ Opciones (documento): exportar + visibilidad, ya no sueltos ── */}
+            <span className="fb-tb-sep" />
+            <div className="fb-menu-wrap">
+              <button className={`fb-menu-btn ${optionsOpen ? 'on' : ''}`} data-testid="btn-options"
+                onClick={() => setOptionsOpen((v) => !v)} title="Opciones del documento">⋮ Opciones</button>
+              {optionsOpen && (
+                <>
+                  <div className="fb-menu-scrim" onClick={() => setOptionsOpen(false)} />
+                  <div className="fb-menu" data-testid="options-menu" role="menu">
+                    <div className="fb-menu-sec">Vista</div>
+                    <button data-testid="menu-toggle-sketch" role="menuitem"
+                      onClick={() => { setShowSketch((v) => !v); setOptionsOpen(false); }}>
+                      {showSketch ? '🙈  Ocultar boceto' : '👁  Mostrar boceto'}
+                    </button>
+                    <div className="fb-menu-sep" />
+                    <div className="fb-menu-sec">Exportar</div>
+                    <a data-testid="menu-export-step" role="menuitem"
+                      className={`fb-menu-link ${result ? '' : 'disabled'}`}
+                      href={result ? (stepBlobUrl.current ?? '#') : undefined} download="forja-part.step"
+                      onClick={() => result && setOptionsOpen(false)} aria-disabled={!result}>
+                      ⬇  STEP <em>(B-Rep exacto)</em>
+                    </a>
+                    <button data-testid="menu-export-stl" role="menuitem"
+                      disabled={!result && !genResult}
+                      onClick={() => { exportSTL(); setOptionsOpen(false); }}>
+                      ⬇  STL <em>{genResult ? '(generativo)' : '(malla)'}</em>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* ── Panel izquierdo: GRAFO de features (clic = editar) ── */}
-          <aside className="fb-features" data-testid="feature-tree">
-            <div className="fb-feat-head">Documento</div>
+          <aside className={`fb-features ${collapsed.features ? 'collapsed' : ''}`} data-testid="feature-tree">
+            <CollapseHead id="features" title="Documento" collapsed={!!collapsed.features}
+              onToggle={() => toggleCollapse('features')}
+              right={<span className="fb-count">{ops.length + 1}</span>} />
             <div
               className={`fb-feat-node ${activeOp === 'sketch' ? 'active' : ''}`}
               data-testid="feat-sketch"
               onClick={() => { setActiveOp('sketch'); setPickMode('none'); }}
             >
               <span className="ico">▣</span>
-              <div>
+              <div className="fb-feat-body">
                 <strong>Sketch 1</strong>
                 <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo' : sketch.kind === 'revprofile' ? `Perfil escalón ×${sketch.steps.length}` : sketch.kind === 'gear' ? `Engrane Z${sketch.gear.teeth} m${sketch.gear.module}` : 'Perfil L'} · Plano XY</em>
               </div>
@@ -2474,7 +2561,7 @@ export default function ForgeBRepStudio() {
               <div key={op.id}>
                 <div className="fb-feat-arrow">↓</div>
                 <div
-                  className={`fb-feat-node accent ${activeOp === op.id ? 'active' : ''}`}
+                  className={`fb-feat-node accent ${activeOp === op.id ? 'active' : ''} ${op.suppressed ? 'suppressed' : ''}`}
                   data-testid={`feat-${op.type}`}
                   onClick={() => {
                     setActiveOp(op.id);
@@ -2484,9 +2571,35 @@ export default function ForgeBRepStudio() {
                   }}
                 >
                   <span className="ico">{opIcon(op.type)}</span>
-                  <div>
-                    <strong>{opTitle(op.type)} {i + 1}</strong>
-                    <em>{opSubtitle(op)}</em>
+                  <div className="fb-feat-body">
+                    {editingOpId === op.id ? (
+                      <input className="fb-feat-rename" data-testid={`feat-rename-${op.type}`}
+                        autoFocus value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onBlur={() => { renameOp(op.id, editingName); setEditingOpId(null); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { renameOp(op.id, editingName); setEditingOpId(null); }
+                          if (e.key === 'Escape') setEditingOpId(null);
+                        }} />
+                    ) : (
+                      <strong onDoubleClick={(e) => { e.stopPropagation(); setEditingOpId(op.id); setEditingName(op.name ?? `${opTitle(op.type)} ${i + 1}`); }}
+                        title="Doble-clic para renombrar">
+                        {op.name ?? `${opTitle(op.type)} ${i + 1}`}
+                      </strong>
+                    )}
+                    <em>{op.suppressed ? 'suprimido' : opSubtitle(op)}</em>
+                  </div>
+                  {/* acciones por-nodo: suprimir (ojo) + borrar (✕) — paridad Timeline */}
+                  <div className="fb-feat-actions">
+                    <button className="fb-feat-act" data-testid={`feat-suppress-${op.type}`}
+                      onClick={(e) => { e.stopPropagation(); toggleSuppressOp(op.id); }}
+                      title={op.suppressed ? 'Reactivar feature' : 'Suprimir feature (no se calcula)'}>
+                      {op.suppressed ? '◌' : '👁'}
+                    </button>
+                    <button className="fb-feat-act del" data-testid={`feat-delete-${op.type}`}
+                      onClick={(e) => { e.stopPropagation(); removeOp(op.id); }}
+                      title="Eliminar feature (purga dependientes)">✕</button>
                   </div>
                 </div>
               </div>
@@ -2498,10 +2611,10 @@ export default function ForgeBRepStudio() {
               selectedFaceId (y, si hay Shell activo, togglea su cara abierta).
               Playwright elige la cara superior/inferior/lateral por testid sin
               depender de coordenadas del viewport. */}
-          <aside className="fb-facelist" data-testid="face-list">
-            <div className="fb-feat-head">
-              Caras del sólido <b>{result?.faces.length ?? 0}</b>
-            </div>
+          <aside className={`fb-facelist ${collapsed.faces ? 'collapsed' : ''}`} data-testid="face-list">
+            <CollapseHead id="faces" title="Caras del sólido" collapsed={!!collapsed.faces}
+              onToggle={() => toggleCollapse('faces')}
+              right={<span className="fb-count">{result?.faces.length ?? 0}</span>} />
             <button className="fb-pick-btn" data-testid="btn-pick-face-global"
               onClick={enableFacePick}>
               {pickMode === 'face' ? '◉ Picking de cara activo' : '○ Activar picking en viewport'}
@@ -2522,7 +2635,9 @@ export default function ForgeBRepStudio() {
           </aside>
 
           {/* ── Panel derecho: OPCIONES de la op activa ── */}
-          <aside className="fb-params" data-testid="op-panel">
+          <aside className={`fb-params ${collapsed.params ? 'collapsed' : ''}`} data-testid="op-panel">
+            <CollapseHead id="params" title="Parámetros" collapsed={!!collapsed.params}
+              onToggle={() => toggleCollapse('params')} />
             {activeOp === 'sketch' && (
               <>
                 <div className="fb-panel-title">Sketch · Perfil</div>
@@ -2905,21 +3020,13 @@ export default function ForgeBRepStudio() {
                 ✕ Eliminar feature
               </button>
             )}
-
-            <div className="fb-divider" />
-            <div className="fb-actions">
-              <button data-testid="btn-toggle-sketch" onClick={() => setShowSketch((v) => !v)}>
-                {showSketch ? 'Ocultar boceto' : 'Mostrar boceto'}
-              </button>
-              <a className="fb-export" data-testid="btn-export-step"
-                href={stepBlobUrl.current ?? '#'} download="forja-part.step"
-                aria-disabled={!result}>Exportar STEP</a>
-            </div>
+            {/* Exportar STEP/STL y Mostrar/Ocultar boceto se movieron al menú ⋮ Opciones (header). */}
           </aside>
 
           {/* ── Panel de ANÁLISIS / PROPIEDADES (masa exacta GProp) ── */}
-          <aside className="fb-analysis" data-testid="analysis-panel">
-            <div className="fb-panel-title">Análisis · Propiedades de masa</div>
+          <aside className={`fb-analysis ${collapsed.analysis ? 'collapsed' : ''}`} data-testid="analysis-panel">
+            <CollapseHead id="analysis" title="Análisis · Propiedades" collapsed={!!collapsed.analysis}
+              onToggle={() => toggleCollapse('analysis')} />
             <label className="fb-mat">
               <span>Material</span>
               <span className="fb-mat-pick">
@@ -3126,6 +3233,60 @@ function opSubtitle(op: Op): string {
   }
 }
 
+// Cabecera de panel COLAPSABLE (▾ abierto / ▸ cerrado). El padre lleva la clase
+// .collapsed que oculta todo menos esta cabecera (CSS), aliviando el encimado de
+// paneles absolutos en pantallas chicas — lo #1 que pidió el fundador.
+function CollapseHead({ id, title, collapsed, onToggle, right }: {
+  id: string; title: string; collapsed: boolean; onToggle: () => void; right?: ReactNode;
+}) {
+  return (
+    <div className="fb-collapse-head" onClick={onToggle}>
+      <button className="fb-collapse-btn" data-testid={`collapse-${id}`}
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        title={collapsed ? 'Expandir' : 'Colapsar'} aria-expanded={!collapsed}>
+        {collapsed ? '▸' : '▾'}
+      </button>
+      <span className="fb-collapse-title">{title}</span>
+      {right && <span className="fb-collapse-right">{right}</span>}
+    </div>
+  );
+}
+
+// STL BINARIO desde una malla triangular (posiciones + índices). 80B header +
+// uint32 nTri + por triángulo (normal 3f + 3 vértices 3f + uint16 attr = 50B).
+// La normal se recomputa por triángulo (cross) — un slicer no usa la del archivo
+// pero un STL válido la lleva. Sirve para exportar el sólido y el generativo.
+function meshToStlBlob(positions: Float32Array, indices: Uint32Array): Blob {
+  const nTri = indices.length / 3;
+  const buf = new ArrayBuffer(84 + nTri * 50);
+  const dv = new DataView(buf);
+  dv.setUint32(80, nTri, true);
+  let o = 84;
+  for (let t = 0; t < nTri; t++) {
+    const a = indices[t * 3] * 3, b = indices[t * 3 + 1] * 3, c = indices[t * 3 + 2] * 3;
+    const ax = positions[a], ay = positions[a + 1], az = positions[a + 2];
+    const bx = positions[b], by = positions[b + 1], bz = positions[b + 2];
+    const cx = positions[c], cy = positions[c + 1], cz = positions[c + 2];
+    const ux = bx - ax, uy = by - ay, uz = bz - az;
+    const vx = cx - ax, vy = cy - ay, vz = cz - az;
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const L = Math.hypot(nx, ny, nz) || 1; nx /= L; ny /= L; nz /= L;
+    dv.setFloat32(o, nx, true); dv.setFloat32(o + 4, ny, true); dv.setFloat32(o + 8, nz, true);
+    dv.setFloat32(o + 12, ax, true); dv.setFloat32(o + 16, ay, true); dv.setFloat32(o + 20, az, true);
+    dv.setFloat32(o + 24, bx, true); dv.setFloat32(o + 28, by, true); dv.setFloat32(o + 32, bz, true);
+    dv.setFloat32(o + 36, cx, true); dv.setFloat32(o + 40, cy, true); dv.setFloat32(o + 44, cz, true);
+    dv.setUint16(o + 48, 0, true);
+    o += 50;
+  }
+  return new Blob([buf], { type: 'model/stl' });
+}
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
 // ──────────────────────────────────────────────────────────────────
 // Estilos (vidrio sobre viewport — feel Plasticity/Onshape, acento oro GAIA)
 // ──────────────────────────────────────────────────────────────────
@@ -3186,6 +3347,42 @@ const CSS = `
   border:1px solid rgba(159,179,200,0.14);
   border-radius:15px;box-shadow:0 10px 44px rgba(0,0,0,0.55),0 1px 0 rgba(255,255,255,0.04) inset;}
 
+/* ── Paneles COLAPSABLES: cabecera con ▾/▸; .collapsed oculta todo menos la
+   cabecera y reduce el panel a una barra (alivia el encimado en pantallas chicas). */
+.fb-collapse-head{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;
+  margin:-2px 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(159,179,200,0.1);}
+.fb-collapse-btn{border:0;background:transparent;color:${GOLD};font-size:11px;cursor:pointer;
+  padding:0;width:14px;line-height:1;}
+.fb-collapse-title{flex:1;font-size:10px;text-transform:uppercase;letter-spacing:1.4px;
+  color:${STEEL};opacity:.72;font-weight:600;}
+.fb-collapse-right{display:flex;align-items:center;}
+.fb-count{font-size:10px;font-family:'JetBrains Mono',monospace;color:${GOLD};
+  background:${GOLD}14;border:1px solid ${GOLD}33;border-radius:10px;padding:1px 7px;}
+.collapsed{max-height:none!important;padding-top:11px!important;padding-bottom:11px!important;overflow:hidden;}
+.collapsed .fb-collapse-head{margin-bottom:0;padding-bottom:0;border-bottom:0;}
+.collapsed>*:not(.fb-collapse-head){display:none!important;}
+
+/* ── Menú ⋮ Opciones (header): export + visibilidad ── */
+.fb-menu-wrap{position:relative;margin-left:auto;}
+.fb-menu-btn{border:1px solid rgba(159,179,200,0.18);background:rgba(255,255,255,0.04);
+  color:#e9eef5;font-size:12px;padding:6px 11px;border-radius:9px;cursor:pointer;font-weight:600;
+  transition:.13s;}
+.fb-menu-btn:hover,.fb-menu-btn.on{border-color:${GOLD}77;background:${GOLD}18;color:${GOLD};}
+.fb-menu-scrim{position:fixed;inset:0;z-index:40;}
+.fb-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:41;min-width:208px;padding:7px;
+  background:linear-gradient(180deg,rgba(24,31,43,0.97),rgba(13,17,25,0.98));
+  border:1px solid rgba(159,179,200,0.18);border-radius:12px;
+  box-shadow:0 16px 50px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:2px;}
+.fb-menu-sec{font-size:9px;text-transform:uppercase;letter-spacing:1.3px;color:${STEEL};
+  opacity:.55;padding:5px 9px 2px;}
+.fb-menu-sep{height:1px;background:rgba(159,179,200,0.12);margin:4px 2px;}
+.fb-menu button,.fb-menu .fb-menu-link{display:flex;align-items:center;gap:4px;text-align:left;
+  border:0;background:transparent;color:#e9eef5;font-size:12px;padding:8px 9px;border-radius:8px;
+  cursor:pointer;text-decoration:none;font-weight:500;transition:.1s;width:100%;}
+.fb-menu button:hover,.fb-menu .fb-menu-link:hover{background:${GOLD}1a;color:${GOLD};}
+.fb-menu em{font-style:normal;opacity:.55;font-size:10px;margin-left:auto;}
+.fb-menu button:disabled,.fb-menu .fb-menu-link.disabled{opacity:.38;pointer-events:none;}
+
 .fb-header{top:18px;left:18px;display:flex;align-items:center;gap:14px;padding:11px 16px;}
 .fb-mark{font-size:22px;color:${GOLD};filter:drop-shadow(0 0 8px ${GOLD}88);}
 .fb-titles h1{font-size:14px;font-weight:600;letter-spacing:.2px;margin:0;}
@@ -3204,6 +3401,7 @@ const CSS = `
   color:#e9eef5;font-size:12px;padding:7px 11px;border-radius:8px;cursor:pointer;font-weight:500;
   transition:.13s;}
 .fb-toolbar button:hover{border-color:${GOLD}77;background:${GOLD}18;color:${GOLD};}
+.fb-tb-sep{width:1px;height:22px;background:rgba(159,179,200,0.2);margin:0 3px;}
 
 .fb-features{top:78px;left:18px;width:210px;padding:12px;max-height:38vh;overflow:auto;}
 .fb-feat-head{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:${STEEL};
@@ -3218,6 +3416,20 @@ const CSS = `
 .fb-feat-node strong{display:block;font-size:12px;font-weight:600;color:#eef3f9;}
 .fb-feat-node em{display:block;font-size:10px;color:${STEEL};opacity:.9;font-style:normal;margin-top:1px;}
 .fb-feat-arrow{text-align:center;font-size:11px;color:${STEEL};opacity:.4;margin:3px 0;}
+.fb-feat-body{flex:1;min-width:0;}
+.fb-feat-body strong{cursor:text;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fb-feat-rename{width:100%;background:rgba(0,0,0,0.4);border:1px solid ${GOLD}66;border-radius:5px;
+  color:#eef3f9;font-size:12px;font-weight:600;padding:2px 5px;outline:none;font-family:inherit;}
+/* acciones por-nodo: aparecen al hover (o si está suprimido/activo) */
+.fb-feat-actions{display:flex;gap:2px;opacity:0;transition:.12s;flex:none;}
+.fb-feat-node:hover .fb-feat-actions,.fb-feat-node.active .fb-feat-actions,
+.fb-feat-node.suppressed .fb-feat-actions{opacity:1;}
+.fb-feat-act{border:0;background:rgba(255,255,255,0.05);color:${STEEL};font-size:11px;
+  width:20px;height:20px;border-radius:5px;cursor:pointer;line-height:1;padding:0;transition:.1s;}
+.fb-feat-act:hover{background:${GOLD}22;color:${GOLD};}
+.fb-feat-act.del:hover{background:rgba(248,113,113,0.2);color:#fca5a5;}
+.fb-feat-node.suppressed{opacity:.5;}
+.fb-feat-node.suppressed strong{text-decoration:line-through;}
 
 .fb-params{right:18px;top:18px;width:230px;padding:14px;max-height:64vh;overflow:auto;}
 .fb-panel-title{font-size:11px;font-weight:600;color:${GOLD};margin-bottom:12px;
