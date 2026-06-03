@@ -421,10 +421,76 @@ function sparseMatVec(M: SparseSym, x: Float64Array, y: Float64Array): void {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Precondicionador IC(0) — Cholesky incompleto SIN relleno (Rebanada 2)
+// ─────────────────────────────────────────────────────────────────
+// K (SPD tras Dirichlet) ≈ L·Lᵀ con L del MISMO patrón sparse que tril(K) (cero
+// fill-in). Mucho más fuerte que Jacobi → el CG converge en muchas menos iters.
+// Se factoriza UNA vez por sesión (solo depende de K) y se reusa en cada re-solve
+// de carga. Ref: simulacion-avanzada.md (K SPD ⇒ Cholesky/IC + CG), Felippa IFEM.
+interface IC0Factor {
+  n: number;
+  diag: Float64Array;     // L[i][i]
+  lowIdx: number[][];     // por columna j: filas i>j con L[i][j]≠0
+  lowVal: number[][];
+}
+
+/** Factoriza K ≈ L·Lᵀ (IC0). Devuelve null si hay breakdown (pivote ≤0) → Jacobi. */
+function buildIC0(K: SparseSym): IC0Factor | null {
+  const n = K.n;
+  const diag = new Float64Array(n);
+  const Lrow: Array<Map<number, number>> = Array.from({ length: n }, () => new Map());
+  for (let i = 0; i < n; i++) {
+    const cols: number[] = [];
+    for (const j of K.rows[i].keys()) if (j <= i) cols.push(j);
+    cols.sort((a, b) => a - b);
+    for (const j of cols) {
+      let s = K.rows[i].get(j) ?? 0;
+      const Lj = Lrow[j];           // s -= Σ_{k<j} L[i][k]·L[j][k]
+      for (const [k, Ljk] of Lj) {
+        if (k >= j) continue;
+        const Lik = Lrow[i].get(k);
+        if (Lik !== undefined) s -= Lik * Ljk;
+      }
+      if (j < i) {
+        if (diag[j] === 0) return null;
+        Lrow[i].set(j, s / diag[j]);
+      } else {
+        if (s <= 1e-300) return null; // pivote no positivo → IC0 falla
+        diag[i] = Math.sqrt(s);
+        Lrow[i].set(i, diag[i]);
+      }
+    }
+    if (diag[i] === 0) return null;
+  }
+  const lowIdx: number[][] = Array.from({ length: n }, () => []);
+  const lowVal: number[][] = Array.from({ length: n }, () => []);
+  for (let i = 0; i < n; i++) {
+    for (const [k, v] of Lrow[i]) if (k < i) { lowIdx[k].push(i); lowVal[k].push(v); }
+  }
+  return { n, diag, lowIdx, lowVal };
+}
+
+/** Aplica el precondicionador: z = M⁻¹·r con M = L·Lᵀ (fwd L·y=r, back Lᵀ·z=y). */
+function ic0Apply(ic: IC0Factor, r: Float64Array, z: Float64Array): void {
+  const { n, diag, lowIdx, lowVal } = ic;
+  for (let i = 0; i < n; i++) z[i] = r[i];
+  for (let j = 0; j < n; j++) {           // forward: L·y = r (y en z)
+    z[j] /= diag[j];
+    const idx = lowIdx[j], val = lowVal[j];
+    for (let t = 0; t < idx.length; t++) z[idx[t]] -= val[t] * z[j];
+  }
+  for (let j = n - 1; j >= 0; j--) {      // back: Lᵀ·z = y
+    let s = z[j];
+    const idx = lowIdx[j], val = lowVal[j];
+    for (let t = 0; t < idx.length; t++) s -= val[t] * z[idx[t]];
+    z[j] = s / diag[j];
+  }
+}
+
 /**
- * Gradiente conjugado precondicionado (Jacobi) SPARSE. MISMA física que
- * conjugateGradient de formulas.ts (PCG con M = diag(K)); solo cambia el
- * almacenamiento a sparse para que escale a decenas de miles de DOF.
+ * Gradiente conjugado precondicionado SPARSE. Precondicionador: IC(0) si se pasa
+ * `ic0` (Rebanada 2, mucho más rápido), si no Jacobi (M = diag(K)). MISMA física.
  * Ref [3] Bathe §8.5, [11] Hughes §3.4.
  */
 function sparseCG(
@@ -433,6 +499,7 @@ function sparseCG(
   tol: number,
   maxIter: number,
   u0?: Float64Array,
+  ic0?: IC0Factor | null,
 ): { u: Float64Array; iterations: number; residual: number; converged: boolean } {
   const n = K.n;
   // WARM-START: si se pasa u0 (solución anterior), el CG arranca de ahí. No cambia
@@ -443,6 +510,10 @@ function sparseCG(
   for (let i = 0; i < n; i++) {
     Minv[i] = 1 / Math.max(Math.abs(K.rows[i].get(i) ?? 0), 1e-30);
   }
+  // z = M⁻¹·r : IC(0) si hay factor, si no Jacobi (diagonal).
+  const precond = ic0
+    ? (rr: Float64Array, zz: Float64Array) => ic0Apply(ic0, rr, zz)
+    : (rr: Float64Array, zz: Float64Array) => { for (let i = 0; i < n; i++) zz[i] = rr[i] * Minv[i]; };
   // r = f − K·u (con warm-start u puede ≠ 0; sin él u=0 ⇒ r=f).
   const r = new Float64Array(n);
   if (u0 && u0.length === n) {
@@ -453,7 +524,7 @@ function sparseCG(
     r.set(f);
   }
   const z = new Float64Array(n);
-  for (let i = 0; i < n; i++) z[i] = r[i] * Minv[i];
+  precond(r, z);
   const p = new Float64Array(z);
   const Kp = new Float64Array(n);
 
@@ -481,7 +552,7 @@ function sparseCG(
     if (lastRes < tol) {
       return { u, iterations: iter + 1, residual: lastRes, converged: true };
     }
-    for (let i = 0; i < n; i++) z[i] = r[i] * Minv[i];
+    precond(r, z);
     let rzNew = 0;
     for (let i = 0; i < n; i++) rzNew += r[i] * z[i];
     const beta = rzNew / rz;
@@ -764,6 +835,7 @@ export interface FEASession {
   tol: number;
   maxIter: number;
   uPrev: Float64Array | null;            // warm-start del CG (solución anterior)
+  ic0: IC0Factor | null;                 // precondicionador Cholesky-incompleto (cacheado)
 }
 
 /** Fase CARA del FEA incremental: malla + K(Dirichlet) + B. Caro; se cachea. */
@@ -846,12 +918,15 @@ export function prepareFeaSession(
     K.rows[dd] = new Map([[dd, 1]]);
   }
 
+  // IC(0) una sola vez (solo depende de K con Dirichlet). null → CG cae a Jacobi.
+  const ic0 = buildIC0(K);
+
   return {
     mesh, K, tetB, D, material, nDOF,
     fixedDOF: [...fixedDOFset], fixedNodes: [...fixedNodesSet], loadNodes: [...loadNodesSet],
     loadArea, loadNormal,
     tol: opts.tol ?? 1e-6, maxIter: opts.maxIter ?? Math.max(2000, 4 * nDOF),
-    uPrev: null,
+    uPrev: null, ic0,
   };
 }
 
@@ -879,7 +954,7 @@ export function solveLoadOnSession(
   for (const dd of s.fixedDOF) f[dd] = 0;
 
   const u0 = warmStart && s.uPrev && s.uPrev.length === nDOF ? s.uPrev : undefined;
-  const sol = sparseCG(K, f, s.tol, s.maxIter, u0);
+  const sol = sparseCG(K, f, s.tol, s.maxIter, u0, s.ic0);
   s.uPrev = sol.u;
   const uM = sol.u;
 
