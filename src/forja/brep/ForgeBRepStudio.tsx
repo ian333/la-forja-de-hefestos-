@@ -79,6 +79,7 @@ import {
   type FaceBC,
   type FEASession,
 } from './fea';
+import { runTopOpt, type TopOptResult } from './topopt';
 import { MATERIAL_DATABASE } from '../../lib/formulas';
 
 // Ejes GLOBALES preestablecidos para el revolve (gp_Ax1 deterministas).
@@ -1166,6 +1167,37 @@ function SolidMesh({
   );
 }
 
+// Render del resultado GENERATIVO: cada voxel con densidad ≥ umbral se dibuja como
+// una cajita (instancedMesh, una sola draw-call) coloreada por densidad (turbo).
+// Muestra la ESTRUCTURA ÓPTIMA que el optimizador dejó tras vaciar material.
+function GenerativeVoxels({ result, threshold }: { result: TopOptResult; threshold: number }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const s = result.mesh.voxel * 0.94;
+  const cap = Math.max(1, result.cells.length);
+  useEffect(() => {
+    const im = ref.current; if (!im) return;
+    const m = new THREE.Matrix4(); const col = new THREE.Color();
+    let n = 0;
+    for (let e = 0; e < result.cells.length; e++) {
+      if (result.xPhys[e] < threshold) continue;
+      const c = result.cells[e];
+      m.makeScale(s, s, s); m.setPosition(c.cx, c.cy, c.cz); im.setMatrixAt(n, m);
+      const [r, g, b] = jetColor((result.xPhys[e] - threshold) / (1 - threshold || 1));
+      col.setRGB(r, g, b); im.setColorAt(n, col);
+      n++;
+    }
+    im.count = n;
+    im.instanceMatrix.needsUpdate = true;
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
+  }, [result, threshold, s]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, cap]} castShadow receiveShadow>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial metalness={0.35} roughness={0.5} envMapIntensity={1.1} />
+    </instancedMesh>
+  );
+}
+
 function ProfileGhost({ pts }: { pts: Pt2[] }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -1456,6 +1488,12 @@ export default function ForgeBRepStudio() {
   const feaDirRef = useRef<[number, number, number]>([0, 0, -1]);
   const feaSigRef = useRef<string>('');
   const [feaLiveMs, setFeaLiveMs] = useState<number | null>(null);
+  // ── DISEÑO GENERATIVO (optimización topológica) ──
+  const [genResult, setGenResult] = useState<TopOptResult | null>(null);
+  const [genBusy, setGenBusy] = useState(false);
+  const [genErr, setGenErr] = useState<string | null>(null);
+  const [genVolfrac, setGenVolfrac] = useState(0.4);   // fracción de material objetivo
+  const [genThreshold, setGenThreshold] = useState(0.4); // umbral de densidad visible
   // Picking de cara/arista pero dirigido al panel FEA (no a la op activa).
   const feaPickTargetRef = useRef<'fija' | 'carga' | null>(null);
   feaPickTargetRef.current = feaPickTarget;
@@ -1735,6 +1773,7 @@ export default function ForgeBRepStudio() {
     }
     setFeaBusy(true);
     setFeaErr(null);
+    setGenResult(null); // el FEA pinta sobre el sólido → quita el render generativo
     requestAnimationFrame(() => {
       let shape: Shape | null = null;
       try {
@@ -1813,6 +1852,40 @@ export default function ForgeBRepStudio() {
     setFeaLiveMs(ms);
   }, [runFeaAnalysis]);
 
+  // ── DISEÑO GENERATIVO: misma cara fija + cara de carga del FEA; corre la
+  // optimización topológica (topopt.ts) y muestra la estructura óptima vaciada. ──
+  const runGenerative = useCallback((loadDirOverride?: [number, number, number]) => {
+    if (!oc || feaFixedFace == null) { setGenErr('Elige una cara FIJA (btn-pick-fija) y una de carga.'); return; }
+    setGenBusy(true); setGenErr(null);
+    requestAnimationFrame(() => {
+      let shape: Shape | null = null;
+      try {
+        const isAssembly = assembly.enabled && sketch.kind === 'gear';
+        shape = isAssembly ? buildAssembly(oc, sketch.gear, assembly).compound : buildShape(oc, sketch, ops, edgeAxisRef.current);
+        const faces = enumerateFaces(oc, shape);
+        let dir: [number, number, number] = [0, 0, -1];
+        if (Array.isArray(loadDirOverride) && Math.hypot(...loadDirOverride) > 1e-6) dir = loadDirOverride;
+        else if (feaLoadFace != null) {
+          const lf = faces.find((f) => f.index === feaLoadFace);
+          if (lf && Math.hypot(lf.normal[0], lf.normal[1], lf.normal[2]) > 1e-6) dir = [lf.normal[0], lf.normal[1], lf.normal[2]];
+        }
+        const dl = Math.hypot(dir[0], dir[1], dir[2]) || 1; const F = feaLoadN;
+        const bc: FaceBC = { fixedFaces: [feaFixedFace], loadFaces: feaLoadFace != null ? [feaLoadFace] : [], totalForce: [dir[0] / dl * F, dir[1] / dl * F, dir[2] / dl * F] };
+        const res = runTopOpt(oc, shape, bc, FEA_MATERIAL_KEY[material] ?? 'aluminio_6061',
+          { volfrac: genVolfrac, penal: 3, rmin: 1.5, ft: 1, maxLoops: 40, tolChange: 0.02, resolution: 12 });
+        setFeaColors(null); setFeaResult(null);   // generativo manda el render
+        setGenResult(res);
+      } catch (e) { setGenErr(String((e as Error)?.message ?? e)); setGenResult(null); }
+      finally { shape?.delete?.(); setGenBusy(false); }
+    });
+  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops, genVolfrac]);
+  const clearGenerative = useCallback(() => setGenResult(null), []);
+  const genVoidPct = useMemo(() => {
+    if (!genResult) return 0;
+    let v = 0; for (let e = 0; e < genResult.xPhys.length; e++) if (genResult.xPhys[e] < 0.1) v++;
+    return 100 * v / Math.max(1, genResult.xPhys.length);
+  }, [genResult]);
+
   // Inicia el picking de cara dirigido al panel FEA (fija o carga).
   const startFeaPick = useCallback((target: 'fija' | 'carga') => {
     setActiveOp(null);
@@ -1835,6 +1908,7 @@ export default function ForgeBRepStudio() {
     setFeaFixedFace(null);
     setFeaLoadFace(null);
     feaSessionRef.current = null; // la geometría cambió → la sesión cacheada caduca
+    setGenResult(null);
   }, [opCount, sketch.kind]);
 
   // Selección (toggle) de cara/arista para la op activa. SIEMPRE fija el
@@ -2087,6 +2161,16 @@ export default function ForgeBRepStudio() {
       feaLiveSetLoad: (n: number) => { feaLiveSetLoad(n); },
       get feaSessionReady() { return !!feaSessionRef.current; },
       get feaLiveMs() { return feaLiveMs; },
+      // ── DISEÑO GENERATIVO (driver QA) ──
+      setGenVolfrac: (v: number) => setGenVolfrac(Math.max(0.1, Math.min(0.8, v))),
+      runGenerative: (dir?: [number, number, number]) => runGenerative(dir),
+      get genBusy() { return genBusy; },
+      get genResult() {
+        if (!genResult) return null;
+        let kept = 0, vd = 0;
+        for (let e = 0; e < genResult.xPhys.length; e++) { if (genResult.xPhys[e] >= genThreshold) kept++; if (genResult.xPhys[e] < 0.1) vd++; }
+        return { nCells: genResult.nCells, compliance: genResult.compliance, kept, voidPct: 100 * vd / Math.max(1, genResult.xPhys.length), loops: genResult.history.length };
+      },
       clearFeaOverlay,
       get feaReady() { return !!feaResult; },
       get feaBusy() { return feaBusy; },
@@ -2129,7 +2213,7 @@ export default function ForgeBRepStudio() {
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
-  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs]);
+  }, [oc, result, ops, opErr, addOp, updateOp, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2175,7 +2259,9 @@ export default function ForgeBRepStudio() {
           <group rotation={[-Math.PI / 2, 0, 0]}>
             {showSketch && <SketchPlane />}
             {showSketch && <ProfileGhost pts={profilePts} />}
-            {result && (
+            {genResult ? (
+              <GenerativeVoxels result={genResult} threshold={genThreshold} />
+            ) : result && (
               <SolidMesh
                 mesh={result.mesh}
                 faded={building}
@@ -2878,6 +2964,31 @@ export default function ForgeBRepStudio() {
               </button>
             )}
             {feaErr && <div className="fb-sim-err" data-testid="fea-error">{feaErr}</div>}
+
+            {/* ── DISEÑO GENERATIVO: misma cara fija + carga; vacía hasta la forma óptima ── */}
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${GOLD}22` }}>
+              <Dim label="Material objetivo" value={Math.round(genVolfrac * 100)} unit="%" min={10} max={80} step={5}
+                testid="input-volfrac" onChange={(v) => setGenVolfrac(Math.max(0.1, Math.min(0.8, v / 100)))} />
+              <button className="fb-fea-run" data-testid="btn-generativo"
+                onClick={() => runGenerative()} disabled={genBusy || !oc || feaFixedFace == null}
+                style={{ background: GOLD, color: '#1a1206', fontWeight: 700 }}>
+                {genBusy ? '⚡ Optimizando topología…' : '⚡ Diseño generativo'}
+              </button>
+              {genResult && (
+                <>
+                  <Dim label="Umbral visible" value={Math.round(genThreshold * 100)} unit="%" min={5} max={90} step={5}
+                    testid="input-umbral" onChange={(v) => setGenThreshold(Math.max(0.05, Math.min(0.9, v / 100)))} />
+                  <div className="fb-row hi">
+                    <span className="rk">Material quitado</span>
+                    <span className="rv" data-testid="gen-void">{Math.round(genVoidPct)}%</span>
+                  </div>
+                  <button className="fb-sim-clear" data-testid="btn-gen-clear" onClick={clearGenerative}>
+                    Volver al sólido
+                  </button>
+                </>
+              )}
+              {genErr && <div className="fb-sim-err" data-testid="gen-error">{genErr}</div>}
+            </div>
 
             {feaResult ? (
               <div className="fb-sim-out">
