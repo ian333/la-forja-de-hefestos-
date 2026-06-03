@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment, Grid, ContactShadows, Line } from '@react-three/drei';
+import { OrbitControls, Environment, Grid, ContactShadows, Line, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import {
   fourBarPose,
   fourBarSweep,
@@ -38,8 +38,8 @@ const STEEL = '#9fb3c8';
 const CAD_BG = '#10151c';
 
 // PBR de acero satinado para las barras (igual receta que el Part Studio).
-const BAR_PBR = { color: '#aeb8c6', metalness: 0.96, roughness: 0.26 };
-const CRANK_PBR = { color: '#caa23a', metalness: 0.92, roughness: 0.33 };   // manivela = latón (resalta la entrada)
+const BAR_PBR = { color: '#aeb8c6', metalness: 0.96, roughness: 0.30 };
+const CRANK_PBR = { color: '#caa23a', metalness: 0.92, roughness: 0.36 };   // manivela = latón (resalta la entrada)
 
 // ──────────────────────────────────────────────────────────────────
 // Viewport CAD limpio (copia de la receta de ForgeBRepStudio.CadViewport).
@@ -65,7 +65,7 @@ function CadViewport({
         dpr={[1, 2]}
         onCreated={({ gl }) => {
           gl.toneMapping = ACESFilmicToneMapping;
-          gl.toneMappingExposure = 0.72;
+          gl.toneMappingExposure = 0.90;
         }}
       >
         <Environment files="/hdri/studio_small_03_1k.hdr" background={false} environmentIntensity={1.0} />
@@ -82,6 +82,17 @@ function CadViewport({
           autoRotate={autoRotate} autoRotateSpeed={0.4}
           minDistance={cameraDistance * 0.2} maxDistance={cameraDistance * 5}
         />
+
+        {/* VIEWCUBE — orienta el plano del mecanismo (como TODO CAD). El Canvas vive
+            en la celda 1fr del grid (a la izquierda del panel de 360px), así que
+            top-right cae dentro del viewport. UN solo GizmoHelper: dos se pisan. */}
+        <GizmoHelper alignment="top-right" margin={[72, 80]}>
+          <GizmoViewcube
+            color="#aab4c2" textColor="#10151c" strokeColor="#5a6675" hoverColor={GOLD}
+            faces={['DER', 'IZQ', 'ARRIBA', 'ABAJO', 'FRENTE', 'ATRAS']}
+          />
+        </GizmoHelper>
+
         {children}
         <CadGround size={Math.max(40, cameraDistance * 1.2)} />
       </Canvas>

@@ -23,7 +23,7 @@ import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } fro
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, type ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Environment, Grid, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import {
   initOCCT,
   _setActiveOCCT,
@@ -112,10 +112,10 @@ const CAD_BG = '#10151c';      // fondo de estudio (oscuro, no negro puro)
 // ──────────────────────────────────────────────────────────────────
 interface PBRFinish { color: string; metalness: number; roughness: number; clearcoat: number; clearcoatRoughness: number; }
 const MATERIAL_PBR: Record<string, PBRFinish> = {
-  alu:   { color: '#d3d8de', metalness: 0.95, roughness: 0.30, clearcoat: 0.15, clearcoatRoughness: 0.30 }, // aluminio pulido claro
-  steel: { color: '#aeb8c6', metalness: 0.96, roughness: 0.26, clearcoat: 0.10, clearcoatRoughness: 0.25 }, // acero satinado azulado
-  brass: { color: '#caa23a', metalness: 0.92, roughness: 0.33, clearcoat: 0.12, clearcoatRoughness: 0.30 }, // latón dorado
-  ti:    { color: '#9aa0a8', metalness: 0.90, roughness: 0.40, clearcoat: 0.08, clearcoatRoughness: 0.40 }, // titanio grisáceo mate-satín
+  alu:   { color: '#d3d8de', metalness: 0.95, roughness: 0.18, clearcoat: 0.15, clearcoatRoughness: 0.30 }, // aluminio pulido claro (casi espejo)
+  steel: { color: '#aeb8c6', metalness: 0.96, roughness: 0.30, clearcoat: 0.10, clearcoatRoughness: 0.25 }, // acero satinado azulado
+  brass: { color: '#caa23a', metalness: 0.92, roughness: 0.36, clearcoat: 0.12, clearcoatRoughness: 0.30 }, // latón dorado pulido suave
+  ti:    { color: '#9aa0a8', metalness: 0.88, roughness: 0.55, clearcoat: 0.08, clearcoatRoughness: 0.45 }, // titanio mate de verdad
   abs:   { color: '#c9ccd2', metalness: 0.05, roughness: 0.62, clearcoat: 0.35, clearcoatRoughness: 0.55 }, // plástico ABS (mate con laca)
   pla:   { color: '#d8d3c4', metalness: 0.04, roughness: 0.66, clearcoat: 0.30, clearcoatRoughness: 0.60 }, // plástico PLA
 };
@@ -1000,9 +1000,55 @@ function SolidMesh({
     onPickEdge(edgeId);
   }, [pickMode, onPickEdge]);
 
+  // HOVER de cara: en modo 'face', la cara bajo el cursor se pre-resalta en oro
+  // tenue cálido (lo que VAS a clicar) y el cursor pasa a pointer — el feedback
+  // de pre-selección que todo CAD tiene. Distinto del oro saturado de la cara ya
+  // seleccionada. Se apaga fuera del modo face o al salir del sólido.
+  const [hoverFace, setHoverFace] = useState<number | null>(null);
+  const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
+    if (pickMode !== 'face') return;
+    const ti = e.faceIndex;
+    if (ti != null && ti >= 0 && ti < mesh.faceIds.length) {
+      const fid = mesh.faceIds[ti];
+      setHoverFace((h) => (h === fid ? h : fid));
+    }
+  }, [pickMode, mesh]);
+  const handlePointerOver = useCallback(() => {
+    if (pickMode === 'face' && typeof document !== 'undefined') document.body.style.cursor = 'pointer';
+  }, [pickMode]);
+  const handlePointerOut = useCallback(() => {
+    setHoverFace(null);
+    if (typeof document !== 'undefined') document.body.style.cursor = '';
+  }, []);
+  // Sub-malla de la cara en hover (misma técnica que highlightGeo, una sola cara).
+  const hoverGeo = useMemo(() => {
+    if (pickMode !== 'face' || hoverFace == null || selFaces.includes(hoverFace)) return null;
+    const idx: number[] = [];
+    for (const grp of mesh.faceGroups) {
+      if (grp.faceId === hoverFace) {
+        for (let k = grp.start; k < grp.start + grp.count; k++) idx.push(mesh.indices[k]);
+      }
+    }
+    if (!idx.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+    return g;
+  }, [mesh, hoverFace, pickMode, selFaces]);
+  useEffect(() => () => { hoverGeo?.dispose(); }, [hoverGeo]);
+
   return (
     <group>
-      <mesh geometry={geom} castShadow receiveShadow onClick={handleClick}>
+      <mesh
+        geometry={geom}
+        castShadow
+        receiveShadow
+        onClick={handleClick}
+        onPointerMove={handlePointerMove}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+      >
         {feaColors ? (
           /* OVERLAY FEA: la pieza se pinta por von Mises (vertexColors azul→rojo).
              meshBasicMaterial = SIN luz: el color del esfuerzo se ve EXACTO en
@@ -1028,11 +1074,27 @@ function SolidMesh({
             roughness={pbr.roughness}
             clearcoat={pbr.clearcoat}
             clearcoatRoughness={pbr.clearcoatRoughness}
-            envMapIntensity={1.15}
+            envMapIntensity={1.35}
             flatShading={false}
           />
         )}
       </mesh>
+
+      {/* CARA EN HOVER (pre-selección): oro tenue cálido, sin emisión, debajo del
+          resalte de selección. Comunica "esta es la que vas a clicar". */}
+      {hoverGeo && (
+        <mesh geometry={hoverGeo} renderOrder={2}>
+          <meshBasicMaterial
+            color={'#f3bf8e'}
+            transparent
+            opacity={0.3}
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-2}
+            polygonOffsetUnits={-2}
+          />
+        </mesh>
+      )}
 
       {/* CARA RESALTADA: misma topología, material de oro emisivo encima. */}
       {highlightGeo && (
@@ -1090,18 +1152,8 @@ function SolidMesh({
         </mesh>
       ))}
 
-      {/* Marcador puntual de cara seleccionada (esfera verde en su centroide),
-          además del resalte de superficie — doble feedback del picking. */}
-      {selFaces.map((i) => {
-        const f = faces.find((x) => x.index === i);
-        if (!f) return null;
-        return (
-          <mesh key={`sf${i}`} position={f.center}>
-            <sphereGeometry args={[1.6, 16, 16]} />
-            <meshBasicMaterial color={'#4ade80'} transparent opacity={0.9} />
-          </mesh>
-        );
-      })}
+      {/* (La esfera verde de centroide se quitó: el resalte de superficie dorado
+          + el hover ya comunican la selección sin el "chícharo" verde encima.) */}
     </group>
   );
 }
@@ -1188,7 +1240,7 @@ function CadViewport({
           // Grain/CA). Exposición algo más baja para que el highlight del metal
           // tenga ROLL-OFF (no clipee a blanco): el brillo conserva textura.
           gl.toneMapping = ACESFilmicToneMapping;
-          gl.toneMappingExposure = 0.70;
+          gl.toneMappingExposure = 0.90;
         }}
       >
         {/* HDRI de estudio que el METAL REFLEJA (es lo que lo hace ver real, como
@@ -1223,6 +1275,21 @@ function CadViewport({
           minDistance={minDistance ?? cameraDistance * 0.15}
           maxDistance={maxDistance ?? cameraDistance * 6}
         />
+
+        {/* VIEWCUBE — orientación viva (como TODO CAD). Click en una cara salta a
+            vista ortográfica; etiquetas en español. El Canvas es full-window y el
+            panel de opciones (.fb-params, right:18 width:230 ≈248px) lo cubriría en
+            top-right, así que lo INSETAMOS ~290px para que quede justo a su izquierda
+            (como el ViewCube de Fusion, pegado al panel de propiedades). */}
+        <GizmoHelper alignment="top-right" margin={[300, 104]}>
+          <GizmoViewcube
+            color="#aab4c2"
+            textColor="#10151c"
+            strokeColor="#5a6675"
+            hoverColor={GOLD}
+            faces={['DER', 'IZQ', 'ARRIBA', 'ABAJO', 'FRENTE', 'ATRAS']}
+          />
+        </GizmoHelper>
 
         {children}
 

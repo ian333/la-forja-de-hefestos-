@@ -810,16 +810,24 @@ function sampleNodalField(
   return vsum / wsum;
 }
 
-/** Mapa de color secuencial azul→cian→verde→amarillo→rojo (jet acotado, 0..1). */
+/** Mapa de color TURBO (Mikhailov 2019): azul-marino→cian→verde→amarillo→naranja→rojo.
+ *  Perceptualmente uniforme y con mucho más rango de matiz que el jet clásico, así
+ *  el gradiente de esfuerzo se lee fino y el ojo distingue zonas vecinas. Acotado 0..1. */
 export function jetColor(t: number): [number, number, number] {
   const x = Math.min(1, Math.max(0, t));
-  // 5 paradas: azul (0), cian (.25), verde (.5), amarillo (.75), rojo (1).
+  // Tipo Turbo pero con el extremo BAJO en azul profundo (estándar FEA azul→rojo),
+  // NO en el púrpura del Turbo oficial (el púrpura sobre la pieza en reposo lee como
+  // defecto, no como dato). Resto: cian→verde→amarillo→naranja→rojo oscuro.
   const stops: Array<[number, [number, number, number]]> = [
-    [0.0, [0.0, 0.10, 0.55]],
-    [0.25, [0.0, 0.65, 0.95]],
-    [0.5, [0.10, 0.85, 0.30]],
-    [0.75, [0.98, 0.85, 0.10]],
-    [1.0, [0.92, 0.12, 0.10]],
+    [0.0, [0.12, 0.22, 0.62]],
+    [0.125, [0.16, 0.50, 0.96]],
+    [0.25, [0.128, 0.563, 0.989]],
+    [0.375, [0.100, 0.780, 0.800]],
+    [0.5, [0.420, 0.931, 0.392]],
+    [0.625, [0.780, 0.945, 0.196]],
+    [0.75, [0.980, 0.745, 0.149]],
+    [0.875, [0.930, 0.398, 0.069]],
+    [1.0, [0.480, 0.016, 0.011]],
   ];
   for (let i = 0; i < stops.length - 1; i++) {
     const [a, ca] = stops[i];
@@ -851,14 +859,26 @@ export function vonMisesVertexColors(
   const nV = positions.length / 3;
   const colors = new Float32Array(nV * 3);
   const vmPerVertex = new Float32Array(nV);
-  const denom = result.maxVonMises > 0 ? result.maxVonMises : 1;
+  // PASO 1 — muestrear el campo de von Mises en cada vértice de la superficie.
   for (let v = 0; v < nV; v++) {
-    const p: [number, number, number] = [
+    vmPerVertex[v] = sampleNodalField(grid, result.mesh, result.vonMisesNodal, [
       positions[v * 3], positions[v * 3 + 1], positions[v * 3 + 2],
-    ];
-    const vm = sampleNodalField(grid, result.mesh, result.vonMisesNodal, p);
-    vmPerVertex[v] = vm;
-    const [r, g, b] = jetColor(vm / denom);
+    ]);
+  }
+  // Normalización por PERCENTIL 98 (no por el máximo): un solo nodo singular en
+  // un filete/esquina dispara maxVonMises y APLASTA todo el resto del campo al
+  // extremo azul. Tomando P98 como tope, el 98% de la pieza usa TODO el rango
+  // turbo cian→rojo y el hot-spot real se ve; los pocos nodos sobre P98 saturan
+  // en rojo (jetColor ya acota a 1). Fallback al máximo si la malla es minúscula.
+  let denom = result.maxVonMises > 0 ? result.maxVonMises : 1;
+  if (nV >= 8) {
+    const sorted = Float64Array.from(vmPerVertex).sort();
+    const p98 = sorted[Math.min(nV - 1, Math.floor(0.98 * nV))];
+    if (p98 > 0) denom = p98;
+  }
+  // PASO 2 — colorear con turbo(σ_vm / denom).
+  for (let v = 0; v < nV; v++) {
+    const [r, g, b] = jetColor(vmPerVertex[v] / denom);
     colors[v * 3] = r; colors[v * 3 + 1] = g; colors[v * 3 + 2] = b;
   }
   return { colors, vmPerVertex };
