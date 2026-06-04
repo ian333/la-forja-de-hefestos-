@@ -1,6 +1,7 @@
 /* Prueba del Operador 𝔄 para mecanismos vs cinemática verificada. node --import tsx scripts/operador-test.ts */
-import { dft, idft, circulantEigenvalues, cyclicBalance, cyclicReduction, modeSpectrum, cabs } from '../src/forja/mech/operador-mecanismos';
+import { dft, idft, circulantEigenvalues, cyclicBalance, cyclicReduction, modeSpectrum, cabs, compileMechanism } from '../src/forja/mech/operador-mecanismos';
 import { eccentricBalance } from '../src/forja/mech/gearbox';
+import { K1, fusionGapMin } from '../src/forja/mech/printsim';
 
 let pass = 0, fail = 0;
 const near = (a: number, b: number, t = 1e-6) => Math.abs(a - b) < t;
@@ -36,7 +37,21 @@ ck('config A (hembra fija): 10:1 opuesto', A.ratio === 10 && A.sign === -1, JSON
 ck('config B (brida fija → gira HEMBRA): 11:1 mismo sentido', B.ratio === 11 && B.sign === +1, JSON.stringify(B));
 ck('el batido es 1 (diferencia de 1 diente Z_r−Z_c)', A.beat === 1 && B.beat === 1);
 
+// Paso 6: COMPILAR — las 3 preguntas en la cara-𝔦, reproduciendo NUESTRA caja + fallas
+const gOn = fusionGapMin(K1.fanOn_h), gOff = fusionGapMin(K1.fanOff_h);   // ~0.30 / ~0.85
+const necks30 = Array.from({ length: 30 }, () => 0.35 * 0.35);            // 30 cuellos = 3.67mm²
+const base = { lobes: 10, discs: 5, output: 'ring' as const, gapMm: 0.6, neckAreas: necks30, detachBudgetMm2: 4 };
+const actuador = compileMechanism({ ...base, gMinFan: gOn });
+ck('ACTUADOR compila VÁLIDO: mueve 11:1 + balanceado + imprime + despega', actuador.valido && actuador.mueve.ratio === 11 && actuador.balanceado, JSON.stringify(actuador));
+const sinVent = compileMechanism({ ...base, gMinFan: gOff });
+ck('SIN ventilador → el hueco FUNDE → no válido (ladrillo)', !sinVent.valido && sinVent.imprime.funde);
+const muchaArea = compileMechanism({ ...base, gMinFan: gOn, neckAreas: Array.from({ length: 50 }, () => 0.6 * 0.6) });
+ck('MUCHA área (50×0.36=18mm²) → no despega → no válido', !muchaArea.valido && !muchaArea.despega.ok);
+const cfgA = compileMechanism({ ...base, gMinFan: gOn, output: 'disc' });
+ck('config A (hembra fija) compila 10:1, sentido opuesto', cfgA.mueve.ratio === 10 && cfgA.mueve.dir === 'opuesto');
+
 console.log(`OPERADOR_TEST pass=${pass} fail=${fail}`);
+console.log('compilar ACTUADOR:', JSON.stringify(compileMechanism({ ...base, gMinFan: gOn }), null, 2));
 console.log('config A:', JSON.stringify(cyclicReduction(10, 'disc')));
 console.log('config B (actuador):', JSON.stringify(cyclicReduction(10, 'ring')));
 console.log('balance N=5:', JSON.stringify(cyclicBalance(5)));

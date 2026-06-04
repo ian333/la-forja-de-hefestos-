@@ -72,3 +72,50 @@ export function cyclicReduction(lobes: number, output: 'disc' | 'ring') {
     dir: output === 'ring' ? 'mismo sentido' : 'opuesto',
   };
 }
+
+// ── Paso 6: el CAMPO DE UNIONES b(θ) sobre la MISMA cara-𝔦 + los 3 operadores de
+// impresión, diagonales/locales ahí. Generar un mecanismo imprimible = elegir b(θ)
+// que (1) dé el movimiento, (2) se imprima, (3) despegue — las 3 en la cara-𝔦. ──
+export type BondType = 'fundido' | 'holgura' | 'cuello' | 'hilo';
+
+/** Operador de FUSIÓN (Deborah): LOCAL. Funde si el hueco < g_min (umbral con/sin
+ *  ventilador, de printsim). Para una junta libre QUEREMOS holgura (no funde). */
+export function fusionOp(gapMm: number, gMinFan: number): { welds: boolean; type: BondType } {
+  if (gapMm <= 0) return { welds: true, type: 'fundido' };
+  return gapMm < gMinFan ? { welds: true, type: 'fundido' } : { welds: false, type: 'holgura' };
+}
+
+/** Operador de VOLADIZO (LOCAL): cara con pendiente desde la vertical > crítico (45°). */
+export function overhangOp(angleFromVertDeg: number, critDeg = 45): boolean {
+  return angleFromVertDeg > critDeg;
+}
+
+/** Operador de DESPEGUE = cota sobre el modo DC del campo de ÁREA frangible.
+ *  Σ área = N·DC (el modo k=0). Despega si Σ área ≤ presupuesto (τ·A ≤ T_in/r). */
+export function detachDC(bondAreaField: number[], budgetMm2: number) {
+  const N = Math.max(1, bondAreaField.length);
+  const spec = modeSpectrum(bondAreaField.map((v) => cx(v)));
+  const total = bondAreaField.reduce((a, b) => a + b, 0);
+  return { dc: +spec[0].toFixed(4), totalArea: +total.toFixed(3), N, detaches: total <= budgetMm2 };
+}
+
+export interface MechSpec {
+  lobes: number; discs: number; output: 'disc' | 'ring';
+  gapMm: number; gMinFan: number;       // impresión: hueco de la junta + umbral de fusión
+  neckAreas: number[];                  // campo de área frangible (un valor por cuello)
+  detachBudgetMm2: number;
+}
+/** COMPILA: las 3 preguntas (mueve / imprime / despega) en la cara-𝔦. */
+export function compileMechanism(s: MechSpec) {
+  const red = cyclicReduction(s.lobes, s.output);
+  const bal = cyclicBalance(Math.max(1, s.discs));
+  const fus = fusionOp(s.gapMm, s.gMinFan);
+  const det = detachDC(s.neckAreas, s.detachBudgetMm2);
+  return {
+    mueve: { ratio: red.ratio, dir: red.dir, beat: red.beat, salida: red.moves },
+    balanceado: bal.balanced,                                  // DC=0 del campo de fases
+    imprime: { funde: fus.welds, union: fus.type, ok: !fus.welds }, // junta libre ⇔ NO funde
+    despega: { areaTotal: det.totalArea, presupuesto: s.detachBudgetMm2, ok: det.detaches },
+    valido: bal.balanced && !fus.welds && det.detaches,
+  };
+}
