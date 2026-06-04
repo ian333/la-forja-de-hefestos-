@@ -46,12 +46,21 @@ const SHOT = process.env.SHOT || '/home/ian/Orkesta/la-forja/forja-shots/caja-mo
     const mi = await ev(() => window.__forgeBrep.gbMotionInfo);
     out.motionInfo = mi;
 
-    // ── cinemática: ratio real (salida = −θ/lóbulos) + órbita del disco ──
+    // ── cinemática: ratio real (salida = −θ/lóbulos), órbita + RELOJ del disco ──
     const pose0 = await ev(() => window.__forgeBrep.gbPoseAt(0));
     const pose360 = await ev(() => window.__forgeBrep.gbPoseAt(360));
-    out.outAt360 = pose360.outputDeg;            // debe ser −36 (=−360/10)
-    out.disc0_at0 = pose0.discCenters[0];         // (E,0) = (1.5,0)
-    out.disc0_at360 = pose360.discCenters[0];     // vuelve a (E,0) (periódico 2π)
+    out.outAt360 = pose360.outputDeg;            // −36 (=−360/10)
+    out.disc0_at0 = pose0.discs[0];               // (E,0)=(1.5,0), reloj 0
+    out.disc1_clock = pose0.discs[1].clockDeg;    // −72/10 = −7.2 (el RELOJ que faltaba)
+    out.disc0_rot360 = pose360.discs[0].rotDeg;   // −(360+0)/10 = −36
+
+    // ── COLISIÓN: holgura lóbulo↔rodillo, relojeado (bien) vs sin relojear (bug) ──
+    const meshOK = await ev(() => window.__forgeBrep.gbMeshClearance(0, true));
+    const meshBad = await ev(() => window.__forgeBrep.gbMeshClearance(0, false));
+    const meshOK2 = await ev(() => window.__forgeBrep.gbMeshClearance(36, true));
+    out.clearance_clocked = meshOK.worstClearance;       // ≥ ~0 → no penetra
+    out.clearance_unclocked = meshBad.worstClearance;    // << 0 → colisiona (el bug)
+    out.clearance_clocked_36 = meshOK2.worstClearance;
 
     await page.waitForTimeout(600);
     await page.screenshot({ path: SHOT, timeout: 30000 });
@@ -65,13 +74,17 @@ const SHOT = process.env.SHOT || '/home/ian/Orkesta/la-forja/forja-shots/caja-mo
       params_abierto: asideState.params === false,
       // PLA (masa realista, no aluminio ~544g)
       masa_pla_no_aluminio: invGb.mass_g > 150 && invGb.mass_g < 360,
-      // (B) movimiento
+      // (B) movimiento + cinemática
       piezas_construidas: mi && mi.ready === true,
       cinco_discos: mi && mi.discCount === 5,
       piezas_con_geometria: mi && mi.verts && mi.verts.housing > 0 && mi.verts.rotor > 0 && mi.verts.disc > 0 && mi.verts.output > 0,
-      ratio_real_10: near(pose360.outputDeg, -36, 0.001),
-      disco_orbita_E: near(pose0.discCenters[0].x, 1.5) && near(pose0.discCenters[0].y, 0),
-      orbita_periodica: near(pose360.discCenters[0].x, 1.5) && near(pose360.discCenters[0].y, 0),
+      ratio_real_10: near(pose360.outputDeg, -36, 0.001) && near(pose360.discs[0].rotDeg, -36, 0.001),
+      reloj_disco_presente: near(pose0.discs[1].clockDeg, -7.2, 0.001),
+      disco_orbita_E: near(pose0.discs[0].x, 1.5) && near(pose0.discs[0].y, 0),
+      // (C) NO colisión: relojeado engrana, sin relojear penetra fuerte
+      relojeado_no_colisiona: meshOK.worstClearance > -1.2 && meshOK2.worstClearance > -1.2,
+      sin_relojear_si_colisiona: meshBad.worstClearance < -1.2,
+      reloj_mejora_engrane: meshOK.worstClearance > meshBad.worstClearance + 0.8,
       sin_errores: errs.length === 0,
     };
     out.pass = Object.values(out.checks).every(Boolean);

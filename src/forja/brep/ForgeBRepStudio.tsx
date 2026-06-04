@@ -828,84 +828,130 @@ function buildComponent(oc: OC, c: Component): Shape {
   return t;
 }
 
-/**
- * CAJA DE VELOCIDADES cicloidal multi-disco, en UNA pieza (compound print-in-place).
- *
- * La FÍSICA de cómo se mueve y por qué NO se desarma (lo que faltaba):
- *  1) EJE + LEVAS EXCÉNTRICAS: el eje central lleva N levas cilíndricas, cada una
- *     descentrada `E` y FASADA a 360/N°, FUNDIDAS al eje (una sola pieza rígida).
- *     Cada disco cabalga sobre SU leva (barreno = ⌀leva + holgura). Al girar el eje,
- *     la leva empuja al disco a orbitar `E` → los lóbulos engranan con los pernos
- *     del anillo → el disco gira lento. ESA es la conexión eje→disco (antes no
- *     existía: el eje giraba en el vacío). Las fases opuestas balancean el eje.
- *  2) PERNOS DE SALIDA + BRIDA: M pernos verticales pasan por barrenos HOLGADOS
- *     (⌀perno + 2E + holgura, acomodan el bamboleo) de TODOS los discos y se unen a
- *     una brida superior → extraen el giro lento Y capturan los discos axialmente
- *     entre la base y la brida (por eso NO se separan).
- *  3) BASE-anillo (el "hembra"): placa masiva + N+1 pernos de anillo = la carcasa
- *     fija contra la que ruedan los lóbulos; recibe el torque alto.
- *
- * Discos extruidos por B-SPLINE (curva real, no polígono facetado). Geometría
- * exacta; la física de supervivencia la valida gearbox.ts (analyzeGearbox).
- */
-function buildGearbox(oc: OC, p: GearboxParams): Shape {
-  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
-  const phases = discPhases(p.discs);
+// Geometría compartida de la caja (un solo lugar de verdad).
+function gearboxDims(p: GearboxParams) {
   const stepZ = p.T + p.gap;
   const totalH = p.discs * p.T + (p.discs - 1) * p.gap;
-  const eccR = p.shaftD / 2 + p.E;                 // radio de la leva excéntrica
-  const boreD = 2 * (eccR + p.gap);                // barreno del disco = ⌀leva + 2·holgura
-  // pernos de salida: en un círculo interior; barreno del disco los holga ±E + holgura.
-  const outR = p.R * 0.55;
-  const outHoleD = p.outPinD + 2 * p.E + 2 * p.gap;
-  const outCenters = pinPositions(outR, Math.max(3, Math.round(p.outPins)));
+  return {
+    stepZ, totalH,
+    eccR: p.shaftD / 2 + p.E,            // radio de la leva excéntrica
+    boreD: 2 * (p.shaftD / 2 + p.E + p.gap), // barreno del disco = ⌀leva + 2·holgura
+    outR: p.R * 0.55,                    // círculo de pernos de salida
+    outHoleD: p.outPinD + 2 * p.E + 2 * p.gap, // barreno de salida = perno + órbita + holgura
+    baseH: p.T * 1.2,                    // placa base de la hembra
+    flangeZ: totalH + 2 * p.gap,         // bajo cara de la brida de salida
+    flangeH: p.T * 0.7,
+  };
+}
+
+/**
+ * UN disco cicloidal centrado, con barreno de leva + barrenos de salida
+ * PRE-COMPENSADOS por +α/lóbulos. ¿Por qué? El disco se RELOJEA (gira) −α/lóbulos
+ * al colocarlo para que sus lóbulos engranen sin colisión; ese mismo reloj giraría
+ * los barrenos de salida y los pernos comunes ya no entrarían. Pre-girarlos +α/lóbulos
+ * los devuelve a la posición nominal → el perno entra con holgura SOLO de la órbita.
+ * NO relojeado aún (el reloj se aplica al colocar/animar). Curva real (B-spline).
+ */
+function buildCycDisc(oc: OC, p: GearboxParams, profile: Pt2[], outCenters: Pt2[], alphaRad: number): Shape {
+  const d0 = gearboxDims(p);
+  const comp = alphaRad / p.lobes;                 // pre-compensación del reloj
+  const ca = Math.cos(comp), sa = Math.sin(comp);
+  let d = extrudeSpline(oc, profile, p.T);
+  d = drillHole(oc, d, { x: 0, y: 0, diameter: d0.boreD, zTop: p.T, depth: p.T, through: true });
+  for (const c of outCenters) {
+    const x = c.x * ca - c.y * sa, y = c.x * sa + c.y * ca;
+    d = drillHole(oc, d, { x, y, diameter: d0.outHoleD, zTop: p.T, depth: p.T, through: true });
+  }
+  return d;
+}
+
+/**
+ * HEMBRA = el VASO estructural (el "actuador" mismo): placa base cerrada + paredes
+ * + N+1 RODILLOS integrados (la pista hembra donde rueda el cicloidal — ya NO son
+ * pernos sueltos). El eje entra por un barreno en la base. Es la pieza FIJA y
+ * estructural; el reductor no es backdriveable, así que sostiene posición sola.
+ */
+function buildHembra(oc: OC, p: GearboxParams): Shape {
+  const d0 = gearboxDims(p);
+  const wall = 4;
+  const Rout = p.R + p.Rr + wall;
+  const zBot = -(d0.baseH + p.gap);
+  const z0 = -p.gap;                 // fondo de la cavidad
+  const zTop = d0.totalH + p.gap;    // tope de cavidad/rodillos
+  let h = makeCylinder(oc, Rout, zTop - zBot, { origin: [0, 0, zBot], dir: [0, 0, 1] });
+  // vaciar la cavidad (radio R) desde z0 → deja placa base + paredes
+  { const cav = makeCylinder(oc, p.R, (zTop - z0) + 2, { origin: [0, 0, z0], dir: [0, 0, 1] }); const t = cut(oc, h, cav); h.delete?.(); cav.delete?.(); h = t; }
+  // RODILLOS de la hembra (la pista) — fundidos a la pared, sobresalen a la cavidad
+  for (const pp of pinPositions(p.R, p.lobes + 1)) {
+    const roller = makeCylinder(oc, p.Rr, zTop - z0, { origin: [pp.x, pp.y, z0], dir: [0, 0, 1] });
+    const t = fuse(oc, h, roller); h.delete?.(); roller.delete?.(); h = t;
+  }
+  // barreno de ENTRADA en la placa base (libra el eje con holgura)
+  { const ib = makeCylinder(oc, p.shaftD / 2 + p.gap, d0.baseH + 2, { origin: [0, 0, zBot - 1], dir: [0, 0, 1] }); const t = cut(oc, h, ib); h.delete?.(); ib.delete?.(); h = t; }
+  return h;
+}
+
+/** EJE + LEVAS excéntricas fundidas (entrada). Muñón abajo para el motor; hueco =
+ *  socket del motor. Las levas (offset E, fase αᵢ) empujan los discos a orbitar. */
+function buildRotor(oc: OC, p: GearboxParams): Shape {
+  const d0 = gearboxDims(p);
+  const phases = discPhases(p.discs);
+  const shZ0 = -(d0.baseH + p.gap) - p.T;          // muñón T bajo la base (agarre del motor)
+  let rotor = makeCylinder(oc, p.shaftD / 2, (d0.totalH + p.gap) - shZ0, { origin: [0, 0, shZ0], dir: [0, 0, 1] });
+  for (let i = 0; i < p.discs; i++) {
+    const a = (phases[i] * Math.PI) / 180;
+    const cam = makeCylinder(oc, d0.eccR, p.T, { origin: [p.E * Math.cos(a), p.E * Math.sin(a), i * d0.stepZ], dir: [0, 0, 1] });
+    const t = fuse(oc, rotor, cam); rotor.delete?.(); cam.delete?.(); rotor = t;
+  }
+  if (p.shaftBore > 0) {
+    const bore = makeCylinder(oc, p.shaftBore / 2, (d0.totalH + 4 * p.T) - shZ0, { origin: [0, 0, shZ0 - 1], dir: [0, 0, 1] });
+    const t = cut(oc, rotor, bore); rotor.delete?.(); bore.delete?.(); rotor = t;
+  }
+  return rotor;
+}
+
+/** SALIDA = la TAPA que gira: brida que cubre la boca del vaso (holgura a la pared)
+ *  + M pernos que bajan por los barrenos de los discos → extraen el giro lento y,
+ *  con la placa base, ATRAPAN los discos axialmente (encapsulado print-in-place). */
+function buildOutput(oc: OC, p: GearboxParams, outCenters: Pt2[]): Shape {
+  const d0 = gearboxDims(p);
+  let output = makeCylinder(oc, p.R - p.gap, d0.flangeH, { origin: [0, 0, d0.flangeZ], dir: [0, 0, 1] });
+  for (const c of outCenters) {
+    const pin = makeCylinder(oc, p.outPinD / 2, d0.flangeZ, { origin: [c.x, c.y, d0.flangeZ], dir: [0, 0, -1] });
+    const t = fuse(oc, output, pin); output.delete?.(); pin.delete?.(); output = t;
+  }
+  { const cb = makeCylinder(oc, p.shaftD / 2 + p.gap, d0.flangeH + 2, { origin: [0, 0, d0.flangeZ - 1], dir: [0, 0, 1] }); const t = cut(oc, output, cb); output.delete?.(); cb.delete?.(); output = t; }
+  return output;
+}
+
+/**
+ * CAJA cicloidal en UNA pieza, ENCAPSULADA print-in-place — sale lista de la
+ * impresora, solo se conecta el motor. Compone: hembra-vaso (fija) + discos
+ * RELOJEADOS −αᵢ/lóbulos (engranan sin colisión) sobre las levas del eje + brida
+ * de salida (tapa que gira). Cada interfaz móvil tiene holgura `gap` = el canal de
+ * grasa que la impresora puentea. Geometría exacta; supervivencia en gearbox.ts.
+ */
+function buildGearbox(oc: OC, p: GearboxParams): Shape {
+  const d0 = gearboxDims(p);
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
+  const phases = discPhases(p.discs);
+  const outCenters = pinPositions(d0.outR, Math.max(3, Math.round(p.outPins)));
   const parts: Shape[] = [];
 
-  // ── DISCOS cicloidales (curva real) sobre su leva, con barrenos de salida ──
+  // DISCOS: relojeados −αᵢ/lóbulos (engranan con los MISMOS rodillos sin colisión).
   for (let i = 0; i < p.discs; i++) {
-    let d = extrudeSpline(oc, disc.profile, p.T);
-    d = drillHole(oc, d, { x: 0, y: 0, diameter: boreD, zTop: p.T, depth: p.T, through: true });
-    for (const c of outCenters) {
-      d = drillHole(oc, d, { x: c.x, y: c.y, diameter: outHoleD, zTop: p.T, depth: p.T, through: true });
-    }
-    const ph = (phases[i] * Math.PI) / 180;
-    const placed = transformShape(oc, d, { translate: [p.E * Math.cos(ph), p.E * Math.sin(ph), i * stepZ] });
+    const a = (phases[i] * Math.PI) / 180;
+    const d = buildCycDisc(oc, p, disc.profile, outCenters, a);
+    const placed = transformShape(oc, d, {
+      translate: [p.E * Math.cos(a), p.E * Math.sin(a), i * d0.stepZ],
+      rotateAngle: -a / p.lobes, rotateAxis: { origin: [0, 0, 0], dir: [0, 0, 1] },
+    });
     d.delete?.();
     parts.push(placed);
   }
-
-  // ── EJE HUECO + LEVAS EXCÉNTRICAS fundidas (la CONEXIÓN eje→disco) ──
-  let rotor = makeCylinder(oc, p.shaftD / 2, totalH + 2 * p.T, { origin: [0, 0, -p.T], dir: [0, 0, 1] });
-  for (let i = 0; i < p.discs; i++) {
-    const ph = (phases[i] * Math.PI) / 180;
-    const cam = makeCylinder(oc, eccR, p.T, { origin: [p.E * Math.cos(ph), p.E * Math.sin(ph), i * stepZ], dir: [0, 0, 1] });
-    const fused = fuse(oc, rotor, cam); rotor.delete?.(); cam.delete?.(); rotor = fused;
-  }
-  if (p.shaftBore > 0) {
-    const bore = makeCylinder(oc, p.shaftBore / 2, totalH + 4 * p.T, { origin: [0, 0, -2 * p.T], dir: [0, 0, 1] });
-    const hollow = cut(oc, rotor, bore); rotor.delete?.(); bore.delete?.(); rotor = hollow;
-  }
-  parts.push(rotor);
-
-  // ── BASE-anillo (el "hembra"): placa masiva + pernos del anillo (carga → base) ──
-  const baseH = p.T * 1.5;
-  parts.push(makeCylinder(oc, p.R + p.Rr + 4, baseH, { origin: [0, 0, -baseH - p.gap], dir: [0, 0, 1] }));
-  for (const pp of pinPositions(p.R, p.lobes + 1)) {
-    parts.push(makeCylinder(oc, p.Rr, totalH, { origin: [pp.x, pp.y, 0], dir: [0, 0, 1] }));
-  }
-
-  // ── SALIDA: brida superior + M pernos que atraviesan los discos (captura axial) ──
-  const flangeZ = totalH + p.gap;
-  let output = makeCylinder(oc, outR + p.outPinD / 2 + 3, p.T * 0.6, { origin: [0, 0, flangeZ], dir: [0, 0, 1] });
-  for (const c of outCenters) {
-    const pin = makeCylinder(oc, p.outPinD / 2, totalH + p.gap, { origin: [c.x, c.y, flangeZ], dir: [0, 0, -1] });
-    const f = fuse(oc, output, pin); output.delete?.(); pin.delete?.(); output = f;
-  }
-  // el eje (con su excéntrica máx ⌀leva+2E) cruza la brida → barreno central holgado
-  const shaftClear = makeCylinder(oc, eccR + p.E + p.gap, p.T * 3, { origin: [0, 0, flangeZ - p.T], dir: [0, 0, 1] });
-  const outFinal = cut(oc, output, shaftClear); output.delete?.(); shaftClear.delete?.();
-  parts.push(outFinal);
-
+  parts.push(buildRotor(oc, p));
+  parts.push(buildHembra(oc, p));
+  parts.push(buildOutput(oc, p, outCenters));
   return makeCompound(oc, parts);
 }
 
@@ -915,12 +961,11 @@ function buildGearbox(oc: OC, p: GearboxParams): Shape {
 // salida extraen ese giro lento. Se teselan UNA vez; useFrame solo mueve grupos. ──
 interface PartGeo { positions: Float32Array; normals: Float32Array; indices: Uint32Array; }
 interface GearboxMotionData {
-  housing: PartGeo;   // base + pernos de anillo (FIJO)
+  housing: PartGeo;   // hembra-vaso + rodillos (FIJO)
   rotor: PartGeo;     // eje + levas excéntricas (gira θ)
   output: PartGeo;    // brida + pernos de salida (gira −θ/lóbulos)
-  discGeo: PartGeo;   // UN disco centrado (se reutiliza en cada etapa)
-  placements: { phase: number; z: number }[];  // φ₀ (rad) + altura por disco
-  flangeZ: number; lobes: number; E: number;
+  discs: { geo: PartGeo; phase: number; z: number }[];  // cada disco: geo + fase αᵢ + altura
+  lobes: number; E: number;
 }
 
 function tessGeo(oc: OC, shape: Shape): PartGeo {
@@ -928,60 +973,27 @@ function tessGeo(oc: OC, shape: Shape): PartGeo {
   return { positions: m.positions, normals: m.normals, indices: m.indices };
 }
 
+// Mismas piezas que buildGearbox pero SEPARADAS y teseladas para animar. El disco
+// se construye centrado y SIN relojear; la animación aplica reloj −(θ+αᵢ)/lóbulos
+// + órbita por frame. Los pernos de salida ya van pre-compensados en buildCycDisc.
 function buildGearboxMotionData(oc: OC, p: GearboxParams): GearboxMotionData {
+  const d0 = gearboxDims(p);
   const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
   const phasesDeg = discPhases(p.discs);
-  const stepZ = p.T + p.gap;
-  const totalH = p.discs * p.T + (p.discs - 1) * p.gap;
-  const eccR = p.shaftD / 2 + p.E;
-  const boreD = 2 * (eccR + p.gap);
-  const outR = p.R * 0.55;
-  const outHoleD = p.outPinD + 2 * p.E + 2 * p.gap;
-  const outCenters = pinPositions(outR, Math.max(3, Math.round(p.outPins)));
+  const outCenters = pinPositions(d0.outR, Math.max(3, Math.round(p.outPins)));
 
-  // DISCO centrado (bore en el origen = eje de giro propio) + barrenos de salida.
-  let d = extrudeSpline(oc, disc.profile, p.T);
-  d = drillHole(oc, d, { x: 0, y: 0, diameter: boreD, zTop: p.T, depth: p.T, through: true });
-  for (const c of outCenters) d = drillHole(oc, d, { x: c.x, y: c.y, diameter: outHoleD, zTop: p.T, depth: p.T, through: true });
-  const discGeo = tessGeo(oc, d); d.delete?.();
+  const discs = phasesDeg.map((deg, i) => {
+    const a = (deg * Math.PI) / 180;
+    const d = buildCycDisc(oc, p, disc.profile, outCenters, a);
+    const geo = tessGeo(oc, d); d.delete?.();
+    return { geo, phase: a, z: i * d0.stepZ };
+  });
 
-  // ROTOR: eje + levas en sus fases estáticas (al girar el grupo, las levas orbitan).
-  let rotor = makeCylinder(oc, p.shaftD / 2, totalH + 2 * p.T, { origin: [0, 0, -p.T], dir: [0, 0, 1] });
-  for (let i = 0; i < p.discs; i++) {
-    const ph = (phasesDeg[i] * Math.PI) / 180;
-    const cam = makeCylinder(oc, eccR, p.T, { origin: [p.E * Math.cos(ph), p.E * Math.sin(ph), i * stepZ], dir: [0, 0, 1] });
-    const f = fuse(oc, rotor, cam); rotor.delete?.(); cam.delete?.(); rotor = f;
-  }
-  if (p.shaftBore > 0) {
-    const bore = makeCylinder(oc, p.shaftBore / 2, totalH + 4 * p.T, { origin: [0, 0, -2 * p.T], dir: [0, 0, 1] });
-    const h = cut(oc, rotor, bore); rotor.delete?.(); bore.delete?.(); rotor = h;
-  }
-  const rotorGeo = tessGeo(oc, rotor); rotor.delete?.();
+  const rotor = buildRotor(oc, p); const rotorGeo = tessGeo(oc, rotor); rotor.delete?.();
+  const hembra = buildHembra(oc, p); const housingGeo = tessGeo(oc, hembra); hembra.delete?.();
+  const output = buildOutput(oc, p, outCenters); const outputGeo = tessGeo(oc, output); output.delete?.();
 
-  // HOUSING fijo: base-anillo + pernos de anillo (z absoluto).
-  const baseH = p.T * 1.5;
-  const hParts: Shape[] = [makeCylinder(oc, p.R + p.Rr + 4, baseH, { origin: [0, 0, -baseH - p.gap], dir: [0, 0, 1] })];
-  for (const pp of pinPositions(p.R, p.lobes + 1)) hParts.push(makeCylinder(oc, p.Rr, totalH, { origin: [pp.x, pp.y, 0], dir: [0, 0, 1] }));
-  const housing = makeCompound(oc, hParts);
-  const housingGeo = tessGeo(oc, housing);
-  housing.delete?.(); hParts.forEach((s) => s.delete?.());
-
-  // OUTPUT centrado en z=0 (brida arriba, pernos hacia abajo); el grupo lo sube a flangeZ.
-  const flangeH = p.T * 0.6;
-  let output = makeCylinder(oc, outR + p.outPinD / 2 + 3, flangeH, { origin: [0, 0, 0], dir: [0, 0, 1] });
-  for (const c of outCenters) {
-    const pin = makeCylinder(oc, p.outPinD / 2, totalH + p.gap, { origin: [c.x, c.y, 0], dir: [0, 0, -1] });
-    const f = fuse(oc, output, pin); output.delete?.(); pin.delete?.(); output = f;
-  }
-  const clr = makeCylinder(oc, eccR + p.E + p.gap, flangeH + 2, { origin: [0, 0, -1], dir: [0, 0, 1] });
-  const oF = cut(oc, output, clr); output.delete?.(); clr.delete?.(); output = oF;
-  const outputGeo = tessGeo(oc, output); output.delete?.();
-
-  return {
-    housing: housingGeo, rotor: rotorGeo, output: outputGeo, discGeo,
-    placements: phasesDeg.map((deg, i) => ({ phase: (deg * Math.PI) / 180, z: i * stepZ })),
-    flangeZ: totalH + p.gap, lobes: p.lobes, E: p.E,
-  };
+  return { housing: housingGeo, rotor: rotorGeo, output: outputGeo, discs, lobes: p.lobes, E: p.E };
 }
 
 /**
@@ -1223,9 +1235,9 @@ function sweepMeshingInterference(
 // ──────────────────────────────────────────────────────────────────
 // MOVIMIENTO de la caja cicloidal — cinemática REAL animada
 // ──────────────────────────────────────────────────────────────────
-/** Una pieza teselada con su color/acabado. */
-function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55 }: {
-  geo: PartGeo; color: string; metalness?: number; roughness?: number;
+/** Una pieza teselada con su color/acabado. opacity<1 → translúcida (ver adentro). */
+function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1 }: {
+  geo: PartGeo; color: string; metalness?: number; roughness?: number; opacity?: number;
 }) {
   const g = useMemo(() => {
     const b = new THREE.BufferGeometry();
@@ -1236,9 +1248,11 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55 }: {
     return b;
   }, [geo]);
   useEffect(() => () => g.dispose(), [g]);
+  const transparent = opacity < 1;
   return (
-    <mesh geometry={g} castShadow receiveShadow>
-      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} envMapIntensity={1.1} side={THREE.DoubleSide} />
+    <mesh geometry={g} castShadow={!transparent} receiveShadow={!transparent} renderOrder={transparent ? 3 : 0}>
+      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} envMapIntensity={1.1}
+        side={THREE.DoubleSide} transparent={transparent} opacity={opacity} depthWrite={!transparent} />
     </mesh>
   );
 }
@@ -1246,11 +1260,12 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55 }: {
 /**
  * Anima el reductor cicloidal con su CINEMÁTICA exacta:
  *  · rotor (eje+levas): gira θ → las levas (offset E) orbitan radio E.
- *  · disco i: su centro orbita a (E·cos(φ₀ᵢ+θ), E·sin(φ₀ᵢ+θ)) [cabalga la leva]
- *    y gira lento −θ/lóbulos (la reducción REAL: ratio = lóbulos).
+ *  · disco i: su centro orbita a (E·cos(αᵢ+θ), E·sin(αᵢ+θ)) [cabalga la leva] y gira
+ *    −(θ+αᵢ)/lóbulos = giro de salida −θ/lóbulos MÁS su RELOJ fijo −αᵢ/lóbulos (sin
+ *    ese reloj los lóbulos chocan con los rodillos — el bug que viste).
  *  · salida (brida+pernos): gira −θ/lóbulos (extrae el giro lento del disco).
- *  · carcasa (base+pernos de anillo): FIJA.
- * Solo se mutan matrices por frame; la geometría es la misma (teselada 1 vez).
+ *  · hembra-vaso (fija): semitransparente para ver el mecanismo adentro.
+ * El rotor y la salida ya están en z absoluto; los discos llevan su z en el grupo.
  */
 function GearboxMotion({ data, playing, speed }: {
   data: GearboxMotionData; playing: boolean; speed: number;
@@ -1262,31 +1277,31 @@ function GearboxMotion({ data, playing, speed }: {
   useFrame((_, dt) => {
     if (playing) theta.current += Math.min(dt, 0.05) * speed;  // rad/s del EJE de entrada
     const th = theta.current;
-    const slow = -th / Math.max(1, data.lobes);                // salida = −θ/ratio
+    const lobes = Math.max(1, data.lobes);
     if (rotorRef.current) rotorRef.current.rotation.z = th;
-    if (outRef.current) outRef.current.rotation.z = slow;
-    for (let i = 0; i < data.placements.length; i++) {
+    if (outRef.current) outRef.current.rotation.z = -th / lobes;
+    for (let i = 0; i < data.discs.length; i++) {
       const grp = discRefs.current[i];
       if (!grp) continue;
-      const pl = data.placements[i];
-      grp.position.set(data.E * Math.cos(pl.phase + th), data.E * Math.sin(pl.phase + th), pl.z);
-      grp.rotation.z = slow;
+      const { phase, z } = data.discs[i];
+      grp.position.set(data.E * Math.cos(phase + th), data.E * Math.sin(phase + th), z);
+      grp.rotation.z = -(th + phase) / lobes;   // giro lento + RELOJ fijo −αᵢ/lóbulos
     }
   });
   return (
     <group>
-      <PartMesh geo={data.housing} color="#39414f" metalness={0.5} roughness={0.45} />
       <group ref={rotorRef}>
-        <PartMesh geo={data.rotor} color="#caa15e" metalness={0.8} roughness={0.3} />
+        <PartMesh geo={data.rotor} color="#caa15e" metalness={0.85} roughness={0.28} />
       </group>
-      {data.placements.map((_, i) => (
+      {data.discs.map((d, i) => (
         <group key={i} ref={(el) => { discRefs.current[i] = el; }}>
-          <PartMesh geo={data.discGeo} color="#e9ddc2" metalness={0.05} roughness={0.62} />
+          <PartMesh geo={d.geo} color="#e9ddc2" metalness={0.05} roughness={0.62} />
         </group>
       ))}
-      <group ref={outRef} position={[0, 0, data.flangeZ]}>
-        <PartMesh geo={data.output} color="#6fb6c9" metalness={0.25} roughness={0.5} />
+      <group ref={outRef}>
+        <PartMesh geo={data.output} color="#6fb6c9" metalness={0.25} roughness={0.5} opacity={0.55} />
       </group>
+      <PartMesh geo={data.housing} color="#5a6576" metalness={0.45} roughness={0.45} opacity={0.18} />
     </group>
   );
 }
@@ -3014,21 +3029,56 @@ export default function ForgeBRepStudio() {
         if (!gbParts) return { ready: false };
         const vc = (g: PartGeo) => g.positions.length / 3;
         return {
-          ready: true, discCount: gbParts.placements.length, lobes: gbParts.lobes, E: gbParts.E,
-          verts: { housing: vc(gbParts.housing), rotor: vc(gbParts.rotor), disc: vc(gbParts.discGeo), output: vc(gbParts.output) },
+          ready: true, discCount: gbParts.discs.length, lobes: gbParts.lobes, E: gbParts.E,
+          verts: { housing: vc(gbParts.housing), rotor: vc(gbParts.rotor), disc: vc(gbParts.discs[0]?.geo ?? gbParts.rotor), output: vc(gbParts.output) },
         };
       },
-      // Pose CINEMÁTICA pura en θ (grados de entrada): salida = −θ/lóbulos, y el
-      // centro de cada disco orbita radio E a (φ₀+θ). Playwright asierta el ratio.
+      // Pose CINEMÁTICA pura en θ (grados de entrada): salida = −θ/lóbulos; el centro
+      // de cada disco orbita radio E a (αᵢ+θ) y el disco GIRA −(θ+αᵢ)/lóbulos (giro
+      // de salida + RELOJ fijo −αᵢ/lóbulos). Playwright asierta el ratio + el reloj.
       gbPoseAt: (thetaDeg: number) => {
         const g = sketch.gearbox; const th = (thetaDeg * Math.PI) / 180;
         return {
           outputDeg: -thetaDeg / g.lobes,
-          discCenters: discPhases(g.discs).map((d) => {
+          discs: discPhases(g.discs).map((d) => {
             const ph = (d * Math.PI) / 180;
-            return { x: +(g.E * Math.cos(ph + th)).toFixed(4), y: +(g.E * Math.sin(ph + th)).toFixed(4) };
+            return {
+              x: +(g.E * Math.cos(ph + th)).toFixed(4), y: +(g.E * Math.sin(ph + th)).toFixed(4),
+              rotDeg: +(-(thetaDeg + d) / g.lobes).toFixed(4), clockDeg: +(-d / g.lobes).toFixed(4),
+            };
           }),
         };
+      },
+      // CHEQUEO de COLISIÓN (puro, sin kernel): para cada disco, a su pose (reloj +
+      // órbita), la holgura mínima lóbulo↔rodillo = min_k(dist(rodillo_k, perfil) − Rr).
+      // ≥ ~0 = engrana sin penetrar. clocked=false reproduce el bug (penetra fuerte).
+      gbMeshClearance: (thetaDeg: number, clocked = true) => {
+        const g = sketch.gearbox;
+        const prof = cycloidalDisc({ lobes: g.lobes, R: g.R, Rr: g.Rr, E: g.E, segments: Math.max(90, g.lobes * 9) }).profile;
+        const th = (thetaDeg * Math.PI) / 180;
+        const rollers = pinPositions(g.R, g.lobes + 1);
+        const d2seg = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
+          const dx = bx - ax, dy = by - ay; const L2 = dx * dx + dy * dy || 1;
+          let t = ((px - ax) * dx + (py - ay) * dy) / L2; t = Math.max(0, Math.min(1, t));
+          const qx = ax + t * dx, qy = ay + t * dy; return Math.hypot(px - qx, py - qy);
+        };
+        let worst = Infinity;
+        for (const dphi of discPhases(g.discs)) {
+          const a = (dphi * Math.PI) / 180;
+          const clock = clocked ? -(th + a) / g.lobes : -th / g.lobes;
+          const cc = Math.cos(clock), ss = Math.sin(clock);
+          const ox = g.E * Math.cos(a + th), oy = g.E * Math.sin(a + th);
+          const pts = prof.map((p) => ({ x: p.x * cc - p.y * ss + ox, y: p.x * ss + p.y * cc + oy }));
+          for (const r of rollers) {
+            let md = Infinity;
+            for (let j = 0; j < pts.length; j++) {
+              const A = pts[j], B = pts[(j + 1) % pts.length];
+              md = Math.min(md, d2seg(r.x, r.y, A.x, A.y, B.x, B.y));
+            }
+            worst = Math.min(worst, md - g.Rr);
+          }
+        }
+        return { worstClearance: +worst.toFixed(4) };
       },
       // Geometría del MECANISMO (derivada, sin kernel): prueba que el eje conecta
       // con los discos vía leva excéntrica con holgura, y que los barrenos de salida
@@ -3764,7 +3814,7 @@ export default function ForgeBRepStudio() {
                 ) : sketch.kind === 'gearbox' ? (
                   <>
                     <p className="fb-hint-txt">
-                      Caja cicloidal en 1 pieza: el eje lleva N <b>levas excéntricas</b> fasadas a 360/N° (la conexión eje→disco: la leva empuja al disco a orbitar E → engrana los pernos → gira lento). Los <b>pernos de salida</b> cruzan barrenos holgados y capturan los discos entre la base y la brida (por eso no se separan). Print-in-place.
+                      Caja ENCAPSULADA en 1 pieza (sale lista, solo conectas el motor). La <b>hembra-vaso</b> (placa base + rodillos integrados) es el cuerpo fijo; los <b>discos</b> van relojeados −αᵢ/lóbulos (engranan sin colisión) sobre las <b>levas excéntricas</b> del eje; la <b>brida de salida</b> es la tapa que gira y atrapa los discos. Cada holgura = canal de grasa que la impresora puentea. No backdriveable → sostiene posición.
                     </p>
                     <Dim label="Discos" value={sketch.gearbox.discs} unit="" min={2} max={10} step={1} testid="input-gb-discs"
                       onChange={(v) => updateGearbox({ discs: Math.round(v) })} />
