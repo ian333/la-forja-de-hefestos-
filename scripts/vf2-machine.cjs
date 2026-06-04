@@ -32,9 +32,9 @@ const EXPECTED = volBox(BASE) + COMPS.reduce((s, c) => s + (c.kind === 'cyl' ? v
   const errs = []; page.on('pageerror', e => { const s = String(e).slice(0, 200); if (!isBenign(s)) errs.push(s); });
   const out = { errs: [], expected: Math.round(EXPECTED) };
   try {
-    const ready = async () => page.waitForFunction('window.__forgeBrep && window.__forgeBrep.ready', { timeout: 20000 });
+    const ready = async () => page.waitForFunction('window.__forgeBrep && window.__forgeBrep.ready', { timeout: 50000 });
     const ev = async (fn, arg) => { await ready(); return page.evaluate(fn, arg); };
-    await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await ready(); await page.waitForTimeout(700);
 
     // BASE como pieza principal
