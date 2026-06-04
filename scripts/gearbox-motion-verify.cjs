@@ -62,6 +62,10 @@ const SHOT = process.env.SHOT || '/home/ian/Orkesta/la-forja/forja-shots/caja-mo
     out.clearance_unclocked = meshBad.worstClearance;    // << 0 → colisiona (el bug)
     out.clearance_clocked_36 = meshOK2.worstClearance;
 
+    // ── RETENEDOR de leva: el collar abraza al disco (overlap = lip−gap > 0) ──
+    const geom = await ev(() => window.__forgeBrep.gearboxGeom);
+    out.retainer = { collarR: geom.camCollarR, boreNarrowR: geom.discBoreNarrowR, overlap: geom.retainerOverlap };
+
     await page.waitForTimeout(600);
     await page.screenshot({ path: SHOT, timeout: 30000 });
 
@@ -85,6 +89,8 @@ const SHOT = process.env.SHOT || '/home/ian/Orkesta/la-forja/forja-shots/caja-mo
       relojeado_no_colisiona: meshOK.worstClearance > -1.2 && meshOK2.worstClearance > -1.2,
       sin_relojear_si_colisiona: meshBad.worstClearance < -1.2,
       reloj_mejora_engrane: meshOK.worstClearance > meshBad.worstClearance + 0.8,
+      // retenedor: el collar de la leva es MÁS ANCHO que el barreno angosto → captura axial
+      retenedor_captura: geom.retainerOverlap > 0 && geom.camCollarR > geom.discBoreNarrowR,
       sin_errores: errs.length === 0,
     };
     out.pass = Object.values(out.checks).every(Boolean);

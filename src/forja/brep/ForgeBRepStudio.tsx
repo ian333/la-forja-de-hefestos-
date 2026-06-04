@@ -844,20 +844,56 @@ function gearboxDims(p: GearboxParams) {
   };
 }
 
+// ── RETENEDOR de leva (mecánico, de plástico, print-in-place) ──────────────
+// Plano r–z (x=radio, y=altura) y eje Z para revolver perfiles axisimétricos.
+const RZ_PLANE = { origin: [0, 0, 0] as [number, number, number], uDir: [1, 0, 0] as [number, number, number], vDir: [0, 0, 1] as [number, number, number] };
+const Z_AXIS: RevolveAxis = { origin: [0, 0, 0], dir: [0, 0, 1] };
+
+// Holgura del retenedor: el COLLAR sobresale `lip` (> gap, si no, no retiene); el
+// disco lo abraza en una garganta. Transiciones a 45° = AUTO-SOPORTADAS (sin viruta).
+function retainerDims(p: GearboxParams) {
+  const lip = Math.max(1.2, p.gap * 2);
+  const band = Math.max(0.8, Math.min(p.T * 0.34, p.T - 2 * lip - 0.8));
+  return { lip, band };
+}
+// Perfil (r,z) de un CARRETE: barrel rN, collar rW en el medio, transiciones 45°.
+function spoolProfile(rN: number, rW: number, zb: number, zt: number, mid: number, band: number): Pt2[] {
+  const lip = rW - rN;   // 45° ⇒ Δz = Δr = lip
+  return [
+    { x: 0, y: zb }, { x: rN, y: zb },
+    { x: rN, y: mid - band / 2 - lip }, { x: rW, y: mid - band / 2 },
+    { x: rW, y: mid + band / 2 }, { x: rN, y: mid + band / 2 + lip },
+    { x: rN, y: zt }, { x: 0, y: zt },
+  ];
+}
+// LEVA-carrete (sólida, eje en el origen, z 0..T): barrel eccR + collar eccR+lip.
+function buildCamSpool(oc: OC, p: GearboxParams): Shape {
+  const d0 = gearboxDims(p); const { lip, band } = retainerDims(p);
+  return revolvePolygon(oc, spoolProfile(d0.eccR, d0.eccR + lip, 0, p.T, p.T / 2, band), 360, RZ_PLANE, Z_AXIS);
+}
+// CORTADOR del barreno-garganta del disco (negativo, eje en origen): el disco
+// queda angosto (eccR+gap) arriba/abajo y ancho (eccR+lip+gap) en la garganta →
+// el collar de la leva NO puede salir axialmente. Holgura radial = gap en todo.
+function buildBoreCutter(oc: OC, p: GearboxParams): Shape {
+  const d0 = gearboxDims(p); const { lip, band } = retainerDims(p);
+  return revolvePolygon(oc, spoolProfile(d0.eccR + p.gap, d0.eccR + lip + p.gap, -1, p.T + 1, p.T / 2, band), 360, RZ_PLANE, Z_AXIS);
+}
+
 /**
- * UN disco cicloidal centrado, con barreno de leva + barrenos de salida
- * PRE-COMPENSADOS por +α/lóbulos. ¿Por qué? El disco se RELOJEA (gira) −α/lóbulos
- * al colocarlo para que sus lóbulos engranen sin colisión; ese mismo reloj giraría
- * los barrenos de salida y los pernos comunes ya no entrarían. Pre-girarlos +α/lóbulos
- * los devuelve a la posición nominal → el perno entra con holgura SOLO de la órbita.
- * NO relojeado aún (el reloj se aplica al colocar/animar). Curva real (B-spline).
+ * UN disco cicloidal centrado, con BARRENO-GARGANTA de retención (carrete) + barrenos
+ * de salida PRE-COMPENSADOS por +α/lóbulos. La garganta abraza el collar de la leva
+ * → el disco no puede subir/bajar de su leva (el retenedor mecánico que faltaba).
+ * Pre-compensación: el disco se RELOJEA −α/lóbulos al colocarlo (engrana sin colisión);
+ * ese reloj giraría los barrenos de salida → se pre-giran +α/lóbulos para que los
+ * pernos comunes entren con holgura SOLO de la órbita. Curva real (B-spline).
  */
 function buildCycDisc(oc: OC, p: GearboxParams, profile: Pt2[], outCenters: Pt2[], alphaRad: number): Shape {
   const d0 = gearboxDims(p);
   const comp = alphaRad / p.lobes;                 // pre-compensación del reloj
   const ca = Math.cos(comp), sa = Math.sin(comp);
   let d = extrudeSpline(oc, profile, p.T);
-  d = drillHole(oc, d, { x: 0, y: 0, diameter: d0.boreD, zTop: p.T, depth: p.T, through: true });
+  // barreno-garganta (retenedor) en vez de barreno recto
+  { const cutter = buildBoreCutter(oc, p); const t = cut(oc, d, cutter); d.delete?.(); cutter.delete?.(); d = t; }
   for (const c of outCenters) {
     const x = c.x * ca - c.y * sa, y = c.x * sa + c.y * ca;
     d = drillHole(oc, d, { x, y, diameter: d0.outHoleD, zTop: p.T, depth: p.T, through: true });
@@ -900,7 +936,10 @@ function buildRotor(oc: OC, p: GearboxParams): Shape {
   let rotor = makeCylinder(oc, p.shaftD / 2, (d0.totalH + p.gap) - shZ0, { origin: [0, 0, shZ0], dir: [0, 0, 1] });
   for (let i = 0; i < p.discs; i++) {
     const a = (phases[i] * Math.PI) / 180;
-    const cam = makeCylinder(oc, d0.eccR, p.T, { origin: [p.E * Math.cos(a), p.E * Math.sin(a), i * d0.stepZ], dir: [0, 0, 1] });
+    // leva-CARRETE (con collar retenedor) en su fase, desplazada a la posición de la leva
+    const camLocal = buildCamSpool(oc, p);
+    const cam = transformShape(oc, camLocal, { translate: [p.E * Math.cos(a), p.E * Math.sin(a), i * d0.stepZ] });
+    camLocal.delete?.();
     const t = fuse(oc, rotor, cam); rotor.delete?.(); cam.delete?.(); rotor = t;
   }
   if (p.shaftBore > 0) {
@@ -3087,11 +3126,16 @@ export default function ForgeBRepStudio() {
       get gearboxGeom() {
         const g = sketch.gearbox;
         const camR = g.shaftD / 2 + g.E;
+        const lip = Math.max(1.2, g.gap * 2);
         return {
           camRadius: +camR.toFixed(4), camOffset: g.E,
           discBoreRadius: +(camR + g.gap).toFixed(4), clearance: g.gap,
           outHoleD: +(g.outPinD + 2 * g.E + 2 * g.gap).toFixed(4), outPinD: g.outPinD,
           phases: discPhases(g.discs),
+          // RETENEDOR de leva: collar (camR+lip) vs barreno angosto (camR+gap).
+          // overlap = lip−gap > 0 ⇒ el disco NO puede salir axialmente de su leva.
+          camCollarR: +(camR + lip).toFixed(4), discBoreNarrowR: +(camR + g.gap).toFixed(4),
+          retainerOverlap: +(lip - g.gap).toFixed(4),
         };
       },
       get gear() { return sketch.gear; },
@@ -3814,7 +3858,7 @@ export default function ForgeBRepStudio() {
                 ) : sketch.kind === 'gearbox' ? (
                   <>
                     <p className="fb-hint-txt">
-                      Caja ENCAPSULADA en 1 pieza (sale lista, solo conectas el motor). La <b>hembra-vaso</b> (placa base + rodillos integrados) es el cuerpo fijo; los <b>discos</b> van relojeados −αᵢ/lóbulos (engranan sin colisión) sobre las <b>levas excéntricas</b> del eje; la <b>brida de salida</b> es la tapa que gira y atrapa los discos. Cada holgura = canal de grasa que la impresora puentea. No backdriveable → sostiene posición.
+                      Caja ENCAPSULADA en 1 pieza (sale lista, solo conectas el motor). La <b>hembra-vaso</b> (base + rodillos integrados) es el cuerpo fijo; los <b>discos</b> van relojeados −αᵢ/lóbulos (engranan sin colisión) sobre las <b>levas excéntricas</b>, retenidos por un <b>carrete</b> (collar+garganta a 45° auto-soportado) que NO deja al disco subir/bajar de su leva. La <b>brida</b> es la tapa que gira. Cada holgura = canal de grasa. No backdriveable → sostiene posición.
                     </p>
                     <Dim label="Discos" value={sketch.gearbox.discs} unit="" min={2} max={10} step={1} testid="input-gb-discs"
                       onChange={(v) => updateGearbox({ discs: Math.round(v) })} />
