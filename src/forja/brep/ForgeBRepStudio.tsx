@@ -69,6 +69,7 @@ import { resolveParams, tryEval, type Param, type ResolvedParams } from './expr'
 import { generateDrawing } from './drawing';
 import { printabilityReport, overhangVertexColors, PRINT_PROFILES, type PrintProfile, type PrintabilityReport } from '../mech/dfm';
 import { cycloidalDisc, pinPositions } from '../mech/cycloidal';
+import { discPhases, analyzeGearbox, type Material as GbMaterial } from '../mech/gearbox';
 import {
   buildGearSketch,
   deriveGearGeometry,
@@ -163,7 +164,15 @@ const FEA_MATERIAL_KEY: Record<string, keyof typeof MATERIAL_DATABASE> = {
 // ──────────────────────────────────────────────────────────────────
 // El documento = grafo de features (sketch base + operaciones ordenadas)
 // ──────────────────────────────────────────────────────────────────
-type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom';
+type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom' | 'gearbox';
+// CAJA cicloidal multi-disco: N discos de lóbulos fasados + eje hueco + base-anillo.
+interface GearboxParams {
+  lobes: number; discs: number; R: number; Rr: number; E: number;
+  T: number; gap: number; shaftD: number; shaftBore: number;
+}
+const GEARBOX_DEFAULTS: GearboxParams = {
+  lobes: 10, discs: 5, R: 40, Rr: 3, E: 1.5, T: 6, gap: 0.6, shaftD: 16, shaftBore: 8,
+};
 
 /** Un escalón del perfil de revolución: radio exterior r y longitud axial L. */
 interface RevStep { r: number; L: number; }
@@ -194,6 +203,8 @@ interface SketchFeature {
   steps: RevStep[];
   // Engrane de involuta (7º clásico). El perfil sale de buildGearSketch().
   gear: GearParams;
+  // Caja cicloidal multi-disco (kind 'gearbox'): N discos fasados + eje + base.
+  gearbox: GearboxParams;
   // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
   // resuelto por el solver de restricciones. Reemplaza las plantillas.
   customProfile?: Pt2[];
@@ -677,6 +688,11 @@ function buildShape(
         shape = buildGearSolid(oc, sketch.gear);
         continue;
       }
+      if (sketch.kind === 'gearbox') {
+        // ── CAJA cicloidal multi-disco (compound print-in-place) ──
+        shape = buildGearbox(oc, sketch.gearbox);
+        continue;
+      }
       // Simétrico: el plano de boceto se baja −depth/2 y se extruye depth, así
       // el sólido queda centrado en z=0 (no cambia volumen ni topología).
       const plane = op.symmetric
@@ -800,6 +816,45 @@ function buildComponent(oc: OC, c: Component): Shape {
   const t = transformShape(oc, centered, { translate: [c.x, c.y, c.z], rotateAngle: rz, rotateAxis: zAxis });
   centered.delete?.();
   return t;
+}
+
+/**
+ * CAJA DE VELOCIDADES cicloidal multi-disco, en UNA pieza (compound print-in-place).
+ * N discos de lóbulos FASADOS a 360/N° (balancean el eje → torsión pura) apilados
+ * con holgura `gap` (auto-puente), un EJE hueco central, y la BASE-anillo con sus
+ * pernos (el "hembra" que recibe la carga). Geometría exacta. La física de
+ * supervivencia la valida gearbox.ts (analyzeGearbox).
+ */
+function buildGearbox(oc: OC, p: GearboxParams): Shape {
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: 120 });
+  const phases = discPhases(p.discs);
+  const stepZ = p.T + p.gap;
+  const totalH = p.discs * p.T + (p.discs - 1) * p.gap;
+  const boreD = p.shaftD + 2 * p.E + 2 * p.gap;   // el barreno libra al eje centrado en cualquier fase
+  const parts: Shape[] = [];
+  // discos cicloidales fasados (cuerpos separados → giran / print-in-place)
+  for (let i = 0; i < p.discs; i++) {
+    let d = extrudePolygon(oc, disc.profile, p.T);
+    d = drillHole(oc, d, { x: 0, y: 0, diameter: boreD, zTop: p.T, depth: p.T, through: true });
+    const ph = (phases[i] * Math.PI) / 180;
+    const placed = transformShape(oc, d, { translate: [p.E * Math.cos(ph), p.E * Math.sin(ph), i * stepZ] });
+    d.delete?.();
+    parts.push(placed);
+  }
+  // eje HUECO central (alto módulo polar → resiste torsión en plástico)
+  let shaft = makeCylinder(oc, p.shaftD / 2, totalH + 2 * p.T, { origin: [0, 0, -p.T], dir: [0, 0, 1] });
+  if (p.shaftBore > 0) {
+    const bore = makeCylinder(oc, p.shaftBore / 2, totalH + 4 * p.T, { origin: [0, 0, -2 * p.T], dir: [0, 0, 1] });
+    const hollow = cut(oc, shaft, bore); shaft.delete?.(); bore.delete?.(); shaft = hollow;
+  }
+  parts.push(shaft);
+  // BASE-anillo (el "hembra"): placa masiva + pernos del anillo (carga → base)
+  const baseH = p.T * 1.5;
+  parts.push(makeCylinder(oc, p.R + p.Rr + 4, baseH, { origin: [0, 0, -baseH - p.gap], dir: [0, 0, 1] }));
+  for (const pp of pinPositions(p.R, p.lobes + 1)) {
+    parts.push(makeCylinder(oc, p.Rr, totalH, { origin: [pp.x, pp.y, 0], dir: [0, 0, 1] }));
+  }
+  return makeCompound(oc, parts);
 }
 
 /**
@@ -1652,7 +1707,7 @@ interface DocState {
 const DEFAULT_SKETCH: SketchFeature = {
   id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
   steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
-  gear: { ...GEAR_DEFAULTS },
+  gear: { ...GEAR_DEFAULTS }, gearbox: { ...GEARBOX_DEFAULTS },
 };
 function makeDefaultDoc(name = 'Pieza nueva'): DocState {
   return {
@@ -1742,6 +1797,7 @@ export default function ForgeBRepStudio() {
     steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
     // Engrane de involuta por defecto (m=2, Z=20, α=20°, espesor 10, barreno 8).
     gear: { ...GEAR_DEFAULTS },
+    gearbox: { ...GEARBOX_DEFAULTS },
   });
   // El grafo arranca con un extrude (el "primer momento": sketch→sólido).
   const [ops, setOps] = useState<Op[]>([
@@ -2229,6 +2285,17 @@ export default function ForgeBRepStudio() {
     setActiveOp('sketch');
     setPickMode('none');
   }, []);
+  // ── CAJA cicloidal multi-disco (btn-gearbox) ──
+  const applyGearbox = useCallback(() => {
+    setSketch((s) => ({ ...s, kind: 'gearbox' }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude')
+      ? cur
+      : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+    setActiveOp('sketch'); setActiveComp(null); setPickMode('none');
+  }, []);
+  const updateGearbox = useCallback((patch: Partial<GearboxParams>) => {
+    setSketch((s) => ({ ...s, gearbox: { ...s.gearbox, ...patch } }));
+  }, []);
 
   // ── ENSAMBLE: agregar el 2º engrane (btn-add-gear2). Garantiza que el sketch
   // base sea un engrane (si no lo es, lo convierte) y enciende la 2ª instancia.
@@ -2429,6 +2496,7 @@ export default function ForgeBRepStudio() {
   const [printProfileKey, setPrintProfileKey] = useState<keyof typeof PRINT_PROFILES>('media');
   const [printMaterial, setPrintMaterial] = useState<PrintProfile['material']>('PLA');
   const [showOverhangs, setShowOverhangs] = useState(false);
+  const [gbTorque, setGbTorque] = useState(50);   // par de salida objetivo (N·m) para el análisis de caja
   const printProfile = useMemo<PrintProfile>(
     () => ({ ...PRINT_PROFILES[printProfileKey], material: printMaterial }),
     [printProfileKey, printMaterial],
@@ -2713,6 +2781,10 @@ export default function ForgeBRepStudio() {
       // ── ENGRANE de involuta (7º clásico) — driver + invariantes de QA ──
       setGear,
       updateGear,
+      // CAJA cicloidal — driver de QA
+      applyGearbox, updateGearbox,
+      setGbTorque: (t: number) => setGbTorque(t),
+      get gearbox() { return sketch.gearbox; },
       get gear() { return sketch.gear; },
       // Geometría DERIVADA del engrane (matemática pura, sin tocar el kernel):
       // rp, rb, área del perfil cerrado, error de simetría rotacional Z-fold y el
@@ -2870,7 +2942,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -3085,6 +3157,7 @@ export default function ForgeBRepStudio() {
             <button data-testid="btn-shell" onClick={() => addOp('shell')} title="Vaciado / pared delgada">▢ Shell</button>
             <button data-testid="btn-revolve" onClick={() => addOp('revolve')} title="Revolución del perfil">⟳ Revolve</button>
             <button data-testid="btn-gear" onClick={applyGear} title="Engrane de involuta (m, Z, α, espesor, barreno)">⚙ Engrane</button>
+            <button data-testid="btn-gearbox" onClick={applyGearbox} title="Caja cicloidal multi-disco (reductor durable de plástico, 1 pieza)">⊞ Caja</button>
             <button data-testid="btn-pocket" onClick={() => addOp('pocket')} title="Corte / bolsillo: resta un perfil rect o círculo (ranuras, cajeras)">⊟ Corte</button>
             <button data-testid="btn-pattern" onClick={() => addOp('pattern')} title="Patrón: rectangular / circular / espejo del sólido">⁘ Patrón</button>
             <span className="fb-tb-sep" />
@@ -3427,6 +3500,42 @@ export default function ForgeBRepStudio() {
                 {sketch.kind === 'circle' ? (
                   <Dim label="Radio" value={sketch.radius} unit="mm" min={3} max={50} step={1} testid="input-radio" bindKey="sketch:radius"
                     onChange={(v) => setSketch((s) => ({ ...s, radius: v }))} />
+                ) : sketch.kind === 'gearbox' ? (
+                  <>
+                    <p className="fb-hint-txt">
+                      Caja cicloidal en 1 pieza: N discos fasados a 360/N° (balancean el eje → torsión pura) + eje hueco + base-anillo. Print-in-place.
+                    </p>
+                    <Dim label="Discos" value={sketch.gearbox.discs} unit="" min={2} max={10} step={1} testid="input-gb-discs"
+                      onChange={(v) => updateGearbox({ discs: Math.round(v) })} />
+                    <Dim label="Lóbulos" value={sketch.gearbox.lobes} unit=":1" min={6} max={20} step={1} testid="input-gb-lobes"
+                      onChange={(v) => updateGearbox({ lobes: Math.round(v) })} />
+                    <Dim label="Eje ⌀" value={sketch.gearbox.shaftD} unit="mm" min={8} max={30} step={1} testid="input-gb-shaft"
+                      onChange={(v) => updateGearbox({ shaftD: v })} />
+                    <Dim label="Eje hueco ⌀" value={sketch.gearbox.shaftBore} unit="mm" min={0} max={20} step={1} testid="input-gb-bore"
+                      onChange={(v) => updateGearbox({ shaftBore: v })} />
+                    <div className="fb-divider" />
+                    <div className="fb-panel-title" style={{ marginTop: 0 }}>¿Resiste? · {printMaterial}</div>
+                    <Dim label="Par de salida" value={gbTorque} unit="N·m" min={5} max={300} step={5} testid="input-gb-torque"
+                      onChange={(v) => setGbTorque(v)} />
+                    {(() => {
+                      const gbm = (printMaterial === 'TPU' ? 'Nylon' : printMaterial) as GbMaterial;
+                      const a = analyzeGearbox(
+                        { lobes: sketch.gearbox.lobes, discs: sketch.gearbox.discs, shaftD: sketch.gearbox.shaftD, shaftBore: sketch.gearbox.shaftBore, pinCircleR: sketch.gearbox.R, outPinR: sketch.gearbox.Rr, outPinCount: 6 },
+                        { outputTorqueNm: gbTorque, material: gbm },
+                      );
+                      return (
+                        <div className="fb-mass">
+                          <div className={`fb-print-fits ${a.survives ? 'ok' : 'bad'}`} data-testid="gb-survives">
+                            {a.survives ? '✓ SOBREVIVE' : '✕ SE ROMPE — + discos / Nylon / eje más grueso'}
+                          </div>
+                          <Row k="Reducción" v={`${a.ratio}:1`} testid="gb-ratio" />
+                          <Row k="Balance del eje" v={a.balanced ? 'balanceado ✓' : 'DESBALANCEADO ✕'} hi={!a.balanced} testid="gb-balance" />
+                          <Row k="Esfuerzo eje" v={`${a.shaftStressMPa} / ${a.allowableShearMPa} MPa`} testid="gb-shaft" />
+                          <Row k={`Esfuerzo perno ×${sketch.gearbox.discs}`} v={`${a.pinStressMPa} / ${a.allowableShearMPa} MPa`} testid="gb-pin" />
+                        </div>
+                      );
+                    })()}
+                  </>
                 ) : sketch.kind === 'gear' ? (
                   <>
                     {/* ── ENGRANE de INVOLUTA (7º clásico) ──────────────────────
