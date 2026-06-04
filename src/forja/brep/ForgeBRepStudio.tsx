@@ -22,7 +22,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
-import { Canvas, type ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import ShortcutOverlay from '../../components/ShortcutOverlay';
 import SketchEditor from './SketchEditor';
@@ -909,6 +909,81 @@ function buildGearbox(oc: OC, p: GearboxParams): Shape {
   return makeCompound(oc, parts);
 }
 
+// ── MOVIMIENTO: la misma caja, pero en PIEZAS SEPARADAS y centradas para animar
+// la cinemática real. Eje gira θ → las levas (offset E) empujan los discos a
+// ORBITAR → engranan los pernos → el disco gira lento −θ/lóbulos; los pernos de
+// salida extraen ese giro lento. Se teselan UNA vez; useFrame solo mueve grupos. ──
+interface PartGeo { positions: Float32Array; normals: Float32Array; indices: Uint32Array; }
+interface GearboxMotionData {
+  housing: PartGeo;   // base + pernos de anillo (FIJO)
+  rotor: PartGeo;     // eje + levas excéntricas (gira θ)
+  output: PartGeo;    // brida + pernos de salida (gira −θ/lóbulos)
+  discGeo: PartGeo;   // UN disco centrado (se reutiliza en cada etapa)
+  placements: { phase: number; z: number }[];  // φ₀ (rad) + altura por disco
+  flangeZ: number; lobes: number; E: number;
+}
+
+function tessGeo(oc: OC, shape: Shape): PartGeo {
+  const m = tessellate(oc, shape, 0.08, 0.3);
+  return { positions: m.positions, normals: m.normals, indices: m.indices };
+}
+
+function buildGearboxMotionData(oc: OC, p: GearboxParams): GearboxMotionData {
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
+  const phasesDeg = discPhases(p.discs);
+  const stepZ = p.T + p.gap;
+  const totalH = p.discs * p.T + (p.discs - 1) * p.gap;
+  const eccR = p.shaftD / 2 + p.E;
+  const boreD = 2 * (eccR + p.gap);
+  const outR = p.R * 0.55;
+  const outHoleD = p.outPinD + 2 * p.E + 2 * p.gap;
+  const outCenters = pinPositions(outR, Math.max(3, Math.round(p.outPins)));
+
+  // DISCO centrado (bore en el origen = eje de giro propio) + barrenos de salida.
+  let d = extrudeSpline(oc, disc.profile, p.T);
+  d = drillHole(oc, d, { x: 0, y: 0, diameter: boreD, zTop: p.T, depth: p.T, through: true });
+  for (const c of outCenters) d = drillHole(oc, d, { x: c.x, y: c.y, diameter: outHoleD, zTop: p.T, depth: p.T, through: true });
+  const discGeo = tessGeo(oc, d); d.delete?.();
+
+  // ROTOR: eje + levas en sus fases estáticas (al girar el grupo, las levas orbitan).
+  let rotor = makeCylinder(oc, p.shaftD / 2, totalH + 2 * p.T, { origin: [0, 0, -p.T], dir: [0, 0, 1] });
+  for (let i = 0; i < p.discs; i++) {
+    const ph = (phasesDeg[i] * Math.PI) / 180;
+    const cam = makeCylinder(oc, eccR, p.T, { origin: [p.E * Math.cos(ph), p.E * Math.sin(ph), i * stepZ], dir: [0, 0, 1] });
+    const f = fuse(oc, rotor, cam); rotor.delete?.(); cam.delete?.(); rotor = f;
+  }
+  if (p.shaftBore > 0) {
+    const bore = makeCylinder(oc, p.shaftBore / 2, totalH + 4 * p.T, { origin: [0, 0, -2 * p.T], dir: [0, 0, 1] });
+    const h = cut(oc, rotor, bore); rotor.delete?.(); bore.delete?.(); rotor = h;
+  }
+  const rotorGeo = tessGeo(oc, rotor); rotor.delete?.();
+
+  // HOUSING fijo: base-anillo + pernos de anillo (z absoluto).
+  const baseH = p.T * 1.5;
+  const hParts: Shape[] = [makeCylinder(oc, p.R + p.Rr + 4, baseH, { origin: [0, 0, -baseH - p.gap], dir: [0, 0, 1] })];
+  for (const pp of pinPositions(p.R, p.lobes + 1)) hParts.push(makeCylinder(oc, p.Rr, totalH, { origin: [pp.x, pp.y, 0], dir: [0, 0, 1] }));
+  const housing = makeCompound(oc, hParts);
+  const housingGeo = tessGeo(oc, housing);
+  housing.delete?.(); hParts.forEach((s) => s.delete?.());
+
+  // OUTPUT centrado en z=0 (brida arriba, pernos hacia abajo); el grupo lo sube a flangeZ.
+  const flangeH = p.T * 0.6;
+  let output = makeCylinder(oc, outR + p.outPinD / 2 + 3, flangeH, { origin: [0, 0, 0], dir: [0, 0, 1] });
+  for (const c of outCenters) {
+    const pin = makeCylinder(oc, p.outPinD / 2, totalH + p.gap, { origin: [c.x, c.y, 0], dir: [0, 0, -1] });
+    const f = fuse(oc, output, pin); output.delete?.(); pin.delete?.(); output = f;
+  }
+  const clr = makeCylinder(oc, eccR + p.E + p.gap, flangeH + 2, { origin: [0, 0, -1], dir: [0, 0, 1] });
+  const oF = cut(oc, output, clr); output.delete?.(); clr.delete?.(); output = oF;
+  const outputGeo = tessGeo(oc, output); output.delete?.();
+
+  return {
+    housing: housingGeo, rotor: rotorGeo, output: outputGeo, discGeo,
+    placements: phasesDeg.map((deg, i) => ({ phase: (deg * Math.PI) / 180, z: i * stepZ })),
+    flangeZ: totalH + p.gap, lobes: p.lobes, E: p.E,
+  };
+}
+
 /**
  * PATRÓN: replica `shape` y FUSIONA las instancias (geometría exacta, no malla).
  *  · linear  — count instancias en la rejilla i·(dx,dy,0).
@@ -1143,6 +1218,77 @@ function sweepMeshingInterference(
     maxInterferenceFraction,
     perAngle,
   };
+}
+
+// ──────────────────────────────────────────────────────────────────
+// MOVIMIENTO de la caja cicloidal — cinemática REAL animada
+// ──────────────────────────────────────────────────────────────────
+/** Una pieza teselada con su color/acabado. */
+function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55 }: {
+  geo: PartGeo; color: string; metalness?: number; roughness?: number;
+}) {
+  const g = useMemo(() => {
+    const b = new THREE.BufferGeometry();
+    b.setAttribute('position', new THREE.BufferAttribute(geo.positions, 3));
+    b.setAttribute('normal', new THREE.BufferAttribute(geo.normals, 3));
+    b.setIndex(new THREE.BufferAttribute(geo.indices, 1));
+    b.computeBoundingSphere();
+    return b;
+  }, [geo]);
+  useEffect(() => () => g.dispose(), [g]);
+  return (
+    <mesh geometry={g} castShadow receiveShadow>
+      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} envMapIntensity={1.1} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+/**
+ * Anima el reductor cicloidal con su CINEMÁTICA exacta:
+ *  · rotor (eje+levas): gira θ → las levas (offset E) orbitan radio E.
+ *  · disco i: su centro orbita a (E·cos(φ₀ᵢ+θ), E·sin(φ₀ᵢ+θ)) [cabalga la leva]
+ *    y gira lento −θ/lóbulos (la reducción REAL: ratio = lóbulos).
+ *  · salida (brida+pernos): gira −θ/lóbulos (extrae el giro lento del disco).
+ *  · carcasa (base+pernos de anillo): FIJA.
+ * Solo se mutan matrices por frame; la geometría es la misma (teselada 1 vez).
+ */
+function GearboxMotion({ data, playing, speed }: {
+  data: GearboxMotionData; playing: boolean; speed: number;
+}) {
+  const rotorRef = useRef<THREE.Group>(null);
+  const outRef = useRef<THREE.Group>(null);
+  const discRefs = useRef<(THREE.Group | null)[]>([]);
+  const theta = useRef(0);
+  useFrame((_, dt) => {
+    if (playing) theta.current += Math.min(dt, 0.05) * speed;  // rad/s del EJE de entrada
+    const th = theta.current;
+    const slow = -th / Math.max(1, data.lobes);                // salida = −θ/ratio
+    if (rotorRef.current) rotorRef.current.rotation.z = th;
+    if (outRef.current) outRef.current.rotation.z = slow;
+    for (let i = 0; i < data.placements.length; i++) {
+      const grp = discRefs.current[i];
+      if (!grp) continue;
+      const pl = data.placements[i];
+      grp.position.set(data.E * Math.cos(pl.phase + th), data.E * Math.sin(pl.phase + th), pl.z);
+      grp.rotation.z = slow;
+    }
+  });
+  return (
+    <group>
+      <PartMesh geo={data.housing} color="#39414f" metalness={0.5} roughness={0.45} />
+      <group ref={rotorRef}>
+        <PartMesh geo={data.rotor} color="#caa15e" metalness={0.8} roughness={0.3} />
+      </group>
+      {data.placements.map((_, i) => (
+        <group key={i} ref={(el) => { discRefs.current[i] = el; }}>
+          <PartMesh geo={data.discGeo} color="#e9ddc2" metalness={0.05} roughness={0.62} />
+        </group>
+      ))}
+      <group ref={outRef} position={[0, 0, data.flangeZ]}>
+        <PartMesh geo={data.output} color="#6fb6c9" metalness={0.25} roughness={0.5} />
+      </group>
+    </group>
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -1875,7 +2021,10 @@ export default function ForgeBRepStudio() {
   const [hideChrome, setHideChrome] = useState(false);
   const [pickMode, setPickMode] = useState<'none' | 'face' | 'edge'>('none');
   // ── UI: paneles colapsables + menú de opciones + renombrar nodo in-place ──
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // Por defecto COLAPSADOS los paneles secundarios (caras, análisis, FEA) — el
+  // lienzo arranca limpio; el usuario expande lo que necesita. El árbol y el panel
+  // de parámetros (el flujo principal) quedan abiertos.
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ faces: true, analysis: true, sim: true });
   const toggleCollapse = useCallback((id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] })), []);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [editingOpId, setEditingOpId] = useState<string | null>(null);
@@ -2343,6 +2492,7 @@ export default function ForgeBRepStudio() {
     setOps((cur) => (cur.some((o) => o.type === 'extrude')
       ? cur
       : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+    setMaterial('pla');   // la caja es de PLÁSTICO → masa con densidad de PLA, no aluminio
     setActiveOp('sketch'); setActiveComp(null); setPickMode('none');
   }, []);
   const updateGearbox = useCallback((patch: Partial<GearboxParams>) => {
@@ -2549,6 +2699,26 @@ export default function ForgeBRepStudio() {
   const [printMaterial, setPrintMaterial] = useState<PrintProfile['material']>('PLA');
   const [showOverhangs, setShowOverhangs] = useState(false);
   const [gbTorque, setGbTorque] = useState(50);   // par de salida objetivo (N·m) para el análisis de caja
+  // ── MOVIMIENTO de la caja: piezas separadas + animación cinemática ──
+  const [gbMotion, setGbMotion] = useState(false);
+  const [gbSpeed, setGbSpeed] = useState(1.4);     // rad/s del eje de entrada
+  const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
+  // Construye las piezas separadas (centradas) cuando se enciende el movimiento o
+  // cambian los parámetros de la caja. Teselación una vez; la animación solo mueve grupos.
+  const gbSig = sketch.kind === 'gearbox' ? JSON.stringify(sketch.gearbox) : '';
+  useEffect(() => {
+    if (!oc || !gbMotion || sketch.kind !== 'gearbox') { setGbParts(null); return; }
+    let cancelled = false;
+    try {
+      const data = buildGearboxMotionData(oc, sketch.gearbox);
+      if (!cancelled) setGbParts(data);
+    } catch (e) {
+      console.warn('[forja] movimiento caja:', e);
+      if (!cancelled) setGbParts(null);
+    }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oc, gbMotion, sketch.kind, gbSig]);
   const printProfile = useMemo<PrintProfile>(
     () => ({ ...PRINT_PROFILES[printProfileKey], material: printMaterial }),
     [printProfileKey, printMaterial],
@@ -2837,6 +3007,29 @@ export default function ForgeBRepStudio() {
       applyGearbox, updateGearbox,
       setGbTorque: (t: number) => setGbTorque(t),
       get gearbox() { return sketch.gearbox; },
+      // MOVIMIENTO — driver + cinemática de QA
+      setGbMotion: (v: boolean) => setGbMotion(v),
+      get gbMotion() { return gbMotion; },
+      get gbMotionInfo() {
+        if (!gbParts) return { ready: false };
+        const vc = (g: PartGeo) => g.positions.length / 3;
+        return {
+          ready: true, discCount: gbParts.placements.length, lobes: gbParts.lobes, E: gbParts.E,
+          verts: { housing: vc(gbParts.housing), rotor: vc(gbParts.rotor), disc: vc(gbParts.discGeo), output: vc(gbParts.output) },
+        };
+      },
+      // Pose CINEMÁTICA pura en θ (grados de entrada): salida = −θ/lóbulos, y el
+      // centro de cada disco orbita radio E a (φ₀+θ). Playwright asierta el ratio.
+      gbPoseAt: (thetaDeg: number) => {
+        const g = sketch.gearbox; const th = (thetaDeg * Math.PI) / 180;
+        return {
+          outputDeg: -thetaDeg / g.lobes,
+          discCenters: discPhases(g.discs).map((d) => {
+            const ph = (d * Math.PI) / 180;
+            return { x: +(g.E * Math.cos(ph + th)).toFixed(4), y: +(g.E * Math.sin(ph + th)).toFixed(4) };
+          }),
+        };
+      },
       // Geometría del MECANISMO (derivada, sin kernel): prueba que el eje conecta
       // con los discos vía leva excéntrica con holgura, y que los barrenos de salida
       // holgan el bamboleo. Playwright asierta: camOffset==E (es excéntrica),
@@ -3008,7 +3201,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -3052,9 +3245,11 @@ export default function ForgeBRepStudio() {
           maxDistance={cameraDist * 4}
         >
           <group rotation={[-Math.PI / 2, 0, 0]}>
-            {showSketch && <SketchPlane />}
-            {showSketch && <ProfileGhost pts={profilePts} />}
-            {genResult ? (
+            {!(gbMotion && gbParts) && showSketch && <SketchPlane />}
+            {!(gbMotion && gbParts) && showSketch && <ProfileGhost pts={profilePts} />}
+            {gbMotion && gbParts ? (
+              <GearboxMotion data={gbParts} playing speed={gbSpeed} />
+            ) : genResult ? (
               genSmooth
                 ? <GenerativeSurface result={genResult} threshold={genThreshold} />
                 : <GenerativeVoxels result={genResult} threshold={genThreshold} />
@@ -3603,6 +3798,24 @@ export default function ForgeBRepStudio() {
                         </div>
                       );
                     })()}
+                    <div className="fb-divider" />
+                    {/* ── MOVIMIENTO: ver girar el mecanismo (cinemática real) ── */}
+                    <button data-testid="btn-gb-motion" className="fb-pick-btn"
+                      style={gbMotion ? { background: `${GOLD}33`, borderColor: `${GOLD}aa` } : undefined}
+                      onClick={() => setGbMotion((m) => !m)}
+                      title="Animar el mecanismo: eje gira → discos orbitan → salida gira lento">
+                      {gbMotion ? '⏸ Detener movimiento' : '▶ Ver el movimiento'}
+                    </button>
+                    {gbMotion && (
+                      <>
+                        <Dim label="Velocidad eje" value={gbSpeed} unit="rad/s" min={0.2} max={5} step={0.2} testid="input-gb-speed"
+                          onChange={(v) => setGbSpeed(v)} />
+                        <div className="fb-mass" data-testid="gb-motion-info">
+                          <Row k="Entrada · salida" v={`θ · −θ/${sketch.gearbox.lobes}`} />
+                          <Row k="Estado" v={gbParts ? `▶ girando (${sketch.gearbox.discs} discos)` : '⏳ construyendo…'} />
+                        </div>
+                      </>
+                    )}
                   </>
                 ) : sketch.kind === 'gear' ? (
                   <>
@@ -4160,8 +4373,9 @@ export default function ForgeBRepStudio() {
               pieza por von Mises. Cara FIJA = empotramiento; cara de CARGA +
               magnitud (N) a lo largo de su normal. Material = el del análisis de
               masa (E, ν, σ_y de MATERIAL_DATABASE). */}
-          <aside className="fb-sim" data-testid="sim-panel">
-            <div className="fb-panel-title">Simulación · von Mises (FEA real)</div>
+          <aside className={`fb-sim ${collapsed.sim ? 'collapsed' : ''}`} data-testid="sim-panel">
+            <CollapseHead id="sim" title="Simulación · von Mises (FEA real)" collapsed={!!collapsed.sim}
+              onToggle={() => toggleCollapse('sim')} />
             <p className="fb-hint-txt">
               Resuelve K·u = f en malla tet del sólido (no es heatmap: es FEM).
               σ_vM, factor de seguridad σ_y/σ_max y deflexión máx.
