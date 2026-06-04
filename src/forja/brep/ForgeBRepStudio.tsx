@@ -994,6 +994,33 @@ function buildGearbox(oc: OC, p: GearboxParams): Shape {
   return makeCompound(oc, parts);
 }
 
+/**
+ * Las MISMAS piezas de la caja pero SEPARADAS y NOMBRADAS (en su pose ensamblada),
+ * para listarlas en el árbol, darles color y OCULTARLAS una por una (como Fusion).
+ * key estable: hembra · eje · disco-1..N · salida. El llamador las tesela y libera.
+ */
+function buildGearboxBodies(oc: OC, p: GearboxParams): { key: string; name: string; shape: Shape }[] {
+  const d0 = gearboxDims(p);
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
+  const phases = discPhases(p.discs);
+  const outCenters = pinPositions(d0.outR, Math.max(3, Math.round(p.outPins)));
+  const out: { key: string; name: string; shape: Shape }[] = [];
+  out.push({ key: 'hembra', name: 'Hembra (vaso)', shape: buildHembra(oc, p) });
+  out.push({ key: 'eje', name: 'Eje + levas', shape: buildRotor(oc, p) });
+  for (let i = 0; i < p.discs; i++) {
+    const a = (phases[i] * Math.PI) / 180;
+    const d = buildCycDisc(oc, p, disc.profile, outCenters, a);
+    const placed = transformShape(oc, d, {
+      translate: [p.E * Math.cos(a), p.E * Math.sin(a), i * d0.stepZ],
+      rotateAngle: -a / p.lobes, rotateAxis: { origin: [0, 0, 0], dir: [0, 0, 1] },
+    });
+    d.delete?.();
+    out.push({ key: `disco-${i + 1}`, name: `Disco ${i + 1}`, shape: placed });
+  }
+  out.push({ key: 'salida', name: 'Salida (brida)', shape: buildOutput(oc, p, outCenters) });
+  return out;
+}
+
 // ── MOVIMIENTO: la misma caja, pero en PIEZAS SEPARADAS y centradas para animar
 // la cinemática real. Eje gira θ → las levas (offset E) empujan los discos a
 // ORBITAR → engranan los pernos → el disco gira lento −θ/lóbulos; los pernos de
@@ -1274,9 +1301,10 @@ function sweepMeshingInterference(
 // ──────────────────────────────────────────────────────────────────
 // MOVIMIENTO de la caja cicloidal — cinemática REAL animada
 // ──────────────────────────────────────────────────────────────────
-/** Una pieza teselada con su color/acabado. opacity<1 → translúcida (ver adentro). */
-function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1 }: {
-  geo: PartGeo; color: string; metalness?: number; roughness?: number; opacity?: number;
+/** Una pieza teselada con su color/acabado. opacity<1 → translúcida (ver adentro).
+ *  clip = planos de sección (corta este cuerpo también). */
+function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1, clip }: {
+  geo: PartGeo; color: string; metalness?: number; roughness?: number; opacity?: number; clip?: THREE.Plane[] | null;
 }) {
   const g = useMemo(() => {
     const b = new THREE.BufferGeometry();
@@ -1291,9 +1319,27 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1 
   return (
     <mesh geometry={g} castShadow={!transparent} receiveShadow={!transparent} renderOrder={transparent ? 3 : 0}>
       <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} envMapIntensity={1.1}
-        side={THREE.DoubleSide} transparent={transparent} opacity={opacity} depthWrite={!transparent} />
+        side={THREE.DoubleSide} transparent={transparent} opacity={opacity} depthWrite={!transparent}
+        clippingPlanes={clip ?? undefined} />
     </mesh>
   );
+}
+
+// Colores por defecto de cada cuerpo de la caja (cada cosa distinta, como Fusion).
+const GB_DISC_RAMP = ['#e9ddc2', '#d9c9a0', '#e6c98e', '#cdb98c', '#ead0ad', '#d4c59a', '#e0cba0', '#cfbf95', '#e8d4ab', '#d8c7a6'];
+function gbDefaultColor(key: string): string {
+  if (key === 'hembra') return '#5a6576';
+  if (key === 'eje') return '#caa15e';
+  if (key === 'salida') return '#6fb6c9';
+  const m = /^disco-(\d+)$/.exec(key);
+  if (m) return GB_DISC_RAMP[(parseInt(m[1], 10) - 1) % GB_DISC_RAMP.length];
+  return '#cfd6df';
+}
+function gbBodyDefs(discs: number): { key: string; name: string }[] {
+  const list = [{ key: 'hembra', name: 'Hembra (vaso)' }, { key: 'eje', name: 'Eje + levas' }];
+  for (let i = 0; i < discs; i++) list.push({ key: `disco-${i + 1}`, name: `Disco ${i + 1}` });
+  list.push({ key: 'salida', name: 'Salida (brida)' });
+  return list;
 }
 
 /**
@@ -1306,9 +1352,11 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1 
  *  · hembra-vaso (fija): semitransparente para ver el mecanismo adentro.
  * El rotor y la salida ya están en z absoluto; los discos llevan su z en el grupo.
  */
-function GearboxMotion({ data, playing, speed }: {
+function GearboxMotion({ data, playing, speed, colors, hidden }: {
   data: GearboxMotionData; playing: boolean; speed: number;
+  colors: Record<string, string>; hidden: Record<string, boolean>;
 }) {
+  const col = (k: string) => colors[k] ?? gbDefaultColor(k);
   const rotorRef = useRef<THREE.Group>(null);
   const outRef = useRef<THREE.Group>(null);
   const discRefs = useRef<(THREE.Group | null)[]>([]);
@@ -1330,17 +1378,18 @@ function GearboxMotion({ data, playing, speed }: {
   return (
     <group>
       <group ref={rotorRef}>
-        <PartMesh geo={data.rotor} color="#caa15e" metalness={0.85} roughness={0.28} />
+        {!hidden['eje'] && <PartMesh geo={data.rotor} color={col('eje')} metalness={0.85} roughness={0.28} />}
       </group>
       {data.discs.map((d, i) => (
         <group key={i} ref={(el) => { discRefs.current[i] = el; }}>
-          <PartMesh geo={d.geo} color="#e9ddc2" metalness={0.05} roughness={0.62} />
+          {!hidden[`disco-${i + 1}`] && <PartMesh geo={d.geo} color={col(`disco-${i + 1}`)} metalness={0.05} roughness={0.62} />}
         </group>
       ))}
       <group ref={outRef}>
-        <PartMesh geo={data.output} color="#6fb6c9" metalness={0.25} roughness={0.5} opacity={0.55} />
+        {!hidden['salida'] && <PartMesh geo={data.output} color={col('salida')} metalness={0.25} roughness={0.5} opacity={hidden['hembra'] ? 1 : 0.55} />}
       </group>
-      <PartMesh geo={data.housing} color="#5a6576" metalness={0.45} roughness={0.45} opacity={0.18} />
+      {/* hembra translúcida para ver el mecanismo; si la ocultas, desaparece */}
+      {!hidden['hembra'] && <PartMesh geo={data.housing} color={col('hembra')} metalness={0.45} roughness={0.45} opacity={0.18} />}
     </group>
   );
 }
@@ -2885,6 +2934,29 @@ export default function ForgeBRepStudio() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oc, gbMotion, sketch.kind, gbSig]);
+  // ── CUERPOS de la caja: separados, con color, OCULTABLES (como Fusion) ──
+  const [gbHidden, setGbHidden] = useState<Record<string, boolean>>({});
+  const [gbColors, setGbColors] = useState<Record<string, string>>({});
+  const [gbBodyGeos, setGbBodyGeos] = useState<{ key: string; name: string; geo: PartGeo }[] | null>(null);
+  useEffect(() => {
+    if (!oc || sketch.kind !== 'gearbox') { setGbBodyGeos(null); return; }
+    let cancelled = false;
+    try {
+      const bodies = buildGearboxBodies(oc, sketch.gearbox);
+      const geos = bodies.map((b) => ({ key: b.key, name: b.name, geo: tessGeo(oc, b.shape) }));
+      bodies.forEach((b) => b.shape.delete?.());
+      if (!cancelled) setGbBodyGeos(geos);
+    } catch (e) {
+      console.warn('[forja] cuerpos caja:', e);
+      if (!cancelled) setGbBodyGeos(null);
+    }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oc, sketch.kind, gbSig]);
+  const gbColor = useCallback((key: string) => gbColors[key] ?? gbDefaultColor(key), [gbColors]);
+  const toggleGbBody = useCallback((key: string) => setGbHidden((h) => ({ ...h, [key]: !h[key] })), []);
+  const setGbColor = useCallback((key: string, color: string) => setGbColors((c) => ({ ...c, [key]: color })), []);
+  const showAllGbBodies = useCallback(() => setGbHidden({}), []);
   const printProfile = useMemo<PrintProfile>(
     () => ({ ...PRINT_PROFILES[printProfileKey], material: printMaterial }),
     [printProfileKey, printMaterial],
@@ -3172,6 +3244,12 @@ export default function ForgeBRepStudio() {
       applyGearbox, updateGearbox,
       setGbTorque: (t: number) => setGbTorque(t),
       get gearbox() { return sketch.gearbox; },
+      // CUERPOS de la caja (separados, color, ocultar) — driver de QA
+      get gbBodies() { return gbBodyGeos ? gbBodyGeos.map((b) => ({ key: b.key, name: b.name, hidden: !!gbHidden[b.key], color: gbColor(b.key), verts: b.geo.positions.length / 3 })) : null; },
+      get gbVisibleCount() { return gbBodyGeos ? gbBodyGeos.filter((b) => !gbHidden[b.key]).length : 0; },
+      toggleGbBody: (key: string) => toggleGbBody(key),
+      setGbColor: (key: string, color: string) => setGbColor(key, color),
+      showAllGbBodies: () => showAllGbBodies(),
       // MOVIMIENTO — driver + cinemática de QA
       setGbMotion: (v: boolean) => setGbMotion(v),
       get gbMotion() { return gbMotion; },
@@ -3406,7 +3484,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts, gbBodyGeos, gbHidden, gbColors]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -3453,7 +3531,15 @@ export default function ForgeBRepStudio() {
             {!(gbMotion && gbParts) && showSketch && <SketchPlane />}
             {!(gbMotion && gbParts) && showSketch && <ProfileGhost pts={profilePts} />}
             {gbMotion && gbParts ? (
-              <GearboxMotion data={gbParts} playing speed={gbSpeed} />
+              <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} />
+            ) : sketch.kind === 'gearbox' && gbBodyGeos ? (
+              // CAJA en CUERPOS separados: cada uno con su color; oculta el que quieras
+              // (p.ej. la hembra) para ver el interior. La sección los corta a todos.
+              gbBodyGeos.map((b) => (gbHidden[b.key] ? null : (
+                <PartMesh key={b.key} geo={b.geo} color={gbColor(b.key)} clip={sectionPlanes}
+                  metalness={b.key === 'eje' ? 0.85 : b.key === 'salida' ? 0.25 : b.key === 'hembra' ? 0.45 : 0.05}
+                  roughness={b.key.startsWith('disco') ? 0.62 : 0.4} />
+              )))
             ) : genResult ? (
               genSmooth
                 ? <GenerativeSurface result={genResult} threshold={genThreshold} />
@@ -3835,6 +3921,36 @@ export default function ForgeBRepStudio() {
                     </div>
                   </div>
                 ))}
+              </>
+            )}
+            {/* ── CUERPOS de la CAJA: color + ocultar (como Fusion) ── */}
+            {sketch.kind === 'gearbox' && gbBodyGeos && (
+              <>
+                <div className="fb-feat-subhead" data-testid="gb-bodies-head">
+                  Cuerpos · caja <b>{gbBodyGeos.length}</b>
+                  <button className="fb-feat-act" data-testid="gb-show-all" title="Mostrar todos"
+                    onClick={showAllGbBodies} style={{ marginLeft: 'auto' }}>👁</button>
+                </div>
+                {gbBodyGeos.map((b) => {
+                  const hidden = !!gbHidden[b.key];
+                  return (
+                    <div key={b.key} className="fb-feat-node comp" data-testid={`gb-body-${b.key}`}
+                      style={hidden ? { opacity: 0.5 } : undefined}>
+                      <input type="color" className="fb-color-dot" data-testid={`gb-color-${b.key}`}
+                        value={gbColor(b.key)} onChange={(e) => setGbColor(b.key, e.target.value)}
+                        title="Color del cuerpo" />
+                      <div className="fb-feat-body">
+                        <strong>{b.name}</strong>
+                        <em>{hidden ? 'oculto' : 'visible'}</em>
+                      </div>
+                      <div className="fb-feat-actions">
+                        <button className="fb-feat-act" data-testid={`gb-hide-${b.key}`}
+                          onClick={() => toggleGbBody(b.key)}
+                          title={hidden ? 'Mostrar cuerpo' : 'Ocultar cuerpo'}>{hidden ? '🙈' : '👁'}</button>
+                      </div>
+                    </div>
+                  );
+                })}
               </>
             )}
           </aside>
@@ -5018,6 +5134,10 @@ const CSS = `
 .fb-feat-act.del:hover{background:rgba(248,113,113,0.2);color:#fca5a5;}
 .fb-feat-act:disabled{opacity:.25;pointer-events:none;}
 .fb-feat-node.suppressed{opacity:.5;}
+.fb-color-dot{width:16px;height:16px;min-width:16px;padding:0;border:1px solid rgba(255,255,255,0.25);
+  border-radius:4px;cursor:pointer;background:transparent;-webkit-appearance:none;appearance:none;margin-right:7px;}
+.fb-color-dot::-webkit-color-swatch{border:0;border-radius:3px;padding:0;}
+.fb-color-dot::-webkit-color-swatch-wrapper{border:0;border-radius:3px;padding:0;}
 .fb-feat-node.suppressed strong{text-decoration:line-through;}
 .fb-feat-subhead{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:${STEEL};
   opacity:.55;margin:12px 0 7px;padding-top:9px;border-top:1px solid rgba(159,179,200,0.1);}
