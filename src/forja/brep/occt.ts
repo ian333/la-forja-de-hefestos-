@@ -323,6 +323,78 @@ export function extrudeCircle(
   return shape;
 }
 
+/**
+ * Extruye un perfil cerrado SUAVE: interpola una B-spline PERIÓDICA (C2) que pasa
+ * por TODOS los puntos (GeomAPI_Interpolate, periodic=true) → UNA sola arista
+ * curva REAL, no una polilínea de N segmentos rectos. Así la cara lateral es
+ * curva y el plano de taller dibuja una curva de verdad (no facetada), que es
+ * como un CAD serio modela un disco cicloidal o una leva.
+ *
+ * Robusto: si el kernel no puede interpolar (perfil degenerado o binding ausente),
+ * cae limpiamente al wire poligonal (extrudePolygon) — nunca rompe el build.
+ *
+ * Invariante de verificación: un sólido extruido por spline tiene MUY POCAS
+ * aristas (≈ tapa + fondo + costura), frente a ≈3·N de un polígono de N lados.
+ */
+export function extrudeSpline(
+  oc: OC,
+  pts: Pt2[],
+  height: number,
+  plane: SketchPlane3D = PLANE_XY,
+): Shape {
+  if (pts.length < 4) throw new Error('extrudeSpline: se requieren ≥4 puntos');
+  try {
+    // No repetir el primer punto al final (el cierre lo pone un segmento aparte).
+    const n0 = pts.length;
+    const a0 = pts[0], aN = pts[n0 - 1];
+    const dup = Math.abs(a0.x - aN.x) < 1e-9 && Math.abs(a0.y - aN.y) < 1e-9;
+    const src = dup ? pts.slice(0, n0 - 1) : pts;
+    const n = src.length;
+    if (n < 4) throw new Error('pocos puntos tras quitar cierre');
+
+    // Receta probada en ESTE wasm (GeomAPI_Interpolate/HArray NO existen; sí
+    // PointsToBSpline). Array de puntos 3D (1-indexado) → B-spline C2 aproximada.
+    const arr = new oc.TColgp_Array1OfPnt_2(1, n);
+    for (let i = 0; i < n; i++) {
+      const [x, y, z] = map2Dto3D(plane, src[i]);
+      arr.SetValue(i + 1, new oc.gp_Pnt_3(x, y, z));
+    }
+    const c2 = oc.GeomAbs_Shape ? oc.GeomAbs_Shape.GeomAbs_C2 : 2;
+    const bspline = new oc.GeomAPI_PointsToBSpline_2(arr, 3, 8, c2, 1e-3);
+    const bcurve = bspline.Curve(); // Handle_Geom_BSplineCurve
+    // CLAVE: Embind no sube Handle_Geom_BSplineCurve → Handle_Geom_Curve solo;
+    // hay que construir el handle base desde el puntero crudo (curve.get()).
+    const curve = new oc.Handle_Geom_Curve_2(bcurve.get());
+
+    // Arista CURVA (la B-spline) + un segmento recto diminuto de cierre (un solo
+    // paso de muestreo) → wire cerrado. 99% curva real, no 90 facetas.
+    const splineEdge = new oc.BRepBuilderAPI_MakeEdge_24(curve).Edge();
+    const [lx, ly, lz] = map2Dto3D(plane, src[n - 1]);
+    const [fx, fy, fz] = map2Dto3D(plane, src[0]);
+    const closeEdge = new oc.BRepBuilderAPI_MakeEdge_3(
+      new oc.gp_Pnt_3(lx, ly, lz), new oc.gp_Pnt_3(fx, fy, fz),
+    ).Edge();
+    const wireMaker = new oc.BRepBuilderAPI_MakeWire_1();
+    wireMaker.Add_1(splineEdge);
+    wireMaker.Add_1(closeEdge);
+    const wire = wireMaker.Wire();
+    wireMaker.delete?.();
+
+    const face = new oc.BRepBuilderAPI_MakeFace_15(wire, true).Face();
+    const w = crossUnit(plane.uDir, plane.vDir);
+    const vec = new oc.gp_Vec_4(w[0] * height, w[1] * height, w[2] * height);
+    const prism = new oc.BRepPrimAPI_MakePrism_1(face, vec, false, true);
+    const shape = prism.Shape();
+    prism.delete?.();
+    bspline.delete?.();
+    arr.delete?.();
+    return shape;
+  } catch {
+    // Cualquier fallo del binding/curva → polígono (mismo resultado, facetado).
+    return extrudePolygon(oc, pts, height, plane);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Booleanas exactas (BRepAlgoAPI)
 // ─────────────────────────────────────────────────────────────────

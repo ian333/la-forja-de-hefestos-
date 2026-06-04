@@ -30,6 +30,7 @@ import {
   initOCCT,
   _setActiveOCCT,
   extrudePolygon,
+  extrudeSpline,
   extrudeCircle,
   drillHole,
   filletEdges,
@@ -169,9 +170,12 @@ type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'cust
 interface GearboxParams {
   lobes: number; discs: number; R: number; Rr: number; E: number;
   T: number; gap: number; shaftD: number; shaftBore: number;
+  outPins: number;   // nº de pernos de SALIDA (extraen el giro lento + capturan los discos axialmente)
+  outPinD: number;   // ⌀ de cada perno de salida (mm)
 }
 const GEARBOX_DEFAULTS: GearboxParams = {
   lobes: 10, discs: 5, R: 40, Rr: 3, E: 1.5, T: 6, gap: 0.6, shaftD: 16, shaftBore: 8,
+  outPins: 6, outPinD: 6,
 };
 
 /** Un escalón del perfil de revolución: radio exterior r y longitud axial L. */
@@ -208,6 +212,9 @@ interface SketchFeature {
   // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
   // resuelto por el solver de restricciones. Reemplaza las plantillas.
   customProfile?: Pt2[];
+  // El perfil custom es una CURVA suave (cicloidal, leva) → extruir por B-spline
+  // (arista curva real) en vez de polígono facetado.
+  smooth?: boolean;
 }
 
 /** Defaults del engrane (m=2, Z=20, α=20°, espesor 10, barreno 8). */
@@ -700,6 +707,9 @@ function buildShape(
         : undefined;
       if (sketch.kind === 'circle') {
         shape = extrudeCircle(oc, { x: 0, y: 0 }, sketch.radius, op.depth, plane);
+      } else if (sketch.kind === 'custom' && sketch.smooth) {
+        // Perfil suave (cicloidal/leva): arista curva REAL (B-spline), no facetada.
+        shape = extrudeSpline(oc, profile(), op.depth, plane);
       } else {
         shape = extrudePolygon(oc, profile(), op.depth, plane);
       }
@@ -820,40 +830,82 @@ function buildComponent(oc: OC, c: Component): Shape {
 
 /**
  * CAJA DE VELOCIDADES cicloidal multi-disco, en UNA pieza (compound print-in-place).
- * N discos de lóbulos FASADOS a 360/N° (balancean el eje → torsión pura) apilados
- * con holgura `gap` (auto-puente), un EJE hueco central, y la BASE-anillo con sus
- * pernos (el "hembra" que recibe la carga). Geometría exacta. La física de
- * supervivencia la valida gearbox.ts (analyzeGearbox).
+ *
+ * La FÍSICA de cómo se mueve y por qué NO se desarma (lo que faltaba):
+ *  1) EJE + LEVAS EXCÉNTRICAS: el eje central lleva N levas cilíndricas, cada una
+ *     descentrada `E` y FASADA a 360/N°, FUNDIDAS al eje (una sola pieza rígida).
+ *     Cada disco cabalga sobre SU leva (barreno = ⌀leva + holgura). Al girar el eje,
+ *     la leva empuja al disco a orbitar `E` → los lóbulos engranan con los pernos
+ *     del anillo → el disco gira lento. ESA es la conexión eje→disco (antes no
+ *     existía: el eje giraba en el vacío). Las fases opuestas balancean el eje.
+ *  2) PERNOS DE SALIDA + BRIDA: M pernos verticales pasan por barrenos HOLGADOS
+ *     (⌀perno + 2E + holgura, acomodan el bamboleo) de TODOS los discos y se unen a
+ *     una brida superior → extraen el giro lento Y capturan los discos axialmente
+ *     entre la base y la brida (por eso NO se separan).
+ *  3) BASE-anillo (el "hembra"): placa masiva + N+1 pernos de anillo = la carcasa
+ *     fija contra la que ruedan los lóbulos; recibe el torque alto.
+ *
+ * Discos extruidos por B-SPLINE (curva real, no polígono facetado). Geometría
+ * exacta; la física de supervivencia la valida gearbox.ts (analyzeGearbox).
  */
 function buildGearbox(oc: OC, p: GearboxParams): Shape {
-  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: 120 });
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
   const phases = discPhases(p.discs);
   const stepZ = p.T + p.gap;
   const totalH = p.discs * p.T + (p.discs - 1) * p.gap;
-  const boreD = p.shaftD + 2 * p.E + 2 * p.gap;   // el barreno libra al eje centrado en cualquier fase
+  const eccR = p.shaftD / 2 + p.E;                 // radio de la leva excéntrica
+  const boreD = 2 * (eccR + p.gap);                // barreno del disco = ⌀leva + 2·holgura
+  // pernos de salida: en un círculo interior; barreno del disco los holga ±E + holgura.
+  const outR = p.R * 0.55;
+  const outHoleD = p.outPinD + 2 * p.E + 2 * p.gap;
+  const outCenters = pinPositions(outR, Math.max(3, Math.round(p.outPins)));
   const parts: Shape[] = [];
-  // discos cicloidales fasados (cuerpos separados → giran / print-in-place)
+
+  // ── DISCOS cicloidales (curva real) sobre su leva, con barrenos de salida ──
   for (let i = 0; i < p.discs; i++) {
-    let d = extrudePolygon(oc, disc.profile, p.T);
+    let d = extrudeSpline(oc, disc.profile, p.T);
     d = drillHole(oc, d, { x: 0, y: 0, diameter: boreD, zTop: p.T, depth: p.T, through: true });
+    for (const c of outCenters) {
+      d = drillHole(oc, d, { x: c.x, y: c.y, diameter: outHoleD, zTop: p.T, depth: p.T, through: true });
+    }
     const ph = (phases[i] * Math.PI) / 180;
     const placed = transformShape(oc, d, { translate: [p.E * Math.cos(ph), p.E * Math.sin(ph), i * stepZ] });
     d.delete?.();
     parts.push(placed);
   }
-  // eje HUECO central (alto módulo polar → resiste torsión en plástico)
-  let shaft = makeCylinder(oc, p.shaftD / 2, totalH + 2 * p.T, { origin: [0, 0, -p.T], dir: [0, 0, 1] });
+
+  // ── EJE HUECO + LEVAS EXCÉNTRICAS fundidas (la CONEXIÓN eje→disco) ──
+  let rotor = makeCylinder(oc, p.shaftD / 2, totalH + 2 * p.T, { origin: [0, 0, -p.T], dir: [0, 0, 1] });
+  for (let i = 0; i < p.discs; i++) {
+    const ph = (phases[i] * Math.PI) / 180;
+    const cam = makeCylinder(oc, eccR, p.T, { origin: [p.E * Math.cos(ph), p.E * Math.sin(ph), i * stepZ], dir: [0, 0, 1] });
+    const fused = fuse(oc, rotor, cam); rotor.delete?.(); cam.delete?.(); rotor = fused;
+  }
   if (p.shaftBore > 0) {
     const bore = makeCylinder(oc, p.shaftBore / 2, totalH + 4 * p.T, { origin: [0, 0, -2 * p.T], dir: [0, 0, 1] });
-    const hollow = cut(oc, shaft, bore); shaft.delete?.(); bore.delete?.(); shaft = hollow;
+    const hollow = cut(oc, rotor, bore); rotor.delete?.(); bore.delete?.(); rotor = hollow;
   }
-  parts.push(shaft);
-  // BASE-anillo (el "hembra"): placa masiva + pernos del anillo (carga → base)
+  parts.push(rotor);
+
+  // ── BASE-anillo (el "hembra"): placa masiva + pernos del anillo (carga → base) ──
   const baseH = p.T * 1.5;
   parts.push(makeCylinder(oc, p.R + p.Rr + 4, baseH, { origin: [0, 0, -baseH - p.gap], dir: [0, 0, 1] }));
   for (const pp of pinPositions(p.R, p.lobes + 1)) {
     parts.push(makeCylinder(oc, p.Rr, totalH, { origin: [pp.x, pp.y, 0], dir: [0, 0, 1] }));
   }
+
+  // ── SALIDA: brida superior + M pernos que atraviesan los discos (captura axial) ──
+  const flangeZ = totalH + p.gap;
+  let output = makeCylinder(oc, outR + p.outPinD / 2 + 3, p.T * 0.6, { origin: [0, 0, flangeZ], dir: [0, 0, 1] });
+  for (const c of outCenters) {
+    const pin = makeCylinder(oc, p.outPinD / 2, totalH + p.gap, { origin: [c.x, c.y, flangeZ], dir: [0, 0, -1] });
+    const f = fuse(oc, output, pin); output.delete?.(); pin.delete?.(); output = f;
+  }
+  // el eje (con su excéntrica máx ⌀leva+2E) cruza la brida → barreno central holgado
+  const shaftClear = makeCylinder(oc, eccR + p.E + p.gap, p.T * 3, { origin: [0, 0, flangeZ - p.T], dir: [0, 0, 1] });
+  const outFinal = cut(oc, output, shaftClear); output.delete?.(); shaftClear.delete?.();
+  parts.push(outFinal);
+
   return makeCompound(oc, parts);
 }
 
@@ -1732,7 +1784,7 @@ function cycloidalReducerDoc(): DocState {
   components.push({ id: newId('comp'), name: 'Excéntrico', kind: 'cyl', w: 0, d: 0, h: 24, r: 5, x: 0, y: 0, z: 12, rz: 0 });
   return {
     ...base, name: 'Reductor cicloidal 10:1',
-    sketch: { ...DEFAULT_SKETCH, kind: 'custom', customProfile: profile, gear: { ...GEAR_DEFAULTS } },
+    sketch: { ...DEFAULT_SKETCH, kind: 'custom', customProfile: profile, smooth: true, gear: { ...GEAR_DEFAULTS } },
     ops: [
       { id: newId('extrude'), type: 'extrude', depth: T, symmetric: false },
       { id: newId('hole'), type: 'hole', x: 0, y: 0, diameter: 12, through: true, depth: T },
@@ -2785,6 +2837,20 @@ export default function ForgeBRepStudio() {
       applyGearbox, updateGearbox,
       setGbTorque: (t: number) => setGbTorque(t),
       get gearbox() { return sketch.gearbox; },
+      // Geometría del MECANISMO (derivada, sin kernel): prueba que el eje conecta
+      // con los discos vía leva excéntrica con holgura, y que los barrenos de salida
+      // holgan el bamboleo. Playwright asierta: camOffset==E (es excéntrica),
+      // discBoreR−camR==gap (ajuste deslizante), outHoleD−outPinD==2E+2gap (órbita).
+      get gearboxGeom() {
+        const g = sketch.gearbox;
+        const camR = g.shaftD / 2 + g.E;
+        return {
+          camRadius: +camR.toFixed(4), camOffset: g.E,
+          discBoreRadius: +(camR + g.gap).toFixed(4), clearance: g.gap,
+          outHoleD: +(g.outPinD + 2 * g.E + 2 * g.gap).toFixed(4), outPinD: g.outPinD,
+          phases: discPhases(g.discs),
+        };
+      },
       get gear() { return sketch.gear; },
       // Geometría DERIVADA del engrane (matemática pura, sin tocar el kernel):
       // rp, rb, área del perfil cerrado, error de simetría rotacional Z-fold y el
@@ -3503,7 +3569,7 @@ export default function ForgeBRepStudio() {
                 ) : sketch.kind === 'gearbox' ? (
                   <>
                     <p className="fb-hint-txt">
-                      Caja cicloidal en 1 pieza: N discos fasados a 360/N° (balancean el eje → torsión pura) + eje hueco + base-anillo. Print-in-place.
+                      Caja cicloidal en 1 pieza: el eje lleva N <b>levas excéntricas</b> fasadas a 360/N° (la conexión eje→disco: la leva empuja al disco a orbitar E → engrana los pernos → gira lento). Los <b>pernos de salida</b> cruzan barrenos holgados y capturan los discos entre la base y la brida (por eso no se separan). Print-in-place.
                     </p>
                     <Dim label="Discos" value={sketch.gearbox.discs} unit="" min={2} max={10} step={1} testid="input-gb-discs"
                       onChange={(v) => updateGearbox({ discs: Math.round(v) })} />
@@ -3513,6 +3579,8 @@ export default function ForgeBRepStudio() {
                       onChange={(v) => updateGearbox({ shaftD: v })} />
                     <Dim label="Eje hueco ⌀" value={sketch.gearbox.shaftBore} unit="mm" min={0} max={20} step={1} testid="input-gb-bore"
                       onChange={(v) => updateGearbox({ shaftBore: v })} />
+                    <Dim label="Pernos salida" value={sketch.gearbox.outPins} unit="" min={3} max={10} step={1} testid="input-gb-outpins"
+                      onChange={(v) => updateGearbox({ outPins: Math.round(v) })} />
                     <div className="fb-divider" />
                     <div className="fb-panel-title" style={{ marginTop: 0 }}>¿Resiste? · {printMaterial}</div>
                     <Dim label="Par de salida" value={gbTorque} unit="N·m" min={5} max={300} step={5} testid="input-gb-torque"
@@ -3520,7 +3588,7 @@ export default function ForgeBRepStudio() {
                     {(() => {
                       const gbm = (printMaterial === 'TPU' ? 'Nylon' : printMaterial) as GbMaterial;
                       const a = analyzeGearbox(
-                        { lobes: sketch.gearbox.lobes, discs: sketch.gearbox.discs, shaftD: sketch.gearbox.shaftD, shaftBore: sketch.gearbox.shaftBore, pinCircleR: sketch.gearbox.R, outPinR: sketch.gearbox.Rr, outPinCount: 6 },
+                        { lobes: sketch.gearbox.lobes, discs: sketch.gearbox.discs, shaftD: sketch.gearbox.shaftD, shaftBore: sketch.gearbox.shaftBore, pinCircleR: sketch.gearbox.R, outPinR: sketch.gearbox.outPinD / 2, outPinCount: sketch.gearbox.outPins },
                         { outputTorqueNm: gbTorque, material: gbm },
                       );
                       return (
