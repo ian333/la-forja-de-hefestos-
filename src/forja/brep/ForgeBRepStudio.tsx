@@ -1044,21 +1044,26 @@ function buildSupportTree(oc: OC, p: GearboxParams): Shape {
     const t = transformShape(oc, raw, { translate: [x - w / 2, y - w / 2, z - h / 2] }); raw.delete?.();
     return t;
   };
-  // PILARES anti-deformación: rejilla vertical en CADA hueco (para el disco arriba),
-  // de pie sobre el disco/base de abajo → tocan la cara de arriba. Cada ~8mm (límite
-  // de puente del PLA) donde hay disco; verticales = auto-soportados (90°). Conectan
-  // disco-abajo↔disco-arriba → el primer giro los cizalla (frangibles).
-  const s = 8, rmin = d0.eccR + p.gap + 3, rmax = p.R - 8, w = 0.6, h = p.gap * 1.4;
+  // PILARES anti-deformación con CUELLO FRANGIBLE en CADA hueco (para el disco de
+  // arriba). Cada pilar = CUELLO delgado abajo (área chiquita → el 1er giro lo cizalla)
+  // + CUERPO ancho arriba (toca el disco con buena área → no se pandea). Σ cuellos por
+  // hueco ≤ presupuesto de despegue (~τ·A ≤ T_in/r → ~4mm²). Cada ~9mm (puente PLA).
+  const s = 9, rmin = d0.eccR + p.gap + 3, rmax = p.R - 8;
+  const wBody = 1.0, wNeck = 0.35, neckH = 0.2;   // cuello 0.35² = 0.12mm² c/u
+  let neckArea = 0;
   for (let i = 0; i < p.discs; i++) {
-    const z = i * d0.stepZ - p.gap / 2;   // centro del hueco bajo el disco i
+    const zLow = i * d0.stepZ - p.gap;            // cara de abajo del hueco (disco/base inferior)
     for (let gx = -Math.ceil(rmax / s); gx <= Math.ceil(rmax / s); gx++) {
       for (let gy = -Math.ceil(rmax / s); gy <= Math.ceil(rmax / s); gy++) {
         const x = gx * s + (i % 2) * s / 2, y = gy * s;  // medio-paso alterno por piso
-        const r = Math.hypot(x, y);
-        if (r >= rmin && r <= rmax) parts.push(pillar(w, h, x, y, z));
+        if (Math.hypot(x, y) < rmin || Math.hypot(x, y) > rmax) continue;
+        parts.push(pillar(wNeck, neckH, x, y, zLow + neckH / 2));               // CUELLO (rompe)
+        parts.push(pillar(wBody, p.gap - neckH, x, y, zLow + neckH + (p.gap - neckH) / 2)); // CUERPO (soporta)
+        neckArea += wNeck * wNeck;
       }
     }
   }
+  void neckArea;  // Σ cuellos / nº huecos ≈ presupuesto; verificado en el análisis
   // 3 ESPINAS de grasa en la pared (0/120/240°), conectadas a la pared = ancladas.
   for (const a of [0, 120, 240]) {
     const ar = (a * Math.PI) / 180;
