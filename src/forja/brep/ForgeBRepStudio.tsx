@@ -22,7 +22,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
-import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import ShortcutOverlay from '../../components/ShortcutOverlay';
 import SketchEditor from './SketchEditor';
@@ -1341,6 +1341,118 @@ function GearboxMotion({ data, playing, speed }: {
         <PartMesh geo={data.output} color="#6fb6c9" metalness={0.25} roughness={0.5} opacity={0.55} />
       </group>
       <PartMesh geo={data.housing} color="#5a6576" metalness={0.45} roughness={0.45} opacity={0.18} />
+    </group>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// SECCIÓN estilo Fusion — plano de corte con FLECHA ARRASTRABLE (no barras)
+// ──────────────────────────────────────────────────────────────────
+/**
+ * Manipulador de sección: un plano translúcido + una FLECHA que arrastras con el
+ * mouse para mover el corte a lo largo del eje (como Fusion). Vive DENTRO del grupo
+ * del modelo (coords locales), pero el plano de recorte (clip) lo deriva en MUNDO
+ * desde su matrixWorld — así corta donde debe aunque el grupo esté rotado. Mientras
+ * arrastras, desactiva el OrbitControls. Sin estado por-frame: muta refs y solo
+ * confirma el offset al soltar.
+ */
+function SectionGizmo({ bbox, axis, flip, offset, setOffset, clip }: {
+  bbox: { center: number[]; half: number[] };
+  axis: 'x' | 'y' | 'z'; flip: boolean; offset: number;
+  setOffset: (o: number) => void; clip: THREE.Plane[];
+}) {
+  const grpRef = useRef<THREE.Group>(null);
+  const controls = useThree((s) => s.controls) as { enabled: boolean } | null;
+  const camera = useThree((s) => s.camera);
+  const gl = useThree((s) => s.gl);
+  const ai = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+  const sign = flip ? -1 : 1;
+  const span = Math.max(bbox.half[0], bbox.half[1], bbox.half[2]) || 20;
+  const dragging = useRef(false);
+  const liveOffset = useRef(offset);
+
+  // orienta la flecha/plano: +Z local → eje elegido (con signo del flip)
+  const quat = useMemo(() => {
+    const to = new THREE.Vector3(); to.setComponent(ai, sign);
+    return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), to);
+  }, [ai, sign]);
+
+  const placeAt = (o: number) => {
+    const g = grpRef.current; if (!g) return;
+    g.position.set(bbox.center[0], bbox.center[1], bbox.center[2]);
+    g.position.setComponent(ai, bbox.center[ai] + o * bbox.half[ai] * 1.02);
+  };
+
+  useFrame(() => {
+    const g = grpRef.current; if (!g) return;
+    if (!dragging.current) placeAt(offset);
+    g.updateWorldMatrix(true, false);
+    const nWorld = new THREE.Vector3().setComponent(ai, sign).transformDirection(g.matrixWorld).normalize();
+    const pWorld = new THREE.Vector3().setFromMatrixPosition(g.matrixWorld);
+    clip[0].setFromNormalAndCoplanarPoint(nWorld, pWorld);
+  });
+
+  const startDrag = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    const g = grpRef.current; if (!g) return;
+    dragging.current = true;
+    if (controls) controls.enabled = false;
+    g.updateWorldMatrix(true, false);
+    const originW = new THREE.Vector3().setFromMatrixPosition(g.matrixWorld);
+    const axisW = new THREE.Vector3().setComponent(ai, 1).transformDirection(g.matrixWorld).normalize();
+    const camDir = camera.getWorldDirection(new THREE.Vector3());
+    const dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(camDir, originW);
+    const ray = new THREE.Raycaster();
+    const rect = gl.domElement.getBoundingClientRect();
+    const hitAt = (cx: number, cy: number) => {
+      const ndc = new THREE.Vector2(((cx - rect.left) / rect.width) * 2 - 1, -((cy - rect.top) / rect.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      const h = new THREE.Vector3();
+      return ray.ray.intersectPlane(dragPlane, h) ? h : null;
+    };
+    const h0 = hitAt(e.clientX, e.clientY);
+    const d0 = h0 ? h0.clone().sub(originW).dot(axisW) : 0;
+    const off0 = offset;
+    const unit = (bbox.half[ai] * 1.02) || 1;
+    const onMove = (ev: PointerEvent) => {
+      const h = hitAt(ev.clientX, ev.clientY); if (!h) return;
+      const d = h.clone().sub(originW).dot(axisW);
+      const o = Math.max(-1.1, Math.min(1.1, off0 + (d - d0) / unit));
+      liveOffset.current = o; placeAt(o);
+    };
+    const onUp = () => {
+      dragging.current = false;
+      if (controls) controls.enabled = true;
+      setOffset(liveOffset.current);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
+  const r = Math.max(0.5, span * 0.03);
+  const reach = span * 1.18;
+  return (
+    <group ref={grpRef}>
+      <group quaternion={quat}>
+        {/* plano de corte translúcido (dónde corta) */}
+        <mesh renderOrder={5}>
+          <planeGeometry args={[span * 2.5, span * 2.5]} />
+          <meshBasicMaterial color="#f2b66d" transparent opacity={0.12} side={THREE.DoubleSide} depthWrite={false} toneMapped={false} />
+        </mesh>
+        {/* FLECHA arrastrable (mango): shaft + cabeza, fuera de la pieza */}
+        <group position={[0, 0, reach]} onPointerDown={startDrag} onPointerOver={() => (gl.domElement.style.cursor = 'grab')} onPointerOut={() => (gl.domElement.style.cursor = 'auto')}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} renderOrder={6}>
+            <cylinderGeometry args={[r * 0.5, r * 0.5, span * 0.5, 16]} />
+            <meshStandardMaterial color="#f2b66d" emissive="#7a4a16" metalness={0.3} roughness={0.4} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 0, span * 0.32]} rotation={[Math.PI / 2, 0, 0]} renderOrder={6}>
+            <coneGeometry args={[r * 1.6, span * 0.28, 20]} />
+            <meshStandardMaterial color="#ffce8a" emissive="#7a4a16" metalness={0.3} roughness={0.35} toneMapped={false} />
+          </mesh>
+        </group>
+      </group>
     </group>
   );
 }
@@ -2801,15 +2913,10 @@ export default function ForgeBRepStudio() {
     }
     return { center: [(mnx + mxx) / 2, (mny + mxy) / 2, (mnz + mxz) / 2], half: [(mxx - mnx) / 2 || 1, (mxy - mny) / 2 || 1, (mxz - mnz) / 2 || 1] };
   }, [result]);
-  const sectionPlanes = useMemo<THREE.Plane[] | null>(() => {
-    if (!sectionOn || !meshBBox) return null;
-    const ai = sectionAxis === 'x' ? 0 : sectionAxis === 'y' ? 1 : 2;
-    const sign = sectionFlip ? -1 : 1;
-    const n = new THREE.Vector3(0, 0, 0); n.setComponent(ai, sign);
-    const px = meshBBox.center[ai] + sectionOffset * meshBBox.half[ai] * 1.02;
-    const point = new THREE.Vector3(meshBBox.center[0], meshBBox.center[1], meshBBox.center[2]); point.setComponent(ai, px);
-    return [new THREE.Plane(n, -n.dot(point))];
-  }, [sectionOn, sectionAxis, sectionOffset, sectionFlip, meshBBox]);
+  // Plano de recorte ESTABLE (objeto único): la flecha del SectionGizmo lo MUTA en
+  // mundo cada frame (no recalculamos por estado → arrastre fluido sin re-render).
+  const sectionClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)], []);
+  const sectionPlanes = sectionOn && meshBBox ? sectionClip : null;
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
   const genPlano = useCallback(() => {
@@ -3028,8 +3135,12 @@ export default function ForgeBRepStudio() {
       get showOverhangs() { return showOverhangs; },
       // SECCIÓN + EJEMPLOS — driver de QA
       setSection: (on: boolean, axis?: 'x' | 'y' | 'z', offset?: number) => { setSectionOn(on); if (axis) setSectionAxis(axis); if (offset != null) setSectionOffset(offset); },
+      setSectionOffset: (o: number) => setSectionOffset(o),
       get sectionOn() { return sectionOn; },
       get sectionPlaneCount() { return sectionPlanes ? sectionPlanes.length : 0; },
+      // Plano de corte EN MUNDO (lo muta la flecha cada frame) — QA verifica que mover
+      // el corte cambia el plano (normal según eje, constante según posición).
+      get sectionPlane() { const p = sectionClip[0]; return { normal: [+p.normal.x.toFixed(3), +p.normal.y.toFixed(3), +p.normal.z.toFixed(3)], constant: +p.constant.toFixed(3) }; },
       loadExample: (i: number) => { const e = makeExamples()[i]; if (e) loadDoc(e.doc()); },
       // ENSAMBLE — driver de QA
       addComponent, updateComponent, removeComponent,
@@ -3364,6 +3475,11 @@ export default function ForgeBRepStudio() {
                 clip={sectionPlanes}
               />
             )}
+            {/* SECCIÓN: flecha arrastrable (Fusion-style) — mueve el corte con el mouse */}
+            {sectionOn && meshBBox && !genResult && !(gbMotion && gbParts) && (
+              <SectionGizmo bbox={meshBBox} axis={sectionAxis} flip={sectionFlip}
+                offset={sectionOffset} setOffset={setSectionOffset} clip={sectionClip} />
+            )}
           </group>
         </CadViewport>
 
@@ -3400,6 +3516,22 @@ export default function ForgeBRepStudio() {
             {placingHole
               ? 'Clic en la cara superior para COLOCAR el barreno'
               : `Clic en ${pickMode === 'face' ? 'una CARA' : 'una ARISTA'} del sólido para seleccionarla`}
+          </div>
+        )}
+
+        {/* HUD de SECCIÓN: eje del corte + invertir + pista de ARRASTRE (Fusion-style). */}
+        {sectionOn && (
+          <div className="fb-section-hud" data-testid="section-hud">
+            <span className="lbl">✂ Corte</span>
+            <div className="fb-seg">
+              {(['x', 'y', 'z'] as const).map((ax) => (
+                <button key={ax} data-testid={`sec-axis-${ax}`} className={sectionAxis === ax ? 'on' : ''}
+                  onClick={() => setSectionAxis(ax)}>{ax.toUpperCase()}</button>
+              ))}
+              <button data-testid="sec-flip" className={sectionFlip ? 'on' : ''} onClick={() => setSectionFlip((v) => !v)} title="Invertir lado">⇄</button>
+            </div>
+            <span className="hint">arrastra la <b>flecha</b> 🠖 con el mouse</span>
+            <button data-testid="btn-section-off" className="off" onClick={() => setSectionOn(false)}>✕</button>
           </div>
         )}
 
@@ -3520,6 +3652,8 @@ export default function ForgeBRepStudio() {
               onClick={() => setParamsOpen((v) => !v)} title="Parámetros con ecuaciones (Change Parameters)">ƒₓ Parámetros</button>
             <button data-testid="btn-plano" onClick={genPlano} disabled={!result}
               title="Plano de taller: 3 vistas ortográficas acotadas (líneas ocultas) → SVG">📐 Plano</button>
+            <button data-testid="btn-section-tool" className={sectionOn ? 'on' : ''} onClick={() => setSectionOn((v) => !v)} disabled={!result}
+              title="Sección: corta la pieza para ver adentro — arrastra la FLECHA con el mouse (como Fusion)">✂ Sección</button>
             <span className="fb-tb-sep" />
             <button data-testid="btn-component" onClick={() => addComponent('box')}
               title="Ensamble: agrega un componente (bloque/cilindro) posicionado en 3D">🧩 Componente</button>
@@ -4435,26 +4569,16 @@ export default function ForgeBRepStudio() {
                   </div>
                 )}
 
-                {/* ── SECCIÓN: corte por plano (ver caras internas) ── */}
+                {/* ── SECCIÓN: ahora vive en la barra (✂ Sección) + flecha en el 3D ── */}
                 <div className="fb-divider" />
                 <div className="fb-print-head">
                   <span>✂ Sección</span>
                   <button className={`fb-sec-toggle ${sectionOn ? 'on' : ''}`} data-testid="btn-section"
                     onClick={() => setSectionOn((v) => !v)}>{sectionOn ? 'ON' : 'OFF'}</button>
                 </div>
-                {sectionOn && (
-                  <div className="fb-mass">
-                    <div className="fb-seg">
-                      {(['x', 'y', 'z'] as const).map((ax) => (
-                        <button key={ax} data-testid={`sec-axis-${ax}`} className={sectionAxis === ax ? 'on' : ''}
-                          onClick={() => setSectionAxis(ax)}>{ax.toUpperCase()}</button>
-                      ))}
-                      <button data-testid="sec-flip" className={sectionFlip ? 'on' : ''} onClick={() => setSectionFlip((v) => !v)}>⇄</button>
-                    </div>
-                    <Dim label="Posición del corte" value={sectionOffset} unit="" min={-1} max={1} step={0.02} testid="input-sec-offset"
-                      onChange={(v) => setSectionOffset(v)} />
-                  </div>
-                )}
+                <p className="fb-hint-txt" style={{ marginTop: 6 }}>
+                  Enciéndela en la barra (✂ Sección) y <b>arrastra la flecha</b> con el mouse para mover el corte (X/Y/Z e invertir en el HUD de arriba). Sin barras.
+                </p>
               </div>
             ) : (
               <div className="fb-mass"><Row k="Estado" v="construyendo…" /></div>
@@ -4720,6 +4844,17 @@ const CSS = `
 .fb-pick-hint{position:absolute;top:74px;left:50%;transform:translateX(-50%);
   background:${GOLD};color:#1a1206;font-size:12px;font-weight:600;padding:7px 16px;
   border-radius:20px;box-shadow:0 4px 20px ${GOLD}66;z-index:6;pointer-events:none;}
+
+.fb-section-hud{position:absolute;top:74px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:10px;z-index:7;background:rgba(13,18,28,0.86);
+  border:1px solid ${GOLD}55;border-radius:10px;padding:6px 10px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.4);font-size:11px;color:#cdd6e2;}
+.fb-section-hud .lbl{color:${GOLD};font-weight:700;}
+.fb-section-hud .hint{color:#9fb3c8;}
+.fb-section-hud .hint b{color:${GOLD};}
+.fb-section-hud .off{border:1px solid ${GOLD}44;background:transparent;color:#9fb3c8;
+  border-radius:6px;width:22px;height:22px;cursor:pointer;line-height:1;}
+.fb-section-hud .off:hover{border-color:#e57373;color:#e57373;}
 
 .fb-hud-sel{position:absolute;top:112px;left:50%;transform:translateX(-50%);
   display:flex;align-items:center;gap:8px;z-index:6;pointer-events:none;
