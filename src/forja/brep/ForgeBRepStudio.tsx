@@ -19,7 +19,7 @@
  * Playwright haga clic de forma estable (btn-extrude, input-altura, …).
  */
 
-import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, type ThreeEvent } from '@react-three/fiber';
@@ -64,6 +64,7 @@ import {
   type RevolveAxis,
   type MassProperties,
 } from './occt';
+import { resolveParams, tryEval, type Param, type ResolvedParams } from './expr';
 import {
   buildGearSketch,
   deriveGearGeometry,
@@ -703,6 +704,40 @@ function buildShape(
   }
   if (!shape) throw new Error('El documento no tiene sólido: agrega Extrude o Revolve.');
   return shape;
+}
+
+/**
+ * Aplica los PARÁMETROS: para cada cota ligada (`bindings[opId:field]` o
+ * `bindings[sketch:field]`), evalúa la expresión contra el scope y SOBREESCRIBE
+ * ese campo numérico. Devuelve copias resueltas de ops + sketch (geometría se
+ * construye con los valores calculados). Si una expresión falla, conserva el
+ * valor manual previo. `count` se redondea a entero ≥1.
+ */
+function applyBindings(
+  ops: Op[], sketch: SketchFeature, bindings: Record<string, string>, scope: Record<string, number>,
+): { ops: Op[]; sketch: SketchFeature } {
+  let rsketch = sketch;
+  const sko: Record<string, number> = {};
+  for (const f of ['width', 'height', 'radius', 'legW'] as const) {
+    const e = bindings[`sketch:${f}`];
+    if (e != null) { const v = tryEval(e, scope); if (v != null) sko[f] = v; }
+  }
+  if (Object.keys(sko).length) rsketch = { ...sketch, ...sko } as SketchFeature;
+  let any = false;
+  const rops = ops.map((op) => {
+    let next: Record<string, unknown> | null = null;
+    for (const k in bindings) {
+      const ci = k.indexOf(':'); const oid = k.slice(0, ci); const field = k.slice(ci + 1);
+      if (oid !== op.id) continue;
+      const v = tryEval(bindings[k], scope);
+      if (v == null) continue;
+      next = next ?? { ...op };
+      next[field] = field === 'count' ? Math.max(1, Math.round(v)) : v;
+    }
+    if (next) { any = true; return next as unknown as Op; }
+    return op;
+  });
+  return { ops: any ? rops : ops, sketch: rsketch };
 }
 
 /**
@@ -1497,13 +1532,52 @@ function CadGround({ size }: { size: number }) {
 // ──────────────────────────────────────────────────────────────────
 // Cota numérica con slider (estilo Onshape) + testid
 // ──────────────────────────────────────────────────────────────────
-function Dim({ label, value, unit, onChange, min, max, step, testid }: {
+// ── PARÁMETROS: contexto para que cualquier cota (Dim) se LIGUE a una expresión
+// (p.ej. `ancho/2`). Si una cota tiene `bindKey` y existe binding[bindKey], el
+// slider se sustituye por la expresión + su valor calculado (read-only); la
+// resolución real ocurre en applyBindings antes de buildShape. ──
+interface BindCtxT {
+  scope: Record<string, number>;
+  bindings: Record<string, string>;
+  setBinding: (key: string, expr: string | null) => void;
+}
+const BindContext = createContext<BindCtxT | null>(null);
+
+function Dim({ label, value, unit, onChange, min, max, step, testid, bindKey }: {
   label: string; value: number; unit: string; onChange: (v: number) => void;
-  min: number; max: number; step: number; testid?: string;
+  min: number; max: number; step: number; testid?: string; bindKey?: string;
 }) {
+  const bind = useContext(BindContext);
+  const expr = bindKey && bind ? bind.bindings[bindKey] : undefined;
+  const bound = expr != null;
+  if (bound && bind && bindKey) {
+    const v = tryEval(expr, bind.scope);
+    const ok = v != null;
+    return (
+      <label className={`fb-dim fb-dim-bound ${ok ? '' : 'err'}`}>
+        <span className="fb-dim-label">{label} <span className="fb-fx on">ƒₓ</span></span>
+        <input className="fb-expr" data-testid={testid ? `${testid}-expr` : undefined}
+          value={expr} spellCheck={false}
+          onChange={(e) => bind.setBinding(bindKey, e.target.value)}
+          title="Expresión (usa nombres de parámetros). Vacía/× para desligar." />
+        <span className="fb-dim-val">
+          {ok ? `${v.toFixed(step < 1 ? 2 : 1)}` : '—'}<em>{unit}</em>
+          <button className="fb-fx-x" data-testid={testid ? `${testid}-unbind` : undefined}
+            onClick={(e) => { e.preventDefault(); bind.setBinding(bindKey, null); }} title="Desligar">×</button>
+        </span>
+      </label>
+    );
+  }
   return (
     <label className="fb-dim">
-      <span className="fb-dim-label">{label}</span>
+      <span className="fb-dim-label">
+        {label}
+        {bindKey && bind && (
+          <button className="fb-fx" data-testid={testid ? `${testid}-bind` : undefined}
+            onClick={(e) => { e.preventDefault(); bind.setBinding(bindKey, String(value)); }}
+            title="Ligar a una expresión de parámetros">ƒₓ</button>
+        )}
+      </span>
       <input
         type="range" min={min} max={max} step={step} value={value}
         data-testid={testid}
@@ -1595,6 +1669,37 @@ export default function ForgeBRepStudio() {
   // mitad de la historia viendo el sólido en ese punto (paridad Timeline marker).
   const [rollbackIdx, setRollbackIdx] = useState<number | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; opId: string } | null>(null);
+  // ── PARÁMETROS con ecuaciones (Change Parameters de Fusion) ──
+  const [params, setParams] = useState<Param[]>([]);
+  const [bindings, setBindings] = useState<Record<string, string>>({});
+  const [paramsOpen, setParamsOpen] = useState(false);
+  const resolvedParams = useMemo<ResolvedParams>(() => resolveParams(params), [params]);
+  const setBinding = useCallback((key: string, expr: string | null) => {
+    setBindings((b) => {
+      if (expr == null) { const n = { ...b }; delete n[key]; return n; }
+      return { ...b, [key]: expr };
+    });
+  }, []);
+  const bindCtx = useMemo<BindCtxT>(() => ({ scope: resolvedParams.scope, bindings, setBinding }), [resolvedParams, bindings, setBinding]);
+  // Mutadores de la tabla de parámetros.
+  const addParam = useCallback(() => {
+    setParams((p) => {
+      let n = p.length + 1; let name = `p${n}`;
+      const used = new Set(p.map((x) => x.name));
+      while (used.has(name)) { n++; name = `p${n}`; }
+      return [...p, { id: newId('param'), name, expr: '10' }];
+    });
+  }, []);
+  const updateParam = useCallback((id: string, patch: Partial<Param>) => {
+    setParams((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }, []);
+  const removeParam = useCallback((id: string) => setParams((p) => p.filter((x) => x.id !== id)), []);
+  // Documento RESUELTO: ops + sketch con las cotas ligadas ya evaluadas. Es lo
+  // que se construye (rebuild/FEA/generativo usan esto, no las cotas crudas).
+  const boundDoc = useMemo(
+    () => applyBindings(ops, sketch, bindings, resolvedParams.scope),
+    [ops, sketch, bindings, resolvedParams],
+  );
   // Click-to-place del barreno: tras pulsar B / el botón Hole, el SIGUIENTE clic en
   // una cara fija el centro (x,y) del barreno en ese punto (no en sliders). El ref
   // lo lee el callback de picking sin closure viejo; el estado alimenta el hint.
@@ -1688,9 +1793,10 @@ export default function ForgeBRepStudio() {
           shape = built.compound;
           assemblyResult = built.assembly;
         } else {
+          // PARÁMETROS: construye con las cotas ligadas ya resueltas (boundDoc).
           // ROLLBACK: construye solo las primeras `rollbackIdx` ops (null = todas).
-          const builtOps = rollbackIdx == null ? ops : ops.slice(0, Math.max(1, rollbackIdx));
-          shape = buildShape(oc, sketch, builtOps, edgeAxisRef.current);
+          const builtOps = rollbackIdx == null ? boundDoc.ops : boundDoc.ops.slice(0, Math.max(1, rollbackIdx));
+          shape = buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
         }
 
         const mesh = tessellate(oc, shape, 0.08, 0.3);
@@ -1718,7 +1824,7 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, sketch, ops, material, assembly, rollbackIdx]);
+  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 
@@ -1728,12 +1834,12 @@ export default function ForgeBRepStudio() {
   // las 4 refs. Un efecto observa los cambios y empuja el estado ANTERIOR a
   // `past`; undo/redo restauran un snapshot marcando applyingRef para no
   // re-capturar el propio salto.
-  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState };
+  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState; params: Param[]; bindings: Record<string, string> };
   const histRef = useRef<{ past: DocSnap[]; future: DocSnap[]; last: DocSnap | null }>({ past: [], future: [], last: null });
   const applyingRef = useRef(false);
   const [histVer, setHistVer] = useState(0);
   useEffect(() => {
-    const snap: DocSnap = { sketch, ops, material, assembly };
+    const snap: DocSnap = { sketch, ops, material, assembly, params, bindings };
     const h = histRef.current;
     if (applyingRef.current) { applyingRef.current = false; h.last = snap; return; }
     if (h.last === null) { h.last = snap; return; } // montaje inicial: no es un cambio
@@ -1742,27 +1848,28 @@ export default function ForgeBRepStudio() {
     h.future = [];
     h.last = snap;
     setHistVer((v) => v + 1);
-  }, [sketch, ops, material, assembly]);
+  }, [sketch, ops, material, assembly, params, bindings]);
+  const applySnap = useCallback((s: DocSnap) => {
+    applyingRef.current = true;
+    setSketch(s.sketch); setOps(s.ops); setMaterial(s.material); setAssembly(s.assembly);
+    setParams(s.params); setBindings(s.bindings);
+    setActiveOp((a) => (a && s.ops.some((o) => o.id === a)) ? a : (s.ops[0]?.id ?? null));
+    setHistVer((v) => v + 1);
+  }, []);
   const undo = useCallback(() => {
     const h = histRef.current;
     if (!h.past.length || h.last == null) return;
     const prev = h.past.pop()!;
     h.future.push(h.last);
-    applyingRef.current = true;
-    setSketch(prev.sketch); setOps(prev.ops); setMaterial(prev.material); setAssembly(prev.assembly);
-    setActiveOp((a) => (a && prev.ops.some((o) => o.id === a)) ? a : (prev.ops[0]?.id ?? null));
-    setHistVer((v) => v + 1);
-  }, []);
+    applySnap(prev);
+  }, [applySnap]);
   const redo = useCallback(() => {
     const h = histRef.current;
     if (!h.future.length || h.last == null) return;
     const nxt = h.future.pop()!;
     h.past.push(h.last);
-    applyingRef.current = true;
-    setSketch(nxt.sketch); setOps(nxt.ops); setMaterial(nxt.material); setAssembly(nxt.assembly);
-    setActiveOp((a) => (a && nxt.ops.some((o) => o.id === a)) ? a : (nxt.ops[0]?.id ?? null));
-    setHistVer((v) => v + 1);
-  }, []);
+    applySnap(nxt);
+  }, [applySnap]);
   const canUndo = useMemo(() => { void histVer; return histRef.current.past.length > 0; }, [histVer]);
   const canRedo = useMemo(() => { void histVer; return histRef.current.future.length > 0; }, [histVer]);
   // Ctrl+Z = undo · Ctrl+Y / Ctrl+Shift+Z = redo (ignora si se escribe en un input).
@@ -2014,7 +2121,7 @@ export default function ForgeBRepStudio() {
         const isAssembly = assembly.enabled && sketch.kind === 'gear';
         shape = isAssembly
           ? buildAssembly(oc, sketch.gear, assembly).compound
-          : buildShape(oc, sketch, ops, edgeAxisRef.current);
+          : buildShape(oc, boundDoc.sketch, boundDoc.ops, edgeAxisRef.current);
 
         // Dirección de la carga = normal OCCT de la cara de carga (si es plana);
         // si no hay cara de carga o su normal es degenerada, empuja en −Z (peso).
@@ -2065,7 +2172,7 @@ export default function ForgeBRepStudio() {
         setFeaBusy(false);
       }
     });
-  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops, opCount]);
+  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops, boundDoc, opCount]);
 
   // ── FEA EN VIVO: cambia SOLO la magnitud de la carga reusando la sesión cacheada
   // + warm-start del CG. Es el "análisis mientras diseñas": mover el slider repinta
@@ -2094,7 +2201,7 @@ export default function ForgeBRepStudio() {
       let shape: Shape | null = null;
       try {
         const isAssembly = assembly.enabled && sketch.kind === 'gear';
-        shape = isAssembly ? buildAssembly(oc, sketch.gear, assembly).compound : buildShape(oc, sketch, ops, edgeAxisRef.current);
+        shape = isAssembly ? buildAssembly(oc, sketch.gear, assembly).compound : buildShape(oc, boundDoc.sketch, boundDoc.ops, edgeAxisRef.current);
         const faces = enumerateFaces(oc, shape);
         let dir: [number, number, number] = [0, 0, -1];
         if (Array.isArray(loadDirOverride) && Math.hypot(...loadDirOverride) > 1e-6) dir = loadDirOverride;
@@ -2111,7 +2218,7 @@ export default function ForgeBRepStudio() {
       } catch (e) { setGenErr(String((e as Error)?.message ?? e)); setGenResult(null); }
       finally { shape?.delete?.(); setGenBusy(false); }
     });
-  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops, genVolfrac]);
+  }, [oc, feaFixedFace, feaLoadFace, feaLoadN, material, assembly, sketch, ops, boundDoc, genVolfrac]);
   const clearGenerative = useCallback(() => setGenResult(null), []);
   // EXPORTAR STL (manufacturable): si hay resultado generativo, exporta la
   // SUPERFICIE vaciada (densityToMesh, misma que se ve); si no, el sólido B-Rep
@@ -2301,6 +2408,13 @@ export default function ForgeBRepStudio() {
       redo,
       get canUndo() { return histRef.current.past.length > 0; },
       get canRedo() { return histRef.current.future.length > 0; },
+      // PARÁMETROS — drivers de QA
+      setParamsOpen: (v: boolean) => setParamsOpen(v),
+      addParam, updateParam, removeParam, setBinding,
+      get params() { return params; },
+      get paramScope() { return resolvedParams.scope; },
+      get paramErrors() { return resolvedParams.errors; },
+      get bindings() { return bindings; },
       // colapsar/expandir un panel por id (features|params|faces|analysis) — driver de QA
       toggleCollapse,
       get collapsed() { return collapsed; },
@@ -2478,7 +2592,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, toggleCollapse, exportSTL, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2660,7 +2774,7 @@ export default function ForgeBRepStudio() {
       </div>
 
       {!hideChrome && (
-        <>
+        <BindContext.Provider value={bindCtx}>
           {/* Encabezado */}
           <header className="fb-header">
             <div className="fb-mark">⚒</div>
@@ -2692,6 +2806,9 @@ export default function ForgeBRepStudio() {
             <button data-testid="btn-gear" onClick={applyGear} title="Engrane de involuta (m, Z, α, espesor, barreno)">⚙ Engrane</button>
             <button data-testid="btn-pocket" onClick={() => addOp('pocket')} title="Corte / bolsillo: resta un perfil rect o círculo (ranuras, cajeras)">⊟ Corte</button>
             <button data-testid="btn-pattern" onClick={() => addOp('pattern')} title="Patrón: rectangular / circular / espejo del sólido">⁘ Patrón</button>
+            <span className="fb-tb-sep" />
+            <button data-testid="btn-params" className={paramsOpen ? 'on' : ''}
+              onClick={() => setParamsOpen((v) => !v)} title="Parámetros con ecuaciones (Change Parameters)">ƒₓ Parámetros</button>
             {/* ── Menú ⋮ Opciones (documento): exportar + visibilidad, ya no sueltos ── */}
             <span className="fb-tb-sep" />
             <div className="fb-menu-wrap">
@@ -2833,6 +2950,37 @@ export default function ForgeBRepStudio() {
             );
           })()}
 
+          {/* ── PARÁMETROS con ecuaciones (Change Parameters de Fusion) ── */}
+          {paramsOpen && (
+            <aside className="fb-paramspanel" data-testid="params-panel">
+              <CollapseHead id="paramstbl" title="Parámetros · ecuaciones" collapsed={false}
+                onToggle={() => setParamsOpen(false)} right={<span className="fb-count">{params.length}</span>} />
+              <div className="fb-ptable">
+                <div className="fb-prow head"><span>Nombre</span><span>Expresión</span><span>=</span><span /></div>
+                {params.length === 0 && <div className="fb-phint">Sin parámetros. Crea <b>ancho=40</b>, <b>alto=ancho/2</b>… y liga cotas con <b>ƒₓ</b>.</div>}
+                {params.map((p, i) => {
+                  const err = resolvedParams.errors[p.id];
+                  const val = resolvedParams.values[p.id];
+                  return (
+                    <div className={`fb-prow ${err ? 'err' : ''}`} key={p.id}>
+                      <input className="fb-pname" data-testid={`param-name-${i}`} value={p.name} spellCheck={false}
+                        onChange={(e) => updateParam(p.id, { name: e.target.value })} />
+                      <input className="fb-pexpr" data-testid={`param-expr-${i}`} value={p.expr} spellCheck={false}
+                        onChange={(e) => updateParam(p.id, { expr: e.target.value })} />
+                      <span className="fb-pval" data-testid={`param-val-${i}`} title={err ?? ''}>
+                        {err ? '⚠' : (val != null ? val.toFixed(2) : '—')}
+                      </span>
+                      <button className="fb-prow-x" data-testid={`param-del-${i}`}
+                        onClick={() => removeParam(p.id)} title="Borrar parámetro">×</button>
+                    </div>
+                  );
+                })}
+              </div>
+              <button className="fb-pick-btn" data-testid="btn-add-param" onClick={addParam}>+ Parámetro</button>
+              <p className="fb-hint-txt">Las cotas con <b>ƒₓ</b> leen estos nombres. Cambias uno y el sólido se recalcula. Funciones: sqrt, sin, cos, min, max… consts: pi, e.</p>
+            </aside>
+          )}
+
           {/* ── Lista SIEMPRE disponible de caras (selección determinista) ──
               Independiente de la op activa: clic en una entrada fija
               selectedFaceId (y, si hay Shell activo, togglea su cara abierta).
@@ -2881,7 +3029,7 @@ export default function ForgeBRepStudio() {
                     onClick={applyGear}>Engrane</button>
                 </div>
                 {sketch.kind === 'circle' ? (
-                  <Dim label="Radio" value={sketch.radius} unit="mm" min={3} max={50} step={1} testid="input-radio"
+                  <Dim label="Radio" value={sketch.radius} unit="mm" min={3} max={50} step={1} testid="input-radio" bindKey="sketch:radius"
                     onChange={(v) => setSketch((s) => ({ ...s, radius: v }))} />
                 ) : sketch.kind === 'gear' ? (
                   <>
@@ -3089,9 +3237,9 @@ export default function ForgeBRepStudio() {
                   </>
                 ) : (
                   <>
-                    <Dim label="Ancho" value={sketch.width} unit="mm" min={6} max={100} step={1} testid="input-ancho"
+                    <Dim label="Ancho" value={sketch.width} unit="mm" min={6} max={100} step={1} testid="input-ancho" bindKey="sketch:width"
                       onChange={(v) => setSketch((s) => ({ ...s, width: v }))} />
-                    <Dim label="Alto" value={sketch.height} unit="mm" min={6} max={100} step={1} testid="input-alto"
+                    <Dim label="Alto" value={sketch.height} unit="mm" min={6} max={100} step={1} testid="input-alto" bindKey="sketch:height"
                       onChange={(v) => setSketch((s) => ({ ...s, height: v }))} />
                     {sketch.kind === 'lprofile' && (
                       <Dim label="Ancho de pata" value={sketch.legW} unit="mm" min={3} max={40} step={1} testid="input-pata"
@@ -3105,7 +3253,7 @@ export default function ForgeBRepStudio() {
             {activeOpObj?.type === 'extrude' && (
               <>
                 <div className="fb-panel-title">Extrude · Boss/Base</div>
-                <Dim label="Altura" value={activeOpObj.depth} unit="mm" min={2} max={80} step={1} testid="input-altura"
+                <Dim label="Altura" value={activeOpObj.depth} unit="mm" min={2} max={80} step={1} testid="input-altura" bindKey={`${activeOpObj.id}:depth`}
                   onChange={(v) => updateOp(activeOpObj.id, { depth: v } as Partial<Op>)} />
                 <label className="fb-check">
                   <input type="checkbox" data-testid="chk-simetrico" checked={activeOpObj.symmetric}
@@ -3118,7 +3266,7 @@ export default function ForgeBRepStudio() {
             {activeOpObj?.type === 'hole' && (
               <>
                 <div className="fb-panel-title">Hole · Barreno</div>
-                <Dim label="Diámetro" value={activeOpObj.diameter} unit="mm" min={1} max={40} step={0.5} testid="input-diametro"
+                <Dim label="Diámetro" value={activeOpObj.diameter} unit="mm" min={1} max={40} step={0.5} testid="input-diametro" bindKey={`${activeOpObj.id}:diameter`}
                   onChange={(v) => updateOp(activeOpObj.id, { diameter: v } as Partial<Op>)} />
                 <Dim label="Posición X" value={activeOpObj.x} unit="mm" min={-50} max={50} step={1} testid="input-pos-x"
                   onChange={(v) => updateOp(activeOpObj.id, { x: v } as Partial<Op>)} />
@@ -3260,9 +3408,9 @@ export default function ForgeBRepStudio() {
                     onChange={(v) => updateOp(activeOpObj.id, { diameter: v } as Partial<Op>)} />
                 ) : (
                   <>
-                    <Dim label="Ancho" value={activeOpObj.w} unit="mm" min={1} max={80} step={1} testid="input-pocket-w"
+                    <Dim label="Ancho" value={activeOpObj.w} unit="mm" min={1} max={80} step={1} testid="input-pocket-w" bindKey={`${activeOpObj.id}:w`}
                       onChange={(v) => updateOp(activeOpObj.id, { w: v } as Partial<Op>)} />
-                    <Dim label="Alto" value={activeOpObj.h} unit="mm" min={1} max={80} step={1} testid="input-pocket-h"
+                    <Dim label="Alto" value={activeOpObj.h} unit="mm" min={1} max={80} step={1} testid="input-pocket-h" bindKey={`${activeOpObj.id}:h`}
                       onChange={(v) => updateOp(activeOpObj.id, { h: v } as Partial<Op>)} />
                   </>
                 )}
@@ -3519,7 +3667,7 @@ export default function ForgeBRepStudio() {
               <div className="inv err"><span className="k">Última op</span><span className="v">{opErr}</span></div>
             )}
           </footer>
-        </>
+        </BindContext.Provider>
       )}
 
       <button className="fb-hide" data-testid="btn-hide-chrome" onClick={() => setHideChrome((v) => !v)}>
@@ -3802,6 +3950,38 @@ const CSS = `
   font-family:'JetBrains Mono',monospace;color:${GOLD};margin-top:3px;}
 .fb-dim-val em{font-size:10px;color:${STEEL};font-style:normal;margin-left:3px;}
 .fb-divider{height:1px;background:rgba(159,179,200,0.12);margin:12px 0;}
+
+/* ── ƒₓ: ligar una cota a una expresión de parámetros ── */
+.fb-fx{border:0;background:transparent;color:${STEEL};opacity:.5;font-size:11px;cursor:pointer;
+  margin-left:6px;font-style:italic;padding:0 2px;transition:.1s;}
+.fb-fx:hover{opacity:1;color:${GOLD};}
+.fb-fx.on{opacity:1;color:${GOLD};font-weight:700;}
+.fb-dim-bound .fb-expr{width:100%;background:rgba(0,0,0,0.4);border:1px solid ${GOLD}66;border-radius:6px;
+  color:${GOLD};font-size:12px;font-family:'JetBrains Mono',monospace;padding:5px 7px;outline:none;}
+.fb-dim-bound.err .fb-expr{border-color:#f87171aa;color:#fca5a5;}
+.fb-fx-x{border:0;background:transparent;color:${STEEL};cursor:pointer;font-size:13px;margin-left:6px;padding:0;}
+.fb-fx-x:hover{color:#fca5a5;}
+
+/* ── Panel de PARÁMETROS (flotante junto al árbol) ── */
+.fb-paramspanel{position:absolute;left:238px;top:78px;width:288px;padding:12px;z-index:30;
+  backdrop-filter:blur(18px) saturate(1.25);
+  background:linear-gradient(180deg,rgba(20,27,38,0.82),rgba(11,15,22,0.84));
+  border:1px solid rgba(159,179,200,0.16);border-radius:15px;
+  box-shadow:0 14px 50px rgba(0,0,0,0.6);max-height:60vh;overflow:auto;}
+.fb-ptable{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.fb-prow{display:grid;grid-template-columns:1fr 1.3fr auto auto;gap:5px;align-items:center;}
+.fb-prow.head{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:${STEEL};opacity:.55;
+  padding:0 2px;}
+.fb-prow input{background:rgba(0,0,0,0.34);border:1px solid rgba(159,179,200,0.14);border-radius:6px;
+  color:#eef3f9;font-size:11px;padding:5px 6px;outline:none;font-family:'JetBrains Mono',monospace;min-width:0;}
+.fb-prow input:focus{border-color:${GOLD}88;}
+.fb-prow.err .fb-pexpr{border-color:#f87171aa;}
+.fb-pname{color:${GOLD}!important;font-weight:600;}
+.fb-pval{font-size:11px;font-family:'JetBrains Mono',monospace;color:#8ff0a4;min-width:34px;text-align:right;}
+.fb-prow.err .fb-pval{color:#fbbf24;}
+.fb-prow-x{border:0;background:transparent;color:${STEEL};cursor:pointer;font-size:14px;padding:0 2px;}
+.fb-prow-x:hover{color:#fca5a5;}
+.fb-phint{font-size:10px;color:${STEEL};opacity:.7;line-height:1.5;padding:4px 2px;}
 
 .fb-check{display:flex;align-items:center;gap:8px;font-size:11px;color:${STEEL};margin-bottom:12px;cursor:pointer;}
 .fb-check input{accent-color:${GOLD};}
