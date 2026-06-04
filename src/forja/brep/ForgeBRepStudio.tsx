@@ -37,6 +37,8 @@ import {
   shellSolid,
   revolvePolygon,
   transformShape,
+  mirrorShape,
+  fuse,
   makeCompound,
   makeBox,
   makeCylinder,
@@ -313,7 +315,7 @@ function buildGearSolid(oc: OC, g: GearParams, phaseRad = 0): Shape {
   return gear;
 }
 
-type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve';
+type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve' | 'pattern';
 
 // Campos comunes a TODA op del árbol: nombre editable (rename) + supresión
 // (suppress) temporal. Un op suprimido se conserva en el grafo pero buildShape
@@ -325,7 +327,16 @@ interface FilletOp extends OpBase { type: 'fillet'; radius: number; edges: numbe
 interface ChamferOp extends OpBase { type: 'chamfer'; dist: number; edges: number[]; }
 interface ShellOp extends OpBase { type: 'shell'; thickness: number; faces: number[]; }
 interface RevolveOp extends OpBase { type: 'revolve'; angle: number; axis: 'x' | 'y' | 'z' | 'edge'; }
-type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp;
+// PATRÓN: replica el sólido construido hasta aquí. linear (rejilla dx·dy),
+// circular (count instancias en angleSpan° alrededor de un eje global) o mirror
+// (espejo respecto a un plano principal). Geometría exacta (transform + fuse).
+interface PatternOp extends OpBase {
+  type: 'pattern'; mode: 'linear' | 'circular' | 'mirror';
+  count: number; dx: number; dy: number;            // linear
+  angleSpan: number; axis: 'x' | 'y' | 'z';          // circular
+  plane: 'yz' | 'zx' | 'xy';                          // mirror
+}
+type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp | PatternOp;
 
 interface BuildResult {
   mesh: TessellatedMesh;
@@ -676,10 +687,47 @@ function buildShape(
       shape = chamferEdges(oc, shape, op.dist, op.edges);
     } else if (op.type === 'shell' && shape) {
       shape = shellSolid(oc, shape, op.thickness, op.faces);
+    } else if (op.type === 'pattern' && shape) {
+      shape = applyPattern(oc, shape, op);
     }
   }
   if (!shape) throw new Error('El documento no tiene sólido: agrega Extrude o Revolve.');
   return shape;
+}
+
+/**
+ * PATRÓN: replica `shape` y FUSIONA las instancias (geometría exacta, no malla).
+ *  · linear  — count instancias en la rejilla i·(dx,dy,0).
+ *  · circular — count instancias rotadas alrededor del eje global elegido por el
+ *    origen; paso = 360/count si span≥360 (cierra el círculo sin solape), si no
+ *    span/(count−1). El cuerpo debe estar DESCENTRADO del eje o se encimarían.
+ *  · mirror  — original + espejo respecto a un plano principal (fuse).
+ */
+function applyPattern(oc: OC, shape: Shape, op: PatternOp): Shape {
+  if (op.mode === 'mirror') {
+    const m = mirrorShape(oc, shape, op.plane);
+    const out = fuse(oc, shape, m);
+    m.delete?.();
+    return out;
+  }
+  const n = Math.max(2, Math.min(64, Math.round(op.count)));
+  const axisDir: [number, number, number] = op.axis === 'x' ? [1, 0, 0] : op.axis === 'y' ? [0, 1, 0] : [0, 0, 1];
+  let acc = shape;
+  for (let i = 1; i < n; i++) {
+    let inst: Shape;
+    if (op.mode === 'linear') {
+      inst = transformShape(oc, shape, { translate: [op.dx * i, op.dy * i, 0] });
+    } else {
+      const stepDeg = op.angleSpan >= 359.999 ? op.angleSpan / n : op.angleSpan / (n - 1);
+      const ang = (stepDeg * i) * Math.PI / 180;
+      inst = transformShape(oc, shape, { translate: [0, 0, 0], rotateAngle: ang, rotateAxis: { origin: [0, 0, 0], dir: axisDir } });
+    }
+    const fused = fuse(oc, acc, inst);
+    if (acc !== shape) acc.delete?.();
+    inst.delete?.();
+    acc = fused;
+  }
+  return acc;
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -1756,6 +1804,7 @@ export default function ForgeBRepStudio() {
       case 'chamfer': op = { id: newId('chamfer'), type, dist: 2, edges: [] }; break;
       case 'shell': op = { id: newId('shell'), type, thickness: 2, faces: [] }; break;
       case 'revolve': op = { id: newId('revolve'), type, angle: 360, axis: 'y' }; break;
+      case 'pattern': op = { id: newId('pattern'), type, mode: 'linear', count: 3, dx: 30, dy: 0, angleSpan: 360, axis: 'z', plane: 'yz' }; break;
     }
     setOps((cur) => [...cur, op]);
     setActiveOp(op.id);
@@ -2606,6 +2655,7 @@ export default function ForgeBRepStudio() {
             <button data-testid="btn-shell" onClick={() => addOp('shell')} title="Vaciado / pared delgada">▢ Shell</button>
             <button data-testid="btn-revolve" onClick={() => addOp('revolve')} title="Revolución del perfil">⟳ Revolve</button>
             <button data-testid="btn-gear" onClick={applyGear} title="Engrane de involuta (m, Z, α, espesor, barreno)">⚙ Engrane</button>
+            <button data-testid="btn-pattern" onClick={() => addOp('pattern')} title="Patrón: rectangular / circular / espejo del sólido">⁘ Patrón</button>
             {/* ── Menú ⋮ Opciones (documento): exportar + visibilidad, ya no sueltos ── */}
             <span className="fb-tb-sep" />
             <div className="fb-menu-wrap">
@@ -3156,6 +3206,64 @@ export default function ForgeBRepStudio() {
               </>
             )}
 
+            {activeOpObj?.type === 'pattern' && (
+              <>
+                <div className="fb-panel-title">Patrón · Arreglo</div>
+                <div className="fb-seg">
+                  <button data-testid="pat-linear" className={activeOpObj.mode === 'linear' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { mode: 'linear' } as Partial<Op>)}>Lineal</button>
+                  <button data-testid="pat-circular" className={activeOpObj.mode === 'circular' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { mode: 'circular' } as Partial<Op>)}>Circular</button>
+                  <button data-testid="pat-mirror" className={activeOpObj.mode === 'mirror' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { mode: 'mirror' } as Partial<Op>)}>Espejo</button>
+                </div>
+
+                {activeOpObj.mode === 'linear' && (
+                  <>
+                    <Dim label="Instancias" value={activeOpObj.count} unit="" min={2} max={32} step={1} testid="input-pat-count"
+                      onChange={(v) => updateOp(activeOpObj.id, { count: Math.round(v) } as Partial<Op>)} />
+                    <Dim label="Paso X" value={activeOpObj.dx} unit="mm" min={-100} max={100} step={1} testid="input-pat-dx"
+                      onChange={(v) => updateOp(activeOpObj.id, { dx: v } as Partial<Op>)} />
+                    <Dim label="Paso Y" value={activeOpObj.dy} unit="mm" min={-100} max={100} step={1} testid="input-pat-dy"
+                      onChange={(v) => updateOp(activeOpObj.id, { dy: v } as Partial<Op>)} />
+                    <p className="fb-hint-txt">Rejilla i·(ΔX,ΔY). Vol = N × vol_base (instancias disjuntas).</p>
+                  </>
+                )}
+                {activeOpObj.mode === 'circular' && (
+                  <>
+                    <Dim label="Instancias" value={activeOpObj.count} unit="" min={2} max={48} step={1} testid="input-pat-count"
+                      onChange={(v) => updateOp(activeOpObj.id, { count: Math.round(v) } as Partial<Op>)} />
+                    <Dim label="Ángulo total" value={activeOpObj.angleSpan} unit="°" min={30} max={360} step={5} testid="input-pat-span"
+                      onChange={(v) => updateOp(activeOpObj.id, { angleSpan: v } as Partial<Op>)} />
+                    <div className="fb-sel-head">Eje de giro (global, por el origen)</div>
+                    <div className="fb-seg">
+                      <button data-testid="pat-axis-x" className={activeOpObj.axis === 'x' ? 'on' : ''}
+                        onClick={() => updateOp(activeOpObj.id, { axis: 'x' } as Partial<Op>)}>X</button>
+                      <button data-testid="pat-axis-y" className={activeOpObj.axis === 'y' ? 'on' : ''}
+                        onClick={() => updateOp(activeOpObj.id, { axis: 'y' } as Partial<Op>)}>Y</button>
+                      <button data-testid="pat-axis-z" className={activeOpObj.axis === 'z' ? 'on' : ''}
+                        onClick={() => updateOp(activeOpObj.id, { axis: 'z' } as Partial<Op>)}>Z</button>
+                    </div>
+                    <p className="fb-hint-txt">Bolt-circle alrededor del eje. El cuerpo debe estar DESCENTRADO del eje.</p>
+                  </>
+                )}
+                {activeOpObj.mode === 'mirror' && (
+                  <>
+                    <div className="fb-sel-head">Plano de espejo (por el origen)</div>
+                    <div className="fb-seg">
+                      <button data-testid="pat-plane-yz" className={activeOpObj.plane === 'yz' ? 'on' : ''}
+                        onClick={() => updateOp(activeOpObj.id, { plane: 'yz' } as Partial<Op>)}>YZ (en X)</button>
+                      <button data-testid="pat-plane-zx" className={activeOpObj.plane === 'zx' ? 'on' : ''}
+                        onClick={() => updateOp(activeOpObj.id, { plane: 'zx' } as Partial<Op>)}>ZX (en Y)</button>
+                      <button data-testid="pat-plane-xy" className={activeOpObj.plane === 'xy' ? 'on' : ''}
+                        onClick={() => updateOp(activeOpObj.id, { plane: 'xy' } as Partial<Op>)}>XY (en Z)</button>
+                    </div>
+                    <p className="fb-hint-txt">Refleja el sólido y lo fusiona. Para simetría: cuerpo a un lado del plano.</p>
+                  </>
+                )}
+              </>
+            )}
+
             {activeOpObj && (
               <button className="fb-del-btn" data-testid="btn-del-op" onClick={() => removeOp(activeOpObj.id)}>
                 ✕ Eliminar feature
@@ -3358,10 +3466,10 @@ function Row({ k, v, hi, testid }: { k: string; v: string; hi?: boolean; testid?
 }
 
 function opIcon(t: OpType): string {
-  return { extrude: '⬓', hole: '◎', fillet: '◜', chamfer: '◹', shell: '▢', revolve: '⟳' }[t];
+  return { extrude: '⬓', hole: '◎', fillet: '◜', chamfer: '◹', shell: '▢', revolve: '⟳', pattern: '⁘' }[t];
 }
 function opTitle(t: OpType): string {
-  return { extrude: 'Extrude', hole: 'Hole', fillet: 'Fillet', chamfer: 'Chamfer', shell: 'Shell', revolve: 'Revolve' }[t];
+  return { extrude: 'Extrude', hole: 'Hole', fillet: 'Fillet', chamfer: 'Chamfer', shell: 'Shell', revolve: 'Revolve', pattern: 'Patrón' }[t];
 }
 function opSubtitle(op: Op): string {
   switch (op.type) {
@@ -3371,6 +3479,7 @@ function opSubtitle(op: Op): string {
     case 'chamfer': return `${op.dist.toFixed(1)}mm · ${op.edges.length || 'todas'} aristas`;
     case 'shell': return `pared ${op.thickness.toFixed(1)} · ${op.faces.length} caras`;
     case 'revolve': return `${op.angle.toFixed(0)}°`;
+    case 'pattern': return op.mode === 'linear' ? `lineal ×${op.count}` : op.mode === 'circular' ? `circular ×${op.count} · ${op.angleSpan.toFixed(0)}°` : `espejo ${op.plane.toUpperCase()}`;
   }
 }
 

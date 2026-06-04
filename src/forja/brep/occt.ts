@@ -415,6 +415,22 @@ function applyTrsf(oc: OC, shape: Shape, trsf: Shape): Shape {
 }
 
 /**
+ * ESPEJO de una forma respecto a un plano principal por el origen (gp_Trsf
+ * SetMirror sobre un gp_Ax2 cuyo plano XY es el de simetría). Geometría EXACTA;
+ * la copia reflejada conserva volumen (orientación invertida, sólido válido).
+ * `plane`: 'yz' refleja en X (normal +X), 'zx' en Y, 'xy' en Z.
+ */
+export function mirrorShape(oc: OC, shape: Shape, plane: 'yz' | 'zx' | 'xy'): Shape {
+  const n: [number, number, number] = plane === 'yz' ? [1, 0, 0] : plane === 'zx' ? [0, 1, 0] : [0, 0, 1];
+  const o = new oc.gp_Pnt_3(0, 0, 0);
+  const dir = new oc.gp_Dir_4(n[0], n[1], n[2]);
+  const ax2 = new oc.gp_Ax2_3(o, dir); // plano XY de este Ax2 = plano de espejo (normal n)
+  const trsf = new oc.gp_Trsf_1();
+  trsf.SetMirror_3(ax2);
+  return applyTrsf(oc, shape, trsf);
+}
+
+/**
  * Compone varias formas en UN TopoDS_Compound (ensamble multi-sólido). NO es una
  * booleana: cada componente conserva su identidad y sus caras/aristas (no se
  * fusionan superficies en contacto), justo lo que queremos para un ensamble de
