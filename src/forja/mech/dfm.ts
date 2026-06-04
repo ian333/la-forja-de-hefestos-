@@ -64,6 +64,29 @@ export function classifyOverhangs(mesh: MeshLike, p: PrintProfile): { cls: Uint8
   const bedBand = p.layerHeight * 1.5;
   const warn = Math.sin((p.overhangWarnDeg * Math.PI) / 180);   // umbral de −nz
   const err = Math.sin((p.overhangErrDeg * Math.PI) / 180);
+  // AUTO-PUENTE: una cara que mira abajo NO es voladizo de verdad si hay otra
+  // superficie a ≤ gMax por debajo (la pieza de abajo la soporta — print-in-place).
+  // Grilla XY de centroides de triángulo para buscarlo rápido (sin O(n²)).
+  const sbg = p.layerHeight * 4.5;                              // hueco máx auto-puenteable (PLA ~0.9)
+  const cell = 2.0;
+  const cZ = new Float32Array(nTri), cX = new Float32Array(nTri), cY = new Float32Array(nTri);
+  const grid = new Map<number, number[]>();                    // (ix*73856 + iy) → índices de tri
+  const keyOf = (ix: number, iy: number) => (ix * 73856) ^ (iy * 19349);
+  for (let t = 0; t < nTri; t++) {
+    const a = idx[t * 3] * 3, b = idx[t * 3 + 1] * 3, c = idx[t * 3 + 2] * 3;
+    const x = (pos[a] + pos[b] + pos[c]) / 3, y = (pos[a + 1] + pos[b + 1] + pos[c + 1]) / 3, z = (pos[a + 2] + pos[b + 2] + pos[c + 2]) / 3;
+    cX[t] = x; cY[t] = y; cZ[t] = z;
+    const k = keyOf(Math.floor(x / cell), Math.floor(y / cell));
+    const arr = grid.get(k); if (arr) arr.push(t); else grid.set(k, [t]);
+  }
+  const supportedBelow = (t: number): boolean => {
+    const ix = Math.floor(cX[t] / cell), iy = Math.floor(cY[t] / cell), z = cZ[t];
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      const arr = grid.get(keyOf(ix + dx, iy + dy)); if (!arr) continue;
+      for (const u of arr) { if (u === t) continue; const dz = z - cZ[u]; if (dz > 0.05 && dz <= sbg) return true; }
+    }
+    return false;
+  };
   for (let t = 0; t < nTri; t++) {
     const a = idx[t * 3] * 3, b = idx[t * 3 + 1] * 3, c = idx[t * 3 + 2] * 3;
     const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
@@ -73,6 +96,7 @@ export function classifyOverhangs(mesh: MeshLike, p: PrintProfile): { cls: Uint8
     if (nz >= 0) { cls[t] = 0; continue; }                       // mira arriba/lateral → OK
     const maxZ = Math.max(pos[a + 2], pos[b + 2], pos[c + 2]);
     if (maxZ - minZ <= bedBand) { cls[t] = 0; continue; }        // pegado al plato → OK
+    if (supportedBelow(t)) { cls[t] = 0; continue; }             // AUTO-PUENTE: pieza debajo → OK
     const s = -nz;                                                // cuánto "mira abajo" (sin del voladizo)
     cls[t] = s >= err ? 2 : s >= warn ? 1 : 0;
   }
