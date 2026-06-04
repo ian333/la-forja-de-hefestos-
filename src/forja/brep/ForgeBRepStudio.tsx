@@ -54,6 +54,7 @@ import {
   enumerateEdges,
   enumerateEdgesGeom,
   exportSTEP,
+  importSTEP,
   type OC,
   type Pt2,
   type Shape,
@@ -1627,6 +1628,7 @@ interface DocState {
   version: number; name: string;
   sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS;
   assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[];
+  importedStep?: string | null;   // STEP importado (reemplaza la pieza principal)
 }
 const DEFAULT_SKETCH: SketchFeature = {
   id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
@@ -1744,6 +1746,10 @@ export default function ForgeBRepStudio() {
   const removeComponent = useCallback((id: string) => {
     setComponents((cur) => cur.filter((c) => c.id !== id)); setActiveComp(null);
   }, []);
+  // ── IMPORTAR STEP: si está, REEMPLAZA la pieza principal (sketch/ops) por el
+  // sólido importado (step.parts u otra fuente open). El texto STEP se guarda en
+  // el DocState → se persiste en la biblioteca como cualquier pieza. ──
+  const [importedStep, setImportedStep] = useState<string | null>(null);
   // ── GUARDAR / CARGAR (biblioteca de piezas) ──
   const [docName, setDocName] = useState('Pieza 1');
   const [libNames, setLibNames] = useState<string[]>([]);
@@ -1818,6 +1824,7 @@ export default function ForgeBRepStudio() {
   const [selectedFaceId, setSelectedFaceId] = useState<number | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<number | null>(null);
   const stepBlobUrl = useRef<string | null>(null);
+  const stepTextRef = useRef<string | null>(null);   // STEP del sólido actual (driver QA)
   // Eje de revolución resuelto desde la arista RECTA clicada (su EdgeGeom.axis).
   // Un ref para que `rebuild` lo lea SIN re-crear el callback en cada clic.
   const edgeAxisRef = useRef<RevolveAxis | null>(null);
@@ -1872,9 +1879,13 @@ export default function ForgeBRepStudio() {
           // ROLLBACK: construye solo las primeras `rollbackIdx` ops (null = todas).
           const builtOps = rollbackIdx == null ? boundDoc.ops : boundDoc.ops.slice(0, Math.max(1, rollbackIdx));
           // ENSAMBLE: pieza principal (si construye) + componentes → compound.
+          // Si hay un STEP importado, ÉSE es la pieza principal (ignora sketch/ops).
           let mainShape: Shape | null = null;
-          try { mainShape = buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current); }
-          catch (e) { if (components.length === 0) throw e; } // sin componentes, propaga
+          try {
+            mainShape = importedStep
+              ? importSTEP(oc, importedStep)
+              : buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
+          } catch (e) { if (components.length === 0) throw e; } // sin componentes, propaga
           const parts: Shape[] = [];
           if (mainShape) parts.push(mainShape);
           for (const c of components) parts.push(buildComponent(oc, c));
@@ -1891,6 +1902,7 @@ export default function ForgeBRepStudio() {
         const edges = enumerateEdges(oc, shape);
         const edgeGeoms = enumerateEdgesGeom(oc, shape);
         const step = exportSTEP(oc, shape, 'forja-part.step');
+        stepTextRef.current = step;
 
         if (stepBlobUrl.current) URL.revokeObjectURL(stepBlobUrl.current);
         stepBlobUrl.current = URL.createObjectURL(
@@ -1907,7 +1919,7 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components]);
+  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components, importedStep]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 
@@ -1970,8 +1982,8 @@ export default function ForgeBRepStudio() {
 
   // ── GUARDAR / CARGAR: serializa TODO el documento y lo restaura ──
   const serializeDoc = useCallback((): DocState => ({
-    version: 1, name: docName, sketch, ops, material, assembly, params, bindings, components,
-  }), [docName, sketch, ops, material, assembly, params, bindings, components]);
+    version: 1, name: docName, sketch, ops, material, assembly, params, bindings, components, importedStep,
+  }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep]);
   const loadDoc = useCallback((d: Partial<DocState>) => {
     // Restaura el estado y REINICIA el historial (no se deshace hacia otra pieza).
     histRef.current = { past: [], future: [], last: null };
@@ -1982,6 +1994,7 @@ export default function ForgeBRepStudio() {
     setMaterial(d.material ?? 'alu');
     setAssembly(d.assembly ?? { ...ASSEMBLY_DEFAULTS });
     setParams(d.params ?? []); setBindings(d.bindings ?? {}); setComponents(d.components ?? []);
+    setImportedStep(d.importedStep ?? null);
     setActiveOp(nops[0]?.id ?? null); setActiveComp(null); setRollbackIdx(null);
     if (d.name) setDocName(d.name);
     setHistVer((v) => v + 1);
@@ -2005,6 +2018,17 @@ export default function ForgeBRepStudio() {
     reader.onload = () => { try { loadDoc(JSON.parse(String(reader.result)) as DocState); } catch { /* json inválido */ } };
     reader.readAsText(file);
   }, [loadDoc]);
+  // ── IMPORTAR STEP (step.parts u otra fuente open) → pieza principal ──
+  const importStepText = useCallback((text: string, name?: string) => {
+    setImportedStep(text);
+    if (name) setDocName(name.replace(/\.(stp|step)$/i, ''));
+  }, []);
+  const importStepFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => importStepText(String(reader.result), file.name);
+    reader.readAsText(file);
+  }, [importStepText]);
+  const clearImportedStep = useCallback(() => setImportedStep(null), []);
 
   // Al cambiar la ESTRUCTURA del documento (nº de ops) la topología cambia y los
   // índices de cara/arista dejan de ser válidos: limpia la selección puntual.
@@ -2572,6 +2596,10 @@ export default function ForgeBRepStudio() {
       setDocName: (n: string) => setDocName(n),
       serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary,
       get libNames() { return Object.keys(readLib()).sort(); },
+      // IMPORTAR STEP — driver de QA
+      importStepText, clearImportedStep,
+      get importedStep() { return importedStep != null; },
+      get stepText() { return stepTextRef.current; },
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
@@ -2742,7 +2770,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2929,7 +2957,8 @@ export default function ForgeBRepStudio() {
           <header className="fb-header">
             <div className="fb-mark">⚒</div>
             <div className="fb-titles">
-              <h1 data-testid="doc-title">{docName} <span className="fb-doc-studio">· Part Studio</span></h1>
+              <h1 data-testid="doc-title">{docName} <span className="fb-doc-studio">· Part Studio</span>
+                {importedStep && <span className="fb-imported-tag" data-testid="imported-tag">STEP importado</span>}</h1>
               <p>La Forja · kernel B-Rep exacto (OpenCASCADE)</p>
             </div>
             <div className={`fb-kernel ${oc ? 'on' : 'off'}`} data-testid="kernel-status">
@@ -2985,6 +3014,15 @@ export default function ForgeBRepStudio() {
                       <input type="file" accept=".json,application/json" data-testid="input-import" style={{ display: 'none' }}
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) { importDocFile(f); setOptionsOpen(false); } }} />
                     </label>
+                    <label className="fb-menu-link" role="menuitem" style={{ cursor: 'pointer' }}>
+                      🧩  Importar STEP <em>(step.parts, robots…)</em>
+                      <input type="file" accept=".step,.stp,application/step,application/STEP" data-testid="input-import-step" style={{ display: 'none' }}
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) { importStepFile(f); setOptionsOpen(false); } }} />
+                    </label>
+                    {importedStep && (
+                      <button data-testid="menu-clear-step" role="menuitem" className="danger"
+                        onClick={() => { clearImportedStep(); setOptionsOpen(false); }}>✕  Quitar STEP importado</button>
+                    )}
                     {libNames.length > 0 && (
                       <>
                         <div className="fb-menu-sec">Abrir <em>(biblioteca)</em></div>
@@ -4131,6 +4169,9 @@ const CSS = `
 .fb-lib-del{border:0;background:transparent;color:${STEEL};cursor:pointer;font-size:12px;padding:4px 6px;border-radius:6px;}
 .fb-lib-del:hover{background:rgba(248,113,113,0.18);color:#fca5a5;}
 .fb-doc-studio{font-weight:400;opacity:.55;}
+.fb-menu button.danger:hover{background:rgba(248,113,113,0.16);color:#fca5a5;}
+.fb-imported-tag{font-size:9px;font-weight:700;color:#1a1206;background:${GOLD};
+  border-radius:5px;padding:2px 6px;margin-left:8px;letter-spacing:.4px;}
 
 .fb-header{top:18px;left:18px;display:flex;align-items:center;gap:14px;padding:11px 16px;}
 .fb-mark{font-size:22px;color:${GOLD};filter:drop-shadow(0 0 8px ${GOLD}88);}
