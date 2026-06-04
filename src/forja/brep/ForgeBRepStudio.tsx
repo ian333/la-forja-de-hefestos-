@@ -356,6 +356,7 @@ interface Component {
   w: number; d: number; h: number;     // bloque (h también = altura del cilindro)
   r: number;                            // cilindro (radio)
   x: number; y: number; z: number;     // posición del CENTRO (mm)
+  rz?: number;                          // giro alrededor de Z (grados) — poses planas
 }
 
 interface BuildResult {
@@ -781,16 +782,21 @@ function applyPocket(oc: OC, shape: Shape, op: PocketOp, zTop: number): Shape {
  * Geometría exacta; cada componente conserva su identidad en el compound.
  */
 function buildComponent(oc: OC, c: Component): Shape {
+  const rz = ((c.rz ?? 0) * Math.PI) / 180;
+  const zAxis = { origin: [0, 0, 0] as [number, number, number], dir: [0, 0, 1] as [number, number, number] };
   if (c.kind === 'cyl') {
-    // cilindro centrado en z (origen base en −h/2, eje +Z), luego a su posición
+    // cilindro centrado en z (origen base en −h/2, eje +Z) → gira en Z → a su posición
     const cyl = makeCylinder(oc, c.r, c.h, { origin: [0, 0, -c.h / 2], dir: [0, 0, 1] });
-    const t = transformShape(oc, cyl, { translate: [c.x, c.y, c.z] });
+    const t = transformShape(oc, cyl, { translate: [c.x, c.y, c.z], rotateAngle: rz, rotateAxis: zAxis });
     cyl.delete?.();
     return t;
   }
-  const b = makeBox(oc, c.w, c.d, c.h); // nace en el origen → centrar en (x,y,z)
-  const t = transformShape(oc, b, { translate: [c.x - c.w / 2, c.y - c.d / 2, c.z - c.h / 2] });
-  b.delete?.();
+  // bloque: nace en el origen → centrar en el origen → girar en Z → trasladar a (x,y,z)
+  const raw = makeBox(oc, c.w, c.d, c.h);
+  const centered = transformShape(oc, raw, { translate: [-c.w / 2, -c.d / 2, -c.h / 2] });
+  raw.delete?.();
+  const t = transformShape(oc, centered, { translate: [c.x, c.y, c.z], rotateAngle: rz, rotateAxis: zAxis });
+  centered.delete?.();
   return t;
 }
 
@@ -1736,7 +1742,7 @@ export default function ForgeBRepStudio() {
   const [components, setComponents] = useState<Component[]>([]);
   const [activeComp, setActiveComp] = useState<string | null>(null);
   const addComponent = useCallback((kind: 'box' | 'cyl') => {
-    const c: Component = { id: newId('comp'), name: kind === 'box' ? 'Bloque' : 'Cilindro', kind, w: 60, d: 60, h: 60, r: 25, x: 0, y: 0, z: 0 };
+    const c: Component = { id: newId('comp'), name: kind === 'box' ? 'Bloque' : 'Cilindro', kind, w: 60, d: 60, h: 60, r: 25, x: 0, y: 0, z: 0, rz: 0 };
     setComponents((cur) => [...cur, c]);
     setActiveComp(c.id); setActiveOp(null);
   }, []);
@@ -3295,6 +3301,8 @@ export default function ForgeBRepStudio() {
                   onChange={(v) => updateComponent(activeCompObj.id, { y: v })} />
                 <Dim label="Z" value={activeCompObj.z} unit="mm" min={-1500} max={1500} step={1} testid="input-comp-z"
                   onChange={(v) => updateComponent(activeCompObj.id, { z: v })} />
+                <Dim label="Giro Z" value={activeCompObj.rz ?? 0} unit="°" min={-180} max={180} step={1} testid="input-comp-rz"
+                  onChange={(v) => updateComponent(activeCompObj.id, { rz: v })} />
                 <button className="fb-del-btn" data-testid="btn-del-comp" onClick={() => removeComponent(activeCompObj.id)}>
                   ✕ Eliminar componente
                 </button>
