@@ -65,6 +65,7 @@ import {
   type MassProperties,
 } from './occt';
 import { resolveParams, tryEval, type Param, type ResolvedParams } from './expr';
+import { generateDrawing } from './drawing';
 import {
   buildGearSketch,
   deriveGearGeometry,
@@ -2231,6 +2232,22 @@ export default function ForgeBRepStudio() {
       triggerDownload(meshToStlBlob(result.mesh.positions, result.mesh.indices), 'forja-part.stl');
     }
   }, [genResult, genThreshold, result]);
+  // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
+  const [planoSvg, setPlanoSvg] = useState<string | null>(null);
+  const genPlano = useCallback(() => {
+    if (!result) return;
+    const draw = generateDrawing(
+      {
+        positions: result.mesh.positions, indices: result.mesh.indices,
+        edges: result.edgeGeoms.map((g) => ({ polyline: g.polyline, kind: g.kind })),
+      },
+      { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm' },
+    );
+    setPlanoSvg(draw.svg);
+  }, [result, material]);
+  const downloadPlano = useCallback(() => {
+    if (planoSvg) triggerDownload(new Blob([planoSvg], { type: 'image/svg+xml' }), 'forja-plano.svg');
+  }, [planoSvg]);
   const genVoidPct = useMemo(() => {
     if (!genResult) return 0;
     let v = 0; for (let e = 0; e < genResult.xPhys.length; e++) if (genResult.xPhys[e] < 0.1) v++;
@@ -2422,6 +2439,9 @@ export default function ForgeBRepStudio() {
       setOptionsOpen: (v: boolean) => setOptionsOpen(v),
       get optionsOpen() { return optionsOpen; },
       exportSTL,
+      // MOTOR DE PLANOS — driver de QA
+      genPlano,
+      get planoSvg() { return planoSvg; },
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
@@ -2592,7 +2612,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2809,6 +2829,8 @@ export default function ForgeBRepStudio() {
             <span className="fb-tb-sep" />
             <button data-testid="btn-params" className={paramsOpen ? 'on' : ''}
               onClick={() => setParamsOpen((v) => !v)} title="Parámetros con ecuaciones (Change Parameters)">ƒₓ Parámetros</button>
+            <button data-testid="btn-plano" onClick={genPlano} disabled={!result}
+              title="Plano de taller: 3 vistas ortográficas acotadas (líneas ocultas) → SVG">📐 Plano</button>
             {/* ── Menú ⋮ Opciones (documento): exportar + visibilidad, ya no sueltos ── */}
             <span className="fb-tb-sep" />
             <div className="fb-menu-wrap">
@@ -3670,6 +3692,22 @@ export default function ForgeBRepStudio() {
         </BindContext.Provider>
       )}
 
+      {/* ── MOTOR DE PLANOS: overlay con el dibujo 2D generado ── */}
+      {planoSvg && (
+        <div className="fb-plano-overlay" data-testid="plano-overlay" onClick={() => setPlanoSvg(null)}>
+          <div className="fb-plano-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="fb-plano-bar">
+              <span>📐 Plano de taller — 3 vistas · líneas ocultas · cotas</span>
+              <div className="fb-plano-actions">
+                <button data-testid="btn-plano-download" onClick={downloadPlano}>⬇ Descargar SVG</button>
+                <button data-testid="btn-plano-close" onClick={() => setPlanoSvg(null)}>✕ Cerrar</button>
+              </div>
+            </div>
+            <div className="fb-plano-svg" data-testid="plano-svg" dangerouslySetInnerHTML={{ __html: planoSvg }} />
+          </div>
+        </div>
+      )}
+
       <button className="fb-hide" data-testid="btn-hide-chrome" onClick={() => setHideChrome((v) => !v)}>
         {hideChrome ? '◳' : '◲'}
       </button>
@@ -3982,6 +4020,22 @@ const CSS = `
 .fb-prow-x{border:0;background:transparent;color:${STEEL};cursor:pointer;font-size:14px;padding:0 2px;}
 .fb-prow-x:hover{color:#fca5a5;}
 .fb-phint{font-size:10px;color:${STEEL};opacity:.7;line-height:1.5;padding:4px 2px;}
+
+/* ── Overlay del MOTOR DE PLANOS ── */
+.fb-plano-overlay{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;
+  background:rgba(6,9,14,0.82);backdrop-filter:blur(6px);}
+.fb-plano-sheet{width:min(92vw,1180px);max-height:92vh;display:flex;flex-direction:column;
+  background:#0f141c;border:1px solid rgba(159,179,200,0.2);border-radius:14px;overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,0.7);}
+.fb-plano-bar{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;
+  background:linear-gradient(180deg,rgba(20,27,38,0.9),rgba(11,15,22,0.9));
+  border-bottom:1px solid rgba(159,179,200,0.14);font-size:13px;color:#e9eef5;font-weight:600;}
+.fb-plano-actions{display:flex;gap:8px;}
+.fb-plano-actions button{border:1px solid rgba(159,179,200,0.2);background:rgba(255,255,255,0.05);
+  color:#e9eef5;font-size:12px;padding:7px 13px;border-radius:8px;cursor:pointer;font-weight:600;transition:.12s;}
+.fb-plano-actions button:hover{border-color:${GOLD}77;background:${GOLD}18;color:${GOLD};}
+.fb-plano-svg{flex:1;overflow:auto;padding:18px;background:#3a3f47;display:flex;align-items:flex-start;justify-content:center;}
+.fb-plano-svg svg{width:100%;height:auto;max-width:1100px;box-shadow:0 8px 30px rgba(0,0,0,0.5);}
 
 .fb-check{display:flex;align-items:center;gap:8px;font-size:11px;color:${STEEL};margin-bottom:12px;cursor:pointer;}
 .fb-check input{accent-color:${GOLD};}
