@@ -315,7 +315,7 @@ function buildGearSolid(oc: OC, g: GearParams, phaseRad = 0): Shape {
   return gear;
 }
 
-type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve' | 'pattern';
+type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve' | 'pattern' | 'pocket';
 
 // Campos comunes a TODA op del árbol: nombre editable (rename) + supresión
 // (suppress) temporal. Un op suprimido se conserva en el grafo pero buildShape
@@ -336,7 +336,14 @@ interface PatternOp extends OpBase {
   angleSpan: number; axis: 'x' | 'y' | 'z';          // circular
   plane: 'yz' | 'zx' | 'xy';                          // mirror
 }
-type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp | PatternOp;
+// CORTE / BOLSILLO: extrude-cut de un perfil simple (rect o círculo) a (x,y) sobre
+// la cara superior, bajando depth (o pasante). Resta del sólido (boolean cut).
+interface PocketOp extends OpBase {
+  type: 'pocket'; profile: 'rect' | 'circle';
+  x: number; y: number; w: number; h: number; diameter: number;
+  depth: number; through: boolean;
+}
+type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp | PatternOp | PocketOp;
 
 interface BuildResult {
   mesh: TessellatedMesh;
@@ -689,10 +696,37 @@ function buildShape(
       shape = shellSolid(oc, shape, op.thickness, op.faces);
     } else if (op.type === 'pattern' && shape) {
       shape = applyPattern(oc, shape, op);
+    } else if (op.type === 'pocket' && shape) {
+      const ex = ops.find((o) => o.type === 'extrude') as ExtrudeOp | undefined;
+      shape = applyPocket(oc, shape, op, ex?.depth ?? 12);
     }
   }
   if (!shape) throw new Error('El documento no tiene sólido: agrega Extrude o Revolve.');
   return shape;
+}
+
+/**
+ * CORTE / BOLSILLO: resta del sólido un prisma (rect) o cilindro (círculo)
+ * posicionado en (x,y) sobre la cara superior (z=zTop), bajando `depth` (o
+ * pasante: atraviesa todo el espesor). Geometría exacta (boolean cut).
+ */
+function applyPocket(oc: OC, shape: Shape, op: PocketOp, zTop: number): Shape {
+  const margin = 1e-3;
+  const span = op.through ? zTop + 2 * margin : op.depth;
+  const top = zTop + margin;
+  let tool: Shape;
+  if (op.profile === 'circle') {
+    tool = makeCylinder(oc, op.diameter / 2, span, { origin: [op.x, op.y, top], dir: [0, 0, -1] });
+  } else {
+    // makeBox nace en el origen (0,0,0)→(w,h,span); lo centramos en (x,y) y
+    // ponemos su cara superior en `top` (baja span hacia −Z).
+    const b = makeBox(oc, op.w, op.h, span);
+    tool = transformShape(oc, b, { translate: [op.x - op.w / 2, op.y - op.h / 2, top - span] });
+    b.delete?.();
+  }
+  const out = cut(oc, shape, tool);
+  tool.delete?.();
+  return out;
 }
 
 /**
@@ -1805,6 +1839,7 @@ export default function ForgeBRepStudio() {
       case 'shell': op = { id: newId('shell'), type, thickness: 2, faces: [] }; break;
       case 'revolve': op = { id: newId('revolve'), type, angle: 360, axis: 'y' }; break;
       case 'pattern': op = { id: newId('pattern'), type, mode: 'linear', count: 3, dx: 30, dy: 0, angleSpan: 360, axis: 'z', plane: 'yz' }; break;
+      case 'pocket': op = { id: newId('pocket'), type, profile: 'rect', x: 0, y: 0, w: 12, h: 8, diameter: 8, depth: ex, through: true }; break;
     }
     setOps((cur) => [...cur, op]);
     setActiveOp(op.id);
@@ -2655,6 +2690,7 @@ export default function ForgeBRepStudio() {
             <button data-testid="btn-shell" onClick={() => addOp('shell')} title="Vaciado / pared delgada">▢ Shell</button>
             <button data-testid="btn-revolve" onClick={() => addOp('revolve')} title="Revolución del perfil">⟳ Revolve</button>
             <button data-testid="btn-gear" onClick={applyGear} title="Engrane de involuta (m, Z, α, espesor, barreno)">⚙ Engrane</button>
+            <button data-testid="btn-pocket" onClick={() => addOp('pocket')} title="Corte / bolsillo: resta un perfil rect o círculo (ranuras, cajeras)">⊟ Corte</button>
             <button data-testid="btn-pattern" onClick={() => addOp('pattern')} title="Patrón: rectangular / circular / espejo del sólido">⁘ Patrón</button>
             {/* ── Menú ⋮ Opciones (documento): exportar + visibilidad, ya no sueltos ── */}
             <span className="fb-tb-sep" />
@@ -3206,6 +3242,43 @@ export default function ForgeBRepStudio() {
               </>
             )}
 
+            {activeOpObj?.type === 'pocket' && (
+              <>
+                <div className="fb-panel-title">Corte · Bolsillo</div>
+                <div className="fb-seg">
+                  <button data-testid="pocket-rect" className={activeOpObj.profile === 'rect' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { profile: 'rect' } as Partial<Op>)}>Rect</button>
+                  <button data-testid="pocket-circle" className={activeOpObj.profile === 'circle' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { profile: 'circle' } as Partial<Op>)}>Círculo</button>
+                </div>
+                <Dim label="Posición X" value={activeOpObj.x} unit="mm" min={-50} max={50} step={1} testid="input-pocket-x"
+                  onChange={(v) => updateOp(activeOpObj.id, { x: v } as Partial<Op>)} />
+                <Dim label="Posición Y" value={activeOpObj.y} unit="mm" min={-50} max={50} step={1} testid="input-pocket-y"
+                  onChange={(v) => updateOp(activeOpObj.id, { y: v } as Partial<Op>)} />
+                {activeOpObj.profile === 'circle' ? (
+                  <Dim label="Diámetro" value={activeOpObj.diameter} unit="mm" min={1} max={60} step={0.5} testid="input-pocket-dia"
+                    onChange={(v) => updateOp(activeOpObj.id, { diameter: v } as Partial<Op>)} />
+                ) : (
+                  <>
+                    <Dim label="Ancho" value={activeOpObj.w} unit="mm" min={1} max={80} step={1} testid="input-pocket-w"
+                      onChange={(v) => updateOp(activeOpObj.id, { w: v } as Partial<Op>)} />
+                    <Dim label="Alto" value={activeOpObj.h} unit="mm" min={1} max={80} step={1} testid="input-pocket-h"
+                      onChange={(v) => updateOp(activeOpObj.id, { h: v } as Partial<Op>)} />
+                  </>
+                )}
+                <label className="fb-check">
+                  <input type="checkbox" data-testid="chk-pocket-through" checked={activeOpObj.through}
+                    onChange={(e) => updateOp(activeOpObj.id, { through: e.target.checked } as Partial<Op>)} />
+                  <span>Pasante (atraviesa todo)</span>
+                </label>
+                {!activeOpObj.through && (
+                  <Dim label="Profundidad" value={activeOpObj.depth} unit="mm" min={1} max={80} step={1} testid="input-pocket-depth"
+                    onChange={(v) => updateOp(activeOpObj.id, { depth: v } as Partial<Op>)} />
+                )}
+                <p className="fb-hint-txt">Resta el perfil del sólido (cut exacto). Ranuras, cajeras, chaveteros.</p>
+              </>
+            )}
+
             {activeOpObj?.type === 'pattern' && (
               <>
                 <div className="fb-panel-title">Patrón · Arreglo</div>
@@ -3466,10 +3539,10 @@ function Row({ k, v, hi, testid }: { k: string; v: string; hi?: boolean; testid?
 }
 
 function opIcon(t: OpType): string {
-  return { extrude: '⬓', hole: '◎', fillet: '◜', chamfer: '◹', shell: '▢', revolve: '⟳', pattern: '⁘' }[t];
+  return { extrude: '⬓', hole: '◎', fillet: '◜', chamfer: '◹', shell: '▢', revolve: '⟳', pattern: '⁘', pocket: '⊟' }[t];
 }
 function opTitle(t: OpType): string {
-  return { extrude: 'Extrude', hole: 'Hole', fillet: 'Fillet', chamfer: 'Chamfer', shell: 'Shell', revolve: 'Revolve', pattern: 'Patrón' }[t];
+  return { extrude: 'Extrude', hole: 'Hole', fillet: 'Fillet', chamfer: 'Chamfer', shell: 'Shell', revolve: 'Revolve', pattern: 'Patrón', pocket: 'Corte' }[t];
 }
 function opSubtitle(op: Op): string {
   switch (op.type) {
@@ -3480,6 +3553,7 @@ function opSubtitle(op: Op): string {
     case 'shell': return `pared ${op.thickness.toFixed(1)} · ${op.faces.length} caras`;
     case 'revolve': return `${op.angle.toFixed(0)}°`;
     case 'pattern': return op.mode === 'linear' ? `lineal ×${op.count}` : op.mode === 'circular' ? `circular ×${op.count} · ${op.angleSpan.toFixed(0)}°` : `espejo ${op.plane.toUpperCase()}`;
+    case 'pocket': return op.profile === 'circle' ? `⌀${op.diameter.toFixed(1)} · ${op.through ? 'pasante' : `${op.depth.toFixed(0)}mm`}` : `${op.w.toFixed(0)}×${op.h.toFixed(0)} · ${op.through ? 'pasante' : `${op.depth.toFixed(0)}mm`}`;
   }
 }
 
