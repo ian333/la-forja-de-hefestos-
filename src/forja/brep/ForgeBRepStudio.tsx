@@ -1326,7 +1326,9 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1,
 }
 
 // Colores por defecto de cada cuerpo de la caja (cada cosa distinta, como Fusion).
-const GB_DISC_RAMP = ['#e9ddc2', '#d9c9a0', '#e6c98e', '#cdb98c', '#ead0ad', '#d4c59a', '#e0cba0', '#cfbf95', '#e8d4ab', '#d8c7a6'];
+// discos en colores VÍVIDOS y DISTINTOS (para contarlos/separarlos de un vistazo —
+// el crema sutil no se distinguía, lo marcó la revisión de usabilidad).
+const GB_DISC_RAMP = ['#ef7d3a', '#16a085', '#e84393', '#8e5cd9', '#12a8c0', '#f1c40f', '#5b6cf0', '#e74c3c', '#2ecc71', '#d96fb0'];
 function gbDefaultColor(key: string): string {
   if (key === 'hembra') return '#5a6576';
   if (key === 'eje') return '#caa15e';
@@ -2935,7 +2937,10 @@ export default function ForgeBRepStudio() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oc, gbMotion, sketch.kind, gbSig]);
   // ── CUERPOS de la caja: separados, con color, OCULTABLES (como Fusion) ──
-  const [gbHidden, setGbHidden] = useState<Record<string, boolean>>({});
+  // Por defecto la HEMBRA arranca OCULTA → ves el mecanismo de colores adentro al
+  // instante (la hembra translúcida "lechosa" lavaba los colores; mejor mostrarla
+  // con un clic). 👁 "mostrar todos" la trae de vuelta.
+  const [gbHidden, setGbHidden] = useState<Record<string, boolean>>({ hembra: true });
   const [gbColors, setGbColors] = useState<Record<string, string>>({});
   const [gbBodyGeos, setGbBodyGeos] = useState<{ key: string; name: string; geo: PartGeo }[] | null>(null);
   useEffect(() => {
