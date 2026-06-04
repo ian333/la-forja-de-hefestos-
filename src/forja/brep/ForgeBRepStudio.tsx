@@ -347,6 +347,16 @@ interface PocketOp extends OpBase {
 }
 type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp | PatternOp | PocketOp;
 
+// ── ENSAMBLE: un COMPONENTE primitivo (bloque o cilindro) posicionado en 3D.
+// Varios componentes + la pieza principal se combinan en un compound (sin soldar)
+// → permite reconstruir una MÁQUINA pieza a pieza a medidas reales. ──
+interface Component {
+  id: string; name: string; kind: 'box' | 'cyl';
+  w: number; d: number; h: number;     // bloque (h también = altura del cilindro)
+  r: number;                            // cilindro (radio)
+  x: number; y: number; z: number;     // posición del CENTRO (mm)
+}
+
 interface BuildResult {
   mesh: TessellatedMesh;
   topo: { faces: number; edges: number; vertices: number; euler: number };
@@ -763,6 +773,24 @@ function applyPocket(oc: OC, shape: Shape, op: PocketOp, zTop: number): Shape {
   const out = cut(oc, shape, tool);
   tool.delete?.();
   return out;
+}
+
+/**
+ * ENSAMBLE: construye un COMPONENTE (bloque o cilindro) centrado en su (x,y,z).
+ * Geometría exacta; cada componente conserva su identidad en el compound.
+ */
+function buildComponent(oc: OC, c: Component): Shape {
+  if (c.kind === 'cyl') {
+    // cilindro centrado en z (origen base en −h/2, eje +Z), luego a su posición
+    const cyl = makeCylinder(oc, c.r, c.h, { origin: [0, 0, -c.h / 2], dir: [0, 0, 1] });
+    const t = transformShape(oc, cyl, { translate: [c.x, c.y, c.z] });
+    cyl.delete?.();
+    return t;
+  }
+  const b = makeBox(oc, c.w, c.d, c.h); // nace en el origen → centrar en (x,y,z)
+  const t = transformShape(oc, b, { translate: [c.x - c.w / 2, c.y - c.d / 2, c.z - c.h / 2] });
+  b.delete?.();
+  return t;
 }
 
 /**
@@ -1674,6 +1702,20 @@ export default function ForgeBRepStudio() {
   const [params, setParams] = useState<Param[]>([]);
   const [bindings, setBindings] = useState<Record<string, string>>({});
   const [paramsOpen, setParamsOpen] = useState(false);
+  // ── ENSAMBLE: componentes posicionados (bloques/cilindros) ──
+  const [components, setComponents] = useState<Component[]>([]);
+  const [activeComp, setActiveComp] = useState<string | null>(null);
+  const addComponent = useCallback((kind: 'box' | 'cyl') => {
+    const c: Component = { id: newId('comp'), name: kind === 'box' ? 'Bloque' : 'Cilindro', kind, w: 60, d: 60, h: 60, r: 25, x: 0, y: 0, z: 0 };
+    setComponents((cur) => [...cur, c]);
+    setActiveComp(c.id); setActiveOp(null);
+  }, []);
+  const updateComponent = useCallback((id: string, patch: Partial<Component>) => {
+    setComponents((cur) => cur.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  }, []);
+  const removeComponent = useCallback((id: string) => {
+    setComponents((cur) => cur.filter((c) => c.id !== id)); setActiveComp(null);
+  }, []);
   const resolvedParams = useMemo<ResolvedParams>(() => resolveParams(params), [params]);
   const setBinding = useCallback((key: string, expr: string | null) => {
     setBindings((b) => {
@@ -1797,7 +1839,15 @@ export default function ForgeBRepStudio() {
           // PARÁMETROS: construye con las cotas ligadas ya resueltas (boundDoc).
           // ROLLBACK: construye solo las primeras `rollbackIdx` ops (null = todas).
           const builtOps = rollbackIdx == null ? boundDoc.ops : boundDoc.ops.slice(0, Math.max(1, rollbackIdx));
-          shape = buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
+          // ENSAMBLE: pieza principal (si construye) + componentes → compound.
+          let mainShape: Shape | null = null;
+          try { mainShape = buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current); }
+          catch (e) { if (components.length === 0) throw e; } // sin componentes, propaga
+          const parts: Shape[] = [];
+          if (mainShape) parts.push(mainShape);
+          for (const c of components) parts.push(buildComponent(oc, c));
+          if (parts.length === 0) throw new Error('Documento vacío: agrega Extrude/Revolve o un Componente.');
+          shape = parts.length === 1 ? parts[0] : makeCompound(oc, parts);
         }
 
         const mesh = tessellate(oc, shape, 0.08, 0.3);
@@ -1825,7 +1875,7 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx]);
+  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 
@@ -1835,12 +1885,12 @@ export default function ForgeBRepStudio() {
   // las 4 refs. Un efecto observa los cambios y empuja el estado ANTERIOR a
   // `past`; undo/redo restauran un snapshot marcando applyingRef para no
   // re-capturar el propio salto.
-  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState; params: Param[]; bindings: Record<string, string> };
+  type DocSnap = { sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS; assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[] };
   const histRef = useRef<{ past: DocSnap[]; future: DocSnap[]; last: DocSnap | null }>({ past: [], future: [], last: null });
   const applyingRef = useRef(false);
   const [histVer, setHistVer] = useState(0);
   useEffect(() => {
-    const snap: DocSnap = { sketch, ops, material, assembly, params, bindings };
+    const snap: DocSnap = { sketch, ops, material, assembly, params, bindings, components };
     const h = histRef.current;
     if (applyingRef.current) { applyingRef.current = false; h.last = snap; return; }
     if (h.last === null) { h.last = snap; return; } // montaje inicial: no es un cambio
@@ -1849,11 +1899,11 @@ export default function ForgeBRepStudio() {
     h.future = [];
     h.last = snap;
     setHistVer((v) => v + 1);
-  }, [sketch, ops, material, assembly, params, bindings]);
+  }, [sketch, ops, material, assembly, params, bindings, components]);
   const applySnap = useCallback((s: DocSnap) => {
     applyingRef.current = true;
     setSketch(s.sketch); setOps(s.ops); setMaterial(s.material); setAssembly(s.assembly);
-    setParams(s.params); setBindings(s.bindings);
+    setParams(s.params); setBindings(s.bindings); setComponents(s.components);
     setActiveOp((a) => (a && s.ops.some((o) => o.id === a)) ? a : (s.ops[0]?.id ?? null));
     setHistVer((v) => v + 1);
   }, []);
@@ -2374,6 +2424,7 @@ export default function ForgeBRepStudio() {
   // se acaba de elegir por clic (selectedFaceId/Id). Así el resalte aparece
   // incluso en modo inspección (sin op de Shell/Fillet activa).
   const activeOpObj = ops.find((o) => o.id === activeOp) ?? null;
+  const activeCompObj = components.find((c) => c.id === activeComp) ?? null;
   const selFaces = useMemo(() => {
     const s = new Set<number>(activeOpObj?.type === 'shell' ? activeOpObj.faces : []);
     if (selectedFaceId != null) s.add(selectedFaceId);
@@ -2442,6 +2493,10 @@ export default function ForgeBRepStudio() {
       // MOTOR DE PLANOS — driver de QA
       genPlano,
       get planoSvg() { return planoSvg; },
+      // ENSAMBLE — driver de QA
+      addComponent, updateComponent, removeComponent,
+      setActiveComp: (id: string | null) => setActiveComp(id),
+      get components() { return components; },
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
@@ -2612,7 +2667,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, components, activeComp, addComponent, updateComponent, removeComponent, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2831,6 +2886,9 @@ export default function ForgeBRepStudio() {
               onClick={() => setParamsOpen((v) => !v)} title="Parámetros con ecuaciones (Change Parameters)">ƒₓ Parámetros</button>
             <button data-testid="btn-plano" onClick={genPlano} disabled={!result}
               title="Plano de taller: 3 vistas ortográficas acotadas (líneas ocultas) → SVG">📐 Plano</button>
+            <span className="fb-tb-sep" />
+            <button data-testid="btn-component" onClick={() => addComponent('box')}
+              title="Ensamble: agrega un componente (bloque/cilindro) posicionado en 3D">🧩 Componente</button>
             {/* ── Menú ⋮ Opciones (documento): exportar + visibilidad, ya no sueltos ── */}
             <span className="fb-tb-sep" />
             <div className="fb-menu-wrap">
@@ -2872,7 +2930,7 @@ export default function ForgeBRepStudio() {
             <div
               className={`fb-feat-node ${activeOp === 'sketch' ? 'active' : ''}`}
               data-testid="feat-sketch"
-              onClick={() => { setActiveOp('sketch'); setPickMode('none'); }}
+              onClick={() => { setActiveOp('sketch'); setActiveComp(null); setPickMode('none'); }}
             >
               <span className="ico">▣</span>
               <div className="fb-feat-body">
@@ -2889,7 +2947,7 @@ export default function ForgeBRepStudio() {
                   className={`fb-feat-node accent ${activeOp === op.id ? 'active' : ''} ${op.suppressed ? 'suppressed' : ''} ${rolled ? 'rolled' : ''}`}
                   data-testid={`feat-${op.type}`}
                   onClick={() => {
-                    setActiveOp(op.id);
+                    setActiveOp(op.id); setActiveComp(null);
                     if (op.type === 'fillet' || op.type === 'chamfer') setPickMode('edge');
                     else if (op.type === 'shell') setPickMode('face');
                     else setPickMode('none');
@@ -2944,6 +3002,28 @@ export default function ForgeBRepStudio() {
               </div>
               );
             })}
+            {/* ── COMPONENTES del ensamble ── */}
+            {components.length > 0 && (
+              <>
+                <div className="fb-feat-subhead" data-testid="components-head">Componentes · ensamble <b>{components.length}</b></div>
+                {components.map((c) => (
+                  <div key={c.id}
+                    className={`fb-feat-node comp ${activeComp === c.id ? 'active' : ''}`}
+                    data-testid={`comp-${c.kind}`}
+                    onClick={() => { setActiveComp(c.id); setActiveOp(null); setPickMode('none'); }}>
+                    <span className="ico">{c.kind === 'cyl' ? '🛢' : '🧩'}</span>
+                    <div className="fb-feat-body">
+                      <strong>{c.name}</strong>
+                      <em>{c.kind === 'cyl' ? `⌀${(c.r * 2).toFixed(0)}×${c.h.toFixed(0)}` : `${c.w.toFixed(0)}×${c.d.toFixed(0)}×${c.h.toFixed(0)}`} · @({c.x.toFixed(0)},{c.y.toFixed(0)},{c.z.toFixed(0)})</em>
+                    </div>
+                    <div className="fb-feat-actions">
+                      <button className="fb-feat-act del" data-testid={`comp-delete-${c.kind}`}
+                        onClick={(e) => { e.stopPropagation(); removeComponent(c.id); }} title="Eliminar componente">✕</button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </aside>
 
           {/* ── Menú CONTEXTUAL (clic derecho en un nodo del árbol) ── */}
@@ -3035,7 +3115,48 @@ export default function ForgeBRepStudio() {
           <aside className={`fb-params ${collapsed.params ? 'collapsed' : ''}`} data-testid="op-panel">
             <CollapseHead id="params" title="Parámetros" collapsed={!!collapsed.params}
               onToggle={() => toggleCollapse('params')} />
-            {activeOp === 'sketch' && (
+
+            {activeCompObj && (
+              <>
+                <div className="fb-panel-title">Componente · {activeCompObj.kind === 'cyl' ? 'Cilindro' : 'Bloque'}</div>
+                <div className="fb-seg">
+                  <button data-testid="comp-box" className={activeCompObj.kind === 'box' ? 'on' : ''}
+                    onClick={() => updateComponent(activeCompObj.id, { kind: 'box' })}>Bloque</button>
+                  <button data-testid="comp-cyl" className={activeCompObj.kind === 'cyl' ? 'on' : ''}
+                    onClick={() => updateComponent(activeCompObj.id, { kind: 'cyl' })}>Cilindro</button>
+                </div>
+                {activeCompObj.kind === 'box' ? (
+                  <>
+                    <Dim label="Ancho (X)" value={activeCompObj.w} unit="mm" min={2} max={3000} step={1} testid="input-comp-w"
+                      onChange={(v) => updateComponent(activeCompObj.id, { w: v })} />
+                    <Dim label="Fondo (Y)" value={activeCompObj.d} unit="mm" min={2} max={3000} step={1} testid="input-comp-d"
+                      onChange={(v) => updateComponent(activeCompObj.id, { d: v })} />
+                    <Dim label="Alto (Z)" value={activeCompObj.h} unit="mm" min={2} max={3000} step={1} testid="input-comp-h"
+                      onChange={(v) => updateComponent(activeCompObj.id, { h: v })} />
+                  </>
+                ) : (
+                  <>
+                    <Dim label="Radio" value={activeCompObj.r} unit="mm" min={1} max={1000} step={1} testid="input-comp-r"
+                      onChange={(v) => updateComponent(activeCompObj.id, { r: v })} />
+                    <Dim label="Altura (Z)" value={activeCompObj.h} unit="mm" min={2} max={3000} step={1} testid="input-comp-h"
+                      onChange={(v) => updateComponent(activeCompObj.id, { h: v })} />
+                  </>
+                )}
+                <div className="fb-divider" />
+                <div className="fb-sel-head">Posición del centro (mm)</div>
+                <Dim label="X" value={activeCompObj.x} unit="mm" min={-1500} max={1500} step={1} testid="input-comp-x"
+                  onChange={(v) => updateComponent(activeCompObj.id, { x: v })} />
+                <Dim label="Y" value={activeCompObj.y} unit="mm" min={-1500} max={1500} step={1} testid="input-comp-y"
+                  onChange={(v) => updateComponent(activeCompObj.id, { y: v })} />
+                <Dim label="Z" value={activeCompObj.z} unit="mm" min={-1500} max={1500} step={1} testid="input-comp-z"
+                  onChange={(v) => updateComponent(activeCompObj.id, { z: v })} />
+                <button className="fb-del-btn" data-testid="btn-del-comp" onClick={() => removeComponent(activeCompObj.id)}>
+                  ✕ Eliminar componente
+                </button>
+              </>
+            )}
+
+            {!activeCompObj && activeOp === 'sketch' && (
               <>
                 <div className="fb-panel-title">Sketch · Perfil</div>
                 <div className="fb-seg">
@@ -3941,6 +4062,10 @@ const CSS = `
 .fb-feat-act:disabled{opacity:.25;pointer-events:none;}
 .fb-feat-node.suppressed{opacity:.5;}
 .fb-feat-node.suppressed strong{text-decoration:line-through;}
+.fb-feat-subhead{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:${STEEL};
+  opacity:.55;margin:12px 0 7px;padding-top:9px;border-top:1px solid rgba(159,179,200,0.1);}
+.fb-feat-subhead b{color:${GOLD};opacity:.9;}
+.fb-feat-node.comp .ico{filter:saturate(.7);}
 /* nodos por DEBAJO del marcador de rollback: en gris, fuera del cálculo */
 .fb-feat-node.rolled{opacity:.4;filter:grayscale(.6);}
 .fb-feat-node.rolled .ico{color:${STEEL};}
