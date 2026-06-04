@@ -1018,7 +1018,57 @@ function buildGearboxBodies(oc: OC, p: GearboxParams): { key: string; name: stri
     out.push({ key: `disco-${i + 1}`, name: `Disco ${i + 1}`, shape: placed });
   }
   out.push({ key: 'salida', name: 'Salida (brida)', shape: buildOutput(oc, p, outCenters) });
+  out.push({ key: 'soportes', name: 'Soportes (árbol)', shape: buildSupportTree(oc, p) });
   return out;
+}
+
+/**
+ * ÁRBOL DE SOPORTES funcional (tubería + soporte + centrado, frangible) — la
+ * decisión de diseño con el usuario: 3 ESPINAS de grasa a 120° en la pared + DEDITOS
+ * TANGENCIALES por piso (anclados a la pared, besan el borde del disco; ladeados en
+ * el sentido del giro → el primer giro los corta como tijera) + 3 ESPIGAS de centrado
+ * por disco (barreno↔leva). Es un cuerpo de DISPLAY (compound, no booleanas): nace con
+ * la pieza, se ve, y "muere" en la 1ª vuelta. Parámetros del math (supports.ts):
+ * deditos cada ~8mm (puente PLA), 0.4×0.6mm (frangibles), área total bajo el techo
+ * de despegue.
+ */
+function buildSupportTree(oc: OC, p: GearboxParams): Shape {
+  const d0 = gearboxDims(p);
+  const phases = discPhases(p.discs);
+  const parts: Shape[] = [];
+  // caja centrada → girada rz(Z) → trasladada a (x,y,z)
+  const box = (w: number, dep: number, h: number, x: number, y: number, z: number, rzDeg: number): Shape => {
+    const raw = makeBox(oc, w, dep, h);
+    const c = transformShape(oc, raw, { translate: [-w / 2, -dep / 2, -h / 2] }); raw.delete?.();
+    const t = transformShape(oc, c, { translate: [x, y, z], rotateAngle: (rzDeg * Math.PI) / 180, rotateAxis: { origin: [0, 0, 0], dir: [0, 0, 1] } });
+    c.delete?.();
+    return t;
+  };
+  // 3 ESPINAS (arterias de grasa) en la pared interior, a 0/120/240°
+  for (const a of [0, 120, 240]) {
+    const ar = (a * Math.PI) / 180;
+    parts.push(box(3, 2.5, d0.totalH, (p.R - 1) * Math.cos(ar), (p.R - 1) * Math.sin(ar), d0.totalH / 2, a));
+  }
+  // DEDITOS tangenciales por piso: anillo en cada disco, ladeados +35° (tangencial)
+  const Nf = Math.max(12, Math.min(36, Math.round((2 * Math.PI * (p.R - 2)) / 8))); // ~cada 8mm
+  for (let i = 0; i < p.discs; i++) {
+    const z = i * d0.stepZ + 0.3;
+    for (let j = 0; j < Nf; j++) {
+      const th = (2 * Math.PI * j) / Nf;
+      parts.push(box(4, 0.5, 0.5, (p.R - 2.2) * Math.cos(th), (p.R - 2.2) * Math.sin(th), z, (th * 180) / Math.PI + 35));
+    }
+  }
+  // ESPIGAS de centrado: 3 por disco, barreno↔leva, en la pose orbitada del disco
+  for (let i = 0; i < p.discs; i++) {
+    const a = (phases[i] * Math.PI) / 180;
+    const ox = p.E * Math.cos(a), oy = p.E * Math.sin(a);
+    const z = i * d0.stepZ + p.T / 2;
+    for (let k = 0; k < 3; k++) {
+      const th = a + (2 * Math.PI * k) / 3;
+      parts.push(box(p.gap + 0.6, 0.5, p.T * 0.6, ox + (d0.eccR + p.gap / 2) * Math.cos(th), oy + (d0.eccR + p.gap / 2) * Math.sin(th), z, (th * 180) / Math.PI));
+    }
+  }
+  return makeCompound(oc, parts);
 }
 
 // ── MOVIMIENTO: la misma caja, pero en PIEZAS SEPARADAS y centradas para animar
@@ -1333,6 +1383,7 @@ function gbDefaultColor(key: string): string {
   if (key === 'hembra') return '#5a6576';
   if (key === 'eje') return '#caa15e';
   if (key === 'salida') return '#6fb6c9';
+  if (key === 'soportes') return '#3ad97a';   // árbol de soportes = verde (orgánico)
   const m = /^disco-(\d+)$/.exec(key);
   if (m) return GB_DISC_RAMP[(parseInt(m[1], 10) - 1) % GB_DISC_RAMP.length];
   return '#cfd6df';
@@ -1341,6 +1392,7 @@ function gbBodyDefs(discs: number): { key: string; name: string }[] {
   const list = [{ key: 'hembra', name: 'Hembra (vaso)' }, { key: 'eje', name: 'Eje + levas' }];
   for (let i = 0; i < discs; i++) list.push({ key: `disco-${i + 1}`, name: `Disco ${i + 1}` });
   list.push({ key: 'salida', name: 'Salida (brida)' });
+  list.push({ key: 'soportes', name: 'Soportes (árbol)' });
   return list;
 }
 
