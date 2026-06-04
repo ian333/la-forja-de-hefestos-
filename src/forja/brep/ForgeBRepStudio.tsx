@@ -932,7 +932,9 @@ function buildHembra(oc: OC, p: GearboxParams): Shape {
 function buildRotor(oc: OC, p: GearboxParams): Shape {
   const d0 = gearboxDims(p);
   const phases = discPhases(p.discs);
-  const shZ0 = -(d0.baseH + p.gap) - p.T;          // muñón T bajo la base (agarre del motor)
+  // eje a RAS de la base (sin muñón saliente): la base queda plana sobre la cama →
+  // sin voladizo. El motor entra por el barreno de la base al socket hueco del eje.
+  const shZ0 = -(d0.baseH + p.gap);
   let rotor = makeCylinder(oc, p.shaftD / 2, (d0.totalH + p.gap) - shZ0, { origin: [0, 0, shZ0], dir: [0, 0, 1] });
   for (let i = 0; i < p.discs; i++) {
     const a = (phases[i] * Math.PI) / 180;
@@ -1969,14 +1971,38 @@ function SketchPlane() {
  *   · Cámara 3/4 por default.
  * El acento dorado GAIA queda solo en selección/HUD (fuera del Canvas).
  */
+/** Salta la cámara a una vista preset (iso/top/front/right/left/back/bottom) — como
+ *  el ViewCube de Fusion. `view` = {name, nonce} para poder repetir la misma vista. */
+function ViewController({ view, dist, target }: { view: { name: string; nonce: number } | null; dist: number; target: [number, number, number] }) {
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void } | null;
+  useEffect(() => {
+    if (!view) return;
+    const d = dist;
+    const P: Record<string, [number, number, number]> = {
+      iso: [d * 0.58, d * 0.5, d * 0.72], top: [0.001, d * 1.25, 0.001], bottom: [0.001, -d * 1.25, 0.001],
+      front: [0, d * 0.15, d * 1.25], back: [0, d * 0.15, -d * 1.25],
+      right: [d * 1.25, d * 0.15, 0], left: [-d * 1.25, d * 0.15, 0],
+    };
+    const [tx, ty, tz] = target;
+    const p = P[view.name] ?? P.iso;
+    camera.position.set(p[0] + tx, p[1] + ty, p[2] + tz);
+    if (controls) { controls.target.set(tx, ty, tz); controls.update(); }
+    camera.lookAt(tx, ty, tz);
+  }, [view, dist, camera, controls, target]);
+  return null;
+}
+
 function CadViewport({
-  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, children,
+  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, viewTarget, children,
 }: {
   cameraDistance: number;
   autoRotate: boolean;
   minDistance?: number;
   maxDistance?: number;
   enablePan?: boolean;
+  view?: { name: string; nonce: number } | null;
+  viewTarget?: [number, number, number];
   children: ReactNode;
 }) {
   return (
@@ -2042,6 +2068,7 @@ function CadViewport({
           minDistance={minDistance ?? cameraDistance * 0.15}
           maxDistance={maxDistance ?? cameraDistance * 6}
         />
+        <ViewController view={view ?? null} dist={cameraDistance} target={viewTarget ?? [0, 0, 0]} />
 
         {/* VIEWCUBE — orientación viva (como TODO CAD). Click en una cara salta a
             vista ortográfica; etiquetas en español. El Canvas es full-window y el
@@ -2971,6 +2998,9 @@ export default function ForgeBRepStudio() {
   // ── MOVIMIENTO de la caja: piezas separadas + animación cinemática ──
   const [gbMotion, setGbMotion] = useState(false);
   const [gbSpeed, setGbSpeed] = useState(1.4);     // rad/s del eje de entrada
+  // VISTAS de cámara (ViewCube): salta a iso/top/front/right/... (nonce permite repetir)
+  const [viewReq, setViewReq] = useState<{ name: string; nonce: number } | null>(null);
+  const setView = useCallback((name: string) => setViewReq((v) => ({ name, nonce: (v?.nonce ?? 0) + 1 })), []);
   const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
   // Construye las piezas separadas (centradas) cuando se enciende el movimiento o
   // cambian los parámetros de la caja. Teselación una vez; la animación solo mueve grupos.
@@ -3331,6 +3361,8 @@ export default function ForgeBRepStudio() {
       isolateGbBody: (key: string) => isolateGbBody(key),
       setGbColor: (key: string, color: string) => setGbColor(key, color),
       showAllGbBodies: () => showAllGbBodies(),
+      // VISTAS de cámara (ViewCube) — driver de QA / explorar ángulos
+      setView: (name: string) => setView(name),
       // MOVIMIENTO — driver + cinemática de QA
       setGbMotion: (v: boolean) => setGbMotion(v),
       get gbMotion() { return gbMotion; },
@@ -3607,12 +3639,21 @@ export default function ForgeBRepStudio() {
           autoRotate={false}
           minDistance={cameraDist * 0.2}
           maxDistance={cameraDist * 4}
+          view={viewReq}
+          viewTarget={meshBBox ? [meshBBox.center[0], meshBBox.center[2], -meshBBox.center[1]] : [0, 0, 0]}
         >
           <group rotation={[-Math.PI / 2, 0, 0]}>
             {!(gbMotion && gbParts) && showSketch && <SketchPlane />}
             {!(gbMotion && gbParts) && showSketch && <ProfileGhost pts={profilePts} />}
             {gbMotion && gbParts ? (
               <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} />
+            ) : sketch.kind === 'gearbox' && showOverhangs && result ? (
+              // ANÁLISIS DE VOLADIZOS: la caja COMPLETA (compound) con mapa de calor
+              // de voladizos (rojo = necesita soporte). La sección/altura la recorta.
+              <SolidMesh mesh={result.mesh} faded={building} matKey={material}
+                faces={result.faces} edgeGeoms={result.edgeGeoms} selFaces={[]} selEdges={[]}
+                pickMode="none" onPickFace={() => {}} onPickEdge={() => {}}
+                feaColors={null} overhangColors={overhangColors} clip={sectionPlanes} />
             ) : sketch.kind === 'gearbox' && gbBodyGeos ? (
               // CAJA en CUERPOS separados, cada uno su color. La HEMBRA arranca
               // semi-transparente (ves los cuerpos de color adentro de un vistazo, no
