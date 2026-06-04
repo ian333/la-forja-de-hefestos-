@@ -68,6 +68,7 @@ import {
 import { resolveParams, tryEval, type Param, type ResolvedParams } from './expr';
 import { generateDrawing } from './drawing';
 import { printabilityReport, overhangVertexColors, PRINT_PROFILES, type PrintProfile, type PrintabilityReport } from '../mech/dfm';
+import { cycloidalDisc, pinPositions } from '../mech/cycloidal';
 import {
   buildGearSketch,
   deriveGearGeometry,
@@ -1042,7 +1043,7 @@ function sweepMeshingInterference(
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
   mesh, faded, matKey, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
-  feaColors, overhangColors,
+  feaColors, overhangColors, clip,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
@@ -1058,9 +1059,12 @@ function SolidMesh({
   feaColors: Float32Array | null;
   /** Overlay de voladizos (imprimibilidad): tiene prioridad sobre el FEA. */
   overhangColors: Float32Array | null;
+  /** Planos de corte (sección). undefined/null = sin corte. */
+  clip: THREE.Plane[] | null;
 }) {
   const pbr = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
   const overlayColors = overhangColors ?? feaColors;   // imprimibilidad > FEA
+  const clipPlanes = clip ?? undefined;
   const geom = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
@@ -1235,6 +1239,8 @@ function SolidMesh({
             vertexColors
             color="#ffffff"
             toneMapped={false}
+            clippingPlanes={clipPlanes}
+            side={THREE.DoubleSide}
           />
         ) : (
           /* METAL PBR REAL (KeyShot/Plasticity): metalness alto + roughness de
@@ -1251,6 +1257,8 @@ function SolidMesh({
             clearcoatRoughness={pbr.clearcoatRoughness}
             envMapIntensity={1.35}
             flatShading={false}
+            clippingPlanes={clipPlanes}
+            side={clipPlanes ? THREE.DoubleSide : THREE.FrontSide}
           />
         )}
       </mesh>
@@ -1477,6 +1485,7 @@ function CadViewport({
           // tenga ROLL-OFF (no clipee a blanco): el brillo conserva textura.
           gl.toneMapping = ACESFilmicToneMapping;
           gl.toneMappingExposure = 0.90;
+          gl.localClippingEnabled = true;   // SECCIÓN: corte por plano (clip)
         }}
       >
         {/* HDRI de estudio que el METAL REFLEJA (es lo que lo hace ver real, como
@@ -1652,6 +1661,36 @@ function makeDefaultDoc(name = 'Pieza nueva'): DocState {
     ops: [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }],
     material: 'alu', assembly: { ...ASSEMBLY_DEFAULTS }, params: [], bindings: {}, components: [],
   };
+}
+
+// ── EJEMPLOS cargables (proyectos demo) — el reductor cicloidal generado por la
+// física: disco de lóbulos (perfil custom) + anillo de pernos + excéntrico. Para
+// abrirlo en La Forja y analizarlo por sección (caras cortadas). ──
+function cycloidalReducerDoc(): DocState {
+  const lobes = 10, R = 40, Rr = 3, E = 1.5, T = 8;
+  const disc = cycloidalDisc({ lobes, R, Rr, E, segments: 150 });
+  const profile = disc.profile.map((p) => ({ x: p.x + E, y: p.y }));   // offset E → malla
+  const base = makeDefaultDoc('Reductor cicloidal 10:1');
+  const components: Component[] = pinPositions(R, lobes + 1).map((p, i) => ({
+    id: newId('comp'), name: `Perno ${i + 1}`, kind: 'cyl', w: 0, d: 0, h: T, r: Rr, x: p.x, y: p.y, z: T / 2, rz: 0,
+  }));
+  components.push({ id: newId('comp'), name: 'Excéntrico', kind: 'cyl', w: 0, d: 0, h: 24, r: 5, x: 0, y: 0, z: 12, rz: 0 });
+  return {
+    ...base, name: 'Reductor cicloidal 10:1',
+    sketch: { ...DEFAULT_SKETCH, kind: 'custom', customProfile: profile, gear: { ...GEAR_DEFAULTS } },
+    ops: [
+      { id: newId('extrude'), type: 'extrude', depth: T, symmetric: false },
+      { id: newId('hole'), type: 'hole', x: 0, y: 0, diameter: 12, through: true, depth: T },
+      ...[0, 1, 2, 3].map((k) => {
+        const a = (2 * Math.PI * k) / 4;
+        return { id: newId('hole'), type: 'hole' as const, x: 22 * Math.cos(a), y: 22 * Math.sin(a), diameter: 11, through: true, depth: T };
+      }),
+    ],
+    components,
+  };
+}
+function makeExamples(): Array<{ name: string; doc: () => DocState }> {
+  return [{ name: '⚙ Reductor cicloidal 10:1', doc: cycloidalReducerDoc }];
 }
 // Biblioteca de piezas en localStorage (nombre → DocState). Persiste entre sesiones.
 const LIB_KEY = 'forja:library:v1';
@@ -2402,6 +2441,31 @@ export default function ForgeBRepStudio() {
     () => (result && showOverhangs ? overhangVertexColors(result.mesh, printProfile) : null),
     [result, showOverhangs, printProfile],
   );
+  // ── SECCIÓN: corte por plano para ver las caras internas (clip) ──
+  const [sectionOn, setSectionOn] = useState(false);
+  const [sectionAxis, setSectionAxis] = useState<'x' | 'y' | 'z'>('y');
+  const [sectionOffset, setSectionOffset] = useState(0);   // −1..1 sobre el bbox
+  const [sectionFlip, setSectionFlip] = useState(false);
+  const meshBBox = useMemo(() => {
+    if (!result) return null;
+    const p = result.mesh.positions;
+    let mnx = Infinity, mny = Infinity, mnz = Infinity, mxx = -Infinity, mxy = -Infinity, mxz = -Infinity;
+    for (let i = 0; i < p.length; i += 3) {
+      mnx = Math.min(mnx, p[i]); mxx = Math.max(mxx, p[i]);
+      mny = Math.min(mny, p[i + 1]); mxy = Math.max(mxy, p[i + 1]);
+      mnz = Math.min(mnz, p[i + 2]); mxz = Math.max(mxz, p[i + 2]);
+    }
+    return { center: [(mnx + mxx) / 2, (mny + mxy) / 2, (mnz + mxz) / 2], half: [(mxx - mnx) / 2 || 1, (mxy - mny) / 2 || 1, (mxz - mnz) / 2 || 1] };
+  }, [result]);
+  const sectionPlanes = useMemo<THREE.Plane[] | null>(() => {
+    if (!sectionOn || !meshBBox) return null;
+    const ai = sectionAxis === 'x' ? 0 : sectionAxis === 'y' ? 1 : 2;
+    const sign = sectionFlip ? -1 : 1;
+    const n = new THREE.Vector3(0, 0, 0); n.setComponent(ai, sign);
+    const px = meshBBox.center[ai] + sectionOffset * meshBBox.half[ai] * 1.02;
+    const point = new THREE.Vector3(meshBBox.center[0], meshBBox.center[1], meshBBox.center[2]); point.setComponent(ai, px);
+    return [new THREE.Plane(n, -n.dot(point))];
+  }, [sectionOn, sectionAxis, sectionOffset, sectionFlip, meshBBox]);
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
   const genPlano = useCallback(() => {
@@ -2618,6 +2682,11 @@ export default function ForgeBRepStudio() {
       setPrintMaterial: (m: PrintProfile['material']) => setPrintMaterial(m),
       setShowOverhangs: (v: boolean) => setShowOverhangs(v),
       get showOverhangs() { return showOverhangs; },
+      // SECCIÓN + EJEMPLOS — driver de QA
+      setSection: (on: boolean, axis?: 'x' | 'y' | 'z', offset?: number) => { setSectionOn(on); if (axis) setSectionAxis(axis); if (offset != null) setSectionOffset(offset); },
+      get sectionOn() { return sectionOn; },
+      get sectionPlaneCount() { return sectionPlanes ? sectionPlanes.length : 0; },
+      loadExample: (i: number) => { const e = makeExamples()[i]; if (e) loadDoc(e.doc()); },
       // ENSAMBLE — driver de QA
       addComponent, updateComponent, removeComponent,
       setActiveComp: (id: string | null) => setActiveComp(id),
@@ -2801,7 +2870,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2865,6 +2934,7 @@ export default function ForgeBRepStudio() {
                 onPickEdge={togglePickEdge}
                 feaColors={feaColors}
                 overhangColors={showOverhangs ? overhangColors : null}
+                clip={sectionPlanes}
               />
             )}
           </group>
@@ -3039,6 +3109,10 @@ export default function ForgeBRepStudio() {
                       onChange={(e) => setDocName(e.target.value)} placeholder="Nombre de la pieza" />
                     <button data-testid="menu-new" role="menuitem"
                       onClick={() => { newDoc(); setOptionsOpen(false); }}>📄  Nueva pieza</button>
+                    {makeExamples().map((ex) => (
+                      <button key={ex.name} data-testid="menu-example" role="menuitem"
+                        onClick={() => { loadDoc(ex.doc()); setOptionsOpen(false); }}>{ex.name}</button>
+                    ))}
                     <button data-testid="menu-save" role="menuitem"
                       onClick={() => { saveToLibrary(); refreshLib(); }}>💾  Guardar <em>en biblioteca</em></button>
                     <label className="fb-menu-link" role="menuitem" style={{ cursor: 'pointer' }}>
@@ -3876,6 +3950,27 @@ export default function ForgeBRepStudio() {
                     </button>
                   </div>
                 )}
+
+                {/* ── SECCIÓN: corte por plano (ver caras internas) ── */}
+                <div className="fb-divider" />
+                <div className="fb-print-head">
+                  <span>✂ Sección</span>
+                  <button className={`fb-sec-toggle ${sectionOn ? 'on' : ''}`} data-testid="btn-section"
+                    onClick={() => setSectionOn((v) => !v)}>{sectionOn ? 'ON' : 'OFF'}</button>
+                </div>
+                {sectionOn && (
+                  <div className="fb-mass">
+                    <div className="fb-seg">
+                      {(['x', 'y', 'z'] as const).map((ax) => (
+                        <button key={ax} data-testid={`sec-axis-${ax}`} className={sectionAxis === ax ? 'on' : ''}
+                          onClick={() => setSectionAxis(ax)}>{ax.toUpperCase()}</button>
+                      ))}
+                      <button data-testid="sec-flip" className={sectionFlip ? 'on' : ''} onClick={() => setSectionFlip((v) => !v)}>⇄</button>
+                    </div>
+                    <Dim label="Posición del corte" value={sectionOffset} unit="" min={-1} max={1} step={0.02} testid="input-sec-offset"
+                      onChange={(v) => setSectionOffset(v)} />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="fb-mass"><Row k="Estado" v="construyendo…" /></div>
@@ -4249,6 +4344,9 @@ const CSS = `
 .fb-overhang-btn{width:100%;margin-top:8px;border:1px solid ${GOLD}44;background:${GOLD}10;color:${GOLD};
   font-size:11px;padding:7px;border-radius:8px;cursor:pointer;font-weight:600;}
 .fb-overhang-btn:hover,.fb-overhang-btn.on{background:${GOLD}22;}
+.fb-sec-toggle{border:1px solid rgba(159,179,200,0.2);background:rgba(255,255,255,0.05);color:${STEEL};
+  font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;cursor:pointer;}
+.fb-sec-toggle.on{background:${GOLD};color:#1a1206;border-color:${GOLD};}
 .fb-menu button.danger:hover{background:rgba(248,113,113,0.16);color:#fca5a5;}
 .fb-imported-tag{font-size:9px;font-weight:700;color:#1a1206;background:${GOLD};
   border-radius:5px;padding:2px 6px;margin-left:8px;letter-spacing:.4px;}
