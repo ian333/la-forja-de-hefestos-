@@ -1038,36 +1038,40 @@ function buildSupportTree(oc: OC, p: GearboxParams): Shape {
   const d0 = gearboxDims(p);
   const phases = discPhases(p.discs);
   const parts: Shape[] = [];
-  // caja centrada → girada rz(Z) → trasladada a (x,y,z)
-  const box = (w: number, dep: number, h: number, x: number, y: number, z: number, rzDeg: number): Shape => {
-    const raw = makeBox(oc, w, dep, h);
-    const c = transformShape(oc, raw, { translate: [-w / 2, -dep / 2, -h / 2] }); raw.delete?.();
-    const t = transformShape(oc, c, { translate: [x, y, z], rotateAngle: (rzDeg * Math.PI) / 180, rotateAxis: { origin: [0, 0, 0], dir: [0, 0, 1] } });
-    c.delete?.();
+  // pilar VERTICAL (centrado en x,y,z): caja w×w×h, sin rotación.
+  const pillar = (w: number, h: number, x: number, y: number, z: number): Shape => {
+    const raw = makeBox(oc, w, w, h);
+    const t = transformShape(oc, raw, { translate: [x - w / 2, y - w / 2, z - h / 2] }); raw.delete?.();
     return t;
   };
-  // 3 ESPINAS (arterias de grasa) en la pared interior, a 0/120/240°
-  for (const a of [0, 120, 240]) {
-    const ar = (a * Math.PI) / 180;
-    parts.push(box(3, 2.5, d0.totalH, (p.R - 1) * Math.cos(ar), (p.R - 1) * Math.sin(ar), d0.totalH / 2, a));
-  }
-  // DEDITOS tangenciales por piso: anillo en cada disco, ladeados +35° (tangencial)
-  const Nf = Math.max(12, Math.min(36, Math.round((2 * Math.PI * (p.R - 2)) / 8))); // ~cada 8mm
+  // PILARES anti-deformación: rejilla vertical en CADA hueco (para el disco arriba),
+  // de pie sobre el disco/base de abajo → tocan la cara de arriba. Cada ~8mm (límite
+  // de puente del PLA) donde hay disco; verticales = auto-soportados (90°). Conectan
+  // disco-abajo↔disco-arriba → el primer giro los cizalla (frangibles).
+  const s = 8, rmin = d0.eccR + p.gap + 3, rmax = p.R - 8, w = 0.6, h = p.gap * 1.4;
   for (let i = 0; i < p.discs; i++) {
-    const z = i * d0.stepZ + 0.3;
-    for (let j = 0; j < Nf; j++) {
-      const th = (2 * Math.PI * j) / Nf;
-      parts.push(box(4, 0.5, 0.5, (p.R - 2.2) * Math.cos(th), (p.R - 2.2) * Math.sin(th), z, (th * 180) / Math.PI + 35));
+    const z = i * d0.stepZ - p.gap / 2;   // centro del hueco bajo el disco i
+    for (let gx = -Math.ceil(rmax / s); gx <= Math.ceil(rmax / s); gx++) {
+      for (let gy = -Math.ceil(rmax / s); gy <= Math.ceil(rmax / s); gy++) {
+        const x = gx * s + (i % 2) * s / 2, y = gy * s;  // medio-paso alterno por piso
+        const r = Math.hypot(x, y);
+        if (r >= rmin && r <= rmax) parts.push(pillar(w, h, x, y, z));
+      }
     }
   }
-  // ESPIGAS de centrado: 3 por disco, barreno↔leva, en la pose orbitada del disco
+  // 3 ESPINAS de grasa en la pared (0/120/240°), conectadas a la pared = ancladas.
+  for (const a of [0, 120, 240]) {
+    const ar = (a * Math.PI) / 180;
+    parts.push(pillar(2.5, d0.totalH, (p.R - 1.5) * Math.cos(ar), (p.R - 1.5) * Math.sin(ar), d0.totalH / 2));
+  }
+  // ESPIGAS de centrado: 3 por disco, barreno↔leva (mantienen el centro al imprimir).
   for (let i = 0; i < p.discs; i++) {
     const a = (phases[i] * Math.PI) / 180;
     const ox = p.E * Math.cos(a), oy = p.E * Math.sin(a);
     const z = i * d0.stepZ + p.T / 2;
     for (let k = 0; k < 3; k++) {
       const th = a + (2 * Math.PI * k) / 3;
-      parts.push(box(p.gap + 0.6, 0.5, p.T * 0.6, ox + (d0.eccR + p.gap / 2) * Math.cos(th), oy + (d0.eccR + p.gap / 2) * Math.sin(th), z, (th * 180) / Math.PI));
+      parts.push(pillar(0.6, p.T * 0.6, ox + (d0.eccR + p.gap / 2) * Math.cos(th), oy + (d0.eccR + p.gap / 2) * Math.sin(th), z));
     }
   }
   return makeCompound(oc, parts);
@@ -1408,9 +1412,9 @@ function gbBodyDefs(discs: number): { key: string; name: string }[] {
  *  · hembra-vaso (fija): semitransparente para ver el mecanismo adentro.
  * El rotor y la salida ya están en z absoluto; los discos llevan su z en el grupo.
  */
-function GearboxMotion({ data, playing, speed, colors, hidden }: {
+function GearboxMotion({ data, playing, speed, colors, hidden, clip }: {
   data: GearboxMotionData; playing: boolean; speed: number;
-  colors: Record<string, string>; hidden: Record<string, boolean>;
+  colors: Record<string, string>; hidden: Record<string, boolean>; clip?: THREE.Plane[] | null;
 }) {
   const col = (k: string) => colors[k] ?? gbDefaultColor(k);
   const rotorRef = useRef<THREE.Group>(null);
@@ -1434,18 +1438,18 @@ function GearboxMotion({ data, playing, speed, colors, hidden }: {
   return (
     <group>
       <group ref={rotorRef}>
-        {!hidden['eje'] && <PartMesh geo={data.rotor} color={col('eje')} metalness={0.85} roughness={0.28} />}
+        {!hidden['eje'] && <PartMesh geo={data.rotor} color={col('eje')} metalness={0.85} roughness={0.28} clip={clip} />}
       </group>
       {data.discs.map((d, i) => (
         <group key={i} ref={(el) => { discRefs.current[i] = el; }}>
-          {!hidden[`disco-${i + 1}`] && <PartMesh geo={d.geo} color={col(`disco-${i + 1}`)} metalness={0.05} roughness={0.62} />}
+          {!hidden[`disco-${i + 1}`] && <PartMesh geo={d.geo} color={col(`disco-${i + 1}`)} metalness={0.05} roughness={0.62} clip={clip} />}
         </group>
       ))}
       <group ref={outRef}>
-        {!hidden['salida'] && <PartMesh geo={data.output} color={col('salida')} metalness={0.25} roughness={0.5} opacity={hidden['hembra'] ? 1 : 0.55} />}
+        {!hidden['salida'] && <PartMesh geo={data.output} color={col('salida')} metalness={0.25} roughness={0.5} opacity={hidden['hembra'] ? 1 : 0.55} clip={clip} />}
       </group>
       {/* hembra translúcida para ver el mecanismo; si la ocultas, desaparece */}
-      {!hidden['hembra'] && <PartMesh geo={data.housing} color={col('hembra')} metalness={0.45} roughness={0.45} opacity={0.18} />}
+      {!hidden['hembra'] && <PartMesh geo={data.housing} color={col('hembra')} metalness={0.45} roughness={0.45} opacity={0.18} clip={clip} />}
     </group>
   );
 }
@@ -1973,9 +1977,15 @@ function SketchPlane() {
  */
 /** Salta la cámara a una vista preset (iso/top/front/right/left/back/bottom) — como
  *  el ViewCube de Fusion. `view` = {name, nonce} para poder repetir la misma vista. */
-function ViewController({ view, dist, target }: { view: { name: string; nonce: number } | null; dist: number; target: [number, number, number] }) {
+function ViewController({ view, orbit, dist, target }: { view: { name: string; nonce: number } | null; orbit?: { az: number; el: number; r: number; nonce: number } | null; dist: number; target: [number, number, number] }) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void } | null;
+  const place = (px: number, py: number, pz: number) => {
+    const [tx, ty, tz] = target;
+    camera.position.set(px + tx, py + ty, pz + tz);
+    if (controls) { controls.target.set(tx, ty, tz); controls.update(); }
+    camera.lookAt(tx, ty, tz);
+  };
   useEffect(() => {
     if (!view) return;
     const d = dist;
@@ -1984,17 +1994,21 @@ function ViewController({ view, dist, target }: { view: { name: string; nonce: n
       front: [0, d * 0.15, d * 1.25], back: [0, d * 0.15, -d * 1.25],
       right: [d * 1.25, d * 0.15, 0], left: [-d * 1.25, d * 0.15, 0],
     };
-    const [tx, ty, tz] = target;
-    const p = P[view.name] ?? P.iso;
-    camera.position.set(p[0] + tx, p[1] + ty, p[2] + tz);
-    if (controls) { controls.target.set(tx, ty, tz); controls.update(); }
-    camera.lookAt(tx, ty, tz);
+    const p = P[view.name] ?? P.iso; place(p[0], p[1], p[2]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, dist, camera, controls, target]);
+  // ÓRBITA arbitraria (az/el grados, r en unidades de mundo) — para barrer 30+ ángulos.
+  useEffect(() => {
+    if (!orbit) return;
+    const az = (orbit.az * Math.PI) / 180, el = (orbit.el * Math.PI) / 180, r = orbit.r;
+    place(r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orbit, camera, controls, target]);
   return null;
 }
 
 function CadViewport({
-  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, viewTarget, children,
+  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, children,
 }: {
   cameraDistance: number;
   autoRotate: boolean;
@@ -2002,6 +2016,7 @@ function CadViewport({
   maxDistance?: number;
   enablePan?: boolean;
   view?: { name: string; nonce: number } | null;
+  orbit?: { az: number; el: number; r: number; nonce: number } | null;
   viewTarget?: [number, number, number];
   children: ReactNode;
 }) {
@@ -2068,7 +2083,7 @@ function CadViewport({
           minDistance={minDistance ?? cameraDistance * 0.15}
           maxDistance={maxDistance ?? cameraDistance * 6}
         />
-        <ViewController view={view ?? null} dist={cameraDistance} target={viewTarget ?? [0, 0, 0]} />
+        <ViewController view={view ?? null} orbit={orbit ?? null} dist={cameraDistance} target={viewTarget ?? [0, 0, 0]} />
 
         {/* VIEWCUBE — orientación viva (como TODO CAD). Click en una cara salta a
             vista ortográfica; etiquetas en español. El Canvas es full-window y el
@@ -3001,6 +3016,8 @@ export default function ForgeBRepStudio() {
   // VISTAS de cámara (ViewCube): salta a iso/top/front/right/... (nonce permite repetir)
   const [viewReq, setViewReq] = useState<{ name: string; nonce: number } | null>(null);
   const setView = useCallback((name: string) => setViewReq((v) => ({ name, nonce: (v?.nonce ?? 0) + 1 })), []);
+  const [orbitReq, setOrbitReq] = useState<{ az: number; el: number; r: number; nonce: number } | null>(null);
+  const orbitTo = useCallback((az: number, el: number, r: number) => setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1 })), []);
   const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
   // Construye las piezas separadas (centradas) cuando se enciende el movimiento o
   // cambian los parámetros de la caja. Teselación una vez; la animación solo mueve grupos.
@@ -3095,9 +3112,20 @@ export default function ForgeBRepStudio() {
   // three a veces no recompila y "no corta" — el bug que el workflow detectó). La
   // flecha lo MUTA al plano real cuando la sección está activa; al apagar, se aleja.
   const sectionClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6)], []);
+  // Computa el plano de corte EN MUNDO desde el estado (eje/offset/flip), no solo
+  // desde la flecha — así el corte también funciona en MODO MOVIMIENTO (donde el
+  // gizmo no se renderiza). Modelo→mundo: (x,y,z)→(x,z,−y) por la rotación −90°X.
   useEffect(() => {
-    if (!sectionOn) sectionClip[0].set(new THREE.Vector3(0, 1, 0), 1e6);
-  }, [sectionOn, sectionClip]);
+    if (!sectionOn || !meshBBox) { sectionClip[0].set(new THREE.Vector3(0, 1, 0), 1e6); return; }
+    const ai = sectionAxis === 'x' ? 0 : sectionAxis === 'y' ? 1 : 2;
+    const sign = sectionFlip ? -1 : 1;
+    const nM = [0, 0, 0]; nM[ai] = sign;
+    const pM = [meshBBox.center[0], meshBBox.center[1], meshBBox.center[2]];
+    pM[ai] = meshBBox.center[ai] + sectionOffset * meshBBox.half[ai] * 1.02;
+    const nW = new THREE.Vector3(nM[0], nM[2], -nM[1]).normalize();
+    const pW = new THREE.Vector3(pM[0], pM[2], -pM[1]);
+    sectionClip[0].setFromNormalAndCoplanarPoint(nW, pW);
+  }, [sectionOn, sectionAxis, sectionOffset, sectionFlip, meshBBox, sectionClip]);
   const sectionPlanes = sectionClip;   // siempre el array (lejos cuando off)
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
@@ -3363,6 +3391,7 @@ export default function ForgeBRepStudio() {
       showAllGbBodies: () => showAllGbBodies(),
       // VISTAS de cámara (ViewCube) — driver de QA / explorar ángulos
       setView: (name: string) => setView(name),
+      orbitTo: (az: number, el: number, r: number) => orbitTo(az, el, r),
       // MOVIMIENTO — driver + cinemática de QA
       setGbMotion: (v: boolean) => setGbMotion(v),
       get gbMotion() { return gbMotion; },
@@ -3640,13 +3669,14 @@ export default function ForgeBRepStudio() {
           minDistance={cameraDist * 0.2}
           maxDistance={cameraDist * 4}
           view={viewReq}
+          orbit={orbitReq}
           viewTarget={meshBBox ? [meshBBox.center[0], meshBBox.center[2], -meshBBox.center[1]] : [0, 0, 0]}
         >
           <group rotation={[-Math.PI / 2, 0, 0]}>
             {!(gbMotion && gbParts) && showSketch && <SketchPlane />}
             {!(gbMotion && gbParts) && showSketch && <ProfileGhost pts={profilePts} />}
             {gbMotion && gbParts ? (
-              <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} />
+              <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} clip={sectionPlanes} />
             ) : sketch.kind === 'gearbox' && showOverhangs && result ? (
               // ANÁLISIS DE VOLADIZOS: la caja COMPLETA (compound) con mapa de calor
               // de voladizos (rojo = necesita soporte). La sección/altura la recorta.
