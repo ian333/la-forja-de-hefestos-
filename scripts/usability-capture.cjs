@@ -32,33 +32,35 @@ const DIR = process.env.DIR || '/home/ian/Orkesta/la-forja/forja-shots/usab';
     out.renderer = await ev(() => { const c = document.createElement('canvas'); const g = c.getContext('webgl2') || c.getContext('webgl'); const e = g && g.getExtension('WEBGL_debug_renderer_info'); return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : '?'; });
     out.bodies = await ev(() => window.__forgeBrep.gbBodies);
     out.visibleAll = await ev(() => window.__forgeBrep.gbVisibleCount);
+    // 01: TODOS visibles — la hembra ahora es semitransparente → se ven los cuerpos de color adentro
     await shot('01-todos');
 
-    // OCULTAR la hembra → ver adentro
+    // 02: OCULTAR la hembra del todo → stack de discos
     await ev(() => window.__forgeBrep.toggleGbBody('hembra'));
     await page.waitForTimeout(900);
     out.visibleNoHembra = await ev(() => window.__forgeBrep.gbVisibleCount);
     await shot('02-sin-hembra');
 
-    // ocultar salida + 2 discos de arriba → interior profundo (levas, discos bajos)
-    await ev(() => { window.__forgeBrep.toggleGbBody('salida'); window.__forgeBrep.toggleGbBody('disco-5'); window.__forgeBrep.toggleGbBody('disco-4'); });
+    // 03: AISLAR un disco (mostrar SOLO ese) — la función nueva tipo Fusion
+    await ev(() => window.__forgeBrep.isolateGbBody('disco-3'));
     await page.waitForTimeout(900);
-    out.visibleInterior = await ev(() => window.__forgeBrep.gbVisibleCount);
-    await shot('03-interior');
+    out.visibleIsolated = await ev(() => window.__forgeBrep.gbVisibleCount);
+    await shot('03-aislar');
 
-    // mostrar todos + SECCIÓN vertical (normal X) por el centro → corte transversal
+    // 04: mostrar todos + SECCIÓN vertical por el centro → AHORA debe RECORTAR de verdad
     await ev(() => { window.__forgeBrep.showAllGbBodies(); window.__forgeBrep.setSection(true, 'x', 0); });
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1200);
+    out.sectionPlane = await ev(() => window.__forgeBrep.sectionPlane);
     await shot('04-seccion');
 
-    // CAMBIAR color de un disco → debe verse distinto
-    await ev(() => { window.__forgeBrep.setSection(false); window.__forgeBrep.setGbColor('disco-1', '#ff3a6b'); });
+    // 05: CAMBIAR color de un disco a rosa + AISLARLO → se ve rosa, sin duda
+    await ev(() => { window.__forgeBrep.setSection(false); window.__forgeBrep.setGbColor('disco-2', '#ff3a6b'); window.__forgeBrep.isolateGbBody('disco-2'); });
     await page.waitForTimeout(900);
     out.bodiesAfterColor = await ev(() => window.__forgeBrep.gbBodies);
     await shot('05-color');
 
     out.errs = errs.slice(0, 6);
-    out.ok = out.bodies && out.bodies.length >= 5 && out.visibleNoHembra === out.visibleAll - 1;
+    out.ok = out.bodies && out.bodies.length >= 5 && out.visibleNoHembra === out.visibleAll - 1 && out.visibleIsolated === 1;
   } catch (e) { out.fatal = String(e && e.stack || e).slice(0, 500); }
   finally { await browser.close(); }
   fs.writeFileSync(`${DIR}/data.json`, JSON.stringify(out, null, 2));

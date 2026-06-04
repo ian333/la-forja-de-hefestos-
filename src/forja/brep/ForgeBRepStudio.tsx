@@ -2955,8 +2955,24 @@ export default function ForgeBRepStudio() {
   }, [oc, sketch.kind, gbSig]);
   const gbColor = useCallback((key: string) => gbColors[key] ?? gbDefaultColor(key), [gbColors]);
   const toggleGbBody = useCallback((key: string) => setGbHidden((h) => ({ ...h, [key]: !h[key] })), []);
-  const setGbColor = useCallback((key: string, color: string) => setGbColors((c) => ({ ...c, [key]: color })), []);
+  // cambiar color SIEMPRE hace visible el cuerpo (si no, el cambio no se ve — bug que vio el workflow)
+  const setGbColor = useCallback((key: string, color: string) => {
+    setGbColors((c) => ({ ...c, [key]: color }));
+    setGbHidden((h) => (h[key] ? { ...h, [key]: false } : h));
+  }, []);
   const showAllGbBodies = useCallback(() => setGbHidden({}), []);
+  // AISLAR (como Fusion): muestra SOLO este cuerpo, oculta el resto. Re-aislar el
+  // mismo (o "mostrar todos") restaura. Resuelve que la hembra opaca tape todo.
+  const isolateGbBody = useCallback((key: string) => {
+    setGbHidden((h) => {
+      const bodies = gbBodyGeos ?? [];
+      const isolated = !h[key] && bodies.every((b) => b.key === key || h[b.key]);
+      if (isolated) return {};   // ya aislado → re-clic = mostrar todos
+      const next: Record<string, boolean> = {};
+      bodies.forEach((b) => { next[b.key] = b.key !== key; });
+      return next;
+    });
+  }, [gbBodyGeos]);
   const printProfile = useMemo<PrintProfile>(
     () => ({ ...PRINT_PROFILES[printProfileKey], material: printMaterial }),
     [printProfileKey, printMaterial],
@@ -2987,8 +3003,15 @@ export default function ForgeBRepStudio() {
   }, [result]);
   // Plano de recorte ESTABLE (objeto único): la flecha del SectionGizmo lo MUTA en
   // mundo cada frame (no recalculamos por estado → arrastre fluido sin re-render).
-  const sectionClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)], []);
-  const sectionPlanes = sectionOn && meshBBox ? sectionClip : null;
+  // Plano de recorte SIEMPRE presente (constante +1e6 = lejísimos, no corta nada)
+  // para que el material compile CON clipping desde el inicio (si pasa de 0→1 plano
+  // three a veces no recompila y "no corta" — el bug que el workflow detectó). La
+  // flecha lo MUTA al plano real cuando la sección está activa; al apagar, se aleja.
+  const sectionClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6)], []);
+  useEffect(() => {
+    if (!sectionOn) sectionClip[0].set(new THREE.Vector3(0, 1, 0), 1e6);
+  }, [sectionOn, sectionClip]);
+  const sectionPlanes = sectionClip;   // siempre el array (lejos cuando off)
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
   const genPlano = useCallback(() => {
@@ -3209,7 +3232,7 @@ export default function ForgeBRepStudio() {
       setSection: (on: boolean, axis?: 'x' | 'y' | 'z', offset?: number) => { setSectionOn(on); if (axis) setSectionAxis(axis); if (offset != null) setSectionOffset(offset); },
       setSectionOffset: (o: number) => setSectionOffset(o),
       get sectionOn() { return sectionOn; },
-      get sectionPlaneCount() { return sectionPlanes ? sectionPlanes.length : 0; },
+      get sectionPlaneCount() { return sectionOn ? 1 : 0; },
       // Plano de corte EN MUNDO (lo muta la flecha cada frame) — QA verifica que mover
       // el corte cambia el plano (normal según eje, constante según posición).
       get sectionPlane() { const p = sectionClip[0]; return { normal: [+p.normal.x.toFixed(3), +p.normal.y.toFixed(3), +p.normal.z.toFixed(3)], constant: +p.constant.toFixed(3) }; },
@@ -3248,6 +3271,7 @@ export default function ForgeBRepStudio() {
       get gbBodies() { return gbBodyGeos ? gbBodyGeos.map((b) => ({ key: b.key, name: b.name, hidden: !!gbHidden[b.key], color: gbColor(b.key), verts: b.geo.positions.length / 3 })) : null; },
       get gbVisibleCount() { return gbBodyGeos ? gbBodyGeos.filter((b) => !gbHidden[b.key]).length : 0; },
       toggleGbBody: (key: string) => toggleGbBody(key),
+      isolateGbBody: (key: string) => isolateGbBody(key),
       setGbColor: (key: string, color: string) => setGbColor(key, color),
       showAllGbBodies: () => showAllGbBodies(),
       // MOVIMIENTO — driver + cinemática de QA
@@ -3533,10 +3557,13 @@ export default function ForgeBRepStudio() {
             {gbMotion && gbParts ? (
               <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} />
             ) : sketch.kind === 'gearbox' && gbBodyGeos ? (
-              // CAJA en CUERPOS separados: cada uno con su color; oculta el que quieras
-              // (p.ej. la hembra) para ver el interior. La sección los corta a todos.
+              // CAJA en CUERPOS separados, cada uno su color. La HEMBRA arranca
+              // semi-transparente (ves los cuerpos de color adentro de un vistazo, no
+              // una pieza maciza); ocúltala del todo o aísla uno para ver mejor. La
+              // sección (flecha) los corta a todos.
               gbBodyGeos.map((b) => (gbHidden[b.key] ? null : (
                 <PartMesh key={b.key} geo={b.geo} color={gbColor(b.key)} clip={sectionPlanes}
+                  opacity={b.key === 'hembra' ? 0.28 : b.key === 'salida' ? 0.9 : 1}
                   metalness={b.key === 'eje' ? 0.85 : b.key === 'salida' ? 0.25 : b.key === 'hembra' ? 0.45 : 0.05}
                   roughness={b.key.startsWith('disco') ? 0.62 : 0.4} />
               )))
@@ -3623,7 +3650,8 @@ export default function ForgeBRepStudio() {
 
         {/* HUD de selección: el faceId/edgeId que el picking acaba de fijar.
             Playwright lee este nodo para verificar que el clic cambió la cara. */}
-        <div className="fb-hud-sel" data-testid="hud-selected-face">
+        <div className="fb-hud-sel" data-testid="hud-selected-face"
+          style={sketch.kind === 'gearbox' && selectedFaceId == null ? { display: 'none' } : undefined}>
           {selectedFaceId != null ? (
             <>
               <span className="lbl">Cara</span>
@@ -3640,7 +3668,8 @@ export default function ForgeBRepStudio() {
 
         {/* HUD de ARISTA SIEMPRE presente (incluso vacío): Playwright lee este
             nodo antes/después del clic para confirmar el cambio de edgeId. */}
-        <div className="fb-hud-edge" data-testid="hud-selected-edge">
+        <div className="fb-hud-edge" data-testid="hud-selected-edge"
+          style={sketch.kind === 'gearbox' && selectedEdgeId == null ? { display: 'none' } : undefined}>
           {selectedEdgeId != null ? (
             (() => {
               const eg = result?.edgeGeoms.find((g) => g.edgeId === selectedEdgeId);
@@ -3927,15 +3956,18 @@ export default function ForgeBRepStudio() {
             {sketch.kind === 'gearbox' && gbBodyGeos && (
               <>
                 <div className="fb-feat-subhead" data-testid="gb-bodies-head">
-                  Cuerpos · caja <b>{gbBodyGeos.length}</b>
-                  <button className="fb-feat-act" data-testid="gb-show-all" title="Mostrar todos"
+                  Cuerpos · caja <b data-testid="gb-visible-count">{gbBodyGeos.filter((b) => !gbHidden[b.key]).length}/{gbBodyGeos.length}</b> vis.
+                  <button className="fb-feat-act" data-testid="gb-show-all" title="Mostrar todos los cuerpos"
                     onClick={showAllGbBodies} style={{ marginLeft: 'auto' }}>👁</button>
                 </div>
+                <div className="fb-bodies-list" data-testid="gb-bodies-list">
                 {gbBodyGeos.map((b) => {
                   const hidden = !!gbHidden[b.key];
                   return (
                     <div key={b.key} className="fb-feat-node comp" data-testid={`gb-body-${b.key}`}
-                      style={hidden ? { opacity: 0.5 } : undefined}>
+                      style={hidden ? { opacity: 0.5 } : undefined}
+                      onDoubleClick={() => isolateGbBody(b.key)}
+                      title="Doble-clic = AISLAR (mostrar solo este)">
                       <input type="color" className="fb-color-dot" data-testid={`gb-color-${b.key}`}
                         value={gbColor(b.key)} onChange={(e) => setGbColor(b.key, e.target.value)}
                         title="Color del cuerpo" />
@@ -3944,13 +3976,17 @@ export default function ForgeBRepStudio() {
                         <em>{hidden ? 'oculto' : 'visible'}</em>
                       </div>
                       <div className="fb-feat-actions">
+                        <button className="fb-feat-act" data-testid={`gb-isolate-${b.key}`}
+                          onClick={(e) => { e.stopPropagation(); isolateGbBody(b.key); }}
+                          title="Aislar (mostrar solo este)">◎</button>
                         <button className="fb-feat-act" data-testid={`gb-hide-${b.key}`}
-                          onClick={() => toggleGbBody(b.key)}
+                          onClick={(e) => { e.stopPropagation(); toggleGbBody(b.key); }}
                           title={hidden ? 'Mostrar cuerpo' : 'Ocultar cuerpo'}>{hidden ? '🙈' : '👁'}</button>
                       </div>
                     </div>
                   );
                 })}
+                </div>
               </>
             )}
           </aside>
@@ -5138,6 +5174,10 @@ const CSS = `
   border-radius:4px;cursor:pointer;background:transparent;-webkit-appearance:none;appearance:none;margin-right:7px;}
 .fb-color-dot::-webkit-color-swatch{border:0;border-radius:3px;padding:0;}
 .fb-color-dot::-webkit-color-swatch-wrapper{border:0;border-radius:3px;padding:0;}
+.fb-bodies-list{max-height:230px;overflow-y:auto;overflow-x:hidden;margin:0 -2px;padding:0 2px;}
+.fb-bodies-list::-webkit-scrollbar{width:7px;}
+.fb-bodies-list::-webkit-scrollbar-thumb{background:${GOLD}44;border-radius:4px;}
+.fb-bodies-list::-webkit-scrollbar-thumb:hover{background:${GOLD}77;}
 .fb-feat-node.suppressed strong{text-decoration:line-through;}
 .fb-feat-subhead{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:${STEEL};
   opacity:.55;margin:12px 0 7px;padding-top:9px;border-top:1px solid rgba(159,179,200,0.1);}
