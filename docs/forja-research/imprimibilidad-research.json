@@ -1,0 +1,439 @@
+[
+ {
+  "key": "dfm",
+  "findings": [
+   {
+    "rule": "Regla de 45 grados / angulo de voladizo sin soporte",
+    "value": "45 deg (conservador) hasta 50-70 deg con buen enfriamiento de capa",
+    "forForja": "Calcular el angulo de cada cara respecto a la VERTICAL del eje Z de impresion: overhangAngle = acos(dot(normalCara, -Zbuild)). Si la cara apunta hacia abajo y su angulo respecto a la horizontal < 45 deg (o normal forma > 45 deg con Z), marcar NECESITA_SOPORTE. Umbral configurable: warning a 45 deg, error a >60 deg. La regla geometrica raiz: a 45 deg cada capa nueva solapa >=50% de la anterior."
+   },
+   {
+    "rule": "Cuando se necesita soporte (caras orientadas hacia abajo)",
+    "value": "angulo > 45 deg desde la vertical = soporte",
+    "forForja": "Tras orientar la pieza, hacer un pass por triangulos del mesh BREP teselado: si normal.z < -cos(45deg) (cara mirando abajo y pronunciada), agregar a la lista de regiones-soporte. Reportar area total que requiere soporte y volumen estimado de material de soporte. Permitir al usuario re-orientar (rotar) para minimizar soporte."
+   },
+   {
+    "rule": "Limite de bridging (puente horizontal sin soporte)",
+    "value": "<= 5-10 mm sin soporte; 10-30 mm con droop tolerable; > 30 mm requiere soporte",
+    "forForja": "Detectar tramos horizontales (caras casi planas mirando abajo, normal.z ~ -1) suspendidos entre dos paredes. Medir la luz (span) entre apoyos: si span <= 10 mm OK, 10-30 mm warning (sag en primera capa, no para superficies visibles), > 30 mm error NECESITA_SOPORTE. Umbral estricto para acabado: 5 mm."
+   },
+   {
+    "rule": "Espesor de pared minimo",
+    "value": "0.8-0.9 mm minimo (2x ancho de extrusion / 2x diametro de nozzle 0.4mm); 1.5 mm recomendado para piezas funcionales; pared horizontal con soporte >= 2.0 mm",
+    "forForja": "Analisis de espesor local (medial axis / shrinkwrap o ray-casting interno): para cada region computar la distancia minima pared-a-pared. Si < 0.8 mm = error (no imprimible / no relleno solido), < 1.5 mm = warning (fragil). Hardcodear minimo = 2 x nozzleDiameter (default nozzle 0.4 -> 0.8 mm), configurable por nozzle."
+   },
+   {
+    "rule": "Tamano de feature minimo imprimible",
+    "value": "feature minimo ~0.4 mm (1x nozzle); minimo confiable 1.8 mm (4x ancho de extrusion); detalle de pin/boss diametro min 1.0-2.0 mm",
+    "forForja": "Detectar features (pins, bosses, costillas, ranuras) por debajo del umbral. Pin/boss diametro min 1.8-2.0 mm. Costilla/rib y ranura/slot grosor min 0.8 mm. Marcar features < 0.4 mm como NO IMPRIMIBLES (mas pequenos que un cordon de extrusion)."
+   },
+   {
+    "rule": "Diametro minimo de barreno (agujero vertical)",
+    "value": "min 2.0 mm (1.0 mm absoluto en X/Y)",
+    "forForja": "Detectar agujeros cilindricos; si diametro nominal < 2.0 mm marcar warning (puede cerrarse/imprimir solido), < 1.0 mm error. Los agujeros horizontales (eje en X/Y) imprimen peor por el voladizo del techo -> sugerir taladrar o cambiar orientacion."
+   },
+   {
+    "rule": "Precision de barrenos: sub-dimensionado tipico (holes imprimen pequenos)",
+    "value": "agujeros salen 0.1-0.5 mm mas pequenos; compensar +0.2 a +0.4 mm al diametro de diseno",
+    "forForja": "El analizador debe AVISAR y opcionalmente auto-compensar: para agujeros que seran funcionales (ejes, tornillos, bujes) sugerir agrandar el diametro CAD en +0.2 a +0.4 mm, o recomendar taladrar a medida (post-proceso = metodo mas confiable). Causa: el slicer aproxima la curva con segmentos rectos y el cordon jala hacia adentro."
+   },
+   {
+    "rule": "Tolerancia dimensional general (maquina bien calibrada)",
+    "value": "+-0.3 mm en features < 100 mm (X/Y mas preciso que Z)",
+    "forForja": "Usar +-0.3 mm como banda de tolerancia por defecto al validar ajustes (fits). Avisar que el eje Z (altura por capas) es menos preciso que el plano X/Y. Para cotas criticas sugerir tolerancia explicita o post-proceso."
+   },
+   {
+    "rule": "Holgura (clearance) para ajustes entre piezas / partes moviles",
+    "value": "ajuste flojo ~0.2 mm, ajuste apretado/press-fit ~0.1 mm",
+    "forForja": "Al validar ensambles: si dos solidos comparten interfaz movil y la holgura modelada < 0.2 mm -> warning (pueden fusionarse al imprimir). Press fit objetivo ~0.1 mm. Ofrecer auto-offset de la holgura recomendada segun tipo de ajuste."
+   },
+   {
+    "rule": "Roscas modeladas vs post-proceso",
+    "value": "rosca modelada min M5 / UNC #10; agujero para tap = 90% del diametro mayor; auto-tap = 96%; inserto termico = 98% del OD del inserto",
+    "forForja": "Marcar roscas modeladas < M5 como no confiables (sugerir inserto termico o tap). Si el usuario define un agujero para rosca, dimensionar segun metodo: 0.90x (tap), 0.96x (autorroscante), 0.98x (heat-set insert) del diametro nominal."
+   },
+   {
+    "rule": "Volumen de impresion tipico (build volume) — validar que la pieza cabe",
+    "value": "default 'Ender class' 220x220x250 mm; Bambu/Prusa 250x210x220 a 256x256x256 mm; grande CR-10 300x300x400 mm; rango general 200x200x200 a 300x300x400 mm",
+    "forForja": "Validar bounding-box de la pieza orientada contra el volumen del perfil de impresora seleccionado. Perfiles preset: Pequena 200x200x200, Media 256x256x256, Grande 300x300x400. Si excede -> error (sugerir escalar, partir la pieza, o reorientar la diagonal). Avisar margen (no usar el 100% del borde)."
+   },
+   {
+    "rule": "Anisotropia / resistencia por capas — orientacion importa",
+    "value": "resistencia en Z (entre capas) = 50-70% de la resistencia en X/Y (dentro de la capa)",
+    "forForja": "El analizador debe considerar la DIRECCION de carga: las capas se separan en Z. Si el usuario marca un eje de carga/tension principal, recomendar orientar la pieza para que las capas queden perpendiculares a la carga (la fuerza viaje DENTRO de la capa, no entre capas). Reportar 'plano debil' = plano XY de cada capa. Penalizar voladizos largos y secciones delgadas alineadas con Z."
+   },
+   {
+    "rule": "Altura de capa (resolucion en Z)",
+    "value": "tipico 0.1-0.3 mm (default 0.2 mm con nozzle 0.4); fino 0.1 mm, rapido 0.3 mm",
+    "forForja": "Usar layerHeight default 0.2 mm para estimar tiempo, escalonamiento (stair-stepping) en superficies inclinadas, y para calcular el solapamiento de capas en el chequeo de voladizos. Features verticales mas chicos que ~2 capas (0.4 mm) no se resuelven."
+   },
+   {
+    "rule": "Bordes vivos / esquinas — fillets y chamfers",
+    "value": "fillet radio 2-5 mm recomendado; chamfer de base ~0.3-0.45 mm (anti elephant-foot); radio de esquina de base min ~4 mm",
+    "forForja": "Sugerir (no bloquear) agregar fillets de 2-5 mm en esquinas internas/externas para repartir esfuerzo y mejorar imprimibilidad. En la cara de la base, recomendar chamfer ~0.3 mm para mitigar 'pata de elefante'. Esquinas vivas en la base concentran warping."
+   },
+   {
+    "rule": "Texto/emboss/engrave (relieve grabado)",
+    "value": "emboss ancho min 0.9 mm, protrusion max 2 mm; engrave ancho min 0.5 mm, profundidad max 2 mm",
+    "forForja": "Validar features de texto/relieve: relieve saliente (emboss) min 0.9 mm de ancho de trazo y <= 2 mm de altura; grabado hundido (engrave) min 0.5 mm de ancho y <= 2 mm de profundidad. Texto mas fino que un cordon no aparece."
+   }
+  ],
+  "sources": [
+   "https://www.hydraresearch3d.com/design-rules",
+   "https://www.hubs.com/knowledge-base/supports-3d-printing-technology-overview/",
+   "https://www.3d-demand.com/blog/design-guidelines-for-fdm-3d-printing-wall-thickness-tolerances-file-prep",
+   "https://sgd3d.co.uk/3d-printing/fdm-3d-printing-design-guide/",
+   "https://www.snapmaker.com/blog/45-degree-rule-3d-printing/",
+   "https://www.aleader-china.com/blog/45-degree-rule-3d-printing-design-guide/",
+   "https://www.3dprintmap.com/blog/3d-printing-tolerances-accuracy",
+   "https://zbotic.in/3d-printing-tolerances-designing-gaps-for-press-fits-threads-and-snap-fits/",
+   "https://www.mlc-cad.com/resources/3d-printing/why-fdm-3d-prints-are-weaker-on-the-z-axis-anisotropy-explained/",
+   "https://rapidmade.com/isotropic-vs-anisotropic-strength-in-3d-printing/",
+   "https://www.3dprinterstuff.com/workshop/build-volume",
+   "https://mandarin3d.com/blog/wall-thickness-guide-minimum-and-optimal-measurements"
+  ]
+ },
+ {
+  "key": "pip",
+  "findings": [
+   {
+    "rule": "Holgura de trabajo estandar FDM para partes moviles print-in-place (PLA, nozzle 0.4mm)",
+    "value": "0.2-0.3 mm en XY (0.15 mm posible en maquina bien calibrada; 0.4 mm+ = juego flojo)",
+    "forForja": "Exponer un parametro global `clearance` (default 0.3, rango 0.15-0.6) que se RESTA del perfil de cada solido movil y se SUMA al alojamiento. En el offset BREP (occt.ts/expr.ts), aplicar offset normal de -clearance/2 a cada cara de un par movil. Validar contra el slider en ForgeBRepStudio."
+   },
+   {
+    "rule": "Regla heuristica: holgura = 1-2x el ancho de extrusion (escala con el nozzle)",
+    "value": "1x ext-width (~0.4 mm con nozzle 0.4) = deslizante; 2x (~0.8 mm) = giro libre. Nozzle 0.6/ext 0.75 -> 0.75 mm deslizante, 1.5 mm libre",
+    "forForja": "En vez de hardcodear 0.3, derivar clearance del perfil de impresion: `clearance = k * extrusionWidth` con k=1 (fit deslizante) o k=2 (fit libre). El usuario elige el nozzle y la app calcula. AON3D-style, escala con tamano de nozzle."
+   },
+   {
+    "rule": "Compensacion de barrenos: los agujeros FDM salen subdimensionados por el paso del nozzle",
+    "value": "-0.1 a -0.3 mm (un D=10mm sale ~9.7mm); compensar con horizontal expansion ~0.02mm o sobredimensionar el agujero 0.1-0.3mm",
+    "forForja": "Al generar agujeros (pernos, ejes, inserts) anadir un `holeCompensation` de +0.15mm por defecto al diametro nominal en la geometria exportada (STL/STEP), o exponerlo como ajuste de manufactura separado del modelo nominal."
+   },
+   {
+    "rule": "Holgura optima para reductor CICLOIDAL impreso (estudio 2025: probaron 0.2/0.3/0.5mm)",
+    "value": "0.3 mm = la mas balanceada (minima varianza, energia vibracional distribuida, mayor durabilidad). 0.2mm vibra/concentra esfuerzo a baja velocidad; 0.5mm = mas backlash",
+    "forForja": "En cycloidal.ts el perfil sale NOMINAL (rueda sin holgura). Anadir parametro `clearance=0.3` que aplica un offset equidistante NEGATIVO al perfil del disco (encoge el lobulo ~0.3mm respecto al perno) para que mallen sin trabarse. Hoy `Rr` es el radio nominal del perno; el malleo real necesita disco = offset(hipocicloide, Rr+clearance)."
+   },
+   {
+    "rule": "Eccentricidad valida del cicloidal (lobulos no se traslapan)",
+    "value": "E < R/(2N) con N=pernos=lobes+1 (ya implementado como `valid`); valores reales probados E=1mm, Rr=8mm, R=66mm, ratio 19:1",
+    "forForja": "Ya existe el check `valid: E < R/(2*N)` en cycloidalDisc(). Mantenerlo y ademas avisar si E elegido deja el perfil demasiado delgado para imprimir (pared minima < 2 perimetros). Cross-check: con clearance aplicada, re-validar que minR del perfil sigue > 0."
+   },
+   {
+    "rule": "Barrenos de salida del disco cicloidal: sobredimensionar por el bamboleo del excentrico",
+    "value": "Dhole = Dpin_salida + 2*E (ya implementado en outputHoles)",
+    "forForja": "Ya correcto en outputHoles(). Anadir ADEMAS la holgura de impresion: Dhole = Dpin + 2*E + clearance para que el perno de salida no roce. Documentar que +2E es cinematico (no opcional) y +clearance es de manufactura."
+   },
+   {
+    "rule": "Clearance lobulo-a-lobulo en bomba GEROTOR (referencia de mecanizado, sellado por contacto)",
+    "value": "0.0005-0.001 in = 0.013-0.025 mm (diametral) en mecanizado de precision",
+    "forForja": "Imposible en FDM (tolerancia FDM ±0.2mm >> 0.025mm). Para un gerotor IMPRESO no se busca sellado hidraulico: usar clearance 0.2-0.3mm como un mecanismo demostrativo/decorativo, NO bomba estanca. Etiquetar en la app: 'gerotor impreso = evocativo, no sella a presion' (regla de honestidad del proyecto)."
+   },
+   {
+    "rule": "Print-in-place: la holgura debe evitar la FUSION de capas durante impresion, pero permitir romper el puente despues",
+    "value": "Gap minimo >= 1 capa; recomendado 0.2-0.3mm; tras imprimir se 'tuerce y rompe' la capa puente para liberar la junta",
+    "forForja": "El generador debe emitir partes ya en posicion de ensamble (un solo STL con multiples cuerpos separados por >= clearance), no piezas sueltas. Garantizar que NINGUN par de caras moviles quede a < clearance en TODA su trayectoria (no solo en pose inicial)."
+   },
+   {
+    "rule": "PETG y flexibles necesitan MAS holgura que PLA (stringing puentea el gap)",
+    "value": "PETG: +0.1-0.15 mm sobre el valor PLA. PLA es el mas fiable para print-in-place (solidifica nitido, deja de ser pegajoso rapido)",
+    "forForja": "El parametro clearance debe depender del material elegido: tabla {PLA:0.30, PETG:0.40, ABS:0.35, TPU:0.45}. Mostrar el valor efectivo cuando el usuario cambia material en el selector de manufactura."
+   },
+   {
+    "rule": "Bisagra de PASADOR (pin hinge) print-in-place: orientacion de capas",
+    "value": "Holgura 0.2-0.3mm pasador-vs-cojinete; imprimir con el eje de la bisagra HORIZONTAL (capas cruzando la junta, no a lo largo)",
+    "forForja": "Al colocar una bisagra el generador debe orientar la pieza para que el eje quede paralelo a la cama. Usar bisel a 45 grados en lugar de escalon recto donde el pasador se captura (evita soportes, mantiene giro libre)."
+   },
+   {
+    "rule": "Bisagra VIVA (living hinge) FDM: espesor de la seccion flexible",
+    "value": "0.4-0.6 mm (2 perimetros con nozzle 0.4). <0.3mm se rompe, >0.8mm no flexa. Largo de la bisagra = 8-12x el espesor. Debe encontrarse con las paredes rigidas a 90 grados",
+    "forForja": "Si La Forja ofrece living hinges, parametrizar espesor=0.5mm default (rango 0.4-0.6) y largo>=8x. PLA es malo para flexion repetida (como espagueti seco); recomendar TPU/PP/PETG. Orientar capas CRUZANDO la bisagra (como fibra de carbono tejida), nunca a lo largo."
+   },
+   {
+    "rule": "Press fit (interferencia) vs sliding fit vs running fit en FDM",
+    "value": "Press/interferencia: -0.1mm (agujero 0.1mm menor que eje). Sliding/snap: +0.2mm. Running/libre: +0.3-0.5mm (o 2x ext-width)",
+    "forForja": "Ofrecer un enum de ajuste en la junta: {presionado:-0.1, deslizante:+0.2, libre:+0.4} que el motor BREP traduce a offset de cara. Default 'deslizante' para partes que deben moverse pero sin slop."
+   },
+   {
+    "rule": "Snap-fit (clip) FDM: tolerancia y robustez",
+    "value": "Holgura del gancho 0.2mm; conectores >= 5mm de espesor, 100% infill; rigidez crece aumentando dimension en Z; capa fina 0.1mm para detalle del gancho",
+    "forForja": "Para snap-fits generados, forzar el clip a >=5mm de grosor solido y 100% relleno (override de perfil), y orientar el brazo flexible de modo que la carga NO separe capas (delaminacion). Capa 0.1mm en el feature del gancho."
+   },
+   {
+    "rule": "Regla de los 45 grados / voladizos para juntas print-in-place",
+    "value": "Voladizos <=45 grados desde vertical imprimen sin soporte; usar chaflanes a 45 en capturas de bola/perno en vez de escalones rectos",
+    "forForja": "El generador de juntas captivas (ball joint, pasador captivo) debe modelar el alojamiento con techo a 45 grados, no plano, para imprimirse sin soporte adentro de la cavidad y mantener la pieza libre."
+   },
+   {
+    "rule": "Resistencia del engrane: PERIMETROS pesan mas que el infill",
+    "value": "4-5 perimetros/paredes; infill 35-50% gyroid o hexagonal (>50% casi no suma porque el diente ya es solido en el perimetro); capa 0.15mm; dientes PLANOS sobre la cama",
+    "forForja": "Cuando La Forja exporte un engrane con receta de slicer, default: perimetros=4-5, infill=40% gyroid, capa 0.15mm, orientacion dientes-sobre-cama. Avisar que mas infill no da fuerza, mas paredes si."
+   },
+   {
+    "rule": "Material para engranes (eleccion por carga)",
+    "value": "Nylon = top (bajo friccion, tenaz, AUTOLUBRICANTE, no requiere grasa). PETG = media (balance fuerza/flex). PLA = ligero/baja durabilidad. CF blends (PPA-CF, PETG-CF) = alta carga/baja flex",
+    "forForja": "En el selector de material del modulo mecanico, recomendar Nylon o PETG para engranes funcionales; marcar PLA como 'prototipo/decorativo'. Si material=Nylon, ocultar el recordatorio de grasa (autolubricante)."
+   },
+   {
+    "rule": "Lubricacion: grasas COMPATIBLES con plastico (evitar petroleo en PLA/PETG)",
+    "value": "Usar grasa de litio blanco, grasa PTFE, o grasa de silicona (PTFE aguanta hasta 250C, ideal Nylon). NO aceites de petroleo sobre PLA/PETG (atacan el plastico). Vaselina cosmetica sirve. Reaplicar fina capa cada pocos meses",
+    "forForja": "En la guia de ensamble generada para una pieza con engranes, recomendar grasa PTFE o silicona, advertir contra aceites de petroleo en PLA/PETG, y omitir lubricacion si el material es Nylon (self-lubricating). Texto en espanol mexicano."
+   },
+   {
+    "rule": "Inserts metalicos roscados (heat-set) — barreno y pared del boss",
+    "value": "M3: barreno 4.0-4.2mm (punta+0.1). M4: ~6mm de ancho. Pared/boss = 2-3x el diametro del insert; minimo 1.6-2mm de material alrededor. Profundidad del barreno >= largo del insert + 1mm (para el plastico desplazado)",
+    "forForja": "Donde el diseno necesite tornilleria de carga, generar un boss con barreno parametrico segun la tabla de insert (M3->4.1mm, M4->5.6mm tipico) y pared >= 2x diametro. Validar que el boss tiene >=2mm de material; si no, sugerir bajar de talla."
+   },
+   {
+    "rule": "Tolerancia dimensional general FDM (limita lo alcanzable)",
+    "value": "±0.1-0.3 mm tipico; bien calibrado ±0.2mm en XY, ±0.1-0.2mm en Z. Si se necesita < ±0.2mm, FDM no alcanza (ir a SLA ±0.1 / SLS ±0.2 isotropico)",
+    "forForja": "El validador de manufactura debe RECHAZAR (o advertir) clearances de junta < 0.15mm como 'no imprimible en FDM' y proponer holgura minima 0.2mm. Es el piso fisico para el solver de offset BREP."
+   },
+   {
+    "rule": "Backlash real de un cicloidal impreso (referencia de magnitud)",
+    "value": "~7mm de juego a 15cm = ~2.7 grados en la version impresa (vs ~1.9 grados CNC). Subdimensionado de disco/perfil causa atascamiento; hay que retirar material para que malle",
+    "forForja": "Modelar el clearance del cicloidal como compromiso explicito: menos holgura = menos backlash pero riesgo de trabarse; 0.3mm es el optimo medido. Mostrar el backlash estimado (funcion de clearance y geometria) como salida del modulo, en grados."
+   }
+  ],
+  "sources": [
+   "https://ozfdm.com.au/blogs/knowledge-base-blogs-knowledge-base/print-in-place-designs-hinges-joints-and-mechanisms",
+   "https://3dprinterly.com/how-to-3d-print-connecting-joints-interlocking-parts/",
+   "https://zbotic.in/3d-printing-tolerances-designing-gaps-for-press-fits-threads-and-snap-fits/",
+   "https://www.aon3d.com/applications/engineering-fits-how-to-design-for-3d-printed-assemblies/",
+   "https://www.3d-demand.com/blog/design-guidelines-for-fdm-3d-printing-wall-thickness-tolerances-file-prep",
+   "https://howtomechatronics.com/projects/cnc-machined-vs-3d-printed-cycloidal-drive-designing-testing/",
+   "https://journals.sagepub.com/doi/abs/10.1177/09544119251391399",
+   "https://www.researchgate.net/publication/366612169_3D-printable_low-reduction_cycloidal_gearing_for_robotics",
+   "https://link.springer.com/chapter/10.1007/978-3-031-80512-7_79",
+   "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11820634/",
+   "https://patents.google.com/patent/US20050063851A1/en",
+   "https://www.michael-smith-engineers.co.uk/mse/uploads/resources/useful-info/Pumping-Principles/Gerotor-Pump-Principles.pdf",
+   "https://siraya.tech/blogs/news/best-filament-for-gears",
+   "https://kingroon.com/blogs/3d-printing-guides/how-to-get-perfect-3d-printed-gears",
+   "https://www.unionfab.com/blog/2024/12/3d-printed-gears",
+   "https://3dbeginnerzone.com/gear-guides/best-lubricant-for-3d-printed-parts/",
+   "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9147857/",
+   "https://elitemoldtech.com/3d-printed-living-hinge-design-guide/",
+   "https://www.hubs.com/knowledge-base/how-design-living-hinges-3d-printing/",
+   "https://www.fictiv.com/articles/how-to-design-living-hinges",
+   "https://www.unionfab.com/blog/2025/06/3d-print-snap-fit",
+   "https://accu-components.com/us/p/488-threaded-insert-hole-size-charts-for-3d-printing-pla-petg-resin",
+   "https://insertguide.com/guides/heat-set-insert-hole-size/",
+   "https://www.spirol.com/assets/files/ins-wp-how-to-design-the-proper-hole-for-heat-ultrasonic-inserts-us.pdf",
+   "https://www.snapmaker.com/blog/45-degree-rule-3d-printing/",
+   "https://www.snapmaker.com/blog/3d-printing-tolerances/"
+  ]
+ },
+ {
+  "key": "fusiondraw",
+  "findings": [
+   {
+    "rule": "SECTION VIEW (vista de sección) — corta el modelo a lo largo de una línea de sección para revelar el interior; soporta sección completa, offset/escalonada (línea con varios tramos), alineada, y por mitad. La línea de sección con flechas de dirección y etiqueta (A-A) se coloca sobre la vista padre.",
+    "value": "hatching ISO 3098 a 45°, espaciado típico ~2-3 mm; soporta sección offset multi-segmento",
+    "forForja": "PRIORIDAD #1. Es la carencia más grande de un motor que solo hace 3 ortográficas+HLR. Implementar: (a) plano de corte definido por una polilínea 2D que el usuario traza sobre una vista existente; (b) intersección sólido∩semiespacio del B-rep (ya hay brep/fea.ts → reusar el kernel); (c) generar el HLR de la mitad cortada + rayado (cross-hatch) en las caras cortadas. Cachear por (vista, línea). El rayado se genera clippeando líneas paralelas a 45° contra los loops de cara cortada."
+   },
+   {
+    "rule": "DETAIL VIEW (vista de detalle) — vista ampliada de una porción de otra vista, delimitada por una frontera circular o rectangular, con su propia escala independiente y etiqueta (Detail B, SCALE 2:1).",
+    "value": "escala independiente típica 2:1, 4:1, 5:1, 10:1; frontera circular o rectangular",
+    "forForja": "PRIORIDAD #2. Reusa el pipeline de proyección que ya existe: tomar la vista base, recortar (clip) al boundary trazado, re-renderizar HLR a una escala mayor, y dibujar el círculo de detalle + leader + etiqueta en la vista padre. No requiere kernel nuevo, solo un clip 2D + factor de escala + etiquetado."
+   },
+   {
+    "rule": "AUXILIARY VIEW (vista auxiliar) — proyección perpendicular a una arista/cara inclinada seleccionada, para mostrar superficies oblicuas en verdadera magnitud. (En Fusion estuvo en desarrollo; es estándar en CAD de planos.)",
+    "value": "ángulo de proyección = normal a la arista de referencia seleccionada",
+    "forForja": "PRIORIDAD #4. Generalización de la vista proyectada: en vez de proyectar a 0/90°, proyectar a lo largo de la normal de una arista 2D que el usuario elige en una vista. La dirección de cámara HLR = esa normal. Cambio chico si la proyección ya está parametrizada por una matriz de vista."
+   },
+   {
+    "rule": "PROJECTED VIEW arbitraria (isométrica/proyectada en cualquier dirección desde una vista base) — Fusion proyecta vistas ortográficas Y vistas isométricas/auxiliares desde el padre arrastrando.",
+    "value": "isométrica estándar a 30°; ortográficas a 0/90°",
+    "forForja": "PRIORIDAD #6. Ya hay 3 ortográficas; falta la ISOMÉTRICA (proyección 30° dimétrica/isométrica) generada desde la misma matriz de cámara. Es solo otra dirección de proyección + HLR. Alto valor visual por bajo costo."
+   },
+   {
+    "rule": "BREAK VIEW / BROKEN VIEW (vista interrumpida) — quita un tramo central de una pieza larga para caber en la hoja, con líneas de ruptura (zig-zag, recta, structural).",
+    "value": "estilos de ruptura: línea recta, zig-zag, structural steel, cilíndrica",
+    "forForja": "PRIORIDAD #8. Recorta dos ventanas de la geometría proyectada y las junta acortando el eje largo, dibujando símbolos de ruptura en los bordes. Es manipulación 2D de la salida HLR, no toca el kernel 3D."
+   },
+   {
+    "rule": "BREAKOUT SECTION VIEW (sección parcial / rotura local) — corta solo una región acotada por un perfil cerrado a una profundidad dada, sin seccionar toda la vista.",
+    "value": "profundidad de corte (depth) parametrizable; perfil cerrado de spline/polilínea",
+    "forForja": "PRIORIDAD #9. Variante de la sección: corte sólido∩(prisma extruido del perfil cerrado hasta profundidad d). Construir tras tener SECTION."
+   },
+   {
+    "rule": "ROTATED VIEW (rotar vista) — gira una vista un ángulo arbitrario en la hoja, con etiqueta de rotación.",
+    "value": "ángulo arbitrario en grados",
+    "forForja": "PRIORIDAD #12. Transformación 2D pura (rotar la salida HLR + cotas) con anotación 'rotated 30° CW'. Trivial."
+   },
+   {
+    "rule": "DIMENSION: lineal, alineada, angular, radio, diámetro, ordenada (ordinate), y arc-length. Fusion infiere el tipo según geometría (línea→lineal, no-paralelas→angular, círculo→diámetro, arco→radio) y permite togglear radio↔diámetro con click derecho.",
+    "value": "7 tipos: lineal, alineada, angular, radio, diámetro, ordenada, longitud de arco",
+    "forForja": "PRIORIDAD #3. Hoy solo hay 'cotas generales'. Falta: ALINEADA (paralela a la entidad), ANGULAR (entre dos líneas, requiere arco de cota + vértice), RADIO/DIÁMETRO (a círculos/arcos, con símbolo ⌀ o R y línea al centro), y ORDENADA (cota desde un datum 0,0 sin línea de cota, solo el valor). La ordenada y la angular son las que más faltan en piezas reales. Cada tipo es una snap-rule + un renderizador de glifo distinto."
+   },
+   {
+    "rule": "DIMENSION precision/units configurables — precisión decimal, unidades (mm, in, ft), mostrar/ocultar ceros, tolerancias (±, límites, símbolo), todo en Document Settings del árbol.",
+    "value": "precisión 0-8 decimales; tolerancia simétrica/desviación/límites/básica",
+    "forForja": "PRIORIDAD #7. Añadir a cada cota: campo de tolerancia (±0.1, o límites, o 'basic' con recuadro), control de precisión decimal y unidad. Es metadata por cota + render del sufijo de tolerancia."
+   },
+   {
+    "rule": "GD&T FEATURE CONTROL FRAME — recuadro de control con símbolo característico, zona de tolerancia y hasta 3 referencias de datum; soporta el set ASME Y14.5 / ISO 1101: rectitud, planitud, circularidad, cilindricidad, perfil de línea, perfil de superficie, angularidad, perpendicularidad, paralelismo, posición, concentricidad, simetría, runout circular, runout total.",
+    "value": "14 símbolos característicos; modificadores de condición de material MMC/LMC/RFS y zona proyectada",
+    "forForja": "PRIORIDAD #5. Construir el glifo del feature control frame: recuadro multi-celda [símbolo | ⌀tol (Ⓜ) | datum A (Ⓜ) | B | C]. Necesita una FUENTE de símbolos GD&T (los 14 caracteres + Ⓜ Ⓛ Ⓢ) o dibujarlos como paths SVG. Se ancla a una cota o a una arista con leader."
+   },
+   {
+    "rule": "DATUM IDENTIFIER — símbolo de datum (triángulo relleno + recuadro con letra) que se ancla a una cara/cota y se referencia desde los feature control frames.",
+    "value": "letra A, B, C…; triángulo de datum relleno",
+    "forForja": "PRIORIDAD #10. Glifo simple (triángulo + cuadro con letra) + leader; va de la mano con el feature control frame."
+   },
+   {
+    "rule": "SURFACE TEXTURE / FINISH SYMBOL — símbolo de acabado superficial (raíz √ con valor Ra, dirección de mecanizado, sobremedida); se ancla a objeto, cota o feature control frame.",
+    "value": "valor Ra en µm; símbolos ISO 1302",
+    "forForja": "PRIORIDAD #13. Glifo de check √ con campos de texto (Ra, proceso). Anotación 2D anclable."
+   },
+   {
+    "rule": "OTROS SÍMBOLOS: WELD SYMBOL (símbolo de soldadura completo flecha+cola), TAPER & SLOPE (conicidad/pendiente), EDGE SYMBOL (estado de aristas ISO 13715).",
+    "value": "soldadura: filete, bisel, tapón; conicidad ratio 1:n",
+    "forForja": "PRIORIDAD #15 (baja). Glifos especializados; implementar solo si el público objetivo (fabricación/soldadura) lo pide. Cada uno es un path + campos."
+   },
+   {
+    "rule": "CENTER MARK & CENTERLINE — marcas de centro en círculos/arcos y líneas de eje (incl. bisectriz y patrón circular de barrenos), con opción de generación AUTOMÁTICA para todos los barrenos al crear la vista.",
+    "value": "generación automática de center marks/centerlines por vista (toggle)",
+    "forForja": "PRIORIDAD #11. Detectar círculos/arcos en la salida HLR → dibujar cruz de centro (línea-punto) y ejes. Auto-generables. Bajo costo, gran impacto en aspecto profesional del plano."
+   },
+   {
+    "rule": "HOLE TABLE (tabla de barrenos) — tabla que lista cada barreno con etiqueta (A1, A2…), coordenadas X/Y respecto a un datum/origen, tamaño/diámetro y cantidad; con etiquetas (tags) colocadas en la vista.",
+    "value": "columnas típicas: Tag, X, Y, Size/⌀, Qty; origen = datum seleccionable",
+    "forForja": "PRIORIDAD #14. Requiere: (a) detectar features de barreno en el B-rep (centro+diámetro+profundidad), (b) elegir un datum origen, (c) tabular X/Y/⌀, (d) colocar etiquetas en la vista. Reusa el detector de círculos del center mark + el motor de tablas."
+   },
+   {
+    "rule": "PARTS LIST / BOM (lista de materiales) + BALLOONS — tabla automática de componentes (item, qty, nombre/part number, descripción, material) generada del ensamble, con globos numerados auto-asociados a las vistas; renumerables. (Nota: Fusion NO soporta BOM multinivel nativo.)",
+    "value": "columnas item/qty/part number/description; globos circulares numerados",
+    "forForja": "PRIORIDAD #16 (solo si hay ENSAMBLES). Si La Forja modela piezas sueltas, esto es secundario. Requiere estructura de ensamble + motor de tablas + globos con leader auto-asociados al item."
+   },
+   {
+    "rule": "BEND TABLE + BEND IDENTIFIERS (chapa metálica) — tabla de dobleces de un patrón plano (ángulo, radio, dirección) con identificadores en la vista; y REVISION TABLE (historial de revisiones).",
+    "value": "columnas de doblez: ángulo, radio, dirección; revisión: rev, descripción, fecha, aprobó",
+    "forForja": "PRIORIDAD #18 (nicho). Solo relevante con módulo de chapa/sheet-metal. La revision table sí es genérica y barata (tabla editable manual)."
+   },
+   {
+    "rule": "TITLE BLOCK editable con ATRIBUTOS — el cajetín tiene campos que heredan datos del diseño (nombre, fecha, autor, escala, material, número de hoja) o se editan a mano por hoja; plantilla reutilizable por estándar (ASME/ISO).",
+    "value": "atributos auto-poblados vs. manuales; uno por estándar",
+    "forForja": "MEJORA del cajetín existente. Hoy hay 'cajetín' fijo; falta hacerlo de PLANTILLA con CAMPOS de atributo (auto desde el modelo: nombre, escala, fecha; o manuales). Es metadata + binding, no geometría nueva."
+   },
+   {
+    "rule": "SHEET SIZES ISO/ANSI seleccionables, retrato/paisaje, multi-hoja por documento.",
+    "value": "ISO: A4 210×297, A3 297×420, A2 420×594, A1 594×841, A0 841×1189 mm. ANSI: A 8.5×11, B 11×17, C 17×22, D 22×34, E 34×44 in. Portrait/Landscape.",
+    "forForja": "PRIORIDAD #17. Añadir selector de tamaño de hoja con estas dimensiones EXACTAS + orientación + soporte multi-hoja. El estándar (ISO vs ASME) también define ángulo de proyección (1ª vs 3ª diedro) y estilo de cotas — importante para correctitud."
+   },
+   {
+    "rule": "EXPORT a PDF, DWG, DXF y CSV. PDF/DWG/DXF exportan la geometría del plano; CSV exporta las tablas (parts list/hole table). Limitación Fusion: DWG sin configurar, todo en paper space, datos como bloques, solo la hoja activa.",
+    "value": "4 formatos: PDF, DWG, DXF, CSV",
+    "forForja": "PRIORIDAD #3-bis (CRÍTICO para entregar valor). DXF es el más fácil y el más pedido por talleres/CNC: serializar las líneas/arcos/textos del plano a entidades DXF (LINE, ARC, CIRCLE, TEXT, DIMENSION). PDF = render vectorial de la hoja. CSV = volcado de tablas. El DXF/PDF es lo que hace el plano UTILIZABLE fuera del navegador — sin export, el motor no compite."
+   },
+   {
+    "rule": "DISPLAY STYLE por vista — visible only / visible+hidden (HLR con líneas ocultas) / shaded / shaded+hidden; control de aristas tangentes, de interferencia y de rosca (thread) por vista.",
+    "value": "4 estilos de display; toggles de tangentes/rosca/interferencia",
+    "forForja": "MEJORA del HLR existente. Hoy hay HLR (líneas ocultas). Falta: toggle por vista (mostrar/ocultar ocultas), estilo SOMBREADO (shaded) y control de aristas TANGENTES (no dibujar el filo entre dos caras tangentes — clave para que el plano se vea limpio y profesional)."
+   }
+  ],
+  "sources": [
+   "https://help.autodesk.com/view/fusion360/ENU/?contextId=DWG-VIEWS",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=GUID-7AA7A8E9-D423-40A0-8139-7B09AE073DC7",
+   "https://help.autodesk.com/view/fusion360/ENU/?contextId=DWG-CREATE-SECTION-VIEW",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-BREAKOUT-SECTION-VIEW",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-BREAK-VIEW",
+   "https://www.autodesk.com/products/fusion-360/blog/fusion-360-drawings-arrange-dimensions-broken-views-are-here/",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-DIMENSIONS",
+   "https://help.autodesk.com/cloudhelp/ENU/Fusion-Drawing/files/DWG-SYMBOLS.htm",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-SYMBOLS",
+   "https://orzeltechnologies.ca/feature-control-frame-fusion-360-tip/",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-WELDING",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-REF-WELDING",
+   "https://help.autodesk.com/view/fusion360/ENU/?contextId=DWG-ADD-CENTERLINE",
+   "https://help.autodesk.com/view/fusion360/ENU/?contextId=DWG-CREATE-HOLE-TABLE",
+   "https://www.autodesk.com/products/fusion-360/blog/fusion-360-drawings-hole-tables/",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=GUID-50A3BA0E-8BA4-4F3C-A06C-01E8D7E0B7FF",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-CREATE-NEW-TITLE-BLOCK",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=GUID-0D9E85A3-9B36-461D-9547-8904BF46CFC4",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-REF-SHEET-SIZE",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-EXPORT",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=DWG-EXPORT-PDF",
+   "https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-export-Fusion-360-Drawings.html",
+   "https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/Differences-between-ASME-and-ISO-Drawing-Standards-in-Fusion-360.html",
+   "https://en.wikipedia.org/wiki/ANSI/ASME_Y14.1",
+   "https://en.wikipedia.org/wiki/International_standard_paper_sizes"
+  ]
+ },
+ {
+  "key": "section",
+  "findings": [
+   {
+    "rule": "Fusion 360 Inspect > Section Analysis: cortar todos los objetos visibles con un plano para revelar el interior. Se invoca en Inspect > Section Analysis, se selecciona una cara/plano planar como Cut Plane, y se ajusta con manipuladores de Distance (offset) y Angle, o se teclean valores. Vive como una FEATURE editable/suprimible en el navegador (timeline) — el resto del modelo sigue siendo 3D interactivo y navegable.",
+    "value": "Opciones exactas: Cut Plane (cara/plano), Distance, Angle, Flip (cambia el lado revelado), Show Hatch (raya diagonal en las caras del corte, on/off), Section Color = From Component (codificado por componente, default) o Custom. Soporta multiples planos de seccion (en ensambles), pero solo uno visible a la vez.",
+    "forForja": "La Forja YA tiene el equivalente vivo en src/lib/viewport/SectionPlane.tsx (SectionState{enabled,axis,distance,flip}). FALTAN 3 cosas vs Fusion: (1) cap/relleno solido de la cara cortada, (2) el patron de hatch sobre el corte (Show Hatch), (3) la vista de seccion 2D real. Mapear SectionState->feature en el timeline para que sea editable/suprimible como Fusion. Cambiar axis fijo (X/Y/Z) por 'plano/cara seleccionada' (Cut Plane arbitrario) usando el normal de la cara del raycast (occt.ts ya da faceIds por triangulo)."
+   },
+   {
+    "rule": "Plano de recorte en Three.js/WebGL (visor 3D vivo): un THREE.Plane define la ecuacion dot(p, normal) + constant = 0; todo lo que da dot(p,n)+const < 0 se descarta. Se asigna a material.clippingPlanes (local, por material) o a renderer.clippingPlanes (global, NO recorta sombras). Hay que activar renderer.localClippingEnabled = true (default false, costo cero si no se usa). material.clipShadows = true para recortar tambien las sombras. Mover el plano = mutar plane.constant cada frame (NO recrear material/plano).",
+    "value": "renderer.localClippingEnabled = true; const plane = new THREE.Plane(new THREE.Vector3(0,-1,0), d); material.clippingPlanes = [plane]; material.clipShadows = true. El plano en La Forja: sectionToThreePlane() ya construye new THREE.Plane(normal, -distance). La normal apunta al lado QUE SE CONSERVA (lo opuesto se recorta).",
+    "forForja": "SectionPlane.tsx YA implementa esto correctamente: MeshClipper hace gl.localClippingEnabled=section.enabled, recorre scene.traverse y setea mat.clippingPlanes[0].copy(plane) por frame (en vez de recrear — correcto), respeta userData.__forgeNoClip. El SDF ray-march usa uClipPlane vec4 (sectionToVec4) con discard en el fragment. Esto es la mitad viva del feature y ya funciona. Lo unico a mejorar: que el plano sea de cara/normal arbitraria (no solo X/Y/Z), y exponer Flip ya existente."
+   },
+   {
+    "rule": "El plano de recorte deja un AGUJERO (el solido se ve hueco/abierto). Para que el corte se vea SOLIDO (como Fusion) hay que CAPEAR (cap) la apertura con el algoritmo de stencil capping del ejemplo oficial three.js webgl_clipping_stencil. Tecnica: por cada solido, render invisible (colorWrite=false, depthWrite=false) de sus BACKFACES incrementando el stencil y de sus FRONTFACES decrementandolo; luego dibujar un quad-plano del color del corte SOLO donde stencil != 0 (NotEqualStencilFunc). Donde stencil != 0 == region donde el plano corto el interior del solido.",
+    "value": "Material de stencil backface: {side:BackSide, colorWrite:false, depthWrite:false, stencilWrite:true, stencilFunc:AlwaysStencilFunc, stencilZFail:IncrementWrapStencilOp, stencilZPass:IncrementWrapStencilOp}. Frontface: igual pero side:FrontSide y DecrementWrapStencilOp. Cap quad: {stencilWrite:true, stencilRef:0, stencilFunc:NotEqualStencilFunc, stencilFail/ZFail/ZPass:ReplaceStencilOp, clippingPlanes:[] (el cap NO se recorta a si mismo)}. GOTCHA: el stencil es MUY sensible al render order — usa renderOrder explicito (objeto1: 1,2; objeto2: 3,4) y completa todas las pasadas de un objeto antes del siguiente. three.js trae PlaneStencilGroup (group con 2 meshes back/front) y un cap mesh por plano.",
+    "forForja": "Anadir a SectionPlaneVisual un PlaneStencilGroup que clone la geometria del part (mesh.positions/indices ya en BufferGeometry en ForgeBRepStudio) con esos materiales de stencil, y un cap quad orientado al plano (reusa sectionToThreePlane para posicion/orientacion via plane.coplanarPoint + lookAt(normal)). Marcar el cap con userData.__forgeNoClip para que MeshClipper no lo recorte. Color del cap = color del material/componente (Fusion 'From Component') o un color fijo (Fusion 'Custom')."
+   },
+   {
+    "rule": "Vista de seccion 2D / corte por plano (interseccion plano-solido) sobre la MALLA tessellada: para cada triangulo, clasificar sus 3 vertices por distancia con signo d = N·P - c (N normal unitaria, c constante del plano). Casos: (a) los 3 d del mismo signo -> el plano no corta el triangulo; (b) un vertice de un lado y dos del otro (o viceversa) -> el plano corta DOS aristas. El punto de cruce en una arista v0->v1 con distancias d0,d1 de signo opuesto: t = d0/(d0 - d1), P = v0 + t*(v1 - v0). Cada triangulo cortado aporta UN segmento dirigido entre sus 2 puntos de cruce. El conjunto de segmentos = contorno del corte.",
+    "value": "t = d0/(d0 - d1) (clamp 0..1); P = v0 + t*(v1-v0). Caso interesante: exactamente 1 cambio de signo a lo largo de los 3 lados del triangulo => 2 intersecciones => 1 segmento. Atributos (color/UV) interpolan con el mismo t. Tolerancia |d|<eps (~1e-6) trata el vertice como 'sobre el plano'.",
+    "forForja": "Funcion pura sliceMesh(positions:Float32Array, indices:Uint32Array, plane:THREE.Plane): Segment[] sobre mesh.positions/mesh.indices que ForgeBRepStudio ya tiene. Sin dependencias nuevas, corre en el cliente. Produce los segmentos del contorno; alimenta tanto el outline 2D como el cap del visor 3D."
+   },
+   {
+    "rule": "Encadenar los segmentos sueltos en POLIGONOS cerrados (loops) para la vista 2D y para triangular el cap: construir un grafo punto->punto (con snapping por hash de coordenadas redondeadas a la tolerancia), recorrer aristas siguiendo el siguiente segmento que comparte endpoint hasta cerrar el loop. Proyectar los puntos 3D del plano a coordenadas 2D (u,v) con dos ejes ortonormales del plano (base tangente). Triangular el poligono 2D (fan desde el centroide si es convexo; ear-clipping/Delaunay si no) para el cap; orientar el winding segun la normal del plano.",
+    "value": "Snap key = `${round(x/eps)}|${round(y/eps)}|${round(z/eps)}` para soldar endpoints flotantes. Base 2D: u = normalize(any axis ⟂ N), v = N × u; coordenada (P·u, P·v). Fan triangulation desde centroide solo valida para poligonos convexos; usar ear-clipping para perfiles con agujeros/concavos.",
+    "forForja": "Para el cap del visor 3D, el stencil capping (finding 3) EVITA tener que triangular el poligono (lo hace la GPU) — preferible para el corte vivo. La triangulacion 2D solo hace falta para EXPORTAR la vista de seccion como geometria 2D (DXF/SVG en drawing.ts, que esta vacio de seccion hoy). Reusar el snapping para chainear es la pieza clave; src/forja/brep/drawing.ts (252 LOC, hoy sin seccion) es el hogar natural."
+   },
+   {
+    "rule": "Rayado/HATCH del corte 2D (relleno de lineas paralelas dentro del contorno): rotar el poligono al espacio del hatch (angulo del rayado, p.ej. 45 grados), generar lineas de barrido (scanlines) horizontales separadas por 'spacing'; para cada scanline y = k*spacing, calcular intersecciones con todas las aristas del poligono, ordenar las X de menor a mayor, y emitir segmentos de hatch entre PARES consecutivos (regla par-impar: dentro entre par 0-1, fuera entre 1-2, dentro entre 2-3...). Rotar los segmentos de vuelta al espacio original.",
+    "value": "Angulo tipico de hatch de seccion = 45 grados; ISO usa spacing y angulo segun escala (p.ej. 2-4 mm entre lineas a escala 1:1). Algoritmo scanline polygon-fill: por scanline, intersectar con cada arista, sortear X asc, rellenar pares (0-1, 2-3...), ignorar impares. Material diferente por componente => angulo/offset distinto para distinguir piezas (como Fusion).",
+    "forForja": "hatchPolygon(loop2D, angleDeg=45, spacingMm): Segment2D[]. En el visor 3D, el hatch puede ser una textura procedural de lineas (repeat segun spacing/escala) aplicada al cap quad, alineada al plano — mas barato que geometria de lineas. En la vista 2D/DXF, generar los segmentos reales. Exponer toggle 'Show Hatch' (igual que Fusion) en SectionState. Para distinguir componentes, variar el angulo (0/45/90/135) por faceId/material."
+   },
+   {
+    "rule": "Camino B-Rep EXACTO (no malla) para la vista de seccion — La Forja usa OCCT real (opencascade.js), asi que el corte puede ser EXACTO en vez de tessellado: BRepAlgoAPI_Section(shape, gp_Pln) intersecta cada cara del solido con el plano y produce ARISTAS de interseccion (analiticas donde se puede: cilindro∩plano = elipse/circulo exacto). Las aristas salen sueltas en un TopoDS_Compound — hay que reordenarlas en wires cerrados con ShapeFix_Wire. Esas wires son el contorno EXACTO del corte, listo para acotar.",
+    "value": "gp_Pln pln(gp_Ax3(origin, normal)); BRepAlgoAPI_Section sec(shape, pln); sec.ComputePCurveOn1(true)? ; sec.Approximation(true); sec.Build(); TopoDS_Shape edges = sec.Shape(). Reordenar: iterar edges del compound -> ShapeFix_Wire para chainear en wire(s) cerrado(s). Curva no analitica -> BSpline grado 1 (succesion de puntos).",
+    "forForja": "occt.ts (1353 LOC) ya envuelve BRepAlgoAPI_Fuse/Cut/Common (lineas 327-350) y makePolygonWire — anadir sectionShape(oc, shape, plane: SketchPlane3D): Shape[] con BRepAlgoAPI_Section + ShapeFix_Wire es trivial y reutiliza el kernel que ya cargas. Da el contorno EXACTO (no escalonado por la malla) para la vista 2D acotable. Esta es la via correcta para La Forja vs slicear la malla (que solo conviene para meshes importados sin B-Rep)."
+   },
+   {
+    "rule": "Proyeccion de la wire de seccion a un PLANO 2D ortografico (vista de plano tecnico, lineas visibles/ocultas): HLRBRep_Algo (exacto) o HLRBRep_PolyAlgo (poligonal, mas rapido) calcula la silueta y las aristas visibles/ocultas de un shape vistas desde una direccion. Se anade el shape, se le pasa un HLRAlgo_Projector (define la direccion/transformacion de proyeccion), se llama Update() y Hide(), y se extrae con HLRBRep_HLRToShape las curvas (visibles, ocultas, contornos suaves) como aristas 2D.",
+    "value": "HLRBRep_Algo myAlgo; myAlgo.Add(shape); myAlgo.Projector(HLRAlgo_Projector(ax3)); myAlgo.Update(); myAlgo.Hide(); HLRBRep_HLRToShape extractor(myAlgo); TopoDS_Shape visEdges = extractor.VCompound(); hiddenEdges = extractor.HCompound(). PolyAlgo = poligonal (rapido); Algo = exacto.",
+    "forForja": "Para una VISTA de seccion 2D completa (no solo el contorno del corte, sino tambien las aristas visibles detras), proyectar con HLRBRep tras cortar con BRepAlgoAPI_Section. El contorno del corte se rellena con hatch (finding 6); el resto se dibuja como lineas. Salida 2D -> DXF/SVG via drawing.ts. Opcional/avanzado; el MVP de seccion 2D solo necesita section wire + hatch."
+   },
+   {
+    "rule": "Plano de corte arbitrario vs ejes fijos: Fusion usa una cara/plano cualquiera (Cut Plane), no solo X/Y/Z. El normal de cualquier plano define el THREE.Plane y el gp_Pln. La constante del plano: para un THREE.Plane(normal, constant), constant = -normal·pointOnPlane. Para mover/animar el corte (Distance manipulator), solo se cambia plane.constant a lo largo del normal.",
+    "value": "constant = -(normal · puntoEnElPlano). Distance += delta a lo largo del normal => plane.constant -= delta (o +=, segun convencion del lado conservado). plane.coplanarPoint(target) devuelve el punto del plano mas cercano al origen — util para posicionar el visual y el cap quad.",
+    "forForja": "SectionPlane.tsx hoy fija axis ∈ {X,Y,Z} (AXIS_NORMALS). Generalizar SectionState a {normal:[x,y,z], distance, flip} y derivar de un raycast sobre una cara (mesh.faceIds -> normal de la cara) para el flujo 'selecciona una cara' identico a Fusion. Conserva los presets X/Y/Z como atajos. sectionToVec4/sectionToThreePlane ya soportan normal arbitrario internamente — solo cambia la fuente del normal."
+   }
+  ],
+  "sources": [
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=SLD-SECTION-ANALYSIS",
+   "https://www.cadedllc.com/post/section-analysis-in-fusion",
+   "https://www.autodesk.com/support/technical/article/caas/sfdcarticles/sfdcarticles/How-to-display-a-cross-section-of-a-Fusion-360-model.html",
+   "https://help.autodesk.com/view/fusion360/ENU/?guid=SLD-INSPECT-TOOLS",
+   "https://threejs.org/docs/#api/en/materials/Material.clippingPlanes",
+   "https://threejs.org/examples/webgl_clipping.html",
+   "https://threejs.org/examples/?q=clipping#webgl_clipping_stencil",
+   "https://github.com/mrdoob/three.js/pull/8465",
+   "https://discourse.threejs.org/t/capping-clipped-planes-using-stencil-on-a-buffergeometry/18407",
+   "https://discourse.threejs.org/t/how-to-render-caps-like-webgl-clipping-stencil/36727",
+   "https://www.geometrictools.com/Documentation/ClipMesh.pdf",
+   "https://deepwiki.com/hugoscurti/mesh-cutter/3.1-plane-mesh-intersection",
+   "https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm",
+   "https://dev.opencascade.org/content/difference-between-brepalgoapisection-and-geomapiintss-shell-plane-intersection",
+   "https://github.com/tpaviot/pythonocc-core/issues/554",
+   "https://dev.opencascade.org/doc/overview/html/occt_user_guides__modeling_algos.html",
+   "https://dev.opencascade.org/doc/refman/html/class_h_l_r_b_rep___algo.html",
+   "https://old.opencascade.com/doc/occt-7.5.0/refman/html/class_h_l_r_b_rep___poly_algo.html",
+   "https://www.tutorialspoint.com/computer_graphics/computer_graphics_scan_line_algorithm.htm",
+   "https://www.javatpoint.com/computer-graphics-scan-line-polygon-fill-algorithm",
+   "https://pressbooks.nvcc.edu/cad201/chapter/hatching/"
+  ]
+ }
+]

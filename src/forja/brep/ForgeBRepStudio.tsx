@@ -67,6 +67,7 @@ import {
 } from './occt';
 import { resolveParams, tryEval, type Param, type ResolvedParams } from './expr';
 import { generateDrawing } from './drawing';
+import { printabilityReport, overhangVertexColors, PRINT_PROFILES, type PrintProfile, type PrintabilityReport } from '../mech/dfm';
 import {
   buildGearSketch,
   deriveGearGeometry,
@@ -1041,7 +1042,7 @@ function sweepMeshingInterference(
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
   mesh, faded, matKey, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
-  feaColors,
+  feaColors, overhangColors,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
@@ -1055,8 +1056,11 @@ function SolidMesh({
   onPickEdge: (i: number) => void;
   /** Colores por vértice del campo de von Mises (RGB 0..1, 3·N). null = sin overlay. */
   feaColors: Float32Array | null;
+  /** Overlay de voladizos (imprimibilidad): tiene prioridad sobre el FEA. */
+  overhangColors: Float32Array | null;
 }) {
   const pbr = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
+  const overlayColors = overhangColors ?? feaColors;   // imprimibilidad > FEA
   const geom = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
@@ -1071,13 +1075,13 @@ function SolidMesh({
   // (vonMisesVertexColors muestrea EXACTAMENTE en mesh.positions). Se actualiza
   // al recalcular el FEA; al apagar el overlay se remueve el atributo.
   useEffect(() => {
-    if (feaColors && feaColors.length === mesh.positions.length) {
-      geom.setAttribute('color', new THREE.BufferAttribute(feaColors, 3));
+    if (overlayColors && overlayColors.length === mesh.positions.length) {
+      geom.setAttribute('color', new THREE.BufferAttribute(overlayColors, 3));
     } else if (geom.getAttribute('color')) {
       geom.deleteAttribute('color');
     }
     geom.attributes.color && (geom.attributes.color.needsUpdate = true);
-  }, [geom, feaColors, mesh.positions.length]);
+  }, [geom, overlayColors, mesh.positions.length]);
   const edgesGeo = useMemo(() => new THREE.EdgesGeometry(geom, 25), [geom]);
   useEffect(() => () => { geom.dispose(); edgesGeo.dispose(); }, [geom, edgesGeo]);
 
@@ -1220,8 +1224,8 @@ function SolidMesh({
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
       >
-        {feaColors ? (
-          /* OVERLAY FEA: la pieza se pinta por von Mises (vertexColors azul→rojo).
+        {overlayColors ? (
+          /* OVERLAY (FEA von Mises / voladizos de imprimibilidad): vertexColors.
              meshBasicMaterial = SIN luz: el color del esfuerzo se ve EXACTO en
              cualquier ángulo y con la luz tenue del viewport CAD (un mapa de
              color FEM debe leerse fiel, no teñido por el HDRI ni por sombras).
@@ -2382,6 +2386,22 @@ export default function ForgeBRepStudio() {
       triggerDownload(meshToStlBlob(result.mesh.positions, result.mesh.indices), 'forja-part.stl');
     }
   }, [genResult, genThreshold, result]);
+  // ── IMPRIMIBILIDAD (DFM): ¿cabe?, voladizos, holgura/compensación recomendadas ──
+  const [printProfileKey, setPrintProfileKey] = useState<keyof typeof PRINT_PROFILES>('media');
+  const [printMaterial, setPrintMaterial] = useState<PrintProfile['material']>('PLA');
+  const [showOverhangs, setShowOverhangs] = useState(false);
+  const printProfile = useMemo<PrintProfile>(
+    () => ({ ...PRINT_PROFILES[printProfileKey], material: printMaterial }),
+    [printProfileKey, printMaterial],
+  );
+  const printReport = useMemo<PrintabilityReport | null>(
+    () => (result ? printabilityReport(result.mesh, printProfile) : null),
+    [result, printProfile],
+  );
+  const overhangColors = useMemo<Float32Array | null>(
+    () => (result && showOverhangs ? overhangVertexColors(result.mesh, printProfile) : null),
+    [result, showOverhangs, printProfile],
+  );
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
   const genPlano = useCallback(() => {
@@ -2593,6 +2613,11 @@ export default function ForgeBRepStudio() {
       // MOTOR DE PLANOS — driver de QA
       genPlano,
       get planoSvg() { return planoSvg; },
+      // IMPRIMIBILIDAD (DFM) — driver de QA
+      get printReport() { return printReport; },
+      setPrintMaterial: (m: PrintProfile['material']) => setPrintMaterial(m),
+      setShowOverhangs: (v: boolean) => setShowOverhangs(v),
+      get showOverhangs() { return showOverhangs; },
       // ENSAMBLE — driver de QA
       addComponent, updateComponent, removeComponent,
       setActiveComp: (id: string | null) => setActiveComp(id),
@@ -2776,7 +2801,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2839,6 +2864,7 @@ export default function ForgeBRepStudio() {
                 onPickFace={togglePickFace}
                 onPickEdge={togglePickEdge}
                 feaColors={feaColors}
+                overhangColors={showOverhangs ? overhangColors : null}
               />
             )}
           </group>
@@ -3817,6 +3843,39 @@ export default function ForgeBRepStudio() {
                 <Row k="Inercia principal"
                   v={result.mass.principal.map((p) => p.toExponential(2)).join(' · ')}
                   testid="an-inercia" />
+
+                {/* ── IMPRIMIBILIDAD (DFM) — el portero antes de imprimir ── */}
+                <div className="fb-divider" />
+                <div className="fb-print-head">
+                  <span>🖨 Imprimibilidad</span>
+                  <select data-testid="select-print-mat" value={printMaterial}
+                    onChange={(e) => setPrintMaterial(e.target.value as PrintProfile['material'])}>
+                    {['PLA', 'PETG', 'ABS', 'TPU', 'Nylon'].map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <select data-testid="select-print-bed" value={printProfileKey}
+                    onChange={(e) => setPrintProfileKey(e.target.value as keyof typeof PRINT_PROFILES)}>
+                    <option value="ender3">220³</option>
+                    <option value="media">256³</option>
+                    <option value="grande">350×350×400</option>
+                  </select>
+                </div>
+                {printReport && (
+                  <div className="fb-mass">
+                    <div className={`fb-print-fits ${printReport.fits ? 'ok' : 'bad'}`} data-testid="print-fits">
+                      {printReport.fits ? '✓ Cabe en la impresora' : '✕ NO cabe — reorienta o parte'}
+                      <em> {printReport.bbox.w}×{printReport.bbox.d}×{printReport.bbox.h} mm</em>
+                    </div>
+                    <Row k="Voladizos (soporte)"
+                      v={printReport.triSupport === 0 ? 'ninguno ✓' : `${printReport.overhangPct}% · ~${printReport.supportVolEstMm3.toFixed(0)} mm³`}
+                      hi={printReport.triSupport > 0} testid="print-overhang" />
+                    <Row k="Holgura print-in-place" v={`${printReport.clearance} mm`} testid="print-clear" />
+                    <Row k="Compensar barrenos" v={`+${printReport.holeComp} mm`} testid="print-holecomp" />
+                    <button className={`fb-overhang-btn ${showOverhangs ? 'on' : ''}`} data-testid="btn-overhangs"
+                      onClick={() => setShowOverhangs((v) => !v)}>
+                      {showOverhangs ? '◼ Ocultar voladizos' : '◻ Ver voladizos (mapa)'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="fb-mass"><Row k="Estado" v="construyendo…" /></div>
@@ -4177,6 +4236,19 @@ const CSS = `
 .fb-lib-del{border:0;background:transparent;color:${STEEL};cursor:pointer;font-size:12px;padding:4px 6px;border-radius:6px;}
 .fb-lib-del:hover{background:rgba(248,113,113,0.18);color:#fca5a5;}
 .fb-doc-studio{font-weight:400;opacity:.55;}
+/* ── Imprimibilidad (DFM) ── */
+.fb-print-head{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:${GOLD};
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.fb-print-head span{flex:1;}
+.fb-print-head select{background:rgba(0,0,0,0.4);border:1px solid rgba(159,179,200,0.18);border-radius:6px;
+  color:#eef3f9;font-size:10px;padding:3px 4px;outline:none;cursor:pointer;}
+.fb-print-fits{font-size:11px;font-weight:600;padding:6px 8px;border-radius:7px;margin-bottom:6px;}
+.fb-print-fits.ok{color:#8ff0a4;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);}
+.fb-print-fits.bad{color:#fca5a5;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);}
+.fb-print-fits em{font-style:normal;opacity:.6;font-weight:400;font-size:10px;}
+.fb-overhang-btn{width:100%;margin-top:8px;border:1px solid ${GOLD}44;background:${GOLD}10;color:${GOLD};
+  font-size:11px;padding:7px;border-radius:8px;cursor:pointer;font-weight:600;}
+.fb-overhang-btn:hover,.fb-overhang-btn.on{background:${GOLD}22;}
 .fb-menu button.danger:hover{background:rgba(248,113,113,0.16);color:#fca5a5;}
 .fb-imported-tag{font-size:9px;font-weight:700;color:#1a1206;background:${GOLD};
   border-radius:5px;padding:2px 6px;margin-left:8px;letter-spacing:.4px;}
