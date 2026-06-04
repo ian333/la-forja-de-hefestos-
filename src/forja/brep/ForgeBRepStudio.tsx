@@ -1622,6 +1622,34 @@ function Dim({ label, value, unit, onChange, min, max, step, testid, bindKey }: 
 let opCounter = 0;
 const newId = (t: string) => `${t}-${++opCounter}`;
 
+// ── GUARDAR / CARGAR: el documento serializable (todo el grafo de diseño) ──
+interface DocState {
+  version: number; name: string;
+  sketch: SketchFeature; ops: Op[]; material: keyof typeof MATERIALS;
+  assembly: AssemblyState; params: Param[]; bindings: Record<string, string>; components: Component[];
+}
+const DEFAULT_SKETCH: SketchFeature = {
+  id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
+  steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
+  gear: { ...GEAR_DEFAULTS },
+};
+function makeDefaultDoc(name = 'Pieza nueva'): DocState {
+  return {
+    version: 1, name,
+    sketch: { ...DEFAULT_SKETCH, gear: { ...GEAR_DEFAULTS } },
+    ops: [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }],
+    material: 'alu', assembly: { ...ASSEMBLY_DEFAULTS }, params: [], bindings: {}, components: [],
+  };
+}
+// Biblioteca de piezas en localStorage (nombre → DocState). Persiste entre sesiones.
+const LIB_KEY = 'forja:library:v1';
+function readLib(): Record<string, DocState> {
+  try { return JSON.parse(localStorage.getItem(LIB_KEY) || '{}'); } catch { return {}; }
+}
+function writeLib(lib: Record<string, DocState>) {
+  try { localStorage.setItem(LIB_KEY, JSON.stringify(lib)); } catch { /* cuota llena */ }
+}
+
 /**
  * Etiqueta semántica de una cara para la lista determinista (Playwright):
  * superior/inferior por la normal en Z (planos), lateral para el resto. Permite
@@ -1716,6 +1744,10 @@ export default function ForgeBRepStudio() {
   const removeComponent = useCallback((id: string) => {
     setComponents((cur) => cur.filter((c) => c.id !== id)); setActiveComp(null);
   }, []);
+  // ── GUARDAR / CARGAR (biblioteca de piezas) ──
+  const [docName, setDocName] = useState('Pieza 1');
+  const [libNames, setLibNames] = useState<string[]>([]);
+  const refreshLib = useCallback(() => setLibNames(Object.keys(readLib()).sort()), []);
   const resolvedParams = useMemo<ResolvedParams>(() => resolveParams(params), [params]);
   const setBinding = useCallback((key: string, expr: string | null) => {
     setBindings((b) => {
@@ -1935,6 +1967,44 @@ export default function ForgeBRepStudio() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [undo, redo]);
+
+  // ── GUARDAR / CARGAR: serializa TODO el documento y lo restaura ──
+  const serializeDoc = useCallback((): DocState => ({
+    version: 1, name: docName, sketch, ops, material, assembly, params, bindings, components,
+  }), [docName, sketch, ops, material, assembly, params, bindings, components]);
+  const loadDoc = useCallback((d: Partial<DocState>) => {
+    // Restaura el estado y REINICIA el historial (no se deshace hacia otra pieza).
+    histRef.current = { past: [], future: [], last: null };
+    applyingRef.current = true;
+    setSketch(d.sketch ?? { ...DEFAULT_SKETCH, gear: { ...GEAR_DEFAULTS } });
+    const nops = d.ops && d.ops.length ? d.ops : makeDefaultDoc().ops;
+    setOps(nops);
+    setMaterial(d.material ?? 'alu');
+    setAssembly(d.assembly ?? { ...ASSEMBLY_DEFAULTS });
+    setParams(d.params ?? []); setBindings(d.bindings ?? {}); setComponents(d.components ?? []);
+    setActiveOp(nops[0]?.id ?? null); setActiveComp(null); setRollbackIdx(null);
+    if (d.name) setDocName(d.name);
+    setHistVer((v) => v + 1);
+  }, []);
+  const newDoc = useCallback(() => { loadDoc(makeDefaultDoc('Pieza nueva')); }, [loadDoc]);
+  const saveToLibrary = useCallback(() => {
+    const lib = readLib(); lib[docName.trim() || 'Sin nombre'] = serializeDoc(); writeLib(lib); refreshLib();
+  }, [docName, serializeDoc, refreshLib]);
+  const loadFromLibrary = useCallback((name: string) => {
+    const d = readLib()[name]; if (d) loadDoc(d);
+  }, [loadDoc]);
+  const deleteFromLibrary = useCallback((name: string) => {
+    const lib = readLib(); delete lib[name]; writeLib(lib); refreshLib();
+  }, [refreshLib]);
+  const exportDocFile = useCallback(() => {
+    const safe = (docName.trim() || 'pieza').replace(/[^\w.-]+/g, '_');
+    triggerDownload(new Blob([JSON.stringify(serializeDoc(), null, 2)], { type: 'application/json' }), `${safe}.forja.json`);
+  }, [docName, serializeDoc]);
+  const importDocFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => { try { loadDoc(JSON.parse(String(reader.result)) as DocState); } catch { /* json inválido */ } };
+    reader.readAsText(file);
+  }, [loadDoc]);
 
   // Al cambiar la ESTRUCTURA del documento (nº de ops) la topología cambia y los
   // índices de cara/arista dejan de ser válidos: limpia la selección puntual.
@@ -2497,6 +2567,11 @@ export default function ForgeBRepStudio() {
       addComponent, updateComponent, removeComponent,
       setActiveComp: (id: string | null) => setActiveComp(id),
       get components() { return components; },
+      // GUARDAR/CARGAR — driver de QA
+      get docName() { return docName; },
+      setDocName: (n: string) => setDocName(n),
+      serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary,
+      get libNames() { return Object.keys(readLib()).sort(); },
       setSketch,
       // Lista de ops con id+tipo+depth — para que QA (Playwright) ubique la op de
       // extrude por su id real y la edite (updateOp) sin depender del clamp del
@@ -2667,7 +2742,7 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, components, activeComp, addComponent, updateComponent, removeComponent, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.kind, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -2854,8 +2929,8 @@ export default function ForgeBRepStudio() {
           <header className="fb-header">
             <div className="fb-mark">⚒</div>
             <div className="fb-titles">
-              <h1>La Forja · Part Studio</h1>
-              <p>Crea por clic · kernel B-Rep exacto (OpenCASCADE)</p>
+              <h1 data-testid="doc-title">{docName} <span className="fb-doc-studio">· Part Studio</span></h1>
+              <p>La Forja · kernel B-Rep exacto (OpenCASCADE)</p>
             </div>
             <div className={`fb-kernel ${oc ? 'on' : 'off'}`} data-testid="kernel-status">
               <span className="dot" />
@@ -2893,11 +2968,39 @@ export default function ForgeBRepStudio() {
             <span className="fb-tb-sep" />
             <div className="fb-menu-wrap">
               <button className={`fb-menu-btn ${optionsOpen ? 'on' : ''}`} data-testid="btn-options"
-                onClick={() => setOptionsOpen((v) => !v)} title="Opciones del documento">⋮ Opciones</button>
+                onClick={() => { setOptionsOpen((v) => { if (!v) refreshLib(); return !v; }); }} title="Opciones del documento">⋮ Opciones</button>
               {optionsOpen && (
                 <>
                   <div className="fb-menu-scrim" onClick={() => setOptionsOpen(false)} />
                   <div className="fb-menu" data-testid="options-menu" role="menu">
+                    <div className="fb-menu-sec">Documento</div>
+                    <input className="fb-doc-name" data-testid="input-doc-name" value={docName} spellCheck={false}
+                      onChange={(e) => setDocName(e.target.value)} placeholder="Nombre de la pieza" />
+                    <button data-testid="menu-new" role="menuitem"
+                      onClick={() => { newDoc(); setOptionsOpen(false); }}>📄  Nueva pieza</button>
+                    <button data-testid="menu-save" role="menuitem"
+                      onClick={() => { saveToLibrary(); refreshLib(); }}>💾  Guardar <em>en biblioteca</em></button>
+                    <label className="fb-menu-link" role="menuitem" style={{ cursor: 'pointer' }}>
+                      ⬆  Importar .json
+                      <input type="file" accept=".json,application/json" data-testid="input-import" style={{ display: 'none' }}
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) { importDocFile(f); setOptionsOpen(false); } }} />
+                    </label>
+                    {libNames.length > 0 && (
+                      <>
+                        <div className="fb-menu-sec">Abrir <em>(biblioteca)</em></div>
+                        <div className="fb-lib-list" data-testid="lib-list">
+                          {libNames.map((n) => (
+                            <div key={n} className="fb-lib-row">
+                              <button className="fb-lib-open" data-testid={`lib-open-${n}`}
+                                onClick={() => { loadFromLibrary(n); setOptionsOpen(false); }} title={`Abrir "${n}"`}>📂 {n}</button>
+                              <button className="fb-lib-del" data-testid={`lib-del-${n}`}
+                                onClick={() => deleteFromLibrary(n)} title="Borrar de la biblioteca">✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    <div className="fb-menu-sep" />
                     <div className="fb-menu-sec">Vista</div>
                     <button data-testid="menu-toggle-sketch" role="menuitem"
                       onClick={() => { setShowSketch((v) => !v); setOptionsOpen(false); }}>
@@ -2915,6 +3018,10 @@ export default function ForgeBRepStudio() {
                       disabled={!result && !genResult}
                       onClick={() => { exportSTL(); setOptionsOpen(false); }}>
                       ⬇  STL <em>{genResult ? '(generativo)' : '(malla)'}</em>
+                    </button>
+                    <button data-testid="menu-export-json" role="menuitem"
+                      onClick={() => { exportDocFile(); setOptionsOpen(false); }}>
+                      ⬇  .json <em>(pieza editable)</em>
                     </button>
                   </div>
                 </>
@@ -4013,6 +4120,17 @@ const CSS = `
 .fb-menu button:hover,.fb-menu .fb-menu-link:hover{background:${GOLD}1a;color:${GOLD};}
 .fb-menu em{font-style:normal;opacity:.55;font-size:10px;margin-left:auto;}
 .fb-menu button:disabled,.fb-menu .fb-menu-link.disabled{opacity:.38;pointer-events:none;}
+.fb-doc-name{width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(159,179,200,0.18);
+  border-radius:7px;color:#eef3f9;font-size:12px;font-weight:600;padding:7px 9px;outline:none;margin:2px 0 4px;}
+.fb-doc-name:focus{border-color:${GOLD}88;}
+.fb-lib-list{display:flex;flex-direction:column;gap:2px;max-height:160px;overflow:auto;}
+.fb-lib-row{display:flex;align-items:center;gap:2px;}
+.fb-lib-open{flex:1;text-align:left;border:0;background:transparent;color:#e9eef5;font-size:11px;
+  padding:6px 9px;border-radius:7px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fb-lib-open:hover{background:${GOLD}1a;color:${GOLD};}
+.fb-lib-del{border:0;background:transparent;color:${STEEL};cursor:pointer;font-size:12px;padding:4px 6px;border-radius:6px;}
+.fb-lib-del:hover{background:rgba(248,113,113,0.18);color:#fca5a5;}
+.fb-doc-studio{font-weight:400;opacity:.55;}
 
 .fb-header{top:18px;left:18px;display:flex;align-items:center;gap:14px;padding:11px 16px;}
 .fb-mark{font-size:22px;color:${GOLD};filter:drop-shadow(0 0 8px ${GOLD}88);}
