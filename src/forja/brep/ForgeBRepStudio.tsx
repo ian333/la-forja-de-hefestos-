@@ -1073,7 +1073,7 @@ function buildOutput(oc: OC, p: GearboxParams, outCenters: Pt2[]): Shape {
  */
 function buildGearbox(oc: OC, p: GearboxParams): Shape {
   const d0 = gearboxDims(p);
-  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr + p.gap, E: p.E, segments: Math.max(90, p.lobes * 9) });
   const phases = discPhases(p.discs);
   const outCenters = pinPositions(d0.outR, Math.max(3, Math.round(p.outPins)));
   const parts: Shape[] = [];
@@ -1102,7 +1102,7 @@ function buildGearbox(oc: OC, p: GearboxParams): Shape {
  */
 function buildGearboxBodies(oc: OC, p: GearboxParams): { key: string; name: string; shape: Shape }[] {
   const d0 = gearboxDims(p);
-  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr + p.gap, E: p.E, segments: Math.max(90, p.lobes * 9) });
   const phases = discPhases(p.discs);
   const outCenters = pinPositions(d0.outR, Math.max(3, Math.round(p.outPins)));
   const out: { key: string; name: string; shape: Shape }[] = [];
@@ -1205,7 +1205,7 @@ function tessGeo(oc: OC, shape: Shape): PartGeo {
 // + órbita por frame. Los pernos de salida ya van pre-compensados en buildCycDisc.
 function buildGearboxMotionData(oc: OC, p: GearboxParams): GearboxMotionData {
   const d0 = gearboxDims(p);
-  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr, E: p.E, segments: Math.max(90, p.lobes * 9) });
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr + p.gap, E: p.E, segments: Math.max(90, p.lobes * 9) });
   const phasesDeg = discPhases(p.discs);
   const outCenters = pinPositions(d0.outR, Math.max(3, Math.round(p.outPins)));
 
@@ -3528,7 +3528,8 @@ export default function ForgeBRepStudio() {
       // ≥ ~0 = engrana sin penetrar. clocked=false reproduce el bug (penetra fuerte).
       gbMeshClearance: (thetaDeg: number, clocked = true) => {
         const g = sketch.gearbox;
-        const prof = cycloidalDisc({ lobes: g.lobes, R: g.R, Rr: g.Rr, E: g.E, segments: Math.max(90, g.lobes * 9) }).profile;
+        // perfil con la holgura de impresión (Rr+gap) y se compara contra el rodillo REAL (Rr)
+        const prof = cycloidalDisc({ lobes: g.lobes, R: g.R, Rr: g.Rr + g.gap, E: g.E, segments: Math.max(90, g.lobes * 9) }).profile;
         const th = (thetaDeg * Math.PI) / 180;
         const rollers = pinPositions(g.R, g.lobes + 1);
         const d2seg = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
