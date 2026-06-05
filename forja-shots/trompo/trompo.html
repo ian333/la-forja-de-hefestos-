@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf8"><style>body{margin:0;background:#0d1218;font-family:system-ui;color:#9fb3c8}h1{color:#d8a657;text-align:center;padding:16px 0 4px;font-size:21px}.sub{text-align:center;font-size:13px;padding-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}.card{background:#121a22;border:1px solid #d8a65733;border-radius:10px;padding:8px}</style></head>
+<body><h1>Trompo: dientes 3D — ¿axial y radial? + cualquier tamaño</h1>
+<div class="sub">La curva 3D mete axial, PERO simétrica (barril) lo cancela → torque sigue tang×R (no se complica). Y escala a 100 g.</div>
+<div class="grid">
+<div class="card"><svg width="580" height="270" viewBox="0 0 580 270" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="context-stroke"/></marker></defs><rect width="580" height="270" fill="#0d1218"/>
+  <text x="40" y="26" fill="#d8a657" font-size="14" font-weight="bold">la fuerza del contacto: ¿axial Y radial?</text>
+  <text x="120" y="55" fill="#9fb3c8" font-size="12" text-anchor="middle">diente PLANO (ψ=0)</text>
+  <line x1="120" y1="150" x2="120" y2="87.440944" stroke="#7ee081" stroke-width="3" marker-end="url(#ar)"/><text x="116" y="87.440944" fill="#7ee081" font-size="11" text-anchor="start">tang→torque</text>
+  <line x1="120" y1="150" x2="143.941407" y2="150" stroke="#6fb6c9" stroke-width="3" marker-end="url(#ar)"/><text x="147.941407" y="150" fill="#6fb6c9" font-size="11" text-anchor="start">radial</text>
+  <circle cx="120" cy="150" r="3" fill="#9fb3c8"/>
+  <text x="120" y="250" fill="#e06c6c" font-size="11" text-anchor="middle">axial = 0 ✓</text>
+  <text x="430" y="55" fill="#9fb3c8" font-size="12" text-anchor="middle">diente CURVO (ψ=18°)</text>
+  <line x1="430" y1="150" x2="430" y2="87.440944" stroke="#7ee081" stroke-width="3" marker-end="url(#ar)"/><text x="426" y="87.440944" fill="#7ee081" font-size="11" text-anchor="start">tang→torque</text>
+  <line x1="430" y1="150" x2="452.769635" y2="150" stroke="#6fb6c9" stroke-width="3" marker-end="url(#ar)"/><text x="456.769635" y="150" fill="#6fb6c9" font-size="11" text-anchor="start">radial</text>
+  <line x1="430" y1="150" x2="452" y2="172" stroke="#b58cf0" stroke-width="3" marker-end="url(#ar)"/><text x="456" y="172" fill="#b58cf0" font-size="11" text-anchor="start">AXIAL</text>
+  <circle cx="430" cy="150" r="3" fill="#9fb3c8"/>
+  <text x="430" y="250" fill="#b58cf0" font-size="11" text-anchor="middle">axial = F·sin ψ ≈ 31 N (NUEVO)</text></svg></div>
+<div class="card"><svg width="580" height="270" viewBox="0 0 580 270" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="context-stroke"/></marker></defs><rect width="580" height="270" fill="#0d1218"/>
+  <text x="40" y="26" fill="#d8a657" font-size="14" font-weight="bold">la clave: barril SIMÉTRICO cancela el axial</text>
+  <!-- barril simétrico: dos conos espejo (forma de X / barril) -->
+  <path d="M110,105 L190,165 L110,225" fill="none" stroke="#d8a657" stroke-width="2"/>
+  <path d="M190,105 L110,165 L190,225" fill="none" stroke="#d8a657" stroke-width="2"/>
+  <line x1="150" y1="147" x2="150" y2="113" stroke="#b58cf0" stroke-width="3" marker-end="url(#ar)"/>
+  <line x1="150" y1="183" x2="150" y2="217" stroke="#b58cf0" stroke-width="3" marker-end="url(#ar)"/>
+  <text x="150" y="251" fill="#7ee081" font-size="12" text-anchor="middle">↑+↓ = 0 NETO ✓</text>
+  <text x="150" y="269" fill="#9fb3c8" font-size="11" text-anchor="middle">barril (trompo simétrico)</text>
+  <!-- cono simple: un solo sentido -->
+  <path d="M370,105 L450,165 L370,225" fill="none" stroke="#d8a657" stroke-width="2"/>
+  <line x1="410" y1="165" x2="410" y2="109" stroke="#e06c6c" stroke-width="4" marker-end="url(#ar)"/>
+  <text x="410" y="251" fill="#e06c6c" font-size="12" text-anchor="middle">empuje NETO ≠ 0</text>
+  <text x="410" y="269" fill="#9fb3c8" font-size="11" text-anchor="middle">cono simple (lo evitas)</text></svg></div>
+<div class="card"><svg width="580" height="290" viewBox="0 0 580 290" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="context-stroke"/></marker></defs><rect width="580" height="290" fill="#0d1218"/>
+  <text x="40" y="26" fill="#d8a657" font-size="14" font-weight="bold">el TORQUE casi no cambia: sigue tang×R</text>
+  <line x1="70" y1="230" x2="530" y2="230" stroke="#9fb3c844"/>
+  <line x1="70" y1="80" x2="530" y2="80" stroke="#7ee08133" stroke-dasharray="4 4"/>
+  <text x="530" y="76" fill="#7ee081" font-size="10" text-anchor="end">100% (plano)</text>
+  <path d="M70.0,80.0 L74.6,80.0 L79.2,80.0 L83.8,80.0 L88.4,80.1 L93.0,80.1 L97.6,80.1 L102.2,80.2 L106.8,80.2 L111.4,80.3 L116.0,80.4 L120.6,80.4 L125.2,80.5 L129.8,80.6 L134.4,80.7 L139.0,80.8 L143.6,80.9 L148.2,81.1 L152.8,81.2 L157.4,81.3 L162.0,81.5 L166.6,81.6 L171.2,81.8 L175.8,81.9 L180.4,82.1 L185.0,82.3 L189.6,82.5 L194.2,82.7 L198.8,82.8 L203.4,83.1 L208.0,83.3 L212.6,83.5 L217.2,83.7 L221.8,84.0 L226.4,84.2 L231.0,84.5 L235.6,84.7 L240.2,85.0 L244.8,85.3 L249.4,85.5 L254.0,85.8 L258.6,86.1 L263.2,86.4 L267.8,86.7 L272.4,87.0 L277.0,87.3 L281.6,87.7 L286.2,88.0 L290.8,88.3 L295.4,88.7 L300.0,89.0 L304.6,89.4 L309.2,89.8 L313.8,90.2 L318.4,90.5 L323.0,90.9 L327.6,91.3 L332.2,91.7 L336.8,92.1 L341.4,92.5 L346.0,93.0 L350.6,93.4 L355.2,93.8 L359.8,94.3 L364.4,94.7 L369.0,95.2 L373.6,95.6 L378.2,96.1 L382.8,96.6 L387.4,97.1 L392.0,97.6 L396.6,98.1 L401.2,98.6 L405.8,99.1 L410.4,99.6 L415.0,100.1 L419.6,100.6 L424.2,101.2 L428.8,101.7 L433.4,102.2 L438.0,102.8 L442.6,103.4 L447.2,103.9 L451.8,104.5 L456.4,105.1 L461.0,105.7 L465.6,106.2 L470.2,106.8 L474.8,107.4 L479.4,108.0 L484.0,108.6 L488.6,109.3 L493.2,109.9 L497.8,110.5 L502.4,111.2 L507.0,111.8 L511.6,112.4 L516.2,113.1 L520.8,113.8 L525.4,114.4 L530.0,115.1 " fill="none" stroke="#d8a657" stroke-width="2.5"/>
+  <circle cx="242.5" cy="85.11500000000001" r="5" fill="#7ee081"/><text x="242.5" y="75.11500000000001" fill="#7ee081" font-size="11" text-anchor="middle">ψ=15° → 97%</text> <circle cx="415" cy="100.1" r="5" fill="#6fb6c9"/><text x="415" y="90.1" fill="#6fb6c9" font-size="11" text-anchor="middle">ψ=30° → 87%</text>
+  <text x="530" y="248" fill="#9fb3c8" font-size="11" text-anchor="end">inclinación del diente ψ →</text>
+  <text x="40" y="268" fill="#9fb3c8" font-size="11">retención = cos ψ: a 15° pierdes 3%, a 30° pierdes 13%. La transmisión NO se complica.</text></svg></div>
+<div class="card"><svg width="580" height="310" viewBox="0 0 580 310" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="context-stroke"/></marker></defs><rect width="580" height="310" fill="#0d1218"/>
+  <text x="40" y="26" fill="#d8a657" font-size="14" font-weight="bold">cualquier tamaño: éste a 100 g</text>
+  <line x1="70" y1="250" x2="530" y2="250" stroke="#9fb3c844"/>
+  <line x1="70" y1="250" x2="70" y2="69" stroke="#9fb3c844"/>
+  <path d="M70.0,247.6 L74.6,247.3 L79.2,247.0 L83.8,246.7 L88.4,246.4 L93.0,246.0 L97.6,245.6 L102.2,245.2 L106.8,244.8 L111.4,244.3 L116.0,243.9 L120.6,243.4 L125.2,242.8 L129.8,242.3 L134.4,241.7 L139.0,241.1 L143.6,240.5 L148.2,239.8 L152.8,239.1 L157.4,238.4 L162.0,237.6 L166.6,236.8 L171.2,236.0 L175.8,235.1 L180.4,234.2 L185.0,233.3 L189.6,232.3 L194.2,231.3 L198.8,230.3 L203.4,229.2 L208.0,228.1 L212.6,226.9 L217.2,225.7 L221.8,224.5 L226.4,223.2 L231.0,221.9 L235.6,220.5 L240.2,219.1 L244.8,217.7 L249.4,216.2 L254.0,214.6 L258.6,213.0 L263.2,211.4 L267.8,209.7 L272.4,208.0 L277.0,206.2 L281.6,204.4 L286.2,202.5 L290.8,200.5 L295.4,198.6 L300.0,196.5 L304.6,194.4 L309.2,192.3 L313.8,190.1 L318.4,187.8 L323.0,185.5 L327.6,183.2 L332.2,180.8 L336.8,178.3 L341.4,175.7 L346.0,173.1 L350.6,170.5 L355.2,167.8 L359.8,165.0 L364.4,162.1 L369.0,159.2 L373.6,156.3 L378.2,153.2 L382.8,150.1 L387.4,147.0 L392.0,143.8 L396.6,140.5 L401.2,137.1 L405.8,133.7 L410.4,130.2 L415.0,126.6 L419.6,123.0 L424.2,119.3 L428.8,115.5 L433.4,111.6 L438.0,107.7 L442.6,103.7 L447.2,99.6 L451.8,95.5 L456.4,91.3 L461.0,87.0 L465.6,82.6 L470.2,78.2 L474.8,73.6 L479.4,69.0 L484.0,64.3 L488.6,59.6 L493.2,54.7 L497.8,49.8 L502.4,44.8 L507.0,39.7 L511.6,34.5 L516.2,29.2 L520.8,23.9 L525.4,18.4 L530.0,12.9 " fill="none" stroke="#d8a657" stroke-width="2.5"/>
+  <rect x="70" y="75" width="10.222222222222229" height="175" fill="#e06c6c10"/>
+  <line x1="80.22222222222223" y1="250" x2="80.22222222222223" y2="75" stroke="#e06c6c" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <text x="84.22222222222223" y="89" fill="#e06c6c" font-size="10">< 6.3 g: rodillo < 2·boquilla</text>
+  <line x1="288.8119356181477" y1="250" x2="288.8119356181477" y2="201.38888888888889" stroke="#7ee081" stroke-width="1" stroke-dasharray="3 3"/>
+  <circle cx="288.8119356181477" cy="201.38888888888889" r="6" fill="#7ee081"/>
+  <text x="296.8119356181477" y="195.38888888888889" fill="#7ee081" font-size="12">100 g → R=27 mm, 63.7 mm⌀</text>
+  <text x="530" y="268" fill="#9fb3c8" font-size="11" text-anchor="end">tamaño (escala) →</text>
+  <text x="40" y="288" fill="#9fb3c8" font-size="11">la macro escala ∝ R³; holguras de impresión (gap 0.6, boquilla 0.4) FIJAS → ajustan voladizos</text></svg></div>
+</div></body></html>
