@@ -175,7 +175,10 @@ interface GearboxParams {
   testRig?: boolean; // banco de prueba: añade PALANCA (manivela) al eje + BASE de fijación a la hembra
 }
 const GEARBOX_DEFAULTS: GearboxParams = {
-  lobes: 10, discs: 5, R: 40, Rr: 3, E: 1.5, T: 6, gap: 0.6, shaftD: 16, shaftBore: 8,
+  // gap 0.8 (no 0.6): el gap del modelo − el crecimiento de pared (~0.24) = efectivo ~0.56,
+  // SF ~1.9 sobre la fusión (0.30). Con 0.6 el efectivo caía a ~0.36 → SF ~1.2 → se fundía.
+  // Ver factor-seguridad.ts. Calibrable: si afinas la sobre-extrusión, se puede apretar.
+  lobes: 10, discs: 5, R: 40, Rr: 3, E: 1.5, T: 6, gap: 0.8, shaftD: 16, shaftBore: 8,
   outPins: 6, outPinD: 6, testRig: false,
 };
 
