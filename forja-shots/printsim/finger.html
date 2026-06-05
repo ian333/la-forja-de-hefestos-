@@ -1,0 +1,69 @@
+<!doctype html><html><head><meta charset="utf8"><style>html,body{margin:0;height:100%;background:#0a0e13;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+const W=1280,H=960;
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(W,H); renderer.setPixelRatio(1); renderer.localClippingEnabled=true;
+renderer.shadowMap.enabled=true; document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#0a0e13');
+const cam=new THREE.PerspectiveCamera(38,W/H,0.1,1000);
+cam.position.set(70,55,95); cam.lookAt(0,30,0);
+scene.add(new THREE.AmbientLight('#3a4a5a',1.1));
+const d1=new THREE.DirectionalLight('#fff4e0',2.2); d1.position.set(60,90,50); d1.castShadow=true; d1.shadow.mapSize.set(1024,1024);
+d1.shadow.camera.left=-60;d1.shadow.camera.right=60;d1.shadow.camera.top=90;d1.shadow.camera.bottom=-10; scene.add(d1);
+{const d2=new THREE.DirectionalLight('#6fb6ff',0.5);d2.position.set(-50,30,-40);scene.add(d2);}
+
+// cama de impresión
+const bed=new THREE.Mesh(new THREE.CircleGeometry(60,64),new THREE.MeshStandardMaterial({color:'#11161d',roughness:0.9,metalness:0.1}));
+bed.rotation.x=-Math.PI/2; bed.receiveShadow=true; scene.add(bed);
+const grid=new THREE.GridHelper(120,40,'#1c2630','#141b22'); scene.add(grid);
+
+// ── plano de corte = la altura de impresión (sube capa por capa) ──
+const clip=new THREE.Plane(new THREE.Vector3(0,-1,0),0.1);
+const PLA=()=>new THREE.MeshStandardMaterial({color:'#d8c9a8',roughness:0.62,metalness:0.04,clippingPlanes:[clip],clipShadows:true,side:THREE.DoubleSide});
+
+// ── el DEDO: 3 falanges que se afinan + codos (gaps) ──
+const part=new THREE.Group(); scene.add(part);
+const seg=(y0,y1,wx,wz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(wx,y1-y0,wz),PLA());m.position.set(0,(y0+y1)/2,0);m.castShadow=true;part.add(m);return m;};
+seg(0,9,16,16);            // base
+seg(11,27,13,13);         // falange 1
+seg(29,43,11,11);         // falange 2
+seg(45,57,9,9);           // falange 3 (punta)
+// codos = pernos print-in-place (cilindros horizontales en los gaps)
+const codo=(y)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(2,2,16,20),new THREE.MeshStandardMaterial({color:'#caa15e',roughness:0.5,clippingPlanes:[clip]}));m.rotation.z=Math.PI/2;m.position.set(0,y,0);m.castShadow=true;part.add(m);};
+codo(10);codo(28);codo(44);
+
+// ── guías (loops) en el lado flexor (+Z) ──
+const guideY=[6,18,36,51], guideZ=8.5; const anchors=[];
+guideY.forEach((y)=>{const g=new THREE.Mesh(new THREE.TorusGeometry(2.4,0.7,10,18),new THREE.MeshStandardMaterial({color:'#7c8a99',roughness:0.6,clippingPlanes:[clip]}));g.position.set(0,y,guideZ);part.add(g);anchors.push(new THREE.Vector3(0,y,guideZ+1));});
+
+// ── TENDÓN = cuerda LIBRE que cae (catenaria entre guías) ──
+function tendonCurve(){
+  const pts=[]; pts.push(new THREE.Vector3(0,2,guideZ+1));
+  for(let i=0;i<anchors.length-1;i++){const a=anchors[i],b=anchors[i+1];
+    const mid=a.clone().add(b).multiplyScalar(0.5);
+    const sag=(b.y-a.y)*0.45;                       // cuelga: cae en -Y y sale en +Z
+    mid.y-=sag; mid.z+=sag*0.5;
+    pts.push(a,mid);}
+  pts.push(anchors[anchors.length-1]);
+  // cola libre que cuelga de la punta (la "cuerda que cae")
+  const tip=anchors[anchors.length-1];
+  pts.push(new THREE.Vector3(tip.x+1,tip.y-4,tip.z+5),new THREE.Vector3(tip.x+2,tip.y-12,tip.z+8));
+  return new THREE.CatmullRomCurve3(pts);
+}
+const tendon=new THREE.Mesh(new THREE.TubeGeometry(tendonCurve(),160,0.55,8,false),
+  new THREE.MeshStandardMaterial({color:'#e06c5a',roughness:0.45,clippingPlanes:[clip]}));
+tendon.castShadow=true; part.add(tendon);
+
+// ── banda CALIENTE en la capa actual (la boquilla acaba de pasar) ──
+const hot=new THREE.Mesh(new THREE.RingGeometry(0,11,32),new THREE.MeshBasicMaterial({color:'#ff7a2a',transparent:true,opacity:0.85,side:THREE.DoubleSide}));
+hot.rotation.x=-Math.PI/2; scene.add(hot);
+
+const TOP=58;
+window.renderAt=(h)=>{ clip.constant=h; hot.position.y=Math.min(h,TOP); hot.visible=h<TOP+1;
+  const s=Math.max(1,11*(1-h/TOP)+3); hot.scale.set(1,1,1);
+  renderer.render(scene,cam); };
+window.__ph={top:TOP,layerH:0.2};
+window.renderAt(0.1); window.__ready=true;
+</script></body></html>

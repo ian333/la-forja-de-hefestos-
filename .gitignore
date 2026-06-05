@@ -63,3 +63,6 @@ _comercial_out/
 _jit_out/
 _solo_out/
 _*_out/
+forja-shots/printsim/frames/
+forja-shots/printsim/three.module.js
+forja-shots/printsim/three.core.js
