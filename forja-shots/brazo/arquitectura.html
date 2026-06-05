@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf8"><style>body{margin:0;background:#0d1218;font-family:system-ui;color:#9fb3c8}h1{color:#d8a657;text-align:center;padding:16px 0 4px;font-size:21px}.sub{text-align:center;font-size:13px;padding-bottom:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}.card{background:#121a22;border:1px solid #d8a65733;border-radius:10px;padding:8px}.wide{grid-column:1/-1}</style></head>
+<body><h1>Arquitectura: cicloidales = movimientos, discos = carga</h1><div class="sub">Lo que cachaste: 1 cicloidal = 1 eje. Para ángulo radial Y axial = 2 cicloidales. Los discos son carga, no DOF.</div>
+<div class="grid"><div class="card"><svg width="440" height="320" viewBox="0 0 440 320" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7ee081"/></marker></defs><rect width="440" height="320" fill="#0d1218"/><text x="20" y="26" fill="#d8a657" font-size="14" font-weight="bold">1 cicloidal = 1 movimiento (1 eje)</text>
+  <ellipse cx="210" cy="160" rx="70" ry="70" fill="#9fb3c818" stroke="#9fb3c8" stroke-width="2"/>
+  <line x1="210" y1="65" x2="210" y2="255" stroke="#7ee081" stroke-width="2" stroke-dasharray="5 4"/>
+  <path d="M288,130 A40 40 0 0 1 288,190" fill="none" stroke="#7ee081" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="296" y="164" fill="#7ee081" font-size="12">gira 1 eje</text>
+  <rect x="180" y="138" width="60" height="10" rx="2" fill="#d8a657"/><rect x="180" y="153" width="60" height="10" rx="2" fill="#d8a657"/><rect x="180" y="168" width="60" height="10" rx="2" fill="#d8a657"/>
+  <text x="210" y="238" fill="#d8a657" font-size="11" text-anchor="middle">discos = CARGA (no DOF)</text>
+  <text x="20" y="300" fill="#6fb6c9" font-size="12">el que imprimiste: 1 movimiento. Apilar discos NO da un 2º movimiento.</text></svg></div><div class="card"><svg width="440" height="320" viewBox="0 0 440 320" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7ee081"/></marker></defs><rect width="440" height="320" fill="#0d1218"/><text x="20" y="26" fill="#d8a657" font-size="14" font-weight="bold">2 ángulos = 2 cicloidales (gimbal)</text>
+  <ellipse cx="200" cy="190" rx="55" ry="22" fill="#b58cf022" stroke="#b58cf0" stroke-width="2"/>
+  <line x1="200" y1="90" x2="200" y2="240" stroke="#b58cf0" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="260" y="194" fill="#b58cf0" font-size="11">cic. 1: AXIAL (yaw)</text>
+  <ellipse cx="200" cy="120" rx="22" ry="50" fill="#e06c6c22" stroke="#e06c6c" stroke-width="2"/>
+  <line x1="125" y1="120" x2="275" y2="120" stroke="#e06c6c" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="230" y="80" fill="#e06c6c" font-size="11">cic. 2: RADIAL (pitch)</text>
+  <text x="20" y="300" fill="#7ee081" font-size="12">cic.1 mueve a cic.2 → el eslabón gira en 2 ejes → ángulo radial Y axial ✓</text></svg></div><div class="card wide"><svg width="900" height="250" viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7ee081"/></marker></defs><rect width="900" height="250" fill="#0d1218"/><text x="20" y="26" fill="#d8a657" font-size="14" font-weight="bold">el brazo esférico: 3 cicloidales = 3 DOF</text>
+  <text x="20" y="46" fill="#9fb3c8" font-size="11">hombro 2-DOF (2 cicloidales: yaw+pitch) + codo (1) = workspace esférico</text><circle cx="40" cy="66" r="8" fill="#b58cf0"/><text x="58" y="70" fill="#9fb3c8" font-size="13">hombro · base-yaw</text>
+    <text x="270" y="70" fill="#b58cf0" font-size="12">cicloidal 1 (eje vertical)</text><text x="540" y="70" fill="#d8a657" font-size="12">3 discos</text><circle cx="40" cy="110" r="8" fill="#e06c6c"/><text x="58" y="114" fill="#9fb3c8" font-size="13">hombro · pitch</text>
+    <text x="270" y="114" fill="#e06c6c" font-size="12">cicloidal 2 (eje horizontal)</text><text x="540" y="114" fill="#d8a657" font-size="12">3 discos</text><circle cx="40" cy="154" r="8" fill="#d8a657"/><text x="58" y="158" fill="#9fb3c8" font-size="13">codo</text>
+    <text x="270" y="158" fill="#d8a657" font-size="12">cicloidal 3</text><text x="540" y="158" fill="#d8a657" font-size="12">2 discos</text>
+  <line x1="20" y1="200" x2="640" y2="200" stroke="#d8a65733"/>
+  <text x="20" y="224" fill="#7ee081" font-size="13" font-weight="bold">desacoplado:  nº CICLOIDALES = los movimientos · nº DISCOS = la carga</text></svg></div></div></body></html>
