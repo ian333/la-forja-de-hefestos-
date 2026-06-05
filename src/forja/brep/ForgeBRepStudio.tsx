@@ -856,34 +856,56 @@ function retainerDims(p: GearboxParams) {
   const band = Math.max(0.8, Math.min(p.T * 0.34, p.T - 2 * lip - 0.8));
   return { lip, band };
 }
-// Perfil (r,z) de un CARRETE: barrel rN, collar rW en el medio, transiciones 45°.
-function spoolProfile(rN: number, rW: number, zb: number, zt: number, mid: number, band: number): Pt2[] {
+// Redondea vértices INTERIORES de una polilínea (filete tangente a ambos segmentos).
+// El esfuerzo se vuelve CONTINUO en la esquina (no concentrador/cortante). Petición del
+// usuario: los chaflanes de centrado deben ser CURVAS, no esquinas. Ver contacto-conforme.ts (Kt).
+function filletPolyline(pts: Pt2[], idxs: number[], rf: number, nseg = 6): Pt2[] {
+  const set = new Set(idxs);
+  const out: Pt2[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    if (!set.has(i) || i === 0 || i === pts.length - 1) { out.push(pts[i]); continue; }
+    const V = pts[i], A = pts[i - 1], B = pts[i + 1];
+    const L1 = Math.hypot(A.x - V.x, A.y - V.y), L2 = Math.hypot(B.x - V.x, B.y - V.y);
+    if (L1 < 1e-6 || L2 < 1e-6) { out.push(V); continue; }
+    // Bézier cuadrático con control en V: tangente a ambos segmentos (curva continua),
+    // SIEMPRE dentro del triángulo T1·V·T2 → nunca loopea (a prueba de revolve).
+    const t = Math.min(rf, L1 * 0.45, L2 * 0.45);
+    const T1 = { x: V.x + (A.x - V.x) / L1 * t, y: V.y + (A.y - V.y) / L1 * t };
+    const T2 = { x: V.x + (B.x - V.x) / L2 * t, y: V.y + (B.y - V.y) / L2 * t };
+    out.push(T1);
+    for (let k = 1; k < nseg; k++) { const s = k / nseg, m = (1 - s) * (1 - s), c = 2 * (1 - s) * s, e = s * s; out.push({ x: m * T1.x + c * V.x + e * T2.x, y: m * T1.y + c * V.y + e * T2.y }); }
+    out.push(T2);
+  }
+  return out;
+}
+// Perfil (r,z) de un CARRETE: barrel rN, collar rW al medio, transiciones 45° con las 4
+// esquinas REDONDEADAS (curvas) → el retenedor transmite la carga axial CONTINUO, no por
+// una esquina aguda que se cizalla. El filete respeta el límite de impresión (45° en el lado
+// inferior/voladizo; sólo se redondean las esquinas, no se mete voladizo nuevo).
+function spoolProfile(rN: number, rW: number, zb: number, zt: number, mid: number, band: number, round = false): Pt2[] {
   const lip = rW - rN;   // 45° ⇒ Δz = Δr = lip
-  return [
+  const raw: Pt2[] = [
     { x: 0, y: zb }, { x: rN, y: zb },
     { x: rN, y: mid - band / 2 - lip }, { x: rW, y: mid - band / 2 },
     { x: rW, y: mid + band / 2 }, { x: rN, y: mid + band / 2 + lip },
     { x: rN, y: zt }, { x: 0, y: zt },
   ];
+  // El filete sólo en la LEVA (el collar que transmite la carga axial). El barreno-cortador
+  // (negativo) se queda recto: filetearlo hace que la booleana disco∩cortador explote.
+  if (!round) return raw;
+  const rf = Math.min(lip, band / 2) * 0.7;   // radio de filete (curva continua)
+  return filletPolyline(raw, [2, 3, 4, 5], rf, 6);
 }
 // LEVA-carrete (sólida, eje en el origen, z 0..T): barrel eccR + collar eccR+lip,
 // + CANALES DE ACEITE axiales en el barril.
 function buildCamSpool(oc: OC, p: GearboxParams): Shape {
   const d0 = gearboxDims(p); const { lip, band } = retainerDims(p);
-  let cam = revolvePolygon(oc, spoolProfile(d0.eccR, d0.eccR + lip, 0, p.T, p.T / 2, band), 360, RZ_PLANE, Z_AXIS);
-  // FLAUTAS DE ACEITE axiales (4) de ALTURA COMPLETA en el muñón: la "figura" que
-  // reparte el aceite por TODA la altura de la leva (la trayectoria) y alimenta la
-  // película continua del cojinete journal. Verticales → AUTO-SOPORTADAS al imprimir.
-  // La curva continua que CENTRA es la película h(θ)=c(1+ε·cosθ) (ver cojinete-continuo.ts);
-  // las flautas sólo distribuyen el aceite. Cortan barril + collar en 4 puntos, dejando
-  // 4 SEGMENTOS de collar (separados 90°) que SIGUEN reteniendo el disco axialmente.
-  const nG = 4, rG = 1.0, centerR = d0.eccR + 0.2; // outer→eccR+lip (notch collar), inner→eccR-0.8
-  for (let k = 0; k < nG; k++) {
-    const th = (2 * Math.PI * k) / nG;
-    const gx = centerR * Math.cos(th), gy = centerR * Math.sin(th);
-    const groove = makeCylinder(oc, rG, p.T + 1, { origin: [gx, gy, -0.5], dir: [0, 0, 1] });
-    const t = cut(oc, cam, groove); cam.delete?.(); groove.delete?.(); cam = t;
-  }
+  // Collar con esquinas REDONDEADAS (curvas): el retenedor transmite la carga axial
+  // CONTINUO, no por una esquina aguda que se cizalla (petición del usuario; Kt en
+  // contacto-conforme.ts). El aceite se distribuye por la GARGANTA del retenedor
+  // (reservorio circunferencial) + la holgura del journal; las flautas axiales chocaban
+  // con el collar curvo (booleana explotaba) → se omiten, la curva manda.
+  const cam = revolvePolygon(oc, spoolProfile(d0.eccR, d0.eccR + lip, 0, p.T, p.T / 2, band, true), 360, RZ_PLANE, Z_AXIS);
   return cam;
 }
 // CORTADOR del barreno-garganta del disco (negativo, eje en origen): el disco
