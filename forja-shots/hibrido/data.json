@@ -1,0 +1,26 @@
+{
+  "bodies": null,
+  "mesh": {
+    "worstClearance": -0.0679
+  },
+  "geom": {
+    "camRadius": 9.5,
+    "camOffset": 1.5,
+    "discBoreRadius": 10.1,
+    "clearance": 0.6,
+    "outHoleD": 10.2,
+    "outPinD": 6,
+    "phases": [
+      0,
+      72,
+      144,
+      216,
+      288
+    ],
+    "camCollarR": 10.7,
+    "discBoreNarrowR": 10.1,
+    "retainerOverlap": 0.6
+  },
+  "exported": true,
+  "errs": []
+}
