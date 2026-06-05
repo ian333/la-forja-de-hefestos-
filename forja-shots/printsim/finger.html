@@ -9,7 +9,8 @@ renderer.shadowMap.enabled=true; document.body.appendChild(renderer.domElement);
 const scene=new THREE.Scene(); scene.background=new THREE.Color('#0a0e13');
 const cam=new THREE.PerspectiveCamera(38,W/H,0.1,1000);
 cam.position.set(70,55,95); cam.lookAt(0,30,0);
-scene.add(new THREE.AmbientLight('#3a4a5a',1.1));
+scene.add(new THREE.AmbientLight('#4a5a6a',1.3));
+scene.add(new THREE.HemisphereLight('#bcd2ea','#1c2530',1.4));   // ilumina TODOS los ángulos (inspección)
 const d1=new THREE.DirectionalLight('#fff4e0',2.2); d1.position.set(60,90,50); d1.castShadow=true; d1.shadow.mapSize.set(1024,1024);
 d1.shadow.camera.left=-60;d1.shadow.camera.right=60;d1.shadow.camera.top=90;d1.shadow.camera.bottom=-10; scene.add(d1);
 {const d2=new THREE.DirectionalLight('#6fb6ff',0.5);d2.position.set(-50,30,-40);scene.add(d2);}
@@ -61,9 +62,13 @@ const hot=new THREE.Mesh(new THREE.RingGeometry(0,11,32),new THREE.MeshBasicMate
 hot.rotation.x=-Math.PI/2; scene.add(hot);
 
 const TOP=58;
-window.renderAt=(h)=>{ clip.constant=h; hot.position.y=Math.min(h,TOP); hot.visible=h<TOP+1;
-  const s=Math.max(1,11*(1-h/TOP)+3); hot.scale.set(1,1,1);
-  renderer.render(scene,cam); };
+// supervisión: la cámara se MUEVE (az/el/dist) y enfoca (ty) para verificar gaps y explorar
+window.renderAt=(o)=>{ if(typeof o==='number')o={h:o};
+  const h=o.h??60, az=o.az??35, el=o.el??22, dist=o.dist??120, ty=o.ty??28;
+  clip.constant=h; hot.position.y=Math.min(h,TOP); hot.visible=(o.hot!==false)&&h<TOP+1;
+  const e=el*Math.PI/180, a=az*Math.PI/180;
+  cam.position.set(dist*Math.cos(e)*Math.sin(a), ty+dist*Math.sin(e), dist*Math.cos(e)*Math.cos(a));
+  cam.lookAt(0,ty,0); renderer.render(scene,cam); };
 window.__ph={top:TOP,layerH:0.2};
-window.renderAt(0.1); window.__ready=true;
+window.renderAt({h:0.1}); window.__ready=true;
 </script></body></html>
