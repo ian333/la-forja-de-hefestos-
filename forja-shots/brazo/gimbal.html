@@ -1,0 +1,52 @@
+<!doctype html><html><head><meta charset="utf8"><style>html,body{margin:0;height:100%;background:#0a0e13;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+const W=1280,H=960;
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(W,H); document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#0a0e13');
+const cam=new THREE.PerspectiveCamera(40,W/H,0.1,2000);
+scene.add(new THREE.AmbientLight('#4a5a6a',1.2));
+scene.add(new THREE.HemisphereLight('#bcd2ea','#1c2530',1.3));
+const d1=new THREE.DirectionalLight('#fff4e0',1.7); d1.position.set(80,140,100); scene.add(d1);
+scene.add(new THREE.GridHelper(160,20,'#1c2630','#141b22'));
+
+const HEMBRA=new THREE.MeshStandardMaterial({color:'#5a6576',roughness:0.65,metalness:0.15});
+const DISC=new THREE.MeshStandardMaterial({color:'#d8a657',roughness:0.5,metalness:0.2});
+const YOKE=new THREE.MeshStandardMaterial({color:'#7c8a99',roughness:0.6});
+const OUT=new THREE.MeshStandardMaterial({color:'#9fb3c8',roughness:0.55});
+// una junta cicloidal (config B): hembra-vaso (gira) + N discos FIJOS dentro. tint = color del eje.
+function cyc(R,N,tint){const g=new THREE.Group(); const h=N*6+6;
+  const vaso=new THREE.Mesh(new THREE.CylinderGeometry(R,R,h,30,1,true),HEMBRA); g.add(vaso);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(R,R,2,30),HEMBRA));               // tapa
+  for(let i=0;i<N;i++){const d=new THREE.Mesh(new THREE.CylinderGeometry(R*0.78,R*0.78,5,26),DISC);d.position.y=-h/2+6+i*6;g.add(d);}
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(R+1.2,1,8,30),new THREE.MeshStandardMaterial({color:tint,roughness:0.5,emissive:tint,emissiveIntensity:0.25}));
+  ring.rotation.x=Math.PI/2; ring.position.y=h/2-3; g.add(ring);                     // anillo del color del eje
+  return g;}
+function axisLine(len,col){const m=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.7});
+  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-len,0),new THREE.Vector3(0,len,0)]);
+  return new THREE.LineSegments(geo,m);}
+
+// CIC.1 — YAW (eje vertical, en la base). Su hembra gira → carga todo lo de arriba.
+const yawG=new THREE.Group(); scene.add(yawG);
+const c1=cyc(22,3,'#b58cf0'); c1.position.y=18; yawG.add(c1);
+yawG.add(axisLine(85,'#b58cf0'));                                                    // eje yaw (violeta) vertical
+// POSTE que sube de la hembra de cic.1 hasta el muñón del pitch (gimbal EN LÍNEA)
+const post=new THREE.Mesh(new THREE.BoxGeometry(9,40,9),YOKE); post.position.y=50; yawG.add(post);
+// CIC.2 — PITCH (eje horizontal arriba del poste). Su hembra gira el eslabón de salida.
+const pitchMount=new THREE.Group(); pitchMount.position.y=74; yawG.add(pitchMount);
+const c2=cyc(16,3,'#e06c5a'); c2.rotation.z=Math.PI/2; pitchMount.add(c2);          // acostado (eje X horizontal)
+const axR=axisLine(48,'#e06c5a'); axR.rotation.z=Math.PI/2; pitchMount.add(axR);    // eje pitch (rojo) horizontal
+const pitchG=new THREE.Group(); pitchMount.add(pitchG);                              // gira el eslabón
+const outBeam=new THREE.Mesh(new THREE.CylinderGeometry(5.5,4.5,95,16),OUT); outBeam.position.y=47.5; pitchG.add(outBeam);
+const tip=new THREE.Mesh(new THREE.SphereGeometry(6,18,12),new THREE.MeshStandardMaterial({color:'#7ee081',emissive:'#2a6e34',emissiveIntensity:0.4})); tip.position.y=95; pitchG.add(tip);
+
+window.renderAt=(o)=>{ o=o||{};
+  yawG.rotation.y=(o.q1||0)*Math.PI/180;          // CIC.1 yaw (axial)
+  pitchG.rotation.x=(o.q2||0)*Math.PI/180;        // CIC.2 pitch (radial)
+  const az=(o.az??40)*Math.PI/180, el=(o.el??14)*Math.PI/180, dist=o.dist??215, ty=o.ty??70;
+  cam.position.set(dist*Math.cos(el)*Math.sin(az), ty+dist*Math.sin(el), dist*Math.cos(el)*Math.cos(az));
+  cam.lookAt(0,ty,0); renderer.render(scene,cam); };
+window.renderAt({q1:25,q2:-30}); window.__ready=true;
+</script></body></html>
