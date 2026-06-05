@@ -952,11 +952,26 @@ function buildCycDisc(oc: OC, p: GearboxParams, profile: Pt2[], outCenters: Pt2[
   return d;
 }
 
+// RODILLO ACINTURADO (revolve, eje en el origen z0..zTop): cilindro Rr con una CINTURA
+// cóncava (radio Rr−crown) en el centro de CADA disco → "abraza" el barril del lóbulo
+// (negativo suave de la hembra). El perfil (r,z) baja a la cintura y vuelve en cada disco;
+// en los huecos entre discos se queda en Rr. Conos rectos = booleana robusta.
+function buildScallopedRoller(oc: OC, p: GearboxParams, z0: number, zTop: number, d0: ReturnType<typeof gearboxDims>): Shape {
+  const crown = Math.min(0.6, p.T * 0.14);
+  const prof: Pt2[] = [{ x: 0, y: z0 }, { x: p.Rr, y: z0 }];
+  for (let i = 0; i < p.discs; i++) {
+    const bot = i * d0.stepZ, mid = bot + p.T / 2, top = bot + p.T;
+    prof.push({ x: p.Rr, y: bot }, { x: p.Rr - crown, y: mid }, { x: p.Rr, y: top });
+  }
+  prof.push({ x: p.Rr, y: zTop }, { x: 0, y: zTop });
+  return revolvePolygon(oc, prof, 360, RZ_PLANE, Z_AXIS);
+}
+
 /**
  * HEMBRA = el VASO estructural (el "actuador" mismo): placa base cerrada + paredes
- * + N+1 RODILLOS integrados (la pista hembra donde rueda el cicloidal — ya NO son
- * pernos sueltos). El eje entra por un barreno en la base. Es la pieza FIJA y
- * estructural; el reductor no es backdriveable, así que sostiene posición sola.
+ * + N+1 RODILLOS ACINTURADOS integrados (la pista hembra que abraza el barril del
+ * cicloidal). El eje entra por un barreno en la base. Es la pieza FIJA y estructural;
+ * el reductor no es backdriveable, así que sostiene posición sola.
  */
 function buildHembra(oc: OC, p: GearboxParams): Shape {
   const d0 = gearboxDims(p);
@@ -968,9 +983,13 @@ function buildHembra(oc: OC, p: GearboxParams): Shape {
   let h = makeCylinder(oc, Rout, zTop - zBot, { origin: [0, 0, zBot], dir: [0, 0, 1] });
   // vaciar la cavidad (radio R) desde z0 → deja placa base + paredes
   { const cav = makeCylinder(oc, p.R, (zTop - z0) + 2, { origin: [0, 0, z0], dir: [0, 0, 1] }); const t = cut(oc, h, cav); h.delete?.(); cav.delete?.(); h = t; }
-  // RODILLOS de la hembra (la pista) — fundidos a la pared, sobresalen a la cavidad
+  // RODILLOS ACINTURADOS (híbrido barril↔socket): cada rodillo tiene una CINTURA cóncava
+  // por disco (radio Rr−crown al centro de cada disco) que ABRAZA el barril del lóbulo
+  // (gordo al medio) → contacto conformal de línea + centrado axial, con el gap de aceite.
+  // Es el "negativo suave" de la hembra. Revolve (recto/cóncavo) = booleana robusta.
   for (const pp of pinPositions(p.R, p.lobes + 1)) {
-    const roller = makeCylinder(oc, p.Rr, zTop - z0, { origin: [pp.x, pp.y, z0], dir: [0, 0, 1] });
+    const rLocal = buildScallopedRoller(oc, p, z0, zTop, d0);
+    const roller = transformShape(oc, rLocal, { translate: [pp.x, pp.y, 0] }); rLocal.delete?.();
     const t = fuse(oc, h, roller); h.delete?.(); roller.delete?.(); h = t;
   }
   // BASE de FIJACIÓN de prueba: pestaña ancha bajo la hembra con 4 barrenos para
