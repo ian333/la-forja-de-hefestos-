@@ -1,0 +1,64 @@
+<!doctype html><html><head><meta charset="utf8"><style>html,body{margin:0;height:100%;background:#0a0e13;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+const W=1280,H=960;
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(W,H); document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#0a0e13');
+const cam=new THREE.PerspectiveCamera(40,W/H,0.1,2000);
+scene.add(new THREE.AmbientLight('#4a5a6a',1.15));
+scene.add(new THREE.HemisphereLight('#bcd2ea','#1c2530',1.25));
+const d1=new THREE.DirectionalLight('#fff4e0',1.7); d1.position.set(90,150,110); scene.add(d1);
+scene.add(new THREE.GridHelper(180,22,'#1c2630','#141b22'));
+
+const VASO=new THREE.MeshStandardMaterial({color:'#5a6576',roughness:0.65,metalness:0.15});
+const DISC=new THREE.MeshStandardMaterial({color:'#d8a657',roughness:0.5,metalness:0.25});
+const ROLL=new THREE.MeshStandardMaterial({color:'#9fb3c8',roughness:0.4,metalness:0.4});
+const SHAFT=new THREE.MeshStandardMaterial({color:'#caa15e',roughness:0.5,metalness:0.3});
+const OUT=new THREE.MeshStandardMaterial({color:'#9fb3c8',roughness:0.55});
+
+// disco cicloidal REAL: perfil lobulado (epitrocoide aprox) extruido, con barreno.
+function discMesh(R,lobes,t){
+  const s=new THREE.Shape(), seg=180;
+  for(let i=0;i<=seg;i++){const a=2*Math.PI*i/seg; const rr=R*(1-0.16*Math.cos(lobes*a)); const x=rr*Math.cos(a),y=rr*Math.sin(a); i?s.lineTo(x,y):s.moveTo(x,y);}
+  const hole=new THREE.Path(); const hr=R*0.28; for(let i=0;i<=40;i++){const a=-2*Math.PI*i/40; const x=hr*Math.cos(a),y=hr*Math.sin(a); i?hole.lineTo(x,y):hole.moveTo(x,y);} s.holes.push(hole);
+  const g=new THREE.ExtrudeGeometry(s,{depth:t,bevelEnabled:false,curveSegments:60}); g.rotateX(-Math.PI/2); // acostado plano XZ, espesor en Y
+  return new THREE.Mesh(g,DISC);
+}
+// junta cicloidal config B: hembra-VASO (rodillos, GIRA) + discos lobulados FIJOS dentro + tint del eje.
+function realCyc(R,lobes,N,tint){const g=new THREE.Group(); const Rr=R*0.10, h=N*5+8, wall=4;
+  // vaso (cup) — la HEMBRA que gira
+  const vaso=new THREE.Mesh(new THREE.CylinderGeometry(R+Rr+wall,R+Rr+wall,h,40,1,true),VASO); g.add(vaso);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(R+Rr+wall,R+Rr+wall,2,40),VASO));   // base del vaso
+  // rodillos (la pista de la hembra) — lobes+1
+  for(let k=0;k<lobes+1;k++){const a=2*Math.PI*k/(lobes+1); const r=new THREE.Mesh(new THREE.CylinderGeometry(Rr,Rr,h-2,12),ROLL); r.position.set((R)*Math.cos(a),0,(R)*Math.sin(a)); g.add(r);}
+  // discos lobulados FIJOS (config B), apilados, excéntricos
+  for(let i=0;i<N;i++){const d=discMesh(R-Rr*1.1,lobes,4); d.position.set(R*0.06*(i%2?1:-1),-h/2+8+i*5,0); g.add(d);}
+  // eje central (entrada)
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(R*0.22,R*0.22,h+6,18),SHAFT));
+  // anillo del color del eje (arriba)
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(R+Rr+wall+1,1.3,8,40),new THREE.MeshStandardMaterial({color:tint,emissive:tint,emissiveIntensity:0.3,roughness:0.5})); ring.rotation.x=Math.PI/2; ring.position.y=h/2-2; g.add(ring);
+  return g;}
+function axisLine(len,col){return new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-len,0),new THREE.Vector3(0,len,0)]),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.7}));}
+
+// CIC.1 — YAW. Su hembra-vaso gira → carga el poste.
+const yawG=new THREE.Group(); scene.add(yawG);
+const c1=realCyc(24,10,3,'#b58cf0'); c1.position.y=16; yawG.add(c1);
+yawG.add(axisLine(90,'#b58cf0'));
+const post=new THREE.Mesh(new THREE.BoxGeometry(10,42,10),VASO); post.position.y=52; yawG.add(post);
+// CIC.2 — PITCH (acostado arriba). Su hembra gira el eslabón.
+const pitchMount=new THREE.Group(); pitchMount.position.y=78; yawG.add(pitchMount);
+const c2=realCyc(18,10,3,'#e06c5a'); c2.rotation.z=Math.PI/2; pitchMount.add(c2);
+const axR=axisLine(46,'#e06c5a'); axR.rotation.z=Math.PI/2; pitchMount.add(axR);
+const pitchG=new THREE.Group(); pitchMount.add(pitchG);
+const outBeam=new THREE.Mesh(new THREE.CylinderGeometry(5.5,4.5,92,16),OUT); outBeam.position.y=46; pitchG.add(outBeam);
+const tip=new THREE.Mesh(new THREE.SphereGeometry(6,18,12),new THREE.MeshStandardMaterial({color:'#7ee081',emissive:'#2a6e34',emissiveIntensity:0.4})); tip.position.y=92; pitchG.add(tip);
+
+window.renderAt=(o)=>{ o=o||{};
+  yawG.rotation.y=(o.q1||0)*Math.PI/180; pitchG.rotation.x=(o.q2||0)*Math.PI/180;
+  const az=(o.az??40)*Math.PI/180, el=(o.el??14)*Math.PI/180, dist=o.dist??215, ty=o.ty??70;
+  cam.position.set(dist*Math.cos(el)*Math.sin(az), ty+dist*Math.sin(el), dist*Math.cos(el)*Math.cos(az));
+  cam.lookAt(0,ty,0); renderer.render(scene,cam); };
+window.renderAt({q1:25,q2:-28}); window.__ready=true;
+</script></body></html>
