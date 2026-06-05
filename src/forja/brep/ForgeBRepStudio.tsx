@@ -172,10 +172,11 @@ interface GearboxParams {
   T: number; gap: number; shaftD: number; shaftBore: number;
   outPins: number;   // nº de pernos de SALIDA (extraen el giro lento + capturan los discos axialmente)
   outPinD: number;   // ⌀ de cada perno de salida (mm)
+  testRig?: boolean; // banco de prueba: añade PALANCA (manivela) al eje + BASE de fijación a la hembra
 }
 const GEARBOX_DEFAULTS: GearboxParams = {
   lobes: 10, discs: 5, R: 40, Rr: 3, E: 1.5, T: 6, gap: 0.6, shaftD: 16, shaftBore: 8,
-  outPins: 6, outPinD: 6,
+  outPins: 6, outPinD: 6, testRig: false,
 };
 
 /** Un escalón del perfil de revolución: radio exterior r y longitud axial L. */
@@ -924,6 +925,17 @@ function buildBoreCutter(oc: OC, p: GearboxParams): Shape {
  * ese reloj giraría los barrenos de salida → se pre-giran +α/lóbulos para que los
  * pernos comunes entren con holgura SOLO de la órbita. Curva real (B-spline).
  */
+// CROWN cónico SIMÉTRICO (diente BARRIL): rebaja el borde exterior del lóbulo arriba y
+// abajo por igual → el contacto se concentra en la banda media y se afina en las caras.
+// Por SIMETRÍA, las componentes de fuerza AXIAL de las dos mitades se CANCELAN (neto 0,
+// como herringbone) → el torque sigue tang×R, sin complicar la transmisión (ver trompo.ts).
+// Conos RECTOS (no curvas) = booleana robusta, como el cortador de barreno original.
+function buildCrownCutter(oc: OC, p: GearboxParams, maxR: number): Shape {
+  const crown = Math.min(0.6, p.T * 0.14), ch = crown, ro = maxR + 2; // 45°, simétrico
+  const top = revolvePolygon(oc, [{ x: maxR - crown, y: p.T }, { x: ro, y: p.T }, { x: ro, y: p.T - ch }], 360, RZ_PLANE, Z_AXIS);
+  const bot = revolvePolygon(oc, [{ x: maxR - crown, y: 0 }, { x: ro, y: 0 }, { x: ro, y: ch }], 360, RZ_PLANE, Z_AXIS);
+  return makeCompound(oc, [top, bot]);
+}
 function buildCycDisc(oc: OC, p: GearboxParams, profile: Pt2[], outCenters: Pt2[], alphaRad: number): Shape {
   const d0 = gearboxDims(p);
   const comp = alphaRad / p.lobes;                 // pre-compensación del reloj
@@ -931,6 +943,8 @@ function buildCycDisc(oc: OC, p: GearboxParams, profile: Pt2[], outCenters: Pt2[
   let d = extrudeSpline(oc, profile, p.T);
   // barreno-garganta (retenedor) en vez de barreno recto
   { const cutter = buildBoreCutter(oc, p); const t = cut(oc, d, cutter); d.delete?.(); cutter.delete?.(); d = t; }
+  // CROWN simétrico (barril) en el borde exterior
+  { const maxR = Math.max(...profile.map((pt) => Math.hypot(pt.x, pt.y))); const crown = buildCrownCutter(oc, p, maxR); const t = cut(oc, d, crown); d.delete?.(); crown.delete?.(); d = t; }
   for (const c of outCenters) {
     const x = c.x * ca - c.y * sa, y = c.x * sa + c.y * ca;
     d = drillHole(oc, d, { x, y, diameter: d0.outHoleD, zTop: p.T, depth: p.T, through: true });
@@ -959,6 +973,21 @@ function buildHembra(oc: OC, p: GearboxParams): Shape {
     const roller = makeCylinder(oc, p.Rr, zTop - z0, { origin: [pp.x, pp.y, z0], dir: [0, 0, 1] });
     const t = fuse(oc, h, roller); h.delete?.(); roller.delete?.(); h = t;
   }
+  // BASE de FIJACIÓN de prueba: pestaña ancha bajo la hembra con 4 barrenos para
+  // atornillar/sujetar el mecanismo a una mesa y poder girar la palanca contra él.
+  if (p.testRig) {
+    const baseR = Rout + p.R * 0.4, bfH = d0.baseH * 0.7;
+    const flange = makeCylinder(oc, baseR, bfH, { origin: [0, 0, zBot], dir: [0, 0, 1] });
+    { const t = fuse(oc, h, flange); h.delete?.(); flange.delete?.(); h = t; }
+    // corte EXPLÍCITO (no drillHole: la base está en z negativo y drillHole haría un
+    // cilindro de altura negativa → inválido). Cilindro vertical pasante por la pestaña.
+    const holeR = (Rout + baseR) / 2, holeRad = Math.max(1.5, p.shaftD * 0.15);
+    for (const a of [45, 135, 225, 315]) {
+      const ar = (a * Math.PI) / 180;
+      const hc = makeCylinder(oc, holeRad, bfH + 2, { origin: [holeR * Math.cos(ar), holeR * Math.sin(ar), zBot - 1], dir: [0, 0, 1] });
+      const t = cut(oc, h, hc); h.delete?.(); hc.delete?.(); h = t;
+    }
+  }
   // barreno de ENTRADA en la placa base (libra el eje con holgura)
   { const ib = makeCylinder(oc, p.shaftD / 2 + p.gap, d0.baseH + 2, { origin: [0, 0, zBot - 1], dir: [0, 0, 1] }); const t = cut(oc, h, ib); h.delete?.(); ib.delete?.(); h = t; }
   return h;
@@ -980,6 +1009,20 @@ function buildRotor(oc: OC, p: GearboxParams): Shape {
     const cam = transformShape(oc, camLocal, { translate: [p.E * Math.cos(a), p.E * Math.sin(a), i * d0.stepZ] });
     camLocal.delete?.();
     const t = fuse(oc, rotor, cam); rotor.delete?.(); cam.delete?.(); rotor = t;
+  }
+  // PALANCA (manivela) de prueba para girar el eje a MANO — sube por el centro de la
+  // brida de salida y termina en un mango vertical (lo agarras y le das vuelta).
+  if (p.testRig) {
+    const topZ = d0.totalH + p.gap;
+    const stemTop = d0.flangeZ + d0.flangeH + 8 * (p.T / 6);
+    const armRad = Math.max(2, p.shaftD / 4);
+    const stem = makeCylinder(oc, p.shaftD / 2, stemTop - topZ, { origin: [0, 0, topZ], dir: [0, 0, 1] });
+    { const t = fuse(oc, rotor, stem); rotor.delete?.(); stem.delete?.(); rotor = t; }
+    const armR = p.R * 1.3;
+    const arm = makeCylinder(oc, armRad, armR, { origin: [0, 0, stemTop + armRad], dir: [1, 0, 0] });
+    { const t = fuse(oc, rotor, arm); rotor.delete?.(); arm.delete?.(); rotor = t; }
+    const handle = makeCylinder(oc, armRad, p.R * 0.55, { origin: [armR, 0, stemTop + armRad], dir: [0, 0, 1] });
+    { const t = fuse(oc, rotor, handle); rotor.delete?.(); handle.delete?.(); rotor = t; }
   }
   if (p.shaftBore > 0) {
     const bore = makeCylinder(oc, p.shaftBore / 2, (d0.totalH + 4 * p.T) - shZ0, { origin: [0, 0, shZ0 - 1], dir: [0, 0, 1] });

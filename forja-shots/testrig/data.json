@@ -1,0 +1,35 @@
+{
+  "bodies": [
+    "hembra",
+    "eje",
+    "disco-1",
+    "disco-2",
+    "disco-3",
+    "disco-4",
+    "disco-5",
+    "salida"
+  ],
+  "geom": {
+    "camRadius": 6.442,
+    "camOffset": 1.017,
+    "discBoreRadius": 7.042,
+    "clearance": 0.6,
+    "outHoleD": 7.304,
+    "outPinD": 4.07,
+    "phases": [
+      0,
+      72,
+      144,
+      216,
+      288
+    ],
+    "camCollarR": 7.642,
+    "discBoreNarrowR": 7.042,
+    "retainerOverlap": 0.6
+  },
+  "mesh": {
+    "worstClearance": -0.046
+  },
+  "exported": true,
+  "errs": []
+}
