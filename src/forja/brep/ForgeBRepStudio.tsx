@@ -866,10 +866,25 @@ function spoolProfile(rN: number, rW: number, zb: number, zt: number, mid: numbe
     { x: rN, y: zt }, { x: 0, y: zt },
   ];
 }
-// LEVA-carrete (sólida, eje en el origen, z 0..T): barrel eccR + collar eccR+lip.
+// LEVA-carrete (sólida, eje en el origen, z 0..T): barrel eccR + collar eccR+lip,
+// + CANALES DE ACEITE axiales en el barril.
 function buildCamSpool(oc: OC, p: GearboxParams): Shape {
   const d0 = gearboxDims(p); const { lip, band } = retainerDims(p);
-  return revolvePolygon(oc, spoolProfile(d0.eccR, d0.eccR + lip, 0, p.T, p.T / 2, band), 360, RZ_PLANE, Z_AXIS);
+  let cam = revolvePolygon(oc, spoolProfile(d0.eccR, d0.eccR + lip, 0, p.T, p.T / 2, band), 360, RZ_PLANE, Z_AXIS);
+  // FLAUTAS DE ACEITE axiales (4) de ALTURA COMPLETA en el muñón: la "figura" que
+  // reparte el aceite por TODA la altura de la leva (la trayectoria) y alimenta la
+  // película continua del cojinete journal. Verticales → AUTO-SOPORTADAS al imprimir.
+  // La curva continua que CENTRA es la película h(θ)=c(1+ε·cosθ) (ver cojinete-continuo.ts);
+  // las flautas sólo distribuyen el aceite. Cortan barril + collar en 4 puntos, dejando
+  // 4 SEGMENTOS de collar (separados 90°) que SIGUEN reteniendo el disco axialmente.
+  const nG = 4, rG = 1.0, centerR = d0.eccR + 0.2; // outer→eccR+lip (notch collar), inner→eccR-0.8
+  for (let k = 0; k < nG; k++) {
+    const th = (2 * Math.PI * k) / nG;
+    const gx = centerR * Math.cos(th), gy = centerR * Math.sin(th);
+    const groove = makeCylinder(oc, rG, p.T + 1, { origin: [gx, gy, -0.5], dir: [0, 0, 1] });
+    const t = cut(oc, cam, groove); cam.delete?.(); groove.delete?.(); cam = t;
+  }
+  return cam;
 }
 // CORTADOR del barreno-garganta del disco (negativo, eje en origen): el disco
 // queda angosto (eccR+gap) arriba/abajo y ancho (eccR+lip+gap) en la garganta →
@@ -1020,7 +1035,8 @@ function buildGearboxBodies(oc: OC, p: GearboxParams): { key: string; name: stri
     out.push({ key: `disco-${i + 1}`, name: `Disco ${i + 1}`, shape: placed });
   }
   out.push({ key: 'salida', name: 'Salida (brida)', shape: buildOutput(oc, p, outCenters) });
-  out.push({ key: 'soportes', name: 'Soportes (árbol)', shape: buildSupportTree(oc, p) });
+  // El soporte ya NO es un árbol frangible aparte: es la JAULA de rodillos (estructural)
+  // + el journal continuo del disco sobre la leva (con canales de aceite). Ver cojinete-continuo.ts.
   return out;
 }
 
@@ -1403,7 +1419,6 @@ function gbBodyDefs(discs: number): { key: string; name: string }[] {
   const list = [{ key: 'hembra', name: 'Hembra (vaso)' }, { key: 'eje', name: 'Eje + levas' }];
   for (let i = 0; i < discs; i++) list.push({ key: `disco-${i + 1}`, name: `Disco ${i + 1}` });
   list.push({ key: 'salida', name: 'Salida (brida)' });
-  list.push({ key: 'soportes', name: 'Soportes (árbol)' });
   return list;
 }
 

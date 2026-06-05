@@ -1,0 +1,35 @@
+{
+  "shots": {
+    "01-contexto": "/home/ian/Orkesta/la-forja/forja-shots/cojinete-3d/01-contexto.png",
+    "02-eje-canales-a": "/home/ian/Orkesta/la-forja/forja-shots/cojinete-3d/02-eje-canales-a.png",
+    "03-eje-canales-lado": "/home/ian/Orkesta/la-forja/forja-shots/cojinete-3d/03-eje-canales-lado.png",
+    "04-eje-canales-top": "/home/ian/Orkesta/la-forja/forja-shots/cojinete-3d/04-eje-canales-top.png",
+    "05-seccion-journal": "/home/ian/Orkesta/la-forja/forja-shots/cojinete-3d/05-seccion-journal.png",
+    "06-seccion-iso": "/home/ian/Orkesta/la-forja/forja-shots/cojinete-3d/06-seccion-iso.png"
+  },
+  "errs": [],
+  "bodies": [
+    "hembra",
+    "eje",
+    "disco-1",
+    "disco-2",
+    "disco-3",
+    "disco-4",
+    "disco-5",
+    "salida"
+  ],
+  "hasSoportes": false,
+  "clearance": {
+    "worstClearance": -0.0679
+  },
+  "visIsolated": 1,
+  "sectionPlane": {
+    "normal": [
+      0,
+      0,
+      -1
+    ],
+    "constant": 0
+  },
+  "exported": true
+}
