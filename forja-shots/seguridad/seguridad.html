@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf8"><style>body{margin:0;background:#0d1218;font-family:system-ui;color:#9fb3c8}h1{color:#d8a657;text-align:center;padding:16px 0 4px;font-size:21px}.sub{text-align:center;font-size:13px;padding-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}.card{background:#121a22;border:1px solid #d8a65733;border-radius:10px;padding:8px}</style></head>
+<body><h1>Factor de seguridad — por qué se fundía + el fix</h1><div class="sub">El gap del MODELO no es el real (las paredes crecen). SF_fusión = gap_efectivo / g_min. El actual estaba en ~1.0 (cero margen).</div>
+<div class="grid"><div class="card"><svg width="520" height="290" viewBox="0 0 520 290" xmlns="http://www.w3.org/2000/svg"><rect width="520" height="290" fill="#0d1218"/><text x="40" y="24" fill="#d8a657" font-size="14" font-weight="bold">por qué se funde: el gap REAL &lt; el del modelo</text>
+  <line x1="136" y1="44" x2="136" y2="220" stroke="#e0a96c" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="140" y="56" fill="#e0a96c" font-size="11">g_min fusión 0.30 (abajo de aquí = funde)</text>
+  <text x="40" y="72" fill="#e06c6c" font-size="12">ACTUAL: modelo 0.55mm</text>
+    <rect x="40" y="80" width="99.2" height="20" fill="#e06c6c88"/>
+    <rect x="139.2" y="80" width="76.8" height="20" fill="#e06c6c55"/>
+    <text x="222" y="95" fill="#9fb3c8" font-size="11">efectivo 0.31 · SF 1.03 ✗ funde</text>
+  <text x="40" y="132" fill="#7ee081" font-size="12">SF 1.5: modelo 0.69mm</text>
+    <rect x="40" y="140" width="144" height="20" fill="#7ee08188"/>
+    <rect x="184" y="140" width="76.8" height="20" fill="#e06c6c55"/>
+    <text x="266.8" y="155" fill="#9fb3c8" font-size="11">efectivo 0.45 · SF 1.50 ✓</text>
+  <text x="40" y="192" fill="#6fb6c9" font-size="12">SF 1.9: modelo 0.8mm</text>
+    <rect x="40" y="200" width="179.20000000000002" height="20" fill="#6fb6c988"/>
+    <rect x="219.20000000000002" y="200" width="76.8" height="20" fill="#e06c6c55"/>
+    <text x="302" y="215" fill="#9fb3c8" font-size="11">efectivo 0.56 · SF 1.87 ✓</text>
+  <text x="40" y="250" fill="#9fb3c8" font-size="11">▮ gap efectivo (impreso)   ▮ crecimiento de pared (2×0.12=0.24mm, se come el gap)</text>
+  <text x="40" y="270" fill="#6fb6c9" font-size="12">gap_modelo ≥ SF·g_min + 2·crecimiento → para SF 1.5: 0.69mm</text></svg></div><div class="card"><svg width="520" height="290" viewBox="0 0 520 290" xmlns="http://www.w3.org/2000/svg"><rect width="520" height="290" fill="#0d1218"/><text x="20" y="24" fill="#d8a657" font-size="14" font-weight="bold">estructural: σ admisible = resistencia / SF</text>
+  <text x="20" y="44" fill="#6fb6c9" font-size="11">aquí va SOBRADO (PLA aguanta; el problema era el gap, no el esfuerzo)</text><text x="20" y="70" fill="#9fb3c8" font-size="12">contacto barril</text>
+    <text x="180" y="70" fill="#9fb3c8" font-size="11">9 MPa / 50 (tensil)</text>
+    <text x="350" y="70" fill="#7ee081" font-size="13" font-weight="bold">SF 5.56</text><text x="20" y="116" fill="#9fb3c8" font-size="12">journal</text>
+    <text x="180" y="116" fill="#9fb3c8" font-size="11">7 MPa / 50 (tensil)</text>
+    <text x="350" y="116" fill="#7ee081" font-size="13" font-weight="bold">SF 7.14</text><text x="20" y="162" fill="#9fb3c8" font-size="12">cuello frangible</text>
+    <text x="180" y="162" fill="#9fb3c8" font-size="11">6 MPa / 28 (cortante)</text>
+    <text x="350" y="162" fill="#7ee081" font-size="13" font-weight="bold">SF 4.67</text>
+  <text x="20" y="220" fill="#9fb3c8" font-size="11">objetivo SF estructural ≥ 2 · todos lo cumplen (barril SF 5.5)</text></svg></div></div></body></html>
