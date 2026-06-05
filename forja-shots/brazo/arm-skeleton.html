@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf8"><style>html,body{margin:0;height:100%;background:#0a0e13;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+const W=1280,H=960;
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(W,H); renderer.localClippingEnabled=true; document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#0a0e13');
+const cam=new THREE.PerspectiveCamera(40,W/H,0.1,4000);
+scene.add(new THREE.AmbientLight('#4a5a6a',1.2));
+scene.add(new THREE.HemisphereLight('#bcd2ea','#1c2530',1.3));
+const d1=new THREE.DirectionalLight('#fff4e0',1.8); d1.position.set(120,200,150); scene.add(d1);
+const grid=new THREE.GridHelper(300,30,'#1c2630','#141b22'); scene.add(grid);
+// workspace esférico (alcance 120 cm) — wireframe
+const reach=120;
+scene.add(new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.SphereGeometry(reach,20,14)), new THREE.LineBasicMaterial({color:'#1e6fa0',transparent:true,opacity:0.18})));
+
+const BEAM=new THREE.MeshStandardMaterial({color:'#9fb3c8',roughness:0.6,metalness:0.1});
+const JOINT=new THREE.MeshStandardMaterial({color:'#d8a657',roughness:0.5,metalness:0.2});
+const HEMBRA=new THREE.MeshStandardMaterial({color:'#5a6576',roughness:0.65});
+// junta cicloidal = vaso hembra (gira) + pila de discos. R,N por el dimensionado.
+function joint(R,N){const g=new THREE.Group(); const h=N*7+5;
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(R*0.55,R*0.55,h,28),HEMBRA));     // hembra (vaso)
+  for(let i=0;i<N;i++){const d=new THREE.Mesh(new THREE.CylinderGeometry(R*0.42,R*0.42,5,24),JOINT);d.position.y=-h/2+5+i*7;g.add(d);} // discos
+  return g;}
+function beam(len){const g=new THREE.Group(); const m=new THREE.Mesh(new THREE.CylinderGeometry(7,7,len,16),BEAM); m.position.y=len/2; g.add(m); g.position.y=0; return g;}
+
+// cadena: base(yaw) → J1 → beam1 → (pitch) J2 → beam2 → (pitch) J3 → beam3 → punta
+const yaw=new THREE.Group(); scene.add(yaw);
+const j1=joint(28,3); yaw.add(j1);
+const sh=new THREE.Group(); sh.position.y=15; yaw.add(sh);   // pivote hombro (pitch)
+const b1=beam(45); sh.add(b1);
+const j2g=new THREE.Group(); j2g.position.y=45; sh.add(j2g); j2g.add(joint(24,2));
+const el=new THREE.Group(); el.position.y=8; j2g.add(el);    // pivote codo (pitch)
+const b2=beam(40); el.add(b2);
+const j3g=new THREE.Group(); j3g.position.y=40; el.add(j3g); j3g.add(joint(20,2));
+const wr=new THREE.Group(); wr.position.y=6; j3g.add(wr);
+const b3=beam(35); wr.add(b3);
+const tip=new THREE.Mesh(new THREE.SphereGeometry(5,16,12),new THREE.MeshStandardMaterial({color:'#7ee081'})); tip.position.y=35; wr.add(tip);
+
+window.renderAt=(o)=>{ o=o||{};
+  yaw.rotation.y=(o.q1||0)*Math.PI/180; sh.rotation.x=(o.q2||0)*Math.PI/180; el.rotation.x=(o.q3||0)*Math.PI/180; wr.rotation.x=(o.q4||0)*Math.PI/180;
+  const az=(o.az??35)*Math.PI/180, el2=(o.el??18)*Math.PI/180, dist=o.dist??260, ty=o.ty??55;
+  cam.position.set(dist*Math.cos(el2)*Math.sin(az), ty+dist*Math.sin(el2), dist*Math.cos(el2)*Math.cos(az));
+  cam.lookAt(0,ty,0); renderer.render(scene,cam); };
+window.renderAt({q2:-50,q3:60}); window.__ready=true;
+</script></body></html>
