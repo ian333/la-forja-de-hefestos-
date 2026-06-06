@@ -10,7 +10,7 @@ const POSES=[
   const b=await chromium.launch({headless:false,executablePath:'/usr/bin/google-chrome-stable',args:['--no-sandbox','--headless=new','--use-angle=gl','--enable-gpu','--ignore-gpu-blocklist','--disable-software-rasterizer','--hide-scrollbars']});
   const p=await b.newPage({viewport:{width:1280,height:960},deviceScaleFactor:1}); const out={};
   try{
-    await p.goto('http://127.0.0.1:8124/forja-shots/brazo/arm-skeleton.html',{waitUntil:'networkidle',timeout:60000});
+    await p.goto('http://127.0.0.1:8125/forja-shots/brazo/arm-skeleton.html',{waitUntil:'networkidle',timeout:60000});
     await p.waitForFunction('window.__ready===true',{timeout:60000});
     for(let i=0;i<POSES.length;i++){ await p.evaluate((o)=>window.renderAt(o),POSES[i]); await p.waitForTimeout(120); await p.screenshot({path:`${FR}/a${String(i+1).padStart(2,'0')}.png`}); }
     out.frames=POSES.length;

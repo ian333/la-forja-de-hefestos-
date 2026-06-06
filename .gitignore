@@ -66,3 +66,9 @@ _*_out/
 forja-shots/printsim/frames/
 forja-shots/printsim/three.module.js
 forja-shots/printsim/three.core.js
+forja-shots/brazo/three.module.js
+forja-shots/brazo/three.core.js
+forja-shots/brazo/frames/
+forja-shots/brazo/gframes/
+forja-shots/brazo/grframes/
+forja-shots/ensamble/mframes/
