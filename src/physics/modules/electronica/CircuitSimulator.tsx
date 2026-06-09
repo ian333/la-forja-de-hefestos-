@@ -64,7 +64,14 @@ export default function CircuitSimulator() {
   }, [preset, dcV, result, frac]);
 
   const applyState = useCallback((patch: Partial<Params>) => {
-    setParams((p) => ({ ...p, ...patch }));
+    setParams((p) => {
+      const next = { ...p };
+      for (const k in patch) {
+        const val = patch[k];
+        if (val !== undefined) next[k] = val;
+      }
+      return next;
+    });
   }, []);
 
   return (
