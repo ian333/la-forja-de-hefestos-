@@ -45,6 +45,7 @@ const DropCannon = lazy(() => import('./modules/manufactura/DropCannon'));
 const BoostV2 = lazy(() => import('./modules/manufactura/BoostV2'));
 const CircuitSimulator = lazy(() => import('./modules/electronica/CircuitSimulator'));
 const NovaLab = lazy(() => import('./modules/electronica/NovaLab'));
+const MicroscopioCorriente = lazy(() => import('./modules/electronica/MicroscopioCorriente'));
 
 export const BRANCHES: PhysicsBranch[] = [
   {
@@ -185,6 +186,11 @@ export const BRANCHES: PhysicsBranch[] = [
         childHint: 'Arma el circuito, mueve las perillas y mira la corriente y el voltaje en vivo, como en un osciloscopio.',
         researcherHint: 'MNA con compañero trapezoidal (2º orden) + Newton-Raphson para no-lineales (Shockley). Verificado vs fórmula cerrada: divisor, τ=RC, τ=L/R, ω₀=1/√(LC), caída de diodo. 15 tests.',
         component: CircuitSimulator },
+      { id: 'micro-corriente', name: 'El microscopio de la corriente', status: 'live',
+        blurb: 'Ver la física REAL: cómo la corriente se vuelve CALOR, el campo de una bobina, por qué un LED tiene su color.',
+        childHint: 'Métete adentro del cable: mira los electrones chocar y poner la red al rojo, el campo de la bobina, y la luz salir del LED.',
+        researcherHint: 'Drude (P∝E²=I²R), Biot-Savart (líneas de campo trazadas por integración real), band gap→λ=hc/Eg→color. 12 tests vs fórmula. R3F emissive + halos additive (sin EffectComposer → robusto en GPU de teléfono).',
+        component: MicroscopioCorriente },
       { id: 'nova-lab', name: 'Laboratorio NOVA OMNI', status: 'live',
         blurb: 'Aprende la placa completa GRATIS: blink, mover un motor, medir corriente, escanear el bus I2C. Antes de comprar.',
         childHint: 'Una placa real con todos sus chips. Haz las prácticas: prende un LED, gira un motor, mide cuánta corriente jala.',
