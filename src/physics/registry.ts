@@ -37,6 +37,14 @@ const TissueField     = lazy(() => import('./modules/matter/TissueField'));
 const ScaleLimit      = lazy(() => import('./modules/matter/ScaleLimit'));
 const ChemicalScaleLimit = lazy(() => import('./modules/matter/ChemicalScaleLimit'));
 const TissueScaleLimit = lazy(() => import('./modules/matter/TissueScaleLimit'));
+const MetalDroplet    = lazy(() => import('./modules/manufactura/MetalDroplet'));
+const MetalPrint      = lazy(() => import('./modules/manufactura/MetalPrint'));
+const CircuitField    = lazy(() => import('./modules/manufactura/CircuitField'));
+const GenerativeDeposit = lazy(() => import('./modules/manufactura/GenerativeDeposit'));
+const DropCannon = lazy(() => import('./modules/manufactura/DropCannon'));
+const BoostV2 = lazy(() => import('./modules/manufactura/BoostV2'));
+const CircuitSimulator = lazy(() => import('./modules/electronica/CircuitSimulator'));
+const NovaLab = lazy(() => import('./modules/electronica/NovaLab'));
 
 export const BRANCHES: PhysicsBranch[] = [
   {
@@ -161,6 +169,40 @@ export const BRANCHES: PhysicsBranch[] = [
         roadmap: [
           'Ecuación de Helmholtz con condiciones de contorno',
           'Elementos finitos o separación de variables analítica',
+        ] },
+    ],
+  },
+
+  {
+    id: 'electronica',
+    name: 'Electrónica & Circuitos',
+    icon: '🔌',
+    accent: '#d4b050',
+    blurb: 'Arma circuitos de verdad — motor SPICE (MNA) real + el laboratorio de la placa NOVA OMNI.',
+    modules: [
+      { id: 'circuit-sim', name: 'Simulador de circuitos (SPICE)', status: 'live',
+        blurb: 'Análisis Nodal Modificado real: R/L/C/diodo, DC + transitorio. Divisor, RC, RLC, rectificador.',
+        childHint: 'Arma el circuito, mueve las perillas y mira la corriente y el voltaje en vivo, como en un osciloscopio.',
+        researcherHint: 'MNA con compañero trapezoidal (2º orden) + Newton-Raphson para no-lineales (Shockley). Verificado vs fórmula cerrada: divisor, τ=RC, τ=L/R, ω₀=1/√(LC), caída de diodo. 15 tests.',
+        component: CircuitSimulator },
+      { id: 'nova-lab', name: 'Laboratorio NOVA OMNI', status: 'live',
+        blurb: 'Aprende la placa completa GRATIS: blink, mover un motor, medir corriente, escanear el bus I2C. Antes de comprar.',
+        childHint: 'Una placa real con todos sus chips. Haz las prácticas: prende un LED, gira un motor, mide cuánta corriente jala.',
+        researcherHint: 'Doble RP2350 (telemetría/IA + movimiento RT), 4×DRV8424 (1/256 µstep), 7×INA226 (Kelvin shunt 2mΩ), LSM6DS3, BMS BQ7693, 3×TPS5430. Código real (pines del firmware NOVA: I2C0=GP4/GP5).',
+        component: NovaLab },
+      { id: 'logic-sim', name: 'Lógica digital y CMOS', status: 'planned',
+        blurb: 'Compuertas desde transistores, flip-flops, contadores. El puente al micro.',
+        roadmap: [
+          'Inversor CMOS (NMOS+PMOS) con curva de transferencia real',
+          'Compuertas NAND/NOR → SR latch → flip-flop D',
+          'Simulador de eventos (cola) para circuitos secuenciales',
+        ] },
+      { id: 'pcb-import', name: 'Importar PCB (EasyEDA/KiCad)', status: 'planned',
+        blurb: 'Trae tu placa de EasyEDA y simúlala + análisis térmico/mecánico en La Forja.',
+        roadmap: [
+          'Parser de netlist EasyEDA Pro (.eprj) y KiCad',
+          'Mapear footprints → geometría B-Rep para FEA térmico',
+          'Cotización de BOM (anti-DigiKey: solo lo comercial)',
         ] },
     ],
   },
@@ -458,6 +500,45 @@ export const BRANCHES: PhysicsBranch[] = [
       { id: 'evolution', name: 'Evolución molecular', status: 'planned',
         blurb: 'Cadenas de Markov de sustituciones (Jukes-Cantor, Kimura).',
         roadmap: ['Simulación de árboles filogenéticos a partir de secuencias'] },
+    ],
+  },
+  {
+    id: 'manufactura',
+    name: 'Manufactura',
+    icon: '🔥',
+    accent: '#FB923C',
+    blurb: 'Fabricar de verdad — imprimir metal, fundir, depositar. La Forja física.',
+    modules: [
+      { id: 'metal-droplet', name: 'Gota resonante — impresora de metal', status: 'live',
+        blurb: 'Microalambre de acero fundido + desprendimiento por RESONANCIA (Rayleigh l=2).',
+        childHint: 'Afina la gota a su nota y se suelta sola — la frecuencia la separa, no la fuerza.',
+        researcherHint: 'Modelo acoplado térmico+mecánico; f₂=√(8γ/ρa³)/2π, A(f) Lorentziana, pinch en A≥1. Validado vs scripts/gota-acoplada-completa.py.',
+        component: MetalDroplet },
+      { id: 'metal-print', name: 'Impresión 3D de metal — por capas', status: 'live',
+        blurb: 'Toolpath (G-code) + deposición gota a gota + adhesión dependiente de T + enfriamiento.',
+        childHint: 'El cabezal escribe la pieza capa por capa; si vas lento, la de abajo se enfría y no se pega.',
+        researcherHint: 'printSim.ts: enfriamiento Newton por gota, unión sana ⟺ T_vecino>T_bond. Mapa térmico vivo, uniones débiles en rojo. Reusa tempColor de metalDrop.',
+        component: MetalPrint },
+      { id: 'circuit-field', name: 'Circuito + campo magnético — el latigazo', status: 'live',
+        blurb: 'Corto-circuito controlado (CMT) + campo B por Biot-Savart pulsando con la corriente real.',
+        childHint: 'La corriente hace un campo magnético (las flechas). Más corriente = campo más grande; en la bobina se guarda la energía ½Li².',
+        researcherHint: 'circuitField.ts: latigazo i(t) (mismo modelo que latigazo-corto-controlado.py). B(r,t)=i(t)·B_unit(r), B_unit precomputado por Biot-Savart de la geometría coil+alambre. E_campo=½Li², pinch∝i².',
+        component: CircuitField },
+      { id: 'generative-deposit', name: 'Deposición generativa — del optimizador al vóxel', status: 'live',
+        blurb: 'Voladizo topológico (SIMP real) impreso vóxel por vóxel; el GAP manda: contacto (exacto) vs vuelo (relleno).',
+        childHint: 'Una pieza optimizada por computadora, hecha gota a gota. Mueve el GAP: chico = preciso, grande = rápido.',
+        researcherHint: 'genDeposit.ts: SIMP (FE Q4+CG, min compliance) precalculado + deposición. gap<d_ordeño→contacto (d_gota=gap, tiro 0); vóxel=huella de mojado≈1.7·d; We=ρv²d/γ<<1.',
+        component: GenerativeDeposit },
+      { id: 'drop-cannon', name: 'Cañón de gotas — dispara y construye', status: 'live',
+        blurb: 'Auto-pinch (J×B SIN bobina) + modos l=2/l=3: la gota apunta y dispara. Patrón por frecuencia.',
+        childHint: 'La gota se derrite, se deforma como pera y DISPARA. Con dos notas (frecuencias) construye un circulo o un cuadrado.',
+        researcherHint: 'Dual-mode Rayleigh-Lamb (l=2 pinch + l=3 pear); auto-pinch I²(t). a=0.125mm, f₂=4714Hz, f₃=9127Hz, Q₂≈54. Trayectoria Fourier paramétrica.',
+        component: DropCannon },
+      { id: 'boost-v2', name: 'Boost trifásico interleaved (v2) — fuente de la gota', status: 'live',
+        blurb: '3 bobinas de aire en DCM desfasadas 120°: el interleaved cancela el rizo (mata el jalón del v1) y sube a 120V para fundir.',
+        childHint: 'Tres bobinas se turnan para empujar la corriente; juntas hacen una línea casi recta, así la fuente no se cansa y hay más fuerza para la gota.',
+        researcherHint: 'boostV2.ts: boost DCM por fase Ipk=Vin·D/(L·fsw), D2=D·Vin/(Vbus−Vin), DCM⟺D+D2<1; interleaved reduce rizo de entrada (268%→55%, ×4.9); bobina aire L=µ0N²A/ℓ (~21 vueltas, sin ferrita); bus→descarga drop-on-demand R≈15Ω. Validado vs scripts/v2-boost-trifasico.py (13 tests).',
+        component: BoostV2 },
     ],
   },
 ];
