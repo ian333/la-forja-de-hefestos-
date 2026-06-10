@@ -139,6 +139,33 @@ export function Diode(p: Sym) {
   );
 }
 
+/**
+ * NMOS (simplificado). Pines: drain en (x,y), source en (x,y+GRID),
+ * gate a la izquierda en (x−34, y+GRID/2). La flecha del source marca NMOS.
+ */
+export function Mosfet({ x, y, label, value, hot }: { x: number; y: number; label?: string; value?: string; hot?: boolean }) {
+  const s = hot ? HOT : STROKE;
+  const m = GRID / 2;
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      {/* drain → canal → source */}
+      <polyline points={`0,0 0,16 -10,16`} fill="none" stroke={s} strokeWidth={2} />
+      <line x1={-10} y1={14} x2={-10} y2={46} stroke={s} strokeWidth={3} />
+      <polyline points={`-10,44 0,44 0,${GRID}`} fill="none" stroke={s} strokeWidth={2} />
+      {/* flecha NMOS (apunta al canal) */}
+      <polygon points="-2,44 -9,40 -9,48" fill={s} />
+      {/* gate (barra aislada) */}
+      <line x1={-17} y1={18} x2={-17} y2={42} stroke={s} strokeWidth={2} />
+      <line x1={-17} y1={m} x2={-34} y2={m} stroke={s} strokeWidth={2} />
+      {(label || value) && (
+        <text x={8} y={m + 4} fontSize={11} fill={hot ? HOT : '#c9bfa8'} fontFamily="JetBrains Mono, monospace">
+          {label}{value ? ` ${value}` : ''}
+        </text>
+      )}
+    </g>
+  );
+}
+
 /** Símbolo de tierra en (x,y), apuntando hacia abajo. */
 export function Ground({ x, y }: { x: number; y: number }) {
   return (

@@ -22,10 +22,11 @@ describe('presets — integración motor + datos', () => {
       expect(c.elements.length).toBeGreaterThan(1);
       // todo elemento referencia nodos válidos (0..nodeCount)
       for (const e of c.elements) {
-        expect(e.a).toBeGreaterThanOrEqual(0);
-        expect(e.b).toBeGreaterThanOrEqual(0);
-        expect(e.a).toBeLessThanOrEqual(c.nodeCount);
-        expect(e.b).toBeLessThanOrEqual(c.nodeCount);
+        const pins = e.kind === 'M' ? [e.d, e.g, e.s] : [e.a, e.b];
+        for (const pin of pins) {
+          expect(pin).toBeGreaterThanOrEqual(0);
+          expect(pin).toBeLessThanOrEqual(c.nodeCount);
+        }
       }
     }
   });

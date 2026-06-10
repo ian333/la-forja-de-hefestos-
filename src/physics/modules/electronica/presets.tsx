@@ -9,9 +9,9 @@
  * de la lección ANIMAN los componentes (sube R y mira cómo cambia la curva).
  */
 import type { ReactNode } from 'react';
-import type { Circuit, Wave } from '@/lib/circuitos/spice';
+import { MOSFETS, type Circuit, type Wave } from '@/lib/circuitos/spice';
 import type { Lesson } from '@/math/lesson/LessonPanel';
-import { Resistor, Capacitor, Inductor, Source, Diode, Ground, Wire, NodeProbe } from './symbols';
+import { Resistor, Capacitor, Inductor, Source, Diode, Mosfet, Ground, Wire, NodeProbe } from './symbols';
 
 export type Params = Record<string, number>;
 
@@ -362,4 +362,100 @@ const rectifier: Preset = {
   },
 };
 
-export const PRESETS: Preset[] = [divider, rcLowpass, rlc, rectifier];
+// ════════════════════════════════════════════════════════════════════════
+// 5) BOOST LA FORJA v2 — el circuito del pedido AG, con el MOSFET del datasheet
+// ════════════════════════════════════════════════════════════════════════
+
+const boostForja: Preset = {
+  id: 'boost-forja',
+  name: 'Boost La Forja v2 (IRF640N)',
+  blurb: 'Una fase REAL de la impresora de metal: bobina de aire + IRF640N (datasheet) + diodo al bus. La bomba llenando la presa.',
+  mode: 'transient',
+  defaults: { duty: 0.55, fsw: 100, Cbus: 10, Rload: 220 },
+  sliders: [
+    { key: 'duty', label: 'Duty del PWM', min: 0.15, max: 0.7, step: 0.01, toSI: (x) => x, fmt: (x) => `${(x * 100).toFixed(0)}%` },
+    { key: 'fsw', label: 'f switcheo', min: 50, max: 200, step: 5, toSI: (x) => x * 1e3, fmt: (x) => `${x} kHz` },
+    { key: 'Cbus', label: 'Presa (Cbus)', min: 2, max: 47, step: 1, toSI: (x) => x * 1e-6, fmt: uf },
+    { key: 'Rload', label: 'R carga (la junta)', min: 15, max: 500, step: 5, toSI: (x) => x, fmt: (x) => `${x} Ω` },
+  ],
+  build: (p) => {
+    const gate: Wave = { type: 'pulse', lo: 0, hi: 10, period: 1 / (p.fsw * 1e3), duty: p.duty };
+    return {
+      nodeCount: 5,
+      elements: [
+        { kind: 'V', id: 'Vin', a: 1, b: 0, value: 24 },
+        { kind: 'L', id: 'L1', a: 1, b: 2, value: 10e-6 },                 // la bobina de aire (25 vueltas)
+        { kind: 'M', id: 'Q1', d: 2, g: 4, s: 5, params: MOSFETS.IRF640N },
+        { kind: 'R', id: 'Rsh', a: 5, b: 0, value: 0.1 },                  // RA-.1E: el shunt que LEES
+        { kind: 'V', id: 'Vg', a: 4, b: 0, value: 0, wave: gate },         // el PWM del RP2350
+        { kind: 'D', id: 'D1', a: 2, b: 3, Is: 1e-10, n: 1.8 },            // MUR1560G (Vf~1.1V a amperios)
+        { kind: 'C', id: 'Cbus', a: 3, b: 0, value: p.Cbus * 1e-6 },
+        { kind: 'R', id: 'Rload', a: 3, b: 0, value: p.Rload },
+      ],
+    };
+  },
+  sim: { dt: 200e-9, tStop: 2e-3 },
+  probes: [
+    { label: 'i bobina (la cucharada)', color: '#4ade80', current: 'L1' },
+    { label: 'V_SW (drain)', color: '#60a5fa', node: 2 },
+    { label: 'V_bus (la presa)', color: '#d4b050', node: 3 },
+  ],
+  Schematic: ({ v, params }) => (
+    <>
+      <Source x={60} y={90} horizontal={false} label="Vin" value="24V" />
+      <Wire points="60,90 60,60 120,60" />
+      <Inductor x={120} y={60} label="L1" value="10µH aire" />
+      <Wire points="180,60 240,60" />
+      <Mosfet x={240} y={60} label="Q1" value="IRF640N" hot={(v[4] ?? 0) > 5} />
+      <text x={186} y={94} fontSize={10} fill="#8b93a8" fontFamily="JetBrains Mono, monospace">⊓ PWM</text>
+      <Resistor x={240} y={120} horizontal={false} label="Rsh" value="0.1Ω" />
+      <Diode x={240} y={60} label="D1" value="MUR1560" />
+      <Wire points="300,60 380,60" />
+      <Capacitor x={320} y={60} horizontal={false} label="Cbus" value={uf(params.Cbus)} />
+      <Resistor x={380} y={60} horizontal={false} label="carga" value={`${params.Rload}Ω`} />
+      <Wire points="320,120 320,180" />
+      <Wire points="380,120 380,180" />
+      <Wire points="60,150 60,180 380,180" />
+      <Ground x={150} y={180} />
+      <NodeProbe x={240} y={60} v={v[2] ?? 0} name="SW" />
+      <NodeProbe x={350} y={60} v={v[3] ?? 0} name="bus" />
+    </>
+  ),
+  lesson: {
+    hook: {
+      title: 'Este es el circuito que COMPRASTE, corriendo con su datasheet.',
+      body: 'El IRF640N de aquí no es un dibujo: es el modelo Shichman-Hodges con la Kp extraída de su Rds(on) publicado (0.15Ω@10V). La bobina es tu bobina de aire de 10µH. El diodo cae ~1.1V como el MUR1560. Lo que ves es lo que va a pasar en tu mesa.',
+    },
+    steps: [
+      {
+        title: 'La cucharada (mira la curva verde)',
+        body: 'Gate ON: la corriente de la bobina rampa hasta ~12A — NO llega a los 13.2 ideales porque el Rds del FET + el shunt se comen volts (rampa RL real, el mismo número que mide tu shunt RA-.1E). Gate OFF: la bobina EMPUJA su energía por el diodo al bus. Cada diente = ½LI² ≈ 0.7 mJ.',
+        formula: 'Ipk = (Vin/R_on)(1 − e^(−t·R_on/L)) ≈ 12.3 A',
+        keyframes: [{ at: 0, state: { duty: 0.55, fsw: 100, Cbus: 10, Rload: 220 } }],
+      },
+      {
+        title: 'La presa se llena',
+        body: 'La curva ámbar (V_bus) sube cucharada a cucharada hasta equilibrar con la carga. Más duty = cucharadas más grandes. Más Cbus = presa más grande (sube más lento pero aguanta más).',
+        duration: 6000,
+        keyframes: [
+          { at: 0, state: { duty: 0.3, Cbus: 10, Rload: 220 } },
+          { at: 1, state: { duty: 0.65, Cbus: 10, Rload: 220 } },
+        ],
+      },
+      {
+        title: 'El muro de Holm',
+        body: 'Baja la carga a 15Ω — el contacto real de la junta. UNA fase no puede sostener el bus contra eso en continuo: se desploma. Por eso el v2 real lleva TRES fases, descarga PULSADA y una presa de 6600µF. (El sistema completo vive en Manufactura → "Impresora de metal v2".)',
+        duration: 6000,
+        keyframes: [
+          { at: 0, state: { duty: 0.55, Rload: 220 } },
+          { at: 1, state: { duty: 0.55, Rload: 15 } },
+        ],
+      },
+    ],
+    connect: {
+      body: 'Cada parte de este circuito está en el pedido de AG con su número: IRF640N ($17), MUR1560G ($43.8), RA-.1E ($11.4), tu bobina hecha a mano. Simular ANTES de armar = saber qué esperar del multímetro. Esa es la tienda que queremos: pruébalo funcionando, luego cómpralo.',
+    },
+  },
+};
+
+export const PRESETS: Preset[] = [divider, rcLowpass, rlc, rectifier, boostForja];

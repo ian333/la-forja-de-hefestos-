@@ -44,13 +44,41 @@ export function waveAt(w: Wave, t: number): number {
 
 // ── Elementos ───────────────────────────────────────────────────────────
 
+/**
+ * Parámetros de MOSFET extraídos del DATASHEET (modelo Shichman-Hodges nivel 1):
+ *   Id(triodo) = Kp·(2(Vgs−Vth)Vds − Vds²)·(1+λVds)
+ *   Id(saturación) = Kp·(Vgs−Vth)²·(1+λVds)
+ * Kp se extrae del Rds(on) publicado: Rds(on) ≈ 1/(2·Kp·(Vgs_spec−Vth)).
+ * Incluye diodo de cuerpo (s→d) y conducción inversa del canal (swap d↔s).
+ */
+export interface MosfetParams {
+  Vth: number;      // umbral [V]
+  Kp: number;       // transconductancia [A/V²]
+  lambda?: number;  // modulación de canal [1/V]
+  dsIs?: number;    // Is del diodo de cuerpo
+  name?: string;    // parte + cita del datasheet
+}
+
+/** Catálogo con parámetros REALES de datasheet (las partes del taller/pedido AG). */
+export const MOSFETS: Record<string, MosfetParams> = {
+  // Vishay IRF640N: Vgs(th) 2–4V, Rds(on) 0.15Ω @ Vgs=10V → Kp=1/(2·0.15·6.2)
+  IRF640N: { Vth: 3.8, Kp: 0.54, lambda: 0.01, name: 'IRF640N 200V/18A · Rds 0.15Ω@10V' },
+  // IR IRL540N (logic level, los del v1): Vgs(th) 1–2V, Rds 0.077Ω @ Vgs=5V
+  IRL540N: { Vth: 1.8, Kp: 2.0, lambda: 0.012, name: 'IRL540N 100V/36A · Rds 0.077Ω@5V' },
+  // IR IRF3205: Vgs(th) 2–4V, Rds 8mΩ @ Vgs=10V
+  IRF3205: { Vth: 3.0, Kp: 8.9, lambda: 0.008, name: 'IRF3205 55V/110A · Rds 8mΩ@10V' },
+  // 2N7000 (señal): Vgs(th) ~2.1V, Rds ~1.9Ω @ Vgs=4.5V
+  '2N7000': { Vth: 2.1, Kp: 0.11, lambda: 0.02, name: '2N7000 60V/200mA · Rds 1.9Ω@4.5V' },
+};
+
 export type Element =
   | { kind: 'R'; id: string; a: number; b: number; value: number }                    // ohms
   | { kind: 'C'; id: string; a: number; b: number; value: number; ic?: number }       // farads, ic = V inicial
   | { kind: 'L'; id: string; a: number; b: number; value: number; ic?: number }       // henries, ic = I inicial
   | { kind: 'V'; id: string; a: number; b: number; value: number; wave?: Wave }       // volts (a = +)
   | { kind: 'I'; id: string; a: number; b: number; value: number; wave?: Wave }       // amps inyectados en `a`
-  | { kind: 'D'; id: string; a: number; b: number; Is?: number; n?: number };         // diodo: a=ánodo, b=cátodo
+  | { kind: 'D'; id: string; a: number; b: number; Is?: number; n?: number }          // diodo: a=ánodo, b=cátodo
+  | { kind: 'M'; id: string; d: number; g: number; s: number; params: MosfetParams }; // NMOS (datasheet)
 
 export interface Circuit {
   /** Mayor índice de nodo distinto de tierra. Nodos válidos: 0..nodeCount. */
@@ -61,8 +89,33 @@ export interface Circuit {
 /** Número de nodos sin contar tierra, derivado de los elementos. */
 export function maxNode(elements: Element[]): number {
   let m = 0;
-  for (const e of elements) m = Math.max(m, e.a, e.b);
+  for (const e of elements) {
+    if (e.kind === 'M') m = Math.max(m, e.d, e.g, e.s);
+    else m = Math.max(m, e.a, e.b);
+  }
   return m;
+}
+
+/**
+ * Corriente de canal NMOS + derivadas (Shichman-Hodges). Devuelve
+ * {id, gm, gds} para los voltajes dados (vgs, vds ≥ 0 — el swap lo hace el caller).
+ */
+export function mosChannel(p: MosfetParams, vgs: number, vds: number): { id: number; gm: number; gds: number } {
+  const lam = p.lambda ?? 0;
+  const vov = vgs - p.Vth;                     // overdrive
+  if (vov <= 0) return { id: 0, gm: 0, gds: 0 };       // corte
+  if (vds < vov) {
+    // triodo
+    const id = p.Kp * (2 * vov * vds - vds * vds) * (1 + lam * vds);
+    const gm = p.Kp * 2 * vds * (1 + lam * vds);
+    const gds = p.Kp * (2 * vov - 2 * vds) * (1 + lam * vds) + p.Kp * (2 * vov * vds - vds * vds) * lam;
+    return { id, gm, gds };
+  }
+  // saturación
+  const id = p.Kp * vov * vov * (1 + lam * vds);
+  const gm = 2 * p.Kp * vov * (1 + lam * vds);
+  const gds = p.Kp * vov * vov * lam;
+  return { id, gm, gds };
 }
 
 // ── Solver lineal denso (eliminación gaussiana con pivoteo parcial) ──────
@@ -147,7 +200,9 @@ function assemble(
   const n = c.nodeCount;
   const { vsrcIndex, vsrcList } = indexVSources(c);
   // En DC los inductores se vuelven fuentes V=0 (corto) → ramas extra.
-  const extraVBranches: Element[] = mode === 'dc' ? c.elements.filter((e) => e.kind === 'L') : [];
+  const extraVBranches = mode === 'dc'
+    ? c.elements.filter((e): e is Extract<Element, { kind: 'L' }> => e.kind === 'L')
+    : [];
   const mV = vsrcList.length + extraVBranches.length;
   const dim = n + mV;
   const A: number[][] = Array.from({ length: dim }, () => new Array(dim).fill(0));
@@ -165,6 +220,27 @@ function assemble(
     // `cur` se inyecta en `a` y se extrae de `b`
     if (a > 0) z[ni(a)] += cur;
     if (b > 0) z[ni(b)] -= cur;
+  };
+  // VCCS: corriente gm·(v_cp − v_cn) que fluye del nodo op al nodo on
+  const stampVCCS = (op: number, on: number, cp: number, cn: number, gm: number) => {
+    if (op > 0 && cp > 0) A[ni(op)][ni(cp)] += gm;
+    if (op > 0 && cn > 0) A[ni(op)][ni(cn)] -= gm;
+    if (on > 0 && cp > 0) A[ni(on)][ni(cp)] -= gm;
+    if (on > 0 && cn > 0) A[ni(on)][ni(cn)] += gm;
+  };
+  // diodo Shockley linealizado (reusado por D y por el diodo de cuerpo del M)
+  const stampDiode = (a: number, b: number, Is: number, nD: number) => {
+    const vt = nD * VT;
+    let vd = (guess[a] ?? 0) - (guess[b] ?? 0);
+    // clamp relativo a n·VT (no 0.8 fijo): un LED azul cae ~2.7 V de verdad
+    const vmax = 40 * vt;
+    if (vd > vmax) vd = vmax;
+    const ex = Math.exp(vd / vt);
+    const Geq = (Is / vt) * ex;
+    const Id = Is * (ex - 1);
+    const Ieq = Id - Geq * vd;
+    stampG(a, b, Geq);
+    stampI(a, b, -Ieq);
   };
 
   // Ramas de fuente de voltaje (V reales + L en DC)
@@ -213,19 +289,24 @@ function assemble(
         break;
       }
       case 'D': {
-        const Is = e.Is ?? DIODE_IS;
-        const nD = e.n ?? DIODE_N;
-        const vt = nD * VT;
-        let vd = (guess[ni(e.a) + 1] ?? 0) - (guess[ni(e.b) + 1] ?? 0);
-        // proteger el exponencial
-        const vmax = 0.8;
-        if (vd > vmax) vd = vmax;
-        const ex = Math.exp(vd / vt);
-        const Geq = (Is / vt) * ex;
-        const Id = Is * (ex - 1);
-        const Ieq = Id - Geq * vd; // linealización
-        stampG(e.a, e.b, Geq);
-        stampI(e.a, e.b, -Ieq);
+        stampDiode(e.a, e.b, e.Is ?? DIODE_IS, e.n ?? DIODE_N);
+        break;
+      }
+      case 'M': {
+        // NMOS Shichman-Hodges. Conducción inversa = swap d↔s (canal simétrico).
+        const vD = guess[e.d] ?? 0, vG = guess[e.g] ?? 0, vS = guess[e.s] ?? 0;
+        const rev = vD < vS;
+        const dEff = rev ? e.s : e.d, sEff = rev ? e.d : e.s;
+        const vgs = vG - (rev ? vD : vS);
+        const vds = Math.abs(vD - vS);
+        const { id, gm, gds } = mosChannel(e.params, vgs, vds);
+        // linealización: Id ≈ Ieq + gm·vgs + gds·vds  (Newton, igual que el diodo)
+        const Ieq = id - gm * vgs - gds * vds;
+        stampG(dEff, sEff, gds + 1e-9);            // gds + Gmin (convergencia en corte)
+        stampVCCS(dEff, sEff, e.g, sEff, gm);
+        stampI(dEff, sEff, -Ieq);
+        // diodo de cuerpo: ánodo=source, cátodo=drain (el flyback gratis del NMOS)
+        stampDiode(e.s, e.d, e.params.dsIs ?? 1e-12, 1);
         break;
       }
     }
@@ -246,7 +327,7 @@ function nodeVoltages(x: number[], n: number): number[] {
   return v;
 }
 
-const hasDiode = (c: Circuit) => c.elements.some((e) => e.kind === 'D');
+const hasDiode = (c: Circuit) => c.elements.some((e) => e.kind === 'D' || e.kind === 'M');
 
 /** Resuelve un instante (con Newton si hay diodos). Devuelve voltajes de nodo + corrientes de rama. */
 function solveInstant(
@@ -297,6 +378,18 @@ function solveInstant(
 
 /** Corriente que circula por un elemento dado el estado de nodos resuelto. */
 function elementCurrent(e: Element, v: number[], dt: number, prev: SimState | null): number {
+  if (e.kind === 'M') {
+    // positiva = drain→source (canal) − diodo de cuerpo (que conduce s→d)
+    const vD = v[e.d] ?? 0, vG = v[e.g] ?? 0, vS = v[e.s] ?? 0;
+    const rev = vD < vS;
+    const vgs = vG - (rev ? vD : vS);
+    const vds = Math.abs(vD - vS);
+    const { id } = mosChannel(e.params, vgs, vds);
+    const chan = rev ? -id : id;
+    const vbd = Math.min(vS - vD, 0.8);
+    const ibd = (e.params.dsIs ?? 1e-12) * (Math.exp(vbd / VT) - 1);
+    return chan - ibd;
+  }
   const va = v[e.a] ?? 0;
   const vb = v[e.b] ?? 0;
   const vdiff = va - vb;
@@ -318,7 +411,7 @@ function elementCurrent(e: Element, v: number[], dt: number, prev: SimState | nu
     case 'D': {
       const Is = e.Is ?? DIODE_IS;
       const vt = (e.n ?? DIODE_N) * VT;
-      const vc = Math.min(vdiff, 0.8);
+      const vc = Math.min(vdiff, 40 * vt); // mismo clamp relativo que stampDiode
       return Is * (Math.exp(vc / vt) - 1);
     }
     default:
@@ -369,6 +462,8 @@ export function transientStep(c: Circuit, prev: SimState, dt: number): SimState 
       const va = sol.v[e.a] ?? 0;
       const vb = sol.v[e.b] ?? 0;
       hist.set(e.id, { v: va - vb, i: elementCurrent(e, sol.v, dt, prev) });
+    } else if (e.kind === 'M') {
+      hist.set(e.id, { v: (sol.v[e.d] ?? 0) - (sol.v[e.s] ?? 0), i: elementCurrent(e, sol.v, dt, prev) });
     }
   }
   return { t, v: sol.v, vsrcI: sol.vsrcI, hist };
