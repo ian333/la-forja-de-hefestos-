@@ -50,6 +50,7 @@ export interface Placement {
     frac?: number;       // potenciómetro 0..1 (posición de la perilla)
     luz?: number;        // LDR 0..1 (0=oscuro, 1=pleno sol)
     tempC?: number;      // NTC
+    volts?: number;      // override del voltaje de una fuente (pila bajo prueba)
   };
 }
 
@@ -197,8 +198,8 @@ function elementsFor(
       // pin 0 = ánodo, pin 1 = cátodo. (El V_f del LED emerge de Is/n del gap.)
       return [{ kind: 'D', id: p.id, a: n0, b: n1, Is: model.Is, n: model.n }];
     case 'V':
-      // pin 0 = +, pin 1 = −
-      return [{ kind: 'V', id: p.id, a: n0, b: n1, value: model.volts }];
+      // pin 0 = +, pin 1 = −. state.volts permite probar una pila a distinto voltaje.
+      return [{ kind: 'V', id: p.id, a: n0, b: n1, value: p.state?.volts ?? model.volts }];
     case 'M':
       // pins: [drain, gate, source]
       return [{ kind: 'M', id: p.id, d: n0, g: n1, s: n2, params: model.params }];

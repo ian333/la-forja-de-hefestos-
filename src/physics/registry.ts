@@ -46,6 +46,7 @@ const BoostV2 = lazy(() => import('./modules/manufactura/BoostV2'));
 const CircuitSimulator = lazy(() => import('./modules/electronica/CircuitSimulator'));
 const NovaLab = lazy(() => import('./modules/electronica/NovaLab'));
 const MicroscopioCorriente = lazy(() => import('./modules/electronica/MicroscopioCorriente'));
+const BancoTrabajo = lazy(() => import('./modules/electronica/BancoTrabajo'));
 
 export const BRANCHES: PhysicsBranch[] = [
   {
@@ -181,6 +182,11 @@ export const BRANCHES: PhysicsBranch[] = [
     accent: '#d4b050',
     blurb: 'Arma circuitos de verdad — motor SPICE (MNA) real + el laboratorio de la placa NOVA OMNI.',
     modules: [
+      { id: 'banco', name: 'Banco de trabajo NOVA (tienda)', status: 'live',
+        blurb: 'Arma circuitos ÚTILES en una protoboard real, míralos responder en vivo y compra el kit. Aprende usando lo que vendemos.',
+        childHint: 'Carga la luz nocturna, tapa el sensor y mira el LED prender solo. Cuando te late, pide el kit.',
+        researcherHint: 'Protoboard real (nets/rieles/jumpers union-find) → netlist → MNA. 4 tableros verificados (luz nocturna LDR+IRL540N, alarma NTC, dimmer pot, probador de pilas). Catálogo de 42 SKUs = paleta + tienda. BOM→carrito (Mercuria).',
+        component: BancoTrabajo },
       { id: 'circuit-sim', name: 'Simulador de circuitos (SPICE)', status: 'live',
         blurb: 'Análisis Nodal Modificado real: R/L/C/diodo, DC + transitorio. Divisor, RC, RLC, rectificador.',
         childHint: 'Arma el circuito, mueve las perillas y mira la corriente y el voltaje en vivo, como en un osciloscopio.',
