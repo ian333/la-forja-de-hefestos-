@@ -64,8 +64,14 @@ export default defineConfig({
         "cinematic-molecule": resolve(import.meta.dirname, "cinematic-molecule.html"),
         "cinematic-bh": resolve(import.meta.dirname, "cinematic-bh.html"),
         "cinematic-bh-reel": resolve(import.meta.dirname, "cinematic-bh-reel.html"),
+        "cinematic-pulsar": resolve(import.meta.dirname, "cinematic-pulsar.html"),
+        "cinematic-protein": resolve(import.meta.dirname, "cinematic-protein.html"),
+        "cinematic-dna": resolve(import.meta.dirname, "cinematic-dna.html"),
+        "cinematic-tde": resolve(import.meta.dirname, "cinematic-tde.html"),
+        "cinematic-bhdisk": resolve(import.meta.dirname, "cinematic-bhdisk.html"),
         "forja-brep": resolve(import.meta.dirname, "forja-brep.html"),
         "forja-mecanismos": resolve(import.meta.dirname, "forja-mecanismos.html"),
+        nova: resolve(import.meta.dirname, "nova.html"),
       },
       output: {
         manualChunks: {

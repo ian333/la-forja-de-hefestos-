@@ -474,6 +474,7 @@ SMOKE_PATHS=(
   "masterclass.html"
   "forja-brep.html"
   "forja-mecanismos.html"
+  "nova.html"
   "occt-import-js.wasm"
   "audio/masterclass/blackhole/manifest.json"
   "audio/masterclass/blackhole/01-pregunta.mp3"
