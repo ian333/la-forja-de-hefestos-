@@ -77,6 +77,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/sim-cycle-test.cjs'] },
   { group: 'kernel', n: 'mold-drawings', why: 'PLANOS DE TALLER del molde: tabla de barrenos fiel al registro (X/Y/⌀/prof/tipo), BOM+globos, achurado, línea de partición',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-drawings-test.cjs'] },
+  { group: 'kernel', n: 'mold-base', why: 'Kazmer cap 4 + Apéndice B: insertos 3⌀/cheek=profundidad, base estándar+aspecto 2:1, HM320 fiel, 11 metales EXACTOS (α≡k/ρcp) + selector',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-base-test.cjs'] },
   { group: 'kernel', n: 'occt-sweep-loft', why: 'loft (prisma A·h, tronco h/3·(a²+b²+ab)) + sweep (cilindro πr²L, codo suave sin truncar)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/occt-sweep-loft-test.cjs'] },
   { group: 'physics', n: 'fea',          why: 'FEA real K·u=f vs analítico: barra axial σ=F/A & δ=FL/AE, viga voladizo',

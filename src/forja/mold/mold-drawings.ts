@@ -57,18 +57,39 @@ function sheetOpen(parts: string[]) {
 }
 
 function titleBlock(parts: string[], code: string, name: string, material: string, scale: string, extra?: string) {
-  const W = 120, H = 34, x = PW - MARGIN / 2 - W, y = PH - MARGIN / 2 - H;
-  parts.push(`<g data-testid="title-block" font-size="2.8" fill="#111">`);
+  // Cajetín según ISO 7200 (campos: propietario, nº de documento, título, fechas,
+  // responsable, hoja) + tolerancia general ISO 2768-mK + proyección 3er ángulo.
+  const W = 150, H = 40, x = PW - MARGIN / 2 - W, y = PH - MARGIN / 2 - H;
+  parts.push(`<g data-testid="title-block" font-size="2.6" fill="#111">`);
   parts.push(`<rect x="${x}" y="${y}" width="${W}" height="${H}" fill="#fff" stroke="#111" stroke-width="0.5"/>`);
+  // fila superior: código + título + marca
   parts.push(`<line x1="${x}" y1="${y + 12}" x2="${x + W}" y2="${y + 12}" stroke="#111" stroke-width="0.3"/>`);
-  parts.push(`<line x1="${x + W * 0.62}" y1="${y + 12}" x2="${x + W * 0.62}" y2="${y + H}" stroke="#111" stroke-width="0.3"/>`);
-  parts.push(`<text x="${x + 3}" y="${y + 5.6}" font-size="4.4" font-weight="bold">${esc(code)} · ${esc(name).slice(0, 34)}</text>`);
-  parts.push(`<text x="${x + 3}" y="${y + 10}" font-size="2.5" fill="#666">${esc(extra ?? 'MOLDE DE INYECCIÓN · 2 PLACAS')}</text>`);
-  parts.push(`<text x="${x + 3}" y="${y + 17.5}" font-size="2.3" fill="#666">MATERIAL</text><text x="${x + 3}" y="${y + 22}" font-weight="bold">${esc(material)}</text>`);
-  parts.push(`<text x="${x + 3}" y="${y + 28}" font-size="2.3" fill="#666">TOL. GRAL ±0.02 · BARRENOS H7</text>`);
-  parts.push(`<text x="${x + W * 0.62 + 3}" y="${y + 17.5}" font-size="2.3" fill="#666">ESCALA</text><text x="${x + W * 0.62 + 3}" y="${y + 22}" font-weight="bold">${scale}</text>`);
-  parts.push(`<text x="${x + W * 0.62 + 3}" y="${y + 28}" font-size="2.3" fill="#666">mm · 3er ángulo</text>`);
-  parts.push(`<text x="${x + W - 2.5}" y="${y + 5.6}" font-size="2.8" fill="#b8860b" text-anchor="end">La Forja · GAIA</text>`);
+  parts.push(`<text x="${x + 3}" y="${y + 5.4}" font-size="4.2" font-weight="bold">${esc(code)} · ${esc(name).slice(0, 32)}</text>`);
+  parts.push(`<text x="${x + 3}" y="${y + 9.8}" font-size="2.4" fill="#666">${esc(extra ?? 'MOLDE DE INYECCIÓN')}</text>`);
+  parts.push(`<text x="${x + W - 2.5}" y="${y + 5.4}" font-size="2.8" fill="#b8860b" text-anchor="end">La Forja · GAIA</text>`);
+  // rejilla ISO 7200: material | tolerancias | escala/proyección | firmas
+  const c1 = x + W * 0.34, c2 = x + W * 0.62, c3 = x + W * 0.82;
+  parts.push(`<line x1="${c1}" y1="${y + 12}" x2="${c1}" y2="${y + H}" stroke="#111" stroke-width="0.3"/>`);
+  parts.push(`<line x1="${c2}" y1="${y + 12}" x2="${c2}" y2="${y + H}" stroke="#111" stroke-width="0.3"/>`);
+  parts.push(`<line x1="${c3}" y1="${y + 12}" x2="${c3}" y2="${y + H}" stroke="#111" stroke-width="0.3"/>`);
+  parts.push(`<line x1="${x}" y1="${y + 26}" x2="${c2}" y2="${y + 26}" stroke="#111" stroke-width="0.25"/>`);
+  const cell = (cx: number, cy: number, k: string, v: string, vs = 2.9) =>
+    parts.push(`<text x="${cx}" y="${cy}" font-size="2.1" fill="#666">${esc(k)}</text><text x="${cx}" y="${cy + 4.4}" font-size="${vs}" font-weight="bold">${esc(v)}</text>`);
+  cell(x + 3, y + 16.5, 'MATERIAL', material.slice(0, 22));
+  cell(x + 3, y + 30.5, 'ACABADO', 'Ra 0.8 cavidad · Ra 3.2 resto');
+  cell(c1 + 3, y + 16.5, 'TOLERANCIA GENERAL', 'ISO 2768-mK');
+  cell(c1 + 3, y + 30.5, 'BARRENOS', 'H7 · roscas 6H');
+  cell(c2 + 3, y + 16.5, 'ESCALA', scale);
+  cell(c2 + 3, y + 30.5, 'UNIDADES', 'mm');
+  cell(c3 + 3, y + 16.5, 'DIBUJÓ', 'La Forja CAD');
+  cell(c3 + 3, y + 30.5, 'HOJA', '1/1 · A3');
+  // símbolo de PROYECCIÓN DE TERCER ÁNGULO (ISO 128: tronco + vista circular),
+  // junto al valor de escala (el símbolo ES la indicación normativa)
+  const sx = c2 + 15, sy = y + 19.3;
+  parts.push(`<g stroke="#111" stroke-width="0.3" fill="none" data-testid="projection-symbol">`);
+  parts.push(`<circle cx="${sx + 3}" cy="${sy}" r="2.4"/><circle cx="${sx + 3}" cy="${sy}" r="1.05"/>`);
+  parts.push(`<path d="M ${sx + 7.5} ${sy - 2.4} L ${sx + 13.5} ${sy - 1.3} L ${sx + 13.5} ${sy + 1.3} L ${sx + 7.5} ${sy + 2.4} z"/>`);
+  parts.push(`</g>`);
   parts.push(`</g>`);
 }
 

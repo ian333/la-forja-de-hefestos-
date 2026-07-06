@@ -105,6 +105,31 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
   save('P-103-pieza-vaso', p103.svg);
   console.log('P-103: sección de revolución ·', p103.bom.length, 'item');
 
+  // ── REPORTE de mold base + acero + máquina (cap 4 §4.2-4.4, pieza 2) ──
+  const mb = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'moldbase.ts'));
+  const ins = mb.sizeInserts({ Lmm: 60, Wmm: 60, depthMm: 70 });
+  const sel = mb.selectMoldBase(ins, { nx: 2, ny: 2 });
+  const metal = mb.selectMetal({ produccionAnual: 500000 });
+  const chk = mb.checkMachine({ wmm: sel.base.wmm, lmm: sel.base.lmm, stackMm: 380, shotCc: 188, clampNeedTons: 4 * 3.5 * 1.3 }, mb.MACHINES[0]);
+  const R = [
+    'MOLD BASE + MATERIALES — molde del vaso ×4 (Kazmer cap 4, Apéndice B)',
+    '════════════════════════════════════════════════════════════════════',
+    `INSERTOS (§4.2): ⌀agua ${ins.coolingDiaMm} mm · extra altura 3⌀ = ${ins.extraHmm.toFixed(1)} mm`,
+    `  cheek lateral = max(3⌀, profundidad 70) = ${ins.cheekMm} mm → manda ${ins.driver.toUpperCase()}`,
+    `  inserto ${ins.insertLmm}×${ins.insertWmm} · placa A ${ins.insertHcavityMm} mm (redondeo 10 mm)`,
+    `BASE (§4.3): rejilla 2×2, envelope ${sel.envelope.wmm}×${sel.envelope.lmm} (aspecto ${sel.aspect}:1)`,
+    `  reserva perimetral ${sel.reserveMm} mm (pilares ⌀${sel.leaderPinDia}) → BASE ESTÁNDAR ${sel.base.wmm}×${sel.base.lmm}`,
+    `ACERO (§4.4 + Apéndice B): ${metal.metal.key} (DIN ${metal.metal.din})`,
+    ...metal.porQue.map((w) => `  · ${w}`),
+    `  fatiga ${metal.metal.fatigueLimitMPa} MPa · ${metal.metal.brinell} HB · k ${metal.metal.kWmC} W/m°C · $${metal.metal.costKg}/kg`,
+    `MÁQUINA (§4.3.3): ${mb.MACHINES[0].name} → ${chk.ok ? 'COMPATIBLE' : 'REVISAR'} (shot ${chk.shotPct}% del barril)`,
+    ...chk.issues.map((i) => `  ⚠ ${i}`),
+    '',
+    'Normativa de los planos: cajetín ISO 7200 · tolerancia general ISO 2768-mK ·',
+    'barrenos H7 / roscas 6H · proyección 3er ángulo (símbolo ISO 128) · hoja A3.',
+  ];
+  writeFileSync(`${out}/REPORTE-MOLDBASE.txt`, R.join('\n'));
+  console.log(R.slice(0, 12).join('\n'));
   console.log('PLANOS_MOLDE_OK →', out);
   process.exit(0);
 })().catch((e) => { console.log('FATAL:', String((e && e.stack) || e).slice(0, 400)); process.exit(1); });
