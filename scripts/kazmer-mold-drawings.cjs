@@ -143,6 +143,43 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
     'Acciones: filete interno R1.5 (50% pared) en la unión base-pared;',
     'draft 1.5° en pared exterior/interior (Clase B-3, Tabla 2.14).'].join('\n'));
   console.log(rep.resumen.join('\n'));
+  // ── E-200: TRES PLACAS de la TAPA (§6.3.2) — pieza corta con gate central
+  //    pin-point (la tapa ⌀62×10 de la familia del vaso; un vaso de 70 mm no
+  //    cabría bajo la placa A de 40) ──
+  const tp = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'threeplate.ts'));
+  const L = tp.threePlateLayout({ partHeightMm: 10, clampTons: 100 });
+  const sp = tp.suckerPinDesign(6);
+  const zOf = (n) => L.stack.find((r) => r.name.startsWith(n));
+  const zB = zOf('placa B'), zA = zOf('placa A'), zX = zOf('placa X'), zTop = zOf('placa sujeción superior');
+  const zAB = L.partingABz;
+  const e200 = md.renderAssemblySection([
+    { id: 1, name: 'Placa sujeción inferior', qty: 1, material: '1045', rects: [{ x0: -70, z0: zOf('placa sujeción inferior').z0, x1: 70, z1: zOf('placa sujeción inferior').z1 }] },
+    { id: 2, name: 'Rieles + eyección', qty: 1, material: '1045', rects: [{ x0: -70, z0: zOf('rieles').z0, x1: -30, z1: zOf('rieles').z1 }, { x0: 30, z0: zOf('rieles').z0, x1: 70, z1: zOf('rieles').z1 }] },
+    { id: 3, name: 'Placa soporte', qty: 1, material: '1045', rects: [{ x0: -70, z0: zOf('placa soporte').z0, x1: 70, z1: zOf('placa soporte').z1 }] },
+    { id: 4, name: 'Placa B (core de la tapa)', qty: 1, material: 'P20', rects: [{ x0: -70, z0: zB.z0, x1: -31, z1: zB.z1 }, { x0: 31, z0: zB.z0, x1: 70, z1: zB.z1 }, { x0: -31, z0: zB.z0, x1: 31, z1: zAB - 10 }] },
+    { id: 5, name: 'PIEZA · tapa ⌀62×10 (gate central)', qty: 1, material: 'ABS', solid: true, rects: [
+      { x0: -31, z0: zAB - 2, x1: 31, z1: zAB }, { x0: -31, z0: zAB - 10, x1: -29, z1: zAB - 2 }, { x0: 29, z0: zAB - 10, x1: 31, z1: zAB - 2 }] },
+    { id: 6, name: 'Placa A (cavidad + drop cónico)', qty: 1, material: 'P20', rects: [{ x0: -70, z0: zA.z0, x1: -3.5, z1: zA.z1 }, { x0: 3.5, z0: zA.z0, x1: 70, z1: zA.z1 }] },
+    { id: 7, name: 'COLADA (runner A-X + drop pin-point)', qty: 1, material: 'ABS (desecho)', solid: true, rects: [
+      { x0: -45, z0: zX.z0 - 3, x1: 45, z1: zX.z0 }, { x0: -2.5, z0: zA.z0, x1: 2.5, z1: zX.z0 - 3 }, { x0: -2, z0: zX.z0, x1: 2, z1: zTop.z1 }] },
+    { id: 8, name: `Placa X stripper · sucker pin ⌀${sp.diaMm}`, qty: 1, material: '1045', rects: [{ x0: -70, z0: zX.z0, x1: -2, z1: zX.z1 }, { x0: 2, z0: zX.z0, x1: 70, z1: zX.z1 }] },
+    { id: 9, name: 'Placa sujeción superior (sprue)', qty: 1, material: '1045', rects: [{ x0: -70, z0: zTop.z0, x1: -2, z1: zTop.z1 }, { x0: 2, z0: zTop.z0, x1: 70, z1: zTop.z1 }] },
+  ], {
+    code: 'E-200', name: 'MOLDE 3 PLACAS — TAPA',
+    extra: `doble apertura: A-B ${L.openABMm} mm (2.5×h) → A-X ${L.openAXMm} mm · v ${L.vOpenMmS} mm/s · t ${L.tOpenS} s`,
+    partings: [{ z: L.partingABz, label: 'PARTICIÓN A-B (pieza)' }, { z: L.partingAXz, label: 'PARTICIÓN A-X (colada)' }],
+    notes: [
+      `stack ${L.stackMm} mm · daylight ${L.daylightMm} mm (Tabla 6.1: el 3 placas abre ~3× más que el 2 placas)`,
+      `stripper bolts: A-B libre ${L.boltABfreeMm} mm · X libre ${L.boltAXfreeMm} mm (ajustables)`,
+      `sucker pin ⌀${sp.diaMm}×${sp.depthMm} mm: retiene la colada en la X sin restringir flujo (§6.5.2)`,
+      'secuencia: abre A-B (pieza) → agota bolt → abre A-X → la colada CAE sola',
+      'gate pin-point al centro de la tapa: de-gating AUTOMÁTICO (§7.2.2)',
+    ],
+    extraBom: [['10', 'Stripper bolt A-B', '4', 'DIN 912 modif.'], ['11', 'Stripper bolt X', '4', 'DIN 912 modif.'], ['12', 'Resorte A-X (apertura temprana)', '4', 'ISO 10243']],
+  });
+  save('E-200-tres-placas', e200.svg);
+  console.log('E-200:', e200.nComps, 'comps ·', e200.bom.length, 'BOM · doble partición ✓');
+
   console.log('PLANOS_MOLDE_OK →', out);
   process.exit(0);
 })().catch((e) => { console.log('FATAL:', String((e && e.stack) || e).slice(0, 400)); process.exit(1); });

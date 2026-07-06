@@ -228,7 +228,7 @@ function hatchRect(parts: string[], r: { x: number; y: number; w: number; h: num
 
 export function renderAssemblySection(
   comps: StackComp[],
-  meta: { code: string; name: string; extra?: string; extraBom?: string[][]; notes?: string[]; sectionLabel?: string },
+  meta: { code: string; name: string; extra?: string; extraBom?: string[][]; notes?: string[]; sectionLabel?: string; partings?: Array<{ z: number; label: string }> },
 ): AssemblyDrawing {
   const parts: string[] = [];
   sheetOpen(parts);
@@ -276,11 +276,14 @@ export function renderAssemblySection(
     bom.push([String(c.id), c.name, String(c.qty), c.material ?? '—']);
   });
 
-  // línea de partición (referencia clave del molde)
-  const zPart = comps.find((c) => c.name.toLowerCase().includes('cavidad'))?.rects.reduce((m, r) => Math.max(m, r.z1), -Infinity);
-  if (zPart != null && Number.isFinite(zPart)) {
-    parts.push(`<line x1="${X(x0) - 8}" y1="${Y(zPart)}" x2="${X(x1) + 8}" y2="${Y(zPart)}" stroke="#c01c28" stroke-width="0.3" stroke-dasharray="4 1.4 1 1.4"/>`);
-    parts.push(`<text x="${X(x1) + 9}" y="${Y(zPart) + 1}" font-size="2.8" fill="#c01c28">LÍNEA DE PARTICIÓN</text>`);
+  // líneas de partición (2 placas: una; 3 placas: A-B y A-X)
+  const partings = meta.partings ?? (() => {
+    const zP = comps.find((c) => c.name.toLowerCase().includes('cavidad'))?.rects.reduce((m, r) => Math.max(m, r.z1), -Infinity);
+    return zP != null && Number.isFinite(zP) ? [{ z: zP, label: 'LÍNEA DE PARTICIÓN' }] : [];
+  })();
+  for (const pt of partings) {
+    parts.push(`<line x1="${X(x0) - 8}" y1="${Y(pt.z)}" x2="${X(x1) + 8}" y2="${Y(pt.z)}" stroke="#c01c28" stroke-width="0.3" stroke-dasharray="4 1.4 1 1.4" data-parting="1"/>`);
+    parts.push(`<text x="${X(x0) - 10}" y="${Y(pt.z) + 1}" font-size="2.8" fill="#c01c28" text-anchor="end">${esc(pt.label)}</text>`);
   }
 
   // cotas generales

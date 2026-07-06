@@ -81,6 +81,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-base-test.cjs'] },
   { group: 'kernel', n: 'mold-dfm', why: 'Kazmer §2.3 DFM: costilla 70%/4×/10×, boss 70%, filete 150/50%, draft 0.5° mín + Tabla 2.14 exacta, undercuts, jetting',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-dfm-test.cjs'] },
+  { group: 'kernel', n: 'mold-threeplate', why: 'Kazmer §6.3.2: doble partición A-B/A-X, bolts, apertura 2-3×h, v=184+13·log(F) y Tabla 6.1 EXACTA (0.36/1.19s, 339/558mm), sucker pin §6.5.2',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-threeplate-test.cjs'] },
   { group: 'kernel', n: 'occt-sweep-loft', why: 'loft (prisma A·h, tronco h/3·(a²+b²+ab)) + sweep (cilindro πr²L, codo suave sin truncar)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/occt-sweep-loft-test.cjs'] },
   { group: 'physics', n: 'fea',          why: 'FEA real K·u=f vs analítico: barra axial σ=F/A & δ=FL/AE, viga voladizo',
