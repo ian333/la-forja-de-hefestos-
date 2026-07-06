@@ -130,6 +130,19 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
   ];
   writeFileSync(`${out}/REPORTE-MOLDBASE.txt`, R.join('\n'));
   console.log(R.slice(0, 12).join('\n'));
+  // ── REPORTE DFM de la pieza (Kazmer §2.3, pieza 3 del checklist) ──
+  const dfm = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'dfm.ts'));
+  const rep = dfm.checkDFM({
+    nominalWallMm: 3,
+    walls: [{ label: 'pared', thicknessMm: 3 }, { label: 'base', thicknessMm: 3 }],
+    corners: [{ label: 'unión base-pared (interna)', kind: 'interno' }],   // hoy VIVA: sin filete
+    surface: { finish: 'Clase B-3', roughnessUm: 12 },
+    draftDeg: 0,                                                            // hoy SIN draft
+  });
+  writeFileSync(`${out}/REPORTE-DFM-VASO.txt`, ['DFM DEL VASO (Kazmer §2.3)', '═'.repeat(40), ...rep.resumen, '',
+    'Acciones: filete interno R1.5 (50% pared) en la unión base-pared;',
+    'draft 1.5° en pared exterior/interior (Clase B-3, Tabla 2.14).'].join('\n'));
+  console.log(rep.resumen.join('\n'));
   console.log('PLANOS_MOLDE_OK →', out);
   process.exit(0);
 })().catch((e) => { console.log('FATAL:', String((e && e.stack) || e).slice(0, 400)); process.exit(1); });
