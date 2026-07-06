@@ -26,6 +26,7 @@ import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import ShortcutOverlay from '../../components/ShortcutOverlay';
 const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación del ciclo de inyección (chunk aparte)
+const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import {
@@ -440,7 +441,13 @@ type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | DraftOp | Revolv
 // Varios componentes + la pieza principal se combinan en un compound (sin soldar)
 // → permite reconstruir una MÁQUINA pieza a pieza a medidas reales. ──
 interface Component {
-  id: string; name: string; kind: 'box' | 'cyl' | 'sketch' | 'sweeppath';
+  id: string; name: string; kind: 'box' | 'cyl' | 'sketch' | 'sweeppath' | 'pieza';
+  // ── ENSAMBLE GENÉRICO (la función #1 de LO-RECIO): una PIEZA de la biblioteca
+  // insertada como componente. Guarda un SNAPSHOT del doc (sketch+ops+components)
+  // — robusto aunque la biblioteca cambie después. Se posiciona con x/y/z/rz y se
+  // combina como compound (bool 'none') o con booleanas. Sin anidar (una pieza
+  // insertada no construye sus propias piezas insertadas — v1). ──
+  pieceDoc?: { sketch: SketchFeature; ops: Op[]; components: Component[] };
   // SWEEP por path de croquis (c6t2): path abierto 2D en el plano del croquis; el
   // perfil es una ELIPSE (semiejes sweepRx en-plano ⊥path, sweepRy fuera-de-plano).
   path?: Pt2[]; sweepRx?: number; sweepRy?: number;
@@ -1040,9 +1047,58 @@ function planeFromMeshFace(mesh: TessellatedMesh, faceId: number): SketchPlane3D
   return { origin: [cx, cy, cz], uDir: [ux, uy, uz], vDir: [vx, vy, vz] };
 }
 
+/**
+ * Construye el SÓLIDO COMPLETO de un documento (pieza de biblioteca) para el
+ * ensamble genérico: sketch+ops (buildShape) + componentes con sus booleanas
+ * básicas (none/union/subtract) y patrón circular. Limitaciones v1 (documentadas
+ * en LO-RECIO): sin piezas anidadas, sin booleanas de molde (subtractFrom/common),
+ * sin mirror — una pieza típica (placa, buje, engrane, tuerca) no las usa.
+ */
+function buildDocSolid(oc: OC, sketch: SketchFeature, ops: Op[], components: Component[]): Shape {
+  let main: Shape | null = null;
+  try { main = buildShape(oc, sketch, ops.filter((o) => !o.suppressed), null); }
+  catch (e) { if (!components.length) throw e; }
+  const parts: Shape[] = [];
+  let acc: Shape | null = main;
+  for (const c of components) {
+    if (c.kind === 'pieza') continue;                    // v1: sin anidar
+    const mode = c.bool ?? 'none';
+    if (mode === 'subtractFrom' || mode === 'common') continue;  // molde: fuera de v1
+    const cs = buildComponent(oc, c);
+    const pc = Math.max(1, Math.round(c.patternCount ?? 1));
+    const insts: Shape[] = [cs];
+    if (pc > 1) {
+      const span = c.patternSpan ?? 360;
+      const step = span >= 359.999 ? span / pc : span / (pc - 1);
+      for (let k = 1; k < pc; k++) {
+        insts.push(transformShape(oc, cs, { translate: [0, 0, 0], rotateAngle: (step * k * Math.PI) / 180, rotateAxis: { origin: [0, 0, 0], dir: c.patternAxis === 'x' ? [1, 0, 0] : c.patternAxis === 'z' ? [0, 0, 1] : [0, 1, 0] } }));
+      }
+    }
+    for (const inst of insts) {
+      if (mode === 'none' || acc === null) parts.push(inst);
+      else if (mode === 'union') acc = fuse(oc, acc, inst);
+      else if (mode === 'subtract') acc = cut(oc, acc, inst);
+    }
+  }
+  // Drafts de la pieza (ángulo de salida) — al final, como en el pipeline principal.
+  if (acc) for (const op of ops) { if (op.type === 'draft' && !op.suppressed) acc = draftFaces(oc, acc, (op as DraftOp).angleDeg); }
+  const all = acc ? [acc, ...parts] : parts;
+  if (!all.length) throw new Error(`La pieza insertada no construye ningún sólido.`);
+  return all.length === 1 ? all[0] : makeCompound(oc, all);
+}
+
 function buildComponent(oc: OC, c: Component): Shape {
   const rz = ((c.rz ?? 0) * Math.PI) / 180;
   const zAxis = { origin: [0, 0, 0] as [number, number, number], dir: [0, 0, 1] as [number, number, number] };
+  if (c.kind === 'pieza' && c.pieceDoc) {
+    // PIEZA INSERTADA (ensamble): construye el doc snapshot completo y lo posiciona.
+    let s = buildDocSolid(oc, c.pieceDoc.sketch, c.pieceDoc.ops, c.pieceDoc.components);
+    if (c.x || c.y || c.z || (c.rz ?? 0)) {
+      const t = transformShape(oc, s, { translate: [c.x, c.y, c.z], rotateAngle: rz, rotateAxis: zAxis });
+      s.delete?.(); s = t;
+    }
+    return s;
+  }
   if (c.kind === 'sketch' && c.profile && c.profile.length >= 3 && c.revolve) {
     // Componente REVOLUCIONADO (revolve-join/cut): perfil del croquis alrededor del eje
     // global, luego trasladado a su posición (ensamble bottom-up c7: piezas torneadas
@@ -2993,6 +3049,7 @@ export default function ForgeBRepStudio() {
   const [workspace, setWorkspace] = useState<'diseno' | 'manufactura' | 'simulacion'>('diseno');
   // Simulación del CICLO DE INYECCIÓN (molde vivo): overlay a pantalla completa.
   const [cycleSimOn, setCycleSimOn] = useState(false);
+  const [tpSimOn, setTpSimOn] = useState(false);
   // Menú "Más" de la toolbar: la cola larga de features que la TELEMETRÍA de los
   // 17 drives del libro marcó con CERO clicks (Transición/Barrido/Engrane/…) vive
   // aquí — la fila principal queda para el núcleo real (croquis→extruir→revolución).
@@ -3392,6 +3449,20 @@ export default function ForgeBRepStudio() {
   const loadFromLibrary = useCallback((name: string) => {
     const d = readLib()[name]; if (d) loadDoc(d);
   }, [loadDoc]);
+  // ── ENSAMBLE GENÉRICO: insertar una pieza guardada COMO COMPONENTE (snapshot).
+  // La pieza llega al origen como compound ('none') y se posiciona con X/Y/Z/Giro
+  // del panel — el primer ladrillo de los robots (mates vendrán encima de esto). ──
+  const insertPieza = useCallback((name: string) => {
+    const d = readLib()[name]; if (!d) return;
+    const c: Component = {
+      id: newId('comp'), name, kind: 'pieza',
+      w: 0, d: 0, h: 0, r: 0, x: 0, y: 0, z: 0, bool: 'none',
+      pieceDoc: { sketch: d.sketch as SketchFeature, ops: (d.ops ?? []) as Op[], components: (d.components ?? []) as Component[] },
+    };
+    setComponents((cur) => [...cur, c]);
+    setActiveComp(c.id); setActiveOp(null);
+    mark('op', 0, { op: 'insert-pieza' });
+  }, []);
   const deleteFromLibrary = useCallback((name: string) => {
     const lib = readLib(); delete lib[name]; writeLib(lib); refreshLib();
   }, [refreshLib]);
@@ -5006,6 +5077,9 @@ export default function ForgeBRepStudio() {
       setActiveCompRevolve: (axis: 'x' | 'y' | 'z', angle: number) => {
         setComponents((cur) => cur.map((c) => (c.id === activeComp ? { ...c, revolve: { axis, angle } } : c)));
       },
+      // ENSAMBLE GENÉRICO: insertar pieza guardada + listar biblioteca (arnés/lecciones).
+      insertPieza,
+      libraryNames: () => Object.keys(readLib()),
       // CROQUIS-SOBRE-CARA por API (fiable para el arnés: sin adivinar pixel de la cara).
       sketchOnFace: (faceId: number) => { sketchFacePendingRef.current = true; togglePickFace(faceId); },
       // Elige AUTOMÁTICAMENTE la cara superior (normal≈+Z, mayor centroide Z) y croquiza en ella.
@@ -5294,6 +5368,11 @@ export default function ForgeBRepStudio() {
             <MoldCycleSim onClose={() => setCycleSimOn(false)} />
           </Suspense>
         )}
+        {tpSimOn && (
+          <Suspense fallback={null}>
+            <MoldThreePlateSim onClose={() => setTpSimOn(false)} />
+          </Suspense>
+        )}
 
         {/* PALETA DE ATAJOS estilo Fusion "S" en el cursor (se abre con la tecla S). */}
         {shortcutPos && (
@@ -5499,6 +5578,9 @@ export default function ForgeBRepStudio() {
                             <div key={n} className="fb-lib-row">
                               <button className="fb-lib-open" data-testid={`lib-open-${n}`}
                                 onClick={() => { loadFromLibrary(n); setOptionsOpen(false); }} title={`Abrir "${n}"`}>{n}</button>
+                              <button className="fb-lib-open" data-testid={`lib-insert-${n}`} style={{ flex: '0 0 auto' }}
+                                onClick={() => { insertPieza(n); setOptionsOpen(false); }}
+                                title={`INSERTAR "${n}" en este documento (ensamble)`}>⤵</button>
                               <button className="fb-lib-del" data-testid={`lib-del-${n}`}
                                 onClick={() => deleteFromLibrary(n)} title="Borrar de la biblioteca">✕</button>
                             </div>
@@ -5850,6 +5932,9 @@ export default function ForgeBRepStudio() {
               <button className="fb-fea-run" data-testid="btn-cycle-sim" onClick={() => setCycleSimOn(true)}>
                 ▶ Ciclo de inyección (molde vivo)
               </button>
+              <button className="fb-fea-run" data-testid="btn-threeplate" onClick={() => setTpSimOn(true)} style={{ marginTop: 6 }}>
+                ▶ Molde 3 placas (construcción + doble apertura)
+              </button>
             </div>
 
             <p className="fb-hint-txt">
@@ -5962,13 +6047,17 @@ export default function ForgeBRepStudio() {
 
             {activeCompObj && (
               <>
-                <div className="fb-panel-title">Componente · {activeCompObj.kind === 'cyl' ? 'Cilindro' : 'Bloque'}</div>
-                <div className="fb-seg">
+                <div className="fb-panel-title">
+                  {activeCompObj.kind === 'pieza'
+                    ? <>Pieza insertada · <b style={{ color: GOLD }}>{activeCompObj.name}</b></>
+                    : <>Componente · {activeCompObj.kind === 'cyl' ? 'Cilindro' : 'Bloque'}</>}
+                </div>
+                {activeCompObj.kind !== 'pieza' && <div className="fb-seg">
                   <button data-testid="comp-box" className={activeCompObj.kind === 'box' ? 'on' : ''}
                     onClick={() => updateComponent(activeCompObj.id, { kind: 'box' })}>Bloque</button>
                   <button data-testid="comp-cyl" className={activeCompObj.kind === 'cyl' ? 'on' : ''}
                     onClick={() => updateComponent(activeCompObj.id, { kind: 'cyl' })}>Cilindro</button>
-                </div>
+                </div>}
                 <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.6, margin: '11px 0 5px' }}>Combinar con el cuerpo</div>
                 <div className="fb-seg" data-testid="comp-bool">
                   <button data-testid="comp-bool-none" className={(activeCompObj.bool ?? 'none') === 'none' ? 'on' : ''} title="Junto: sin booleana (compound)"
