@@ -66,6 +66,15 @@ console.log(`${lec.id}: ${lec.pasos.length} pasos, narración ${durs.every((d) =
 
   const meta = { id: lec.id, url: URL, viewport: { w: W, h: H }, pasos: [], errors, leadMs: 0 };
   try {
+    // BIBLIOTECA EMBARCADA: si la lección declara piezas (lec.biblioteca), se siembran
+    // en localStorage ANTES de cargar — cada Chrome de Playwright nace vacío.
+    if (Array.isArray(lec.biblioteca) && lec.biblioteca.length) {
+      const bibDir = path.join(path.dirname(LEC_PATH), '..', 'biblioteca');
+      const lib = {};
+      for (const n of lec.biblioteca) lib[n] = JSON.parse(fs.readFileSync(path.join(bibDir, `${n}.json`), 'utf8'));
+      await page.addInitScript((l) => { localStorage.setItem('forja:library:v1', JSON.stringify(l)); }, lib);
+      console.log(`biblioteca embarcada: ${lec.biblioteca.join(', ')}`);
+    }
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     // El doc por defecto arranca VACÍO (sin sólido) → `ready` (build exitoso) jamás
     // llega; el kernel cargado se detecta por ready O por el error de "sin sólido".

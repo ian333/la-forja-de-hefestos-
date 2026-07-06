@@ -21,6 +21,11 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5001,
+    // iangpu corre el RIAN lab (daemon fuera del repo) que agota los inotify
+    // watchers del SISTEMA → vite dev muere con ENOSPC al intentar vigilar. No
+    // necesitamos HMR para render: watch:null apaga el watcher (recarga manual).
+    // Si algún día se quiere HMR aquí, subir fs.inotify.max_user_watches (root).
+    watch: process.env.VITE_NO_WATCH ? null : undefined,
     proxy: {
       // /rpc → daemon lab1k en ian-gpu vía tailscale (64K edges activos)
       // Esto elimina CORS porque el navegador habla con localhost:5001/rpc

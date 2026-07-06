@@ -25,10 +25,14 @@ Figuras extraídas: `docs/forja-research/manuales/bethune/figs/` (pgNNNN.png).
    `16925504` en boolean subtract) sin mensaje humano. Función a construir: catch de
    excepciones OCCT → mensaje accionable ("el perfil cruza el eje de revolución", "la
    booleana no intersecta"). Los usuarios de robots van a vivir esto a diario.
-2. **Ensamble genérico AUSENTE (confirmado)** — la API solo tiene `importStepText` (STEP),
-   `applyGearMate` (solo engranes). NO hay: insertar pieza guardada + mates
-   concéntrico/coincidente + grados de libertad. Sin esto no hay 11-34, ni robots, ni motores.
-   ES LA FUNCIÓN #1 A CONSTRUIR.
+2. **Ensamble genérico → v1 CONSTRUIDA (2026-07-06)**: Component kind `'pieza'` con snapshot
+   del doc (`pieceDoc`), botón ⤵ INSERTAR en la biblioteca (`lib-insert-<n>`), API
+   `insertPieza(name)`/`libraryNames()`, posición X/Y/Z/Giro del panel, booleanas
+   Junto/Unir/Restar. PROBADO: placa+pin compound = 130,995.57 mm³ EXACTO (test-ensamble.cjs).
+   Limitaciones v1: sin anidar, sin mates automáticos (posición manual), sin molde en piezas
+   insertadas. FALTA v2: mates concéntrico/coincidente + el 11-34 completo como lección.
+   GOTCHA: el doc nuevo trae pieza-demo (rect 40×24 extrude 12 = 11,520 mm³) — un ensamble
+   empieza BORRANDO las ops base.
 3. **`addComponent('sketch')` no acepta perfil por API** — el patch de `profile` vía
    `updateComponent` no aplicó (el boss D quedó como caja default 216,000 mm³). El camino
    fiel es la UI (boceto-en-cara + Unir), pero la API del agente debe soportarlo.
@@ -40,7 +44,13 @@ Figuras extraídas: `docs/forja-research/manuales/bethune/figs/` (pgNNNN.png).
    de Fusion) — antes el corte extra heredaba 12mm aunque el principal se editara (bug de
    la ele con un barreno corto: faltaban π·10²·3 mm³ exactos).
 6. **Pin del 11-34: EXACTO al primer intento** (10,995.6 mm³) — círculo+extrude sólidos.
-7. **El barrido de embonado de engranes tarda >4s** — cualquier UI/arnés debe esperarlo
+7. **Trim círculo-contra-círculo NO soportado** (solo "círculo cortado por líneas", documentado
+   y confirmado en corrida) — la lección del cacahuate es imposible hoy.
+8. **El arco generado por TRIM no participa en el lazo del perfil** — círculo+cuerda recortados
+   extruyen con vol=0 (o "<3 puntos"): el extractor no camina lazos mixtos cuando el arco viene
+   del trim (los dibujados con la herramienta de arco SÍ funcionan — la biela lo probó). Arreglar
+   esto desbloquea todas las lecciones de trim del cap. 2. Lección U2L5 (flat-D) APARCADA hasta entonces.
+9. **El barrido de embonado de engranes tarda >4s** — cualquier UI/arnés debe esperarlo
    (spinner/estado "barriendo…" sería la función de UX correcta).
 
 - **ENSAMBLE genérico** (esperada): insertar piezas guardadas + mates concéntrico/coincidente.

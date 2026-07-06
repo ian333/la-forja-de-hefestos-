@@ -1,0 +1,6 @@
+Lo que hace mágico al CAD no es dibujar: es que el PASADO se puede editar. Mira la historia, abajo.
+Una placa con barreno: dos capítulos de historia.
+Clic en el capítulo de la extrusión, allá abajo... y reescríbelo: cuarenta de altura.
+La placa entera se reconstruyó: el barreno sigue ahí, ahora atravesando cuarenta milímetros.
+¿Te arrepientes? Deshacer. ¿Te vuelves a arrepentir? Rehacer. La historia es tuya.
+Papel y lápiz no perdonan. El CAD paramétrico, sí: por eso diseñamos aquí. Nos vemos en la próxima.

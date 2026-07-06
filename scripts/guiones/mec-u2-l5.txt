@@ -1,0 +1,5 @@
+Toda flecha con opresor lleva un FLAT: una cara plana fresada. Su perfil es una D... y se hace recortando.
+Un círculo de cuarenta... y una línea que lo cruza de lado a lado.
+Las tijeras: fuera las puntas de la línea... y fuera el casquete de arriba.
+Quedó la D. Termina y extruye diez: el flat listo para que el opresor muerda.
+Círculo menos casquete: el kernel clava la fórmula del segmento circular. En el capítulo seis, el opresor agradece.

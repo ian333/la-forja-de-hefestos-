@@ -1,0 +1,171 @@
+{
+  "id": "mec-u3-l8",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 8,
+  "titulo": "Edita la historia",
+  "subtitulo": "Timeline · el pasado obedece",
+  "fuente": "Bethune cap. 3 §3-25 (Editing Features)",
+  "descripcion": "El corazón del CAD paramétrico: la historia de abajo se puede reabrir. Clic en un capítulo, cambias un número, y toda la pieza se reescribe.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Lo que hace mágico al CAD no es dibujar: es que el PASADO se puede editar. Mira la historia, abajo.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una placa con barreno: dos capítulos de historia.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -50,
+          "y": -30,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 50,
+          "y": 30,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "15",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-hole",
+          "settle": 2400
+        },
+        {
+          "type": "probe",
+          "label": "historia-base"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('hole')",
+        "desc": "placa con barreno (2 capítulos)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Clic en el capítulo de la extrusión, allá abajo... y reescríbelo: cuarenta de altura.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "tl-extrude",
+          "settle": 1200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "40",
+          "settle": 2400
+        },
+        {
+          "type": "probe",
+          "label": "historia-40"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 190000",
+        "desc": "la pieza se reescribió más alta"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "La placa entera se reconstruyó: el barreno sigue ahí, ahora atravesando cuarenta milímetros.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            890,
+            550
+          ],
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "¿Te arrepientes? Deshacer. ¿Te vuelves a arrepentir? Rehacer. La historia es tuya.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-undo",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-redo",
+          "settle": 1800
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Papel y lápiz no perdonan. El CAD paramétrico, sí: por eso diseñamos aquí. Nos vemos en la próxima.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            650
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

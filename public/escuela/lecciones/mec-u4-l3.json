@@ -1,0 +1,156 @@
+{
+  "id": "mec-u4-l3",
+  "curso": "mecanica",
+  "unidad": 4,
+  "n": 3,
+  "titulo": "Ver por dentro",
+  "subtitulo": "Sección · el corte que no rompe",
+  "fuente": "Bethune cap. 4 §4-5 (Section Views)",
+  "descripcion": "La vista de sección del cap. 4, pero viva: un plano de corte que rebana la pieza en 3D para ver el barreno por dentro.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "¿Cómo enseñas lo que está ADENTRO de una pieza sin romperla? El capítulo cuatro tiene la respuesta: la sección.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una placa con barreno, para tener secreto que revelar.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -45,
+          "y": -25,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 45,
+          "y": 25,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "25",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-hole",
+          "settle": 2400
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('hole')",
+        "desc": "placa con barreno lista"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Las tijeras mágicas: el botón de sección.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-section-tool",
+          "settle": 2000
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"sec-axis-x\"]')",
+        "desc": "el HUD de sección apareció"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "La pieza se rebana en vivo: ahí está el barreno por dentro, con su pared cilíndrica.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sec-axis-x",
+          "settle": 1600
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            900,
+            560
+          ],
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "En el plano dos D, este corte se achura con líneas a cuarenta y cinco grados. Aquí, simplemente lo VES.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Sin sierra, sin polvo, sin perder la pieza. La sección es el rayos equis del ingeniero.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1120,
+            650
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

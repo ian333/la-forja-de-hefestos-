@@ -1,0 +1,223 @@
+{
+  "id": "mec-u5-l1",
+  "curso": "mecanica",
+  "unidad": 5,
+  "n": 1,
+  "titulo": "Tu primer ensamble",
+  "subtitulo": "Problema 11-34 · base + eslabón + pasador",
+  "fuente": "Bethune cap. 5 (Assemblies) + cap. 11 Problema 11-34 (LINK ASSEMBLY)",
+  "descripcion": "El momento histórico: La Forja ARMA. Tres piezas de la biblioteca — base, eslabón y pasador del examen CSWA — insertadas y posicionadas, con el volumen total exacto.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Éste es el problema once treinta y cuatro del examen del libro: tres piezas. Hoy, por primera vez, La Forja las ARMA.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 900
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Un ensamble empieza limpio: fuera la pieza de demostración.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "tl-extrude",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-del-op",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "!inv",
+        "desc": "documento vacío, listo para ensamblar"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "La biblioteca guarda tus piezas. Insertamos la primera: la base.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-options",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "lib-insert-1134-base",
+          "settle": 2800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 115287.6) < 20",
+        "desc": "la base llegó (115,287.6 mm³)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "La segunda: el eslabón. La biela que ya conoces, del mismo examen.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-options",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "lib-insert-1134-link",
+          "settle": 2800
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 205000",
+        "desc": "el eslabón llegó al ensamble"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Posiciónalo: ochenta en equis, quince arriba. Su ojo izquierdo cae exacto sobre el barreno de la base.",
+      "gestos": [
+        {
+          "type": "fill",
+          "testid": "input-comp-x",
+          "text": "80",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 1400
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-z",
+          "text": "15",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 1800
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y la tercera: el pasador.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-options",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "lib-insert-1134-pin",
+          "settle": 2800
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Bájalo cinco milímetros: que asome por abajo de la base... y sujete al eslabón por arriba.",
+      "gestos": [
+        {
+          "type": "fill",
+          "testid": "input-comp-z",
+          "text": "-5",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 2000
+        },
+        {
+          "type": "probe",
+          "label": "ensamble-1134"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 219578.9) < 400",
+        "desc": "las 3 piezas suman su volumen exacto (~219,579 mm³)"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "¿No me crees que atraviesa? Sección.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-section-tool",
+          "settle": 1600
+        },
+        {
+          "type": "tclick",
+          "testid": "sec-axis-x",
+          "settle": 2000
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Ahí está, por dentro: el pasador cruzando base y eslabón. El once treinta y cuatro del libro, armado en La Forja.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            900,
+            560
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Todavía no giran solos: los mates vienen en camino. Pero desde hoy, La Forja ya ARMA. Y esto apenas empieza.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-section-off",
+          "settle": 1200
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1200
+        }
+      ]
+    }
+  ],
+  "biblioteca": [
+    "1134-base",
+    "1134-link",
+    "1134-pin"
+  ]
+}

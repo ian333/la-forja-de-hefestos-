@@ -1,0 +1,206 @@
+{
+  "id": "mec-u9-l1",
+  "curso": "mecanica",
+  "unidad": 9,
+  "n": 1,
+  "titulo": "El buje",
+  "subtitulo": "Sleeve bearing · anillo por revolución",
+  "fuente": "Bethune cap. 9 §9-2 (Drawing a Sleeve Bearing)",
+  "descripcion": "El balero más humilde y más usado del mundo: un buje. Un rectángulo lejos del eje, revolucionado — capítulo 9 del libro.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Antes del balero de bolas existió el buje: un anillo de bronce donde la flecha resbala. Capítulo nueve del libro.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Boceto en equis ye: el eje vertical será el centro del buje.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "el editor abrió"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Un rectángulo LEJOS del eje: de radio diez a radio dieciocho, treinta de largo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "10",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "-15",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "8",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "8",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "270",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 700
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "el perfil del anillo existe"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Revolución... y el rectángulo se vuelve anillo. Adentro resbala la flecha; afuera lo abraza la carcasa.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-revolve",
+          "settle": 2800
+        },
+        {
+          "type": "probe",
+          "label": "buje"
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 21111.5) < 100",
+        "desc": "anillo Ø20/Ø36 ×30 (~21,111 mm³ exacto)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Diámetro interior veinte, exterior treinta y seis. En el capítulo nueve le pondremos su AJUSTE: ni flojo ni prensado. Eso es ingeniería.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            860,
+            550
+          ],
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            660
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

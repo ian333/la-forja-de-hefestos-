@@ -1,0 +1,137 @@
+{
+  "id": "mec-u10-l1",
+  "curso": "mecanica",
+  "unidad": 10,
+  "n": 1,
+  "titulo": "El engrane a tu medida",
+  "subtitulo": "Módulo · dientes · involuta paramétrica",
+  "fuente": "Bethune cap. 10 §10-2/10-3 (Gear Terminology & Formulas)",
+  "descripcion": "Las dos perillas que definen todo engrane: módulo y número de dientes. Cámbialas y mira la involuta regenerarse — D = m(Z+2).",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Todo engrane del planeta se define con dos números: el módulo y los dientes. Hoy los mueves tú.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Del menú Más: engrane de involuta. Nace con sus valores de fábrica.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-gear",
+          "settle": 3400
+        },
+        {
+          "type": "probe",
+          "label": "gear-fabrica"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 1000",
+        "desc": "el engrane existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Súbele los dientes a treinta... y mira: el diámetro crece, porque de igual a eme por zeta más dos.",
+      "gestos": [
+        {
+          "type": "fill",
+          "testid": "input-dientes",
+          "text": "30",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 3000
+        },
+        {
+          "type": "probe",
+          "label": "gear-z30"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 12500",
+        "desc": "el engrane creció con Z=30"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Ahora el módulo a tres: dientes más GORDOS. El módulo es el tamaño del diente, y las parejas deben compartirlo.",
+      "gestos": [
+        {
+          "type": "fill",
+          "testid": "input-modulo",
+          "text": "3",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 3200
+        },
+        {
+          "type": "probe",
+          "label": "gear-m3"
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 9000",
+        "desc": "módulo 3 = diente más grande"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Módulo tres, treinta dientes: diámetro de noventa y seis, dice la fórmula. Sin dibujar un solo diente a mano.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            860,
+            550
+          ],
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "En la unidad diez completa: pares, trenes, cremalleras y cuñeros. La transmisión es nuestra cancha.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            660
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

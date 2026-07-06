@@ -1,0 +1,228 @@
+{
+  "id": "mec-u2-l5",
+  "curso": "mecanica",
+  "unidad": 2,
+  "n": 5,
+  "titulo": "El flat de la flecha",
+  "subtitulo": "Trim · círculo + cuerda = perfil D",
+  "fuente": "Bethune cap. 2 §2-15 (Trim Entities)",
+  "descripcion": "Trim del cap. 2: un círculo, una línea que lo cruza, tres tijeretazos — el perfil D del flat donde muerde el opresor.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Toda flecha con opresor lleva un FLAT: una cara plana fresada. Su perfil es una D... y se hace recortando.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Un círculo de cuarenta... y una línea que lo cruza de lado a lado.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "20",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "-30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "8",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 600
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 1 && sk.nLines >= 2",
+        "desc": "círculo + cuerda (2 tramos) existen"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Las tijeras: fuera las puntas de la línea... y fuera el casquete de arriba.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-trim",
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -26,
+          "y": 8,
+          "settle": 900
+        },
+        {
+          "type": "clickmm",
+          "x": 26,
+          "y": 8,
+          "settle": 900
+        },
+        {
+          "type": "clickmm",
+          "x": 0,
+          "y": 20,
+          "settle": 1200
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles === 0",
+        "desc": "el círculo se volvió arco (quedó la D)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Quedó la D. Termina y extruye diez: el flat listo para que el opresor muerda.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "10",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "flat-D"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 9395.6) < 80",
+        "desc": "perfil D exacto (~9,396 mm³: círculo menos casquete)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Círculo menos casquete: el kernel clava la fórmula del segmento circular. En el capítulo seis, el opresor agradece.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            860,
+            560
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}
