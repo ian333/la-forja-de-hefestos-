@@ -1,0 +1,841 @@
+About This eBook
+ePUB is an open, industry-standard format for eBooks. However, support of ePUB and its many
+features varies across reading devices and applications. Use your device or app settings to
+customize the presentation to your liking. Settings that you can customize often include font, font
+size, single or double column, landscape or portrait mode, and figures that you can click or tap to
+enlarge. For additional information about the settings and features on your reading device or app,
+visit the device manufacturer’s Web site.
+Many titles include programming code or configuration examples. To optimize the presentation
+of these elements, view the eBook in single-column, landscape mode and adjust the font size to
+the smallest setting. In addition to presenting code and configurations in the reflowable text
+format, we have included images of the code that mimic the presentation found in the print book;
+therefore, where the reflowable format may compromise the presentation of the code listing, you
+will see a “Click here to view code image” link. Click the link to view the print-fidelity code
+image. To return to the previous page viewed, click the Back button on your device or app.
+Engineering Design and Graphics with
+         SolidWorks® 2023
+
+            James D. Bethune
+             Nathan Brown
+Engineering Design and Graphics with SolidWorks® 2023
+Copyright © 2023 by Pearson Education, Inc., publishing as Peachpit Press. All rights
+reserved. This publication is protected by copyright, and permission must be obtained from the
+publisher prior to any prohibited reproduction, storage in a retrieval system, or transmission in
+any form or by any means, electronic, mechanical, photocopying, recording, or likewise. For
+information regarding permissions, request forms, and the appropriate contacts within the
+Pearson Education Global Rights & Permissions Department, please visit
+www.pearson.com/permissions. No patent liability is assumed with respect to the use of the
+information contained herein. Although every precaution has been taken in the preparation of
+this book, the publisher and author assume no responsibility for errors or omissions. Nor is any
+liability assumed for damages resulting from the use of the information contained herein.
+
+Credits and acknowledgments borrowed from other sources and reproduced, with permission, in
+this textbook appear on the appropriate page within the text. Unless otherwise stated, all artwork
+has been provided by the author.
+
+Images courtesy of Dassault Systèmes SolidWorks Corporation. SolidWorks® is a registered
+trademark of Dassault Systèmes SolidWorks Corp. All rights reserved.
+
+Trademarks
+All terms mentioned in this book that are known to be trademarks or service marks have been
+appropriately capitalized. Que Publishing cannot attest to the accuracy of this information. Use
+of a term in this book should not be regarded as affecting the validity of any trademark or service
+mark.
+
+Warning and Disclaimer
+Every effort has been made to make this book as complete and as accurate as possible, but no
+warranty or fitness is implied. The information provided is on an “as is” basis. The authors and
+the publisher shall have neither liability nor responsibility to any person or entity with respect to
+any loss or damages arising from the information contained in this book.
+
+Special Sales
+For information about buying this title in bulk quantities, or for special sales opportunities
+(which may include electronic versions; custom cover designs; and content particular to your
+business, training goals, marketing focus, or branding interests), please contact our corporate
+sales department at corpsales@pearsoned.com or (800) 382-3419.
+
+For government sales inquiries, please contact governmentsales@pearsoned.com.
+
+For questions about sales outside the U.S., please contact intlcs@pearson.com.
+Acquisitions Editor: Anshul Sharma
+Senior Production Editor: Tonya Simpson
+Cover Designer: Chuti Prasertsith
+Developmental Editor: Patrice Rutledge
+Full-Service Project Management: codeMantra
+Composition: codeMantra
+Proofreader: Jen Hinchliffe
+Indexer: Timothy Wright
+
+ScoutAutomatedPrintCode
+
+
+Library of Congress Control Number: 2022951068
+
+ISBN 10: 0-13-789952-1
+ISBN 13: 978-0-13789952-4
+Pearson’s Commitment to Diversity, Equity,
+and Inclusion
+
+Pearson is dedicated to creating bias-free content that reflects the diversity of all learners. We
+embrace the many dimensions of diversity, including but not limited to race, ethnicity, gender,
+socioeconomic status, ability, age, sexual orientation, and religious or political beliefs.
+Education is a powerful force for equity and change in our world. It has the potential to deliver
+opportunities that improve lives and enable economic mobility. As we work with authors to
+create content for every product and service, we acknowledge our responsibility to demonstrate
+inclusivity and incorporate diverse scholarship so that everyone can achieve their potential
+through learning. As the world’s leading learning company, we have a duty to help drive change
+and live up to our purpose to help more people create a better life for themselves and to create a
+better world.
+     Our ambition is to purposefully contribute to a world where:
+          Everyone has an equitable and lifelong opportunity to succeed through learning.
+          Our educational products and services are inclusive and represent the rich diversity of
+          learners.
+          Our educational content accurately reflects the histories and experiences of the learners
+          we serve.
+          Our educational content prompts deeper discussions with learners and motivates them
+          to expand their own learning (and worldview).
+While we work hard to present unbiased content, we want to hear from you about any concerns
+or needs with this Pearson product so that we can investigate and address them.
+Please contact us with concerns about any potential bias at https://www.pearson.com/report-
+bias.xhtml.
+Preface
+
+This book shows and explains how to use SolidWorks® 2023 to create engineering designs and
+drawings. Emphasis is placed on creating engineering drawings including dimensions and
+tolerances and using standard parts and tools. Each chapter contains step-by-step sample
+problems that show how to apply the concepts presented in the chapter.
+     The book contains hundreds of projects of various degrees of difficulty specifically designed
+to reinforce the chapter’s content. The idea is that students learn best by doing. In response to
+reviewers’ requests, some more difficult projects have been included.
+     Chapters 1 and 2 show how to set up a part document and how to use the SolidWorks
+Sketch tools. Sketch tools are used to create 2D part entities that can then be extruded into 3D
+solid models. The chapters contain an explanation of how SolidWorks’ colors are used and of
+how shapes can be fully defined. The usage of mouse gestures, S key, and origins is also
+included. The two chapters include 44 exercise problems (18 in Ch1 and 26 in Ch2) using both
+inches and millimeters so that students can practice applying the various Sketch tools.
+     Chapter 3 shows how to use the Features tools. Features tools are used to create and
+modify 3D solid models. In addition, reference planes are covered, and examples of how to edit
+existing models are given.
+     Chapter 4 explains how to create and interpret orthographic views. Views are created using
+third-angle projection in compliance with ANSI standards and conventions. The differences
+between first-angle and third-angle projections are demonstrated. Seven exercise problems (P4-
+142 to P4-149) are included to help students learn to work with the two different standards. Also
+included are section views, auxiliary views, and broken views. Several of the projects require
+that a 3D solid model be drawn from a given set of orthographic views to help students develop
+visualization skills.
+     Chapter 5 explains how to create assembly drawings using the Assembly tools (Mate,
+Exploded View) and how to document assemblies using the Drawing Documents tools. Topics
+include assembled 3D solid models, exploded isometric drawings, and bills of materials (BOMs).
+Assembly numbers and part numbers are discussed. Both the Animate Collapse/Explode and
+Motion Study tools are demonstrated. In addition, the title, release, and revision blocks are
+discussed. An explanation of how to use Interference Detection is given.
+     Chapter 6 shows how to create and design with threads and fasteners. Both ANSI inch and
+ANSI metric threads are covered. The Design Library is presented, and examples are used to
+show how to select and size screws and other fasteners for assembled parts.
+     Chapter 7 covers dimensioning and is in compliance with ANSI standards and conventions.
+There are extensive visual examples of dimensioned shapes and features that serve as references
+for various dimensioning applications.
+     Chapter 8 covers tolerances. Both linear and geometric tolerances are included. This is
+often a difficult topic to understand, so there are many examples of how to apply and how to
+interpret the various types of tolerances. Standard tolerances as presented in the title block are
+demonstrated.
+     Chapter 9 explains bearings and fit tolerances. The Design Library is used to create
+bearing drawings, and examples show how to select the correct interference tolerance between
+bearings and housing, and clearance tolerances between bearings and shafts.
+     Chapter 10 presents gears. Gear terminology, gear formulas, gear ratios, and gear creation
+using the SolidWorks Toolbox are covered. The chapter relies heavily on the Design Library.
+Keys, keyways, and set screws are discussed. Both English and metric units are covered. There is
+an extensive sample problem that shows how to draw a support plate for mating gears and how
+to create an assembly drawing for gear trains. The projects at the end of the chapter include two
+large gear assembly exercises.
+     Chapter 11 will help students prepare for the CSWA certification exam. There are many
+sample questions and examples. Students should time how long it takes them to do each
+problem. This will help them get used to working under time pressure.
+     The Appendix includes fit tables for use with projects in the text. Clearance, locational, and
+interference fits are included for both inch and millimeter values.
+
+Download Instructor Resources from the Instructor Resource
+Center
+Instructor materials are available from Pearson’s Instructor Resource Center. Go to
+https://www.pearson.com/en-us/highered-educators.xhtml to register, or to sign in if you already
+have an account.
+
+Acknowledgments
+I would like to acknowledge the reviewers of this text: Peggy Condon-Vance, Penn State Berks;
+Lisa Richter, Macomb Community College; Julie Korfhage, Clackamas Community College;
+Max P. Gassman, Iowa State University; Paul E. Lienard, Northeastern University; and Hossein
+Hemati, Mira Costa College.
+    Thanks to my family—David, Maria, Randy, Sandra, Hannah, Will, Madison, Jack, Luke,
+Sam, and Ben.
+    A special thanks to Cheryl.
+                                                                                James D. Bethune
+    I would like to acknowledge the editors of this edition: Anshul Sharma, Patrice Rutledge,
+and Tonya Simpson. Thanks to my family: Amanda, Jovie, and Iris. And thanks to my mentor:
+Gina Bertocci.
+                                                                                    Nathan Brown
+Contents
+
+  Preface
+
+  CHAPTER 1 Getting Started
+
+       Chapter Objectives
+       1-1 Introduction
+       1-2 Starting a New Document
+                   Starting a New Part Document
+                   Selecting a Sketch Plane
+       1-3 SolidWorks Colors
+       1-4 Creating a Fully Defined Circle
+                   Changing an Existing Dimension
+                   Fully Defined Entities
+       1-5 Units
+                   Changing Units
+       1-6 Rectangle
+                   Sketching a Rectangle
+                   Exiting the Sketch Mode
+                   Reentering the Sketch Mode
+       1-7 Moving Around the Drawing Screen
+                   Zooming the Rectangle
+                   Moving the Rectangle
+                   Reorientating the Rectangle
+       1-8 Orientation
+                   Returning to the Top View Orientation—View Selector
+                   Returning to the Top View Orientation—Top View
+                   Returning to the Top View Orientation—Orientation Triad
+       1-9 Sample Problem SP1-1
+                   Fixing a Line in Place
+                  Sketch Relations
+    1-10 Creating 3D Models
+                  Creating a 3D Model
+    1-11 Saving Documents
+                  Saving a Document
+    1-12 Sample Problem SP1-2
+    1-13 Holes
+                  Creating a Hole
+    Chapter Project
+
+CHAPTER 2 Sketch Entities and Tools
+
+    Chapter Objectives
+    2-1 Introduction
+    2-2 Mouse Gestures and the S Key
+                  Mouse Gestures
+                  Using Mouse Gestures
+                  Accessing Mouse Gestures Settings
+                  Adding a Tool to a Mouse Gestures Wheel
+                  S Key
+                  Activating the S Key
+                  Customizing the S Key Shortcut Toolbar
+                  Removing a Tool from the S Key Toolbar
+    2-3 Origins
+                  Showing the Origin
+    2-4 Circle
+                  Sketching a Circle
+                  Sketching a Perimeter Circle Using Three Points
+                  Sketching a Perimeter Circle Tangent to Three Lines
+    2-5 Rectangle
+                  Sketching a Center Rectangle
+                  Sketching a 3 Point Corner Rectangle
+                  Sketching a 3 Point Center Rectangle
+                  Sketching a Parallelogram
+2-6 Slots
+              Sketching a Straight Slot
+              Sketching a Centerpoint Straight Slot
+              Sketching a 3 Point Arc Slot
+              Sketching a Centerpoint Arc Slot
+2-7 Perimeter Circle
+              Sketching a Perimeter Circle
+2-8 Arcs
+              Sketching a Centerpoint Arc
+              Sketching a Tangent Arc
+              Sketching a 3 Point Arc
+2-9 Polygons
+              Sketching a Hexagon
+2-10 Spline
+              Sketching a Spline
+              Editing a Spline
+2-11 Ellipse
+              Sketching an Ellipse
+              Sketching a Partial Ellipse
+              Sketching a Parabola
+              Conic Section
+              Sketching a Conic
+2-12 Fillets and Chamfers
+              Sketching a Fillet
+              Sketching a Chamfer
+              Sketching a Chamfer Using Distance-Distance—Equal Distance
+              Sketching a Chamfer Using Angle-Distance
+              Sketching a Chamfer Using Distance-Distance—Not Equal Distance
+2-13 Sketch Text
+              Adding Text
+              Changing the Font and Size of Text
+              Adding Text to a Feature
+              Creating Text that Wraps Around Two Features
+2-14 Point
+2-15 Trim Entities
+             Trimming Entities
+2-16 Extend Entities
+             Extending Entities in a Sketch
+2-17 Offset Entities
+             Sketching an Offset Line
+2-18 Mirror Entities
+             Creating a Mirror Entity
+2-19 Linear Sketch Pattern
+             Creating a Linear Sketch Pattern
+2-20 Circular Sketch Pattern
+             Creating a Circular Sketch Pattern
+2-21 Move Entities
+             Moving an Entity
+2-22 Copy Entities
+             Copying an Entity
+2-23 Rotate Entities
+             Rotating an Entity
+2-24 Scale Entities
+             Scaling an Entity
+2-25 Stretch Entities
+             Stretching an Entity
+2-26 Split Entities
+             Splitting an Entity
+2-27 Jog Lines
+             Using the Jog Line Tool
+2-28 Centerline
+             Using the Centerline Tool
+2-29 Sample Problem SP2-1
+2-30 Sample Problem SP2-2
+2-31 Sample Problem SP2-3
+Chapter Projects
+CHAPTER 3 Features
+
+    Chapter Objectives
+    3-1 Introduction
+    3-2 Extruded Boss/Base
+                 Using the Extruded Boss/Base Tool
+                 Creating Inward Draft Sides
+                 Creating an Outward Draft
+    3-3 Sample Problem SP3-1
+    3-4 Extruded Cut
+    3-5 Hole Wizard
+    3-6 Creating a Hole with the Circle and Extruded Cut Tools
+    3-7 Blind Holes
+                 Creating a Blind Hole—Inches
+                 Creating a Blind Hole—Metric
+    3-8 Fillet
+                 Creating a Fillet with a Variable Radius
+                 Creating a Fillet Using the Face Fillet Option
+                 Creating a Fillet Using the Full Round Fillet Option
+    3-9 Chamfer
+                 Defining a Chamfer Using an Angle and a Distance
+                 Defining a Chamfer Using Two Distances
+                 Defining a Vertex Chamfer
+    3-10 Revolved Boss/Base
+    3-11 Revolved Cut
+    3-12 Reference Planes
+                 Creating a Reference Plane
+    3-13 Lofted Boss/Base
+    3-14 Shell
+    3-15 Swept Boss/Base
+    3-16 Draft
+    3-17 Linear Sketch Pattern
+    3-18 Circular Sketch Pattern
+    3-19 Mirror
+    3-20 Helix Curves and Springs
+                Drawing a Helix
+                Drawing a Spring From the Given Helix
+    3-21 Compression Springs
+                Creating Ground Ends
+    3-22 Torsional Springs
+                Drawing a Torsional Spring
+    3-23 Extension Springs
+                Drawing an Extension Spring
+    3-24 Wrap
+                Creating Debossed Text
+    3-25 Editing Features
+                Editing the Hole
+                Editing the Cutout
+    3-26 Sample Problem SP3-2
+                Drawing a Cylinder
+                Creating a Slanted Surface on the Cylinder
+                Adding the Vertical Slot
+                Adding the Ø8 Hole
+    3-27 Sample Problem SP3-3
+    3-28 Curve Driven Patterns
+                Using the Curve Driven Pattern Tool—Example 1
+                Using the Curve Driven Pattern Tool—Example 2
+    Chapter Projects
+
+CHAPTER 4 Orthographic Views
+
+    Chapter Objectives
+    4-1 Introduction
+    4-2 Third- and First-Angle Projections
+    4-3 Fundamentals of Orthographic Views
+                Normal Surfaces
+                Hidden Lines
+               Precedence of Lines
+               Slanted Surfaces
+               Compound Lines
+               Oblique Surfaces
+               Rounded Surfaces
+    4-4 Drawing Orthographic Views
+               Moving Orthographic Views
+               Creating Other Views
+    4-5 Section Views
+    4-6 Drawing a Section View
+               Changing the Style of a Section View
+    4-7 Aligned Section Views
+    4-8 Broken Views
+               Creating a Broken View
+    4-9 Detail Views
+               Drawing a Detail View
+    4-10 Auxiliary Views
+               Drawing an Auxiliary View
+    4-11 First-Angle Projection
+               Creating Three Orthographic Views Using First-Angle Projection
+    Chapter Projects
+
+CHAPTER 5 Assemblies
+    Chapter Objectives
+    5-1 Introduction
+    5-2 Starting an Assembly
+    5-3 Move Component
+    5-4 Rotate Component
+    5-5 Mouse Gestures for Assemblies
+    5-6 Mate
+               Creating the First Assembly Using Mates
+               Creating a Second Assembly
+               Creating a Third Assembly
+    5-7 Bottom-up Assemblies
+    5-8 Creating an Exploded Isometric Assembly
+    5-9 Creating an Exploded Isometric Drawing
+    5-10 Assembly Numbers
+    5-11 Bill of Materials (BOM or Parts List)
+               Editing the BOM
+               Adding Columns to the BOM
+               Changing the Width of a Column
+               Changing the Width of Rows and Columns
+               Changing the BOM’s Font
+    5-12 Title Blocks
+               Revision Letters
+               Editing a Title Block
+               Release Blocks
+               Tolerance Blocks
+               Application Blocks
+    5-13 Animate Collapse
+    5-14 Sample Problem SP5-1
+    5-15 Using the Motion Study Tool
+               Viewing the Assembly Motion
+    5-16 Editing a Part Within an Assembly
+    5-17 Interference Detection/Clearance Verification
+               Interference Detection
+               Detecting an Interference
+               Verifying the Clearance
+               Removing the Interference
+               Verifying that a Clearance Exists
+    Chapter Projects
+
+CHAPTER 6 Threads and Fasteners
+
+    Chapter Objectives
+    6-1 Introduction
+    6-2 Thread Terminology
+                Pitch
+    6-3 Thread Callouts—ANSI Metric Units
+    6-4 Thread Callouts—ANSI Unified Screw Threads
+    6-5 Thread Representations
+    6-6 Internal Threads—Inches
+    6-7 Threaded Blind Holes—Inches
+    6-8 Internal Threads—Metric
+    6-9 Accessing the Design Library
+    6-10 Thread Pitch
+    6-11 Determining an External Thread Length—Inches
+    6-12 Smart Fasteners
+    6-13 Determining an Internal Thread Length
+    6-14 Set Screws
+    6-15 Drawing a Threaded Hole in the Side of a Cylinder
+    6-16 Adding Set Screws to the Collar
+    Chapter Projects
+
+CHAPTER 7 Dimensioning
+
+    Chapter Objectives
+    7-1 Introduction
+    7-2 Terminology and Conventions—ANSI
+                Common Terms
+                Dimensioning Conventions
+                Common Errors to Avoid
+    7-3 Adding Dimensions to a Drawing
+                Controlling Dimensions
+                Dimensioning Short Distances
+                Autodimension Tool
+                Creating Baseline Dimensions
+                Creating Ordinate Dimensions
+    7-4 Drawing Scale
+    7-5 Units
+                Aligned Dimensions
+               Hole Dimensions
+    7-6 Dimensioning Holes and Fillets
+               Dimensioning a Blind Hole
+               Dimensioning Hole Patterns
+    7-7 Dimensioning Counterbored and Countersunk Holes
+               Counterbored Hole with Threads
+               Dimensioning Countersink Holes
+               Dimensioning the Block
+    7-8 Angular Dimensions
+               Dimensioning an Evenly Spaced Hole Pattern
+    7-9 Ordinate Dimensions
+               Creating Ordinate Dimensions
+    7-10 Baseline Dimensions
+               Creating Baseline Dimensions
+               Hole Tables
+    7-11 Locating Dimensions
+    7-12 Fillets and Rounds
+    7-13 Rounded Shapes—Internal
+    7-14 Rounded Shapes—External
+    7-15 Irregular Surfaces
+    7-16 Polar Dimensions
+    7-17 Chamfers
+    7-18 Symbols and Abbreviations
+    7-19 Symmetrical and Centerline Symbols
+    7-20 Dimensioning to a Point
+    7-21 Dimensioning Section Views
+    7-22 Dimensioning Orthographic Views
+               Dimensions Using Centerlines
+    Chapter Projects
+
+CHAPTER 8 Tolerancing
+
+    Chapter Objectives
+    8-1 Introduction
+8-2 Direct Tolerance Methods
+8-3 Tolerance Expressions
+8-4 Understanding Plus and Minus Tolerances
+8-5 Creating Plus and Minus Tolerances
+           Adding Plus and Minus Symmetric Tolerances Using the Dimension
+             Text Box
+8-6 Creating Limit Tolerances
+8-7 Creating Angular Tolerances
+8-8 Standard Tolerances
+8-9 Double-Dimensioning Errors
+8-10 Chain Dimensions and Baseline Dimensions
+           Baseline Dimensions
+8-11 Tolerance Studies
+           Calculating the Maximum Length of A
+           Calculating the Minimum Length of A
+8-12 Rectangular Dimensions
+8-13 Hole Locations
+8-14 Choosing a Shaft for a Toleranced Hole
+           For Linear Dimensions and Tolerances
+8-15 Sample Problem SP8-1
+8-16 Sample Problem SP8-2
+8-17 Nominal Sizes
+8-18 Standard Fits (Metric Values)
+           Clearance Fits
+           Transitional Fits
+           Interference Fits
+8-19 Standard Fits (Inch Values)
+           Adding a Fit Callout to a Drawing
+           Reading Fit Tables
+8-20 Preferred and Standard Sizes
+8-21 Surface Finishes
+8-22 Surface Control Symbols
+8-23 Applying Surface Control Symbols
+           Adding a Lay Symbol to a Drawing
+8-24 Design Problems
+           Floating Condition
+           Fixed Condition
+           Designing a Hole Given a Fastener Size
+8-25 Geometric Tolerances
+8-26 Tolerances of Form
+8-27 Flatness
+8-28 Straightness
+8-29 Straightness (RFS and MMC)
+8-30 Circularity
+8-31 Cylindricity
+8-32 Geometric Tolerances Using SolidWorks
+8-33 Datums
+           Adding a Datum Indicator
+           Defining a Perpendicular Tolerance
+           Defining a Straightness Value for Datum Surface A
+8-34 Tolerances of Orientation
+8-35 Perpendicularity
+8-36 Parallelism
+8-37 Angularity
+8-38 Profiles
+8-39 Runouts
+8-40 Positional Tolerances
+8-41 Creating Positional Tolerances
+           Creating the Positional Tolerance
+8-42 Virtual Condition
+           Calculating the Virtual Condition for a Shaft
+           Calculating the Virtual Condition for a Hole
+8-43 Floating Fasteners
+8-44 Sample Problem SP8-3
+8-45 Sample Problem SP8-4
+8-46 Fixed Fasteners
+    8-47 Sample Problem SP8-5
+    8-48 Design Problems
+    Chapter Projects
+
+CHAPTER 9 Bearings and Fit Tolerances
+
+    Chapter Objectives
+    9-1 Introduction
+    9-2 Sleeve Bearings
+               Drawing a Sleeve Bearing
+               Using a Sleeve Bearing in an Assembly Drawing
+    9-3 Bearings from the Toolbox
+    9-4 Ball Bearings
+    9-5 Fits and Tolerances for Bearings
+    9-6 Fits—Inches
+    9-7 Clearance Fits
+    9-8 Hole Basis
+    9-9 Shaft Basis
+    9-10 Sample Problem SP9-1
+    9-11 Interference Fits
+    9-12 Manufactured Bearings
+               Clearance for a Manufactured Bearing
+               Applying a Clearance Fit Tolerance
+               Interference for a Manufactured Bearing
+               Applying an Interference Fit Tolerance
+               Applying Standard Fit Tolerances to an Assembly Drawing
+    9-13 Fit Tolerances—Millimeters
+    Chapter Projects
+
+CHAPTER 10 Gears
+    Chapter Objectives
+    10-1 Introduction
+    10-2 Gear Terminology
+    10-3 Gear Formulas
+    10-4 Creating Gears
+               Creating a Gear Assembly
+               Animating the Gears
+    10-5 Gear Ratios
+    10-6 Gears and Bearings
+               Adding Bearings
+    10-7 Power Transmission—Shaft to Gear
+    10-8 Set Screws and Gear Hubs
+               Adding a Threaded Hole to the Gear’s Hub
+    10-9 Keys, Keyseats, and Gears
+               Defining and Creating Keyseats in Gears
+               Returning to the Assembly Drawing
+               Defining and Creating a Parallel Key
+               Creating a Keyseat in the Shaft
+               Creating the Keyseat
+               Creating the Arc-Shaped End of a Keyseat
+    10-10 Sample Problem SP10-1
+               Determining the Pitch Diameter
+               Editing the Bill of Materials
+    10-11 Rack and Pinion Gears
+               Animating the Rack and Pinion
+    10-12 Metric Gears
+               Creating a Metric Gear
+    Chapter Projects
+
+CHAPTER 11 CSWA Preparation
+    Chapter Objectives
+    11-1 Introduction
+    11-2 Working with Cubes
+               Problem 11-1
+    11-3 Drawing Profiles
+               Problem 11-2
+               Problem 11-3
+          Problem 11-4
+          Problem 11-5
+          Problem 11-6
+11-4 Drawing Small 3D Objects
+          Problem 11-7
+          Problem 11-8
+          Problem 11-9
+          Problem 11-10
+          Problem 11-11
+          Problem 11-12
+11-5 Drawing Larger Objects
+          Problem 11-13
+          Problem 11-14
+          Problem 11-15
+          Problem 11-16
+          Problem 11-17
+          Problem 11-18
+          Problem 11-19
+          Problem 11-20
+11-6 Drawing Auxiliary Views
+          Problem 11-21
+          Problem 11-22
+          Problem 11-23
+11-7 Drawing Break Views
+          Problem 11-24
+          Problem 11-25
+11-8 Drawing Section Views
+          Problem 11-26
+          Problem 11-27
+          Problem 11-28
+11-9 Drawing Detail Views
+          Problem 11-29
+          Problem 11-30
+    11-10 Drawing Lines and Views
+              Problem 11-31
+              Problem 11-32
+              Problem 11-33
+    11-11 Creating Assemblies
+              Problem 11-34
+              Problem 11-35
+    11-12 Problem Answers
+
+APPENDIX
+
+Index
+Chapter 1. Getting Started
+Chapter Objectives
+
+          Create a sketch
+          Create a file/part
+          Create a solid model
+          Edit angular and circular shapes
+          Draw holes
+          Use Sketch tools
+          Change units of a part
+
+
+
+1-1 Introduction
+SolidWorks is a parametric solid modeler that uses dimensions, parameters, and relationships to
+define and drive 3D shapes. Solid modelers make it easy to edit and modify parts as they are
+constructed. This capability is ideal for creating new designs.
+      Parametric modelers use dimensions to drive the shapes. For example, to create a line of a
+defined length, a line is first sketched, and then the length dimension is added. The line will
+assume the length of the dimension. If the dimension is changed, the length of the line will
+change to match the new dimension.
+      When using non-parametric modelers, a line is drawn and a dimension added. The
+dimension will define the length of the existing line but not drive it. If the length of the line is
+changed, the dimensions will not change. A new dimension is required to define the length of the
+line.
+      This chapter will show you how to start a New document and introduce the Line, Circle,
+and Edit tools. The Smart Dimension tool will be used to define and edit lines and circles. Line
+colors and relationships will also be introduced.
+
+1-2 Starting a New Document
+Figure 1-1 shows the initial SolidWorks screen.
+Figure 1-1
+
+
+Starting a New Part Document
+      1 Click the New tool icon at the top of the SolidWorks screen.
+    The New SolidWorks Document dialog box appears, as shown on the left in Figure 1-2.
+This is the Novice version of the dialog box. Clicking Advanced opens the Advanced version,
+shown on the right. Either version can be used to create three types of documents: Part,
+Assembly, and Drawing.
+Figure 1-2
+
+       Parts are 3D solid models of individual parts.
+       Assemblies are used to create combinations of parts and assemblies.
+       Drawings are used to create orthographic views of a Part or Assembly. Dimensions and
+       tolerances can be applied to Drawings.
+      2 Click the Part tool and then click the OK box.
+     The Part screen will appear. See Figure 1-3. Note the different areas of the screen. The
+Sketch tab is currently activated, so the Features tools are displayed. Each tool icon on the
+Sketch toolbar is accompanied by its name. These names can be removed and the toolbar
+condensed to expand the size of the drawing screen. For clarity these named tools will be
+included in the first few chapters of the book so you gain enough knowledge of the tools to work
+without their names.
+Figure 1-3
+
+
+Selecting a Sketch Plane
+SolidWorks uses one of three basic planes to define a part: Front, Top, and Right. These planes
+correspond to the planes used to define orthographic views that will be explained in Chapter 4.
+The Top plane will be used as a sketch plane to demonstrate the first few tools.
+        1 Define the plane on which the part will be created by clicking the Top Plane option in
+          the Feature manager box on the left side of the drawing screen.
+
+
+ Note
+ Instruction numbering in the text and figures does not necessarily match; however, the order will be similar. Steps numbered
+ in the figures generally pertain to clicking items in the SolidWorks user interface, whereas the text may include additional
+ numbered steps to guide the developmental process. The numbering in the figures will generally start anew in each new
+ figure.
+
+
+     See Figure 1-4. An outline of the Top plane will appear using a type of 3D orientation 5
+called the Trimetric orientation.
+Figure 1-4
+
+      2 Click the Sketch tool as shown in Figure 1-4.
+     The Top plane’s orientation will change to a 2D view. The Top plane is now a sketch plane
+and appears as a rectangle because the view is taken perpendicular to the plane. This means that
+all 2D shapes drawn on the plane will appear as true shapes.
+      3 Click the Line tool.
+          With the Line tool activated, locate the cursor on the origin. The origin is indicated by
+          the two red arrows spaced 90° apart. See Figure 1-5.
+Figure 1-5
+
+     Two icons will appear on the screen: the Line tool icon indicating that the Line tool is
+active, and the Coincident relation icon indicating that the origin and the starting point for the
+line are on the same point.
+       4 Move the cursor away from the origin horizontally to the right.
+    As you move the cursor away from the origin, a distance and angle value will appear. See
+Figure 1-6. The distance is as measured from the origin or starting point for the line, and the
+angle is based on the SolidWorks definition of 0° as a horizontal line to the left of the starting
+point. We are drawing to the right, so the angular value is 180°.
+Figure 1-6
+
+    Two other icons will also appear: the Line tool icon and the horizontal relationship icon.
+      5 Click the mouse at the point at which you want to define the endpoint of the line.
+      6 Move the cursor vertically downwards. Do not click the mouse.
+     A new line will be drawn using the endpoint of the horizontal line as the starting point for
+the vertical line. Distance and angle values will appear based on the new starting point, and the
+Line and vertical relationship icons will appear.
+      7 Press the <Esc> key or right-click the mouse and click the Select option.
+      8 Click the Smart Dimension tool, click the line, and move the cursor away from the
+        line.
+          A dimension will appear.
+      9 Click the mouse to define the location of the dimension.
+    The Modify dialog box will appear.
+     10 Enter a distance value for the line and click the green OK check mark.
+     11 Click anywhere on the empty screen to complete the line.
+    The dimension can be moved by locating the cursor on the dimension, pressing and holding
+the mouse button, and dragging the cursor.
+     12 Hover over the arrow next to the SolidWorks logo in the upper left and click the File
+        menu located at the top of the screen, then click Close. See Figure 1-7.
+
+
+
+
+Figure 1-7
+
+     13 Click the Don’t Save option. See Figure 1-8.
+Figure 1-8
+
+    The screen will return to the original SolidWorks screen.
+
+1-3 SolidWorks Colors
+As you work with SolidWorks you will notice that the lines change colors. These color changes
+let you know the status of the sketch being drawn. There are four basic colors.
+     Black = Fully defined
+     Blue = Under defined
+     Red = Over defined
+     Yellow = Redundant
+
+1-4 Creating a Fully Defined Circle
+In this section we will sketch a circle to help understand the difference between a fully defined
+and an under defined Part.
+      1 In the New SolidWorks dialog box (previously shown in Figure 1-2), click Part and
+          then click OK to open a new Part document.
+       2 Click the Top Plane on the left (as depicted in Figure 1-4).
+       3 Click the Sketch tab. (It may already be activated.) See Figure 1-9.
+
+
+
+
+Figure 1-9
+
+       4 Click the Circle tool.
+       5 Locate the cursor on the origin, click the mouse, and drag the cursor away from the
+         origin centerpoint.
+    Note that the Coincident relation symbol appears next to the origin, indicating that the
+centerpoint of the circle is located on the origin.
+       6 Click the mouse to define a sketch radius for the circle.
+     This sketched radius is a temporary radius and is not the final radius. The circle will be blue,
+indicating that it is not fully defined.
+       7 Click the Smart Dimension tool on the Sketch panel.
+       8 Click the circle and move the cursor away from the circle.
+

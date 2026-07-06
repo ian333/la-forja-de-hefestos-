@@ -1,0 +1,247 @@
+// ============================================================================
+// LENTE GRAVITACIONAL DE ESTRELLA DE NEUTRONES — fullscreen quad raymarcher.
+// Reusa la integración de geodésicas nulas Schwarzschild de BHRaytraced.tsx,
+// con parada INVERTIDA: el rayo INTERSECTA la esfera R_STAR -> muestrea el
+// mapa térmico NICER J0030 (Riley 2019) en el punto de impacto.
+//
+// FÍSICA: dv/dt = -2·rs/r² · r̂  (idéntico a BHRaytraced, factor ×2 calibrado).
+//   rs = 2GM/c²  (uRs en unidades de escena). Compacidad u = rs/R_STAR.
+//   J0030: M≈1.4M☉,R≈12.7km -> rs≈4.13km, R/rs≈3.07, u≈0.325 -> se ve ~3/4.
+//   Radio aparente lensado = R·sqrt(1/(1-rs/R)) ≈ 3.74 rs (limbo agrandado).
+//   NO hay sombra: R/rs≈3.07 ≫ 1.5 (la estrella tapa su photon sphere).
+// ============================================================================
+
+// ---- Montaje TSX (componente NSLensed, hermano de BHRaytraced) -------------
+//
+// import { useRef, useMemo } from 'react';
+// import { useFrame, useThree } from '@react-three/fiber';
+// import * as THREE from 'three';
+//
+// export interface NSLensedProps {
+//   rs?: number;          // radio Schwarzschild en unidades de escena (def 1.0)
+//   rStar?: number;       // R_STAR en MISMAS unidades. Compacidad = rs/rStar.
+//                         // J0030 fiel: rStar = 3.07 con rs=1.0  (R/rs=3.07).
+//                         // Crab/Vela menos compactas: rStar mayor (menos lente).
+//   period?: number;      // P de rotación (s) — barre los hot spots (pulso térmico)
+//   animTime?: number;    // tiempo determinista (render). <0 = clock realtime
+//   exposure?: number;    // HDR antes del tonemap externo (def 1.4)
+//   limbBoost?: number;   // brillo del limbo enroscado (def 1.0 = físico)
+//   tEffNorm?: number;    // T superficie normalizada 0..1 (def 0.62 ~ 1e6 K
+//                         // = blanco-azul PÁLIDO Rayleigh-Jeans, NO azul cobalto)
+//   starDensity?: number; // fondo de estrellas (la NS no tiene sombra)
+//   starSeed?: number;
+//   linearOutput?: boolean; // true: emite HDR lineal (CinematicPostFX hace ACES)
+//   maxSteps?: number;    // tope integrador (def 140; el HIT ocurre <50 pasos)
+// }
+//
+// uniforms (useMemo UNA vez, mutar .value en useFrame — NUNCA inline):
+//   uTime, uRs, uRStar, uPeriod, uExposure, uLimbBoost, uTEff,
+//   uStarDensity, uStarSeed, uLinearOut, uMaxSteps,
+//   uCamPos(vec3), uCamFwd, uCamRight, uCamUp, uTanHalfFov, uAspect.
+//
+// useFrame: idéntico a BHRaytraced para la base de cámara —
+//   camera.getWorldDirection(fwd); right=cross(fwd,up).norm; up=cross(right,fwd).norm
+//   u.uTanHalfFov.value = tan(fovY/2);  u.uAspect.value = w/h;
+//   u.uTime.value = (animTime>=0)? animTime : clock.elapsedTime;
+//   uRot del mapa NICER se calcula EN EL SHADER: rot = 2π·uTime/uPeriod.
+//
+// JSX (igual que BHRaytraced):
+//   <mesh renderOrder={-100} frustumCulled={false}>
+//     <planeGeometry args={[2,2]} />
+//     <shaderMaterial depthWrite={false} depthTest={false} transparent={false}
+//       toneMapped={false} uniforms={uniforms}
+//       vertexShader={VERTEX_SHADER} fragmentShader={FRAGMENT_SHADER} />
+//   </mesh>
+//
+// Escena (CinematicPulsar) — reemplaza <NeutronStar/> rasterizado por <NSLensed/>:
+//   gl.toneMapping=NoToneMapping; <NSLensed rs={1} rStar={3.07} period={1.4}
+//     animTime={animTime} linearOutput exposure={1.4} maxSteps={140}/>
+//   <CinematicPostFX preset="magnetar" bloomThreshold={0.45} anamorphic/>
+//   Cámara WeightedRig: dist 9..7 rs (la estrella COMPLETA + halo lensado en cuadro).
+//
+// ---- VERTEX (fullscreen, idéntico a BHRaytraced) ---------------------------
+const VERTEX_SHADER = /* glsl */`
+  varying vec2 vUv;
+  void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+
+// ---- FRAGMENT --------------------------------------------------------------
+const FRAGMENT_SHADER = /* glsl */`
+  precision highp float;
+  varying vec2 vUv;
+
+  uniform float uTime;
+  uniform float uRs;        // rs = 2GM/c²  (compacidad = uRs/uRStar)
+  uniform float uRStar;     // radio de la estrella, MISMAS unidades que uRs
+  uniform float uPeriod;    // P rotación (s)
+  uniform float uExposure;
+  uniform float uLimbBoost;
+  uniform float uTEff;      // T superficie normalizada 0..1
+  uniform float uStarDensity;
+  uniform float uStarSeed;
+  uniform float uLinearOut;
+  uniform float uMaxSteps;
+
+  uniform vec3  uCamPos, uCamFwd, uCamRight, uCamUp;
+  uniform float uTanHalfFov, uAspect;
+
+  // ── Hashes / starfield (copiados de BHRaytraced: NS no tiene sombra, el
+  //    fondo lensado leve da contexto en el void NEGRO) ────────────────────
+  float hash21(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+  vec3 stars(vec3 dir){
+    dir=normalize(dir);
+    float theta=atan(dir.z,dir.x), phi=asin(clamp(dir.y,-1.0,1.0));
+    vec3 col=vec3(0.0);
+    for(int layer=0; layer<3; layer++){
+      float scale=350.0*pow(1.55,float(layer));
+      vec2 uvS=vec2(theta*scale, phi*scale*2.0)+vec2(uStarSeed*17.7+float(layer)*4.1, uStarSeed*31.3+float(layer)*7.7);
+      vec2 cell=floor(uvS), cf=fract(uvS);
+      for(int dx=-1;dx<=1;dx++) for(int dy=-1;dy<=1;dy++){
+        vec2 cc=cell+vec2(float(dx),float(dy));
+        float h=hash21(cc+float(layer)*11.3);
+        float thr=0.972-0.004*float(layer);
+        if(h>thr){
+          vec2 pp=vec2(float(dx)+hash21(cc+2.0), float(dy)+hash21(cc+5.0));
+          vec2 d=cf-pp; float di2=dot(d,d);
+          float inten=exp(-di2*90.0)*(h-thr)*360.0*uStarDensity;
+          float t=hash21(cc+7.0);
+          vec3 tint=mix(vec3(0.7,0.82,1.0), vec3(1.0,0.82,0.6), t);
+          col+=tint*inten*(1.0/pow(1.3,float(layer)));
+        }
+      }
+    }
+    return col;
+  }
+
+  // ── Rotación de la superficie alrededor del eje de SPIN (Y) ──────────────
+  vec3 spinY(vec3 p, float a){ float c=cos(a),s=sin(a); return vec3(c*p.x - s*p.z, p.y, s*p.x + c*p.z); }
+
+  // ── Mapa NICER de PSR J0030+0451 (Riley 2019): mancha chica + media luna
+  //    alargada, AMBAS en el MISMO hemisferio (no antipodales). Devuelve
+  //    "calor" 0..1 sobre la superficie en coords de objeto (normal unit). ─────
+  //    n  = punto de impacto normalizado, YA des-rotado al frame del mapa.
+  float cap(vec3 n, vec3 c, float coreDeg, float edgeDeg){
+    float d = dot(n, normalize(c));
+    return smoothstep(cos(radians(edgeDeg)), cos(radians(coreDeg)), d);
+  }
+  float nicerMap(vec3 n){
+    // mancha chica (single temperature spot)
+    float spot = cap(n, vec3(0.60, 0.77, 0.22), 6.0, 11.0);
+    // media luna = arco de 4 casquetes contiguos en el MISMO hemisferio Y>0
+    float cre = 0.0;
+    cre = max(cre, cap(n, vec3(-0.10, 0.82, 0.565), 4.0, 8.0));
+    cre = max(cre, cap(n, vec3(-0.287,0.82, 0.497), 4.0, 8.0));
+    cre = max(cre, cap(n, vec3(-0.44, 0.82, 0.369), 4.0, 8.0));
+    cre = max(cre, cap(n, vec3(-0.55, 0.80, 0.24 ), 4.0, 8.0));
+    return max(spot, cre);
+  }
+
+  // ── Cuerpo negro NS a ~1e6 K: BLANCO-AZUL PÁLIDO (cola Rayleigh-Jeans),
+  //    NO azul cobalto. t normalizado 0..1. ─────────────────────────────────
+  vec3 nsColor(float t){
+    // base corteza fría (no-spot): casi negro azulado tenue
+    vec3 crust = vec3(0.012, 0.018, 0.040);
+    // hot spot: blanco con leve sesgo azul (R-J), templado por uTEff
+    vec3 hot   = mix(vec3(1.0,0.95,0.88), vec3(0.80,0.88,1.0), clamp(uTEff,0.0,1.0));
+    return crust + hot * t;
+  }
+
+  // ── ACES (solo si !linearOutput) ─────────────────────────────────────────
+  vec3 aces(vec3 x){ const float a=2.51,b=0.03,c=2.43,d=0.59,e=0.14;
+    return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.0,1.0); }
+
+  void main(){
+    // ── Rayo desde la cámara (idéntico a BHRaytraced) ──────────────────────
+    vec2 uv = vUv*2.0 - 1.0;  uv.x *= uAspect;
+    vec3 rayDir = normalize(uCamFwd + uv.x*uTanHalfFov*uCamRight + uv.y*uTanHalfFov*uCamUp);
+    vec3 rayPos = uCamPos;
+
+    float rot = 6.28318530718 * uTime / max(uPeriod, 1e-3);
+
+    // ── Raymarch de geodésica nula con parada INVERTIDA ───────────────────
+    float maxR = length(uCamPos) + 60.0;
+    float dt   = 0.18 * uRs;
+    vec3  prevPos = rayPos;
+    float prevR   = length(rayPos);
+
+    bool  hit = false, escaped = false;
+    vec3  hitPos = vec3(0.0);
+    vec3  hitDir = rayDir;   // dirección del rayo en el impacto (para limbo)
+
+    for(int i=0;i<200;i++){
+      if(float(i) >= uMaxSteps) break;
+      float r = length(rayPos);
+
+      // PARADA INVERTIDA: el rayo INTERSECTA la esfera de la estrella.
+      if(r < uRStar){
+        // sub-paso: punto exacto de cruce r=uRStar entre prevPos y rayPos
+        // (anti-artefacto del limbo: incidencia rasante salta la superficie).
+        float frac = (prevR - uRStar) / max(prevR - r, 1e-4);
+        hitPos = mix(prevPos, rayPos, clamp(frac,0.0,1.0));
+        hit = true; hitDir = rayDir;
+        break;
+      }
+      if(r > maxR){ escaped = true; break; }
+
+      // ── Flexión gravitacional (IDÉNTICA a BHRaytraced) ──────────────────
+      vec3  toBh = -rayPos / r;
+      float strength = 2.0 * uRs / (r*r);
+      rayDir = normalize(rayDir + toBh * strength * dt);
+
+      // dt adaptativo: fino cerca de la superficie (incidencia rasante) para
+      // no saltarse la esfera; grueso lejos. Equivalente al de BHRaytraced
+      // pero con piso MÁS fino cuando r<1.4·R_STAR (el limbo).
+      float near = step(r, uRStar*1.4);
+      dt = mix(max(0.04*uRs, r*0.06), max(0.03*uRs, r*0.035), near);
+
+      prevPos = rayPos;  prevR = r;
+      rayPos += rayDir * dt;
+    }
+
+    vec3 finalColor = vec3(0.0);
+
+    if(hit){
+      // normal de superficie en el impacto = dirección radial del punto
+      vec3 nWorld = normalize(hitPos);
+      // des-rotar al frame del mapa NICER (la estrella gira en +Y con uPeriod)
+      vec3 nMap = spinY(nWorld, -rot);
+      float heat = nicerMap(nMap);
+
+      // emisión térmica de la superficie (HDR; el bloom revienta los spots)
+      vec3 surf = nsColor(pow(heat, 0.75));
+
+      // ── LIMBO BRILLANTE (enroscado, efecto Riley 2019) ──────────────────
+      // cosθ = incidencia del rayo contra la normal local. En el limbo el
+      // rayo casi-rasa (cosθ->0). Físico: el área aparente de cada parche se
+      // comprime ∝ cosθ y los rayos rasantes provienen de la superficie
+      // lensada que se enrosca al frente -> el borde se AGRANDA y BRILLA.
+      // limb-brightening suave ∝ 1/sqrt(cosθ) acotado (evita NaN/halo duro).
+      float cosI = clamp(dot(-hitDir, nWorld), 0.05, 1.0);
+      float limb = uLimbBoost * (0.55 + 0.45 / sqrt(cosI));    // 1.0 centro -> ~2.5 borde
+      // redshift gravitacional de superficie (1-rs/R)^(1/2): atenúa+enrojece
+      float zSurf = sqrt(max(1e-3, 1.0 - uRs/uRStar));
+
+      finalColor = surf * limb * zSurf;
+
+      // anillo de luz del limbo: borde tenue SIEMPRE visible (la corteza fría
+      // también emite algo de cuerpo negro y el limbo la concentra) — esto da
+      // la silueta luminosa que distingue la NS lensada de una esfera negra.
+      float rim = smoothstep(0.30, 0.06, cosI);
+      finalColor += vec3(0.10,0.13,0.20) * rim * 0.9;
+    }
+    else if(escaped){
+      // la NS NO tiene sombra: lo que no golpea va al fondo de estrellas.
+      finalColor += stars(rayDir) * 0.5;
+    }
+
+    finalColor *= uExposure;
+
+    // DOBLE-TONEMAP GUARD (igual que BHRaytraced): si linearOutput, emite HDR
+    // lineal y deja el ÚNICO ACES al CinematicPostFX. Si no, ACES+gamma inline.
+    if(uLinearOut < 0.5){
+      finalColor = aces(finalColor);
+      finalColor = pow(finalColor, vec3(0.92));
+    }
+    gl_FragColor = vec4(finalColor, 1.0);
+  }
+`;

@@ -1,0 +1,1859 @@
+Chapter 11. CSWA Preparation
+Chapter Objectives
+
+         Prepare for the CSWA exam
+         Answer types of questions likely to appear on the CSWA exam
+         Practice working under time pressure
+
+
+
+11-1 Introduction
+As an undergraduate, James asked his math professor how to prepare for an upcoming exam. His
+response was, “Do lots and lots of problems.” With that in mind, this section contains lots and
+lots of short problems to help you prepare for the CSWA exam.
+     This chapter contains a series of problems in which you will practice drawing shapes and
+time how long it takes you to create each shape. For example, you should spend less than 3
+minutes to draw the cube in Problem 11-1. The goal is to get used to working with a time limit.
+Answers to multiple-choice and matching questions are provided at the end of the chapter.
+
+11-2 Working with Cubes
+Problem 11-1
+Figure 11-1
+MILLIMETERS
+
+    1 Draw a cube that measures 100 × 100 × 100 millimeters, as shown in Figure 11-1, as
+      a 3D model.
+    2 Locate and display the origin.
+    3 Define the material as AISI 1020 Steel.
+    4 How long did it take to draw this cube? ___________
+    5 To determine the object’s volume, after a shape has been completely drawn, click the
+      Evaluate tab (see Figure 11-2).
+Figure 11-2
+
+      6 Click the Mass Properties tool.
+      7 Read the value listed next to Volume (see Figure 11-3).
+      8 Verify the volume by using hand calculations.
+Figure 11-3
+
+11-3 Drawing Profiles
+In the following problems, you will draw a variety of profiles—that is, objects of uniform
+thickness.
+
+
+Problem 11-2
+Figure 11-4
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-4 as a 3D model.
+    2 Define the material as Alloy Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 26,288.28
+     B. 27,959.12
+     C. 18,566.75
+     D. 22,567.00
+
+
+Problem 11-3
+Figure 11-5
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-5 as a 3D model.
+    2 Define the material as Titanium Alloy, Commercially Pure Grade 2 textured (SS).
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 35,978.00
+     B. 42,467.23
+     C. 38,978.49
+     D. 36,837.25
+
+
+Problem 11-4
+Figure 11-6
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-6 as a 3D model. The circular cuts at the top of the
+      object have a diameter of 40mm.
+    2 Define the material as AISI 1020 Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 75,203.69
+     B. 71,663.12
+     C. 75,324.89
+     D. 73,779.06
+
+
+Problem 11-5
+Figure 11-7
+INCHES
+
+      1 Draw the object shown in Figure 11-7 as a 3D model.
+      2 Define the material as Copper.
+      3 How long did it take to draw this object? ___________
+      4 What is the object’s volume, in cubic inches?
+       A. 4.75
+       B. 4.25
+       C. 3.75
+       D. 5.00
+
+
+Problem 11-6
+Figure 11-8
+MILLIMETERS
+
+       1 Draw the object shown in Figure 11-8 as a 3D model.
+       2 Define the material as AISI 304.
+       3 How long did it take to draw this object? ___________
+       4 What is the object’s volume, in cubic millimeters?
+        A. 115,467.35
+        B. 12,896.39
+        C. 31,728.45
+        D. 29,962.16
+
+11-4 Drawing Small 3D Objects
+For each of the following problems, try to draw the shape in one sitting (that is, start the part and
+work straight through until it’s finished). Time yourself. It’s a good idea to practice without
+stopping because when you take the CSWA exam, you will have no breaks.
+Problem 11-7
+Figure 11-9
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-9 as a 3D model.
+    2 Define the material as AISI 1020.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 154,946.33
+     B. 638,378.97
+     C. 694,556.01
+     D. 602,785.58
+
+
+Problem 11-8
+Figure 11-10
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-10 as a 3D model.
+    2 Define the material as AISI 4130 Steel, normalized at 870C.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 1,273,282.09
+     B. 1,054,492.35
+     C. 990,731.79
+     D. 1,805,412.78
+
+
+Problem 11-9
+Figure 11-11
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-11 as a 3D model.
+    2 Define the material as Cast Alloy Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 643,535.95
+     B. 58,999.10
+     C. 61,598.54
+     D. 62,100.46
+
+
+Problem 11-10
+Figure 11-12
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-12 as a 3D model.
+    2 Define the material as 2024 Alloy.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 473,108.26
+     B. 647,598.46
+     C. 477,942.06
+     D. 483,060.87
+
+
+Problem 11-11
+Figure 11-13
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-13 as a 3D model.
+    2 Define the material as Copper.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 61,766.40
+     B. 647,598.46
+     C. 60,713.22
+     D. 59,896.01
+
+
+Problem 11-12
+Figure 11-14
+MILLIMETERS
+
+      1 Draw the object shown in Figure 11-14 as a 3D model.
+      2 Define the material as 2024-T3 AL.
+      3 How long did it take to draw this object? ___________
+      4 What is the object’s volume, in cubic millimeters?
+        A. 999,375.24
+        B. 1,744,396.50
+        C. 212,050.65
+        D. 1,621,578.00
+
+11-5 Drawing Larger Objects
+This section includes larger and more complex shapes.
+
+
+Problem 11-13
+Figure 11-15
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-15 as a 3D model. The diameter of the circular
+      cutout concentric with the Ø16 hole is Ø26mm.
+    2 Define the material as Nickel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 52,756.24
+     B. 57,037.68
+     C. 59,327.89
+     D. 56,819.59
+
+
+Problem 11-14
+Figure 11-16
+INCHES
+
+     1 Draw the object shown in Figure 11-16 as a 3D model.
+     2 Define the material as 2018 Alloy - AL.
+     3 How long did it take to draw this object? ___________
+     4 What is the object’s volume, in cubic inches?
+       A. 21.40
+       B. 22.10
+       C. 19.78
+       D. 20.56
+
+
+Problem 11-15
+Figure 11-17
+INCHES
+
+     1 Draw the object shown in Figure 11-17 as a 3D model. The centerpoints of the six
+       R1.75in. arcs are located 3.88in. from the object’s centerpoint.
+     2 Define the material as Cast Carbon Steel.
+     3 How long did it take to draw this object? ___________
+     4 What is the object’s volume, in cubic inches?
+       A. 45.72
+       B. 45.93
+       C. 47.28
+       D. 46.09
+
+
+Problem 11-16
+Figure 11-18
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-18 as a 3D model.
+    2 Define the material as Plain Carbon Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 344,983.69
+     B. 365,204.55
+     C. 228,134.02
+     D. 406,739.94
+
+
+Problem 11-17
+Figure 11-19
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-19 as a 3D model.
+    2 Define the material as Galvanized Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 515,738.36
+     B. 569,328.55
+     C. 525,971.78
+     D. 600,584.56
+
+
+Problem 11-18
+Figure 11-20
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-20 as a 3D model.
+    2 Define the material as AISI Type A2 Tool Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 500,683.20
+     B. 510,446.10
+     C. 509,991.15
+     D. 505,498.05
+
+
+Problem 11-19
+Figure 11-21
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-21 as a 3D model.
+    2 Define the material as 6063-T6 AL.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 255,395.99
+     B. 250,629.75
+     C. 244,668.36
+     D. 251,623.95
+
+
+Problem 11-20
+Figure 11-22
+MILLIMETERS
+
+      1 Draw the object shown in Figure 11-22 as a 3D model. The overall height is 50mm.
+      2 Define the material as Alloy Steel.
+      3 How long did it take to draw this object? ___________
+      4 What is the object’s volume, in cubic millimeters?
+        A. 88,835.33
+        B. 87,934.28
+        C. 89,430.75
+        D. 90,385.88
+
+11-6 Drawing Auxiliary Views
+Auxiliary views are used to present true views of slanted surfaces. A slanted surface viewed in a
+normal orthographic view will appear foreshortened. An auxiliary view is taken at 90° to the
+surface and therefore shows a true view of the surface.
+Problem 11-21
+Figure 11-23
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-23 as a 3D model and a set of dimensioned
+      orthograph views.
+    2 Define the material as Cast Carbon Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 147,385.58
+     B. 150,553.73
+     C. 143,825.64
+     D. 148,341.06
+
+
+Problem 11-22
+Figure 11-24
+MILLIMETERS
+
+       1 Draw the object shown in Figure 11-24 as a 3D model and a set of dimensioned
+         orthograph views.
+       2 Define the material as Carbon Steel.
+       3 How long did it take to draw this object? ___________
+       4 What is the object’s volume, in cubic millimeters?
+        A. 92,674.96
+        B. 93,319.08
+        C. 89,253.60
+        D. 93,548.66
+
+
+Problem 11-23
+This project uses three types of drawings: two orthographic views, an auxiliary view, and a detail
+view. Combined, these views completely define the object.
+Figure 11-25
+INCHES
+
+      1 Draw the object shown in Figure 11-25 as a 3D model and a set of dimensioned
+        orthograph views.
+      2 Define the material as AISI 1020.
+      3 How long did it take to draw this object? ___________
+      4 What is the object’s volume, in cubic inches?
+        A. 26.05
+        B. 24.71
+        C. 25.07
+        D. 24.96
+
+11-7 Drawing Break Views
+Break views are used to shorten long shapes so that they fit within a drawing’s sheet parameters.
+The shapes must be of constant shape throughout their length.
+Problem 11-24
+Figure 11-26
+INCHES
+
+     1 Draw the object shown in Figure 11-26 as a 3D model and a set of dimensioned
+       orthograph views.
+     2 Define the material as AISI 1020 Steel, Cold Rolled.
+     3 How long did it take to draw this object? ___________
+     4 What is the object’s volume, in cubic inches?
+       A. 35.63
+       B. 34.75
+       C. 33.85
+       D. 36.84
+
+
+Problem 11-25
+Figure 11-27
+MILLIMETERS
+
+       1 Draw the object shown in Figure 11-27 as a 3D model and a set of dimensioned
+         orthograph views.
+       2 Define the material as Carbon Steel.
+       3 How long did it take to draw this object? ___________
+       4 What is the object’s volume, in cubic millimeters?
+        A. 62,056.35
+        B. 63,446.86
+        C. 62,831.85
+        D. 61,496.30
+
+11-8 Drawing Section Views
+A section view allows you to look inside an object. Often there are internal shapes in an object
+that are not clearly visible from the outside. Section views allow you to expose these shapes with
+more clarity than using just hidden lines.
+
+
+Problem 11-26
+Figure 11-28
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-28 as a 3D model and a set of dimensioned
+      orthograph views.
+    2 Define the material as Carbon Steel.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 4,841,979.68
+     B. 3,495,117.34
+     C. 4,293,964.08
+     D. 4,067,229.47
+
+
+Problem 11-27
+Figure 11-29
+MILLIMETERS
+
+       1 Draw the object shown in Figure 11-29 as a 3D model and a set of dimensioned
+         orthograph views. The 16mm deep notch has a width of 8mm.
+       2 Define the material as Carbon Steel.
+       3 How long did it take to draw this object? ___________
+       4 What is the object’s volume, in cubic millimeters?
+        A. 310,663.39
+        B. 335,812.94
+        C. 387,613.88
+        D. 299,846.95
+
+
+Problem 11-28
+Cutting plane lines need not always be straight. Figure 11-30 shows an aligned cutting plane line.
+The resulting view is created by swinging the angle part of the line as if it were bent into the
+vertical position.
+Figure 11-30
+MILLIMETERS
+
+      1 Draw the object shown in Figure 11-30 as a 3D model and a set of dimensioned
+        orthograph views.
+      2 Define the material as AISI 1020 Steel.
+      3 How long did it take to draw this object? ___________
+      4 What is the object’s volume, in cubic millimeters?
+        A. 46,115.01
+        B. 47,335.75
+        C. 46,889.24
+        D. 45,998.83
+
+11-9 Drawing Detail Views
+Detail views are used to enlarge areas of a drawing that contain small features that would be
+difficult to define in the drawing’s initial scale.
+Problem 11-29
+Figure 11-31
+MILLIMETERS
+
+    1 Draw the object shown in Figure 11-31 as a 3D model and a set of dimensioned
+      orthograph views. The small holes are Ø3mm.
+    2 Define the material as Brass.
+    3 How long did it take to draw this object? ___________
+    4 What is the object’s volume, in cubic millimeters?
+     A. 127,886.37
+     B. 128,975.67
+     C. 128,680.09
+     D. 126,834.75
+
+
+Problem 11-30
+Figure 11-32
+INCHES
+
+      1 Draw the object shown in Figure 11-32 as a 3D model and a set of dimensioned
+        orthograph views.
+      2 Define the material as Titanium Ti-5AI-2.5SM.
+      3 How long did it take to draw this object? ___________
+      4 What is the object’s volume, in cubic inches?
+       A. 10.47
+       B. 10.05
+       C. 10. 98
+       D. 10.57
+
+11-10 Drawing Lines and Views
+This section tests the knowledge of the different types of lines that are used to create
+orthographic views.
+Problem 11-31
+Figure 11-33
+MILLIMETERS
+
+     Technical drawings use many different types of lines. Identify the types of lines referenced
+in Figure 11-33 by entering the letter corresponding to the correct line type in each blank.
+
+    What type of line?                                     Type of lines
+
+       1 __________________                                a. Continuous
+       2 __________________                                b. Section
+       3 __________________                                c. Hidden
+       4 __________________                                d. Cutting Plane
+       5 __________________                                e. Extension
+                                                           f. Center
+                                                           g. Dimension
+                                                           h. Leader
+Problem 11-32
+Figure 11-34
+MILLIMETERS
+
+     Identify the types of lines referenced and types of views in Figure 11-34 by entering the
+letter corresponding to the correct line type in each blank.
+
+    What type of line?                                   Type of lines
+
+      1 __________________                               a. Continuous
+      2 __________________                               b. Section
+      3 __________________                               c. Hidden
+      4 __________________                               d. Cutting Plane
+      5 __________________                               e. Extension
+                                                         f. Center
+                                                         g. Dimension
+                                                         h. Leader
+  What type of view?        Type of views
+
+    1 __________________   i. Orthographic
+    2 __________________   j. Auxiliary
+    3 __________________   k. Section
+    4 __________________   l. Detail
+                           m. Break
+
+
+
+Problem 11-33
+Figure 11-35
+MILLIMETERS
+
+     There are different ways to dimension an object that has multiple holes. Identify the
+different dimension styles for the views shown in Figure 11-35 by entering the letter
+corresponding to the correct style type in each blank.
+
+    Style number                                            Name of style
+
+       1 __________________                                 a. Ordinate
+       2 __________________                                 b. Chain
+       3 __________________                                 c. Hole Table
+       4 __________________                                 d. Baseline
+
+
+11-11 Creating Assemblies
+Figures 11-36 and 11-37 are the parts and finished assembly in different configurations. In the
+following problems, you are asked to create and manipulate the assembly as required.
+Problem 11-34
+Figure 11-36
+MILLIMETERS
+
+    1 Draw the components shown in Figure 11-36 and create the link assembly.
+    2 Position the links as indicated by the angular dimensions.
+    3 What is the horizontal distance A, in millimeters?
+     A. 300.0
+     B. 294.7
+     C. 281.0
+     D. 276.4
+
+
+Problem 11-35
+Figure 11-37
+MILLIMETERS
+
+       1 Draw the components shown in Figure 11-36 and create the link assembly shown in
+         Figure 11-37.
+       2 Position the links as indicated by the angular dimensions.
+       3 What is the horizontal distance B, in millimeters?
+         A. 353.6
+         B. 356.0
+         C. 354.8
+         D. 357.8
+
+
+Note
+In addition to the examples presented here, students may search YouTube for more tutorials on SolidWorks.
+11-12 Problem Answers
+The answers to the chapter problems are below.
+      11-2. B
+      11-3. B
+      11-4. A
+      11-5. A
+      11-6. A
+      11-7. B
+      11-8. A
+      11-9. A
+      11-10. D
+      11-11. B
+      11-12. C
+      11-13. D
+      11-14. B
+      11-15. A
+      11-16. A
+      11-17. C
+      11-18. C
+      11-19. D
+      11-20. A
+      11-21. D
+      11-22. D
+      11-23. C
+      11-24. A
+      11-25. C
+      11-26. A
+      11-27. B
+      11-28. C
+      11-29. C
+      11-30. A
+      11-31. 1. g, 2. e, 3. f, 4. h, 5. c
+11-32. Type of line: 1. d, 2. e, 3. g, 4. b, 5. h, 6. c; Type of view: 1. k, 2. l, 3. i, 4. i
+11-33. 1. b, 2. d, 3. a, 4. c
+11-34. C
+11-35. B
+Appendix
+
+
+
+
+Figure A-1
+Figure A-2A
+Figure A-2B
+Figure A-3A
+Figure A-3B
+Figure A-4A
+Figure A-4B
+Figure A-5
+Figure A-6
+
+
+
+
+Figure A-7
+Figure A-8
+
+
+
+
+Figure A-9
+Figure A-10
+
+
+
+
+Figure A-11
+Figure A-12
+Figure A-13A
+Figure A-13B
+Index
+
+Numerics
+    2D shape
+                creating, 28–31
+                drawing, 20–23
+    3 point arc, sketching, 69–70
+    3 point arc slot, sketching, 64
+    3 Point Arc Slot tool, 64
+    3 point center rectangle, sketching, 58–59
+    3 point corner rectangle, sketching, 57–58
+    3D model, creating, 25–26
+
+
+A
+    abbreviations, 498–499
+    accessing
+                Design Library, 390–392
+                Mouse Gestures settings, 45–46
+    activating, S Key, 48
+    addendum, 655
+    adding
+                columns to a BOM (bill of materials), 332–333
+                datum indicator, 563–564
+                dimensions to a drawing, 450–454
+                plus and minus tolerances, 524–525
+                screw sets to a collar, 409–410
+                text, 85
+                text to a feature, 86
+    aligned dimensions, 462
+    aligned section view, 258–259
+    angular dimensions, 448, 480–484
+angular tolerance, creating, 526–528
+angularity tolerances, 569–570
+Animate Collapse tool, 339–340
+animating, gears, 661–662, 689–690
+Annotation tools
+         Auto Balloon, 327
+         Autodimension, 457–459
+            creating baseline dimensions, 459
+            creating ordinate dimensions, 460
+         Balloon, 326–328
+         Datum Feature, 563, 564
+         Geometric Tolerance, 565–566
+         Note tool, 337–338
+         Smart Dimension, 6, 8, 11–12, 17, 23, 387, 451, 457
+ANSI (American National Standards Institute). See also English units; inch values; metric
+units
+         dimensioning terminology and conventions, 448–449
+         orthographic view standards, 229
+         thread standards, 383–384
+         threads, 381, 392
+application blocks, 339
+applying, surface control symbols, 547–549
+arcs
+         3 point, sketching, 69–70
+         centerpoint, sketching, 67–68
+         tangent, sketching, 68–69
+Assembly tools
+         Animate Collapse, 339–340
+         Clearance Verification, 353, 355–356
+         Exploded View, 321–324
+         Interference Detection, 349–350
+         Mate, 311–316, 318–320
+         Motion Study, 344–346
+         Mouse Gestures, 310–311
+         Move Component, 308–309
+            Rotate Component, 309–310
+assembly/ies
+            application blocks, 339
+            BOM (bill of materials), 328–329
+              adding columns, 332–333
+              changing the font, 334–335
+              changing the width of columns and rows, 333–334
+              editing, 330–331
+            bottom-up, 316–321
+            exploded isometric, creating, 321–324
+            Fix option, 308
+            gear, 674–675
+              adding bearings, 663–666
+              animating the gears, 661–662
+              creating, 657–661
+            interference
+              detecting, 350–352
+              removing, 353–355
+            motion, viewing, 346
+            numbers, 326–328
+            origin, 307
+            parts, editing, 347–349
+            release block, 338
+            revision letters, 336
+            Rotator, 341–344
+            sleeve bearings, 621–622
+            standard fit tolerance, applying, 634–635
+            starting, 305–308
+            title block, 335, 336–338
+assigning
+            tolerances, 549–550
+            tools to the Mouse Gestures wheel, 46–47
+Auto Balloon tool, 327
+Autodimension tool, 457–459
+auxiliary views, drawing, 262–266
+B
+    backlash, 655
+    ball bearings, 619, 626–628
+    Balloon tool, 326–328
+    baseline dimensions, 459, 488–490, 529–532
+    basic dimensions, 574
+    bearings, 628
+             adding to gear assemblies, 663–666
+             applying a clearance fit tolerance, 632–633
+             ball, 619, 626–628
+             clearance fits, 628–629
+             fits, 628
+             hole basis, 629
+             interference fit, 630–631
+             manufactured, 631–632
+                clearance fit, 632
+                interference fit, 633
+             shaft basis, 629–630
+             sleeve, 619, 620
+                drawing, 620–621
+                using in an assembly drawing, 621–622
+             from the Toolbox, 623–626
+    bilateral tolerance, 519–520
+    blind holes, 205, 466
+             creating, 143–146
+             dimensioning, 466–471
+             threaded, inch values, 387–388
+    bolt threads, 396
+    BOM (bill of materials), 328–329
+             adding columns, 332–333
+             changing the font, 334–335
+             changing the width of columns and rows, 333
+             editing, 330–331, 683–686
+    bottom-up assemblies, 316–321
+    broken views, 259–261
+
+
+C
+    callouts
+               ball bearings, 626
+               fit, 540–541
+               thread, 382–383
+    CD (center distance), 655
+    center rectangle, sketching, 56–57
+    Centerline tool, 110–111
+    centerlines
+               dimensions, 502
+               extending, 463
+               symbol, 500
+    centerpoint arc, sketching, 67–68
+    centerpoint arc slot, sketching, 65–66
+    centerpoint straight slot, sketching, 63
+    Centerpoint Straight Slot tool, 63
+    chain dimensions, 529–531
+    Chamfer tool, 153
+               defining a chamfer using an angle and a distance, 153–154
+               defining a chamfer using two distances, 154–155
+               defining a vertex chamfer, 155–156
+    chamfer/s
+               dimensioning, 497–498
+               sketching, 82
+                  using angle-distance, 83
+                  using distance-distance – equal distance, 82
+                  using distance-distance – not equal distance, 84
+               vertex, 155–156
+    changing
+               existing dimension, 10–11
+               style of a section view, 257
+               text font and size, 85–86
+            units, 15
+Circle tool, 9, 52–54, 141–142
+circle/s
+            changing an existing dimension, 10–11
+            under defined, 11
+            defining the diameter, 53–54
+            fully defined, creating, 8–10
+            locational value, 11
+            perimeter
+              sketching, 66–67
+              sketching tangent to three lines, 55–56
+              sketching using three points, 54–55
+            sketching, 52–54
+circular pitch, 655
+Circular Sketch Pattern tool, 176–177
+circular sketch patterns, creating, 97–99
+circular thickness, 655
+circularity tolerance, 559–560
+class, threads, 383–384
+clearance, 655
+clearance fit, 539, 628–629, 632–633
+Clearance Verification tool, 353, 355–356
+closed spline, 72
+Coincident relation icon, 5
+colors, 8
+Column Width dialog box, 333
+column/s
+            adding to BOM (bill of materials), 332–333
+            width, changing on a BOM (bill of materials), 333
+compound lines, 237
+compression springs, 181–182
+Concentric relation icon, 23
+conic section, sketching, 79–80
+controlling, dimensions, 454–455
+copying, entities, 100–102
+counterbored holes, dimensioning, 469–478
+countersink holes, dimensioning, 479–480
+creating
+             2D shapes, 28–31
+             3D models, 25–26
+             angular tolerances, 526–528
+             baseline dimensions, 459, 488–490
+             broken views, 260–261
+             exploded isometric drawings, 324–326
+             fillets, with variable radius, 148–149
+             gears, 656–657, 690–691
+             ground ends, 183–184
+             holes, 32–36, 141–142
+               blind, 143–146
+             inward draft sides, 132–133
+             keyseats, 671–674, 678–679
+             limit tolerances, 525–526
+             linear sketch pattern, 95–97
+             mirror entities, 92–94
+             ordinate dimensions, 460, 486–488
+             outward draft, 133–134
+             plus and minus tolerances, 522–523
+             positional tolerance, 575–578
+             reference plane, 161–165
+crest, 381
+Curve Driven Pattern tool, 208–213
+curved surfaces, dimensioning to a point, 500
+Customize dialog box, 45, 49
+customizing, S Key toolbar, 49–51
+cutout, editing, 196–197
+cylinders. See also sleeve bearings
+             creating a slanted surface, 200
+             drawing, 198–200
+             hole, adding, 203–205
+             straightness tolerance, 556
+               threaded holes, adding, 405–409
+               vertical slot, adding, 201–203
+    cylindricity tolerance, 560
+
+
+D
+    datum, 561–563
+               indicator, adding, 563–564
+               surfaces, 545
+    Datum Feature tool, 563, 564
+    debossed text, creating, 191–194
+    dedendum, 655
+    under defined entities, 11
+    Design Library, 381
+               accessing, 390–392
+               Limits and Fits option, 539
+               nuts, 394–396
+               threads, 383
+               washers, 393–394
+    detail view, drawing, 261–262
+    detailed representation, threads, 384
+    detecting, interference, 350–352
+    dialog box
+               Column Width, 333
+               Customize, 45, 49
+               Documents Properties - Drafting Standard, 454
+               Formatting, 330, 336
+               Make Dimension Driven?, 13
+               Modify, 10, 29
+               New SolidWorks Document, 240, 672
+               Properties/Geometric Tolerance, 564
+               S Key, 47
+               Smart Fastener, 399
+    diameter
+               calculating, 535–538
+         clearance fit, 539
+         defining, 53–54
+         fixed condition, 551–552
+         floating condition, 550–551
+         interference fit, 539, 540
+         major, 382
+         minor, 381
+         outside, 655
+         pitch, 655, 681–683
+         root, 655
+         transition fit, 539
+diametral pitch, 655
+Dimension Property Manager, 464
+Dimension Text box, adding plus and minus symmetric tolerances, 524–525
+dimensions and dimensioning, 1, 7. See also tolerances
+         adding to a drawing, 450–454
+         aligned, 462
+         angular, 448, 480–484
+         baseline, 459, 488–490, 529–532
+         basic, 574
+         blind holes, 466–471
+         chain, 529–531
+         chamfers, 497–498
+         changing, 10–11
+         circle, 12–13
+         common errors to avoid, 449–450
+         controlling, 454–455
+         conventions, 449
+         counterbored holes, 469–478
+         countersink holes, 479–480
+         datum, 561–563
+         designing a hole given a fastener size, 553
+         double, 457, 493, 528–529
+         drawing scale, 460–461
+         driving, 13
+         evenly spaced hole pattern, 484–485
+         extension lines, 448, 449
+         hole patterns, 468–469
+         hole tables, 490–491
+         holes, 462–466
+         irregular surfaces, 495–496
+         leader lines, 448, 449
+         linear, 448
+         lines, 448
+         locating, 492–493
+         nominal size, 535–537, 549
+         ordinate, 460, 485, 486–488
+         orthographic views, 501–502
+         overall, 455
+         to a point, 500
+         polar, 496–497, 535
+         rectangular, 533
+         reference, 13, 495
+         section views, 501
+         short distances, 455–457
+         slots, 493–494
+         standard tolerances, 461
+         symbols and abbreviations, 498–499
+         unidirectional, 462
+         units, 14–15, 461–462
+         using centerlines, 502
+         values, 455, 461
+document/s
+         part
+             sketch plane, selecting, 3–8
+             starting, 2–3
+         saving, 27–28
+Documents Properties - Drafting Standard dialog box, 454
+double dimensioning, 457, 493, 528–529
+Draft tool, 172–173
+    drawing/s. See also assembly/ies
+             2D shape, 20–23
+             abbreviations, 498–499
+             adding dimensions, 450–454
+             auxiliary view, 262–266
+             callouts, thread, 382–383
+             cylinders, 198–200
+             detail views, 261–262
+             fit callout, adding, 540–541
+             helix, 179–180
+             lay symbol, adding, 548–549
+             orthographic view, 240–248
+             scale, 460–461
+             section views, 252–257
+             sheet sizes, 241
+             sleeve bearings, 620–621
+             springs, 180–181
+                   extension, 187–191
+                   torsional, 184–187
+             symbols, 498–499
+             threads
+                   blind holes, 387–388
+                   internal, 384–387
+    driving dimension, 13
+
+
+E
+    editing, 195
+             BOM (bill of materials), 330–331, 683–686
+             cutout, 196–197
+             dimensions, 454–455
+             holes, 195–196
+             parts within an assembly, 347–349
+             splines, 73
+             title block, 336–338
+ellipse
+           conic section, sketching, 79–80
+           partial, sketching, 75–76
+           sketching, 74–75
+English units, 14–15, 542. See also metric units
+entities
+           center, 110–111
+           copying, 100–102
+           under defined, 11
+           extending, 89–90
+           fully defined, 11–13
+           mirror, creating, 92–94
+           moving, 18, 99–100
+           rotating, 102–103, 151–153
+           scaling, 103–104
+           Sketch Relations, 24–25
+           splitting, 106–109
+           stretching, 104–106
+           trimming, 88
+evenly spaced hole pattern, dimensioning, 484–485
+exam preparation, 715
+           creating assemblies, 747–749
+           drawing auxiliary views, 735–737
+           drawing break views, 737–738
+           drawing larger objects, 727–734
+           drawing lines and views, 744–747
+           drawing profiles, 717–721
+           drawing section views, 739–741, 742–743
+           drawing small 3D objects, 721–726
+           working with cubes, 716–717
+Exit Sketch mode icon, 17
+exploded isometric assembly, creating, 321–324
+exploded isometric drawing, creating, 324–326
+Exploded View tool, 321–324, 622
+extending
+              centerlines, 463
+              entities, 89–90
+    extension lines, 448, 449
+    extension springs, drawing, 187–191
+    Extrude Boss/Base tool, 129–132, 134–136
+              creating an outward draft, 133–134
+              creating inward draft sides, 132–133
+              extrusion depth, defining, 132
+    Extruded Cut tool, 137–138, 141–142, 203
+
+
+F
+    face width, 655
+    fasteners, 399–400, 553
+              fixed, 582–584
+              fixed condition, 551–552
+              floating, 579–582
+              floating condition, 550–551
+              screw sets, 404–405
+    features, text
+              adding, 86
+              wrapping, 87
+    Features tools, 3
+              Chamfer, 153
+                 defining a vertex chamfer, 155–156
+                 defining using an angle and a distance, 153–154
+                 defining using two distances, 154–155
+              Circular Sketch Pattern, 176–177
+              Curve Driven Pattern, 208–213
+              Draft, 172–173
+              Extrude Boss/Base, 129–132, 134–136
+                 creating an outward draft, 133–134
+                 creating inward draft sides, 132–133
+                 extrusion depth, defining, 132
+              Extruded Cut, 137–138, 203
+             Fillet, 146–148
+               creating a fillet with a variable radius, 148–149
+               Face Fillet option, 150–151
+               Full Round Fillet option, 151–153
+             Hole Wizard, 138–142, 462, 466–471
+               creating a blind hole, 143–146
+               dimensioning counterbored and countersunk holes, 469–480
+               internal threads, drawing, 384–387
+               threaded blind holes, drawing, 387–388
+               threaded hole, drawing on the side of a cylinder, 406–409
+             Linear Sketch Pattern, 174–175
+             Lofted Boss/Base, 165–168
+             Mirror, 177–179
+             Revolved Boss/Base, 156–159
+             Revolved Cut, 159–160
+             Shell, 168–169
+             Swept Boss/Base, 170–172
+             Wrap, 191–194
+Fillet tool, 146–148
+             Face Fillet option, 150–151
+             Full Round Fillet option, 151–153
+fillets, 146–148
+             creating with a variable radius, 148–149
+             dimensioning, 493
+             sketching, 81
+first-angle projection, orthographic views, 229–230, 243, 266–268
+fit/s, 628
+             callout, adding to a drawing, 540–541
+             clearance, 539, 628–629, 632–633
+             interference, 539, 540, 630–631
+             locational, 630
+             metric, 635
+             press, 633
+             standard, 540, 634–635
+             tables, 542
+             transition, 539
+    fixed condition, 551–552
+    fixed fasteners, 582–584
+    flatness tolerances, 554–555
+    floating condition, 550–551
+    floating fasteners, 579–582
+    font
+             changing, 85–86
+             changing on a BOM (bill of materials), 334–335
+    Formatting dialog box, 330, 336
+    formulas, gear, 655
+    fully defined entities, 8–10, 11–13
+
+
+G
+    gear/s
+             addendum, 655
+             animating, 689–690
+             assemblies, 674–675
+                adding bearings, 663–666
+                animating the gears, 661–662
+                creating, 657–661
+             backlash, 655
+             CD (center distance), 655
+             circular pitch, 655
+             circular thickness, 655
+             clearance, 655
+             creating, 656–657
+             dedendum, 655
+             diametral pitch, 655
+             face width, 655
+             formulas, 655
+             hub
+                adding, 666–667
+                threaded hole, adding, 668–671
+             keyseat
+                creating, 671–674, 678–679
+                creating in the shaft, 676–678
+                creating the arc-shaped end, 679–680
+             metric, 690–691
+             module, 655
+             number of teeth, 655
+             outside diameter, 655
+             parallel keys, 675–676
+             pitch diameter, 655, 681–683
+             preferred pitch, 655
+             pressure angle, 655
+             rack and pinion, 687–689
+             ratios, 663
+             root diameter, 655
+             set screws, 666–667
+             spur, 681
+             train, 663
+             whole depth, 655
+             working depth, 655
+    Geometric Tolerance tool, 565–566
+    geometric tolerances, 554, 561, 584–587
+    ground ends, creating, 183–184
+
+
+H
+    helix, drawing, 179–180
+    hexagon, sketching, 70–72
+    hidden lines, 234–235
+    Hole Callout tool, 477
+    Hole Wizard tool, 32, 138–142, 462, 466–471
+             internal threads, drawing, 384–387
+             threaded blind holes, inches, 387–388
+             threaded hole, drawing on the side of a cylinder, 406–409
+    hole/s, 32, 203–205
+             basis, 629–630
+             blind, 143, 205, 466
+                  dimensioning, 466–471
+                  threaded, 387–388
+             counterbored, dimensioning, 469–478
+             countersink, dimensioning, 479–480
+             creating, 32–36, 141–142
+             designing given a fastener size, 553
+             dimensions, 462–466
+             editing, 195–196
+             evenly spaced pattern, dimensioning, 484–485
+             locations, 533–535
+             patterns, dimensioning, 468–469
+             shaft tolerance, calculating, 535–537
+             tables, 490–491
+             threaded
+                  adding to a gear’s hub, 668–671
+                  adding to the side of a cylinder, 405–409
+             tolerance, calculating, 538
+             virtual condition, 579
+    hub, gear, 666–667, 668–671
+
+
+I
+    icon/s
+             Coincident relation, 5
+             Concentric relation, 23
+             Design Library, 391
+             Exit Sketch mode, 17
+             Line, 6
+             origin, hiding/showing, 321
+             Sketch toolbar, 3
+    inch values
+             standard fits, 540
+             threaded blind holes, 387–388
+                zero limit, 521
+      interference
+                detecting, 350–352
+                fit, 539, 540, 630–631, 633
+                removing, 353–355
+      Interference Detection tool, 349–350
+      internal threads
+                inches, 384–388
+                length, 401–404
+                metric, 388–390
+                threaded blind holes, 387–388
+      irregular surfaces, dimensioning, 495–496
+      isometric drawing, creating, 324–326
+
+
+J-K
+      Jog Line tool, 110
+      keys, 671, 675–676
+      keyseat, 671
+                creating, 671–674, 678–679
+                creating in the shaft, 676–678
+                creating the arc-shaped end, 679–680
+
+
+L
+      lay symbol, adding to a drawing, 548–549
+      leader lines, 448, 449
+      length
+                internal thread, 401–404
+                thread, 392–397
+      limit tolerance, 525–526
+      Line tool, 5, 22, 28, 43–44
+      linear dimensions, 448
+      Linear Sketch Pattern tool, 174–175
+      linear sketch patterns, creating, 95–97
+    linear tolerance, 533
+    lines
+              compound, 237
+              hidden, 234–235
+              offset, sketching, 91–92
+              precedence, 235–236
+    locating dimensions, 492–493
+    locational fit, 630
+    locational tolerance, 567
+    locational value, 11
+    Lofted Boss/Base tool, 165–168
+
+
+M
+    major diameter, 382
+    Make Dimension Driven? dialog box, 13
+    Make Fixed tool, 24
+    manufactured bearings, 631–632, 633
+    Mate tool, 311–316, 318–320
+    metric units, 14–15, 635
+              fit tables, 542
+              gears, 690–691
+              threads, 382, 388–390
+    minor diameter, 381
+    mirror entities, creating, 92–94
+    Mirror tool, 177–179
+    MMC (maximum material condition), 557–559
+    Model View tool, 252–253
+    Modify dialog box, 10, 29
+    module, 655
+    Motion Study tool, 344–346
+    Mouse Gestures, 44
+              accessing settings, 45–46
+              for assemblies, 310–311
+              assigning a tool to the wheel, 46–47
+    Move Component tool, 308–309
+    moving
+              entities, 18, 99–100
+              orthographic views, 249
+              rectangles, 19
+
+
+N
+    New SolidWorks Document dialog box, 240, 672
+    nominal size, 549
+    non-parametric modeler, 1
+    normal surfaces, orthographic views, 233–234
+    Note tool, 337–338
+    numbers, assembly, 326–328
+    nuts, 394–396
+
+
+O
+    oblique surfaces, 238
+    offset line, sketching, 91–92
+    open spline, 72
+    ordinate dimensions, 460, 485, 486–488
+    orientation
+              returning to original
+                    using the Orientation Triad, 20
+                    using the Top View tool, 20
+                    using the View Selector, 19–20
+              tolerances, 566
+              Top view, 19
+    Orientation Triad, 20
+    origin, 5, 51
+              assembly, 307
+              icons, 321
+              showing, 51–52
+    orthographic views, 229
+               ANSI standards, 229
+               compound lines, 237
+               dimensioning, 501–502
+               drawing, 240–248
+               first-angle projection, 229–230, 243, 266–268
+               hidden lines, 234–235
+               moving, 249
+               normal surfaces, 233–234
+               oblique surfaces, 238
+               precedence of lines, 235–236
+               side view orientations, 231–232
+               slanted surfaces, 236–237
+               third-angle projections, 229–230, 231, 243
+    outside diameter, 655
+    overall dimensions, 455
+
+
+P
+    parabola
+               conic section, sketching, 79–80
+               sketching, 76–77
+    parallel keys, 675–676
+    parallelism tolerances, 569
+    parallelogram, sketching, 59
+    Parallelogram tool, 59
+    parametric modeler, 1
+    part document
+               sketch plane, selecting, 3–8
+               starting, 2–3
+    partial ellipse, sketching, 75–76
+    parts list, 328–329
+    patterns
+               circular, 97–99
+               hole, dimensioning, 468–469
+               linear, 97
+perimeter circle, sketching, 66–67
+         tangent to three lines, 55–56
+         using three points, 54–55
+Perimeter Circle tool, 54–56, 66–67
+perpendicular tolerance, 564–565
+perpendicularity tolerances, 566–568
+pitch, 382
+         circular, 655
+         diameter, 655
+         diametral, 655
+         preferred, 655
+         thread, 392
+pitch diameter, 681–683
+plane. See also sketch plane
+         conic section, 77–78
+         reference, creating, 161–165
+         selecting, 3–8
+plus and minus tolerances, 519, 520, 522
+         adding, 524–525
+         creating, 522–523
+points, 87
+polar dimensions, 496–497, 535
+polygons, hexagon, sketching, 70–72
+positional tolerances, 573–575
+         creating, 575–578
+         design problems, 584–587
+power transmission, 653. See also gear/s
+         shaft to gear, 666
+             adding a threaded hole to the gear’s hub, 668–671
+             keys, 671
+             keyseat, creating, 676–680
+             keyseats, 671–674
+             parallel keys, 675–676
+             set screws and gear hubs, 666–667
+precedence of lines, 235–236
+      preferred pitch, 655
+      preferred sizes, 543–544
+      press fit, 633
+      pressure angle, 655
+      profile tolerances, 570–572
+      Projected View tool, 249–250
+      Properties/Geometric Tolerance dialog box, 564
+
+
+Q-R
+      rack and pinion gears, 687–689
+      rectangle/s, 15
+                  3 point center, sketching, 58–59
+                  3 point corner, sketching, 57–58
+                  center, sketching, 56–57
+                  dimensions, 533
+                  hole locations, 533–535
+                  moving, 19
+                  reorienting, 19
+                  sketching, 15–17
+                  zooming, 19
+      reentering, Sketch mode, 17–18
+      reference dimension, 13, 495
+      Reference Geometry tool, 161, 168, 177, 183, 191, 200, 203, 208
+      reference plane, creating, 161–165
+      release block, 338
+      removing, interference, 353–355
+      reorienting, entities, 19
+      Revolved Boss/Base tool, 156–159
+      Revolved Cut tool, 159–160
+      RFS (regardless of feature size), 556–559
+      root, 381
+      root diameter, 655
+      Rotate Component tool, 309–310
+      rotating, entities, 102–103, 151–153
+    Rotator assembly, 341–344
+    rounded shapes
+              external, 494–495
+              internal, 493–494
+    rounded surfaces, 238–240
+    rows, width, changing on a BOM (bill of materials), 334
+    runout tolerance, 572–573
+
+
+S
+    S Key, 47
+              activating, 48
+              dialog box, 47
+              toolbar
+                 customizing, 49–51
+                 removing a tool from, 51
+         saving, documents, 27–28
+         scaling, entities, 103–104
+         schematic representation, thread/s, 384
+         screw sets, 404–405, 409–410
+         section views, 250–251
+              aligned, 258–259
+              changing the style, 257
+              dimensioning, 501
+              drawing, 252–257
+    set screws, 666–667
+    settings, Mouse Gestures, accessing, 45–46
+    shaft. See also gear/s; hole/s
+              basis, 629–630
+              clearance fit, 539
+              interference fit, 539, 540, 630–631
+              keyseat, creating, 676–678
+              MMC (maximum material condition), 557
+              nominal size, 535–537
+              tolerances, 535–537
+            transition fit, 539
+            virtual condition, calculating, 579
+Shell tool, 168–169
+short distances, dimensioning, 455–457
+side view orientations, orthographic views, 231–232
+simplified representation, threads, 384
+Sketch mode
+            exiting, 17
+            reentering, 17–18
+sketch plane
+            origin, 5
+            returning to original orientation, 19–20
+              using the Orientation Triad, 20
+              using the Top View tool, 20
+              using the View Selector, 19–20
+            selecting, 3–8
+Sketch Relations, 24–25
+Sketch toolbar, icons, 3
+sketching
+            arcs
+              3 point, 69–70
+              centerpoint, 67–68
+              tangent, 68–69
+            chamfer, 82
+              using angle-distance, 83
+              using distance-distance – equal distance, 82
+              using distance-distance – not equal distance, 84
+            circles, perimeter, 66–67
+            conic section, 79–80
+            fillets, 81
+            hexagons, 70–72
+            parabolas, 76–77
+            parallelograms, 59
+            rectangles, 15–17
+              3 point center, 58–59
+           3 point corner, 57–58
+           center, 56–57
+         slots
+           3 point arc, 64
+           centerpoint arc, 65–66
+           centerpoint straight, 63
+           straight, 61–62
+         splines, 72–73
+Sketching tools, 110–111
+         3 Point Arc Slot, 64
+         Centerline, 110–111
+         Centerpoint Arc, 67–68
+         Centerpoint Arc Slot, 65–66
+         Centerpoint Straight Slot, 63
+         Chamfer, 82, 83
+         Circle, 52–54
+         Circular Sketch Pattern, 97–99
+         Copy Entities, 102
+         Ellipse, 73
+         Extend Entities, 89–90
+         Fillet, 81
+         Jog Line, 110
+         Line, 5, 22, 28
+         Linear Sketch Pattern, 95–97
+         Mirror Entities, 92–94
+         Move Entities, 100
+         Offset Entities, 90–92
+         Parabola, 76–77
+         Parallelogram, 59
+         Partial Ellipse, 75–76
+         Perimeter Circle, 66–67
+         Point, 87
+         Polygon, 71–72
+         Rotate Entities, 103
+         Scale Entities, 103–104
+             Spline, 73
+             Split Entities, 106–109
+             Straight slot, 61–62
+             Stretch Entities, 104–106
+             Tangent Arc, 68–69
+             Text, 84–87
+             Trim Entities, 88
+slanted surfaces, 236–237
+sleeve bearings, 619, 620
+             drawing, 620–621
+             tolerances, 1
+             using in an assembly drawing, 621–622
+slots
+             3 point arc, sketching, 64
+             centerpoint arc, sketching, 65–66
+             centerpoint straight, sketching, 63
+             dimensioning, 493–494
+             straight, sketching, 61–62
+Smart Dimension tool, 6, 8, 11–12, 17, 23, 387, 451, 455–457
+Smart Fastener dialog box, 399
+Smart Fasteners tool, 398–400
+solid modeler, 1
+spline, 72
+             editing, 73
+             sketching, 72–73
+splitting, entities, 106–109
+springs
+             compression, 181–182
+             drawing, 180–181
+             extension, drawing, 187–191
+             ground ends, creating, 183–184
+             torsional, drawing, 184–187
+spur gears, 681
+Standard 3 View tool, 249
+standard fit, 540, 634–635
+standard sizes, 543–544
+standard tolerances, 461, 528
+starting
+            assemblies, 305–308
+            new part document, 2–3
+straight slot, sketching, 61–62
+Straight slot tool, 61–62
+straightness
+            tolerances, 555–559
+            value, defining, 565–566
+stretching, entities, 104–106
+style, section views, changing, 257
+surface/s
+            control symbols, 545–547
+               applying, 547–548
+               lay, 548–549
+            datum, 545, 565–566
+            finish, 544–545
+            hidden lines, 234–235
+            irregular, dimensioning, 495–496
+            lay, 545
+            normal, orthographic views, 233–234
+            oblique, 238
+            profile tolerances, 570–572
+            roughness, 545
+            rounded, 238–240
+            slanted, 236–237
+            texture, 545
+Swept Boss/Base tool, 170–172
+symbols, 498–499
+            centerline, 500
+            datum, 564
+            surface control, 545–547
+               applying, 547–548
+               lay, 548–549
+               symmetrical object, 499
+    symmetric tolerances, 524–525
+
+
+T
+    tangent arc, sketching, 68–69
+    text
+               adding, 85
+               adding to a feature, 86
+               changing font and size, 85–86
+               debossed, creating, 191–194
+               wrapping, 87
+    third-angle projection, orthographic views, 229–230, 243
+    threaded hole, drawing on the side of a cylinder, 405–409
+    thread/s
+               ANSI callout, 383–384
+               bolt, 396
+               classes, 383
+               counterbored holes, dimensioning, 473–478
+               crest, 381
+               depth, 476
+               detailed representation, 384
+               display styles, 392
+               external length, inch values, 392–397
+               form specification, 383
+               internal, 384
+                 inches, 384–388
+                 length, 401–404
+                 metric, 388–390
+                 threaded blind holes, 387–388
+               length, 382
+               major diameter, 382
+               metric, 382
+               minor diameter, 381
+               pitch, 382, 392
+          preferred sizes, 383
+          root, 381
+title block, 335, 336–338
+tolerance/s, 519. See also fit/s
+          angular, 526–528
+          angularity, 569–570
+          assigning, 549–550
+          bilateral, 519–520
+          circularity, 559–560
+          cylindricity, 560
+          datum, 561–563
+          designing a hole given a fastener size, 553
+          double-dimensioning errors, 528–529
+          expressions, 521
+          fit, 628, 635
+          fixed condition, 551–552
+          fixed fasteners, 582–584
+          floating condition, 550–551
+          floating fasteners, 579–582
+          of form, 554
+             flatness, 554–555
+             straightness, 555–559
+          geometric, 554, 561, 584–587
+          hole, 538
+          hole locations, 533–535
+          interference fit, 633–634
+          limit, 525–526
+          linear, 533
+          locational, 567
+          manufactured bearings, 631–632
+          MMC (maximum material condition), 557–559
+          of orientation, 566
+          parallelism, 569
+          perpendicular, 564–565
+          perpendicularity, 566–568
+          plus and minus, 519, 520, 522
+            adding, 524–525
+            creating, 522–523
+          positional, 573–578, 584–587
+          profile, 570–572
+          RFS (regardless of feature size), 556–559
+          runout, 572–573
+          shaft, 535–537
+          shaft basis, 629–630
+          standard, 528
+          standard fit, applying to an assembly drawing, 634–635
+          studies, 532
+            maximum length, calculating, 532
+            minimum length, calculating, 533
+          symmetric, 524–525
+          unilateral, 519–520
+          virtual condition, 578–579
+            calculating for the hole, 579
+            calculating for the shaft, 579
+          zero limit, 521
+tolerances, bilateral, 520
+toolbar, S Key
+          customizing, 49–51
+          removing a tool from, 51
+Toolbox, bearings, 623–626
+tool/s
+          Annotation
+            Auto Balloon, 327
+            Autodimension, 457–460
+            Balloon, 326–328
+            Datum Feature, 563, 564
+            Geometric Tolerance, 565–566
+            Note, 337–338
+            Smart Dimension, 6, 8, 11–12, 17, 23, 387, 451, 457
+          Assembly, 305
+  Animate Collapse, 339–340
+  Clearance Verification, 353, 355–356
+  Interference Detection, 349–350
+  Mate, 311–316, 318–320
+  Motion Study, 344–346
+  Move Component, 308–309
+  Rotate Component, 309–310
+assigning to the Mouse Gestures wheel, 46–47
+Circle, 9
+Exploded View, 321–324, 622
+Features, 3, 129
+  Chamfer, 153–156
+  Circular Sketch Pattern, 176–177
+  Curve Driven Pattern, 208–213
+  Draft, 172–173
+  Extrude Boss/Base, 129–136
+  Extruded Cut, 137–138, 203
+  Fillet, 146–153
+  Hole Wizard, 138–142, 143–146, 384–387, 462, 466–471
+  Linear Sketch Pattern, 174–175
+  Lofted Boss/Base, 165–168
+  Mirror, 177–179
+  Revolved Boss/Base, 156–159
+  Revolved Cut, 159–160
+  Shell, 168–169
+  Swept Boss/Base, 170–172
+  Wrap, 191–194
+Hole Callout, 477
+Hole Wizard, 32
+Line, 5, 22, 28
+Make Fixed, 24
+Model View, 252–253
+Perimeter Circle, 54–56
+Projected View, 249–250
+Rectangle, 15–17
+Sketching, 4, 110–111
+  3 Point Arc Slot, 64
+  Centerline, 110–111
+  Centerpoint Arc, 67–68
+  Centerpoint Arc Slot, 65–66
+  Centerpoint Straight Slot, 63
+  Chamfer, 82–83
+  Circle, 52–54
+  Circular Sketch Pattern, 97–99
+  Copy Entities, 102
+  Ellipse, 73
+  Extend Entities, 89–90
+  Fillet, 81
+  Jog Line, 110
+  Line, 5, 22, 28
+  Linear Sketch Pattern, 95–97
+  Mirror Entities, 92–94
+  Move Entities, 100
+  Offset Entities, 90–92
+  Parabola, 76–77
+  Parallelogram, 59
+  Partial Ellipse, 75–76
+  Perimeter Circle, 66–67
+  Point, 87
+  Polygon, 71–72
+  Rotate Entities, 103
+  Scale Entities, 103–104
+  Spline, 73
+  Split Entities, 106–109
+  Straight slot, 61–62
+  Stretch Entities, 104–106
+  Tangent Arc, 68–69
+  Text, 84–87
+  Trim Entities, 88
+Smart Dimension, 6, 8, 11–12, 17, 23, 387, 451, 455–457
+              Smart Fasteners, 398–400
+              Standard 3 View, 249
+              Top View, 20
+              Undo, 23
+              View Orientation, 19–20, 33
+    Top sketch plane, 3, 4
+    Top View tool, 20
+    torsional springs, drawing, 184–187
+    transition fit, 539
+    trimming, entities, 88
+
+
+U
+    Undo tool, 23
+    unidirectional dimensioning, 462
+    unilateral tolerance, 519–520
+    units, 14–15, 461–462. See also English units; metric units
+
+
+V
+    vertex chamfer, 155–156
+    View Orientation tool, 19–20, 33
+    View Selector cube, 19–20
+    views
+              auxiliary, drawing, 262–266
+              broken, 259–261
+              detail, drawing, 261–262
+              orthographic, 229
+                 ANSI standards, 229
+                 compound lines, 237
+                 first-angle projection, 229–230, 243, 266–268
+                 hidden lines, 234–235
+                 moving, 249
+                 normal surfaces, 233–234
+                 oblique surfaces, 238
+                precedence of lines, 235–236
+                side view orientations, 231–232
+                slanted surfaces, 236–237
+                third-angle projection, 229–230, 231, 243
+             section, 250–251
+                aligned, 258–259
+                changing the style, 257
+                drawing, 252–257
+         virtual condition, 556, 578–579
+             calculating for the hole, 579
+             calculating for the shaft, 579
+
+
+W
+    washers, 393–394
+    whole depth, 655
+    working depth, 655
+    Wrap tool, 191–194
+    wrapping text, 87
+
+
+X-Y-Z
+    zero limit, 521
+    zooming, rectangles, 19
+

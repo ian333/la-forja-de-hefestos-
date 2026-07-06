@@ -1,0 +1,1411 @@
+{
+ "chapters": [
+  {
+   "capitulo": "Capitulo 1 — Surface Modeling (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "superficies",
+   "relevanciaMolde": "ALTA. Este capitulo es la materia prima del evaluador de molde de La Forja. Aporta directo: (1) PARTING SURFACE: el libro dice explicito que Radiate Surface \"is generally used in mold design as parting surface for extracting the core and cavity\" — radia una hoja desde la parting line / split line, paralela a un plano de referencia, a una Radiate Distance. (2) CORE/CAVITY EXTRACTION: Knit Surface se describe textual como \"widely used for extracting core and cavity while designing a mold\" — coses las caras de la pieza + la parting surface en una sola hoja estanca y luego con Create solid (en Thicken) la conviertes en el bloque del que sacas core y cavity. (3) SHUT-OFF: Planar Surface y Filled Surface tapan aberturas/agujeros pasantes para cerrar el volumen antes de partir; Delete Hole y Untrim tambien tapan huecos para hacer estanca la cavidad. (4) PARTIR EL BLOQUE: Cut With Surface y Thickened Cut usan la parting surface como cuchillo para separar el bloque solido en mitades, y el dialogo Bodies to Keep elige que mitad es core y cual cavity. (5) Offset Surface da la cara desplazada (holgura/contraccion local). (6) Mid-Surface da la superficie media entre dos caras paralelas: insumo para evaluar espesor de pared. NO cubre: Draft Analysis, Parting Line tool dedicada, Tooling Split ni Scale (factor de contraccion) — esos viven en el modulo Mold Tools, no en este capitulo; aqui se construye la geometria del molde a mano con superficies genericas.",
+   "conceptos": [
+    "Superficie = geometria de espesor cero: no tiene masa ni propiedades de masa y no admite vista de seccion; por eso el flujo SIEMPRE termina convirtiendo la(s) superficie(s) en solido (Thicken o Create solid).",
+    "Para que sirven: modelar formas complejas (carcasas, cubiertas organicas) que el solido directo no logra, y extraer/manipular caras de un solido existente.",
+    "Flujo canonico de modelado por superficies: construir hoja por hoja (extrude/revolve/loft/boundary/planar) -> recortar entre hojas (trim mutuo) -> coser todo en una sola hoja (knit) -> redondear (fillet) -> dar espesor (thicken). Regla dura del libro: para dar espesor a un modelo de varias superficies, PRIMERO hay que coserlas (knit).",
+    "Loft de superficie: todas las secciones deben ser del mismo tipo — todas abiertas o todas cerradas; NO se puede mezclar seccion abierta con cerrada.",
+    "Boundary Surface: superficie de alta calidad con continuidad de curvatura, definida por curvas en 2 direcciones; los tipos de tangencia (None / Direction Vector / Normal To Profile / Tangency To Face / Curvature To Face) controlan como empalma con superficies vecinas. Para cerrar una boundary surface se necesitan >=3 secciones y angulo >180 grados.",
+    "Diferencia Planar vs Fill: la planar exige entidades de frontera COPLANARES; la fill (Filled Surface) parchea N lados aunque las curvas/aristas sean 3D y no coplanares.",
+    "Curvature Control de la Fill Surface: Contact (solo dentro de la frontera), Tangent (mantiene tangencia con aristas vecinas), Curvature (continuidad de curvatura). Mismo concepto de continuidad G0/G1/G2 aplicado a parches.",
+    "Trim: dos modos — Standard (una superficie/sketch/arista actua de cuchillo y eliges piezas a conservar o quitar) y Mutual (dos superficies se recortan entre si). Opciones de extension del corte: Natural (extiende la split line tangente a la frontera) vs Linear (la extiende recta).",
+    "Untrim: rellena la porcion recortada extendiendo la superficie; por caras (All/Internal/External edges) o por aristas (Extend edges / Connect endpoints). Util para reconstruir una hoja completa.",
+    "Knit: solo cose superficies/caras EN CONTACTO (no disjuntas); usa una tolerancia de cosido — gaps menores que la tolerancia se cierran. Create solid convierte la hoja cerrada en solido; Merge entities funde las caras.",
+    "Offset: una hoja a distancia constante; si una cara falla el offset, el PropertyManager la lista (Remove All Failing Faces).",
+    "Fillet de superficie: solo se puede filetear la arista creada en la INTERSECCION de dos superficies — antes de filetear, hay que coserlas (knit). Face fillet pide direccion; opciones Trim and attach (recorta+cose en una sola hoja) vs Don't trim or attach (fillet como hoja nueva).",
+    "Mid-Surface: superficie media entre dos caras paralelas (o dos caras curvas concentricas), posicionable por porcentaje desde la primera cara; Find Face Pairs detecta pares automaticamente por umbral de espesor de pared.",
+    "Thicken: dos modos — anadir espesor de pared a una hoja (elige lado: Side 1/Side 2/ambos) o solidificar una hoja cerrada y cosida (Create solid from enclosed volume).",
+    "Delete Face: tres modos — Delete (borra y convierte el solido en superficie), Delete and Patch (borra y reconstruye la cara), Delete and Fill (varias caras -> una sola). Replace Face: sustituye caras de un solido por una superficie, anadiendo o quitando material para que el solido tome la forma de la superficie.",
+    "Radiate: la hoja radiada sale SIEMPRE paralela al plano/cara de referencia (Radiate Direction Reference), a lo largo de una arista o split line, a una Radiate Distance; Propagate to tangent faces la propaga por aristas tangentes."
+   ],
+   "flujoHumano": [
+    "EXTRUDE: dibuja croquis (abierto o cerrado) en un plano -> Surfaces CommandManager > Extruded Surface -> en Surface-Extrude PropertyManager elige End Condition en Direction 1/2 y profundidad (o arrastra el handle) -> OK. (Variante: sin croquis, ALT+clic en una cara 2D para extruir todas sus aristas.)",
+    "REVOLVE: dibuja croquis + una linea de centro (centerline) -> Revolved Surface -> en Surface-Revolve elige Revolve Type (p.ej. Mid Plane) y el angulo (p.ej. 180 o 270) -> OK.",
+    "SWEEP: dibuja croquis de perfil + croquis de trayectoria (path) -> Swept Surface -> selecciona el perfil, luego el path (opcional: guide curves; o Circular Profile, que solo pide el path) -> OK.",
+    "LOFT: crea >=2 secciones (todas abiertas o todas cerradas) en planos -> Lofted Surface -> selecciona las secciones en orden (opcional: centerline o guide curves) -> OK.",
+    "BOUNDARY: prepara curvas -> Boundary Surface -> selecciona curvas de Direction 1 (ordenalas con Move Up/Down), luego clic en Curves de Direction 2 y selecciona; ajusta Tangent Type por curva, Trim by direction 1/2, Merge tangent faces; revisa con Zebra stripes / Curvature combs -> OK.",
+    "PLANAR: dibuja croquis cerrado coplanar o selecciona aristas coplanares -> Planar Surface -> entidades llenan Bounding Entities -> OK.",
+    "FILL: selecciona aristas/croquis/curvas 3D que cierren un contorno -> Filled Surface -> ajusta Curvature Control (Contact/Tangent/Curvature) por arista (o Apply to all edges), opcional Constraint Curves -> OK.",
+    "RADIATE (parting): Radiate Surface -> selecciona el plano/cara de referencia paralela (Radiate Direction Reference) -> selecciona las aristas o split line (Edges To Radiate) -> fija Radiate Distance, activa Propagate to tangent faces -> OK.",
+    "OFFSET: Offset Surface -> selecciona la cara/superficie -> fija Offset Distance (Flip si hace falta) -> OK.",
+    "TRIM standard: Trim Surface -> Trim Type=Standard -> selecciona la superficie/sketch/arista cuchillo -> Keep selections (o Remove) -> clic en las piezas a conservar -> OK. TRIM mutual: Trim Type=Mutual -> selecciona las dos superficies -> selecciona piezas a conservar -> OK.",
+    "UNTRIM: Untrim Surface -> selecciona cara (Face untrim type: All/Internal/External edges) o arista (Edge untrim type: Extend edges / Connect endpoints) -> Merge with original / Distance % -> OK.",
+    "EXTEND: Extend Surface -> Extension Type=Same surface o Linear -> selecciona arista o cara -> End Condition (Distance / Up to point / Up to surface) -> OK.",
+    "KNIT: Knit Surface -> selecciona todas las superficies en contacto -> fija Knitting tolerance, marca gaps en el list box, opcional Create solid / Merge entities -> OK.",
+    "FILLET de superficie: knit primero las dos superficies -> Fillet -> selecciona la arista de interseccion -> Radius -> (face fillet: Trim and attach o Don't trim) -> OK.",
+    "MID-SURFACE: Mid-Surface -> Find Face Pairs (o selecciona caras paralelas a mano) -> ajusta Position % -> OK.",
+    "DELETE HOLE: selecciona la arista del contorno cerrado -> Delete Hole -> OK (parchea manteniendo tangencia/curvatura).",
+    "REPLACE FACE: Replace Face -> selecciona cara objetivo (Target faces) -> clic en Replacement surface(s) y selecciona la superficie -> OK.",
+    "DELETE FACE: Delete Face -> selecciona cara(s) -> elige Delete / Delete and Patch / Delete and Fill -> OK.",
+    "THICKEN: Knit todo primero -> Thicken -> selecciona la superficie, fija Thickness, elige lado (Thicken Side 1/2/ambos) o, si la hoja es cerrada, marca Create solid from enclosed volume -> OK.",
+    "CUT WITH SURFACE: con solido + superficie que lo cruzan -> Cut With Surface -> selecciona la superficie de corte, Flip Cut para el lado -> si parte en varios cuerpos aparece Bodies to Keep (All bodies / Selected bodies) -> OK.",
+    "THICKENED CUT: solido + superficie intersecando -> Thickened Cut -> selecciona la superficie, define lado y espesor del corte -> Bodies to Keep si hay varios -> OK.",
+    "TUTORIAL completo (flujo molde-like): revolve base 180 -> extrude segunda hoja -> trim mutuo -> fillet R5 -> plano offset 40mm -> Project Curve sobre la base -> loft entre curva proyectada y croquis -> planar para cerrar arriba -> trim de la base con el loft -> knit base+loft+planar -> fillets -> thicken 1mm."
+   ],
+   "herramientasUI": [
+    "Surfaces CommandManager (pestana que se activa con clic derecho > Tabs > Surfaces)",
+    "Extruded Surface / Surface-Extrude PropertyManager",
+    "Revolved Surface / Surface-Revolve PropertyManager",
+    "Swept Surface / Surface-Sweep PropertyManager (Circular Profile, guide curves)",
+    "Lofted Surface / Surface-Loft PropertyManager",
+    "Boundary Surface / Boundary-Surface PropertyManager (Tangent Type, Curve Influence Type, Zebra stripes, Curvature combs)",
+    "Planar Surface PropertyManager (Bounding Entities)",
+    "Filled Surface / Fill Surface PropertyManager (Curvature Control: Contact/Tangent/Curvature, Constraint Curves, Optimize surface)",
+    "Radiate Surface PropertyManager (Radiate Direction Reference, Edges To Radiate, Radiate Distance, Propagate to tangent faces)",
+    "Offset Surface PropertyManager (Offset Distance, Flip, Remove All Failing Faces)",
+    "Trim Surface PropertyManager (Standard/Mutual, Keep/Remove selections, Surface Split Options: Natural/Linear, Split all)",
+    "Untrim Surface PropertyManager (Face/Edge untrim type, Merge with original, Exclude parent surface)",
+    "Extend Surface PropertyManager (Same surface/Linear, End Condition: Distance/Up to point/Up to surface)",
+    "Knit Surface PropertyManager (Knitting tolerance, Create solid, Merge entities)",
+    "Fillet PropertyManager para superficies (Trim and attach / Don't trim or attach)",
+    "MidSurface1 PropertyManager (Find Face Pairs, Position %, Recognition threshold)",
+    "Delete Hole PropertyManager",
+    "Replace Face1 PropertyManager (Target faces / Replacement surface(s))",
+    "Delete Face PropertyManager (Delete / Delete and Patch / Delete and Fill)",
+    "Thicken PropertyManager (Thicken Side 1/2, Create solid from enclosed volume, Merge result)",
+    "Cut-Thicken / Thickened Cut PropertyManager (Bodies to Keep)",
+    "SurfaceCut / Cut With Surface PropertyManager (Flip Cut, Bodies to Keep: All/Selected bodies)",
+    "Move/Copy Bodies, Mirror (para superficies)",
+    "Project Curve / Projected Curve PropertyManager (Curves > Project Curve, Sketch on faces)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "surfaceExtrude(sketch, dir, end)",
+     "queHace": "Extruir un croquis abierto/cerrado a hoja de espesor cero; con perfil abierto da una hoja, cerrado da un tubo abierto. Mapea a BRepPrimAPI_MakePrism sobre el wire (no sobre face) o a un sweep lineal del edge.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "surfaceRevolve(sketch, axis, angle, midplane)",
+     "queHace": "Revolucionar croquis/centerline a hoja; reusar el revolve solido pero quedarse con caras. OCCT BRepPrimAPI_MakeRevol del wire.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "surfaceSweep(profile, path, guides?, circularProfile?)",
+     "queHace": "Barrer perfil por trayectoria con curvas guia opcionales o perfil circular implicito. OCCT BRepOffsetAPI_MakePipeShell.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "surfaceLoft(sections[], guides?, centerline?)",
+     "queHace": "Interpolar hoja entre >=2 secciones (validar todas abiertas o todas cerradas). OCCT BRepOffsetAPI_ThruSections con makeSolid=false.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "boundarySurface(curvesDir1[], curvesDir2[], tangentTypes)",
+     "queHace": "Parche en 2 direcciones con continuidad de curvatura y control de tangencia por curva. Geom_BSplineSurface por Gordon/Coons; lo mas duro del capitulo.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "planarSurface(coplanarEdgesOrSketch)",
+     "queHace": "Tapa plana desde aristas/croquis coplanares (validar coplanaridad). OCCT BRepBuilderAPI_MakeFace de un wire planar. Clave para shut-off del molde.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "fillSurface(boundaryEdges[], curvatureControl, constraintCurves?)",
+     "queHace": "Parche N-lados sobre aristas/curvas 3D no coplanares con continuidad Contact/Tangent/Curvature. OCCT GeomPlate (GeomPlate_BuildPlateSurface) o BRepFill_Filling. Insumo de shut-off complejo.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "radiateSurface(refPlane, edgesOrSplitLine, distance, propagateTangent)",
+     "queHace": "Generar la PARTING SURFACE: barrer cada arista en direccion paralela al plano de referencia a una distancia. Mapea a: para cada edge, direccion = proyeccion del eje del refPlane, extruir el edge esa distancia (prism del edge). Pieza central del pipeline de molde.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "offsetSurface(face, distance, flip)",
+     "queHace": "Desplazar cara/hoja a distancia constante con manejo de caras fallidas. OCCT BRepOffsetAPI_MakeOffsetShape / BRepOffset. Holgura y espesor.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "trimSurface(target, tool, mode=standard|mutual, keepPieces)",
+     "queHace": "Recortar hoja con superficie/sketch/arista; modo mutuo recorta ambas; permitir elegir piezas a conservar/quitar (Natural/Linear). OCCT BRepAlgoAPI_Section + split de caras / BOPAlgo_Splitter. Muy usado en el flujo.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "untrimSurface(faceOrEdges, mode, mergeOriginal)",
+     "queHace": "Reconstruir la porcion recortada extendiendo la geometria subyacente (All/Internal/External edges o Extend/Connect). Reusa la Geom_Surface base y rehace la cara sin los wires de recorte.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "extendSurface(faceOrEdge, type=same|linear, end)",
+     "queHace": "Prolongar hoja por arista/cara, manteniendo curvatura (same) o recta tangente (linear), hasta distancia/punto/superficie. OCCT BRepOffsetAPI_ExtendSurface o extension del Geom_BSplineSurface.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "knitSurfaces(surfaces[], tolerance, createSolid, merge)",
+     "queHace": "Coser hojas en contacto en una sola; si esta cerrada, generar solido. EXTRACCION CORE/CAVITY. OCCT BRepBuilderAPI_Sewing + BRepBuilderAPI_MakeSolid. Pieza clave del molde.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "filletSurface(intersectionEdges, radius, trimAndAttach)",
+     "queHace": "Redondear aristas de interseccion entre superficies cosidas; opcion de recortar+coser o dejar hoja nueva. OCCT BRepFilletAPI_MakeFillet (requiere shell cosido).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "midSurface(face1, face2, position%) + findFacePairs(threshold)",
+     "queHace": "Superficie media entre caras paralelas/concentricas; detectar pares por espesor. Insumo del analisis de espesor de pared. Geometricamente: promedio de las dos Geom_Surface o desfase 50%.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "deleteHole(closedEdges[])",
+     "queHace": "Tapar agujeros/contornos cerrados de una hoja manteniendo tangencia. OCCT: quitar el inner wire de la face y reconstruir. Util para sellar la cavidad.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "replaceFace(solid, targetFaces[], replacementSurface)",
+     "queHace": "Sustituir caras de un solido por una superficie, anadiendo/quitando material. OCCT BRepAlgoAPI con la hoja como herramienta + reconstruccion del shell.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "deleteFace(faces[], mode=delete|patch|fill)",
+     "queHace": "Borrar caras (convierte solido en hoja), o borrar+parchear, o fundir varias en una. OCCT BRepAlgoAPI / ShapeUpgrade_RemoveFace + GeomPlate para el patch.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "thicken(surface, thickness, side, createSolidEnclosed?)",
+     "queHace": "Dar espesor de pared a una hoja (lado 1/2/ambos) o solidificar hoja cerrada. OCCT BRepOffsetAPI_MakeThickSolid / MakeOffsetShape Skin. Cierre del flujo a solido.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "thickenedCut(solid, surface, side, thickness)",
+     "queHace": "Cortar un solido engrosando una superficie de corte. OCCT: thicken de la hoja -> BRepAlgoAPI_Cut.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "cutWithSurface(solid, surface, flip, bodiesToKeep)",
+     "queHace": "Partir un solido con una superficie como cuchillo y elegir que cuerpos conservar. PARTIR EL BLOQUE EN CORE/CAVITY. OCCT BRepAlgoAPI_Splitter / Section + seleccion de solidos.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "projectCurve(sketch, targetFaces)",
+     "queHace": "Proyectar un croquis sobre caras de una superficie para generar curvas guia (usado en los tutoriales para loft y dip). OCCT BRepProj_Projection.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "curvatureInspect(surface, zebra|combs)",
+     "queHace": "Visualizar continuidad (zebra stripes, peines de curvatura) para juzgar calidad y empalmes de superficie. Capa de render R3F + analisis de normales/curvatura, no kernel.",
+     "dificultad": "medio"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OpenCascade) WASM — ya es el kernel de La Forja; cubre casi todo el capitulo: BRepPrimAPI_MakePrism/MakeRevol (extrude/revolve surface), BRepOffsetAPI_MakePipeShell (sweep), BRepOffsetAPI_ThruSections (loft), BRepBuilderAPI_MakeFace (planar), BRepFill_Filling / GeomPlate_BuildPlateSurface (fill/boundary/patch de delete-face), BRepOffsetAPI_MakeOffsetShape y BRepOffset (offset), BRepBuilderAPI_Sewing + MakeSolid (knit/create solid), BRepFilletAPI_MakeFillet (fillet de superficie), BRepOffsetAPI_MakeThickSolid (thicken), BRepAlgoAPI_Splitter/Section/Cut y BOPAlgo_Splitter (trim mutuo, cut with surface, replace face), BRepProj_Projection (project curve), ShapeUpgrade/ShapeFix (untrim, reparar shells).",
+    "planegcs (solver de restricciones 2D de FreeCAD, compilable a WASM) — para el croquis acotado de cada perfil/seccion/path antes de extruir/revolucionar/loftear; ya alineado con el roadmap del sketcher de La Forja.",
+    "manifold / CSG — alternativa robusta y rapida para las booleanas de malla (cut with surface, partir core/cavity) si OCCT BOP falla o para preview; complementa, no reemplaza, al B-Rep.",
+    "three.js / R3F + drei — visualizacion de superficies, zebra stripes y peines de curvatura (Curvature Display) que el libro usa para juzgar calidad; matcap/normal-shading para inspeccion.",
+    "opencascade.js (bindings JS/WASM de OCCT) — el wrapper concreto para invocar todo lo anterior desde el frontend por clicks."
+   ]
+  },
+  {
+   "capitulo": "Capitulo 2 — Working with Blocks (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "croquis (bloques de croquis reutilizables y mecanismos 2D)",
+   "conceptos": [
+    "Un bloque es un conjunto de entidades de croquis agrupadas como una sola entidad; sirve para prototipar mecanismos complejos en 2D y verificar su funcionamiento ANTES de modelar el 3D (barato y rapido).",
+    "Regla clave de diseno: cada entidad debe convertirse en un bloque SEPARADO si quieres movimiento relativo entre ellas; si metes todo en un solo bloque la geometria queda rigida (sin grados de libertad).",
+    "Un bloque tiene un PUNTO DE INSERCION (insertion point) que define donde se ancla al insertarlo; el cursor hace snap a ese punto y se generan relaciones entre el punto y la geometria.",
+    "Los bloques son reutilizables: se guardan como archivo .sldblk y se pueden insertar multiples copias, con escala y rotacion parametricas, y enlazar al archivo original (Link to file) para propagar cambios.",
+    "Mecanismos cinematicos se arman aplicando RELACIONES entre bloques: Traction (rueda-rueda o cremallera-pinon: traslacion lineal <-> giro), Make Path + Tangent (leva-seguidor), Coincident/Concentric para pivotes.",
+    "La relacion Traction crea un mecanismo driver-driven (motriz-conducido): la razon de velocidades sale de los diametros de los circulos/poleas.",
+    "Una leva (cam) es un elemento rotatorio que da movimiento reciprocante/oscilante a un seguidor (follower); el perfil de leva debe ser una sola cadena continua (entidades coincidentes extremo-a-extremo) para definir un Path.",
+    "Belt/Chain modela poleas/engranes/cadenas: el movimiento de las poleas se acopla automaticamente segun sus diametros; los miembros de la correa deben ser circulos o arcos.",
+    "Del 2D al 3D: un bloque se convierte en parte (Make Part from Block); queda como componente virtual (entre corchetes/parentesis) guardado dentro del ensamble hasta que lo guardas externamente.",
+    "La parte derivada del bloque puede quedar coplanar al plano del bloque (On Block) o proyectada y libre normal al plano (Project).",
+    "El flujo completo de diseno: croquis -> bloque -> insertar en Layout -> relaciones cinematicas -> verificar movimiento arrastrando -> convertir a partes -> extruir -> ensamblar con mates -> animar con motor."
+   ],
+   "flujoHumano": [
+    "1. New > Part > entrar al entorno de croquis (Sketch).",
+    "2. Dibujar la geometria de cada eslabon con las herramientas del Sketch CommandManager (ej. vista frontal del crank/manivela).",
+    "3. (Para movimiento) seleccionar UNA entidad y Make Block (Blocks toolbar o Tools>Blocks>Make); en el Make Block PropertyManager expandir Insertion Point, arrastrar el manipulador al punto de anclaje, OK. Repetir por entidad.",
+    "4. (Para reuso) seleccionar el croquis y Save Sketch as Block (Blocks toolbar) o Tools>Blocks>Save; nombrar (Crank, Piston_rod, etc.) y guardar como .sldblk. Cerrar sin guardar el part.",
+    "5. Repetir 1-4 para cada eslabon del mecanismo en croquis separados.",
+    "6. New > Assembly; cerrar el dialogo Open; en Begin Assembly PropertyManager elegir Create Layout -> entra al entorno Layout.",
+    "7. Orientar el plano: View (Heads-Up) > View Orientation > Normal To.",
+    "8. Insert Block (Blocks toolbar) > en Insert Block PropertyManager > Browse > elegir el .sldblk > Open; el bloque se pega al cursor; click para colocar; right-click > OK. Repetir por bloque.",
+    "9. Aplicar relaciones cinematicas: CTRL-seleccionar dos entidades (ej. centro del circulo inferior del Crank y el origin) -> Properties PropertyManager -> elegir el boton de relacion en Add Relations (Coincident, Concentric, Traction, Tangent, etc.).",
+    "10. Para Traction (cremallera-pinon o poleas): CTRL-seleccionar el bloque circular + la linea vertical (o dos circulos) -> Properties PropertyManager -> Traction -> click fuera para salir.",
+    "11. Para leva-seguidor: seleccionar el arco inferior de la leva -> Tools>Sketch Tools>Make Path -> Path Properties PropertyManager -> Edit Path -> seleccionar las entidades coincidentes que forman la cadena -> OK; luego Tangent entre leva y seguidor.",
+    "12. Verificar el movimiento: arrastrar con el mouse un punto/eslabon y observar la cinematica (lineal->giro, etc.).",
+    "13. Make Part from Block (Layout CommandManager) -> seleccionar todos los bloques -> en Block to Part Constraint dejar On Block (coplanar) o Project -> OK; quedan como componentes virtuales en el FeatureManager Design Tree.",
+    "14. Rebuild (Menu Bar) para actualizar.",
+    "15. Seleccionar un bloque/parte en el design tree -> Edit Part (pop-up toolbar) -> entra al Part environment -> Features tab.",
+    "16. Extruded Boss/Base -> Extrude PropertyManager -> seleccionar el croquis -> Direction 1: End Condition Blind, Depth (ej. 10 mm), Reverse Direction si hace falta -> OK.",
+    "17. Para extruir contornos especificos (agujeros, salientes): seleccionar de nuevo el croquis, Extruded Boss/Base, expandir Selected Contours, elegir el contorno resaltado; usar Direction 1 + Direction 2 o Mid Plane con sus profundidades -> OK.",
+    "18. Confirmation corner para salir del Part; Rebuild.",
+    "19. Ensamblar (Assembly tab): Fix la pieza base; Mate PropertyManager -> Concentric entre caras cilindricas (pivotes), Coincident entre planos -> Add/Finish Mate por cada mate.",
+    "20. Animar: Motion Study 1 tab -> MotionManager -> Type of Study = Animation -> Motor -> Motor PropertyManager (Rotary Motor por defecto) -> seleccionar cara/circulo como ubicacion y direccion -> OK -> Calculate -> Play.",
+    "21. Guardar componentes virtuales externos: right-click > Save Part (in External File) por cada uno; luego Save / Save All (Save externally - specify paths)."
+   ],
+   "herramientasUI": [
+    "Make Block (Blocks toolbar / Tools>Blocks>Make)",
+    "Make Block PropertyManager (rollouts Block Entities, Insertion Point)",
+    "Save Block / Save Sketch as Block (Blocks toolbar / Tools>Blocks>Save, extension .sldblk)",
+    "Insert Block (Blocks toolbar)",
+    "Insert Block PropertyManager (rollouts Blocks to Insert con Block List, Browse, Link to file; Parameters con Block Scale y Block Rotation spinners)",
+    "Edit Sketch PropertyManager",
+    "Edit Block (Blocks toolbar / shortcut menu)",
+    "Add/Remove (Add/Remove Entities PropertyManager)",
+    "Rebuild (Blocks toolbar / Tools>Blocks>Rebuild / Menu Bar)",
+    "Explode Block (Blocks toolbar / Tools>Blocks>Explode)",
+    "Belt/Chain (Blocks toolbar / Tools>Sketch Entities>Belt/Chain) y Belt/Chain PropertyManager (rollouts Belt Members con Move Up/Down y Flip belt side; Properties con Driving, Use belt thickness, Engage belt)",
+    "Make Path (Tools>Sketch Tools>Make Path), Path Properties PropertyManager, Edit Path, Path PropertyManager",
+    "Properties PropertyManager > Add Relations (Traction, Coincident, Tangent, Concentric)",
+    "Design Library task pane > Add to Library (Add to Library PropertyManager, File type SOLIDWORKS Blocks *.sldblk)",
+    "Begin Assembly PropertyManager > Create Layout (entorno Layout)",
+    "Layout CommandManager > Make Part from Block (Make Part From Block PropertyManager, rollouts Selected Blocks y Block to Part Constraint con botones On Block / Project)",
+    "Extruded Boss/Base > Extrude / Boss-Extrude PropertyManager (Direction 1, Direction 2, End Condition Blind, Mid Plane, Depth spinner, Reverse Direction, Selected Contours, Thin Feature)",
+    "Mate PropertyManager (Concentric, Coincident; Add/Finish Mate); Fix (shortcut menu)",
+    "MotionManager (Motion Study 1 tab) > Motor (Motor PropertyManager, Rotary Motor, Motor Direction/Location, Calculate, Play, Stop)",
+    "View (Heads-Up) toolbar > View Orientation > Normal To; Visibility Off > View Sketches"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "makeBlock(entities, insertionPoint)",
+     "queHace": "Agrupa entidades de croquis seleccionadas en un objeto bloque con id, nombre y punto de insercion; mantiene su geometria relativa interna como rigida. Estructura de datos sobre el modelo de croquis, no requiere kernel.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "saveBlock / loadBlock (.forjablk JSON)",
+     "queHace": "Serializa un bloque (entidades + restricciones internas + punto de insercion) a archivo reutilizable y lo recarga; soporta Link to file (referencia viva que propaga ediciones).",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "insertBlock(block, plane, scale, rotation)",
+     "queHace": "Instancia una copia del bloque en el croquis activo aplicando transform afin 2D (escala uniforme + rotacion + traslacion al click); permite copias multiples. Pura algebra 2D.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "editBlock / addRemoveEntities / explodeBlock",
+     "queHace": "Entra al contexto del bloque para modificar/agregar/quitar entidades, o disuelve el bloque de vuelta a entidades de croquis sueltas. Manipulacion del grafo de croquis.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "blockConstraintSolver (grados de libertad entre bloques)",
+     "queHace": "Trata cada bloque como cuerpo rigido 2D (3 GDL: x,y,theta) y resuelve restricciones inter-bloque (coincident, concentric) como un sistema cinematico planar. Mapea a un solver de restricciones rigido (planegcs sobre puntos representativos del bloque).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "tractionRelation(circleA, circleB | line)",
+     "queHace": "Acopla giro-giro (poleas/engranes, ratio = rA/rB) o giro-traslacion (pinon-cremallera): liga la velocidad angular/lineal de un bloque a la del otro. Restriccion de rodadura sin deslizamiento.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "makePath(entities) + tangentToPath",
+     "queHace": "Une arcos/lineas coincidentes extremo-a-extremo en una sola curva parametrica (cadena) y mantiene un punto del seguidor tangente a esa curva: mecanismo leva-seguidor. Requiere parametrizacion de la curva + restriccion tangente movil.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "beltChain(pulleys[], thickness, driving)",
+     "queHace": "Genera la geometria de correa (tangentes externas/internas entre circulos + arcos de envoltura) y acopla los giros segun diametros; flip de lado por polea. Geometria de tangentes comunes a circulos + cinematica.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "makePartFromBlock(block, mode=onBlock|project)",
+     "queHace": "Convierte un bloque 2D en un perfil de parte: lo ancla coplanar (On Block) o lo proyecta libre normal al plano (Project), listo para extruir. Puente croquis->feature.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "extrudeProfile(sketch, dir1, dir2|midplane, depth, selectedContour)",
+     "queHace": "Extrusion del perfil del bloque a solido; soporta Direction 1/2, Mid Plane, Reverse, y seleccion de contorno especifico (agujero/region) dentro de un croquis con multiples lazos. Mapea a OCCT BRepPrimAPI_MakePrism / extrude de region cerrada.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "assemblyMates(concentric, coincident, fix)",
+     "queHace": "Ensambla las partes 3D resultantes con mates (concentric entre ejes/caras cilindricas, coincident entre planos, fix de base). Solver de ensamble 3D (6 GDL por cuerpo).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "motionStudy(rotaryMotor, calculate, play)",
+     "queHace": "Aplica un motor rotatorio a un eslabon y simula/anima la cinematica del mecanismo en el tiempo; reproduce el movimiento. Integrador cinematico sobre el solver de mates.",
+     "dificultad": "dificil"
+    }
+   ],
+   "reutilizarOSS": [
+    "planegcs (FreeCAD sketcher GCS) compilado a WASM: resolver restricciones de croquis 2D y, tratando cada bloque como cuerpo rigido (puntos/lineas representativas), las relaciones inter-bloque (coincident, concentric, traction como rodadura).",
+    "OCCT (OpenCascade) WASM: Make Part from Block -> extrude del perfil (BRepPrimAPI_MakePrism), seleccion de contornos cerrados, y los solidos 3D resultantes.",
+    "Para la cinematica/motion study: un solver de restricciones planar propio o usar planegcs en modo cinematico; libs JS de constraint-based rigid bodies (ej. matter.js solo como referencia de cuerpos rigidos, no fisico) para arrastrar y previsualizar.",
+    "Geometria de tangentes comunes a circulos / envoltura de correa: implementable con geometria analitica pura (no necesita kernel) — calcular tangentes externas e internas entre pares de circulos."
+   ],
+   "relevanciaMolde": "Media e indirecta. El capitulo NO toca draft/parting/tooling-split/scale ni superficies; trata bloques de croquis 2D y mecanismos. Su aporte al pipeline del molde de plastico es de INFRAESTRUCTURA de croquis reutilizable, no de evaluacion directa de moldeabilidad: (1) los bloques de croquis = perfiles 2D parametricos guardables/reinsertables que sirven como biblioteca de secciones para piezas a moldear (insercion con escala/rotacion); (2) Make Part from Block + Extrude es el puente croquis->solido que el evaluador necesita aguas arriba para tener un solido sobre el cual luego correr draft analysis, parting line y tooling split (esos viven en capitulos de superficies/moldes, no aqui); (3) la nocion de componente virtual y la relacion Traction/Belt (cinematica) son relevantes para mecanismos, no para el core/cavity. En resumen: alimenta la etapa de modelado del perfil/solido base, no las etapas core/cavity/parting/draft/scale del evaluador del molde."
+  },
+  {
+   "capitulo": "Capitulo 3 — Sheet Metal Design (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "chapa (sheet metal)",
+   "relevanciaMolde": "baja-media. Este capitulo NO toca directamente el pipeline core/cavity/parting/draft/scale del molde de inyeccion (es chapa metalica, no plastico). Lo que SI aporta al evaluador del molde es transversal: (1) el concepto de FLAT PATTERN = desplegar/aplanar una superficie doblada conservando longitud sobre el eje neutro (bend allowance, K-factor) es la misma matematica de desarrollo de superficies que sirve para nesting y para validar superficies regladas/desarrollables; (2) el par UNFOLD/FOLD (estado plegado <-> estado plano deterministico por cara fija) es analogo a generar variantes geometricas reproducibles, util para el cache deterministico de variantes que pide el proyecto; (3) la nocion de RELIEF (alivio para evitar desgarre en esquinas/dobleces) es la prima del fillet/draft que evita undercuts y concentracion de esfuerzo en el molde — alimenta al validador de manufacturabilidad (esquinas que no se pueden fabricar). (4) RIP/SHELL (vaciar un solido dejando pared delgada y rajar aristas) reutiliza exactamente las mismas operaciones de kernel (shell con cara removida, offset de superficie) que se usan al fabricar cavidades de pared delgada. En resumen: comparte motor (shell, offset, desarrollo de superficie, relieve de esquina) pero no el pipeline de molde propiamente dicho.",
+   "conceptos": [
+    "Flat pattern (patron plano): toda pieza de chapa doblada debe poder desplegarse a una lamina plana; ese desarrollo define el tamano de la lamina cruda y es el insumo #1 del taller para corte/punzonado antes de doblar.",
+    "Eje neutro y K-factor: K = distancia(cara_interna_doblez -> eje_neutro) / espesor. El eje neutro es la fibra que ni se estira ni se comprime; controla cuanto material 'real' ocupa un doblez al desplegarse.",
+    "Bend allowance: longitud de arco del doblez medida sobre el eje neutro. Es lo que se suma a las longitudes planas para obtener la longitud total desplegada.",
+    "Bend deduction (compensacion): diferencia entre la suma de longitudes de flange y la longitud plana total; cuanto se 'estiro' la cara externa. allowance y deduction son dos formas equivalentes de calcular el desarrollo.",
+    "El espesor es UNICO y global para toda la pieza de chapa: cualquier feature (tab, flange) hereda el espesor definido en el base flange; no se edita por feature.",
+    "Bend radius: radio interno de doblez; parametro global heredado del base flange, sobreescribible por feature (custom bend allowance).",
+    "Relief (alivio): pequeno corte que se agrega cerca del doblez para que la lamina no se desgarre al doblar. Tipos: Rectangular, Tear (rasgado), Obround; con relief ratio que escala el tamano respecto al espesor.",
+    "Virtual sharp (vertice virtual): vertice imaginario donde se cruzarian las tangentes extendidas del radio externo (outer) o interno (inner) del doblez; sirve de origen para medir longitud de flange.",
+    "Material inside / outside / bend outside: tres maneras de posicionar el flange respecto al limite del material padre — define si la pared resultante queda dentro, fuera o el doblez arranca fuera del limite.",
+    "Corner relief / closed corner: al juntar dos paredes dobladas queda un hueco por el relieve; se puede cerrar (closed corner, faces deben ser normales entre si) o tratar el hueco en 2-bend / 3-bend corners (Suitcase cierra esquina 3-bend con forma esferica).",
+    "Normal cut: en chapa un corte debe ser NORMAL al espesor de la lamina (no normal al plano de croquis) para que el corte sea recto a traves del material doblado; de lo contrario quedan paredes oblicuas.",
+    "Cortes a traves de dobleces: para cortar cruzando un doblez hay que desplegar primero (unfold) o trabajar en el estado plano y luego replegar (fold) — un corte hecho sobre el doblez curvo no es valido geometricamente.",
+    "Tres origenes de doblez al convertir solido en chapa: sharp bends (aristas vivas), round bends (fillets con radio = radio de doblez), flat bends (creados doblando la lamina plana).",
+    "Grain direction (direccion de grano/fibra): orientacion de laminacion del material; importa para orientar el doblez y minimizar el rectangulo envolvente (bounding box) de material.",
+    "Lofted bend: transicion de chapa entre dos perfiles abiertos separados (ej. cuadrado->circulo) — base para conductos/transiciones desarrollables.",
+    "Forming tools: punzones/embosses/louvers/lances que DEFORMAN la chapa (no cortan); se definen con una cara de tope (stopping face) y caras a remover."
+   ],
+   "flujoHumano": [
+    "FLUJO A — Pieza por Base Flange (el mas usado): 1) Nuevo documento en modo Part. 2) Invocar el CommandManager 'Sheet Metal' (click derecho en pestana del CommandManager -> Sheet Metal si no aparece). 3) Elegir plano (ej. Front), entrar a croquis, dibujar el contorno (abierto o cerrado; ej. rectangulo 350x250). 4) Click en 'Base Flange/Tab' -> aparece Base Flange PropertyManager con preview. 5) Fijar Thickness (ej. 1), Bend Radius, Bend Allowance Type (K-Factor=ej.0.5 / Bend Table / Bend Allowance / Bend Deduction), Auto Relief Type (Rectangular/Tear/Obround) + Relief Ratio. 6) OK. Se crean nodos: Cut list, Sheet-Metal (parametros globales), Base-Flange1, Flat-Pattern (suprimido por defecto).",
+    "Editar parametros globales: seleccionar nodo 'Sheet-Metal' en el FeatureManager -> Edit Feature -> ajustar Bend Radius (ej. 5) -> OK. Todo feature posterior hereda esto.",
+    "Edge Flange: click 'Edge Flange' -> seleccionar arista lineal de una cara plana -> aparece preview con drag handle (longitud dinamica). Fijar Length, Angle (default 90, rango >0 y <180), Flange Position (Material Inside/Outside/Bend Outside/Bend from Virtual Sharp/Tangent to Bend), opcional Offset, opcional Trim side bends. Para perfil no completo: 'Edit Flange Profile' -> editar croquis del perfil (dialogo Profile Sketch valida) -> Finish. OK.",
+    "Tab: seleccionar cara como plano, dibujar croquis CERRADO, click 'Base Flange/Tab' -> el espesor se ajusta solo al de la lamina. Merge result marcado = fusiona; desmarcado = nuevo cuerpo (Sheet-Metal2 + entrada en Cut list).",
+    "Tab and Slot: click 'Tab and Slot' -> seleccionar Tab Edge + Tab Face + Slot Face (normal al tab) -> definir Offset (start/end), Spacing (Equal Spacing con N instancias / Spacing Length), Tabs (Tab Length, edge sharp/fillet/chamfer), Slot (offsets, corner type) -> OK. Crea tab+ranura para interbloquear cuerpos (reduce fixtures de soldadura).",
+    "Sketched Bend: seleccionar cara, entrar croquis, dibujar linea(s) como linea de doblez (sin intersectarse), click 'Sketched Bend' -> seleccionar lado de la cara que queda FIJO (esfera negra + flecha reverse), Bend position (Bend Centerline por defecto = doblez simetrico) -> OK.",
+    "Miter Flange: seleccionar plano normal a la direccion de extrusion, dibujar perfil, click 'Miter Flange' -> seleccionar arista(s) lineales continuas a las que se pega -> ajustar Rip Gap (si aborta por gap default, subirlo), Start/End Offset -> OK. Crea serie de flanges a lo largo de las aristas.",
+    "Closed Corner: Corners flyout -> 'Closed Corner' -> seleccionar cara(s) de esquina a extender (ambas deben ser normales) -> elegir Corner type -> opcional Coplanar faces, Open bend region -> OK.",
+    "Hem: click 'Hem' -> seleccionar arista en cara plana -> elegir tipo (Closed/Open/Tear Drop/Rolled) + Length/Gap/Angle/Radius, posicion Material Inside o Bend Outside, opcional Edit Hem Width (croquis de 1 solo segmento) -> OK.",
+    "Jog: seleccionar cara, dibujar 1 linea de doblez dentro/sobre la cara, click 'Jog' -> seleccionar cara fija -> Bend Radius, Jog Offset (dimension position inside/outside/overall, Fix projected length), Jog Angle (default 90) -> OK. Crea DOS dobleces (escalon).",
+    "Swept Flange: dibujar perfil en plano normal, click 'Swept Flange' -> seleccionar perfil, luego la cadena de aristas como Path -> OK.",
+    "Break Corner: Corners flyout -> 'Break-Corner/Corner-Trim' -> seleccionar aristas/caras -> Chamfer (Distance) o Fillet (Radius) -> OK.",
+    "Corner Relief: click 'Corner Relief' -> elegir 2 Bend / 3 Bend Corner -> 'Collect all corners' (o New Corner seleccionando 2 caras de doblez) -> Relief Options (Rectangular/Circular/Tear/Obround/Constant Width/Full Round/Suitcase) -> OK.",
+    "Extruded Cut en cara plana: croquis en cara, 'Extruded Cut' -> en Direction 1 opciones extra de chapa: Link to thickness (corta = espesor), Flip side to cut, Normal cut (marcado por defecto, asegura corte normal a la lamina) -> OK.",
+    "Flat Pattern: expandir nodo Flat-Pattern -> seleccionar Flat-Pattern1 -> Edit Feature -> elegir Fixed Face, opciones Merge faces / Simplify bends / Show Slit / Corner treatment / Grain Direction / Faces To Exclude -> OK. Para aplanar: click 'Flatten' (toggle) o Unsuppress sobre Flat-Pattern1.",
+    "Bend Notch (en plano): primero Flatten (debe haber >=1 doblez), click 'Bend Notch' -> seleccionar caras de doblez -> Notch type (Rectangular/Triangular/Circular) + width/depth -> OK.",
+    "FLUJO B — desde lamina plana: crear base flange con la silueta del patron plano -> dibujar TODAS las lineas de doblez en un croquis -> 'Sketched Bend' para doblar.",
+    "FLUJO C — desde Flat Part / solido: extruir croquis cerrado con espesor (Extruded Boss) -> 'Insert Bends' -> seleccionar cara/arista fija + parametros (bend allowance, relief) -> OK (avisa 'no bends found' si es plano). Quedan nodos Flatten-Bends1 / Process-Bends1. Doblar via Process Bends: expandir Process-Bends1 -> Flat-Sketch1 -> Edit Sketch -> dibujar lineas de doblez -> salir.",
+    "No Bends: toggle que regresa la pieza al estado sin dobleces (sube el rollback bar arriba de Flatten-Bends1). Util para agregar extrusiones (= espesor) que al resumir se vuelven flanges.",
+    "FLUJO D — desde solido vaciado (shell): modelar solido -> 'Shell' removiendo >=1 cara, espesor = espesor de lamina -> 'Rip' seleccionar aristas internas/externas a rajar (flechas + Rip Gap, Change Direction) -> 'Insert Bends' con cara fija -> OK. -> Flatten.",
+    "FLUJO E — Convert to Sheet Metal: solido en Part -> 'Convert to Sheet Metal' -> seleccionar cara fija -> Sheet thickness + Default radius for bends (Reverse thickness opcional) -> seleccionar aristas que representan dobleces (rip edges se detectan solas) -> Rip Sketches/Corner Defaults (gap) + Auto Relief -> OK.",
+    "Cortes a traves de dobleces (pieza base flange): 'Unfold' -> seleccionar cara fija + 'Collect All Bends' -> OK -> crear el cut (Extruded Cut, patron si aplica) -> 'Fold' -> cara fija + 'Collect All Bends' -> OK.",
+    "Cortes a traves de dobleces (pieza desde solido): rollback arriba de Process-Bends -> crear cut con 'Link to thickness' a traves del doblez -> Linear Pattern -> click derecho en LPattern -> 'Roll to End'.",
+    "Normal Cut tool: 'Normal Cut' -> agrupar caras no-normales del cut (New Group), Auto-Propagation, Edge/Curve/Face para direccion, Extent vs Offset plane -> OK (vuelve normales las paredes de cualquier cut).",
+    "Insertar Forming Tool: pestana Design Library -> nodo forming tools -> arrastrar el punzon a la cara -> Form Tool Feature PropertyManager (Flip Tool, Replace Tool) -> pestana Position para acotar -> OK.",
+    "Crear Forming Tool propio: modelar el solido del punzon -> 'Forming Tool' -> seleccionar stopping face (cara de tope) -> seleccionar Faces to Remove -> OK. Guardar como herramienta.",
+    "Drawing del flat pattern: Menu Bar -> 'Make Drawing from Part/Assembly' -> Model View PropertyManager -> en Orientation marcar 'Flat Pattern' (config DEFAULTSM-FLAT-PATTERN) -> colocar la vista. Opcional Display bounding box en propiedades de la vista."
+   ],
+   "herramientasUI": [
+    "Sheet Metal CommandManager / Sheet Metal toolbar",
+    "Base Flange/Tab (+ Base Flange PropertyManager)",
+    "Edge Flange (+ Edge-Flange PropertyManager, Edit Flange Profile, Profile Sketch dialog)",
+    "Tab and Slot (+ Tab and Slot PropertyManager)",
+    "Sketched Bend (+ Sketched Bend PropertyManager, Bend Centerline)",
+    "Miter Flange (+ Miter Flange PropertyManager, Rip Gap, Start/End Offset)",
+    "Closed Corner (Corners flyout)",
+    "Welded Corner",
+    "Break-Corner/Corner-Trim",
+    "Corner Relief (Collect all corners, Suitcase/Full Round/Constant Width)",
+    "Hem (+ Hem PropertyManager: Closed/Open/Tear Drop/Rolled, Edit Hem Width)",
+    "Jog (+ Jog PropertyManager, Fix projected length)",
+    "Swept Flange",
+    "Extruded Cut / Cut-Extrude PropertyManager (Link to thickness, Flip side to cut, Normal cut)",
+    "Normal Cut (tool dedicada + Normal Cut PropertyManager)",
+    "Lofted-Bend (+ Lofted Bends PropertyManager)",
+    "Flatten + Flat-Pattern PropertyManager (Fixed Face, Merge faces, Simplify bends, Show Slit, Corner treatment, Grain Direction, Faces To Exclude)",
+    "Bend Notch (Rectangular/Triangular/Circular)",
+    "Insert Bends (+ Bends PropertyManager, Flatten-Bends1 / Process-Bends1)",
+    "No Bends (toggle rollback)",
+    "Unfold / Fold (Collect All Bends)",
+    "Convert to Sheet Metal (+ Convert To Sheet Metal PropertyManager)",
+    "Rip (+ Rip PropertyManager, Rip Gap, Change Direction)",
+    "Shell (en Part)",
+    "Linear Pattern / Mirror (para flanges, tabs) + LPattern -> Roll to End",
+    "Forming Tool (crear) + Form Tool PropertyManager (stopping face, Faces to Remove)",
+    "Design Library task pane (insertar forming tools: embosses, louvers, lances, ribs) + Form Tool Feature / Position PropertyManager",
+    "Bend Table / K-Factor / Bend Allowance / Bend Deduction (Bend Allowance Type drop-down)",
+    "Gauge Table (Sheet Metal Gauges rollout)",
+    "Material dialog -> Sheet Metal tab (Thickness Range, custom material)",
+    "Make Drawing from Part/Assembly + Model View PropertyManager (Flat Pattern checkbox, DEFAULTSM-FLAT-PATTERN), Display bounding box"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "baseFlange(sketch2D, {thickness, bendRadius, kFactor})",
+     "queHace": "Extruye un croquis (abierto o cerrado) a una lamina de espesor uniforme; en croquis abierto agrega dobleces automaticos con el radio dado. Mapea a kernel: prism del wire por espesor (OCCT BRepPrimAPI_MakePrism) + para abierto, thick-shell del wire + fillets en aristas de union. Setea parametros globales (espesor/radio/relief) en el documento.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "edgeFlange(edge, {length, angle, position, offset, profile})",
+     "queHace": "Crea una pared doblada sobre una arista lineal de una cara plana, con angulo (0<a<180), longitud medida desde inner/outer virtual sharp o tangent bend, y posicion material-inside/outside/bend-outside. Kernel: construir el doblez (cilindro de radio r tangente a la cara) + prism del flange en el plano rotado angle; resolver el virtual sharp por interseccion de tangentes.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "bendAllowance(thickness, radius, angle, kFactor)",
+     "queHace": "Funcion PURA que calcula la longitud de arco sobre el eje neutro: BA = angle * (radius + kFactor*thickness). Tambien bendDeduction. Es el nucleo del desarrollo (flat pattern) y testeable en node sin GPU. Soporta tabla de dobleces (interpolacion) y bend table.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "flatten(body, fixedFace, {mergeFaces, simplifyBends})",
+     "queHace": "Despliega la pieza doblada a lamina plana conservando longitud sobre el eje neutro por cada doblez (usa bendAllowance). Fija una cara y rota cada doblez a plano; opcionalmente fusiona caras planas+doblez y endereza aristas curvas. Devuelve el patron plano + bounding box.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "unfold(body, fixedFace, bends) / fold(body, fixedFace, bends)",
+     "queHace": "Despliega/repliega un subconjunto de dobleces deterministicamente respecto a una cara fija (para cortar a traves de un doblez). Es flatten parametrizado por que dobleces tocar; reusa la misma transformacion de doblez->plano y su inversa.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "autoRelief(corner, {type:'rectangular|tear|obround', ratio})",
+     "queHace": "Inserta el corte de alivio en la base del doblez para evitar desgarre: rectangular/obround (escalado por ratio*thickness) o tear (rasgado). Kernel: boolean cut de un perfil de relieve posicionado en la interseccion doblez-pared.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "miterFlange(profile, edges[], {ripGap, startOffset, endOffset})",
+     "queHace": "Barre un perfil normal a la direccion de extrusion a lo largo de una cadena de aristas continuas, generando una serie de flanges con rip gap entre flanges consecutivos. Kernel: sweep del perfil + split por aristas + relieve de gap.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "sketchedBend(face, bendLines[], {fixedSide, radius, position})",
+     "queHace": "Dobla la lamina a lo largo de lineas de croquis (no intersectantes), fijando un lado. Kernel: particionar la cara por las lineas y rotar las regiones moviles alrededor del eje de doblez con radio r (centerline simetrica).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "hem(edge, {type:'closed|open|teardrop|rolled', length, gap, angle, radius})",
+     "queHace": "Crea un dobladillo (pliegue del borde) para eliminar filos o interbloquear paredes. Kernel: composicion de 1-2 dobleces (180 grados para closed/open, parcial+arco para teardrop/rolled) sobre la arista.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "jog(face, bendLine, {offset, angle, fixProjectedLength})",
+     "queHace": "Crea dos dobleces (escalon) a partir de una linea: el primero en el plano de la linea, el segundo a una distancia offset. Kernel: dos operaciones de doblez encadenadas con opcion de mantener longitud proyectada.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "closedCorner(faces[], {coplanar, openBendRegion}) / cornerRelief(corner, type)",
+     "queHace": "Cierra el hueco de relieve entre dos paredes normales extendiendo caras, o aplica alivio de esquina 2-bend/3-bend (rectangular/circular/tear/obround/full-round/suitcase). Kernel: extender/recortar superficies + boolean.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "normalCut(profile, body, {linkToThickness, normalToSheet})",
+     "queHace": "Corte que se proyecta NORMAL al espesor de la lamina (no al plano de croquis), para que las paredes del corte queden rectas en chapa doblada. Kernel: extruir el perfil a lo largo de la normal local de la cara y boolean cut; link-to-thickness = profundidad = espesor.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "convertToSheetMetal(solid, fixedFace, {thickness, bendRadius, bendEdges[], ripEdges[]})",
+     "queHace": "Toma un solido (o shell vaciado) y lo reinterpreta como chapa: detecta/recibe aristas que son dobleces (sharp->bend, fillet con radio=radio->round bend), raja aristas (rip) y permite aplanar. Kernel: feature recognition de fillets + shell + rip (gap entre caras).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "rip(solid, edges[], {gap, direction})",
+     "queHace": "Agrega un hueco (gap) a lo largo de aristas de un solido de pared delgada (post-shell) para poder desplegarlo. Kernel: separar caras adyacentes en la arista por el gap (offset opuesto de las dos caras).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "loftedBend(profileA, profileB, {thickness})",
+     "queHace": "Crea la transicion de chapa entre dos perfiles abiertos separados (ej. cuadrado->circulo). Kernel: loft/ruled surface entre los wires (OCCT BRepOffsetAPI_ThruSections) + thicken por espesor; flat pattern solo si la superficie es desarrollable.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "tab(face, closedSketch, {merge})",
+     "queHace": "Agrega material (tab) a una cara con espesor heredado de la lamina; merge=false crea cuerpo separado. Kernel: prism del croquis cerrado por el espesor + boolean union/separado.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "formingTool(toolSolid, stoppingFace, facesToRemove[]) / applyFormingTool(body, face, tool, position)",
+     "queHace": "Define un punzon que deforma (no corta) la chapa: cara de tope + caras a remover; al aplicarlo deforma la lamina segun la forma del punzon. Kernel: boolean + imprint de la forma del punzon sobre la cara, respetando espesor.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "flatPatternDrawing(flatBody)",
+     "queHace": "Genera la vista 2D del patron plano con bounding box y lineas de doblez (up/down) para taller. Reusa el motor de planos/HLR existente (drawing.ts) aplicado al cuerpo aplanado.",
+     "dificultad": "medio"
+    }
+   ],
+   "reutilizarOSS": [
+    "OpenCascade (OCCT) via opencascade.js (WASM): toda la geometria B-Rep — BRepPrimAPI_MakePrism (extruir lamina/tab), BRepOffsetAPI_MakeThickSolid (shell para flujo D), BRepOffsetAPI_MakeOffset/MakeOffsetShape (offset de superficie para dobleces y rip), BRepFilletAPI_MakeFillet (round bends), BRepOffsetAPI_ThruSections (lofted bend), BRepAlgoAPI_Cut/Fuse (cuts, relief, tabs), BRepBuilderAPI_Transform (rotacion de regiones al doblar/desplegar).",
+    "planegcs (solver de restricciones 2D, de FreeCAD): para los croquis de perfil de flange, lineas de doblez, perfiles de miter/swept y croquis de hem/jog acotados.",
+    "FreeCAD SheetMetal Workbench (GPL, basado en OCCT): referencia de implementacion directa de base flange, edge flange, unfold/fold, bend allowance y K-factor — algoritmos ya resueltos sobre el mismo kernel OCCT-WASM que usa La Forja.",
+    "Manifold / CSG: alternativa rapida para los boolean de cortes y relieve cuando no se necesita B-Rep exacto (preview interactivo).",
+    "three.js / R3F: render del cuerpo, drag handles de longitud de flange, preview dinamico y visualizacion del flat pattern (lineas de doblez up/down).",
+    "El motor de planos propio drawing.ts (HLR ya existente en el repo) para generar la vista 2D del flat pattern."
+   ]
+  },
+  {
+   "capitulo": "Capítulo 4 — Equations, Configurations, and Library Features (Advanced SOLIDWORKS 2026, CADCIM)",
+   "dominio": "parametrico",
+   "conceptos": [
+    "Ecuaciones = relaciones matemáticas entre dimensiones de croquis o feature; los nombres de las dimensiones (ej. D1@Sketch1) actúan como variables.",
+    "Variable global = parámetro con nombre (ej. length=200) que centraliza valores y se reutiliza en muchas ecuaciones; cambiar la global propaga el cambio a todo el modelo.",
+    "Dimensión driving (independiente, la que controlas) vs driven (dependiente, se calcula desde la driving). Modificar la driving regenera todas las driven.",
+    "Orden de resolución: SOLIDWORKS detecta dependencias automáticamente (Automatic solve order) y resuelve primero la columna Name antes de Value/Equation; el orden se puede forzar manualmente arrastrando filas.",
+    "Intención de diseño (design intent): las ecuaciones deben capturar la relación de proporción real (ej. ancho = largo/2) sin romper el propósito de la pieza.",
+    "Unidades mixtas: las ecuaciones pueden mezclar mm/cm/in; el sistema resuelve la conversión y muestra el valor final (columna Evaluates to).",
+    "Configuración = instancia distinta de la MISMA geometría con dimensiones y/o estado de supresión distintos, todo dentro de un solo documento (ej. familia de tornillos/washers).",
+    "Estado de supresión por feature: suprimir/des-suprimir features genera variantes del mismo modelo, incluso para representar etapas de un proceso de manufactura (billet → pocket → drill → chamfer).",
+    "Design table (tabla Excel) = manejar configuraciones en masa por filas (instancias) y columnas (parámetros: dimensiones y estados S/U); ideal cuando la geometría es igual y solo cambian números.",
+    "Alcance de edición de feature en pieza multi-config: This configuration / All configurations / Specify configurations controla a qué variantes afecta un cambio.",
+    "Library feature = feature(s) recurrentes guardadas (.sldlfp) para reusar por arrastrar-y-soltar; pueden colocarse con o sin referencias y vincularse a la biblioteca para que el cambio en la librería se propague.",
+    "Display states (en ensamble) = variantes de color/textura/transparencia/visibilidad por componente, independientes de la geometría."
+   ],
+   "flujoHumano": [
+    "ECUACIONES — Crear croquis y acotarlo completamente (fully defined). Tools > Equations abre el diálogo 'Equations, Global Variables, and Dimensions'.",
+    "Para mostrar las dimensiones del feature en Part mode: clic derecho en el nodo Annotations del FeatureManager > Show Feature Dimensions.",
+    "Agregar variable global: en Equation View, clic en celda vacía del nodo Global Variables (columna Name), escribir nombre (ej. length); clic en la celda Value/Equation, teclear valor (200) o seleccionar una dimensión del área de dibujo; añadir comentario.",
+    "Variable derivada de otra: nueva global 'width' > en Value/Equation elegir del menú 'Global Variable length(200)', teclear '-50', confirmar con la palomita verde.",
+    "Agregar ecuación a una dimensión: clic en celda vacía del nodo Equations (Name), seleccionar la dimensión driven del área de dibujo (aparece su nombre); en Value/Equation seleccionar la dimensión driving (o una global), teclear el operador y factor (ej. '/5' o '*0.5'), confirmar con la palomita. El resultado se muestra en 'Evaluates to'.",
+    "Cerrar con OK; se crea la carpeta Equations en el FeatureManager. Si Automatically rebuild está desactivado, presionar Rebuild para regenerar.",
+    "Editar/eliminar/deshabilitar ecuación: reabrir el diálogo (o clic derecho en carpeta Equations > Manage Equations); editar la celda Value/Equation, o clic derecho > Delete Equation / Disable Equation.",
+    "Suprimir feature por ecuación: nodo Features (Name) > seleccionar feature del FeatureManager > en Value/Equation elegir suppress/unsuppress (o escribir 1=suprimir, 0=des-suprimir).",
+    "Exportar/Importar ecuaciones: botón Export a archivo de texto; en otro modelo, botón Import.",
+    "CONFIGURACIONES MANUALES — Abrir ConfigurationManager (botón junto a PropertyManager bajo el CommandManager). La pieza original es 'Default'.",
+    "Clic derecho en el nombre de la pieza > Add Configuration; en el PropertyManager poner Configuration name, Description, BOM options, Advanced Options (Suppress new features and mates, Use configuration specific color); OK.",
+    "Con la nueva config activa, editar el modelo (ej. suprimir el cut del recess circular vía FeatureManager). Cambiar de config: doble clic en la config (o clic derecho > Show Configuration).",
+    "DESIGN TABLE — Crear la pieza maestra. Insert > Tables > Excel Design Table. En el PropertyManager elegir Source: Auto-create; Edit Control: Allow model edits to update the design table; Options (New parameters, New configurations, etc.); OK.",
+    "En el diálogo Dimensions, CTRL+clic para seleccionar las dimensiones a parametrizar (ej. para el tornillo, excluir D1@Revolve1, D1@Fillet1, D1@Chamfer1); OK. Se inserta la hoja Excel con los valores de Default.",
+    "Escribir en la columna A los nombres de las instancias (filas A3, A4...) y sus dimensiones por columna (ej. washer: 100/50/10; tornillo: 30x90, 20x60, 50x150...). Clic fuera de la hoja > aparece message box con las configuraciones creadas > OK.",
+    "DESIGN TABLE PARA ESTADOS DE SUPRESIÓN — (opcional) renombrar features en el FeatureManager. Insert design table Auto-create > en Dimensions dar OK sin seleccionar nada > doble clic en cada feature del FeatureManager para que aparezcan como columnas; escribir S (suppressed) / U (unsuppressed) por configuración (Finished Plate, Billet Stock, Pocket Milling...).",
+    "Editar tabla: ConfigurationManager > expandir Tables > clic derecho en Excel Design Table > Edit Table (Add Rows and Columns) o Edit Feature (PropertyManager). Borrar: seleccionar el icono y DELETE (las configs ya creadas no se borran).",
+    "SUPRESIÓN SIN DESIGN TABLE — Seleccionar features en el FeatureManager > clic derecho > Configure Feature > ventana Modify Configurations; crear configs en la fila 'Creates a new configuration', marcar checkboxes para suprimir, opcionalmente exponer dimensiones de feature vía la flecha del encabezado de columna; OK.",
+    "LIBRARY FEATURE — Crear base feature + el/los features a guardar (ej. extrude + fillet). En el FeatureManager seleccionar la pieza, en el Design Library task pane elegir Add to Library; en el PropertyManager limpiar la selección y elegir solo los features deseados; poner File name y carpeta destino; File type = Lib Feat Part (*.sldlfp); Description; OK.",
+    "Colocar library feature: pestaña Design Library > navegar a la carpeta > arrastrar el feature y soltarlo sobre una cara del modelo; aparece el Library Feature PropertyManager con preview; ajustar Placement Plane, especificar References (o Edit Sketch en Location si no tiene referencias), opcional Override dimension values, opcional Link to library part; OK.",
+    "Editar/disolver: en Design Library clic derecho > Open para editar y guardar (se propaga si Link to library part). Para convertir en features normales: FeatureManager > clic derecho en el library feature > Dissolve Library Feature.",
+    "SPLIT CONFIGURATIONS — ConfigurationManager > clic derecho en el nombre del archivo o una config > Split Configurations > dialog 'Split Configurations as New Files'; opciones Update where used, Where used, File Locations, Update for 3DEXPERIENCE Compatibility; Save."
+   ],
+   "herramientasUI": [
+    "Tools > Equations (diálogo Equations, Global Variables, and Dimensions)",
+    "Vistas del diálogo: Equation View, Sketch Equation View, Dimension View, Ordered View",
+    "Rebuild / Automatically rebuild",
+    "Automatic solve order (checkbox), Angular equation units (drop-down), Filter All Fields, Configuration (drop-down), Link to external file, Export, Import",
+    "Carpeta Equations en el FeatureManager > Manage Equations (clic derecho)",
+    "Annotations > Show Feature Dimensions (clic derecho)",
+    "Dimension PropertyManager > Primary Value (renombrar dimensión)",
+    "Enable/Disable Equation, Delete Equation, suppress/unsuppress por ecuación (1/0)",
+    "ConfigurationManager",
+    "Add Configuration PropertyManager (Configuration Properties, Bill of Materials Options, Advanced Options: Suppress new features and mates, Use configuration specific color)",
+    "Show Configuration",
+    "Configurations rollout en el PropertyManager de un feature: This configuration / All configurations / Specify configurations (All, Reset)",
+    "Insert > Tables > Excel Design Table (Excel Design Table PropertyManager: Source con Blank/Auto-create/From file y Link to file; Edit Control con Allow/Block model edits; Options con New parameters, New configurations, Warn when updating, Enable cell drop-down lists)",
+    "Diálogo Dimensions (selección CTRL+clic)",
+    "Edit Table / Add Rows and Columns dialog / Edit Feature",
+    "Configure Feature > Modify Configurations window",
+    "Display States (ConfigurationManager > Add Display State; display pane del FeatureManager; Display States toolbar)",
+    "Split Configurations > Split Configurations as New Files dialog (Update where used, Where used, File Locations, Update for 3DEXPERIENCE Compatibility)",
+    "Design Library task pane > Add to Library (Add to Library PropertyManager: Items to Add, Save To, Options con File type Lib Feat Part *.sldlfp)",
+    "Library Feature PropertyManager (Placement Plane, Configuration con Link to library part, Location con Edit Sketch, Size Dimensions con Override dimension values, Locating Dimensions)",
+    "Dissolve Library Feature",
+    "Revolved Boss/Base, Extruded Cut, Fillet, Chamfer (usados en los tutoriales del cap.)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "Motor de ecuaciones / variables globales",
+     "queHace": "Tabla de parámetros con nombre (largo=200, ancho=largo-50) y ecuaciones dim=f(otras dims) que se editan por clicks; evalúa expresiones aritméticas y propaga al regenerar. Mapea a: cada dimensión del croquis es una variable; las driven se sustituyen antes de re-resolver el sketch-solver.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Grafo de dependencias + orden de resolución automático",
+     "queHace": "Detecta dependencias entre ecuaciones (topological sort) para resolver driving antes de driven y detectar ciclos; equivale al 'Automatic solve order'. Mapea a: DAG sobre variables, orden topológico, reporte de ciclo.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Parser/evaluador de expresiones con unidades",
+     "queHace": "Evalúa '150/5', 'largo*0.5', mezcla mm/cm/in y devuelve el valor (columna Evaluates to). Mapea a: tokenizer + AST + tabla de conversión de unidades.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Naming estable de dimensiones (D1@Sketch1, D1@Revolve1)",
+     "queHace": "Asigna IDs/nombres estables y renombrables a cada dimensión y feature para referenciarlas en ecuaciones y design tables. Mapea a: id persistente por constraint dimensional + alias editable.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Sistema de configuraciones (variantes en un documento)",
+     "queHace": "Permite múltiples instancias de la misma pieza con distintos valores y estados de supresión, conmutables; una activa a la vez. Mapea a: feature-tree base + overrides por config (mapa featureId->{suppressed,dimOverrides}).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Supresión/des-supresión de features con propagación",
+     "queHace": "Marcar features como suprimidos por config o por ecuación (1/0) y regenerar el árbol sin ellos; clave para representar etapas de manufactura. Mapea a: filtrar features del replay del kernel; recompute incremental.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Design table (matriz instancias x parámetros)",
+     "queHace": "Hoja editable: filas=configuraciones, columnas=dimensiones y estados S/U; genera todas las variantes de golpe y permite edición bidireccional. Mapea a: data-grid web -> set de overrides por fila -> batch rebuild.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Alcance de edición por configuración",
+     "queHace": "Al editar un feature, elegir This/All/Specify configurations. Mapea a: aplicar el override al subconjunto de configs seleccionadas.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Library features (catálogo de features reutilizables)",
+     "queHace": "Guardar uno o varios features (ej. extrude+fillet) como activo reutilizable, arrastrarlo sobre una cara, fijar plano de colocación y referencias, override de tamaño y link a la librería. Mapea a: serializar sub-árbol de features + transform de colocación (cara objetivo + referencias) + re-instanciar en otro modelo.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Disolver library feature",
+     "queHace": "Convertir la instancia de librería en features individuales editables. Mapea a: expandir el sub-árbol serializado dentro del árbol del documento destino.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Split configurations a archivos individuales",
+     "queHace": "Exportar cada configuración como pieza independiente. Mapea a: por cada config, hornear overrides y exportar documento/STEP propio.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Display states (ensamble)",
+     "queHace": "Variantes de color/transparencia/visibilidad por componente sin cambiar geometría. Mapea a: capa de render overrides por componente, independiente del kernel.",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "planegcs (FreeCAD sketcher solver) — resolver el croquis 2D tras sustituir las dimensiones driven por las ecuaciones; las dimensiones acotadas son las variables del solver.",
+    "OCCT (OpenCascade, vía OCCT-WASM) — replay/recompute del árbol de features (Revolved Boss/Base, Extruded Cut, Fillet, Chamfer) al regenerar cada configuración; soporta supresión = omitir operaciones.",
+    "mathjs o expr-eval — parser/evaluador de las expresiones de ecuaciones y variables globales (mathjs además maneja unidades).",
+    "SheetJS / handsontable (o un data-grid React) — UI tipo hoja Excel para la design table (filas=configs, columnas=parámetros).",
+    "graphlib / toposort — grafo de dependencias y orden de resolución automático de ecuaciones (detección de ciclos).",
+    "JSON/serialización propia — almacenar library features (.sldlfp equivalente) como sub-árbol de features serializado reusable."
+   ],
+   "relevanciaMolde": "\"ALTA pero INDIRECTA: este capítulo NO aporta geometría de molde (core/cavity/parting/draft no se tratan aquí). Lo que alimenta al evaluador del molde es la capa PARAMÉTRICA y de CATÁLOGO: (1) Las ecuaciones/variables globales permiten parametrizar la pieza moldeada y reglas de molde (ej. espesor de pared = f(dim), draft_angle como variable global reutilizada en todas las caras, contracción/shrink como factor de escala global aplicado al cavity), de modo que cambiar un parámetro reescala el molde completo. (2) Las configuraciones + design table son la columna vertebral del CATÁLOGO de familias (washers, tornillos socket/cheese-head con d=20/30/40/50 mm) — exactamente el caso de inserto/componente estándar de molde y de generar la familia de cavidades de un molde multi-cavidad por filas de una tabla. (3) El estado de supresión por configuración modela ETAPAS del proceso (billet -> pocket -> drill -> chamfer), análogo a representar etapas core/cavity/eyectores o variantes del molde en un solo documento. (4) Las library features son el mecanismo para guardar y reinsertar features recurrentes de molde (machos, venteos, canales, ejectores) por clicks. En el pipeline core/cavity/parting/draft/scale, este capítulo aporta SCALE (factor de contracción como variable/ecuación global) y la PARAMETRIZACIÓN/CATÁLOGO que orquesta variantes; el draft, parting line y tooling split como geometría deben venir de otro capítulo.\""
+  },
+  {
+   "capitulo": "Capitulo 5 — Motion Study (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "movimiento (simulacion de movimiento de ensambles)",
+   "conceptos": [
+    "Motion Study = simular el movimiento de los componentes de un ensamble en una linea de tiempo (MotionManager) sin alterar las propiedades del ensamble simulado.",
+    "Dos tipos de estudio: Basic Motion (movimiento por condiciones fisicas: motor, resorte, gravedad, contacto) y Animation (movimiento por mates de ensamble, arrastre libre, triad y key frames). Un tercero, Motion Analysis, requiere el add-in SOLIDWORKS Motion.",
+    "La linea de tiempo (Timeline) define la duracion; el tramo en movimiento se resalta en amarillo. El Timebar (linea gris vertical) marca la posicion actual en el tiempo.",
+    "Keypoints marcan inicio/fin de una fase de cambio de un componente; el espacio entre dos keypoints es un key frame.",
+    "Motor: aplica movimiento rotatorio o lineal a un componente. Tipos: Rotary Motor (gira sobre su eje), Linear Motor/Actuator (traslada en linea recta), Path Mate Motor (movimiento a lo largo de una trayectoria).",
+    "Perfil de velocidad del motor (Function): Constant Speed (RPM constante), Distance (desplazamiento en un tiempo dado), Oscillating (desplazamiento+frecuencia+desfase), Segments (velocidad por tramos), Data Points (velocidad interpolada de puntos t-v), Expression (funcion matematica), Load Function from File.",
+    "Spring: resorte lineal (constante k, free length) o torsional (free angle), con exponente de la expresion de fuerza, damper (constante de amortiguamiento + exponente) y parametros de display (diametro de espira, numero de espiras, diametro de alambre).",
+    "Contact: evita que los componentes se penetren entre si durante la simulacion.",
+    "Gravity: agrega gravedad en direccion X/Y/Z o segun una entidad de referencia, con valor numerico ajustable.",
+    "Calidad de simulacion: frames por segundo (animacion y basic motion), Geometry Accuracy (precision de la malla geometrica) y 3D Contact Resolution (calidad del contacto entre componentes que mallan).",
+    "Para que la simulacion refleje cambios de parametros hay que recalcular (Calculate); Play solo reproduce el ultimo calculo.",
+    "Direccion del motor: el movimiento es relativo (Motor Location = cuerpo donde se aplica, Motor Direction = direccion, Component to Move Relative to = referencia movil)."
+   ],
+   "flujoHumano": [
+    "Tutorial 1 (Bench Vice — motor rotatorio): 1) File > Open y abrir Bench Vice.SLDASM. 2) Click en la pestania 'Motion Study 1' debajo del area grafica para invocar el MotionManager.",
+    "3) Toolbar MotionManager > boton Motor; se abre el Motor PropertyManager.",
+    "4) En Motor Type elegir Rotary Motor (si no esta por defecto).",
+    "5) Click en el selection box 'Motor Location' (rollout Component/Direction) y seleccionar la cara cilindrica del Jaw Screw; el nombre aparece en Motor Direction.",
+    "6) En el rollout Motion, Function = Constant Speed; poner Speed = 150 (RPM).",
+    "7) OK en el Motor PropertyManager para agregar el motor.",
+    "8) Toolbar > Calculate para generar la simulacion; los componentes se mueven en el area grafica.",
+    "9) Stop para pausar; para alargar la animacion, seleccionar el keypoint de la primera fila y arrastrarlo al punto de tiempo deseado.",
+    "10) Calculate de nuevo para reproducir hasta el nuevo punto de tiempo.",
+    "Tutorial 2 (Cam Spring — ensamblar + motor): 1) New > Assembly; aparece Begin Assembly PropertyManager con el dialogo Open.",
+    "2) Abrir la parte Pin; el modelo se pega al cursor. 3) OK en Begin Assembly para colocar el Pin coincidente con el origen.",
+    "4) Insertar el componente Cam en una ubicacion arbitraria.",
+    "5) Assembly CommandManager > Mate; se abre el Mate PropertyManager.",
+    "6) Seleccionar la cara cilindrica del Pin y la cara circular interior del Cam; se aplica mate concentrico. 7) Add/Finish Mate en la barra emergente.",
+    "8) En Standard Mates elegir Distance; 9) escribir 4, ENTER, y seleccionar las caras planas de Pin y Cam para el mate de distancia. 10) Add/Finish Mate.",
+    "11) Repetir para ensamblar los demas componentes.",
+    "12) Click en 'Motion Study 1'; toolbar > Motor; seleccionar la cara redonda del cam (flecha roja indica direccion); aceptar defaults; OK.",
+    "13) Calculate para simular; ajustar el tiempo de reproduccion arrastrando keypoints como en Tutorial 1.",
+    "Animation Wizard (alterno): toolbar > Animation Wizard > Select an Animation Type (Rotate/Explode/Collapse...) > Next > Select an Axis of Rotation (eje, numero de rotaciones, direccion) > Next > Animation Control Options (duracion, tiempo de inicio) > Finish.",
+    "Guardar video: toolbar > Save Animation > dialogo Save Animation to File > Save > Video Compression (compresor, calidad, key frames) > OK."
+   ],
+   "herramientasUI": [
+    "MotionManager (interfaz timeline, pestania 'Motion Study 1')",
+    "Type of Study drop-down (Animation / Basic Motion / Motion Analysis)",
+    "Calculate, Play from Start, Play, Stop",
+    "Time Slider, Playback Speed drop-down, Playback Mode (Normal/Loop/Reciprocate)",
+    "Save Animation (dialogo Save Animation to File + Video Compression)",
+    "Animation Wizard (Select an Animation Type / Select an Axis of Rotation / Animation Control Options)",
+    "Autokey, Add/Update Key (menu contextual Place Key)",
+    "Motor PropertyManager (Motor Type: Rotary/Linear-Actuator/Path Mate; rollout Component/Direction: Motor Location, Motor Direction, Component to Move Relative to; rollout Motion: Function = Constant Speed/Distance/Oscillating/Segments/Data Points/Expression/Load Function from File; Function Builder dialog)",
+    "Spring PropertyManager (Linear/Torsional, Spring Constant, Free Length/Free Angle, Damper, Display: Coil Diameter/Number of Coils/Wire Diameter, Load Bearing Faces)",
+    "Contact PropertyManager (Selections rollout, Components)",
+    "Gravity PropertyManager (X/Y/Z, Direction Reference, Numeric gravity value)",
+    "Motion Study Properties PropertyManager (Frames per second, Geometry Accuracy, 3D Contact Resolution, General Options)",
+    "Mate PropertyManager (Standard Mates: Concentric, Distance; Add/Finish Mate)",
+    "Begin Assembly PropertyManager"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "MotionTimeline (linea de tiempo con keypoints/keyframes)",
+     "queHace": "UI de timeline editable: agregar/arrastrar keypoints por componente, scrubber de tiempo, play/stop/loop/reciprocate; estado puro en t para reproduccion determinista (encaja con el patron renderAt(t) del proyecto).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "RotaryMotor / LinearMotor (driver cinematico)",
+     "queHace": "Aplica velocidad angular (RPM) o traslacion a un componente alrededor/sobre un eje seleccionado por click en una cara cilindrica; integra pose(t)=pose0 * exp(omega*t). Mapea a kernel: extraer eje de la cara cilindrica (OCCT BRep_Tool::Surface -> Geom_CylindricalSurface -> Axis) y aplicar transform rigido.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "SpeedFunction (perfiles de velocidad)",
+     "queHace": "Constant/Distance/Oscillating/Segments/Data Points/Expression: evaluador de v(t) para alimentar al motor; Data Points = interpolacion, Expression = parser de funciones, Oscillating = seno(amplitud,frecuencia,fase).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "PathMateMotor",
+     "queHace": "Mueve un componente a lo largo de una curva/trayectoria parametrizada (s(t)); requiere muestreo de la curva del kernel.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Spring (resorte lineal/torsional)",
+     "queHace": "Fuerza F=-k*(L-L0)^n entre dos endpoints (o torque torsional), con damper c; necesita integrador de cuerpo rigido para Basic Motion.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Gravity",
+     "queHace": "Vector de gravedad en X/Y/Z o segun entidad de referencia, con magnitud; campo de fuerza para el integrador dinamico.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "ContactConstraint (no penetracion)",
+     "queHace": "Deteccion de colision malla-malla entre componentes seleccionados + resolucion de penetracion; parametros Geometry Accuracy y 3D Contact Resolution = nivel de teselado/tolerancia.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "RigidBodySolver (integrador Basic Motion)",
+     "queHace": "Integra el movimiento bajo motor+resorte+gravedad+contacto respetando los mates como restricciones; el corazon de Basic Motion. Puede precomputarse (no tiempo real) como otras sims del proyecto.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "MateAsConstraint para animacion",
+     "queHace": "Usar los mates concentrico/distancia/coincidente del ensamble como grados de libertad que el motor recorre (modo Animation, sin dinamica).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "AnimationWizard (rotate/explode/collapse)",
+     "queHace": "Generador de animaciones canonicas con keypoints automaticos: girar el modelo sobre un eje N vueltas, explotar/colapsar.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "AnimationExport",
+     "queHace": "Exportar la simulacion a video (frames -> ffmpeg/NVENC, ya existe pipeline en el proyecto) con fps configurable.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "AxisFromFacePicker",
+     "queHace": "Click en cara cilindrica/redonda -> deducir eje de rotacion (Motor Location/Direction). Operacion de kernel: clasificar la cara y devolver su eje.",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT: extraccion de ejes/normales de caras (Geom_CylindricalSurface, BRep_Tool), teselado para deteccion de contacto, parametrizacion de curvas para Path Mate.",
+    "planegcs (FreeCAD sketch solver) o un solver de restricciones para los mates como grados de libertad en el modo Animation.",
+    "Una libreria de fisica de cuerpo rigido (ammo.js/Rapier/cannon-es) para el RigidBodySolver de Basic Motion: gravedad, resortes, contacto/no-penetracion.",
+    "manifold o motor CSG para mallas robustas que alimenten la deteccion de colision.",
+    "three.js / R3F AnimationMixer + clock determinista para la reproduccion timeline (renderAt(t) puro).",
+    "ffmpeg + NVENC (ya en el pipeline del proyecto) para Save Animation."
+   ],
+   "relevanciaMolde": "Baja y mayormente indirecta. Este capitulo es simulacion cinematica/dinamica de ENSAMBLES (motor, resorte, gravedad, contacto, timeline), no geometria de molde, por lo que NO aporta a las etapas core/cavity/parting/draft/scale del evaluador de moldes. Su unica conexion util al pipeline de molde es operativa: (1) la deteccion de Contact/no-penetracion (colision malla-malla) podria reutilizarse para verificar interferencia entre mitades core/cavity al cerrar el molde, y (2) el motor/timeline podria animar la apertura del molde y la expulsion de la pieza (eyector) para validar la direccion de desmoldeo (pull direction) que el analisis de draft requiere. Fuera de eso, el capitulo no alimenta el evaluador del molde."
+  },
+  {
+   "capitulo": "Capítulo 6 — Introduction to Mold Design (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "molde",
+   "conceptos": [
+    "El molde se diseña SIEMPRE en función de la pieza a moldear; su complejidad determina el diseño. En SOLIDWORKS solo se cubre la EXTRACCIÓN de core y cavity (no la base completa, gates, runners, eyectores).",
+    "Cavity (cavidad) = parte HEMBRA del molde, hueca por dentro; el plástico/metal fundido se vierte ahí y toma su forma. Genera las superficies EXTERIORES de la pieza.",
+    "Core (corazón/macho) = parte MACHO; define dónde NO debe llegar el material fundido. Genera huecos, bolsas, cortes y las superficies INTERIORES de la pieza.",
+    "Parting line (línea de partición) = línea/curva donde los moldes se separan y abren en sus direcciones respectivas; marca la transición entre caras formadas por el core y caras formadas por el cavity. Es la frontera esencial para generar parting surfaces y para el Tooling Split.",
+    "Parting surface (superficie de partición) = superficie que extiende la parting line hacia afuera; define el plano/banda por donde el molde se divide en core y cavity. Necesaria para el Tooling Split.",
+    "Scale factor (factor de escala) = cantidad en porcentaje por la que la pieza moldeada se CONTRAE (shrink) tras solidificar; depende del material y de la forma del molde. Por eso el core/cavity se hacen MÁS GRANDES que la pieza (ej. factor 1.1 = +10%).",
+    "Draft angle (ángulo de salida) = inclinación obligatoria en las caras paralelas a la dirección de extracción; sin draft NO puedes sacar la pieza solidificada del molde. Debe añadirse a la pieza en Part mode para que se refleje en core y cavity.",
+    "Direction of pull (dirección de extracción) = vector (plano/cara/arista) a lo largo del cual el molde se abre; referencia para todo el análisis de draft y para radiate/parting.",
+    "Clasificación de caras por draft respecto a la dirección de pull: VERDE = draft positivo (cara del lado positivo, sale bien); ROJO = draft negativo (lado opuesto); AMARILLO = requiere draft (cara casi paralela al pull, no sale). Caras amarillas de poca altura o de barrenos que se taladran después se pueden ignorar.",
+    "Dos métodos de diseño de molde: (1) SPLIT MOLD — molde simple de dos cavidades, se inserta la pieza dentro de un bloque base transparente, se resta con Cavity y se parte con un sketch/Split; (2) CORE & CAVITY — para piezas complejas, vía top-down assembly con radiate/knit surfaces o vía Parting Line + Parting Surface + Tooling Split.",
+    "Mold base = bloque extruido (cubo/cuboide) mayor que la pieza; sus dimensiones dependen del tamaño de la pieza, la presión de inyección y la temperatura del fundido.",
+    "Shut-off / shutoff surfaces (superficies de cierre) = parches planos (Planar Surface) o rellenos (Filled Surface) que tapan agujeros pasantes/aberturas de la pieza; sin ellos la pieza no es estanca y no se puede separar core de cavity. Si hay shutoff no existe 'seed surface'.",
+    "Seed face/surface = cara semilla a partir de la cual se propaga el knit; en piezas sin shutoff es la cara base que se conoce automáticamente.",
+    "Inserts (postizos) = sólidos que restringen el flujo de material en una zona, creando ranuras/slots en la pieza moldeada; se modelan con enfoque top-down dentro del ensamble.",
+    "Antes del Tooling Split hay que SUPRIMIR o BORRAR los extruded-cut (agujeros taladrados posteriormente) de la pieza, o la operación falla.",
+    "La extracción de core/cavity es un flujo TOP-DOWN: se crean partes nuevas (Insert > Component > New Part) DENTRO del ensamble, referenciando geometría de la pieza maestra."
+   ],
+   "flujoHumano": [
+    "SPLIT MOLD — 1) Modelar la pieza en Part mode y modelar el mold base (bloque extruido más grande que la pieza).",
+    "SPLIT MOLD — 2) Crear ensamble interino: nuevo Assembly, insertar el mold base, click derecho > Change Transparency para verlo transparente, insertar la pieza y con mates colocarla en el centro del bloque.",
+    "SPLIT MOLD — 3) Seleccionar el mold base > Edit Component (entra a modelar la parte dentro del ensamble) > botón Cavity (Mold Tools). En el Cavity PropertyManager: seleccionar la pieza desde el FeatureManager (aparece en Design Component Parts), dejar Uniform scaling, fijar Scaling % (escala), elegir origen en Scale about, OK → aparece feature Cavity1. Salir con Edit Component.",
+    "SPLIT MOLD — 4) Seleccionar el mold base > File > Derive Component Part > OK (inserta en el origen) → nueva parte = bloque con la cavidad restada. Cambiar display a Wireframe.",
+    "SPLIT MOLD — 5) Seleccionar la cara frontal del derivado > abrir sketch > dibujar una sola línea de partición. Guardar.",
+    "SPLIT MOLD — 6) Insert > Molds > Split. El sketch de la línea se auto-selecciona en Trimming Surfaces. Click Cut Part → crea placa superior e inferior. Click Auto-assign Names, desmarcar el primer cuerpo, dejar Consume cut bodies marcado, OK → placa inferior del molde partido.",
+    "CORE & CAVITY (método radiate/knit) — 1) Modelar la pieza con sus draft angles incluidos en Part mode.",
+    "CORE & CAVITY — 2) Draft Analysis: botón Draft Analysis (Mold Tools) > seleccionar plano/cara/arista como Direction of Pull (ej. Top Plane, usar Reverse Direction si hace falta) > leer el código de color (verde/amarillo/rojo) > OK. Añadir draft a las caras amarillas relevantes.",
+    "CORE & CAVITY — 3) Scale: botón Scale (Mold Tools) > Scale PropertyManager > elegir Scale About (origen) > fijar Scale Factor (ej. 1.1) > Uniform scaling marcado > OK.",
+    "CORE & CAVITY — 4) Ensamble interino: nuevo Assembly, colocar la pieza coincidente con el origen del ensamble, guardar.",
+    "CORE & CAVITY (EXTRAER CORE) — 5) Insert > Component > New Part > seleccionar Front Plane > renombrar el nodo a 'Core' > salir del sketch.",
+    "CORE & CAVITY (CORE) — 6) Radiate Surface (Mold Tools): elegir Top Plane como Radiate Direction Reference, seleccionar la arista exterior de la base como Edges to Radiate, marcar Propagate to tangent faces, fijar Radiate Distance (ej. 40 mm), OK.",
+    "CORE & CAVITY (CORE) — 7) Knit Surface: seleccionar la superficie radiada + la seed surface (caras interiores) en Surfaces and Faces to Knit / Seed Faces, OK. Ocultar la pieza (Hide Components) para ver la superficie cosida.",
+    "CORE & CAVITY (CORE) — 8) Crear un plano nuevo a un offset por DEBAJO de la superficie radiada > abrir sketch en ese plano > dibujar el sketch de la base del core > extruir con opción Up To Surface usando la superficie cosida como referencia. Ocultar la superficie cosida → core final. Edit Component para volver al ensamble.",
+    "CORE & CAVITY (EXTRAER CAVITY) — 9) Ocultar el Core, mostrar la pieza. Insert > Component > New Part > Front Plane > renombrar 'Cavity' > salir del sketch.",
+    "CORE & CAVITY (CAVITY) — 10) Crear radiate surface igual; Knit Surface seleccionando la superficie radiada + las caras EXTERIORES; crear plano a offset hacia ARRIBA (mayor que la altura total de la pieza); sketch de la base del cavity; extruir Up To Surface; ocultar la superficie. Mostrar todo y crear Exploded View. Guardar (se generan los documentos de parte de Core y Cavity).",
+    "CORE & CAVITY (método Parting Line + Tooling Split, Tutorial 1) — Draft Analysis → Scale (1.1) → Suprimir/borrar los extruded-cut (agujeros) de la pieza.",
+    "PARTING LINE — Parting Lines tool (Mold Tools): en Direction of Pull elegir la cara superior (habilita el botón Draft Analysis), click en el cuadro Parting Lines y seleccionar TODAS las aristas de la cara superior → se crea la parting line.",
+    "PARTING SURFACE — Parting Surface tool: en Mold Parameters seleccionar la cara superior, en Parting Line seleccionar 'Parting Line 1' del árbol → preview de la superficie de partición → OK.",
+    "TOOLING SPLIT — guardar el modelo, click Tooling Split, seleccionar la cara superior como plano de sketch, dibujar la sección transversal (rectángulo), salir del sketch (Confirmation corner). Fijar Depth in Direction 1 y Direction 2 (ej. 150). Core/Cavity/Parting Surface ya vienen seleccionados → OK. Cuerpos quedan unidos; click derecho en Solid Bodies para separarlos. Guardar cada cuerpo y crear el ensamble; abrir y hacer Exploded View.",
+    "SHUT-OFF (método alterno / Filled Surface) — tras draft y scale: con Planar Surface seleccionar las aristas de las aberturas y crear parches planos; o con Filled Surface tapar aberturas de caras curvas. Guardar.",
+    "INSERTS (Tutorial 2) — en el ensamble: Insert > Component > New Part > Front Plane > renombrar 'Insert1' > seleccionar la cara frontal de la placa del cavity como plano de sketch > Convert Entities sobre las aristas de los slots > extruir cada slot por contour selection hasta la cara curva interior de la pieza > modelar la placa trasera del insert. Repetir para Insert2. Exploded View.",
+    "SLOTS PARA INSERTS — seleccionar la cara frontal de la placa del cavity > sketch > Convert Entities sobre las aristas de los slots de la pieza > Cut-Extrude con Through All."
+   ],
+   "herramientasUI": [
+    "Cavity (Mold Tools) — resta la pieza escalada del mold base; Cavity PropertyManager",
+    "Cavity PropertyManager: Design Component Parts, Scale Parameters, Uniform scaling, Scaling % spinner, Scale about (drop-down de origen)",
+    "Change Transparency (menú contextual del ensamble)",
+    "Edit Component (Assembly CommandManager) — editar la parte dentro del ensamble",
+    "File > Derive Component Part (Insert Part PropertyManager)",
+    "Insert > Molds > Split (Split PropertyManager): Trimming Surfaces, Trim Tools, Cut Part, Auto-assign Names, Resulting Bodies, Consume cut bodies",
+    "Draft Analysis (Mold Tools) — Draft Analysis PropertyManager",
+    "Draft Analysis PropertyManager: Direction of Pull, Draft Angle spinner, Reverse Direction, Adjustment triad, Face classification (Positive/Requires/Negative/Straddle + Show/Hide), Find steep faces, Gradual transition, Analysis Parameters/Color Settings",
+    "Scale (Mold Tools) — Scale PropertyManager: Scale About (drop-down), Scale Factor spinner, Uniform scaling, X/Y/Z Scale Factor",
+    "Insert > Component > New Part (flujo top-down dentro del ensamble)",
+    "Radiate Surface (Mold Tools): Radiate Direction Reference, Edges to Radiate, Propagate to tangent faces, Radiate Distance spinner",
+    "Knit Surface — Knit Surface PropertyManager: Surfaces and Faces to Knit, Seed Faces",
+    "Parting Lines (Mold Tools): Direction of Pull, Draft Analysis (dentro), Parting Lines edit box",
+    "Parting Surface (Mold Tools): Mold Parameters, Parting Line",
+    "Tooling Split (Mold Tools): sketch de sección, Depth in Direction 1/2, cuadros Core/Cavity/Parting Surface, Solid Bodies, Resulting Parts, Create Assembly",
+    "Planar Surface — shutoff plano",
+    "Filled Surface — shutoff de caras curvas/aberturas",
+    "Convert Entities — proyectar aristas a un sketch",
+    "Extrude con opción Up To Surface",
+    "Cut-Extrude con opción Through All / Selected Contours / contour selection",
+    "Reference Plane (plano a offset)",
+    "Exploded View (Assembly CommandManager)",
+    "Hide Components / Hide / Unhide",
+    "Suppress / Delete feature (FeatureManager Design Tree) para quitar extruded-cuts antes del Tooling Split",
+    "FeatureManager Design Tree"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "draftAnalysis(bodies, pullDir, minAngle)",
+     "queHace": "Por cada cara calcula el ángulo entre su normal y la dirección de extracción; clasifica verde (positivo, normal·pull>+sin(min)), amarillo (requiere draft, |ángulo respecto a perpendicular|<min), rojo (negativo). Pinta el modelo R3F por color por cara. Mapea a kernel: angle = asin(faceNormal·pullDir) por cara; threshold = minAngle.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "scaleModel(bodies, factor, scaleAbout, uniform, xyz)",
+     "queHace": "Escala el sólido respecto a un origen (centroide, origen del modelo, o punto) por un factor (uniforme o por eje) para compensar la contracción. Kernel OCCT: BRepBuilderAPI_Transform con gp_Trsf::SetScale, o afín no-uniforme con gp_GTrsf.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "cavityBoolean(moldBase, part, scaleFactor, scaleAbout)",
+     "queHace": "Escala la pieza y la resta booleanamente del bloque base para dejar la huella hueca (método split mold). Kernel: scale + BRepAlgoAPI_Cut(moldBase, scaledPart).",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "splitBodyBySketchSurface(body, trimmingSurface)",
+     "queHace": "Parte un sólido en dos cuerpos usando una superficie/sketch de corte (línea de partición extendida); reproduce Insert>Molds>Split. Kernel: BRepAlgoAPI_Splitter / BRepFeat con la superficie como herramienta de corte; opción consume/keep por cuerpo.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "deriveComponent(body)",
+     "queHace": "Crea un documento de parte derivado (copia vinculada) del cuerpo en el origen, para luego cortarlo. Kernel: copiar el shape; en La Forja = clonar el nodo del árbol manteniendo referencia.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "radiateSurface(edges, directionRef, distance, propagateTangent)",
+     "queHace": "Genera una superficie plana/ruled que irradia hacia afuera desde las aristas de partición, perpendicular a la dirección de pull, a cierta distancia; opción propagar a caras tangentes. Es la base de la parting surface. Kernel: por cada arista, barrer un ruled surface a lo largo del vector perpendicular al pull proyectado; BRepOffsetAPI/GeomFill ruled.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "knitSurface(faces, seedFaces)",
+     "queHace": "Cose múltiples caras/superficies (la radiada + caras interiores o exteriores de la pieza) en una sola hoja continua que sirve de tope para el core/cavity. Kernel OCCT: BRepBuilderAPI_Sewing.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "extrudeUpToSurface(sketch, targetSurface, direction)",
+     "queHace": "Extruye un perfil 2D hasta chocar con una superficie (knitted surface) en vez de una distancia fija; así el core/cavity copia la forma de la pieza. Kernel: prism + cut/intersect contra el target, o BRepFeat_Prism con 'until face'.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "shutoffSurface(edges, tipo)",
+     "queHace": "Crea parches que tapan aberturas pasantes: planar (Planar Surface, aristas coplanares) o filled (Filled Surface, contorno curvo). Hace estanca la pieza antes del split. Kernel: BRepBuilderAPI_MakeFace para planares, BRepFill/GeomPlate (Filled) para huecos curvos.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "createPartingLine(body, pullDir, faces)",
+     "queHace": "Detecta/define la curva donde core y cavity se separan: aristas de silueta respecto a la dirección de pull (transición de caras de draft positivo a negativo). Kernel: extraer silhouette edges donde faceNormal·pullDir cambia de signo entre caras adyacentes.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "createPartingSurface(partingLine, moldFace, pullDir)",
+     "queHace": "Extiende la parting line hacia afuera formando la superficie que parte el bloque de tooling. Kernel: ruled/swept surface desde la parting line hasta el borde del bloque, tangente o perpendicular según parámetro.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "toolingSplit(part, partingSurface, sketchSection, depth1, depth2)",
+     "queHace": "Operación maestra: a partir de un sketch de sección y profundidades arriba/abajo, genera el bloque de molde y lo divide en cuerpos Core y Cavity usando las caras interiores/exteriores de la pieza + la parting surface. Kernel: crear bloque (prism del sketch), restar la pieza, dividir con la knitted/parting surface (BRepAlgoAPI_Splitter), etiquetar cuerpos por lado del pull.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "suppressCutFeatures(featureTree)",
+     "queHace": "Suprime/borra los extruded-cut (agujeros taladrados después) antes del tooling split para que la operación no falle. En La Forja: toggle suppress en nodos del árbol de features y reconstruir.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "convertEntities(sketch, edges)",
+     "queHace": "Proyecta aristas de una cara al plano de sketch activo para reusarlas como perfil (slots, placas, inserts). Kernel: proyección de curvas al plano + restricciones coincidentes.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "createInsert(cavityPlate, slotEdges, targetFace)",
+     "queHace": "Crea un postizo top-down: Convert Entities de los slots, extruir por contour hasta la cara curva interior + placa trasera. Reusa convertEntities + extrudeUpToSurface + extrude.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "explodedView(assembly, directions)",
+     "queHace": "Separa los cuerpos (core/cavity/pieza/inserts) a lo largo de la dirección de pull para presentación. Solo transform visual en R3F, no kernel.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "topDownNewPart(assembly, plane, name)",
+     "queHace": "Crea una parte nueva DENTRO del ensamble referenciando un plano, base del flujo top-down de extracción. En La Forja: nodo de parte hija con referencias externas a la pieza maestra.",
+     "dificultad": "medio"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OpenCASCADE / OCCT-WASM): BRepBuilderAPI_Sewing para Knit Surface; BRepAlgoAPI_Cut/Common/Splitter para Cavity, Tooling Split y separar cuerpos; BRepBuilderAPI_Transform y gp_GTrsf para Scale; BRepFeat_Prism / BRepPrimAPI con 'up to surface' para extrudeUpToSurface; GeomFill/BRepFill y GeomPlate para Radiate/Filled Surface; BRepBuilderAPI_MakeFace para Planar Surface",
+    "planegcs (FreeCAD sketcher solver) para restringir los sketches 2D de líneas de partición, secciones de tooling split y perfiles de core/cavity",
+    "manifold (CSG robusto) como alternativa rápida a las booleanas de cavity/tooling-split en malla",
+    "three-bvh / three-mesh-bvh para clasificar caras por draft (normal·pull) y pintar por color en R3F sin pasar por el kernel",
+    "FreeCAD MoldDesign/Surface workbenches como referencia de implementación del flujo radiate/knit/parting",
+    "Convert-entities / proyección de curvas: reusar la lógica de proyección de OCCT (BRepProj_Projection)"
+   ],
+   "relevanciaMolde": "MÁXIMA — este capítulo ES el evaluador del molde de plástico de La Forja, define el pipeline completo core/cavity/parting/draft/scale por clicks. Aporta: (1) DRAFT — draftAnalysis(normal·pull por cara) es el chequeo de manufacturabilidad que valida si la pieza sale del molde, con código de color verde/amarillo/rojo que el frontend R3F puede pintar directo; (2) SCALE — scaleModel(factor de contracción, ej. 1.1) es el paso obligatorio antes de cualquier extracción para compensar shrink; (3) PARTING — createPartingLine (silhouette edges donde cambia el signo del draft) + createPartingSurface definen la frontera core/cavity, núcleo del evaluador; (4) CORE/CAVITY — los dos métodos (radiate+knit+extrudeUpToSurface, y parting-line+tooling-split) son las dos rutas para generar las dos mitades del molde, con la knit/parting surface como tope; (5) SHUT-OFF — el cierre de aberturas (planar/filled) es prerequisito de estanqueidad sin el cual el split falla; (6) INSERTS y supresión de extruded-cuts como casos límite que el evaluador debe manejar. En conjunto da el grafo de operaciones que La Forja necesita para, dado un sólido, decir si es moldeable (draft) y producir core+cavity+parting reales por clicks, que es exactamente la función de evaluador de molde del proyecto."
+  },
+  {
+   "capitulo": "Capítulo 7 — Working with SOLIDWORKS Simulation (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "fea",
+   "conceptos": [
+    "FEA = Análisis por Elementos Finitos: discretizar el sólido en elementos simples (tetraedros 3D, triángulos 2D shell, líneas 1D beam) conectados en nodos, y resolver un sistema algebraico K·u=f. Tres clases de solver: directos (técnica numérica exacta) e iterativos (asumir solución y reducir el error hasta tolerancia).",
+    "Análisis estático lineal: calcula desplazamientos, deformaciones (strains), esfuerzos (stresses) y reacciones bajo cargas en equilibrio. Supuestos duros: cargas aplicadas lenta y gradualmente, constantes en el tiempo tras alcanzar su máximo, relación carga-respuesta lineal, ley de Hooke aplicable, E (módulo de Young) y ν (Poisson) constantes, cargas constantes en magnitud/dirección/distribución.",
+    "Propiedades de material mandatorias para estático: Elastic Modulus (E), Poisson's Ratio (ν), Mass Density (ρ), Yield Strength (σ_y). Opcionales: Tensile/Compressive Strength, Thermal Expansion Coefficient. El código de color en el diálogo (rojo=mandatorio, azul=opcional, negro=no aplica) guía qué propiedades exige el estudio activo.",
+    "von Mises stress: criterio de esfuerzo equivalente que se contornea sobre el modelo (rojo=máximo, azul=mínimo) para predecir fluencia comparándolo contra σ_y.",
+    "Factor de Seguridad (FOS): FOS = σ_y / σ_von_Mises (o el criterio de falla elegido). Un FOS mínimo aceptable (ej. 2) define si el diseño aguanta; el plot muestra la distribución espacial del FOS.",
+    "Convergencia de malla: la precisión depende de la calidad/finura de la malla. Refinar reduce el tamaño de elemento y mejora resultados hasta un punto de convergencia (la deformación se estabiliza); más allá solo aumenta el runtime sin ganancia. Decisión de ingeniero entre precisión y tiempo.",
+    "Calidad de elemento: Aspect Ratio (relación arista más larga / normal más corta de vértice a cara opuesta; ideal=1.0 para tet perfecto) y Jacobian ratio (medida de distorsión; ideal=1.0, crece con la curvatura de aristas; negativo = elemento degenerado que detiene el análisis). Mallas parabólicas (de segundo orden) mapean curvatura mejor que las lineales.",
+    "Tipos de malla: standard (Voronoi-Delaunay, rápida), curvature-based (más elementos en zonas de alta curvatura), blended curvature-based (mejor calidad de superficie). Draft quality (4 nodos esquina) para evaluación rápida vs high quality (parabólica) para precisión.",
+    "Buckling (pandeo): falla súbita por desplazamiento lateral grande bajo carga axial en estructuras esbeltas, a cargas menores que la resistencia última. Esbeltez = l/r. Fórmula de Euler F = (π²·E·I)/(K·L)² con factor K según apoyos (Fixed-Fixed=0.5, Fixed-Free=2.0, Fixed-Pinned=0.7071, Pinned-Pinned=1.0).",
+    "Fatiga: falla por carga cíclica repetida aun cuando el esfuerzo es menor que σ_y; micro-fisuras crecen a grietas. Definida por curva S-N (número de ciclos vs nivel de esfuerzo). Eventos de amplitud constante (alternating stress + mean stress + nº ciclos) o variable (historial de fluctuación).",
+    "Análisis térmico: calcula distribución de temperatura, gradiente térmico, flujo térmico (heat flux) y pérdida/ganancia de calor por los tres modos: Conducción (cuerpos en contacto), Convección (medio fluido, definida por film/convection coefficient + bulk ambient temperature), Radiación (a través del espacio, definida por emisividad ε y constante Stefan-Boltzmann σ). Steady-state (cargas invariantes en el tiempo) vs Transient (cargas función del tiempo).",
+    "Topology study: optimización topológica no paramétrica; parte del espacio de diseño máximo con cargas/fixtures/restricciones de manufactura y redistribuye material para satisfacer una meta de optimización conservando los requisitos funcionales.",
+    "Simetría como reducción de problema: aplicar Cyclic Symmetry / condiciones de simetría permite analizar 1/4 del modelo y deducir resultados del resto, reduciendo tamaño y mejorando precisión; los resultados se muestran completos con Display symmetric results."
+   ],
+   "flujoHumano": [
+    "1) Activar el entorno: Tools > Add-Ins, marcar SOLIDWORKS Simulation (casillas izquierda y derecha) > OK. Aparece el menú Simulation y la pestaña Simulation en el CommandManager.",
+    "2) Abrir o crear el modelo 3D (File > Open, o sketch + feature como Revolved Boss/Base para crearlo).",
+    "3) Iniciar estudio: pestaña Simulation > flyout New Study > New Study; en el Study PropertyManager elegir el tipo (Static / Thermal / Frequency / Buckling / Fatigue / Topology), nombrarlo en el Name rollout > OK. Se despliega el Simulation Tree.",
+    "4) Asignar material: click derecho en el nodo Part(s) del Simulation Tree > Apply/Edit Material (o Apply Material to All). En el Material dialog box: expandir SOLIDWORKS Materials > Steel > seleccionar (ej. Plain Carbon Steel / Alloy Steel) > Apply > Close. Las propiedades en rojo son obligatorias.",
+    "4b) Material custom: en el Material dialog, click derecho en Custom Materials > New Category (renombrar) > click derecho > New Material (renombrar). Elegir unidades (SI - N/m²), borrar valores y teclear Elastic Modulus, Poisson's Ratio, Mass Density, Tensile Strength, Yield Strength > Apply.",
+    "5) Aplicar restricciones (fixtures): Fixtures Advisor flyout > Fixed Geometry; en el Fixture PropertyManager rotar el modelo y seleccionar la cara a fijar > OK. Para casos cíclicos: click derecho Fixtures > Advanced Fixtures > Cyclic Symmetry, seleccionar Face 1, Face 2 y el eje > OK.",
+    "6) Aplicar cargas: External Loads Advisor flyout > Force (o Torque). En el Force/Torque PropertyManager seleccionar la cara, elegir Selected direction y una arista/cara/plano de referencia, marcar Reverse direction si hace falta, elegir unidad SI, teclear el valor (ej. 5 N / 100 Nm) > OK.",
+    "7) Mallar: click derecho en el nodo Mesh > Create Mesh (o flyout Run This Study > Create Mesh). En el Mesh PropertyManager mover el slider Mesh Factor hacia Fine para refinar, o elegir Standard/Curvature-based mesh y fijar Global Size/Element Size > OK. Aparece la ventana Mesh Progress.",
+    "7b) Control local de malla: click derecho Mesh > Apply Mesh Control; en Mesh Control PropertyManager seleccionar entidades (ej. caras de agujeros), teclear Element Size (1.5 mm) > Create Mesh > Yes.",
+    "7c) Verificar malla: click derecho Mesh > Details (ventana con nº nodos/elementos/aspect ratio) y/o Create Mesh Quality Plot > elegir Aspect ratio (o Jacobian) > OK.",
+    "8) Correr el estudio: botón Run This Study (o click derecho en el nodo del estudio > Run). Aparece la ventana del solver; al terminar se agrega el nodo Results con plots de Stress (von Mises), Displacement y Strain.",
+    "9) Ver resultados: doble click en Stress1(-vonMises-) en el árbol. Para editar: click derecho > Edit Definition > Stress Plot PropertyManager (cambiar unidad, Advanced Options > Display symmetric results para mostrar el modelo completo).",
+    "10) Factor de seguridad: click derecho nodo Results > Define Factor Of Safety Plot; en el FOS PropertyManager avanzar con Next por los 3 pasos (criterio, multiplication factor=1, minimum factor of safety=2) > OK. El plot muestra el FOS mínimo.",
+    "11) Estudio térmico: New Study > Thermal; click derecho en el estudio > Properties > Thermal dialog > Steady state > OK. Aplicar material y malla. Thermal Loads flyout > Temperature (seleccionar cara, unidad °C/K, valor) y > Convection (seleccionar caras, Convection Coefficient, Bulk Ambient Temperature). Run This Study. Ver Thermal1(-Temperature-); click derecho Results > Define Thermal Plot > elegir HFLUXN (flujo resultante) o HFLUXX/Y/Z (direccional).",
+    "12) Generar reporte: botón Report en el Simulation CommandManager > Report Options dialog, marcar secciones y datos de encabezado > Publish (sale en Word). Save."
+   ],
+   "herramientasUI": [
+    "Add-Ins dialog (Tools > Add-Ins) para activar Simulation",
+    "New Study flyout / Study PropertyManager (Static, Thermal, Frequency, Buckling, Fatigue, Drop Test, Nonlinear, Topology, Pressure Vessel)",
+    "Simulation Tree (árbol de estudio con nodos Part(s), Fixtures, External Loads, Mesh, Results)",
+    "Material dialog box (SOLIDWORKS Materials library, Custom Materials, tabs Properties/Tables&Curves/Appearance/Custom/Favorites)",
+    "Apply/Edit Material / Apply Material to All / Apply Favorite Material",
+    "Fixtures Advisor flyout: Fixed Geometry, Advanced Fixtures > Cyclic Symmetry; Fixture PropertyManager",
+    "External Loads Advisor flyout: Force, Torque; Force/Torque PropertyManager (Selected direction, Reverse direction, Units)",
+    "Thermal Loads flyout: Temperature PropertyManager, Convection PropertyManager",
+    "Create Mesh / Mesh PropertyManager (Mesh Density slider/Mesh Factor, Mesh Parameters: Standard / Curvature-based / Blended curvature-based, Global Size, Tolerance, Automatic transition, Min/Max element size)",
+    "Apply Mesh Control / Mesh Control PropertyManager (Selected Entities, Element Size, Use per part size)",
+    "Mesh Details window y Create Mesh Quality Plot / Mesh Quality Plot PropertyManager (Aspect ratio, Jacobian points)",
+    "Run This Study (solver: Automatic, FFEPlus, Direct Sparse, Large Problem Direct Sparse)",
+    "Stress Plot PropertyManager (von Mises, Edit Definition, Advanced Options > Display symmetric results)",
+    "Define Factor Of Safety Plot / Factor of Safety PropertyManager (criterion, multiplication factor, minimum factor of safety)",
+    "Define Thermal Plot / Thermal Plot PropertyManager (HFLUXN, HFLUXX/Y/Z)",
+    "Thermal dialog (Steady state / Transient)",
+    "Report tool / Report Options dialog (Publish a Word)",
+    "Revolved Boss/Base (modelado del rotor de disco de freno en el tutorial térmico)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "newStudy(type)",
+     "queHace": "Crear un nodo de estudio (Static/Thermal por ahora) en un árbol de Simulación lateral, con su tipo y nombre, replicando el Study PropertyManager. La Forja ya tiene el motor (fea.ts); falta el árbol/estado de estudio en la UI.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "applyMaterial(bodyId, material)",
+     "queHace": "Asignar propiedades de material (E, ν, ρ, σ_y) a un cuerpo desde una biblioteca clickeable + permitir material custom editable. Mapea directo a MATERIAL_DATABASE de src/lib/formulas.ts que fea.ts ya consume.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "pickFaceFixture(faceId, type)",
+     "queHace": "Fijar grados de libertad de los nodos de una cara seleccionada por click (Fixed Geometry). Mapea a marcar DOF fijos (u=0) en los nodos de la malla cuyo centroide cae en la cara teselada. fea.ts ya toma BCs del face-picking.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "applyForce(faceId, vector, magnitude)",
+     "queHace": "Distribuir una fuerza/torque sobre los nodos de una cara con dirección por arista/plano de referencia. Mapea a ensamblar el vector de cargas f sobre los DOF de esos nodos (fuerza repartida por área/nodo; torque = fuerza tangencial × radio respecto al eje).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "generateMesh({type, globalSize, tolerance, curvatureBased})",
+     "queHace": "Mallar el sólido en tets con tamaño global controlable por slider y refinado por curvatura. fea.ts ya voxeliza el AABB + ray-cast inside/outside + split de Kuhn (5 tet/voxel); falta exponer el control de tamaño y curvature-based en la UI.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "applyMeshControl(entities, elementSize)",
+     "queHace": "Refinamiento local de malla en entidades seleccionadas (agujeros, fillets). Mapea a reducir el tamaño de voxel/tet en una región AABB local alrededor de las caras elegidas.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "meshQuality()",
+     "queHace": "Calcular y graficar Aspect Ratio y Jacobian ratio por elemento + listar nº nodos/elementos (Mesh Details). Aspect ratio = arista_max / normal_min; Jacobian del mapeo isoparamétrico. Plot de color sobre la malla.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "runStatic()",
+     "queHace": "Resolver K·u=f y derivar von Mises, desplazamiento y deformación. Ya existe en fea.ts (CG sparse CSR + Jacobi + tet4Element + vonMisesStress). Falta cablear el botón Run y los plots.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "vonMisesPlot() / displacementPlot()",
+     "queHace": "Contornear el campo de von Mises/desplazamiento sobre el sólido en R3F con leyenda min-max (rojo/azul). El campo ya sale de fea.ts; falta el mapa de color por nodo en el visualizador.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "factorOfSafetyPlot(criterion, minFOS)",
+     "queHace": "Calcular FOS = σ_y/σ_vm por nodo y resaltar zonas bajo el FOS mínimo. Trivial sobre el campo von Mises ya computado.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "convergenceStudy()",
+     "queHace": "Correr el estudio a varias densidades de malla y graficar deformación máxima vs nº elementos para detectar convergencia (la decisión de mallado del capítulo). Bucle sobre generateMesh+runStatic.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "runSteadyThermal({temperatureBC, convectionBC})",
+     "queHace": "Resolver conducción estacionaria K_t·T=Q con cargas de temperatura prescrita y convección (h, T_bulk) por cara, y derivar gradiente y heat flux (HFLUXN/X/Y/Z). Requiere un solver térmico nuevo (matriz de conductividad), análogo al estructural pero escalar.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "bucklingEuler(loadCase)",
+     "queHace": "Resolver el problema de valores propios de pandeo (K + λ·K_g)φ=0 para el menor factor de carga crítico. Más avanzado; el capítulo solo da la teoría/Euler con factor K.",
+     "dificultad": "dificil"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (opencascade.js WASM): teselado del B-Rep (tessellate), enumeración de caras pickeables (enumerateFaces) para fixtures/loads, y el bounding box — ya en uso en occt.ts/fea.ts",
+    "Motor FEA propio ya en el repo (src/lib/formulas.ts: tet4Element Ke 12×12, elasticityMatrix3D D 6×6, vonMisesStress, principalStresses, conjugateGradient) — reusar y NO reinventar",
+    "CalculiX / code_aster como referencia de solvers FEA open-source (validar resultados contra casos canónicos viga cantilever σ=Mc/I, δ=PL³/3EI)",
+    "TetGen / Gmsh para mallado tetraédrico de calidad si se quiere superar la voxelización+Kuhn actual de fea.ts",
+    "eigen-js / ndarray para álgebra lineal sparse (CSR) del solver K·u=f y del eigenproblema de buckling",
+    "three.js / R3F para el contorneo de color del campo (von Mises, temperatura, FOS) con leyenda — infraestructura ya presente"
+   ],
+   "relevanciaMolde": "\"Media. Este capítulo NO cubre draft/parting/tooling split/scale del molde (eso vive en los capítulos de superficies/moldes); su aporte al evaluador del molde de plástico es el órgano de VALIDACIÓN ESTRUCTURAL y TÉRMICA del molde y la pieza: (1) FEA estructural estática (von Mises + FOS) para verificar que las placas core/cavity y la pieza aguantan la presión de inyección y la fuerza de cierre sin fluir (σ_vm < σ_y, FOS >= objetivo) — mapea directo a fea.ts ya existente; (2) análisis térmico steady-state (conducción + convección, heat flux) que es la base para evaluar enfriamiento del molde y disipación de calor del plástico fundido, insumo del tiempo de ciclo; (3) la doctrina de convergencia/calidad de malla (aspect ratio, jacobian) marca el estándar de confiabilidad de cualquier resultado FEA que el evaluador reporte; (4) material custom valida que se pueden cargar propiedades reales de aceros de molde y resinas. Es el 'análisis MIENTRAS diseñas' (FEA incremental) aplicado a validar el molde, no a generar su geometría.\""
+  },
+  {
+   "capitulo": "Capitulo 8 — Working with Weldments (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "estructura",
+   "conceptos": [
+    "Un weldment (estructura soldada) parte de un wireframe (2D + 3D sketch) que define las trayectorias/ejes de los miembros; los perfiles se barren a lo largo de esos segmentos. La forma es la curva, no el solido.",
+    "Un perfil de seccion estandar (square tube, pipe, etc.) se define por Standard (iso/ansi), Type (seccion) y Size (ej. 40x40x4, 21.3x2.3); el perfil se posiciona normal a cada segmento de la trayectoria.",
+    "Los miembros se organizan en Grupos: miembros colineales/continuos van en un mismo grupo y reciben tratamiento de esquina automatico entre si; miembros con orientacion distinta van en grupos separados.",
+    "Las esquinas requieren tratamiento porque dos barras barridas se interpenetran en la interseccion; hay que recortar/extender una contra otra para una junta limpia.",
+    "Tipos de tratamiento de esquina: End Trim (recorta contra una o varias caras/cuerpos, multiples cuerpos), End Miter (corte a inglete, un solo cuerpo, angulo igual o full flush), End Butt1 y End Butt2 (tope, un solo cuerpo).",
+    "Corte coped (despunte) vs simple cut: el coped sigue el contorno del miembro adyacente; el simple es un corte plano. El Weld gap reduce la longitud del cuerpo recortado para dejar espacio al cordon de soldadura.",
+    "Allow extension permite alargar un segmento que no llega a tocar la frontera de recorte para que la intersecte.",
+    "Allow protrusion (en el grupo de miembro estructural): si no se desactiva, los miembros de un grupo secundario se deforman tras la alineacion.",
+    "End Cap cierra un miembro tubular abierto con una tapa de espesor definido; direccion Outward/Inward/Internal, con offset desde el borde y tratamiento de esquina (chaflan/redondeo).",
+    "Un Gusset es una placa de refuerzo triangular o poligonal que conecta dos miembros que se intersectan en sus caras planas/cilindricas; se parametriza por d1..d6, a1, a2 (lados, angulos), espesor, lado (inner/both/outer) y ubicacion (start/mid/end + offset).",
+    "Los weld beads (cordones) son representaciones graficas/cosmeticas, NO geometria solida real; se definen por una trayectoria (weld path) o por Weld Geometry (Weld From / Weld To) y un tamano de cordon (bead size).",
+    "Un Groove Bead es un cordon dentro de una ranura/gap entre dos miembros con penetracion definida (Face Set 1 vs Face Set 2, full face weld).",
+    "El weldment genera automaticamente cut list y bill of materials (listado de corte y lista de materiales) para fabricacion.",
+    "El weldment se integra con Simulation: se asigna material, se fija geometria (Fixed Geometry en juntas), se aplica fuerza sobre vigas (Beams) y se obtiene contorno de esfuerzo axial y de flexion (analisis estatico lineal por elementos viga)."
+   ],
+   "flujoHumano": [
+    "1. Invocar el CommandManager Weldments (View > Toolbars > Weldments, o click derecho en el CommandManager).",
+    "2. Crear sketch base 2D: elegir plano (ej. Right Plane), dibujar lineas/rectangulo y acotar el wireframe de los miembros.",
+    "3. (Opcional) Reference Geometry > Plane: seleccionar Right Plane como referencia, escribir Offset Distance (ej. 2000), OK para crear plano paralelo; dibujar el segundo sketch 2D en ese plano.",
+    "4. Weldments > 3D Sketch: con Line conectar puntos entre planos (puntos 1-2, 3-4, y una tercera linea entre midpoints) para crear los miembros que cruzan el espacio 3D; Exit.",
+    "5. Weldments > Structural Member: abre el PropertyManager. En Selections elegir Standard (ej. iso), Type (ej. square tube / pipe), Size (ej. 40x40x4 / 21.3x2.3).",
+    "6. Seleccionar los segmentos del sketch que forman un miembro continuo -> se crea Group1 automaticamente.",
+    "7. New Group para miembros con otra orientacion -> seleccionar sus segmentos -> Group2. (Desactivar Allow protrusion si los grupos se deforman). OK para generar los miembros.",
+    "8. Repetir Structural Member para miembros frontales y centrales (mismos pasos de grupos).",
+    "9. Weldments > Trim/Extend: elegir Corner Type (End Trim/End Miter/End Butt1/End Butt2).",
+    "10. En Bodies to be Trimmed seleccionar el/los cuerpos a recortar; en Trimming Boundary elegir Bodies/Face y seleccionar el miembro adyacente contra el cual recortar.",
+    "11. Usar los callouts (toggle keep/discard) para decidir que segmento conservar; elegir Simple cut o Coped cut; activar Weld gap y meter valor si se requiere espacio para el cordon. OK.",
+    "12. (End Cap) Weldments > End Cap: seleccionar la cara extrema abierta, elegir direccion (Outward/Inward/Internal), Thickness, Offset, y opcional Corner Treatment (chaflan/redondeo). OK.",
+    "13. (Gusset) Weldments > Gusset: seleccionar las dos caras planas/cilindricas adyacentes (Supporting Faces), elegir Triangular o Polygonal Profile, meter d1..d4/a1 (o d1,d2), opcional Chamfer (d5,d6,a2), Gusset Thickness, lado (Inner/Both/Outer), ubicacion (Start/Mid/End + offset). OK.",
+    "14. (Weld Bead) Weldments > Weld Bead: en Settings elegir Weld Path o Weld Geometry; si Weld Path seleccionar aristas/sketches del camino; si Weld Geometry seleccionar Weld From y Weld To. Meter Bead size. New Weld Path para caminos adicionales. OK -> se crea Weld Folder.",
+    "15. Click derecho en Weld Folder > Show Cosmetic Welds para visualizar los cordones.",
+    "16. (Groove Bead) Weldments > Groove Bead: seleccionar Face Set 1 y Face Set 2, activar Full face weld, OK.",
+    "17. (Simulacion) New Study > Static; Create Mesh; Apply Material (ej. Alloy Steel); Fixed Geometry en las juntas; Force tool con boton Beams, seleccionar miembros y arista de direccion, Reverse direction si hace falta, meter 1000 N en Along Edge; Run -> contorno de esfuerzo axial/flexion.",
+    "18. Save."
+   ],
+   "herramientasUI": [
+    "Weldments CommandManager",
+    "3D Sketch",
+    "Structural Member PropertyManager (Standard / Type / Size, Groups, New Group, Allow protrusion)",
+    "Trim/Extend PropertyManager (Corner Type: End Trim / End Miter / End Butt1 / End Butt2; Bodies to be Trimmed; Trimming Boundary; Allow extension; Simple cut vs Coped cut; Weld gap; Equal angle miter / Full flush miter; callouts keep/discard)",
+    "End Cap PropertyManager (Outward/Inward/Internal, Thickness, Offset, Corner Treatment chamfer/fillet)",
+    "Gusset PropertyManager (Supporting Faces, Triangular/Polygonal Profile, d1..d6/a1/a2, Chamfer, Gusset Thickness, Inner/Both/Outer Side, Start/Mid/End Point, Offset)",
+    "Weld Bead PropertyManager (Weld Geometry vs Weld Path, Weld From/Weld To, Bead size, New Weld Path, Select Faces, Weld Folder, Show Cosmetic Welds)",
+    "Groove Bead PropertyManager (Face Set 1, Face Set 2, Full face weld)",
+    "Reference Geometry > Plane (Offset Distance)",
+    "Line, Cut list / Bill of Materials (autogenerados)",
+    "Simulation: New Study (Static), Create Mesh, Apply Material, Fixed Geometry, Force/Torque (Beams), Run This Study"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "sketch3D() / line3D entre planos",
+     "queHace": "Permitir trazar lineas en el espacio 3D conectando puntos/midpoints entre dos sketches 2D en planos distintos; base del wireframe de la estructura.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "offsetPlane(refPlane, dist)",
+     "queHace": "Crear un plano de referencia paralelo a otro a distancia dada para alojar el segundo sketch 2D.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "structuralMember(pathSegments, profile)",
+     "queHace": "Barrer (sweep) un perfil de seccion estandar a lo largo de cada segmento del wireframe, orientando el perfil normal al segmento. Mapea a OCCT BRepOffsetAPI_MakePipe / sweep del perfil 2D por la polilinea.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "profileLibrary (Standard/Type/Size)",
+     "queHace": "Catalogo de secciones (square tube, pipe...) parametrizado por norma/tipo/tamano que devuelve el wire del perfil 2D a barrer; ligar al catalogo Weston/fasteners existente.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "memberGroups()",
+     "queHace": "Agrupar segmentos colineales/continuos en grupos para aplicar alineacion y tratamiento de esquina coherente entre miembros del mismo grupo.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "trimExtendCorner(bodyA, boundary, type)",
+     "queHace": "Recortar/extender un miembro contra otro: End Trim (boolean cut contra cara/cuerpo), End Miter (plano bisector entre ejes), End Butt (corte plano en tope). Mapea a interseccion de ejes -> plano de corte -> BRep cut (manifold/OCCT BRepAlgoAPI_Cut).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "copedCut(bodyA, bodyB)",
+     "queHace": "Despunte: cortar bodyA siguiendo la superficie de bodyB (boolean cut con el solido adyacente) vs simple cut (corte plano).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "weldGap(offset)",
+     "queHace": "Acortar el cuerpo recortado una distancia para dejar holgura de cordon; offset del plano de corte a lo largo del eje.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "allowExtension()",
+     "queHace": "Extender un segmento que no alcanza la frontera hasta intersectarla antes de recortar.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "endCap(face, thickness, dir, offset, cornerTreat)",
+     "queHace": "Tapar una cara extrema abierta de un tubo: extruir la cara (offset hacia outward/inward/internal) a espesor dado y opcional chaflan/redondeo de borde. Mapea a extrude del loop de la cara + fillet/chamfer.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "gusset(face1, face2, profile, thickness, side, location)",
+     "queHace": "Generar placa triangular/poligonal de refuerzo entre dos caras adyacentes, parametrizada por d1..d6/a1/a2; sketch en el plano comun + extrude a espesor.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "weldBead(path|fromTo, beadSize)",
+     "queHace": "Crear cordon cosmetico (representacion, sin booleano real) a lo largo de aristas/caminos o entre caras Weld From/Weld To; barrido de un perfil circular de radio=beadSize como malla decorativa + nodo en arbol.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "grooveBead(faceSet1, faceSet2, fullFace)",
+     "queHace": "Cordon en la ranura entre dos conjuntos de caras con penetracion definida; geometria de relleno del gap.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "cutList / BOM autogenerado",
+     "queHace": "Agrupar miembros identicos por perfil y longitud y listar cantidades para fabricacion.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "beamFEA(static)",
+     "queHace": "Analisis estatico lineal sobre elementos viga: malla, material, Fixed Geometry en juntas, fuerza sobre miembros, contorno de esfuerzo axial+flexion. Reusar fea.ts/topopt.ts existentes adaptados a vigas.",
+     "dificultad": "dificil"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (opencascade.js WASM): BRepOffsetAPI_MakePipe/ThruSections para barrer perfiles por la trayectoria; BRepAlgoAPI_Cut/Common para trim/extend y coped cuts; BRepPrimAPI/BRepBuilderAPI para end caps y gussets; BRepFilletAPI para chaflan/redondeo de end cap",
+    "planegcs: solver de restricciones para el wireframe 2D (acotar lineas/rectangulos del sketch base)",
+    "manifold / CSG: alternativa rapida a booleanos para coped cut, weld gap y recortes de esquina sobre mallas",
+    "three-mesh-bvh: deteccion de interseccion eje-eje y de cuerpos adyacentes para detectar esquinas a tratar automaticamente",
+    "Catalogo propio de fasteners/Weston (src/lib/parts/) extendido a perfiles estructurales (square tube, pipe) con dimensiones por norma",
+    "Solver FEA propio (fea.ts/topopt.ts) o frame3dd-style para el analisis de viga del Tutorial 2"
+   ],
+   "relevanciaMolde": "Media/indirecta. Este capitulo no toca core/cavity ni draft/parting directamente; alimenta el lado ESTRUCTURAL del pipeline. Aporta: (1) el flujo wireframe->barrido de perfil que da a La Forja el sweep-along-path reutilizable para porta-moldes y bastidores/marcos de la maquina; (2) operaciones booleanas de recorte/despunte (trim/extend, coped cut) que comparten el mismo kernel de cut que necesita el tooling split del molde; (3) end cap = extrude de cara + offset, primitiva reutilizable para placas del molde; (4) gusset = placa de refuerzo, reutilizable para refuerzos del bastidor. El cordon de soldadura es cosmetico (sin geometria) y NO entra al evaluador de molde. El nexo mas fuerte es con el edificio estructural del user (miembros estructurales, grupos, tratamiento de esquina), no con el evaluador draft/scale/parting del molde."
+  },
+  {
+   "capitulo": "Chapter 9 - Projects (Advanced SOLIDWORKS 2026 for Designers, CADCIM)",
+   "dominio": "proyectos (capstone): modelado de componentes + ensamblaje de mecanismos completos",
+   "conceptos": [
+    "El capitulo es puramente de proyectos capstone: NO ensena teoria ni comandos nuevos; pide replicar 10 ensambles a partir de vistas y cotas en figuras.",
+    "Cada ensamble se descompone en piezas individuales (separate part files) que el diseñador modela una por una y luego ensambla bottom-up.",
+    "El diseñador debe leer dibujos de ingenieria (vistas ortograficas + cotas) y reconstruir el solido 3D a partir de ellos.",
+    "Los 10 proyectos son mecanismos reales con movimiento/funcion: Wheel, Metal Shear, Angle Clamp, Hand Punch Press, Ball Valve, Pneumatic Gripper, Car Jack, Wrench, Hand Drill, Bending Machine.",
+    "Intuicion de diseño que ejercitan: relaciones de acoplamiento entre piezas (ejes-agujeros, pivotes, deslizadores, roscas) y grados de libertad de cada mecanismo."
+   ],
+   "flujoHumano": [
+    "1. Estudiar las figuras del proyecto: vista de ensamble (ej. Figura 1) + vistas y cotas de cada componente (ej. Figuras 2-6).",
+    "2. Para CADA componente: New > Part; elegir plano de croquis; Sketch; acotar segun la figura; salir del croquis.",
+    "3. Aplicar la feature base (Extruded Boss/Base o Revolved Boss/Base segun la geometria) y luego features secundarias (cortes, agujeros, redondeos, chaflanes) hasta igualar las cotas de la figura.",
+    "4. Guardar cada componente como part file separado.",
+    "5. Repetir hasta tener todos los componentes del proyecto modelados.",
+    "6. New > Assembly; Insert Components de cada part file.",
+    "7. Fijar el primer componente y aplicar Mates (coincident, concentric, distance, etc.) para definir las relaciones del mecanismo.",
+    "8. Verificar el ensamble contra la figura de referencia (ej. Figuras 17 y 18)."
+   ],
+   "herramientasUI": [
+    "New Part / New Assembly",
+    "Sketch + Smart Dimension",
+    "Extruded Boss/Base",
+    "Revolved Boss/Base",
+    "Extruded Cut / Revolved Cut",
+    "Hole Wizard",
+    "Fillet / Chamfer",
+    "Insert Components",
+    "Mate (Coincident, Concentric, Distance, Angle)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "importarVistasReferencia",
+     "queHace": "Cargar imagenes de las vistas/cotas (las figuras del proyecto) como referencia visible junto al lienzo para reconstruir la pieza por clicks; el capitulo se basa 100% en leer figuras.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "modeladoMultiPieza",
+     "queHace": "Permitir crear y guardar varios part files independientes en un mismo proyecto antes de ensamblar (bottom-up).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "ensamblajeYMates",
+     "queHace": "Insertar varias piezas en una escena de ensamble y aplicar restricciones de acoplamiento (coincident/concentric/distance) resueltas por un solver de restricciones 3D; mapea a un sistema de DOF entre cuerpos rigidos.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "croquisAcotadoDesdeFigura",
+     "queHace": "Sketcher 2D con cotas exactas para reproducir las cotas de las figuras; mapea a planegcs (restricciones) + extrude/revolve OCCT.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "biblioteca10Proyectos",
+     "queHace": "Plantillas/retos capstone (Wheel, Ball Valve, Car Jack, etc.) como ejercicios guiados por clicks dentro de La Forja.",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "planegcs: solver de restricciones de croquis 2D para acotar cada componente segun las figuras",
+    "OCCT (OpenCascade): features Extrude/Revolve/Cut/Fillet/Chamfer y kernel B-Rep para los solidos",
+    "manifold/CSG: operaciones booleanas auxiliares en cortes complejos",
+    "Un solver de mates de ensamble (constraints 6-DOF entre cuerpos) para la parte de assembly"
+   ],
+   "relevanciaMolde": "Baja. Este capitulo son proyectos capstone de ensamblaje mecanico (Wheel, Ball Valve, Car Jack, etc.) y NO toca el pipeline de molde de plastico: no cubre Draft Analysis, Parting Line, Tooling Split, Scale ni superficies core/cavity. Su unico aporte indirecto al evaluador del molde es validar que el modelador multi-pieza + croquis acotado + features base (extrude/revolve/cut) funcionan sobre piezas reales con cotas de ingenieria, que es el prerequisito para luego aplicar draft/parting sobre una pieza candidata a moldear."
+  }
+ ],
+ "recon": [
+  {
+   "tema": "Estado actual del croquis/sketcher 2D de La Forja (src/forja/brep/sketch-solver.ts + SketchEditor.tsx)",
+   "hallazgos": [
+    "GEOMETRIA DIBUJABLE POR CLICKS HOY (8 herramientas en SketchEditor.tsx:20,349-353): select, line, rect, circle, arc, point, dim, fix. LINEA = cadena clic-clic con snap a punto existente (umbral 10px, snapOrAdd L99) y cierre de lazo al snap del primer punto de una cadena >=3 (L194). RECTANGULO = clic-clic esquina->esquina O drag desde esquina; genera 4 puntos + 4 lineas + 4 constraints automaticas (2 horizontal + 2 vertical, L165-168/206-209). CIRCULO = clic centro->clic radio O drag centro->radio (rmin=1mm). ARCO = 3 clics centro->inicio->fin, CCW, con previa que crece con el mouse (L224-234, tessArc). PUNTO = datum suelto. Drag-to-draw real para circulo/rect con preview punteado ambar (L107-179).",
+    "GEOMETRIA QUE FALTA dibujar: no hay elipse, ni spline/bezier, ni polígono regular, ni slot/ranura como herramienta nativa, ni fillet/chamfer DE CROQUIS, ni texto. Solo line/rect/circle/arc/point.",
+    "RESTRICCIONES — el SOLVER (sketch-solver.ts:23-36) tiene 14 tipos: fix, coincident, horizontal, vertical, distance, parallel, perpendicular, equalLength, pointOnLine, radius, equalRadius, concentric, tangentLC, y la implícita de arco (sus 2 extremos al mismo radio del centro, L118-121). Todas con residual cerrado.",
+    "DESAJUSTE UI vs SOLVER: la barra de herramientas (SketchEditor.tsx:366-372) SOLO expone botones para horizontal, vertical, perpendicular, parallel, equalLength, coincident, construction-toggle, y fix (via herramienta ancla). QUEDAN HUERFANAS 4 restricciones que el solver YA sabe resolver pero NO tienen botón ni gesto: pointOnLine, equalRadius, concentric, tangentLC. Es código muerto desde la UI.",
+    "COTAS / DIMENSIONES existentes (tool 'dim', L244-258): distancia entre 2 puntos (euclidiana punto-a-punto) y radio de círculo. Se editan en un input flotante al crearlas (L431-438) y se dibujan con líneas de extensión/flechas (DimAnnotations L463-502). FALTA: cota de DIAMETRO (solo hay radio), cota ANGULAR entre 2 líneas, cota HORIZONTAL/VERTICAL proyectada (la 'distance' siempre mide la recta, nunca la proyección ortho como SolidWorks), y NO se pueden re-editar las cotas ya colocadas (las DimAnnotations son solo display, sin doble-clic).",
+    "AUTO-RELACIONES (lo que DEFINE a SolidWorks): NO existe inferencia automática mientras dibujas. No detecta H/V/coincident/tangent/midpoint/igual al vuelo. La ÚNICA constraint auto-inyectada es la del rectángulo (H/V de sus 4 lados). Todo lo demás es 100% manual: seleccionar entidades y pulsar botón. El 'snap' (snapOrAdd, L99-106) es puramente geométrico: pega al punto existente más cercano <10px reusando su MISMO índice (coincidencia real, no constraint 'coincident'); no hay snap a líneas, puntos medios, cuadrantes ni intersecciones.",
+    "FULLY-DEFINED: BIEN implementado y es lo mejor del módulo. DOF = nVars − rank(J) por RREF con tolerancia (rankAndMovable L166-195); estado full(verde)/under(azul)/over(rojo) en barra inferior (L443-446); y DOF POR-ENTIDAD via espacio nulo del Jacobiano (free.points/free.circles) que pinta de AZUL solo lo que aún se mueve y BLANCO lo clavado (colFor L326-327) — paridad real con Fusion/SolidWorks.",
+    "SOLVER (método): Levenberg–Marquardt = Gauss–Newton amortiguado (solveSketch L205-268), maxIters=80, tol=1e-9, lambda adaptativo (×4 al fallar / ÷3 al mejorar, 8 reintentos por iteración, L241-250). JACOBIANO NUMERICO por diferencias centradas h=1e-6 (jacobian L126-139): cada iteración hace 2·n evaluaciones de residuals() recorriendo TODAS las restricciones → costo ~O(iters·n·m), denso, sin sparsity ni descomposición en subsistemas. Algebra lineal densa propia (Gauss-Jordan, solveDense L142-160), sin QR/sparse. 'fix' se implementa eliminando la variable (marca point.fixed) en lugar de como ecuación (L209-210) — limpio. Drag en vivo: pin temporal del punto al cursor + resolver, y re-resolver SIN el pin al soltar para reportar el DOF real (L121-179).",
+    "HERRAMIENTAS DE EDICION tipo SolidWorks que FALTAN por completo (grep confirma cero referencias): trim/extend (recortar), offset, mirror/espejo, pattern de croquis (lineal/circular — el patrón existe pero a nivel de features/ops en ForgeBRepStudio, no en el croquis), fillet/chamfer de croquis, restricción symmetric, restricción midpoint, restricción equal entre punto-punto. No hay deshacer/rehacer en el editor.",
+    "INTEGRACION con el sólido (extractProfileAndHoles L583-637 → onSketchFinish en ForgeBRepStudio.tsx:3041-3055): arma el perfil exterior caminando el lazo (líneas, o lazo MIXTO líneas+arcos por recorrido de aristas con teselado, o un círculo) excluyendo las líneas de construcción; círculos internos → barrenos; al Terminar crea customProfile + un Extrude (depth 12) + un hole por círculo. LIMITACION: asume UN solo lazo cerrado simple — no maneja múltiples perfiles cerrados, islas anidadas (más allá de 'primer círculo=exterior, resto=barrenos'), ni perfiles abiertos; un perfil con auto-intersección o lazos sueltos lo confunde.",
+    "VERIFICACION: el módulo está MUY probado por invariantes geométricas — existen scripts/sketch-solver-test.ts, sketch-dof-verify.cjs, sketch-drag-verify.cjs, sketch-hole-verify.cjs, sketcher-verify.cjs y toda la familia sketch-fit-* (precision/stress/step/numbers). El hook window.__sketchEditor (L330-346) expone dof/status/free/points/profile/holes para Playwright."
+   ],
+   "recomendacion": "EL HUECO REAL NO ES EL SOLVER, ES EL EDITOR. El núcleo LM con detección de DOF por-entidad (espacio nulo) ya da la experiencia 'azul→blanco/fully-defined' a paridad de Fusion y está bien probado; para croquis chicos/medianos converge sin problema. Reemplazar el solver NO arregla nada de lo que se siente faltante, porque lo ausente vive en la capa de interacción. Prioridad por impacto/costo: (1) BARATO Y ALTO IMPACTO — exponer en la UI las 4 restricciones que el solver YA resuelve y hoy son código muerto: pointOnLine, concentric, equalRadius, tangentLC (solo faltan botón/gesto). (2) LO MAS 'SOLIDWORKS' QUE FALTA — auto-inferencia de relaciones al dibujar (detectar H/V/coincident/tangent/midpoint al vuelo y aplicarlas), que es lo que hace que un croquis se sienta vivo. (3) cotas angular + diámetro + distancia proyectada H/V, y editar cotas ya puestas. (4) trim/offset/mirror + restricción symmetric/midpoint. SOBRE PLANEGCS (LGPL): NO es urgente y NO resuelve (1)-(4) — esos son trabajo de editor con cualquier solver. Conviene SOLO como swap de mediano plazo si (a) los croquis crecen y el Jacobiano numérico denso (2·n·m evals/iter) se vuelve lento, o (b) quieres GRATIS el diagnóstico robusto de restricciones redundantes/conflictivas/parcialmente-redundantes + más primitivas (symmetric, ángulo, point-on-object genérico, alineación interna) que trae el GCS de FreeCAD. La licencia LGPL-2.1 es compatible con el producto si se enlaza como módulo WASM reemplazable (no estático). ALTERNATIVA MAS BARATA QUE PLANEGCS para la perf: añadir Jacobiano ANALÍTICO al solver propio (los residuales son polinómicos simples → derivadas cerradas triviales), elimina el cuello de las diferencias centradas sin importar dependencia externa. Recomendación: invertir primero en (1)-(4) sobre el solver actual + Jacobiano analítico; tener planegcs en el radar y prototiparlo solo si aparece el muro de escala o se necesita el diagnóstico de conflictos.",
+   "candidatos": [
+    {
+     "nombre": "PlaneGCS (FreeCAD GCS) compilado a WASM/TS",
+     "licencia": "LGPL-2.1-or-later",
+     "queAporta": "Solver 2D maduro que mueve a FreeCAD: set completo de restricciones (incluye symmetric, ángulo, point-on-object genérico, alineación interna de cónicas), múltiples algoritmos (DogLeg/LM/BFGS), descomposición en subsistemas, manejo sparse, conteo de DOF y DIAGNOSTICO de redundantes/conflictivas/parcialmente-redundantes — justo lo que el solver propio no diagnostica. Enlazable como módulo WASM reemplazable (compatible LGPL en navegador).",
+     "repo": "github.com/Salusoft89/planegcs (port Emscripten/WASM del PlaneGCS de FreeCAD)",
+     "lenguaje": "C++ → WASM con bindings TypeScript",
+     "madurez": "Alta como librería de FreeCAD; el port JS/WASM es funcional pero menos batido en producción que el original C++",
+     "navegador": "Sí (WASM, corre en el browser)"
+    },
+    {
+     "nombre": "Solver de SolveSpace (extraído)",
+     "licencia": "GPLv3",
+     "queAporta": "Solver de restricciones robusto y muy probado (LM + análisis simbólico). Tecnicamente excelente.",
+     "repo": "github.com/solvespace/solvespace",
+     "lenguaje": "C++ (requeriría port/WASM)",
+     "madurez": "Muy alta",
+     "navegador": "Solo vía WASM con esfuerzo; ADEMAS GPLv3 es contaminante para un producto que no quiera abrir todo el código — descartable por licencia para La Forja"
+    },
+    {
+     "nombre": "Mantener el solver propio + Jacobiano analítico",
+     "licencia": "propia (ya en el repo)",
+     "queAporta": "Cero dependencia nueva, cero riesgo de licencia, control total y ya probado por invariantes. Sustituir las diferencias centradas (jacobian L126-139) por derivadas cerradas de los residuales (todos polinómicos) elimina el cuello de perf O(2·n·m). Es la vía más barata si el problema fuera velocidad y no diagnóstico.",
+     "repo": "src/forja/brep/sketch-solver.ts (in-repo)",
+     "lenguaje": "TypeScript",
+     "madurez": "Media-alta para croquis chicos/medianos; sin sparsity ni descomposición en subsistemas",
+     "navegador": "Sí (TS puro, ya corre)"
+    }
+   ]
+  },
+  {
+   "tema": "Estado ACTUAL del modelado por features y del molde en La Forja (src/forja/brep): kernel OCCT, booleano cuerpo-cuerpo \"Cavidad\", y hueco hacia el pipeline SolidWorks Mold Tools.",
+   "hallazgos": [
+    "FEATURES POR CLIC HOY (toolbar ForgeBRepStudio.tsx ~L4178-4189): Extrude, Hole (click-to-place sobre cara), Fillet, Chamfer, Shell (vaciado), Revolve, Loft, Sweep, Corte/Pocket, Patron (lineal/circular/espejo). Mas Componentes box/cyl (btn-component, L4198). OpType (L352) = 'extrude'|'hole'|'fillet'|'chamfer'|'shell'|'revolve'|'loft'|'sweep'|'pattern'|'pocket'. Arbol de features REAL: suppress/rename/rollback (rollbackIdx) + parametros ligados (applyBindings/boundDoc). NO existe ningun OpType 'draft'/'scale'/'parting'/'mold'/'split'.",
+    "KERNEL occt.ts — operaciones COMPLETAS (1611 lineas): primitivas makeBox(dx,dy,dz) y makeCylinder(r,h,axis?); sketch->solido extrudePolygon / extrudeCircle / extrudeSpline (B-spline C2 REAL, no facetada); booleanas fuse(A∪B) / cut(A−B) / common(A∩B); transformShape (rotacion∘traslacion via gp_Trsf) / mirrorShape('yz'|'zx'|'xy') / makeCompound (ensamble multi-solido SIN soldar); filletAllEdges / filletEdges (selectivo por indice estable) / chamferEdges; shellSolid (MakeThickSolidByJoin, pared hacia ADENTRO); revolvePolygon(pts,angulo,plano,eje); loftSections (BRepOffsetAPI_ThruSections); sweepProfileAlong (BRepOffsetAPI_MakePipe + spine B-spline); drillHole; topology(Euler)/volume/surfaceArea/massProperties (CoM+inercia+ejes principales); enumerateFaces (kind plane/cylinder/cone/sphere + area + centroide + NORMAL solo en planos) / enumerateEdges / enumerateEdgesGeom (polilinea pickeable + eje gp_Ax1); tessellate (faceIds por triangulo); exportSTEP/importSTEP (AP214).",
+    "BOOLEANO CUERPO-CUERPO (Cavidad) — el keystone del molde a medias: vive en interface Component campo bool? (ForgeBRepStudio.tsx L408) = 'none'|'union'|'subtract'|'subtractFrom'. UI = 4 botones Junto/Unir/Restar/Cavidad (comp-bool-cavity, L4520-4527). Acumulador en rebuild() L2742-2754: acc = mainShape; none->push(compound) ; union->fuse(acc,comp) ; subtract->cut(acc,comp)=cuerpo−comp ; subtractFrom->cut(comp,acc)=comp−cuerpo = CAVIDAD (bloque MENOS la pieza). FUNCIONA y da el negativo de la pieza dentro de un bloque.",
+    "LIMITES del Cavidad (por que es 'a medias'): (1) el componente restable es SOLO primitiva box o cyl (buildComponent L916-933), no un solido arbitrario — el bloque de molde es un box parametrico; (2) la pieza principal SI puede ser un STEP importado (mainShape=importSTEP, L2735) -> bloque(box,subtractFrom) − pieza_STEP ya corre; (3) el acumulador es LINEAL sobre UN solo 'acc' -> el resultado es UN solido monolitico (bloque con hueco), NO dos mitades; con >1 componente subtractFrom el acc se reasigna en cadena (fragil). Es decir: hace el NEGATIVO, pero NO ABRE el molde (no hay macho/hembra separados).",
+    "SUPERFICIES / DRAFT / SCALE / PARTING / TOOLING-SPLIT: practicamente NADA. grep (exit 1, cero matches) confirma ausencia de SetScale, MakeOffsetShape/MakeOffset, DraftAngle, SplitShape/BRepFeat, HalfSpace/MakeHalfSpace, partingLine/partingSurface en todo src/forja/brep. Detalle de los falsos positivos del termino: 'draft' = setDraft del SketchEditor (punto inicial de una cadena de lineas), NO angulo de salida; 'scale/escala' = topScale del LOFT (escala el perfil superior -> tronco/cono; es el UNICO guino manual a 'salida de molde') + escalas de dibujo en drawing.ts + px/mm del sketcher; NO existe operacion Scale de modelado (contraccion del material). 'draft analysis', 'shut-off', 'parting', 'tooling' = cero ocurrencias.",
+    "OTROS MOTORES (no tocan molde): drawing.ts = motor de PLANOS 2D (3 vistas ortograficas en tercer angulo, lineas visibles/ocultas por HLR REAL Moller-Trumbore, cotas, cajetin, SVG; PURO y testeable en node). topopt.ts = GENERATIVO (SIMP+OC, top88 literal) con filtro de manufacturabilidad AM (overhang 45 grados, min member). fea.ts = FEA von Mises REAL (K·u=f, malla tet voxelizada, CG sparse). Ninguno aporta nada al flujo de molde.",
+    "GANCHO REUSABLE ya presente: enumerateFaces ya entrega la NORMAL por cara (solo planos) y tessellate ya etiqueta faceIds por triangulo -> base directa para un Draft Analysis sobre la malla; drawing.ts ya calcula SILUETA/oclusion (raycast por segmento) -> base directa para derivar la Parting Line (contorno de silueta visto desde la direccion de tiro)."
+   ],
+   "recomendacion": "Lo que YA sirve del kernel para molde: el Tooling Split final de SolidWorks es, en el fondo, cut(bloque, pieza) — y eso EXISTE y esta cableado como 'Cavidad' (subtractFrom), con makeBox para el bloque e importSTEP para meter la pieza del cliente. Tambien estan fuse/common (para componer/recortar mitades) y enumerateFaces+tessellate+faceIds (insumo de analisis). El hueco EXACTO vs el pipeline Mold Tools (Draft Analysis -> Scale -> Shut-off -> Parting Line -> Parting Surface -> Tooling Split), en orden de menor a mayor esfuerzo: (1) SCALE: no hay operacion de escalado por contraccion; agregar scaleShape(oc,shape,factor) con gp_Trsf.SetScale es ~10 lineas reusando el patron applyTrsf (verificar primero que el binding SetScale exista en este wasm 1.1.1, que ya carece de Message_ProgressRange/SolidClassifier/GeomAPI_Interpolate). (2) DRAFT ANALYSIS: no existe; se puede hacer PURO sobre la malla — angulo entre la normal de cada triangulo (ya en tessellate) y la direccion de tiro, coloreando caras verde/amarillo/rojo; no toca el kernel (mismo enfoque que drawing.ts). (3) TOOLING SPLIT real (dos mitades): es el salto grande pero NO necesita kernel nuevo para el caso de linea de particion PLANA (~80% de piezas): orquestar macho = cut(common(bloque, semiespacio_inferior), pieza) y hembra = cut(common(bloque, semiespacio_superior), pieza) usando un segundo box como semiespacio cortado en un plano Z elegido por el usuario; esto convierte la 'Cavidad' monolitica de hoy en core+cavity separables y exportables a STEP. (4) PARTING LINE no planar: derivarla de la silueta que drawing.ts ya sabe calcular. (5) PARTING SURFACE y SHUT-OFF de agujeros: lo verdaderamente faltante (extender una banda desde la parting line hasta el perimetro, y tapar wires de borde) — diferir. Camino minimo a un 'Mold Tools v1' usable: SCALE (kernel, trivial) + DRAFT ANALYSIS (malla, puro) + TOOLING SPLIT PLANAR (orquestacion con common/cut + 2 boxes). Ademas, generalizar Component.bool para restar un SOLIDO arbitrario (no solo box/cyl) y soportar >1 cavidad de forma no-lineal, porque hoy el acumulador 'acc' unico es fragil con multiples subtractFrom.",
+   "candidatos": [
+    {
+     "nombre": "opencascade.js (OCCT-WASM, build 1.1.1)",
+     "licencia": "LGPL-2.1",
+     "queAporta": "Kernel B-Rep que ya da TODO lo booleano del molde (cut/common/fuse), makeBox, importSTEP y exportSTEP. Las piezas que faltan para Mold Tools (gp_Trsf::SetScale para Scale, BRepOffsetAPI_DraftAngle, BOPAlgo_Splitter/BRepFeat_SplitShape para particion) EXISTEN en OCCT upstream — el hueco es de CABLEADO/binding, no de dependencia nueva. ADVERTENCIA: este build wasm ya tiene bindings ausentes documentados (Message_ProgressRange, BRepClass3d_SolidClassifier, GeomAPI_Interpolate), asi que hay que VERIFICAR que SetScale/DraftAngle/Splitter esten expuestos antes de asumirlos.",
+     "repo": "https://github.com/donalffons/opencascade.js",
+     "lenguaje": "C++/WASM via TypeScript",
+     "madurez": "En produccion en La Forja (kernel del Part Studio)",
+     "navegador": "Si (cliente, solo-LGPL)"
+    }
+   ]
+  },
+  {
+   "tema": "Reutilización OSS del kernel OCCT (opencascade.js) + planegcs + manifold para el pipeline de DISEÑO+MOLDE en navegador: qué clases ya expone nuestro build, qué falta, y REUTILIZAR vs CONSTRUIR por cada paso",
+   "hallazgos": [
+    "VERIFICADO CONTRA EL BINARIO REAL: el build que ya usamos (opencascade.js 1.1.1, node_modules/opencascade.js/dist/opencascade.wasm.wasm, 65 MB) registra por embind —confirmado con `strings` exact-match— TODAS estas clases del pipeline de molde: BRepOffsetAPI_DraftAngle, BRepOffsetAPI_MakeFilling, GeomPlate_BuildPlateSurface (+ GeomPlate_MakeApprox / GeomPlate_CurveConstraint / GeomPlate_PointConstraint), Geom_Plane, BRepBuilderAPI_MakeFace (22 sobrecargas _1.._22), BRepOffsetAPI_MakeOffset, BRepOffsetAPI_MakeThickSolid, BRepAlgoAPI_Splitter, BRepAlgoAPI_Section, BRepAlgoAPI_Defeaturing, gp_Trsf (+ método SetScale), BRepBuilderAPI_Transform y BRepBuilderAPI_GTransform (escala NO uniforme/anisotrópica), HLRBRep_Algo, HLRBRep_PolyAlgo, HLRAlgo_Projector, BRepFeat_SplitShape, BRepProj_Projection, ShapeUpgrade_UnifySameDomain, Bnd_Box / BRepBndLib. Es decir, ~90% del pipeline NO hay que compilar nada extra: ya está en el .wasm que servimos.",
+    "HUECO ÚNICO Y CONCRETO: HLRBRep_HLRToShape (y HLRBRep_PolyHLRToShape) NO están en el binario shipped — `strings` da exact=0 y substr=0 para 'HLRToShape'/'HLRBRep_HLR' (mientras HLRBRep_Algo sí aparece exact=1, así que la extracción de strings es fiable). Sin ese extractor, HLRBRep_Algo NO entrega las aristas proyectadas (visibles/ocultas/contorno) como TopoDS_Shape → la LÍNEA DE PARTICIÓN por HLR exacto está incompleta en el build por defecto. Dato bueno: HLRBRep_HLRToShape SÍ está en el whitelist `dist/Supported APIs.md` (in_doc=1), o sea es bindeable; solo hay que AMPLIAR el build (custom .yml + rebuild emscripten), no es una clase imposible.",
+    "BOPAlgo_Builder y BOPAlgo_Splitter NO están bindeadas como clase exacta (exact=0; aparecen solo como substring en type-info), pero su WRAPPER público BRepAlgoAPI_Splitter SÍ está (exact=1). Conclusión operativa: para el tooling-split usar el wrapper BRepAlgoAPI_Splitter, no la clase interna BOPAlgo. Igual con offset: la clase interna BRepOffset_MakeOffset no está expuesta directa (exact=0), pero los wrappers públicos BRepOffsetAPI_MakeThickSolid (shelling 3D) y BRepOffsetAPI_MakeOffset (offset 2D de wires) sí lo están — usar los wrappers.",
+    "LICENCIAS (ninguna es GPL/AGPL → cero riesgo viral fuerte): OCCT / opencascade.js = LGPL-2.1 con excepción (ya documentado en src/forja/brep/occt.ts como 'frontera de licencia solo-LGPL apta para el cliente'); @salusoft89/planegcs = LGPL-2.0-or-later (el único solver 2D completo usable incluso en apps cerradas); manifold/manifold-3d = Apache-2.0 (la más permisiva, sin fricción); occt-import-js = MIT. CONDICIÓN DURA de LGPL: el usuario debe poder re-linkear → mantener el .wasm como artefacto REEMPLAZABLE (servirlo como asset con su URL, no ofuscarlo/inlinearlo dentro del bundle) y citar la licencia. Con WASM dynamic-link esto se cumple naturalmente porque ya cargamos el .wasm aparte (locateFile en occt.ts).",
+    "EXTRAS ya presentes que ayudan al molde sin construir nada: BRepFeat_SplitShape (imprime/divide una cara por wires — para grabar la línea de partición en la superficie), BRepProj_Projection (proyecta un wire sobre la pieza — envolver la parting line en la superficie real), BRepAlgoAPI_Defeaturing (quitar redondeos antes de generar la partición), ShapeUpgrade_UnifySameDomain (fusiona caras coplanares — limpia la superficie de partición y el bloque antes del split). El custom-build de opencascade.js usa YAML + dead-code-elimination de Emscripten (-O3): agregar HLRToShape es una línea en el .yml + un rebuild en CI/Docker, no reescribir el binding.",
+    "manifold (Apache-2.0) es la RED DE SEGURIDAD para booleanas robustas: algoritmo boolean garantizado-manifold sobre malla, corre en navegador por WASM (npm manifold-3d v3.5.x), 2.1k stars, usado por Blender/OpenSCAD/Godot/Babylon.js/BRL-CAD. Útil exactamente cuando el BOP de OCCT (Splitter/Cut) falla por geometría sucia o auto-intersección en el split core/cavity: malla → boolean manifold → de vuelta a mesh. NO reemplaza el kernel B-Rep (no tiene NURBS/STEP), es complemento de robustez.",
+    "planegcs (@salusoft89/planegcs, LGPL) es el upgrade natural de nuestro sketch-solver.ts: es el solver 2D de FreeCAD portado a WASM (DogLeg/Levenberg-Marquardt/BFGS/SQP), con typings TS completos. Ya tenemos solver propio (sketch-solver.ts, 13 KB) pero planegcs trae el set COMPLETO de restricciones probado en producción de FreeCAD, lo que el roadmap del sketcher pide (trim/offset/cotas/arco/etc.)."
+   ],
+   "recomendacion": "Por PASO del pipeline de molde (REUTILIZAR vs CONSTRUIR), con base en lo verificado en el .wasm que YA tenemos: 1) CROQUIS 2D con restricciones → REUTILIZAR @salusoft89/planegcs (LGPL) en vez de seguir engordando sketch-solver.ts a mano; ya está bindeado y trae todo el set de FreeCAD. 2) ESCALADO por contracción (shrinkage) → REUTILIZAR, no construir: gp_Trsf::SetScale (uniforme) y BRepBuilderAPI_GTransform (no uniforme/anisotrópico por eje) — ambos en el build. 3) ÁNGULO DE SALIDA (draft) → REUTILIZAR BRepOffsetAPI_DraftAngle (en el build). 4) SUPERFICIE DE PARTICIÓN / shut-off / tapado de huecos → REUTILIZAR BRepOffsetAPI_MakeFilling y GeomPlate_BuildPlateSurface (+ Geom_Plane / BRepBuilderAPI_MakeFace para planos y caras simples) — todos en el build. 5) PARED/CAVIDAD (shell/offset) → REUTILIZAR BRepOffsetAPI_MakeThickSolid (en el build). 6) LÍNEA DE PARTICIÓN / silueta → ES EL ÚNICO PASO QUE NO ESTÁ COMPLETO: el build NO trae HLRBRep_HLRToShape. Recomendación: corto plazo CONSTRUIR a mano la silueta desde la teselación que ya generamos en occt.ts (aristas donde n·pull cambia de signo entre caras vecinas usando faceIds+normals) — barato, determinista, sin rebuild; mediano plazo AMPLIAR el build con un custom .yml que agregue HLRBRep_HLRToShape (está whitelisted) + rebuild emscripten en CI para HLR exacto. Apoyarse en BRepProj_Projection y BRepFeat_SplitShape (ya presentes) para proyectar/grabar esa línea en la superficie. 7) TOOLING SPLIT (core/cavity desde el bloque) → REUTILIZAR BRepAlgoAPI_Splitter / BRepAlgoAPI_Section (en el build) cortando el bloque con la superficie de partición; usar el WRAPPER público, no BOPAlgo interno (no bindeado). Limpiar con ShapeUpgrade_UnifySameDomain y quitar redondeos con BRepAlgoAPI_Defeaturing antes. FALLBACK de robustez: si el BOP de OCCT revienta por geometría sucia, mandar a manifold (Apache) el boolean garantizado-manifold sobre malla y regresar. RESUMEN: ~90% del pipeline = reutilizar clases que el opencascade.js que YA importamos expone; el riesgo de licencia es nulo (todo LGPL/MIT/Apache, ningún GPL/AGPL) siempre que el .wasm siga siendo un asset reemplazable; el único trabajo real de kernel es la línea de partición (silueta-desde-malla ya, o ampliar el build para HLR exacto), más adoptar planegcs para el croquis y dejar manifold como red de seguridad de booleanas.",
+   "candidatos": [
+    {
+     "nombre": "opencascade.js (build full, el que YA usamos)",
+     "repo": "github.com/donalffons/opencascade.js (npm opencascade.js@1.1.1)",
+     "lenguaje": "C++ (OCCT) compilado a WASM vía Emscripten/embind; API JS/TS",
+     "licencia": "LGPL-2.1 con excepción (licencia OCCT) — apto cliente navegador",
+     "navegador": "Sí, .wasm de 65 MB cargado por locateFile (ya cableado en occt.ts)",
+     "queAporta": "Kernel B-Rep completo para TODO el molde: verificado en el binario que ya registra DraftAngle, MakeFilling, GeomPlate, Geom_Plane, MakeFace, MakeThickSolid, MakeOffset, Splitter, Section, Defeaturing, gp_Trsf/SetScale, Transform, GTransform (escala anisotrópica), HLR Algo/Projector, SplitShape, Proj_Projection, UnifySameDomain. Hueco: NO incluye HLRBRep_HLRToShape (extractor de aristas HLR) aunque está en el whitelist → ampliable con custom .yml + rebuild.",
+     "madurez": "Estable; base de nuestro src/forja/brep/occt.ts (1610 LOC) ya en producción; custom-build por YAML documentado en ocjs.org"
+    },
+    {
+     "nombre": "manifold (manifold-3d)",
+     "repo": "github.com/elalish/manifold (npm manifold-3d v3.5.x)",
+     "lenguaje": "C++ a WASM; bindings JS/TS (y Python/Rust/etc.)",
+     "licencia": "Apache-2.0 (la más permisiva del set, sin fricción)",
+     "navegador": "Sí, WASM en cualquier navegador moderno (ManifoldCAD corre en web)",
+     "queAporta": "Booleanas/CSG garantizado-manifold y robustas sobre MALLA — red de seguridad para el split core/cavity cuando el BOP de OCCT falla por geometría sucia (malla→boolean→mesh). NO reemplaza el kernel B-Rep (sin NURBS/STEP).",
+     "madurez": "Muy madura: 2.1k stars, 25 releases, usada por Blender, OpenSCAD, Godot, Babylon.js, BRL-CAD; mantenimiento activo"
+    },
+    {
+     "nombre": "planegcs (@salusoft89/planegcs)",
+     "repo": "github.com/Salusoft89/planegcs (npm @salusoft89/planegcs)",
+     "lenguaje": "C++ del PlaneGCS de FreeCAD portado a WASM; wrapper + typings TS",
+     "licencia": "LGPL-2.0-or-later (usable incluso en apps cerradas vía dynamic-link)",
+     "navegador": "Sí, módulo WASM para browser y Node",
+     "queAporta": "Solver de restricciones 2D COMPLETO (DogLeg, Levenberg-Marquardt, BFGS, SQP) — upgrade directo de nuestro sketch-solver.ts para cerrar el roadmap del sketcher (trim/offset/cotas/arco) reusando el solver probado de FreeCAD.",
+     "madurez": "Madura: port directo del solver de FreeCAD, con docs (Sketcher Lecture + Solver manual) y annotations TS completas"
+    },
+    {
+     "nombre": "occt-import-js",
+     "repo": "github.com/kovacsv/occt-import-js (npm occt-import-js@0.0.23)",
+     "lenguaje": "C++ (OCCT) a WASM; API JS",
+     "licencia": "MIT",
+     "navegador": "Sí, WASM ligero",
+     "queAporta": "Importar STEP/IGES/BREP → malla (viewer). Útil para INGESTA de modelos/catálogo, pero NO modela (no draft/offset/split). Ya está en deps; mantenerlo solo como importador, el modelado va por opencascade.js.",
+     "madurez": "Estable y ligero; ya integrado en el proyecto"
+    }
+   ]
+  }
+ ]
+}

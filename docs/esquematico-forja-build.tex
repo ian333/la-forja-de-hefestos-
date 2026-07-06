@@ -1,0 +1,77 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.2cm]{geometry}
+\usepackage{amsmath}
+\usepackage[american,siunitx]{circuitikz}
+\usepackage{xcolor}
+\title{FORJA --- esquem\'atico de ARMADO (buck LOW-SIDE, con tus piezas)}
+\author{La Forja --- micro-AM metal}
+\date{2026-06-05}
+\begin{document}
+\maketitle
+
+\section*{Tu configuraci\'on}
+MOSFET \textbf{LOW-SIDE} (abajo, fuente a tierra) $\to$ el gate se maneja f\'acil con un
+\textbf{KSP2222A} desde 5\,V. Potencia a \textbf{12\,V} (fuente de PC), tus caps de 25\,V
+quedan seguros. Sensado pasivo a los ADC de la Pico.
+
+\vspace{4mm}
+\begin{center}
+\begin{circuitikz}[american, scale=1.0, transform shape, line width=0.6pt]
+% ===== rieles =====
+\draw (0,0) to[battery1, l_=\SI{12}{V}, invert] (0,6);
+\node[font=\footnotesize, align=center] at (0,6.6){PSU 12V (PC)};
+\draw (0,6) -- (12,6);                                  % +12V
+\draw (0,0) -- (13,0);  \node[ground] at (13,0){};       % GND
+\draw[densely dashed] (2.6,7.2) -- (4.0,7.2);            % riel +5V (gate)
+\node[font=\footnotesize] at (2.2,7.2){+5V};
+% ===== banco de caps =====
+\draw (2,6) to[C, l=\shortstack{7\,mF\\(7$\times$1000\,$\mu$F)}] (2,0);
+% ===== flyback (19x MBR360G) — propio carril, a la izquierda del MOSFET =====
+\draw (4.6,6) to[D, l=\shortstack{19$\times$\\MBR360G}, invert] (4.6,3.2) coordinate(FB);
+% ===== columna de potencia (x=7) =====
+\draw (7,6) to[L, l_=\SI{20}{\micro H}] (7,4.6) coordinate(TIP);
+\node[font=\footnotesize, align=center, color=blue!55!black] at (8.4,5.05){punta de contacto};
+\draw (TIP) to[R, l_=$R(T)$] (7,3.2) coordinate(SW);
+\node[font=\footnotesize, align=center, color=orange!65!black] at (8.4,3.4){pieza / sustrato};
+\node[nigfete, anchor=D] (Q1) at (7,3.2) {};
+\node[font=\footnotesize, right] at (7.45,2.55){Q1 IRL540N};
+\draw (Q1.S) -- (7,1.6) coordinate(SRC);
+\draw (SRC) to[R, l_=$R_{sh}$, a=\SI{2}{m\ohm}] (7,0);
+\draw (SW) -- (FB);                                      % SW -> flyback (anodo); catodo a +12V
+% ===== driver del gate: KSP2222A (inversor) =====
+\node[npn, anchor=E] (K) at (3.2,0.9) {};
+\node[font=\footnotesize, left] at (K.B){KSP2222A};
+\draw (K.E) -- (3.2,0);                                  % emisor a GND
+\draw (K.C) -- (3.2,2.1);
+\draw (3.2,2.1) to[R, l_=\SI{470}{\ohm}] (3.2,7.2);     % pull-up a +5V
+\draw (K.C) -| (Q1.G);                                   % colector -> gate Q1
+\draw (K.B) to[R, l_=\SI{1}{k\ohm}] (1.4,0.9);          % base <- PWM por 1k
+% ===== sensado: divisor en la punta + shunt =====
+\draw (TIP) -- (9.8,4.6);
+\draw (9.8,4.6) to[R, l_=\SI{47}{k\ohm}] (9.8,3.0) coordinate(MID);
+\draw (MID) to[R, l_=\SI{10}{k\ohm}] (9.8,1.4) -- (9.8,0);
+% ===== RP2350 =====
+\node[draw, fill=blue!4, minimum width=2.4cm, minimum height=2.4cm, font=\footnotesize, align=center] (MCU) at (12,2.6) {\textbf{RP2350}\\[2pt] ADC0 $V$\\ ADC1 $I$\\ PWM\\ STEP/DIR};
+\draw (MID) -- (10.8,3.0);                               % ADC0 <- divisor
+\draw (SRC) -- (5.6,1.6) -- (5.6,1.0) -- (10.8,1.0) -- (10.8,2.0);  % ADC1 <- shunt (ruta baja)
+\draw[->, densely dashed] (10.8,3.4) |- (0.6,-0.7) -| (1.4,0.9);    % PWM -> base KSP
+\node[font=\footnotesize] at (5.5,-0.95){PWM (gate)};
+\end{circuitikz}
+\end{center}
+
+\vspace{3mm}
+\section*{C\'omo DETECTA}
+$R = V/I$ con $V$ del divisor (punta) e $I$ del shunt.
+$R=\infty$ → no toca · cae a $\sim$$20\,$m$\Omega$ → toc\'o · sube (TCR) → calienta ·
+sube fuerte → cuello → corta.
+\emph{Mejora opcional:} un 2º divisor en el \emph{drain} da $V_{junta}=V_{punta}-V_{drain}$ ($R$ exacta).
+
+\section*{Tus piezas}
+\begin{itemize}\setlength\itemsep{1pt}
+\item PSU \textbf{12\,V} (PC) + \textbf{5\,V} (gate). Caps \textbf{7\,mF} cerca de Q1.
+\item \textbf{Q1 = IRL540N} low-side: \textbf{uno} para arrancar, \textbf{dos en paralelo} para depositar.
+\item Gate \textbf{KSP2222A} \emph{inversor} ($470\,\Omega$ a 5\,V, $1\,$k$\Omega$ en base). GPIO bajo = MOSFET prende (el firmware lo compensa).
+\item Flyback \textbf{19$\times$ MBR360G} (barra de cobre + disipador): c\'atodo a +12\,V, \'anodo al drain.
+\item Sensado: divisor 47k/10k (punta) + shunt $2\,$m$\Omega$.
+\end{itemize}
+\end{document}

@@ -1,0 +1,1523 @@
+{
+ "chapters": [
+  {
+   "capitulo": "Cap. 1 — Introduction (UI/Workspaces), Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed (CADCIM)",
+   "dominio": "ui",
+   "conceptos": [
+    "Fusion 360 es CAD/CAM/CAE parametrico y basado en features (feature-based): el modelo solido se compone de bloques individuales editables",
+    "Modelado parametrico: la geometria se define por parametros (cotas/numero de instancias); cambiar el parametro reconstruye la forma sin importar las dimensiones originales",
+    "Intencion de diseno: croquis 2D -> feature 3D; el croquis es la fundacion de todo objeto 3D",
+    "Asociatividad bidireccional: un cambio en el modelo se refleja automaticamente en los planos/drawing y demas workspaces",
+    "Concepto de workspace: agrupacion de herramientas/funciones que controla que comandos estan disponibles y que tipo de dato se crea (DESIGN, RENDER, ANIMATION, SIMULATION, DRAWING, MANUFACTURE)",
+    "Constraints (restricciones geometricas): operaciones logicas sobre entidades de croquis para precisarlas o posicionarlas; Fusion aplica algunas automaticamente al dibujar y otras se aplican a mano; hay 12 tipos",
+    "Assembly joints: operaciones logicas que unen componentes y definen su movimiento (DOF permitidos); hay 7 tipos",
+    "No hay command prompt: todo se hace invocando herramientas desde el Ribbon o por hotkeys; el flujo es por clicks",
+    "Modelado organico (sculpt/surface) coexiste con modelado solido preciso; surface = geometria sin masa ni espesor"
+   ],
+   "flujoHumano": [
+    "Iniciar Fusion -> en la Quick Access Toolbar abrir el menu File -> elegir New Design; se agrega una pestana nueva a la derecha para el nuevo diseno",
+    "Elegir el workspace activo en el selector de workspace (DESIGN por defecto); al cambiar de workspace el Ribbon actualiza sus herramientas pero conserva el modelo",
+    "Dentro de DESIGN, elegir la pestana (tab): SOLID, SURFACE, SHEET METAL o UTILITIES; cada tab muestra paneles CREATE/MODIFY/ASSEMBLE/CONSTRUCT con sus herramientas",
+    "Para croquizar: invocar Sketch -> seleccionar un plano/cara -> aparece el SKETCH contextual tab con todas las herramientas de croquis; dibujar el perfil; Fusion aplica constraints automaticos al dibujar y opcionalmente aplicas mas a mano",
+    "Convertir el croquis terminado en feature usando una herramienta del SOLID tab (p.ej. Extrude con tecla E)",
+    "Navegar el modelo: usar el ViewCube (esquina sup. der., se activa al acercar el cursor; un click cambia entre vistas estandar e isometrica) y la Navigation Bar inferior; orbit = Shift+boton central, pan = boton central, zoom = rueda",
+    "Revisar/editar el arbol de operaciones en el BROWSER bar (izquierda, bajo el Ribbon): lista en arbol todas las operaciones en secuencia; permite re-editar features (modelado parametrico)",
+    "Cambiar unidades: en el BROWSER expandir Document Settings -> hover sobre el subnodo Units:mm -> boton Change Active Units -> elegir Unit Type -> OK",
+    "Usar el Marking menu: click derecho en la ventana grafica -> aparecen herramientas comunes alrededor del cursor (Sketch, Move/Copy, Hole, Press Pull...) -> mover el cursor hacia la deseada (se resalta con marker ray) -> click para invocar",
+    "Guardar: File menu -> Save; los datos quedan en la nube (Data Panel, boton Show/Hide a la izquierda, muestra carpetas de proyecto, Upload, New Folder, People para invitar colaboradores)",
+    "Documentar: cambiar al DRAWING workspace -> generar drawing views del modelo o de la animacion; las cotas parametricas del modelo aparecen en las vistas"
+   ],
+   "herramientasUI": [
+    "New Design",
+    "Save",
+    "Quick Access Toolbar",
+    "Ribbon",
+    "Data Panel (Refresh, Search, Data, People, Upload, New Folder, Settings)",
+    "SELECT panel: Window Selection",
+    "Freeform Selection",
+    "Paint Selection",
+    "Selection Tools flyout",
+    "Selection Priority flyout (Select Body/Edges/Face Priority)",
+    "Selection Filter flyout",
+    "Component Drag",
+    "Preferences (General/API/Design/Render/Drawing/Simulation, Material, Mesh, Graphics, Unit and Value Display, Nest, Network)",
+    "Workspaces: DESIGN, RENDER, ANIMATION, SIMULATION, DRAWING, MANUFACTURE",
+    "DESIGN tabs: SOLID, SURFACE, SHEET METAL, UTILITIES; SKETCH contextual tab",
+    "Panels CREATE/MODIFY/ASSEMBLE/CONSTRUCT",
+    "Navigation Bar and Display Settings",
+    "BROWSER bar",
+    "ViewCube",
+    "Marking menu",
+    "CHANGE ACTIVE UNITS dialog / Change Active Units",
+    "Sketch",
+    "Line (L)",
+    "2-point Rectangle (R)",
+    "Center Diameter Circle (C)",
+    "Sketch Dimension (D)",
+    "Trim (T)",
+    "Offset (O)",
+    "Project (P)",
+    "Extrude (E)",
+    "Fillet (F)",
+    "Hole (H)",
+    "Press Pull (Q)",
+    "Move (M)",
+    "Joint (J)",
+    "As-built Joint (Shift+J)",
+    "Normal/Construction (X)",
+    "Measure (I)",
+    "Model Toolbox (S)",
+    "Appearance (A)",
+    "Compute All (Ctrl+B)",
+    "Toggle Visibility (V)",
+    "Constraints: Perpendicular, Parallel, Coincident, Concentric, Collinear, Horizontal, Vertical, Tangent, Equal, Smooth, Fix/Unfix, Symmetric",
+    "Joints: Rigid, Revolute, Slider, Cylindrical, Planar, Ball, Pin-Slot",
+    "DRAWING: Projected View (P), Dimension (D), Balloon (B), Center Mark (C), Text (T), Annotation",
+    "MANUFACTURE: Generate Toolpath (Ctrl+G), Duplicate (Ctrl+D)",
+    "SIMULATION: New Simulation Study (N), Structural Constraint (C), Structural Loads (L), Force (F)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "Selector de workspaces (DESIGN/DRAWING/SIMULATION/RENDER/...)",
+     "queHace": "Cambia el set de herramientas del Ribbon segun el modo conservando el modelo; La Forja ya tiene modos dispersos pero sin un selector unificado tipo Fusion",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Ribbon con tabs y paneles (SOLID/SURFACE/SHEET METAL/UTILITIES + CREATE/MODIFY/ASSEMBLE/CONSTRUCT)",
+     "queHace": "Organiza todos los comandos por click en una barra contextual; reemplaza la toolbar monolitica actual del frontend roto",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "SKETCH contextual tab",
+     "queHace": "Al entrar a croquis sobre un plano/cara, mostrar SOLO las herramientas de croquis; salir vuelve al tab anterior",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "BROWSER bar / arbol de operaciones (feature tree)",
+     "queHace": "Lista en arbol todas las operaciones en secuencia y permite re-editar cada feature (base del modelado parametrico)",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Document Settings + Change Active Units",
+     "queHace": "Dialogo para fijar unidades (mm/in/...) y precision aplicadas a todo el documento",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Data Panel (proyectos/nube)",
+     "queHace": "Panel lateral con carpetas, guardar/abrir, upload, colaboradores; mapea a almacenamiento de proyectos de La Forja",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "ViewCube + Navigation Bar",
+     "queHace": "Cubo 3D de navegacion (click cambia a vistas estandar/isometricas) + barra con orbit/pan/zoom/fit",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Sistema de seleccion (Window/Freeform/Paint + priority + filter)",
+     "queHace": "Seleccion por trap rectangular, forma libre, brocha; prioridad body/edge/face y filtros",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Marking menu (radial en click derecho)",
+     "queHace": "Menu radial con herramientas comunes (Sketch, Move, Hole, Press Pull) invocado con click derecho en la ventana grafica",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Auto-aplicacion de constraints al dibujar + UI para las 12 restricciones",
+     "queHace": "Inferir y aplicar constraints (coincident/horizontal/vertical/tangent/perpendicular/parallel/concentric/collinear/equal/symmetric/smooth/fix) al croquizar; exponer las que faltan en la UI",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Hotkeys (mapa de teclas L/R/C/E/F/H/D/T/O/Q/M/J...)",
+     "queHace": "Invocar herramientas por tecla; ya esta la nota de keymap bilingue C/B pendiente",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Assembly Joints (7 tipos)",
+     "queHace": "Operacion de ensamble que une componentes y define DOF: Rigid/Revolute/Slider/Cylindrical/Planar/Ball/Pin-Slot; mapea a restricciones cinematicas",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "DRAWING workspace asociativo",
+     "queHace": "Generar drawing views (projected/base) con cotas parametricas asociadas al modelo; La Forja ya tiene drawing.ts (HLR 3D->2D), falta el workspace UI y la asociatividad",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Press Pull / Move como acciones directas sobre el solido",
+     "queHace": "Empujar/jalar caras y mover cuerpos por gesto directo en el grafico",
+     "dificultad": "medio"
+    }
+   ],
+   "reutilizarOSS": [
+    "planegcs (FreeCAD sketch solver) para auto-constraint e inferencia de las 12 restricciones geometricas en el croquis",
+    "OCCT / OCCT-WASM para features (extrude/fillet/hole/press-pull) y B-Rep",
+    "OCCT HLR para los drawing views del DRAWING workspace",
+    "three.js drei/Gizmo para ViewCube y Navigation Bar (orbit/pan/zoom)"
+   ],
+   "yaExisteEnForja": "\"Croquis: line/rect/circle/arc/point con solver de 13 restricciones (UI expone ~6) — cubre parte de las 12 constraints del cap. Features: extrude/revolve/loft/sweep/pattern/fillet/chamfer/shell/hole ya existen. Motor de planos drawing.ts (HLR 3D->2D, puro/testeable) cubre la base del DRAWING workspace. Hotkeys: keymap bilingue C/B pendiente. Falta: Ribbon/tabs unificado, selector de workspaces, BROWSER feature-tree editable, Marking menu radial, Data Panel de nube, ViewCube, assembly joints (los 7 tipos), Change Active Units UI, sistema de seleccion priority/filter. Nota: el frontend (ForgeBRepStudio.tsx, 5838 lineas) esta marcado como roto y con dos sistemas de croquis que no componen.\""
+  },
+  {
+   "capitulo": "Cap. 2 — Drawing Sketches for Solid Models (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed, CADCIM)",
+   "dominio": "croquis (sketching 2D como base de modelos solidos)",
+   "conceptos": [
+    "El croquis (sketch) es la base de TODO: entidades 2D (lineas, arcos, circulos) dibujadas sobre un plano o cara plana; luego se convierten en feature 3D usando el croquis como perfil.",
+    "Distincion clave de Fusion: sketch-based features (extrude, revolve, sweep — nacen de un croquis 2D) vs placed features (fillet, chamfer, thread, shell — NO necesitan croquis). El primer feature de un diseno SIEMPRE es sketch-based.",
+    "Intencion de diseno parametrica: por ser parametrico puedes empezar el croquis desde cualquier punto y dimensionar despues; la geometria se ajusta a las cotas.",
+    "Loops anidados = cavidad automatica: al extruir un perfil con un loop exterior y un loop interior, el interior se RESTA solo y crea el hueco sin un feature aparte (ahorra tiempo). El perfil a extruir es la region entre ambos loops.",
+    "Seleccion de plano base: 3 planos por defecto (XY=Front, YZ=Right, XZ=Top) bajo el nodo Origin del Browser; al elegir uno se orienta normal a la vista para dibujar comodo.",
+    "Snap/Grid: el salto del cursor depende del RATIO Major Grid Spacing / Minor Subdivision (ej. 50/10 = saltos de 5 mm; 100/20 = 5 mm). Adaptive (grid escala con zoom) vs Fixed (constante).",
+    "Inferencing lines: lineas punteadas azules temporales que rastrean un punto (endpoint, midpoint) para alinear geometria; alternativa al snap-to-grid (uno u otro a la vez).",
+    "Construction entities: una entidad de croquis se puede convertir en construccion (linea de referencia/centerline) via el Marking menu, no participa del solido.",
+    "Un rectangulo se considera un conjunto de 4 lineas individuales, no una entidad unica.",
+    "Dynamic Input: campos length + angle (Tab para alternar) para acotar entidades mientras dibujas; tecla de entrada directa.",
+    "El eje de revolucion debe ser una linea del croquis (o construccion); Revolve gira el perfil alrededor de ese eje."
+   ],
+   "flujoHumano": [
+    "INICIO: abrir Fusion -> nuevo diseno (File > New Design); por defecto entras al workspace DESIGN.",
+    "INVOCAR CROQUIS: CREATE panel del Ribbon > Create Sketch; aparecen los 3 planos por defecto en el grafico.",
+    "ELEGIR PLANO: click en el plano en el grafico O en el Browser bajo Origin (ej. XY/Front, YZ/Right); el plano se orienta normal a la vista. Aparece el tab contextual SKETCH, el boton FINISH SKETCH y la ventana SKETCH PALETTE.",
+    "AJUSTAR UNIDADES: en el Browser, hover sobre Document Settings > Units: mm > boton Change Active Units > dialogo CHANGE ACTIVE UNITS > elegir Millimeter > OK.",
+    "AJUSTAR GRID/SNAP: flyout Grid and Snaps (abajo del grafico) > Grid Settings > dialogo GRID SETTINGS > radio Fixed > escribir Major Grid Spacing y Minor Subdivision (ratio = salto deseado) > OK. Activar checkbox Snap to Grid en el mismo flyout.",
+    "DIBUJAR CON LINE (T1/T3/T4): CREATE > Line (o tecla L) > click en origen > mover cursor en una direccion > escribir longitud en Dynamic Input > Tab > escribir angulo > click; se encadena linea tras linea. Terminar con ESC, doble-click, o click-derecho > Marking menu > OK.",
+    "DIBUJAR RECTANGULO (T1, loop interno): SKETCH > CREATE > Rectangle > Center Rectangle > click para fijar centro (ej. 5 mm arriba del origen) > escribir ancho y alto en los campos de Dimension Input > click > OK del Marking menu. El loop interno + externo = perfil con cavidad.",
+    "DIBUJAR ARCO CENTRO (T2): CREATE > Arc > Center Point Arc > click en centro > mover y escribir longitud (radio) en length input > click define el punto inicial > mover en sentido del arco y escribir 180 en angle input > click cierra el arco.",
+    "DIBUJAR ARCO 3 PUNTOS (T2): CREATE > Arc > 3-Point Arc > click en punto inicial (endpoint de la ultima linea) > escribir longitud al segundo punto > click > mover y click para fijar el punto medio/centro que define la curvatura.",
+    "ENCADENAR LINE A ARCO: con Line activa, snap al start point del arco (el cursor se pega) y continua dibujando lineas desde ahi.",
+    "DIBUJAR CIRCULOS CON INFERENCIA (T4): apagar Snap to Grid > click-derecho > Marking menu > SKETCH > Center Diameter Circle > acercar cursor a endpoints para generar inferencing lines (punteadas azules) > click en la interseccion = centro > escribir diametro en diameter input > Enter dos veces.",
+    "APLICAR FILLET EN CROQUIS (T3): MODIFY panel > Fillet > seleccionar linea 8 luego linea 9 (par de lineas) > escribir radio (1.5) en Radius edit box > repetir para otros pares > click-derecho > OK. (Ignora aviso de constraint removida.)",
+    "SALIR DEL CROQUIS: boton FINISH SKETCH en el Ribbon.",
+    "EXTRUDE (T1/T2/T4): CREATE > Extrude > dialogo EXTRUDE. Si hay 2 loops el perfil NO se autoselecciona: mover cursor fuera del loop interior pero dentro del exterior, la region se resalta, click para elegirla > escribir 20 en Distance (o usar el manipulador) > OK.",
+    "REVOLVE (T3): CREATE > Revolve > dialogo REVOLVE > seleccionar la linea inferior (22 mm) como Axis > aceptar valores default (360) > OK.",
+    "GUARDAR: File/Application menu > Save > escribir nombre (c02_Tut_01) > expandir Location > elegir/crear Project > Save.",
+    "GENERAR PLANOS (drawing views): Workspaces drop-down > DRAWING > From Design > dialogo CREATE DRAWING > radio Manual > Contents=Full Assembly > Standard=ISO > Sheet Size=A3 (420x297) > OK; entras al workspace DRAWING con la vista base pegada al cursor.",
+    "COLOCAR VISTAS: click abajo-izquierda para colocar la vista base (front) > CREATE > Projected View > seleccionar el front como parent > mover arriba = top view; repetir desde el front para right-side e isometrica > click-derecho > OK."
+   ],
+   "herramientasUI": [
+    "Create Sketch",
+    "Line (tecla L)",
+    "Center Rectangle",
+    "2-Point Rectangle",
+    "3-Point Rectangle",
+    "Center Point Arc",
+    "3-Point Arc",
+    "Center Diameter Circle (Circle)",
+    "Slot (Center to Center / Center Point / Overall / 3-Point Arc / Center Point Arc — mencionados en Feature Options)",
+    "Centerline (construccion)",
+    "Fillet (sketch, MODIFY panel)",
+    "Extrude",
+    "Revolve",
+    "Finish Sketch",
+    "Dynamic Input (length/angle, Tab)",
+    "Construction / Normal (Marking menu — convertir a construccion)",
+    "Grid Settings (Adaptive/Fixed, Major Grid Spacing, Minor Subdivision, Reference Numbers)",
+    "Snap to Grid",
+    "Sketch Grid (Sketch Palette)",
+    "Change Active Units (CHANGE ACTIVE UNITS)",
+    "Inferencing lines",
+    "Fit (Navigation Bar)",
+    "Zoom / Pan / Orbit / Look At (Navigation Bar)",
+    "ViewCube",
+    "DRAWING From Design (CREATE DRAWING)",
+    "Projected View",
+    "DELETE (borrar entidades)",
+    "Marking menu (click-derecho)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "Line tool con Dynamic Input (length+angle)",
+     "queHace": "Dibujar cadena continua de lineas haciendo click en origen y tecleando longitud, Tab, angulo; encadena hasta ESC/doble-click. Mapea a crear segmentos de croquis con constraints implicitas (coincident endpoints).",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Center Rectangle (y 2-Point / 3-Point Rectangle)",
+     "queHace": "Crear rectangulo por centro+esquina (o diagonal, o width/dir/height) que internamente son 4 lineas con constraints perpendicular/horizontal/vertical. Operacion de croquis pura.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Center Point Arc",
+     "queHace": "Arco por centro -> punto inicial (radio) -> angulo barrido. Geometria 2D + constraint de centro/radio.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "3-Point Arc",
+     "queHace": "Arco por 3 puntos (inicio, fin, punto sobre el arco). Geometria 2D, calculo de centro/radio desde 3 puntos.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Center Diameter Circle",
+     "queHace": "Circulo por centro+diametro; con entrada de diametro por teclado. Geometria 2D.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Inferencing lines (rastreo de puntos)",
+     "queHace": "Lineas guia punteadas que emanan de endpoints/midpoints para snap a intersecciones alineadas; requiere motor de inferencia geometrica en la UI del croquis sobre el canvas R3F.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Snap to Grid + Grid Settings (Fixed/Adaptive, ratio Major/Minor)",
+     "queHace": "Rejilla configurable con salto de cursor calculado por ratio Major/Minor; snap del cursor a intersecciones. UI + logica de cuantizacion del cursor.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Sketch Fillet (entre 2 lineas de croquis)",
+     "queHace": "Redondear la esquina entre dos lineas seleccionadas con radio dado, recortando y creando un arco tangente; quita constraints afectadas. Operacion 2D de trim+arco tangente con constraint tangent.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Construction/Centerline (toggle de entidad a construccion)",
+     "queHace": "Marcar una entidad como construccion (referencia, eje de revolucion) que no forma parte del solido. Flag en la entidad de croquis + render diferenciado.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Profile detection para loops anidados",
+     "queHace": "Detectar regiones cerradas y permitir seleccionar la region entre loop exterior e interior; al extruir, el loop interno se resta automaticamente (cavidad). Requiere deteccion de perfiles/faces 2D.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Extrude con seleccion de perfil resaltado",
+     "queHace": "Hover resalta el perfil/region, click lo elige, Distance en mm crea el solido. Mapea a OCCT prism/BRepPrimAPI_MakePrism del wire/face.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Revolve alrededor de eje seleccionado",
+     "queHace": "Girar el perfil 360 (o angulo) alrededor de una linea/eje del croquis. Mapea a OCCT BRepPrimAPI_MakeRevol.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Generacion de vistas de taller (DRAWING From Design)",
+     "queHace": "Crear hoja A3 ISO con vista base + Projected Views (top, right, isometrica) por proyeccion ortografica del solido. Mapea a HLR/projeccion 3D->2D.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Marking menu (radial, click-derecho)",
+     "queHace": "Menu radial contextual para invocar herramientas (Circle, Line, OK, Construction) y terminar operaciones. UI.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Delete de entidades (tecla DELETE)",
+     "queHace": "Borrar entidades de croquis seleccionadas. UI + edicion del modelo de croquis.",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "planegcs (FreeCAD/SolveSpace-derived): solver de restricciones 2D para coincident/horizontal/vertical/perpendicular/tangent y para el fillet tangente y arcos por 3 puntos.",
+    "OCCT (OCCT-WASM): BRepPrimAPI_MakePrism para Extrude, BRepPrimAPI_MakeRevol para Revolve, BRepBuilderAPI_MakeWire/Face para perfiles y loops anidados (cavidad por substraccion de wire interno).",
+    "OCCT HLRBRep (Hidden Line Removal) para la generacion de vistas ortograficas/isometricas del workspace DRAWING.",
+    "SolveSpace (referencia) para inferencing lines / snapping inteligente entre endpoints.",
+    "manifold (booleanas) como alternativa para la resta del loop interior si no se hace via face con hueco."
+   ],
+   "yaExisteEnForja": "\"Croquis: ya existen line/rect/circle/arc/point + solver de 13 restricciones (la UI solo expone ~6) — cubre la base de Line, Rectangle, Arc, Circle de este capitulo, pero faltan exponer en UI: Center/2-Point/3-Point Rectangle como variantes, Center Point Arc vs 3-Point Arc explicitos, sketch Fillet entre lineas, toggle Construction/Centerline, inferencing lines y Snap-to-Grid con ratio Major/Minor. Features: ya existen extrude/revolve/loft/sweep/pattern/fillet/chamfer/shell/hole — cubren Extrude y Revolve de este capitulo (falta exponer la seleccion de perfil resaltado para loops anidados/cavidad y el eje de revolucion desde linea de croquis). Planos: drawing.ts ya hace 3D->2D con HLR real, PURO/testeable en node — cubre la parte de Generating Drawing Views (vistas ortograficas + isometrica del workspace DRAWING).\""
+  },
+  {
+   "capitulo": "Capitulo 3 — Adding Constraints and Dimensions to Sketches (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed, CADCIM)",
+   "dominio": "croquis (restricciones geometricas + cotas + fully-defined)",
+   "conceptos": [
+    "Las restricciones (constraints) definen tamano y posicion de las entidades respecto a otras, y capturan la INTENCION DE DISENO; restringen grados de libertad y vuelven el croquis estable.",
+    "Existen 12 tipos de restricciones geometricas en Fusion 360.",
+    "Restricciones automaticas (Automatic Constraints): se aplican solas mientras dibujas — Horizontal, Vertical, Coincident, Midpoint, Tangent, Perpendicular, Concentric, Parallel — se muestran como simbolos bajo el cursor (linea horizontal/vertical, interseccion, etc.).",
+    "Modelado parametrico: el entidad selecciona se conduce por el valor de cota especificado sin importar su tamano original; cambiar la cota fuerza el cambio de tamano.",
+    "Diseno por intencion: usar la restriccion Equal en vez de cotas repetidas reduce el numero de cotas; al acotar UNA linea/curva del grupo equal, todas las demas adoptan ese valor. Equal se aplica en pares.",
+    "Concepto de croquis totalmente definido (fully constrained/defined): entidades en NEGRO = definido; entidades en AZUL = no definido. Para definir del todo hay que anclar el croquis al ORIGEN (que es fijo por defecto) con una restriccion (tipicamente Coincident de un vertice al origen).",
+    "Sobre-restriccion (over-constrained): agregar una cota/restriccion innecesaria dispara el dialogo Over-constrained; puedes crear una COTA CONDUCIDA (driven dimension) en parentesis, solo de referencia, no editable, no usada en manufactura.",
+    "Al aplicar una restriccion entre dos entidades, la PRIMERA seleccionada queda fija y la SEGUNDA se ajusta a ella.",
+    "La cota a aplicar varia segun el tipo de entidad: linea=lineal, circulo=diametro por defecto, arco=radio.",
+    "Cota de diametro lineal (linear diameter dimension): para piezas de REVOLUCION se acota contra la linea central (centerline/construction) para que la cota muestre el diametro (doble de la distancia real) — necesario porque el plano de taller pide diametros, no medias distancias.",
+    "Linea central de construccion (construction line): se dibuja con Line desde el origen y se marca como Construction para usarla como eje de revolucion / referencia de cotas de diametro.",
+    "Estrategia para croquis con multiples loops: dibujar y restringir/acotar primero el loop EXTERIOR, luego los circulos/loops interiores tomando referencia del exterior (concentricidad, etc.)."
+   ],
+   "flujoHumano": [
+    "Iniciar: File menu > New Design para invocar el workspace DESIGN.",
+    "Ribbon > SOLID tab > CREATE panel > Create Sketch; se muestran los 3 planos por defecto y te pide seleccionar plano o cara plana.",
+    "BROWSER > expandir nodo Origin > seleccionar el plano (YZ/Right o XY/Front); el plano se orienta normal a la vista y aparece la pestana contextual SKETCH.",
+    "SKETCH PALETTE > desmarcar Sketch Grid para ocultar la rejilla.",
+    "BROWSER > Document Settings > Units sub-node > boton Change Active Units > dialogo CHANGE ACTIVE UNITS > Unit Type drop-down > Millimeter > OK (o Cancel si ya esta en mm).",
+    "Dibujar el croquis aproximado con CREATE panel > Line y Center Rectangle (no a medidas exactas); las lineas se numeran de referencia.",
+    "Aplicar restricciones: SKETCH tab > CONSTRAINTS panel > Equal; seleccionar linea A luego linea B (par); repetir para cada par de lineas/arcos que deben ser iguales. Si Fusion avisa over-constrained = ya estaban iguales por auto-trace; click derecho > Cancel del Marking menu.",
+    "Aplicar Horizontal/Vertical a lineas que lo requieran; para restriccion entre puntos: mantener Ctrl, seleccionar punto1 y punto2 (o punto y origen), soltar Ctrl, elegir la restriccion del CONSTRAINTS panel.",
+    "Acotar: CREATE panel > Sketch Dimension (o click derecho > Sketch Dimension del Marking menu); seleccionar la entidad, mover el cursor para colocar el preview de la cota, click para fijar posicion; aparece el Dimension edit box; teclear valor (ej. 80) y Enter (o click derecho > OK). El comando sigue activo para acotar la siguiente.",
+    "Acotar distancia entre dos lineas/puntos: seleccionar entidad1 y entidad2, colocar y teclear valor.",
+    "Para revolucion (Tut 2): dibujar Line vertical desde el origen, ESC, seleccionar la linea y marcar Construction (SKETCH PALETTE > Options node) para volverla eje. Luego con Sketch Dimension seleccionar centerline + linea, click derecho > Diameter Dimension del Marking menu, colocar abajo, teclear valor (ej. 100) Enter.",
+    "Cota alineada (Tut 4): seleccionar linea, click derecho > Aligned del Marking menu, colocar, teclear valor.",
+    "Cota angular (Tut 4): seleccionar dos lineas, colocar la cota angular, teclear el angulo (ej. 135) Enter.",
+    "Anclar al origen para definir del todo: CONSTRAINTS panel (o SKETCH PALETTE > Constraints node) > Coincident; seleccionar el vertice/centro del croquis, luego seleccionar el origin; el croquis se desplaza para que ese punto quede en el origen.",
+    "Verificar definicion: si las entidades quedan en NEGRO esta fully constrained; si quedan AZUL falta restriccion. Navigation Bar > Fit para encuadrar.",
+    "Dibujar circulos interiores (Tut 3/4): CREATE panel > Circle > Center Diameter Circle; snap al centro de un arco existente para concentricidad, click para tamano; aplicar Equal entre circulos; Sketch Dimension > seleccionar circulo > cota de diametro (ej. 8) Enter.",
+    "Ver restricciones aplicadas: SKETCH PALETTE > Options node > Show Constraints.",
+    "Guardar: File menu > Save > dialogo Save > teclear nombre (c03_Tut_01) > seleccionar proyecto CADCIM (o New Project) > Save."
+   ],
+   "herramientasUI": [
+    "Create Sketch",
+    "Line",
+    "Center Rectangle",
+    "Circle > Center Diameter Circle",
+    "3-Point Arc",
+    "Sketch Dimension",
+    "Diameter Dimension (Marking menu)",
+    "Aligned dimension (Marking menu)",
+    "Angular dimension",
+    "Linear diameter dimension",
+    "Radius dimension",
+    "Construction (toggle, SKETCH PALETTE > Options)",
+    "AutoConstrain (Auto Constraint)",
+    "Coincident",
+    "Collinear",
+    "Concentric",
+    "Midpoint",
+    "Fix/UnFix",
+    "Perpendicular",
+    "Parallel",
+    "Horizontal/Vertical",
+    "Tangent",
+    "Symmetry",
+    "Equal",
+    "Curvature",
+    "Show Constraints (SKETCH PALETTE > Options)",
+    "Sketch Grid toggle (SKETCH PALETTE)",
+    "Change Active Units (CHANGE ACTIVE UNITS dialog)",
+    "Measure",
+    "Fit (Navigation Bar)",
+    "ViewCube",
+    "Create Driven (Over-constrained dialog)",
+    "CONSTRAINTS panel",
+    "CREATE panel",
+    "SKETCH PALETTE",
+    "BROWSER bar",
+    "Marking menu",
+    "Revolve (referenciado como feature destino)",
+    "Extrude (referenciado: convertir croquis en feature)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "Solver de restriccion Equal (longitud de lineas / radio de curvas) aplicado en pares",
+     "queHace": "Forza igualdad de longitud entre dos lineas o igualdad de radio/diametro entre dos arcos/circulos; al acotar una, las demas del grupo se actualizan",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Restricciones geometricas faltantes en UI: Collinear, Symmetry, Midpoint, Concentric, Fix/UnFix, Curvature",
+     "queHace": "Completar el set de 12 restricciones del kernel exponiendolas como botones del panel CONSTRAINTS",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Auto-constraint mientras dibujas (Automatic Constraints + simbolos bajo el cursor)",
+     "queHace": "Detectar y aplicar Horizontal/Vertical/Coincident/Tangent/Perpendicular/Parallel/Concentric/Midpoint en tiempo real al trazar, con feedback visual de glifos",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Herramienta Sketch Dimension contextual por tipo de entidad",
+     "queHace": "Selecciona entidad(es), coloca preview, abre edit box; deduce tipo: linea=lineal, circulo=diametro, arco=radio, dos lineas=distancia/angular",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Cota de diametro lineal contra centerline (revolucion)",
+     "queHace": "Acota la distancia eje-perfil mostrando el valor x2 como diametro; requiere reconocer la linea de construccion como eje",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Cota alineada (Aligned) y cota angular",
+     "queHace": "Aligned mide a lo largo de una linea inclinada; angular mide el angulo entre dos lineas",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Linea/eje de construccion (toggle Construction)",
+     "queHace": "Convierte una linea de croquis en geometria de construccion (eje de revolucion / referencia de cota), no se extruye",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Estado de definicion del croquis con color (negro=fully, azul=under) + conteo de DOF",
+     "queHace": "Calcula grados de libertad restantes via el solver y colorea entidades para indicar si el croquis esta totalmente definido",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Anclar croquis al origen (Coincident punto<->origin que desplaza todo el croquis)",
+     "queHace": "Hace coincidente un vertice/centro con el origen fijo y traslada el croquis entero para eliminar los DOF de traslacion",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Deteccion de sobre-restriccion + cota conducida (driven dimension)",
+     "queHace": "Detecta cuando una cota/restriccion es redundante y ofrece convertirla en driven (en parentesis, solo referencia, no editable)",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Show Constraints / panel para ver y editar restricciones aplicadas",
+     "queHace": "Lista/dibuja los glifos de todas las restricciones del croquis para inspeccionarlas y borrarlas",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Marking menu (menu radial click-derecho contextual)",
+     "queHace": "Acceso rapido a Sketch Dimension, Diameter/Aligned, OK, Cancel desde el area grafica",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Center Rectangle y Center Diameter Circle con snaps",
+     "queHace": "Dibuja rectangulo desde el centro y circulo por centro+diametro, con snap a centros de arcos existentes para concentricidad",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Selector de unidades activas (mm)",
+     "queHace": "Cambia las unidades del documento y reescala la entrada de cotas",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "planegcs (FreeCAD GCS portado a JS/WASM): solver 2D de restricciones geometricas — Equal, Collinear, Symmetry, Concentric, Midpoint, Tangent, Perpendicular, Parallel, Coincident; calculo de DOF para el color negro/azul y deteccion de over-constrained/driven",
+    "FreeCAD Sketcher (referencia de UX): logica de auto-constraint, glifos de restriccion y conversion a driven/reference dimension",
+    "OpenCascade (OCCT-WASM): geometria de las entidades de croquis y el feature Revolve/Extrude que consume el croquis definido",
+    "solvespace (geometric constraint solver alternativo): referencia de DOF analysis y restricciones 2D/3D"
+   ],
+   "yaExisteEnForja": "\"Croquis: ya existen line/rect/circle/arc/point y un solver con 13 restricciones, pero la UI solo expone ~6 — este capitulo exige exponer las faltantes (Equal, Collinear, Symmetry, Midpoint, Concentric, Fix/UnFix, Curvature, Tangent, Perpendicular, Parallel, Horizontal/Vertical, Coincident). Features destino ya existen: extrude/revolve/loft/sweep/pattern/fillet/chamfer/shell/hole. Planos: drawing.ts (3D->2D HLR). FALTA segun memoria: el sketcher 2D a mano con su keymap bilingue y ~50 funciones de croquis pendientes (trim, offset, cotas H/V/angular, construccion/puntos-ref) — varias de las que pide este capitulo (Sketch Dimension contextual, cota diametro lineal, aligned, angular, anclaje al origen, color de definicion, driven dimension) no estan confirmadas como presentes en la UI.\""
+  },
+  {
+   "capitulo": "Cap. 4 — Advanced Modeling-I (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed, CADCIM)",
+   "dominio": "features",
+   "conceptos": [
+    "Intencion de diseno: el modelo nace de un croquis 2D totalmente definido (fully defined) y luego se convierte en feature base por Extrude o Revolve. Constrenir y dimensionar ANTES de extruir.",
+    "Un croquis con multiples loops cerrados: el loop exterior + circulos interiores. Al extruir el perfil exterior, los circulos interiores se restan automaticamente (huecos), sin operacion booleana explicita.",
+    "Tecnica de construccion de un loop suave: dibujar 3 circulos (2 extremos + 1 central), unirlos con lineas tangentes, y luego recortar (Trim) las mitades sobrantes de los circulos para dejar arcos. Restricciones Equal + Tangent + Horizontal definen la geometria; Trim borra constraints que hay que re-aplicar para volver a definir.",
+    "Feature de revolucion: girar un perfil cerrado alrededor de un eje (centerline / linea normal / construction line) para crear ejes, poleas, acoplamientos, ruedas. Se puede revolver Parcial (angulo), To (hasta cara) o Full (360 grados).",
+    "Dimension de diametro lineal (linear diameter) en croquis de revolucion: una cota mide el diametro completo (2x el radio respecto al eje) para perfiles que se revolucionaran.",
+    "Modelado multi-feature secuencial: feature base + feature de corte + feature extruida sobre caras del solido. Cada nuevo croquis se dibuja sobre una cara planar del modelo existente (no solo en los planos de origen).",
+    "Operaciones booleanas de feature (Operation): Join (anade material), Cut (resta material), Intersect (retiene material comun), New Body (cuerpo independiente), New Component.",
+    "Opciones de terminacion de extrusion (Extent Type): Distance (profundidad fija + taper angle), To Object (hasta cara/plano), All (atraviesa toda la geometria existente, requiere feature base previa).",
+    "Direccion de extrusion: One Side, Two Sides (espesores independientes por lado), Symmetric; con boton Flip para invertir el sentido.",
+    "Inicio de extrusion (Start): Profile Plane (desde el plano del croquis), Offset (a distancia del plano), Object (desde una cara/plano/vertice).",
+    "Espejo (Mirror) de features/caras/cuerpos/componentes respecto a un plano de simetria o cara planar; reduce trabajo en piezas simetricas.",
+    "Chamfer: biselar aristas vivas para reducir concentracion de esfuerzos y eliminar bordes filosos. Tipos: Equal Distance, Two Distance, Distance and Angle. Corner Type: Chamfer/Miter/Blend. Tangent Chain selecciona aristas tangentes automaticamente.",
+    "Patron circular (Circular Pattern): replicar una feature N veces alrededor de un eje (arista circular, eje, cara cilindrica, linea de construccion). Distribucion Full (reparte en 360) con Quantity.",
+    "Asignar material fisico (Steel) al cuerpo: hereda densidad/masa/volumen y permite calcular propiedades masicas (Properties).",
+    "Camara: orthographic (default) vs perspective; ViewCube para reorientar; unidades activas configurables (CHANGE ACTIVE UNITS)."
+   ],
+   "flujoHumano": [
+    "Tut1 (extrude con huecos): File > New Design. CREATE panel > Create Sketch. Elegir Top Plane (XZ) desde graphics window o BROWSER > Origin > XZ. Dibujar 3 circulos + 4 lineas tangentes. Aplicar Equal a las 4 lineas y a los circulos izq/der; aplicar Tangent donde falte; aplicar Horizontal entre el centro de los circulos laterales y el central.",
+    "Tut1: MODIFY panel > Trim. Acercar cursor a la mitad sobrante de cada circulo (se pone morada) y clic para recortar; aceptar el aviso de que se removieron constraints/dimensiones. Dibujar 3 circulos concentricos a los arcos recortados, Equal entre izq/der.",
+    "Tut1: CREATE > Sketch Dimension para acotar todo hasta fully defined (re-anadir constraints removidas por Trim si no define).",
+    "Tut1: SOLID tab > CREATE panel > Extrude. Clic dentro del loop exterior pero fuera de los 3 circulos (perfil en azul; areas de circulos no sombreadas = no se extruyen). Extent Type = Distance, Distance = 10, OK.",
+    "Tut1: BROWSER > Bodies > Body1 clic derecho > Physical Material > expandir Metal > arrastrar Steel al modelo > Close. Clic derecho Body1 > Properties para ver masa. File > Save como c04_Tut_01.",
+    "Tut2 (revolve 180): New Design. Create Sketch en plano XZ (Top desde ViewCube o BROWSER). Dibujar perfil + centerline. Aplicar Equal a entidades iguales; Coincident entre la linea vertical mas cercana y el eje vertical; Horizontal/Vertical donde falte.",
+    "Tut2: Sketch Dimension con cotas de diametro lineal y horizontales hasta fully defined. FINISH SKETCH.",
+    "Tut2: SOLID > CREATE > Revolve. Seleccionar el perfil cerrado. Clic en Axis selection box y seleccionar la centerline horizontal como eje. Extent Type = Partial, Angle = 180, OK.",
+    "Tut2: ViewCube clic en esquina superior + arrastrar para reorientar. Display Settings > Camera > Perspective. Save c04_Tut_02.",
+    "Tut3 (multi-feature + mirror + chamfer): New Design. Create Sketch en plano XY. Dibujar+constrain+dimension. SOLID > Extrude, perfil fuera de circulos, Direction = One Side, Distance = 10, OK (feature base).",
+    "Tut3 segunda feature: Create Sketch sobre la cara derecha del solido (se orienta normal). Dibujar+dimension. Extrude, Direction = Two Sides, en Side 2 Distance = 10, Operation = Join, OK.",
+    "Tut3 mirror: CREATE > Mirror. Object Type = Features, seleccionar la 2a feature desde el timeline. Clic en Mirror Plane selection box, seleccionar plano YZ desde BROWSER > Origin. OK.",
+    "Tut3 cut: Create Sketch sobre la cara frontal de la base. Dibujar perfil. Extrude, Extent Type = All, boton Flip para invertir, OK (resta material).",
+    "Tut3 chamfer: MODIFY > Chamfer. Seleccionar arista del cut feature. Type = Distance and Angle, Distance = 2.5, Angle = 45, OK. Save c04_Tut_03.",
+    "Tut4 (rueda de tren): New Design. Create Sketch en XY, dibujar+constrain+dimension perfil. Revolve usando la centerline vertical como eje (feature base).",
+    "Tut4 cut: Create Sketch en la cara inferior del revolucionado. Dibujar perfil. Extrude, Extent Type = All, Flip, OK.",
+    "Tut4 patron: CREATE > Pattern > Circular Pattern. Object Type = Features, seleccionar el cut feature del timeline. Clic Select junto a Axis, seleccionar la arista circular del modelo. Distribution = Full, Quantity = 6, OK.",
+    "Tut4 extrude final (crank pin): Create Sketch en la cara inferior, dibujar circulo diam 28. Extrude One Side Distance = 50, Operation = Join, OK. Repetir extrudiendo region entre diam 15 y diam 6 a Distance = 20. Save c04_Tut_04."
+   ],
+   "herramientasUI": [
+    "Create Sketch",
+    "Line",
+    "Circle",
+    "Trim",
+    "Sketch Dimension",
+    "linear diameter dimension",
+    "Extrude",
+    "Revolve",
+    "Mirror",
+    "Chamfer",
+    "Pattern > Circular Pattern",
+    "Pattern > Rectangular Pattern",
+    "Pattern on Path",
+    "Finish Sketch",
+    "Equal (constraint)",
+    "Tangent (constraint)",
+    "Horizontal (constraint)",
+    "Vertical (constraint)",
+    "Coincident (constraint)",
+    "ViewCube",
+    "Display Settings > Camera > Perspective / Orthographic",
+    "Physical Material (Steel)",
+    "Properties (mass properties)",
+    "CHANGE ACTIVE UNITS",
+    "Section View (en ejercicios)",
+    "Timeline (seleccion de features)",
+    "Flip (boton de direccion)",
+    "Add/Remove Selection Set (Chamfer)",
+    "Tangent Chain (Chamfer)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "sketchTrim(curve, point)",
+     "queHace": "Recorta la porcion de una curva (linea/arco/circulo/spline) entre intersecciones con otras curvas; el clic mas cercano al punto define el segmento a borrar. Resuelve intersecciones 2D y reconstruye la geometria como arcos. Debe re-disparar el solver de restricciones y avisar que algunas constraints/dimensiones se removieron.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "tangentLineCircleConstraint + autoEqual/autoTangent on draw",
+     "queHace": "Restriccion de tangencia linea-circulo y aplicacion semi-automatica de Equal/Tangent/Coincident al dibujar; exponer Tangent en la UI (la UI hoy expone ~6 de las 13 del solver).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "linearDiameterDimension(entity, axis)",
+     "queHace": "Cota de diametro lineal en croquis: mide el doble de la distancia al eje de revolucion para perfiles que se revolucionaran. Tipo de dimension nuevo en el motor de cotas.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "extrudeProfileMultiLoop(profile, distance, {start, extentType, direction, taper, operation})",
+     "queHace": "Extrude que toma un perfil con loops cerrados anidados y resta automaticamente los loops interiores (huecos) del exterior. Soportar Start=Profile/Offset/Object, ExtentType=Distance/ToObject/All, Direction=OneSide/TwoSides/Symmetric con espesores independientes, Taper Angle, Flip, Operation Join/Cut/Intersect/NewBody. Mapea a OCCT prism + boolean.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "revolveProfile(profile, axis, angle, {extentType, operation})",
+     "queHace": "Revoluciona un perfil cerrado alrededor de un eje (centerline/edge/construction line) un angulo Partial, To Object o Full 360. Mapea a OCCT BRepPrimAPI_MakeRevol.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "sketchOnFace(planarFace)",
+     "queHace": "Iniciar un croquis sobre una cara planar del solido existente (no solo en planos de origen) y orientar la vista normal a esa cara. Requiere mapear el plano local de la cara y proyectar la base.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "mirrorFeature(objects, mirrorPlane, objectType)",
+     "queHace": "Espeja features/caras/cuerpos/componentes respecto a un plano o cara planar. Seleccion del objeto desde el timeline; plano desde BROWSER (planos de origen). Mapea a transform reflejado + boolean union.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "chamferEdges(edges, {type, distance, angle, cornerType, tangentChain})",
+     "queHace": "Bisela aristas; Type Equal Distance / Two Distance / Distance and Angle; Corner Type Chamfer/Miter/Blend; Tangent Chain auto-selecciona aristas tangentes. Mapea a OCCT BRepFilletAPI_MakeChamfer.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "circularPattern(features, axis, quantity, {distribution, suppression, computeType})",
+     "queHace": "Patron circular de features/cuerpos/caras alrededor de un eje (arista circular/eje/cara cilindrica/linea construccion); Distribution Full, Quantity, supresion de instancias. Mapea a transform polar repetido + boolean.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "assignPhysicalMaterial(body, material) + massProperties(body)",
+     "queHace": "Asigna material (densidad) a un cuerpo y calcula masa/volumen/centro de masa/momentos. OCCT BRepGProp da volumen y propiedades; multiplicar por densidad.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "cameraPerspectiveToggle + ViewCube",
+     "queHace": "Alternar camara ortografica/perspectiva y un ViewCube clicable para reorientar la vista a caras/esquinas estandar.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "changeActiveUnits",
+     "queHace": "Dialogo para cambiar las unidades activas del documento (mm/cm/in).",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "timelinePanel",
+     "queHace": "Linea de tiempo de features para seleccionar/editar features (Mirror y Pattern seleccionan el feature desde aqui).",
+     "dificultad": "medio"
+    }
+   ],
+   "reutilizarOSS": [
+    "planegcs (FreeCAD sketcher solver) para Equal/Tangent/Horizontal/Coincident y para re-resolver el croquis tras un Trim",
+    "OCCT (OpenCascade WASM): BRepPrimAPI_MakePrism (extrude), BRepPrimAPI_MakeRevol (revolve), BRepFilletAPI_MakeChamfer (chamfer), BRepFilletAPI_MakeFillet (fillet), BRepAlgoAPI_Cut/Fuse/Common (Join/Cut/Intersect), BRepBuilderAPI_Transform (mirror/pattern), BRepGProp (mass properties)",
+    "Para Trim 2D: rutina de interseccion curva-curva (puede apoyarse en planegcs/geom utilidades o en OCCT Geom2dAPI_InterCurveCurve)"
+   ],
+   "yaExisteEnForja": "\"Croquis: line/rect/circle/arc/point + solver de 13 restricciones (UI expone ~6). Features: extrude, revolve, loft, sweep, pattern, fillet, chamfer, shell, hole. Motor de planos drawing.ts. FALTAN o estan parciales segun este capitulo: Trim de croquis; exponer Tangent en la UI; cota de diametro lineal; extrude multi-loop con resta automatica de huecos; Mirror de features; Circular Pattern con eje por arista/cara; croquis-sobre-cara-de-solido; asignacion de material fisico + mass properties; ViewCube y toggle perspectiva/orto; timeline de features; CHANGE ACTIVE UNITS.\""
+  },
+  {
+   "capitulo": "Cap. 5 — Creating Reference Geometries (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed, CADCIM)",
+   "dominio": "referencia",
+   "conceptos": [
+    "Un modelo mecanico real es multi-feature: combina sketched features, referenced geometries y placed features integradas; casi nunca todo cabe en un solo plano de croquis.",
+    "La base feature define el primer plano; las features adicionales necesitan otro plano existente, una cara planar, o un plano de referencia (construction plane) nuevo como plano de croquis.",
+    "Intencion de diseno: cada sketched feature (boss/cut) requiere un plano donde dibujar su croquis; eliges el plano segun el requerimiento geometrico de esa feature.",
+    "Los planos de referencia (construccion) se crean por distintos metodos geometricos: Offset Plane, Plane at Angle, Tangent Plane, Midplane, Plane Through Two Edges, Plane Through Three Points, Plane Tangent to Face at Point, Plane Along Path.",
+    "Metodo de seleccion de contornos (Contour Selection): de UN solo croquis puedes generar VARIAS features distintas extruyendo contornos cerrados diferentes (ej. anillo exterior vs anillo formado por dos circulos), evitando dibujar croquis separados.",
+    "La extrusion simetrica reparte el material respecto al plano: Half Length = igual longitud a cada lado desde el plano/eje; Whole Length = divide la longitud total dada por igual a ambos lados.",
+    "Direccion de extrusion: One Side, Two Sides (Side 1 y Side 2 con distancias independientes) y Symmetric.",
+    "Extent Type controla donde termina la extrusion: Distance (numero), To Object (termina en una cara/cuerpo/vertice/plano de trabajo seleccionado), All (a traves de todo el cuerpo).",
+    "Una misma operacion Extrude sirve para anadir material (New Body/Join) o quitarlo: al cruzar todo el solido la operacion cambia a Cut automaticamente, o se selecciona Cut en Operation.",
+    "Un construction axis puede usarse como referencia para construir un construction plane; un construction point debe ubicarse sobre una cara o plano de construccion.",
+    "Al crear una feature circular aparece un eje temporal; el axis Through Cylinder/Cone/Torus pasa por el centro de una superficie cilindrica/conica.",
+    "Los planos de construccion se pueden ocultar/mostrar; la visibilidad de croquis, planos y entidades se controla con el toggle en el BROWSER.",
+    "Un croquis debe quedar fully defined (totalmente restringido por relaciones y cotas) antes de extruir."
+   ],
+   "flujoHumano": [
+    "TUTORIAL 1 — Base feature: DESIGN workspace > panel CREATE > Create Sketch; aparecen los 3 planos default.",
+    "En el BROWSER, nodo Origin, seleccionar el plano YZ; dibujar con la herramienta Circle (dos circulos) y aplicar Sketch Dimensions; salir del croquis.",
+    "Ribbon > SOLID tab > panel CREATE > Extrude; abre dialogo EXTRUDE; con ViewCube > Home pasar a vista isometrica.",
+    "Verificar que el boton Extrude esta activo en el area Type; seleccionar el contorno entre los dos circulos en el viewport.",
+    "Direction drop-down > Symmetric; aparece Measurement con Half Length / Whole Length; elegir Whole Length; Distance = 70; OK. Base feature lista.",
+    "Segunda feature: seleccionar plano YZ, dibujar croquis (fully defined); Extrude > Symmetric > Whole Length > Distance 62 > OK.",
+    "Tercera y cuarta features (Contour Selection desde un croquis): seleccionar plano YZ, dibujar el croquis; Extrude; mover el cursor cerca del contorno inferior, seleccionarlo al resaltarse; Symmetric > Whole Length > Distance 18 > OK (tercera feature).",
+    "Cuarta feature: BROWSER > sub-nodo Sketches > click derecho en Sketch3 > Show/Hide para volverlo visible; Extrude; seleccionar el contorno cerrado formado por dos circulos; Direction > Two Sides; Side 1 Distance 12, Side 2 Distance 34; OK.",
+    "Quinta feature (cut): seleccionar plano XY, dibujar croquis; Extrude; seleccionar el croquis; Direction Symmetric; arrastrar la flecha azul hasta cortar todo el modelo (Operation pasa a Cut); OK.",
+    "Sexta feature (con Offset Plane): panel CONSTRUCT > Offset Plane; dialogo OFFSET PLANE; Extent Type > Distance; en BROWSER nodo Origin seleccionar plano XY; Distance 55; OK. El plano queda bajo el nodo Construction.",
+    "Create Sketch > seleccionar el nuevo plano de construccion (se orienta normal a pantalla); dibujar con 2-Point Rectangle.",
+    "Extrude; seleccionar el croquis; Extent > To Object; seleccionar la cara tangencial de la cuarta feature como terminacion; OK.",
+    "Septima y octava features (Midplane + Contour Selection): panel CONSTRUCT > Midplane; seleccionar las dos caras planares de la cuarta feature como referencia 1 y 2; OK (se crea el plano medio).",
+    "Create Sketch > seleccionar el midplane; dibujar con Line y Center Diameter Circle (cotas segun Fig 5-4).",
+    "Extrude; seleccionar el contorno cerrado al resaltarse; Symmetric > Whole Length > Distance 42 > OK (septima feature).",
+    "Octava feature: click derecho en el croquis de la septima en el BROWSER > Show/Hide; Extrude; seleccionar el contorno formado por dos circulos; Symmetric > Whole Length > Distance 48 > OK.",
+    "Guardar: File/Application menu > Save; Name c05_Tut_01; expandir Location, elegir proyecto CADCIM (o New Project); Save.",
+    "TUTORIAL 2 — Base feature: Create Sketch en plano YZ con Line; cotas; Extrude > Symmetric > Whole Length > Distance 76 > OK.",
+    "Segunda feature (Plane at Angle): panel CONSTRUCT > Plane at Angle; seleccionar la arista izquierda de la cara superior; Angle = 135 grados; OK.",
+    "Create Sketch en ese plano inclinado; dibujar croquis; Extrude con Extent Type > To Object.",
+    "Tercera feature (cut): Create Sketch sobre la cara planar de la segunda feature (se orienta normal a pantalla); dibujar croquis; Extrude; seleccionar el circulo; Extent Type > All; Flip si hace falta; Operation > Cut; OK; repetir para los demas cortes.",
+    "Guardar como c05_Tut_02 en el proyecto CADCIM."
+   ],
+   "herramientasUI": [
+    "Create Sketch",
+    "Circle",
+    "Center Diameter Circle",
+    "2-Point Rectangle",
+    "Line",
+    "Sketch Dimension",
+    "Extrude (Type: Extrude; Direction: One Side / Two Sides / Symmetric; Measurement: Half Length / Whole Length; Extent Type: Distance / To Object / All; Operation: New Body / Join / Cut; Flip; Distance edit box; Side 1 / Side 2)",
+    "Contour Selection (seleccion de perfil/contorno cerrado)",
+    "Offset Plane (Extent Type: Distance)",
+    "Plane at Angle (Angle)",
+    "Midplane",
+    "Tangent Plane",
+    "Plane Through Two Edges",
+    "Plane Through Three Points",
+    "Plane Tangent to Face at Point",
+    "Plane Along Path",
+    "Axis Through Cylinder/Cone/Torus",
+    "Construction Axis",
+    "Construction Point",
+    "ViewCube (Home / vista isometrica)",
+    "BROWSER bar (nodos Origin, Sketches, Construction; toggle de visibilidad)",
+    "Show/Hide (menu contextual)",
+    "Save / New Project"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "Offset Plane (plano de referencia por distancia)",
+     "queHace": "Crea un plano de construccion paralelo a un plano/cara seleccionado a una distancia dada; pasa a ser plano de croquis. Datum geometrico (transform de un plano base), sin tocar el solido.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Plane at Angle (plano por arista + angulo)",
+     "queHace": "Crea un plano de construccion que pasa por una arista/eje/linea de croquis y forma un angulo dado. Rotacion del plano alrededor del eje seleccionado.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Midplane (plano medio entre dos caras/planos)",
+     "queHace": "Crea un plano de construccion equidistante entre dos caras planares o planos. Promedio de dos transforms de plano.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Otros constructors de plano (Tangent, Through Two Edges, Through Three Points, Tangent to Face at Point, Along Path)",
+     "queHace": "Familia de planos datum por restriccion geometrica (tangencia a superficie, 2 aristas, 3 puntos, punto sobre cara, a lo largo de un path). Resuelve un frame a partir de las referencias.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Construction Axis (incl. Through Cylinder/Cone/Torus)",
+     "queHace": "Eje de referencia, p. ej. por el centro de una cara cilindrica/conica; usable como referencia para crear planos.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Construction Point",
+     "queHace": "Punto de referencia ubicado sobre cara o plano de construccion; ancla para otros datums.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Sketch sobre plano de construccion / cara planar",
+     "queHace": "Permite iniciar un croquis seleccionando un datum plane o una cara del solido y orientarlo normal a pantalla. Requiere proyectar el plano de trabajo y mapear el croquis 2D a ese frame 3D.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Contour Selection en Extrude (multi-perfil desde un croquis)",
+     "queHace": "Detecta los contornos cerrados de un croquis (deteccion de loops/regiones) y deja extruir uno o varios por separado para crear features distintas. Mapea a face-detection sobre el grafo de aristas del croquis + extrude del perfil elegido.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Extrude Symmetric con Half/Whole Length",
+     "queHace": "Extrusion simetrica respecto al plano; Half = misma longitud por lado, Whole = longitud total repartida. Operacion de prism OCCT con offset bidireccional centrado.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Extrude Two Sides (Side 1/Side 2 con distancias distintas)",
+     "queHace": "Extruye en ambas direcciones con profundidades independientes. Dos prismas opuestos fusionados.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Extent To Object",
+     "queHace": "Termina la extrusion en una cara/cuerpo/vertice/plano seleccionado. Requiere up-to-face: extruir y luego boolean/limitar contra la geometria objetivo (BRepFeat_Prism Until).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Extent All (a traves de todo)",
+     "queHace": "Extruye atravesando todo el cuerpo en la direccion (y/o ambas). Prism sobredimensionado + boolean contra el solido.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Extrude Cut (operacion de resta)",
+     "queHace": "Usa el perfil para restar material; auto-cambia a Cut al cruzar el solido o se elige en Operation. Boolean subtract (BRepAlgoAPI_Cut).",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Mostrar/Ocultar planos, ejes, croquis (BROWSER + Show/Hide)",
+     "queHace": "Toggle de visibilidad de datums y croquis y arbol con nodos Origin/Sketches/Construction. UI + estado, sin geometria de kernel.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Re-usar un croquis ya consumido (Show/Hide del Sketch para otra feature)",
+     "queHace": "Permite que un croquis oculto tras una feature vuelva a usarse para extruir otro contorno. Requiere que el croquis siga vivo en el modelo y desacoplado de la feature que lo consumio.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Drag interactivo de la profundidad (flecha azul) con preview",
+     "queHace": "Manipulador 3D que ajusta la distancia arrastrando y muestra preview en vivo; al cruzar todo cambia a Cut. Gizmo + recompute en vivo.",
+     "dificultad": "medio"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OCCT-WASM): gp_Pln/datum frames para Offset/Angle/Midplane/Through-points; BRepPrimAPI_MakePrism y BRepFeat_MakePrism (Until/Symmetric) para Extrude con Distance/To Object/All; BRepAlgoAPI_Cut/Fuse para Cut/Join; deteccion de wires cerrados para Contour Selection.",
+    "planegcs (FreeCAD sketcher solver): restricciones y auto-constraint del croquis 2D para dejarlo fully defined antes de extruir.",
+    "FreeCAD (referencia de diseno): su modelo de Datum Plane/Axis/Point (PartDesign) como mapa de los constructors Offset/Angle/Midplane/Through-3-points/Tangent."
+   ],
+   "yaExisteEnForja": "\"Croquis: line/rect/circle/arc/point con solver de 13 restricciones (UI expone ~6). Features: extrude/revolve/loft/sweep/pattern/fillet/chamfer/shell/hole. Planos taller: drawing.ts. Falta confirmar/construir: los datum planes de referencia (Offset, Plane at Angle, Midplane y demas), croquis sobre cara/plano de construccion, Contour Selection multi-perfil, y extents To Object/All en Extrude.\""
+  },
+  {
+   "capitulo": "Cap. 6 — Advanced Modeling-II (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed., CADCIM)",
+   "dominio": "features",
+   "conceptos": [
+    "Captura de intencion de diseno: el modelo se construye como secuencia de features sobre una linea de tiempo (base + features dependientes), no como geometria suelta.",
+    "Hole como placed feature: el agujero se coloca seleccionando cara/plano/punto y se posiciona por cotas a aristas de referencia, SIN dibujar el croquis del agujero; soporta tipos simple/counterbore/countersink y extents (All/To/Distance).",
+    "Rib (nervio): estructura de pared delgada que aumenta la resistencia del componente para evitar la falla bajo carga; nace de un croquis abierto que se engrosa (Thickness) y se rellena hasta To Next o por Distance.",
+    "Sweep (barrido): extruir un perfil cerrado a lo largo de una trayectoria abierta o cerrada; requiere SIEMPRE un perfil (seccion) y un path (ruta).",
+    "Loft (recubrimiento): mezclar dos o mas secciones similares o disimiles (paralelas o no) en una forma libre; las secciones deben ser croquis CERRADOS; puede guiarse con una Centerline (path).",
+    "Plano normal a la trayectoria: para el perfil del sweep / secciones del loft se crea un plano de referencia normal al path (Plane Along Path con Distance) en puntos a lo largo de la curva.",
+    "Slice + Intersect/Project: rebanar el modelo respecto al plano de croquis y proyectar las aristas del corte para apoyar el dibujo del nuevo croquis con relacion asociativa (Projection Link).",
+    "Mirror de feature: replicar una feature (rib, hole) respecto a un plano de simetria, con Object Type = Features y un Mirror Plane.",
+    "Patron lineal y circular de features: repetir una feature N veces; el circular requiere eje (arista circular), Type Full y Quantity.",
+    "Section Analysis: vista de seccion cortando el modelo con un plano/cara (Y Distance, X Angle, Z Angle); puede guardarse para generar la seccion en el ambiente de plano.",
+    "Sculpt / T-Spline: crear cuerpos freeform por press-pull sobre superficies subdivididas; el cuerpo T-Spline se convierte luego en solido y se combina con el modelado solido.",
+    "Simetria interna en sculpt (Mirror - Internal): definir cara master y cara espejo para que crease/edit form se reflejen automaticamente.",
+    "Insert Edge / Crease / Edit Form: anadir aristas de subdivision, marcar aristas como afiladas (crease) y manipular directamente caras/aristas/vertices con una triada (Edit Form)."
+   ],
+   "flujoHumano": [
+    "TUT1 base: CREATE > Create Sketch > clic plano XY en BROWSER > dibujar perfil > Extrude > Direction=Symmetric, Measurement=Whole Length, Distance=72 > OK.",
+    "TUT1 feature 2: Create Sketch en XY > dibujar perfil > Extrude > Symmetric/Whole Length, Distance=54 > OK.",
+    "TUT1 feature 3: Create Sketch en XY > en SKETCH PALETTE activar checkbox Slice > CREATE > Project/Include > Intersect > seleccionar objeto rebanado (proyecta arista) > Line para dibujar > Extrude Symmetric Distance=15 > OK.",
+    "TUT1 rib: CONSTRUCT > Offset Plane > seleccionar cara derecha, Distance=-118 > OK > Create Sketch en ese plano > Slice + Intersect/Project > dibujar perfil del nervio con Line > CREATE > Rib > seleccionar croquis > Thickness=10, Thickness Direction=Symmetric, Extent Type=To Next > OK.",
+    "TUT1 mirror del rib: CREATE > Mirror > Object Type=Features > seleccionar la rib en el timeline > Mirror Plane > seleccionar plano XY > OK.",
+    "TUT1 hole: CREATE > Hole > seleccionar cara superior de la base como plano de colocacion > seleccionar arista 1 y teclear 100 en la cota, arista 2 y teclear 18 > diametro=12 > Extents=All > OK > luego Mirror del hole respecto a XY.",
+    "TUT1 cut: Create Sketch en XY + Slice > dibujar perfil del corte + restricciones > Extrude > Direction=Two Sides, Extent Type=All en Side1 y Side2, Operation=Cut > OK > repetir otro corte > aplicar Fillets > Save como c06_Tut_01.",
+    "TUT2 base revolve: Create Sketch en XY > dibujar perfil con linea de centro vertical > Revolve seleccionando el centerline vertical como eje > OK.",
+    "TUT2 sweep: Create Sketch en XY + Slice > dibujar el PATH > Finish Sketch > CONSTRUCT > Plane Along Path > seleccionar el path, Distance=0 > OK > en ese plano Create Sketch > dibujar el PERFIL > Finish Sketch > CREATE > Sweep > seleccionar perfil > pestana Feature opcion Path > seleccionar el path > Operation=Join > OK.",
+    "TUT2 fillet + seccion: aplicar Fillet > INSPECT > Section Analysis > seleccionar plano XY > aceptar Y Distance/X Angle/Z Angle por defecto > OK > usar Show/Hide del folder Analysis en BROWSER para volver al modelo completo > Save c06_Tut_02.",
+    "TUT3 base revolve: Create Sketch en XY > dibujar perfil > Finish Sketch > CREATE > Revolve > seleccionar perfil + eje vertical > Angle=360 > OK.",
+    "TUT3 loft: Create Sketch en XY (Display Settings > Visual Style > Wireframe para ver) > dibujar el PATH > Finish Sketch > CONSTRUCT > Plane Along Path en un extremo (arrastrar flecha al final) > OK > otro Plane Along Path en el otro extremo > en cada plano Create Sketch y dibujar la seccion (elipses) cerradas > Finish Sketch > CREATE > Loft > seleccionar las dos secciones una por una > Guide Type=Centerline > seleccionar el path > Operation=Join > OK.",
+    "TUT3 patron: CREATE > Pattern > Circular Pattern > seleccionar la loft feature en el timeline > Pattern Type=Features > clic en Axis y seleccionar arista circular del modelo > Type=Full, Quantity=3 > OK > Save c06_Tut_03.",
+    "TUT4 sculpt: CREATE > Create Form (entra al workspace FORM) > CREATE > Box > seleccionar plano XZ > clic origen como centro > length=50, Tab, width=40, Tab (bloquea) > Height=100, Height Faces=6 > OK.",
+    "TUT4 simetria: SYMMETRY > Mirror - Internal > seleccionar cara frontal (master) > seleccionar cara trasera (mirror) > OK (aparece linea simetrica verde).",
+    "TUT4 aristas: MODIFY > Insert Edge > seleccionar arista, Insertion Side=Both > OK > repetir en ambos lados de la linea simetrica.",
+    "TUT4 crease/edit: MODIFY > Crease > seleccionar aristas (de un solo lado; se espeja solo) > OK > MODIFY > Edit Form > seleccionar las aristas creased con CTRL > X Distance=10 (o arrastrar triada) > OK > Finish Form > aplicar Fillet 2 mm a las aristas creased > Save c06_Tut_04."
+   ],
+   "herramientasUI": [
+    "Create Sketch",
+    "Finish Sketch",
+    "Line",
+    "Sketch Dimension (cota)",
+    "Extrude (Symmetric, Whole Length, Two Sides, Operation Cut/Join, Extent Type To Next/All/Distance)",
+    "Revolve (eje/centerline, Angle 360)",
+    "Hole (Simple Hole, Hole Type simple/counterbore/countersink, Extents All)",
+    "Rib (Thickness, Thickness Direction Symmetric/One Side, Extent Type To Next/Distance, Depth)",
+    "Sweep (Profile, Path, Operation Join, Analysis Zebra/Curvature Map/Isocurve)",
+    "Loft (Profiles, Guide Type Centerline, Operation Join)",
+    "Mirror (Object Type Features, Mirror Plane)",
+    "Linear Pattern",
+    "Circular Pattern (Pattern Type Features, Axis, Type Full, Quantity)",
+    "Fillet",
+    "Offset Plane (CONSTRUCT)",
+    "Plane Along Path (CONSTRUCT, Distance)",
+    "Project/Include > Intersect (Specified entities, Body, Projection Link)",
+    "Slice (checkbox en SKETCH PALETTE)",
+    "Section Analysis (INSPECT, Y Distance, X Angle, Z Angle)",
+    "Create Form (entra a workspace Sculpt/FORM)",
+    "Box (primitiva T-Spline: Length/Width/Height Faces, Direction)",
+    "Mirror - Internal (SYMMETRY)",
+    "Insert Edge (Insertion Side Both)",
+    "Crease",
+    "Edit Form (triada, X Distance)",
+    "Finish Form",
+    "Display Settings > Visual Style > Wireframe",
+    "Show/Hide (BROWSER)",
+    "Save / New Design / New Project"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "holeTool(face, refEdges[], diametro, extents, type)",
+     "queHace": "Coloca un agujero como placed feature: usuario selecciona cara/plano/punto, lo posiciona por cotas a 2 aristas de referencia y fija diametro/extents (All/To/Distance) sin dibujar croquis. Kernel: cilindro booleano (cut) parametrico anclado a referencias; soportar simple/counterbore/countersink.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "ribTool(sketchAbierto, thickness, direction, extentType)",
+     "queHace": "Engrosa un croquis abierto a pared delgada y rellena hasta la siguiente cara (To Next) o por Distance. Kernel: thicken/offset de la curva a solido + booleana union, recortado contra el cuerpo.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "planeAlongPath(pathCurve, distanceParam)",
+     "queHace": "Crea plano de referencia normal a una trayectoria en un parametro t (0..1) sobre la curva; base para perfiles de sweep y secciones de loft. Kernel: evaluar tangente de la curva en t y construir plano perpendicular.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "offsetPlane(face/plane, distance)",
+     "queHace": "Plano de construccion desplazado una distancia (con signo) de una cara/plano. Kernel: plano paralelo trasladado.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "sweepConPathSelection(profile, path, operation)",
+     "queHace": "Barre un perfil cerrado a lo largo de un path abierto/cerrado con seleccion explicita de perfil y trayectoria + Operation Join/Cut. Mapea a OCCT BRepOffsetAPI_MakePipe.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "loftCenterline(sections[], centerlinePath, operation)",
+     "queHace": "Recubre 2+ secciones cerradas guiadas por una centerline (path). Mapea a ThruSections con guia; valida que las secciones sean cerradas.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "mirrorFeature(feature, mirrorPlane)",
+     "queHace": "Espeja una feature completa (no body) seleccionandola del timeline y un plano de simetria; re-ejecuta la operacion reflejada. Requiere modelo de features con timeline.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "circularPatternFeature(feature, axisEdge, type, quantity)",
+     "queHace": "Patron circular de una feature alrededor de un eje (arista circular seleccionada), con Type Full y Quantity. Kernel: transformar+rebooleanar la feature N veces.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "sliceSketch(plano)",
+     "queHace": "Rebana el cuerpo en el plano de croquis activo para ver la seccion mientras dibujas (checkbox Slice del SKETCH PALETTE). Kernel: interseccion plano-solido para display.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "projectIntersect(plano, bodies, projectionLink)",
+     "queHace": "Proyecta puntos/aristas/geometria que intersecta el plano de croquis, con vinculo asociativo opcional (Projection Link). Kernel: seccion plano-cara devuelta como curvas de croquis.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "sectionAnalysis(plano, yDistance, xAngle, zAngle)",
+     "queHace": "Vista de seccion del modelo cortando con un plano/cara, parametrizada por distancia y angulos; guardable. Kernel: clipping plane en R3F + corte para captura.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "sculptForm.box / insertEdge / crease / editForm / mirrorInternal",
+     "queHace": "Workspace de modelado freeform por T-Spline/subdivision: crear primitiva box subdividida (Length/Width/Height Faces), insertar aristas, marcar crease, manipular caras/aristas/vertices con triada, simetria interna master/mirror, y convertir a solido. Es un subsistema nuevo completo.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "extrudeTwoSidesCutAll(sketch)",
+     "queHace": "Extrude con Direction Two Sides y Extent Type All en ambos lados con Operation Cut (corte pasante bidireccional). Extension de la herramienta extrude existente.",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OpenCASCADE, ya via WASM): BRepOffsetAPI_MakePipe para sweep; BRepOffsetAPI_ThruSections para loft; BRepPrimAPI/booleanas para hole; BRepFilletAPI para fillet; BRepBuilderAPI_Transform para patrones/mirror; seccion plano-solido para Slice/Intersect/Section Analysis.",
+    "planegcs (FreeCAD sketcher solver): restricciones y auto-constraint del croquis abierto del rib y perfiles de sweep/loft.",
+    "OpenSubdiv / T-Spline-equivalente open-source para el workspace Sculpt (subdivision surfaces, crease, edit form); alternativa: libigl para operaciones de malla freeform.",
+    "manifold (booleanas robustas de malla) como respaldo a las booleanas de hole/rib/pattern."
+   ],
+   "yaExisteEnForja": "\"Croquis: line/rect/circle/arc/point con solver de 13 restricciones (UI expone ~6). Features ya existentes: extrude, revolve, loft, sweep, pattern, fillet, chamfer, shell, hole. Motor de planos drawing.ts (3D->2D taller con HLR). Por construir o ampliar para este capitulo: Rib, Hole como placed feature (posicion por cotas a aristas, sin croquis), Mirror de feature, Circular Pattern con eje, Offset Plane, Plane Along Path, Slice + Project/Intersect, Section Analysis, Extrude Two Sides Cut All, y TODO el workspace Sculpt/T-Spline (Create Form, Box, Insert Edge, Crease, Edit Form, Mirror-Internal).\""
+  },
+  {
+   "capitulo": "Cap. 7 — Assembling Components (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed, CADCIM)",
+   "dominio": "ensamble (joints/mates, contact sets, analisis de interferencia, bottom-up y top-down)",
+   "conceptos": [
+    "Ensamble = unir 2+ componentes en sus posiciones de trabajo aplicando joints; los joints restringen los grados de libertad para que el mecanismo se mueva como se requiere.",
+    "Bottom-up: cada componente se crea como archivo/cuerpo independiente y luego se inserta en el diseno de ensamble (preferido para ensambles grandes con piezas detalladas/intrincadas).",
+    "Top-down: los componentes se crean dentro del mismo diseno a partir de un croquis maestro (master sketch) comun; la geometria de un componente define la de otro y se ve el producto en tiempo real. Util cuando se necesita referencia de piezas previas.",
+    "Middle-out: combinacion de top-down + bottom-up (mencionado en preguntas).",
+    "Body (cuerpo) vs Component (componente): un body es feature(s) de un diseno hibrido; un componente es una parte independiente, sin relacion de posicion ni cinematica con otros hasta aplicar joints. Un body se puede convertir en componente.",
+    "Grounded (anclado): un componente puede fijarse al espacio (icono push pin) para que no se mueva ni rote; sirve de referencia base del ensamble.",
+    "Joint origin: punto/cara/borde de Componente 1 que se snapea a un punto/cara/borde de Componente 2 para crear la union.",
+    "Tipos de movimiento (Motion) usados en el cap: Rigid (0 GDL, sin movimiento relativo), Slider (traslacion a lo largo de un eje), Cylindrical (traslacion + rotacion sobre un eje), Revolute (rotacion sobre un eje). Fusion tiene 7 tipos de joint en total.",
+    "Contact Set: restriccion de contacto para que los componentes no se atraviesen y se comporten como en el mundo real (Enable All Contact + New Contact Set).",
+    "Analisis de interferencia: calcula el volumen de traslape entre componentes; un ensamble correcto no debe tener interferencia. Opcion Include Coincident Faces para ver traslape en caras coincidentes.",
+    "Alignment / Offset: se puede ajustar angulo y desplazamiento X/Y/Z de la union segun el tipo de joint.",
+    "En top-down con Extrude se usa Operation = New Component para que el cuerpo extruido nazca ya como componente (en vez de New Body) y Join para sumar el pin al mismo componente."
+   ],
+   "flujoHumano": [
+    "BOTTOM-UP (Tutorial 1, Bench Vice): 1) En Data Panel doble-click en carpeta CADCIM > boton New Folder > renombrar a C07; crear subcarpeta Bench Vice Assembly.",
+    "2) Por cada pieza: CREATE panel (SOLID tab, DESIGN workspace) > Create Sketch > elegir plano > dibujar perfil con cotas > features > Application menu > Save > escribir Name > expandir Location (flecha) > elegir PROJECT CADCIM > carpeta Bench Vice Assembly > Save. Repetir para Base, Vice Jaw, Jaw Screw, Oval Fillister, Screw Bar, Bar Globe, Clamping Plate, Screw 1, Screw 2, Base Plate.",
+    "3) Abrir nuevo diseno de ensamble. Application bar > Show Data Panel. Doble-click carpeta Bench Vice Assembly.",
+    "4) Insertar Base: click derecho sobre Base en Data Panel > Insert into Current Design; aparece dialogo MOVE/COPY > dejar en posicion default > OK. La Base queda grounded (push pin). Si no, click derecho en BROWSER > Ground.",
+    "5) Insertar Vice Jaw igual; si la posicion no coincide, reposicionar con el triad/manipulador o escribir valor en Angle del MOVE/COPY > OK.",
+    "6) ASSEMBLE panel > Joint; abre dialogo JOINT en pestana Position. En Component 1 elegir Origin Mode = Simple > click en la ubicacion de joint origin sobre Vice Jaw; se activa Select en Component 2 (Snap) > click en la ubicacion sobre Base. Vice Jaw se ensambla.",
+    "7) Pestana Motion > Type = Slider > Slide = X Axis > OK (Vice Jaw desliza sobre Base).",
+    "8) Contacto: ASSEMBLE > Enable All Contact (agrega nodo Contact: sets en BROWSER y la tool New Contact Set) > click derecho en Contact: sets > New Contact Set > seleccionar Base y Vice Jaw en graphics > OK.",
+    "9) Jaw Screw: Insert into Current Design > reposicionar con triad/MOVE-COPY a espacio libre > OK. Joint > Simple > click en Jaw Screw > Select en Vice Jaw. Motion > Type = Cylindrical > Axis = Z Axis > OK (se alinea al eje central).",
+    "10) Fijar linealmente: Joint > Simple > seleccionar cara del Jaw Screw > Select (Component 2) > ubicacion en Vice Jaw > aparece message box > Continue. Motion > Type = Revolute > OK.",
+    "11) Oval Fillister: insertar y reposicionar sin traslape > Joint > cara del Oval Fillister como Component 1, cara interna de Vice Jaw como Component 2 > Motion Type = Rigid > OK.",
+    "12) Screw Bar: insertar > Joint > cara del Screw Bar + cara cilindrica del agujero del Jaw Screw > Motion Type = Slider > Slide = Z Axis > OK.",
+    "13) Bar Globes: insertar 2 instancias desde Data Panel, orientar cara plana hacia el Screw Bar > Joint > cara cilindrica del Bar Globe + borde circular del Screw Bar > Rigid > OK; repetir en el otro extremo. Crear New Contact Set seleccionando Screw Bar, Jaw Screw y ambos Bar Globes en BROWSER > OK.",
+    "14) Clamping Plate: insertar > Joint > borde circular del agujero del Clamping Plate + borde circular interno del agujero del Vice Jaw > Rigid > OK.",
+    "15) Screw 1: insertar > Joint > borde circular del Screw 1 + borde circular del agujero del Clamping Plate (rotar vista con ViewCube) > Rigid > OK; repetir en el otro agujero.",
+    "16) Base Plate: insertar > seleccionar borde circular del agujero del Base Plate + borde circular del agujero del Base (girar con ViewCube) > Rigid > OK; aplicar Rigid en el otro agujero; repetir para la segunda instancia Base/Base Plate.",
+    "17) Screw 2: insertar > Joint > borde circular del Screw 2 + borde del agujero del Base Plate (ViewCube) > Rigid > OK; repetir instancias.",
+    "18) Interferencia: INSPECT panel > Interference > marcar Include Coincident Faces > seleccionar todos los componentes en BROWSER > Compute > leer Interferences Results (volumen de traslape) > cerrar.",
+    "19) Guardar: File/Application menu > Save > Add Version Description > OK.",
+    "TOP-DOWN (Tutorial 2, mecanismo reciprocante): 1) CREATE panel > Create Sketch > plano XY > dibujar TODO el croquis maestro del mecanismo con cotas > FINISH SKETCH.",
+    "2) Extrude del Base Plate: CREATE > Extrude > seleccionar perfil > Start = Offset, Offset = 10 > Distance = -5 > Operation = New Component > OK (nace ya como componente).",
+    "3) Pin del Base Plate: seleccionar perfil del pin > Extrude > Distance = -10 > Operation = Join > OK (se suma al mismo componente).",
+    "4) Crank: seleccionar perfil > Extrude > Distance = -10 > Operation = New Component > OK; su pin: Distance = -10 > Join.",
+    "5) Piston Tank: perfil > Extrude > Distance = -10 > New Component; su pin: Distance = 5 > Join.",
+    "6) Piston Rod: perfil > Extrude > Distance = 5 > New Component > OK.",
+    "7) Renombrar componentes en BROWSER (Base Plate, Crank, Piston Tank, Piston Rod).",
+    "8) Mover cada componente a una ubicacion separada para aplicar joints comodamente.",
+    "9) Joint Base Plate + Piston Tank: seleccionar bordes > Motion Type = Slider > en Position/Alignment Offset X = -55 y Offset Z = -55 > Slide = Z Axis > OK.",
+    "10) Home/ViewCube a isometrico. Joint Crank+Piston Rod: ubicacion en Piston Rod + pin del Crank > Revolute > Rotate = Z Axis > OK.",
+    "11) Joint Piston Tank + Piston Rod: pin del Piston Tank + borde del agujero del Piston Rod > Revolute > Rotate = Z Axis > OK. Similar con Crank y Base pin.",
+    "12) Guardar y cerrar el ensamble."
+   ],
+   "herramientasUI": [
+    "Create Sketch",
+    "FINISH SKETCH",
+    "Sketch Dimension (cotas del croquis)",
+    "Extrude (con Operation: New Body / New Component / Join, y Start: Offset)",
+    "Data Panel",
+    "New Folder",
+    "Rename",
+    "Insert into Current Design (menu contextual)",
+    "MOVE/COPY dialog (triad/manipulador, Angle edit box, Offset X/Y/Z)",
+    "Ground / Grounded (push pin)",
+    "Joint (ASSEMBLE panel)",
+    "JOINT dialog (Position tab, Motion tab, Origin Mode = Simple, Snap = Select, Alignment/Offset)",
+    "Joint Type: Rigid",
+    "Joint Type: Slider (Slide axis: X/Z)",
+    "Joint Type: Cylindrical (Axis)",
+    "Joint Type: Revolute (Rotate axis)",
+    "Enable All Contact",
+    "New Contact Set (NEW CONTACT SET dialog)",
+    "Interference (INSPECT panel) + Include Coincident Faces + Compute",
+    "Create Components from Bodies (convertir body a componente)",
+    "ViewCube",
+    "Home view (isometrico)",
+    "BROWSER bar",
+    "Save / Add Version Description",
+    "Application bar > Show Data Panel"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "Modelo de ensamble multi-componente",
+     "queHace": "Permite que un diseno contenga varios componentes independientes (no solo cuerpos), con su propia transformacion (matriz 4x4 posicion+rotacion) e identidad, navegables en el BROWSER. Mapea a estructura de escena/grafo R3F sobre el kernel OCCT (un TopoDS_Shape por componente).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Insert into Current Design (insertar pieza)",
+     "queHace": "Inserta un componente guardado (archivo/STEP/cuerpo) en el diseno actual como nueva instancia con su transform; soporta multiples instancias (ej. 2 Bar Globes, 2 Base Plate).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Triad / MOVE-COPY (mover-rotar componente)",
+     "queHace": "Gizmo 3D para trasladar/rotar un componente libremente o por valores numericos (Angle, Offset X/Y/Z). Equivale a editar la matriz de transform de la instancia.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Ground (anclar componente)",
+     "queHace": "Fija un componente al espacio (0 GDL absolutos) como referencia base; marca push pin. Kernel: marcar instancia como fija al resolver el sistema cinematico.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Joint engine (resolvedor de uniones)",
+     "queHace": "Crea uniones entre 2 componentes seleccionando geometria (punto/cara/borde) de cada uno y resuelve la transform relativa que las hace coincidir; expone tipos de movimiento Rigid/Slider/Cylindrical/Revolute con eje configurable. Necesita seleccion de joint origin (snap a vertice/centro de cara/borde circular) y solver de restricciones cinematicas.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Joint origin snapping",
+     "queHace": "Detecta y snapea a puntos notables: centro de cara circular, borde circular (eje), vertice, midpoint, cara plana; provee el frame local de la union. Mapea a consultas geometricas OCCT (BRep_Tool, GProp para centroides, ejes de superficies cilindricas).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Tipos de joint Rigid/Slider/Cylindrical/Revolute",
+     "queHace": "Define los GDL permitidos: Rigid=0; Slider=1 traslacion en eje; Revolute=1 rotacion en eje; Cylindrical=traslacion+rotacion en eje. Permite simular el movimiento (drag) dentro de esos limites.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Alignment/Offset de la union",
+     "queHace": "Ajusta angulo y offset X/Y/Z entre los dos frames de la union para posicion fina (ej. Offset X/Z = -55).",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "Contact Set / Enable All Contact",
+     "queHace": "Restriccion para que componentes no se interpenetren al moverse; deteccion de colision entre mallas/BReps de los componentes elegidos.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "Interference analysis",
+     "queHace": "Calcula el volumen de traslape (boolean intersection) entre componentes seleccionados y lo reporta; opcion para incluir caras coincidentes. Mapea a BRepAlgoAPI_Common (interseccion booleana) + volumen via GProp_GProps.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Extrude con Operation = New Component",
+     "queHace": "En flujo top-down, extruye un perfil de un croquis maestro y crea directamente un componente nuevo (no solo body); Join suma geometria al componente activo; Start=Offset para arrancar el extrude desplazado del plano.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Create Components from Bodies",
+     "queHace": "Convierte uno o varios cuerpos existentes en componentes independientes del ensamble.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "BROWSER de ensamble + renombrar/instancias",
+     "queHace": "Arbol con componentes, sus instancias (n:1), nodo Contact: sets y joints; permite renombrar, seleccionar y aplicar acciones (Ground, contactos).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "Croquis maestro (master sketch) top-down",
+     "queHace": "Un solo croquis del que se extruyen multiples componentes relacionados por construccion; ya soportado parcialmente si el croquis admite multiples perfiles cerrados extruibles por separado.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "ViewCube / Home / vistas",
+     "queHace": "Orientacion rapida de camara (isometrico, caras) para seleccionar geometria oculta al aplicar joints. UI de camara R3F.",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OpenCascade WASM): BRepAlgoAPI_Common para interseccion booleana del analisis de interferencia y calculo de volumen con GProp_GProps; BRep_Tool / geometria para extraer ejes de caras cilindricas y centroides (joint origin snapping); el kernel ya usado por La Forja para extrude/features.",
+    "planegcs (FreeCAD GCS): solver 2D de restricciones para el croquis maestro top-down (relaciones entre perfiles que definen componentes).",
+    "Bibliotecas de cinematica/restriccion rigida 3D (ej. solvers de joints estilo physics/ECS o un mini-solver propio) para resolver los GDL de Rigid/Slider/Revolute/Cylindrical.",
+    "Bullet / cannon-es u otra libreria de colision para Contact Sets (deteccion de interpenetracion entre mallas).",
+    "manifold / mesh-boolean como alternativa ligera a OCCT para interferencia sobre mallas si el BRep boolean es muy pesado en WASM."
+   ],
+   "yaExisteEnForja": "Features de modelado ya existen y cubren la parte de crear las piezas y el extrude del flujo top-down: extrude (incluido Operation Join/New Body; falta opcion New Component y Start=Offset), revolve, loft, sweep, pattern, fillet, chamfer, shell, hole. Croquis con line/rect/circle/arc/point + solver de 13 restricciones (UI expone ~6) cubre el dibujo del croquis maestro y los perfiles. Motor de planos drawing.ts (3D->2D) existe pero no aplica a este capitulo. NO existe aun la capa de ENSAMBLE: componentes/instancias, Insert into Current Design, Ground, Joint (Rigid/Slider/Cylindrical/Revolute) con joint origin/snapping, MOVE-COPY/triad, Contact Sets, analisis de Interference, ViewCube de ensamble, ni Create Components from Bodies."
+  },
+  {
+   "capitulo": "Cap. 8 — Working with Drawing and Animation Workspace (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed, CADCIM)",
+   "dominio": "planos (drawing 2D de taller) + animacion/explosionado de ensambles",
+   "conceptos": [
+    "Los planos (drawing views) son representaciones 2D de un solido o ensamble; el Drawing Workspace es un entorno especializado para generarlos y anotarlos.",
+    "Asociatividad: el plano es asociativo a la pieza/ensamble; cambios en el modelo 3D se reflejan en las vistas. Borrar la vista padre arrastra las vistas dependientes.",
+    "Estandares de dibujo predefinidos: ISO y ASME; eligen convenciones de proyeccion y simbolos. Hay que fijar Standard + Units antes de generar vistas.",
+    "Angulo de proyeccion: Primer angulo vs Tercer angulo (Third Angle); define como se colocan las vistas proyectadas alrededor de la padre.",
+    "Vista padre (base/parent view) y vistas proyectadas (projected) derivadas de ella: front, top, right, isometric. El estilo de la proyectada hereda por defecto el de la padre.",
+    "Estilos de visualizacion de arista: Visible Edges; Visible and Hidden Edges; aristas tangentes (cortar/apagar/longitud completa), aristas de interferencia, aristas de rosca.",
+    "Escala de vista (1:4, 1:2, 1:3, etc.) independiente por vista.",
+    "Vista en corte (section view): linea de seccion definida por 2 puntos; el material cortado se raya con hatch; se pueden excluir componentes del corte (Objects To Cut). Corte alineado (aligned section).",
+    "El hatch/rayado tiene patron, escala (densidad de lineas) y angulo configurables.",
+    "Vista de detalle (detail view): amplia una porcion encerrada en un circulo, con su propia escala.",
+    "Marcas de centro (center marks) y lineas de centro (centerlines) como geometria de referencia previa a acotar.",
+    "Acotacion 2D: diametro, radio, angular, lineal; las cotas se colocan, se reordenan y se borran las sobrantes.",
+    "Anotacion GD&T: simbolo de identificador de datum + Feature Control Frame (caracteristica geometrica como Concentricidad, tolerancia, referencia de datum).",
+    "Documentacion de ensamble: Bill of Materials / Parts List (tabla) + globos (balloons) que enlazan numeros de item a componentes. La numeracion del parts list depende de si la tabla esta en la mitad superior o inferior de la hoja.",
+    "Hojas A4/A3, orientacion landscape/portrait; se pueden agregar mas hojas.",
+    "Animation Workspace: animar ensambles y crear vistas explotadas (componentes movidos una distancia definida desde su posicion ensamblada).",
+    "Storyboard + Timeline + Playhead; el Scratch Zone fija el estado inicial de modelo y camara sin grabar. Cada accion (Transform) crea un tramo en el timeline.",
+    "Lineas de rastro (trail lines): lineas parametricas que muestran trayectoria y direccion de los componentes explotados.",
+    "Transform Components con triad: la direccion del vector del triad depende del orden de seleccion; se explota por distancia en X/Y/Z. Publicacion a video (.avi) con resolucion/aspect-ratio."
+   ],
+   "flujoHumano": [
+    "TUT1 — Plano multivista de una pieza:",
+    "1. Abrir el modelo 3D desde el Data Panel.",
+    "2. En el Workspaces drop-down (DESIGN), elegir 'Drawing > From Design'; sale el dialogo CREATE DRAWING.",
+    "3. En CREATE DRAWING: Standard=ISO, Sheet Size=A4(297x210), Orientation=Landscape; OK. Entra al DRAWING workspace con preview de vista base pegada al cursor y el dialogo DRAWING VIEW abierto.",
+    "4. (Preferencias) Account Settings > Preference > nodo General > Drawing; Standard=ISO, Units=mm; marcar 'Override or Restore Format Defaults Below'; Project Angle=Third Angle; Apply; OK.",
+    "5. En DRAWING VIEW: Orientation=Front, Style=Visible and Hidden Edges, Scale=1:4; clic a la izquierda-medio de la hoja para colocar; OK -> se genera la vista frontal (padre).",
+    "6. CREATE panel > Projected View; seleccionar la vista padre; mover el cursor hacia arriba y clic -> vista top; seguir moviendo en diagonal arriba-derecha -> preview isometrico, clic para colocar.",
+    "7. Clic derecho > marking menu > OK para terminar Projected View.",
+    "8. (Section) CREATE panel > Section View; seleccionar la vista top como padre; clic punto inicial de la linea de seccion (snap), mover vertical hacia abajo y clic punto final; clic derecho > Continue; mover y clic para colocar la vista de seccion a la derecha; Enter.",
+    "9. (Hatch) doble clic sobre el rayado de la seccion -> dialogo HATCH; elegir Pattern; Scale Factor=0.5; Angle=5; Close.",
+    "10. (Detail) CREATE panel > Detail View; seleccionar vista top; dibujar circulo de frontera; colocar la vista de detalle a la derecha; Scale=1:3; OK.",
+    "11. File > Save; nombre c08_Tut_01; elegir proyecto CADCIM; Save.",
+    "TUT2 — Plano de ensamble (Bench Vise) con BOM y globos:",
+    "1. Copiar el ensamble y componentes de c07 a c08 (Data Panel: seleccionar todo, clic derecho > Copy > Copy to dialog > proyecto CADCIM > nueva carpeta C08 > Copy).",
+    "2. Abrir el ensamble (doble clic en Data Panel).",
+    "3. Workspaces > Drawing > From Design; CREATE DRAWING: Standard=ISO, Sheet Size=A3(420x297), Orientation=Landscape; OK.",
+    "4. DRAWING VIEW (nodo Appearance): Orientation=Top, Scale=1:2, Style=Visible Edges; clic arriba-izquierda; OK -> vista top.",
+    "5. CREATE > Section View; padre=vista top; trazar linea de seccion en el extremo izquierdo; Continue; bajar y colocar; OK -> seccion frontal.",
+    "6. (Excluir piezas del corte) doble clic en la seccion -> DRAWING VIEW; en nodo 'Objects To Cut' desmarcar Screw Bar, Jaw Screw, Oval Fillister, Set Screw1, Set Screw2; Close.",
+    "7. Projected View desde la seccion frontal -> mover a la derecha -> vista lateral derecha; OK.",
+    "8. (Iso desde la seccion) pasar cursor sobre la seccion, clic derecho con el rectangulo punteado > 'Create Projected View'; mover diagonal arriba-derecha -> iso; clic derecho > OK.",
+    "9. (Globos) doble clic en la iso > DRAWING VIEW > desmarcar 'Inherit Cut' (la iso se vuelve vista completa) > Close. TABLES panel > Balloon; Type=Standard; clic en arista de cada componente, arrastrar el globo a su lugar; repetir; Close.",
+    "10. (Parts List) TABLES panel > Table; colocar la PARTS LIST arriba del cuadro de rotulo.",
+    "11. File > Save; c08_Tut_02; proyecto CADCIM; Save.",
+    "TUT3 — Cotas y anotaciones GD&T:",
+    "1. Abrir c08_Tut01; File > Save As > c08_Tut03.",
+    "2. GEOMETRY panel > Center Mark; seleccionar barrenos/aristas redondeadas; Esc.",
+    "3. GEOMETRY panel > Centerline; seleccionar primera arista, luego segunda -> linea de centro entre ellas; repetir; Esc.",
+    "4. DIMENSION panel > Diameter Dimension; seleccionar aristas circulares; colocar.",
+    "5. DIMENSIONS panel > Angular Dimension; seleccionar dos lineas de centro; colocar fuera de la vista. Radius Dimension para radios.",
+    "6. SYMBOLS panel > Datum Identifier; seleccionar arista; colocar punto; Enter; OK (en dialogo DATUM IDENTIFIER).",
+    "7. SYMBOLS panel > Feature Control Frame; seleccionar arista cilindrica; colocar punto; Enter -> dialogo FCF; Characteristic=Concentricity, Tolerance=0.01, First datum=A; OK; reacomodar si solapa cotas.",
+    "8. File > Save; c08_Tut_03; CADCIM; Save.",
+    "TUT4 — Animacion / explosionado del ensamble:",
+    "1. Abrir el ensamble desde el Data Panel.",
+    "2. Workspaces > ANIMATION -> entra al Animation Workspace.",
+    "3. Arrastrar el Playhead al Scratch Zone; ViewCube > Home (vista iso) para fijar estado/camara inicial.",
+    "4. Arrastrar el Playhead a ~2 s.",
+    "5. Rotar el ensamble, seleccionar todos los tornillos (Ctrl); clic derecho en el BROWSER > Transform Components -> sale dialogo TRANSFORM COMPONENTS y el triad.",
+    "6. Elegir vector Z del triad; en Z Distance escribir 70 -> se explotan hacia abajo; activar 'Trail Line Visibility' para mostrar el rastro; OK (se crea tramo verde en el timeline).",
+    "7. TRANSFORM panel > Transform Components; seleccionar Base Plates + Clamping Plate (Ctrl); vector Z; Z Distance=-50. Quitar de la seleccion con Shift-clic; agregar Bar Globes, Screw Bar, Jaw Screw; vector X; X Distance=80; Trail Line Visibility; OK.",
+    "8. Repetir para Oval Fillister (Z=60), Vice Jaw (Z=40), y Bar Globes uno por uno en Y, activando rastros.",
+    "9. Boton 'Play Current Storyboard' para reproducir; 'Back to Storyboard Beginning' para re-ensamblar.",
+    "10. PUBLISH panel > Publish; Video Scope=Current Storyboard; Window size=Custom, Width/Height; marcar Lock Aspect Ratio; OK; nombrar; guardar a proyecto en la nube (.avi)."
+   ],
+   "herramientasUI": [
+    "Drawing > From Design (Workspaces drop-down)",
+    "CREATE DRAWING dialog (Template, Sheet Size, Standard, Units, Orientation, Contents: Full Assembly / Visible Only / Select)",
+    "DRAWING VIEW dialog (Orientation, Style, Scale, Tangent Edges, Interference Edges, Thread Edges, Automated Center Marks and Centerlines, Objects To Cut, Inherit Cut)",
+    "Base View / Parent View",
+    "Projected View",
+    "Create Projected View (menu contextual sobre una vista)",
+    "Section View (incl. Aligned Section View)",
+    "Detail View",
+    "HATCH dialog (Pattern, Scale Factor, Angle)",
+    "Balloon (TABLES panel)",
+    "Table / Parts List (TABLES panel)",
+    "Center Mark (GEOMETRY panel)",
+    "Centerline (GEOMETRY panel)",
+    "Diameter Dimension (DIMENSION panel)",
+    "Radius Dimension (DIMENSIONS panel)",
+    "Angular Dimension (DIMENSIONS panel)",
+    "Linear/Sketch Dimension",
+    "Datum Identifier (SYMBOLS panel)",
+    "Feature Control Frame (SYMBOLS panel) — Characteristic (Concentricity), Tolerance, datum refs",
+    "Visible Edges / Visible and Hidden Edges (Style)",
+    "Preferences > Drawing (Standard, Units, Project Angle: Third Angle)",
+    "ViewCube (Home)",
+    "ANIMATION Workspace",
+    "ANIMATION TIMELINE / Storyboard / Playhead / Scratch Zone",
+    "Transform Components (TRANSFORM panel) + triad + X/Y/Z Distance",
+    "Trail Line Visibility",
+    "Play Current Storyboard / Back to Storyboard Beginning",
+    "Publish (PUBLISH panel) + Video Options dialog (Video Scope, Window size, Width/Height, Lock Aspect Ratio)",
+    "Save / Save As (File menu), Data Panel, Copy / Copy to"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "createDrawingFromModel(modelId, {standard, sheetSize, orientation, projectAngle})",
+     "queHace": "Crea un documento de plano asociativo a partir del solido/ensamble: define hoja (A4/A3), estandar ISO/ASME, orientacion y angulo de proyeccion (tercer angulo). Es el contenedor de las vistas.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "placeBaseView(orientation, scale, edgeStyle, point)",
+     "queHace": "Genera la vista padre proyectando el solido segun orientacion (Front/Top/Right/Iso) con un estilo de aristas. Requiere proyeccion 3D->2D con HLR (hidden line removal). Mapea a drawing.ts (proyeccion + HLR).",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "projectView(parentViewId, direction)",
+     "queHace": "Crea una vista proyectada ortografica o isometrica a partir de una padre, respetando el angulo de proyeccion; hereda estilo por defecto. Reusa el HLR del proyector.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "sectionView(parentViewId, sectionLinePts[], {alignedSeg?, excludeComponents[]})",
+     "queHace": "Define una linea de corte (2+ puntos) sobre la vista padre, intersecta el solido con el plano de corte, genera la vista resultante y raya el material seccionado. Soporta corte alineado y exclusion de componentes. Kernel: BRepAlgoAPI_Section / plano de corte + clasificacion de caras cortadas.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "hatchRegion(faceLoop, {pattern, scaleFactor, angle})",
+     "queHace": "Rellena las regiones cerradas del corte con un patron de rayado parametrico (patron, densidad, angulo). Geometria 2D pura (lineas clip dentro del loop).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "detailView(parentViewId, center, radius, scale)",
+     "queHace": "Crea una vista ampliada de la porcion encerrada en un circulo, recortando la geometria 2D y reescalando. Clip de la proyeccion 2D existente.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "centerMark(holeOrRoundEdge) / centerline(edgeA, edgeB)",
+     "queHace": "Anade marca de centro a barrenos/aristas redondas y linea de centro entre dos aristas. Geometria de anotacion derivada de la proyeccion.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "dimension({type:diameter|radius|angular|linear}, refs[], placement)",
+     "queHace": "Coloca cotas sobre aristas/lineas de centro proyectadas; calcula valor real desde el modelo asociativo y la escala de vista. Reusa el solver de croquis para distancias/angulos.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "datumIdentifier(edge, point, label) / featureControlFrame(edge, {characteristic, tolerance, datumRefs})",
+     "queHace": "Anade simbolos GD&T: identificador de datum y Feature Control Frame (concentricidad, etc). Render de simbolos ASME/ISO + anclaje a geometria.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "balloon(componentEdge, {type:standard}) + partsList(table, position)",
+     "queHace": "Para planos de ensamble: globos numerados ligados a items + tabla BOM (item, cantidad, nombre). Requiere modelo de ensamble con lista de componentes; numeracion segun posicion de la tabla.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "sheetManager(addSheet, titleBlock, sizeFormat)",
+     "queHace": "Maneja multiples hojas, cuadro de rotulo y formatos estandar; coloca vistas/tablas relativas al rotulo.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "animationWorkspace: storyboard + timeline + playhead + scratchZone",
+     "queHace": "Entorno de animacion: linea de tiempo con playhead, scratch zone para estado inicial sin grabar, tramos por accion. Estado/camara keyframeados.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "transformComponents(componentIds[], axis, distance, {trailLines})",
+     "queHace": "Explota componentes una distancia en X/Y/Z (direccion segun orden de seleccion), genera keyframe de traslacion y opcionalmente lineas de rastro. R3F: interpolar transform por tiempo.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "explodedView(assembly, moves[])",
+     "queHace": "Vista explotada estatica: aplica un conjunto de desplazamientos a los componentes desde su posicion ensamblada. Base para la animacion y para planos de ensamble.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "publishAnimation({scope, width, height, lockAspect}) -> video",
+     "queHace": "Reproduce el storyboard (explode/unexplode) y exporta a video con resolucion/aspect configurable. Se conecta al pipeline de render existente.",
+     "dificultad": "medio"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OCCT-WASM) — HLRBRep_Algo / HLRAlgo para hidden line removal (proyeccion 3D->2D de vistas), BRepAlgoAPI_Section para vistas en corte y plano de corte, clasificacion de caras para Objects To Cut.",
+    "planegcs — solver geometrico 2D para acotacion y restricciones de las cotas/lineas de centro (distancia, angulo, coincidencia).",
+    "Manifold / clipper2 — booleanas 2D y clipping de regiones para hatch (rayado dentro de loops cerrados) y recorte de la vista de detalle.",
+    "Three.js / R3F + keyframe/tweening (p.ej. tween.js) — timeline, playhead e interpolacion de transform para el Animation Workspace y trail lines.",
+    "ffmpeg/NVENC (ya en el pipeline) — exportar la animacion explode/unexplode a video.",
+    "Estandares de simbolos GD&T (ISO 1101 / ASME Y14.5) como tablas de glyphs para datum y feature control frame."
+   ],
+   "yaExisteEnForja": "\"Existe el MOTOR DE PLANOS drawing.ts (proyeccion 3D->2D a vista de taller con HLR real, PURO/testeable en node) — base directa para placeBaseView/projectView. Existen features de kernel reutilizables para construir los solidos de las piezas a acotar: extrude, revolve, loft, sweep, pattern, fillet, chamfer, shell, hole. Existe el croquis con line/rect/circle/arc/point + solver de 13 restricciones (UI expone ~6) reutilizable para las cotas (distancia/angulo) y geometria de anotacion. NO consta que existan aun: vistas en corte/seccion ni detalle sobre drawing.ts, hatch parametrico, cotas/anotaciones 2D en UI, GD&T (datum + FCF), balloons + parts list/BOM, ni el Animation Workspace (timeline/explode/publish a video desde el plano).\""
+  },
+  {
+   "capitulo": "Cap. 9 — Working with Sheet Metal Components (Autodesk Fusion 360 with Videos: A Tutorial Approach, 7th Ed, CADCIM)",
+   "dominio": "chapa (sheet metal)",
+   "conceptos": [
+    "La chapa (sheet metal) es una de las formas fundamentales del metalurgico: una lamina de espesor uniforme que se corta, dobla o deforma. <6mm rangos varian; >6mm (0.25in) se considera 'plate', laminas muy delgadas son 'foil'/'leaf'.",
+    "Un componente de chapa SIEMPRE tiene espesor uniforme constante en toda la pieza — es la restriccion central del modelado de chapa frente al solido libre.",
+    "Intencion de diseno doble: modelas la pieza DOBLADA (la forma final 3D) pero debes poder APLANARLA (flat pattern) para fabricarla, porque no se puede mecanizar la forma doblada — se corta plano y luego se dobla.",
+    "Las 'Sheet Metal Rules' parametrizan la pieza: espesor (Thickness) y radio de doblez (Bend radius) viven en reglas reutilizables (ej. Steel (mm) Default). Cambiar la regla despues de modelar PROPAGA el cambio a toda la pieza al guardar.",
+    "Los radios de doblez y los tamanos de relief (alivios) son iguales en toda la pieza por motivos de fabricacion (un solo set de parametros de doblado).",
+    "Un 'flange' (pestana/ala) es la pared base o una pared anadida; al crear un flange sobre una arista, se genera AUTOMATICAMENTE un 'bend' (doblez) entre la cara base y el flange, con parametros tomados de las Sheet Metal Rules.",
+    "Contour flange: pestana creada a partir de un contorno (perfil 2D) bosquejado, extruido a lo largo de una arista. Las dos lineas de un mismo croquis se seleccionan juntas como perfil.",
+    "El flujo Unfold (desdoblar) / Refold (redoblar) permite cortar o agregar geometria a la pieza estando plana (across the bends — cortes que cruzan los dobleces) y luego regresarla a su forma doblada; requiere una 'stationary entity' (cara fija de referencia).",
+    "Flat Pattern es el patron plano fabricable de la pieza, generado para manufactura."
+   ],
+   "flujoHumano": [
+    "INVOCAR WORKSPACE: en el Ribbon, elegir la pestana/opcion SHEET METAL (desde el Model workspace) -> se abre el Sheet Metal workspace con sus paneles (CREATE, MODIFY).",
+    "FIJAR PARAMETROS: MODIFY panel > Sheet Metal Rules -> dialogo SHEET METAL RULES. Pasar el cursor sobre el nodo 'Steel (mm) (Default)' -> aparecen Edit Rule / New Rule. Click 'Edit Rule' -> dialogo Edit Rule. Escribir 1 en Thickness, expandir nodo 'Bend Conditions', escribir 2 en Bend radius. Save -> Close.",
+    "CROQUIS BASE: CREATE panel > Create Sketch, seleccionar plano XZ del BROWSER. Dibujar el perfil de la pared base. FINISH SKETCH.",
+    "BASE WALL: CREATE panel > Flange -> dialogo FLANGE. Seleccionar el croquis en la ventana grafica -> preview. OK -> se crea la pared base (base wall).",
+    "CONTOUR FLANGE 1: Create Sketch sobre una CARA de la pieza como plano de croquis. Dibujar el perfil del contour flange (acotado segun planos). FINISH SKETCH. CREATE > Flange. Seleccionar UNA de las dos lineas del croquis como perfil (la otra se autoselecciona y se pone azul). Seleccionar la arista (derecha de la cara superior) sobre la que va el flange. Aceptar defaults -> OK; se crea el doblez automatico.",
+    "CONTOUR FLANGE 2: repetir el mismo croquis-perfil en el otro lado de la pared base; Flange seleccionando la arista izquierda de la cara superior.",
+    "CONTOUR FLANGE 3: Create Sketch en la cara plana de la base, dibujar contorno. FINISH SKETCH. Flange > seleccionar el croquis como contorno; escribir -27 en Distance; seleccionar la arista horizontal de la cara superior. OK.",
+    "CORTE (cut): Create Sketch en la cara frontal del tercer contour flange, dibujar perfil del corte. FINISH SKETCH. CREATE > Extrude; en Extent Type elegir 'All'; click 'Flip' para invertir direccion -> corta material.",
+    "NUEVA CARA: Create Sketch otra vez en la cara frontal, dibujar rectangulo. Extrude con Operation = Join para anadir una cara rectangular nueva.",
+    "CHAMFER: MODIFY panel > Chamfer sobre las aristas indicadas (segun dimensiones de planos).",
+    "ULTIMO FLANGE: CREATE > Flange -> dialogo FLANGE. Seleccionar la arista inferior de la cara superior de la base. Escribir 19 en Distance; click 'Flip' para invertir direccion. OK.",
+    "ROUNDS: MODIFY > Fillet sobre las esquinas/aristas (segun planos).",
+    "HOLES: pestana SOLID > CREATE > Hole, crear dos barrenos (segun planos). Guardar como c09_Tut_01 en proyecto CADCIM.",
+    "TUTORIAL 2 — BASE FLANGE: SHEET METAL workspace > Create Sketch, plano XZ, dibujar rectangulo 250x200 mm. FINISH SKETCH. Flange > seleccionar croquis > OK.",
+    "CUATRO FLANGES: CREATE > Flange, seleccionar las aristas de la base flange; escribir 30 en Height; click Flip; OK -> cuatro paredes.",
+    "WALL ON EDGES: Flange, seleccionar la arista inferior del flange frontal; en el cuadro de seleccion del dialogo FLANGE elegir 'Symmetric' del drop-down Full Edge; escribir 75 en Distance y 25 en Height; OK. Repetir para las otras tres paredes laterales.",
+    "CUTS ACROSS BENDS: MODIFY > Unfold -> dialogo UNFOLD; seleccionar la cara superior como stationary entity; marcar checkbox 'Unfold all bends' (o seleccionar bends uno por uno); OK -> pieza plana. Seleccionar la cara superior, Create Sketch (pestana SOLID); usar 2-Point Rectangle; dibujar el corte. Extrude para crear el corte. Pattern del corte (patron del feature).",
+    "REFOLD: en el Ribbon > Refold Faces -> la pieza se redobla. Crear holes (Hole) en las cuatro paredes. Guardar como c09_Tut_02 en CADCIM.",
+    "DRAWINGS: generar vistas de plano (drawing views) del modelo terminado."
+   ],
+   "herramientasUI": [
+    "SHEET METAL workspace (pestana/opcion del Ribbon)",
+    "Sheet Metal Rules (MODIFY panel)",
+    "SHEET METAL RULES dialog",
+    "Edit Rule / New Rule",
+    "Edit Rule dialog (Thickness, Bend Conditions, Bend radius)",
+    "Create Sketch (CREATE panel)",
+    "Finish Sketch",
+    "Plano XZ (BROWSER)",
+    "Flange (CREATE panel) + FLANGE dialog (Distance, Height, Flip, Full Edge > Symmetric)",
+    "Contour Flange (via Flange con perfil de croquis)",
+    "Extrude (CREATE panel) + Extent Type (All), Flip, Operation (Join/Cut)",
+    "Chamfer (MODIFY panel)",
+    "Fillet (rounds, MODIFY panel)",
+    "Hole (CREATE panel, pestana SOLID)",
+    "2-Point Rectangle (CREATE panel del SKETCH contextual)",
+    "Rectangle (rectangulo de croquis)",
+    "Unfold (MODIFY panel) + UNFOLD dialog + 'Unfold all bends' checkbox + stationary entity",
+    "Refold Faces",
+    "Pattern (patron del feature de corte)",
+    "Create Flat Pattern",
+    "Bend (doblez automatico generado por Flange)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "sheetMetalWorkspace()",
+     "queHace": "Modo/workspace de chapa que impone espesor uniforme constante y expone solo herramientas de chapa (Flange, Unfold, Refold, Flat Pattern). UI: toggle de workspace.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "sheetMetalRules({thickness, bendRadius, ...})",
+     "queHace": "Objeto de reglas reutilizable (Steel mm Default) con Thickness y Bend radius (Bend Conditions); editable en dialogo; propaga el cambio a toda la pieza al recalcular el arbol de features.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "baseWallFlange(sketchProfile)",
+     "queHace": "Convierte un croquis cerrado/abierto en una pared base de espesor = thickness (thicken de una cara/perfil). Kernel: OCCT MakeThickSolid / extrude del perfil por el espesor.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "contourFlange(profileLines, edge, distance)",
+     "queHace": "Crea una pestana barriendo un perfil 2D (1-2 lineas de croquis) a lo largo de una arista; genera el doblez automatico con bendRadius. Kernel: sweep/prism del perfil engrosado + arco de doblez tangente.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "edgeFlange(edge, height, flip, symmetric)",
+     "queHace": "Anade una pestana plana sobre una arista existente con altura dada (Height/Distance), opcion Flip de direccion y Full Edge = Symmetric; crea el bend automatico. Kernel: extrude de la cara del espesor + arco de doblez.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "autoBend(faceA, faceB, radius)",
+     "queHace": "Inserta el doblez (arco tangente de radio = bendRadius) entre dos paredes de chapa al crear un flange. Kernel: fillet/arco cilindrico con continuidad tangente, parametros de Sheet Metal Rules.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "unfold(stationaryFace, bends|allBends)",
+     "queHace": "Desdobla la pieza dejando una cara estacionaria fija; aplana los bends seleccionados (o todos via checkbox) para poder bosquejar/cortar sobre la pieza plana. Kernel: transformacion de desarrollo (bend allowance) por doblez.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "refoldFaces()",
+     "queHace": "Regresa la pieza desdoblada a su forma doblada original, manteniendo la geometria agregada en plano (cortes across-the-bends). Inversa de unfold.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "flatPattern()",
+     "queHace": "Genera el patron plano fabricable de la pieza completa (todos los bends desarrollados con bend allowance), listo para exportar a corte. Kernel: desarrollo global + lineas de doblez.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "extrudeCut(sketch, extentAll, flip)",
+     "queHace": "Corte por extrusion con Extent Type=All y Flip; opera tambien en pieza desdoblada. Kernel: boolean cut OCCT (ya existe extrude, falta Extent=All/Flip en chapa).",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "extrudeJoinFace(sketch)",
+     "queHace": "Anade material (cara rectangular nueva) con Operation=Join sobre una cara. Kernel: boolean fuse OCCT.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "patternFeature(feature, count, spacing)",
+     "queHace": "Patron del feature de corte sobre la pieza plana (slots a los lados). Kernel: replicar feature + boolean.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "rectangle2Point(p1,p2)",
+     "queHace": "Herramienta de croquis 2-Point Rectangle usada para el corte; ya existe rect en La Forja, mapear al SKETCH contextual de chapa.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "sheetHole(face, diameter)",
+     "queHace": "Barreno sobre paredes de chapa (Hole de la pestana SOLID). Kernel: boolean cut cilindro.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "sheetChamfer(edge,d) / sheetFillet(edge,r)",
+     "queHace": "Chamfer y rounds (Fillet) en esquinas/aristas de chapa. Kernel: chamfer/fillet OCCT (ya existen).",
+     "dificultad": "facil"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OpenCascade) — MakeThickSolid para engrosar caras a espesor uniforme; sweep/prism para contour flange; BRepFilletAPI para bends/fillet/chamfer; boolean cut/fuse para cortes, caras nuevas y holes.",
+    "planegcs — solver de restricciones 2D para los perfiles/contornos de croquis (lineas del flange, rectangulos) y auto-constraint.",
+    "Algoritmo de bend allowance / K-factor (formulas estandar de desarrollo de chapa, no requiere lib pesada) para unfold/refold/flat pattern.",
+    "freecad-sheetmetal (workbench SMD de FreeCAD, GPL) — referencia de implementacion de Base Flange, Edge Flange, Unfold y bend allowance sobre OCCT."
+   ],
+   "yaExisteEnForja": "\"Croquis: line/rect/circle/arc/point con solver de 13 restricciones (UI expone ~6) — sirve para los perfiles de flange y el 2-Point Rectangle. Features ya existentes reutilizables aqui: extrude (falta Extent=All/Flip y Operation Join/Cut explicitos para chapa), fillet, chamfer, hole, pattern. drawing.ts para las drawing views del Tutorial 2. NO existe nada del dominio chapa: workspace Sheet Metal, Sheet Metal Rules (espesor/bend radius), Flange/base wall/contour flange, bend automatico, Unfold/Refold, ni Flat Pattern — todo eso hay que construirlo.\""
+  },
+  {
+   "capitulo": "Cap. 10 — Managing and Collaborating on the Cloud and 3D Printing (Autodesk Fusion 360 with Videos, 7th Ed, CADCIM)",
+   "dominio": "salida",
+   "conceptos": [
+    "Fusion 360 es CAD en la nube (A360/Hub): el diseno se guarda en la nube y se accede desde cualquier navegador sin instalar el software, via link seguro compartido por email/chat.",
+    "Proyecto = contenedor de archivos (disenos, planos, imagenes renderizadas). Un Hub/Workspace agrupa proyectos donde eres dueno o miembro.",
+    "Distributed Design (diseno distribuido): un componente puede REFERENCIAR a otro archivo-fuente. Si A hace el cuadro, B el asiento, C las abrazaderas, todos se integran por referencia, no por copia.",
+    "Asociatividad por referencia: al insertar un componente se enlaza a su archivo-fuente; mover/renombrar el original no rompe el link. Si el original cambia, el que lo referencia queda 'out of date' (icono triangular amarillo) y debe actualizarse.",
+    "Versionado de diseno: Fusion mantiene historial de versiones; se puede promover versiones viejas sobre la mas reciente.",
+    "Revision colaborativa: comentarios anclados a la vista exacta de camara en que se hicieron; markups (flecha, texto) sobre el modelo; los comentarios se ordenan cronologicamente.",
+    "3D printing = manufactura aditiva: construir un solido 3D fisico desde un archivo digital, exportando la malla teselada del B-Rep.",
+    "Teselacion / refinement: el solido B-Rep se convierte en malla de triangulos para imprimir; mas refinement = mas triangulos = mas fidelidad geometrica (low/medium/high/custom). El conteo de triangulos mide la densidad de la malla.",
+    "Formatos de exportacion para impresion: STL, 3MF, OBJ; el unit type asegura la escala correcta al imprimir.",
+    "Permisos y privacidad de compartir: link copiable, acceso protegido por contrasena, miembros por grupo/email."
+   ],
+   "flujoHumano": [
+    "EXPORTAR A 3D PRINT: abrir el diseno solido en el workspace -> menu File -> opcion '3D Print' -> se abre el dialogo 3D PRINT.",
+    "En el dialogo 3D PRINT, elegir 'Preparation Type' del drop-down: Manufacturing (ir al workspace Manufacture), Export (genera 3MF/STL/OBJ a archivo), o Print Utility (genera el archivo y lo abre en la utilidad de impresion instalada). Seleccionar 'Export'.",
+    "En el nodo 'Output': seleccionar el cuerpo/body a exportar, elegir el formato (STL/3MF/OBJ), fijar el 'unit type' para la escala correcta, y la opcion 'Structure' (un solo archivo o multiples si hay varios cuerpos).",
+    "Activar la casilla 'Preview' para ver la malla teselada y verificar la geometria; observar el 'Triangle Count'.",
+    "En el nodo 'Refinement': elegir low/medium/high (o custom para afinar la malla con parametros). Mas refinement sube el Triangle Count.",
+    "Elegir 'OK' -> aparece el dialogo 'Save As' -> guardar en formato STL -> el archivo queda listo para enviar a la impresora 3D.",
+    "DISTRIBUTED DESIGN / REFERENCIAR COMPONENTE EXTERNO: File > New Design, modelar y guardar (ej. 'Candle') en el Data Panel.",
+    "Cambiar al archivo destino, abrir el Data Panel, ARRASTRAR el diseno externo (Candle) al area grafica para insertarlo como componente referenciado.",
+    "Invocar el dialogo JOINTS desde el panel ASSEMBLE y aplicar las juntas requeridas entre los dos cuerpos; guardar.",
+    "ACTUALIZAR REFERENCIA OUT-OF-DATE: editar el componente fuente (ej. aumentar altura 25 mm con la herramienta Press Pull del panel MODIFY), guardar. En el archivo que lo referencia aparece un icono triangular amarillo (out of date) junto al nodo en el BROWSER. Seleccionar el icono Out-of-date en la Application bar -> el diseno se actualiza.",
+    "MEDIR EN EL VIEWER: en el Fusion 360 Viewer, seleccionar la herramienta Measure del toolbar Examine -> seleccionar arista 1 y arista 2 -> se resaltan en verde y muestra la distancia -> ajustar unidad y precision con 'Measure Setting' (Unit Type y Precision drop-downs) -> 'Done'.",
+    "MARKUP/COMENTARIO ANCLADO: Orbit para reorientar la vista; herramienta Comments > 'Comment on Points' -> click en un punto del modelo -> escribir comentario -> Post. Markup > Line Tools > Arrow, ajustar Line Style (peso, color, opacidad) -> dibujar flecha -> Text -> escribir -> Save.",
+    "COMPARTIR/EXPORTAR ARCHIVO: en Design References window usar 'Export' para sacar el diseno a formatos Inventor/IGES/SAT/SMT/DWG; o 'Share' para copiar link, activar 'Require a password to access this link' y fijar contrasena."
+   ],
+   "herramientasUI": [
+    "3D Print (File Menu)",
+    "3D PRINT dialog (Preparation Type: Manufacturing/Export/Print Utility)",
+    "Output node (selection de body, formato STL/3MF/OBJ, Unit Type, Structure single/multiple)",
+    "Preview (malla teselada)",
+    "Triangle Count",
+    "Refinement (low/medium/high/custom)",
+    "Save As (STL)",
+    "Export (Inventor 2022, IGES, SAT, SMT, DWG)",
+    "Joints / JOINTS dialog (panel ASSEMBLE)",
+    "Press Pull (panel MODIFY)",
+    "Measure (toolbar Examine)",
+    "Measure Setting (Unit Type, Precision)",
+    "Orbit (View toolbar)",
+    "Comments / Comment on Points",
+    "Markup (Line Tools > Arrow, Line Style, Text, Text Style)",
+    "Data Panel (drag-and-drop de componente)",
+    "Out-of-date update icon (Application bar)",
+    "Share (Copy Link, Require a password / Set Password)",
+    "Members and Permissions / Create Group",
+    "Settings flyout (display lines/points/section hatches, environment, appearance, lighting)",
+    "Section analysis (Examine toolbar)"
+   ],
+   "construirEnForja": [
+    {
+     "funcion": "exportSTL(body, refinement)",
+     "queHace": "Teselar el solido B-Rep del kernel OCCT a malla de triangulos y serializar a archivo STL (binario y ASCII). Es el entregable principal del capitulo. Mapea a BRepMesh_IncrementalMesh de OCCT (deflexion lineal/angular controlada por el nivel de refinement).",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "export3MF / exportOBJ(body, refinement, unitType)",
+     "queHace": "Misma teselacion que STL pero serializando a 3MF (XML+zip, con unidades) y OBJ. Incluye el unit type para escala correcta de impresion.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "refinementControl(low/medium/high/custom)",
+     "queHace": "Mapear el nivel de refinamiento a parametros de deflexion de la teselacion y reportar el triangleCount resultante para preview.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "meshPreview(body)",
+     "queHace": "Renderizar en el viewport R3F la malla teselada (wireframe de triangulos) antes de exportar para que el humano verifique la geometria; mostrar conteo de triangulos.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "measureTool(edge1, edge2)",
+     "queHace": "Seleccionar dos aristas/entidades y reportar distancia, con configuracion de unidad y precision. Calculo geometrico puro sobre el B-Rep.",
+     "dificultad": "facil"
+    },
+    {
+     "funcion": "exportNeutral(format)",
+     "queHace": "Exportar el modelo a formatos neutros de intercambio: STEP, IGES (via OCCT STEPControl/IGESControl Writer). El capitulo lista IGES/SAT/SMT/DWG.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "externalReference(insertComponent)",
+     "queHace": "Insertar un componente de otro archivo manteniendo un link al fuente (no copia). Requiere un grafo de documentos con referencias y deteccion de 'out of date' cuando el fuente cambia.",
+     "dificultad": "dificil"
+    },
+    {
+     "funcion": "shareLink(password)",
+     "queHace": "Generar un link de solo-lectura al diseno guardado en la nube, con opcion de proteccion por contrasena. Infra web/backend, no kernel.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "comments/markup ancladas a vista",
+     "queHace": "Guardar la pose de camara junto con un comentario o anotacion (flecha/texto) sobre el modelo, y restaurar esa vista al abrir el comentario. Overlay DOM/3D + persistencia.",
+     "dificultad": "medio"
+    },
+    {
+     "funcion": "versionHistory",
+     "queHace": "Mantener historial de versiones del diseno con capacidad de promover una version anterior. Backend de versionado.",
+     "dificultad": "dificil"
+    }
+   ],
+   "reutilizarOSS": [
+    "OCCT (OpenCascade) BRepMesh_IncrementalMesh — teselacion B-Rep -> malla de triangulos para STL/3MF/OBJ; ya disponible via occt.ts (OCCT-WASM)",
+    "OCCT StlAPI_Writer / RWStl — escritura directa de STL",
+    "OCCT STEPControl_Writer e IGESControl_Writer — exportacion a STEP/IGES (formatos neutros)",
+    "lib3mf (open-source) — lectura/escritura del formato 3MF con unidades y metadatos",
+    "three.js STLExporter / STLLoader — alternativa JS para STL desde geometria three si se evita el roundtrip OCCT",
+    "manifold — para garantizar malla watertight/solida antes de exportar a impresion"
+   ],
+   "yaExisteEnForja": "La Forja ya tiene kernel OCCT-WASM (occt.ts) con features extrude/revolve/loft/sweep/pattern/fillet/chamfer/shell/hole y el motor de planos drawing.ts; tambien hay pipeline propio de STL a mano (printinplace.ts genera STL sin OCCT/GPU) y joints/print-in-place (cicloidal). Esto cubre buena parte de la salida del cap. 10: ya se generan STL para impresion. Faltan en La Forja: control de refinement con triangleCount/preview de malla teselada desde el B-Rep OCCT, exportacion 3MF/OBJ, exportacion STEP/IGES neutra desde el kernel, y la capa colaborativa de nube (referencias externas out-of-date, share-link con password, comentarios anclados a vista, versionado)."
+  }
+ ]
+}

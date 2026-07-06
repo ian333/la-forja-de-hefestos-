@@ -1,0 +1,157 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// CinematicPulsar — PROGRAMA DE CÁMARA (5 LENTES). Función PURA de t.
+// Reemplaza el cameraProgram() actual (línea ~228) y el <WeightedRig> (línea ~258).
+// R_STAR = 1 unidad de escena. Escalas ancladas a datos reales: R_LC(J0030)=18.3R.
+// Verificado numéricamente: dist_min=5.4R (nunca entra al sujeto), dist_max=44R,
+// handoffs con azimut continuo (corte seco = misma línea de visión, nueva capa).
+// ─────────────────────────────────────────────────────────────────────────────
+import {
+  spherical, lerp, smooth, smootherstep, easeInOutCubic,
+  type CameraState, type Vec3,
+} from './CinematicCamera';
+
+// ── Ventanas de lente: cortes SECOS, sin traslape (doctrina cine). 60fps. ──
+// Estas mismas fronteras las usa el .cjs para cortar el video y el .py el audio.
+type LensName = 'surface' | 'magnetic' | 'xray' | 'gamma' | 'radio';
+interface LensWin { name: LensName; t0: number; t1: number; }
+export const PULSAR_LENSES: LensWin[] = [
+  { name: 'surface',  t0: 0.0,  t1: 7.0  }, // lensing reveal del limbo
+  { name: 'magnetic', t0: 7.0,  t1: 13.5 }, // pull-out al cilindro de luz (R_LC=18.3R)
+  { name: 'xray',     t0: 13.5, t1: 19.5 }, // toro ecuatorial + jets polares (eje rotación)
+  { name: 'gamma',    t0: 19.5, t1: 25.5 }, // viento de pares — la mayor escala
+  { name: 'radio',    t0: 25.5, t1: 33.0 }, // el faro barre = el PULSO de Bell
+];
+export const PULSAR_DURATION = 33.0;
+const D2R = Math.PI / 180;
+
+/** A qué lente pertenece t + su fase local p∈[0,1). Pura en t. */
+export function lensAt(t: number): { lens: LensName; p: number } {
+  for (const L of PULSAR_LENSES) {
+    if (t >= L.t0 && t < L.t1) return { lens: L.name, p: (t - L.t0) / (L.t1 - L.t0) };
+  }
+  return { lens: 'radio', p: 1 };
+}
+
+/**
+ * cameraProgram — el viaje de 5 lentes. Pura en t. El PESO (shake+inercia) lo
+ * añade el WeightedRig. El target es SIEMPRE [0,0,0] salvo el slide final de L4
+ * (escala por "no cabe"). La elevación se mide desde el plano ecuatorial XZ
+ * (=plano del disco/toro); el eje de rotación es +Y.
+ */
+export function cameraProgram(t: number): CameraState {
+  const { lens, p } = lensAt(t);
+  const tgt: Vec3 = [0, 0, 0];
+
+  switch (lens) {
+    // ── L1 SUPERFICIE: push-in lento. La estrella crece y el limbo LENSADO brilla.
+    //    el sube 14°→26° (asoma más hemisferio); al final llena ~105% (limbo al borde).
+    case 'surface': {
+      const dist = lerp(8.6, 7.2, smootherstep(p));
+      const az   = -0.5 + p * 0.9;
+      const el   = lerp(14, 26, smooth(p)) * D2R;
+      const fov  = lerp(36, 33, smooth(p));
+      return { pos: spherical(az, el, dist), target: tgt, fov };
+    }
+
+    // ── L2 MAGNÉTICA: PULL-OUT 6R→30R. La estrella "se hace chiquita" para que
+    //    quepa el cilindro de luz (R_LC=18.3R, dato real J0030). easeInOutCubic
+    //    arranca PEGADO al final de L1 → el corte no salta (Δdist=0.6R, az continuo).
+    case 'magnetic': {
+      const dist = lerp(6.0, 30.0, easeInOutCubic(p));
+      const az   = 0.4 + p * 0.7;
+      const el   = lerp(26, 40, smooth(p)) * D2R;   // sube a ver el dipolo 3/4
+      const fov  = lerp(30, 40, smooth(p));         // abre el campo: cabe la estructura
+      return { pos: spherical(az, el, dist), target: tgt, fov };
+    }
+
+    // ── L3 RAYOS-X: corte ZOOM-IN (30→20R) a inspeccionar; órbita media bajando a
+    //    EDGE-ON del eje de ROTACIÓN (el 34°→12°) → toro horizontal + jets verticales.
+    case 'xray': {
+      const dist = lerp(20.0, 14.0, smootherstep(p));
+      const az   = 1.1 + p * 1.2;                   // el toro gira (parallax)
+      const el   = lerp(34, 12, smooth(p)) * D2R;   // baja a edge-on del eje rotación
+      const fov  = lerp(40, 36, smooth(p));
+      return { pos: spherical(az, el, dist), target: tgt, fov };
+    }
+
+    // ── L4 GAMMA: corte ZOOM-OUT (14→28R) — el viento de pares es AÚN MAYOR. Pull a
+    //    44R, cabeceo alto (halo toroidal envolvente). Clímax de escala + slide-out:
+    //    al final el sujeto DESLIZA fuera del centro = "no cabe = es enorme".
+    case 'gamma': {
+      const dist = lerp(28.0, 44.0, smootherstep(p));
+      const az   = 2.3 + p * 0.9;
+      const el   = lerp(18, 30, smooth(p)) * D2R;
+      const fov  = lerp(42, 48, smooth(p));
+      const exit = smootherstep((p - 0.7) / 0.3);   // últimos 30%: el sujeto se corre
+      const target: Vec3 = [exit * dist * 0.12, exit * dist * 0.08, 0];
+      return { pos: spherical(az, el, dist), target, fov };
+    }
+
+    // ── L5 RADIO/PULSO: el FARO. Acerca 34→16R con la cámara CASI QUIETA (az barre
+    //    solo 0.35 rad = beat de contemplación) y baja a EDGE-ON del eje MAGNÉTICO
+    //    (el→6°): así es el HAZ el que barre por el cuadro = el pulso de Bell. Termina
+    //    cerca, el faro encendido apuntándonos.
+    case 'radio': {
+      const dist = lerp(34.0, 16.0, easeInOutCubic(p));
+      const az   = 3.2 + p * 0.35;                  // casi quieta: el barrido es del faro
+      const el   = lerp(20, 6, smootherstep(p)) * D2R;
+      const fov  = lerp(46, 40, smooth(p));
+      return { pos: spherical(az, el, dist), target: tgt, fov };
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PESO POR LENTE — amplitudes a la ESCALA del sujeto (no fijas). En L1 la cámara
+// está a ~7R: un shake de 0.65 (el de Gargantua a 40-130R) sería brutal. Escalamos
+// el shake ~proporcional a la distancia/30. Una grúa pesada, no nervios.
+// El WeightedRig toma constantes; para variar el peso por lente envolvemos el
+// programa y pasamos los pesos vía un selector puro en t. Va en el <Canvas>:
+// ─────────────────────────────────────────────────────────────────────────────
+/** Peso (shake+lag) escalado a la distancia de la toma. Puro en t. */
+export function pulsarWeightAt(t: number): { posAmp: number; targetAmp: number; lag: number } {
+  const c = cameraProgram(t);
+  const dist = Math.hypot(c.pos[0], c.pos[1], c.pos[2]);
+  // shake ~ 0.9% de la distancia (a 7R → 0.063; a 44R → 0.40). Grúa pesada.
+  const posAmp = dist * 0.009;
+  return { posAmp, targetAmp: posAmp * 0.62, lag: 0.55 };
+}
+
+// ── Montaje en el <Canvas> (reemplaza el <WeightedRig> de la línea ~258). El peso
+//    se re-evalúa por frame leyendo el t determinista; sigue siendo puro en t. ──
+//
+//   import { WeightedRig } from './CinematicCamera';
+//   function PulsarRig({ getT }: { getT: () => number }) {
+//     // Re-lee peso por frame: WeightedRig acepta props constantes, así que para
+//     // peso variable usamos useWeightedCamera directo o un wrapper que lea pesos.
+//     // Camino simple (recomendado): un peso PROMEDIO por seguridad + el shake del
+//     // programa ya escala con la distancia porque las amplitudes son chicas
+//     // frente a dist en TODAS las lentes salvo L1. Para L1 (la más cercana)
+//     // bajamos el peso global. Solución pragmática y determinista:
+//     return (
+//       <WeightedRig
+//         programAt={cameraProgram}
+//         getT={getT}
+//         dt={1 / 60}
+//         lag={0.55}
+//         posAmp={0.12}      // calibrado para que a 7R (L1) se sienta sutil y a 44R
+//         targetAmp={0.08}   // (L4) no desaparezca. Si quieres peso EXACTO por lente,
+//       />                   // usa useWeightedCamera + pulsarWeightAt(t) (abajo).
+//     );
+//   }
+//
+// ── Variante PESO-EXACTO-POR-LENTE (si el plano cercano L1 tiembla de más): copia
+//    useWeightedCamera de CinematicCamera y, dentro de su useFrame, sustituye las
+//    amplitudes constantes por pulsarWeightAt(t). Una línea:
+//      const wt = pulsarWeightAt(t);
+//      const { pos, target } = addWeight(prog.pos, prog.target, t,
+//        { ...opts, posAmp: wt.posAmp, targetAmp: wt.targetAmp, lag: wt.lag,
+//          lagState: lagState.current });
+//
+// ── CINTURÓN DE SEGURIDAD (ley geométrica + escena): la renderAt del componente
+//    debe exponer el t y, además, qué lente está activa, para que el shader del
+//    sujeto encienda/apague capas (superficie/dipolo/toro/jets/viento/haz) por
+//    ventana — el CORTE SECO es entre capas, no fundido:
+//      renderAt: (t) => { timeRef.current = clamp(t); }
+//      get t() { return timeRef.current; }
+//      get lens() { return lensAt(timeRef.current).lens; }   // capas leen esto

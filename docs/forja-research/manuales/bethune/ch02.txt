@@ -1,0 +1,1102 @@
+Chapter 2. Sketch Entities and Tools
+Chapter Objectives
+
+         Create 2D sketches
+         Use most of the sketch tools
+         Create more complex shapes by combining individual sketch tools
+
+
+
+2-1 Introduction
+Chapter 2 explains and demonstrates the tools on the Sketch panel, shown in Figure 2-1. Most of
+the sketch tools are initially explained and demonstrated individually. They are then combined in
+Sample Problems to show how they can be used together to create more complicated sketches.
+
+
+
+
+Figure 2-1
+
+     Most of the sections include only one tool so that you can reference them at a later time if
+you need a refresher. The Line tool was covered in Chapter 1.
+     The Circle and Rectangle tools are presented in reference to an origin to create fully
+defined parts. However, many times sketches are added into an existing part that is already fully
+defined and referenced to the origin. The added sketches are referenced to the existing part to
+create fully defined parts. Many of the Sketching tools will be presented without reference to an
+origin.
+
+2-2 Mouse Gestures and the S Key
+As you work with SolidWorks you may find yourself constantly using the same sketching tools
+repeatedly. The Mouse Gestures and S Key tools can be customized to help speed up the
+application of repetitive tools.
+
+
+Mouse Gestures
+Mouse Gestures is a SolidWorks feature that enables you to work faster. Selective commands,
+those you use most often, are linked to the movement of the mouse so that you can activate these
+commands by simply moving the mouse.
+     Figure 2-2 shows the default Mouse Gestures settings for the Part commands. Four tools
+are shown on the wheel: Smart Dimension, Circle, Line, and Corner Rectangle. These are the
+default tools settings. Up to eight tools can be added to the mouse gestures wheel.
+Figure 2-2
+
+     Mouse Gestures and Mouse Gestures options are different for each drawing mode. The
+tools listed in the Drawing and Assembly modes will be used when these subjects are
+introduced later in the book.
+
+
+Using Mouse Gestures
+Say you want to activate the Line tool and the default settings are in place.
+      11 Press and hold the right mouse button.
+      12 Move the mouse slightly to the left.
+      13 Still holding the right mouse button down, move the cursor onto the Line tool.
+    The selected tool will activate.
+
+
+Accessing Mouse Gestures Settings
+       1 Click the Tools menu at the top of the screen.
+      2 Click the Customize option.
+    See Figure 2-3. The Customize dialog box will appear.
+
+
+
+
+Figure 2-3
+
+      3 Click the Mouse Gestures tab.
+    A listing of available tools will appear. If you select 8 Gestures in the drop-down menu, the
+eight default mouse gestures settings will appear. See Figure 2-4.
+Figure 2-4
+
+
+Adding a Tool to a Mouse Gestures Wheel
+      1 Click and hold the left mouse button on the tool you want to move onto a wheel.
+      2 95Drag the tool’s icon onto the wheel.
+      3 Release the mouse button.
+   Figure 2-5 shows the new tool replacing the default tool on the wheel.
+Figure 2-5
+
+    Figure 2-6 shows the Mouse Gestures wheel used to create Part documents. Figure 2-7
+shows a sample Mouse Gestures wheel next to a sketch.
+Figure 2-6
+Figure 2-7
+
+
+ Note
+ When you assign a new tool to a Mouse Gestures wheel, the existing tool will be replaced—that is, it is no longer available.
+ If you want the removed tool on the Mouse Gestures wheel, you must re-enter it in a different location.
+
+
+
+
+S Key
+Another SolidWorks tool that helps to increase your working speed is the S Key option. The tools
+listed in the S Key dialog box may be customized. For this chapter we will show the Sketching
+S Key. Other S Key tool listings will be shown as the different modes are explained. S Key tools
+can be customized to your personal preference.
+
+
+Activating the S Key
+See Figure 2-8.
+Figure 2-8
+
+      1 While in a sketch, press the S key on the keyboard.
+   The S Key toolbar will appear.
+      2 Click the desired tool.
+   In this example the Line tool was activated. See Figure 2-9.
+Figure 2-9
+
+
+Customizing the S Key Shortcut Toolbar
+      1 Press the S key on the keyboard.
+      2 Right-click the S Key toolbar.
+   See Figure 2-10.
+Figure 2-10
+
+      3 Click the Customize . . . callout.
+   The Customize dialog box will appear. See Figure 2-11.
+Figure 2-11
+
+      4 Click the tool to be added from the Buttons panel, drag the icon to the Sketch
+        Shortcuts toolbar panel, and release the mouse button.
+      5 Click OK.
+   The tool icon will appear in the box. See Figure 2-12.
+Figure 2-12
+
+
+Removing a Tool from the S Key Toolbar
+       1 Click and drag the selected tool out and away from the toolbar. See Figure 2-12
+         (bottom).
+       2 Release the mouse button.
+       3 Click OK.
+
+2-3 Origins
+All sketches must be referenced to the drawing’s origin in order to be fully defined. See Section
+1-4 in Chapter 1. The easiest way to create a fully defined sketch is to start it on the origin. The
+drawing’s origin may not always be visible.
+
+
+Showing the Origin
+       1 Click the View menu at the top of the drawing screen.
+       2 Click the Hide/Show option, and click the Origins tool.
+     See Figure 2-13. The icon next to the Origins tool heading will become shaded when the
+tool is on.
+
+
+
+
+Figure 2-13
+
+   The drawing’s origin icon will appear on the screen. It will remain visible on the screen until
+removed by clicking the shaded tool heading created when the Origins tool was turned on.
+
+2-4 Circle
+A circle is sketched using the Circle tool and then sized (that is, given a diameter value) using
+the Smart Dimension tool. There are two circle tools: Circle and Perimeter Circle.
+
+
+Sketching a Circle
+       1 Click the New tool icon at the top of the screen, click the Part tool in the New
+         SolidWorks Document dialog box, and click OK.
+    See Figure 2-14. The dimensions will be in inches.
+Figure 2-14
+
+      2 Click the Front Plane tool in the FeatureManager Design Tree.
+    A small toolbar will appear.
+      3 Click the Sketch tool.
+     The circle will be created on the Front plane in the Sketch mode. See Figure 2-15. Note that
+the origin is displayed in the center of the Front plane.
+Figure 2-15
+
+      4 Click the Circle tool.
+      5 Select the origin as the circle’s centerpoint by clicking the origin and dragging the
+        cursor away from the centerpoint.
+      6 Click an approximate edge point for the circle.
+      7 Click the Smart Dimension tool, click the circle, and define the circle’s diameter. See
+        Figure 2-16.
+Figure 2-16
+
+      8 Right-click the mouse and click the Select option.
+    For this example a diameter of Ø2.50 was selected. The circle is black, meaning it is fully
+defined. The Orientation Triad in the lower-left corner of the screen shows the XY or Front
+plane orientation.
+
+
+Sketching a Perimeter Circle Using Three Points
+A perimeter circle is a circle drawn using three points. These points may be three individual
+points or points tangent to an existing object.
+      1 Create a new Part document.
+      2 Click the Top Plane tool in the FeatureManager Design Tree.
+      3 Click the Sketch tool.
+      4 Set the Units for millimeters.
+      5 Click the Perimeter Circle tool.
+   The Perimeter Circle tool is a flyout from the Circle tool. See Figure 2-17.
+
+
+
+
+Figure 2-17
+
+      6 Click three points on the screen.
+   Make one of the points coincidental with the origin. See Figure 2-18.
+      7 Click the circle to select it.
+Figure 2-18
+
+
+Sketching a Perimeter Circle Tangent to Three Lines
+Figure 2-19 shows three randomly drawn straight lines. Draw a circle tangent to each line.
+      1 Click the Perimeter Circle tool.
+      2 Click the approximate midpoint of each of the three lines.
+Figure 2-19
+
+     A circle will appear tangent to all three lines.
+     When the Sketch Relations are shown, you can see that the circle is tangent to each of the
+lines. See Figure 2-20.
+Figure 2-20
+
+2-5 Rectangle
+There are five different methods that can be used to create a rectangle, including the Corner
+Rectangle tool explained in Chapter 1. This section will describe how to sketch a rectangle using
+the other four methods.
+
+
+Sketching a Center Rectangle
+      1 Create a New Part document.
+      2 Click the Top Plane option.
+      3 Click the Sketch tool.
+      4 Set the Units for inches.
+      5 Click the Center Rectangle tool.
+    The Center Rectangle tool is a flyout from the Rectangle tool icon. See Figure 2-21.
+Figure 2-21
+
+      6 Select the origin for the first corner point.
+      7 Move the cursor and select the second corner point, right-click the mouse, and click the
+        Select option.
+      8 Click the Smart Dimension tool and add dimensions to the rectangle.
+      9 Right-click the mouse and click the Select option.
+   The rectangle is fully defined. See Figure 2-22.
+Figure 2-22
+
+
+Sketching a 3 Point Corner Rectangle
+        1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+          inches.
+        2 Click the 3 Point Corner Rectangle tool.
+      The 3 Point Corner Rectangle tool is a flyout from the Rectangle tool icon. See Figure 2-
+23.
+Figure 2-23
+
+      3 Locate the first point on the origin.
+      4 Move the cursor horizontally and define a second point.
+      5 Move the cursor vertically and define a third point.
+      6 Use the Smart Dimension tool and define the rectangle’s size.
+   See Figure 2-24.
+Figure 2-24
+
+
+Sketching a 3 Point Center Rectangle
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        inches.
+      2 Click the 3 Point Center Rectangle tool.
+   The 3 Point Center Rectangle tool is a flyout from the Rectangle tool icon.
+      3 Locate the first point on the origin.
+      4 Move the cursor horizontally to the right and define a second point.
+      5 Move the cursor vertically and define a third point.
+   See Figure 2-25.
+Figure 2-25
+
+      6 Use the Smart Dimension tool and define the rectangle’s size.
+
+
+Sketching a Parallelogram
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        inches.
+      2 Click the Parallelogram tool.
+   The Parallelogram tool is a flyout from the Rectangle tool icon. See Figure 2-26.
+Figure 2-26
+
+       3 Locate the first point on the origin.
+       4 Move the cursor horizontally and to the right and define a second point.
+       5 Move the cursor vertically and at an angle and define a third point.
+     Note that a parallelogram has four sides that are parallel and equal in length, but also
+includes an angle other than 90° between sides.
+       6 Use the Smart Dimension tool and define the rectangle’s size.
+
+2-6 Slots
+SolidWorks has four different tools that can be used to draw slots. See Figure 2-27.
+Figure 2-27
+
+    The Straight Slot tool can be used to draw both internal and external slot shapes. Figure 2-
+28 shows examples of both internal and external slot shapes.
+Figure 2-28
+
+
+Sketching a Straight Slot
+See Figure 2-29.
+Figure 2-29
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the Straight Slot tool and the Center to Center option.
+      3 Click a starting point.
+     In this example the origin was selected.
+      4 Move the cursor horizontally and define a second point.
+     The distance between points 1 and 2 will define the slot’s centerline.
+      5 Move the cursor and select a third point.
+    The distance between points 2 and 3 will define the radius of the slot’s rounded ends.
+      6 Add dimensions as required to fully define the shape.
+
+
+Sketching a Centerpoint Straight Slot
+See Figure 2-30.
+Figure 2-30
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the Centerpoint Straight Slot tool.
+      3 Click a starting point.
+      4 Move the cursor horizontally and define a second point.
+      5 Move the cursor and select a third point.
+      6 Add dimensions as required to fully define the shape.
+
+
+Sketching a 3 Point Arc Slot
+See Figure 2-31.
+Figure 2-31
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the 3 Point Arc Slot tool.
+      3 Click a starting point.
+      4 Move the cursor and define point 2.
+      5 Move the cursor and define point 3.
+     The angular distance between points 1 and 2 will define the angular length of the arc. The
+distance between point 3 and the arc’s centerpoint will define the arc’s radius.
+      6 Move the cursor and define point 4.
+    The distance between points 3 and 4 will define the radius for the slot’s rounded ends.
+      7 Add dimensions as required.
+
+
+Sketching a Centerpoint Arc Slot
+See Figure 2-32.
+Figure 2-32
+
+       1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+         inches.
+       2 Click the Centerpoint Arc Slot tool.
+       3 Click a starting point.
+       4 Move the cursor and define point 2.
+     The distance between the starting point, point 1, and point 2 will define the radius of a circle.
+The circle will be used to define the arc. The radius of the arc will be equal to the radius of the
+circle.
+       5 Move the cursor and define point 3.
+    The angular distance between points 2 and 3 will define the angular length of the arc.
+       6 Move the cursor and define point 4.
+    The distance between points 3 and 4 will define the radius for the slot’s rounded ends.
+       7 Add dimensions as required.
+2-7 Perimeter Circle
+The Circle tool was presented in Section 1-4 in Chapter 1.
+     Perimeter circles are often drawn tangent to existing lines or arcs. Figure 2-33 shows a set of
+perpendicular lines and a circle. In this example a perimeter circle will be drawn tangent to the
+lines and circle.
+Figure 2-33
+
+
+Sketching a Perimeter Circle
+       1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+         inches.
+       2 Click the Perimeter Circle tool.
+       3 Click a starting point, point 1.
+    In this example the horizontal line was selected. Any point on the line is acceptable but it is
+good practice to select a point on the line near the approximate location of the tangent point.
+       4 Move the cursor and define point 2.
+    In this example the vertical line was selected.
+       5 Move the cursor and select point 3.
+    In this example the circle was selected.
+       6 Right-click the mouse and click the Select option.
+2-8 Arcs
+SolidWorks has three Arc tools: Centerpoint Arc, Tangent Arc, and 3 Point Arc. See Figure
+2-34.
+
+
+
+
+Figure 2-34
+
+
+Sketching a Centerpoint Arc
+See Figure 2-35.
+Figure 2-35
+
+       1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+         millimeters.
+       2 Click the Centerpoint Arc tool.
+       3 Click a starting point, point 1.
+       4 Move the cursor and define point 2.
+     The distance between the starting point, point 1, and point 2 will define the radius of a circle.
+The circle will be used to define the arc. The radius of the arc will be equal to the radius of the
+circle.
+       5 Move the cursor and define point 3.
+    The angular distance between points 2 and 3 will define the angular length of the arc.
+       6 Add dimensions as required.
+
+
+Sketching a Tangent Arc
+See Figure 2-36. The Tangent Arc is used to draw an arc between existing entities. In this
+example two lines have been drawn.
+Figure 2-36
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the Tangent Arc tool.
+      3 Click a starting point, point 1.
+     In this example the endpoint of the slanted line was selected.
+      4 Move the cursor and define point 2.
+     In this example the endpoint of the horizontal line was selected.
+      5 Add dimensions as required.
+     The radius of the arc is controlled by the radius dimensional value.
+     Figure 2-37 shows two parallel lines. The Tangent Arc tool was used to add a rounded end
+segment to the right end. Note that the radius value is 10 or half the distance between the two
+lines.
+Figure 2-37
+
+
+Sketching a 3 Point Arc
+Three points can be used to define an arc. See Figure 2-38.
+Figure 2-38
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the 3 Point Arc tool.
+      3 Click a starting point, point 1.
+      4 Move the cursor and define point 2.
+      5 Move the cursor and define point 3.
+      6 Add dimensions as required.
+
+2-9 Polygons
+A polygon is any closed plane figure with at least three sides and three angles. SolidWorks draws
+regular polygons—that is, polygons with all sides and angles equal. Irregular polygons must be
+drawn as individual line segments.
+
+
+Sketching a Hexagon
+A hexagon is a polygon with six sides. For this example a regular hexagon with six equal sides
+and angles will be drawn. See Figure 2-39.
+Figure 2-39
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the Polygon tool.
+      3 Set the Parameters value to 6 and ensure that the Inscribed circle button is active.
+        This will create a circumscribed hexagon.
+      4 Click a starting point, point 1.
+      5 Move the cursor and define point 2.
+      6 Add dimensions as required.
+    Figure 2-40 shows a circumscribed hexagon and an inscribed hexagon. The circumscribed
+hexagon is drawn around and tangent to a circle. An inscribed hexagon is drawn within a circle.
+Figure 2-40
+
+2-10 Spline
+A spline is a curved line that intersects several defined points. A spline whose starting point is
+coincident with its endpoint is called a closed spline. All other splines are open splines. Figure 2-
+41 shows examples of open and closed splines.
+Figure 2-41
+
+
+Sketching a Spline
+See Figure 2-42.
+Figure 2-42
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the Spline tool.
+      3 Click a starting point, point 1.
+      4 Move the cursor and define point 2.
+      5 Move the cursor and define point 3.
+      6 Move the cursor and define point 4.
+      7 Move the cursor and define point 5.
+      8 Press the <Esc> key.
+    The points used to create a spline may be defined using dimensions.
+
+
+Editing a Spline
+See Figure 2-43.
+Figure 2-43
+
+      1 Select a point on the spline.
+      2 Click and drag the point to a new location.
+      3 Click the green OK check mark.
+    A spline may also be edited by editing the dimensions used to define the spline’s points.
+
+2-11 Ellipse
+There are four tools associated with the Ellipse tool: Ellipse, Partial Ellipse, Parabola, and
+Conic. See Figure 2-44. For technical drawings an ellipse is defined by its centerpoint location,
+its major axis, and its minor axis.
+Figure 2-44
+
+
+Sketching an Ellipse
+See Figure 2-45.
+Figure 2-45
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the Ellipse tool.
+      3 Click a starting point, point 1.
+      4 Move the cursor and define point 2.
+    The distance between points 1 and 2 defines half the minor axis distance.
+      5 Move the cursor and define point 3.
+    The distance between points 1 and 3 defines half the major axis distance.
+      6 Add dimensions as required.
+
+
+Sketching a Partial Ellipse
+See Figure 2-46.
+1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+  millimeters.
+2 Click the Partial Ellipse tool.
+3 Click a starting point, point 1.
+Figure 2-46
+
+       4 Move the cursor and define point 2.
+    The distance between points 1 and 2 defines half the minor axis distance.
+       5 Move the cursor and define point 3.
+    The distance between points 1 and 3 defines half the major axis distance.
+       6 Move the cursor to define the partial ellipse.
+       7 Add dimensions as necessary.
+
+
+Sketching a Parabola
+A parabola is defined as the path of a moving point that is always equidistant from a fixed point,
+the focus, and a fixed straight line, the directrix. See Figure 2-47.
+       1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+         millimeters.
+       2 Click the Parabola tool.
+3 Click a starting point, point 1.
+Figure 2-47
+
+    In this example the selected point 1 becomes the focus.
+       4 Move the cursor and define point 2.
+    The distance between points 1 and 2 defines half the distance to the directrix.
+       5 Move the cursor and define a start point for the parabola.
+       6 Click and drag the cursor to define the size of the parabola.
+       7 Add dimensions as required.
+    The distance between the focus and the directrix is two times the distance between the focus
+and the closest point of the parabola.
+
+
+Conic Section
+A conic section is the intersection of a plane with a cone. Ellipses, parabolas, and hyperbolas are
+all conic sections. See Figure 2-48.
+Figure 2-48
+
+
+Sketching a Conic
+Conic curves can be used to create smooth curves between existing endpoints. See Figure 2-49.
+Figure 2-49
+
+      1 Click the Sketch tab to access the Sketching tools, define a plane, and set the units to
+        millimeters.
+      2 Click the Conic tool.
+      3 Ensure that there is a check mark in the Auto tangency box.
+      4 Click points 1 and 2.
+     A conic curve will appear along with a rho value. The rho value will change as you move
+the cursor.
+      5 Select an appropriate conic shape, right-click the mouse, and click the Select option.
+
+2-12 Fillets and Chamfers
+A fillet is a rounded corner or edge and a chamfer is a beveled corner or edge. Both the Sketch
+Fillet and Sketch Chamfer tools can be applied to 2D sketches of 3D models. Figure 2-50
+shows a sketch that includes a fillet and a chamfer.
+Figure 2-50
+
+
+Sketching a Fillet
+See Figure 2-51.
+Figure 2-51
+
+      1 Click the Fillet tool.
+      2 Define the radius for the fillet.
+      3 Click the left vertical line.
+      4 Click the top horizontal line.
+    A preview of the fillet will appear.
+      5 Add fillets to the other corners of the rectangle.
+
+
+Sketching a Chamfer
+There are three different ways to define a chamfer: angle-distance, distance-distance—equal
+distance, and distance-distance—not equal distance. Figure 2-52 shows an existing 3.00 × 5.00
+rectangle.
+Figure 2-52
+
+
+Sketching a Chamfer Using Distance-Distance—Equal Distance
+See Figure 2-52.
+      1 Click the Chamfer tool.
+    The Chamfer tool is a flyout from the Fillet tool.
+      2 Click the Distance-distance option and check the Equal distance check box.
+      3 Define the size of the chamfer.
+      4 Click the left vertical line.
+      5 Click the top horizontal line.
+    A preview of the chamfer will appear.
+      6 Add a .75 × .75 chamfer to the other corners.
+Sketching a Chamfer Using Angle-Distance
+See Figure 2-53.
+
+
+
+
+Figure 2-53
+
+       1 Click the Chamfer tool.
+       2 Click the Angle-distance option.
+       3 Define the chamfer’s angle and distance.
+       4 Click the left vertical line.
+       5 Click the top horizontal line.
+     A preview of the chamfer will appear. The relative angle of the chamfer will depend on the
+line selection sequence. The chamfers at the top of the rectangle selected the vertical sides first
+and the chamfers at the bottom of the rectangle selected the bottom horizontal line first.
+     Note that an angle-distance chamfer created with a 45° angle will generate two equal
+distances.
+Sketching a Chamfer Using Distance-Distance—Not Equal
+Distance
+See Figure 2-54.
+
+
+
+
+Figure 2-54
+
+      1 Click the Chamfer tool.
+      2 Click the Distance-distance option and uncheck the Equal distance check box.
+      3 Define the two distances.
+    The direction of the chamfer depends on the line selection sequence.
+      4 Click the lines as shown.
+
+2-13 Sketch Text
+The Text tool is used to add text to a sketch. The default font for SolidWorks text is Century
+Gothic.
+Adding Text
+See Figure 2-55.
+
+
+
+
+Figure 2-55
+
+      1 Click the Text tool.
+      2 Type the text in the Text box in the Sketch Text manager box.
+     The Text box text will appear on the screen. The text can be moved by clicking the cursor in
+a different location.
+
+
+Changing the Font and Size of Text
+See Figure 2-56.
+Figure 2-56
+
+       1 Remove the check mark from the Use document font box and click the Font button.
+    The Choose Font dialog box will appear.
+       2 Define the new font and text height.
+       3 Click OK.
+       4 Add the text.
+       5 Click the green OK check mark.
+    In this example Arial Bold font with a height of 0.375in was selected.
+
+
+Adding Text to a Feature
+The Text tool will automatically place text at the origin if no feature is selected. The Text tool
+can also attach text to a defined existing feature as shown in Figure 2-57, where text is added to a
+line on a rectangle.
+Figure 2-57
+
+       1 Draw a rectangle.
+       2 Click the Text tool.
+       3 Click the top line of the rectangle.
+       4 Type the text in the Text box in the Sketch Text manager box.
+       5 Click the green OK check mark.
+
+
+Creating Text that Wraps Around Two Features
+Text can also be added to two features at once.
+       1 Draw a rectangle.
+       2 Click the Text tool.
+       3 Define two of the lines in the rectangle shown as features to attach the text.
+       4 Type the text.
+       5 Click the green OK check mark.
+2-14 Point
+The Point tool is used to create points anywhere on the drawing screen. Points are often helpful
+during the construction process of a sketch. Figure 2-58 shows a point. It was created by clicking
+the Point tool and selecting a location on the drawing screen. The point can be precisely located
+using dimensions, by using the Control Vertex Parameters values listed in the Point manager
+box, or by attaching the point to an existing entity.
+
+
+
+
+Figure 2-58
+
+2-15 Trim Entities
+The Trim Entities tool is used to remove unwanted entities from an existing sketch. Figure 2-59
+shows a line passing through a circle and a rectangle. Say we wish to remove the portions of the
+line that pass through the circle and the rectangle.
+Figure 2-59
+
+
+Trimming Entities
+      1 Click the Trim Entities tool. If not already selected, click the Trim to closest option.
+      2 Locate the cursor on the portion of the line within the circle.
+      3 Click the mouse.
+    The line segment will be removed.
+      4 Locate the cursor on the portion of the line that passes through the rectangle and click
+        the mouse.
+
+2-16 Extend Entities
+The Extend Entities tool is on the flyout from the Trim Entities tool and is used to extend
+existing lines to new lengths.
+     Figure 2-60 shows an existing 1.75 × 4.00 rectangle. We wish to extend the horizontal
+length to 6.00.
+Figure 2-60
+
+
+Extending Entities in a Sketch
+      1 Sketch a vertical line about 6.00 from the left vertical line of the rectangle.
+      2 Use the Smart Dimension tool and define the location of the line as 6.00.
+      3 Click the Extend Entities tool.
+    The cursor will appear with the Extend Entities icon attached.
+      4 Click the top horizontal line.
+     The line will extend to the vertical line located at 6.00 from the left vertical edge of the
+rectangle.
+      5 Click the lower horizontal line.
+      6 Click the Trim Entities tool, select the Trim to closest option, and, using the top and
+        bottom horizontal lines as bounding lines, trim the 4.00 line.
+    Note that the dimension also is removed.
+
+2-17 Offset Entities
+The Offset Entities tool is used to sketch entities parallel to an existing entity. Figure 2-61
+shows a line. Say we wish to draw a line parallel to the existing line .75 away.
+Figure 2-61
+
+
+Sketching an Offset Line
+          1 Sketch a line.
+          2 Click the Offset Entities tool.
+          3 Specify the offset distance.
+          4 Click the existing line.
+        A preview will appear. In this example the offset line is initially located below the original
+line.
+          5 Click a location above the existing line.
+          6 Click the green OK check mark.
+        The Offset Entities tool can be used to offset existing enclosed shapes. See Figure 2-62.
+Figure 2-62
+
+2-18 Mirror Entities
+The Mirror Entities tool is used to create mirror images of entities. A mirror image is different
+from a copy. Figure 2-63 shows both a mirror image and a copy of the same shape. Note the
+differences.
+Figure 2-63
+
+
+Creating a Mirror Entity
+Figure 2-64 shows a circular shaped entity that includes a circular cutout.
+       1 Click the Mirror Entities tool.
+       2 Select all the curves and lines in the entity excluding the Mirror Line.
+Figure 2-64
+
+    A list will appear in the Entities to mirror box. In this example, Line1, Arc3, Arc2, and
+Arc1 were selected.
+      3 Click the Mirror about box.
+      4 Click the mirror line. In this example, Line2 was selected.
+    A preview of the mirrored image will appear.
+      5 Click the green OK check mark.
+    A line within the entity can be used as a mirror line. Figure 2-65 shows an entity mirrored
+about one of its edge lines.
+Figure 2-65
+
+2-19 Linear Sketch Pattern
+The Linear Sketch Pattern tool is used to create patterns of sketched entities in the X and Y
+directions. Both linear and circular patterns can also be created from 3D models.
+     Figure 2-66 shows an entity. Say we wish to create a 3 × 5 linear pattern of the entity.
+Figure 2-66
+
+
+Creating a Linear Sketch Pattern
+      1 Click the Linear Sketch Pattern tool.
+      2 Click all the lines in the entity.
+      3 Ensure that Direction 1 is the X-axis.
+    The box will have a blue background.
+      4 Set the spacing distance for 2in.
+    The 2.00 spacing distance is derived from the shapes’ 1.50 width plus .50 clearance between
+each object in the X-direction.
+      5 Set the number of instances to 3.
+      6 Click the Y-axis box.
+      7 Set the spacing distance for 1.5.
+    The 1.50 spacing distance is derived from the shapes’ 1.00 height plus .50 clearance
+between each object in the Y-direction.
+      8 Set the number of instances to 5.
+    A preview will appear.
+      9 Click the green OK check mark.
+
+2-20 Circular Sketch Pattern
+The Circular Sketch Pattern tool is used to create circular patterns about a centerpoint. To
+demonstrate the Circular Sketch Pattern tool we will create a bolt circle. Figure 2-67 shows a
+Ø.75 circle located 2.00 from a fixed centerpoint.
+Figure 2-67
+
+
+Creating a Circular Sketch Pattern
+      1 Click the Circular Sketch Pattern tool.
+    The Circular Sketch Pattern tool is a flyout from the Linear Sketch Pattern tool.
+      2 Define Point-1 as the origin.
+      3 Click the edge of the Ø.75 circle.
+      4 Set the number of instances in the pattern to 8.
+      5 Ensure that the Spacing is 360deg and that the Entities to Pattern contains the
+        selected circle.
+      6 Click the green OK check mark.
+
+2-21 Move Entities
+The Move Entities tool is used to move an entity from one location to another. See Figure 2-68.
+Figure 2-68
+
+
+Moving an Entity
+      1 Click the Move Entities tool.
+      2 Click all the lines in the entity.
+   A listing of the selected lines will appear in the Entities to Move box.
+      3 Delete the check from the Keep relations check box.
+      4 Click the Start point box.
+   It should turn blue, indicating that it is active.
+      5 Select a Start point.
+   In this example the lower-left corner of the entity was selected.
+      6 Click the Start point and move the cursor away from the entity.
+   A preview of the entity will follow the cursor.
+      7 Select a new location for the entity.
+      8 Click the green OK check mark.
+
+2-22 Copy Entities
+The Copy Entities tool is used to create a duplication of an existing entity. The existing entity
+remains in place as the copy is created. See Figure 2-69.
+Figure 2-69
+
+
+Copying an Entity
+      1 Click the Copy Entities tool.
+         The Copy Entities tool is a flyout from the Move Entities tool.
+      2 Select all the lines in the entity.
+      3 Delete the check from the Keep relations check box.
+      4 Click the Start point box.
+         The Start point box will turn blue when it is active.
+      5 Click a selected Start point.
+         In this example the lower-left corner was selected.
+      6 Move the cursor and select a location for the copy.
+         A preview of the copy will move with the cursor.
+      7 Click a location for the copy.
+    SolidWorks will automatically generate another copy that will move with the cursor.
+      8 Click the green OK check mark.
+
+2-23 Rotate Entities
+The Rotate Entities tool is used to rotate an existing entity about a defined rotation point. See
+Figure 2-70.
+Figure 2-70
+
+
+Rotating an Entity
+      1 Click the Rotate Entities tool.
+    The Rotate Entities tool is a flyout from the Move Entities tool.
+      2 Select all the lines in the entity.
+      3 Click the Center of rotation box.
+    The box will have a blue background when it is active.
+      4 Enter an angular value for the rotation or move the cursor to select a rotation angle.
+    SolidWorks defines the counterclockwise direction as the positive angular direction. A
+horizontal line to the right is 0.0°. In this example an angle of 30° was selected.
+      5 Click the green OK check mark.
+
+2-24 Scale Entities
+The Scale Entities tool is used to change the overall size of an entity while maintaining the
+proportions of the original entity. The Scale Entities tool includes a Copy option. If the Copy
+option is activated when the scaled entity is created, the original entity will be retained. If the
+Copy option is off (no check mark) when a scaled entity is made, the original entity will be
+deleted.
+    See Figure 2-71.
+Figure 2-71
+
+
+Scaling an Entity
+      1 Click the Scale Entities tool.
+    The Scale Entities tool is a flyout from the Move Entities tool.
+      2 Select all the lines in the entity.
+      3 Define the scale factor.
+    In this example a factor of 1.5 was selected.
+      4 Click the Copy box (check mark).
+    Checking the Copy box will cause the original drawing to remain when the scaled copy is
+created.
+      5 Define the Scale point.
+    In this example the lower-left corner was selected. A preview will appear.
+      6 Click the green OK check mark.
+
+2-25 Stretch Entities
+The Stretch Entities tool is used to extend the length of some of the lines in an entity. See
+Figure 2-72.
+Figure 2-72
+
+
+Stretching an Entity
+      1 Click the Stretch Entities tool.
+   The Stretch Entities tool is a flyout from the Move Entities tool.
+      2 Click only the lines that will be involved in the stretch.
+   In this example five lines were selected.
+      3 Click the Stretch about box.
+   The box will turn blue when active.
+      4 Define a Base point.
+   For this example the lower-left corner (origin) was selected.
+      5 Click and drag the Base point to stretch the entity.
+      6 Click to specify the endpoint.
+    For this example, the stretch drag was along the horizontal lower line of the entity, that is,
+the X direction.
+        7 Use the Smart Dimension tool to size the final stretch distance.
+        8 Click the green OK check mark.
+
+2-26 Split Entities
+The Split Entities tool is used to trim away internal segments of an existing entity or to split an
+entity into two or more parts by specifying split points.
+
+
+ Note
+ Not all sketching tools are shown on the Sketching panel. Additional sketch tools are accessed by clicking the Tools heading
+ at the top of the screen when creating a Part document, and clicking the Sketch Tools option. A listing of all sketch tools will
+ appear. See Figure 2-73.
+
+
+
+
+Figure 2-73
+Splitting an Entity
+See Figure 2-74.
+      1 Access the Split Entities tool by clicking Tools, Sketch Tools, and Split Entities.
+Figure 2-74
+
+    An entity must exist for the Split Entities tool to activate.
+       2 Click two random points on the existing rectangle for the split.
+    In this example two points were selected on the top horizontal line of the entity.
+       3 Click the screen, right-click the line segment between the two points, and click the
+         Delete option.
+       4 Use the Smart Dimension tool to define the split length.
+       5 Click the green OK check mark.
+
+2-27 Jog Lines
+The Jog Line tool is used to create a rectangular shape (jog) in a line. See Figure 2-75.
+Figure 2-75
+
+
+Using the Jog Line Tool
+      1 Access the Jog Line tool by clicking Tools, Sketch Tools, and Jog Line.
+      2 Click a point on the line and drag the cursor away from the line.
+      3 Click a point to define the approximate size of the jog.
+    A preview of the jog will appear.
+      4 Repeat the process as necessary.
+      5 Use the Smart Dimension tool to define the location and depth of the jog.
+      6 Right-click the mouse and click the OK option.
+
+2-28 Centerline
+The Centerline tool is used to help define and locate the center of entities.
+    Figure 2-76 shows an existing 2.00 2.00 × 4.00 rectangle. It is not centered on the origin,
+and none of its lines touch the origin. The Centerline tool can be used to center the rectangle on
+the origin.
+Figure 2-76
+
+
+Using the Centerline Tool
+      1 Click the Centerline tool.
+   The Centerline tool is a flyout from the Line tool.
+      2 Draw a centerline diagonally across the rectangle.
+      3 Right-click the mouse on the centerline near the middle of the centerline and click the
+        Select Midpoint option.
+      4 Hold down the <Ctrl> key and click the Origin.
+      5 Click the Coincident option in the Add Relations box.
+   The rectangle will relocate so that the origin is on the midpoint of the centerline.
+      6 Click the green OK check mark.
+
+2-29 Sample Problem SP2-1
+Draw the shape shown in Figure 2-77.
+      1 Start a New Part document, use inch units, and create the sketch on the Top plane.
+      2 Use the Corner Rectangle and Smart Dimension tools and draw a 2.00 × 4.00
+        rectangle with its lower-left corner coincidental with the origin.
+Figure 2-77
+
+      3 Use the Jog Line tool and add jogs at each end on the rectangle as shown. Use the
+        Smart Dimension tool to size the jogs.
+      4 Click the Features tab and click the Extruded Boss/Base tool.
+      5 Set the extrude distance for 0.50in.
+      6 Click the green OK check mark.
+      7 Click the Fillet tool on the Features tool panel.
+    This is the 3D application of the Fillet tool. The 2D application was discussed in Section 2-
+12. The fillets could have been added to the 2D sketch and then extruded.
+      8 Set the Fillet radius for .50in.
+      9 Add the fillets as shown.
+     10 Click the green OK check mark.
+
+2-30 Sample Problem SP2-2
+A circular pattern can be created using any shape. Figure 2-78 shows a slot shape located within
+a large circle. A circular pattern can be created from the slot shape.
+Figure 2-78
+
+      1 Start a New Part document, use ANSI Standards, inch units, and create the sketch on
+        the Top plane.
+      2 Sketch a Ø7.50 circle centered on the origin and add the slot shape as shown.
+      3 Click the Circular Sketch Pattern tool.
+   The Circular Sketch Pattern tool is a flyout from the Linear Sketch Pattern tool.
+      4 Click all the slot components (lines and arcs) in the slot shape.
+      5 Set the number of instances in the pattern for 12.
+   A preview will appear.
+      6 Click the green OK check mark.
+      7 Click the Features tab and click the Extruded Boss/Base tool.
+      8 Set the extrude distance for 0.3in.
+      9 Click the green OK check mark.
+   The model in this sample problem could have been created by first creating a 3D disk,
+sketching the slot shape on the disk, and cutting out the circular pattern.
+
+2-31 Sample Problem SP2-3
+Figure 2-79 shows a shape that includes fillets and rounded shapes. Draw the shape and extrude
+it to a thickness of .375 inch.
+
+
+
+
+Figure 2-79
+
+       1 Start a New Part document, use ANSI Standards, inch units, and create the sketch on
+         the Top plane.
+    See Figure 2-80.
+       2 Sketch the approximate shape of the part.
+       3 Use the Smart Dimension tool and size the part.
+       4 Use the Fillet tool and add fillets with a 0.25 radius as shown.
+Figure 2-80
+
+      5 Use the Corner Rectangle and Smart Dimension tools and add the 1.00 × 1.75
+        rectangle as shown.
+      6 Use the Fillet tool to add R0.25 fillets inside the 1.00 × 1.75 rectangle.
+      7 Use the Circle, Line, Trim, and Smart Dimension tools to draw and locate the slot as
+        shown.
+      8 Click the Features tab and the Extruded Boss/Base tool.
+      9 Set the extrude distance for 0.375in.
+     10 Click the green OK check mark.
+
+Chapter Projects
+
+Project 2-1:
+Redraw the objects in Figures P2-1 through P2-25 using the given dimensions. Create solid
+models of the objects using the specified thicknesses.
+Figure P2-1
+INCHES
+Figure P2-2
+INCHES
+Figure P2-3
+MILLIMETERS
+Figure P2-4
+MILLIMETERS
+Figure P2-5
+INCHES
+Figure P2-6
+MILLIMETERS
+Figure P2-7
+INCHES
+Figure P2-8
+MILLIMETERS
+Figure P2-9
+INCHES
+Figure P2-10
+MILLIMETERS
+Figure P2-11
+MILLIMETERS
+Figure P2-12
+MILLIMETERS
+Figure P2-13
+INCHES
+Figure P2-14
+MILLIMETERS
+Figure P2-15
+MILLIMETERS
+Figure P2-16
+MILLIMETERS
+Figure P2-17
+INCHES
+Figure P2-18
+MILLIMETERS
+Figure P2-19
+MILLIMETERS
+Figure P2-20
+INCHES
+Figure P2-21
+MILLIMETERS
+Figure P2-22
+MILLIMETERS
+Figure P2-23
+INCHES
+Figure P2-24
+MILLIMETERS
+Figure P2-25
+INCHES
+
+Project 2-2:
+Draw a retaining ring based on the following dimensions shown in Figure P2-26 and as assigned
+by your instructor.
+Figure P2-26

@@ -1,0 +1,1010 @@
+Chapter 7. Dimensioning
+Chapter Objectives
+
+         Dimension objects
+         Learn ANSI standards and conventions
+         Dimension different shapes and features
+         Learn fundamentals of 3D dimensioning
+
+
+
+7-1 Introduction
+Dimensions are added to SolidWorks on Drawing documents. Dimensions will appear in Part
+documents, but these are construction dimensions. These sketch dimensions are used to create a
+part and are used when a sketch is edited. They may be modified as the part is being created
+using the Smart Dimension tool. They will not appear on the finished model or in Assembly
+documents.
+     Figure 7-1 shows a dimensioned shape. The drawing on the left in Figure 7-1 shows the
+sketch dimensions that were used as the part was being created. The drawing on the right in
+Figure 7-1 shows dimensions that were created using the Smart Dimension tool in a Drawing
+document. These are defining dimensions and will appear on the working drawings. This chapter
+will show how to apply these types of dimensions.
+     SolidWorks has ANSI Inch and ANSI Metric dimensions available. Other dimensioning
+systems such as ISO also are available. This text is in compliance with ANSI standards.
+Figure 7-1
+
+7-2 Terminology and Conventions—ANSI
+Dimensions are added to drawings to define the part and guide manufacturing. General rules and
+conventions are used to dimension a drawing in a complete, orderly, and succinct manner.
+
+
+Common Terms
+Figure 7-2 shows both ANSI- and ISO-style dimensions. The terms apply to both styles.
+Figure 7-2
+
+      Dimension lines: In mechanical drawings, lines between extension lines that end with an
+      arrowhead and include a numerical dimensional value located within the line.
+      Extension lines: Lines that extend away from an object and allow dimensions to be
+      located off the surface of an object.
+      Leader lines: Lines drawn at an angle, not horizontal or vertical, that are used to
+      dimension specific shapes such as holes. The start point of a leader line includes an
+      arrowhead. Numerical values are drawn at the end opposite the arrowhead.
+      Linear dimensions: Dimensions that define the straight-line distance between two points.
+      Angular dimensions: Dimensions that define the angular value, measured in degrees,
+      between two straight lines.
+
+
+Dimensioning Conventions
+There are general guidelines you should follow when dimensioning drawings. Figure 7-3 shows
+some of the following guidelines applied to a dimensioned part.
+Figure 7-3
+
+      Dimension lines should be drawn evenly spaced; that is, the distance between dimension
+      lines should be uniform. A general rule of thumb is to locate dimension lines about 1/2in.
+      or 15mm apart.
+      There should be a noticeable gap between the edge of a part and the beginning of an
+      extension line. This serves as a visual break between the object and the extension line.
+      The visual difference between the line types can be enhanced by using different colors for
+      the two types of lines.
+      Leader lines are used to define the size of holes and should be positioned so that the
+      arrowhead points toward the center of the hole.
+      Centerlines may be used as extension lines. No gap is used when a centerline is extended
+      beyond the edge lines of an object.
+      Align dimension lines whenever possible to give the drawing a neat, organized
+      appearance.
+
+
+Common Errors to Avoid
+See Figure 7-4.
+
+
+
+
+Figure 7-4
+
+       Avoid crossing extension lines. Place longer dimensions farther away from the object
+       than shorter dimensions.
+       Do not locate dimensions within cutouts; always use extension lines.
+       Do not locate any dimension close to the object. Dimension lines should be at least 1/2in.
+       or 15mm from the edge of the object.
+       Avoid long extension lines. Locate dimensions in the same general area as the feature
+       being defined.
+
+7-3 Adding Dimensions to a Drawing
+Figure 7-5 shows a part that includes two holes. This section will explain how to add dimensions
+to the part. The part was drawn as a Part document and saved as BLOCK, 2 HOLES. See
+Figure 7-10 for the part’s dimensions. The part is 0.50 thick. Save the part and start a new
+Drawing document.
+Figure 7-5
+
+      1 Click New, Drawing, and OK to start a new drawing. Use a B (ANSI) Landscape
+        sheet size.
+      2 Click the View Layout tab, Model View, and create a top view of the BLOCK, 2
+        HOLES part.
+   In this example we will work with only one view. See Figure 7-6.
+Figure 7-6
+
+    Extend the horizontal center mark from the left hole to the horizontal centerline of the right
+hole.
+       3 Click the horizontal centerline of the left hole. Small blue boxes will appear on the
+         center mark.
+       4 Click and drag the horizontal centerline from the left hole to the right hole.
+    The holes now have the same horizontal centerline so only one vertical dimension can be
+used to define the hole’s location. See Figure 7-7.
+Figure 7-7
+
+ Tip
+ Centerlines can be extended by first clicking them and then dragging an endpoint to a new location.
+
+
+
+        5 Use the Smart Dimension tool and add the horizontal and vertical dimensions as
+          shown.
+    See Figure 7-8.
+Figure 7-8
+
+    Note that the dimension values for the vertical dimensions are written horizontally. This is in
+compliance with ANSI standards. For this example, the Century Gothic font was made bold with
+14-point height.
+
+ Rule
+ Keep dimension lines aligned and evenly spaced.
+
+
+
+        6 Click the Hole Callout tool located on the Annotation panel, click the edge of the left
+          hole, and move the cursor away from the hole.
+     Note that the leader arrow always points to the center of the hole.
+        7 Select a location off the surface of the part and click the mouse.
+
+ Rule
+ Never locate dimensions on the surface of the part.
+See Figure 7-9. The word THRU is optional. Some companies require it and some do not.
+Figure 7-9
+
+      8 Go to the Dimension PropertyManager at the left of the screen, locate the cursor in
+        the Dimension Text box, and delete the word THRU.
+   The text already in the box defines the hole’s diameter.
+      9 Move the cursor to the end of the existing text line, and type - 2 HOLES.
+     10 Click the green OK check mark.
+   Move the dimensions if needed to create neat, uniform dimensions.
+   See Figure 7-10.
+     11 Save the drawing.
+Figure 7-10
+
+ Tip
+ Dimensions can be relocated by clicking and dragging the dimension text.
+
+
+
+
+Controlling Dimensions
+Various aspects of dimensions can be edited, such as text height, arrow location, and text values.
+        1 Click the Options tool at the top of the screen.
+    The Documents Properties - Drafting Standard dialog box will appear. See Figure 7-11.
+        2 Click the Document Properties tab.
+        3 Click the Dimensions option.
+     The Document Properties - Dimensions dialog box can be used to edit the style and form
+of dimensions. It can also be used to change the way arrows are applied.
+        4 Click the Font option.
+     The Choose Font dialog box will appear. See Figure 7-11. This dialog box can be used to
+change the font, font style, and height of dimension text. The height of text can be measured in
+inches, millimeters, or points. A point refers to a space that equals about 1/72 of an inch. (There
+are 12 points to a pica.)
+Figure 7-11
+
+      5 Click the Height: Units radio button and change the height to 0.250in.
+    Note that the SolidWorks default font is Century Gothic.
+      6 Click OK, then OK.
+    Figure 7-11 shows dimensions created using the Times New Roman font. Fonts for
+drawings should always be easy to read and not too stylistic.
+
+
+Dimensioning Short Distances
+Figure 7-12 shows an object that includes several short distances. We will start by using the
+standard dimensions settings and show how to edit them for a particular situation.
+Figure 7-12
+
+        1 Use the Smart Dimension tool and add dimensions to the drawing.
+     Note that the arrows for the .50 dimension are aligned with the arrows for the 1.00
+dimensions. Dimensions that are aligned in a single row are called chain dimensions. Note that
+the .25 dimension is crowded between the two extension lines.
+
+ Rule
+ Never squeeze dimension values. Dimension values should always be presented clearly and legible.
+
+
+
+    There are several possible solutions to the crowded .25 value.
+        2 Click and drag the .25 dimension to the right outside the extension lines.
+        3 Add the 4.00 overall dimension.
+    Dimensions that define the total length and width of an object are called overall dimensions.
+In this example the dimension 4.00 defines the total length of the part, so it is an overall
+dimension. Overall dimensions are located farthest away from the edge of the part.
+    The right edge of the part, the section below the .25, does not need a dimension. The reason
+for this will be discussed in the next chapter on tolerancing.
+
+ Tip
+ To delete an existing dimension, click the dimension and press the <Del> key.
+
+
+
+     Figure 7-12 shows two other options for dimensioning. The first is the baseline method, in
+which all dimensions are taken from the same datum line. The second method is a combination
+of chain and baseline dimensions.
+
+ Rule
+ Never dimension the same distance twice. This is called double dimensioning.
+
+
+
+     Figure 7-13 shows an example of double dimensioning. The top edge distance is
+dimensioned twice: once using the 1.00 + .50 + 1.00 + .25 + 1.25 dimensions, and a second
+time using the 4.00 dimension. One of the dimensions must be omitted. Double dimensioning
+will be explained in more detail in Chapter 8.
+Figure 7-13
+
+
+Autodimension Tool
+The Autodimension tool will automatically add dimensions to a drawing.
+
+ Warning
+ The dimensions created using the Autodimension tool are not always in the best locations. The dimensions must be relocated
+ to be in compliance with ANSI conventions.
+
+
+
+    Figure 7-14 shows a shape to be dimensioned using the Autodimension tool.
+        1 Click the Annotation tab, click the Smart Dimension tool, and click the
+          Autodimension tab.
+        2 Select the Chain Scheme, define Edge 1 and Edge 2, click the Apply box, and click
+          the OK check mark.
+Figure 7-14
+
+    SolidWorks will automatically pick edges 1 and 2. If it does not, or the edges selected are
+not the ones you want, click the Edge box, then click the edge. The word Edge<1> should
+appear in the box.
+    Figure 7-14 shows the dimensions applied using the Autodimension tool. They are not in
+acceptable positions.
+      3 Rearrange the dimensions to comply with standard conventions.
+    Figure 7-15 shows the shape shown in Figure 7-14 dimensioned using the baseline scheme,
+which is created as follows.
+Figure 7-15
+
+
+Creating Baseline Dimensions
+       1 Access the Autodimension tool and select the Baseline Scheme.
+       2 Select Edge 1 and Edge 2.
+       3 Click Apply.
+       4 Click the green OK check mark.
+    Figure 7-15 shows the dimensions created by the Autodimension tool and how the
+dimensions can be rearranged.
+
+
+Creating Ordinate Dimensions
+Figure 7-16 shows the object dimensioned using the Ordinate Scheme of the Autodimension
+tool. The Autodimension tool did better placing the ordinate dimensions in this instance, but if
+some of the created dimensions are located on the surface of the part, this would be a violation of
+the convention that dimensions should never be located on the surface of the part. Figure 7-16
+shows how the ordinate dimensions were rearranged.
+Figure 7-16
+
+7-4 Drawing Scale
+Drawings are often drawn “to scale” because the actual part is either too big to fit on a sheet of
+drawing paper or too small to be seen. For example, a microchip circuit must be drawn at several
+thousand times its actual size to be seen.
+    Drawing scales are written using the following formats:
+      SCALE: 1 = 1
+      SCALE: FULL
+      SCALE: 1000 = 1
+      SCALE: .25 = 1
+     In each example the value on the left indicates the scale factor. A value greater than 1
+indicates that the drawing is larger than actual size. A value smaller than 1 indicates that the
+drawing is smaller than actual size.
+     Regardless of the drawing scale selected, the dimension values must be true size. Figure 7-
+17 shows the same rectangle drawn at two different scales. The top rectangle is drawn at a scale
+of 1 = 1, or its true size. The bottom rectangle is drawn at a scale of 2 = 1, or twice its true size.
+In both examples the 3.00 dimension remains the same.
+
+
+
+
+Figure 7-17
+
+7-5 Units
+It is important to understand that dimension values are not the same as mathematical units.
+Dimension values are manufacturing instructions and always include a tolerance, even if the
+tolerance value is not stated. Manufacturers use a predefined set of standard dimensions that are
+applied to any dimensional value that does not include a written tolerance. Standard tolerance
+values differ from organization to organization. Figure 7-18 shows a chart of standard tolerances.
+Figure 7-18
+
+     In Figure 7-19 a distance is dimensioned twice: once as 5.50 and a second time as 5.5000.
+Mathematically these two values are equal, but they are not the same manufacturing instruction.
+The 5.50 value could, for example, have a standard tolerance of ±.01, whereas the 5.5000 value
+could have a standard tolerance of ±.0005. A tolerance of ±.0005 is more difficult and
+therefore more expensive to manufacture than a tolerance of ±.01.
+Figure 7-19
+
+     Figure 7-20 shows examples of units expressed in millimeters and in decimal inches. A zero
+is not required to the left of the decimal point for decimal inch values less than one. Millimeter
+values do not require zeros to the right of the decimal point. Millimeter and decimal inch values
+never include symbols; the units will be defined in the title block of the drawing.
+Figure 7-20
+
+
+Aligned Dimensions
+Aligned dimensions are dimensions that are parallel to a slanted edge or surface. They are not
+horizontal or vertical. The units for aligned dimensions should be written horizontally. This is
+called unidirectional dimensioning.
+     Figure 7-21 shows the front, right-side, and isometric views of a part with a slanted surface.
+The dimensions were applied using the Smart Dimension tool. Note that the slanted dimension,
+aligned with the slanted surface, has unidirectional (horizontal) text. The hole dimension was
+created using the Note tool from the Annotation tab.
+Figure 7-21
+
+
+Hole Dimensions
+Figure 7-22 shows an object that has two holes, one blind and one completely through. The
+object has filleted corners. In this section we will add dimensions to the views.
+Figure 7-22
+
+    The holes were drawn using the Hole Wizard tool. The Hole Wizard tool will
+automatically create a conical point to a blind hole.
+       1 Use the Smart Dimension tool and locate the two holes.
+     See Figure 7-23. In general, dimensions are applied from the inside out; that is, starting with
+the features in the middle of the part and working out to the overall dimensions. Leader lines are
+generally applied last, as they have more freedom of location.
+Figure 7-23
+
+        2 Use the Linear Center Mark tool to draw a centerline between the two holes and use
+          the Centerline tool to add the vertical centerline in the front and side views.
+    The centerline between the two holes indicates that the vertical 30 dimension applies to both
+holes.
+
+
+ Note
+ Centerlines should extend beyond the edges of the part. Centerlines can be extended by first clicking the centerline. Blue end
+ boxes will appear. Click and drag the blue end boxes to a point beyond the edges of the part.
+
+
+        3 Use the Smart Dimension tool and add a dimension to one of the filleted corners.
+     See Figure 7-24.
+Figure 7-24
+
+ Tip
+ The dimension options found on the Document PropertyManager will change all dimensions. Clicking a dimension and
+ using the Dimension PropertyManager allows you to change just that dimension.
+
+
+
+       4 Click the fillet dimension again, go to the Dimension Text block on the Dimension
+         PropertyManager, and type - 4 CORNERS as shown in Figure 7-25.
+Figure 7-25
+
+      5 Click OK, Apply, and OK.
+      6 Use the Hole Callout tool on the Annotation panel and dimension the Ø16 hole.
+    The Ø16 hole goes completely through the part, so no depth specification is required. See
+Figure 7-26. The word THRU is optional and may be removed.
+      7 Use the Hole Callout tool and Dimension the Ø25 hole.
+Figure 7-26
+
+     The hole callout will include the depth symbol (see Figure 7-27) and a depth value of 30
+(see Figure 7-28).
+     Complete the dimensions.
+Figure 7-27
+Figure 7-28
+
+   See Figure 7-29.
+Figure 7-29
+
+
+ Note
+ If the Smart Dimension tool had been used, the dimension would have to be edited in the Dimension Text area and the depth
+ symbol and a numerical value added.
+
+
+
+
+7-6 Dimensioning Holes and Fillets
+A blind hole is a hole that does not go completely through an object. It has a depth requirement.
+Figure 7-30 shows a 2.00 × 2.00 × 2.00 cube with a blind Ø.50 × 1.18 DEEP hole. It was
+created as follows.
+
+
+Dimensioning a Blind Hole
+        1 Draw the block.
+        2 Click the Hole Wizard tool.
+     See Figure 7-30.
+Figure 7-30
+
+      3 Click the Hole tool in the Hole Type box. Define the hole using the ANSI Inch
+        standard with a Size of 1/2 and a Blind Hole Depth of 1.18in.
+      4 Click the Positions tab.
+      5 Locate the hole as shown.
+    The initial location is an approximation. Use the Smart Dimension tool to specify the exact
+location of the hole’s centerpoint.
+      6 Click the green OK check mark.
+      7 Save the drawing as Block, Blind.
+      8 Start a new Drawing document and create a front and a top orthographic view of the
+        Block, Blind.
+      9 Add dimensions to the views.
+     10 Click the Annotation tab and click the Hole Callout option.
+     11 Click the edge of the hole, move the cursor away from the hole, define a location for
+        the hole callout, and click the mouse. The hole callout dimension will initially appear
+          as a rectangular box.
+    Change the height of the text font if necessary.
+      12 Save the drawing.
+    Note that the hole includes a conical point. Holes manufactured using twist drills will have
+conical points. The conical point is not included in the hole’s depth dimension. A special drill bit
+can be used to create a flat-bottomed hole.
+    Figure 7-31 shows three different methods that can be used to dimension a blind hole.
+
+
+
+
+Figure 7-31
+
+    Figure 7-32 shows three methods of dimensioning holes in section views. The single line
+note version is the preferred method.
+Figure 7-32
+
+
+Dimensioning Hole Patterns
+Figure 7-33 shows two different hole patterns dimensioned. The circular pattern includes the
+note Ø10 − 4 HOLES. This note serves to define all four holes within the object.
+Figure 7-33
+
+     Figure 7-33 also shows a rectangular object that contains five holes of equal diameter,
+equally spaced from one another. The notation 5 × Ø10 specifies five holes of 10 diameter. The
+notation 4 × 20 (= 80) means four equal spaces of 20. The notation (= 80) is a reference
+dimension and is included for convenience. Reference dimensions are explained in Chapter 9.
+     Figure 7-34 shows two additional methods for dimensioning repeating hole patterns. Figure
+7-35 shows a circular hole pattern that includes two different hole diameters. The hole diameters
+are not noticeably different and could be confused. One group is defined by indicating letter A;
+the other is dimensioned in a normal manner.
+Figure 7-34
+
+
+
+
+Figure 7-35
+
+7-7 Dimensioning Counterbored and Countersunk Holes
+Counterbored holes are dimensioned in the sequence of their manufacture. First the hole’s
+diameter is given, then the counterbore diameter, then the depth of the counterbore.
+    Figure 7-36 shows a part that contains two counterbored holes; one goes completely through
+and the other is blind. Dimensions will be applied to both.
+      1 Create a 3.00 × 4.00 × 1.75 block.
+      2 Click the Hole Wizard tool, click the Counterbore option, and insert the counterbored
+        hole that goes completely through.
+      3 Specify the Standard as ANSI Inch, the Type as Hex Screw, the Size as a 3/8
+        diameter, and the End Condition as Through All.
+Figure 7-36
+
+    See Figure 7-37. SolidWorks will automatically select the diameter for the counterbored
+hole that will accommodate a Ø3/8 Hex Head Screw.
+    Depending on your default settings, the counterbored hole may have a small chamfer added.
+The countersink can be removed by removing the check mark in the Options box on the Hole
+Specification manager.
+Figure 7-37
+
+      4 Position the hole using the given dimensions.
+      5 Add the second hole, setting the End Condition to Blind and 1.00 deep.
+      6 Position the hole using the given dimensions.
+      7 Save the block as Block, Cbore.
+      8 Start a new Drawing document and create a front and a top orthographic view of the
+        Block, Cbore.
+      9 Click the Annotation tab and add all dimensions and centerlines other than the hole
+        dimensions.
+     10 Click the Hole Callout tool.
+   See Figure 7-38.
+     11 Click the edge of each hole, move the cursor away from the hole, and click the mouse
+        when a suitable location is found.
+   The counterbored hole’s dimension note is interpreted as shown in Figure 7-38.
+Figure 7-38
+
+     Figure 7-39 shows the Block, Cbore assembled with hex head screws inserted into the
+counterbored holes. SolidWorks will automatically generate the correct size counterbored hole
+for a specified screw. The counterbore depth will align the top of the screw head with the top
+surface of the part and will define a hole diameter that includes clearance between the fastener
+and the hole. In this example a clearance hole with a diameter of Ø.40 was generated. The hole is
+.02 larger than the specified .38 fastener diameter.
+Figure 7-39
+
+    If clearance is required between the top of the screw and the top surface of the part, check
+the Head clearance box under Options in the Hole Specification section of the Hole Wizard
+PropertyManager. See Figure 7-40.
+Figure 7-40
+
+    The diameter of the counterbored hole can be made larger than the clearance generated by
+SolidWorks to allow for tool clearance. Tool clearance allowance increases the diameter of the
+counterbore so that it is large enough to allow a socket wrench to fit over the head of the fastener
+and still fit within the hole.
+
+
+Counterbored Hole with Threads
+Figure 7-41 shows a 3.00 × 4.00 × 2.00 block with two counterbored holes. Both holes are
+threaded.
+       1 Create the block.
+       2 Click the Hole Wizard tool, select the Straight Tap option, and specify a 3/8-16 UNC
+         thread that goes completely through.
+       3 Click the Positions tab and locate the hole.
+       4 Click the green OK check mark.
+    This will locate a 3/8-16 UNC thread hole in the block. Now, we add the counterbore.
+  5 Click the top surface of the block and click the Sketch option.
+  6 Click the Circle tool and draw a Ø.88 circle on the top surface centered on the same
+    centerpoint as the Ø3/8-16 hole.
+The dimensions for this example came from Figure 7-38.
+Figure 7-41
+
+        7 Click the Features tab, click the Extruded Cut tool, and specify a cut depth of 0.27.
+        8 Click the green OK check mark.
+        9 Repeat the procedure, adding a second hole with a thread to a depth of 0.85.
+
+ Tip
+ For an internal thread, the thread depth is measured from the top surface of the part.
+
+
+
+     See Figure 7-42.
+Figure 7-42
+
+      10 Save the block as Block, Threads.
+      11 Create a new Drawing document and create front and top orthographic views of the
+        Block, Threads.
+      12 Add centerlines to the front view and add dimensions as shown.
+    See Figure 7-43.
+      13 Use the Hole Callout tool and click the left threaded hole.
+     Do not click the outside of the counterbored hole. This will generate a note that includes
+only the counterbore. In Figure 7-42 the callouts 3/8-16 Tapped Hole appear on the front view.
+Remove the callouts from view by right-clicking the callouts and selecting the Hide option. The
+thread information will be included in the counterbore hole callout.
+      14 Locate the text and click the mouse.
+     The initial note may show the counterbore callout above the thread callout. Convention calls
+for the note to read in the sequence of manufacture. The threaded hole is cut first and then the
+counterbore is added; therefore, the thread callout should come before the counterbore callout.
+      15 Modify the callout to list the thread callout above the counterbore callout.
+    Access the Dimension Text box on the Dimension Manager by clicking the .31 THRU
+ALL dimension, delete the first line of text, and replace the dimension with a new dimension,
+3/8-16 UNC THRU.
+Figure 7-43
+
+       16 Click the green OK check mark.
+       17 Click the threaded portion of the right hole.
+       18 Locate the text and click the mouse.
+       19 Modify the callout as shown.
+     Figure 7-44 shows dimensioned counterbored holes using metric units. The Hole Callout
+tool was used to dimension the counterbored holes. Note that the hole’s diameter is listed as Ø11.
+The fastener size was specified as M10, and the Ø11 hole is a clearance hole.
+Figure 7-44
+
+
+Dimensioning Countersink Holes
+Countersink holes are used with flat head screws to create assemblies in which the fasteners do
+not protrude above the surfaces.
+     Figure 7-45 shows a part with two countersunk holes; one goes completely through, the
+other has a depth specification.
+Figure 7-45
+
+      1 Draw a 40 × 80 × 60 block.
+      2 Use the Hole Wizard tool, click the Countersink type, specify the ANSI Metric
+        standard, select an M10 size for a flat head screw, and specify a hole that goes all the
+        way through. Define a head clearance of 2.00mm.
+      3 Click the Positions tab and position the countersunk hole’s centerpoint as shown using
+        the Smart Dimension tool.
+      4 Click the green OK check mark.
+      5 Click the Hole Wizard tool, click the Countersink type, specify the ANSI Metric
+        standard, select an M10 size for a flat head screw, and specify a depth requirement of
+        25.00mm for a Blind hole. Define a head clearance of 2.00mm.
+      6 Click the Positions tab and locate the hole as shown.
+      7 Click the green OK check mark.
+      8 Save the drawing as Block, CSink.
+Dimensioning the Block
+      1 Create a new Drawing document with a front and a top orthographic view of the
+        Block, CSink.
+      2 Use the Smart Dimension tool and add the appropriate dimensions.
+      3 Use the Center Mark tool to add a centerline between the two holes indicating they
+        are aligned.
+      4 Click the Annotation tab, click the Hole Callout tool, and dimension the two
+        countersunk holes.
+    See Figure 7-46.
+
+
+
+
+Figure 7-46
+
+7-8 Angular Dimensions
+Figure 7-47 shows a model that includes a slanted surface and dimensioned orthographic views
+of the model. The dimension values are located beyond the model between two extension lines.
+Locating dimensions between extension lines is preferred to locating the value between an
+extension line and the edge of the model.
+Figure 7-47
+
+    Figure 7-48 shows a shape that includes a slanted surface dimensioned in two different
+ways. The shape on the left uses an angular dimension; the one on the right does not. Both are
+acceptable.
+Figure 7-48
+
+    Figure 7-49 shows two objects dimensioned using angular dimensions. One has an evenly
+spaced hole pattern; the other has an uneven hole pattern.
+Figure 7-49
+
+
+Dimensioning an Evenly Spaced Hole Pattern
+       1 Start a new drawing of the object and create a view as shown in Figure 7-49.
+     The object will automatically include circular centerlines. The circular centerline is called a
+bolt circle. Note that the center marks are not horizontal and vertical but point at the centerpoint
+of the pattern.
+     Circular centerlines and center marks can be created using the Manual Insert Options
+located on the Center Mark PropertyManager.
+       2 Add dimensions to the pattern and the object.
+     The six holes are evenly spaced and are all the same size, so only one angular dimension and
+a note are needed, as shown. All the holes are the same distance from the centerpoint, so the
+circular centerline needs only one dimension that will include the six holes.
+     The size and text position of the angular dimension can be edited using the System tool,
+Document Properties, Dimensions, Angle, and entering edits.
+     Figure 7-49 shows a similar object but with an uneven hole pattern. Each hole must be
+dimensioned separately.
+     When the drawing view first appears on the screen, all the center marks are horizontal and
+vertical. A circular centerline pattern is preferred. Click each center mark and Hide the mark.
+Click the Center Mark tool and the Circular Center Mark tool located under the Manual
+Insert Options, and click each hole. A circular centerline pattern will appear. The shape can
+then be dimensioned using the circular pattern.
+
+7-9 Ordinate Dimensions
+Ordinate dimensions are dimensions based on an XY coordinate system. Ordinate dimensions do
+not include extension lines, dimension lines, or arrowheads but simply horizontal and vertical
+leader lines drawn directly from the features of the object. Ordinate dimensions are particularly
+useful when dimensioning an object that includes many small holes.
+     Figure 7-50 shows a part that is to be dimensioned using ordinate dimensions. Ordinate
+dimensions’ values are calculated from the XY origin, which, in this example, is the lower-left
+corner of the front view of the model.
+Figure 7-50
+
+
+Creating Ordinate Dimensions
+See Figure 7-51.
+      1 Start a new Drawing document and create a top orthographic view of the part.
+    Use the dimensions shown in Figure 7-52 to create the drawing.
+      2 Click and extend the center marks and draw centerlines between the four corner holes.
+Figure 7-51
+
+      3 Click the arrowhead located under the Smart Dimension tool and click the Horizontal
+        Ordinate Dimension option.
+      4 Click the lower-left corner of the part to establish the origin for the dimensions.
+      5 Move the cursor away from the origin and define a location for the “0” dimension.
+   All other horizontal dimensions will align with this location.
+      6 Click the lower portion of each hole’s vertical centerline and the lower-right corner of
+        the part.
+      7 Click the arrowhead located under the Smart Dimension tool and click the Vertical
+        Ordinate Dimension option.
+      8 Click the lower-left corner of the part to establish the origin for the dimensions.
+      9 Click the left portion of each hole’s horizontal centerline and the upper-left corner of
+        the part.
+     10 Add dimensions for the holes.
+   Figure 7-52 shows the dimensioned part.
+Figure 7-52
+
+7-10 Baseline Dimensions
+Baseline dimensions are a series of dimensions that originate from a common baseline or datum
+line. Baseline dimensions are very useful because they help eliminate the tolerance buildup that
+is associated with chain-type dimensions.
+
+
+Creating Baseline Dimensions
+See Figure 7-53.
+Figure 7-53
+
+       1 Start a new Drawing document and create a top orthographic view of the part.
+       2 Use the Linear Center Mark tool and add connection centerlines between the four
+         corner holes.
+       3 Click the arrowhead under the Smart Dimension tool and click the Baseline
+         Dimension option.
+       4 Click the left vertical edge of the part and the lower portion of the first vertical
+         centerline.
+    This will establish the baseline.
+       5 Click the lower portion of each vertical centerline and the right vertical edge line and
+         locate the dimensions.
+
+
+Note
+The distance between the dimension lines can be changed in the Offset distances box under Dimensions on the Document
+Properties tab of the Options tool.
+      6 Click the arrowhead under the Smart Dimension tool and click the Baseline
+        Dimension option.
+      7 Click the lower horizontal edge of the part and the left end of the first horizontal
+        centerline.
+      8 Click the left end of each horizontal centerline and the right top horizontal edge line.
+    The alignment of the vertical dimension lines can be changed by right-clicking the
+individual dimension and selecting the Break Alignment option.
+      9 Add the hole dimensions.
+
+
+Hole Tables
+Hole tables are a method for dimensioning parts that have large numbers of holes where standard
+dimensioning may be cluttered and difficult to read. See Figure 7-54.
+Figure 7-54
+
+      1 Start a new Drawing document and create a top orthographic view of the part.
+      2 Use the Linear Center Mark tool and add connection centerlines between the four
+        corner holes.
+      3 Click the Annotation tab, click Tables, and click Hole Table.
+      4 Click the lower-left corner of the part to establish an origin.
+      5 Click each hole.
+   As the holes are clicked they should be listed in the Holes box located in the Hole Table
+PropertyManager.
+      6 Click the green OK check mark and locate the hole table.
+      7 Add the overall dimensions.
+      8 Move the hole tags as needed to present a clear, easy-to-read drawing.
+    In this example all tags were located to the upper-right of the holes they define. Tables can
+be edited using the instructions presented in Section 5-11 for BOMs.
+7-11 Locating Dimensions
+There are eight general rules concerning the location of dimensions. See Figure 7-55.
+Figure 7-55
+
+      1 Locate dimensions near the features they are defining.
+      2 Do not locate dimensions on the surface of the object.
+      3 Align and group dimensions so that they are neat and easy to understand.
+      4 Avoid crossing extension lines.
+    Sometimes it is impossible not to cross extension lines because of the complex shape of the
+object, but whenever possible, avoid crossing extension lines.
+      5 Do not cross dimension lines.
+      6 Locate shorter dimensions closer to the object than longer dimensions.
+      7 Always locate overall dimensions the farthest away from the object.
+      8 Do not dimension the same distance twice. This is called double dimensioning and will
+        be discussed in Chapter 8 in association with tolerancing.
+
+7-12 Fillets and Rounds
+Fillets and rounds may be dimensioned individually or by a note. In many design situations all
+the fillets and rounds are the same size, so a note as shown in Figure 7-56 is used. Any fillets or
+rounds that have a different radius from that specified by the note are dimensioned individually.
+
+
+
+
+Figure 7-56
+
+7-13 Rounded Shapes—Internal
+Internal rounded shapes are called slots. Figure 7-57 shows three different methods for
+dimensioning slots. The end radii are indicated by the note R-2 PLACES, but no numerical
+value is given. The width of the slot is dimensioned, and it is assumed that the radius of the
+rounded ends is exactly half of the stated width.
+Figure 7-57
+
+7-14 Rounded Shapes—External
+Figure 7-58 shows two shapes with external rounded ends. As with internal rounded shapes, the
+end radii are indicated, but no value is given. The width of the object is given, and the radius of
+the rounded end is assumed to be exactly half of the stated width.
+Figure 7-58
+
+    The second example shown in Figure 7-58 shows an object dimensioned using the object’s
+centerline. This type of dimensioning is done when the distance between the holes is more
+important than the overall length of the object; that is, the tolerance for the distance between the
+holes is more exact than the tolerance for the overall length of the object.
+    The overall length of the object is given as a reference dimension (100). This means the
+object will be manufactured based on the other dimensions, and the 100 value will be used only
+for reference.
+     Objects with partially rounded edges should be dimensioned as shown in Figure 7-58. The
+radii of the end features are dimensioned. The centerpoint of the radii is implied to be on the
+object centerline. The overall dimension is given; it is not referenced unless specific radii values
+are included.
+
+7-15 Irregular Surfaces
+There are three different methods for dimensioning irregular surfaces: tabular, baseline, and
+baseline with oblique extension lines. Figure 7-59 shows an irregular surface dimensioned using
+the tabular method. An XY axis is defined using the edges of the object. Points are then defined
+relative to the XY axis. The points are assigned reference numbers, and the reference numbers
+and XY coordinate values are listed in chart form as shown.
+Figure 7-59
+
+    Figure 7-60 shows an irregular curve dimensioned using baseline dimensions. The baseline
+method references all dimensions to specified baselines. Usually there are two baselines, one
+horizontal and one vertical.
+Figure 7-60
+
+     It is considered poor practice to use a centerline as a baseline. Centerlines are imaginary
+lines that do not exist on the object and would make it more difficult to manufacture and inspect
+the finished objects.
+     Baseline dimensioning is very common because it helps eliminate tolerance buildup and is
+easily adaptable to many manufacturing processes.
+
+7-16 Polar Dimensions
+Polar dimensions are similar to polar coordinates. A location is defined by a radius (distance)
+and an angle. Figure 7-61 shows an object that includes polar dimensions. The holes are located
+on a circular centerline, and their positions from the vertical centerline are specified using angles.
+Figure 7-61
+
+   Figure 7-62 shows an example of a hole pattern dimensioned using polar dimensions.
+Figure 7-62
+
+7-17 Chamfers
+Chamfers are angular cuts made on the edges of objects. They are usually used to make it easier
+to fit two parts together. They are most often made at 45° angles but may be made at any angle.
+Figure 7-63 shows two objects with chamfers between surfaces 90° apart and two examples
+between surfaces that are not 90° apart. Either of the two types of dimensions shown for the 45°
+dimension may be used. If an angle other than 45° is used, the angle and setback distance must
+be specified.
+Figure 7-63
+
+    Figure 7-64 shows two examples of internal chamfers. Both define the chamfer using an
+angle and diameter. Internal chamfers are very similar to countersunk holes.
+Figure 7-64
+
+7-18 Symbols and Abbreviations
+Symbols are used in dimensioning to help accurately display the meaning of the dimension.
+Symbols also help eliminate language barriers when reading drawings.
+     Abbreviations should be used very carefully on drawings. Whenever possible, write out the
+full word, including correct punctuation. The Dimension PropertyManager Value tab includes
+a group of symbols and words commonly used on technical drawings. Figure 7-65 lists several
+standard abbreviations used on technical drawings.
+Figure 7-65
+
+       Figure 7-66 shows a list of symbols available in the Dimension PropertyManager Value
+tab.
+Figure 7-66
+
+ Tip
+ To access the Dimension PropertyManager Value tab, click an existing dimension.
+
+
+
+    More symbols are available by clicking the More box. A list of available symbols will
+appear. Click a new symbol. A preview of the selected symbol will appear. Click OK and the
+symbol will appear on the drawing next to the existing symbol.
+
+7-19 Symmetrical and Centerline Symbols
+An object is symmetrical about an axis when one side is the exact mirror image of the other.
+Figure 7-67 shows a symmetrical object. The symbol of two short parallel lines or the note
+OBJECT IS SYMMETRICAL ABOUT THIS AXIS (centerline) may be used to designate
+symmetry.
+    If an object is symmetrical, only half the object needs to be dimensioned. The other
+dimensions are implied by the symmetry note or symbol.
+Figure 7-67
+
+     The centerline is slightly different from the axis of symmetry. An object may or may not be
+symmetrical about its centerline. See Figure 7-67. Centerlines are used to define the center of
+both individual features and entire objects. Use the centerline symbol when a line is a centerline,
+but do not use it in place of the symmetry symbol.
+
+7-20 Dimensioning to a Point
+Curved surfaces can be dimensioned using theoretical points. See Figure 7-68. There should be a
+small gap between the surface of the object and the lines used to define the theoretical point. The
+point should be defined by the intersection of at least two lines.
+     There should also be a small gap between the extension lines and the theoretical point used
+to locate the point.
+Figure 7-68
+
+7-21 Dimensioning Section Views
+Section views are dimensioned. See Figure 7-69. The section lines should be drawn at an angle
+that allows the viewer to clearly distinguish between the section lines and the extension lines.
+Figure 7-69
+
+7-22 Dimensioning Orthographic Views
+Dimensions should be added to orthographic views where the features appear in contour. Holes
+should be dimensioned in their circular views. Figure 7-70 shows three views of an object that
+has been dimensioned.
+Figure 7-70
+
+     The hole dimensions are added to the top view, where the hole appears circular. The slot is
+also dimensioned in the top view because it appears in contour. The slanted surface is
+dimensioned in the front view.
+     The height of surface A is given in the side view rather than run along extension lines across
+the front view. The length of surface A is given in the front view. This is a contour view of the
+surface.
+     It is considered good practice to keep dimensions in groups. This makes it easier for the
+viewer to find dimensions.
+     Be careful not to double dimension a distance. A distance should be dimensioned only once.
+If a 30 dimension were added above the 25 dimension on the right-side view, it would be an
+error. The distance would be double dimensioned: once with the 25 + 30 dimension, and again
+with the 55 overall dimension. The 25 + 30 dimensions are mathematically equal to the 55
+overall dimension, but there is a distinct difference in how they affect the manufacturing
+tolerances. Double dimensions are explained more fully in Chapter 8.
+
+
+Dimensions Using Centerlines
+Figure 7-71 shows an object dimensioned from its centerline. This type of dimensioning is used
+when the distance between the holes relative to each other is critical.
+
+
+
+
+Figure 7-71
+
+Chapter Projects
+
+Project 7-1:
+Measure and redraw the shapes in Figures P7-1 through P7-24. The dotted grid background has
+either .50in. or 10mm spacing. All holes are through holes. Specify the units and scale of the
+drawing. Use the Part template to create a model. Use the grid background pattern to determine
+the dimensions. Use the Drawing template to create the orthographic view shown. Use the
+Smart Dimension tool to dimension the view.
+   A. Measure using millimeters.
+   B. Measure using inches.
+    All dimensions are within either .25in. or 5mm. All fillets and rounds are R.50in., R.25in. or
+R10mm, R5mm.
+
+
+
+
+Figure P7-1
+
+
+
+
+Figure P7-2
+Figure P7-3
+Figure P7-4
+Figure P7-5
+Figure P7-6
+Figure P7-7
+Figure P7-8
+Figure P7-9
+Figure P7-10
+Figure P7-11
+Figure P7-12
+Figure P7-13
+
+
+
+
+Figure P7-14
+Figure P7-15
+Figure P7-16
+Figure P7-17
+Figure P7-18
+Figure P7-19
+Figure P7-20
+Figure P7-21
+Figure P7-22
+Figure P7-23
+Figure P7-24
+
+Project 7-2:
+Use the Part template to draw models of the objects shown in Figures P7-25 through P7-42.
+    1. Create orthographic views of the objects. Dimension the orthographic views.
+    2. Create 3D models of the objects. Dimension the 3D models.
+Figure P7-25
+MILLIMETERS
+Figure P7-26
+MILLIMETERS
+Figure P7-27
+INCHES
+Figure P7-28
+MILLIMETERS
+Figure P7-29
+MILLIMETERS
+Figure P7-30
+INCHES
+Figure P7-31
+MILLIMETERS
+Figure P7-32
+INCHES
+Figure P7-33
+MILLIMETERS
+Figure P7-34
+INCHES
+Figure P7-35
+MILLIMETERS
+Figure P7-36
+MILLIMETERS
+Figure P7-37
+INCHES
+Figure P7-38
+MILLIMETERS
+Figure P7-39
+MILLIMETERS
+Figure P7-40
+MILLIMETERS
+Figure P7-41
+MILLIMETERS
+Figure P7-42
+MILLIMETERS
+
+Project 7-3:
+   1. Draw a 3D model from the given top orthographic and section views in Figure P7-43.
+   2. Draw a top orthographic view and a section view of the object and add dimensions.
+Figure P7-43
+MILLIMETERS
+Figure P7-44
+MILLIMETERS
+
+Project 7-4:
+   1. Draw a 3D model from the given top orthographic and section views in Figure P7-44.
+   2. Draw a top orthographic view and a section view of the object and add dimensions.
+
+Project 7-5:
+   1. Draw a 3D model from the given top orthographic and section views in Figure P7-45.
+   2. Draw a top orthographic view and a section view of the object and add dimensions.
+
+Project 7-6:
+   1. Draw a 3D model from the given top orthographic and section views in Figure P7-46.
+   2. Draw a top orthographic view and a section view of the object and add dimensions.
+Figure P7-45
+INCHES
+Figure P7-46
+INCHES
+
+Project 7-7:
+Redraw the given shapes in Figures P7-47 through P7-49 and dimension them using the
+following dimension styles.
+   1. Baseline
+   2. Ordinate
+   3. Hole Table
+Figure P7-47
+MILLIMETERS
+Figure P7-48
+MILLIMETERS
+Figure P7-49
+INCHES

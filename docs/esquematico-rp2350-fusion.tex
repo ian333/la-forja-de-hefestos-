@@ -1,0 +1,90 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.6cm]{geometry}
+\usepackage{amsmath}
+\usepackage[american,siunitx]{circuitikz}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\renewcommand{\arraystretch}{1.3}
+\title{Esquem\'atico m\'inimo --- RP2350 + buck de fusi\'on\\
+\large sensado 100\,\% pasivo (divisor + shunt de derivaci\'on)}
+\author{La Forja --- micro-AM metal}
+\date{2026-06-05}
+\begin{document}
+\maketitle
+
+\section*{Idea}
+Un solo lazo: el RP2350 conmuta el MOSFET (PWM = corriente de fusi\'on + patr\'on de
+orde\~no) y \textbf{detecta todo} de $R=V/I$. El sensado NO usa chips: $V$ de la junta por
+un \textbf{divisor} de resistencias al ADC, e $I$ por un \textbf{shunt} (resistencia de
+derivaci\'on) al ADC. La pieza queda a GND (seguro) y el sensado vale siempre.
+
+\begin{center}
+\begin{circuitikz}[american, scale=1.05, transform shape]
+% --- rieles ---
+\draw (0,0) to[battery1, l_=\SI{24}{V}, invert] (0,4.6);
+\node[align=center, font=\footnotesize] at (0,5.2) {PSU};
+\draw (0,4.6) -- (12.7,4.6);                  % riel VIN
+\draw (0,0) -- (13.4,0);                       % riel GND
+\node[ground] at (13.4,0){};
+% --- banco de caps (SOMI) ---
+\draw (1.9,4.6) to[C, l=$C_{\text{SOMI}}$, a=\SI{22}{mF}] (1.9,0);
+% --- MOSFET high-side Q1 ---
+\node[nigfete, anchor=D] (Q1) at (3.8,4.6) {};
+\node[font=\footnotesize, right] at (Q1.S) {Q1};
+\draw (Q1.S) -- (3.8,2.7) coordinate (SW);
+% --- gate driver (bootstrap) ---
+\node[draw, minimum width=1.2cm, minimum height=0.8cm, font=\footnotesize, align=center] (DRV) at (2.0,3.0) {Gate\\drv};
+\draw (DRV.east) -| (Q1.G);
+% --- diodo de freewheel (catch) ---
+\draw (SW) -- (5.0,2.7);
+\draw (5.0,0) to[D, l_=$D_{fw}$, invert] (5.0,2.7);
+% --- choque (SOMI) ---
+\draw (SW) to[L, l=$L$, a=\SI{50}{\micro H}] (7.3,2.7) coordinate (TIP);
+\node[font=\footnotesize, align=center] at (7.3,3.3) {punta de\\contacto};
+% --- la JUNTA: alambre + gota ---
+\draw (TIP) to[R, l=$R(T)$] (7.3,1.05) coordinate (SUB);
+\node[font=\footnotesize, align=left, color=orange!75!black] at (9.0,2.05) {junta (alambre+gota)\\$\leftarrow$ aqu\'i funde / pincha};
+% --- shunt de derivaci\'on ---
+\draw (SUB) to[R, l_=$R_{sh}$, a=\SI{2}{m\ohm}] (7.3,0);
+\node[font=\footnotesize] at (5.7,0.45) {pieza $\approx$ GND};
+% --- divisor de V de la junta ---
+\draw (TIP) -- (10.4,2.7);
+\draw (10.4,2.7) to[R, l=$R_1$, a=\SI{47}{k\ohm}] (10.4,1.5) coordinate (DIVA);
+\draw (DIVA) to[R, l=$R_2$, a=\SI{10}{k\ohm}] (10.4,0);
+% --- RP2350 ---
+\node[draw, fill=blue!4, minimum width=2.7cm, minimum height=2.6cm, font=\footnotesize, align=center] (MCU) at (12.55,1.7) {\textbf{RP2350}\\[2pt] ADC0 $\;V$\\ ADC1 $\;I$\\ PWM\\ STEP/DIR};
+\draw (DIVA) -- (11.2,1.5);                    % ADC0 <- divisor
+\draw (SUB) -- (8.6,1.05) -- (8.6,0.7) -- (11.2,0.7);   % ADC1 <- shunt
+\draw[->, dashed] (12.55,0.4) -- (12.55,-0.8) -- (2.0,-0.8) -- (2.0,2.6);  % PWM -> driver
+\node[font=\footnotesize] at (7.0,-1.05) {PWM (gate)};
+\end{circuitikz}
+\end{center}
+
+\section*{C\'omo DETECTA (todo de $R=V/I$, dos ADC)}
+$R = \dfrac{V_{\text{ADC0}}\cdot\frac{R_1+R_2}{R_2}}{\,V_{\text{ADC1}}/R_{sh}\,}$\quad
+(el RP2350 muestrea en la ventana ON, que \'el mismo controla).
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Lo que ve} & \textbf{Se\~nal} & \textbf{Decisi\'on}\\
+\midrule
+$R=\infty$ ($I\approx0$) & alambre no toca & avanza hasta tocar\\
+$R$ cae a $\sim$\SI{20}{m\ohm} & \textbf{toc\'o} (corto fr\'io) & guarda $R_{\text{fr\'io}}$ (auto-cal)\\
+$R$ sube $\sim7\times$ & calienta (TCR) & $T=25+\frac{R/R_{fr}-1}{\alpha}$ (term\'ometro)\\
+$R/R_{fr}>6$ & $\approx$ liquidus & FUNDE, guarda $R_{\min}$\\
+$R>4\,R_{\min}$ & \textbf{cuello} & baja a $I_{\text{fondo}}$ (corte suave)\\
+$R\to\infty$ & gota soltada & avanza, repite\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Lista (sensado 100\,\% pasivo)}
+\begin{itemize}\setlength\itemsep{1pt}
+\item \textbf{Sensado:} $R_1,R_2$ (divisor de $V$) $+$ $R_{sh}$ (shunt de $I$) $+$ 2 diodos clamp a \SI{3.3}{V}. \emph{Cero chips de sensado.}
+\item \textbf{Potencia:} Q1 (N-MOSFET \SIrange{60}{100}{V}), $D_{fw}$ Schottky $\sim$\SI{130}{A}, $L$ y $C$ de la SOMI, gate driver (1 IC \emph{o} t\'otem de 2 transistores).
+\item \textbf{Reusado:} impresora (XYZ + avance + cama caliente) + fuente \SI{24}{V}.
+\item \textbf{Respaldo opcional:} comparador LM393 sobre el umbral de cuello $\to$ corte r\'apido al pin SD del driver.
+\end{itemize}
+\end{document}

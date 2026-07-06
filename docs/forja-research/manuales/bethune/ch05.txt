@@ -1,0 +1,885 @@
+Chapter 5. Assemblies
+Chapter Objectives
+
+         Create assembly drawings
+         Create exploded assembly drawings
+         Create a parts list
+         Animate an assembly
+         Edit a title block
+
+
+
+5-1 Introduction
+This chapter introduces the Assembly tools. These tools are used to create Assembly documents.
+Assemblies can be exploded to form isometric assembly drawings that when labeled and
+accompanied by a parts list become working drawings. Assemblies can also be animated.
+
+5-2 Starting an Assembly
+Figure 5-1 shows a Test Block. The overall dimensions for the block are 80 × 80 × 80 mm.
+The cutout is 40 × 40 × 80 mm. The Test Block will be used to help introduce the Assembly
+tools. Draw the block and save it as BLOCK, TEST. Draw the Test Block so that one of its
+corners is on the origin. If the origin icon does not appear on your drawing screen, click the View
+tab, click Hide/Show, and click the Origins option. See Figure 5-2.
+Figure 5-1
+Figure 5-2
+
+   See Figure 5-3.
+      1 Click New.
+      2 Select the Assembly format.
+      3 Click OK.
+Figure 5-3
+
+   The Begin Assembly PropertyManager will appear. See Figure 5-4.
+      4 Click the Browse button if BLOCK, TEST does not show automatically.
+Figure 5-4
+
+   The Open dialog box will appear. See Figure 5-5.
+Figure 5-5
+
+      5 Click BLOCK, TEST, then click Open.
+   The Test Block will appear on the screen. See Figure 5-6.
+Figure 5-6
+
+
+ Note
+ It is good practice to anchor the assembly to the assembly’s origin.
+
+
+
+     Align the origin of the Test Block with the assembly’s origin.
+        6 When the Test Block appears on the screen, click the green OK check mark in the
+          upper-left corner of the screen.
+     The Part origin and the Assembly origin will align.
+        7 Click the Insert Components tool, click the Browse button, select the BLOCK,
+          TEST, and insert a second block by clicking in the model space in a location that does
+          not overlap the first block.
+   See Figure 5-7. The first block inserted is fixed in place. In any assembly drawing the first
+component will automatically be fixed in place. Note the (f) notation to the left of BLOCK,
+TEST<1> in Figure 5-7. As the assembly is created, components will move to the fixed first
+component.
+Figure 5-7
+
+ Tip
+ To remove the fixed condition, locate the cursor on the (f) BLOCK, TEST<1> callout, right-click the mouse, and click the
+ Float option. To return the block to the fixed condition or to fix another component, right-click the component name callout
+ and select the Fix option.
+
+
+
+
+5-3 Move Component
+See Figure 5-8.
+Figure 5-8
+
+        1 Click the Move Component tool on the Assembly tab.
+        2 Click the second block inserted and hold down the left mouse button.
+        3 While holding down the left mouse button, move the block around the screen by
+          moving the mouse.
+        4 Release the button and click the green OK check mark.
+
+
+ Note
+ If you try to apply the Move tool to the fixed block, the block will not move. Float must be applied before the block can be
+ moved.
+
+
+     The entire assembly can be moved by pressing and holding down the <Ctrl> key and
+holding down the mouse wheel while moving the cursor. The mouse wheel can be used to zoom
+the assembly.
+
+5-4 Rotate Component
+See Figure 5-9.
+
+
+
+
+Figure 5-9
+
+      1 Click the Rotate Component tool.
+    The Rotate Component tool is a flyout from the Move Component tool.
+      2 Click the second block inserted and hold down the left mouse button.
+      3 While holding down the left mouse button, rotate the block around the screen by
+        moving the mouse.
+      4 Release the button and click the green OK check mark.
+      5 Use the Undo tool to return the block to its original position.
+
+5-5 Mouse Gestures for Assemblies
+The Mouse Gestures tools can be applied to assemblies. Mouse Gestures were introduced in
+Section 2-2 of Chapter 2. To access the Mouse Gestures tools, click the Tools menu and select
+the Customize option. Click the Mouse Gestures tab. See Figure 5-10.
+Figure 5-10
+
+     Scroll down the listings, watching the Command column for Assembly commands. The
+default settings for Assembly drawings are the Front, Back, Left, Right, Top, and Bottom
+orientation tools as well as two other tools. These may be changed as preferred. Up to 12 tools
+may be added to the Mouse Gestures tool.
+     To access the Mouse Gestures, press and hold down the right mouse button. The Mouse
+Gestures wheel will show the selected settings. While still holding down the right mouse button,
+move the cursor onto the selected tool and release the button. The selected tool will be applied to
+the assembly. See Figure 5-11.
+Figure 5-11
+
+5-6 Mate
+The Mate tool is used to align components to create assemblies. See Figure 5-12.
+Figure 5-12
+
+
+Creating the First Assembly Using Mates
+Mate the two Test Blocks side by side.
+      1 Click the Mate tool on the Assembly tab.
+     See Figure 5-13. Note that the first block is listed in the Mate Selections box after it is
+selected.
+Figure 5-13
+
+      2 Click the upper-right edge of the first block inserted.
+      3 Click the upper-left edge on the second block.
+   Note that the Coincident option became active automatically.
+   The edges will align. See Figure 5-14.
+      4 Click the green OK check mark to clear the tools.
+   The Mate Selections box should be clear.
+Figure 5-14
+
+
+Creating a Second Assembly
+Mate the two Test Blocks face to face.
+      1 Use the Undo tool and return the blocks to their original positions.
+     See Figure 5-15. The second Test Block must be rotated into a different position relative to
+the first Test Block.
+Figure 5-15
+
+       2 Use the Move Component and Rotate Component tools and position the second
+         block as shown.
+       3 Use the Mate tool and click the lower-front face of each block.
+    The second block will rotate relative to the first block. Recall that the first block is in the
+fixed condition, and the second block is in the floating condition.
+       4 Click the green OK check mark.
+       5 Use the Mate tool again and click the two faces of the Test Block as shown.
+       6 Click the Add/Finish Mate check mark on the toolbar, then click the green OK check
+         mark in the Mate PropertyManager.
+       7 Use the Mate tool for a third time, rotate the objects as shown, and click the two edges
+         as shown in Figure 5-16.
+       8 Click the green OK check mark.
+
+
+Creating a Third Assembly
+Mate the two Test Blocks to form a rectangular prism.
+      1 Use the Undo tool and return the blocks to their original positions.
+      2 Use the Rotate Component tool and position the second Test Block as shown.
+      3 Click the green OK check mark.
+      4 Use the Mate tool and click the surfaces of the blocks as shown.
+    Use the mouse wheel to rotate the blocks so you can click the appropriate surfaces.
+      5 Click the Add/Finish Mate check mark on the toolbar, click the green OK check mark
+        in the Mate PropertyManager, and rotate the blocks as shown.
+      6 Click the front surfaces of the blocks as shown.
+      7 Click the Add/Finish Mate check mark on the toolbar, then click the green OK check
+        mark in the Mate PropertyManager.
+      8 Reorient the blocks so that the bottom surfaces are visible.
+      9 Use the Mate tool and click the bottom surfaces of the blocks.
+    Figure 5-16 shows the finished assembly.
+Figure 5-16
+
+5-7 Bottom-up Assemblies
+Bottom-up assemblies are assemblies that are created for existing parts; that is, the parts have
+already been created as models. In this example the three parts shown in Figure 5-17 have been
+modeled and saved.
+Figure 5-17
+
+      1 Start a new document and select the Assembly format.
+      2 Click the Browse button, then click the BLOCK, BOTTOM component.
+      3 Click Open.
+   See Figure 5-18. The BLOCK, BOTTOM will appear on the screen.
+
+
+
+
+Figure 5-18
+
+      4 Click the green OK check mark in the upper-left corner of the screen to align the origin
+        of the block with the origin of the assembly.
+   See Figure 5-19.
+Figure 5-19
+
+      5 Click the Insert Component tool, click the Browse button, and select BLOCK, TOP.
+      6 Repeat the sequence and select Ø15 POST.
+   See Figure 5-20.
+Figure 5-20
+
+
+Note
+The BLOCK, BOTTOM was the first part entered and is fixed in its location, as designated by the (f) symbol in the
+PropertyManager box.
+
+
+       7 Use the Mate tool and click the centerpoint of the edge line of the BLOCK,
+         BOTTOM and the BLOCK, TOP as shown in Figure 5-21.
+Figure 5-21
+
+     A dot will appear when the cursor is on the centerpoint of the edge. If the blocks do not
+align, use the Mate tool again to align the blocks by clicking their end surfaces.
+      8 Click the green OK check mark.
+      9 Click the Mate tool and click the Concentric option.
+    See Figure 5-22.
+     10 Click the side of the Ø15 POST and the inside of the hole in the BLOCK, TOP.
+Figure 5-22
+
+
+Note
+Click the surface of the components, not their edge lines. Clicking the edge lines would produce different results.
+
+
+
+      11 Click the Add/Finish Mate check mark on the toolbar, then click the green OK check
+         mark.
+      12 Use the Mate tool and click the top surface of the Ø15 POST and the top surface of
+         the BLOCK, TOP.
+    See Figure 5-23.
+      13 Click the Add/Finish Mate check mark on the toolbar, then click the green OK check
+         mark.
+      14 Save the assembly as Block Assembly.
+Figure 5-23
+
+    A listing of the mates can be seen by clicking the Mates heading in the PropertyManager.
+See Figure 5-24.
+Figure 5-24
+
+     The origin icons can be removed from view using View, Hide/Show, Origins. For examples
+in this book the origins will be shown.
+
+5-8 Creating an Exploded Isometric Assembly
+An exploded isometric assembly shows the components of an assembly pulled apart. This makes
+it easier to see how the parts fit together.
+      1 Click the Exploded View tool on the Assembly tab.
+    See Figure 5-25.
+      2 Click the top surface of the Ø15 POST.
+Figure 5-25
+
+    An axis system icon will appear. See Figure 5-26. The arrow in the Y-direction (the one
+pointing vertically) will initially be yellow.
+      3 Move the cursor onto the Y-direction arrow and hold down the left mouse button. The
+        arrow will turn blue when selected.
+      4 Drag the Ø15 POST to a location above the assembly as shown.
+Figure 5-26
+
+   A real-time scale will appear as you drag the Ø15 POST.
+      5 Right-click the BLOCK, TOP and select the Done with step option. Click and drag
+        the BLOCK, TOP vertically to a new location between Ø15 POST and BOTTOM,
+        BLOCK.
+      6 Click and move the BOTTOM, BLOCK vertically down if needed for more space.
+      7 Click the green OK check mark.
+      8 Save the assembly as Exploded Assembly.
+   All three components should be listed in the PropertyManager.
+   Figure 5-26 shows the final exploded assembly.
+
+5-9 Creating an Exploded Isometric Drawing
+      1 Create a new document using the Drawing format.
+      2 Select the A-(ANSI) Landscape sheet format.
+  3 Click the Browse button in the Model View PropertyManager that is open by default.
+See Figure 5-27.
+  4 Select Exploded Assembly; click Open.
+  5 Set the Orientation for Isometric and the Display Style for Hidden Lines Visible.
+  6 Move the cursor into the drawing area.
+Figure 5-27
+
+     A rectangular outline of the view will appear.
+        7 Locate the view and click the left mouse button.
+     Turn off the Origins tool if it is active.
+
+ Tip
+ As a general rule, hidden lines are not included on isometric drawings.
+
+
+
+
+5-10 Assembly Numbers
+Assembly numbers are numbers that identify a part within an assembly. They are different from
+part numbers. A part number identifies a specific part, and the part number is unique to that part.
+A part has only one part number but may have different assembly numbers in different
+assemblies.
+     Assembly numbers are created using the Balloon and Auto Balloon tools located on the
+Annotation tab. See Figure 5-28.
+Figure 5-28
+
+        1 Click the Annotation tab.
+        2 Click the Auto Balloon tool.
+        3 Move the cursor into the Block Assembly area (a red outline will appear) and click the
+          mouse.
+     The Auto Balloon arrangements may not always be the best presentation. The balloons may
+be rearranged or applied individually.
+
+ Tip
+ Balloons can be moved by first clicking them. They will change color. Click and hold either the balloon or the box that will
+ appear on the arrow. Drag either the balloon or the arrow to a new location.
+
+
+
+        4 Use the Undo tool to undo the auto balloons.
+        5 Click the Balloon tool.
+        6 Click each part and locate the balloon.
+       7 Click the green OK check mark.
+    See Figure 5-29. Note that all the leader lines from the parts to the balloons are drawn at
+approximately the same angle. This gives the drawing a neat, organized look.
+
+
+
+
+Figure 5-29
+
+5-11 Bill of Materials (BOM or Parts List)
+A bill of materials is a listing of all parts included in an assembly drawing. A bill of materials
+may also be called a parts list.
+       1 To access the Bill of Materials tool, click the Annotation tab, then the Tables and Bill
+         of Materials tools.
+    See Figure 5-30.
+Figure 5-30
+
+        2 Click the area of the Block Assembly.
+     A box will appear around the Block Assembly. Click within that box.
+        3 Click the green OK check mark.
+  Pull the cursor back into the drawing area. The BOM will follow. Select a location for the
+BOM and click the mouse.
+
+
+ Note
+ The information in the PART NUMBER column is each part’s file name. These names are directly linked by SolidWorks to
+ the original parts. They can be manually edited, but if the assembly is changed and regenerated, the original part names will
+ appear.
+
+
+
+
+Editing the BOM
+        1 Double-click the box directly under the heading PART NUMBER.
+A warning dialog box will appear. See Figure 5-31.
+Figure 5-31
+
+      2 Click the Keep Link box.
+    The Formatting dialog box will appear.
+      3 Type in a part number.
+      4 Click the Left Justify option if necessary.
+      5 Click the box below the one just edited and enter the part numbers.
+     Part numbers are different from assembly numbers (item numbers). A part number is
+assigned to an individual part. The part number will never change. A specific part will always
+have the same part number.
+     When a part is entered into an assembly, it receives an assembly number. The assembly
+number applies only to the individual assembly. The same part may also be used in a different
+assembly and receive a different assembly number. The original part number will remain the
+same.
+     In this example the BLOCK, BOTTOM has a part number of AM-311-1 and an assembly
+number of 1.
+      6 Click the boxes under the DESCRIPTION heading and enter the descriptions.
+    See Figure 5-32.
+Figure 5-32
+
+
+Adding Columns to the BOM
+      1 Right-click the BLOCK, BOTTOM box in the DESCRIPTION column.
+   See Figure 5-33.
+      2 Click the Insert option, then click Column Right.
+Figure 5-33
+
+    A new column will appear to the right of the BLOCK, BOTTOM box and a dialog box will
+appear above the new column.
+      3 Click the Property name box and select the SW-Title (Title) option.
+      4 Swipe and remove the Title entry and enter a new column heading.
+    In this example the heading MATERIAL was entered.
+      5 Enter the required materials for each part.
+    In this example a material specification of SAE 1020 Steel was added. SAE 1020 Steel is a
+type of mild steel.
+
+
+Changing the Width of a Column
+      1 Right-click one of the cells in the new column.
+    See Figure 5-34.
+      2 Select the Formatting option and click Column Width.
+    The Column Width dialog box will appear.
+      3 Enter a new value.
+     In this example a value of 1.75in. was entered. Figure 5-34 shows the new column width.
+Edit the other columns if necessary.
+Figure 5-34
+
+
+Changing the Width of Rows and Columns
+The size of either rows or columns can be changed in real time by clicking and dragging the row
+and column lines. See Figure 5-35.
+      1 Click and drag the bottom horizontal line of the BOM.
+      2 Release the mouse button when the desired size is reached.
+      3 Click and drag the vertical lines to create a new format for the BOM.
+Figure 5-35
+
+
+Changing the BOM’s Font
+The text font can be changed. In Figure 5-36 the font of the column heads was changed from the
+default SolidWorks font Century Gothic to Times New Roman and made bold.
+Figure 5-36
+
+      1 Swipe the text to be changed.
+      2 Click the Use Document Font tool.
+      3 Select a new font.
+      4 Click the Bold (B) button.
+
+5-12 Title Blocks
+A title block contains information about the drawing. See Figure 5-37. The information
+presented in a title block varies from company to company but usually includes the company’s
+name, the drawing name and part number, the drawing scale, and a revision letter.
+
+
+
+
+Figure 5-37
+
+
+Revision Letters
+As a drawing goes through its production cycle, changes are sometimes made. The changes may
+be because of errors but they may also be because of the availability of new materials,
+manufacturing techniques, or new customer requirements. As the changes are incorporated into
+the drawing, a new revision letter is added to the drawing.
+ Note
+ SolidWorks automatically enters the file name of the document as the part number. In the example shown in Figure 5-37 the
+ drawing number Exploded block is not the document’s part number. The title block will have to be edited and the correct part
+ number entered.
+
+
+
+
+Editing a Title Block
+See Figure 5-38.
+        1 Right-click the mouse and select the Edit Sheet Format option.
+        2 Double-click the Exploded block file name.
+     The Formatting dialog box will appear.
+Figure 5-38
+
+      3 Change the DWG. NO. to BU-ME 407.
+      4 Change the font size to fit the number within the DWG. NO. box.
+   In this example a size of 20 was selected.
+      5 Click the drawing screen.
+   The Notes tool is used to add text to the other boxes in the Title Block. See Figure 5-39.
+Figure 5-39
+
+      6 Click the Annotation tab, click the Note tool, locate the note within the title, and enter
+        the drawing name (EXPLODED ASSEMBLY).
+    In this example the font height was changed to 16.
+      7 Click the drawing screen.
+      8 Use the Note tool to add the company name.
+   In this example “Boston University” was added. Consider using your own school or
+company name.
+
+
+Release Blocks
+A finished engineering drawing is a legal document that goes through a release process before it
+becomes final. The release block documents the release process. For example, once you have
+completed a drawing, you will initial and date the DRAWN box located just to the left of the
+title block. The drawing will then go to a checker, who, after reviewing and incorporating any
+changes, will sign and date the CHECKED box. See Figure 5-40.
+Figure 5-40
+
+
+Tolerance Blocks
+The tolerance block will be discussed in Chapter 8, “Tolerancing.”
+
+
+Application Blocks
+See Figure 5-41.
+Figure 5-41
+
+     This block is used to reference closely related drawings. In this example, we know that the
+block assembly will be used on assembly ME-312A and that it was also used on EK131-46. This
+information makes it easier to access related drawings that can be checked for interfaces.
+
+
+ Note
+ The note “DO NOT SCALE DRAWING” located at the bottom of the application block is a reminder not to measure the
+ views on the drawing. If a dimension is missing, do not measure the distance on the drawing, because the drawing may not
+ have been reproduced at the exact 100% scale of the original.
+
+
+
+
+5-13 Animate Collapse
+Exploded Assemblies can be animated. In this example the Animate Collapse tool will be used.
+        1 Open the EXPLODED ASSEMBLY.
+        2 Right-click the EXPLODED ASSEMBLY heading in the FeatureManager.
+     See Figure 5-42.
+      3 Click the Animate collapse option.
+
+
+
+
+Figure 5-42
+
+   The assembly will automatically be animated and start to move. See Figure 5-43.
+      4 Click the Stop button to stop the animation and return the assembly to the exploded
+        position.
+      5 Close the Animation Controller.
+Figure 5-43
+
+    In this example the Animate collapse option was used because the assembly was shown in
+the exploded position. Had the assembly been in a closed assembled position, the Animate
+explode option would have been used.
+
+5-14 Sample Problem SP5-1
+Figure 5-44 shows the components for the Rotator Assembly. The dimensions for the
+components can be found in Project P5-10 at the end of the chapter. Draw and save the four
+Rotator Assembly components as Part documents.
+Figure 5-44
+
+        1 Start a new Assembly document.
+        2 Insert the PLATE, CROSSLINK, and two LINK-Ls into the assembly.
+
+
+Note
+Insert the PLATE first so it will be fixed (f) and align its origin with the origin of the assembly.
+
+
+        3 Click the Mate tool.
+        4 Click the Concentric tool.
+        5 Click the side of the bottom post of one LINK-L and the inside of the left hole in the
+          PLATE.
+     See Figure 5-45. The LINK-L and PLATE will align.
+
+ Tip
+ Click the surfaces of the posts and holes. Do not click the edge lines.
+      6 Click the green OK check mark.
+      7 Click the Mate tool.
+      8 Click the top surface of the PLATE and the bottom surface of the LINK-L.
+    See Figure 5-46. Use the Rotate View tool to manipulate the view orientation so that the
+bottom surface of the LINK-L is visible. The part also can be rotated by holding down the mouse
+wheel and moving the cursor.
+
+
+
+
+Figure 5-45
+Figure 5-46
+
+      9 Click the Distance tool and then the Distance box and enter a value. In this example a
+        value of 2.0mm was entered.
+     See Figure 5-47. The initial offset values may be in inches. Enter the new value of 2.00
+followed by mm, and the system will automatically change to metric (millimeter) distances.
+Figure 5-47
+
+     10 Click the green OK check mark.
+   The 2.00mm distance will allow for clearance between the PLATE and the LINK-L.
+   Figure 5-48 shows the 2mm offset between the PLATE and the LINK-L.
+     11 Return the assembly to the Isometric orientation.
+     12 Repeat the procedure for the other LINK-L.
+   See Figure 5-49.
+Figure 5-48
+Figure 5-49
+
+     13 Access the Mate tool and use the Concentric tool to align the top post of the first
+        LINK-L with the left hole in the CROSSLINK.
+     14 Access the Mate tool, click the Concentric tool, and align the right hole in the
+        CROSSLINK with the post on the second LINK-L.
+     15 Use the Mate tool and click the top surface of the LINK-L’s post and the top surface of
+        the CROSSLINK.
+     16 Use the Mate tool and click the top surface of the second LINK-L’s post and the top
+        surface of the CROSSLINK.
+   See Figure 5-50.
+     17 Click the green OK check mark.
+   See Figure 5-51.
+Figure 5-50
+Figure 5-51
+
+       18 Locate the cursor on the CROSSLINK and move it around.
+    The CROSSLINK and two LINK-Ls should rotate about the PLATE.
+       19 Save the assembly as Rotator Assembly.
+
+ Tip
+ All mates will be listed in the FeatureManager.
+
+
+
+
+5-15 Using the Motion Study Tool
+        1 Access the Rotator Assembly.
+        2 Click the Mate tool, then click the Parallel tool.
+        3 Make the front surface line of the CROSSLINK parallel to the front edge of the
+          PLATE; click the green OK check mark.
+     This step will ensure that the CROSSLINK rotates in an orientation parallel to the front edge
+of the PLATE. See Figure 5-52.
+
+
+
+
+Figure 5-52
+
+       4 Click the Motion Study tab at the bottom of the screen.
+    See Figure 5-53.
+Figure 5-53
+
+      5 Click the Motor tool.
+   The Motor PropertyManager box will appear.
+   See Figure 5-54.
+Figure 5-54
+
+      6 Click the Rotary Motor tool.
+      7 Click the box under the Component/Direction heading, then click the top surface of
+        the left LINK-L.
+    The box will have a blue background when it is active.
+    The left LINK-L is now the driver link. An arrow will appear indicating the direction of
+motion. It will drive the other components.
+
+
+Viewing the Assembly Motion
+      1 Go to the Motion box on the Motor PropertyManager and define the assembly’s
+        motion.
+    In this example the default values of Constant Speed and 100 RPM were accepted.
+      2 Click the green OK check mark.
+    See Figure 5-55.
+      3 Click Play.
+Figure 5-55
+
+5-16 Editing a Part Within an Assembly
+Parts already inserted into an assembly drawing can be edited. Figure 5-56 shows the block
+assembly created earlier in the chapter. The general operating concept is to isolate a part, make
+the changes, and insert the part back into the assembly.
+     In this example we will change the diameter value of the hole in BLOCK, TOP.
+Figure 5-56
+
+      1 Click the arrowhead to the left of the BLOCK, TOP heading in the FeatureManager.
+      2 Click the arrowhead to the left of Cut-Extrusion 1 under the BLOCK, TOP heading
+        in the FeatureManager.
+   In this example the Cut-Extrusion 1 is the hole in BLOCK, TOP. Your assembly and parts
+may differ. See Figure 5-57.
+Figure 5-57
+
+      3 Right-click the Sketch2 heading and click the Edit Sketch option.
+      4 Double-click the Ø15 hole value and enter a new value.
+   In this example, the value was changed to Ø20.0. See Figure 5-58.
+Figure 5-58
+
+      5 Click the green OK check mark.
+      6 Click the Exit Sketch option.
+      7 Click the Edit Assembly tool located in the upper-right corner of the drawing screen.
+    If necessary, use the Exploded View tool to create an exploded view of the assembly.
+Figure 5-59 shows BLOCK, TOP with the enlarged hole.
+Figure 5-59
+
+5-17 Interference Detection/Clearance Verification
+Assemblies contain multiple parts, and these parts must fit together appropriately. SolidWorks
+contains Interference Detection and Clearance Verification tools that can be used to confirm
+that the assembly is feasibly developed with no overlapping parts.
+
+
+Interference Detection
+The Interference Detection tool is used to determine whether there are interferences within an
+assembly. SolidWorks will assemble parts as instructed without regard to interferences. It is
+possible for two parts to be put together in an assembly that would, in reality, not fit together.
+     Figure 5-61 shows a simple assembly made from two parts whose dimensions are shown in
+Figure 5-60. All the dimensions use whole numbers. There are no tolerances specified. From the
+given dimensions we know that there is an interference between the Base and the Top. The shaft
+on the Base is Ø60 and the hole in the Top is Ø58. The Interference Detection tool can be used
+to highlight this interference.
+Figure 5-60
+Figure 5-61
+
+
+Detecting an Interference
+      1 Click the Evaluate tab at the top of the screen and select the Interference Detection
+        tool.
+     See Figure 5-62. The Assembly will appear enclosed in a wireframe box. A note will appear
+indicating that an interference has been detected.
+Figure 5-62
+
+       2 Click the Calculate button.
+     The interference will be highlighted using a red hollow cylinder. See Figure 5-63. There will
+also be a sound indicating an interference has been detected.
+Figure 5-63
+
+     Figure 5-64 shows an assembly. The eight fasteners in the Base have a diameter of Ø8.00.
+The eight holes in the Cover Plate have a diameter of Ø6.00. When the Interference Detection
+tool is applied, the interference between the fasteners and holes is detected. One fastener hole
+interference will be highlighted on the assembly. All the interferences will be listed in the
+Results box.
+     It is good practice to always apply the Interference Detection tool to an assembly to ensure
+that there are no interferences.
+Figure 5-64
+
+    Figure 5-65 shows a similar assembly, but the eight holes in the Cover Plate have been
+enlarged to Ø10.
+Figure 5-65
+
+    The Ø10 holes should create a clearance between the Fasteners and the Cover Plate’s
+holes.
+
+
+Verifying the Clearance
+      1 Click the Evaluate tab and select the Clearance Verification tool.
+    See Figure  5-66. We   know       the    clearance  should               be   1.0mm   (
+10 mm Hole − 8.0mm = 2.0 mm; half the distance = 1.0 mm).
+Figure 5-66
+
+      2 Click a fastener and the Cover Plate.
+    Part file names should appear in the Selected Components box.
+      3 Click the Calculate button.
+     See Figure 5-67. SolidWorks has verified that there is a 1.0mm clearance between the
+fasteners and the holes in the cover plate.
+Figure 5-67
+
+
+Removing the Interference
+Figure 5-68 shows the assembly originally shown in Figure 5-61. There is an interference
+between the Post on the Base and the Hole in the Top. The interference can be removed by
+editing the original BLOCK, TOP part, or it can be edited in the assembly mode.
+
+
+
+
+Figure 5-68
+
+      1 Locate the Sketch that created the hole in the FeatureManager Design Tree.
+      2 Right-click the Sketch.
+      3 Click the Edit Sketch option.
+    The hole’s diameter value will appear. See Figure 5-69. In this example the diameter is Ø58.
+Figure 5-69
+
+      4 Double-click the Ø58 value and change it to Ø62.
+      5 Click the Exit Sketch icon in the upper-right corner of the screen and the Return to
+        the FeatureManager Design Tree icon.
+   There is now a clearance between the Base and Top parts.
+      6 Click the Interference Detection tool again.
+      7 Click the Calculate box.
+   The results box will indicate that no interferences were found. See Figure 5-70.
+Figure 5-70
+
+
+Verifying that a Clearance Exists
+The Clearance Verification tool is used to ensure that clearances have been created.
+      1 Click the Evaluate tab at the top of the screen.
+      2 Click the Clearance Verification tool.
+      3 Click the two parts.
+      4 Click the Calculate box.
+     The Clearance Verification will be listed in the Results box and the onscreen assembly
+will show the clearance. See Figure 5-71.
+Figure 5-71
+
+Chapter Projects
+
+Project 5-1:
+Create a Part document of the SQBLOCK using the given dimensions. Create assemblies using
+two SQBLOCKS, positioning the blocks as shown in Figures P5-1A through P5-1G.
+    Pages 305–316 show a group of parts. These parts are used to create the assemblies
+presented as problems in this section. Use the given descriptions, part numbers, and materials
+when creating BOMs for the assemblies.
+Figure P5-1
+MILLIMETERS
+
+Project 5-2:
+Redraw the models in Figure P5-2 and save them as Standard (mm).ipn files. All dimensions
+are in millimeters.
+Figure P5-2
+MILLIMETERS
+
+Project 5-3:
+Create an exploded isometric assembly drawing of the shown in Figure P5-3. Create a BOM.
+Figure P5-3
+MILLIMETERS
+
+Project 5-4:
+Create an exploded isometric assembly drawing of the shown in Figure P5-4. Create a BOM.
+Figure P5-4
+MILLIMETERS
+
+Project 5-5:
+Create an exploded isometric assembly drawing of the shown in Figure P5-5. Create a BOM.
+Figure P5-5
+MILLIMETERS
+
+Project 5-6:
+Create an exploded isometric assembly drawing of the shown in Figure P5-6. Create a BOM.
+Figure P5-6
+MILLIMETERS
+
+Project 5-7:
+Create an exploded isometric assembly drawing of the shown in Figure P5-7. Create a BOM.
+Figure P5-7
+MILLIMETERS
+
+Project 5-8:
+Create an exploded isometric assembly drawing of the shown in Figure P5-8. Create a BOM.
+Figure P5-8
+MILLIMETERS
+
+Project 5-9:
+Create an original assembly and drawing based on the parts shown on pages 347–349. Include an
+isometric view, an exploded isometric view with assembly numbers, and a BOM. Use at least 12
+parts.
+
+Project 5-10:
+Draw the ROTATOR ASSEMBLY shown in Figure P5-10. Include the following:
+   A. An assembly drawing
+   B. An exploded isometric drawing with assembly numbers
+   C. A parts list
+   D. LINKs should carry the CROSSLINK. The CROSSLINK should remain parallel during
+      the rotation.
+Note
+This assembly was used in the section on animating assemblies. See page 341.
+Figure P5-10
+MILLIMETERS
+
+Project 5-11:
+Draw the FLY ASSEMBLY shown in Figure P5-11. Include the following:
+  A. An assembly drawing
+  B. An exploded isometric drawing with assembly numbers
+  C. A parts list
+  D. An animated assembly; the FLYLINK should rotate around the SUPPORT base.
+Figure P5-11
+MILLIMETERS
+
+Project 5-12:
+Draw the ROCKER ASSEMBLY shown in Figure P5-12. Include the following:
+  A. An assembly drawing
+  B. An exploded isometric drawing with assembly numbers
+  C. A parts list
+  D. An animated assembly
+Figure P5-12
+MILLIMETERS
+
+Project 5-13:
+Draw the LINK ASSEMBLY shown in Figure P5-13. Include the following:
+  A. An assembly drawing
+  B. An exploded isometric drawing with assembly numbers
+  C. A parts list
+  D. An animated assembly; the HOLDER ARM should rotate between −30° and +30°.
+Figure P5-13
+MILLIMETERS
+
+Project 5-14:
+Draw the PIVOT ASSEMBLY shown in Figure P5-14 using the dimensioned components given.
+Include the following:
+  A. A 3D exploded isometric drawing
+  B. A parts list
+Figure P5-14
+MILLIMETERS
+
+Project 5-15:
+
+Soma Cube Puzzle
+The Soma Cube puzzle was invented by Piet Hein in 1933. It makes an interesting assembly
+problem. Each of the 27 cubes used is the same size. They are combined to form seven solid
+shapes, each of which has an internal edge. When correctly combined they will form a 3 × 3 × 3
+cube.
+   A. Specify a cube size.
+   B. Create the seven different shapes shown in Figure P5-15.
+   C. Assemble the seven shapes to create a 3 × 3 × 3 cube.
+   D. Physically build the seven shapes out of poster board and assemble them.
+Figure P5-15
+MILLIMETERS
+
+Project 5-16:
+Draw the assembly shown in Figure P5-16.
+   A. An assembly drawing
+   B. An exploded isometric drawing with assembly numbers
+   C. A parts list
+   D. An animated assembly. Make the Crank the driver.
+Figure P5-16
+
+Project 5-17:
+
+Slider Assembly—Millimeters
+Draw the Slider Assembly shown in Figure P5-17.
+   A. An assembly drawing
+   B. An exploded isometric drawing with assembly numbers
+   C. A parts list
+   D. An animated assembly. Make the Driver Wheel the driver.
+Figure P5-17

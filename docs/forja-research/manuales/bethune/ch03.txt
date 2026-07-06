@@ -1,0 +1,1183 @@
+Chapter 3. Features
+Chapter Objectives
+
+         Learn Features tools
+         Draw 3D objects
+         Use Features tools to create objects
+
+
+
+3-1 Introduction
+This chapter introduces the Features tools. Features tools are used to create 3D models. A
+drawing usually starts with a 2D sketch as described in Chapter 2, and Features tools are applied
+to create a 3D model. For example, the Extruded Boss/Base features tool can be applied to a
+rectangle to create a rectangular prism or box. Figure 3-1 shows the Features tool panel.
+
+
+
+
+Figure 3-1
+
+3-2 Extruded Boss/Base
+The Extruded Boss/Base tool is used to add thickness or height to an existing 2D sketch. In this
+section we will first sketch a 2D rectangle, then extrude it into a box-like shape. All dimensions
+are in millimeters.
+
+
+Using the Extruded Boss/Base Tool
+       1 Click the New tool, create a new Part document, click the Top Plane option, and click
+         the Sketch tab.
+       2 Use the Options tool from the Tools menu (top of the screen), click the Document
+         Properties tab, and set the Overall drafting standard to ANSI.
+Figure 3-2
+
+      3 Define the drawing units for MMGS (millimeter, gram, second). Click the arrowhead
+        next to the IPS heading and select the MMGS option.
+   The drawing units are referenced at the bottom of the drawing screen. See Figure 3-2.
+      4 Use the Corner Rectangle tool to sketch a 60 × 100 rectangle in the Top plane with
+        one corner located on the origin. Use the Smart Dimension tool to size the rectangle.
+   See Figure 3-3.
+Figure 3-3
+
+        5 Click the Features tab, and click the Extruded Boss/Base tool.
+    The drawing will change orientation from a 2D top view to a Trimetric 3D drawing. The
+Boss-Extrude PropertyManager will appear.
+        6 Define the extrusion depth, also known as the extrusion height or distance, as
+          20.00mm. Click the screen and a real-time preview will appear.
+        7 Click the green OK check mark at the top of the Boss-Extrude PropertyManager.
+          Click the drawing screen.
+    The finished drawing shows a 20 × 60 × 100 box.
+
+ Tip
+ The extrusion depth may be defined by entering a value or by using the arrows at the right of the Depth box. The extrusion
+ depth may also be changed by clicking and dragging the directional arrow in the center of the box. See Figure 3-4.
+Figure 3-4
+
+    The preceding example has perpendicular sides. The Extruded Boss/Base tool may also be
+used to create tapered sides. Tapered sides are called draft sides.
+
+
+Creating Inward Draft Sides
+      1 Sketch a 60 × 100 rectangle as described in the previous section.
+      2 Click the Features tab and click the Extruded Boss/Base tool.
+      3 Click the Draft On/Off tool to activate it.
+      4 Enter the draft angle value.
+    In this example a 15.00deg value was entered. See Figure 3-5.
+Figure 3-5
+
+      5 Click the green OK check mark at the top of the Boss-Extrude PropertyManager to
+        complete the object.
+    The shape now has a 15° inward draft.
+
+
+Creating an Outward Draft
+Repeat the same procedure, but this time, check the Draft outward box.
+   See Figure 3-6.
+Figure 3-6
+
+3-3 Sample Problem SP3-1
+This section shows how to draw a solid 3D model of an L-bracket using the Extruded
+Boss/Base tool.
+      1 Draw a 60 × 100 rectangle and extrude it to a depth of 20mm as explained in Section
+        3-2.
+   See Figure 3-7.
+Figure 3-7
+
+        2 Locate the cursor on the top surface of the box and right-click the mouse. Select the
+          Sketch tool.
+     The 2D Sketch tools will be displayed across the top of the screen.
+        3 Click the Corner Rectangle tool and use it to draw a rectangle on the top surface of
+          the box. Use the upper-left corner of the box as one corner point of the rectangle and
+          drag the cursor to the right edge of the top surface to locate the second corner point for
+          the rectangle.
+     SolidWorks will grab the upper-left corner of the rectangle when the cursor is located near
+it. An orange fill circle will appear indicating that the corner has been selected. SolidWorks will
+also grab the edge line when the cursor is located near it. The edge line will appear as an orange
+broken line indicating that it has been selected.
+
+
+ Note
+ The corner points and edge lines will change color when they are activated. The part is currently under defined.
+      4 Select the Smart Dimension tool and dimension the width of the rectangle as 20.0.
+      5 Click the Features tab and select the Extruded Boss/Base tool.
+      6 Select the 20 × 100 rectangle to extrude to a depth of 40.00mm.
+      7 Click the green OK check mark in the Boss-Extrude PropertyManager.
+     SolidWorks offers many different ways to create the same shape. Figure 3-8 shows the same
+L-bracket shown in Figure 3-7 created using the Right plane and extruded in the negative X
+direction.
+Figure 3-8
+
+3-4 Extruded Cut
+This section will add a cutout to the L-bracket drawn in Section 3-3 using the Extruded Cut
+tool. See Figure 3-9.
+Figure 3-9
+
+      1 Locate the cursor on the lower-front horizontal surface and right-click the mouse.
+      2 Click the Sketch tool option.
+      3 Use the Corner Rectangle and Smart Dimension tools to draw and size a rectangle as
+        shown.
+     Locate the first point of the Corner Rectangle on the front edge line. SolidWorks will grab
+the front edge line. The line will change to an orange broken line indicating that it has been
+selected.
+      4 Click the Features tab, then click the Extruded Cut tool.
+     A preview will appear. Ensure that the Extruded Cut extends beyond the lower surface of
+the bracket.
+      5 Click the green OK check mark in the Cut-Extrude PropertyManager.
+
+3-5 Hole Wizard
+This section will add a hole to the L-bracket created in Section 3-3 using the Hole Wizard tool.
+The Hole Wizard tool is used to add nine different types of holes and slots to an existing 3D
+model. The hole types include simple holes and threaded holes, among others. See Figure 3-10.
+Figure 3-10
+
+      1 Click the Features tab, then click the Hole Wizard tool.
+      2 Select the Hole option.
+    The Hole option will generate a clear hole.
+      3 Access the Standard box and select ANSI Metric.
+    ANSI stands for American National Standards Institute. ANSI standards will be covered in
+detail in the chapters on orthographic views, dimensions, and tolerances.
+      4 Define the diameter size of the hole.
+    In this example a diameter of 20.0mm was selected.
+      5 Define the End Condition as Through All.
+      6 Click the Positions tab on the PropertyManager.
+      7 Click an approximate location for the hole’s centerpoint.
+    A preview of the hole will appear.
+       8 Use the Smart Dimension tool to locate the hole’s centerpoint.
+       9 Click the green OK check mark and click the drawing screen.
+    The hole will be added to the L-bracket.
+      10 Save the L-bracket, as it will be used in later sections.
+     The hole created in Figure 3-10 is a through hole; that is, it goes completely through the
+object. Holes that do not go completely through are called blind holes. Note that the Hole
+Wizard PropertyManager shows a conical point at the bottom of the hole. Holes created using
+a circle and the Extruded Cut tool (see Section 1-13) will not have this conical endpoint. Blind
+holes created using a drill should include the conical point. For this reason, blind holes should,
+with a few exceptions, be created using the Hole Wizard tool.
+
+3-6 Creating a Hole with the Circle and Extruded Cut Tools
+Holes may also be created by using the Circle tool and then applying the Extruded Cut tool.
+This method should be used only for through holes. Figure 3-11 shows the L-bracket created in
+Section 3-3.
+       1 Right-click the top front plane as shown and click the Sketch tool.
+       2 Click the Circle tool and use it to sketch a circle.
+       3 Use the Smart Dimension tool and locate and size the circle.
+       4 Click the Features tab and select the Extruded Cut tool. Click the circle if necessary.
+       5 Click the green OK check mark and click the drawing screen.
+Figure 3-11
+
+3-7 Blind Holes
+A blind hole is a hole that does not go completely through a part. Most blind holes are created
+using a twist drill that includes a conical end tip. The Hole Wizard tool includes a conical point
+on blind holes.
+
+
+Creating a Blind Hole—Inches
+See Figure 3-12.
+       1 Draw a 1.00 × 1.50 × 1.25 inch box.
+       2 Click the Hole Wizard tool and click the Hole option.
+       3 Set the Standard for ANSI Inch, the Size for 1/2, the End Condition for Blind, and
+         the hole depth for 0.75in.
+Figure 3-12
+
+    Note that the hole depth does not include the conical endpoint.
+      4 Click the Positions tab and select an approximate location for the hole.
+      5 Use the Smart Dimension tool to locate the hole.
+      6 Click the green OK check mark and click the drawing screen.
+
+
+Creating a Blind Hole—Metric
+See Figure 3-13.
+Figure 3-13
+
+       1 Draw a 90 × 80 × 100 box.
+       2 Click the Hole Wizard tool and click the Hole option.
+       3 Set the Standard for ANSI Metric, the Size for Ø20.0, the End Condition for Blind,
+         and the hole depth for 40mm.
+    Note that the hole depth does not include the conical endpoint.
+       4 Click the Positions tab and select an approximate location for the hole.
+       5 Use the Smart Dimension tool to locate the hole.
+       6 Click the green OK check mark and click the drawing screen.
+    Figure 3-13 also shows a section view of the box. Note that the hole is blind and that it ends
+with a conical point. The specified hole depth does not include the conical point.
+
+3-8 Fillet
+A fillet is a rounded corner. Specifically, convex corners are called rounds, and concave corners
+are called fillets, but in general, all rounded corners are called fillets.
+     SolidWorks can draw four types of fillets: constant radius, variable radius, face fillets, and
+full round fillets. Figure 3-14 shows the L-bracket used previously to demonstrate the Features
+tools. It will be used in this section to demonstrate Fillet tools.
+Figure 3-14
+
+    There is also a 2D Fillet tool available on the Sketch tool panel. See Section 2-12.
+      1 Use the Open tool and open the L-bracket drawing.
+    If the L-bracket was not saved after the previous section, use the dimensions and procedures
+specified in Section 3-4 to re-create the bracket.
+      2 Click the Features tab and click the Fillet tool.
+      3 Select Constant Size in the Fillet Type box and define the fillet’s radius as 10.00mm.
+    Click the Full preview button.
+      4 Click the upper-right edge line of the object.
+    A preview of the fillet will appear.
+      5 Click the green OK check mark.
+    Note that there is a line across the top surface of the part. This is a tangency line.
+SolidWorks includes tangency lines to show the beginning and end of all fillets and rounds.
+Creating a Fillet with a Variable Radius
+See Figure 3-15.
+      1 Click the Fillet tool.
+      2 Click the Variable Size button.
+      3 Click the edge line shown in Figure 3-15.
+Figure 3-15
+
+    Two boxes will appear on the screen, one at each end of the edge line.
+      4 Click the word Unassigned in the left box and enter a value of 15.
+      5 Click the word Unassigned in the right box and enter a value of 5.
+      6 Click the green OK check mark.
+
+
+Creating a Fillet Using the Face Fillet Option
+The Face Fillet option draws a fillet between two faces (surfaces), whereas Fillet uses an edge
+between two surfaces to draw a fillet.
+    See Figure 3-16.
+Figure 3-16
+
+      1 Click the Fillet tool.
+      2 Click the Face Fillet option.
+     Two boxes will appear in the Items To Fillet box. They will be used to define the two faces
+of the fillet. The blue box is the active box and is awaiting an input.
+      3 Define the fillet radius as 10.00mm.
+      4 Define Face 1 as shown.
+    The label Face<1> will appear in the blue box.
+      5 Click the lower box in the Items To Fillet box (it will turn blue) and define Face 2 by
+        clicking the surface as shown.
+      6 Click the green OK check mark and click the drawing screen.
+
+
+Creating a Fillet Using the Full Round Fillet Option
+See Figure 3-17.
+Figure 3-17
+
+       1 Use the Undo tool and remove the fillets created previously.
+    This will return the original L-bracket shape.
+       2 Click the Fillet tool and click the Full Round Fillet button.
+    Three boxes will appear. These boxes will be used to define Side Face 1, the Center Face,
+and Side Face 2. The top box is blue, indicating it is awaiting an input.
+    In this example, the default fillet radius value of 10 will be used.
+
+ Tip
+ Objects can be rotated by holding down the mouse wheel and moving the cursor.
+
+
+
+       3 Rotate the object so that the back surface can be selected.
+       4 Click the back surface.
+    The back surface is defined as Side Face 1.
+      5 Reorient the object to an isometric view.
+      6 Click the middle box (it will turn blue) in the Items To Fillet box and click the top
+        surface of the object.
+    The top surface is defined as the Center Face.
+      7 Click the lower of the three boxes in the Items To Fillet box and click the front surface
+        of the object as shown.
+    The front surface is defined as Side Face 2. A preview of the fillet will appear.
+      8 Click the green OK check mark.
+
+3-9 Chamfer
+A chamfer is a slanted surface added to a corner of an object. Chamfers are usually manufactured
+at 45° but may be made at any angle. Chamfers are defined using either an angle and a distance
+(5 × 45°) or two distances (5 × 5). A vertex chamfer may also be defined.
+
+
+Defining a Chamfer Using an Angle and a Distance
+See Figure 3-18. This section uses the L-bracket created in Section 3-3 and used in the previous
+section.
+Figure 3-18
+
+      1 Use the Undo tool and remove the fillet created in the previous section.
+      2 Click the Chamfer tool.
+    The Chamfer tool is a flyout from the Fillet tool.
+      3 Click the Distance-Angle button.
+      4 Define the chamfer distance as 10.00mm and accept the 45deg default value.
+      5 Click the top side edge line as shown.
+      6 Click the green OK check mark.
+
+
+Defining a Chamfer Using Two Distances
+See Figure 3-19.
+Figure 3-19
+
+      1 Click the Chamfer tool.
+      2 Click the Distance-Distance button.
+      3 Select the Asymmetric option in the Chamfer Parameters.
+      4 Define the two distances as 15.00mm and 5.00mm as shown.
+    In this example the two distances are not equal. Distances of different lengths may be used.
+      5 Click the inside vertical line as shown.
+      6 Click the green OK check mark.
+
+
+Defining a Vertex Chamfer
+See Figure 3-20.
+      1 Click the Chamfer tool.
+      2 Click the Vertex button.
+Figure 3-20
+
+    Three distance boxes will appear.
+      3 Define the three distances.
+    In this example three equal distances of 10.00mm were used. The three distances need not
+be equal.
+      4 Click the lower top corner point as shown.
+      5 Click the green OK check mark.
+
+3-10 Revolved Boss/Base
+The Revolved Boss/Base tool rotates a contour about an axis line. See Figure 3-21.
+Figure 3-21
+
+       1 Start a new Part, click the Sketch tool, and click the Top Plane option.
+       2 Use the Sketch tools to draw a line on the screen and then draw a 2D shape next to the
+         line. All dimensions are in inches.
+       3 Draw the shape shown using the given dimensions.
+       4 Click the Features tab, then click the Revolved Boss/Base tool.
+       5 Click the Selected Contours box, then click the contour on the screen.
+       6 Click the Axis of Revolution box at the top of the Revolve PropertyManager.
+
+
+Note
+If the Selected Contours box is already shaded, it means that it has been activated automatically. Click the contour directly.
+
+
+       7 Click the Axis of Revolution line on the screen.
+    A preview of the revolved object will appear.
+      8 Click the green OK check mark.
+   Figure 3-22 shows an example of a sphere created using the Revolved Boss/Base tool. A
+Centerline was used as the axis of revolution.
+Figure 3-22
+
+3-11 Revolved Cut
+The Revolved Cut tool is used to cut revolved sections out of objects. Figure 3-23 shows a
+40 × 60 × 100 box. All dimensions are in millimeters.
+      1 Create a new sketch plane (Sketch tool) on the top surface of the box and use the
+        Centerpoint Arc tool to draw an arc of radius 40 centered about the lower corner of
+        the top surface as shown. Use the Smart Dimension tool to define the radius.
+      2 Use the Line tool to draw two lines from this arc’s endpoints to the corner point of the
+        box, creating an enclosed area.
+Figure 3-23
+
+      3 Click the Features tab and click the Revolved Cut tool.
+      4 Click the Selected Contours box and click the enclosed area created in Step 2.
+      5 Click the Axis of Revolution box.
+      6 Click the right edge line of the contour.
+      7 Click the green OK check mark and click the drawing screen.
+
+3-12 Reference Planes
+Reference planes are planes that are not part of an existing object. Until now if we needed a new
+sketch plane, we selected an existing surface on the object. Consider the Ø3.0 × 3.50 cylinder
+shown in Figure 3-24. The cylinder was drawn with its base on the Top plane and its centerpoint
+at the origin. All dimensions are in inches. How do we create a hole through the rounded sides of
+the cylinder? If we right-click the rounded surface, no Sketch tool will appear.
+
+
+Creating a Reference Plane
+See Figure 3-24.
+      1 Click the Right Plane option in the FeatureManager Design Tree.
+      2 Right-click the Right Plane feature and click Show to ensure that the Right plane is
+        visible. (It will probably already be on.)
+Figure 3-24
+
+    The Right plane is located at the cylinder’s origin. The Reference Geometry tool is used to
+create a second plane parallel to the Right plane. We can offset this plane from the Right plane
+and create a sketch plane on the offset plane.
+       3 Click the Reference Geometry tool located in the Features panel and select the Plane
+         option.
+    The Plane box will appear.
+       4 Set the offset distance for 2.00in.
+     This offset distance will locate a new Front plane offset 2.00 inches from the origin. The
+edge of the cylinder is 1.75 from the origin. The extra .25 distance ensures that the hole will not
+interfere with the edge surface.
+       5 Click the green OK check mark.
+    The new reference plane is defined as Plane 1.
+       6 Right-click Plane 1 and click the Sketch tool.
+       7 Click the View Orientation tool, and then click the Normal To tool to create a right-
+         view orientation of the cylinder.
+      8 Use the Circle tool and sketch a Ø1.50 circle located with its centerpoint 1.75 from the
+        base of the cylinder as shown. Use the Smart Dimension tool to apply dimensions.
+      9 Use the View Orientation tool and create an isometric view of the cylinder.
+     10 Click the Features tab and click the Extruded Cut tool.
+     11 Define the length of the cutting cylinder as 4.00in to ensure that it will pass completely
+        through the Ø3.00 cylinder.
+     12 Click the green OK check mark.
+     13 Hide Plane 1 by right-clicking on the planes and selecting the Hide (an icon of an eye
+        with a slash through it) option.
+
+3-13 Lofted Boss/Base
+The Lofted Boss/Base tool is used to create a shape between two planes, each of which contains
+a defined shape. Before drawing a lofted shape we must first draw two shapes on two different
+planes. In this example a square is lofted to a circle.
+    See Figure 3-25.
+Figure 3-25
+
+      1 Start a new Part, select the Top Plane, click the Sketch tool, set the units for
+        millimeters (MMGS), and set the Drafting Standards for ANSI.
+      2 Use the Center Rectangle tool and sketch a rectangle about the origin.
+      3 Use the Smart Dimension tool and create an 80 × 80 square.
+   The square is centered about the origin.
+      4 Click the Exit Sketch option.
+      5 Click the View Orientation tool and select a Trimetric orientation.
+      6 Click the Features tab.
+      7 Click the Top Plane, click the Reference Geometry tool, and select the Plane option.
+   A new plane, called Plane 1, will appear.
+      8 Offset Plane 1 60.00mm from the Top plane.
+      9 Click the green OK check mark.
+     10 Right-click Plane 1 and click the Sketch option.
+     11 Use the Circle tool and sketch a circle centered about the origin in Plane 1.
+     12 Use the Smart Dimension tool and dimension the diameter of the circle to 30.0.
+     13 Click the Exit Sketch option and click the Lofted Boss/Base tool on the Features tab.
+    The Profiles box should turn on automatically; that is, it should be blue in color.
+     14 Click the rectangle. The rectangle may already have been selected.
+     15 Click the circle.
+    A preview of the lofted segment should appear.
+     16 Click the green OK check mark in the Loft PropertyManager box.
+     17 Right-click Plane 1 and select the Hide option.
+     18 Save the part as LOFT.
+
+3-14 Shell
+The Shell tool is used to hollow out existing solid parts. Figure 3-26 shows a 40 × 60 × 35 box.
+It was created using the Corner Rectangle, Smart Dimension, and Extruded Boss/Base tools.
+Figure 3-26
+
+   The Shell tool will be applied to the box.
+      1 Click the Features tab and click the Shell tool.
+      2 Define the shell thickness.
+   In this example, a thickness of 2.00mm was selected.
+      3 Click the two faces of the box as indicated.
+      4 Click the green OK check mark.
+   Figure 3-27 shows two more examples of how the Shell tool can be applied to parts.
+Figure 3-27
+
+3-15 Swept Boss/Base
+The Swept Boss/Base tool is used to sweep a profile along a path line. As with the Lofted
+Boss/Base tool, existing shapes must be present before the Swept Boss/Base tool can be applied.
+In this example, a Ø.50-inch circle will be swept along an arc with a 2.50-inch radius for 120°.
+See Figure 3-28.
+Figure 3-28
+
+      1 Start a new Part and click the Top Plane option. Use the Circle, Construction Line,
+        and Smart Dimension tools to draw a Ø.50-inch circle 2.50 inches from the origin.
+      2 Use the View Orientation tool and change the drawing screen to an isometric
+        orientation.
+      3 Right-click the mouse and click the Select option.
+      4 Click the Exit Sketch option.
+   We are now going to create a new sketch on a different sketch plane, so we must exit the
+Top plane sketch plane.
+      5 Right-click the Front Plane tool in the FeatureManager Design tree and click the
+        Sketch option.
+      6 Click the Centerpoint Arc tool and use it to draw an arc with a 2.50 radius with the
+        origin as its centerpoint and an arc length of approximately 120°. Define the arc’s
+        length as 120.00° in the Parameters box.
+      7 Click the green OK check mark.
+      8 Click the Exit Sketch option.
+     This completes the second sketch. The Swept Boss/Base tool can now be applied.
+        9 Click the Features tab, then click the Swept Boss/Base tool.
+       10 Select the circle as the profile and the arc as the path.
+     The path area will automatically be selected.
+       11 Click the green OK check mark.
+
+
+ Note
+ Figure 3-29 shows an object hollowed out using the Shell tool.
+
+
+
+
+Figure 3-29
+
+3-16 Draft
+The Draft tool is used to create slanted surfaces. Figure 3-30 shows a 30 × 50 × 60 box. In this
+example a 15° slanted surface will be added to the top surface.
+Figure 3-30
+
+       1 Draw a 30 × 50 × 60 box on the Top plane.
+       2 Click the Draft tool.
+       3 Define the Direction of Pull by clicking the right vertical face of the box.
+       4 Define the Draft angle as 15.00deg.
+       5 Select the draft face by clicking the top surface of the box.
+    The draft angle will be applied to the draft face relative to the 90° angle between the two
+faces.
+       6 Click the green OK check mark.
+    Figure 3-31 shows a slanted surface created by making the top surface the direction of pull
+and the front surface the draft face. Note how the sequence of the draft face selection affects the
+resulting slanted surface.
+Figure 3-31
+
+3-17 Linear Sketch Pattern
+The Linear Sketch Pattern tool is used to create rectangular patterns based on a given object.
+    Figure 3-32 shows a 10 × 15 × 20 box located on a 5 × 80 × 170 base. The box is located
+10mm from each edge of the base as shown.
+Figure 3-32
+
+        1 Draw the base and box as shown.
+        2 Click the Linear Sketch Pattern tool.
+
+
+ Note
+ The box should be selected automatically, but if it is not, use the Features to Pattern tool to select the box.
+
+
+        3 Define Direction 1 by clicking the back top line as shown.
+        4 Define the spacing as 30.00mm.
+    Spacing is the distance between two of the objects in the pattern as measured from the same
+point on each object; for example, the distance from the lower-front corner on one object to the
+lower-front corner of the next object.
+        5 Define the number of columns in the pattern (Instances) as 5.
+        6 Click the Features to Pattern box and select the 10 × 15 × 20 box.
+        7 Click the Reverse Direction option if the pattern goes in the opposite direction than
+         desired.
+      8 Define Direction 2 by clicking the left edge of the base.
+      9 Define the spacing for Direction 2 as 25.00mm and the number of rows in the pattern
+        (Instances) as 3.
+    A preview of the pattern will appear.
+     10 Click the green OK check mark.
+
+3-18 Circular Sketch Pattern
+The Circular Sketch Pattern tool is used to create circular patterns about an origin. See Figure
+3-33.
+Figure 3-33
+
+      1 Draw a Ø160 × 10 cylinder.
+      2 Draw a Ø30 hole centered about the Ø160 cylinder’s origin.
+      3 Create an axis for the Ø30 hole by accessing the Reference Geometry tool in the
+        Features tab and then clicking the Axis option.
+      4 Click the Cylindrical/Conical Face option in the Axis PropertyManager and click
+        the inside surface of the Ø30 hole.
+   The word Axis should appear on the screen and in the Design tree.
+      5 Use the Hole Wizard tool and create a Ø20.0 through hole 60 from the cylinder’s
+        centerpoint by clicking the centerpoint of the Ø20 hole and the edges of the Ø30 hole.
+      6 Access the Features tab and select the Circular Pattern tool.
+      7 Define the number of features (Instances) in the pattern for 8, and click the Equal
+        spacing option. Define the axis of the Ø30 hole as the axis and the Ø20 hole as the
+        Features and Faces to pattern.
+   A preview will appear.
+      8 Click the green OK check mark.
+
+3-19 Mirror
+The Mirror tool is used to create mirror images of features. A mirror image is not the same as a
+copy. In this section we will mirror the object shown in Figure 3-34.
+
+
+
+
+Figure 3-34
+
+      1 Draw the object shown in Figure 3-34.
+    See Figure 3-35.
+Figure 3-35
+
+      2 Access the Features tab and click the Mirror tool.
+      3 Click the Mirror Face/Plane box, then click the right surface plane as shown.
+    The box will be blue when it is active.
+      4 Click the Features to Mirror box, then click the object.
+    A preview will appear.
+      5 Click the green OK check mark.
+
+3-20 Helix Curves and Springs
+SolidWorks allows you to draw springs by drawing a helix and then sweeping a circle along the
+helical path.
+
+
+Drawing a Helix
+See Figure 3-36. All dimensions are in inches.
+Figure 3-36
+
+      1 Start a new Part, select the Top Plane option, and click the Sketch tab.
+      2 Draw a Ø1.50 circle.
+    In this example the circle was centered about the origin. The diameter of this circle will
+determine the diameter of the helix.
+      3 Click the View Orientation tool and select the Trimetric view orientation.
+      4 Click the Features tab, and click the Helix tool.
+     The Helix and Spiral tool is a flyout from the Curves tool on the Features tab.
+     The Helix/Spiral PropertyManager box will appear along with a preview of the default
+helix.
+      5 Select Constant pitch and enter a Pitch of 0.375in, Revolutions of 6, Clockwise
+        direction, and Start angle of 0.00deg.
+    Note how the Ø1.50 diameter sizes the helix.
+      6 Click the green OK check mark.
+Drawing a Spring From the Given Helix
+See Figure 3-37. The helix shown is the one that was created in Figure 3-36.
+Figure 3-37
+
+       1 Click the endpoint of the helix and click the Right Plane option in the
+         FeatureManager.
+    The endpoint of the helix had its start point at 0°; therefore, it is located on the Front plane.
+The centerpoint of the Ø1.50 circle was located on the Origin.
+       2 Right-click the plane and select the Sketch option.
+       3 Draw a Ø.375 circle on the front plane centered on the endpoint of the helix.
+    The diameter of the circle defines the wire diameter for the spring.
+       4 Exit the Sketch mode, click the Features tab, and click the Swept Boss/Base tool.
+       5 Click the circle as the profile and the helix as the path.
+    A preview will appear.
+       6 Click the green OK check mark.
+       7 Save the spring.
+3-21 Compression Springs
+Compression springs are designed to accept forces that squeeze them together. They often
+include ground ends that help them accept the loads while maintaining their position; that is, they
+don’t pop out when the load is applied.
+     Figure 3-38 shows a spring. It has the following parameters. Dimensions are in inches.
+Figure 3-38
+
+     Diameter = 1.00
+     Pitch = .25
+     Number of coils = 10
+     Start angle = 0.00
+     Wire diameter = .250
+     It was created using the procedure described in Section 3-20.
+
+
+Creating Ground Ends
+See Figure 3-39.
+      1 Orient the spring in the Trimetric orientation.
+      2 Click the Top Plane option in the FeatureManager Design tree and click the Plane
+        option in the Reference Geometry tool on the Features tab.
+Figure 3-39
+
+      3 Create an offset plane .50in from the Top plane and click the green OK check mark.
+   This is Plane 1.
+      4 Create a second offset plane 2.00in from the Top plane. This is Plane 2.
+      5 Right-click Plane 2 and select the Sketch option.
+      6 Sketch a large rectangle on Plane 2.
+   Any size larger than the spring is acceptable.
+      7 Click the Features tab and select the Extruded Cut tool.
+      8 Create a distance that exceeds the end of the spring.
+      9 Click the green OK check mark.
+   The top portion of the spring will be cut off, simulating a ground end.
+     10 Repeat the procedure for the bottom end of the spring.
+     11 Hide Planes 1 and 2.
+   The distance between Planes 1 and 2 will be the final height of the spring before
+compression.
+
+3-22 Torsional Springs
+Torsional springs are designed to accept a twisting load. They usually include extensions. See
+Figure 3-40.
+
+
+
+
+Figure 3-40
+Figure 3-41
+
+
+Drawing a Torsional Spring
+      1 Draw a spring using the following parameters. All dimensions are in inches. See Figure
+        3-41.
+    Diameter = 1.75
+    Pitch = .375
+    Number of coils = 10
+    Start angle = 0°
+    Wire diameter = .25
+      2 Zoom in on the bottom endpoint of the spring, right-click the end surface, and select
+        the Sketch tool.
+      3 Click the Sketch tab, click the Circle tool, and sketch a circle that exactly matches the
+        existing end diameter.
+   In this example Ø.25, the wire diameter, was used.
+      4 Click the Features tab and select the Extruded Boss/Base tool.
+      5 Extrude the circle a distance of 1.75in and click the green OK check mark.
+      6 Right-click the Helix/Spiral heading in the FeatureManager Design Tree and select
+        the Edit Feature option.
+      7 Change the Revolutions value to 9.5 and click the green OK check mark.
+    This revision is necessary to make both extensions face the same direction.
+      8 Right-click the new top end surface of the spring, create a sketch plane, sketch a Ø.25
+        circle, and draw a 1.75 extension as shown.
+      9 Click the green OK check mark and save the spring.
+
+3-23 Extension Springs
+Extension springs are designed for loads that pull them apart (that is, tension loads). Extension
+springs usually have hooklike ends.
+
+
+Drawing an Extension Spring
+See Figure 3-42.
+Figure 3-42
+
+      1 Draw a spring as defined below. All dimensions are in inches.
+    Diameter = 1.00
+    Pitch = .25
+    Number of coils = 10
+    Start angle = 0.00
+    Wire diameter = .125
+    Clockwise
+      2 Sketch a Ø.125 circle on the end surface of the spring as shown.
+      3 Use the Plane option under the Reference Geometry tool and create an offset Front
+        plane offset .50; that is, through the centerpoint of the circle created in Step 1.
+      4 Right-click the mouse and select the Sketch tool, turning the offset plane into a sketch
+        plane.
+      5 Use the Centerpoint Arc tool and sketch an arc from the center of the sketch circle a
+        distance of 90°.
+      6 Use the Smart Dimension tool to define the radius of the arc as .25.
+    Use the Swept Boss/Base tool and sweep the circle along the arc path; click the green OK
+check mark. Hide the planes and the sketches.
+      7 Sketch a circle on the arc’s end surface.
+      8 Use the Plane option under the Reference Geometry tool and create an offset Right
+        plane through the centerpoint of the circle created in Step 3.
+      9 Use the Centerpoint Arc tool and sketch a 180° arc with a radius of .50.
+     10 Use the Swept Boss/Base tool and sweep the circle through the arc.
+     11 Click the OK check mark.
+     12 Hide the planes.
+     13 Repeat the procedure for the other end surface of the spring.
+    The spring shown represents one possible type of extension spring.
+
+3-24 Wrap
+The Wrap tool is used to wrap text or other shapes around a surface. There are three options:
+embossed, text that stands out from a face; debossed, text that is embedded on a face; and
+scribed, text that is written directly on the face.
+
+
+Creating Debossed Text
+See Figure 3-43.
+      1 Draw a Ø3.00 × 2.50 cylinder based on the Top plane centered on the origin.
+      2 Use the Plane option of the Reference Geometry tool and create an offset Right plane
+        tangent to the outside edge of the cylinder. The offset distance will be 1.50 from the
+        origin. This is Plane 1.
+      3 Change the orientation of the cylinder to the Right plane.
+      4 Right-click Plane 1 and click the Sketch option.
+      5 Click the Text tool and add text to the plane.
+      6 Use the cursor or the Smart Dimension tool to locate the text.
+      7 Change the drawing orientation to Trimetric.
+      8 Exit the Sketch mode.
+      9 Click the Wrap tool.
+     10 Click the Deboss option.
+Figure 3-43
+
+     11 Click the edge surface of the cylinder to define the Face for Wrap Sketch.
+     12 Hide Plane 1.
+     13 Click the green OK check mark.
+   Figure 3-44 shows an example of scribed text.
+Figure 3-44
+
+3-25 Editing Features
+SolidWorks allows you to edit existing models. This is a very powerful feature in that you can
+easily make changes to a completed model without having to redraw the entire model.
+
+ Tip
+ The Edit Sketch tool is used to edit entities created using the Sketch tools, such as holes. The Edit Features tool is used to
+ edit entities created using the Features tools, such as cuts or extrusions.
+
+
+
+    Figure 3-45 shows the L-bracket originally created in Sections 3-3 through 3-6. The finished
+object may be edited. In this example, the hole’s diameter and the size of the cutout will be
+changed.
+Figure 3-45
+
+ Tip
+ The hole will be highlighted when selected.
+
+
+
+
+Editing the Hole
+See Figure 3-46.
+        1 Right-click the hole on the L-bracket.
+Figure 3-46
+
+    A pop-up menu will appear.
+      2 Select the Edit Sketch option.
+    The sketch used to create the hole will appear.
+      3 Double-click the Ø20 dimension.
+      4 Change the dimension to Ø24.00 and click the green OK check mark.
+      5 Click the Exit Sketch option.
+
+
+Editing the Cutout
+See Figure 3-47.
+      1 Right-click the back surface of the cutout.
+Figure 3-47
+
+    The surface will be highlighted when selected. A pop-up menu will appear.
+      2 Click the Edit Sketch option.
+      3 Double-click the two 20 dimensions that define the length of the cutout and change
+        their value to 30.
+      4 Click the green OK check mark.
+      5 Click the Exit Sketch option.
+
+3-26 Sample Problem SP3-2
+Figure 3-48 shows a cylindrical object with a slanted surface, a cutout, and a blind hole. Figure
+3-49 shows how to draw the object. The procedures presented in Figure 3-49 represent one of
+several possible ways to create the object.
+Figure 3-48
+
+
+Drawing a Cylinder
+      1 Start a new Part document.
+      2 Define the units as millimeters (MMGS), the Overall drafting standards should be
+        ANSI, access the Top Plane, and make it a sketch plane.
+      3 Draw a Ø58 circle centered on the origin and extrude it to 60.
+Figure 3-49
+
+
+Creating a Slanted Surface on the Cylinder
+       1 Click the Right Plane option, click the Reference Geometry tool under the Features
+         tab, and click the Plane option.
+       2 Define the offset plane distance in the Plane PropertyManager as 30, and click the
+         green OK check mark.
+       3 Right-click the offset plane and select the Sketch option.
+       4 Change the drawing orientation to the Right plane.
+       5 Use the Line tool and draw an enclosed triangular shape.
+
+
+Note
+The dimensions for the triangle came from Figure 3-48. The triangle must be an enclosed area. No gaps are permitted. A
+vertical construction line was added to help in the location and creation of the triangular area.
+      6 Use the Smart Dimension tool to define the size and location of the triangle.
+      7 Change the drawing orientation to Dimetric and click the Extruded Cut tool in the
+        Features tab.
+      8 Set the length of the cut to 70.00mm and click the OK check mark.
+      9 Right-click the offset plane and click the Hide option.
+
+
+Adding the Vertical Slot
+See Figure 3-50.
+Figure 3-50
+
+      1 Right-click the slanted surface and click the Sketch tool.
+      2 Click the View Orientation tool and click the Normal to View tool, or press <Ctrl-
+        8>.
+    The original dimensions shown in Figure 3-48 define the slot along the slanted surface, so
+they must be applied along the slanted surface. After the dimensions are applied, they will be
+projected into the top surface.
+      3 Use the Line tool and sketch a vertical construction line through the origin. Start the
+        line on the edge of the slanted surface.
+      4 Use the Rectangle tool on the Sketch toolbar and draw an 8 × 16 rectangle as shown.
+        Use the Smart Dimension tool to size the rectangle.
+     The lower edge of the rectangle must align with the edge of the cylinder or extend beyond
+the edge to ensure the cutout removes all material.
+      5 Draw a second 8 × 16 rectangle as shown.
+      6 Change the drawing orientation to a dimetric view.
+        7 Exit the sketch.
+        8 Click the Top Plane, then use the Plane option in the Reference Geometry tool on the
+          Features tab and create an offset Top plane 60.00mm from the base of the cylinder.
+
+
+ Note
+ The Extruded Cut tool will extrude a shape perpendicular to the plane of the shape. In this example the plane is slanted, so
+ the extrusion would not be vertical, as required. The rectangle is projected into the top offset plane and the extrusion tool
+ applied there.
+
+
+        9 Right-click the 60 offset plane, select the Sketch option, and change the drawing
+          orientation to the top view.
+       10 Use the Line tool and sketch a rectangle on the offset plane over the projected view of
+          the 16 × 16 rectangle on the slanted plane, right-click the mouse, and click the Select
+          option.
+       11 Change the drawing orientation to a dimetric view.
+       12 Use the Extruded Cut tool on the Features tab to cut out the slot.
+       13 Hide the 60 offset plane and hide the 16 × 16 rectangle on the slanted surface.
+       14 Click the green OK check mark.
+
+
+Adding the Ø8 Hole
+See Figure 3-51.
+        1 Right-click the flat top surface of the object, click the Sketch option, and create a
+          sketch plane.
+        2 Change the orientation to a view normal to the flat top surface.
+        3 Use the Point tool and sketch a point on the flat portion of the top surface. Use the
+          origin to center the point.
+        4 Use the Smart Dimension tool and locate the point according to the given dimensions,
+          in this example 9mm.
+        5 Change to a Trimetric orientation and exit the sketch.
+Figure 3-51
+
+
+ Note
+ There are two ways to draw blind holes (holes that do not go all the way through): draw a circle and use the Extruded Cut
+ tool to remove material, or use the Hole Wizard. In this example the Hole Wizard tool is used because it will generate a
+ conical-shaped bottom to the hole. Conical-shaped hole bottoms result from using a twist drill, which has a conical-shaped
+ cutting end.
+
+
+
+        6 Click the Hole Wizard tool on the Features tab.
+        7 Click the Hole option and define the hole’s diameter and depth.
+     In this example the hole’s diameter is 8.0mm and the depth is 20.00mm. Note that the hole
+is defined as a blind hole and that the hole’s depth does not include the conical point.
+        8 Click the Positions tab in the PropertyManager.
+        9 Click the flat top surface, then click the point.
+       10 Click the green OK check mark.
+       11 Rotate the drawing orientation and verify that the hole has a conical-shaped bottom.
+3-27 Sample Problem SP3-3
+Figure 3-52 shows a dimensioned object. In this example we will start with the middle section of
+the object. See Figure 3-53. The solution presented represents one of many possible solutions.
+The solution uses metric units and ANSI Overall drafting standards.
+
+
+
+
+Figure 3-52
+Figure 3-53
+
+      1 Sketch a profile using the Right Plane based on the given dimensions.
+      2 Use the Extruded Boss/Base tool to add a thickness of 40.00mm to the profile.
+      3 Right-click the right surface of the object and select the Sketch option.
+      4 Use the Rectangle and Smart Dimension tools and draw a rectangle based on the
+        given dimensions. Align the corners of the rectangle with the corners of the object.
+      5 Use the Extruded Boss/Base tool and extrude the rectangle 20 to the right.
+      6 Reorient the object and draw a rectangle on the left surface of the object.
+      7 Use the Extruded Boss/Base tool and extrude the rectangle 20 to the left.
+      8 Reorientate the object and create a sketch plane on the right side of the object. Draw a
+        rectangle based on the given dimensions.
+      9 Use the Extruded Cut tool on the Features tab and cut out the rectangle over the
+        length of the object.
+
+3-28 Curve Driven Patterns
+Figure 3-54 shows a Ø4.00 inch ring with 12 holes through its side surfaces. The holes were
+created using the Curve Driven Pattern tool.
+Figure 3-54
+
+
+Using the Curve Driven Pattern Tool—Example 1
+See Figure 3-55.
+Figure 3-55
+
+      1 Sketch the ring using the dimensions shown in Figure 3-54.
+   The outer diameter is Ø4.00, and the inner ring is Ø3.00. Both are centered on the origin
+working on the Top plane.
+      2 Use the Extruded Boss/Base tool and extrude the ring a distance of 1.00.
+      3 Click the Front Plane option in the FeatureManager box, click the Plane option
+        under the Reference Geometry tool, and create an offset plane tangent to the front
+        edge of the ring.
+    The new plane is offset 2.00 from the origin, that is, from the centerpoint of the ring. The
+new plane is defined as Plane 1 in this example.
+      4 Create a sketch plane on Plane 1, create a normal view to the plane, and sketch a
+        Ø0.375 circle 0.50 from the bottom edge of the ring.
+      5 Use the Extruded Cut tool and create a hole from the circle.
+      6 Click the Top Plane in the FeatureManager box, click the Plane option under the
+        Reference Geometry tool, and create an offset Plane 0.50 above the initial Top plane
+        used to create the ring.
+    In this example this plane is defined as Plane 2. Plane 2 is offset 0.50 from the initial Top
+plane or halfway up the 1.00 thickness of the ring.
+       7 Create a sketch plane on Plane 2, and create a normal view.
+       8 Sketch a Ø4.00 circle on the sketch plane, click the Exit Sketch icon, and orientate the
+         drawing to an isometric view.
+    In this step we are creating a path for the new hole pattern.
+       9 Click the Insert menu at the top of the screen, click the Pattern/Mirror option, and
+         click the Curve Driven Pattern tool.
+      10 Set the Number of Instances to 12, click the Equal spacing box, click the Tangent to
+         curve option for Alignment Method, click the Features and Faces box, select the
+         hole, and click the OK check mark.
+      11 Hide Planes 1 and 2, and the circle used to define the pattern.
+
+
+Using the Curve Driven Pattern Tool—Example 2
+Figure 3-56 shows a part that has 12 holes offset 10 from the part’s outer edge surface.
+       1 Use the given dimensions and draw the part as shown in Figure 3-56.
+    See Figure 3-57.
+Figure 3-56
+Figure 3-57
+
+      2 Define a sketch plane on the top surface of the part and use the Offset tool and create a
+        curve offset 10 from the part’s outer edge.
+    Figure 3-57 shows a normal view of the top surface. The offset curve is created using the
+Offset tool. Both the arcs and fillets can be offset to create a continuous curve.
+      3 Draw a Ø6 hole centered on the intersection of the offset curve and the horizontal
+        centerline of the part. The centerpoint is 40 from the part’s origin.
+      4 Click the Insert menu at the top of the screen, click the Pattern/Mirror option, and
+        click the Curve Driven Pattern tool.
+      5 Set the Number of Instances to 12, click the Equal spacing box, select the hole as the
+        Features and Faces to pattern, the offset curve as the Pattern Direction, and click the
+        OK check mark.
+
+Chapter Projects
+
+Project 3-1:
+Redraw the following objects, shown in Figures P3-1 to P3-48, as solid models based on the
+given dimensions. Make all models from mild steel.
+
+
+
+
+Figure P3-1
+MILLIMETERS
+Figure P3-2
+INCHES
+Figure P3-3
+MILLIMETERS
+Figure P3-4
+MILLIMETERS
+Figure P3-5
+MILLIMETERS
+Figure P3-6
+MILLIMETERS
+Figure P3-7
+INCHES
+Figure P3-8
+MILLIMETERS
+Figure P3-9
+MILLIMETERS
+Figure P3-10
+MILLIMETERS
+Figure P3-11
+INCHES
+Figure P3-12
+MILLIMETERS
+Figure P3-13
+MILLIMETERS
+Figure P3-14
+MILLIMETERS
+Figure P3-15
+MILLIMETERS
+Figure P3-16
+INCHES
+Figure P3-17
+MILLIMETERS
+Figure P3-18
+MILLIMETERS
+Figure P3-19
+MILLIMETERS
+Figure P3-20
+MILLIMETERS
+Figure P3-21
+MILLIMETERS
+Figure P3-22
+INCHES
+Figure P3-23
+MILLIMETERS
+Figure P3-24
+MILLIMETERS
+Figure P3-25
+INCHES (SCALE: 4 = 1)
+Figure P3-26
+MILLIMETERS
+Figure P3-27
+MILLIMETERS
+Figure P3-28
+MILLIMETERS
+Figure P3-29
+INCHES (SCALE: 4 = 1)
+Figure P3-30
+MILLIMETERS (SCALE: 2 = 1)
+Figure P3-31
+MILLIMETERS
+Figure P3-32
+MILLIMETERS
+Figure P3-33
+MILLIMETERS
+Figure P3-34
+MILLIMETERS
+Figure P3-35
+MILLIMETERS
+Figure P3-36
+MILLIMETERS
+Figure P3-37
+MILLIMETERS
+Figure P3-38
+MILLIMETERS
+Figure P3-39
+MILLIMETERS (CONSIDER A SHELL)
+Figure P3-40
+MILLIMETERS
+Figure P3-41
+MILLIMETERS
+Figure P3-42
+INCHES
+Figure P3-43
+MILLIMETERS
+Figure P3-44
+INCHES
+Figure P3-45
+MILLIMETERS
+Figure P3-46
+MILLIMETERS
+Figure P3-47
+INCHES
+Figure P3-48
+MILLIMETERS
+
+Project 3-2:
+  A. Draw the following spring.
+       Diameter = 2.00
+       Wire diameter = .125
+       Pitch = .375
+       Revolutions = 16
+  B. Grind both ends to create a spring 2.00 long in its unloaded position.
+
+Project 3-3:
+  A. Draw the following spring.
+       Diameter = 25
+       Wire diameter = 5 × 5 square
+       Pitch = 6
+       Revolutions = 8
+
+
+
+
+Figure P3-49
+INCHES (Project 3-2)
+Figure P3-50
+MILLIMETERS (Project 3-3)
+Figure P3-51
+INCHES (Project 3-4)
+
+Project 3-4:
+  A. Draw the following torsional spring.
+       Diameter = .500
+       Wire diameter = .06
+       Pitch = .125
+       Revolutions = 20
+       Extension lengths = 1.00, 90° apart
+
+Project 3-5:
+  A. Draw the following torsional spring.
+      Diameter = 12.00
+      Wire diameter = 4.0
+      Pitch = 6.0
+      Revolutions = 18
+      Extension lengths = 15, 180° apart
+
+
+
+
+Figure P3-52
+MILLIMETERS
+
+Project 3-6:
+  A. Draw the following extension spring.
+       Diameter = 1.0
+       Wire diameter = .0938
+       Pitch = .180
+       Revolutions = 12
+       Extension radius = .125
+       Hook radius = .50
+
+
+
+
+Figure P3-53
+INCHES
+
+Project 3-7:
+  A. Draw the following extension spring.
+       Diameter = 30
+       Wire diameter = 6
+       Pitch = 30
+       Revolutions = 10
+       Extension radius = 6
+       Hook radius = 12
+
+
+
+
+Figure P3-54
+MILLIMETERS
+
+Project 3-8:
+Draw a Ø4.00 × 3.00 cylinder and deboss on one of the following. Use a font style and size of
+your choice, or as assigned by your instructor.
+   A. Your name and address
+   B. Your school’s name and address
+Project 3-9:
+Redraw the following objects as solid models based on the given dimensions.
+
+
+
+
+Figure P3-55
+INCHES
+Figure P3-56
+MILLIMETERS
+Figure P3-57A
+MILLIMETERS
+Figure P3-57B
+MILLIMETERS

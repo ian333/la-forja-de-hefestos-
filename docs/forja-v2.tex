@@ -1,0 +1,182 @@
+\documentclass[10pt]{article}
+\usepackage[margin=1.4cm,a4paper,landscape]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{circuitikz}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usetikzlibrary{positioning,calc}
+
+\definecolor{fondo}{HTML}{0B0F17}
+\definecolor{panel}{HTML}{121A28}
+\definecolor{tinta}{HTML}{E2E8F0}
+\definecolor{ambar}{HTML}{FB923C}
+\definecolor{cyan}{HTML}{38BDF8}
+\definecolor{verde}{HTML}{4ADE80}
+\definecolor{rojo}{HTML}{F87171}
+\definecolor{gris}{HTML}{64748B}
+\pagecolor{fondo}\color{tinta}
+\pagestyle{empty}
+\ctikzset{bipoles/length=1.05cm, font=\footnotesize}
+\renewcommand{\arraystretch}{1.18}
+
+\begin{document}
+
+\begin{center}
+{\color{ambar}\bfseries\Large LA FORJA — Impresora de metal v2}\\[2pt]
+{\color{gris}\small Boost trifásico interleaved (3 bobinas de aire) · 24V/14.6A $\to$ bus 120V · 100kHz · DCM · $\sim$308W · sin aislamiento}
+\end{center}
+\vspace{2mm}
+
+% ===================== ESQUEMATICO (solo referencias) =====================
+\begin{center}
+\begin{circuitikz}[scale=0.92, transform shape, color=tinta, every node/.style={text=tinta}, line width=0.7pt]
+
+% ---------- riel de entrada +24V ----------
+\node[text=ambar] at (-0.3,1.0) {+24V};
+\draw[ambar] (0,0.7) -- (0,-8.5);                % riel +24
+\draw (-1.2,0.7) to[battery1] (-1.2,-8.5);       % fuente
+\draw (-1.2,0.7) -- (0,0.7);
+\node[text=ambar,font=\scriptsize] at (-1.7,0.7){+};
+\node[text=gris,font=\scriptsize]  at (-1.7,-8.5){--};
+
+% ---------- 3 FASES (idénticas, refs solamente) ----------
+\foreach \k/\y/\col in {1/0/ambar, 2/-3/cyan, 3/-6/verde}{
+  % sensor de corriente de fase
+  \node[draw=\col, fill=panel, text=\col, minimum width=1.0cm, minimum height=0.7cm, font=\scriptsize] (ACS\k) at (1.4,\y) {ACS\k};
+  \draw (0,\y) -- (ACS\k.west);
+  \draw[\col,-{Latex}] (ACS\k.north) -- ++(0,0.45) node[above,font=\scriptsize]{ADC};
+  % bobina de aire
+  \draw (ACS\k.east) -- (2.6,\y);
+  \draw (2.6,\y) to[L, l_=L\k, color=\col] (4.8,\y);
+  \draw (4.8,\y) -- (5.2,\y) coordinate(SW\k);
+  % MOSFET low-side (jog a la derecha: el bajante de source NO corre por los nodos SW de abajo)
+  \node[nigfete, anchor=D, scale=0.78, color=verde] (Q\k) at (5.9,\y-1.05) {};
+  \draw (SW\k) -- (5.9,\y) -- (Q\k.D);
+  \draw (Q\k.G) -- ++(-0.7,0) node[left,text=gris,font=\scriptsize]{g};
+  \node[text=\col,font=\scriptsize] at (6.35,\y-1.75) {Q\k};
+  \draw (Q\k.S) -- (5.9,-8.5);
+  % snubber RCD (bloque, de SW a GND; baja despejado del diodo)
+  \node[draw=gris, fill=panel, text=gris, font=\scriptsize, minimum width=0.55cm, minimum height=0.66cm] (S\k) at (6.9,\y-1.05) {Sn\k};
+  \draw (SW\k) -- (6.9,\y) -- (S\k.north);
+  \draw (S\k.south) -- (6.9,-8.5);
+  % diodo al bus (arriba, libre del snubber; etiqueta arriba)
+  \draw (SW\k) to[D, l^=D\k, color=rojo] (10.5,\y);
+  \draw (10.5,\y) -- (11.2,\y);
+}
+
+% ---------- riel del BUS 120V ----------
+\node[text=ambar] at (11.5,1.0) {+120V bus};
+\draw[ambar] (11.2,0.7) -- (11.2,-8.5);          % riel bus
+\draw (10.4,-7.5) to[C, l_=C1, color=ambar] (11.2,-7.5);      % Cbus
+
+% ---------- divisor del bus ----------
+\draw (11.2,-0.3) -- (12.1,-0.3);
+\draw (12.1,-0.3) to[R, l_=R1, color=cyan] (12.1,-2.0);
+\draw (12.1,-2.0) to[R, l_=R2, color=cyan] (12.1,-3.7);
+\draw[cyan,-{Latex}] (12.1,-2.0) -- (12.9,-2.0) node[right,font=\scriptsize]{ADC (Vbus)};
+\draw (12.1,-3.7) -- (12.1,-8.5);
+
+% ---------- riel GND ----------
+\draw[gris, line width=0.9pt] (-1.2,-8.5) -- (16.5,-8.5);
+\node[text=gris] at (16.9,-8.5){GND};
+
+% ===================== DESCARGA =====================
+\node[text=rojo,font=\small\bfseries] at (14.5,1.0){DESCARGA};
+\draw (11.2,-0.3) -- (13.6,-0.3);
+% flyback
+\draw (13.6,-0.3) to[D, l_=Df, mirror, color=rojo] (13.6,-1.5);
+\draw (13.6,-0.3) -- (14.6,-0.3);
+% alambre - junta - placa
+\draw (14.6,-0.3) -- (14.6,-2.2);
+\node[draw=ambar, fill=panel, text=ambar, font=\scriptsize, minimum width=1.0cm] (Jx) at (14.6,-2.7){junta};
+\draw (14.6,-2.2) -- (Jx.north);
+\draw (Jx.south) -- (14.6,-3.6);
+% MOSFET descarga
+\node[nigfete, anchor=D, scale=0.8, color=verde] (Qd) at (14.6,-4.6){};
+\draw (14.6,-3.6) -- (Qd.D);
+\node[text=verde,font=\scriptsize,right=1pt of Qd]{Qd};
+\draw (Qd.G) -- (13.7,-4.6) node[left,text=gris,font=\scriptsize]{g};
+\draw (Qd.S) -- (14.6,-6.0);
+% shunt descarga
+\draw (14.6,-6.0) to[R, l_=Rd, color=cyan] (14.6,-8.5);
+% divisor junta
+\draw (Jx.east) -- (15.8,-2.7);
+\draw (15.8,-2.7) to[R, l_=R3, color=cyan] (15.8,-4.3);
+\draw (15.8,-4.3) to[R, l_=R4, color=cyan] (15.8,-6.0);
+\draw[cyan,-{Latex}] (15.8,-4.3) -- (16.6,-4.3) node[right,font=\scriptsize]{ADC (Vjunta)};
+\draw (15.8,-6.0) -- (15.8,-8.5);
+
+% ===================== CEREBRO =====================
+\node[draw=ambar, fill=panel, rounded corners, align=center, font=\scriptsize, minimum width=4.2cm, minimum height=1.5cm] (cpu) at (4.0,-10.6)
+  {\textbf{\textcolor{ambar}{RP2350}} — 3 PWM (boost 120°) · 1 PWM (descarga)\\ 6 ADC + DMA · drivers IR2110 (×3) + KSP (descarga)};
+\draw[cyan] (cpu.east) -- (8.0,-10.6) node[right,text=gris,font=\scriptsize]{$\to$ gates Q1,Q2,Q3,Qd};
+
+\end{circuitikz}
+\end{center}
+
+\vspace{1mm}
+\begin{center}{\color{gris}\scriptsize Color: \textcolor{ambar}{potencia/bobinas} · \textcolor{cyan}{L2} · \textcolor{verde}{L3 y MOSFETs} · \textcolor{rojo}{diodos} · \textcolor{cyan}{sensado/ADC}. Refs aquí; valores, parte y uso en el BOM (pág.\,2). Las 3 fases idénticas (replicar la fase $\times$3, PWM a 0°/120°/240°).}\end{center}
+
+\clearpage
+% ===================== BOM =====================
+\noindent{\color{ambar}\bfseries\large BOM — Lista de materiales}\\[1pt]
+{\color{gris}\small La Forja v2 · boost trifásico interleaved · 24V $\to$ 120V · todo de AG Electrónica / UNIT Electronics + lo que ya tienes}
+\vspace{1mm}
+
+{\scriptsize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.02}
+\noindent\begin{tabular}{@{}>{\bfseries}l l l c l p{6.2cm}@{}}
+\arrayrulecolor{gris}\toprule
+\color{ambar}Ref & \color{ambar}Componente & \color{ambar}Valor / Parte & \color{ambar}Cant & \color{ambar}Dónde & \color{ambar}Uso \\
+\midrule
+\multicolumn{6}{@{}l}{\color{cyan}\itshape — Etapa de potencia (3 fases interleaved) —}\\
+L1--L3   & Bobina de aire     & 10$\mu$H (21 vueltas AWG14, $\varnothing$3cm) & 3 & a mano   & almacena/limita di/dt; núcleo aire = reproducible, sin ferrita \\
+Q1--Q3   & MOSFET N           & SIHG20N50C (500V 20A TO-247)          & 3 & UNIT     & switch del boost; 500V = no revienta a 120V \\
+D1--D3   & Diodo ultrarrápido & 60F30 (300V 60A)                      & 3 & AG/tienes 1 & rectifica al bus por fase \\
+C1       & Cap electrolítico  & 2200$\mu$F 200V (CE-2200/200V-TEAPO)   & 2--3 & AG    & banco del bus 120V (200V = 80V margen) \\
+Cin      & Cap electrolítico  & 1000$\mu$F 35V                        & 1 & AG/UNIT  & desacople de entrada 24V \\
+\midrule
+\multicolumn{6}{@{}l}{\color{cyan}\itshape — Drivers de compuerta —}\\
+U1--U3   & Gate driver        & IR2110 (canal bajo)                   & 3 & UNIT     & maneja el gate del boost limpio (no más muerte por calor) \\
+Rg1--Rg3 & Resistencia        & 15$\Omega$                            & 3 & AG/UNIT  & limita di/dt del gate \\
+Rgs1--3  & Resistencia        & 10k                                   & 3 & AG/UNIT  & pull-down boot-safe (gate no flota) \\
+\midrule
+\multicolumn{6}{@{}l}{\color{cyan}\itshape — Snubber por fase (Sn1--Sn3, RCD) —}\\
+Dsn      & Diodo rápido       & UF4007 (1000V 1A)                     & 3 & AG       & RCD: encamina el pico \\
+Csn      & Cap película       & 1nF 250V                              & 3 & AG       & absorbe el pico L·di/dt \\
+Rsn      & Resistencia        & 47$\Omega$ 2W                         & 3 & AG       & disipa la energía del pico \\
+\midrule
+\multicolumn{6}{@{}l}{\color{cyan}\itshape — Sensado (6 ADC directos + DMA = ultra-rápido) —}\\
+ACS1--3  & Sensor corriente   & ACS712-30A (Hall, 66mV/A)             & 3 & UNIT     & corriente de cada fase (balanceo), aislado, directo al ADC \\
+Rd       & Shunt              & 1m$\Omega$                            & 1 & tienes/AG & corriente de descarga (+ energía por $\Delta$Vbus) \\
+R1/R2    & Divisor bus        & 400k / 10k 1\% ($\div$41)             & 1 & AG/UNIT  & lee Vbus hasta 135V \\
+R3/R4    & Divisor junta      & 200k / 10k 1\% ($\div$21)             & 1 & AG/UNIT  & lee V$_{arco}$ (14+10$\cdot$gap) \\
+Rdiv     & Divisor salida ACS & 2k / 3.3k (o 1k + clamp 3.3V)         & 3 & AG/UNIT  & el ACS712 saca $\sim$3.4V a 14A pico; el ADC muere $>$3.3V \\
+(opc.)   & ADC SPI            & MCP3008 (8ch)                         & 1 & UNIT     & +8 canales si quieres leer todo \\
+\midrule
+\multicolumn{6}{@{}l}{\color{cyan}\itshape — Descarga (drop-on-demand) —}\\
+Qd       & MOSFET N           & SIHG20N50C (500V, +1 al pedido)       & 1 & UNIT     & dispara el pulso a la junta. \textbf{NO usar IRL540N}: con junta cerrada el drain ve los 120V del bus ($>$100V rating) \\
+Df       & Diodo flyback      & 60F30 / UF rápido                     & 1 & tienes/AG & \textbf{mata el pico que reventó el v1} (faltaba) \\
+--       & Punta contacto MIG & 0.8mm                                 & 2--3 & soldadura & consumible (el "hotend") \\
+\midrule
+\multicolumn{6}{@{}l}{\color{cyan}\itshape — Protección · disipación · conexión —}\\
+--       & TVS / MOV          & 1.5KE150A ($\sim$150V)                & 1--2 & AG     & clamp del bus \\
+--       & Regulador          & 7812 (o mini-buck 24$\to$12V)         & 1 & AG/UNIT  & VCC de los IR2110 (10--20V; no 24V directo) \\
+--       & R sangrado + LED   & 47k 2W + LED con 100k                 & 1 & AG       & sangra el bus (32--48J) a $<$30V en $\sim$5min + LED bus vivo \\
+--       & Fusible            & 20A automotriz + portafusible         & 1 & AG       & protege el lado 24V antes del primer cap \\
+--       & Disipador          & TO-247 grande                         & 6 & UNIT     & uno por MOSFET (el calor mató al v1) \\
+--       & Ventilador         & 9025 / 12025 (12--24V)                & 1--2 & UNIT   & aire forzado \\
+--       & Mica + buje        & TO-247                                & 6 & UNIT     & aísla la pestaña del disipador \\
+--       & Bornera            & 2EDG-5.08 (potencia) + KF301 (señal)  & varias & AG/UNIT & conexiones enchufables \\
+--       & Cerebro            & RP2350 (Pico 2)                       & 1 & tienes   & 3 PWM 120° + descarga + 6 ADC/DMA + PIO \\
+\bottomrule
+\end{tabular}}
+
+\vspace{1.5mm}
+\noindent{\color{gris}\footnotesize\textbf{Los 3 fallos del v1, blindados:} (1) \textit{jalón de fuente} $\to$ interleaved (rizo 268\%$\to$55\%) + ACS712 por fase; (2) \textit{muerte de MOSFET} $\to$ SIHG 500V + IR2110 limpio + disipación forzada; (3) \textit{pico L·di/dt} $\to$ snubber RCD + flyback Df + TVS.\quad\textbf{Revisión 09-jun (Opus):} (4) Qd a 500V (el IRL540N no aguanta el bus); (5) bleeder + LED en el bus; (6) riel 12V para los IR2110; (7) divisor en salidas ACS712; (8) fusible 20A de entrada.}
+
+\end{document}

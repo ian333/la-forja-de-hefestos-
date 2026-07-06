@@ -1,0 +1,146 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage[american,siunitx]{circuitikz}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\renewcommand{\arraystretch}{1.25}
+
+\title{Banco de deposici\'on por microalambre --- acero E71T-GS 0.8\,mm\\
+\large BOM + circuito m\'inimo (Tier 1)}
+\author{La Forja --- m\'odulo micro-AM metal}
+\date{2026-06-05}
+
+\begin{document}
+\maketitle
+
+\section*{Objetivo}
+Banco de mesa m\'inimo para \textbf{medir los dos par\'ametros} que el modelo acoplado
+(\texttt{scripts/gota-acoplada-completa.py}) dej\'o abiertos y que deciden el dise\~no del
+boost LC:
+\begin{itemize}
+  \item $R_{op}$ --- resistencia de la junta \emph{fundida} (baja, milliohms).
+  \item $L_{th}$ --- longitud t\'ermica de la p\'erdida por conducci\'on arriba del alambre.
+\end{itemize}
+Se calienta un segmento de alambre por $I^2R$, se mide $V$ por \emph{Kelvin} (4 hilos) e $I$
+$\Rightarrow R(T)=V/I$ (term\'ometro por TCR + punto de fusi\'on $\Rightarrow R_{op}$), y el
+\emph{perfil} de temperatura con termopares $\Rightarrow L_{th}$.
+
+\section*{BOM}
+\begin{center}\small
+\begin{tabular}{@{}clp{3.0cm}p{4.6cm}ccc@{}}
+\toprule
+\# & Componente & Parte sugerida & Funci\'on & Cant & \textasciitilde USD & Tier\\
+\midrule
+1  & Fuente DC 30\,A   & (la tienes)              & energ\'ia promedio (calentar)             & 1 & 0  & 1\\
+2  & MOSFET potencia   & IRLB3034PbF              & conmuta la corriente por la junta         & 3 & 7  & 1\\
+3  & Gate driver       & TC4420CPA (6\,A)         & el ESP32 no mueve solo el gate            & 1 & 2  & 1\\
+4  & Sensor $I$ (I\textsuperscript{2}C) & INA226 m\'odulo & mide $I$ y $V_{bus}$ juntos        & 1 & 4  & 1\\
+5  & Sensor $I$ (alto) & ACS758-200B (Hall)       & corriente alta, aislado                   & 1 & 8  & 1\\
+6  & Shunt             & 1\,m$\Omega$ 5\,W / manganina & para $R=V/I$                          & 1 & 2  & 1\\
+7  & Amp termopar      & MAX31855 + termopar K    & perfil $T$ $\Rightarrow L_{th}$           & 3 & 9  & 1\\
+8  & TVS               & SMBJ30A                  & clamp del ``patad\'on'' $L\,dI/dt$        & 2 & 1  & 1\\
+9  & Diodo freewheel   & SB10100 / MBR6045        & camino para la corriente inductiva        & 1 & 2  & 1\\
+10 & Cap de filtro     & 10\,000\,$\mu$F 50\,V    & amortigua el jaloneo del switcheo         & 1 & 3  & 1\\
+11 & MCU r\'apido      & ESP32 DevKit v1          & lazo de corriente + PWM + ADC             & 1 & 6  & 1\\
+12 & Supervisor        & Raspberry Pi (la tienes) & log + UI + m\'aquina de estados           & 1 & 0  & 1\\
+13 & Disipador+vent.   & TO-220                   & enfr\'ia el MOSFET                         & 1 & 5  & 1\\
+14 & Fusible+porta     & 40\,A automotriz         & protecci\'on                              & 1 & 2  & 1\\
+15 & Cable+bornes      & 8--10 AWG cobre          & ruta de alta corriente                    & - & 10 & 1\\
+16 & Placa de acero    & sustrato/retorno         & DUT + tierra el\'ectrica                   & 1 & 3  & 1\\
+17 & Protoboard+misc   & R gate, pulldowns, bypass& cableado                                  & - & 5  & 1\\
+\midrule
+18 & Inductor $L$      & $\sim0.17\,\mu$H litz/tubo Cu (DIY) & tanque LC (boost $Q\!\approx\!1.5$) & 1 & 5 & 2\\
+19 & Cap de pel\'icula & $\sim$15\,$\mu$F PP alto RMS & el otro lado del tanque LC             & varios & 15 & 2\\
+20 & Driver medio puente & IR2104 + bootstrap     & inversor resonante                        & 1 & 3 & 2\\
+21 & Sensor capacitivo & FDC1004 / osc. LC        & tama\~no de gota $\Rightarrow$ track de $f$ & 1 & 5 & 2\\
+22 & Alimentador       & extrusor impresora + TMC2209 & empuja el alambre 0.8\,mm             & 1 & 5 & 2\\
+23 & Esqueleto XYZ     & impresora 3D vieja       & movimiento (precisi\'on $\sim$12\,$\mu$m)  & 1 & 0 & 2\\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent\textbf{Total Tier 1 $\approx$ 70--80 USD} (menos reciclando). Fuentes en M\'exico:
+AliExpress (env\'io a MX), Amazon MX, Steren, AG Electr\'onica, Sandez. Precios aprox.\ (1\,USD $\approx$ 18--20\,MXN).
+
+\section*{Circuito --- lazo de potencia + sensado (Tier 1)}
+\begin{center}
+\begin{circuitikz}[american, line width=0.7pt, scale=0.95, transform shape]
+
+  % ---------- Fuente y filtro ----------
+  \draw (0,0) to[battery1, l=$V_{cc}$, invert] (0,4.5);
+  \draw (0,4.5) -- (1,4.5);
+  \draw (0,0)   -- (1,0);
+  \draw (1,0) to[C, l_=$C_f$] (1,4.5);
+
+  % ---------- Riel + con fusible ----------
+  \draw (1,4.5) to[fuse, l=$F\,40A$] (3.3,4.5) -- (6,4.5);
+
+  % ---------- Rama de carga: clamp A - DUT - clamp B ----------
+  \draw (6,4.5) to[short,-*] (6,4.0); \node[left=1pt,font=\scriptsize] at (6,4.0) {clamp A};
+  \draw (6,4.0) to[R, l_={$R_w$ (alambre/DUT)}, name=DUT] (6,2.2);
+  \draw (6,2.2) to[short,-*] (6,2.0); \node[left=1pt,font=\scriptsize] at (6,2.0) {clamp B};
+
+  % ---------- Kelvin taps (4 hilos) ----------
+  \draw[densely dashed, blue] (6,4.0) -- (9.5,4.0) node[right,font=\scriptsize]{$V_+$ Kelvin};
+  \draw[densely dashed, blue] (6,2.0) -- (9.5,2.0) node[right,font=\scriptsize]{$V_-$ Kelvin};
+
+  % ---------- Shunt ----------
+  \draw (6,2.0) to[R, l_=$R_{sh}$] (6,1.1);
+
+  % ---------- MOSFET low-side ----------
+  \node[nigfete] (Q) at (6,0.35) {};
+  \draw (6,1.1) -- (Q.D);
+  \draw (Q.S) -- (6,-0.5) -- (0,-0.5) -- (0,0);
+  \draw (Q.G) -- (4.2,0.35) node[left]{\scriptsize G};
+
+  % ---------- Diodo freewheel (catodo a V+) ----------
+  \draw (7.8,1.1) to[D, l^=$D_{fw}$] (7.8,4.5);
+  \draw (7.8,1.1) -- (6,1.1);
+  \draw (7.8,4.5) -- (6,4.5);
+
+  % ---------- TVS a traves de D-S ----------
+  \draw (8.9,-0.5) to[zD, l^=$TVS$] (8.9,1.1);
+  \draw (8.9,1.1) -- (7.8,1.1);
+  \draw (8.9,-0.5) -- (6,-0.5);
+
+  % ---------- Bloques de control ----------
+  \node[draw, rounded corners, align=center, fill=orange!10, minimum width=20mm, minimum height=8mm] (gd) at (2.0,-2.2) {\scriptsize Gate driver\\TC4420};
+  \node[draw, rounded corners, align=center, fill=red!8,   minimum width=18mm, minimum height=8mm] (ina) at (12.0,1.6) {\scriptsize INA226\\$I,V_{bus}$};
+  \node[draw, rounded corners, align=center, fill=violet!8,minimum width=20mm, minimum height=8mm] (tc) at (12.0,4.2) {\scriptsize MAX31855\\termopares K};
+  \node[draw, rounded corners, align=center, fill=blue!8,  minimum width=22mm, minimum height=10mm](esp) at (15.0,1.0) {\scriptsize ESP32\\(lazo r\'apido)};
+  \node[draw, rounded corners, align=center, fill=green!10,minimum width=22mm, minimum height=9mm] (rpi) at (15.0,3.6) {\scriptsize Raspberry Pi\\(log/UI)};
+
+  % conexiones de control
+  \draw[-latex] (esp.west) |- (gd.east) node[pos=0.85,above,font=\scriptsize]{PWM};
+  \draw (gd.north) |- (4.2,0.35);
+  \draw[latex-] (esp.north west) -- (ina.east) node[midway,below,font=\scriptsize]{I\textsuperscript{2}C};
+  \draw[blue, densely dashed] (9,2.0) -- (ina.west);
+  \draw (6,2.0) ..controls (8,1.4).. (ina.south);
+  \draw[latex-] (esp) -- (tc.south east) node[midway,sloped,above,font=\scriptsize]{SPI};
+  \draw[latex-latex] (esp.north) -- (rpi.south) node[midway,right,font=\scriptsize]{USB};
+
+  % termopares sobre el DUT
+  \draw[violet] (tc.north) |- (6.0,3.4);
+  \draw[violet] (tc.north west) |- (6.0,2.6);
+  \fill[violet] (6.0,3.4) circle(1.6pt);
+  \fill[violet] (6.0,2.6) circle(1.6pt);
+
+\end{circuitikz}
+\end{center}
+
+\section*{Notas cr\'iticas}
+\begin{enumerate}
+  \item \textbf{TVS + freewheel obligatorios}: apagar la corriente con la inductancia del lazo
+        genera $V=L\,dI/dt$ de cientos de volts $\Rightarrow$ mata el MOSFET sin estos.
+  \item \textbf{Sensado Kelvin (4 hilos)}: la junta es de milliohms; los hilos de $V$ van
+        \emph{separados} de los de potencia, pegados directo en el alambre.
+  \item \textbf{Lazo cerrado de $I$ siempre}: $V_{cc}$ sobre milliohms = corriente de fuga
+        descontrolada; el ESP32 limita por duty + corte por energ\'ia $\int VI\,dt$.
+  \item \textbf{Para $L_{th}$}: 3 termopares espaciados a lo largo del alambre dan el perfil
+        $T(x)$ $\Rightarrow$ ajusta $P_{cond}=k A_w\,\Delta T/L_{th}$.
+  \item \textbf{Seguridad}: extracci\'on de humos (el flux y el acero humean), lentes, guantes,
+        superficie antiflama. Empieza con la fuente \emph{limitada} en corriente.
+\end{enumerate}
+
+\end{document}

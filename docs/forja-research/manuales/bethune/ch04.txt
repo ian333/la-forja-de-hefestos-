@@ -1,0 +1,865 @@
+Chapter 4. Orthographic Views
+Chapter Objectives
+
+         Implement orthographic views
+         Apply ANSI standards and conventions
+         Draw section and auxiliary views
+
+
+
+4-1 Introduction
+Orthographic views are two-dimensional views used to define a three-dimensional model. More
+than one orthographic view is needed to define a model unless the model is of uniform thickness.
+Standard practice calls for three orthographic views, a front, top, and side view, although more or
+fewer views may be used as needed.
+     There are two sets of standards used to define the projection and placement of orthographic
+views: the American National Standards Institute (ANSI) and the International Organization for
+Standardization (ISO). ANSI calls for orthographic views to be created using third-angle
+projection and is the accepted method for use in the United States. See the American Society of
+Mechanical Engineers publication ASME Y14.3-2012. Some countries, other than the United
+States, use first-angle projection. See ISO publications 128-2:2022 and 128-3:2022.
+     This chapter will present orthographic views using third-angle projections as defined by
+ANSI. However, there is so much international commerce happening today that you should be
+able to work in both conventions and in either inches or millimeters.
+     Figure 4-1 shows a three-dimensional model and three orthographic views created using
+third-angle projection and three orthographic views created using first-angle projection. Note the
+differences and similarities. The front view in both projections is the same. The top views are the
+same but are in different locations. The third-angle projection presents a right-side view, while
+the first-angle projection presents a left-side view.
+Figure 4-1
+
+    Figure 4-2 shows the drawing symbols for first- and third-angle projections. These symbols
+can be added to a drawing to help the reader understand which type of projection is being used.
+These symbols were included in the projections presented in Figure 4-1.
+Figure 4-2
+
+4-2 Third- and First-Angle Projections
+Figure 4-3 shows an object with front and top orthographic views created using third-angle and
+first-angle projections. For third-angle projections the orthographic view is projected on a plane
+located between the viewer’s position and the object. For first-angle projections the orthographic
+view is projected on a plane located beyond the object. The front and top views for third- and
+first-angle projections appear the same, but they are located in different positions relative to the
+front view.
+Figure 4-3
+
+     The side orthographic views are different for third- and first-angle projections. Third-angle
+projections use a right-side view. First-angle projections use a left-side view. Figures 4-4 and 4-5
+show the side views for two different objects. For third-angle projections, the viewer is located
+on the right side of the object and creates the side orthographic view on a plane located between
+the view position and the object. For first-angle projections the viewer is located on the left side
+of the object and creates the side orthographic view on a plane located beyond the object.
+     To help understand the difference between side view orientations for third- and first-angle
+projections, locate your right hand with the heel facing down and the thumb facing up. Rotate
+your hand so that the palm is facing up—this is the third-angle projection orientation. Return to
+the thumb-up position. Rotate your hand so that the palm is down—this is the first-angle view
+orientation.
+Figure 4-4
+Figure 4-5
+
+4-3 Fundamentals of Orthographic Views
+Figure 4-6 shows an object with its front, top, and right-side orthographic views projected from
+the object. The views are two-dimensional, so they show no depth. Note that in the projected
+right plane there are three rectangles. There is no way to determine which of the three is closest
+and which is farthest away if only the right-side view is considered. All views must be studied to
+analyze the shape of the object.
+Figure 4-6
+
+     Figure 4-7 shows three orthographic views of a book. After the views are projected they are
+positioned as shown. The positioning of views relative to one another is critical. The views must
+be aligned and positioned as shown.
+Figure 4-7
+
+
+Normal Surfaces
+Normal surfaces are surfaces that are at 90° to each other. Figures 4-8, 4-9, and 4-10 show
+objects that include only normal surfaces and their orthographic views.
+Figure 4-8
+Figure 4-9
+Figure 4-10
+
+
+Hidden Lines
+Hidden lines are used to show surfaces that are not directly visible. All surfaces must be shown
+in all views. If an edge or surface is blocked from view by another feature, it is drawn using a
+hidden line. Figures 4-11 and 4-12 show objects that require hidden lines in their orthographic
+views.
+Figure 4-11
+Figure 4-12
+
+     Figure 4-13 shows an object that contains an edge line, A-B. In the top view, line A-B is
+partially hidden and partially visible. The hidden portion of the line is drawn using a hidden-line
+pattern, and the visible portion of the line is drawn using a solid line.
+     Figures 4-14 and 4-15 show objects that require hidden lines in their orthographic views.
+Figure 4-13
+Figure 4-14
+Figure 4-15
+
+
+Precedence of Lines
+It is not unusual for one type of line to be drawn over another type of line. Figure 4-16 shows
+two examples of overlap by different types of lines. Lines are shown on the views in a prescribed
+order of precedence. A solid line (object or continuous) takes precedence over a hidden line, and
+a hidden line takes precedence over a centerline.
+Figure 4-16
+
+
+Slanted Surfaces
+Slanted surfaces are surfaces drawn at an angle to each other. Figure 4-17 shows an object that
+contains two slanted surfaces. Surface ABCD appears as a rectangle in both the top and front
+views. Neither rectangle represents the true shape of the surface. Each is smaller than the actual
+surface. Also, none of the views shows enough of the object to enable the viewer to accurately
+define the shape of the object. The views must be used together for a correct understanding of the
+object’s shape.
+
+
+
+
+Figure 4-17
+
+     Figures 4-18 and 4-19 show objects that include slanted surfaces. Projection lines have been
+included to emphasize the importance of correct view location. Information is projected between
+the front and top views using vertical lines and between the front and side views using horizontal
+lines.
+Figure 4-18
+Figure 4-19
+
+
+Compound Lines
+A compound line is formed when two slanted surfaces intersect. Figure 4-20 shows an object that
+includes a compound line.
+Figure 4-20
+
+
+Oblique Surfaces
+An oblique surface is a surface that is slanted in two different directions. Figures 4-21 and 4-22
+show objects that include oblique surfaces.
+Figure 4-21
+Figure 4-22
+
+
+Rounded Surfaces
+Figure 4-23 shows an object with two rounded surfaces. Note that as with slanted surfaces, an
+individual view is insufficient to define the shape of a surface. More than one view is needed to
+accurately define the surface’s shape.
+Figure 4-23
+
+     Convention calls for a smooth transition between rounded and flat surfaces; that is, no lines
+are drawn to indicate the tangency. SolidWorks includes a line to indicate tangencies between
+surfaces in the isometric drawings created using the multiview options but does not include them
+in the orthographic views. Tangency lines are also not included when models are rendered.
+     Figure 4-24 shows the drawing conventions for including lines for rounded surfaces. If a
+surface includes no vertical portions or no tangency, no line is included.
+Figure 4-24
+
+     Figure 4-25 shows an object that includes two tangencies. Each is represented by a line.
+Note in Figure 4-25 that SolidWorks will add tangency lines to the 3D model. These lines will
+not appear in the orthographic views.
+Figure 4-25
+
+     Figure 4-26 shows two objects with similar configurations; however, the boxlike portion of
+the lower object blends into the rounded portion exactly at its widest point, so no line is required.
+Figure 4-26
+
+4-4 Drawing Orthographic Views
+SolidWorks creates orthographic views using the drawing tools found in the New SolidWorks
+Document dialog box. See Figure 4-27.
+Figure 4-27
+
+      1 Start a new document by clicking the New tool.
+      2 Click the Drawing icon in the New SolidWorks Document dialog box.
+      3 Click OK.
+The Sheet Format/Size dialog box will appear. See Figure 4-28. Keep the default format A
+(ANSI) Landscape.
+Figure 4-28
+
+ Tip
+ Drawing sheets—that is, the paper drawings are printed on—are manufactured in standard sizes. For example, in the English
+ unit system an A-size drawing sheet is 8.5 × 11 in. In the metric unit system an A4-size drawing sheet is 210 × 297 mm.
+ A listing of standard sheet sizes is shown in Figure 4-28.
+
+
+
+        4 Click OK.
+     A drawing template will appear. See Figure 4-29. The template includes a title block, a
+release block, a tolerance block, and two other blocks. The template format can be customized,
+but in this example the default template will be used. The title block will be explained in the next
+section.
+Figure 4-29
+
+      5 Click the Options tool.
+      6 Select the Options option.
+   See Figure 4-30.
+Figure 4-30
+
+   The Document Properties dialog box will appear. See Figure 4-31.
+      7 Click the Document Properties tab and ensure the Overall drafting standard field is
+        set to ANSI.
+Figure 4-31
+
+      8 Click OK.
+Third-angle projection is the format preferred by U.S. companies in compliance with ANSI
+(American National Standards Institute) standards. First-angle projection is used by countries
+that are in compliance with ISO (International Organization for Standardization). Figure 4-32
+shows an L-bracket drawn in both first- and third-angle projection. Compare the differences in
+the projected views.
+Figure 4-32
+
+    Figure 4-32 also shows a dimensioned isometric drawing of the L-bracket. The bracket was
+drawn in Section 3-3. If you have not previously drawn the bracket, do so now and save it as L-
+bracket.
+      9 Click the Drawing tab.
+     10 Click the Standard 3 View tool located on the Drawing tab.
+     See Figure 4-33. The Standard 3 View PropertyManager will appear on the left side of
+the screen.
+Figure 4-33
+
+     11 Click the Browse button.
+        The Open box will appear. See Figure 4-34.
+Figure 4-34
+
+     12 Click the L Bracket icon and click Open.
+    Three orthographic views will appear on the screen. They include no hidden lines. The
+hidden lines must be added. See Figure 4-35.
+Figure 4-35
+
+      13 Click the top orthographic view and select the Hidden Lines Visible option in the
+         Display Style box of the Drawing View PropertyManager.
+    The hidden lines will appear in the top view.
+      14 Click the right-side view, then click the Hidden Lines Visible option to add hidden
+         lines to the right-side view.
+     Notice in the top and right-side views that there are no centerlines for the hole. Centerlines
+are added using the Centerline option found on the Annotation tab. See Figure 4-36. The
+circular view of the hole will automatically generate a set of perpendicular centerlines.
+Figure 4-36
+
+   Note the difference between center marks and centerline tools.
+     15 Click the Annotation tab and select the Centerline option.
+     16 Click each of the two parallel lines in the top and side views that define the hole.
+   The centerlines will appear. See Figure 4-37.
+Figure 4-37
+
+     Figure 4-38 shows the orthographic views of another object. The dimensions for the object
+are given in Figure P4-23 in the Chapter Projects section at the end of this chapter. Note the
+hidden lines in the side view that represent the Ø30 hole. The right vertical line is continuously
+straight, whereas the left vertical line has a step. Why?
+Figure 4-38
+
+
+Moving Orthographic Views
+Figure 4-39 shows the orthographic views of the L-bracket generated for Figure 4-37. The views
+can be moved closer together or farther apart.
+Figure 4-39
+
+      1 Move the cursor into the area of the top view.
+    An orange boundary line will appear.
+      2 Click and hold one of the boundary lines.
+      3 Drag the view to a new location.
+
+
+Creating Other Views
+The Standard 3 View tool will generate front, top, and right-side orthographic views of an
+object. These views are considered the standard three views. Other orthographic views and
+isometric views can be generated.
+      1 Click the Projected View tool.
+    The Projected View tool is one of the Drawing tab tools.
+      2 Click the front view and move the cursor to the left of the front view, creating a new
+        orthographic view.
+In this example a left-side view was created. Add hidden lines and centerlines as needed.
+  3 Click the left view in its new location.
+  4 Press the <Esc> key or click the green OK check mark.
+See Figure 4-40.
+  5 Use the Centerline tool to add a centerline to the hole in the left-side view.
+  6 Click the Projected View tool and click the front view again.
+  7 Move the cursor to the right and upward.
+Figure 4-40
+
+    An isometric view will appear.
+       8 Click the isometric view in its new location.
+       9 Press the <Esc> key or click the green OK check mark.
+
+4-5 Section Views
+Some objects have internal surfaces that are not directly visible in normal orthographic views.
+Section views are used to expose these surfaces. Section views do not include hidden lines.
+     Any material cut when a section view is defined is hatched using section lines. There are
+many different styles of hatching, but the general style is evenly spaced 45° lines. This style is
+defined as ANSI 31 and will be applied automatically by SolidWorks.
+     Figure 4-41 shows a three-dimensional view of an object. The object is cut by a cutting
+plane. Cutting planes are used to define the location of the section view. 302Material to one side
+of the cutting plane is removed, exposing the section view.
+Figure 4-41
+
+     Figure 4-42 shows the same object presented in Figure 4-41 using two orthographic views
+and a section view. The cutting plane is represented by a cutting plane line. The cutting plane
+line is defined as A-A, and the section view is defined as view A-A.
+Figure 4-42
+
+     All surfaces directly visible must be shown in a section view. In Figure 4-43 the back
+portion of the object is not affected by the section view and is directly visible from the cutting
+plane. The section view must include these surfaces. Note how the rectangular section blocks
+part of the large hole. No hidden lines are used on section views.
+Figure 4-43
+
+4-6 Drawing a Section View
+This section will show how to draw a section view of an existing model. In this example, the
+model presented as P4-22 in the Chapter Projects was used to demonstrate the concepts.
+        1 Start a new drawing using the Drawing format.
+    See the previous section on how to create orthographic views using SolidWorks. Select the
+A (ANSI) Landscape format and select the ANSI standards.
+
+
+ Note
+ See Figures 4-29 to 4-32 for an explanation of how to specify the third-angle format.
+
+
+        2 Click the Model View tool on the Drawing tab.
+
+ Tip
+ The Model View tool is similar to the Standard 3 View tool but creates only one orthographic view rather than three views.
+
+
+
+        3 In the Part/Assembly to Insert box, click Browse.
+     See Figure 4-44. The Open box will appear. See Figure 4-45.
+Figure 4-44
+Figure 4-45
+
+      4 Click the model to be used to draw orthographic views, and click Open.
+    In this example the model is called BLOCK, 3 HOLES. The dimensions for BLOCK, 3
+HOLES can be found in Figure P4-22 in the Chapter Projects section at the end of this chapter.
+    A rectangular outline will appear defining the boundaries of the orthographic view. By
+default, this will be a front view. In this example we want a top view.
+      5 Click the Top view tool.
+    See Figure 4-46.
+      6 Locate the top orthographic view on the drawing screen, click the mouse, and then
+        click the check mark.
+      7 Add a centerline to the Ø24 hole.
+Figure 4-46
+
+   See Figure 4-47.
+      8 Click the Drawing tab and click the Section View tool.
+   The orthographic view will be outlined by a dotted line.
+Figure 4-47
+
+
+Note
+If more than one view was present on the screen, you would first have to select which view to use to create the section view.
+
+
+
+       9 Select a horizontal cutting plane line.
+      10 Define the location of the cutting plane line by moving the cursor to the approximate
+         midpoint of the left vertical line of the orthographic view.
+    Use the cursor to align the cutting plane line with the centerpoint of the holes.
+      11 Click the green OK check mark.
+      12 Move the cursor downward.
+    The section view will appear and move with the cursor. See Figure 4-48.
+Figure 4-48
+
+     13 Select an appropriate location and click the mouse.
+     14 Click the Flip direction box if necessary.
+   See Figure 4-49.
+     15 Add centerlines.
+     16 Click the green OK check mark.
+Figure 4-49
+
+
+Note
+Section views are always located behind the arrows; that is, the arrows point toward the section view. Think of the arrows as
+your eyes looking at the section view.
+
+
+    More than one section view may be taken from the same model. See Figure 4-50.
+Figure 4-50
+
+     The section views shown in Figure 4-50 use a hatching pattern made from evenly spaced 45°
+lines. This is the most commonly used hatch pattern for section views and is designated as ANSI
+31 in the ANSI hatch patterns. SolidWorks can also draw section views using one of five
+different styles. See Figure 4-51.
+Figure 4-51
+
+
+Changing the Style of a Section View
+      1 Move the cursor into the area of the section view and right-click the mouse.
+    A listing of tools will appear, and the Display Style box will appear.
+      2 Click the mouse again in the section view area to remove the list of tools.
+      3 Click one of the boxes in the Display Style box.
+     Figure 4-52 shows two of the styles available: Shaded with Edges, and Shaded. The hidden
+lines removed style is used for all other illustrations in this chapter.
+Figure 4-52
+
+4-7 Aligned Section Views
+Aligned section views are most often used on circular objects and use an angled cutting plane
+line to include more features in the section view. Note in Figure 4-53 how section view A-A was
+created by rotating the cutting plane into a vertical position before projecting the section view.
+Figure 4-53
+
+    Figure 4-53 shows an aligned section view created using SolidWorks. The aligned section
+view was created as follows.
+      1 Start a new Drawing and open the model for the aligned section view.
+    The model was drawn using the dimensions given in Figure 4-53.
+      2 Access the Section View tool.
+      3 Click the Aligned Section View option in the Cutting Line box.
+    See Figure 4-54.
+Figure 4-54
+
+      4 Click the object’s centerpoint.
+      5 Click the centerpoint of two Ø10 holes as shown.
+      6 Click the green OK check mark.
+      7 Move the cursor away from the object.
+    The aligned section will appear as the cursor is moved.
+      8 Add centerlines; click the green OK check mark.
+
+4-8 Broken Views
+It is often convenient to break long continuous shapes so that they take up less drawing space.
+Figure 4-55 shows a long L-bracket that has a continuous shape; that is, its shape is constant
+throughout its length.
+Figure 4-55
+
+
+Creating a Broken View
+      1 Draw a model of the long L-bracket using the dimensions shown in Figure 4-55. Save
+        the model.
+      2 Start a new Drawing and insert the long L-bracket as a Front view.
+      3 Click the Drawing tab, and click the Break View tool.
+   See Figure 4-56.
+4 Set the Gap size for 0.25in. and select the Zig Zag Cut style.
+Figure 4-56
+
+       5 Move the cursor onto the long L-bracket and click a location for the first break line.
+       6 Click a location for the second break line.
+    The area between the break lines will be removed.
+       7 Click the green OK check mark.
+    If the break is not satisfactory, undo the break and insert a new one.
+
+4-9 Detail Views
+A detail view is used to clarify specific areas of a drawing. Usually, an area is enlarged so that
+small details are easier to see.
+
+
+Drawing a Detail View
+       1 Create a Part document for the model shown in Figure P4-23 in the Chapter Projects
+         section at the end of this chapter. Save the model.
+       2 Start a new Drawing, and create a front section view and a top orthographic view. Use
+         third-angle projection.
+       3 Click the Detail View tool located on the Drawing tab.
+    See Figure 4-57.
+Figure 4-57
+
+      4 Locate the centerpoint for a circle that will be used to define the area for the detail view
+        by clicking a point.
+    In this example a point down and to the right of center was selected.
+      5 Move the cursor away from the point.
+    A detail view will appear.
+      6 When the circle is big enough to enclose all the area you wish to display in the detail
+        view, click the mouse.
+      7 Move the cursor away from the views.
+      8 Select a location for the detail view and click the mouse.
+      9 Click the Full outline check box.
+   The scale of the detail view can be changed by changing the values in the Scale box in the
+PropertyManager. The callout letters are changed using the Detail Circle box.
+4-10 Auxiliary Views
+Auxiliary views are orthographic views used to present true-shaped views of a slanted surface. In
+Figure 4-58 neither the front nor the side view shows a true shape of the slanted surface. A top
+view would show a foreshortened view. Only a view taken 90° to the surface will show its true
+shape.
+Figure 4-58
+
+
+Drawing an Auxiliary View
+      1 Draw the model with a slanted surface shown in Figure 4-58.
+      2 Start a new Drawing and create orthographic views of the model.
+   In this example a front and a right-side view were drawn. See Figure 4-59.
+Figure 4-59
+
+       3 Click the Drawing tab, then click the Auxiliary View tool.
+       4 Click the slanted edge line in the front view.
+       5 Move the cursor away from the slanted edge line.
+       6 Click the Arrow box in the PropertyManager box.
+     Because there is only one auxiliary view and its origin is obvious, no defining cutting plane
+line is needed.
+       7 Select a location for the auxiliary view and click the mouse.
+       8 If needed, adjust the font size for the view callout.
+    In this example the horizontal/vertical center mark for the hole in the auxiliary view was
+hidden and replaced with an aligned center mark.
+    Figures 4-60 and 4-61 show additional examples of auxiliary views.
+Figure 4-60
+Figure 4-61
+
+4-11 First-Angle Projection
+SolidWorks can be used to create either first-angle or third-angle projections. In this section,
+first-angle projection will be used to create orthographic views in compliance with ISO
+standards.
+
+
+Creating Three Orthographic Views Using First-Angle
+Projection
+Figure 4-62 shows an L-bracket that was used in the beginning of the chapter to demonstrate
+third-angle and ANSI drawing standards. The L-bracket will now be used to create orthographic
+views using first-angle projection.
+Figure 4-62
+
+       1 Create a new Drawing, using a C sheet size.
+
+
+Note
+The icon for the drawing tools shows three orthographic views set in the first-angle projection.
+
+
+       2 Click the Settings heading.
+       3 Click the Document Properties tab and change the Overall drafting standard field to
+         ISO; then click OK. See Figure 4-63.
+Figure 4-63
+
+      4 Click the Model View tool on the Drawing tab and create a front view of the L-
+        bracket. Click the Hidden Lines Visible option. See Figure 4-64.
+Figure 4-64
+
+      5 Use the Project View tool and create a left and top orthographic view around the front
+        view. See Figure 4-65.
+Figure 4-65
+
+ 6 Drag the left view to the right side and the top view to a location directly below the
+   front view. See Figure 4-66.
+Figure 4-66
+
+    The views are now in the first-angle projections.
+
+Chapter Projects
+Draw a front, top, and right-side orthographic view of each of the objects in Figures P4-1
+through P4-94. Do not include dimensions.
+Figure P4-1
+INCHES
+Figure P4-2
+MILLIMETERS
+Figure P4-3
+MILLIMETERS
+Figure P4-4
+INCHES
+Figure P4-5
+MILLIMETERS
+Figure P4-6
+MILLIMETERS
+Figure P4-7
+MILLIMETERS
+Figure P4-8
+MILLIMETERS
+Figure P4-9
+INCHES
+Figure P4-10
+MILLIMETERS
+Figure P4-11
+MILLIMETERS
+Figure P4-12
+INCHES
+Figure P4-13
+MILLIMETERS
+Figure P4-14
+MILLIMETERS
+Figure P4-15
+MILLIMETERS
+Figure P4-16
+MILLIMETERS
+Figure P4-17
+MILLIMETERS
+Figure P4-18
+MILLIMETERS
+Figure P4-19
+MILLIMETERS
+Figure P4-20
+MILLIMETERS
+Figure P4-21
+INCHES
+Figure P4-22
+MILLIMETERS
+Figure P4-23
+MILLIMETERS
+Figure P4-24
+INCHES
+Figure P4-25
+MILLIMETERS
+Figure P4-26
+MILLIMETERS
+Figure P4-27
+MILLIMETERS
+Figure P4-28
+MILLIMETERS
+Figure P4-29
+MILLIMETERS
+Figure P4-30
+MILLIMETERS
+Figure P4-31
+INCHES
+Figure P4-32
+MILLIMETERS
+Figure P4-33
+INCHES
+Figure P4-34
+MILLIMETERS
+Figure P4-35
+MILLIMETERS
+Figure P4-36
+INCHES
+Figure P4-37
+MILLIMETERS
+Figure P4-38
+MILLIMETERS
+Figure P4-39
+MILLIMETERS
+Figure P4-40
+MILLIMETERS
+Figure P4-41
+INCHES
+Figure P4-42
+INCHES
+Figure P4-43
+MILLIMETERS
+Figure P4-44
+MILLIMETERS
+Figure P4-45
+MILLIMETERS
+Figure P4-46
+MILLIMETERS
+Figure P4-47
+INCHES
+Figure P4-48
+INCHES
+Figure P4-49
+MILLIMETERS
+Figure P4-50
+INCHES
+Figure P4-51
+INCHES
+Figure P4-52
+MILLIMETERS
+Figure P4-53
+INCHES
+Figure P4-54
+MILLIMETERS
+Figure P4-55
+MILLIMETERS
+Figure P4-56
+MILLIMETERS
+Figure P4-57
+MILLIMETERS
+Figure P4-58
+MILLIMETERS
+Figure P4-59
+MILLIMETERS
+Figure P4-60
+INCHES
+Figure P4-61
+MILLIMETERS
+Figure P4-62
+MILLIMETERS
+Figure P4-63
+MILLIMETERS
+Figure P4-64
+MILLIMETERS
+Figure P4-65
+MILLIMETERS
+Figure P4-66
+MILLIMETERS
+Figure P4-67
+MILLIMETERS
+Figure P4-68
+MILLIMETERS
+Figure P4-69
+MILLIMETERS
+Figure P4-70
+MILLIMETERS
+Figure P4-71
+MILLIMETERS
+Figure P4-72
+MILLIMETERS
+Figure P4-73
+MILLIMETERS
+Figure P4-74
+INCHES
+Figure P4-75
+INCHES
+Figure P4-76
+MILLIMETERS
+Figure P4-77
+MILLIMETERS
+Figure P4-78
+MILLIMETERS
+Figure P4-79
+MILLIMETERS
+Figure P4-80
+MILLIMETERS
+Figure P4-81
+MILLIMETERS
+Figure P4-82
+MILLIMETERS
+Figure P4-83
+MILLIMETERS
+Figure P4-84
+INCHES
+Figure P4-85
+MILLIMETERS
+Figure P4-86
+MILLIMETERS
+Figure P4-87
+INCHES
+Figure P4-88
+MILLIMETERS
+Figure P4-89
+MILLIMETERS
+Figure P4-90
+MILLIMETERS
+Figure P4-91
+MILLIMETERS
+Figure P4-92
+MILLIMETERS
+Figure P4-93
+MILLIMETERS
+Figure P4-94
+MILLIMETERS
+
+   For Figures P4-95 through P4-100:
+  A. Sketch the given orthographic views, and add the top view so that the final sketch
+     includes a front, top, and right-side view.
+  B. Prepare a three-dimensional sketch of the object.
+Figure P4-95
+
+
+
+
+Figure P4-96
+
+
+
+
+Figure P4-97
+Figure P4-98
+
+
+
+
+Figure P4-99
+Figure P4-100
+
+For Figures P4-101 through P4-128:
+   A. Redraw the given views, and draw the third view.
+   B. Prepare a three-dimensional sketch of the object.
+Figure P4-101
+INCHES
+Figure P4-102
+INCHES
+
+
+
+
+Figure P4-103
+INCHES
+Figure P4-104
+INCHES
+
+
+
+
+Figure P4-105
+INCHES
+
+
+
+
+Figure P4-106
+INCHES
+Figure P4-107
+INCHES
+Figure P4-108
+INCHES
+Figure P4-109
+INCHES
+Figure P4-110
+INCHES
+Figure P4-111
+INCHES
+Figure P4-112
+INCHES
+
+Figures P4-113 through P4-128 are drawn with grid backgrounds. The grid may be either
+0.50 × 0.50 inches or 10 × 10 millimeters.
+Figure P4-113
+Figure P4-114
+Figure P4-115
+Figure P4-116
+Figure P4-117
+Figure P4-118
+Figure P4-119
+Figure P4-120
+Figure P4-121
+
+
+
+
+Figure P4-122
+Figure P4-123
+
+
+
+
+Figure P4-124
+Figure P4-125
+
+
+
+
+Figure P4-126
+Figure P4-127
+
+
+
+
+Figure P4-128
+
+Draw the complete front, top, and side views of the two intersecting objects given in Figures P4-
+129 through P4-134 on the basis of the given complete and partially complete orthographic
+views.
+Figure P4-129
+MILLIMETERS
+Figure P4-130
+MILLIMETERS
+Figure P4-131
+INCHES
+Figure P4-132
+INCHES
+Figure P4-133
+MILLIMETERS
+Figure P4-134
+MILLIMETERS
+
+Draw the front, top, and side orthographic views of the objects given in Figures P4-135 through
+P4-138 on the basis of the partially complete isometric drawings.
+Figure P4-135
+MILLIMETERS
+Figure P4-136
+MILLIMETERS
+Figure P4-137
+INCHES
+Figure P4-138
+INCHES (SCALE: 5 = 1)
+
+Draw Figures P4-139 through P4-141 as 3D models using the given dimensions.
+Figure P4-139
+Figure P4-140
+Figure P4-141
+
+Figures P4-142 through P4-149 are presented using first-angle projection per ISO standards.
+Draw the objects as
+   A. 3D models.
+   B. Orthographic views using third-angle projections per ANSI standards.
+Figure P4-142
+Figure P4-143
+Figure P4-144
+Figure P4-145
+Figure P4-146
+Figure P4-147A
+Figure P4-147B
+Figure P4-148A
+Figure P4-148B
+Figure P4-149A
+Figure P4-149B
+Figure P4-149C
+Figure P4-149D

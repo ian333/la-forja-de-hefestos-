@@ -1,0 +1,212 @@
+{
+  "question": "Para renders cinematográficos de fenómenos astrofísicos (agujeros negros y discos de acreción, estrellas de neutrones/púlsares, quásares, nebulosas, supernovas) que sean A LA VEZ científicamente FIELES y ULTRA-BELLOS/hipnóticos (proyecto \"La Forja\", videos 4K para redes + educación), investiga y sintetiza una DOCTRINA DE COLOR accionable. Tres ejes: (1) LA CIENCIA DEL CINE SOBRE EL COLOR — teoría del color emocional, color grading (DaVinci), color contrast/complementarios, el lenguaje de color del sci-fi y cine espacial de referencia (Interstellar/Hoyte van Hoytema, Nolan, Villeneuve, 2001 de Kubrick, Tree of Life/Malick), cómo el color genera asombro y \"monstruosidad sentida\"; qué paletas y técnicas usan. (2) LA CIENCIA SOBRE EL COLOR REAL DE ESTOS FENÓMENOS — radiación de cuerpo negro y la ley de Planck (por qué a 10^6 K se ve blanco-azul pálido por la cola Rayleigh-Jeans y NO azul cobalto), líneas de emisión reales de nebulosas (Hα, OIII, SII y la paleta Hubble), el color real medido por telescopios (Chandra rayos X falso-color, JWST, Hubble), beaming Doppler relativista (δ⁴) y corrimiento al rojo/azul, temperatura de color de estrellas por tipo espectral (O azul → M rojo, índice B-V). (3) CÓMO SE RECONCILIAN ambos — el principio \"la belleza EMERGE de la corrección física\": cómo mapear espectros/temperaturas/datos reales a paletas cinematográficas hermosas sin inventar (mapeo Planck→sRGB, falso-color honesto y etiquetado, qué hace la naturaleza que ya es bello). Entrega valores/paletas concretos y reglas de grade aplicables (crush de negros, halación, saturación, split-tone) para que cada render sea fiel y bellísimo.",
+  "summary": "Doctrina de color astrofisico fiel y bello, 20 claims verificadas. Ver findings y caveats.",
+  "findings": [
+    {
+      "claim": "FISICA DEL COLOR REAL. El cuerpo negro NO se vuelve azul cobalto: por la cola Rayleigh-Jeans la cromaticidad converge a azul palido fijo CIE xy 0.2399 0.2340 igual a sRGB 94b1ff (color de una estrella de neutrones), asi un plasma a un millon de kelvin se ve blanco-azul palido. Ley de Planck sobre 380 a 780 nm; anclajes 1000K rojo profundo ff3800, 4500K amarillento, 6500K casi blanco D65, 8000 a 9000K azul palido e3e9ff. Tablas directas temperatura a RGB bastan (pasar por CIE refutado 0-3). Alta, cuatro claims 3-0.",
+      "confidence": "high",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Planckian_locus"
+      ],
+      "evidence": "Wikipedia: color converges to that shade of blue, power inversely proportional to fourth power of wavelength. Baez: color de una tipica estrella de neutrones. Scratchapixel: evaluate Plancks equation from 380 to 780 nm. Charity: 1000K ff3800, 8000K e3e9ff."
+    },
+    {
+      "claim": "FALSO-COLOR HONESTO Y RECETAS. Rayos X, infrarrojo, radio, ultravioleta y gamma no tienen color; JWST ve casi solo infrarrojo. Orden cromatico: lambda corta a azul, intermedia a verde, larga a rojo. Chandra rayos X: energia baja, media y alta a rojo, verde y azul (bandas de 0.3 a 1.55, 1.55 a 3.34 y 3.34 a 10 keV) para corona de disco, jets de quasares y viento de pulsar. Hubble SHO nebulosas y supernovas: OIII 501 nm a azul, H-alfa 656 nm a verde, SII 672 nm a rojo. Las agencias dejan el void OSCURO para ser fieles (crush 0.14). Alta, nueve claims 3-0.",
+      "confidence": "high",
+      "sources": [
+        "https://chandra.harvard.edu/photo/false_color.html"
+      ],
+      "evidence": "Chandra: X rays cannot be seen with the human eye and do not have any color; low, medium, higher bands shown as red, green, blue respectively. ESA: both science and an art; dark areas show darkness of space just as Webb saw them. DePasquale: maintaining chromatic order makes the images pop."
+    },
+    {
+      "claim": "FISICA RELATIVISTA DEL DISCO (BH). Beaming Doppler: el lado que se acerca se ve mas brillante y el que se aleja mas oscuro; cinematico (factor delta a la cuarta), NO termico, y se anula al ver el disco de frente. El lensing gravitacional da la forma warpeada y asimetrica; un render fiel necesita AMBOS. Gargantua lo probo con DNGR sobre ecuaciones de Kip Thorne (lensing Kerr, peer-reviewed), pero su color Doppler fue atenuado por Nolan (refutado 0-3): la fidelidad probada es del lensing, no citar Interstellar como color Doppler fiel. Alta, cuatro claims 3-0.",
+      "confidence": "high",
+      "sources": [
+        "https://svs.gsfc.nasa.gov/13326/"
+      ],
+      "evidence": "NASA SVS: gas moving toward us makes that side brighter, opposite darker; effect disappears when directly above or below; gravity skews light producing the misshapen appearance. delta a la cuarta independiente del gradiente Shakura-Sunyaev. CERN Courier y arXiv 1502.03808: DNGR resuelve ray-bundle en spacetime Kerr."
+    },
+    {
+      "claim": "GRADE ANCLADO EN LO REAL. La halacion rojo-ambar es un defecto fotoquimico REAL (no estilistico): la luz rebota tras las capas del film y golpea la capa roja (mas profunda en film color), justificando halacion calida en objetos emisivos brillantes (La Forja: sigma por 11, opacity 0.16, highs aislados). El color emocional del cine (Villeneuve calidos vs azules neon para lo artificial; Malick imagineria natural minimizando computadora) es craft estetico, NO fidelidad cientifica, etiquetar como evocativo. Halacion alta (dos claims 3-0); cine media (Villeneuve 2-1 blog, Malick 3-0).",
+      "confidence": "medium",
+      "sources": [
+        "https://mixinglight.com/color-grading-tutorials/emulating-film-halation-in-davinci-resolve/"
+      ],
+      "evidence": "MixingLight: a reddish glow around high contrast edges; light bouncing back hits the red layers. Fue un defecto, por eso se diseno anti-halation backing o remjet. Malick (Emanuel Levy): wanted imagery to feel like a natural phenomenon, relying as little as possible on computers. Verde en BR2049 connota vida, no detachment."
+    }
+  ],
+  "caveats": "FIDELIDAD vs CRAFT: la fisica (Planck/Rayleigh-Jeans, beaming Doppler delta a la cuarta, lensing, falso-color de telescopios) es fuerte (primarias NASA, ESA, Chandra mas peer-reviewed, 3-0); el cine emocional (Villeneuve, Malick) es craft, etiquetar paletas calidas si no son temperatura o lineas reales. REFUTADAS: tablas T a RGB bastan sin CIE (0-3); el color del disco de Gargantua no integro Doppler ni redshift, Nolan los atenuo, solo el lensing fue fiel (0-3), no citar Interstellar como color Doppler fiel; SPIE de orden y bandas y belleza-oficial (1-2) redundantes con primarias. 94b1ff y ff3800 son cromaticidades, no espectros de fuente. URL JWST original redirige a science.nasa.gov. OPEN: mapeo Planck a sRGB de disco Shakura-Sunyaev sin saturar a cobalto con clamp cerca de 94b1ff; lineas de emision exactas y etiquetado SHO; combinar delta a la cuarta con lensing en shader; split-tone, grano y dither por tipo de objeto.",
+  "refuted": [
+    {
+      "claim": "The stated goal couples scientific accuracy with visual engagement, validating the project's 'beauty emerges from correctness' principle as official institutional practice.",
+      "vote": "1-2",
+      "source": "https://webbtelescope.org/contents/articles/how-are-webbs-full-color-images-made"
+    },
+    {
+      "claim": "The correct physics-to-color pipeline is: evaluate the Planck spectrum, integrate it against the CIE color matching functions to obtain XYZ tristimulus values, then convert XYZ to RGB — i.e. you must go through a spectrum and the CIE observer, not assign a color directly.",
+      "vote": "0-3",
+      "source": "https://www.scratchapixel.com/lessons/cg-gems/blackbody/blackbody.html"
+    },
+    {
+      "claim": "Astronomical false-color images use 'chromatic ordering': the shortest observed wavelengths are assigned blue, intermediate wavelengths green, and the longest wavelengths red — a convention chosen because it carries scientific meaning AND tends to yield aesthetic images. This is the canonical justification for La Forja's 'belleza emerge de la corrección' when mapping invisible/spectral data to a palette.",
+      "vote": "1-2",
+      "source": "https://spie.org/news/photonics-focus/sept-oct-2025/coloring-astronomy"
+    },
+    {
+      "claim": "Chandra X-ray false-color follows a fixed energy-to-RGB convention: low, medium, and high X-ray energy bands map to red, green, and blue respectively. This gives a directly applicable, labeled rule for rendering X-ray phenomena (e.g. accretion-disk corona, quasar jets, pulsar wind nebulae) honestly.",
+      "vote": "1-2",
+      "source": "https://spie.org/news/photonics-focus/sept-oct-2025/coloring-astronomy"
+    },
+    {
+      "claim": "The accretion disk's appearance encoded real relativistic effects — relativistic aberration, Doppler shifts, and gravitational redshifts were integrated into the rendering code, with the disk's colors Doppler- and gravitationally shifted, so the on-screen color emerged from physics rather than being invented.",
+      "vote": "0-3",
+      "source": "https://cerncourier.com/a/building-gargantua/"
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://pixflow.net/blog/how-denis-villeneuve-uses-color-palettes-to-elevate-storytelling-in-film/",
+      "quality": "blog",
+      "angle": "Cinematic color language (space sci-fi references)",
+      "claimCount": 4
+    },
+    {
+      "url": "https://colorculture.org/cinematography-analysis-of-2001-a-space-odyssey/",
+      "quality": "blog",
+      "angle": "Cinematic color language (space sci-fi references)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://emanuellevy.com/review/tree-of-life-creating-the-stunning-visuals/",
+      "quality": "secondary",
+      "angle": "Cinematic color language (space sci-fi references)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.studiobinder.com/blog/hoyte-van-hoytema-movies-cinematography-style/",
+      "quality": "blog",
+      "angle": "Cinematic color language (space sci-fi references)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://colorculture.org/cinematography-analysis-of-interstellar-in-depth/",
+      "quality": "blog",
+      "angle": "Color grading technique (DaVinci, contrast, split-tone)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://mixinglight.com/color-grading-tutorials/emulating-film-halation-in-davinci-resolve/",
+      "quality": "secondary",
+      "angle": "Color grading technique (DaVinci, contrast, split-tone)",
+      "claimCount": 4
+    },
+    {
+      "url": "https://aaapresets.com/blogs/davinci-resolve-color-grading-gradient-tutorials/unlocking-cinematic-magic-teal-orange-bleach-bypass-and-cross-processing-explained",
+      "quality": "blog",
+      "angle": "Color grading technique (DaVinci, contrast, split-tone)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://filmmakingelements.com/film-halation-emulation-in-davinci-resolve/",
+      "quality": "blog",
+      "angle": "Color grading technique (DaVinci, contrast, split-tone)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://tallguyfilms.wordpress.com/2018/01/20/grading-the-films-interstellar/",
+      "quality": "blog",
+      "angle": "Color grading technique (DaVinci, contrast, split-tone)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://oboe.com/learn/mastering-cinematic-video-editing-3e83dg/cinematic-color-grading-jiseic",
+      "quality": "unreliable",
+      "angle": "Color grading technique (DaVinci, contrast, split-tone)",
+      "claimCount": 0
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Planckian_locus",
+      "quality": "secondary",
+      "angle": "Real blackbody/spectral color → sRGB",
+      "claimCount": 4
+    },
+    {
+      "url": "https://www.scratchapixel.com/lessons/cg-gems/blackbody/blackbody.html",
+      "quality": "secondary",
+      "angle": "Real blackbody/spectral color → sRGB",
+      "claimCount": 5
+    },
+    {
+      "url": "https://www.aavso.org/determination-stellar-temp-and-spectral-class-b-v-photometry",
+      "quality": "forum",
+      "angle": "Real blackbody/spectral color → sRGB",
+      "claimCount": 4
+    },
+    {
+      "url": "https://webbtelescope.org/contents/articles/how-are-webbs-full-color-images-made",
+      "quality": "primary",
+      "angle": "Telescope false-color conventions (nebulae, X-ray)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://chandra.harvard.edu/photo/false_color.html",
+      "quality": "primary",
+      "angle": "Telescope false-color conventions (nebulae, X-ray)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://esawebb.org/about/general/image-processing/",
+      "quality": "primary",
+      "angle": "Telescope false-color conventions (nebulae, X-ray)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://spie.org/news/photonics-focus/sept-oct-2025/coloring-astronomy",
+      "quality": "secondary",
+      "angle": "Telescope false-color conventions (nebulae, X-ray)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://theastromanual.com/narrowband-astrophotography-ha-oiii-sii/",
+      "quality": "blog",
+      "angle": "Telescope false-color conventions (nebulae, X-ray)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://cerncourier.com/a/building-gargantua/",
+      "quality": "secondary",
+      "angle": "Reconciling fidelity + beauty (relativistic disks, palettes)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://github.com/SushantGagneja/Black-Hole-simulation",
+      "quality": "blog",
+      "angle": "Reconciling fidelity + beauty (relativistic disks, palettes)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://svs.gsfc.nasa.gov/13326/",
+      "quality": "primary",
+      "angle": "Reconciling fidelity + beauty (relativistic disks, palettes)",
+      "claimCount": 5
+    },
+    {
+      "url": "https://astrobackyard.com/narrowband-imaging/",
+      "quality": "blog",
+      "angle": "Reconciling fidelity + beauty (relativistic disks, palettes)",
+      "claimCount": 5
+    }
+  ],
+  "stats": {
+    "angles": 5,
+    "sourcesFetched": 22,
+    "claimsExtracted": 96,
+    "claimsVerified": 25,
+    "confirmed": 20,
+    "killed": 5,
+    "afterSynthesis": 4,
+    "urlDupes": 4,
+    "budgetDropped": 4,
+    "agentCalls": 104
+  }
+}

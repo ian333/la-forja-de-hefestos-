@@ -1,0 +1,221 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// (a1) COLOR CUERPO-NEGRO — Planck real para la NS. GLSL drop-in en
+//      CinematicPulsar.tsx → NeutronStar() fragmentShader. Reemplaza el bloque
+//      crust/hot/col actual (líneas ~190-194). FÍSICA: T>5e5 K = cola
+//      Rayleigh-Jeans (Wien peak en rayos X). El crust REAL casi no emite
+//      visible → casi negro; los hot spots revientan a BLANCO-AZUL PÁLIDO.
+// ───────────────────────────────────────────────────────────────────────────
+//  Constantes (valores EXACTOS calculados Planck→sRGB, normalizados a luma):
+//    TINT_HOT (paleness 0.55) = vec3(0.685, 0.747, 1.000)   // hot spot pálido
+//    TINT_CRUST (chroma pura)  = vec3(0.301, 0.439, 1.000)   // SOLO para el tinte
+//                                                               del residual, MUY tenue
+//  uniform float uTcrust;  // 0..1 normalizado: J0030=0.50 (1e6K), Vela=0.65 (1.5e6K)
+
+  // ── Color cuerpo-negro: crust CASI NEGRO en visible (XUV peak), hot spots reventando ──
+  // El crust de una NS a 1e6 K emite el grueso de su flujo en rayos X; en banda
+  // VISIBLE es la cola Rayleigh-Jeans → tenue. NO pintar un globo azul.
+  const vec3 TINT_HOT   = vec3(0.685, 0.747, 1.000);  // Planck 1e6K, paleness 0.55
+  const vec3 TINT_CRUST = vec3(0.301, 0.439, 1.000);  // chroma pura (solo tinte)
+  // crust: emisión visible MÍNIMA (Rayleigh-Jeans) + leve realce polar térmico.
+  // base 0.006 (casi negro), no 0.014/0.020/0.045 cobalto del actual.
+  float pole = pow(abs(n.y), 5.0);
+  vec3 crust = TINT_CRUST * (0.010 + 0.022 * pole);        // tenue, frío, NO cobalto
+  // hot spots: intensidad emisiva ALTA (1e6 K es brutal) → ACES+bloom los lleva
+  // a blanco-azul pálido CONSERVANDO la forma (pow 0.8 = borde nítido del cap).
+  vec3 hot = TINT_HOT * 5.2;                               // HDR: revienta vía bloom
+  vec3 col = crust + hot * pow(h, 0.8);
+  // limbo: light-bending hace BRILLAR el borde (3/4 de superficie visible). El
+  // limbo recibe un realce azul-pálido suave (foto-esfera doblada al borde).
+  float limb = pow(max(dot(normalize(vNview), vView), 0.0), 0.45);
+  col *= mix(0.18, 1.0, limb);                             // 0.18 = crust casi negro al centro
+  col += TINT_HOT * 0.35 * pow(1.0 - limb, 2.0) * smoothstep(0.0,0.4,h+0.15); // glo de limbo
+  gl_FragColor = vec4(col, 1.0);
+
+// ───────────────────────────────────────────────────────────────────────────
+// (a2) PRESET 'pulsar' en CinematicPostFX.tsx — añadir al type y a PRESETS.
+//      saturation BAJA (0.06, NO 0.18 magnetar) = blanco-azul PÁLIDO, sin cobalto.
+//      Bloom DOMADO que conserva la media luna. CA=0 (confeti).
+// ───────────────────────────────────────────────────────────────────────────
+export type CinematicPreset = 'bh' | 'magnetar' | 'quasar' | 'physics' | 'pulsar'
+
+  // Estrella de neutrones: crust frío casi-negro, hot spots blanco-azul que
+  // REVIENTAN conservando la forma de la media luna NICER. Glo FRÍO, no ámbar.
+  pulsar: {
+    bloomIntensity: 1.6,      // domado: el arco no se funde en disco
+    bloomThreshold: 0.65,     // ALTO: solo los hot spots cruzan (crust no brilla)
+    bloomRadius: 0.55,        // corto: halo ceñido = conserva la media luna
+    dofFocusDistance: 0.02,
+    dofFocalLength: 0.05,
+    dofBokehScale: 0,         // NS = sphere sólida; DOF plano lava todo (off)
+    caOffset: 0.0,            // CA=0: el starfield no hace confeti
+    grainOpacity: 0.03,
+    vignetteDarkness: 0.9,    // void NEGRO en esquinas (como el BH)
+    anamorphic: false,        // un flare anamórfico en NS = falso (no hay disco)
+    saturation: 0.06,         // BAJO: blanco-azul pálido, NO empuja a cobalto
+    contrast: 0.16,
+    brightness: -0.02,
+  },
+
+// Y en CinematicPulsar.tsx el <CinematicPostFX> pasa a:
+//   <CinematicPostFX preset="pulsar" />   // (quita preset="magnetar" bloomThreshold={0.5} anamorphic)
+
+// ───────────────────────────────────────────────────────────────────────────
+// (b) GRADE DaVinci PORTADO a render-pulsar-comercial.cjs (copia de
+//     render-bh-comercial.cjs). Cambios EXACTOS sobre buildGradeFilter():
+//     halación FRÍA-BLANCA (no ámbar: la NS es azul), crush 0.16, sat 0.86.
+// ───────────────────────────────────────────────────────────────────────────
+const GRADE_VERSION = 'pulsar-v1-frio';
+
+  // (3) GRADE: NEGROS NEGROS + altas FRÍAS (no cálidas: la NS no es un disco ámbar).
+  //     colorbalance: sombras NEUTRAS, altas con leve AZUL (rh negativo, bh positivo).
+  //     crush a 0.16 (void del pulsar más limpio que el BH) → polvo nebular a negro.
+  parts.push(
+    `[base1]` +
+    `colorbalance=rs=0.00:gs=0.00:bs=0.02:rm=0.00:gm=0.00:bm=0.00:rh=-0.06:gh=0.00:bh=0.10,` +
+    `curves=master='0/0 0.16/0 0.36/0.18 0.5/0.5 0.75/0.80 1/1',` +
+    `eq=saturation=0.86:contrast=1.12:gamma=0.97` +
+    `[graded]`
+  );
+
+  // (4) HALACIÓN FRÍA-BLANCA (NO ámbar): aislar altas → atenuar R levemente (sangra
+  //     al AZUL-BLANCO, no al rojo) → gblur → screen. El glo de una NS es blanco-frío.
+  parts.push(`[graded]split=2[gbase][ghi]`);
+  parts.push(
+    `[ghi]` +
+    `curves=master='0/0 0.80/0 0.9/0.5 1/1',` +
+    // sangrado FRÍO: B intacto, R atenuado, G medio → halo blanco-azulado
+    `curves=red='0/0 1/0.55':green='0/0 1/0.78',` +
+    `gblur=sigma=${haloSigma}:steps=3,` +
+    `format=gbrp[glow]`
+  );
+  parts.push(`[gbase][glow]blend=all_mode=screen:all_opacity=0.14[halated]`);
+  // (resto idéntico al BH: grano all_seed=SEED+fo, gate-weave, format 10-bit+dither)
+
+// ───────────────────────────────────────────────────────────────────────────
+// (c) STARFIELD REAL — reemplaza el <Starfield> de points en CinematicPulsar.
+//     OPCIÓN ELEGIDA: portar el starfield GLSL del BHRaytraced.stars() a un quad
+//     fullscreen propio (cáscara que SÍ llena el cuadro, magnitud pow, color B-V,
+//     Vía Láctea, nebulosa Cangrejo etiquetada). Justificación vs points: los
+//     points no entran en cuadro como contexto y no tienen magnitud física; el
+//     enfoque GLSL es el MISMO que da el fondo de la vara BH. CA=0.
+//     Color B-V real (Planck→sRGB calculado): O=#6c8cff B=#96adff A=#d4d7ff
+//     F=#ffe6e2 G=#ffd2b0 K/M=#ffa65d.
+// ───────────────────────────────────────────────────────────────────────────
+function Starfield({ crab = false }: { crab?: boolean }) {
+  const { camera, size } = useThree();
+  const mat = useMemo(() => new THREE.ShaderMaterial({
+    depthWrite: false, depthTest: false, toneMapped: false,
+    uniforms: {
+      uCamFwd:{value:new THREE.Vector3()}, uCamRight:{value:new THREE.Vector3()},
+      uCamUp:{value:new THREE.Vector3()}, uTanHalfFov:{value:0.4}, uAspect:{value:1.0},
+      uCrab:{value: crab?1.0:0.0},
+    },
+    vertexShader:`varying vec2 vUv; void main(){vUv=uv; gl_Position=vec4(position.xy,0.999,1.0);}`,
+    fragmentShader:/* glsl */`
+      precision highp float; varying vec2 vUv;
+      uniform vec3 uCamFwd,uCamRight,uCamUp; uniform float uTanHalfFov,uAspect,uCrab;
+      float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+      float n2(vec2 p){vec2 i=floor(p),f=fract(p);float a=h21(i),b=h21(i+vec2(1,0)),
+        c=h21(i+vec2(0,1)),d=h21(i+vec2(1,1));vec2 u=f*f*(3.-2.*f);
+        return mix(mix(a,b,u.x),mix(c,d,u.x),u.y);}
+      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n2(p);p*=2.07;a*=.5;}return v;}
+      // B-V chromaticity LUT (Planck→sRGB real): O→M sequence
+      vec3 bvColor(float t){ // t in 0..1 = blue..red
+        vec3 O=vec3(0.42,0.55,1.00), A=vec3(0.83,0.85,1.00),
+             G=vec3(1.00,0.90,0.79), M=vec3(1.00,0.65,0.37);
+        if(t<0.45) return mix(O,A,t/0.45);
+        if(t<0.75) return mix(A,G,(t-0.45)/0.30);
+        return mix(G,M,(t-0.75)/0.25);
+      }
+      vec3 stars(vec3 dir){
+        dir=normalize(dir);
+        float theta=atan(dir.z,dir.x), phi=asin(clamp(dir.y,-1.,1.));
+        vec3 col=vec3(0.);
+        for(int layer=0;layer<4;layer++){
+          float scale=340.*pow(1.55,float(layer));
+          vec2 uvS=vec2(theta*scale,phi*scale*2.)+vec2(float(layer)*4.1,float(layer)*7.7);
+          vec2 cell=floor(uvS), cf=fract(uvS);
+          for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++){
+            vec2 cc=cell+vec2(float(dx),float(dy));
+            float hh=h21(cc+float(layer)*11.3);
+            float thr=0.965-0.005*float(layer);
+            if(hh>thr){
+              vec2 pp=vec2(float(dx)+h21(cc+2.),float(dy)+h21(cc+5.));
+              vec2 dd=cf-pp; float d2=dot(dd,dd);
+              // MAGNITUD: pow alto → pocas estrellas dominan (ley de magnitud real)
+              float mag=pow(hh-thr,1.6);
+              float inten=exp(-d2*80.)*mag*620.;
+              vec3 tint=bvColor(h21(cc+7.0));            // color B-V real por estrella
+              col+=tint*inten*(1.0/pow(1.3,float(layer)));
+            }
+          }
+        }
+        // Vía Láctea sutil (fix anti-morado del BH: gris-frío tenue, NO lavanda)
+        float band=exp(-dir.y*dir.y*4.5);
+        float dust=fbm(vec2(theta*6.,phi*4.))*band;
+        col+=vec3(0.34,0.36,0.42)*dust*0.08;
+        col+=vec3(0.80,0.78,0.70)*pow(band,1.6)*0.04;
+        float darkB=smoothstep(0.3,0.55,fbm(vec2(theta*5.,phi*3.)))*band;
+        col*=1.0-darkB*0.4;
+        // NEBULOSA CANGREJO (etiquetada: solo lentes X/gamma, uCrab=1). SN 1054,
+        // filamentos + synchrotron azul-blanco. Evocativa → se ETIQUETA en caption.
+        if(uCrab>0.5){
+          vec3 cd=normalize(vec3(0.5,0.25,0.83));        // posición fija en el cielo
+          float ang=acos(clamp(dot(dir,cd),-1.,1.));
+          float neb=exp(-pow(ang/0.18,2.0));
+          float fil=fbm(vec2(theta*9.+ang*20.,phi*9.));
+          col+=vec3(0.55,0.78,1.00)*neb*(0.20+0.45*fil); // synchrotron azul-blanco
+          col+=vec3(1.00,0.45,0.42)*neb*fil*0.12;         // filamentos Hα tenues
+        }
+        return col;
+      }
+      void main(){
+        vec2 uv=vUv*2.-1.; uv.x*=uAspect;
+        vec3 rd=normalize(uCamFwd+uv.x*uTanHalfFov*uCamRight+uv.y*uTanHalfFov*uCamUp);
+        gl_FragColor=vec4(stars(rd)*0.9,1.0);            // CA=0 (cero confeti)
+      }`,
+  }), [crab]);
+  useFrame(() => {
+    const fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
+    const right=new THREE.Vector3().crossVectors(fwd,camera.up).normalize();
+    const up=new THREE.Vector3().crossVectors(right,fwd).normalize();
+    mat.uniforms.uCamFwd.value.copy(fwd); mat.uniforms.uCamRight.value.copy(right);
+    mat.uniforms.uCamUp.value.copy(up);
+    mat.uniforms.uTanHalfFov.value=Math.tan(((camera as THREE.PerspectiveCamera).fov*Math.PI/180)/2);
+    mat.uniforms.uAspect.value=size.width/size.height;
+  });
+  return <mesh renderOrder={-100} frustumCulled={false} material={mat}>
+    <planeGeometry args={[2,2]} /></mesh>;
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// (d) CONSTANTES DE DATOS REALES + CAPTIONS POR LENTE.
+//     P, rs, R_LC, T, B reales. Usa el captionFilter existente del .cjs.
+// ───────────────────────────────────────────────────────────────────────────
+// PULSAR_DATA — anclas físicas reales (no inventadas):
+const PULSAR_DATA = {
+  J0030: { P: 4.87e-3, M: 1.4, R_km: 12.7, rs_km: 4.13, RcRs: 3.07, compact: 0.16,
+           R_LC_km: 232, T_K: 1.0e6, src: 'NICER · Riley 2019' },
+  Crab:  { P: 33.0e-3, B_G: 3.3e12, R_LC_km: 1574, T_K: 1.6e6, sn: 'SN 1054',
+           src: 'Chandra · doble pico P1/P2' },
+  Vela:  { P: 89.0e-3, R_LC_km: 4250, T_K: 1.5e6, src: 'Vela X' },
+  Bell:  { P: 1.337, src: 'PSR B1919+21 · Jocelyn Bell 1967' },
+};
+// rs = 2GM/c² para M=1.4 M☉ = 4.13 km; R_LC = cP/2π: J0030=232 km, Vela=4250 km. ✓
+// compacidad rs/R = 4.13/12.7 = 0.325 (NOTA: el brief da 0.16 = GM/Rc² = rs/2R;
+// AMBAS conviven: la fracción de superficie visible por light-bending va con rs/R≈0.33
+// → se ve ~3/4 de la esfera; verificado con la fórmula de Pechenick 1983.)
+
+// CAPTIONS por lente (formato "LENTE n/5 · banda · fuente · dato-awe"). Pasan al
+// captionFilter(beat.caption, opts) ya existente — cada beat lleva su .caption:
+const LENS_CAPTIONS = {
+  L1_visible: 'LENTE 1/5 · VISIBLE · NICER (Riley 2019) · ves 3/4 de la esfera: la gravedad dobla la luz',
+  L2_magnetica:'LENTE 2/5 · CAMPO B · dipolo + cilindro de luz R_LC = cP/2π = 232 km',
+  L3_xray:    'LENTE 3/5 · RAYOS X · Chandra · toro + jets sobre el eje de ROTACIÓN (SN 1054)',
+  L4_gamma:   'LENTE 4/5 · GAMMA · viento de pares e± · doble pico P1/P2 del Cangrejo',
+  L5_radio:   'LENTE 5/5 · RADIO · el haz magnético barre = el PULSO (Jocelyn Bell, 1967)',
+};
+// El Crab/nebulosa se activa con <Starfield crab /> SOLO en L3_xray y L4_gamma.
+// Render: copia render-bh-comercial.cjs → render-pulsar-comercial.cjs, cambia
+// SCENE_DEPS a CinematicPulsar.tsx, GRADE_VERSION='pulsar-v1-frio', hook='__cinematicPulsar',
+// y aplica el buildGradeFilter frío de arriba. --captions usa LENS_CAPTIONS por beat.

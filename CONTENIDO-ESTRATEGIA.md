@@ -26,6 +26,41 @@ la fidelidad — cada física distinta = cada arranque distinto):
 Variar el EVENTO de los primeros 1.5s con 6-8 ganchos científicos distintos. Reusar los beats
 deterministas de `CinematicBHReel.tsx`. A/B 2-3 ganchos por motor.
 
+## POR QUÉ el gancho importa — Doctrina de señalización (5 Nobel, la economía REAL del feed)
+
+El feed ES el mercado de los limones (Akerlof 1970). El pulgar NO puede "partir la sandía" antes de
+comprar: en 0.5 s no ve tu calidad real, así que te paga **precio de promedio mental** ("otro canal
+de espacio bonito" → swipe). Tu agujero negro físicamente correcto muere INDISTINGUIBLE de la
+chatarra de After Effects/IA. Ese es el `welfareLoss` de tu propio lab `MarketForLemons.tsx`, medido
+en views perdidas. Las 5 leyes (cada una es un Nobel que ya vive en `src/economia/`):
+
+1. **La belleza NO es señal (Spence 1973).** Una señal solo separa si es CARA de fingir. La belleza de
+   render hoy es BARATA de fingir (mil cuentas con IA/stock la escupen en segundos) → ya se **infló**
+   (Nash: todos parados de puntitas en el mismo estadio). Es el PISO, no el diferenciador. Subir más
+   belleza = pararte más de puntitas donde todos ya están parados; nadie te ve más.
+2. **La señal cara de fingir = la PROMESA de una brecha que no puedes des-ver (Spence + Becker).** El
+   de humo no tiene física real atrás; tú sí (señal "llena", no "hueca"). El gancho debe prometer
+   cerrar una brecha que SOLO tu corrección científica cierra: no "míralo girar bonito", sino "esto es
+   lo último que verías al caer" / "esto mide 2 m y cabe donde no alcanzas a ver".
+3. **El primer frame ES la criba (Mirrlees-Vickrey 1996).** El algoritmo NO te pregunta si el video es
+   bueno: te pone una trampa que te delata sola — los primeros 1.5 s. **Optimiza para PASAR la criba,
+   no para la belleza** que vive en el cuarto (segundos 3+) donde el pulgar ya no entra.
+4. **Eres el PRODUCTO, no el cliente (Tirole 2014).** TikTok es mercado de dos lados: regala
+   entretenimiento a la gente y cobra a anunciantes; tú eres el cebo gratis. Al algoritmo NO le importa
+   tu belleza ni tu verdad — solo que la gente no cierre la app (retención). Trabaja CON la máquina y
+   te regala alcance; pelea (belleza que no retiene) y te entierra. No es castigo: es el negocio.
+5. **Tu MOAT es la verdad que el de humo no puede fingir (Akerlof→Spence, el cable de `relaciones.ts`).**
+   "Akerlof ve el problema, Spence la salida." La salida NO es más bonito: es la señal que el canal de
+   IA no puede copiar — física correcta + el dato-brecha. Ahí, y solo ahí, vuelves a ser el único.
+
+**Implicación operativa (esto cambia el trabajo):** el cuello NO es producción (vas sobrado de
+belleza) — es la **señal en la criba de 1.5 s**. Por eso el video #114 más bonito no mueve la aguja;
+el primer frame + la promesa, sí.
+- **A/B del texto-gancho sobre el MISMO render** (NO re-renderear): 3 promesas-brecha distintas, una
+  por día, mismo video → el feed te dice cuál retiene (Mirrlees: deja que la trampa revele la verdad).
+- **Re-subir** los enterrados en 2-3 semanas con gancho nuevo (TikTok los trata como nuevos).
+- La belleza es condición NECESARIA, no suficiente: gánate la criba primero; la belleza cobra después.
+
 ## Formato (validado por investigación)
 
 - **Duración**: 12-25 s default (reels de 1 objeto); 30-45 s solo para piezas narrativas. Cortar antes de 45s.

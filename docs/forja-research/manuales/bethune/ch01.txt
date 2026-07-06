@@ -1,0 +1,593 @@
+Chapter 1. Getting Started
+Chapter Objectives
+
+          Create a sketch
+          Create a file/part
+          Create a solid model
+          Edit angular and circular shapes
+          Draw holes
+          Use Sketch tools
+          Change units of a part
+
+
+
+1-1 Introduction
+SolidWorks is a parametric solid modeler that uses dimensions, parameters, and relationships to
+define and drive 3D shapes. Solid modelers make it easy to edit and modify parts as they are
+constructed. This capability is ideal for creating new designs.
+      Parametric modelers use dimensions to drive the shapes. For example, to create a line of a
+defined length, a line is first sketched, and then the length dimension is added. The line will
+assume the length of the dimension. If the dimension is changed, the length of the line will
+change to match the new dimension.
+      When using non-parametric modelers, a line is drawn and a dimension added. The
+dimension will define the length of the existing line but not drive it. If the length of the line is
+changed, the dimensions will not change. A new dimension is required to define the length of the
+line.
+      This chapter will show you how to start a New document and introduce the Line, Circle,
+and Edit tools. The Smart Dimension tool will be used to define and edit lines and circles. Line
+colors and relationships will also be introduced.
+
+1-2 Starting a New Document
+Figure 1-1 shows the initial SolidWorks screen.
+Figure 1-1
+
+
+Starting a New Part Document
+      1 Click the New tool icon at the top of the SolidWorks screen.
+    The New SolidWorks Document dialog box appears, as shown on the left in Figure 1-2.
+This is the Novice version of the dialog box. Clicking Advanced opens the Advanced version,
+shown on the right. Either version can be used to create three types of documents: Part,
+Assembly, and Drawing.
+Figure 1-2
+
+       Parts are 3D solid models of individual parts.
+       Assemblies are used to create combinations of parts and assemblies.
+       Drawings are used to create orthographic views of a Part or Assembly. Dimensions and
+       tolerances can be applied to Drawings.
+      2 Click the Part tool and then click the OK box.
+     The Part screen will appear. See Figure 1-3. Note the different areas of the screen. The
+Sketch tab is currently activated, so the Features tools are displayed. Each tool icon on the
+Sketch toolbar is accompanied by its name. These names can be removed and the toolbar
+condensed to expand the size of the drawing screen. For clarity these named tools will be
+included in the first few chapters of the book so you gain enough knowledge of the tools to work
+without their names.
+Figure 1-3
+
+
+Selecting a Sketch Plane
+SolidWorks uses one of three basic planes to define a part: Front, Top, and Right. These planes
+correspond to the planes used to define orthographic views that will be explained in Chapter 4.
+The Top plane will be used as a sketch plane to demonstrate the first few tools.
+        1 Define the plane on which the part will be created by clicking the Top Plane option in
+          the Feature manager box on the left side of the drawing screen.
+
+
+ Note
+ Instruction numbering in the text and figures does not necessarily match; however, the order will be similar. Steps numbered
+ in the figures generally pertain to clicking items in the SolidWorks user interface, whereas the text may include additional
+ numbered steps to guide the developmental process. The numbering in the figures will generally start anew in each new
+ figure.
+
+
+     See Figure 1-4. An outline of the Top plane will appear using a type of 3D orientation 5
+called the Trimetric orientation.
+Figure 1-4
+
+      2 Click the Sketch tool as shown in Figure 1-4.
+     The Top plane’s orientation will change to a 2D view. The Top plane is now a sketch plane
+and appears as a rectangle because the view is taken perpendicular to the plane. This means that
+all 2D shapes drawn on the plane will appear as true shapes.
+      3 Click the Line tool.
+          With the Line tool activated, locate the cursor on the origin. The origin is indicated by
+          the two red arrows spaced 90° apart. See Figure 1-5.
+Figure 1-5
+
+     Two icons will appear on the screen: the Line tool icon indicating that the Line tool is
+active, and the Coincident relation icon indicating that the origin and the starting point for the
+line are on the same point.
+       4 Move the cursor away from the origin horizontally to the right.
+    As you move the cursor away from the origin, a distance and angle value will appear. See
+Figure 1-6. The distance is as measured from the origin or starting point for the line, and the
+angle is based on the SolidWorks definition of 0° as a horizontal line to the left of the starting
+point. We are drawing to the right, so the angular value is 180°.
+Figure 1-6
+
+    Two other icons will also appear: the Line tool icon and the horizontal relationship icon.
+      5 Click the mouse at the point at which you want to define the endpoint of the line.
+      6 Move the cursor vertically downwards. Do not click the mouse.
+     A new line will be drawn using the endpoint of the horizontal line as the starting point for
+the vertical line. Distance and angle values will appear based on the new starting point, and the
+Line and vertical relationship icons will appear.
+      7 Press the <Esc> key or right-click the mouse and click the Select option.
+      8 Click the Smart Dimension tool, click the line, and move the cursor away from the
+        line.
+          A dimension will appear.
+      9 Click the mouse to define the location of the dimension.
+    The Modify dialog box will appear.
+     10 Enter a distance value for the line and click the green OK check mark.
+     11 Click anywhere on the empty screen to complete the line.
+    The dimension can be moved by locating the cursor on the dimension, pressing and holding
+the mouse button, and dragging the cursor.
+     12 Hover over the arrow next to the SolidWorks logo in the upper left and click the File
+        menu located at the top of the screen, then click Close. See Figure 1-7.
+
+
+
+
+Figure 1-7
+
+     13 Click the Don’t Save option. See Figure 1-8.
+Figure 1-8
+
+    The screen will return to the original SolidWorks screen.
+
+1-3 SolidWorks Colors
+As you work with SolidWorks you will notice that the lines change colors. These color changes
+let you know the status of the sketch being drawn. There are four basic colors.
+     Black = Fully defined
+     Blue = Under defined
+     Red = Over defined
+     Yellow = Redundant
+
+1-4 Creating a Fully Defined Circle
+In this section we will sketch a circle to help understand the difference between a fully defined
+and an under defined Part.
+      1 In the New SolidWorks dialog box (previously shown in Figure 1-2), click Part and
+          then click OK to open a new Part document.
+       2 Click the Top Plane on the left (as depicted in Figure 1-4).
+       3 Click the Sketch tab. (It may already be activated.) See Figure 1-9.
+
+
+
+
+Figure 1-9
+
+       4 Click the Circle tool.
+       5 Locate the cursor on the origin, click the mouse, and drag the cursor away from the
+         origin centerpoint.
+    Note that the Coincident relation symbol appears next to the origin, indicating that the
+centerpoint of the circle is located on the origin.
+       6 Click the mouse to define a sketch radius for the circle.
+     This sketched radius is a temporary radius and is not the final radius. The circle will be blue,
+indicating that it is not fully defined.
+       7 Click the Smart Dimension tool on the Sketch panel.
+       8 Click the circle and move the cursor away from the circle.
+    A dimension will appear. See Figure 1-10.
+
+
+
+
+Figure 1-10
+
+       9 Select a location for the dimension and click the mouse.
+     The circle will initially be blue, not fully defined, until the mouse is clicked, locating the
+circle’s dimension. When the mouse is clicked, the circle will turn black; it is now fully defined.
+We know the circle’s diameter and location.
+     When the mouse is clicked, the Modify dialog box will appear. The sketched diameter value
+will be listed in the box. This sketched diameter value is now the circle’s diameter until we enter
+a new value.
+      10 Enter a diameter value for the circle.
+    In this example a value of 2.00 was entered.
+      11 Click the green OK check mark in the Modify dialog box to enter the diameter value.
+      12 Click the green OK check mark in the PropertyManager area to finish defining the
+         circle.
+Changing an Existing Dimension
+      1 Double-click the 2.00 dimension.
+    The Modify dialog box will reappear.
+      2 Enter a new value.
+    In this example a value of 3.00 was entered. See Figure 1-11. The circle’s diameter will
+change to 3.00 and the circle’s color will remain black. The circle is still fully defined.
+Figure 1-11
+
+       3 Click the green OK check mark in the Modify dialog box.
+    Note that the words Fully Defined appear at the bottom of the screen.
+    The circle is fully defined because both its diameter and location are known. The location
+was fully defined when we located the circle’s centerpoint on the origin. Every circle needs a
+locational value and a diameter value to be fully defined. The locational value may be linear (an
+X and Y component value) or polar (an angular and radius value).
+
+
+Fully Defined Entities
+To help understand when an entity is fully defined, sketch two circles, one with its centerpoint on
+the origin and the other with its centerpoint not on the origin. See Figure 1-12. Both circles are
+under defined because the diameter values have not been defined. Both circles are sketched
+circles.
+Figure 1-12
+
+     Use the Smart Dimension tool and define both their diameters as Ø2.00. The circle located
+on the origin will be black. It is fully defined. Both its diameter and location are known. The
+circle with its centerpoint not located on the origin will remain blue. It is not fully defined. Its
+location is unknown. See Figure 1-13.
+Figure 1-13
+
+     Figure 1-14 shows the two Ø2.00 circles again. This time, dimensions have been added to
+the circle not located on the origin. The dimensions define the circle’s centerpoint relative to the
+origin. It is now fully defined. Its color will change to black.
+Figure 1-14
+
+
+ Note
+ Always include the origin as part of a 2D sketch.
+
+
+
+     Figure 1-15 shows the two Ø2.00 circles with an extra dimension. The 1.20 vertical
+dimension is not needed to define the location of the hole not centered on the origin. A 1.20
+vertical dimension already exists. The 1.20 dimension is redundant, so the dimension lines
+change to yellow.
+Figure 1-15
+
+    Figure 1-15 also shows the Make Dimension Driven? dialog box. A driving dimension
+drives the shape and/or location of the object. If the driving dimension is changed, the shape or
+location will change. Driven dimensions are reference dimensions. They are sometimes added to
+a drawing for clarity. For example, a reference dimension could be used to show the overall
+value of a string of smaller dimensions. See Chapter 7. In this example it would be better to
+delete the extra 1.20 dimension. If you save it on the sketch, click the Make this dimension
+driven option and click OK. It will appear as a gray color. See Figure 1-16.
+Figure 1-16
+
+1-5 Units
+This book will present examples and exercise problems using English units (inches) and Metric
+units (millimeters). Figure 1-17 shows the dimensioned circles created in the previous section.
+Note the letters IPS to the right of the Fully Defined callout. IPS stands for inch, pound, and
+second, the current units.
+Figure 1-17
+
+
+Changing Units
+        1 Click the IPS callout at the bottom of the screen.
+        2 Select the desired units.
+     In this example millimeters (MMGS) was selected. MMGS stands for millimeter, gram, and
+second. The letters MMGS appear at the bottom right of the screen, indicating the drawing units
+are now millimeters.
+        3 Click the Undo tool to return to the sketch. The new dimensions appear.
+
+
+ Note
+ The converted millimeter dimensions are not whole numbers as were the inch units. It is better to do a drawing in either inches
+ or millimeters from the beginning and not to convert units as a drawing is created. This helps prevent round-off errors.
+
+
+
+
+1-6 Rectangle
+Rectangles are sketch tools that expedite the creation of rectangles and parallelograms. Each of
+these tools can be used to generate four connected lines with appropriate relations rather than
+drawing each line individually.
+
+
+Sketching a Rectangle
+The example shown in Figure 1-18 was created on the Top plane using the Rectangle tool. The
+units are inches.
+Figure 1-18
+
+      1 Open a new Part document, click the Top Plane option, and click the Sketch tool.
+    As shown in Figure 1-18, the outline rectangle for the Top plane will rotate to the Normal
+orientation; that is, you are looking at the plane from a 90° orientation. This means that any
+shape drawn on the plane will be a true shaped line. This concept will be covered in Chapter 4 on
+orthographic views.
+      2 Click the arrowhead next to the Rectangle tool and select the Corner Rectangle
+        option.
+    Five options for drawing a rectangle are listed. The different options are helpful when
+creating designs. It is recommended you take a few minutes and try each option. Only Corner
+Rectangle will be used in this chapter.
+      3 Click the origin and move the cursor up and to the right.
+      4 Click the mouse to define the rectangle’s opposite corner.
+      5 Press the <Esc> key or right-click the mouse and click the Select option.
+    Note that two relationships are defined: coincident and horizontal. The starting point was
+located on the origin, so they are coincident and the rectangle is drawn. Note also that the
+rectangle is not fully defined because its size has not been defined.
+     Releasing the mouse button will define the length of the sketched line, but you are still in the
+Sketch mode. If you click the mouse again, a new rectangle will begin.
+       6 Click the Smart Dimension tool and use it (as previously described) to define the size
+         of the rectangle.
+
+
+Exiting the Sketch Mode
+Click the Exit Sketch icon on the Sketch panel or click the Exit Sketch icon that appears in the
+upper-right corner of the drawing screen.
+    See Figure 1-19.
+
+
+
+
+Figure 1-19
+
+
+Reentering the Sketch Mode
+Once you have created a sketch and left the Sketch mode, you can return to work on the sketch
+by using the Edit Sketch mode. See Figure 1-20.
+      1 Click an entity in the existing sketch.
+      2 Click the Edit Sketch tool.
+
+
+
+
+Figure 1-20
+
+1-7 Moving Around the Drawing Screen
+SolidWorks includes several methods that allow you to move entities around the screen. Entities
+can be moved, zoomed, or reorientated. Figure 1-21 shows the rectangle created in the previous
+section.
+Figure 1-21
+
+
+Zooming the Rectangle
+Rotate the mouse wheel. The rectangle will increase and decrease in size.
+
+
+Moving the Rectangle
+      1 Hold down the <Ctrl> key; press and hold down the mouse wheel.
+      2 Move the mouse around.
+          The rectangle will follow the mouse movement.
+
+
+Reorientating the Rectangle
+      1 Click the rectangle.
+      2 Hold down the mouse wheel and move the mouse.
+    The rectangle’s orientation will follow the mouse movement.
+
+1-8 Orientation
+The rectangle in the previous sections was created in the Top view orientation. As you work on a
+sketch, the orientation may change. There are three techniques you can use to return the sketch to
+its original orientation.
+
+
+Returning to the Top View Orientation—View Selector
+       1 Click the View Orientation tool at the top of the drawing screen.
+   The View Selector cube will appear. See Figure 1-22. If the cube does not appear, click the
+View Selector icon on the View Orientation tool panel.
+Figure 1-22
+
+      2 Click the top surface of the View Selector cube.
+    The sketch will return to the Top view orientation.
+
+
+Returning to the Top View Orientation—Top View
+See Figure 1-22.
+      1 Click the View Orientation tool at the top of the drawing screen.
+      2 Click the Top view tool.
+
+
+Returning to the Top View Orientation—Orientation Triad
+The Orientation Triad is located in the lower-left corner of the drawing screen. See Figure 1-
+22.
+    SolidWorks defines the Top plane as the XZ plane. The Y axis is 90° to the XZ plane, so a
+view taken along the Y axis will generate a top view of the plane.
+      1 Move the cursor onto the Orientation Triad.
+      2 Click the Y axis indicator arrow.
+          The triad will reorientate to the Top view orientation.
+
+1-9 Sample Problem SP1-1
+Figure 1-23 shows a 2D shape sketched using the Line tool. The dimensions are in millimeters.
+This section will explain how to draw the shape.
+
+
+
+
+Figure 1-23
+
+      1 Start a New Part document, select the Front Plane, and click the Sketch tool to create
+        a sketch plane.
+    See Figure 1-24.
+Figure 1-24
+
+      2 Define the dimensional units as millimeters, MMGS.
+   See Figure 1-25.
+Figure 1-25
+
+       3 Click the Line tool.
+       4 Select the origin as the starting point for the first line.
+
+
+Note
+The Line tool will generate a series of chain lines, where the endpoint of a sketched line becomes the starting point for the
+next line, until the line’s endpoint is defined by pressing the <Esc> key or right-clicking the mouse and clicking the Select
+option.
+
+
+       5 Sketch the general shape as shown in Figure 1-26.
+Figure 1-26
+
+ Hint
+ Make each line slightly larger than the stated dimension. Exact values are not required. Use the real-time length values to
+ estimate the length of the longer lines.
+
+
+
+     Note the double-circle relation icon that appears when the end of the last horizontal line
+drawn is located on the starting point of the first line. This is the Concentric relation icon, which
+indicates that the two points occupy the same location. The midpoint of the right-side vertical
+line is also defined.
+        6 Click the Smart Dimension tool and dimension the shape as shown in Figure 1-27 by
+          clicking each line and entering the given dimensional value.
+Figure 1-27
+
+     SolidWorks is sensitive to how the dimensions are entered. See Figure 1-27. Note that when
+the vertical 40 dimension was added to the right side of the shape, the adjacent horizontal 40 line
+moved upwards. This means that the two horizontal 40 lines are no longer aligned. The right
+horizontal 40 line must be fixed in place so that it remains aligned with the other horizontal 40
+line when the vertical 40 dimension is added. The vertical 40 dimension will then move the
+bottom of the slot downwards.
+
+
+Fixing a Line in Place
+       1 Use the Undo tool to remove the vertical 40 dimension.
+       2 Click the right horizontal 40 line as shown in Figure 1-28.
+Figure 1-28
+
+       3 Click the Make Fixed tool.
+    The Make Fixed tool’s icon is an anchor. When the Make Fixed tool is activated, an anchor
+icon will appear below the line.
+       4 Use the Smart Dimension tool and add a vertical 40 dimension as shown.
+    The horizontal line at the bottom of the slot will move, accepting the 40 dimensional
+changes. The two horizontal lines remain aligned.
+
+
+Sketch Relations
+Sketch Relations are relationships shared between entities that help maintain the design intent of
+the sketch. The coincident relation was used previously in Figure 1-5 to align the starting point
+of a line with the origin. This relation ensures that the start point is always at the origin, even if
+the line’s length changes. Figure 1-29 shows a view of the object with Sketch Relations.
+Figure 1-29
+
+     To remove the Sketch Relations icon:
+        1 Click the View tab at the top of the screen.
+        2 Click the Hide/Show option.
+        3 Click the Sketch Relations option.
+
+
+ Note
+ 2D shapes should always be fully defined before creating 3D models.
+
+
+
+
+1-10 Creating 3D Models
+The fully defined shape shown in Figure 1-28 can now be used to create a 3D model.
+
+
+Creating a 3D Model
+      1 Select the sketch.
+      2 Click the Features tab.
+      3 Click the Extruded Boss/Base tool.
+    See Figure 1-30. The shape will change orientation to the Trimetric orientation. The sketch
+was created on the Front plane.
+Figure 1-30
+
+      4 Define the depth as 20mm.
+      5 Click the green OK check mark.
+      6 Click the drawing screen.
+
+1-11 Saving Documents
+See Figure 1-31.
+Figure 1-31
+
+
+Saving a Document
+      1 Click the File menu at the top of the drawing screen. You might have to hover over the
+        SolidWorks logo if the File menu is not visible.
+   A drop-down menu will appear.
+      2 Click the Save As option.
+   The Save As dialog box will appear. See Figure 1-32.
+Figure 1-32
+
+      3 Enter the name of the document in the File name field.
+    In this example the name BLOCK was used.
+      4 Click the Save button.
+
+1-12 Sample Problem SP1-2
+Figure 1-33 shows a 2D shape that includes two angles. The dimensions are in inches. This
+section will show how to create the shape.
+Figure 1-33
+
+       1 Click the Sketch tab, click the Front Plane option, and then click the Sketch tool.
+    See Figure 1-34.
+       2 Use the Line tool and sketch the approximate shape.
+    Start the first line of the shape on the origin. Sketch the shape slightly larger than the final
+shape.
+       3 Add dimensions to the shape. See Figure 1-34.
+       4 Click the left vertical line and the left angled line and move the cursor away from the
+         shape to create an angular dimension.
+       5 Select a location for the dimension and click the mouse.
+       6 In the Modify dialog box that opens, enter the angle value.
+Figure 1-34
+
+   In this example the value is 30°.
+      7 Click the green OK check mark to close the Modify dialog box.
+      8 Complete the remaining dimensions as shown in Figure 1-34.
+      9 Ensure that the shape is fully defined.
+     10 Click the Features tab, click the Extruded Boss/Base tool, and define the depth. See
+        Figure 1-35.
+Figure 1-35
+
+      In this example, a depth of 0.50in. was entered.
+       11 Click the green OK check mark and then click the drawing screen.
+      All the lines in the shape should be black, indicating the shape is fully defined. See Figure 1-
+36.
+Figure 1-36
+
+1-13 Holes
+There are several different ways to create holes using SolidWorks. Most holes are created using
+the Hole Wizard tool, which is explained in Chapter 3. For purposes of this introductory
+chapter, holes will be created using the Circle and Extruded Cut tools. A circle will be created
+and then cut through the 3D shape. All holes will be simple through holes; that is, they will go
+completely through the shape.
+
+
+Creating a Hole
+Figure 1-37 shows the 3D shape created in Sample Problem SP1-1. Two Ø20.0 holes have been
+added.
+Figure 1-37
+
+      1 Click the File menu at the top of the screen and click the Open option, or click the
+        Open tool.
+      2 Locate and click the BLOCK file created and saved in the last section.
+    See Figure 1-38. In this example the file was located on the C: drive in the folder
+SolidWorks 2023.
+Figure 1-38
+
+      3 Click Open.
+   The BLOCK will appear on the screen. See Figure 1-39.
+Figure 1-39
+
+      4 Click the View Orientation tool and select the Normal To option.
+    This will create a view from an orientation point 90° to the surface. This is called a normal
+view. See Figure 1-40.
+Figure 1-40
+
+   For this exercise we will work in a three-dimensional isometric plane. See Figure 1-41.
+Figure 1-41
+
+      5 Again click the View Orientation tool, but this time select the small hexagonal surface
+        to orient to Isometric.
+      6 Create a sketch plane on the front surface of the BLOCK, then use the Circle tool and
+        add two circles using the given dimensions.
+      7 Click the Features tab and click the Extruded Cut tool.
+      8 Set the cut depth for 20.00mm.
+     The Extruded Cut tool should automatically select the two circles. If it does not, click the
+circles. A preview should appear.
+      9 Click the green OK check mark.
+     10 Click the drawing screen.
+    The holes should appear in the shape.
+
+Chapter Project
+Project 1-1
+Sketch the shapes shown in Figures P1-1 through P1-18. Create 3D models using the specified
+thickness values.
+Figure P1-1
+INCHES
+Figure P1-2
+INCHES
+Figure P1-3
+INCHES
+Figure P1-4
+INCHES
+Figure P1-5
+MILLIMETERS
+Figure P1-6
+MILLIMETERS
+Figure P1-7
+MILLIMETERS
+Figure P1-8
+MILLIMETERS
+Figure P1-9
+MILLIMETERS
+Figure P1-10
+INCHES
+Figure P1-11
+MILLIMETERS
+Figure P1-12
+MILLIMETERS
+Figure P1-13
+INCHES
+Figure P1-14
+MILLIMETERS
+Figure P1-15
+MILLIMETERS
+Figure P1-16
+INCHES
+Figure P1-17
+MILLIMETERS
+Figure P1-18
+MILLIMETERS

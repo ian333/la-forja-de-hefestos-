@@ -73,6 +73,16 @@ para Tierra/Luna/planetas/proteínas — no estilizar. Lo evocativo se ETIQUETA 
 
 ## 📐 DOCTRINA DE CINE (cuando se renderiza video)
 
+> **LÉE `docs/FILOSOFIA-CINE.md` ANTES de cualquier render.** Es la doctrina completa:
+> cada ángulo y decisión se toma por BELLEZA + TEXTURA + COLOR + MONSTRUOSIDAD (que se
+> SIENTA el poder). Mandatos duros que salen de ahí: **OCUPAR TODA LA PANTALLA** (cero
+> letterbox 2.39:1 en el entregable, cero void muerto); **ESCALA por referencia** (horizonte
+> planetario / parallax+ancla / dato-awe — nunca esfera sola en void vacío); **VELOCIDAD
+> sentida** por estelas=motion-blur + parallax + beaming δ⁴ + cámara en traslación (no marea);
+> el lab interactivo se queda 3D, los renders son videos ULTRA-IMPACTANTES no navegables.
+> **Color técnico accionable: `docs/DOCTRINA-COLOR.md`** (rampa T→sRGB con hex, líneas de
+> emisión, falso-color Chandra, valores de grade, recetas por objeto, checklist). Léelo antes de tocar color.
+
 1 objeto principal, fondo negro real, bloom de threshold bajo (los picos REVIENTAN), grade tipo DaVinci 10-bit
 (halación rojo-ámbar real, grano de película, split-tone, dither anti-banding). Cámara con PESO determinista
 (`CinematicCamera.WeightedRig`, pura en t). Escala por contraste (objeto de referencia + parallax). El SILENCIO

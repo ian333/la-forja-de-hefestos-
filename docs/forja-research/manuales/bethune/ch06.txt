@@ -1,0 +1,939 @@
+Chapter 6. Threads and Fasteners
+Chapter Objectives
+
+         Learn thread terminology and conventions
+         Draw threads
+         Size both internal and external threads
+         Use standard-sized threads
+         Use and size washers, nuts, and set screws
+
+
+
+6-1 Introduction
+This chapter explains how to draw threads, washers, and nuts. It also explains how to select
+fasteners, washers, nuts, and set screws.
+     Internal threads are created using the Hole Wizard tool, which is located on the Features
+toolbar. Predrawn fasteners and other standard components may be accessed using the Design
+Library.
+     All threads in this book are in compliance with ANSI (American National Standards
+Institute) standards—ANSI Inch and ANSI Metric threads.
+
+6-2 Thread Terminology
+Figure 6-1 shows a thread. The peak of a thread is called the crest, and the valley portion is
+called the root. The major diameter of a thread is the distance across the thread from crest to
+crest. The minor diameter is the distance across the thread from root to root.
+Figure 6-1
+
+
+Pitch
+The pitch of a thread is the distance from the center of one thread to the center of the next thread.
+By definition the pitch of a thread is equal to one over the number of threads per distance unit.
+The formula for pitch is
+      Pitch = 1/ Number of threads per inch (millimeter)
+      Number of threads per inch (millimeter) = 1/ Pitch
+
+
+6-3 Thread Callouts—ANSI Metric Units
+Threads are specified on a drawing using drawing callouts. See Figure 6-2. The M at the
+beginning of a drawing callout specifies that the callout is for a metric thread. Holes that are not
+threaded use the Ø symbol.
+Figure 6-2
+
+     The number following the M is the major diameter of the thread. An M10 thread has a major
+diameter of 10mm. The pitch of a metric thread is assumed to be a coarse thread unless otherwise
+stated. The callout M10 × 30 assumes a coarse thread, or a thread length of 1.5mm per thread.
+The number 30 is the thread length in millimeters. The “×” is read as “by,” so the thread is called
+a “ten by thirty.”
+
+
+ Note
+ For metric threads the pitch is specified, not the number of threads per millimeter.
+
+
+
+    The callout M10 × 1.25 × 30 specifies a pitch of 1.25mm per thread. This is not a standard
+coarse thread size, so the pitch must be specified.
+    Figure 6-3 shows a listing of standard metric thread sizes available in the SolidWorks
+Design Library for one type of hex head bolt. The sizes are in compliance with ANSI Metric
+specifications.
+Figure 6-3
+
+     Whenever possible, design using preferred thread sizes. Preferred thread sizes are readily
+available and are usually cheaper than nonstandard sizes. In addition, tooling such as wrenches is
+also readily available for preferred sizes.
+
+6-4 Thread Callouts—ANSI Unified Screw Threads
+ANSI Unified Screw Threads (English units) always include a thread form specification. Thread
+form specifications are designated by capital letters, as shown in Figure 6-4, and are defined as
+follows:
+      UNC—Unified National Coarse
+      UNF—Unified National Fine
+      UNEF—Unified National Extra Fine
+      UN—Unified National, or constant-pitch threads
+Figure 6-4
+
+     An ANSI (English units) thread callout starts by defining the major diameter of the thread
+followed by the pitch specification. The callout .500-13 UNC means a thread whose major
+diameter is .500in. with 13 threads per inch. The thread is manufactured to the UNC standards.
+The pitch for a .500-13 UNC thread is 1/13 = .08 or 1/Number of threads per inch.
+     There are three possible classes of fit for a thread: 1, 2, and 3. The different class
+specifications specify a set of manufacturing tolerances. A class 1 thread is the loosest and a
+class 3 the most exact. A class 2 fit is the most common.
+     The letter A designates an external thread and the letter B designates an internal thread. The
+symbol × means “by” as in 2 × 4, “two by four.” The thread length (3.00) may be followed by
+the word LONG to prevent confusion about which value represents the length.
+     Drawing callouts for ANSI (English unit) threads are sometimes shortened, such as in Figure
+6-4. The callout .500-13 UNC -2A × 3.00 LONG is shortened to .500-13 × 3.00. Only a
+coarse thread has 13 threads per inch, and it should be obvious whether a thread is internal or
+external, so these specifications may be dropped. Most threads are class 2, so it is tacitly
+accepted that all threads are class 2 unless otherwise specified. The shortened callout form is not
+universally accepted. When in doubt, use a complete thread callout.
+     A listing of standard ANSI (English unit) threads, as presented in SolidWorks, is shown in
+Figure 6-5.
+Figure 6-5
+
+6-5 Thread Representations
+There are three ways to graphically represent threads on a technical drawing: detailed, schematic,
+and simplified. Figure 6-6 shows an external detailed representation, and both the external and
+internal simplified and schematic representations.
+Figure 6-6
+
+     Figure 6-7 shows an internal and an external thread created using SolidWorks. Note that no
+thread representations appear. This is called the Simplified representation. SolidWorks uses the
+Simplified thread representation as a way to minimize file size. Cosmetic thread representations
+can be created and will be discussed later in the chapter. Actual threads may be drawn using the
+Helix tool. SolidWorks can also draw a Schematic thread representation.
+Figure 6-7
+
+6-6 Internal Threads—Inches
+Internal threads are drawn using the Hole Wizard. Figure 6-8 shows a 1.5 × 2.0 × 1.0 block. In
+this section a 3/8-16 UNC hole will be located in the center of the block.
+Figure 6-8
+
+      1 Draw a 1.5 × 2.0 × 1.0 block.
+      2 Orient the block in the Isometric view.
+      3 Click the Hole Wizard tool on the Features tab.
+      4 Click the Straight Tap option, set the Standard for ANSI Inch, set the Type for
+        Tapped hole, define the thread’s size, and set the End Condition to Through All.
+   In this example an internal 3/8-16 UNC thread will be created. The thread will go
+completely through the block. See Figure 6-9.
+
+
+
+
+Figure 6-9
+
+      5 Select a 3/8-16 thread size in the Hole Specifications box.
+   The thread will have a major diameter of 3/8 with 16 threads per inch and a pitch of
+1/16 = .06.
+      6 Select the Through All option in the End Condition box.
+      7 Click the Cosmetic thread option.
+Note
+The Cosmetic thread option will create a hidden line around the finished hole that serves to indicate that the hole is threaded.
+
+
+       8 Click the Positions tab in the Hole Wizard PropertyManager, as shown in Figure 6-
+         10.
+       9 Click a location near the center of the top surface of the block to identify the surface for
+         the thread.
+Figure 6-10
+
+     10 Click the mouse again to approximately locate the threaded hole.
+     11 Use the Smart Dimension tool and locate the centerpoint of the hole.
+     12 Click the green OK check mark.
+     The hidden line surrounding the hole is a cosmetic thread and indicates that the hole is
+threaded. Note that there are threads on the inside of the hole.
+
+6-7 Threaded Blind Holes—Inches
+A blind hole is one that does not go completely though an object. See Figure 6-11.
+Figure 6-11
+
+       1 Use the Undo tool and remove the hole added to the 1.5 × 2.0 × 1.0 block.
+       2 Edit the block so that it is 2.00 thick.
+       3 Click the Hole Wizard tool.
+    SolidWorks will remember the last hole setting used, so the hole specifications will be the
+same as those used to create the 3/8-16 through hole: ANSI standard, tapped hole, with a
+cosmetic thread.
+       4 Size the hole to 3/8-16, set the End Condition for Blind, and set the Tap Thread
+         Depth in the End Condition box to 1.25in.
+     In this example the tap Blind Hole Depth was automatically calculated as 1.56in. When a
+threaded hole is created, a hole (pilot hole) is first drilled and then the threads are cut (tapped
+hole) into the sides of the hole. The pilot hole must always be longer than the threaded portion of
+the hole. A tapping bit only cuts threads; it has no cutting surfaces on its bottom surface. If the
+bit bottoms out—that is, hits the bottom of the hole—it may break. As a general rule a distance
+greater than two pitches is added to the pilot hole depth beyond the threaded hole depth. In this
+example SolidWorks adds a distance of approximately four pitches.
+        5 Click the Positions tab and locate a centerpoint near the center of the top surface of the
+          block.
+        6 Use the Smart Dimension tool to locate the centerpoint.
+        7 Click the green OK check mark.
+     Figure 6-12 shows an orthographic view of the block and a section view. Note that the
+tapped hole extends beyond the end of the threads and ends with a conical point. The depth of
+the tapped hole does not include the conical end point.
+
+
+
+
+Figure 6-12
+
+6-8 Internal Threads—Metric
+Metric threads are designated by the letter M. For example, M10 × 30 is the callout for a metric
+thread of diameter 10 and a length of 30. The thread is assumed to be a coarse thread.
+
+ Tip
+ For metric thread drawings, the symbol Ø indicates a hole or cylinder without threads; the symbol M indicates metric
+ threads.
+  1 Draw a 20 × 30 × 15 block.
+See Figure 6-13.
+Figure 6-13
+
+      2 Click the Hole Wizard.
+      3 Click the Straight Tap option, select the Tapped hole option, set the Standard for
+        ANSI Metric, set the hole size for M10 × 1.0, and set the depth for Through All.
+     The number 1.0 is the pitch of the thread. An M10 thread can be cut with several different
+pitch sizes.
+      4 Click the Cosmetic thread option.
+      5 Click the Positions tab and click the top surface of the block, and click the mouse again
+        to select the approximate location for the hole.
+      6 Use the Smart Dimension tool to locate the hole’s centerpoint.
+      7 Click the green OK check mark.
+Figure 6-14
+
+    Figure 6-14 shows the specifications for an M10 × 1.0 × 20 deep blind hole. The pilot hole
+depth is approximately 5 pitches deeper than the threaded portion of the hole.
+
+6-9 Accessing the Design Library
+SolidWorks includes a Design Library. The Design Library contains a listing of predrawn
+standard components such as bolts, nuts, and washers. These components may be accessed and
+inserted into assemblies. Figure 6-15 shows how to access hex bolts in the Design Library.
+Figure 6-15
+
+     The Design Library is accessed by clicking the Design Library icon located on the right
+side of the screen. The Design Library can only be used in an Assembly document.
+      1 Create an Assembly document and click the Design Library tab.
+      2 Click Toolbox.
+    If the Add in Now tool appears, click Add in Now.
+      3 Click ANSI Inch.
+      4 Click Bolts and Screws.
+      5 Click Hex Head.
+    A listing of various types of hex head bolts will appear.
+      6 Click the Hex Bolt, drag it into the drawing screen area, and click Create Part.
+      7 Define the needed size and length.
+    In this example a 1/4-20 UNC × 2.00 HEX HEAD BOLT was created.
+       8 Define the Thread Display style.
+       9 Click the green OK check mark.
+
+Tip
+There are three display styles available for threads: Schematic, Cosmetic, and Simplified. See Figure 6-16. The Simplified
+style was created to use a smaller file size.
+Figure 6-16
+
+6-10 Thread Pitch
+Thread pitch for an ANSI Inch fastener is defined as
+      P = N1
+     where
+       P = pitch
+       N = number of threads per inch
+     In ANSI Inch standards a sample bolt callout is 1/4-20 UNC × length. The 20 value is the
+number of threads per inch, so the pitch is 1/20 or 0.05. The pitch for a 1/4-28 UNF thread would
+be 1/28, or 0.036.
+     A sample thread callout for ANSI Metric is written M10 × 1.0 × 30, where 1.0 is the pitch.
+No calculation is required to determine the pitch for metric threads. It is included directly in the
+thread callout.
+
+ Tip
+ Almost all threads are coarse, so ANSI Metric thread callouts omit the pitch designation. A pitch size is included only when a
+ metric thread is not coarse.
+
+
+
+
+6-11 Determining an External Thread Length—Inches
+Figure 6-17 shows three blocks stacked together. Their dimensions are given. They are to be held
+together using a hex bolt, two washers, and a nut. The bolt will be a 3/8-16 UNC. What length
+should be used?
+Figure 6-17
+
+      1 Draw a 1.5 × 1.5 × 0.50 block. Draw a Ø.44 (7/16) hole through the center of the
+        block. Save the block as BLOCK, BOLT.
+   The Ø.44 was selected because it allows for clearance between the bolt and the block.
+      2 Create an Assembly, enter three BLOCK, BOLTs, and assemble them as shown.
+      3 Save the assembly as 3-BLOCK ASSEMBLY.
+      4 Access the Design Library, then click Toolbox, ANSI Inch, Washers, and Plain
+        Washers (Type A).
+   See Figure 6-18.
+Figure 6-18
+
+        5 Click and hold the Preferred – Narrow Flat Washer Type A.
+        6 Drag-and-drop it into the drawing screen.
+    The washer preview will appear in the drawing area.
+        7 Size the washer by clicking the arrow to the right of the initial Size value and selecting
+          a nominal value.
+     See Figure 6-19.
+     The term nominal refers to a starting value. In this case we are going to use a 3/8-16 UNC
+thread. The 3/8 value is a nominal value. We select a washer with a specified 3/8 nominal inside
+diameter. The actual inside diameter of the washer is .406. Clearance between the washer and the
+bolt is created when the washer is manufactured. The fastener will also not measure .375 but will
+be slightly smaller. The .375 size is the size of the bolt’s shaft before the threads were cut.
+     Note that the washer thickness is .065 (about 1/16).
+
+
+ Note
+ Washers are identified using Inside Diameter × Outside Diameter × Thickness; for example: .406 × .812 × .065
+PLAIN WASHER.
+
+
+
+
+Figure 6-19
+
+      8 Click the green OK check mark.
+      9 Add a second washer into the assembly.
+     10 Use the Mate Concentric and Mate Coincident tools to position the washers around
+        the block’s holes as shown.
+   See Figure 6-20.
+     11 Access the Design Library, then click Toolbox, ANSI Inch, Nuts, Hex Nuts, Hex
+        Jam Nut, and drag-and-drop the nut into the drawing area.
+Figure 6-20
+
+   See Figure 6-21.
+Figure 6-21
+
+      12 Size the nut to 3/8-16 UNC to match the 3/8-16 UNC thread on the bolt.
+      13 Use the Mate tool and position the nut as shown in Figure 6-22.
+Figure 6-22
+
+    The nut thickness is .227. This value was obtained by using the Edit Feature tool and
+determining the extrusion value used to create the nut. The nut is defined as 3/8-16 UNC Hex
+Jam Nut.
+
+
+ Note
+ Bolt threads must extend beyond the nut to ensure 100% contact with the nut. The extension must be a minimum of two
+ pitches (2P).
+
+
+     So far, the bolt must pass through three blocks (.50 × 3 = 1.50), two washers
+(.065 × 2 = .13), and one nut (.227). Therefore, the initial bolt length is
+1.50 + .13 + .227 = 1.857.
+     Calculations used to determine the strength of a bolt/nut combination assume that there is
+100% contact between the bolt and the nut; that is, all threads of the nut are in contact with the
+threads of the bolt. However, there is no assurance that the last thread on a bolt is 360°, so at
+least two threads must extend beyond the nut to ensure 100% contact. The 2P requirement is a
+minimum value. More than 2P is acceptable. SolidWorks will automatically add at least 4P
+unless defined otherwise.
+    In this example the thread pitch is .0625 (1/16). Two pitches (2P) is .125. This value must be
+added to the initial thread length:
+                                     1.857 + .125 = 1.982
+     Therefore, the minimum bolt length is 1.982. This value must in turn be rounded up to the
+nearest standard size. Figure 6-23 shows a listing of standard sizes for a 1 3/8-16 UNC Hex Head
+bolt.
+
+
+
+
+Figure 6-23
+
+    The final thread length for the given blocks, washers, nut, and 2P is 2.00. The bolt callout is
+                          3/8-16 UNC × 2.00 Hex Head Bolt
+       14 Click the Design Library, Toolbox, ANSI Inch, Bolts and Screws, Hex Head, Hex
+         Bolt, and click and drag-and-drop the bolt into the drawing.
+       15 Define the Size as 3/8-16 and the Length as 2.
+    See Figures 6-24 and 6-25. Note how the bolt extends beyond the nut.
+Figure 6-24
+Figure 6-25
+
+6-12 Smart Fasteners
+The Smart Fasteners tool will automatically create the correct bolt. Given the three blocks, two
+washers, and nut shown in Figure 6-26, use the Smart Fasteners tool to add the appropriate bolt.
+      1 Click the Smart Fasteners tool located on the Assembly tab.
+    A dialog box will appear.
+      2 Click OK.
+Figure 6-26
+
+   The Smart Fasteners PropertyManager will appear. See Figure 6-27.
+      3 Click the hole in the top block of the three blocks.
+Figure 6-27
+
+ Tip
+ Click the hole—that is, a cylindrical-shaped section as shown in Figure 6-28—not the edge of the hole.
+
+
+
+    The selected hole will appear in the Selection box.
+        4 Click Add.
+    A fastener will appear in the hole. This may take a few seconds. In this example a Socket
+Head Cap Screw appeared in the hole. Once the screw is added to the assembly it can be edited
+as needed.
+        5 Right-click the Socket Head Cap Screw heading in the Fastener box.
+        6 Click the Change fastener type option.
+    See Figure 6-28. The Smart Fastener dialog box will appear.
+Figure 6-28
+
+      7 Scroll down the list of fasteners and select a Hex Head type, as shown in Figure 6-29.
+      8 Click OK.
+Figure 6-29
+
+   The Series Components manager will appear. See Figure 6-30.
+      9 Scroll down and access the Properties box.
+     10 Define the thread size, number of threads per inch, and the thread length.
+     11 Click the green OK check mark.
+Figure 6-30
+
+   Note that the fastener extends beyond the nut. See Figure 6-31.
+Figure 6-31
+
+6-13 Determining an Internal Thread Length
+Figure 6-32 shows two blocks: Block, Cover and Block, Base. Their dimensions are also shown.
+The two blocks are to be assembled and held together using an M10 × 1.25 × 25 hex head
+screw. What should be the threaded hole in the Block, Base?
+Figure 6-32
+
+     Note in Figure 6-32 that the tapped hole extends beyond the threaded portion of the hole.
+This is to prevent damage to the tapping bit. SolidWorks will automatically calculate the excess
+length needed, but as a general rule it is at least two pitches (2P) beyond the threaded portion of
+the hole.
+     The threaded hole should always be longer than the fastener so that the fastener doesn’t
+“bottom out”—that is, hit the bottom of the threads before the fastener is completely in the hole.
+Again, the general rule is to allow at least two pitches (2P) beyond the length of the fastener, but
+more are acceptable depending on the situation.
+
+ Tip
+ Metric thread callouts give the pitch directly.
+
+
+
+    In this example the thread pitch is 1.25. Two pitches = 2.50. The bolt length is 25, but it
+must initially pass through the 10-thick Block, Cover, so the length of the bolt in the Block,
+Base is 15. Adding 2.50 to this value yields a minimum thread length of 17.50. Rounding the
+value up determines that the threaded hole in the Block, Base should be M10 × 1.25 × 18 deep.
+See Figure 6-33. The 18 depth is a minimum value and can be greater.
+Figure 6-33
+
+       1 Draw the parts as dimensioned in Figure 6-32 and use the Hole Wizard to add an
+         M10 × 1.25 × 18 deep hole to the Block, Base.
+    The Ø12 hole in the Cover block is a clearance hole; that is, it is larger than the fastener. It
+has no threads. See Figure 6-34.
+Figure 6-34
+
+      2 Assemble the parts as shown.
+      3 Access the Design Library. Click Toolbox, ANSI Metric, Bolts and Screws, Hex
+        Head, and access Formed Hex Screw ANSI B18.2.3.2M.
+      4 Click and drag the bolt onto the screen.
+   See Figure 6-35.
+Figure 6-35
+
+      5 Define the Size of the screw as M10 and the Length as 25 with Thread Length of 25.
+    The Ø12mm hole in the Cover Block is 10mm thick. The threaded hole has threads 18mm
+deep. The screw is 25mm long. There are three unused threads in the hole.
+      6 Use the Mate Concentric and Mate Coincident tools to place the screw into the
+        assembly.
+      7 Save the assembly. See Figure 6-36.
+Figure 6-36
+
+     Figure 6-37 shows an isometric view, an orthographic view, and a section view of the
+internal thread assembly.
+Figure 6-37
+
+6-14 Set Screws
+Set screws are fasteners used to hold parts like gears and pulleys to rotating shafts or other
+moving objects to prevent slippage between the two objects. See Figure 6-38.
+Figure 6-38
+
+    Most set screws have recessed heads to help prevent interference with other parts.
+    Many different head styles and point styles are available. See Figure 6-39. The dimensions
+shown in Figure 6-39 are general sizes for use in this book. For actual sizes, see manufacturers’
+specifications.
+Figure 6-39
+
+6-15 Drawing a Threaded Hole in the Side of a Cylinder
+Figure 6-40 shows a Ø.75 × Ø1.00 × 1.00 collar with a #10-24 threaded hole. This section will
+explain how to add a threaded hole through the sides of a cylinder.
+Figure 6-40
+
+      1 Draw the collar as a Ø1.00 × 1.00 cylinder with a Ø.75 hole through the length of the
+        cylinder.
+   See Figure 6-41. In this example the Ø1.00 × 1.00 cylinder was centered about the origin.
+Figure 6-41
+
+      2 Select the Plane tool flyout from the Reference Geometry tool.
+      3 Choose the Right Plane as the First Reference and set the Offset distance to 0.50in,
+        which is tangent to the outside edge of the cylinder.
+   See Figure 6-42. The plane will be offset .50 from the origin.
+Figure 6-42
+
+      4 Click the Hole Wizard tool and define the Size of the hole as #10-24 with a thread
+        depth of .38.
+    The .38 distance is enough to have the threads go through the wall of the collar, but not go
+completely through the cylinder. The collar wall is .125 (1.00 − .75 = .25/2 = .125). Use the
+Straight Tap option. See Figure 6-43.
+Figure 6-43
+
+ Tip
+ Do not use the Through All option, as this will create holes in both sides of the collar.
+
+
+
+        5 Use the View Orientation tool and create a Right view of the collar, that is, Normal to
+          the offset plane.
+    This view orientation will give a direct 90° view of Plane 1. The holes must be located at
+exactly 90° to the cylinder.
+        6 Click the Positions tab and click the offset right plane within the boundaries of the
+          rectangular face of the cylinder.
+     This will define the face for the hole location.
+        7 Locate the centerpoint of the threaded hole as near as possible to the defined location
+          and click the mouse.
+    See Figure 6-44. This will locate the hole. The location will not be perfect, but it can easily
+be corrected.
+      8 Click the Smart Dimension tool, and click the hole’s centerpoint again.
+
+
+
+
+Figure 6-44
+
+   A listing of parameters will appear. See Figure 6-45.
+Figure 6-45
+
+      9 Change the Z value to 0.00 and the Y value to 0.25.
+     The Z value of 0.00 will locate the hole’s centerpoint directly on the Z-axis. Remember that
+the original cylinder’s centerpoint is on the origin, so this Z value will locate the hole’s
+centerpoint on the Z-axis. The X location will be 0.50, or a point tangent to the outside edge of
+the cylinder.
+     The 0.25 value comes from the given .25 dimension. See Figure 6-40.
+     10 Use the Hole Wizard tool again and repeat the procedure and locate a second threaded
+        hole 0.75 from the base as shown in Figure 6-46.
+Figure 6-46
+Figure 6-47
+
+     11 Hide the Offset Plane by right-clicking the plane and selecting the Hide option.
+     12 Save the collar as Ø1.00 COLLAR.
+    The Ø symbol is created using <Alt> 0216.
+    Figure 6-47 shows the resulting holes.
+
+6-16 Adding Set Screws to the Collar
+Figure 6-49 shows the collar with two set screws. This section will explain how to add and insert
+the set screws.
+      1 Start a new Assembly.
+      2 Use the Browse tool and locate the Ø1.00 COLLAR on the screen.
+    Locate the origin of the COLLAR on the origin of the assembly.
+      3 Access the Design Library, then click Toolbox, ANSI Inch, Bolts and Screws, and
+        Set Screws (Slotted).
+   See Figure 6-48.
+      4 Select the Slotted Set Screw Cup Point option and click and drag the set screw into
+        the assembly.
+
+
+
+
+Figure 6-48
+
+   See Figure 6-49.
+Figure 6-49
+
+      5 Define the Size of the set screw as #10-24 and the Length as 0.315.
+    0.315 is a standard length. It is good design practice to use standard lengths whenever
+possible.
+      6 Click the green OK check mark.
+    A second screw will automatically be attached to the cursor.
+      7 Add a second set screw and press the <Esc> key.
+    See Figure 6-50.
+Figure 6-50
+
+      8 Use the Mate tool and insert the set screws into the collar.
+      9 Save the assembly.
+
+Chapter Projects
+
+Project 6-1: Millimeters
+Figure P6-1 shows three blocks. Assume that the blocks are each 30 × 30 × 10 and that the hole
+is Ø9. Assemble the three blocks so that their holes are aligned and they are held together by a
+hex head bolt secured by an appropriate hex nut. Locate a washer between the bolt head and the
+top block and between the nut and the bottom block. Create all drawings using either an A4 or
+A3 drawing sheet, as needed. Include a title block on all drawing sheets.
+   A. Define the bolt.
+   B. Define the nut.
+   C. Define the washers.
+   D. Create an assembly drawing including all components.
+   E. Create a BOM for the assembly.
+   F. Create an isometric exploded drawing of the assembly.
+   G. Create an animation of the assembly.
+
+
+
+
+Figure P6-1
+
+Project 6-2: Millimeters
+Figure P6-2 shows three blocks, one 30 × 30 × 50 block with a centered M8 threaded hole, and
+two 30 × 30 × 10 blocks with centered Ø9 holes. Join the two 30 × 30 × 10 blocks to the
+30 × 30 × 50 block using an M8 hex head bolt. Locate a regular plain washer under the bolt
+head.
+   A. Define the bolt.
+   B. Define the thread depth.
+   C. Define the hole depth.
+   D. Define the washers.
+   E. Create an assembly drawing including all components.
+   F. Create a BOM for the assembly.
+   G. Create an isometric exploded drawing of the assembly.
+   H. Create an animation of the assembly.
+
+
+
+
+Figure P6-2
+
+Project 6-3: Inches
+Figure P6-3 shows three blocks. Assume that each block is 1.00 × 1.00 × .375 and that the hole
+is Ø.375. Assemble the three blocks so that their holes are aligned and that they are held together
+by a 5/16-18 UNC indented regular hex head bolt secured by an appropriate hex nut. Locate a
+washer between the bolt head and the top block and between the nut and the bottom block.
+Create all drawings using either an A4 or A3 drawing sheet, as needed. Include a title block on
+all drawing sheets.
+   A. Define the bolt.
+   B. Define the nut.
+   C. Define the washers.
+   D. Create an assembly drawing including all components.
+   E. Create a BOM for the assembly.
+   F. Create an isometric exploded drawing of the assembly.
+   G. Create an animation of the assembly.
+
+
+
+
+Figure P6-3
+
+Project 6-4: Inches
+Figure P6-4 shows three blocks, one 1.00 × 1.00 × 2.00 with a centered threaded hole, and two
+1.00 × 1.00 × .375 blocks with centered Ø.375 holes. Join the two 1.00 × 1.00 × .375 blocks
+to the 1.00 × 1.00 × 2.00 block using a 5/16-18 UNC hex head bolt. Locate a regular plain
+washer under the bolt head.
+Figure P6-4
+
+   A. Define the bolt.
+   B. Define the thread depth.
+   C. Define the hole depth.
+   D. Define the washer.
+   E. Create an assembly drawing including all components.
+   F. Create a BOM for the assembly.
+   G. Create an isometric exploded drawing of the assembly.
+   H. Create an animation of the assembly.
+
+Project 6-5: Inches or Millimeters
+Figure P6-5 shows a centering block. Create an assembly drawing of the block and insert three
+set screws into the three threaded holes so that they extend at least .25in. or 6mm into the center
+hole.
+Figure P6-5
+
+   A. Use the inch dimensions.
+   B. Use the millimeter dimensions.
+   C. Define the set screws.
+   D. Create an assembly drawing including all components.
+   E. Create a BOM for the assembly.
+   F. Create an isometric exploded drawing of the assembly.
+   G. Create an animation of the assembly.
+
+Project 6-6: Millimeters
+Figure P6-6 shows two parts: a head cylinder and a base cylinder. The head cylinder has outside
+dimensions of Ø40 × 20, and the base cylinder has outside dimensions of Ø40 × 50. The holes
+in both parts are located on a Ø24 bolt circle. Assemble the two parts using hex head bolts.
+Figure P6-6
+
+   A. Define the bolt.
+   B. Define the holes in the head cylinder, the counterbore diameter and depth, and the
+      clearance hole diameter.
+   C. Define the thread depth in the base cylinder.
+   D. Define the hole depth in the base cylinder.
+   E. Create an assembly drawing including all components.
+   F. Create a BOM for the assembly.
+   G. Create an isometric exploded drawing of the assembly.
+   H. Create an animation of the assembly.
+
+Project 6-7: Millimeters
+Figure P6-7 shows a pressure cylinder assembly.
+Figure P6-7
+
+   A. Create an assembly drawing including all components.
+   B. Create a BOM for the assembly.
+   C. Create an isometric exploded drawing of the assembly.
+   D. Create an animation of the assembly.
+
+Project 6-8: Millimeters
+Revise the pressure cylinder assembly shown in Figure P6-7.
+   A. Use M10 × 35 hex head bolts.
+   B. Create an assembly drawing including all components.
+   C. Create a BOM for the assembly.
+   D. Create an isometric exploded drawing of the assembly.
+   E. Create an animation of the assembly.
+Project 6-9: Inches and Millimeters
+Figure P6-9 shows a C-block assembly.
+   A. Use one of the following fasteners assigned by your instructor:
+              M12 hex head
+              M10 square head
+              1/4-20 UNC hex head
+              3/8-16 UNC square head
+              M10 socket head
+              M8 slotted head
+              1/4-20 UNC slotted head
+              3/8-16 UNC socket head
+   B. Define the bolt.
+   C. Define the nut.
+   D. Define the washers.
+   E. Create an assembly drawing including all components.
+   F. Create a BOM for the assembly.
+   G. Create an isometric exploded drawing of the assembly.
+   H. Create an animation of the assembly.
+Figure P6-9
+
+Project 6-10: Millimeters
+Figure P6-10 shows an exploded assembly drawing. There are no standard parts, so each part
+must be drawn individually.
+   A. Create an assembly drawing including all components.
+   B. Create a BOM for the assembly.
+   C. Create an isometric exploded drawing of the assembly.
+   D. Create an animation of the assembly.
+
+Project 6-11: Millimeters
+Figure P6-11 shows an exploded assembly.
+   A. Create an assembly drawing including all components.
+   B. Create a BOM for the assembly.
+  C. Create an isometric exploded drawing of the assembly.
+  D. Create an animation of the assembly.
+
+
+
+
+Figure P6-10
+Figure P6-11
+
+Project 6-12: Inches or Millimeters
+Figure P6-12 shows an exploded assembly. No dimensions are given. If parts 3 and 5 have either
+M10 or 3/8-16 UNC threads, size parts 1 and 2. Based on these values, estimate and create the
+remaining sizes and dimensions.
+   A. Create an assembly drawing including all components.
+   B. Create a BOM for the assembly.
+   C. Create an isometric exploded drawing of the assembly.
+   D. Create an animation of the assembly.
+Figure P6-12
+
+Project 6-13: Inches
+Figure P6-13 shows an assembly and detail drawings of a surface gauge.
+   A. Create an assembly drawing including all components.
+   B. Create a BOM for the assembly.
+   C. Create an isometric exploded drawing of the assembly.
+   D. Create an animation of the assembly.
+Figure P6-13
+
+Project 6-14: Millimeters
+Figure P6-14 shows an assembly made from parts defined in Project 5-2 on pages [358-360].
+Assemble the parts using M10 threaded fasteners.
+   A. Define the bolt.
+   B. Define the nut.
+   C. Create an assembly drawing including all components.
+   D. Create a BOM for the assembly.
+   E. Create an isometric exploded drawing of the assembly.
+   F. Create an animation of the assembly.
+   G. Consider possible interference between the nuts and ends of the fasteners both during and
+      after assembly. Recommend an assembly sequence.
+Figure P6-14
+
+Project 6-15: Millimeters
+Figure P6-15 shows an assembly made from parts defined on pages [358–360]. Assemble the
+parts using M10 threaded fasteners.
+  A. Define the bolt.
+   B. Define the nut.
+   C. Create an assembly drawing including all components.
+  D. Create a BOM for the assembly.
+   E. Create an isometric exploded drawing of the assembly.
+   F. Create an animation of the assembly.
+  G. Consider possible interference between the nuts and ends of the fasteners both during and
+     after assembly. Recommend an assembly sequence.
+Figure P6-15
+
+Project 6-16: Millimeters
+Figure P6-16 shows an assembly made from parts defined in Project 5-2 on pages [358-360].
+Assemble the parts using M10 threaded fasteners.
+   A. Define the bolt.
+   B. Define the nut.
+   C. Create an assembly drawing including all components.
+   D. Create a BOM for the assembly.
+   E. Create an isometric exploded drawing of the assembly.
+   F. Create an animation of the assembly.
+   G. Consider possible interference between the nuts and ends of the fasteners both during and
+      after assembly. Recommend an assembly sequence.
+Figure P6-16
+
+Project 6-17: Access Controller
+Design an access controller based on the information given in Figure P6-17. The controller
+works by moving an internal cylinder up and down within the base so the cylinder aligns with
+output holes A and B. Liquids will enter the internal cylinder from the top, then exit the base
+through holes A and B. Include as many holes in the internal cylinder as necessary to create the
+following liquid–exit combinations.
+Figure P6-17
+
+    1. A open, B closed
+    2. A open, B open
+    3. A closed, B open
+The internal cylinder is to be held in place by an alignment key and a stop button. The stop
+button is to be spring-loaded so that it will always be held in place. The internal cylinder will be
+moved by pulling out the stop button, repositioning the cylinder, then reinserting the stop button.
+Prepare the following drawings:
+   A. An assembly drawing.
+   B. Detail drawings of each nonstandard part. Include positional tolerances for all holes.
+   C. A BOM.
+
+Project 6-18: Grinding Wheel
+Design a hand-operated grinding wheel as shown in Figure P6-18 specifically for sharpening a
+chisel. The chisel is to be located on an adjustable rest while it is being sharpened. The
+mechanism should be able to be clamped to a table during operation using two thumbscrews. A
+standard grinding wheel is 6.00in. and 1/2in. thick, and has an internal mounting hole with a
+50.00±.03 bore.
+Prepare the following drawings:
+   A. An assembly drawing.
+   B. Detail drawings of each nonstandard part. Include positional tolerances for all holes.
+   C. A BOM.
+
+Project 6-19: Millimeters
+Given the assembly shown in Figure P6-19, add the indicated fasteners and prepare the following
+drawings:
+    1. Create an assembly drawing.
+    2. Create a parts list including assembly numbers.
+    3. Create a dimensioned drawing of the support block and specify a dimension for each hole
+       including the thread size and the depth required.
+Figure P6-18
+
+
+
+
+Figure P6-19
+
+Fasteners:
+   A.
+             1. M10 × 35 HEX HEAD BOLT
+             2. M10 × 35 HEX HEAD BOLT
+             3. M10 × 30 HEX HEAD BOLT
+             4. M10 × 25 HEX HEAD BOLT
+   B.
+             1. M10 × 1.5 × 35 HEX HEAD BOLT
+             2. M8 × 35 ROUND HEAD BOLT
+             3. M10 × 30 HEXAGON SOCKET HEAD CAP SCREW
+             4. M6 × 30 SQUARE BOLT
+Project 6-20: Inches
+Given the assembly shown in Figure P6-19, add the indicated fasteners and prepare the following
+drawings:
+    1. Create an assembly drawing.
+    2. Create a BOM including assembly numbers.
+    3. Create a dimensioned drawing of the base and specify a dimension for each hole
+       including the thread size and the depth required.
+Fasteners:
+   A.
+             1. 3/8-16 UNC × 2.50 HEX HEAD BOLT
+             2. 1/4-20 UNC × 2.00 HEX HEAD BOLT
+             3. 7/16-14 UNC × 1.75 HEX HEAD BOLT
+             4. 5/16-18 UNC × 2.25 HEX HEAD BOLT
+   B.
+             1. 1/4-28 UNC × 2.00 HEX HEAD BOLT
+             2. #8 (.164)-32 UNC × 2.00 HEX HEAD BOLT
+             3. 8-16 UNC × 1.75 PAN HEAD MACHINE BOLT
+             4. 5/16-18 UNC × 1.75 HEXAGON SOCKET HEAD CAP BOLT
+
+
+Project 6-21: Millimeters
+Given the collar shown in Figure P6-21, add the indicated set screws and prepare the following
+drawings:
+    1. Create an assembly drawing.
+    2. Create a BOM.
+    3. Create a dimensioned drawing of the collar. Specify a thread specification for each hole
+       as required by the designated set screw.
+Figure P6-21
+
+  A.
+         1. M4 × 6 ANSI B18.3.5M SOCKET SET SCREW-HALF-DOG POINT
+         2. M3 × 3 SOCKET SET SCREW-OVAL POINT
+         3. M2.5 × 4 B18.3.6M SOCKET SET SCREW-FLAT POINT
+         4. M4 × 5 B18.3.1M SOCKET HEAD CAP SCREW
+  B.
+         1. M2 × 4 B18.3.4M SOCKET BUTTON HEAD CAP SCREW
+         2. M3 × 6 B18.3.6M SOCKET SET SCREW-CONE POINT
+         3. M4 × 5 B18.3.6M SOCKET SET SCREW-FLAT POINT
+         4. M1.6 × 4 B18.3.6M SOCKET SET SCREW-CUP POINT
+
+Project 6-22: Inches
+Given the collar shown in Figure P6-22, add the indicated set screws and prepare the following
+drawings:
+    1. Create an assembly drawing.
+    2. Create a BOM.
+    3. Create a dimensioned drawing of the collar. Specify a thread specification for each hole
+       as required by the designated set screw.
+
+
+
+
+Figure P6-22
+
+Holes:
+   A.
+           1. #10 (0.190) × .375 SQUARE HEAD SET SCREW-HALF-DOG POINT-INCH
+           2. #6 (0.138) × .125 SLOTTED HEADLESS SET SCREW-FLAT POINT-INCH
+           3. #8 (0.164) × 3.75 SOCKET SET SCREW-CUP POINT-INCH
+           4. #5 (0.126) × .45 HEXAGON SOCKET SET SCREW-CONE POINT-INCH
+   B.
+           1. #6 (0.138) × .25 TYPE D-SOCKET SET SCREW-CUP POINT-INCH
+           2. #8 (0.164) × .1875 SLOTTED HEADLESS SET SCREW-DOG POINT-INCH
+           3. #10 (0.190) × .58 HEXAGON SOCKET SET SCREW-FLAT POINT-INCH
+           4. #6 (0.138) × .3125 SOCKET SET SCREW-HALF-DOG POINT-INCH
+
+
+Project 6-23: Millimeters
+Given the components shown in Figure P6-23:
+    1. Create an assembly drawing.
+    2. Animate the assembly.
+    3. Create an exploded isometric drawing.
+    4. Create a BOM.
+Figure P6-23
+
+Project 6-24: Inches
+Given the assembly shown in Figure P6-24:
+Figure P6-24
+
+   1. Create an assembly drawing.
+   2. Animate the assembly.
+   3. Create an exploded isometric drawing.
+   4. Create a BOM.
+Project 6-25: Inches
+Given the assembly shown in Figure P6-25:
+    1. Create an assembly drawing.
+    2. Animate the assembly.
+    3. Create an exploded isometric drawing.
+    4. Create a BOM.
+Figure P6-25
+
+Project 6-26: Inches
+Given the assembly shown in Figure P6-26:
+    1. Create an assembly drawing.
+    2. Animate the assembly.
+    3. Create an exploded isometric drawing.
+    4. Create a BOM.
+Figure P6-26
+
+Project 6-27: Inches
+Given the assembly shown in Figure P6-27:
+    1. Create an assembly drawing.
+    2. Animate the assembly.
+    3. Create an exploded isometric drawing.
+    4. Create a BOM.
+Figure P6-27
+
+Project 6-28: Inches
+Figure P6-28 shows five pipe segments. Use the segments to create the following assemblies:
+   A. Pipe assembly-1
+   B. Pipe assembly-2
+  C. Pipe assembly-3
+  D. Pipe assembly-4
+  E. An assembly as defined by your instructor.
+For each assembly join the segments using a 1/4-20 UNC × 1.375 Hex Head Screw and a
+1/4-20 UNC Hex Nut and create the following:
+   1. Assembly drawing
+   2. An isometric exploded drawing
+   3. A BOM
+Figure P6-28

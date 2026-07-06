@@ -1,0 +1,1228 @@
+Chapter 10. Gears
+Chapter Objectives
+
+         Learn the concept of power transmission
+         Learn the fundamentals of gears
+         Draw and animate gears
+
+
+
+10-1 Introduction
+Gears, pulleys, and chains are part of a broader category called power transmission. Power
+comes from a source such as an engine, motor, or windmill. The power is then transferred to a
+mechanism that performs some function. For example, an automobile engine transmits power
+from the engine to the wheels via a gear box. Bicyclists transmit the power of their legs to
+wheels via a chain and sprocket.
+     This section explains how gears, pulleys, and chains are drawn using SolidWorks and how
+the finished drawings can be animated. There is also a discussion of how speed is transferred and
+changed using gears, pulleys, and chains. Figure 10-1 shows a spur gear drawn using
+SolidWorks.
+Figure 10-1
+
+10-2 Gear Terminology
+Gears are designed based on several factors, and proper function is dependent on these factors.
+The following list provides descriptions of gear terminology.
+      Pitch Diameter (D): The diameter used to define the spacing of gears. Ideally, gears are
+      exactly tangent to each other along their pitch diameters.
+      Diametral Pitch (P): The number of teeth per inch. Meshing gears must have the same
+      diametral pitch. Manufacturers’ gear charts list gears with the same diametral pitch.
+      Module (M): The pitch diameter divided by the number of teeth. The metric equivalent of
+      diametral pitch.
+      Number of Teeth (N): The number of teeth of a gear.
+      Circular Pitch (CP): The circular distance from a fixed point on one tooth to the same
+      position on the next tooth as measured along the pitch circle. The circumference of the
+      pitch circle divided by the number of teeth.
+      Preferred Pitches: The standard sizes available from gear manufacturers. Whenever
+      possible, use preferred gear sizes.
+      Center Distance (CD): The distance between the centerpoints of two meshing gears.
+      Backlash: The difference between a tooth width and the engaging space on a meshing
+      gear.
+      Addendum (a): The height of a tooth above the pitch diameter.
+      Dedendum (d): The depth of a tooth below the pitch diameter.
+      Whole Depth: The total depth of a tooth. The addendum plus the dedendum.
+      Working Depth: The depth of engagement of one gear into another. Equal to the sum of
+      the two gears’ addendums.
+      Circular Thickness: The distance across a tooth as measured along the pitch circle.
+      Face Width (F): The distance from front to back along a tooth as measured perpendicular
+      to the pitch circle.
+      Outside Diameter: The largest diameter of the gear. Equal to the pitch diameter plus the
+      addendum.
+      Root Diameter: The diameter of the base of the teeth. The pitch diameter minus the
+      dedendum.
+      Clearance: The distance between the addendum of the meshing gear and the dedendum of
+      the mating gear.
+      Pressure Angle: The angle between the line of action and a line tangent to the pitch circle.
+      Most gears have pressure angles of either 14.5° or 20°.
+See Figure 10-2.
+Figure 10-2
+
+10-3 Gear Formulas
+Figure 10-3 shows a chart of formulas commonly associated with gears. The formulas are for
+spur gears.
+Figure 10-3
+
+10-4 Creating Gears
+In this section we will create two gears and then create an assembly that includes a support plate
+and two posts to hold the gears in place. The specifications for the two gears are as follows. See
+Figure 10-4.
+Figure 10-4
+
+       Gear 1:
+               Diametral Pitch = 24
+               Number of Teeth = 30
+               Face Width = .50
+               Nominal Shaft Diameter = Ø 1/2
+               Hub Diameter = Ø 1.00
+               Hub Height = .50
+               Pressure Angle = 20
+       Gear 2:
+               Diametral Pitch = 24
+               Number of Teeth = 60
+               Face Thickness = .50
+               Nominal Shaft Diameter = Ø 1/2
+               Hub Diameter = Ø 1.00
+               Hub Height = .50
+               Pressure Angle = 20
+
+ Tip
+ Gears must have the same diametral pitch to mesh properly.
+
+
+
+    Using the formulas presented we know that the pitch diameter is found as follows:
+                                                      D = N /P
+    So
+                                            D1 = 30/24 = 1.25 in .
+                                            D2 = 60/24 = 2.50 in .
+    The center distance between gears is found from the relation (D1 + D2)/2:
+                                               1.25+2.50
+                                                   2
+                                                         = 1.875 in .
+
+    This center distance data was used to create the Plate, Support shown in Figure 10-4.
+    The bore for the gears is defined as 0.50, so shafts that hold the gears will be Ø0.50, and the
+holes in the Plate, Support will also be 0.50.
+ Note
+ Tolerances for gears, shaft, and support plates are discussed in Chapter 9.
+
+
+     The shafts will have a nominal diameter of Ø0.50 and a length of 1.50. The length was
+derived by allowing 0.50 for the gear thickness, 0.50 for the Plate, Support thickness, and 0.50
+clearance between the gear and the plate. See Figure 10-4. In this example 0.06 × 45° chamfers
+were added to both ends of the shafts.
+
+
+Creating a Gear Assembly
+        1 Draw the Plate, Support and Shaft shown in Figure 10-4.
+        2 Start a new Assembly.
+        3 Assemble the plate and shafts as shown. Be sure to align the origin of the plate with the
+          origin of the assembly drawing.
+     See Figure 10-5. The top surface of the shafts is offset 1.00 from the surface of the plate.
+
+
+
+
+Figure 10-5
+   Create the gears using the Design Library. See Figure 10-6.
+
+
+
+
+Figure 10-6
+
+      4 Click the Design Library tool and then click Toolbox, ANSI Inch, Power
+        Transmission, and Gears.
+      5 Click the Spur Gear tool and drag the icon into the drawing area.
+   The Spur Gear PropertyManager will appear. See Figure 10-7.
+Figure 10-7
+
+      6 Enter the gear values as presented earlier for Gear 1 and create the gear.
+      7 Create Gear 2 using the presented values.
+   See Figure 10-8.
+Figure 10-8
+
+      8 Use the Mate tool and assemble the gears onto the shafts so that they mesh. First, use
+        the Mate/Concentric tool to align the gears’ bores with the shafts; then use the
+        Mate/Parallel tool to align the top surface of the shafts with the top surfaces of the
+        gears.
+   See Figure 10-9.
+Figure 10-9
+
+      9 Zoom in on the gear teeth and align them so they mesh; click the green check mark.
+     10 Click the Mate tool.
+     11 Click the Mechanical tab in the PropertyManager.
+     12 Select the Gear option.
+   See Figure 10-10.
+Figure 10-10
+
+     13 Define the gear mate by clicking the inside bore of the two gears.
+   See Figure 10-11.
+     14 Define the ratio between the gears.
+Figure 10-11
+
+    See Figure 10-12. In this example the ratio between the two gears is 2:1; that is, the smaller
+30-tooth gear goes around twice for every revolution of the larger 60-tooth gear.
+Figure 10-12
+
+       15 Click the green OK check mark.
+       16 Locate the cursor on the smaller gear and rotate the gears.
+
+ Tip
+ If the gears were not aligned (step 8), an error message would appear stating that the gears interfere with each other. The
+ gears will turn relative to each other even if they interfere, but it is better to go back and align the gears.
+
+
+
+
+Animating the Gears
+You can see the operation of the gears in SolidWorks by animating the assembly that has
+appropriate gear mates in place.
+        1 Click the Motion Study tab at the bottom of the screen. If needed, click the Expand
+          Motion Manager icon in the lower-right corner of the screen to expand the Motion
+          Manager box.
+        2 Click the Motor tool.
+   See Figure 10-13.
+
+
+
+
+Figure 10-13
+
+     3 Click the Rotary Motor option in the Motor PropertyManager.
+     4 Click the smaller 30-tooth gear.
+   A red arrow will appear on the gear, and the gear will be identified in the
+Component/Direction box. See Figure 10-14.
+Figure 10-14
+
+     5 Click the green OK check mark.
+     6 Drag the diamond-shaped Key on the time slider to 5s. See Figure 10-15.
+     7 The time for rotation of the Rotary Motor should correspondingly update to 5s.
+     8 Click the Play button.
+   The gears will animate.
+     9 Save the gear assembly.
+Figure 10-15
+
+10-5 Gear Ratios
+Gear ratios are determined by the number of teeth of each gear. In the previous example a gear
+with 30 teeth was meshed with a gear that has 60 teeth. As mentioned, their gear ratio is 2:1; that
+is, the smaller gear turns twice for every one revolution of the larger gear. Figure 10-16 shows a
+group of four gears. A grouping of gears is called a gear train. The gear train shown contains
+two gears with 30 teeth and two gears with 90 teeth. One of the 30-tooth gears is mounted on the
+same shaft as one of the 90-tooth gears. The gear ratio for the gear train is found as follows:
+Figure 10-16
+
+                                          ( 33 )( 31 ) = 91
+
+    Thus, if the leftmost 30-tooth gear turns at 1750 RPM, the rightmost 90-tooth gear turns at
+                                        1750
+                                         9
+                                             = 199.4 RPM
+
+
+10-6 Gears and Bearings
+The gear assembly created in the previous section did not include bearings. As gears rotate they
+rub against a stationary part, causing friction. It would be better to mount the gears’ shafts into
+bearings mounted into the support plate. There will still be friction, but it will be absorbed by the
+bearings, which are designed to absorb the forces. The bearings will eventually wear, but they
+can be replaced more easily than the support plate.
+
+
+Adding Bearings
+Figure 10-17 shows the gear assembly created in the last section. The shafts are Ø.50.
+      1 Access the Design Library, click Toolbox, ANSI Inch, Jig Bushings, All Jig
+        Bushings, and select Jig Bushing Type P and drag it onto the drawing.
+      2 Set the Size of the bearing to 0.5000 and the Length to 0.5.
+    The support plate is .50 thick.
+      3 Add a second bearing.
+
+
+
+
+Figure 10-17
+
+      4 Double-click one of the bearings.
+    The dimensions used to create the bearing will appear. See Figure 10-18. The outside
+diameter of the bearing is .75. The holes in the support plate must be edited to Ø.75.
+Figure 10-18
+Figure 10-19
+
+     5 Click the arrowhead to the left of the BLOCK, 2 BEARING heading in the
+       FeatureManager.
+     6 Click the arrowhead to the left of the Cut-Extrude 1 heading, right-click the Sketch 2
+       heading, and select the Edit Sketch option. Your names may differ.
+        See Figure 10-19.
+     7 Double-click the holes’ .50 diameter dimensions and change them to .75.
+   See Figure 10-20.
+Figure 10-20
+
+     8 Rotate the entire assembly so that the bottom surface of the support plate is visible.
+     9 Use the Mate tool to position the bearings onto the bottoms of the shafts.
+   See Figure 10-21.
+Figure 10-21
+
+   Figure 10-22 shows an exploded isometric drawing of the assembly with a BOM.
+Figure 10-22
+
+10-7 Power Transmission—Shaft to Gear
+When a gear is mounted on a shaft there must be a way to transfer the power from the shaft to
+the gear and from the gear to the shaft. Three common ways to achieve this transfer are to use set
+screws, keys, and splines. This section shows how to add set screws and keyways to gears.
+Splines will not be included.
+
+10-8 Set Screws and Gear Hubs
+This section shows how to add a hub to a gear and then how to create a threaded hole in the hub
+that will accept a set screw.
+       1 Start a new Part and create the Ø0.50 × 2.25 shaft shown in Figure 10-23.
+Figure 10-23
+
+   Save the part as POST, GEAR.
+     2 Start a new Assembly drawing.
+     3 Use the Insert Components tool and add the Ø0.50 × 2.25 shaft to the drawing.
+     4 Access the Design Library and click Toolbox, ANSI Inch, Power Transmission, and
+       Gears.
+     5 Select the Spur Gear option and click and drag it onto the drawing screen.
+   See Figure 10-24.
+Figure 10-24
+
+        6 Set the gear’s properties as follows. See Figure 10-25.
+             Diametral Pitch: 24
+             Number of Teeth: 36
+             Pressure Angle: 14.5
+             Face Width: 0.5
+             Hub Style: One Side
+             Hub Diameter: 1.0
+             Overall Length: 1.0
+
+ Tip
+ The overall length is the face width plus the hub height. In this example the face width is .5, and the overall length is 1.00, so
+ the hub height is .5.
+
+
+
+        7 Click the green OK check mark.
+Figure 10-25
+
+
+Adding a Threaded Hole to the Gear’s Hub
+The screen should show the shaft and gear. This is an assembly drawing.
+      1 Right-click the spur gear callout and click the Open Part option.
+    A warning dialog box will appear; click OK.
+      2 Rotate the gear so that the hub is clearly visible.
+    See Figure 10-26.
+Figure 10-26
+
+      3 Click the Hole Wizard tool.
+      4 Define the Hole Type as a Straight Tap hole.
+    See Figure 10-27. In this example an ANSI Inch #6-32 thread was selected for the hole. The
+depth of the hole must exceed the wall thickness of the hub, which is 0.25. In this example a
+depth of 0.50 was selected.
+Figure 10-27
+
+     5 Click the Positions tab and locate the threaded hole on the outside surface of the hub.
+   See Figure 10-28.
+Figure 10-28
+
+     6 Click the Smart Dimension tool and create a 0.25 dimension between the centerpoint
+       of the hole and the top surface of the gear teeth.
+   Define the dimension between the hole’s centerpoint and the top surface of the gear’s hub.
+     7 Click the green OK check mark.
+     8 Save the modified part as GEAR, SET SCREW.
+     9 Click the Close tool.
+     10 Access the Design Library, click Toolbox, ANSI Inch, Bolts and Screws, and Set
+        Screws (Slotted).
+     11 Select a Slotted Set Screw Oval Point and drag it onto the screen.
+     12 Define the Properties of the set screw as Size #6-32 and Length 0.263; click the green
+        OK check mark.
+   See Figure 10-29.
+Figure 10-29
+
+     13 Use the Mate tool and assemble the shaft and set screw into the gear as shown.
+   See Figure 10-30.
+Figure 10-30
+
+10-9 Keys, Keyseats, and Gears
+Keys are used to transfer power from a drive shaft to an entity such as a gear or pulley. A keyseat
+is cut into both the shaft and the gear, and the key is inserted between them. See Figure 10-31.
+The SolidWorks Design Library contains two types of keys: parallel and Woodruff.
+Figure 10-31
+
+     In this section we will insert a parallel key between a Ø0.50 × 3.00 shaft and a gear. Both
+the shaft and gear will have keyseats.
+
+
+Defining and Creating Keyseats in Gears
+      1 Draw a Ø0.50 × 3.00 shaft with a .06 × 45° chamfer at both ends and save the shaft
+        as Ø0.50 × 3.00 SHAFT.
+      2 Start a new Assembly and insert the shaft into the drawing.
+      3 Access the Design Library and click Toolbox, ANSI Inch, Power Transmission, and
+        Gears.
+      4 Click and drag a Spur Gear into the modeling space.
+      5 Define the gear’s properties as shown in Figure 10-32.
+Figure 10-32
+
+     This gear will not have a hub. Define a Square(1) keyway.
+        6 Click the green OK check mark.
+
+
+ Note
+ The gear will automatically have a keyseat cut into it. The size of the keyseat is based on the gear’s bore diameter.
+
+
+    The key will also be sized according to the gear’s bore diameter, but say we wish to
+determine the exact keyway size. See Figure 10-33.
+        1 Right-click the gear and select the Open Part option.
+Figure 10-33
+
+   A warning dialog box will appear.
+     2 Click OK.
+     3 Click the File menu at the top of the screen and click the Make Drawing from Part
+       tool.
+   The New SolidWorks Document dialog box will appear.
+     4 Click OK.
+   The Sheet Format/Size dialog box will appear.
+     5 Select the B (ANSI) Landscape sheet size; click OK.
+   The Drag views onto drawing sheet box will appear.
+     6 Click and drag a Front view of the gear into the drawing area.
+     7 Use the Center Mark tool to add a centerline to the gear’s bore. Press <Esc>.
+     8 Use the Smart Dimension tool and dimension the keyseat.
+    Notice that the keyseat’s width is .125. The height of the keyseat is measured from the
+bore’s centerpoint. The height is defined as .31. Therefore, the height of the keyseat is
+.31 − .25 (the radius of the bore) = .06, or about half the width.
+
+
+Returning to the Assembly Drawing
+      1 Click the File menu at the top of the screen and select the Close option.
+    Do not save the gear drawing. If changes were made to the drawing, they would have to be
+saved as a new drawing and the drawing closed to return to the original assembly.
+      2 Again, click the File menu and select the Close option.
+    The drawing will return to the assembly drawing. When the Open tool was activated, a new
+drawing was created, so the drawing must be closed to return to the original drawing.
+    See Figure 10-34.
+
+
+
+
+Figure 10-34
+
+
+Defining and Creating a Parallel Key
+     1 Access the Design Library and click Toolbox, ANSI Inch, Keys, and Parallel Keys.
+   See Figure 10-35.
+
+
+
+
+Figure 10-35
+
+     2 Click and drag the Key (B17.1) icon onto the drawing screen.
+     3 Enter the Shaft Diameter value and the key’s Length value as .5.
+   See Figure 10-36.
+Figure 10-36
+
+     In this example the shaft diameter is .50, or 1/2 inch (8/16). This value is between 7/16 and
+9/16.
+     Note that key dimensions are also given as 0.125 × 0.125 and a Keyseat Depth of 0.0625.
+The key size automatically matches the keyway in the gear. The width of the gear’s keyseat was
+.13, or .005 larger than the key. A rule of thumb is to make the height of the keyseat in both the
+shaft and the gear equal to a little more than the key’s height. The height of the keyseat in the
+gear was .06, so the depth of the keyway in the shaft will be .07, for a total keyway height of
+.06 + .07 = .13. The calculation does not take into account the tolerances between the shaft and
+the gear or the tolerances between the key and the keyseat.
+     For exact tolerance values, refer to Erik Oberg’s Machinery’s Handbook (available from
+Industrial Press, Inc., at https://www.amazon.com/Machinerys-Handbook-29th-Erik-
+Oberg/dp/083112900X or some equivalent source).
+       4 Click the green OK check mark.
+
+
+Creating a Keyseat in the Shaft
+The keyway for the shaft will be .13 × .07.
+     1 Click the top surface of the Ø.50 × 3.00 shaft.
+     2 Click the Normal To tool.
+   See Figure 10-37. The top surface of the shaft will become normal to the drawing screen.
+
+
+
+
+Figure 10-37
+
+     3 Right-click the normal surface again and select the Sketch option.
+     4 Click the Sketch tab, then click the Line tool and draw a vertical line from the
+       centerpoint of the shaft as shown.
+   This vertical line is for construction purposes. It will be used to center the keyway.
+   See Figure 10-38.
+Figure 10-38
+
+        5 Click the Sketch tab, then the Rectangle tool, and draw a rectangle as shown.
+     Draw the rectangle so that the top horizontal line is above the edge of the shaft.
+        6 Use the Smart Dimension tool to locate the left vertical line of the rectangle .065 from
+          the vertical construction line.
+
+ Tip
+ If the vertical centerline moves rather than the left vertical line, left-click the vertical construction line and select the Fix
+ option.
+
+
+
+        7 Use the Smart Dimension tool and dimension the rectangle as shown.
+
+
+Creating the Keyseat
+        1 Access the Extruded Cut tool located on the Features tab, and click the dimensioned
+          rectangle.
+See Figure 10-39.
+  2 Define the cut length of 0.50in.
+  3 Click the green OK check mark.
+Figure 10-39
+
+    The keyseat will end with an arc-shaped cut. The radius of the arc is equal to the depth of the
+keyseat. The arc shape is generated by the Extruded Cut tool used to create the keyseat.
+
+
+Creating the Arc-Shaped End of a Keyseat
+       1 Right-click the inside vertical surface of the keyseat and click the Sketch tab.
+       2 Use the Circle tool and draw a circle centered about the end of the keyseat on the
+         surface of the shaft, using the lower corner of the keyway to define the radius value.
+    See Figure 10-40.
+Figure 10-40
+
+     3 Use the Extruded Cut tool to cut the arc-shaped end surface.
+   The length of the cut equals the width of the keyway, or .13.
+     4 Assemble the parts as shown. See Figures 10-41 and 10-42.
+Figure 10-41
+Figure 10-42
+
+10-10 Sample Problem SP10-1
+This exercise explains how to determine the size of plates used to support spur gears and their
+shafts.
+    Say we wish to design a support plate that will support four spur gears. See Figure 10-43.
+The gear specifications are as follows.
+Figure 10-43
+
+     Gear 1:
+           Diametral Pitch = 24
+           Number of Teeth = 20
+           Pressure Angle = 14.5°
+           Face Width = 0.375
+           Hub Style = One Side
+           Hub Diameter = 0.75
+           Overall Length = .875
+           Nominal Shaft Diameter = 1/2
+           Keyway = None
+     Gear 2:
+           Diametral Pitch = 24
+           Number of Teeth = 60
+             Pressure Angle = 14.5°
+             Face Width = 0.375
+             Hub Style = One Side
+             Hub Diameter = 0.75
+             Overall Length = .875
+             Nominal Shaft Diameter = 1/2
+             Keyway = None
+
+
+Determining the Pitch Diameter
+The pitch diameter of the gears is determined by
+                                            D= N
+                                               P
+
+    where
+     D = pitch diameter
+     N = number of teeth
+     P = diametral pitch
+     Therefore, for Gear 1
+                                         D = 20
+                                             24
+                                                = .83
+
+    For Gear 2
+                                        D = 60
+                                            24
+                                               = 2.50
+
+    The center distance (CD) between the gears is calculated as follows:
+
+                                     CD = .83+22.50 = 1.67
+
+    The radii of the gears are .46 and 1.25, respectively.
+    Figure 10-44 shows a support plate for the gears. The dimensions for the support plate were
+derived from the gear pitch diameters and an allowance of about .50 between the gear pitch
+diameters and the edge of the support plate. For example, the pitch diameter of the larger gear is
+2.50. Allowing .50 between the top edge and the bottom edge gives .50 + 2.50 + .50 = 3.50.
+Figure 10-44
+
+     The pitch diameter for the smaller gear is .83. Adding the .50 edge distance gives a distance
+of 1.33 from the smaller gear’s centerpoint. In this example the distance was rounded up to 1.50.
+The center distance between the gears is 1.67. Therefore, the total length of the support plate is
+1.50 + 1.67 + 1.67 + 1.75 = 6.59, or about 6.75. The height will be 3.50.
+     Each of the gears has a 1/2 nominal shaft diameter. For this example a value of .50 will be
+assigned to both the gear bores and the holes in the support plate. Bearings are not included in
+this example.
+     Figure 10-45 shows a Ø.50 × 2.00 shaft that will be used to support the gears.
+Figure 10-45
+
+     Create an Assembly drawing using the support plate, three Ø.50 × 2.00 shafts, and the four
+gears. The gears were created using the given information. Figure 10-46 shows the components
+in their assembled position. Save the assembly as ASSEMBLY, THREE GEAR. The gears are
+offset .60 from the support and from each other on the gear shafts.
+Figure 10-46
+
+     Create an exploded drawing using the three-gear assembly in the Isometric orientation with
+no hidden lines. See Figure 10-47. Access the Annotation menu, add balloons, click the Tables
+tool, and select the Bill of Materials tool. Locate the bill of materials (BOM) as shown.
+Figure 10-47
+
+     The PART NUMBER column does not show part numbers but lists the file names assigned
+to each part and, in the case of the gears, a listing of gear parameters.
+
+
+Editing the Bill of Materials
+See Figure 10-47. SolidWorks will automatically insert the part’s file name as its part number.
+       1 Double-click the first cell under the heading DESCRIPTION.
+    A warning dialog box will appear. See Figure 10-48.
+Figure 10-48
+
+     2 Click Break Link.
+   An editing text box will appear in the cell. See Figure 10-49.
+     3 Type in the part description.
+Figure 10-49
+
+     In this example the file name SUPPORT, GEAR, SPUR was used, and the text was left
+aligned.
+
+
+ Note
+ The description was typed using only uppercase letters. Uppercase letters are the preferred convention.
+
+
+        4 Complete the editing of the DESCRIPTION column.
+        5 Click the PART NUMBER column and add part numbers as shown.
+
+
+ Note
+ Part numbers differ from item numbers (assembly numbers). The support plate is item number 1 and has a part number of
+ AM311-1. If the plate were to be used in another assembly, it might have a different item number, but it will always have the
+ same AM311-1 part number.
+
+
+     The gears’ part numbers were accepted “as is” because they are standard numbers assigned
+to each gear. In general, manufacturers’ part numbers are used directly. See Figure 10-50.
+Figure 10-50
+
+   The three-gear assembly can be animated using the Mechanical Mates tool.
+     1 Click the Mate tool.
+     2 Click the Mechanical tab.
+     3 Click the Gear tool.
+     4 Click the edge of Gear 1.
+   The gear name should appear in the Mate Selections box.
+     5 Click Gear 2.
+     6 Set the gear ratio to 1:2.
+   See Figure 10-51.
+     7 Create a Gear Mate between Gear 2 and the second Gear 1, located on the same shaft,
+       and set the gear ratio for 1:1.
+Figure 10-51
+
+   The gears are on the same shaft, so they will rotate at the same speed.
+     8 Create a Gear Mate between the second Gear 1 and the second Gear 2 and set the gear
+       ratio for 1:2.
+   Figure 10-52 shows gear mates used to create the animated assembly.
+     9 Use the cursor to rotate Gear 1.
+Figure 10-52
+
+    The gears should rotate.
+    The total gear ratio is
+
+     ( 31 )( 31 ) = 91
+
+   Therefore, if the first Gear 1 rotates at 1750 RPM, the second Gear 2 will rotate at 194.4
+RPM:
+     1750/9 = 194.4 RPM
+
+10-11 Rack and Pinion Gears
+Figure 10-53 shows a rack and pinion gear setup. It was created as an Assembly with a
+Ø.50 × 2.25 shaft and a rack and pinion gear from the Design Library.
+      1 Draw a Ø.50 × 2.25 shaft with a 0.03 chamfer at each end.
+      2 Start a new Assembly.
+      3 Insert the Ø.50 × 2.25 shaft.
+Figure 10-53
+
+   The shaft will serve as a base for the gears and a reference for animation.
+     4 Access the Design Library and click Toolbox, ANSI Inch, Power Transmission,
+       Gears, and click and drag a Rack (Spur Rectangular) into the model space.
+     5 Set the rack’s properties as shown in Figure 10-54.
+     6 Repeat step 4 but this time drag a Spur Gear into the model space.
+Figure 10-54
+
+   The spur gear will become the pinion.
+     7 Set the pinion’s properties as shown in Figure 10-55.
+     8 Reorient the components and use the Mate tool to insert the pinion onto the shaft.
+Figure 10-55
+
+    See Figure 10-56.
+    Remember that the shaft was entered into the assembly first, so its position is fixed. Use the
+Float option to move the shaft.
+Figure 10-56
+
+      9 Use the Mate tool to make the top surface of the pinion parallel with the front flat
+        surface of the rack.
+     10 Use the Mate tool and align the top surface (not an edge) of one of the pinion’s teeth
+        with the bottom surface of one of the rack’s teeth.
+   See Figure 10-57.
+Figure 10-57
+
+     11 Adjust the pinion as needed to create a proper fit between the pinion and the rack by
+        locating the cursor on the pinion and rotating the pinion.
+
+
+Animating the Rack and Pinion
+See Figure 10-58. This animation is based on the rack and pinion setup created in the previous
+section.
+      1 Click the Mate tool.
+      2 Click the Mechanical tab.
+      3 Click the Rack Pinion option.
+      4 Click the front edge of the rack’s teeth.
+      5 Click the pinion gear (not an edge).
+      6 Fix the shaft in place.
+      7 Set the pinion pitch diameter.
+    Right-click the Shaft heading in the FeatureManager Design Tree and click the Fix
+option. An f should appear in the Shaft heading.
+      8 Click the green OK check mark.
+      9 Use the cursor to rotate the pinion.
+
+
+
+
+Figure 10-58
+
+    The rack will slide back and forth as the pinion is moved. Reverse the mate direction if the
+rack moves opposite to the pinion.
+
+10-12 Metric Gears
+Gears created using the metric system are very similar to gears created using English units with
+one major exception. Gears in the English system use the term pitch to refer to the number of
+teeth per inch. Gears in the metric system use the term module to refer to the pitch diameter
+divided by the number of teeth. As meshing gears in the English system must have the same
+pitch, so meshing gears in the metric system must have the same module.
+Creating a Metric Gear
+See Figure 10-59.
+
+
+
+
+Figure 10-59
+
+      1 Start a new Part document and set the units for MMGS.
+      2 Draw a Ø16 × 60 millimeter shaft. Save the shaft as Ø16 × 60.
+      3 Start a new Assembly drawing and insert the Ø16 × 60 shaft.
+      4 Access the Design Library.
+      5 Click Toolbox, ANSI Metric, Power Transmission, and Gears.
+      6 Click and drag a Spur Gear into the drawing area.
+      7 Define the gear’s properties as follows:
+        a. Module = 1.5
+        b. Number of Teeth = 30
+        c. Pressure Angle = 14.5
+        d. Face Width = 10
+        e. Hub Style = None
+         f. Nominal Shaft Diameter = 16
+        g. Keyway = None
+      8 Use the Mate tool and assemble the gear onto the shaft.
+    Figure 10-60 shows the gear assembled onto the shaft.
+
+
+
+
+Figure 10-60
+
+Chapter Projects
+
+Project 10-1: Inches
+Use Figure P10-1 for Projects 10-1 through 10-4.
+Figure P10-1
+
+  A. Create a Ø.375 × 1.75 shaft.
+  B. Create a spur gear based on the following specifications:
+      Diametral Pitch = 32
+      Number of Teeth = 36
+      Pressure Angle = 14.5
+      Face Width = .250
+      Hub Style = None
+      Nominal Shaft Diameter = 3/8
+      Keyway = None
+  C. Assemble the gear onto the shaft with a .25 offset from the end of the shaft.
+
+Project 10-2: Inches
+  A. Create a Ø.250 × 1.50 shaft.
+  B. Create a spur gear based on the following specifications:
+      Diametral Pitch = 40
+      Number of Teeth = 56
+      Pressure Angle = 14.5
+      Face Width = .125
+      Hub Style = None
+      Nominal Shaft Diameter = 1/4
+      Keyway = None
+  C. Assemble the gear onto the shaft with a .125 offset from the end of the shaft.
+
+Project 10-3: Inches
+  A. Create a Ø1.00 × 4.00 shaft.
+  B. Create a spur gear based on the following specifications:
+      Diametral Pitch = 8
+      Number of Teeth = 66
+      Pressure Angle = 14.5
+      Face Width = .625
+      Hub Style = None
+      Nominal Shaft Diameter = 1
+      Keyway = None
+  C. Assemble the gear onto the shaft with a 0.00 offset from the end of the shaft.
+
+Project 10-4: Millimeters
+  A. Create a Ø8.0 × 30 shaft.
+  B. Create a spur gear based on the following specifications:
+      Module = 2
+      Number of Teeth = 40
+      Pressure Angle = 14.5
+      Face Width = 12
+      Hub Style = None
+       Nominal Shaft Diameter = 8
+       Keyway = None
+   C. Assemble the gear onto the shaft with a 5.0 offset from the end of the shaft.
+
+Project 10-5: Inches
+Use Figure P10-2 for Projects 10-5 through 10-7.
+
+
+
+
+Figure P10-2
+
+   A. Create a Ø.625 × 4.00 shaft.
+   B. Create a spur gear based on the following specifications:
+       Gear 1:
+             Diametral Pitch = 10
+             Number of Teeth = 42
+             Pressure Angle = 14.5
+            Face Width = .375
+            Hub Style = None
+            Nominal Shaft Diameter = 5/8
+            Keyway = None
+  C. Create a second gear based on the following specifications:
+      Gear 2:
+            Diametral Pitch = 10
+            Number of Teeth = 68
+            Pressure Angle = 14.5
+            Face Width = .500
+            Hub Style = None
+            Nominal Shaft Diameter = 5/8
+            Keyway = None
+  D. Assemble the gears onto the shaft with Gear 1 offset .25 from the front end of the shaft
+     and Gear 2 offset 3.00 from the front end of the shaft.
+
+Project 10-6: Inches
+  A. Create a Ø.25 × 2.75 shaft.
+  B. Create a spur gear based on the following specifications:
+      Gear 1:
+            Diametral Pitch = 40
+            Number of Teeth = 18
+            Pressure Angle = 14.5
+            Face Width = .125
+            Hub Style = None
+            Nominal Shaft Diameter = 1/4
+            Keyway = None
+  C. Create a second gear based on the following specifications:
+      Gear 2:
+            Diametral Pitch = 40
+            Number of Teeth = 54
+            Pressure Angle = 14.5
+            Face Width = .125
+            Hub Style = None
+            Nominal Shaft Diameter = 1/4
+            Keyway = None
+  D. Assemble the gears onto the shaft with Gear 1 offset .125 from the front end of the shaft
+     and Gear 2 offset 2.00 from the front end of the shaft.
+
+Project 10-7: Millimeters
+  A. Create a Ø12 × 80 shaft.
+  B. Create a spur gear based on the following specifications:
+      Gear 1:
+            Module = 1.0
+            Number of Teeth = 16
+            Pressure Angle = 14.5
+            Face Width = 8
+            Hub Style = None
+            Nominal Shaft Diameter = 12
+            Keyway = None
+  C. Create a second gear based on the following specifications:
+      Gear 2:
+            Module = 1.0
+            Number of Teeth = 48
+            Pressure Angle = 14.5
+            Face Width = 10
+            Hub Style = None
+            Nominal Shaft Diameter = 12
+            Keyway = None
+  D. Assemble the gears onto the shaft with Gear 1 offset 5 from the front end of the shaft and
+     Gear 2 offset 50 from the front end of the shaft.
+
+Project 10-8: Inches
+Use Figure P10-3 for Projects 10-8 through 10-10.
+Figure P10-3
+
+  A. Create a Ø.375 × 2.75 shaft. Save the shaft.
+  B. Create a spur gear based on the following specifications:
+      Gear 1:
+           Diametral Pitch = 10
+           Number of Teeth = 22
+           Pressure Angle = 14.5
+           Face Width = .375
+           Hub Style = One Side
+           Hub Diameter = .75
+           Overall Length = .75
+           Nominal Shaft Diameter = 3/8
+           Keyway = None
+  C. Create another spur gear based on the following specifications:
+      Gear 2:
+            Diametral Pitch = 10
+            Number of Teeth = 44
+            Pressure Angle = 14.5
+            Face Width = .375
+            Hub Style = One Side
+            Hub Diameter = .75
+            Overall Length = .75
+            Nominal Shaft Diameter = 3/8
+            Keyway = None
+  D. Add #6-32 threaded holes to each gear hub .19 from the top hub surface.
+  E. Assemble the gears onto the shaft with Gear 1 offset .25 from the front end of the shaft
+     and Gear 2 offset 2.25 from the front end of the shaft.
+  F. Insert a #6-32 Slotted Set Screw with an Oval Point into each hole.
+  G. Create an exploded assembly drawing.
+  H. Create a bill of materials.
+  I. Animate the assembly.
+
+Project 10-9: Inches
+  A. Create a Ø.375 × 3.25 shaft. Save the shaft.
+  B. Create a spur gear based on the following specifications:
+      Gear 1:
+            Diametral Pitch = 20
+            Number of Teeth = 18
+            Pressure Angle = 14.5
+            Face Width = .25
+            Hub Style = One Side
+            Hub Diameter = .50
+            Overall Length = .50
+            Nominal Shaft Diameter = 3/8
+            Keyway = None
+  C. Create another spur gear based on the following specifications:
+      Gear 2:
+            Diametral Pitch = 20
+            Number of Teeth = 63
+            Pressure Angle = 14.5
+            Face Width = .25
+            Hub Style = One Side
+            Hub Diameter = .50
+            Overall Length = .50
+            Nominal Shaft Diameter = 3/8
+            Keyway = None
+  D. Add #4-40 threaded holes to each gear hub .19 from the top hub surface.
+  E. Assemble the gears onto the shaft with Gear 1 offset .25 from the front end of the shaft
+     and Gear 2 offset 2.63 from the front end of the shaft.
+
+Project 10-10: Millimeters
+  A. Create a Ø24 × 120 shaft. Save the shaft.
+  B. Create a spur gear based on the following specifications:
+      Gear 1:
+            Module = 1.5
+            Number of Teeth = 18
+            Pressure Angle = 14.5
+            Face Width = 12
+            Hub Style = One Side
+            Hub Diameter = 32
+            Overall Length = 30
+            Nominal Shaft Diameter = 16
+            Keyway = None
+  C. Create another spur gear based on the following specifications:
+      Gear 2:
+            Module = 1.5
+            Number of Teeth = 70
+            Pressure Angle = 14.5
+             Face Width = 12
+             Hub Style = One Side
+             Hub Diameter = 40
+             Overall Length = 30
+             Nominal Shaft Diameter = 16
+             Keyway = None
+   D. Add M3.0 threaded holes to each gear hub 10 from the top hub surface.
+   E. Assemble the gears onto the shaft with Gear 1 offset 4.0 from the front end of the shaft
+      and Gear 2 offset 80.0 from the front end of the shaft.
+   F. Insert an M3 Socket Set Screw with a Cup Point into each hole.
+   G. Create an exploded assembly drawing.
+   H. Create a bill of materials.
+   I. Animate the assembly.
+
+Project 10-11: Inches
+See Figure P10-4.
+   A. Draw three Ø.375 × 3.00 shafts.
+   B. Draw the support plate shown.
+   Figure P10-4
+
+C. Access the Design Library and create two Gear 1s and two Gear 2s.
+    The gears are defined as follows:
+    Gear 1:
+         Diametral Pitch = 16
+         Number of Teeth = 24
+         Pressure Angle = 14.5
+         Face Width = .25
+         Hub Style = One Side
+         Hub Diameter = .50
+         Overall Length = .50
+         Nominal Shaft Diameter = 3/8
+         Keyway = None
+    Gear 2:
+             Diametral Pitch = 16
+             Number of Teeth = 64
+             Pressure Angle = 14.5
+             Face Width = .25
+             Hub Style = One Side
+             Hub Diameter = .50
+             Overall Length = .50
+             Nominal Shaft Diameter = 3/8
+             Keyway = None
+   D. Add #6-32 threaded holes to each gear hub .19 from the top hub surface.
+   E. Assemble the gears onto the shafts so that Gear 1 and Gear 2 are offset .50 from the
+      support plate, and Gear 3 and Gear 4 are parallel to the ends of the shafts.
+   F. Insert a #6-32 Slotted Set Screw with an Oval Point into each hole.
+   G. Create an exploded assembly drawing.
+   H. Create a bill of materials.
+    I. Animate the assembly.
+
+Project 10-12: Inches—Design Problem
+Using Figure P10-4 define a support plate and shafts that support the following gears. Use two of
+each gear.
+      Parameters:
+            Plate: .50 thick, a distance of at least .50 beyond the other edge of the gears to the
+            edge of the plate.
+            Shafts: Diameters that match the gear’s bore diameter; minimum offset between the
+            plate and the gear is .50 or greater.
+      Gear 1:
+            Diametral Pitch = 10
+            Number of Teeth = 24
+            Pressure Angle = 14.5
+            Face Width = .375
+            Hub Style = One Side
+            Hub Diameter = 1.00
+            Overall Length = .875
+            Nominal Shaft Diameter = 7/16
+            Keyway = None
+   A. Create another spur gear based on the following specifications:
+       Gear 2:
+             Diametral Pitch = 10
+             Number of Teeth = 96
+             Pressure Angle = 14.5
+             Face Width = .375
+             Hub Style = One Side
+             Hub Diameter = 1.00
+             Overall Length = .875
+             Nominal Shaft Diameter = 7/16
+             Keyway = None
+   B. Add #6-32 threaded holes to each gear hub .19 from the top hub surface.
+   C. Assemble the gears onto the shafts so that Gear 1 and Gear 2 are offset .50 from the
+      support plate, and Gear 3 and Gear 4 are parallel to the ends of the shafts.
+   D. Insert a #6-32 Slotted Set Screw with an Oval Point into each hole.
+   E. Create an exploded assembly drawing.
+   F. Create a bill of materials.
+   G. Animate the assembly.
+
+Project 10-13: Inches—Design Problem
+Based on Figure P10-4 define a support plate and shafts that support the following gears. Use
+two of each gear.
+      Parameters:
+            Plate: .50 thick, a distance of at least .50 beyond the other edge of the gears to the
+            edge of the plate.
+            Shafts: Diameters that match the gear’s bore diameter: minimum offset between the
+            plate and the gear is .50 or greater.
+      Gear 1:
+            Diametral Pitch = 6
+            Number of Teeth = 22
+            Pressure Angle = 14.5
+            Face Width = .500
+            Hub Style = One Side
+            Hub Diameter = 1.50
+            Overall Length = 1.25
+            Nominal Shaft Diameter = .75
+            Keyway = None
+      Gear 2:
+            Diametral Pitch = 6
+            Number of Teeth = 77
+            Pressure Angle = 14.5
+            Face Width = .50
+            Hub Style = One Side
+            Hub Diameter = 1.50
+            Overall Length = 1.25
+            Nominal Shaft Diameter = .75
+            Keyway = None
+   A. Add 1/4-20 UNC threaded holes to each gear hub 0.25 from the top hub surface.
+   B. Assemble the gears onto the shafts so that Gear 1 and Gear 2 are offset .50 from the
+      support plate, and Gear 3 and Gear 4 are parallel to the ends of the shafts.
+   C. Insert a 1/4-20 UNC Slotted Set Screw with an Oval Point into each hole.
+   D. Create an exploded assembly drawing.
+   E. Create a bill of materials.
+   F. Animate the assembly.
+
+Project 10-14: Millimeters—Design Problem
+Based on Figure P10-4 define a support plate and shafts that support the following gears. Use
+two of each gear.
+      Parameters:
+            Plate: 20 thick, a distance of at least 25 beyond the other edge of the gears to the
+            edge of the plate.
+            Shafts: Diameters that match the gear’s bore diameter; minimum offset between the
+            plate and the gear is 20 or greater.
+      Gear 1:
+            Module = 2.5
+            Number of Teeth = 20
+            Pressure Angle = 14.5
+            Face Width = 16
+            Hub Style = One Side
+            Hub Diameter = 26
+            Overall Length = 30
+            Nominal Shaft Diameter = 20
+            Keyway = None
+      Gear 2:
+            Module = 2.5
+            Number of Teeth = 50
+            Pressure Angle = 14.5
+            Face Width = 16
+            Hub Style = One Side
+            Hub Diameter = 30
+            Overall Length = 30
+            Nominal Shaft Diameter = 20
+            Keyway = None
+   A. Add M4 threaded holes to each gear hub 12 from the top hub surface.
+   B. Assemble the gears onto the shafts so that Gear 1 and Gear 2 are offset 10 from the
+      support plate, and Gear 3 and Gear 4 are parallel to the ends of the shafts.
+   C. Insert an M4 Slotted Set Screw with an Oval Point into each hole.
+   D. Create an exploded assembly drawing.
+   E. Create a bill of materials.
+   F. Animate the assembly.
+
+Project 10-15: Inches
+See Figure P10-5.
+   A. Draw four Ø.375 × 3.00 shafts.
+   B. Draw the support plate shown in Figure P10-5.
+C. Access the Design Library and create three Gear 1s and three Gear 2s.
+Figure P10-5
+
+The gears are defined as follows:
+      Gear 1:
+            Diametral Pitch = 16
+            Number of Teeth = 24
+            Pressure Angle = 14.5
+            Face Width = .25
+            Hub Style = One Side
+            Hub Diameter = .50
+            Overall Length = .50
+            Nominal Shaft Diameter = 3/8
+            Keyway = None
+      Gear 2:
+            Diametral Pitch = 16
+            Number of Teeth = 64
+            Pressure Angle = 14.5
+            Face Width = .25
+            Hub Style = One Side
+            Hub Diameter = .50
+            Overall Length = .50
+            Nominal Shaft Diameter = 3/8
+            Keyway = None
+   D. Add #6-32 threaded holes to each gear hub 0.19 from the top hub surface.
+   E. Assemble the gears onto the shafts so that the offset between the support plate and the
+      gears is as defined in Figure P10-5.
+   F. Insert a #6-32 Slotted Set Screw with an Oval Point into each hole.
+   G. Create an exploded assembly drawing.
+   H. Create a bill of materials.
+   I. Animate the assembly.
+
+Project 10-16: Inches—Design Problem
+Based on Figure P10-5 define a support plate and shafts that support the following gears. Use
+two of each gear.
+      Parameters:
+            Plate: .50 thick, a distance of at least .50 beyond the other edge of the gears to the
+            edge of the plate.
+            Shafts: Diameters that match the gear’s bore diameter; minimum offset between the
+            plate and the gear is .50 or greater.
+      Gear 1:
+            Diametral Pitch = 6
+            Number of Teeth = 22
+            Pressure Angle = 14.5
+            Face Width = .500
+            Hub Style = One Side
+            Hub Diameter = 1.50
+            Overall Length = 1.25
+            Nominal Shaft Diameter = .75
+            Keyway = None
+      Gear 2:
+            Diametral Pitch = 6
+            Number of Teeth = 77
+            Pressure Angle = 14.5
+            Face Width = .50
+            Hub Style = One Side
+            Hub Diameter = 1.50
+            Overall Length = 1.25
+            Nominal Shaft Diameter = .75
+            Keyway = None
+   A. Add 1/4-20 UNC threaded holes to each gear hub .25 from the top hub surface.
+   B. Assemble the gears onto the shafts so that Gear 1 and Gear 2 are offset .50 from the
+      support plate, and Gear 3 and Gear 4 are parallel to the ends of the shafts.
+   C. Insert a 1/4-20 UNC Slotted Set Screw with an Oval Point into each hole.
+   D. Create an exploded assembly drawing.
+   E. Create a bill of materials.
+   F. Animate the assembly.
+
+Project 10-17: Millimeters—Design Problem
+Based on Figure P10-5 define a support plate and shafts that support the following gears. Use
+two of each gear.
+      Parameters:
+            Plate: 20 thick, a distance of at least 25 beyond the other edge of the gears to the
+            edge of the plate.
+            Shafts: Diameters that match the gear’s bore diameter; minimum offset between the
+            plate and the gear is 20 or greater.
+      Gear 1:
+            Module = 2.5
+            Number of Teeth = 20
+            Pressure Angle = 14.5
+            Face Width = 16
+            Hub Style = One Side
+            Hub Diameter = 26
+            Overall Length = 30
+            Nominal Shaft Diameter = 20
+            Keyway = None
+      Gear 2:
+            Module = 2.5
+            Number of Teeth = 50
+            Pressure Angle = 14.5
+            Face Width = 16
+            Hub Style = One Side
+            Hub Diameter = 30
+            Overall Length = 30
+            Nominal Shaft Diameter = 20
+            Keyway = None
+   A. Add M4 threaded holes to each gear hub 12 from the top hub surface.
+   B. Assemble the gears onto the shafts so that Gear 1 and Gear 2 are offset 10 from the
+      support plate, and Gear 3 and Gear 4 are parallel to the ends of the shafts.
+   C. Insert an M4 Slotted Set Screw with an Oval Point into each hole.
+   D. Create an exploded assembly drawing.
+   E. Create a bill of materials.
+   F. Animate the assembly.
+
+Project 10-18: Inches—Design Problem
+Redraw the gear assembly shown in Figure P10-6. Create the following:
+   A. An assembly drawing
+   B. An exploded isometric drawing
+   C. A BOM
+   D. Dimensioned drawings of each part
+Parts from the Toolbox do not need drawings but should be listed on the BOM.
+Figure P10-6
+
+Project 10-19: Millimeters—Design Problem
+Redraw the gear assembly shown in Figure P10-7. Create the following:
+   A. An assembly drawing
+   B. An exploded isometric drawing
+   C. A BOM
+   D. Dimensioned drawings of each part
+Parts from the Toolbox do not need drawings but should be listed on the BOM.
+Figure P10-7

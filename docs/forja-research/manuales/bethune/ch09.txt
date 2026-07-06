@@ -1,0 +1,429 @@
+Chapter 9. Bearings and Fit Tolerances
+Chapter Objectives
+
+         Learn about sleeve and ball bearings
+         Learn about fits
+         Apply fits to holes and shafts
+         Apply tolerances to holes and shafts
+
+
+
+9-1 Introduction
+This text deals with two types of bearings: sleeve bearings or bushings and ball bearings. See
+Figure 9-1. Sleeve bearings, or jig bushings, are hollow cylinders made from a low-friction
+material such as Teflon or impregnated bronze. Sleeve bearings may have flanges. Ball bearings
+include spherical bearings in an internal race that greatly reduce friction. In general, sleeve
+bearings are cheaper than ball bearings, but ball bearings can take heavier loads at faster speeds.
+A listing of ball bearings is included in the Design Library.
+
+
+
+
+Figure 9-1
+
+9-2 Sleeve Bearings
+Sleeve bearings are identified by the following callout format:
+     Inside Diameter × Outside Diameter × Thickness
+    For example,
+     .375 × .750 × .500 or 3/8 × 3/4 × 1/2
+
+
+Drawing a Sleeve Bearing
+Draw a .500 × 1.000 × 1.000 sleeve bearing. See Figure 9-2.
+       1 Start a new Part document.
+       2 Select the Front Plane orientation.
+Figure 9-2
+
+       1 Click the Sketch tab, then click the Circle tool.
+       2 Draw a Ø1.000 circle. Use the Smart Dimension tool to size the circle.
+       3 Click the Features tab, then click the Extruded Boss/Base tool.
+       4 Define the thickness of the extrusion as 1.00in.
+       5 Click the green OK check mark.
+       6 Right-click the front surface of the cylinder and select the Sketch tool.
+       7 Use the Circle tool and the Smart Dimension tool to draw a Ø.500 circle on the front
+         surface of the cylinder.
+       8 Click the Features tab and select the Extruded Cut tool.
+       9 Define the Ø.500 circle to be cut through the entire cylinder and click the green OK
+         check mark.
+     10 Save the part as .50 BEARING.
+
+
+Note
+ No tolerances are assigned to the bushing.
+
+
+
+
+Using a Sleeve Bearing in an Assembly Drawing
+See Figures 9-3 and 9-4.
+Figure 9-3
+
+      1 Create the support plate and Ø.500 × 2.500 shaft defined in Figure 9-3. Save the parts.
+      2 Create a new Assembly.
+      3 Add the support plate, shaft, and sleeve bearing (created in the last section) to the
+        assembly.
+   See Figure 9-4.
+Figure 9-4
+
+      4 Use the Mate tool and assemble the sleeve bearing into the support plate, and the shaft
+        into the sleeve bearing. The front surface of the shaft should be offset 1.50 from the
+        front surface of the support plate.
+      5 Save the assembly as Sleeve Assembly.
+      6 Use the Exploded View tool. Select a direction and pull the shaft out of the assembly.
+     See Figures 5-25 and 5-26 in Chapter 5 for instructions on how to use the Exploded View
+tool.
+      7 Use the Exploded View tool to pull the bearing away from the support plate.
+      8 Save the assembly with exploded view.
+      9 Start a new Drawing.
+     10 Click the Annotation tab, click the Balloon tool, and add the assembly numbers as
+        shown in Figure 9-4.
+     11 Click the Annotation tab, click the Tables tool, click the Bill of Materials tool, and
+        add a BOM to the drawing.
+9-3 Bearings from the Toolbox
+The SolidWorks Toolbox includes many different sizes and styles of bearings. In this example
+we will use the PLATE, SUPPORT, and Ø.50 SHAFT with a bearing from the Toolbox to
+create an assembly.
+      1 Create a new Assembly and add the PLATE, SUPPORT, and Ø.50 SHAFT.
+    See Figure 9-5.
+      2 Save the assembly as BEARING ASSEMBLY.
+      3 Click the Toolbox, expand ANSI Inch, click Jig Bushings, and select All Jig
+        Bushings.
+      4 Select Jig Bushing Type P and drag it onto the drawing screen.
+Figure 9-5
+
+     We know the shaft diameter is .500, so we will size the bearing’s inside diameter to match
+the shaft diameter. Tolerances are not considered. They will be included in later examples.
+      5 Set the Size to 0.5000 (1/2) and the Length to 1 and click the green OK check mark.
+    What is the outside diameter of the bearing? To answer this question, double-click the
+bearing on the screen. The dimensions used to create the bearing will become visible.
+    The outside diameter is defined as .75, so the Ø1.00 hole in the PLATE, SUPPORT is not
+acceptable. It must be edited.
+      6 Click the screen to remove the bearing’s dimensions and click the arrow next to the
+        PLATE, SUPPORT heading in the FeatureManager.
+      7 Click the arrow next to the Boss-Extrude1 heading, right-click the Sketch1 heading,
+        and click Edit Sketch.
+    Your sketch number may be different.
+      8 Click the Edit Sketch option.
+    The dimension for the Ø1.00 hole will appear.
+       9 Double-click the 1.00 dimension and change the diameter from 1.00 to .75; click the
+         green OK check mark.
+      10 Return to the assembly and assemble the components.
+      11 Create an exploded assembly.
+      12 Create a Drawing of the exploded assembly and add a BOM.
+    Note that the bearing’s part number, 0.5000-P-48-16, was used as is.
+    This is a vendor item; that is, we did not make it but purchased it from an outside source, so
+we used the manufacturer’s part number for the bearing rather than creating a new one.
+
+9-4 Ball Bearings
+Ball bearings are identified by the following callout format:
+     Inside Diameter × Outside Diameter × Thickness
+    For example,
+     .375 × .750 × .500 or 3/8 × 3/4 × 1/2
+     A listing of standard ball bearing sizes can be found in the Design Library. For this
+example a .5000 × .8750 × .2188 instrument ball bearing will be used and will be inserted into
+a counterbored hole. Only nominal dimensions will be considered. Tolerances will be defined
+later in the chapter.
+     Figure 9-6 shows a ball bearing support plate.
+Figure 9-6
+
+      1 Draw and save the ball bearing support plate.
+      2 Draw and save a Ø.500 × 2.50 shaft with .03 chamfers at each end.
+      3 Start a new Assembly and insert the ball bearing support plate and Ø.500 × 2.50 shaft.
+   See Figure 9-7.
+      4 Access the Design Library, Toolbox, ANSI Inch, Bearings, Ball Bearings, and select
+        Instrument Ball Bearing – AFBMA 12.2.
+      5 Click and drag the bearing into the drawing screen and set the properties as shown.
+Figure 9-7
+
+    In this example a Size of 0.5000 − 0.8750 − 0.2188 was used. See the values in the
+Instrument Ball Bearing PropertyManager.
+       6 Insert the ball bearing into the counterbored hole.
+       7 Insert the shaft into the bearing.
+       8 Create a new Drawing showing the assembly and a BOM.
+
+9-5 Fits and Tolerances for Bearings
+The tolerance between a shaft and a bearing and between a bearing and a support part is critical.
+Incorrect tolerances can cause excessive wear or vibration and affect the performance of the
+assembly.
+     In general, a clearance fit is used between the shaft and the inside diameter of the bearing,
+and an interference fit is used between the outside diameter of the bearing and the support
+structure. A listing of standard fit tolerances is included in the appendix.
+
+9-6 Fits—Inches
+Tolerances for shafts and holes have been standardized and are called fits. An example of a fit
+callout is H7/g6. The hole tolerance is always given first using an uppercase letter, and the shaft
+tolerance is given second using a lowercase letter.
+
+9-7 Clearance Fits
+As an example, a Ø0.500 nominal shaft is to be inserted into a Ø0.500 nominal hole using an
+H7/g6 clearance fit, which is also referred to as a Class LC5 Clearance fit.
+
+
+ Note
+ The term nominal refers to a starting value for the shaft and hole. It is not the final dimension.
+
+
+
+     The following data are given in a table in the appendix. See Figure 9-8. The values are given
+in thousandths of an inch. The nominal value for the hole is 0.5000, so the +0.7 table value
+means .5007in. The −0.25 table value for the 0.5000 nominal shaft means 0.49975in. The limits
+of clearance values are the differences between the hole minimum value and the shaft maximum
+value, 0.00 and −0.25, or 0.25 absolute, and between the maximum hole value and the minimum
+shaft value, +0.7 and −0.65, or 1.35.
+Figure 9-8
+
+9-8 Hole Basis
+The 0 value for the hole’s minimum indicates that the tolerances were derived using hole basis
+calculations; that is, the tolerances were applied starting with the minimum hole value.
+Tolerances applied starting with the shaft are called shaft basis.
+
+9-9 Shaft Basis
+The limits of clearance values would be applied starting with the minimum shaft diameter. If the
+H7/g6 tolerances were applied using the shaft basis, the resulting tolerance values for the shaft
+would be 0.50000 to 0.50040, and for the hole would be 0.50065 (.50040 + .00025) to
+0.50135. These values maintain the limits of tolerance, 0.50135 to 0.00135, and the individual
+tolerances    for    the    hole   (0.50135 − 0.50065 = 0.0007)           and      the     shaft
+(0.50040 − 0.50000 = .00040).
+
+9-10 Sample Problem SP9-1
+If a shaft with nominal values of Ø.750 × 3.00 is to be fitted into a bearing with an inside
+diameter bore, nominal, of 0.7500 using Class LC5 fit, hole basis, what are the final dimensions
+for the shaft and bearing’s bore? The table values for the hole are 0/ + 0.5, yielding a hole
+tolerance of .7500 to .7505, and the shaft values for the hole are 0/ − 0.4, yielding a shaft
+tolerance of .7500 to .7496.
+
+
+ Note
+ The fact that both the hole and the shaft could be .7500 is called locational fit.
+
+
+     See Figure 9-9.
+Figure 9-9
+
+9-11 Interference Fits
+When the shaft is equal to or larger in diameter than the hole, the fit is called an interference fit.
+Interference fits are sometimes used to secure a shaft into a hole rather than using a fastener or
+adhesive. For example, an aluminum shaft with a nominal diameter of .250in. inserted into a hole
+in a steel housing with a Ø.250 nominal hole using .0006in. interference would require
+approximately 123in.-lb of torque to turn the shaft.
+     In this example a sleeve bearing with a nominal outside diameter (O.D.) of .875 is to be
+inserted into a Ø.875 nominal hole using an LN1 Interference Locational fit. The hole and shaft
+(bearing O.D.) specifications are H6/n5. The following values were derived from a table in the
+appendix. See Figure 9-10.
+
+
+
+
+Figure 9-10
+
+     All stated values are in thousandths of an inch. The 0 in the column for the hole indicates
+that it is a hole basis calculation (see the explanation in the previous section). Given the .875
+nominal value for both the hole and the shaft, the hole and shaft tolerances are as follows. See
+Figure 9-11.
+     Hole: Ø.8755/.875 Shaft: Ø.8760/.8755
+Figure 9-11
+
+9-12 Manufactured Bearings
+Most companies do not manufacture their own bearings but rather purchase them from a bearing
+manufacturer. This means that tolerances must be assigned to assemblies based on existing given
+tolerances for the purchased bearings.
+
+
+ Note
+ Companies that manufacture bearings usually also manufacture shafts that match the bearings; therefore, the tolerances for the
+ bearings and shafts are coordinated.
+
+
+     Figure 9-12 shows a typical manufactured sleeve bearing. The dimensions and tolerances are
+included. The inside diameter (bore or I.D.) of the bearing is matched to the shaft using a
+clearance fit, and the O.D. is to be matched to the support using an interference fit. The
+procedure is to find standard fits that are closest to the bearing’s manufactured dimensions and
+apply the limits of tolerance to create the needed tolerances.
+Figure 9-12
+
+
+Clearance for a Manufactured Bearing
+Refer to the standard fit tables in the appendix and find a tolerance range for a hole that matches
+or comes close to the bearing’s I.D. tolerance of .001 (the +.000/ − .001 creates a tolerance
+range of .001). The given I.D. is 1.0040, so it falls within the 0.71–1.19 nominal size range. An
+LC2 Clearance fit (H8/h7) has a hole tolerance specification of 0.0 to 0.0008, 0.0002 smaller
+than the bearing’s manufactured tolerance of .0010. The given tolerance is Ø1.0040/1.0030.
+    The limits of clearance for the LC2 standard fit are 0.0 to 0.0013. If these limits are
+maintained, the smallest hole diameter is equal to the largest shaft diameter
+(1.0030 − 0.0 = 1.0030), and the smallest shaft diameter is .0013 less than the largest hole
+diameter (1.0040 − .0013 = 1.0027).
+    Therefore, the shaft tolerances are
+     Shaft : Ø1.0030/1.0027
+    These tolerances give a tolerance range for the shaft of .0003, or .0002 less than the stated
+.0005 found in the table. This difference makes up for the .0002 difference between the actual
+hole diameter’s tolerance range of 0.0010 and the standard H8 tolerance of 0.0008.
+Applying a Clearance Fit Tolerance
+Figure 9-13 shows a shaft with a nominal diameter of 1.0040. Enter the required 1.0030/1.0027
+tolerance.
+Figure 9-13
+
+      1 Click the Limit option in the Tolerance/Precision box.
+      2 Set the upper limit for −0.0010 mm and the lower limit for −0.0013 mm.
+         3 Click the green OK check mark.
+
+
+Interference for a Manufactured Bearing
+The O.D. for the manufactured bearing is 1.379 + .000/ − .001. Written as a limit tolerance, it
+is 1.3790/1.3780. The tolerance range for the O.D. is 0.001. An interference tolerance is required
+between the O.D. of the bearing and the hole in the support.
+
+
+ Note
+ An interference fit is also called a press fit.
+
+
+     A search of the Standard Fit tables in the appendix for a shaft (the O.D. of the bearing acts
+like a shaft in this condition) tolerance range of 0.001 finds that an LN2 (H7/p6) shaft range is
+.0008, or .0002 less than manufactured tolerance.
+     The limits of interference for the LN2 standard fit are 0.0 to 0.0013. If these limits are
+maintained, the smallest shaft diameter is equal to the largest hole diameter
+(1.3780 + 0.0 = 1.3780), and the largest shaft diameter is .0013 greater than the smallest hole
+diameter (1.3790 − .0013 = 1.3777).
+     Therefore, the shaft tolerances are
+       Shaft : Ø1.3780/1.3777
+    These tolerances give a tolerance range for the shaft of .0003, or .0002 less than the stated
+.0005 found in the table. This difference makes up for the .0002 difference between the actual
+hole diameter’s tolerance range of 0.0010 and the standard H7 tolerance of 0.0008.
+
+
+Applying an Interference Fit Tolerance
+Figure 9-14 shows a support with a nominal diameter of 1.3780. Enter the required
+1.3780/1.3777 tolerance. See Chapter 8 for further explanation on how to apply tolerances.
+Figure 9-14
+
+      1 Click the Limit option in the Tolerance/Precision box.
+      2 Set the upper limit for +0.0000 mm and the lower limit for −0.0003 mm.
+      3 Click the green OK check mark.
+
+
+Applying Standard Fit Tolerances to an Assembly Drawing
+Figure 9-15 shows the assembly of the shaft and support toleranced in the previous section with
+the manufactured bearing. The standard tolerance callouts are added as follows.
+Figure 9-15
+
+      1 Use the Smart Dimension tool and dimension the O.D. of the bearing.
+      2 Access the Tolerance/Precision box and select the Fit option.
+      3 Set the hole fit tolerance for H8 and the shaft fit tolerance for h7.
+      4 Click the green OK check mark.
+      5 Use the Smart Dimension tool and dimension the I.D. of the bearing.
+      6 Access the Tolerance/Precision box and select the Fit option.
+      7 Set the hole fit tolerance for H6 and the shaft fit tolerance for p6.
+
+9-13 Fit Tolerances—Millimeters
+The appendix also includes tables for preferred fits using metric values. These tables are read
+directly. For example, the values for a Close Running Preferred Clearance fit H8/f7 for a nominal
+shaft diameter of 16 are as follows:
+     Hole : Ø16.027/16.00        Shaft : Ø15.984/15.966
+     Fit(limits of fits) : 0.016
+    The value 16.000 indicates that the hole basis condition was used to calculate the tolerances.
+Metric fits are applied in the same manner as English unit values.
+
+Chapter Projects
+Figure P9-1 shows a support plate with three holes. A dimensioned drawing of the support plate
+is included. The holes are lettered. Three shafts are also shown. All shafts are 3.00 long. For
+Projects 9-1 to 9-8:
+   A. Create dimensioned and toleranced drawings for the support plate and shafts.
+   B. Specify tolerances for both the support plate holes and the shaft’s diameters based on the
+      given fit information.
+Figure P9-1
+
+Project 9-1: Clearance Fits—Inches
+Hole A/Shaft D: H7/h6, Ø.125 nominal
+Hole B/Shaft E: H6/h5, Ø.750 nominal
+Hole C/Shaft F: H9/f8, Ø.250 nominal
+
+Project 9-2: Clearance Fits—Inches
+Hole A/Shaft D: H10/d9, Ø1.123 nominal
+Hole B/Shaft E: H7/h6, Ø.500 nominal
+Hole C/Shaft F: H5/g4, Ø.625 nominal
+
+Project 9-3: Clearance Fits—Inches
+Hole A/Shaft D: H9/f8, Ø.500 nominal
+Hole B/Shaft E: H8/e7, Ø.635 nominal
+Hole C/Shaft F: H7/f6, Ø1.000 nominal
+
+Project 9-4: Clearance Fits—Millimeters
+Hole A/Shaft D: D9/h9, Ø10.0 nominal
+Hole B/Shaft E: H7/h6, Ø16.0 nominal
+Hole C/Shaft F: C11/h11, Ø20.0 nominal
+
+Project 9-5: Interference Fits—Inches
+Hole A/Shaft D: H6/n5, Ø.250 nominal
+Hole B/Shaft E: H7/p6, Ø.750 nominal
+Hole C/Shaft F: H7/r6, Ø.250 nominal
+
+Project 9-6: Interference Fits—Inches
+Hole A/Shaft D: FN2, Ø.375 nominal
+Hole B/Shaft E: FN3, Ø1.500 nominal
+Hole C/Shaft F: FN4, Ø.250 nominal
+
+Project 9-7: Locational Fits—Inches
+Hole A/Shaft D: H8/k7, Ø.4375 nominal
+Hole B/Shaft E: H7/k6, Ø.7075 nominal
+Hole C/Shaft F: H8/js7, Ø1.155 nominal
+
+Project 9-8: Interference Fits—Millimeters
+Hole A/Shaft D: H7/k6, Ø12.0 nominal
+Hole B/Shaft E: H7/p6, Ø25.0 nominal
+Hole C/Shaft F: N7/h6, Ø8.0 nominal
+Figure P9-2 shows a U-bracket, four sleeve bearings, and two shafts. A dimensioned drawing of
+the U-bracket is also included. For Projects 9-9 to 9-12:
+Figure P9-2
+
+  A. Create dimensioned and toleranced drawings for the U-bracket, sleeve bearings, and
+     shafts. All shafts are 5.00 long.
+   B. Specify tolerances for the shaft diameter and the outside diameter of the sleeve bearings
+      based on the given interference fits.
+   C. Specify tolerances for the holes in the U-bracket and the outside diameter of the sleeve
+      bearings based on the sizes given in the appendix.
+   D. Assign your own part numbers for the bracket and shaft. Use the manufacturer’s numbers
+      for the bearings.
+
+Project 9-9: Inches
+Clearance between shaft and bearing: H9/f8, Ø.875 nominal
+Interference between the hole in the U-bracket and the bearing: H7/p6, Ø.375 nominal
+
+Project 9-10: Inches
+Clearance between the shaft and the bearing: H9/f8, Ø.875 nominal
+Interference between the hole in the U-bracket and the bearing: Class FN2, Ø1.125 nominal
+
+Project 9-11: Inches
+Clearance between the shaft and the bearing: H10/h9, Ø.500 nominal
+Interference between the hole in the U-bracket and the bearing: H7/r6, Ø.750 nominal
+
+Project 9-12: Millimeters
+Clearance between the shaft and the bearing: H9/d9, Ø10.0 nominal
+Interference between the hole in the U-bracket and the bearing: H7/p6, Ø16.0 nominal
+
+Project 9-13: Inches
+A four-bar assembly is defined in Figure P9-3.
+    1. Create a three-dimensional assembly drawing of the four-bar assembly.
+    2. Animate the links using LINK-1 as the driver.
+    3. Redraw the individual parts, add the appropriate dimensions, and add the following
+       tolerances:
+          A. Assign an LN1 interference fit between the links and the needle roller bearing.
+          B. Assign an LC2 clearance between the holder posts, both regular and long posts,
+             and the inside diameter of the needle roller bearing.
+C. Assign an LC3 clearance between the holder posts, both regular and long posts,
+   and the spacers.
+Figure P9-3
+
+Project 9-14: Inches
+Redraw the crank assembly shown in Figure P9-4. Create the following drawings.
+   A. An exploded isometric drawing with balloons and a BOM.
+   B. Dimensioned drawings of each part.
+   C. Animate the assembly.
+   D. Change the length of the links and note the differences in motion.
+Figure P9-4
+
+Project 9-15: Millimeters
+Redraw the Rocker Assembly shown in Figure P9-5. Create the following drawings:
+   A. An exploded drawing with balloons and a BOM
+   B. Dimensioned drawings of each part
+   C. Animate the assembly
+Figure P9-5

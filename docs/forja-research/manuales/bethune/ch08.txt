@@ -1,0 +1,1985 @@
+Chapter 8. Tolerancing
+Chapter Objectives
+
+         Understand tolerance conventions
+         Understand the meaning of tolerances
+         Apply tolerances
+         Understand geometric tolerances
+         Understand positional tolerances
+
+
+
+8-1 Introduction
+Tolerances define the manufacturing limits for dimensions. All dimensions have tolerances
+either written directly on the drawing as part of the dimension or implied by a predefined set of
+standard tolerances that apply to any dimension that does not have a stated tolerance.
+     This chapter explains general tolerance conventions and how they are applied using
+SolidWorks. It includes a sample tolerance study and an explanation of standard fits and surface
+finishes.
+
+8-2 Direct Tolerance Methods
+There are two methods used to include tolerances as part of a dimension: plus and minus, and
+limits. Plus and minus tolerances can be expressed in either bilateral (symmetric) or unilateral
+(deviation) form.
+     A bilateral tolerance has both a plus and a minus value, whereas a unilateral tolerance has
+either the plus or the minus value equal to 0. Figure 8-1 shows a horizontal dimension of 60mm
+that includes a bilateral tolerance of plus or minus 1 and another dimension of 60.00mm that
+includes a bilateral tolerance of plus 0.20 or minus 0.10. Figure 8-1 also shows a dimension of
+65mm that includes a unilateral tolerance of plus 1 or minus 0.
+Figure 8-1
+
+     Plus or minus tolerances define a range for manufacturing. If inspection shows that all
+dimensioned distances on an object fall within their specified tolerance range, the object is
+considered acceptable; that is, it has been manufactured correctly.
+     A dimension and tolerance of 60 ± 0.1 means that the part must be manufactured within a
+range no greater than 60.1 nor less than 59.9. A dimension and tolerance of 65 +1/ − 0 defines
+the tolerance range as 65 to 66.
+     Figure 8-2 shows some bilateral and unilateral tolerances applied using decimal inch values.
+Inch dimensions and tolerances are written using a slightly different format than millimeter
+dimensions and tolerances, but they also define manufacturing ranges for dimension values. The
+horizontal bilateral dimension and tolerance 2.50 ± .02 defines the longest acceptable distance
+as 2.52 inches and the shortest as 2.48. The unilateral dimension 2.50 + .02/ − .00 defines the
+longest acceptable distance as 2.52 and the shortest as 2.50.
+Figure 8-2
+
+8-3 Tolerance Expressions
+Dimension and tolerance values are written differently for inch and millimeter values. See Figure
+8-3. Unilateral dimensions for millimeter values specify a zero limit with a single 0. A zero limit
+for inch values must include the same number of decimal places given for the dimension value.
+In the example shown in Figure 8-3, the dimension value .500 has a unilateral tolerance with
+minus zero tolerance. The zero limit is written as .000, three decimal places for both the
+dimension and the tolerance.
+Figure 8-3
+
+     Both values in a bilateral tolerance for inch values must contain the same number of decimal
+places; for millimeter values the tolerance values need not include the same number of decimal
+places as the dimension value. In Figure 8-3 the dimension value 32 is accompanied by
+tolerances of +0.25 and −0.10. This form is not acceptable for inch dimensions and tolerances.
+An equivalent inch dimension and tolerance would be written 32.00 + .25/ − .00.
+     Degree values must include the same number of decimal places in both the dimension and
+the tolerance values for bilateral tolerances. A single 0 may be used for unilateral tolerances.
+
+8-4 Understanding Plus and Minus Tolerances
+A millimeter dimension and tolerance of 12.0 + 0.2/ − 0.1 means that the longest acceptable
+distance is 12.2000... 0, and the shortest is 11.9000... 0. The total range is 0.3000... 0.
+     After an object is manufactured, it is inspected to ensure that the object has been
+manufactured correctly. Each dimensioned distance is measured and, if it is within the specified
+tolerance, is accepted. If the measured distance is not within the specified tolerance, the part is
+rejected. Some rejected objects may be reworked to bring them into the specified tolerance
+range, whereas others are simply scrapped.
+     Figure 8-4 shows a dimension with a tolerance. Assume that five objects were manufactured
+using the same 12.0 + 0.2/ − 0.1 dimension and tolerance. The objects were then inspected and
+the results were as listed. Inspected measurements are usually expressed to at least one more
+decimal place than that specified in the tolerance. Which objects are acceptable and which are
+not? Object 3 is too long, and object 5 is too short because their measured distances are not
+within the specified tolerances.
+
+
+
+
+Figure 8-4
+
+    Figure 8-5 shows a dimension and tolerance of 3.50 ± .02 in. Object 3 is not acceptable
+because it is too short, and object 4 is too long.
+
+
+
+
+Figure 8-5
+8-5 Creating Plus and Minus Tolerances
+Figure 8-6 shows a dimensioned view. This section will show how to add plus and minus to the
+existing dimensions.
+
+
+
+
+Figure 8-6
+
+      1 Create a part using the dimensions shown. The part thickness is 0.50.
+      2 Save the part as BLOCK, TOL.
+      3 Create a Drawing document of the BLOCK, TOL and create an orthographic view as
+        shown.
+      4 Add dimensions as shown.
+    See Figure 8-7.
+Figure 8-7
+
+      5 Click the horizontal 2.00 dimension.
+      6 Click the arrow in the Tolerance/Precision box as shown.
+      7 Select the Bilateral option.
+      8 Enter a plus tolerance of 0.02in and a minus tolerance of 0.01in.
+   See Figure 8-8.
+      9 Click the green OK check mark.
+Figure 8-8
+
+
+Adding Plus and Minus Symmetric Tolerances Using the
+Dimension Text Box
+See Figure 8-9.
+Figure 8-9
+
+       1 Click the vertical 1.13 dimension.
+    Note the entry in the Dimension Text box: <DIM>. This represents the existing text value
+taken from the part’s construction dimensions.
+       2 Move the cursor into the Dimension Text box to the right of the <DIM> notation and
+         click the ± symbol.
+     Note that the entry in the Dimension Text box now reads <DIM MOD-PM>. This indicates
+that the ± symbol has been added to the dimension text.
+       3 Type .01 after <MOD-PM>.
+       4 Click the green OK check mark.
+       5 Save the BLOCK, TOL drawing.
+    Note how the dimensions and tolerances have been aligned and moved to create a neat,
+uncluttered appearance.
+
+ Tip
+ A symmetric tolerance can also be created using the Symmetric option in the Tolerance/Precision box.
+
+
+
+
+8-6 Creating Limit Tolerances
+Figure 8-10 shows examples of limit tolerances. Limit tolerances replace dimension values. Two
+values are given: the upper and lower limits for the dimension value. The limit tolerance 62.1
+and 61.9 is mathematically equal to 62 ± 0.1, but the stated limit tolerance is considered easier
+to read and understand.
+
+
+
+
+Figure 8-10
+
+    Limit tolerances define a range for manufacture. Final distances on an object must fall
+within the specified range to be acceptable.
+    This section uses the BLOCK, TOL drawing created in the previous section. See Figure 8-
+11.
+        1 Click the vertical 2.25 dimension.
+        2 Select the Limit option as shown.
+        3 Set the upper limit for 0.02in and the lower limit for 0.01in.
+4 Click the green OK check mark.
+Figure 8-11
+
+8-7 Creating Angular Tolerances
+Figure 8-12 shows an example of an angular dimension with a symmetric tolerance. The
+procedures explained for applying different types of tolerances to linear dimensions also apply to
+angular dimensions.
+Figure 8-12
+
+   See Figure 8-12.
+      1 Draw the part shown in Figure 8-12. Extrude the part to a thickness of .50.
+      2 Save the part as BLOCK, ANGLE.
+      3 Create a Drawing document of the BLOCK, ANGLE and create an orthographic view
+        as shown.
+      4 Dimension the view.
+      5 Click the 45.00° dimension.
+      6 Select the Symmetric option.
+      7 Enter a value of .02.
+      8 Click the green OK check mark.
+      9 Save the drawing.
+
+8-8 Standard Tolerances
+Most manufacturers establish a set of standard tolerances that are applied to any dimension that
+does not include a specific tolerance. Figure 8-13 shows some possible standard tolerances.
+Standard tolerances vary from company to company. Standard tolerances are usually listed on
+the first page of a drawing to the left of the title block, but this location may vary.
+
+
+
+
+Figure 8-13
+
+     The X value used when specifying standard tolerances means any X stated in that format. A
+dimension value of 52.00 would have an implied tolerance of ±.01 because the stated standard
+tolerance is . XX ± .01. Thus, any dimension value with two decimal places has a standard
+implied tolerance of ±.01. A dimension value of 52.000 would have an implied tolerance of
+±.001.
+
+8-9 Double-Dimensioning Errors
+It is an error to dimension the same distance twice. This mistake is called double dimensioning.
+Double dimensioning is an error because it does not allow for tolerance buildup across a
+distance.
+      Figure 8-14 shows an object that has been dimensioned twice across its horizontal length,
+once using three 30mm dimensions and a second time using the 90mm overall dimension. The
+two dimensions are mathematically equal but are not equal when tolerances are considered.
+Assume that each dimension has a standard tolerance of ±1 mm. The three 30mm dimensions
+could create an acceptable distance of 90 ± 3 mm, or a maximum distance of 93 and a minimum
+distance of 87. The overall dimension of 90mm allows a maximum distance of 91 and a
+minimum distance of 89. The two dimensions yield different results when tolerances are
+considered.
+Figure 8-14
+
+     The size and location of a tolerance depend on the design objectives of the object, how it
+will be manufactured, and how it will be inspected. Even objects that have similar shapes may be
+dimensioned and toleranced very differently.
+     One possible solution to the double dimensioning shown in Figure 8-14 is to remove one of
+the 30mm dimensions and allow that distance to “float,” that is, absorb the cumulated tolerances.
+The choice of which 30mm dimension to eliminate depends on the design objectives of the part.
+For this example the far-right dimension was eliminated to remove the double-dimensioning
+error.
+     Another possible solution to the double-dimensioning error is to retain the three 30mm
+dimensions and to change the 90mm overall dimension to a reference dimension. A reference
+dimension is used only for mathematical convenience. It is not used during the manufacturing or
+inspection process. A reference dimension is designated on a drawing using parentheses: (90).
+     If the 90mm dimension was referenced, then only the three 30mm dimensions would be
+used to manufacture and inspect the object. This would eliminate the double-dimensioning error.
+
+8-10 Chain Dimensions and Baseline Dimensions
+There are two systems for applying dimensions and tolerances to a drawing: chain and baseline.
+Figure 8-15 shows examples of both systems. Chain dimensions dimension each feature to the
+feature next to it. Baseline dimensions dimension all features from a single baseline or datum.
+Figure 8-15
+
+     Chain and baseline dimensions may be used together. Figure 8-15 also shows two objects
+with repetitive features; one object includes two slots, and the other includes three sets of three
+holes. In each example, the center of the repetitive feature is dimensioned to the left side of the
+object, which serves as a baseline. The sizes of the individual features are dimensioned using
+chain dimensions referenced to centerlines.
+     Baseline dimensions eliminate tolerance buildup and can be related directly to the reference
+axis of many machines. They tend to take up much more area on a drawing than do chain
+dimensions.
+     Chain dimensions are useful in relating one feature to another, such as the repetitive hole
+pattern shown in Figure 8-15. In this example the distance between the holes is more important
+than the individual hole’s distance from the baseline.
+     Figure 8-16 shows the same object dimensioned twice, once using chain dimensions and
+once using baseline dimensions. All distances are assigned a tolerance range of 2mm using limit
+tolerances. The maximum distance for surface A is 28mm using the chain system and 27mm
+using the baseline system. The 1mm difference comes from the elimination of the first 26–24
+limit dimension found on the chain example but not on the baseline.
+Figure 8-16
+
+     The total tolerance difference is 6mm for the chain dimensions and 4mm for the baseline
+dimensions. The baseline method reduces the tolerance variations for the object simply because
+it applies the tolerances and dimensions differently. So why not always use baseline dimensions?
+For most applications, the baseline system is probably better, but if the distance between the
+individual features is more critical than the distance from the feature to the baseline, use the
+chain system.
+
+
+Baseline Dimensions
+See Figure 8-17. See also Chapter 7, “Dimensioning.”
+Figure 8-17
+
+     Note in the example of baseline dimensioning shown in Figure 8-17 that each dimension is
+independent of the other. This means that if one of the dimensions is manufactured incorrectly, it
+will not affect the other dimensions.
+
+8-11 Tolerance Studies
+The term tolerance study is used when analyzing the effects of a group of tolerances on one
+another and on an object. Figure 8-18 shows an object with two horizontal dimensions. The
+horizontal distance A is not dimensioned. Its length depends on the tolerances of the two
+horizontal dimensions.
+Figure 8-18
+
+
+Calculating the Maximum Length of A
+Distance A will be longest when the overall distance is at its longest and the other distance is at
+its shortest.
+                                                 65.2
+                                               −29.8
+                                              ¯¯¯¯¯35.4
+                                                   ¯¯¯¯¯¯
+
+
+Calculating the Minimum Length of A
+Distance A will be shortest when the overall length is at its shortest and the other length is at its
+longest.
+                                            64.9
+                                          −30.1
+                                         ¯¯¯¯¯34.8
+                                              ¯¯¯¯¯¯
+
+
+8-12 Rectangular Dimensions
+Figure 8-19 shows an example of rectangular dimensions referenced to baselines. Figure 8-20
+shows a circular object on which dimensions are referenced to a circle’s centerlines.
+Dimensioning to a circle’s centerline is critical to accurate hole location.
+
+
+
+
+Figure 8-19
+Figure 8-20
+
+8-13 Hole Locations
+When rectangular dimensions are used, the location of a hole’s centerpoint is defined by two
+linear dimensions. The result is a rectangular tolerance zone whose size is based on the linear
+dimension’s tolerances. The shape of the centerpoint’s tolerance zone may be changed to circular
+using positioning tolerancing, as described later in the chapter.
+     Figure 8-21 shows the location and size dimensions for a hole. Also shown are the resulting
+tolerance zone and the overall possible hole shape. The centerpoint’s tolerance is .2 by .3 based
+on the given linear locating tolerances.
+Figure 8-21
+
+
+ Note
+ Linear tolerances generate a square or rectangular tolerance zone.
+
+
+
+     The hole diameter has a tolerance of ±.05. This value must be added to the centerpoint
+location tolerances to define the maximum overall possible shape of the hole. The maximum
+possible hole shape is determined by drawing the maximum radius from the four corner points of
+the tolerance zone.
+     This means that the left edge of the hole could be as close to the vertical baseline as 12.75 or
+as far as 13.25. The 12.75 value was derived by subtracting the maximum hole diameter value
+12.05 from the minimum linear distance 24.80 (24.80 − 12.05 = 12.75). The 13.25 value was
+derived by subtracting the minimum hole diameter 11.95 from the maximum linear distance
+25.20 (25.20 − 11.95 = 13.25).
+
+
+ Note
+ The hole locations can also be defined using polar dimensions.
+    Figure 8-22 shows a hole’s tolerance zone based on polar dimensions. The zone has a sector
+shape, and the possible hole shape is determined by locating the maximum radius at the four
+corner points of the tolerance zone.
+
+
+
+
+Figure 8-22
+
+8-14 Choosing a Shaft for a Toleranced Hole
+Given the hole location and size shown in Figure 8-21, what is the largest diameter shaft that will
+always fit into the hole?
+     Figure 8-23 shows the hole’s centerpoint tolerance zone based on the given linear locating
+tolerances. Four circles have been drawn centered at the four corners on the linear tolerance zone
+that represents the smallest possible hole diameter. The circles define an area that represents the
+maximum shaft size that will always fit into the hole, regardless of how the given dimensions are
+applied.
+Figure 8-23
+
+    The diameter size of this circular area can be calculated by subtracting the maximum
+diagonal distance across the linear tolerance zone (corner to corner) from the minimum hole
+diameter.
+    The results can be expressed as a formula.
+
+
+For Linear Dimensions and Tolerances
+                                   Smax = Hmin − DTZ
+where
+     Smax = maximum shaft diameter
+     Hmin = minimum hole diameter
+     DTZ = diagonal distance across the tolerance zone
+    In the example shown the diagonal distance is determined using the Pythagorean theorem:
+                                   DTZ = √(.4)2 + (.6)2
+                                       = √.16 + .36
+                                   DTZ = .72
+    This means that the maximum shaft diameter that will always fit into the given hole is 11.43:
+                                     Smax = Hmin − DTZ
+                                          = 11.95 − .72
+                                     Smax = 11.23
+     This procedure represents a restricted application of the general formula presented later in
+the chapter for positioning tolerances.
+     Once the maximum shaft size has been established, a tolerance can be applied to the shaft. If
+the shaft had a total tolerance of .25, the minimum shaft diameter would be 11.43 − .25, or
+11.18. Figure 8-23 shows a shaft dimensioned and toleranced using these values.
+     The formula presented is based on the assumption that the shaft is perfectly placed on the
+hole’s centerpoint. This assumption is reasonable if two objects are joined by a fastener and both
+objects are free to move. When both objects are free to move about a common fastener, they are
+called floating objects.
+
+8-15 Sample Problem SP8-1
+Parts A and B in Figure 8-24 are to be joined by a common shaft. The total tolerance for the shaft
+is to be .05. What are the maximum and minimum shaft diameters?
+Figure 8-24
+
+    Both objects have the same dimensions and tolerances and are floating relative to each other.
+                                    Smax = Hmin − DTZ
+                                         = 15.93 − .85
+                                    Smax = 15.08
+     The shaft’s minimum diameter is found by subtracting the total tolerance requirement from
+the calculated maximum diameter:
+                                     15.08 − .05 = 15.03
+    Therefore,
+     Shaft max = 15.08
+     Shaft min = 15.03
+
+8-16 Sample Problem SP8-2
+The procedure presented in Sample Problem SP8-1 can be worked in reverse to determine the
+maximum and minimum hole size based on a given shaft size.
+    Objects AA and BB as shown in Figure 8-25 are to be joined using a bolt whose maximum
+diameter is .248. What is the minimum hole size for objects that will always accept the bolt?
+What is the maximum hole size if the total hole tolerance is .005?
+                                     Smax = Hmin − DTZ
+
+
+
+
+Figure 8-25
+
+    In this example Hmin is the unknown factor, so the equation is rewritten as
+                                    Hmin = Smax + DTZ
+                                    Hmin = .248 + .001
+                                    Hmin = .249
+    This is the minimum hole diameter, so the total tolerance requirement is added to this value:
+                                      .249 + .005 = .254
+    Therefore,
+      Hole max = .254
+      Hole min = .249
+
+8-17 Nominal Sizes
+The term nominal refers to the approximate size of an object that matches a common fraction or
+whole number. A shaft with a dimension of 1.500 + .003 is said to have a nominal size of “one
+and a half inches.” A dimension of 1.500 + .000/ − .005 is still said to have a nominal size of
+one and a half inches. In both examples 1.5 is the closest common fraction.
+
+8-18 Standard Fits (Metric Values)
+Calculating tolerances between holes and shafts that fit together is so common in engineering
+design that a group of standard values and notations has been established. These values may be
+calculated using the Limits and Fits option of the Design Library.
+     There are three possible types of fits between a shaft and a hole: clearance, transitional, and
+interference. There are several subclassifications within each of these categories.
+     A clearance fit always defines the maximum shaft diameter as smaller than the minimum
+hole diameter. The difference between the two diameters is the amount of clearance. It is
+possible for a clearance fit to be defined with zero clearance; that is, the maximum shaft diameter
+is equal to the minimum hole diameter.
+     An interference fit always defines the minimum shaft diameter as larger than the maximum
+hole diameter; that is, the shaft is always bigger than the hole. This definition means that an
+interference fit is the converse of a clearance fit. The difference between the diameter of the shaft
+and the hole is the amount of interference.
+     An interference fit is primarily used to assemble objects together. Interference fits eliminate
+the need for threads, welds, or other joining methods. Using an interference for joining two
+objects is generally limited to light load applications.
+     It is sometimes difficult to visualize how a shaft can be assembled into a hole with a
+diameter smaller than that of the shaft. It is sometimes done using a hydraulic press that slowly
+forces the two parts together. The joining process can be augmented by the use of lubricants or
+heat. The hole is heated, causing it to expand, the shaft is inserted, and the hole is allowed to cool
+and shrink around the shaft.
+     A transition fit may be either a clearance or an interference fit. It may have a clearance
+between the shaft and the hole or an interference.
+     The notations are based on Standard International Tolerance values. A specific description
+for each category of fit follows.
+
+
+Clearance Fits
+       H11/c11 or C11/h11 = loose running fit
+       H8/d8 or D8/h8 = free running fit
+       H8/f7 or F8/h7 = close running fit
+       H7/g6 or G7/h6 = sliding fit
+       H7/h6 = locational clearance fit
+
+
+Transitional Fits
+       H7/k6 or K7/h6 = locational transition fit
+       H7/n6 or N7/h6 = locational transition fit
+
+
+Interference Fits
+       H7/p6 or P7/h6 = locational transition fit
+       H7/s6 or S7/h6 = medium drive fit
+       H7/u6 or U7/h6 = force fit
+
+8-19 Standard Fits (Inch Values)
+Inch values are accessed in the Design Library by selecting the ANSI-Inch standards.
+    Fits defined using inch values are classified as follows:
+       RC     = running and sliding fits
+       LC     = localtional clearance fits
+       LT     = locational transition fits
+       LN     = interference fits
+       FN     = force fits
+     Each of these general categories has several subclassifications within it defined by a number,
+for example, Class RC1, Class RC2, through Class RC8. The letter designations are based on
+International Tolerance Standards, as are metric designations.
+
+ Tip
+ Charts of tolerance values can be found in the appendix.
+
+
+
+
+Adding a Fit Callout to a Drawing
+Figure 8-26 shows a block and post. Figure 8-27 shows a drawing containing a front and a top
+orthographic view of the block and post assembly.
+1 Draw the block and post and create an assembly drawing as shown in Figure 8-26.
+Figure 8-26
+Figure 8-27
+
+      2 Draw a front and a top orthographic view of the assembly as shown.
+      3 Add a Ø.50 dimension to the top view.
+      4 Click the Ø.50 dimension.
+   The Dimension Value PropertyManager will appear. See Figure 8-28.
+      5 Select the Fit option from the Tolerance/Precision box as shown.
+      6 Select an H5 tolerance for the hole.
+      7 Select the g4 tolerance for the shaft.
+      8 Change the number of decimal places in the Ø.50 dimension to four places, Ø.5000.
+      9 Click the green OK check mark.
+Figure 8-28
+
+
+Reading Fit Tables
+There are several fit tables in the appendix for both English units and metric units. The metric
+tables can be read directly, as they state hole and shaft dimension. For example, the tolerance for
+a Preferred Clearance Fit for a 10mm nominal hole using a loose running fit is 10.090/10.000 for
+the hole and 9.920/9.830 for the shaft. The tolerance callout would be H11/c11. English unit
+tables require interpretation.
+     Figure 8-29 shows the table values for a .5000 nominal hole using an H5/g4 tolerance. The
+tolerance values are in thousandths of an inch; that is, a listed value of 0.25 equals 0.0025in. The
+Ø.5000 nominal value is in the 0.40–0.71 size range, so the tolerance values are as shown. These
+values can be applied to the detail drawings of the block and shaft. See Figure 8-30.
+Figure 8-29
+Figure 8-30
+
+8-20 Preferred and Standard Sizes
+It is important that designers always consider preferred and standard sizes when selecting sizes
+for designs. Most tooling is set up to match these sizes, so manufacturing is greatly simplified
+when preferred and standard sizes are specified. Figure 8-31 shows a listing of preferred sizes for
+metric values.
+Figure 8-31
+
+     Consider the case of design calculations that call for a 42mm diameter hole. A 42mm
+diameter hole is not a preferred size. A diameter of 40mm is the closest preferred size, and a
+45mm diameter is a second choice. A 42mm hole could be manufactured but would require an
+unusual drill size that might not be available. It would be wise to reconsider the design to see if a
+40mm diameter hole could be used, and if not, possibly a 45mm diameter hole.
+     A production run of a very large quantity could possibly justify the cost of special tooling,
+but for smaller runs it is probably better to use preferred sizes. Machinists will have the required
+drills, and maintenance people will have the appropriate tools for these sizes.
+     Figure 8-32 shows a listing of standard fractional drill sizes. Most companies now specify
+metric units or decimal inches; however, many standard items are still available in fractional
+sizes, and many older objects may still require fractional-sized tools and replacement parts. A
+more complete listing is available in the appendix.
+Figure 8-32
+
+8-21 Surface Finishes
+The term surface finish refers to the accuracy (flatness) of a surface. Metric values are measured
+using micrometers (μm), and inch values are measured in microinches (μin).
+     The accuracy of a surface depends on the manufacturing process used to produce the
+surface. Figure 8-33 shows a listing of manufacturing processes and the quality of the surface
+finish they can be expected to produce.
+Figure 8-33
+
+     Surface finishes have several design applications. Datum surfaces, or surfaces used for
+baseline dimensioning, should have fairly accurate surface finishes to help assure accurate
+measurements. Bearing surfaces should have good-quality surface finishes for better load
+distribution, and parts that operate at high speeds should have smooth finishes to help reduce
+friction. Figure 8-34 shows a screw head sitting on a very wavy surface. Note that the head of the
+screw is actually in contact with only two wave peaks, which means that the entire bearing load
+is concentrated on the two peaks. This situation could cause stress cracks and greatly weaken the
+surface. A better-quality surface finish would increase the bearing contact area.
+Figure 8-34
+
+     Figure 8-34 also shows two very rough surfaces moving in contact with each other. The
+result will be excess wear to both surfaces because the surfaces touch only on the peaks, and
+these peaks will tend to wear faster than flatter areas. Excess vibration can also result when
+interfacing surfaces are too rough.
+     Surface finishes are classified into three categories: surface texture, roughness, and lay.
+Surface texture is a general term that refers to the overall quality and accuracy of a surface.
+     Roughness is a measure of the average deviation of a surface’s peaks and valleys. See Figure
+8-35.
+
+
+
+
+Figure 8-35
+
+     Lay refers to the direction of machine marks on a surface. See Figure 8-35. The lay of a
+surface is particularly important when two moving objects are in contact with each other,
+especially at high speeds.
+
+8-22 Surface Control Symbols
+Surface finishes are indicated on a drawing using surface control symbols. See Figure 8-36. The
+general surface control symbol looks like a check mark. Roughness values may be included with
+the symbol to specify the required accuracy. Surface control symbols can also be used to specify
+the manufacturing process that may or may not be used to produce a surface.
+Figure 8-36
+
+     Figure 8-37 shows two applications of surface control symbols. In the first example, a 0.8-
+μm (32μin) surface finish is specified on the surface that serves as a datum for several horizontal
+dimensions. A 0.8-μm surface finish is generally considered the minimum acceptable finish for
+datums.
+     A second finish mark with a value of 0.4μm is located on an extension line that refers to a
+surface that will be in contact with a moving object. The extra flatness will help prevent wear
+between the two surfaces.
+Figure 8-37
+
+8-23 Applying Surface Control Symbols
+Figure 8-38 shows a dimensioned orthographic view. Surface symbols will be added to this view.
+      1 Click the Annotation tab and select the Surface Finish tool.
+Figure 8-38
+
+   See Figure 8-39.
+      2 Select the Basic symbol and enter a value of 32.
+      3 Move the cursor into the drawing area and locate the surface control symbol on an
+        extension line as shown.
+      4 Press the <Esc> key.
+      5 Click the green OK check mark.
+      6 Save the drawing.
+Figure 8-39
+
+
+Adding a Lay Symbol to a Drawing
+Use the same drawing as in Figure 8-39.
+      1 Click the Annotation tab and select the Surface Finish tool.
+    See Figure 8-40.
+      2 Click the Machining Required symbol box.
+      3 Click the Lay Direction box and select the Multi-Directional option.
+Figure 8-40
+
+       4 Move the cursor into the drawing area and locate the surface control symbol on an
+         extension line as shown.
+       5 Press the <Esc> key.
+       6 Click the green OK check mark.
+
+8-24 Design Problems
+Figure 8-41 shows two objects that are to be fitted together using a fastener such as a screw-and-
+nut combination. For this example a cylinder will be used to represent a fastener. Only two
+nominal dimensions are given. The dimensions and tolerances were derived as follows.
+Figure 8-41
+
+      The distance between the centers of the holes is given as 50 nominal. The term nominal
+means that the stated value is only a starting point. The final dimensions will be close to the
+given value but do not have to equal it.
+      Assigning tolerances is an iteration process; that is, a tolerance is selected and other
+tolerance values are calculated from the selected initial values. If the results are not satisfactory,
+go back and modify the initial value and calculate the other values again. As your experience
+grows you will become better at selecting realistic initial values.
+      In the example shown in Figure 8-41, start by assigning a tolerance of ±.01 to both the top
+and bottom parts for both the horizontal and vertical dimensions used to locate the holes. This
+means that there is a possible centerpoint variation of .02 for both parts. The parts must always
+fit together, so tolerances must be assigned based on the worst-case condition, or when the parts
+are made at the extreme ends of the assigned tolerances.
+      Figure 8-42 shows a greatly enlarged picture of the worst-case condition created by a
+tolerance of ±.01. The centerpoints of the holes could be as much as .028 apart if the two
+centerpoints were located at opposite corners of the tolerance zones. This means that the
+minimum hole diameter must always be at least .028 larger than the maximum stud diameter. In
+addition, there should be a clearance tolerance assigned so that the hole and stud are never
+exactly the same size. Figure 8-43 shows the resulting tolerances.
+ Tip
+ The tolerance zones in this section are created by line dimensions that generated square tolerance zones.
+
+
+
+
+Figure 8-42
+Figure 8-43
+
+
+Floating Condition
+The top and bottom parts shown in Figure 8-41 are to be joined by two independent fasteners;
+that is, the location of one fastener does not depend on the location of the other. This situation is
+called a floating condition.
+     This means that the tolerance zones for both the top and bottom parts can be assigned the
+same values and that a fastener diameter selected to fit one part will also fit the other part.
+     The final tolerances were developed by first defining a minimum hole size of 20.00. An
+arbitrary tolerance of .02 was assigned to the hole and was expressed as 20.00 1.02/20, so the
+hole can never be any smaller than 20.00.
+     The 20.00 minimum hole diameter dictates that the maximum fastener diameter can be no
+greater than 19.97, or .03 (the rounded-off diagonal distance across the tolerance zone—.028)
+less than the minimum hole diameter. A .01 clearance was assigned. The clearance ensures that
+the hole and fastener are never exactly the same diameter. The resulting maximum allowable
+diameter for the fastener is 19.96. Again, an arbitrary tolerance of .02 was assigned to the
+fastener. The final fastener dimensions are therefore 19.96 to 19.94.
+     The assigned tolerances ensure that there will always be at least .01 clearance between the
+fastener and the hole. The other extreme condition occurs when the hole is at its largest possible
+size (20.02) and the fastener is at its smallest (19.94). This means that there could be as much as
+.08 clearance between the parts. If this much clearance is not acceptable, then the assigned
+tolerances will have to be reevaluated.
+     Figure 8-44 shows the top and bottom parts dimensioned and toleranced. Any dimensions
+that do not have assigned tolerances are assumed to have standard tolerances.
+Figure 8-44
+
+     Note, in Figure 8-44, that the top edge of each part has been assigned a surface finish. This
+was done to help ensure the accuracy of the 20 ± .01 dimension. If this edge surface were rough,
+it could affect the tolerance measurements.
+     This example will be done later in the chapter using geometric tolerances. Geometric
+tolerance zones are circular rather than rectangular.
+
+
+Fixed Condition
+Figure 8-45 shows the same nominal conditions presented in Figure 8-41, but the fasteners are
+now fixed to the top part. This situation is called the fixed condition. In analyzing the tolerance
+zones for the fixed condition, two positional tolerances must be considered: the positional
+tolerances for the holes in the bottom part, and the positional tolerances for the fixed fasteners in
+the top part. This relationship may be expressed in an equation, as follows:
+Figure 8-45
+
+                                Smax + DTSZ = Hmin − DTZ
+where
+     Smax = maximum shaft (fastener) diameter
+     Hmin = minimum hole diameter
+     DTSZ = diagonal distance across the shaft 's centerpoint tolerance zone
+     DTZ = diagonal distance across the hole 's centerpoint tolerance zone
+    If a dimension and tolerance of 50 ± .01 is assigned to both the center distance between the
+holes and the center distance between the fixed fasteners, the values for DTSZ and DTZ will be
+equal. The formula can then be simplified as follows.
+                                   Smax = Hmin − 2 (DTZ)
+where DTZ equals the diagonal distance across the tolerance zone. If a hole tolerance of
+20.00 + .02/ − 0 also is defined, the resulting maximum shaft size can be determined, assuming
+that the calculated distance of .028 is rounded off to .03. See Figure 8-46.
+                                    Smax = 20.00 − 2 (0.03)
+                                         = 19.94
+
+
+
+
+Figure 8-46
+
+     This means that 19.94 is the largest possible shaft diameter that will fit without interference.
+If a clearance tolerance of .01 is assumed to ensure that the shaft and hole are never exactly the
+same size, the maximum shaft diameter becomes 19.93. See Figure 8-47.
+Figure 8-47
+
+    A feature tolerance of .02 on the shaft will result in a minimum shaft diameter of 19.91.
+Note that the .01 clearance tolerance and the .02 feature tolerance were arbitrarily chosen. Other
+values could have been used.
+
+
+Designing a Hole Given a Fastener Size
+The previous two examples started by selecting a minimum hole diameter and then calculating
+the resulting fastener size. Figure 8-48 shows a situation in which the fastener size is defined,
+and the problem is to determine the appropriate hole sizes. Figure 8-49 shows the dimensions
+and tolerances for both top and bottom parts.
+Figure 8-48
+
+   Requirements:
+     Clearance , minimum = .003
+     Hole tolerances = .005
+     Positional tolerance = .002
+Figure 8-49
+
+8-25 Geometric Tolerances
+Geometric tolerancing is a dimensioning and tolerancing system based on the geometric shape of
+an object. Surfaces may be defined in terms of their flatness or roundness, or in terms of how
+perpendicular or parallel they are to other surfaces.
+     Geometric tolerances allow a more exact definition of the shape of an object than do
+conventional coordinate-type tolerances. Objects can be toleranced in a manner more closely
+related to their design function or so that their features and surfaces are more directly related to
+each other.
+
+8-26 Tolerances of Form
+Tolerances of form are used to define the shape of a surface relative to itself. There are four
+classifications: flatness, straightness, roundness, and cylindricity. Tolerances of form are not
+related to other surfaces but apply only to an individual surface.
+
+8-27 Flatness
+Flatness tolerances are used to define the amount of variation permitted in an individual surface.
+The surface is thought of as a plane not related to the rest of the object.
+     Figure 8-50 shows a rectangular object. How flat is the top surface? The given plus or minus
+tolerances allow a variation of (±0.5) across the surface. Without additional tolerances the
+surface could look like a series of waves varying between 30.5 and 29.5.
+
+
+
+
+Figure 8-50
+     If the example in Figure 8-50 was assigned a flatness tolerance of 0.3, the height of the
+object—the feature tolerance—could continue to vary based on the 30 ± 0.5 tolerance, but the
+surface itself could not vary by more than 0.3. In the most extreme condition, one end of the
+surface could be 30.5 above the bottom surface and the other end 29.5, but the surface would still
+be limited to within two parallel planes 0.3 apart as shown.
+     To better understand the meaning of flatness, consider how the surface would be inspected.
+The surface would be acceptable if a gauge could be moved all around the surface and never vary
+by more than 0.3. See Figure 8-51. Every point in the plane must be within the specified
+tolerance.
+
+
+
+
+Figure 8-51
+
+8-28 Straightness
+Straightness tolerances are used to measure the variation of an individual feature along a straight
+line in a specified direction. Figure 8-52 shows an object with a straightness tolerance applied to
+its top surface. Straightness differs from flatness because straightness measurements are checked
+by moving a gauge directly across the surface in a single direction. The gauge is not moved
+randomly about the surface, as is required by flatness.
+Figure 8-52
+
+     Straightness tolerances are most often applied to circular or matching objects to help ensure
+that the parts are not barreled or warped within the given feature tolerance range and, therefore,
+do not fit together well. Figure 8-53 shows a cylindrical object dimensioned and toleranced using
+a standard feature tolerance. The surface of the cylinder may vary within the specified tolerance
+range as shown.
+Figure 8-53
+
+     Figure 8-54 shows the same object shown in Figure 8-53 dimensioned and toleranced using
+the same feature tolerance but also including a 0.05 straightness tolerance. The straightness
+tolerance limits the surface variation to 0.05 as shown.
+Figure 8-54
+
+8-29 Straightness (RFS and MMC)
+Figure 8-55 again shows the same cylinder shown in Figures 8-53 and 8-54. This time the
+straightness tolerance is applied about the cylinder’s centerline. This type of tolerance permits
+the feature tolerance and geometric tolerance to be used together to define a virtual condition. A
+virtual condition is used to determine the maximum possible size variation of the cylinder or the
+smallest diameter hole that will always accept the cylinder.
+Figure 8-55
+
+      The geometric tolerance specified in Figure 8-55 is applied to any circular segment along the
+cylinder, regardless of the cylinder’s diameter. This means that the 0.05 tolerance is applied
+equally when the cylinder’s diameter measures 19 or when it measures 21. This application is
+called RFS, regardless of feature size. RFS condition applies if no material condition is
+specified. In Figure 8-55 no symbol is listed after the 0.05 value, so it is assumed to be applied
+RFS.
+      Figure 8-56 shows the cylinder dimensioned with an MMC condition applied to the
+straightness tolerance. MMC stands for maximum material condition and means that the
+specified straightness tolerance (0.05) is applied only at the MMC condition or when the cylinder
+is at its maximum diameter size (21).
+Figure 8-56
+
+     A shaft is an external feature, so its largest possible size or MMC occurs when it is at its
+maximum diameter. A hole is an internal feature. A hole’s MMC condition occurs when it is at
+its smallest diameter. The MMC condition for holes will be discussed later in the chapter along
+with positional tolerances.
+     Applying a straightness tolerance at MMC allows for a variation in the resulting tolerance
+zone. Because the 0.05 flatness tolerance is applied at MMC, the virtual condition is still 21.05,
+the same as with the RFS condition; however, the tolerance is applied only at MMC. As the
+cylinder’s diameter varies within the specified feature tolerance range the acceptable tolerance
+zone may vary to maintain the same virtual condition.
+     The table in Figure 8-56 shows how the tolerance zone varies as the cylinder’s diameter
+varies. When the cylinder is at its largest size or MMC, the tolerance zone equals 0.05, or the
+specified flatness variation. When the cylinder is at its smallest diameter, the tolerance zone
+equals 2.05, or the total feature size plus the total flatness size. In all variations the virtual size
+remains the same, so at any given cylinder diameter value, the size of the tolerance zone can be
+determined by subtracting the cylinder’s diameter value from the virtual condition.
+
+
+ Note
+ Geometric tolerance applied at MMC allows the tolerance zone to grow.
+
+
+     Figure 8-57 shows a comparison between different methods used to dimension and tolerance
+a .750 shaft. The first example uses only a feature tolerance. This tolerance sets an upper limit of
+.755 and a lower limit of .745. Any variations within that range are acceptable.
+Figure 8-57
+
+     The second example in Figure 8-57 sets a straightness tolerance of .003 about the cylinder’s
+centerline. No conditions are defined, so the tolerance is applied RFS. This limits the variations
+in straightness to .003 at all feature sizes. For example, when the shaft is at its smallest possible
+feature size of .745, the .003 still applies. This means that a shaft measuring .745 that had a
+straightness variation greater than .003 would be rejected. If the tolerance had been applied at
+MMC, the part would be accepted. This does not mean that straightness tolerances should always
+be applied at MMC. If straightness is critical to the design integrity or function of the part, then
+straightness should be applied in the RFS condition.
+     The third example in Figure 8-57 applies the straightness tolerance about the centerline at
+MMC. This tolerance creates a virtual condition of .758. The MMC condition allows the
+tolerance to vary as the feature tolerance varies, so when the shaft is at its smallest feature size,
+.745, a straightness tolerance of .003 is acceptable (.005 feature tolerance +.003 straightness
+tolerance).
+     If the tolerance specification for the cylinder shown in Figure 8-57 was 0.000 applied at
+MMC, it would mean that the shaft would have to be perfectly straight at MMC or when the
+shaft was at its maximum value (.755); however, the straightness tolerance can vary as the
+feature size varies, as discussed for the other tolerance conditions. A 0.000 tolerance means that
+the MMC and the virtual conditions are equal.
+     Figure 8-58 shows a very long .750 diameter shaft. Its straightness tolerance includes a
+length qualifier that serves to limit the straightness variations over each inch of the shaft length
+and to prevent excess waviness over the full length. The tolerance .002/1.000 means that the total
+straightness may vary over the entire length of the shaft by .003 but that the variation is limited
+to .002 per 1.000 of shaft length.
+
+
+
+
+Figure 8-58
+
+8-30 Circularity
+A circularity tolerance is used to limit the amount of variation in the roundness of a surface of
+revolution. It is measured at individual cross sections along the length of the object. The
+measurements are limited to the individual cross sections and are not related to other cross
+sections. This means that in extreme conditions the shaft shown in Figure 8-59 could actually
+taper from a diameter of 21 to a diameter of 19 and never violate the circularity requirement. It
+also means that qualifications such as MMC cannot be applied.
+Figure 8-59
+
+     Figure 8-59 shows a shaft that includes a feature tolerance and a circularity tolerance of
+0.07. To understand circularity tolerances, consider an individual cross section or slice of the
+cylinder. The actual shape of the outside edge of the slice varies around the slice. The difference
+between the maximum diameter and the minimum diameter of the slice can never exceed the
+stated circularity tolerance.
+     Circularity tolerances can be applied to tapered sections and spheres, as shown in Figure 8-
+60. In both applications, circularity is measured around individual cross sections, as it was for the
+shaft shown in Figure 8-59.
+Figure 8-60
+
+8-31 Cylindricity
+Cylindricity tolerances are used to define a tolerance zone both around individual circular cross
+sections of an object and also along its length. The resulting tolerance zone looks like two
+concentric cylinders.
+     Figure 8-61 shows a shaft that includes a cylindricity tolerance that establishes a tolerance
+zone of .007. This means that if the maximum measured diameter is determined to be .755, the
+minimum diameter cannot be less than .748 anywhere on the cylindrical surface. Cylindricity
+and circularity are somewhat analogous to flatness and straightness. Flatness and cylindricity are
+concerned with variations across an entire surface or plane. In the case of cylindricity, the plane
+is shaped like a cylinder. Straightness and circularity are concerned with variations of a single
+element of a surface: a straight line across the plane in a specified direction for straightness, and
+a path around a single cross section for circularity.
+Figure 8-61
+
+8-32 Geometric Tolerances Using SolidWorks
+Geometric tolerances are tolerances that limit dimensional variations based on the geometric
+properties. Figure 8-62 shows three different ways geometric tolerance boxes can be added to a
+drawing.
+
+
+
+
+Figure 8-62
+
+    Figure 8-63 shows lists of geometric tolerance symbols.
+Figure 8-63
+
+8-33 Datums
+A datum is a point, axis, or surface used as a starting reference point for dimensions and
+tolerances. Figure 8-64 and Figure 8-65 show a rectangular object with three datum planes
+labeled A, B, and C. The three datum planes are called the primary, secondary, and tertiary
+datums, respectively. The three datum planes are, by definition, exactly 90° to one another.
+Figure 8-64
+
+    Figure 8-66 shows a cylindrical datum frame that includes three datum planes. The X and Y
+planes are perpendicular to each other, and the base A plane is perpendicular to the datum axis
+between the X and Y planes.
+Figure 8-65
+Figure 8-66
+
+    Datum planes are assumed to be perfectly flat. When assigning a datum status to a surface,
+be sure that the surface is reasonably flat. This means that datum surfaces should be toleranced
+using surface finishes or created using machine techniques that produce flat surfaces.
+
+
+Adding a Datum Indicator
+Figure 8-67 shows a dimensioned orthographic view. This section shows how to define the lower
+surface as a datum feature, datum A. Note that a surface finish of 16 has been added to the lower
+surface. Datum surfaces are assumed to be flat and smooth.
+Figure 8-67
+
+        1 Click the Annotation tab and select the Datum Feature tool.
+    The Datum Feature PropertyManager will appear.
+        2 Enter the letter A in the Label Settings field and select the Filled Triangle With
+          Shoulder option under Leader.
+        3 Locate the datum symbol on the drawing as shown.
+        4 Press the <Esc> key.
+        5 Click the green OK check mark.
+
+ Tip
+ Once in place, a datum symbol can be repositioned by clicking and dragging the symbol.
+
+
+
+
+Defining a Perpendicular Tolerance
+Define the right vertical edge of the part as datum B and perpendicular to datum A within a
+tolerance of .001.
+        1 Click the Annotation tab and click the Datum Feature tool and define the right
+          vertical surface as datum B using the same procedure as used to define datum A.
+        2 Click the Annotation tab and click the Geometric Tolerance tool.
+See Figure 8-68. The Properties/Geometric Tolerance dialog box will appear.
+  3 Locate the Geometric Tolerance.
+  4 Click the No Leader option.
+  5 Select the Perpendicular symbol from the popup box.
+  6 Enter the Tolerance and click Add Datum in the next popup box.
+  7 Enter datum A and click Done in the next popup box.
+  8 Locate the geometric symbol on the extension line as shown.
+  9 Click the green OK check mark.
+Figure 8-68
+
+
+Defining a Straightness Value for Datum Surface A
+The surface finish value of 16 defines the smoothness of the surface but not the straightness.
+Think of surface finish as waves, and straightness as an angle. A straightness value of .002
+indicates that there is a band of width .002 located .001 on either side of a theoretically perfectly
+straight line. The surface may vary but must always be within the .002 boundary. See Figure 8-
+69.
+       1 Click the Annotation tab and select the Geometric Tolerance tool.
+       2 Locate the Geometric Tolerance.
+       3 Click the No Leader option.
+       4 Select the Straightness symbol from the popup box, and define the tolerance as .002 in
+         the next popup box.
+       5 Click Done.
+       6 Locate the symbol under the datum A symbol as shown.
+7 Click the green OK check mark.
+Figure 8-69
+
+8-34 Tolerances of Orientation
+Tolerances of orientation are used to relate a feature or surface to another feature or surface.
+Tolerances of orientation include perpendicularity, parallelism, and angularity. They may be
+applied using RFS or MMC conditions, but they cannot be applied to individual features by
+themselves. To define a surface as parallel to another surface is very much like assigning a
+flatness value to the surface. The difference is that flatness applies only within the surface; every
+point on the surface is related to a defined set of limiting parallel planes. Parallelism defines
+every point in the surface relative to another surface. The two surfaces are therefore directly
+related to each other, and the condition of one affects the other.
+     Orientation tolerances are used with locational tolerances. A feature is first located, then it is
+oriented within the locational tolerances. This means that the orientation tolerance must always
+be less than the locational tolerances. The next four sections will further explain this
+requirement.
+
+8-35 Perpendicularity
+Perpendicularity tolerances are used to limit the amount of variation for a surface or feature
+within two planes perpendicular to a specified datum. Figure 8-70 shows a rectangular object.
+The bottom surface is assigned as datum A, and the right vertical edge is toleranced so that it
+must be perpendicular within a limit of 0.05 to datum A. The perpendicularity tolerance defines a
+tolerance zone 0.05 wide between two parallel planes that are perpendicular to datum A.
+
+
+
+
+Figure 8-70
+
+     The object also includes a horizontal dimension and tolerance of 40 ± 1. This tolerance is
+called a locational tolerance because it serves to locate the right edge of the object. As with
+rectangular coordinate tolerances, discussed earlier in the chapter, the 40 ± 1 controls the
+location of the edge—how far away or how close it can be to the left edge—but does not directly
+control the shape of the edge. Any shape that falls within the specified tolerance range is
+acceptable. This may in fact be sufficient for a given design, but if a more controlled shape is
+required, a perpendicularity tolerance must be added. The perpendicularity tolerance works
+within the locational tolerance to ensure that the edge is not only within the locational tolerance
+but also perpendicular to datum A.
+     Figure 8-70 shows the two extreme conditions for the 40 ± 1 locational tolerance. The
+perpendicularity tolerance is applied by first measuring the surface and determining its maximum
+and minimum lengths. The difference between these two measurements must be less than 0.05.
+Thus, if the measured maximum distance is 41, then no other part of the surface may be less than
+41 − 0.05 = 40.95.
+     Tolerances of perpendicularity serve to complement locational tolerances, to make the shape
+more exact, so tolerances of perpendicularity must always be smaller than tolerances of location.
+It would be of little use, for example, to assign a perpendicularity tolerance of 1.5 for the object
+shown in Figure 8-71. The locational tolerance would prevent the variation from ever reaching
+the limits specified by such a large perpendicularity tolerance.
+
+
+
+
+Figure 8-71
+
+     Figure 8-72 shows a perpendicularity tolerance applied to cylindrical features: a shaft and a
+hole. The figure includes examples of both RFS and MMC applications. As with straightness
+tolerances applied at MMC, perpendicularity tolerances applied about a hole or shaft’s centerline
+allow the tolerance zone to vary as the feature size varies.
+Figure 8-72
+
+     The inclusion of the Ø symbol in a geometric tolerance is critical to its interpretation. See
+Figure 8-73. If the Ø symbol is not included, the tolerance applies only to the view in which it is
+written. This means that the tolerance zone is shaped like a rectangular slice, not a cylinder, as
+would be the case if the Ø symbol were included. In general it is better to always include the Ø
+symbol for cylindrical features because it generates a tolerance zone more like that used in
+positional tolerancing.
+Figure 8-73
+
+   Figure 8-73 shows a perpendicularity tolerance applied to a slot, a noncylindrical feature.
+Again, the MMC specification is always for variations in the tolerance zone.
+
+8-36 Parallelism
+Parallelism tolerances are used to ensure that all points within a plane are within two parallel
+planes that are parallel to a referenced datum plane. Figure 8-74 shows a rectangular object that
+is toleranced so that its top surface is parallel to the bottom surface within 0.02. This means that
+every point on the top surface must be within a set of parallel planes 0.02 apart. These parallel
+tolerancing planes are located by determining the maximum and minimum distances from the
+datum surface. The difference between the maximum and minimum values may not exceed the
+stated 0.02 tolerance.
+     In the extreme condition of maximum feature size, the top surface is located 40.5 above the
+datum plane. The parallelism tolerance is then applied, meaning that no point on the surface may
+be closer than 40.3 to the datum. This is an RFS condition. The MMC condition may also be
+applied, thereby allowing the tolerance zone to vary as the feature size varies.
+Figure 8-74
+
+8-37 Angularity
+Angularity tolerances are used to limit the variance of surfaces and axes that are at an angle
+relative to a datum. Angularity tolerances are applied like perpendicularity and parallelism
+tolerances as a way to better control the shape of locational tolerances.
+     Figure 8-75 shows an angularity tolerance and several ways it is interpreted at extreme
+conditions.
+Figure 8-75
+
+8-38 Profiles
+Profile tolerances are used to limit the variations of irregular surfaces. They may be assigned as
+either bilateral or unilateral tolerances. There are two types of profile tolerances: surface and
+line. Surface profile tolerances limit the variation of an entire surface, whereas a line profile
+tolerance limits the variations along a single line across a surface.
+     Figure 8-76 shows an object that includes a surface profile tolerance referenced to an
+irregular surface. The tolerance is considered a bilateral tolerance because no other specification
+is given. This means that all points on the surface must be located between two parallel planes
+0.08 apart that are centered about the irregular surface. The measurements are taken
+perpendicular to the surface.
+Figure 8-76
+
+     Unilateral applications of surface profile tolerances must be indicated on the drawing using
+phantom lines. The phantom line indicates the side of the true profile line of the irregular surface
+on which the tolerance is to be applied. A phantom line above the irregular surface indicates that
+the tolerance is to be applied using the true profile line as 0, and then the specified tolerance
+range is to be added above that line. See Figures 8-77 and 8-78.
+Figure 8-77
+Figure 8-78
+
+     Profiles of line tolerances are applied to irregular surfaces, as shown in Figure 8-78. Profiles
+of line tolerances are particularly helpful when tolerancing an irregular surface that is constantly
+changing, such as the surface of an airplane wing.
+     Surface and line profile tolerances are somewhat analogous to flatness and straightness
+tolerances. Flatness and surface profile tolerances are applied across an entire surface, whereas
+straightness and line profile tolerances are applied only along a single line across the surface.
+
+8-39 Runouts
+A runout tolerance is used to limit the variations between features of an object and a datum.
+More specifically, they are applied to surfaces around a datum axis such as a cylinder or to a
+surface constructed perpendicular to a datum axis. There are two types of runout tolerances:
+circular and total.
+     Figure 8-79 shows a cylinder that includes a circular runout tolerance. The runout
+requirements are checked by rotating the object about its longitudinal axis or datum axis while
+holding an indicator gauge in a fixed position on the object’s surface.
+Figure 8-79
+
+     Runout tolerances may be either bilateral or unilateral. A runout tolerance is assumed to be
+bilateral unless otherwise indicated. If a runout tolerance is to be unilateral, a phantom line is
+used to indicate the side of the object’s true surface to which the tolerance is to be applied. See
+Figure 8-80.
+Figure 8-80
+
+     Runout tolerances may be applied to tapered areas of cylindrical objects, as shown in Figure
+8-81. The tolerance is checked by rotating the object about a datum axis while holding an
+indicator gauge in place.
+Figure 8-81
+
+     A total runout tolerance limits the variation across an entire surface. See Figure 8-82. An
+indicator gauge is not held in place while the object is rotated, as it is for circular runout
+tolerances, but is moved about the rotating surface.
+Figure 8-82
+
+    Figure 8-83 shows a circular runout tolerance that references two datums. The two datums
+serve as one datum. The object can then be rotated about both datums simultaneously as the
+runout tolerances are checked.
+Figure 8-83
+
+8-40 Positional Tolerances
+As defined earlier, positional tolerances are used to locate and tolerance holes. Positional
+tolerances create a circular tolerance zone for hole centerpoint locations, in contrast with the
+rectangular tolerance zone created by linear coordinate dimensions. See Figure 8-84. The circular
+tolerance zone allows for an increase in acceptable tolerance variation without compromising the
+design integrity of the object.
+Figure 8-84
+
+     Note how some of the possible hole centerpoints fall in an area outside the rectangular
+tolerance zone but are still within the circular tolerance zone. If the hole had been located using
+linear coordinate dimensions, centerpoints located beyond the rectangular tolerance zone would
+have been rejected as beyond tolerance, and yet holes produced using these locations would
+function correctly from a design standpoint. The centerpoint locations would be acceptable if
+positional tolerances had been specified. The finished hole is round, so a round tolerance zone is
+appropriate. The rectangular tolerance zone rejects some holes unnecessarily.
+     Holes are dimensioned and toleranced using geometric tolerances by a combination of
+locating dimensions, feature dimensions and tolerances, and positional tolerances. See Figure 8-
+85. The locating dimensions are enclosed in rectangular boxes and are called basic dimensions.
+Basic dimensions are assumed to be exact.
+Figure 8-85
+
+    The feature tolerances for the hole are as presented earlier in the chapter. They can be
+presented using plus or minus or limit-type tolerances. In the example shown in Figure 8-85 the
+diameter of the hole is toleranced using a plus and minus 0.05 tolerance.
+    The basic locating dimensions of 45 and 50 are assumed to be exact. The tolerances that
+would normally accompany linear locational dimensions are replaced by the positional tolerance.
+The positional tolerance also specifies that the tolerance be applied at the centerline at maximum
+material condition. The resulting tolerance zones are as shown in Figure 8-85.
+    Figure 8-86 shows an object containing two holes that are dimensioned and toleranced using
+positional tolerances. There are two consecutive horizontal basic dimensions. Because basic
+dimensions are exact, they do not have tolerances that accumulate; that is, there is no tolerance
+buildup.
+Figure 8-86
+
+8-41 Creating Positional Tolerances
+Figure 8-87 shows an orthographic view that has been dimensioned. Note that the hole has a
+dimension and tolerance of Ø1.000 ± .001. This is the hole’s feature tolerance. It deals only
+with the hole’s diameter variation. It does not tolerance the hole’s location.
+
+
+Creating the Positional Tolerance
+      1 Click the Annotation tab and click the Geometric Tolerance tool.
+      2 Locate the Geometric Tolerance.
+      3 Click the No Leader option.
+      4 Select the Position symbol from the popup box, define the tolerance as .001, and select
+        the Diameter symbol in the next popup box.
+      5 Select Material Condition and select the Maximum Material Condition symbol.
+      6 Click Done.
+    The collective symbol would read “Apply a .001 positional tolerance about the hole’s
+centerpoint at the maximum material condition.”
+      7 Click the green OK check mark.
+      8 Locate the symbol on the drawing under the feature tolerance as shown.
+Figure 8-87
+
+   Create basic dimensions to accompany the geometric positional tolerance. See Figure 8-88.
+Figure 8-88
+
+        9 Click the 2.00 dimension.
+    The Dimension PropertyManager will appear.
+       10 Click the Basic option in the Tolerance/Precision box.
+       11 Click the 1.13 dimension and make it a Basic dimension.
+       12 Click the 1.00 dimension and make it a Basic dimension.
+       13 Click the green OK check mark.
+       14 Save the drawing.
+
+ Tip
+ Geometric positional tolerances must include basic dimensions. Basic dimensions are assumed to be perfect. The locational
+ tolerance associated with locating dimensions has been moved to the geometric positional tolerance.
+
+
+
+
+8-42 Virtual Condition
+Virtual condition is a combination of a feature’s MMC and its geometric tolerance. For external
+features (shafts) it is the MMC plus the geometric tolerance; for internal features (holes) it is the
+MMC minus the geometric tolerance.
+     The following calculations are based on the dimensions shown in Figure 8-89.
+Figure 8-89
+
+
+Calculating the Virtual Condition for a Shaft
+      25.5 MMC for shaft—maximum diameter
+     +0.3 Geometric tolerance
+     ¯25.8
+      ¯¯¯¯¯¯ Virtual condition
+
+
+Calculating the Virtual Condition for a Hole
+      24.5 MMC for hole—minimum diameter
+     −0.3 Geometric tolerance
+     ¯24.2
+      ¯¯¯¯¯¯ Virtual condition
+
+
+8-43 Floating Fasteners
+Positional tolerances are particularly helpful when dimensioning mating parts. Because basic
+locating dimensions are considered exact, the sizing of mating parts is dependent only on the
+hole and shaft’s MMC and the geometric tolerance between them.
+    The relationship for floating fasteners and holes in objects may be expressed as a formula:
+                                          H−T = F
+where
+      H = hole at MMC
+      T = geometric tolerance
+      F = shaft at MMC
+     A floating fastener is one that passes through two or more objects, and all parts have
+clearance holes for the tolerance. It is not attached to either object and it does not screw into
+either object. Figure 8-90 shows two objects that are to be joined by a common floating shaft,
+such as a bolt or screw. The feature size and tolerance and the positional geometric tolerance are
+both given. The minimum size hole that will always just fit is determined using the preceding
+formula:
+                                         H−T = F
+                                     11.97 − .02 = 11.95
+Figure 8-90
+
+    Therefore, the shaft’s diameter at MMC, the shaft’s maximum diameter, equals 11.95. Any
+required tolerance would have to be subtracted from this shaft size.
+    The .02 geometric tolerance is applied at the hole’s MMC, so as the hole’s size expands
+within its feature tolerance, the tolerance zone for the acceptable matching parts also expands.
+
+8-44 Sample Problem SP8-3
+The situation presented in Figure 8-90 can be worked in reverse; that is, hole sizes can be derived
+from given shaft sizes.
+     The two objects shown in Figure 8-91 are to be joined by a .250in. bolt. The parts are
+floating; they are both free to move, and the fastener is not joined to either object. What is the
+MMC of the holes if the positional tolerance is to be .030?
+Figure 8-91
+
+    A manufacturer’s catalog specifies that the tolerance for .250 bolts is .2500 to .2600.
+    Rewriting the formula
+                                           H−T = F
+to isolate the H yields
+                                       H = F+T
+                                         = .260 + .030
+                                         = .290
+    The .290 value represents the minimum hole diameter, MMC, for all four holes that will
+always accept the .250 bolt. Figure 8-92 shows the resulting drawing callout.
+Figure 8-92
+
+    Any clearance requirements or tolerances for the hole would have to be added to the .290
+value.
+
+8-45 Sample Problem SP8-4
+Repeat the problem presented in SP8-3 but be sure that there is always a minimum clearance of
+.002 between the hole and the shaft, and assign a hole tolerance of .008.
+     Sample problem SP8-3 determined that the maximum hole diameter that will always accept
+the .250 bolt is .290 based on the .030 positioning tolerance. If the minimum clearance is to be
+.002, the maximum hole diameter is found as follows:
+          .290 Minimum hole diameter that will always accept the bolt
+                  (0 clearance at MMC)
+       +.002 Minimum clearance
+     ¯¯¯¯¯.292
+           ¯¯¯¯¯¯ Minimum hole diameter including clearance
+
+    Now, assign the tolerance to the hole:
+          .292 Minimum hole diameter
+       +.001 Tolerance
+     ¯¯¯¯¯.293
+          ¯¯¯¯¯¯¯ Maximum hole diameter
+
+     See Figure 8-93 for the appropriate drawing callout. The choice of clearance size and hole
+tolerance varies with the design requirements for the objects.
+
+
+
+
+Figure 8-93
+
+8-46 Fixed Fasteners
+A fixed fastener is a fastener that is restrained in one of the parts. For example, one end of the
+fastener is screwed into one of the parts using threads. See Figure 8-94. Because the fastener is
+fixed to one of the objects, the geometric tolerance zone must be smaller than that used for
+floating fasteners. The fixed fastener cannot move without moving the object it is attached to.
+The relationship between fixed fasteners and holes in mating objects is defined by the formula
+Figure 8-94
+                                        H − 2T = F
+     The tolerance zone is cut in half for each part. This can be demonstrated by the objects
+shown in Figure 8-95. The same feature sizes that were used in Figure 8-91 are assigned, but in
+this example the fasteners are fixed. Solving for the geometric tolerance yields a value as
+follows:
+                                            H− F     = 2T
+                                    11.97 − 11.95    = 2T
+                                              .02    = 2T
+                                              .01    =T
+Figure 8-95
+
+    The resulting positional tolerance is half that obtained for floating fasteners.
+
+8-47 Sample Problem SP8-5
+This problem is similar to sample problem SP8-3, but the given conditions are applied to fixed
+fasteners rather than floating fasteners. Compare the resulting shaft diameters for the two
+problems. See Figure 8-96.
+Figure 8-96
+
+   A. What is the minimum diameter hole that will always accept the fixed fasteners?
+   B. If the minimum clearance is .005 and the hole is to have a tolerance of .002, what are the
+      maximum and minimum diameters of the hole?
+              H − 2T = F
+                   H = F + 2T
+                     = .260 + 2 (0.030)
+                     = .260 + 0.060
+                     = .320 Minimum diameter that will always accept the fastener
+If the minimum clearance is .005 and the hole tolerance is .002,
+            .320 Virtual condition
+         +.005 Clearance
+       ¯¯¯¯¯.325
+             ¯¯¯¯¯¯ Minimum hole diameter
+            .325 Minimum hole diameter
+         +.002 Tolerance
+      ¯¯¯¯¯.327
+           ¯¯¯¯¯¯¯ Maximum hole diameter
+
+The maximum and minimum values for the hole’s diameter can then be added to the drawing of
+the object that fits over the fixed fasteners. See Figure 8-97.
+
+
+
+
+Figure 8-97
+
+8-48 Design Problems
+This problem was originally done in section “8-40, Positional Tolerances” using rectangular
+tolerances. It is done in this section using positional geometric tolerances so that the two systems
+can be compared. It is suggested that the previous problem be reviewed before reading this
+section.
+     Figure 8-98 shows top and bottom parts that are to be joined in the floating condition. A
+nominal distance of 50 between hole centers and Ø20 for the holes has been assigned. In the
+previous solution a rectangular tolerance of ±.01 was selected, and there was a minimum hole
+diameter of 20.00. Figure 8-99 shows the resulting tolerance zones.
+
+
+
+
+Figure 8-98
+Figure 8-99
+
+     The diagonal distance across the rectangular tolerance zone is .028 and was rounded off to
+.03 to yield a maximum possible fastener diameter of 19.97. If the same .03 value is used to
+calculate the fastener diameter using positional tolerance, the results are as follows:
+                                          H−T = F
+                                      20.00 − .03 = 19.97
+     The results seem to be the same, but because of the circular shape of the positional tolerance
+zone, the manufactured results are not the same. The minimum distance between the inside edges
+of the rectangular zones is 49.98, or .01 from the centerpoint of each hole. The minimum
+distance from the innermost points of the circular tolerance zones is 49.97, or .015 (half the
+rounded-off .03 value) from the centerpoint of each hole.
+     The same value difference also occurs for the maximum distance between centerpoints,
+where 50.02 is the maximum distance for the rectangular tolerances, and 50.03 is the maximum
+distance for the circular tolerances. The size of the circular tolerance zone is larger because the
+hole tolerances are assigned at MMC. In this example the MMC for the hole is 20.00; that is,
+when the hole is at its smallest. As the hole’s feature tolerance increases from 20.00 to 20.02, the
+size of the tolerance zone increases.
+     The basic dimensions of 20 and 50 are assumed to be perfect. The original ±.01 positional
+tolerances assigned are still present; they are now presented as geometric positional tolerances.
+The hole tolerance, 20 + .02/ − 0, is the feature tolerance, and the geometric tolerance of .03 is
+the positional tolerance.
+     Figure 8-99 shows a comparison between the tolerance zones, and Figure 8-100 shows how
+the positional tolerances would be presented on a drawing of either the top or bottom part.
+Figure 8-100
+
+     Figure 8-101 shows the same top and bottom parts joined together in the fixed condition.
+The initial nominal values are the same. If the same .03 diagonal value is assigned as a positional
+tolerance, the results are as follows:
+                                          H − 2T = F
+                                      20.00 − .06 = 19.94
+     These results appear to be the same as those generated by the rectangular tolerance zone, but
+the circular tolerance zone allows a greater variance in acceptable manufactured parts.
+Figure 8-101
+
+   Figure 8-102 shows the parts dimensioned using baseline dimensions.
+Figure 8-102
+
+Chapter Projects
+
+Project 8-1:
+Draw a model of the objects shown in Figure P8-1A through P8-1D using the given dimensions
+and tolerances. Create a drawing layout with a view of the model as shown. Add the specified
+dimensions and tolerances.
+Figure P8-1A
+MILLIMETERS
+Figure P8-1B
+MILLIMETERS
+Figure P8-1C
+INCHES
+Figure P8-1D
+MILLIMETERS
+
+Project 8-2:
+Redraw the object shown in Figure P8-2, including the given dimensions and tolerances.
+Calculate and list the maximum and minimum distances for surface A.
+Figure P8-2
+MILLIMETERS
+Figure P8-3
+INCHES
+
+Project 8-3:
+   A. Redraw the object shown in Figure P8-3, including the dimensions and tolerances.
+      Calculate and list the maximum and minimum distances for surface A.
+   B. Redraw the given object and dimension it using baseline dimensions. Calculate and list
+      the maximum and minimum distances for surface A.
+
+Project 8-4:
+Redraw the object shown in Figure P8-4, including the dimensions and tolerances. Calculate and
+list the maximum and minimum distances for surfaces D and E.
+
+Project 8-5:
+Dimension the object shown in Figure P8-5 twice, once using chain dimensions and once using
+baseline dimensions. Calculate and list the maximum and minimum distances for surface D for
+both chain and baseline dimensions. Compare the results.
+Figure P8-4
+MILLIMETERS
+Figure P8-5
+MILLIMETERS
+
+Project 8-6:
+Redraw the following shapes, as shown in Figure P8-6, including the dimensions and tolerances.
+Also list the required minimum and maximum values for the specified distances.
+Figure P8-6
+INCHES
+
+Project 8-7:
+Redraw and complete the inspection report shown in Figure P8-7. Under the RESULTS column
+classify each “AS MEASURED” value as OK if the value is within the stated tolerances,
+REWORK if the value indicates that the measured value is beyond the stated tolerance but can
+be reworked to bring it into the acceptable range, or SCRAP if the value is not within the
+tolerance range and cannot be reworked to make it acceptable.
+Figure P8-7
+MILLIMETERS
+
+Project 8-8:
+Redraw the charts shown in Figure P8-8 and complete them based on the following information.
+All values are in millimeters.
+   A. Nominal = 16, Fit = H8/d8
+   B. Nominal = 30, Fit = H11/c11
+   C. Nominal = 22, Fit = H7/g6
+   D. Nominal = 10, Fit = C11/h11
+   E. Nominal = 25, Fit = F8/h7
+   F. Nominal = 12, Fit = H7/k6
+   G. Nominal = 3, Fit = H7/p6
+   H. Nominal = 18, Fit = H7/s6
+   I. Nominal = 27, Fit = H7/u6
+   J. Nominal = 30, Fit = N7/h6
+
+
+
+
+Figure P8-8
+MILLIMETERS
+
+Project 8-9:
+Redraw the charts shown in Figure P8-9 and complete them based on the following information.
+All values are in inches.
+   A. Nominal = 0.25, Fit = Class LC 5, H7/g6
+   B. Nominal = 1.00, Fit = Class LC 7, H10/e9
+   C. Nominal = 1.50, Fit = Class LC 9, F11/h11
+   D. Nominal = 0.75, Fit = Class RC 3, H7/f6
+   E. Nominal = 1.75, Fit = Class RC 6, H9/e8
+   F. Nominal = .500, Fit = Class LT 2, H8/js7
+   G. Nominal = 1.25, Fit = Class LT 5, H7/n6
+   H. Nominal = 1.38, Fit = Class LN 3, J7/h6
+   I. Nominal = 1.625, Fit = Class FN 2, H7/s6
+   J. Nominal = 2.00, Fit = Class FN 4, H7/u6
+
+
+
+
+Figure P8-9
+INCHES
+
+Project 8-10:
+Draw the chart shown and add the appropriate values based on the dimensions and tolerances
+given in Figures P8-10A through P8-10D.
+Figure P8-10A
+MILLIMETERS
+Figure P8-10B
+MILLIMETERS
+Figure P8-10C
+MILLIMETERS
+Figure P8-10D
+MILLIMETERS
+
+Project 8-11:
+Prepare front and top views of parts 4A and 4B in Figure P8-11 based on the given dimensions.
+    Add tolerances to produce the stated clearances.
+
+Project 8-12:
+Redraw the Box, Top and Box, Bottom in Figure P8-12 and include dimensions and tolerances to
+meet the “UPON ASSEMBLY” requirements.
+Figure P8-11
+MILLIMETERS
+Figure P8-12
+INCHES
+
+Project 8-13:
+Draw a front and top view of both given objects in Figure P8-13. Add dimensions and tolerances
+to meet the “FINAL CONDITION” requirements.
+
+Project 8-14:
+Given the following nominal sizes, dimension and tolerance parts AM311 and AM312 in Figure
+P8-14 so that they always fit together regardless of orientation. Further, dimension the overall
+lengths of each part so that in the assembled condition they will always pass through a clearance
+gauge with an opening of 80.00 ± 0.02.
+Figure P8-13
+MILLIMETERS
+Figure P8-14
+MILLIMETERS
+
+Project 8-15:
+Given the following rail assembly, as shown in Figure P8-15, add dimensions and tolerances so
+that the parts always fit together as shown in the assembled position.
+Figure P8-15
+MILLIMETERS
+
+Project 8-16:
+Given the following peg assembly, shown in Figure P8-16, add dimensions and tolerances so that
+the parts always fit together as shown in the assembled position.
+
+
+
+
+Figure P8-16
+INCHES
+Project 8-17:
+Given the following collar assembly shown in Figure P8-17, add dimensions and tolerances so
+that the parts always fit together as shown in the assembled position.
+
+
+
+
+Figure P8-17
+MILLIMETERS
+
+Project 8-18:
+Given the following vee-block assembly shown in Figure P8-18, add dimensions and tolerances
+so that the parts always fit together as shown in the assembled position. The total height of the
+assembled blocks must be between 4.45 and 4.55in.
+Figure P8-18
+INCHES
+
+Project 8-19:
+Design a bracket that will support the three Ø100 wheels shown in Figure P8-19A. The wheels
+will utilize three Ø5.00 ± 0.01 shafts attached to the bracket. The bottom of the bracket must be
+a minimum of 10mm from the ground. The wall thickness of the bracket must always be at least
+5mm, and the minimum bracket opening must be at least 15mm.
+    1. Prepare a front and a side view of the bracket.
+    2. Draw the wheels in their relative positions using phantom lines.
+    3. Add all appropriate dimensions and tolerances.
+Given a top and a bottom part in the floating condition as shown in Figure P8-19B, satisfy the
+requirements given in projects P8-20 through P8-23 so that the parts always fit together
+regardless of orientation. Prepare drawings of each part including dimensions and tolerances.
+   A. Use linear tolerances.
+   B. Use positional tolerances.
+Figure P8-19A
+MILLIMETERS
+Figure P8-19B
+
+Project 8-20: Inches
+  A. The distance between the holes’ centerpoints is 2.00 nominal.
+  B. The holes are Ø.375 nominal.
+  C. The fasteners have a tolerance of .001.
+  D. The holes have a tolerance of .002.
+  E. The minimum allowable clearance between the fasteners and the holes is .003.
+  F. The positional tolerance is .001.
+
+Project 8-21: Millimeters
+  A. The distance between the holes’ centerpoints is 80 nominal.
+  B. The holes are Ø12 nominal.
+  C. The fasteners have a tolerance of 0.05.
+   D. The holes have a tolerance of 0.03.
+   E. The minimum allowable clearance between the fasteners and the holes is 0.02.
+   F. The positional tolerance is .01.
+
+Project 8-22: Inches
+   A. The distance between the holes’ centerpoints is 3.50 nominal.
+   B. The holes are Ø.625 nominal.
+   C. The fasteners have a tolerance of .005.
+   D. The holes have a tolerance of .003.
+   E. The minimum allowable clearance between the fasteners and the holes is .002.
+   F. The positional tolerance is .002.
+
+Project 8-23: Millimeters
+   A. The distance between the holes’ centerpoints is 65 nominal.
+   B. The holes are Ø16 nominal.
+   C. The fasteners have a tolerance of 0.03.
+   D. The holes have a tolerance of 0.04.
+   E. The minimum allowable clearance between the fasteners and the holes is 0.03.
+   F. The positional tolerance is .02.
+Given a top and a bottom part in the fixed condition as shown in Figure Figure P8-20, satisfy the
+requirements given in projects P8-24 through P8-27 so that the parts fit together regardless of
+orientation. Prepare drawings of each part including dimensions and tolerances.
+   A. Use linear tolerances.
+   B. Use positional tolerances.
+Figure P8-20
+
+Project 8-24: Millimeters
+  A. The distance between the holes’ centerpoints is 60 nominal.
+  B. The holes are Ø10 nominal.
+  C. The fasteners have a tolerance of 0.04.
+  D. The holes have a tolerance of 0.02.
+  E. The minimum allowable clearance between the fasteners and the holes is 0.02.
+  F. The positional tolerance is 0.01.
+
+Project 8-25: Inches
+  A. The distance between the holes’ centerpoints is 3.50 nominal.
+  B. The holes are Ø.563 nominal.
+  C. The fasteners have a tolerance of .005.
+   D. The holes have a tolerance of .003.
+   E. The minimum allowable clearance between the fasteners and the holes is .002.
+   F. The positional tolerance is .001.
+
+Project 8-26: Millimeters
+   A. The distance between the holes’ centerpoints is 100 nominal.
+   B. The holes are Ø18 nominal.
+   C. The fasteners have a tolerance of 0.02.
+   D. The holes have a tolerance of 0.01.
+   E. The minimum allowable clearance between the fasteners and the holes is 0.03.
+   F. The positional tolerance is 0.02.
+
+Project 8-27: Inches
+   A. The distance between the holes’ centerpoints is 1.75 nominal.
+   B. The holes are Ø.250 nominal.
+   C. The fasteners have a tolerance of .002.
+   D. The holes have a tolerance of .003.
+   E. The minimum allowable clearance between the fasteners and the holes is .001.
+   F. The positional tolerance is .002.
+
+Project 8-28: Millimeters
+Dimension and tolerance the rotator assembly shown in Figure P8-21. Use the given dimensions
+as nominal and add sleeve bearings between the LINKs and both the CROSS-LINK and the
+PLATE. Create drawings of each part. Modify the dimensions as needed and add the appropriate
+tolerances. Specify the selected sleeve bearing.
+
+Project 8-29: Millimeters
+Dimension and tolerance the rocker assembly shown in Figure P8-22. Use the given dimensions
+as nominal, and add sleeve bearings between all moving parts. Create drawings of each part.
+Modify the dimensions as needed and add the appropriate tolerances. Specify the selected sleeve
+bearing.
+
+Project 8-30: Millimeters
+Draw the model shown in Figure P8-23, create a drawing layout with the appropriate views, and
+add the specified dimensions and tolerances.
+
+Project 8-31: Millimeters
+Redraw the shaft shown in Figure P8-24, create a drawing layout with the appropriate views, and
+add a feature dimension and tolerance of 36 ± 0.1 and a straightness tolerance of 0.07 about the
+centerline at MMC.
+
+
+
+
+Figure P8-21
+Figure P8-22
+Figure P8-23
+Figure P8-24
+
+Project 8-32:
+  A. Given the shaft shown in Figure P8-25, what is the minimum hole diameter that will
+     always accept the shaft?
+  B. If the minimum clearance between the shaft and a hole is equal to 0.02, and the tolerance
+     on the hole is to be 0.6, what are the maximum and minimum diameters for the hole?
+
+Project 8-33:
+  A. Given the shaft shown in Figure P8-26, what is the minimum hole diameter that will
+     always accept the shaft?
+  B. If the minimum clearance between the shaft and a hole is equal to .005, and the tolerance
+     on the hole is to be .007, what are the maximum and minimum diameters for the hole?
+
+Project 8-34:
+Draw a front and a right-side view of the object shown in Figure P8-27 and add the appropriate
+dimensions and tolerances based on the following information. Numbers located next to an edge
+line indicate the length of the edge.
+
+
+
+
+Figure P8-25
+Figure P8-26
+Figure P8-27
+Figure P8-28
+
+   A. Define surfaces A, B, and C as primary, secondary, and tertiary datums, respectively.
+   B. Assign a tolerance of ±0.5 to all linear dimensions.
+   C. Assign a feature tolerance of 12.07 − 12.00 to the protruding shaft.
+   D. Assign a flatness tolerance of 0.01 to surface A.
+   E. Assign a straightness tolerance of 0.03 to the protruding shaft.
+   F. Assign a perpendicularity tolerance to the centerline of the protruding shaft of 0.02 at
+      MMC relative to datum A.
+
+Project 8-35:
+Draw a front and a right-side view of the object shown in Figure P8-28 and add the following
+dimensions and tolerances.
+   A. Define the bottom surface as datum A.
+   B. Assign a perpendicularity tolerance of 0.4 to both sides of the slot relative to datum A.
+   C. Assign a perpendicularity tolerance of 0.2 to the centerline of the 30 diameter hole at
+      MMC relative to datum A.
+   D. Assign a feature tolerance of ±0.8 to all three holes.
+   E. Assign a parallelism tolerance of 0.2 to the common centerline between the two 20
+      diameter holes relative to datum A.
+   F. Assign a tolerance of ±0.5 to all linear dimensions.
+
+Project 8-36:
+Draw a circular front and the appropriate right-side view of the object shown in Figure P8-29 and
+add the following dimensions and tolerances.
+
+
+
+
+Figure P8-29
+Figure P8-30
+
+   A. Assign datum A as indicated.
+   B. Assign the object’s longitudinal axis as datum B.
+   C. Assign the object’s centerline through the slot as datum C.
+   D. Assign a tolerance of ±0.5 to all linear tolerances.
+   E. Assign a tolerance of ±0.5 to all circular features.
+   F. Assign a parallelism tolerance of 0.01 to both edges of the slot.
+   G. Assign a perpendicularity tolerance of 0.01 to the outside edge of the protruding shaft.
+
+Project 8-37:
+Given the two objects shown in Figure P8-30, draw a front and a side view of each. Assign a
+tolerance of ±0.5 to all linear dimensions. Assign a feature tolerance of ±0.4 to the shaft, and
+also assign a straightness tolerance of 0.2 to the shaft’s centerline at MMC.
+     Tolerance the hole so that it will always accept the shaft with a minimum clearance of 0.1
+and a feature tolerance of 0.2. Assign a perpendicularity tolerance of 0.05 to the centerline of the
+hole at MMC.
+
+Project 8-38:
+Given the two objects shown in Figure P8-31, draw a front and a side view of each. Assign a
+tolerance of ±.005 to all linear dimensions. Assign a feature tolerance of ±.004 to the shaft, and
+also assign a straightness tolerance of .002 to the shaft’s centerline at MMC.
+     Tolerance the hole so that it will always accept the shaft with a minimum clearance of .001
+and a feature tolerance of .002.
+
+Project 8-39:
+Draw a model of the object shown in Figure P8-32, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+
+
+
+
+Figure P8-31
+Figure P8-32
+Figure P8-33
+
+   A. Surface 1 is datum A.
+   B. Surface 2 is datum B and is perpendicular to datum A within 0.1mm.
+   C. Surface 3 is datum C and is parallel to datum A within 0.3mm.
+   D. Locate a 16mm diameter hole in the center of the front surface that goes completely
+      through the object. Use positional tolerances to locate the hole. Assign a positional
+      tolerance of 0.02 at MMC perpendicular to datum A.
+
+Project 8-40:
+Draw a model of the object shown in Figure P8-33, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Surface 1 is datum A.
+   B. Surface 2 is datum B and is perpendicular to datum A within .003in.
+   C. Surface 3 is parallel to datum A within .005in.
+   D. The cylinder’s longitudinal centerline is to be straight within .001in. at MMC.
+   E. Surface 2 is to have circular accuracy within .002in.
+
+Project 8-41:
+Draw a model of the object shown in Figure P8-34, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+
+
+
+
+Figure P8-34
+Figure P8-35
+
+   A. Surface 1 is datum A.
+   B. Surface 4 is datum B and is perpendicular to datum A within 0.08mm.
+   C. Surface 3 is flat within 0.03mm.
+   D. Surface 5 is parallel to datum A within 0.01mm.
+   E. Surface 2 has a runout tolerance of 0.2mm relative to surface 4.
+   F. Surface 1 is flat within 0.02mm.
+   G. The longitudinal centerline is to be straight within 0.02 at MMC and perpendicular to
+      datum A.
+
+Project 8-42:
+Draw a model of the object shown in Figure P8-35, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Surface 2 is datum A.
+   B. Surface 6 is perpendicular to datum A with .000 allowable variance at MMC but with a
+      .002in. MAX variance limit beyond MMC.
+   C. Surface 1 is parallel to datum A within .005in.
+   D. Surface 4 is perpendicular to datum A within .004in.
+
+Project 8-43:
+Draw a model of the object shown in Figure P8-36, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Surface 1 is datum A.
+   B. Surface 2 is datum B.
+   C. The hole is located using a true position tolerance value of 0.13mm at MMC. The true
+      position tolerance is referenced to datums A and B.
+   D. Surface 1 is to be straight within 0.02mm.
+   E. The bottom surface is to be parallel to datum A within 0.03mm.
+
+Project 8-44:
+Draw a model of the object shown in Figure P8-37, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Surface 1 is datum A.
+   B. Surface 2 is datum B.
+   C. Surface 3 is perpendicular to surface 2 within 0.02mm.
+   D. The four holes are to be located using a positional tolerance of 0.07mm at MMC
+      referenced to datums A and B.
+   E. The centerlines of the holes are to be straight within 0.01mm at MMC.
+Figure P8-36
+Figure P8-37
+
+Project 8-45:
+Draw a model of the object shown in Figure P8-38, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Surface 1 has a dimension of .378 − .375 in. and is datum A. The surface has a dual
+      primary runout with datum B to within .005in. The runout is total.
+   B. Surface 2 has a dimension of 1.505 − 1.495 in. Its runout relative to the dual primary
+      datums A and B is .008in. The runout is total.
+   C. Surface 3 has a dimension of 1.000 ± .005 and has no geometric tolerance.
+   D. Surface 4 has no circular dimension but has a total runout tolerance of .006in. relative to
+      the dual datums A and B.
+   E. Surface 5 has a dimension of .500 − .495 in. and is datum B. It has a dual primary
+      runout with datum A within .005in. The runout is total.
+
+Project 8-46:
+Draw a model of the object shown in Figure P8-39, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Hole 1 is datum A.
+   B. Hole 2 is to have its circular centerline parallel to datum A within 0.2mm at MMC when
+      datum A is at MMC.
+   C. Assign a positional tolerance of 0.01 to each hole’s centerline at MMC.
+
+
+
+
+Figure P8-38
+Figure P8-39
+
+Project 8-47:
+Draw a model of the object shown in Figure P8-40, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Surface 1 is datum A.
+   B. Surface 2 is datum B.
+   C. The six holes have a diameter range of .502 − .499 in. and are to be located using
+      positional tolerances so that their centerlines are within .005in. at MMC relative to
+      datums A and B.
+   D. The back surface is to be parallel to datum A within .002in.
+
+Project 8-48:
+Draw a model of the object shown in Figure P8-41, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+  A. Surface 1 is datum A.
+  B. Hole 2 is datum B.
+  C. The eight holes labeled 3 have diameters of 8.4 − 8.3 mm with a positional tolerance of
+     0.15mm at MMC relative to datums A and B. Also, the eight holes are to be counterbored
+     to a diameter of 14.6 − 14.4 mm and to a depth of 5.0mm.
+  D. The large center hole is to have a straightness tolerance of 0.2 at MMC about its
+     centerline.
+
+
+
+
+Figure P8-40
+Figure P8-41
+
+Project 8-49:
+Draw a model of the object shown in Figure P8-42, then create a drawing layout including the
+specified dimensions. Add the following tolerances and specifications to the drawing.
+   A. Surface 1 is datum A.
+   B. Surface 2 is datum B.
+   C. Surface 3 is datum C.
+   D. The four holes labeled 4 have a dimension and tolerance of 8 + 0.3/ − 0 mm. The holes
+      are to be located using a positional tolerance of 0.05mm at MMC relative to datums A, B,
+      and C.
+   E. The six holes labeled 5 have a dimension and tolerance of 6 + 0.2/ − 0 mm. The holes
+      are to be located using a positional tolerance of 0.01mm at MMC relative to datums A, B,
+      and C.
+Project 8-50:
+The objects in Figure P8-43B labeled A and B are to be toleranced using four different tolerances
+as shown. Redraw the charts shown in Figure P8-43A and list the appropriate allowable
+tolerance for “as measured” increments of 0.1mm or .001in. Also include the appropriate
+geometric tolerance drawing called out above each chart.
+   A. Millimeters
+   B. Inches
+
+
+
+
+Figure P8-42
+Figure P8-43A
+Figure P8-43B
+
+Project 8-51:
+Assume that there are two copies of the part in Figure P8-44 and that these parts are to be joined
+together using four fasteners in the floating condition. Draw front and top views of the object,
+including dimensions and tolerances. Add the following tolerances and specifications to the
+drawing, then draw front and top views of a shaft that can be used to join the two objects. The
+shaft should be able to fit into any of the four holes.
+   A. Surface 1 is datum A.
+   B. Surface 2 is datum B.
+   C. Surface 3 is perpendicular to surface 2 within 0.02mm.
+   D. Specify the positional tolerance for the four holes applied at MMC.
+   E. The centerlines of the holes are to be straight within 0.01mm at MMC.
+   F. The clearance between the shafts and the holes is to be 0.05 minimum and 0.10
+      maximum.
+Project 8-52:
+Dimension and tolerance parts 1 and 2 of Figure P8-45 so that part 1 always fits into part 2 with
+a minimum clearance of .005in. The tolerance for part 1’s outer matching surface is .006in.
+
+
+
+
+Figure P8-44
+MILLIMETERS
+Figure P8-45
+
+Project 8-53:
+Dimension and tolerance parts 1 and 2 of Figure P8-46 so that part 1 always fits into part 2 with
+a minimum clearance of 0.03mm. The tolerance for part 1’s diameter is 0.05mm. Take into
+account the fact that the interface is long relative to the diameters.
+
+Project 8-54:
+Assume that there are two copies of the part in Figure P8-47 and that these parts are to be joined
+together using six fasteners in the floating condition. Draw front and top views of the object,
+including dimensions and tolerances. Add the following tolerances and specifications to the
+drawing, then draw front and top views of a shaft that can be used to join the two objects. The
+shaft should be able to fit into any of the six holes.
+   A. Surface 1 is datum A.
+   B. Surface 2 is round within .003.
+  C. Specify the positional tolerance for the six holes applied at MMC.
+  D. The clearance between the shafts and the holes is to be .001 minimum and .003
+     maximum.
+
+
+
+
+Figure P8-46
+MILLIMETERS
+Figure P8-47
+INCHES
+
+Project 8-55:
+The assembly shown in Figure P8-48 is made from parts defined in Chapter 5.
+   A. Draw an exploded assembly drawing.
+   B. Draw a BOM.
+   C. Use the drawing layout mode and draw orthographic views of each part. Include
+      dimensions and geometric tolerances. The pegs should have a minimum clearance of
+      0.02. Select appropriate tolerances.
+Figure P8-48
+MILLIMETERS
