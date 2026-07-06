@@ -72,3 +72,15 @@ forja-shots/brazo/frames/
 forja-shots/brazo/gframes/
 forja-shots/brazo/grframes/
 forja-shots/ensamble/mframes/
+
+# Salidas de render / trabajo en curso (gigas de media — viven solo local)
+/_*
+docs/referencias-espacial/
+dist-video/
+
+# Manuales/libros PDF (copyright + peso). El índice sí se versiona.
+docs/forja-research/manuales/**/*.pdf
+docs/forja-research/manuales/*.pdf
+
+# Builds de firmware (pico-sdk)
+firmware/**/build/
