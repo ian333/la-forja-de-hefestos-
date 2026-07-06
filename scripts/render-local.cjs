@@ -13,7 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const W = 1080, H = 1920, FPS = 30, DURATION = 18, DPR = parseInt(process.env.DPR || '1');
+const W = parseInt(process.env.W || '1080', 10), H = parseInt(process.env.H || '1920', 10);
+const FPS = 30, DURATION = 18, DPR = parseInt(process.env.DPR || '1');
 const Z = process.env.Z || '6';
 const SYM = process.env.SYM || 'C';
 const MOL = process.env.MOL || '';               // si está → renderiza MOLÉCULA

@@ -60,7 +60,7 @@ fi
 
 # 3. Rsync (--delete para no acumular basura entre builds)
 echo -e "${YELLOW}Rsync → ${ATLAS_USER}@${ATLAS_IP}:${REMOTE_DIST}/…${NC}"
-rsync -az --delete --info=stats1 \
+rsync -az --delete --exclude='biblioteca' --info=stats1 \
   -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
   dist/ "${ATLAS_USER}@${ATLAS_IP}:${REMOTE_DIST}/" \
   | grep -E 'transferred|deleted|speedup' || true

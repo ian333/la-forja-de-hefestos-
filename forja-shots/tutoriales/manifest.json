@@ -1,0 +1,295 @@
+{
+  "generated": "driven-by-commands-and-clicks",
+  "telemetry_url": "http://localhost:8002/events",
+  "tutoriales": [
+    {
+      "id": "t1-placa",
+      "titulo": "Tu primera pieza: placa con barrenos",
+      "objetivo": "El ritual CAD completo: croquis → extruir → barreno → redondeo → leer la masa.",
+      "aplicacion": "Soportes, bridas, placas de montaje — el 80% de las piezas de un taller.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Parte de una placa (croquis rectángulo ya extruido a sólido).",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t1-placa/01-placa-base.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Agrega un barreno: clic en ◎ Hole. El volumen baja (se quitó material).",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t1-placa/02-barreno.png",
+          "vol": 10916.814210510756,
+          "mass_g": 29.475398368379043,
+          "ops": [
+            "extrude",
+            "hole"
+          ]
+        },
+        {
+          "n": 3,
+          "desc": "Redondea una arista: ◜ Fillet → clic en la arista de la lista.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t1-placa/03-fillet.png",
+          "vol": 10893.637212157682,
+          "mass_g": 29.412820472825743,
+          "ops": [
+            "extrude",
+            "hole",
+            "fillet"
+          ]
+        },
+        {
+          "n": 4,
+          "desc": "Lee masa, volumen y centro de masa en el panel de Análisis (exacto, del kernel).",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t1-placa/04-analisis.png",
+          "vol": 10893.637212157682,
+          "mass_g": 29.412820472825743,
+          "ops": [
+            "extrude",
+            "hole",
+            "fillet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t2-fea",
+      "titulo": "¿Aguanta? Análisis de esfuerzos (FEA) en vivo",
+      "objetivo": "Fijar una cara, aplicar una carga y ver el esfuerzo de von Mises + el factor de seguridad.",
+      "aplicacion": "El diferenciador: saber si la pieza se rompe ANTES de fabricarla.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Pieza base. Vamos a empotrar la cara inferior y cargar la superior.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t2-fea/01-fea-pieza.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Fija la cara inferior, carga la superior con 500 N y resuelve K·u=f.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t2-fea/02-fea-vonmises.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 3,
+          "desc": "Sube la carga a 900 N en vivo (warm-start): el campo se recalcula al instante.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t2-fea/03-fea-900N.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t3-generativo",
+      "titulo": "Menos material, misma fuerza: diseño generativo",
+      "objetivo": "Optimización topológica (SIMP): la IA quita material donde no trabaja.",
+      "aplicacion": "Piezas ligeras impresas en 3D — gratis aquí, premium en Fusion.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Define el caso de carga (cara fija + carga), igual que en FEA.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t3-generativo/01-gen-caso.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Fracción de volumen 40% y ¡optimiza! El sólido se vuelve orgánico.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t3-generativo/02-generativo.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t4-revolve",
+      "titulo": "Pieza de revolución: una flecha escalonada",
+      "objetivo": "Revolucionar un perfil 2D alrededor de un eje → sólidos de rotación exactos.",
+      "aplicacion": "Flechas, poleas, bridas, boquillas — todo lo torneado.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Cambia el croquis a perfil de escalones (radio–longitud).",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t4-revolve/01-rev-perfil.png",
+          "vol": 10200,
+          "mass_g": 27.540000000000003,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Revoluciona 360° alrededor del eje: ⟳ Revolve.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t4-revolve/02-revolve.png",
+          "vol": 33772.12102609028,
+          "mass_g": 91.18472677044376,
+          "ops": [
+            "extrude",
+            "revolve"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t5-loft",
+      "titulo": "Embudo por Loft: piel entre perfiles",
+      "objetivo": "Interpolar un sólido entre el perfil base y una copia escalada (tronco/cono).",
+      "aplicacion": "Embudos, tolvas, salidas de molde, transiciones.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Pieza base.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t5-loft/01-loft-base.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Aplica ◈ Loft: piel entre el perfil y una copia al 50% en altura.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t5-loft/02-loft.png",
+          "vol": 11200,
+          "mass_g": 30.240000000000002,
+          "ops": [
+            "extrude",
+            "loft"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t6-sweep",
+      "titulo": "Tubo y resorte por Sweep: barrer por una trayectoria",
+      "objetivo": "Barrer el perfil por un codo (esquina redondeada real) o una hélice (resorte).",
+      "aplicacion": "Tuberías, ductos, resortes, manijas.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Pieza base.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t6-sweep/01-sweep-base.png",
+          "vol": 11519.999999999998,
+          "mass_g": 31.103999999999996,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Aplica ↝ Sweep: el perfil barre un codo (la esquina se redondea sola).",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t6-sweep/02-sweep-codo.png",
+          "vol": 30150.375572723344,
+          "mass_g": 81.40601404635304,
+          "ops": [
+            "extrude",
+            "sweep"
+          ]
+        },
+        {
+          "n": 3,
+          "desc": "Cambia la trayectoria a Hélice → un resorte (auto-dimensionado, siempre válido).",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t6-sweep/03-sweep-resorte.png",
+          "vol": 543522.0148148595,
+          "mass_g": 1467.5094400001208,
+          "ops": [
+            "extrude",
+            "sweep"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t7-engrane",
+      "titulo": "Engrane real de involuta",
+      "objetivo": "Generar un engrane paramétrico (módulo, dientes, ángulo) y exportarlo a STL.",
+      "aplicacion": "Reductores, cajas, mecanismos impresos en 3D.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Genera un engrane de involuta: ⚙ Engrane.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t7-engrane/01-engrane.png",
+          "vol": 11796.918630606919,
+          "mass_g": 31.85168030263868,
+          "ops": [
+            "extrude"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Exporta a STL para imprimir (cierra el ciclo diseño→fábrica).",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t7-engrane/02-engrane-stl.png",
+          "vol": 11796.918630606919,
+          "mass_g": 31.85168030263868,
+          "ops": [
+            "extrude"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t8-plano",
+      "titulo": "Del diseño al taller: plano 2D + STL",
+      "objetivo": "Generar un plano de taller (3 vistas con líneas ocultas reales) y exportar STL.",
+      "aplicacion": "La documentación que el taller necesita para fabricar.",
+      "pasos": [
+        {
+          "n": 1,
+          "desc": "Pieza con barreno.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t8-plano/01-plano-pieza.png",
+          "vol": 10916.814210510756,
+          "mass_g": 29.475398368379043,
+          "ops": [
+            "extrude",
+            "hole"
+          ]
+        },
+        {
+          "n": 2,
+          "desc": "Genera el plano de taller: 3 vistas ortográficas + cotas + cajetín.",
+          "shot": "/home/ian/Orkesta/la-forja/forja-shots/tutoriales/t8-plano/02-plano.png",
+          "vol": 10916.814210510756,
+          "mass_g": 29.475398368379043,
+          "ops": [
+            "extrude",
+            "hole"
+          ]
+        }
+      ]
+    }
+  ],
+  "telemetry": {
+    "posted_total": 65,
+    "by_type": {
+      "pageview": 1,
+      "webgl_probe": 1,
+      "console_warn": 50,
+      "click": 10,
+      "forja.fea_live": 1,
+      "forja.generative": 1,
+      "visibility": 1
+    },
+    "forja_events": 2
+  },
+  "page_errors": []
+}

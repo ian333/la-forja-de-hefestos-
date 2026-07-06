@@ -1,0 +1,131 @@
+{
+  "shots": {
+    "01-todos": "/home/ian/Orkesta/la-forja/forja-shots/usab/01-todos.png",
+    "02-sin-hembra": "/home/ian/Orkesta/la-forja/forja-shots/usab/02-sin-hembra.png",
+    "03-interior": "/home/ian/Orkesta/la-forja/forja-shots/usab/03-interior.png",
+    "04-seccion": "/home/ian/Orkesta/la-forja/forja-shots/usab/04-seccion.png",
+    "05-color": "/home/ian/Orkesta/la-forja/forja-shots/usab/05-color.png"
+  },
+  "errs": [],
+  "renderer": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Ti), OpenGL 4.6)",
+  "bodies": [
+    {
+      "key": "hembra",
+      "name": "Hembra (vaso)",
+      "hidden": false,
+      "color": "#5a6576",
+      "verts": 2264
+    },
+    {
+      "key": "eje",
+      "name": "Eje + levas",
+      "hidden": false,
+      "color": "#caa15e",
+      "verts": 3818
+    },
+    {
+      "key": "disco-1",
+      "name": "Disco 1",
+      "hidden": false,
+      "color": "#e9ddc2",
+      "verts": 2190
+    },
+    {
+      "key": "disco-2",
+      "name": "Disco 2",
+      "hidden": false,
+      "color": "#d9c9a0",
+      "verts": 2190
+    },
+    {
+      "key": "disco-3",
+      "name": "Disco 3",
+      "hidden": false,
+      "color": "#e6c98e",
+      "verts": 2190
+    },
+    {
+      "key": "disco-4",
+      "name": "Disco 4",
+      "hidden": false,
+      "color": "#cdb98c",
+      "verts": 2190
+    },
+    {
+      "key": "disco-5",
+      "name": "Disco 5",
+      "hidden": false,
+      "color": "#ead0ad",
+      "verts": 2190
+    },
+    {
+      "key": "salida",
+      "name": "Salida (brida)",
+      "hidden": false,
+      "color": "#6fb6c9",
+      "verts": 1472
+    }
+  ],
+  "visibleAll": 8,
+  "visibleNoHembra": 7,
+  "visibleInterior": 4,
+  "bodiesAfterColor": [
+    {
+      "key": "hembra",
+      "name": "Hembra (vaso)",
+      "hidden": false,
+      "color": "#5a6576",
+      "verts": 2264
+    },
+    {
+      "key": "eje",
+      "name": "Eje + levas",
+      "hidden": false,
+      "color": "#caa15e",
+      "verts": 3818
+    },
+    {
+      "key": "disco-1",
+      "name": "Disco 1",
+      "hidden": false,
+      "color": "#ff3a6b",
+      "verts": 2190
+    },
+    {
+      "key": "disco-2",
+      "name": "Disco 2",
+      "hidden": false,
+      "color": "#d9c9a0",
+      "verts": 2190
+    },
+    {
+      "key": "disco-3",
+      "name": "Disco 3",
+      "hidden": false,
+      "color": "#e6c98e",
+      "verts": 2190
+    },
+    {
+      "key": "disco-4",
+      "name": "Disco 4",
+      "hidden": false,
+      "color": "#cdb98c",
+      "verts": 2190
+    },
+    {
+      "key": "disco-5",
+      "name": "Disco 5",
+      "hidden": false,
+      "color": "#ead0ad",
+      "verts": 2190
+    },
+    {
+      "key": "salida",
+      "name": "Salida (brida)",
+      "hidden": false,
+      "color": "#6fb6c9",
+      "verts": 1472
+    }
+  ],
+  "ok": true
+}

@@ -12,7 +12,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs'); const path = require('path');
 
-const W = 1080, H = 1920;
+const W = parseInt(process.env.W || '1080', 10), H = parseInt(process.env.H || '1920', 10);
 const MOL = process.env.MOL || '';
 const Z = process.env.Z || '6';
 const TIMES = (process.env.TIMES || '0.6,6,11,15').split(',').map(s => parseFloat(s.trim())).filter(n => Number.isFinite(n));
@@ -28,7 +28,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:5001';
     args: ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu', '--use-gl=angle', '--hide-scrollbars', `--window-size=${W},${H}`] });
   const page = await (await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1, bypassCSP: true })).newPage();
   page.on('console', m => { if (m.type() === 'error') console.log('  [console.error]', m.text().slice(0, 200)); });
-  await page.goto(`${BASE}/${PAGE}`, { waitUntil: 'networkidle', timeout: 60000 });
+  await page.goto(`${BASE}/${PAGE}`, { waitUntil: 'load', timeout: 60000 });
   await page.waitForFunction(() => window.__cinematicAtom && window.__cinematicAtom.ready === true, null, { timeout: 30000 });
   await page.waitForTimeout(600);
   const dur = (await page.evaluate(() => window.__cinematicAtom.duration)) || 16;

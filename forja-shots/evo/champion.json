@@ -1,0 +1,76 @@
+{
+  "genome": {
+    "R": 20.829092399161762,
+    "lobes": 16,
+    "N": 5,
+    "t": 8.586502644639843,
+    "RrFac": 0.07578709533901361,
+    "Efac": 0.92,
+    "gap": 0.6899022285330451,
+    "coneDeg": 44.07500342315687,
+    "shaftFac": 0.3547342217117143,
+    "ribs": 0,
+    "tiltDeg": 0.0001520268025457991
+  },
+  "metrics": {
+    "valid": true,
+    "Tcap_Nm": 37.25,
+    "torqueMargin": 4.382,
+    "runout_mm": 0.005,
+    "hasCone": true,
+    "bindMargin_mm": 0.4449,
+    "binds": false,
+    "fusionSF": 1.5,
+    "fuses": false,
+    "lambda": 3.249,
+    "regime": "full-film",
+    "muContact": 0.004,
+    "efficiency": 0.9866,
+    "backlash_mm": 0.4549,
+    "mass_g": 94.5,
+    "stackH_mm": 45.7,
+    "Router_mm": 26.4
+  },
+  "fitness": 0.88066,
+  "verify": {
+    "runout_mm": 0.005,
+    "realWorstMesh_mm": 0.6146,
+    "collides": false,
+    "proxyAgrees": true
+  },
+  "today": {
+    "genome": {
+      "R": 24,
+      "lobes": 10,
+      "N": 1,
+      "t": 5,
+      "RrFac": 0.1,
+      "Efac": 0.8,
+      "gap": 0.55,
+      "coneDeg": 0,
+      "shaftFac": 0.22,
+      "ribs": 0,
+      "tiltDeg": 0
+    },
+    "metrics": {
+      "valid": true,
+      "Tcap_Nm": 5.76,
+      "torqueMargin": 0.678,
+      "runout_mm": 0.292,
+      "hasCone": false,
+      "bindMargin_mm": 0.018,
+      "binds": true,
+      "fusionSF": 1.033,
+      "fuses": true,
+      "lambda": 0.085,
+      "regime": "frontera",
+      "muContact": 0.12,
+      "efficiency": 0.5853,
+      "backlash_mm": 0.602,
+      "mass_g": 22.7,
+      "stackH_mm": 5,
+      "Router_mm": 30.4
+    },
+    "fitness": -6.75641
+  }
+}

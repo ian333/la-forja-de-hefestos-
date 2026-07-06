@@ -93,7 +93,7 @@ const TH = { purpleDelta: 4, greenPct: 0.4, darkMeanMin: 12 };
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))));
     await page.waitForTimeout(120);
     const f = path.join(out, `${b.id}.png`);
-    await page.screenshot({ path: f, type: 'png', animations: 'disabled', timeout: 0 });
+    await page.screenshot({ path: f, type: 'png', animations: 'disabled', timeout: 30000 });
     const m = await measure();
     m.beat = b.id; m.t = +t.toFixed(2); m.file = f;
     m.flags = { purple: m.darkPurple > TH.purpleDelta, confetti: m.greenPct > TH.greenPct, blackFrame: m.lumMean < TH.darkMeanMin };

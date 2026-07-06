@@ -26,8 +26,14 @@ const DURATION = parseInt(process.env.DURATION || '15', 10);
 const BV  = process.env.BV  || '22M';
 const MBV = process.env.MBV || '28M';
 const BUF = process.env.BUF || '44M';
+// 10-bit opt-in (mandato 4K): TENBIT=1 → HEVC Main10 10-bit (h264_nvenc no hace 10-bit).
+const TENBIT = !!process.env.TENBIT;
+const VENC  = TENBIT ? 'hevc_nvenc'   : 'h264_nvenc';
+const VPROF = TENBIT ? 'main10'       : 'high';
+const VPIX  = TENBIT ? 'yuv420p10le'  : 'yuv420p';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
+const BREATHE = parseInt(process.env.BREATHE || '15', 10); // ms de respiro GPU entre frames
 const ROOT = path.resolve(__dirname, '..');
 const OUT_DIR = path.join(ROOT, 'dist-video', 'atoms-vertical');
 const TMP_DIR = path.join(ROOT, 'dist-video', '.tmp', 'atoms-vertical');
@@ -69,6 +75,9 @@ const ATOMS_FULL = [
 ];
 
 function selectAtoms() {
+  // ZLIST=11,12,13 → renderiza CUALQUIER Z (la escena carga el elemento por z);
+  // símbolo/nombre vacíos → filename z-only. Para batches de los 118.
+  if (process.env.ZLIST) return process.env.ZLIST.split(',').map(s => [parseInt(s.trim(), 10), '', '']);
   if (process.env.ONLY) return ATOMS_FULL.filter(a => String(a[0]) === process.env.ONLY);
   if (process.env.ATOMS) {
     const z = process.env.ATOMS.split(',').map(s => s.trim());
@@ -113,8 +122,8 @@ function ensureOutroMatched() {
   const out = path.join(TMP_DIR, 'outro-matched.mp4');
   run('ffmpeg', [
     '-y','-i', OUTRO_PATH,
-    '-vf', `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,fps=${FPS},format=yuv420p`,
-    '-c:v','h264_nvenc','-preset','p7','-profile:v','high','-pix_fmt','yuv420p',
+    '-vf', `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,fps=${FPS},format=${VPIX}`,
+    '-c:v',VENC,'-preset','p7','-profile:v',VPROF,'-pix_fmt',VPIX,
     '-rc','vbr','-cq','19','-b:v',BV,'-maxrate',MBV,'-bufsize',BUF,
     '-g', String(FPS*2), '-movflags','+faststart','-an', out,
   ]);
@@ -127,8 +136,8 @@ async function captureAtom(z, symbol, name) {
   if (fs.existsSync(framesDir)) fs.rmSync(framesDir, { recursive: true });
   fs.mkdirSync(framesDir, { recursive: true });
 
-  const totalFrames = DURATION * FPS;
-  const url = `${BASE_URL}/cinematic-atom.html?z=${z}`;
+  const tv = process.env.TV || '0';   // variación de cámara por átomo (ángulos distintos)
+  const url = `${BASE_URL}/cinematic-atom.html?z=${z}&tv=${tv}`;
   console.log(`  ⚛ Z=${z} ${symbol} — ${name}  (${W}×${H} @ ${FPS}fps)`);
 
   const browser = await chromium.launch({
@@ -136,6 +145,9 @@ async function captureAtom(z, symbol, name) {
     executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome-stable',
     args: [
       '--no-sandbox','--disable-setuid-sandbox','--headless=new',
+      // FORZAR backend ANGLE=GL (D3D12 NVIDIA). Sin esto, Chrome 148 a veces cae
+      // a --use-angle=swiftshader-webgl bajo carga → 4K se cuelga / sale negro.
+      '--use-angle=gl','--use-gl=angle',
       '--ignore-gpu-blocklist','--enable-gpu','--enable-gpu-rasterization',
       '--enable-webgl','--disable-software-rasterizer',
       '--disable-background-timer-throttling','--hide-scrollbars',
@@ -152,16 +164,27 @@ async function captureAtom(z, symbol, name) {
     null, { timeout: 20_000 });
   await page.waitForTimeout(800);
 
+  // Duración REAL de la escena (varía por nº de capas). DURATION env la fuerza.
+  const sceneDur = await page.evaluate(() => window.__cinematicAtom.duration);
+  const capDur = process.env.DURATION ? DURATION : sceneDur;
+  const totalFrames = Math.round(capDur * FPS);
+  console.log(`    duración escena=${sceneDur.toFixed(1)}s · captura=${capDur.toFixed(1)}s · ${totalFrames} frames`);
+
   const t0 = Date.now();
   let lastLog = t0;
   for (let i = 0; i < totalFrames; i++) {
     await page.evaluate((tt) => window.__cinematicAtom.renderAt(tt), i / FPS);
     await page.evaluate(() => new Promise(r =>
       requestAnimationFrame(() => requestAnimationFrame(() => r(null)))));
+    // timeout FINITO: si la GPU se degrada (TDR de Windows), el screenshot falla
+    // rápido y limpio en vez de colgar el render para siempre (CLAUDE.md).
     await page.screenshot({
       path: path.join(framesDir, `${String(i).padStart(6,'0')}.jpg`),
-      type: 'jpeg', quality: 100, animations: 'disabled',
+      type: 'jpeg', quality: 100, animations: 'disabled', timeout: 30000,
     });
+    // RESPIRO entre frames: deja a la GPU/compositor de WSL recuperarse → menos
+    // presión sostenida que dispara el reset del driver (dxgkrnl). ~10s extra/render.
+    await page.waitForTimeout(BREATHE);
     if (Date.now() - lastLog > 8000) {
       console.log(`      ${((i/totalFrames)*100).toFixed(0)}% · ${i}/${totalFrames}`);
       lastLog = Date.now();
@@ -174,8 +197,8 @@ async function captureAtom(z, symbol, name) {
   const clip = path.join(TMP_DIR, `clip-${symbol}.mp4`);
   run('ffmpeg', [
     '-y','-framerate', String(FPS), '-i', path.join(framesDir, '%06d.jpg'),
-    '-c:v','h264_nvenc','-preset','p7','-tune','hq','-profile:v','high',
-    '-pix_fmt','yuv420p','-rc','vbr','-cq','19',
+    '-c:v',VENC,'-preset','p7','-tune','hq','-profile:v',VPROF,
+    '-pix_fmt',VPIX,'-rc','vbr','-cq','19',
     '-b:v',BV,'-maxrate',MBV,'-bufsize',BUF,
     '-spatial_aq','1','-temporal_aq','1','-rc-lookahead','20',
     '-g', String(FPS*2), '-movflags','+faststart','-an', clip,
@@ -189,8 +212,13 @@ async function captureAtom(z, symbol, name) {
     const concatList = path.join(TMP_DIR, `concat-${symbol}.txt`);
     const merged = path.join(TMP_DIR, `merged-${symbol}.mp4`);
     fs.writeFileSync(concatList, `file '${clip}'\nfile '${outroMatched}'\n`);
+    // RE-ENCODE el concat (NO -c copy): copiar dos streams H264 con SPS/PPS
+    // ligeramente distintos deja un NAL roto en la juntura que truena al
+    // re-decodificar (quemar subs en post). Re-encodar = stream continuo limpio.
     run('ffmpeg', ['-y','-f','concat','-safe','0','-i', concatList,
-      '-c','copy','-movflags','+faststart','-an', merged]);
+      '-c:v',VENC,'-preset','p7','-profile:v',VPROF,'-pix_fmt',VPIX,
+      '-rc','vbr','-cq','19','-b:v',BV,'-maxrate',MBV,'-bufsize',BUF,
+      '-g', String(FPS*2),'-movflags','+faststart','-an', merged]);
     fs.unlinkSync(concatList);
     fs.unlinkSync(clip);
     silent = merged;
@@ -199,7 +227,7 @@ async function captureAtom(z, symbol, name) {
   // Audio sonificado cubriendo TODO el video (átomo + outro): el drone resuelve
   // sobre el logo. Reverb de catedral + nivelación.
   const totalDur = ffprobeDuration(silent);
-  const finalFile = path.join(OUT_DIR, `atom-${String(z).padStart(3,'0')}-${symbol}.mp4`);
+  const finalFile = path.join(OUT_DIR, `atom-${String(z).padStart(3,'0')}${symbol ? '-' + symbol : ''}.mp4`);
   const dry = makeAudio(z, symbol, totalDur || (DURATION + 3));
   if (dry) {
     run('ffmpeg', [
@@ -225,6 +253,9 @@ async function main() {
   const t0 = Date.now();
   let ok = 0;
   for (const [z, sym, nm] of ATOMS) {
+    // RESUMIBLE: si el final ya existe, saltar (re-lanzar continúa donde quedó).
+    const done = path.join(OUT_DIR, `atom-${String(z).padStart(3,'0')}${sym ? '-' + sym : ''}.mp4`);
+    if (!process.env.FORCE && fs.existsSync(done)) { console.log(`  ⏭  Z=${z} ya existe, salto`); ok++; continue; }
     try { await captureAtom(z, sym, nm); ok++; }
     catch (e) { console.error(`    ✗ ${sym} FAILED: ${e.message}`); }
     console.log(`    [${ok}/${ATOMS.length} · ${((Date.now()-t0)/60000).toFixed(1)} min]\n`);

@@ -74,6 +74,15 @@ const SHOT = process.env.SHOT || '/home/ian/Orkesta/la-forja/forja-shots/fea-von
     out.fijaTag = await page.textContent('[data-testid="fea-fija-id"]').catch(() => null);
     out.cargaTag = await page.textContent('[data-testid="fea-carga-id"]').catch(() => null);
 
+    // El panel de Simulación puede arrancar COLAPSADO → btn-fea existe pero no es
+    // visible. Lo expandimos por la API antes de clickear (toggleCollapse('sim')).
+    await page.evaluate(() => {
+      const fb = window.__forgeBrep;
+      if (fb && fb.collapsed && fb.collapsed.sim && fb.toggleCollapse) fb.toggleCollapse('sim');
+    });
+    await page.waitForTimeout(300);
+    await page.locator('[data-testid="btn-fea"]').scrollIntoViewIfNeeded().catch(() => {});
+
     // CLIC REAL en Analizar.
     await page.click('[data-testid="btn-fea"]');
     await page.waitForFunction('window.__forgeBrep.feaReady === true', { timeout: 60000 });

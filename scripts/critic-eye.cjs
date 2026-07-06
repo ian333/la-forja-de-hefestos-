@@ -59,7 +59,7 @@ function arg(name, def) { const i = process.argv.indexOf(name); return i >= 0 ? 
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))));
       await page.waitForTimeout(120);
       const name = `${b.id}_s${s}.png`;
-      await page.screenshot({ path: path.join(out, name), type: 'png', animations: 'disabled', timeout: 0 });
+      await page.screenshot({ path: path.join(out, name), type: 'png', animations: 'disabled', timeout: 30000 });
       captured.push({ beat: b.id, caption: b.caption, t: +t.toFixed(2), file: path.join(out, name) });
     }
   }

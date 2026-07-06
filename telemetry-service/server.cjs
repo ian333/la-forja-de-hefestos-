@@ -22,6 +22,7 @@ const url  = require('url');
 const PORT       = parseInt(process.env.PORT || '8002', 10);
 const STORE_DIR  = process.env.STORE_DIR || '/mnt/hdd/forja-telemetry';
 const LOG_FILE   = path.join(STORE_DIR, 'events.jsonl');
+const REG_FILE   = path.join(STORE_DIR, 'registro.json');  // marcas de publicación (Centro de Comando)
 const MAX_BYTES  = 100 * 1024 * 1024;  // 100 MB antes de rotar
 const CLEAR_TOKEN = process.env.CLEAR_TOKEN || 'forja-2026';
 
@@ -252,6 +253,21 @@ const server = http.createServer(async (req, res) => {
 
     if (route === '/health' && req.method === 'GET') {
       return send(res, 200, JSON.stringify({ ok: true, total: totalEvents, sse_clients: sseClients.length }), 'application/json');
+    }
+
+    // /registro — marcas de publicación del Centro de Comando, persistidas a archivo
+    // (antes solo vivían en localStorage del navegador → se reseteaban a 0).
+    if (route === '/registro' && req.method === 'GET') {
+      // 404 cuando NO hay archivo aún → el frontend cae a localStorage (no clobber).
+      // En cuanto se hace el 1er POST, el archivo existe y se sirve server-side.
+      try { return send(res, 200, fs.readFileSync(REG_FILE, 'utf8'), 'application/json'); }
+      catch { return send(res, 404, 'sin registro aun'); }
+    }
+    if (route === '/registro' && req.method === 'POST') {
+      const body = await readBody(req);
+      try { JSON.parse(body); } catch { return send(res, 400, 'bad json'); }
+      try { fs.writeFileSync(REG_FILE, body); } catch (e) { return send(res, 500, 'write fail'); }
+      return send(res, 200, JSON.stringify({ ok: true }), 'application/json');
     }
 
     send(res, 404, 'not found');
