@@ -211,6 +211,15 @@ export const PLANE_XY: SketchPlane3D = {
   uDir: [1, 0, 0],
   vDir: [0, 1, 0],
 };
+// Planos base adicionales (croquizar en YZ / XZ, como Fusion). El perfil 2D (x,y)
+// se mapea a (uDir, vDir); la normal = uDir×vDir es la dirección de extrusión.
+export const PLANE_YZ: SketchPlane3D = { origin: [0, 0, 0], uDir: [0, 1, 0], vDir: [0, 0, 1] }; // normal +X
+export const PLANE_XZ: SketchPlane3D = { origin: [0, 0, 0], uDir: [1, 0, 0], vDir: [0, 0, 1] }; // normal −Y
+// Plano de referencia a OFFSET de un plano base (desplaza el origen por su normal).
+export function offsetPlane(base: SketchPlane3D, dist: number): SketchPlane3D {
+  const w = crossUnit(base.uDir, base.vDir);
+  return { origin: [base.origin[0] + w[0] * dist, base.origin[1] + w[1] * dist, base.origin[2] + w[2] * dist], uDir: base.uDir, vDir: base.vDir };
+}
 
 function map2Dto3D(
   plane: SketchPlane3D,
@@ -290,6 +299,46 @@ export function extrudePolygon(
   const prism = new oc.BRepPrimAPI_MakePrism_1(face, vec, false, true);
   const shape = prism.Shape();
   prism.delete?.();
+  return shape;
+}
+
+/**
+ * Extruye un PERFIL con LAZOS INTERIORES (cavidades) en UNA sola operación:
+ * cara = wire exterior + N wires interiores como huecos, luego prisma. Así un
+ * croquis de doble lazo (contorno + ventana) sale como un sólido con cavidad,
+ * tal como el Tutorial 1 de Fusion ("al extruir el lazo exterior, el interior
+ * se resta y crea la cavidad automáticamente"). Winding: exterior CCW, huecos CW.
+ */
+export function extrudePolygonWithHoles(
+  oc: OC,
+  outer: Pt2[],
+  holes: Pt2[][],
+  height: number,
+  plane: SketchPlane3D = PLANE_XY,
+): Shape {
+  if (outer.length < 3) {
+    throw new Error('extrudePolygonWithHoles: el perfil exterior necesita ≥3 puntos');
+  }
+  const signedArea = (p: Pt2[]): number => {
+    let a = 0;
+    for (let i = 0; i < p.length; i++) { const q = p[(i + 1) % p.length]; a += p[i].x * q.y - q.x * p[i].y; }
+    return a / 2;
+  };
+  const outCCW = signedArea(outer) >= 0 ? outer : outer.slice().reverse();
+  const outerWire = makePolygonWire(oc, plane, outCCW);
+  const mk = new oc.BRepBuilderAPI_MakeFace_15(outerWire, true);
+  for (const h of holes) {
+    if (h.length < 3) continue;
+    const holeCW = signedArea(h) <= 0 ? h : h.slice().reverse();  // hueco con winding opuesto al exterior
+    mk.Add(makePolygonWire(oc, plane, holeCW));
+  }
+  const face = mk.Face();
+  const w = crossUnit(plane.uDir, plane.vDir);
+  const vec = new oc.gp_Vec_4(w[0] * height, w[1] * height, w[2] * height);
+  const prism = new oc.BRepPrimAPI_MakePrism_1(face, vec, false, true);
+  const shape = prism.Shape();
+  prism.delete?.();
+  mk.delete?.();
   return shape;
 }
 
@@ -475,6 +524,157 @@ export function transformShape(oc: OC, shape: Shape, t: RigidTransform): Shape {
     const out = applyTrsf(oc, shape, trans);
     return out;
   }
+  return applyTrsf(oc, shape, trsf);
+}
+
+/**
+ * ÁNGULO DE SALIDA (Draft de SolidWorks, BRepOffsetAPI_DraftAngle) — cap 6:
+ * inclina las caras laterales `angleDeg` respecto a la dirección de DESMOLDEO
+ * (pullDir), pivotando en el plano NEUTRO (a `neutralAt` sobre pullDir), para
+ * que la pieza salga del molde. Sin `faceIndices` se inclinan TODAS las caras
+ * planas cuya normal ⟂ pullDir (las paredes) — "draft 3° on inner & outer
+ * side faces" del plastic cover. Ángulo positivo = las paredes se CIERRAN
+ * hacia arriba (el tope queda más chico, como el desmoldeo real).
+ */
+export function draftFaces(
+  oc: OC, shape: Shape, angleDeg: number,
+  pullDir: [number, number, number] = [0, 0, 1],
+  neutralAt = 0,
+  faceIndices?: number[],
+): Shape {
+  // RESILIENCIA: DraftAngle de OCCT truena con caras chicas en topología compleja
+  // (bisecado: las 4 caras de 105-120mm² del óvalo del tut1 matan el Build aunque
+  // solas pasen). El libro exime del draft a las caras pequeñas — si el Build
+  // truena, reintenta subiendo el umbral de área (100 → 300 → 1000).
+  if (!faceIndices) {
+    let lastErr: unknown;
+    for (const minArea of [100, 300, 1000]) {
+      try { return draftFacesMin(oc, shape, angleDeg, pullDir, neutralAt, undefined, minArea); }
+      catch (e) { lastErr = e; }
+    }
+    throw lastErr;
+  }
+  return draftFacesMin(oc, shape, angleDeg, pullDir, neutralAt, faceIndices, 0);
+}
+
+function draftFacesMin(
+  oc: OC, shape: Shape, angleDeg: number,
+  pullDir: [number, number, number],
+  neutralAt: number,
+  faceIndices: number[] | undefined,
+  minArea: number,
+): Shape {
+  const faces = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_FACE);
+  const dir = new oc.gp_Dir_4(pullDir[0], pullDir[1], pullDir[2]);
+  const pln = new oc.gp_Pln_3(
+    new oc.gp_Pnt_3(neutralAt * pullDir[0], neutralAt * pullDir[1], neutralAt * pullDir[2]), dir);
+  const mk = typeof oc.BRepOffsetAPI_DraftAngle_2 === 'function'
+    ? new oc.BRepOffsetAPI_DraftAngle_2(shape)
+    : new oc.BRepOffsetAPI_DraftAngle_1(shape);
+  const ang = (angleDeg * Math.PI) / 180;
+  // Centro del sólido: decide si una pared es EXTERIOR (normal se aleja del COM)
+  // o INTERIOR (pared de un void). El desmoldeo real gira la PARED EN BLOQUE:
+  // exterior se ABRE hacia el pull (−α con la convención de OCCT, que mueve el
+  // tope hacia −n̂) e interior acompaña (+α) — si no, la pared se ADELGAZA
+  // (bug tina: 6mm → 0.76mm arriba, −64% de volumen).
+  const vprops = new oc.GProp_GProps_1();
+  oc.BRepGProp.VolumeProperties_1(shape, vprops, false, false, false);
+  const comP = vprops.CentreOfMass();
+  const com0 = [comP.X(), comP.Y(), comP.Z()];
+  vprops.delete?.();
+  let added = 0;
+  for (let i = 0; i < faces.length; i++) {
+    if (faceIndices && !faceIndices.includes(i)) continue;
+    const f = oc.TopoDS.Face_1(faces[i]);
+    const ad = new oc.BRepAdaptor_Surface_2(f, true);
+    const isPlane = ad.GetType().value === oc.GeomAbs_SurfaceType.GeomAbs_Plane.value;
+    if (!isPlane) { ad.delete?.(); continue; }
+    if (!faceIndices) {
+      // Solo PAREDES: normal perpendicular al desmoldeo. Caras tapa/base quedan.
+      const n = ad.Plane().Axis().Direction();
+      const dot = Math.abs(n.X() * pullDir[0] + n.Y() * pullDir[1] + n.Z() * pullDir[2]);
+      if (dot > 1e-3) { ad.delete?.(); continue; }
+      // Regla del libro (cap 6): a las caras MUY chicas no se les exige draft
+      // (facetas de recortes teselados) — inclinar microfacetas revienta el Build.
+      const props = new oc.GProp_GProps_1();
+      oc.BRepGProp.SurfaceProperties_1(faces[i], props, false, false);
+      const area = props.Mass();
+      props.delete?.();
+      if (area < minArea) { ad.delete?.(); continue; }
+    }
+    // Signo por cara: exterior (n̂ se aleja del COM) → −α (se abre hacia el pull);
+    // interior → +α. La pared gira EN BLOQUE y conserva su espesor.
+    let sign = -1;
+    {
+      const props = new oc.GProp_GProps_1();
+      oc.BRepGProp.SurfaceProperties_1(faces[i], props, false, false);
+      const fc = props.CentreOfMass();
+      const n = ad.Plane().Axis().Direction();
+      // Normal ORIENTADA: el plano subyacente no sabe de la orientación de la
+      // cara (dos paredes opuestas reportan la MISMA dirección) — sin esto la
+      // mitad de las paredes recibe el signo equivocado y el draft se anula.
+      const rev = (typeof f.Orientation_1 === 'function' ? f.Orientation_1() : f.Orientation())
+        === oc.TopAbs_Orientation.TopAbs_REVERSED;
+      const flip = rev ? -1 : 1;
+      const dotOut = flip * (n.X() * (fc.X() - com0[0]) + n.Y() * (fc.Y() - com0[1]) + n.Z() * (fc.Z() - com0[2]));
+      sign = dotOut > 0 ? -1 : 1;
+      props.delete?.();
+    }
+    mk.Add(f, dir, sign * ang, pln, true);
+    added++;
+    ad.delete?.();
+  }
+  if (!added) throw new Error('draftFaces: ninguna cara aplicable (paredes ⟂ pullDir)');
+  if (typeof mk.Build === 'function') mk.Build();
+  const out = mk.Shape();
+  mk.delete?.();
+  return out;
+}
+
+/**
+ * CONSERVAR UN SÓLIDO del compound (cap 6: partir el molde): bloque−pieza con el
+ * bloque hasta el plano de partición da DOS cuerpos disjuntos — la CAVITY PLATE
+ * (mayor) y el MACHO del core (menor), separados por la pieza fantasma. Este
+ * filtro extrae uno: 'largest' → cavity; 'smallest' → macho (que luego se UNE
+ * a la placa superior = core plate, Fig 6-34).
+ */
+export function keepSolid(oc: OC, shape: Shape, which: 'largest' | 'smallest'): Shape {
+  // uniqueSubShapes (helper probado) — el explorer crudo devuelve refs que se
+  // invalidan con Next() y el filtro se volvía no-op silencioso.
+  let cands = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_SOLID);
+  if (cands.length <= 1) {
+    // El cut() de OCCT a veces regresa UN solid con VARIOS shells cerrados
+    // disjuntos (el molde partido: cavity+macho+pilar). Separar por SHELL y
+    // reconstruir un sólido por cada uno.
+    const shells = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_SHELL);
+    if (shells.length <= 1) return shape;
+    cands = shells.map((sh) => {
+      const shell = oc.TopoDS.Shell_1(sh);
+      const mk = typeof oc.BRepBuilderAPI_MakeSolid_3 === 'function'
+        ? new oc.BRepBuilderAPI_MakeSolid_3(shell)
+        : new oc.BRepBuilderAPI_MakeSolid_2(shell);
+      return mk.Solid();
+    });
+  }
+  let best = cands[0], bestV = Math.abs(volume(oc, cands[0]));
+  for (let i = 1; i < cands.length; i++) {
+    const v = Math.abs(volume(oc, cands[i]));
+    if (which === 'largest' ? v > bestV : v < bestV) { best = cands[i]; bestV = v; }
+  }
+  return best;
+}
+
+/**
+ * ESCALA UNIFORME alrededor de un punto (gp_Trsf::SetScale) — la CONTRACCIÓN
+ * del molde (cap 6 SolidWorks / Kazmer): la pieza se escala 1+s ANTES de
+ * restarse del bloque, así el plástico que ENCOGE al enfriar cae en la cota
+ * nominal. Geometría exacta: el volumen escala factor³ (verificable).
+ */
+export function scaleShape(oc: OC, shape: Shape, factor: number, center: [number, number, number] = [0, 0, 0]): Shape {
+  const trsf = new oc.gp_Trsf_1();
+  const c = new oc.gp_Pnt_3(center[0], center[1], center[2]);
+  if (typeof trsf.SetScale === 'function') trsf.SetScale(c, factor);
+  else trsf.SetScale_1(c, factor);
   return applyTrsf(oc, shape, trsf);
 }
 
@@ -721,6 +921,191 @@ export function revolvePolygon(
   const mk = full
     ? new oc.BRepPrimAPI_MakeRevol_2(face, ax1, true)
     : new oc.BRepPrimAPI_MakeRevol_1(face, ax1, ang, true);
+  const shape = mk.Shape();
+  mk.delete?.();
+  return shape;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Loft / ThruSections (BRepOffsetAPI_ThruSections) — piel por SECCIONES
+// ─────────────────────────────────────────────────────────────────
+//
+// Interpola un SÓLIDO (o cascarón) que pasa por N PERFILES cerrados, cada uno en
+// su propio plano. Es el "Loft" de Fusion (skinning). El orden de las secciones
+// define el barrido. ThruSections re-parametriza los wires (CheckCompatibility)
+// para skinnear perfiles de topología distinta.
+//
+// Invariantes (occt-sweep-loft-test.cjs):
+//   - Loft de dos CUADRADOS iguales (lado a) separados h  → prisma, V = a²·h.
+//   - Loft cuadrado(a) → cuadrado(b) coaxiales, altura h  → tronco de pirámide,
+//     V = h/3·(a² + b² + a·b)  (Newton, tronco de base cuadrada).
+
+/** Una sección del loft: perfil 2D cerrado + el plano 3D donde vive. */
+export interface LoftSection {
+  /** Perfil cerrado 2D (polígono); el cierre último→primero es automático. */
+  pts: Pt2[];
+  /** Plano 3D del perfil (origen + ejes u,v); la normal w=u×v da la altura. */
+  plane: SketchPlane3D;
+}
+
+/**
+ * Loft entre ≥2 secciones. `solid` (default true) tapa los extremos → sólido
+ * cerrado; `ruled` (default false) usa facetas regladas en vez de superficie
+ * suave. Geometría EXACTA (NURBS), no malla.
+ */
+export function loftSections(
+  oc: OC,
+  sections: LoftSection[],
+  opts: { solid?: boolean; ruled?: boolean } = {},
+): Shape {
+  if (sections.length < 2) {
+    throw new Error('loftSections: se requieren ≥2 secciones');
+  }
+  // En este build, BRepOffsetAPI_ThruSections se expone con el constructor base
+  // (isSolid, ruled, pres3d) — sin variante numerada ni Message_ProgressRange.
+  const ts = new oc.BRepOffsetAPI_ThruSections(
+    opts.solid !== false,
+    opts.ruled === true,
+    1e-6,
+  );
+  for (const s of sections) {
+    const wire = makePolygonWire(oc, s.plane, s.pts);
+    ts.AddWire(wire);
+  }
+  // Re-parametriza para igualar el nº de aristas entre secciones (suaviza el
+  // skinning de perfiles distintos). Con perfiles idénticos es inocua.
+  try {
+    if (typeof ts.CheckCompatibility === 'function') ts.CheckCompatibility(true);
+  } catch {
+    /* algunos builds no la exponen; Build() igual construye */
+  }
+  // Shape() llama a Build() si !IsDone(); aun así forzamos Build cuando existe.
+  try {
+    if (typeof ts.Build === 'function') ts.Build();
+  } catch {
+    /* lo intentará Shape() */
+  }
+  const shape = ts.Shape();
+  ts.delete?.();
+  return shape;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Sweep / Pipe (BRepOffsetAPI_MakePipe) — barrido de perfil por TRAYECTORIA
+// ─────────────────────────────────────────────────────────────────
+//
+// Barre un PERFIL cerrado a lo largo de una TRAYECTORIA (spine) 3D. El perfil se
+// ubica en el PRIMER punto del spine, en el plano perpendicular a la tangente
+// inicial, y MakePipe lo transporta a lo largo de la curva (marco tipo Frenet).
+// Es el "Sweep" de Fusion.
+//
+// Invariante: círculo de radio r barrido por un segmento RECTO de longitud L
+//   → cilindro, V = π·r²·L EXACTO (el plano del perfil es ⟂ al spine).
+
+/** Perfil a barrer: círculo (centro+radio) o polígono cerrado, en coords 2D. */
+export type SweepProfile =
+  | { kind: 'circle'; center: Pt2; radius: number }
+  | { kind: 'polygon'; pts: Pt2[] };
+
+/**
+ * Spine (TopoDS_Wire) desde una polilínea 3D de ≥2 puntos.
+ *
+ * CLAVE de corrección: con 2 puntos hacemos un segmento RECTO (un barrido recto
+ * reproduce el cilindro/prisma EXACTO). Con ≥3 puntos NO encadenamos segmentos
+ * rectos: un spine con esquina C0 (vértice anguloso) hace que BRepOffsetAPI_
+ * MakePipe TRUNQUE el barrido al primer tramo (probado: V cae a πr²·L₁), y
+ * además un sólido barrido por una esquina interior de radio 0 se auto-interseca
+ * (es físicamente imposible). Por eso interpolamos una B-spline C2 SUAVE que
+ * pasa por los puntos (mismo recurso que extrudeSpline) → una sola arista curva
+ * tangente-continua que MakePipe sí barre completa, con la esquina redondeada
+ * (como un tubo real con radio de curvatura). Si el binding de la B-spline
+ * fallara, caemos a la polilínea recta (peor, pero no rompe el build).
+ */
+function makeSpineWire(oc: OC, path3d: Array<[number, number, number]>): Shape {
+  if (path3d.length < 2) throw new Error('sweep: el spine requiere ≥2 puntos');
+
+  if (path3d.length === 2) {
+    const a = path3d[0], b = path3d[1];
+    const pa = new oc.gp_Pnt_3(a[0], a[1], a[2]);
+    const pb = new oc.gp_Pnt_3(b[0], b[1], b[2]);
+    const edge = new oc.BRepBuilderAPI_MakeEdge_3(pa, pb).Edge();
+    const wire = new oc.BRepBuilderAPI_MakeWire_2(edge).Wire();
+    return wire;
+  }
+
+  // ≥3 puntos: B-spline C2 suave a través de todos (no periódica — es un camino
+  // abierto). Receta probada en este wasm: PointsToBSpline + Handle base.
+  try {
+    const n = path3d.length;
+    const arr = new oc.TColgp_Array1OfPnt_2(1, n);
+    for (let i = 0; i < n; i++) {
+      const [x, y, z] = path3d[i];
+      arr.SetValue(i + 1, new oc.gp_Pnt_3(x, y, z));
+    }
+    const c2 = oc.GeomAbs_Shape ? oc.GeomAbs_Shape.GeomAbs_C2 : 2;
+    const bspline = new oc.GeomAPI_PointsToBSpline_2(arr, 3, 8, c2, 1e-3);
+    const bcurve = bspline.Curve();
+    const curve = new oc.Handle_Geom_Curve_2(bcurve.get());
+    const splineEdge = new oc.BRepBuilderAPI_MakeEdge_24(curve).Edge();
+    const wire = new oc.BRepBuilderAPI_MakeWire_2(splineEdge).Wire();
+    bspline.delete?.();
+    arr.delete?.();
+    return wire;
+  } catch {
+    // Fallback: polilínea recta (puede truncar en esquinas, pero no crashea).
+    const wireMaker = new oc.BRepBuilderAPI_MakeWire_1();
+    for (let i = 0; i < path3d.length - 1; i++) {
+      const a = path3d[i], b = path3d[i + 1];
+      const pa = new oc.gp_Pnt_3(a[0], a[1], a[2]);
+      const pb = new oc.gp_Pnt_3(b[0], b[1], b[2]);
+      const edge = new oc.BRepBuilderAPI_MakeEdge_3(pa, pb).Edge();
+      wireMaker.Add_1(edge);
+    }
+    const wire = wireMaker.Wire();
+    wireMaker.delete?.();
+    return wire;
+  }
+}
+
+/**
+ * Barre `profile` por la trayectoria `path3d` (polilínea 3D). Devuelve un sólido
+ * B-Rep exacto. El perfil se ancla en el inicio del spine, perpendicular a su
+ * tangente, de modo que un barrido recto reproduce el cilindro/prisma analítico.
+ */
+export function sweepProfileAlong(
+  oc: OC,
+  profile: SweepProfile,
+  path3d: Array<[number, number, number]>,
+): Shape {
+  if (path3d.length < 2) throw new Error('sweepProfileAlong: spine con ≥2 puntos');
+  // Marco ortonormal en el inicio: w = tangente, (u,v) generan el plano ⟂.
+  const a = path3d[0], b = path3d[1];
+  const tan: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const tlen = Math.hypot(tan[0], tan[1], tan[2]) || 1;
+  const w: [number, number, number] = [tan[0] / tlen, tan[1] / tlen, tan[2] / tlen];
+  const ref: [number, number, number] = Math.abs(w[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const u = crossUnit(ref, w); // u ⟂ w
+  const v = crossUnit(w, u);   // v ⟂ w,u (terna a derechas)
+  const plane: SketchPlane3D = { origin: a, uDir: u, vDir: v };
+
+  let face: Shape;
+  if (profile.kind === 'circle') {
+    const [cx, cy, cz] = map2Dto3D(plane, profile.center);
+    const centerPnt = new oc.gp_Pnt_3(cx, cy, cz);
+    const normalDir = new oc.gp_Dir_4(w[0], w[1], w[2]);
+    const ax2 = new oc.gp_Ax2_3(centerPnt, normalDir);
+    const circle = new oc.gp_Circ_2(ax2, profile.radius);
+    const edge = new oc.BRepBuilderAPI_MakeEdge_8(circle).Edge();
+    const wire = new oc.BRepBuilderAPI_MakeWire_2(edge).Wire();
+    face = new oc.BRepBuilderAPI_MakeFace_15(wire, true).Face();
+  } else {
+    const wire = makePolygonWire(oc, plane, profile.pts);
+    face = new oc.BRepBuilderAPI_MakeFace_15(wire, true).Face();
+  }
+
+  const spine = makeSpineWire(oc, path3d);
+  // MakePipe_1(spine, profileFace): perfil-cara ⇒ sólido cerrado.
+  const mk = new oc.BRepOffsetAPI_MakePipe_1(spine, face);
   const shape = mk.Shape();
   mk.delete?.();
   return shape;

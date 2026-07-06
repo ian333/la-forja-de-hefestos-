@@ -163,3 +163,59 @@ export function designFunctionalSupports(gb: GearboxLite, outputTorqueNm: number
     valid: centering.shearsOnFirstTurn && centering.holdsDuringPrint && selfBridged(gb.gap, material),
   };
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// 7) FLOR DE PHI — repartir los soportes por el ÁNGULO ÁUREO (137.5°) para que
+//    NINGUNO estorbe al otro (filotaxis de Vogel, como las semillas del girasol).
+//    El chaflán de 45° auto-soporta la ORILLA del disco; el casquete central que
+//    todavía vuela se llena de esta flor de árboles frangibles, esquivando el
+//    eje y los pernos de salida. El ángulo áureo garantiza que dos árboles NUNCA
+//    se alineen radialmente → empaque cuasi-uniforme (Ridley) → no se enciman.
+// ───────────────────────────────────────────────────────────────────────────
+/** Ángulo áureo = 360°·(2−φ) = 137.5077…°  (φ = (1+√5)/2). */
+export const GOLDEN_ANGLE_DEG = 360 * (2 - (1 + Math.sqrt(5)) / 2);
+
+export interface PhylloPoint { x: number; y: number; r: number; theta: number; }
+export interface PhylloField {
+  points: PhylloPoint[];
+  count: number;
+  minSpacing: number;   // separación mínima entre dos árboles (prueba: ninguno estorba)
+  goldenDeg: number;
+}
+/**
+ * Reparte hasta `n` puntos por FILOTAXIS DE VOGEL en el anillo [rMin, rMax]:
+ *   r_k = sqrt(rMin² + (rMax²−rMin²)·(k−0.5)/n)   → densidad de ÁREA uniforme
+ *   θ_k = k · 137.5°                              → ángulo áureo (nunca se alinean)
+ * Descarta los que caen dentro de algún `keepOut` (círculos de radio r: eje, pernos
+ * de salida). Devuelve la separación mínima como PRUEBA de no-interferencia.
+ */
+export function phyllotaxisField(opts: {
+  n: number; rMin: number; rMax: number;
+  keepOut?: { x: number; y: number; r: number }[];
+}): PhylloField {
+  const ga = (GOLDEN_ANGLE_DEG * Math.PI) / 180;
+  const n = Math.max(0, Math.floor(opts.n));
+  const span = Math.max(0, opts.rMax ** 2 - opts.rMin ** 2);
+  const pts: PhylloPoint[] = [];
+  for (let k = 1; k <= n; k++) {
+    const r = Math.sqrt(opts.rMin ** 2 + (span * (k - 0.5)) / n);
+    const theta = k * ga;
+    const x = r * Math.cos(theta), y = r * Math.sin(theta);
+    if (opts.keepOut?.some((o) => Math.hypot(x - o.x, y - o.y) < o.r)) continue;
+    pts.push({ x: +x.toFixed(4), y: +y.toFixed(4), r: +r.toFixed(4), theta });
+  }
+  let minSpacing = Infinity;
+  for (let i = 0; i < pts.length; i++)
+    for (let j = i + 1; j < pts.length; j++)
+      minSpacing = Math.min(minSpacing, Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y));
+  return {
+    points: pts, count: pts.length,
+    minSpacing: pts.length > 1 ? +minSpacing.toFixed(4) : Infinity,
+    goldenDeg: +GOLDEN_ANGLE_DEG.toFixed(5),
+  };
+}
+/** nº de árboles para una separación objetivo `targetMm` en el anillo (≈ área/celda). */
+export function phylloCountForSpacing(rMin: number, rMax: number, targetMm: number): number {
+  const area = Math.PI * Math.max(0, rMax ** 2 - rMin ** 2);
+  return Math.max(0, Math.round(area / (targetMm * targetMm)));
+}

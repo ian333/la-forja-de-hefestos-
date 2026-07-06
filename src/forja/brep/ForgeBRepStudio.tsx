@@ -19,17 +19,20 @@
  * Playwright haga clic de forma estable (btn-extrude, input-altura, …).
  */
 
-import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, lazy, Suspense, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
 import ShortcutOverlay from '../../components/ShortcutOverlay';
+const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación del ciclo de inyección (chunk aparte)
 import SketchEditor from './SketchEditor';
+import RadialMenu from './RadialMenu';
 import {
   initOCCT,
   _setActiveOCCT,
   extrudePolygon,
+  extrudePolygonWithHoles,
   extrudeSpline,
   extrudeCircle,
   drillHole,
@@ -37,7 +40,12 @@ import {
   chamferEdges,
   shellSolid,
   revolvePolygon,
+  loftSections,
+  sweepProfileAlong,
   transformShape,
+  scaleShape,
+  draftFaces,
+  keepSolid,
   mirrorShape,
   fuse,
   makeCompound,
@@ -46,6 +54,9 @@ import {
   cut,
   common,
   PLANE_XY,
+  PLANE_YZ,
+  PLANE_XZ,
+  offsetPlane,
   tessellate,
   topology,
   volume,
@@ -65,11 +76,25 @@ import {
   type EdgeGeom,
   type RevolveAxis,
   type MassProperties,
+  type SweepProfile,
+  type SketchPlane3D,
 } from './occt';
+import { generateFacingToolpath, toGcode, toolpathStats, arcSweep } from '../cam/facing';
+import type { ToolpathSegment } from '../cam/facing';
+import { generateCircularPocketToolpath } from '../cam/pocket';
+import { generateDrillingToolpath, detectHolesFromMesh } from '../cam/drill';
+import { generateTappingGcode, threadName } from '../cam/tap';
+import { generateBoreToolpath } from '../cam/bore';
+import { generateAdaptive3DToolpath } from '../cam/adaptive3d';
+import { profileFromMesh, detectAxis, turnFacing, turnProfileRough, turnProfileFinish, turnPartOff, toLatheGcode } from '../cam/turning';
+import type { LatheMove } from '../cam/turning';
+import { nestParts, laserGcode } from '../cam/laser';
+import { slicePart, sliceMesh } from '../cam/slicer';
 import { resolveParams, tryEval, type Param, type ResolvedParams } from './expr';
 import { generateDrawing } from './drawing';
 import { printabilityReport, overhangVertexColors, PRINT_PROFILES, type PrintProfile, type PrintabilityReport } from '../mech/dfm';
 import { cycloidalDisc, pinPositions } from '../mech/cycloidal';
+import { phyllotaxisField, phylloCountForSpacing, GOLDEN_ANGLE_DEG } from '../mech/supports';
 import { discPhases, analyzeGearbox, type Material as GbMaterial } from '../mech/gearbox';
 import {
   buildGearSketch,
@@ -88,7 +113,8 @@ import {
   type FaceBC,
   type FEASession,
 } from './fea';
-import { runTopOpt, densityToMesh, type TopOptResult } from './topopt';
+import { runTopOpt, densityToMesh, type TopOptResult, type TopOptParams } from './topopt';
+import { mark } from '../telemetry-forja';
 import { MATERIAL_DATABASE } from '../../lib/formulas';
 
 // Ejes GLOBALES preestablecidos para el revolve (gp_Ax1 deterministas).
@@ -135,6 +161,11 @@ const MATERIAL_PBR: Record<string, PBRFinish> = {
 };
 const DEFAULT_PBR: PBRFinish = MATERIAL_PBR.alu;
 
+// ── COLOR POR PIEZA (orden del user: "jamás me ha gustado el color metálico;
+// cada pieza debería tener su color"). El MATERIAL sigue mandando la masa
+// (densidad); el color es APARIENCIA de la pieza, mate, como Fusion. ──
+const PART_PALETTE = ['#4E8FE0', '#57B98A', '#E0784E', '#C86BD8', '#E0B34E', '#5BC8D6', '#D65B79', '#8A77E8'];
+
 // ──────────────────────────────────────────────────────────────────
 // Materiales (densidad en g/mm³) — para el análisis de masa exacto
 // ──────────────────────────────────────────────────────────────────
@@ -173,6 +204,8 @@ interface GearboxParams {
   outPins: number;   // nº de pernos de SALIDA (extraen el giro lento + capturan los discos axialmente)
   outPinD: number;   // ⌀ de cada perno de salida (mm)
   testRig?: boolean; // banco de prueba: añade PALANCA (manivela) al eje + BASE de fijación a la hembra
+  supports?: boolean; // árbol de soportes frangibles que SOSTIENE los discos al imprimir (default ON).
+                      // SIN esto los discos flotan/se funden — el bug que arruinó el primer print.
 }
 const GEARBOX_DEFAULTS: GearboxParams = {
   // gap 0.8 (no 0.6): el gap del modelo − el crecimiento de pared (~0.24) = efectivo ~0.56,
@@ -216,6 +249,18 @@ interface SketchFeature {
   // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
   // resuelto por el solver de restricciones. Reemplaza las plantillas.
   customProfile?: Pt2[];
+  // Lazos INTERIORES del croquis (cavidades): al extruir se restan del perfil
+  // exterior en una sola operación (sólido con ventana), como el Tutorial 1 de Fusion.
+  customHoles?: Pt2[][];
+  // Si el perfil dibujado es UN CÍRCULO: el círculo EXACTO (el kernel hace un cilindro
+  // gp_Circ real, no el polígono de respaldo — fix "el círculo tiene caras").
+  customCircle?: { x: number; y: number; r: number };
+  // Plano base del croquis (croquizar en XY / YZ / XZ, como Fusion) + offset opcional.
+  plane?: 'xy' | 'yz' | 'xz';
+  planeOffset?: number;
+  // Plano ARBITRARIO derivado de una cara 3D clicada (croquis-sobre-cara, como Fusion).
+  // Si está presente, MANDA sobre plane/planeOffset. En coords del kernel.
+  plane3d?: SketchPlane3D;
   // El perfil custom es una CURVA suave (cicloidal, leva) → extruir por B-spline
   // (arista curva real) en vez de polígono facetado.
   smooth?: boolean;
@@ -342,18 +387,37 @@ function buildGearSolid(oc: OC, g: GearParams, phaseRad = 0): Shape {
   return gear;
 }
 
-type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'revolve' | 'pattern' | 'pocket';
+type OpType = 'extrude' | 'hole' | 'fillet' | 'chamfer' | 'shell' | 'draft' | 'revolve' | 'loft' | 'sweep' | 'pattern' | 'pocket';
 
 // Campos comunes a TODA op del árbol: nombre editable (rename) + supresión
 // (suppress) temporal. Un op suprimido se conserva en el grafo pero buildShape
 // lo SALTA (no entra al cálculo del sólido) — paridad con el Timeline de Fusion.
 interface OpBase { id: string; name?: string; suppressed?: boolean; }
-interface ExtrudeOp extends OpBase { type: 'extrude'; depth: number; symmetric: boolean; }
+interface ExtrudeOp extends OpBase { type: 'extrude'; depth: number; symmetric: boolean; plane?: 'xy' | 'yz' | 'xz'; planeOffset?: number; plane3d?: SketchPlane3D; }
 interface HoleOp extends OpBase { type: 'hole'; x: number; y: number; diameter: number; through: boolean; depth: number; }
 interface FilletOp extends OpBase { type: 'fillet'; radius: number; edges: number[]; }
 interface ChamferOp extends OpBase { type: 'chamfer'; dist: number; edges: number[]; }
 interface ShellOp extends OpBase { type: 'shell'; thickness: number; faces: number[]; }
+/** Ángulo de salida (cap 6 molde): inclina las paredes ⟂ al desmoldeo +Z, pivote en z=0. */
+interface DraftOp extends OpBase { type: 'draft'; angleDeg: number; }
 interface RevolveOp extends OpBase { type: 'revolve'; angle: number; axis: 'x' | 'y' | 'z' | 'edge'; }
+// LOFT: piel entre el perfil base (z=0) y una copia ESCALADA (topScale) a una
+// altura. Es el "Loft" de Fusion en su forma paramétrica (perfil→perfil): un
+// topScale<1 da un cono/tronco (boss con salida), >1 una campana. Vía
+// loftSections (BRepOffsetAPI_ThruSections), geometría exacta.
+interface LoftOp extends OpBase { type: 'loft'; height: number; topScale: number; }
+// SWEEP: barre el perfil base por una TRAYECTORIA paramétrica. line = recto
+// (≡ extrude), arc = codo (radio + ángulo, esquina redondeada real), helix =
+// resorte (radio + paso + vueltas). Vía sweepProfileAlong (BRepOffsetAPI_MakePipe
+// con spine B-spline suave), geometría exacta.
+interface SweepOp extends OpBase {
+  type: 'sweep'; pathKind: 'line' | 'arc' | 'helix';
+  height: number;   // line: longitud
+  radius: number;   // arc/helix: radio
+  angle: number;    // arc: ° de barrido
+  turns: number;    // helix: vueltas
+  pitch: number;    // helix: paso por vuelta (mm)
+}
 // PATRÓN: replica el sólido construido hasta aquí. linear (rejilla dx·dy),
 // circular (count instancias en angleSpan° alrededor de un eje global) o mirror
 // (espejo respecto a un plano principal). Geometría exacta (transform + fuse).
@@ -370,17 +434,40 @@ interface PocketOp extends OpBase {
   x: number; y: number; w: number; h: number; diameter: number;
   depth: number; through: boolean;
 }
-type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | RevolveOp | PatternOp | PocketOp;
+type Op = ExtrudeOp | HoleOp | FilletOp | ChamferOp | ShellOp | DraftOp | RevolveOp | LoftOp | SweepOp | PatternOp | PocketOp;
 
 // ── ENSAMBLE: un COMPONENTE primitivo (bloque o cilindro) posicionado en 3D.
 // Varios componentes + la pieza principal se combinan en un compound (sin soldar)
 // → permite reconstruir una MÁQUINA pieza a pieza a medidas reales. ──
 interface Component {
-  id: string; name: string; kind: 'box' | 'cyl';
+  id: string; name: string; kind: 'box' | 'cyl' | 'sketch' | 'sweeppath';
+  // SWEEP por path de croquis (c6t2): path abierto 2D en el plano del croquis; el
+  // perfil es una ELIPSE (semiejes sweepRx en-plano ⊥path, sweepRy fuera-de-plano).
+  path?: Pt2[]; sweepRx?: number; sweepRy?: number;
+  // REVOLVE del componente (c6t3: el rim del volante = revolve-JOIN, no extrude):
+  // si está presente, el perfil del croquis se REVOLUCIONA alrededor del eje global.
+  revolve?: { axis: 'x' | 'y' | 'z'; angle: number };
   w: number; d: number; h: number;     // bloque (h también = altura del cilindro)
   r: number;                            // cilindro (radio)
   x: number; y: number; z: number;     // posición del CENTRO (mm)
   rz?: number;                          // giro alrededor de Z (grados) — poses planas
+  // FEATURE de croquis (multi-feature: base + saliente/corte). Perfil dibujado que se
+  // extruye en su plano y se compone con booleana sobre el cuerpo.
+  profile?: Pt2[]; holes?: Pt2[][]; plane?: 'xy' | 'yz' | 'xz'; planeOffset?: number; depth?: number;
+  circle?: { x: number; y: number; r: number }; // perfil circular EXACTO → cilindro real, no prisma
+  plane3d?: SketchPlane3D;               // plano de cara clicada (croquis-sobre-cara); manda sobre plane/offset
+  bool?: 'none' | 'union' | 'subtract' | 'subtractFrom' | 'common'; // cómo combina con el cuerpo:
+  // none=junto(compound) · union=fuse · subtract=cuerpo−comp · subtractFrom=comp−cuerpo (CAVIDAD de molde: bloque−pieza)
+  // common=INTERSECAR (cuerpo ∩ comp): recorta el cuerpo al volumen del componente — PARTE el molde
+  // en placas core/cavity (molde ∩ bloque-superior = core plate; ∩ bloque-inferior = cavity plate)
+  /** CONTRACCIÓN del molde (solo subtractFrom): la pieza se escala ×esto alrededor de su centroide antes de restarse. Libro cap 6: 1.05. */
+  cavityScale?: number;
+  /** Tras la booleana: conservar solo el sólido mayor/menor del compound (partir molde: cavity=mayor, macho=menor). */
+  keep?: 'largest' | 'smallest';
+  patternCount?: number;   // PATRÓN CIRCULAR del componente: N copias rotadas alrededor de Y (rayos de la rueda)
+  patternSpan?: number;    // arco total del patrón en ° (360 = repartido parejo)
+  patternAxis?: 'x' | 'y' | 'z';  // eje del patrón circular (default 'y'; el volante c6t3 gira en Z)
+  mirror?: 'yz' | 'zx' | 'xy';  // MIRROR FEATURE: espeja el componente a través de ese plano (misma booleana). c4t3: feature en cara derecha → mirror YZ.
 }
 
 interface BuildResult {
@@ -653,6 +740,52 @@ function revProfile(steps: RevStep[]): Pt2[] {
 // ──────────────────────────────────────────────────────────────────
 // Replay del grafo de features a través del kernel → Shape final
 // ──────────────────────────────────────────────────────────────────
+// Genera la TRAYECTORIA 3D (polilínea) del Sweep desde sus parámetros. El perfil
+// vive en XY (z=0), así que el camino DEBE arrancar perpendicular a XY (tangente
+// +Z) para que un barrido recto reproduzca el cilindro/prisma exacto.
+//
+// `profR` = radio envolvente del perfil (máx |p| desde el origen). Para la HÉLICE
+// floramos paso y radio para que el "alambre" NO se auto-interseque (paso ≥ 2.2·r
+// separa las vueltas; radio ≥ 1.25·r las aleja del eje) — así "Sweep→Hélice"
+// produce un resorte VÁLIDO con cualquier perfil, en vez de fallar en silencio.
+function buildSweepPath(op: SweepOp, profR = 0): Array<[number, number, number]> {
+  if (op.pathKind === 'line') {
+    return [[0, 0, 0], [0, 0, Math.max(0.5, op.height)]];
+  }
+  if (op.pathKind === 'arc') {
+    // Arco en el plano X–Z: centro (R,0,0), arranca en el origen tangente +Z y
+    // gira `angle`°. La esquina queda redondeada (codo real, sin auto-intersección).
+    const R = Math.max(0.5, op.radius);
+    const th = (Math.max(1, op.angle) * Math.PI) / 180;
+    const n = 32;
+    const pts: Array<[number, number, number]> = [];
+    for (let i = 0; i <= n; i++) {
+      const f = (th * i) / n;
+      pts.push([R - R * Math.cos(f), 0, R * Math.sin(f)]);
+    }
+    return pts;
+  }
+  // helix (resorte): arranca en (R,0,0), sube `pitch` por vuelta, `turns` vueltas.
+  const R = Math.max(0.5, op.radius, 1.25 * profR);
+  const turns = Math.max(0.25, op.turns);
+  const pitch = Math.max(0.5, op.pitch, 2.2 * profR);
+  const tot = turns * 2 * Math.PI;
+  const n = Math.max(24, Math.ceil(turns * 24));
+  const pts: Array<[number, number, number]> = [];
+  for (let i = 0; i <= n; i++) {
+    const t = (tot * i) / n;
+    pts.push([R * Math.cos(t), R * Math.sin(t), (pitch * t) / (2 * Math.PI)]);
+  }
+  return pts;
+}
+
+/** Radio envolvente de un perfil 2D (máx distancia al origen). */
+function profileRadius(pts: Pt2[]): number {
+  let r = 0;
+  for (const p of pts) r = Math.max(r, Math.hypot(p.x, p.y));
+  return r;
+}
+
 function buildShape(
   oc: OC,
   sketch: SketchFeature,
@@ -681,10 +814,16 @@ function buildShape(
   // revolve se procesen antes que el/los extrude; el resto conserva su orden.
   // Las ops SUPRIMIDAS se omiten del cálculo (siguen en el árbol, tachadas).
   const active = ops.filter((o) => !o.suppressed);
-  const hasRevolve = active.some((o) => o.type === 'revolve');
-  const ordered = hasRevolve
-    ? [...active.filter((o) => o.type === 'revolve'),
-       ...active.filter((o) => o.type !== 'revolve' && o.type !== 'extrude')]
+  // Op BASE (la que crea el PRIMER sólido): prioridad revolve > loft > sweep >
+  // extrude. Gana el primer tipo-base presente; los demás base-makers se ignoran
+  // (así el usuario agrega Revolve/Loft/Sweep sin borrar primero el extrude
+  // inicial — el grafo nunca queda vacío). Los MODIFICADORES (hole/fillet/shell/
+  // pattern/pocket) conservan su orden relativo.
+  const BASE_TYPES: OpType[] = ['revolve', 'loft', 'sweep', 'extrude'];
+  const baseType = BASE_TYPES.find((t) => active.some((o) => o.type === t));
+  const ordered = baseType
+    ? [...active.filter((o) => o.type === baseType),
+       ...active.filter((o) => !(BASE_TYPES as string[]).includes(o.type))]
     : active;
 
   for (const op of ordered) {
@@ -706,14 +845,31 @@ function buildShape(
       }
       // Simétrico: el plano de boceto se baja −depth/2 y se extruye depth, así
       // el sólido queda centrado en z=0 (no cambia volumen ni topología).
-      const plane = op.symmetric
-        ? { origin: [0, 0, -op.depth / 2] as [number, number, number], uDir: [1, 0, 0] as [number, number, number], vDir: [0, 1, 0] as [number, number, number] }
-        : undefined;
+      // Plano del croquis (XY/YZ/XZ + offset); si es simétrico, se baja −depth/2 por su normal.
+      // El extrude SNAPSHOTEA su plano al crearse (op.plane); si cambias el plano para
+      // OTRO croquis, este sólido NO se mueve (cada croquis es independiente, como Fusion).
+      const exPlane = (op as ExtrudeOp).plane ?? sketch.plane;
+      // Offset del plano: si el op trae plano SNAPSHOTEADO, su offset también está
+      // congelado (?? 0) — NUNCA cae al offset vivo del sketch, o teclear un offset
+      // para el croquis de un CORTE posterior mueve la pieza base (bug del molde:
+      // offset 47 del óvalo movió la tapa a y∈[−97,−47] y los 3 cortes quedaron en el aire).
+      const exOffset = (op as ExtrudeOp).planeOffset ?? ((op as ExtrudeOp).plane ? 0 : sketch.planeOffset);
+      const exP3d = (op as ExtrudeOp).plane3d;   // croquis-sobre-cara: SNAPSHOT del op (nunca fallback vivo a sketch.plane3d, o el base "hereda" la cara y se mueve)
+      const basePlane = exPlane === 'yz' ? PLANE_YZ : exPlane === 'xz' ? PLANE_XZ : PLANE_XY;
+      const sketchPlane = exP3d ? exP3d : (exOffset ? offsetPlane(basePlane, exOffset) : basePlane);
+      const plane = op.symmetric ? offsetPlane(sketchPlane, -op.depth / 2) : sketchPlane;
       if (sketch.kind === 'circle') {
         shape = extrudeCircle(oc, { x: 0, y: 0 }, sketch.radius, op.depth, plane);
+      } else if (sketch.kind === 'custom' && sketch.customCircle && !(sketch.customHoles && sketch.customHoles.length)) {
+        // Círculo DIBUJADO a mano → cilindro exacto (gp_Circ), no prisma facetado.
+        const cc = sketch.customCircle;
+        shape = extrudeCircle(oc, { x: cc.x, y: cc.y }, cc.r, op.depth, plane);
       } else if (sketch.kind === 'custom' && sketch.smooth) {
         // Perfil suave (cicloidal/leva): arista curva REAL (B-spline), no facetada.
         shape = extrudeSpline(oc, profile(), op.depth, plane);
+      } else if (sketch.kind === 'custom' && sketch.customHoles && sketch.customHoles.length) {
+        // Perfil con cavidades (doble lazo): el interior se resta al extruir.
+        shape = extrudePolygonWithHoles(oc, profile(), sketch.customHoles, op.depth, plane);
       } else {
         shape = extrudePolygon(oc, profile(), op.depth, plane);
       }
@@ -726,6 +882,28 @@ function buildShape(
           ? (edgeAxis ?? GLOBAL_AXES.y)
           : GLOBAL_AXES[op.axis];
       shape = revolvePolygon(oc, profile(), op.angle, PLANE_XY, axis);
+    } else if (op.type === 'loft') {
+      if (shape) continue;
+      // Loft entre el perfil base y una copia escalada a `height`. circle/gear/
+      // custom usan su perfil poligonal; el resultado es un sólido cerrado exacto.
+      const base = profile();
+      const s = Math.max(0.02, op.topScale);
+      const top = base.map((p) => ({ x: p.x * s, y: p.y * s }));
+      shape = loftSections(oc, [
+        { pts: base, plane: PLANE_XY },
+        { pts: top, plane: { origin: [0, 0, op.height], uDir: [1, 0, 0], vDir: [0, 1, 0] } },
+      ], { solid: true });
+    } else if (op.type === 'sweep') {
+      if (shape) continue;
+      // Barre el perfil base por la trayectoria paramétrica. El círculo va como
+      // perfil EXACTO (gp_Circ); el resto como polígono del sketch. El radio
+      // envolvente del perfil dimensiona la hélice para que no se auto-interseque.
+      const prof: SweepProfile = sketch.kind === 'circle'
+        ? { kind: 'circle', center: { x: 0, y: 0 }, radius: sketch.radius }
+        : { kind: 'polygon', pts: profile() };
+      const profR = sketch.kind === 'circle' ? sketch.radius : profileRadius(profile());
+      const path = buildSweepPath(op, profR);
+      shape = sweepProfileAlong(oc, prof, path);
     } else if (op.type === 'hole' && shape) {
       // zTop = altura del sólido extruido (depende del extrude previo).
       const ex = ops.find((o) => o.type === 'extrude') as ExtrudeOp | undefined;
@@ -740,6 +918,10 @@ function buildShape(
       shape = chamferEdges(oc, shape, op.dist, op.edges);
     } else if (op.type === 'shell' && shape) {
       shape = shellSolid(oc, shape, op.thickness, op.faces);
+    } else if (op.type === 'draft' && shape) {
+      // El DRAFT se aplica en rebuild() DESPUÉS de los componentes (la pieza
+      // TERMINADA es la que se desmoldea, como el Draft Analysis del libro).
+      // Aquí no-op a propósito.
     } else if (op.type === 'pattern' && shape) {
       shape = applyPattern(oc, shape, op);
     } else if (op.type === 'pocket' && shape) {
@@ -813,9 +995,112 @@ function applyPocket(oc: OC, shape: Shape, op: PocketOp, zTop: number): Shape {
  * ENSAMBLE: construye un COMPONENTE (bloque o cilindro) centrado en su (x,y,z).
  * Geometría exacta; cada componente conserva su identidad en el compound.
  */
+// CROQUIS-SOBRE-CARA (la función que faltaba, como Fusion "sketch on a face"): dado el
+// faceId clicado, saca el PLANO de esa cara de la malla (normal + centroide, en coords del
+// kernel) para croquizar EXACTO sobre ella (no en un punto random). u,v ortonormales a n.
+function planeFromMeshFace(mesh: TessellatedMesh, faceId: number): SketchPlane3D | null {
+  const { positions, normals, indices, faceIds } = mesh;
+  let nx = 0, ny = 0, nz = 0, cx = 0, cy = 0, cz = 0, cnt = 0;
+  for (let t = 0; t < faceIds.length; t++) {
+    if (faceIds[t] !== faceId) continue;
+    for (let k = 0; k < 3; k++) {
+      const vi = indices[t * 3 + k];
+      nx += normals[vi * 3]; ny += normals[vi * 3 + 1]; nz += normals[vi * 3 + 2];
+      cx += positions[vi * 3]; cy += positions[vi * 3 + 1]; cz += positions[vi * 3 + 2];
+      cnt++;
+    }
+  }
+  if (!cnt) return null;
+  const nl = Math.hypot(nx, ny, nz);
+  if (nl < 1e-9) return null;
+  nx /= nl; ny /= nl; nz /= nl;
+  // ORIGEN = centro del BBOX de la cara (el centroide de vértices se CORRE cuando la
+  // cara ya tiene barrenos — bug c4t3: los ⌀10 mordían el borde). Recalculo bbox:
+  let mnx = Infinity, mny = Infinity, mnz = Infinity, mxx = -Infinity, mxy = -Infinity, mxz = -Infinity;
+  for (let t = 0; t < mesh.faceIds.length; t++) {
+    if (mesh.faceIds[t] !== faceId) continue;
+    for (let k = 0; k < 3; k++) {
+      const vi = mesh.indices[t * 3 + k];
+      const X = mesh.positions[vi * 3], Y = mesh.positions[vi * 3 + 1], Z = mesh.positions[vi * 3 + 2];
+      if (X < mnx) mnx = X; if (X > mxx) mxx = X;
+      if (Y < mny) mny = Y; if (Y > mxy) mxy = Y;
+      if (Z < mnz) mnz = Z; if (Z > mxz) mxz = Z;
+    }
+  }
+  cx = (mnx + mxx) / 2; cy = (mny + mxy) / 2; cz = (mnz + mxz) / 2;
+  // vDir = "ARRIBA" consistente: proyección de +Z-mundo al plano (o +Y si la cara es
+  // horizontal). Así el croquis-en-cara siempre tiene +y = arriba (bug c4t3: v al revés).
+  const refZ = Math.abs(nz) < 0.9;
+  let vx = (refZ ? 0 : 0) - (refZ ? nz * nx : ny * nx);
+  let vy = (refZ ? 0 : 1) - (refZ ? nz * ny : ny * ny);
+  let vz = (refZ ? 1 : 0) - (refZ ? nz * nz : ny * nz);
+  const vl = Math.hypot(vx, vy, vz); vx /= vl; vy /= vl; vz /= vl;
+  // uDir = v × n → u×v = n (normal saliente = dirección de extrusión del boss)
+  const ux = vy * nz - vz * ny, uy = vz * nx - vx * nz, uz = vx * ny - vy * nx;
+  return { origin: [cx, cy, cz], uDir: [ux, uy, uz], vDir: [vx, vy, vz] };
+}
+
 function buildComponent(oc: OC, c: Component): Shape {
   const rz = ((c.rz ?? 0) * Math.PI) / 180;
   const zAxis = { origin: [0, 0, 0] as [number, number, number], dir: [0, 0, 1] as [number, number, number] };
+  if (c.kind === 'sketch' && c.profile && c.profile.length >= 3 && c.revolve) {
+    // Componente REVOLUCIONADO (revolve-join/cut): perfil del croquis alrededor del eje
+    // global, luego trasladado a su posición (ensamble bottom-up c7: piezas torneadas
+    // separadas — cada una gira en el eje y se COLOCA con x/y/z).
+    let s = revolvePolygon(oc, c.profile, c.revolve.angle, PLANE_XY, GLOBAL_AXES[c.revolve.axis]);
+    if (c.x || c.y || c.z) {
+      const t = transformShape(oc, s, { translate: [c.x, c.y, c.z] });
+      s.delete?.(); s = t;
+    }
+    return s;
+  }
+  if (c.kind === 'sketch' && c.profile && c.profile.length >= 3) {
+    // FEATURE de croquis: extruye el perfil en su plano (+offset) y lo posiciona.
+    const base = c.plane === 'yz' ? PLANE_YZ : c.plane === 'xz' ? PLANE_XZ : PLANE_XY;
+    // Croquis-sobre-cara: si hay plane3d, manda. Para CORTE (subtract) el prisma debe
+    // entrar HACIA la pieza → se baja el plano −depth por su normal y se extruye +depth.
+    const fp = c.plane3d ? c.plane3d : (c.planeOffset ? offsetPlane(base, c.planeOffset) : base);
+    const pl = (c.plane3d && c.bool === 'subtract') ? offsetPlane(fp, -(c.depth ?? 12)) : fp;
+    // Perfil = UN CÍRCULO exacto → CILINDRO real (gp_Circ), no prisma de N caras
+    // (fix "el círculo tiene caras"). El polígono queda solo como respaldo.
+    let s = (c.circle && !(c.holes && c.holes.length))
+      ? extrudeCircle(oc, { x: c.circle.x, y: c.circle.y }, c.circle.r, c.depth ?? 12, pl)
+      : (c.holes && c.holes.length)
+        ? extrudePolygonWithHoles(oc, c.profile, c.holes, c.depth ?? 12, pl)
+        : extrudePolygon(oc, c.profile, c.depth ?? 12, pl);
+    if (c.x || c.y || c.z || (c.rz ?? 0)) {
+      const t = transformShape(oc, s, { translate: [c.x, c.y, c.z], rotateAngle: rz, rotateAxis: zAxis });
+      s.delete?.(); s = t;
+    }
+    return s;
+  }
+  if (c.kind === 'sweeppath' && c.path && c.path.length >= 2) {
+    // SWEEP POR PATH DE CROQUIS: mapea el path 2D al 3D por el plano del croquis y
+    // barre una elipse (polígono 24 pts) con el motor sweepProfileAlong (B-spline).
+    const base = c.plane === 'yz' ? PLANE_YZ : c.plane === 'xz' ? PLANE_XZ : PLANE_XY;
+    const pl = c.plane3d ? c.plane3d : (c.planeOffset ? offsetPlane(base, c.planeOffset) : base);
+    const [ox, oy, oz] = pl.origin, [ux, uy, uz] = pl.uDir, [vx, vy, vz] = pl.vDir;
+    const path3d: Array<[number, number, number]> = c.path.map((p) => [
+      ox + p.x * ux + p.y * vx, oy + p.x * uy + p.y * vy, oz + p.x * uz + p.y * vz]);
+    const rx = c.sweepRx ?? 5, ry = c.sweepRy ?? 20, N = 24;
+    const ell: Pt2[] = Array.from({ length: N }, (_, k) => ({
+      x: rx * Math.cos((2 * Math.PI * k) / N), y: ry * Math.sin((2 * Math.PI * k) / N) }));
+    return sweepProfileAlong(oc, { kind: 'polygon', pts: ell }, path3d);
+  }
+  if (c.kind === 'cyl' && c.plane3d) {
+    // AGUJERO-EN-CARA (Hole tool, pedido del user): cilindro con eje ⊥ a la cara clicada,
+    // arranca 0.5mm AFUERA del punto de entrada (corte limpio) y entra h hacia la pieza.
+    // Pasante = h grande (default 200); a medida = h exacta. Se usa con bool 'subtract'.
+    // La POSICIÓN vive en c.x/y/z (se siembra con el clic y luego se EDITA exacta en el
+    // panel, como el diálogo de Hole de Fusion — antes los sliders X/Y no hacían nada).
+    const u = c.plane3d.uDir, v = c.plane3d.vDir;
+    const n: [number, number, number] = [
+      u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    return makeCylinder(oc, c.r, c.h + 0.5, {
+      origin: [c.x + 0.5 * n[0], c.y + 0.5 * n[1], c.z + 0.5 * n[2]],
+      dir: [-n[0], -n[1], -n[2]],
+    });
+  }
   if (c.kind === 'cyl') {
     // cilindro centrado en z (origen base en −h/2, eje +Z) → gira en Z → a su posición
     const cyl = makeCylinder(oc, c.r, c.h, { origin: [0, 0, -c.h / 2], dir: [0, 0, 1] });
@@ -846,6 +1131,17 @@ function gearboxDims(p: GearboxParams) {
     flangeZ: totalH + 2 * p.gap,         // bajo cara de la brida de salida
     flangeH: p.T * 0.7,
   };
+}
+
+// CHAFLÁN-YOYO: la mordida del barril simétrico a 45° en la orilla del disco. Antes
+// era 0.6mm (sólo equilibrio de fuerza); ahora es el CHAFLÁN de impresión que el
+// usuario pidió ("las caras planas con ángulo"): el anillo exterior baja a 45° →
+// SE AUTO-IMPRIME (reduce el campo de soportes al casquete central, que va con la
+// flor de phi). Simétrico arriba/abajo ⇒ el empuje axial neto sigue siendo 0
+// (trompo.ts) y el disco se ve como un yoyo. Acotado: ≤ T/2.5 (deja la orilla sana)
+// y ≤ Rr/2 (el rodillo acinturado puede abrazarlo sin pellizcarse).
+function crownMm(p: GearboxParams): number {
+  return Math.min(p.T / 2.5, p.Rr / 2, 1.8);
 }
 
 // ── RETENEDOR de leva (mecánico, de plástico, print-in-place) ──────────────
@@ -934,7 +1230,7 @@ function buildBoreCutter(oc: OC, p: GearboxParams): Shape {
 // como herringbone) → el torque sigue tang×R, sin complicar la transmisión (ver trompo.ts).
 // Conos RECTOS (no curvas) = booleana robusta, como el cortador de barreno original.
 function buildCrownCutter(oc: OC, p: GearboxParams, maxR: number): Shape {
-  const crown = Math.min(0.6, p.T * 0.14), ch = crown, ro = maxR + 2; // 45°, simétrico
+  const crown = crownMm(p), ch = crown, ro = maxR + 2; // chaflán-yoyo 45°, simétrico
   const top = revolvePolygon(oc, [{ x: maxR - crown, y: p.T }, { x: ro, y: p.T }, { x: ro, y: p.T - ch }], 360, RZ_PLANE, Z_AXIS);
   const bot = revolvePolygon(oc, [{ x: maxR - crown, y: 0 }, { x: ro, y: 0 }, { x: ro, y: ch }], 360, RZ_PLANE, Z_AXIS);
   return makeCompound(oc, [top, bot]);
@@ -960,7 +1256,7 @@ function buildCycDisc(oc: OC, p: GearboxParams, profile: Pt2[], outCenters: Pt2[
 // (negativo suave de la hembra). El perfil (r,z) baja a la cintura y vuelve en cada disco;
 // en los huecos entre discos se queda en Rr. Conos rectos = booleana robusta.
 function buildScallopedRoller(oc: OC, p: GearboxParams, z0: number, zTop: number, d0: ReturnType<typeof gearboxDims>): Shape {
-  const crown = Math.min(0.6, p.T * 0.14);
+  const crown = crownMm(p);
   const prof: Pt2[] = [{ x: 0, y: z0 }, { x: p.Rr, y: z0 }];
   for (let i = 0; i < p.discs; i++) {
     const bot = i * d0.stepZ, mid = bot + p.T / 2, top = bot + p.T;
@@ -1095,6 +1391,10 @@ function buildGearbox(oc: OC, p: GearboxParams): Shape {
   parts.push(buildRotor(oc, p));
   parts.push(buildHembra(oc, p));
   parts.push(buildOutput(oc, p, outCenters));
+  // SOPORTES FRANGIBLES: sostienen los discos cada ~9mm mientras imprime (cuellos
+  // que el 1er giro cizalla). SIN esto los discos flotan/se funden — por eso falló
+  // el primer print. Ahora ENTRAN a la pieza (y al STL). Default ON.
+  if (p.supports !== false) parts.push(buildSupportTree(oc, p));
   return makeCompound(oc, parts);
 }
 
@@ -1122,20 +1422,22 @@ function buildGearboxBodies(oc: OC, p: GearboxParams): { key: string; name: stri
     out.push({ key: `disco-${i + 1}`, name: `Disco ${i + 1}`, shape: placed });
   }
   out.push({ key: 'salida', name: 'Salida (brida)', shape: buildOutput(oc, p, outCenters) });
+  if (p.supports !== false) out.push({ key: 'soportes', name: 'Soportes frangibles', shape: buildSupportTree(oc, p) });
   // El soporte ya NO es un árbol frangible aparte: es la JAULA de rodillos (estructural)
   // + el journal continuo del disco sobre la leva (con canales de aceite). Ver cojinete-continuo.ts.
   return out;
 }
 
 /**
- * ÁRBOL DE SOPORTES funcional (tubería + soporte + centrado, frangible) — la
- * decisión de diseño con el usuario: 3 ESPINAS de grasa a 120° en la pared + DEDITOS
- * TANGENCIALES por piso (anclados a la pared, besan el borde del disco; ladeados en
- * el sentido del giro → el primer giro los corta como tijera) + 3 ESPIGAS de centrado
- * por disco (barreno↔leva). Es un cuerpo de DISPLAY (compound, no booleanas): nace con
- * la pieza, se ve, y "muere" en la 1ª vuelta. Parámetros del math (supports.ts):
- * deditos cada ~8mm (puente PLA), 0.4×0.6mm (frangibles), área total bajo el techo
- * de despegue.
+ * ÁRBOL DE SOPORTES funcional (soporte + centrado, frangible) — el rediseño con
+ * el usuario (figuras 9–12): la cara del disco ya no es plana sino un CHAFLÁN-YOYO
+ * de 45° que auto-imprime la ORILLA; el casquete central que todavía vuela se llena
+ * de una FLOR DE PHI (137.5°, filotaxis de Vogel) de árboles frangibles que NINGUNO
+ * estorba al otro y esquivan el eje y los pernos de salida. Cada árbol = CUELLO
+ * delgado abajo (el 1er giro lo cizalla) + CUERPO ancho arriba (no se pandea).
+ * + 3 ESPINAS de grasa a 120° en la pared + 3 ESPIGAS de centrado por disco
+ * (barreno↔leva). Cuerpo de DISPLAY (compound): nace con la pieza, se ve, y "muere"
+ * en la 1ª vuelta. Math puro y testeado en supports.ts (phyllotaxisField).
  */
 function buildSupportTree(oc: OC, p: GearboxParams): Shape {
   const d0 = gearboxDims(p);
@@ -1147,23 +1449,29 @@ function buildSupportTree(oc: OC, p: GearboxParams): Shape {
     const t = transformShape(oc, raw, { translate: [x - w / 2, y - w / 2, z - h / 2] }); raw.delete?.();
     return t;
   };
-  // PILARES anti-deformación con CUELLO FRANGIBLE en CADA hueco (para el disco de
-  // arriba). Cada pilar = CUELLO delgado abajo (área chiquita → el 1er giro lo cizalla)
-  // + CUERPO ancho arriba (toca el disco con buena área → no se pandea). Σ cuellos por
-  // hueco ≤ presupuesto de despegue (~τ·A ≤ T_in/r → ~4mm²). Cada ~9mm (puente PLA).
-  const s = 9, rmin = d0.eccR + p.gap + 3, rmax = p.R - 8;
+  // FLOR DE PHI: el chaflán-yoyo a 45° (crownMm) auto-imprime el anillo exterior
+  // [maxR−crown, maxR]; sólo el casquete [rMin, rMax] todavía vuela → se llena de
+  // árboles repartidos por el ángulo áureo (ninguno se encima, prueba: minSpacing).
+  // Esquivan el eje (rMin) y los pernos de salida (keepOut). Cada ~6.5mm (< puente PLA).
+  const disc = cycloidalDisc({ lobes: p.lobes, R: p.R, Rr: p.Rr + p.gap, E: p.E, segments: Math.max(90, p.lobes * 9) });
+  const crown = crownMm(p);
+  const rMin = d0.eccR + p.gap + 2;             // libra la leva/barreno
+  const rMax = Math.max(rMin + 1, disc.maxR - crown - 1); // el chaflán cubre lo de afuera
+  const outCenters = pinPositions(d0.outR, Math.max(3, Math.round(p.outPins)));
+  const keepOut = outCenters.map((c) => ({ x: c.x, y: c.y, r: d0.outHoleD / 2 + 1 }));
+  const n = Math.min(120, phylloCountForSpacing(rMin, rMax, 6.5));
+  const flower = phyllotaxisField({ n, rMin, rMax, keepOut });
   const wBody = 1.0, wNeck = 0.35, neckH = 0.2;   // cuello 0.35² = 0.12mm² c/u
   let neckArea = 0;
   for (let i = 0; i < p.discs; i++) {
     const zLow = i * d0.stepZ - p.gap;            // cara de abajo del hueco (disco/base inferior)
-    for (let gx = -Math.ceil(rmax / s); gx <= Math.ceil(rmax / s); gx++) {
-      for (let gy = -Math.ceil(rmax / s); gy <= Math.ceil(rmax / s); gy++) {
-        const x = gx * s + (i % 2) * s / 2, y = gy * s;  // medio-paso alterno por piso
-        if (Math.hypot(x, y) < rmin || Math.hypot(x, y) > rmax) continue;
-        parts.push(pillar(wNeck, neckH, x, y, zLow + neckH / 2));               // CUELLO (rompe)
-        parts.push(pillar(wBody, p.gap - neckH, x, y, zLow + neckH + (p.gap - neckH) / 2)); // CUERPO (soporta)
-        neckArea += wNeck * wNeck;
-      }
+    const spin = (i * GOLDEN_ANGLE_DEG * Math.PI / 180) % (2 * Math.PI);  // gira la flor entre pisos (no se alinean en Z)
+    const cs = Math.cos(spin), sn = Math.sin(spin);
+    for (const pt of flower.points) {
+      const x = pt.x * cs - pt.y * sn, y = pt.x * sn + pt.y * cs;
+      parts.push(pillar(wNeck, neckH, x, y, zLow + neckH / 2));               // CUELLO (rompe)
+      parts.push(pillar(wBody, p.gap - neckH, x, y, zLow + neckH + (p.gap - neckH) / 2)); // CUERPO (soporta)
+      neckArea += wNeck * wNeck;
     }
   }
   void neckArea;  // Σ cuellos / nº huecos ≈ presupuesto; verificado en el análisis
@@ -1677,12 +1985,14 @@ function SectionGizmo({ bbox, axis, flip, offset, setOffset, clip }: {
 // Render del sólido teselado + picking de cara/arista (raycast)
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
-  mesh, faded, matKey, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
+  mesh, faded, matKey, tint, faces, edgeGeoms, selFaces, selEdges, pickMode, onPickFace, onPickEdge,
   feaColors, overhangColors, clip,
 }: {
   mesh: TessellatedMesh;
   faded: boolean;
   matKey: string;
+  /** Color de LA PIEZA (apariencia mate). Si viene, gana sobre el look metálico del material. */
+  tint?: string;
   faces: FaceRef[];
   edgeGeoms: EdgeGeom[];
   selFaces: number[];
@@ -1697,7 +2007,9 @@ function SolidMesh({
   /** Planos de corte (sección). undefined/null = sin corte. */
   clip: THREE.Plane[] | null;
 }) {
-  const pbr = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
+  const pbrBase = MATERIAL_PBR[matKey] ?? DEFAULT_PBR;
+  // Con tinte: acabado MATE de color (metalness bajo) — el metálico espejo murió.
+  const pbr = tint ? { ...pbrBase, color: tint, metalness: 0.12, roughness: 0.55, clearcoat: 0.18, clearcoatRoughness: 0.5 } : pbrBase;
   const overlayColors = overhangColors ?? feaColors;   // imprimibilidad > FEA
   const clipPlanes = clip ?? undefined;
   const geom = useMemo(() => {
@@ -1915,16 +2227,19 @@ function SolidMesh({
       )}
 
       {/* CARA RESALTADA: misma topología, material de oro emisivo encima. */}
+      {/* CARA SELECCIONADA: tinte AZUL translúcido (convención CAD — Fusion/Onshape/
+          SolidWorks tiñen de azul; la inundación amarilla opaca leía a MS Paint y
+          escondía el sombreado de la cara). La geometría sigue VIVA debajo. */}
       {highlightGeo && (
         <mesh geometry={highlightGeo} renderOrder={2}>
           <meshStandardMaterial
-            color={'#ffd24a'}
-            emissive={GOLD}
-            emissiveIntensity={0.9}
-            metalness={0.3}
-            roughness={0.35}
+            color={'#4C9FFF'}
+            emissive={'#2F7FE0'}
+            emissiveIntensity={0.55}
+            metalness={0.2}
+            roughness={0.5}
             transparent
-            opacity={0.92}
+            opacity={0.45}
             polygonOffset
             polygonOffsetFactor={-2}
             polygonOffsetUnits={-2}
@@ -1967,7 +2282,7 @@ function SolidMesh({
       {/* ARISTA en HOVER: tubo de oro tenue (pre-selección, distinto del seleccionado). */}
       {hoveredEdge != null && !selEdges.includes(hoveredEdge) && edgeTubes.filter((t) => t.edgeId === hoveredEdge).map(({ edgeId, geoSel }) => (
         <mesh key={`eth${edgeId}`} geometry={geoSel} renderOrder={4}>
-          <meshBasicMaterial color={'#f3bf8e'} transparent opacity={0.85} toneMapped={false} depthTest={false} />
+          <meshBasicMaterial color={'#7FB8FF'} transparent opacity={0.85} toneMapped={false} depthTest={false} />
         </mesh>
       ))}
 
@@ -1975,7 +2290,7 @@ function SolidMesh({
           sólido (depthTest off) — visible aunque el bloom queme la cara. */}
       {edgeTubes.filter((t) => selEdges.includes(t.edgeId)).map(({ edgeId, geoSel }) => (
         <mesh key={`ets${edgeId}`} geometry={geoSel} renderOrder={5} onClick={handleEdgeClick(edgeId)}>
-          <meshBasicMaterial color={GOLD} toneMapped={false} depthTest={false} />
+          <meshBasicMaterial color={'#4C9FFF'} toneMapped={false} depthTest={false} />
         </mesh>
       ))}
 
@@ -2058,16 +2373,23 @@ function ProfileGhost({ pts }: { pts: Pt2[] }) {
   );
 }
 
-function SketchPlane() {
-  // Rejilla del PLANO DE BOCETO (XY local del sketch), sutil — referencia, no
-  // protagonista. Vive en el group rotado del modelo; el piso de estudio de
-  // referencia espacial lo pone CadViewport en coordenadas de mundo.
+function SketchPlane({ plane }: { plane: SketchPlane3D }) {
+  // Rejilla del PLANO DE BOCETO — orientada al plano ACTIVO del croquis (XY/YZ/XZ
+  // + offset, o el plano de una cara), en coordenadas del kernel (vive dentro del
+  // group rotado del modelo). El grid es cuadrado/simétrico → basta alinear la
+  // normal; el twist u/v no se percibe.
+  const q = useMemo(() => {
+    const u = new THREE.Vector3(...plane.uDir), v = new THREE.Vector3(...plane.vDir);
+    const n = new THREE.Vector3().crossVectors(u, v).normalize();
+    return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), n);
+  }, [plane]);
   return (
-    <gridHelper
-      args={[160, 32, new THREE.Color('#2a3744'), new THREE.Color('#1a232d')]}
-      rotation={[Math.PI / 2, 0, 0]}
-      position={[0, 0, -0.01]}
-    />
+    <group position={plane.origin} quaternion={q}>
+      <gridHelper
+        args={[160, 32, new THREE.Color('#2a3744'), new THREE.Color('#1a232d')]}
+        position={[0, -0.01, 0]}
+      />
+    </group>
   );
 }
 
@@ -2084,17 +2406,67 @@ function SketchPlane() {
  */
 /** Salta la cámara a una vista preset (iso/top/front/right/left/back/bottom) — como
  *  el ViewCube de Fusion. `view` = {name, nonce} para poder repetir la misma vista. */
-function ViewController({ view, orbit, dist, target }: { view: { name: string; nonce: number } | null; orbit?: { az: number; el: number; r: number; nonce: number } | null; dist: number; target: [number, number, number] }) {
+type SketchCam = { pos: [number, number, number]; target: [number, number, number]; up: [number, number, number]; pxPerMm: number } | null;
+function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name: string; nonce: number } | null; orbit?: { az: number; el: number; r: number; nonce: number } | null; dist: number; target: [number, number, number]; sketchCam?: SketchCam }) {
   const camera = useThree((s) => s.camera);
-  const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void } | null;
+  const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void; enabled: boolean } | null;
+  // ── EL VIAJE (orden del user, como Fusion): la cámara NUNCA salta — VUELA a su
+  // destino con easing (~0.9s). Das clic en una cara y se mueve TODO hasta que esa
+  // cara queda plana frente a ti. Aterriza EXACTO (la calibración px/mm del boceto
+  // depende del pose final). Durante el vuelo los controles se apagan. ──
+  const sketchCamRef = useRef<SketchCam | undefined>(sketchCam);
+  useEffect(() => { sketchCamRef.current = sketchCam; }, [sketchCam]);
+  const tweenRef = useRef<null | { t0: number; dur: number; fp: THREE.Vector3; fu: THREE.Vector3; ft: THREE.Vector3; tp: THREE.Vector3; tu: THREE.Vector3; tt: THREE.Vector3 }>(null);
+  const flyTo = (pos: [number, number, number], up: [number, number, number], tgt: [number, number, number], dur = 900) => {
+    if (controls) controls.enabled = false;
+    tweenRef.current = {
+      t0: performance.now(), dur,
+      fp: camera.position.clone(), fu: camera.up.clone(),
+      ft: controls ? controls.target.clone() : new THREE.Vector3(),
+      tp: new THREE.Vector3(...pos), tu: new THREE.Vector3(...up), tt: new THREE.Vector3(...tgt),
+    };
+  };
+  useFrame(() => {
+    const tw = tweenRef.current; if (!tw) return;
+    const k = Math.min(1, (performance.now() - tw.t0) / tw.dur);
+    const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;   // easeInOutQuad
+    camera.position.lerpVectors(tw.fp, tw.tp, e);
+    camera.up.copy(tw.fu.clone().lerp(tw.tu, e).normalize());
+    const t = tw.ft.clone().lerp(tw.tt, e);
+    if (controls) controls.target.copy(t);
+    camera.lookAt(t);
+    if (k >= 1) {
+      tweenRef.current = null;
+      // Controles de vuelta SOLO si no estamos en boceto (ahí la cámara está clavada).
+      if (controls && !sketchCamRef.current) { controls.enabled = true; controls.update(); }
+    }
+  });
+  // BOCETO EN ESCENA: al abrir, VIAJE hasta quedar perpendicular al plano; los
+  // OrbitControls se quedan apagados mientras dura el boceto (calibración fija).
+  useEffect(() => {
+    if (!sketchCam) {
+      // El regreso lo maneja el setView('iso') del Studio (vuela también).
+      camera.up.set(0, 1, 0);
+      if (controls && !tweenRef.current) { controls.enabled = true; controls.update(); }
+      return;
+    }
+    flyTo(sketchCam.pos, sketchCam.up, sketchCam.target, 950);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sketchCam, camera, controls]);
+  // Las vistas con nombre y las órbitas también VIAJAN (nada salta ya).
   const place = (px: number, py: number, pz: number) => {
     const [tx, ty, tz] = target;
-    camera.position.set(px + tx, py + ty, pz + tz);
-    if (controls) { controls.target.set(tx, ty, tz); controls.update(); }
-    camera.lookAt(tx, ty, tz);
+    flyTo([px + tx, py + ty, pz + tz], [0, 1, 0], [tx, ty, tz], 850);
   };
+  // GUARDIA POR NONCE: `target` (viewTarget) es un array nuevo en CADA render →
+  // sin guardia, estos efectos re-aplicaban la ÚLTIMA vista en cada render y
+  // PISABAN la cámara del croquis (el bug de la vista oblicua al croquizar en
+  // cara). Cada petición de vista/órbita se aplica UNA vez; el croquis manda.
+  const lastViewNonce = useRef(-1);
+  const lastOrbitNonce = useRef(-1);
   useEffect(() => {
-    if (!view) return;
+    if (!view || sketchCam || view.nonce === lastViewNonce.current) return;
+    lastViewNonce.current = view.nonce;
     const d = dist;
     const P: Record<string, [number, number, number]> = {
       iso: [d * 0.58, d * 0.5, d * 0.72], top: [0.001, d * 1.25, 0.001], bottom: [0.001, -d * 1.25, 0.001],
@@ -2103,19 +2475,20 @@ function ViewController({ view, orbit, dist, target }: { view: { name: string; n
     };
     const p = P[view.name] ?? P.iso; place(p[0], p[1], p[2]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, dist, camera, controls, target]);
+  }, [view, dist, camera, controls, target, sketchCam]);
   // ÓRBITA arbitraria (az/el grados, r en unidades de mundo) — para barrer 30+ ángulos.
   useEffect(() => {
-    if (!orbit) return;
+    if (!orbit || sketchCam || orbit.nonce === lastOrbitNonce.current) return;
+    lastOrbitNonce.current = orbit.nonce;
     const az = (orbit.az * Math.PI) / 180, el = (orbit.el * Math.PI) / 180, r = orbit.r;
     place(r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orbit, camera, controls, target]);
+  }, [orbit, camera, controls, target, sketchCam]);
   return null;
 }
 
 function CadViewport({
-  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, children,
+  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, sketchCam, children,
 }: {
   cameraDistance: number;
   autoRotate: boolean;
@@ -2125,6 +2498,7 @@ function CadViewport({
   view?: { name: string; nonce: number } | null;
   orbit?: { az: number; el: number; r: number; nonce: number } | null;
   viewTarget?: [number, number, number];
+  sketchCam?: SketchCam;
   children: ReactNode;
 }) {
   return (
@@ -2133,11 +2507,15 @@ function CadViewport({
       style={{
         // Degradado de estudio MUY sutil: un poco más claro al centro para dar
         // profundidad sin viñeta cinematográfica.
-        background: `radial-gradient(ellipse at 50% 42%, #18202a 0%, ${CAD_BG} 70%, #0b0f14 100%)`,
+        // ESPACIO PROFUNDO (paleta nebulosa): azul de medianoche que respira hacia
+        // el vacío — la profundidad hipnótica de sus renders, sin robar contraste.
+        background: `radial-gradient(ellipse at 50% 38%, #16283F 0%, #0C1626 52%, #050A14 100%)`,
       }}
     >
       <Canvas
-        shadows
+        // 'percentage' = PCFShadowMap (no el PCFSoftShadowMap deprecado por
+        // three, que warneaba en CADA render y ensuciaba la telemetría 66×/sesión).
+        shadows="percentage"
         camera={{
           // 3/4 clásico de CAD: ligeramente arriba y al frente-derecha. Encuadre
           // ajustado (la pieza llena el viewport) → aristas más crujientes.
@@ -2190,14 +2568,16 @@ function CadViewport({
           minDistance={minDistance ?? cameraDistance * 0.15}
           maxDistance={maxDistance ?? cameraDistance * 6}
         />
-        <ViewController view={view ?? null} orbit={orbit ?? null} dist={cameraDistance} target={viewTarget ?? [0, 0, 0]} />
+        <ViewController view={view ?? null} orbit={orbit ?? null} dist={cameraDistance} target={viewTarget ?? [0, 0, 0]} sketchCam={sketchCam} />
 
         {/* VIEWCUBE — orientación viva (como TODO CAD). Click en una cara salta a
             vista ortográfica; etiquetas en español. El Canvas es full-window y el
             panel de opciones (.fb-params, right:18 width:230 ≈248px) lo cubriría en
             top-right, así que lo INSETAMOS ~290px para que quede justo a su izquierda
             (como el ViewCube de Fusion, pegado al panel de propiedades). */}
-        <GizmoHelper alignment="top-right" margin={[300, 104]}>
+        {/* El viewport ya empieza DEBAJO del ribbon (fb-viewport top:120) → el cubo
+            solo esquiva el riel derecho (282px + su propio radio) y respira arriba. */}
+        <GizmoHelper alignment="top-right" margin={[356, 70]}>
           <GizmoViewcube
             color="#aab4c2"
             textColor="#10151c"
@@ -2219,7 +2599,69 @@ function CadViewport({
   );
 }
 
-/** Piso de estudio: grid sutil + contact shadow suave para profundidad barata. */
+/** CAM EN EL VIVO (workspace MANUFACTURA): el toolpath deja de ser un dibujito 2D
+ *  y vive SOBRE la pieza — cortes en ámbar, rápidos en agua tenue, arcos/hélices
+ *  muestreados cada ~6°. Coordenadas = kernel (va DENTRO del group rotado). */
+function CamToolpath3D({ segs }: { segs: ToolpathSegment[] }) {
+  const { cutGeo, rapidGeo } = useMemo(() => {
+    const cut: number[] = [], rapid: number[] = [];
+    for (const s of segs) {
+      const dest = s.kind === 'cut' ? cut : rapid;
+      if (s.arc) {
+        const r = Math.hypot(s.from[0] - s.arc.cx, s.from[1] - s.arc.cy);
+        const a0 = Math.atan2(s.from[1] - s.arc.cy, s.from[0] - s.arc.cx);
+        const sweep = arcSweep(s);
+        const n = Math.max(2, Math.ceil(sweep / 0.1));
+        for (let i = 0; i < n; i++) {
+          for (const t of [i / n, (i + 1) / n]) {
+            const a = s.arc.cw ? a0 - sweep * t : a0 + sweep * t;
+            dest.push(s.arc.cx + r * Math.cos(a), s.arc.cy + r * Math.sin(a), s.from[2] + (s.to[2] - s.from[2]) * t);
+          }
+        }
+      } else {
+        dest.push(s.from[0], s.from[1], s.from[2], s.to[0], s.to[1], s.to[2]);
+      }
+    }
+    const g = (arr: number[]) => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+      return geo;
+    };
+    return { cutGeo: g(cut), rapidGeo: g(rapid) };
+  }, [segs]);
+  return (
+    <group renderOrder={6}>
+      <lineSegments geometry={cutGeo}>
+        <lineBasicMaterial color="#FFB224" transparent opacity={0.95} depthTest={false} toneMapped={false} />
+      </lineSegments>
+      <lineSegments geometry={rapidGeo}>
+        <lineBasicMaterial color="#41C7D4" transparent opacity={0.35} depthTest={false} toneMapped={false} />
+      </lineSegments>
+    </group>
+  );
+}
+
+/** STOCK del setup (cap 8 del libro): el bruto del que sale la pieza — bbox de la
+ *  pieza + sobrematerial de careado arriba. Translúcido agua: se VE qué se remueve. */
+function CamStock3D({ center, half, topAllow = 1.5 }: { center: [number, number, number]; half: [number, number, number]; topAllow?: number }) {
+  const size: [number, number, number] = [half[0] * 2, half[1] * 2, half[2] * 2 + topAllow];
+  const pos: [number, number, number] = [center[0], center[1], center[2] + topAllow / 2];
+  const edges = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(...size)), [size[0], size[1], size[2]]);
+  return (
+    <group position={pos}>
+      <mesh>
+        <boxGeometry args={size} />
+        <meshStandardMaterial color="#41C7D4" transparent opacity={0.05} depthWrite={false} />
+      </mesh>
+      <lineSegments geometry={edges}>
+        <lineBasicMaterial color="#41C7D4" transparent opacity={0.5} />
+      </lineSegments>
+    </group>
+  );
+}
+
+/** Piso de estudio: grid AGUA sutil + contact shadow suave para profundidad barata.
+ *  Paleta nebulosa: las líneas llevan el azul-agua profundo del océano, no gris muerto. */
 function CadGround({ size }: { size: number }) {
   return (
     <group position={[0, -0.02, 0]}>
@@ -2227,10 +2669,10 @@ function CadGround({ size }: { size: number }) {
         args={[size, size]}
         cellSize={size / 60}
         cellThickness={0.6}
-        cellColor="#28333f"
+        cellColor="#1b3347"
         sectionSize={size / 12}
         sectionThickness={1.0}
-        sectionColor="#3a4a5a"
+        sectionColor="#28536e"
         fadeDistance={size * 1.1}
         fadeStrength={2.2}
         infiniteGrid
@@ -2242,7 +2684,7 @@ function CadGround({ size }: { size: number }) {
         far={size * 0.55}
         blur={2.4}
         opacity={0.62}
-        color="#04060a"
+        color="#020610"
         resolution={1024}
       />
     </group>
@@ -2262,6 +2704,51 @@ interface BindCtxT {
   setBinding: (key: string, expr: string | null) => void;
 }
 const BindContext = createContext<BindCtxT | null>(null);
+
+// ── FORJA DS v2 · ICONOS ──────────────────────────────────────────
+// Set vectorial propio (16×16, trazo 1.4, currentColor): glifos CAD LITERALES
+// (la operación se dibuja a sí misma), cero emoji. La regla del rediseño:
+// iconografía monocroma consistente = la mitad de verse profesional.
+const ICONS: Record<string, JSX.Element> = {
+  croquis: <><path d="M3.2 12.8 10.6 5.4l2 2-7.4 7.4-2.8.8z" /><path d="M11.6 4.4l1.2-1.2 2 2-1.2 1.2" /></>,
+  encara: <><path d="M1.8 11.5 5.6 7h8.6l-3.8 4.5z" /><path d="M4.5 4.5 8 1.6l1.6 1.6" opacity=".55" /></>,
+  agujerocara: <><path d="M1.8 11.5 5.6 7h8.6l-3.8 4.5z" /><ellipse cx="8.2" cy="9.2" rx="2" ry="1" /></>,
+  extruir: <><rect x="3" y="11" width="10" height="2.6" /><path d="M8 10.6V3.4M5.6 5.6 8 3.2l2.4 2.4" /></>,
+  barreno: <><circle cx="8" cy="8" r="5.4" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /></>,
+  redondeo: <><path d="M2.8 13.2V8A5.2 5.2 0 0 1 8 2.8h5.2" /><path d="M2.8 2.8 6 6" opacity=".4" /></>,
+  chaflan: <><path d="M2.8 13.2V7L7 2.8h6.2" /><path d="M2.8 2.8 7 7" opacity=".4" /></>,
+  vaciado: <><path d="M2.8 3v10.2H13.2V3" /><path d="M5.6 3v6.6h7.6" opacity=".6" /></>,
+  revolucion: <><path d="M8 1.8v12.4" /><path d="M8 4.6c3 0 5 1.5 5 3.4s-2 3.4-5 3.4" /><path d="M8 11.4c-1.6 0-3-.4-3.9-1.1" opacity=".5" /><path d="M9.6 12.6 8 11.4l1.8-1" /></>,
+  transicion: <><ellipse cx="8" cy="3.4" rx="3.4" ry="1.5" /><ellipse cx="8" cy="12.4" rx="5.6" ry="2" /><path d="M4.6 4 2.4 11.2M11.4 4l2.2 7.2" opacity=".7" /></>,
+  barrido: <><path d="M2.4 12.4C6 12.4 9.4 4 14 4" /><ellipse cx="2.6" cy="12.4" rx="1.6" ry="2" /></>,
+  engrane: <><circle cx="8" cy="8" r="3.2" /><path d="M8 1.6v2.1M8 12.3v2.1M2.5 4.8l1.8 1M11.7 10.2l1.8 1M2.5 11.2l1.8-1M11.7 5.8l1.8-1" /></>,
+  cajacic: <><rect x="2.6" y="2.6" width="10.8" height="10.8" rx="1.4" /><circle cx="8" cy="8" r="3" /><circle cx="9.8" cy="8" r=".9" opacity=".6" /></>,
+  cajera: <><rect x="2.6" y="2.6" width="10.8" height="10.8" /><rect x="6" y="6" width="4" height="4" strokeDasharray="1.6 1.4" /></>,
+  patron: <><circle cx="5" cy="5" r="1.7" /><circle cx="11" cy="5" r="1.7" /><circle cx="5" cy="11" r="1.7" /><circle cx="11" cy="11" r="1.7" /></>,
+  planotaller: <><rect x="2.4" y="2.4" width="11.2" height="11.2" /><rect x="4.6" y="4.6" width="3.2" height="3.2" opacity=".7" /><rect x="9.4" y="4.6" width="2.4" height="3.2" opacity=".7" /><rect x="4.6" y="9.6" width="3.2" height="2" opacity=".7" /></>,
+  seccion: <><rect x="3" y="3" width="10" height="10" /><path d="M1.6 14.4 14.4 1.6" strokeDasharray="2 1.6" /></>,
+  encuadrar: <><path d="M2 5V2h3M11 2h3v3M14 11v3h-3M5 14H2v-3" /><circle cx="8" cy="8" r="2.2" opacity=".6" /></>,
+  componente: <><rect x="2.4" y="5.6" width="8" height="8" /><path d="M5.4 5.6V2.6h8v8h-3" opacity=".7" /></>,
+  careado: <><path d="M2.6 3.4h10.8v3.2H2.6v3.2h10.8v3.2H2.6" /></>,
+  cajera2d: <><circle cx="8" cy="8" r="5.6" /><circle cx="8" cy="8" r="2.6" opacity=".7" /></>,
+  taladrado: <><path d="M5 2.4h6M8 2.4v7" /><path d="M8 13.6 5.8 9.4h4.4z" /></>,
+  roscado: <><path d="M5.4 2.6v8l2.6 2.6 2.6-2.6v-8" /><path d="M5.4 5h5.2M5.4 7.4h5.2M5.4 9.8h5.2" opacity=".7" /></>,
+  mandrinado: <><circle cx="8" cy="8" r="5.6" /><path d="M8 3.6A4.4 4.4 0 1 1 3.6 8" opacity=".8" /><circle cx="8" cy="8" r=".9" fill="currentColor" stroke="none" /></>,
+  desbaste3d: <><path d="M2.4 13.4h3.2v-3h3.2v-3H12v-3h1.8" /><path d="M2.4 13.4V2.6" opacity=".35" /></>,
+  params: <><path d="M5.2 13 8 3h2.4" /><path d="M4 6.4h5.6" /><path d="M10.4 9.4l3.2 4M13.6 9.4l-3.2 4" opacity=".8" /></>,
+  laser: <><path d="M8 1.6v5" /><path d="M8 6.6 5.2 12h5.6z" opacity=".85" /><path d="M2.6 13.4h10.8" /><path d="M4.6 3.4 6.2 5M11.4 3.4 9.8 5" opacity=".5" /></>,
+  impresion: <><rect x="2.6" y="2.6" width="10.8" height="10.8" rx="1" /><path d="M5 5.4h6M8 5.4v2.4" opacity=".8" /><path d="M6.4 7.8h3.2v1.6H6.4z" /><path d="M4 11.4h8" strokeDasharray="1.8 1.2" opacity=".7" /></>,
+  torno: <><path d="M1.8 8.5h12.4" strokeDasharray="2.2 1.6" opacity=".6" /><path d="M3.2 8.5V4.8h3.2V3h4v2.6h2.4v2.9" /><path d="M13.4 11.6l-2-2M13.4 9.6v2h-2" opacity=".8" /></>,
+  opciones: <><circle cx="8" cy="3.4" r="1.1" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" /><circle cx="8" cy="12.6" r="1.1" fill="currentColor" stroke="none" /></>,
+};
+function Ic({ name }: { name: string }) {
+  return (
+    <svg className="fb-ic" width="15" height="15" viewBox="0 0 16 16" fill="none"
+      stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {ICONS[name] ?? <circle cx="8" cy="8" r="5" />}
+    </svg>
+  );
+}
 
 function Dim({ label, value, unit, onChange, min, max, step, testid, bindKey }: {
   label: string; value: number; unit: string; onChange: (v: number) => void;
@@ -2288,9 +2775,24 @@ function Dim({ label, value, unit, onChange, min, max, step, testid, bindKey }: 
       </label>
     );
   }
+  // DS v2: CAMPO NUMÉRICO real (un CAD se maneja tecleando cotas, no con sliders —
+  // el slider además redondeaba al step y rechazó ⌀6.8). Scrub: arrastrar el label
+  // horizontalmente ajusta el valor (gesto pro tipo Blender/Fusion), teclear manda.
   return (
-    <label className="fb-dim">
-      <span className="fb-dim-label">
+    <label className="fb-dim fb-dim-num">
+      <span
+        className="fb-dim-label fb-scrub"
+        onPointerDown={(e) => {
+          const x0 = e.clientX, v0 = value;
+          const move = (ev: PointerEvent) => {
+            const dv = (ev.clientX - x0) * (step < 1 ? 0.1 : step);
+            onChange(Math.min(max, Math.max(min, +(v0 + dv).toFixed(3))));
+          };
+          const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+          window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+        }}
+        title="Arrastra para ajustar · teclea el valor exacto en el campo"
+      >
         {label}
         {bindKey && bind && (
           <button className="fb-fx" data-testid={testid ? `${testid}-bind` : undefined}
@@ -2298,13 +2800,16 @@ function Dim({ label, value, unit, onChange, min, max, step, testid, bindKey }: 
             title="Ligar a una expresión de parámetros">ƒₓ</button>
         )}
       </span>
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        data-testid={testid}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-      />
-      <span className="fb-dim-val">
-        {value.toFixed(step < 1 ? 1 : 0)}<em>{unit}</em>
+      <span className="fb-dim-field">
+        <input
+          type="number" min={min} max={max} step="any" value={+value.toFixed(3)}
+          data-testid={testid}
+          onChange={(e) => {
+            const v = parseFloat(e.target.value);
+            if (Number.isFinite(v)) onChange(Math.min(max, Math.max(min, v)));
+          }}
+        />
+        <em>{unit}</em>
       </span>
     </label>
   );
@@ -2415,10 +2920,10 @@ export default function ForgeBRepStudio() {
     gear: { ...GEAR_DEFAULTS },
     gearbox: { ...GEARBOX_DEFAULTS },
   });
-  // El grafo arranca con un extrude (el "primer momento": sketch→sólido).
-  const [ops, setOps] = useState<Op[]>([
-    { id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false },
-  ]);
+  // El documento arranca LIMPIO (lienzo vacío) — el usuario abre y dibuja sus
+  // planos; el extrude aparece al Terminar el dibujo (onSketchFinish). Antes
+  // arrancaba con una caja default que confundía y afeaba el inicio.
+  const [ops, setOps] = useState<Op[]>([]);
   // Inicializador LAZY: `ops[0].id` se evaluaría en CADA render con la forma
   // eager y reventaría al vaciar el documento (ops=[] → ops[0] undefined). Con
   // `() => …` solo corre al montar, y el `?.` cubre un arranque sin ops.
@@ -2442,9 +2947,56 @@ export default function ForgeBRepStudio() {
   // Por defecto COLAPSADOS los paneles secundarios (caras, análisis, FEA) — el
   // lienzo arranca limpio; el usuario expande lo que necesita. El árbol y el panel
   // de parámetros (el flujo principal) quedan abiertos.
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ faces: true, analysis: true, sim: true });
+  // Documento arranca COLAPSADO (el timeline de abajo es la historia primaria;
+  // el panel queda para renombrar/suprimir). Más espacio para VER la pieza.
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({ faces: true, analysis: true, sim: true, features: true });
+  // ── VENTANAS FLOTANTES (pedido del user): cada panel arranca DOCKED en su riel
+  // (zonas limpias por default) y se JALA de la cabecera para flotar donde quieras;
+  // doble clic en la cabecera lo re-anida al riel. Posiciones persisten en localStorage.
+  const [winPos, setWinPos] = useState<Record<string, { x: number; y: number }>>(() => {
+    try { return JSON.parse(localStorage.getItem('forja-winpos') ?? '{}'); } catch { return {}; }
+  });
+  const winDrag = useCallback((id: string) => (e: React.PointerEvent) => {
+    const t = e.target as HTMLElement;
+    if (!t.closest('.fb-collapse-head') || t.closest('button')) return; // solo la cabecera arrastra
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const dx = e.clientX - rect.left, dy = e.clientY - rect.top;
+    const x0 = e.clientX, y0 = e.clientY;
+    let dragging = false; // UMBRAL 4px: un clic limpio NO mueve la ventana → el colapso sigue funcionando
+    const move = (ev: PointerEvent) => {
+      if (!dragging && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 4) return;
+      dragging = true;
+      const x = Math.min(window.innerWidth - 90, Math.max(0, ev.clientX - dx));
+      const y = Math.min(window.innerHeight - 44, Math.max(50, ev.clientY - dy));
+      setWinPos((prev) => ({ ...prev, [id]: { x, y } }));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
+      setWinPos((prev) => { try { localStorage.setItem('forja-winpos', JSON.stringify(prev)); } catch { /* privado */ } return prev; });
+    };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }, []);
+  const winUndock = useCallback((id: string) => (e: React.MouseEvent) => {
+    if (!(e.target as HTMLElement).closest('.fb-collapse-head')) return;
+    setWinPos((prev) => {
+      const next = { ...prev }; delete next[id];
+      try { localStorage.setItem('forja-winpos', JSON.stringify(next)); } catch { /* privado */ }
+      return next;
+    });
+  }, []);
+  const winStyle = (id: string): React.CSSProperties | undefined =>
+    winPos[id] ? { position: 'fixed', left: winPos[id].x, top: winPos[id].y, zIndex: 44, margin: 0 } : undefined;
   const toggleCollapse = useCallback((id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] })), []);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  // Workspace (DS v2): DISEÑO = modelado; MANUFACTURA = las ops CAM (como Fusion
+  // separa Design/Manufacture — la barra de modelado ya no carga los ⛏).
+  const [workspace, setWorkspace] = useState<'diseno' | 'manufactura' | 'simulacion'>('diseno');
+  // Simulación del CICLO DE INYECCIÓN (molde vivo): overlay a pantalla completa.
+  const [cycleSimOn, setCycleSimOn] = useState(false);
+  // Menú "Más" de la toolbar: la cola larga de features que la TELEMETRÍA de los
+  // 17 drives del libro marcó con CERO clicks (Transición/Barrido/Engrane/…) vive
+  // aquí — la fila principal queda para el núcleo real (croquis→extruir→revolución).
+  const [masOpen, setMasOpen] = useState(false);
   const [editingOpId, setEditingOpId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   // ── P1: rollback (construir hasta op N) + menú contextual (clic derecho) ──
@@ -2463,6 +3015,7 @@ export default function ForgeBRepStudio() {
     const c: Component = { id: newId('comp'), name: kind === 'box' ? 'Bloque' : 'Cilindro', kind, w: 60, d: 60, h: 60, r: 25, x: 0, y: 0, z: 0, rz: 0 };
     setComponents((cur) => [...cur, c]);
     setActiveComp(c.id); setActiveOp(null);
+    mark('op', 0, { op: 'component', kind });   // ensamblaje (carro/robot): componente agregado
   }, []);
   const updateComponent = useCallback((id: string, patch: Partial<Component>) => {
     setComponents((cur) => cur.map((c) => (c.id === id ? { ...c, ...patch } : c)));
@@ -2512,6 +3065,30 @@ export default function ForgeBRepStudio() {
   const [placingHole, setPlacingHole] = useState(false);
   // Editor de croquis 2D (dibujar perfil con restricciones, kind 'custom').
   const [sketchOpen, setSketchOpen] = useState(false);
+  // Operación del croquis al Terminar: 'new'=base · 'join'=saliente (une) · 'cut'=corte (resta).
+  // Esto da el MULTI-FEATURE: base + boss/cut encadenados como componentes con booleana.
+  const [sketchOp, setSketchOp] = useState<'new' | 'join' | 'cut'>('new');
+  // Barrenos (círculos del croquis base) esperando a que exista el sólido: se
+  // materializan al crear el extrude (ya SIN auto-extrude, el usuario decide cuándo).
+  const pendingHolesRef = useRef<Op[]>([]);
+  // MENÚ RADIAL (clic derecho en el viewport): las ops en un gesto, estilo videojuego.
+  const [radial, setRadial] = useState<{ x: number; y: number } | null>(null);
+  // COLOR DE LA PIEZA (paleta mate — el metálico murió por orden del user).
+  const [partColor, setPartColor] = useState<string>(PART_PALETTE[0]);
+  const cyclePartColor = useCallback(() => {
+    setPartColor((c) => PART_PALETTE[(PART_PALETTE.indexOf(c) + 1) % PART_PALETTE.length]);
+  }, []);
+  // BOCETO — un solo botón y el MOUSE decide (como Fusion): al pedir boceto se
+  // abre el selector (planos base) Y se arma el pick de cara a la vez; clic en
+  // una cara de la pieza = boceto ahí; clic en un plano = boceto ahí.
+  const [sketchChooser, setSketchChooser] = useState(false);
+  // RIBBON COLAPSABLE: la pieza siempre a la vista; el estado sobrevive a la sesión.
+  const [ribbonMin, setRibbonMin] = useState<boolean>(() => {
+    try { return localStorage.getItem('fb-ribbon-min') === '1'; } catch { return false; }
+  });
+  const toggleRibbon = useCallback(() => {
+    setRibbonMin((v) => { const nx = !v; try { localStorage.setItem('fb-ribbon-min', nx ? '1' : '0'); } catch { /* privado */ } return nx; });
+  }, []);
 
   // ── SIMULACIÓN FEA (von Mises real sobre el sólido) ──
   // Caras de borde elegidas por face-picking: la FIJA (empotramiento u=0) y la
@@ -2610,14 +3187,81 @@ export default function ForgeBRepStudio() {
               ? importSTEP(oc, importedStep)
               : buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
           } catch (e) { if (components.length === 0) throw e; } // sin componentes, propaga
+          // Componentes: por defecto se JUNTAN (compound), pero cada uno puede
+          // combinarse por BOOLEANA con el cuerpo acumulado — la base de un MOLDE:
+          //   union = fuse · subtract = cuerpo−comp · subtractFrom = comp−cuerpo (cavidad bloque−pieza).
           const parts: Shape[] = [];
-          if (mainShape) parts.push(mainShape);
-          for (const c of components) parts.push(buildComponent(oc, c));
-          if (parts.length === 0) throw new Error('Documento vacío: agrega Extrude/Revolve o un Componente.');
-          shape = parts.length === 1 ? parts[0] : makeCompound(oc, parts);
+          let acc: Shape | null = mainShape;
+          // DRAFT (ángulo de salida): se aplica a la PIEZA terminada — después de
+          // sus cortes pero ANTES del primer booleano de MOLDE (subtractFrom), o
+          // el draft inclinaría las paredes del BLOQUE (+596k mm³ fantasma en el
+          // molde del tut1). Si no hay molde, va al final.
+          let drafted = false;
+          const applyDrafts = () => {
+            if (drafted) return;
+            drafted = true;
+            if (!acc) return;
+            for (const op of builtOps) {
+              if (op.type === 'draft') acc = draftFaces(oc, acc, (op as DraftOp).angleDeg);
+            }
+          };
+          for (const c of components) {
+            const cs = buildComponent(oc, c);
+            const mode = c.bool ?? 'none';
+            // PATRÓN CIRCULAR del componente: N instancias rotadas alrededor de Y (el eje
+            // de la rueda). Cada instancia aplica la MISMA booleana → cortar 1 sector y
+            // repetirlo ×6 = los 6 rayos, como el "circular pattern of a feature" de Fusion.
+            const pc = Math.max(1, Math.round(c.patternCount ?? 1));
+            const insts: Shape[] = [cs];
+            if (pc > 1) {
+              const span = c.patternSpan ?? 360;
+              const step = span >= 359.999 ? span / pc : span / (pc - 1);
+              for (let k = 1; k < pc; k++) {
+                insts.push(transformShape(oc, cs, { translate: [0, 0, 0], rotateAngle: step * k * Math.PI / 180, rotateAxis: { origin: [0, 0, 0], dir: c.patternAxis === 'x' ? [1, 0, 0] : c.patternAxis === 'z' ? [0, 0, 1] : [0, 1, 0] } }));
+              }
+            }
+            // MIRROR FEATURE: duplica cada instancia espejada por el plano elegido (misma booleana).
+            if (c.mirror) { const cur = insts.slice(); for (const s of cur) insts.push(mirrorShape(oc, s, c.mirror)); }
+            for (const inst of insts) {
+              if (mode === 'none' || acc === null) parts.push(inst);
+              else if (mode === 'union') acc = fuse(oc, acc, inst);
+              else if (mode === 'subtract') acc = cut(oc, acc, inst);
+              else if (mode === 'subtractFrom') {
+                applyDrafts();  // la pieza entra al molde YA drafteada (desmoldeo)
+                // CONTRACCIÓN del molde (parámetro Escala del Cavity de SolidWorks, cap 6):
+                // la pieza se escala alrededor de su centroide ANTES de restarse — el molde
+                // sale más grande y la pieza inyectada, al ENCOGER al enfriar (~5% en
+                // termoplásticos), cae en la cota nominal.
+                const cs = c.cavityScale ?? 1;
+                if (Math.abs(cs - 1) > 1e-9) {
+                  const com = massProperties(oc, acc, 1).centerOfMass as [number, number, number];
+                  const tool = scaleShape(oc, acc, cs, com);
+                  acc = cut(oc, inst, tool);
+                } else {
+                  acc = cut(oc, inst, acc);
+                }
+              }
+              else if (mode === 'common') { applyDrafts(); acc = common(oc, acc, inst); }
+              // Partir el molde (tras la booleana de ESTE componente): conservar solo
+              // el sólido mayor (cavity plate) o menor (macho del core). Va después del
+              // corte shut-off que separa los cuerpos (paso d del Tutorial 1).
+              if (c.keep && mode !== 'none' && acc) acc = keepSolid(oc, acc, c.keep);
+            }
+          }
+          // Sin molde en el doc: el draft va al final, sobre la pieza terminada.
+          applyDrafts();
+          const allParts = acc ? [acc, ...parts] : parts;
+          if (allParts.length === 0) throw new Error('Documento vacío: agrega Extrude/Revolve o un Componente.');
+          shape = allParts.length === 1 ? allParts[0] : makeCompound(oc, allParts);
         }
 
-        const mesh = tessellate(oc, shape, 0.08, 0.3);
+        // Deflection 0.25/0.5 (antes 0.08/0.3): 0.08mm ABSOLUTO sobre una pieza ⌀448
+        // (volante c6t3) = ~100k tris y el rebuild bloquea el thread >30s. Con 0.25 la
+        // pérdida visual es mínima y el rebuild va 4-10× más rápido en piezas grandes.
+        // Deflexión ANGULAR fina (0.2 rad ≈ 11.5°): los cilindros se dibujan con ~32+
+        // segmentos → siluetas REDONDAS (0.5 rad = octágonos, "el círculo tiene caras").
+        // La lineal 0.25 se queda (piezas grandes no explotan en triángulos).
+        const mesh = tessellate(oc, shape, 0.25, 0.2);
         const topo = topology(oc, shape);
         const volKernel = volume(oc, shape);
         const area = surfaceArea(oc, shape);
@@ -2638,7 +3282,18 @@ export default function ForgeBRepStudio() {
         setResult(built);
         shape.delete?.();
       } catch (e) {
+        // console.error VISIBLE para el arnés (meta.errors): sin esto, un component que
+        // lanza (p.ej. revolve inválido) muere en silencio y el operador no se entera.
+        console.error('REBUILD_ERR:', String((e as Error)?.message ?? e));
         setOpErr(String((e as Error)?.message ?? e));
+        // Si el documento ya NO produce sólido (sin ops, sin STEP, sin componentes,
+        // sin ensamble), limpia el resultado para que el viewport y la topología no
+        // queden con la malla/volumen del sólido anterior. (Bug de desync: borrar el
+        // último feature dejaba el sólido fantasma renderizado y el panel con datos viejos.)
+        const noSolid = !importedStep && components.length === 0
+          && !(assembly.enabled && sketch.kind === 'gear')
+          && boundDoc.ops.length === 0;
+        if (noSolid) { resultRef.current = null; setResult(null); }
       } finally {
         setBuilding(false);
       }
@@ -2709,6 +3364,13 @@ export default function ForgeBRepStudio() {
     version: 1, name: docName, sketch, ops, material, assembly, params, bindings, components, importedStep,
   }), [docName, sketch, ops, material, assembly, params, bindings, components, importedStep]);
   const loadDoc = useCallback((d: Partial<DocState>) => {
+    // IDs ÚNICOS tras cargar: opCounter vive en memoria y se reinicia con la
+    // página — sin este bump, los componentes NUEVOS colisionan con los ids
+    // cargados (React "same key" duplicado + updateComponent edita el
+    // equivocado → el bug de los barrenos del tut1 que sumó +4.2M al "cortar").
+    const bump = (id?: string) => { const m = /-(\d+)$/.exec(id ?? ''); if (m) opCounter = Math.max(opCounter, parseInt(m[1], 10)); };
+    (d.ops ?? []).forEach((o) => bump(o.id));
+    (d.components ?? []).forEach((c) => bump(c.id));
     // Restaura el estado y REINICIA el historial (no se deshace hacia otra pieza).
     histRef.current = { past: [], future: [], last: null };
     applyingRef.current = true;
@@ -2805,32 +3467,60 @@ export default function ForgeBRepStudio() {
     setOps((cur) => cur.map((o) => (o.id === id ? ({ ...o, ...patch } as Op) : o)));
   }, []);
   const addOp = useCallback((type: OpType) => {
+    // El extrude es la operación BASE del sketch y la app YA mantiene uno. Si el
+    // usuario vuelve a pulsar "Extrude" (instinto de Fusion tras dibujar el perfil),
+    // NO lo dupliques —eso fusionaba dos sólidos del MISMO perfil (el muddle de 66
+    // caras)—; selecciona el extrude existente para editar su profundidad. (Mismo
+    // guard `some(extrude)` que ya usan onCommit del croquis y los modos gear.)
+    if (type === 'extrude') {
+      const existingEx = ops.find((o) => o.type === 'extrude');
+      if (existingEx) { setActiveOp(existingEx.id); setPickMode('none'); return; }
+    }
     let op: Op;
     const ex = (ops.find((o) => o.type === 'extrude') as ExtrudeOp | undefined)?.depth ?? 12;
     switch (type) {
-      case 'extrude': op = { id: newId('extrude'), type, depth: 12, symmetric: false }; break;
+      // SNAPSHOT del plano/offset del croquis en el extrude (igual que hacía el
+      // auto-extrude): sin esto, extruir un croquis en YZ/offset lo aplasta a XY.
+      case 'extrude': op = { id: newId('extrude'), type, depth: 12, symmetric: false, plane: sketch.plane ?? 'xy', planeOffset: sketch.planeOffset ?? 0, plane3d: sketch.plane3d }; break;
       case 'hole': op = { id: newId('hole'), type, x: 0, y: 0, diameter: 8, through: true, depth: ex }; break;
       case 'fillet': op = { id: newId('fillet'), type, radius: 3, edges: [] }; break;
       case 'chamfer': op = { id: newId('chamfer'), type, dist: 2, edges: [] }; break;
       case 'shell': op = { id: newId('shell'), type, thickness: 2, faces: [] }; break;
+      case 'draft': op = { id: newId('draft'), type, angleDeg: 3 }; break;
       case 'revolve': op = { id: newId('revolve'), type, angle: 360, axis: 'y' }; break;
+      case 'loft': op = { id: newId('loft'), type, height: 20, topScale: 0.5 }; break;
+      case 'sweep': op = { id: newId('sweep'), type, pathKind: 'arc', height: 20, radius: 20, angle: 90, turns: 3, pitch: 8 }; break;
       case 'pattern': op = { id: newId('pattern'), type, mode: 'linear', count: 3, dx: 30, dy: 0, angleSpan: 360, axis: 'z', plane: 'yz' }; break;
       case 'pocket': op = { id: newId('pocket'), type, profile: 'rect', x: 0, y: 0, w: 12, h: 8, diameter: 8, depth: ex, through: true }; break;
     }
-    setOps((cur) => [...cur, op]);
+    // CAPTURAR los barrenos pendientes ANTES del dispatch: el updater de setOps
+    // corre DESPUÉS (batched) — limpiar el ref tras la llamada los perdía (bug de
+    // la tuerca/biela sin barrenos: el updater leía un ref ya vacío).
+    const pend = type === 'extrude' ? pendingHolesRef.current : [];
+    if (type === 'extrude') pendingHolesRef.current = [];
+    setOps((cur) => [...cur, op, ...pend]);
+    if (type === 'extrude') {
+      // plane3d es one-shot: lo consumió ESTE extrude (antes lo consumía el auto-extrude).
+      setSketch((s) => (s.plane3d ? { ...s, plane3d: undefined } : s));
+    }
     setActiveOp(op.id);
+    // TELEMETRÍA de USO de features: qué operación agrega el usuario (extrude,
+    // loft, sweep, …). Antes solo se medían FEA/generativo; ahora TODA op se
+    // registra → sabemos qué se usa de verdad en producción. `forja.op` {op}.
+    mark('op', 0, { op: type });
     if (type === 'fillet' || type === 'chamfer') setPickMode('edge');
     else if (type === 'shell') setPickMode('face');
     else setPickMode('none');
-  }, [ops]);
+  }, [ops, sketch.plane, sketch.planeOffset, sketch.plane3d]);
   const removeOp = useCallback((id: string) => {
     setOps((cur) => {
       const next = cur.filter((o) => o.id !== id);
       // Si al borrar ya no queda un sólido BASE (extrude/revolve), las ops
       // dependientes (hole/fillet/chamfer/shell) quedan HUÉRFANAS → se purgan:
       // un barreno/redondeo no puede existir sin el cuerpo sobre el que opera.
-      const hasBase = next.some((o) => o.type === 'extrude' || o.type === 'revolve');
-      return hasBase ? next : next.filter((o) => o.type === 'extrude' || o.type === 'revolve');
+      const isBase = (o: Op) => o.type === 'extrude' || o.type === 'revolve' || o.type === 'loft' || o.type === 'sweep';
+      const hasBase = next.some(isBase);
+      return hasBase ? next : next.filter(isBase);
     });
     setActiveOp(null);
     setPickMode('none');
@@ -2870,27 +3560,76 @@ export default function ForgeBRepStudio() {
     const op: HoleOp = { id: newId('hole'), type: 'hole', x: 0, y: 0, diameter: 8, through: true, depth: ex };
     setOps((cur) => [...cur, op]);
     setActiveOp(op.id);
+    mark('op', 0, { op: 'hole', via: 'click' });
     placingHoleRef.current = op.id;
     setPlacingHole(true);
     setPickMode('face');
   }, [ops]);
   // Editor de croquis: al Terminar, el perfil dibujado (resuelto por el solver) pasa
   // a kind 'custom' y se garantiza un extrude que lo solidifica.
-  const onSketchFinish = useCallback((result: { profile: Pt2[]; holes: { x: number; y: number; d: number }[] }) => {
-    setSketch((s) => ({ ...s, kind: 'custom', customProfile: result.profile }));
-    setOps((cur) => {
-      const next: Op[] = cur.some((o) => o.type === 'extrude')
-        ? [...cur]
-        : [...cur, { id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }];
-      // Cada círculo del croquis → un barreno pasante en su centro (mismo plano local).
-      for (const h of result.holes) {
-        next.push({ id: newId('hole'), type: 'hole', x: h.x, y: h.y, diameter: h.d, through: true, depth: 12 });
+  const onSketchFinish = useCallback((result: { profile: Pt2[]; holes: { x: number; y: number; d: number }[]; polyHoles: Pt2[][]; path?: Pt2[]; circle?: { x: number; y: number; r: number } }) => {
+    // MULTI-FEATURE: si la op del croquis es unir/cortar, se agrega como COMPONENTE de
+    // croquis con booleana (saliente=union, corte=subtract) sobre el cuerpo base.
+    if (sketchOp === 'join' || sketchOp === 'cut') {
+      // PATH ABIERTO → SWEEP por path (c6t2): el croquis sin cerrar es la trayectoria.
+      if (result.path && result.path.length >= 2 && result.profile.length < 3) {
+        const sp: Component = {
+          id: newId('comp'), name: 'Barrido', kind: 'sweeppath',
+          w: 0, d: 0, h: 0, r: 0, x: 0, y: 0, z: 0,
+          bool: sketchOp === 'cut' ? 'subtract' : 'union',
+          path: result.path, sweepRx: 5, sweepRy: 20,
+          plane: sketch.plane ?? 'xy', planeOffset: sketch.planeOffset, plane3d: sketch.plane3d,
+        };
+        setComponents((cur) => [...cur, sp]);
+        setSketch((s) => ({ ...s, plane3d: undefined }));
+        setSketchOp('new'); setActiveComp(sp.id); setActiveOp(null); setSketchOpen(false);
+        return;
       }
-      return next;
+      const c: Component = {
+        id: newId('comp'), name: sketchOp === 'cut' ? 'Corte' : 'Saliente', kind: 'sketch',
+        w: 0, d: 0, h: 0, r: 0, x: 0, y: 0, z: 0,
+        bool: sketchOp === 'cut' ? 'subtract' : 'union',
+        profile: result.profile, holes: result.polyHoles, circle: result.circle,
+        // CORTE = PASANTE por default (Through-All de Fusion/SW): un corte que se
+        // queda a 12mm es una trampa — bug de la ele: el círculo EXTRA heredaba 12
+        // aunque al principal le pusieras 20. SALIENTE sí nace en 12.
+        plane: sketch.plane ?? 'xy', planeOffset: sketch.planeOffset, plane3d: sketch.plane3d,
+        depth: sketchOp === 'cut' ? 200 : 12,
+      };
+      // FIX (bug del yoke): los CÍRCULOS EXTRA del croquis join/cut se PERDÍAN (iban a
+      // result.holes, que el Component ignora). Como en Fusion "seleccionar varios perfiles":
+      // cada círculo extra → su PROPIO componente con la MISMA booleana/plano/profundidad
+      // (con su círculo EXACTO → cilindro real; el polígono queda de respaldo).
+      const extras: Component[] = result.holes.map((h) => {
+        const r = h.d / 2, N = 40;
+        const poly: Pt2[] = Array.from({ length: N }, (_, k) => ({
+          x: h.x + r * Math.cos((2 * Math.PI * k) / N), y: h.y + r * Math.sin((2 * Math.PI * k) / N) }));
+        return { ...c, id: newId('comp'), profile: poly, holes: [], circle: { x: h.x, y: h.y, r } };
+      });
+      setComponents((cur) => [...cur, c, ...extras]);
+      // plane3d es ONE-SHOT: aplica al croquis que lo pidió (sketchOnPlane3d / croquis-en-cara)
+      // y se limpia — si no, los croquis siguientes en XY/XZ heredan el plano inclinado
+      // (plane3d MANDA sobre plane) y sus cortes se van a coordenadas fuera de la pieza.
+      setSketch((s) => ({ ...s, plane3d: undefined }));
+      setSketchOp('new'); setActiveComp(c.id); setActiveOp(null); setSketchOpen(false);
+      return;
+    }
+    setSketch((s) => ({ ...s, kind: 'custom', customProfile: result.profile, customHoles: result.polyHoles, customCircle: result.circle, smooth: false }));
+    // SIN AUTO-EXTRUDE (orden del user 2026-07-03): terminar el croquis GUARDA el
+    // perfil (se ve el fantasma sobre el plano) y extruir es DECISIÓN del diseñador
+    // (btn-extrude), como en todo CAD serio. Los círculos del croquis quedan
+    // PENDIENTES y se materializan como barrenos cuando nazca el sólido base —
+    // crearlos antes rompería el orden de ops (hole sin cuerpo).
+    const circleHoles: Op[] = result.holes.map((h) => (
+      { id: newId('hole'), type: 'hole', x: h.x, y: h.y, diameter: h.d, through: true, depth: 12 } as Op));
+    setOps((cur) => {
+      if (cur.some((o) => o.type === 'extrude')) return [...cur, ...circleHoles];
+      pendingHolesRef.current = circleHoles;
+      return cur;
     });
     setActiveOp(null);
     setSketchOpen(false);
-  }, []);
+  }, [sketchOp, sketch.plane, sketch.planeOffset, sketch.plane3d]);
 
   // ── Feature ENGRANE (botón btn-gear): pasa el croquis a 'gear', garantiza el
   // extrude que lo solidifica (perfil de involuta → sólido → resta del barreno)
@@ -2902,6 +3641,7 @@ export default function ForgeBRepStudio() {
       ? cur
       : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
     setActiveOp('sketch');
+    mark('op', 0, { op: 'gear' });
     setPickMode('none');
   }, []);
   // ── CAJA cicloidal multi-disco (btn-gearbox) ──
@@ -2912,6 +3652,7 @@ export default function ForgeBRepStudio() {
       : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
     setMaterial('pla');   // la caja es de PLÁSTICO → masa con densidad de PLA, no aluminio
     setActiveOp('sketch'); setActiveComp(null); setPickMode('none');
+    mark('op', 0, { op: 'gearbox' });
   }, []);
   const updateGearbox = useCallback((patch: Partial<GearboxParams>) => {
     setSketch((s) => ({ ...s, gearbox: { ...s.gearbox, ...patch } }));
@@ -3071,7 +3812,8 @@ export default function ForgeBRepStudio() {
     if (renderPos) { const { colors } = vonMisesVertexColors(res, renderPos); setFeaColors(colors); }
     setFeaResult(res);
     setFeaLiveMs(ms);
-  }, [runFeaAnalysis]);
+    mark('fea_live', ms, { kind: sketch.kind, loadN: N });
+  }, [runFeaAnalysis, sketch.kind]);
 
   // ── DISEÑO GENERATIVO: misma cara fija + cara de carga del FEA; corre la
   // optimización topológica (topopt.ts) y muestra la estructura óptima vaciada. ──
@@ -3092,8 +3834,28 @@ export default function ForgeBRepStudio() {
         }
         const dl = Math.hypot(dir[0], dir[1], dir[2]) || 1; const F = feaLoadN;
         const bc: FaceBC = { fixedFaces: [feaFixedFace], loadFaces: feaLoadFace != null ? [feaLoadFace] : [], totalForce: [dir[0] / dl * F, dir[1] / dl * F, dir[2] / dl * F] };
+        // MAPA DE REGIONES (mecanismo): en un DISCO (rueda / disco cicloidal)
+        // congelamos el BORDE (contacto/lóbulos) y el CUBO central (pared del
+        // barreno/eje) como SÓLIDO; el generativo solo aligera el ALMA → sale un
+        // disco con rayos orgánicos, con las superficies funcionales INTACTAS.
+        // (Fusion no congela regiones para mecanismos print-in-place.)
+        const Rout = sketch.kind === 'circle' ? Math.max(1, sketch.radius) : 0;
+        const passive: TopOptParams['passive'] = Rout > 0
+          ? (cx, cy) => {
+            const r = Math.hypot(cx, cy);
+            if (r > 0.80 * Rout) return 'solid';   // borde (rim / lóbulos)
+            if (r < 0.40 * Rout) return 'solid';   // cubo (pared del barreno/eje)
+            return 'design';                        // alma → aligerar
+          }
+          : undefined;
+        const tGen = performance.now();
         const res = runTopOpt(oc, shape, bc, FEA_MATERIAL_KEY[material] ?? 'aluminio_6061',
-          { volfrac: genVolfrac, penal: 3, rmin: 1.5, ft: 1, maxLoops: 40, tolChange: 0.02, resolution: 12 });
+          // ft:2 (densidad) + tamaño mínimo de miembro auto (sin "navajas") +
+          // selfSupport: filtro de voladizo → la pieza se imprime SIN soportes
+          // (auto-soporte a 45°, la precisión de la impresora a nuestro favor) +
+          // passive: mapa de regiones (congela borde/cubo del disco).
+          { volfrac: genVolfrac, penal: 3, ft: 2, maxLoops: 50, tolChange: 0.02, resolution: 12, selfSupport: true, maxOverhangDeg: 45, passive });
+        mark('generative', performance.now() - tGen, { cells: res.nCells, loops: res.history.length, volfrac: genVolfrac, kind: sketch.kind, regions: !!passive });
         setFeaColors(null); setFeaResult(null);   // generativo manda el render
         setGenResult(res);
       } catch (e) { setGenErr(String((e as Error)?.message ?? e)); setGenResult(null); }
@@ -3111,6 +3873,7 @@ export default function ForgeBRepStudio() {
     } else if (result) {
       triggerDownload(meshToStlBlob(result.mesh.positions, result.mesh.indices), 'forja-part.stl');
     }
+    mark('export', 0, { fmt: 'stl', src: genResult ? 'generativo' : 'part' });
   }, [genResult, genThreshold, result]);
   // ── IMPRIMIBILIDAD (DFM): ¿cabe?, voladizos, holgura/compensación recomendadas ──
   const [printProfileKey, setPrintProfileKey] = useState<keyof typeof PRINT_PROFILES>('media');
@@ -3123,6 +3886,14 @@ export default function ForgeBRepStudio() {
   // VISTAS de cámara (ViewCube): salta a iso/top/front/right/... (nonce permite repetir)
   const [viewReq, setViewReq] = useState<{ name: string; nonce: number } | null>(null);
   const setView = useCallback((name: string) => setViewReq((v) => ({ name, nonce: (v?.nonce ?? 0) + 1 })), []);
+  // Al SALIR del croquis (Terminar o Cancelar) la cámara salta a ISO: dejas el
+  // plano y VES tu pieza en 3D. También evita el roll arbitrario que dejaba la
+  // vista cenital al restaurar up=(0,1,0) (lookAt con up casi paralelo).
+  const wasSketchingRef = useRef(false);
+  useEffect(() => {
+    if (wasSketchingRef.current && !sketchOpen) setView('iso');
+    wasSketchingRef.current = sketchOpen;
+  }, [sketchOpen, setView]);
   const [orbitReq, setOrbitReq] = useState<{ az: number; el: number; r: number; nonce: number } | null>(null);
   const orbitTo = useCallback((az: number, el: number, r: number) => setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1 })), []);
   const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
@@ -3236,6 +4007,383 @@ export default function ForgeBRepStudio() {
   const sectionPlanes = sectionClip;   // siempre el array (lejos cuando off)
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
+  // ── CAM · CAREADO (libro Cimo cap 9): stock = bbox del sólido; zigzag + G-code ──
+  const [camSvg, setCamSvg] = useState<string | null>(null);
+  const camGcodeRef = useRef('');
+  const [camToolD, setCamToolD] = useState(40);      // ⌀ fresa (libro: R390 ⌀40)
+  const [camStepover, setCamStepover] = useState(27); // ~2/3·⌀ (libro: 26.67)
+  const [camDepth, setCamDepth] = useState(1.5);      // material a remover (libro: 1.5)
+  const genCam = useCallback(() => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, zT = -Infinity;
+    for (let i = 0; i < m.positions.length; i += 3) {
+      const X = m.positions[i], Y = m.positions[i + 1], Z = m.positions[i + 2];
+      if (X < x0) x0 = X; if (X > x1) x1 = X;
+      if (Y < y0) y0 = Y; if (Y > y1) y1 = Y;
+      if (Z > zT) zT = Z;
+    }
+    const stock = { x0, y0, x1, y1, zTop: zT };
+    const tool = { diameter: camToolD, rpm: 7850, feed: 7070, plunge: 800 };
+    const segs = generateFacingToolpath(stock, tool, { stepover: camStepover, passExtension: 5, depth: camDepth, safeZ: 10 });
+    camOpRef.current = 'careado';
+    setCamTitle('Careado — trayectoria zigzag');
+    setCamView3D(segs); setWorkspace('manufactura');
+    setCamStats(`stock ${(x1 - x0).toFixed(1)}×${(y1 - y0).toFixed(1)}mm · fresa ⌀${camToolD} · paso ${camStepover} · corte ${st.cutLen.toFixed(0)}mm · ~${st.timeMin.toFixed(2)} min`);
+    camGcodeRef.current = toGcode(segs, tool);
+    const st = toolpathStats(segs, tool);
+    // SVG en PLANTA: stock + zigzag (corte ámbar, rápidos cian punteado)
+    const pad = camToolD + 12, W = (x1 - x0) + 2 * pad, H = (y1 - y0) + 2 * pad;
+    const sx = (v: number) => (v - x0 + pad), sy = (v: number) => (y1 - v + pad);
+    const lines = segs.map((s) =>
+      `<line x1="${sx(s.from[0]).toFixed(1)}" y1="${sy(s.from[1]).toFixed(1)}" x2="${sx(s.to[0]).toFixed(1)}" y2="${sy(s.to[1]).toFixed(1)}" stroke="${s.kind === 'cut' ? '#FDB813' : '#38bdf8'}" stroke-width="${s.kind === 'cut' ? 1.6 : 0.9}" ${s.kind !== 'cut' ? 'stroke-dasharray="4 3"' : ''}/>`).join('');
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<rect x="${pad}" y="${pad}" width="${(x1 - x0).toFixed(1)}" height="${(y1 - y0).toFixed(1)}" fill="#eef2f7" stroke="#111" stroke-width="1.2"/>` +
+      lines +
+      `</svg>`);
+  }, [camToolD, camStepover, camDepth]);
+  const downloadCamGcode = useCallback(() => {
+    const blob = new Blob([camGcodeRef.current], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `${camOpRef.current}-laforja.nc`; a.click();
+    URL.revokeObjectURL(a.href);
+  }, []);
+  // ── CAM · RANURA CIRCULAR (libro Cimo cap 9, shoulder milling / 2D Adaptive):
+  // como el libro: clic en la CARA del fondo de la ranura → anillos climb + G2.
+  const camOpRef = useRef<'careado' | 'ranura' | 'taladrado' | 'roscado' | 'bore' | 'desbaste3d'>('careado');
+  const [camTitle, setCamTitle] = useState('Careado — trayectoria zigzag');
+  const [camStats, setCamStats] = useState('');  // stats en la BARRA del modal (dentro del SVG se desbordaban)
+  const [camView3D, setCamView3D] = useState<ToolpathSegment[] | null>(null);  // toolpath EN el viewport (workspace MANUFACTURA)
+  const [camLoad, setCamLoad] = useState(13.33);        // carga radial óptima (libro: ⌀/3)
+  const camPocketFaceRef = useRef<number | null>(null); // última cara elegida (para Regenerar)
+  const genCamPocket = useCallback((faceId: number) => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    // bbox de la CARA clicada (fondo de la ranura) + tope Z del sólido
+    let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity, fz = -Infinity, zT = -Infinity;
+    let nzSum = 0;
+    for (let t = 0; t < m.faceIds.length; t++) {
+      const mine = m.faceIds[t] === faceId;
+      for (let k = 0; k < 3; k++) {
+        const vi = m.indices[t * 3 + k];
+        const X = m.positions[vi * 3], Y = m.positions[vi * 3 + 1], Z = m.positions[vi * 3 + 2];
+        if (Z > zT) zT = Z;
+        if (!mine) continue;
+        if (X < mnx) mnx = X; if (X > mxx) mxx = X;
+        if (Y < mny) mny = Y; if (Y > mxy) mxy = Y;
+        if (Z > fz) fz = Z;
+        nzSum += m.normals[vi * 3 + 2];
+      }
+    }
+    if (!isFinite(mnx)) return;
+    if (Math.abs(nzSum) < 1) { setOpErr('CAM ranura: clic en una cara HORIZONTAL (el fondo de la ranura).'); return; }
+    const R = Math.max(mxx - mnx, mxy - mny) / 2;
+    const cx = (mnx + mxx) / 2, cy = (mny + mxy) / 2;
+    const depth = zT - fz;
+    if (depth < 1e-3) { setOpErr('CAM ranura: esa cara no es un fondo (profundidad 0).'); return; }
+    const tool = { diameter: camToolD, rpm: 7878, feed: 7090, plunge: 800 }; // números del libro
+    const segs = generateCircularPocketToolpath({ cx, cy, radius: R, zTop: zT, zBottom: fz }, tool, { optimalLoad: camLoad, safeZ: 10, helicalPitch: 2 });
+    if (!segs.length) { setOpErr(`CAM ranura: la fresa ⌀${camToolD} no cabe en la ranura ⌀${(2 * R).toFixed(1)}.`); return; }
+    camOpRef.current = 'ranura'; camPocketFaceRef.current = faceId;
+    camGcodeRef.current = toGcode(segs, tool, 'RANURA CIRCULAR');
+    const st = toolpathStats(segs, tool);
+    // SVG en planta: ranura (pared negra) + anillos ámbar (arcos) + rápidos cian
+    const pad = camToolD + 12, W = 2 * R + 2 * pad, H = 2 * R + 2 * pad;
+    const sx = (v: number) => (v - cx + R + pad), sy = (v: number) => (cy + R - v + pad);
+    const parts = segs.map((s) => {
+      const col = s.kind === 'cut' ? '#FDB813' : '#38bdf8';
+      const wdt = s.kind === 'cut' ? 1.6 : 0.9, dash = s.kind !== 'cut' ? 'stroke-dasharray="4 3"' : '';
+      if (s.arc) {
+        const r = Math.hypot(s.from[0] - s.arc.cx, s.from[1] - s.arc.cy);
+        const large = arcSweep(s) > Math.PI ? 1 : 0;
+        // modelo CW visto desde +Z + eje y volteado del SVG → sweep-flag 0
+        return `<path d="M ${sx(s.from[0]).toFixed(1)} ${sy(s.from[1]).toFixed(1)} A ${r.toFixed(1)} ${r.toFixed(1)} 0 ${large} ${s.arc.cw ? 0 : 1} ${sx(s.to[0]).toFixed(1)} ${sy(s.to[1]).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${wdt}" ${dash}/>`;
+      }
+      return `<line x1="${sx(s.from[0]).toFixed(1)}" y1="${sy(s.from[1]).toFixed(1)}" x2="${sx(s.to[0]).toFixed(1)}" y2="${sy(s.to[1]).toFixed(1)}" stroke="${col}" stroke-width="${wdt}" ${dash}/>`;
+    }).join('');
+    setCamTitle('Ranura circular (2D Adaptive) — anillos CLIMB · G2');
+    setCamStats(`ranura ⌀${(2 * R).toFixed(1)}×${depth.toFixed(1)}mm · fresa ⌀${camToolD} · a_e ${camLoad} · S7878 F7090 · corte ${st.cutLen.toFixed(0)}mm · ~${st.timeMin.toFixed(2)} min`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<circle cx="${sx(cx).toFixed(1)}" cy="${sy(cy).toFixed(1)}" r="${R.toFixed(1)}" fill="#eef2f7" stroke="#111" stroke-width="1.2"/>` +
+      parts +
+      `</svg>`);
+    setCamView3D(segs); setWorkspace('manufactura');
+    mark('cam-ranura', 0, { d: 2 * R, depth });
+  }, [camToolD, camLoad]);
+  // ── CAM · TALADRADO (libro Cimo cap 9/5): clic en la PARED de un barreno →
+  // "Select Same Diameter" en la malla → ciclo peck (G83 expandido) por barreno.
+  const genCamDrill = useCallback((targetD: number) => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    const holes = detectHolesFromMesh(m, targetD);
+    if (!holes.length) { setOpErr(`CAM taladrado: no encontré barrenos ⌀≈${targetD.toFixed(1)} verticales.`); return; }
+    // preset "Aluminum - Drilling": vc≈100 m/min → n=vc·1000/(π·⌀); f=0.15 mm/rev
+    const rpm = Math.round(100000 / (Math.PI * targetD));
+    const tool = { diameter: targetD, rpm, feed: Math.round(rpm * 0.15), plunge: Math.round(rpm * 0.15) };
+    const segs = generateDrillingToolpath(holes, tool, { peckDepth: 3 * targetD, safeZ: 10, rPlane: 3, reentryGap: 0.5 });
+    camOpRef.current = 'taladrado';
+    camGcodeRef.current = toGcode(segs, tool, `TALADRADO ${holes.length}x D${targetD.toFixed(1)}`);
+    const st = toolpathStats(segs, tool);
+    // SVG en planta: stock + barrenos numerados en orden de ruta + traslados punteados
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let i = 0; i < m.positions.length; i += 3) {
+      const X = m.positions[i] as number, Y = m.positions[i + 1] as number;
+      if (X < x0) x0 = X; if (X > x1) x1 = X;
+      if (Y < y0) y0 = Y; if (Y > y1) y1 = Y;
+    }
+    const pad = 20, W = (x1 - x0) + 2 * pad, H = (y1 - y0) + 2 * pad;
+    const sx = (v: number) => (v - x0 + pad), sy = (v: number) => (y1 - v + pad);
+    // el orden de ruta REAL vive en los segs (vecino-más-cercano): saco la secuencia XY única
+    const route: Array<[number, number]> = [];
+    for (const s of segs) {
+      const k: [number, number] = [s.to[0], s.to[1]];
+      if (!route.length || Math.hypot(k[0] - route[route.length - 1][0], k[1] - route[route.length - 1][1]) > 1e-6) route.push(k);
+    }
+    const holesSvg = route.map((q, i) =>
+      `<circle cx="${sx(q[0]).toFixed(1)}" cy="${sy(q[1]).toFixed(1)}" r="${(targetD / 2).toFixed(2)}" fill="none" stroke="#FDB813" stroke-width="1.4"/>` +
+      `<text x="${(sx(q[0]) + targetD / 2 + 1.5).toFixed(1)}" y="${(sy(q[1]) + 2).toFixed(1)}" font-size="6" font-family="monospace" fill="#111">${i + 1}</text>`).join('');
+    const travel = route.map((q, i) => `${i ? 'L' : 'M'} ${sx(q[0]).toFixed(1)} ${sy(q[1]).toFixed(1)}`).join(' ');
+    setCamTitle(`Taladrado ×${holes.length} — ciclo peck (G83 expandido)`);
+    setCamStats(`${holes.length} barrenos ⌀${targetD.toFixed(1)} (pilotos M8) · S${rpm} · f 0.15 mm/rev · peck ${(3 * targetD).toFixed(1)} · ~${st.timeMin.toFixed(2)} min`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<rect x="${pad}" y="${pad}" width="${(x1 - x0).toFixed(1)}" height="${(y1 - y0).toFixed(1)}" fill="#eef2f7" stroke="#111" stroke-width="1.2"/>` +
+      `<path d="${travel}" fill="none" stroke="#38bdf8" stroke-width="0.8" stroke-dasharray="4 3"/>` +
+      holesSvg +
+      `</svg>`);
+    setCamView3D(segs); setWorkspace('manufactura');
+    mark('cam-taladrado', 0, { n: holes.length, d: targetD });
+  }, []);
+  // ── CAM · ROSCADO (libro Cimo cap 9): drilling con Cycle Type=Tapping → G84 modal.
+  // Rosca los primeros 20mm de los pilotos (M8×1.25 sobre ⌀6.8). Símbolo de plano:
+  // doble círculo (rosca) como en los dibujos de taller.
+  const genCamTap = useCallback((pilotD: number, pitch = 1.25) => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    const holes = detectHolesFromMesh(m, pilotD);
+    if (!holes.length) { setOpErr(`CAM roscado: no encontré pilotos ⌀≈${pilotD.toFixed(1)}.`); return; }
+    const tap = { pilotD, pitch, rpm: 500 };
+    const params = { threadLen: 20, rPlane: 3, safeZ: 10 };
+    camOpRef.current = 'roscado';
+    camGcodeRef.current = generateTappingGcode(holes, tap, params);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let i = 0; i < m.positions.length; i += 3) {
+      const X = m.positions[i] as number, Y = m.positions[i + 1] as number;
+      if (X < x0) x0 = X; if (X > x1) x1 = X;
+      if (Y < y0) y0 = Y; if (Y > y1) y1 = Y;
+    }
+    const pad = 20, W = (x1 - x0) + 2 * pad, H = (y1 - y0) + 2 * pad;
+    const sx = (v: number) => (v - x0 + pad), sy = (v: number) => (y1 - v + pad);
+    const majorR = (pilotD + pitch) / 2;
+    const holesSvg = holes.map((h) =>
+      `<circle cx="${sx(h.x).toFixed(1)}" cy="${sy(h.y).toFixed(1)}" r="${(pilotD / 2).toFixed(2)}" fill="none" stroke="#111" stroke-width="0.9"/>` +
+      `<circle cx="${sx(h.x).toFixed(1)}" cy="${sy(h.y).toFixed(1)}" r="${majorR.toFixed(2)}" fill="none" stroke="#FDB813" stroke-width="1.2" stroke-dasharray="5 2.2"/>`).join('');
+    setCamTitle(`Roscado ${threadName(tap)} ×${holes.length} — ciclo G84 (rígido)`);
+    setCamStats(`${holes.length} roscas ${threadName(tap)} · prof 20mm · S500 · F=paso×S=${Math.round(pitch * 500)} · G84 modal`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<rect x="${pad}" y="${pad}" width="${(x1 - x0).toFixed(1)}" height="${(y1 - y0).toFixed(1)}" fill="#eef2f7" stroke="#111" stroke-width="1.2"/>` +
+      holesSvg +
+      `</svg>`);
+    setCamView3D(null);
+    mark('cam-roscado', 0, { n: holes.length, thread: threadName(tap) });
+  }, []);
+  // ── CAM · BORE (libro Cimo cap 10): el hueco grande (⌀32, piloto M36) no se puede
+  // taladrar — se FRESA en hélice pegada a la pared + vuelta completa a fondo plano.
+  const genCamBore = useCallback((targetD: number) => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    const holes = detectHolesFromMesh(m, targetD);
+    if (!holes.length) { setOpErr(`CAM bore: no encontré un hueco ⌀≈${targetD.toFixed(1)} vertical.`); return; }
+    const h = holes[0];
+    const toolD = camToolD < targetD - 1 ? camToolD : 16; // la fresa DEBE caber en el hueco
+    const rpm = Math.round(100000 / (Math.PI * toolD));
+    const tool = { diameter: toolD, rpm, feed: Math.round(0.15 * 4 * rpm), plunge: 400 };
+    const pitch = 2; // bajada por vuelta (mm/rev)
+    const segs = generateBoreToolpath(
+      { cx: h.x, cy: h.y, radius: targetD / 2, zTop: h.zTop, zBottom: h.zBottom },
+      tool, { pitch, safeZ: 10 });
+    if (!segs.length) { setOpErr(`CAM bore: la fresa ⌀${toolD} no cabe en ⌀${targetD.toFixed(1)}.`); return; }
+    camOpRef.current = 'bore';
+    camGcodeRef.current = toGcode(segs, tool, `BORE D${targetD.toFixed(1)} HELICOIDAL`);
+    const st = toolpathStats(segs, tool);
+    const depth = h.zTop - h.zBottom, vueltas = Math.ceil(depth / pitch);
+    const R = targetD / 2, rH = R - toolD / 2;
+    const pad = toolD + 12, W = 2 * R + 2 * pad, H2 = 2 * R + 2 * pad;
+    const sx = (v: number) => (v - h.x + R + pad), sy = (v: number) => (h.y + R - v + pad);
+    setCamTitle(`Bore ⌀${targetD.toFixed(1)} — hélice ${pitch}mm/rev · G2 helicoidal`);
+    setCamStats(`bore ⌀${targetD.toFixed(1)}×${depth.toFixed(1)}mm · fresa ⌀${toolD} · hélice r${rH.toFixed(1)} ${vueltas} vueltas · S${rpm} · corte ${st.cutLen.toFixed(0)}mm`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H2.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<circle cx="${sx(h.x).toFixed(1)}" cy="${sy(h.y).toFixed(1)}" r="${R.toFixed(1)}" fill="#eef2f7" stroke="#111" stroke-width="1.2"/>` +
+      `<circle cx="${sx(h.x).toFixed(1)}" cy="${sy(h.y).toFixed(1)}" r="${rH.toFixed(1)}" fill="none" stroke="#FDB813" stroke-width="1.6"/>` +
+      `<line x1="${sx(h.x + rH).toFixed(1)}" y1="${sy(h.y).toFixed(1)}" x2="${sx(h.x + rH).toFixed(1)}" y2="${(sy(h.y) - 6).toFixed(1)}" stroke="#38bdf8" stroke-width="0.9" stroke-dasharray="3 2"/>` +
+      `</svg>`);
+    setCamView3D(segs); setWorkspace('manufactura');
+    mark('cam-bore', 0, { d: targetD, depth });
+  }, [camToolD]);
+  // ── CAM · ADAPTIVE CLEARING 3D (libro Cimo cap 10): desbaste por niveles Z sobre
+  // la superficie REAL (heightmap de la malla + dilatación por fresa → cero gouge).
+  const genCamAdaptive3D = useCallback(() => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    const toolD = 10; // desbaste 3D con fresa chica (el libro cambia de herramienta aquí)
+    const rpm = Math.round(100000 / (Math.PI * toolD));
+    const tool = { diameter: toolD, rpm, feed: Math.round(0.1 * 4 * rpm), plunge: 500 };
+    const params = { stepdown: 5, stepover: 4, stockToLeave: 0.5, safeZ: 10, grid: 1.5 };
+    const segs = generateAdaptive3DToolpath({ positions: m.positions, indices: m.indices }, tool, params);
+    if (!segs.length) { setOpErr('CAM 3D: no hay material que desbastar (pieza plana al tope del stock).'); return; }
+    camOpRef.current = 'desbaste3d';
+    camGcodeRef.current = toGcode(segs, tool, 'ADAPTIVE 3D');
+    const st = toolpathStats(segs, tool);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, zT = -Infinity, zB = Infinity;
+    for (let i = 0; i < m.positions.length; i += 3) {
+      const X = m.positions[i] as number, Y = m.positions[i + 1] as number, Z = m.positions[i + 2] as number;
+      if (X < x0) x0 = X; if (X > x1) x1 = X;
+      if (Y < y0) y0 = Y; if (Y > y1) y1 = Y;
+      if (Z > zT) zT = Z; if (Z < zB) zB = Z;
+    }
+    const cuts = segs.filter(s => s.kind === 'cut');
+    const levels = [...new Set(cuts.map(s => s.from[2]))].sort((a, b) => b - a);
+    const pad = 20, W = (x1 - x0) + 2 * pad, H2 = (y1 - y0) + 2 * pad;
+    const sx = (v: number) => (v - x0 + pad), sy = (v: number) => (y1 - v + pad);
+    const lines = cuts.map((s) => {
+      const li = levels.indexOf(s.from[2]);
+      const op = (1 - 0.65 * (li / Math.max(1, levels.length - 1))).toFixed(2); // nivel más hondo = más tenue
+      return `<line x1="${sx(s.from[0]).toFixed(1)}" y1="${sy(s.from[1]).toFixed(1)}" x2="${sx(s.to[0]).toFixed(1)}" y2="${sy(s.to[1]).toFixed(1)}" stroke="#FDB813" stroke-width="1.1" opacity="${op}"/>`;
+    }).join('');
+    setCamTitle(`Adaptive 3D — ${levels.length} niveles · sin gouge (heightmap)`);
+    setCamStats(`${levels.length} niveles (a_p ${params.stepdown}) · fresa ⌀${toolD} · a_e ${params.stepover} · stock ${params.stockToLeave} · corte ${st.cutLen.toFixed(0)}mm · ~${st.timeMin.toFixed(1)} min`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H2.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<rect x="${pad}" y="${pad}" width="${(x1 - x0).toFixed(1)}" height="${(y1 - y0).toFixed(1)}" fill="#eef2f7" stroke="#111" stroke-width="1.2"/>` +
+      lines +
+      `</svg>`);
+    setCamView3D(segs); setWorkspace('manufactura');
+    mark('cam-adaptive3d', 0, { levels: levels.length });
+  }, []);
+  // ── CAM · TORNEADO (libro Cimo caps 2/4/5): careado CoroPlus + desbaste de perfil
+  // (G71 expandido, cero gouge) + acabado siguiendo el contorno + tronzado. El perfil
+  // r(z) se extrae de la MALLA (radio máx por rebanada) y el eje se DETECTA por esbeltez.
+  const genCamTurning = useCallback(() => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    const axis = detectAxis(m);
+    const profile = profileFromMesh(m, axis, 100);
+    const rMax = Math.max(...profile.map((q) => q.r));
+    if (rMax < 0.5) { setOpErr('CAM torno: no encuentro un sólido de revolución.'); return; }
+    const zF = profile[0].z, zB = profile[profile.length - 1].z;
+    const stock = { radius: rMax + 1.5, zFront: zF, zBack: zB };
+    const tool = { noseR: 0.8, feedRough: 0.491, feedFinish: 0.265, vcRough: 356, vcFinish: 415, maxRpm: 4000 };
+    const zEnd = zB - Math.min(6, (zB - zF) * 0.12); // el tramo del chuck no se tornea
+    const moves: LatheMove[] = [
+      ...turnFacing(stock, tool, { roughPasses: 2, roughAp: 1.02, finishAp: 0.96, clear: 2 }),
+      ...turnProfileRough(profile, stock, tool, { ap: 2, stockToLeave: 0.5, clear: 2, zStart: zF, zEnd }),
+      ...turnProfileFinish(profile, stock, tool, { clear: 2, zStart: zF, zEnd }),
+      ...turnPartOff(stock, tool, { z: zEnd, clear: 2 }),
+    ];
+    camOpRef.current = 'torneado';
+    camGcodeRef.current = toLatheGcode(moves, tool, 'PIEZA DE REVOLUCION', tool.vcRough);
+    // 3D: el plano del torno (x=radio) vive en el semiplano θ=0 alrededor del eje detectado
+    const to3D = (x: number, z: number): [number, number, number] =>
+      axis === 'x' ? [z, x, 0] : axis === 'y' ? [x, z, 0] : [x, 0, z];
+    setCamView3D(moves.map((mv) => ({
+      kind: mv.kind === 'cut' ? 'cut' as const : 'rapid' as const,
+      from: to3D(mv.from[0], mv.from[1]), to: to3D(mv.to[0], mv.to[1]),
+    })));
+    setWorkspace('manufactura');
+    // SVG: vista XZ del torno — perfil de la pieza + pasadas ámbar / rápidos agua
+    const st = { cut: 0 };
+    for (const mv of moves) if (mv.kind === 'cut') st.cut += Math.hypot(mv.to[0] - mv.from[0], mv.to[1] - mv.from[1]);
+    const pad = 14, W = (zB - zF) + 2 * pad + 8, H = stock.radius + 2 * pad;
+    const sx = (z: number) => (z - zF + pad), sy = (x: number) => (stock.radius - x + pad);
+    const profPath = profile.map((q, i) => `${i ? 'L' : 'M'} ${sx(q.z).toFixed(1)} ${sy(q.r).toFixed(1)}`).join(' ');
+    const mvs = moves.map((mv) =>
+      `<line x1="${sx(mv.from[1]).toFixed(1)}" y1="${sy(mv.from[0]).toFixed(1)}" x2="${sx(mv.to[1]).toFixed(1)}" y2="${sy(mv.to[0]).toFixed(1)}" stroke="${mv.kind === 'cut' ? '#FDB813' : '#38bdf8'}" stroke-width="${mv.kind === 'cut' ? 1.1 : 0.7}" ${mv.kind !== 'cut' ? 'stroke-dasharray="3 2.4"' : ''}/>`).join('');
+    setCamTitle(`Torneado — careado + desbaste + acabado + tronzado (eje ${axis.toUpperCase()})`);
+    setCamStats(`barra ⌀${(2 * stock.radius).toFixed(1)}×${(zB - zF).toFixed(0)}mm · G96 vc356/415 · f 0.491/0.265 mm/rev · corte ${st.cut.toFixed(0)}mm`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<line x1="0" y1="${sy(0).toFixed(1)}" x2="${W}" y2="${sy(0).toFixed(1)}" stroke="#889" stroke-width="0.5" stroke-dasharray="6 3"/>` +
+      `<rect x="${sx(zF).toFixed(1)}" y="${sy(stock.radius).toFixed(1)}" width="${(zB - zF).toFixed(1)}" height="${stock.radius.toFixed(1)}" fill="#dfe4ea" stroke="#99a"/>` +
+      `<path d="${profPath}" fill="none" stroke="#111" stroke-width="1.4"/>` + mvs +
+      `</svg>`);
+    mark('cam-torneado', 0, { axis, d: 2 * rMax });
+  }, []);
+  // ── CAM · LÁSER (Cimo caps 11-13): la PRIMERA capa del slicer da los contornos
+  // reales de la pieza plana (exterior + huecos) → nesting en hoja 1000×500 →
+  // G-code con kerf 0.4, interiores primero, pierce con pausa.
+  const genCamLaser = useCallback((count = 6) => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    const zs = sliceMesh({ positions: m.positions, indices: m.indices }, 1)[0];
+    if (!zs || !zs.loops.length) { setOpErr('CAM láser: no pude rebanar la pieza (¿es plana?).'); return; }
+    const area = (lp: { x: number; y: number }[]) => {
+      let a2 = 0;
+      for (let i = 0; i < lp.length; i++) { const q = lp[i], r = lp[(i + 1) % lp.length]; a2 += q.x * r.y - r.x * q.y; }
+      return Math.abs(a2 / 2);
+    };
+    const sorted = [...zs.loops].sort((l1, l2) => area(l2) - area(l1));
+    const part = { outline: sorted[0], holes: sorted.slice(1) };
+    const tool = { kerf: 0.4, feed: 3800, cutPower: 80, piercePower: 100, pierceMs: 300 };
+    const sheet = { w: 1000, h: 500 };
+    const places = nestParts(part, sheet, count, 8);
+    camOpRef.current = 'laser';
+    camGcodeRef.current = laserGcode(part, places, tool, `NESTING ${places.length}X`);
+    setCamView3D(null); setWorkspace('manufactura');
+    // SVG: la HOJA con el nesting + contornos
+    const sc = 0.6, W = sheet.w * sc + 20, H = sheet.h * sc + 20;
+    const loopPath = (lp: { x: number; y: number }[], dx: number, dy: number) =>
+      lp.map((q, i) => `${i ? 'L' : 'M'} ${((q.x + dx) * sc + 10).toFixed(1)} ${((sheet.h - q.y - dy) * sc + 10).toFixed(1)}`).join(' ') + ' Z';
+    const partsSvg = places.map((pl) =>
+      `<path d="${loopPath(part.outline, pl.dx, pl.dy)}" fill="#cfd6df" stroke="#FDB813" stroke-width="1.1"/>` +
+      (part.holes ?? []).map((hh) => `<path d="${loopPath(hh, pl.dx, pl.dy)}" fill="#E9ECF0" stroke="#FDB813" stroke-width="0.9"/>`).join('')).join('');
+    setCamTitle(`Láser — nesting ${places.length}× en hoja 1000×500 (kerf 0.4)`);
+    setCamStats(`fibra 4kW acero 3mm · feed 3800 mm/min · pierce 0.3s · interiores ANTES del exterior · ${places.length}/${count} piezas caben`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      `<rect x="10" y="10" width="${(sheet.w * sc).toFixed(0)}" height="${(sheet.h * sc).toFixed(0)}" fill="#dde3ea" stroke="#111" stroke-width="1.2"/>` +
+      partsSvg + `</svg>`);
+    mark('cam-laser', 0, { n: places.length });
+  }, []);
+  // ── CAM · IMPRESIÓN FDM (Cimo caps 14-17): slicer propio sobre la malla real →
+  // perímetros + infill ±45° (30%, libro cap 17) + G-code Marlin PLA 210/60.
+  const genCamPrint = useCallback(() => {
+    const m = resultRef.current?.mesh; if (!m) return;
+    const params = { layerH: 0.2, lineW: 0.4, infillPct: 30, nozzleTemp: 210, bedTemp: 60, feedPrint: 3600, feedFirst: 1200, filamentD: 1.75 };
+    const { gcode, layers } = slicePart({ positions: m.positions, indices: m.indices }, params);
+    if (!layers.length) { setOpErr('CAM impresión: no pude rebanar la pieza.'); return; }
+    camOpRef.current = 'impresion';
+    camGcodeRef.current = gcode;
+    // 3D: contornos e infill de capas MUESTREADAS (cada ~6) sobre la pieza
+    const segs: ToolpathSegment[] = [];
+    const step = Math.max(1, Math.floor(layers.length / 9));
+    for (let li = 0; li < layers.length; li += step) {
+      const ly = layers[li];
+      for (const lp of ly.loops)
+        for (let i = 0; i < lp.length; i++) {
+          const q = lp[i], r = lp[(i + 1) % lp.length];
+          segs.push({ kind: 'cut', from: [q.x, q.y, ly.z], to: [r.x, r.y, ly.z] });
+        }
+      for (const [sA, sB] of ly.infill)
+        segs.push({ kind: 'rapid', from: [sA.x, sA.y, ly.z], to: [sB.x, sB.y, ly.z] });
+    }
+    setCamView3D(segs); setWorkspace('manufactura');
+    const eTotal = (gcode.match(/E total ([\d.]+)/) ?? ['', '?'])[1];
+    // SVG: una capa media (contornos + infill)
+    const mid = layers[Math.floor(layers.length / 2)];
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const lp of mid.loops) for (const q of lp) {
+      if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x;
+      if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y;
+    }
+    const pad = 12, W = (x1 - x0) + 2 * pad, H = (y1 - y0) + 2 * pad;
+    const sx = (v: number) => (v - x0 + pad), sy = (v: number) => (y1 - v + pad);
+    const loopsSvg = mid.loops.map((lp) =>
+      `<path d="${lp.map((q, i) => `${i ? 'L' : 'M'} ${sx(q.x).toFixed(1)} ${sy(q.y).toFixed(1)}`).join(' ')} Z" fill="none" stroke="#111" stroke-width="1.2"/>`).join('');
+    const infillSvg = mid.infill.map(([sA, sB]) =>
+      `<line x1="${sx(sA.x).toFixed(1)}" y1="${sy(sA.y).toFixed(1)}" x2="${sx(sB.x).toFixed(1)}" y2="${sy(sB.y).toFixed(1)}" stroke="#FDB813" stroke-width="0.7"/>`).join('');
+    setCamTitle(`Impresión FDM — ${layers.length} capas · slicer propio`);
+    setCamStats(`PLA 210/60 · capa 0.2 · infill 30% ±45° · 1ª capa lenta · filamento ${eTotal}mm · Marlin`);
+    setCamSvg(
+      `<svg viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" style="background:#E9ECF0;max-width:100%;max-height:70vh">` +
+      infillSvg + loopsSvg + `</svg>`);
+    mark('cam-impresion', 0, { layers: layers.length });
+  }, []);
   const genPlano = useCallback(() => {
     if (!result) return;
     const draw = generateDrawing(
@@ -3246,7 +4394,8 @@ export default function ForgeBRepStudio() {
       { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm' },
     );
     setPlanoSvg(draw.svg);
-  }, [result, material]);
+    mark('plano', 0, { kind: sketch.kind });
+  }, [result, material, sketch.kind]);
   const downloadPlano = useCallback(() => {
     if (planoSvg) triggerDownload(new Blob([planoSvg], { type: 'image/svg+xml' }), 'forja-plano.svg');
   }, [planoSvg]);
@@ -3277,6 +4426,7 @@ export default function ForgeBRepStudio() {
     setFeaResult(null);
     setFeaFixedFace(null);
     setFeaLoadFace(null);
+    setCamView3D(null);   // el toolpath 3D caduca con la geometría
     feaSessionRef.current = null; // la geometría cambió → la sesión cacheada caduca
     setGenResult(null);
   }, [opCount, sketch.kind]);
@@ -3284,8 +4434,71 @@ export default function ForgeBRepStudio() {
   // Selección (toggle) de cara/arista para la op activa. SIEMPRE fija el
   // selectedFaceId/selectedEdgeId (para el HUD + resalte), y además, si hay una
   // op que consume caras/aristas (Shell / Fillet / Chamfer), togglea su lista.
+  const sketchFacePendingRef = useRef(false);   // croquis-sobre-cara: el próximo pick abre croquis en esa cara
+  const holeFacePendingRef = useRef(false);     // AGUJERO-EN-CARA: el próximo pick taladra ahí
+  const camPocketPendingRef = useRef(false);    // CAM ranura: el próximo pick es el FONDO de la ranura
+  const camDrillPendingRef = useRef(false);     // CAM taladrado: el próximo pick es la PARED de un barreno
   const togglePickFace = useCallback((i: number, p?: THREE.Vector3) => {
     setSelectedFaceId(i);
+    // CAM RANURA (libro Cimo cap 9): clic en el fondo de la ranura → toolpath de anillos
+    if (camPocketPendingRef.current) {
+      camPocketPendingRef.current = false;
+      setPickMode('none');
+      genCamPocket(i);
+      return;
+    }
+    // CAM TALADRADO (libro cap 9/5): clic en la pared de UN barreno → mismo-⌀ descubre el resto
+    if (camDrillPendingRef.current) {
+      camDrillPendingRef.current = false;
+      setPickMode('none');
+      const m = resultRef.current?.mesh;
+      if (m) {
+        let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
+        for (let t = 0; t < m.faceIds.length; t++) {
+          if (m.faceIds[t] !== i) continue;
+          for (let k = 0; k < 3; k++) {
+            const vi = m.indices[t * 3 + k];
+            const X = m.positions[vi * 3], Y = m.positions[vi * 3 + 1];
+            if (X < mnx) mnx = X; if (X > mxx) mxx = X;
+            if (Y < mny) mny = Y; if (Y > mxy) mxy = Y;
+          }
+        }
+        const dia = Math.max(mxx - mnx, mxy - mny);
+        if (isFinite(dia) && dia > 0.1) genCamDrill(dia);
+        else setOpErr('CAM taladrado: clic en la PARED cilíndrica de un barreno.');
+      }
+      return;
+    }
+    // AGUJERO-EN-CARA (Hole tool): clic en la cara → Component cilindro subtract con eje
+    // ⊥ a la cara en el PUNTO del clic. Panel: ⌀ (r) y profundidad (h; 200 = pasante).
+    if (holeFacePendingRef.current && p) {
+      holeFacePendingRef.current = false;
+      setPickMode('none');
+      const m = resultRef.current?.mesh;
+      const pl = m ? planeFromMeshFace(m, i) : null;
+      if (pl) {
+        // punto del clic en coords kernel (el grupo va rotado −90° en X: kernel = (x, −z, y))
+        const kp: [number, number, number] = [p.x, -p.z, p.y];
+        const c: Component = {
+          id: newId('comp'), name: 'Agujero', kind: 'cyl',
+          w: 0, d: 0, h: 200, r: 6, x: kp[0], y: kp[1], z: kp[2],
+          bool: 'subtract', plane3d: { origin: kp, uDir: pl.uDir, vDir: pl.vDir },
+        };
+        setComponents((cur) => [...cur, c]);
+        setActiveComp(c.id);
+      }
+      return;
+    }
+    // CROQUIS-SOBRE-CARA: si se pidió "croquis en cara", deriva el plano de la cara
+    // clicada (normal+centroide) y abre el editor de croquis SOBRE ella (no random).
+    if (sketchFacePendingRef.current) {
+      sketchFacePendingRef.current = false;
+      setPickMode('none');
+      const m = resultRef.current?.mesh;
+      const pl = m ? planeFromMeshFace(m, i) : null;
+      if (pl) { setSketch((s) => ({ ...s, plane3d: pl })); setSketchOpen(true); }
+      return;
+    }
     // COLOCACIÓN DE BARRENO por clic: el punto del mundo se mapea a (x,y) local.
     // El grupo del modelo está rotado -90° en X → mundo (X,Y,Z) = local (x, z, -y),
     // así que local x = mundo.x, local y = -mundo.z (el barreno se taladra en Z).
@@ -3307,7 +4520,7 @@ export default function ForgeBRepStudio() {
     const cur = (op as ShellOp).faces;
     const next = cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i];
     updateOp(op.id, { faces: next } as Partial<Op>);
-  }, [ops, activeOp, updateOp]);
+  }, [ops, activeOp, updateOp, genCamPocket, genCamDrill]);
   const togglePickEdge = useCallback((i: number) => {
     setSelectedEdgeId(i);
     // Si la arista clicada es RECTA, su eje (gp_Ax1) queda disponible para el
@@ -3326,6 +4539,65 @@ export default function ForgeBRepStudio() {
   const enableEdgePick = useCallback(() => {
     setPickMode((m) => (m === 'edge' ? 'none' : 'edge'));
   }, []);
+
+  // Arranca AGUJERO-EN-CARA: el próximo clic en una cara crea el barreno ⊥ ahí.
+  const startHoleOnFace = useCallback(() => {
+    holeFacePendingRef.current = true;
+    setActiveOp(null);
+    setPickMode('face');
+  }, []);
+
+  // Arranca CAM-RANURA: el próximo clic en una cara (fondo de la ranura) genera
+  // el toolpath de anillos climb (libro Cimo cap 9: "click on the cylindrical face").
+  const startCamPocket = useCallback(() => {
+    camPocketPendingRef.current = true;
+    setActiveOp(null);
+    setPickMode('face');
+  }, []);
+
+  // Arranca CAM-TALADRADO: clic en la pared de un barreno → Select Same Diameter.
+  const startCamDrill = useCallback(() => {
+    camDrillPendingRef.current = true;
+    setActiveOp(null);
+    setPickMode('face');
+  }, []);
+
+  // Arranca BOCETO-SOBRE-CARA: activa el pick de cara; el próximo clic en una cara abre
+  // el editor de boceto SOBRE ella (plane3d). Regla del libro: clic en la cara exacta.
+  const startSketchOnFace = useCallback(() => {
+    sketchFacePendingRef.current = true;
+    setActiveOp(null);
+    setPickMode('face');
+  }, []);
+  // ── BOCETO CON EL MOUSE (como Fusion): UN botón; al abrirse el selector se arma
+  // TAMBIÉN el pick de cara — clic en cara = boceto en la cara; clic en tarjeta de
+  // plano = boceto en ese plano. El botón "En cara" separado murió. ──
+  const openSketchChooser = useCallback(() => {
+    setSketchChooser(true);
+    sketchFacePendingRef.current = true;
+    setActiveOp(null);
+    setPickMode('face');
+  }, []);
+  const cancelSketchChooser = useCallback(() => {
+    setSketchChooser(false);
+    sketchFacePendingRef.current = false;
+    setPickMode('none');
+  }, []);
+  const pickChooserPlane = useCallback((pl: 'xy' | 'yz' | 'xz') => {
+    setSketch((c) => ({ ...c, plane: pl, plane3d: undefined }));
+    setSketchChooser(false);
+    sketchFacePendingRef.current = false;
+    setPickMode('none');
+    setSketchOpen(true);
+  }, []);
+  // El selector se esfuma cuando el boceto abre (p.ej. clic en una cara) o con Esc.
+  useEffect(() => { if (sketchOpen && sketchChooser) setSketchChooser(false); }, [sketchOpen, sketchChooser]);
+  useEffect(() => {
+    if (!sketchChooser) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') cancelSketchChooser(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sketchChooser, cancelSketchChooser]);
 
   // El picking se puede activar SIN una op (modo "inspección"): permite elegir
   // cara/arista para ver el ID en el HUD antes de crear el feature.
@@ -3714,6 +4986,74 @@ export default function ForgeBRepStudio() {
       setPickMode,
       pickFace: togglePickFace,
       pickEdge: togglePickEdge,
+      startHoleOnFace,   // Hole tool: armar y luego CLIC REAL en la cara (como el humano)
+      startCamPocket,    // CAM ranura: armar y luego CLIC REAL en el fondo de la ranura
+      startCamDrill,     // CAM taladrado: armar y luego CLIC REAL en la pared de un barreno
+      camDrillAuto: (d: number) => genCamDrill(d),  // arnés: Select Same Diameter directo
+      camTapAuto: (d: number, pitch?: number) => genCamTap(d, pitch),  // roscado G84 sobre los pilotos ⌀d
+      camBoreAuto: (d: number) => genCamBore(d),  // bore helicoidal del hueco grande ⌀d
+      camAdaptive3D: () => genCamAdaptive3D(),    // desbaste 3D por niveles (toda la pieza)
+      camTurnAuto: () => genCamTurning(),         // torno completo (careado+desbaste+acabado+tronzado)
+      camLaserAuto: (n?: number) => genCamLaser(n),   // nesting + corte láser de la pieza plana
+      camPrintAuto: () => genCamPrint(),              // slicer FDM completo
+      setWorkspace: (w: 'diseno' | 'manufactura' | 'simulacion') => setWorkspace(w),  // pestaña de la toolbar
+      // Patrón circular del componente ACTIVO (equivale a mover los controles del panel):
+      // count copias alrededor de axis. c6t3: rayos del volante ×3 alrededor de Z.
+      setActiveCompPattern: (count: number, axis?: 'x' | 'y' | 'z') => {
+        setComponents((cur) => cur.map((c) => (c.id === activeComp ? { ...c, patternCount: count, patternAxis: axis ?? c.patternAxis } : c)));
+      },
+      // Convierte el componente ACTIVO (croquis) en REVOLVE-join/cut alrededor del eje global.
+      setActiveCompRevolve: (axis: 'x' | 'y' | 'z', angle: number) => {
+        setComponents((cur) => cur.map((c) => (c.id === activeComp ? { ...c, revolve: { axis, angle } } : c)));
+      },
+      // CROQUIS-SOBRE-CARA por API (fiable para el arnés: sin adivinar pixel de la cara).
+      sketchOnFace: (faceId: number) => { sketchFacePendingRef.current = true; togglePickFace(faceId); },
+      // Elige AUTOMÁTICAMENTE la cara superior (normal≈+Z, mayor centroide Z) y croquiza en ella.
+      sketchOnTopFace: () => {
+        const m = resultRef.current?.mesh; if (!m) return;
+        const ids = Array.from(new Set(Array.from(m.faceIds as ArrayLike<number>)));
+        let best = -1, bestZ = -Infinity;
+        for (const id of ids) {
+          const pl = planeFromMeshFace(m, id); if (!pl) continue;
+          const nz = pl.uDir[0] * pl.vDir[1] - pl.uDir[1] * pl.vDir[0]; // (u×v).z = normal.z
+          if (nz > 0.7 && pl.origin[2] > bestZ) { bestZ = pl.origin[2]; best = id; }
+        }
+        if (best >= 0) { sketchFacePendingRef.current = true; togglePickFace(best); }
+      },
+      // PLANO DE REFERENCIA ARBITRARIO (Plane-at-Angle de Fusion, cap 5): el caller da
+      // origen (punto en la arista) + uDir/vDir del plano (calculados de arista+ángulo,
+      // como teclear 135° en el PropertyManager). Setea plane3d y abre el croquis ahí.
+      sketchOnPlane3d: (origin: [number, number, number], uDir: [number, number, number], vDir: [number, number, number]) => {
+        setSketch((s) => ({ ...s, plane3d: { origin, uDir, vDir } }));
+        setSketchOpen(true);
+      },
+      // Cara INFERIOR (normal≈−Z, menor centroide Z) — tutoriales que croquizan abajo (rueda, yoke).
+      sketchOnBottomFace: () => {
+        const m = resultRef.current?.mesh; if (!m) return;
+        const ids = Array.from(new Set(Array.from(m.faceIds as ArrayLike<number>)));
+        let best = -1, bestZ = Infinity;
+        for (const id of ids) {
+          const pl = planeFromMeshFace(m, id); if (!pl) continue;
+          const nz = pl.uDir[0] * pl.vDir[1] - pl.uDir[1] * pl.vDir[0];
+          if (nz < -0.7 && pl.origin[2] < bestZ) { bestZ = pl.origin[2]; best = id; }
+        }
+        if (best >= 0) { sketchFacePendingRef.current = true; togglePickFace(best); }
+      },
+      // GENERAL: croquis sobre la cara cuyo normal apunta a +/-X|Y|Z y su centroide es el
+      // extremo en ese eje (right=x/max, front=y/min, top=z/max...). Cubre TODOS los tutoriales.
+      sketchOnFaceDir: (ax: 'x' | 'y' | 'z', side: 'max' | 'min') => {
+        const m = resultRef.current?.mesh; if (!m) return;
+        const idx = ax === 'x' ? 0 : ax === 'y' ? 1 : 2;
+        const want = side === 'min' ? -1 : 1;
+        const ids = Array.from(new Set(Array.from(m.faceIds as ArrayLike<number>)));
+        let best = -1, bestProj = -Infinity;
+        for (const id of ids) {
+          const pl = planeFromMeshFace(m, id); if (!pl) continue;
+          const n = [pl.uDir[1] * pl.vDir[2] - pl.uDir[2] * pl.vDir[1], pl.uDir[2] * pl.vDir[0] - pl.uDir[0] * pl.vDir[2], pl.uDir[0] * pl.vDir[1] - pl.uDir[1] * pl.vDir[0]];
+          if (n[idx] * want > 0.7) { const proj = pl.origin[idx] * want; if (proj > bestProj) { bestProj = proj; best = id; } }
+        }
+        if (best >= 0) { sketchFacePendingRef.current = true; togglePickFace(best); }
+      },
       listFaces: () => result?.faces ?? [],
       listEdges: () => result?.edges ?? [],
       // Geometría pickeable de aristas (polilínea + eje si es recta).
@@ -3749,10 +5089,26 @@ export default function ForgeBRepStudio() {
       const ra2 = mate.rp2 + sketch.gear.module;
       asmSpan = mate.centerDistance + ra1 + ra2;
     }
+    // BBOX REAL de la malla (incluye TODOS los componentes: paredes, perno, rayos…)
+    // → encuadra CUALQUIER pieza, no solo la del croquis base. Es el fix de "no se
+    // veía la pieza completa": antes solo estimaba del sketch, ignorando componentes.
+    const realSpan = meshBBox ? 2 * Math.max(meshBBox.half[0], meshBBox.half[1], meshBBox.half[2]) : 0;
     const span = Math.max(sketch.width, sketch.height, sketch.radius * 2, stepLen, stepR * 2,
-      sketch.kind === 'gear' ? gearD : 0, asmSpan, 30);
-    return Math.max(60, span * 2.6);
-  }, [sketch, assembly]);
+      sketch.kind === 'gear' ? gearD : 0, asmSpan, realSpan, 30);
+    return Math.max(60, span * (realSpan > 0 ? 2.2 : 2.6));
+  }, [sketch, assembly, meshBBox]);
+
+  // AUTO-ENCUADRAR: cuando el TAMAÑO de la pieza cambia notablemente (agregar una
+  // pared/componente/perno grande), salta a una vista iso que la abarca COMPLETA.
+  // Antes la cámara se quedaba pegada y la pieza no se veía entera.
+  const lastFitSpan = useRef(0);
+  useEffect(() => {
+    if (!meshBBox) return;
+    const span = 2 * Math.max(meshBBox.half[0], meshBBox.half[1], meshBBox.half[2]);
+    if (Math.abs(span - lastFitSpan.current) > lastFitSpan.current * 0.2 + 8) {
+      lastFitSpan.current = span; setView('iso');
+    }
+  }, [meshBBox, setView]);
 
   // El <canvas> lo crea R3F dentro del viewport; le ponemos data-testid para
   // que Playwright pueda clicar por COORDENADAS del viewport de forma estable.
@@ -3765,12 +5121,60 @@ export default function ForgeBRepStudio() {
   const ok = result ? result.topo.euler === 2 : false;
   const mat = MATERIALS[material];
 
+  // ── CROQUIS EN ESCENA (orden del user: el croquis NO es otra pantalla) ──
+  // El plano ACTIVO del croquis, resuelto en coordenadas del kernel: plane3d manda
+  // (croquis-en-cara); si no, el plano base XY/YZ/XZ con su offset.
+  const sketchPlaneK = useMemo<SketchPlane3D>(() => {
+    if (sketch.plane3d) return sketch.plane3d;
+    const base = (sketch.plane ?? 'xy') === 'yz' ? PLANE_YZ : (sketch.plane ?? 'xy') === 'xz' ? PLANE_XZ : PLANE_XY;
+    return (sketch.planeOffset ?? 0) !== 0 ? offsetPlane(base, sketch.planeOffset ?? 0) : base;
+  }, [sketch.plane, sketch.planeOffset, sketch.plane3d]);
+  // Cámara PERPENDICULAR al plano: con Z constante, la proyección en perspectiva del
+  // plano es una SIMILITUD exacta ⇒ px/mm uniforme ⇒ el SVG del editor (escala fija)
+  // cae SOBRE el plano 3D real. El nudge 0.002·d evita el gimbal de OrbitControls al
+  // salir (error de escala ~2e-6: invisible).
+  const sketchCam = useMemo(() => {
+    if (!sketchOpen) return null;
+    const el = viewportRef.current;
+    const W = el?.clientWidth ?? 1600, H = el?.clientHeight ?? 900;
+    const S = (Math.min(W, H) * 0.44) / 140;                      // px/mm (encuadre por defecto del editor)
+    const d = H / (2 * S * Math.tan(((35 * Math.PI) / 180) / 2)); // fov vertical 35°
+    const k2w = (p: [number, number, number]): [number, number, number] => [p[0], p[2], -p[1]];
+    const { origin, uDir, vDir } = sketchPlaneK;
+    const n: [number, number, number] = [
+      uDir[1] * vDir[2] - uDir[2] * vDir[1],
+      uDir[2] * vDir[0] - uDir[0] * vDir[2],
+      uDir[0] * vDir[1] - uDir[1] * vDir[0],
+    ];
+    const nl = Math.hypot(n[0], n[1], n[2]) || 1;
+    const o = k2w(origin);
+    const nw = k2w([n[0] / nl, n[1] / nl, n[2] / nl]);
+    const uw = k2w([uDir[0], uDir[1], uDir[2]]);
+    const up = k2w([vDir[0], vDir[1], vDir[2]]);
+    return {
+      pos: [o[0] + nw[0] * d + uw[0] * d * 0.002, o[1] + nw[1] * d + uw[1] * d * 0.002, o[2] + nw[2] * d + uw[2] * d * 0.002] as [number, number, number],
+      target: o as [number, number, number], up: up as [number, number, number], pxPerMm: S,
+    };
+    // ribbonMin cambia el ALTO del viewport → recalibrar cámara/escala si colapsan
+    // la barra a mitad del croquis.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sketchOpen, sketchPlaneK, ribbonMin]);
+
   return (
-    <div className="fb-root">
+    <div className={`fb-root${hideChrome ? ' fb-chrome-off' : ''}${ribbonMin ? ' fb-ribbon-min' : ''}`}>
       <style>{CSS}</style>
 
       {/* ── VIEWPORT ── */}
-      <div className="fb-viewport" data-testid="viewport" ref={viewportRef}>
+      <div
+        className="fb-viewport" data-testid="viewport" ref={viewportRef}
+        onContextMenu={(e) => {
+          // Clic derecho = menú radial de operaciones (no durante el croquis: ahí
+          // el botón derecho es del editor). preventDefault mata el menú del browser.
+          if (sketchOpen) return;
+          e.preventDefault();
+          setRadial({ x: e.clientX, y: e.clientY });
+        }}
+      >
         <CadViewport
           cameraDistance={cameraDist}
           autoRotate={false}
@@ -3779,16 +5183,24 @@ export default function ForgeBRepStudio() {
           view={viewReq}
           orbit={orbitReq}
           viewTarget={meshBBox ? [meshBBox.center[0], meshBBox.center[2], -meshBBox.center[1]] : [0, 0, 0]}
+          sketchCam={sketchCam}
         >
           <group rotation={[-Math.PI / 2, 0, 0]}>
-            {!(gbMotion && gbParts) && showSketch && <SketchPlane />}
-            {!(gbMotion && gbParts) && showSketch && <ProfileGhost pts={profilePts} />}
+            {/* CAM vivo: stock + toolpath 3D solo en workspace MANUFACTURA */}
+            {workspace === 'manufactura' && meshBBox && result && !building && (
+              <CamStock3D center={meshBBox.center as [number, number, number]} half={meshBBox.half as [number, number, number]} />
+            )}
+            {workspace === 'manufactura' && camView3D && <CamToolpath3D segs={camView3D} />}
+            {!(gbMotion && gbParts) && showSketch && <SketchPlane plane={sketchPlaneK} />}
+            {/* El fantasma del perfil VIEJO se esconde mientras el croquis está
+                abierto: el SVG en vivo ES la verdad ahí; dos versiones confunden. */}
+            {!(gbMotion && gbParts) && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
             {gbMotion && gbParts ? (
               <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} clip={sectionPlanes} />
             ) : sketch.kind === 'gearbox' && showOverhangs && result ? (
               // ANÁLISIS DE VOLADIZOS: la caja COMPLETA (compound) con mapa de calor
               // de voladizos (rojo = necesita soporte). La sección/altura la recorta.
-              <SolidMesh mesh={result.mesh} faded={building} matKey={material}
+              <SolidMesh mesh={result.mesh} faded={building} matKey={material} tint={partColor}
                 faces={result.faces} edgeGeoms={result.edgeGeoms} selFaces={[]} selEdges={[]}
                 pickMode="none" onPickFace={() => {}} onPickEdge={() => {}}
                 feaColors={null} overhangColors={overhangColors} clip={sectionPlanes} />
@@ -3812,6 +5224,7 @@ export default function ForgeBRepStudio() {
                 mesh={result.mesh}
                 faded={building}
                 matKey={material}
+                tint={partColor}
                 faces={result.faces}
                 edgeGeoms={result.edgeGeoms}
                 selFaces={selFaces}
@@ -3834,7 +5247,52 @@ export default function ForgeBRepStudio() {
 
         {/* EDITOR DE CROQUIS 2D — dibujar perfil con restricciones (solver en vivo). */}
         {sketchOpen && (
-          <SketchEditor onFinish={onSketchFinish} onCancel={() => setSketchOpen(false)} />
+          <SketchEditor onFinish={onSketchFinish} onCancel={() => setSketchOpen(false)} projScale={sketchCam?.pxPerMm} />
+        )}
+
+        {/* SELECTOR DE BOCETO — tarjeta flotante; el viewport queda VIVO para que el
+            clic en una cara de la pieza decida (pick de cara armado en paralelo). */}
+        {sketchChooser && !sketchOpen && (
+          <div className="fb-chooser" data-testid="sketch-chooser">
+            <div className="fb-chooser-head">
+              <b>¿Dónde va el boceto?</b>
+              <button className="fb-chooser-x" data-testid="chooser-cancel" onClick={cancelSketchChooser} title="Cancelar (Esc)">✕</button>
+            </div>
+            <div className="fb-chooser-planes">
+              {(['xy', 'yz', 'xz'] as const).map((pl) => (
+                <button key={pl} data-testid={`chooser-plane-${pl}`} onClick={() => pickChooserPlane(pl)}
+                  title={`Bocetar en el plano ${pl.toUpperCase()}`}>
+                  <span className="glyph">{pl === 'xy' ? '▭' : pl === 'yz' ? '▯' : '▱'}</span>
+                  {pl.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <div className="fb-chooser-hint">… o haz clic directo en una <b>cara</b> de la pieza</div>
+          </div>
+        )}
+
+        {/* MENÚ RADIAL dorado (clic derecho): las operaciones del taller en un gesto */}
+        {radial && (
+          <RadialMenu
+            x={radial.x} y={radial.y} onClose={() => setRadial(null)}
+            items={[
+              { id: 'sketch', label: 'Boceto', glyph: '✏', onPick: openSketchChooser },
+              { id: 'extrude', label: 'Extruir', glyph: '⤒', onPick: () => addOp('extrude') },
+              { id: 'revolve', label: 'Revolución', glyph: '⟳', onPick: () => addOp('revolve') },
+              { id: 'hole', label: 'Barreno', glyph: '◎', onPick: startHole },
+              { id: 'fillet', label: 'Redondeo', glyph: '◜', onPick: () => addOp('fillet') },
+              { id: 'chamfer', label: 'Chaflán', glyph: '◹', onPick: () => addOp('chamfer') },
+              { id: 'pattern', label: 'Patrón', glyph: '⠿', onPick: () => addOp('pattern') },
+              { id: 'plano', label: 'Plano 2D', glyph: '▤', onPick: genPlano },
+            ]}
+          />
+        )}
+
+        {/* SIMULACIÓN DEL CICLO DE INYECCIÓN — overlay a pantalla completa */}
+        {cycleSimOn && (
+          <Suspense fallback={null}>
+            <MoldCycleSim onClose={() => setCycleSimOn(false)} />
+          </Suspense>
         )}
 
         {/* PALETA DE ATAJOS estilo Fusion "S" en el cursor (se abre con la tecla S). */}
@@ -3846,19 +5304,22 @@ export default function ForgeBRepStudio() {
           />
         )}
 
-        {/* HINT descubrible: la tecla S abre la paleta de atajos. */}
-        <div
+        {/* ATAJOS VISIBLES (orden del user): botón real, no susurro — clic o tecla S. */}
+        <button
           data-testid="shortcut-hint"
+          onClick={() => setShortcutPos({ x: 320, y: Math.max(180, window.innerHeight - 340) })}
+          title="Paleta de atajos (o presiona S): C círculo · B rect · L línea · E extruir · F redondeo…"
           style={{
-            position: 'absolute', left: 240, bottom: 20, zIndex: 6, pointerEvents: 'none',
-            display: 'flex', alignItems: 'center', gap: 7,
-            background: 'rgba(13,18,28,0.7)', border: `1px solid ${GOLD}33`, borderRadius: 8,
-            padding: '5px 11px', fontSize: 11, color: '#cdd6e2', fontFamily: "'JetBrains Mono', monospace",
+            position: 'absolute', left: 14, bottom: 88, zIndex: 6, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(13,18,28,0.88)', border: `1px solid ${GOLD}66`, borderRadius: 9,
+            padding: '7px 13px', fontSize: 12.5, color: '#e9eef5', fontFamily: "'JetBrains Mono', monospace",
+            boxShadow: '0 4px 14px rgba(0,0,0,.4)',
           }}
         >
-          <span style={{ color: GOLD, fontWeight: 700 }}>S</span>
-          <span>atajos · teclas C B L E F…</span>
-        </div>
+          <span style={{ color: GOLD, fontWeight: 700, border: `1px solid ${GOLD}88`, borderRadius: 4, padding: '0 6px' }}>S</span>
+          <span>atajos del taller</span>
+        </button>
 
         {pickMode !== 'none' && (
           <div className="fb-pick-hint" data-testid="pick-hint">
@@ -3886,7 +5347,7 @@ export default function ForgeBRepStudio() {
 
         {/* HUD de selección: el faceId/edgeId que el picking acaba de fijar.
             Playwright lee este nodo para verificar que el clic cambió la cara. */}
-        <div className="fb-hud-sel" data-testid="hud-selected-face"
+        <div className={`fb-hud-sel ${selectedFaceId == null ? 'empty' : ''}`} data-testid="hud-selected-face"
           style={sketch.kind === 'gearbox' && selectedFaceId == null ? { display: 'none' } : undefined}>
           {selectedFaceId != null ? (
             <>
@@ -3904,7 +5365,7 @@ export default function ForgeBRepStudio() {
 
         {/* HUD de ARISTA SIEMPRE presente (incluso vacío): Playwright lee este
             nodo antes/después del clic para confirmar el cambio de edgeId. */}
-        <div className="fb-hud-edge" data-testid="hud-selected-edge"
+        <div className={`fb-hud-edge ${selectedEdgeId == null ? 'empty' : ''}`} data-testid="hud-selected-edge"
           style={sketch.kind === 'gearbox' && selectedEdgeId == null ? { display: 'none' } : undefined}>
           {selectedEdgeId != null ? (
             (() => {
@@ -3966,53 +5427,41 @@ export default function ForgeBRepStudio() {
       {!hideChrome && (
         <BindContext.Provider value={bindCtx}>
           {/* Encabezado */}
+          {/* ── APP BAR ÚNICA (lo mejor de Fusion): marca + documento + workspaces +
+                estado + undo + Opciones — UNA sola banda, no tres. ── */}
           <header className="fb-header">
             <div className="fb-mark">⚒</div>
             <div className="fb-titles">
               <h1 data-testid="doc-title">{docName} <span className="fb-doc-studio">· Part Studio</span>
                 {importedStep && <span className="fb-imported-tag" data-testid="imported-tag">STEP importado</span>}</h1>
-              <p>La Forja · kernel B-Rep exacto (OpenCASCADE)</p>
             </div>
-            <div className={`fb-kernel ${oc ? 'on' : 'off'}`} data-testid="kernel-status">
+            <div className="fb-ws-tabs" role="tablist">
+              <button className={workspace === 'diseno' ? 'on' : ''} data-testid="tab-diseno" role="tab"
+                onClick={() => setWorkspace('diseno')}>DISEÑO</button>
+              <button className={workspace === 'manufactura' ? 'on' : ''} data-testid="tab-manufactura" role="tab"
+                onClick={() => setWorkspace('manufactura')}>MANUFACTURA</button>
+              {/* SIMULACIÓN es un ESTUDIO (orden del user), no una ventana perpetua. */}
+              <button className={workspace === 'simulacion' ? 'on' : ''} data-testid="tab-simulacion" role="tab"
+                onClick={() => setWorkspace('simulacion')}>SIMULACIÓN</button>
+            </div>
+            <span className="fb-tb-spring" />
+            <div className={`fb-kernel ${oc ? 'on' : 'off'}`} data-testid="kernel-status" title={oc ? 'OCCT-WASM listo' : bootErr ? 'kernel falló' : 'cargando kernel…'}>
               <span className="dot" />
-              {oc ? 'OCCT-WASM listo' : bootErr ? 'kernel falló' : 'cargando kernel…'}
             </div>
-            {/* ── Undo / Redo (Ctrl+Z · Ctrl+Y) ── */}
             <div className="fb-undo">
               <button data-testid="btn-undo" onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)">↶</button>
               <button data-testid="btn-redo" onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Y)">↷</button>
+              {/* RIBBON COLAPSABLE (orden del user): la pieza SIEMPRE a la vista. */}
+              <button data-testid="btn-ribbon-toggle" onClick={toggleRibbon}
+                title={ribbonMin ? 'Mostrar la barra de herramientas' : 'Colapsar la barra (la pieza siempre a la vista)'}>
+                {ribbonMin ? '⌄' : '⌃'}</button>
+              {/* COLOR DE LA PIEZA — clic cicla la paleta (adiós al metálico). */}
+              <button data-testid="btn-part-color" onClick={cyclePartColor} title="Color de la pieza — clic para cambiar"
+                style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #2a3546', background: partColor, cursor: 'pointer', padding: 0 }} />
             </div>
-          </header>
-
-          {/* ── TOOLBAR de operaciones (botones) ── */}
-          <div className="fb-toolbar" data-testid="toolbar">
-            <span className="fb-tb-label">Operaciones</span>
-            <button data-testid="btn-sketch" onClick={() => setSketchOpen(true)} title="Croquis: dibuja el perfil con restricciones (azul→negro)">✎ Croquis</button>
-            <button data-testid="btn-extrude" onClick={() => addOp('extrude')} title="Extrude (boss/base)">⬓ Extrude</button>
-            <button data-testid="btn-hole" onClick={() => startHole()} title="Barreno / corte cilíndrico — clic en la cara para colocarlo">◎ Hole</button>
-            <button data-testid="btn-fillet" onClick={() => addOp('fillet')} title="Redondeo de aristas">◜ Fillet</button>
-            <button data-testid="btn-chamfer" onClick={() => addOp('chamfer')} title="Bisel de aristas">◹ Chamfer</button>
-            <button data-testid="btn-shell" onClick={() => addOp('shell')} title="Vaciado / pared delgada">▢ Shell</button>
-            <button data-testid="btn-revolve" onClick={() => addOp('revolve')} title="Revolución del perfil">⟳ Revolve</button>
-            <button data-testid="btn-gear" onClick={applyGear} title="Engrane de involuta (m, Z, α, espesor, barreno)">⚙ Engrane</button>
-            <button data-testid="btn-gearbox" onClick={applyGearbox} title="Caja cicloidal multi-disco (reductor durable de plástico, 1 pieza)">⊞ Caja</button>
-            <button data-testid="btn-pocket" onClick={() => addOp('pocket')} title="Corte / bolsillo: resta un perfil rect o círculo (ranuras, cajeras)">⊟ Corte</button>
-            <button data-testid="btn-pattern" onClick={() => addOp('pattern')} title="Patrón: rectangular / circular / espejo del sólido">⁘ Patrón</button>
-            <span className="fb-tb-sep" />
-            <button data-testid="btn-params" className={paramsOpen ? 'on' : ''}
-              onClick={() => setParamsOpen((v) => !v)} title="Parámetros con ecuaciones (Change Parameters)">ƒₓ Parámetros</button>
-            <button data-testid="btn-plano" onClick={genPlano} disabled={!result}
-              title="Plano de taller: 3 vistas ortográficas acotadas (líneas ocultas) → SVG">📐 Plano</button>
-            <button data-testid="btn-section-tool" className={sectionOn ? 'on' : ''} onClick={() => setSectionOn((v) => !v)} disabled={!result}
-              title="Sección: corta la pieza para ver adentro — arrastra la FLECHA con el mouse (como Fusion)">✂ Sección</button>
-            <span className="fb-tb-sep" />
-            <button data-testid="btn-component" onClick={() => addComponent('box')}
-              title="Ensamble: agrega un componente (bloque/cilindro) posicionado en 3D">🧩 Componente</button>
-            {/* ── Menú ⋮ Opciones (documento): exportar + visibilidad, ya no sueltos ── */}
-            <span className="fb-tb-sep" />
             <div className="fb-menu-wrap">
               <button className={`fb-menu-btn ${optionsOpen ? 'on' : ''}`} data-testid="btn-options"
-                onClick={() => { setOptionsOpen((v) => { if (!v) refreshLib(); return !v; }); }} title="Opciones del documento">⋮ Opciones</button>
+                onClick={() => { setOptionsOpen((v) => { if (!v) refreshLib(); return !v; }); }} title="Opciones del documento"><Ic name="opciones" />Opciones</button>
               {optionsOpen && (
                 <>
                   <div className="fb-menu-scrim" onClick={() => setOptionsOpen(false)} />
@@ -4021,26 +5470,26 @@ export default function ForgeBRepStudio() {
                     <input className="fb-doc-name" data-testid="input-doc-name" value={docName} spellCheck={false}
                       onChange={(e) => setDocName(e.target.value)} placeholder="Nombre de la pieza" />
                     <button data-testid="menu-new" role="menuitem"
-                      onClick={() => { newDoc(); setOptionsOpen(false); }}>📄  Nueva pieza</button>
+                      onClick={() => { newDoc(); setOptionsOpen(false); }}>Nueva pieza</button>
                     {makeExamples().map((ex) => (
                       <button key={ex.name} data-testid="menu-example" role="menuitem"
                         onClick={() => { loadDoc(ex.doc()); setOptionsOpen(false); }}>{ex.name}</button>
                     ))}
                     <button data-testid="menu-save" role="menuitem"
-                      onClick={() => { saveToLibrary(); refreshLib(); }}>💾  Guardar <em>en biblioteca</em></button>
+                      onClick={() => { saveToLibrary(); refreshLib(); }}>Guardar <em>en biblioteca</em></button>
                     <label className="fb-menu-link" role="menuitem" style={{ cursor: 'pointer' }}>
-                      ⬆  Importar .json
+                      Importar .json
                       <input type="file" accept=".json,application/json" data-testid="input-import" style={{ display: 'none' }}
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) { importDocFile(f); setOptionsOpen(false); } }} />
                     </label>
                     <label className="fb-menu-link" role="menuitem" style={{ cursor: 'pointer' }}>
-                      🧩  Importar STEP <em>(step.parts, robots…)</em>
+                      Importar STEP <em>(step.parts, robots…)</em>
                       <input type="file" accept=".step,.stp,application/step,application/STEP" data-testid="input-import-step" style={{ display: 'none' }}
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) { importStepFile(f); setOptionsOpen(false); } }} />
                     </label>
                     {importedStep && (
                       <button data-testid="menu-clear-step" role="menuitem" className="danger"
-                        onClick={() => { clearImportedStep(); setOptionsOpen(false); }}>✕  Quitar STEP importado</button>
+                        onClick={() => { clearImportedStep(); setOptionsOpen(false); }}>✕ Quitar STEP importado</button>
                     )}
                     {libNames.length > 0 && (
                       <>
@@ -4049,7 +5498,7 @@ export default function ForgeBRepStudio() {
                           {libNames.map((n) => (
                             <div key={n} className="fb-lib-row">
                               <button className="fb-lib-open" data-testid={`lib-open-${n}`}
-                                onClick={() => { loadFromLibrary(n); setOptionsOpen(false); }} title={`Abrir "${n}"`}>📂 {n}</button>
+                                onClick={() => { loadFromLibrary(n); setOptionsOpen(false); }} title={`Abrir "${n}"`}>{n}</button>
                               <button className="fb-lib-del" data-testid={`lib-del-${n}`}
                                 onClick={() => deleteFromLibrary(n)} title="Borrar de la biblioteca">✕</button>
                             </div>
@@ -4061,7 +5510,7 @@ export default function ForgeBRepStudio() {
                     <div className="fb-menu-sec">Vista</div>
                     <button data-testid="menu-toggle-sketch" role="menuitem"
                       onClick={() => { setShowSketch((v) => !v); setOptionsOpen(false); }}>
-                      {showSketch ? '🙈  Ocultar boceto' : '👁  Mostrar boceto'}
+                      {showSketch ? 'Ocultar boceto' : 'Mostrar boceto'}
                     </button>
                     <div className="fb-menu-sep" />
                     <div className="fb-menu-sec">Exportar</div>
@@ -4069,25 +5518,161 @@ export default function ForgeBRepStudio() {
                       className={`fb-menu-link ${result ? '' : 'disabled'}`}
                       href={result ? (stepBlobUrl.current ?? '#') : undefined} download="forja-part.step"
                       onClick={() => result && setOptionsOpen(false)} aria-disabled={!result}>
-                      ⬇  STEP <em>(B-Rep exacto)</em>
+                      STEP <em>(B-Rep exacto)</em>
                     </a>
                     <button data-testid="menu-export-stl" role="menuitem"
                       disabled={!result && !genResult}
                       onClick={() => { exportSTL(); setOptionsOpen(false); }}>
-                      ⬇  STL <em>{genResult ? '(generativo)' : '(malla)'}</em>
+                      STL <em>{genResult ? '(generativo)' : '(malla)'}</em>
                     </button>
                     <button data-testid="menu-export-json" role="menuitem"
                       onClick={() => { exportDocFile(); setOptionsOpen(false); }}>
-                      ⬇  .json <em>(pieza editable)</em>
+                      .json <em>(pieza editable)</em>
                     </button>
                   </div>
                 </>
               )}
             </div>
+          </header>
+
+          {/* ── RIBBON (lo mejor de SolidWorks CommandManager + Fusion): UNA banda de
+                GRUPOS con botones grandes icono-arriba-label y el CAPTION del grupo
+                debajo. Las ops de VISTA viven en la heads-up bar del viewport. ── */}
+          <div className="fb-toolbar" data-testid="toolbar">
+            <div className="fb-ribbon">
+            {workspace === 'diseno' && <>
+            <div className="fb-group">
+              <div className="fb-group-row">
+                {/* UN solo botón: el MOUSE decide dónde (plano base o cara de la pieza). */}
+                <button className="fb-big primary" data-testid="btn-sketch" onClick={openSketchChooser} title="Boceto: elige un plano o haz clic en una cara de la pieza — el mouse decide"><Ic name="croquis" /><span>Boceto</span></button>
+                <div className="fb-sketch-ctx">
+                  <div className="fb-sketch-ctx-line">
+                    <div className="fb-seg" title="Plano del croquis">
+                    {(['xy', 'yz', 'xz'] as const).map((pl) => (
+                      <button key={pl} data-testid={`set-plane-${pl}`} className={(sketch.plane ?? 'xy') === pl ? 'on' : ''}
+                        onClick={() => setSketch((c) => ({ ...c, plane: pl, plane3d: undefined }))}
+                        title={`Bocetar en el plano ${pl.toUpperCase()}`}>{pl.toUpperCase()}</button>
+                    ))}
+                    </div>
+                    <input data-testid="input-plane-offset" className="fb-tb-num" type="number" value={sketch.planeOffset ?? 0}
+                      onChange={(e) => setSketch((c) => ({ ...c, planeOffset: parseFloat(e.target.value) || 0 }))}
+                      title="Offset del plano (mm)" />
+                  </div>
+                  <div className="fb-sketch-ctx-line">
+                    <div className="fb-seg" title="Qué hace el croquis al terminar">
+                    {(['new', 'join', 'cut'] as const).map((opn) => (
+                      <button key={opn} data-testid={`sketch-op-${opn}`} className={sketchOp === opn ? 'on' : ''}
+                        onClick={() => setSketchOp(opn)}
+                        title={opn === 'new' ? 'El boceto crea una base nueva' : opn === 'join' ? 'SUMA material (saliente)' : 'RESTA material (corte)'}>
+                        {opn === 'new' ? 'Base' : opn === 'join' ? 'Unir' : 'Cortar'}</button>
+                    ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="fb-group-cap">BOCETO</div>
+            </div>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-extrude" onClick={() => addOp('extrude')} title="Extruir (saliente/base)"><Ic name="extruir" /><span>Extruir</span></button>
+                <button className="fb-big" data-testid="btn-revolve" onClick={() => addOp('revolve')} title="Revolución del perfil alrededor de un eje"><Ic name="revolucion" /><span>Revolución</span></button>
+                <button className="fb-big" data-testid="btn-hole-face" onClick={startHoleOnFace} title="Agujero en cara: clic en una cara y taladra ⊥ (⌀ y profundidad editables)"><Ic name="agujerocara" /><span>Agujero</span></button>
+                <button className="fb-big" data-testid="btn-pattern" onClick={() => addOp('pattern')} title="Patrón: rectangular / circular / espejo"><Ic name="patron" /><span>Patrón</span></button>
+                <div className="fb-menu-wrap">
+              <button data-testid="btn-mas" className={masOpen ? 'on' : ''}
+                onClick={() => setMasOpen((v) => !v)} title="Más features (transición, barrido, engranes, vaciado…)">Más ▾</button>
+              {masOpen && (
+                <>
+                  <div className="fb-menu-scrim" onClick={() => setMasOpen(false)} />
+                  <div className="fb-menu fb-menu-mas" role="menu">
+                    <button data-testid="btn-loft" role="menuitem" onClick={() => { addOp('loft'); setMasOpen(false); }}><Ic name="transicion" />Transición (loft)</button>
+                    <button data-testid="btn-sweep" role="menuitem" onClick={() => { addOp('sweep'); setMasOpen(false); }}><Ic name="barrido" />Barrido (sweep)</button>
+                    <button data-testid="btn-hole" role="menuitem" onClick={() => { startHole(); setMasOpen(false); }}><Ic name="barreno" />Barreno</button>
+                    <button data-testid="btn-shell" role="menuitem" onClick={() => { addOp('shell'); setMasOpen(false); }}><Ic name="vaciado" />Vaciado (shell)</button>
+                    <button data-testid="btn-draft" role="menuitem" onClick={() => { addOp('draft'); setMasOpen(false); }}><Ic name="chaflan" />Ángulo de salida (draft)</button>
+                    <button data-testid="btn-pocket" role="menuitem" onClick={() => { addOp('pocket'); setMasOpen(false); }}><Ic name="cajera" />Cajera</button>
+                    <button data-testid="btn-gear" role="menuitem" onClick={() => { applyGear(); setMasOpen(false); }}><Ic name="engrane" />Engrane de involuta</button>
+                    <button data-testid="btn-gearbox" role="menuitem" onClick={() => { applyGearbox(); setMasOpen(false); }}><Ic name="cajacic" />Caja cicloidal</button>
+                    <button data-testid="btn-params" role="menuitem" onClick={() => { setParamsOpen((v) => !v); setMasOpen(false); }}><Ic name="params" />Parámetros ƒₓ</button>
+                    <button data-testid="btn-component" role="menuitem" onClick={() => { addComponent('box'); setMasOpen(false); }}><Ic name="componente" />Componente</button>
+                  </div>
+                </>
+              )}
+            </div>
+              </div>
+              <div className="fb-group-cap">CREAR</div>
+            </div>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-fillet" onClick={() => addOp('fillet')} title="Redondeo de aristas"><Ic name="redondeo" /><span>Redondeo</span></button>
+                <button className="fb-big" data-testid="btn-chamfer" onClick={() => addOp('chamfer')} title="Chaflán de aristas"><Ic name="chaflan" /><span>Chaflán</span></button>
+              </div>
+              <div className="fb-group-cap">MODIFICAR</div>
+            </div>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-plano" onClick={genPlano} disabled={!result}
+                  title="Plano de taller: 3 vistas ortográficas acotadas → SVG"><Ic name="planotaller" /><span>Plano</span></button>
+              </div>
+              <div className="fb-group-cap">DOCUMENTAR</div>
+            </div>
+            </>}
+            {workspace === 'manufactura' && <>
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-cam-face" onClick={genCam} disabled={!result}
+                  title="Careado (face milling): stock = bbox; zigzag + G-code (Cimo cap 9)"><Ic name="careado" /><span>Careado</span></button>
+                <button className="fb-big" data-testid="btn-cam-pocket" onClick={startCamPocket} disabled={!result}
+                  title="Cajera circular (2D Adaptive): clic en el FONDO de la ranura (Cimo cap 9)"><Ic name="cajera2d" /><span>Cajera 2D</span></button>
+                <button className="fb-big" data-testid="btn-cam-drill" onClick={startCamDrill} disabled={!result}
+                  title="Taladrado: clic en la pared de UN barreno → mismo-⌀ + ciclo peck (Cimo cap 9/5)"><Ic name="taladrado" /><span>Taladrado</span></button>
+                <button className="fb-big" data-testid="btn-cam-tap" onClick={() => genCamTap(6.8)} disabled={!result}
+                  title="Roscado M8×1.25 sobre pilotos ⌀6.8 → G84 modal (Cimo cap 9)"><Ic name="roscado" /><span>Roscado</span></button>
+                <button className="fb-big" data-testid="btn-cam-bore" onClick={() => genCamBore(32)} disabled={!result}
+                  title="Mandrinado (Bore): hélice pegada a la pared, G2 helicoidal (Cimo cap 10)"><Ic name="mandrinado" /><span>Mandrinado</span></button>
+                <button className="fb-big" data-testid="btn-cam-adaptive" onClick={genCamAdaptive3D} disabled={!result}
+                  title="Desbaste 3D: niveles Z sobre la superficie real, cero gouge (Cimo cap 10)"><Ic name="desbaste3d" /><span>Desbaste 3D</span></button>
+              </div>
+              <div className="fb-group-cap">FRESADO · CIMO CAP 9-10</div>
+            </div>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-cam-turn" onClick={genCamTurning} disabled={!result}
+                  title="Torneado (Cimo caps 2/4/5): careado CoroPlus + desbaste de perfil sin gouge + acabado + tronzado — G96/G95, X en diámetro"><Ic name="torno" /><span>Torneado</span></button>
+              </div>
+              <div className="fb-group-cap">TORNO · CIMO CAP 4-5</div>
+            </div>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-cam-laser" onClick={() => genCamLaser(6)} disabled={!result}
+                  title="Corte láser (Cimo caps 11-13): nesting en hoja 1000×500, kerf 0.4, interiores primero, pierce"><Ic name="laser" /><span>Láser</span></button>
+                <button className="fb-big" data-testid="btn-cam-print" onClick={genCamPrint} disabled={!result}
+                  title="Impresión FDM (Cimo caps 14-17): slicer propio — capas 0.2, infill 30% ±45°, Marlin PLA"><Ic name="impresion" /><span>Imprimir</span></button>
+              </div>
+              <div className="fb-group-cap">LÁSER+3D · CIMO 11-17</div>
+            </div>
+            </>}
+            </div>
+          </div>
+
+          {/* ── HEADS-UP VIEW BAR (firma de SolidWorks): las ops de VISTA flotan sobre
+                el viewport, no engordan el ribbon. ── */}
+          <div className="fb-hud-view" data-testid="hud-view">
+            <button data-testid="btn-fit" onClick={() => setView('iso')} disabled={!result} title="Encuadrar la pieza completa"><Ic name="encuadrar" /></button>
+            <button onClick={() => setView('iso')} disabled={!result} title="Vista isométrica">ISO</button>
+            <button onClick={() => setView('top')} disabled={!result} title="Vista superior">SUP</button>
+            <button onClick={() => setView('front')} disabled={!result} title="Vista frontal">FRE</button>
+            <button data-testid="btn-section-tool" className={sectionOn ? 'on' : ''} onClick={() => setSectionOn((v) => !v)} disabled={!result} title="Sección: corta la pieza para ver adentro"><Ic name="seccion" /></button>
           </div>
 
           {/* ── Panel izquierdo: GRAFO de features (clic = editar) ── */}
-          <aside className={`fb-features ${collapsed.features ? 'collapsed' : ''}`} data-testid="feature-tree">
+          <div className="fb-rail fb-rail-left" data-testid="rail-left">
+          <aside className={`fb-features ${collapsed.features ? 'collapsed' : ''} ${winPos.features ? 'floating' : ''}`} data-testid="feature-tree" onPointerDown={winDrag('features')} onDoubleClick={winUndock('features')} style={winStyle('features')}>
             <CollapseHead id="features" title="Documento" collapsed={!!collapsed.features}
               onToggle={() => toggleCollapse('features')}
               right={<span className="fb-count">{ops.length + 1}</span>} />
@@ -4098,8 +5683,12 @@ export default function ForgeBRepStudio() {
             >
               <span className="ico">▣</span>
               <div className="fb-feat-body">
-                <strong>Sketch 1</strong>
-                <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo' : sketch.kind === 'revprofile' ? `Perfil escalón ×${sketch.steps.length}` : sketch.kind === 'gear' ? `Engrane Z${sketch.gear.teeth} m${sketch.gear.module}` : 'Perfil L'} · Plano XY</em>
+                <strong>Boceto 1</strong>
+                <em>{sketch.kind === 'rect' ? 'Rectángulo' : sketch.kind === 'circle' ? 'Círculo'
+                  : sketch.kind === 'revprofile' ? `Perfil escalón ×${sketch.steps.length}`
+                  : sketch.kind === 'gear' ? `Engrane Z${sketch.gear.teeth} m${sketch.gear.module}`
+                  : sketch.kind === 'custom' ? (sketch.customCircle ? `Círculo ⌀${(2 * sketch.customCircle.r).toFixed(0)}` : `Boceto · ${sketch.customProfile?.length ?? 0} pts`)
+                  : sketch.kind === 'lprofile' ? 'Perfil L' : 'Boceto'} · Plano XY</em>
               </div>
             </div>
             {ops.map((op, i) => {
@@ -4226,70 +5815,7 @@ export default function ForgeBRepStudio() {
               </>
             )}
           </aside>
-
-          {/* ── Menú CONTEXTUAL (clic derecho en un nodo del árbol) ── */}
-          {ctxMenu && (() => {
-            const op = ops.find((o) => o.id === ctxMenu.opId);
-            if (!op) return null;
-            const idx = ops.findIndex((o) => o.id === ctxMenu.opId);
-            return (
-              <>
-                <div className="fb-ctx-scrim" onClick={() => setCtxMenu(null)}
-                  onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }} />
-                <div className="fb-ctx" data-testid="ctx-menu" role="menu"
-                  style={{ left: Math.min(ctxMenu.x, window.innerWidth - 200), top: Math.min(ctxMenu.y, window.innerHeight - 280) }}>
-                  <div className="fb-ctx-head">{op.name ?? `${opTitle(op.type)} ${idx + 1}`}</div>
-                  <button data-testid="ctx-edit" onClick={() => { setActiveOp(op.id); setCtxMenu(null); }}>✎ Editar</button>
-                  <button data-testid="ctx-rename" onClick={() => { setEditingOpId(op.id); setEditingName(op.name ?? `${opTitle(op.type)} ${idx + 1}`); setCtxMenu(null); }}>✏ Renombrar</button>
-                  <div className="fb-menu-sep" />
-                  <button data-testid="ctx-up" disabled={idx === 0} onClick={() => { moveOp(op.id, -1); setCtxMenu(null); }}>↑ Subir</button>
-                  <button data-testid="ctx-down" disabled={idx === ops.length - 1} onClick={() => { moveOp(op.id, 1); setCtxMenu(null); }}>↓ Bajar</button>
-                  <button data-testid="ctx-suppress" onClick={() => { toggleSuppressOp(op.id); setCtxMenu(null); }}>{op.suppressed ? '◌ Reactivar' : '👁 Suprimir'}</button>
-                  <button data-testid="ctx-rollback" onClick={() => { rollTo(idx + 1); setCtxMenu(null); }}>⟲ Rollback aquí</button>
-                  <div className="fb-menu-sep" />
-                  <button className="danger" data-testid="ctx-delete" onClick={() => { removeOp(op.id); setCtxMenu(null); }}>✕ Eliminar</button>
-                </div>
-              </>
-            );
-          })()}
-
-          {/* ── PARÁMETROS con ecuaciones (Change Parameters de Fusion) ── */}
-          {paramsOpen && (
-            <aside className="fb-paramspanel" data-testid="params-panel">
-              <CollapseHead id="paramstbl" title="Parámetros · ecuaciones" collapsed={false}
-                onToggle={() => setParamsOpen(false)} right={<span className="fb-count">{params.length}</span>} />
-              <div className="fb-ptable">
-                <div className="fb-prow head"><span>Nombre</span><span>Expresión</span><span>=</span><span /></div>
-                {params.length === 0 && <div className="fb-phint">Sin parámetros. Crea <b>ancho=40</b>, <b>alto=ancho/2</b>… y liga cotas con <b>ƒₓ</b>.</div>}
-                {params.map((p, i) => {
-                  const err = resolvedParams.errors[p.id];
-                  const val = resolvedParams.values[p.id];
-                  return (
-                    <div className={`fb-prow ${err ? 'err' : ''}`} key={p.id}>
-                      <input className="fb-pname" data-testid={`param-name-${i}`} value={p.name} spellCheck={false}
-                        onChange={(e) => updateParam(p.id, { name: e.target.value })} />
-                      <input className="fb-pexpr" data-testid={`param-expr-${i}`} value={p.expr} spellCheck={false}
-                        onChange={(e) => updateParam(p.id, { expr: e.target.value })} />
-                      <span className="fb-pval" data-testid={`param-val-${i}`} title={err ?? ''}>
-                        {err ? '⚠' : (val != null ? val.toFixed(2) : '—')}
-                      </span>
-                      <button className="fb-prow-x" data-testid={`param-del-${i}`}
-                        onClick={() => removeParam(p.id)} title="Borrar parámetro">×</button>
-                    </div>
-                  );
-                })}
-              </div>
-              <button className="fb-pick-btn" data-testid="btn-add-param" onClick={addParam}>+ Parámetro</button>
-              <p className="fb-hint-txt">Las cotas con <b>ƒₓ</b> leen estos nombres. Cambias uno y el sólido se recalcula. Funciones: sqrt, sin, cos, min, max… consts: pi, e.</p>
-            </aside>
-          )}
-
-          {/* ── Lista SIEMPRE disponible de caras (selección determinista) ──
-              Independiente de la op activa: clic en una entrada fija
-              selectedFaceId (y, si hay Shell activo, togglea su cara abierta).
-              Playwright elige la cara superior/inferior/lateral por testid sin
-              depender de coordenadas del viewport. */}
-          <aside className={`fb-facelist ${collapsed.faces ? 'collapsed' : ''}`} data-testid="face-list">
+          <aside className={`fb-facelist ${collapsed.faces ? 'collapsed' : ''} ${winPos.faces ? 'floating' : ''}`} data-testid="face-list" onPointerDown={winDrag('faces')} onDoubleClick={winUndock('faces')} style={winStyle('faces')}>
             <CollapseHead id="faces" title="Caras del sólido" collapsed={!!collapsed.faces}
               onToggle={() => toggleCollapse('faces')}
               right={<span className="fb-count">{result?.faces.length ?? 0}</span>} />
@@ -4311,9 +5837,126 @@ export default function ForgeBRepStudio() {
               ))}
             </div>
           </aside>
+          {workspace === 'simulacion' && (
+          <aside className={`fb-sim ${collapsed.sim ? 'collapsed' : ''} ${winPos.sim ? 'floating' : ''}`} data-testid="sim-panel" onPointerDown={winDrag('sim')} onDoubleClick={winUndock('sim')} style={winStyle('sim')}>
+            <CollapseHead id="sim" title="Simulación · von Mises (FEA real)" collapsed={!!collapsed.sim}
+              onToggle={() => toggleCollapse('sim')} />
+            {/* ── CICLO DE INYECCIÓN: la simulación VIVA del molde (motor Kazmer) ── */}
+            <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${GOLD}22` }}>
+              <p className="fb-hint-txt">
+                Molde de 2 placas ciclando: llenado por frente real, campo térmico FDM
+                en sección viva, F_apertura vs clamp (aviso de FUGA) y agua en canales.
+              </p>
+              <button className="fb-fea-run" data-testid="btn-cycle-sim" onClick={() => setCycleSimOn(true)}>
+                ▶ Ciclo de inyección (molde vivo)
+              </button>
+            </div>
 
-          {/* ── Panel derecho: OPCIONES de la op activa ── */}
-          <aside className={`fb-params ${collapsed.params ? 'collapsed' : ''}`} data-testid="op-panel">
+            <p className="fb-hint-txt">
+              Resuelve K·u = f en malla tet del sólido (no es heatmap: es FEM).
+              σ_vM, factor de seguridad σ_y/σ_max y deflexión máx.
+            </p>
+
+            <div className="fb-sim-bc">
+              <div className="fb-sim-bc-row">
+                <button className="fb-pick-btn" data-testid="btn-pick-fija"
+                  onClick={() => startFeaPick('fija')}
+                  style={feaPickTarget === 'fija' ? { background: `${GOLD}33` } : undefined}>
+                  {feaPickTarget === 'fija' ? '◉ Clic en cara FIJA…' : '○ Cara FIJA (empotrar)'}
+                </button>
+                <span className="fb-sim-tag" data-testid="fea-fija-id">
+                  {feaFixedFace != null ? `#${feaFixedFace}` : '—'}
+                </span>
+              </div>
+              <div className="fb-sim-bc-row">
+                <button className="fb-pick-btn" data-testid="btn-pick-carga"
+                  onClick={() => startFeaPick('carga')}
+                  style={feaPickTarget === 'carga' ? { background: `${GOLD}33` } : undefined}>
+                  {feaPickTarget === 'carga' ? '◉ Clic en cara de CARGA…' : '○ Cara de CARGA'}
+                </button>
+                <span className="fb-sim-tag" data-testid="fea-carga-id">
+                  {feaLoadFace != null ? `#${feaLoadFace}` : '—'}
+                </span>
+              </div>
+            </div>
+
+            <Dim label="Carga" value={feaLoadN} unit="N" min={10} max={50000} step={10}
+              testid="input-carga"
+              onChange={(v) => { if (feaSessionRef.current) feaLiveSetLoad(v); else setFeaLoadN(v); }} />
+
+            <button className="fb-fea-run" data-testid="btn-fea"
+              onClick={() => runFeaAnalysis()} disabled={feaBusy || !oc || feaFixedFace == null}>
+              {feaBusy ? '⏳ Resolviendo K·u = f…' : '▶ Analizar (von Mises)'}
+            </button>
+            {feaColors && (
+              <button className="fb-sim-clear" data-testid="btn-fea-clear" onClick={clearFeaOverlay}>
+                Quitar overlay (volver a metal)
+              </button>
+            )}
+            {feaErr && <div className="fb-sim-err" data-testid="fea-error">{feaErr}</div>}
+
+            {/* ── DISEÑO GENERATIVO: misma cara fija + carga; vacía hasta la forma óptima ── */}
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${GOLD}22` }}>
+              <Dim label="Material objetivo" value={Math.round(genVolfrac * 100)} unit="%" min={10} max={80} step={5}
+                testid="input-volfrac" onChange={(v) => setGenVolfrac(Math.max(0.1, Math.min(0.8, v / 100)))} />
+              <button className="fb-fea-run" data-testid="btn-generativo"
+                onClick={() => runGenerative()} disabled={genBusy || !oc || feaFixedFace == null}
+                style={{ background: GOLD, color: '#1a1206', fontWeight: 700 }}>
+                {genBusy ? '⚡ Optimizando topología…' : '⚡ Diseño generativo'}
+              </button>
+              {genResult && (
+                <>
+                  <Dim label="Umbral visible" value={Math.round(genThreshold * 100)} unit="%" min={5} max={90} step={5}
+                    testid="input-umbral" onChange={(v) => setGenThreshold(Math.max(0.05, Math.min(0.9, v / 100)))} />
+                  <div className="fb-row hi">
+                    <span className="rk">Material quitado</span>
+                    <span className="rv" data-testid="gen-void">{Math.round(genVoidPct)}%</span>
+                  </div>
+                  <button className="fb-sim-clear" data-testid="btn-gen-smooth" onClick={() => setGenSmooth((s) => !s)}>
+                    {genSmooth ? '◼ Ver voxeles (crudo)' : '⬭ Ver superficie suave'}
+                  </button>
+                  <button className="fb-sim-clear" data-testid="btn-gen-clear" onClick={clearGenerative}>
+                    Volver al sólido
+                  </button>
+                </>
+              )}
+              {genErr && <div className="fb-sim-err" data-testid="gen-error">{genErr}</div>}
+            </div>
+
+            {feaResult ? (
+              <div className="fb-sim-out">
+                <div className="fb-row hi">
+                  <span className="rk">Máx von Mises</span>
+                  <span className="rv" data-testid="fea-max-vm">{(feaResult.maxVonMises / 1e6).toFixed(2)} MPa</span>
+                </div>
+                <div className={`fb-row ${feaResult.minSafetyFactor < 1 ? 'fs-bad' : 'fs-ok'}`}>
+                  <span className="rk">Factor de seguridad</span>
+                  <span className="rv" data-testid="fea-fs">
+                    {Number.isFinite(feaResult.minSafetyFactor) ? feaResult.minSafetyFactor.toFixed(2) : '∞'}
+                  </span>
+                </div>
+                <div className="fb-row">
+                  <span className="rk">Deflexión máx</span>
+                  <span className="rv" data-testid="fea-deflexion">{feaResult.maxDisplacement.toFixed(4)} mm</span>
+                </div>
+                <div className="fb-row">
+                  <span className="rk">Malla / solver</span>
+                  <span className="rv" data-testid="fea-mesh">
+                    {feaResult.mesh.nNodes}n · {feaResult.mesh.nTets}t · {feaResult.solver.iterations}it
+                    {feaResult.solver.converged ? ' ✓' : ' ✕'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="fb-sim-out">
+                <div className="fb-row"><span className="rk">Estado</span><span className="rv">{feaBusy ? 'calculando…' : 'elige cara fija + Analizar'}</span></div>
+              </div>
+            )}
+          </aside>
+          )}
+          </div>
+          <div className="fb-rail fb-rail-right" data-testid="rail-right">
+          <aside className={`fb-params ${collapsed.params ? 'collapsed' : ''} ${winPos.params ? 'floating' : ''}`} data-testid="op-panel" onPointerDown={winDrag('params')} onDoubleClick={winUndock('params')} style={winStyle('params')}>
             <CollapseHead id="params" title="Parámetros" collapsed={!!collapsed.params}
               onToggle={() => toggleCollapse('params')} />
 
@@ -4326,7 +5969,35 @@ export default function ForgeBRepStudio() {
                   <button data-testid="comp-cyl" className={activeCompObj.kind === 'cyl' ? 'on' : ''}
                     onClick={() => updateComponent(activeCompObj.id, { kind: 'cyl' })}>Cilindro</button>
                 </div>
-                {activeCompObj.kind === 'box' ? (
+                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.6, margin: '11px 0 5px' }}>Combinar con el cuerpo</div>
+                <div className="fb-seg" data-testid="comp-bool">
+                  <button data-testid="comp-bool-none" className={(activeCompObj.bool ?? 'none') === 'none' ? 'on' : ''} title="Junto: sin booleana (compound)"
+                    onClick={() => updateComponent(activeCompObj.id, { bool: 'none' })}>Junto</button>
+                  <button data-testid="comp-bool-union" className={activeCompObj.bool === 'union' ? 'on' : ''} title="Unir (fuse) al cuerpo"
+                    onClick={() => updateComponent(activeCompObj.id, { bool: 'union' })}>Unir</button>
+                  <button data-testid="comp-bool-subtract" className={activeCompObj.bool === 'subtract' ? 'on' : ''} title="Restar este componente del cuerpo"
+                    onClick={() => updateComponent(activeCompObj.id, { bool: 'subtract' })}>Restar</button>
+                  <button data-testid="comp-bool-cavity" className={activeCompObj.bool === 'subtractFrom' ? 'on' : ''} title="CAVIDAD de molde: este bloque MENOS la pieza"
+                    onClick={() => updateComponent(activeCompObj.id, { bool: 'subtractFrom' })}>Cavidad</button>
+                </div>
+                {activeCompObj.bool === 'subtractFrom' && (
+                  <Dim label="Contracción ×" value={activeCompObj.cavityScale ?? 1} unit="" min={1} max={1.2} step={0.01} testid="input-comp-cavity-scale"
+                    onChange={(v) => updateComponent(activeCompObj.id, { cavityScale: v })} />
+                )}
+                {(activeCompObj.bool ?? 'none') !== 'none' && (
+                  <>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.6, margin: '9px 0 5px' }}>Conservar sólido (partir molde)</div>
+                    <div className="fb-seg">
+                      <button data-testid="comp-keep-all" className={!activeCompObj.keep ? 'on' : ''} title="Todo el resultado"
+                        onClick={() => updateComponent(activeCompObj.id, { keep: undefined })}>Todo</button>
+                      <button data-testid="comp-keep-largest" className={activeCompObj.keep === 'largest' ? 'on' : ''} title="Solo el sólido MAYOR (cavity plate)"
+                        onClick={() => updateComponent(activeCompObj.id, { keep: 'largest' })}>Mayor</button>
+                      <button data-testid="comp-keep-smallest" className={activeCompObj.keep === 'smallest' ? 'on' : ''} title="Solo el sólido MENOR (macho del core)"
+                        onClick={() => updateComponent(activeCompObj.id, { keep: 'smallest' })}>Menor</button>
+                    </div>
+                  </>
+                )}
+                {activeCompObj.kind === 'box' && (
                   <>
                     <Dim label="Ancho (X)" value={activeCompObj.w} unit="mm" min={2} max={3000} step={1} testid="input-comp-w"
                       onChange={(v) => updateComponent(activeCompObj.id, { w: v })} />
@@ -4335,14 +6006,39 @@ export default function ForgeBRepStudio() {
                     <Dim label="Alto (Z)" value={activeCompObj.h} unit="mm" min={2} max={3000} step={1} testid="input-comp-h"
                       onChange={(v) => updateComponent(activeCompObj.id, { h: v })} />
                   </>
-                ) : (
+                )}
+                {activeCompObj.kind === 'cyl' && (
                   <>
-                    <Dim label="Radio" value={activeCompObj.r} unit="mm" min={1} max={1000} step={1} testid="input-comp-r"
+                    <Dim label="Radio" value={activeCompObj.r} unit="mm" min={1} max={1000} step={0.1} testid="input-comp-r"
                       onChange={(v) => updateComponent(activeCompObj.id, { r: v })} />
                     <Dim label="Altura (Z)" value={activeCompObj.h} unit="mm" min={2} max={3000} step={1} testid="input-comp-h"
                       onChange={(v) => updateComponent(activeCompObj.id, { h: v })} />
                   </>
                 )}
+                {activeCompObj.kind === 'sketch' && (
+                  <Dim label="Profundidad" value={activeCompObj.depth ?? 12} unit="mm" min={1} max={3000} step={1} testid="input-comp-depth"
+                    onChange={(v) => updateComponent(activeCompObj.id, { depth: v })} />
+                )}
+                {activeCompObj.kind === 'sweeppath' && (
+                  <>
+                    <Dim label="Perfil ancho (en plano)" value={2 * (activeCompObj.sweepRx ?? 5)} unit="mm" min={1} max={200} step={1} testid="input-comp-swx"
+                      onChange={(v) => updateComponent(activeCompObj.id, { sweepRx: v / 2 })} />
+                    <Dim label="Perfil alto" value={2 * (activeCompObj.sweepRy ?? 20)} unit="mm" min={1} max={200} step={1} testid="input-comp-swy"
+                      onChange={(v) => updateComponent(activeCompObj.id, { sweepRy: v / 2 })} />
+                  </>
+                )}
+                <Dim label="Patrón circular ×" value={activeCompObj.patternCount ?? 1} unit="" min={1} max={64} step={1} testid="input-comp-patn"
+                  onChange={(v) => updateComponent(activeCompObj.id, { patternCount: v })} />
+                <div className="fb-sel-head">Espejar (mirror)</div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[['none', '—'], ['yz', 'YZ'], ['zx', 'ZX'], ['xy', 'XY']].map(([m, lbl]) => (
+                    <button key={m} data-testid={`comp-mirror-${m}`}
+                      onClick={() => updateComponent(activeCompObj.id, { mirror: (m === 'none' ? undefined : m) as ('yz' | 'zx' | 'xy' | undefined) })}
+                      style={{ flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 11, cursor: 'pointer',
+                        background: (activeCompObj.mirror ?? 'none') === m ? '#FDB813' : 'rgba(255,255,255,0.05)',
+                        color: (activeCompObj.mirror ?? 'none') === m ? '#1a1206' : '#9fb3c8', border: '1px solid #283443' }}>{lbl}</button>
+                  ))}
+                </div>
                 <div className="fb-divider" />
                 <div className="fb-sel-head">Posición del centro (mm)</div>
                 <Dim label="X" value={activeCompObj.x} unit="mm" min={-1500} max={1500} step={1} testid="input-comp-x"
@@ -4654,8 +6350,8 @@ export default function ForgeBRepStudio() {
 
             {activeOpObj?.type === 'extrude' && (
               <>
-                <div className="fb-panel-title">Extrude · Boss/Base</div>
-                <Dim label="Altura" value={activeOpObj.depth} unit="mm" min={2} max={80} step={1} testid="input-altura" bindKey={`${activeOpObj.id}:depth`}
+                <div className="fb-panel-title">Extruir · Saliente/Base</div>
+                <Dim label="Altura" value={activeOpObj.depth} unit="mm" min={2} max={3000} step={1} testid="input-altura" bindKey={`${activeOpObj.id}:depth`}
                   onChange={(v) => updateOp(activeOpObj.id, { depth: v } as Partial<Op>)} />
                 <label className="fb-check">
                   <input type="checkbox" data-testid="chk-simetrico" checked={activeOpObj.symmetric}
@@ -4718,6 +6414,14 @@ export default function ForgeBRepStudio() {
               </>
             )}
 
+            {activeOpObj?.type === 'draft' && (
+              <>
+                <div className="fb-panel-title">Draft · Ángulo de salida</div>
+                <Dim label="Ángulo" value={activeOpObj.angleDeg} unit="°" min={0.5} max={15} step={0.5} testid="input-draft-angle"
+                  onChange={(v) => updateOp(activeOpObj.id, { angleDeg: v } as Partial<Op>)} />
+                <div style={{ fontSize: 11, opacity: 0.55, margin: '6px 0' }}>Paredes ⟂ al desmoldeo (+Z) se inclinan; pivote en z=0. Positivo = cierran hacia arriba.</div>
+              </>
+            )}
             {activeOpObj?.type === 'shell' && (
               <>
                 <div className="fb-panel-title">Shell · Vaciado</div>
@@ -4788,6 +6492,59 @@ export default function ForgeBRepStudio() {
                 )}
                 <p className="fb-hint-txt">
                   Eje global X/Y/Z o una arista recta del sólido actual. El perfil gira a UN lado del eje.
+                </p>
+              </>
+            )}
+
+            {activeOpObj?.type === 'loft' && (
+              <>
+                <div className="fb-panel-title">Loft · Piel por secciones</div>
+                <Dim label="Altura" value={activeOpObj.height} unit="mm" min={1} max={120} step={1} testid="input-altura-loft"
+                  onChange={(v) => updateOp(activeOpObj.id, { height: v } as Partial<Op>)} />
+                <Dim label="Escala superior" value={activeOpObj.topScale} unit="×" min={0.05} max={3} step={0.05} testid="input-escala-loft"
+                  onChange={(v) => updateOp(activeOpObj.id, { topScale: v } as Partial<Op>)} />
+                <p className="fb-hint-txt">
+                  Interpola entre el perfil base y una copia escalada a esa altura. &lt;1 = tronco/cono (salida de molde), &gt;1 = campana.
+                </p>
+              </>
+            )}
+
+            {activeOpObj?.type === 'sweep' && (
+              <>
+                <div className="fb-panel-title">Sweep · Barrido por trayectoria</div>
+                <div className="fb-sel-head">Trayectoria</div>
+                <div className="fb-seg">
+                  <button data-testid="sweep-line" className={activeOpObj.pathKind === 'line' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { pathKind: 'line' } as Partial<Op>)}>Recta</button>
+                  <button data-testid="sweep-arc" className={activeOpObj.pathKind === 'arc' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { pathKind: 'arc' } as Partial<Op>)}>Codo</button>
+                  <button data-testid="sweep-helix" className={activeOpObj.pathKind === 'helix' ? 'on' : ''}
+                    onClick={() => updateOp(activeOpObj.id, { pathKind: 'helix' } as Partial<Op>)}>Hélice</button>
+                </div>
+                {activeOpObj.pathKind === 'line' && (
+                  <Dim label="Longitud" value={activeOpObj.height} unit="mm" min={1} max={150} step={1} testid="input-largo-sweep"
+                    onChange={(v) => updateOp(activeOpObj.id, { height: v } as Partial<Op>)} />
+                )}
+                {activeOpObj.pathKind === 'arc' && (
+                  <>
+                    <Dim label="Radio del codo" value={activeOpObj.radius} unit="mm" min={2} max={120} step={1} testid="input-radio-sweep"
+                      onChange={(v) => updateOp(activeOpObj.id, { radius: v } as Partial<Op>)} />
+                    <Dim label="Ángulo" value={activeOpObj.angle} unit="°" min={10} max={270} step={5} testid="input-angulo-sweep"
+                      onChange={(v) => updateOp(activeOpObj.id, { angle: v } as Partial<Op>)} />
+                  </>
+                )}
+                {activeOpObj.pathKind === 'helix' && (
+                  <>
+                    <Dim label="Radio" value={activeOpObj.radius} unit="mm" min={3} max={100} step={1} testid="input-radio-helix"
+                      onChange={(v) => updateOp(activeOpObj.id, { radius: v } as Partial<Op>)} />
+                    <Dim label="Paso por vuelta" value={activeOpObj.pitch} unit="mm" min={1} max={40} step={0.5} testid="input-paso-helix"
+                      onChange={(v) => updateOp(activeOpObj.id, { pitch: v } as Partial<Op>)} />
+                    <Dim label="Vueltas" value={activeOpObj.turns} unit="" min={0.5} max={12} step={0.5} testid="input-vueltas-helix"
+                      onChange={(v) => updateOp(activeOpObj.id, { turns: v } as Partial<Op>)} />
+                  </>
+                )}
+                <p className="fb-hint-txt">
+                  Barre el perfil del croquis por la trayectoria. La esquina del codo se redondea (tubo real); la hélice hace resortes.
                 </p>
               </>
             )}
@@ -4894,9 +6651,7 @@ export default function ForgeBRepStudio() {
             )}
             {/* Exportar STEP/STL y Mostrar/Ocultar boceto se movieron al menú ⋮ Opciones (header). */}
           </aside>
-
-          {/* ── Panel de ANÁLISIS / PROPIEDADES (masa exacta GProp) ── */}
-          <aside className={`fb-analysis ${collapsed.analysis ? 'collapsed' : ''}`} data-testid="analysis-panel">
+          <aside className={`fb-analysis ${collapsed.analysis ? 'collapsed' : ''} ${winPos.analysis ? 'floating' : ''}`} data-testid="analysis-panel" onPointerDown={winDrag('analysis')} onDoubleClick={winUndock('analysis')} style={winStyle('analysis')}>
             <CollapseHead id="analysis" title="Análisis · Propiedades" collapsed={!!collapsed.analysis}
               onToggle={() => toggleCollapse('analysis')} />
             <label className="fb-mat">
@@ -4972,6 +6727,77 @@ export default function ForgeBRepStudio() {
               <div className="fb-mass"><Row k="Estado" v="construyendo…" /></div>
             )}
           </aside>
+          </div>
+
+          {/* ── Menú CONTEXTUAL (clic derecho en un nodo del árbol) ── */}
+          {ctxMenu && (() => {
+            const op = ops.find((o) => o.id === ctxMenu.opId);
+            if (!op) return null;
+            const idx = ops.findIndex((o) => o.id === ctxMenu.opId);
+            return (
+              <>
+                <div className="fb-ctx-scrim" onClick={() => setCtxMenu(null)}
+                  onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null); }} />
+                <div className="fb-ctx" data-testid="ctx-menu" role="menu"
+                  style={{ left: Math.min(ctxMenu.x, window.innerWidth - 200), top: Math.min(ctxMenu.y, window.innerHeight - 280) }}>
+                  <div className="fb-ctx-head">{op.name ?? `${opTitle(op.type)} ${idx + 1}`}</div>
+                  <button data-testid="ctx-edit" onClick={() => { setActiveOp(op.id); setCtxMenu(null); }}>✎ Editar</button>
+                  <button data-testid="ctx-rename" onClick={() => { setEditingOpId(op.id); setEditingName(op.name ?? `${opTitle(op.type)} ${idx + 1}`); setCtxMenu(null); }}>✏ Renombrar</button>
+                  <div className="fb-menu-sep" />
+                  <button data-testid="ctx-up" disabled={idx === 0} onClick={() => { moveOp(op.id, -1); setCtxMenu(null); }}>↑ Subir</button>
+                  <button data-testid="ctx-down" disabled={idx === ops.length - 1} onClick={() => { moveOp(op.id, 1); setCtxMenu(null); }}>↓ Bajar</button>
+                  <button data-testid="ctx-suppress" onClick={() => { toggleSuppressOp(op.id); setCtxMenu(null); }}>{op.suppressed ? '◌ Reactivar' : '👁 Suprimir'}</button>
+                  <button data-testid="ctx-rollback" onClick={() => { rollTo(idx + 1); setCtxMenu(null); }}>⟲ Rollback aquí</button>
+                  <div className="fb-menu-sep" />
+                  <button className="danger" data-testid="ctx-delete" onClick={() => { removeOp(op.id); setCtxMenu(null); }}>✕ Eliminar</button>
+                </div>
+              </>
+            );
+          })()}
+
+          {/* ── PARÁMETROS con ecuaciones (Change Parameters de Fusion) ── */}
+          {paramsOpen && (
+            <aside className="fb-paramspanel" data-testid="params-panel">
+              <CollapseHead id="paramstbl" title="Parámetros · ecuaciones" collapsed={false}
+                onToggle={() => setParamsOpen(false)} right={<span className="fb-count">{params.length}</span>} />
+              <div className="fb-ptable">
+                <div className="fb-prow head"><span>Nombre</span><span>Expresión</span><span>=</span><span /></div>
+                {params.length === 0 && <div className="fb-phint">Sin parámetros. Crea <b>ancho=40</b>, <b>alto=ancho/2</b>… y liga cotas con <b>ƒₓ</b>.</div>}
+                {params.map((p, i) => {
+                  const err = resolvedParams.errors[p.id];
+                  const val = resolvedParams.values[p.id];
+                  return (
+                    <div className={`fb-prow ${err ? 'err' : ''}`} key={p.id}>
+                      <input className="fb-pname" data-testid={`param-name-${i}`} value={p.name} spellCheck={false}
+                        onChange={(e) => updateParam(p.id, { name: e.target.value })} />
+                      <input className="fb-pexpr" data-testid={`param-expr-${i}`} value={p.expr} spellCheck={false}
+                        onChange={(e) => updateParam(p.id, { expr: e.target.value })} />
+                      <span className="fb-pval" data-testid={`param-val-${i}`} title={err ?? ''}>
+                        {err ? '⚠' : (val != null ? val.toFixed(2) : '—')}
+                      </span>
+                      <button className="fb-prow-x" data-testid={`param-del-${i}`}
+                        onClick={() => removeParam(p.id)} title="Borrar parámetro">×</button>
+                    </div>
+                  );
+                })}
+              </div>
+              <button className="fb-pick-btn" data-testid="btn-add-param" onClick={addParam}>+ Parámetro</button>
+              <p className="fb-hint-txt">Las cotas con <b>ƒₓ</b> leen estos nombres. Cambias uno y el sólido se recalcula. Funciones: sqrt, sin, cos, min, max… consts: pi, e.</p>
+            </aside>
+          )}
+
+          {/* ── Lista SIEMPRE disponible de caras (selección determinista) ──
+              Independiente de la op activa: clic en una entrada fija
+              selectedFaceId (y, si hay Shell activo, togglea su cara abierta).
+              Playwright elige la cara superior/inferior/lateral por testid sin
+              depender de coordenadas del viewport. */}
+          
+
+          {/* ── Panel derecho: OPCIONES de la op activa ── */}
+          
+
+          {/* ── Panel de ANÁLISIS / PROPIEDADES (masa exacta GProp) ── */}
+          
 
           {/* ── Panel de SIMULACIÓN (FEA von Mises REAL) ──
               El CAD pasa de "ver" a "ANALIZAR": resuelve K·u=f sobre una malla
@@ -4979,110 +6805,33 @@ export default function ForgeBRepStudio() {
               pieza por von Mises. Cara FIJA = empotramiento; cara de CARGA +
               magnitud (N) a lo largo de su normal. Material = el del análisis de
               masa (E, ν, σ_y de MATERIAL_DATABASE). */}
-          <aside className={`fb-sim ${collapsed.sim ? 'collapsed' : ''}`} data-testid="sim-panel">
-            <CollapseHead id="sim" title="Simulación · von Mises (FEA real)" collapsed={!!collapsed.sim}
-              onToggle={() => toggleCollapse('sim')} />
-            <p className="fb-hint-txt">
-              Resuelve K·u = f en malla tet del sólido (no es heatmap: es FEM).
-              σ_vM, factor de seguridad σ_y/σ_max y deflexión máx.
-            </p>
+          
 
-            <div className="fb-sim-bc">
-              <div className="fb-sim-bc-row">
-                <button className="fb-pick-btn" data-testid="btn-pick-fija"
-                  onClick={() => startFeaPick('fija')}
-                  style={feaPickTarget === 'fija' ? { background: `${GOLD}33` } : undefined}>
-                  {feaPickTarget === 'fija' ? '◉ Clic en cara FIJA…' : '○ Cara FIJA (empotrar)'}
-                </button>
-                <span className="fb-sim-tag" data-testid="fea-fija-id">
-                  {feaFixedFace != null ? `#${feaFixedFace}` : '—'}
-                </span>
-              </div>
-              <div className="fb-sim-bc-row">
-                <button className="fb-pick-btn" data-testid="btn-pick-carga"
-                  onClick={() => startFeaPick('carga')}
-                  style={feaPickTarget === 'carga' ? { background: `${GOLD}33` } : undefined}>
-                  {feaPickTarget === 'carga' ? '◉ Clic en cara de CARGA…' : '○ Cara de CARGA'}
-                </button>
-                <span className="fb-sim-tag" data-testid="fea-carga-id">
-                  {feaLoadFace != null ? `#${feaLoadFace}` : '—'}
-                </span>
-              </div>
+          {/* ── TIMELINE ABAJO (orden del user, como Fusion): la historia de la
+              pieza en chips horizontales; clic = activar y editar. El panel
+              Documento (izq) queda para renombrar/suprimir/detalle. ── */}
+          {(ops.length > 0 || components.length > 0) && (
+            <div className="fb-timeline" data-testid="timeline">
+              <span className="fb-tl-cap">HISTORIA</span>
+              <button className={`fb-tl-chip ${activeOp === 'sketch' ? 'on' : ''}`} data-testid="tl-sketch"
+                onClick={() => { setActiveOp('sketch'); setActiveComp(null); }} title="Boceto base — clic para editar">
+                ✏ Boceto 1</button>
+              {ops.map((o) => (
+                <button key={o.id} className={`fb-tl-chip ${activeOp === o.id ? 'on' : ''} ${o.suppressed ? 'sup' : ''}`}
+                  data-testid={`tl-${o.type}`}
+                  onClick={() => { setActiveOp(o.id); setActiveComp(null); }}
+                  title={`${opTitle(o.type)} — clic para editar`}>
+                  {opIcon(o.type)} {o.name ?? opTitle(o.type)}</button>
+              ))}
+              {components.map((c) => (
+                <button key={c.id} className={`fb-tl-chip comp ${activeComp === c.id ? 'on' : ''}`}
+                  data-testid={`tl-comp-${c.kind}`}
+                  onClick={() => { setActiveComp(c.id); setActiveOp(null); }}
+                  title={`${c.name} — clic para editar`}>
+                  ⧉ {c.name}</button>
+              ))}
             </div>
-
-            <Dim label="Carga" value={feaLoadN} unit="N" min={10} max={50000} step={10}
-              testid="input-carga"
-              onChange={(v) => { if (feaSessionRef.current) feaLiveSetLoad(v); else setFeaLoadN(v); }} />
-
-            <button className="fb-fea-run" data-testid="btn-fea"
-              onClick={() => runFeaAnalysis()} disabled={feaBusy || !oc || feaFixedFace == null}>
-              {feaBusy ? '⏳ Resolviendo K·u = f…' : '▶ Analizar (von Mises)'}
-            </button>
-            {feaColors && (
-              <button className="fb-sim-clear" data-testid="btn-fea-clear" onClick={clearFeaOverlay}>
-                Quitar overlay (volver a metal)
-              </button>
-            )}
-            {feaErr && <div className="fb-sim-err" data-testid="fea-error">{feaErr}</div>}
-
-            {/* ── DISEÑO GENERATIVO: misma cara fija + carga; vacía hasta la forma óptima ── */}
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${GOLD}22` }}>
-              <Dim label="Material objetivo" value={Math.round(genVolfrac * 100)} unit="%" min={10} max={80} step={5}
-                testid="input-volfrac" onChange={(v) => setGenVolfrac(Math.max(0.1, Math.min(0.8, v / 100)))} />
-              <button className="fb-fea-run" data-testid="btn-generativo"
-                onClick={() => runGenerative()} disabled={genBusy || !oc || feaFixedFace == null}
-                style={{ background: GOLD, color: '#1a1206', fontWeight: 700 }}>
-                {genBusy ? '⚡ Optimizando topología…' : '⚡ Diseño generativo'}
-              </button>
-              {genResult && (
-                <>
-                  <Dim label="Umbral visible" value={Math.round(genThreshold * 100)} unit="%" min={5} max={90} step={5}
-                    testid="input-umbral" onChange={(v) => setGenThreshold(Math.max(0.05, Math.min(0.9, v / 100)))} />
-                  <div className="fb-row hi">
-                    <span className="rk">Material quitado</span>
-                    <span className="rv" data-testid="gen-void">{Math.round(genVoidPct)}%</span>
-                  </div>
-                  <button className="fb-sim-clear" data-testid="btn-gen-smooth" onClick={() => setGenSmooth((s) => !s)}>
-                    {genSmooth ? '◼ Ver voxeles (crudo)' : '⬭ Ver superficie suave'}
-                  </button>
-                  <button className="fb-sim-clear" data-testid="btn-gen-clear" onClick={clearGenerative}>
-                    Volver al sólido
-                  </button>
-                </>
-              )}
-              {genErr && <div className="fb-sim-err" data-testid="gen-error">{genErr}</div>}
-            </div>
-
-            {feaResult ? (
-              <div className="fb-sim-out">
-                <div className="fb-row hi">
-                  <span className="rk">Máx von Mises</span>
-                  <span className="rv" data-testid="fea-max-vm">{(feaResult.maxVonMises / 1e6).toFixed(2)} MPa</span>
-                </div>
-                <div className={`fb-row ${feaResult.minSafetyFactor < 1 ? 'fs-bad' : 'fs-ok'}`}>
-                  <span className="rk">Factor de seguridad</span>
-                  <span className="rv" data-testid="fea-fs">
-                    {Number.isFinite(feaResult.minSafetyFactor) ? feaResult.minSafetyFactor.toFixed(2) : '∞'}
-                  </span>
-                </div>
-                <div className="fb-row">
-                  <span className="rk">Deflexión máx</span>
-                  <span className="rv" data-testid="fea-deflexion">{feaResult.maxDisplacement.toFixed(4)} mm</span>
-                </div>
-                <div className="fb-row">
-                  <span className="rk">Malla / solver</span>
-                  <span className="rv" data-testid="fea-mesh">
-                    {feaResult.mesh.nNodes}n · {feaResult.mesh.nTets}t · {feaResult.solver.iterations}it
-                    {feaResult.solver.converged ? ' ✓' : ' ✕'}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="fb-sim-out">
-                <div className="fb-row"><span className="rk">Estado</span><span className="rv">{feaBusy ? 'calculando…' : 'elige cara fija + Analizar'}</span></div>
-              </div>
-            )}
-          </aside>
+          )}
 
           {/* ── Invariantes (la corrección visible) ── */}
           <footer className={`fb-invariants ${ok ? 'ok' : 'pending'}`} data-testid="invariants">
@@ -5118,6 +6867,25 @@ export default function ForgeBRepStudio() {
       )}
 
       {/* ── MOTOR DE PLANOS: overlay con el dibujo 2D generado ── */}
+      {camSvg && (
+        <div className="fb-plano-overlay" data-testid="cam-overlay" onClick={() => setCamSvg(null)}>
+          <div className="fb-plano-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="fb-plano-bar">
+              <span className="fb-cam-head"><b>CAM · {camTitle}</b>{camStats && <em data-testid="cam-stats">{camStats}</em>}</span>
+              <div className="fb-plano-actions">
+                <label style={{ fontSize: 11, marginRight: 6 }}>⌀<input data-testid="cam-tool-d" type="number" value={camToolD} onChange={(e) => setCamToolD(parseFloat(e.target.value) || 40)} style={{ width: 46, marginLeft: 3 }} /></label>
+                {camOpRef.current === 'careado' && <label style={{ fontSize: 11, marginRight: 6 }}>paso<input data-testid="cam-stepover" type="number" value={camStepover} onChange={(e) => setCamStepover(parseFloat(e.target.value) || 27)} style={{ width: 46, marginLeft: 3 }} /></label>}
+                {camOpRef.current === 'careado' && <label style={{ fontSize: 11, marginRight: 6 }}>prof<input data-testid="cam-depth" type="number" value={camDepth} onChange={(e) => setCamDepth(parseFloat(e.target.value) || 1.5)} style={{ width: 46, marginLeft: 3 }} /></label>}
+                {camOpRef.current === 'ranura' && <label style={{ fontSize: 11, marginRight: 6 }}>a_e<input data-testid="cam-load" type="number" value={camLoad} onChange={(e) => setCamLoad(parseFloat(e.target.value) || 13.33)} style={{ width: 52, marginLeft: 3 }} /></label>}
+                <button data-testid="btn-cam-regen" onClick={() => (camOpRef.current === 'ranura' && camPocketFaceRef.current != null ? genCamPocket(camPocketFaceRef.current) : genCam())}>↻ Regenerar</button>
+                <button data-testid="btn-cam-download" onClick={downloadCamGcode}>⬇ G-code (.nc)</button>
+                <button data-testid="btn-cam-close" onClick={() => setCamSvg(null)}>✕ Cerrar</button>
+              </div>
+            </div>
+            <div className="fb-plano-svg" data-testid="cam-svg" dangerouslySetInnerHTML={{ __html: camSvg }} />
+          </div>
+        </div>
+      )}
       {planoSvg && (
         <div className="fb-plano-overlay" data-testid="plano-overlay" onClick={() => setPlanoSvg(null)}>
           <div className="fb-plano-sheet" onClick={(e) => e.stopPropagation()}>
@@ -5150,10 +6918,10 @@ function Row({ k, v, hi, testid }: { k: string; v: string; hi?: boolean; testid?
 }
 
 function opIcon(t: OpType): string {
-  return { extrude: '⬓', hole: '◎', fillet: '◜', chamfer: '◹', shell: '▢', revolve: '⟳', pattern: '⁘', pocket: '⊟' }[t];
+  return { extrude: '⬓', hole: '◎', fillet: '◜', chamfer: '◹', shell: '▢', revolve: '⟳', loft: '◈', sweep: '↝', pattern: '⁘', pocket: '⊟' }[t];
 }
 function opTitle(t: OpType): string {
-  return { extrude: 'Extrude', hole: 'Hole', fillet: 'Fillet', chamfer: 'Chamfer', shell: 'Shell', revolve: 'Revolve', pattern: 'Patrón', pocket: 'Corte' }[t];
+  return { extrude: 'Extrude', hole: 'Hole', fillet: 'Fillet', chamfer: 'Chamfer', shell: 'Shell', draft: 'Draft', revolve: 'Revolve', loft: 'Loft', sweep: 'Sweep', pattern: 'Patrón', pocket: 'Corte' }[t];
 }
 function opSubtitle(op: Op): string {
   switch (op.type) {
@@ -5162,7 +6930,10 @@ function opSubtitle(op: Op): string {
     case 'fillet': return `R${op.radius.toFixed(1)} · ${op.edges.length || 'todas'} aristas`;
     case 'chamfer': return `${op.dist.toFixed(1)}mm · ${op.edges.length || 'todas'} aristas`;
     case 'shell': return `pared ${op.thickness.toFixed(1)} · ${op.faces.length} caras`;
+    case 'draft': return `${op.angleDeg.toFixed(1)}° salida`;
     case 'revolve': return `${op.angle.toFixed(0)}°`;
+    case 'loft': return `h${op.height.toFixed(0)} · ×${op.topScale.toFixed(2)}`;
+    case 'sweep': return op.pathKind === 'line' ? `recta ${op.height.toFixed(0)}mm` : op.pathKind === 'arc' ? `codo R${op.radius.toFixed(0)} · ${op.angle.toFixed(0)}°` : `hélice R${op.radius.toFixed(0)} · ${op.turns.toFixed(1)}v`;
     case 'pattern': return op.mode === 'linear' ? `lineal ×${op.count}` : op.mode === 'circular' ? `circular ×${op.count} · ${op.angleSpan.toFixed(0)}°` : `espejo ${op.plane.toUpperCase()}`;
     case 'pocket': return op.profile === 'circle' ? `⌀${op.diameter.toFixed(1)} · ${op.through ? 'pasante' : `${op.depth.toFixed(0)}mm`}` : `${op.w.toFixed(0)}×${op.h.toFixed(0)} · ${op.through ? 'pasante' : `${op.depth.toFixed(0)}mm`}`;
   }
@@ -5287,11 +7058,11 @@ const CSS = `
 .fb-facelist-items .fi-lbl{flex:1;}
 .fb-facelist-items .fi-meta{opacity:.7;font-size:9px;}
 
+/* ── SHELL DOCKED: paneles sólidos grafito que ENMARCAN el viewport (ya no flotan
+   encima encimándose). Cada panel se ancla a un borde; el 3D vive limpio al centro. ── */
 .fb-header,.fb-features,.fb-params,.fb-invariants,.fb-toolbar,.fb-analysis{
-  position:absolute;backdrop-filter:blur(18px) saturate(1.25);
-  background:linear-gradient(180deg,rgba(20,27,38,0.72),rgba(11,15,22,0.74));
-  border:1px solid rgba(159,179,200,0.14);
-  border-radius:15px;box-shadow:0 10px 44px rgba(0,0,0,0.55),0 1px 0 rgba(255,255,255,0.04) inset;}
+  position:absolute;backdrop-filter:none;background:#12161d;
+  border:0;border-radius:0;box-shadow:none;}
 
 /* ── Paneles COLAPSABLES: cabecera con ▾/▸; .collapsed oculta todo menos la
    cabecera y reduce el panel a una barra (alivia el encimado en pantallas chicas). */
@@ -5359,7 +7130,8 @@ const CSS = `
 .fb-imported-tag{font-size:9px;font-weight:700;color:#1a1206;background:${GOLD};
   border-radius:5px;padding:2px 6px;margin-left:8px;letter-spacing:.4px;}
 
-.fb-header{top:18px;left:18px;display:flex;align-items:center;gap:14px;padding:11px 16px;}
+.fb-header{top:0;left:0;right:0;height:46px;display:flex;align-items:center;gap:14px;
+  padding:0 16px;border-bottom:1px solid #222a35;background:#0f131a;z-index:20;}
 .fb-mark{font-size:22px;color:${GOLD};filter:drop-shadow(0 0 8px ${GOLD}88);}
 .fb-titles h1{font-size:14px;font-weight:600;letter-spacing:.2px;margin:0;}
 .fb-titles p{font-size:11px;margin:2px 0 0;color:${STEEL};opacity:.8;}
@@ -5369,17 +7141,36 @@ const CSS = `
 .fb-kernel.on{color:#8ff0a4;}.fb-kernel.on .dot{background:#4ade80;box-shadow:0 0 8px #4ade80;}
 .fb-kernel.off{color:#fbbf24;}.fb-kernel.off .dot{background:#fbbf24;box-shadow:0 0 8px #fbbf24;}
 
-.fb-toolbar{top:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;
-  gap:6px;padding:8px 12px;}
-.fb-tb-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:${STEEL};
-  opacity:.55;margin-right:4px;}
-.fb-toolbar button{border:1px solid rgba(159,179,200,0.16);background:rgba(255,255,255,0.04);
-  color:#e9eef5;font-size:12px;padding:7px 11px;border-radius:8px;cursor:pointer;font-weight:500;
-  transition:.13s;}
-.fb-toolbar button:hover{border-color:${GOLD}77;background:${GOLD}18;color:${GOLD};}
-.fb-tb-sep{width:1px;height:22px;background:rgba(159,179,200,0.2);margin:0 3px;}
+/* ── TOOLBAR "DRO": barra de instrumento maquinada (grafito sólido con profundidad,
+   hairline de acento arriba, teclas táctiles, estado activo = tecla encendida) ── */
+.fb-toolbar{top:46px;left:0;right:0;display:flex;align-items:center;flex-wrap:wrap;
+  gap:5px;row-gap:7px;padding:8px 16px 9px;border-radius:0;backdrop-filter:none;
+  background:linear-gradient(180deg,#1a212c,#11151c);
+  border:0;border-bottom:1px solid #222a35;
+  box-shadow:0 8px 22px rgba(0,0,0,.38);z-index:19;}
+.fb-toolbar::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,transparent,#5bd1e6 18%,#7fe9fb 50%,#5bd1e6 82%,transparent);opacity:.9;
+  box-shadow:0 0 12px rgba(91,209,230,.45);}
+.fb-tb-label{font-size:9px;text-transform:uppercase;letter-spacing:2.4px;color:#9fb0bf;
+  opacity:.85;margin:0 9px 0 3px;font-weight:700;}
+.fb-toolbar button{position:relative;border:1px solid #3a4452;color:#dbe3ee;
+  background:linear-gradient(180deg,#27303d,#1a212c);
+  font-size:11.5px;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:600;letter-spacing:.2px;
+  transition:transform .1s,border-color .12s,background .12s,color .12s,box-shadow .12s;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 1px 3px rgba(0,0,0,.35);}
+.fb-toolbar button:hover{transform:translateY(-1.5px);border-color:#5bd1e6;color:#eafaff;
+  background:linear-gradient(180deg,#2c3744,#1d2733);
+  box-shadow:0 6px 18px rgba(91,209,230,.28),0 0 0 1px rgba(91,209,230,.4),0 1px 0 rgba(255,255,255,.1) inset;}
+.fb-toolbar button:active{transform:translateY(0);}
+.fb-toolbar button.on{border-color:#8af0ff;color:#04222b;font-weight:700;
+  background:linear-gradient(180deg,#8df0ff,#42c9e4);
+  box-shadow:0 0 0 1px rgba(141,240,255,.7) inset,0 6px 22px rgba(91,209,230,.5);}
+.fb-toolbar button:disabled{opacity:.34;cursor:not-allowed;transform:none;box-shadow:none;}
+.fb-tb-sep{width:2px;height:26px;margin:0 9px;border-radius:2px;
+  background:linear-gradient(180deg,transparent,#465263 20%,#465263 80%,transparent);}
 
-.fb-features{top:78px;left:18px;width:210px;padding:12px;max-height:38vh;overflow:auto;}
+.fb-features{top:106px;left:0;bottom:34px;width:238px;padding:12px;max-height:none;overflow:auto;
+  border-right:1px solid #222a35;}
 .fb-feat-head{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:${STEEL};
   opacity:.6;margin-bottom:10px;}
 .fb-feat-node{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;
@@ -5450,7 +7241,8 @@ const CSS = `
 .fb-ctx button:disabled{opacity:.3;pointer-events:none;}
 .fb-ctx button.danger:hover{background:rgba(248,113,113,0.16);color:#fca5a5;}
 
-.fb-params{right:18px;top:18px;width:230px;padding:14px;max-height:64vh;overflow:auto;}
+.fb-params{right:0;top:106px;width:264px;padding:14px;max-height:56vh;overflow:auto;
+  border-left:1px solid #222a35;border-bottom:1px solid #222a35;}
 .fb-panel-title{font-size:11px;font-weight:600;color:${GOLD};margin-bottom:12px;
   text-transform:uppercase;letter-spacing:.6px;}
 .fb-seg{display:flex;gap:4px;background:rgba(0,0,0,0.3);padding:3px;border-radius:9px;margin-bottom:14px;}
@@ -5479,7 +7271,7 @@ const CSS = `
 .fb-fx-x:hover{color:#fca5a5;}
 
 /* ── Panel de PARÁMETROS (flotante junto al árbol) ── */
-.fb-paramspanel{position:absolute;left:238px;top:78px;width:288px;padding:12px;z-index:30;
+.fb-paramspanel{position:absolute;left:248px;top:113px;width:288px;padding:12px;z-index:30;
   backdrop-filter:blur(18px) saturate(1.25);
   background:linear-gradient(180deg,rgba(20,27,38,0.82),rgba(11,15,22,0.84));
   border:1px solid rgba(159,179,200,0.16);border-radius:15px;
@@ -5550,7 +7342,8 @@ const CSS = `
 .fb-actions button:hover,.fb-export:hover{border-color:${GOLD}66;background:${GOLD}14;}
 .fb-export[aria-disabled=true]{opacity:.4;pointer-events:none;}
 
-.fb-analysis{right:18px;bottom:18px;width:236px;padding:15px;}
+.fb-analysis{right:0;bottom:34px;width:264px;padding:15px;
+  border-left:1px solid #222a35;border-top:1px solid #222a35;}
 .fb-mat{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;font-size:11px;color:${STEEL};}
 .fb-mat>span:first-child{font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:.85;}
 .fb-mat-pick{display:flex;align-items:center;gap:7px;flex:1;background:rgba(0,0,0,0.42);
@@ -5569,10 +7362,12 @@ const CSS = `
 .fb-row.hi .rk{opacity:.95;color:#cdd8e4;}
 .fb-row.hi .rv{color:${GOLD};font-weight:700;font-size:16px;letter-spacing:-.2px;}
 
-.fb-invariants{left:50%;transform:translateX(-50%);bottom:18px;max-width:640px;
-  display:flex;gap:0;padding:0;overflow:hidden;}
-.fb-invariants .inv{flex:1;padding:11px 16px;display:flex;flex-direction:column;gap:3px;
-  border-right:1px solid rgba(159,179,200,0.1);}
+.fb-invariants{left:0;right:0;bottom:0;transform:none;max-width:none;height:34px;
+  display:flex;gap:0;padding:0;overflow:hidden;border-top:1px solid #222a35;background:#0f131a;z-index:18;}
+.fb-invariants{align-items:center;}
+.fb-invariants .inv{flex:0 0 auto;padding:0 18px;height:34px;display:flex;flex-direction:row;
+  align-items:center;gap:8px;border-right:1px solid #1c232d;}
+.fb-invariants .chk{display:none;}
 .fb-invariants .inv:last-child{border-right:0;}
 .fb-invariants .inv.err{background:rgba(248,113,113,0.1);}
 .fb-invariants .k{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:${STEEL};opacity:.78;}
@@ -5588,7 +7383,7 @@ const CSS = `
 .fb-hide:hover{color:${GOLD};border-color:${GOLD}55;}
 
 /* ── Panel de SIMULACIÓN FEA (von Mises) ── */
-.fb-sim{position:absolute;left:236px;top:78px;width:240px;padding:14px;
+.fb-sim{position:absolute;left:252px;top:120px;width:240px;padding:14px;
   backdrop-filter:blur(18px) saturate(1.25);
   background:linear-gradient(180deg,rgba(20,27,38,0.72),rgba(11,15,22,0.74));
   border:1px solid rgba(159,179,200,0.14);border-radius:15px;
@@ -5621,4 +7416,229 @@ const CSS = `
 .fb-fea-bar{height:13px;border-radius:4px;border:1px solid rgba(0,0,0,0.5);}
 .fb-fea-ticks{display:flex;justify-content:space-between;margin-top:4px;
   font-family:'JetBrains Mono',monospace;font-size:10px;color:#e9eef5;}
+
+/* ════════════════════════════════════════════════════════════════
+   FORJA DS v2 — capa final del rediseño (gana el cascade).
+   Doctrina: cromo grafito NEUTRO, iconos vectoriales monocromos,
+   UN acento interactivo (azul acero), dorado SOLO para la marca.
+   Nada de píldoras infladas ni emoji: plano, denso, de taller.
+   ════════════════════════════════════════════════════════════════ */
+/* PALETA NEBULOSA — colores de naturaleza que hipnotizan sin gritar:
+   fondo = espacio profundo (azul de medianoche, no negro carbón);
+   acento = AGUA/cielo (cian-teal); aurora verde = éxito; nebulosa violeta = especial;
+   dorado = SOLO la marca. La profundidad la da el gradiente del viewport, no el cromo. */
+:root{
+  --ds-bg:#0A101C; --ds-panel:#0F1725; --ds-panel2:#16202F; --ds-raise:#1D2A3D;
+  --ds-line:rgba(140,180,255,0.10); --ds-line2:rgba(140,180,255,0.20);
+  --ds-text:#DCE7F5; --ds-dim:#8FA3BD; --ds-faint:#5E7089;
+  --ds-accent:#41C7D4; --ds-accent-ink:#04252A; --ds-brand:#E8A33D;
+  --ds-sky:#58A6FF; --ds-aurora:#5DDB8C; --ds-nebula:#8E7CFF;
+}
+.fb-root{background:var(--ds-bg);color:var(--ds-text);}
+.fb-header,.fb-features,.fb-params,.fb-invariants,.fb-toolbar,.fb-analysis{
+  background:var(--ds-panel);}
+.fb-header{border-bottom:1px solid var(--ds-line);}
+/* toolbar de DOS FILAS (contexto / herramientas) — sin wrap fantasma */
+.fb-toolbar{border-bottom:1px solid var(--ds-line);display:flex;flex-direction:column;
+  height:auto;padding:0;overflow:visible;}
+.fb-tb-row{display:flex;align-items:center;flex-wrap:nowrap;gap:1px;padding:0 8px;
+  height:37px;min-width:0;}
+/* la fila de herramientas scrollea POR DENTRO si no cabe (jamás desplaza el layout:
+   el scrollLeft fantasma del contenedor raíz corría TODA la UI y rompía los clics) */
+.fb-tb-row-tools{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;}
+.fb-tb-row-tools::-webkit-scrollbar{display:none;}
+.fb-tb-row-ctx{border-bottom:1px solid var(--ds-line);overflow:visible;}
+.fb-tb-spring{flex:1;}
+.fb-mark{color:var(--ds-brand);}
+
+/* pestañas de workspace */
+.fb-ws-tabs{display:flex;gap:2px;align-self:stretch;align-items:stretch;}
+.fb-ws-tabs button{border:0;background:transparent;color:var(--ds-dim);cursor:pointer;
+  font-size:10.5px;font-weight:700;letter-spacing:1.1px;padding:0 12px;border-radius:0;
+  border-bottom:2px solid transparent;transition:color .12s;}
+.fb-ws-tabs button:hover{color:var(--ds-text);background:transparent;}
+.fb-ws-tabs button.on{color:var(--ds-accent);border-bottom-color:var(--ds-accent);background:transparent;}
+
+/* botones de la toolbar: planos, icono+texto, cero borde en reposo */
+.fb-tb-row>button{display:inline-flex;align-items:center;gap:5px;border:1px solid transparent;
+  background:transparent;color:var(--ds-dim);font-size:11px;font-weight:500;
+  padding:5px 7px;border-radius:6px;cursor:pointer;white-space:nowrap;line-height:1;
+  transition:background .1s,color .1s;flex:0 0 auto;}
+.fb-tb-row>button>.fb-ic{width:14px;height:14px;}
+.fb-tb-row>button:hover{background:var(--ds-panel2);color:var(--ds-text);}
+.fb-tb-row>button:active{background:var(--ds-raise);}
+.fb-tb-row>button.on{background:var(--ds-panel2);color:var(--ds-accent);border-color:var(--ds-line2);}
+.fb-tb-row>button:disabled{opacity:.32;cursor:default;background:transparent;color:var(--ds-dim);}
+.fb-tb-row>button .fb-ic{flex:0 0 auto;opacity:.9;}
+/* HUDs del viewport: bajo la toolbar de 2 filas (header 48 + 2×38 ≈ 126) */
+.fb-pick-hint{top:136px;}
+.fb-section-hud{top:136px;}
+.fb-hud-sel{top:170px;}
+.fb-hud-edge{top:204px;}
+.fb-hud-asm{top:238px;}
+/* chips de selección VACÍOS: invisibles (siguen en el DOM para el arnés) */
+.fb-hud-sel.empty,.fb-hud-edge.empty{opacity:0;}
+/* acento de selección en los chips: azul, no dorado */
+.fb-hud-sel b{color:var(--ds-accent);}
+.fb-hud-sel{border-color:rgba(76,159,255,0.35);}
+/* ── APP BAR única + RIBBON CommandManager + heads-up view bar ── */
+.fb-header{display:flex!important;align-items:center;gap:12px;padding:0 12px;height:44px;
+  left:0;right:0;top:0;width:auto;}
+.fb-titles h1{font-size:13px;margin:0;}
+.fb-titles p{display:none;}
+.fb-kernel{padding:0;background:transparent;border:0;}
+.fb-header .fb-ws-tabs{align-self:stretch;}
+.fb-ribbon{display:flex;align-items:stretch;gap:2px;padding:4px 10px 2px;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;}
+.fb-ribbon::-webkit-scrollbar{display:none;}
+.fb-group{display:flex;flex-direction:column;align-items:center;gap:1px;flex:0 0 auto;}
+.fb-group-row{display:flex;align-items:stretch;gap:2px;}
+.fb-group-cap{font-size:8.5px;letter-spacing:1.3px;color:var(--ds-faint);font-weight:700;
+  padding:1px 0 2px;user-select:none;}
+.fb-big{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  min-width:54px;padding:7px 8px 5px;border:1px solid transparent;border-radius:8px;
+  background:transparent;color:var(--ds-dim);font-size:10px;font-weight:500;cursor:pointer;
+  line-height:1;white-space:nowrap;}
+.fb-big .fb-ic{width:17px;height:17px;opacity:.92;}
+.fb-big:hover{background:var(--ds-panel2);color:var(--ds-text);}
+.fb-big.on{background:var(--ds-panel2);color:var(--ds-accent);border-color:var(--ds-line2);}
+.fb-big:disabled{opacity:.32;cursor:default;background:transparent;}
+.fb-big.primary{background:var(--ds-accent);color:var(--ds-accent-ink);font-weight:700;}
+.fb-big.primary:hover{background:#5CD6E2;color:var(--ds-accent-ink);}
+.fb-sketch-ctx{display:flex;flex-direction:column;gap:3px;justify-content:center;padding:0 4px;}
+.fb-sketch-ctx-line{display:flex;align-items:center;gap:3px;}
+.fb-ribbon>.fb-tb-sep{height:42px;align-self:center;}
+.fb-toolbar{top:44px;}
+/* heads-up view bar (firma SolidWorks): vista flotando sobre el viewport */
+.fb-hud-view{position:absolute;top:126px;left:50%;transform:translateX(-50%);
+  display:flex;gap:2px;z-index:6;background:rgba(15,23,37,0.85);border:1px solid var(--ds-line);
+  border-radius:8px;padding:3px;backdrop-filter:blur(8px);}
+.fb-hud-view button{display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;
+  color:var(--ds-dim);font-size:10px;font-weight:700;padding:5px 8px;border-radius:5px;cursor:pointer;}
+.fb-hud-view button:hover{background:var(--ds-panel2);color:var(--ds-text);}
+.fb-hud-view button.on{color:var(--ds-accent);}
+.fb-hud-view button:disabled{opacity:.3;cursor:default;}
+.fb-hud-view .fb-ic{width:14px;height:14px;}
+/* HUDs y rieles bajo el cromo nuevo (44 + ~74) */
+.fb-pick-hint{top:160px;}
+.fb-section-hud{top:160px;}
+.fb-hud-sel{top:126px;left:28%;transform:none;}
+.fb-hud-edge{top:126px;left:62%;transform:none;}
+.fb-hud-asm{top:196px;}
+.fb-rail{top:126px;}
+
+/* ── ZONAS (rieles): columnas REALES; los paneles ya no flotan encimados ── */
+.fb-rail{position:absolute;top:106px;bottom:38px;display:flex;flex-direction:column;
+  gap:8px;z-index:4;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding:2px;}
+.fb-rail-left{left:6px;width:244px;}
+.fb-rail-right{right:6px;width:276px;}
+.fb-rail>aside:not(.floating){position:static!important;inset:auto!important;width:auto!important;
+  max-height:none!important;flex:0 0 auto;}
+.fb-rail>aside{border:1px solid var(--ds-line)!important;border-radius:10px!important;
+  background:rgba(15,23,37,0.92)!important;backdrop-filter:blur(6px);
+  box-shadow:0 8px 28px rgba(2,8,18,0.45)!important;}
+/* VENTANA FLOTANTE: jalada fuera del riel — ancho propio, sombra más honda */
+.fb-rail>aside.floating{width:262px!important;max-height:64vh!important;overflow:auto;
+  box-shadow:0 18px 60px rgba(2,8,18,0.7)!important;border-color:var(--ds-line2)!important;}
+.fb-collapse-head{cursor:grab;}
+.fb-collapse-head:active{cursor:grabbing;}
+.fb-rail>aside.fb-features{flex:0 1 auto;min-height:120px;overflow:auto;}
+.fb-rail>aside.fb-params{flex:0 1 auto;overflow:auto;}
+/* ── EL VIEWPORT ES UNA REGIÓN REAL (no un fondo tapado): empieza DEBAJO del
+   header+ribbon y termina sobre el footer. El cubo de vistas ya no queda
+   aplastado por la barra y la pieza se encuadra en el espacio que SE VE. ── */
+.fb-root:not(.fb-chrome-off) .fb-viewport{top:120px;bottom:34px;}
+.fb-root.fb-chrome-off .fb-viewport{inset:0;}
+/* RIBBON COLAPSADO: solo queda el header (46px) — máxima pieza en pantalla. */
+.fb-root.fb-ribbon-min .fb-toolbar{display:none;}
+.fb-root.fb-ribbon-min:not(.fb-chrome-off) .fb-viewport{top:46px;}
+.fb-root.fb-ribbon-min .fb-rail{top:52px;}
+.fb-root.fb-ribbon-min .fb-hud-view{top:52px;}
+/* Ventanas flotantes NUNCA debajo de la barra. */
+.fb-paramspanel{top:128px;}
+/* ── TIMELINE abajo (Fusion-style): la historia en chips ── */
+.fb-timeline{position:absolute;left:0;right:0;bottom:34px;height:42px;display:flex;gap:6px;align-items:center;
+  padding:0 12px;z-index:8;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;
+  background:linear-gradient(0deg,rgba(9,14,22,.94) 0%,rgba(9,14,22,.6) 70%,transparent 100%);}
+.fb-tl-cap{font-size:9px;letter-spacing:2.2px;color:#5b6b7e;font-weight:700;flex:0 0 auto;}
+.fb-tl-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:16px;
+  border:1px solid #2a3546;background:rgba(16,23,34,.92);color:#cdd6e2;font:600 11.5px Inter,system-ui,sans-serif;
+  cursor:pointer;transition:border-color .12s,background .12s,color .12s;}
+.fb-tl-chip:hover{border-color:var(--ds-accent);color:#eafaff;}
+.fb-tl-chip.on{border-color:#FDB813;color:#ffe9ad;background:rgba(56,42,8,.55);}
+.fb-tl-chip.sup{opacity:.4;text-decoration:line-through;}
+/* ── Selector de boceto (el MOUSE decide: plano o cara) ── */
+.fb-chooser{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:45;width:330px;
+  background:rgba(10,15,23,.96);border:1px solid #33404f;border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.6);
+  padding:12px 14px;color:#e9eef5;font-family:Inter,system-ui,sans-serif;}
+.fb-chooser-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;margin-bottom:9px;}
+.fb-chooser-x{background:none;border:none;color:#8fa3b8;cursor:pointer;font-size:14px;}
+.fb-chooser-planes{display:flex;gap:8px;}
+.fb-chooser-planes button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 0 7px;
+  border-radius:10px;border:1px solid #2a3546;background:rgba(20,28,40,.9);color:#dbe3ee;
+  font:700 12px Inter,system-ui,sans-serif;cursor:pointer;transition:border-color .12s,color .12s;}
+.fb-chooser-planes button:hover{border-color:#FDB813;color:#ffe9ad;}
+.fb-chooser-planes .glyph{font-size:20px;line-height:1;}
+.fb-chooser-hint{margin-top:9px;font-size:11.5px;color:#8fa3b8;text-align:center;}
+.fb-rail>aside.fb-facelist{max-height:26vh!important;overflow:auto;}
+.fb-rail>aside.fb-sim{overflow:auto;}
+.fb-rail>aside.fb-analysis{overflow:auto;}
+/* botón PRIMARIO (Croquis): acento agua — el punto de entrada del flujo real */
+.fb-tb-row>button.primary{background:var(--ds-accent);color:var(--ds-accent-ink);font-weight:700;}
+.fb-tb-row>button.primary:hover{background:#5CD6E2;color:var(--ds-accent-ink);}
+/* menú Más: items con icono */
+.fb-menu-mas button{display:flex;align-items:center;gap:9px;}
+.fb-menu-mas .fb-ic{opacity:.8;}
+
+/* cabecera del modal CAM: título + stats con wrap (ya no dentro del SVG) */
+.fb-cam-head{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.fb-cam-head b{font-size:12px;color:var(--ds-text);font-weight:600;}
+.fb-cam-head em{font-style:normal;font-size:10.5px;color:var(--ds-dim);
+  font-family:'JetBrains Mono',monospace;white-space:normal;}
+.fb-tb-sep{display:inline-block;width:1px;height:22px;background:var(--ds-line2);
+  margin:0 7px;flex:0 0 auto;}
+.fb-tb-label{display:none;}
+
+/* segmented control (plano XY/YZ/XZ · Base/Unir/Cortar) */
+.fb-seg{display:inline-flex;background:var(--ds-panel2);border:1px solid var(--ds-line);
+  border-radius:6px;overflow:hidden;flex:0 0 auto;margin:0 3px;}
+.fb-seg button{border:0;background:transparent;color:var(--ds-dim);font-size:10.5px;
+  font-weight:600;padding:4px 8px;cursor:pointer;border-radius:0;}
+.fb-seg button:hover{color:var(--ds-text);background:rgba(255,255,255,0.04);}
+.fb-seg button.on{background:var(--ds-accent);color:var(--ds-accent-ink);}
+.fb-tb-num{width:46px;background:var(--ds-panel2);border:1px solid var(--ds-line);
+  color:var(--ds-text);font-size:11px;font-family:'JetBrains Mono',monospace;
+  border-radius:6px;padding:3px 5px;margin:0 3px;}
+.fb-tb-num:focus{outline:none;border-color:var(--ds-accent);}
+
+/* menú Opciones */
+.fb-menu-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;
+  background:transparent;color:var(--ds-dim);font-size:11.5px;padding:5px 9px;
+  border-radius:6px;cursor:pointer;}
+.fb-menu-btn:hover{background:var(--ds-panel2);color:var(--ds-text);}
+.fb-menu{background:var(--ds-panel2);border:1px solid var(--ds-line2);border-radius:8px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.55);}
+
+/* panel derecho: campos numéricos (Dim v2) */
+.fb-dim-num{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.fb-dim-num .fb-dim-label{flex:1;}
+.fb-scrub{cursor:ew-resize;user-select:none;}
+.fb-dim-field{display:inline-flex;align-items:center;gap:4px;background:var(--ds-panel2);
+  border:1px solid var(--ds-line);border-radius:6px;padding:2px 7px 2px 2px;}
+.fb-dim-field:focus-within{border-color:var(--ds-accent);}
+.fb-dim-field input{width:58px;border:0;background:transparent;color:var(--ds-text);
+  font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;padding:3px 2px;
+  -moz-appearance:textfield;appearance:textfield;}
+.fb-dim-field input::-webkit-outer-spin-button,.fb-dim-field input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0;}
+.fb-dim-field input:focus{outline:none;}
+.fb-dim-field em{font-style:normal;font-size:10px;color:var(--ds-faint);}
+
+/* selección: el acento manda (adiós inundación dorada en cromo) */
+.fb-facelist-items button.sel{background:var(--ds-accent);color:var(--ds-accent-ink);border-color:var(--ds-accent);}
+.fb-count{color:var(--ds-accent);background:rgba(76,159,255,0.10);border-color:rgba(76,159,255,0.35);}
+
+/* tarjetas del árbol de features: compactas y sobrias */
+.fb-feat-node{border-radius:6px;}
+.fb-menu-btn .fb-ic,.fb-seg .fb-ic{opacity:.85;}
 `;

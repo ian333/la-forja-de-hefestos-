@@ -16,28 +16,43 @@
  */
 
 export interface SkPoint { x: number; y: number; fixed?: boolean }
-export interface SkLine { a: number; b: number }        // índices a points
+export interface SkLine { a: number; b: number; constr?: boolean }  // índices a points. constr = línea de CONSTRUCCIÓN (eje/referencia, NO se extruye)
 export interface SkCircle { c: number; r: number }      // centro (índice a points) + radio
+export interface SkArc { c: number; p0: number; p1: number }  // arco: centro + 2 extremos (índices a points). r = |c−p0| = |c−p1|, barre p0→p1 CCW
 
 export type Constraint =
   | { t: 'fix'; p: number }                              // ancla un punto donde está
   | { t: 'coincident'; p: number; q: number }            // dos puntos iguales
   | { t: 'horizontal'; a: number; b: number }            // segmento a-b horizontal
   | { t: 'vertical'; a: number; b: number }              // segmento a-b vertical
-  | { t: 'distance'; p: number; q: number; d: number }   // |pq| = d  (cota)
+  | { t: 'distance'; p: number; q: number; d: number }   // |pq| = d  (cota alineada/euclidiana)
+  | { t: 'distX'; p: number; q: number; d: number }      // distancia HORIZONTAL |px−qx| = d (cota H)
+  | { t: 'distY'; p: number; q: number; d: number }      // distancia VERTICAL |py−qy| = d (cota V)
   | { t: 'parallel'; l1: number; l2: number }            // líneas paralelas
   | { t: 'perpendicular'; l1: number; l2: number }       // líneas perpendiculares
   | { t: 'equalLength'; l1: number; l2: number }         // |l1| = |l2|
   | { t: 'pointOnLine'; p: number; l: number }           // punto sobre la recta de l
   | { t: 'radius'; c: number; r: number }                // radio de círculo = r (cota)
+  | { t: 'diameter'; c: number; d: number }              // diámetro de círculo = d (se rotula Ø)
+  | { t: 'arcRadius'; a: number; r: number }             // radio de ARCO a = r (|centro−p0|; se rotula R)
   | { t: 'equalRadius'; c1: number; c2: number }
   | { t: 'concentric'; c1: number; c2: number }
-  | { t: 'tangentLC'; l: number; c: number };            // línea tangente a círculo
+  | { t: 'tangentLC'; l: number; c: number }             // línea tangente a círculo
+  | { t: 'symmetric'; p: number; q: number; l: number }  // p,q simétricos respecto al eje (línea l)
+  | { t: 'angle'; l1: number; l2: number; deg: number; sign?: number }  // ÁNGULO entre dos líneas = deg; sign fija la RAMA (evita 135↔-45)
+  | { t: 'tangentLArc'; l: number; a: number; side?: number } // línea tangente a ARCO a; side fija el LADO del trazo (evita flip)
+  | { t: 'equalArcRadius'; a1: number; a2: number };      // dos arcos con el MISMO radio
 
 export interface Sketch {
   points: SkPoint[];
   lines: SkLine[];
   circles: SkCircle[];
+  arcs?: SkArc[];
+  /** Elipses (AutoCAD Workbook L5): centro + semiejes. Fuera del solver por ahora
+   *  (sin restricciones sobre rx/ry) — se dibujan y se teselan al exportar. */
+  ellipses?: Array<{ c: number; rx: number; ry: number }>;
+  /** Achurado (Workbook L15): segmentos calculados al crear (clip por paridad). */
+  hatches?: Array<{ a: { x: number; y: number }; b: { x: number; y: number } }>;
   constraints: Constraint[];
 }
 
@@ -97,11 +112,15 @@ function residuals(s: Sketch): number[] {
         const dx = P[c.p].x - P[c.q].x, dy = P[c.p].y - P[c.q].y;
         r.push(Math.hypot(dx, dy) - c.d); break;
       }
+      case 'distX': r.push(Math.abs(P[c.p].x - P[c.q].x) - c.d); break;  // cota horizontal
+      case 'distY': r.push(Math.abs(P[c.p].y - P[c.q].y) - c.d); break;  // cota vertical
       case 'parallel': { const [ux, uy] = dir(L[c.l1]); const [vx, vy] = dir(L[c.l2]); r.push(ux * vy - uy * vx); break; }
       case 'perpendicular': { const [ux, uy] = dir(L[c.l1]); const [vx, vy] = dir(L[c.l2]); r.push(ux * vx + uy * vy); break; }
       case 'equalLength': { const [ux, uy] = dir(L[c.l1]); const [vx, vy] = dir(L[c.l2]); r.push(Math.hypot(ux, uy) - Math.hypot(vx, vy)); break; }
       case 'pointOnLine': { const l = L[c.l]; const [ux, uy] = dir(l); const wx = P[c.p].x - P[l.a].x, wy = P[c.p].y - P[l.a].y; r.push(ux * wy - uy * wx); break; }
       case 'radius': r.push(C[c.c].r - c.r); break;
+      case 'diameter': r.push(C[c.c].r - c.d / 2); break;
+      case 'arcRadius': { const ar = (s.arcs ?? [])[c.a]; if (ar) r.push(Math.hypot(P[ar.p0].x - P[ar.c].x, P[ar.p0].y - P[ar.c].y) - c.r); break; }
       case 'equalRadius': r.push(C[c.c1].r - C[c.c2].r); break;
       case 'concentric': { const a = C[c.c1].c, b = C[c.c2].c; r.push(P[a].x - P[b].x, P[a].y - P[b].y); break; }
       case 'tangentLC': {
@@ -109,7 +128,62 @@ function residuals(s: Sketch): number[] {
         const wx = P[ci.c].x - P[l.a].x, wy = P[ci.c].y - P[l.a].y;
         r.push((ux * wy - uy * wx) / len - ci.r); break; // distancia con signo centro↔recta − radio
       }
+      case 'symmetric': {
+        // p,q simétricos respecto al eje (línea l): el punto medio cae sobre el eje
+        // Y el segmento p→q es perpendicular al eje. 2 ecuaciones → quita 2 GDL al par.
+        const l = L[c.l]; const [ux, uy] = dir(l);
+        const mx = (P[c.p].x + P[c.q].x) / 2, my = (P[c.p].y + P[c.q].y) / 2;
+        r.push(ux * (my - P[l.a].y) - uy * (mx - P[l.a].x));            // punto medio sobre el eje
+        r.push(ux * (P[c.q].x - P[c.p].x) + uy * (P[c.q].y - P[c.p].y)); // p→q ⟂ eje
+        break;
+      }
+      case 'angle': {
+        // Ángulo INTERIOR en el vértice compartido (como Fusion): si las dos líneas
+        // comparten un punto, se miden los RAYOS que salen de ese vértice (así 135°
+        // es el ángulo real del croquis, no el agudo entre direcciones a→b, que haría
+        // girar el brazo al lado equivocado). Residual suave = sin(θ − t) → 0 en θ=t.
+        const L1 = L[c.l1], L2 = L[c.l2];
+        let sv = -1, o1 = -1, o2 = -1;
+        if (L1.a === L2.a) { sv = L1.a; o1 = L1.b; o2 = L2.b; }
+        else if (L1.a === L2.b) { sv = L1.a; o1 = L1.b; o2 = L2.a; }
+        else if (L1.b === L2.a) { sv = L1.b; o1 = L1.a; o2 = L2.b; }
+        else if (L1.b === L2.b) { sv = L1.b; o1 = L1.a; o2 = L2.a; }
+        let ux, uy, vx, vy;
+        if (sv >= 0) { ux = P[o1].x - P[sv].x; uy = P[o1].y - P[sv].y; vx = P[o2].x - P[sv].x; vy = P[o2].y - P[sv].y; }
+        else { [ux, uy] = dir(L1); [vx, vy] = dir(L2); }
+        const cross = ux * vy - uy * vx, dot = ux * vx + uy * vy;
+        const theta = Math.atan2(cross, dot);            // ángulo con SIGNO actual (−π..π]
+        const target = (c.sign ?? 1) * c.deg * Math.PI / 180;
+        const d = Math.atan2(Math.sin(theta - target), Math.cos(theta - target)); // diferencia ENVUELTA → cero SOLO en la rama del trazo
+        r.push(d);
+        break;
+      }
+      case 'tangentLArc': {
+        // Línea L tangente al ARCO a: distancia(centro, recta) = radio(arco)=|centro−p0|.
+        // Distancia CON SIGNO × side (fijado al lado del trazo) para NO flipear al otro
+        // lado tangente (el error que volaba el cuello del croquis).
+        const l = L[c.l]; const arc = (s.arcs ?? [])[c.a]; if (!arc) break;
+        const [ux, uy] = dir(l); const len = Math.hypot(ux, uy) || 1e-12;
+        const cen = P[arc.c];
+        const dist = (ux * (cen.y - P[l.a].y) - uy * (cen.x - P[l.a].x)) / len;
+        const rad = Math.hypot(P[arc.p0].x - cen.x, P[arc.p0].y - cen.y);
+        r.push((c.side ?? 1) * dist - rad);
+        break;
+      }
+      case 'equalArcRadius': {
+        const a1 = (s.arcs ?? [])[c.a1], a2 = (s.arcs ?? [])[c.a2]; if (!a1 || !a2) break;
+        const r1 = Math.hypot(P[a1.p0].x - P[a1.c].x, P[a1.p0].y - P[a1.c].y);
+        const r2 = Math.hypot(P[a2.p0].x - P[a2.c].x, P[a2.p0].y - P[a2.c].y);
+        r.push(r1 - r2);
+        break;
+      }
     }
+  }
+  // ARCOS: cada arco impone que sus dos extremos estén al MISMO radio del centro
+  // (así sigue siendo un arco circular aunque arrastres los extremos). 1 ecuación/arco.
+  for (const a of (s.arcs ?? [])) {
+    const c = P[a.c], q0 = P[a.p0], q1 = P[a.p1];
+    r.push(Math.hypot(q0.x - c.x, q0.y - c.y) - Math.hypot(q1.x - c.x, q1.y - c.y));
   }
   return r;
 }

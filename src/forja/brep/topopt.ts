@@ -22,6 +22,7 @@ import {
   prepareFeaSession, sparseInit, sparseAdd, sparseCG,
   type FaceBC, type FEAOptions, type VolumeTetMesh,
 } from './fea';
+import { amOverhangFilter, applyPassive, passiveMask, overhangReachFromAngle, type CellGrid } from './topopt-am';
 
 const MM_TO_M = 1e-3;
 
@@ -34,12 +35,38 @@ interface DesignCell {
 export interface TopOptParams {
   volfrac: number;            // fracción de volumen objetivo (0..1)
   penal?: number;             // penalización SIMP (p=3)
-  rmin?: number;              // radio del filtro en VOXELES (≈1.5)
-  ft?: 1 | 2;                 // 1 = filtro de sensibilidad, 2 = de densidad
+  rmin?: number;              // radio del filtro en VOXELES (≈1.5) — fallback si no hay minMemberMm
+  minMemberMm?: number;       // TAMAÑO MÍNIMO DE MIEMBRO en mm (manufacturabilidad): el radio
+                              // del filtro = este valor. Evita "navajas" no imprimibles. Si no
+                              // se da, default ≈ 10% de la dimensión menor del envolvente.
+  ft?: 1 | 2;                 // 1 = filtro de sensibilidad, 2 = de densidad (impone grosor mínimo)
+  // ── Restricciones de MANUFACTURA (mecanismos imprimibles de 1 pieza) ──
+  passive?: (cx: number, cy: number, cz: number) => 'solid' | 'void' | 'design'; // keep-in/out por centroide (mm)
+  selfSupport?: boolean;      // filtro de voladizo: la pieza se imprime SIN soportes
+  maxOverhangDeg?: number;    // ángulo máx de voladizo desde la VERTICAL (45° default)
   maxLoops?: number;
   tolChange?: number;
   move?: number;
   resolution?: number;
+}
+
+/** Mapea las celdas (voxeles) a una rejilla regular (i,j,k) para el filtro de
+ *  voladizo. cellOf[i + nx·(j + ny·k)] = índice de celda o −1. Build = +Z. */
+function buildCellGrid(mesh: VolumeTetMesh, cells: DesignCell[]): CellGrid {
+  const ax = mesh.aabb.min[0], ay = mesh.aabb.min[1], az = mesh.aabb.min[2];
+  const sx = mesh.aabb.max[0] - ax, sy = mesh.aabb.max[1] - ay, sz = mesh.aabb.max[2] - az;
+  const v = mesh.voxel;
+  const nx = Math.max(1, Math.round(sx / v)), ny = Math.max(1, Math.round(sy / v)), nz = Math.max(1, Math.round(sz / v));
+  const hx = sx / nx, hy = sy / ny, hz = sz / nz;
+  const cellOf = new Int32Array(nx * ny * nz).fill(-1);
+  const ijk = new Int32Array(cells.length * 3);
+  for (let e = 0; e < cells.length; e++) {
+    const i = Math.min(nx - 1, Math.max(0, Math.round((cells[e].cx - ax) / hx - 0.5)));
+    const j = Math.min(ny - 1, Math.max(0, Math.round((cells[e].cy - ay) / hy - 0.5)));
+    const k = Math.min(nz - 1, Math.max(0, Math.round((cells[e].cz - az) / hz - 0.5)));
+    cellOf[i + nx * (j + ny * k)] = e; ijk[e * 3] = i; ijk[e * 3 + 1] = j; ijk[e * 3 + 2] = k;
+  }
+  return { nx, ny, nz, cellOf, ijk };
 }
 
 export interface TopOptResult {
@@ -119,8 +146,17 @@ export function runTopOpt(
   }
   const N = cells.length;
 
-  // ── FILTRO: vecinos dentro de rmin·voxel (ec.8). O(N²) — ok para malla coarse. ──
-  const rmm = (params.rmin ?? 1.5) * mesh.voxel;
+  // ── FILTRO: el RADIO controla el TAMAÑO MÍNIMO DE MIEMBRO (manufacturabilidad).
+  // Antes rmin=1.5 voxeles dejaba salir "navajas" no imprimibles. Ahora el radio es
+  // un mínimo FÍSICO (minMemberMm) o, por defecto, ~10% de la dimensión menor del
+  // envolvente — y nunca menos de 2.5 voxeles. Garantiza miembros gruesos y una
+  // pieza que SÍ se imprime (mejor que el topopt naïve / Fusion sin length-scale).
+  // Vecinos dentro de rmm (ec.8). O(N²) — ok para malla coarse. ──
+  const amin = mesh.aabb.min, amax = mesh.aabb.max;
+  const minDim = Math.min(amax[0] - amin[0], amax[1] - amin[1], amax[2] - amin[2]);
+  const rmm = params.minMemberMm != null
+    ? Math.max(1.2 * mesh.voxel, params.minMemberMm)
+    : (params.rmin != null ? params.rmin * mesh.voxel : Math.max(2.0 * mesh.voxel, 0.07 * minDim));
   const filtIdx: number[][] = new Array(N);
   const filtW: Float64Array[] = new Array(N);
   const filtHs = new Float64Array(N);
@@ -144,12 +180,15 @@ export function runTopOpt(
   }
   const fixedDOF = session.fixedDOF;
 
-  // ── BUCLE SIMP + OC ──
-  const x = new Float64Array(N).fill(volfrac);
-  let xPhys = Float64Array.from(x);
-  let U: Float64Array | undefined;
-  const history: TopOptResult['history'] = [];
-  let change = 1, loop = 0, compliance = 0;
+  // ── MANUFACTURA: regiones pasivas (keep-in/out) + filtro de voladizo ──
+  const region = params.passive;
+  const pmask = region ? passiveMask(cells, region)
+    : { solid: new Array<boolean>(N).fill(false), void: new Array<boolean>(N).fill(false), nDesign: N };
+  const grid = buildCellGrid(mesh, cells);
+  const selfSupport = params.selfSupport ?? false;
+  const reach = overhangReachFromAngle(params.maxOverhangDeg ?? 45);
+  const nDesign = Math.max(1, pmask.nDesign);
+  const isPassive = (e: number) => pmask.solid[e] || pmask.void[e];
 
   const applyDensityFilter = (src: Float64Array, dst: Float64Array) => {
     for (let e = 0; e < N; e++) {
@@ -158,10 +197,29 @@ export function runTopOpt(
       dst[e] = s / filtHs[e];
     }
   };
+  // Densidad FÍSICA + IMPRIMIBLE: filtro de densidad → congelar pasivas → filtro
+  // de voladizo (auto-soporte) → congelar pasivas. Es lo que "ve" el FE y lo que
+  // se exporta: la pieza que SÍ se imprime sin soportes, con sus superficies
+  // funcionales intactas.
+  const physicalize = (xRaw: Float64Array): Float64Array => {
+    let xp: Float64Array;
+    if (ft === 2) { xp = new Float64Array(N); applyDensityFilter(xRaw, xp); } else xp = Float64Array.from(xRaw);
+    applyPassive(xp, pmask);
+    if (selfSupport) { xp = amOverhangFilter(xp, grid, reach); applyPassive(xp, pmask); }
+    return xp;
+  };
+
+  // ── BUCLE SIMP + OC ──
+  const x = new Float64Array(N).fill(volfrac);
+  applyPassive(x, pmask);                 // arranca con las regiones congeladas
+  let xPhys = physicalize(x);
+  let U: Float64Array | undefined;
+  const history: TopOptResult['history'] = [];
+  let change = 1, loop = 0, compliance = 0;
 
   while (change > tolChange && loop < maxLoops) {
     loop++;
-    if (ft === 2) applyDensityFilter(x, xPhys); else xPhys = Float64Array.from(x);
+    xPhys = physicalize(x);
 
     // FE: K = Σ E_e·k0_e ; Dirichlet ; resolver (warm-start entre iteraciones)
     const K = sparseInit(nDOF);
@@ -217,32 +275,32 @@ export function runTopOpt(
       }
       dc.set(dcn); dv.set(dvn);
     }
+    for (let e = 0; e < N; e++) if (isPassive(e)) dc[e] = 0; // regiones congeladas: no se mueven
 
     // OC: bisección de λ hasta cumplir el volumen (ec.3,4)
     let l1 = 0, l2 = 1e9;
     const xnew = new Float64Array(N);
-    const xPhysTmp = new Float64Array(N);
     while ((l2 - l1) / (l1 + l2) > 1e-3) {
       const lmid = 0.5 * (l1 + l2);
       for (let e = 0; e < N; e++) {
+        if (pmask.solid[e]) { xnew[e] = 1; continue; }   // keep-in
+        if (pmask.void[e]) { xnew[e] = 0; continue; }     // keep-out
         const Be = Math.sqrt(Math.max(0, -dc[e] / (dv[e] * lmid)));
         let xe = x[e] * Be;
         xe = Math.max(0, Math.max(x[e] - move, Math.min(1, Math.min(x[e] + move, xe))));
         xnew[e] = xe;
       }
-      let vol = 0;
-      if (ft === 2) { applyDensityFilter(xnew, xPhysTmp); for (let e = 0; e < N; e++) vol += xPhysTmp[e]; }
-      else for (let e = 0; e < N; e++) vol += xnew[e];
-      if (vol > volfrac * N) l1 = lmid; else l2 = lmid;
+      // volumen IMPRIMIBLE (tras voladizo + pasivas) sobre las celdas de DISEÑO.
+      const xpv = physicalize(xnew);
+      let vol = 0; for (let e = 0; e < N; e++) if (!isPassive(e)) vol += xpv[e];
+      if (vol > volfrac * nDesign) l1 = lmid; else l2 = lmid;
     }
 
     change = 0;
     for (let e = 0; e < N; e++) { const d = Math.abs(xnew[e] - x[e]); if (d > change) change = d; x[e] = xnew[e]; }
-    let volMean = 0;
-    if (ft === 2) { applyDensityFilter(x, xPhys); }
-    else xPhys = Float64Array.from(x);
-    for (let e = 0; e < N; e++) volMean += xPhys[e];
-    volMean /= N;
+    xPhys = physicalize(x);
+    let volMean = 0; for (let e = 0; e < N; e++) if (!isPassive(e)) volMean += xPhys[e];
+    volMean /= nDesign;
     history.push({ loop, c, vol: volMean, change });
   }
 

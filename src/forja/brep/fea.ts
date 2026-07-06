@@ -396,16 +396,16 @@ function faceTriBBox(
 // ─────────────────────────────────────────────────────────────────
 
 /** Matriz simétrica sparse en listas de adyacencia por fila (mapa col→valor). */
-interface SparseSym {
+export interface SparseSym {
   n: number;
   rows: Array<Map<number, number>>;
 }
 
-function sparseInit(n: number): SparseSym {
+export function sparseInit(n: number): SparseSym {
   return { n, rows: Array.from({ length: n }, () => new Map<number, number>()) };
 }
 
-function sparseAdd(M: SparseSym, i: number, j: number, v: number): void {
+export function sparseAdd(M: SparseSym, i: number, j: number, v: number): void {
   if (v === 0) return;
   const row = M.rows[i];
   row.set(j, (row.get(j) ?? 0) + v);
@@ -493,7 +493,7 @@ function ic0Apply(ic: IC0Factor, r: Float64Array, z: Float64Array): void {
  * `ic0` (Rebanada 2, mucho más rápido), si no Jacobi (M = diag(K)). MISMA física.
  * Ref [3] Bathe §8.5, [11] Hughes §3.4.
  */
-function sparseCG(
+export function sparseCG(
   K: SparseSym,
   f: Float64Array,
   tol: number,

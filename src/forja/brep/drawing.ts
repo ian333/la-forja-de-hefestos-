@@ -28,6 +28,7 @@ export interface ViewReport {
   wmm: number; hmm: number;          // tamaño real proyectado (mm)
   nVisible: number; nHidden: number; // nº de segmentos
   visibleLen: number;                // longitud total de líneas visibles (mm)
+  circles: Array<{ cu: number; cv: number; dia: number }>; // agujeros/cilindros (Ø real)
 }
 export interface DrawingResult {
   svg: string;
@@ -75,6 +76,73 @@ function occluded(M: V3, eye: V3, pos: ArrayLike<number>, idx: ArrayLike<number>
   return false;
 }
 
+// ── Detección de círculos (agujeros / cilindros) en una vista ────────
+export interface Circle2D { cu: number; cv: number; r: number }
+
+/** Ajuste algebraico de círculo (Kåsa) sobre puntos 2D. Devuelve centro+radio
+ *  y el residual RMS (qué tan bien encajan en un círculo). */
+function fitCircle(pts: Array<[number, number]>): { cx: number; cy: number; r: number; residual: number } | null {
+  const n = pts.length;
+  if (n < 6) return null;
+  let Sx = 0, Sy = 0, Sxx = 0, Syy = 0, Sxy = 0, Sxz = 0, Syz = 0, Sz = 0;
+  for (const [x, y] of pts) {
+    const z = x * x + y * y;
+    Sx += x; Sy += y; Sxx += x * x; Syy += y * y; Sxy += x * y;
+    Sxz += x * z; Syz += y * z; Sz += z;
+  }
+  // Sistema normal 3×3 para [A=2a, B=2b, C=r²−a²−b²]:
+  const sol = solve3([[Sxx, Sxy, Sx], [Sxy, Syy, Sy], [Sx, Sy, n]], [Sxz, Syz, Sz]);
+  if (!sol) return null;
+  const a = sol[0] / 2, b = sol[1] / 2;
+  const r2 = sol[2] + a * a + b * b;
+  if (r2 <= 0) return null;
+  const r = Math.sqrt(r2);
+  let acc = 0;
+  for (const [x, y] of pts) { const d = Math.hypot(x - a, y - b) - r; acc += d * d; }
+  return { cx: a, cy: b, r, residual: Math.sqrt(acc / n) };
+}
+
+function solve3(M: number[][], v: number[]): number[] | null {
+  const A = M.map((row, i) => [...row, v[i]]);
+  for (let col = 0; col < 3; col++) {
+    let piv = col;
+    for (let r = col + 1; r < 3; r++) if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+    if (Math.abs(A[piv][col]) < 1e-12) return null;
+    [A[col], A[piv]] = [A[piv], A[col]];
+    const d = A[col][col];
+    for (let c = col; c < 4; c++) A[col][c] /= d;
+    for (let r = 0; r < 3; r++) { if (r === col) continue; const f = A[r][col]; for (let c = col; c < 4; c++) A[r][c] -= f * A[col][c]; }
+  }
+  return [A[0][3], A[1][3], A[2][3]];
+}
+
+/** Máximo hueco angular entre puntos consecutivos alrededor del centro (rad).
+ *  Un círculo COMPLETO (rim de agujero) tiene huecos chicos; un arco/filete no. */
+function maxAngularGap(pts: Array<[number, number]>, cx: number, cy: number): number {
+  const ang = pts.map(([x, y]) => Math.atan2(y - cy, x - cx)).sort((a, b) => a - b);
+  let gap = 0;
+  for (let i = 1; i < ang.length; i++) gap = Math.max(gap, ang[i] - ang[i - 1]);
+  return Math.max(gap, ang[0] + 2 * Math.PI - ang[ang.length - 1]); // wrap-around
+}
+
+/** Detecta círculos COMPLETOS (agujero/cilindro de frente) en una vista,
+ *  deduplicando rims concéntricos (arriba/abajo proyectan igual). */
+function detectCircles(edges: DrawingInput['edges'], u: V3, v: V3, diag: number): Circle2D[] {
+  const found: Circle2D[] = [];
+  for (const e of edges) {
+    if (e.polyline.length < 6) continue;
+    const pts = e.polyline.map((p) => [dot(p, u), dot(p, v)] as [number, number]);
+    const fit = fitCircle(pts);
+    if (!fit) continue;
+    if (fit.r < diag * 0.01) continue;                                 // ruido
+    if (fit.residual > fit.r * 0.03) continue;                         // no es círculo
+    if (maxAngularGap(pts, fit.cx, fit.cy) > Math.PI * 0.5) continue;  // arco, no círculo completo
+    const dup = found.find((c) => Math.hypot(c.cu - fit.cx, c.cv - fit.cy) < diag * 0.02 && Math.abs(c.r - fit.r) < diag * 0.02);
+    if (!dup) found.push({ cu: fit.cx, cv: fit.cy, r: fit.r });
+  }
+  return found;
+}
+
 export function generateDrawing(input: DrawingInput, meta: DrawingMeta = {}): DrawingResult {
   const pos = input.positions, idx = input.indices;
   // bbox real del modelo
@@ -107,7 +175,8 @@ export function generateDrawing(input: DrawingInput, meta: DrawingMeta = {}): Dr
         vmin = Math.min(vmin, v1, v2); vmax = Math.max(vmax, v1, v2);
       }
     }
-    return { view, segs, umin, umax, vmin, vmax, nVis, nHid, visLen };
+    const circles = detectCircles(input.edges, view.u, view.v, diag);
+    return { view, segs, umin, umax, vmin, vmax, nVis, nHid, visLen, circles };
   });
 
   const front = perView[0], top = perView[1], right = perView[2];
@@ -136,6 +205,7 @@ export function generateDrawing(input: DrawingInput, meta: DrawingMeta = {}): Dr
       key: pv.view.key, label: pv.view.label,
       wmm: +(pv.umax - pv.umin).toFixed(3), hmm: +(pv.vmax - pv.vmin).toFixed(3),
       nVisible: pv.nVis, nHidden: pv.nHid, visibleLen: +pv.visLen.toFixed(3),
+      circles: pv.circles.map((c) => ({ cu: +c.cu.toFixed(3), cv: +c.cv.toFixed(3), dia: +(2 * c.r).toFixed(3) })),
     })),
     scale: rendered.scale,
     bbox: { w: +(maxX - minX).toFixed(3), h: +(maxZ - minZ).toFixed(3), d: +(maxY - minY).toFixed(3) },
@@ -145,7 +215,7 @@ export function generateDrawing(input: DrawingInput, meta: DrawingMeta = {}): Dr
 // ── Render SVG (hoja A-landscape, marco, vistas, cotas generales, cajetín) ──
 type PerView = ReturnType<typeof generateDrawing> extends never ? never : {
   view: ViewDef; segs: Seg[]; umin: number; umax: number; vmin: number; vmax: number;
-  nVis: number; nHid: number; visLen: number;
+  nVis: number; nHid: number; visLen: number; circles: Circle2D[];
 };
 
 function niceScale(s: number): { ratio: number; label: string } {
@@ -182,6 +252,22 @@ function renderSVG(
   const Y = (v: number) => oy + (sheet.symax - v) * s;
 
   const parts: string[] = [];
+
+  // cota acotada (línea + 2 flechas + texto). Reutilizable por vistas/agujeros.
+  const dim = (x1: number, y1: number, x2: number, y2: number, txt: string, horiz: boolean) => {
+    const a = 1.4;
+    if (horiz) {
+      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1a5fb4" stroke-width="0.3"/>`);
+      parts.push(`<path d="M ${x1} ${y1} l ${a} ${-a / 1.6} l 0 ${a * 1.25} z" fill="#1a5fb4"/>`);
+      parts.push(`<path d="M ${x2} ${y2} l ${-a} ${-a / 1.6} l 0 ${a * 1.25} z" fill="#1a5fb4"/>`);
+      parts.push(`<text x="${(x1 + x2) / 2}" y="${y1 - 1.2}" font-size="3" fill="#1a5fb4" text-anchor="middle">${txt}</text>`);
+    } else {
+      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1a5fb4" stroke-width="0.3"/>`);
+      parts.push(`<path d="M ${x1} ${y1} l ${-a / 1.6} ${a} l ${a * 1.25} 0 z" fill="#1a5fb4"/>`);
+      parts.push(`<path d="M ${x2} ${y2} l ${-a / 1.6} ${-a} l ${a * 1.25} 0 z" fill="#1a5fb4"/>`);
+      parts.push(`<text x="${x1 - 1.5}" y="${(y1 + y2) / 2}" font-size="3" fill="#1a5fb4" text-anchor="middle" transform="rotate(-90 ${x1 - 1.5} ${(y1 + y2) / 2})">${txt}</text>`);
+    }
+  };
   parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${PW}mm" height="${PH}mm" viewBox="0 0 ${PW} ${PH}" font-family="Arial, sans-serif">`);
   parts.push(`<rect x="0" y="0" width="${PW}" height="${PH}" fill="#ffffff"/>`);
   // marco
@@ -198,6 +284,29 @@ function renderSVG(
     }
     if (hid.length) parts.push(`<path d="${hid.join(' ')}" fill="none" stroke="#8a8a8a" stroke-width="0.3" stroke-dasharray="1.2 1" data-view="${pv.view.key}" data-line="hidden"/>`);
     if (vis.length) parts.push(`<path d="${vis.join(' ')}" fill="none" stroke="#111" stroke-width="0.55" stroke-linecap="round" data-view="${pv.view.key}" data-line="visible"/>`);
+    // agujeros / cilindros vistos de frente: eje en cruz (dash-dot) + cota Ø.
+    // La marca de centro localiza el agujero (drafting estándar) y la hoja a 45°
+    // saca el Ø real afuera del círculo. Esto faltaba (el barreno iba pelón).
+    for (const c of pv.circles) {
+      const ccx = px(c.cu), ccy = py(c.cv), rr = c.r * s;
+      const ext = rr * 1.25 + 1.6;
+      parts.push(`<path d="M ${(ccx - ext).toFixed(2)} ${ccy.toFixed(2)} L ${(ccx + ext).toFixed(2)} ${ccy.toFixed(2)} M ${ccx.toFixed(2)} ${(ccy - ext).toFixed(2)} L ${ccx.toFixed(2)} ${(ccy + ext).toFixed(2)}" fill="none" stroke="#1a5fb4" stroke-width="0.22" stroke-dasharray="2 0.7 0.45 0.7" data-line="center"/>`);
+      const dx = Math.SQRT1_2, dy = -Math.SQRT1_2;          // hoja a 45° hacia arriba-derecha
+      const ex = ccx + dx * (rr + 6), ey = ccy + dy * (rr + 6);
+      parts.push(`<line x1="${(ccx + dx * rr).toFixed(2)}" y1="${(ccy + dy * rr).toFixed(2)}" x2="${ex.toFixed(2)}" y2="${ey.toFixed(2)}" stroke="#1a5fb4" stroke-width="0.3"/>`);
+      parts.push(`<text x="${(ex + 0.6).toFixed(2)}" y="${(ey - 0.4).toFixed(2)}" font-size="3" fill="#1a5fb4" data-dim="diameter">⌀${(2 * c.r).toFixed(1)}</text>`);
+      // posición AUTO del agujero desde el datum (esquina inf-izq de la vista).
+      // Auto-acotar TODO el plano es MEJOR que Fusion (ahí la posición va a mano).
+      // Solo con un agujero (varios necesitan reparto inteligente → se omite).
+      if (pv.circles.length === 1) {
+        const po = 6;
+        const yTop = Y(pv.vmax + o.dv) - po;
+        dim(X(pv.umin + o.du), yTop, ccx, yTop, (c.cu - pv.umin).toFixed(1), true);
+        const xLeft = X(pv.umin + o.du) - po;
+        dim(xLeft, Y(pv.vmin + o.dv), xLeft, ccy, (c.cv - pv.vmin).toFixed(1), false);
+      }
+    }
+
     // etiqueta de la vista
     const lx = X((pv.umin + pv.umax) / 2 + o.du), ly = Y(pv.vmin + o.dv) + 6;
     parts.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="3.2" fill="#444" text-anchor="middle">${pv.view.label}</text>`);
@@ -205,20 +314,6 @@ function renderSVG(
 
   // ── cotas generales del ALZADO (ancho abajo, alto a la izquierda) ──
   const fv = perView[0], fo = off['front'];
-  const dim = (x1: number, y1: number, x2: number, y2: number, txt: string, horiz: boolean) => {
-    const a = 1.4;
-    if (horiz) {
-      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1a5fb4" stroke-width="0.3"/>`);
-      parts.push(`<path d="M ${x1} ${y1} l ${a} ${-a / 1.6} l 0 ${a * 1.25} z" fill="#1a5fb4"/>`);
-      parts.push(`<path d="M ${x2} ${y2} l ${-a} ${-a / 1.6} l 0 ${a * 1.25} z" fill="#1a5fb4"/>`);
-      parts.push(`<text x="${(x1 + x2) / 2}" y="${y1 - 1.2}" font-size="3" fill="#1a5fb4" text-anchor="middle">${txt}</text>`);
-    } else {
-      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1a5fb4" stroke-width="0.3"/>`);
-      parts.push(`<path d="M ${x1} ${y1} l ${-a / 1.6} ${a} l ${a * 1.25} 0 z" fill="#1a5fb4"/>`);
-      parts.push(`<path d="M ${x2} ${y2} l ${-a / 1.6} ${-a} l ${a * 1.25} 0 z" fill="#1a5fb4"/>`);
-      parts.push(`<text x="${x1 - 1.5}" y="${(y1 + y2) / 2}" font-size="3" fill="#1a5fb4" text-anchor="middle" transform="rotate(-90 ${x1 - 1.5} ${(y1 + y2) / 2})">${txt}</text>`);
-    }
-  };
   const fbX1 = X(fv.umin + fo.du), fbX2 = X(fv.umax + fo.du);
   const fbY = Y(fv.vmin + fo.dv) + 9;
   dim(fbX1, fbY, fbX2, fbY, dims.w.toFixed(1), true);
