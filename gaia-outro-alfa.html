@@ -1,0 +1,102 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#04060d;
+    font-family:'Inter','DejaVu Sans',system-ui,sans-serif}
+  #c{position:absolute;inset:0}
+  #ui{position:absolute;left:7%;bottom:13%;z-index:9;display:flex;flex-direction:column;
+    align-items:flex-start;text-align:left;pointer-events:none}
+  .el{opacity:0;will-change:transform,opacity}
+  #ohead{font-size:64px;font-weight:200;color:#fff;letter-spacing:-0.02em;line-height:1;
+    text-shadow:0 4px 55px rgba(0,0,0,.7)}
+  .git{font-size:36px;font-weight:400;color:rgba(255,255,255,0.72);margin-top:16px}
+  #obrand{font-size:28px;font-weight:300;color:rgba(255,255,255,0.5);margin-top:46px}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="ohead" class="el">Sigue aprendiendo</div>
+  <div id="rel"></div>
+  <div id="obrand" class="el">GAIA Prime</div>
+</div>
+<img id="alfa" src="./alfa-solo.png" style="display:none">
+<script>
+const P=new URLSearchParams(location.search);
+const REL=(P.get('rel')||'Cómo dar de alta un producto|Cómo dar de alta un cliente').split('|').filter(Boolean).slice(0,3);
+const relBox=document.getElementById('rel');
+REL.forEach(r=>{const d=document.createElement('div');d.className='git el';d.textContent='▸  '+r;relBox.appendChild(d);});
+const gits=[...document.querySelectorAll('.git')];
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const DPR=window.devicePixelRatio||1,W=1920,H=1080;
+cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';ctx.scale(DPR,DPR);
+const CX=W*0.66, CY=H*0.42;
+let _s=909; const rnd=()=>{_s=(_s*1664525+1013904223)>>>0;return _s/4294967296;};
+const N=2200, PTS=[];
+for(let i=0;i<N;i++){
+  const u=rnd();
+  const r=(70 + (-Math.log(1-u*0.98))*85);
+  const th=Math.acos(2*rnd()-1), ph=rnd()*6.283;
+  PTS.push({x:r*Math.sin(th)*Math.cos(ph), y:r*Math.sin(th)*Math.sin(ph)*0.85, z:r*Math.cos(th),
+    ph:rnd()*6.283, sp:0.35+rnd()*0.7, sz:0.9+rnd()*1.7, c:rnd()});
+}
+const clamp=x=>Math.min(1,Math.max(0,x));
+const ease=x=>1-Math.pow(1-clamp(x),3);
+const seg=(t,a,b)=>ease((t-a)/(b-a));
+function pcol(c,br){const r=(79+(59-79)*c)*br,g=(195+(130-195)*c)*br,b=(247+(246-247)*c)*br;return `rgb(${r|0},${g|0},${b|0})`;}
+function glow(x,y,rad,rgba){const g=ctx.createRadialGradient(x,y,0,x,y,rad);g.addColorStop(0,rgba);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,rad,0,6.283);ctx.fill();}
+function proj(x,y,z){const p=560/(560+z);return [CX+x*p, CY+y*p, p];}
+const IMG=document.getElementById('alfa');
+const OFF=document.createElement('canvas'); let OFFREADY=false;
+function prepAlfa(){
+  if(OFFREADY||!IMG.complete||!IMG.naturalWidth)return;
+  const s=IMG.naturalWidth; OFF.width=s; OFF.height=s;
+  const c2=OFF.getContext('2d'); c2.drawImage(IMG,0,0);
+  try{
+    const d=c2.getImageData(0,0,s,s);
+    for(let i=0;i<d.data.length;i+=4){
+      const l=Math.max(d.data[i],d.data[i+1],d.data[i+2]);
+      d.data[i+3]=l<36?0:Math.min(255,(l-36)*2.4);
+    }
+    c2.putImageData(d,0,0); OFFREADY=true;
+  }catch(e){ OFFREADY=true; }
+}
+window.render=function(t){
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#04060d';ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  const app=seg(t,0,0.9);
+  const rot=t*0.22, cr=Math.cos(rot), sr=Math.sin(rot);   // rotación LENTA (reposo)
+  const breathe=1+0.04*Math.sin(t*0.9);
+  glow(CX,CY,480,'rgba(30,58,138,'+(0.16*app)+')');
+  glow(CX,CY,280,'rgba(245,158,11,'+(0.10*app)+')');
+  const far=[],near=[];
+  for(let i=0;i<N;i++){const p=PTS[i];
+    let x=p.x*breathe,y=p.y*breathe,z=p.z*breathe;
+    const rx=x*cr-z*sr, rz=x*sr+z*cr;
+    const br=(0.4+0.5*Math.sin(t*p.sp+p.ph))*app;
+    if(br<=0.03||rz<=-500)continue;
+    (rz>0?far:near).push([rx,y,rz,p,br]);
+  }
+  const drawP=arr=>{for(const [rx,ry,rz,p,br] of arr){
+    const [sx,sy,pp]=proj(rx,ry,rz);
+    if(pp<=0.05)continue;
+    ctx.fillStyle=pcol(p.c, br*(0.5+0.45*Math.min(pp,1.5)));
+    ctx.beginPath();ctx.arc(sx,sy,Math.max(0.1,p.sz*pp),0,6.283);ctx.fill();
+  }};
+  drawP(far);
+  if(IMG.complete){
+    prepAlfa();
+    const pulse=1+0.02*Math.sin(t*1.6);
+    const sz=440*pulse;
+    glow(CX,CY,sz*0.8,'rgba(245,158,11,'+(0.30*app)+')');
+    ctx.globalAlpha=app;
+    ctx.drawImage(OFFREADY&&OFF.width?OFF:IMG, CX-sz/2, CY-sz/2, sz, sz);
+    ctx.globalAlpha=1;
+  }
+  drawP(near);
+  const $=id=>document.getElementById(id);
+  const h=seg(t,0.7,1.6); $('ohead').style.opacity=h; $('ohead').style.transform=`translateY(${(1-h)*16}px)`;
+  gits.forEach((g,i)=>{const s=seg(t,1.3+i*0.35,2.1+i*0.35);g.style.opacity=s;g.style.transform=`translateX(${(1-s)*20}px)`;});
+  $('obrand').style.opacity=seg(t,2.5,3.3);
+  const fo=seg(t,4.7,5.0);
+  document.getElementById('ui').style.opacity=1-fo; cv.style.opacity=1-0.9*fo;
+};
+window.render(0);
+</script></body></html>

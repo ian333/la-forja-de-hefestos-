@@ -76,6 +76,8 @@ function readCamParams() {
     incl: n('incl', 90), // inclinación del disco (°)
     dur: n('dur', 30), // duración del programa (s) — reels cortos = 12
     sweep: n('sweep', 1.0), // barrido de azimut a lo largo del plano (rad)
+    nave: q.get('nave') === '1', // sonda de escala: APAGADA por defecto (realismo);
+                                 // ?nave=1 la reactiva para planos que pidan escala
   };
 }
 const CAM = readCamParams();
@@ -215,23 +217,24 @@ export default function CinematicGargantua() {
           chromaticAberration={0.0}
         />
 
-        {/* Referencia de escala: sonda diminuta a la deriva cerca del horizonte.
-            MISMO t determinista (timeRef). Mota apenas reconocible como artificial
-            → magnitud + parallax instantáneos. Sus balizas emiten HDR (el postFX
-            las tonemap-ea, el Bloom las hace pulsar). */}
-        <ScaleReference
-          t={animTime}
-          scale={0.9}
-          emissiveColor="#ffd2a0"
-          seed={7}
-          path={{
-            center: [9.5, 2.2, -4.5],
-            amplitude: [1.6, 0.9, 1.2],
-            speed: [0.012, 0.017, 0.010],
-            drift: [-0.05, 0.012, 0.02],
-            tumble: [0.05, 0.018, 0.03],
-          }}
-        />
+        {/* Referencia de escala (sonda). APAGADA por defecto: la nave evocativa
+            le QUITA realismo al agujero negro (regla dura de fidelidad). Se puede
+            reactivar por plano con ?nave=1 cuando se quiera el truco de escala. */}
+        {CAM.nave && (
+          <ScaleReference
+            t={animTime}
+            scale={0.9}
+            emissiveColor="#ffd2a0"
+            seed={7}
+            path={{
+              center: [9.5, 2.2, -4.5],
+              amplitude: [1.6, 0.9, 1.2],
+              speed: [0.012, 0.017, 0.010],
+              drift: [-0.05, 0.012, 0.02],
+              tumble: [0.05, 0.018, 0.03],
+            }}
+          />
+        )}
 
         {/* Postproceso cinematográfico — hermano de la escena 3D (igual que
             DynamicPostFX en CinematicAtom). Preset 'bh': Bloom threshold BAJO

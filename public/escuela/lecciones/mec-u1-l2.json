@@ -1,0 +1,220 @@
+{
+  "id": "mec-u1-l2",
+  "curso": "mecanica",
+  "unidad": 1,
+  "n": 2,
+  "titulo": "La cámara y el árbol",
+  "subtitulo": "Navegar · vistas · editar operaciones · deshacer",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 1 §1-7, 1-8, 1-11 + edición de features",
+  "descripcion": "Moverte en 3D como pez en el agua y entender el árbol de operaciones: la historia viva de tu pieza. Editar una cota del pasado y ver la pieza reconstruirse.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Ya hiciste tu primera pieza. Hoy aprendes a moverte alrededor de ella como pez en el agua.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 400
+        },
+        {
+          "type": "clickmm",
+          "x": -50,
+          "y": -30,
+          "settle": 400
+        },
+        {
+          "type": "clickmm",
+          "x": 50,
+          "y": 30,
+          "settle": 500
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('extrude')",
+        "desc": "hay una pieza para navegar"
+      }
+    },
+    {
+      "id": "p02",
+      "dice": "Arrastra con el mouse para orbitar. La pieza no se mueve: te mueves tú.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            850,
+            520
+          ],
+          "settle": 600
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            700
+          ],
+          "settle": 700
+        }
+      ]
+    },
+    {
+      "id": "p03",
+      "dice": "Las vistas con nombre son tus anclas: isométrica, superior, frontal. Un clic y sabes dónde estás.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "top",
+          "settle": 1200
+        },
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 1200
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "A la izquierda vive el árbol de operaciones: la historia completa de tu pieza, paso por paso.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 600
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Ahora un regalo: clic derecho, y el taller entero se abre en un anillo dorado.",
+      "gestos": [
+        {
+          "type": "rclick",
+          "x": 960,
+          "y": 610,
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"radial-menu\"]')",
+        "desc": "el menú radial abrió"
+      }
+    },
+    {
+      "id": "p05b",
+      "dice": "Elige Extruir en el anillo... y cámbiale la altura a cuarenta. La historia se puede editar.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "radial-extrude",
+          "settle": 1200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "40",
+          "settle": 2000
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 200000",
+        "desc": "la pieza se reconstruyó más alta"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "La pieza entera se reconstruye desde su historia. Eso es diseño paramétrico: el pasado manda.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            900,
+            560
+          ],
+          "settle": 800
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "¿Te equivocaste? Deshacer y rehacer son tus amigos de toda la vida.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-undo",
+          "settle": 1500
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-redo",
+          "settle": 1500
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Y abajo, siempre encendidos: volumen, masa y topología. El tablero de instrumentos del taller.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Órbita, vistas, historia, deshacer. Con esto ya nada te asusta. La próxima: el boceto a fondo, con el perfil en ele del libro.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            800,
+            580
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}

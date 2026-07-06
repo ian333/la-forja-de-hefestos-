@@ -1,0 +1,236 @@
+{
+  "id": "mec-u2-l4",
+  "curso": "mecanica",
+  "unidad": 2,
+  "n": 4,
+  "titulo": "Redondeos de boceto",
+  "subtitulo": "Fillet y chaflán en las esquinas del perfil",
+  "fuente": "Bethune cap. 2 §2-12 (Fillets and Chamfers)",
+  "descripcion": "Las esquinas se suavizan desde el boceto: fillet de radio 8 en una, chaflán de 8 en otra. El volumen delata a cada una.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Las esquinas vivas cortan manos y concentran esfuerzo. El capítulo dos les da dos curas: el redondeo y el chaflán.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Un rectángulo de sesenta por cuarenta, con la entrada dinámica: exacto desde el trazo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "-30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "-20",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "60",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "40",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "60",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "40",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "270",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 700
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "el rectángulo existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Redondeo de boceto: clic en la esquina de arriba a la derecha... radio de ocho.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-sfillet",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-fillet-r",
+          "text": "8",
+          "settle": 400
+        },
+        {
+          "type": "clickmm",
+          "x": 30,
+          "y": 20,
+          "settle": 1300
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Y chaflán en la de abajo: ocho milímetros de corte recto.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-schamfer",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-chamfer-d",
+          "text": "8",
+          "settle": 400
+        },
+        {
+          "type": "clickmm",
+          "x": 30,
+          "y": -20,
+          "settle": 1300
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Termina y extruye diez. El kernel delata a cada esquina: el redondeo perdona más material que el chaflán.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "10",
+          "settle": 1600
+        },
+        {
+          "type": "probe",
+          "label": "esquinas"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 23300 && inv.vol_kernel < 23900",
+        "desc": "placa con fillet+chaflán (~23,543 mm³)"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Mismo boceto, dos personalidades: la curva para las manos, el corte para los ensambles. Nos vemos en la próxima.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            860,
+            560
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}

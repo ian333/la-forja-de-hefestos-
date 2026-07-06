@@ -1,0 +1,156 @@
+{
+  "id": "mec-u3-l1",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 1,
+  "titulo": "El ángulo de salida",
+  "subtitulo": "Draft · la primera regla del plástico",
+  "fuente": "Bethune cap. 3 §3-2 (Draft) y §3-16",
+  "descripcion": "Ninguna pieza sale del molde con paredes verticales: el draft inclina las caras para desmoldear. La primera lección de piezas de plástico.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Hoy, la primera regla de las piezas de plástico: nada sale del molde con paredes verticales.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una caja simple: boceto, rectángulo, y extruye treinta.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -30,
+          "y": -30,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 30,
+          "y": 30,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "30",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 90000",
+        "desc": "hay una caja sólida"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Sus paredes son verticales: en el molde, esto se atora. Se rayaría al salir.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 1400
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "La cura está en el menú Más: ángulo de salida. Tres grados de inclinación.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-draft",
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "post-draft"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('draft') && inv.vol_kernel < 117000 && inv.vol_kernel > 109000",
+        "desc": "el draft inclinó las paredes (~5% menos material)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Mira las paredes: ahora abren hacia arriba. La pieza se desliza del molde sin pelear.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 1400
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            900,
+            560
+          ],
+          "settle": 900
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Tres grados que valen oro: sin draft no hay inyección. Es la unidad de moldes, y apenas empieza.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1000,
+            600
+          ],
+          "to": [
+            1180,
+            660
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}

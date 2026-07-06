@@ -1,0 +1,288 @@
+[
+ {
+  "aid": "02-helio",
+  "name": "helio",
+  "order": [
+   0,
+   6,
+   5,
+   7
+  ],
+  "hook_index": 6,
+  "est_seconds": 15.47,
+  "reason": "El gancho es la perdida/escasez (\"se escapa al espacio y no regresa\"), se paga con para que lo necesitamos, y cierra en el escalofrio de \"recurso no renovable\".",
+  "est_real": 16.37
+ },
+ {
+  "aid": "03-litio",
+  "name": "litio",
+  "order": [
+   0,
+   7,
+   6,
+   8
+  ],
+  "hook_index": 7,
+  "est_seconds": 15.56,
+  "reason": "El gancho [7] revienta la cabeza (un metal es medicina psiquiatrica que estabiliza el animo bipolar), luego pago la curiosidad con su otra cara, las baterias [6], y cierro en el peak-end [8] \"mueve maquinas y calma mentes\"; descarto descubrimiento, etimologia y nucleosintesis por lastre.",
+  "est_real": 16.46
+ },
+ {
+  "aid": "05-boro",
+  "name": "boro",
+  "order": [
+   0,
+   5,
+   7
+  ],
+  "hook_index": 5,
+  "est_seconds": 17.2,
+  "reason": "Gancho vital y contraintuitivo (sin boro las plantas no florecen) que activa supervivencia, y peak-end que revienta la cabeza (nitruro de boro casi tan duro como el diamante); descarté espalación, egipcios y descubrimiento 1808 por lastre.",
+  "est_real": 17.8
+ },
+ {
+  "aid": "09-fluor",
+  "name": "fluor",
+  "order": [
+   0,
+   1,
+   3,
+   6
+  ],
+  "hook_index": 1,
+  "est_seconds": 16.56,
+  "reason": "El gancho es \"el elemento mas reactivo de toda la tabla\" (contraintuitivo e inmediato), escala al peligro mortal de aislarlo, y cierra en peak-end conectando con tu vida (pasta de dientes y sartenes).",
+  "est_real": 17.46
+ },
+ {
+  "aid": "11-sodio",
+  "name": "sodio",
+  "order": [
+   0,
+   1,
+   4,
+   5
+  ],
+  "hook_index": 1,
+  "est_seconds": 14.03,
+  "reason": "El gancho es la explosion en agua (peligro+sorpresa inmediata); cierra con que la sal era tan valiosa que pagaba a los legionarios, conectando el metal explosivo con la historia humana.",
+  "est_real": 14.93
+ },
+ {
+  "aid": "12-magnesio",
+  "name": "magnesio",
+  "order": [
+   0,
+   1,
+   5
+  ],
+  "hook_index": 1,
+  "est_seconds": 14.82,
+  "reason": "El gancho es la luz cegadora que daña los ojos (peligro/supervivencia inmediata en <3s), y cierra con el dato que conecta con TU vida: sin magnesio tu ADN no se copia y tu corazón pierde el ritmo (peak-end escalante).",
+  "est_real": 15.42
+ },
+ {
+  "aid": "13-aluminio",
+  "name": "aluminio",
+  "order": [
+   0,
+   1,
+   2,
+   7
+  ],
+  "hook_index": 1,
+  "est_seconds": 15.55,
+  "reason": "El gancho (mas caro que el oro hace 200 anos) es contraintuitivo y dispara perdida de valor; la corte de Napoleon paga la brecha y se cierra en el escalofrio de que ese metal \"de reyes\" hoy se recicla infinito sin perder calidad.",
+  "est_real": 16.45
+ },
+ {
+  "aid": "15-fosforo",
+  "name": "fosforo",
+  "order": [
+   0,
+   5,
+   6
+  ],
+  "hook_index": 5,
+  "est_seconds": 15.99,
+  "reason": "Gancho = supervivencia/auto-relevancia (\"sin fósforo no hay vida: ADN, ATP, tus huesos\") y cierre-pico que revienta la cabeza (\"alimenta al mundo pero las reservas son finitas y no hay sustituto\"), descartando descubrimiento/etimología/nucleosíntesis.",
+  "est_real": 16.6
+ },
+ {
+  "aid": "20-calcio",
+  "name": "calcio",
+  "order": [
+   0,
+   1,
+   6,
+   7
+  ],
+  "hook_index": 1,
+  "est_seconds": 17.38,
+  "reason": "El gancho [1] es lo mas concreto y tangible (huesos, dientes, marmol del Partenon = todo calcio), abre la brecha estructura-vs-vida que paga [6] con escalofrio de auto-relevancia (musculo, neurona, ovulo fertilizado) y cierra en [7], el aforismo peak-end que une las dos caras del atomo.",
+  "est_real": 18.28
+ },
+ {
+  "aid": "22-titanio",
+  "name": "titanio",
+  "order": [
+   0,
+   1,
+   2,
+   7
+  ],
+  "hook_index": 1,
+  "est_seconds": 16.19,
+  "reason": "Gancho: \"fuerte como acero pero mitad de peso\" es lo mas concreto y contraintuitivo; cierra en \"metal de guerra y de medicina\", el peak-end que da escalofrio y conecta cuerpo/poder.",
+  "est_real": 17.09
+ },
+ {
+  "aid": "25-manganeso",
+  "name": "manganeso",
+  "order": [
+   0,
+   1,
+   7
+  ],
+  "hook_index": 1,
+  "est_seconds": 16.18,
+  "reason": "Gancho concreto y sorprendente (los primeros pintores de Lascaux ya usaban manganeso) que abre brecha, y cierra en el peak-end de supervivencia: el manganeso rompe el agua y libera el oxigeno que respiras.",
+  "est_real": 16.78
+ },
+ {
+  "aid": "29-cobre",
+  "name": "cobre",
+  "order": [
+   0,
+   5,
+   6
+  ],
+  "hook_index": 5,
+  "est_seconds": 16.71,
+  "reason": "El gancho [5] activa dependencia/supervivencia universal (cada cable de tu casa es cobre), y cierra en [6] que paga la curiosidad con un dato de salud que revienta la cabeza: una superficie de cobre mata bacterias en horas.",
+  "est_real": 17.31
+ },
+ {
+  "aid": "30-zinc",
+  "name": "zinc",
+  "order": [
+   0,
+   2,
+   5,
+   7
+  ],
+  "hook_index": 2,
+  "est_seconds": 19.81,
+  "reason": "(ajustado a <18s) Gancho = perdida visceral (heridas no cierran, pierdes olfato); galvanizado paga; cierra en 'protege metales y protege cuerpos'.",
+  "est_real": 19.81
+ },
+ {
+  "aid": "33-arsenico",
+  "name": "arsenico",
+  "order": [
+   0,
+   1,
+   5,
+   6,
+   8
+  ],
+  "hook_index": 1,
+  "est_seconds": 15.91,
+  "reason": "El gancho \"el rey de los venenos\" arresta al instante; el cierre \"el mismo elemento que mató emperadores hoy salva pacientes de cáncer\" da escalofrío y paga la brecha veneno-medicina.",
+  "est_real": 17.11
+ },
+ {
+  "aid": "47-plata",
+  "name": "plata",
+  "order": [
+   0,
+   1,
+   5,
+   7
+  ],
+  "hook_index": 1,
+  "est_seconds": 17.88,
+  "reason": "Gancho con el superlativo concreto (mejor conductor de todos, ningun metal mueve electrones/calor mejor) y cierre peak-end que conecta con tu vida hoy: paneles solares, electronica y vendajes que evitan infecciones.",
+  "est_real": 18.78
+ },
+ {
+  "aid": "50-estano",
+  "name": "estano",
+  "order": [
+   0,
+   5,
+   6
+  ],
+  "hook_index": 5,
+  "est_seconds": 18.45,
+  "reason": "Abre con el dato concreto y omnipresente (suelda toda tu electrónica) para enganchar por auto-relevancia, y cierra en la peste del estaño que arruinó a los soldados de Napoleón — el dato contraintuitivo que da escalofrío como peak-end.",
+  "est_real": 19.05
+ },
+ {
+  "aid": "53-yodo",
+  "name": "yodo",
+  "order": [
+   0,
+   5,
+   6
+  ],
+  "hook_index": 5,
+  "est_seconds": 15.31,
+  "reason": "El gancho [5] activa perdida/supervivencia (bocio y retraso infantil sin yodo) abriendo una brecha, y cierra en el peak [6] que revienta la cabeza: la sal yodada fue una de las intervenciones de salud publica mas exitosas de la historia.",
+  "est_real": 15.91
+ },
+ {
+  "aid": "74-wolframio",
+  "name": "wolframio",
+  "order": [
+   0,
+   2,
+   5,
+   7
+  ],
+  "hook_index": 2,
+  "est_seconds": 17.86,
+  "reason": "El gancho es el superlativo (el punto de fusion mas alto de todos los metales), se paga con el filamento que brillaba sin derretirse, y cierra en el eslogan escalofriante \"el metal que no se rinde ante el calor\".",
+  "est_real": 18.76
+ },
+ {
+  "aid": "82-plomo",
+  "name": "plomo",
+  "order": [
+   0,
+   2,
+   5
+  ],
+  "hook_index": 2,
+  "est_seconds": 14.39,
+  "reason": "El gancho es la teoria de que el plomo de las tuberias romanas enveneno lentamente al imperio (peligro+brecha historica), y cierra en el dato que toca TU vida: estuvo en gasolina y pintura hasta saber que dana el cerebro infantil.",
+  "est_real": 14.99
+ },
+ {
+  "aid": "92-uranio",
+  "name": "uranio",
+  "order": [
+   0,
+   3,
+   4
+  ],
+  "hook_index": 3,
+  "est_seconds": 17.14,
+  "reason": "El gancho [3] activa peligro/poder (\"el que liberó la energía del átomo\") y abre una brecha que [4] paga con el escalofrío peak-end: reactores que alimentan millones de hogares y las bombas que cambiaron la historia en 1945.",
+  "est_real": 17.74
+ },
+ {
+  "aid": "79-oro",
+  "name": "oro",
+  "order": [
+   0,
+   3,
+   4,
+   6
+  ],
+  "hook_index": 3,
+  "est_seconds": 16.5,
+  "est_real": 16.5,
+  "reason": "Gancho relatable+awe (el oro que tocas brilla igual que hace 5000 años), sube a lo cosmico (forjado en colision de estrellas de neutrones) y cierra en el wow tactil (un gramo = hilo de 3km)."
+ }
+]

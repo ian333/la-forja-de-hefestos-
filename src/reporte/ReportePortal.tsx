@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { CajetinReporte, ReporteLab, TablaReporte } from './pdf/types';
 import { descargarReportePDF } from './pdf/generator';
+import { addReport } from '@/lib/progress';
 import { REPORTE_EJEMPLO } from './pdf/samples';
 
 const GAIA_GRADIENT = 'linear-gradient(135deg, #4FC3F7 0%, #7E57C2 50%, #F472B6 100%)';
@@ -197,6 +198,7 @@ export default function ReportePortal() {
       const slugAlumno = c.alumno.trim().split(/\s+/)[0]?.toLowerCase() || 'gaia';
       const num = String(c.practicaNumero).trim() || 's-n';
       descargarReportePDF(reporte, `reporte-practica-${num}-${slugAlumno}.pdf`);
+      addReport(); // progreso: reporte real generado (cuenta en tu recorrido)
       setOk('Generamos tu PDF. Revisa tu carpeta de descargas.');
     } catch (e: any) {
       setError('No pudimos generar el PDF: ' + (e?.message || 'error desconocido') + '. Revisa los datos e intenta de nuevo.');

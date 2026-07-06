@@ -130,7 +130,10 @@ export default function CuentaPortal() {
             <div className="text-[10px] text-[#64748B] uppercase tracking-[0.2em]">tu cuenta</div>
           </div>
         </a>
-        <a href="/precios.html" className="text-[12px] text-[#94A3B8] font-mono hover:text-white transition">Planes →</a>
+        <div className="flex items-center gap-4 text-[12px] font-mono">
+          <a href="/perfil.html" className="text-[#94A3B8] hover:text-white transition">Tu recorrido →</a>
+          <a href="/precios.html" className="text-[#94A3B8] hover:text-white transition">Planes →</a>
+        </div>
       </header>
 
       <main className={`relative z-10 mx-auto px-6 pt-10 ${me ? 'max-w-[560px]' : 'max-w-[440px]'}`}>

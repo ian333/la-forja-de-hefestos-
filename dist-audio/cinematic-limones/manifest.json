@@ -1,0 +1,49 @@
+{
+  "id": "cinematic-limones",
+  "title": "El mercado de los limones — cinematic (Akerlof)",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "b1-nebulosa",
+      "scene": "B1",
+      "audio": "b1-nebulosa.mp3",
+      "text": "Esto es un mercado. Sí: un mercado. Y todo mercado vivo... son dos estrellas alimentándose."
+    },
+    {
+      "id": "b2-luces",
+      "scene": "B2",
+      "audio": "b2-luces.mp3",
+      "text": "La estrella dorada vende. La azul compra. Y ese puente de luz entre ellas son las transacciones. Cada chispa que cruza... es un trato."
+    },
+    {
+      "id": "b3-ciego",
+      "scene": "B3",
+      "audio": "b3-ciego.mp3",
+      "text": "Pero algunas chispas son limones: productos con defectos ocultos. Y el comprador no las distingue. Para él, todo el flujo brilla igual."
+    },
+    {
+      "id": "b4-oleada",
+      "scene": "B4",
+      "audio": "b4-oleada.mp3",
+      "text": "Como no distingue, paga un precio promedio. Pero al vendedor bueno, el promedio lo insulta. Prefiere quedarse su producto. Y deja de vender."
+    },
+    {
+      "id": "b5-cascada",
+      "scene": "B5",
+      "audio": "b5-cascada.mp3",
+      "text": "Menos buenos: peor calidad. Peor calidad: menor precio. Más buenos se van. El flujo se envenena... y se adelgaza."
+    },
+    {
+      "id": "b6-muerte",
+      "scene": "B6",
+      "audio": "b6-muerte.mp3",
+      "text": "Hasta que se corta. El mercado colapsa bajo su propio peso. Y un mercado muerto es un agujero negro: nada escapa de él."
+    },
+    {
+      "id": "b7-coda",
+      "scene": "B7",
+      "audio": "b7-coda.mp3",
+      "text": "George Akerlof lo demostró en mil novecientos setenta. Nobel de Economía. La cura: garantías, historiales, reputación. La confianza es lo que mantiene a las estrellas alimentándose."
+    }
+  ]
+}

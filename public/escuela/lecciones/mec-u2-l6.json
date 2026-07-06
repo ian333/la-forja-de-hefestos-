@@ -1,0 +1,221 @@
+{
+  "id": "mec-u2-l6",
+  "curso": "mecanica",
+  "unidad": 2,
+  "n": 6,
+  "titulo": "La brida",
+  "subtitulo": "Patrón circular de boceto · 6 barrenos",
+  "fuente": "Bethune cap. 2 §2-20 (Circular Sketch Pattern)",
+  "descripcion": "El patrón circular del cap. 2: un barreno guía y el array polar lo multiplica por seis alrededor del centro — la brida clásica.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Toda tubería termina en una brida: un disco con barrenos en círculo. Hoy los pones todos... dibujando uno.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El disco: un círculo de ochenta.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 0,
+          "y": 0,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 40,
+          "y": 0,
+          "settle": 700
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "80",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 1",
+        "desc": "el disco existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El barreno guía: uno solo, de ocho, a treinta del centro.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 30,
+          "y": 0,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 34,
+          "y": 0,
+          "settle": 700
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            1
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "8",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 2",
+        "desc": "el barreno guía existe"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y la magia: patrón polar. Ventana sobre el barreno... seis copias... y el centro del giro.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-array",
+          "settle": 600
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-array-mode",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-array-n",
+          "text": "6",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 24,
+          "y": -6,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": 36,
+          "y": 6,
+          "settle": 800
+        },
+        {
+          "type": "clickmm",
+          "x": 0,
+          "y": 0,
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 7",
+        "desc": "el patrón puso los 6 barrenos"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Termina y extruye doce: la brida, con sus seis barrenos ya taladrados.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "12",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "brida"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 55000 && inv.vol_kernel < 58500",
+        "desc": "brida con los 6 barrenos (~56,700 mm³)"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Uno dibujado, seis taladrados. El patrón es la pereza inteligente del ingeniero. Nos vemos en la próxima.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            860,
+            560
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}

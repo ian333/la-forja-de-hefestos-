@@ -212,6 +212,15 @@ export function nucleusInfo(element: Element): { protons: number; neutrons: numb
 // ═══════════════════════════════════════════════════════════════
 
 export function subshellColor(n: number, l: number): string {
+  // Modo marca Gaia (gated por window.__GAIA_BRAND): paleta cyan→morado→magenta
+  // para el intro de partículas. NO afecta los videos de química (no setean el flag).
+  if (typeof globalThis !== 'undefined' && (globalThis as any).__GAIA_BRAND) {
+    if (l === 0) return '#22d3ee';   // s: cyan (núcleo interno)
+    if (l === 1) return '#a855f7';   // p: morado (lóbulos principales)
+    if (l === 2) return '#d946ef';   // d: magenta
+    if (l === 3) return '#d8b4fe';   // f: morado claro
+    return '#8b5cf6';
+  }
   // Diferencia visual inmediata:
   //   s: azul cielo
   //   p: rojo-naranja (con variación por orientación)

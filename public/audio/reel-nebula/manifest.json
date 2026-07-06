@@ -1,0 +1,37 @@
+{
+  "id": "reel-nebula",
+  "title": "Reel — Cómo crecer sin dinero (Romer 30s)",
+  "voice": "Matilda",
+  "scenes": [
+    {
+      "id": "reel-01",
+      "scene": "reel",
+      "audio": "reel-01.mp3",
+      "text": "En mil novecientos sesenta, México era más rico que Corea del Sur."
+    },
+    {
+      "id": "reel-02",
+      "scene": "reel",
+      "audio": "reel-02.mp3",
+      "text": "Hoy, Corea nos triplica. ¿Qué pasó?"
+    },
+    {
+      "id": "reel-03",
+      "scene": "reel",
+      "audio": "reel-03.mp3",
+      "text": "No fue el petróleo. No fue la suerte. Fue una idea."
+    },
+    {
+      "id": "reel-04",
+      "scene": "reel",
+      "audio": "reel-04.mp3",
+      "text": "Y una idea no se gasta cuando la compartes. Se multiplica."
+    },
+    {
+      "id": "reel-05",
+      "scene": "reel",
+      "audio": "reel-05.mp3",
+      "text": "Desde añadirle un trompo de pastor a tu puesto de tacos, hasta inventar el transistor. No necesitas capital. Necesitas ideas."
+    }
+  ]
+}

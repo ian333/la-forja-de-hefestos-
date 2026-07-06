@@ -1,0 +1,509 @@
+{
+  "id": "mec-u1-l3",
+  "curso": "mecanica",
+  "unidad": 1,
+  "n": 3,
+  "titulo": "El perfil en L del libro",
+  "subtitulo": "SP1-1 y SP1-2 · líneas · cotas · barrenos",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 1 §1-9 (SP1-1) y §1-12/1-13 (SP1-2)",
+  "descripcion": "El primer ejercicio real del libro: perfil en L con líneas encadenadas a ojo, totalmente restringido con cuatro cotas, extruido y con sus dos barrenos de Ø20.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Éste es el perfil en ele del libro de Bethune: el primer ejercicio real de todo ingeniero. Vamos a calcarlo.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Boceto nuevo, en el plano equis ye.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "el editor de boceto abrió"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Con la herramienta de línea, sigue la ele a ojo: seis trazos, y cierras donde empezaste.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -40,
+          "y": -30,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 41,
+          "y": -31,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 40,
+          "y": 1,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": -9,
+          "y": 0,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": -10,
+          "y": 31,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": -41,
+          "y": 30,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": -40,
+          "y": -30,
+          "settle": 600
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 800
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 6",
+        "desc": "la L tiene sus 6 líneas"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y ahora dale esqueleto: estas tres líneas, horizontales... y estas tres, verticales.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "clearPick",
+          "args": [],
+          "settle": 300
+        },
+        {
+          "type": "hook",
+          "fn": "pick",
+          "args": [
+            "line",
+            0
+          ],
+          "settle": 250
+        },
+        {
+          "type": "hook",
+          "fn": "pick",
+          "args": [
+            "line",
+            2
+          ],
+          "settle": 250
+        },
+        {
+          "type": "hook",
+          "fn": "pick",
+          "args": [
+            "line",
+            4
+          ],
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-con-h",
+          "settle": 900
+        },
+        {
+          "type": "hook",
+          "fn": "clearPick",
+          "args": [],
+          "settle": 300
+        },
+        {
+          "type": "hook",
+          "fn": "pick",
+          "args": [
+            "line",
+            1
+          ],
+          "settle": 250
+        },
+        {
+          "type": "hook",
+          "fn": "pick",
+          "args": [
+            "line",
+            3
+          ],
+          "settle": 250
+        },
+        {
+          "type": "hook",
+          "fn": "pick",
+          "args": [
+            "line",
+            5
+          ],
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-con-v",
+          "settle": 900
+        },
+        {
+          "type": "hook",
+          "fn": "clearPick",
+          "args": [],
+          "settle": 300
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Ahora las órdenes. La base: ochenta milímetros.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            0,
+            1,
+            "h"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "80",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1100
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "El talón derecho: treinta.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            1,
+            2,
+            "v"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "30",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1100
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "El brazo de arriba: treinta también.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            4,
+            5,
+            "h"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "30",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1100
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Y la altura total: sesenta. Cuatro cotas, y la geometría entera obedece.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            5,
+            0,
+            "v"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1100
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Ancla la esquina... y ahí está: totalmente restringido. Igual que en la página del libro.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 500
+        },
+        {
+          "type": "clickptwhere",
+          "where": "bl",
+          "settle": 1100
+        }
+      ],
+      "check": {
+        "js": "sk && sk.dof === 0",
+        "desc": "DOF 0 — totalmente restringido"
+      }
+    },
+    {
+      "id": "p10",
+      "dice": "Termina el boceto... y extruye: quince milímetros de espesor.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "15",
+          "settle": 1800
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 49500) < 5",
+        "desc": "la L extruida mide 49,500 mm³ exactos"
+      }
+    },
+    {
+      "id": "p11",
+      "dice": "Ahora los barrenos del ejercicio uno punto dos. Cortar... Boceto... y clic en la cara de la pieza.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sketch-op-cut",
+          "settle": 800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1100
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 640,
+          "settle": 1800
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "boceto sobre la cara de la L"
+      }
+    },
+    {
+      "id": "p12",
+      "dice": "Dos círculos a ojo: uno en el brazo... y otro en la base.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -25,
+          "y": 15,
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -16,
+          "y": 15,
+          "settle": 700
+        },
+        {
+          "type": "clickmm",
+          "x": 15,
+          "y": -15,
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 24,
+          "y": -15,
+          "settle": 700
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 2",
+        "desc": "hay dos círculos"
+      }
+    },
+    {
+      "id": "p13",
+      "dice": "El libro los pide de veinte: cota de diámetro al primero... y al segundo.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "20",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            1
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "20",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        }
+      ]
+    },
+    {
+      "id": "p14",
+      "dice": "Termina el boceto... y los dos cortes atraviesan la placa. La ele del libro, barrenada.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "post-barrenos"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 40075.2) < 10",
+        "desc": "vol final ≈ 40,075 mm³ (2 barrenos Ø20 exactos)"
+      }
+    },
+    {
+      "id": "p15",
+      "dice": "Ejercicio uno punto uno y uno punto dos del libro: superados. El kernel da fe. Nos vemos en la siguiente.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            820,
+            560
+          ],
+          "settle": 800
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1000,
+            600
+          ],
+          "to": [
+            1180,
+            680
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}

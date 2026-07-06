@@ -591,6 +591,110 @@ export const O2: Molecule3D = (() => {
  * La nube bonding está fuertemente polarizada hacia F (mayor EN).
  * Además F tiene 3 pares libres (lone pairs) de 2s, 2p_y, 2p_z.
  */
+export const F2: Molecule3D = (() => {
+  const R = 2.668;   // bohr (1.412 Å exp.)
+  const c_s_b = 0.55, c_s_a = 0.85, c_p_b = 0.55, c_pi = 0.62;
+  return {
+    name: 'Flúor molecular',
+    formula: 'F₂',
+    atoms: [
+      { element: 'F', Z: 9, position: [-R / 2, 0, 0] },
+      { element: 'F', Z: 9, position: [ R / 2, 0, 0] },
+    ],
+    bondLength: R,
+    description:
+      'Enlace SIMPLE σ — y el más débil de los homonucleares (Dₑ ≈ 1.6 eV): ' +
+      'los pares libres π/π* llenos se REPELEN. Por eso el flúor es tan reactivo.',
+    mos: [
+      { name: '2σg', occupancy: 2, symmetry: 'bonding', energy: -17,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2s', Zeff: Z_EFF_F_2sp, coefficient: c_s_b },
+          { atomIndex: 1, orbitalKey: '2s', Zeff: Z_EFF_F_2sp, coefficient: c_s_b },
+        ],
+      },
+      { name: '2σu*', occupancy: 2, symmetry: 'antibonding', energy: -15,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2s', Zeff: Z_EFF_F_2sp, coefficient:  c_s_a },
+          { atomIndex: 1, orbitalKey: '2s', Zeff: Z_EFF_F_2sp, coefficient: -c_s_a },
+        ],
+      },
+      { name: '3σg', occupancy: 2, symmetry: 'bonding', energy: -12,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2px', Zeff: Z_EFF_F_2sp, coefficient:  c_p_b },
+          { atomIndex: 1, orbitalKey: '2px', Zeff: Z_EFF_F_2sp, coefficient: -c_p_b },
+        ],
+      },
+      { name: '1πu_y', occupancy: 2, symmetry: 'bonding', energy: -11,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2py', Zeff: Z_EFF_F_2sp, coefficient: c_pi },
+          { atomIndex: 1, orbitalKey: '2py', Zeff: Z_EFF_F_2sp, coefficient: c_pi },
+        ],
+      },
+      { name: '1πu_z', occupancy: 2, symmetry: 'bonding', energy: -11,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2pz', Zeff: Z_EFF_F_2sp, coefficient: c_pi },
+          { atomIndex: 1, orbitalKey: '2pz', Zeff: Z_EFF_F_2sp, coefficient: c_pi },
+        ],
+      },
+      { name: '1πg_y*', occupancy: 2, symmetry: 'antibonding', energy: -9,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2py', Zeff: Z_EFF_F_2sp, coefficient:  c_pi },
+          { atomIndex: 1, orbitalKey: '2py', Zeff: Z_EFF_F_2sp, coefficient: -c_pi },
+        ],
+      },
+      { name: '1πg_z*', occupancy: 2, symmetry: 'antibonding', energy: -9,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2pz', Zeff: Z_EFF_F_2sp, coefficient:  c_pi },
+          { atomIndex: 1, orbitalKey: '2pz', Zeff: Z_EFF_F_2sp, coefficient: -c_pi },
+        ],
+      },
+    ],
+  };
+})();
+
+export const C2: Molecule3D = (() => {
+  const R = 2.348;   // bohr (1.2425 Å exp.)
+  const c_s_b = 0.55, c_s_a = 0.85, c_pi = 0.65;
+  return {
+    name: 'Carbono diatómico',
+    formula: 'C₂',
+    atoms: [
+      { element: 'C', Z: 6, position: [-R / 2, 0, 0] },
+      { element: 'C', Z: 6, position: [ R / 2, 0, 0] },
+    ],
+    bondLength: R,
+    description:
+      'La anomalía: enlace DOBLE hecho de DOS π puros (1πu⁴) — sin σ neto de frente ' +
+      '(2σg y 2σu* se cancelan). Vive en cometas, flamas y vapor de carbono.',
+    mos: [
+      { name: '2σg', occupancy: 2, symmetry: 'bonding', energy: -14,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2s', Zeff: Z_EFF_C_2sp, coefficient: c_s_b },
+          { atomIndex: 1, orbitalKey: '2s', Zeff: Z_EFF_C_2sp, coefficient: c_s_b },
+        ],
+      },
+      { name: '2σu*', occupancy: 2, symmetry: 'antibonding', energy: -11,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2s', Zeff: Z_EFF_C_2sp, coefficient:  c_s_a },
+          { atomIndex: 1, orbitalKey: '2s', Zeff: Z_EFF_C_2sp, coefficient: -c_s_a },
+        ],
+      },
+      { name: '1πu_y', occupancy: 2, symmetry: 'bonding', energy: -10,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2py', Zeff: Z_EFF_C_2sp, coefficient: c_pi },
+          { atomIndex: 1, orbitalKey: '2py', Zeff: Z_EFF_C_2sp, coefficient: c_pi },
+        ],
+      },
+      { name: '1πu_z', occupancy: 2, symmetry: 'bonding', energy: -10,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2pz', Zeff: Z_EFF_C_2sp, coefficient: c_pi },
+          { atomIndex: 1, orbitalKey: '2pz', Zeff: Z_EFF_C_2sp, coefficient: c_pi },
+        ],
+      },
+    ],
+  };
+})();
+
 export const HF: Molecule3D = (() => {
   const R = 1.733;   // bohr (0.917 Å experimental)
   return {

@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { completeLesson } from '@/lib/progress';
 import LimonesEscena01 from './LimonesEscena01';
 import LimonesEscena02 from './LimonesEscena02';
 import LimonesEscena03 from './LimonesEscena03';
@@ -95,6 +96,8 @@ export default function LimonesCinematicChain() {
         setIdx(prev => {
           const next = prev + 1;
           if (next >= SCENES.length) {
+            // Fin real del capítulo → cuenta en el recorrido (electrón colocado).
+            completeLesson('economia', 'econ-01-limones');
             setFinished(true);
             return prev;
           }

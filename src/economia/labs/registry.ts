@@ -19,7 +19,10 @@ export const PREMIO_LABS: Record<string, LazyExoticComponent<ComponentType<unkno
   'econ-2005-aumann-schelling': lazy(() => import('./SchellingCiudad')),
   'econ-2008-krugman': lazy(() => import('@/masterclass/cine/scenes/KrugmanClase')),
   'econ-15-ostrom': lazy(() => import('@/masterclass/cine/scenes/OstromClase')),
+  'econ-2024-acemoglu': lazy(() => import('@/masterclass/cine/scenes/AcemogluClase')),
+  'econ-1991-coase': lazy(() => import('@/masterclass/cine/scenes/CoaseClase')),
   'econ-2018-romer-nordhaus': lazy(() => import('@/masterclass/cine/scenes/RomerClase')),
+  'reel-nebula': lazy(() => import('@/masterclass/cine/scenes/NebulaReel')),
   'econ-1972-hicks-arrow': lazy(() => import('./HicksArrowLab')),
   'econ-1983-debreu': lazy(() => import('./DebreuLab')),
   'econ-1988-allais': lazy(() => import('./AllaisLab')),
@@ -80,6 +83,9 @@ export function hasLab(id: string): boolean {
 export const CINE_CLASES = new Set<string>([
   'econ-2008-krugman',
   'econ-15-ostrom',
+  'econ-2024-acemoglu',
+  'econ-1991-coase',
   'econ-2018-romer-nordhaus',
+  'reel-nebula',
 ]);
 export const esClaseCine = (id: string) => CINE_CLASES.has(id);

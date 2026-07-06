@@ -1,0 +1,165 @@
+{
+  "id": "tabla-periodica-61-90",
+  "title": "Tabla Periódica — Elementos 61 al 90",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "61-prometio",
+      "scene": "Pm",
+      "text": "Prometio. Nombrado por Prometeo, el titán que robó el fuego a los dioses para dárselo a los humanos. Y el nombre encaja: es el único lantánido sin isótopos estables, todos radiactivos. No existe prácticamente en la Tierra; se confirmó en mil novecientos cuarenta y cinco entre los productos de fisión de un reactor nuclear. Se forma artificialmente. Su brillo radiactivo se usó en pinturas luminosas para relojes y en relojes que no necesitan pilas, y como fuente de energía en baterías atómicas miniatura para marcapasos y sondas espaciales. El elemento que roba un poco del fuego nuclear para dar luz."
+    },
+    {
+      "id": "62-samario",
+      "scene": "Sm",
+      "text": "Samario. El primer elemento nombrado en honor a una persona: Vasili Samarski, un oficial de minas ruso, a través de su mineral, la samarskita. Lecoq de Boisbaudran lo aisló en mil ochocientos setenta y nueve. Se forma en supernovas. Los imanes de samario y cobalto fueron los primeros imanes de tierras raras realmente potentes, y aún se prefieren cuando hay que soportar altas temperaturas, como en motores militares y aeroespaciales. El samario también absorbe neutrones en reactores nucleares. Un oficial ruso del siglo diecinueve dio su apellido al primer imán superpotente."
+    },
+    {
+      "id": "63-europio",
+      "scene": "Eu",
+      "text": "Europio. Nombrado por el continente Europa. Eugène-Anatole Demarçay lo aisló en mil novecientos uno. Se forma en supernovas. El europio es el más reactivo de las tierras raras, pero su don es la luz: brilla en rojo y azul vivísimos bajo luz ultravioleta. Por eso fue el fósforo rojo de los televisores a color durante décadas, y hoy ilumina los LED blancos y las lámparas fluorescentes. Y un dato fascinante: los billetes de euro llevan europio como tinta de seguridad invisible que brilla bajo luz UV para evitar falsificaciones. El elemento de Europa protege el dinero de Europa."
+    },
+    {
+      "id": "64-gadolinio",
+      "scene": "Gd",
+      "text": "Gadolinio. Nombrado por Johan Gadolin, el químico finlandés padre del estudio de las tierras raras. Jean de Marignac lo identificó en mil ochocientos ochenta. Se forma en supernovas. El gadolinio tiene la mayor capacidad de absorber neutrones de todos los elementos, así que protege en reactores nucleares. En medicina es estrella: inyectado como agente de contraste, hace que los tumores y los vasos sanguíneos brillen con nitidez en las resonancias magnéticas. Tiene además una propiedad casi mágica, el efecto magnetocalórico: se calienta al acercarlo a un imán y se enfría al alejarlo, base de refrigeradores del futuro sin gases."
+    },
+    {
+      "id": "65-terbio",
+      "scene": "Tb",
+      "text": "Terbio. Otro de los cuatro elementos nombrados por la aldea sueca de Ytterby. Carl Gustaf Mosander lo descubrió en mil ochocientos cuarenta y tres. Se forma en supernovas. El terbio es el fósforo verde de las pantallas y los LED, completando con el europio rojo y otros el color de la imagen. Pero tiene un superpoder mecánico: las aleaciones de terbio cambian de forma en un campo magnético, una propiedad llamada magnetostricción, que se usa en sonares de submarinos y altavoces que convierten cualquier superficie en bocina. Un pueblito sueco que sigue regalando elementos a la tecnología."
+    },
+    {
+      "id": "66-disprosio",
+      "scene": "Dy",
+      "text": "Disprosio. Su nombre viene del griego dysprositos, difícil de obtener, porque costó muchísimo aislarlo. Lecoq de Boisbaudran lo logró en mil ochocientos ochenta y seis tras decenas de intentos. Se forma en supernovas. El disprosio es crítico para la economía verde: se añade a los imanes de neodimio para que aguanten el calor sin perder su magnetismo, lo cual es indispensable en los motores de autos eléctricos y en los generadores de turbinas eólicas que trabajan calientes. Difícil de obtener, sí, pero sin él los imanes de los coches eléctricos se debilitarían con el calor del motor."
+    },
+    {
+      "id": "67-holmio",
+      "scene": "Ho",
+      "text": "Holmio. Nombrado por Holmia, el nombre latino de Estocolmo. Se identificó en mil ochocientos setenta y ocho. Se forma en supernovas. El holmio tiene el mayor poder magnético de todos los elementos: se usa en las piezas polares que concentran los campos magnéticos más intensos creados por el hombre. Y los láseres de holmio son una maravilla de la medicina moderna: cortan y vaporizan tejido con tal precisión que pulverizan cálculos renales y tratan la próstata sin sangrado. Un elemento de Estocolmo que es a la vez el imán más fuerte y un bisturí de luz."
+    },
+    {
+      "id": "68-erbio",
+      "scene": "Er",
+      "text": "Erbio. El cuarto y último elemento nombrado por la aldea de Ytterby. Carl Gustaf Mosander lo separó en mil ochocientos cuarenta y tres. Se forma en supernovas. El erbio es el guardián secreto del internet: los amplificadores de fibra óptica dopados con erbio refuerzan la señal de luz que viaja por los cables submarinos a través de los océanos. Sin erbio, la luz se apagaría a mitad de camino y no habría internet intercontinental. También da el color rosa a vidrios y porcelanas, y sus láseres se usan en odontología y cirugía estética. La aldea sueca que conecta al mundo entero."
+    },
+    {
+      "id": "69-tulio",
+      "scene": "Tm",
+      "text": "Tulio. Nombrado por Thule, el nombre mítico de las tierras del extremo norte. Per Teodor Cleve lo descubrió en mil ochocientos setenta y nueve. Se forma en supernovas. Es la más rara de las tierras raras estables, y por eso una de las más caras. Cuando se expone a radiación en un reactor, el tulio se vuelve radiactivo y emite rayos X: así se fabrican fuentes de rayos X portátiles para revisar soldaduras y dispositivos médicos donde no llega una máquina grande. Los láseres de tulio también se usan en cirugía. El elemento del lejano norte, raro, caro y radiante."
+    },
+    {
+      "id": "70-iterbio",
+      "scene": "Yb",
+      "text": "Iterbio. El cuarto elemento que comparte la raíz Ytterby, esa increíble aldea sueca. Jean de Marignac lo aisló en mil ochocientos setenta y ocho. Se forma en supernovas. El iterbio tiene un futuro brillante en la medición del tiempo: los relojes atómicos de iterbio son aún más precisos que los de cesio, tan exactos que no perderían un segundo en miles de millones de años, más que la edad del universo. También se usa como dopante en láseres de fibra de alta potencia para corte industrial. Y un dato curioso: bajo presión, el iterbio cambia su conductividad eléctrica, lo que lo hace útil como sensor de tensión."
+    },
+    {
+      "id": "71-lutecio",
+      "scene": "Lu",
+      "text": "Lutecio. Nombrado por Lutetia, el nombre romano de París. Georges Urbain lo aisló en mil novecientos siete, cerrando la familia de los lantánidos. Se forma en supernovas. Es la más densa y dura de las tierras raras, y una de las más caras de producir. El lutecio se usa como catalizador en las refinerías de petróleo. Pero su aplicación más impactante es la medicina nuclear de precisión: el lutecio ciento setenta y siete se une a moléculas que buscan tumores y los irradia desde dentro, una terapia dirigida contra ciertos cánceres de próstata y neuroendocrinos que está salvando vidas hoy."
+    },
+    {
+      "id": "72-hafnio",
+      "scene": "Hf",
+      "text": "Hafnio. Nombrado por Hafnia, el nombre latino de Copenhague, donde se descubrió en mil novecientos veintitrés, uno de los últimos elementos estables en hallarse. Se forma en supernovas. El hafnio absorbe neutrones tan bien que se usa en las barras de control de los reactores nucleares de los submarinos. Pero su revolución silenciosa fue en los chips: el óxido de hafnio reemplazó al dióxido de silicio como aislante en los transistores modernos, permitiendo seguir miniaturizando los procesadores cuando el silicio ya no daba más. El hafnio mantuvo viva la ley de Moore."
+    },
+    {
+      "id": "73-tantalo",
+      "scene": "Ta",
+      "text": "Tántalo. Nombrado por Tántalo, el rey griego condenado a no poder beber el agua que lo rodeaba, porque el metal resiste ser atacado por los ácidos, como si no pudiera absorberlos. Anders Ekeberg lo descubrió en mil ochocientos dos. Se forma en supernovas. El tántalo es la joya escondida de tu teléfono: los condensadores de tántalo almacenan carga en un volumen minúsculo, así que cada celular, laptop y consola lleva tántalo. El cuerpo humano no lo rechaza, por eso se usa en implantes y placas quirúrgicas. Pequeño, resistente a todo, y dentro de cada dispositivo que tocas."
+    },
+    {
+      "id": "74-wolframio",
+      "scene": "W",
+      "text": "Wolframio, o tungsteno. Su símbolo es W, del alemán wolfram. Tiene el punto de fusión más alto de todos los metales: tres mil cuatrocientos veintidós grados. Los hermanos Elhuyar lo aislaron en España en mil setecientos ochenta y tres. Se forma en supernovas. Ese punto de fusión extremo lo hizo el filamento de las bombillas incandescentes durante un siglo: brillaba al rojo blanco sin derretirse. El carburo de tungsteno es casi tan duro como el diamante, así que arma las puntas de las brocas, las herramientas de corte y las balas perforantes. El metal que no se rinde ante el calor."
+    },
+    {
+      "id": "75-renio",
+      "scene": "Re",
+      "text": "Renio. Nombrado por el río Rin. Fue el último elemento estable natural en ser descubierto, en mil novecientos veinticinco, en Alemania. Se forma en supernovas. Es uno de los elementos más raros de la corteza terrestre y tiene el segundo punto de fusión más alto. Su aplicación crítica está en los cielos: las superaleaciones de renio forman los álabes de las turbinas de los motores a reacción, que deben girar al rojo vivo sin deformarse. Sin renio, los aviones modernos no podrían volar tan eficientemente. Cada vez que despega un jet, el renio aguanta el infierno dentro del motor."
+    },
+    {
+      "id": "76-osmio",
+      "scene": "Os",
+      "text": "Osmio. El elemento más denso de toda la tabla periódica: un cubo pequeño pesa como un ladrillo de plomo dos veces. Su nombre viene del griego osme, olor, por el hedor penetrante de su óxido. Smithson Tennant lo descubrió en mil ochocientos tres. Se forma en supernovas. Por ser tan denso y duro, el osmio se usaba en las puntas de las plumas fuente de lujo y en las agujas de los tocadiscos, donde nunca se desgastaban. Aleado con iridio hace contactos eléctricos y pivotes de instrumentos de precisión que duran toda la vida. El campeón de peso pesado de la tabla periódica."
+    },
+    {
+      "id": "77-iridio",
+      "scene": "Ir",
+      "text": "Iridio. Su nombre viene de Iris, la diosa del arcoíris, por los colores de sus sales. Smithson Tennant lo descubrió en mil ochocientos tres. Se forma en colisiones de estrellas de neutrones. Y el iridio guarda una de las pistas más importantes de la historia de la Tierra: hay una capa de iridio en las rocas de hace sesenta y seis millones de años, en todo el mundo. Como el iridio es raro en la corteza pero común en los asteroides, esa capa fue la prueba de que un meteorito gigante extinguió a los dinosaurios. El metal del arcoíris que escribió el final de una era."
+    },
+    {
+      "id": "78-platino",
+      "scene": "Pt",
+      "text": "Platino. Su nombre viene del español platina, platica, porque los conquistadores lo despreciaban como plata inferior. Hoy es uno de los metales más valiosos. Se forma en supernovas y colisiones de estrellas de neutrones. El platino casi no reacciona con nada, por eso es el patrón de pureza eterna; el kilogramo se definía con un cilindro de platino e iridio. Es el catalizador estrella: limpia los gases de escape, fabrica fertilizantes y combustibles. En medicina, el cisplatino es uno de los fármacos contra el cáncer más usados del mundo. Y, claro, símbolo de lujo en joyería y discos de música."
+    },
+    {
+      "id": "79-oro",
+      "scene": "Au",
+      "text": "Oro. El metal que obsesiona a la humanidad desde siempre. Su símbolo, A U, viene del latín aurum, el resplandor del amanecer. No se oxida ni se desluce jamás: el oro que tocas hoy brilla igual que hace cinco mil años. Se forja en los eventos más violentos del universo: la colisión de dos estrellas de neutrones. Todo el oro de la Tierra llegó de las estrellas o de meteoritos. Es tan maleable que un gramo se estira en un hilo de tres kilómetros. Hoy, más allá de la joyería, el oro conduce las señales en los chips más finos y recubre los visores de los astronautas para reflejar la radiación solar."
+    },
+    {
+      "id": "80-mercurio",
+      "scene": "Hg",
+      "text": "Mercurio. El único metal líquido a temperatura ambiente. Su símbolo, H G, viene del griego hydrargyros, plata líquida. Conocido desde la antigüedad, los alquimistas lo veneraban. Se forma en supernovas. Durante siglos midió la temperatura y la presión en termómetros y barómetros por su expansión uniforme. Pero es muy tóxico: la frase loco como un sombrerero viene de los sombrereros que enloquecían por respirar vapores de mercurio al tratar el fieltro. Hoy se elimina de casi todo, aunque aún brilla en las lámparas fluorescentes. Hermoso, fascinante y peligroso, el plata que fluye."
+    },
+    {
+      "id": "81-talio",
+      "scene": "Tl",
+      "text": "Talio. Su nombre viene del griego thallos, brote verde, por la brillante línea verde de su espectro. William Crookes lo descubrió en mil ochocientos sesenta y uno. Se forma en supernovas. El talio es extremadamente venenoso, insípido e inodoro, lo que le ganó el apodo de veneno del envenenador y protagonizó novelas de Agatha Christie. Pero también sirve: detecta radiación gamma en los detectores de centelleo de la medicina nuclear, y sus compuestos se usan en lentes infrarrojos especiales. Otro elemento de doble filo: mortal en malas manos, útil en las buenas."
+    },
+    {
+      "id": "82-plomo",
+      "scene": "Pb",
+      "text": "Plomo. Su símbolo, P B, viene del latín plumbum, de donde viene también plomería. Los romanos hicieron sus tuberías de plomo, y algunos historiadores creen que el envenenamiento lento contribuyó a su caída. Se forma como el producto final estable de muchas cadenas de desintegración radiactiva: el destino último del uranio y el torio es convertirse en plomo. Es denso y bloquea la radiación, por eso forra los delantales de rayos X y los contenedores nucleares. Estuvo en la gasolina y en la pintura hasta que descubrimos cuánto daña el cerebro, sobre todo en niños. Útil, pesado y tóxico."
+    },
+    {
+      "id": "83-bismuto",
+      "scene": "Bi",
+      "text": "Bismuto. Forma cristales escalonados de colores iridiscentes, de los más bellos del mundo mineral, gracias a una capa de óxido que refracta la luz como el aceite sobre el agua. Se forma en supernovas. Durante mucho tiempo se creyó el elemento estable más pesado, hasta que en dos mil tres se descubrió que es levísimamente radiactivo, con una vida media mil millones de veces mayor que la edad del universo: en la práctica, eterno. Es el ingrediente del Pepto-Bismol que calma el estómago, y como no es tóxico como el plomo, lo reemplaza en municiones, plomadas de pesca y soldaduras ecológicas."
+    },
+    {
+      "id": "84-polonio",
+      "scene": "Po",
+      "text": "Polonio. Marie Curie lo descubrió en mil ochocientos noventa y ocho y lo nombró por Polonia, su patria, para llamar la atención del mundo sobre la nación ocupada. Es intensamente radiactivo. Se forma en las cadenas de desintegración del uranio. Un solo gramo de polonio genera tanto calor por su radiactividad que brilla y puede hervir agua: por eso se usó como fuente de calor en sondas espaciales soviéticas y en las misiones lunares. Tristemente célebre por el envenenamiento del exespía Litvinenko en dos mil seis. El elemento que Marie Curie nombró por amor a su país."
+    },
+    {
+      "id": "85-astato",
+      "scene": "At",
+      "text": "Astato. Su nombre viene del griego astatos, inestable, y le queda perfecto: es el elemento natural más raro de la Tierra. Se estima que en toda la corteza terrestre hay menos de un gramo en cualquier momento. Se creó artificialmente en mil novecientos cuarenta. Todos sus isótopos son radiactivos y duran horas o menos. Pero esa misma radiactividad lo hace prometedor: el astato doscientos once emite partículas alfa de muy corto alcance, ideales para destruir células cancerosas individuales sin dañar el tejido sano alrededor. El elemento más esquivo del planeta, candidato a curar tumores."
+    },
+    {
+      "id": "86-radon",
+      "scene": "Rn",
+      "text": "Radón. Un gas noble radiactivo, incoloro e inodoro, producto de la desintegración del radio en el suelo. Friedrich Ernst Dorn lo identificó en mil novecientos. Y aquí va una advertencia de salud pública: el radón se filtra desde las rocas hacia los sótanos de las casas, y al respirarlo durante años es la segunda causa de cáncer de pulmón después del tabaco. Por eso en muchos países se mide el radón en las viviendas. Es invisible y silencioso, pero medible y prevenible con buena ventilación. El gas noble que conviene mantener fuera de casa."
+    },
+    {
+      "id": "87-francio",
+      "scene": "Fr",
+      "text": "Francio. Marguerite Perey lo descubrió en mil novecientos treinta y nueve en el Instituto Curie y lo nombró por Francia. Es el segundo elemento natural más raro después del astato y el más inestable de los noventa primeros. Es tan radiactivo y efímero que jamás se ha visto una muestra visible: nunca habrá más que unos pocos miles de átomos en toda la Tierra a la vez. Como es el metal alcalino más pesado, es teóricamente el más reactivo de todos. No tiene usos prácticos, solo de investigación pura. Un elemento tan fugaz que existe casi solo en la teoría."
+    },
+    {
+      "id": "88-radio",
+      "scene": "Ra",
+      "text": "Radio. Marie y Pierre Curie lo aislaron en mil ochocientos noventa y ocho tras procesar toneladas de mineral, un trabajo titánico que le valió a Marie su segundo Nobel. Su nombre viene del latín radius, rayo, por su intenso resplandor. El radio brilla en la oscuridad con una luz azul verdosa fantasmal. Se usó en pinturas luminosas para relojes, hasta que las obreras que pintaban las esferas, las Radium Girls, enfermaron y murieron por la radiación, un caso que cambió las leyes laborales para siempre. Hoy se reemplazó por fuentes más seguras. El elemento que Marie Curie pagó con su propia salud."
+    },
+    {
+      "id": "89-actinio",
+      "scene": "Ac",
+      "text": "Actinio. Su nombre viene del griego aktis, rayo. André-Louis Debierne lo descubrió en mil ochocientos noventa y nueve entre los residuos de los Curie. Da nombre a la familia de los actínidos. Es tan radiactivo que brilla en la oscuridad con una luz azul pálida. Se forma en las cadenas del uranio. Durante mucho tiempo no tuvo uso, pero hoy el actinio doscientos veinticinco es una de las grandes esperanzas de la oncología: emite partículas alfa que destruyen tumores con precisión quirúrgica a nivel celular. El elemento que da su nombre a toda una familia y promete curar el cáncer."
+    },
+    {
+      "id": "90-torio",
+      "scene": "Th",
+      "text": "Torio. Nombrado por Thor, el dios nórdico del trueno. Jöns Jacob Berzelius lo descubrió en mil ochocientos veintiocho. Es radiactivo pero abundante, tres o cuatro veces más común que el uranio. Su gran promesa es energética: los reactores de torio podrían generar energía nuclear con menos residuos peligrosos y sin servir para hacer bombas, por lo que muchos lo ven como el futuro de la energía limpia. India, que tiene enormes reservas, apuesta fuerte por él. Durante décadas dio luz blanca brillante en las camisas de los faroles de gas. El elemento de Thor que podría alimentar al mundo."
+    }
+  ]
+}

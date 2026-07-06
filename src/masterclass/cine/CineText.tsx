@@ -23,6 +23,9 @@ interface CineTextProps {
   height?: number;
   fontWeight?: number;
   rotation?: [number, number, number];
+  upper?: boolean;
+  track?: number;
+  glow?: number;
   /** Segundo en que empieza a aparecer. */
   at: number;
   /** Duración del fade-in. Default 0.8. */
@@ -37,6 +40,7 @@ interface CineTextProps {
 
 export default function CineText({
   text, position, color = '#FFE5A0', width = 9, height = 1.1, fontWeight = 600, rotation,
+  upper = false, track = 0, glow = 14,
   at, inDur = 0.8, hold = 4.5, outDur = 1.0, maxOpacity = 1,
 }: CineTextProps) {
   const ref = useRef<SkyTextHandle | null>(null);
@@ -61,6 +65,7 @@ export default function CineText({
 
   return (
     <SkyText ref={ref} text={text} position={position} color={color}
-             width={width} height={height} fontWeight={fontWeight} rotation={rotation} />
+             width={width} height={height} fontWeight={fontWeight} rotation={rotation}
+             upper={upper} track={track} glow={glow} />
   );
 }

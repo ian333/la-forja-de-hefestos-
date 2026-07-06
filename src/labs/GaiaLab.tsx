@@ -21,8 +21,9 @@
  * electrónica real, orbitales, valencia. Todo lo demás es consecuencia.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { PERIODIC_TABLE, elementByZ, configCompact } from '@/lib/chem/quantum/periodic-table';
+import { completeLesson } from '@/lib/progress';
 import PeriodicTable from './components/PeriodicTable';
 import MultiElectronAtomView from './components/MultiElectronAtomView';
 import CinematicAtom from '@/cinematic/CinematicAtom';
@@ -31,13 +32,90 @@ import BondTab from './components/BondTab';
 import ReactionTab from './components/ReactionTab';
 import SandboxTab from './components/SandboxTab';
 
+const ELEMENT_AUDIO: Record<number, string> = {
+  1:'01-hidrogeno',2:'02-helio',3:'03-litio',4:'04-berilio',5:'05-boro',
+  6:'06-carbono',7:'07-nitrogeno',8:'08-oxigeno',9:'09-fluor',10:'10-neon',
+  11:'11-sodio',12:'12-magnesio',13:'13-aluminio',14:'14-silicio',15:'15-fosforo',
+  16:'16-azufre',17:'17-cloro',18:'18-argon',19:'19-potasio',20:'20-calcio',
+  21:'21-escandio',22:'22-titanio',23:'23-vanadio',24:'24-cromo',25:'25-manganeso',
+  26:'26-hierro',27:'27-cobalto',28:'28-niquel',29:'29-cobre',30:'30-zinc',
+  31:'31-galio',32:'32-germanio',33:'33-arsenico',34:'34-selenio',35:'35-bromo',
+  36:'36-kripton',37:'37-rubidio',38:'38-estroncio',39:'39-itrio',40:'40-circonio',
+  41:'41-niobio',42:'42-molibdeno',43:'43-tecnecio',44:'44-rutenio',45:'45-rodio',
+  46:'46-paladio',47:'47-plata',48:'48-cadmio',49:'49-indio',50:'50-estano',
+  51:'51-antimonio',52:'52-telurio',53:'53-yodo',54:'54-xenon',55:'55-cesio',
+  56:'56-bario',57:'57-lantano',58:'58-cerio',59:'59-praseodimio',60:'60-neodimio',
+  61:'61-prometio',62:'62-samario',63:'63-europio',64:'64-gadolinio',65:'65-terbio',
+  66:'66-disprosio',67:'67-holmio',68:'68-erbio',69:'69-tulio',70:'70-iterbio',
+  71:'71-lutecio',72:'72-hafnio',73:'73-tantalo',74:'74-wolframio',75:'75-renio',
+  76:'76-osmio',77:'77-iridio',78:'78-platino',79:'79-oro',80:'80-mercurio',
+  81:'81-talio',82:'82-plomo',83:'83-bismuto',84:'84-polonio',85:'85-astato',
+  86:'86-radon',87:'87-francio',88:'88-radio',89:'89-actinio',90:'90-torio',
+  91:'91-protactinio',92:'92-uranio',93:'93-neptunio',94:'94-plutonio',95:'95-americio',
+  96:'96-curio',97:'97-berkelio',98:'98-californio',99:'99-einstenio',100:'100-fermio',
+  101:'101-mendelevio',102:'102-nobelio',103:'103-lawrencio',104:'104-rutherfordio',105:'105-dubnio',
+  106:'106-seaborgio',107:'107-bohrio',108:'108-hassio',109:'109-meitnerio',110:'110-darmstadio',
+  111:'111-roentgenio',112:'112-copernicio',113:'113-nihonio',114:'114-flerovio',115:'115-moscovio',
+  116:'116-livermorio',117:'117-teneso',118:'118-oganeson',
+};
+
 type Tab = 'atom' | 'molecule' | 'bond' | 'reaction' | 'sandbox';
+type ElementSubs = { dur: number; cues: { t: number; text: string }[] };
 
 export default function GaiaLab() {
   const [tab, setTab] = useState<Tab>('atom');
-  const [selectedZ, setSelectedZ] = useState(6); // Carbono por defecto (más interesante que H)
+  const [selectedZ, setSelectedZ] = useState(6);
   const [dockOpen, setDockOpen] = useState(true);
   const [hoverZ, setHoverZ] = useState<number | null>(null);
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [caption, setCaption] = useState('');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const subsRef = useRef<Record<number, ElementSubs> | null>(null);
+
+  // Carga perezosa del JSON de subtítulos (timestamps por frase, vía forced
+  // alignment de ElevenLabs — no gasta cuota de TTS).
+  useEffect(() => {
+    let alive = true;
+    fetch('/audio/tabla-periodica/subtitles.json')
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { if (alive && j) subsRef.current = j; })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  const playElementAudio = useCallback((Z: number) => {
+    const slug = ELEMENT_AUDIO[Z];
+    setCaption('');
+    if (!slug) { setAudioPlaying(false); return; }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.ontimeupdate = null; audioRef.current = null; }
+    const audio = new Audio(`/audio/tabla-periodica/${slug}.mp3`);
+    const cues = subsRef.current?.[Z]?.cues ?? [];
+    audio.onplay = () => setAudioPlaying(true);
+    // Progreso: escuchar una narración de elemento COMPLETA = la tabla ya te habló.
+    audio.onended = () => { setAudioPlaying(false); setCaption(''); completeLesson('quimica', 'tabla-viva'); };
+    audio.onpause = () => setAudioPlaying(false);
+    audio.ontimeupdate = () => {
+      if (!cues.length) return;
+      const t = audio.currentTime;
+      let cur = '';
+      for (const c of cues) { if (t >= c.t) cur = c.text; else break; }
+      setCaption(cur);
+    };
+    audio.play().catch(() => setAudioPlaying(false));
+    audioRef.current = audio;
+  }, []);
+
+  const toggleAudio = useCallback(() => {
+    const a = audioRef.current;
+    if (!a) { playElementAudio(selectedZ); return; }
+    if (a.paused) { a.play().catch(() => {}); }
+    else { a.pause(); }
+  }, [selectedZ, playElementAudio]);
+
+  const handleSelect = useCallback((Z: number) => {
+    setSelectedZ(Z);
+    playElementAudio(Z);
+  }, [playElementAudio]);
 
   const element = elementByZ(selectedZ) ?? PERIODIC_TABLE[0];
   const previewZ = hoverZ ?? selectedZ;
@@ -78,11 +156,12 @@ export default function GaiaLab() {
           </div>
 
           <nav className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[#0B0F17] border border-[#1E293B]">
-            <TabButton active={tab === 'atom'} onClick={() => setTab('atom')}>ψ Átomo</TabButton>
-            <TabButton active={tab === 'molecule'} onClick={() => setTab('molecule')}>⬡ Molécula</TabButton>
-            <TabButton active={tab === 'bond'} onClick={() => setTab('bond')}>⟮⟯ Enlace</TabButton>
-            <TabButton active={tab === 'reaction'} onClick={() => setTab('reaction')}>⇌ Reacción</TabButton>
-            <TabButton active={tab === 'sandbox'} onClick={() => setTab('sandbox')}>✧ Sandbox</TabButton>
+            {/* Progreso: explorar cada mesa de trabajo cuenta como lección de química. */}
+            <TabButton active={tab === 'atom'} onClick={() => { setTab('atom'); completeLesson('quimica', 'tab:atom'); }}>ψ Átomo</TabButton>
+            <TabButton active={tab === 'molecule'} onClick={() => { setTab('molecule'); completeLesson('quimica', 'tab:molecule'); }}>⬡ Molécula</TabButton>
+            <TabButton active={tab === 'bond'} onClick={() => { setTab('bond'); completeLesson('quimica', 'tab:bond'); }}>⟮⟯ Enlace</TabButton>
+            <TabButton active={tab === 'reaction'} onClick={() => { setTab('reaction'); completeLesson('quimica', 'tab:reaction'); }}>⇌ Reacción</TabButton>
+            <TabButton active={tab === 'sandbox'} onClick={() => { setTab('sandbox'); completeLesson('quimica', 'tab:sandbox'); }}>✧ Sandbox</TabButton>
           </nav>
 
           <div className="ml-auto flex items-center gap-3 text-[10px] text-[#64748B] font-mono">
@@ -112,15 +191,21 @@ export default function GaiaLab() {
                 </div>
                 <PeriodicTable
                   selectedZ={selectedZ}
-                  onSelect={setSelectedZ}
+                  onSelect={handleSelect}
                   onHover={setHoverZ}
                   compact
                   showLegend={false}
                 />
               </div>
 
-              <HoverInfoCard element={previewElement} isPreview={previewZ !== selectedZ} />
-              <NavButtons selectedZ={selectedZ} onSelect={setSelectedZ} />
+              <HoverInfoCard
+                element={previewElement}
+                isPreview={previewZ !== selectedZ}
+                hasAudio={!!ELEMENT_AUDIO[previewElement.Z]}
+                audioPlaying={audioPlaying && previewZ === selectedZ}
+                onToggleAudio={toggleAudio}
+              />
+              <NavButtons selectedZ={selectedZ} onSelect={handleSelect} />
               <ReferencePanel />
             </div>
           </aside>
@@ -133,6 +218,15 @@ export default function GaiaLab() {
           {tab === 'bond'     && <BondTab />}
           {tab === 'reaction' && <ReactionTab />}
           {tab === 'sandbox'  && <SandboxTab />}
+
+          {/* Subtítulos sincronizados con la narración del elemento */}
+          {audioPlaying && caption && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-[min(90%,720px)] px-2 pointer-events-none">
+              <p className="text-center text-[15px] md:text-[17px] leading-snug font-medium text-white [text-shadow:_0_2px_8px_rgba(0,0,0,0.95),_0_0_2px_rgba(0,0,0,1)] bg-[#05060A]/55 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
+                {caption}
+              </p>
+            </div>
+          )}
         </main>
       </div>
     </div>
@@ -296,10 +390,13 @@ function TabButton({
 }
 
 function HoverInfoCard({
-  element, isPreview,
+  element, isPreview, hasAudio, audioPlaying, onToggleAudio,
 }: {
   element: ReturnType<typeof elementByZ> extends infer E ? NonNullable<E> : never;
   isPreview: boolean;
+  hasAudio?: boolean;
+  audioPlaying?: boolean;
+  onToggleAudio?: () => void;
 }) {
   return (
     <div className={`rounded-xl border ${isPreview ? 'border-[#4FC3F7]/40' : 'border-[#1E293B]'} bg-[#0B0F17]/70 backdrop-blur-md p-3 transition`}>
@@ -309,9 +406,22 @@ function HoverInfoCard({
         </div>
         <div className="text-[9px] font-mono text-[#64748B]">Z = {element.Z}</div>
       </div>
-      <div className="flex items-baseline gap-2 mt-1">
+      <div className="flex items-center gap-2 mt-1">
         <div className="text-[28px] font-bold leading-none text-white">{element.symbol}</div>
         <div className="text-[12px] text-[#CBD5E1]">{element.name}</div>
+        {hasAudio && !isPreview && (
+          <button
+            onClick={onToggleAudio}
+            className={`ml-auto w-7 h-7 rounded-full border flex items-center justify-center transition text-sm ${
+              audioPlaying
+                ? 'border-[#FDB813] bg-[#FDB813]/20 text-[#FDB813] animate-pulse'
+                : 'border-[#1E293B] bg-[#0B0F17] text-[#94A3B8] hover:border-[#4FC3F7] hover:text-white'
+            }`}
+            title={audioPlaying ? 'Pausar narración' : 'Escuchar narración'}
+          >
+            {audioPlaying ? '❚❚' : '▶'}
+          </button>
+        )}
       </div>
       <div className="mt-1 text-[10px] font-mono text-[#7DD3FC]">{configCompact(element.Z)}</div>
       <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono">

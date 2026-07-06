@@ -2,6 +2,7 @@ import { StrictMode, Suspense, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { PREMIO_LABS } from './economia/labs/registry';
 import { CineLayoutContext } from './masterclass/cine/useCineTime';
+import { completeLesson } from './lib/progress';
 import './main.css';
 
 /**
@@ -20,6 +21,15 @@ function ClasePage() {
     html.style.overflow = 'hidden'; body.style.overflow = 'hidden'; body.style.background = '#000';
     return () => { html.style.overflow = prev.ho; body.style.overflow = prev.bo; body.style.background = prev.bg; };
   }, []);
+
+  // Progreso: CineStage emite gaia:cine-ended cuando el audio sonó completo una
+  // vez (las clases cine loopean; el PRIMER final es el que cuenta). Solo econ.
+  useEffect(() => {
+    if (!id || !PREMIO_LABS[id] || !id.startsWith('econ')) return;
+    const done = () => completeLesson('economia', id);
+    window.addEventListener('gaia:cine-ended', done);
+    return () => window.removeEventListener('gaia:cine-ended', done);
+  }, [id]);
 
   if (!Comp) {
     return (

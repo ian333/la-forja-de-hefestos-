@@ -1,0 +1,131 @@
+{
+  "id": "mec-u4-l2",
+  "curso": "mecanica",
+  "unidad": 4,
+  "n": 2,
+  "titulo": "El plano de taller",
+  "subtitulo": "3 vistas · líneas ocultas · cajetín",
+  "fuente": "Bethune cap. 4 §4-4 (Drawing Orthographic Views)",
+  "descripcion": "Del sólido al papel: el plano con las 3 vistas ortográficas, líneas ocultas reales y cajetín — el idioma del taller.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Tu pieza vive en tres dimensiones... pero el taller trabaja con papel. Hoy: el plano.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una placa rápida con barreno, para tener qué dibujar.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -45,
+          "y": -25,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 45,
+          "y": 25,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-hole",
+          "settle": 2400
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('hole')",
+        "desc": "placa con barreno lista"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Y ahora, el botón que habla con el taller: Plano.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano",
+          "settle": 3200
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Tres vistas ortográficas: planta, alzado y perfil. Las líneas punteadas son el barreno escondido.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Líneas ocultas calculadas de verdad, cotas, y el cajetín con tu nombre. Esto se imprime y se fabrica.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "El capítulo cuatro entero vive aquí: tercer ángulo, como dibuja América. Nos vemos en la próxima.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1200
+        }
+      ]
+    }
+  ]
+}

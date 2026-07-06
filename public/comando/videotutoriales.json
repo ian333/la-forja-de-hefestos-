@@ -1,0 +1,257 @@
+{
+ "pieces": [
+  {
+   "id": "tutorial-01-nota-de-venta",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "01. Cómo hacer una nota de venta",
+   "descripcion": "El flujo de mostrador, como lo usas a diario  ·  Archivo: 01-nota-de-venta-4k.mp4  ·  🎙️ con voz",
+   "guion": "01. Esta es la venta de mostrador: lo que más vas a hacer. Empezamos en Hermes.\n02. Entramos a Ventas.\n03. Aquí viven tus notas de venta; las facturas tienen su propia pestaña.\n04. Creamos una nota nueva.\n05. Con la tecla F2 elegimos al cliente.\n06. Público en General ya viene dado de alta: es tu cliente de mostrador por defecto.\n07. Lo seleccionamos.\n08. Con la tecla F4 agregamos la pieza.\n09. La buscamos por su clave o por su nombre.\n10. El precio y el IVA se ponen solos.\n11. Y aquí el truco que usan todos: la calculadora, con la tecla F6.\n12. Tecleamos lo que paga el cliente, con el IVA incluido.\n13. Y aplicamos el precio sin IVA al renglón, con todos los decimales, para que no te falte ni un centavo.\n14. Eliges cómo te pagan: efectivo, tarjeta o transferencia.\n15. Cuando todo está listo: con F9, o el botón verde, generamos la nota.\n16. Queda registrada, baja el inventario, y está lista para imprimir o mandar por correo.\n17. Y eso es todo. ¡Así de fácil es tu nota de venta!",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-02-alta-de-producto",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "02. Cómo dar de alta un producto",
+   "descripcion": "Cada campo explicado, paso a paso  ·  Archivo: 02-alta-de-producto-4k.mp4  ·  🎙️ con voz",
+   "guion": "01. Entramos a Hermes, el módulo del ERP.\n02. Vamos a Productos, donde vive todo tu catálogo de piezas.\n03. Abrimos el formulario para dar de alta una pieza nueva.\n04. El nombre del producto: así lo verán tus clientes en cotizaciones y notas de venta.\n05. El SKU, o clave: el código único de esta pieza. Con él la encuentras al instante en tu inventario.\n06. Una descripción breve, para dar más detalle de la pieza.\n07. El precio de venta al público. Más abajo también puedes poner precio de mayoreo y de distribuidor.\n08. Tu costo: lo que te cuesta la pieza. Con el precio, el sistema te calcula el margen de ganancia solo.\n09. Y las existencias: cuántas piezas tienes en bodega listas para vender.\n10. También puedes agregar código de barras, peso, y su clave del SAT para poder facturarla.\n11. Con todo listo, creamos el producto.\n12. Y le subimos su foto desde la computadora.\n13. Aquí está nuestra pieza en el catálogo, ya con su foto, su precio y su stock.\n14. ¡Así de fácil! Cada dato que pusiste sirve para vender, facturar y controlar tu inventario.\n15. Y eso es todo. ¡Tu producto listo para vender!",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-03-alta-de-cliente",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "03. Cómo dar de alta un cliente",
+   "descripcion": "Sus datos una vez, los usas para siempre  ·  Archivo: 03-alta-de-cliente-4k.mp4  ·  🎙️ con voz",
+   "guion": "01. Vamos a dar de alta un cliente nuevo. Entramos a Hermes.\n02. Entramos a Clientes.\n03. Abrimos el formulario de alta.\n04. El nombre o razón social del cliente.\n05. Su RFC, para poder facturarle.\n06. Su correo, para enviarle notas y facturas.\n07. Y su teléfono de contacto.\n08. Si subes su Constancia de Situación Fiscal, el sistema llena los datos del SAT solo.\n09. Guardamos, y el cliente queda listo.\n10. Ya puedes venderle, cotizarle y facturarle.\n11. Y eso es todo. ¡Tu cliente quedó dado de alta!",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-04-cotizacion",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "04. Cómo hacer una cotización",
+   "descripcion": "Un presupuesto con formato profesional, en un minuto  ·  Archivo: 04-cotizacion-4k.mp4  ·  🎙️ con voz",
+   "guion": "01. Ahora hagamos una cotización para un cliente. Empezamos en Hermes.\n02. Entramos a Ventas.\n03. Aquí viven tus cotizaciones, en su propia pestaña.\n04. Creamos una cotización nueva.\n05. Elegimos el tipo de documento.\n06. Cotización.\n07. Con la tecla F2 elegimos al cliente.\n08. Público en General, tu cliente de mostrador por defecto.\n09. Lo seleccionamos.\n10. Con la tecla F4 agregamos la primera pieza.\n11. La buscamos por su clave o por su nombre.\n12. El precio y el IVA se ponen solos.\n13. Y agregamos una segunda pieza, igual de rápido.\n14. Lista la cotización con sus dos piezas.\n15. Con F9, o el botón verde, generamos la cotización.\n16. La abrimos para ver cómo quedó.\n17. Y aquí lo bonito: el PDF con tu marca, las fotos de cada pieza, sus precios y el total. Listo para impresionar a tu cliente.\n18. Y eso es todo. ¡Tu cotización lista en un minuto!",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-05-facturacion-portal",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "05. Tus clientes se facturan solos (Portal)",
+   "descripcion": "Sin que tú factures a mano — el cliente saca su factura en un minuto  ·  Archivo: 05-facturacion-portal-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. Esta es tu página de facturación. Tu cliente entra desde el folio de su ticket — sin instalar nada, sin llamarte a ti.\n02. Pone el folio de su nota, el que viene impreso en su ticket.\n03. Y busca su nota de venta.\n04. Ahora captura sus datos fiscales. Su RFC.\n05. Su razón social, tal como está en el SAT.\n06. Su código postal fiscal.\n07. Y su correo, para recibir la factura al instante.\n08. Elige su régimen fiscal.\n09. ¿No se sabe sus datos? Sube su Constancia del SAT y se llenan solitos.\n10. Revisa su prefactura.\n11. Aquí ve todo antes de timbrar: sus datos, las piezas y el total.\n12. Confirma que revisó bien sus datos, porque una factura timbrada ya no se corrige.\n13. Y con un clic, se timbra ante el SAT.\n14. ¡Listo! Su factura quedó timbrada, con su folio fiscal del SAT.\n15. Y descarga su factura en PDF — formal, con sello del SAT, sin que tú levantaras un dedo.\n16. Tus clientes se facturan solos, en un minuto, y tú te olvidas de facturar a mano.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-06-remision",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "06. Cómo hacer una remisión",
+   "descripcion": "La nota de entrega: sale la mercancía, sin cobro inmediato  ·  Archivo: 06-remision-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. Ahora una remisión: cuando entregas la mercancía pero el cobro queda para después. Empezamos en Hermes.\n02. Entramos a Ventas.\n03. Aquí viven tus remisiones, en su propia pestaña.\n04. Creamos una remisión nueva.\n05. Elegimos el tipo de documento.\n06. Remisión.\n07. Con la tecla F2 elegimos al cliente.\n08. Público en General, o el cliente al que le entregas.\n09. Lo seleccionamos.\n10. Con la tecla F4 agregamos la primera pieza.\n11. La buscamos por su clave o por su nombre.\n12. El precio se pone solo.\n13. Y agregamos otra pieza, igual de rápido.\n14. Lista la remisión con sus dos piezas.\n15. Con F9, o el botón verde, generamos la remisión.\n16. La abrimos para verla.\n17. Y aquí está: la remisión con tus piezas, lista para entregar. Baja el inventario, y el cobro queda pendiente para cuando toque.\n18. Y eso es todo. ¡Tu remisión lista, la mercancía en camino!",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-07-editar-nota",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "07. Cómo editar una nota de venta",
+   "descripcion": "¿Faltó una pieza o una cantidad? Corrige sin volver a empezar  ·  Archivo: 07-editar-nota-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. ¿Te faltó una pieza en la nota, o pusiste mal una cantidad? No la rehagas, edítala. Empezamos en Hermes.\n02. Entramos a Ventas.\n03. Vamos a nuestras notas de venta.\n04. Abrimos la nota que queremos corregir.\n05. Y le damos Editar. Esto funciona mientras la nota no esté timbrada; una vez timbrada ante el SAT, ya no se puede cambiar.\n06. Aquí está tu nota tal cual la dejaste, lista para cambiar lo que necesites.\n07. Con la tecla F4 agregamos la pieza que faltó.\n08. La buscamos por su clave o su nombre.\n09. Queda agregada, y el total se recalcula solo: ahora son las dos piezas.\n10. Ahí está la pieza nueva en la nota, con su precio y su importe.\n11. Y guardamos los cambios.\n12. Lista: la misma nota, ahora con las dos piezas. Sin duplicados, sin rehacer nada.\n13. Y eso es todo. Editar es corregir sin volver a empezar.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-08-orden-de-compra",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "08. Cómo hacer una orden de compra",
+   "descripcion": "Pídele mercancía a tu proveedor, ordenado y con registro  ·  Archivo: 08-orden-de-compra-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. Ahora el otro lado del negocio: las compras, cuando le pides mercancía a tu proveedor. Empezamos en Hermes.\n02. Vamos a Compras.\n03. Creamos una orden de compra nueva.\n04. Con la tecla F2 elegimos al proveedor.\n05. Lo buscamos por su nombre.\n06. Lo seleccionamos.\n07. Con la tecla F4 agregamos la pieza que vamos a pedir.\n08. Por su clave o su nombre.\n09. Con su costo de compra.\n10. Y agregamos otra pieza más.\n11. Lista la orden con todo lo que vamos a pedir.\n12. Y la creamos.\n13. La abrimos para verla.\n14. Y aquí está: tu orden de compra, con el proveedor, las piezas y los costos, lista para enviar.\n15. Y eso es todo. Tu orden de compra lista para enviar a tu proveedor.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-09-cancelar-nota",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "09. Cómo cancelar una nota de venta",
+   "descripcion": "Cancela con registro, sin borrar nada  ·  Archivo: 09-cancelar-nota-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. ¿Hiciste una nota por error, o el cliente se arrepintió? Se cancela, y queda el registro. Empezamos en Hermes.\n02. Entramos a Ventas.\n03. Aquí están nuestras notas.\n04. Abrimos la nota que vamos a cancelar.\n05. Hasta abajo encontramos el botón Cancelar Transacción.\n06. El sistema te avisa: esto no se puede deshacer. La nota quedará marcada como cancelada.\n07. Confirmamos.\n08. Y queda cancelada. No se borra: se marca, con su registro, para tu control y tu auditoría.\n09. Y eso es todo. Cancelada, con registro, sin borrar nada.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-10-registrar-pago",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "10. Cómo registrar un pago (cobranza)",
+   "descripcion": "Vendiste a crédito y ya te pagaron — actualiza el saldo  ·  Archivo: 10-registrar-pago-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. ¿Vendiste a crédito y ya te pagaron? Registras el pago y el saldo se actualiza solo. Empezamos en Hermes.\n02. Entramos a Ventas.\n03. Buscamos la venta a crédito en nuestras notas.\n04. La abrimos. Esta quedó a crédito: el cliente aún debía.\n05. Le damos Registrar Pago.\n06. El monto ya viene con el saldo completo. Si fuera un abono parcial, aquí lo ajustas, y eliges cómo te pagaron.\n07. Confirmamos el pago.\n08. Y listo: queda pagada, y el saldo del cliente se actualiza al instante.\n09. Y eso es todo. Pago registrado, y el saldo del cliente al día.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-11-factura-interna",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "11. Cómo hacer una factura desde el ERP",
+   "descripcion": "Timbrada ante el SAT, en un minuto  ·  Archivo: 11-factura-interna-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. Ahora una factura, desde el ERP. La diferencia con la nota: la factura se timbra ante el SAT. Empezamos en Hermes.\n02. Entramos a Ventas.\n03. Vamos a la pestaña de Facturas.\n04. Creamos una factura nueva.\n05. Elegimos el tipo de documento.\n06. Factura.\n07. Con F2 elegimos al cliente. Para facturar, necesita tener su RFC dado de alta.\n08. Lo buscamos por su nombre.\n09. Y al elegirlo, sus datos fiscales se cargan solos: RFC, régimen y código postal.\n10. Con F4 agregamos la primera pieza.\n11. Por su clave o su nombre.\n12. El precio y el IVA salen solos.\n13. Y otra pieza, igual de rápido.\n14. Lista la factura con sus dos piezas.\n15. Con F9, o el botón verde, generamos la factura.\n16. La abrimos para timbrarla.\n17. Y la timbramos ante el SAT, con un solo clic.\n18. Y aquí está: tu factura timbrada, con su folio fiscal del SAT, lista para mandar a tu cliente.\n19. Y eso es todo. Tu factura timbrada ante el SAT, en un minuto.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-12-rep",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "12. Cómo timbrar un REP (Recibo de Pago)",
+   "descripcion": "Facturaste a crédito y te pagaron — cumple con el SAT  ·  Archivo: 12-rep-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. Cuando facturas a crédito —método PPD— el SAT te pide un comprobante extra al cobrar: el Recibo Electrónico de Pago, o REP. Te enseño a timbrarlo. Empezamos en Hermes.\n02. Entramos a Pagos y Cobranza.\n03. Vamos a la pestaña de Pagadas: las facturas que ya cobraste.\n04. Esta se facturó a crédito —fíjate en la etiqueta PPD— y ya la cobramos. La abrimos.\n05. Aquí está el pago que registramos. Y el sistema te avisa en ámbar: falta timbrar el REP.\n06. Le damos Timbrar REP.\n07. Es un CFDI tipo P. El cálculo de parcialidades, saldo anterior e insoluto es automático: no tienes que calcular nada.\n08. Confirmamos.\n09. Y listo: el REP queda timbrado ante el SAT. Verde, cumplido. Eso es lo que evita multas cuando facturas a crédito.\n10. Y eso es todo. Tu Recibo Electrónico de Pago, timbrado ante el SAT.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-13-factura-global",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "13. Cómo hacer una Factura Global",
+   "descripcion": "Junta todas tus ventas de mostrador en una sola factura  ·  Archivo: 13-factura-global-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. ¿Vendes mucho de mostrador y casi nadie pide factura? El SAT te deja juntar todas esas ventas en una sola factura global a Público en General, normalmente cada mes. Empezamos en Hermes.\n02. Entramos a Facturación SAT.\n03. Y a la pestaña de Factura Global.\n04. Elegimos el modo manual, para escoger exactamente qué notas entran.\n05. El periodo ya viene en Mensual, con el mes y año actuales. Y abajo están todas las notas de venta sin factura del mes.\n06. Las seleccionamos todas con un solo clic.\n07. Activamos auto-timbrar para que se selle sola al generarla.\n08. Y le damos Generar Factura Global.\n09. El sistema te confirma los datos fiscales: el receptor es Público en General, con el RFC genérico, y uso de CFDI sin efectos fiscales. Así lo pide el SAT para las globales.\n10. Confirmamos.\n11. Y listo: una sola factura global timbrada que consolida todas las notas del mes. Una factura, en vez de veintiuna.\n12. Y eso es todo. Una sola factura global timbrada por todo el mes.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  },
+  {
+   "id": "tutorial-14-calculadora",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "14. La calculadora de precios (4 funciones)",
+   "descripcion": "Margen, IVA, descuento y calculadora — dentro de cada venta  ·  Archivo: 14-calculadora-4k.mp4  ·  ⏳ voz pendiente (preview subtítulos+música)",
+   "guion": "01. Una de las herramientas más usadas del ERP: la calculadora de precios. Tiene cuatro funciones y vive dentro de cada venta. Vamos a Hermes.\n02. Entramos a Ventas.\n03. Abrimos una venta nueva.\n04. Agregamos una pieza para tener una partida.\n05. Lista la partida.\n06. Abrimos la calculadora. También con la tecla F6. Mira: cuatro pestañas.\n07. La primera y más útil para fijar precios: Margen. Pones tu costo y el margen que quieres ganar.\n08. Compraste la pieza a 600 pesos.\n09. Y quieres 35% de margen.\n10. Calculamos.\n11. Vendes a 810. Te dice tu ganancia, y hasta cuánto sería con IVA.\n12. Y con un clic, ese precio se aplica directo a tu partida.\n13. Segunda función: IVA. ¿Tu precio ya trae el dieciséis por ciento, o no?\n14. De 1160 con IVA, son 1000 sin IVA, y 160 de impuesto. Al instante.\n15. Tercera: descuentos.\n16. Un 15% sobre 1000: el cliente paga 850.\n17. Y la cuarta: una calculadora normal, para cualquier cuenta. Funciona con el teclado.\n18. Doce por seis, setenta y dos.\n19. La cierras y sigues con tu venta.\n20. Y lo mejor: el margen que calculaste ya quedó en tu partida. 810 pesos, sin teclear nada dos veces.\n21. Y eso es todo. Margen, IVA, descuento y calculadora, sin salir de tu venta.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
+  }
+ ],
+ "generatedAt": ""
+}

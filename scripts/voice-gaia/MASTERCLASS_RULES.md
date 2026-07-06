@@ -110,6 +110,17 @@ TikTok/YouTube en miles de millones de impresiones:
 NUNCA abrir con: definición, biografía del Nobel, "hoy aprenderás", o un
 contexto histórico abstracto.
 
+### Por qué el hook funciona — es una SEÑAL (economía del feed)
+
+El primer frame de la clase es economía, no estética. El feed es el mercado de los limones (Akerlof):
+el espectador no puede ver tu calidad antes de "comprar", así que te paga precio de promedio ("otra
+clase aburrida") y hace swipe. El hook es tu **señal** — y solo separa si es CARA de fingir (Spence):
+la belleza de animación ya no diferencia (la tiene cualquiera con IA), es el piso. Lo que sí separa es
+la PROMESA de una brecha que solo tu rigor cierra. Y el algoritmo no te pregunta si la clase es buena:
+te pone la criba de los primeros segundos (Mirrlees) y te delata solo. Por eso estas reglas obsesionan
+con el gap concreto en 5 s — no es capricho pedagógico, es pasar la criba. Doctrina completa para
+reels: `CONTENIDO-ESTRATEGIA.md` → "Doctrina de señalización".
+
 ---
 
 ## 3. Misconception-first

@@ -21,19 +21,22 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import AtomModel from '@/masterclass/assets/gltf/AtomModel';
 import { CineStage, CineCamera, CineModel, useCineTime } from '@/masterclass/cine';
+import NebulaWorld from '@/masterclass/cine/NebulaWorld';
 import type { CineCamKey } from '@/masterclass/cine/CineCamera';
 
 const FACTORY = '/models/library/buildings/factory.glb';
-const MONKEY = '/models/library/animals/monkey.glb';
+const SEDAN = '/models/library/vehicles/sedan.glb';
+const CAMPFIRE = '/models/library/nature/campfire.glb';
 AtomModel.preload(FACTORY);
-AtomModel.preload(MONKEY);
+AtomModel.preload(SEDAN);
+AtomModel.preload(CAMPFIRE);
 
 // Inicio de habla de cada una de las 25 líneas (medido del audio Matilda con
 // 0.6 s de silencio entre líneas). Los beats y subtítulos se clavan aquí.
-const T = [0.45, 12.05, 18.92, 28.35, 37.54, 48.01, 56.66, 65.93, 76.49, 85.84,
-  95.42, 101.98, 112.22, 119.9, 129.98, 137.58, 148.37, 156.67, 165.32, 171.48,
-  180.44, 188.44, 197.79, 206.75, 215.78];
-const END = 226;
+const T = [0.51, 12.04, 18.91, 28.29, 37.49, 47.9, 56.54, 65.74, 76.24, 85.6,
+  95.16, 101.68, 111.92, 119.57, 129.56, 137.06, 147.88, 156.16, 164.75, 170.89,
+  179.78, 187.73, 199.91, 211.37, 220.36];
+const END = 241;
 const beatEnd = (i: number) => (i < 24 ? T[i + 1] : END);
 
 const GOLD = '#FDB813';
@@ -65,30 +68,43 @@ function TimedGroup({ inAt, outAt, children }: { inAt: number; outAt: number; ch
   return <group ref={g}>{children}</group>;
 }
 
-// ╔═══ 01 — Corea vs Ghana: dos ciudades iguales; una despega ════════════════╗
-function TwoCities({ start, end }: { start: number; end: number }) {
+// ╔═══ 01 — Apertura: un CRISTAL (rombo) que se enciende = la idea, símbolo del ep ═╗
+// Octaedro facetado apagado flotando en la nebulosa; parpadea y PRENDE en "¿Qué
+// pasó?" como las ideas del resto del video (mismo lenguaje, t91.8/t136). Baña la
+// escena con luz cálida. Es la respuesta visual a la pregunta.
+export function OpeningCrystal({ start, end, igniteAt }: { start: number; end: number; igniteAt: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
-  const korea = useRef<THREE.Group>(null);
-  const heights = useMemo(() => [1.2, 1.8, 1.0, 1.5, 0.9], []);
+  const gem = useRef<THREE.Mesh>(null);
+  const gemMat = useRef<THREE.MeshStandardMaterial>(null);
+  const light = useRef<THREE.PointLight>(null);
   useFrame(() => {
     const t = timeRef.current;
     if (!fadeGroup(g.current, t, start, end)) return;
-    const p = local(t, start + (end - start) * 0.45, end); // Corea despega en la 2ª mitad
-    if (korea.current) korea.current.scale.y = 1 + smooth(p) * 3.2;
+    if (g.current) g.current.position.y = 2.7 + 0.06 * Math.sin(t * 1.0);   // flotación
+    if (gem.current) { gem.current.rotation.y += 0.012; gem.current.rotation.x = 0.18 + 0.04 * Math.sin(t * 0.7); }
+    const dt = t - igniteAt;
+    // parpadeo determinista (sin random: renderAt puro en t) → encendido pleno
+    let flick: number;
+    if (dt >= 0) flick = 1;
+    else if (dt > -1.2) { const ph = dt + 1.2; flick = (Math.abs(ph - 0.42) < 0.05 || Math.abs(ph - 0.82) < 0.04) ? 0.8 : 0.04; }
+    else flick = 0.04;
+    const settle = dt >= 0 ? smooth(Math.min(1, dt / 0.5)) : 0;
+    const lum = Math.max(flick, settle);
+    // el brillo sale del PROPIO cubito (emissive alto → revienta por bloom natural),
+    // sin aro/halo postizo. Crece un pelín al encender, como ganando energía.
+    if (gemMat.current) gemMat.current.emissiveIntensity = 0.12 + lum * 5.2;
+    if (gem.current) gem.current.scale.setScalar(1 + lum * 0.12);
+    if (light.current) light.current.intensity = lum * 5.2;
   });
-  const tower = (x: number, h: number, c: string, e: number) => (
-    <mesh position={[x, h / 2, 0]}>
-      <boxGeometry args={[0.6, h, 0.6]} />
-      <meshStandardMaterial color="#11151F" emissive={c} emissiveIntensity={e} toneMapped={false} />
-    </mesh>
-  );
   return (
-    <group ref={g}>
-      {/* Ghana (izquierda) — se queda */}
-      <group position={[-4.5, 0, 0]}>{heights.map((h, i) => <group key={i} position={[(i - 2) * 0.9, 0, 0]}>{tower(0, h, '#5A6275', 0.5)}</group>)}</group>
-      {/* Corea (derecha) — despega */}
-      <group ref={korea} position={[4.5, 0, 0]}>{heights.map((h, i) => <group key={i} position={[(i - 2) * 0.9, 0, 0]}>{tower(0, h, GOLD, 0.9)}</group>)}</group>
+    <group ref={g} position={[0, 2.7, 0]}>
+      {/* el ROMBO (octaedro facetado): apagado → se ilumina como las ideas */}
+      <mesh ref={gem} rotation={[0.18, 0, 0]}>
+        <octahedronGeometry args={[1.15, 0]} />
+        <meshStandardMaterial ref={gemMat} color="#0E2236" emissive={GOLD} emissiveIntensity={0.12} metalness={0.3} roughness={0.25} flatShading toneMapped={false} />
+      </mesh>
+      <pointLight ref={light} color="#FFCC7A" intensity={0} distance={30} decay={2} />
     </group>
   );
 }
@@ -105,7 +121,7 @@ function MisconStrike({ start, end }: { start: number; end: number }) {
     if (!fadeGroup(g.current, t, start, end)) return;
     for (let i = 0; i < 3; i++) {
       const struck = local(t, start + span * (0.18 + i * 0.24), start + span * (0.42 + i * 0.24));
-      if (mats.current[i]) mats.current[i].emissiveIntensity = lerpN(0.9, 0.06, smooth(struck));
+      if (mats.current[i]) mats.current[i].emissiveIntensity = lerpN(1.7, 0.06, smooth(struck));
       if (crosses.current[i]) { crosses.current[i].visible = struck > 0.01; crosses.current[i].scale.setScalar(smooth(struck)); }
     }
   });
@@ -118,7 +134,7 @@ function MisconStrike({ start, end }: { start: number; end: number }) {
     <group ref={g} position={[0, 1.4, 0]}>
       {items.map((it, i) => (
         <group key={i} position={[it.x, 0, 0]}>
-          <mesh>{it.geo}<meshStandardMaterial ref={(m) => { if (m) mats.current[i] = m; }} color="#11151F" emissive={it.c} emissiveIntensity={0.9} toneMapped={false} /></mesh>
+          <mesh>{it.geo}<meshStandardMaterial ref={(m) => { if (m) mats.current[i] = m; }} color="#11151F" emissive={it.c} emissiveIntensity={1.7} toneMapped={false} /></mesh>
           <group ref={(c) => { if (c) crosses.current[i] = c; }} visible={false}>
             <mesh rotation={[0, 0, Math.PI / 4]}><boxGeometry args={[2, 0.16, 0.16]} /><meshStandardMaterial color="#FF2E2E" emissive="#FF2E2E" emissiveIntensity={2} toneMapped={false} /></mesh>
             <mesh rotation={[0, 0, -Math.PI / 4]}><boxGeometry args={[2, 0.16, 0.16]} /><meshStandardMaterial color="#FF2E2E" emissive="#FF2E2E" emissiveIntensity={2} toneMapped={false} /></mesh>
@@ -143,7 +159,7 @@ function Comal({ start, end, x = 0 }: { start: number; end: number; x?: number }
     <group ref={g} position={[x, 1.1, 0]}>
       <mesh ref={m} rotation={[-0.35, 0, 0]}>
         <cylinderGeometry args={[1.0, 1.0, 0.14, 40]} />
-        <meshStandardMaterial color="#1C1206" emissive="#FF7A1A" emissiveIntensity={0.85} metalness={0.4} roughness={0.5} toneMapped={false} />
+        <meshStandardMaterial color="#1C1206" emissive="#FF7A1A" emissiveIntensity={1.7} metalness={0.4} roughness={0.5} toneMapped={false} />
       </mesh>
     </group>
   );
@@ -231,8 +247,8 @@ function ResidualBars({ start, end }: { start: number; end: number }) {
       {/* marco "crecimiento total" */}
       <mesh position={[0, H / 2, 0]}><boxGeometry args={[3, H, 1.6]} /><meshStandardMaterial color={GOLD} transparent opacity={0.05} emissive={GOLD} emissiveIntensity={0.15} toneMapped={false} /></mesh>
       {/* la mitad explicada */}
-      <mesh ref={cap} position={[-0.7, 0, 0]}><boxGeometry args={[1.0, 1, 1.0]} /><meshStandardMaterial color="#6A7080" emissive="#3A4150" emissiveIntensity={0.5} toneMapped={false} /></mesh>
-      <mesh ref={lab} position={[0.7, 0, 0]}><boxGeometry args={[1.0, 1, 1.0]} /><meshStandardMaterial color="#4A7A9A" emissive="#1E3A5F" emissiveIntensity={0.5} toneMapped={false} /></mesh>
+      <mesh ref={cap} position={[-0.7, 0, 0]}><boxGeometry args={[1.0, 1, 1.0]} /><meshStandardMaterial color="#8893A8" emissive="#5A6B8A" emissiveIntensity={1.3} toneMapped={false} /></mesh>
+      <mesh ref={lab} position={[0.7, 0, 0]}><boxGeometry args={[1.0, 1, 1.0]} /><meshStandardMaterial color="#5AA0D0" emissive="#2E6BA8" emissiveIntensity={1.3} toneMapped={false} /></mesh>
       {/* la mitad sin explicar */}
       <mesh position={[0, H * 0.75, 0]}><boxGeometry args={[2.6, H / 2, 1.2]} /><meshStandardMaterial ref={voidMat} color={GOLD} transparent opacity={0.12} emissive={GOLD} emissiveIntensity={0.7} toneMapped={false} /></mesh>
     </group>
@@ -278,7 +294,7 @@ function ideaMesh(r: number, color = GOLD, intensity = 1.8) {
 }
 
 // ╔═══ 11 — Propiedad mágica: una sola idea, brillando ══════════════════════╗
-function SingleIdea({ start, end }: { start: number; end: number }) {
+export function SingleIdea({ start, end }: { start: number; end: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
   const m = useRef<THREE.Mesh>(null);
@@ -415,8 +431,8 @@ function CombineChain({ start, end }: { start: number; end: number }) {
       <group ref={(gg) => { if (gg) groups.current[0] = gg; }} position={[X[0], 0, 0]} visible={false}>{wheel(0, 0, 0.7)}</group>
       {/* 1: carreta = caja + 2 ruedas */}
       <group ref={(gg) => { if (gg) groups.current[1] = gg; }} position={[X[1], 0, 0]} visible={false}>{box(0, 0.4, 1.2, 0.5, 0.7)}{wheel(-0.4, -0.05)}{wheel(0.4, -0.05)}</group>
-      {/* 2: coche = cuerpo + cabina + 2 ruedas */}
-      <group ref={(gg) => { if (gg) groups.current[2] = gg; }} position={[X[2], 0, 0]} visible={false}>{box(0, 0.45, 1.5, 0.45, 0.7)}{box(0.1, 0.85, 0.8, 0.4, 0.6)}{wheel(-0.5, 0.05)}{wheel(0.5, 0.05)}</group>
+      {/* 2: coche = GLB real (sedan), tinte cálido para encajar con la cadena */}
+      <group ref={(gg) => { if (gg) groups.current[2] = gg; }} position={[X[2], 0.1, 0]} visible={false}><AtomModel src={SEDAN} color="#9FD0F5" glow={1.5} fitTo={2.9} /></group>
       {/* 3: teléfono = slab oscuro + pantalla brillante */}
       <group ref={(gg) => { if (gg) groups.current[3] = gg; }} position={[X[3], 0.5, 0]} visible={false}>{box(0, 0, 0.7, 1.4, 0.12, '#1A2030', 0.3)}{box(0, 0, 0.56, 1.2, 0.16, BLUE, 1.4)}</group>
     </group>
@@ -445,7 +461,7 @@ function buildTree() {
   }
   return { nodes, lines, levelOf };
 }
-function IdeaTree({ start, end }: { start: number; end: number }) {
+export function IdeaTree({ start, end }: { start: number; end: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
   const { nodes, lines, levelOf } = useMemo(() => buildTree(), []);
@@ -479,7 +495,7 @@ function IdeaTree({ start, end }: { start: number; end: number }) {
 }
 
 // ╔═══ 18/24 — Payoff: capital plano vs ideas que se disparan ════════════════╗
-function PayoffBars({ start, end }: { start: number; end: number }) {
+export function PayoffBars({ start, end }: { start: number; end: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
   const cap = useRef<THREE.Mesh>(null);
@@ -580,56 +596,75 @@ function BalanceScale({ start, end }: { start: number; end: number }) {
   );
 }
 
-// ╔═══ 23 — Cultura: recetas que se apilan sobre la tropa ════════════════════╗
-function CultureStack({ start, end, x = 7 }: { start: number; end: number; x?: number }) {
+// ╔═══ 22/23 — Cultura: el FUEGO (1ª receta) y buenas ideas que se APILAN ══════╗
+// Heredamos recetas buenas, una sobre otra. El fuego abajo (la más vieja),
+// y rombos de idea que caen y se apilan en una columna que crece = cultura.
+function HeritageStack({ start, end }: { start: number; end: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
   const items = useRef<THREE.Mesh[]>([]);
-  const N = 6;
+  const N = 7;
+  const span = end - start;
   useFrame(() => {
     const t = timeRef.current;
     if (!fadeGroup(g.current, t, start, end)) return;
     for (let i = 0; i < N; i++) {
       const m = items.current[i]; if (!m) continue;
-      const p = smooth(local(t, start + 0.6 + i * 0.6, start + 1.4 + i * 0.6));
+      const p = smooth(local(t, start + 1.2 + i * (span * 0.095), start + 2.2 + i * (span * 0.095)));
       m.visible = p > 0.01;
-      m.scale.setScalar(0.0001 + p * 0.34);
-      m.position.y = lerpN(3.2 + i * 0.55 + 1.5, 3.2 + i * 0.55, p);
-      m.rotation.y += 0.04;
-    }
-  });
-  return <group ref={g} position={[x, 0, 0]}>{Array.from({ length: N }).map((_, i) => <mesh key={i} ref={(m) => { if (m) items.current[i] = m; }} visible={false}>{ideaMesh(0.34)}</mesh>)}</group>;
-}
-
-// ╔═══ 25 — Franquicia: un comal se copia en una parrilla de comales ═════════╗
-function Franchise({ start, end }: { start: number; end: number }) {
-  const timeRef = useCineTime();
-  const g = useRef<THREE.Group>(null);
-  const cells = useMemo(() => { const a: [number, number][] = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) a.push([(c - 1.5) * 2.4, (r - 1.5) * 2.4]); return a; }, []);
-  // ordenar por distancia al centro para que se "propaguen" hacia afuera
-  const order = useMemo(() => cells.map((_, i) => i).sort((a, b) => (cells[a][0] ** 2 + cells[a][1] ** 2) - (cells[b][0] ** 2 + cells[b][1] ** 2)), [cells]);
-  const meshes = useRef<THREE.Mesh[]>([]);
-  const span = end - start;
-  useFrame(() => {
-    const t = timeRef.current;
-    if (!fadeGroup(g.current, t, start, end)) return;
-    for (let k = 0; k < cells.length; k++) {
-      const idx = order[k];
-      const m = meshes.current[idx]; if (!m) continue;
-      const p = smooth(local(t, start + 0.6 + k * (span * 0.5 / cells.length), start + 1.4 + k * (span * 0.5 / cells.length)));
-      m.visible = p > 0.01;
-      m.scale.setScalar(0.0001 + p);
-      m.rotation.z += 0.005;
+      m.scale.setScalar(0.0001 + p * 0.46);
+      m.position.y = lerpN(1.9 + i * 0.62 + 1.2, 1.9 + i * 0.62, p);  // cae a su lugar
+      m.rotation.y += 0.03;
     }
   });
   return (
-    <group ref={g} rotation={[-Math.PI / 2 + 0.55, 0, 0]} position={[0, 1.4, 0]}>
-      {cells.map(([cx, cz], i) => (
-        <mesh key={i} ref={(m) => { if (m) meshes.current[i] = m; }} position={[cx, cz, 0]} visible={false}>
-          <cylinderGeometry args={[0.9, 0.9, 0.12, 32]} />
-          <meshStandardMaterial color="#1C1206" emissive="#FF7A1A" emissiveIntensity={0.9} metalness={0.4} roughness={0.5} toneMapped={false} />
+    <group ref={g} position={[0, 0, 0]}>
+      {/* el fuego: la receta más vieja, base de la pila */}
+      <CineModel src={CAMPFIRE} position={[0, 0.4, 0]} at={start + 0.2} color="#FF7A1A" glow={1.7} fitTo={2.1} floatAmp={0} />
+      {/* recetas buenas que se apilan encima, alternando oro/azul */}
+      {Array.from({ length: N }).map((_, i) => (
+        <mesh key={i} ref={(m) => { if (m) items.current[i] = m; }} position={[0, 1.9 + i * 0.62, 0]} visible={false}>
+          {ideaMesh(0.42, i % 2 ? BLUE : GOLD, 1.9)}
         </mesh>
       ))}
+    </group>
+  );
+}
+
+// ╔═══ 25 — Cierre: una buena idea se ENCIENDE y se MULTIPLICA en enjambre ════╗
+// Del trompo de pastor al transistor: la idea no se gasta, se copia al infinito.
+// El rombo central enciende fuerte y dispara copias que crecen hacia afuera.
+export function IdeaMultiply({ start, end }: { start: number; end: number }) {
+  const timeRef = useCineTime();
+  const g = useRef<THREE.Group>(null);
+  const core = useRef<THREE.Mesh>(null);
+  const coreMat = useRef<THREE.MeshStandardMaterial>(null);
+  const M = 22;
+  const copies = useRef<THREE.Mesh[]>([]);
+  const span = end - start;
+  const targets = useMemo(() => Array.from({ length: M }, (_, i) => {
+    const a = (i / M) * Math.PI * 2 + (i % 2) * 0.32; const r = 3.4 + (i % 4) * 0.85;
+    return [Math.cos(a) * r, 2.6 + Math.sin(i * 1.3) * 2.0, Math.sin(a) * r] as [number, number, number];
+  }), []);
+  useFrame(() => {
+    const t = timeRef.current;
+    if (!fadeGroup(g.current, t, start, end)) return;
+    const ig = smooth(local(t, start + 0.6, start + 2.6));
+    if (coreMat.current) coreMat.current.emissiveIntensity = 0.5 + ig * 3.6;
+    if (core.current) { core.current.rotation.y += 0.04; core.current.rotation.x += 0.02; }
+    for (let i = 0; i < M; i++) {
+      const m = copies.current[i]; if (!m) continue;
+      const p = smooth(local(t, start + 2.2 + i * (span * 0.018), start + 4.2 + i * (span * 0.018)));
+      m.visible = p > 0.01;
+      m.position.set(lerpN(0, targets[i][0], p), lerpN(2.6, targets[i][1], p), lerpN(0, targets[i][2], p));
+      m.scale.setScalar(0.0001 + p * 0.5);
+      m.rotation.y += 0.06;
+    }
+  });
+  return (
+    <group ref={g} position={[0, 0, 0]}>
+      <mesh ref={core} position={[0, 2.6, 0]}><octahedronGeometry args={[0.95, 0]} /><meshStandardMaterial ref={coreMat} color="#0E2236" emissive={GOLD} emissiveIntensity={0.5} flatShading toneMapped={false} /></mesh>
+      {targets.map((_, i) => <mesh key={i} ref={(m) => { if (m) copies.current[i] = m; }} visible={false}>{ideaMesh(0.34, GOLD, 1.9)}</mesh>)}
     </group>
   );
 }
@@ -638,7 +673,7 @@ function Franchise({ start, end }: { start: number; end: number }) {
 const LOOK: [number, number, number] = [0, 2, 0];
 interface Shot { p0: [number, number, number]; p1: [number, number, number]; look?: [number, number, number]; }
 const SHOTS: Shot[] = [
-  { p0: [-2, 8, 26], p1: [2, 6, 19] },                              // 01 establish
+  { p0: [-1.5, 3.4, 12], p1: [1.5, 2.9, 8.5], look: [0, 2.7, 0] },  // 01 foco que enciende
   { p0: [9, 4, 13], p1: [3, 3, 9], look: [0, 1.6, 0] },             // 02 misconception
   { p0: [3, 1.6, 6.5], p1: [0.8, 1.2, 4], look: [0, 1.1, 0] },      // 03 comal
   { p0: [-10, 5, 13], p1: [-5, 3.4, 9.5], look: [0, 2.2, 0] },      // 04 fierros
@@ -659,10 +694,10 @@ const SHOTS: Shot[] = [
   { p0: [-5, 3, 10], p1: [-2, 2.6, 7], look: [0, 2.2, 0] },         // 19 free-rider
   { p0: [5, 3, 9], p1: [1.5, 2.4, 6], look: [0, 2.2, 0] },          // 20 patente
   { p0: [0, 4, 12], p1: [0, 3, 8], look: [0, 2.0, 0] },             // 21 balanza
-  { p0: [11, 5, 13], p1: [7, 3, 9.5], look: [7, 1.8, 0] },          // 22 mono
-  { p0: [12, 6, 14], p1: [7, 4.5, 10], look: [7, 3.4, 0] },         // 23 cultura
+  { p0: [-6, 3.5, 13], p1: [-2, 3, 9], look: [0, 3.2, 0] },         // 22 fuego + pila
+  { p0: [5, 5.5, 13], p1: [2, 4.6, 9.5], look: [0, 4.2, 0] },       // 23 pila de recetas
   { p0: [-8, 6, 17], p1: [0, 4, 11], look: [0, 4, 0] },             // 24 payoff triunfal
-  { p0: [0, 11, 18], p1: [0, 6.5, 12], look: [0, 1.4, 0] },         // 25 franquicia
+  { p0: [0, 4.5, 16], p1: [0, 3, 11], look: [0, 2.8, 0] },          // 25 idea se multiplica
 ];
 function buildCamKeys(): CineCamKey[] {
   const keys: CineCamKey[] = [];
@@ -697,10 +732,10 @@ const SUBS = [
   'Pero si se copian gratis… ¿quién se rompe la cabeza inventándolas?',
   'Por eso hay patentes y secretos: un ratito de exclusiva para que valga la pena.',
   'El equilibrio de Romer: proteger para que inventen, compartir para crecer.',
-  'Una mona en Japón aprendió a lavar el camote. La tropa entera la copió.',
-  'Nadie perdió nada. Somos el animal que acumula recetas: cultura.',
+  'Cada buena idea ya es tuya: el fuego, la rueda, la maleta con ruedas. La heredaste gratis.',
+  'Somos el animal que apila recetas buenas. Eso es la cultura — más vieja que el dinero.',
   'Un país sin capital puede despegar. No lo necesitas todo: necesitas ideas.',
-  'El taquero que la pega no compra más comales: franquicia la receta.',
+  'Una buena idea no se gasta: se multiplica. Del trompo de pastor al transistor.',
 ];
 
 export default function RomerClase() {
@@ -709,33 +744,50 @@ export default function RomerClase() {
     <CineStage
       mood="starry_night"
       envIntensity={0.42}
-      audio="/audio/clase-romer/narration.mp3?v=25"
+      audio="/audio/clase-romer/narration.mp3?v=26"
       duration={END}
       chapter="Romer · 2018 · el hack para crecer"
       fov={50}
       cameraPos={[0, 8, 26]}
-      postfx={{ intensity: 1.5, threshold: 0.3, vignette: 0.82, aberration: 0.0006 }}
+      postfx={{ intensity: 1.2, threshold: 0.46, vignette: 0.82, aberration: 0.0006 }}
       subtitles={subtitles}
+      title={{ text: 'Cómo crecer sin dinero', at: T[0] + 0.3, until: beatEnd(0) }}
     >
       <CineCamera keys={buildCamKeys()} />
 
-      {/* Piso + atmósfera */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]}>
-        <planeGeometry args={[140, 140]} />
-        <meshStandardMaterial color="#05060E" roughness={0.5} metalness={0.4} emissive="#070914" emissiveIntensity={0.1} />
-      </mesh>
-      <fog attach="fog" args={['#02010A', 24, 80]} />
+      {/* EL MUNDO-NEBULOSA (los GLB explican al centro; la nube narra de fondo):
+          fría durante CAPITAL → el fantasma palpita en EL RESIDUO (T[8]) → la
+          PRIMERA estrella enciende en "son IDEAS" (T[9]) → la vecina contagia en
+          "das receta la conservas" (T[12]) → mil cocinas (T[13]+) → bola de
+          nieve (T[16]+) → amanecer pleno en "el país despega" (T[23]). */}
+      <NebulaWorld
+        scale={35}
+        holeR={15.5}
+        ghostWindow={[T[8], T[9]]}
+        firstIgnite={T[9]}
+        chain={[
+          T[12],                                          // la vecina: "los dos la tenemos"
+          T[13], T[13] + 1.6, T[13] + 3.1, T[13] + 4.8,   // mil cocinas
+          T[16], T[16] + 0.9, T[16] + 1.7, T[16] + 2.6,   // bola de nieve
+          T[16] + 3.4, T[16] + 4.5, T[16] + 5.8,
+          T[18] + 2, T[19] + 3, T[20] + 2, T[21] + 4,     // la cadena sigue de fondo
+          T[22] + 1, T[22] + 5,
+        ]}
+        dawnAt={T[23]}
+        beatTimes={T}
+        calmFrom={T[24]}
+      />
       <ambientLight intensity={0.2} color="#1E2440" />
       <directionalLight position={[4, 10, 5]} intensity={0.4} color="#FFE6C0" />
 
       {/* ─── 25 escenas, cada una visible sólo en su beat ─── */}
-      <TwoCities start={T[0]} end={beatEnd(0)} />
+      <OpeningCrystal start={T[0]} end={beatEnd(0)} igniteAt={T[0] + 9.0} />
       <MisconStrike start={T[1]} end={beatEnd(1)} />
       <Comal start={T[2]} end={beatEnd(2)} />
       <TimedGroup inAt={T[3]} outAt={beatEnd(3)}>
-        <CineModel src={FACTORY} position={[-2.6, 0, -1]} at={T[3] + 0.2} color="#8A90A4" glow={0.7} fitTo={3.0} floatAmp={0} />
-        <CineModel src={FACTORY} position={[0.4, 0, -2]} at={T[3] + 0.9} color="#7C8296" glow={0.6} fitTo={2.7} floatAmp={0} />
-        <CineModel src={FACTORY} position={[2.9, 0, -0.6]} at={T[3] + 1.6} color="#7A8096" glow={0.6} fitTo={2.4} floatAmp={0} />
+        <CineModel src={FACTORY} position={[-2.6, 0, -1]} at={T[3] + 0.2} color="#AFC6E6" glow={1.9} fitTo={3.0} floatAmp={0} />
+        <CineModel src={FACTORY} position={[0.4, 0, -2]} at={T[3] + 0.9} color="#9FB8DC" glow={1.7} fitTo={2.7} floatAmp={0} />
+        <CineModel src={FACTORY} position={[2.9, 0, -0.6]} at={T[3] + 1.6} color="#A8BEE0" glow={1.7} fitTo={2.4} floatAmp={0} />
       </TimedGroup>
       <CapitalBar start={T[4]} end={beatEnd(6)} />
       <CuriositySpark start={T[6]} end={beatEnd(6)} />
@@ -751,13 +803,9 @@ export default function RomerClase() {
       <FreeRider start={T[18]} end={beatEnd(18)} />
       <Excludability start={T[19]} end={beatEnd(19)} />
       <BalanceScale start={T[20]} end={beatEnd(20)} />
-      <TimedGroup inAt={T[21]} outAt={beatEnd(22)}>
-        <CineModel src={MONKEY} position={[6.4, 0.5, 0]} at={T[21]} color="#E8B27A" glow={1.1} fitTo={2.6} floatAmp={0.12} spin={0.2} />
-        <CineModel src={MONKEY} position={[8.4, 0.4, -1.6]} at={T[22] + 0.3} color="#D9A56E" glow={0.9} fitTo={2.2} floatAmp={0.1} spin={-0.18} />
-      </TimedGroup>
-      <CultureStack start={T[22]} end={beatEnd(22)} x={7} />
+      <HeritageStack start={T[21]} end={beatEnd(22)} />
       <PayoffBars start={T[23]} end={beatEnd(23)} />
-      <Franchise start={T[24]} end={beatEnd(24)} />
+      <IdeaMultiply start={T[24]} end={beatEnd(24)} />
     </CineStage>
   );
 }

@@ -1,0 +1,387 @@
+{
+  "id": "mec-u3-l4",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 4,
+  "titulo": "La flecha del torno",
+  "subtitulo": "Revolución · perfil escalonado · simetría",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 3 §3-10 (Revolved Boss/Base)",
+  "descripcion": "Todo lo torneado nace igual: un perfil plano girado alrededor de un eje. Flecha escalonada de tres diámetros por revolución.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Todo lo que sale de un torno nace igual: un perfil plano... girado. Hoy haces una flecha escalonada.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Boceto en el plano equis ye. El eje vertical va a ser el eje de la flecha.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "el editor de boceto abrió"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Dibuja media flecha: solo el lado derecho del eje, como una escalera de radios.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "-40",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "12",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "35",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "6",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "8",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "15",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "10",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "80",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "270",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 700
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 8",
+        "desc": "el perfil escalonado tiene sus 8 líneas"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Los radios se acotan contra el eje: doce en la cola...",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            0,
+            1,
+            "h"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "12",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "...dieciocho en el hombro, donde vivirá el balero...",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            0,
+            3,
+            "h"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "18",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "...y diez en la punta. Ancla el arranque para que nada se mueva.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            6,
+            7,
+            "h"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "10",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 500
+        },
+        {
+          "type": "clickptwhere",
+          "where": "bl",
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Termina el boceto... y ahora la magia del torno: Revolución.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-revolve",
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "post-revolve"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('revolve')",
+        "desc": "hay una revolución"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "Trescientos sesenta grados alrededor del eje... y el perfil plano ya es una flecha de tres diámetros.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            850,
+            560
+          ],
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 40000 && inv.vol_kernel < 60000",
+        "desc": "la flecha tiene el volumen de sus 3 cilindros (~51 mil mm³)"
+      }
+    },
+    {
+      "id": "p09",
+      "dice": "Cola para el motor, hombro para el balero, punta para la polea. Así se piensa una flecha. Nos vemos en el taller.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1000,
+            600
+          ],
+          "to": [
+            1200,
+            680
+          ],
+          "settle": 900
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            780,
+            620
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}

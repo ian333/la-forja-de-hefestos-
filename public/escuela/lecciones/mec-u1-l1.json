@@ -1,0 +1,358 @@
+{
+  "id": "mec-u1-l1",
+  "curso": "mecanica",
+  "unidad": 1,
+  "n": 1,
+  "titulo": "Tu primera pieza",
+  "subtitulo": "Boceto · cota · sólido · barreno",
+  "fuente": "Bethune & Brown, Engineering Design and Graphics with SolidWorks 2023, cap. 1",
+  "descripcion": "El ritual completo del CAD en una pieza real: dibujar a ojo, mandar con cotas, extruir y barrenar. Método del libro: el pulso no importa, la cota manda.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Bienvenido a La Forja. El reto de hoy: una placa de cien por sesenta milímetros, con un barreno, en tres minutos.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Toda pieza empieza igual: con un boceto. Clic en Boceto... y tú eliges: un plano, o una cara. El mouse decide.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1200
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "el editor de boceto abrió"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Dibuja un rectángulo a ojo, sin medidas exactas. Así arranca un diseñador de verdad.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -47,
+          "y": -28,
+          "settle": 700
+        },
+        {
+          "type": "clickmm",
+          "x": 51,
+          "y": 33,
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "hay un rectángulo (4 líneas)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "¿Ves el trazo azul? Azul significa libre: a esta geometría todavía le faltan órdenes.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 600
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Y las órdenes se dan con cotas. Cota horizontal: cien milímetros.",
+      "gestos": [
+        {
+          "type": "dimline",
+          "axis": "h",
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "100",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1100
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Cota vertical: sesenta. Fíjate cómo la geometría obedece a la cota, no a tu pulso.",
+      "gestos": [
+        {
+          "type": "dimline",
+          "axis": "v",
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1100
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Ancla una esquina, y el boceto queda totalmente restringido: nada se puede mover ya.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 500
+        },
+        {
+          "type": "clickptwhere",
+          "where": "bl",
+          "settle": 1000
+        }
+      ],
+      "check": {
+        "js": "sk && sk.dof === 0",
+        "desc": "DOF 0 — totalmente restringido"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "Termina el boceto. El perfil queda listo sobre el plano... esperando tu decisión.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        }
+      ],
+      "check": {
+        "js": "!sk",
+        "desc": "boceto guardado — sin sólido aún: aquí nadie extruye por ti"
+      }
+    },
+    {
+      "id": "p09",
+      "dice": "Y la decisión es tuya: clic en Extruir... y dale veinte milímetros de altura.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1800
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "placa 100×60×20 exacta"
+      }
+    },
+    {
+      "id": "p10",
+      "dice": "Gírala. Ya no es un dibujo: es un sólido, con volumen, masa y aristas de verdad.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1180,
+            640
+          ],
+          "to": [
+            820,
+            560
+          ],
+          "settle": 700
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1000,
+            600
+          ],
+          "to": [
+            1120,
+            680
+          ],
+          "settle": 700
+        }
+      ]
+    },
+    {
+      "id": "p11",
+      "dice": "Ahora el barreno. Cortar... clic en Boceto... y el mouse decide: clic directo en la cara de arriba.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sketch-op-cut",
+          "settle": 800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1100
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 570,
+          "settle": 1800
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "boceto sobre cara abierto"
+      }
+    },
+    {
+      "id": "p12",
+      "dice": "Dibuja un círculo a ojo, más o menos al centro de la placa.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 9,
+          "y": -4,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": 20,
+          "y": -4,
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 1",
+        "desc": "hay un círculo"
+      }
+    },
+    {
+      "id": "p13",
+      "dice": "Cota de diámetro: veinticuatro milímetros. En la lección tres lo posicionamos exacto.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "24",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1100
+        }
+      ]
+    },
+    {
+      "id": "p14",
+      "dice": "Termina el boceto... y el corte atraviesa la placa. Un barreno limpio.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-depth",
+          "text": "25",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "post-barreno"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 100000 && inv.vol_kernel < 120000",
+        "desc": "el corte quitó material (vol ≈ 111 mil mm³)"
+      }
+    },
+    {
+      "id": "p15",
+      "dice": "Y el kernel no miente: volumen y masa exactos, como los medirías en el taller.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        }
+      ]
+    },
+    {
+      "id": "p16",
+      "dice": "Tu primera pieza. En la próxima lección dominas la cámara y el árbol de operaciones. Nos vemos en La Forja.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1180,
+            640
+          ],
+          "to": [
+            760,
+            600
+          ],
+          "settle": 600
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1000,
+            620
+          ],
+          "to": [
+            1200,
+            700
+          ],
+          "settle": 800
+        }
+      ]
+    }
+  ]
+}

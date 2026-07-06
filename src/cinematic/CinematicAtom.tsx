@@ -40,9 +40,12 @@ import { ORBITALS, sampleOrbital } from '@/lib/chem/quantum/orbitals';
 // completa antes de disolverse en el logo (lo pidió el user). 18s base, cap 23s.
 let RUN_DURATION = 18;
 function durationForShells(n: number): number {
-  return Math.min(23, Math.max(18, Math.round((17.0 + n * 0.32) * 10) / 10));
+  // La cola (15s→fin) es el BEAT DE CONTEMPLACIÓN — toma LARGA, lenta y lejana
+  // (la "parte lenta" que pidió Ian) para LEER la forma de la nube + el campo.
+  // Base alta → ~10s de contemplación tras los 15s de gancho+viaje.
+  return Math.min(22, Math.max(18, Math.round((18.5 + n * 0.32) * 10) / 10));
 }
-const SAMPLES_PER_ELECTRON = 6000;
+const SAMPLES_PER_ELECTRON = 16000;
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * Math.max(0, Math.min(1, t));
@@ -80,13 +83,30 @@ function sph(dist: number, elev: number, azim: number): Vec3 {
 
 const CUTS: CutSpec[] = [
   {
-    // 0.0-3.0s · DESPERTAR — cámara CERCA, íntimo, capas nacen
-    t0: 0.0, t1: 3.0, name: 'despertar', bloom: 0.70, vignette: 0.55,
+    // 0.0-3.0s · GOLPE + REVELACIÓN (cold-open EN la simulación).
+    //   0.0-1.3s: el NÚCLEO llena el cuadro y SE ACERCA (looming) — sorpresa +
+    //     1-objeto + contraste desde el frame 0. Front-load del money-shot que el
+    //     detector midió en ~10s con z+11.8 (docs/NEUROCIENCIA-DEL-GANCHO.md).
+    //     bloom alto → el cúmulo REVIENTA; órbita enérgica = movimiento.
+    //   1.3-3.0s: pull-back que REVELA el átomo completo y entrega al 'viaje'
+    //     (termina en ex*0.95 = inicio exacto del viaje, corte invisible).
+    t0: 0.0, t1: 3.0, name: 'golpe', bloom: 0.95, vignette: 0.5,
     cam: (t, ex) => {
-      const dist = lerp(ex * 0.55, ex * 0.95, smoothstep(t));
-      const azim = -0.3 + t * 0.50;
-      const elev = lerp(0.10, 0.28, smoothstep(t));
-      return { pos: sph(dist, elev, azim), fov: lerp(30, 34, smoothstep(t)) };
+      // ESTALLIDO @ frame0 (regla #1: el pico debe estar al INICIO, no llegar a él).
+      // En t=0 el núcleo YA llena el cuadro (máx contraste + 1-objeto) y en los
+      // primeros ~0.25s SE ABALANZA hacia la cámara (looming explosivo: dist baja,
+      // fov cierra) → el pico de movimiento+sorpresa cae a ~0.15s, no a 0.75s.
+      if (t < 0.083) {                                  // 0-0.25s · el estallido
+        const u = smoothstep(t / 0.083);
+        const dist = lerp(ex * 0.0110, ex * 0.0058, u); // se abalanza: crece rápido hacia ti
+        const azim = 1.2 + u * 1.3;                      // giro enérgico inmediato
+        return { pos: sph(dist, 0.06, azim), lookAt: [0, 0, 0], fov: lerp(40, 32, u) };
+      }
+      const u = smoothstep((t - 0.083) / 0.917);        // 0.25-3.0s · pull-back revelador
+      const dist = lerp(ex * 0.0058, ex * 0.95, u);
+      const azim = 2.5 + u * 0.7;
+      const elev = lerp(0.06, 0.26, u);
+      return { pos: sph(dist, elev, azim), lookAt: [0, 0, 0], fov: lerp(34, 34, u) };
     },
   },
   {
@@ -96,21 +116,31 @@ const CUTS: CutSpec[] = [
     // crece, los electrones son estrellas dispersas. FOV estable = dolly puro.
     t0: 3.0, t1: 10.5, name: 'viaje', bloom: 0.50, vignette: 0.62,
     cam: (t, ex) => {
-      const e = Math.pow(t, 0.82);                  // ligeramente adelantado
-      const dist = ex * 0.95 * Math.pow(1 / 136, e); // → ex·0.007 (ve el cúmulo entero)
-      const azim = 0.4 + t * 0.50;                   // espiral lenta y continua
-      const elev = lerp(0.28, 0.0, e);
-      return { pos: sph(dist, elev, azim), lookAt: [0, 0, 0], fov: 32 };
+      // FLY-THROUGH: no es caer radial — la cámara VUELA ATRAVESANDO la nube.
+      // Barrido lateral GRANDE (azim ~195°) + clavado desde el borde de la nube
+      // hasta el núcleo + cruce del plano vertical (+0.28→−0.28) → "viaje POR el
+      // átomo": las capas/electrones pasan ROZANDO la cámara. fov ancho = inmersión.
+      // El núcleo queda de ANCLA (lookAt al centro) para no perder el encuadre.
+      const u = smoothstep(t);
+      const az = 0.2 + u * 3.4;                       // de un lado al otro, atravesando
+      // closest = ex·0.18: vuela por la nube RICA (mid), NO se clava al centro
+      // vacío/granulado (ahí el point-cloud tirita en movimiento rápido). El barrido
+      // veloz (u~0.5) queda donde la nube se ve DENSA y suave, no en el hueco.
+      const r  = ex * lerp(1.0, 0.18, Math.pow(u, 0.7));
+      const el = 0.28 * Math.cos(u * Math.PI);        // cruza el plano: arriba → abajo
+      return { pos: sph(r, el, az), lookAt: [0, 0, 0], fov: 44 };
     },
   },
   {
     // 10.5-15.0s · MIRADA (4.5s) — DESDE el núcleo. Órbita lenta, cielo estrellado.
     t0: 10.5, t1: 15.0, name: 'mirada', bloom: 0.55, vignette: 0.50,
     cam: (t, ex) => {
-      const nucDist = ex * 0.007;                    // ve el cúmulo COMPLETO, no encima
-      const azim = 2.4 + t * 0.30;
-      const bob = Math.sin(t * Math.PI * 0.5) * 0.05;
-      return { pos: sph(nucDist, 0.02 + bob, azim), lookAt: [0, 0, 0], fov: 38 };
+      // SEGUNDO BEAT: órbita ENÉRGICA alrededor del núcleo (swoop) — antes era
+      // demasiado plácida; ahora tiene su propio empuje (feedback: faltaba 2º beat).
+      const nucDist = ex * (0.0090 - 0.0030 * Math.sin(t * Math.PI)); // push-in y sale
+      const azim = 2.2 + t * 1.15;                   // órbita más rápida = movimiento sentido
+      const elev = 0.04 + 0.22 * Math.sin(t * Math.PI); // arco vertical (swoop)
+      return { pos: sph(nucDist, elev, azim), lookAt: [0, 0, 0], fov: lerp(40, 34, t) };
     },
   },
   {
@@ -118,13 +148,17 @@ const CUTS: CutSpec[] = [
     // reforma completo, ATERRIZA al 62% del corte, sostiene, y se disuelve en el
     // logo. Más capas → regreso más largo → la cascada de etiquetas TERMINA.
     // (t1 es placeholder; findCut usa RUN_DURATION como fin real)
-    t0: 15.0, t1: 99.0, name: 'regreso', bloom: 0.62, vignette: 0.75,
+    // CONTEMPLACIÓN (mantiene name 'regreso' porque findCut usa eso para el fin).
+    // Pull-out RÁPIDO al átomo completo, luego HOLD lento y lejano = el respiro
+    // tranquilo que pediste para LEER la forma de la nube + el campo magnético.
+    // bloom BAJO (0.34): más luz lava a blanco; bajarlo deja ver los lóbulos.
+    t0: 15.0, t1: 99.0, name: 'regreso', bloom: 0.34, vignette: 0.62,
     cam: (t, ex) => {
-      const land = smoothstep(Math.min(1, t / 0.62));         // llega al átomo lleno ~16.85s
-      const dist = ex * 0.007 * Math.pow(170, land);          // → ex·1.2
-      const azim = 2.9 + t * 0.40;
-      const elev = lerp(0.02, 0.34, land);
-      return { pos: sph(dist, elev, azim), lookAt: [0, 0, 0], fov: lerp(38, 28, land) };
+      const land = smoothstep(Math.min(1, t / 0.18));         // llega RÁPIDO a vista lejana (contempl. corta)
+      const dist = ex * 0.007 * Math.pow(143, land);          // → ex·1.00 (se aleja MENOS: feedback)
+      const azim = 2.9 + t * 0.22;                            // órbita LENTA, tranquila
+      const elev = lerp(0.02, 0.28, land);
+      return { pos: sph(dist, elev, azim), lookAt: [0, 0, 0], fov: lerp(38, 31, land) };
     },
   },
 ];
@@ -137,6 +171,10 @@ function holeForTime(time: number, nucR: number, ex: number): number {
   void ex;
   const base = nucR * 0.9;
   const deep = nucR * 3.2;                            // limpia el entorno del cúmulo
+  // Cold-open (0-1.3s): hueco PROFUNDO → el cúmulo de nucleones se ve limpio en
+  // el golpe. 1.3-2.6s: la nube vuelve conforme la cámara hace pull-back.
+  if (time < 1.3) return deep;
+  if (time < 2.6) return lerp(deep, base, smoothstep((time - 1.3) / 1.3));
   if (time < 3.5) return base;
   if (time < 10.5) return lerp(base, deep, smoothstep((time - 3.5) / 6.0));
   if (time < 15.0) return deep;
@@ -168,7 +206,9 @@ function shellRevealTime(idx: number, total: number): number {
 // otra conforme la cámara sale. Se reparte sobre todo el regreso variable, así
 // que termina justo antes del cierre sin importar cuántas capas haya.
 function shellLabelTime(idx: number, total: number): number {
-  const start = 15.4, end = RUN_DURATION - 0.8;
+  // TODAS las bandas deben aparecer antes del cierre y SOSTENERSE: termina la
+  // cascada ~4.5s antes del fin de la cinemática (no pegada al corte al outro).
+  const start = 15.2, end = RUN_DURATION - 1.0;
   if (total <= 1) return start;
   return start + (idx / Math.max(1, total - 1)) * (end - start);
 }
@@ -204,10 +244,10 @@ export function buildAtomBundle(element: Element): AtomBundle {
     }));
 
   const totalElectrons = populated.reduce((s, o) => s + o.electrons, 0);
-  // Puntos por electrón ADAPTATIVO: en átomos pesados (muchos electrones) bajamos
-  // las muestras para que el total no sature — el "cielo estrellado" del viaje
-  // queda esparcido (estrellas reales) en vez de un campo de confeti.
-  const spe = Math.min(SAMPLES_PER_ELECTRON, Math.max(1500, Math.floor(120000 / totalElectrons)));
+  // Puntos por electrón ADAPTATIVO. Menos muestras = menos solape aditivo = el
+  // centro NO se lava a blanco y la FORMA del orbital (lóbulos, tréboles) se ve
+  // nítida en vez de fundirse en una bola. Cap total ~70k para mar de color, no confeti.
+  const spe = Math.min(SAMPLES_PER_ELECTRON, Math.max(3000, Math.floor(200000 / totalElectrons)));
   const totalPts = totalElectrons * spe;
 
   const positions = new Float32Array(totalPts * 3);
@@ -225,17 +265,29 @@ export function buildAtomBundle(element: Element): AtomBundle {
       if (!orbital) continue;
       const npts = orb.electrons * spe;
       const pts = sampleOrbital(orbital, npts, orb.Zeff, 42 + si * 17 + orb.n);
+      // Color base SATURADO: en additive, el color = saturación (sumar brillo
+      // lava a blanco). Empujamos la saturación y acotamos la luminancia para que
+      // las capas conserven su color puro aun donde se solapan (mar de colores).
+      const baseHSL = { h: 0, s: 0, l: 0 };
+      baseColor.getHSL(baseHSL);
+      const richColor = new THREE.Color().setHSL(
+        baseHSL.h, Math.min(1, baseHSL.s * 1.3), Math.min(0.60, baseHSL.l),
+      );
       for (const p of pts) {
         positions[cursor * 3 + 0] = p.x;
         positions[cursor * 3 + 1] = p.y;
         positions[cursor * 3 + 2] = p.z;
-        const tint = baseColor.clone();
-        if (p.sign < 0) tint.offsetHSL(-0.05, 0.05, -0.02);
-        const bright = 0.55 + 0.6 * p.density;
+        const tint = richColor.clone();
+        // signo de ψ → matiz ligeramente distinto (los dos lóbulos de un p se
+        // distinguen): comunica la fase real de la función de onda.
+        if (p.sign < 0) tint.offsetHSL(0.06, 0.0, 0.0);
+        // brillo PLANO (no dispara el additive): la densidad modula sutil, no quema.
+        const bright = 0.70 + 0.20 * p.density;
         colors[cursor * 3 + 0] = tint.r * bright;
         colors[cursor * 3 + 1] = tint.g * bright;
         colors[cursor * 3 + 2] = tint.b * bright;
-        sizes[cursor] = 0.045 + 0.10 * p.density;
+        // puntos más finos → estrellas nítidas, no glow gordo que se funde.
+        sizes[cursor] = 0.030 + 0.055 * p.density;
         shellIdx[cursor] = si;
         cursor++;
       }
@@ -273,6 +325,7 @@ uniform float uRevealMask[16];
 uniform float uGlobalRot;
 uniform float uTime;
 uniform float uHoleR;
+uniform float uCoreR;
 uniform float uBright;
 uniform float uBokeh;
 attribute vec3 aColor;
@@ -308,19 +361,29 @@ void main() {
   float r = length(p) + 1e-4;
   vec3 radial = p / r;
   vec3 tang = normalize(vec3(-p.z, 0.0, p.x) + vec3(1e-4));
-  float breath = sin(uTime * 1.6 + ph);
-  float swirl  = sin(uTime * 1.1 + ph * 1.7);
-  p += radial * (0.018 * r * breath) + tang * (0.020 * r * swirl);
+  // Movimiento SUTIL (la mitad que antes): respira y circula vivo, pero NO
+  // difumina la forma del orbital. Los lóbulos-p, tréboles-d, formas-f quedan
+  // nítidos. La circulación tangencial es la corriente de probabilidad real.
+  float breath = sin(uTime * 1.4 + ph);
+  float swirl  = sin(uTime * 0.9 + ph * 1.7);
+  p += radial * (0.008 * r * breath) + tang * (0.010 * r * swirl);
 
-  // Aparecer / desaparecer: cada electrón parpadea dentro y fuera de existencia
-  // con su propio ritmo y fase. ASÍ es la mecánica cuántica — no es un punto
-  // fijo, es una probabilidad que se manifiesta aquí, luego allá. En cada
-  // instante solo una fracción está "presente"; el promedio es |ψ|².
+  // Vida cuántica con PISO de presencia: cada electrón titila con su ritmo, pero
+  // nunca desaparece del todo (piso 0.55) → la FORMA del orbital se ve siempre,
+  // con un parpadeo (0.45) encima que comunica que es probabilidad viva, no punto.
   float u = fract(ph * 0.15915494);              // 0..1 por punto
-  float rate = 0.55 + 1.05 * u;                  // ritmo distinto por electrón
+  float rate = 0.5 + 0.8 * u;                    // ritmo distinto por electrón
   float life = fract(uTime * rate + u);          // ciclo de vida
-  float pulse = smoothstep(0.0, 0.20, life) * (1.0 - smoothstep(0.50, 1.0, life));
-  vAlpha = reveal * pulse * uBright;
+  float flick = smoothstep(0.0, 0.25, life) * (1.0 - smoothstep(0.55, 1.0, life));
+  float pulse = 0.55 + 0.45 * flick;
+  // Atenuación SUAVE del corazón: el core hiperdenso (1s/2s) acumula additive y
+  // se quema a blanco. Bajamos su alfa gradualmente (no corte duro) → el centro
+  // deja de reventar y las capas externas con FORMA (p,d,f) lucen su color. El
+  // core esférico no tiene forma interesante, así que no se pierde nada bello.
+  float coreAtten = uCoreR > 0.0001
+    ? mix(0.16, 1.0, smoothstep(0.0, uCoreR, length(position)))
+    : 1.0;
+  vAlpha = reveal * pulse * uBright * coreAtten;
 
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
@@ -351,7 +414,7 @@ void main() {
 }
 `;
 
-export function ElectronCloud({ bundle, time, holeRadius = 0, brightness = 1, bokeh = 0, rotRate = 0.55 }: { bundle: AtomBundle; time: number; holeRadius?: number; brightness?: number; bokeh?: number; rotRate?: number }) {
+export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, brightness = 1, bokeh = 0, rotRate = 0.55, revealAll = false }: { bundle: AtomBundle; time: number; holeRadius?: number; coreRadius?: number; brightness?: number; bokeh?: number; rotRate?: number; revealAll?: boolean }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const sprite = useMemo(() => makeSpriteTexture(), []);
 
@@ -370,6 +433,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, brightness = 1, bo
     uGlobalRot:  { value: 0 },
     uTime:       { value: 0 },
     uHoleR:      { value: 0 },
+    uCoreR:      { value: 0 },
     uBright:     { value: 1 },
     uBokeh:      { value: 0 },
   }), [sprite]);
@@ -379,18 +443,20 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, brightness = 1, bo
     const mask = matRef.current.uniforms.uRevealMask.value as Float32Array;
     for (let i = 0; i < 16; i++) {
       if (i >= bundle.shells.length) { mask[i] = 0; continue; }
-      const revealAt = shellRevealTime(i, bundle.shells.length);
-      mask[i] = fadeIn(time, revealAt, 0.85);
+      // revealAll: nube COMPLETA desde t=0 (átomos que ya existen, p.ej. los dos O
+      // que se acercan a formar O₂ — no deben "materializarse" capa por capa).
+      mask[i] = revealAll ? 1 : fadeIn(time, shellRevealTime(i, bundle.shells.length), 0.85);
     }
     // rotRate=0 en moléculas (la nube debe quedar alineada con los núcleos; la
     // cámara orbita). En átomos gira para dar vida al cúmulo.
     matRef.current.uniforms.uGlobalRot.value = time * rotRate;
     matRef.current.uniforms.uTime.value = time;
     matRef.current.uniforms.uHoleR.value = holeRadius;
+    matRef.current.uniforms.uCoreR.value = coreRadius;
     matRef.current.uniforms.uBright.value = brightness;
     matRef.current.uniforms.uBokeh.value = bokeh;
     matRef.current.uniformsNeedUpdate = true;
-  }, [time, bundle.shells.length, holeRadius, brightness, bokeh, rotRate]);
+  }, [time, bundle.shells.length, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll]);
 
   return (
     <points geometry={geo} frustumCulled={false}>
@@ -568,7 +634,9 @@ export function Nucleus({ protons, neutrons, time, clusterRadius = 0.1 }: { prot
     if (groupRef.current) {
       groupRef.current.rotation.y = time * 0.5;
       groupRef.current.rotation.x = time * 0.22;
-      groupRef.current.scale.setScalar(smoothstep(time / 0.5));
+      // Cold-open: el núcleo está LLENO desde el frame 0 (el money-shot abre la
+      // escena, no nace despacio). +0.5 → smoothstep(1)=1 en t=0.
+      groupRef.current.scale.setScalar(smoothstep((time + 0.5) / 0.5));
     }
     if (pMat.current) pMat.current.uniforms.uTime.value = time;
     if (nMat.current) nMat.current.uniforms.uTime.value = time;
@@ -602,9 +670,9 @@ function trajectoryOffset(seed: number, tv: number): { dAzim: number; dElev: num
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
   return {
-    dAzim: (rnd() - 0.5) * tv * 1.4,
-    dElev: (rnd() - 0.5) * tv * 0.4,
-    dDist: 1 + (rnd() - 0.5) * tv * 0.25,
+    dAzim: (rnd() - 0.5) * tv * 2.6,   // ±azimut amplio: cada átomo orbita distinto
+    dElev: (rnd() - 0.5) * tv * 1.3,   // ±elevación: unos desde arriba, otros abajo
+    dDist: 1 + (rnd() - 0.5) * tv * 0.30,
   };
 }
 
@@ -675,18 +743,19 @@ export function DynamicPostFX({ time, live = false }: { time: number; live?: boo
   return (
     <EffectComposer multisampling={live ? 0 : 4} frameBufferType={THREE.HalfFloatType}>
       <Bloom
-        intensity={bloomIntensity * 1.12}
-        luminanceThreshold={0.18}
-        luminanceSmoothing={0.42}
-        radius={0.78}
+        intensity={bloomIntensity * 0.95}
+        luminanceThreshold={0.38}
+        luminanceSmoothing={0.30}
+        radius={0.72}
         mipmapBlur
       />
       {/* Tonemap filmico ACES — las altas luces (núcleo molten, estrellas densas)
           ruedan a dorado/blanco como película, en vez de recortar planas. */}
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
-      {/* Grado de color: curva-S de contraste + saturación rica (cine, no CG). */}
-      <BrightnessContrast brightness={0.0} contrast={0.14} />
-      <HueSaturation saturation={0.12} />
+      {/* Grado de color: curva-S de contraste + saturación RICA (mar de colores,
+          no confeti lavado). La saturación alta saca el color puro de cada capa. */}
+      <BrightnessContrast brightness={-0.02} contrast={0.18} />
+      <HueSaturation saturation={0.24} />
       <ChromaticAberration
         offset={new THREE.Vector2(caBase, caBase)}
         radialModulation
@@ -885,6 +954,367 @@ function AtomTitle({ element, shells, time, vertical }: {
 }
 
 
+// ── FÍSICA VISIBLE: campo E, campo B, radioactividad ────────────────
+// El usuario lo pidió: que se SIENTA la física. Cada capa es real y va gated al
+// momento de la MIRADA al núcleo (t≈10.5-15) para que se lea sin saturar el wide.
+
+// Electrones desapareados por regla de Hund → momento magnético del átomo.
+// Subcapa con e electrones y m=2l+1 orbitales: llena de a uno (Hund) primero.
+function unpairedElectrons(element: Element): number {
+  let u = 0;
+  for (const s of element.config) {
+    const m = 2 * s.l + 1;
+    u += s.electrons <= m ? s.electrons : 2 * m - s.electrons;
+  }
+  return u;
+}
+// Isótopo inestable: Tecnecio, Prometio, y todo Z≥84 (Po en adelante).
+function isRadioactive(Z: number): boolean {
+  return Z === 43 || Z === 61 || Z >= 84;
+}
+
+// Ventana de opacidad para el campo ELÉCTRICO (correcto en el núcleo: Coulomb +Ze).
+// Entra en la mirada al núcleo, sale antes de la contemplación.
+function physOpacity(time: number): number {
+  return smoothstep((time - 10.3) / 1.0) * Math.min(1, Math.max(0, (14.6 - time) / 0.9));
+}
+// Ventana del campo MAGNÉTICO — distinta del E. El magnetismo del átomo es
+// ELECTRÓNICO (e⁻ desapareados), NO nuclear, así que se muestra en la
+// CONTEMPLACIÓN (cámara lejos, a escala atómica envolviendo la nube), NO encima
+// del núcleo donde leería como nuclear y chocaría. Sale a ~RUN_DURATION-1.2.
+function bFieldOpacity(time: number): number {
+  // El campo entra DESPUÉS del beat de la nube (15-19s = ver la FORMA rotando),
+  // para que no compitan. 19.4s → fin.
+  return smoothstep((time - 17.3) / 0.7) * Math.min(1, Math.max(0, (RUN_DURATION - 0.7 - time) / 0.7));
+}
+
+// CAMPO ELÉCTRICO — el núcleo tiene carga +Ze. Líneas de campo radiales (Coulomb,
+// E∝Z/r²) saliendo del núcleo: el "erizo" de Faraday. Brillan y respiran.
+const EFIELD_VERT = /* glsl */ `
+uniform float uTime;
+uniform float uOpacity;
+uniform float uBright;
+attribute float aSeed;
+attribute float aAlong;
+varying float vA;
+varying float vR;
+void main() {
+  // pulso viajando hacia afuera por la línea (la "tensión" del campo saliendo)
+  float wave = sin(aAlong * 12.0 - uTime * 4.0 + aSeed * 6.28);
+  vA = uBright * uOpacity * (0.35 + 0.65 * smoothstep(0.2, 1.0, wave)) * (1.0 - aAlong * 0.35);
+  vR = aAlong;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+const EFIELD_FRAG = /* glsl */ `
+varying float vA;
+varying float vR;
+void main() {
+  // ámbar→blanco cálido (campo eléctrico = energía); discard al final de la línea
+  vec3 col = mix(vec3(1.0, 0.55, 0.12), vec3(1.0, 0.95, 0.8), vR);
+  gl_FragColor = vec4(col, vA);
+}`;
+
+function ElectricField({ Z, time, radius }: { Z: number; time: number; radius: number }) {
+  const op = physOpacity(time);
+  const { geo } = useMemo(() => {
+    // erizo de líneas radiales (direcciones de Fibonacci en la esfera). Cap más
+    // bajo para no saturar en pesados (Z alto): el campo se SIENTE sin tapar todo.
+    // Densidad ∝ Z (Coulomb: el campo ES más fuerte mientras más protones). H
+    // = erizo ralo; Au = erizo denso. Rango amplio para que se NOTE la diferencia.
+    const N = Math.max(10, Math.min(72, Math.round(9 + Z * 0.7)));
+    const seg = 14;
+    const pos: number[] = [];
+    const seed: number[] = [];
+    const along: number[] = [];
+    const R = radius * 3.4;
+    for (let i = 0; i < N; i++) {
+      const y = 1 - (i / (N - 1)) * 2;
+      const rr = Math.sqrt(Math.max(0, 1 - y * y));
+      const phi = i * 2.399963229;
+      const dir = new THREE.Vector3(Math.cos(phi) * rr, y, Math.sin(phi) * rr);
+      const s = (i * 73 % 100) / 100;
+      for (let j = 0; j < seg; j++) {
+        const a0 = j / seg, a1 = (j + 1) / seg;
+        for (const a of [a0, a1]) {
+          const p = dir.clone().multiplyScalar(radius * 0.5 + a * R);
+          pos.push(p.x, p.y, p.z);
+          seed.push(s);
+          along.push(a);
+        }
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    g.setAttribute('aSeed', new THREE.BufferAttribute(new Float32Array(seed), 1));
+    g.setAttribute('aAlong', new THREE.BufferAttribute(new Float32Array(along), 1));
+    return { geo: g };
+  }, [Z, radius]);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  // Brillo ∝ Z (sub-lineal sqrt para no quemar): H tenue, Au intenso. El campo
+  // es más FUERTE mientras más carga nuclear (E∝Z) — corrige y da variedad.
+  const bright = 0.7 + 0.55 * Math.sqrt(Z / 30);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uOpacity: { value: 0 }, uBright: { value: 1 } }), []);
+  useEffect(() => {
+    if (!matRef.current) return;
+    matRef.current.uniforms.uTime.value = time;
+    matRef.current.uniforms.uOpacity.value = op;
+    matRef.current.uniforms.uBright.value = bright;
+  }, [time, op, bright]);
+  if (op < 0.01) return null;
+  return (
+    <lineSegments geometry={geo} frustumCulled={false}>
+      <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={EFIELD_VERT}
+        fragmentShader={EFIELD_FRAG} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </lineSegments>
+  );
+}
+
+// CAMPO MAGNÉTICO — solo si hay e⁻ desapareados (paramagnético). Líneas de un
+// dipolo real (r = L·sin²θ) saliendo de un polo y entrando por el otro. La
+// intensidad escala con μ (nº de desapareados). Diamagnético → nada.
+// CAMPO MAGNÉTICO como CAMPO (no líneas): miles de PARTÍCULAS que FLUYEN a lo
+// largo del dipolo. Brillo y tamaño ∝ |B| (∝ 1/r³·√(1+3cos²θ): intenso cerca del
+// átomo y en los polos, se desvanece lejos). El pulso viajando = la dirección del
+// flujo. Es ELECTRÓNICO (mu = e⁻ desapareados), a escala atómica, en la contemplación.
+const BFIELD_VERT = /* glsl */ `
+uniform float uTime;
+uniform float uOpacity;
+uniform float uSize;
+attribute float aAlong;   // 0..1 a lo largo de la línea de campo (θ/π)
+attribute float aMag;     // brillo base ∝ |B|
+varying float vA;
+void main() {
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  // partículas FLUYENDO: pulso brillante viajando a lo largo del campo = dirección.
+  // VIOLENTO: flujo rápido + segundo armónico = energía nerviosa, no tranquila.
+  float flow = 0.4 + 0.6 * sin(aAlong * 34.0 - uTime * 4.2)
+                   + 0.25 * sin(aAlong * 71.0 - uTime * 7.3);
+  vA = uOpacity * aMag * clamp(flow, 0.0, 1.4);
+  gl_PointSize = uSize * (0.3 + 1.3 * aMag) * (0.6 + 0.7 * flow);   // partículas más chicas
+  gl_Position = projectionMatrix * mv;
+}`;
+const BFIELD_FRAG = /* glsl */ `
+varying float vA;
+void main() {
+  vec2 d = gl_PointCoord - 0.5;
+  float r = length(d);
+  if (r > 0.5) discard;
+  float a = vA * smoothstep(0.5, 0.0, r);          // partícula redonda suave
+  // cian ELÉCTRICO brillante (se distingue del azul de los electrones) + núcleo blanco
+  gl_FragColor = vec4(mix(vec3(0.3, 0.85, 1.0), vec3(0.9, 1.0, 1.0), a) , a * 1.3);
+}`;
+
+export function MagneticField({ element, time, radius, mu: muOverride, op: opOverride }: { element?: Element; time: number; radius: number; mu?: number; op?: number }) {
+  // mu = momento magnético (e⁻ desapareados). Átomo: regla de Hund. MOLÉCULA: se
+  // pasa directo (O₂ → 2 desapareados en los π* antienlazantes = paramagnético).
+  const mu = muOverride ?? (element ? unpairedElectrons(element) : 0);
+  // op propio para la molécula (su ventana de revelado); átomo usa bFieldOpacity.
+  const op = opOverride ?? (bFieldOpacity(time) * Math.min(1, mu / 3));
+  const geo = useMemo(() => {
+    if (mu === 0) return null;
+    const pos: number[] = [], along: number[] = [], mag: number[] = [];
+    const nAz = 46;                                          // densidad azimutal → llena el espacio
+    const shells = [0.4, 0.55, 0.72, 0.92, 1.14, 1.4, 1.7, 2.05, 2.4]; // más conchas = más volumen
+    const steps = 66;
+    const tilt = 0.5;                                  // eje del dipolo inclinado (estético)
+    const ct = Math.cos(tilt), st = Math.sin(tilt);
+    for (let a = 0; a < nAz; a++) {
+      const phi = (a / nAz) * Math.PI * 2;
+      for (const Lf of shells) {
+        const L = radius * 2.2 * Lf;
+        for (let i = 0; i < steps; i++) {
+          const tt = 0.03 + (i / steps) * 0.94;
+          const th = tt * Math.PI;
+          const s = Math.sin(th), c = Math.cos(th);
+          const r = L * s * s;                          // r = L·sin²θ (línea de campo real)
+          const x = r * s * Math.cos(phi);
+          const y = r * c;
+          const z = r * s * Math.sin(phi);
+          const yt = ct * y - st * z, zt = st * y + ct * z;
+          pos.push(x, yt, zt); along.push(tt);
+          // brillo ∝ |B|: ∝ 1/r³·√(1+3cos²θ) → más cerca (concha interna) y en polos.
+          const poleBoost = 0.4 + 0.6 * Math.abs(c);
+          const shellFall = Math.pow(0.4 / Lf, 1.7);    // conchas internas más brillantes
+          mag.push(Math.max(0.12, Math.min(1, poleBoost * shellFall)));
+        }
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    g.setAttribute('aAlong', new THREE.BufferAttribute(new Float32Array(along), 1));
+    g.setAttribute('aMag', new THREE.BufferAttribute(new Float32Array(mag), 1));
+    return g;
+  }, [mu, radius]);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uOpacity: { value: 0 }, uSize: { value: 8.0 } }), []);
+  useEffect(() => {
+    if (!matRef.current) return;
+    matRef.current.uniforms.uTime.value = time;
+    matRef.current.uniforms.uOpacity.value = op;
+  }, [time, op]);
+  if (!geo || op < 0.01) return null;
+  return (
+    <points geometry={geo} frustumCulled={false}>
+      <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={BFIELD_VERT}
+        fragmentShader={BFIELD_FRAG} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  );
+}
+
+// RADIOACTIVIDAD — isótopos inestables. Partículas α (núcleo de He: 2p+2n)
+// disparadas radialmente desde el núcleo a tiempos escalonados (determinista por
+// t), con estela; + un latido de glow azul-verde (Cherenkov / radio que brilla).
+// Que se SIENTA peligroso. Solo en Tc, Pm, Z≥84.
+const DECAY_VERT = /* glsl */ `
+uniform float uTime;
+uniform float uOpacity;
+uniform float uNucR;
+attribute vec3 aDir;     // dirección de emisión (unitaria)
+attribute float aPhase;  // 0..1 desfase de emisión
+attribute float aTrail;  // 0=cabeza, >0 = posición en la estela
+varying float vA;
+varying float vHead;
+void main() {
+  float speed = uNucR * 34.0;        // más rápido → se SIENTE el disparo violento
+  float period = 1.3;
+  float life = fract(uTime / period + aPhase);
+  float dist = uNucR * 2.0 + life * speed - aTrail * uNucR * 2.4;  // estela larga
+  vec3 p = aDir * max(uNucR * 1.5, dist);
+  float head = smoothstep(0.0, 0.05, life) * (1.0 - smoothstep(0.75, 1.0, life));
+  vHead = aTrail < 0.5 ? 1.0 : 0.0;  // marca la cabeza (más brillante)
+  vA = uOpacity * head * (1.0 - aTrail * 0.22);
+  vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  gl_Position = projectionMatrix * mv;
+  // cabeza GRANDE y brillante; la estela adelgaza
+  gl_PointSize = clamp((1.0 - aTrail * 0.22) * uNucR * 1500.0 / -mv.z, 2.0, 30.0);
+}`;
+const DECAY_FRAG = /* glsl */ `
+varying float vA;
+varying float vHead;
+void main() {
+  vec2 d = gl_PointCoord - 0.5;
+  float r = length(d);
+  if (r > 0.5) discard;
+  float glow = smoothstep(0.5, 0.0, r);
+  // VERDE-LIMA radiactivo intenso. La CABEZA es HDR (revienta en bloom a blanco
+  // incandescente) para DESTACAR del cielo estrellado verde de los electrones d/f.
+  // La estela queda verde-lima venenoso. Color de radio/Cherenkov.
+  vec3 base = vec3(0.5, 1.0, 0.12);
+  vec3 col = mix(base, vec3(1.0, 1.0, 0.9), glow * glow * (0.4 + 0.6 * vHead));
+  float boost = 1.0 + vHead * 2.6;          // cabeza HDR → revienta y se ve
+  gl_FragColor = vec4(col * boost, vA * glow);
+}`;
+
+// Halo radiactivo — glow verde-enfermizo que LATE alrededor del núcleo. Es la
+// señal inequívoca "inestable / peligroso" que se lee al instante, aunque no
+// alcances a ver una partícula α. Sprite billboard aditivo, palpita ~2 Hz.
+const HALO_VERT = /* glsl */ `
+uniform float uTime;
+uniform float uOpacity;
+uniform float uNucR;
+varying float vA;
+varying float vTime;
+void main() {
+  vA = uOpacity;
+  vTime = uTime;
+  vec4 mv = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+  gl_Position = projectionMatrix * mv;
+  // sprite GRANDE (envuelve bien al núcleo) para que los anillos salgan afuera.
+  gl_PointSize = clamp(uNucR * 16000.0 / -mv.z, 8.0, 1200.0);
+}`;
+const HALO_FRAG = /* glsl */ `
+varying float vA;
+varying float vTime;
+// Anillos de RADIACIÓN expandiéndose (sonar/ping): cada ping nace en el núcleo y
+// se expande hacia afuera desvaneciéndose. Inequívoco: "está emitiendo". Verde
+// radiactivo. 3 pings escalonados → emisión continua.
+float ping(float r, float phase) {
+  float life = fract(vTime * 0.7 + phase);     // 0..1 ciclo del anillo
+  float rr = 0.08 + life * 0.42;               // radio crece 0.08 → 0.5
+  float w = 0.035;                             // grosor del anillo
+  float ring = smoothstep(w, 0.0, abs(r - rr));
+  return ring * (1.0 - life);                  // se apaga al expandirse
+}
+void main() {
+  vec2 d = gl_PointCoord - 0.5;
+  float r = length(d);
+  if (r > 0.5) discard;
+  float e = ping(r, 0.0) + ping(r, 0.33) + ping(r, 0.66);
+  // glow central tenue que late, para que el núcleo "respire" radiactivo
+  float throb = 0.5 + 0.5 * sin(vTime * 5.0);
+  float core = smoothstep(0.34, 0.12, r) * throb * 0.5;
+  vec3 col = vec3(0.45, 1.0, 0.3);             // verde radiactivo
+  gl_FragColor = vec4(col * (e * 1.6 + core), vA * (e + core * 0.6));
+}`;
+
+function RadioHalo({ time, nucR }: { time: number; nucR: number }) {
+  const op = physOpacity(time);
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3));
+    return g;
+  }, []);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uOpacity: { value: 0 }, uNucR: { value: nucR } }), [nucR]);
+  useEffect(() => {
+    if (!matRef.current) return;
+    matRef.current.uniforms.uTime.value = time;
+    matRef.current.uniforms.uOpacity.value = op;
+    matRef.current.uniforms.uNucR.value = nucR;
+  }, [time, op, nucR]);
+  if (op < 0.01) return null;
+  return (
+    <points geometry={geo} frustumCulled={false}>
+      <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={HALO_VERT}
+        fragmentShader={HALO_FRAG} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  );
+}
+
+function RadioactiveDecay({ Z, time, nucR }: { Z: number; time: number; nucR: number }) {
+  const op = physOpacity(time);
+  const { geo, count } = useMemo(() => {
+    const nParticles = 10;
+    const trailLen = 5;
+    const pos: number[] = [], dir: number[] = [], phase: number[] = [], trail: number[] = [];
+    for (let i = 0; i < nParticles; i++) {
+      const y = 1 - (i / (nParticles - 1)) * 2;
+      const rr = Math.sqrt(Math.max(0, 1 - y * y));
+      const phi = i * 2.399963229;
+      const d = [Math.cos(phi) * rr, y, Math.sin(phi) * rr];
+      const ph = (i * 0.6180339887) % 1;
+      for (let tIdx = 0; tIdx < trailLen; tIdx++) {
+        pos.push(0, 0, 0);
+        dir.push(d[0], d[1], d[2]);
+        phase.push(ph);
+        trail.push(tIdx);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    g.setAttribute('aDir', new THREE.BufferAttribute(new Float32Array(dir), 3));
+    g.setAttribute('aPhase', new THREE.BufferAttribute(new Float32Array(phase), 1));
+    g.setAttribute('aTrail', new THREE.BufferAttribute(new Float32Array(trail), 1));
+    return { geo: g, count: nParticles * trailLen };
+  }, []);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uOpacity: { value: 0 }, uNucR: { value: nucR } }), [nucR]);
+  useEffect(() => {
+    if (!matRef.current) return;
+    matRef.current.uniforms.uTime.value = time;
+    matRef.current.uniforms.uOpacity.value = op;
+    matRef.current.uniforms.uNucR.value = nucR;
+  }, [time, op, nucR]);
+  void count;
+  if (op < 0.01) return null;
+  return (
+    <points geometry={geo} frustumCulled={false}>
+      <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={DECAY_VERT}
+        fragmentShader={DECAY_FRAG} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  );
+}
+
 // ── Main ────────────────────────────────────────────────────────────
 function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) {
   const element = useMemo(() => elementByZ(Z) ?? elementByZ(1)!, [Z]);
@@ -900,6 +1330,15 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   // Radio del núcleo proporcional al átomo (~escala real-ish): de lejos es un
   // punto diminuto, y solo al VIAJAR hasta él se revela como cúmulo de nucleones.
   const nucR = useMemo(() => extent * 0.0010, [extent]);
+  // Radio de atenuación del corazón: crece con Z (más capas internas densas que
+  // queman el additive). H/He ≈ casi nada; pesados ≈ 12% del extent. Así el core
+  // no revienta a blanco y las capas externas con forma lucen su color.
+  // Atenúa el centro: el núcleo brillante LAVA la estructura de la nube. Más
+  // hueco central → se ven las capas/lóbulos exteriores (la FORMA) al rotar.
+  const coreR = useMemo(
+    () => extent * (0.03 + 0.16 * (1 - Math.exp(-element.Z / 30))),
+    [extent, element.Z],
+  );
   const [time, setTime] = useState(0);
   const [vertical, setVertical] = useState(
     () => typeof window !== 'undefined' && window.innerHeight > window.innerWidth
@@ -970,7 +1409,24 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} />
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
-          brightness={Math.min(1, 4.2 / Math.sqrt(element.Z))} />
+          coreRadius={coreR}
+          rotRate={1.15}
+          brightness={Math.min(0.82, 3.4 / Math.sqrt(element.Z)) * (1 - 0.45 * smoothstep((time - 17.3) / 0.8))} />
+        {/* Física visible (gated a la mirada al núcleo): campo eléctrico de
+            Coulomb, campo magnético dipolar si es paramagnético, y decaimiento
+            radiactivo si el isótopo es inestable. Todo determinista en t. */}
+        {/* Los campos ROTAN con el átomo (misma rotación que el núcleo) — antes
+            quedaban fijos mientras el cúmulo giraba y se veía desconectado. */}
+        <group rotation={[time * 0.22, time * 0.5, 0]}>
+          <ElectricField Z={element.Z} time={time} radius={nucR} />
+          {/* Campo B a escala ATÓMICA (envuelve la nube) — el magnetismo es
+              electrónico, no nuclear. Ventana = contemplación (bFieldOpacity). */}
+          <MagneticField element={element} time={time} radius={extent * 0.55} />
+        </group>
+        {isRadioactive(element.Z) && <>
+          <RadioHalo time={time} nucR={nucR} />
+          <RadioactiveDecay Z={element.Z} time={time} nucR={nucR} />
+        </>}
         {/* En el lab (live) NO usamos el EffectComposer: su pipeline HDR-float+MSAA
             revienta a blanco en GPUs diversas (Intel/ANGLE D3D11). flat={!live} deja
             que el renderer haga el tonemap ACES directo → negro garantizado en toda

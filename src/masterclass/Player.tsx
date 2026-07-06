@@ -69,6 +69,7 @@ import { NarratorOverlay, NARRATOR_REGISTRY } from './narrator';
 import Chalkboard from './Chalkboard';
 import ModulePicker from './ModulePicker';
 import { RenderClockContext, useRenderClockController } from './render-clock';
+import { completeLesson, type PillarKey } from '@/lib/progress';
 
 interface Scene {
   id: string;
@@ -146,6 +147,19 @@ export default function Player() {
   const [endReached, setEndReached] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const fallbackTimerRef = useRef<number | null>(null);
+
+  // Progreso: la clase narrada cuenta al LLEGAR AL FINAL (nunca en render
+  // headless). El pilar se deduce del manifest: econ-* → economía,
+  // blackhole/phys-* → física, calc/linalg/i → mate; resto → masterclass.
+  useEffect(() => {
+    if (!endReached || !manifest || RENDER_MODE) return;
+    const mid = manifest.id;
+    const pillar: PillarKey = mid.startsWith('econ-') ? 'economia'
+      : (mid.startsWith('phys-') || mid === 'blackhole') ? 'physics'
+      : (mid.startsWith('calc-') || mid.startsWith('linalg-') || mid.startsWith('i-')) ? 'math'
+      : 'masterclass';
+    completeLesson(pillar, mid);
+  }, [endReached, manifest]);
 
   // Render mode determinista: clock externo controlado por Playwright.
   // En modo normal este controlador no hace nada (enabled=false).

@@ -244,7 +244,7 @@ export const NOBEL_CATALOG: NobelLaureate[] = [
     subtitle: 'Por su descubrimiento de la importancia de los costos de transacción y los derechos de propiedad.',
     impact: 'Si los mercados son tan eficientes, ¿por qué hay jefes? La respuesta cambia tu vida laboral.',
     status: 'live',
-    classId: 'econ-02-coase',
+    classId: 'econ-1991-coase',
   },
   {
     id: 'econ-03-spence',
@@ -428,7 +428,7 @@ export const NOBEL_CATALOG: NobelLaureate[] = [
     subtitle: 'Por estudios sobre cómo las instituciones se forman y afectan la prosperidad.',
     impact: 'Nogales (Arizona) vs Nogales (Sonora): misma gente, misma geografía, riqueza opuesta. La respuesta es institucional.',
     status: 'live',
-    classId: 'econ-09-acemoglu',
+    classId: 'econ-2024-acemoglu',
   },
 
   // ═══════════════════════ FINANZAS ═══════════════════════

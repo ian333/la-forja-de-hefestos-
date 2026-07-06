@@ -51,7 +51,7 @@ const FXComposer = EffectComposer as unknown as FC<
 /* Presets por escena                                                  */
 /* ------------------------------------------------------------------ */
 
-export type CinematicPreset = 'bh' | 'magnetar' | 'quasar' | 'physics'
+export type CinematicPreset = 'bh' | 'magnetar' | 'quasar' | 'physics' | 'pulsar' | 'tde'
 
 export interface CinematicPostFXProps {
   /** Preset que fija defaults sensatos por escena. */
@@ -124,6 +124,43 @@ const PRESETS: Record<CinematicPreset, PresetDefaults> = {
     anamorphic: true,
     saturation: 0.04,     // bajo: no empujar el residual de color (evita el morado/verde)
     contrast: 0.18,
+    brightness: -0.02,
+  },
+  // Pulsar (estrella de neutrones lensada): crust frío casi-negro, hot spots
+  // blanco-azul que REVIENTAN conservando la forma de la media luna NICER. Glo FRÍO.
+  pulsar: {
+    bloomIntensity: 0.95,     // BAJO: el bloom suaviza; solo el corazón debe glow, los filamentos quedan NÍTIDOS
+    bloomThreshold: 0.5,      // alto: solo el púlsar/toro/jet revientan; los filamentos NO se difuminan
+    bloomRadius: 0.35,        // corto: halo ceñido = no lava las hebras
+    dofFocusDistance: 0.02,
+    dofFocalLength: 0.05,
+    dofBokehScale: 0,         // escena raymarcheada/volumétrica; DOF plano lava todo (off)
+    caOffset: 0.0,            // CA=0: el starfield no hace confeti
+    grainOpacity: 0.04,
+    vignetteDarkness: 0.9,    // void NEGRO en las esquinas (fuera de la nebulosa)
+    anamorphic: false,
+    saturation: 0.2,          // MAR DE COLORES: las líneas de emisión (Hα/OIII) POP, sin lavarse a gris
+    contrast: 0.16,
+    brightness: -0.02,
+  },
+  // TDE (agujero negro devorando una estrella): el COLOR debe leerse — gradiente
+  // de temperatura del disco (azul-blanco interior → ámbar exterior) + beaming
+  // δ⁴ (azul/rojo) + el sol cálido espaguetificándose. Threshold ALTO: solo el
+  // rim interno, el hot spot y el núcleo estelar REVIENTAN; el cuerpo del disco
+  // CONSERVA su color (no se funde a niebla blanca). Saturación media.
+  tde: {
+    bloomIntensity: 1.0,
+    bloomThreshold: 0.58,     // MUY alto: solo los hot spots de reconexión revientan; el plasma conserva estructura/color
+    bloomRadius: 0.55,
+    dofFocusDistance: 0.02,
+    dofFocalLength: 0.05,
+    dofBokehScale: 0,         // escena raymarcheada: DOF lava todo (off)
+    caOffset: 0.0,            // CA=0 sobre el starfield (confeti)
+    grainOpacity: 0.04,
+    vignetteDarkness: 0.92,   // void NEGRO en esquinas
+    anamorphic: true,         // flare anamórfico cálido — SÍ hay disco que lo justifica
+    saturation: 0.26,         // el color FÍSICO se lee (Planck + Doppler), sin cobalto
+    contrast: 0.2,
     brightness: -0.02,
   },
   // Magnetar: polos brutalmente brillantes, líneas de campo dipolar.

@@ -19,6 +19,7 @@ import { Suspense, useEffect } from 'react';
 import { BLOCKS, NOBEL_CATALOG } from './nobel-catalog';
 import { getPremioContent } from './premio-content';
 import { PREMIO_LABS, esClaseCine } from './labs/registry';
+import { completeLesson } from '@/lib/progress';
 
 function nobelUrl(year: number): string {
   return `https://www.nobelprize.org/prizes/economic-sciences/${year}/summary/`;
@@ -46,6 +47,14 @@ export default function PremioPage() {
   useScrollUnlock();
   const id = new URLSearchParams(window.location.search).get('id');
   const entry = id ? NOBEL_CATALOG.find(n => n.id === id) : undefined;
+
+  // Progreso: leer un premio cuenta tras 25s de permanencia real (no drive-by).
+  useEffect(() => {
+    if (!entry) return;
+    const t = window.setTimeout(() => completeLesson('economia', entry.id), 25_000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entry?.id]);
 
   if (!entry) {
     return (

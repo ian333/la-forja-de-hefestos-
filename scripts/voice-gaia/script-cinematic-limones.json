@@ -1,0 +1,57 @@
+{
+  "id": "cinematic-limones",
+  "title": "El mercado de los limones — cinematic (Akerlof)",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "b1-nebulosa",
+      "scene": "B1",
+      "beat_t0": 0.8,
+      "text": "Esto es un mercado. Sí: un mercado. Y todo mercado vivo... son dos estrellas alimentándose."
+    },
+    {
+      "id": "b2-luces",
+      "scene": "B2",
+      "beat_t0": 10.5,
+      "text": "La estrella dorada vende. La azul compra. Y ese puente de luz entre ellas son las transacciones. Cada chispa que cruza... es un trato."
+    },
+    {
+      "id": "b3-ciego",
+      "scene": "B3",
+      "beat_t0": 22.5,
+      "text": "Pero algunas chispas son limones: productos con defectos ocultos. Y el comprador no las distingue. Para él, todo el flujo brilla igual."
+    },
+    {
+      "id": "b4-oleada",
+      "scene": "B4",
+      "beat_t0": 34.5,
+      "text": "Como no distingue, paga un precio promedio. Pero al vendedor bueno, el promedio lo insulta. Prefiere quedarse su producto. Y deja de vender."
+    },
+    {
+      "id": "b5-cascada",
+      "scene": "B5",
+      "beat_t0": 50.5,
+      "text": "Menos buenos: peor calidad. Peor calidad: menor precio. Más buenos se van. El flujo se envenena... y se adelgaza."
+    },
+    {
+      "id": "b6-muerte",
+      "scene": "B6",
+      "beat_t0": 66.5,
+      "text": "Hasta que se corta. El mercado colapsa bajo su propio peso. Y un mercado muerto es un agujero negro: nada escapa de él."
+    },
+    {
+      "id": "b7-coda",
+      "scene": "B7",
+      "beat_t0": 78.5,
+      "text": "George Akerlof lo demostró en mil novecientos setenta. Nobel de Economía. La cura: garantías, historiales, reputación. La confianza es lo que mantiene a las estrellas alimentándose."
+    }
+  ]
+}

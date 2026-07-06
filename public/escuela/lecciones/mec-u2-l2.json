@@ -1,0 +1,442 @@
+{
+  "id": "mec-u2-l2",
+  "curso": "mecanica",
+  "unidad": 2,
+  "n": 2,
+  "titulo": "La biela del examen",
+  "subtitulo": "Arcos · perfil mixto · dos barrenos",
+  "fuente": "Bethune cap. 2 §2-8 (Arcs) + Problema 11-34 (el LINK del ensamble CSWA)",
+  "descripcion": "Perfil estadio con arcos y líneas — la biela del examen CSWA del libro (Problema 11-34), con sus dos ojos de Ø16.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Esta pieza sale del examen del libro: una biela. Dos arcos, dos líneas, dos barrenos.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Boceto en el plano equis ye.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "el editor de boceto abrió"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Arco a la derecha: centro, inicio, fin. Línea arriba. Arco a la izquierda... y la línea que cierra.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-arc",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "-15",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "15",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "15",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "60",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-arc",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "-30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "-30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "15",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "-30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "-15",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 500
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "-30",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "-15",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "60",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 700
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 2",
+        "desc": "el perfil mixto existe (2 líneas + 2 arcos)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Sesenta milímetros entre centros... y quince de radio en cada oreja.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDist",
+          "args": [
+            0,
+            4,
+            "h"
+          ],
+          "settle": 900
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1000
+        },
+        {
+          "type": "hook",
+          "fn": "dimArcR",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "15",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        },
+        {
+          "type": "hook",
+          "fn": "dimArcR",
+          "args": [
+            1
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "15",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Los dos ojos: círculos en los centros de los arcos, de dieciséis.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 30,
+          "y": 0,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 38,
+          "y": 0,
+          "settle": 700
+        },
+        {
+          "type": "clickmm",
+          "x": -30,
+          "y": 0,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": -22,
+          "y": 0,
+          "settle": 700
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "16",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            1
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "16",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 2",
+        "desc": "los dos ojos existen"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Termina y extruye diez: la biela, con sus ojos ya barrenados.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "10",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "biela"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 21047.4) < 80",
+        "desc": "biela exacta (~21,047 mm³)"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "Guárdala en tu cabeza: cuando La Forja arme ensambles, esta biela girará sobre su pasador.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            830,
+            570
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}

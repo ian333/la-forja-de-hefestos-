@@ -30,6 +30,12 @@ interface SkyTextProps {
   rotation?: [number, number, number];
   /** Font weight. Default 600 (lighter than prices). */
   fontWeight?: number;
+  /** MAYÚSCULAS (para palabras-ancla). */
+  upper?: boolean;
+  /** Tracking (letter-spacing px) — palabras-ancla se ven mejor con ~6-10. */
+  track?: number;
+  /** Intensidad del glow (default 14; ancla ~22). */
+  glow?: number;
 }
 
 function makeSkyTexture(
@@ -37,6 +43,9 @@ function makeSkyTexture(
   color: string,
   fontWeight: number,
   ratio: number,
+  upper = false,
+  track = 0,
+  glow = 14,
 ): THREE.CanvasTexture {
   // Canvas dimensions con el MISMO ratio que el plane 3D (width/height).
   // Eso garantiza que el texto se renderiza sin aplastarse/estirarse al
@@ -52,31 +61,35 @@ function makeSkyTexture(
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
   ctx.clearRect(0, 0, W, H);
+  const label = upper ? text.toUpperCase() : text;
 
-  // Auto-fit font:
-  //   - El tamaño máximo está limitado por la altura disponible (line height ~70% H)
-  //   - Y por el ancho disponible (94% W)
-  // Empezamos con un tamaño basado en H y bajamos si excede el ancho.
+  // Auto-fit font (Outfit = geométrica, fuerte en bold; ideal para palabras-ancla):
   const maxHeightPx = H * 0.72;
   const maxWidthPx = W * 0.94;
   let fontSize = Math.floor(maxHeightPx);
-  ctx.font = `${fontWeight} ${fontSize}px "Inter", "Helvetica", sans-serif`;
-  let measured = ctx.measureText(text).width;
+  const setFont = () => {
+    ctx.font = `${fontWeight} ${fontSize}px "Outfit", "Inter", "Helvetica", sans-serif`;
+    try { ctx.letterSpacing = `${track}px`; } catch { /* letterSpacing no soportado */ }
+  };
+  setFont();
+  let measured = ctx.measureText(label).width;
   if (measured > maxWidthPx) {
     fontSize = Math.floor(fontSize * (maxWidthPx / measured));
-    ctx.font = `${fontWeight} ${fontSize}px "Inter", "Helvetica", sans-serif`;
+    setFont();
   }
 
   ctx.fillStyle = color;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // Single sutil glow
+  // Glow: 2 pasadas de sombra (halo) + relleno nítido encima → revienta por bloom
   ctx.shadowColor = color;
-  ctx.shadowBlur = 14;
-  ctx.fillText(text, W / 2, H / 2);
+  ctx.shadowBlur = glow * 1.8;
+  ctx.fillText(label, W / 2, H / 2);
+  ctx.shadowBlur = glow;
+  ctx.fillText(label, W / 2, H / 2);
   ctx.shadowBlur = 0;
-  ctx.fillText(text, W / 2, H / 2);
+  ctx.fillText(label, W / 2, H / 2);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter;
@@ -95,11 +108,14 @@ const SkyText = forwardRef<SkyTextHandle, SkyTextProps>(
     position = [0, 8, -10],
     rotation = [0, 0, 0],
     fontWeight = 600,
+    upper = false,
+    track = 0,
+    glow = 14,
   }, ref) {
     const ratio = width / Math.max(0.01, height);
     const texture = useMemo(
-      () => makeSkyTexture(text, color, fontWeight, ratio),
-      [text, color, fontWeight, ratio],
+      () => makeSkyTexture(text, color, fontWeight, ratio, upper, track, glow),
+      [text, color, fontWeight, ratio, upper, track, glow],
     );
     useEffect(() => () => { texture.dispose(); }, [texture]);
 

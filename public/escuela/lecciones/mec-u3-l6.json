@@ -1,0 +1,146 @@
+{
+  "id": "mec-u3-l6",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 6,
+  "titulo": "El vaciado",
+  "subtitulo": "Shell · carcasas de plástico",
+  "fuente": "Bethune cap. 3 §3-14 (Shell)",
+  "descripcion": "Toda carcasa de plástico —tu control, tu bocina, tu cargador— es un sólido vaciado. Shell con cara abierta.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Agarra cualquier aparato de tu casa: su carcasa es un sólido al que le sacaron las tripas. Eso es el vaciado.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La caja base: ochenta por cincuenta, treinta de alto.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -40,
+          "y": -25,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 40,
+          "y": 25,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "30",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 110000",
+        "desc": "hay una caja sólida"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "En el menú Más: vaciado. Y le decimos qué cara se queda abierta: clic en la tapa.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-shell",
+          "settle": 1400
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 520,
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "post-shell"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('shell') && inv.vol_kernel < 60000",
+        "desc": "el vaciado sacó las tripas"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "De ciento veinte mil milímetros cúbicos... a una cáscara de dos milímetros de pared.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            880,
+            500
+          ],
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Menos material, menos peso, menos costo de inyección. La carcasa de tu control nació exactamente así.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            650
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

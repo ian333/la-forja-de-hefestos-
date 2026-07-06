@@ -1,0 +1,165 @@
+{
+  "id": "tabla-periodica-31-60",
+  "title": "Tabla Periódica — Elementos 31 al 60",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "31-galio",
+      "scene": "Ga",
+      "text": "Galio. Un metal que se derrite en tu mano. Su punto de fusión es de apenas treinta grados, así que una cuchara de galio se desvanece en una taza de té caliente. Mendeléyev predijo su existencia y sus propiedades exactas en mil ochocientos setenta y uno, llamándolo eka-aluminio, antes de que nadie lo viera. Cuatro años después, Lecoq de Boisbaudran lo encontró. Se forma en supernovas por captura de neutrones. Hoy el arseniuro de galio es clave en los LED, en las celdas solares de los satélites y en los chips de radiofrecuencia de tu teléfono. El nitruro de galio está reemplazando al silicio en los cargadores rápidos."
+    },
+    {
+      "id": "32-germanio",
+      "scene": "Ge",
+      "text": "Germanio. Otro elemento que Mendeléyev predijo, el eka-silicio, y que confirmó el poder de su tabla cuando Clemens Winkler lo halló en mil ochocientos ochenta y seis. Se forma en estrellas por captura lenta de neutrones. El germanio fue el corazón del primer transistor de la historia, en mil novecientos cuarenta y siete, antes de que el silicio lo destronara. Hoy se usa en fibra óptica, en lentes de cámaras infrarrojas para visión nocturna, y en detectores de rayos gamma. Es un semiconductor que abrió la era electrónica antes de ceder su trono."
+    },
+    {
+      "id": "33-arsenico",
+      "scene": "As",
+      "text": "Arsénico. El veneno de los reyes y el rey de los venenos. Durante siglos fue el asesino silencioso favorito porque no tiene sabor ni olor y sus síntomas imitaban a otras enfermedades. Alberto Magno lo aisló alrededor del año mil doscientos cincuenta. Se forma en supernovas. Pero el arsénico tiene dos caras: en dosis controladas es medicina. El trióxido de arsénico cura hoy un tipo de leucemia con tasas de éxito altísimas. Y el arseniuro de galio, ya lo dijimos, mueve la electrónica moderna. El mismo elemento que mató emperadores hoy salva pacientes de cáncer."
+    },
+    {
+      "id": "34-selenio",
+      "scene": "Se",
+      "text": "Selenio. Nombrado por Selene, la diosa griega de la Luna. Jöns Jacob Berzelius lo descubrió en mil ochocientos diecisiete como subproducto de fabricar ácido sulfúrico. Se forma en supernovas. El selenio conduce más electricidad cuando le da la luz: esa propiedad fotoconductora hizo posibles las primeras fotocopiadoras Xerox y los fotómetros. En tu cuerpo es esencial en cantidades minúsculas: forma parte de enzimas antioxidantes que protegen tus células del daño. Pero la línea entre lo necesario y lo tóxico es delgadísima: poquito te mantiene sano, un poco más te envenena."
+    },
+    {
+      "id": "35-bromo",
+      "scene": "Br",
+      "text": "Bromo. Uno de los dos únicos elementos que son líquidos a temperatura ambiente, junto con el mercurio. Es un líquido rojo pardo que humea y huele horrible: su nombre viene del griego bromos, hedor. Antoine Balard lo descubrió en mil ochocientos veintiséis en aguas saladas. Se forma en supernovas. Durante el siglo veinte el bromo estuvo en todas partes: en películas fotográficas, en sedantes, y en el aditivo de la gasolina con plomo. Hoy se usa como retardante de llama en electrónicos y textiles. El compuesto de plata y bromo fue, literalmente, lo que capturó la luz en cada fotografía analógica."
+    },
+    {
+      "id": "36-kripton",
+      "scene": "Kr",
+      "text": "Kriptón. Su nombre viene del griego kryptos, el oculto, porque se escondía en cantidades ínfimas en el aire. William Ramsay y Morris Travers lo destilaron del aire líquido en mil ochocientos noventa y ocho. Se forma en supernovas. Y aquí un dato hermoso: entre mil novecientos sesenta y mil novecientos ochenta y tres, el metro se definió oficialmente por la longitud de onda de la luz naranja del kriptón ochenta y seis. Durante veintitrés años, la unidad de longitud de toda la humanidad fue un color de este gas. Hoy se usa en láseres y en iluminación de alto rendimiento. Y no, no debilita a Superman."
+    },
+    {
+      "id": "37-rubidio",
+      "scene": "Rb",
+      "text": "Rubidio. Robert Bunsen y Gustav Kirchhoff lo descubrieron en mil ochocientos sesenta y uno usando una técnica nueva y poderosa: la espectroscopía. Vieron dos líneas rojo oscuro en el espectro de un mineral, y de ahí el nombre, del latín rubidus, rojo profundo. Se forma en supernovas. El rubidio es uno de los metales más reactivos: estalla violentamente en contacto con agua. Su uso más impresionante son los relojes atómicos: las oscilaciones del átomo de rubidio son tan regulares que mantienen el tiempo del GPS. Cada vez que tu teléfono te ubica en el mapa, hay rubidio contando el tiempo allá arriba."
+    },
+    {
+      "id": "38-estroncio",
+      "scene": "Sr",
+      "text": "Estroncio. Nombrado por Strontian, un pueblo de Escocia donde se halló su mineral. Humphry Davy lo aisló en mil ochocientos ocho. Se forma en supernovas. El estroncio es el que pinta de rojo intenso los fuegos artificiales y las bengalas de emergencia. Pero tiene un lado oscuro: el estroncio noventa, un isótopo radiactivo de las pruebas nucleares, se parece tanto al calcio que el cuerpo lo deposita en los huesos, donde irradia desde dentro. Por eso medir estroncio noventa en los dientes de leche fue clave para frenar las pruebas atómicas atmosféricas en los años sesenta."
+    },
+    {
+      "id": "39-itrio",
+      "scene": "Y",
+      "text": "Itrio. Toma su nombre de Ytterby, una pequeña aldea sueca que dio nombre a nada menos que cuatro elementos: itrio, iterbio, terbio y erbio. Johan Gadolin lo identificó en mil setecientos ochenta y nueve. Se forma en supernovas. El itrio es protagonista en dos tecnologías clave: los superconductores de alta temperatura, donde el compuesto de itrio, bario y cobre conduce electricidad sin resistencia, y los fósforos rojos que dieron color a los televisores y a las pantallas. También se usa en láseres médicos YAG. Una aldea diminuta escondía media tabla periódica de tierras raras."
+    },
+    {
+      "id": "40-circonio",
+      "scene": "Zr",
+      "text": "Circonio. Su mineral, el zircón, ha sido gema desde la antigüedad, y los cristales de zircón más antiguos de la Tierra tienen cuatro mil cuatrocientos millones de años: son los objetos más viejos del planeta y nos cuentan cómo era la Tierra recién nacida. Martin Klaproth lo identificó en mil setecientos ochenta y nueve. Se forma en supernovas. El circonio casi no absorbe neutrones, así que es el material perfecto para forrar el combustible en los reactores nucleares. La circonia, su óxido, imita diamantes y se usa en coronas dentales y cuchillos cerámicos que nunca se oxidan."
+    },
+    {
+      "id": "41-niobio",
+      "scene": "Nb",
+      "text": "Niobio. Nombrado por Níobe, la hija de Tántalo en la mitología griega, porque siempre aparece junto al tántalo y cuesta separarlos. Charles Hatchett lo descubrió en mil ochocientos uno en una roca enviada desde América. Se forma en supernovas. El niobio es el alma de los imanes superconductores: las aleaciones de niobio y titanio crean los campos magnéticos brutales de las máquinas de resonancia magnética y del Gran Colisionador de Hadrones. Sin niobio, no podríamos ver dentro del cuerpo humano sin abrirlo, ni hacer chocar partículas para descubrir el bosón de Higgs."
+    },
+    {
+      "id": "42-molibdeno",
+      "scene": "Mo",
+      "text": "Molibdeno. Su nombre viene del griego molybdos, plomo, porque lo confundían con él. Carl Wilhelm Scheele demostró que era distinto en mil setecientos setenta y ocho. Se forma en supernovas. El molibdeno tiene uno de los puntos de fusión más altos de todos los metales, así que hace al acero capaz de soportar calor y presión extremos: los motores de avión, los cañones de artillería y las herramientas de corte lo llevan. En biología es asombroso: ciertas bacterias usan molibdeno para fijar el nitrógeno del aire, un proceso del que depende toda la cadena alimenticia del planeta."
+    },
+    {
+      "id": "43-tecnecio",
+      "scene": "Tc",
+      "text": "Tecnecio. El primer elemento fabricado por el hombre, y su nombre lo dice: viene del griego technetos, artificial. Todos sus isótopos son radiactivos, así que en la Tierra prácticamente no existe natural. Carlo Perrier y Emilio Segrè lo crearon en mil novecientos treinta y siete bombardeando molibdeno. Mendeléyev había dejado su casillero vacío décadas antes. Hoy el tecnecio noventa y nueve metaestable es la estrella de la medicina nuclear: se inyecta y permite obtener imágenes del corazón, los huesos y los órganos. Es el elemento radiactivo más usado en diagnóstico médico del mundo."
+    },
+    {
+      "id": "44-rutenio",
+      "scene": "Ru",
+      "text": "Rutenio. Nombrado por Rutenia, el nombre latino de Rusia, donde Karl Klaus lo aisló en mil ochocientos cuarenta y cuatro de minerales de los Urales. Se forma en supernovas. El rutenio es un metal del grupo del platino, raro y precioso. Endurece las aleaciones de platino para puntas de pluma fuente y contactos eléctricos. Pero su papel estelar es la catálisis: los catalizadores de rutenio aceleran reacciones químicas industriales y le valieron el Nobel a varios químicos. También se usa en los discos duros para guardar más datos en menos espacio. Un metal ruso que organiza átomos."
+    },
+    {
+      "id": "45-rodio",
+      "scene": "Rh",
+      "text": "Rodio. Su nombre viene del griego rhodon, rosa, por el color rosado de sus sales. William Hyde Wollaston lo descubrió en mil ochocientos tres. Se forma en supernovas. El rodio es uno de los metales más caros del planeta, a veces más que el oro o el platino. ¿Para qué? Es el corazón del convertidor catalítico de tu coche: transforma los gases tóxicos del escape en sustancias inofensivas. Cada auto en la calle lleva una pizca de este metal rarísimo limpiando el aire. También se usa para dar brillo a las joyas de oro blanco. Pequeño, carísimo y guardián del aire que respiras."
+    },
+    {
+      "id": "46-paladio",
+      "scene": "Pd",
+      "text": "Paladio. Nombrado por el asteroide Palas, descubierto justo un año antes. William Hyde Wollaston lo aisló en mil ochocientos tres. Se forma en supernovas. El paladio tiene una habilidad casi mágica: absorbe hidrógeno como una esponja, hasta novecientas veces su propio volumen, lo que lo hace clave para almacenar y purificar hidrógeno. Como el rodio, limpia los gases de escape en los convertidores catalíticos. Y en química es un catalizador tan importante que las reacciones de acoplamiento con paladio ganaron el Premio Nobel en dos mil diez: gracias a él fabricamos medicinas y plásticos modernos."
+    },
+    {
+      "id": "47-plata",
+      "scene": "Ag",
+      "text": "Plata. El mejor conductor eléctrico y térmico de todos los elementos: ningún metal mueve electrones ni calor mejor. Su símbolo, A G, viene del latín argentum. La humanidad la trabaja desde hace más de cinco mil años. Se forma en supernovas y en colisiones de estrellas de neutrones. La plata es antimicrobiana: mata bacterias, por eso se usaba para conservar agua y leche antes de los refrigeradores. Las sales de plata capturaron la luz en toda la fotografía clásica. Hoy está en paneles solares, en electrónica de alta gama y en vendajes que evitan infecciones. Un país entero, Argentina, lleva su nombre."
+    },
+    {
+      "id": "48-cadmio",
+      "scene": "Cd",
+      "text": "Cadmio. Friedrich Stromeyer lo descubrió en mil ochocientos diecisiete escondido en minerales de zinc. Se forma en supernovas. El cadmio dio al arte sus amarillos y rojos más intensos: el amarillo cadmio de Monet y Van Gogh es este metal. Pero es muy tóxico y se acumula en el cuerpo, así que hoy se restringe. Su uso técnico clave fue la batería recargable de níquel cadmio. Y en los reactores nucleares, las barras de control de cadmio absorben neutrones para frenar la reacción en cadena: literalmente, el cadmio es uno de los frenos que evita que un reactor se descontrole."
+    },
+    {
+      "id": "49-indio",
+      "scene": "In",
+      "text": "Indio. Nombrado por la línea índigo, azul intenso, que delata su presencia en el espectro. Ferdinand Reich y Hieronymous Richter lo descubrieron en mil ochocientos sesenta y tres. Se forma en supernovas. El indio es blando, tan blando que se puede rayar con la uña, y emite un chillido cuando se dobla. Su compuesto más importante es el óxido de indio y estaño: es transparente y conduce electricidad a la vez, una combinación rarísima. Por eso recubre la pantalla táctil de tu teléfono y de tu tableta. Cada vez que deslizas el dedo sobre un cristal, el indio invisible registra tu toque."
+    },
+    {
+      "id": "50-estano",
+      "scene": "Sn",
+      "text": "Estaño. Su símbolo, S N, viene del latín stannum. Hace más de cinco mil años, alguien mezcló cobre con estaño y obtuvo el bronce, una aleación tan superior que nombró toda una era de la civilización: la Edad de Bronce. Se forma en estrellas por captura lenta de neutrones. El estaño recubre las latas de comida para que no se oxiden, de ahí que las llamemos latas de hojalata. Suelda los circuitos de toda la electrónica. Y un dato curioso: en mucho frío, el estaño blanco se desmorona en un polvo gris, la peste del estaño, que arruinó los botones de los soldados de Napoleón en Rusia."
+    },
+    {
+      "id": "51-antimonio",
+      "scene": "Sb",
+      "text": "Antimonio. Su símbolo, S B, viene del latín stibium. Las egipcias lo usaban como delineador de ojos negro hace miles de años. Se forma en supernovas. El antimonio tiene una rareza: se expande al solidificarse, igual que el agua al congelarse, lo que lo hacía perfecto para los tipos de imprenta, que necesitaban llenar cada detalle del molde. Así, el antimonio ayudó a Gutenberg a imprimir libros y difundir el conocimiento. Hoy su uso principal es como retardante de llama y en las aleaciones de las baterías de plomo de los autos."
+    },
+    {
+      "id": "52-telurio",
+      "scene": "Te",
+      "text": "Telurio. Nombrado por el latín tellus, la Tierra. Franz Joseph Müller lo descubrió en mil setecientos ochenta y dos en minerales de oro de Transilvania. Se forma en supernovas. El telurio es rarísimo en la corteza terrestre, más raro que el oro, porque en la Tierra joven formó un gas que se escapó. Tiene un efecto curioso: quien lo maneja desarrolla un aliento a ajo durante semanas, aunque haya tocado cantidades minúsculas. Hoy se usa en paneles solares de teluro de cadmio y en los chips de memoria regrabable que cambian de fase, como los DVD regrabables."
+    },
+    {
+      "id": "53-yodo",
+      "scene": "I",
+      "text": "Yodo. Su nombre viene del griego iodes, violeta, por el hermoso vapor púrpura que desprende al calentarse. Bernard Courtois lo descubrió por accidente en mil ochocientos once procesando algas para hacer pólvora. Se forma en supernovas. El yodo es vital para tu tiroides: esa glándula del cuello lo usa para fabricar las hormonas que regulan tu metabolismo. Sin yodo en la dieta aparece el bocio y, en niños, retraso del desarrollo. Por eso se le añade a la sal de mesa: la sal yodada fue una de las intervenciones de salud pública más exitosas de la historia. También desinfecta heridas."
+    },
+    {
+      "id": "54-xenon",
+      "scene": "Xe",
+      "text": "Xenón. Su nombre viene del griego xenos, el extraño o el extranjero, porque era un gas raro y desconocido. Ramsay y Travers lo aislaron en mil ochocientos noventa y ocho. Se forma en supernovas. El xenón produce una luz blanca brillantísima: ilumina los faros de xenón de los autos, los flashes profesionales y los proyectores de cine. Es uno de los pocos gases nobles que sí forma compuestos. Se usa como anestésico ideal porque no daña nada, y como propulsor en los motores iónicos de las naves espaciales: las sondas que exploran el sistema solar avanzan empujando átomos de xenón."
+    },
+    {
+      "id": "55-cesio",
+      "scene": "Cs",
+      "text": "Cesio. El primer elemento descubierto por espectroscopía, por Bunsen y Kirchhoff en mil ochocientos sesenta. Su nombre viene del latín caesius, azul cielo, por sus líneas espectrales. Se forma en supernovas. El cesio es el metal más reactivo y uno de los más blandos; explota apenas toca el agua. Pero su gloria es el tiempo: el segundo se define oficialmente por nueve mil ciento noventa y dos millones seiscientas treinta y una mil setecientas setenta oscilaciones del átomo de cesio. El reloj atómico de cesio es tan preciso que se atrasaría un segundo en cien millones de años. El cesio ES el tiempo."
+    },
+    {
+      "id": "56-bario",
+      "scene": "Ba",
+      "text": "Bario. Su nombre viene del griego barys, pesado. Humphry Davy lo aisló en mil ochocientos ocho. Se forma en supernovas por captura lenta de neutrones. El bario da el color verde a los fuegos artificiales. Pero su uso más conocido es médico: cuando te hacen una radiografía del aparato digestivo, te dan a tomar un batido de sulfato de bario. El bario bloquea los rayos X, así que dibuja con nitidez el contorno de tu estómago e intestinos en la imagen. Es seguro porque el sulfato de bario es insoluble y el cuerpo no lo absorbe. Pesado, opaco a los rayos X, y útil para ver por dentro."
+    },
+    {
+      "id": "57-lantano",
+      "scene": "La",
+      "text": "Lantano. Su nombre viene del griego lanthanein, estar oculto, porque se escondía dentro de otros minerales. Carl Gustaf Mosander lo descubrió en mil ochocientos treinta y nueve. Es el que da nombre a toda la familia de los lantánidos, las famosas tierras raras. Se forma en supernovas. El lantano da a los lentes de cámara su alto índice de refracción para imágenes nítidas. Pero su uso más masivo fueron las baterías de hidruro metálico de níquel, que llevan mucho lantano y movieron a la primera generación de autos híbridos como el Prius. El elemento escondido que ayudó a electrificar el transporte."
+    },
+    {
+      "id": "58-cerio",
+      "scene": "Ce",
+      "text": "Cerio. Nombrado por Ceres, el planeta enano descubierto dos años antes. Berzelius y Hisinger lo hallaron en mil ochocientos tres. Se forma en supernovas. El cerio es la más abundante de las tierras raras, tan común como el cobre. Tiene una propiedad pirofórica: al rayarlo suelta chispas, por eso las piedras de los encendedores son aleación de cerio. El óxido de cerio es el mejor abrasivo para pulir vidrio y lentes hasta dejarlos perfectos, y limpia los gases de escape en los convertidores catalíticos. De las tierras raras, el cerio es el caballo de batalla cotidiano."
+    },
+    {
+      "id": "59-praseodimio",
+      "scene": "Pr",
+      "text": "Praseodimio. Su nombre, larguísimo, viene del griego y significa gemelo verde, por el color de sus sales. Carl Auer von Welsbach lo separó en mil ochocientos ochenta y cinco de lo que se creía un solo elemento. Se forma en supernovas. El praseodimio se mezcla con neodimio para hacer los imanes permanentes más potentes del mundo. Tiñe de un amarillo verdoso intenso los cristales, y los vidrios de praseodimio protegen los ojos de soldadores y sopladores de vidrio del resplandor cegador. También fortalece las aleaciones de magnesio que usan los motores de avión."
+    },
+    {
+      "id": "60-neodimio",
+      "scene": "Nd",
+      "text": "Neodimio. Su nombre significa nuevo gemelo. Carl Auer von Welsbach lo descubrió en mil ochocientos ochenta y cinco. Se forma en supernovas. Y este elemento mueve, literalmente, el mundo moderno: los imanes de neodimio, hierro y boro son los imanes permanentes más fuertes que existen. Están en los audífonos, en los discos duros, en los motores de los autos eléctricos y en los generadores de las turbinas eólicas. Un imán de neodimio del tamaño de una moneda puede levantar cientos de veces su peso. Sin neodimio, ni los molinos de viento ni los coches eléctricos serían posibles a esta escala."
+    }
+  ]
+}

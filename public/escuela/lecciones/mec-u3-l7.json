@@ -1,0 +1,161 @@
+{
+  "id": "mec-u3-l7",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 7,
+  "titulo": "El resorte",
+  "subtitulo": "Barrido en hélice · compresión",
+  "fuente": "Bethune cap. 3 §3-20/3-21 (Helix Curves and Springs)",
+  "descripcion": "Un perfil circular barrido por una hélice: el resorte de compresión del cap. 3.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El capítulo tres guarda una joya: los resortes. Un círculo chiquito... viajando por una hélice.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El perfil: un círculo de seis milímetros. Ese será el alambre.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 0,
+          "y": 0,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 3,
+          "y": 1,
+          "settle": 700
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "6",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        }
+      ],
+      "check": {
+        "js": "!sk",
+        "desc": "el perfil del alambre quedó guardado"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "En el menú Más: barrido. El perfil recorre un camino...",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sweep",
+          "settle": 2800
+        },
+        {
+          "type": "probe",
+          "label": "post-sweep"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('sweep')",
+        "desc": "hay un barrido"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "...y el camino que queremos es una hélice. Vueltas y paso... y ahí está tu resorte.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sweep-helix",
+          "settle": 3200
+        },
+        {
+          "type": "probe",
+          "label": "post-helix"
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 500",
+        "desc": "el resorte existe como sólido"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Compresión, torsión o extensión: todos nacen de esta misma hélice. El libro les dedica tres secciones enteras.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            850,
+            540
+          ],
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            660
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

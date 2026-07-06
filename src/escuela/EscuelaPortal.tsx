@@ -73,6 +73,7 @@ export default function EscuelaPortal() {
           </div>
         </div>
         <nav className="flex items-center gap-5 text-[12px] text-[#94A3B8] font-mono">
+          <a href="/perfil.html" className="hover:text-[#FDB813] transition">Tu recorrido</a>
           <a href="#carreras" className="hover:text-[#FDB813] transition">Carreras</a>
           <a href="#misiones" className="hover:text-[#FDB813] transition">Misiones</a>
           <a href="#software" className="hover:text-[#FDB813] transition">Software</a>
@@ -90,7 +91,7 @@ export default function EscuelaPortal() {
           La escuela que querías cuando ibas a clase
         </div>
         <h1 className="text-[64px] md:text-[88px] font-extrabold leading-[0.95] tracking-tight">
-          <span className="text-white">Cuatro pilares.</span><br />
+          <span className="text-white">Cinco pilares.</span><br />
           <span className="bg-gradient-to-r from-[#4FC3F7] via-[#7E57C2] to-[#F472B6] bg-clip-text text-transparent">
             Una clase de verdad.
           </span>
@@ -478,6 +479,30 @@ export default function EscuelaPortal() {
             'Subastas Vickrey ▶ live · sim',
           ]}
           stats="56 Nobel · 17 live · 41 sims"
+        />
+        <PillarCard
+          href="/forja-brep.html?leccion=mec-u1-l1"
+          glyph="⚙"
+          name="Mecánica"
+          accent="#FDB813"
+          bgFrom="from-[#FDB813]/20"
+          bgTo="to-[#92400E]/10"
+          quote="Bethune · diseño y gráficos de ingeniería"
+          tagline="Diseña piezas reales en un CAD real — el kernel califica."
+          modules={[
+            'Tu primera pieza ▶ live',
+            'El croquis es el idioma',
+            'Del croquis al sólido (features)',
+            'Vistas ortográficas (planos de taller)',
+            'Ensambles',
+            'Roscas y tornillería (DIN real)',
+            'Acotación ANSI',
+            'Tolerancias y ajustes (GD&T)',
+            'Baleros y ajustes',
+            'Engranes (involuta real)',
+            'Certificación Forjador',
+          ]}
+          stats="11 unidades · 59 lecciones · CAD propio"
         />
       </section>
 

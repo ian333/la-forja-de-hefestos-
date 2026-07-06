@@ -1,0 +1,208 @@
+{
+  "id": "mec-u11-l1",
+  "curso": "mecanica",
+  "unidad": 11,
+  "n": 1,
+  "titulo": "El cubo a contrarreloj",
+  "subtitulo": "Problema 11-1 · velocidad de examen",
+  "fuente": "Bethune cap. 11 §11-2 (Working with Cubes, Problem 11-1)",
+  "descripcion": "El primer problema del examen CSWA del libro: un cubo, contra reloj. Aquí cae en treinta segundos, con el volumen exacto de testigo.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El capítulo once es el examen. Su primer problema: un cubo de cincuenta, contra reloj. Cronómetro... ya.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 700
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Boceto... cuadrado exacto de cincuenta... y cierra.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 400
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "-25",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "-25",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "50",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "50",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "50",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "50",
+          "settle": 260
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "270",
+          "settle": 260
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 420
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 500
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "el cuadrado existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Termina... extruye cincuenta... y tiempo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1600
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 1800
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "50",
+          "settle": 1600
+        },
+        {
+          "type": "probe",
+          "label": "cubo"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 125000) < 1",
+        "desc": "cubo 50³ = 125,000 mm³ EXACTO"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Ciento veinticinco mil milímetros cúbicos, exactos. En el examen te dan diez minutos; te sobraron nueve y medio.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            860,
+            560
+          ],
+          "settle": 900
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Así se entrena la velocidad: piezas chicas, volumen exacto, cero dudas. El resto del capítulo once sube la apuesta.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            650
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

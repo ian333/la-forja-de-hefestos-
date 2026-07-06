@@ -14,6 +14,7 @@
 
 import AtomModel from '@/masterclass/assets/gltf/AtomModel';
 import { CineStage, CineCamera, CineText, CineModel } from '@/masterclass/cine';
+import NebulaWorld from '@/masterclass/cine/NebulaWorld';
 
 const B = '/models/library/buildings/';
 
@@ -61,12 +62,16 @@ export default function KrugmanClase() {
         ]}
       />
 
-      {/* Piso metálico oscuro */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
-        <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color="#07060E" roughness={0.4} metalness={0.5} emissive="#0A0714" emissiveIntensity={0.12} />
-      </mesh>
-      <gridHelper args={[60, 30, '#1E293B', '#11161F']} position={[0, 0.01, 0]} />
+      {/* EL MUNDO-NEBULOSA: el cúmulo que enciende EN CADENA = la aglomeración
+          económica (la fábrica primera, los edificios contagian, nace la ciudad). */}
+      <NebulaWorld
+        scale={32}
+        holeR={14}
+        ghostWindow={[5, 11]}
+        firstIgnite={13}
+        chain={[16, 18.5, 21, 23.5, 26, 28.5, 31, 33.5, 36, 38.5]}
+        dawnAt={34}
+      />
 
       {/* La ciudad que se arma sola */}
       {CITY.map((b, i) => (
@@ -75,7 +80,6 @@ export default function KrugmanClase() {
 
       <ambientLight intensity={0.2} color="#26203A" />
       <directionalLight position={[6, 12, 4]} intensity={0.5} color="#FFE0B0" />
-      <fog attach="fog" args={['#02010A', 24, 80]} />
 
       {/* Narración en pantalla (SkyText) — los actos */}
       <CineText text="¿Por qué Silicon Valley está donde está?" position={[0, 12, -8]} at={1.5} hold={4} width={13} height={1.2} color="#FFE5A0" />

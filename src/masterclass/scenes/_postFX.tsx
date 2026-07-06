@@ -17,11 +17,26 @@
  *   </Canvas>
  */
 
-import { useThree } from '@react-three/fiber';
+import { useThree, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing';
 import { BlendFunction, KernelSize } from 'postprocessing';
-import { Component, useEffect, useState, type ReactNode, type ErrorInfo } from 'react';
+import { Component, useEffect, useRef, useState, type ReactNode, type ErrorInfo } from 'react';
 import { HalfFloatType, Vector2 } from 'three';
+import { voiceLevel } from '@/masterclass/cine/dynamics';
+
+/**
+ * BloomPulse — Bloom cuya intensidad RESPIRA con la voz (voiceLevel del envelope).
+ * En los picos de narración los objetos emisivos FLAREAN. Si no hay envelope,
+ * voiceLevel()=0 → intensidad base (cero cambio para escenas sin voz).
+ */
+function BloomPulse({ intensity, threshold, smoothing }: { intensity: number; threshold: number; smoothing: number }) {
+  const ref = useRef<{ intensity: number } | null>(null);
+  useFrame(() => { if (ref.current) ref.current.intensity = intensity * (1 + voiceLevel() * 0.45); });
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <Bloom ref={ref as any} intensity={intensity} luminanceThreshold={threshold} luminanceSmoothing={smoothing} mipmapBlur kernelSize={KernelSize.LARGE} />
+  );
+}
 
 class PostprocessingShield extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -83,21 +98,19 @@ export default function PostFX({
   if (intensity <= 0) return null;
   // Always include all effects to satisfy EffectComposer children typing.
   // Set neutral values (darkness=0, offset=0) when the user opted out.
+  // MSAA del composer: a 4K (lado largo > 2400px) un framebuffer multisample
+  // HalfFloat satura la VRAM/límites de ANGLE → context lost (pantalla blanca).
+  // A 4K usamos 0 (8.3 MP + bloom ya suavizan); a resoluciones bajas, 4.
+  const bigRes = typeof window !== 'undefined' && Math.max(window.innerWidth, window.innerHeight) > 2400;
   return (
     <PostprocessingShield>
       <DeferredEffects>
         <EffectComposer
-          multisampling={4}
+          multisampling={bigRes ? 0 : 4}
           enableNormalPass={false}
           frameBufferType={HalfFloatType}
         >
-          <Bloom
-            intensity={intensity}
-            luminanceThreshold={threshold}
-            luminanceSmoothing={smoothing}
-            mipmapBlur
-            kernelSize={KernelSize.LARGE}
-          />
+          <BloomPulse intensity={intensity} threshold={threshold} smoothing={smoothing} />
           <Vignette
             offset={vignetteOffset}
             darkness={vignette}

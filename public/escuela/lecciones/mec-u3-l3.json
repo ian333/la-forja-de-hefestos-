@@ -1,0 +1,145 @@
+{
+  "id": "mec-u3-l3",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 3,
+  "titulo": "El redondeo 3D",
+  "subtitulo": "Fillet por arista · el toque final",
+  "fuente": "Bethune cap. 3 §3-8 (Fillet)",
+  "descripcion": "El fillet del cap. 3: elegir una arista del sólido y redondearla. El acabado que separa el dibujo del producto.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Pasa el dedo por el borde de tu teléfono: no corta. Ese es el redondeo tres D, y hoy lo pones tú.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La placa base, rápida: ochenta por cincuenta, veinte de alto.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -40,
+          "y": -25,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 40,
+          "y": 25,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 70000",
+        "desc": "hay una placa"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Botón de redondeo... y La Forja te pide la arista: clic directo en el borde de enfrente.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-fillet",
+          "settle": 1400
+        },
+        {
+          "type": "click",
+          "x": 920,
+          "y": 690,
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "post-fillet"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('fillet')",
+        "desc": "hay un redondeo aplicado"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "La arista viva se volvió un cuarto de cilindro. El kernel quitó exactamente lo que la fórmula dice.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            880,
+            540
+          ],
+          "settle": 1000
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel < 80000",
+        "desc": "el redondeo quitó material"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Del dibujo al producto hay un radio de distancia. En el examen del libro, los redondeos van al final: ya sabes por qué.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            650
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

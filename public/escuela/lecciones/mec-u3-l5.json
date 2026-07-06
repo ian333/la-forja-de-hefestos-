@@ -1,0 +1,162 @@
+{
+  "id": "mec-u3-l5",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 5,
+  "titulo": "El embudo",
+  "subtitulo": "Loft · piel entre dos perfiles",
+  "fuente": "Bethune cap. 3 §3-13 (Lofted Boss/Base)",
+  "descripcion": "El loft del cap. 3: una piel tensada entre el perfil de abajo y su copia reducida arriba — embudos, tolvas y transiciones.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Un embudo no se extruye ni se revoluciona: se TENSA. Una piel entre dos perfiles. Eso es el loft.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El perfil de abajo: un círculo de sesenta.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 0,
+          "y": 0,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 30,
+          "y": 0,
+          "settle": 700
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        }
+      ],
+      "check": {
+        "js": "!sk",
+        "desc": "el perfil de abajo quedó guardado"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "En el menú Más: transición. La Forja tensa la piel hasta una copia al cincuenta por ciento.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-loft",
+          "settle": 2800
+        },
+        {
+          "type": "probe",
+          "label": "post-loft"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('loft')",
+        "desc": "hay un loft"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Dale cuarenta de altura... y ahí está el tronco de cono: la matemática del embudo.",
+      "gestos": [
+        {
+          "type": "fill",
+          "testid": "input-altura-loft",
+          "text": "40",
+          "settle": 2200
+        },
+        {
+          "type": "probe",
+          "label": "loft-40"
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 63000 && inv.vol_kernel < 68000",
+        "desc": "tronco de cono Ø60→Ø30 ×40 (~65,973 mm³)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Sesenta abajo, treinta arriba, y el volumen clava la fórmula del tronco de cono. Tolvas, boquillas, embudos: ya son tuyos.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            860,
+            550
+          ],
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            660
+          ],
+          "settle": 1000
+        }
+      ]
+    }
+  ]
+}

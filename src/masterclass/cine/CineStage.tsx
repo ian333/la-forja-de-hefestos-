@@ -24,6 +24,7 @@ import MasterclassEnv from '@/masterclass/assets/hdri/MasterclassEnv';
 import PostFX, { type PostFXProps } from '@/masterclass/scenes/_postFX';
 import type { HdriMood } from '@/masterclass/assets/hdri/manifest';
 import { CineTimeContext, useCineLayout } from './useCineTime';
+import { VoiceDriver, WordsDriver } from './dynamics';
 
 export interface CineStageProps {
   /** Mood del HDRI: studio | urban_night | starry_night. */
@@ -48,7 +49,51 @@ export interface CineStageProps {
   aspect?: string;
   /** Subtítulos sincronizados al audio — HUD, SIEMPRE visibles (no se salen de cuadro). */
   subtitles?: { text: string; at: number; until: number }[];
+  /** Título elegante arriba (mismo reloj), visible sólo en su ventana [at, until). */
+  title?: { text: string; at: number; until: number };
   children?: ReactNode;
+}
+
+// Título de capítulo/episodio: arriba-centro, misma familia que los subtítulos
+// (Outfit), tamaño medio y elegante, con fundido suave. No tapa el centro.
+function TitleOverlay({ title, audioRef, duration }: {
+  title: { text: string; at: number; until: number };
+  audioRef: React.RefObject<HTMLAudioElement | null>;
+  duration: number;
+}) {
+  const [op, setOp] = useState(0);
+  useEffect(() => {
+    let raf = 0; let clock = 0; let last = performance.now();
+    const tick = () => {
+      const a = audioRef.current;
+      let t: number;
+      const ov = (window as unknown as { __cineT?: number }).__cineT;
+      if (typeof ov === 'number') t = ov;
+      else if (a) t = a.currentTime;
+      else { const now = performance.now(); clock = (clock + (now - last) / 1000) % (duration > 0 ? duration : 1e9); last = now; t = clock; }
+      // fundido: 0.6 s al entrar, 0.8 s al salir
+      const fin = Math.min(1, Math.max(0, (t - title.at) / 0.6));
+      const fout = Math.min(1, Math.max(0, (title.until - t) / 0.8));
+      const o = t >= title.at && t < title.until ? Math.min(fin, fout) : 0;
+      setOp(o);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [title, audioRef, duration]);
+
+  return (
+    <div className="absolute left-1/2 -translate-x-1/2 top-[7%] w-[90%] text-center pointer-events-none"
+         style={{ opacity: op, transition: 'opacity 0.12s linear' }}>
+      <span className="inline-block uppercase"
+            style={{ fontFamily: "'Outfit', 'Inter', system-ui, sans-serif", fontWeight: 600,
+                     letterSpacing: '0.22em', color: '#FCE7C4',
+                     fontSize: 'clamp(15px, 2.9vmin, 74px)',
+                     textShadow: '0 2px 22px rgba(0,0,0,0.92), 0 0 60px rgba(0,0,0,0.55)' }}>
+        {title.text}
+      </span>
+    </div>
+  );
 }
 
 // Subtítulos HUD: leen el tiempo del audio (fuente de verdad) → sincronía exacta.
@@ -67,7 +112,9 @@ function Subtitles({ subs, audioRef, duration }: {
     const tick = () => {
       const a = audioRef.current;
       let t: number;
-      if (a) t = a.currentTime;
+      const ov = (window as unknown as { __cineT?: number }).__cineT;
+      if (typeof ov === 'number') t = ov;            // render determinista
+      else if (a) t = a.currentTime;
       else { const now = performance.now(); clock = (clock + (now - last) / 1000) % (duration > 0 ? duration : 1e9); last = now; t = clock; }
       const hit = subs.find(s => t >= s.at && t < s.until);
       const next = hit ? hit.text : null;
@@ -81,8 +128,9 @@ function Subtitles({ subs, audioRef, duration }: {
   return (
     <div className="absolute left-1/2 -translate-x-1/2 bottom-[7%] w-[88%] max-w-[1180px] text-center pointer-events-none">
       {text && (
-        <span className="inline-block font-bold text-white leading-tight"
-              style={{ fontSize: 'clamp(17px, 2.5vw, 36px)', textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.7)' }}>
+        <span className="inline-block text-white leading-tight"
+              style={{ fontFamily: "'Outfit', 'Inter', system-ui, sans-serif", fontWeight: 600, letterSpacing: '0.015em',
+                       fontSize: 'clamp(16px, 2.4vmin, 60px)', textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.7)' }}>
           {text}
         </span>
       )}
@@ -98,6 +146,11 @@ function SceneClock({ audioRef, timeRef, playing, duration }: {
 }) {
   useFrame((_, dt) => {
     void playing;
+    // Override determinista para RENDER/QA headless (window.__cineT = t):
+    // permite renderAt sin depender del seek de audio (los servers estáticos
+    // sin byte-range rompen el seek del MP3). Producción no lo define.
+    const ov = (window as unknown as { __cineT?: number }).__cineT;
+    if (typeof ov === 'number') { timeRef.current = ov; return; }
     const a = audioRef.current;
     if (a) {
       // Con audio: el reloj ES el audio (queda en 0 hasta que el usuario da play).
@@ -122,6 +175,7 @@ export default function CineStage({
   background = 'radial-gradient(ellipse at 50% 38%, #0a0d1a 0%, #02010A 80%)',
   aspect = '16 / 9',
   subtitles,
+  title,
   children,
 }: CineStageProps) {
   const layout = useCineLayout();
@@ -138,6 +192,9 @@ export default function CineStage({
     const a = audioRef.current;
     if (!a) return;
     const onEnded = () => {
+      // Progreso: el audio sonó COMPLETO una vez — clase.html escucha este evento
+      // (CineStage no sabe qué lección es; el shell sí). Idempotente río abajo.
+      window.dispatchEvent(new CustomEvent('gaia:cine-ended'));
       setPlaying(false);
       setTimeout(() => { if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().then(() => setPlaying(true)).catch(() => {}); } }, 2500);
     };
@@ -168,6 +225,8 @@ export default function CineStage({
       >
         <CineTimeContext.Provider value={timeRef}>
           <SceneClock audioRef={audioRef} timeRef={timeRef} playing={playing} duration={duration} />
+          {audio && <VoiceDriver src={audio.split('?')[0].replace(/narration\.mp3$/, 'envelope.json')} audioRef={audioRef} />}
+          {audio && <WordsDriver src={audio.split('?')[0].replace(/narration\.mp3$/, 'words.json')} />}
           <Suspense fallback={null}>
             <MasterclassEnv preset={mood} intensity={envIntensity} />
             {children}
@@ -181,16 +240,19 @@ export default function CineStage({
         <div className="absolute top-0 left-0 right-0 h-[10%] bg-gradient-to-b from-black/45 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-[16%] bg-gradient-to-t from-black/65 to-transparent" />
         {chapter && (
-          <div className="absolute top-4 left-5 text-[10px] uppercase tracking-[0.3em] font-mono text-[#FFE5A0]/60">
+          <div className="absolute top-4 left-5 uppercase tracking-[0.3em] font-mono text-[#FFE5A0]/60"
+               style={{ fontSize: 'clamp(8px, 1vmin, 22px)' }}>
             {chapter}
           </div>
         )}
-        <div className="absolute top-4 right-5 text-[10px] uppercase tracking-[0.3em] font-mono text-[#94A3B8]/50">
+        <div className="absolute top-4 right-5 uppercase tracking-[0.3em] font-mono text-[#94A3B8]/50"
+             style={{ fontSize: 'clamp(8px, 1vmin, 22px)' }}>
           GAIA · masterclass
         </div>
         {subtitles && subtitles.length > 0 && (
           <Subtitles subs={subtitles} audioRef={audioRef} duration={duration} />
         )}
+        {title && <TitleOverlay title={title} audioRef={audioRef} duration={duration} />}
       </div>
 
       {/* Botón de inicio (solo con audio) */}

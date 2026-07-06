@@ -1,0 +1,165 @@
+{
+  "id": "tabla-periodica-01-30",
+  "title": "Tabla Periódica — Elementos 1 al 30",
+  "voice_id": "XrExE9yKIg1WjnnlVkGX",
+  "voice_name": "Matilda",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.42,
+    "similarity_boost": 0.75,
+    "style": 0.55,
+    "use_speaker_boost": true
+  },
+  "scenes": [
+    {
+      "id": "01-hidrogeno",
+      "scene": "H",
+      "text": "Hidrógeno. El elemento más simple del universo: un protón y un electrón. Nada más. Se formó tres minutos después del Big Bang, y hoy representa el setenta y cinco por ciento de toda la materia visible. Cada estrella que ves en el cielo es una fábrica que fusiona hidrógeno en helio. Tu cuerpo tiene más átomos de hidrógeno que de cualquier otro elemento, porque cada molécula de agua lleva dos. Fue descubierto en mil setecientos sesenta y seis por Henry Cavendish, que lo llamó aire inflamable. Hoy se usa en cohetes espaciales, en refinar petróleo, y es la apuesta más fuerte para el combustible limpio del futuro."
+    },
+    {
+      "id": "02-helio",
+      "scene": "He",
+      "text": "Helio. El único elemento descubierto primero en el Sol antes que en la Tierra. En mil ochocientos sesenta y ocho, durante un eclipse, el astrónomo Jules Janssen vio una línea amarilla en el espectro solar que no correspondía a nada conocido. Se forma en el corazón de las estrellas, donde cuatro núcleos de hidrógeno se fusionan y liberan la energía que ilumina el cosmos. Es tan ligero y tan inerte que no reacciona con nada. Por eso lo usamos para inflar globos, enfriar resonancias magnéticas a menos doscientos sesenta y nueve grados, y detectar fugas en tuberías. Dato inquietante: el helio terrestre se escapa al espacio y no regresa. Es un recurso no renovable."
+    },
+    {
+      "id": "03-litio",
+      "scene": "Li",
+      "text": "Litio. El metal más ligero que existe. Flota en el agua. Una parte se cocinó en el Big Bang junto con el hidrógeno, pero la mayoría viene de rayos cósmicos que impactan átomos más pesados y los rompen. Fue descubierto en mil ochocientos diecisiete por Johan Arfwedson en un mineral sueco. Su nombre viene del griego lithos, piedra. Hoy es el alma de las baterías que mueven tu teléfono, tu laptop y los autos eléctricos. Pero también es un medicamento psiquiátrico: estabiliza el ánimo en personas con trastorno bipolar. Un mismo elemento que mueve máquinas y calma mentes."
+    },
+    {
+      "id": "04-berilio",
+      "scene": "Be",
+      "text": "Berilio. Ligero como el aluminio pero seis veces más rígido. Se forma en el espacio cuando rayos cósmicos chocan contra átomos de carbono y oxígeno, rompiéndolos. Las estrellas lo destruyen más rápido de lo que lo crean, así que es rarísimo en el universo. Fue identificado en mil setecientos noventa y ocho por Louis Vauquelin dentro de una esmeralda. Sí, las esmeraldas son cristales de berilio con cromo. Hoy se usa en ventanas de rayos X porque es casi transparente a esa radiación, y en aleaciones aeroespaciales. Eso sí: su polvo es extremadamente tóxico si lo respiras."
+    },
+    {
+      "id": "05-boro",
+      "scene": "B",
+      "text": "Boro. Un metaloide que no es metal ni no metal. Igual que el berilio, se forma por espalación cósmica: rayos cósmicos despedazando átomos más grandes en el espacio interestelar. Los antiguos egipcios ya usaban bórax sin saberlo para momificar y soldar oro. Fue aislado en mil ochocientos ocho simultáneamente por Humphry Davy en Londres y Gay-Lussac en París. El boro es esencial para las plantas: sin él no florecen. El vidrio borosilicato, el que usas en los trastes Pyrex, lleva boro para resistir el choque térmico. Y el nitruro de boro cúbico es casi tan duro como el diamante."
+    },
+    {
+      "id": "06-carbono",
+      "scene": "C",
+      "text": "Carbono. La columna vertebral de la vida. Cada proteína, cada molécula de ADN, cada célula de tu cuerpo está construida sobre carbono. ¿Por qué? Porque puede formar cuatro enlaces a la vez y encadenarse consigo mismo hasta crear moléculas de millones de átomos. Se forja en el corazón de estrellas gigantes rojas por el proceso triple alfa: tres núcleos de helio se fusionan. Fred Hoyle predijo en los años cincuenta que debía existir un nivel de energía exacto en el carbono doce para que esto funcionara, y tenía razón. El mismo átomo puede ser diamante transparente, grafito negro o grafeno, el material más fuerte jamás medido."
+    },
+    {
+      "id": "07-nitrogeno",
+      "scene": "N",
+      "text": "Nitrógeno. Cada vez que respiras, el setenta y ocho por ciento de lo que entra a tus pulmones es nitrógeno. Y tu cuerpo no hace nada con él. Lo exhalas intacto. Se forma en estrellas masivas por el ciclo CNO, donde cataliza la fusión del hidrógeno. Daniel Rutherford lo aisló en mil setecientos setenta y dos llamándolo aire fijo. Su descubrimiento importó porque sin nitrógeno no hay aminoácidos, y sin aminoácidos no hay proteínas. En mil novecientos nueve, Fritz Haber logró fijarlo del aire para hacer fertilizante. Esa sola invención alimenta hoy a la mitad de la humanidad."
+    },
+    {
+      "id": "08-oxigeno",
+      "scene": "O",
+      "text": "Oxígeno. El tercer elemento más abundante del universo, forjado dentro de estrellas masivas al final de sus vidas, cuando fusionan carbono y helio. Cada átomo de oxígeno que respiras se cocinó en una estrella que explotó hace miles de millones de años. Joseph Priestley y Carl Wilhelm Scheele lo descubrieron en los años mil setecientos setenta. Sin él no hay agua, no hay rocas, no hay respiración celular. Constituye el sesenta y cinco por ciento de la masa de tu cuerpo, casi toda en forma de agua. Y oxígeno líquido es lo que impulsa los cohetes junto con el hidrógeno. Un átomo nacido en una supernova que termina sosteniéndote vivo."
+    },
+    {
+      "id": "09-fluor",
+      "scene": "F",
+      "text": "Flúor. El elemento más reactivo de toda la tabla periódica. Reacciona con prácticamente todo, incluyendo vidrio, agua y hasta gases nobles. Es tan agresivo que los químicos que intentaron aislarlo fueron quemados, envenenados o muertos. Henri Moissan finalmente lo logró en mil ochocientos ochenta y seis por electrólisis y ganó el Nobel por eso. Se forma en supernovas y estrellas moribundas. En tu vida diaria, el flúor está en la pasta de dientes protegiendo tu esmalte y en el teflón de tus sartenes antiadherentes. Sin él, la química del siglo veinte habría sido completamente diferente."
+    },
+    {
+      "id": "10-neon",
+      "scene": "Ne",
+      "text": "Neón. Mira un letrero luminoso rojo en la noche: eso es neón puro brillando. William Ramsay y Morris Travers lo descubrieron en mil ochocientos noventa y ocho al destilar aire líquido. Cuando Ramsay lo metió en un tubo y le aplicó corriente, la habitación se llenó de un resplandor rojo anaranjado que nunca habían visto. Se forma en estrellas masivas por fusión de carbono, justo antes de que la estrella colapse. Es el quinto elemento más abundante del universo pero rarísimo en la Tierra porque es tan ligero e inerte que se escapa de la atmósfera. Se usa en láseres, en señalización, y como refrigerante en algunos circuitos criogénicos."
+    },
+    {
+      "id": "11-sodio",
+      "scene": "Na",
+      "text": "Sodio. Corta un trozo de este metal plateado y ponlo en agua: explota con una llama amarilla. Humphry Davy lo aisló en mil ochocientos siete haciendo pasar electricidad por sosa cáustica, y bailó de alegría por el laboratorio. Se forma en estrellas masivas por fusión de neón. El sodio es esencial para tu sistema nervioso: cada señal que viaja por tus neuronas depende de iones de sodio entrando y saliendo de las células. La sal de mesa, cloruro de sodio, fue tan valiosa que a los legionarios romanos les pagaban con ella. De ahí viene la palabra salario."
+    },
+    {
+      "id": "12-magnesio",
+      "scene": "Mg",
+      "text": "Magnesio. Se quema con una luz blanca tan intensa que puede dañarte los ojos. Esa fue la primera tecnología de flash fotográfico. Se forma en estrellas viejas por fusión de neón y carbono. Joseph Black lo distinguió del calcio en mil setecientos cincuenta y cinco en Edimburgo. En tu cuerpo, el magnesio es cofactor de más de trescientas enzimas: sin él, tu ADN no se copia, tus músculos no se relajan y tu corazón pierde el ritmo. Los autos deportivos lo usan en aleaciones ligeras. Y la clorofila, la molécula que permite la fotosíntesis, tiene un átomo de magnesio en su centro exacto."
+    },
+    {
+      "id": "13-aluminio",
+      "scene": "Al",
+      "text": "Aluminio. El metal más abundante de la corteza terrestre, pero hace doscientos años era más caro que el oro. Napoleón tercero servía a sus invitados de honor con cubiertos de aluminio mientras los demás usaban oro. Se forma en estrellas masivas fusionando magnesio con protones. Hans Christian Ørsted lo aisló en mil ochocientos veinticinco. Lo que lo cambió todo fue el proceso Hall-Héroult de mil ochocientos ochenta y seis, que abarató la producción con electrólisis. Hoy lo tienes en latas, aviones, cables eléctricos y el marco de tu teléfono. Y se recicla infinitamente sin perder calidad."
+    },
+    {
+      "id": "14-silicio",
+      "scene": "Si",
+      "text": "Silicio. Estás leyendo esto gracias al silicio. Cada chip, cada transistor, cada procesador en cada computadora del planeta está hecho de silicio ultrapuro. Se forma en estrellas masivas como penúltimo paso antes del hierro. Jöns Jacob Berzelius lo aisló en mil ochocientos veinticuatro. Es el segundo elemento más abundante en la corteza terrestre después del oxígeno: cada roca, cada grano de arena es básicamente silicio y oxígeno. El vidrio es silicio fundido. Y sin la revolución del silicio, no existiría internet, ni los teléfonos inteligentes, ni la inteligencia artificial."
+    },
+    {
+      "id": "15-fosforo",
+      "scene": "P",
+      "text": "Fósforo. Fue descubierto de la forma más extraña: Hennig Brand, un alquimista de Hamburgo, evaporó mil doscientos litros de orina en mil seiscientos sesenta y nueve buscando la piedra filosofal. Lo que encontró fue una sustancia que brillaba en la oscuridad. Fósforo significa portador de luz. Se forma en supernovas cuando el silicio captura un protón extra. Sin fósforo no hay vida: está en el esqueleto del ADN, en el ATP que da energía a cada célula, y en tus huesos. Los fertilizantes con fósforo alimentan al mundo, pero las reservas son finitas y no hay sustituto."
+    },
+    {
+      "id": "16-azufre",
+      "scene": "S",
+      "text": "Azufre. Conocido desde la antigüedad como piedra que arde, es el elemento bíblico del fuego y el castigo. Los volcanes lo escupen amarillo. Se forma en las capas finales de las estrellas masivas, justo antes del colapso. No necesitó descubridor porque siempre estuvo ahí, visible y oloroso. En tu cuerpo, el azufre mantiene la forma de las proteínas con puentes disulfuro: sin esos enlaces, tu pelo sería lacio, tus anticuerpos no funcionarían y las enzimas se desdoblarían. Industrialmente, el ácido sulfúrico es la sustancia química más producida en el mundo. Literalmente, mides la industrialización de un país por cuánto ácido sulfúrico consume."
+    },
+    {
+      "id": "17-cloro",
+      "scene": "Cl",
+      "text": "Cloro. Gas amarillo verdoso con un olor que reconoces de las albercas. Carl Wilhelm Scheele lo produjo en mil setecientos setenta y cuatro, y casi se envenena haciéndolo. Se forma en supernovas por procesos de captura de neutrones. El cloro potabiliza el agua: una tecnología tan simple que ha salvado más vidas que cualquier medicamento en la historia. La sal de mesa es medio cloro. Tu estómago produce ácido clorhídrico para digerir comida. Pero en la Primera Guerra Mundial lo usaron como arma química en Ypres. Un mismo elemento que salva millones de vidas y que fue usado para destruirlas."
+    },
+    {
+      "id": "18-argon",
+      "scene": "Ar",
+      "text": "Argón. Su nombre viene del griego argos: el perezoso. No reacciona con nada. Lord Rayleigh notó en mil ochocientos noventa y cuatro que el nitrógeno del aire pesaba más que el nitrógeno puro, y William Ramsay descubrió que había un gas desconocido escondido: el argón. Representa casi el uno por ciento del aire que respiras. Se forma en la Tierra por la desintegración radiactiva del potasio cuarenta, acumulándose durante miles de millones de años. Se usa para crear atmósferas inertes en soldadura, dentro de focos incandescentes, y entre los vidrios dobles de las ventanas para aislar térmicamente. Perezoso, pero útil."
+    },
+    {
+      "id": "19-potasio",
+      "scene": "K",
+      "text": "Potasio. Humphry Davy, otra vez él, lo aisló en mil ochocientos siete, un mes antes que el sodio, haciéndolo el primer metal aislado por electrólisis. Se forma en supernovas y en estrellas gigantes por captura de neutrones. En tu cuerpo es crucial: junto con el sodio, genera el potencial eléctrico que permite a tus neuronas disparar y a tu corazón latir rítmicamente. Los plátanos son famosos por su potasio, pero los aguacates y las espinacas tienen más. El isótopo potasio cuarenta es radiactivo y lleva desintegrándose desde que se formó la Tierra: de hecho, es el reloj que los geólogos usan para datar rocas."
+    },
+    {
+      "id": "20-calcio",
+      "scene": "Ca",
+      "text": "Calcio. Tus huesos, tus dientes, las conchas del mar, la piedra caliza de las pirámides, el mármol del Partenón: todo calcio. Humphry Davy lo aisló en mil ochocientos ocho. Se forma en estrellas masivas por fusión de azufre y silicio. Es el quinto elemento más abundante en la corteza terrestre. Pero no solo da estructura: los iones de calcio son mensajeros dentro de tus células. Cuando un músculo se contrae, cuando una neurona libera un neurotransmisor, cuando un óvulo es fertilizado, es porque el calcio entró en la célula. Un elemento que construye catedrales por fuera y transmite señales por dentro."
+    },
+    {
+      "id": "21-escandio",
+      "scene": "Sc",
+      "text": "Escandio. Dmitri Mendeléyev predijo su existencia en mil ochocientos sesenta y nueve, llamándolo eka-boro. Diez años después, Lars Fredrik Nilson lo encontró en minerales de Escandinavia y le puso el nombre de su tierra. Se forma por procesos de captura de neutrones en supernovas. Es carísimo y escaso, pero cuando le agregas menos del uno por ciento a una aleación de aluminio, la resistencia se dispara. Por eso lo usan en cuadros de bicicletas de competición y en aviones de combate. También se usa en lámparas de estadio que necesitan imitar la luz del sol. El primer triunfo de la tabla periódica fue predecirlo antes de encontrarlo."
+    },
+    {
+      "id": "22-titanio",
+      "scene": "Ti",
+      "text": "Titanio. Fuerte como el acero pero casi la mitad de pesado. No se corroe, resiste el agua de mar y el cuerpo humano no lo rechaza. William Gregor lo descubrió en mil setecientos noventa y uno en la arena negra de un río en Cornualles. Se forma en supernovas por fusión de silicio. Pero aislar titanio puro tomó más de ciento cincuenta años: fue hasta mil novecientos cuarenta que el proceso Kroll lo hizo viable. Hoy está en implantes de cadera, aviones de combate, prótesis dentales, y en el dióxido de titanio que pone blanca tu pasta de dientes, tu bloqueador solar y la pintura de tu pared. Un metal de guerra y de medicina."
+    },
+    {
+      "id": "23-vanadio",
+      "scene": "V",
+      "text": "Vanadio. Nombrado por Vanadis, la diosa nórdica de la belleza, porque sus compuestos vienen en una paleta espectacular de colores. Andrés Manuel del Río lo descubrió en México en mil ochocientos uno, en un mineral de Zimapán, Hidalgo. Pero nadie le creyó, y el crédito se lo llevó Nils Sefström treinta años después. Se forma en supernovas. El vanadio hace al acero extraordinariamente duro y resistente a la fatiga: las llaves de tuercas, los resortes de válvula y las herramientas de alta calidad llevan vanadio. Henry Ford dijo que sin acero al vanadio no habría podido fabricar el Modelo T."
+    },
+    {
+      "id": "24-cromo",
+      "scene": "Cr",
+      "text": "Cromo. Su nombre viene del griego chroma, color, porque todos sus compuestos son intensamente coloridos. El rubí rojo es cromo en corindón. La esmeralda verde es cromo en berilio. Louis Vauquelin lo aisló en mil setecientos noventa y siete de un mineral siberiano. Se forma en supernovas por la misma cadena que el hierro. Lo conoces por el cromado brillante de los autos clásicos, pero su uso más importante es el acero inoxidable: agrega más del diez por ciento de cromo al acero y forma una capa invisible de óxido que se autorepara. Sin cromo, cada cuchillo, cada bisturí y cada edificio moderno se oxidaría."
+    },
+    {
+      "id": "25-manganeso",
+      "scene": "Mn",
+      "text": "Manganeso. Los pintores de las cuevas de Lascaux, hace diecisiete mil años, usaron dióxido de manganeso para pintar bisontes negros. Es literalmente el primer pigmento de la humanidad. Johan Gottlieb Gahn lo aisló en mil setecientos setenta y cuatro. Se forma en supernovas por fusión explosiva de silicio. El manganeso es indispensable para el acero: elimina azufre y oxígeno durante la fundición. Sin manganeso no hay rieles de tren, no hay cascos de barco, no hay vigas de edificio. En la naturaleza, la fotosíntesis depende de un cluster de manganeso que rompe la molécula de agua y libera el oxígeno que respiras."
+    },
+    {
+      "id": "26-hierro",
+      "scene": "Fe",
+      "text": "Hierro. El elemento que mata estrellas. Cuando una estrella masiva fusiona silicio en hierro, se acabó: el hierro no libera energía al fusionarse. El núcleo colapsa en segundos y la estrella explota en supernova. Es el elemento más estable del universo, el fondo del pozo de energía nuclear. Los hititas descubrieron cómo fundirlo hace tres mil doscientos años y cambiaron la civilización. Tu sangre es roja por el hierro en la hemoglobina: cada molécula lleva cuatro átomos de hierro que capturan oxígeno en tus pulmones y lo sueltan en tus tejidos. El núcleo de la Tierra es una esfera de hierro líquido del tamaño de la Luna que genera nuestro campo magnético."
+    },
+    {
+      "id": "27-cobalto",
+      "scene": "Co",
+      "text": "Cobalto. Los mineros medievales maldecían un mineral que parecía plata pero que al fundirlo soltaba vapores venenosos de arsénico y no daba metal útil. Lo llamaron kobold, duende travieso. Georg Brandt lo aisló en mil setecientos treinta y cinco, demostrando que era un metal nuevo. Se forma por proceso s y r en supernovas. El azul cobalto ha coloreado cerámica china y vidrio veneciano por siglos. Hoy el cobalto es crítico para baterías de ion litio: sin él, los autos eléctricos y tus dispositivos pierden capacidad. La vitamina B doce tiene un átomo de cobalto en su centro. Sin ese único átomo, tu médula ósea no fabrica glóbulos rojos."
+    },
+    {
+      "id": "28-niquel",
+      "scene": "Ni",
+      "text": "Níquel. Otro metal que tomó nombre de un demonio minero: kupfernickel, el cobre del diablo, porque se parecía al cobre pero no se dejaba trabajar. Axel Cronstedt lo identificó como elemento en mil setecientos cincuenta y uno. Se forma en las mismas supernovas que el hierro, justo en las capas exteriores del colapso. El níquel no se corroe y es magnético. Está en las monedas de muchos países, en el acero inoxidable junto al cromo, y en las baterías recargables. El núcleo de la Tierra, ese que genera el campo magnético, es una aleación de hierro y níquel. Literalmente, el escudo que protege la vida en la Tierra está hecho de níquel."
+    },
+    {
+      "id": "29-cobre",
+      "scene": "Cu",
+      "text": "Cobre. El primer metal que la humanidad aprendió a trabajar, hace más de diez mil años. No necesitabas fundirlo: aparecía nativo, brillante y rojizo, listo para martillar en herramientas. Su nombre viene de Chipre, la isla donde los romanos lo extraían. Se forma en supernovas por captura rápida de neutrones. El cobre conduce electricidad casi tan bien como la plata pero es mucho más barato: cada cable en tu casa, cada motor eléctrico, cada generador del mundo depende del cobre. También es antimicrobiano natural: una superficie de cobre mata bacterias en horas. La Estatua de la Libertad pesa ochenta toneladas de cobre que se pusieron verdes por oxidación."
+    },
+    {
+      "id": "30-zinc",
+      "scene": "Zn",
+      "text": "Zinc. Tu sistema inmune depende de él. Sin zinc suficiente, las heridas no cierran, pierdes el sentido del olfato y tu cuerpo no fabrica las proteínas que leen el ADN. Los metalurgistas indios ya lo producían en el siglo trece, pero en Europa, Andreas Marggraf lo aisló en mil setecientos cuarenta y seis. Se forma en supernovas por captura de neutrones. El zinc protege al acero de la corrosión: esas láminas galvanizadas que ves en techos y postes están bañadas en zinc. También está en las pilas alcalinas, en las cremas para proteger la piel del bebé, y en las aleaciones de latón junto con el cobre. El metal que protege metales y protege cuerpos."
+    }
+  ]
+}

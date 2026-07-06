@@ -1,0 +1,190 @@
+{
+  "id": "mec-u2-l1",
+  "curso": "mecanica",
+  "unidad": 2,
+  "n": 1,
+  "titulo": "La tuerca hexagonal",
+  "subtitulo": "Polígono · círculo concéntrico · barreno automático",
+  "fuente": "Bethune cap. 2 §2-9 (Polygons) y §2-4 (Circle)",
+  "descripcion": "El polígono del cap. 2: hexágono a ojo + círculo concéntrico → una tuerca. Los círculos del boceto base se vuelven barrenos al extruir.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El capítulo dos del libro es el idioma completo del boceto. Empezamos con su forma más famosa: el hexágono.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Boceto en el plano equis ye.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "el editor de boceto abrió"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Herramienta de polígono: clic en el centro... y clic al radio. Seis lados perfectos.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-poly",
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": 0,
+          "y": 0,
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 10,
+          "y": 0,
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 6",
+        "desc": "el hexágono tiene 6 lados"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y en el mismo centro, un círculo: el futuro barreno de la tuerca.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 0,
+          "y": 0,
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 5,
+          "y": 2,
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 1",
+        "desc": "hay un círculo concéntrico"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "La orden clave va al barreno: diez milímetros de diámetro.",
+      "gestos": [
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "10",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Ancla el centro para que nada se pasee. El hexágono completo se amarra en el examen.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 500
+        },
+        {
+          "type": "clickptwhere",
+          "where": "origin",
+          "settle": 1000
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Termina... extruye ocho milímetros... y mira: el círculo del boceto se volvió barreno solo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "8",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "tuerca"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 1450.2) < 130",
+        "desc": "tuerca hexagonal (~1,450 mm³, hex a ojo ±)"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "Una tuerca en seis clics, con el volumen exacto de la fórmula del hexágono. Así se habla boceto.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            620
+          ],
+          "to": [
+            850,
+            560
+          ],
+          "settle": 900
+        }
+      ]
+    }
+  ]
+}
