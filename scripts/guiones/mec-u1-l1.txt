@@ -1,0 +1,16 @@
+Bienvenido a La Forja. El reto de hoy: una placa de cien por sesenta milímetros, con un barreno, en tres minutos.
+Toda pieza empieza igual: con un boceto. Clic en Boceto... y tú eliges: un plano, o una cara. El mouse decide.
+Dibuja un rectángulo a ojo, sin medidas exactas. Así arranca un diseñador de verdad.
+¿Ves el trazo azul? Azul significa libre: a esta geometría todavía le faltan órdenes.
+Y las órdenes se dan con cotas. Cota horizontal: cien milímetros.
+Cota vertical: sesenta. Fíjate cómo la geometría obedece a la cota, no a tu pulso.
+Ancla una esquina, y el boceto queda totalmente restringido: nada se puede mover ya.
+Termina el boceto. El perfil queda listo sobre el plano... esperando tu decisión.
+Y la decisión es tuya: clic en Extruir... y dale veinte milímetros de altura.
+Gírala. Ya no es un dibujo: es un sólido, con volumen, masa y aristas de verdad.
+Ahora el barreno. Cortar... clic en Boceto... y el mouse decide: clic directo en la cara de arriba.
+Dibuja un círculo a ojo, más o menos al centro de la placa.
+Cota de diámetro: veinticuatro milímetros. En la lección tres lo posicionamos exacto.
+Termina el boceto... y el corte atraviesa la placa. Un barreno limpio.
+Y el kernel no miente: volumen y masa exactos, como los medirías en el taller.
+Tu primera pieza. En la próxima lección dominas la cámara y el árbol de operaciones. Nos vemos en La Forja.

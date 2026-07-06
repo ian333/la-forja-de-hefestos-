@@ -371,11 +371,11 @@ const boostForja: Preset = {
   name: 'Boost La Forja v2 (IRF640N)',
   blurb: 'Una fase REAL de la impresora de metal: bobina de aire + IRF640N (datasheet) + diodo al bus. La bomba llenando la presa.',
   mode: 'transient',
-  defaults: { duty: 0.55, fsw: 100, Cbus: 10, Rload: 220 },
+  defaults: { duty: 0.55, fsw: 100, Cbus: 4.7, Rload: 220 },
   sliders: [
     { key: 'duty', label: 'Duty del PWM', min: 0.15, max: 0.7, step: 0.01, toSI: (x) => x, fmt: (x) => `${(x * 100).toFixed(0)}%` },
     { key: 'fsw', label: 'f switcheo', min: 50, max: 200, step: 5, toSI: (x) => x * 1e3, fmt: (x) => `${x} kHz` },
-    { key: 'Cbus', label: 'Presa (Cbus)', min: 2, max: 47, step: 1, toSI: (x) => x * 1e-6, fmt: uf },
+    { key: 'Cbus', label: 'Presa (Cbus)', min: 1, max: 22, step: 0.5, toSI: (x) => x * 1e-6, fmt: uf },
     { key: 'Rload', label: 'R carga (la junta)', min: 15, max: 500, step: 5, toSI: (x) => x, fmt: (x) => `${x} Ω` },
   ],
   build: (p) => {
@@ -394,7 +394,7 @@ const boostForja: Preset = {
       ],
     };
   },
-  sim: { dt: 200e-9, tStop: 2e-3 },
+  sim: { dt: 250e-9, tStop: 0.8e-3 },
   probes: [
     { label: 'i bobina (la cucharada)', color: '#4ade80', current: 'L1' },
     { label: 'V_SW (drain)', color: '#60a5fa', node: 2 },
@@ -431,15 +431,15 @@ const boostForja: Preset = {
         title: 'La cucharada (mira la curva verde)',
         body: 'Gate ON: la corriente de la bobina rampa hasta ~12A — NO llega a los 13.2 ideales porque el Rds del FET + el shunt se comen volts (rampa RL real, el mismo número que mide tu shunt RA-.1E). Gate OFF: la bobina EMPUJA su energía por el diodo al bus. Cada diente = ½LI² ≈ 0.7 mJ.',
         formula: 'Ipk = (Vin/R_on)(1 − e^(−t·R_on/L)) ≈ 12.3 A',
-        keyframes: [{ at: 0, state: { duty: 0.55, fsw: 100, Cbus: 10, Rload: 220 } }],
+        keyframes: [{ at: 0, state: { duty: 0.55, fsw: 100, Cbus: 4.7, Rload: 220 } }],
       },
       {
         title: 'La presa se llena',
         body: 'La curva ámbar (V_bus) sube cucharada a cucharada hasta equilibrar con la carga. Más duty = cucharadas más grandes. Más Cbus = presa más grande (sube más lento pero aguanta más).',
         duration: 6000,
         keyframes: [
-          { at: 0, state: { duty: 0.3, Cbus: 10, Rload: 220 } },
-          { at: 1, state: { duty: 0.65, Cbus: 10, Rload: 220 } },
+          { at: 0, state: { duty: 0.3, Cbus: 4.7, Rload: 220 } },
+          { at: 1, state: { duty: 0.65, Cbus: 4.7, Rload: 220 } },
         ],
       },
       {

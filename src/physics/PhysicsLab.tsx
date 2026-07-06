@@ -10,10 +10,11 @@
  *   - AudienceContext controla densidad/tono (niño ↔ investigador).
  */
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import type { Audience } from './types';
 import { AudienceContext } from './context';
 import { BRANCHES, findModule } from './registry';
+import { completeLesson } from '@/lib/progress';
 import Sidebar from './components/Sidebar';
 import AudienceToggle from './components/AudienceToggle';
 import ModuleStub from './components/ModuleStub';
@@ -33,6 +34,13 @@ export default function PhysicsLab() {
   const [selected, setSelected] = useState<{ branchId: string; moduleId: string }>(FIRST_LIVE);
   useHashRoute(BRANCHES, setSelected);
 
+  // Progreso: LessonPanel avisa el fin de su clase guiada; aquí sabemos el módulo.
+  useEffect(() => {
+    const done = () => completeLesson('physics', `${selected.branchId}/${selected.moduleId}`);
+    window.addEventListener('gaia:lesson-complete', done);
+    return () => window.removeEventListener('gaia:lesson-complete', done);
+  }, [selected.branchId, selected.moduleId]);
+
   const { branch, module: mod } = useMemo(
     () => findModule(selected.branchId, selected.moduleId),
     [selected],
@@ -42,7 +50,7 @@ export default function PhysicsLab() {
 
   return (
     <AudienceContext.Provider value={audienceValue}>
-      <div className="min-h-screen bg-[#05060A] text-[#E2E8F0] font-sans flex flex-col">
+      <div className="h-screen overflow-hidden bg-[#05060A] text-[#E2E8F0] font-sans flex flex-col">
         <div
           className="fixed inset-0 pointer-events-none opacity-[0.03] z-0"
           style={{

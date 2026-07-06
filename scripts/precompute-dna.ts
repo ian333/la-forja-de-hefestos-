@@ -37,9 +37,11 @@ function hex(h: string): V3 { const n = parseInt(h.slice(1), 16); return [(n >> 
 
 // brillo HDR para el bloom (picos blanco-caliente)
 function colHot(base: V3, density: number, boost = 1): V3 {
-  const hot = Math.min(1, density * density * 0.55);
+  // MÁS LUZ ≠ MÁS COLOR: blanqueo BAJO (solo los picos máximos) + brillo BAJO → el aditivo
+  // suma a COLOR SATURADO, no a blanco; así se VEN los átomos y la doble hélice.
+  const hot = Math.min(1, density * density * 0.18);
   const r = base[0] * (1 - hot) + 1.0 * hot, g = base[1] * (1 - hot) + 0.96 * hot, b = base[2] * (1 - hot) + 0.86 * hot;
-  const bright = (0.18 + 0.45 * density) * boost;
+  const bright = (0.10 + 0.26 * density) * boost;
   return [r * bright, g * bright, b * bright];
 }
 const TEAL: V3 = [0.26, 0.78, 0.92];   // backbone fosfato
@@ -51,7 +53,7 @@ const SEQS: Record<string, string> = {
 };
 
 const key = (process.argv[2] || 'brca1').toLowerCase();
-const N = parseInt(process.argv[3] || '600000', 10);   // MÁS denso: nunca se ve vacío
+const N = parseInt(process.argv[3] || '600000', 10);   // densidad original (el aura llena el void, sin lavar)
 const seq = (SEQS[key] || BRCA1_FRAGMENT).slice(0, 36);   // ~36 bp = 3.4 vueltas → hélice ALTA (gigante)
 const duplex = buildDuplex(seq);
 const { atoms, frames } = duplex;
@@ -133,6 +135,26 @@ for (const a of atoms) {
   }
   emit(a.c1, colHot(TEAL, 1.0), 0.34, 1);                                  // núcleo del átomo
   emit(a.baseEdge, colHot(hex(BASE_COLOR[a.base as Base]), 1.0), 0.36, 2);
+}
+
+// ── AURA DE CAMPO ELÉCTRICO: el esqueleto de fosfatos es NEGATIVO → un campo lo ENVUELVE
+// (decae radial desde el backbone, ~como Poisson/cara-i). Lo dibujamos como nube AZUL-
+// ELÉCTRICA que LLENA el void alrededor de la hélice (MÁS COLOR + OCUPAR PANTALLA) + es el
+// diferenciador. Hugea la hélice (no la agranda de más) para que el helix siga dominando. ──
+const nField = Math.round(N * 0.34);
+const FIELD_NEAR: V3 = [0.35, 0.85, 1.0];    // cian eléctrico (cerca, intenso)
+const FIELD_FAR: V3 = [0.10, 0.28, 0.95];    // azul profundo (lejos, tenue)
+const zTop = (frames.length - 1) * B_DNA.rise;
+const helixR = B_DNA.rPhosphate;             // ~9.4 Å
+for (let k = 0; k < nField; k++) {
+  const z = R() * zTop;
+  const u = R();
+  const r = helixR * (1.0 + 0.95 * u * u);   // r ∈ [helixR, ~1.95·helixR]: hugea, no globo
+  const ang = R() * 6.283;
+  const fall = Math.exp(-(r - helixR) / (helixR * 0.7));   // brillo del campo ∝ decae radial
+  const col: V3 = [FIELD_NEAR[0]*(fall)+FIELD_FAR[0]*(1-fall), FIELD_NEAR[1]*fall+FIELD_FAR[1]*(1-fall), FIELD_NEAR[2]*fall+FIELD_FAR[2]*(1-fall)];
+  const p: V3 = sub([r * Math.cos(ang), r * Math.sin(ang), z], center);
+  emit(p, mul(col, 0.022 + 0.05 * fall), 0.10 + 0.03 * fall, 1);   // MUY tenue: velo de color, sin lavar
 }
 
 // ── NÚCLEOS: fosfatos (P) de ambas hebras — los puntos dorados del esqueleto ──

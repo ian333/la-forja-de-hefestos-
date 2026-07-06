@@ -1,0 +1,9 @@
+Todo lo que sale de un torno nace igual: un perfil plano... girado. Hoy haces una flecha escalonada.
+Boceto en el plano equis ye. El eje vertical va a ser el eje de la flecha.
+Dibuja media flecha: solo el lado derecho del eje, como una escalera de radios.
+Los radios se acotan contra el eje: doce en la cola...
+...dieciocho en el hombro, donde vivirá el balero...
+...y diez en la punta. Ancla el arranque para que nada se mueva.
+Termina el boceto... y ahora la magia del torno: Revolución.
+Trescientos sesenta grados alrededor del eje... y el perfil plano ya es una flecha de tres diámetros.
+Cola para el motor, hombro para el balero, punta para la polea. Así se piensa una flecha. Nos vemos en el taller.

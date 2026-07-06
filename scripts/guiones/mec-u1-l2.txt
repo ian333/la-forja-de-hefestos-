@@ -1,0 +1,10 @@
+Ya hiciste tu primera pieza. Hoy aprendes a moverte alrededor de ella como pez en el agua.
+Arrastra con el mouse para orbitar. La pieza no se mueve: te mueves tú.
+Las vistas con nombre son tus anclas: isométrica, superior, frontal. Un clic y sabes dónde estás.
+A la izquierda vive el árbol de operaciones: la historia completa de tu pieza, paso por paso.
+Ahora un regalo: clic derecho, y el taller entero se abre en un anillo dorado.
+Elige Extruir en el anillo... y cámbiale la altura a cuarenta. La historia se puede editar.
+La pieza entera se reconstruye desde su historia. Eso es diseño paramétrico: el pasado manda.
+¿Te equivocaste? Deshacer y rehacer son tus amigos de toda la vida.
+Y abajo, siempre encendidos: volumen, masa y topología. El tablero de instrumentos del taller.
+Órbita, vistas, historia, deshacer. Con esto ya nada te asusta. La próxima: el boceto a fondo, con el perfil en ele del libro.

@@ -24,14 +24,14 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { H2O, CH4, NH3, CO2, C2H4, C2H2, HCl, NaCl, C6H6 } from '../src/lib/chem/quantum/canonical-molecules';
-import { H2, HE_H_CATION, LI2, N2, O2, HF, CO, sampleMolecule, type Molecule3D } from '../src/lib/chem/quantum/molecular-orbitals';
+import { H2, HE_H_CATION, LI2, N2, O2, F2, C2, HF, CO, sampleMolecule, type Molecule3D } from '../src/lib/chem/quantum/molecular-orbitals';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
 const MOLS: Record<string, Molecule3D> = {
   h2o: H2O, ch4: CH4, nh3: NH3, co2: CO2, c2h4: C2H4, c2h2: C2H2, hcl: HCl, nacl: NaCl, c6h6: C6H6,
-  h2: H2, hehp: HE_H_CATION, li2: LI2, n2: N2, o2: O2, hf: HF, co: CO,
+  h2: H2, hehp: HE_H_CATION, li2: LI2, n2: N2, o2: O2, f2: F2, c2: C2, hf: HF, co: CO,
 };
 
 const key = (process.argv[2] || 'h2o').toLowerCase();
@@ -78,7 +78,7 @@ const samples: ReturnType<typeof sampleMolecule> = [];
 let seed = 7;
 while (samples.length < N && seed < 7 + 16) {
   const batch = sampleMolecule(mol, 200000, seed);
-  samples.push(...batch);
+  for (const _s of batch) samples.push(_s);   // push(...huge) revienta el call stack (H2)
   console.log(`  lote seed=${seed}: +${batch.length} → ${samples.length}/${N}  (${((Date.now() - t0) / 1000).toFixed(0)}s)`);
   seed++;
 }

@@ -218,3 +218,65 @@ export function wavelengthToRGB(nm: number): Vec3 {
   const adj = (c: number): number => (c <= 0 ? 0 : Math.pow(c * f, gamma));
   return [adj(r), adj(g), adj(b)];
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// CAPACITOR — el tanque de carga
+// ════════════════════════════════════════════════════════════════════════
+//
+// Q = C·V electrones ACUMULADOS en una placa (y huecos en la otra). El
+// capacitor NO deja pasar corriente: la corriente solo fluye MIENTRAS cambia
+// el voltaje (i = C·dV/dt). Entre placas vive el campo E = V/d con energía
+// ½CV² — el mismo ½ de la presa del boost de La Forja.
+
+/** Carga almacenada Q = C·V [C]. */
+export function capCharge(C: number, V: number): number {
+  return C * V;
+}
+
+/** Número de electrones REALES desplazados: N = Q/e (un número descomunal). */
+export function capElectrons(C: number, V: number): number {
+  return capCharge(C, V) / E_CHARGE;
+}
+
+/** Energía en el campo eléctrico: ½CV² [J]. */
+export function capEnergy(C: number, V: number): number {
+  return 0.5 * C * V * V;
+}
+
+/** Campo eléctrico entre placas: E = V/d [V/m]. */
+export function capField(V: number, d: number): number {
+  return V / d;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// MOSFET — el canal de inversión visto desde el silicio
+// ════════════════════════════════════════════════════════════════════════
+//
+// Gradual Channel Approximation (el origen del Shichman-Hodges de spice.ts):
+// el potencial del canal V(x) sube de 0 (source) a Vds (drain); la carga local
+// del canal es ∝ (Vov − V(x)). Integrando I = µCox·W·(Vov−V)·dV/dx constante:
+//     x/L = [Vov·V − V²/2] / [Vov·Vds_eff − Vds_eff²/2]
+// Invirtiendo se obtiene V(x) y de ahí el GROSOR del canal en cada punto —
+// la cuña que se estrangula (pinch-off) cuando Vds ≥ Vov.
+
+/** Potencial del canal V(x) con x∈[0,1] (GCA). Vds se recorta a Vov (pinch-off). */
+export function channelV(vov: number, vds: number, x: number): number {
+  if (vov <= 0) return 0;
+  const ve = Math.min(vds, vov);                 // en saturación el canal ve Vov
+  const denom = vov * ve - (ve * ve) / 2;
+  if (denom <= 0) return 0;
+  // resolver Vov·V − V²/2 = x·denom  →  V = Vov − √(Vov² − 2x·denom)
+  const disc = Math.max(0, vov * vov - 2 * x * denom);
+  return vov - Math.sqrt(disc);
+}
+
+/**
+ * Grosor RELATIVO del canal de inversión en x∈[0,1]: t = (Vov − V(x))/Vov.
+ * 1 = canal pleno (source), 0 = estrangulado (pinch-off en el drain saturado).
+ * Corte (vgs ≤ Vth) → 0 en todas partes.
+ */
+export function channelThickness(vgs: number, vth: number, vds: number, x: number): number {
+  const vov = vgs - vth;
+  if (vov <= 0) return 0;
+  return Math.max(0, (vov - channelV(vov, vds, x)) / vov);
+}

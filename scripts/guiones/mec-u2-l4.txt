@@ -1,0 +1,6 @@
+Las esquinas vivas cortan manos y concentran esfuerzo. El capítulo dos les da dos curas: el redondeo y el chaflán.
+Un rectángulo de sesenta por cuarenta, con la entrada dinámica: exacto desde el trazo.
+Redondeo de boceto: clic en la esquina de arriba a la derecha... radio de ocho.
+Y chaflán en la de abajo: ocho milímetros de corte recto.
+Termina y extruye diez. El kernel delata a cada esquina: el redondeo perdona más material que el chaflán.
+Mismo boceto, dos personalidades: la curva para las manos, el corte para los ensambles. Nos vemos en la próxima.

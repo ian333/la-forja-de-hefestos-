@@ -121,3 +121,52 @@ describe('LED — el color sale del band gap', () => {
     expect(b2).toBeGreaterThanOrEqual(g2 * 0.5); // azul presente
   });
 });
+
+// ── capacitor + canal MOSFET (añadidos 2026-06-09 noche) ──
+import {
+  capCharge, capElectrons, capEnergy, capField,
+  channelV, channelThickness,
+} from '../microfisica';
+
+describe('capacitor — el tanque de carga', () => {
+  it('Q = C·V: 10µF a 5V = 50µC', () => {
+    expect(capCharge(10e-6, 5)).toBeCloseTo(50e-6, 9);
+  });
+  it('los electrones desplazados son DESCOMUNALES: ~3.1e14 en 10µF/5V', () => {
+    const n = capElectrons(10e-6, 5);
+    expect(n).toBeGreaterThan(3e14);
+    expect(n).toBeLessThan(3.3e14);
+  });
+  it('energía ½CV²: la presa del v2 (6600µF a 120V) guarda 47.5J', () => {
+    expect(capEnergy(6600e-6, 120)).toBeCloseTo(47.52, 1);
+  });
+  it('E = V/d crece con V y cae con d', () => {
+    expect(capField(10, 1e-3)).toBeCloseTo(1e4, 6);
+    expect(capField(10, 2e-3)).toBeLessThan(capField(10, 1e-3));
+  });
+});
+
+describe('canal MOSFET — gradual channel (la cuña)', () => {
+  it('V(0)=0 en el source y V(1)=Vds en triodo', () => {
+    expect(channelV(6, 2, 0)).toBeCloseTo(0, 9);
+    expect(channelV(6, 2, 1)).toBeCloseTo(2, 6);
+  });
+  it('en saturación V(1) se recorta a Vov (pinch-off)', () => {
+    expect(channelV(6, 15, 1)).toBeCloseTo(6, 6);
+  });
+  it('grosor: pleno en source, monótono decreciente hacia drain', () => {
+    const t0 = channelThickness(10, 4, 3, 0);
+    const tm = channelThickness(10, 4, 3, 0.5);
+    const t1 = channelThickness(10, 4, 3, 1);
+    expect(t0).toBeCloseTo(1, 9);
+    expect(tm).toBeLessThan(t0);
+    expect(t1).toBeLessThan(tm);
+  });
+  it('pinch-off: en saturación el grosor en el drain es 0', () => {
+    expect(channelThickness(10, 4, 12, 1)).toBeCloseTo(0, 6);
+  });
+  it('corte: sin overdrive no hay canal en ningún punto', () => {
+    expect(channelThickness(2, 4, 5, 0)).toBe(0);
+    expect(channelThickness(2, 4, 5, 0.5)).toBe(0);
+  });
+});

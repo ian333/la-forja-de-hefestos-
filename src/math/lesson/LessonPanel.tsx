@@ -166,7 +166,18 @@ export default function LessonPanel<S>({ lesson, onApplyState, sandbox, stepsCon
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, mode, replayKey]);
 
-  const next = () => { setPage(p => Math.min(p + 1, total)); setProgress(0); };
+  const next = () => {
+    setPage(p => {
+      const np = Math.min(p + 1, total);
+      // Fin de la clase guiada (llega a "Conexión"): señal de progreso. El shell
+      // del lab (PhysicsLab/MathLab) sabe QUÉ módulo es y registra la lección.
+      if (np === total && p !== total && total > 0) {
+        window.dispatchEvent(new CustomEvent('gaia:lesson-complete'));
+      }
+      return np;
+    });
+    setProgress(0);
+  };
   const prev = () => { setPage(p => Math.max(p - 1, -1)); setProgress(0); };
   const replay = () => { setReplayKey(k => k + 1); setProgress(0); };
 

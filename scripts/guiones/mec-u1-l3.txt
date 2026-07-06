@@ -1,0 +1,15 @@
+Éste es el perfil en ele del libro de Bethune: el primer ejercicio real de todo ingeniero. Vamos a calcarlo.
+Boceto nuevo, en el plano equis ye.
+Con la herramienta de línea, sigue la ele a ojo: seis trazos, y cierras donde empezaste.
+Y ahora dale esqueleto: estas tres líneas, horizontales... y estas tres, verticales.
+Ahora las órdenes. La base: ochenta milímetros.
+El talón derecho: treinta.
+El brazo de arriba: treinta también.
+Y la altura total: sesenta. Cuatro cotas, y la geometría entera obedece.
+Ancla la esquina... y ahí está: totalmente restringido. Igual que en la página del libro.
+Termina el boceto... y extruye: quince milímetros de espesor.
+Ahora los barrenos del ejercicio uno punto dos. Cortar... Boceto... y clic en la cara de la pieza.
+Dos círculos a ojo: uno en el brazo... y otro en la base.
+El libro los pide de veinte: cota de diámetro al primero... y al segundo.
+Termina el boceto... y los dos cortes atraviesan la placa. La ele del libro, barrenada.
+Ejercicio uno punto uno y uno punto dos del libro: superados. El kernel da fe. Nos vemos en la siguiente.

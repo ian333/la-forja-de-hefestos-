@@ -1,0 +1,8 @@
+Esto no es un dibujo de engrane. Es una involuta real: la curva que hace que los dientes rueden sin rechinar.
+Un clic... y La Forja talla el engrane completo: módulo, dientes, ángulo de presión de veinte grados.
+Gíralo. Cada diente es la misma curva matemática, repetida con precisión de micras.
+Ahora su pareja: un segundo engrane, embonado a la distancia exacta entre centros.
+Aplica el mate... y quedan faseados: diente contra valle, a la distancia exacta entre centros.
+Y ahora el juez: verificar el embonado. El kernel barre la vuelta completa y mide la interferencia.
+Y abajo, el juez: la interferencia entre dientes, medida por el kernel. Si rechinara, aquí lo verías en números.
+Esto es un adelanto de la unidad diez: engranes, flechas, cuñas y baleros. La transmisión completa. Nos vemos ahí.

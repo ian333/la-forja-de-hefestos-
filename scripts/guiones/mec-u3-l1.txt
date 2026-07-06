@@ -1,0 +1,6 @@
+Hoy, la primera regla de las piezas de plástico: nada sale del molde con paredes verticales.
+Una caja simple: boceto, rectángulo, y extruye treinta.
+Sus paredes son verticales: en el molde, esto se atora. Se rayaría al salir.
+La cura está en el menú Más: ángulo de salida. Tres grados de inclinación.
+Mira las paredes: ahora abren hacia arriba. La pieza se desliza del molde sin pelear.
+Tres grados que valen oro: sin draft no hay inyección. Es la unidad de moldes, y apenas empieza.

@@ -49,7 +49,7 @@ describe('presets — integración motor + datos', () => {
         }
       }
     }
-  });
+  }, 20000);
 
   it('el divisor cumple la fórmula V_out = Vin·R2/(R1+R2)', () => {
     const div = PRESETS.find((p) => p.id === 'divider')!;

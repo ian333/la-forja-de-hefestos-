@@ -23,13 +23,17 @@ import { getParticleTexture } from '@/labs/components/sprite-texture';
 import {
   makeRng, stepDrude, helixSegments, biotSavart,
   bandgapToWavelengthNm, wavelengthToRGB, type Vec3, type DrudeElectron,
+  capElectrons, capEnergy, channelThickness,
 } from '@/lib/circuitos/microfisica';
+import { MOSFETS, mosChannel } from '@/lib/circuitos/spice';
 
-type View = 'resistencia' | 'bobina' | 'led';
+type View = 'resistencia' | 'bobina' | 'capacitor' | 'mosfet' | 'led';
 
 const HUD: Record<View, string> = {
   resistencia: 'Estás DENTRO del alambre · cada chispa es un electrón entregando su energía a la red',
   bobina: 'El brillo de cada línea es |B| real (Biot-Savart) · el flujo te dice la dirección',
+  capacitor: 'Los electrones NO cruzan: se ACUMULAN (Q=CV) · la corriente solo fluye mientras V CAMBIA',
+  mosfet: 'El campo del gate crea un río de electrones donde no lo había · la cuña se estrangula = saturación',
   led: 'Cada destello en la unión es un electrón cayendo a un hueco · el fotón sale con λ = h·c/E_g',
 };
 
@@ -39,10 +43,17 @@ export default function MicroscopioCorriente() {
   const [current, setCurrent] = useState(2.5);
   const [ledV, setLedV] = useState(3.0); // arriba del gap del azul: arranca ENCENDIDO
   const [material, setMaterial] = useState(4); // azul por default: el premio Nobel
+  const [capV, setCapV] = useState(5);
+  const [capC, setCapC] = useState(10);          // µF
+  const [vgs, setVgs] = useState(6);
+  const [vds, setVds] = useState(8);
+  const [mosPart, setMosPart] = useState<'IRF640N' | 'IRL540N' | '2N7000'>('IRF640N');
 
   const tabs: { id: View; label: string; icon: string }[] = [
     { id: 'resistencia', label: 'Resistencia → calor', icon: '🔥' },
     { id: 'bobina', label: 'Bobina → campo', icon: '🧲' },
+    { id: 'capacitor', label: 'Capacitor → carga', icon: '⚡' },
+    { id: 'mosfet', label: 'MOSFET → canal', icon: '🚪' },
     { id: 'led', label: 'LED → luz', icon: '💡' },
   ];
 
@@ -61,10 +72,12 @@ export default function MicroscopioCorriente() {
         </div>
         <div className="relative flex-1 min-h-0 rounded-lg border border-[#2c2818] overflow-hidden bg-black" style={{ minHeight: 420 }}>
           <Stage key={view}
-            cameraDistance={view === 'resistencia' ? 6.5 : view === 'bobina' ? 6 : 6}
+            cameraDistance={view === 'resistencia' ? 6.5 : view === 'mosfet' ? 7 : 6}
             autoRotate enablePan={false} bgColor="#030407">
             {view === 'resistencia' && <ResistorScene voltage={voltage} />}
             {view === 'bobina' && <CoilScene current={current} />}
+            {view === 'capacitor' && <CapacitorScene vTarget={capV} cap={capC} />}
+            {view === 'mosfet' && <MosfetScene vgs={vgs} vds={vds} part={mosPart} />}
             {view === 'led' && <LedScene voltage={ledV} eg={LED_MATERIALS[material].eg} />}
           </Stage>
           {/* HUD cinematográfico (DOM, nunca drei Text) */}
@@ -79,6 +92,10 @@ export default function MicroscopioCorriente() {
       <div className="flex flex-col gap-3 min-h-0 overflow-auto">
         {view === 'resistencia' && <ResistorPanel voltage={voltage} setVoltage={setVoltage} />}
         {view === 'bobina' && <CoilPanel current={current} setCurrent={setCurrent} />}
+        {view === 'capacitor' && <CapacitorPanel v={capV} setV={setCapV} c={capC} setC={setCapC} />}
+        {view === 'mosfet' && (
+          <MosfetPanel vgs={vgs} setVgs={setVgs} vds={vds} setVds={setVds} part={mosPart} setPart={setMosPart} />
+        )}
         {view === 'led' && (
           <LedPanel voltage={ledV} setVoltage={setLedV} material={material} setMaterial={setMaterial} />
         )}
@@ -918,6 +935,426 @@ function LedPanel({ voltage, setVoltage, material, setMaterial }: {
         <div className={`text-[12px] mt-1 font-medium ${on ? 'text-[#4ade80]' : 'text-[#6a5e4e]'}`}>
           {on ? '● Encendido — recombinando y emitiendo luz' : `○ Apagado — necesita ≥ ${eg.toFixed(1)} V (el gap)`}
         </div>
+      </Panel>
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 4) CAPACITOR — el tanque de carga (Q = CV, i = C·dV/dt)
+// ════════════════════════════════════════════════════════════════════════
+
+const CAP_GRID = 14;                       // 14×14 = 196 huecos por placa
+const CAP_SLOTS = CAP_GRID * CAP_GRID;
+const CAP_VMAX = 10;
+const FIELD_N = 9;                          // 9×9 líneas de campo
+const TRAV_N = 14;                          // viajeros por cable
+
+function CapacitorScene({ vTarget, cap }: { vTarget: number; cap: number }) {
+  const sprite = useMemo(() => getParticleTexture(), []);
+  const vDisp = useRef(0);
+  const iRef = useRef(0);
+
+  // posiciones fijas de los huecos de carga en la cara interna de cada placa
+  const slots = useMemo(() => {
+    const out: Vec3[] = [];
+    for (let i = 0; i < CAP_GRID; i++)
+      for (let j = 0; j < CAP_GRID; j++)
+        out.push([0, ((i + 0.5) / CAP_GRID - 0.5) * 2.3, ((j + 0.5) / CAP_GRID - 0.5) * 2.3]);
+    return out;
+  }, []);
+
+  const eGeom = useRef<THREE.BufferGeometry>(null);
+  const ePos = useMemo(() => new Float32Array(CAP_SLOTS * 3), []);
+  const hGeom = useRef<THREE.BufferGeometry>(null);
+  const hPos = useMemo(() => new Float32Array(CAP_SLOTS * 3), []);
+  const fGeom = useRef<THREE.BufferGeometry>(null);
+  const fPos = useMemo(() => new Float32Array(FIELD_N * FIELD_N * 2 * 3), []);
+  const fCol = useMemo(() => new Float32Array(FIELD_N * FIELD_N * 2 * 3), []);
+  const tGeom = useRef<THREE.BufferGeometry>(null);
+  const tPos = useMemo(() => new Float32Array(TRAV_N * 2 * 3), []);
+  const tCol = useMemo(() => new Float32Array(TRAV_N * 2 * 3), []);
+  const trav = useRef<number[]>([]);
+  if (trav.current.length === 0) {
+    const r = makeRng(7);
+    trav.current = Array.from({ length: TRAV_N * 2 }, () => r());
+  }
+  const plateNegMat = useRef<THREE.MeshStandardMaterial>(null);
+  const platePosMat = useRef<THREE.MeshStandardMaterial>(null);
+
+  useFrame((state, dt) => {
+    const d = Math.min(dt, 0.05);
+    const prev = vDisp.current;
+    vDisp.current += (vTarget - vDisp.current) * Math.min(d / 0.45, 1);
+    iRef.current = cap * 1e-6 * (vDisp.current - prev) / Math.max(d, 1e-4);   // i = C dV/dt
+    const frac = Math.min(vDisp.current / CAP_VMAX, 1);
+    const visible = Math.round(frac * CAP_SLOTS);
+    const t = state.clock.elapsedTime;
+
+    // electrones en la placa − (derecha, x=+1.04) y huecos en la + (izquierda)
+    for (let k = 0; k < CAP_SLOTS; k++) {
+      const [, y, z] = slots[k];
+      const jy = 0.03 * Math.sin(t * 6 + k * 2.1), jz = 0.03 * Math.cos(t * 5 + k * 1.3);
+      ePos[k * 3] = 1.04; ePos[k * 3 + 1] = y + jy; ePos[k * 3 + 2] = z + jz;
+      hPos[k * 3] = -1.04; hPos[k * 3 + 1] = y - jz; hPos[k * 3 + 2] = z + jy;
+    }
+    eGeom.current?.setDrawRange(0, visible);
+    hGeom.current?.setDrawRange(0, visible);
+    if (eGeom.current) eGeom.current.attributes.position.needsUpdate = true;
+    if (hGeom.current) hGeom.current.attributes.position.needsUpdate = true;
+
+    // campo E entre placas: brillo ∝ V (de + a −: de izquierda a derecha)
+    let p = 0;
+    for (let i = 0; i < FIELD_N; i++)
+      for (let j = 0; j < FIELD_N; j++) {
+        const y = ((i + 0.5) / FIELD_N - 0.5) * 2.2;
+        const z = ((j + 0.5) / FIELD_N - 0.5) * 2.2;
+        fPos[p * 3] = -0.95; fPos[p * 3 + 1] = y; fPos[p * 3 + 2] = z;
+        fPos[p * 3 + 3] = 0.95; fPos[p * 3 + 4] = y; fPos[p * 3 + 5] = z;
+        const g = 0.06 + frac * 0.85;
+        fCol[p * 3] = g * 0.55; fCol[p * 3 + 1] = g * 0.75; fCol[p * 3 + 2] = g;
+        fCol[p * 3 + 3] = g * 0.85; fCol[p * 3 + 4] = g * 0.6; fCol[p * 3 + 5] = g * 0.35;
+        p += 2;
+      }
+    if (fGeom.current) {
+      fGeom.current.attributes.position.needsUpdate = true;
+      fGeom.current.attributes.color.needsUpdate = true;
+    }
+
+    // viajeros por los cables — SOLO mientras fluye corriente (i = C·dV/dt)
+    const iN = Math.min(Math.abs(iRef.current) * 4e5, 1);    // brillo de la corriente
+    const dir = Math.sign(iRef.current);
+    for (let k = 0; k < TRAV_N * 2; k++) {
+      trav.current[k] = (trav.current[k] + d * (0.25 + iN * 1.6) * (dir >= 0 ? 1 : -1) + 1) % 1;
+      const s = trav.current[k];
+      const right = k >= TRAV_N;
+      const x = right ? 3.3 - s * 2.1 : -3.3 + s * 2.1;     // entran hacia las placas
+      tPos[k * 3] = x; tPos[k * 3 + 1] = 0; tPos[k * 3 + 2] = 0;
+      const a = iN * 0.95;
+      if (right) { tCol[k * 3] = a * 0.45; tCol[k * 3 + 1] = a * 0.8; tCol[k * 3 + 2] = a; }
+      else { tCol[k * 3] = a; tCol[k * 3 + 1] = a * 0.65; tCol[k * 3 + 2] = a * 0.3; }
+    }
+    if (tGeom.current) {
+      tGeom.current.attributes.position.needsUpdate = true;
+      tGeom.current.attributes.color.needsUpdate = true;
+    }
+    if (plateNegMat.current) plateNegMat.current.emissiveIntensity = 0.08 + frac * 0.4;
+    if (platePosMat.current) platePosMat.current.emissiveIntensity = 0.08 + frac * 0.4;
+  });
+
+  return (
+    <group>
+      {/* placas */}
+      <mesh position={[-1.12, 0, 0]}>
+        <boxGeometry args={[0.14, 2.6, 2.6]} />
+        <meshStandardMaterial ref={platePosMat} color="#8a7a5c" metalness={0.85} roughness={0.3}
+          emissive="#ff9a3c" emissiveIntensity={0.08} />
+      </mesh>
+      <mesh position={[1.12, 0, 0]}>
+        <boxGeometry args={[0.14, 2.6, 2.6]} />
+        <meshStandardMaterial ref={plateNegMat} color="#6e7c92" metalness={0.85} roughness={0.3}
+          emissive="#46b6ff" emissiveIntensity={0.08} />
+      </mesh>
+      {/* dieléctrico */}
+      <mesh>
+        <boxGeometry args={[1.9, 2.55, 2.55]} />
+        <meshStandardMaterial color="#10141f" transparent opacity={0.16} roughness={0.9} depthWrite={false} />
+      </mesh>
+      {/* cables */}
+      <mesh position={[-2.25, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.05, 0.05, 2.2, 10]} />
+        <meshStandardMaterial color="#3a3326" metalness={0.7} roughness={0.4} />
+      </mesh>
+      <mesh position={[2.25, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.05, 0.05, 2.2, 10]} />
+        <meshStandardMaterial color="#3a3326" metalness={0.7} roughness={0.4} />
+      </mesh>
+      {/* campo E */}
+      <lineSegments>
+        <bufferGeometry ref={fGeom}>
+          <bufferAttribute attach="attributes-position" args={[fPos, 3]} />
+          <bufferAttribute attach="attributes-color" args={[fCol, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial vertexColors transparent opacity={0.55} depthWrite={false}
+          blending={THREE.AdditiveBlending} toneMapped={false} />
+      </lineSegments>
+      {/* electrones acumulados (placa −) */}
+      <points>
+        <bufferGeometry ref={eGeom}>
+          <bufferAttribute attach="attributes-position" args={[ePos, 3]} />
+        </bufferGeometry>
+        <pointsMaterial map={sprite} color="#6fd2ff" size={0.16} sizeAttenuation transparent
+          depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </points>
+      {/* huecos (placa +) */}
+      <points>
+        <bufferGeometry ref={hGeom}>
+          <bufferAttribute attach="attributes-position" args={[hPos, 3]} />
+        </bufferGeometry>
+        <pointsMaterial map={sprite} color="#ffb061" size={0.16} sizeAttenuation transparent
+          depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </points>
+      {/* corriente en los cables (solo al cambiar V) */}
+      <points>
+        <bufferGeometry ref={tGeom}>
+          <bufferAttribute attach="attributes-position" args={[tPos, 3]} />
+          <bufferAttribute attach="attributes-color" args={[tCol, 3]} />
+        </bufferGeometry>
+        <pointsMaterial map={sprite} size={0.3} sizeAttenuation vertexColors transparent
+          depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </points>
+    </group>
+  );
+}
+
+function CapacitorPanel({ v, setV, c, setC }: {
+  v: number; setV: (x: number) => void; c: number; setC: (x: number) => void;
+}) {
+  const nE = capElectrons(c * 1e-6, v);
+  const exp = nE > 0 ? Math.floor(Math.log10(nE)) : 0;
+  const mant = nE > 0 ? nE / 10 ** exp : 0;
+  const eJ = capEnergy(c * 1e-6, v);
+  return (
+    <>
+      <Panel title="Qué estás viendo">
+        <p className="text-[13px] text-[#c9bfa8] leading-relaxed">
+          Los electrones <b>NO cruzan</b> el capacitor: se <b>amontonan</b> en una placa (azul) y
+          <b> abandonan</b> la otra (los huecos ámbar). Entre placas queda el <b>campo eléctrico</b> —
+          ahí vive la energía. Mira los cables: la corriente solo corre <b>mientras V cambia</b>.
+        </p>
+      </Panel>
+      <Panel title="Cárgalo y descárgalo (mueve V rápido)">
+        <Slider label="Voltaje" value={v} set={setV} min={0} max={10} step={0.1} fmt={(x) => `${x.toFixed(1)} V`} />
+        <Slider label="Capacitancia" value={c} set={setC} min={1} max={22} step={1} fmt={(x) => `${x} µF`} />
+        <div className="text-[11px] font-mono text-[#a0947e] mt-2 leading-relaxed">
+          Q = C·V = {(c * v).toFixed(0)} µC → <b className="text-[#ead080]">{mant.toFixed(1)}×10<sup>{exp}</sup> electrones</b> desplazados
+          <br />E = ½CV² = {(eJ * 1e6).toFixed(0)} µJ
+        </div>
+      </Panel>
+      <Panel title="La idea clave">
+        <p className="text-[12px] text-[#a0947e] leading-relaxed">
+          i = C·dV/dt: el capacitor <b>bloquea lo constante y deja pasar lo que cambia</b>. Por eso filtra,
+          desacopla y suaviza. La <b>presa</b> del v2 de La Forja son 6600 µF a 120 V = 47.5 J —
+          este mismo principio, tamaño industrial.
+        </p>
+      </Panel>
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 5) MOSFET — el canal de inversión desde el silicio (datasheet real)
+// ════════════════════════════════════════════════════════════════════════
+
+const CH_COLS = 36;                 // columnas del canal
+const CH_MAXDOTS = 5;               // puntos máx por columna
+const CH_N = CH_COLS * CH_MAXDOTS;
+const FLOW_N = 64;                  // electrones fluyendo
+const GATE_LINES = 12;
+
+function MosfetScene({ vgs, vds, part }: { vgs: number; vds: number; part: 'IRF640N' | 'IRL540N' | '2N7000' }) {
+  const sprite = useMemo(() => getParticleTexture(), []);
+  const params = MOSFETS[part];
+  const vgsD = useRef(0), vdsD = useRef(0);
+
+  const chGeom = useRef<THREE.BufferGeometry>(null);
+  const chPos = useMemo(() => new Float32Array(CH_N * 3), []);
+  const chCol = useMemo(() => new Float32Array(CH_N * 3), []);
+  const flGeom = useRef<THREE.BufferGeometry>(null);
+  const flPos = useMemo(() => new Float32Array(FLOW_N * 3), []);
+  const flCol = useMemo(() => new Float32Array(FLOW_N * 3), []);
+  const flS = useRef<number[]>([]);
+  const flZ = useRef<number[]>([]);
+  if (flS.current.length === 0) {
+    const r = makeRng(11);
+    flS.current = Array.from({ length: FLOW_N }, () => r());
+    flZ.current = Array.from({ length: FLOW_N }, () => (r() - 0.5) * 1.7);
+  }
+  const gGeom = useRef<THREE.BufferGeometry>(null);
+  const gPos = useMemo(() => new Float32Array(GATE_LINES * 2 * 3), []);
+  const gCol = useMemo(() => new Float32Array(GATE_LINES * 2 * 3), []);
+  const gateMat = useRef<THREE.MeshStandardMaterial>(null);
+
+  // Id máximo de la parte (para normalizar la velocidad del flujo)
+  const idMax = useMemo(() => Math.max(mosChannel(params, 10, 15).id, 1e-3), [params]);
+
+  useFrame((state, dt) => {
+    const d = Math.min(dt, 0.05);
+    vgsD.current += (vgs - vgsD.current) * Math.min(d / 0.3, 1);
+    vdsD.current += (vds - vdsD.current) * Math.min(d / 0.3, 1);
+    const t = state.clock.elapsedTime;
+    const { id } = mosChannel(params, vgsD.current, vdsD.current);
+    const speed = Math.min(id / idMax, 1);
+
+    // canal de inversión: cuña bajo el óxido (grosor REAL de la GCA)
+    let n = 0;
+    for (let cI = 0; cI < CH_COLS; cI++) {
+      const xn = cI / (CH_COLS - 1);
+      const th = channelThickness(vgsD.current, params.Vth, vdsD.current, xn);
+      const dots = Math.round(th * CH_MAXDOTS);
+      const x = -1.15 + xn * 2.3;
+      for (let k = 0; k < dots; k++) {
+        const y = -0.16 - (k / CH_MAXDOTS) * 0.34 * Math.max(th, 0.25);
+        chPos[n * 3] = x + 0.02 * Math.sin(t * 7 + n);
+        chPos[n * 3 + 1] = y;
+        chPos[n * 3 + 2] = (((n * 37) % 17) / 17 - 0.5) * 1.8;
+        const g = 0.35 + th * 0.65;
+        chCol[n * 3] = g * 0.4; chCol[n * 3 + 1] = g * 0.85; chCol[n * 3 + 2] = g;
+        n++;
+      }
+    }
+    chGeom.current?.setDrawRange(0, n);
+    if (chGeom.current) {
+      chGeom.current.attributes.position.needsUpdate = true;
+      chGeom.current.attributes.color.needsUpdate = true;
+    }
+
+    // flujo source→drain con velocidad ∝ Id REAL
+    for (let k = 0; k < FLOW_N; k++) {
+      flS.current[k] = (flS.current[k] + d * (0.05 + speed * 1.4)) % 1;
+      const s = flS.current[k];
+      const th = channelThickness(vgsD.current, params.Vth, vdsD.current, s);
+      const x = -1.6 + s * 3.2;
+      const inChan = x > -1.15 && x < 1.15;
+      const y = inChan ? -0.16 - 0.18 * Math.max(th, 0.12) : -0.3;
+      flPos[k * 3] = x; flPos[k * 3 + 1] = y; flPos[k * 3 + 2] = flZ.current[k];
+      const a = (0.15 + speed * 0.85) * (vgsD.current > params.Vth ? 1 : 0.06);
+      flCol[k * 3] = a * 0.5; flCol[k * 3 + 1] = a * 0.9; flCol[k * 3 + 2] = a;
+    }
+    if (flGeom.current) {
+      flGeom.current.attributes.position.needsUpdate = true;
+      flGeom.current.attributes.color.needsUpdate = true;
+    }
+
+    // el campo del gate (las líneas que ATRAEN al canal)
+    const gA = Math.min(vgsD.current / 10, 1);
+    for (let k = 0; k < GATE_LINES; k++) {
+      const x = -1.05 + (k / (GATE_LINES - 1)) * 2.1;
+      gPos[k * 6] = x; gPos[k * 6 + 1] = 0.12; gPos[k * 6 + 2] = 0;
+      gPos[k * 6 + 3] = x; gPos[k * 6 + 4] = -0.14; gPos[k * 6 + 5] = 0;
+      const g = 0.08 + gA * 0.8;
+      gCol[k * 6] = g; gCol[k * 6 + 1] = g * 0.8; gCol[k * 6 + 2] = g * 0.35;
+      gCol[k * 6 + 3] = g * 0.4; gCol[k * 6 + 4] = g * 0.65; gCol[k * 6 + 5] = g;
+    }
+    if (gGeom.current) {
+      gGeom.current.attributes.position.needsUpdate = true;
+      gGeom.current.attributes.color.needsUpdate = true;
+    }
+    if (gateMat.current) gateMat.current.emissiveIntensity = 0.1 + gA * 0.7;
+  });
+
+  return (
+    <group position={[0, 0.4, 0]}>
+      {/* sustrato p */}
+      <mesh position={[0, -1.05, 0]}>
+        <boxGeometry args={[4.6, 1.7, 2.4]} />
+        <meshStandardMaterial color="#1c100e" transparent opacity={0.5} roughness={0.85} />
+      </mesh>
+      {/* islas n+ (source y drain) */}
+      <mesh position={[-1.7, -0.42, 0]}>
+        <boxGeometry args={[1.1, 0.55, 2.1]} />
+        <meshStandardMaterial color="#13335a" emissive="#1c4f8a" emissiveIntensity={0.25} roughness={0.6} />
+      </mesh>
+      <mesh position={[1.7, -0.42, 0]}>
+        <boxGeometry args={[1.1, 0.55, 2.1]} />
+        <meshStandardMaterial color="#13335a" emissive="#1c4f8a" emissiveIntensity={0.25} roughness={0.6} />
+      </mesh>
+      {/* óxido (el aislante: por eso el gate NO gasta corriente) */}
+      <mesh position={[0, -0.05, 0]}>
+        <boxGeometry args={[2.45, 0.09, 2.15]} />
+        <meshPhysicalMaterial color="#cfd8e8" transparent opacity={0.22} roughness={0.1} depthWrite={false} />
+      </mesh>
+      {/* gate metálico */}
+      <mesh position={[0, 0.14, 0]}>
+        <boxGeometry args={[2.3, 0.2, 2.0]} />
+        <meshStandardMaterial ref={gateMat} color="#8a7a4c" metalness={0.9} roughness={0.25}
+          emissive="#d4b050" emissiveIntensity={0.1} />
+      </mesh>
+      {/* contactos */}
+      <mesh position={[-1.7, 0.25, 0]}>
+        <boxGeometry args={[0.5, 0.8, 0.5]} />
+        <meshStandardMaterial color="#4a4234" metalness={0.8} roughness={0.35} />
+      </mesh>
+      <mesh position={[1.7, 0.25, 0]}>
+        <boxGeometry args={[0.5, 0.8, 0.5]} />
+        <meshStandardMaterial color="#4a4234" metalness={0.8} roughness={0.35} />
+      </mesh>
+      {/* campo del gate */}
+      <lineSegments>
+        <bufferGeometry ref={gGeom}>
+          <bufferAttribute attach="attributes-position" args={[gPos, 3]} />
+          <bufferAttribute attach="attributes-color" args={[gCol, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial vertexColors transparent opacity={0.7} depthWrite={false}
+          blending={THREE.AdditiveBlending} toneMapped={false} />
+      </lineSegments>
+      {/* canal de inversión (la cuña) */}
+      <points>
+        <bufferGeometry ref={chGeom}>
+          <bufferAttribute attach="attributes-position" args={[chPos, 3]} />
+          <bufferAttribute attach="attributes-color" args={[chCol, 3]} />
+        </bufferGeometry>
+        <pointsMaterial map={sprite} size={0.22} sizeAttenuation vertexColors transparent
+          depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </points>
+      {/* electrones fluyendo source→drain */}
+      <points>
+        <bufferGeometry ref={flGeom}>
+          <bufferAttribute attach="attributes-position" args={[flPos, 3]} />
+          <bufferAttribute attach="attributes-color" args={[flCol, 3]} />
+        </bufferGeometry>
+        <pointsMaterial map={sprite} size={0.3} sizeAttenuation vertexColors transparent
+          depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} />
+      </points>
+    </group>
+  );
+}
+
+function MosfetPanel({ vgs, setVgs, vds, setVds, part, setPart }: {
+  vgs: number; setVgs: (x: number) => void; vds: number; setVds: (x: number) => void;
+  part: 'IRF640N' | 'IRL540N' | '2N7000'; setPart: (p: 'IRF640N' | 'IRL540N' | '2N7000') => void;
+}) {
+  const params = MOSFETS[part];
+  const vov = vgs - params.Vth;
+  const { id } = mosChannel(params, vgs, vds);
+  const region = vov <= 0 ? 'CORTE' : vds < vov ? 'TRIODO (switch cerrado)' : 'SATURACIÓN (fuente de corriente)';
+  const regionColor = vov <= 0 ? '#6a5e4e' : vds < vov ? '#4ade80' : '#ead080';
+  return (
+    <>
+      <Panel title="Qué estás viendo">
+        <p className="text-[13px] text-[#c9bfa8] leading-relaxed">
+          Silicio <b>p</b> con dos islas <b>n</b>. Sin gate no hay camino. Sube V<sub>GS</sub> y el campo
+          (las líneas doradas) <b>atrae electrones</b> bajo el óxido: nace el <b>canal de inversión</b> —
+          un río donde había desierto. Con V<sub>DS</sub>, la <b>cuña se estrangula</b> hacia el drain:
+          eso ES la saturación.
+        </p>
+      </Panel>
+      <Panel title="Elige la parte (datasheet real)">
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          {(['IRF640N', 'IRL540N', '2N7000'] as const).map((p) => (
+            <button key={p} onClick={() => setPart(p)}
+              className={`text-[11px] px-1.5 py-1.5 rounded border ${
+                p === part ? 'border-[#d4b050] bg-[#1e2538] text-[#ead080]' : 'border-[#2c2818] bg-[#14160f] text-[#a0947e]'}`}>
+              {p}
+            </button>
+          ))}
+        </div>
+        <div className="text-[10px] font-mono text-[#6a5e4e]">{params.name} · V_th={params.Vth}V</div>
+      </Panel>
+      <Panel title="Las dos perillas">
+        <Slider label="V_GS (el gate)" value={vgs} set={setVgs} min={0} max={10} step={0.1} fmt={(x) => `${x.toFixed(1)} V`} />
+        <Slider label="V_DS (drain-source)" value={vds} set={setVds} min={0} max={15} step={0.1} fmt={(x) => `${x.toFixed(1)} V`} />
+        <div className="mt-2 text-[12px] font-medium" style={{ color: regionColor }}>● {region}</div>
+        <div className="text-[11px] font-mono text-[#ead080] mt-1">
+          I_D = {id >= 1 ? `${id.toFixed(1)} A` : `${(id * 1000).toFixed(0)} mA`} <span className="text-[#6a5e4e]">(Shichman-Hodges, parámetros del datasheet)</span>
+        </div>
+      </Panel>
+      <Panel title="La idea clave">
+        <p className="text-[12px] text-[#a0947e] leading-relaxed">
+          Una placa de metal, SIN tocar el silicio, crea o borra un camino de electrones: <b>el campo
+          controla la materia</b>. Eso es un transistor — y mil millones de estos son tu computadora.
+          El <b>IRF640N</b> es el del pedido AG: el que va a switchear tu boost a 100 kHz.
+        </p>
       </Panel>
     </>
   );

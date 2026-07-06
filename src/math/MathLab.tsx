@@ -8,10 +8,11 @@
  * de física (son agnósticos del dominio).
  */
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import type { Audience } from './types';
 import { AudienceContext } from './context';
 import { BRANCHES, findModule } from './registry';
+import { completeLesson } from '@/lib/progress';
 import Sidebar from '@/physics/components/Sidebar';
 import AudienceToggle from '@/physics/components/AudienceToggle';
 import ModuleStub from '@/physics/components/ModuleStub';
@@ -32,6 +33,13 @@ export default function MathLab() {
   const [audience, setAudience] = useState<Audience>('researcher');
   const [selected, setSelected] = useState<{ branchId: string; moduleId: string }>(FIRST_LIVE);
   useHashRoute(BRANCHES, setSelected);
+
+  // Progreso: LessonPanel avisa el fin de su clase guiada; aquí sabemos el módulo.
+  useEffect(() => {
+    const done = () => completeLesson('math', `${selected.branchId}/${selected.moduleId}`);
+    window.addEventListener('gaia:lesson-complete', done);
+    return () => window.removeEventListener('gaia:lesson-complete', done);
+  }, [selected.branchId, selected.moduleId]);
 
   const { branch, module: mod } = useMemo(
     () => findModule(selected.branchId, selected.moduleId),
