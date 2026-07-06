@@ -1,0 +1,22 @@
+{
+  "jobs": [
+    {
+      "id": "coase-169",
+      "label": "Coase 16:9 (4K)",
+      "cmd": "SLUG=coase ID=econ-1991-coase END=438 FMT=169 BATCH=100 AUDIO=auto node scripts/render-clase.cjs",
+      "status": "pending"
+    },
+    {
+      "id": "acemoglu-916",
+      "label": "Acemoglu 9:16 (4K)",
+      "cmd": "SLUG=acemoglu ID=econ-2024-acemoglu END=632 FMT=916 BATCH=100 AUDIO=auto node scripts/render-clase.cjs",
+      "status": "pending"
+    },
+    {
+      "id": "acemoglu-169",
+      "label": "Acemoglu 16:9 (4K)",
+      "cmd": "SLUG=acemoglu ID=econ-2024-acemoglu END=632 FMT=169 BATCH=100 AUDIO=auto node scripts/render-clase.cjs",
+      "status": "pending"
+    }
+  ]
+}

@@ -52,9 +52,10 @@ const URL = process.env.URL || 'http://localhost:5002/forja-brep.html';
     // ── #3 FILLET: clic en Fillet, luego clic en una arista de la lista (UI) ──
     await page.click('[data-testid="btn-fillet"]');
     await page.waitForSelector('[data-testid="edge-list"]', { timeout: 10000 });
-    // Hay aristas listadas; clic en la primera (edge-0) — selección real por UI.
-    await page.waitForSelector('[data-testid="edge-0"]', { timeout: 10000 });
-    await page.click('[data-testid="edge-0"]');
+    // Hay aristas listadas; clic en la primera (edge-item-0) — selección real por UI.
+    // (testid real del Part Studio: `edge-item-${index}`, ver ForgeBRepStudio.tsx:4759.)
+    await page.waitForSelector('[data-testid="edge-item-0"]', { timeout: 10000 });
+    await page.click('[data-testid="edge-item-0"]');
     const volBeforeFillet = (await inv()).vol_kernel;
     // El radio default (3) ya redondea; espera al recompute con vol menor.
     await page.waitForFunction(

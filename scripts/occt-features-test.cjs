@@ -100,8 +100,26 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
   const cha = occt.chamferEdges(oc, plate2, 2, [0]);
   const volCha = occt.volume(oc, cha);
 
+  // ── 7. ESCALA (contracción de molde, cap 6): cubo 10³ ×1.05 → 1157.625 EXACTO ──
+  const cubeS = occt.makeBox(oc, 10, 10, 10);
+  const scaled = occt.scaleShape(oc, cubeS, 1.05, [5, 5, 5]);
+  const volScaled = occt.volume(oc, scaled);
+  const comScaled = occt.massProperties(oc, scaled, 1).centerOfMass;
+
+  // ── 8. DRAFT (ángulo de salida, cap 6 molde): caja 20×20×10, 3° pull +Z,
+  //       neutro z=0 → tronco piramidal EXACTO h/3·(a²+ab+b²) con b=20−2h·tan3°
+  const boxD = occt.makeBox(oc, 20, 20, 10);
+  const drafted = occt.draftFaces(oc, boxD, 3, [0, 0, 1], 0);
+  const volDraft = occt.volume(oc, drafted);
+  const bTop = 20 - 2 * 10 * Math.tan((3 * Math.PI) / 180);
+  const volDraftIn = (10 / 3) * (400 + 20 * bTop + bTop * bTop);       // paredes se cierran
+  const bOut = 20 + 2 * 10 * Math.tan((3 * Math.PI) / 180);
+  const volDraftOut = (10 / 3) * (400 + 20 * bOut + bOut * bOut);      // paredes se abren
+
   const inv = {
     vol_plate: volPlate, vol_drilled: volDrilled, hole_removed: holeRemoved, hole_exact: holeExact,
+    vol_scaled: volScaled, com_scaled: comScaled,
+    vol_draft: volDraft, vol_draft_in: volDraftIn, vol_draft_out: volDraftOut,
     vol_tube: volTube, vol_tube_exact: volTubeExact, tube_euler: topoTube.euler,
     vol_box: volBox, vol_shell: volShell, top_face_idx: topIdx, shell_solids: shellSolids,
     mass: mp.mass, mass_exact: massExact, com: mp.centerOfMass, principal: mp.principal,
@@ -124,6 +142,13 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
     box_faces_6: planeFaces === 6,
     fillet_reduces: volFil < volPlate && volFil > 0,
     chamfer_reduces: volCha < volPlate && volCha > 0,
+    // escala 1.05 alrededor del centro: vol ×1.05³ exacto y el COM NO se mueve
+    scale_vol_exact: approx(volScaled, 1157.625, 1e-6),
+    scale_com_fixed: Math.hypot(comScaled[0] - 5, comScaled[1] - 5, comScaled[2] - 5) < 1e-6,
+    // draft 3° de DESMOLDEO: caras exteriores se ABREN hacia el pull (la pieza
+    // sale de la hembra) → el cubo se ensancha arriba = tronco invertido EXACTO
+    draft_frustum_exact: approx(volDraft, volDraftOut, 1e-4),
+    draft_valid: occt.topology(oc, drafted).faces === 6,
   };
 
   const allPass = Object.values(checks).every(Boolean);
