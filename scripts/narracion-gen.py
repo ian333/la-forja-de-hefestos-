@@ -53,16 +53,14 @@ GAP_CLAUSE = float(os.environ.get('GAPCLAUS', '0.26'))  # respiro NATURAL entre 
 # user: "ecualiza la voz, mas dulce, quita el siseo y frecuencias [duras]".
 # Cadena TONAL sin estado (segura por-clausula; la compresion/loudnorm van en el
 # ensamble). Apagar con SWEET=0.
-# MASTERING de voz — limpia + dulce SIN over-procesar (lo agresivo sonaba "rara").
-# Orden pro: HPF → denoise → de-ess → calidez → suavizar aire → compresión pareja.
-# (loudnorm va en el ensamble, no aquí — por-clip descuadraría niveles). SWEET=0 apaga.
-_SWEET = ("highpass=f=80,"                                  # quita rumble/plosivas
-          "afftdn=nr=10:nf=-40,"                            # DENOISE suave: quita ruido de fondo
-          "equalizer=f=7200:width_type=q:w=2.2:g=-3.5,"     # de-ess (siseo/sibilancia)
-          "equalizer=f=2900:width_type=q:w=1.6:g=-1.5,"     # baja dureza leve
-          "equalizer=f=200:width_type=q:w=1.1:g=1.3,"       # calidez -> dulce
-          "treble=g=-1.5:f=8800,"                           # suaviza el aire alto
-          "acompressor=threshold=-20dB:ratio=2.2:attack=6:release=180:makeup=1.5")  # pareja -> limpia
+# GENTIL y CORRECTIVO (el user: sonaba "en una caja" = over-procesado; oídos
+# sensibles a los agudos). SIN denoise ni compresión (eso cierra/encaja el sonido),
+# SIN boost de calidez (agrega caja). Solo: quita rumble, corta la caja (low-mid),
+# de-ess suave y un low-pass que borra los agudos innecesarios. SWEET=0 apaga.
+_SWEET = ("highpass=f=85,"                                  # quita rumble/plosivas
+          "equalizer=f=360:width_type=q:w=1.3:g=-2,"        # QUITA la 'caja' (corta low-mid, NO la sube)
+          "equalizer=f=7000:width_type=q:w=2.6:g=-2.5,"     # de-ess suave (sibilancia)
+          "lowpass=f=11000")                                # borra agudos innecesarios (aire áspero)
 SWEET = os.environ.get('SWEET', '1') != '0'
 
 
