@@ -24,6 +24,7 @@ declare -A NOMBRE=(
   [mec-u5-l1]="ESCUELA-MECANICA-U5L1-tu-primer-ensamble-4K"
   [mec-u10-l3]="ESCUELA-MECANICA-U10L3-relacion-de-transmision-4K"
   [mec-u10-l4]="ESCUELA-MECANICA-U10L4-transmitir-potencia-4K"
+  [mec-u6-l1]="ESCUELA-MECANICA-U6L1-la-rosca-4K"
   [mec-u9-l2]="ESCUELA-MECANICA-U9L2-el-ajuste-4K"
   [mec-u3-l2]="ESCUELA-MECANICA-U3L2-el-costillado-4K"
   [mec-u9-l3]="ESCUELA-MECANICA-U9L3-el-apriete-4K"
