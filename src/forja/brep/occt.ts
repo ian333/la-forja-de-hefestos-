@@ -751,6 +751,34 @@ export function filletAllEdges(oc: OC, shape: Shape, radius: number): Shape {
 }
 
 /**
+ * FILLET RESILIENTE — el fillet de OCCT truena (críptico: `__cxa_is_pointer_type`
+ * en este build WASM sin símbolos de excepción C++) cuando el radio no cabe en la
+ * geometría local: R > pared, o raíces de costillas delgadas. Como el draft, este
+ * wrapper BAJA el radio hasta que entra, y si de plano no cabe, DEGRADA (deja la
+ * pieza sin ese fillet) en vez de matar el sólido. Descubierto con el bezel del
+ * libro (ver scripts/kazmer-parts-build.cjs).
+ */
+export function filletAllEdgesResilient(
+  oc: OC, shape: Shape, radius: number,
+): { shape: Shape; radiusUsedMm: number; ok: boolean; nota: string } {
+  const tries = [radius, radius * 0.6, radius * 0.35, radius * 0.2, Math.min(radius, 0.3), Math.min(radius, 0.15)];
+  for (const r of tries) {
+    if (r < 0.05) break;
+    try {
+      const s = filletAllEdges(oc, shape, r);
+      // valida que salió un sólido con volumen (no un shape corrupto)
+      if (volume(oc, s) > 0) {
+        return { shape: s, radiusUsedMm: +r.toFixed(3), ok: true,
+          nota: r >= radius ? 'fillet aplicado al radio pedido' : `radio bajado a ${r.toFixed(2)}mm (el pedido ${radius}mm no cabía)` };
+      }
+    } catch { /* probar radio menor */ }
+  }
+  // degradación limpia: la pieza sigue viva sin ese fillet
+  return { shape, radiusUsedMm: 0, ok: false,
+    nota: `ningún radio ≤${radius}mm cabe (pared/costilla más delgada que 2·R) → pieza sin ese fillet; redondear aristas seleccionadas o engrosar la geometría` };
+}
+
+/**
  * Redondea SOLO las aristas cuyo índice (en el orden estable de
  * `enumerateEdges`) está en `edgeIndices`. Es el fillet SELECTIVO que el
  * diseñador usa al clicar aristas en el viewport / panel.

@@ -77,6 +77,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-flowleaders-test.cjs'] },
   { group: 'kernel', n: 'mold-moldtech', why: 'Kazmer §13.9 TECNOLOGÍAS: selector por criterios del libro (undercut externo→split cavity §13.9.1, estética total→reverse ejection §13.9.4, rosca→unscrewing, lateral→slide)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-moldtech-test.cjs'] },
+  { group: 'kernel', n: 'kazmer-parts', why: 'BANCO: construir las 4 piezas REALES del libro con el kernel B-Rep (cup/lid/jabonera/bezel); el bezel reveló que el fillet trueca en geom. delgada → filletAllEdgesResilient (baja radio o degrada); las 4 construyen + bezel→STEP',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/kazmer-parts-build.cjs'] },
   { group: 'kernel', n: 'mold-sideactions', why: 'Kazmer §11.3.6-8 MOLDES CON MOVIMIENTO: core pull 44kN/⌀75→82.55std, angle pin 35+25mm EXACTOS, decisor slide/pull',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-sideactions-test.cjs'] },
   { group: 'kernel', n: 'mold-fasteners', why: 'Kazmer §12.4: tornillo del molde peor-caso 362kg/47kN → M10 DIN 912 del CATÁLOGO real',
