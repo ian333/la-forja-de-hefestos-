@@ -245,7 +245,7 @@ export function renderAssemblySection(
   let s = sOpts[0];
   for (const o of sOpts) if (o <= sFit) s = o;
   const scaleLabel = s >= 1 ? `${s}:1` : `1:${+(1 / s).toFixed(1)}`;
-  const ox = MARGIN + 30, oyTop = MARGIN + 18;
+  const ox = MARGIN + 52, oyTop = MARGIN + 18;   // margen izq amplio: cota de altura + balones no se salen del A3
   const X = (x: number) => ox + (x - x0) * s;
   const Y = (z: number) => oyTop + (z1 - z) * s;
 
@@ -270,7 +270,7 @@ export function renderAssemblySection(
     const gx0 = r0 ? X((r0.x0 + r0.x1) / 2) : X(c0 ? c0.x : (x0 + x1) / 2);
     const gy0 = r0 ? Y((r0.z0 + r0.z1) / 2) : Y(c0 ? c0.z : (z0 + z1) / 2);
     const side = comps.length === 1 ? 1 : (gx0 < X((x0 + x1) / 2) ? -1 : 1);
-    const bx = (side < 0 ? X(x0) - 16 : X(x1) + 16) + (ci % 3) * 7 * side;
+    const bx = (side < 0 ? X(x0) - 14 : X(x1) + 14) + (ci % 3) * 5 * side;
     const by = gy0;
     parts.push(`<line x1="${gx0.toFixed(1)}" y1="${gy0.toFixed(1)}" x2="${bx}" y2="${by}" stroke="#b8860b" stroke-width="0.25"/>`);
     parts.push(`<circle cx="${bx}" cy="${by}" r="3.4" fill="#fff" stroke="#b8860b" stroke-width="0.5" data-balloon="${c.id}"/>`);
@@ -285,12 +285,13 @@ export function renderAssemblySection(
   })();
   for (const pt of partings) {
     parts.push(`<line x1="${X(x0) - 8}" y1="${Y(pt.z)}" x2="${X(x1) + 8}" y2="${Y(pt.z)}" stroke="#c01c28" stroke-width="0.3" stroke-dasharray="4 1.4 1 1.4" data-parting="1"/>`);
-    parts.push(`<text x="${X(x0) - 10}" y="${Y(pt.z) + 1}" font-size="2.8" fill="#c01c28" text-anchor="end">${esc(pt.label)}</text>`);
+    // etiqueta a la DERECHA de la sección (a la izquierda se salía de la hoja A3)
+    parts.push(`<text x="${X(x1) + 10}" y="${Y(pt.z) - 1.5}" font-size="2.6" fill="#c01c28" text-anchor="start">${esc(pt.label)}</text>`);
   }
 
   // cotas generales
   dimLine(parts, X(x0), Y(z0) + 9, X(x1), Y(z0) + 9, (x1 - x0).toFixed(1), true);
-  dimLine(parts, X(x0) - 10, Y(z0), X(x0) - 10, Y(z1), (z1 - z0).toFixed(1), false);
+  dimLine(parts, X(x0) - 7, Y(z0), X(x0) - 7, Y(z1), (z1 - z0).toFixed(1), false);
   parts.push(`<text x="${X((x0 + x1) / 2)}" y="${oyTop - 6}" font-size="3.6" fill="#444" text-anchor="middle">${esc(meta.sectionLabel ?? 'SECCIÓN A-A · plano medio')}</text>`);
 
   // ── BOM ──
