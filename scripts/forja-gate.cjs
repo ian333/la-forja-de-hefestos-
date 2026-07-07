@@ -83,6 +83,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-dfm-test.cjs'] },
   { group: 'kernel', n: 'mold-threeplate', why: 'Kazmer §6.3.2: doble partición A-B/A-X, bolts, apertura 2-3×h, v=184+13·log(F) y Tabla 6.1 EXACTA (0.36/1.19s, 339/558mm), sucker pin §6.5.2',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-threeplate-test.cjs'] },
+  { group: 'kernel', n: 'mold-cost-detailed', why: 'Kazmer §3.3 costeo DETALLADO: reproduce el laptop bezel EXACTO ($435 material, 258h/$25,800 maq, 34h/$1,700 acabado, 538kg base, ≈$74,800 total) + Tablas 3.4-3.11',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-cost-detailed-test.cjs'] },
   { group: 'kernel', n: 'occt-sweep-loft', why: 'loft (prisma A·h, tronco h/3·(a²+b²+ab)) + sweep (cilindro πr²L, codo suave sin truncar)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/occt-sweep-loft-test.cjs'] },
   { group: 'physics', n: 'fea',          why: 'FEA real K·u=f vs analítico: barra axial σ=F/A & δ=FL/AE, viga voladizo',

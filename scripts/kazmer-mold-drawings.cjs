@@ -180,6 +180,25 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
   save('E-200-tres-placas', e200.svg);
   console.log('E-200:', e200.nComps, 'comps ·', e200.bom.length, 'BOM · doble partición ✓');
 
+  // ── COTIZACIÓN detallada (Kazmer §3.3, pieza 5) — el laptop bezel del libro ──
+  const mc = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'moldcost-detailed.ts'));
+  const bezelInp = {
+    part: { LpartMm: 240, WpartMm: 160, HpartMm: 10, ApartSurfaceMm2: 45700, VpartMm3: 27500, wallMm: 1.5 },
+    metalKey: 'D2', nCavities: 1, machiningFactor: mc.MACHINING_FACTOR.edm, machiningRateUSDh: 100,
+    finishAreas: [{ spi: 'SPI B-3', areaMm2: 35700 }, { spi: 'SPI A-1', areaMm2: 10000 }], finishRateUSDh: 50,
+    moldSteel: 'AISI P20',
+    custom: { feed: ['hot-thermal'], cooling: ['circuito'], ejector: ['mixto'],
+      structural: ['pilares-interlocks', 'escalonada'], misc: ['sensor-temp', 'sensor-presion'] },
+  };
+  const bezelCost = mc.estimateMoldCost(bezelInp);
+  writeFileSync(`${out}/COTIZACION-BEZEL.txt`, [
+    ...mc.quoteReport(bezelInp, bezelCost), '',
+    'Método: Kazmer cap 3 §3.3 (Eq 3.2-3.18). Reproduce el ejemplo resuelto del',
+    'libro ($74,800). Ajustar tarifas por región (Apéndice D: EE.UU. $100/h vs',
+    'Asia menor) y acero por volumen/abrasión (Apéndice B).',
+  ].join('\n'));
+  console.log('COTIZACIÓN bezel:', '$' + Math.round(bezelCost.totalUSD).toLocaleString('en-US'), '(libro $74,800)');
+
   console.log('PLANOS_MOLDE_OK →', out);
   process.exit(0);
 })().catch((e) => { console.log('FATAL:', String((e && e.stack) || e).slice(0, 400)); process.exit(1); });
