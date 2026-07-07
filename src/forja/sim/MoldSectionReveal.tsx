@@ -21,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // ── cotas del molde (mm) — bezel del libro por defecto ──────────────
 const MOLD = {
@@ -42,14 +42,25 @@ const zStack = () => {
   return { bottomClamp, support, B, A, topClamp, total: topClamp[1] };
 };
 
-// ── entorno procedural (reflejos de acero, sin assets externos) ──────
+// ── entorno de SOFTBOXES (acero rudo: fondo oscuro + franjas de luz brillantes
+//    que se reflejan como en un taller fotográfico, no un cuarto uniforme) ──
 function StudioEnv() {
   const { gl, scene } = useThree();
   useEffect(() => {
+    const s = new THREE.Scene();
+    s.background = new THREE.Color('#05070c');
+    const softbox = (w: number, h: number, color: string, pos: [number, number, number]) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color }));
+      m.position.set(...pos); m.lookAt(0, 0, 0); s.add(m);
+    };
+    softbox(9, 5, '#ffffff', [-5, 6, 4]);       // key blanca arriba-izq
+    softbox(7, 7, '#8fb0ff', [7, 2, 2]);        // fill fría derecha
+    softbox(5, 9, '#ffdca6', [1, -2, -7]);      // rim cálida atrás
+    softbox(12, 2, '#c8d4e6', [0, -6, 3]);      // franja inferior (piso)
     const pmrem = new THREE.PMREMGenerator(gl);
-    const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
+    const env = pmrem.fromScene(s, 0.02);
     scene.environment = env.texture;
-    scene.background = new THREE.Color('#0a0c10');
+    scene.background = new THREE.Color('#080a0f');
     return () => { env.texture.dispose(); pmrem.dispose(); };
   }, [gl, scene]);
   return null;
@@ -107,7 +118,8 @@ function CutSolid({ geometry, plane, steel, capMat, renderOrder, capSize }: {
 
 // ── geometrías del mold base (planta X×Y, apiladas en Z) ─────────────
 const boxG = (x: number, y: number, z: number, cz: number) => { const g = new THREE.BoxGeometry(x, y, z); g.translate(0, 0, cz); return g; };
-const boreY = (r: number, len: number, x: number, z: number) => { const g = new THREE.CylinderGeometry(r, r, len, 40); g.translate(0, 0, 0); g.rotateX(0); return g.translate(x, 0, z); };   // eje Y
+// barreno de agua a lo ANCHO (local X) → perpendicular a la sección → CÍRCULO en la cara del corte
+const boreX = (r: number, len: number, z: number, y = 0) => new THREE.CylinderGeometry(r, r, len, 40).rotateZ(Math.PI / 2).translate(0, y, z);
 const pinZ = (r: number, len: number, x: number, z: number) => { const g = new THREE.CylinderGeometry(r, r, len, 28).rotateX(Math.PI / 2); return g.translate(x, 0, z); };
 
 function MoldSection({ plane, playing, speed, tRef }: {
@@ -118,73 +130,76 @@ function MoldSection({ plane, playing, speed, tRef }: {
 
   // aceros: base pulido OSCURO (no styrofoam) + cara recién fresada satinada
   const steel = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#565c66', metalness: 1.0, roughness: 0.34, envMapIntensity: 0.55,
+    color: '#6b727c', metalness: 0.7, roughness: 0.4, envMapIntensity: 0.7,
     clippingPlanes: [plane], clipShadows: true, side: THREE.DoubleSide,
   }), [plane]);
-  const steelCore = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#4c525c', metalness: 1.0, roughness: 0.3, envMapIntensity: 0.55, clippingPlanes: [plane], side: THREE.DoubleSide,
-  }), [plane]);
   const capMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#8a929d', metalness: 0.95, roughness: 0.52, envMapIntensity: 0.45,   // fresado fresco satinado, más claro
+    color: '#a7b0bd', metalness: 0.3, roughness: 0.62, envMapIntensity: 0.35,   // fresado fresco satinado CLARO (que se lea)
+    emissive: '#3a4048', emissiveIntensity: 0.35,                                // pizca de auto-iluminación para no ennegrecer
     stencilWrite: true, stencilRef: 0, stencilFunc: THREE.NotEqualStencilFunc,
     stencilFail: THREE.ReplaceStencilOp, stencilZFail: THREE.ReplaceStencilOp, stencilZPass: THREE.ReplaceStencilOp,
     side: THREE.DoubleSide,
   }), []);
-  const capCore = useMemo(() => { const m = capMat.clone(); m.color = new THREE.Color('#7e868f'); return m; }, [capMat]);
 
   const cavityMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#20262f', metalness: 0.7, roughness: 0.6, clippingPlanes: [plane], side: THREE.DoubleSide,
   }), [plane]);
   const waterMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#1f6fb0', emissive: '#0d4e86', emissiveIntensity: 0.5, metalness: 0.2, roughness: 0.4,
+    color: '#2f9fe0', emissive: '#1789d8', emissiveIntensity: 1.3, metalness: 0.1, roughness: 0.35,
     clippingPlanes: [plane], side: THREE.DoubleSide,
   }), [plane]);
   const pinMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#d9b23a', metalness: 1.0, roughness: 0.28, envMapIntensity: 1.1, clippingPlanes: [plane], side: THREE.DoubleSide,
+    color: '#e6bf46', metalness: 0.65, roughness: 0.34, emissive: '#4a3a10', emissiveIntensity: 0.4,
+    envMapIntensity: 0.8, clippingPlanes: [plane], side: THREE.DoubleSide,
   }), [plane]);
 
-  // placas (planta X×Y), la A con la bolsa de cavidad restada
-  const plates = useMemo(() => {
-    const { X, Y } = MOLD;
-    // placa A con cavidad: shape con hueco central, extruida en Z
-    const aShape = new THREE.Shape();
-    aShape.moveTo(-X / 2, -Y / 2); aShape.lineTo(X / 2, -Y / 2); aShape.lineTo(X / 2, Y / 2); aShape.lineTo(-X / 2, Y / 2); aShape.closePath();
-    return {
-      bottomClamp: boxG(X, Y, Z.bottomClamp[1] - Z.bottomClamp[0], mid(Z.bottomClamp)),
-      support: boxG(X, Y, Z.support[1] - Z.support[0], mid(Z.support)),
-      B: boxG(X, Y, Z.B[1] - Z.B[0], mid(Z.B)),
-      Alower: boxG(X, Y, MOLD.A - MOLD.cavityDepth, Z.A[0] + (MOLD.A - MOLD.cavityDepth) / 2),  // resto de A sobre la cavidad
-      topClamp: boxG(X, Y, Z.topClamp[1] - Z.topClamp[0], mid(Z.topClamp)),
-    };
+  // UN SOLO BLOQUE de acero (5 placas fusionadas) → cap de esténcil LIMPIO (sin
+  // costuras dentadas). Las placas se distinguen por líneas de partición grabadas.
+  const block = useMemo(() => {
+    const parts = [
+      boxG(MOLD.X, MOLD.Y, Z.bottomClamp[1] - Z.bottomClamp[0], mid(Z.bottomClamp)),
+      boxG(MOLD.X, MOLD.Y, Z.support[1] - Z.support[0], mid(Z.support)),
+      boxG(MOLD.X, MOLD.Y, Z.B[1] - Z.B[0], mid(Z.B)),
+      boxG(MOLD.X, MOLD.Y, Z.A[1] - Z.A[0], mid(Z.A)),
+      boxG(MOLD.X, MOLD.Y, Z.topClamp[1] - Z.topClamp[0], mid(Z.topClamp)),
+    ];
+    return mergeGeometries(parts, false);
   }, [Z]);
 
+  // features reveladas por el corte (se dibujan DESPUÉS del cap → se ven "dentro")
   const cavityG = useMemo(() => boxG(MOLD.cavityX, MOLD.cavityY, MOLD.cavityDepth, Z.A[0] + MOLD.cavityDepth / 2), [Z]);
-  // líneas de enfriamiento: barrenos en Y a ambos lados, en A y en B
-  const coolG = useMemo(() => [
-    boreY(MOLD.coolDia / 2, MOLD.Y + 4, -MOLD.coolInsetY, Z.A[0] + 16),
-    boreY(MOLD.coolDia / 2, MOLD.Y + 4, MOLD.coolInsetY, Z.A[0] + 16),
-    boreY(MOLD.coolDia / 2, MOLD.Y + 4, -MOLD.coolInsetY, Z.B[1] - 16),
-    boreY(MOLD.coolDia / 2, MOLD.Y + 4, MOLD.coolInsetY, Z.B[1] - 16),
-  ], [Z]);
-  // pines de expulsión: suben por B/support hasta la cara de cavidad
+  const zCoolA = Z.A[0] + 22, zCoolB = Z.B[1] - 22;   // agua en A (arriba de cavidad) y en B (abajo)
+  const coolBore = useMemo(() => [   // barrenos a lo ancho → círculos en la cara del corte, a 2 profundidades
+    [zCoolA, -MOLD.coolInsetY], [zCoolA, MOLD.coolInsetY], [zCoolB, -MOLD.coolInsetY], [zCoolB, MOLD.coolInsetY],
+  ].map(([z, y]) => ({ bore: boreX(MOLD.coolDia / 2 + 1.4, MOLD.X + 1, z, y), water: boreX(MOLD.coolDia / 2, MOLD.X + 2, z, y) })), [Z]);
   const pinG = useMemo(() => {
-    const zc = (Z.support[0] + Z.A[0]) / 2, len = Z.A[0] - Z.support[0];
+    const zc = (Z.support[0] + (Z.A[0] + MOLD.cavityDepth)) / 2, len = (Z.A[0] + MOLD.cavityDepth) - Z.support[0];
     return [-MOLD.pinInsetX, 0, MOLD.pinInsetX].map((x) => pinZ(MOLD.pinDia / 2, len, x, zc));
   }, [Z]);
+  // líneas de partición grabadas (finas, oscuras) en las caras del bloque
+  const partingLines = useMemo(() => [Z.support[0], Z.B[0], Z.A[0], Z.topClamp[0]], [Z]);
 
-  const cap = MOLD.X * 1.4;
+  const cap = MOLD.X * 1.5;
   return (
     <group>
       <StudioEnv />
-      {/* placas de acero, cada una con su cap de esténcil → cara maciza */}
-      <CutSolid geometry={plates.bottomClamp} plane={plane} steel={steel} capMat={capMat} renderOrder={1} capSize={cap} />
-      <CutSolid geometry={plates.support} plane={plane} steel={steelCore} capMat={capCore} renderOrder={3} capSize={cap} />
-      <CutSolid geometry={plates.B} plane={plane} steel={steelCore} capMat={capCore} renderOrder={5} capSize={cap} />
-      <CutSolid geometry={plates.Alower} plane={plane} steel={steel} capMat={capMat} renderOrder={7} capSize={cap} />
-      <CutSolid geometry={plates.topClamp} plane={plane} steel={steel} capMat={capMat} renderOrder={9} capSize={cap} />
+      {/* el bloque macizo, un solo cap limpio */}
+      <CutSolid geometry={block} plane={plane} steel={steel} capMat={capMat} renderOrder={2} capSize={cap} />
+      {/* líneas de partición entre placas (grabado) */}
+      {partingLines.map((z, i) => (
+        <mesh key={'pl' + i} position={[0, 0, z]} renderOrder={4}>
+          <boxGeometry args={[MOLD.X + 0.4, MOLD.Y + 0.4, 0.6]} />
+          <meshStandardMaterial color="#23272e" metalness={0.6} roughness={0.7} clippingPlanes={[plane]} />
+        </mesh>
+      ))}
       {/* anatomía revelada por el corte */}
       <mesh geometry={cavityG} material={cavityMat} renderOrder={12} />
-      {coolG.map((g, i) => <mesh key={'c' + i} geometry={g} material={waterMat} renderOrder={13} />)}
+      {coolBore.map((c, i) => (
+        <group key={'c' + i}>
+          <mesh geometry={c.bore} renderOrder={12}><meshStandardMaterial color="#2a2f37" metalness={0.8} roughness={0.5} clippingPlanes={[plane]} side={THREE.DoubleSide} /></mesh>
+          <mesh geometry={c.water} material={waterMat} renderOrder={13} />
+        </group>
+      ))}
       {pinG.map((g, i) => <mesh key={'p' + i} geometry={g} material={pinMat} renderOrder={13} />)}
     </group>
   );
@@ -212,32 +227,41 @@ function CutEdge({ plane }: { plane: THREE.Plane }) {
 interface SceneProps { playing: boolean; speed: number; tRef: React.MutableRefObject<number>; }
 function Scene({ playing, speed, tRef }: SceneProps) {
   const Z = useMemo(zStack, []);
-  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(-1, 0, 0), MOLD.X * 0.75), []);
+  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(-1, 0, 0), MOLD.X / 2), []);
   const { gl } = useThree();
   const controlsRef = useRef<any>(null);
   useEffect(() => { gl.localClippingEnabled = true; }, [gl]);
 
-  // el plano de corte BARRE de +X hacia el centro (0), luego se queda
-  useFrame((_s, delta) => {
+  // el plano de corte BARRE de la cara +X hacia el centro (a través del pin central)
+  useFrame(({ camera }, delta) => {
     if (playing) tRef.current += Math.min(delta, 1 / 30) * speed;
     const t = tRef.current;
-    const sweep = Math.min(1, t / 3.2);                     // 3.2 s de barrido
+    const sweep = Math.min(1, t / 3.4);                     // 3.4 s de barrido
     const e = 1 - Math.pow(1 - sweep, 3);
-    plane.constant = MOLD.X * 0.75 * (1 - e) + 2 * e;       // de +X a ~centro
+    plane.constant = (MOLD.X / 2) * (1 - e);                // de +60 (cara) a 0 (centro)
+    // órbita lenta cinematográfica alrededor del eje vertical una vez hecho el corte
+    if (t > 3.4) {
+      const a = 0.62 + (t - 3.4) * 0.1, R = 440;
+      camera.position.x = Math.sin(a) * R;
+      camera.position.z = Math.cos(a) * R;
+      camera.position.y = 150 + Math.sin((t - 3.4) * 0.15) * 20;
+    }
     controlsRef.current?.update();
   });
 
   return (
     <>
-      <ambientLight intensity={0.14} />
-      <directionalLight position={[280, -200, 360]} intensity={2.7} color="#fff2e0" castShadow />
-      <directionalLight position={[-240, 180, 140]} intensity={0.7} color="#7fa8ff" />
-      <directionalLight position={[40, 260, -160]} intensity={0.5} color="#ffd9a8" />{/* rim cálido */}
-      <group position={[0, 0, -Z.total / 2]}>
+      <ambientLight intensity={0.5} />
+      <hemisphereLight args={['#c2d2e8', '#332d24', 0.9]} />
+      <directionalLight position={[360, 220, 260]} intensity={2.6} color="#fff2e0" castShadow />{/* clave sobre la cara del corte */}
+      <directionalLight position={[-240, 180, 140]} intensity={1.1} color="#8fb0ff" />
+      <directionalLight position={[40, 260, -160]} intensity={0.9} color="#ffd9a8" />{/* rim cálido */}
+      {/* molde DERECHO: stack local-Z → world-Y (arriba); depth local-Y → world-Z (al fondo) */}
+      <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -TOTAL_Z / 2, 0]}>
         <MoldSection plane={plane} playing={playing} speed={speed} tRef={tRef} />
         <CutEdge plane={plane} />
       </group>
-      <OrbitControls ref={controlsRef} enablePan enableZoom target={[0, 0, 0]} />
+      <OrbitControls ref={controlsRef} enablePan enableZoom target={[0, 6, 0]} />
     </>
   );
 }
@@ -257,7 +281,7 @@ export default function MoldSectionReveal({ onClose }: { onClose?: () => void })
     <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: '#0a0c10' }}>
       <Canvas
         gl={{ antialias: true, stencil: true, alpha: false, powerPreference: 'high-performance' }}
-        camera={{ position: [360, -300, 250], fov: 32, near: 1, far: 4000 }}
+        camera={{ position: [410, 150, 210], fov: 34, near: 1, far: 4000 }}
         onCreated={({ gl }) => { gl.localClippingEnabled = true; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.05; }}
       >
         <color attach="background" args={['#0a0c10']} />
