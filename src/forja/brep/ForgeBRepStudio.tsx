@@ -29,6 +29,7 @@ const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación
 const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
 const MoldMachinePanel = lazy(() => import('../mold/MoldMachinePanel'));   // LA MÁQUINA: cliente sube pieza → cotización
 const MoldUnscrewSim = lazy(() => import('../sim/MoldUnscrewSim'));        // molde que desenrosca (núcleo rotativo)
+const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL CORTE: acero seccionándose (esténcil + env)
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import {
@@ -2099,8 +2100,11 @@ function FeaDeformMesh({ mesh, colors, disp, dispMax, clip }: {
       </lineSegments>
       {/* pieza deformada + coloreada por von Mises */}
       <mesh geometry={geom} castShadow>
-        <meshStandardMaterial vertexColors metalness={0.1} roughness={0.45} side={THREE.DoubleSide}
-          emissive="#ffffff" emissiveIntensity={0.06} clippingPlanes={clip ?? undefined} />
+        {/* Colores del esfuerzo REPRESENTATIVOS: toneMapped OFF → el turbo azul→rojo
+            se muestra a su valor REAL (mapa de calor fiel), sin lavarlo el ACES ni
+            el emissive blanco. Mate, para que el color mande, no el brillo. */}
+        <meshStandardMaterial vertexColors metalness={0} roughness={0.62} side={THREE.DoubleSide}
+          toneMapped={false} clippingPlanes={clip ?? undefined} />
       </mesh>
     </group>
   );
@@ -3121,6 +3125,8 @@ export default function ForgeBRepStudio() {
   const [tpSimOn, setTpSimOn] = useState(false);
   const [moldMachineOn, setMoldMachineOn] = useState(false);
   const [unscrewOn, setUnscrewOn] = useState(false);
+  // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
+  //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
   // Menú "Más" de la toolbar: la cola larga de features que la TELEMETRÍA de los
   // 17 drives del libro marcó con CERO clicks (Transición/Barrido/Engrane/…) vive
   // aquí — la fila principal queda para el núcleo real (croquis→extruir→revolución).
@@ -5473,6 +5479,11 @@ export default function ForgeBRepStudio() {
             <MoldUnscrewSim onClose={() => setUnscrewOn(false)} />
           </Suspense>
         )}
+        {sectionOn && (
+          <Suspense fallback={null}>
+            <MoldSectionReveal onClose={() => setSectionOn(false)} />
+          </Suspense>
+        )}
 
         {/* PALETA DE ATAJOS estilo Fusion "S" en el cursor (se abre con la tecla S). */}
         {shortcutPos && (
@@ -5599,6 +5610,18 @@ export default function ForgeBRepStudio() {
               <span>{((feaResult.maxVonMises / 1e6) / 2).toFixed(0)}</span>
               <span data-testid="fea-legend-max">{(feaResult.maxVonMises / 1e6).toFixed(0)}</span>
             </div>
+            {/* HONESTIDAD DE LA VISTA (orden del user): la línea de reposo NO se
+                mueve; lo que se ve deformarse está AMPLIFICADO para que se entienda.
+                Se dice cuánto: real vs exagerada, para que nadie lo lea literal. */}
+            {feaDisp && (() => {
+              const diag = meshBBox ? 2 * Math.hypot(meshBBox.half[0], meshBBox.half[1], meshBBox.half[2]) : 0;
+              const amp = feaDispMaxRef.current > 1e-9 ? (0.14 * diag) / feaDispMaxRef.current : 1;
+              return (
+                <div className="fb-fea-amp" data-testid="fea-amp">
+                  deformación real <b>{feaResult.maxDisplacement.toFixed(3)} mm</b> · vista <b>×{amp < 10 ? amp.toFixed(1) : Math.round(amp)}</b> exagerada · contorno = reposo
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -6037,6 +6060,9 @@ export default function ForgeBRepStudio() {
               </button>
               <button className="fb-fea-run" data-testid="btn-unscrew" onClick={() => setUnscrewOn(true)} style={{ marginTop: 6 }}>
                 ▶ Molde que DESENROSCA (núcleo rotativo · tapa/tubo con rosca)
+              </button>
+              <button className="fb-fea-run" data-testid="btn-section-reveal" onClick={() => setSectionOn(true)} style={{ marginTop: 6 }}>
+                ▶ EL CORTE del molde (acero seccionándose · cavidad + agua + pines)
               </button>
               <button className="fb-fea-run" data-testid="btn-mold-machine" onClick={() => setMoldMachineOn(true)}
                 style={{ marginTop: 6, background: GOLD, color: '#1a1206', fontWeight: 700 }}>
@@ -7634,9 +7660,12 @@ const CSS = `
 .fb-sim-out .fb-row.fs-ok .rv{color:#8ff0a4;}
 
 /* ── Barra de escala (leyenda) del overlay FEA ── */
-.fb-fea-legend{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;width:260px;z-index:7;pointer-events:none;
+.fb-fea-legend{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;width:284px;z-index:7;pointer-events:none;
   background:rgba(13,18,28,0.82);border:1px solid ${GOLD}44;border-radius:12px;padding:9px 11px;
   backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.fb-fea-amp{margin-top:7px;padding-top:7px;border-top:1px solid rgba(159,179,200,0.14);
+  font-size:10.5px;color:#aeb9c7;text-align:center;line-height:1.4;}
+.fb-fea-amp b{color:${GOLD};font-weight:700;}
 .fb-fea-legend-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:${STEEL};
   opacity:.85;margin-bottom:6px;}
 .fb-fea-bar{height:13px;border-radius:4px;border:1px solid rgba(0,0,0,0.5);}
