@@ -73,6 +73,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-slendercore-test.cjs'] },
   { group: 'kernel', n: 'mold-assembly', why: 'PLANO DE ENSAMBLE: cada pieza calculada como pieza mecánica (11 comps) + BOM + sección A-A + cajetín ISO 7200 + notas de análisis; bezel completo',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-assembly-test.cjs'] },
+  { group: 'kernel', n: 'mold-flowleaders', why: 'Kazmer §5.5.5 FLOW LEADERS: espesor balanceado H=H·(L/Lref)·√(μr) para eliminar race-tracking; contenedor del libro EXACTO (280/210mm → pared 1.5mm, v75%)',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-flowleaders-test.cjs'] },
   { group: 'kernel', n: 'mold-sideactions', why: 'Kazmer §11.3.6-8 MOLDES CON MOVIMIENTO: core pull 44kN/⌀75→82.55std, angle pin 35+25mm EXACTOS, decisor slide/pull',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-sideactions-test.cjs'] },
   { group: 'kernel', n: 'mold-fasteners', why: 'Kazmer §12.4: tornillo del molde peor-caso 362kg/47kN → M10 DIN 912 del CATÁLOGO real',
