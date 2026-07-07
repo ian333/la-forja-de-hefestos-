@@ -1,0 +1,102 @@
+{
+  "id": "mec-u6-l1",
+  "curso": "mecanica",
+  "unidad": 6,
+  "n": 1,
+  "titulo": "La rosca: el plano inclinado que aprieta el mundo",
+  "subtitulo": "M8×1.25 · piloto = mayor − paso · roscado rígido F = paso × S",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 6 §6-1..6-4 (Thread terminology & callouts)",
+  "descripcion": "Una rosca es un plano inclinado enrollado en un cilindro — la máquina más vieja, escondida a la vista. Aquí lees el callout M8×1.25, entiendes por qué el barreno piloto es 6.8 y no 8, y ves el roscado rígido donde husillo y avance van sincronizados: una vuelta = un paso.",
+  "biblioteca": [],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Todo lo que te rodea lo sostiene una rosca. Y una rosca es un truco viejísimo: un plano inclinado, enrollado en un cilindro. La máquina más antigua, escondida a la vista.",
+      "gestos": [
+        { "type": "wait", "ms": 1000 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Empieza con una placa. Extrúyela.",
+      "zoom": "btn-extrude",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2400 },
+        { "type": "view", "name": "iso", "settle": 1200 },
+        { "type": "probe", "label": "placa" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 500",
+        "desc": "la placa existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Ahora el barreno. Pero no de ocho: de seis punto ocho. Ese es el piloto.",
+      "zoom": "input-diametro",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-hole", "settle": 1600 },
+        { "type": "click", "x": 960, "y": 430, "settle": 1400 },
+        { "type": "fill", "testid": "input-diametro", "text": "6.8", "settle": 1800 },
+        { "type": "probe", "label": "piloto-6.8" }
+      ],
+      "check": {
+        "js": "inv && (inv.ops||'').indexOf('hole') >= 0",
+        "desc": "el barreno piloto ⌀6.8 existe"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "¿Por qué seis punto ocho y no ocho? Porque el machuelo no taladra: CORTA la rosca en la pared. El piloto es el diámetro mayor menos el paso. Ocho menos uno punto dos cinco.",
+      "gestos": [
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Vamos al taller. Pestaña Manufactura. Primero se taladra el piloto.",
+      "zoom": "tab-manufactura",
+      "gestos": [
+        { "type": "tclick", "testid": "tab-manufactura", "settle": 1600 },
+        { "type": "tclick", "testid": "btn-cam-drill", "settle": 2200 },
+        { "type": "probe", "label": "taladrado" }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y ahora el machuelo: roscar. Mira el nombre — eme ocho por uno veinticinco. Diámetro mayor ocho, paso uno punto dos cinco.",
+      "zoom": "btn-cam-tap",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-cam-tap", "settle": 2400 },
+        { "type": "probe", "label": "roscado-M8" }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"cam-stats\"]'); e && e.textContent.indexOf('M8') >= 0",
+        "desc": "rosca M8×1.25 generada (callout del kernel)"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "Fíjate en la sincronía: efe igual a paso por ese. El husillo y el avance van CLAVADOS. Una vuelta del machuelo baja exactamente un paso. Roscado rígido, ciclo G ochenta y cuatro.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Eso es una rosca: un plano inclinado que convierte vueltas en avance, y avance en un apretón enorme. El ángulo pequeño te da la ventaja — y la fricción la traba para que no se afloje sola.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "El callout eme ocho por uno veinticinco dice todo: diámetro y paso. Con eso, cualquier taller del mundo hace la misma rosca. Eso es lenguaje de ingeniería. Nos vemos.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-cam-close", "settle": 1000 },
+        { "type": "view", "name": "iso", "settle": 1200 }
+      ]
+    }
+  ]
+}
