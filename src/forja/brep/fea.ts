@@ -1156,5 +1156,36 @@ export function vonMisesVertexColors(
   return { colors, vmPerVertex };
 }
 
+/**
+ * DESPLAZAMIENTO POR VÉRTICE — muestrea el campo de desplazamiento nodal (ux,uy,uz
+ * en mm) sobre los vértices de la malla de superficie que SE VE (positions, mm).
+ * Con esto la UI DEFORMA la pieza en vivo (la vista, no la ecuación): pos' =
+ * pos + disp·escala·pulso. Devuelve el vector por vértice + la magnitud máxima
+ * (para auto-escalar a un % del tamaño de la pieza y que la deformación se LEA).
+ */
+export function feaVertexDisplacements(
+  result: FEAResult,
+  positions: Float32Array,
+): { disp: Float32Array; maxMag: number } {
+  const grid = buildNodeGrid(result.mesh);
+  const n = result.mesh.nNodes;
+  // Deinterleaving: el solver entrega [ux0,uy0,uz0, ux1,...]; sampleNodalField
+  // muestrea UN escalar, así que separamos las tres componentes.
+  const ux = new Float64Array(n), uy = new Float64Array(n), uz = new Float64Array(n);
+  for (let i = 0; i < n; i++) { ux[i] = result.displacements[i * 3]; uy[i] = result.displacements[i * 3 + 1]; uz[i] = result.displacements[i * 3 + 2]; }
+  const nV = positions.length / 3;
+  const disp = new Float32Array(nV * 3);
+  let maxMag = 0;
+  for (let v = 0; v < nV; v++) {
+    const p: [number, number, number] = [positions[v * 3], positions[v * 3 + 1], positions[v * 3 + 2]];
+    const dx = sampleNodalField(grid, result.mesh, ux, p);
+    const dy = sampleNodalField(grid, result.mesh, uy, p);
+    const dz = sampleNodalField(grid, result.mesh, uz, p);
+    disp[v * 3] = dx; disp[v * 3 + 1] = dy; disp[v * 3 + 2] = dz;
+    const m = Math.hypot(dx, dy, dz); if (m > maxMag) maxMag = m;
+  }
+  return { disp, maxMag };
+}
+
 // Re-export de utilidades para overlay/inspección desde la UI.
 export { principalStresses };

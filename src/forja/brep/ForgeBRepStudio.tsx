@@ -111,6 +111,7 @@ import {
   prepareFeaSession,
   solveLoadOnSession,
   vonMisesVertexColors,
+  feaVertexDisplacements,
   jetColor,
   type FEAResult,
   type FaceBC,
@@ -2040,6 +2041,72 @@ function SectionGizmo({ bbox, axis, flip, offset, setOffset, clip }: {
 }
 
 // ──────────────────────────────────────────────────────────────────
+// FEA VISUAL — la pieza se DEFORMA animada bajo la carga (la vista, no la
+// ecuación). El desplazamiento real es micras (invisible), así que se AMPLIFICA
+// a ~14% del tamaño de la pieza y se anima con un pulso suave 0→1→0 (la carga
+// "respirando"). Coloreada por von Mises. Un fantasma en reposo (wireframe) deja
+// LEER cuánto se movió. La carga puede venir en CUALQUIER dirección (runFEADir).
+// ──────────────────────────────────────────────────────────────────
+function FeaDeformMesh({ mesh, colors, disp, dispMax, clip }: {
+  mesh: TessellatedMesh; colors: Float32Array; disp: Float32Array; dispMax: number;
+  clip: THREE.Plane[] | null;
+}) {
+  const base = mesh.positions;
+  // Auto-escala: la deformación máx se lleva a ~14% de la diagonal del bbox → SE VE.
+  const scale = useMemo(() => {
+    let mnx = Infinity, mny = Infinity, mnz = Infinity, mxx = -Infinity, mxy = -Infinity, mxz = -Infinity;
+    for (let i = 0; i < base.length; i += 3) {
+      mnx = Math.min(mnx, base[i]); mxx = Math.max(mxx, base[i]);
+      mny = Math.min(mny, base[i + 1]); mxy = Math.max(mxy, base[i + 1]);
+      mnz = Math.min(mnz, base[i + 2]); mxz = Math.max(mxz, base[i + 2]);
+    }
+    const diag = Math.hypot(mxx - mnx, mxy - mny, mxz - mnz) || 1;
+    return dispMax > 1e-9 ? (0.14 * diag) / dispMax : 0;
+  }, [base, dispMax]);
+  // Posiciones VIVAS (copia mutable); la geometría deforma sobre ésta cada frame.
+  const live = useMemo(() => new Float32Array(base), [base]);
+  const geom = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(live, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    g.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+    g.computeVertexNormals();
+    return g;
+  }, [live, colors, mesh.indices]);
+  const restGeom = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(base, 3));
+    g.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+    return new THREE.EdgesGeometry(g, 30);
+  }, [base, mesh.indices]);
+  useEffect(() => () => { geom.dispose(); restGeom.dispose(); }, [geom, restGeom]);
+  const tRef = useRef(0);
+  useFrame((_, dt) => {
+    tRef.current += dt;
+    // pulso suave 0→1→0, periodo 2.6s (la carga "respira"): easeInOut por coseno.
+    const a = 0.5 * (1 - Math.cos((2 * Math.PI * tRef.current) / 2.6));
+    const k = scale * a;
+    for (let i = 0; i < base.length; i++) live[i] = base[i] + disp[i] * k;
+    const posAttr = geom.getAttribute('position') as THREE.BufferAttribute;
+    posAttr.needsUpdate = true;
+    geom.computeVertexNormals();
+  });
+  return (
+    <group>
+      {/* fantasma en reposo: aristas tenues → se ve de dónde partió */}
+      <lineSegments geometry={restGeom}>
+        <lineBasicMaterial color="#3a4658" transparent opacity={0.4} clippingPlanes={clip ?? undefined} />
+      </lineSegments>
+      {/* pieza deformada + coloreada por von Mises */}
+      <mesh geometry={geom} castShadow>
+        <meshStandardMaterial vertexColors metalness={0.1} roughness={0.45} side={THREE.DoubleSide}
+          emissive="#ffffff" emissiveIntensity={0.06} clippingPlanes={clip ?? undefined} />
+      </mesh>
+    </group>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Render del sólido teselado + picking de cara/arista (raycast)
 // ──────────────────────────────────────────────────────────────────
 function SolidMesh({
@@ -3161,6 +3228,12 @@ export default function ForgeBRepStudio() {
   const [feaLoadN, setFeaLoadN] = useState(500); // magnitud de carga [N]
   const [feaResult, setFeaResult] = useState<FEAResult | null>(null);
   const [feaColors, setFeaColors] = useState<Float32Array | null>(null);
+  // Campo de DESPLAZAMIENTO por vértice (mm) → la pieza se DEFORMA animada en la
+  // VISTA (el simulador visual: ves cómo se comporta, no esperas ecuaciones en la
+  // nube). Cargable en cualquier dirección (los botones ↑↓←→⊙ llaman runFEADir).
+  const [feaDisp, setFeaDisp] = useState<Float32Array | null>(null);
+  const feaDispMaxRef = useRef(0);
+  const [feaLoadDir, setFeaLoadDir] = useState<[number, number, number] | null>(null);
   const [feaBusy, setFeaBusy] = useState(false);
   const [feaErr, setFeaErr] = useState<string | null>(null);
   // ── FEA INCREMENTAL ("análisis mientras diseñas") ──
@@ -3853,12 +3926,16 @@ export default function ForgeBRepStudio() {
         feaSigRef.current = `${sketch.kind}|${opCount}|${matKey}|${feaFixedFace}|${feaLoadFace}`;
         const res = solveLoadOnSession(session, { totalForce: [dirUnit[0] * F, dirUnit[1] * F, dirUnit[2] * F] });
 
-        // Colorea la malla de RENDER (la teselada que se ve) por von Mises.
+        // Colorea la malla de RENDER (la teselada que se ve) por von Mises Y
+        // muestrea el desplazamiento por vértice → la pieza se DEFORMA animada.
         const renderPos = resultRef.current?.mesh.positions;
         if (renderPos) {
           const { colors } = vonMisesVertexColors(res, renderPos);
           setFeaColors(colors);
+          const { disp, maxMag } = feaVertexDisplacements(res, renderPos);
+          setFeaDisp(disp); feaDispMaxRef.current = maxMag;
         }
+        setFeaLoadDir(dirUnit);
         setFeaResult(res);
       } catch (e) {
         setFeaErr(String((e as Error)?.message ?? e));
@@ -3884,7 +3961,10 @@ export default function ForgeBRepStudio() {
     const res = solveLoadOnSession(session, { totalForce: [d[0] * N, d[1] * N, d[2] * N] });
     const ms = (typeof performance !== 'undefined' ? performance.now() : 0) - t0;
     const renderPos = resultRef.current?.mesh.positions;
-    if (renderPos) { const { colors } = vonMisesVertexColors(res, renderPos); setFeaColors(colors); }
+    if (renderPos) {
+      const { colors } = vonMisesVertexColors(res, renderPos); setFeaColors(colors);
+      const { disp, maxMag } = feaVertexDisplacements(res, renderPos); setFeaDisp(disp); feaDispMaxRef.current = maxMag;
+    }
     setFeaResult(res);
     setFeaLiveMs(ms);
     mark('fea_live', ms, { kind: sketch.kind, loadN: N });
@@ -4491,6 +4571,7 @@ export default function ForgeBRepStudio() {
   const clearFeaOverlay = useCallback(() => {
     setFeaColors(null);
     setFeaResult(null);
+    setFeaDisp(null); setFeaLoadDir(null);
     feaSessionRef.current = null;
   }, []);
 
@@ -4499,6 +4580,7 @@ export default function ForgeBRepStudio() {
   useEffect(() => {
     setFeaColors(null);
     setFeaResult(null);
+    setFeaDisp(null); setFeaLoadDir(null);
     setFeaFixedFace(null);
     setFeaLoadFace(null);
     setCamView3D(null);   // el toolpath 3D caduca con la geometría
@@ -5297,6 +5379,10 @@ export default function ForgeBRepStudio() {
               genSmooth
                 ? <GenerativeSurface result={genResult} threshold={genThreshold} />
                 : <GenerativeVoxels result={genResult} threshold={genThreshold} />
+            ) : result && feaDisp && feaColors && !showOverhangs ? (
+              // FEA VISUAL: la pieza se deforma animada bajo la carga (multi-dirección).
+              <FeaDeformMesh mesh={result.mesh} colors={feaColors} disp={feaDisp}
+                dispMax={feaDispMaxRef.current} clip={sectionPlanes} />
             ) : result && (
               <SolidMesh
                 mesh={result.mesh}
@@ -5994,6 +6080,28 @@ export default function ForgeBRepStudio() {
               onClick={() => runFeaAnalysis()} disabled={feaBusy || !oc || feaFixedFace == null}>
               {feaBusy ? '⏳ Resolviendo K·u = f…' : '▶ Analizar (von Mises)'}
             </button>
+            {/* EMPUJAR EN CUALQUIER DIRECCIÓN — la pieza se deforma según de dónde
+                venga la fuerza. Aprender del OJO: probar todos los sentidos y VER
+                cómo se comporta, sin esperar la nube. Cada botón re-resuelve al vuelo. */}
+            {feaFixedFace != null && (
+              <div className="fb-fea-dirs" data-testid="fea-dirs">
+                <span className="fb-fea-dirs-lbl">Empuja hacia →</span>
+                <div className="fb-fea-dir-grid">
+                  {([
+                    ['↑', [0, 0, 1], '+Z arriba'], ['↓', [0, 0, -1], '−Z abajo (peso)'],
+                    ['→', [1, 0, 0], '+X'], ['←', [-1, 0, 0], '−X'],
+                    ['⊗', [0, 1, 0], '+Y adentro'], ['⊙', [0, -1, 0], '−Y afuera'],
+                  ] as [string, [number, number, number], string][]).map(([g, d, t]) => {
+                    const on = feaLoadDir && Math.abs(feaLoadDir[0] - d[0]) < 0.4 && Math.abs(feaLoadDir[1] - d[1]) < 0.4 && Math.abs(feaLoadDir[2] - d[2]) < 0.4;
+                    return (
+                      <button key={t} data-testid={`fea-dir-${d[0]}-${d[1]}-${d[2]}`} title={`Cargar en ${t}`}
+                        className={`fb-fea-dir ${on ? 'on' : ''}`} disabled={feaBusy || !oc}
+                        onClick={() => runFeaAnalysis(d)}>{g}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {feaColors && (
               <button className="fb-sim-clear" data-testid="btn-fea-clear" onClick={clearFeaOverlay}>
                 Quitar overlay (volver a metal)
@@ -7507,6 +7615,14 @@ const CSS = `
   font-size:12px;padding:9px;border-radius:9px;cursor:pointer;margin-top:8px;transition:.13s;}
 .fb-fea-run:hover{filter:brightness(1.06);}
 .fb-fea-run:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4);}
+.fb-fea-dirs{margin-top:9px;}
+.fb-fea-dirs-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#7f93a8;font-weight:700;}
+.fb-fea-dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px;}
+.fb-fea-dir{border:1px solid #33404f;background:rgba(20,28,40,.9);color:#dbe3ee;font-size:16px;
+  padding:7px 0;border-radius:8px;cursor:pointer;transition:.12s;line-height:1;}
+.fb-fea-dir:hover{border-color:${GOLD};color:${GOLD};background:rgba(56,42,8,.4);}
+.fb-fea-dir.on{border-color:${GOLD};color:#1a1206;background:${GOLD};font-weight:700;}
+.fb-fea-dir:disabled{opacity:.4;cursor:not-allowed;}
 .fb-sim-clear{width:100%;border:1px solid rgba(159,179,200,0.2);background:rgba(255,255,255,0.04);
   color:${STEEL};font-size:10px;padding:6px;border-radius:8px;cursor:pointer;margin-top:6px;}
 .fb-sim-clear:hover{border-color:${GOLD}55;color:${GOLD};}
