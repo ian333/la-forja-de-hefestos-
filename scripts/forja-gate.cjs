@@ -53,7 +53,7 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-filling-test.cjs'] },
   { group: 'kernel', n: 'mold-feed', why: 'Kazmer cap 6: hot runner 5.9/8.8/16.7MPa + optimizador R 5.0/4.4/4.4mm EXACTOS',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-feed-test.cjs'] },
-  { group: 'kernel', n: 'mold-ejection', why: 'Kazmer cap 11: F_eject cup 1.8kN/bezel 4.7kN + pines (shear gobierna ⌀2.27)',
+  { group: 'kernel', n: 'mold-ejection', why: 'Kazmer cap 11: VECTOR de expulsión (σ/F_normal/F_stick + peso g REAL + cinemática 50mm/s + pandeo Euler); cup 1.8kN/bezel 4.7kN',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-ejection-test.cjs'] },
   { group: 'kernel', n: 'mold-cost', why: 'Kazmer cap 3: break-even cold/hot 615,385 pzas + tabla 3.1 exacta',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-cost-test.cjs'] },

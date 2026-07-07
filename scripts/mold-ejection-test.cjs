@@ -23,6 +23,44 @@
   checks.dShear = ok(pins.dMinShearMm, 2.23, 0.06);
   checks.area = ok(pins.pushAreaMm2, 10.4, 0.3);
   checks.governa = ok(pins.dMinMm, pins.dMinShearMm, 1e-9);
+
+  // ── VECTOR de expulsión: se REDUCE al escalar del libro cuando el peso es despreciable ──
+  // cup con masa ~15 g eyectado HACIA ARRIBA (la gravedad opone, pero es <0.2 N vs 1800)
+  const vCup = ej.ejectionVector(ABS_EJECT, { aEffM2: 526e-6, draftDeg: 1, massKg: 0.015, ejectAxis: [0, 1, 0] });
+  console.log('VECTOR cup: σ', (vCup.sigmaPa / 1e6).toFixed(2), 'MPa | F_normal', vCup.fNormalN.toFixed(0), '| F_stick', vCup.fStickN.toFixed(0), '| W', vCup.weightN.toFixed(2), '| F_eject', vCup.fEjectN.toFixed(0), 'N');
+  checks.vecReduce = ok(vCup.fEjectN, 1800, 60);                 // ≈ escalar del libro
+  checks.sigma = ok(vCup.sigmaPa, 7.05e6, 0.1e6);               // σ = E·CTE·ΔT (11.5)
+  checks.fNormal = ok(vCup.fNormalN, 3706, 30);                 // σ·A_eff (11.6)
+  checks.pesoArriba = vCup.weightAxialN > 0;                    // eyectar hacia arriba: el peso OPONE
+  checks.gTierra = ok(vCup.gUsed, 9.81, 1e-9);                  // gravedad REAL Tierra (no Marte)
+
+  // gravedad AYUDA cuando se eyecta hacia abajo (mismo eje que g)
+  const vDown = ej.ejectionVector(ABS_EJECT, { aEffM2: 526e-6, draftDeg: 1, massKg: 0.015, ejectAxis: [0, -1, 0] });
+  checks.pesoAyuda = vDown.fEjectN < vCup.fEjectN;              // hacia abajo cuesta MENOS
+  checks.pesoDelta = ok(vCup.fEjectN - vDown.fEjectN, 2 * vCup.weightN, 0.01);  // diferencia = 2·W
+
+  // Marte ≠ Tierra: el peso cambia con g (la broma del user hecha física)
+  const vMarte = ej.ejectionVector(ABS_EJECT, { aEffM2: 526e-6, draftDeg: 1, massKg: 0.015, ejectAxis: [0, 1, 0], g: ej.GRAVITY.marte });
+  checks.marteMenor = vMarte.weightN < vCup.weightN;           // en Marte pesa menos
+
+  // ── CINEMÁTICA controlada: la máquina (2% del clamp ~400kN → 8kN máx) vence 1853 N a 50 mm/s ──
+  const kin = ej.ejectionKinematics({ fMachineMaxN: 8000, fEjectN: vCup.fEjectN, ejectVelMs: 0.05, strokeM: 0.03 });
+  console.log('CINEMÁTICA: libera', kin.libera, '| SF', kin.sf.toFixed(1), '| v', (kin.vMs * 1000).toFixed(0), 'mm/s | t', (kin.timeS * 1000).toFixed(0), 'ms');
+  checks.libera = kin.libera === true;                        // sí sale del core (8000 ≥ 1853)
+  checks.kinSF = ok(kin.sf, 8000 / vCup.fEjectN, 0.01);       // margen de fuerza correcto
+  checks.kinTiempo = ok(kin.timeS, 0.03 / 0.05, 1e-9);        // t = carrera/velocidad = 0.6 s
+  // margen insuficiente: si la máquina solo da 1500 N < 1853, NO libera
+  const kinMal = ej.ejectionKinematics({ fMachineMaxN: 1500, fEjectN: vCup.fEjectN, ejectVelMs: 0.05, strokeM: 0.03 });
+  checks.noLibera = kinMal.libera === false;
+
+  // ── PANDEO de Euler del pin: uno esbelto (⌀2.23, libre 60mm) debe tener SF suficiente ──
+  const buck = ej.pinBuckling({ diaMm: 2.23, freeLenMm: 60, fPerPinN: 4700 / 20 });
+  console.log('PANDEO pin ⌀2.23 L60: F_crit', buck.fCritN.toFixed(0), 'N | SF', buck.sf.toFixed(1), '| ok', buck.ok);
+  checks.buckPositivo = buck.fCritN > 0 && isFinite(buck.sf);
+  // pin MUY esbelto (⌀1, libre 100mm) debe FALLAR el pandeo (SF<2) — el chequeo sirve
+  const buckMal = ej.pinBuckling({ diaMm: 1.0, freeLenMm: 100, fPerPinN: 4700 / 20 });
+  checks.buckDetecta = buckMal.ok === false;
+
   const pass = Object.values(checks).every(Boolean);
   console.log('VERIFY_RESULT=' + JSON.stringify({ pass, checks }));
   process.exit(pass ? 0 : 2);
