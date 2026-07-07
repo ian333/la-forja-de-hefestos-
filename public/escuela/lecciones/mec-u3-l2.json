@@ -1,0 +1,239 @@
+{
+  "id": "mec-u3-l2",
+  "curso": "mecanica",
+  "unidad": 3,
+  "n": 2,
+  "titulo": "El costillado",
+  "subtitulo": "Rigidez sin peso · I = b·h³/12 · δ = FL³/3EI",
+  "fuente": "Bethune cap. 3 (Features) + teoría de vigas — costillas de plástico",
+  "descripcion": "Por qué una costilla flaca vuelve rígido un panel flojo. El segundo momento de área crece con el CUBO de la altura: la geometría más inteligente del plástico.",
+  "biblioteca": [],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Agarra una regla plana y dóblala: cede fácil. Ahora ponla de canto: no hay quien la doble. Mismo material, misma masa. La diferencia es geometría — y hoy la vuelves fórmula.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Un panel delgado: ciento veinte por ochenta, apenas cuatro milímetros de espesor.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -60,
+          "y": -40,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 60,
+          "y": 40,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "4",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 38400) < 50",
+        "desc": "el panel plano (120×80×4)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Un panel así se flexiona porque su rigidez la manda el segundo momento de área: i igual a be por hache al CUBO, entre doce. Y hache, el espesor, es chiquito. Al cubo, es casi nada.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 1500
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "La cura: una costilla. Boceto sobre la cara de arriba — clic directo en el panel.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1100
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 560,
+          "settle": 1800
+        }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "boceto sobre la cara del panel"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Una tira flaca por el centro: cuatro milímetros de ancho, a lo largo del panel. Y le decimos que SUMA material.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sketch-op-join",
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -58,
+          "y": -2,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 58,
+          "y": 2,
+          "settle": 700
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "la tira de la costilla dibujada"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Termina, y levántala veinte milímetros. Una costilla delgada... pero ALTA.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-depth",
+          "text": "20",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "costilla"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 42000",
+        "desc": "el panel con su costilla"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "Aquí está la magia de la fórmula: la costilla subió la altura efectiva de la sección. Y como la i va con hache al CUBO, subir la altura tres veces multiplica la rigidez por veintisiete. Veintisiete.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            880,
+            560
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Y la flexión es la consecuencia: delta igual a efe ele al cubo, entre tres e por i. Más i abajo... menos flexión arriba. Agregaste casi nada de material y el panel dejó de ceder.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3000
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Por eso TODO lleva costillas: la carcasa de tu control, el chasis de un dron, el cárter de un motor. No es adorno — es el segundo momento de área trabajando gratis.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            640
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Rigidez sin peso. Geometría inteligente le gana a más material, siempre. Eso es diseño mecánico. Nos vemos en la próxima.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            900,
+            640
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}

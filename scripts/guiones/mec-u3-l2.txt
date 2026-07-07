@@ -1,0 +1,10 @@
+Agarra una regla plana y dóblala: cede fácil. Ahora ponla de canto: no hay quien la doble. Mismo material, misma masa. La diferencia es geometría — y hoy la vuelves fórmula.
+Un panel delgado: ciento veinte por ochenta, apenas cuatro milímetros de espesor.
+Un panel así se flexiona porque su rigidez la manda el segundo momento de área: i igual a be por hache al CUBO, entre doce. Y hache, el espesor, es chiquito. Al cubo, es casi nada.
+La cura: una costilla. Boceto sobre la cara de arriba — clic directo en el panel.
+Una tira flaca por el centro: cuatro milímetros de ancho, a lo largo del panel. Y le decimos que SUMA material.
+Termina, y levántala veinte milímetros. Una costilla delgada... pero ALTA.
+Aquí está la magia de la fórmula: la costilla subió la altura efectiva de la sección. Y como la i va con hache al CUBO, subir la altura tres veces multiplica la rigidez por veintisiete. Veintisiete.
+Y la flexión es la consecuencia: delta igual a efe ele al cubo, entre tres e por i. Más i abajo... menos flexión arriba. Agregaste casi nada de material y el panel dejó de ceder.
+Por eso TODO lleva costillas: la carcasa de tu control, el chasis de un dron, el cárter de un motor. No es adorno — es el segundo momento de área trabajando gratis.
+Rigidez sin peso. Geometría inteligente le gana a más material, siempre. Eso es diseño mecánico. Nos vemos en la próxima.
