@@ -18,7 +18,7 @@ export interface MoldAssemblySpec {
   cavity: { widthMm: number; depthMm: number };     // bolsa de cavidad (en la partición)
   cooling: { diaMm: number; plug?: string; insetMm: number };  // líneas de agua
   ejectors: { type: 'pin' | 'blade' | 'sleeve' | 'stripper'; diaMm: number; count: number };
-  core: { diaMm: number; material: string };
+  core: { diaMm?: number; widthMm?: number; material: string };   // ⌀ (cup) o ancho de bloque (marco/bezel)
   cavityMetal: string; baseSteel?: string;
   machine?: string; clampTons?: number;
 }
@@ -54,9 +54,11 @@ export function buildMoldStack(s: MoldAssemblySpec): { comps: StackComp[]; parti
   comps.push(full('Placa A (cavidad)', a0, a1, s.cavityMetal));
   comps.push(full('Placa de sujeción superior', tc0, tc1, s.baseSteel ?? '1730'));
 
-  // core insert (sube de la placa B a la partición, ⌀core)
-  const cr = s.core.diaMm / 2;
-  comps.push({ id: id++, name: 'Inserto de núcleo (core)', qty: 1, material: s.core.material,
+  // core insert (sube de la placa B a la partición): ⌀ para pieza redonda (cup)
+  // o bloque de ancho dado para marco (bezel). El marco deja la abertura central.
+  const cr = (s.core.widthMm ?? s.core.diaMm ?? 0) / 2;
+  const coreName = s.core.widthMm ? 'Inserto de núcleo (marco)' : 'Inserto de núcleo (core)';
+  comps.push({ id: id++, name: coreName, qty: 1, material: s.core.material,
     rects: [{ x0: -cr, z0: su1, x1: cr, z1: parting }] });
   // cavidad insert (bolsa en A) + la PIEZA moldeada (plástico, sólido)
   const cvw = s.cavity.widthMm / 2;
@@ -87,7 +89,7 @@ export function moldAssemblyDrawing(s: MoldAssemblySpec): AssemblyDrawing {
   const notes = [
     `Molde de inyección · base ${s.widthMm} mm · máquina ${s.machine ?? '—'}${s.clampTons ? ` (${s.clampTons.toFixed(0)} t)` : ''}`,
     `Placa de soporte ${s.plates.support} mm${s.supportPillars ? ` + ${s.supportPillars} pilares` : ''} (deflexión < venteo, §12.1)`,
-    `Núcleo ⌀${s.core.diaMm} ${s.core.material} (hoop/deflexión §12.3) · agua ${s.cooling.plug ?? ''} ⌀${s.cooling.diaMm} (§9.2)`,
+    `Núcleo ${s.core.widthMm ? `${s.core.widthMm}mm (marco)` : `⌀${s.core.diaMm}`} ${s.core.material} (hoop/deflexión §12.3) · agua ${s.cooling.plug ?? ''} ⌀${s.cooling.diaMm} (§9.2)`,
     `Expulsión ${s.ejectors.count}× ${s.ejectors.type} ⌀${s.ejectors.diaMm} (§11.3)`,
   ];
   return renderAssemblySection(comps, {
