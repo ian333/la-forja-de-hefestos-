@@ -21,7 +21,7 @@
     },
     {
       "id": "p02",
-      "dice": "El engrane motriz: quince dientes. Del menú Más, engrane de involuta.",
+      "dice": "El engrane motriz: veinte dientes. Del menú Más, engrane de involuta.",
       "gestos": [
         {
           "type": "tclick",
@@ -36,53 +36,46 @@
         {
           "type": "fill",
           "testid": "input-dientes",
-          "text": "15",
+          "text": "20",
           "settle": 400
         },
         {
           "type": "key",
           "key": "Tab",
-          "settle": 2600
+          "settle": 2800
         },
         {
           "type": "probe",
-          "label": "gear-z15"
+          "label": "gear-z20"
         }
       ],
       "check": {
         "js": "inv && inv.vol_kernel > 500",
-        "desc": "el engrane motriz existe (Z₁=15)"
+        "desc": "el engrane motriz existe (Z₁=20)"
       }
     },
     {
       "id": "p03",
-      "dice": "Su pareja: el doble de dientes, treinta. Fíjate — la distancia entre centros la fija la fórmula: ce igual a módulo por zeta uno más zeta dos, entre dos.",
+      "dice": "Su pareja: el doble de dientes, cuarenta. Fíjate — la distancia entre centros la fija la fórmula: ce igual a módulo por zeta uno más zeta dos, entre dos.",
       "gestos": [
         {
           "type": "tclick",
           "testid": "btn-add-gear2",
-          "settle": 2800
+          "settle": 3000
         },
         {
-          "type": "fill",
-          "testid": "input-dientes2",
-          "text": "30",
-          "settle": 400
-        },
-        {
-          "type": "key",
-          "key": "Tab",
-          "settle": 2600
+          "type": "probe",
+          "label": "par-20-40"
         }
       ],
       "check": {
         "js": "!!document.querySelector('[data-testid=\"hud-assembly\"]')",
-        "desc": "el par existe (Z₁=15, Z₂=30)"
+        "desc": "el par existe (Z₁=20, Z₂=40)"
       }
     },
     {
       "id": "p04",
-      "dice": "La relación es zeta dos entre zeta uno: treinta entre quince, igual a dos. Ese número, el dos, lo cambia TODO.",
+      "dice": "La relación es zeta dos entre zeta uno: cuarenta entre veinte, igual a dos. Ese número, el dos, lo cambia TODO.",
       "gestos": [
         {
           "type": "tclick",
