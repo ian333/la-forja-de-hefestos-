@@ -14,7 +14,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 type Gesto = { type: string; testid?: string; [k: string]: unknown };
-type Paso = { id: string; dice: string; gestos?: Gesto[]; check?: { js: string; desc: string } };
+// zoom?: id/nombre del control al que enfocar en este paso (opcional; si falta se
+// infiere del gesto/panel). Se resuelve contra el MAPA DINÁMICO de la UI.
+type Paso = { id: string; dice: string; gestos?: Gesto[]; zoom?: string; check?: { js: string; desc: string } };
 type Leccion = {
   id: string; unidad: number; n: number; titulo: string; subtitulo?: string;
   descripcion?: string; pasos: Paso[];
@@ -70,16 +72,59 @@ function splitPhrases(text: string, max = 11): string[] {
 //    y se quedan fijos encima.
 function getRoot(): HTMLElement | null { return document.querySelector<HTMLElement>('.fb-root'); }
 
-// El elemento a enfocar en este paso: la pestaña flotante de operación si está
-// abierta; si no, el botón/campo objetivo del paso; si no, el viewport (la pieza).
-function focusEl(paso?: Paso): HTMLElement | null {
-  const op = document.querySelector<HTMLElement>('[data-testid="op-panel"]');
-  if (op && op.offsetParent && op.getBoundingClientRect().width > 80) return op;
-  const g = (paso?.gestos ?? []).find((x) => (x.type === 'tclick' || x.type === 'fill') && x.testid);
-  if (g?.testid) {
-    const el = document.querySelector<HTMLElement>(`[data-testid="${g.testid}"]`);
-    if (el && el.offsetParent) return el;
+// ── MAPA DINÁMICO DE LA UI ──────────────────────────────────────────────────
+// Registra la región (rect) de CADA control de La Forja, escaneando el DOM en
+// vivo. NO hay coordenadas hardcodeadas: se agregan botones nuevos y aparecen
+// solos. El zoom enfoca cualquiera por su id (data-testid) o su nombre.
+type Region = { id: string; name: string; group: string; rect: { x: number; y: number; w: number; h: number } };
+function slug(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+function groupOf(el: HTMLElement): string {
+  for (let n: HTMLElement | null = el, i = 0; n && i < 6; n = n.parentElement, i++) {
+    const cap = n.querySelector?.(':scope > .fb-group-cap, :scope > .fb-panel-title');
+    if (cap?.textContent?.trim()) return cap.textContent.trim();
   }
+  return '';
+}
+// Escanea .fb-root MIDIENDO en identidad (ignora un transform de zoom activo).
+function scanRegions(): { regions: Region[]; els: Map<string, HTMLElement> } {
+  const root = getRoot();
+  const els = new Map<string, HTMLElement>();
+  if (!root) return { regions: [], els };
+  const pt = root.style.transform, ptr = root.style.transition;
+  root.style.transition = 'none'; root.style.transform = 'none'; void root.offsetWidth;
+  const rr = root.getBoundingClientRect();
+  const seen = new Set<string>(); const regions: Region[] = [];
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>('[data-testid], button'))) {
+    if (!el.offsetParent) continue;                               // invisible
+    const r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) continue;
+    const id = el.getAttribute('data-testid') || slug(el.getAttribute('title') || el.getAttribute('aria-label') || el.textContent || '');
+    if (!id || seen.has(id)) continue; seen.add(id);
+    els.set(id, el);
+    regions.push({
+      id, name: (el.getAttribute('title') || el.getAttribute('aria-label') || el.textContent || id).trim().slice(0, 44),
+      group: groupOf(el), rect: { x: r.left - rr.left, y: r.top - rr.top, w: r.width, h: r.height },
+    });
+  }
+  root.style.transform = pt; root.style.transition = ptr;         // restaurar
+  return { regions, els };
+}
+
+// El elemento a enfocar: 1) el 'zoom' EXPLÍCITO del paso (por id/nombre del mapa);
+// 2) la pestaña flotante de operación abierta; 3) el botón/campo del gesto;
+// 4) el viewport (la pieza). Todo resuelto contra el mapa vivo → dinámico.
+function focusEl(paso?: Paso): HTMLElement | null {
+  const { els } = scanRegions();
+  if (paso?.zoom) {
+    const want = els.get(paso.zoom) || els.get(slug(paso.zoom));
+    if (want) return want;
+  }
+  const op = els.get('op-panel');
+  if (op && op.getBoundingClientRect().width > 80) return op;
+  const g = (paso?.gestos ?? []).find((x) => (x.type === 'tclick' || x.type === 'fill') && x.testid);
+  if (g?.testid && els.get(g.testid)) return els.get(g.testid)!;
   return document.querySelector<HTMLElement>('[data-testid="viewport"]');
 }
 function zoomRootFull(ms = 820) {
@@ -136,6 +181,14 @@ export default function TutorialOverlay() {
 
   const paso = lec?.pasos[i];
   const phrases = useMemo(() => (paso ? splitPhrases(paso.dice) : []), [paso]);
+
+  // Expone el MAPA DINÁMICO de la UI (regiones de todos los botones) para
+  // introspección/autoría de lecciones: window.__forgeUIMap().
+  useEffect(() => {
+    const w = window as unknown as { __forgeUIMap?: () => Region[] };
+    w.__forgeUIMap = () => scanRegions().regions;
+    return () => { delete w.__forgeUIMap; };
+  }, []);
 
   // Resaltar el botón objetivo del paso (solo en modo GUÍA — en reproducir estorba).
   useEffect(() => {
