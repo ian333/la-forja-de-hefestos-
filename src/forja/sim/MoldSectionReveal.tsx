@@ -272,7 +272,8 @@ export default function MoldSectionReveal({ onClose }: { onClose?: () => void })
   const tRef = useRef(0);
 
   useEffect(() => {
-    (window as any).__cutRenderAt = (t: number) => { tRef.current = t; };
+    // render determinista: congela la reproducción y fija t exacto por frame
+    (window as any).__cutRenderAt = (t: number) => { setPlaying(false); tRef.current = t; };
     (window as any).__cutReset = () => { tRef.current = 0; };
     return () => { delete (window as any).__cutRenderAt; delete (window as any).__cutReset; };
   }, []);
