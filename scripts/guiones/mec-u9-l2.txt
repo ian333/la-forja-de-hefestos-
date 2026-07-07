@@ -1,0 +1,10 @@
+Pregunta de examen: un eje de veinte milímetros, ¿entra en un agujero de veinte milímetros? La respuesta correcta es... depende. Y de eso vive la mecánica de precisión.
+Empieza limpio, para ensamblar.
+Éste es un buje: un balero de camisa. Su agujero es de veinte milímetros exactos, calidad hache siete. La referencia de todo.
+Y su eje. Pero fíjate en el número: no mide veinte. Mide diecinueve noventa y ocho. Dos centésimas MENOS.
+Métele el eje al buje: mismo centro, y bájalo diez para que asome por los dos lados.
+Ésa es la HOLGURA: agujero menos eje, veinte menos diecinueve noventa y ocho, igual a dos centésimas. Dos centésimas de milímetro que lo cambian todo.
+Con esa holgura, el eje GIRA libre dentro del buje: es un ajuste deslizante, hache siete ge seis. Ni tan flojo que bailotee, ni tan apretado que se atore.
+Si el eje fuera MÁS GRANDE que el agujero — digamos veinte cero dos — habría interferencia: entra a prensa y NO se mueve. Ése es el ajuste de apriete, para lo que va fijo.
+Tres familias: con holgura para lo que gira, de apriete para lo que va clavado, y de transición en medio. La norma ISO las tabula todas.
+Esto — el análisis de tolerancias — en otros programas es un complemento que cuesta un dineral. Aquí es tuyo, gratis. Un eje de veinte NO va en un agujero de veinte: ahora sabes por qué. Nos vemos.

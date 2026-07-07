@@ -1,0 +1,200 @@
+{
+  "id": "mec-u9-l2",
+  "curso": "mecanica",
+  "unidad": 9,
+  "n": 2,
+  "titulo": "El ajuste",
+  "subtitulo": "Holgura = D_agujero − D_eje · deslizante vs apriete",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 9 §9-5..9-11 (Fits and Tolerances)",
+  "descripcion": "Por qué un eje de 20 milímetros NO va en un agujero de 20 milímetros. La fórmula del ajuste — el análisis de tolerancias que en otros programas cuesta un dineral — enseñado con un balero y su eje reales.",
+  "biblioteca": [
+    "buje-h7",
+    "eje-deslizante"
+  ],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Pregunta de examen: un eje de veinte milímetros, ¿entra en un agujero de veinte milímetros? La respuesta correcta es... depende. Y de eso vive la mecánica de precisión.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Empieza limpio, para ensamblar.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "tl-extrude",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-del-op",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "!inv",
+        "desc": "documento vacío"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Éste es un buje: un balero de camisa. Su agujero es de veinte milímetros exactos, calidad hache siete. La referencia de todo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-options",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "lib-insert-buje-h7",
+          "settle": 2800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 23561.9) < 40",
+        "desc": "el buje llegó (agujero Ø20 H7)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y su eje. Pero fíjate en el número: no mide veinte. Mide diecinueve noventa y ocho. Dos centésimas MENOS.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-options",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "lib-insert-eje-deslizante",
+          "settle": 2800
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 36000",
+        "desc": "el eje llegó al ensamble"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Métele el eje al buje: mismo centro, y bájalo diez para que asome por los dos lados.",
+      "gestos": [
+        {
+          "type": "fill",
+          "testid": "input-comp-z",
+          "text": "-10",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 2000
+        },
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 1400
+        },
+        {
+          "type": "probe",
+          "label": "ajuste"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 37670.7) < 60",
+        "desc": "buje + eje ensamblados (holgura invisible pero real)"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Ésa es la HOLGURA: agujero menos eje, veinte menos diecinueve noventa y ocho, igual a dos centésimas. Dos centésimas de milímetro que lo cambian todo.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3000
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Con esa holgura, el eje GIRA libre dentro del buje: es un ajuste deslizante, hache siete ge seis. Ni tan flojo que bailotee, ni tan apretado que se atore.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            880,
+            560
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Si el eje fuera MÁS GRANDE que el agujero — digamos veinte cero dos — habría interferencia: entra a prensa y NO se mueve. Ése es el ajuste de apriete, para lo que va fijo.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3000
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Tres familias: con holgura para lo que gira, de apriete para lo que va clavado, y de transición en medio. La norma ISO las tabula todas.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            640
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Esto — el análisis de tolerancias — en otros programas es un complemento que cuesta un dineral. Aquí es tuyo, gratis. Un eje de veinte NO va en un agujero de veinte: ahora sabes por qué. Nos vemos.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            900,
+            640
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}

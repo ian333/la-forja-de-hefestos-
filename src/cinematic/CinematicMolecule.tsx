@@ -266,17 +266,21 @@ function molCamera(t: number, f: Frame): Shot {
     // clavado de O₂, pero a lo largo de la cadena = "más espacio para viajar").
     const L = Math.max(f.L, 0.8);
     const k = ease(t / 45);                          // barrido único suave (sin fases → sin costuras)
-    // ARRANCA YA ADENTRO (near end) y avanza — SIEMPRE con cadena por delante llenando
-    // el cuadro (nunca detrás mirando vacío). Frame 1 = dentro del río de oro.
-    const s = lerp(-0.9 * L, 0.45 * L, k);
-    const off = 0.42 * L;                             // adentro del río, ligeramente descentrado (ves las cintas)
-    const w1 = Math.sin(t * 0.23) * off, w2 = Math.cos(t * 0.19 + 1.0) * off * 0.8;   // deriva senoidal (inmersión)
-    const la = 0.40 * L;                              // mira hacia adelante por el eje (el río viene hacia ti)
+    // CAÑÓN DE ORO: cámara MUY cerca del eje viendo pocos carbonos → las cintas π
+    // gruesas ENVUELVEN y llenan el cuadro. roll=π/2 → cadena VERTICAL (llena el 9:16).
+    // dolly continuo por toda la cadena + órbita lenta alrededor del eje (parallax, vida,
+    // sensación de estar ADENTRO viajando). Cero cortes (funciones puras de t).
+    // VUELA CON el frente de formación: la cámara avanza mientras la cadena CRECE
+    // adelante (el reveal va un poco por delante → siempre estamos en el oro ya
+    // formado, nunca en el vacío). De un extremo (formación) hacia el otro.
+    const s = lerp(-0.9 * L, 0.6 * L, k);
+    const d = 3.2;                                    // bohr: cerca (cañón), 2-3 carbonos, cintas gruesas
+    const ph = 0.6 + t * 0.13;                        // órbita lenta alrededor del eje (parallax 3D)
     return {
-      pos: P(s, w1, w2),
-      target: P(s + la, w1 * 0.35, w2 * 0.35),
-      fov: 52,                                        // amplio = velocidad sentida + pantalla llena
-      roll: 0.30 * Math.sin(t * 0.11),                // roll lento con peso (inmersión, no marea)
+      pos: P(s, Math.cos(ph) * d, Math.sin(ph) * d),
+      target: P(s, 0, 0),                             // mira al eje (siempre hay río alrededor)
+      fov: 46,
+      roll: Math.PI / 2 + 0.12 * Math.sin(t * 0.1),   // cadena VERTICAL + micro-vaivén con peso
     };
   }
 
@@ -777,7 +781,8 @@ const CARO_VERT = `
   attribute float aAxis;    // 0..1 posición a lo largo del eje de la cadena
   attribute float aShell;   // 1 = espina σ · 2 = río π (el cromóforo)
   uniform float uSize;
-  uniform float uReveal;     // frente de crecimiento de la cadena (0→1)
+  uniform float uReveal;     // frente de CRECIMIENTO REAL de la cadena (0→1): la conjugación
+                             // se extiende unidad por unidad (posiciones REALES, en orden real)
   uniform float uTime;
   varying float vNear;
   varying float vShell;
@@ -785,9 +790,10 @@ const CARO_VERT = `
   varying float vTip;
   void main() {
     vShell = aShell;
-    // REVELADO: lo que está más allá del frente de crecimiento aún no existe
+    // CRECIMIENTO por largo (formación real): lo que está más allá del frente aún no
+    // existe; las partículas aparecen en su SITIO REAL, en orden real a lo largo del eje.
     float shown = smoothstep(uReveal + 0.02, uReveal - 0.06, aAxis);
-    vTip = smoothstep(uReveal - 0.12, uReveal, aAxis) * shown;   // el frente brilla (se está formando)
+    vTip = smoothstep(uReveal - 0.12, uReveal, aAxis) * shown;   // el frente donde crece brilla
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     vNear = smoothstep(0.22, 0.95, -mv.z) * shown;
     // el río FLUYE: una onda de brillo corre a lo largo del eje (los e⁻ π viajando)
@@ -798,7 +804,8 @@ const CARO_VERT = `
 const CARO_FRAG = `
   precision highp float;
   uniform float uBright;
-  uniform float uWarm;       // 0 frío (UV, invisible) → 1 naranja (visible, el color nace)
+  uniform vec3 uColor;       // COLOR OBSERVADO REAL del cromóforo para el largo actual
+                             // (LUT PySCF/FEMO: incoloro corto → naranja β-caroteno largo)
   varying float vNear;
   varying float vShell;
   varying float vFlow;
@@ -809,12 +816,11 @@ const CARO_FRAG = `
     if (a < 0.004) discard;
     vec3 col;
     if (vShell > 1.5) {
-      // RÍO π (figura): nace FRÍO (violeta, absorbe UV = "invisible") → ESTALLA
-      // naranja al alargarse (el salto HOMO-LUMO cae al visible). El color del largo.
-      col = mix(vec3(0.34, 0.18, 0.86), vec3(1.0, 0.46, 0.08), uWarm);
+      // RÍO π (figura): el color que la molécula REFLEJA para su largo de conjugación
+      // actual — física real por longitud (el salto HOMO-LUMO cae al visible al crecer).
+      col = uColor;
     } else {
-      // ESPINA σ: SIEMPRE fría (cian) — el fondo frío que hace POP al río cálido
-      // (firma del viral: figura cálida sobre campo frío = dual-cluster).
+      // ESPINA σ: SIEMPRE fría (cian) — campo frío que hace POP al río (dual-cluster).
       col = vec3(0.24, 0.62, 1.0);
     }
     // el río π MANDA; la espina σ es solo una SUGERENCIA (hilo tenue que insinúa el
@@ -824,8 +830,8 @@ const CARO_FRAG = `
     gl_FragColor = vec4(col * a * uBright * shellB, a);
   }`;
 
-function CarotenoFlow({ bundle, axis, cen, L, reveal, warm, bright, time }:
-  { bundle: AtomBundle; axis: Vec3; cen: Vec3; L: number; reveal: number; warm: number; bright: number; time: number }) {
+function CarotenoFlow({ bundle, axis, cen, L, reveal, color, bright, time }:
+  { bundle: AtomBundle; axis: Vec3; cen: Vec3; L: number; reveal: number; color: Vec3; bright: number; time: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const geo = useMemo(() => {
     const N = bundle.sizes.length;
@@ -845,13 +851,13 @@ function CarotenoFlow({ bundle, axis, cen, L, reveal, warm, bright, time }:
   }, [bundle, axis, cen, L]);
   const uniforms = useMemo(() => ({
     uSize: { value: 0.30 }, uBright: { value: bright }, uReveal: { value: reveal },
-    uWarm: { value: warm }, uTime: { value: time },
+    uColor: { value: new THREE.Vector3(color[0], color[1], color[2]) }, uTime: { value: time },
   }), []);
   useFrame(() => {
     if (!matRef.current) return;
     matRef.current.uniforms.uBright.value = bright;
     matRef.current.uniforms.uReveal.value = reveal;
-    matRef.current.uniforms.uWarm.value = warm;
+    matRef.current.uniforms.uColor.value.set(color[0], color[1], color[2]);
     matRef.current.uniforms.uTime.value = time;
   });
   return (
@@ -1642,6 +1648,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const [o2ai, setO2ai] = useState<O2AbInitio | null>(null);   // Δρ ab initio del enlace (O₂)
   const [atomCloud, setAtomCloud] = useState<Int16Array | null>(null);   // nube del átomo AISLADO (individuos)
   const [piSplit, setPiSplit] = useState<Uint8Array | null>(null);       // ¿a cuál π pertenece cada partícula? (triple enlace)
+  const [caroLUT, setCaroLUT] = useState<{ rgb: Vec3 }[] | null>(null);   // color observado REAL por longitud (PySCF/FEMO)
   const [time, setTime] = useState(0);
   const modes = useMemo(() => (molKey === 'h2o' ? computeWaterModes() : null), [molKey]);
   const [vertical, setVertical] = useState(
@@ -1673,6 +1680,15 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
       .then(r => r.arrayBuffer())
       .then(buf => { if (alive) setData(parseBin(buf)); })
       .catch(e => console.error('mol load failed', e));
+    // CAROTENO: LUT del color OBSERVADO real por longitud de conjugación (calculado:
+    // FEMO calibrado a λmax medida + verificado con PySCF). El "color nace del largo".
+    if (molKey === 'caroteno') {
+      setCaroLUT(null);
+      fetch('/precomputed/caroteno-color.json')
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => { if (alive && j) setCaroLUT(j); })
+        .catch(() => { /* opcional */ });
+    }
     // Enlaces AB INITIO (o2/n2/f2/h2): además la Δρ REAL de la formación (calculada)
     if (isBond(molKey)) {
       if (live) setO2ai(null);
@@ -1756,10 +1772,23 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
           // LA PREGUNTA (se enfría y ENCOGE: "¿y si fuera más corta?") → REGROW: el
           // color NACE del largo (la lección, el re-gancho) → héroe + loop. reveal =
           // cuánta cadena existe; warm = el salto HOMO-LUMO en el visible (naranja).
-          // Vuelo inmersivo: río de ORO todo el tiempo (espectacular de frame 1 a 45).
-          // El "color nace del largo" lo cuenta la narración, no un demo de afuera.
-          const caroReveal = 1;
-          const caroWarm = 1;
+          // FORMACIÓN REAL desde 0 (serie de la formación): la conjugación CRECE unidad
+          // por unidad (reveal, posiciones reales en orden real). El color por longitud
+          // sale de la FÍSICA precomputada (caroColorLUT: λmax real de cada polieno N vía
+          // PySCF → sRGB) — NO un warm inventado. warm = índice en esa LUT según el largo.
+          // reveal va un poco ADELANTE de la cámara (misma curva ease que molCamera) →
+          // la cadena crece justo delante de nosotros y siempre volamos en lo ya formado.
+          const _gk = (() => { const x = Math.max(0, Math.min(1, sceneT / 45)); return x * x * x * (x * (x * 6 - 15) + 10); })();
+          const caroReveal = !isCaro ? 1 : Math.min(1, (_gk + 0.12) / 0.6);
+          // COLOR OBSERVADO REAL para el largo actual: N = reveal·11 dobles → LUT
+          // (interpolada) del color que el cromóforo refleja a ese largo. Física, no warm.
+          let caroColor: Vec3 = [1, 0.53, 0.01];
+          if (isCaro && caroLUT && caroLUT.length) {
+            const x = Math.max(0, Math.min(1, caroReveal)) * (caroLUT.length - 1);
+            const i0 = Math.floor(x), i1 = Math.min(caroLUT.length - 1, i0 + 1), f = x - i0;
+            const a = caroLUT[i0].rgb, b = caroLUT[i1].rgb;
+            caroColor = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+          }
           const caroBright = 0.62;   // tenue a propósito: el aditivo del río satura a blanco si subes
           const mr = isBond(molKey) ? bondR(sceneT, molKey) : 1.0;
           const formed = isBond(molKey) ? smoothstep((1.4 - mr) / 0.25) : 1;
@@ -1811,7 +1840,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             {/* CAROTENO FLAGSHIP: la cadena por el MOTOR de O₂ (sprites grandes+tenues,
                 río π cálido naciendo del largo) — reemplaza ElectronCloud+ChainField */}
             {isCaro && <CarotenoFlow bundle={data.bundle} axis={frame.a} cen={frame.c}
-              L={frame.L} reveal={caroReveal} warm={caroWarm} bright={caroBright} time={sceneT} />}
+              L={frame.L} reveal={caroReveal} color={caroColor} bright={caroBright} time={sceneT} />}
             {/* nube MOLECULAR precomputada — OTRAS moléculas (O₂ usa la densidad real abajo) */}
             {!isBond(molKey) && !isCaro && <ElectronCloud bundle={data.bundle} time={time} holeRadius={0.04}
               bokeh={0.8 / Math.max(1, data.extent)} rotRate={0} brightness={formed} />}
