@@ -63,6 +63,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-structural-test.cjs'] },
   { group: 'kernel', n: 'mold-platesizing', why: 'Kazmer §12.1+§9.2.5 TAMAÑO DE PLACA → placa COMERCIAL: soporte por deflexión (bezel 176mm→optimiza a 36mm/4 pilares), cavidad por enfriamiento (tapa 27mm)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-platesizing-test.cjs'] },
+  { group: 'kernel', n: 'mold-machinesizing', why: 'Kazmer §4.3.3+cap5+cap11 TAMAÑO DE MÁQUINA: 4 restricciones (cierre/shot/presión/expulsión) → inyectora comercial; cup 400kN/IM-50, bezel 1400kN/IM-250, expulsión 0.5% del clamp EXACTO',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-machinesizing-test.cjs'] },
   { group: 'kernel', n: 'mold-sideactions', why: 'Kazmer §11.3.6-8 MOLDES CON MOVIMIENTO: core pull 44kN/⌀75→82.55std, angle pin 35+25mm EXACTOS, decisor slide/pull',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-sideactions-test.cjs'] },
   { group: 'kernel', n: 'mold-fasteners', why: 'Kazmer §12.4: tornillo del molde peor-caso 362kg/47kN → M10 DIN 912 del CATÁLOGO real',
