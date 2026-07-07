@@ -134,8 +134,8 @@ function MoldSection({ plane, playing, speed, tRef }: {
     clippingPlanes: [plane], clipShadows: true, side: THREE.DoubleSide,
   }), [plane]);
   const capMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#a7b0bd', metalness: 0.3, roughness: 0.62, envMapIntensity: 0.35,   // fresado fresco satinado CLARO (que se lea)
-    emissive: '#3a4048', emissiveIntensity: 0.35,                                // pizca de auto-iluminación para no ennegrecer
+    color: '#828b97', metalness: 0.4, roughness: 0.55, envMapIntensity: 0.45,   // fresado fresco satinado (acero medio, no papel)
+    emissive: '#2c323b', emissiveIntensity: 0.3,
     stencilWrite: true, stencilRef: 0, stencilFunc: THREE.NotEqualStencilFunc,
     stencilFail: THREE.ReplaceStencilOp, stencilZFail: THREE.ReplaceStencilOp, stencilZPass: THREE.ReplaceStencilOp,
     side: THREE.DoubleSide,
@@ -172,12 +172,20 @@ function MoldSection({ plane, playing, speed, tRef }: {
   const coolBore = useMemo(() => [   // barrenos a lo ancho → círculos en la cara del corte, a 2 profundidades
     [zCoolA, -MOLD.coolInsetY], [zCoolA, MOLD.coolInsetY], [zCoolB, -MOLD.coolInsetY], [zCoolB, MOLD.coolInsetY],
   ].map(([z, y]) => ({ bore: boreX(MOLD.coolDia / 2 + 1.4, MOLD.X + 1, z, y), water: boreX(MOLD.coolDia / 2, MOLD.X + 2, z, y) })), [Z]);
-  const pinG = useMemo(() => {
-    const zc = (Z.support[0] + (Z.A[0] + MOLD.cavityDepth)) / 2, len = (Z.A[0] + MOLD.cavityDepth) - Z.support[0];
-    return [-MOLD.pinInsetX, 0, MOLD.pinInsetX].map((x) => pinZ(MOLD.pinDia / 2, len, x, zc));
-  }, [Z]);
+  const pinZc = (Z.support[0] + (Z.A[0] + MOLD.cavityDepth)) / 2, pinLen = (Z.A[0] + MOLD.cavityDepth) - Z.support[0];
+  const pinG = useMemo(() => [-MOLD.pinInsetX, 0, MOLD.pinInsetX].map((x) => pinZ(MOLD.pinDia / 2, pinLen, x, pinZc)), [Z]);
   // líneas de partición grabadas (finas, oscuras) en las caras del bloque
   const partingLines = useMemo(() => [Z.support[0], Z.B[0], Z.A[0], Z.topClamp[0]], [Z]);
+
+  // ── RELLENOS DE SECCIÓN MACIZOS: lo que se VE en la cara del corte (discos/bolsas
+  //    rellenos, no aritos huecos). Aparecen cuando el corte llega al centro. ──
+  const zCavity = Z.A[0] + MOLD.cavityDepth / 2;
+  const fillsRef = useRef<THREE.Group>(null!);
+  useFrame(() => { if (fillsRef.current) fillsRef.current.visible = plane.constant < 2.5; });
+  const mkFill = (o: THREE.MeshStandardMaterialParameters) => new THREE.MeshStandardMaterial({ ...o, side: THREE.DoubleSide, depthTest: false, depthWrite: false });
+  const discBlue = useMemo(() => mkFill({ color: '#3aa6e8', emissive: '#1f8fd8', emissiveIntensity: 1.7, roughness: 0.3, metalness: 0.1 }), []);
+  const rectGold = useMemo(() => mkFill({ color: '#f0c94e', emissive: '#7a5c12', emissiveIntensity: 0.7, roughness: 0.35, metalness: 0.5 }), []);
+  const rectCav = useMemo(() => mkFill({ color: '#0e1116', emissive: '#060809', emissiveIntensity: 0.2, roughness: 0.8, metalness: 0.1 }), []);
 
   const cap = MOLD.X * 1.5;
   return (
@@ -189,18 +197,33 @@ function MoldSection({ plane, playing, speed, tRef }: {
       {partingLines.map((z, i) => (
         <mesh key={'pl' + i} position={[0, 0, z]} renderOrder={4}>
           <boxGeometry args={[MOLD.X + 0.4, MOLD.Y + 0.4, 0.6]} />
-          <meshStandardMaterial color="#23272e" metalness={0.6} roughness={0.7} clippingPlanes={[plane]} />
+          <meshStandardMaterial color="#20242b" metalness={0.6} roughness={0.7} clippingPlanes={[plane]} />
         </mesh>
       ))}
-      {/* anatomía revelada por el corte */}
-      <mesh geometry={cavityG} material={cavityMat} renderOrder={12} />
+      {/* anatomía 3D que se hunde hacia el fondo (tubos de agua + pines) */}
       {coolBore.map((c, i) => (
-        <group key={'c' + i}>
-          <mesh geometry={c.bore} renderOrder={12}><meshStandardMaterial color="#2a2f37" metalness={0.8} roughness={0.5} clippingPlanes={[plane]} side={THREE.DoubleSide} /></mesh>
-          <mesh geometry={c.water} material={waterMat} renderOrder={13} />
-        </group>
+        <mesh key={'c' + i} geometry={c.water} material={waterMat} renderOrder={12} />
       ))}
-      {pinG.map((g, i) => <mesh key={'p' + i} geometry={g} material={pinMat} renderOrder={13} />)}
+      {pinG.map((g, i) => <mesh key={'p' + i} geometry={g} material={pinMat} renderOrder={12} />)}
+
+      {/* RELLENOS MACIZOS sobre la cara del corte (x≈0), cada uno mirando +X.
+          PlaneGeometry(W,H) + rotationY π/2: W→altura (Z local), H→profundidad (Y local). */}
+      <group ref={fillsRef} renderOrder={16}>
+        {/* la CAVIDAD: bolsa oscura real (corte de la pieza) — cavityDepth alto × cavityY hondo */}
+        <mesh position={[0, 0, zCavity]} rotation={[0, Math.PI / 2, 0]} material={rectCav} renderOrder={16}>
+          <planeGeometry args={[MOLD.cavityDepth + 1, MOLD.cavityY]} />
+        </mesh>
+        {/* 4 barrenos de AGUA: discos azules rellenos */}
+        {[[-MOLD.coolInsetY, zCoolA], [MOLD.coolInsetY, zCoolA], [-MOLD.coolInsetY, zCoolB], [MOLD.coolInsetY, zCoolB]].map(([y, z], i) => (
+          <mesh key={'wf' + i} position={[0, y, z]} rotation={[0, Math.PI / 2, 0]} material={discBlue} renderOrder={17}>
+            <circleGeometry args={[MOLD.coolDia / 2, 32]} />
+          </mesh>
+        ))}
+        {/* PIN de expulsión al centro: barra dorada vertical — pinLen alto × pinDia ancho */}
+        <mesh position={[0, 0, pinZc]} rotation={[0, Math.PI / 2, 0]} material={rectGold} renderOrder={17}>
+          <planeGeometry args={[pinLen, MOLD.pinDia]} />
+        </mesh>
+      </group>
     </group>
   );
 }
