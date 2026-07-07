@@ -83,6 +83,7 @@ import {
   type SweepProfile,
   type SketchPlane3D,
 } from './occt';
+import { makeThreadedRod, threadDims, threadDesignation } from './thread';
 import { generateFacingToolpath, toGcode, toolpathStats, arcSweep } from '../cam/facing';
 import type { ToolpathSegment } from '../cam/facing';
 import { generateCircularPocketToolpath } from '../cam/pocket';
@@ -201,7 +202,9 @@ const FEA_MATERIAL_KEY: Record<string, keyof typeof MATERIAL_DATABASE> = {
 // ──────────────────────────────────────────────────────────────────
 // El documento = grafo de features (sketch base + operaciones ordenadas)
 // ──────────────────────────────────────────────────────────────────
-type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom' | 'gearbox';
+type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom' | 'gearbox' | 'rosca';
+interface RoscaParams { d: number; pitch: number; length: number }
+const ROSCA_DEFAULTS: RoscaParams = { d: 14, pitch: 3, length: 18 }; // coarse visible (la fina revienta MakePipe)
 // CAJA cicloidal multi-disco: N discos de lóbulos fasados + eje hueco + base-anillo.
 interface GearboxParams {
   lobes: number; discs: number; R: number; Rr: number; E: number;
@@ -251,6 +254,8 @@ interface SketchFeature {
   gear: GearParams;
   // Caja cicloidal multi-disco (kind 'gearbox'): N discos fasados + eje + base.
   gearbox: GearboxParams;
+  // Rosca MODELADA (kind 'rosca'): tornillo con cuerda helicoidal real (ISO 68-1).
+  rosca: RoscaParams;
   // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
   // resuelto por el solver de restricciones. Reemplaza las plantillas.
   customProfile?: Pt2[];
@@ -852,6 +857,14 @@ function buildShape(
       if (sketch.kind === 'gearbox') {
         // ── CAJA cicloidal multi-disco (compound print-in-place) ──
         shape = buildGearbox(oc, sketch.gearbox);
+        continue;
+      }
+      if (sketch.kind === 'rosca') {
+        // ── ROSCA MODELADA: tornillo con cuerda helicoidal REAL (ISO 68-1) ──
+        // Si la rosca fina revienta el sweep (MakePipe), cae a barra lisa (nunca rompe la UI).
+        const { d, pitch, length } = sketch.rosca ?? ROSCA_DEFAULTS;
+        try { shape = makeThreadedRod(oc, d, pitch, length); }
+        catch { shape = makeCylinder(oc, d / 2, length); }
         continue;
       }
       // Simétrico: el plano de boceto se baja −depth/2 y se extruye depth, así
@@ -2957,7 +2970,7 @@ interface DocState {
 const DEFAULT_SKETCH: SketchFeature = {
   id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
   steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
-  gear: { ...GEAR_DEFAULTS }, gearbox: { ...GEARBOX_DEFAULTS },
+  gear: { ...GEAR_DEFAULTS }, gearbox: { ...GEARBOX_DEFAULTS }, rosca: { ...ROSCA_DEFAULTS },
 };
 function makeDefaultDoc(name = 'Pieza nueva'): DocState {
   return {
@@ -3811,6 +3824,18 @@ export default function ForgeBRepStudio() {
   }, []);
   const updateGearbox = useCallback((patch: Partial<GearboxParams>) => {
     setSketch((s) => ({ ...s, gearbox: { ...s.gearbox, ...patch } }));
+  }, []);
+  // ── ROSCA modelada (btn-rosca): tornillo con cuerda helicoidal real ──
+  const applyRosca = useCallback(() => {
+    setSketch((s) => ({ ...s, kind: 'rosca', rosca: s.rosca ?? { ...ROSCA_DEFAULTS } }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude')
+      ? cur
+      : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+    setActiveOp('sketch'); setActiveComp(null); setPickMode('none');
+    mark('op', 0, { op: 'rosca' });
+  }, []);
+  const updateRosca = useCallback((patch: Partial<RoscaParams>) => {
+    setSketch((s) => ({ ...s, rosca: { ...s.rosca, ...patch } }));
   }, []);
 
   // ── ENSAMBLE: agregar el 2º engrane (btn-add-gear2). Garantiza que el sketch
@@ -5801,6 +5826,7 @@ export default function ForgeBRepStudio() {
                     <button data-testid="btn-pocket" role="menuitem" onClick={() => { addOp('pocket'); setMasOpen(false); }}><Ic name="cajera" />Cajera</button>
                     <button data-testid="btn-gear" role="menuitem" onClick={() => { applyGear(); setMasOpen(false); }}><Ic name="engrane" />Engrane de involuta</button>
                     <button data-testid="btn-gearbox" role="menuitem" onClick={() => { applyGearbox(); setMasOpen(false); }}><Ic name="cajacic" />Caja cicloidal</button>
+                    <button data-testid="btn-rosca" role="menuitem" onClick={() => { applyRosca(); setMasOpen(false); }}><Ic name="roscado" />Rosca (tornillo)</button>
                     <button data-testid="btn-params" role="menuitem" onClick={() => { setParamsOpen((v) => !v); setMasOpen(false); }}><Ic name="params" />Parámetros ƒₓ</button>
                     <button data-testid="btn-component" role="menuitem" onClick={() => { addComponent('box'); setMasOpen(false); }}><Ic name="componente" />Componente</button>
                   </div>
@@ -6319,7 +6345,24 @@ export default function ForgeBRepStudio() {
                 {sketch.kind === 'circle' ? (
                   <Dim label="Radio" value={sketch.radius} unit="mm" min={3} max={50} step={1} testid="input-radio" bindKey="sketch:radius"
                     onChange={(v) => setSketch((s) => ({ ...s, radius: v }))} />
-                ) : sketch.kind === 'gearbox' ? (
+                ) : sketch.kind === 'rosca' ? ((() => {
+                  const r = sketch.rosca ?? ROSCA_DEFAULTS; const dm = threadDims(r.d, r.pitch);
+                  return (
+                  <>
+                    <p className="fb-hint-txt">
+                      Cuerda helicoidal REAL (ISO 68-1): un perfil a 60° barrido por una hélice.
+                      El callout <b>{threadDesignation(r.d, r.pitch)}</b> = Ø mayor × paso.
+                      Menor <b>d₁ = {dm.d1.toFixed(2)}</b>, paso <b>d₂ = {dm.d2.toFixed(2)}</b> mm.
+                    </p>
+                    <Dim label="Ø mayor" value={r.d} unit="mm" min={6} max={40} step={1} testid="input-rosca-d"
+                      onChange={(v) => updateRosca({ d: v })} />
+                    <Dim label="Paso" value={r.pitch} unit="mm" min={1} max={6} step={0.25} testid="input-rosca-paso"
+                      onChange={(v) => updateRosca({ pitch: v })} />
+                    <Dim label="Largo roscado" value={r.length} unit="mm" min={6} max={80} step={2} testid="input-rosca-largo"
+                      onChange={(v) => updateRosca({ length: v })} />
+                  </>
+                  );
+                })()) : sketch.kind === 'gearbox' ? (
                   <>
                     <p className="fb-hint-txt">
                       Caja ENCAPSULADA en 1 pieza (sale lista, solo conectas el motor). La <b>hembra-vaso</b> (base + rodillos integrados) es el cuerpo fijo; los <b>discos</b> van relojeados −αᵢ/lóbulos (engranan sin colisión) sobre las <b>levas excéntricas</b>, retenidos por un <b>carrete</b> (collar+garganta a 45° auto-soportado) que NO deja al disco subir/bajar de su leva. La <b>brida</b> es la tapa que gira. Cada holgura = canal de grasa. No backdriveable → sostiene posición.
