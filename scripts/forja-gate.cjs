@@ -65,6 +65,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-platesizing-test.cjs'] },
   { group: 'kernel', n: 'mold-machinesizing', why: 'Kazmer §4.3.3+cap5+cap11 TAMAÑO DE MÁQUINA: 4 restricciones (cierre/shot/presión/expulsión) → inyectora comercial; cup 400kN/IM-50, bezel 1400kN/IM-250, expulsión 0.5% del clamp EXACTO',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-machinesizing-test.cjs'] },
+  { group: 'kernel', n: 'mold-cores', why: 'Kazmer §12.3 CORES: axial 216MPa/δ0.06, hoop 240MPa + Ø_int máx 31mm fatiga vs 38mm sobrepresión, flexión I 5.1e-7/δ0.03mm + interlock ×0.1 (cup EXACTO)',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-cores-test.cjs'] },
   { group: 'kernel', n: 'mold-sideactions', why: 'Kazmer §11.3.6-8 MOLDES CON MOVIMIENTO: core pull 44kN/⌀75→82.55std, angle pin 35+25mm EXACTOS, decisor slide/pull',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-sideactions-test.cjs'] },
   { group: 'kernel', n: 'mold-fasteners', why: 'Kazmer §12.4: tornillo del molde peor-caso 362kg/47kN → M10 DIN 912 del CATÁLOGO real',
