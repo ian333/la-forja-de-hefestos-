@@ -6,12 +6,19 @@
   // cubo 10×10×10 (8 vértices, 12 triángulos)
   const P = [0, 0, 0, 10, 0, 0, 10, 10, 0, 0, 10, 0, 0, 0, 10, 10, 0, 10, 10, 10, 10, 0, 10, 10];
   const I = [0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 4, 5, 0, 5, 1, 2, 6, 7, 2, 7, 3, 1, 5, 6, 1, 6, 2, 0, 3, 7, 0, 7, 4];
-  const svg = ISO.isoView(P, I, { name: 'cubo', code: 'TST', material: 'acero' });
-  console.log('svg len', svg.length, '· paths', (svg.match(/<path/g) || []).length);
+  // normales por vértice (normalizadas del origen, aprox) y aristas del cubo
+  const N = []; for (let i = 0; i < P.length; i += 3) { const l = Math.hypot(P[i] - 5, P[i + 1] - 5, P[i + 2] - 5) || 1; N.push((P[i] - 5) / l, (P[i + 1] - 5) / l, (P[i + 2] - 5) / l); }
+  const E = [{ polyline: [[0, 0, 10], [10, 0, 10]] }, { polyline: [[10, 0, 10], [10, 10, 10]] }];
+  const svg = ISO.isoView(P, I, N, E, { name: 'cubo', code: 'TST', material: 'acero' });
+  console.log('svg len', svg.length, '· paths', (svg.match(/<path/g) || []).length, '· lines', (svg.match(/<line/g) || []).length);
   checks.svgValido = svg.startsWith('<svg') && svg.includes('</svg>');
   checks.tienePaths = (svg.match(/<path/g) || []).length >= 3;       // caras visibles del cubo (back-face culled)
-  checks.tieneCajetin = svg.includes('ISOMÉTRICO') && svg.includes('cubo');
+  checks.tieneCajetin = svg.includes('ISOMÉTRIC') && svg.includes('cubo');
   checks.sombreado = /fill="rgb\(\d+,\d+,\d+\)"/.test(svg);          // relleno por normal·luz
+  checks.aristasReales = svg.includes('#0e1216');                    // aristas B-Rep superpuestas
+  // partSheet4View: compone 3 vistas (svg dummy) + iso en A3
+  const sheet = ISO.partSheet4View('<svg viewBox="0 0 297 210"><rect width="297" height="210" fill="#fff"/></svg>', { positions: P, indices: I, normals: N, edges: E }, { name: 'cubo' });
+  checks.cuatroVistas = sheet.includes('4 vistas') && sheet.includes('ISOMÉTRICO') && sheet.includes('<svg');
   const pass = Object.values(checks).every(Boolean);
   console.log('VERIFY_RESULT=' + JSON.stringify({ pass, checks }));
   process.exit(pass ? 0 : 2);

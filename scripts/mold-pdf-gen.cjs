@@ -137,17 +137,19 @@ const EXAMPLES = [
 
   for (const ex of EXAMPLES) {
     const set = DS.moldDrawingSet(ex.spec, ex.analysis);
-    // LÁMINAS DE LA PIEZA MOLDEADA: 3 vistas (HLR) + isométrico (del sólido del kernel)
+    // LÁMINA DE LA PIEZA: 4 VISTAS (3 ortográficas HLR + isométrico LISO) del sólido del kernel
     try {
       const solid = buildPart(K, oc, ex.key);
-      const mesh = K.tessellate(oc, solid, 0.3, 0.5);
+      const mesh = K.tessellate(oc, solid, 0.1, 0.3);   // teselado FINO → superficie lisa
       const edges = K.enumerateEdgesGeom(oc, solid).map((e) => ({ polyline: e.polyline, kind: e.kind }));
       const three = DRAW.generateDrawing({ positions: mesh.positions, indices: mesh.indices, edges },
         { name: `PIEZA · ${ex.spec.name}`, material: 'ABS', units: 'mm' });
-      set.pages.push({ name: 'Pieza · 3 vistas', svg: three.svg });
-      set.pages.push({ name: 'Pieza · isométrico', svg: ISO.isoView(mesh.positions, mesh.indices, { name: 'Pieza moldeada', code: ex.spec.code, material: 'ABS' }) });
-      console.log(`  pieza ${ex.key}: 3 vistas (${three.views.map((v) => v.key).join('/')}) + iso (${mesh.triangleCount} tri)`);
-    } catch (e) { console.log(`  pieza ${ex.key} SIN vistas: ${String(e.message || e).slice(0, 80)}`); }
+      const sheet = ISO.partSheet4View(three.svg,
+        { positions: mesh.positions, indices: mesh.indices, normals: mesh.normals, edges },
+        { name: ex.spec.name, code: ex.spec.code, material: 'ABS', units: 'mm' });
+      set.pages.push({ name: 'Pieza · 4 vistas', svg: sheet });
+      console.log(`  pieza ${ex.key}: 4 vistas (3 orto ${three.views.map((v) => v.key).join('/')} + iso liso, ${mesh.triangleCount} tri)`);
+    } catch (e) { console.log(`  pieza ${ex.key} SIN vistas: ${String(e.message || e).slice(0, 100)}`); }
     // 1) rasteriza cada lámina con el.screenshot (WYSIWYG, sin recorte del A3)
     const pngs = [];
     for (const pg of set.pages) {
