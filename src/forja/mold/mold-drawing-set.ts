@@ -49,9 +49,27 @@ function analysisSheet(spec: MoldAssemblySpec, rows: AnalysisRow[]): string {
   return p.join('');
 }
 
+export type PlateRole = 'clamp' | 'A' | 'B' | 'support' | 'bottom';
+export interface PlateDef { role: PlateRole; code: string; name: string; thick: number; mat: string }
+
+/** Las 5 placas del molde (rol, código, espesor del spec, material). Fuente única:
+ *  la usan tanto el plano plano (renderPlateDrawing) como el sólido del kernel. */
+export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
+  return [
+    { role: 'clamp', code: `${s.code ?? 'MLD'}-01`, name: 'Placa de sujeción superior', thick: s.plates.topClamp, mat: s.baseSteel ?? '1.1730' },
+    { role: 'A', code: `${s.code ?? 'MLD'}-02`, name: 'Placa A (cavidad)', thick: s.plates.A, mat: s.cavityMetal },
+    { role: 'B', code: `${s.code ?? 'MLD'}-03`, name: 'Placa B (núcleo)', thick: s.plates.B, mat: s.cavityMetal },
+    { role: 'support', code: `${s.code ?? 'MLD'}-04`, name: 'Placa de soporte', thick: s.plates.support, mat: s.baseSteel ?? '1.1730' },
+    { role: 'bottom', code: `${s.code ?? 'MLD'}-05`, name: 'Placa de sujeción inferior', thick: s.plates.bottomClamp, mat: s.baseSteel ?? '1.1730' },
+  ];
+}
+
+/** Ancho del fondo de la placa (≈0.78·ancho, 4:3 típico de mold base). */
+export const plateDepth = (s: MoldAssemblySpec) => Math.round(s.widthMm * 0.78);
+
 /** Barrenos estándar de una placa según su rol (layout simétrico, cantidades/⌀
  *  del spec resuelto — no inventa la pieza, especifica componentes estándar). */
-function standardHoles(s: MoldAssemblySpec, role: 'clamp' | 'A' | 'B' | 'support' | 'bottom'): PlateHole[] {
+export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[] {
   const W = s.widthMm, D = Math.round(W * 0.78);   // fondo ≈ 0.78·ancho (placa 381→302, 4:3 típico)
   const inset = Math.max(20, Math.round(W * 0.06));
   const holes: PlateHole[] = [];
@@ -83,7 +101,7 @@ function standardHoles(s: MoldAssemblySpec, role: 'clamp' | 'A' | 'B' | 'support
 
 /** Genera el SET completo de planos del molde (ensamble + análisis + placas). */
 export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]): MoldDrawingSet {
-  const D = Math.round(s.widthMm * 0.78);
+  const D = plateDepth(s);
   const pages: DrawingPage[] = [];
 
   // 1) ENSAMBLE (sección A-A + BOM + notas de análisis)
@@ -92,15 +110,8 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
   // 2) HOJA DE ANÁLISIS DE INGENIERÍA (la ingeniería del molde, con § y veredicto)
   if (analysisRows && analysisRows.length) pages.push({ name: 'Análisis', svg: analysisSheet(s, analysisRows) });
 
-  // 2) PLANO INDIVIDUAL de cada placa (planta + tabla de barrenos a cota)
-  const plateDefs: Array<{ role: Parameters<typeof standardHoles>[1]; code: string; name: string; thick: number; mat: string }> = [
-    { role: 'clamp', code: `${s.code ?? 'MLD'}-01`, name: 'Placa de sujeción superior', thick: s.plates.topClamp, mat: s.baseSteel ?? '1.1730' },
-    { role: 'A', code: `${s.code ?? 'MLD'}-02`, name: 'Placa A (cavidad)', thick: s.plates.A, mat: s.cavityMetal },
-    { role: 'B', code: `${s.code ?? 'MLD'}-03`, name: 'Placa B (núcleo)', thick: s.plates.B, mat: s.cavityMetal },
-    { role: 'support', code: `${s.code ?? 'MLD'}-04`, name: 'Placa de soporte', thick: s.plates.support, mat: s.baseSteel ?? '1.1730' },
-    { role: 'bottom', code: `${s.code ?? 'MLD'}-05`, name: 'Placa de sujeción inferior', thick: s.plates.bottomClamp, mat: s.baseSteel ?? '1.1730' },
-  ];
-  for (const p of plateDefs) {
+  // 3) PLANO INDIVIDUAL de cada placa (planta + tabla de barrenos a cota)
+  for (const p of plateDefs(s)) {
     const spec: PlateSpec = {
       code: p.code, name: p.name, material: p.mat,
       wmm: s.widthMm, dmm: D, thickMm: p.thick,

@@ -18,7 +18,15 @@
   checks.aristasReales = svg.includes('#0e1216');                    // aristas B-Rep superpuestas
   // partSheet4View: compone 3 vistas (svg dummy) + iso en A3
   const sheet = ISO.partSheet4View('<svg viewBox="0 0 297 210"><rect width="297" height="210" fill="#fff"/></svg>', { positions: P, indices: I, normals: N, edges: E }, { name: 'cubo' });
-  checks.cuatroVistas = sheet.includes('4 vistas') && sheet.includes('ISOMÉTRICO') && sheet.includes('<svg');
+  checks.cuatroVistas = sheet.includes('4 vistas') && sheet.includes('ISOMÉTRIC') && sheet.includes('<svg');
+  // COLOR + TRANSLUCIDEZ: material ámbar translúcido → fill-opacity + tono cálido (R>B)
+  const amber = ISO.isoView(P, I, N, E, { name: 'cubo' }, { color: [224, 122, 48], opacity: 0.55, edgeColor: '#5a2a10' });
+  checks.translucido = amber.includes('<g opacity="0.55">');        // opacity de GRUPO (funde fill+stroke: sin telaraña)
+  const m = amber.match(/fill="rgb\((\d+),(\d+),(\d+)\)"/);
+  checks.colorCalido = !!m && Number(m[1]) > Number(m[3]);          // rojo domina (ámbar) vs gris-acero
+  checks.aristaColor = amber.includes('#5a2a10');                    // edgeColor propagado
+  const transSheet = ISO.partSheet4View('<svg viewBox="0 0 297 210"><rect width="297" height="210"/></svg>', { positions: P, indices: I, normals: N, edges: E }, { name: 'placa' }, { color: [150, 165, 185], opacity: 0.6 });
+  checks.sheetTranslucido = transSheet.includes('<g opacity="0.6">') && transSheet.includes('translúcido');
   const pass = Object.values(checks).every(Boolean);
   console.log('VERIFY_RESULT=' + JSON.stringify({ pass, checks }));
   process.exit(pass ? 0 : 2);

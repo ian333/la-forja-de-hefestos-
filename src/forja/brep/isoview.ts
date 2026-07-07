@@ -42,12 +42,18 @@ function occluded(M: V3, eye: V3, pos: ArrayLike<number>, idx: ArrayLike<number>
 export interface IsoMeta { name?: string; code?: string; material?: string; units?: string }
 export interface Edge3 { polyline: Array<[number, number, number]>; kind?: string }
 
+export interface IsoStyle { color?: [number, number, number]; opacity?: number; edgeColor?: string }
+
 /** Contenido `<g>` del iso LISO (sin marco): superficie sombreada suave + aristas
- *  reales visibles. Encajado en la caja {x,y,w,h} de la hoja. */
+ *  reales visibles. Encajado en la caja {x,y,w,h}. `style` da COLOR de material y
+ *  OPACIDAD (translúcido para ver adentro, como el ghost de SolidWorks). */
 export function isoGroup(
   positions: ArrayLike<number>, indices: ArrayLike<number>, normals: ArrayLike<number>,
-  edges: Edge3[], box: { x: number; y: number; w: number; h: number },
+  edges: Edge3[], box: { x: number; y: number; w: number; h: number }, style: IsoStyle = {},
 ): string {
+  const base = style.color ?? [176, 186, 200];     // gris-acero default
+  const op = style.opacity ?? 1;
+  const edgeCol = style.edgeColor ?? '#0e1216';
   const view = norm([1, 1, 0.85]);                 // dir objeto→ojo
   const right = norm(cross([0, 0, 1], view));
   const up = norm(cross(view, right));
@@ -93,21 +99,32 @@ export function isoGroup(
   const X = (u: number) => ox + (u - u0) * s;
   const Y = (v: number) => oy + (v1 - v) * s;
 
-  const p: string[] = ['<g>'];
-  // superficie sombreada — relleno con hairline del MISMO color (cierra costuras, sin líneas de malla)
+  // SUPERFICIE sombreada — grupo con `opacity` de GRUPO (funde fill Y stroke a la
+  // vez): así el cuerpo translúcido es VIDRIO UNIFORME, sin la telaraña de aristas
+  // de triángulo que deja `fill-opacity` (que NO afecta al trazo). El hairline
+  // del mismo color sella las costuras entre triángulos (nada de malla).
+  const p: string[] = [];
+  p.push(`<g${op < 1 ? ` opacity="${op}"` : ''}>`);
   for (const tr of tris) {
-    const g = Math.round(tr.shade * 205 + 22);
-    const col = `rgb(${g},${g},${Math.min(255, g + 10)})`;
+    const sh = 0.28 + tr.shade * 0.85;             // realza el rango tonal sobre el color base
+    const r = Math.min(255, Math.round(base[0] * sh)), g = Math.min(255, Math.round(base[1] * sh)), b = Math.min(255, Math.round(base[2] * sh));
+    const col = `rgb(${r},${g},${b})`;
     p.push(`<path d="M${X(tr.pu[0]).toFixed(2)},${Y(tr.pv[0]).toFixed(2)}L${X(tr.pu[1]).toFixed(2)},${Y(tr.pv[1]).toFixed(2)}L${X(tr.pu[2]).toFixed(2)},${Y(tr.pv[2]).toFixed(2)}Z" fill="${col}" stroke="${col}" stroke-width="0.25" stroke-linejoin="round"/>`);
   }
-  // ARISTAS REALES del B-Rep, solo las visibles (oclusión) → nítidas, no malla
+  p.push('</g>');
+  // ARISTAS REALES del B-Rep en su PROPIO grupo, SIEMPRE opacas y nítidas (aunque
+  // el cuerpo sea translúcido). Cuerpo opaco → solo visibles (oclusión). Cuerpo
+  // translúcido → todas (el alambre interior se lee a través del vidrio = ghost).
+  p.push('<g>');
   for (const e of edges ?? []) {
     const pl = e.polyline;
     for (let k = 0; k + 1 < pl.length; k++) {
       const p1 = pl[k], p2 = pl[k + 1];
       const M: V3 = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2];
-      if (occluded(M, eyeDir, positions, indices, eps)) continue;
-      p.push(`<line x1="${X(dot(p1, right)).toFixed(2)}" y1="${Y(dot(p1, up)).toFixed(2)}" x2="${X(dot(p2, right)).toFixed(2)}" y2="${Y(dot(p2, up)).toFixed(2)}" stroke="#0e1216" stroke-width="0.32" stroke-linecap="round"/>`);
+      const occ = occluded(M, eyeDir, positions, indices, eps);
+      if (op >= 1 && occ) continue;                 // opaco: HLR (oculta las de atrás)
+      const hidden = occ;                            // translúcido: internas más tenues (se leen por el vidrio)
+      p.push(`<line x1="${X(dot(p1, right)).toFixed(2)}" y1="${Y(dot(p1, up)).toFixed(2)}" x2="${X(dot(p2, right)).toFixed(2)}" y2="${Y(dot(p2, up)).toFixed(2)}" stroke="${edgeCol}" stroke-width="${hidden ? 0.22 : 0.34}" stroke-linecap="round" stroke-opacity="${hidden ? 0.45 : 1}"/>`);
     }
   }
   p.push('</g>');
@@ -125,25 +142,25 @@ function sheetFrame(title: string, sub: string): string[] {
 }
 
 /** Lámina A3 SOLO isométrico (liso). */
-export function isoView(positions: ArrayLike<number>, indices: ArrayLike<number>, normals: ArrayLike<number>, edges: Edge3[], meta: IsoMeta = {}): string {
+export function isoView(positions: ArrayLike<number>, indices: ArrayLike<number>, normals: ArrayLike<number>, edges: Edge3[], meta: IsoMeta = {}, style: IsoStyle = {}): string {
   const p = sheetFrame('VISTA ISOMÉTRICA', `${meta.code ?? ''} · ${meta.name ?? 'Pieza'} · ${meta.material ?? ''}`);
-  p.push(isoGroup(positions, indices, normals, edges, { x: A3.M + 10, y: A3.M + 18, w: A3.W - 2 * A3.M - 20, h: A3.H - 2 * A3.M - 30 }));
+  p.push(isoGroup(positions, indices, normals, edges, { x: A3.M + 10, y: A3.M + 18, w: A3.W - 2 * A3.M - 20, h: A3.H - 2 * A3.M - 30 }, style));
   p.push('</svg>');
   return p.join('');
 }
 
 /** Compone las 3 vistas ortográficas (SVG de generateDrawing, A4) + el ISO en UNA
  *  lámina A3 (4 vistas). `threeSvg` se anida escalado a la izquierda; el iso a la
- *  derecha-arriba. */
-export function partSheet4View(threeSvg: string, iso: { positions: ArrayLike<number>; indices: ArrayLike<number>; normals: ArrayLike<number>; edges: Edge3[] }, meta: IsoMeta = {}): string {
+ *  derecha-arriba. `style` da color/opacidad al isométrico (material real). */
+export function partSheet4View(threeSvg: string, iso: { positions: ArrayLike<number>; indices: ArrayLike<number>; normals: ArrayLike<number>; edges: Edge3[] }, meta: IsoMeta = {}, style: IsoStyle = {}): string {
   const p = sheetFrame(`PIEZA · ${meta.name ?? ''}`, `4 vistas (3er ángulo + isométrico) · ${meta.material ?? ''} · ${meta.units ?? 'mm'} · La Forja · GAIA`);
   // 3 vistas ortográficas (A4 297×210) anidadas a la IZQUIERDA
   const nested = threeSvg.replace(/^<svg /, `<svg x="${A3.M + 2}" y="${A3.M + 20}" width="248" height="${A3.H - 2 * A3.M - 26}" preserveAspectRatio="xMidYMid meet" `);
   p.push(nested);
-  // ISOMÉTRICO a la DERECHA
+  // ISOMÉTRICO a la DERECHA (sombreado con color de material)
   p.push(`<line x1="256" y1="${A3.M + 20}" x2="256" y2="${A3.H - A3.M - 6}" stroke="#ccc" stroke-width="0.3"/>`);
-  p.push(`<text x="335" y="${A3.M + 26}" font-size="3.4" fill="#444" text-anchor="middle">ISOMÉTRICO</text>`);
-  p.push(isoGroup(iso.positions, iso.indices, iso.normals, iso.edges, { x: 262, y: A3.M + 30, w: 150, h: A3.H - 2 * A3.M - 40 }));
+  p.push(`<text x="335" y="${A3.M + 26}" font-size="3.4" fill="#444" text-anchor="middle">ISOMÉTRICO${style.opacity != null && style.opacity < 1 ? ' · translúcido' : ''}</text>`);
+  p.push(isoGroup(iso.positions, iso.indices, iso.normals, iso.edges, { x: 262, y: A3.M + 30, w: 150, h: A3.H - 2 * A3.M - 40 }, style));
   p.push('</svg>');
   return p.join('');
 }

@@ -45,6 +45,43 @@ function buildPart(K, oc, key) {
   return K.draftFaces(oc, bz, 1, [0, 0, 1], 0, vert.slice(0, 12));
 }
 
+// construye una PLACA como SÓLIDO del kernel: caja W×D×espesor + apertura de
+// cavidad pasante (placas A/B) + barrenos estándar pasantes (mismos que el plano
+// plano: standardHoles). Boolean por barreno con try/catch → si uno no cabe, se
+// omite y la placa sigue (no aborta la lámina).
+function buildPlate(K, DS, oc, spec, def) {
+  const W = spec.widthMm, D = DS.plateDepth(spec), t = def.thick;
+  let solid = K.makeBox(oc, W, D, t);
+  // apertura de cavidad (pasante, rectangular) en placas A y B
+  if (def.role === 'A' || def.role === 'B') {
+    const cw = spec.cavity.widthMm, cd = Math.round(spec.cavity.widthMm * 0.67);
+    const cx = W / 2, cy = D / 2;
+    const rect = [
+      { x: cx - cw / 2, y: cy - cd / 2 }, { x: cx + cw / 2, y: cy - cd / 2 },
+      { x: cx + cw / 2, y: cy + cd / 2 }, { x: cx - cw / 2, y: cy + cd / 2 },
+    ];
+    try {
+      const tool = K.extrudePolygon(oc, rect, t + 2, K.offsetPlane(K.PLANE_XY, -1));
+      solid = K.cut(oc, solid, tool);
+    } catch (e) { /* si la apertura falla, la placa queda sólida */ }
+  }
+  // barrenos estándar pasantes (SHCS, pilares guía, expulsores, sprue)
+  const holes = DS.standardHoles(spec, def.role);
+  let drilled = 0;
+  for (const h of holes) {
+    try { solid = K.drillHole(oc, solid, { x: h.x, y: h.y, diameter: h.dia, zTop: t, depth: t, through: true }); drilled++; }
+    catch (e) { /* barreno que no cabe: se omite */ }
+  }
+  return { solid, drilled, holes: holes.length };
+}
+
+// ── PALETA de materiales (SolidWorks-style: acero azul-gris, plástico ámbar) ──
+const STEEL = [150, 165, 185];         // acero de mold base
+const platePartStyle = (role) => (role === 'A' || role === 'B')
+  ? { color: STEEL, opacity: 0.6, edgeColor: '#18202c' }   // cavidad/núcleo: TRANSLÚCIDA (se ve la cavidad)
+  : { color: STEEL, edgeColor: '#12161c' };                // resto: acero opaco
+const PART_STYLE = { color: [224, 122, 48], opacity: 0.55, edgeColor: '#5a2a10' };  // plástico moldeado ámbar translúcido
+
 // ── los 4 ejemplos del libro (parte LITERAL; § citado en el ensamble) ──
 const EXAMPLES = [
   { key: 'cup', spec: {
@@ -135,20 +172,42 @@ const EXAMPLES = [
   const ctx = await browser.newContext({ viewport: { width: 2400, height: 1720 }, deviceScaleFactor: 1 });   // idéntico al svg2png que renderiza completo
   const page = await ctx.newPage();
 
+  // helper: 4 vistas (3 ortográficas HLR + isométrico sombreado a color) de un sólido
+  const fourView = (solid, meta, style, deflLin = 0.15) => {
+    const mesh = K.tessellate(oc, solid, deflLin, 0.4);
+    const edges = K.enumerateEdgesGeom(oc, solid).map((e) => ({ polyline: e.polyline, kind: e.kind }));
+    const three = DRAW.generateDrawing({ positions: mesh.positions, indices: mesh.indices, edges }, meta);
+    const svg = ISO.partSheet4View(three.svg,
+      { positions: mesh.positions, indices: mesh.indices, normals: mesh.normals, edges }, meta, style);
+    return { svg, tri: mesh.triangleCount, views: three.views.map((v) => v.key).join('/') };
+  };
+
   for (const ex of EXAMPLES) {
     const set = DS.moldDrawingSet(ex.spec, ex.analysis);
-    // LÁMINA DE LA PIEZA: 4 VISTAS (3 ortográficas HLR + isométrico LISO) del sólido del kernel
+    // las láminas planas de placa vienen tras Ensamble (+ Análisis) — las intercalamos
+    // con su lámina de 4 vistas a color (cada placa: planta acotada + 3 vistas + iso).
+    const defs = DS.plateDefs(ex.spec);
+    const head = set.pages.slice(0, set.pages.length - defs.length);   // Ensamble, Análisis
+    const flatPlans = set.pages.slice(set.pages.length - defs.length); // planos planos, en orden de defs
+    const pages = [...head];
+    defs.forEach((def, i) => {
+      pages.push(flatPlans[i]);   // planta acotada + tabla de barrenos (para el maquinista)
+      try {
+        const { solid, drilled, holes } = buildPlate(K, DS, oc, ex.spec, def);
+        const meta = { name: def.name, code: def.code, material: def.mat, units: 'mm' };
+        const fv = fourView(solid, meta, platePartStyle(def.role), 0.2);
+        pages.push({ name: `${def.name} · 4 vistas`, svg: fv.svg });
+        console.log(`  placa ${def.role}: ${drilled}/${holes} barrenos · 4 vistas (${fv.views}, ${fv.tri} tri)${def.role === 'A' || def.role === 'B' ? ' · TRANSLÚCIDA' : ''}`);
+      } catch (e) { console.log(`  placa ${def.role} SIN 4 vistas: ${String(e.message || e).slice(0, 120)}`); }
+    });
+    set.pages = pages;
+    // LÁMINA DE LA PIEZA MOLDEADA: 4 vistas + iso ÁMBAR TRANSLÚCIDO (plástico)
     try {
       const solid = buildPart(K, oc, ex.key);
-      const mesh = K.tessellate(oc, solid, 0.1, 0.3);   // teselado FINO → superficie lisa
-      const edges = K.enumerateEdgesGeom(oc, solid).map((e) => ({ polyline: e.polyline, kind: e.kind }));
-      const three = DRAW.generateDrawing({ positions: mesh.positions, indices: mesh.indices, edges },
-        { name: `PIEZA · ${ex.spec.name}`, material: 'ABS', units: 'mm' });
-      const sheet = ISO.partSheet4View(three.svg,
-        { positions: mesh.positions, indices: mesh.indices, normals: mesh.normals, edges },
-        { name: ex.spec.name, code: ex.spec.code, material: 'ABS', units: 'mm' });
-      set.pages.push({ name: 'Pieza · 4 vistas', svg: sheet });
-      console.log(`  pieza ${ex.key}: 4 vistas (3 orto ${three.views.map((v) => v.key).join('/')} + iso liso, ${mesh.triangleCount} tri)`);
+      const meta = { name: ex.spec.name, code: ex.spec.code, material: 'ABS', units: 'mm' };
+      const fv = fourView(solid, meta, PART_STYLE, 0.1);   // partSheet4View ya antepone "PIEZA · "
+      set.pages.push({ name: 'Pieza moldeada · 4 vistas', svg: fv.svg });
+      console.log(`  pieza ${ex.key}: 4 vistas ámbar translúcido (${fv.views}, ${fv.tri} tri)`);
     } catch (e) { console.log(`  pieza ${ex.key} SIN vistas: ${String(e.message || e).slice(0, 100)}`); }
     // 1) rasteriza cada lámina con el.screenshot (WYSIWYG, sin recorte del A3)
     const pngs = [];
