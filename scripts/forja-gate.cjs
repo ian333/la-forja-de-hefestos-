@@ -89,6 +89,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-machine-test.cjs'] },
   { group: 'kernel', n: 'mold-unscrewing', why: 'Kazmer §13.9.2-3 NÚCLEOS MÓVILES (roscas/tubos): vueltas=L/paso, torque=μ·(ΔT·CTE·E)·A·r, collapse 6%⌀, hélice gruesa vs planetario; 64 tapas→planetario (Fig 13.32)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-unscrewing-test.cjs'] },
+  { group: 'kernel', n: 'mold-coolinglines', why: 'Kazmer §9.2.3-6 LÍNEAS DE ENFRIAMIENTO (flujo real, no 2D): caudal Eq9.13, Ø turbulencia Re>4000 Eq9.15, Ø presión Eq9.17, plug DME; cup/lid EXACTO (6.2e-5 m³/s, 3.7-20mm, 6.35mm)',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-coolinglines-test.cjs'] },
   { group: 'kernel', n: 'occt-sweep-loft', why: 'loft (prisma A·h, tronco h/3·(a²+b²+ab)) + sweep (cilindro πr²L, codo suave sin truncar)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/occt-sweep-loft-test.cjs'] },
   { group: 'physics', n: 'fea',          why: 'FEA real K·u=f vs analítico: barra axial σ=F/A & δ=FL/AE, viga voladizo',
