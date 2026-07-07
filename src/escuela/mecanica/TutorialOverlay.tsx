@@ -63,25 +63,57 @@ function splitPhrases(text: string, max = 11): string[] {
   return merged.length ? merged : [clean];
 }
 
-// ── Zoom "trackpad" sobre el viewport 3D (el .fb-viewport del Studio). Puro DOM:
-//    no toca el monolito, solo lee su elemento por data-testid y le anima el scale.
-const FOCI: [number, number][] = [[50, 50], [44, 44], [57, 47], [50, 58], [46, 52], [55, 45]];
-function getVp(): HTMLElement | null {
+// ── Zoom PEDAGÓGICO tipo mousepad sobre TODA la pantalla (.fb-root). El ritmo es:
+//    enseña la pantalla completa → hace ZOOM al panel/control del paso ("ah, ESTA
+//    es la pestaña de Extruir") → ZOOM OUT de regreso. Puro DOM (no toca el
+//    monolito): transforma .fb-root; el subtítulo/transporte viven FUERA (hermanos)
+//    y se quedan fijos encima.
+function getRoot(): HTMLElement | null { return document.querySelector<HTMLElement>('.fb-root'); }
+
+// El elemento a enfocar en este paso: la pestaña flotante de operación si está
+// abierta; si no, el botón/campo objetivo del paso; si no, el viewport (la pieza).
+function focusEl(paso?: Paso): HTMLElement | null {
+  const op = document.querySelector<HTMLElement>('[data-testid="op-panel"]');
+  if (op && op.offsetParent && op.getBoundingClientRect().width > 80) return op;
+  const g = (paso?.gestos ?? []).find((x) => (x.type === 'tclick' || x.type === 'fill') && x.testid);
+  if (g?.testid) {
+    const el = document.querySelector<HTMLElement>(`[data-testid="${g.testid}"]`);
+    if (el && el.offsetParent) return el;
+  }
   return document.querySelector<HTMLElement>('[data-testid="viewport"]');
 }
-function zoomVp(scale: number, ox: number, oy: number, ms = 1600) {
-  const vp = getVp(); if (!vp) return;
-  vp.style.willChange = 'transform';
-  vp.style.transformOrigin = `${ox}% ${oy}%`;
-  vp.style.transition = `transform ${ms}ms cubic-bezier(.22,.61,.36,1)`;
-  vp.style.transform = `scale(${scale})`;
+function zoomRootFull(ms = 820) {
+  const r = getRoot(); if (!r) return;
+  r.style.transformOrigin = '0 0';
+  r.style.transition = `transform ${ms}ms cubic-bezier(.4,0,.2,1)`;
+  r.style.transform = 'none';
+  r.style.willChange = 'transform';
 }
-function resetVp() {
-  const vp = getVp(); if (!vp) return;
-  vp.style.transition = 'transform 800ms ease';
-  vp.style.transform = '';
-  vp.style.transformOrigin = '';
-  vp.style.willChange = '';
+function zoomRootInto(el: HTMLElement | null, ms = 1350) {
+  const r = getRoot(); if (!r || !el) return;
+  // Medir en IDENTIDAD (sin heredar un transform previo) → centro + escala exactos.
+  r.style.transition = 'none'; r.style.transform = 'none'; void r.offsetWidth;
+  const rr = r.getBoundingClientRect(), er = el.getBoundingClientRect();
+  const cx = er.left + er.width / 2 - rr.left, cy = er.top + er.height / 2 - rr.top;
+  const S = Math.max(1.35, Math.min(2.4, Math.min(
+    (0.66 * rr.width) / Math.max(140, er.width),
+    (0.66 * rr.height) / Math.max(100, er.height))));
+  // Centrar el elemento… pero CLAMP para que .fb-root SIEMPRE cubra la pantalla
+  // (si no, un panel pegado al borde deja una banda negra). dx∈[W(1-S),0].
+  let dx = rr.width / 2 - S * cx, dy = rr.height / 2 - S * cy;
+  dx = Math.max(rr.width * (1 - S), Math.min(0, dx));
+  dy = Math.max(rr.height * (1 - S), Math.min(0, dy));
+  void r.offsetWidth;
+  r.style.transition = `transform ${ms}ms cubic-bezier(.22,.61,.36,1)`;
+  r.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${S.toFixed(3)})`;
+}
+function clearRoot() {
+  const r = getRoot(); if (!r) return;
+  r.style.transition = 'transform 700ms ease'; r.style.transform = 'none';
+  window.setTimeout(() => {
+    const el = getRoot(); if (!el) return;
+    el.style.transition = ''; el.style.transform = ''; el.style.transformOrigin = ''; el.style.willChange = '';
+  }, 720);
 }
 
 export default function TutorialOverlay() {
@@ -139,7 +171,8 @@ export default function TutorialOverlay() {
   useEffect(() => {
     if (!playing || !paso || !lec) return;
     const words = (phrases[ph] || '').split(' ').length;
-    const ms = Math.max(1500, words * 420);   // ~ritmo de narración (0.42s/palabra)
+    const isLast = ph + 1 >= phrases.length;   // la última frase aguanta más: da tiempo al zoom-in
+    const ms = Math.max(isLast ? 2700 : 1500, words * 420);   // ~ritmo de narración (0.42s/palabra)
     const to = window.setTimeout(() => {
       if (ph + 1 < phrases.length) setPh(ph + 1);
       else if (i + 1 < lec.pasos.length) { setI(i + 1); setPh(0); }
@@ -148,23 +181,25 @@ export default function TutorialOverlay() {
     return () => window.clearTimeout(to);
   }, [playing, i, ph, phrases, paso, lec]);
 
-  // REPRODUCIR: zoom "trackpad" hacia la pieza al entrar a cada paso.
+  // REPRODUCIR: al entrar a cada paso, enseña TODA la pantalla y luego hace zoom al
+  // panel/control del paso (y en el siguiente vuelve a abrir → zoom → cerrar).
   useEffect(() => {
     if (!playing) return;
-    const [ox, oy] = FOCI[i % FOCI.length];
-    zoomVp(1.26 + (i % 3) * 0.1, ox, oy);      // 1.26 .. 1.46
-  }, [i, playing]);
+    zoomRootFull();                                                  // 1) pantalla completa
+    const t = window.setTimeout(() => zoomRootInto(focusEl(paso)), 1050); // 2) zoom a la pestaña
+    return () => window.clearTimeout(t);
+  }, [i, playing, paso]);
 
   // Arranque/paro de reproducción: encuadra al iniciar, restaura al parar.
   useEffect(() => {
     if (playing) { try { window.__forgeBrep?.setView?.('iso'); } catch { /* noop */ } }
-    else resetVp();
+    else clearRoot();
   }, [playing]);
-  // Limpieza dura: si el overlay se desmonta, no dejar el viewport escalado.
-  useEffect(() => () => resetVp(), []);
+  // Limpieza dura: si el overlay se desmonta, no dejar la pantalla escalada.
+  useEffect(() => () => clearRoot(), []);
 
   function play() { setPh(0); setMin(true); setPlaying(true); }
-  function stop() { setPlaying(false); resetVp(); }
+  function stop() { setPlaying(false); clearRoot(); }
 
   if (!leccionId || !lec) return null;
 
