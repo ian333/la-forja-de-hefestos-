@@ -6,7 +6,44 @@
  * mold base = placa comercial estándar. Corre en iangpu (playwright).
  */
 const path = require('path');
+const { readFileSync, writeFileSync, existsSync } = require('fs');
 const { chromium } = require('playwright');
+
+// ── kernel OCCT (para construir las piezas y proyectar iso + 3 vistas) ──
+const distDir = path.resolve(__dirname, '..', 'node_modules', 'opencascade.js', 'dist');
+const cjsGlue = path.join(distDir, 'opencascade.wasm.cjs');
+if (!existsSync(cjsGlue)) {
+  let s = readFileSync(path.join(distDir, 'opencascade.wasm.js'), 'utf8');
+  s = s.replace(/export default opencascade;\s*$/, '') + '\nmodule.exports = opencascade;\n';
+  writeFileSync(cjsGlue, s);
+}
+const occtFactory = require(cjsGlue);
+const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
+
+// construye el SÓLIDO de la pieza moldeada de cada ejemplo (geometría del libro)
+function buildPart(K, oc, key) {
+  if (key === 'cup') {
+    return K.revolvePolygon(oc, [{ x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 58 }, { x: 28, y: 58 }, { x: 28, y: 3 }, { x: 0, y: 3 }], 360);
+  }
+  if (key === 'lid') {
+    return K.revolvePolygon(oc, [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 40, y: 8 }, { x: 41, y: 9 }, { x: 41, y: 11 }, { x: 38, y: 11 }, { x: 38, y: 2 }, { x: 0, y: 2 }], 360);
+  }
+  if (key === 'jabonera') {
+    let b = K.makeBox(oc, 120, 80, 30);
+    const faces = K.enumerateFaces(oc, b);
+    let top = 0, mz = -1e9; faces.forEach((f, i) => { if (f.centroid && f.centroid[2] > mz) { mz = f.centroid[2]; top = i; } });
+    b = K.shellSolid(oc, b, 2, [top]);
+    return K.filletAllEdgesResilient(oc, b, 3).shape;
+  }
+  // bezel: marco 240×160 con ventana + 7 costillas + 4 bosses + draft
+  const outer = [{ x: 0, y: 0 }, { x: 240, y: 0 }, { x: 240, y: 160 }, { x: 0, y: 160 }];
+  const win = [{ x: 20, y: 20 }, { x: 220, y: 20 }, { x: 220, y: 140 }, { x: 20, y: 140 }];
+  let bz = K.extrudePolygonWithHoles(oc, outer, [win], 10);
+  for (let i = 0; i < 7; i++) { const x = 30 + i * 26; bz = K.fuse(oc, bz, K.extrudePolygon(oc, [{ x, y: 20 }, { x: x + 1, y: 20 }, { x: x + 1, y: 140 }, { x, y: 140 }], 10)); }
+  for (const [cx, cy] of [[30, 30], [210, 30], [30, 130], [210, 130]]) bz = K.fuse(oc, bz, K.makeCylinder(oc, 3, 10, { origin: [cx, cy, 0], dir: [0, 0, 1] }));
+  const fs = K.enumerateFaces(oc, bz); const vert = fs.map((f, i) => i).filter((i) => fs[i].normal && Math.abs(fs[i].normal[2]) < 0.3);
+  return K.draftFaces(oc, bz, 1, [0, 0, 1], 0, vert.slice(0, 12));
+}
 
 // ── los 4 ejemplos del libro (parte LITERAL; § citado en el ensamble) ──
 const EXAMPLES = [
@@ -87,6 +124,11 @@ const EXAMPLES = [
 
 (async () => {
   const DS = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-drawing-set.ts'));
+  const K = await import(path.resolve(__dirname, '..', 'src', 'forja', 'brep', 'occt.ts'));
+  const DRAW = await import(path.resolve(__dirname, '..', 'src', 'forja', 'brep', 'drawing.ts'));
+  const ISO = await import(path.resolve(__dirname, '..', 'src', 'forja', 'brep', 'isoview.ts'));
+  const oc = await occtFactory({ wasmBinary: wasmBin, locateFile: (p) => path.join(distDir, p) });
+  K._setActiveOCCT(oc);
   const outDir = process.env.OUT || '/tmp/mold-pdfs';
   require('fs').mkdirSync(outDir, { recursive: true });
   const browser = await chromium.launch({ args: ['--no-sandbox', '--headless=new'] });
@@ -95,6 +137,17 @@ const EXAMPLES = [
 
   for (const ex of EXAMPLES) {
     const set = DS.moldDrawingSet(ex.spec, ex.analysis);
+    // LÁMINAS DE LA PIEZA MOLDEADA: 3 vistas (HLR) + isométrico (del sólido del kernel)
+    try {
+      const solid = buildPart(K, oc, ex.key);
+      const mesh = K.tessellate(oc, solid, 0.3, 0.5);
+      const edges = K.enumerateEdgesGeom(oc, solid).map((e) => ({ polyline: e.polyline, kind: e.kind }));
+      const three = DRAW.generateDrawing({ positions: mesh.positions, indices: mesh.indices, edges },
+        { name: `PIEZA · ${ex.spec.name}`, material: 'ABS', units: 'mm' });
+      set.pages.push({ name: 'Pieza · 3 vistas', svg: three.svg });
+      set.pages.push({ name: 'Pieza · isométrico', svg: ISO.isoView(mesh.positions, mesh.indices, { name: 'Pieza moldeada', code: ex.spec.code, material: 'ABS' }) });
+      console.log(`  pieza ${ex.key}: 3 vistas (${three.views.map((v) => v.key).join('/')}) + iso (${mesh.triangleCount} tri)`);
+    } catch (e) { console.log(`  pieza ${ex.key} SIN vistas: ${String(e.message || e).slice(0, 80)}`); }
     // 1) rasteriza cada lámina con el.screenshot (WYSIWYG, sin recorte del A3)
     const pngs = [];
     for (const pg of set.pages) {
