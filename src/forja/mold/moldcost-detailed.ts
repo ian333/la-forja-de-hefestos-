@@ -170,6 +170,59 @@ export function estimateMoldCost(inp: CostInputs): CostBreakdown {
   };
 }
 
+// ══ §3.4: COSTO POR PIEZA (Eq 3.19-3.24) ═══════════════════════════
+// Apéndice A: plásticos (ρ kg/m³, κ $/kg). Ampliar con el Apéndice completo.
+export const PLASTICS: Record<string, { rhoKgM3: number; costKg: number }> = {
+  ABS: { rhoKgM3: 1044, costKg: 2.16 },
+  PP: { rhoKgM3: 905, costKg: 1.50 },
+  PC: { rhoKgM3: 1200, costKg: 4.20 },
+  PA66: { rhoKgM3: 1140, costKg: 3.80 },
+  POM: { rhoKgM3: 1410, costKg: 2.90 },
+};
+// Tabla 3.12: factor de desperdicio de material por sistema de alimentación.
+export const FEED_WASTE = {
+  'cold': 1.25, 'cold-regrind': 1.08, 'hot-short': 1.05, 'hot-long': 1.02,
+} as const;
+// Tabla 3.13: factor de eficiencia de ciclo [cold, hot] por modo de operación.
+export const CYCLE_EFFICIENCY = {
+  'operador': [2.5, 3.0], 'gravedad-robot': [1.5, 2.0], 'automatico': [1.0, 1.5],
+} as const;
+
+/** Eq 3.24: tarifa horaria de la máquina de moldeo por tonelaje de clamp ($/h). */
+export function moldingMachineRate(clampTons: number, fMachine = 1): number {
+  return (47.0 + 0.073 * clampTons - 4.7 * Math.log(clampTons)) * fMachine;
+}
+/** Eq 3.23: tiempo de ciclo estimado por espesor de pared (s). */
+export function cycleTimeEstimate(wallMm: number, cycleEff: number): number {
+  return 4 * wallMm * wallMm * cycleEff;
+}
+
+export interface PartCostInputs {
+  VpartMm3: number; plastic: keyof typeof PLASTICS;
+  feedWaste: keyof typeof FEED_WASTE;
+  nCavities: number; clampTons: number; wallMm: number;
+  cycleMode: keyof typeof CYCLE_EFFICIENCY; hotRunner: boolean;
+  fMachine?: number; yield_?: number; fMaintenance?: number;
+}
+export interface PartCostBreakdown {
+  moldPerPart: number; materialPerPart: number; processPerPart: number;
+  cycleTimeS: number; machineRateUSDh: number; partUSD: number;
+}
+/** §3.4 completo: costo por pieza (Eq 3.19-3.24). */
+export function estimatePartCost(totalMoldUSD: number, annualOrTotalQty: number, p: PartCostInputs): PartCostBreakdown {
+  const fMaint = p.fMaintenance ?? 3;                        // ejemplo del libro: ×3
+  const moldPerPart = (totalMoldUSD / annualOrTotalQty) * fMaint;       // Eq 3.20
+  const plc = PLASTICS[p.plastic];
+  const materialPerPart = (p.VpartMm3 * 1e-9) * plc.rhoKgM3 * plc.costKg * FEED_WASTE[p.feedWaste]; // Eq 3.21
+  const cycleEff = CYCLE_EFFICIENCY[p.cycleMode][p.hotRunner ? 1 : 0];
+  const cycleTimeS = cycleTimeEstimate(p.wallMm, cycleEff);            // Eq 3.23
+  const machineRateUSDh = moldingMachineRate(p.clampTons, p.fMachine ?? 1); // Eq 3.24
+  const processPerPart = (cycleTimeS / p.nCavities) * (machineRateUSDh / 3600);   // Eq 3.22
+  const yld = p.yield_ ?? 0.98;
+  const partUSD = (moldPerPart + materialPerPart + processPerPart) / yld; // Eq 3.19
+  return { moldPerPart, materialPerPart, processPerPart, cycleTimeS, machineRateUSDh, partUSD };
+}
+
 /** Cotización legible (para el reporte al cliente). */
 export function quoteReport(inp: CostInputs, b: CostBreakdown): string[] {
   const $ = (x: number) => '$' + Math.round(x).toLocaleString('en-US');
