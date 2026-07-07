@@ -178,7 +178,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
   // ── OBJECT SNAP (Workbook L4): candidatos que se ILUMINAN y capturan el clic —
   // punto/extremo (cuadrado), punto medio (triángulo), cuadrante de círculo (rombo),
   // intersección línea-línea (X). Prioridad: punto > medio > cuadrante > intersección.
-  type SnapHit = { x: number; y: number; kind: 'punto' | 'medio' | 'cuadrante' | 'intersección' };
+  type SnapHit = { x: number; y: number; kind: 'punto' | 'medio' | 'cuadrante' | 'intersección' | 'origen' | 'eje' };
   const [snapHint, setSnapHint] = useState<SnapHit | null>(null);
   const computeSnap = useCallback((mm: XY): SnapHit | null => {
     const m = modelRef.current;
@@ -188,6 +188,14 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
       const d = Math.hypot(x - mm.x, y - mm.y) * bias;
       if (d < bd) { bd = d; best = { x, y, kind }; }
     };
+    // ── GEOMETRÍA CONSTRUCTORA GRATIS (orden del user: "todo plano YA debería
+    // tener líneas constructoras; solo dale click al eje y que empiece ahí").
+    // El ORIGEN y los DOS EJES son snappeables SIEMPRE, sin dibujarlos. Pegar el
+    // trazo al eje x=0 también CURA el revolve (el perfil debe tocar el eje EXACTO;
+    // el clic a ojo dejaba ±0.17mm y OCCT tronaba). El origen gana con bias fuerte. ──
+    consider(0, 0, 'origen', 0.55);          // origen — el ancla de todo boceto
+    consider(mm.x, 0, 'eje', 0.9);           // proyección al eje X (y=0)
+    consider(0, mm.y, 'eje', 0.9);           // proyección al eje Y (x=0)
     m.points.forEach((q) => consider(q.x, q.y, 'punto', 0.7));
     m.lines.forEach((l) => {
       const q1 = m.points[l.a], q2 = m.points[l.b];
@@ -1085,6 +1093,10 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
   }, [selectTool, toggleConstruction]);
 
   const grid = useMemo(() => buildGrid(size.w, size.h, cx, cy, scale), [size.w, size.h, cx, cy, scale]);
+  // Ejes constructores + origen: se dibujan SIEMPRE (también en modo escena, donde
+  // la rejilla SVG se suprime porque la pone el plano 3D — pero los ejes snappeables
+  // y el ancla del origen DEBEN verse). Orden del user: "todo plano con constructoras".
+  const axes = useMemo(() => buildAxes(size.w, size.h, cx, cy), [size.w, size.h, cx, cy]);
   const TOOLS: [Tool, string, string][] = [
     ['select', '▣', 'Seleccionar / mover (V)'], ['line', '╱', 'Línea (L) — clic a clic; cierra en el inicio'], ['rect', '▭', 'Rectángulo (R) — 2 esquinas'],
     ['circle', '◯', 'Círculo (C) — centro y radio'], ['arc', '◠', 'Arco (A) — centro → inicio → fin'], ['arc3', '⌒', '3-Point Arc — 3 puntos por los que pasa'],
@@ -1208,6 +1220,7 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
           {/* En modo escena la rejilla la pone el PLANO 3D real (SketchPlane); la
               rejilla SVG duplicada solo ensuciaría. */}
           {projScale == null && grid}
+          {axes}
           {/* vista previa del ARRASTRE (círculo/rect punteado ámbar mientras dibujas) */}
           {dragPreview && (() => {
             if (dragPreview.kind === 'circle') {
@@ -1252,8 +1265,15 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
           {/* OBJECT SNAP iluminado (Workbook L4): cuadrado=punto · triángulo=medio ·
               rombo=cuadrante · X=intersección — verde aurora, captura el clic */}
           {snapHint && (() => {
-            const p = toPx(snapHint.x, snapHint.y); const S = 8; const col = '#5DDB8C';
-            const glyph = snapHint.kind === 'punto'
+            const p = toPx(snapHint.x, snapHint.y); const S = 8;
+            // origen/eje = ámbar (geometría constructora); el resto = verde aurora.
+            const constr = snapHint.kind === 'origen' || snapHint.kind === 'eje';
+            const col = constr ? '#FDB813' : '#5DDB8C';
+            const glyph = snapHint.kind === 'origen'
+              ? <circle cx={p.px} cy={p.py} r={S} fill="none" stroke={col} strokeWidth={2.2} />
+              : snapHint.kind === 'eje'
+              ? <g stroke={col} strokeWidth={2.2}><line x1={p.px} y1={p.py - S} x2={p.px} y2={p.py + S} /><line x1={p.px - S} y1={p.py} x2={p.px + S} y2={p.py} /></g>
+              : snapHint.kind === 'punto'
               ? <rect x={p.px - S} y={p.py - S} width={2 * S} height={2 * S} fill="none" stroke={col} strokeWidth={2.4} />
               : snapHint.kind === 'medio'
                 ? <polygon points={`${p.px},${p.py - S} ${p.px + S},${p.py + S} ${p.px - S},${p.py + S}`} fill="none" stroke={col} strokeWidth={1.8} />
@@ -1487,9 +1507,21 @@ function buildGrid(w: number, h: number, cx: number, cy: number, scale: number) 
   const step = 10 * scale; // 10 mm
   for (let x = cx % step; x < w; x += step) lines.push(<line key={`gx${x}`} x1={x} y1={0} x2={x} y2={h} stroke="#141c26" strokeWidth={1} />);
   for (let y = cy % step; y < h; y += step) lines.push(<line key={`gy${y}`} x1={0} y1={y} x2={w} y2={y} stroke="#141c26" strokeWidth={1} />);
-  lines.push(<line key="ax" x1={0} y1={cy} x2={w} y2={cy} stroke="#2a3a4a" strokeWidth={1.3} />);
-  lines.push(<line key="ay" x1={cx} y1={0} x2={cx} y2={h} stroke="#2a3a4a" strokeWidth={1.3} />);
   return lines;
+}
+// EJES CONSTRUCTORES + ORIGEN — geometría de referencia que TODO plano trae gratis
+// (orden del user). Ámbar = convención de construcción; no se extruyen. Snappeables
+// (ver computeSnap 'origen'/'eje'): clic en el eje empieza ahí, sin dibujar la línea.
+// Se dibujan también en modo escena (sobre el 3D oscuro) → colores vivos.
+function buildAxes(w: number, h: number, cx: number, cy: number) {
+  const els: ReactElement[] = [];
+  els.push(<line key="ax" x1={0} y1={cy} x2={w} y2={cy} stroke="#c79235" strokeWidth={1.6} strokeDasharray="9 6" opacity={0.9} />);
+  els.push(<line key="ay" x1={cx} y1={0} x2={cx} y2={h} stroke="#c79235" strokeWidth={1.6} strokeDasharray="9 6" opacity={0.9} />);
+  els.push(<text key="lx" x={w - 18} y={cy - 8} fontSize={12} fontWeight={700} fill="#e0a63a" fontFamily="JetBrains Mono, monospace">X</text>);
+  els.push(<text key="ly" x={cx + 9} y={16} fontSize={12} fontWeight={700} fill="#e0a63a" fontFamily="JetBrains Mono, monospace">Y</text>);
+  els.push(<circle key="o0" cx={cx} cy={cy} r={5.5} fill="none" stroke="#FDB813" strokeWidth={2} />);
+  els.push(<circle key="o1" cx={cx} cy={cy} r={1.8} fill="#FDB813" />);
+  return els;
 }
 function nearestPoint(s: Sketch, mm: XY, thr: number): number {
   let best = -1, bd = thr;
