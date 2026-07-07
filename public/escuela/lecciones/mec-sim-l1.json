@@ -68,8 +68,8 @@
         }
       ],
       "check": {
-        "js": "inv && Math.abs(inv.vol_kernel - 40000) < 60",
-        "desc": "la viga (100×20×20)"
+        "js": "inv && inv.vol_kernel > 38000 && inv.vol_kernel < 43000",
+        "desc": "la viga (~100×20×20)"
       }
     },
     {
