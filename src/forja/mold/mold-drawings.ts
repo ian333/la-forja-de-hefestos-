@@ -264,9 +264,11 @@ export function renderAssemblySection(
       parts.push(`<circle cx="${X(circ.x)}" cy="${Y(circ.z)}" r="${(circ.dia / 2) * s}" fill="#fff" stroke="#1a5fb4" stroke-width="0.4" data-comp-circle="${c.id}"/>`);
       if (circ.note) parts.push(`<text x="${X(circ.x) + circ.dia * s * 0.6 + 1}" y="${Y(circ.z) + 1}" font-size="2.4" fill="#1a5fb4">${esc(circ.note)}</text>`);
     }
-    // globo con líder al centro del primer rect
+    // globo con líder al centro del primer rect (o del primer círculo si no hay rects)
     const r0 = c.rects[0];
-    const gx0 = X((r0.x0 + r0.x1) / 2), gy0 = Y((r0.z0 + r0.z1) / 2);
+    const c0 = c.circles?.[0];
+    const gx0 = r0 ? X((r0.x0 + r0.x1) / 2) : X(c0 ? c0.x : (x0 + x1) / 2);
+    const gy0 = r0 ? Y((r0.z0 + r0.z1) / 2) : Y(c0 ? c0.z : (z0 + z1) / 2);
     const side = comps.length === 1 ? 1 : (gx0 < X((x0 + x1) / 2) ? -1 : 1);
     const bx = (side < 0 ? X(x0) - 16 : X(x1) + 16) + (ci % 3) * 7 * side;
     const by = gy0;

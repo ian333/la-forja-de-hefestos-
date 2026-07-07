@@ -71,6 +71,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-ejectortypes-test.cjs'] },
   { group: 'kernel', n: 'mold-slendercore', why: 'Kazmer §9.3.5 Tabla 9.3 CORES ESBELTOS: selector de enfriamiento axial por Ø de core (inserto/baffle/bubbler/heat-pipe/pin), baffle preferido, pared por §12.3',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-slendercore-test.cjs'] },
+  { group: 'kernel', n: 'mold-assembly', why: 'PLANO DE ENSAMBLE: cada pieza calculada como pieza mecánica (11 comps) + BOM + sección A-A + cajetín ISO 7200 + notas de análisis; bezel completo',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-assembly-test.cjs'] },
   { group: 'kernel', n: 'mold-sideactions', why: 'Kazmer §11.3.6-8 MOLDES CON MOVIMIENTO: core pull 44kN/⌀75→82.55std, angle pin 35+25mm EXACTOS, decisor slide/pull',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-sideactions-test.cjs'] },
   { group: 'kernel', n: 'mold-fasteners', why: 'Kazmer §12.4: tornillo del molde peor-caso 362kg/47kN → M10 DIN 912 del CATÁLOGO real',
