@@ -12,7 +12,7 @@
  * Tiempo determinista: window.__cinematicAtom.renderAt(t) ∈ [0, 15].
  */
 import { useEffect, useMemo, useState, memo, useRef } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { EffectComposer, Bloom, Vignette, ChromaticAberration, BrightnessContrast, HueSaturation, ToneMapping, Noise } from '@react-three/postprocessing';
 import { BlendFunction, ToneMappingMode } from 'postprocessing';
@@ -31,6 +31,8 @@ const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 // overshoot/vibración visible 3-7s. La física no cambia, solo el reloj de cámara.
 // PELÍCULA de 30s (no reel rápido): el enlace se forma DESPACIO, contemplativo.
 const O2_FILM_DURATION = 70;   // narración v5 ~65.7s + cola en silencio
+const CARO_DURATION = 45;   // FLAGSHIP caroteno: la curva de retención dice que 70s
+                            // pierde (solo 19% llega); 45s aprieta el ritmo, sube el % completado
 const O2_SLOWMO = 10.0;   // punto dulce: dinámico desde el inicio pero sin atropellar
                           // (13.5 se veía muerto al arranque, 7 iba muy rápido)
 // Escala de las nubes atómicas de O (buildAtomBundle ~3 bohr) para que se lean
@@ -252,6 +254,40 @@ function molCamera(t: number, f: Frame): Shot {
     f.c[0] + f.a[0] * s + f.p1[0] * o1 + f.p2[0] * o2,
     f.c[1] + f.a[1] * s + f.p1[1] * o1 + f.p2[1] * o2,
     f.c[2] + f.a[2] * s + f.p1[2] * o1 + f.p2[2] * o2];
+
+  // ── CAROTENO FLAGSHIP: la cámara VIAJA a lo largo del río π (más espacio para
+  // viajar). roll pone la cadena VERTICAL → llena el 9:16 (truco O₂). Timeline 45s
+  // sincronizado al nacimiento del color: crecer(0-13) → IGNICIÓN(13-19) → héroe
+  // volando por el río(19-33) → revelar cadena completa + loop(33-45). ──
+  if (f.mk === 'caroteno') {
+    const L = Math.max(f.L, 0.8), Rp = Math.max(f.Rp, 0.6);
+    const stand = Math.max(Rp * 2.6, L * 0.42);      // standoff perpendicular (río llena el cuadro)
+    const rollV = Math.PI / 2;                        // cadena VERTICAL en 9:16
+    if (t < 13.0) {                                   // CRECE — volamos junto al frente que se extiende
+      const k = ease(t / 13.0);
+      const s = lerp(-L * 0.75, L * 0.55, k);         // seguimos el frente de crecimiento
+      const off = lerp(stand * 1.35, stand, k), ph = 0.5 + k * 0.7;
+      return { pos: P(s, Math.cos(ph) * off, Math.sin(ph) * off), fov: lerp(42, 36, k),
+        target: P(s * 0.6, 0, 0), roll: rollV + 0.04 * Math.sin(t * 0.5) };
+    } else if (t < 19.0) {                            // IGNICIÓN — el color NACE: cámara se acerca y contempla
+      const k = ease((t - 13.0) / 6.0);
+      const off = lerp(stand, stand * 0.82, k), ph = 1.2 + k * 0.5;
+      return { pos: P(lerp(L * 0.55, 0, k), Math.cos(ph) * off, Math.sin(ph) * off), fov: lerp(36, 33, k),
+        target: f.c, roll: rollV + 0.03 * Math.sin(t * 0.4) };
+    } else if (t < 33.0) {                            // HÉROE — VUELA por el río de punta a punta (el viaje)
+      const k = ease((t - 19.0) / 14.0);
+      const s = lerp(-L * 0.9, L * 0.9, k);           // dolly a lo largo del cromóforo encendido
+      const off = stand * (0.9 + 0.12 * Math.sin(k * Math.PI * 2.0)), ph = 0.8 + k * 2.4;
+      return { pos: P(s, Math.cos(ph) * off, Math.sin(ph) * off), fov: 34,
+        target: P(s + L * 0.12, 0, 0), roll: rollV + 0.10 * Math.sin(k * Math.PI * 2.0) };
+    } else {                                          // REVELA TODO + LOOP — se abre a la cadena completa
+      const k = ease((t - 33.0) / 12.0);
+      const off = lerp(stand * 0.9, Math.max(L * 1.7, stand * 2.0), k), ph = 3.2 + k * 1.1;
+      const s = lerp(L * 0.9, 0, Math.min(1, k * 1.4));
+      return { pos: P(s, Math.cos(ph) * off, Math.sin(ph) * off), fov: lerp(34, 40, k),
+        target: f.c, roll: rollV + (1 - k) * 0.10 * Math.sin(k * Math.PI) };
+    }
+  }
 
   if (f.chain) {
     // DOLLY AL COSTADO, LENTO: la cámara viaja a lo largo de la cadena a un standoff
@@ -738,6 +774,102 @@ const O2FLOW_FRAG = `
     if (a < 0.004) discard;
     gl_FragColor = vec4(vColor * a * uBright * vW, a);
   }`;
+
+// ═══ CAROTENO — el cromóforo que te deja VER. Reusa la DATA de chain-caroteno.bin
+// (geometría + cintas π reales) pero la renderiza con el MOTOR de O₂: sprites
+// grandes+tenues (densidad luminosa, no puntos), bloom, depth-fade. El WOW es
+// FÍSICO: el color NACE del largo (partícula en una caja, E~1/L²). Cadena corta =
+// frío/violeta (absorbe UV, "invisible"); al alargarse el salto HOMO-LUMO cae al
+// visible → el río π ESTALLA en naranja (β-caroteno absorbe azul → lo ves naranja).
+// Firma del viral: río CÁLIDO (figura) sobre campo FRÍO. ──
+const CARO_VERT = `
+  attribute float aAxis;    // 0..1 posición a lo largo del eje de la cadena
+  attribute float aShell;   // 1 = espina σ · 2 = río π (el cromóforo)
+  uniform float uSize;
+  uniform float uReveal;     // frente de crecimiento de la cadena (0→1)
+  uniform float uTime;
+  varying float vNear;
+  varying float vShell;
+  varying float vFlow;
+  varying float vTip;
+  void main() {
+    vShell = aShell;
+    // REVELADO: lo que está más allá del frente de crecimiento aún no existe
+    float shown = smoothstep(uReveal + 0.02, uReveal - 0.06, aAxis);
+    vTip = smoothstep(uReveal - 0.12, uReveal, aAxis) * shown;   // el frente brilla (se está formando)
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vNear = smoothstep(0.22, 0.95, -mv.z) * shown;
+    // el río FLUYE: una onda de brillo corre a lo largo del eje (los e⁻ π viajando)
+    vFlow = 0.5 + 0.5 * sin(aAxis * 34.0 - uTime * 2.6);
+    gl_PointSize = min(uSize * (300.0 / -mv.z), 60.0);
+    gl_Position = projectionMatrix * mv;
+  }`;
+const CARO_FRAG = `
+  precision highp float;
+  uniform float uBright;
+  uniform float uWarm;       // 0 frío (UV, invisible) → 1 naranja (visible, el color nace)
+  varying float vNear;
+  varying float vShell;
+  varying float vFlow;
+  varying float vTip;
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.0, d) * vNear;
+    if (a < 0.004) discard;
+    vec3 col;
+    if (vShell > 1.5) {
+      // RÍO π (figura): nace FRÍO (violeta, absorbe UV = "invisible") → ESTALLA
+      // naranja al alargarse (el salto HOMO-LUMO cae al visible). El color del largo.
+      col = mix(vec3(0.34, 0.18, 0.86), vec3(1.0, 0.46, 0.08), uWarm);
+    } else {
+      // ESPINA σ: SIEMPRE fría (cian) — el fondo frío que hace POP al río cálido
+      // (firma del viral: figura cálida sobre campo frío = dual-cluster).
+      col = vec3(0.24, 0.62, 1.0);
+    }
+    // el río π MANDA; la espina σ va tenue (no compite, no lava a blanco).
+    // SATURACIÓN = menos brillo: el naranja se ve cuando NO revienta (más-luz-no-es-color).
+    float shellB = (vShell > 1.5) ? (0.42 + 0.55 * vFlow) : (0.16 + 0.14 * vFlow);
+    col += vec3(1.0, 0.85, 0.6) * vTip * 0.5;      // el frente de crecimiento chispea (tenue)
+    gl_FragColor = vec4(col * a * uBright * shellB, a);
+  }`;
+
+function CarotenoFlow({ bundle, axis, cen, L, reveal, warm, bright, time }:
+  { bundle: AtomBundle; axis: Vec3; cen: Vec3; L: number; reveal: number; warm: number; bright: number; time: number }) {
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const geo = useMemo(() => {
+    const N = bundle.sizes.length;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(bundle.positions, 3));
+    // aAxis = proyección normalizada sobre el eje de la cadena (0 punta izq → 1 der)
+    const aAxis = new Float32Array(N);
+    const halfL = Math.max(L, 0.5);
+    for (let i = 0; i < N; i++) {
+      const dx = bundle.positions[i * 3] - cen[0], dy = bundle.positions[i * 3 + 1] - cen[1], dz = bundle.positions[i * 3 + 2] - cen[2];
+      const s = dx * axis[0] + dy * axis[1] + dz * axis[2];
+      aAxis[i] = Math.max(0, Math.min(1, 0.5 + s / (2 * halfL)));
+    }
+    g.setAttribute('aAxis', new THREE.BufferAttribute(aAxis, 1));
+    g.setAttribute('aShell', new THREE.BufferAttribute(bundle.shellIdx, 1));
+    return g;
+  }, [bundle, axis, cen, L]);
+  const uniforms = useMemo(() => ({
+    uSize: { value: 0.30 }, uBright: { value: bright }, uReveal: { value: reveal },
+    uWarm: { value: warm }, uTime: { value: time },
+  }), []);
+  useFrame(() => {
+    if (!matRef.current) return;
+    matRef.current.uniforms.uBright.value = bright;
+    matRef.current.uniforms.uReveal.value = reveal;
+    matRef.current.uniforms.uWarm.value = warm;
+    matRef.current.uniforms.uTime.value = time;
+  });
+  return (
+    <points geometry={geo} frustumCulled={false}>
+      <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={CARO_VERT}
+        fragmentShader={CARO_FRAG} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  );
+}
 
 // Una nube advectada: cada frame interpola las POSICIONES entre las dos separaciones
 // que bracketean R(t) → las partículas se MUEVEN siguiendo la densidad (la carga
@@ -1576,7 +1708,8 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   // Marco geométrico (eje principal, elongación) → decide orbit vs traversal.
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
-  const dur = isDNA ? DNA_DURATION : isBond(molKey) ? O2_FILM_DURATION : DURATION;
+  const isCaro = molKey === 'caroteno';
+  const dur = isDNA ? DNA_DURATION : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -1628,6 +1761,12 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
           // ESPACIO CONTINUO (cero cortes): abre FORMADA (el pico = frame 1) y la
           // separación/unión sucede VARIAS VECES en cámara (bondR coreografiado).
           const sceneT = time;
+          // CAROTENO: el color NACE del largo. reveal = la cadena crece (0.5-13s);
+          // warm = el salto HOMO-LUMO cae al visible cuando el largo pasa el umbral
+          // (ignición 13-18s) → el río violeta ESTALLA naranja. bright con brío.
+          const caroReveal = isCaro ? smoothstep((sceneT - 0.5) / 12.5) : 1;
+          const caroWarm = isCaro ? smoothstep((sceneT - 13.0) / 5.0) : 1;
+          const caroBright = 0.62;   // tenue a propósito: el aditivo del río satura a blanco si subes
           const mr = isBond(molKey) ? bondR(sceneT, molKey) : 1.0;
           const formed = isBond(molKey) ? smoothstep((1.4 - mr) / 0.25) : 1;
           // VIBRACIÓN DE PUNTO CERO: aun en el estado base la molécula respira (energía
@@ -1669,14 +1808,19 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             : animPos;
           return <>
             <MolCameraRig frame={frame} time={isBond(molKey) ? sceneT : time} vertical={vertical} />
-            {data.nuclei.map((nuc, i) => (
+            {/* caroteno: el río π ES el protagonista; los nucleones (dots duros) sobran */}
+            {!isCaro && data.nuclei.map((nuc, i) => (
               <group key={i} position={drawPos[i]}>
                 <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time}
                   clusterRadius={0.022 + 0.009 * Math.cbrt(nuc.protons + nuc.neutrons)} />
               </group>
             ))}
+            {/* CAROTENO FLAGSHIP: la cadena por el MOTOR de O₂ (sprites grandes+tenues,
+                río π cálido naciendo del largo) — reemplaza ElectronCloud+ChainField */}
+            {isCaro && <CarotenoFlow bundle={data.bundle} axis={frame.a} cen={frame.c}
+              L={frame.L} reveal={caroReveal} warm={caroWarm} bright={caroBright} time={sceneT} />}
             {/* nube MOLECULAR precomputada — OTRAS moléculas (O₂ usa la densidad real abajo) */}
-            {!isBond(molKey) && <ElectronCloud bundle={data.bundle} time={time} holeRadius={0.04}
+            {!isBond(molKey) && !isCaro && <ElectronCloud bundle={data.bundle} time={time} holeRadius={0.04}
               bokeh={0.8 / Math.max(1, data.extent)} rotRate={0} brightness={formed} />}
             {/* O₂: Δρ AB INITIO (PySCF UHF/cc-pVTZ, triplete). La DEFORMACIÓN Δρ=ρ(O₂)−ρ(átomos)
                 = el enlace DESNUDO: oro/ámbar donde la carga se acumula (σ+π), azul de dónde se
@@ -1741,7 +1885,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             {/* O₂ paramagnético: el imán NO se dibuja con anillos (eso era HUD falso) —
                 EMERGE de la densidad real de los π* (los lóbulos violeta = los 2 e⁻
                 desapareados). La física lo muestra sola. */}
-            {isChain && <ChainField frame={frame} time={time} alkane={!CONJUGATED_KEYS.has(molKey)} />}
+            {isChain && !isCaro && <ChainField frame={frame} time={time} alkane={!CONJUGATED_KEYS.has(molKey)} />}
             {isCatalog && catField === 'pi' && <ChainField frame={frame} time={time} alkane={false} />}
             {isCatalog && catField === 'sigma' && <ChainField frame={frame} time={time} alkane={true} />}
           </>;
@@ -1752,12 +1896,12 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
       </Canvas>
       <CinemaVignette />
       {!live && <>
-        {!(isBond(molKey) && (BOND_BEATS_MOL[molKey] ?? []).some(b => time >= b.t0 - 0.4 && time <= b.t1 + 0.5)) &&
+        {!isCaro && !(isBond(molKey) && (BOND_BEATS_MOL[molKey] ?? []).some(b => time >= b.t0 - 0.4 && time <= b.t1 + 0.5)) &&
           <ScaleNote molKey={molKey} time={time} vertical={vertical} />}
         {isDNA && <AudioNote time={time} vertical={vertical} />}
         <ModeLabel modes={modes} time={time} vertical={vertical} />
-        <FieldLabel molKey={molKey} polar={isChain || (isCatalog && catField !== 'none') || (!isCatalog && !isDNA && !!data && partialCharges(data.nuclei).some(v => Math.abs(v) > 0.05))} time={time} vertical={vertical} />
-        <MoleculeTitle mkey={molKey} time={time} vertical={vertical} />
+        {!isCaro && <FieldLabel molKey={molKey} polar={isChain || (isCatalog && catField !== 'none') || (!isCatalog && !isDNA && !!data && partialCharges(data.nuclei).some(v => Math.abs(v) > 0.05))} time={time} vertical={vertical} />}
+        {!isCaro && <MoleculeTitle mkey={molKey} time={time} vertical={vertical} />}
         {isBond(molKey) && <BondExplainer time={time} vertical={vertical} mol={molKey} />}
         <Letterbox vertical={vertical} />
       </>}
