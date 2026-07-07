@@ -27,6 +27,7 @@ import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoVie
 import ShortcutOverlay from '../../components/ShortcutOverlay';
 const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación del ciclo de inyección (chunk aparte)
 const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
+const MoldMachinePanel = lazy(() => import('../mold/MoldMachinePanel'));   // LA MÁQUINA: cliente sube pieza → cotización
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import {
@@ -3050,6 +3051,7 @@ export default function ForgeBRepStudio() {
   // Simulación del CICLO DE INYECCIÓN (molde vivo): overlay a pantalla completa.
   const [cycleSimOn, setCycleSimOn] = useState(false);
   const [tpSimOn, setTpSimOn] = useState(false);
+  const [moldMachineOn, setMoldMachineOn] = useState(false);
   // Menú "Más" de la toolbar: la cola larga de features que la TELEMETRÍA de los
   // 17 drives del libro marcó con CERO clicks (Transición/Barrido/Engrane/…) vive
   // aquí — la fila principal queda para el núcleo real (croquis→extruir→revolución).
@@ -5373,6 +5375,11 @@ export default function ForgeBRepStudio() {
             <MoldThreePlateSim onClose={() => setTpSimOn(false)} />
           </Suspense>
         )}
+        {moldMachineOn && (
+          <Suspense fallback={null}>
+            <MoldMachinePanel onClose={() => setMoldMachineOn(false)} />
+          </Suspense>
+        )}
 
         {/* PALETA DE ATAJOS estilo Fusion "S" en el cursor (se abre con la tecla S). */}
         {shortcutPos && (
@@ -5934,6 +5941,10 @@ export default function ForgeBRepStudio() {
               </button>
               <button className="fb-fea-run" data-testid="btn-threeplate" onClick={() => setTpSimOn(true)} style={{ marginTop: 6 }}>
                 ▶ Molde 3 placas (construcción + doble apertura)
+              </button>
+              <button className="fb-fea-run" data-testid="btn-mold-machine" onClick={() => setMoldMachineOn(true)}
+                style={{ marginTop: 6, background: GOLD, color: '#1a1206', fontWeight: 700 }}>
+                🏭 LA MÁQUINA — cotizar molde de una pieza
               </button>
             </div>
 
