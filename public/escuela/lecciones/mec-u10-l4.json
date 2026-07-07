@@ -11,14 +11,14 @@
   "pasos": [
     {
       "id": "p01",
-      "dice": "El motor entrega potencia: vueltas por fuerza. Pero esa potencia tiene que VIAJAR hasta la rueda. ¿Por dónde? Por una flecha. Y algo tiene que sostenerla mientras gira: el balero. Arma la cadena completa.",
+      "dice": "El motor gira rápido, con poca fuerza. Tu rueda quiere lo contrario. El puente son engranes sobre una flecha. Y un balero la sostiene. Ármala.",
       "gestos": [
         { "type": "wait", "ms": 1000 }
       ]
     },
     {
       "id": "p02",
-      "dice": "El engrane motriz, veinte dientes. Del menú Más, engrane de involuta.",
+      "dice": "El engrane motriz: veinte dientes. Del menú Más, engrane de involuta.",
       "zoom": "btn-gear",
       "gestos": [
         { "type": "tclick", "testid": "btn-mas", "settle": 900 },
@@ -34,7 +34,7 @@
     },
     {
       "id": "p03",
-      "dice": "Su pareja, el doble de dientes: cuarenta. Ya hay un par que embona.",
+      "dice": "Su pareja tiene el doble: cuarenta dientes. Ya embonan.",
       "zoom": "btn-add-gear2",
       "gestos": [
         { "type": "tclick", "testid": "btn-add-gear2", "settle": 3200 },
@@ -47,7 +47,7 @@
     },
     {
       "id": "p04",
-      "dice": "Emparéjalos. La relación es dos a uno: el grande gira a la mitad y con el doble de fuerza.",
+      "dice": "Emparéjalos. La relación es dos a uno. El grande gira a la mitad, con el doble de fuerza.",
       "zoom": "btn-gear-mate",
       "gestos": [
         { "type": "tclick", "testid": "btn-gear-mate", "settle": 2600 },
@@ -60,7 +60,7 @@
     },
     {
       "id": "p05",
-      "dice": "Ahora lo importante: cada engrane monta sobre una flecha. Enciende las flechas. Esa barra es la que LLEVA el par de un engrane al siguiente.",
+      "dice": "Cada engrane monta sobre una flecha. Enciéndelas. Esa barra lleva el par de un engrane al otro.",
       "zoom": "chk-shafts",
       "gestos": [
         { "type": "tclick", "testid": "chk-shafts", "settle": 2800 },
@@ -73,14 +73,14 @@
     },
     {
       "id": "p06",
-      "dice": "¿Cuánto par lleva la flecha? La potencia manda: tau igual a pe entre omega. Misma potencia, si la flecha gira más lento, aguanta MÁS torque. Por eso la flecha de salida es la que sufre.",
+      "dice": "¿Cuánto par lleva? La potencia manda: tau es pe entre omega. Si gira más lento, aguanta más torque. Por eso la flecha de salida sufre.",
       "gestos": [
-        { "type": "wait", "ms": 3200 }
+        { "type": "wait", "ms": 3000 }
       ]
     },
     {
       "id": "p07",
-      "dice": "Y la flecha no flota: se apoya en baleros dentro de la carcasa. Enciéndela. El balero deja girar la flecha casi sin fricción, y aguanta la carga que los dientes empujan de lado.",
+      "dice": "La flecha no flota. Se apoya en baleros, dentro de la carcasa. Enciéndela. El balero la deja girar casi sin fricción.",
       "zoom": "chk-housing",
       "gestos": [
         { "type": "tclick", "testid": "chk-housing", "settle": 2800 },
@@ -93,16 +93,16 @@
     },
     {
       "id": "p08",
-      "dice": "Míralo trabajar. Entra rápido y suave por la flecha motriz; sale lento y con fuerza por la de salida. La potencia es la misma en las dos: pe igual a tau por omega, constante.",
+      "dice": "Míralo trabajar. Entra rápido por un lado. Sale lento y fuerte por el otro. La potencia es la misma.",
       "zoom": "btn-gb-motion",
       "gestos": [
         { "type": "tclick", "testid": "btn-gb-motion", "settle": 1500 },
-        { "type": "wait", "ms": 3800 }
+        { "type": "wait", "ms": 3600 }
       ]
     },
     {
       "id": "p09",
-      "dice": "Esta es la cadena de toda máquina: motor, engranes, flecha, baleros, carga. El engrane cambia la relación; la flecha carga el par; el balero lo sostiene. Ninguno sobra.",
+      "dice": "Esta es la cadena de toda máquina. Motor, engranes, flecha, baleros, carga. Ninguno sobra.",
       "gestos": [
         { "type": "view", "name": "iso", "settle": 1200 },
         { "type": "orbit", "from": [1120, 600], "to": [880, 560], "settle": 1200 }
@@ -110,7 +110,7 @@
     },
     {
       "id": "p10",
-      "dice": "Potencia que entra igual a potencia que sale. Lo que cambias es el trato entre velocidad y fuerza. Eso no es un dibujo: es una transmisión de verdad. Nos vemos en la próxima.",
+      "dice": "Potencia que entra, potencia que sale. Cambias velocidad por fuerza. Eso es una transmisión de verdad. Nos vemos.",
       "gestos": [
         { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
       ]

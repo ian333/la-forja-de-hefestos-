@@ -39,6 +39,80 @@ def _dur(p):
                                           "-of", "default=nk=1:nw=1", p]).decode().strip())
 
 
+# ── PARTIR FRASES LARGAS ──────────────────────────────────────────────────
+# REGLA DURA (reference_xtts_matilda_iangpu): XTTS se TRABA / arrastra las
+# vocales / pierde energia en frases largas (>~15 palabras) → "se oye lenta y
+# rara". Las narraciones que sonaron chingonas (enlaces) tenian ~10 pal/linea;
+# las de la escuela venian de 20-39 palabras → por eso sonaban lentas. Aqui
+# cada linea larga se PARTE en clausulas cortas, se genera cada una limpia y se
+# concatena en el MISMO wav por linea (el timing de aguas abajo no cambia).
+MAX_WORDS = int(os.environ.get('MAXPAL', '16'))   # umbral: solo ORACIONES muy largas se parten
+GAP_CLAUSE = float(os.environ.get('GAPCLAUS', '0.26'))  # respiro NATURAL entre oraciones (tras recortar silencios)
+
+# ── VOZ DULCE (EQ) ─────────────────────────────────────────────────────────
+# user: "ecualiza la voz, mas dulce, quita el siseo y frecuencias [duras]".
+# Cadena TONAL sin estado (segura por-clausula; la compresion/loudnorm van en el
+# ensamble). Apagar con SWEET=0.
+# SUAVE: la cadena agresiva sonaba "rara". Solo quita rumble + un de-ess ligero;
+# la voz queda natural (como los enlaces que gustaron). Subir con SWEET=0 apagado.
+_SWEET = ("highpass=f=80,"                                 # quita rumble/plosivas
+          "equalizer=f=7000:width_type=q:w=2:g=-3")        # de-ess LIGERO (siseo), nada más
+SWEET = os.environ.get('SWEET', '1') != '0'
+
+
+def _wc(s):
+    return len(s.split())
+
+
+def _hard_split(p, mx):
+    w = p.split()
+    return [' '.join(w[i:i + mx]) for i in range(0, len(w), mx)]
+
+
+def _split_clause(s, mx):
+    # parte por raya/; / : / , respetando el orden; agrupa a <= mx palabras
+    parts = [p.strip() for p in re.split(r'\s*[—–;:]\s*|,\s*', s) if p.strip()]
+    out, buf = [], ''
+    for p in parts:
+        cand = (buf + ', ' + p) if buf else p
+        if _wc(cand) <= mx:
+            buf = cand
+        else:
+            if buf:
+                out.append(buf); buf = ''
+            if _wc(p) > mx:            # clausula larga SIN comas -> corte duro
+                out.extend(_hard_split(p, mx))
+            else:
+                buf = p
+    if buf:
+        out.append(buf)
+    return out
+
+
+def _merge_tiny(chunks, mn=4, mx=MAX_WORDS):
+    # fusiona fragmentos diminutos (<mn palabras) con el vecino previo
+    out = []
+    for c in chunks:
+        if out and (_wc(c) < mn or _wc(out[-1]) < mn) and _wc(out[-1]) + _wc(c) <= mx + 4:
+            out[-1] = out[-1] + ', ' + c
+        else:
+            out.append(c)
+    return out
+
+
+def split_line(text, mx=MAX_WORDS):
+    text = ' '.join(text.split())
+    if _wc(text) <= mx:
+        return [text]
+    chunks = []
+    for s in re.split(r'(?<=[.!?])\s+', text):   # 1) por oracion
+        s = s.strip()
+        if not s:
+            continue
+        chunks.extend([s] if _wc(s) <= mx else _split_clause(s, mx))  # 2) por clausula
+    return _merge_tiny(chunks)                    # 3) sin fragmentos huerfanos
+
+
 def gen_trim(text, final):
     raw = final[:-4] + "_raw.wav"
     # XTTS LEE la puntuacion en voz alta ("punto" en puntos A MITAD de frase,
@@ -71,10 +145,64 @@ def gen_trim(text, final):
                 break
         if cut is None:
             cut = expected + 0.6                 # fallback: corta en el fin esperado
-    args = ["ffmpeg", "-y", "-v", "error", "-i", raw] + (["-t", f"{cut:.3f}"] if cut else []) + [final]
+    af = (["-af", _SWEET] if SWEET else [])   # EQ dulce (length-preserving -> cut sigue valido)
+    args = ["ffmpeg", "-y", "-v", "error", "-i", raw] + (["-t", f"{cut:.3f}"] if cut else []) + af + [final]
     subprocess.run(args, check=True)
     os.remove(raw)
     return _dur(final), bool(cut)
+
+
+def _trim_sil(wav):
+    """Recorta el silencio de ENTRADA y SALIDA de un clip (XTTS mete lead-in y
+    cola). Conserva ~20/60ms para que no suene cortado. Evita que el aire se
+    ACUMULE al concatenar muchas clausulas (si no, la narracion se alarga y
+    'se oye lenta')."""
+    tmp = wav[:-4] + "_t.wav"
+    r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", wav, "-af",
+                        "silenceremove=start_periods=1:start_silence=0.02:start_threshold=-40dB,"
+                        "areverse,"
+                        "silenceremove=start_periods=1:start_silence=0.06:start_threshold=-40dB,"
+                        "areverse", tmp])
+    if r.returncode == 0 and os.path.exists(tmp) and _dur(tmp) > 0.15:
+        os.replace(tmp, wav)
+    elif os.path.exists(tmp):
+        os.remove(tmp)
+
+
+def gen_line(text, final):
+    """Una LINEA -> un wav. Si es larga, la parte en clausulas cortas (XTTS
+    limpio), genera cada una y las concatena con un respiro. Mapeo linea->wav
+    intacto para el timing de aguas abajo."""
+    chunks = split_line(text)
+    if len(chunks) == 1:
+        return gen_trim(text, final)
+    tmps, any_trim = [], False
+    for j, ch in enumerate(chunks):
+        t = final[:-4] + f"_p{j}.wav"
+        _d, tr = gen_trim(ch, t)
+        _trim_sil(t)          # recorta el silencio de entrada/salida de CADA clausula:
+        tmps.append(t); any_trim = any_trim or tr   # asi el aire NO se ACUMULA al concatenar
+    sil = final[:-4] + "_sil.wav"
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
+                    "anullsrc=r=24000:cl=mono", "-t", f"{GAP_CLAUSE}", "-c:a", "pcm_s16le", sil], check=True)
+    seq = []
+    for j, t in enumerate(tmps):
+        if j:
+            seq.append(sil)
+        seq.append(t)
+    lst = final[:-4] + "_list.txt"
+    with open(lst, "w") as fh:
+        for c in seq:
+            fh.write(f"file '{os.path.abspath(c)}'\n")
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0",
+                    "-i", lst, "-c", "copy", final], check=True)
+    for c in tmps + [sil, lst]:
+        try:
+            os.remove(c)
+        except OSError:
+            pass
+    print(f"    (partida en {len(chunks)} clausulas)", flush=True)
+    return _dur(final), any_trim
 
 
 # OJO: en zsh "LINES" es variable especial ENTERA (alto del terminal) — asignarle
@@ -95,7 +223,7 @@ for i, text in enumerate(lines, 1):
     best = None
     for tk in range(TAKES):
         cand = f[:-4] + f"_take{tk}.wav" if TAKES > 1 else f
-        d, trimmed = gen_trim(text, cand)
+        d, trimmed = gen_line(text, cand)
         score = abs(d - tgt) if tgt > 0 else d
         if best is None or score < best[3]:
             best = (d, cand, trimmed, score)

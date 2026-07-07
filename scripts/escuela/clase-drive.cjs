@@ -113,7 +113,9 @@ console.log(`${lec.id}: ${lec.pasos.length} pasos, narración ${durs.every((d) =
       // CHYRON — el subtítulo de la clase (lo que Matilda va diciendo), arriba al centro.
       const sub = document.createElement('div');
       sub.id = '__chyron';
-      sub.style.cssText = 'position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:2147483645;pointer-events:none;max-width:74vw;padding:12px 22px;border-radius:12px;background:rgba(8,12,18,.92);border:1px solid #2a3546;color:#e9eef5;font:600 21px/1.35 Inter,system-ui,sans-serif;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:opacity .25s;';
+      // ABAJO, no arriba: arriba tapaba la barra de herramientas y no dejaba ver
+      // a qué se le da click (queja del user). Caja suave, centrada abajo.
+      sub.style.cssText = 'position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:2147483645;pointer-events:none;max-width:70vw;padding:12px 22px;border-radius:14px;background:rgba(9,13,20,.72);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border:1px solid rgba(255,255,255,.10);color:#f2efe6;font:600 22px/1.32 Inter,system-ui,sans-serif;text-align:center;text-shadow:0 2px 14px rgba(0,0,0,.8);box-shadow:0 16px 40px -20px #000;opacity:0;transition:opacity .25s;';
       document.body.appendChild(sub);
       window.__setChyron = (t) => { if (t) { sub.textContent = t; sub.style.opacity = '1'; } else sub.style.opacity = '0'; };
       // Tarjeta de título (los primeros segundos de la clase).
@@ -162,6 +164,15 @@ console.log(`${lec.id}: ${lec.pasos.length} pasos, narración ${durs.every((d) =
       const marker = t0 - recT0;
       await page.evaluate((t) => window.__setChyron && window.__setChyron(t), paso.dice);
       const rec = { id: paso.id, marker, durNarr: durs[i].dur, gestosOk: true };
+      // PRIMERO SE EXPLICA, LUEGO SE DA CLICK (regla del user: no al mismo tiempo).
+      // Deja correr casi toda la narración del paso ANTES de tocar la herramienta;
+      // así el alumno oye la instrucción y DESPUÉS ve el click. Los pasos sin click
+      // (solo cámara/espera) apenas se afectan.
+      const hasClick = (paso.gestos || []).some((g) => ['tclick', 'click', 'rclick', 'fill', 'clickmm', 'dragmm', 'key'].includes(g.type));
+      if (hasClick && durs[i].real) {
+        const preMs = Math.max(0, Math.min(durs[i].dur * 1000 * 0.78, durs[i].dur * 1000 - 300));
+        if (preMs > 0) await page.waitForTimeout(preMs);
+      }
       for (const a of paso.gestos || []) {
         try {
           if (a.type === 'tclick') { const loc = await glideEl(a.testid); await page.waitForTimeout(220 * PACE); await loc.click({ timeout: 10000 }); }

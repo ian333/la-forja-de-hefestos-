@@ -3131,6 +3131,7 @@ export default function ForgeBRepStudio() {
   // 17 drives del libro marcó con CERO clicks (Transición/Barrido/Engrane/…) vive
   // aquí — la fila principal queda para el núcleo real (croquis→extruir→revolución).
   const [masOpen, setMasOpen] = useState(false);
+  const masBtnRef = useRef<HTMLButtonElement>(null);   // para sacar el dropdown "Más" del overflow que lo recortaba
   const [editingOpId, setEditingOpId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   // ── P1: rollback (construir hasta op N) + menú contextual (clic derecho) ──
@@ -5785,12 +5786,13 @@ export default function ForgeBRepStudio() {
                 <button className="fb-big" data-testid="btn-hole-face" onClick={startHoleOnFace} title="Agujero en cara: clic en una cara y taladra ⊥ (⌀ y profundidad editables)"><Ic name="agujerocara" /><span>Agujero</span></button>
                 <button className="fb-big" data-testid="btn-pattern" onClick={() => addOp('pattern')} title="Patrón: rectangular / circular / espejo"><Ic name="patron" /><span>Patrón</span></button>
                 <div className="fb-menu-wrap">
-              <button data-testid="btn-mas" className={masOpen ? 'on' : ''}
+              <button ref={masBtnRef} data-testid="btn-mas" className={masOpen ? 'on' : ''}
                 onClick={() => setMasOpen((v) => !v)} title="Más features (transición, barrido, engranes, vaciado…)">Más ▾</button>
               {masOpen && (
                 <>
                   <div className="fb-menu-scrim" onClick={() => setMasOpen(false)} />
-                  <div className="fb-menu fb-menu-mas" role="menu">
+                  <div className="fb-menu fb-menu-mas" role="menu"
+                    style={(() => { const r = masBtnRef.current?.getBoundingClientRect(); return r ? { position: 'fixed' as const, top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right), left: 'auto' as const } : undefined; })()}>
                     <button data-testid="btn-loft" role="menuitem" onClick={() => { addOp('loft'); setMasOpen(false); }}><Ic name="transicion" />Transición (loft)</button>
                     <button data-testid="btn-sweep" role="menuitem" onClick={() => { addOp('sweep'); setMasOpen(false); }}><Ic name="barrido" />Barrido (sweep)</button>
                     <button data-testid="btn-hole" role="menuitem" onClick={() => { startHole(); setMasOpen(false); }}><Ic name="barreno" />Barreno</button>
