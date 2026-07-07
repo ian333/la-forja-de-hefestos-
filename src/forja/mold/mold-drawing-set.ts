@@ -14,6 +14,41 @@ import { moldAssemblyDrawing, type MoldAssemblySpec } from './mold-assembly';
 export interface DrawingPage { name: string; svg: string }
 export interface MoldDrawingSet { title: string; code: string; pages: DrawingPage[] }
 
+/** Filas de análisis de ingeniería (valores del libro, con § y veredicto). */
+export interface AnalysisRow { grupo: string; param: string; valor: string; ref: string; ok?: boolean }
+
+const esc = (s: string) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
+
+/** LÁMINA DE ANÁLISIS — la ingeniería del molde en una hoja (A3), agrupada por
+ *  subsistema con su referencia al libro y veredicto. */
+function analysisSheet(spec: MoldAssemblySpec, rows: AnalysisRow[]): string {
+  const PW = 420, PH = 297, M = 10;
+  const p: string[] = [];
+  p.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${PW}mm" height="${PH}mm" viewBox="0 0 ${PW} ${PH}" font-family="Arial, sans-serif">`);
+  p.push(`<rect width="${PW}" height="${PH}" fill="#fff"/><rect x="${M / 2}" y="${M / 2}" width="${PW - M}" height="${PH - M}" fill="none" stroke="#111" stroke-width="0.7"/>`);
+  p.push(`<text x="${M + 4}" y="${M + 8}" font-size="5.5" font-weight="bold">HOJA DE ANÁLISIS DE INGENIERÍA</text>`);
+  p.push(`<text x="${M + 4}" y="${M + 15}" font-size="3.2" fill="#555">${esc(spec.name)} · el molde como sistema de ecuaciones resuelto (Kazmer)</text>`);
+  const x0 = M + 4, cols = [46, 92, 60, 40], head = ['SUBSISTEMA', 'PARÁMETRO', 'VALOR', 'REF/§'];
+  let y = M + 24; const rowH = 6.4;
+  const cx = (i: number) => x0 + cols.slice(0, i).reduce((a, b) => a + b, 0);
+  const tW = cols.reduce((a, b) => a + b, 0);
+  p.push(`<rect x="${x0}" y="${y}" width="${tW}" height="${rowH}" fill="#eef2f7" stroke="#111" stroke-width="0.3"/>`);
+  head.forEach((h, i) => p.push(`<text x="${cx(i) + 1.5}" y="${y + 4.3}" font-size="3" font-weight="bold">${esc(h)}</text>`));
+  y += rowH;
+  let lastGroup = '';
+  for (const r of rows) {
+    p.push(`<rect x="${x0}" y="${y}" width="${tW}" height="${rowH}" fill="${r.ok === false ? '#fdecec' : 'none'}" stroke="#bbb" stroke-width="0.2"/>`);
+    if (r.grupo !== lastGroup) { p.push(`<text x="${cx(0) + 1.5}" y="${y + 4.3}" font-size="2.9" font-weight="bold" fill="#1a5fb4">${esc(r.grupo)}</text>`); lastGroup = r.grupo; }
+    p.push(`<text x="${cx(1) + 1.5}" y="${y + 4.3}" font-size="2.8">${esc(r.param)}</text>`);
+    p.push(`<text x="${cx(2) + 1.5}" y="${y + 4.3}" font-size="2.8" font-weight="bold">${esc(r.valor)}${r.ok != null ? (r.ok ? '  ✓' : '  ⚠') : ''}</text>`);
+    p.push(`<text x="${cx(3) + 1.5}" y="${y + 4.3}" font-size="2.6" fill="#666">${esc(r.ref)}</text>`);
+    y += rowH;
+  }
+  p.push(`<text x="${x0}" y="${PH - M - 4}" font-size="2.6" fill="#888">Análisis reproducido del libro Kazmer «Injection Mold Design Engineering» · valores verificados contra los ejemplos resueltos · La Forja · GAIA</text>`);
+  p.push(`</svg>`);
+  return p.join('');
+}
+
 /** Barrenos estándar de una placa según su rol (layout simétrico, cantidades/⌀
  *  del spec resuelto — no inventa la pieza, especifica componentes estándar). */
 function standardHoles(s: MoldAssemblySpec, role: 'clamp' | 'A' | 'B' | 'support' | 'bottom'): PlateHole[] {
@@ -46,13 +81,16 @@ function standardHoles(s: MoldAssemblySpec, role: 'clamp' | 'A' | 'B' | 'support
   return holes;
 }
 
-/** Genera el SET completo de planos del molde (ensamble + placas individuales). */
-export function moldDrawingSet(s: MoldAssemblySpec): MoldDrawingSet {
+/** Genera el SET completo de planos del molde (ensamble + análisis + placas). */
+export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]): MoldDrawingSet {
   const D = Math.round(s.widthMm * 0.78);
   const pages: DrawingPage[] = [];
 
   // 1) ENSAMBLE (sección A-A + BOM + notas de análisis)
   pages.push({ name: 'Ensamble', svg: moldAssemblyDrawing(s).svg });
+
+  // 2) HOJA DE ANÁLISIS DE INGENIERÍA (la ingeniería del molde, con § y veredicto)
+  if (analysisRows && analysisRows.length) pages.push({ name: 'Análisis', svg: analysisSheet(s, analysisRows) });
 
   // 2) PLANO INDIVIDUAL de cada placa (planta + tabla de barrenos a cota)
   const plateDefs: Array<{ role: Parameters<typeof standardHoles>[1]; code: string; name: string; thick: number; mat: string }> = [
