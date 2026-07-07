@@ -234,12 +234,12 @@
     },
     {
       "id": "p04",
-      "dice": "Ahora la física. Una viga se opone a doblarse con su segundo momento de área: i igual a suma de área por distancia al cuadrado. Al cuadrado: el material LEJOS del eje neutro vale oro.",
+      "dice": "Ahora la física — y mírala desde arriba, donde se ve la sección. Una viga se opone a doblarse con su segundo momento de área: i igual a suma de área por distancia al cuadrado. El material LEJOS del eje neutro vale oro.",
       "gestos": [
         {
           "type": "view",
-          "name": "front",
-          "settle": 1500
+          "name": "top",
+          "settle": 1600
         }
       ]
     },
@@ -259,8 +259,8 @@
             600
           ],
           "to": [
-            880,
-            560
+            900,
+            500
           ],
           "settle": 1200
         }
