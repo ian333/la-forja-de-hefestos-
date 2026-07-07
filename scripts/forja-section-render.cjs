@@ -11,7 +11,8 @@ const OUT = process.env.OUT || '/tmp/forja-cut-frames';
 const VIDEO = process.env.VIDEO || '/home/ian/Orkesta/la-forja/dist-video/el-corte-molde.mp4';
 const URL = process.env.URL || 'http://localhost:5001/forja-brep.html';
 const FPS = +(process.env.FPS || 30);
-const DUR = +(process.env.DUR || 8);          // segundos
+const DUR = +(process.env.DUR || 9);          // segundos
+const XRAY_AT = +(process.env.XRAY_AT || 5.0); // s: transición corte → rayos X
 const W = +(process.env.W || 3840), H = +(process.env.H || 2160);   // 4K horizontal
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(require('path').dirname(VIDEO), { recursive: true });
@@ -44,9 +45,12 @@ fs.mkdirSync(require('path').dirname(VIDEO), { recursive: true });
   await page.waitForTimeout(1200);
 
   const N = Math.round(FPS * DUR);
+  let xrayOn = false;
   for (let i = 0; i < N; i++) {
     const t = i / FPS;
-    await page.evaluate((tt) => window.__cutRenderAt(tt), t);
+    const wantX = t >= XRAY_AT;
+    await page.evaluate(([tt, x]) => { window.__cutRenderAt(tt); if (window.__cutXray) window.__cutXray(x); }, [t, wantX]);
+    if (wantX && !xrayOn) { xrayOn = true; await page.waitForTimeout(250); }   // deja re-montar materiales
     await page.waitForTimeout(90);
     await page.screenshot({ path: `${OUT}/f${String(i).padStart(4, '0')}.png`, timeout: 30000 });
     if (i % 30 === 0) console.log(`frame ${i}/${N} (t=${t.toFixed(2)}s)`);
