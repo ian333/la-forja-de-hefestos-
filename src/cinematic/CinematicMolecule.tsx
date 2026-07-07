@@ -260,33 +260,24 @@ function molCamera(t: number, f: Frame): Shot {
   // sincronizado al nacimiento del color: crecer(0-13) → IGNICIÓN(13-19) → héroe
   // volando por el río(19-33) → revelar cadena completa + loop(33-45). ──
   if (f.mk === 'caroteno') {
-    const L = Math.max(f.L, 0.8), Rp = Math.max(f.Rp, 0.6);
-    const stand = Math.max(Rp * 2.6, L * 0.42);      // standoff perpendicular (río llena el cuadro)
-    const rollV = Math.PI / 2;                        // cadena VERTICAL en 9:16
-    if (t < 13.0) {                                   // CRECE — volamos junto al frente que se extiende
-      const k = ease(t / 13.0);
-      const s = lerp(-L * 0.75, L * 0.55, k);         // seguimos el frente de crecimiento
-      const off = lerp(stand * 1.35, stand, k), ph = 0.5 + k * 0.7;
-      return { pos: P(s, Math.cos(ph) * off, Math.sin(ph) * off), fov: lerp(42, 36, k),
-        target: P(s * 0.6, 0, 0), roll: rollV + 0.04 * Math.sin(t * 0.5) };
-    } else if (t < 19.0) {                            // IGNICIÓN — el color NACE: cámara se acerca y contempla
-      const k = ease((t - 13.0) / 6.0);
-      const off = lerp(stand, stand * 0.82, k), ph = 1.2 + k * 0.5;
-      return { pos: P(lerp(L * 0.55, 0, k), Math.cos(ph) * off, Math.sin(ph) * off), fov: lerp(36, 33, k),
-        target: f.c, roll: rollV + 0.03 * Math.sin(t * 0.4) };
-    } else if (t < 33.0) {                            // HÉROE — VUELA por el río de punta a punta (el viaje)
-      const k = ease((t - 19.0) / 14.0);
-      const s = lerp(-L * 0.9, L * 0.9, k);           // dolly a lo largo del cromóforo encendido
-      const off = stand * (0.9 + 0.12 * Math.sin(k * Math.PI * 2.0)), ph = 0.8 + k * 2.4;
-      return { pos: P(s, Math.cos(ph) * off, Math.sin(ph) * off), fov: 34,
-        target: P(s + L * 0.12, 0, 0), roll: rollV + 0.10 * Math.sin(k * Math.PI * 2.0) };
-    } else {                                          // REVELA TODO + LOOP — se abre a la cadena completa
-      const k = ease((t - 33.0) / 12.0);
-      const off = lerp(stand * 0.9, Math.max(L * 1.7, stand * 2.0), k), ph = 3.2 + k * 1.1;
-      const s = lerp(L * 0.9, 0, Math.min(1, k * 1.4));
-      return { pos: P(s, Math.cos(ph) * off, Math.sin(ph) * off), fov: lerp(34, 40, k),
-        target: f.c, roll: rollV + (1 - k) * 0.10 * Math.sin(k * Math.PI) };
-    }
+    // VUELO CONTINUO POR DENTRO del río π (NO desde afuera): UNA sola trayectoria,
+    // cero cortes. La cámara viaja A TRAVÉS de la cadena mirando hacia ADELANTE por
+    // el eje → el río de electrones fluye hacia nosotros y LLENA la pantalla (como el
+    // clavado de O₂, pero a lo largo de la cadena = "más espacio para viajar").
+    const L = Math.max(f.L, 0.8);
+    const k = ease(t / 45);                          // barrido único suave (sin fases → sin costuras)
+    // ARRANCA YA ADENTRO (near end) y avanza — SIEMPRE con cadena por delante llenando
+    // el cuadro (nunca detrás mirando vacío). Frame 1 = dentro del río de oro.
+    const s = lerp(-0.9 * L, 0.45 * L, k);
+    const off = 0.42 * L;                             // adentro del río, ligeramente descentrado (ves las cintas)
+    const w1 = Math.sin(t * 0.23) * off, w2 = Math.cos(t * 0.19 + 1.0) * off * 0.8;   // deriva senoidal (inmersión)
+    const la = 0.40 * L;                              // mira hacia adelante por el eje (el río viene hacia ti)
+    return {
+      pos: P(s, w1, w2),
+      target: P(s + la, w1 * 0.35, w2 * 0.35),
+      fov: 52,                                        // amplio = velocidad sentida + pantalla llena
+      roll: 0.30 * Math.sin(t * 0.11),                // roll lento con peso (inmersión, no marea)
+    };
   }
 
   if (f.chain) {
@@ -826,9 +817,9 @@ const CARO_FRAG = `
       // (firma del viral: figura cálida sobre campo frío = dual-cluster).
       col = vec3(0.24, 0.62, 1.0);
     }
-    // el río π MANDA; la espina σ va tenue (no compite, no lava a blanco).
-    // SATURACIÓN = menos brillo: el naranja se ve cuando NO revienta (más-luz-no-es-color).
-    float shellB = (vShell > 1.5) ? (0.42 + 0.55 * vFlow) : (0.16 + 0.14 * vFlow);
+    // el río π MANDA; la espina σ es solo una SUGERENCIA (hilo tenue que insinúa el
+    // esqueleto, no compite ni sobresale). SATURACIÓN = menos brillo (más-luz-no-es-color).
+    float shellB = (vShell > 1.5) ? (0.42 + 0.55 * vFlow) : (0.055 + 0.05 * vFlow);
     col += vec3(1.0, 0.85, 0.6) * vTip * 0.5;      // el frente de crecimiento chispea (tenue)
     gl_FragColor = vec4(col * a * uBright * shellB, a);
   }`;
@@ -1761,11 +1752,14 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
           // ESPACIO CONTINUO (cero cortes): abre FORMADA (el pico = frame 1) y la
           // separación/unión sucede VARIAS VECES en cámara (bondR coreografiado).
           const sceneT = time;
-          // CAROTENO: el color NACE del largo. reveal = la cadena crece (0.5-13s);
-          // warm = el salto HOMO-LUMO cae al visible cuando el largo pasa el umbral
-          // (ignición 13-18s) → el río violeta ESTALLA naranja. bright con brío.
-          const caroReveal = isCaro ? smoothstep((sceneT - 0.5) / 12.5) : 1;
-          const caroWarm = isCaro ? smoothstep((sceneT - 13.0) / 5.0) : 1;
+          // CAROTENO (45s): ABRE espectacular (río de ORO, frame 1 = lo más verga) →
+          // LA PREGUNTA (se enfría y ENCOGE: "¿y si fuera más corta?") → REGROW: el
+          // color NACE del largo (la lección, el re-gancho) → héroe + loop. reveal =
+          // cuánta cadena existe; warm = el salto HOMO-LUMO en el visible (naranja).
+          // Vuelo inmersivo: río de ORO todo el tiempo (espectacular de frame 1 a 45).
+          // El "color nace del largo" lo cuenta la narración, no un demo de afuera.
+          const caroReveal = 1;
+          const caroWarm = 1;
           const caroBright = 0.62;   // tenue a propósito: el aditivo del río satura a blanco si subes
           const mr = isBond(molKey) ? bondR(sceneT, molKey) : 1.0;
           const formed = isBond(molKey) ? smoothstep((1.4 - mr) / 0.25) : 1;
@@ -1808,8 +1802,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             : animPos;
           return <>
             <MolCameraRig frame={frame} time={isBond(molKey) ? sceneT : time} vertical={vertical} />
-            {/* caroteno: el río π ES el protagonista; los nucleones (dots duros) sobran */}
-            {!isCaro && data.nuclei.map((nuc, i) => (
+            {data.nuclei.map((nuc, i) => (
               <group key={i} position={drawPos[i]}>
                 <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time}
                   clusterRadius={0.022 + 0.009 * Math.cbrt(nuc.protons + nuc.neutrons)} />
