@@ -61,6 +61,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-shrinkage-test.cjs'] },
   { group: 'kernel', n: 'mold-structural', why: 'Kazmer cap 12: compresión 17MPa/corte 21.8/flexión 0.056mm EXACTOS + veredicto FLASH',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-structural-test.cjs'] },
+  { group: 'kernel', n: 'mold-platesizing', why: 'Kazmer §12.1+§9.2.5 TAMAÑO DE PLACA → placa COMERCIAL: soporte por deflexión (bezel 176mm→optimiza a 36mm/4 pilares), cavidad por enfriamiento (tapa 27mm)',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-platesizing-test.cjs'] },
   { group: 'kernel', n: 'mold-sideactions', why: 'Kazmer §11.3.6-8 MOLDES CON MOVIMIENTO: core pull 44kN/⌀75→82.55std, angle pin 35+25mm EXACTOS, decisor slide/pull',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-sideactions-test.cjs'] },
   { group: 'kernel', n: 'mold-fasteners', why: 'Kazmer §12.4: tornillo del molde peor-caso 362kg/47kN → M10 DIN 912 del CATÁLOGO real',
