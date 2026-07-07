@@ -1,0 +1,119 @@
+{
+  "id": "mec-u10-l4",
+  "curso": "mecanica",
+  "unidad": 10,
+  "n": 4,
+  "titulo": "Transmitir potencia: engrane, flecha y balero",
+  "subtitulo": "P = τ·ω se conserva · la flecha lleva el torque · el balero lo sostiene",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 10 §10-6..10-8 (Power Transmission)",
+  "descripcion": "El reductor no vive solo: el par de engranes monta sobre flechas reales, y los baleros aguantan la carga. Aquí ves de dónde SALE el torque y quién lo sostiene, con la potencia conservándose paso a paso.",
+  "biblioteca": [],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El motor entrega potencia: vueltas por fuerza. Pero esa potencia tiene que VIAJAR hasta la rueda. ¿Por dónde? Por una flecha. Y algo tiene que sostenerla mientras gira: el balero. Arma la cadena completa.",
+      "gestos": [
+        { "type": "wait", "ms": 1000 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El engrane motriz, veinte dientes. Del menú Más, engrane de involuta.",
+      "zoom": "btn-gear",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-gear", "settle": 3200 },
+        { "type": "fill", "testid": "input-dientes", "text": "20", "settle": 400 },
+        { "type": "key", "key": "Tab", "settle": 2800 },
+        { "type": "probe", "label": "gear-z20" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 500",
+        "desc": "el engrane motriz existe (Z₁=20)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Su pareja, el doble de dientes: cuarenta. Ya hay un par que embona.",
+      "zoom": "btn-add-gear2",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-add-gear2", "settle": 3200 },
+        { "type": "probe", "label": "par-20-40" }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"hud-assembly\"]')",
+        "desc": "el par existe (Z₁=20, Z₂=40)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Emparéjalos. La relación es dos a uno: el grande gira a la mitad y con el doble de fuerza.",
+      "zoom": "btn-gear-mate",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-gear-mate", "settle": 2600 },
+        { "type": "view", "name": "iso", "settle": 1200 }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"mate-ratio\"]'); e && parseFloat(e.textContent) > 1.9 && parseFloat(e.textContent) < 2.1",
+        "desc": "i = Z₂/Z₁ = 2.0 (medido por el kernel)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Ahora lo importante: cada engrane monta sobre una flecha. Enciende las flechas. Esa barra es la que LLEVA el par de un engrane al siguiente.",
+      "zoom": "chk-shafts",
+      "gestos": [
+        { "type": "tclick", "testid": "chk-shafts", "settle": 2800 },
+        { "type": "probe", "label": "con-flechas" }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"asm-vol-flechas\"]'); e && parseFloat(e.textContent.replace(/[^0-9.]/g,'')) > 0",
+        "desc": "las flechas existen (portan el par)"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "¿Cuánto par lleva la flecha? La potencia manda: tau igual a pe entre omega. Misma potencia, si la flecha gira más lento, aguanta MÁS torque. Por eso la flecha de salida es la que sufre.",
+      "gestos": [
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y la flecha no flota: se apoya en baleros dentro de la carcasa. Enciéndela. El balero deja girar la flecha casi sin fricción, y aguanta la carga que los dientes empujan de lado.",
+      "zoom": "chk-housing",
+      "gestos": [
+        { "type": "tclick", "testid": "chk-housing", "settle": 2800 },
+        { "type": "probe", "label": "con-carcasa" }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"asm-vol-carcasa\"]'); e && parseFloat(e.textContent.replace(/[^0-9.]/g,'')) > 0",
+        "desc": "la carcasa con baleros sostiene las flechas"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "Míralo trabajar. Entra rápido y suave por la flecha motriz; sale lento y con fuerza por la de salida. La potencia es la misma en las dos: pe igual a tau por omega, constante.",
+      "zoom": "btn-gb-motion",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-gb-motion", "settle": 1500 },
+        { "type": "wait", "ms": 3800 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Esta es la cadena de toda máquina: motor, engranes, flecha, baleros, carga. El engrane cambia la relación; la flecha carga el par; el balero lo sostiene. Ninguno sobra.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1200 },
+        { "type": "orbit", "from": [1120, 600], "to": [880, 560], "settle": 1200 }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Potencia que entra igual a potencia que sale. Lo que cambias es el trato entre velocidad y fuerza. Eso no es un dibujo: es una transmisión de verdad. Nos vemos en la próxima.",
+      "gestos": [
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
