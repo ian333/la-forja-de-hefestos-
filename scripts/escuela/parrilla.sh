@@ -26,6 +26,7 @@ declare -A NOMBRE=(
   [mec-u9-l2]="ESCUELA-MECANICA-U9L2-el-ajuste-4K"
   [mec-u3-l2]="ESCUELA-MECANICA-U3L2-el-costillado-4K"
   [mec-u9-l3]="ESCUELA-MECANICA-U9L3-el-apriete-4K"
+  [mec-sim-l1]="ESCUELA-MECANICA-SIM1-aguanta-o-se-rompe-FEA-4K"
 )
 LECCIONES=("$@")
 [ ${#LECCIONES[@]} -eq 0 ] && LECCIONES=(mec-u2-l1 mec-u2-l2 mec-u3-l1 mec-u3-l6 mec-u3-l7 mec-u4-l2)

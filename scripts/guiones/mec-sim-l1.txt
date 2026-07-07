@@ -1,0 +1,10 @@
+La pregunta más cara de la ingeniería: ¿aguanta, o se rompe? Antes se fabricaba y se probaba a que tronara. Hoy lo sabes ANTES, con la simulación — y ese complemento, en otros programas, cuesta miles.
+Una ménsula: una viga de cien por veinte por veinte, como el soporte de una repisa.
+Vamos a la pestaña de Simulación, y abrimos el análisis de esfuerzos.
+Primero, empotrarla: esta cara va atornillada a la pared, no se mueve. Elige cara fija... y clic en ella.
+Ahora la carga: dos toneladas, veinte mil newtons, empujando la cara de arriba. Elige cara de carga... y clic.
+Y ahora, la magia. Analizar. El kernel arma miles de tetraedros y resuelve ka por u igual a efe: un sistema de miles de ecuaciones. Esto es elemento finito de verdad, no un dibujo bonito.
+Mira el mapa de colores: azul donde la pieza no sufre, rojo donde el esfuerzo se concentra — justo en el empotramiento, exactamente donde la teoría de vigas lo predice. El pico: treinta y cuatro megapascales de von Mises.
+Y el número de oro, el factor de seguridad: el esfuerzo que aguanta el aluminio antes de fluir, doscientos setenta y seis, entre el pico real, treinta y cuatro. Da ocho. La pieza soporta OCHO veces esta carga antes de ceder.
+Si ese número fuera menor que uno, se rompe. Mayor que uno, aguanta. Y ahora lo sabes ANTES de cortar una sola viruta — rediseñas en la pantalla, no en el taller a golpes.
+Esfuerzo, von Mises, factor de seguridad. La simulación estructural — el complemento que cuesta un dineral — aquí, gratis, resolviendo física real en tu navegador. Eso es ingeniería, no adivinanza. Nos vemos.

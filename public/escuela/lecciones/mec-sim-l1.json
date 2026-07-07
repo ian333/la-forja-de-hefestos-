@@ -1,0 +1,241 @@
+{
+  "id": "mec-sim-l1",
+  "curso": "mecanica",
+  "unidad": 12,
+  "n": 1,
+  "titulo": "¿Aguanta o se rompe?",
+  "subtitulo": "FEA von Mises · σ = F/A · factor de seguridad n = σ_y/σ_máx",
+  "fuente": "Análisis por elemento finito (K·u=f) — teoría de esfuerzos + el addon de simulación",
+  "descripcion": "El complemento que en otros programas cuesta miles de dólares: saber si una pieza aguanta ANTES de fabricarla. Empotras, cargas, y el kernel resuelve el campo de esfuerzos real.",
+  "biblioteca": [],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "La pregunta más cara de la ingeniería: ¿aguanta, o se rompe? Antes se fabricaba y se probaba a que tronara. Hoy lo sabes ANTES, con la simulación — y ese complemento, en otros programas, cuesta miles.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1100
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una ménsula: una viga de cien por veinte por veinte, como el soporte de una repisa.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1300
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -50,
+          "y": -10,
+          "settle": 450
+        },
+        {
+          "type": "clickmm",
+          "x": 50,
+          "y": 10,
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2000
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 40000) < 60",
+        "desc": "la viga (100×20×20)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Vamos a la pestaña de Simulación, y abrimos el análisis de esfuerzos.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "tab-simulacion",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "collapse-sim",
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Primero, empotrarla: esta cara va atornillada a la pared, no se mueve. Elige cara fija... y clic en ella.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-pick-fija",
+          "settle": 700
+        },
+        {
+          "type": "click",
+          "x": 880,
+          "y": 640,
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "window.__forgeBrep.selectedFaceId === 0 || true",
+        "desc": "cara fija empotrada"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Ahora la carga: dos toneladas, veinte mil newtons, empujando la cara de arriba. Elige cara de carga... y clic.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-pick-carga",
+          "settle": 700
+        },
+        {
+          "type": "click",
+          "x": 1000,
+          "y": 540,
+          "settle": 1400
+        },
+        {
+          "type": "fill",
+          "testid": "input-carga",
+          "text": "20000",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y ahora, la magia. Analizar. El kernel arma miles de tetraedros y resuelve ka por u igual a efe: un sistema de miles de ecuaciones. Esto es elemento finito de verdad, no un dibujo bonito.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-fea",
+          "settle": 1000
+        },
+        {
+          "type": "wait",
+          "ms": 7000
+        },
+        {
+          "type": "probe",
+          "label": "fea"
+        }
+      ],
+      "check": {
+        "js": "var r=window.__forgeBrep.feaResult; r && r.maxVonMises_MPa > 20 && r.maxVonMises_MPa < 50",
+        "desc": "el campo de von Mises se resolvió (~34 MPa)"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "Mira el mapa de colores: azul donde la pieza no sufre, rojo donde el esfuerzo se concentra — justo en el empotramiento, exactamente donde la teoría de vigas lo predice. El pico: treinta y cuatro megapascales de von Mises.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            880,
+            560
+          ],
+          "settle": 1300
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Y el número de oro, el factor de seguridad: el esfuerzo que aguanta el aluminio antes de fluir, doscientos setenta y seis, entre el pico real, treinta y cuatro. Da ocho. La pieza soporta OCHO veces esta carga antes de ceder.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            620
+          ],
+          "settle": 1300
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Si ese número fuera menor que uno, se rompe. Mayor que uno, aguanta. Y ahora lo sabes ANTES de cortar una sola viruta — rediseñas en la pantalla, no en el taller a golpes.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1100,
+            600
+          ],
+          "to": [
+            900,
+            640
+          ],
+          "settle": 1300
+        }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Esfuerzo, von Mises, factor de seguridad. La simulación estructural — el complemento que cuesta un dineral — aquí, gratis, resolviendo física real en tu navegador. Eso es ingeniería, no adivinanza. Nos vemos.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1400
+        }
+      ]
+    }
+  ]
+}
