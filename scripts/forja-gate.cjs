@@ -87,6 +87,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-cost-detailed-test.cjs'] },
   { group: 'kernel', n: 'mold-machine', why: 'LA MÁQUINA (orquestador): DFM→optimiza arch×cav por costo total→cotización §3.3+costo/pza §3.4 (material $0.063 EXACTO)→veredicto; bezel→cold×1, cubeta gruesa 20M→hot×16, DFM gate rechaza esquina viva',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-machine-test.cjs'] },
+  { group: 'kernel', n: 'mold-unscrewing', why: 'Kazmer §13.9.2-3 NÚCLEOS MÓVILES (roscas/tubos): vueltas=L/paso, torque=μ·(ΔT·CTE·E)·A·r, collapse 6%⌀, hélice gruesa vs planetario; 64 tapas→planetario (Fig 13.32)',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-unscrewing-test.cjs'] },
   { group: 'kernel', n: 'occt-sweep-loft', why: 'loft (prisma A·h, tronco h/3·(a²+b²+ab)) + sweep (cilindro πr²L, codo suave sin truncar)',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/occt-sweep-loft-test.cjs'] },
   { group: 'physics', n: 'fea',          why: 'FEA real K·u=f vs analítico: barra axial σ=F/A & δ=FL/AE, viga voladizo',
