@@ -122,36 +122,60 @@ const boxG = (x: number, y: number, z: number, cz: number) => { const g = new TH
 const boreX = (r: number, len: number, z: number, y = 0) => new THREE.CylinderGeometry(r, r, len, 40).rotateZ(Math.PI / 2).translate(0, y, z);
 const pinZ = (r: number, len: number, x: number, z: number) => { const g = new THREE.CylinderGeometry(r, r, len, 28).rotateX(Math.PI / 2); return g.translate(x, 0, z); };
 
-function MoldSection({ plane, playing, speed, tRef }: {
-  plane: THREE.Plane; playing: boolean; speed: number; tRef: React.MutableRefObject<number>;
+// textura de FRESADO procedural (marcas de herramienta) → la cara del corte
+// refleja la luz en franjas como acero recién maquinado, no un panel vacío.
+function makeMillTexture(size = 512): THREE.CanvasTexture {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#7a7a7a'; g.fillRect(0, 0, size, size);
+  for (let y = 0; y < size; y++) {                 // líneas finas de herramienta
+    const v = Math.max(60, Math.min(210, 122 + Math.floor(Math.random() * 26) + Math.sin(y * 0.6) * 7));
+    g.strokeStyle = `rgb(${v},${v},${v})`; g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(size, y + 0.5); g.stroke();
+  }
+  for (let i = 0; i < 60; i++) {                    // rayones brillantes ocasionales
+    const y = Math.random() * size;
+    g.strokeStyle = `rgba(220,220,220,${0.08 + Math.random() * 0.12})`;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(size, y + (Math.random() * 6 - 3)); g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 4); t.anisotropy = 8;
+  return t;
+}
+
+function MoldSection({ plane, xray }: {
+  plane: THREE.Plane; xray: boolean;
 }) {
   const Z = useMemo(zStack, []);
   const mid = (a: number[]) => (a[0] + a[1]) / 2;
+  const clip = xray ? [] : [plane];                // rayos X = sin corte, bloque entero fantasma
+  const mill = useMemo(() => makeMillTexture(), []);
 
-  // aceros: base pulido OSCURO (no styrofoam) + cara recién fresada satinada
+  // aceros: cuerpo pulido + cara de corte con TEXTURA de fresado (refleja en franjas)
   const steel = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#6b727c', metalness: 0.7, roughness: 0.4, envMapIntensity: 0.7,
-    clippingPlanes: [plane], clipShadows: true, side: THREE.DoubleSide,
-  }), [plane]);
+    color: '#6b727c', metalness: 0.75, roughness: 0.42, envMapIntensity: 0.75,
+    bumpMap: mill, bumpScale: 0.25, roughnessMap: mill,
+    clippingPlanes: clip, clipShadows: true, side: THREE.DoubleSide,
+    transparent: xray, opacity: xray ? 0.22 : 1, depthWrite: !xray,
+  }), [plane, xray, mill]);
   const capMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#828b97', metalness: 0.4, roughness: 0.55, envMapIntensity: 0.45,   // fresado fresco satinado (acero medio, no papel)
-    emissive: '#2c323b', emissiveIntensity: 0.3,
+    color: '#8b95a2', metalness: 0.62, roughness: 0.44, envMapIntensity: 0.75,   // acero fresado que REFLEJA
+    emissive: '#262b33', emissiveIntensity: 0.22,
+    bumpMap: mill, bumpScale: 0.6, roughnessMap: mill,                            // marcas de herramienta = textura + brillo en franjas
     stencilWrite: true, stencilRef: 0, stencilFunc: THREE.NotEqualStencilFunc,
     stencilFail: THREE.ReplaceStencilOp, stencilZFail: THREE.ReplaceStencilOp, stencilZPass: THREE.ReplaceStencilOp,
     side: THREE.DoubleSide,
-  }), []);
+  }), [mill]);
 
   const cavityMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#20262f', metalness: 0.7, roughness: 0.6, clippingPlanes: [plane], side: THREE.DoubleSide,
-  }), [plane]);
+    color: '#20262f', metalness: 0.7, roughness: 0.6, clippingPlanes: clip, side: THREE.DoubleSide,
+  }), [plane, xray]);
   const waterMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#2f9fe0', emissive: '#1789d8', emissiveIntensity: 1.3, metalness: 0.1, roughness: 0.35,
-    clippingPlanes: [plane], side: THREE.DoubleSide,
-  }), [plane]);
+    clippingPlanes: clip, side: THREE.DoubleSide,
+  }), [plane, xray]);
   const pinMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: '#e6bf46', metalness: 0.65, roughness: 0.34, emissive: '#4a3a10', emissiveIntensity: 0.4,
-    envMapIntensity: 0.8, clippingPlanes: [plane], side: THREE.DoubleSide,
-  }), [plane]);
+    envMapIntensity: 0.8, clippingPlanes: clip, side: THREE.DoubleSide,
+  }), [plane, xray]);
 
   // UN SOLO BLOQUE de acero (5 placas fusionadas) → cap de esténcil LIMPIO (sin
   // costuras dentadas). Las placas se distinguen por líneas de partición grabadas.
@@ -181,7 +205,7 @@ function MoldSection({ plane, playing, speed, tRef }: {
   //    rellenos, no aritos huecos). Aparecen cuando el corte llega al centro. ──
   const zCavity = Z.A[0] + MOLD.cavityDepth / 2;
   const fillsRef = useRef<THREE.Group>(null!);
-  useFrame(() => { if (fillsRef.current) fillsRef.current.visible = plane.constant < 2.5; });
+  useFrame(() => { if (fillsRef.current) fillsRef.current.visible = !xray && plane.constant < 2.5; });
   const mkFill = (o: THREE.MeshStandardMaterialParameters) => new THREE.MeshStandardMaterial({ ...o, side: THREE.DoubleSide, depthTest: false, depthWrite: false });
   const discBlue = useMemo(() => mkFill({ color: '#3aa6e8', emissive: '#1f8fd8', emissiveIntensity: 1.7, roughness: 0.3, metalness: 0.1 }), []);
   const rectGold = useMemo(() => mkFill({ color: '#f0c94e', emissive: '#7a5c12', emissiveIntensity: 0.7, roughness: 0.35, metalness: 0.5 }), []);
@@ -191,16 +215,20 @@ function MoldSection({ plane, playing, speed, tRef }: {
   return (
     <group>
       <StudioEnv />
-      {/* el bloque macizo, un solo cap limpio */}
-      <CutSolid geometry={block} plane={plane} steel={steel} capMat={capMat} renderOrder={2} capSize={cap} />
+      {/* BLOQUE: en corte, macizo con cap de esténcil; en rayos X, fantasma entero */}
+      {xray
+        ? <mesh geometry={block} material={steel} renderOrder={2} />
+        : <CutSolid geometry={block} plane={plane} steel={steel} capMat={capMat} renderOrder={2} capSize={cap} />}
       {/* líneas de partición entre placas (grabado) */}
       {partingLines.map((z, i) => (
         <mesh key={'pl' + i} position={[0, 0, z]} renderOrder={4}>
           <boxGeometry args={[MOLD.X + 0.4, MOLD.Y + 0.4, 0.6]} />
-          <meshStandardMaterial color="#20242b" metalness={0.6} roughness={0.7} clippingPlanes={[plane]} />
+          <meshStandardMaterial color="#20242b" metalness={0.6} roughness={0.7} clippingPlanes={clip} transparent={xray} opacity={xray ? 0.5 : 1} />
         </mesh>
       ))}
-      {/* anatomía 3D que se hunde hacia el fondo (tubos de agua + pines) */}
+      {/* CAVIDAD 3D (la pieza): en rayos X se ve la bolsa entera dentro del acero */}
+      <mesh geometry={cavityG} material={cavityMat} renderOrder={11} />
+      {/* anatomía 3D: tubos de agua + pines (completos en rayos X, seccionados en corte) */}
       {coolBore.map((c, i) => (
         <mesh key={'c' + i} geometry={c.water} material={waterMat} renderOrder={12} />
       ))}
@@ -247,8 +275,8 @@ function CutEdge({ plane }: { plane: THREE.Plane }) {
   );
 }
 
-interface SceneProps { playing: boolean; speed: number; tRef: React.MutableRefObject<number>; }
-function Scene({ playing, speed, tRef }: SceneProps) {
+interface SceneProps { playing: boolean; speed: number; xray: boolean; tRef: React.MutableRefObject<number>; }
+function Scene({ playing, speed, xray, tRef }: SceneProps) {
   const Z = useMemo(zStack, []);
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(-1, 0, 0), MOLD.X / 2), []);
   const { gl } = useThree();
@@ -281,8 +309,8 @@ function Scene({ playing, speed, tRef }: SceneProps) {
       <directionalLight position={[40, 260, -160]} intensity={0.9} color="#ffd9a8" />{/* rim cálido */}
       {/* molde DERECHO: stack local-Z → world-Y (arriba); depth local-Y → world-Z (al fondo) */}
       <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -TOTAL_Z / 2, 0]}>
-        <MoldSection plane={plane} playing={playing} speed={speed} tRef={tRef} />
-        <CutEdge plane={plane} />
+        <MoldSection plane={plane} xray={xray} />
+        {!xray && <CutEdge plane={plane} />}
       </group>
       <OrbitControls ref={controlsRef} enablePan enableZoom target={[0, 6, 0]} />
     </>
@@ -292,13 +320,15 @@ function Scene({ playing, speed, tRef }: SceneProps) {
 export default function MoldSectionReveal({ onClose }: { onClose?: () => void }) {
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
+  const [xray, setXray] = useState(false);
   const tRef = useRef(0);
 
   useEffect(() => {
     // render determinista: congela la reproducción y fija t exacto por frame
     (window as any).__cutRenderAt = (t: number) => { setPlaying(false); tRef.current = t; };
     (window as any).__cutReset = () => { tRef.current = 0; };
-    return () => { delete (window as any).__cutRenderAt; delete (window as any).__cutReset; };
+    (window as any).__cutXray = (on: boolean) => setXray(!!on);   // rayos X para el render/QA
+    return () => { delete (window as any).__cutRenderAt; delete (window as any).__cutReset; delete (window as any).__cutXray; };
   }, []);
 
   return (
@@ -309,7 +339,7 @@ export default function MoldSectionReveal({ onClose }: { onClose?: () => void })
         onCreated={({ gl }) => { gl.localClippingEnabled = true; gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.05; }}
       >
         <color attach="background" args={['#0a0c10']} />
-        <Scene playing={playing} speed={speed} tRef={tRef} />
+        <Scene playing={playing} speed={speed} xray={xray} tRef={tRef} />
       </Canvas>
 
       {/* HUD */}
@@ -321,6 +351,7 @@ export default function MoldSectionReveal({ onClose }: { onClose?: () => void })
         <button onClick={() => setPlaying((p) => !p)} style={btn}>{playing ? '⏸' : '▶'}</button>
         <button onClick={() => { tRef.current = 0; }} style={btn}>⟲ corte</button>
         <button onClick={() => setSpeed((s) => (s >= 2 ? 0.5 : s + 0.5))} style={btn}>{speed}×</button>
+        <button onClick={() => setXray((x) => !x)} style={{ ...btn, ...(xray ? { background: '#123', borderColor: '#4a90d9', color: '#8fd0ff' } : {}) }}>👁 rayos X {xray ? 'ON' : ''}</button>
       </div>
       {onClose && <button onClick={onClose} style={{ ...btn, position: 'absolute', top: 16, right: 16 }}>✕ cerrar</button>}
     </div>

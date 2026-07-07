@@ -55,6 +55,11 @@ const URL = process.env.URL || 'http://localhost:5001/forja-brep.html';
       await page.screenshot({ path: `${OUT}/cut-t${String(t).replace('.', '_')}.png`, timeout: 30000 });
       console.log('OK  t=', t);
     }
+    // modo RAYOS X (Fusion-style)
+    await page.evaluate(() => { window.__cutRenderAt(5.0); window.__cutXray && window.__cutXray(true); });
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: `${OUT}/cut-xray.png`, timeout: 30000 });
+    console.log('OK  xray');
   }
   if (logs.length) { console.log('--- console errors ---'); console.log(logs.slice(0, 14).join('\n')); }
   await ctx.close();
