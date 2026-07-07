@@ -4,7 +4,7 @@
   "unidad": 12,
   "n": 1,
   "titulo": "¿Aguanta o se rompe?",
-  "subtitulo": "FEA von Mises · σ = F/A · factor de seguridad n = σ_y/σ_máx",
+  "subtitulo": "FEA visual · se DEFORMA en vivo · empuja en toda dirección · n = σ_y/σ_máx",
   "fuente": "Análisis por elemento finito (K·u=f) — teoría de esfuerzos + el addon de simulación",
   "descripcion": "El complemento que en otros programas cuesta miles de dólares: saber si una pieza aguanta ANTES de fabricarla. Empotras, cargas, y el kernel resuelve el campo de esfuerzos real.",
   "biblioteca": [],
@@ -144,7 +144,7 @@
     },
     {
       "id": "p06",
-      "dice": "Y ahora, la magia. Analizar. El kernel arma miles de tetraedros y resuelve ka por u igual a efe: un sistema de miles de ecuaciones. Esto es elemento finito de verdad, no un dibujo bonito.",
+      "dice": "Y ahora, la magia. Analizar. El kernel arma miles de tetraedros y resuelve ka por u igual a efe. Y mira lo que pasa: la pieza se DEFORMA, en vivo.",
       "gestos": [
         {
           "type": "tclick",
@@ -167,7 +167,7 @@
     },
     {
       "id": "p07",
-      "dice": "Mira el mapa de colores: azul donde la pieza no sufre, rojo donde el esfuerzo se concentra — justo en el empotramiento, exactamente donde la teoría de vigas lo predice. El pico: treinta y cuatro megapascales de von Mises.",
+      "dice": "Ahí está — la punta se hunde bajo su posición de reposo, ese contorno fantasma. No es un dibujo bonito: es la física moviendo la pieza. Y el color grita dónde sufre: rojo en el empotramiento, azul donde descansa.",
       "gestos": [
         {
           "type": "orbit",
@@ -179,14 +179,46 @@
             880,
             560
           ],
-          "settle": 1300
+          "settle": 1600
         }
       ]
     },
     {
       "id": "p08",
-      "dice": "Y el número de oro, el factor de seguridad: el esfuerzo que aguanta el aluminio antes de fluir, doscientos setenta y seis, entre el pico real, treinta y cuatro. Da ocho. La pieza soporta OCHO veces esta carga antes de ceder.",
+      "dice": "El número de oro: factor de seguridad. El aluminio aguanta doscientos setenta y seis megapascales antes de fluir, entre el pico real, treinta y cuatro. Da ocho. Soporta OCHO veces esta carga antes de ceder.",
       "gestos": [
+        {
+          "type": "wait",
+          "ms": 3200
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Pero aquí está lo que ningún curso te enseña: empújala en CUALQUIER dirección, y velo. A lo largo, de canto, de lado... cada fuerza la comporta distinto, y lo VES al instante.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "fea-dir-1-0-0",
+          "settle": 4500
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            900,
+            560
+          ],
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "fea-dir-0-1-0",
+          "settle": 4500
+        },
         {
           "type": "orbit",
           "from": [
@@ -197,14 +229,19 @@
             1150,
             620
           ],
-          "settle": 1300
+          "settle": 1400
         }
       ]
     },
     {
-      "id": "p09",
-      "dice": "Si ese número fuera menor que uno, se rompe. Mayor que uno, aguanta. Y ahora lo sabes ANTES de cortar una sola viruta — rediseñas en la pantalla, no en el taller a golpes.",
+      "id": "p10",
+      "dice": "Aprendes del OJO — viendo cómo se comporta, pensando desde todos los ángulos — no esperando ecuaciones en la nube que tardan una eternidad. Esto es el simulador de nueva generación. Física real, instantánea, en tu navegador. Nos vemos.",
       "gestos": [
+        {
+          "type": "tclick",
+          "testid": "fea-dir-0-0--1",
+          "settle": 4000
+        },
         {
           "type": "orbit",
           "from": [
@@ -214,24 +251,6 @@
           "to": [
             900,
             640
-          ],
-          "settle": 1300
-        }
-      ]
-    },
-    {
-      "id": "p10",
-      "dice": "Esfuerzo, von Mises, factor de seguridad. La simulación estructural — el complemento que cuesta un dineral — aquí, gratis, resolviendo física real en tu navegador. Eso es ingeniería, no adivinanza. Nos vemos.",
-      "gestos": [
-        {
-          "type": "orbit",
-          "from": [
-            950,
-            560
-          ],
-          "to": [
-            1160,
-            660
           ],
           "settle": 1400
         }

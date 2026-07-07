@@ -3,8 +3,8 @@ Una ménsula: una viga de cien por veinte por veinte, como el soporte de una rep
 Vamos a la pestaña de Simulación, y abrimos el análisis de esfuerzos.
 Primero, empotrarla: esta cara va atornillada a la pared, no se mueve. Elige cara fija... y clic en ella.
 Ahora la carga: dos toneladas, veinte mil newtons, empujando la cara de arriba. Elige cara de carga... y clic.
-Y ahora, la magia. Analizar. El kernel arma miles de tetraedros y resuelve ka por u igual a efe: un sistema de miles de ecuaciones. Esto es elemento finito de verdad, no un dibujo bonito.
-Mira el mapa de colores: azul donde la pieza no sufre, rojo donde el esfuerzo se concentra — justo en el empotramiento, exactamente donde la teoría de vigas lo predice. El pico: treinta y cuatro megapascales de von Mises.
-Y el número de oro, el factor de seguridad: el esfuerzo que aguanta el aluminio antes de fluir, doscientos setenta y seis, entre el pico real, treinta y cuatro. Da ocho. La pieza soporta OCHO veces esta carga antes de ceder.
-Si ese número fuera menor que uno, se rompe. Mayor que uno, aguanta. Y ahora lo sabes ANTES de cortar una sola viruta — rediseñas en la pantalla, no en el taller a golpes.
-Esfuerzo, von Mises, factor de seguridad. La simulación estructural — el complemento que cuesta un dineral — aquí, gratis, resolviendo física real en tu navegador. Eso es ingeniería, no adivinanza. Nos vemos.
+Y ahora, la magia. Analizar. El kernel arma miles de tetraedros y resuelve ka por u igual a efe. Y mira lo que pasa: la pieza se DEFORMA, en vivo.
+Ahí está — la punta se hunde bajo su posición de reposo, ese contorno fantasma. No es un dibujo bonito: es la física moviendo la pieza. Y el color grita dónde sufre: rojo en el empotramiento, azul donde descansa.
+El número de oro: factor de seguridad. El aluminio aguanta doscientos setenta y seis megapascales antes de fluir, entre el pico real, treinta y cuatro. Da ocho. Soporta OCHO veces esta carga antes de ceder.
+Pero aquí está lo que ningún curso te enseña: empújala en CUALQUIER dirección, y velo. A lo largo, de canto, de lado... cada fuerza la comporta distinto, y lo VES al instante.
+Aprendes del OJO — viendo cómo se comporta, pensando desde todos los ángulos — no esperando ecuaciones en la nube que tardan una eternidad. Esto es el simulador de nueva generación. Física real, instantánea, en tu navegador. Nos vemos.
