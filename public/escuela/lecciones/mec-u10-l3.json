@@ -1,0 +1,180 @@
+{
+  "id": "mec-u10-l3",
+  "curso": "mecanica",
+  "unidad": 10,
+  "n": 3,
+  "titulo": "La relación de transmisión",
+  "subtitulo": "i = Z₂/Z₁ · velocidad vs torque · P = τ·ω",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 10 §10-5 (Gear Ratios)",
+  "descripcion": "La fórmula que mueve toda máquina: por qué un reductor cambia velocidad por fuerza. Dos engranes reales de involuta comprueban i = Z₂/Z₁ en vivo.",
+  "biblioteca": [],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Un motor gira rápido y con poca fuerza. Tu robot necesita lo contrario: lento y con torque. El puente entre los dos es una sola fórmula: la relación de transmisión.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El engrane motriz: quince dientes. Del menú Más, engrane de involuta.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-gear",
+          "settle": 3200
+        },
+        {
+          "type": "fill",
+          "testid": "input-dientes",
+          "text": "15",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "gear-z15"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 500",
+        "desc": "el engrane motriz existe (Z₁=15)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Su pareja: el doble de dientes, treinta. Fíjate — la distancia entre centros la fija la fórmula: ce igual a módulo por zeta uno más zeta dos, entre dos.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-add-gear2",
+          "settle": 2800
+        },
+        {
+          "type": "fill",
+          "testid": "input-dientes2",
+          "text": "30",
+          "settle": 400
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 2600
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"hud-assembly\"]')",
+        "desc": "el par existe (Z₁=15, Z₂=30)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "La relación es zeta dos entre zeta uno: treinta entre quince, igual a dos. Ese número, el dos, lo cambia TODO.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-gear-mate",
+          "settle": 2400
+        },
+        {
+          "type": "view",
+          "name": "top",
+          "settle": 1400
+        }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"mate-ratio\"]'); e && parseFloat(e.textContent) > 1.9 && parseFloat(e.textContent) < 2.1",
+        "desc": "i = Z₂/Z₁ = 2.0 (medido por el kernel)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "La velocidad: omega dos igual a omega uno entre i. El engrane grande gira a la MITAD de vueltas. Míralo rodar.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-gb-motion",
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 3500
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Pero aquí está el trato de la física: el torque hace lo opuesto. Tau dos igual a tau uno POR i. La salida entrega el DOBLE de fuerza.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 2600
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "¿Por qué? Porque la potencia se conserva: pe igual a tau por omega, constante. Si la velocidad baja a la mitad, el torque sube al doble. No hay almuerzo gratis... pero sí hay palanca.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3200
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Eso es un reductor: convierte revoluciones en fuerza. Un dos a uno, en la muñeca de tu robot, duplica lo que puede cargar. Un cincuenta a uno, lo hace levantar su propio peso.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            880,
+            560
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Una fórmula, i igual a zeta dos entre zeta uno, y ya entiendes por qué toda máquina del mundo lleva engranes. Esto no es un dibujo: es mecánica. Nos vemos en la próxima.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}

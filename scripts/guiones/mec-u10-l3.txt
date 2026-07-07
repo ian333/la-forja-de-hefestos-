@@ -1,0 +1,9 @@
+Un motor gira rápido y con poca fuerza. Tu robot necesita lo contrario: lento y con torque. El puente entre los dos es una sola fórmula: la relación de transmisión.
+El engrane motriz: quince dientes. Del menú Más, engrane de involuta.
+Su pareja: el doble de dientes, treinta. Fíjate — la distancia entre centros la fija la fórmula: ce igual a módulo por zeta uno más zeta dos, entre dos.
+La relación es zeta dos entre zeta uno: treinta entre quince, igual a dos. Ese número, el dos, lo cambia TODO.
+La velocidad: omega dos igual a omega uno entre i. El engrane grande gira a la MITAD de vueltas. Míralo rodar.
+Pero aquí está el trato de la física: el torque hace lo opuesto. Tau dos igual a tau uno POR i. La salida entrega el DOBLE de fuerza.
+¿Por qué? Porque la potencia se conserva: pe igual a tau por omega, constante. Si la velocidad baja a la mitad, el torque sube al doble. No hay almuerzo gratis... pero sí hay palanca.
+Eso es un reductor: convierte revoluciones en fuerza. Un dos a uno, en la muñeca de tu robot, duplica lo que puede cargar. Un cincuenta a uno, lo hace levantar su propio peso.
+Una fórmula, i igual a zeta dos entre zeta uno, y ya entiendes por qué toda máquina del mundo lleva engranes. Esto no es un dibujo: es mecánica. Nos vemos en la próxima.
