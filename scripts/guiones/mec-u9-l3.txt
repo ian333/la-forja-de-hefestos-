@@ -1,0 +1,9 @@
+En la clase pasada, el eje deslizaba en el buje con dos centésimas de holgura. Hoy, el problema opuesto: montar un balero que NO se puede atornillar. ¿Cómo lo fijas? A presión.
+Empieza limpio.
+El mismo buje: agujero de veinte milímetros, exacto.
+Pero AHORA el eje es más GRANDE que el agujero: mide veinte cero tres. Tres centésimas de MÁS. En papel, no cabe. Y ése es justo el punto.
+La interferencia es eje menos agujero: veinte cero tres menos veinte, igual a MÁS tres centésimas. Positiva. El metal del eje invade el del buje. No entra deslizando: entra a golpe de prensa hidráulica.
+¿Y qué lo agarra? La interferencia comprime: genera una presión de contacto que crece con la interferencia por el módulo elástico, entre el diámetro. Ese apretón es el que sujeta, sin un solo tornillo.
+La fuerza para montarlo sale de la fricción: efe igual a mu por la presión, por el área de contacto, pi de por ele. Por eso un balero de coche se mete con toneladas... y una vez dentro, no se sale jamás.
+Ésa es la regla de oro del ajuste: holgura para lo que GIRA, apriete para lo que va FIJO. Dos o tres centésimas de milímetro separan una cosa de la otra. La precisión ES la mecánica.
+Deslizante, de transición, de apriete: las tres familias, con su física y su fórmula. El análisis de ajustes completo, que en otros programas cuesta un dineral — aquí, tuyo. Nos vemos en la próxima.

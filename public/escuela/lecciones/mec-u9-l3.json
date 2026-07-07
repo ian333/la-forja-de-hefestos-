@@ -1,0 +1,186 @@
+{
+  "id": "mec-u9-l3",
+  "curso": "mecanica",
+  "unidad": 9,
+  "n": 3,
+  "titulo": "El apriete",
+  "subtitulo": "Interferencia = D_eje − D_agujero · presión de contacto · F = μ·p·πDL",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 9 §9-11 (Interference Fits)",
+  "descripcion": "Cómo se monta un balero o un engrane en un eje sin un solo tornillo: a presión. El ajuste de apriete y la física que lo agarra — el otro lado del análisis de tolerancias.",
+  "biblioteca": [
+    "buje-h7",
+    "eje-apriete"
+  ],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "En la clase pasada, el eje deslizaba en el buje con dos centésimas de holgura. Hoy, el problema opuesto: montar un balero que NO se puede atornillar. ¿Cómo lo fijas? A presión.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Empieza limpio.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "tl-extrude",
+          "settle": 1000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-del-op",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "!inv",
+        "desc": "documento vacío"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El mismo buje: agujero de veinte milímetros, exacto.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-options",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "lib-insert-buje-h7",
+          "settle": 2800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 23561.9) < 40",
+        "desc": "el buje (agujero Ø20)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Pero AHORA el eje es más GRANDE que el agujero: mide veinte cero tres. Tres centésimas de MÁS. En papel, no cabe. Y ése es justo el punto.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-options",
+          "settle": 1100
+        },
+        {
+          "type": "tclick",
+          "testid": "lib-insert-eje-apriete",
+          "settle": 2800
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-z",
+          "text": "-10",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Tab",
+          "settle": 2000
+        },
+        {
+          "type": "probe",
+          "label": "apriete"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 37000",
+        "desc": "buje + eje de apriete (interferencia)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "La interferencia es eje menos agujero: veinte cero tres menos veinte, igual a MÁS tres centésimas. Positiva. El metal del eje invade el del buje. No entra deslizando: entra a golpe de prensa hidráulica.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3200
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Y qué lo agarra? La interferencia comprime: genera una presión de contacto que crece con la interferencia por el módulo elástico, entre el diámetro. Ese apretón es el que sujeta, sin un solo tornillo.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 1500
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "La fuerza para montarlo sale de la fricción: efe igual a mu por la presión, por el área de contacto, pi de por ele. Por eso un balero de coche se mete con toneladas... y una vez dentro, no se sale jamás.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            880,
+            560
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Ésa es la regla de oro del ajuste: holgura para lo que GIRA, apriete para lo que va FIJO. Dos o tres centésimas de milímetro separan una cosa de la otra. La precisión ES la mecánica.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1150,
+            640
+          ],
+          "settle": 1200
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Deslizante, de transición, de apriete: las tres familias, con su física y su fórmula. El análisis de ajustes completo, que en otros programas cuesta un dineral — aquí, tuyo. Nos vemos en la próxima.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1120,
+            600
+          ],
+          "to": [
+            900,
+            640
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}
