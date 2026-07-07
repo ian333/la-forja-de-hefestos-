@@ -22,10 +22,15 @@
  */
 import { ABS_MG47, convergeVelocity, pressureDropSegment, clampMetricTons, type MeltMaterial } from './filling';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
-import { sizeInserts, selectMoldBase, selectMetal, checkMachine, MACHINES, type InsertSizing, type BaseSelection, type MoldMetal } from './moldbase';
+import { sizeInserts, selectMoldBase, selectMetal, type InsertSizing, type BaseSelection, type MoldMetal } from './moldbase';
 import {
   estimateMoldCost, estimatePartCost, MACHINING_FACTOR, type CostInputs, type CostBreakdown, type PartCostBreakdown,
 } from './moldcost-detailed';
+import { heatToRemove, ABS_KAZMER } from './cooling';
+import { designCoolingLines, type CoolingLineDesign } from './coolinglines';
+import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type EjectionVector } from './ejection';
+import { optimizeSupportPlate, sizeCavityPlate, type PlateSizing, type CavityPlateSizing } from './platesizing';
+import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
 
 export type Arch = 'cold-2placas' | 'cold-3placas' | 'hot-runner';
 
@@ -58,6 +63,20 @@ interface ArchCav {
   cost: CostBreakdown; part: PartCostBreakdown;
 }
 
+/**
+ * DISEÑO FÍSICO — las simulaciones acopladas resueltas sobre la ganadora: el
+ * molde como sistema de ecuaciones (enfriamiento + expulsión + placas + máquina),
+ * cada una aterrizada en componente COMERCIAL. Es lo que el cliente compra: no un
+ * dibujo, un molde óptimo maquinable con placas y plugs de catálogo.
+ */
+export interface DiseñoFisico {
+  fillMPa: number; cavityMPa: number;
+  enfriamiento: { qCavidadJ: number; qTotalW: number; cicloS: number; lineas: CoolingLineDesign };
+  expulsion: { aEffM2: number; vector: EjectionVector; pines: ReturnType<typeof ejectorPinSizing> };
+  placas: { soporte: PlateSizing; soporteOpciones: PlateSizing[]; cavidad: CavityPlateSizing };
+  maquina: { requerimientos: MachineRequirements; seleccion: MachineSelection };
+}
+
 export interface MoldPackage {
   spec: MachineSpec;
   dfm: DFMReport;
@@ -69,10 +88,15 @@ export interface MoldPackage {
   cotizacion: CostBreakdown;
   costoPieza: PartCostBreakdown;
   breakEven: string[];
+  diseno: DiseñoFisico;
   maquina: { nombre: string; ok: boolean; issues: string[] } | null;
   veredicto: { viable: boolean; banderas: string[]; precioMoldeUSD: number; costoPiezaUSD: number; entregaSemanas: number };
   reporte: string[];
 }
+
+/** Densidad del plástico (kg/m³) para masa/calor por ciclo. */
+const PLASTIC_RHO: Record<string, number> = { ABS: 1050, PP: 905, PS: 1040, PC: 1200, PE: 950, PA: 1140, POM: 1410 };
+const PLASTIC_CP: Record<string, number> = { ABS: 2000, PP: 2100, PS: 1900, PC: 1250, PE: 2300, PA: 1700, POM: 1500 };
 
 const FINISH_MAP: Record<string, { spi: 'texture' | 'SPI A-1' | 'SPI A-3' | 'SPI B-3' }['spi']> = {
   texture: 'SPI B-3', 'SPI B-3': 'SPI B-3', 'SPI A-3': 'SPI A-3', 'SPI A-1': 'SPI A-1',
@@ -84,13 +108,21 @@ const ARCH_CUSTOM: Record<Arch, { feed: string; feedWaste: 'cold' | 'hot-long'; 
   'hot-runner': { feed: 'hot-thermal', feedWaste: 'hot-long', hotRunner: true },
 };
 
+/**
+ * Factor presión MEDIA de cavidad / presión PICO de inyección. El clamp lo da la
+ * presión media sobre el área proyectada, que es ~½ del pico en la compuerta por
+ * el gradiente gate→frente de flujo (perfil ~triangular). Con esto el bezel da
+ * ~194 t, en el rango del libro (cap 11: 143 t; cap 12 usa 200 t).
+ */
+const CAVITY_PRESSURE_FACTOR = 0.5;
+
 /** Presión de llenado + clamp por cavidad (filling.ts, puro). */
 function clampFor(spec: MachineSpec, melt: MeltMaterial, nCav: number): { dPMPa: number; clampTons: number } {
   const wallM = spec.wallMm / 1000, flowM = spec.Lmm / 1000;   // longitud de flujo ≈ largo (aprox)
   const v = convergeVelocity(melt, wallM);
   const dP = pressureDropSegment(melt, flowM, wallM, v);
   const projAreaM2 = nCav * (spec.Lmm * spec.Wmm) * 1e-6;      // área proyectada = L×W por cavidad
-  const clamp = clampMetricTons(dP * 0.8, projAreaM2);         // presión de empaque ≈ 0.8·ΔP
+  const clamp = clampMetricTons(dP * CAVITY_PRESSURE_FACTOR, projAreaM2);
   return { dPMPa: dP / 1e6, clampTons: clamp };
 }
 
@@ -141,9 +173,11 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
   const nSide = Math.max(1, Math.round(Math.sqrt(win.nCav)));
   const base = selectMoldBase(insertos, { nx: nSide, ny: Math.ceil(win.nCav / nSide) });
 
-  // ── compatibilidad de máquina (la mejor que aguante el clamp) ──
-  const stackMm = base.plateAmm + base.plateBmm + 120;
-  const maq = pickMachine(base, stackMm, win);
+  // ── DISEÑO FÍSICO: el molde como sistema de ecuaciones acopladas, resuelto de
+  //    punta a punta sobre la ganadora (enfriamiento → expulsión → placas → máquina) ──
+  const diseno = physicalDesign(spec, win, base, insertos, melt, plastic);
+  const sel = diseno.maquina.seleccion;
+  const maq = { nombre: sel.machine?.name ?? '—', ok: sel.ok, issues: sel.issues };
 
   // ── break-even: por qué NO otra arquitectura ──
   const alt = variantes.find((v) => v.arch !== win.arch) ?? variantes[1];
@@ -160,7 +194,7 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
   const entregaSemanas = Math.ceil(win.cost.cavity.tMachiningH / 40) + (win.arch === 'hot-runner' ? 4 : 2) + 2;
   const viable = dfm.errors === 0 && Number.isFinite(win.cost.totalUSD) && win.cost.totalUSD > 0;
 
-  const reporte = buildReport(spec, dfm, metal, win, base, maq, precioMolde, entregaSemanas, be, complexity, machiningFactor);
+  const reporte = buildReport(spec, dfm, metal, win, base, maq, precioMolde, entregaSemanas, be, complexity, machiningFactor, diseno);
 
   return {
     spec, dfm, metal, insertos, variantes,
@@ -168,9 +202,66 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
       `mínimo costo TOTAL @ ${totalQty.toLocaleString()} pzas: molde $${Math.round(win.cost.totalUSD).toLocaleString()} + $${win.partUSD.toFixed(3)}/pza`,
       `${win.arch === 'hot-runner' ? 'hot runner amortiza el molde caro con material/ciclo bajos a alto volumen' : 'cold runner: molde barato gana cuando el volumen no paga la colada caliente'}`,
     ] },
-    base, cotizacion: win.cost, costoPieza: win.part, breakEven: be, maquina: maq,
+    base, cotizacion: win.cost, costoPieza: win.part, breakEven: be, diseno, maquina: maq,
     veredicto: { viable, banderas, precioMoldeUSD: precioMolde, costoPiezaUSD: win.partUSD, entregaSemanas },
     reporte,
+  };
+}
+
+/**
+ * RESUELVE el diseño físico de punta a punta sobre la ganadora: enfriamiento (Q →
+ * caudal → plug comercial), expulsión (vector con peso/gravedad + pines),
+ * placas (soporte por deflexión + pilares óptimos + cavidad) y máquina
+ * (cierre+shot+presión+expulsión → inyectora). Cada ecuación aterriza en un
+ * componente de catálogo. PURO.
+ */
+function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, insertos: InsertSizing, melt: MeltMaterial, plastic: string): DiseñoFisico {
+  const nCav = win.nCav;
+  const wallM = spec.wallMm / 1000, flowM = spec.Lmm / 1000;
+  const v = convergeVelocity(melt, wallM);
+  const fillPa = pressureDropSegment(melt, flowM, wallM, v);
+  const fillMPa = fillPa / 1e6, cavityMPa = fillMPa * CAVITY_PRESSURE_FACTOR;  // media ≈ ½ del pico
+
+  // ── ENFRIAMIENTO: calor por ciclo → caudal → Ø turbulento → plug DME ──
+  const rho = PLASTIC_RHO[plastic] ?? 1050, cp = PLASTIC_CP[plastic] ?? 2000;
+  const massKg = spec.volumeMm3 * 1e-9 * rho;                   // masa por cavidad
+  const qCavJ = heatToRemove(massKg, cp, ABS_KAZMER);           // J por cavidad por ciclo
+  const cicloS = win.part.cycleTimeS;
+  const qTotalW = (qCavJ * nCav) / cicloS;                      // W a disipar (todas las cavidades)
+  const lineLenM = 2 * (base.base.wmm + base.base.lmm) / 1000;  // circuito perimetral aprox
+  const lineas = designCoolingLines({ qTotalW, nLines: Math.max(1, nCav), lineLenM, dTallowC: 1, dPmaxPa: 100e3 });
+
+  // ── EXPULSIÓN: vector con peso real + dimensionado de pines ──
+  const aEffM2 = effectiveArea({ h: wallM, L: spec.Lmm / 1000, W: spec.Wmm / 1000 });
+  const draft = Math.max(1, spec.dfm?.draftDeg ?? 1);
+  const vector = ejectionVector(ABS_EJECT, { aEffM2, draftDeg: draft, massKg: massKg * nCav });
+  const pines = ejectorPinSizing(ABS_EJECT, vector.fEjectN, Math.max(4, 4 * nCav), wallM);
+
+  // ── PLACAS: soporte por deflexión (+pilares óptimos) + cavidad por enfriamiento ──
+  const spanM = (Math.min(base.base.wmm, base.base.lmm) / 1000) * 0.6;   // claro entre rieles
+  const widthM = Math.max(base.base.wmm, base.base.lmm) / 1000;
+  const soporte = optimizeSupportPlate({ clampTons: win.clampTons, spanM, widthM, maxPillars: 4 });
+  const cavidad = sizeCavityPlate({ cavityDepthMm: spec.Hmm, lineDiaMm: insertos.coolingDiaMm });
+
+  // ── MÁQUINA: cuatro restricciones → inyectora comercial ──
+  const projAreaM2 = nCav * spec.Lmm * spec.Wmm * 1e-6;
+  const partCc = spec.volumeMm3 * 1e-3;
+  const requerimientos = machineRequirements({
+    projectedAreaM2: projAreaM2, cavityPressureMPa: cavityMPa,
+    partVolumeCc: partCc, nCav, runnerVolumeCc: partCc * (win.arch === 'hot-runner' ? 0.02 : 0.25),
+    fillPressureMPa: fillMPa, ejectionForceN: vector.fEjectN,
+  });
+  // altura de cierre = placas A+B + soporte + (2 placas de sujeción ~60 + housing
+  //  del expulsor ~140): estimado realista de shut height del stack del mold base
+  const stackMm = base.plateAmm + base.plateBmm + (soporte.best.plateThkMm ?? 60) + 200;
+  const seleccion = selectInjectionMachine(requerimientos, { wmm: base.base.wmm, lmm: base.base.lmm, stackMm });
+
+  return {
+    fillMPa: +fillMPa.toFixed(1), cavityMPa: +cavityMPa.toFixed(1),
+    enfriamiento: { qCavidadJ: +qCavJ.toFixed(0), qTotalW: +qTotalW.toFixed(0), cicloS: +cicloS.toFixed(1), lineas },
+    expulsion: { aEffM2, vector, pines },
+    placas: { soporte: soporte.best, soporteOpciones: soporte.options, cavidad },
+    maquina: { requerimientos, seleccion },
   };
 }
 
@@ -188,18 +279,6 @@ function buildCostInputs(spec: MachineSpec, metalKey: string, nCav: number, mach
   };
 }
 
-function pickMachine(base: BaseSelection, stackMm: number, win: ArchCav) {
-  const shotCc = win.nCav * 30;                              // aprox por cavidad
-  for (const m of [...MACHINES].sort((a, b) => a.clampTons - b.clampTons)) {
-    if (m.clampTons < win.clampTons) continue;
-    const chk = checkMachine({ wmm: base.base.wmm, lmm: base.base.lmm, stackMm, shotCc, clampNeedTons: win.clampTons }, m);
-    if (chk.ok) return { nombre: m.name, ok: true, issues: [] as string[] };
-  }
-  const big = MACHINES[MACHINES.length - 1];
-  const chk = checkMachine({ wmm: base.base.wmm, lmm: base.base.lmm, stackMm, shotCc, clampNeedTons: win.clampTons }, big);
-  return { nombre: big.name, ok: false, issues: chk.issues };
-}
-
 function breakEvenReport(win: ArchCav, alt: ArchCav, qty: number): string[] {
   const dFixed = alt.cost.totalUSD - win.cost.totalUSD;
   const dMarg = win.partUSD - alt.partUSD;
@@ -212,9 +291,11 @@ function breakEvenReport(win: ArchCav, alt: ArchCav, qty: number): string[] {
   ];
 }
 
-function buildReport(spec: MachineSpec, dfm: DFMReport, metal: { metal: MoldMetal; porQue: string[] }, win: ArchCav, base: BaseSelection, maq: { nombre: string; ok: boolean } | null, precioMolde: number, semanas: number, be: string[], complexity: number, mf: number): string[] {
+function buildReport(spec: MachineSpec, dfm: DFMReport, metal: { metal: MoldMetal; porQue: string[] }, win: ArchCav, base: BaseSelection, maq: { nombre: string; ok: boolean } | null, precioMolde: number, semanas: number, be: string[], complexity: number, mf: number, d: DiseñoFisico): string[] {
   const $ = (x: number) => '$' + Math.round(x).toLocaleString('en-US');
   const c = win.cost;
+  const cl = d.enfriamiento.lineas, sp = d.placas.soporte, ev = d.expulsion.vector, ms = d.maquina.seleccion;
+  const kgBase = d.placas.soporteOpciones[0]?.steelMassKg ?? sp.steelMassKg;
   return [
     `╔══ COTIZACIÓN DE MOLDE · La Forja ═══════════════════════════════`,
     `║ PIEZA: ${spec.name} · ${spec.Lmm}×${spec.Wmm}×${spec.Hmm} mm · pared ${spec.wallMm} mm · ${spec.plastic ?? 'ABS'}`,
@@ -234,6 +315,12 @@ function buildReport(spec: MachineSpec, dfm: DFMReport, metal: { metal: MoldMeta
     `║ COSTO DEL MOLDE: ${$(c.totalUSD)}   →   PRECIO SUGERIDO: ${$(precioMolde)}`,
     `╠── COSTO POR PIEZA (§3.4) ───────────────────────────────────────`,
     `║ molde/pza $${win.part.moldPerPart.toFixed(3)} + material $${win.part.materialPerPart.toFixed(3)} + proceso $${win.part.processPerPart.toFixed(3)} → $${win.part.partUSD.toFixed(3)}/pza (ciclo ${win.part.cycleTimeS.toFixed(1)}s)`,
+    `╠── DISEÑO FÍSICO · el molde como ecuaciones resueltas ───────────`,
+    `║ LLENADO: ${d.fillMPa} MPa · cavidad ${d.cavityMPa} MPa`,
+    `║ ENFRIAMIENTO: ${d.enfriamiento.qTotalW} W → ${(cl.flowM3s * 1e6).toFixed(0)} cm³/s · Ø ${cl.dMinMm.toFixed(1)}-${cl.dMaxMm.toFixed(1)} mm → plug ${cl.plug?.dme ?? '—'} (${cl.plug?.diaMm ?? '—'} mm) · Re ${cl.reAtPlug.toFixed(0)} ${cl.turbulento ? 'turbulento ✓' : '⚠ laminar'} · ${cl.controller ?? '—'}`,
+    `║ EXPULSIÓN: F_eject ${ev.fEjectN.toFixed(0)} N (σ ${(ev.sigmaPa / 1e6).toFixed(1)} MPa · peso ${ev.weightN.toFixed(1)} N g=${ev.gUsed}) → ${d.expulsion.pines.dMinMm.toFixed(2)} mm/pin (cortante gobierna)`,
+    `║ PLACAS: soporte ${sp.plateThkMm ?? '—'} mm ${sp.nPillars > 0 ? `+ ${sp.nPillars} pilar(es)` : 'sin pilares'} (δ ${sp.deflectionAtPlateMm} mm ${sp.flashOk ? 'ok' : '⚠ FLASH'}, ${sp.steelMassKg} kg vs ${kgBase.toFixed(0)} sin pilares) · cavidad ${d.placas.cavidad.plateThkMm ?? '—'} mm (${d.placas.cavidad.governs})`,
+    `║ MÁQUINA: ${ms.machine?.name ?? '—'} ${ms.ok ? '✓' : '⚠'} · clamp ${d.maquina.requerimientos.clampNeedTons.toFixed(0)} t (util ${ms.clampUtilPct}%) · shot ${ms.shotPct}% del barril${ms.issues.length ? ' · ' + ms.issues[0].slice(0, 40) : ''}`,
     `╠── DECISIÓN ECONÓMICA ───────────────────────────────────────────`,
     ...be.map((s) => `║ ${s}`),
     `╠── ENTREGA ──────────────────────────────────────────────────────`,

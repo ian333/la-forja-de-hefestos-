@@ -43,6 +43,23 @@
   console.log('material/pza (Eq 3.21):', '$' + matBezel.toFixed(4), '(libro $0.063)');
   checks.material_exacto = near(matBezel, 0.063, 0.002);
 
+  // ── DISEÑO FÍSICO cableado de punta a punta: las 4 ecuaciones resueltas ──
+  const d = bezel.diseno;
+  console.log('DISEÑO:', JSON.stringify({
+    fill: d.fillMPa, plug: d.enfriamiento.lineas.plug?.dme, turb: d.enfriamiento.lineas.turbulento,
+    Feject: d.expulsion.vector.fEjectN.toFixed(0), g: d.expulsion.vector.gUsed,
+    soporte: d.placas.soporte.plateThkMm, pilares: d.placas.soporte.nPillars, cavidad: d.placas.cavidad.plateThkMm,
+    maq: d.maquina.seleccion.machine?.name, clamp: d.maquina.requerimientos.clampNeedTons.toFixed(0),
+  }));
+  checks.diseno_enfriamiento = d.enfriamiento.qTotalW > 0 && d.enfriamiento.lineas.plug !== null && d.enfriamiento.lineas.turbulento === true;
+  checks.diseno_expulsion_vector = d.expulsion.vector.fEjectN > 3000 && d.expulsion.vector.fEjectN < 6000;   // bezel ~4-5 kN (libro 4.7)
+  checks.diseno_gravedad_real = d.expulsion.vector.gUsed === 9.81;                 // Tierra, no Marte
+  checks.diseno_pines = d.expulsion.pines.dMinMm > 0;
+  checks.diseno_placa_comercial = d.placas.soporte.plateThkMm !== null && d.placas.cavidad.plateThkMm !== null;
+  checks.diseno_pilares_ahorran = d.placas.soporte.steelMassKg < d.placas.soporteOpciones[0].steelMassKg;  // pilares < placa gruesa
+  checks.diseno_maquina = d.maquina.seleccion.ok === true && d.maquina.seleccion.machine.name === 'IM-250';
+  checks.diseno_clamp_libro = d.maquina.requerimientos.clampNeedTons > 150 && d.maquina.requerimientos.clampNeedTons < 260;  // rango libro (143-200t)
+
   // ── pieza GRUESA de MUY alto volumen: el hot runner (menos desperdicio de
   //    colada + ciclo) debe ganar → la máquina lo elige y sube cavidades ──
   const cubetaGruesa = mm.moldMachine({

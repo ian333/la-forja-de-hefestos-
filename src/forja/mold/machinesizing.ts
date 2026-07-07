@@ -100,16 +100,23 @@ export function selectInjectionMachine(
   for (const m of sorted) {
     const cierre = m.clampTons >= req.clampNeedTons;
     const shotPct = 100 * req.shotNeedCc / m.shotCc;
-    const shotVentana = shotPct >= 25 && shotPct <= 50;       // §4.3.3
+    // ventana IDEAL 25-50 % (§4.3.3); pero <25 % es solo advertencia de residencia,
+    // no fallo. El gate DURO es que el barril alcance el shot con cojín (≤85 %).
+    const shotFits = shotPct <= 85;
+    const shotVentana = shotPct >= 25 && shotPct <= 50;
     const presion = m.maxInjPressureMPa >= req.injPressureNeedMPa;
     const expulsion = m.ejectionForceKN >= req.ejectionNeedKN;
-    const ajuste = mold.wmm <= m.tieHmm && mold.lmm <= m.tieVmm
-      && mold.stackMm >= m.minDaylightMm && mold.stackMm <= m.maxDaylightMm;
-    if (cierre && shotVentana && presion && expulsion && ajuste) {
+    // ajuste DURO: cabe entre columnas y NO excede el daylight abierto. Estar por
+    // debajo del daylight mínimo es solo advertencia (se agregan risers), no fallo.
+    const ajuste = mold.wmm <= m.tieHmm && mold.lmm <= m.tieVmm && mold.stackMm <= m.maxDaylightMm;
+    if (cierre && shotFits && presion && expulsion && ajuste) {
+      const issues: string[] = [];
+      if (shotPct < 25) issues.push(`shot ${shotPct.toFixed(0)}% < 25%: barril grande para la pieza → subir cavidades o máquina más chica`);
+      if (mold.stackMm < m.minDaylightMm) issues.push(`stack ${mold.stackMm.toFixed(0)} < daylight mín ${m.minDaylightMm}: agregar risers`);
       return {
         machine: m, ok: true, governs: 'cierre',
         shotPct: +shotPct.toFixed(1), clampUtilPct: +(100 * req.clampNeedTons / m.clampTons).toFixed(1),
-        checks: { cierre, shotVentana, presion, expulsion, ajuste }, issues: [],
+        checks: { cierre, shotVentana, presion, expulsion, ajuste }, issues,
       };
     }
   }
