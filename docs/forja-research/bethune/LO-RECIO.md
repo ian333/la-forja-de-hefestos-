@@ -50,7 +50,13 @@ Figuras extraídas: `docs/forja-research/manuales/bethune/figs/` (pgNNNN.png).
    extruyen con vol=0 (o "<3 puntos"): el extractor no camina lazos mixtos cuando el arco viene
    del trim (los dibujados con la herramienta de arco SÍ funcionan — la biela lo probó). Arreglar
    esto desbloquea todas las lecciones de trim del cap. 2. Lección U2L5 (flat-D) APARCADA hasta entonces.
-9. **El barrido de embonado de engranes tarda >4s** — cualquier UI/arnés debe esperarlo
+9. **Fusión (join) de geometría DELGADA COPLANAR falla** — una costilla de 4mm
+   sketcheada SOBRE la cara superior de un panel y unida (bool union) truena en OCCT
+   (REBUILD_ERR 16788680/16892680): las caras coplanares del boolean son frágiles.
+   Workaround: construir la sección costillada (T/I) en UN solo extrude, o hacer que
+   el join OVERLAPE volumétricamente (no coplanar). Feature deseable: rib tool robusto
+   (extrusión desde una cara con auto-overlap) — plásticos lo piden. U3-L2 rehecha como sección-T.
+10. **El barrido de embonado de engranes tarda >4s** — cualquier UI/arnés debe esperarlo
    (spinner/estado "barriendo…" sería la función de UX correcta).
 
 - **ENSAMBLE genérico** (esperada): insertar piezas guardadas + mates concéntrico/coincidente.
