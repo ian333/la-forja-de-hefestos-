@@ -15,7 +15,9 @@ export interface MoldAssemblySpec {
   widthMm: number;                                  // ancho de la base (X en la sección)
   plates: { bottomClamp: number; ejectorHousing: number; support: number; B: number; A: number; topClamp: number };
   supportPillars?: number;
-  cavity: { widthMm: number; depthMm: number };     // bolsa de cavidad (en la partición)
+  // bolsa de cavidad. widthMm = ⌀ (redonda) o extensión X en planta (caja);
+  // lenMm = extensión Y en planta (caja); depthMm = profundidad de la bolsa (Z).
+  cavity: { widthMm: number; depthMm: number; shape?: 'round' | 'rect'; lenMm?: number };
   cooling: { diaMm: number; plug?: string; insetMm: number };  // líneas de agua
   ejectors: { type: 'pin' | 'blade' | 'sleeve' | 'stripper'; diaMm: number; count: number };
   core: { diaMm?: number; widthMm?: number; material: string };   // ⌀ (cup) o ancho de bloque (marco/bezel)
@@ -70,12 +72,17 @@ export function buildMoldStack(s: MoldAssemblySpec): { comps: StackComp[]; parti
   comps.push({ id: id++, name: 'PIEZA moldeada (plástico)', qty: 1, material: 'ABS', solid: true,
     rects: [{ x0: -cvw, z0: parting, x1: cvw, z1: parting + s.cavity.depthMm }] });
 
-  // líneas de enfriamiento (círculos cortados) en A y en B, a ±inset
+  // líneas de enfriamiento — DETRÁS de la superficie moldeante (§9.2.5: ~3·⌀), NO
+  // dentro de la pieza: las de la CAVIDAD van en A sobre el fondo de la bolsa; las
+  // del NÚCLEO en B bajo la partición. Así nunca cruzan el plástico.
+  const behind = Math.max(10, Math.round(2.5 * s.cooling.diaMm));
+  const zCav = Math.min(parting + s.cavity.depthMm + behind, a0 + p.A * 0.7);   // en placa A, detrás de la cavidad
+  const zCore = Math.max(parting - behind, su1 + p.B * 0.3);                    // en placa B, detrás del núcleo
   const water: StackComp = { id: id++, name: `Líneas de agua ${s.cooling.plug ?? ''}`.trim(), qty: 4, material: `plug ⌀${s.cooling.diaMm}mm`, rects: [], circles: [
-    { x: -s.cooling.insetMm, z: parting + 16, dia: s.cooling.diaMm, note: '⌀' + s.cooling.diaMm },
-    { x: s.cooling.insetMm, z: parting + 16, dia: s.cooling.diaMm },
-    { x: -s.cooling.insetMm, z: parting - 16, dia: s.cooling.diaMm },
-    { x: s.cooling.insetMm, z: parting - 16, dia: s.cooling.diaMm },
+    { x: -s.cooling.insetMm, z: zCav, dia: s.cooling.diaMm, note: '⌀' + s.cooling.diaMm },
+    { x: s.cooling.insetMm, z: zCav, dia: s.cooling.diaMm },
+    { x: -s.cooling.insetMm, z: zCore, dia: s.cooling.diaMm },
+    { x: s.cooling.insetMm, z: zCore, dia: s.cooling.diaMm },
   ] };
   comps.push(water);
 

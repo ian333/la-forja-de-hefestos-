@@ -52,16 +52,20 @@ function buildPart(K, oc, key) {
 function buildPlate(K, DS, oc, spec, def) {
   const W = spec.widthMm, D = DS.plateDepth(spec), t = def.thick;
   let solid = K.makeBox(oc, W, D, t);
-  // apertura de cavidad (pasante, rectangular) en placas A y B
+  // apertura de cavidad (pasante) en placas A y B — CÍRCULO si la pieza es redonda
   if (def.role === 'A' || def.role === 'B') {
-    const cw = spec.cavity.widthMm, cd = Math.round(spec.cavity.widthMm * 0.67);
     const cx = W / 2, cy = D / 2;
-    const rect = [
-      { x: cx - cw / 2, y: cy - cd / 2 }, { x: cx + cw / 2, y: cy - cd / 2 },
-      { x: cx + cw / 2, y: cy + cd / 2 }, { x: cx - cw / 2, y: cy + cd / 2 },
-    ];
     try {
-      const tool = K.extrudePolygon(oc, rect, t + 2, K.offsetPlane(K.PLANE_XY, -1));
+      let tool;
+      if (spec.cavity.shape === 'round') {
+        tool = K.makeCylinder(oc, spec.cavity.widthMm / 2, t + 2, { origin: [cx, cy, -1], dir: [0, 0, 1] });
+      } else {
+        const cw = spec.cavity.widthMm, cd = spec.cavity.lenMm ?? Math.round(cw * 0.67);
+        tool = K.extrudePolygon(oc, [
+          { x: cx - cw / 2, y: cy - cd / 2 }, { x: cx + cw / 2, y: cy - cd / 2 },
+          { x: cx + cw / 2, y: cy + cd / 2 }, { x: cx - cw / 2, y: cy + cd / 2 },
+        ], t + 2, K.offsetPlane(K.PLANE_XY, -1));
+      }
       solid = K.cut(oc, solid, tool);
     } catch (e) { /* si la apertura falla, la placa queda sólida */ }
   }
@@ -87,7 +91,7 @@ const EXAMPLES = [
   { key: 'cup', spec: {
     name: 'Molde vaso (cup)', code: 'MLD-CUP', widthMm: 246,
     plates: { bottomClamp: 36, ejectorHousing: 66, support: 46, B: 66, A: 66, topClamp: 36 },
-    cavity: { widthMm: 62, depthMm: 58 },                       // ⌀60 core (§12.3), alto 58 (§12.3)
+    cavity: { widthMm: 60, depthMm: 58, shape: 'round' },       // ⌀60 core (§12.3), alto 58 (§12.3)
     cooling: { diaMm: 6.35, plug: 'JP-251', insetMm: 40 },      // 6.35mm ×4 (§9.2)
     ejectors: { type: 'pin', diaMm: 4, count: 8 },
     core: { diaMm: 60, material: 'AISI P20' }, cavityMetal: 'AISI P20', baseSteel: '1.1730 (C45)',
@@ -108,7 +112,7 @@ const EXAMPLES = [
   { key: 'lid', spec: {
     name: 'Molde tapa (lid)', code: 'MLD-LID', widthMm: 246,
     plates: { bottomClamp: 36, ejectorHousing: 66, support: 46, B: 56, A: 46, topClamp: 36 },
-    cavity: { widthMm: 82, depthMm: 12 },                       // tapa con labio undercut (§11.3.5)
+    cavity: { widthMm: 80, depthMm: 12, shape: 'round' },       // tapa ⌀80 con labio undercut (§11.3.5)
     cooling: { diaMm: 6.35, plug: 'JP-251', insetMm: 42 },
     ejectors: { type: 'stripper', diaMm: 6, count: 4 },         // stripper (§11.3.4) por el undercut
     core: { diaMm: 80, material: 'AISI P20' }, cavityMetal: 'AISI P20', baseSteel: '1.1730 (C45)',
@@ -124,7 +128,7 @@ const EXAMPLES = [
   { key: 'jabonera', spec: {
     name: 'Molde jabonera (box)', code: 'MLD-BOX', widthMm: 296,
     plates: { bottomClamp: 36, ejectorHousing: 66, support: 56, B: 76, A: 56, topClamp: 36 },
-    cavity: { widthMm: 120, depthMm: 30 },                      // caja 120×80×30
+    cavity: { widthMm: 120, depthMm: 30, shape: 'rect', lenMm: 80 },   // caja 120×80×30
     cooling: { diaMm: 7.94, plug: 'JP-352', insetMm: 50 },
     ejectors: { type: 'pin', diaMm: 5, count: 8 },
     core: { widthMm: 116, material: 'AISI P20' }, cavityMetal: 'AISI P20', baseSteel: '1.1730 (C45)',
@@ -140,7 +144,7 @@ const EXAMPLES = [
   { key: 'bezel', spec: {
     name: 'Molde bezel laptop', code: 'MLD-BEZEL', widthMm: 381,   // placa 381×302 (§12.2 LIBRO)
     plates: { bottomClamp: 36, ejectorHousing: 66, support: 120, B: 76, A: 56, topClamp: 36 }, // soporte 120 (§12 LIBRO)
-    cavity: { widthMm: 248, depthMm: 10 },                       // cavidad 248×168 (§12.2 LIBRO)
+    cavity: { widthMm: 248, depthMm: 10, shape: 'rect', lenMm: 168 },   // cavidad 248×168 (§12.2 LIBRO)
     cooling: { diaMm: 9.53, plug: 'JP-352', insetMm: 70 },
     ejectors: { type: 'pin', diaMm: 2.23, count: 20 },          // 20 pines ⌀2.23 (§11.2.3 LIBRO)
     core: { widthMm: 248, material: 'AISI P20' }, cavityMetal: 'AISI P20', baseSteel: '1.1730 (C45)',

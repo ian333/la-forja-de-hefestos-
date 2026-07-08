@@ -8,7 +8,7 @@
  * simétrico estándar. Salida: láminas SVG A3 → PDF (scripts/mold-pdf-gen.cjs).
  */
 
-import { renderPlateDrawing, type PlateSpec, type PlateHole } from './mold-drawings';
+import { renderPlateDrawing, type PlateSpec, type PlateHole, type PlateOpening } from './mold-drawings';
 import { moldAssemblyDrawing, type MoldAssemblySpec } from './mold-assembly';
 import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 import { ventMaxThickness } from './venting';
@@ -69,6 +69,17 @@ export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
 
 /** Ancho del fondo de la placa (≈0.78·ancho, 4:3 típico de mold base). */
 export const plateDepth = (s: MoldAssemblySpec) => Math.round(s.widthMm * 0.78);
+
+/** Abertura(s) de cavidad de una placa A/B — CONSCIENTE de la pieza: círculo para
+ *  pieza redonda (⌀), rectángulo con la huella REAL (w×len) para caja. Centrada. */
+export function cavityOpenings(s: MoldAssemblySpec, D: number): PlateOpening[] {
+  const cav = s.cavity, cx = Math.round(s.widthMm / 2), cy = Math.round(D / 2);
+  if (cav.shape === 'round') {
+    return [{ kind: 'circle', x: cx, y: cy, dia: cav.widthMm, note: `cavidad ⌀${cav.widthMm} · prof ${cav.depthMm}` }];
+  }
+  const len = cav.lenMm ?? Math.round(cav.widthMm * 0.67);
+  return [{ kind: 'rect', x: cx, y: cy, w: cav.widthMm, d: len, note: `cavidad ${cav.widthMm}×${len} · prof ${cav.depthMm}` }];
+}
 
 /** Altura total del stack de placas (mm). */
 export const moldStackHeight = (s: MoldAssemblySpec) =>
@@ -205,9 +216,7 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
       code: p.code, name: p.name, material: p.mat,
       wmm: s.widthMm, dmm: D, thickMm: p.thick,
       holes: standardHoles(s, p.role),
-      openings: (p.role === 'A' || p.role === 'B')
-        ? [{ kind: 'rect', x: Math.round(s.widthMm / 2), y: Math.round(D / 2), w: s.cavity.widthMm, d: Math.round(s.cavity.widthMm * 0.67), note: `cavidad ${s.cavity.widthMm}×${Math.round(s.cavity.widthMm * 0.67)} prof ${s.cavity.depthMm}` }]
-        : undefined,
+      openings: (p.role === 'A' || p.role === 'B') ? cavityOpenings(s, D) : undefined,
     };
     pages.push({ name: p.name, svg: renderPlateDrawing(spec).svg });
   }

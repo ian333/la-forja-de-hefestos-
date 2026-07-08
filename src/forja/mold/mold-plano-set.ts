@@ -35,14 +35,18 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   const W = spec.widthMm, D = plateDepth(spec), t = def.thick;
   let solid = K.makeBox(oc, W, D, t);
   if (def.role === 'A' || def.role === 'B') {
-    const cw = spec.cavity.widthMm, cd = Math.round(spec.cavity.widthMm * 0.67);
     const cx = W / 2, cy = D / 2;
-    const rect = [
-      { x: cx - cw / 2, y: cy - cd / 2 }, { x: cx + cw / 2, y: cy - cd / 2 },
-      { x: cx + cw / 2, y: cy + cd / 2 }, { x: cx - cw / 2, y: cy + cd / 2 },
-    ];
     try {
-      const tool = K.extrudePolygon(oc, rect, t + 2, K.offsetPlane(K.PLANE_XY, -1));
+      let tool;
+      if (spec.cavity.shape === 'round') {
+        tool = K.makeCylinder(oc, spec.cavity.widthMm / 2, t + 2, { origin: [cx, cy, -1], dir: [0, 0, 1] });
+      } else {
+        const cw = spec.cavity.widthMm, cd = spec.cavity.lenMm ?? Math.round(cw * 0.67);
+        tool = K.extrudePolygon(oc, [
+          { x: cx - cw / 2, y: cy - cd / 2 }, { x: cx + cw / 2, y: cy - cd / 2 },
+          { x: cx + cw / 2, y: cy + cd / 2 }, { x: cx - cw / 2, y: cy + cd / 2 },
+        ], t + 2, K.offsetPlane(K.PLANE_XY, -1));
+      }
       solid = K.cut(oc, solid, tool);
     } catch { /* si la apertura falla, la placa queda sólida */ }
   }
@@ -123,8 +127,10 @@ export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
       support, B: cavPlate, A: cavPlate, topClamp: 36,
     },
     supportPillars: d.placas.soporte.nPillars,
-    cavity: { widthMm: Math.round(s.Lmm + 8), depthMm: Math.round(s.Hmm) },
-    cooling: { diaMm: line.plug?.diaMm ?? +line.dMinMm.toFixed(2), plug: line.plug?.dme ?? 'a medida', insetMm: Math.round((base.wmm || s.Lmm) * 0.15) },
+    cavity: { widthMm: Math.round(s.Lmm), lenMm: Math.round(s.Wmm), depthMm: Math.round(s.Hmm), shape: 'rect' },
+    // ⌀ de agua con PISO maquinable (~6.35 mm mínimo real); nunca el ⌀ físico
+    // diminuto de piezas chicas (inmaquinable). Plug DME estándar por defecto.
+    cooling: { diaMm: Math.max(6.35, +(line.plug?.diaMm ?? line.dMinMm).toFixed(2)), plug: line.plug?.dme ?? 'JP-251', insetMm: Math.round((base.wmm || s.Lmm) * 0.15) },
     ejectors: { type: 'pin', diaMm: +Math.max(2, d.expulsion.pines.dMinMm).toFixed(2), count: Math.max(4, 4 * nCav) },
     core: { widthMm: Math.round(s.Lmm), material: pkg.metal.metal.key },
     cavityMetal: pkg.metal.metal.key, baseSteel: '1.1730 (C45)',
