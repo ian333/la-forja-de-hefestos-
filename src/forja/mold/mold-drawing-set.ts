@@ -11,6 +11,8 @@
 import { renderPlateDrawing, type PlateSpec, type PlateHole } from './mold-drawings';
 import { moldAssemblyDrawing, type MoldAssemblySpec } from './mold-assembly';
 import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
+import { ventMaxThickness } from './venting';
+import { sideActionDesign } from './sideactions';
 
 export interface DrawingPage { name: string; svg: string }
 export interface MoldDrawingSet { title: string; code: string; pages: DrawingPage[] }
@@ -94,7 +96,7 @@ export function moldBoltSizing(s: MoldAssemblySpec): {
 export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
   const b = moldBoltSizing(s);
   const dia = s.cooling.diaMm, depth = +(dia * 2).toFixed(1), pitch = +(dia * 3.5).toFixed(1);
-  return [
+  const rows: AnalysisRow[] = [
     { grupo: 'Tornillería §12.4', param: 'masa del molde (stack real)', valor: `${b.massKg.toFixed(0)} kg`, ref: `${b.Hmm}×${s.widthMm}×${plateDepth(s)} mm` },
     { grupo: 'Tornillería §12.4', param: 'fuerza peor caso (izaje, n_g=10)', valor: `${(b.forceN / 1000).toFixed(1)} kN`, ref: 'Fig 12.33', ok: true },
     { grupo: 'Tornillería §12.4', param: 'tornillo de sujeción (Ø mín → DIN 912)', valor: `${b.din} (⌀mín ${b.dMinMm.toFixed(1)} mm)`, ref: 'Eq 12.32', ok: true },
@@ -102,6 +104,27 @@ export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
     { grupo: 'Enfriamiento §9.2', param: 'profundidad bajo cavidad (~2·⌀)', valor: `${depth} mm`, ref: '§9.2.5' },
     { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas (~3.5·⌀)', valor: `${pitch} mm`, ref: '§9.2.6' },
   ];
+  // VENTEO §8 — el aire tiene que salir o quema/short-shot. Máx antes de rebaba
+  //   por la LEY del land (geometría real, defaults del libro); práctica en partición.
+  const hMax = ventMaxThickness(0.8e-3) * 1000;   // land de escape 0.8 mm
+  rows.push(
+    { grupo: 'Venteo §8', param: 'profundidad en la partición (práctica)', valor: '0.02 mm', ref: '§8.2', ok: true },
+    { grupo: 'Venteo §8', param: 'máx antes de rebaba (land 0.8 mm)', valor: `${hMax.toFixed(3)} mm`, ref: 'Eq 8.x', ok: true },
+    { grupo: 'Venteo §8', param: 'canal de escape detrás del land', valor: '0.4 mm × 6 mm', ref: '§8.2' },
+  );
+  // MOVIMIENTOS §11.3.6-8 — undercut lateral que exige corredera/core-pull
+  if (s.sideAction) {
+    const sa = sideActionDesign(s.sideAction);
+    rows.push(
+      { grupo: 'Movimientos §11.3.6', param: `retención del undercut (${s.sideAction.aProjMm2} mm² × ${s.sideAction.pMeltMPa} MPa)`, valor: `${(sa.forceN / 1000).toFixed(1)} kN`, ref: 'Eq 11.13', ok: true },
+      { grupo: 'Movimientos §11.3.6', param: 'mecanismo (por carrera)', valor: sa.type === 'slide' ? 'corredera (slide)' : 'core-pull hidráulico', ref: '§11.3.6', ok: true },
+      sa.type === 'slide'
+        ? { grupo: 'Movimientos §11.3.7', param: `angle pin ${sa.anglePin!.phiDeg}° · carrera ${s.sideAction.strokeMm} mm`, valor: `L ${sa.anglePin!.totalLenMm.toFixed(0)} mm (contacto ${sa.anglePin!.contactLenMm.toFixed(0)} + encastre 25)`, ref: '§11.3.7', ok: true }
+        : { grupo: 'Movimientos §11.3.6', param: `cilindro hidráulico (bore ⌀${sa.boreMm!.toFixed(0)} mm)`, valor: `estándar ⌀${sa.stdBoreMm} mm · carrera ${s.sideAction.strokeMm} mm`, ref: '§11.3.6', ok: true },
+    );
+    if (s.sideAction.note) rows.push({ grupo: 'Movimientos §11.3.6', param: 'nota', valor: s.sideAction.note, ref: '§11.3' });
+  }
+  return rows;
 }
 
 /** Leyenda de propósito de los barrenos de una placa (agrupa por tipo → "N× tipo").

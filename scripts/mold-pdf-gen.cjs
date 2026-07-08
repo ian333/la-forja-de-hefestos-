@@ -145,6 +145,7 @@ const EXAMPLES = [
     ejectors: { type: 'pin', diaMm: 2.23, count: 20 },          // 20 pines ⌀2.23 (§11.2.3 LIBRO)
     core: { widthMm: 248, material: 'AISI P20' }, cavityMetal: 'AISI P20', baseSteel: '1.1730 (C45)',
     machine: 'clamp 200 t / 1400 kN (§12/§11)', clampTons: 200,
+    sideAction: { aProjMm2: 220, pMeltMPa: 200, strokeMm: 12, note: 'puerto lateral del bezel · corredera con angle pin' },  // LIBRO p.289-293
   }, analysis: [
     { grupo: 'DFM', param: 'moldeabilidad (7 costillas + draft)', valor: 'OK', ref: '§2.3' },
     { grupo: 'Llenado', param: 'presión de llenado (pared 1.5 mm)', valor: '83.2 MPa', ref: '§5.5.2', ok: true },

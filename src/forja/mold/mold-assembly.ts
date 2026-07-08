@@ -21,6 +21,8 @@ export interface MoldAssemblySpec {
   core: { diaMm?: number; widthMm?: number; material: string };   // ⌀ (cup) o ancho de bloque (marco/bezel)
   cavityMetal: string; baseSteel?: string;
   machine?: string; clampTons?: number;
+  // MOVIMIENTO lateral (§11.3.6-8): undercut que exige corredera/core-pull.
+  sideAction?: { aProjMm2: number; pMeltMPa: number; strokeMm: number; note?: string };
 }
 
 /** Construye la SECCIÓN de ensamble (plano medio) apilando las placas y colocando
