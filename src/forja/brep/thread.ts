@@ -21,7 +21,7 @@
 // MakePipeShell con modo Frenet. Ver [[reference_forja_planos_engine]].
 
 import type { OC, Shape, Pt2 } from './occt';
-import { makeCylinder, sweepProfileAlong, sweepProfilePipeShell, cut } from './occt';
+import { makeCylinder, sweepProfileAlong, sweepProfilePipeShell, cut, fuse, volume } from './occt';
 
 export interface ThreadSpec { desig: string; d: number; pitch: number }
 
@@ -98,16 +98,27 @@ function helixPath(radius: number, pitch: number, length: number): Array<[number
 export function makeThreadedRod(oc: OC, d: number, pitch: number, length: number): Shape {
   const R = d / 2;
   const rod = makeCylinder(oc, R, length);
-  try {
-    // MakePipeShell (marco Frenet) = surco en V limpio y continuo, no rings rugosos.
-    const cutter = sweepProfilePipeShell(oc, { kind: 'polygon', pts: cutProfile(pitch) }, helixPath(R, pitch, length));
-    return cut(oc, rod, cutter);
-  } catch {
-    try {   // fallback al MakePipe simple si PipeShell no arma
-      const c = sweepProfileAlong(oc, { kind: 'polygon', pts: cutProfile(pitch) }, helixPath(R, pitch, length));
-      return cut(oc, rod, c);
-    } catch { return rod; }
+  const cylVol = volume(oc, rod);
+  // 1) surco en V afilado (mejor pinta): MakePipeShell (Frenet) y si no, MakePipe.
+  //    Sólo vale si el corte SÍ quitó material (a veces arma pero no interseca).
+  for (const sweep of [sweepProfilePipeShell, sweepProfileAlong] as const) {
+    try {
+      const cutter = sweep(oc, { kind: 'polygon', pts: cutProfile(pitch) }, helixPath(R, pitch, length));
+      const t = cut(oc, rod, cutter);
+      if (volume(oc, t) < cylVol * 0.985) return t;   // hilo real
+    } catch { /* siguiente método */ }
   }
+  // 2) fallback ROBUSTO: cresta helicoidal redondeada unida al núcleo Ø menor.
+  //    Menos afilada, pero SIEMPRE arma (perfil círculo = invariante a la orientación).
+  try {
+    const { d1 } = threadDims(d, pitch);
+    const wireR = pitch * 0.42;
+    const core = makeCylinder(oc, d1 / 2 + 0.02, length);
+    const coil = sweepProfileAlong(oc, { kind: 'circle', center: { x: 0, y: 0 }, radius: wireR }, helixPath(R - wireR, pitch, length));
+    const f = fuse(oc, core, coil);
+    if (volume(oc, f) < cylVol * 0.99) return f;
+  } catch { /* último recurso */ }
+  return rod;   // barra lisa (nunca rompe la UI)
 }
 
 /**
