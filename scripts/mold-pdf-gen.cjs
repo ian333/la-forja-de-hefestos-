@@ -173,12 +173,12 @@ const EXAMPLES = [
   const page = await ctx.newPage();
 
   // helper: 4 vistas (3 ortográficas HLR + isométrico sombreado a color) de un sólido
-  const fourView = (solid, meta, style, deflLin = 0.15) => {
+  const fourView = (solid, meta, style, deflLin = 0.15, legend = []) => {
     const mesh = K.tessellate(oc, solid, deflLin, 0.4);
     const edges = K.enumerateEdgesGeom(oc, solid).map((e) => ({ polyline: e.polyline, kind: e.kind }));
     const three = DRAW.generateDrawing({ positions: mesh.positions, indices: mesh.indices, edges }, meta);
     const svg = ISO.partSheet4View(three.svg,
-      { positions: mesh.positions, indices: mesh.indices, normals: mesh.normals, edges }, meta, style);
+      { positions: mesh.positions, indices: mesh.indices, normals: mesh.normals, edges }, meta, style, legend);
     return { svg, tri: mesh.triangleCount, views: three.views.map((v) => v.key).join('/') };
   };
 
@@ -195,7 +195,8 @@ const EXAMPLES = [
       try {
         const { solid, drilled, holes } = buildPlate(K, DS, oc, ex.spec, def);
         const meta = { name: def.name, code: def.code, material: def.mat, units: 'mm' };
-        const fv = fourView(solid, meta, platePartStyle(def.role), 0.2);
+        const legend = DS.holeLegend(DS.standardHoles(ex.spec, def.role));
+        const fv = fourView(solid, meta, platePartStyle(def.role), 0.2, legend);
         pages.push({ name: `${def.name} · 4 vistas`, svg: fv.svg });
         console.log(`  placa ${def.role}: ${drilled}/${holes} barrenos · 4 vistas (${fv.views}, ${fv.tri} tri)${def.role === 'A' || def.role === 'B' ? ' · TRANSLÚCIDA' : ''}`);
       } catch (e) { console.log(`  placa ${def.role} SIN 4 vistas: ${String(e.message || e).slice(0, 120)}`); }

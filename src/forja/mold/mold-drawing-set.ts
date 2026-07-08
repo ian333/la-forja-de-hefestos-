@@ -10,6 +10,7 @@
 
 import { renderPlateDrawing, type PlateSpec, type PlateHole } from './mold-drawings';
 import { moldAssemblyDrawing, type MoldAssemblySpec } from './mold-assembly';
+import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 
 export interface DrawingPage { name: string; svg: string }
 export interface MoldDrawingSet { title: string; code: string; pages: DrawingPage[] }
@@ -67,16 +68,64 @@ export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
 /** Ancho del fondo de la placa (≈0.78·ancho, 4:3 típico de mold base). */
 export const plateDepth = (s: MoldAssemblySpec) => Math.round(s.widthMm * 0.78);
 
+/** Altura total del stack de placas (mm). */
+export const moldStackHeight = (s: MoldAssemblySpec) =>
+  s.plates.bottomClamp + s.plates.ejectorHousing + s.plates.support + s.plates.B + s.plates.A + s.plates.topClamp;
+
+/** TORNILLERÍA DEL MOLDE (Kazmer §12.4, Fig 12.33) — dimensiona los tornillos de
+ *  IZAJE por el peor caso (molde colgado de un tornillo + choque de grúa n_g=10).
+ *  Masa del stack real; brazo l_COG = media altura; l_tornillo = 0.75·l_COG (razón
+ *  del libro 0.15/0.2). Reproduce el bezel del libro (362 kg → 47 kN → M10). NO
+ *  inventa: masa y brazos salen de la geometría del molde. */
+export function moldBoltSizing(s: MoldAssemblySpec): {
+  Hmm: number; massKg: number; forceN: number; din: string; dMinMm: number; dMm: number;
+} {
+  const D = plateDepth(s), Hmm = moldStackHeight(s);
+  const massKg = moldMassKg(Hmm / 1000, s.widthMm / 1000, D / 1000);
+  const lCog = Hmm / 1000 / 2;
+  const forceN = worstCaseScrewForce(massKg, lCog, 0.75 * lCog);   // razón 0.15/0.2 del libro
+  const sel = selectMoldScrew(forceN);
+  return { Hmm, massKg, forceN, din: sel.din912, dMinMm: sel.dMinMm, dMm: parseFloat(sel.din912.slice(1)) };
+}
+
+/** FILAS DE INGENIERÍA CALCULADAS (no hardcode): tornillería §12.4 + geometría de
+ *  las líneas de enfriamiento §9.2.5-6. Se anexan a la hoja de análisis del molde
+ *  para que CADA barreno tenga propósito y número. */
+export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
+  const b = moldBoltSizing(s);
+  const dia = s.cooling.diaMm, depth = +(dia * 2).toFixed(1), pitch = +(dia * 3.5).toFixed(1);
+  return [
+    { grupo: 'Tornillería §12.4', param: 'masa del molde (stack real)', valor: `${b.massKg.toFixed(0)} kg`, ref: `${b.Hmm}×${s.widthMm}×${plateDepth(s)} mm` },
+    { grupo: 'Tornillería §12.4', param: 'fuerza peor caso (izaje, n_g=10)', valor: `${(b.forceN / 1000).toFixed(1)} kN`, ref: 'Fig 12.33', ok: true },
+    { grupo: 'Tornillería §12.4', param: 'tornillo de sujeción (Ø mín → DIN 912)', valor: `${b.din} (⌀mín ${b.dMinMm.toFixed(1)} mm)`, ref: 'Eq 12.32', ok: true },
+    { grupo: 'Enfriamiento §9.2', param: 'línea de agua (plug DME)', valor: `${s.cooling.plug} · ⌀${dia} mm`, ref: '§9.2.4', ok: true },
+    { grupo: 'Enfriamiento §9.2', param: 'profundidad bajo cavidad (~2·⌀)', valor: `${depth} mm`, ref: '§9.2.5' },
+    { grupo: 'Enfriamiento §9.2', param: 'paso entre líneas (~3.5·⌀)', valor: `${pitch} mm`, ref: '§9.2.6' },
+  ];
+}
+
+/** Leyenda de propósito de los barrenos de una placa (agrupa por tipo → "N× tipo").
+ *  Da SENTIDO a cada barreno del plano (el cliente ve para qué es cada uno). */
+export function holeLegend(holes: PlateHole[]): string[] {
+  const groups = new Map<string, { n: number; dia: number }>();
+  for (const h of holes) {
+    const key = (h.type ?? 'barreno');
+    const g = groups.get(key) ?? { n: 0, dia: h.dia };
+    g.n++; groups.set(key, g);
+  }
+  return [...groups.entries()].map(([type, g]) => `${g.n}× ${type} ⌀${g.dia}`);
+}
+
 /** Barrenos estándar de una placa según su rol (layout simétrico, cantidades/⌀
  *  del spec resuelto — no inventa la pieza, especifica componentes estándar). */
 export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[] {
   const W = s.widthMm, D = Math.round(W * 0.78);   // fondo ≈ 0.78·ancho (placa 381→302, 4:3 típico)
   const inset = Math.max(20, Math.round(W * 0.06));
   const holes: PlateHole[] = [];
-  // tornillos SHCS en las 4 esquinas (todas las placas)
-  const scr = W > 300 ? 'M12' : W > 200 ? 'M10' : 'M8';
+  // tornillos de sujeción SHCS en las 4 esquinas — Ø DIMENSIONADO por §12.4 (izaje)
+  const bolt = moldBoltSizing(s);
   for (const [x, y] of [[inset, inset], [W - inset, inset], [inset, D - inset], [W - inset, D - inset]])
-    holes.push({ x, y, dia: scr === 'M12' ? 12 : scr === 'M10' ? 10 : 8, type: `tornillo ${scr}` });
+    holes.push({ x, y, dia: bolt.dMm, type: `tornillo DIN 912 ${bolt.din} (§12.4)` });
   // pilares guía (leader pins) en 3-4 esquinas asimétricas (una desplazada = anti-error)
   if (role !== 'clamp' && role !== 'bottom') {
     const gp = W > 300 ? 32 : W > 200 ? 25 : 20, gi = inset + 14;
@@ -107,8 +156,10 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
   // 1) ENSAMBLE (sección A-A + BOM + notas de análisis)
   pages.push({ name: 'Ensamble', svg: moldAssemblyDrawing(s).svg });
 
-  // 2) HOJA DE ANÁLISIS DE INGENIERÍA (la ingeniería del molde, con § y veredicto)
-  if (analysisRows && analysisRows.length) pages.push({ name: 'Análisis', svg: analysisSheet(s, analysisRows) });
+  // 2) HOJA DE ANÁLISIS DE INGENIERÍA (§ + veredicto) + filas CALCULADAS
+  //    (tornillería §12.4 + geometría de enfriamiento §9.2) anexadas siempre.
+  const allRows = [...(analysisRows ?? []), ...moldEngineeringRows(s)];
+  if (allRows.length) pages.push({ name: 'Análisis', svg: analysisSheet(s, allRows) });
 
   // 3) PLANO INDIVIDUAL de cada placa (planta + tabla de barrenos a cota)
   for (const p of plateDefs(s)) {

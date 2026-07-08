@@ -27,6 +27,9 @@
   checks.aristaColor = amber.includes('#5a2a10');                    // edgeColor propagado
   const transSheet = ISO.partSheet4View('<svg viewBox="0 0 297 210"><rect width="297" height="210"/></svg>', { positions: P, indices: I, normals: N, edges: E }, { name: 'placa' }, { color: [150, 165, 185], opacity: 0.6 });
   checks.sheetTranslucido = transSheet.includes('<g opacity="0.6">') && transSheet.includes('translúcido');
+  // LEYENDA de barrenos (propósito) en la lámina de 4 vistas
+  const legSheet = ISO.partSheet4View('<svg viewBox="0 0 297 210"><rect width="297" height="210"/></svg>', { positions: P, indices: I, normals: N, edges: E }, { name: 'placa' }, {}, ['4× tornillo DIN 912 M10 (§12.4) ⌀10', '20× expulsor (pin) ⌀2.23']);
+  checks.leyenda = legSheet.includes('DESPIECE DE BARRENOS') && legSheet.includes('tornillo DIN 912 M10');
   const pass = Object.values(checks).every(Boolean);
   console.log('VERIFY_RESULT=' + JSON.stringify({ pass, checks }));
   process.exit(pass ? 0 : 2);

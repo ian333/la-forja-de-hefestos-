@@ -149,10 +149,13 @@ export function isoView(positions: ArrayLike<number>, indices: ArrayLike<number>
   return p.join('');
 }
 
+const escSvg = (s: string) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
+
 /** Compone las 3 vistas ortográficas (SVG de generateDrawing, A4) + el ISO en UNA
  *  lámina A3 (4 vistas). `threeSvg` se anida escalado a la izquierda; el iso a la
- *  derecha-arriba. `style` da color/opacidad al isométrico (material real). */
-export function partSheet4View(threeSvg: string, iso: { positions: ArrayLike<number>; indices: ArrayLike<number>; normals: ArrayLike<number>; edges: Edge3[] }, meta: IsoMeta = {}, style: IsoStyle = {}): string {
+ *  derecha-arriba. `style` da color/opacidad al isométrico (material real).
+ *  `legend` = despiece de barrenos (para que cada uno tenga PROPÓSITO). */
+export function partSheet4View(threeSvg: string, iso: { positions: ArrayLike<number>; indices: ArrayLike<number>; normals: ArrayLike<number>; edges: Edge3[] }, meta: IsoMeta = {}, style: IsoStyle = {}, legend: string[] = []): string {
   const p = sheetFrame(`PIEZA · ${meta.name ?? ''}`, `4 vistas (3er ángulo + isométrico) · ${meta.material ?? ''} · ${meta.units ?? 'mm'} · La Forja · GAIA`);
   // 3 vistas ortográficas (A4 297×210) anidadas a la IZQUIERDA
   const nested = threeSvg.replace(/^<svg /, `<svg x="${A3.M + 2}" y="${A3.M + 20}" width="248" height="${A3.H - 2 * A3.M - 26}" preserveAspectRatio="xMidYMid meet" `);
@@ -160,7 +163,15 @@ export function partSheet4View(threeSvg: string, iso: { positions: ArrayLike<num
   // ISOMÉTRICO a la DERECHA (sombreado con color de material)
   p.push(`<line x1="256" y1="${A3.M + 20}" x2="256" y2="${A3.H - A3.M - 6}" stroke="#ccc" stroke-width="0.3"/>`);
   p.push(`<text x="335" y="${A3.M + 26}" font-size="3.4" fill="#444" text-anchor="middle">ISOMÉTRICO${style.opacity != null && style.opacity < 1 ? ' · translúcido' : ''}</text>`);
-  p.push(isoGroup(iso.positions, iso.indices, iso.normals, iso.edges, { x: 262, y: A3.M + 30, w: 150, h: A3.H - 2 * A3.M - 40 }, style));
+  const isoH = (A3.H - 2 * A3.M - 40) - (legend.length ? legend.length * 4.2 + 16 : 0);
+  p.push(isoGroup(iso.positions, iso.indices, iso.normals, iso.edges, { x: 262, y: A3.M + 30, w: 150, h: isoH }, style));
+  // DESPIECE DE BARRENOS (leyenda de propósito) bajo el iso
+  if (legend.length) {
+    const ly = A3.M + 30 + isoH + 4, boxH = legend.length * 4.2 + 8.5;
+    p.push(`<rect x="262" y="${ly}" width="150" height="${boxH.toFixed(1)}" fill="#f6f8fb" stroke="#9aa7bb" stroke-width="0.3" rx="1.5"/>`);
+    p.push(`<text x="266" y="${ly + 5.5}" font-size="3.1" font-weight="bold" fill="#2a3746">DESPIECE DE BARRENOS · propósito</text>`);
+    legend.forEach((l, i) => p.push(`<text x="267" y="${ly + 10.5 + i * 4.2}" font-size="2.75" fill="#3a4a56">· ${escSvg(l)}</text>`));
+  }
   p.push('</svg>');
   return p.join('');
 }
