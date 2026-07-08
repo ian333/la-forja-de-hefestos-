@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5001",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc -b",
     "preview": "vite preview --host --port 5001",
     "test": "vitest run",
     "test:watch": "vitest",

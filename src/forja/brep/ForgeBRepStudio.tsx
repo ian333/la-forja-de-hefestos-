@@ -255,7 +255,7 @@ interface SketchFeature {
   // Caja cicloidal multi-disco (kind 'gearbox'): N discos fasados + eje + base.
   gearbox: GearboxParams;
   // Rosca MODELADA (kind 'rosca'): tornillo con cuerda helicoidal real (ISO 68-1).
-  rosca: RoscaParams;
+  rosca?: RoscaParams;
   // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
   // resuelto por el solver de restricciones. Reemplaza las plantillas.
   customProfile?: Pt2[];
