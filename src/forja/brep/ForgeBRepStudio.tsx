@@ -5325,11 +5325,15 @@ export default function ForgeBRepStudio() {
   // plano es una SIMILITUD exacta ⇒ px/mm uniforme ⇒ el SVG del editor (escala fija)
   // cae SOBRE el plano 3D real. El nudge 0.002·d evita el gimbal de OrbitControls al
   // salir (error de escala ~2e-6: invisible).
+  // ZOOM del croquis con la RUEDA: escala px/mm (y con ella la distancia de cámara)
+  // JUNTAS, así el boceto se queda PEGADO al plano 3D. Reset a 1 al abrir un croquis.
+  const [sketchZoom, setSketchZoom] = useState(1);
+  useEffect(() => { if (sketchOpen) setSketchZoom(1); }, [sketchOpen]);
   const sketchCam = useMemo(() => {
     if (!sketchOpen) return null;
     const el = viewportRef.current;
     const W = el?.clientWidth ?? 1600, H = el?.clientHeight ?? 900;
-    const S = (Math.min(W, H) * 0.44) / 140;                      // px/mm (encuadre por defecto del editor)
+    const S = ((Math.min(W, H) * 0.44) / 140) * sketchZoom;       // px/mm × zoom de rueda
     const d = H / (2 * S * Math.tan(((35 * Math.PI) / 180) / 2)); // fov vertical 35°
     const k2w = (p: [number, number, number]): [number, number, number] => [p[0], p[2], -p[1]];
     const { origin, uDir, vDir } = sketchPlaneK;
@@ -5350,7 +5354,7 @@ export default function ForgeBRepStudio() {
     // ribbonMin cambia el ALTO del viewport → recalibrar cámara/escala si colapsan
     // la barra a mitad del croquis.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sketchOpen, sketchPlaneK, ribbonMin]);
+  }, [sketchOpen, sketchPlaneK, ribbonMin, sketchZoom]);
 
   return (
     <div className={`fb-root${hideChrome ? ' fb-chrome-off' : ''}${ribbonMin ? ' fb-ribbon-min' : ''}`}>
@@ -5359,6 +5363,12 @@ export default function ForgeBRepStudio() {
       {/* ── VIEWPORT ── */}
       <div
         className="fb-viewport" data-testid="viewport" ref={viewportRef}
+        onWheel={(e) => {
+          // Durante el croquis la rueda ZOOMEA el boceto (dolly de cámara + px/mm).
+          // Fuera del croquis la rueda es de OrbitControls (no la tocamos).
+          if (!sketchOpen) return;
+          setSketchZoom((z) => Math.min(6, Math.max(0.22, z * (e.deltaY < 0 ? 1.12 : 1 / 1.12))));
+        }}
         onContextMenu={(e) => {
           // Clic derecho = menú radial de operaciones (no durante el croquis: ahí
           // el botón derecho es del editor). preventDefault mata el menú del browser.
