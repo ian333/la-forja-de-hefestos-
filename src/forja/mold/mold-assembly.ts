@@ -81,6 +81,23 @@ export function buildMoldStack(s: MoldAssemblySpec): { comps: StackComp[]; parti
   comps.push({ id: id++, name: `Expulsor (${s.ejectors.type}) ⌀${s.ejectors.diaMm}`, qty: s.ejectors.count, material: '1.2842 templado',
     rects: exs.map((x) => ({ x0: x - er, z0: eh0 + p.ejectorHousing * 0.55, x1: x + er, z1: parting })) });
 
+  // MOVIMIENTO lateral (§11.3.6-8): corredera + talón + perno inclinado (angle pin)
+  // en el costado +X, a la altura de la pieza. El perno (fijo al lado A) cama la
+  // corredera hacia AFUERA al abrir el molde: por eso su punta baja hacia +X.
+  if (s.sideAction) {
+    const cvw2 = s.cavity.widthMm / 2, depth = s.cavity.depthMm;
+    const slideLen = Math.min(Math.max(28, (hw - cvw2) * 0.5), 60);
+    const sx0 = cvw2, sx1 = cvw2 + slideLen, sz0 = parting, sz1 = parting + depth + 4;
+    const phi = (20 * Math.PI) / 180, tan = Math.tan(phi);
+    const zBot = parting + 4, zTop = tc0 + p.topClamp * 0.7;
+    const xBot = cvw2 + slideLen * 0.6, xTop = xBot - (zTop - zBot) * tan;   // arriba más adentro, punta afuera
+    comps.push({ id: id++, name: 'Corredera (slide)', qty: 1, material: '1.2312 templado', tint: '#d7e6f7',
+      rects: [{ x0: sx0, z0: sz0, x1: sx1, z1: sz1 }],
+      lines: [{ x0: xTop, z0: zTop, x1: xBot, z1: zBot, widthMm: 12, note: 'angle pin 20°' }] });
+    comps.push({ id: id++, name: 'Talón + gib (heel block)', qty: 1, material: '1.2312 templado', tint: '#e9eff7',
+      rects: [{ x0: cvw2 + slideLen * 0.35, z0: sz1, x1: Math.min(sx1 + 10, hw), z1: a1 }] });
+  }
+
   const partings = [{ z: parting, label: 'LÍNEA DE PARTICIÓN A|B' }];
   return { comps, partings };
 }

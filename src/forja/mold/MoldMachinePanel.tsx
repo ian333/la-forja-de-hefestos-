@@ -124,6 +124,36 @@ export default function MoldMachinePanel({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}><input type="checkbox" checked={!!spec.corrosive} onChange={(e) => set('corrosive', e.target.checked)} /> corrosiva</label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}><input type="checkbox" checked={!!spec.mirror} onChange={(e) => set('mirror', e.target.checked)} /> espejo</label>
           </div>
+          {/* UNDERCUT LATERAL → MOVIMIENTO (§11.3.6-8): activa la corredera en los planos */}
+          <div style={{ borderTop: '1px solid #223046', paddingTop: 10 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11.5, fontWeight: 700 }}>
+              <input type="checkbox" data-testid="mm-undercut" checked={!!spec.undercuts?.length}
+                onChange={(e) => set('undercuts', e.target.checked ? [{ aProjMm2: 220, strokeMm: 12 }] : undefined)} />
+              ⟷ undercut lateral (corredera / side action §11.3.6)
+            </label>
+            {!!spec.undercuts?.length && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase' }}>Área proy. del undercut</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input type="number" data-testid="mm-uc-area" value={spec.undercuts[0].aProjMm2} step={10}
+                      onChange={(e) => set('undercuts', [{ aProjMm2: Number(e.target.value), strokeMm: spec.undercuts![0].strokeMm }])}
+                      style={{ width: 92, background: '#0f1620', border: '1px solid #2c3a50', color: '#e9eef5', borderRadius: 6, padding: '5px 7px', fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} />
+                    <span style={{ fontSize: 10, opacity: 0.5 }}>mm²</span>
+                  </div>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase' }}>Carrera (stroke)</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input type="number" data-testid="mm-uc-stroke" value={spec.undercuts[0].strokeMm} step={1}
+                      onChange={(e) => set('undercuts', [{ aProjMm2: spec.undercuts![0].aProjMm2, strokeMm: Number(e.target.value) }])}
+                      style={{ width: 92, background: '#0f1620', border: '1px solid #2c3a50', color: '#e9eef5', borderRadius: 6, padding: '5px 7px', fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }} />
+                    <span style={{ fontSize: 10, opacity: 0.5 }}>mm</span>
+                  </div>
+                </label>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── RESULTADO ── */}

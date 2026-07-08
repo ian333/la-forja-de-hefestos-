@@ -41,7 +41,9 @@ export interface StackComp {
   id: number; name: string; qty: number; material?: string;
   rects: SectionRect[];                 // perfil de la sección (plano medio y=0)
   solid?: boolean;                      // pieza de plástico: relleno sólido, sin achurar
+  tint?: string;                        // relleno de color (p.ej. corredera) en vez de achurado
   circles?: Array<{ x: number; z: number; dia: number; note?: string }>; // p.ej. líneas de agua cortadas
+  lines?: Array<{ x0: number; z0: number; x1: number; z1: number; widthMm?: number; note?: string }>; // p.ej. perno inclinado (angle pin)
 }
 export interface AssemblyDrawing { svg: string; bom: string[][]; nComps: number; scale: string }
 
@@ -255,10 +257,18 @@ export function renderAssemblySection(
       const rx = X(r.x0), ry = Y(r.z1), rw = (r.x1 - r.x0) * s, rh = (r.z1 - r.z0) * s;
       if (c.solid) {
         parts.push(`<rect x="${rx.toFixed(2)}" y="${ry.toFixed(2)}" width="${rw.toFixed(2)}" height="${rh.toFixed(2)}" fill="#c9531f" stroke="#7a2f0e" stroke-width="0.35" data-comp="${c.id}"/>`);
+      } else if (c.tint) {
+        parts.push(`<rect x="${rx.toFixed(2)}" y="${ry.toFixed(2)}" width="${rw.toFixed(2)}" height="${rh.toFixed(2)}" fill="${c.tint}" stroke="#111" stroke-width="0.5" data-comp="${c.id}"/>`);
+        hatchRect(parts, { x: rx, y: ry, w: rw, h: rh }, ci % 2 === 1, 3.2);
       } else {
         parts.push(`<rect x="${rx.toFixed(2)}" y="${ry.toFixed(2)}" width="${rw.toFixed(2)}" height="${rh.toFixed(2)}" fill="none" stroke="#111" stroke-width="0.5" data-comp="${c.id}"/>`);
         hatchRect(parts, { x: rx, y: ry, w: rw, h: rh }, ci % 2 === 1);
       }
+    }
+    // pernos inclinados / mecanismos (angle pin): trazo grueso a ⌀ real
+    for (const ln of c.lines ?? []) {
+      parts.push(`<line x1="${X(ln.x0).toFixed(2)}" y1="${Y(ln.z0).toFixed(2)}" x2="${X(ln.x1).toFixed(2)}" y2="${Y(ln.z1).toFixed(2)}" stroke="#3a4656" stroke-width="${Math.max(0.6, (ln.widthMm ?? 3) * s).toFixed(2)}" stroke-linecap="round" data-comp-line="${c.id}"/>`);
+      if (ln.note) parts.push(`<text x="${(X((ln.x0 + ln.x1) / 2) + 2).toFixed(1)}" y="${(Y((ln.z0 + ln.z1) / 2)).toFixed(1)}" font-size="2.4" fill="#3a4656">${esc(ln.note)}</text>`);
     }
     for (const circ of c.circles ?? []) {
       parts.push(`<circle cx="${X(circ.x)}" cy="${Y(circ.z)}" r="${(circ.dia / 2) * s}" fill="#fff" stroke="#1a5fb4" stroke-width="0.4" data-comp-circle="${c.id}"/>`);

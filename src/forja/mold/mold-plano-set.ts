@@ -129,5 +129,9 @@ export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
     core: { widthMm: Math.round(s.Lmm), material: pkg.metal.metal.key },
     cavityMetal: pkg.metal.metal.key, baseSteel: '1.1730 (C45)',
     machine: pkg.maquina?.nombre, clampTons: win ? Math.round(win.clampTons) : undefined,
+    // undercut lateral del cliente → MOVIMIENTO (§11.3.6-8): presión de fusión REAL del diseño
+    sideAction: s.undercuts?.[0]
+      ? { aProjMm2: s.undercuts[0].aProjMm2, pMeltMPa: Math.round(d.fillMPa || d.cavityMPa || 80), strokeMm: s.undercuts[0].strokeMm, note: 'undercut lateral del cliente' }
+      : undefined,
   };
 }

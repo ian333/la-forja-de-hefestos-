@@ -32,6 +32,10 @@ const { chromium } = require('playwright');
   await page.locator('[data-testid="btn-mold-machine"]').scrollIntoViewIfNeeded().catch(() => {});
   console.log('· abro LA MÁQUINA');
   await page.click('[data-testid="btn-mold-machine"]');
+  // activa UNDERCUT LATERAL → corredera en los planos (§11.3.6)
+  await page.waitForSelector('[data-testid="mm-undercut"]', { timeout: 20000 });
+  await page.check('[data-testid="mm-undercut"]');
+  console.log('· undercut lateral activado (corredera)');
   await page.waitForSelector('[data-testid="mm-planos"]', { timeout: 20000 });
   console.log('· panel abierto, click GENERAR PLANOS');
 
@@ -44,11 +48,13 @@ const { chromium } = require('playwright');
   const svgCount = await popup.evaluate(() => document.querySelectorAll('svg').length);
   const hasDespiece = await popup.evaluate(() => document.body.innerHTML.includes('DESPIECE DE BARRENOS'));
   const hasTornilleria = await popup.evaluate(() => document.body.innerHTML.includes('Tornillería'));
+  const hasCorredera = await popup.evaluate(() => document.body.innerHTML.includes('Corredera (slide)'));
+  const hasMovimientos = await popup.evaluate(() => document.body.innerHTML.includes('Movimientos'));
   await popup.screenshot({ path: '/tmp/mr/click-popup.png', fullPage: false }).catch(() => {});
 
-  console.log(`RESULT svgs=${svgCount} despiece=${hasDespiece} tornilleria=${hasTornilleria} consoleErrors=${errors.length}`);
+  console.log(`RESULT svgs=${svgCount} despiece=${hasDespiece} tornilleria=${hasTornilleria} corredera=${hasCorredera} movimientos=${hasMovimientos} consoleErrors=${errors.length}`);
   if (errors.length) console.log('ERRORS:', errors.slice(0, 6).join(' || '));
-  const ok = svgCount >= 5 && hasDespiece && hasTornilleria && errors.length === 0;
+  const ok = svgCount >= 5 && hasDespiece && hasTornilleria && hasCorredera && hasMovimientos && errors.length === 0;
   console.log(ok ? 'CLICK_FLOW_OK' : 'CLICK_FLOW_ISSUE');
   await browser.close();
   process.exit(ok ? 0 : 2);
