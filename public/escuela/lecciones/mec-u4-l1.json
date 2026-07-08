@@ -1,0 +1,90 @@
+{
+  "id": "mec-u4-l1",
+  "curso": "mecanica",
+  "unidad": 4,
+  "n": 1,
+  "titulo": "El idioma del taller: proyección ortográfica",
+  "subtitulo": "planta · alzado · perfil — sombras del sólido sobre 3 planos",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 4 §4-1..4-3 (Orthographic Views; normal, hidden, inclined surfaces)",
+  "descripcion": "Antes de fabricar hay que HABLAR con el taller, y el taller lee papel plano. La proyección ortográfica convierte tu sólido 3D en tres sombras — planta, alzado y perfil — donde cada superficie tiene su regla: normal se ve en verdadera forma, oculta va punteada, inclinada se deforma.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Tu pieza vive en tres dimensiones. Pero el taller trabaja con papel plano. El puente es la proyección ortográfica.",
+      "gestos": [
+        { "type": "wait", "ms": 1000 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Hagamos una pieza con qué hablar: una placa con un barreno adentro.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1200 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1400 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 500 },
+        { "type": "clickmm", "x": -45, "y": -25, "settle": 450 },
+        { "type": "clickmm", "x": 45, "y": 25, "settle": 700 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 1800 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2000 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1400 },
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-hole", "settle": 2400 }
+      ],
+      "check": {
+        "js": "inv && inv.ops && inv.ops.includes('hole')",
+        "desc": "placa con barreno lista"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Imagina que le pegas una luz de frente, otra desde arriba, otra de lado. Cada sombra es una vista. Genera el plano.",
+      "zoom": "btn-plano",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3400 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Ahí están las tres: planta desde arriba, alzado de frente, perfil de lado. Ninguna miente, y juntas describen la pieza entera.",
+      "gestos": [
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Regla uno: una cara paralela al plano de vista se ve en VERDADERA forma. El rectángulo de la placa es el rectángulo real, sin deformar.",
+      "gestos": [
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Regla dos: lo que está ESCONDIDO no desaparece, se dibuja punteado. Esas líneas de guiones son el barreno que no ves pero está.",
+      "gestos": [
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Regla tres: una cara inclinada NO se ve en verdadera forma en ninguna de las tres. Se acorta. Por eso a veces hace falta una vista auxiliar.",
+      "gestos": [
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Y ojo: América dibuja en TERCER ángulo, la vista donde la verías. Europa en primer ángulo, cruzada. El cajetín dice cuál, o nadie fabrica bien.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Tres sombras, tres reglas, y tu idea viaja a cualquier taller del mundo sin una palabra. Eso es dibujo de ingeniería. Nos vemos.",
+      "gestos": [
+        { "type": "wait", "ms": 2600 }
+      ]
+    }
+  ]
+}

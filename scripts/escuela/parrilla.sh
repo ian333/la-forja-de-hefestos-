@@ -11,6 +11,7 @@ declare -A NOMBRE=(
   [mec-u3-l6]="ESCUELA-MECANICA-U3L6-el-vaciado-4K"
   [mec-u3-l7]="ESCUELA-MECANICA-U3L7-el-resorte-4K"
   [mec-u4-l2]="ESCUELA-MECANICA-U4L2-plano-de-taller-4K"
+  [mec-u4-l1]="ESCUELA-MECANICA-U4L1-proyeccion-ortografica-4K"
   [mec-u2-l4]="ESCUELA-MECANICA-U2L4-redondeos-de-boceto-4K"
   [mec-u2-l6]="ESCUELA-MECANICA-U2L6-la-brida-4K"
   [mec-u3-l3]="ESCUELA-MECANICA-U3L3-redondeo-3D-4K"
