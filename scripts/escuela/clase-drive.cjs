@@ -47,16 +47,22 @@ const durs = lec.pasos.map((p, i) => {
 });
 console.log(`${lec.id}: ${lec.pasos.length} pasos, narración ${durs.every((d) => d.real) ? 'REAL' : 'ESTIMADA (borrador)'}, ~${durs.reduce((s, d) => s + d.dur + AIRE_S, 0).toFixed(0)}s`);
 
+// SOFTGL=1: WebGL por SOFTWARE (SwiftShader) — corre en la laptop sin GPU, para
+// VERIFICAR lecciones contra prod (los checks del kernel son CPU). Sin video.
+const SOFTGL = process.env.SOFTGL === '1';
 (async () => {
   const browser = await chromium.launch({
     headless: false, executablePath: '/usr/bin/google-chrome-stable',
-    args: ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu',
-           '--use-gl=angle', '--use-angle=gl', '--disable-software-rasterizer',
-           '--hide-scrollbars', `--window-size=${W},${H}`],
+    args: SOFTGL
+      ? ['--no-sandbox', '--headless=new', '--use-gl=angle', '--use-angle=swiftshader',
+         '--hide-scrollbars', `--window-size=${W},${H}`]
+      : ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu',
+         '--use-gl=angle', '--use-angle=gl', '--disable-software-rasterizer',
+         '--hide-scrollbars', `--window-size=${W},${H}`],
   });
   const context = await browser.newContext({
     viewport: { width: W, height: H }, deviceScaleFactor: 1,
-    recordVideo: { dir: `${OUT}/rec`, size: { width: W, height: H } },
+    ...(SOFTGL ? {} : { recordVideo: { dir: `${OUT}/rec`, size: { width: W, height: H } } }),
   });
   const recT0 = Date.now();
   const page = await context.newPage();
