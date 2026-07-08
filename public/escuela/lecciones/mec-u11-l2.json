@@ -1,0 +1,80 @@
+{
+  "id": "mec-u11-l2",
+  "curso": "mecanica",
+  "unidad": 11,
+  "n": 2,
+  "titulo": "Objetos 3D chicos: la técnica del examen",
+  "subtitulo": "lee el dibujo → modela por COTAS → la masa es la respuesta",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 11 §11-4 (CSWA prep — small 3D objects)",
+  "descripcion": "En el examen CSWA te dan un dibujo con cotas y te miden por la MASA de la pieza. El truco no es dibujar bonito: es modelar por cotas (largo y ángulo), rápido y exacto. Aquí modelas una escuadra en L y el kernel te da la masa — tu respuesta.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "En el examen no te miden la velocidad de tu mouse. Te miden la MASA de tu pieza. Modela exacto, y ganas.",
+      "gestos": [
+        { "type": "wait", "ms": 1000 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El truco: nunca teclees coordenadas. Dibuja por cotas, largo y ángulo. Una escuadra en ele, de un trazo.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1200 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1400 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 500 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "60", "settle": 240 },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "0", "settle": 240 },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 360 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "15", "settle": 240 },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "90", "settle": 240 },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 360 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "45", "settle": 240 },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "180", "settle": 240 },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 360 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "25", "settle": 240 },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "90", "settle": 240 },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 360 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "15", "settle": 240 },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "180", "settle": 240 },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 360 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "40", "settle": 240 },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "270", "settle": 240 },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 360 },
+        { "type": "key", "key": "Escape", "settle": 700 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 6",
+        "desc": "la escuadra en L dibujada por cotas"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Extrúyela veinte milímetros. Ya tienes la pieza del examen, modelada en segundos.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1800 },
+        { "type": "probe", "label": "escuadra-L" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 25500) < 60",
+        "desc": "escuadra L = 25,500 mm³ EXACTO (área 1275 × 20)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y aquí está la respuesta del examen: masa. Área por altura por densidad. El kernel no miente — ese número es lo que califican.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1200 },
+        { "type": "orbit", "from": [1120, 600], "to": [900, 520], "settle": 1300 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Modela por cotas, verifica con el kernel, entrega la masa. Esa es la técnica. Nos vemos en el examen.",
+      "gestos": [
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
