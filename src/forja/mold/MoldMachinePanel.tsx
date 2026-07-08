@@ -7,6 +7,8 @@
  */
 import { useMemo, useState } from 'react';
 import { moldMachine, type MachineSpec, type MoldPackage } from './moldmachine';
+import * as K from '../brep/occt';
+import { packageToAssemblySpec, buildMoldLaminas, laminasToPrintHTML } from './mold-plano-set';
 
 const GOLD = '#c9a227';
 const PRESETS: Array<{ label: string } & MachineSpec> = [
@@ -22,9 +24,31 @@ const $ = (x: number) => '$' + Math.round(x).toLocaleString('en-US');
 
 export default function MoldMachinePanel({ onClose }: { onClose: () => void }) {
   const [spec, setSpec] = useState<MachineSpec>(PRESETS[0]);
-  const set = <K extends keyof MachineSpec>(k: K, v: MachineSpec[K]) => setSpec((s) => ({ ...s, [k]: v }));
+  const set = <Kk extends keyof MachineSpec>(k: Kk, val: MachineSpec[Kk]) => setSpec((s) => ({ ...s, [k]: val }));
   const pkg: MoldPackage = useMemo(() => moldMachine(spec), [spec]);
   const c = pkg.cotizacion, v = pkg.veredicto, r = pkg.recomendacion;
+  const [gen, setGen] = useState<'idle' | 'busy' | 'err'>('idle');
+
+  // GENERAR PLANOS: construye el juego de láminas (mismo motor que el PDF) desde el
+  // paquete y abre una ventana imprimible → PDF. "Lo mismo con puros clicks".
+  const generarPlanos = async () => {
+    setGen('busy');
+    try {
+      const oc = await K.getOCCT();
+      const aspec = packageToAssemblySpec(pkg);
+      const rows = [
+        { grupo: 'Recomendación', param: 'arquitectura × cavidades', valor: `${r.arch} × ${r.nCav}`, ref: '§3.4' },
+        { grupo: 'Máquina', param: 'inyectora', valor: `${pkg.maquina?.nombre ?? '—'} ${pkg.maquina?.ok ? '✓' : '⚠'}`, ref: '§4.3.3', ok: pkg.maquina?.ok },
+        { grupo: 'DFM', param: 'moldeabilidad', valor: `${pkg.dfm.score}/100`, ref: '§2.3', ok: pkg.dfm.score >= 60 },
+      ];
+      const w = window.open('', '_blank');
+      if (!w) { setGen('err'); return; }
+      w.document.write('<!doctype html><title>Generando planos…</title><body style="font-family:sans-serif;padding:40px;color:#333">⏳ Construyendo las placas del molde y proyectando los planos…</body>');
+      const pages = buildMoldLaminas(K, oc, aspec, rows);   // ensamble + análisis + 5 placas a 4 vistas
+      w.document.open(); w.document.write(laminasToPrintHTML(pages, `Planos · ${aspec.name}`)); w.document.close();
+      setGen('idle');
+    } catch (e) { console.error('generarPlanos', e); setGen('err'); }
+  };
 
   const numField = (label: string, k: keyof MachineSpec, unit: string, step = 1) => (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -46,7 +70,14 @@ export default function MoldMachinePanel({ onClose }: { onClose: () => void }) {
           <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: 1 }}>🏭 LA MÁQUINA DE MOLDES</div>
           <div style={{ fontSize: 11, opacity: 0.6 }}>Sube tu pieza → cotización de molde con veredicto de ingeniería (Kazmer)</div>
         </div>
-        <button data-testid="mm-close" onClick={onClose} style={{ background: 'rgba(20,28,40,0.9)', border: '1px solid #2c3a50', color: '#dfe7f2', cursor: 'pointer', borderRadius: 7, padding: '7px 14px', fontSize: 12 }}>✕ Cerrar</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button data-testid="mm-planos" onClick={generarPlanos} disabled={gen === 'busy'}
+            title="Genera el juego completo de planos (ensamble + análisis + cada placa a 4 vistas) e imprime a PDF"
+            style={{ background: gen === 'busy' ? 'rgba(40,48,60,0.9)' : `linear-gradient(160deg,${GOLD},#a8851d)`, border: `1px solid ${GOLD}`, color: gen === 'busy' ? '#9fb0c4' : '#1a1206', cursor: gen === 'busy' ? 'wait' : 'pointer', borderRadius: 7, padding: '7px 14px', fontSize: 12, fontWeight: 700 }}>
+            {gen === 'busy' ? '⏳ Generando…' : gen === 'err' ? '⚠ Reintentar planos' : '📐 GENERAR PLANOS (PDF)'}
+          </button>
+          <button data-testid="mm-close" onClick={onClose} style={{ background: 'rgba(20,28,40,0.9)', border: '1px solid #2c3a50', color: '#dfe7f2', cursor: 'pointer', borderRadius: 7, padding: '7px 14px', fontSize: 12 }}>✕ Cerrar</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 24, padding: '20px 22px', flex: 1 }}>
