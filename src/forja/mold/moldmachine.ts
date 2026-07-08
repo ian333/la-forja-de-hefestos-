@@ -53,6 +53,9 @@ export interface MachineSpec {
   abrasive?: boolean; corrosive?: boolean; mirror?: boolean;
   /** Undercuts que exigen slide/core-pull. */
   undercuts?: Array<{ aProjMm2: number; strokeMm: number }>;
+  /** El CLIENTE exige una alimentación (p.ej. Sony/LEGO piden colada caliente por
+   *  calidad/sin regrind). Si se fija, la optimización se restringe a ella. */
+  feedPref?: Arch;
   /** Margen de venta sobre el costo del molde (default 1.6 = 60 %). */
   margin?: number;
 }
@@ -146,7 +149,9 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
   const complexity = (spec.surfaceMm2 * spec.wallMm) / spec.volumeMm3;
   const machiningFactor = complexity > 2.5 ? MACHINING_FACTOR.edm : complexity > 1.5 ? 2 : MACHINING_FACTOR.fresado;
   const totalQty = spec.totalVolume ?? spec.annualVolume;
-  const archs: Arch[] = ['cold-2placas', 'cold-3placas', 'hot-runner'];
+  // el cliente puede EXIGIR la alimentación (colada caliente por calidad); si no,
+  // se optimiza sobre las tres arquitecturas por costo total.
+  const archs: Arch[] = spec.feedPref ? [spec.feedPref] : ['cold-2placas', 'cold-3placas', 'hot-runner'];
   const cavs = [1, 2, 4, 8, 16];
   const HORAS_ANO = 6000;                                     // molder típico 2-3 turnos
   const todas: ArchCav[] = [];

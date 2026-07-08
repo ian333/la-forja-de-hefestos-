@@ -112,6 +112,21 @@ export function moldEngineeringRows(s: MoldAssemblySpec): AnalysisRow[] {
     { grupo: 'Venteo §8', param: 'máx antes de rebaba (land 0.8 mm)', valor: `${hMax.toFixed(3)} mm`, ref: 'Eq 8.x', ok: true },
     { grupo: 'Venteo §8', param: 'canal de escape detrás del land', valor: '0.4 mm × 6 mm', ref: '§8.2' },
   );
+  // ALIMENTACIÓN §6-7 — colada CALIENTE (manifold + drops) vs FRÍA (bebedero+canales)
+  if (s.feed === 'hot-runner') {
+    const n = s.nCav ?? 1, zonas = Math.max(2, n + 1);   // 1 manifold + 1/drop
+    rows.push(
+      { grupo: 'Colada caliente §6', param: 'manifold (distribución balanceada)', valor: `H13 · ${zonas} zonas calefactoras`, ref: '§6.4', ok: true },
+      { grupo: 'Colada caliente §6', param: 'boquillas calientes (una por cavidad)', valor: `${n} drops · termopar/zona`, ref: '§6.4', ok: true },
+      { grupo: 'Colada caliente §6', param: 'colada de desecho (regrind)', valor: '0 % (sin bebedero ni canales)', ref: '§6.1', ok: true },
+      { grupo: 'Colada caliente §6', param: 'por qué', valor: 'ciclo corto + material bajo a alto volumen', ref: '§3.4' },
+    );
+  } else {
+    rows.push(
+      { grupo: 'Colada fría §7', param: 'alimentación', valor: s.feed === 'cold-3placas' ? '3 placas (compuerta automática)' : '2 placas (bebedero + canales)', ref: '§7', ok: true },
+      { grupo: 'Colada fría §7', param: 'colada de desecho (regrind)', valor: '~20-25 % del disparo', ref: '§7.1' },
+    );
+  }
   // MOVIMIENTOS §11.3.6-8 — undercut lateral que exige corredera/core-pull
   if (s.sideAction) {
     const sa = sideActionDesign(s.sideAction);

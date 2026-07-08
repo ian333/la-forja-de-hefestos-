@@ -23,6 +23,9 @@ export interface MoldAssemblySpec {
   machine?: string; clampTons?: number;
   // MOVIMIENTO lateral (§11.3.6-8): undercut que exige corredera/core-pull.
   sideAction?: { aProjMm2: number; pMeltMPa: number; strokeMm: number; note?: string };
+  // ALIMENTACIÓN (§6-7): colada fría (bebedero+canales) vs CALIENTE (manifold+drops).
+  feed?: 'cold-2placas' | 'cold-3placas' | 'hot-runner';
+  nCav?: number;                                    // nº de cavidades (drops del hot runner)
 }
 
 /** Construye la SECCIÓN de ensamble (plano medio) apilando las placas y colocando
@@ -80,6 +83,24 @@ export function buildMoldStack(s: MoldAssemblySpec): { comps: StackComp[]; parti
   const er = s.ejectors.diaMm / 2, exs = [-W * 0.19, 0, W * 0.19];
   comps.push({ id: id++, name: `Expulsor (${s.ejectors.type}) ⌀${s.ejectors.diaMm}`, qty: s.ejectors.count, material: '1.2842 templado',
     rects: exs.map((x) => ({ x0: x - er, z0: eh0 + p.ejectorHousing * 0.55, x1: x + er, z1: parting })) });
+
+  // ALIMENTACIÓN (§6-7): colada CALIENTE (manifold + drops rojos) o FRÍA (bebedero).
+  const feed = s.feed ?? 'cold-2placas';
+  const nc = Math.max(1, s.nCav ?? 1);
+  if (feed === 'hot-runner') {
+    const manW = Math.min(W * 0.6, cvw * 2 + 140);
+    const zMan0 = tc0 + p.topClamp * 0.2, zMan1 = zMan0 + 14;
+    const dropXs = nc <= 1 ? [0] : [-W * 0.2, 0, W * 0.2];
+    const dropW = 12;
+    comps.push({ id: id++, name: 'Manifold (colada caliente)', qty: 1, material: 'H13 · zonas calef.', tint: '#f3c0b2',
+      rects: [{ x0: -manW / 2, z0: zMan0, x1: manW / 2, z1: zMan1 }] });
+    comps.push({ id: id++, name: `Boquillas calientes (${nc} drops)`, qty: nc, material: 'H13 · termopar/zona', tint: '#efa48d',
+      rects: dropXs.map((x) => ({ x0: x - dropW / 2, z0: parting, x1: x + dropW / 2, z1: zMan0 })) });
+  } else {
+    // bebedero (sprue) frío al centro, del nozzle a la pieza
+    comps.push({ id: id++, name: 'Bebedero (sprue) frío', qty: 1, material: '1.2311', tint: '#e8e2d2',
+      rects: [{ x0: -5, z0: parting + s.cavity.depthMm, x1: 5, z1: tc1 - 3 }] });
+  }
 
   // MOVIMIENTO lateral (§11.3.6-8): corredera + talón + perno inclinado (angle pin)
   // en el costado +X, a la altura de la pieza. El perno (fijo al lado A) cama la
