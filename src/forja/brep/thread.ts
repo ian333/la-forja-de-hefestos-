@@ -21,7 +21,7 @@
 // MakePipeShell con modo Frenet. Ver [[reference_forja_planos_engine]].
 
 import type { OC, Shape, Pt2 } from './occt';
-import { makeCylinder, sweepProfileAlong, cut, fuse } from './occt';
+import { makeCylinder, sweepProfileAlong, sweepProfilePipeShell, cut } from './occt';
 
 export interface ThreadSpec { desig: string; d: number; pitch: number }
 
@@ -90,22 +90,24 @@ function helixPath(radius: number, pitch: number, length: number): Array<[number
 }
 
 /**
- * Barra ROSCADA externa = núcleo al Ø MENOR + cresta helicoidal UNIDA encima.
- *
- * Por qué unir-una-espira y no cortar-una-V: el perfil V es ORIENTADO y el
- * barrido helicoidal lo tuerce (probado: el corte no quita nada). El perfil
- * CÍRCULO es invariante a la orientación (por eso los resortes SÍ salen), así
- * que la cresta redondeada (estilo "rolled thread", real y común) es robusta.
- * La envolvente sigue ISO: núcleo=d1, cresta llega a d. length = largo (mm).
+ * Barra ROSCADA externa = cilindro Ø MAYOR menos un surco helicoidal en V (60°)
+ * cortado del cilindro → CRESTAS AFILADAS de rosca real (no la dona redonda).
+ * En régimen COARSE (Ø≥12, paso≥3) el MakePipe arma la V bien; en fina cae a
+ * barra lisa. length = largo roscado (mm).
  */
 export function makeThreadedRod(oc: OC, d: number, pitch: number, length: number): Shape {
-  const { d1 } = threadDims(d, pitch);
-  const wireR = pitch * 0.42;          // radio del alambre del hilo (cresta redondeada)
-  const coreR = d1 / 2;                // núcleo al diámetro menor
-  const helixR = d / 2 - wireR;        // la cresta llega ~al mayor
-  const core = makeCylinder(oc, coreR + 0.02, length);   // +ε: solape limpio con la espira
-  const coil = sweepProfileAlong(oc, { kind: 'circle', center: { x: 0, y: 0 }, radius: wireR }, helixPath(helixR, pitch, length));
-  return fuse(oc, core, coil);
+  const R = d / 2;
+  const rod = makeCylinder(oc, R, length);
+  try {
+    // MakePipeShell (marco Frenet) = surco en V limpio y continuo, no rings rugosos.
+    const cutter = sweepProfilePipeShell(oc, { kind: 'polygon', pts: cutProfile(pitch) }, helixPath(R, pitch, length));
+    return cut(oc, rod, cutter);
+  } catch {
+    try {   // fallback al MakePipe simple si PipeShell no arma
+      const c = sweepProfileAlong(oc, { kind: 'polygon', pts: cutProfile(pitch) }, helixPath(R, pitch, length));
+      return cut(oc, rod, c);
+    } catch { return rod; }
+  }
 }
 
 /**

@@ -1139,6 +1139,47 @@ export function sweepProfileAlong(
   return shape;
 }
 
+/**
+ * Barrido con MakePipeShell (marco Frenet + MakeSolid) — más robusto y LIMPIO
+ * que MakePipe_1 para hélices apretadas (roscas): mantiene el perfil ⟂ a la
+ * espina sin torcerse. Perfil-WIRE (no cara); MakeSolid tapa los extremos.
+ */
+export function sweepProfilePipeShell(
+  oc: OC,
+  profile: SweepProfile,
+  path3d: Array<[number, number, number]>,
+  frenet = true,
+): Shape {
+  if (path3d.length < 2) throw new Error('sweepProfilePipeShell: spine con ≥2 puntos');
+  const a = path3d[0], b = path3d[1];
+  const tan: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const tlen = Math.hypot(tan[0], tan[1], tan[2]) || 1;
+  const w: [number, number, number] = [tan[0] / tlen, tan[1] / tlen, tan[2] / tlen];
+  const ref: [number, number, number] = Math.abs(w[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const u = crossUnit(ref, w);
+  const v = crossUnit(w, u);
+  const plane: SketchPlane3D = { origin: a, uDir: u, vDir: v };
+  let wire: Shape;
+  if (profile.kind === 'circle') {
+    const [cx, cy, cz] = map2Dto3D(plane, profile.center);
+    const ax2 = new oc.gp_Ax2_3(new oc.gp_Pnt_3(cx, cy, cz), new oc.gp_Dir_4(w[0], w[1], w[2]));
+    const circle = new oc.gp_Circ_2(ax2, profile.radius);
+    const edge = new oc.BRepBuilderAPI_MakeEdge_8(circle).Edge();
+    wire = new oc.BRepBuilderAPI_MakeWire_2(edge).Wire();
+  } else {
+    wire = makePolygonWire(oc, plane, profile.pts);
+  }
+  const spine = makeSpineWire(oc, path3d);
+  const mk = new oc.BRepOffsetAPI_MakePipeShell(spine);
+  mk.SetMode_1(frenet);            // marco Frenet
+  mk.Add_1(wire, false, false);    // (perfil, WithContact, WithCorrection)
+  mk.Build();
+  mk.MakeSolid();
+  const shape = mk.Shape();
+  mk.delete?.();
+  return shape;
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Hole / barreno: resta de un cilindro pasante o ciego
 // ─────────────────────────────────────────────────────────────────
