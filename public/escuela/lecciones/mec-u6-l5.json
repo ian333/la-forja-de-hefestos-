@@ -1,0 +1,81 @@
+{
+  "id": "mec-u6-l5",
+  "curso": "mecanica",
+  "unidad": 6,
+  "n": 5,
+  "titulo": "El opresor: el tornillo sin cabeza que agarra la flecha",
+  "subtitulo": "T_agarre ≈ μ·F·r · la punta traba por fricción · débil a propósito",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 6 §6-14..6-16 (Set screws) + T=K·F·d",
+  "descripcion": "Un opresor es un tornillo sin cabeza que se aprieta hasta que su punta muerde la flecha. Aquí ves cómo el par de apriete se vuelve fuerza de agarre — y por qué, para torque de verdad, no basta un opresor: necesitas una cuña.",
+  "biblioteca": [],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "¿Cómo se pega una polea a una flecha lisa, sin soldarla? El truco más común es un tornillo sin cabeza: el opresor.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Genéralo: menú Más, Rosca. Hazlo chiquito, un eme ocho. Un opresor es pura rosca, sin cabeza: se esconde dentro del cubo de la polea.",
+      "zoom": "btn-rosca",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-rosca", "settle": 3600 },
+        { "type": "fill", "testid": "input-rosca-d", "text": "8", "settle": 800 },
+        { "type": "fill", "testid": "input-rosca-largo", "text": "14", "settle": 800 },
+        { "type": "fill", "testid": "input-rosca-paso", "text": "1.25", "settle": 3200 },
+        { "type": "view", "name": "iso", "settle": 1100 },
+        { "type": "probe", "label": "opresor-m8" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 450 && inv.vol_kernel < 850",
+        "desc": "el opresor M8×1.25 corto existe (cuerda sin cabeza)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Lo aprietas contra la flecha. Y ya lo sabes de la clase pasada: ese giro se vuelve fuerza. Efe igual a te entre ka por de. Miles de newton empujando la punta.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Esa fuerza aprieta la punta contra la flecha, y la fricción es la que agarra. El torque que aguanta es te de agarre igual a mu por efe por erre. Mu es la fricción, erre el radio de la flecha.",
+      "gestos": [
+        { "type": "orbit", "from": [1130, 610], "to": [900, 520], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Corre los números: en un eme ocho, con un par chico, la punta empuja como seis mil newton. Pero el radio es pequeño, así que el agarre son solo unos diez newton metro. Fuerte para sostener, débil para mover.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Por eso hay una regla de taller: para que agarre de verdad, lima un plano en la flecha donde asiente la punta. Sin ese plano, el opresor gira, raya la flecha, y la polea se afloja.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y aquí el límite: el opresor es débil a propósito. Vibra, se afloja, y su punta muerde un solo punto. Para transmitir potencia de verdad, no basta. Ahí entra la cuña.",
+      "gestos": [
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "El opresor posiciona; la cuña transmite. Un perilla de puerta, un collar, una polea ligera: opresor. El engrane de un reductor bajo carga: cuña. Cada uno en su lugar.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1100 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

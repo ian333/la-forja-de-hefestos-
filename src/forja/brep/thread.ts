@@ -105,7 +105,12 @@ export function makeThreadedRod(oc: OC, d: number, pitch: number, length: number
     try {
       const cutter = sweep(oc, { kind: 'polygon', pts: cutProfile(pitch) }, helixPath(R, pitch, length));
       const t = cut(oc, rod, cutter);
-      if (volume(oc, t) < cylVol * 0.985) return t;   // hilo real
+      const v = volume(oc, t);
+      // El corte VÁLIDO quita material (v < cyl) pero deja vivo el núcleo (v > ~⅔·cyl).
+      // A paso fino el cutter en V se auto-interseca y `cut` devuelve un sólido VACÍO
+      // (v≈0): sin el piso 0.5·cyl ese vacío pasaba el filtro y se devolvía un tornillo
+      // fantasma (bug M8×1.25). Con el piso, cae al fallback de espira.
+      if (v > cylVol * 0.5 && v < cylVol * 0.985) return t;   // hilo real
     } catch { /* siguiente método */ }
   }
   // 2) fallback ROBUSTO: cresta helicoidal redondeada unida al núcleo Ø menor.
@@ -116,7 +121,8 @@ export function makeThreadedRod(oc: OC, d: number, pitch: number, length: number
     const core = makeCylinder(oc, d1 / 2 + 0.02, length);
     const coil = sweepProfileAlong(oc, { kind: 'circle', center: { x: 0, y: 0 }, radius: wireR }, helixPath(R - wireR, pitch, length));
     const f = fuse(oc, core, coil);
-    if (volume(oc, f) < cylVol * 0.99) return f;
+    const vf = volume(oc, f);
+    if (vf > cylVol * 0.5 && vf < cylVol * 0.99) return f;   // espira válida (no vacía)
   } catch { /* último recurso */ }
   return rod;   // barra lisa (nunca rompe la UI)
 }

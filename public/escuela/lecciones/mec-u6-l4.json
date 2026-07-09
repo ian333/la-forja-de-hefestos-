@@ -1,0 +1,95 @@
+{
+  "id": "mec-u6-l4",
+  "curso": "mecanica",
+  "unidad": 6,
+  "n": 4,
+  "titulo": "El par de apriete: la fuerza invisible del tornillo",
+  "subtitulo": "T = K·F·d · el giro se vuelve fuerza · apriete al 75%",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 6 §6-11..6-13 (Fasteners: nuts, washers, engagement) + regla de par T≈0.2·F·d (VDI 2230)",
+  "descripcion": "Cuando aprietas un tornillo con la llave, dejas adentro una fuerza que no ves — y es ENORME. Aquí ves de dónde sale el número de la llave de torque: T = K·F·d. El kernel te da el área de la rosca y con ella la fuerza máxima que aguanta el acero.",
+  "biblioteca": [],
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Aprietas un tornillo con la llave y sientes que ya quedó. Pero, ¿cuánta fuerza dejaste ahí adentro, apretando, donde no la ves? La respuesta te va a sorprender.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Vamos a un tornillo de verdad: un eme doce. Menú Más, Rosca. La Forja le genera su cuerda helicoidal real.",
+      "zoom": "btn-rosca",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-rosca", "settle": 3600 },
+        { "type": "fill", "testid": "input-rosca-d", "text": "12", "settle": 900 },
+        { "type": "fill", "testid": "input-rosca-paso", "text": "1.75", "settle": 3200 },
+        { "type": "view", "name": "iso", "settle": 1100 },
+        { "type": "probe", "label": "m12" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 1200 && inv.vol_kernel < 2600",
+        "desc": "el tornillo M12×1.75 existe (cuerda real)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El par que le metes con la llave se convierte en fuerza de apriete. La fórmula es sencilla: te igual a ka por efe por de. Te es el par, efe la fuerza que aprieta, de el diámetro del tornillo.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "¿Y ka? Ka es cuánto se come la fricción, en la rosca y bajo la cabeza. En acero seco, ka vale como cero punto dos. Le llaman el factor de tuerca.",
+      "gestos": [
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Ahora despejemos la fuerza: efe igual a te entre ka por de. Con un par de ochenta y ocho newton metro en este eme doce, la fuerza de apriete es de más de tres toneladas y media. Con una sola llave de mano.",
+      "zoom": "input-rosca-d",
+      "gestos": [
+        { "type": "orbit", "from": [1130, 610], "to": [900, 520], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿De dónde salió ese ochenta y ocho? Del acero mismo. El kernel te da el diámetro menor de la rosca; con él, el área que resiste el jalón. Multiplícala por la resistencia del tornillo y sabes cuánto aguanta antes de tronar.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "El truco del ingeniero: aprietas al setenta y cinco por ciento de esa fuerza máxima. Ni más, ni menos. Con menos, la vibración lo afloja y lo fatiga. Con más, lo estiras hasta reventarlo.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "¿Y por qué la tuerca es tan alta? Para que el tornillo trone antes de que la rosca se barra. Con rosca engranada de al menos un diámetro en acero, el tornillo es el eslabón que cede primero. Por eso una tuerca mide como cero punto ocho veces el diámetro.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Un tornillo apretado es un resorte estirado: guarda la tensión que mantiene todo unido. Por eso la llave de torque hace clic. Ese clic clava la fuerza invisible, exacta.",
+      "gestos": [
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Los birlos de tu coche, la cabeza del motor, el reductor de un robot: cada tornillo lleva su par exacto. No es capricho, es física. Y ahora la puedes calcular tú. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1100 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
