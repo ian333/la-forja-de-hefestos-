@@ -5,7 +5,7 @@
  * dimensiones de la pieza y un resultado con veredicto de ingeniería, precio
  * sugerido y desglose Kazmer. Corre 100 % en el browser (moldMachine es puro).
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { moldMachine, type MachineSpec, type MoldPackage } from './moldmachine';
 import * as K from '../brep/occt';
 import { packageToAssemblySpec, buildMoldLaminas, laminasToPrintHTML } from './mold-plano-set';
@@ -52,6 +52,29 @@ export default function MoldMachinePanel({ onClose }: { onClose: () => void }) {
     } catch (e) { console.error('generarPlanos', e); setGen('err'); }
   };
 
+  // ── SESIÓN EN VIVO (realtime compartido): el panel SONDEA /mold-live.json cada
+  //    1.5 s. Cuando el operador (yo, vía API/ssh) escribe una nueva rev, el molde
+  //    se actualiza SOLO en la pantalla del cliente: cotización, arquitectura y —
+  //    si `generate` viene true — abre los planos. Los dos manejamos el mismo molde.
+  const [live, setLive] = useState<{ on: boolean; at?: string }>({ on: false });
+  const liveRev = useRef<number>(-1);
+  const genRef = useRef(generarPlanos); genRef.current = generarPlanos;
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch('/mold-live.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (typeof j.rev !== 'number' || j.rev === liveRev.current) return;
+        liveRev.current = j.rev;
+        if (j.spec) setSpec(j.spec);
+        setLive({ on: true, at: j.by || 'La Forja' });
+        if (j.generate) setTimeout(() => genRef.current(), 120);   // deja re-render con el nuevo spec
+      } catch { /* sin sesión viva: ignora */ }
+    }, 1500);
+    return () => clearInterval(id);
+  }, []);
+
   const numField = (label: string, k: keyof MachineSpec, unit: string, step = 1) => (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <span style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
@@ -69,8 +92,15 @@ export default function MoldMachinePanel({ onClose }: { onClose: () => void }) {
       {/* barra superior */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderBottom: '1px solid #1c2634' }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: 1 }}>🏭 LA MÁQUINA DE MOLDES</div>
-          <div style={{ fontSize: 11, opacity: 0.6 }}>Sube tu pieza → cotización de molde con veredicto de ingeniería (Kazmer)</div>
+          <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+            🏭 LA MÁQUINA DE MOLDES
+            {live.on && (
+              <span data-testid="mm-live" style={{ fontSize: 10.5, fontWeight: 700, color: '#ff5c5c', border: '1px solid #ff5c5c66', borderRadius: 20, padding: '2px 9px', background: 'rgba(255,92,92,0.1)' }}>
+                🔴 EN VIVO · sesión compartida
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.6 }}>Sube tu pieza → cotización de molde con veredicto de ingeniería (Kazmer){live.on ? ` · controlado por ${live.at}` : ''}</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button data-testid="mm-planos" onClick={generarPlanos} disabled={gen === 'busy'}

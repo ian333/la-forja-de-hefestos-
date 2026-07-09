@@ -19,7 +19,9 @@ const { chromium } = require('playwright');
   page.on('console', (m) => { if (m.type() === 'error' && !benign(m.text())) errors.push(m.text().slice(0, 160)); });
   page.on('pageerror', (e) => { if (!benign(String(e.message))) errors.push('PAGEERR ' + String(e.message).slice(0, 160)); });
 
-  await page.goto(`http://localhost:${PORT}/forja-brep.html`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  const target = process.env.URL || `http://localhost:${PORT}/forja-brep.html`;
+  console.log('· destino:', target);
+  await page.goto(target, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForSelector('[data-testid="tab-simulacion"]', { timeout: 90000 });
   console.log('· Studio cargado, voy a la pestaña SIMULACIÓN');
   await page.click('[data-testid="tab-simulacion"]');
