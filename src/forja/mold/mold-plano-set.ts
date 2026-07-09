@@ -15,7 +15,7 @@
 import type { MoldPackage } from './moldmachine';
 import type { MoldAssemblySpec } from './mold-assembly';
 import {
-  moldDrawingSet, plateDefs, plateDepth, standardHoles, holeLegend,
+  moldDrawingSet, plateDefs, plateDepth, standardHoles, holeLegend, cavityGrid, coolingCircuit,
   type DrawingPage, type AnalysisRow, type PlateDef,
 } from './mold-drawing-set';
 import { generateDrawing } from '../brep/drawing';
@@ -35,20 +35,29 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   const W = spec.widthMm, D = plateDepth(spec), t = def.thick;
   let solid = K.makeBox(oc, W, D, t);
   if (def.role === 'A' || def.role === 'B') {
-    const cx = W / 2, cy = D / 2;
+    const cw = spec.cavity.widthMm, cd = spec.cavity.lenMm ?? Math.round(cw * 0.67);
+    // TODAS las cavidades del grid (multi-cavidad), círculo o caja
+    for (const cell of cavityGrid(spec, D)) {
+      try {
+        const tool = spec.cavity.shape === 'round'
+          ? K.makeCylinder(oc, cw / 2, t + 2, { origin: [cell.cx, cell.cy, -1], dir: [0, 0, 1] })
+          : K.extrudePolygon(oc, [
+            { x: cell.cx - cw / 2, y: cell.cy - cd / 2 }, { x: cell.cx + cw / 2, y: cell.cy - cd / 2 },
+            { x: cell.cx + cw / 2, y: cell.cy + cd / 2 }, { x: cell.cx - cw / 2, y: cell.cy + cd / 2 },
+          ], t + 2, K.offsetPlane(K.PLANE_XY, -1));
+        solid = K.cut(oc, solid, tool);
+      } catch { /* una cavidad que falla no aborta la placa */ }
+    }
+    // CANALES DE AGUA REALES (cilindros a lo largo de X a la profundidad de enfriamiento)
     try {
-      let tool;
-      if (spec.cavity.shape === 'round') {
-        tool = K.makeCylinder(oc, spec.cavity.widthMm / 2, t + 2, { origin: [cx, cy, -1], dir: [0, 0, 1] });
-      } else {
-        const cw = spec.cavity.widthMm, cd = spec.cavity.lenMm ?? Math.round(cw * 0.67);
-        tool = K.extrudePolygon(oc, [
-          { x: cx - cw / 2, y: cy - cd / 2 }, { x: cx + cw / 2, y: cy - cd / 2 },
-          { x: cx + cw / 2, y: cy + cd / 2 }, { x: cx - cw / 2, y: cy + cd / 2 },
-        ], t + 2, K.offsetPlane(K.PLANE_XY, -1));
+      const cc = coolingCircuit(spec, D);
+      const zc = Math.max(cc.diaMm, Math.min(t - cc.diaMm, t - cc.zBehindMm));
+      for (const g of cc.segs) if (g.y0 === g.y1) {
+        const len = Math.abs(g.x1 - g.x0) + 6;
+        const tool = K.makeCylinder(oc, cc.diaMm / 2, len, { origin: [Math.min(g.x0, g.x1) - 3, g.y0, zc], dir: [1, 0, 0] });
+        solid = K.cut(oc, solid, tool);
       }
-      solid = K.cut(oc, solid, tool);
-    } catch { /* si la apertura falla, la placa queda sólida */ }
+    } catch { /* canal que falla se omite */ }
   }
   const list = standardHoles(spec, def.role);
   let drilled = 0;

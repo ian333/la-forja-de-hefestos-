@@ -99,15 +99,19 @@ export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; 
 export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   const dia = s.cooling.diaMm;
   const cells = cavityGrid(s, D), { fy } = cavityFootprint(s);
-  const ys = cells.map((c) => c.cy);
-  const yMin = Math.min(...ys) - fy / 2 - dia, yMax = Math.max(...ys) + fy / 2 + dia;
-  const bandH = Math.max(dia * 4, yMax - yMin);
-  const pitch = Math.max(22, Math.round(3.5 * dia));
-  const nCh = Math.max(2, Math.min(8, Math.floor(bandH / pitch) + 1));
   const edge = Math.max(16, Math.round(s.widthMm * 0.05));
   const xL = edge, xR = s.widthMm - edge;
-  const chY: number[] = [];
-  for (let i = 0; i < nCh; i++) chY.push(Math.round(yMin + (bandH * (i + 0.5)) / nCh));
+  // RUTEO LIBRE DE COLISIÓN: los canales van en los HUECOS entre filas de cavidades
+  // (donde NO hay pines expulsores) + un flanco arriba y abajo. Holgura = media
+  // huella + (radio pin + radio canal + pared 3 mm). Así el agua nunca cruza un pin.
+  const rowsY = [...new Set(cells.map((c) => c.cy))].sort((a, b) => a - b);
+  const clr = Math.round(fy / 2 + s.ejectors.diaMm / 2 + dia / 2 + 4);
+  const chYraw = [rowsY[0] - clr];
+  for (let i = 0; i + 1 < rowsY.length; i++) chYraw.push(Math.round((rowsY[i] + rowsY[i + 1]) / 2));
+  chYraw.push(rowsY[rowsY.length - 1] + clr);
+  const yEdge = Math.max(14, Math.round(D * 0.05));
+  const chY = chYraw.map((y) => Math.max(yEdge, Math.min(D - yEdge, y)));
+  const nCh = chY.length;
   const segs: CoolingCircuit['segs'] = [];
   for (let i = 0; i < nCh; i++) segs.push({ x0: xL, y0: chY[i], x1: xR, y1: chY[i] });   // canal recto (a lo ancho)
   for (let i = 0; i + 1 < nCh; i++)                                                      // serpentín: cross-drill en extremo alterno
@@ -120,7 +124,8 @@ export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   for (let i = 0; i < nCh; i++) for (const x of [xL, xR])
     if (!portEnds.has(`${i}:${x}`)) plugs.push({ x, y: chY[i] });
   const behind = Math.max(10, Math.round(2.5 * dia));
-  return { diaMm: dia, zBehindMm: behind, segs, ports, plugs, note: `enfriamiento serpentín · ⌀${dia} mm · ${nCh} canales · paso ${pitch} mm · plug ${s.cooling.plug ?? '—'}` };
+  const pitch = nCh > 1 ? Math.round((chY[nCh - 1] - chY[0]) / (nCh - 1)) : 0;
+  return { diaMm: dia, zBehindMm: behind, segs, ports, plugs, note: `enfriamiento serpentín (entre cavidades) · ⌀${dia} mm · ${nCh} canales · paso ${pitch} mm · plug ${s.cooling.plug ?? '—'}` };
 }
 
 /** Abertura(s) de cavidad de una placa A/B — CONSCIENTE de la pieza (círculo/caja

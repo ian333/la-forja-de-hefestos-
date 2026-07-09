@@ -52,22 +52,28 @@ function buildPart(K, oc, key) {
 function buildPlate(K, DS, oc, spec, def) {
   const W = spec.widthMm, D = DS.plateDepth(spec), t = def.thick;
   let solid = K.makeBox(oc, W, D, t);
-  // apertura de cavidad (pasante) en placas A y B — CÍRCULO si la pieza es redonda
+  // aperturas de cavidad (TODAS, multi-cavidad) + CANALES de agua reales en A/B
   if (def.role === 'A' || def.role === 'B') {
-    const cx = W / 2, cy = D / 2;
+    const cw = spec.cavity.widthMm, cd = spec.cavity.lenMm ?? Math.round(cw * 0.67);
+    for (const cell of DS.cavityGrid(spec, D)) {
+      try {
+        const tool = spec.cavity.shape === 'round'
+          ? K.makeCylinder(oc, cw / 2, t + 2, { origin: [cell.cx, cell.cy, -1], dir: [0, 0, 1] })
+          : K.extrudePolygon(oc, [
+            { x: cell.cx - cw / 2, y: cell.cy - cd / 2 }, { x: cell.cx + cw / 2, y: cell.cy - cd / 2 },
+            { x: cell.cx + cw / 2, y: cell.cy + cd / 2 }, { x: cell.cx - cw / 2, y: cell.cy + cd / 2 },
+          ], t + 2, K.offsetPlane(K.PLANE_XY, -1));
+        solid = K.cut(oc, solid, tool);
+      } catch (e) { /* cavidad que falla no aborta la placa */ }
+    }
     try {
-      let tool;
-      if (spec.cavity.shape === 'round') {
-        tool = K.makeCylinder(oc, spec.cavity.widthMm / 2, t + 2, { origin: [cx, cy, -1], dir: [0, 0, 1] });
-      } else {
-        const cw = spec.cavity.widthMm, cd = spec.cavity.lenMm ?? Math.round(cw * 0.67);
-        tool = K.extrudePolygon(oc, [
-          { x: cx - cw / 2, y: cy - cd / 2 }, { x: cx + cw / 2, y: cy - cd / 2 },
-          { x: cx + cw / 2, y: cy + cd / 2 }, { x: cx - cw / 2, y: cy + cd / 2 },
-        ], t + 2, K.offsetPlane(K.PLANE_XY, -1));
+      const cc = DS.coolingCircuit(spec, D);
+      const zc = Math.max(cc.diaMm, Math.min(t - cc.diaMm, t - cc.zBehindMm));
+      for (const g of cc.segs) if (g.y0 === g.y1) {
+        const len = Math.abs(g.x1 - g.x0) + 6;
+        solid = K.cut(oc, solid, K.makeCylinder(oc, cc.diaMm / 2, len, { origin: [Math.min(g.x0, g.x1) - 3, g.y0, zc], dir: [1, 0, 0] }));
       }
-      solid = K.cut(oc, solid, tool);
-    } catch (e) { /* si la apertura falla, la placa queda sólida */ }
+    } catch (e) { /* canal que falla se omite */ }
   }
   // barrenos estándar pasantes (SHCS, pilares guía, expulsores, sprue)
   const holes = DS.standardHoles(spec, def.role);
