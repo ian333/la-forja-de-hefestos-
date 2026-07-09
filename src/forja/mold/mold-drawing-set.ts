@@ -8,7 +8,7 @@
  * simétrico estándar. Salida: láminas SVG A3 → PDF (scripts/mold-pdf-gen.cjs).
  */
 
-import { renderPlateDrawing, type PlateSpec, type PlateHole, type PlateOpening } from './mold-drawings';
+import { renderPlateDrawing, type PlateSpec, type PlateHole, type PlateOpening, type CoolingCircuit } from './mold-drawings';
 import { moldAssemblyDrawing, type MoldAssemblySpec } from './mold-assembly';
 import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 import { ventMaxThickness } from './venting';
@@ -89,6 +89,37 @@ export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; 
   for (let r = 0; r < ny && k < n; r++) for (let c = 0; c < nx && k < n; c++, k++)
     out.push({ cx: Math.round(x0 + c * pitchX), cy: Math.round(y0 + r * pitchY) });
   return out;
+}
+
+/** CIRCUITO de enfriamiento en SERPENTÍN, AUTOMATIZADO desde la rejilla de
+ *  cavidades: N canales rectos barrenados a lo ancho, cubriendo la banda de las
+ *  impresiones, conectados en extremos alternos (cross-drill) y sellados con plugs;
+ *  puertos IN/OUT en un extremo. Base para el diseño generativo de refrigeración. */
+export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
+  const dia = s.cooling.diaMm;
+  const cells = cavityGrid(s, D), { fy } = cavityFootprint(s);
+  const ys = cells.map((c) => c.cy);
+  const yMin = Math.min(...ys) - fy / 2 - dia, yMax = Math.max(...ys) + fy / 2 + dia;
+  const bandH = Math.max(dia * 4, yMax - yMin);
+  const pitch = Math.max(22, Math.round(3.5 * dia));
+  const nCh = Math.max(2, Math.min(8, Math.floor(bandH / pitch) + 1));
+  const edge = Math.max(16, Math.round(s.widthMm * 0.05));
+  const xL = edge, xR = s.widthMm - edge;
+  const chY: number[] = [];
+  for (let i = 0; i < nCh; i++) chY.push(Math.round(yMin + (bandH * (i + 0.5)) / nCh));
+  const segs: CoolingCircuit['segs'] = [];
+  for (let i = 0; i < nCh; i++) segs.push({ x0: xL, y0: chY[i], x1: xR, y1: chY[i] });   // canal recto (a lo ancho)
+  for (let i = 0; i + 1 < nCh; i++)                                                      // serpentín: cross-drill en extremo alterno
+    segs.push({ x0: i % 2 === 0 ? xR : xL, y0: chY[i], x1: i % 2 === 0 ? xR : xL, y1: chY[i + 1] });
+  const outX = (nCh - 1) % 2 === 0 ? xR : xL;                                            // extremo abierto del último canal
+  const portEnds = new Set([`0:${xL}`, `${nCh - 1}:${outX}`]);
+  const ports = [{ x: xL, y: chY[0], label: 'IN' }, { x: outX, y: chY[nCh - 1], label: 'OUT' }];
+  // cada canal se barrena PASANTE a los dos cantos → se sella con plug salvo IN/OUT
+  const plugs: CoolingCircuit['plugs'] = [];
+  for (let i = 0; i < nCh; i++) for (const x of [xL, xR])
+    if (!portEnds.has(`${i}:${x}`)) plugs.push({ x, y: chY[i] });
+  const behind = Math.max(10, Math.round(2.5 * dia));
+  return { diaMm: dia, zBehindMm: behind, segs, ports, plugs, note: `enfriamiento serpentín · ⌀${dia} mm · ${nCh} canales · paso ${pitch} mm · plug ${s.cooling.plug ?? '—'}` };
 }
 
 /** Abertura(s) de cavidad de una placa A/B — CONSCIENTE de la pieza (círculo/caja
@@ -275,6 +306,7 @@ export function moldDrawingSet(s: MoldAssemblySpec, analysisRows?: AnalysisRow[]
       wmm: s.widthMm, dmm: D, thickMm: p.thick,
       holes: standardHoles(s, p.role),
       openings: (p.role === 'A' || p.role === 'B') ? cavityOpenings(s, D) : undefined,
+      cooling: (p.role === 'A' || p.role === 'B') ? coolingCircuit(s, D) : undefined,
     };
     pages.push({ name: p.name, svg: renderPlateDrawing(spec).svg });
   }

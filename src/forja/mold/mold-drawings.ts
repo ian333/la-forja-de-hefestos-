@@ -29,10 +29,18 @@ export interface PlateOpening {
   kind: 'circle' | 'rect'; x: number; y: number;
   dia?: number; w?: number; d?: number; note?: string;
 }
+/** CIRCUITO de enfriamiento (serpentín) barrenado en una placa: ejes de canal en
+ *  planta, puertos IN/OUT, plugs de sellado, y la profundidad detrás de la cavidad. */
+export interface CoolingCircuit {
+  diaMm: number; zBehindMm: number; note: string;
+  segs: Array<{ x0: number; y0: number; x1: number; y1: number }>;
+  ports: Array<{ x: number; y: number; label: string }>;
+  plugs: Array<{ x: number; y: number }>;
+}
 export interface PlateSpec {
   code: string; name: string; material?: string;
   wmm: number; dmm: number; thickMm: number;
-  holes: PlateHole[]; sideHoles?: SideHole[]; openings?: PlateOpening[];
+  holes: PlateHole[]; sideHoles?: SideHole[]; openings?: PlateOpening[]; cooling?: CoolingCircuit;
 }
 export interface PlateDrawing { svg: string; rows: string[][]; nHoles: number; scale: string }
 
@@ -140,6 +148,22 @@ export function renderPlateDrawing(p: PlateSpec): PlateDrawing {
     }
   }
 
+  // ── CIRCUITO DE ENFRIAMIENTO (serpentín): canales barrenados (línea de agua),
+  //    plugs de sellado y puertos IN/OUT. Azul, oculto (dash-dot) porque va DENTRO
+  //    de la placa detrás de la cavidad. Es lo que el taller barrena para el agua.
+  if (p.cooling) {
+    const cc = p.cooling;
+    for (const g of cc.segs)
+      parts.push(`<line x1="${X(g.x0)}" y1="${Y(g.y0)}" x2="${X(g.x1)}" y2="${Y(g.y1)}" stroke="#1a7fd4" stroke-width="0.5" stroke-dasharray="4 1.3 0.8 1.3" data-cooling="1"/>`);
+    for (const pl of cc.plugs)
+      parts.push(`<rect x="${X(pl.x) - 1.2}" y="${Y(pl.y) - 1.2}" width="2.4" height="2.4" fill="#1a7fd4" data-plug="1"/>`);
+    for (const pt of cc.ports) {
+      parts.push(`<circle cx="${X(pt.x)}" cy="${Y(pt.y)}" r="2" fill="#fff" stroke="#0a7a3a" stroke-width="0.7"/>`);
+      parts.push(`<text x="${X(pt.x)}" y="${Y(pt.y) - 3}" font-size="3" fill="#0a7a3a" font-weight="bold" text-anchor="middle">${esc(pt.label)}</text>`);
+    }
+    parts.push(`<text x="${X(0)}" y="${Y(p.dmm) - 1}" font-size="2.7" fill="#1a7fd4">${esc(cc.note)}</text>`);
+  }
+
   // barrenos: cruz de centro + círculo + número
   const rows: string[][] = [];
   p.holes.forEach((h, i) => {
@@ -171,6 +195,14 @@ export function renderPlateDrawing(p: PlateSpec): PlateDrawing {
   const sideW = p.thickMm * s, sideX = X(p.wmm) + 14;
   parts.push(`<rect x="${sideX}" y="${Y(p.dmm)}" width="${sideW}" height="${p.dmm * s}" fill="none" stroke="#111" stroke-width="0.55"/>`);
   parts.push(`<text x="${sideX + sideW / 2}" y="${Y(p.dmm) - 5}" font-size="3.2" fill="#444" text-anchor="middle">LATERAL</text>`);
+  // en el LATERAL: los canales de agua aparecen como círculos a su PROFUNDIDAD
+  if (p.cooling) {
+    const zc = Math.max(4, Math.min(p.thickMm - 4, p.thickMm - p.cooling.zBehindMm));
+    const lxc = sideX + zc * s;
+    for (const g of p.cooling.segs) if (g.y0 === g.y1)   // canal recto (en X) → círculo en el lateral
+      parts.push(`<circle cx="${lxc}" cy="${Y(g.y0)}" r="${Math.max(0.6, (p.cooling.diaMm / 2) * s)}" fill="none" stroke="#1a7fd4" stroke-width="0.4"/>`);
+    parts.push(`<text x="${lxc}" y="${Y(p.dmm) + 3.5}" font-size="2.4" fill="#1a7fd4" text-anchor="middle">agua ⌀${p.cooling.diaMm}</text>`);
+  }
   const zSeen = new Set<number>();
   for (const sh of p.sideHoles ?? []) {
     if (zSeen.has(sh.z)) continue;
