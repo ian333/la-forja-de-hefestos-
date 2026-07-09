@@ -32,6 +32,10 @@ const MoldUnscrewSim = lazy(() => import('../sim/MoldUnscrewSim'));        // mo
 const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL CORTE: acero seccionándose (esténcil + env)
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
+import * as OCC from './occt';                                   // namespace del kernel para armar el molde
+import { buildMoldAssembly, packageToAssemblySpec } from '../mold/mold-plano-set';
+import { moldMachine } from '../mold/moldmachine';
+import type { MoldAssemblySpec } from '../mold/mold-assembly';
 import {
   initOCCT,
   _setActiveOCCT,
@@ -3138,6 +3142,26 @@ export default function ForgeBRepStudio() {
   const [tpSimOn, setTpSimOn] = useState(false);
   const [moldMachineOn, setMoldMachineOn] = useState(false);
   const [unscrewOn, setUnscrewOn] = useState(false);
+  // SESIÓN VIVA compartida: el operador remoto (Claude) publica una pieza en
+  // /mold-live.json; el Studio ARMA el molde con las PRIMITIVAS del kernel
+  // (buildMoldAssembly) y lo pone en la escena 3D real → el cliente ve y GIRA el
+  // molde de verdad, en vivo. Sin STEP: se construye dentro de La Forja.
+  const liveMoldRev = useRef(-1);
+  const [liveMoldSpec, setLiveMoldSpec] = useState<MoldAssemblySpec | null>(null);
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch('/mold-live.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (typeof j.rev !== 'number' || j.rev === liveMoldRev.current) return;
+        liveMoldRev.current = j.rev;
+        if (j.clear) { setLiveMoldSpec(null); return; }
+        if (j.spec) { try { setLiveMoldSpec(packageToAssemblySpec(moldMachine(j.spec))); } catch { setLiveMoldSpec(null); } }
+      } catch { /* sin sesión viva */ }
+    }, 1500);
+    return () => clearInterval(id);
+  }, []);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
   // Menú "Más" de la toolbar: la cola larga de features que la TELEMETRÍA de los
@@ -3337,9 +3361,11 @@ export default function ForgeBRepStudio() {
           // Si hay un STEP importado, ÉSE es la pieza principal (ignora sketch/ops).
           let mainShape: Shape | null = null;
           try {
-            mainShape = importedStep
-              ? importSTEP(oc, importedStep)
-              : buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
+            mainShape = liveMoldSpec
+              ? buildMoldAssembly(OCC, oc, liveMoldSpec, 'blocks')   // MOLDE en vivo, armado con primitivas
+              : importedStep
+                ? importSTEP(oc, importedStep)
+                : buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
           } catch (e) { if (components.length === 0) throw e; } // sin componentes, propaga
           // Componentes: por defecto se JUNTAN (compound), pero cada uno puede
           // combinarse por BOOLEANA con el cuerpo acumulado — la base de un MOLDE:
@@ -3452,7 +3478,7 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components, importedStep]);
+  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components, importedStep, liveMoldSpec]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 

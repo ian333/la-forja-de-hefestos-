@@ -31,7 +31,7 @@ export const PART_STYLE: IsoStyle = { color: [224, 122, 48], opacity: 0.55, edge
 
 /** Construye una PLACA como SÓLIDO del kernel: caja + apertura de cavidad (A/B) +
  *  barrenos estándar pasantes. `K` = módulo occt, `oc` = instancia activa. */
-export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: PlateDef): { solid: any; drilled: number; holes: number } {
+export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: PlateDef, detail: 'full' | 'blocks' = 'full'): { solid: any; drilled: number; holes: number } {
   const W = spec.widthMm, D = plateDepth(spec), t = def.thick;
   let solid = K.makeBox(oc, W, D, t);
   if (def.role === 'A' || def.role === 'B') {
@@ -48,8 +48,8 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
         solid = K.cut(oc, solid, tool);
       } catch { /* una cavidad que falla no aborta la placa */ }
     }
-    // CANALES DE AGUA REALES (cilindros a lo largo de X a la profundidad de enfriamiento)
-    try {
+    // CANALES DE AGUA REALES (sólo en 'full' — es lo más caro en booleanas)
+    if (detail === 'full') try {
       const cc = coolingCircuit(spec, D);
       const zc = Math.max(cc.diaMm, Math.min(t - cc.diaMm, t - cc.zBehindMm));
       for (const g of cc.segs) if (g.y0 === g.y1) {
@@ -59,13 +59,40 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
       }
     } catch { /* canal que falla se omite */ }
   }
-  const list = standardHoles(spec, def.role);
+  // barrenos: en 'blocks' sólo los grandes (pilares/tornillos ⌀≥10) para ir rápido
+  const list = standardHoles(spec, def.role).filter((h) => detail === 'full' || h.dia >= 10);
   let drilled = 0;
   for (const h of list) {
     try { solid = K.drillHole(oc, solid, { x: h.x, y: h.y, diameter: h.dia, zTop: t, depth: t, through: true }); drilled++; }
     catch { /* barreno que no cabe: se omite */ }
   }
   return { solid, drilled, holes: list.length };
+}
+
+/** ENSAMBLE del molde como SÓLIDO 3D — apila las placas (cada una construida con
+ *  las primitivas del kernel: makeBox/cut/makeCylinder) en su cota Z y las junta en
+ *  un compound. Se construye DENTRO de La Forja (browser), sin STEP. `detail`:
+ *  'full' = cavidades+agua+expulsores en A/B; 'blocks' = placas con sólo aberturas
+ *  (mucho más rápido para el visor en vivo). */
+export function buildMoldAssembly(K: any, oc: any, spec: MoldAssemblySpec, detail: 'full' | 'blocks' = 'full'): any {
+  const p = spec.plates;
+  const zBase: Record<string, number> = {
+    bottom: 0,
+    ejector: p.bottomClamp + 4,
+    support: p.bottomClamp + p.ejectorHousing,
+    B: p.bottomClamp + p.ejectorHousing + p.support,
+    A: p.bottomClamp + p.ejectorHousing + p.support + p.B,
+    clamp: p.bottomClamp + p.ejectorHousing + p.support + p.B + p.A,
+  };
+  const shapes: any[] = [];
+  for (const def of plateDefs(spec)) {
+    try {
+      const { solid } = buildPlateSolid(K, oc, spec, def, detail);
+      const z0 = zBase[def.role] ?? 0;
+      shapes.push(z0 ? K.transformShape(oc, solid, { translate: [0, 0, z0] }) : solid);
+    } catch { /* una placa que falla no aborta el ensamble */ }
+  }
+  return K.makeCompound(oc, shapes);
 }
 
 /** 4 vistas (3 ortográficas HLR + isométrico sombreado a color) de un sólido. */

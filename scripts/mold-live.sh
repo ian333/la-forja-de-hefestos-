@@ -18,12 +18,16 @@ sony='{"name":"Carcasa de control Sony","Lmm":150,"Wmm":45,"Hmm":22,"surfaceMm2"
 charola='{"name":"Charola contenedora","Lmm":90,"Wmm":90,"Hmm":35,"surfaceMm2":49000,"volumeMm3":49000,"wallMm":2,"annualVolume":200000,"plastic":"PP","finish":"SPI B-3"}'
 tapa='{"name":"Tapa rosca","Lmm":40,"Wmm":40,"Hmm":15,"surfaceMm2":6500,"volumeMm3":2800,"wallMm":1.2,"annualVolume":8000000,"plastic":"PP","finish":"SPI A-3"}'
 
+REV=$(date +%s)
+if [ "${1:-}" = "clear" ]; then
+  printf '{"rev":%s,"by":"Claude (remoto)","clear":true}' "$REV" | ssh -o ConnectTimeout=10 "${ATLAS_USER}@${ATLAS_IP}" "cat > $DIST"
+  echo "✓ live rev=$REV · CLEAR → la escena vuelve a la pieza normal"; exit 0
+fi
 if [ "${1:-}" = "--spec" ]; then SPEC="$2"; GEN="${3:-false}";
 else
   case "${1:-lego}" in lego) SPEC="$lego";; sony) SPEC="$sony";; charola) SPEC="$charola";; tapa) SPEC="$tapa";; *) echo "preset desconocido: ${1:-}"; exit 1;; esac
   GEN="${2:-false}"
 fi
-REV=$(date +%s)
 printf '{"rev":%s,"by":"Claude (remoto)","generate":%s,"spec":%s}' "$REV" "$GEN" "$SPEC" \
   | ssh -o ConnectTimeout=10 "${ATLAS_USER}@${ATLAS_IP}" "cat > $DIST"
-echo "✓ live rev=$REV · generate=$GEN → la pantalla del cliente se actualiza en ~1.5 s"
+echo "✓ live rev=$REV → La Forja arma el molde con primitivas y aparece en tu escena 3D (~4 s)"
