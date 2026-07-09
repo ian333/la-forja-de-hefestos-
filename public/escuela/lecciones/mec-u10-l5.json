@@ -1,0 +1,120 @@
+{
+  "id": "mec-u10-l5",
+  "curso": "mecanica",
+  "unidad": 10,
+  "n": 5,
+  "titulo": "La cuña: el fusible que salva tu flecha",
+  "subtitulo": "τ = F·r · cortante = F/(b·L) · se corta ANTES que la flecha",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 10 §10-9 (Keys, keyseats & set screws) + DIN 6885",
+  "descripcion": "Un opresor agarra por fricción y es débil. Para transmitir torque de verdad se usa una cuña: una barrita de acero en una ranura entre flecha y cubo. Aquí la construyes y ves por qué se diseña para CORTARSE antes que la flecha — el fusible mecánico.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El opresor de la clase pasada agarra por fricción, y es débil. ¿Cómo pegas un engrane a una flecha para pasar torque de verdad, sin que patine? Con una cuña.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una cuña es una barrita de acero. Vamos a construirla. Clic en Boceto, sobre el plano.",
+      "zoom": "btn-sketch",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "el editor de boceto abrió"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Dibuja su sección a ojo: un rectángulo. El ancho y el alto de la cuña.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -5, "y": -4, "settle": 700 },
+        { "type": "clickmm", "x": 4, "y": 4, "settle": 900 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "hay un rectángulo (4 líneas)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Las cotas mandan. Ancho: ocho milímetros. Es la be de la fórmula, la que trabaja a cortante.",
+      "gestos": [
+        { "type": "dimline", "axis": "h", "settle": 900 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "8", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1100 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Alto: siete. Ancho ocho por alto siete es la cuña estándar de una flecha de veinticinco milímetros, según la norma.",
+      "gestos": [
+        { "type": "dimline", "axis": "v", "settle": 900 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "7", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1100 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Ancla una esquina: boceto totalmente restringido. Y termínalo.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 500 },
+        { "type": "clickptwhere", "where": "bl", "settle": 1000 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 }
+      ],
+      "check": {
+        "js": "!sk",
+        "desc": "perfil de la cuña listo"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "Extrúyela treinta milímetros: ese es el largo de la cuña. Ya la tienes: ocho por siete por treinta.",
+      "zoom": "btn-extrude",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "30", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "probe", "label": "cuña" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 1680) < 1",
+        "desc": "la cuña 8×7×30 = 1680 mm³ exacta"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "¿Cómo trabaja? La flecha le entrega torque a la cuña. Tau igual a efe por erre. Despejas la fuerza: efe es tau entre erre, el radio de la flecha.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 520], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Esa fuerza intenta cortar la cuña a lo ancho. El esfuerzo cortante es efe entre be por ele: la fuerza, entre el ancho por el largo. Por eso una cuña más larga aguanta más.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Y aquí lo hermoso: la cuña se diseña para cortarse ANTES de que la flecha se tuerza o el cubo se raje. Es el fusible mecánico. Truenas una cuña de diez pesos, no una flecha de mil.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p11",
+      "dice": "Opresor contra cuña: fricción contra cortante, débil contra fuerte. Por eso todo engrane bajo carga lleva su cuña. Con ella, la potencia llega a la rueda. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
