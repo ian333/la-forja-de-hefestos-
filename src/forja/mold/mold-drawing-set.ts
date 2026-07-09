@@ -52,10 +52,10 @@ function analysisSheet(spec: MoldAssemblySpec, rows: AnalysisRow[]): string {
   return p.join('');
 }
 
-export type PlateRole = 'clamp' | 'A' | 'B' | 'support' | 'bottom';
+export type PlateRole = 'clamp' | 'A' | 'B' | 'support' | 'ejector' | 'bottom';
 export interface PlateDef { role: PlateRole; code: string; name: string; thick: number; mat: string }
 
-/** Las 5 placas del molde (rol, código, espesor del spec, material). Fuente única:
+/** Las placas del molde (rol, código, espesor del spec, material). Fuente única:
  *  la usan tanto el plano plano (renderPlateDrawing) como el sólido del kernel. */
 export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
   return [
@@ -63,7 +63,8 @@ export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
     { role: 'A', code: `${s.code ?? 'MLD'}-02`, name: 'Placa A (cavidad)', thick: s.plates.A, mat: s.cavityMetal },
     { role: 'B', code: `${s.code ?? 'MLD'}-03`, name: 'Placa B (núcleo)', thick: s.plates.B, mat: s.cavityMetal },
     { role: 'support', code: `${s.code ?? 'MLD'}-04`, name: 'Placa de soporte', thick: s.plates.support, mat: s.baseSteel ?? '1.1730' },
-    { role: 'bottom', code: `${s.code ?? 'MLD'}-05`, name: 'Placa de sujeción inferior', thick: s.plates.bottomClamp, mat: s.baseSteel ?? '1.1730' },
+    { role: 'ejector', code: `${s.code ?? 'MLD'}-05`, name: 'Placa expulsora + retenedora', thick: Math.max(20, Math.round(s.plates.ejectorHousing * 0.55)), mat: s.baseSteel ?? '1.1730' },
+    { role: 'bottom', code: `${s.code ?? 'MLD'}-06`, name: 'Placa de sujeción inferior', thick: s.plates.bottomClamp, mat: s.baseSteel ?? '1.1730' },
   ];
 }
 
@@ -279,8 +280,20 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     }
   }
 
+  // PLACA EXPULSORA + RETENEDORA: aloja la CABEZA de cada expulsor (barreno de la
+  // cabeza) + pines de RETORNO en 4 esquinas (regresan el paquete al cerrar).
+  if (role === 'ejector') {
+    const cells = cavityGrid(s, D), { fx, fy, round } = cavityFootprint(s);
+    const perCav = Math.max(1, Math.round(s.ejectors.count / Math.max(1, cells.length)));
+    for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav))
+      holes.push({ x, y, dia: s.ejectors.diaMm + 3, type: 'aloj. cabeza de expulsor' });
+    const ri = Math.max(24, Math.round(W * 0.08));
+    for (const [x, y] of [[ri, ri], [W - ri, ri], [ri, D - ri], [W - ri, D - ri]])
+      holes.push({ x, y, dia: 12, type: 'pin de retorno' });
+  }
+
   // BARRENO DE EXPULSIÓN CENTRAL (KO) para el vástago de la máquina.
-  if (role === 'support' || role === 'bottom')
+  if (role === 'support' || role === 'bottom' || role === 'ejector')
     holes.push({ x: Math.round(W / 2), y: Math.round(D / 2), dia: Math.max(20, Math.round(W * 0.055)), type: 'barreno KO (vástago expulsor)' });
 
   return holes;
