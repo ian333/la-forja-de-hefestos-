@@ -70,15 +70,36 @@ export function plateDefs(s: MoldAssemblySpec): PlateDef[] {
 /** Ancho del fondo de la placa (≈0.78·ancho, 4:3 típico de mold base). */
 export const plateDepth = (s: MoldAssemblySpec) => Math.round(s.widthMm * 0.78);
 
-/** Abertura(s) de cavidad de una placa A/B — CONSCIENTE de la pieza: círculo para
- *  pieza redonda (⌀), rectángulo con la huella REAL (w×len) para caja. Centrada. */
+/** Huella de la cavidad en planta: X e Y (⌀ para redonda). */
+export function cavityFootprint(s: MoldAssemblySpec): { fx: number; fy: number; round: boolean } {
+  const cav = s.cavity, round = cav.shape === 'round';
+  return { fx: cav.widthMm, fy: round ? cav.widthMm : (cav.lenMm ?? Math.round(cav.widthMm * 0.67)), round };
+}
+
+/** REJILLA de cavidades: nCav impresiones en grid nx×ny, centradas en la placa,
+ *  con paso = huella + separación. Devuelve el centro de cada cavidad. */
+export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; cy: number }> {
+  const n = Math.max(1, s.nCav ?? 1);
+  const nx = Math.max(1, Math.round(Math.sqrt(n))), ny = Math.ceil(n / nx);
+  const { fx, fy } = cavityFootprint(s);
+  const pitchX = fx + Math.max(18, Math.round(fx * 0.35)), pitchY = fy + Math.max(18, Math.round(fy * 0.35));
+  const x0 = s.widthMm / 2 - ((nx - 1) * pitchX) / 2, y0 = D / 2 - ((ny - 1) * pitchY) / 2;
+  const out: Array<{ cx: number; cy: number }> = [];
+  let k = 0;
+  for (let r = 0; r < ny && k < n; r++) for (let c = 0; c < nx && k < n; c++, k++)
+    out.push({ cx: Math.round(x0 + c * pitchX), cy: Math.round(y0 + r * pitchY) });
+  return out;
+}
+
+/** Abertura(s) de cavidad de una placa A/B — CONSCIENTE de la pieza (círculo/caja
+ *  con huella REAL) y MULTI-CAVIDAD (una abertura por impresión del grid). */
 export function cavityOpenings(s: MoldAssemblySpec, D: number): PlateOpening[] {
-  const cav = s.cavity, cx = Math.round(s.widthMm / 2), cy = Math.round(D / 2);
-  if (cav.shape === 'round') {
-    return [{ kind: 'circle', x: cx, y: cy, dia: cav.widthMm, note: `cavidad ⌀${cav.widthMm} · prof ${cav.depthMm}` }];
-  }
-  const len = cav.lenMm ?? Math.round(cav.widthMm * 0.67);
-  return [{ kind: 'rect', x: cx, y: cy, w: cav.widthMm, d: len, note: `cavidad ${cav.widthMm}×${len} · prof ${cav.depthMm}` }];
+  const cav = s.cavity, { fx, fy, round } = cavityFootprint(s);
+  const cells = cavityGrid(s, D);
+  const note = round ? `cavidad ⌀${cav.widthMm} · prof ${cav.depthMm}` : `cavidad ${fx}×${fy} · prof ${cav.depthMm}`;
+  return cells.map((c, i) => round
+    ? { kind: 'circle', x: c.cx, y: c.cy, dia: cav.widthMm, note: i === 0 ? note : undefined }
+    : { kind: 'rect', x: c.cx, y: c.cy, w: fx, d: fy, note: i === 0 ? note : undefined });
 }
 
 /** Altura total del stack de placas (mm). */
@@ -167,33 +188,70 @@ export function holeLegend(holes: PlateHole[]): string[] {
 
 /** Barrenos estándar de una placa según su rol (layout simétrico, cantidades/⌀
  *  del spec resuelto — no inventa la pieza, especifica componentes estándar). */
-export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[] {
-  const W = s.widthMm, D = Math.round(W * 0.78);   // fondo ≈ 0.78·ancho (placa 381→302, 4:3 típico)
-  const inset = Math.max(20, Math.round(W * 0.06));
-  const holes: PlateHole[] = [];
-  // tornillos de sujeción SHCS en las 4 esquinas — Ø DIMENSIONADO por §12.4 (izaje)
-  const bolt = moldBoltSizing(s);
-  for (const [x, y] of [[inset, inset], [W - inset, inset], [inset, D - inset], [W - inset, D - inset]])
-    holes.push({ x, y, dia: bolt.dMm, type: `tornillo DIN 912 ${bolt.din} (§12.4)` });
-  // pilares guía (leader pins) en 3-4 esquinas asimétricas (una desplazada = anti-error)
-  if (role !== 'clamp' && role !== 'bottom') {
-    const gp = W > 300 ? 32 : W > 200 ? 25 : 20, gi = inset + 14;
-    holes.push({ x: gi, y: gi, dia: gp, type: 'pilar guía' });
-    holes.push({ x: W - gi, y: gi, dia: gp, type: 'pilar guía' });
-    holes.push({ x: gi, y: D - gi, dia: gp, type: 'pilar guía' });
-    holes.push({ x: W - gi - 8, y: D - gi, dia: gp, type: 'pilar guía (desplazado)' });
-  }
-  // expulsores en la placa B y soporte (rejilla), con ⌀ y cantidad del spec
-  if (role === 'B' || role === 'support') {
-    const n = Math.min(s.ejectors.count, 20), cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
+/** Posiciones de expulsores bajo UNA cavidad: círculo de pernos si es redonda,
+ *  rejilla dentro de la huella si es caja. */
+function ejectorPositions(cx: number, cy: number, fx: number, fy: number, round: boolean, n: number): Array<[number, number]> {
+  const pts: Array<[number, number]> = [];
+  if (round) {
+    const r = Math.max(5, (fx / 2) * 0.55);
+    for (let i = 0; i < n; i++) { const a = (2 * Math.PI * i) / n - Math.PI / 2; pts.push([Math.round(cx + r * Math.cos(a)), Math.round(cy + r * Math.sin(a))]); }
+  } else {
+    const nx = Math.max(1, Math.round(Math.sqrt(n))), ny = Math.ceil(n / nx);
+    const mx = fx * 0.30, my = fy * 0.30;
     let k = 0;
-    for (let r = 0; r < rows && k < n; r++) for (let c = 0; c < cols && k < n; c++, k++) {
-      const x = Math.round((W * (c + 1)) / (cols + 1)), y = Math.round((D * (r + 1)) / (rows + 1));
-      holes.push({ x, y, dia: s.ejectors.diaMm, type: `expulsor (${s.ejectors.type})` });
+    for (let r = 0; r < ny && k < n; r++) for (let c = 0; c < nx && k < n; c++, k++) {
+      const px = nx === 1 ? cx : cx - fx / 2 + mx + (c * (fx - 2 * mx)) / (nx - 1);
+      const py = ny === 1 ? cy : cy - fy / 2 + my + (r * (fy - 2 * my)) / (ny - 1);
+      pts.push([Math.round(px), Math.round(py)]);
     }
   }
-  // sprue en el centro de la placa A y del clamp superior
-  if (role === 'A' || role === 'clamp') holes.push({ x: Math.round(W / 2), y: Math.round(D / 2), dia: 8, type: 'sprue / bebedero' });
+  return pts;
+}
+
+export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[] {
+  const W = s.widthMm, D = plateDepth(s);
+  const inset = Math.max(20, Math.round(W * 0.06));
+  const holes: PlateHole[] = [];
+  const bolt = moldBoltSizing(s), scrDia = bolt.dMm + 1;   // barreno de HOLGURA (M + 1)
+
+  // TORNILLOS de sujeción en los PUNTOS MEDIOS de los bordes → NO chocan con los
+  // pilares guía de las esquinas (antes se cruzaban ~1 mm).
+  for (const [x, y] of [[Math.round(W / 2), inset], [Math.round(W / 2), D - inset], [inset, Math.round(D / 2)], [W - inset, Math.round(D / 2)]])
+    holes.push({ x, y, dia: scrDia, type: `tornillo ${bolt.din} (holgura ⌀${scrDia})` });
+
+  // PILARES GUÍA en las 4 esquinas — SOLO placas que los cruzan (A y B). Asimétrico.
+  if (role === 'A' || role === 'B') {
+    const gp = W > 300 ? 32 : W > 200 ? 25 : 20, gi = inset + Math.round(gp / 2) + 4;
+    for (const [dx, dy, t] of [[gi, gi, ''], [W - gi, gi, ''], [gi, D - gi, ''], [W - gi - 10, D - gi, ' (desplazado)']])
+      holes.push({ x: dx, y: dy, dia: gp, type: `pilar guía${t}` });
+  }
+
+  // EXPULSORES bajo CADA cavidad (placa B y soporte) — en la huella REAL, conteo
+  // coherente (perCav × nCav ≈ ejectors.count).
+  if (role === 'B' || role === 'support') {
+    const cells = cavityGrid(s, D), { fx, fy, round } = cavityFootprint(s);
+    const perCav = Math.max(1, Math.round(s.ejectors.count / Math.max(1, cells.length)));
+    for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav))
+      holes.push({ x, y, dia: s.ejectors.diaMm, type: `expulsor (${s.ejectors.type})` });
+  }
+
+  // ALIMENTACIÓN por cavidad (placa A + clamp): CALIENTE → boquilla (drop); FRÍA →
+  // bebedero central (1 cav) o compuerta por cavidad (multi). Nunca bebedero en hot.
+  if (role === 'A' || role === 'clamp') {
+    const cells = cavityGrid(s, D);
+    if (s.feed === 'hot-runner') {
+      for (const c of cells) holes.push({ x: c.cx, y: c.cy, dia: Math.max(4, Math.round(s.cavity.widthMm * 0.05)), type: 'boquilla caliente (drop §6)' });
+    } else if (cells.length === 1) {
+      holes.push({ x: cells[0].cx, y: cells[0].cy, dia: 8, type: 'bebedero (sprue)' });
+    } else {
+      for (const c of cells) holes.push({ x: c.cx, y: c.cy, dia: 3, type: 'compuerta (gate)' });
+    }
+  }
+
+  // BARRENO DE EXPULSIÓN CENTRAL (KO) para el vástago de la máquina.
+  if (role === 'support' || role === 'bottom')
+    holes.push({ x: Math.round(W / 2), y: Math.round(D / 2), dia: Math.max(20, Math.round(W * 0.055)), type: 'barreno KO (vástago expulsor)' });
+
   return holes;
 }
 

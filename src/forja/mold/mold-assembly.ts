@@ -61,16 +61,19 @@ export function buildMoldStack(s: MoldAssemblySpec): { comps: StackComp[]; parti
   comps.push(full('Placa A (cavidad)', a0, a1, s.cavityMetal));
   comps.push(full('Placa de sujeción superior', tc0, tc1, s.baseSteel ?? '1730'));
 
-  // core insert (sube de la placa B a la partición): ⌀ para pieza redonda (cup)
-  // o bloque de ancho dado para marco (bezel). El marco deja la abertura central.
-  const cr = (s.core.widthMm ?? s.core.diaMm ?? 0) / 2;
+  // REJILLA de cavidades — la sección corta la FILA MEDIA; muestra nCav impresiones
+  // (misma lógica que cavityGrid pero centrada en x=0 para evitar import circular).
+  const nCav = Math.max(1, s.nCav ?? 1);
+  const gnx = Math.max(1, Math.round(Math.sqrt(nCav)));
+  const cvw = s.cavity.widthMm / 2;                       // media huella X
+  const pitchX = s.cavity.widthMm + Math.max(18, Math.round(s.cavity.widthMm * 0.35));
+  const rowXs: number[] = [];
+  for (let c = 0; c < gnx; c++) rowXs.push(Math.round(-((gnx - 1) * pitchX) / 2 + c * pitchX));
   const coreName = s.core.widthMm ? 'Inserto de núcleo (marco)' : 'Inserto de núcleo (core)';
-  comps.push({ id: id++, name: coreName, qty: 1, material: s.core.material,
-    rects: [{ x0: -cr, z0: su1, x1: cr, z1: parting }] });
-  // cavidad insert (bolsa en A) + la PIEZA moldeada (plástico, sólido)
-  const cvw = s.cavity.widthMm / 2;
-  comps.push({ id: id++, name: 'PIEZA moldeada (plástico)', qty: 1, material: 'ABS', solid: true,
-    rects: [{ x0: -cvw, z0: parting, x1: cvw, z1: parting + s.cavity.depthMm }] });
+  comps.push({ id: id++, name: coreName, qty: nCav, material: s.core.material,
+    rects: rowXs.map((x) => ({ x0: x - cvw, z0: su1, x1: x + cvw, z1: parting })) });
+  comps.push({ id: id++, name: 'PIEZA moldeada (plástico)', qty: nCav, material: 'ABS', solid: true,
+    rects: rowXs.map((x) => ({ x0: x - cvw, z0: parting, x1: x + cvw, z1: parting + s.cavity.depthMm })) });
 
   // líneas de enfriamiento — DETRÁS de la superficie moldeante (§9.2.5: ~3·⌀), NO
   // dentro de la pieza: las de la CAVIDAD van en A sobre el fondo de la bolsa; las
@@ -86,19 +89,19 @@ export function buildMoldStack(s: MoldAssemblySpec): { comps: StackComp[]; parti
   ] };
   comps.push(water);
 
-  // expulsores (suben del paquete expulsor a la partición)
-  const er = s.ejectors.diaMm / 2, exs = [-W * 0.19, 0, W * 0.19];
-  comps.push({ id: id++, name: `Expulsor (${s.ejectors.type}) ⌀${s.ejectors.diaMm}`, qty: s.ejectors.count, material: '1.2842 templado',
-    rects: exs.map((x) => ({ x0: x - er, z0: eh0 + p.ejectorHousing * 0.55, x1: x + er, z1: parting })) });
+  // expulsores (suben del paquete expulsor a la partición) — bajo CADA cavidad
+  const er = s.ejectors.diaMm / 2;
+  const exRects = rowXs.flatMap((x) => [x - cvw * 0.5, x + cvw * 0.5].map((ex) => ({ x0: ex - er, z0: eh0 + p.ejectorHousing * 0.55, x1: ex + er, z1: parting })));
+  comps.push({ id: id++, name: `Expulsor (${s.ejectors.type}) ⌀${s.ejectors.diaMm}`, qty: s.ejectors.count, material: '1.2842 templado', rects: exRects });
 
   // ALIMENTACIÓN (§6-7): colada CALIENTE (manifold + drops rojos) o FRÍA (bebedero).
   const feed = s.feed ?? 'cold-2placas';
   const nc = Math.max(1, s.nCav ?? 1);
   if (feed === 'hot-runner') {
-    const manW = Math.min(W * 0.6, cvw * 2 + 140);
-    const zMan0 = tc0 + p.topClamp * 0.2, zMan1 = zMan0 + 14;
-    const dropXs = nc <= 1 ? [0] : [-W * 0.2, 0, W * 0.2];
-    const dropW = 12;
+    const zMan0 = tc0 + p.topClamp * 0.2, zMan1 = zMan0 + 14, dropW = 12;
+    const dropXs = rowXs;                                  // un drop ALINEADO con cada cavidad de la fila
+    const span = rowXs.length > 1 ? rowXs[rowXs.length - 1] - rowXs[0] : 0;
+    const manW = Math.min(W * 0.85, span + s.cavity.widthMm + 60);
     comps.push({ id: id++, name: 'Manifold (colada caliente)', qty: 1, material: 'H13 · zonas calef.', tint: '#f3c0b2',
       rects: [{ x0: -manW / 2, z0: zMan0, x1: manW / 2, z1: zMan1 }] });
     comps.push({ id: id++, name: `Boquillas calientes (${nc} drops)`, qty: nc, material: 'H13 · termopar/zona', tint: '#efa48d',
