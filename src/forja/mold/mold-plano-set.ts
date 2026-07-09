@@ -69,6 +69,45 @@ export function buildPlateSolid(K: any, oc: any, spec: MoldAssemblySpec, def: Pl
   return { solid, drilled, holes: list.length };
 }
 
+/** Z de cada placa en el stack (cota inferior). */
+export function plateStackZ(spec: MoldAssemblySpec): Record<string, number> {
+  const p = spec.plates;
+  return {
+    bottom: 0,
+    ejector: p.bottomClamp + 4,
+    support: p.bottomClamp + p.ejectorHousing,
+    B: p.bottomClamp + p.ejectorHousing + p.support,
+    A: p.bottomClamp + p.ejectorHousing + p.support + p.B,
+    clamp: p.bottomClamp + p.ejectorHousing + p.support + p.B + p.A,
+  };
+}
+
+export interface MoldPart {
+  role: string; name: string; material: string;
+  positions: Float32Array; normals: Float32Array; indices: Uint32Array;
+  color: string; opacity: number;
+}
+
+/** El molde como COMPONENTES separados (una malla por placa) — para el árbol de
+ *  La Forja: aislar / ocultar / opacidad, como Fusion/SolidWorks. Cada placa se
+ *  construye con las primitivas y se posiciona en su cota Z. */
+export function buildMoldParts(K: any, oc: any, spec: MoldAssemblySpec, detail: 'full' | 'blocks' = 'blocks'): MoldPart[] {
+  const z = plateStackZ(spec);
+  const STEEL = '#9aa6ba', CAV = '#7f93b0';
+  const out: MoldPart[] = [];
+  for (const def of plateDefs(spec)) {
+    try {
+      const { solid } = buildPlateSolid(K, oc, spec, def, detail);
+      const z0 = z[def.role] ?? 0;
+      const placed = z0 ? K.transformShape(oc, solid, { translate: [0, 0, z0] }) : solid;
+      const m = K.tessellate(oc, placed, detail === 'full' ? 0.25 : 0.45, 0.5);
+      const isCav = def.role === 'A' || def.role === 'B';
+      out.push({ role: def.role, name: def.name, material: def.mat, positions: m.positions, normals: m.normals, indices: m.indices, color: isCav ? CAV : STEEL, opacity: isCav ? 0.55 : 1 });
+    } catch { /* placa que falla se omite */ }
+  }
+  return out;
+}
+
 /** ENSAMBLE del molde como SÓLIDO 3D — apila las placas (cada una construida con
  *  las primitivas del kernel: makeBox/cut/makeCylinder) en su cota Z y las junta en
  *  un compound. Se construye DENTRO de La Forja (browser), sin STEP. `detail`:

@@ -33,7 +33,7 @@ const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import * as OCC from './occt';                                   // namespace del kernel para armar el molde
-import { buildMoldAssembly, packageToAssemblySpec } from '../mold/mold-plano-set';
+import { buildMoldParts, packageToAssemblySpec, type MoldPart } from '../mold/mold-plano-set';
 import { moldMachine } from '../mold/moldmachine';
 import type { MoldAssemblySpec } from '../mold/mold-assembly';
 import {
@@ -3157,11 +3157,38 @@ export default function ForgeBRepStudio() {
         if (typeof j.rev !== 'number' || j.rev === liveMoldRev.current) return;
         liveMoldRev.current = j.rev;
         if (j.clear) { setLiveMoldSpec(null); return; }
+        if (j.assemblySpec) { setLiveMoldSpec(j.assemblySpec); return; }   // ejemplo del libro directo
         if (j.spec) { try { setLiveMoldSpec(packageToAssemblySpec(moldMachine(j.spec))); } catch { setLiveMoldSpec(null); } }
       } catch { /* sin sesión viva */ }
     }, 1500);
     return () => clearInterval(id);
   }, []);
+  // El MOLDE en vivo se arma como COMPONENTES (una placa = una pieza) para el
+  // árbol: aislar / ocultar / opacidad, como Fusion/SolidWorks. Con primitivas.
+  const [moldParts, setMoldParts] = useState<MoldPart[]>([]);
+  const [moldHidden, setMoldHidden] = useState<Record<string, boolean>>({});
+  const [moldOpacity, setMoldOpacity] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!oc || !liveMoldSpec) { setMoldParts([]); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {   // deja pintar antes del build síncrono (~3s)
+      try { const parts = buildMoldParts(OCC, oc, liveMoldSpec, 'blocks'); if (!cancelled) { setMoldParts(parts); setMoldHidden({}); setMoldOpacity({}); } }
+      catch { if (!cancelled) setMoldParts([]); }
+    }, 60);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [oc, liveMoldSpec]);
+  const toggleMoldPlate = useCallback((role: string) => setMoldHidden((h) => ({ ...h, [role]: !h[role] })), []);
+  const showAllMold = useCallback(() => setMoldHidden({}), []);
+  const isolateMoldPlate = useCallback((role: string) => {
+    setMoldHidden((h) => {
+      const already = !h[role] && moldParts.every((p) => p.role === role || h[p.role]);
+      if (already) return {};
+      const next: Record<string, boolean> = {};
+      for (const p of moldParts) next[p.role] = p.role !== role;
+      return next;
+    });
+  }, [moldParts]);
+  const setMoldPlateOpacity = useCallback((role: string, v: number) => setMoldOpacity((o) => ({ ...o, [role]: v })), []);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
   // Menú "Más" de la toolbar: la cola larga de features que la TELEMETRÍA de los
@@ -3361,11 +3388,9 @@ export default function ForgeBRepStudio() {
           // Si hay un STEP importado, ÉSE es la pieza principal (ignora sketch/ops).
           let mainShape: Shape | null = null;
           try {
-            mainShape = liveMoldSpec
-              ? buildMoldAssembly(OCC, oc, liveMoldSpec, 'blocks')   // MOLDE en vivo, armado con primitivas
-              : importedStep
-                ? importSTEP(oc, importedStep)
-                : buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
+            mainShape = importedStep
+              ? importSTEP(oc, importedStep)
+              : buildShape(oc, boundDoc.sketch, builtOps, edgeAxisRef.current);
           } catch (e) { if (components.length === 0) throw e; } // sin componentes, propaga
           // Componentes: por defecto se JUNTAN (compound), pero cada uno puede
           // combinarse por BOOLEANA con el cuerpo acumulado — la base de un MOLDE:
@@ -3478,7 +3503,7 @@ export default function ForgeBRepStudio() {
         setBuilding(false);
       }
     });
-  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components, importedStep, liveMoldSpec]);
+  }, [oc, boundDoc, sketch.gear, sketch.kind, material, assembly, rollbackIdx, components, importedStep]);
 
   useEffect(() => { if (oc) rebuild(); }, [oc, rebuild]);
 
@@ -4186,16 +4211,18 @@ export default function ForgeBRepStudio() {
   const [sectionOffset, setSectionOffset] = useState(0);   // −1..1 sobre el bbox
   const [sectionFlip, setSectionFlip] = useState(false);
   const meshBBox = useMemo(() => {
-    if (!result) return null;
-    const p = result.mesh.positions;
+    // fuente: la pieza del doc, o (si el doc está vacío) el MOLDE en vivo (unión de placas)
+    const buffers: ArrayLike<number>[] = result ? [result.mesh.positions] : moldParts.map((p) => p.positions);
+    if (!buffers.length) return null;
     let mnx = Infinity, mny = Infinity, mnz = Infinity, mxx = -Infinity, mxy = -Infinity, mxz = -Infinity;
-    for (let i = 0; i < p.length; i += 3) {
+    for (const p of buffers) for (let i = 0; i < p.length; i += 3) {
       mnx = Math.min(mnx, p[i]); mxx = Math.max(mxx, p[i]);
       mny = Math.min(mny, p[i + 1]); mxy = Math.max(mxy, p[i + 1]);
       mnz = Math.min(mnz, p[i + 2]); mxz = Math.max(mxz, p[i + 2]);
     }
+    if (!Number.isFinite(mnx)) return null;
     return { center: [(mnx + mxx) / 2, (mny + mxy) / 2, (mnz + mxz) / 2], half: [(mxx - mnx) / 2 || 1, (mxy - mny) / 2 || 1, (mxz - mnz) / 2 || 1] };
-  }, [result]);
+  }, [result, moldParts]);
   // Plano de recorte ESTABLE (objeto único): la flecha del SectionGizmo lo MUTA en
   // mundo cada frame (no recalculamos por estado → arrastre fluido sin re-render).
   // Plano de recorte SIEMPRE presente (constante +1e6 = lejísimos, no corta nada)
@@ -5419,11 +5446,19 @@ export default function ForgeBRepStudio() {
               <CamStock3D center={meshBBox.center as [number, number, number]} half={meshBBox.half as [number, number, number]} />
             )}
             {workspace === 'manufactura' && camView3D && <CamToolpath3D segs={camView3D} />}
-            {!(gbMotion && gbParts) && showSketch && <SketchPlane plane={sketchPlaneK} />}
+            {!(gbMotion && gbParts) && !moldParts.length && showSketch && <SketchPlane plane={sketchPlaneK} />}
             {/* El fantasma del perfil VIEJO se esconde mientras el croquis está
                 abierto: el SVG en vivo ES la verdad ahí; dos versiones confunden. */}
-            {!(gbMotion && gbParts) && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
-            {gbMotion && gbParts ? (
+            {!(gbMotion && gbParts) && !moldParts.length && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
+            {moldParts.length ? (
+              // MOLDE EN VIVO: cada PLACA es un componente separado (aislar/ocultar/
+              // opacidad desde el árbol; la SECCIÓN los corta a todos).
+              moldParts.map((pt) => (moldHidden[pt.role] ? null : (
+                <PartMesh key={pt.role} geo={{ positions: pt.positions, normals: pt.normals, indices: pt.indices }}
+                  color={pt.color} clip={sectionPlanes} opacity={moldOpacity[pt.role] ?? pt.opacity}
+                  metalness={0.35} roughness={0.5} />
+              )))
+            ) : gbMotion && gbParts ? (
               <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} clip={sectionPlanes} />
             ) : sketch.kind === 'gearbox' && showOverhangs && result ? (
               // ANÁLISIS DE VOLADIZOS: la caja COMPLETA (compound) con mapa de calor
@@ -6080,6 +6115,41 @@ export default function ForgeBRepStudio() {
                     </div>
                   );
                 })}
+                </div>
+              </>
+            )}
+            {/* ── MOLDE EN VIVO: componentes (placas) — aislar / ocultar / opacidad, como Fusion ── */}
+            {moldParts.length > 0 && (
+              <>
+                <div className="fb-feat-subhead" data-testid="mold-parts-head">
+                  🏭 Molde · placas <b data-testid="mold-visible-count">{moldParts.filter((p) => !moldHidden[p.role]).length}/{moldParts.length}</b> vis.
+                  <button className="fb-feat-act" data-testid="mold-show-all" title="Mostrar todas las placas" onClick={showAllMold} style={{ marginLeft: 'auto' }}>👁</button>
+                </div>
+                <div className="fb-bodies-list" data-testid="mold-parts-list">
+                  {moldParts.map((pt) => {
+                    const hidden = !!moldHidden[pt.role];
+                    const op = moldOpacity[pt.role] ?? pt.opacity;
+                    return (
+                      <div key={pt.role} className="fb-feat-node comp" data-testid={`mold-part-${pt.role}`}
+                        style={hidden ? { opacity: 0.5 } : undefined}
+                        onDoubleClick={() => isolateMoldPlate(pt.role)} title="Doble-clic = AISLAR (solo esta placa)">
+                        <span className="fb-color-dot" style={{ background: pt.color, borderRadius: '50%', width: 12, height: 12, display: 'inline-block', flex: '0 0 auto' }} />
+                        <div className="fb-feat-body">
+                          <strong>{pt.name}</strong>
+                          <em>{pt.material} · {hidden ? 'oculta' : 'visible'}</em>
+                          <input type="range" min={0.15} max={1} step={0.05} value={op} data-testid={`mold-opacity-${pt.role}`}
+                            onChange={(e) => setMoldPlateOpacity(pt.role, Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()} title={`Opacidad ${Math.round(op * 100)}%`} style={{ width: '100%', marginTop: 3 }} />
+                        </div>
+                        <div className="fb-feat-actions">
+                          <button className="fb-feat-act" data-testid={`mold-isolate-${pt.role}`}
+                            onClick={(e) => { e.stopPropagation(); isolateMoldPlate(pt.role); }} title="Aislar (solo esta)">◎</button>
+                          <button className="fb-feat-act" data-testid={`mold-hide-${pt.role}`}
+                            onClick={(e) => { e.stopPropagation(); toggleMoldPlate(pt.role); }} title={hidden ? 'Mostrar placa' : 'Ocultar placa'}>{hidden ? '🙈' : '👁'}</button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}
