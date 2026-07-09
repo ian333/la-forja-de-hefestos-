@@ -11,11 +11,13 @@ import * as K from '../brep/occt';
 import { packageToAssemblySpec, buildMoldLaminas, laminasToPrintHTML } from './mold-plano-set';
 
 const GOLD = '#c9a227';
+// LOS 4 PROYECTOS de La Forja — cubren colada caliente (Sony/LEGO) y fría
+// (charola/tapa), multi- y mono-cavidad. Los ⌀/volúmenes salen de la pieza real.
 const PRESETS: Array<{ label: string } & MachineSpec> = [
-  { label: 'Bezel laptop', name: 'Bezel laptop', Lmm: 240, Wmm: 160, Hmm: 10, surfaceMm2: 45700, volumeMm3: 27500, wallMm: 1.5, annualVolume: 1_000_000, plastic: 'ABS', finish: 'SPI B-3' },
+  { label: 'LEGO 2×4', name: 'Ladrillo LEGO 2×4', Lmm: 32, Wmm: 16, Hmm: 11, surfaceMm2: 3300, volumeMm3: 2500, wallMm: 1.5, annualVolume: 20_000_000, plastic: 'ABS', finish: 'SPI A-3', feedPref: 'hot-runner' },
+  { label: 'Carcasa Sony', name: 'Carcasa de control Sony', Lmm: 150, Wmm: 45, Hmm: 22, surfaceMm2: 43000, volumeMm3: 43000, wallMm: 2, annualVolume: 2_000_000, plastic: 'ABS', finish: 'SPI B-3', feedPref: 'hot-runner' },
+  { label: 'Charola', name: 'Charola contenedora', Lmm: 90, Wmm: 90, Hmm: 35, surfaceMm2: 49000, volumeMm3: 49000, wallMm: 2, annualVolume: 200_000, plastic: 'PP', finish: 'SPI B-3' },
   { label: 'Tapa rosca', name: 'Tapa rosca', Lmm: 40, Wmm: 40, Hmm: 15, surfaceMm2: 6500, volumeMm3: 2800, wallMm: 1.2, annualVolume: 8_000_000, plastic: 'PP', finish: 'SPI A-3' },
-  { label: 'Carcasa auto', name: 'Carcasa conector auto', Lmm: 60, Wmm: 40, Hmm: 25, surfaceMm2: 14000, volumeMm3: 9000, wallMm: 2, annualVolume: 3_000_000, plastic: 'PA66', finish: 'SPI B-3', abrasive: true },
-  { label: 'Lente óptico', name: 'Lente óptico', Lmm: 50, Wmm: 50, Hmm: 8, surfaceMm2: 9000, volumeMm3: 12000, wallMm: 3, annualVolume: 200_000, plastic: 'PC', finish: 'SPI A-1', mirror: true },
 ];
 
 const PLASTICS = ['ABS', 'PP', 'PC', 'PA66', 'POM'];
