@@ -1,0 +1,102 @@
+{
+  "id": "mec-u8-l1",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 1,
+  "titulo": "El plano promete, la tolerancia cumple",
+  "subtitulo": "± y límites · nada mide exacto · cada decimal cuesta ×10",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-2..8-6 (Direct tolerances & limits)",
+  "descripcion": "Dibujaste 100 mm. Tu fresa entregará 100.03. ¿Está mal? Sin tolerancia, NADIE sabe. Aquí aprendes el idioma del ±: límites, veredicto medible, y por qué cada decimal extra multiplica el costo por diez.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Cien milímetros. Así lo dibujaste. Pero tu fresa va a entregar cien punto cero tres. ¿Está mal la pieza? Sin tolerancia, nadie lo sabe. Hoy aprendes el idioma que lo decide.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una placa de ejemplo. Boceto sobre el plano, un rectángulo a ojo.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -47, "y": -28, "settle": 700 },
+        { "type": "clickmm", "x": 51, "y": 33, "settle": 900 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "hay un rectángulo"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "La cota manda: cien milímetros. En el modelo, este cien es PERFECTO. El kernel no tiembla, no vibra, no se calienta.",
+      "gestos": [
+        { "type": "dimline", "axis": "h", "settle": 900 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "100", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1100 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Sesenta de alto, ancla la esquina: totalmente restringido. Negro, clavado, perfecto.",
+      "gestos": [
+        { "type": "dimline", "axis": "v", "settle": 900 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 900 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 500 },
+        { "type": "clickptwhere", "where": "bl", "settle": 1000 }
+      ],
+      "check": {
+        "js": "sk && sk.dof === 0",
+        "desc": "DOF 0 — el modelo es exacto"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Termina y extruye veinte. El kernel entrega el volumen EXACTO: ciento veinte mil milímetros cúbicos. Ni una micra más. Es la única máquina perfecta que vas a conocer.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "probe", "label": "placa-exacta" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "el kernel es exacto: 120,000 mm³ clavados"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Pero tu taller NO es el kernel. La fresa vibra, la pieza cede, el calor dilata, el filo se gasta. Por eso un plano de verdad NUNCA dice solo cien. Dice: cien, MÁS MENOS una décima.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Ese más menos define LÍMITES: noventa y nueve punto nueve, y cien punto uno. El inspector mide: ¿cayó adentro? Pieza buena. ¿Afuera? Rechazada. La tolerancia convierte el 'quedó bonita' en un veredicto medible.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "¿Y por qué no pedir siempre más menos una micra? Porque CADA DECIMAL CUESTA. La décima la da cualquier fresa. La centésima pide máquina fina y buena medición. La micra pide rectificadora y cuarto con temperatura controlada. Regla del taller: cada decimal extra multiplica el costo por diez.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Por eso el ingeniero tolera LO MÁS FLOJO que el diseño aguante. El modelo es la promesa; la tolerancia es el contrato. En la próxima: hache siete ge seis, el apretón de manos entre un barreno y su flecha. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

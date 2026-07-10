@@ -1,0 +1,119 @@
+{
+  "id": "mec-u8-l4",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 4,
+  "titulo": "H7/g6: el apretón de manos entre barreno y flecha",
+  "subtitulo": "ajustes ISO · holgura = agujero − eje · 25.000 NO entra en 25.000",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-17..8-20 (Standard fits) + ISO 286 (Ø25: H7 = +21/0 µm, g6 = −7/−20 µm)",
+  "descripcion": "Ø25 H7/g6: dos letras y un número que aterran — y deciden si tu balero gira suave o se atora. Aquí barrenas el agujero, descifras el código ISO y calculas la holgura real: entre 7 y 41 micras, siempre positiva. El addon de ajustes, regalado como clase.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Veinticinco hache siete, ge seis. Dos letras y un número que aparecen en todo plano serio... y nadie te explica. Hoy los descifras: son los que deciden si tu balero gira suave o se atora.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza de hoy: una placa con el barreno donde va a vivir una flecha. Boceto, rectángulo, cotas de cien por sesenta, y extruye veinte.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -47, "y": -28, "settle": 700 },
+        { "type": "clickmm", "x": 51, "y": 33, "settle": 900 },
+        { "type": "dimline", "axis": "h", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "100", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "dimline", "axis": "v", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 1800 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1600 }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "la placa 100×60×20 existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Ahora el barreno de la flecha: veinticinco. Cortar, boceto sobre la cara, círculo, y cota de diámetro veinticinco.",
+      "gestos": [
+        { "type": "tclick", "testid": "sketch-op-cut", "settle": 800 },
+        { "type": "view", "name": "iso", "settle": 900 },
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1100 },
+        { "type": "click", "x": 960, "y": 570, "settle": 1800 },
+        { "type": "tclick", "testid": "sk-tool-circle", "settle": 500 },
+        { "type": "clickmm", "x": 9, "y": -4, "settle": 600 },
+        { "type": "clickmm", "x": 21, "y": -4, "settle": 900 },
+        { "type": "hook", "fn": "dimDiam", "args": [0], "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "25", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1100 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "fill", "testid": "input-comp-depth", "text": "25", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 900 },
+        { "type": "probe", "label": "barreno-h7" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 110000 && inv.vol_kernel < 110400",
+        "desc": "barreno Ø25 exacto (vol = 110,182 mm³)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "En el modelo, ese barreno mide veinticinco EXACTO. Y aquí viene la pregunta del millón: si la flecha también mide veinticinco exacto... ¿entra?",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "NO entra. Veinticinco contra veinticinco es fricción infinita: se atora a medio camino y ahí se queda, soldada en frío. Para que una flecha GIRE, necesita AIRE. Poquito, controlado, pero aire. Ese aire tiene nombre: holgura.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y aquí entra el código. Hache siete, para el barreno: puede quedar entre veinticinco exacto y veinticinco más veintiún micras. Nunca más chico que el nominal. Esa ventanita de veintiún micras es su tolerancia.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Ge seis, para la flecha: entre siete y veinte micras MÁS CHICA que veinticinco. Siempre más chica, nunca igual. La LETRA dice de qué lado del nominal cae; el NÚMERO dice qué tan ancha es la ventana.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Ahora resta: holgura igual a agujero menos eje. En el peor par, siete micras de aire. En el mejor, cuarenta y una. SIEMPRE positiva: la flecha entra deslizando y gira sin cabecear. Eso es hache siete ge seis: el ajuste deslizante universal. Así se monta un balero, un buje, el disco de un reductor.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "¿Y si NO quieres que gire? Cambias la letra: hache siete pe seis hace la flecha MÁS GRANDE que el barreno — se mete a prensa y queda clavada por fricción. Holgura, transición, interferencia: tres familias, un mismo código.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p10",
+      "dice": "Dos letras y un número son un contrato mundial: cualquier taller del planeta te entrega la MISMA holgura sin cruzar palabra. El análisis de ajustes que allá afuera es un addon carísimo... aquí es una clase. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
