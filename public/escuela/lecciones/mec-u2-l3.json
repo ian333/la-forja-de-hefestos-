@@ -1,0 +1,97 @@
+{
+  "id": "mec-u2-l3",
+  "curso": "mecanica",
+  "unidad": 2,
+  "n": 3,
+  "titulo": "El polígono: por qué la tuerca es hexagonal",
+  "subtitulo": "llave 13 = entrecaras · e = s/cos30° · 6 caras, el pacto perfecto",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 2 §2-9 (Polygon tool) + DIN 934 (M8→13, M12→19)",
+  "descripcion": "Tuerca M8, llave del 13 — ¿de dónde salió el TRECE si en 'M8' no aparece? Dibujas un hexágono circunscrito (la entrecaras manda), lo vuelves prisma y descifras el pacto geométrico de las 6 caras: por qué no 4, ni 8, ni redonda.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Tuerca eme ocho... llave del trece. ¿De dónde salió el trece? En eme ocho no aparece por ningún lado. Hoy lo descifras — y de paso, por qué TODAS las tuercas del planeta son hexagonales.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Boceto sobre el plano. La herramienta de hoy: el polígono.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-poly", "settle": 700 }
+      ],
+      "check": {
+        "js": "sk && sk.ready",
+        "desc": "editor abierto, herramienta polígono"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Seis lados, modo circunscrito: así el clic define el punto medio de una CARA — la distancia entre caras, que es LA que importa en una tuerca. Centro en el origen... y cara a veintiséis: entrecaras de cincuenta y dos. Una tuerca gigante, de llave cincuenta y dos.",
+      "gestos": [
+        { "type": "fill", "testid": "sk-poly-n", "text": "6", "settle": 400 },
+        { "type": "tclick", "testid": "sk-poly-mode", "settle": 500 },
+        { "type": "clickmm", "x": 0, "y": 0, "settle": 700 },
+        { "type": "clickmm", "x": 26, "y": 0, "settle": 1100 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 6",
+        "desc": "el hexágono existe (6 lados)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Termina y extrúyelo doce milímetros: el cuerpo de la tuerca. El kernel mide el prisma: dos por raíz de tres por el apotema al cuadrado, por la altura. Veintiocho mil cien milímetros cúbicos.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "12", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 1100 },
+        { "type": "probe", "label": "hexagono" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 27500 && inv.vol_kernel < 28700",
+        "desc": "prisma hexagonal ≈ 28,100 mm³ (2√3·26²·12)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Y aquí el secreto de la llave: agarra dos caras PARALELAS, separadas exactamente la entrecaras. En una tuerca eme ocho real, esa distancia es TRECE milímetros. El trece nunca fue de la rosca — es del hexágono. Eme doce: llave del diecinueve. Mismo cuento.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Y por qué seis caras? Redonda: la llave no agarra nada. Cuadrada: agarra, pero solo hay cuatro posiciones — en un rincón apretado no llegas. Ocho caras: posiciones de sobra, pero las esquinas quedan tan abiertas que la llave las redondea al primer apretón. Seis es el pacto: giras la llave solo sesenta grados para reagarrar... y las esquinas todavía aguantan el torque.",
+      "gestos": [
+        { "type": "wait", "ms": 4200 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "De punta a punta el hexágono mide más: la entrecaras entre coseno de treinta grados — aquí, sesenta milímetros. Por eso la llave nunca agarra las puntas: resbalaría, y las redondearía.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "¿Te suena de algo? Una barra hexagonal en una prensa de mordazas planas solo toca DOS caras — como una llave floja: se bota. El nido que la abraza por cuatro caras es una llave bien hecha. La geometría manda: en la tuerca, en la llave y en la prensa.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Círculo, rectángulo, polígono: ya hablas el idioma del croquis. Y la próxima vez que pidas la llave del trece, sabrás que estás leyendo la entrecaras de un hexágono. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

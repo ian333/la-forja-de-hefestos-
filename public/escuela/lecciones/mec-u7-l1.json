@@ -1,0 +1,124 @@
+{
+  "id": "mec-u7-l1",
+  "curso": "mecanica",
+  "unidad": 7,
+  "n": 1,
+  "titulo": "La cota es una orden",
+  "subtitulo": "anatomía de la cota · acota lo que se MIDE · nunca dos veces",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 7 §7-1..7-2 (Dimensioning terminology & conventions, ANSI)",
+  "descripcion": "Un plano sin cotas es una opinión. Aquí construyes una placa en L acotándola como manda ANSI: la anatomía de la cota, la regla de oro (la cota mueve a la geometría, no al revés) y los tres pecados que cuestan piezas rechazadas.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Un plano sin cotas es una opinión. Y una cota mal puesta cuesta piezas rechazadas y pleitos con el taller. Hoy: el idioma de la cota... y sus tres pecados capitales.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una placa en L, dibujada a pulso con la herramienta de línea. Azul: libre. Todavía no promete nada.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 600 },
+        { "type": "clickmm", "x": 2, "y": 3, "settle": 500 },
+        { "type": "clickmm", "x": 58, "y": -2, "settle": 500 },
+        { "type": "clickmm", "x": 61, "y": 13, "settle": 500 },
+        { "type": "clickmm", "x": 22, "y": 17, "settle": 500 },
+        { "type": "clickmm", "x": 18, "y": 43, "settle": 500 },
+        { "type": "clickmm", "x": -3, "y": 44, "settle": 500 },
+        { "type": "clickmm", "x": 2, "y": 3, "settle": 700 },
+        { "type": "key", "key": "Escape", "settle": 800 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 6",
+        "desc": "la L tiene sus 6 líneas"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Primero las órdenes de dirección: estas líneas, horizontales. Estas otras, verticales. La forma ya es una L de verdad — pero sin tamaño.",
+      "gestos": [
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 0], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 2], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 4], "settle": 300 },
+        { "type": "tclick", "testid": "sk-con-h", "settle": 900 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 1], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 3], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 5], "settle": 300 },
+        { "type": "tclick", "testid": "sk-con-v", "settle": 900 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Anatomía de una cota: dos líneas de extensión salen de la pieza, la línea de cota corre entre ellas, flechas en las puntas... y el VALOR. Tecleo sesenta — y mira: la geometría OBEDECE a la cota. Nunca al revés. Regla número uno del CAD paramétrico.",
+      "gestos": [
+        { "type": "hook", "fn": "dimDist", "args": [0, 1, "h"], "settle": 900 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1300 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Acota lo FUNCIONAL: lo que el inspector va a medir con su calibrador, desde bordes que se pueden tocar. Quince de peralte... veinte de ala... cuarenta y cinco de alto total.",
+      "gestos": [
+        { "type": "hook", "fn": "dimDist", "args": [1, 2, "v"], "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "15", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1000 },
+        { "type": "hook", "fn": "dimDist", "args": [4, 5, "h"], "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "20", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1000 },
+        { "type": "hook", "fn": "dimDist", "args": [5, 0, "v"], "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "45", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1200 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Ancla la esquina... y cero grados de libertad. El boceto dejó de ser un dibujo: ya es un contrato.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 500 },
+        { "type": "clickptwhere", "where": "bl", "settle": 1100 }
+      ],
+      "check": {
+        "js": "sk && sk.dof === 0",
+        "desc": "DOF 0 — acotada por completo, sin ambigüedad"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "Termina y extruye quince. El kernel firma el contrato: veintidós mil quinientos milímetros cúbicos. Exactos.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "15", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 1100 },
+        { "type": "probe", "label": "L-acotada" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 22500) < 1",
+        "desc": "la L acotada = 22,500 mm³ exactos (área 1,500 × 15)"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "Los tres pecados. Uno: la cota DOBLE — acotar el total de sesenta... y también los tramos que suman sesenta. Si un día cambias una, ¿cuál manda? Ambigüedad, pleito. Dos: acotar a líneas ocultas — el inspector no puede medir lo que no ve. Tres: acotar lo decorativo y olvidar lo funcional — el barreno que ensambla vale más que el chaflán bonito.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1600 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "La cota es una orden triple: al taller le dice qué lograr, al inspector qué medir, y al CAD qué obedecer. En la unidad ocho aprendiste a ponerle el más menos; hoy sabes DÓNDE ponerla. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
