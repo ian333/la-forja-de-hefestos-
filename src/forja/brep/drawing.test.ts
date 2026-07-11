@@ -162,6 +162,33 @@ describe('generateDrawing — profundidad + nota de tolerancia', () => {
   });
 });
 
+describe('generateDrawing — primer ángulo (ISO europeo, U4-L5)', () => {
+  // Extrae la Y de hoja del label de una vista (menor y = más arriba en la hoja)
+  const labelY = (svg: string, label: string) => {
+    const m = svg.match(new RegExp(`<text x="[\\d.]+" y="([\\d.]+)"[^>]*>${label}</text>`));
+    return m ? parseFloat(m[1]) : NaN;
+  };
+  it('tercer ángulo (default): PLANTA ARRIBA del alzado', () => {
+    const svg = generateDrawing(makeBox(40, 20, 12)).svg;
+    expect(labelY(svg, 'PLANTA')).toBeLessThan(labelY(svg, 'ALZADO'));
+    expect(svg).toContain('3er áng');
+  });
+  it("projection:'first': PLANTA ABAJO del alzado y cajetín '1er áng'", () => {
+    const svg = generateDrawing(makeBox(40, 20, 12), { projection: 'first' }).svg;
+    expect(labelY(svg, 'PLANTA')).toBeGreaterThan(labelY(svg, 'ALZADO'));
+    expect(svg).toContain('1er áng');
+  });
+  it('las dimensiones reales de las vistas NO cambian con el sistema', () => {
+    const a = generateDrawing(makeBox(40, 20, 12));
+    const b = generateDrawing(makeBox(40, 20, 12), { projection: 'first' });
+    for (const k of ['front', 'top', 'right'] as const) {
+      const va = a.views.find((v) => v.key === k)!, vb = b.views.find((v) => v.key === k)!;
+      expect(vb.wmm).toBeCloseTo(va.wmm, 3);
+      expect(vb.hmm).toBeCloseTo(va.hmm, 3);
+    }
+  });
+});
+
 describe('generateDrawing — oclusión HLR (Möller–Trumbore)', () => {
   it('una arista DETRÁS de una pared sale oculta; una DELANTE, visible', () => {
     // Pared grande en y=0 (ocluye en el ALZADO, eye = -Y).

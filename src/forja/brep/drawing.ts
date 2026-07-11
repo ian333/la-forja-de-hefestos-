@@ -25,6 +25,10 @@ export interface DrawingMeta {
   /** Nota de tolerancia general (U8/ISO 2768), ej. "±0.1 · ISO 2768-m". Se
    *  rotula sobre el cajetín: "TOL. GRAL. … SALVO INDICACIÓN". Opcional. */
   tolNote?: string;
+  /** Sistema de proyección (U4-L5): 'third' (ANSI, default — PLANTA arriba,
+   *  LATERAL derecha) o 'first' (ISO europeo — la vista se proyecta AL OTRO
+   *  lado del objeto: PLANTA abajo, LATERAL izquierda). El cajetín lo declara. */
+  projection?: 'first' | 'third';
 }
 export interface ViewReport {
   key: string; label: string;
@@ -184,12 +188,22 @@ export function generateDrawing(input: DrawingInput, meta: DrawingMeta = {}): Dr
 
   const front = perView[0], top = perView[1], right = perView[2];
   const gap = diag * 0.5;
-  // offsets en "espacio de hoja" (mm, v hacia arriba), 3er ángulo
-  const off: Record<string, { du: number; dv: number }> = {
-    front: { du: 0, dv: 0 },
-    top: { du: 0, dv: (front.vmax + gap) - top.vmin },     // PLANTA arriba, comparte X
-    right: { du: (front.umax + gap) - right.umin, dv: 0 }, // LATERAL a la derecha, comparte Z
-  };
+  // offsets en "espacio de hoja" (mm, v hacia arriba). TERCER ángulo (ANSI): la
+  // vista cae DEL MISMO lado que el ojo (PLANTA arriba, LATERAL derecha). PRIMER
+  // ángulo (ISO): el objeto está entre el ojo y el plano → la vista cae AL OTRO
+  // lado (PLANTA abajo, LATERAL izquierda). Misma proyección, otro acomodo.
+  const firstAngle = meta.projection === 'first';
+  const off: Record<string, { du: number; dv: number }> = firstAngle
+    ? {
+        front: { du: 0, dv: 0 },
+        top: { du: 0, dv: (front.vmin - gap) - top.vmax },      // PLANTA abajo
+        right: { du: (front.umin - gap) - right.umax, dv: 0 },  // LATERAL a la izquierda
+      }
+    : {
+        front: { du: 0, dv: 0 },
+        top: { du: 0, dv: (front.vmax + gap) - top.vmin },     // PLANTA arriba, comparte X
+        right: { du: (front.umax + gap) - right.umin, dv: 0 }, // LATERAL a la derecha, comparte Z
+      };
 
   // bbox combinada de la hoja
   let sxmin = Infinity, sxmax = -Infinity, symin = Infinity, symax = -Infinity;
@@ -357,7 +371,7 @@ function renderSVG(
   parts.push(row(tbx + 3, tby + 16, 'MATERIAL', meta.material ?? '—'));
   parts.push(row(tbx + 3, tby + 26, 'MASA', meta.massG != null ? `${meta.massG.toFixed(1)} g` : '—'));
   parts.push(row(tbx + TB_W * 0.55 + 3, tby + 16, 'ESCALA', scaleLabel));
-  parts.push(row(tbx + TB_W * 0.55 + 3, tby + 26, 'UNID · 3er áng', meta.units ?? 'mm'));
+  parts.push(row(tbx + TB_W * 0.55 + 3, tby + 26, meta.projection === 'first' ? 'UNID · 1er áng' : 'UNID · 3er áng', meta.units ?? 'mm'));
   parts.push(`<text x="${tbx + TB_W - 2}" y="${tby + 7.5}" font-size="2.6" fill="#b8860b" text-anchor="end">La Forja · GAIA</text>`);
   parts.push(`</g>`);
   parts.push(`</svg>`);
