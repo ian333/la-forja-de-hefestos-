@@ -88,6 +88,7 @@ import {
   type SketchPlane3D,
 } from './occt';
 import { makeThreadedRod, threadDims, threadDesignation } from './thread';
+import { makeRack, rackArea } from './rack';
 import { generateFacingToolpath, toGcode, toolpathStats, arcSweep } from '../cam/facing';
 import type { ToolpathSegment } from '../cam/facing';
 import { generateCircularPocketToolpath } from '../cam/pocket';
@@ -206,9 +207,11 @@ const FEA_MATERIAL_KEY: Record<string, keyof typeof MATERIAL_DATABASE> = {
 // ──────────────────────────────────────────────────────────────────
 // El documento = grafo de features (sketch base + operaciones ordenadas)
 // ──────────────────────────────────────────────────────────────────
-type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom' | 'gearbox' | 'rosca';
+type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom' | 'gearbox' | 'rosca' | 'rack';
 interface RoscaParams { d: number; pitch: number; length: number }
 const ROSCA_DEFAULTS: RoscaParams = { d: 14, pitch: 3, length: 18 }; // coarse visible (la fina revienta MakePipe)
+interface RackParams { m: number; teeth: number; width: number }
+const RACK_DEFAULTS: RackParams = { m: 3, teeth: 8, width: 20 };   // cremallera legible en pantalla
 // CAJA cicloidal multi-disco: N discos de lóbulos fasados + eje hueco + base-anillo.
 interface GearboxParams {
   lobes: number; discs: number; R: number; Rr: number; E: number;
@@ -260,6 +263,7 @@ interface SketchFeature {
   gearbox: GearboxParams;
   // Rosca MODELADA (kind 'rosca'): tornillo con cuerda helicoidal real (ISO 68-1).
   rosca?: RoscaParams;
+  rack?: RackParams;
   // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
   // resuelto por el solver de restricciones. Reemplaza las plantillas.
   customProfile?: Pt2[];
@@ -869,6 +873,13 @@ function buildShape(
         const { d, pitch, length } = sketch.rosca ?? ROSCA_DEFAULTS;
         try { shape = makeThreadedRod(oc, d, pitch, length); }
         catch { shape = makeCylinder(oc, d / 2, length); }
+        continue;
+      }
+      if (sketch.kind === 'rack') {
+        // ── CREMALLERA (ISO 53): la involuta límite — flancos RECTOS a 20°.
+        // Perfil trapezoide exacto extruido; vol == rackArea·width (kernel 0.0000%).
+        const rk = sketch.rack ?? RACK_DEFAULTS;
+        shape = makeRack(oc, { m: rk.m, teeth: rk.teeth, width: rk.width });
         continue;
       }
       // Simétrico: el plano de boceto se baja −depth/2 y se extruye depth, así
@@ -2974,7 +2985,7 @@ interface DocState {
 const DEFAULT_SKETCH: SketchFeature = {
   id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
   steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
-  gear: { ...GEAR_DEFAULTS }, gearbox: { ...GEARBOX_DEFAULTS }, rosca: { ...ROSCA_DEFAULTS },
+  gear: { ...GEAR_DEFAULTS }, gearbox: { ...GEARBOX_DEFAULTS }, rosca: { ...ROSCA_DEFAULTS }, rack: { ...RACK_DEFAULTS },
 };
 function makeDefaultDoc(name = 'Pieza nueva'): DocState {
   return {
@@ -3887,6 +3898,19 @@ export default function ForgeBRepStudio() {
   }, []);
   const updateRosca = useCallback((patch: Partial<RoscaParams>) => {
     setSketch((s) => ({ ...s, rosca: { ...s.rosca, ...patch } }));
+  }, []);
+
+  // ── CREMALLERA (btn-rack): la involuta límite — U10-L6 ──
+  const applyRack = useCallback(() => {
+    setSketch((s) => ({ ...s, kind: 'rack', rack: s.rack ?? { ...RACK_DEFAULTS } }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude')
+      ? cur
+      : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+    setActiveOp('sketch'); setActiveComp(null); setPickMode('none');
+    mark('op', 0, { op: 'rack' });
+  }, []);
+  const updateRack = useCallback((patch: Partial<RackParams>) => {
+    setSketch((s) => ({ ...s, rack: { ...(s.rack ?? RACK_DEFAULTS), ...patch } }));
   }, []);
 
   // ── ENSAMBLE: agregar el 2º engrane (btn-add-gear2). Garantiza que el sketch
@@ -5907,6 +5931,7 @@ export default function ForgeBRepStudio() {
                     <button data-testid="btn-gear" role="menuitem" onClick={() => { applyGear(); setMasOpen(false); }}><Ic name="engrane" />Engrane de involuta</button>
                     <button data-testid="btn-gearbox" role="menuitem" onClick={() => { applyGearbox(); setMasOpen(false); }}><Ic name="cajacic" />Caja cicloidal</button>
                     <button data-testid="btn-rosca" role="menuitem" onClick={() => { applyRosca(); setMasOpen(false); }}><Ic name="roscado" />Rosca (tornillo)</button>
+                    <button data-testid="btn-rack" role="menuitem" onClick={() => { applyRack(); setMasOpen(false); }}><Ic name="engrane" />Cremallera (rack)</button>
                     <button data-testid="btn-params" role="menuitem" onClick={() => { setParamsOpen((v) => !v); setMasOpen(false); }}><Ic name="params" />Parámetros ƒₓ</button>
                     <button data-testid="btn-component" role="menuitem" onClick={() => { addComponent('box'); setMasOpen(false); }}><Ic name="componente" />Componente</button>
                   </div>
@@ -6475,6 +6500,23 @@ export default function ForgeBRepStudio() {
                       onChange={(v) => updateRosca({ pitch: v })} />
                     <Dim label="Largo roscado" value={r.length} unit="mm" min={6} max={80} step={2} testid="input-rosca-largo"
                       onChange={(v) => updateRosca({ length: v })} />
+                  </>
+                  );
+                })()) : sketch.kind === 'rack' ? ((() => {
+                  const rk = sketch.rack ?? RACK_DEFAULTS;
+                  return (
+                  <>
+                    <p className="fb-hint-txt">
+                      La involuta LÍMITE: radio→∞ ⇒ flancos RECTOS a 20° (ISO 53). Engrana con
+                      cualquier piñón del mismo módulo. Avance = π·m·Z por vuelta del piñón.
+                      Volumen exacto: <b>{(rackArea(rk.m, rk.teeth) * rk.width).toFixed(0)} mm³</b>.
+                    </p>
+                    <Dim label="Módulo" value={rk.m} unit="mm" min={1} max={8} step={0.5} testid="input-rack-m"
+                      onChange={(v) => updateRack({ m: v })} />
+                    <Dim label="Dientes" value={rk.teeth} unit="" min={3} max={30} step={1} testid="input-rack-z"
+                      onChange={(v) => updateRack({ teeth: v })} />
+                    <Dim label="Ancho de cara" value={rk.width} unit="mm" min={5} max={60} step={5} testid="input-rack-w"
+                      onChange={(v) => updateRack({ width: v })} />
                   </>
                   );
                 })()) : sketch.kind === 'gearbox' ? (
