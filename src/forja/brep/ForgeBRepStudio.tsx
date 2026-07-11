@@ -89,6 +89,7 @@ import {
 } from './occt';
 import { makeThreadedRod, threadDims, threadDesignation } from './thread';
 import { makeRack, rackArea } from './rack';
+import { makeDinBolt, dinBoltInfo } from './din-bolt';
 import { generateFacingToolpath, toGcode, toolpathStats, arcSweep } from '../cam/facing';
 import type { ToolpathSegment } from '../cam/facing';
 import { generateCircularPocketToolpath } from '../cam/pocket';
@@ -207,11 +208,13 @@ const FEA_MATERIAL_KEY: Record<string, keyof typeof MATERIAL_DATABASE> = {
 // ──────────────────────────────────────────────────────────────────
 // El documento = grafo de features (sketch base + operaciones ordenadas)
 // ──────────────────────────────────────────────────────────────────
-type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom' | 'gearbox' | 'rosca' | 'rack';
+type SketchKind = 'rect' | 'circle' | 'lprofile' | 'revprofile' | 'gear' | 'custom' | 'gearbox' | 'rosca' | 'rack' | 'din';
 interface RoscaParams { d: number; pitch: number; length: number }
 const ROSCA_DEFAULTS: RoscaParams = { d: 14, pitch: 3, length: 18 }; // coarse visible (la fina revienta MakePipe)
 interface RackParams { m: number; teeth: number; width: number }
 const RACK_DEFAULTS: RackParams = { m: 3, teeth: 8, width: 20 };   // cremallera legible en pantalla
+interface DinParams { size: 'M6' | 'M8' | 'M10'; length: number }
+const DIN_DEFAULTS: DinParams = { size: 'M8', length: 16 };        // llave 13, cuerda visible (M12 largo degrada)
 // CAJA cicloidal multi-disco: N discos de lóbulos fasados + eje hueco + base-anillo.
 interface GearboxParams {
   lobes: number; discs: number; R: number; Rr: number; E: number;
@@ -264,6 +267,7 @@ interface SketchFeature {
   // Rosca MODELADA (kind 'rosca'): tornillo con cuerda helicoidal real (ISO 68-1).
   rosca?: RoscaParams;
   rack?: RackParams;
+  din?: DinParams;
   // Perfil DIBUJADO en el editor de croquis (kind 'custom'): polígono cerrado en mm
   // resuelto por el solver de restricciones. Reemplaza las plantillas.
   customProfile?: Pt2[];
@@ -873,6 +877,12 @@ function buildShape(
         const { d, pitch, length } = sketch.rosca ?? ROSCA_DEFAULTS;
         try { shape = makeThreadedRod(oc, d, pitch, length); }
         catch { shape = makeCylinder(oc, d / 2, length); }
+        continue;
+      }
+      if (sketch.kind === 'din') {
+        // ── TORNILLO DIN 933 del CATÁLOGO: no se dibuja, se INVOCA (cotas de norma).
+        const dn = sketch.din ?? DIN_DEFAULTS;
+        shape = makeDinBolt(oc, dn.size, dn.length);
         continue;
       }
       if (sketch.kind === 'rack') {
@@ -2985,7 +2995,7 @@ interface DocState {
 const DEFAULT_SKETCH: SketchFeature = {
   id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
   steps: [{ r: 10, L: 20 }, { r: 15, L: 30 }, { r: 10, L: 20 }],
-  gear: { ...GEAR_DEFAULTS }, gearbox: { ...GEARBOX_DEFAULTS }, rosca: { ...ROSCA_DEFAULTS }, rack: { ...RACK_DEFAULTS },
+  gear: { ...GEAR_DEFAULTS }, gearbox: { ...GEARBOX_DEFAULTS }, rosca: { ...ROSCA_DEFAULTS }, rack: { ...RACK_DEFAULTS }, din: { ...DIN_DEFAULTS },
 };
 function makeDefaultDoc(name = 'Pieza nueva'): DocState {
   return {
@@ -3911,6 +3921,19 @@ export default function ForgeBRepStudio() {
   }, []);
   const updateRack = useCallback((patch: Partial<RackParams>) => {
     setSketch((s) => ({ ...s, rack: { ...(s.rack ?? RACK_DEFAULTS), ...patch } }));
+  }, []);
+
+  // ── TORNILLO DIN 933 (btn-din): del catálogo de 942 SKUs — U6-L3 ──
+  const applyDin = useCallback(() => {
+    setSketch((s) => ({ ...s, kind: 'din', din: s.din ?? { ...DIN_DEFAULTS } }));
+    setOps((cur) => (cur.some((o) => o.type === 'extrude')
+      ? cur
+      : [{ id: newId('extrude'), type: 'extrude', depth: 12, symmetric: false }, ...cur]));
+    setActiveOp('sketch'); setActiveComp(null); setPickMode('none');
+    mark('op', 0, { op: 'din' });
+  }, []);
+  const updateDin = useCallback((patch: Partial<DinParams>) => {
+    setSketch((s) => ({ ...s, din: { ...(s.din ?? DIN_DEFAULTS), ...patch } }));
   }, []);
 
   // ── ENSAMBLE: agregar el 2º engrane (btn-add-gear2). Garantiza que el sketch
@@ -5938,6 +5961,7 @@ export default function ForgeBRepStudio() {
                     <button data-testid="btn-gearbox" role="menuitem" onClick={() => { applyGearbox(); setMasOpen(false); }}><Ic name="cajacic" />Caja cicloidal</button>
                     <button data-testid="btn-rosca" role="menuitem" onClick={() => { applyRosca(); setMasOpen(false); }}><Ic name="roscado" />Rosca (tornillo)</button>
                     <button data-testid="btn-rack" role="menuitem" onClick={() => { applyRack(); setMasOpen(false); }}><Ic name="engrane" />Cremallera (rack)</button>
+                    <button data-testid="btn-din" role="menuitem" onClick={() => { applyDin(); setMasOpen(false); }}><Ic name="roscado" />Tornillo DIN 933</button>
                     <button data-testid="btn-params" role="menuitem" onClick={() => { setParamsOpen((v) => !v); setMasOpen(false); }}><Ic name="params" />Parámetros ƒₓ</button>
                     <button data-testid="btn-component" role="menuitem" onClick={() => { addComponent('box'); setMasOpen(false); }}><Ic name="componente" />Componente</button>
                   </div>
@@ -6507,6 +6531,25 @@ export default function ForgeBRepStudio() {
                       onChange={(v) => updateRosca({ pitch: v })} />
                     <Dim label="Largo roscado" value={r.length} unit="mm" min={6} max={80} step={2} testid="input-rosca-largo"
                       onChange={(v) => updateRosca({ length: v })} />
+                  </>
+                  );
+                })()) : sketch.kind === 'din' ? ((() => {
+                  const dn = sketch.din ?? DIN_DEFAULTS; const info = dinBoltInfo(dn.size, dn.length);
+                  return (
+                  <>
+                    <p className="fb-hint-txt">
+                      Del CATÁLOGO (942 SKUs, cotas de norma): <b>{info.desig}</b> — llave
+                      <b> {info.s}</b>, cabeza {info.k} mm, paso {info.pitch}. Lo normalizado
+                      no se dibuja: se invoca por designación.
+                    </p>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                      {(['M6', 'M8', 'M10'] as const).map((sz) => (
+                        <button key={sz} data-testid={`btn-din-${sz}`} onClick={() => updateDin({ size: sz })}
+                          style={{ fontWeight: dn.size === sz ? 700 : 400 }}>{sz}</button>
+                      ))}
+                    </div>
+                    <Dim label="Largo" value={dn.length} unit="mm" min={8} max={40} step={2} testid="input-din-largo"
+                      onChange={(v) => updateDin({ length: v })} />
                   </>
                   );
                 })()) : sketch.kind === 'rack' ? ((() => {
