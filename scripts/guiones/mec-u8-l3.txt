@@ -1,0 +1,9 @@
+Tres cotas de treinta milímetros en cadena, cada una con más menos una décima. ¿A cuánto queda el borde final? Si dijiste 'a más menos una décima'... hoy te salvo de un error de millones. Se llama estudio de tolerancias.
+La pieza: una escalera de tres escalones. Ocho líneas a pulso.
+Las órdenes de dirección: pisos horizontales, contrahuellas verticales.
+Y ahora acoto EN CADENA, a propósito: cada escalón mide treinta desde el anterior. Treinta... treinta... y treinta. Igual las alturas: diez, diez y diez.
+Ancla, termina y extruye doce. El kernel mide: veintiún mil seiscientos milímetros cúbicos, exactos. En el MODELO, la cadena es perfecta — los treintas suman noventa sin protestar.
+Pero el taller no es el kernel. Cada treinta sale con su más menos una décima... y aquí viene la suma fatal: el borde del tercer escalón hereda los errores de TODOS los anteriores. Peor caso: una décima, más una, más una: MÁS MENOS TRES DÉCIMAS. Triplicaste la tolerancia sin darte cuenta.
+Ese es el ESTUDIO DE TOLERANCIAS de peor caso: recorres la cadena de cotas que llega a tu medida crítica... y SUMAS los más menos. Una resta de kinder que allá afuera venden como addon carísimo. Ya lo sabes hacer.
+¿Y el modo fino? Los errores reales rara vez conspiran todos al mismo lado. El estudio ESTADÍSTICO suma cuadrados y saca raíz: raíz de tres veces una décima al cuadrado... cero punto diecisiete. Casi la mitad del peor caso. Por eso en producción en serie se tolera con estadística — y en la pieza única, con peor caso.
+Y la vacuna ya la conoces de la lección de baseline: si el borde final es lo crítico, acótalo DIRECTO desde el datum — y el error deja de apilarse. Cadena para lo relativo, base para lo crítico, y la suma de más menos siempre en la cabeza. Eso es diseñar para manufactura. Nos vemos.

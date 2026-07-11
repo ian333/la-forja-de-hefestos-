@@ -1,0 +1,133 @@
+{
+  "id": "mec-u8-l3",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 3,
+  "titulo": "El estudio de tolerancias: una suma que cuesta millones",
+  "subtitulo": "peor caso = Σ± · estadístico = √Σ±² · el addon, regalado",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-10..8-11 (Chain vs baseline & tolerance studies)",
+  "descripcion": "Una escalera de 3 escalones acotada en CADENA: 30+30+30, cada cota ±0.1. ¿A cuánto queda el borde final? Peor caso ±0.3 — y estadísticamente ±0.17. Ese cálculo es el 'análisis de tolerancias' que allá afuera es un addon carísimo. Aquí es una clase con el kernel de testigo.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Tres cotas de treinta milímetros en cadena, cada una con más menos una décima. ¿A cuánto queda el borde final? Si dijiste 'a más menos una décima'... hoy te salvo de un error de millones. Se llama estudio de tolerancias.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza: una escalera de tres escalones. Ocho líneas a pulso.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 600 },
+        { "type": "clickmm", "x": 2, "y": 2, "settle": 400 },
+        { "type": "clickmm", "x": 88, "y": -2, "settle": 400 },
+        { "type": "clickmm", "x": 91, "y": 12, "settle": 400 },
+        { "type": "clickmm", "x": 62, "y": 8, "settle": 400 },
+        { "type": "clickmm", "x": 58, "y": 22, "settle": 400 },
+        { "type": "clickmm", "x": 32, "y": 18, "settle": 400 },
+        { "type": "clickmm", "x": 28, "y": 32, "settle": 400 },
+        { "type": "clickmm", "x": -3, "y": 28, "settle": 400 },
+        { "type": "clickmm", "x": 2, "y": 2, "settle": 700 },
+        { "type": "key", "key": "Escape", "settle": 800 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 8",
+        "desc": "la escalera tiene sus 8 líneas"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Las órdenes de dirección: pisos horizontales, contrahuellas verticales.",
+      "gestos": [
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 0], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 2], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 4], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 6], "settle": 200 },
+        { "type": "tclick", "testid": "sk-con-h", "settle": 900 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 1], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 3], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 5], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 7], "settle": 200 },
+        { "type": "tclick", "testid": "sk-con-v", "settle": 900 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Y ahora acoto EN CADENA, a propósito: cada escalón mide treinta desde el anterior. Treinta... treinta... y treinta. Igual las alturas: diez, diez y diez.",
+      "gestos": [
+        { "type": "hook", "fn": "dimDist", "args": [7, 6, "h"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "30", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [5, 4, "h"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "30", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [3, 2, "h"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "30", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [1, 2, "v"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "10", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [3, 4, "v"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "10", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [5, 6, "v"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "10", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 900 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Ancla, termina y extruye doce. El kernel mide: veintiún mil seiscientos milímetros cúbicos, exactos. En el MODELO, la cadena es perfecta — los treintas suman noventa sin protestar.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 500 },
+        { "type": "clickptwhere", "where": "bl", "settle": 900 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "12", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "probe", "label": "escalera" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 21600) < 1",
+        "desc": "escalera (1,800 mm² × 12) = 21,600 mm³ exactos"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Pero el taller no es el kernel. Cada treinta sale con su más menos una décima... y aquí viene la suma fatal: el borde del tercer escalón hereda los errores de TODOS los anteriores. Peor caso: una décima, más una, más una: MÁS MENOS TRES DÉCIMAS. Triplicaste la tolerancia sin darte cuenta.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2600 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Ese es el ESTUDIO DE TOLERANCIAS de peor caso: recorres la cadena de cotas que llega a tu medida crítica... y SUMAS los más menos. Una resta de kinder que allá afuera venden como addon carísimo. Ya lo sabes hacer.",
+      "gestos": [
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "¿Y el modo fino? Los errores reales rara vez conspiran todos al mismo lado. El estudio ESTADÍSTICO suma cuadrados y saca raíz: raíz de tres veces una décima al cuadrado... cero punto diecisiete. Casi la mitad del peor caso. Por eso en producción en serie se tolera con estadística — y en la pieza única, con peor caso.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Y la vacuna ya la conoces de la lección de baseline: si el borde final es lo crítico, acótalo DIRECTO desde el datum — y el error deja de apilarse. Cadena para lo relativo, base para lo crítico, y la suma de más menos siempre en la cabeza. Eso es diseñar para manufactura. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
