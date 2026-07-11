@@ -1,0 +1,7 @@
+Abre el instructivo de cualquier mueble o el despiece de una moto: las piezas FLOTAN separadas, en fila, sobre su eje. Nadie te escribió un párrafo — el dibujo solo cuenta el orden. Eso es la vista explosionada, y hoy explotas un reductor de verdad.
+El ensamble más denso de La Forja: el reductor cicloidal. Menú Más, Caja cicloidal. El kernel construye la hembra, los discos, las levas, el carrete y la brida — dale unos segundos.
+Armado, es una pieza hermética: no se ve NADA de lo de adentro. Así no se puede explicar, ni inspeccionar, ni armar. Y ahora... el clic.
+EXPLOSIÓNALO. Mira: cada cuerpo se separa por el EJE del ensamble — la hembra, los discos con sus levas, el carrete, la brida — cada quien a su distancia, en el orden EXACTO en que se arman. El dibujo ya cuenta la historia solo.
+Las reglas del oficio. Uno: las piezas se separan por su EJE DE ENSAMBLE — la trayectoria real por la que entran al armarse. Nunca en diagonal caprichosa. Dos: el ORDEN en la fila ES el orden de armado: lo primero que entra queda pegado a la base. Y tres: en el plano formal, una LÍNEA DE EXPLOSIÓN punteada une cada pieza con su lugar.
+¿Y para qué sirve? El dibujo isométrico explosionado con globos y su BOM — lo de la lección pasada — ES el manual de ensamble: el técnico ve qué pieza, en qué orden, por qué eje. Las mil palabras que no tuviste que escribir.
+Y de regreso: ÁRMALO. El ensamble respira — se abre para explicar, se cierra para funcionar. Esa es toda la magia de la vista explosionada. Nos vemos.

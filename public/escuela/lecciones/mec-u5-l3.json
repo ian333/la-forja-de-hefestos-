@@ -1,0 +1,78 @@
+{
+  "id": "mec-u5-l3",
+  "curso": "mecanica",
+  "unidad": 5,
+  "n": 3,
+  "titulo": "La vista explosionada: el ensamble que respira",
+  "subtitulo": "cada pieza en su eje · el orden de armado dibujado · el manual que no necesita palabras",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 5 §5-8..5-9 (Exploded views & isometric assembly drawings)",
+  "descripcion": "¿Cómo le dices al técnico en qué ORDEN se arma un reductor sin escribir un manual? Lo EXPLOSIONAS: cada cuerpo se separa por su eje de ensamble y el dibujo cuenta solo la historia. Aquí explotas un reductor cicloidal real con un clic.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Abre el instructivo de cualquier mueble o el despiece de una moto: las piezas FLOTAN separadas, en fila, sobre su eje. Nadie te escribió un párrafo — el dibujo solo cuenta el orden. Eso es la vista explosionada, y hoy explotas un reductor de verdad.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El ensamble más denso de La Forja: el reductor cicloidal. Menú Más, Caja cicloidal. El kernel construye la hembra, los discos, las levas, el carrete y la brida — dale unos segundos.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-gearbox", "settle": 12000 },
+        { "type": "view", "name": "iso", "settle": 1500 },
+        { "type": "probe", "label": "reductor-armado" }
+      ],
+      "check": {
+        "js": "window.__forgeBrep && window.__forgeBrep.gbBodies && window.__forgeBrep.gbBodies.length >= 4",
+        "desc": "el reductor cicloidal existe (4+ cuerpos)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Armado, es una pieza hermética: no se ve NADA de lo de adentro. Así no se puede explicar, ni inspeccionar, ni armar. Y ahora... el clic.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2000 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "EXPLOSIÓNALO. Mira: cada cuerpo se separa por el EJE del ensamble — la hembra, los discos con sus levas, el carrete, la brida — cada quien a su distancia, en el orden EXACTO en que se arman. El dibujo ya cuenta la historia solo.",
+      "zoom": "btn-explode",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-explode", "settle": 2500 },
+        { "type": "probe", "label": "explosionado" }
+      ],
+      "check": {
+        "js": "var b=document.querySelector('[data-testid=\"btn-explode\"]'); b && b.getAttribute('data-on') === '1'",
+        "desc": "la vista explosionada está activa"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Las reglas del oficio. Uno: las piezas se separan por su EJE DE ENSAMBLE — la trayectoria real por la que entran al armarse. Nunca en diagonal caprichosa. Dos: el ORDEN en la fila ES el orden de armado: lo primero que entra queda pegado a la base. Y tres: en el plano formal, una LÍNEA DE EXPLOSIÓN punteada une cada pieza con su lugar.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Y para qué sirve? El dibujo isométrico explosionado con globos y su BOM — lo de la lección pasada — ES el manual de ensamble: el técnico ve qué pieza, en qué orden, por qué eje. Las mil palabras que no tuviste que escribir.",
+      "gestos": [
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y de regreso: ÁRMALO. El ensamble respira — se abre para explicar, se cierra para funcionar. Esa es toda la magia de la vista explosionada. Nos vemos.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-explode", "settle": 2000 },
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

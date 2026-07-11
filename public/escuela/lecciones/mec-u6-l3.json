@@ -1,0 +1,149 @@
+{
+  "id": "mec-u6-l3",
+  "curso": "mecanica",
+  "unidad": 6,
+  "n": 3,
+  "titulo": "La biblioteca: lo normalizado no se dibuja, se INVOCA",
+  "subtitulo": "DIN 933 M8×16 · llave 13, de norma · comprado ≠ dibujado",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 6 §6-9..6-12 (Design library & standard fasteners)",
+  "descripcion": "¿Dibujarías un tornillo? JAMÁS. Los tornillos ya están diseñados — desde hace un siglo, por norma. Aquí lo INVOCAS del catálogo: 'DIN 933 M8 por 16', y sale con su llave de 13 exacta y su cuerda real. La mitad del CAD profesional es saber qué NO dibujar.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Pregunta de novato: ¿cómo dibujo un tornillo? Respuesta de profesional: NO LO DIBUJAS. Los tornillos ya están diseñados desde hace un siglo, por norma, hasta la última décima. Hoy aprendes a INVOCARLOS.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1400
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Menú Más... Tornillo DIN novecientos treinta y tres. Y míralo nacer COMPLETO: cabeza hexagonal, cuerda helicoidal, todo de norma. Nadie dibujó nada.",
+      "zoom": "btn-din",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-din",
+          "settle": 4200
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        },
+        {
+          "type": "probe",
+          "label": "din933-m8"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 1440 && inv.vol_kernel < 1560",
+        "desc": "DIN 933 M8×16 = 1,501 mm³ (cotas de norma)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Lee su designación: DIN novecientos treinta y tres, EME OCHO, por dieciséis. Tres datos y quedó TODO dicho: la norma define la cabeza, la llave, el paso, las tolerancias. Ese nombre ES el número de parte — el mismo en cualquier ferretería del planeta.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            610
+          ],
+          "to": [
+            900,
+            530
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 2600
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Y fíjate en el panel: llave TRECE. ¿Te suena? Es la entrecaras del hexágono de la norma — la que descifraste en la lección de la tuerca. El kernel no la inventó: la LEYÓ del catálogo, novecientos cuarenta y dos refacciones con sus cotas de norma.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3400
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Prueba el poder del catálogo: cámbialo a EME DIEZ. Un clic... y TODO se actualiza junto: cabeza, llave, paso, cuerda. Porque no es un dibujo — es una FAMILIA paramétrica anclada a la norma.",
+      "zoom": "btn-din-M10",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-din-M10",
+          "settle": 4200
+        },
+        {
+          "type": "probe",
+          "label": "din933-m10"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 1900",
+        "desc": "M10: la familia entera se regeneró de la norma"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "¿Por qué importa tanto NO dibujar lo normalizado? Uno: tu dibujo tendría errores; la norma, no. Dos: lo normalizado se COMPRA — ya lo sabes del BOM: renglón con número de catálogo, no con plano. Y tres: tu tiempo vale para TU pieza, la que nadie más ha diseñado.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            900,
+            540
+          ],
+          "to": [
+            1150,
+            640
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 2800
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "La regla del profesional: antes de dibujar CUALQUIER cosa, pregunta si ya existe en el catálogo. Tornillos, tuercas, arandelas, baleros, pernos: se invocan. La mitad del CAD es saber qué NO dibujar. Y con esto, la unidad seis — la tornillería completa — queda cerrada. Nos vemos.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}

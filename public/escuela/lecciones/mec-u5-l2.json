@@ -1,0 +1,138 @@
+{
+  "id": "mec-u5-l2",
+  "curso": "mecanica",
+  "unidad": 5,
+  "n": 2,
+  "titulo": "Bottom-up: piezas primero, ensamble después",
+  "subtitulo": "cada componente trae sus 6 GDL · posición = (x,y,z) + giro · el mate los roba",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 5 §5-7 (Bottom-up assembly modeling)",
+  "descripcion": "Hay dos filosofías para armar: BOTTOM-UP (diseñas cada pieza sola y luego las juntas — como comprar muebles) y top-down (diseñas dentro del ensamble). Aquí armas bottom-up: dos componentes independientes, cada uno con sus 6 grados de libertad, y ves por qué es la filosofía de los catálogos.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Hay dos maneras de armar una máquina. La primera: diseñas cada pieza POR SEPARADO, completa, y luego las juntas — como amueblar comprando muebles hechos. Se llama bottom-up, y es la filosofía de todo lo que se compra por catálogo.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1400
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Componente uno: un bloque, pieza terminada e independiente. Componente dos: otro. Cada uno existe por sí mismo — con su geometría cerrada, como si viniera de otro archivo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-component",
+          "settle": 2600
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-mas",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-component",
+          "settle": 2600
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1200
+        },
+        {
+          "type": "probe",
+          "label": "dos-componentes"
+        }
+      ],
+      "check": {
+        "js": "window.__forgeBrep && window.__forgeBrep.components && window.__forgeBrep.components.length >= 2",
+        "desc": "dos componentes independientes en el ensamble"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Y aquí la física del ensamble: cada componente LIBRE trae SEIS grados de libertad — tres de traslación, tres de giro. Dos piezas sueltas: doce GDL. El trabajo de ensamblar es ROBARLE grados de libertad a cada pieza hasta que solo quede el movimiento que quieres.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            610
+          ],
+          "to": [
+            900,
+            530
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 2800
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "¿Y quién roba esos grados? Los MATES: coincidente pega cara con cara y roba tres. Concéntrico alinea ejes y roba cuatro. Ya lo viviste con los engranes: su mate les robó todo menos el giro engranado. Un ensamble bien hecho termina con CERO grados sueltos... o exactamente los que la máquina necesita para moverse.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3400
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "¿Cuándo bottom-up? Cuando las piezas YA existen: tornillería de catálogo, baleros comprados, la pieza que otro equipo diseñó. ¿Y top-down? Cuando la pieza nueva debe nacer AJUSTADA a sus vecinas — diseñas dentro del contexto. Los proyectos reales mezclan: compra lo normalizado, diseña en contexto lo tuyo.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            900,
+            540
+          ],
+          "to": [
+            1150,
+            640
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 2800
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "La unidad cinco completa: componentes, mates, la explosión, el BOM con globos, el cajetín, y el motion study. Ya sabes ARMAR — que es la mitad silenciosa de diseñar. Nos vemos.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}
