@@ -4180,6 +4180,8 @@ export default function ForgeBRepStudio() {
   // instante (la hembra translúcida "lechosa" lavaba los colores; mejor mostrarla
   // con un clic). 👁 "mostrar todos" la trae de vuelta.
   const [gbHidden, setGbHidden] = useState<Record<string, boolean>>({ hembra: true });
+  // VISTA EXPLOSIONADA (U5-L3): cada cuerpo se desplaza por el eje del stack.
+  const [gbExplode, setGbExplode] = useState(false);
   const [gbColors, setGbColors] = useState<Record<string, string>>({});
   const [gbBodyGeos, setGbBodyGeos] = useState<{ key: string; name: string; geo: PartGeo }[] | null>(null);
   useEffect(() => {
@@ -5507,11 +5509,13 @@ export default function ForgeBRepStudio() {
               // semi-transparente (ves los cuerpos de color adentro de un vistazo, no
               // una pieza maciza); ocúltala del todo o aísla uno para ver mejor. La
               // sección (flecha) los corta a todos.
-              gbBodyGeos.map((b) => (gbHidden[b.key] ? null : (
-                <PartMesh key={b.key} geo={b.geo} color={gbColor(b.key)} clip={sectionPlanes}
+              gbBodyGeos.map((b, gi) => (gbHidden[b.key] ? null : (
+                <group key={b.key} position={[0, 0, gbExplode ? gi * 34 : 0]}>
+                <PartMesh geo={b.geo} color={gbColor(b.key)} clip={sectionPlanes}
                   opacity={b.key === 'hembra' ? 0.28 : b.key === 'salida' ? 0.9 : 1}
                   metalness={b.key === 'eje' ? 0.85 : b.key === 'salida' ? 0.25 : b.key === 'hembra' ? 0.45 : 0.05}
                   roughness={b.key.startsWith('disco') ? 0.62 : 0.4} />
+                </group>
               )))
             ) : genResult ? (
               genSmooth
@@ -6126,6 +6130,7 @@ export default function ForgeBRepStudio() {
                     onClick={showAllGbBodies} style={{ marginLeft: 'auto' }}>👁</button>
                 </div>
                 <div className="fb-bodies-list" data-testid="gb-bodies-list">
+                <button data-testid="btn-explode" data-on={gbExplode ? '1' : '0'} onClick={() => setGbExplode((e) => !e)} title="Vista explosionada: separa los cuerpos por el eje (dibujo isométrico explosionado)" style={{ marginBottom: 6 }}>💥 {gbExplode ? 'Armar' : 'Explosionar'}</button>
                 {gbBodyGeos.map((b) => {
                   const hidden = !!gbHidden[b.key];
                   return (
