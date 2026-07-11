@@ -252,14 +252,22 @@ const SOFTGL = process.env.SOFTGL === '1';
       const falta = objetivo - (Date.now() - t0);
       if (falta > 0) await page.waitForTimeout(falta);
       // Check del paso (no aborta; el reporte decide si el video sirve).
+      // CON REINTENTO: el kernel WASM corre en CPU y en una máquina compartida
+      // (renders del agente de videos) un settle fijo a veces no alcanza — el
+      // check se sondea hasta 4 veces × 2.5s antes de declarar FALLÓ. Inmuniza
+      // TODAS las lecciones contra contención de CPU sin inflar cada settle.
       if (paso.check) {
-        try {
-          rec.check = await page.evaluate((js) => {
-            const inv = window.__forgeBrep && window.__forgeBrep.invariants;
-            const sk = window.__sketchEditor;
-            return { pass: !!eval(js), vol: inv && inv.vol_kernel, dof: sk && sk.dof };
-          }, paso.check.js);
-        } catch (e) { rec.check = { pass: false, err: String(e).slice(0, 120) }; }
+        for (let intento = 0; intento < 4; intento++) {
+          try {
+            rec.check = await page.evaluate((js) => {
+              const inv = window.__forgeBrep && window.__forgeBrep.invariants;
+              const sk = window.__sketchEditor;
+              return { pass: !!eval(js), vol: inv && inv.vol_kernel, dof: sk && sk.dof };
+            }, paso.check.js);
+          } catch (e) { rec.check = { pass: false, err: String(e).slice(0, 120) }; }
+          if (rec.check.pass) break;
+          if (intento < 3) await page.waitForTimeout(2500);
+        }
         console.log(`  ${rec.check.pass ? '✓' : '✗'} ${paso.id} check: ${paso.check.desc}${rec.check.pass ? '' : ' — FALLÓ'}`);
       } else console.log(`  · ${paso.id}`);
       rec.end = Date.now() - recT0;
