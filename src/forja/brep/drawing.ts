@@ -22,6 +22,9 @@ export interface DrawingInput {
 }
 export interface DrawingMeta {
   name?: string; material?: string; massG?: number; date?: string; units?: string;
+  /** Nota de tolerancia general (U8/ISO 2768), ej. "±0.1 · ISO 2768-m". Se
+   *  rotula sobre el cajetín: "TOL. GRAL. … SALVO INDICACIÓN". Opcional. */
+  tolNote?: string;
 }
 export interface ViewReport {
   key: string; label: string;
@@ -254,18 +257,20 @@ function renderSVG(
   const parts: string[] = [];
 
   // cota acotada (línea + 2 flechas + texto). Reutilizable por vistas/agujeros.
-  const dim = (x1: number, y1: number, x2: number, y2: number, txt: string, horiz: boolean) => {
+  // `attr` (opcional) etiqueta el TEXTO con data-atributos para checks/lecciones.
+  const dim = (x1: number, y1: number, x2: number, y2: number, txt: string, horiz: boolean, attr = '') => {
     const a = 1.4;
+    const at = attr ? ` ${attr}` : '';
     if (horiz) {
       parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1a5fb4" stroke-width="0.3"/>`);
       parts.push(`<path d="M ${x1} ${y1} l ${a} ${-a / 1.6} l 0 ${a * 1.25} z" fill="#1a5fb4"/>`);
       parts.push(`<path d="M ${x2} ${y2} l ${-a} ${-a / 1.6} l 0 ${a * 1.25} z" fill="#1a5fb4"/>`);
-      parts.push(`<text x="${(x1 + x2) / 2}" y="${y1 - 1.2}" font-size="3" fill="#1a5fb4" text-anchor="middle">${txt}</text>`);
+      parts.push(`<text x="${(x1 + x2) / 2}" y="${y1 - 1.2}" font-size="3" fill="#1a5fb4" text-anchor="middle"${at}>${txt}</text>`);
     } else {
       parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1a5fb4" stroke-width="0.3"/>`);
       parts.push(`<path d="M ${x1} ${y1} l ${-a / 1.6} ${a} l ${a * 1.25} 0 z" fill="#1a5fb4"/>`);
       parts.push(`<path d="M ${x2} ${y2} l ${-a / 1.6} ${-a} l ${a * 1.25} 0 z" fill="#1a5fb4"/>`);
-      parts.push(`<text x="${x1 - 1.5}" y="${(y1 + y2) / 2}" font-size="3" fill="#1a5fb4" text-anchor="middle" transform="rotate(-90 ${x1 - 1.5} ${(y1 + y2) / 2})">${txt}</text>`);
+      parts.push(`<text x="${x1 - 1.5}" y="${(y1 + y2) / 2}" font-size="3" fill="#1a5fb4" text-anchor="middle" transform="rotate(-90 ${x1 - 1.5} ${(y1 + y2) / 2})"${at}>${txt}</text>`);
     }
   };
   parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${PW}mm" height="${PH}mm" viewBox="0 0 ${PW} ${PH}" font-family="Arial, sans-serif">`);
@@ -295,16 +300,23 @@ function renderSVG(
       const ex = ccx + dx * (rr + 6), ey = ccy + dy * (rr + 6);
       parts.push(`<line x1="${(ccx + dx * rr).toFixed(2)}" y1="${(ccy + dy * rr).toFixed(2)}" x2="${ex.toFixed(2)}" y2="${ey.toFixed(2)}" stroke="#1a5fb4" stroke-width="0.3"/>`);
       parts.push(`<text x="${(ex + 0.6).toFixed(2)}" y="${(ey - 0.4).toFixed(2)}" font-size="3" fill="#1a5fb4" data-dim="diameter">⌀${(2 * c.r).toFixed(1)}</text>`);
-      // posición AUTO del agujero desde el datum (esquina inf-izq de la vista).
-      // Auto-acotar TODO el plano es MEJOR que Fusion (ahí la posición va a mano).
-      // Solo con un agujero (varios necesitan reparto inteligente → se omite).
-      if (pv.circles.length === 1) {
-        const po = 6;
-        const yTop = Y(pv.vmax + o.dv) - po;
-        dim(X(pv.umin + o.du), yTop, ccx, yTop, (c.cu - pv.umin).toFixed(1), true);
-        const xLeft = X(pv.umin + o.du) - po;
-        dim(xLeft, Y(pv.vmin + o.dv), xLeft, ccy, (c.cv - pv.vmin).toFixed(1), false);
-      }
+    }
+    // posición AUTO de los agujeros — BASELINE (ANSI/Bethune §7-9): TODAS las
+    // cotas salen del MISMO datum (esquina inf-izq de la vista), apiladas hacia
+    // afuera. En cadena el error del taller se ACUMULA (±0.1+±0.1=±0.2 en el
+    // segundo barreno); desde una base común cada posición conserva su ±. Hasta
+    // 4 agujeros (más satura la hoja → cotas ordenadas, pendiente).
+    if (pv.circles.length >= 1 && pv.circles.length <= 4) {
+      const byX = [...pv.circles].sort((a, b) => a.cu - b.cu);
+      const byY = [...pv.circles].sort((a, b) => a.cv - b.cv);
+      byX.forEach((c, i) => {
+        const yTop = Y(pv.vmax + o.dv) - (6 + i * 6);
+        dim(X(pv.umin + o.du), yTop, px(c.cu), yTop, (c.cu - pv.umin).toFixed(1), true, 'data-dim="pos-x"');
+      });
+      byY.forEach((c, i) => {
+        const xLeft = X(pv.umin + o.du) - (6 + i * 6);
+        dim(xLeft, Y(pv.vmin + o.dv), xLeft, py(c.cv), (c.cv - pv.vmin).toFixed(1), false, 'data-dim="pos-y"');
+      });
     }
 
     // etiqueta de la vista
@@ -320,9 +332,19 @@ function renderSVG(
   const flY1 = Y(fv.vmin + fo.dv), flY2 = Y(fv.vmax + fo.dv);
   const flX = X(fv.umin + fo.du) - 7;
   dim(flX, flY1, flX, flY2, dims.h.toFixed(1), false);
+  // ── PROFUNDIDAD en la PLANTA (derecha, para no chocar con las baseline de
+  // agujeros que se apilan a la izquierda). Completa el trío w/h/d: antes el
+  // fondo del modelo NO estaba acotado en ninguna vista. ──
+  const tv = perView[1], to2 = off['top'];
+  const tdX = X(tv.umax + to2.du) + 7;
+  dim(tdX, Y(tv.vmin + to2.dv), tdX, Y(tv.vmax + to2.dv), dims.d.toFixed(1), false, 'data-dim="depth"');
 
   // ── cajetín ──
   const tbx = PW - M / 2 - TB_W, tby = PH - M / 2 - TB_H;
+  // nota de tolerancia general (U8/ISO 2768) — el contrato de TODO lo no acotado
+  if (meta.tolNote) {
+    parts.push(`<text x="${tbx + TB_W - 2}" y="${tby - 2}" font-size="2.6" fill="#111" text-anchor="end" data-note="tol">TOL. GRAL. ${esc(meta.tolNote)} SALVO INDICACIÓN</text>`);
+  }
   parts.push(`<g data-testid="title-block" font-size="2.7" fill="#111">`);
   parts.push(`<rect x="${tbx}" y="${tby}" width="${TB_W}" height="${TB_H}" fill="#fff" stroke="#111" stroke-width="0.5"/>`);
   parts.push(`<line x1="${tbx}" y1="${tby + 11}" x2="${tbx + TB_W}" y2="${tby + 11}" stroke="#111" stroke-width="0.3"/>`);

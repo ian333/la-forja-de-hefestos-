@@ -113,6 +113,55 @@ describe('generateDrawing — agujeros (cota Ø + eje de centro)', () => {
   });
 });
 
+// Caja 40×20×12 con DOS barrenos (Ø8 en (12,10) y Ø6 en (30,14)) a lo largo de Z.
+function boxWith2Holes(): DrawingInput {
+  const b = makeBox(40, 20, 12);
+  return { ...b, edges: [...b.edges, ring(12, 10, 12, 4), ring(12, 10, 0, 4), ring(30, 14, 12, 3), ring(30, 14, 0, 3)] };
+}
+
+describe('generateDrawing — acotación BASELINE multi-barreno (U7 §7-9)', () => {
+  const r = generateDrawing(boxWith2Holes(), { name: '2 barrenos' });
+
+  it('la PLANTA detecta los DOS círculos', () => {
+    const top = r.views.find((v) => v.key === 'top')!;
+    expect(top.circles.length).toBe(2);
+  });
+
+  it('cada barreno lleva posición X y Y desde el MISMO datum (baseline)', () => {
+    expect((r.svg.match(/data-dim="pos-x"/g) || []).length).toBe(2);
+    expect((r.svg.match(/data-dim="pos-y"/g) || []).length).toBe(2);
+    // valores = posición REAL medida desde la esquina inf-izq de la vista
+    expect(r.svg).toContain('>12.0<');   // cx barreno 1
+    expect(r.svg).toContain('>30.0<');   // cx barreno 2
+    expect(r.svg).toContain('>10.0<');   // cy barreno 1
+    expect(r.svg).toContain('>14.0<');   // cy barreno 2
+  });
+
+  it('el caso de UN barreno conserva sus cotas de posición (compat)', () => {
+    const one = generateDrawing(boxWithHole());
+    expect((one.svg.match(/data-dim="pos-x"/g) || []).length).toBe(1);
+    expect((one.svg.match(/data-dim="pos-y"/g) || []).length).toBe(1);
+  });
+});
+
+describe('generateDrawing — profundidad + nota de tolerancia', () => {
+  it('la PLANTA acota la PROFUNDIDAD del modelo (el trío w/h/d completo)', () => {
+    const r = generateDrawing(makeBox(40, 20, 12));
+    expect(r.svg).toContain('data-dim="depth"');
+    expect(r.svg).toContain('>20.0<');   // d = 20 real
+  });
+
+  it('meta.tolNote rotula la tolerancia general sobre el cajetín', () => {
+    const r = generateDrawing(makeBox(40, 20, 12), { tolNote: '±0.1 · ISO 2768-m' });
+    expect(r.svg).toContain('data-note="tol"');
+    expect(r.svg).toContain('TOL. GRAL. ±0.1 · ISO 2768-m SALVO INDICACIÓN');
+  });
+
+  it('sin tolNote NO aparece la nota (aditivo, no rompe moldes)', () => {
+    expect(generateDrawing(makeBox(40, 20, 12)).svg).not.toContain('data-note="tol"');
+  });
+});
+
 describe('generateDrawing — oclusión HLR (Möller–Trumbore)', () => {
   it('una arista DETRÁS de una pared sale oculta; una DELANTE, visible', () => {
     // Pared grande en y=0 (ocluye en el ALZADO, eye = -Y).
