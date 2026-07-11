@@ -1,0 +1,97 @@
+{
+  "id": "mec-u8-l5",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 5,
+  "titulo": "Ra: la piel de la pieza",
+  "subtitulo": "rugosidad en micras · cada escalón duplica el costo · pide lo MÁS rugoso que funcione",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-21..8-23 (Surface finish) + ISO 1302",
+  "descripcion": "Ra 3.2 — otro código que nadie explica. Es la RUGOSIDAD: el promedio en micras de los picos y valles de la superficie. Aquí lees la nota de acabado del plano y aprendes la escalera completa: 12.5 desbaste, 3.2 maquinado, 0.8 rectificado, 0.05 espejo — y por qué cada escalón hacia abajo te cuesta el doble.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Erre a, tres punto dos. Aparece en la esquina de todo plano serio y casi nadie sabe leerlo. Es la PIEL de tu pieza: qué tan lisa quedó. Y equivocarlo hacia abajo duplica tu costo... sin mejorar nada. Hoy lo descifras.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza de siempre, rápido: placa de cien por sesenta por veinte.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -47, "y": -28, "settle": 700 },
+        { "type": "clickmm", "x": 51, "y": 33, "settle": 900 },
+        { "type": "dimline", "axis": "h", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "100", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "dimline", "axis": "v", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 1800 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1600 }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "la pieza existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El plano... y mira sobre el cajetín: ACABADO ERRE A TRES PUNTO DOS, SALVO INDICACIÓN. Esa nota es un contrato sobre la PIEL de cada cara de la pieza.",
+      "zoom": "btn-plano",
+      "gestos": [
+        { "type": "view", "name": "front", "settle": 900 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3200 },
+        { "type": "probe", "label": "nota-ra" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('data-note=\"ra\"') >= 0 && s.indexOf('ACABADO Ra 3.2') >= 0",
+        "desc": "el plano declara el acabado general Ra 3.2"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "¿Qué mide erre a? Imagina cruzar la superficie con una aguja finísima — eso hace el rugosímetro. La aguja sube y baja por picos y valles microscópicos. Erre a es el PROMEDIO de esas alturas, en MICRAS. Tres punto dos significa: picos y valles de unas tres micras en promedio. Al tacto, un maquinado limpio.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "La escalera completa, de rugoso a espejo. Doce punto cinco: desbaste, se ven las rayas del cortador. Tres punto dos: maquinado estándar — tu fresa bien afilada lo da sola. Cero punto ocho: RECTIFICADO, entra la piedra. Cero punto cero cinco: lapeado, un espejo donde te peinas.",
+      "gestos": [
+        { "type": "wait", "ms": 4000 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Y quién pide qué? El asiento de un balero: cero punto ocho — la pista necesita piel fina para no comerse los rodillos. El labio de un sello o retén: cero punto cuatro, o gotea. Una cara de empaque: tres punto dos basta. ¿El costado que nadie toca? Como salga del desbaste. La FUNCIÓN dicta la piel.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y aquí la regla de oro del dinero: cada escalón hacia abajo es OTRA operación — otra máquina, otro montaje, otro tiempo. De maquinado a rectificado, el costo de esa cara se duplica o triplica. Pedir espejo donde bastaba maquinado no es calidad: es tirar dinero. Pide lo MÁS RUGOSO que tu función aguante.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "En el plano, la nota general cubre todo... y las caras especiales llevan su propio símbolo — la palomita con su número — solo donde la función lo exige. Tolerancia dimensional para el TAMAÑO, erre a para la PIEL. Con las dos, la pieza no solo mide bien: FUNCIONA. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

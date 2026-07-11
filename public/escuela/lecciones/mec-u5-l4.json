@@ -17,14 +17,25 @@
     },
     {
       "id": "p02",
-      "dice": "El ensamble: par de engranes, veinte y cuarenta dientes, engranados.",
+      "dice": "El ensamble: un par de engranes, veinte y cuarenta dientes.",
       "gestos": [
         { "type": "tclick", "testid": "btn-mas", "settle": 900 },
         { "type": "tclick", "testid": "btn-gear", "settle": 3200 },
         { "type": "fill", "testid": "input-dientes", "text": "20", "settle": 400 },
         { "type": "key", "key": "Tab", "settle": 2800 },
-        { "type": "tclick", "testid": "btn-add-gear2", "settle": 3200 },
-        { "type": "tclick", "testid": "btn-gear-mate", "settle": 2600 }
+        { "type": "tclick", "testid": "btn-add-gear2", "settle": 3200 }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"hud-assembly\"]')",
+        "desc": "los dos componentes existen"
+      }
+    },
+    {
+      "id": "p02b",
+      "dice": "Engranados con su mate.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-gear-mate", "settle": 2600 },
+        { "type": "view", "name": "iso", "settle": 1200 }
       ],
       "check": {
         "js": "var e=document.querySelector('[data-testid=\"mate-ratio\"]'); e && parseFloat(e.textContent) > 1.9 && parseFloat(e.textContent) < 2.1",

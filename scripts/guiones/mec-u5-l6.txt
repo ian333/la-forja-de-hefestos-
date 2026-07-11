@@ -1,7 +1,8 @@
 Imagina mil piezas recién fabricadas... y el ensamble no gira. Dos piezas quieren ocupar el mismo espacio al mismo tiempo. Eso se llama interferencia, cuesta lo que costó el lote, y hoy aprendes a cazarla ANTES de cortar metal.
 El ensamble de prueba: un par de engranes. El motriz de veinte dientes... y su pareja de cuarenta.
 Ahora el mate que los engrana. Y fíjate lo que revisa el software al aceptarlo: mismo módulo, centros a la distancia EXACTA de la fórmula. Si los centros quedaran más cerca, los dientes se TRASLAPARÍAN — interferencia. El mate es un contrato anti-choque.
-Complétalo: flechas y carcasa con baleros. Ya es un reductor de verdad — cinco componentes que tienen que convivir sin tocarse donde no deben.
+Complétalo. Primero las flechas: las barras que llevan el par.
+Y la carcasa con sus baleros. Ya es un reductor de verdad — cinco componentes que tienen que convivir sin tocarse donde no deben.
 Y ahora, la prueba reina: el ESTUDIO DE MOVIMIENTO. Míralo girar. Esto no es animación decorativa — es la validación de que la cadena cinemática funciona: cada diente entra en un hueco, nunca en otro diente, vuelta tras vuelta.
 ¿Y cómo detecta un choque la computadora? Con la regla más dura de la física: dos sólidos no pueden compartir volumen. El detector es una intersección booleana: A intersectada con B. Si ese volumen no es CERO... hay interferencia. Así de simple, así de brutal.
 ¿Dónde se esconden las interferencias clásicas? El tornillo que topa fondo antes de apretar. La cabeza que choca con la pared del cárter. La pieza que crece con el calor y se come su holgura. Por eso el estudio se corre en TODO el rango de movimiento: el choque puede vivir en un solo grado de la vuelta.

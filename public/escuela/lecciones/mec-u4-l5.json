@@ -1,0 +1,126 @@
+{
+  "id": "mec-u4-l5",
+  "curso": "mecanica",
+  "unidad": 4,
+  "n": 5,
+  "titulo": "Primer ángulo: el mismo plano, al revés",
+  "subtitulo": "ANSI vs ISO · la PLANTA salta de lado · lee el sistema ANTES que las vistas",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 4 §4-11 (First-angle projection)",
+  "descripcion": "El mismo plano, leído en Texas y en Alemania, pone la PLANTA en lados opuestos. Si no detectas el sistema, fabricas la pieza EN ESPEJO. Aquí generas el plano en tercer ángulo, lo volteas a primer ángulo con un clic, y aprendes a leer el cajetín antes que las vistas.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El mismo dibujo, leído en Texas y en Alemania, pone la vista de arriba en lados OPUESTOS del papel. Y si no sabes qué sistema estás leyendo, fabricas la pieza en espejo. Hoy: los dos idiomas de la proyección.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Necesitamos una pieza ASIMÉTRICA — en una simétrica no se notaría el problema. La ele de siempre, acotada y anclada.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 600 },
+        { "type": "clickmm", "x": 2, "y": 3, "settle": 500 },
+        { "type": "clickmm", "x": 58, "y": -2, "settle": 500 },
+        { "type": "clickmm", "x": 61, "y": 13, "settle": 500 },
+        { "type": "clickmm", "x": 22, "y": 17, "settle": 500 },
+        { "type": "clickmm", "x": 18, "y": 43, "settle": 500 },
+        { "type": "clickmm", "x": -3, "y": 44, "settle": 500 },
+        { "type": "clickmm", "x": 2, "y": 3, "settle": 700 },
+        { "type": "key", "key": "Escape", "settle": 800 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 0], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 2], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 4], "settle": 200 },
+        { "type": "tclick", "testid": "sk-con-h", "settle": 800 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 1], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 3], "settle": 200 },
+        { "type": "hook", "fn": "pick", "args": ["line", 5], "settle": 200 },
+        { "type": "tclick", "testid": "sk-con-v", "settle": 800 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "dimDist", "args": [0, 1, "h"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [1, 2, "v"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "15", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [4, 5, "h"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "20", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDist", "args": [5, 0, "v"], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "45", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2000 },
+        { "type": "fill", "testid": "input-altura", "text": "15", "settle": 1600 }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 22500) < 1",
+        "desc": "la L asimétrica existe (22,500 mm³)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El plano, como siempre: TERCER ángulo, el sistema americano. La regla: la vista cae DEL MISMO LADO que tu ojo. Miras desde arriba... y la planta aparece ARRIBA. Intuitivo.",
+      "zoom": "btn-plano",
+      "gestos": [
+        { "type": "view", "name": "front", "settle": 900 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3200 },
+        { "type": "probe", "label": "tercer-angulo" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('3er áng') >= 0",
+        "desc": "el cajetín declara TERCER ángulo (ANSI)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y ahora, el clic que cruza el Atlántico. Mira la PLANTA... saltar ABAJO. Bienvenido al PRIMER ángulo: el sistema europeo, el de la norma ISO.",
+      "zoom": "btn-plano-angulo",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-plano-angulo", "settle": 2600 },
+        { "type": "probe", "label": "primer-angulo" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('1er áng') >= 0",
+        "desc": "el cajetín declara PRIMER ángulo (ISO) y la planta cambió de lado"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "¿Por qué se voltea? En primer ángulo, el objeto está ENTRE tu ojo y el papel: la proyección lo ATRAVIESA y aterriza del otro lado. Miras desde arriba... y la vista cae abajo. En tercer ángulo, el papel está entre tú y el objeto: la vista cae de tu lado. Misma geometría, convención opuesta.",
+      "gestos": [
+        { "type": "wait", "ms": 4000 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Y cómo sabes cuál estás leyendo? NUNCA adivinando: lo declara el cajetín. En los planos formales va además un símbolo — un cono truncado dibujado en los dos sistemas — que es el pasaporte del plano. Primero lees el sistema, LUEGO las vistas.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "¿Y qué pasa si te equivocas? Con esta ele, confundir el sistema significa leer el ala IZQUIERDA como derecha: la pieza sale EN ESPEJO. Ensambla al revés, o no ensambla. Es el error más caro de la lectura de planos — y el más fácil de evitar: una mirada al cajetín.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "México y Estados Unidos dibujan en tercer ángulo; Europa y buena parte de Asia, en primero. Tu taller recibirá de los dos. Ya sabes voltearlos con un clic — y leerlos sin fabricar espejos. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

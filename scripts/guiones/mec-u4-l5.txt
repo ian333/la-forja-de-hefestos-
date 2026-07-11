@@ -1,0 +1,8 @@
+El mismo dibujo, leído en Texas y en Alemania, pone la vista de arriba en lados OPUESTOS del papel. Y si no sabes qué sistema estás leyendo, fabricas la pieza en espejo. Hoy: los dos idiomas de la proyección.
+Necesitamos una pieza ASIMÉTRICA — en una simétrica no se notaría el problema. La ele de siempre, acotada y anclada.
+El plano, como siempre: TERCER ángulo, el sistema americano. La regla: la vista cae DEL MISMO LADO que tu ojo. Miras desde arriba... y la planta aparece ARRIBA. Intuitivo.
+Y ahora, el clic que cruza el Atlántico. Mira la PLANTA... saltar ABAJO. Bienvenido al PRIMER ángulo: el sistema europeo, el de la norma ISO.
+¿Por qué se voltea? En primer ángulo, el objeto está ENTRE tu ojo y el papel: la proyección lo ATRAVIESA y aterriza del otro lado. Miras desde arriba... y la vista cae abajo. En tercer ángulo, el papel está entre tú y el objeto: la vista cae de tu lado. Misma geometría, convención opuesta.
+¿Y cómo sabes cuál estás leyendo? NUNCA adivinando: lo declara el cajetín. En los planos formales va además un símbolo — un cono truncado dibujado en los dos sistemas — que es el pasaporte del plano. Primero lees el sistema, LUEGO las vistas.
+¿Y qué pasa si te equivocas? Con esta ele, confundir el sistema significa leer el ala IZQUIERDA como derecha: la pieza sale EN ESPEJO. Ensambla al revés, o no ensambla. Es el error más caro de la lectura de planos — y el más fácil de evitar: una mirada al cajetín.
+México y Estados Unidos dibujan en tercer ángulo; Europa y buena parte de Asia, en primero. Tu taller recibirá de los dos. Ya sabes voltearlos con un clic — y leerlos sin fabricar espejos. Nos vemos.
