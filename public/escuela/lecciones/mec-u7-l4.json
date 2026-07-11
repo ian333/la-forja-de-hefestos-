@@ -1,0 +1,118 @@
+{
+  "id": "mec-u7-l4",
+  "curso": "mecanica",
+  "unidad": 7,
+  "n": 4,
+  "titulo": "Escala, unidades y redondeos: el plano no se mide con regla",
+  "subtitulo": "la cota manda sobre el papel · unidades declaradas · arco = R",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 7 §7-4..7-5, 7-12..7-14 (Scale, units, fillets & rounds)",
+  "descripcion": "Un cohete de 327 millones de dólares se estrelló en Marte por ASUMIR unidades. Aquí haces una pieza chica, el plano sale a escala 2:1 — el dibujo mide el doble, la cota NO — y aprendes las tres reglas: nunca midas el papel, declara las unidades, y los redondeos van con R.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "En mil novecientos noventa y nueve, un cohete de trescientos veintisiete millones de dólares se estrelló en Marte. ¿La causa? Un equipo trabajó en newtons y otro ASUMIÓ libras. Unidades. Hoy: las tres reglas que evitan ese error en tu taller.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una placa chiquita: cuarenta por veinte. Dibuja y acota.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -18, "y": -8, "settle": 700 },
+        { "type": "clickmm", "x": 22, "y": 12, "settle": 900 },
+        { "type": "dimline", "axis": "h", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "40", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "dimline", "axis": "v", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "20", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "la placa 40×20 dibujada y acotada"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Y los REDONDEOS: esquinas vivas cortan manos y concentran esfuerzo. Radio de ocho en las cuatro esquinas — y fíjate que el redondeo se acota con ERRE, porque es un arco, no un círculo. La regla de la lección pasada.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-tool-sfillet", "settle": 600 },
+        { "type": "fill", "testid": "sk-fillet-r", "text": "8", "settle": 400 },
+        { "type": "clickmm", "x": -18, "y": -8, "settle": 700 },
+        { "type": "clickmm", "x": 22, "y": -8, "settle": 700 },
+        { "type": "clickmm", "x": 22, "y": 12, "settle": 700 },
+        { "type": "clickmm", "x": -18, "y": 12, "settle": 700 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 4",
+        "desc": "el croquis sigue vivo tras los redondeos (el volumen de p04 los confirma)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Termina y extruye doce. El kernel mide la placa redondeada: ocho mil novecientos cuarenta y uno — le descontó a cada esquina exactamente cuatro menos pi por radio al cuadrado. Trigonometría, no fe.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "12", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "probe", "label": "placa-redondeada" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 8940.7) < 15",
+        "desc": "(800 − (4−π)·64) × 12 = 8,940.7 mm³"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Ahora el plano... y mira el cajetín: ESCALA DOS A UNO. La pieza es tan chica que el dibujo la muestra al doble para que se lea. El papel mide ochenta... la cota dice CUARENTA.",
+      "zoom": "btn-plano",
+      "gestos": [
+        { "type": "view", "name": "front", "settle": 900 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3200 },
+        { "type": "probe", "label": "plano-2a1" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('2:1') >= 0 && s.indexOf('>40.0<') >= 0",
+        "desc": "el cajetín declara 2:1 y la cota sigue diciendo 40.0"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Y esa es la regla número uno: EL PLANO NO SE MIDE CON REGLA. La escala existe para que el dibujo se lea — dos a uno si es chico, uno a diez si es enorme — pero la verdad vive en la COTA. Si una medida no está acotada, se pide, no se mide del papel.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2600 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Regla dos: las UNIDADES se declaran, nunca se asumen. Mira el cajetín: milímetros, tercer ángulo. Un plano gringo puede venir en pulgadas — veinticinco punto cuatro veces de diferencia. El cohete de Marte se estrelló por menos que eso.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Y regla tres, la de los redondeos: interno o externo, el redondeo es un ARCO y se acota con erre. Y si toda la pieza comparte el mismo, el plano lo dice UNA vez: 'radios no acotados: erre ocho'. Menos tinta, cero ambigüedad.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2200 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "La cota manda sobre el papel. Las unidades se declaran. Los arcos van con erre. Tres reglas baratas... que valen trescientos veintisiete millones de dólares. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+En mil novecientos noventa y nueve, un cohete de trescientos veintisiete millones de dólares se estrelló en Marte. ¿La causa? Un equipo trabajó en newtons y otro ASUMIÓ libras. Unidades. Hoy: las tres reglas que evitan ese error en tu taller.
+Una placa chiquita: cuarenta por veinte. Dibuja y acota.
+Y los REDONDEOS: esquinas vivas cortan manos y concentran esfuerzo. Radio de ocho en las cuatro esquinas — y fíjate que el redondeo se acota con ERRE, porque es un arco, no un círculo. La regla de la lección pasada.
+Termina y extruye doce. El kernel mide la placa redondeada: ocho mil novecientos cuarenta y uno — le descontó a cada esquina exactamente cuatro menos pi por radio al cuadrado. Trigonometría, no fe.
+Ahora el plano... y mira el cajetín: ESCALA DOS A UNO. La pieza es tan chica que el dibujo la muestra al doble para que se lea. El papel mide ochenta... la cota dice CUARENTA.
+Y esa es la regla número uno: EL PLANO NO SE MIDE CON REGLA. La escala existe para que el dibujo se lea — dos a uno si es chico, uno a diez si es enorme — pero la verdad vive en la COTA. Si una medida no está acotada, se pide, no se mide del papel.
+Regla dos: las UNIDADES se declaran, nunca se asumen. Mira el cajetín: milímetros, tercer ángulo. Un plano gringo puede venir en pulgadas — veinticinco punto cuatro veces de diferencia. El cohete de Marte se estrelló por menos que eso.
+Y regla tres, la de los redondeos: interno o externo, el redondeo es un ARCO y se acota con erre. Y si toda la pieza comparte el mismo, el plano lo dice UNA vez: 'radios no acotados: erre ocho'. Menos tinta, cero ambigüedad.
+La cota manda sobre el papel. Las unidades se declaran. Los arcos van con erre. Tres reglas baratas... que valen trescientos veintisiete millones de dólares. Nos vemos.
