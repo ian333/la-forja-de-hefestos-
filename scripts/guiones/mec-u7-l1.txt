@@ -1,0 +1,9 @@
+Un plano sin cotas es una opinión. Y una cota mal puesta cuesta piezas rechazadas y pleitos con el taller. Hoy: el idioma de la cota... y sus tres pecados capitales.
+Una placa en L, dibujada a pulso con la herramienta de línea. Azul: libre. Todavía no promete nada.
+Primero las órdenes de dirección: estas líneas, horizontales. Estas otras, verticales. La forma ya es una L de verdad — pero sin tamaño.
+Anatomía de una cota: dos líneas de extensión salen de la pieza, la línea de cota corre entre ellas, flechas en las puntas... y el VALOR. Tecleo sesenta — y mira: la geometría OBEDECE a la cota. Nunca al revés. Regla número uno del CAD paramétrico.
+Acota lo FUNCIONAL: lo que el inspector va a medir con su calibrador, desde bordes que se pueden tocar. Quince de peralte... veinte de ala... cuarenta y cinco de alto total.
+Ancla la esquina... y cero grados de libertad. El boceto dejó de ser un dibujo: ya es un contrato.
+Termina y extruye quince. El kernel firma el contrato: veintidós mil quinientos milímetros cúbicos. Exactos.
+Los tres pecados. Uno: la cota DOBLE — acotar el total de sesenta... y también los tramos que suman sesenta. Si un día cambias una, ¿cuál manda? Ambigüedad, pleito. Dos: acotar a líneas ocultas — el inspector no puede medir lo que no ve. Tres: acotar lo decorativo y olvidar lo funcional — el barreno que ensambla vale más que el chaflán bonito.
+La cota es una orden triple: al taller le dice qué lograr, al inspector qué medir, y al CAD qué obedecer. En la unidad ocho aprendiste a ponerle el más menos; hoy sabes DÓNDE ponerla. Nos vemos.

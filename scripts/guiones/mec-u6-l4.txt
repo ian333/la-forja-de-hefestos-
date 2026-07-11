@@ -1,0 +1,10 @@
+Aprietas un tornillo con la llave y sientes que ya quedó. Pero, ¿cuánta fuerza dejaste ahí adentro, apretando, donde no la ves? La respuesta te va a sorprender.
+Vamos a un tornillo de verdad: un eme doce. Menú Más, Rosca. La Forja le genera su cuerda helicoidal real.
+El par que le metes con la llave se convierte en fuerza de apriete. La fórmula es sencilla: te igual a ka por efe por de. Te es el par, efe la fuerza que aprieta, de el diámetro del tornillo.
+¿Y ka? Ka es cuánto se come la fricción, en la rosca y bajo la cabeza. En acero seco, ka vale como cero punto dos. Le llaman el factor de tuerca.
+Ahora despejemos la fuerza: efe igual a te entre ka por de. Con un par de ochenta y ocho newton metro en este eme doce, la fuerza de apriete es de más de tres toneladas y media. Con una sola llave de mano.
+¿De dónde salió ese ochenta y ocho? Del acero mismo. El kernel te da el diámetro menor de la rosca; con él, el área que resiste el jalón. Multiplícala por la resistencia del tornillo y sabes cuánto aguanta antes de tronar.
+El truco del ingeniero: aprietas al setenta y cinco por ciento de esa fuerza máxima. Ni más, ni menos. Con menos, la vibración lo afloja y lo fatiga. Con más, lo estiras hasta reventarlo.
+¿Y por qué la tuerca es tan alta? Para que el tornillo trone antes de que la rosca se barra. Con rosca engranada de al menos un diámetro en acero, el tornillo es el eslabón que cede primero. Por eso una tuerca mide como cero punto ocho veces el diámetro.
+Un tornillo apretado es un resorte estirado: guarda la tensión que mantiene todo unido. Por eso la llave de torque hace clic. Ese clic clava la fuerza invisible, exacta.
+Los birlos de tu coche, la cabeza del motor, el reductor de un robot: cada tornillo lleva su par exacto. No es capricho, es física. Y ahora la puedes calcular tú. Nos vemos.

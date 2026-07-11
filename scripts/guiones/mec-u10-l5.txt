@@ -1,0 +1,11 @@
+El opresor de la clase pasada agarra por fricción, y es débil. ¿Cómo pegas un engrane a una flecha para pasar torque de verdad, sin que patine? Con una cuña.
+Una cuña es una barrita de acero. Vamos a construirla. Clic en Boceto, sobre el plano.
+Dibuja su sección a ojo: un rectángulo. El ancho y el alto de la cuña.
+Las cotas mandan. Ancho: ocho milímetros. Es la be de la fórmula, la que trabaja a cortante.
+Alto: siete. Ancho ocho por alto siete es la cuña estándar de una flecha de veinticinco milímetros, según la norma.
+Ancla una esquina: boceto totalmente restringido. Y termínalo.
+Extrúyela treinta milímetros: ese es el largo de la cuña. Ya la tienes: ocho por siete por treinta.
+¿Cómo trabaja? La flecha le entrega torque a la cuña. Tau igual a efe por erre. Despejas la fuerza: efe es tau entre erre, el radio de la flecha.
+Esa fuerza intenta cortar la cuña a lo ancho. El esfuerzo cortante es efe entre be por ele: la fuerza, entre el ancho por el largo. Por eso una cuña más larga aguanta más.
+Y aquí lo hermoso: la cuña se diseña para cortarse ANTES de que la flecha se tuerza o el cubo se raje. Es el fusible mecánico. Truenas una cuña de diez pesos, no una flecha de mil.
+Opresor contra cuña: fricción contra cortante, débil contra fuerte. Por eso todo engrane bajo carga lleva su cuña. Con ella, la potencia llega a la rueda. Nos vemos.

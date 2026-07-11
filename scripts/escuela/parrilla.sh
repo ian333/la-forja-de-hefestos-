@@ -31,6 +31,14 @@ declare -A NOMBRE=(
   [mec-u3-l2]="ESCUELA-MECANICA-U3L2-el-costillado-4K"
   [mec-u9-l3]="ESCUELA-MECANICA-U9L3-el-apriete-4K"
   [mec-sim-l1]="ESCUELA-MECANICA-SIM1-aguanta-o-se-rompe-FEA-4K"
+  [mec-u6-l2]="ESCUELA-MECANICA-U6L2-broca-para-machuelo-4K"
+  [mec-u6-l4]="ESCUELA-MECANICA-U6L4-par-de-apriete-4K"
+  [mec-u6-l5]="ESCUELA-MECANICA-U6L5-el-opresor-4K"
+  [mec-u10-l5]="ESCUELA-MECANICA-U10L5-fusible-mecanico-4K"
+  [mec-u8-l1]="ESCUELA-MECANICA-U8L1-tolerancias-mas-menos-4K"
+  [mec-u8-l4]="ESCUELA-MECANICA-U8L4-ajuste-H7g6-4K"
+  [mec-u2-l3]="ESCUELA-MECANICA-U2L3-llave-del-13-4K"
+  [mec-u7-l1]="ESCUELA-MECANICA-U7L1-la-cota-es-una-orden-4K"
 )
 LECCIONES=("$@")
 [ ${#LECCIONES[@]} -eq 0 ] && LECCIONES=(mec-u2-l1 mec-u2-l2 mec-u3-l1 mec-u3-l6 mec-u3-l7 mec-u4-l2)

@@ -1,0 +1,8 @@
+¿Cómo se pega una polea a una flecha lisa, sin soldarla? El truco más común es un tornillo sin cabeza: el opresor.
+Genéralo: menú Más, Rosca. Hazlo chiquito, un eme ocho. Un opresor es pura rosca, sin cabeza: se esconde dentro del cubo de la polea.
+Lo aprietas contra la flecha. Y ya lo sabes de la clase pasada: ese giro se vuelve fuerza. Efe igual a te entre ka por de. Miles de newton empujando la punta.
+Esa fuerza aprieta la punta contra la flecha, y la fricción es la que agarra. El torque que aguanta es te de agarre igual a mu por efe por erre. Mu es la fricción, erre el radio de la flecha.
+Corre los números: en un eme ocho, con un par chico, la punta empuja como seis mil newton. Pero el radio es pequeño, así que el agarre son solo unos diez newton metro. Fuerte para sostener, débil para mover.
+Por eso hay una regla de taller: para que agarre de verdad, lima un plano en la flecha donde asiente la punta. Sin ese plano, el opresor gira, raya la flecha, y la polea se afloja.
+Y aquí el límite: el opresor es débil a propósito. Vibra, se afloja, y su punta muerde un solo punto. Para transmitir potencia de verdad, no basta. Ahí entra la cuña.
+El opresor posiciona; la cuña transmite. Un perilla de puerta, un collar, una polea ligera: opresor. El engrane de un reductor bajo carga: cuña. Cada uno en su lugar.

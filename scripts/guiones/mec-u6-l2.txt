@@ -1,0 +1,9 @@
+Quieres una rosca por dentro: un barreno roscado. Antes de meter el macho, hay que barrenar. ¿De qué tamaño? Ese número confunde a todo el mundo, y es una simple resta.
+Primero una pieza donde barrenar. Boceto sobre el plano, un rectángulo.
+Cotas: cien por sesenta. Ancla, termina y extruye veinte. Ya tienes el bloque.
+Ahora el barreno para una rosca eme doce. El error clásico: barrenar de doce. NO. Cortar, boceto sobre la cara de arriba.
+Un círculo, y su diámetro. La regla: diámetro de broca igual a diámetro nominal menos el paso. Doce menos uno punto setenta y cinco: diez punto veinticinco.
+Termina, y el corte atraviesa. Ese agujero de diez punto veinticinco es donde el macho va a cortar la rosca eme doce.
+¿Por qué no barrenar de doce, el diámetro completo? Porque el macho tendría que cortar demasiado material, se traba y se rompe adentro. Y sacar un macho roto es una pesadilla.
+Al dejar el agujero un poco más grande, el macho corta solo el setenta y cinco por ciento de la rosca. Pierdes casi nada de fuerza, y el macho entra fácil. Ese es el trato.
+Broca muy grande, rosca floja que se barre. Broca muy chica, macho tronado. Diez punto veinticinco es el punto justo, y salió de una resta: nominal menos paso. Esa es toda la tabla de brocas para macho. Nos vemos.
