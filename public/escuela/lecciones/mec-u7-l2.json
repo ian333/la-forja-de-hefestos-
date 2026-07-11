@@ -1,0 +1,126 @@
+{
+  "id": "mec-u7-l2",
+  "curso": "mecanica",
+  "unidad": 7,
+  "n": 2,
+  "titulo": "Baseline: que el error no se apile",
+  "subtitulo": "cadena acumula ± · base común no · acota lo funcional",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 7 §7-3, 7-9..7-10 (Linear, baseline & ordinate dimensioning)",
+  "descripcion": "¿Acotas del borde al barreno uno, y de ahí al dos (cadena)? ¿O los dos desde el MISMO borde (baseline)? Parece estilo — es ±dinero: en cadena el error del taller se apila. Aquí La Forja acota el plano SOLA, en baseline, y ves por qué.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Dos barrenos en una placa. ¿Los acotas del borde al primero y del primero al segundo, en cadena? ¿O los dos desde el mismo borde? Parece cuestión de estilo... y es dinero: una de las dos apila el error del taller.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La placa de siempre: cien por sesenta, veinte de espesor.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -47, "y": -28, "settle": 700 },
+        { "type": "clickmm", "x": 51, "y": 33, "settle": 900 },
+        { "type": "dimline", "axis": "h", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "100", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "dimline", "axis": "v", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 1800 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1600 }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "la placa 100×60×20 existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Ahora dos barrenos de doce... y fíjate: los voy a poner A OJO, sin medir dónde. No importa — el plano nos lo va a decir él solito.",
+      "gestos": [
+        { "type": "tclick", "testid": "sketch-op-cut", "settle": 800 },
+        { "type": "view", "name": "iso", "settle": 900 },
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1100 },
+        { "type": "click", "x": 960, "y": 570, "settle": 1800 },
+        { "type": "tclick", "testid": "sk-tool-circle", "settle": 500 },
+        { "type": "clickmm", "x": -25, "y": -8, "settle": 600 },
+        { "type": "clickmm", "x": -19, "y": -8, "settle": 800 },
+        { "type": "clickmm", "x": 20, "y": 10, "settle": 600 },
+        { "type": "clickmm", "x": 26, "y": 10, "settle": 800 },
+        { "type": "hook", "fn": "dimDiam", "args": [0], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "12", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 },
+        { "type": "hook", "fn": "dimDiam", "args": [1], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "12", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 2",
+        "desc": "hay dos barrenos Ø12 dibujados a ojo"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Termina, y el corte atraviesa. Dos barrenos reales en la placa.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "fill", "testid": "input-comp-depth", "text": "25", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 900 },
+        { "type": "probe", "label": "placa-2-barrenos" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 115000 && inv.vol_kernel < 115900",
+        "desc": "placa − 2 barrenos Ø12 = 115,476 mm³"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Y ahora, el plano. Mira lo que hace La Forja: acota SOLA. Cada barreno con su equis y su ye... y las cuatro cotas salen del MISMO borde. Eso se llama acotación baseline: una base común.",
+      "zoom": "btn-plano",
+      "gestos": [
+        { "type": "view", "name": "front", "settle": 900 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3200 },
+        { "type": "probe", "label": "plano-baseline" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && (s.match(/data-dim=\"pos-x\"/g)||[]).length >= 2 && (s.match(/data-dim=\"pos-y\"/g)||[]).length >= 2 && s.indexOf('data-dim=\"depth\"') >= 0",
+        "desc": "el plano acota los 2 barrenos en BASELINE + la profundidad"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "¿Por qué desde el mismo borde? Piensa en el taller. En cadena, cada cota sale con su más menos una décima... y el segundo barreno HEREDA el error del primero: ya va en más menos dos décimas. Con cinco barrenos, media décima se vuelve medio milímetro. En baseline cada barreno sale del mismo cero: su error es suyo, y no se apila.",
+      "gestos": [
+        { "type": "wait", "ms": 4200 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "¿Entonces la cadena es pecado? No. Si lo que IMPORTA es la distancia entre los dos barrenos — un par de pernos que entran juntos — acotas ESA distancia, directa. La regla de oro sigue siendo la misma: acota lo funcional, lo que el ensamble necesita.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "¿Y con veinte barrenos? Ni las flechas caben. Ahí se usan cotas ordenadas: una columna de coordenadas desde el cero — el mismo baseline, compactado en tabla. Y fíjate en algo más: el plano ya acota ancho, alto y fondo. Las tres dimensiones, sin pedirlo.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Acotar no es decorar el dibujo: es decidir dónde aterriza el error del taller. Base común para las posiciones; directa para lo funcional. Así se lee — y se escribe — un plano de verdad. Nos vemos.",
+      "gestos": [
+        { "type": "wait", "ms": 2600 }
+      ]
+    }
+  ]
+}

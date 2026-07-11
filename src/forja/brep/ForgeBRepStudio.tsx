@@ -4631,7 +4631,9 @@ export default function ForgeBRepStudio() {
         positions: result.mesh.positions, indices: result.mesh.indices,
         edges: result.edgeGeoms.map((g) => ({ polyline: g.polyline, kind: g.kind })),
       },
-      { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm' },
+      // tolNote: TODO plano serio lleva su tolerancia general (ISO 2768-m) — lo
+      // no acotado hereda este ±. Es la puerta de la U8 (tolerancias) del libro.
+      { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm', tolNote: '±0.1 · ISO 2768-m' },
     );
     setPlanoSvg(draw.svg);
     mark('plano', 0, { kind: sketch.kind });

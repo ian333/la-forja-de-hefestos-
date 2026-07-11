@@ -1,0 +1,9 @@
+Dos barrenos en una placa. ¿Los acotas del borde al primero y del primero al segundo, en cadena? ¿O los dos desde el mismo borde? Parece cuestión de estilo... y es dinero: una de las dos apila el error del taller.
+La placa de siempre: cien por sesenta, veinte de espesor.
+Ahora dos barrenos de doce... y fíjate: los voy a poner A OJO, sin medir dónde. No importa — el plano nos lo va a decir él solito.
+Termina, y el corte atraviesa. Dos barrenos reales en la placa.
+Y ahora, el plano. Mira lo que hace La Forja: acota SOLA. Cada barreno con su equis y su ye... y las cuatro cotas salen del MISMO borde. Eso se llama acotación baseline: una base común.
+¿Por qué desde el mismo borde? Piensa en el taller. En cadena, cada cota sale con su más menos una décima... y el segundo barreno HEREDA el error del primero: ya va en más menos dos décimas. Con cinco barrenos, media décima se vuelve medio milímetro. En baseline cada barreno sale del mismo cero: su error es suyo, y no se apila.
+¿Entonces la cadena es pecado? No. Si lo que IMPORTA es la distancia entre los dos barrenos — un par de pernos que entran juntos — acotas ESA distancia, directa. La regla de oro sigue siendo la misma: acota lo funcional, lo que el ensamble necesita.
+¿Y con veinte barrenos? Ni las flechas caben. Ahí se usan cotas ordenadas: una columna de coordenadas desde el cero — el mismo baseline, compactado en tabla. Y fíjate en algo más: el plano ya acota ancho, alto y fondo. Las tres dimensiones, sin pedirlo.
+Acotar no es decorar el dibujo: es decidir dónde aterriza el error del taller. Base común para las posiciones; directa para lo funcional. Así se lee — y se escribe — un plano de verdad. Nos vemos.
