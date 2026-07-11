@@ -1,0 +1,9 @@
+Más menos un grado. Suena a nada, ¿verdad? Pues en el borde de una brida de trescientos milímetros, ese nada son cinco punto dos milímetros. Hoy: por qué el ángulo es la tolerancia más traicionera del plano.
+La pieza: una rampa. Tres líneas a pulso: la base, la subida... y de regreso.
+Órdenes de dirección: la base horizontal, la espalda vertical.
+La base: sesenta milímetros.
+Y ahora la estrella: la cota ANGULAR. El ángulo de la rampa, entre la base y la subida: treinta grados. Mira la geometría obedecer — la altura ya no es tuya: la manda el ángulo.
+Ancla, termina, y extruye quince. El kernel confirma la trigonometría: la altura salió de sesenta por tangente de treinta, y el volumen da quince mil quinientos ochenta y ocho milímetros cúbicos. Exactos.
+¿Y por qué el ángulo es traicionero? Porque su error CRECE con la distancia: error igual a radio por el ángulo en radianes. Un grado son cero punto cero uno siete radianes. A cien milímetros del vértice: casi dos milímetros de desviación. A trescientos: cinco punto dos. La misma tolerancia, tres veces peor — solo por alejarte.
+De ahí, dos reglas. Una: en piezas largas, mejor acota la ALTURA al final que el ángulo — la cota lineal no se amplifica. Y dos: jamás acotes el ángulo Y la altura a la vez. Son dos jefes dando la misma orden: el solver lo pintaría de rojo, sobre-definido, y en el taller nadie sabe a cuál obedecer. Una orden, un jefe.
+Y para lo no acotado, la nota general del plano también da ángulos: más menos medio grado en la norma ISO. Ángulos cortos, cotas lineales largas, y un solo jefe por medida. Así no te traiciona el grado. Nos vemos.

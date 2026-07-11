@@ -1,0 +1,109 @@
+{
+  "id": "mec-u8-l2",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 2,
+  "titulo": "La tolerancia angular: el error que crece con la distancia",
+  "subtitulo": "error = R·Δθ · ±1° a 300mm = 5.2mm · nunca dos jefes",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-7..8-9 (Angular tolerances & double dimensioning)",
+  "descripcion": "±1 grado suena a nada — en el borde de una brida de 300mm son 5.2 milímetros. Construyes una rampa acotada por ÁNGULO, el kernel confirma la trigonometría exacta, y aprendes las dos reglas: el error angular crece con el radio, y nunca acotes ángulo Y altura a la vez.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Más menos un grado. Suena a nada, ¿verdad? Pues en el borde de una brida de trescientos milímetros, ese nada son cinco punto dos milímetros. Hoy: por qué el ángulo es la tolerancia más traicionera del plano.",
+      "gestos": [
+        { "type": "wait", "ms": 1200 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza: una rampa. Tres líneas a pulso: la base, la subida... y de regreso.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 600 },
+        { "type": "clickmm", "x": 2, "y": 2, "settle": 500 },
+        { "type": "clickmm", "x": 58, "y": 3, "settle": 500 },
+        { "type": "clickmm", "x": -2, "y": 28, "settle": 500 },
+        { "type": "clickmm", "x": 2, "y": 2, "settle": 700 },
+        { "type": "key", "key": "Escape", "settle": 800 }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 3",
+        "desc": "el triángulo de la rampa existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Órdenes de dirección: la base horizontal, la espalda vertical.",
+      "gestos": [
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 0], "settle": 300 },
+        { "type": "tclick", "testid": "sk-con-h", "settle": 800 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 },
+        { "type": "hook", "fn": "pick", "args": ["line", 2], "settle": 300 },
+        { "type": "tclick", "testid": "sk-con-v", "settle": 800 },
+        { "type": "hook", "fn": "clearPick", "args": [], "settle": 300 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "La base: sesenta milímetros.",
+      "gestos": [
+        { "type": "hook", "fn": "dimDist", "args": [0, 1, "h"], "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1100 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Y ahora la estrella: la cota ANGULAR. El ángulo de la rampa, entre la base y la subida: treinta grados. Mira la geometría obedecer — la altura ya no es tuya: la manda el ángulo.",
+      "gestos": [
+        { "type": "hook", "fn": "dimAngle", "args": [0, 1], "settle": 900 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "30", "settle": 400 },
+        { "type": "key", "key": "Enter", "settle": 1400 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Ancla, termina, y extruye quince. El kernel confirma la trigonometría: la altura salió de sesenta por tangente de treinta, y el volumen da quince mil quinientos ochenta y ocho milímetros cúbicos. Exactos.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 500 },
+        { "type": "clickptwhere", "where": "bl", "settle": 900 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 2200 },
+        { "type": "fill", "testid": "input-altura", "text": "15", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "probe", "label": "rampa-30" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 15588.46) < 3",
+        "desc": "rampa 60 × tan(30°) × 15 = 15,588 mm³ (trigonometría exacta)"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "¿Y por qué el ángulo es traicionero? Porque su error CRECE con la distancia: error igual a radio por el ángulo en radianes. Un grado son cero punto cero uno siete radianes. A cien milímetros del vértice: casi dos milímetros de desviación. A trescientos: cinco punto dos. La misma tolerancia, tres veces peor — solo por alejarte.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2200 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "De ahí, dos reglas. Una: en piezas largas, mejor acota la ALTURA al final que el ángulo — la cota lineal no se amplifica. Y dos: jamás acotes el ángulo Y la altura a la vez. Son dos jefes dando la misma orden: el solver lo pintaría de rojo, sobre-definido, y en el taller nadie sabe a cuál obedecer. Una orden, un jefe.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Y para lo no acotado, la nota general del plano también da ángulos: más menos medio grado en la norma ISO. Ángulos cortos, cotas lineales largas, y un solo jefe por medida. Así no te traiciona el grado. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
