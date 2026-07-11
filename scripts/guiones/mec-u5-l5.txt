@@ -1,0 +1,8 @@
+Imagina que llega un dibujo al taller: sin nombre, sin material, sin escala, sin fecha. ¿Lo fabricas? ¿En qué acero? ¿La versión de quién? Un plano sin cajetín no es un plano: es un rumor. Hoy: la cédula de identidad del dibujo.
+Una pieza rápida para tener qué documentar: la placa de cien por sesenta por veinte.
+El plano. Y ahora ignora las vistas un momento: vete a la esquina inferior derecha. Ahí vive el CAJETÍN — y esa esquina no es casualidad: es lo primero que ves al desenrollar un plano doblado.
+Léelo renglón por renglón. El NOMBRE de la pieza: sin él, el almacén no la encuentra. El MATERIAL: la misma geometría en aluminio o en acero son dos piezas distintas. La MASA, calculada por el kernel: si la báscula del taller no coincide, algo anda mal. Y la ESCALA con las UNIDADES: lo de la lección pasada.
+Falta el renglón más dramático: la REVISIÓN. Todo plano nace en revisión A. ¿Cambiaste un barreno de diez a doce? Revisión B — y una tablita arriba del cajetín registra: qué cambió, quién lo cambió, cuándo, y quién lo aprobó.
+¿Por qué tanto ritual? Porque el error clásico de la industria es fabricar con el plano VIEJO. El taller tiene la revisión A pegada en la pared; ingeniería ya va en la C. Mil piezas después, nada ensambla. El bloque de revisiones es la vacuna: antes de cortar, se compara la letra.
+Y la firma. En un plano real hay tres: quién DIBUJÓ, quién REVISÓ, quién APROBÓ. No es burocracia — es responsabilidad: si la pieza falla en campo, esa cadena dice quién respondía por qué. Firmar un plano es decir: yo respondo.
+Nombre, material, masa, escala, unidades, revisión y firmas. Siete renglones que convierten un dibujo en un DOCUMENTO. La geometría dice cómo es la pieza; el cajetín dice de quién es y en qué versión va. Nos vemos.

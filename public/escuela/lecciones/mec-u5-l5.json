@@ -1,0 +1,97 @@
+{
+  "id": "mec-u5-l5",
+  "curso": "mecanica",
+  "unidad": 5,
+  "n": 5,
+  "titulo": "El cajetín: la cédula de identidad del plano",
+  "subtitulo": "quién, qué, cuándo, a qué escala · sin cajetín no es plano, es dibujo",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 5 §5-12 (Title blocks & revision blocks)",
+  "descripcion": "Un plano sin cajetín es un dibujo anónimo: nadie sabe qué pieza es, de qué material, a qué escala, ni quién responde por él. Aquí generas el plano y lees su cédula completa — y aprendes el bloque de revisiones: la bitácora que evita fabricar la versión equivocada.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Imagina que llega un dibujo al taller: sin nombre, sin material, sin escala, sin fecha. ¿Lo fabricas? ¿En qué acero? ¿La versión de quién? Un plano sin cajetín no es un plano: es un rumor. Hoy: la cédula de identidad del dibujo.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Una pieza rápida para tener qué documentar: la placa de cien por sesenta por veinte.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -47, "y": -28, "settle": 700 },
+        { "type": "clickmm", "x": 51, "y": 33, "settle": 900 },
+        { "type": "dimline", "axis": "h", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "100", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "dimline", "axis": "v", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 1800 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1600 }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "la pieza a documentar existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El plano. Y ahora ignora las vistas un momento: vete a la esquina inferior derecha. Ahí vive el CAJETÍN — y esa esquina no es casualidad: es lo primero que ves al desenrollar un plano doblado.",
+      "zoom": "btn-plano",
+      "gestos": [
+        { "type": "view", "name": "front", "settle": 900 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3200 },
+        { "type": "probe", "label": "cajetin" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('title-block') >= 0 && s.indexOf('MATERIAL') >= 0 && s.indexOf('ESCALA') >= 0 && s.indexOf('MASA') >= 0",
+        "desc": "el cajetín declara nombre, material, masa y escala"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Léelo renglón por renglón. El NOMBRE de la pieza: sin él, el almacén no la encuentra. El MATERIAL: la misma geometría en aluminio o en acero son dos piezas distintas. La MASA, calculada por el kernel: si la báscula del taller no coincide, algo anda mal. Y la ESCALA con las UNIDADES: lo de la lección pasada.",
+      "gestos": [
+        { "type": "wait", "ms": 4200 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Falta el renglón más dramático: la REVISIÓN. Todo plano nace en revisión A. ¿Cambiaste un barreno de diez a doce? Revisión B — y una tablita arriba del cajetín registra: qué cambió, quién lo cambió, cuándo, y quién lo aprobó.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2600 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Por qué tanto ritual? Porque el error clásico de la industria es fabricar con el plano VIEJO. El taller tiene la revisión A pegada en la pared; ingeniería ya va en la C. Mil piezas después, nada ensambla. El bloque de revisiones es la vacuna: antes de cortar, se compara la letra.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y la firma. En un plano real hay tres: quién DIBUJÓ, quién REVISÓ, quién APROBÓ. No es burocracia — es responsabilidad: si la pieza falla en campo, esa cadena dice quién respondía por qué. Firmar un plano es decir: yo respondo.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2200 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Nombre, material, masa, escala, unidades, revisión y firmas. Siete renglones que convierten un dibujo en un DOCUMENTO. La geometría dice cómo es la pieza; el cajetín dice de quién es y en qué versión va. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

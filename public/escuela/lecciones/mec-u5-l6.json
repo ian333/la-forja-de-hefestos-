@@ -1,0 +1,93 @@
+{
+  "id": "mec-u5-l6",
+  "curso": "mecanica",
+  "unidad": 5,
+  "n": 6,
+  "titulo": "Motion study: mueve el ensamble ANTES de fabricarlo",
+  "subtitulo": "interferencia = volumen compartido · A∩B debe ser CERO · el lote se salva en pantalla",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 5 §5-13..5-17 (Motion studies & interference detection)",
+  "descripcion": "Mil piezas fabricadas y el ensamble no gira: dos piezas quieren ocupar el mismo espacio. Eso es una interferencia y cuesta el lote entero. Aquí armas un reductor, lo pones a girar (motion study) y aprendes el detector booleano: la intersección de dos sólidos debe medir CERO.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Imagina mil piezas recién fabricadas... y el ensamble no gira. Dos piezas quieren ocupar el mismo espacio al mismo tiempo. Eso se llama interferencia, cuesta lo que costó el lote, y hoy aprendes a cazarla ANTES de cortar metal.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El ensamble de prueba: un par de engranes. El motriz de veinte dientes... y su pareja de cuarenta.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-gear", "settle": 3200 },
+        { "type": "fill", "testid": "input-dientes", "text": "20", "settle": 400 },
+        { "type": "key", "key": "Tab", "settle": 2800 },
+        { "type": "tclick", "testid": "btn-add-gear2", "settle": 3200 }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"hud-assembly\"]')",
+        "desc": "el ensamble de dos componentes existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Ahora el mate que los engrana. Y fíjate lo que revisa el software al aceptarlo: mismo módulo, centros a la distancia EXACTA de la fórmula. Si los centros quedaran más cerca, los dientes se TRASLAPARÍAN — interferencia. El mate es un contrato anti-choque.",
+      "zoom": "btn-gear-mate",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-gear-mate", "settle": 2600 },
+        { "type": "view", "name": "iso", "settle": 1200 }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"mate-ratio\"]'); e && parseFloat(e.textContent) > 1.9 && parseFloat(e.textContent) < 2.1",
+        "desc": "el mate valida el engrane (i = 2.0, sin traslape de dientes)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Complétalo: flechas y carcasa con baleros. Ya es un reductor de verdad — cinco componentes que tienen que convivir sin tocarse donde no deben.",
+      "gestos": [
+        { "type": "tclick", "testid": "chk-shafts", "settle": 2800 },
+        { "type": "tclick", "testid": "chk-housing", "settle": 2800 },
+        { "type": "probe", "label": "ensamble-completo" }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"asm-vol-carcasa\"]'); e && parseFloat(e.textContent.replace(/[^0-9.]/g,'')) > 0",
+        "desc": "el ensamble completo (engranes + flechas + carcasa)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Y ahora, la prueba reina: el ESTUDIO DE MOVIMIENTO. Míralo girar. Esto no es animación decorativa — es la validación de que la cadena cinemática funciona: cada diente entra en un hueco, nunca en otro diente, vuelta tras vuelta.",
+      "zoom": "btn-gb-motion",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-gb-motion", "settle": 1500 },
+        { "type": "wait", "ms": 4200 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Y cómo detecta un choque la computadora? Con la regla más dura de la física: dos sólidos no pueden compartir volumen. El detector es una intersección booleana: A intersectada con B. Si ese volumen no es CERO... hay interferencia. Así de simple, así de brutal.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2600 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "¿Dónde se esconden las interferencias clásicas? El tornillo que topa fondo antes de apretar. La cabeza que choca con la pared del cárter. La pieza que crece con el calor y se come su holgura. Por eso el estudio se corre en TODO el rango de movimiento: el choque puede vivir en un solo grado de la vuelta.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2600 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "La lección de toda la unidad cinco cabe en una frase: primero MUEVE, luego fabrica. El ensamble que gira en pantalla es barato; el que se atora en el taller cuesta el lote. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
