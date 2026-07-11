@@ -45,10 +45,21 @@
     },
     {
       "id": "p04",
-      "dice": "Complétalo: flechas y carcasa con baleros. Ya es un reductor de verdad — cinco componentes que tienen que convivir sin tocarse donde no deben.",
+      "dice": "Complétalo. Primero las flechas: las barras que llevan el par.",
       "gestos": [
-        { "type": "tclick", "testid": "chk-shafts", "settle": 2800 },
-        { "type": "tclick", "testid": "chk-housing", "settle": 2800 },
+        { "type": "tclick", "testid": "chk-shafts", "settle": 3200 },
+        { "type": "probe", "label": "con-flechas" }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"asm-vol-flechas\"]'); e && parseFloat(e.textContent.replace(/[^0-9.]/g,'')) > 0",
+        "desc": "las flechas montadas"
+      }
+    },
+    {
+      "id": "p04b",
+      "dice": "Y la carcasa con sus baleros. Ya es un reductor de verdad — cinco componentes que tienen que convivir sin tocarse donde no deben.",
+      "gestos": [
+        { "type": "tclick", "testid": "chk-housing", "settle": 5000 },
         { "type": "probe", "label": "ensamble-completo" }
       ],
       "check": {

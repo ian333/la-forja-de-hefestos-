@@ -1,0 +1,9 @@
+Te encargan cien reductores. ¿Cuánto acero compras? ¿Cuántos baleros? ¿Qué tornillería? El plano no responde eso — lo responde un documento aparte: la lista de materiales. El BOM. Y si el BOM está mal, compras mal, cien veces.
+El ensamble: par de engranes, veinte y cuarenta dientes, engranados.
+Las flechas...
+...y la carcasa con baleros. El ensamble está completo.
+Y mira el panel del ensamble: ahí está el BOM naciendo. Cada componente con su nombre... y su MASA, calculada por el kernel. Multiplica cada masa por cien reductores, y esa es tu orden de compra de material. Sin adivinar.
+Un renglón de BOM serio lleva cinco datos: número de parte, descripción, CANTIDAD por ensamble, material, y masa. El número de parte es sagrado: es el nombre legal de la pieza en toda la empresa.
+Y la distinción que ordena la fábrica entera: COMPRADO contra FABRICADO. El balero se compra — su renglón lleva número de catálogo del proveedor. La flecha se fabrica — su renglón apunta a su propio plano. Dos mundos: uno se cotiza, el otro se maquina.
+¿Y cómo conecta el dibujo con la lista? Con GLOBOS: en el plano de ensamble, cada pieza lleva un numerito en un círculo — el globo — y ese número ES el renglón del BOM. El plano dice DÓNDE va cada cosa; el BOM dice QUÉ es y cuántas. Juntos son el ensamble completo en papel.
+El plano mueve al taller; el BOM mueve al departamento de compras — y compras mueve el dinero. Por eso el BOM es el documento más caro de equivocar. Cuenta bien, nombra bien, y separa lo comprado de lo fabricado. Nos vemos.

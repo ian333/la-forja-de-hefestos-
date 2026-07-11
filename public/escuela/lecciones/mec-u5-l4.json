@@ -1,0 +1,97 @@
+{
+  "id": "mec-u5-l4",
+  "curso": "mecanica",
+  "unidad": 5,
+  "n": 4,
+  "titulo": "El BOM: la lista que más dinero mueve",
+  "subtitulo": "cada componente, su renglón · comprado vs fabricado · el globo apunta al renglón",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 5 §5-10..5-11 (BOM & balloons)",
+  "descripcion": "¿Cuánto acero compras para cien reductores? ¿Cuántos baleros? El plano no lo dice — lo dice la LISTA DE MATERIALES (BOM). Armas el reductor, lees su BOM vivo (componentes + masas del kernel) y aprendes el renglón completo: parte, cantidad, material, comprado o fabricado.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Te encargan cien reductores. ¿Cuánto acero compras? ¿Cuántos baleros? ¿Qué tornillería? El plano no responde eso — lo responde un documento aparte: la lista de materiales. El BOM. Y si el BOM está mal, compras mal, cien veces.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "El ensamble: par de engranes, veinte y cuarenta dientes, engranados.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-gear", "settle": 3200 },
+        { "type": "fill", "testid": "input-dientes", "text": "20", "settle": 400 },
+        { "type": "key", "key": "Tab", "settle": 2800 },
+        { "type": "tclick", "testid": "btn-add-gear2", "settle": 3200 },
+        { "type": "tclick", "testid": "btn-gear-mate", "settle": 2600 }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"mate-ratio\"]'); e && parseFloat(e.textContent) > 1.9 && parseFloat(e.textContent) < 2.1",
+        "desc": "el par engranado existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Las flechas...",
+      "gestos": [
+        { "type": "tclick", "testid": "chk-shafts", "settle": 3200 }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"asm-vol-flechas\"]'); e && parseFloat(e.textContent.replace(/[^0-9.]/g,'')) > 0",
+        "desc": "flechas montadas"
+      }
+    },
+    {
+      "id": "p03b",
+      "dice": "...y la carcasa con baleros. El ensamble está completo.",
+      "gestos": [
+        { "type": "tclick", "testid": "chk-housing", "settle": 5000 },
+        { "type": "view", "name": "iso", "settle": 1200 },
+        { "type": "probe", "label": "reductor-bom" }
+      ],
+      "check": {
+        "js": "var e=document.querySelector('[data-testid=\"asm-n-componentes\"]'); e && parseInt(e.textContent) >= 4",
+        "desc": "el ensamble lista 4+ componentes — el BOM vivo"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y mira el panel del ensamble: ahí está el BOM naciendo. Cada componente con su nombre... y su MASA, calculada por el kernel. Multiplica cada masa por cien reductores, y esa es tu orden de compra de material. Sin adivinar.",
+      "gestos": [
+        { "type": "wait", "ms": 3600 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Un renglón de BOM serio lleva cinco datos: número de parte, descripción, CANTIDAD por ensamble, material, y masa. El número de parte es sagrado: es el nombre legal de la pieza en toda la empresa.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y la distinción que ordena la fábrica entera: COMPRADO contra FABRICADO. El balero se compra — su renglón lleva número de catálogo del proveedor. La flecha se fabrica — su renglón apunta a su propio plano. Dos mundos: uno se cotiza, el otro se maquina.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "¿Y cómo conecta el dibujo con la lista? Con GLOBOS: en el plano de ensamble, cada pieza lleva un numerito en un círculo — el globo — y ese número ES el renglón del BOM. El plano dice DÓNDE va cada cosa; el BOM dice QUÉ es y cuántas. Juntos son el ensamble completo en papel.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "El plano mueve al taller; el BOM mueve al departamento de compras — y compras mueve el dinero. Por eso el BOM es el documento más caro de equivocar. Cuenta bien, nombra bien, y separa lo comprado de lo fabricado. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
