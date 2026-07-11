@@ -1,0 +1,9 @@
+Pregunta de examen: ¿acotas la posición de un barreno a su BORDE... o a su CENTRO? Es lo mismo más un radio, ¿no? No. Uno de los dos te arruina la pieza — y hoy ves por qué.
+La placa base: cien por sesenta, quince de espesor.
+Tres barrenos: dos gemelos de diez para pernos... y uno de dieciséis para el eje.
+Termina, atraviesa... y la placa queda perforada. El kernel lo confirma al milímetro cúbico.
+El plano. Mira el lenguaje: cada barreno lleva su símbolo de diámetro — el circulito cruzado — su eje en cruz al centro... y su posición, medida AL CENTRO, desde la base común.
+¿Por qué al CENTRO y no al borde? Porque la broca ENTRA por su centro: ahí marcas con el punzón, ahí posiciona el husillo. Y hay una razón más fina: el borde depende del diámetro real. Si el barreno sale una décima más grande, tu 'posición al borde' se movió media décima... sin que nadie moviera nada. La cota al centro no se contamina.
+¿Y por qué diámetro y nunca radio? Porque el taller COMPRA por diámetro: la broca es de diez, el machuelo es para diez, el calibrador mide diez. El radio es para lo que se dibuja con compás: arcos, filetes, esquinas. Regla de hierro: círculo completo, diámetro. Arco, radio.
+Dos convenciones más del oficio. Los gemelos: cuando hay barrenos idénticos, el plano dice 'dos equis diámetro diez' — una sola cota, contadas las copias. Y la profundidad: si no atraviesa, el callout dice el fondo. Pasante o ciego, siempre declarado. La caja para la cabeza del tornillo — el counterbore — tiene su propio símbolo, y su propia lección.
+Ø al círculo, radio al arco, posición al centro, copias contadas, fondo declarado. Cinco reglas y cualquier taller del mundo taladra tu placa sin llamarte. Ese es el punto de un plano. Nos vemos.

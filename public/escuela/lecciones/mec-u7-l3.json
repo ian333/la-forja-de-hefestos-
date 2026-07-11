@@ -1,0 +1,134 @@
+{
+  "id": "mec-u7-l3",
+  "curso": "mecanica",
+  "unidad": 7,
+  "n": 3,
+  "titulo": "El lenguaje del barreno: Ø, al centro, nunca al borde",
+  "subtitulo": "Ø porque la broca se pide por diámetro · posición al CENTRO · pasante o ciego",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 7 §7-6..7-8 (Dimensioning holes & hole patterns)",
+  "descripcion": "¿Acotas un barreno a su BORDE o a su CENTRO? Uno de los dos arruina la posición. Y ¿por qué Ø10 y nunca R5, si es lo mismo? Tres barrenos en una placa, el plano que se acota solo, y las convenciones que el taller espera leer.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Pregunta de examen: ¿acotas la posición de un barreno a su BORDE... o a su CENTRO? Es lo mismo más un radio, ¿no? No. Uno de los dos te arruina la pieza — y hoy ves por qué.",
+      "gestos": [
+        { "type": "wait", "ms": 1300 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La placa base: cien por sesenta, quince de espesor.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -47, "y": -28, "settle": 700 },
+        { "type": "clickmm", "x": 51, "y": 33, "settle": 900 },
+        { "type": "dimline", "axis": "h", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "100", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "dimline", "axis": "v", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 1800 },
+        { "type": "fill", "testid": "input-altura", "text": "15", "settle": 1600 }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 90000) < 1",
+        "desc": "placa 100×60×15 = 90,000 mm³"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Tres barrenos: dos gemelos de diez para pernos... y uno de dieciséis para el eje.",
+      "gestos": [
+        { "type": "tclick", "testid": "sketch-op-cut", "settle": 800 },
+        { "type": "view", "name": "iso", "settle": 900 },
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1100 },
+        { "type": "click", "x": 960, "y": 570, "settle": 1800 },
+        { "type": "tclick", "testid": "sk-tool-circle", "settle": 500 },
+        { "type": "clickmm", "x": -30, "y": -10, "settle": 500 },
+        { "type": "clickmm", "x": -25, "y": -10, "settle": 700 },
+        { "type": "clickmm", "x": 10, "y": -10, "settle": 500 },
+        { "type": "clickmm", "x": 15, "y": -10, "settle": 700 },
+        { "type": "clickmm", "x": 30, "y": 15, "settle": 500 },
+        { "type": "clickmm", "x": 38, "y": 15, "settle": 700 },
+        { "type": "hook", "fn": "dimDiam", "args": [0], "settle": 600 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "10", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "hook", "fn": "dimDiam", "args": [1], "settle": 600 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "10", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "hook", "fn": "dimDiam", "args": [2], "settle": 600 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "16", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 800 }
+      ],
+      "check": {
+        "js": "sk && sk.nCircles >= 3",
+        "desc": "tres barrenos: 2× Ø10 + 1× Ø16"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Termina, atraviesa... y la placa queda perforada. El kernel lo confirma al milímetro cúbico.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "fill", "testid": "input-comp-depth", "text": "20", "settle": 1800 },
+        { "type": "view", "name": "iso", "settle": 900 },
+        { "type": "probe", "label": "placa-3-barrenos" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 84300 && inv.vol_kernel < 84950",
+        "desc": "placa − (2×Ø10 + Ø16) = 84,628 mm³"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "El plano. Mira el lenguaje: cada barreno lleva su símbolo de diámetro — el circulito cruzado — su eje en cruz al centro... y su posición, medida AL CENTRO, desde la base común.",
+      "zoom": "btn-plano",
+      "gestos": [
+        { "type": "view", "name": "front", "settle": 900 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3200 },
+        { "type": "probe", "label": "plano-barrenos" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && (s.match(/data-dim=\"diameter\"/g)||[]).length >= 3 && (s.match(/data-dim=\"pos-x\"/g)||[]).length >= 3",
+        "desc": "el plano rotula 3× Ø + posiciones baseline al CENTRO"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "¿Por qué al CENTRO y no al borde? Porque la broca ENTRA por su centro: ahí marcas con el punzón, ahí posiciona el husillo. Y hay una razón más fina: el borde depende del diámetro real. Si el barreno sale una décima más grande, tu 'posición al borde' se movió media décima... sin que nadie moviera nada. La cota al centro no se contamina.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2600 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "¿Y por qué diámetro y nunca radio? Porque el taller COMPRA por diámetro: la broca es de diez, el machuelo es para diez, el calibrador mide diez. El radio es para lo que se dibuja con compás: arcos, filetes, esquinas. Regla de hierro: círculo completo, diámetro. Arco, radio.",
+      "gestos": [
+        { "type": "wait", "ms": 3400 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Dos convenciones más del oficio. Los gemelos: cuando hay barrenos idénticos, el plano dice 'dos equis diámetro diez' — una sola cota, contadas las copias. Y la profundidad: si no atraviesa, el callout dice el fondo. Pasante o ciego, siempre declarado. La caja para la cabeza del tornillo — el counterbore — tiene su propio símbolo, y su propia lección.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Ø al círculo, radio al arco, posición al centro, copias contadas, fondo declarado. Cinco reglas y cualquier taller del mundo taladra tu placa sin llamarte. Ese es el punto de un plano. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

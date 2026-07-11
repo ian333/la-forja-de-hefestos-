@@ -42,6 +42,7 @@ declare -A NOMBRE=(
   [mec-u7-l2]="ESCUELA-MECANICA-U7L2-baseline-error-no-se-apila-4K"
   [mec-u8-l2]="ESCUELA-MECANICA-U8L2-tolerancia-angular-4K"
   [mec-u8-l3]="ESCUELA-MECANICA-U8L3-estudio-de-tolerancias-4K"
+  [mec-u7-l3]="ESCUELA-MECANICA-U7L3-lenguaje-del-barreno-4K"
 )
 LECCIONES=("$@")
 [ ${#LECCIONES[@]} -eq 0 ] && LECCIONES=(mec-u2-l1 mec-u2-l2 mec-u3-l1 mec-u3-l6 mec-u3-l7 mec-u4-l2)
