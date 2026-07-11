@@ -1,0 +1,8 @@
+Mira un plano profesional: casi no tiene cotas. ¿Descuido? Al revés: usa TAQUIGRAFÍA. Una letra despacha un chaflán, una nota despacha ocho barrenos, una rayita parte la pieza a la mitad. Hoy: las abreviaturas del oficio.
+La placa de cien por sesenta, acotada y anclada.
+Y ahora el CHAFLÁN: la esquina cortada a cuarenta y cinco grados. Distancia diez, en las cuatro esquinas. En el plano, esto se escribe con UNA letra: CE DIEZ.
+Termina y extruye quince. El kernel: ochenta y siete mil exactos — le quitó a cada esquina su triangulito de cincuenta milímetros cuadrados. CE DIEZ significa: diez por diez a cuarenta y cinco grados. También se escribe 'diez por cuarenta y cinco grados'. Dos dialectos, mismo corte.
+¿Y por qué chaflán y no redondeo? El chaflán GUÍA: el tornillo entra solito, el balero encuentra su asiento, la mano no se corta. Y es más barato — una pasada recta de la herramienta, sin radio que cuidar. El redondeo es para esfuerzos; el chaflán, para ensamblar.
+Taquigrafía dos: el patrón POLAR. Ocho barrenos en círculo — como los birlos de un rin — NO se acotan uno por uno. Una sola nota: OCHO EQUIS, diámetro diez, EQUIESPACIADOS en círculo de barrenos diámetro ochenta. Cuatro palabras, ocho barrenos. El taller pone el divisor y listo.
+Y taquigrafía tres: la SIMETRÍA. Esa línea de centro con rayitas — punto raya punto — declara: la pieza es ESPEJO. Acotas media pieza... y la otra mitad queda acotada gratis. Menos cotas, menos errores, y el patrón simétrico jamás se desbalancea.
+El alfabeto completo del plano: diámetro para círculos, erre para arcos, ce para chaflanes, equis para las copias, la línea de centro para el espejo. Cinco símbolos que ahorran cien cotas. La taquigrafía no es flojera: es menos tinta y CERO ambigüedad. Nos vemos.

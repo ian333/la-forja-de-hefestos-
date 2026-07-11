@@ -1,0 +1,104 @@
+{
+  "id": "mec-u4-l4",
+  "curso": "mecanica",
+  "unidad": 4,
+  "n": 4,
+  "titulo": "Vista de detalle: el zoom formal del plano",
+  "subtitulo": "círculo A punteado → DETALLE A (×2.2) · rotas para lo largo · auxiliares para lo inclinado",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 4 §4-8..4-10 (Broken, detail & auxiliary views)",
+  "descripcion": "Un barreno de 8 en una placa de 100: a escala de hoja es un puntito inacotable. La solución formal: el círculo A punteado y su DETALLE A ampliado con escala declarada. Aquí lo generas de verdad — y aprendes sus dos hermanas: la vista rota (piezas largas) y la auxiliar (caras inclinadas).",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Un barreno de ocho milímetros en una placa de cien. En el papel, a escala, ese barreno es un PUNTITO: ni sus cotas caben. ¿Amplías todo el plano? Desperdicias la hoja. La solución tiene nombre y reglas: la vista de DETALLE.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La placa de siempre... con un barreno chiquito de ocho.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1400 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sk-tool-rect", "settle": 600 },
+        { "type": "clickmm", "x": -47, "y": -28, "settle": 700 },
+        { "type": "clickmm", "x": 51, "y": 33, "settle": 900 },
+        { "type": "dimline", "axis": "h", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "100", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "dimline", "axis": "v", "settle": 800 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "60", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 700 },
+        { "type": "tclick", "testid": "sk-tool-fix", "settle": 400 },
+        { "type": "clickptwhere", "where": "bl", "settle": 800 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2000 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 1800 },
+        { "type": "fill", "testid": "input-altura", "text": "20", "settle": 1600 },
+        { "type": "tclick", "testid": "sketch-op-cut", "settle": 800 },
+        { "type": "view", "name": "iso", "settle": 900 },
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1100 },
+        { "type": "click", "x": 960, "y": 570, "settle": 1800 },
+        { "type": "tclick", "testid": "sk-tool-circle", "settle": 500 },
+        { "type": "clickmm", "x": 9, "y": -4, "settle": 600 },
+        { "type": "clickmm", "x": 13, "y": -4, "settle": 800 },
+        { "type": "hook", "fn": "dimDiam", "args": [0], "settle": 700 },
+        { "type": "fill", "testid": "sk-dim-input", "text": "8", "settle": 300 },
+        { "type": "key", "key": "Enter", "settle": 900 },
+        { "type": "tclick", "testid": "sk-finish", "settle": 2200 },
+        { "type": "fill", "testid": "input-comp-depth", "text": "25", "settle": 1800 },
+        { "type": "probe", "label": "placa-barreno-chico" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 118800 && inv.vol_kernel < 119200",
+        "desc": "placa con barreno Ø8 (118,995 mm³)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El plano normal... y ahí está el problema: el barreno se ve diminuto. Ahora el botón de DETALLE. Mira: un círculo PUNTEADO abraza la zona, con su letra A... y en la esquina aparece el DETALLE A, ampliado, con su escala declarada.",
+      "zoom": "btn-plano-detalle",
+      "gestos": [
+        { "type": "view", "name": "front", "settle": 900 },
+        { "type": "tclick", "testid": "btn-plano", "settle": 3200 },
+        { "type": "tclick", "testid": "btn-plano-detalle", "settle": 2600 },
+        { "type": "probe", "label": "detalle-A" }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('data-detail-mark=\"A\"') >= 0 && s.indexOf('data-view=\"detail\"') >= 0 && s.indexOf('DETALLE A') >= 0",
+        "desc": "círculo A punteado + recuadro DETALLE A ampliado"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Las reglas del detalle. Uno: el círculo punteado y la letra van en la vista MADRE — el lector sabe de dónde salió el zoom. Dos: el rótulo declara la ESCALA del recuadro, porque es DISTINTA a la del resto de la hoja. Y tres — ya lo sabes de la lección de escalas: las COTAS dentro del detalle siguen siendo las reales. El papel amplía; la cota nunca miente.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Hermana uno: la vista ROTA. Una flecha de un metro con los dos extremos maquinados y puro cilindro liso en medio... no merece un metro de papel. Se ROMPE: dos rayitas de zigzag, se omite el tramo aburrido, y la pieza cabe en la hoja. La cota del largo sigue diciendo MIL — la rotura es visual, jamás dimensional.",
+      "gestos": [
+        { "type": "wait", "ms": 3800 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Hermana dos: la vista AUXILIAR. Una cara INCLINADA vista de frente sale DISTORSIONADA — un barreno redondo se dibuja elipse. La auxiliar proyecta PERPENDICULAR a la cara inclinada: ahí se ve en VERDADERA MAGNITUD, redondo el barreno, reales las distancias. Regla de oro: las caras inclinadas se acotan en su vista auxiliar, nunca en la distorsionada.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 3200 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Tres herramientas, un mismo principio: la hoja se ADAPTA a la pieza — zoom para lo chico, rotura para lo largo, proyección extra para lo inclinado — pero la VERDAD dimensional no se toca. El papel es flexible; las cotas, sagradas. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}
