@@ -167,6 +167,18 @@ describe('generateDrawing — profundidad + nota de tolerancia', () => {
     expect(r.svg).toContain('ACABADO Ra 3.2 SALVO INDICACIÓN');
     expect(generateDrawing(makeBox(40, 20, 12)).svg).not.toContain('data-note="ra"');
   });
+
+  it('gdtDemo: datums A/B + planitud + perpendicularidad + posición por barreno', () => {
+    const r = generateDrawing(boxWith2Holes(), { gdtDemo: true });
+    expect(r.svg).toContain('data-datum="A"');
+    expect(r.svg).toContain('data-datum="B"');
+    expect(r.svg).toContain('data-gdt="flatness"');
+    expect(r.svg).toContain('data-gdt="perpendicularity"');
+    expect((r.svg.match(/data-gdt="position"/g) || []).length).toBe(2); // uno por barreno
+    expect(r.svg).toContain('⌀0.2 Ⓜ');
+    // sin gdtDemo, NADA (aditivo — moldes intactos)
+    expect(generateDrawing(boxWith2Holes()).svg).not.toContain('data-gdt=');
+  });
 });
 
 describe('generateDrawing — primer ángulo (ISO europeo, U4-L5)', () => {

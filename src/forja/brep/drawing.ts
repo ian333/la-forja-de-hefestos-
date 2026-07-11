@@ -32,6 +32,13 @@ export interface DrawingMeta {
   /** Acabado superficial GENERAL (U8-L5/ISO 1302), ej. "Ra 3.2" (µm). Se rotula
    *  sobre el cajetín: "ACABADO … SALVO INDICACIÓN". Opcional. */
   raNote?: string;
+  /** GD&T DEMO (U8-L6..L8, ASME Y14.5): genera el control geométrico canónico
+   *  del ALZADO/PLANTA a partir de la geometría ya medida — banderas de datum
+   *  A (borde inferior) y B (borde izquierdo, los MISMOS bordes del baseline),
+   *  marco de PLANITUD ⏥ en la base, PERPENDICULARIDAD ⊥|A en el borde B, y
+   *  POSICIÓN ⌖|⌀0.2Ⓜ|A|B en cada barreno de la PLANTA. Didáctico y honesto:
+   *  referencia exactamente los datums que las cotas baseline ya usan. */
+  gdtDemo?: boolean;
 }
 export interface ViewReport {
   key: string; label: string;
@@ -339,6 +346,49 @@ function renderSVG(
     // etiqueta de la vista
     const lx = X((pv.umin + pv.umax) / 2 + o.du), ly = Y(pv.vmin + o.dv) + 6;
     parts.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="3.2" fill="#444" text-anchor="middle">${pv.view.label}</text>`);
+  }
+
+  // ── GD&T DEMO (U8-L6..L8, ASME Y14.5) ──────────────────────────────
+  if (meta.gdtDemo) {
+    // marco de control (feature control frame): celdas [símbolo | tol | datums...]
+    const frame = (x: number, y: number, cells: string[], tag: string) => {
+      const H = 4.6, pad = 1.2;
+      let cx0 = x;
+      const boxes: string[] = [];
+      for (const c of cells) {
+        const w = c.length * 1.9 + pad * 2;
+        boxes.push(`<rect x="${cx0.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${H}" fill="#fff" stroke="#111" stroke-width="0.3"/>`);
+        boxes.push(`<text x="${(cx0 + w / 2).toFixed(2)}" y="${(y + H - 1.3).toFixed(2)}" font-size="3" fill="#111" text-anchor="middle">${esc(c)}</text>`);
+        cx0 += w;
+      }
+      parts.push(`<g data-gdt="${tag}">${boxes.join('')}</g>`);
+      return cx0 - x; // ancho total
+    };
+    // bandera de datum: cuadrito con letra + pata triangular al borde
+    const datumFlag = (x: number, y: number, letter: string) => {
+      parts.push(`<g data-datum="${letter}">` +
+        `<path d="M ${x.toFixed(2)} ${(y - 5).toFixed(2)} l 1.8 -3 l -3.6 0 z" fill="#111"/>` +
+        `<line x1="${x.toFixed(2)}" y1="${(y - 8).toFixed(2)}" x2="${x.toFixed(2)}" y2="${(y - 10).toFixed(2)}" stroke="#111" stroke-width="0.3"/>` +
+        `<rect x="${(x - 2.6).toFixed(2)}" y="${(y - 15.2).toFixed(2)}" width="5.2" height="5.2" fill="#fff" stroke="#111" stroke-width="0.35"/>` +
+        `<text x="${x.toFixed(2)}" y="${(y - 11.4).toFixed(2)}" font-size="3.2" fill="#111" text-anchor="middle" font-weight="bold">${letter}</text></g>`);
+    };
+    const fvv = perView[0], fvo = off['front'];
+    // datum A = borde INFERIOR del alzado (el mismo del baseline vertical)
+    datumFlag(X((fvv.umin + fvv.umax) / 2 + fvo.du) + 12, Y(fvv.vmin + fvo.dv) + 15, 'A');
+    // datum B = borde IZQUIERDO (bandera girada: la ponemos arriba-izquierda)
+    parts.push(`<g data-datum="B"><rect x="${(X(fvv.umin + fvo.du) - 16).toFixed(2)}" y="${(Y((fvv.vmin + fvv.vmax) / 2 + fvo.dv) - 2.6).toFixed(2)}" width="5.2" height="5.2" fill="#fff" stroke="#111" stroke-width="0.35"/>` +
+      `<text x="${(X(fvv.umin + fvo.du) - 13.4).toFixed(2)}" y="${(Y((fvv.vmin + fvv.vmax) / 2 + fvo.dv) + 1.2).toFixed(2)}" font-size="3.2" fill="#111" text-anchor="middle" font-weight="bold">B</text>` +
+      `<line x1="${(X(fvv.umin + fvo.du) - 10.8).toFixed(2)}" y1="${Y((fvv.vmin + fvv.vmax) / 2 + fvo.dv).toFixed(2)}" x2="${(X(fvv.umin + fvo.du) - 8).toFixed(2)}" y2="${Y((fvv.vmin + fvv.vmax) / 2 + fvo.dv).toFixed(2)}" stroke="#111" stroke-width="0.3"/>` +
+      `<path d="M ${(X(fvv.umin + fvo.du) - 8).toFixed(2)} ${Y((fvv.vmin + fvv.vmax) / 2 + fvo.dv).toFixed(2)} l -3 1.8 l 0 -3.6 z" fill="#111"/></g>`);
+    // PLANITUD ⏥ 0.1 en la base del alzado (forma: SIN datum)
+    frame(X(fvv.umin + fvo.du), Y(fvv.vmin + fvo.dv) + 17, ['⏥', '0.1'], 'flatness');
+    // PERPENDICULARIDAD ⊥ 0.1 | A en el borde izquierdo
+    frame(X(fvv.umin + fvo.du) - 16, Y(fvv.vmax + fvo.dv) - 8, ['⊥', '0.1', 'A'], 'perpendicularity');
+    // POSICIÓN ⌖ ⌀0.2 Ⓜ | A | B en cada barreno de la PLANTA
+    const tvv = perView[1], tvo = off['top'];
+    tvv.circles.slice(0, 4).forEach((c) => {
+      frame(X(c.cu + tvo.du) + c.r * s + 7, Y(c.cv + tvo.dv) - 2.3, ['⌖', '⌀0.2 Ⓜ', 'A', 'B'], 'position');
+    });
   }
 
   // ── cotas generales del ALZADO (ancho abajo, alto a la izquierda) ──
