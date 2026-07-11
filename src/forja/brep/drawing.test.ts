@@ -168,6 +168,14 @@ describe('generateDrawing — profundidad + nota de tolerancia', () => {
     expect(generateDrawing(makeBox(40, 20, 12)).svg).not.toContain('data-note="ra"');
   });
 
+  it('detailView: marca A punteada + recuadro DETALLE A ampliado', () => {
+    const r = generateDrawing(boxWithHole(), { detailView: true });
+    expect(r.svg).toContain('data-detail-mark="A"');
+    expect(r.svg).toContain('data-view="detail"');
+    expect(r.svg).toContain('DETALLE A');
+    expect(generateDrawing(boxWithHole()).svg).not.toContain('data-view="detail"');
+  });
+
   it('gdtDemo: datums A/B + planitud + perpendicularidad + posición por barreno', () => {
     const r = generateDrawing(boxWith2Holes(), { gdtDemo: true });
     expect(r.svg).toContain('data-datum="A"');

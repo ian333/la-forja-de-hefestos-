@@ -4652,11 +4652,13 @@ export default function ForgeBRepStudio() {
   // genPlano se usa como onClick directo → el 1er arg puede ser un MouseEvent: guard.
   const planoProjRef = useRef<'first' | 'third'>('third');
   const planoGdtRef = useRef(false);
-  const genPlano = useCallback((proj?: unknown, gdt?: boolean) => {
+  const planoDetRef = useRef(false);
+  const genPlano = useCallback((proj?: unknown, gdt?: boolean, det?: boolean) => {
     if (!result) return;
     const p: 'first' | 'third' = proj === 'first' || proj === 'third' ? proj : 'third';
     planoProjRef.current = p;
     if (gdt !== undefined) planoGdtRef.current = gdt;
+    if (det !== undefined) planoDetRef.current = det;
     const draw = generateDrawing(
       {
         positions: result.mesh.positions, indices: result.mesh.indices,
@@ -4664,7 +4666,7 @@ export default function ForgeBRepStudio() {
       },
       // tolNote/raNote: TODO plano serio lleva tolerancia general (ISO 2768-m) y
       // acabado general (ISO 1302). gdtDemo (U8-L6..L8): datums A/B + marcos Y14.5.
-      { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm', tolNote: '±0.1 · ISO 2768-m', raNote: 'Ra 3.2', projection: p, gdtDemo: planoGdtRef.current },
+      { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm', tolNote: '±0.1 · ISO 2768-m', raNote: 'Ra 3.2', projection: p, gdtDemo: planoGdtRef.current, detailView: planoDetRef.current },
     );
     setPlanoSvg(draw.svg);
     mark('plano', 0, { kind: sketch.kind });
@@ -7342,6 +7344,8 @@ export default function ForgeBRepStudio() {
                   onClick={() => genPlano(planoProjRef.current === 'third' ? 'first' : 'third')}>⇄ 1er/3er áng</button>
                 <button data-testid="btn-plano-gdt" title="GD&T (ASME Y14.5): datums A/B + planitud + perpendicularidad + posición Ⓜ en barrenos"
                   onClick={() => genPlano(planoProjRef.current, !planoGdtRef.current)}>⌖ GD&T</button>
+                <button data-testid="btn-plano-detalle" title="Vista de DETALLE: amplía la zona del primer barreno (círculo A)"
+                  onClick={() => genPlano(planoProjRef.current, undefined, !planoDetRef.current)}>🔍 Detalle</button>
                 <button data-testid="btn-plano-download" onClick={downloadPlano}>⬇ Descargar SVG</button>
                 <button data-testid="btn-plano-close" onClick={() => setPlanoSvg(null)}>✕ Cerrar</button>
               </div>

@@ -32,6 +32,11 @@ export interface DrawingMeta {
   /** Acabado superficial GENERAL (U8-L5/ISO 1302), ej. "Ra 3.2" (µm). Se rotula
    *  sobre el cajetín: "ACABADO … SALVO INDICACIÓN". Opcional. */
   raNote?: string;
+  /** VISTA DE DETALLE (U4-L4): recuadro circular ampliado del primer barreno
+   *  (la zona densa clásica). Marca el círculo "A" punteado en la vista madre y
+   *  redibuja su contenido a ~2.2× en la esquina superior derecha, con rótulo
+   *  "DETALLE A" y su escala. Auto: elige la primera vista con círculos. */
+  detailView?: boolean;
   /** GD&T DEMO (U8-L6..L8, ASME Y14.5): genera el control geométrico canónico
    *  del ALZADO/PLANTA a partir de la geometría ya medida — banderas de datum
    *  A (borde inferior) y B (borde izquierdo, los MISMOS bordes del baseline),
@@ -346,6 +351,44 @@ function renderSVG(
     // etiqueta de la vista
     const lx = X((pv.umin + pv.umax) / 2 + o.du), ly = Y(pv.vmin + o.dv) + 6;
     parts.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="3.2" fill="#444" text-anchor="middle">${pv.view.label}</text>`);
+  }
+
+  // ── VISTA DE DETALLE (U4-L4): el zoom formal del plano ─────────────
+  if (meta.detailView) {
+    const dv = perView.find((pv) => pv.circles.length > 0);
+    if (dv) {
+      const o2 = off[dv.view.key];
+      const c0 = dv.circles[0];
+      const Rd = c0.r * 2.2;                       // radio de la zona (modelo, mm)
+      const k = 2.2;                               // amplificación vs escala de hoja
+      const mag = s * k;
+      // marca en la vista madre: círculo punteado + letra A
+      const mx = X(c0.cu + o2.du), my = Y(c0.cv + o2.dv);
+      parts.push(`<circle cx="${mx.toFixed(2)}" cy="${my.toFixed(2)}" r="${(Rd * s).toFixed(2)}" fill="none" stroke="#111" stroke-width="0.35" stroke-dasharray="2.4 1.2" data-detail-mark="A"/>`);
+      parts.push(`<text x="${(mx + Rd * s + 1.5).toFixed(2)}" y="${(my - Rd * s - 1).toFixed(2)}" font-size="3.4" font-weight="bold" fill="#111">A</text>`);
+      // recuadro ampliado (esquina superior derecha de la hoja)
+      const ix = PW - M / 2 - 34, iy = M / 2 + 26, Ri = Rd * mag;
+      const clipId = 'detClip';
+      parts.push(`<defs><clipPath id="${clipId}"><circle cx="${ix}" cy="${iy}" r="${Ri.toFixed(2)}"/></clipPath></defs>`);
+      parts.push(`<g data-view="detail" clip-path="url(#${clipId})">`);
+      const dx = (u: number) => ix + (u - c0.cu) * mag;
+      const dy = (v: number) => iy - (v - c0.cv) * mag;
+      const dvis: string[] = [];
+      for (const sg of dv.segs) {
+        if (sg.hidden) continue;
+        const near = Math.hypot(sg.u1 - c0.cu, sg.v1 - c0.cv) < Rd * 1.4 || Math.hypot(sg.u2 - c0.cu, sg.v2 - c0.cv) < Rd * 1.4;
+        if (near) dvis.push(`M ${dx(sg.u1).toFixed(2)} ${dy(sg.v1).toFixed(2)} L ${dx(sg.u2).toFixed(2)} ${dy(sg.v2).toFixed(2)}`);
+      }
+      if (dvis.length) parts.push(`<path d="${dvis.join(' ')}" fill="none" stroke="#111" stroke-width="0.55"/>`);
+      for (const c of dv.circles) {
+        if (Math.hypot(c.cu - c0.cu, c.cv - c0.cv) < Rd * 1.4) {
+          parts.push(`<circle cx="${dx(c.cu).toFixed(2)}" cy="${dy(c.cv).toFixed(2)}" r="${(c.r * mag).toFixed(2)}" fill="none" stroke="#111" stroke-width="0.55"/>`);
+        }
+      }
+      parts.push(`</g>`);
+      parts.push(`<circle cx="${ix}" cy="${iy}" r="${Ri.toFixed(2)}" fill="none" stroke="#111" stroke-width="0.4"/>`);
+      parts.push(`<text x="${ix}" y="${(iy + Ri + 4.4).toFixed(2)}" font-size="3.2" font-weight="bold" fill="#111" text-anchor="middle" data-detail-label="A">DETALLE A (×${k.toFixed(1)})</text>`);
+    }
   }
 
   // ── GD&T DEMO (U8-L6..L8, ASME Y14.5) ──────────────────────────────
