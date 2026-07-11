@@ -1,0 +1,326 @@
+{
+  "id": "mec-u8-l6",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 6,
+  "titulo": "GD&T I — Planitud: medir bien no basta",
+  "subtitulo": "forma = la cara contra SÍ misma · zona entre dos planos · sin datum",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-25..8-32 (Form tolerances, ASME Y14.5)",
+  "descripcion": "Una cara puede MEDIR 20.0 exactos en todos lados... y estar pandeada como papa frita. El ± no lo detecta — la PLANITUD sí. Primera lección de GD&T: las tolerancias de FORMA, donde la cara se compara contra sí misma.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Tu calibrador dice veinte punto cero en cada esquina... y aun así la placa no asienta: está pandeada como papa frita. El más menos NO ve eso. Hoy entra el lenguaje que sí lo ve: ge de y te, empezando por la FORMA.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1400
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza de prueba: la placa con dos barrenos que ya conoces.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -47,
+          "y": -28,
+          "settle": 700
+        },
+        {
+          "type": "clickmm",
+          "x": 51,
+          "y": 33,
+          "settle": 900
+        },
+        {
+          "type": "dimline",
+          "axis": "h",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "100",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "dimline",
+          "axis": "v",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 400
+        },
+        {
+          "type": "clickptwhere",
+          "where": "bl",
+          "settle": 800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 1800
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "la placa existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Sus dos barrenos de doce.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sketch-op-cut",
+          "settle": 800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1100
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 570,
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -25,
+          "y": -8,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -19,
+          "y": -8,
+          "settle": 800
+        },
+        {
+          "type": "clickmm",
+          "x": 20,
+          "y": 10,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": 26,
+          "y": 10,
+          "settle": 800
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 700
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "12",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 800
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            1
+          ],
+          "settle": 700
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "12",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-depth",
+          "text": "25",
+          "settle": 1800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 115000 && inv.vol_kernel < 115900",
+        "desc": "los 2 barrenos atravesados"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "El plano... y ahora el botón nuevo: GE DE Y TE. Mira aparecer las banderas y los marcos.",
+      "zoom": "btn-plano-gdt",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano",
+          "settle": 3200
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano-gdt",
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "gdt-on"
+        }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('data-gdt=\"flatness\"') >= 0",
+        "desc": "el marco de PLANITUD ⏥ 0.1 apareció en la base"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Mira el marco pegado a la base: un rectángulo con dos celdas. El símbolo de planitud — el paralelogramo — y el número: cero punto uno. Se lee: esta cara debe caber entre DOS PLANOS PARALELOS separados una décima. No importa dónde esté la cara — importa qué tan PLANA es.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 4000
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y fíjate en lo que NO tiene ese marco: datum. Referencia. La forma se mide contra LA PROPIA cara: pones la placa en la mesa de mármol, barres con el indicador, y la aguja no debe moverse más de una décima. La cara contra sí misma.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            610
+          ],
+          "to": [
+            900,
+            530
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 2600
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "La familia de FORMA completa: planitud para caras. RECTITUD para ejes y aristas. CIRCULARIDAD: cada rebanada del cilindro debe ser un círculo entre dos círculos concéntricos. Y CILINDRICIDAD: el tubo completo entre dos cilindros. Mismas ideas: la geometría contra su forma ideal.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3800
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "¿Cuándo pedir planitud? Cuando la cara SELLA o ASIENTA: la base de un molde, la cara de un empaque, el asiento de una torreta. Ahí el más menos de espesor no basta — necesitas que la cara sea un PLANO, no solo que esté a la distancia correcta. Nos vemos.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}

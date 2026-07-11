@@ -1,0 +1,9 @@
+¿Y si te dijera que hay una tolerancia que se agranda SOLA cuando el barreno sale más grande? No es trampa: es el modificador eme mayúscula en un círculo — y es la joya de la corona de ge de y te. El gran final.
+La pieza de prueba: la placa con dos barrenos que ya conoces.
+Sus dos barrenos de doce.
+El plano... y ahora el botón nuevo: GE DE Y TE. Mira aparecer las banderas y los marcos.
+Cada barreno trae su marco: la mira — el símbolo de posición — diámetro cero punto dos, la eme en su círculo, y los datums A y B. Se lee: el EJE de este barreno debe vivir dentro de un CILINDRO de dos décimas de diámetro, parado donde dicen las cotas desde A y B.
+¿Por qué cilindro y no el cuadrito clásico de más menos una décima por lado? Geometría pura: el cuadrito permite más error en las diagonales que en los ejes — absurdo. El círculo trata igual a todas las direcciones... y de paso regala cincuenta y siete por ciento más área de tolerancia. Mismo riesgo, más piezas buenas.
+Y ahora la eme: condición de MÁXIMO MATERIAL. Piénsalo con el perno que va a entrar: si el barreno salió en su mínimo — doce exacto, el máximo material — el perno apenas cabe: la posición debe ser estricta. Pero si salió de doce punto uno... hay una décima EXTRA de aire. La eme te la REGALA como tolerancia de posición. El barreno grande perdona al barreno chueco.
+De ahí sale el número mágico: la CONDICIÓN VIRTUAL. Barreno mínimo menos tolerancia de posición: doce menos cero punto dos, once punto ocho. Ese es el diámetro del PERNO DE CALIBRE: si el calibre de once punto ocho pasa por los dos barrenos... la placa ensambla. Siempre. El ge de y te no es burocracia: es el diseño del calibre que decide en segundos.
+Unidad ocho completa: más menos, angular, el estudio de tolerancias, los ajustes, la piel... y el idioma ge de y te entero. Ya lees el plano que las fábricas serias exigen. Nos vemos.

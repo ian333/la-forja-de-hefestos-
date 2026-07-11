@@ -1,0 +1,326 @@
+{
+  "id": "mec-u8-l7",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 7,
+  "titulo": "GD&T II — Datums: el suelo desde donde se mide todo",
+  "subtitulo": "A primario, B secundario · orientación exige referencia · ⊥ 0.1 A",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-33..8-39 (Datums & orientation, ASME Y14.5)",
+  "descripcion": "¿Perpendicular... respecto a QUÉ? La orientación no existe sin referencia. Los DATUMS son el suelo del sistema: la bandera A en la base, la B en el borde — exactamente los bordes desde donde ya acotabas en baseline. Segunda lección de GD&T.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Te piden un borde PERPENDICULAR. Perpendicular... ¿respecto a qué? Sin referencia, la palabra no significa nada. Hoy: los DATUMS — el suelo que todo taller y toda máquina de medición pisan antes de medir.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1400
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza de prueba: la placa con dos barrenos que ya conoces.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -47,
+          "y": -28,
+          "settle": 700
+        },
+        {
+          "type": "clickmm",
+          "x": 51,
+          "y": 33,
+          "settle": 900
+        },
+        {
+          "type": "dimline",
+          "axis": "h",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "100",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "dimline",
+          "axis": "v",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 400
+        },
+        {
+          "type": "clickptwhere",
+          "where": "bl",
+          "settle": 800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 1800
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "la placa existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Sus dos barrenos de doce.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sketch-op-cut",
+          "settle": 800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1100
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 570,
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -25,
+          "y": -8,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -19,
+          "y": -8,
+          "settle": 800
+        },
+        {
+          "type": "clickmm",
+          "x": 20,
+          "y": 10,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": 26,
+          "y": 10,
+          "settle": 800
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 700
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "12",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 800
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            1
+          ],
+          "settle": 700
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "12",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-depth",
+          "text": "25",
+          "settle": 1800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 115000 && inv.vol_kernel < 115900",
+        "desc": "los 2 barrenos atravesados"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "El plano... y ahora el botón nuevo: GE DE Y TE. Mira aparecer las banderas y los marcos.",
+      "zoom": "btn-plano-gdt",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano",
+          "settle": 3200
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano-gdt",
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "gdt-on"
+        }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && s.indexOf('data-datum=\"A\"') >= 0 && s.indexOf('data-datum=\"B\"') >= 0 && s.indexOf('data-gdt=\"perpendicularity\"') >= 0",
+        "desc": "banderas A y B + marco ⊥|A en el plano"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Mira las BANDERAS: la A colgada de la base, la B del borde izquierdo. ¿Te suenan esos dos bordes? Son EXACTAMENTE desde donde acotamos en baseline. Un datum no es decoración: es declarar oficialmente cuál cara es el CERO.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3600
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "El orden importa. A es el datum PRIMARIO: la pieza se ASIENTA en él — tres puntos de apoyo, como un banco. B es el secundario: se ARRIMA contra él — dos puntos. En la máquina de medir se repite el ritual idéntico: asentar en A, arrimar a B, y desde ahí, TODO se mide. Reproducible en cualquier taller del planeta.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            610
+          ],
+          "to": [
+            900,
+            530
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 3000
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y ahora sí, la ORIENTACIÓN: el marco de perpendicularidad en el borde. Símbolo, cero punto uno... y la celda nueva: A. Se lee: este borde debe caber entre dos planos separados una décima... PERPENDICULARES AL DATUM A. La orientación siempre lleva apellido.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3800
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "La familia de orientación: perpendicularidad, PARALELISMO — dos caras gemelas a la misma distancia — y ANGULARIDAD, para cualquier ángulo declarado. Las tres miden lo mismo: qué tan fiel es tu cara a la dirección prometida, vista desde el datum. Sin suelo no hay dirección. Nos vemos.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}

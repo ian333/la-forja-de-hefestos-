@@ -1,0 +1,89 @@
+{
+  "id": "mec-u10-l6",
+  "curso": "mecanica",
+  "unidad": 10,
+  "n": 6,
+  "titulo": "Piñón-cremallera: la involuta que se estiró hasta ser recta",
+  "subtitulo": "radio→∞ ⇒ flanco RECTO · avance = π·m·Z por vuelta · así dobla tu coche",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 10 §10-11..10-12 (Rack & pinion) + ISO 53",
+  "descripcion": "¿Cómo convierte tu volante el GIRO en el empujón lateral que dobla las llantas? Con el engrane de radio infinito: la cremallera. Aquí generas el piñón (involuta curva), luego la cremallera (la misma involuta... estirada hasta ser RECTA) y calculas el avance exacto: π·m·Z por vuelta.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Gira el volante de tu coche... y las llantas se EMPUJAN de lado. ¿Quién convierte el giro en empujón? Un engrane al que le pasó algo rarísimo: su radio creció hasta el infinito. Hoy: el piñón y la cremallera.",
+      "gestos": [
+        { "type": "wait", "ms": 1400 }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Primero el piñón: un engrane normal, veinte dientes. Mira sus flancos: CURVOS. Esa curva es la involuta — la que hace que ruede sin rechinar.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-gear", "settle": 3400 },
+        { "type": "fill", "testid": "input-dientes", "text": "20", "settle": 400 },
+        { "type": "key", "key": "Tab", "settle": 3000 },
+        { "type": "view", "name": "front", "settle": 1100 },
+        { "type": "probe", "label": "pinon" }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 1000",
+        "desc": "el piñón Z=20 existe (flancos de involuta)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Ahora un experimento mental: agranda el engrane. Cien dientes... mil... un MILLÓN. El círculo se va aplanando... y en el límite, cuando el radio llega al infinito, el engrane se vuelve una BARRA RECTA. Eso es una cremallera.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 3000 }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "Genérala: menú Más, Cremallera. Módulo tres, ocho dientes. Y mira los flancos: RECTOS, a exactamente veinte grados. La involuta de radio infinito ES una línea recta — por eso engrana perfecto con cualquier piñón de su módulo.",
+      "zoom": "btn-rack",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-mas", "settle": 900 },
+        { "type": "tclick", "testid": "btn-rack", "settle": 3600 },
+        { "type": "view", "name": "iso", "settle": 1200 },
+        { "type": "probe", "label": "cremallera" }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 12170) < 15",
+        "desc": "la cremallera m3 Z8: 12,170 mm³ EXACTOS (trapecio ISO 53)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "El kernel lo confirma al milímetro cúbico: doce mil ciento setenta. Cada diente es un trapecio exacto: cresta angosta, raíz ancha, flancos a veinte grados. Geometría de regla y escuadra — y por eso una cremallera es BARATA de fabricar.",
+      "gestos": [
+        { "type": "orbit", "from": [900, 540], "to": [1150, 640], "settle": 1500 },
+        { "type": "wait", "ms": 2400 }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y ahora la cuenta que mueve tu coche. Por cada vuelta del piñón, la cremallera avanza su perímetro primitivo: pi por módulo por zeta. Módulo tres, veinte dientes: ciento ochenta y ocho milímetros por vuelta. Un giro de volante... dieciocho centímetros de empujón lateral. Dirección directa, sin resbalar jamás.",
+      "gestos": [
+        { "type": "wait", "ms": 4000 }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Rotación a traslación y de regreso: la dirección de tu coche, el elevador del taladro de banco, los ejes de una CNC de cremallera, la puerta corrediza automática. Donde un giro deba volverse recorrido LARGO — el husillo se acaba, la cremallera se extiende a los metros que quieras.",
+      "gestos": [
+        { "type": "orbit", "from": [1150, 610], "to": [900, 530], "settle": 1500 },
+        { "type": "wait", "ms": 2600 }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "Y con esto, la unidad diez está COMPLETA: la involuta, el par, los trenes, la potencia, la cuña... y hoy, la involuta que se estiró hasta ser recta. Ya dominas la transmisión completa. Nos vemos.",
+      "gestos": [
+        { "type": "view", "name": "iso", "settle": 1000 },
+        { "type": "orbit", "from": [950, 560], "to": [1160, 660], "settle": 1300 }
+      ]
+    }
+  ]
+}

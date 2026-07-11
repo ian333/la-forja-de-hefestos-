@@ -1,0 +1,8 @@
+Te piden un borde PERPENDICULAR. Perpendicular... ¿respecto a qué? Sin referencia, la palabra no significa nada. Hoy: los DATUMS — el suelo que todo taller y toda máquina de medición pisan antes de medir.
+La pieza de prueba: la placa con dos barrenos que ya conoces.
+Sus dos barrenos de doce.
+El plano... y ahora el botón nuevo: GE DE Y TE. Mira aparecer las banderas y los marcos.
+Mira las BANDERAS: la A colgada de la base, la B del borde izquierdo. ¿Te suenan esos dos bordes? Son EXACTAMENTE desde donde acotamos en baseline. Un datum no es decoración: es declarar oficialmente cuál cara es el CERO.
+El orden importa. A es el datum PRIMARIO: la pieza se ASIENTA en él — tres puntos de apoyo, como un banco. B es el secundario: se ARRIMA contra él — dos puntos. En la máquina de medir se repite el ritual idéntico: asentar en A, arrimar a B, y desde ahí, TODO se mide. Reproducible en cualquier taller del planeta.
+Y ahora sí, la ORIENTACIÓN: el marco de perpendicularidad en el borde. Símbolo, cero punto uno... y la celda nueva: A. Se lee: este borde debe caber entre dos planos separados una décima... PERPENDICULARES AL DATUM A. La orientación siempre lleva apellido.
+La familia de orientación: perpendicularidad, PARALELISMO — dos caras gemelas a la misma distancia — y ANGULARIDAD, para cualquier ángulo declarado. Las tres miden lo mismo: qué tan fiel es tu cara a la dirección prometida, vista desde el datum. Sin suelo no hay dirección. Nos vemos.

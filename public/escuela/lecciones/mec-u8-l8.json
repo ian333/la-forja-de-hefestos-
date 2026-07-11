@@ -1,0 +1,348 @@
+{
+  "id": "mec-u8-l8",
+  "curso": "mecanica",
+  "unidad": 8,
+  "n": 8,
+  "titulo": "GD&T III — Posición y el bono Ⓜ",
+  "subtitulo": "zona CILÍNDRICA ⌀0.2 · MMC = tolerancia que crece · condición virtual",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 8 §8-40..8-48 (Position, MMC & virtual condition, ASME Y14.5)",
+  "descripcion": "El gran final de GD&T: la POSICIÓN con zona cilíndrica (57% más tolerancia que el cuadrito ±) y el modificador Ⓜ — la única tolerancia del mundo que CRECE cuando el barreno sale grande. Con condición virtual: el número que diseña el calibre.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "¿Y si te dijera que hay una tolerancia que se agranda SOLA cuando el barreno sale más grande? No es trampa: es el modificador eme mayúscula en un círculo — y es la joya de la corona de ge de y te. El gran final.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1400
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza de prueba: la placa con dos barrenos que ya conoces.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -47,
+          "y": -28,
+          "settle": 700
+        },
+        {
+          "type": "clickmm",
+          "x": 51,
+          "y": 33,
+          "settle": 900
+        },
+        {
+          "type": "dimline",
+          "axis": "h",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "100",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "dimline",
+          "axis": "v",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 400
+        },
+        {
+          "type": "clickptwhere",
+          "where": "bl",
+          "settle": 800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 1800
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1600
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 120000) < 1",
+        "desc": "la placa existe"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Sus dos barrenos de doce.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sketch-op-cut",
+          "settle": 800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1100
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 570,
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": -25,
+          "y": -8,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -19,
+          "y": -8,
+          "settle": 800
+        },
+        {
+          "type": "clickmm",
+          "x": 20,
+          "y": 10,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": 26,
+          "y": 10,
+          "settle": 800
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 700
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "12",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 800
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            1
+          ],
+          "settle": 700
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "12",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-depth",
+          "text": "25",
+          "settle": 1800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 115000 && inv.vol_kernel < 115900",
+        "desc": "los 2 barrenos atravesados"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "El plano... y ahora el botón nuevo: GE DE Y TE. Mira aparecer las banderas y los marcos.",
+      "zoom": "btn-plano-gdt",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano",
+          "settle": 3200
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano-gdt",
+          "settle": 2600
+        },
+        {
+          "type": "probe",
+          "label": "gdt-on"
+        }
+      ],
+      "check": {
+        "js": "var s = window.__forgeBrep && window.__forgeBrep.planoSvg; !!s && (s.match(/data-gdt=\"position\"/g)||[]).length >= 2 && s.indexOf('⌀0.2 Ⓜ') >= 0",
+        "desc": "marco de POSICIÓN ⌖⌀0.2Ⓜ|A|B en cada barreno"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Cada barreno trae su marco: la mira — el símbolo de posición — diámetro cero punto dos, la eme en su círculo, y los datums A y B. Se lee: el EJE de este barreno debe vivir dentro de un CILINDRO de dos décimas de diámetro, parado donde dicen las cotas desde A y B.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 4000
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "¿Por qué cilindro y no el cuadrito clásico de más menos una décima por lado? Geometría pura: el cuadrito permite más error en las diagonales que en los ejes — absurdo. El círculo trata igual a todas las direcciones... y de paso regala cincuenta y siete por ciento más área de tolerancia. Mismo riesgo, más piezas buenas.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            610
+          ],
+          "to": [
+            900,
+            530
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 3000
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y ahora la eme: condición de MÁXIMO MATERIAL. Piénsalo con el perno que va a entrar: si el barreno salió en su mínimo — doce exacto, el máximo material — el perno apenas cabe: la posición debe ser estricta. Pero si salió de doce punto uno... hay una décima EXTRA de aire. La eme te la REGALA como tolerancia de posición. El barreno grande perdona al barreno chueco.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 4200
+        }
+      ]
+    },
+    {
+      "id": "p08",
+      "dice": "De ahí sale el número mágico: la CONDICIÓN VIRTUAL. Barreno mínimo menos tolerancia de posición: doce menos cero punto dos, once punto ocho. Ese es el diámetro del PERNO DE CALIBRE: si el calibre de once punto ocho pasa por los dos barrenos... la placa ensambla. Siempre. El ge de y te no es burocracia: es el diseño del calibre que decide en segundos.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            900,
+            540
+          ],
+          "to": [
+            1150,
+            640
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 3000
+        }
+      ]
+    },
+    {
+      "id": "p09",
+      "dice": "Unidad ocho completa: más menos, angular, el estudio de tolerancias, los ajustes, la piel... y el idioma ge de y te entero. Ya lees el plano que las fábricas serias exigen. Nos vemos.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}
