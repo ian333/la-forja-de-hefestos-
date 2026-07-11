@@ -29,6 +29,9 @@ export interface DrawingMeta {
    *  LATERAL derecha) o 'first' (ISO europeo — la vista se proyecta AL OTRO
    *  lado del objeto: PLANTA abajo, LATERAL izquierda). El cajetín lo declara. */
   projection?: 'first' | 'third';
+  /** Acabado superficial GENERAL (U8-L5/ISO 1302), ej. "Ra 3.2" (µm). Se rotula
+   *  sobre el cajetín: "ACABADO … SALVO INDICACIÓN". Opcional. */
+  raNote?: string;
 }
 export interface ViewReport {
   key: string; label: string;
@@ -358,6 +361,10 @@ function renderSVG(
   // nota de tolerancia general (U8/ISO 2768) — el contrato de TODO lo no acotado
   if (meta.tolNote) {
     parts.push(`<text x="${tbx + TB_W - 2}" y="${tby - 2}" font-size="2.6" fill="#111" text-anchor="end" data-note="tol">TOL. GRAL. ${esc(meta.tolNote)} SALVO INDICACIÓN</text>`);
+  }
+  // acabado superficial general (U8-L5/ISO 1302) — segunda línea sobre el cajetín
+  if (meta.raNote) {
+    parts.push(`<text x="${tbx + TB_W - 2}" y="${tby - (meta.tolNote ? 5.5 : 2)}" font-size="2.6" fill="#111" text-anchor="end" data-note="ra">ACABADO ${esc(meta.raNote)} SALVO INDICACIÓN</text>`);
   }
   parts.push(`<g data-testid="title-block" font-size="2.7" fill="#111">`);
   parts.push(`<rect x="${tbx}" y="${tby}" width="${TB_W}" height="${TB_H}" fill="#fff" stroke="#111" stroke-width="0.5"/>`);

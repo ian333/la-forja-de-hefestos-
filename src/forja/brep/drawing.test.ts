@@ -160,6 +160,13 @@ describe('generateDrawing — profundidad + nota de tolerancia', () => {
   it('sin tolNote NO aparece la nota (aditivo, no rompe moldes)', () => {
     expect(generateDrawing(makeBox(40, 20, 12)).svg).not.toContain('data-note="tol"');
   });
+
+  it('meta.raNote rotula el acabado general (ISO 1302); sin él, nada', () => {
+    const r = generateDrawing(makeBox(40, 20, 12), { raNote: 'Ra 3.2', tolNote: '±0.1' });
+    expect(r.svg).toContain('data-note="ra"');
+    expect(r.svg).toContain('ACABADO Ra 3.2 SALVO INDICACIÓN');
+    expect(generateDrawing(makeBox(40, 20, 12)).svg).not.toContain('data-note="ra"');
+  });
 });
 
 describe('generateDrawing — primer ángulo (ISO europeo, U4-L5)', () => {

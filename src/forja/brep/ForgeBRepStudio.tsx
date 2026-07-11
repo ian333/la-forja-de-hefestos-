@@ -4624,16 +4624,21 @@ export default function ForgeBRepStudio() {
       infillSvg + loopsSvg + `</svg>`);
     mark('cam-impresion', 0, { layers: layers.length });
   }, []);
-  const genPlano = useCallback(() => {
+  // Proyección del plano (U4-L5): 3er ángulo (ANSI, default) o 1er (ISO europeo).
+  // genPlano se usa como onClick directo → el 1er arg puede ser un MouseEvent: guard.
+  const planoProjRef = useRef<'first' | 'third'>('third');
+  const genPlano = useCallback((proj?: unknown) => {
     if (!result) return;
+    const p: 'first' | 'third' = proj === 'first' || proj === 'third' ? proj : 'third';
+    planoProjRef.current = p;
     const draw = generateDrawing(
       {
         positions: result.mesh.positions, indices: result.mesh.indices,
         edges: result.edgeGeoms.map((g) => ({ polyline: g.polyline, kind: g.kind })),
       },
-      // tolNote: TODO plano serio lleva su tolerancia general (ISO 2768-m) — lo
-      // no acotado hereda este ±. Es la puerta de la U8 (tolerancias) del libro.
-      { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm', tolNote: '±0.1 · ISO 2768-m' },
+      // tolNote/raNote: TODO plano serio lleva tolerancia general (ISO 2768-m) y
+      // acabado general (ISO 1302). Las puertas de la U8 del libro.
+      { name: 'Pieza La Forja', material: MATERIALS[material].label, massG: result.mass.mass, units: 'mm', tolNote: '±0.1 · ISO 2768-m', raNote: 'Ra 3.2', projection: p },
     );
     setPlanoSvg(draw.svg);
     mark('plano', 0, { kind: sketch.kind });
@@ -7289,6 +7294,8 @@ export default function ForgeBRepStudio() {
             <div className="fb-plano-bar">
               <span>📐 Plano de taller — 3 vistas · líneas ocultas · cotas</span>
               <div className="fb-plano-actions">
+                <button data-testid="btn-plano-angulo" title="Alterna 3er ángulo (ANSI) ↔ 1er ángulo (ISO europeo)"
+                  onClick={() => genPlano(planoProjRef.current === 'third' ? 'first' : 'third')}>⇄ 1er/3er áng</button>
                 <button data-testid="btn-plano-download" onClick={downloadPlano}>⬇ Descargar SVG</button>
                 <button data-testid="btn-plano-close" onClick={() => setPlanoSvg(null)}>✕ Cerrar</button>
               </div>
