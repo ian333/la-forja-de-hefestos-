@@ -43,6 +43,21 @@ declare -A NOMBRE=(
   [mec-u8-l2]="ESCUELA-MECANICA-U8L2-tolerancia-angular-4K"
   [mec-u8-l3]="ESCUELA-MECANICA-U8L3-estudio-de-tolerancias-4K"
   [mec-u7-l3]="ESCUELA-MECANICA-U7L3-lenguaje-del-barreno-4K"
+  [mec-u7-l4]="ESCUELA-MECANICA-U7L4-escala-unidades-redondeos-4K"
+  [mec-u7-l5]="ESCUELA-MECANICA-U7L5-taquigrafia-del-plano-4K"
+  [mec-u5-l2]="ESCUELA-MECANICA-U5L2-bottom-up-4K"
+  [mec-u5-l3]="ESCUELA-MECANICA-U5L3-vista-explosionada-4K"
+  [mec-u5-l4]="ESCUELA-MECANICA-U5L4-el-BOM-4K"
+  [mec-u5-l5]="ESCUELA-MECANICA-U5L5-el-cajetin-4K"
+  [mec-u5-l6]="ESCUELA-MECANICA-U5L6-motion-study-4K"
+  [mec-u4-l4]="ESCUELA-MECANICA-U4L4-vista-de-detalle-4K"
+  [mec-u4-l5]="ESCUELA-MECANICA-U4L5-primer-angulo-4K"
+  [mec-u8-l5]="ESCUELA-MECANICA-U8L5-Ra-la-piel-de-la-pieza-4K"
+  [mec-u8-l6]="ESCUELA-MECANICA-U8L6-GDT-planitud-4K"
+  [mec-u8-l7]="ESCUELA-MECANICA-U8L7-GDT-datums-4K"
+  [mec-u8-l8]="ESCUELA-MECANICA-U8L8-GDT-posicion-MMC-4K"
+  [mec-u10-l6]="ESCUELA-MECANICA-U10L6-pinon-cremallera-4K"
+  [mec-u6-l3]="ESCUELA-MECANICA-U6L3-biblioteca-DIN-4K"
 )
 LECCIONES=("$@")
 [ ${#LECCIONES[@]} -eq 0 ] && LECCIONES=(mec-u2-l1 mec-u2-l2 mec-u3-l1 mec-u3-l6 mec-u3-l7 mec-u4-l2)
@@ -63,7 +78,7 @@ for L in "${LECCIONES[@]}"; do
     echo "=== $L INTENTO $t ==="
     NODE_PATH=/home/ian/Orkesta/la-forja/node_modules \
     DISPLAY=:0 GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA \
-    PACE=1.35 URL=http://localhost:5001/forja-brep.html \
+    PACE=1.35 URL="${PARRILLA_URL:-http://localhost:5001/forja-brep.html}" \
       node scripts/escuela/clase-drive.cjs "public/escuela/lecciones/$L.json" \
         "dist-video/$L-narracion" "dist-video/escuela/$L-v1" && { OK=1; break; }
     sleep 6
