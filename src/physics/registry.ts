@@ -35,6 +35,7 @@ const MoleculeGPU     = lazy(() => import('./modules/matter/MoleculeGPU'));
 const MultiScale      = lazy(() => import('./modules/matter/MultiScale'));
 const TissueField     = lazy(() => import('./modules/matter/TissueField'));
 const ScaleLimit      = lazy(() => import('./modules/matter/ScaleLimit'));
+const Aerodynamics    = lazy(() => import('./modules/fluids/Aerodynamics'));
 const ChemicalScaleLimit = lazy(() => import('./modules/matter/ChemicalScaleLimit'));
 const TissueScaleLimit = lazy(() => import('./modules/matter/TissueScaleLimit'));
 const MetalDroplet    = lazy(() => import('./modules/manufactura/MetalDroplet'));
@@ -273,9 +274,11 @@ export const BRANCHES: PhysicsBranch[] = [
           'Núcleo gaussiano o poly6',
           'Gravedad + tensión superficial + viscosidad',
         ] },
-      { id: 'aero', name: 'Aerodinámica', status: 'planned',
-        blurb: 'Airfoil 2D por vórtices + capa límite simple.',
-        roadmap: ['Panel method', 'Kutta condition', 'CL/CD vs ángulo'] },
+      { id: 'aero', name: 'Aerodinámica — sustentación por circulación', status: 'live',
+        blurb: 'Perfil NACA + flujo potencial de Joukowski exacto. Kutta, Γ, L = ρ·U·Γ, Cp.',
+        childHint: 'Inclina el ala y mira cómo el aire la chupa hacia arriba.',
+        researcherHint: 'Mapa conforme z=ζ+a²/ζ, Γ de Kutta, Cl=2π·sinα. Campo verificado: ∮u·dl=Γ (potencial.test.ts).',
+        component: Aerodynamics },
     ],
   },
 

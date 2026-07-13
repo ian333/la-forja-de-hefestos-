@@ -1,0 +1,17 @@
+Doscientas toneladas de avión, colgadas del aire. De algo que no puedes ver. ¿Quién las carga?
+En la escuela te contaron: el aire de arriba recorre más camino, y corre para alcanzar al de abajo.
+Mentira. Míralo: las dos parcelas salen juntas, y nunca se reencuentran. La de arriba llega antes.
+El aire de arriba no corre por alcanzar a nadie. Corre por otra cosa. Algo invisible.
+Para verla, Yukovski hizo magia: convirtió el ala en un círculo. Zeta, más a cuadrada sobre zeta.
+Alrededor de un círculo el flujo tiene solución exacta. Y el mapa la regresa al ala. Sin aproximar nada.
+Pero la matemática permite un absurdo: aire doblando el borde de salida a velocidad infinita. Mira el borde.
+La naturaleza lo prohíbe. Kutta lo escribió: el flujo sale limpio del borde. Una sola solución sobrevive.
+Y esa solución esconde el secreto: en neto, el aire gira alrededor del ala. Eso es la circulación: gama.
+El teorema más limpio de la aerodinámica: la sustentación es ro, por velocidad, por gama. Exacta.
+¿Y Bernoulli? Cierto, pero al revés: la circulación acelera el aire de arriba, la presión cae, y el ala se chupa hacia arriba.
+Baja el ángulo a cero: la circulación muere. Gama cero, sustentación cero. El campo queda simétrico.
+Inclínala ocho grados: gama despierta. El coeficiente de sustentación es dos pi por alfa. Solo importa el ángulo.
+Doce grados: más circulación, más succión. La fórmula dice que puedes subir para siempre.
+La realidad dice no. A quince grados el flujo se desprende del ala: pérdida. Aquí esta teoría ya no ve.
+Ese es el filo del cuchillo: todo avión vuela con suficiente ángulo para cargarte, sin caer en pérdida.
+Esto fue Anderson, capítulo cuatro, hecho luz. En La Forja el flujo es tuyo: ven a jugar con él.

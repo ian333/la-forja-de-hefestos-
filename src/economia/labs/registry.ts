@@ -23,6 +23,7 @@ export const PREMIO_LABS: Record<string, LazyExoticComponent<ComponentType<unkno
   'econ-1991-coase': lazy(() => import('@/masterclass/cine/scenes/CoaseClase')),
   'econ-2018-romer-nordhaus': lazy(() => import('@/masterclass/cine/scenes/RomerClase')),
   'reel-nebula': lazy(() => import('@/masterclass/cine/scenes/NebulaReel')),
+  'aero-1-vuelo': lazy(() => import('@/masterclass/cine/scenes/AeroClase')),
   'econ-1972-hicks-arrow': lazy(() => import('./HicksArrowLab')),
   'econ-1983-debreu': lazy(() => import('./DebreuLab')),
   'econ-1988-allais': lazy(() => import('./AllaisLab')),
@@ -87,5 +88,6 @@ export const CINE_CLASES = new Set<string>([
   'econ-1991-coase',
   'econ-2018-romer-nordhaus',
   'reel-nebula',
+  'aero-1-vuelo',
 ]);
 export const esClaseCine = (id: string) => CINE_CLASES.has(id);

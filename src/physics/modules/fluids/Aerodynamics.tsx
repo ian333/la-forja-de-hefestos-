@@ -52,13 +52,17 @@ import { useFrame } from '@react-three/fiber';
 import Stage from '@/physics/components/Stage';
 import { useAudience } from '@/physics/context';
 import LessonPanel, { type Lesson } from '@/math/lesson/LessonPanel';
+import {
+  JOUKOWSKI_A, U_INF, RHO_0 as RHO, kuttaGamma,
+  flowVelocity, cpValue, integrateStreamline, nacaProfile, cpToColor,
+} from '@/aero/potencial';
 
 // ═══════════════════════════════════════════════════════════════════════
 // CONSTANTES DE SIMULACIÓN
+// (la matemática del flujo vive en src/aero/potencial.ts — compartida con
+//  el cine AeroClase y verificada por potencial.test.ts)
 // ═══════════════════════════════════════════════════════════════════════
 
-const U_INF  = 1.0;     // velocidad del flujo libre [m/s]
-const RHO    = 1.225;   // densidad del aire [kg/m³] (ISA nivel del mar)
 const CHORD  = 1.0;     // cuerda del perfil [m]
 const N_STREAM = 24;    // líneas de corriente
 const N_STEP   = 140;   // pasos de integración por línea
@@ -174,202 +178,6 @@ El coeficiente de sustentación de thin-airfoil theory, Cl = 2πα, es notable: 
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// MATEMÁTICA DEL PERFIL Y FLUJO POTENCIAL
-// ═══════════════════════════════════════════════════════════════════════
-
-/** Perfil NACA 4 dígitos simétrico (NACA 00xx): genera los puntos del contorno. */
-function nacaProfile(thickness: number, nPoints: number): { x: number; y: number }[] {
-  const t = thickness;
-  const pts: { x: number; y: number }[] = [];
-  // suction side (de borde de ataque a borde de salida, arriba)
-  for (let i = 0; i <= nPoints; i++) {
-    const xb = i / nPoints;
-    // cosine spacing para concentrar puntos en bordes
-    const xc = 0.5 * (1 - Math.cos(Math.PI * xb));
-    const yt = 5 * t * (
-      0.2969 * Math.sqrt(xc)
-      - 0.1260 * xc
-      - 0.3516 * xc * xc
-      + 0.2843 * xc * xc * xc
-      - 0.1015 * xc * xc * xc * xc
-    );
-    pts.push({ x: xc, y: yt });
-  }
-  // pressure side (borde de salida a borde de ataque, abajo)
-  for (let i = nPoints; i >= 0; i--) {
-    const xb = i / nPoints;
-    const xc = 0.5 * (1 - Math.cos(Math.PI * xb));
-    const yt = 5 * t * (
-      0.2969 * Math.sqrt(xc)
-      - 0.1260 * xc
-      - 0.3516 * xc * xc
-      + 0.2843 * xc * xc * xc
-      - 0.1015 * xc * xc * xc * xc
-    );
-    pts.push({ x: xc, y: -yt });
-  }
-  return pts;
-}
-
-/**
- * Velocidad del flujo potencial alrededor del círculo de Joukowski
- * transformada al plano físico.
- *
- * Plano del círculo: ζ = a·e^{iθ} + offset
- * Transformación: z = ζ + a²/ζ
- *
- * Flujo potencial (cilindro + circulación Γ):
- *   w(ζ) = U_∞·(ζ·e^{-iα} + a²·e^{iα}/ζ) + i·Γ·ln(ζ) / (2π)
- *   dw/dζ = U_∞·(e^{-iα} − a²·e^{iα}/ζ²) + i·Γ/(2π·ζ)
- *
- * Jacobiano de la transformación:
- *   dz/dζ = 1 − a²/ζ²
- *
- * Velocidad en el plano físico: u_z = dw/dζ / (dz/dζ)
- *
- * Invertimos z→ζ numéricamente (Newton) para mapear puntos físicos (x,y)
- * al plano del círculo y calcular la velocidad allí.
- */
-
-const JOUKOWSKI_A = 0.52; // radio del círculo de Joukowski (ligeramente > 0.5·chord)
-
-function joukowskiInverse(zx: number, zy: number): [number, number] {
-  // Resuelve ζ + a²/ζ = z vía cuadrática: ζ² − z·ζ + a² = 0
-  // ζ = (z ± √(z²−4a²)) / 2
-  const a2 = JOUKOWSKI_A * JOUKOWSKI_A;
-  // z² − 4a²
-  const re2 = zx * zx - zy * zy - 4 * a2;
-  const im2 = 2 * zx * zy;
-  // √(complex) — tomamos la raíz con parte imaginaria positiva (exterior del cilindro)
-  const r2 = Math.sqrt(re2 * re2 + im2 * im2);
-  const ang2 = Math.atan2(im2, re2);
-  const sqRe = Math.sqrt(r2) * Math.cos(ang2 / 2);
-  const sqIm = Math.sqrt(r2) * Math.sin(ang2 / 2);
-  // ζ = (z + sqrt) / 2  — elegimos la raíz exterior (|ζ| > a)
-  let zeta_re = (zx + sqRe) / 2;
-  let zeta_im = (zy + sqIm) / 2;
-  if (zeta_re * zeta_re + zeta_im * zeta_im < a2) {
-    // si caímos dentro del círculo, tomar la otra raíz
-    zeta_re = (zx - sqRe) / 2;
-    zeta_im = (zy - sqIm) / 2;
-  }
-  return [zeta_re, zeta_im];
-}
-
-/**
- * Calcula (u, v) en el punto físico (px, py) dado ángulo de ataque alpha (rad).
- * Devuelve velocidad en coordenadas del flujo libre (sin rotar por alpha).
- */
-function flowVelocity(px: number, py: number, alpha: number): [number, number] {
-  const a  = JOUKOWSKI_A;
-  const a2 = a * a;
-  const Gamma = 4 * Math.PI * U_INF * a * Math.sin(alpha); // condición de Kutta
-
-  // Invertir la transformación de Joukowski z→ζ
-  const [zetaRe, zetaIm] = joukowskiInverse(px, py);
-
-  // |ζ|²
-  const mod2 = zetaRe * zetaRe + zetaIm * zetaIm;
-  if (mod2 < a2 * 0.81) {
-    // punto dentro del cuerpo — velocidad cero
-    return [0, 0];
-  }
-
-  // dw/dζ = U_∞·(e^{-iα} − a²·e^{iα}/ζ²) + i·Γ/(2π·ζ)
-  const cosA = Math.cos(alpha), sinA = Math.sin(alpha);
-  // a²/ζ²: ζ² = (zetaRe+i·zetaIm)²
-  const zeta2Re = zetaRe * zetaRe - zetaIm * zetaIm;
-  const zeta2Im = 2 * zetaRe * zetaIm;
-  const zeta2mod2 = zeta2Re * zeta2Re + zeta2Im * zeta2Im;
-  // a²/ζ² en complejo
-  const a2_z2Re =  a2 * zeta2Re / zeta2mod2;
-  const a2_z2Im = -a2 * zeta2Im / zeta2mod2;
-
-  // U_∞ · e^{-iα} = U_∞·(cosA + i·(-sinA))
-  // U_∞ · e^{iα}·(a²/ζ²)
-  const term1Re = U_INF * cosA;
-  const term1Im = -U_INF * sinA;
-  // e^{iα} · (a²/ζ²)
-  const ea_iRe = cosA * a2_z2Re - sinA * a2_z2Im;
-  const ea_iIm = cosA * a2_z2Im + sinA * a2_z2Re;
-  // dw/dζ parte Rankine
-  let dwRe = term1Re - U_INF * ea_iRe;
-  let dwIm = term1Im - U_INF * ea_iIm;
-  // + iΓ/(2π·ζ) = iΓ·ζ̄ / (2π·|ζ|²)
-  const twoPiMod2 = 2 * Math.PI * mod2;
-  dwRe += -Gamma * zetaIm / twoPiMod2; // i/ζ = -Im/|ζ|² + i·Re/|ζ|²
-  dwIm +=  Gamma * zetaRe / twoPiMod2;
-
-  // dz/dζ = 1 − a²/ζ²
-  const dzRe = 1 - a2_z2Re;
-  const dzIm =   - a2_z2Im;
-  const dzMod2 = dzRe * dzRe + dzIm * dzIm;
-  if (dzMod2 < 1e-10) return [U_INF * cosA, -U_INF * sinA]; // singularidad
-
-  // u_z = dw/dζ / (dz/dζ) — división de complejos
-  // (dwRe + i·dwIm) / (dzRe + i·dzIm)
-  const uRe = (dwRe * dzRe + dwIm * dzIm) / dzMod2;
-  const uIm = (dwIm * dzRe - dwRe * dzIm) / dzMod2;
-
-  // En R3F: x es horizontal, y es vertical — la velocidad compleja da (u, v)
-  return [uRe, -uIm]; // conjugado: w = u − iv, por eso negamos la imaginaria
-}
-
-/** Coeficiente de presión en un punto dado el módulo de velocidad. */
-function cp(ux: number, uy: number): number {
-  const mag2 = ux * ux + uy * uy;
-  return 1 - mag2 / (U_INF * U_INF);
-}
-
-/** Integración RK4 de una línea de corriente durante N_STEP pasos. */
-function integrateStreamline(
-  x0: number, y0: number, alpha: number, nSteps: number, ds: number,
-): { x: number; y: number; cp: number }[] {
-  const pts: { x: number; y: number; cp: number }[] = [];
-  let x = x0, y = y0;
-  for (let i = 0; i < nSteps; i++) {
-    const [u1, v1] = flowVelocity(x, y, alpha);
-    const mag1 = Math.hypot(u1, v1);
-    if (mag1 < 1e-6) break;
-    const k1x = u1 / mag1, k1y = v1 / mag1;
-    const [u2, v2] = flowVelocity(x + 0.5 * ds * k1x, y + 0.5 * ds * k1y, alpha);
-    const mag2 = Math.hypot(u2, v2);
-    const k2x = mag2 > 1e-6 ? u2 / mag2 : k1x;
-    const k2y = mag2 > 1e-6 ? v2 / mag2 : k1y;
-    const [u3, v3] = flowVelocity(x + 0.5 * ds * k2x, y + 0.5 * ds * k2y, alpha);
-    const mag3 = Math.hypot(u3, v3);
-    const k3x = mag3 > 1e-6 ? u3 / mag3 : k2x;
-    const k3y = mag3 > 1e-6 ? v3 / mag3 : k2y;
-    const [u4, v4] = flowVelocity(x + ds * k3x, y + ds * k3y, alpha);
-    const mag4 = Math.hypot(u4, v4);
-    const k4x = mag4 > 1e-6 ? u4 / mag4 : k3x;
-    const k4y = mag4 > 1e-6 ? v4 / mag4 : k3y;
-    const dx = (ds / 6) * (k1x + 2 * k2x + 2 * k3x + k4x);
-    const dy = (ds / 6) * (k1y + 2 * k2y + 2 * k3y + k4y);
-    x += dx;
-    y += dy;
-    const [ux, uy] = flowVelocity(x, y, alpha);
-    pts.push({ x, y, cp: cp(ux, uy) });
-    // salir si el punto se fue lejos
-    if (Math.abs(x) > 4 || Math.abs(y) > 3) break;
-  }
-  return pts;
-}
-
-/** Mapea un valor Cp a color RGB: azul (cp>0 presión alta) → blanco → rojo (cp<0 presión baja). */
-function cpToColor(cpVal: number): [number, number, number] {
-  // cp clamped [-2, 1]
-  const t = Math.max(-1, Math.min(1, cpVal / 1.5));
-  if (t >= 0) {
-    // azul → blanco: cp positivo (desaceleración, alta presión)
-    return [t, t, 1.0];
-  } else {
-    // blanco → rojo: cp negativo (aceleración, baja presión)
-    return [1.0, 1.0 + t, 1.0 + t];
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════
 // GEOMETRÍA DEL PERFIL ALAR (para el mesh 3D)
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -400,7 +208,7 @@ export default function Aerodynamics() {
   const [thickness, setThickness] = useState(THICKNESS);
 
   // Sustentación calculada
-  const Gamma = 4 * Math.PI * U_INF * JOUKOWSKI_A * Math.sin(alpha);
+  const Gamma = kuttaGamma(alpha);
   const liftPerSpan = RHO * U_INF * Gamma; // L = ρ U_∞ Γ  [N/m]
   const Cl = 2 * Math.PI * Math.sin(alpha); // thin-airfoil
   const alphaDeg = (alpha * 180 / Math.PI).toFixed(1);
@@ -528,7 +336,7 @@ function AeroScene({ alpha, thickness, showPressure, showStreamlines }: AeroScen
         const [ux, uy] = flowVelocity(px, py, alpha);
         const mag = Math.hypot(ux, uy);
         if (mag < 1e-4) continue; // dentro del perfil
-        const cpVal = cp(ux, uy);
+        const cpVal = cpValue(ux, uy);
         const [r, g, b] = cpToColor(cpVal);
         // profundidad Z: distribuir a lo largo de la envergadura
         const nZ = 3;
@@ -604,7 +412,7 @@ function AeroScene({ alpha, thickness, showPressure, showStreamlines }: AeroScen
       wingGroupRef.current.rotation.z = alpha;
     }
     if (liftArrowRef.current && liftShaftRef.current) {
-      const Gamma = 4 * Math.PI * U_INF * JOUKOWSKI_A * Math.sin(alpha);
+      const Gamma = kuttaGamma(alpha);
       const liftNorm = Math.min(Math.abs(RHO * U_INF * Gamma) / 3.0, 1.2);
       const sign = alpha >= 0 ? 1 : -1;
       // Flecha de sustentación: escalar su altura
