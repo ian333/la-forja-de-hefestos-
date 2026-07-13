@@ -84,7 +84,11 @@ const SOFTGL = process.env.SOFTGL === '1';
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     // El doc por defecto arranca VACÍO (sin sólido) → `ready` (build exitoso) jamás
     // llega; el kernel cargado se detecta por ready O por el error de "sin sólido".
-    await page.waitForFunction('window.__forgeBrep && (window.__forgeBrep.ready || !!window.__forgeBrep.error)', { timeout: 60000 });
+    // Lecciones AERO: el lab publica window.__aeroLab (no hay kernel B-Rep que esperar).
+    const READY = lec.curso === 'aero'
+      ? 'window.__aeroLab && !!window.__aeroLab.estado'
+      : 'window.__forgeBrep && (window.__forgeBrep.ready || !!window.__forgeBrep.error)';
+    await page.waitForFunction(READY, { timeout: 60000 });
     await page.waitForTimeout(1500);
 
     // ── Overlays quemados en el video: cursor + pulso de clic + hint bar
@@ -209,6 +213,8 @@ const SOFTGL = process.env.SOFTGL === '1';
           else if (a.type === 'view') await page.evaluate((n) => { const f = window.__forgeBrep; if (f && f.setView) f.setView(n); }, a.name);
           else if (a.type === 'main') await page.evaluate(({ fn, args }) => { const f = window.__forgeBrep; if (f && typeof f[fn] === 'function') f[fn](...(args || [])); }, { fn: a.fn, args: a.args });
           else if (a.type === 'hook') await page.evaluate(({ fn, args }) => { const se = window.__sketchEditor; if (se && typeof se[fn] === 'function') se[fn](...(args || [])); }, { fn: a.fn, args: a.args });
+          // alab: labs de la ESCUELA AERO (window.__aeroLab.set('h', 11000), etc.)
+          else if (a.type === 'alab') await page.evaluate(({ fn, args }) => { const al = window.__aeroLab; if (al && typeof al[fn] === 'function') al[fn](...(args || [])); }, { fn: a.fn, args: a.args });
           // dimline: acota la línea MÁS LARGA horizontal ('h') o vertical ('v') por sus
           // endpoints — sin hardcodear índices de puntos (robusto entre versiones).
           else if (a.type === 'dimline') {

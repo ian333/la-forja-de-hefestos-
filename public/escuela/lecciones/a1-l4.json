@@ -1,0 +1,119 @@
+{
+ "id": "a1-l4",
+ "curso": "aero",
+ "unidad": 1,
+ "n": 4,
+ "titulo": "La atmósfera estándar: el aire que se acaba",
+ "subtitulo": "T = 288.15 − 6.5·h · ρ = p/RT · de aquí sale TODO cálculo aeronáutico",
+ "fuente": "Bertin §1.2; Anderson Ap. D; Raymer Ap. B (tabla ISA, ISO 2533)",
+ "descripcion": "A 11 kilómetros hace −56 °C y el aire pesa un TERCIO que aquí abajo. Tu ala genera un tercio de la sustentación a la misma velocidad. La atmósfera estándar ISA es la primera tabla de todo cálculo aeronáutico — y aquí la generas y la compruebas contra los valores publicados.",
+ "url": "physics.html#fluids/aero-atmosfera",
+ "pasos": [
+  {
+   "id": "p01",
+   "dice": "Número que da miedo: a once kilómetros, donde cruzan los jets, hacen MENOS cincuenta y seis grados y el aire pesa la TERCERA parte que al nivel del mar. Tu ala, a la misma velocidad, carga un tercio. Hoy construyes la tabla de la que sale todo cálculo aeronáutico: la atmósfera estándar.",
+   "gestos": [
+    {
+     "type": "wait",
+     "ms": 1600
+    }
+   ],
+   "check": {
+    "desc": "el lab de atmósfera está montado",
+    "js": "window.__aeroLab && window.__aeroLab.estado.modulo === 'aero-atmosfera'"
+   }
+  },
+  {
+   "id": "p02",
+   "dice": "Nivel del mar, condición estándar: doscientos ochenta y ocho punto quince kelvin — quince grados —, ciento un mil trescientos veinticinco pascales, y la densidad sagrada: uno punto doscientos veinticinco kilogramos por metro cúbico. Grábatela: es la rho de todas las fórmulas.",
+   "gestos": [
+    {
+     "type": "tclick",
+     "testid": "btn-h-mar"
+    }
+   ],
+   "check": {
+    "desc": "T=288.15 K, ρ=1.225 kg/m³ (tabla ISA)",
+    "js": "Math.abs(window.__aeroLab.estado.T - 288.15) < 0.01 && Math.abs(window.__aeroLab.estado.rho - 1.225) < 0.001"
+   }
+  },
+  {
+   "id": "p03",
+   "dice": "Sube a cinco mil metros. La regla es LINEAL y te la aprendes hoy: la temperatura cae seis punto cinco kelvin por kilómetro. Doscientos ochenta y ocho menos seis punto cinco por cinco: doscientos cincuenta y cinco punto sesenta y cinco kelvin. Sin ajustes, sin magia: la tabla lo confirma.",
+   "gestos": [
+    {
+     "type": "alab",
+     "fn": "set",
+     "args": [
+      "h",
+      5000
+     ]
+    }
+   ],
+   "check": {
+    "desc": "T(5 km) = 255.65 K (tabla ISA literal)",
+    "js": "Math.abs(window.__aeroLab.estado.T - 255.65) < 0.05"
+   }
+  },
+  {
+   "id": "p04",
+   "dice": "¿Y la presión? No es lineal: cada capa de aire CARGA a todas las de arriba. Hidrostática más gas ideal dan una potencia: p igual a p cero por T entre T cero, elevado a cinco punto doscientos cincuenta y seis. Míralo caer en el tablero mientras subes.",
+   "gestos": [
+    {
+     "type": "alab",
+     "fn": "set",
+     "args": [
+      "h",
+      8000
+     ]
+    }
+   ],
+   "check": {
+    "desc": "p(8 km) ≈ 3.56×10⁴ Pa (tabla ISA)",
+    "js": "Math.abs(window.__aeroLab.estado.p - 35600) < 150"
+   }
+  },
+  {
+   "id": "p05",
+   "dice": "Once kilómetros: la TROPOPAUSA, el techo del clima. Presión: veintidós mil seiscientos treinta y dos pascales — el número exacto de la tabla internacional. Densidad: cero punto treinta y seis — ahí está el tercio que te prometí.",
+   "gestos": [
+    {
+     "type": "tclick",
+     "testid": "btn-h-tropopausa"
+    }
+   ],
+   "check": {
+    "desc": "p(11 km) = 22 632 Pa, ρ = 0.3639 (ISO 2533)",
+    "js": "Math.abs(window.__aeroLab.estado.p - 22632) < 40 && Math.abs(window.__aeroLab.estado.rho - 0.3639) < 0.001"
+   }
+  },
+  {
+   "id": "p06",
+   "dice": "Pasa a quince kilómetros y pasa algo raro: el termómetro se CONGELA en doscientos dieciséis punto sesenta y cinco kelvin. Es la estratosfera baja: isoterma. La presión sigue cayendo — ahora como exponencial pura — pero la temperatura ya no baja.",
+   "gestos": [
+    {
+     "type": "tclick",
+     "testid": "btn-h-crucero"
+    }
+   ],
+   "check": {
+    "desc": "estratosfera isoterma: T = 216.65 K, p ≈ 12 045 Pa",
+    "js": "Math.abs(window.__aeroLab.estado.T - 216.65) < 0.01 && Math.abs(window.__aeroLab.estado.p - 12045) < 40"
+   }
+  },
+  {
+   "id": "p07",
+   "dice": "¿Por qué te hice memorizar esto? Porque la sustentación es un medio de rho, por ve al cuadrado, por superficie, por c ele. Si no sabes qué rho hay a tu altitud, NO sabes cuánto carga tu ala. Esta columna es la lección cero de diseñar cualquier cosa que vuele. La próxima: el número que da miedo completo.",
+   "gestos": [
+    {
+     "type": "tclick",
+     "testid": "btn-h-mar"
+    }
+   ],
+   "check": {
+    "desc": "de vuelta al mar: ρ₀ = 1.225 (la rho de todas las fórmulas)",
+    "js": "Math.abs(window.__aeroLab.estado.rho - 1.225) < 0.001"
+   }
+  }
+ ]
+}

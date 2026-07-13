@@ -36,6 +36,8 @@ const MultiScale      = lazy(() => import('./modules/matter/MultiScale'));
 const TissueField     = lazy(() => import('./modules/matter/TissueField'));
 const ScaleLimit      = lazy(() => import('./modules/matter/ScaleLimit'));
 const Aerodynamics    = lazy(() => import('./modules/fluids/Aerodynamics'));
+const AeroFuerzas     = lazy(() => import('./modules/fluids/AeroFuerzas'));
+const AeroAtmosfera   = lazy(() => import('./modules/fluids/AeroAtmosfera'));
 const ChemicalScaleLimit = lazy(() => import('./modules/matter/ChemicalScaleLimit'));
 const TissueScaleLimit = lazy(() => import('./modules/matter/TissueScaleLimit'));
 const MetalDroplet    = lazy(() => import('./modules/manufactura/MetalDroplet'));
@@ -274,6 +276,16 @@ export const BRANCHES: PhysicsBranch[] = [
           'Núcleo gaussiano o poly6',
           'Gravedad + tensión superficial + viscosidad',
         ] },
+      { id: 'aero-fuerzas', name: 'Las dos manos: presión y cortante', status: 'live',
+        blurb: 'Anderson Ej. 1.1 EN VIVO: cuña 5° a Mach 2 — integra p y τ por paneles hasta D′=1.24×10⁴, cd=0.022.',
+        childHint: 'Prende las flechas: el aire solo sabe empujar (azul) y raspar (ámbar).',
+        researcherHint: 'D′=∮(−p·n̂+τ·t̂)·x̂ ds, panel midpoint; β del choque por θ-β-M (34.3°). Fixtures literales del libro.',
+        component: AeroFuerzas },
+      { id: 'aero-atmosfera', name: 'La atmósfera estándar (ISA)', status: 'live',
+        blurb: 'T=288.15−6.5·h[km], p por hidrostática, ρ=p/RT, a=√(γRT). Verificada vs ISO 2533/Anderson Ap. D.',
+        childHint: 'Sube el avión: el aire se enfría, se adelgaza… y a 11 km se congela el termómetro.',
+        researcherHint: 'atmosfera.ts 8/8 tests vs tabla publicada; tropopausa 22 632 Pa; isoterma 216.65 K.',
+        component: AeroAtmosfera },
       { id: 'aero', name: 'Aerodinámica — sustentación por circulación', status: 'live',
         blurb: 'Perfil NACA + flujo potencial de Joukowski exacto. Kutta, Γ, L = ρ·U·Γ, Cp.',
         childHint: 'Inclina el ala y mira cómo el aire la chupa hacia arriba.',
