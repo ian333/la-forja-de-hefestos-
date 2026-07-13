@@ -23,7 +23,7 @@
  * Determinismo: TODO es puro en t (timeRef) — renderAt(t) reproducible.
  */
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CineStage, CineCamera, useCineTime } from '@/masterclass/cine';
@@ -41,10 +41,10 @@ const smooth = (x: number) => { const c = clamp(x, 0, 1); return c * c * (3 - 2 
 const local = (t: number, a: number, b: number) => clamp((t - a) / (b - a), 0, 1);
 const lerpN = (a: number, b: number, t: number) => a + (b - a) * t;
 
-// ── Beats (provisional hasta medir la voz real con assemble-narracion) ─────
-const T = [0.5, 10.0, 18.5, 27.0, 34.5, 42.5, 50.5, 59.0, 67.5, 76.0,
-  84.5, 93.5, 101.5, 110.0, 118.0, 126.5, 135.0];
-const END = 146;
+// ── Beats MEDIDOS de la voz Matilda (segs.json, gap 0.6 s, lead 0.6 s) ──────
+const T = [0.60, 7.60, 14.30, 21.63, 28.26, 35.31, 44.04, 51.79, 59.83, 68.47,
+  76.81, 86.99, 94.87, 102.19, 109.23, 117.58, 124.77];
+const END = 137; // última línea acaba a 131.0 + cola contemplativa
 const beatEnd = (i: number) => (i < T.length - 1 ? T[i + 1] : END);
 
 // α por beat (rad). El marco del flujo rota +α: freestream SIEMPRE horizontal
@@ -95,18 +95,43 @@ function Wing() {
     g.translate(0, 0, -1.3);
     return g;
   }, []);
+  // acentos: los BORDES (ataque/salida) brillan; nada de wireframe (la
+  // triangulación del extrude se veía como peine en las caras laterales)
+  const edges = useMemo(() => {
+    const le = new THREE.CylinderGeometry(0.012, 0.012, 2.6, 8);
+    return le;
+  }, []);
   return (
     <group>
       <mesh geometry={geo}>
-        <meshStandardMaterial color="#8FA8C8" emissive="#1D4ED8" emissiveIntensity={0.34}
-          metalness={0.72} roughness={0.28} side={THREE.DoubleSide} toneMapped={false} />
+        <meshStandardMaterial color="#8FA8C8" emissive="#1D4ED8" emissiveIntensity={0.14}
+          metalness={0.35} roughness={0.55} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
-      <mesh geometry={geo}>
-        <meshStandardMaterial color="#60A5FA" emissive="#93C5FD" emissiveIntensity={1.0}
-          wireframe transparent opacity={0.10} toneMapped={false} />
+      <mesh geometry={edges} position={[-CHORD / 2 + 0.02, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <meshStandardMaterial color="#0E1E3A" emissive="#7EB8FF" emissiveIntensity={1.1} toneMapped={false} />
+      </mesh>
+      <mesh geometry={edges} position={[CHORD / 2 - 0.005, 0, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6, 1, 0.6]}>
+        <meshStandardMaterial color="#0E1E3A" emissive="#9FCBFF" emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
     </group>
   );
+}
+
+// sprite circular suave para TODOS los Points (adiós confeti cuadrado)
+let DOT_TEX: THREE.Texture | null = null;
+function dotTexture(): THREE.Texture {
+  if (DOT_TEX) return DOT_TEX;
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.4, 'rgba(255,255,255,0.55)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  DOT_TEX = new THREE.CanvasTexture(c);
+  return DOT_TEX;
 }
 
 // ═══ PARTÍCULAS DEL FLUJO (parcelas reales, tiempo físico, puras en t) ══════
@@ -140,6 +165,8 @@ function FlowParticles({ windows, alpha, gamma }: FlowWindows) {
   const timeRef = useCineTime();
   const paths = useParcelPaths(alpha, gamma);
   const N = paths.length * Z_PLANES.length * PER_PATH;
+  // cabezas (sprites) + ESTELAS (segmento τ−0.14s → τ): la estela mide la
+  // velocidad local — arriba del ala salen LARGAS (aire rápido). Física visible.
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
@@ -147,39 +174,71 @@ function FlowParticles({ windows, alpha, gamma }: FlowWindows) {
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 10);
     return g;
   }, [N]);
+  const trailGeo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 6), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 6), 3));
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 10);
+    return g;
+  }, [N]);
   const mat = useMemo(() => new THREE.PointsMaterial({
-    vertexColors: true, size: 0.045, sizeAttenuation: true, transparent: true,
-    opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false,
+    vertexColors: true, size: 0.055, sizeAttenuation: true, transparent: true,
+    opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, map: dotTexture(),
   }), []);
-  const ptsRef = useRef<THREE.Points>(null);
+  const trailMat = useMemo(() => new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.6,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }), []);
+  const grpRef = useRef<THREE.Group>(null);
+  const TRAIL_DT = 0.14;
 
   useFrame(() => {
     const t = timeRef.current;
     const win = windows.find(([a, b]) => t >= a && t < b);
-    if (ptsRef.current) ptsRef.current.visible = !!win;
+    if (grpRef.current) grpRef.current.visible = !!win;
     if (!win) return;
     const posA = geo.getAttribute('position') as THREE.BufferAttribute;
     const colA = geo.getAttribute('color') as THREE.BufferAttribute;
+    const tp = trailGeo.getAttribute('position') as THREE.BufferAttribute;
+    const tc = trailGeo.getAttribute('color') as THREE.BufferAttribute;
     let w = 0;
     for (let p = 0; p < paths.length; p++) {
       const path = paths[p];
+      const at = (tau: number): [number, number, number] => {
+        const fk = Math.max(0, Math.min(tau / 0.015, path.n - 1.001));
+        const k = Math.floor(fk), fr = fk - k;
+        return [
+          lerpN(path.pos[k * 2], path.pos[(k + 1) * 2], fr),
+          lerpN(path.pos[k * 2 + 1], path.pos[(k + 1) * 2 + 1], fr),
+          k,
+        ];
+      };
       for (let zi = 0; zi < Z_PLANES.length; zi++) {
         for (let j = 0; j < PER_PATH; j++) {
           const jit = (((p * 7 + zi * 13 + j * 29) % 17) / 17) * (path.dur / PER_PATH);
           const tau = ((t - win[0]) + j * (path.dur / PER_PATH) + jit) % path.dur;
-          const fk = Math.min(tau / 0.015, path.n - 1.001);
-          const k = Math.floor(fk), fr = fk - k;
-          const x = lerpN(path.pos[k * 2], path.pos[(k + 1) * 2], fr);
-          const y = lerpN(path.pos[k * 2 + 1], path.pos[(k + 1) * 2 + 1], fr);
-          posA.setXYZ(w, x, y, Z_PLANES[zi]);
+          const [x, y, k] = at(tau);
+          const [xt, yt] = at(tau - TRAIL_DT);
+          const z = Z_PLANES[zi];
+          posA.setXYZ(w, x, y, z);
           colA.setXYZ(w, path.col[k * 3], path.col[k * 3 + 1], path.col[k * 3 + 2]);
+          tp.setXYZ(w * 2, xt, yt, z);
+          tp.setXYZ(w * 2 + 1, x, y, z);
+          tc.setXYZ(w * 2, path.col[k * 3] * 0.25, path.col[k * 3 + 1] * 0.25, path.col[k * 3 + 2] * 0.25);
+          tc.setXYZ(w * 2 + 1, path.col[k * 3], path.col[k * 3 + 1], path.col[k * 3 + 2]);
           w++;
         }
       }
     }
     posA.needsUpdate = true; colA.needsUpdate = true;
+    tp.needsUpdate = true; tc.needsUpdate = true;
   });
-  return <points ref={ptsRef} geometry={geo} material={mat} />;
+  return (
+    <group ref={grpRef}>
+      <points geometry={geo} material={mat} />
+      <lineSegments geometry={trailGeo} material={trailMat} />
+    </group>
+  );
 }
 
 // ═══ EL MITO: dos parcelas reales (arriba/abajo) — la de arriba GANA ════════
@@ -237,9 +296,9 @@ function MythParcels({ start, end }: { start: number; end: number }) {
 
   return (
     <group ref={g}>
-      <mesh ref={up}><sphereGeometry args={[0.075, 20, 20]} />
+      <mesh ref={up}><sphereGeometry args={[0.1, 20, 20]} />
         <meshStandardMaterial color="#3A2E08" emissive={GOLD} emissiveIntensity={3.2} toneMapped={false} /></mesh>
-      <mesh ref={dn}><sphereGeometry args={[0.075, 20, 20]} />
+      <mesh ref={dn}><sphereGeometry args={[0.1, 20, 20]} />
         <meshStandardMaterial color="#062A33" emissive="#22D3EE" emissiveIntensity={3.2} toneMapped={false} /></mesh>
       {/* eslint-disable-next-line react/no-unknown-property */}
       <line ref={upTrail as never} geometry={upGeo}>
@@ -307,7 +366,7 @@ function TrailingEdgeDrama({ start, mid, end }: { start: number; mid: number; en
 
   const build = (gamma?: number) => {
     const geos: THREE.BufferGeometry[] = [];
-    for (const sy of [-0.04, -0.08, -0.13, -0.19]) {
+    for (const sy of [-0.015, -0.035, -0.06, -0.10]) {
       const [fx, fy] = seedField(-2.6, sy, 8 * DEG); // justo bajo el ala (pantalla)
       const pts = integrateStreamline(fx, fy, 8 * DEG, 260, 0.026, gamma !== undefined ? { gamma } : undefined);
       const pos = new Float32Array(pts.length * 3);
@@ -331,11 +390,12 @@ function TrailingEdgeDrama({ start, mid, end }: { start: number; mid: number; en
     if (hot.current) {
       const m = hot.current.material as THREE.MeshStandardMaterial;
       if (inWrong) {
-        m.emissiveIntensity = 3.4 + 2.2 * Math.sin((t - start) * 9); // el borde ARDE
-        hot.current.scale.setScalar(1 + 0.25 * Math.sin((t - start) * 9));
+        m.emissiveIntensity = 3.4 + 2.2 * Math.sin((t - start) * 9); // el filo ARDE
+        const sc = 1 + 0.35 * Math.sin((t - start) * 9);
+        hot.current.scale.set(sc, 1, sc); // pulsa el grosor, no el largo
       } else {
-        m.emissiveIntensity = lerpN(3.0, 0.35, smooth(local(t, mid, mid + 1.4))); // se calma
-        hot.current.scale.setScalar(1);
+        m.emissiveIntensity = lerpN(3.0, 0.3, smooth(local(t, mid, mid + 1.4))); // se calma
+        hot.current.scale.set(1, 1, 1);
       }
     }
   });
@@ -357,8 +417,9 @@ function TrailingEdgeDrama({ start, mid, end }: { start: number; mid: number; en
           </line>
         ))}
       </group>
-      <mesh ref={hot} position={[CHORD / 2, 0, 0]}>
-        <sphereGeometry args={[0.05, 16, 16]} />
+      {/* la singularidad vive en TODO el filo de salida (3D): línea que arde */}
+      <mesh ref={hot} position={[CHORD / 2, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.022, 0.022, 2.62, 10]} />
         <meshStandardMaterial color="#2A0A02" emissive="#FF6B35" emissiveIntensity={3} toneMapped={false} />
       </mesh>
     </group>
@@ -398,8 +459,8 @@ function BoundVortex({ start, end }: { start: number; end: number }) {
     return gg;
   }, []);
   const ptsMat = useMemo(() => new THREE.PointsMaterial({
-    color: GOLD, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.95,
-    blending: THREE.AdditiveBlending, depthWrite: false,
+    color: GOLD, size: 0.065, sizeAttenuation: true, transparent: true, opacity: 0.95,
+    blending: THREE.AdditiveBlending, depthWrite: false, map: dotTexture(),
   }), []);
 
   useFrame(() => {
@@ -441,17 +502,22 @@ function PressureCloud({ windows, alpha }: FlowWindows) {
     const positions: number[] = [];
     const colors: number[] = [];
     const NG = 46, step = 4.6 / NG;
+    // jitter DETERMINISTA por punto: mata el moiré de la retícula regular
+    const jit = (a: number, b: number, c: number) =>
+      ((((a * 73 + b * 149 + c * 233) % 97) / 97) - 0.5) * step * 0.85;
     for (let ix = 0; ix < NG; ix++) {
       for (let iy = 0; iy < NG; iy++) {
-        const px = -2.3 + ix * step + step / 2;
-        const py = -2.3 + iy * step + step / 2;
-        const [u, v] = flowVelocity(px, py, alpha);
-        if (u === 0 && v === 0) continue;
-        const c = cpValue(u, v);
-        if (Math.abs(c) < 0.12) continue; // solo donde la presión DICE algo
-        const [r, gg, b] = cpToColor(c);
+        let zi = 0;
         for (const pz of [-0.9, 0, 0.9]) {
-          positions.push(px, py, pz);
+          zi++;
+          const px = -2.3 + ix * step + step / 2 + jit(ix, iy, zi);
+          const py = -2.3 + iy * step + step / 2 + jit(iy, zi, ix);
+          const [u, v] = flowVelocity(px, py, alpha);
+          if (u === 0 && v === 0) continue;
+          const c = cpValue(u, v);
+          if (Math.abs(c) < 0.12) continue; // solo donde la presión DICE algo
+          const [r, gg, b] = cpToColor(c * 1.6); // saturar el tono, no el brillo
+          positions.push(px, py, pz + jit(zi, ix, iy) * 2);
           colors.push(r * 0.5, gg * 0.5, b * 0.5);
         }
       }
@@ -462,14 +528,14 @@ function PressureCloud({ windows, alpha }: FlowWindows) {
     return bg;
   }, [alpha]);
   const mat = useMemo(() => new THREE.PointsMaterial({
-    vertexColors: true, size: 0.05, sizeAttenuation: true, transparent: true,
-    opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
+    vertexColors: true, size: 0.055, sizeAttenuation: true, transparent: true,
+    opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, map: dotTexture(),
   }), []);
   useFrame(() => {
     const t = timeRef.current;
     const win = windows.find(([a, b]) => t >= a && t < b);
     if (ref.current) ref.current.visible = !!win;
-    if (win) mat.opacity = 0.5 * smooth(local(t, win[0], win[0] + 1.2));
+    if (win) mat.opacity = 0.42 * smooth(local(t, win[0], win[0] + 1.2));
   });
   return <points ref={ref} geometry={geo} material={mat} />;
 }
@@ -513,10 +579,11 @@ function StallWarning({ start, end }: { start: number; end: number }) {
     if (mat.current) mat.current.opacity = 0.14 + 0.13 * (0.5 + 0.5 * Math.sin((t - start) * 6.3));
   });
   return (
-    // en coords del CAMPO el ala es horizontal — el plano abraza el dorso trasero
-    <group ref={g} position={[0.45, 0.14, 0]}>
+    // en coords del CAMPO el ala es horizontal — el shimmer se ACUESTA sobre el
+    // dorso trasero (mirando arriba) para leerse desde las cámaras 3/4
+    <group ref={g} position={[0.45, 0.14, 0]} rotation={[-Math.PI / 2 + 0.25, 0, 0]}>
       <mesh>
-        <planeGeometry args={[1.15, 0.34]} />
+        <planeGeometry args={[1.15, 1.8]} />
         <meshBasicMaterial ref={mat} color="#FF3A2E" transparent opacity={0.2}
           blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
@@ -528,8 +595,8 @@ function StallWarning({ start, end }: { start: number; end: number }) {
 interface Shot { p0: [number, number, number]; p1: [number, number, number]; look?: [number, number, number] }
 const SHOTS: Shot[] = [
   { p0: [2.6, 1.2, 4.6], p1: [1.6, 0.7, 3.4] },                       // 01 hero push-in
-  { p0: [0.4, 0.35, 4.6], p1: [0.2, 0.25, 4.0], look: [-0.4, 0, 0] }, // 02 carrera lateral
-  { p0: [0.9, 0.3, 3.7], p1: [1.15, 0.25, 3.1], look: [0.5, 0, 0] },  // 03 borde de salida
+  { p0: [-0.5, 0.1, 4.8], p1: [0.1, 0.1, 4.4], look: [-0.5, 0, 0] },  // 02 carrera lateral BAJA
+  { p0: [0.5, 0.08, 4.6], p1: [1.2, 0.08, 4.2], look: [0.55, 0, 0] }, // 03 pan siguiendo AMBAS parcelas
   { p0: [0.4, 2.7, 3.1], p1: [0.2, 2.2, 2.7] },                       // 04 vista cenital
   { p0: [0, 0.9, 4.9], p1: [0, 0.6, 4.2], look: [0, 0.7, 0] },        // 05 morph frontal
   { p0: [-1.4, 0.5, 4.3], p1: [1.2, 0.5, 4.0] },                      // 06 dolly lateral
@@ -541,7 +608,7 @@ const SHOTS: Shot[] = [
   { p0: [0.8, 0.3, 4.5], p1: [0.5, 0.2, 4.0] },                       // 12 α=0 calma
   { p0: [1.5, 0.85, 4.2], p1: [1.0, 0.6, 3.5] },                      // 13 α=8 despierta
   { p0: [1.2, -0.7, 3.9], p1: [0.9, -0.2, 3.2] },                     // 14 α=12 dramático
-  { p0: [1.9, 1.7, 3.0], p1: [1.4, 1.3, 2.5], look: [0.3, 0.2, 0] },  // 15 stall ominoso
+  { p0: [2.5, 1.2, 4.4], p1: [1.9, 1.0, 3.8], look: [0.2, 0.1, 0] },  // 15 stall ominoso (bajo: sin espejo del dorso)
   { p0: [-2.2, 1.0, 4.4], p1: [2.0, 0.8, 4.1] },                      // 16 filo del cuchillo
   { p0: [0, 1.7, 6.4], p1: [0, 1.1, 5.2] },                           // 17 semilla wide
 ];
@@ -577,11 +644,15 @@ const SUBS = [
 ];
 
 export default function AeroClase() {
+  // sin nebulosa que cargar: la escena se declara lista para los renders
+  // (render-clase/shot-clase esperan __nebulaReady antes de capturar)
+  useEffect(() => { (window as unknown as { __nebulaReady?: boolean }).__nebulaReady = true; }, []);
   const subtitles = SUBS.map((text, i) => ({ text, at: T[i], until: beatEnd(i) }));
   return (
     <CineStage
       mood="studio"
-      envIntensity={0.35}
+      envIntensity={0.22}
+      audio="/audio/clase-aero1/narration.mp3"
       duration={END}
       chapter="Aeronáutica · clase 1 · por qué vuela"
       fov={50}
@@ -592,7 +663,7 @@ export default function AeroClase() {
     >
       <CineCamera keys={buildCamKeys()} />
       <ambientLight intensity={0.16} color="#243050" />
-      <directionalLight position={[4, 8, 6]} intensity={0.5} color="#DCE8FF" />
+      <directionalLight position={[4, 8, 6]} intensity={0.3} color="#DCE8FF" />
 
       <FlowFrame>
         <Wing />
@@ -609,8 +680,9 @@ export default function AeroClase() {
 
         <PressureCloud alpha={8 * DEG} windows={[[T[10], T[11]], [T[12], T[13]]]} />
         <PressureCloud alpha={0} windows={[[T[11], T[12]]]} />
+        {/* en el stall NO va la nube: a 15° + aditivo inundaba el cuadro de
+            blanco (juicio visual t122) — ahí mandan las estelas + el shimmer */}
         <PressureCloud alpha={12 * DEG} windows={[[T[13], T[14]]]} />
-        <PressureCloud alpha={15 * DEG} windows={[[T[14], T[15]]]} />
 
         <StallWarning start={T[14]} end={beatEnd(14)} />
       </FlowFrame>
