@@ -2,7 +2,9 @@
 # PARRILLA de producción de la Escuela de Mecánica — resumable.
 # Por lección: voz (si falta) → drive con 3 reintentos → 4K → Downloads.
 # Uso (iangpu): bash scripts/escuela/parrilla.sh [leccion1 leccion2 ...]
-cd /home/ian/Orkesta/la-forja || exit 1
+# raíz del repo DUEÑO de este script (override con PARRILLA_ROOT) — no
+# hardcodear: hay más de un checkout en iangpu (forja-aero vs el de videos).
+cd "${PARRILLA_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}" || exit 1
 
 declare -A NOMBRE=(
   [mec-u2-l1]="ESCUELA-MECANICA-U2L1-tuerca-hexagonal-4K"
