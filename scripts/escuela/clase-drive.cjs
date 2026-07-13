@@ -81,7 +81,10 @@ const SOFTGL = process.env.SOFTGL === '1';
       await page.addInitScript((l) => { localStorage.setItem('forja:library:v1', JSON.stringify(l)); }, lib);
       console.log(`biblioteca embarcada: ${lec.biblioteca.join(', ')}`);
     }
-    await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    // La lección puede declarar SU página (p.ej. physics.html#fluids/aero-...):
+    // se resuelve contra el server del URL base — la parrilla sirve a ambos cursos.
+    const TARGET = lec.url ? URL.replace(/\/[^/]*$/, '/') + lec.url : URL;
+    await page.goto(TARGET, { waitUntil: 'domcontentloaded', timeout: 60000 });
     // El doc por defecto arranca VACÍO (sin sólido) → `ready` (build exitoso) jamás
     // llega; el kernel cargado se detecta por ready O por el error de "sin sólido".
     // Lecciones AERO: el lab publica window.__aeroLab (no hay kernel B-Rep que esperar).
