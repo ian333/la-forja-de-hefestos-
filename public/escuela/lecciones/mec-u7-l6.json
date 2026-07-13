@@ -1,0 +1,291 @@
+{
+  "id": "mec-u7-l6",
+  "curso": "mecanica",
+  "unidad": 7,
+  "n": 6,
+  "titulo": "La vista completa: auditar el plano antes de soltarlo",
+  "subtitulo": "cada feature: tamaño + posición · lo interior se acota en la SECCIÓN · nada dos veces",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 7 §7-20..7-22 (Dimensioning sections & complete views)",
+  "descripcion": "¿Cuándo está TERMINADO un plano? Cuando pasa la auditoría: cada feature con su tamaño y su posición, cada dimensión del sólido exactamente una vez, y lo interior acotado en la sección donde se VE. Aquí generas un plano completo y lo auditas renglón por renglón.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Son las siete de la mañana y suena tu teléfono: es el taller. 'Oye... ¿y a qué profundidad va el barreno?' Ese plano se fue INCOMPLETO. Hoy: la auditoría que se hace ANTES de soltar un plano — y dónde se acota lo que no se ve.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1400
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "La pieza de examen: placa de cien por sesenta por veinte, con su barreno de veinticinco.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-rect",
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": -47,
+          "y": -28,
+          "settle": 700
+        },
+        {
+          "type": "clickmm",
+          "x": 51,
+          "y": 33,
+          "settle": 900
+        },
+        {
+          "type": "dimline",
+          "axis": "h",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "100",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "dimline",
+          "axis": "v",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "60",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 700
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-fix",
+          "settle": 400
+        },
+        {
+          "type": "clickptwhere",
+          "where": "bl",
+          "settle": 800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2000
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 1800
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "20",
+          "settle": 1600
+        },
+        {
+          "type": "tclick",
+          "testid": "sketch-op-cut",
+          "settle": 800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1100
+        },
+        {
+          "type": "click",
+          "x": 960,
+          "y": 570,
+          "settle": 1800
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-circle",
+          "settle": 500
+        },
+        {
+          "type": "clickmm",
+          "x": 9,
+          "y": -4,
+          "settle": 600
+        },
+        {
+          "type": "clickmm",
+          "x": 21,
+          "y": -4,
+          "settle": 800
+        },
+        {
+          "type": "hook",
+          "fn": "dimDiam",
+          "args": [
+            0
+          ],
+          "settle": 700
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dim-input",
+          "text": "25",
+          "settle": 300
+        },
+        {
+          "type": "key",
+          "key": "Enter",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-comp-depth",
+          "text": "25",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "pieza-examen"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 110000 && inv.vol_kernel < 110400",
+        "desc": "la pieza del examen existe (110,182 mm³)"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "El plano. Y ahora no lo mires como dibujo — mírallo como AUDITOR. Vamos renglón por renglón con la checklist.",
+      "zoom": "btn-plano",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "front",
+          "settle": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-plano",
+          "settle": 3200
+        },
+        {
+          "type": "probe",
+          "label": "plano-completo"
+        }
+      ],
+      "check": {
+        "js": "var s=window.__forgeBrep&&window.__forgeBrep.planoSvg; !!s && s.indexOf('data-dim=\"diameter\"')>=0 && s.indexOf('data-dim=\"pos-x\"')>=0 && s.indexOf('data-dim=\"pos-y\"')>=0 && s.indexOf('data-dim=\"depth\"')>=0 && s.indexOf('data-note=\"tol\"')>=0",
+        "desc": "la vista COMPLETA: Ø + posición ×2 + las 3 dimensiones + tolerancia general"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Regla uno de la auditoría: CADA FEATURE necesita su TAMAÑO y su POSICIÓN. El barreno: diámetro veinticinco — tamaño ✓. Su equis y su ye desde el datum — posición ✓. Un barreno sin posición es una adivinanza; sin diámetro, una broca al azar.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            610
+          ],
+          "to": [
+            900,
+            530
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 2800
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Regla dos: las TRES dimensiones del sólido — ancho, alto, fondo — deben aparecer exactamente UNA vez, repartidas en las vistas. Ni cero veces, que es el teléfono a las siete... ni dos veces, que es el doble-acotado que ya conoces. Audita: cien en el alzado, veinte de alto, sesenta de fondo en la planta. Completo.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3600
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Y regla tres, la de las SECCIONES: lo interior se acota donde se VE de línea SÓLIDA. Un barreno ciego, una cavidad, un escalón interno — en la vista normal son líneas punteadas... y sobre punteado NO se acota. Para eso existe la vista de sección: el corte los vuelve contorno sólido, y AHÍ van sus cotas. La sección no es decoración: es el hogar de las cotas interiores.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            900,
+            540
+          ],
+          "to": [
+            1150,
+            640
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 3200
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "La checklist completa, de memoria: cada feature con tamaño y posición. Cada dimensión una sola vez. Lo funcional desde datums medibles. Lo interior en la sección. Tolerancia general declarada. Cinco renglones... y el teléfono de las siete de la mañana no vuelve a sonar. Con esto, la unidad siete — el arte de acotar — está completa. Nos vemos.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1300
+        }
+      ]
+    }
+  ]
+}

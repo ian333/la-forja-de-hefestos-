@@ -1,0 +1,305 @@
+{
+  "id": "mec-u11-l3",
+  "curso": "mecanica",
+  "unidad": 11,
+  "n": 3,
+  "titulo": "El Examen Forjador: el kernel es tu sinodal",
+  "subtitulo": "plano → modelo → masa EXACTA · ±1% o no pasa · la cinta negra del libro",
+  "fuente": "Bethune & Brown, SolidWorks 2023, cap. 11 (Certification prep / CSWA) — proyectos finales",
+  "descripcion": "El examen que cierra el libro: te dan un plano acotado, lo modelas contra reloj, y te califica el juez que no negocia — el kernel. Si tu volumen coincide al milímetro cúbico, entendiste TODO lo anterior. Aquí corres una pieza de examen completa, por cotas, como se debe.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Llegaste al final del libro. Y el examen final no lo califica un maestro con pluma roja — lo califica el KERNEL: modelas la pieza del plano, y tu volumen tiene que coincidir. Exacto. El número no perdona ni regala. Bienvenido al Examen Forjador.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Las reglas. Uno: recibes un plano acotado — como los de la unidad siete. Dos: modelas COMO EL LIBRO ENSEÑA: croquis a ojo, restricciones, y las COTAS mandan la geometría. Tres: el kernel mide tu sólido y compara contra la respuesta. Tolerancia: uno por ciento. Tiempo: contra reloj.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3600
+        }
+      ]
+    },
+    {
+      "id": "p03",
+      "dice": "Corramos una pieza de examen de verdad: un canal en U. Del plano leo: exterior ochenta por cuarenta, paredes de quince. Croquis por cotas dinámicas — largo y ángulo, como en la técnica del examen.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-sketch",
+          "settle": 1400
+        },
+        {
+          "type": "tclick",
+          "testid": "chooser-plane-xy",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-tool-line",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "0",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "80",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "0",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "40",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "15",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "25",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "270",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "50",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "25",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "90",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 600
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "15",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "180",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 800
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-a",
+          "text": "40",
+          "settle": 250
+        },
+        {
+          "type": "fill",
+          "testid": "sk-dyn-b",
+          "text": "270",
+          "settle": 250
+        },
+        {
+          "type": "tclick",
+          "testid": "sk-dyn-go",
+          "settle": 800
+        },
+        {
+          "type": "key",
+          "key": "Escape",
+          "settle": 800
+        }
+      ],
+      "check": {
+        "js": "sk && sk.nLines >= 8",
+        "desc": "el canal en U CERRADO por cotas (8 tramos)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Termina y extruye dieciocho. Momento del veredicto: área, ochenta por cuarenta menos cincuenta por veinticinco... mil novecientos cincuenta. Por dieciocho: treinta y cinco mil cien. El kernel dice... treinta y cinco mil cien. EXACTO. Aprobado.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "sk-finish",
+          "settle": 2200
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-extrude",
+          "settle": 2200
+        },
+        {
+          "type": "fill",
+          "testid": "input-altura",
+          "text": "18",
+          "settle": 1800
+        },
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1100
+        },
+        {
+          "type": "probe",
+          "label": "examen-U"
+        }
+      ],
+      "check": {
+        "js": "inv && Math.abs(inv.vol_kernel - 35100) < 1",
+        "desc": "el canal U = 35,100 mm³ EXACTOS — examen aprobado"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "¿Viste lo que acaba de pasar? Ese número exacto DEMUESTRA que dominas la cadena completa: leíste el plano, croquizaste por cotas, restringiste, extruiste... y la masa salió clavada. No hay suerte que produzca un volumen exacto. Solo entendimiento.",
+      "gestos": [
+        {
+          "type": "orbit",
+          "from": [
+            1150,
+            610
+          ],
+          "to": [
+            900,
+            530
+          ],
+          "settle": 1500
+        },
+        {
+          "type": "wait",
+          "ms": 2600
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "El examen completo son tres piezas así, contra reloj, cada una más recia: perfiles, revoluciones, barrenos posicionados. La calificación es binaria por pieza: masa dentro del uno por ciento, o de vuelta al plano. Como el CSWA... pero con un juez incorruptible.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 3200
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Mira el camino: empezaste con una placa de cien por sesenta... y hoy lees planos con tolerancias geométricas, invocas tornillos de norma, explotas ensambles y apruebas exámenes por masa exacta. CINCUENTA Y NUEVE lecciones. El libro está completo — y tú ya no eres el mismo. El taller te espera. Nos vemos en La Forja.",
+      "gestos": [
+        {
+          "type": "view",
+          "name": "iso",
+          "settle": 1000
+        },
+        {
+          "type": "orbit",
+          "from": [
+            950,
+            560
+          ],
+          "to": [
+            1160,
+            660
+          ],
+          "settle": 1500
+        }
+      ]
+    }
+  ]
+}
