@@ -23,7 +23,8 @@ import { useEffect, useMemo, useRef, useState, useCallback, createContext, useCo
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube } from '@react-three/drei';
+import { estudioVientoSupersonico, type VientoSuperResultado } from '../sim/viento'; // Escuela AERO — Estudio Viento
+import { OrbitControls, Environment, Grid, ContactShadows, GizmoHelper, GizmoViewcube, TransformControls } from '@react-three/drei';
 import ShortcutOverlay from '../../components/ShortcutOverlay';
 const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación del ciclo de inyección (chunk aparte)
 const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
@@ -1978,6 +1979,109 @@ function GearboxMotion({ data, playing, speed, colors, hidden, clip }: {
  * arrastras, desactiva el OrbitControls. Sin estado por-frame: muta refs y solo
  * confirma el offset al soltar.
  */
+// ── ESTUDIO VIENTO: overlay de las DOS MANOS del aire sobre la pieza real ──
+// Presión (⊥ a las caras, cian), cortante (tangente, ámbar, τ decayendo) y la
+// onda de choque (β real) — todo en el marco medido de la cuña (bbox).
+function VientoArrow({ from, dir, len, color, r = 0.9 }: {
+  from: THREE.Vector3; dir: THREE.Vector3; len: number; color: string; r?: number;
+}) {
+  const quat = useMemo(
+    () => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize()),
+    [dir],
+  );
+  const shaft = Math.max(len * 0.6, len - r * 2.4);
+  return (
+    <group position={from} quaternion={quat}>
+      <mesh position={[0, shaft / 2, 0]}>
+        <cylinderGeometry args={[r * 0.32, r * 0.32, shaft, 8]} />
+        <meshStandardMaterial color="#0a0f16" emissive={color} emissiveIntensity={1.7} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, shaft + r * 1.1, 0]}>
+        <coneGeometry args={[r * 0.85, r * 2.2, 10]} />
+        <meshStandardMaterial color="#0a0f16" emissive={color} emissiveIntensity={2.1} toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function VientoOverlay({ bbox, r, showP, showTau, showShock }: {
+  bbox: { center: number[]; half: number[] };
+  r: VientoSuperResultado; showP: boolean; showTau: boolean; showShock: boolean;
+}) {
+  // marco de la cuña medido del bbox: cuerda = eje de mayor span, espesor = menor.
+  const { eChord, eThick, eDepth, ci, ti, halfC, halfT, halfD, C } = useMemo(() => {
+    const spans = bbox.half.map((h) => h * 2);
+    let ci = 0, ti = 0;
+    for (let k = 1; k < 3; k++) { if (spans[k] > spans[ci]) ci = k; if (spans[k] < spans[ti]) ti = k; }
+    if (ti === ci) ti = (ci + 1) % 3;
+    const di = 3 - ci - ti;
+    const e = (i: number) => { const v = new THREE.Vector3(); v.setComponent(i, 1); return v; };
+    return {
+      eChord: e(ci), eThick: e(ti), eDepth: e(di), ci, ti,
+      halfC: bbox.half[ci], halfT: bbox.half[ti], halfD: bbox.half[di],
+      C: new THREE.Vector3(bbox.center[0], bbox.center[1], bbox.center[2]),
+    };
+  }, [bbox]);
+
+  const delta = (r.deltaDeg * Math.PI) / 180;
+  const beta = (r.betaDeg * Math.PI) / 180;
+  const cosD = Math.cos(delta), sinD = Math.sin(delta);
+  const arrowLen = Math.max(halfC, halfT, halfD) * 0.42;
+  const rad = arrowLen * 0.18;
+  const apex = C.clone().addScaledVector(eChord, -halfC); // borde de ataque
+
+  // muestreo de arrows a lo largo de la cuerda (una fila por cara, mid-span)
+  const N = 6;
+  const rows = useMemo(() => {
+    const P: { from: THREE.Vector3; dir: THREE.Vector3 }[] = [];
+    const Tw: { from: THREE.Vector3; dir: THREE.Vector3; len: number }[] = [];
+    for (const s of [1, -1]) {
+      const nOut = eChord.clone().multiplyScalar(-sinD).addScaledVector(eThick, s * cosD).normalize();
+      const tDown = eChord.clone().multiplyScalar(cosD).addScaledVector(eThick, s * sinD).normalize();
+      for (let i = 0; i < N; i++) {
+        const f = (i + 0.5) / N;
+        const surf = C.clone()
+          .addScaledVector(eChord, -halfC + f * 2 * halfC)
+          .addScaledVector(eThick, s * f * halfT);
+        // presión: empuja HACIA la cara (desde afuera) → nace fuera, apunta a −nOut
+        P.push({ from: surf.clone().addScaledVector(nOut, arrowLen * 1.05), dir: nOut.clone().multiplyScalar(-1) });
+        // cortante τ=431·s^-0.2 (decae): flecha tangente aguas abajo, largo ∝ τ
+        const sMm = Math.max(1e-3, f * (2 * halfC) / Math.cos(delta));
+        const tau = Math.pow(sMm, -0.2);
+        const tauLen = arrowLen * (0.45 + 0.9 * (tau / Math.pow((2 * halfC) * 0.08, -0.2)));
+        Tw.push({ from: surf.clone().addScaledVector(nOut, arrowLen * 0.12).addScaledVector(eDepth, halfD * 0.55), dir: tDown, len: Math.min(tauLen, arrowLen * 1.4) });
+      }
+    }
+    return { P, Tw };
+  }, [eChord, eThick, eDepth, halfC, halfT, halfD, cosD, sinD, delta, arrowLen, C]);
+
+  // onda de choque: dos hojas desde el borde de ataque a ±β del flujo
+  const shockQuats = useMemo(() => [1, -1].map((s) => {
+    const shockDir = eChord.clone().multiplyScalar(Math.cos(beta)).addScaledVector(eThick, s * Math.sin(beta)).normalize();
+    // plano cuyo +X local = shockDir, +Z local = eDepth
+    const m = new THREE.Matrix4().makeBasis(shockDir, eDepth.clone().cross(shockDir).normalize(), eDepth);
+    return { q: new THREE.Quaternion().setFromRotationMatrix(m), dir: shockDir };
+  }), [eChord, eThick, eDepth, beta]);
+
+  return (
+    <group>
+      {showP && rows.P.map((a, i) => (
+        <VientoArrow key={`p${i}`} from={a.from} dir={a.dir} len={arrowLen} color="#46C2FF" r={rad} />
+      ))}
+      {showTau && rows.Tw.map((a, i) => (
+        <VientoArrow key={`t${i}`} from={a.from} dir={a.dir} len={a.len} color="#FDB813" r={rad * 0.72} />
+      ))}
+      {showShock && shockQuats.map((sq, i) => (
+        <mesh key={`s${i}`} position={apex.clone().addScaledVector(sq.dir, halfC * 1.1)} quaternion={sq.q}>
+          <planeGeometry args={[halfC * 2.4, halfD * 2.6]} />
+          <meshBasicMaterial color="#FF7A3C" transparent opacity={0.16} side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function SectionGizmo({ bbox, axis, flip, offset, setOffset, clip }: {
   bbox: { center: number[]; half: number[] };
   axis: 'x' | 'y' | 'z'; flip: boolean; offset: number;
@@ -3336,6 +3440,17 @@ export default function ForgeBRepStudio() {
   const feaDirRef = useRef<[number, number, number]>([0, 0, -1]);
   const feaSigRef = useRef<string>('');
   const [feaLiveMs, setFeaLiveMs] = useState<number | null>(null);
+  // ── ESTUDIO VIENTO (aerodinámica supersónica sobre la pieza — Escuela AERO) ──
+  // Hermano del FEA: el alumno construye la cuña y el estudio la analiza. El
+  // semiángulo δ se MIDE de la pieza (bbox); presión, choque y arrastre salen de
+  // la física real (src/forja/sim/viento.ts). Overlay: flechas p/τ + onda de choque.
+  const [vientoOn, setVientoOn] = useState(false);
+  const [vientoMach, setVientoMach] = useState(2.0);
+  const [vientoAltM, setVientoAltM] = useState(0);      // altitud ISA [m]
+  const [vientoNPan, setVientoNPan] = useState(6);      // paneles de integración por cara
+  const [vientoShowP, setVientoShowP] = useState(true);
+  const [vientoShowTau, setVientoShowTau] = useState(false);
+  const [vientoShowShock, setVientoShowShock] = useState(false);
   // ── DISEÑO GENERATIVO (optimización topológica) ──
   const [genResult, setGenResult] = useState<TopOptResult | null>(null);
   const [genBusy, setGenBusy] = useState(false);
@@ -4272,6 +4387,22 @@ export default function ForgeBRepStudio() {
     if (!Number.isFinite(mnx)) return null;
     return { center: [(mnx + mxx) / 2, (mny + mxy) / 2, (mnz + mxz) / 2], half: [(mxx - mnx) / 2 || 1, (mxy - mny) / 2 || 1, (mxz - mnz) / 2 || 1] };
   }, [result, moldParts]);
+
+  // ── ESTUDIO VIENTO: mide el semiángulo δ de la pieza y corre la física real ──
+  // δ = atan( (menor span / 2) / (mayor span) ): para la cuña dibujada (cuerda ≫
+  // espesor) esto da su semiángulo. La cuerda del ANÁLISIS es el mayor span en mm
+  // → m. Todo emerge del kernel + viento.ts (choque θ-β-M, ISA, integral ec. 1.8).
+  const vientoResult = useMemo<VientoSuperResultado | null>(() => {
+    if (!vientoOn || !meshBBox) return null;
+    const spans = meshBBox.half.map((h) => h * 2);
+    const cuerdaMM = Math.max(...spans);
+    const espesorMM = Math.min(...spans);
+    const delta = Math.atan((espesorMM / 2) / cuerdaMM);
+    if (!(delta > 0.001) || !(delta < Math.PI / 4)) return null;
+    return estudioVientoSupersonico({
+      delta, cuerdaM: cuerdaMM / 1000, mach: vientoMach, hM: vientoAltM, nPaneles: Math.max(2, Math.round(vientoNPan)),
+    });
+  }, [vientoOn, meshBBox, vientoMach, vientoAltM, vientoNPan]);
   // Plano de recorte ESTABLE (objeto único): la flecha del SectionGizmo lo MUTA en
   // mundo cada frame (no recalculamos por estado → arrastre fluido sin re-render).
   // Plano de recorte SIEMPRE presente (constante +1e6 = lejísimos, no corta nada)
@@ -5299,6 +5430,27 @@ export default function ForgeBRepStudio() {
       camLaserAuto: (n?: number) => genCamLaser(n),   // nesting + corte láser de la pieza plana
       camPrintAuto: () => genCamPrint(),              // slicer FDM completo
       setWorkspace: (w: 'diseno' | 'manufactura' | 'simulacion') => setWorkspace(w),  // pestaña de la toolbar
+      // ── ESTUDIO VIENTO (Escuela AERO) — drivers + resultado para las lecciones ──
+      setViento: (on: boolean) => setVientoOn(on),
+      setVientoMach: (m: number) => setVientoMach(m),
+      setVientoAlt: (h: number) => setVientoAltM(Math.max(0, Math.min(20000, h))),
+      setVientoPaneles: (n: number) => setVientoNPan(Math.max(2, Math.round(n))),
+      setVientoShow: (kind: 'p' | 'tau' | 'shock', on: boolean) => {
+        if (kind === 'p') setVientoShowP(on);
+        else if (kind === 'tau') setVientoShowTau(on);
+        else if (kind === 'shock') setVientoShowShock(on);
+      },
+      get viento() {
+        return vientoResult ? {
+          deltaDeg: vientoResult.deltaDeg, betaDeg: vientoResult.betaDeg,
+          p2_Pa: vientoResult.p2, pInf_Pa: vientoResult.pInf, rho: vientoResult.rho,
+          q_Pa: vientoResult.q, V: vientoResult.V, aSonido: vientoResult.aSonido,
+          Dp: vientoResult.Dp, Df: vientoResult.Df, D: vientoResult.D, cd: vientoResult.cd,
+          fraccionPresion: vientoResult.fraccionPresion, nPaneles: vientoResult.nPaneles,
+          mach: vientoResult.mach, hM: vientoResult.hM,
+          showP: vientoShowP, showTau: vientoShowTau, showShock: vientoShowShock,
+        } : null;
+      },
       // Patrón circular del componente ACTIVO (equivale a mover los controles del panel):
       // count copias alrededor de axis. c6t3: rayos del volante ×3 alrededor de Z.
       setActiveCompPattern: (count: number, axis?: 'x' | 'y' | 'z') => {
@@ -5379,7 +5531,8 @@ export default function ForgeBRepStudio() {
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
-  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts, gbBodyGeos, gbHidden, gbColors]);
+  }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts, gbBodyGeos, gbHidden, gbColors,
+   vientoResult, vientoShowP, vientoShowTau, vientoShowShock]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -5570,6 +5723,11 @@ export default function ForgeBRepStudio() {
             {sectionOn && meshBBox && !genResult && !(gbMotion && gbParts) && (
               <SectionGizmo bbox={meshBBox} axis={sectionAxis} flip={sectionFlip}
                 offset={sectionOffset} setOffset={setSectionOffset} clip={sectionClip} />
+            )}
+            {/* ESTUDIO VIENTO: flechas p/τ + onda de choque SOBRE la pieza real */}
+            {vientoOn && vientoResult && meshBBox && (
+              <VientoOverlay bbox={meshBBox} r={vientoResult}
+                showP={vientoShowP} showTau={vientoShowTau} showShock={vientoShowShock} />
             )}
           </group>
         </CadViewport>
@@ -6333,6 +6491,59 @@ export default function ForgeBRepStudio() {
               </button>
             )}
             {feaErr && <div className="fb-sim-err" data-testid="fea-error">{feaErr}</div>}
+
+            {/* ── ESTUDIO VIENTO (Escuela AERO): la pieza en un túnel supersónico ── */}
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${GOLD}22` }}>
+              <p className="fb-hint-txt">
+                Túnel supersónico sobre TU pieza: presión y cortante (las dos manos
+                del aire) + onda de choque real. D′ = ∮(−p·n̂ + τ·t̂)·x̂ ds.
+              </p>
+              <button className="fb-fea-run" data-testid="btn-viento"
+                onClick={() => setVientoOn((v) => !v)}
+                style={vientoOn ? { background: GOLD, color: '#1a1206', fontWeight: 700 } : undefined}>
+                {vientoOn ? '✈ Estudio VIENTO activo' : '✈ Estudio de VIENTO (aerodinámica)'}
+              </button>
+              {vientoOn && vientoResult && (
+                <>
+                  <Dim label="Mach" value={vientoMach} unit="" min={1.2} max={5} step={0.1}
+                    testid="input-mach" onChange={(v) => setVientoMach(v)} />
+                  <Dim label="Altitud" value={vientoAltM} unit="m" min={0} max={20000} step={500}
+                    testid="input-altitud" onChange={(v) => setVientoAltM(v)} />
+                  <Dim label="Paneles" value={vientoNPan} unit="" min={2} max={400} step={2}
+                    testid="input-paneles-viento" onChange={(v) => setVientoNPan(Math.round(v))} />
+                  <div className="fb-sim-bc" style={{ marginTop: 6 }}>
+                    <div className="fb-sim-bc-row">
+                      <button className="fb-pick-btn" data-testid="chk-viento-p"
+                        onClick={() => setVientoShowP((v) => !v)}
+                        style={vientoShowP ? { background: '#1E6FB033' } : undefined}>
+                        {vientoShowP ? '◉' : '○'} Presión p (⊥)
+                      </button>
+                      <button className="fb-pick-btn" data-testid="chk-viento-tau"
+                        onClick={() => setVientoShowTau((v) => !v)}
+                        style={vientoShowTau ? { background: `${GOLD}33` } : undefined}>
+                        {vientoShowTau ? '◉' : '○'} Cortante τ
+                      </button>
+                    </div>
+                    <div className="fb-sim-bc-row">
+                      <button className="fb-pick-btn" data-testid="chk-viento-shock"
+                        onClick={() => setVientoShowShock((v) => !v)}
+                        style={vientoShowShock ? { background: '#FF7A3C33' } : undefined}>
+                        {vientoShowShock ? '◉' : '○'} Onda de choque (β={vientoResult.betaDeg.toFixed(1)}°)
+                      </button>
+                    </div>
+                  </div>
+                  <div className="fb-row"><span className="rk">δ medido</span><span className="rv" data-testid="viento-delta">{vientoResult.deltaDeg.toFixed(1)}°</span></div>
+                  <div className="fb-row"><span className="rk">p tras choque</span><span className="rv">{(vientoResult.p2 / 1e5).toFixed(3)}×10⁵ Pa</span></div>
+                  <div className="fb-row"><span className="rk">q∞</span><span className="rv">{(vientoResult.q / 1e5).toFixed(3)}×10⁵ Pa</span></div>
+                  <div className="fb-row hi"><span className="rk">D′ (arrastre)</span><span className="rv" data-testid="viento-drag">{(vientoResult.D / 1e4).toFixed(3)}×10⁴ N/m</span></div>
+                  <div className="fb-row hi"><span className="rk">c_d</span><span className="rv" data-testid="viento-cd">{vientoResult.cd.toFixed(4)}</span></div>
+                  <div className="fb-row"><span className="rk">presión / fricción</span><span className="rv">{(vientoResult.fraccionPresion * 100).toFixed(0)}% / {((1 - vientoResult.fraccionPresion) * 100).toFixed(0)}%</span></div>
+                </>
+              )}
+              {vientoOn && !vientoResult && (
+                <div className="fb-sim-err" data-testid="viento-error">Dibuja y extruye una cuña primero (el estudio mide su semiángulo).</div>
+              )}
+            </div>
 
             {/* ── DISEÑO GENERATIVO: misma cara fija + carga; vacía hasta la forma óptima ── */}
             <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${GOLD}22` }}>

@@ -4,116 +4,83 @@
  "unidad": 1,
  "n": 1,
  "titulo": "Las dos manos del aire: presión y cortante",
- "subtitulo": "no hay magia · TODA fuerza aerodinámica es ∮(p, τ) · Anderson Ejemplo 1.1 en vivo",
+ "subtitulo": "dibuja la cuña · ponla en el túnel supersónico · no hay tercera fuerza · Anderson Ej. 1.1",
  "fuente": "Anderson, Fundamentals of Aerodynamics 6ª ed., §1.5 y Ejemplo 1.1 (cuña 5° a Mach 2)",
- "descripcion": "El aire no tiene imanes ni trucos: solo sabe EMPUJARTE perpendicular (presión) y RASPARTE tangente (cortante). Sustentación, arrastre, momentos — todo es la integral de esas dos manos sobre la superficie. Aquí integras el Ejemplo 1.1 de Anderson por paneles hasta clavar el número del libro.",
- "url": "physics.html#fluids/aero-fuerzas",
+ "descripcion": "El aire solo sabe hacer DOS cosas: empujarte perpendicular (presión) y rasparte tangente (cortante). Sustentación, arrastre — todo es la integral de esas dos manos. Aquí DIBUJAS la cuña del Ejemplo 1.1 en La Forja, la metes al túnel supersónico del CAD y ves la integral clavarse en el número del libro.",
+ "url": "forja-brep.html",
  "pasos": [
   {
    "id": "p01",
-   "dice": "El aire no tiene manos mágicas. Solo sabe hacerte DOS cosas: empujarte perpendicular a la piel — eso es la presión — y rasparte tangente a la piel — eso es el cortante. La sustentación, el arrastre, todo lo que sientes al volar, es la INTEGRAL de esas dos manos sobre la superficie. Hoy lo compruebas con el ejemplo uno punto uno de Anderson.",
-   "gestos": [
-    {
-     "type": "wait",
-     "ms": 1600
-    }
-   ],
-   "check": {
-    "desc": "el lab de fuerzas está montado",
-    "js": "window.__aeroLab && window.__aeroLab.estado.modulo === 'aero-fuerzas'"
-   }
+   "dice": "El aire no tiene manos mágicas. Solo sabe hacerte dos cosas: empujarte perpendicular a la piel — eso es la presión — y rasparte tangente a la piel — eso es el cortante. La sustentación, el arrastre, todo, es la integral de esas dos manos sobre tu pieza. Hoy dibujas la cuña del ejemplo uno punto uno de Anderson y la metes al túnel.",
+   "gestos": [ { "type": "wait", "ms": 1600 } ]
   },
   {
    "id": "p02",
-   "dice": "Esta cuña de cinco grados vuela a Mach dos al nivel del mar. Prende la primera mano: la presión. Cada flecha azul empuja perpendicular a su cara — y fíjate que TODAS miden lo mismo, porque detrás del choque la presión es constante: ciento treinta y un mil pascales.",
+   "dice": "Dibujo la cuña del ejemplo a su tamaño real: cuerda de dos metros, borde de ataque afilado. En el plano equis ye, con la herramienta de línea, tres tramos por cotas: la cara de arriba sube a cinco grados, cierro el talón, y la cara de abajo regresa al filo. La acoto con longitud y ángulo, nunca a ojo.",
    "gestos": [
-    {
-     "type": "tclick",
-     "testid": "chk-presion"
-    }
-   ],
-   "check": {
-    "desc": "presión visible con p_cara = 1.31×10⁵ Pa (libro)",
-    "js": "window.__aeroLab.estado.presion === true && window.__aeroLab.estado.pCara === 131000"
-   }
+    { "type": "tclick", "testid": "btn-sketch", "settle": 1200 },
+    { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1300 },
+    { "type": "tclick", "testid": "sk-tool-line", "settle": 500 },
+    { "type": "fill", "testid": "sk-dyn-a", "text": "-1000" },
+    { "type": "fill", "testid": "sk-dyn-b", "text": "0" },
+    { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+    { "type": "fill", "testid": "sk-dyn-a", "text": "2007.64" },
+    { "type": "fill", "testid": "sk-dyn-b", "text": "5" },
+    { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+    { "type": "fill", "testid": "sk-dyn-a", "text": "350" },
+    { "type": "fill", "testid": "sk-dyn-b", "text": "270" },
+    { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+    { "type": "fill", "testid": "sk-dyn-a", "text": "2007.64" },
+    { "type": "fill", "testid": "sk-dyn-b", "text": "175" },
+    { "type": "tclick", "testid": "sk-dyn-go", "settle": 600 }
+   ]
   },
   {
    "id": "p03",
-   "dice": "¿Y quién subió la presión? Esta señora: la onda de choque. A Mach dos, una cuña de cinco grados la ancla a treinta y cuatro punto tres grados — no lo dibujamos bonito, lo CALCULAMOS con la relación theta beta Mach.",
+   "dice": "Cierro el croquis y lo extruyo ochocientos milímetros de envergadura. Ahí está: mi cuña, sólida, con volumen exacto que el kernel verifica. Es MI pieza, no un dibujito — la voy a analizar como si fuera un ala.",
    "gestos": [
-    {
-     "type": "tclick",
-     "testid": "chk-choque"
-    }
+    { "type": "tclick", "testid": "sk-finish", "settle": 1600 },
+    { "type": "tclick", "testid": "btn-extrude", "settle": 1600 },
+    { "type": "fill", "testid": "input-altura", "text": "800", "settle": 1800 }
    ],
-   "check": {
-    "desc": "choque visible en β≈34.3° (θ-β-M, carta NACA 1135)",
-    "js": "window.__aeroLab.estado.choque === true && Math.abs(window.__aeroLab.estado.betaDeg - 34.3) < 0.5"
-   }
+   "check": { "desc": "la cuña sólida (vol ≈ 2.8×10⁸ mm³)", "js": "inv && inv.vol_kernel > 2.7e8 && inv.vol_kernel < 2.9e8" }
   },
   {
    "id": "p04",
-   "dice": "La segunda mano: el cortante. La fricción del aire raspando la piel: tau igual a cuatrocientos treinta y uno sobre s elevado a la cero punto dos. Mira las flechas ámbar: feroces en el borde de ataque, cansadas hacia atrás — la capa límite engorda y raspa menos.",
+   "dice": "Voy a la pestaña de Simulación y prendo el estudio de Viento. El CAD MIDE el semiángulo de mi pieza: cinco grados, clavado. Ahora la meto a Mach dos al nivel del mar. Este es el mismo túnel que el análisis de esfuerzos, pero de aire.",
    "gestos": [
-    {
-     "type": "tclick",
-     "testid": "chk-cortante"
-    }
+    { "type": "tclick", "testid": "tab-simulacion", "settle": 1000 },
+    { "type": "main", "fn": "setViento", "args": [true], "settle": 400 },
+    { "type": "main", "fn": "setVientoMach", "args": [2.0], "settle": 400 },
+    { "type": "main", "fn": "setVientoAlt", "args": [0], "settle": 400 },
+    { "type": "main", "fn": "setVientoPaneles", "args": [6], "settle": 600 }
    ],
-   "check": {
-    "desc": "cortante visible, τ = 431·s^−0.2 (libro)",
-    "js": "window.__aeroLab.estado.cortante === true && window.__aeroLab.estado.tauK === 431"
-   }
+   "check": { "desc": "estudio activo, δ medido de la pieza = 5° a Mach 2", "js": "var v=window.__forgeBrep.viento; v && Math.abs(v.deltaDeg-5)<0.4 && v.mach===2" }
   },
   {
    "id": "p05",
-   "dice": "Ahora INTEGRA. Con seis paneles por cara la suma es burda: mira el arrastre en el tablero. Es la ecuación uno punto ocho del libro: D prima es la integral cerrada de menos p por n gorro más tau por t gorro, todo punto x gorro, de ese.",
+   "dice": "Prendo la primera mano: la presión. Cada flecha azul empuja perpendicular a mi cara — y todas miden lo mismo. ¿Por qué? Porque detrás de la onda de choque la presión es constante. Y no la copio del libro: el estudio la CALCULA con el salto del choque, ciento treinta y tres mil pascales, el número del ejemplo.",
    "gestos": [
-    {
-     "type": "alab",
-     "fn": "set",
-     "args": [
-      "n",
-      6
-     ]
-    }
+    { "type": "main", "fn": "setVientoShow", "args": ["p", true], "settle": 800 }
    ],
-   "check": {
-    "desc": "integrando con 6 paneles por cara",
-    "js": "window.__aeroLab.estado.n === 6"
-   }
+   "check": { "desc": "presión visible, p tras choque ≈ 1.31×10⁵ Pa (emerge del choque)", "js": "var v=window.__forgeBrep.viento; v && v.showP===true && Math.abs(v.p2_Pa-1.31e5)/1.31e5<0.03" }
   },
   {
    "id": "p06",
-   "dice": "Súbele a cuatrocientos paneles. La suma converge y se CLAVA en el número que Anderson publicó: uno punto veinticuatro por diez a la cuatro newtons por metro. El kernel no miente y la física tampoco.",
+   "dice": "¿Y quién subió la presión? La onda de choque. A Mach dos, mi cuña de cinco grados la ancla a treinta y cuatro punto tres grados — no la dibujo bonita, la calculo con la relación theta beta Mach. Y la segunda mano, el cortante: la fricción raspando, feroz en el filo y cansada atrás. Tau igual a cuatrocientos treinta y uno sobre ese a la cero punto dos.",
    "gestos": [
-    {
-     "type": "alab",
-     "fn": "set",
-     "args": [
-      "n",
-      400
-     ]
-    }
+    { "type": "main", "fn": "setVientoShow", "args": ["shock", true], "settle": 700 },
+    { "type": "main", "fn": "setVientoShow", "args": ["tau", true], "settle": 800 }
    ],
-   "check": {
-    "desc": "D′ = 1.24×10⁴ N/m (libro, ±1%)",
-    "js": "Math.abs(window.__aeroLab.estado.D - 12400) < 150"
-   }
+   "check": { "desc": "choque β≈34.3° + cortante visibles", "js": "var v=window.__forgeBrep.viento; v && v.showShock===true && v.showTau===true && Math.abs(v.betaDeg-34.3)<0.6" }
   },
   {
    "id": "p07",
-   "dice": "El reparto te enseña qué domina: ochenta y cinco por ciento es PRESIÓN — la onda de choque cobrando peaje — y quince por ciento fricción. Coeficiente de arrastre: cero punto cero veintidós. Y no hubo tercera fuerza: solo p y tau. Nunca la habrá.",
+   "dice": "Ahora INTEGRO. Con seis paneles la suma es burda; la subo a cuatrocientos y se clava en el número que Anderson publicó: uno punto tres por diez a la cuatro newtons por metro, coeficiente de arrastre cero punto cero veintitrés. El reparto: ochenta y cinco por ciento presión — el choque cobrando peaje — quince por ciento fricción. Y no hubo tercera fuerza. Solo p y tau. Nunca la habrá.",
    "gestos": [
-    {
-     "type": "wait",
-     "ms": 1200
-    }
+    { "type": "main", "fn": "setVientoPaneles", "args": [400], "settle": 1200 }
    ],
-   "check": {
-    "desc": "cd = 0.022 y 85/15 presión/fricción (libro)",
-    "js": "Math.abs(window.__aeroLab.estado.cd - 0.022) < 0.0015 && window.__aeroLab.estado.fraccionPresion > 0.83 && window.__aeroLab.estado.fraccionPresion < 0.87"
-   }
+   "check": { "desc": "D′≈1.3×10⁴, cd≈0.023, 85/15 (Ej. 1.1 emergente)", "js": "var v=window.__forgeBrep.viento; v && v.nPaneles===400 && Math.abs(v.cd-0.022)<0.003 && v.fraccionPresion>0.82 && v.fraccionPresion<0.88" }
   }
  ]
 }

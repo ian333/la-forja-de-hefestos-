@@ -87,8 +87,10 @@ const SOFTGL = process.env.SOFTGL === '1';
     await page.goto(TARGET, { waitUntil: 'domcontentloaded', timeout: 60000 });
     // El doc por defecto arranca VACÍO (sin sólido) → `ready` (build exitoso) jamás
     // llega; el kernel cargado se detecta por ready O por el error de "sin sólido".
-    // Lecciones AERO: el lab publica window.__aeroLab (no hay kernel B-Rep que esperar).
-    const READY = lec.curso === 'aero'
+    // El ready-wait depende de la PÁGINA (no del curso): las lecciones del CAD
+    // (forja-brep.html) esperan el kernel B-Rep; las de labs (physics.html)
+    // esperan window.__aeroLab. La escuela AERO vive en el CAD por defecto.
+    const READY = /physics\.html/.test(TARGET)
       ? 'window.__aeroLab && !!window.__aeroLab.estado'
       : 'window.__forgeBrep && (window.__forgeBrep.ready || !!window.__forgeBrep.error)';
     await page.waitForFunction(READY, { timeout: 60000 });
