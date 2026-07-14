@@ -92,7 +92,7 @@ for L in "${LECCIONES[@]}"; do
   if [ "$OK" = "1" ]; then
     node scripts/escuela/ensamblar-clase.cjs "dist-video/escuela/$L-v1" \
       "dist-video/$L-narracion" "dist-video/escuela/${NOMBRE[$L]}.mp4" 2>&1 | tail -1
-    cp "dist-video/escuela/${NOMBRE[$L]}.mp4" /mnt/c/Users/sebas/Downloads/ && echo "ENTREGADO ${NOMBRE[$L]}"
+    cp "dist-video/escuela/${NOMBRE[$L]}.mp4" "${ENTREGA_DIR:-/mnt/c/Users/sebas/Downloads}/" && echo "ENTREGADO ${NOMBRE[$L]} → ${ENTREGA_DIR:-/mnt/c/Users/sebas/Downloads}"
   else
     echo "✗✗ $L NO PASÓ — requiere iteración"
   fi
