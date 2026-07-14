@@ -1979,102 +1979,263 @@ function GearboxMotion({ data, playing, speed, colors, hidden, clip }: {
  * arrastras, desactiva el OrbitControls. Sin estado por-frame: muta refs y solo
  * confirma el offset al soltar.
  */
-// ── ESTUDIO VIENTO: overlay de las DOS MANOS del aire sobre la pieza real ──
-// Presión (⊥ a las caras, cian), cortante (tangente, ámbar, τ decayendo) y la
-// onda de choque (β real) — todo en el marco medido de la cuña (bbox).
-function VientoArrow({ from, dir, len, color, r = 0.9 }: {
-  from: THREE.Vector3; dir: THREE.Vector3; len: number; color: string; r?: number;
-}) {
-  const quat = useMemo(
-    () => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize()),
-    [dir],
-  );
-  const shaft = Math.max(len * 0.6, len - r * 2.4);
-  return (
-    <group position={from} quaternion={quat}>
-      <mesh position={[0, shaft / 2, 0]}>
-        <cylinderGeometry args={[r * 0.32, r * 0.32, shaft, 8]} />
-        <meshStandardMaterial color="#0a0f16" emissive={color} emissiveIntensity={1.7} toneMapped={false} />
-      </mesh>
-      <mesh position={[0, shaft + r * 1.1, 0]}>
-        <coneGeometry args={[r * 0.85, r * 2.2, 10]} />
-        <meshStandardMaterial color="#0a0f16" emissive={color} emissiveIntensity={2.1} toneMapped={false} />
-      </mesh>
-    </group>
-  );
+// ── ESTUDIO VIENTO: post-procesador CFD sobre la pieza (no glifos: CAMPO real) ──
+// Flujo supersónico sobre la cuña: streamlines que se DOBLAN y COMPRIMEN al cruzar
+// la onda de choque (β real θ-β-M) + campo denso de partículas advectadas (schlieren:
+// se agolpan donde el flujo frena tras el choque) + Cp pintado sobre las caras.
+// Todo en coords locales de la cuña (s a lo largo de la cuerda desde el filo, n ⊥).
+
+// paleta de presión (Cp): azul frío (baja p / expansión) → blanco → ámbar (alta p / compresión)
+function cpColor(cp: number, out: THREE.Color) {
+  const t = Math.max(-1, Math.min(1, cp / 0.35));
+  if (t >= 0) out.setRGB(0.25 + 0.75 * t, 0.35 + 0.4 * t, 0.55 - 0.35 * t); // → ámbar cálido
+  else out.setRGB(0.25 + 0.35 * t, 0.45 + 0.35 * t, 0.75 + 0.25 * t);       // → azul frío
+  return out;
 }
 
-function VientoOverlay({ bbox, r, showP, showTau, showShock }: {
-  bbox: { center: number[]; half: number[] };
-  r: VientoSuperResultado; showP: boolean; showTau: boolean; showShock: boolean;
-}) {
-  // marco de la cuña medido del bbox: cuerda = eje de mayor span, espesor = menor.
-  const { eChord, eThick, eDepth, ci, ti, halfC, halfT, halfD, C } = useMemo(() => {
+// ── CALIDAD ADAPTABLE: correr LIGERO en PCs viejas de LATAM, ULTRA en las nuevas ──
+// La física es idéntica y baratísima (CPU); solo escala cuántas partículas dibujo
+// y si las animo. Un solo draw-call en cualquier tier. Sin EffectComposer (el
+// viewport del CAD lo prohíbe): el glow del modo Ultra se finge con sprite aditivo.
+let _dotTex: THREE.Texture | null = null;
+function dotSprite(): THREE.Texture {
+  if (_dotTex) return _dotTex;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d')!;
+  const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.45, 'rgba(255,255,255,0.5)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  _dotTex = new THREE.CanvasTexture(c); return _dotTex;
+}
+export interface VientoQ { particles: number; streamlines: number; animate: boolean; throttle: number; glow: boolean; tier: 0 | 1 | 2 }
+const VIENTO_TIERS: Record<0 | 1 | 2, Omit<VientoQ, 'tier'>> = {
+  0: { particles: 650,  streamlines: 32,  animate: false, throttle: 3, glow: false }, // PC vieja / software
+  1: { particles: 2600, streamlines: 64,  animate: true,  throttle: 1, glow: false }, // laptop decente
+  2: { particles: 6000, streamlines: 100, animate: true,  throttle: 1, glow: true },  // GPU discreta
+};
+// detecta el tier leyendo el renderer real de WebGL (+ núcleos). SwiftShader/llvmpipe/
+// Intel viejo → 0; GPU discreta (NVIDIA/AMD/Apple/Adreno alto) → 2; resto → 1.
+function detectVientoTier(gl: THREE.WebGLRenderer): 0 | 1 | 2 {
+  try {
+    const ctx = gl.getContext();
+    const dbg = ctx.getExtension('WEBGL_debug_renderer_info');
+    const r = (dbg ? String(ctx.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : '').toLowerCase();
+    if (!r || /swiftshader|llvmpipe|software|microsoft basic/.test(r)) return 0;
+    const cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 4;
+    if (/nvidia|geforce|rtx|radeon|\bamd\b|apple m\d|adreno 7|mali-g7/.test(r) && cores >= 8) return 2;
+    if (/intel.*(hd|uhd) graphics (4|5|6)\d\d\b/.test(r) || cores <= 4) return 0; // integradas viejas
+    return 1;
+  } catch { return 1; }
+}
+function resolveVientoQ(gl: THREE.WebGLRenderer, calidad: 'auto' | 'ligero' | 'ultra'): VientoQ {
+  const tier: 0 | 1 | 2 = calidad === 'ligero' ? 0 : calidad === 'ultra' ? 2 : detectVientoTier(gl);
+  return { ...VIENTO_TIERS[tier], tier };
+}
+
+interface WedgeFrame {
+  apex: THREE.Vector3; eChord: THREE.Vector3; eThick: THREE.Vector3; eDepth: THREE.Vector3;
+  chord: number; halfT: number; halfD: number; tanD: number; tanB: number; cpFace: number;
+}
+function useWedgeFrame(bbox: { center: number[]; half: number[] }, r: VientoSuperResultado): WedgeFrame {
+  return useMemo(() => {
     const spans = bbox.half.map((h) => h * 2);
     let ci = 0, ti = 0;
     for (let k = 1; k < 3; k++) { if (spans[k] > spans[ci]) ci = k; if (spans[k] < spans[ti]) ti = k; }
     if (ti === ci) ti = (ci + 1) % 3;
     const di = 3 - ci - ti;
     const e = (i: number) => { const v = new THREE.Vector3(); v.setComponent(i, 1); return v; };
+    const C = new THREE.Vector3(bbox.center[0], bbox.center[1], bbox.center[2]);
+    const eChord = e(ci);
+    const delta = (r.deltaDeg * Math.PI) / 180, beta = (r.betaDeg * Math.PI) / 180;
     return {
-      eChord: e(ci), eThick: e(ti), eDepth: e(di), ci, ti,
-      halfC: bbox.half[ci], halfT: bbox.half[ti], halfD: bbox.half[di],
-      C: new THREE.Vector3(bbox.center[0], bbox.center[1], bbox.center[2]),
+      apex: C.clone().addScaledVector(eChord, -bbox.half[ci]),
+      eChord, eThick: e(ti), eDepth: e(di),
+      chord: spans[ci], halfT: bbox.half[ti], halfD: bbox.half[di],
+      tanD: Math.tan(delta), tanB: Math.tan(beta),
+      cpFace: (r.p2 - r.pInf) / r.q, // Cp de las caras (compresión)
     };
-  }, [bbox]);
+  }, [bbox, r]);
+}
 
-  const delta = (r.deltaDeg * Math.PI) / 180;
-  const beta = (r.betaDeg * Math.PI) / 180;
-  const cosD = Math.cos(delta), sinD = Math.sin(delta);
-  const arrowLen = Math.max(halfC, halfT, halfD) * 0.42;
-  const rad = arrowLen * 0.18;
-  const apex = C.clone().addScaledVector(eChord, -halfC); // borde de ataque
+// posición mundo de un punto local (s desde el filo, n ⊥, z envergadura)
+function wedgeToWorld(f: WedgeFrame, s: number, n: number, z: number, out: THREE.Vector3) {
+  return out.copy(f.apex).addScaledVector(f.eChord, s).addScaledVector(f.eThick, n).addScaledVector(f.eDepth, z);
+}
+// altura n de una línea de corriente sembrada a n0 (constante ahí), tras cruzar el choque
+function streamN(f: WedgeFrame, n0: number, s: number): number {
+  if (Math.abs(n0) < 1e-6) return 0;
+  const sgn = Math.sign(n0);
+  const sShock = Math.abs(n0) / f.tanB;      // s donde la línea horizontal cruza el choque
+  if (s <= sShock) return n0;
+  return n0 + sgn * (s - sShock) * f.tanD;   // detrás del choque: paralela a la cara
+}
 
-  // muestreo de arrows a lo largo de la cuerda (una fila por cara, mid-span)
-  const N = 6;
-  const rows = useMemo(() => {
-    const P: { from: THREE.Vector3; dir: THREE.Vector3 }[] = [];
-    const Tw: { from: THREE.Vector3; dir: THREE.Vector3; len: number }[] = [];
-    for (const s of [1, -1]) {
-      const nOut = eChord.clone().multiplyScalar(-sinD).addScaledVector(eThick, s * cosD).normalize();
-      const tDown = eChord.clone().multiplyScalar(cosD).addScaledVector(eThick, s * sinD).normalize();
-      for (let i = 0; i < N; i++) {
-        const f = (i + 0.5) / N;
-        const surf = C.clone()
-          .addScaledVector(eChord, -halfC + f * 2 * halfC)
-          .addScaledVector(eThick, s * f * halfT);
-        // presión: empuja HACIA la cara (desde afuera) → nace fuera, apunta a −nOut
-        P.push({ from: surf.clone().addScaledVector(nOut, arrowLen * 1.05), dir: nOut.clone().multiplyScalar(-1) });
-        // cortante τ=431·s^-0.2 (decae): flecha tangente aguas abajo, largo ∝ τ
-        const sMm = Math.max(1e-3, f * (2 * halfC) / Math.cos(delta));
-        const tau = Math.pow(sMm, -0.2);
-        const tauLen = arrowLen * (0.45 + 0.9 * (tau / Math.pow((2 * halfC) * 0.08, -0.2)));
-        Tw.push({ from: surf.clone().addScaledVector(nOut, arrowLen * 0.12).addScaledVector(eDepth, halfD * 0.55), dir: tDown, len: Math.min(tauLen, arrowLen * 1.4) });
+// CAMPO DE PARTÍCULAS advectado (schlieren): se agolpan tras el choque (frenan).
+// N y animación escalan por tier (q); el sembrado y la física son idénticos.
+function VientoFlowField({ f, q }: { f: WedgeFrame; q: VientoQ }) {
+  const N = q.particles;
+  const ZPL = q.tier === 0 ? 3 : 5;
+  const sMin = -f.chord * 0.7, sMax = f.chord * 1.55;
+  const nSpread = f.halfT * 3.2 + f.chord * 0.16;
+  const seeds = useMemo(() => {
+    const a: { n0: number; z: number; ph: number; band: number }[] = [];
+    for (let i = 0; i < N; i++) {
+      const u = (i * 0.61803398875) % 1;               // secuencia áurea (uniforme, sin random)
+      let n0 = (u - 0.5) * 2 * nSpread;
+      if (Math.abs(n0) < f.halfT * 0.06) n0 += (n0 >= 0 ? 1 : -1) * f.halfT * 0.06; // evita el cuerpo
+      const z = (((i % ZPL) / Math.max(1, ZPL - 1)) - 0.5) * 2 * f.halfD * 0.92;
+      a.push({ n0, z, ph: (i * 0.7548776662) % 1, band: ((i * 13) % 7) / 7 });
+    }
+    return a;
+  }, [N, ZPL, nSpread, f.halfT, f.halfD]);
+
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+    g.boundingSphere = new THREE.Sphere(f.apex.clone(), f.chord * 3);
+    return g;
+  }, [N, f.apex, f.chord]);
+  const mat = useMemo(() => new THREE.PointsMaterial({
+    size: Math.max(f.chord * (q.glow ? 0.009 : 0.006), q.glow ? 9 : 6), sizeAttenuation: true,
+    vertexColors: true, map: dotSprite(), transparent: true, opacity: q.glow ? 0.95 : 0.85,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }), [f.chord, q.glow]);
+
+  const tRef = useRef(0); const frameRef = useRef(0);
+  const tmp = useMemo(() => new THREE.Vector3(), []);
+  const col = useMemo(() => new THREE.Color(), []);
+  const fill = (t: number) => {
+    const pos = geo.getAttribute('position') as THREE.BufferAttribute;
+    const cA = geo.getAttribute('color') as THREE.BufferAttribute;
+    const span = sMax - sMin;
+    const vAhead = f.chord * 0.42;
+    for (let i = 0; i < N; i++) {
+      const sd = seeds[i];
+      const cycle = (t * vAhead / span + sd.ph) % 1;   // fase temporal → posición s
+      const s = sMin + cycle * span;
+      const n = streamN(f, sd.n0, s);
+      const behind = s > Math.abs(sd.n0) / f.tanB && s > 0; // ¿tras el choque?
+      wedgeToWorld(f, s, n, sd.z, tmp);
+      pos.setXYZ(i, tmp.x, tmp.y, tmp.z);
+      cpColor(behind ? f.cpFace : -0.04, col);
+      const bright = behind ? 1.25 + 0.5 * sd.band : 0.5 + 0.25 * sd.band;
+      cA.setXYZ(i, col.r * bright, col.g * bright, col.b * bright);
+    }
+    pos.needsUpdate = true; cA.needsUpdate = true;
+  };
+  // modo Ligero (throttle>1 o !animate): pinta pocas veces; Ultra: cada frame.
+  useMemo(() => fill(0), [seeds, f, q.glow]); // primer llenado (también cubre el modo estático)
+  useFrame((_, dt) => {
+    if (!q.animate) return;
+    frameRef.current++;
+    if (q.throttle > 1 && frameRef.current % q.throttle !== 0) return;
+    tRef.current += Math.min(dt, 0.05) * q.throttle;
+    fill(tRef.current);
+  });
+  return <points geometry={geo} material={mat} />;
+}
+
+// STREAMLINES: muchas líneas finas que se doblan y comprimen en el choque (NL por tier)
+function VientoStreamlines({ f, q }: { f: WedgeFrame; q: VientoQ }) {
+  const NL = q.streamlines;
+  const geo = useMemo(() => {
+    const nSpread = f.halfT * 3.0 + f.chord * 0.14;
+    const sMin = -f.chord * 0.7, sMax = f.chord * 1.55;
+    const SEG = q.tier === 0 ? 14 : 24;
+    const pos: number[] = [], colr: number[] = [];
+    const col = new THREE.Color(), p = new THREE.Vector3(), q = new THREE.Vector3();
+    for (let li = 0; li < NL; li++) {
+      const fr = (li + 0.5) / NL;
+      let n0 = (fr - 0.5) * 2 * nSpread;
+      if (Math.abs(n0) < f.halfT * 0.05) continue;
+      const z = (((li % 5) / 4) - 0.5) * 2 * f.halfD * 0.9;
+      for (let k = 0; k < SEG; k++) {
+        const s0 = sMin + (k / SEG) * (sMax - sMin);
+        const s1 = sMin + ((k + 1) / SEG) * (sMax - sMin);
+        wedgeToWorld(f, s0, streamN(f, n0, s0), z, p);
+        wedgeToWorld(f, s1, streamN(f, n0, s1), z, q);
+        const behind = s0 > Math.abs(n0) / f.tanB && s0 > 0;
+        cpColor(behind ? f.cpFace : -0.04, col);
+        const b = behind ? 1.15 : 0.5;
+        pos.push(p.x, p.y, p.z, q.x, q.y, q.z);
+        colr.push(col.r * b, col.g * b, col.b * b, col.r * b, col.g * b, col.b * b);
       }
     }
-    return { P, Tw };
-  }, [eChord, eThick, eDepth, halfC, halfT, halfD, cosD, sinD, delta, arrowLen, C]);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colr), 3));
+    g.boundingSphere = new THREE.Sphere(f.apex.clone(), f.chord * 3);
+    return g;
+  }, [f, NL]);
+  const mat = useMemo(() => new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: q.glow ? 0.55 : 0.45,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }), [q.glow]);
+  return <lineSegments geometry={geo} material={mat} />;
+}
 
-  // onda de choque: dos hojas desde el borde de ataque a ±β del flujo
-  const shockQuats = useMemo(() => [1, -1].map((s) => {
-    const shockDir = eChord.clone().multiplyScalar(Math.cos(beta)).addScaledVector(eThick, s * Math.sin(beta)).normalize();
-    // plano cuyo +X local = shockDir, +Z local = eDepth
-    const m = new THREE.Matrix4().makeBasis(shockDir, eDepth.clone().cross(shockDir).normalize(), eDepth);
-    return { q: new THREE.Quaternion().setFromRotationMatrix(m), dir: shockDir };
-  }), [eChord, eThick, eDepth, beta]);
+function VientoOverlay({ bbox, r, showP, showTau, showShock, calidad, onTier }: {
+  bbox: { center: number[]; half: number[] };
+  r: VientoSuperResultado; showP: boolean; showTau: boolean; showShock: boolean;
+  calidad: 'auto' | 'ligero' | 'ultra'; onTier?: (t: 0 | 1 | 2) => void;
+}) {
+  const f = useWedgeFrame(bbox, r);
+  const gl = useThree((s) => s.gl);
+  const q = useMemo(() => resolveVientoQ(gl, calidad), [gl, calidad]);
+  useEffect(() => { onTier?.(q.tier); }, [q.tier, onTier]);
+
+  // caras inclinadas de la cuña, teñidas por Cp (compresión) — el "mapa de presión" del libro
+  const facesGeo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const v = new THREE.Vector3();
+    const P: number[] = [];
+    const quad = (s0: number, n0: number, s1: number, n1: number) => {
+      const z0 = -f.halfD, z1 = f.halfD;
+      const a = wedgeToWorld(f, s0, n0, z0, v.clone());
+      const b = wedgeToWorld(f, s1, n1, z0, new THREE.Vector3());
+      const c = wedgeToWorld(f, s1, n1, z1, new THREE.Vector3());
+      const d = wedgeToWorld(f, s0, n0, z1, new THREE.Vector3());
+      P.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z, a.x, a.y, a.z, c.x, c.y, c.z, d.x, d.y, d.z);
+    };
+    quad(0, 0, f.chord, f.chord * f.tanD);   // cara superior
+    quad(0, 0, f.chord, -f.chord * f.tanD);  // cara inferior
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P), 3));
+    return g;
+  }, [f]);
+  const faceCol = useMemo(() => cpColor(f.cpFace, new THREE.Color()), [f.cpFace]);
+
+  // onda de choque: dos hojas nítidas desde el filo a ±β (schlieren)
+  const shock = useMemo(() => [1, -1].map((s) => {
+    const dir = f.eChord.clone().multiplyScalar(1).addScaledVector(f.eThick, s * f.tanB).normalize();
+    const m = new THREE.Matrix4().makeBasis(dir, f.eDepth.clone().cross(dir).normalize(), f.eDepth);
+    return { q: new THREE.Quaternion().setFromRotationMatrix(m), pos: f.apex.clone().addScaledVector(dir, f.chord * 0.9) };
+  }), [f]);
 
   return (
     <group>
-      {showP && rows.P.map((a, i) => (
-        <VientoArrow key={`p${i}`} from={a.from} dir={a.dir} len={arrowLen} color="#46C2FF" r={rad} />
-      ))}
-      {showTau && rows.Tw.map((a, i) => (
-        <VientoArrow key={`t${i}`} from={a.from} dir={a.dir} len={a.len} color="#FDB813" r={rad * 0.72} />
-      ))}
-      {showShock && shockQuats.map((sq, i) => (
-        <mesh key={`s${i}`} position={apex.clone().addScaledVector(sq.dir, halfC * 1.1)} quaternion={sq.q}>
-          <planeGeometry args={[halfC * 2.4, halfD * 2.6]} />
-          <meshBasicMaterial color="#FF7A3C" transparent opacity={0.16} side={THREE.DoubleSide}
+      {/* siempre que el estudio corre: el CAMPO (flujo real, no glifos) — escala por tier */}
+      <VientoStreamlines f={f} q={q} />
+      <VientoFlowField f={f} q={q} />
+      {/* Cp pintado sobre las caras de la pieza */}
+      {showP && (
+        <mesh geometry={facesGeo}>
+          <meshBasicMaterial color={faceCol} transparent opacity={0.6} side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending} depthWrite={false} />
+        </mesh>
+      )}
+      {/* la capa límite (τ): piel brillante fina sobre las caras */}
+      {showTau && (
+        <mesh geometry={facesGeo}>
+          <meshBasicMaterial color="#FDB813" transparent opacity={0.14} side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending} depthWrite={false} wireframe />
+        </mesh>
+      )}
+      {showShock && shock.map((sh, i) => (
+        <mesh key={i} position={sh.pos} quaternion={sh.q}>
+          <planeGeometry args={[f.chord * 2.0, f.halfD * 2.4]} />
+          <meshBasicMaterial color="#FFB070" transparent opacity={0.14} side={THREE.DoubleSide}
             blending={THREE.AdditiveBlending} depthWrite={false} />
         </mesh>
       ))}
@@ -3451,6 +3612,9 @@ export default function ForgeBRepStudio() {
   const [vientoShowP, setVientoShowP] = useState(true);
   const [vientoShowTau, setVientoShowTau] = useState(false);
   const [vientoShowShock, setVientoShowShock] = useState(false);
+  // calidad adaptable (LATAM): auto detecta la GPU; ligero/ultra fuerzan el tier.
+  const [vientoCalidad, setVientoCalidad] = useState<'auto' | 'ligero' | 'ultra'>('auto');
+  const [vientoTier, setVientoTier] = useState<0 | 1 | 2>(1);
   // ── DISEÑO GENERATIVO (optimización topológica) ──
   const [genResult, setGenResult] = useState<TopOptResult | null>(null);
   const [genBusy, setGenBusy] = useState(false);
@@ -5440,6 +5604,8 @@ export default function ForgeBRepStudio() {
         else if (kind === 'tau') setVientoShowTau(on);
         else if (kind === 'shock') setVientoShowShock(on);
       },
+      setVientoCalidad: (c: 'auto' | 'ligero' | 'ultra') => setVientoCalidad(c),
+      get vientoTier() { return vientoTier; },
       get viento() {
         return vientoResult ? {
           deltaDeg: vientoResult.deltaDeg, betaDeg: vientoResult.betaDeg,
@@ -5449,6 +5615,7 @@ export default function ForgeBRepStudio() {
           fraccionPresion: vientoResult.fraccionPresion, nPaneles: vientoResult.nPaneles,
           mach: vientoResult.mach, hM: vientoResult.hM,
           showP: vientoShowP, showTau: vientoShowTau, showShock: vientoShowShock,
+          calidad: vientoCalidad, tier: vientoTier,
         } : null;
       },
       // Patrón circular del componente ACTIVO (equivale a mover los controles del panel):
@@ -5532,7 +5699,7 @@ export default function ForgeBRepStudio() {
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
   }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts, gbBodyGeos, gbHidden, gbColors,
-   vientoResult, vientoShowP, vientoShowTau, vientoShowShock]);
+   vientoResult, vientoShowP, vientoShowTau, vientoShowShock, vientoCalidad, vientoTier]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -5727,7 +5894,8 @@ export default function ForgeBRepStudio() {
             {/* ESTUDIO VIENTO: flechas p/τ + onda de choque SOBRE la pieza real */}
             {vientoOn && vientoResult && meshBBox && (
               <VientoOverlay bbox={meshBBox} r={vientoResult}
-                showP={vientoShowP} showTau={vientoShowTau} showShock={vientoShowShock} />
+                showP={vientoShowP} showTau={vientoShowTau} showShock={vientoShowShock}
+                calidad={vientoCalidad} onTier={setVientoTier} />
             )}
           </group>
         </CadViewport>
@@ -6530,6 +6698,17 @@ export default function ForgeBRepStudio() {
                         style={vientoShowShock ? { background: '#FF7A3C33' } : undefined}>
                         {vientoShowShock ? '◉' : '○'} Onda de choque (β={vientoResult.betaDeg.toFixed(1)}°)
                       </button>
+                    </div>
+                  </div>
+                  <div className="fb-sim-bc" style={{ marginTop: 6 }}>
+                    <div className="fb-sim-bc-row" style={{ gap: 4 }}>
+                      <span className="rk" style={{ fontSize: 10, alignSelf: 'center' }}>Calidad</span>
+                      {(['auto', 'ligero', 'ultra'] as const).map((c) => (
+                        <button key={c} data-testid={`viento-calidad-${c}`} onClick={() => setVientoCalidad(c)}
+                          className="fb-pick-btn" style={{ flex: 1, ...(vientoCalidad === c ? { background: `${GOLD}33`, color: GOLD } : {}) }}>
+                          {c === 'auto' ? `Auto·${['Ligero', 'Medio', 'Ultra'][vientoTier]}` : c === 'ligero' ? 'Ligero' : 'Ultra'}
+                        </button>
+                      ))}
                     </div>
                   </div>
                   <div className="fb-row"><span className="rk">δ medido</span><span className="rv" data-testid="viento-delta">{vientoResult.deltaDeg.toFixed(1)}°</span></div>
