@@ -2078,8 +2078,8 @@ function streamN(f: WedgeFrame, n0: number, s: number): number {
 function VientoFlowField({ f, q }: { f: WedgeFrame; q: VientoQ }) {
   const N = q.particles;
   const ZPL = q.tier === 0 ? 3 : 5;
-  const sMin = -f.chord * 0.7, sMax = f.chord * 1.55;
-  const nSpread = f.halfT * 3.2 + f.chord * 0.16;
+  const sMin = -f.chord * 0.45, sMax = f.chord * 1.3;
+  const nSpread = f.halfT * 2.6 + f.chord * 0.11;
   const seeds = useMemo(() => {
     const a: { n0: number; z: number; ph: number; band: number }[] = [];
     for (let i = 0; i < N; i++) {
@@ -2143,8 +2143,8 @@ function VientoFlowField({ f, q }: { f: WedgeFrame; q: VientoQ }) {
 function VientoStreamlines({ f, q }: { f: WedgeFrame; q: VientoQ }) {
   const NL = q.streamlines;
   const geo = useMemo(() => {
-    const nSpread = f.halfT * 3.0 + f.chord * 0.14;
-    const sMin = -f.chord * 0.7, sMax = f.chord * 1.55;
+    const nSpread = f.halfT * 2.6 + f.chord * 0.11;
+    const sMin = -f.chord * 0.45, sMax = f.chord * 1.3;
     const SEG = q.tier === 0 ? 14 : 24;
     const pos: number[] = [], colr: number[] = [];
     // OJO: no llamar `q` a este Vector3 — ensombrece el prop `q` (calidad) y la
@@ -2194,13 +2194,33 @@ function VientoOverlay({ bbox, r, showP, showTau, showShock, calidad, onTier }: 
   // onda de choque: dos hojas desde el filo a ±β (schlieren). El plano debe
   // extenderse a lo largo del CHOQUE (dir) y de la ENVERGADURA (eDepth) — así se
   // ve de CANTO (línea nítida) desde el perfil. Base: X=dir, Y=eDepth, Z=normal.
-  const shockLen = f.chord * 1.9;
-  const shock = useMemo(() => [1, -1].map((s) => {
-    const dir = f.eChord.clone().addScaledVector(f.eThick, s * f.tanB).normalize();
-    const nrm = dir.clone().cross(f.eDepth).normalize();
-    const m = new THREE.Matrix4().makeBasis(dir, f.eDepth, nrm);
-    return { q: new THREE.Quaternion().setFromRotationMatrix(m), pos: f.apex.clone().addScaledVector(dir, shockLen / 2) };
-  }), [f, shockLen]);
+  // La onda es una HOJA, pero como pared translúcida se lee como muro y tapa el
+  // cuadro. Se dibuja como HAZ DE LÍNEAS brillantes (una por plano de envergadura):
+  // de perfil se superponen en una línea filosa (la V del schlieren del libro) y en
+  // ISO forman la hoja pero aireada, sin tapar la pieza.
+  const shockGeo = useMemo(() => {
+    const shockLen = f.chord * 1.75;
+    const NZ = 9;
+    const pos: number[] = [];
+    const a = new THREE.Vector3(), b = new THREE.Vector3();
+    for (const s of [1, -1]) {
+      const dir = f.eChord.clone().addScaledVector(f.eThick, s * f.tanB).normalize();
+      for (let k = 0; k < NZ; k++) {
+        const z = ((k / (NZ - 1)) - 0.5) * 2 * f.halfD;
+        a.copy(f.apex).addScaledVector(f.eDepth, z);
+        b.copy(a).addScaledVector(dir, shockLen);
+        pos.push(a.x, a.y, a.z, b.x, b.y, b.z);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    g.boundingSphere = new THREE.Sphere(f.apex.clone(), f.chord * 3);
+    return g;
+  }, [f]);
+  const shockMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: '#FFD9A0', transparent: true, opacity: 0.75,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }), []);
 
   return (
     <group>
@@ -2209,13 +2229,7 @@ function VientoOverlay({ bbox, r, showP, showTau, showShock, calidad, onTier }: 
       <VientoFlowField f={f} q={q} />
       {/* El Cp NO se sobrepone con quads (z-fight/artefactos): se pinta en los
           VÉRTICES del sólido real vía el canal feaColors — igual que von Mises. */}
-      {showShock && shock.map((sh, i) => (
-        <mesh key={i} position={sh.pos} quaternion={sh.q}>
-          <planeGeometry args={[shockLen, f.halfD * 2]} />
-          <meshBasicMaterial color="#FFC48A" transparent opacity={0.5} side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending} depthWrite={false} />
-        </mesh>
-      ))}
+      {showShock && <lineSegments geometry={shockGeo} material={shockMat} />}
     </group>
   );
 }
