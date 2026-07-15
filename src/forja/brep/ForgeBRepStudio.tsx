@@ -1985,11 +1985,13 @@ function GearboxMotion({ data, playing, speed, colors, hidden, clip }: {
 // se agolpan donde el flujo frena tras el choque) + Cp pintado sobre las caras.
 // Todo en coords locales de la cuña (s a lo largo de la cuerda desde el filo, n ⊥).
 
-// paleta de presión (Cp): azul frío (baja p / expansión) → blanco → ámbar (alta p / compresión)
-function cpColor(cp: number, out: THREE.Color) {
-  const t = Math.max(-1, Math.min(1, cp / 0.35));
-  if (t >= 0) out.setRGB(0.25 + 0.75 * t, 0.35 + 0.4 * t, 0.55 - 0.35 * t); // → ámbar cálido
-  else out.setRGB(0.25 + 0.35 * t, 0.45 + 0.35 * t, 0.75 + 0.25 * t);       // → azul frío
+// paleta de presión (Cp): azul frío (baja p / expansión) → ámbar (alta p / compresión).
+// `scale` NORMALIZA al rango de Cp que realmente hay en la escena — si se deja fijo,
+// un Cp chico (la cuña da apenas 0.113) se queda a media escala y todo sale GRIS.
+function cpColor(cp: number, out: THREE.Color, scale = 0.35) {
+  const t = Math.max(-1, Math.min(1, cp / Math.max(0.02, scale)));
+  if (t >= 0) out.setRGB(0.30 + 0.70 * t, 0.34 + 0.38 * t, 0.58 - 0.48 * t); // → ámbar cálido
+  else out.setRGB(0.30 + 0.22 * t, 0.50 + 0.30 * t, 0.90 + 0.10 * t);        // → azul frío
   return out;
 }
 
@@ -2119,8 +2121,8 @@ function VientoFlowField({ f, q }: { f: WedgeFrame; q: VientoQ }) {
       const behind = s > Math.abs(sd.n0) / f.tanB && s > 0; // ¿tras el choque?
       wedgeToWorld(f, s, n, sd.z, tmp);
       pos.setXYZ(i, tmp.x, tmp.y, tmp.z);
-      cpColor(behind ? f.cpFace : -0.04, col);
-      const bright = behind ? 1.25 + 0.5 * sd.band : 0.5 + 0.25 * sd.band;
+      cpColor(behind ? f.cpFace : -0.04 * f.cpFace, col, f.cpFace);
+      const bright = behind ? 1.35 + 0.5 * sd.band : 0.55 + 0.25 * sd.band;
       cA.setXYZ(i, col.r * bright, col.g * bright, col.b * bright);
     }
     pos.needsUpdate = true; cA.needsUpdate = true;
@@ -2145,7 +2147,9 @@ function VientoStreamlines({ f, q }: { f: WedgeFrame; q: VientoQ }) {
     const sMin = -f.chord * 0.7, sMax = f.chord * 1.55;
     const SEG = q.tier === 0 ? 14 : 24;
     const pos: number[] = [], colr: number[] = [];
-    const col = new THREE.Color(), p = new THREE.Vector3(), q = new THREE.Vector3();
+    // OJO: no llamar `q` a este Vector3 — ensombrece el prop `q` (calidad) y la
+    // TDZ tumba el componente entero (bug cazado por la captura CPU 2026-07-14).
+    const col = new THREE.Color(), pA = new THREE.Vector3(), pB = new THREE.Vector3();
     for (let li = 0; li < NL; li++) {
       const fr = (li + 0.5) / NL;
       let n0 = (fr - 0.5) * 2 * nSpread;
@@ -2154,12 +2158,12 @@ function VientoStreamlines({ f, q }: { f: WedgeFrame; q: VientoQ }) {
       for (let k = 0; k < SEG; k++) {
         const s0 = sMin + (k / SEG) * (sMax - sMin);
         const s1 = sMin + ((k + 1) / SEG) * (sMax - sMin);
-        wedgeToWorld(f, s0, streamN(f, n0, s0), z, p);
-        wedgeToWorld(f, s1, streamN(f, n0, s1), z, q);
+        wedgeToWorld(f, s0, streamN(f, n0, s0), z, pA);
+        wedgeToWorld(f, s1, streamN(f, n0, s1), z, pB);
         const behind = s0 > Math.abs(n0) / f.tanB && s0 > 0;
-        cpColor(behind ? f.cpFace : -0.04, col);
-        const b = behind ? 1.15 : 0.5;
-        pos.push(p.x, p.y, p.z, q.x, q.y, q.z);
+        cpColor(behind ? f.cpFace : -0.04 * f.cpFace, col, f.cpFace);
+        const b = behind ? 1.3 : 0.55;
+        pos.push(pA.x, pA.y, pA.z, pB.x, pB.y, pB.z);
         colr.push(col.r * b, col.g * b, col.b * b, col.r * b, col.g * b, col.b * b);
       }
     }
@@ -2170,7 +2174,7 @@ function VientoStreamlines({ f, q }: { f: WedgeFrame; q: VientoQ }) {
     return g;
   }, [f, NL]);
   const mat = useMemo(() => new THREE.LineBasicMaterial({
-    vertexColors: true, transparent: true, opacity: q.glow ? 0.55 : 0.45,
+    vertexColors: true, transparent: true, opacity: q.glow ? 0.85 : 0.75,
     blending: THREE.AdditiveBlending, depthWrite: false,
   }), [q.glow]);
   return <lineSegments geometry={geo} material={mat} />;
@@ -2186,56 +2190,29 @@ function VientoOverlay({ bbox, r, showP, showTau, showShock, calidad, onTier }: 
   const q = useMemo(() => resolveVientoQ(gl, calidad), [gl, calidad]);
   useEffect(() => { onTier?.(q.tier); }, [q.tier, onTier]);
 
-  // caras inclinadas de la cuña, teñidas por Cp (compresión) — el "mapa de presión" del libro
-  const facesGeo = useMemo(() => {
-    const g = new THREE.BufferGeometry();
-    const v = new THREE.Vector3();
-    const P: number[] = [];
-    const quad = (s0: number, n0: number, s1: number, n1: number) => {
-      const z0 = -f.halfD, z1 = f.halfD;
-      const a = wedgeToWorld(f, s0, n0, z0, v.clone());
-      const b = wedgeToWorld(f, s1, n1, z0, new THREE.Vector3());
-      const c = wedgeToWorld(f, s1, n1, z1, new THREE.Vector3());
-      const d = wedgeToWorld(f, s0, n0, z1, new THREE.Vector3());
-      P.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z, a.x, a.y, a.z, c.x, c.y, c.z, d.x, d.y, d.z);
-    };
-    quad(0, 0, f.chord, f.chord * f.tanD);   // cara superior
-    quad(0, 0, f.chord, -f.chord * f.tanD);  // cara inferior
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P), 3));
-    return g;
-  }, [f]);
-  const faceCol = useMemo(() => cpColor(f.cpFace, new THREE.Color()), [f.cpFace]);
 
-  // onda de choque: dos hojas nítidas desde el filo a ±β (schlieren)
+  // onda de choque: dos hojas desde el filo a ±β (schlieren). El plano debe
+  // extenderse a lo largo del CHOQUE (dir) y de la ENVERGADURA (eDepth) — así se
+  // ve de CANTO (línea nítida) desde el perfil. Base: X=dir, Y=eDepth, Z=normal.
+  const shockLen = f.chord * 1.9;
   const shock = useMemo(() => [1, -1].map((s) => {
-    const dir = f.eChord.clone().multiplyScalar(1).addScaledVector(f.eThick, s * f.tanB).normalize();
-    const m = new THREE.Matrix4().makeBasis(dir, f.eDepth.clone().cross(dir).normalize(), f.eDepth);
-    return { q: new THREE.Quaternion().setFromRotationMatrix(m), pos: f.apex.clone().addScaledVector(dir, f.chord * 0.9) };
-  }), [f]);
+    const dir = f.eChord.clone().addScaledVector(f.eThick, s * f.tanB).normalize();
+    const nrm = dir.clone().cross(f.eDepth).normalize();
+    const m = new THREE.Matrix4().makeBasis(dir, f.eDepth, nrm);
+    return { q: new THREE.Quaternion().setFromRotationMatrix(m), pos: f.apex.clone().addScaledVector(dir, shockLen / 2) };
+  }), [f, shockLen]);
 
   return (
     <group>
       {/* siempre que el estudio corre: el CAMPO (flujo real, no glifos) — escala por tier */}
       <VientoStreamlines f={f} q={q} />
       <VientoFlowField f={f} q={q} />
-      {/* Cp pintado sobre las caras de la pieza */}
-      {showP && (
-        <mesh geometry={facesGeo}>
-          <meshBasicMaterial color={faceCol} transparent opacity={0.6} side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending} depthWrite={false} />
-        </mesh>
-      )}
-      {/* la capa límite (τ): piel brillante fina sobre las caras */}
-      {showTau && (
-        <mesh geometry={facesGeo}>
-          <meshBasicMaterial color="#FDB813" transparent opacity={0.14} side={THREE.DoubleSide}
-            blending={THREE.AdditiveBlending} depthWrite={false} wireframe />
-        </mesh>
-      )}
+      {/* El Cp NO se sobrepone con quads (z-fight/artefactos): se pinta en los
+          VÉRTICES del sólido real vía el canal feaColors — igual que von Mises. */}
       {showShock && shock.map((sh, i) => (
         <mesh key={i} position={sh.pos} quaternion={sh.q}>
-          <planeGeometry args={[f.chord * 2.0, f.halfD * 2.4]} />
-          <meshBasicMaterial color="#FFB070" transparent opacity={0.14} side={THREE.DoubleSide}
+          <planeGeometry args={[shockLen, f.halfD * 2]} />
+          <meshBasicMaterial color="#FFC48A" transparent opacity={0.5} side={THREE.DoubleSide}
             blending={THREE.AdditiveBlending} depthWrite={false} />
         </mesh>
       ))}
@@ -3094,9 +3071,13 @@ function CamStock3D({ center, half, topAllow = 1.5 }: { center: [number, number,
 
 /** Piso de estudio: grid AGUA sutil + contact shadow suave para profundidad barata.
  *  Paleta nebulosa: las líneas llevan el azul-agua profundo del océano, no gris muerto. */
-function CadGround({ size }: { size: number }) {
+function CadGround({ size, drop = 0.6 }: { size: number; drop?: number }) {
+  // Grid FINITO (no `infiniteGrid`): el infinito calcula las líneas por-fragmento y
+  // hace aliasing/parpadeo en ángulos rasantes y VISTO A TRAVÉS de piezas translúcidas.
+  // El finito fade en el borde y no shimmerea. Se baja `drop` mm para no z-fightear con
+  // la base de la pieza (que se apoya en Y=0). Aplica a CUALQUIER pieza, no solo al molde.
   return (
-    <group position={[0, -0.02, 0]}>
+    <group position={[0, -drop, 0]}>
       <Grid
         args={[size, size]}
         cellSize={size / 60}
@@ -4567,6 +4548,35 @@ export default function ForgeBRepStudio() {
       delta, cuerdaM: cuerdaMM / 1000, mach: vientoMach, hM: vientoAltM, nPaneles: Math.max(2, Math.round(vientoNPan)),
     });
   }, [vientoOn, meshBBox, vientoMach, vientoAltM, vientoNPan]);
+
+  // Cp POR VÉRTICE del sólido real → se pinta por el MISMO canal que von Mises
+  // (nada de quads sobrepuestos: daban z-fight y franjas). Cada vértice se clasifica
+  // en el marco de la cuña: cara inclinada = Cp de compresión; base/talón = p∞.
+  // Es "la presión sobre TU pieza", exactamente como el FEA pinta el esfuerzo.
+  const vientoColors = useMemo<Float32Array | null>(() => {
+    if (!vientoOn || !vientoShowP || !vientoResult || !result || !meshBBox) return null;
+    const pos = result.mesh.positions;
+    const spans = meshBBox.half.map((h) => h * 2);
+    let ci = 0, ti = 0;
+    for (let k = 1; k < 3; k++) { if (spans[k] > spans[ci]) ci = k; if (spans[k] < spans[ti]) ti = k; }
+    if (ti === ci) ti = (ci + 1) % 3;
+    const chord = spans[ci];
+    const tanD = Math.tan((vientoResult.deltaDeg * Math.PI) / 180);
+    const apexC = meshBBox.center[ci] - meshBBox.half[ci];
+    const cpFace = (vientoResult.p2 - vientoResult.pInf) / vientoResult.q; // compresión
+    const cWarm = cpColor(cpFace, new THREE.Color(), cpFace);
+    const cBase = cpColor(0, new THREE.Color(), cpFace);
+    const out = new Float32Array(pos.length);
+    for (let i = 0; i < pos.length; i += 3) {
+      const s = pos[i + ci] - apexC;                          // distancia desde el filo
+      const n = Math.abs(pos[i + ti] - meshBBox.center[ti]);  // |espesor| desde el eje
+      const onFace = s > chord * 0.02 && n > 0.65 * s * tanD; // sigue la pendiente
+      const c = onFace ? cWarm : cBase;
+      out[i] = c.r; out[i + 1] = c.g; out[i + 2] = c.b;
+    }
+    return out;
+  }, [vientoOn, vientoShowP, vientoResult, result, meshBBox]);
+
   // Plano de recorte ESTABLE (objeto único): la flecha del SectionGizmo lo MUTA en
   // mundo cada frame (no recalculamos por estado → arrastre fluido sin re-render).
   // Plano de recorte SIEMPRE presente (constante +1e6 = lejísimos, no corta nada)
@@ -5699,7 +5709,7 @@ export default function ForgeBRepStudio() {
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
   }, [oc, result, ops, opErr, addOp, updateOp, removeOp, renameOp, toggleSuppressOp, moveOp, rollTo, rollbackIdx, undo, redo, histVer, params, bindings, resolvedParams, addParam, updateParam, removeParam, setBinding, toggleCollapse, exportSTL, genPlano, planoSvg, printReport, printMaterial, showOverhangs, sectionOn, sectionPlanes, components, activeComp, addComponent, updateComponent, removeComponent, docName, serializeDoc, loadDoc, newDoc, saveToLibrary, loadFromLibrary, deleteFromLibrary, importedStep, importStepText, clearImportedStep, togglePickFace, togglePickEdge, selectedFaceId, selectedEdgeId, setSteps, addStep, updateStep, sketch.steps, setGear, updateGear, sketch.gear, sketch.gearbox, sketch.kind, applyGearbox, updateGearbox, gbTorque, printMaterial, assembly, addGear2, setTeeth2, applyGearMate, removeGear2, setDriveAngleDeg, setShafts, setHousing, verifyMeshing, meshSweep, material, runFeaAnalysis, feaLiveSetLoad, clearFeaOverlay, feaResult, feaBusy, feaErr, feaColors, feaFixedFace, feaLoadFace, feaLoadN, feaLiveMs, runGenerative, genResult, genBusy, genThreshold, genVoidPct, gbMotion, gbParts, gbBodyGeos, gbHidden, gbColors,
-   vientoResult, vientoShowP, vientoShowTau, vientoShowShock, vientoCalidad, vientoTier]);
+   vientoResult, vientoShowP, vientoShowTau, vientoShowShock, vientoCalidad, vientoTier, vientoColors]);
 
   const cameraDist = useMemo(() => {
     const stepLen = sketch.steps.reduce((a, s) => a + s.L, 0);
@@ -5881,7 +5891,7 @@ export default function ForgeBRepStudio() {
                 pickMode={pickMode}
                 onPickFace={togglePickFace}
                 onPickEdge={togglePickEdge}
-                feaColors={feaColors}
+                feaColors={vientoColors ?? feaColors}
                 overhangColors={showOverhangs ? overhangColors : null}
                 clip={sectionPlanes}
               />
@@ -6538,6 +6548,36 @@ export default function ForgeBRepStudio() {
                           <button className="fb-feat-act" data-testid={`mold-hide-${pt.role}`}
                             onClick={(e) => { e.stopPropagation(); toggleMoldPlate(pt.role); }} title={hidden ? 'Mostrar placa' : 'Ocultar placa'}>{hidden ? '🙈' : '👁'}</button>
                         </div>
+                      </div>
+                      {exp && (
+                        <div className="fb-comp-tree" data-testid={`mold-comp-tree-${pt.role}`}>
+                          <div className="fb-comp-row hdr">🔩 Cuerpos <b>({pt.bodies ?? 1})</b></div>
+                          {pt.features && pt.features.length > 0 && <div className="fb-comp-row hdr">🕮 Historia</div>}
+                          {(pt.features ?? []).map((f, i) => <div key={i} className="fb-comp-row feat">· {f}</div>)}
+                          {pt.role === 'pieza' && liveDfm && (
+                            <>
+                              <div className="fb-comp-row hdr" data-testid="mold-dfm-pieza">⚖ Moldeabilidad (Kazmer §2.3) — <b style={{
+                                color: liveDfm.moldable === 'si' ? '#7ee0a0' : liveDfm.moldable === 'con-mecanismos' ? '#f2b45c' : '#f27a6c',
+                              }}>{liveDfm.moldable === 'si' ? 'MOLDEABLE (dos placas)' : liveDfm.moldable === 'con-mecanismos' ? 'CON MECANISMOS §11.3' : 'NO MOLDEABLE'}</b></div>
+                              {liveDfm.verdicts.map((v, i) => (
+                                <div key={i} className="fb-comp-row feat" title={`límite: ${v.limite}`}>
+                                  {v.ok ? '✓' : '⚠'} {v.param}: <b style={{ color: v.ok ? '#7ee0a0' : '#f2b45c' }}>{v.valor}</b> <span style={{ opacity: 0.55 }}>[{v.ref}]</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                          {moldCompAnalysis?.[pt.role] && (
+                            <>
+                              <div className="fb-comp-row hdr" data-testid={`mold-comp-analysis-${pt.role}`}>📊 Análisis de esta placa</div>
+                              {moldCompAnalysis[pt.role].map((v, i) => (
+                                <div key={i} className="fb-comp-row feat" title={`límite: ${v.limite}`}>
+                                  {v.ok ? '✓' : '⚠'} {v.param}: <b style={{ color: v.ok ? '#7ee0a0' : '#f2b45c' }}>{v.valor}</b> <span style={{ opacity: 0.55 }}>[{v.ref}]</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      )}
                       </div>
                     );
                   })}
