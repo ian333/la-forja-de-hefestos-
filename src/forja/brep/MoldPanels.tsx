@@ -344,6 +344,10 @@ export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelRe
                   title="RED RAMIFICADA (Fig 6.14): sprue → 2 primarios → 4 secundarios → 8 gates sumergidos §7.2.7 — la carga se REPARTE ½ en cada unión (Eq 6.1). Prende 💧 para verla fluir."><Ic name="patron" /><span>Red 6.14</span></button>
                 <button className="fb-big" data-testid="btn-red-6-15" onClick={() => loadFeedDemo('radial')} disabled={!kernelReady}
                   title="RED RADIAL (Fig 6.15): N brazos desde el diafragma del sprue — balanceada, poco volumen (Eq 6.1 con n=N)."><Ic name="engrane" /><span>Red 6.15</span></button>
+                <button className="fb-big" data-testid="btn-red-6-13" onClick={() => loadFeedDemo('serie')} disabled={!kernelReady}
+                  title="RED EN SERIE (Fig 6.13): compacta pero DESBALANCEADA — mira en 💧 cómo las cavidades lejanas llenan TARDE; el libro la balancea artificialmente adelgazando los secundarios cercanos."><Ic name="careado" /><span>Red 6.13</span></button>
+                <button className="fb-big" data-testid="btn-red-6-16" onClick={() => loadFeedDemo('hibrida')} disabled={!kernelReady}
+                  title="RED HÍBRIDA (Fig 6.16): ramificada → 4 clusters RADIALES ×4 = 16 cavidades — menos material que la ramificada pura con balance natural (p.136)."><Ic name="cajacic" /><span>Red 6.16</span></button>
               </div>
               <div className="fb-group-cap">MOLDE · CURSO ALWIS</div>
             </div>

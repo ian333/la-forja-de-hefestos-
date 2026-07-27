@@ -30,7 +30,7 @@ import { surfaceFlowLength } from '../mold/flowlen-surface';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine } from '../mold/moldmachine';
-import { layoutBranched, layoutRadial, type FeedNetwork } from '../mold/feed-layouts';
+import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
 export function useMoldStudio({ oc, setCollapsed, setDocName }: {
@@ -513,9 +513,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // ── DEMO REDES DE COLADA (standalone: "solo lo conectaremos") ──
   // Reproduce las figuras del libro como sólidos de fundido + cavidades
   // fantasma; cada vértice sabe CUÁNDO le llega el frente (flowT).
-  const loadFeedDemo = useCallback((kind: 'ramificada' | 'radial') => {
+  const loadFeedDemo = useCallback((kind: 'ramificada' | 'radial' | 'serie' | 'hibrida') => {
     if (!oc) return;
-    const net: FeedNetwork = kind === 'radial' ? layoutRadial({}) : layoutBranched({});
+    const net: FeedNetwork = kind === 'radial' ? layoutRadial({}) : kind === 'serie' ? layoutSeries({}) : kind === 'hibrida' ? layoutHybrid({}) : layoutBranched({});
     try {
       const solids = net.segs.map((sg) => {
         const dx = sg.b[0] - sg.a[0], dy = sg.b[1] - sg.a[1], dz = sg.b[2] - sg.a[2];
@@ -564,7 +564,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       setMoldParts(parts);
       setMoldHidden({}); setMoldOpacity({}); setMoldColors({});
       setFlowOn(true);
-      setDocName(`Red de colada ${kind} · Fig ${kind === 'radial' ? '6.15' : '6.14'}`);
+      setDocName(`Red de colada ${kind} · Fig ${({ radial: '6.15', serie: '6.13', hibrida: '6.16' } as Record<string, string>)[kind] ?? '6.14'}`);
       mark('feed-demo', 0, { kind });
     } catch (e) { console.error('FEED_DEMO_ERR', e); }
   }, [oc]);

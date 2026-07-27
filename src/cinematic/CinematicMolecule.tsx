@@ -1880,12 +1880,12 @@ function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
         return (
           <group key={i} position={it.mid} quaternion={it.q}>
             <mesh>
-              <cylinderGeometry args={[esDip ? 0.052 : 0.030, esDip ? 0.052 : 0.030, it.len, 8]} />
-              <meshBasicMaterial color={esDip ? '#ffffff' : '#ffd9a0'} transparent opacity={op * (esDip ? 0.95 : 0.7)} depthWrite={false} />
+              <cylinderGeometry args={[esDip ? 0.040 : 0.016, esDip ? 0.040 : 0.016, it.len, 8]} />
+              <meshBasicMaterial color={esDip ? '#ffffff' : '#ffd9a0'} transparent opacity={op * (esDip ? 0.95 : 0.5)} depthWrite={false} />
             </mesh>
             {esDip && (
               <mesh position={[0, it.len * 0.5 + 0.16, 0]}>
-                <coneGeometry args={[0.14, 0.34, 10]} />
+                <coneGeometry args={[0.11, 0.28, 10]} />
                 <meshBasicMaterial color="#ffffff" transparent opacity={op} depthWrite={false} />
               </mesh>
             )}
@@ -2003,7 +2003,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
               agrandan y se pintan CÁLIDOS (el O queda frío) para que se cuenten 3 átomos
               por molécula y se LEA hacia dónde apunta cada H (= el volteo). */}
           <Nucleus protons={wd.Z[i]} neutrons={wd.Z[i] === 8 ? 8 : 0} time={time}
-            clusterRadius={wd.Z[i] === 8 ? 0.10 : (mk === 'wtri' ? 0.115 : 0.05)}
+            clusterRadius={wd.Z[i] === 8 ? (mk === 'wtri' ? 0.165 : 0.10) : (mk === 'wtri' ? 0.068 : 0.05)}
             nHot={wd.Z[i] === 8 || mk !== 'wtri' ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
             nHue={wd.Z[i] === 8 || mk !== 'wtri' ? 0.55 : 0.08} />
         </group>

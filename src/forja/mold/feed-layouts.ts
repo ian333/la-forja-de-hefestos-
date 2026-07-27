@@ -134,3 +134,94 @@ export function layoutRadial(o: {
     ],
   };
 }
+
+/** Fig 6.13 — SERIE: 1 primario largo, secundarios saliendo a intervalos.
+ *  NATURALMENTE DESBALANCEADA (las cavidades lejanas llenan tarde — el flujo
+ *  lo ENSEÑA) + balanceo ARTIFICIAL del libro: los secundarios cercanos al
+ *  sprue van MÁS DELGADOS (Eq 6.8 con el ΔP que le sobra a cada ruta). */
+export function layoutSeries(o: {
+  nPairs?: number; pitchMm?: number; VdotCcS?: number; material?: string; sprueLenMm?: number;
+}): FeedNetwork {
+  const nP = o.nPairs ?? 4;
+  const pitch = o.pitchMm ?? 42, Lsec = 30;
+  const Vdot = o.VdotCcS ?? 60;
+  const m = FEED_MATERIALS[o.material ?? 'ABS'] ?? FEED_MATERIALS.ABS;
+  const Lsprue = o.sprueLenMm ?? 70;
+  const segs: FeedSeg[] = [];
+  const rSprue = Math.max(2.5, minRunnerRadius(m, Lsprue / 1000, Vdot * 1e-6, 10e6) * 1000);
+  const tSprue = fillS(rSprue, Lsprue, Vdot);
+  segs.push({ a: [0, 0, Lsprue], b: [0, 0, 0], rMm: rSprue, level: 'sprue', VdotCcS: Vdot, tStartS: 0, tFillS: tSprue });
+  const rPrim = Math.max(1.5, steelSafeDiaMm(2 * rSprue / Math.SQRT2) / 2);
+  const cavities: FeedNetwork['cavities'] = [];
+  const VdotCav = Vdot / (2 * nP);
+  // ΔP de la ruta MÁS LARGA fija el presupuesto; a cada secundario le queda el resto
+  const dPfar = 8e6;
+  let t = tSprue;
+  for (let i = 0; i < nP; i++) {
+    const x0 = i * pitch, x1 = (i + 1) * pitch;
+    const VdotTr = Vdot * (1 - (2 * i) / (2 * nP));           // el primario pierde carga en cada par
+    const tTr = fillS(rPrim, pitch, VdotTr);
+    segs.push({ a: [x0, 0, 0], b: [x1, 0, 0], rMm: rPrim, level: 'primario', VdotCcS: VdotTr, tStartS: t, tFillS: tTr });
+    t += tTr;
+    // balanceo artificial: fracción de ΔP restante ∝ cercanía → R menor cerca (Eq 6.8)
+    const frac = (i + 1) / nP;
+    const rSec = Math.max(0.9, minRunnerRadius(m, Lsec / 1000, VdotCav * 1e-6, dPfar * (2 - frac)) * 1000);
+    const tSec = fillS(rSec, Lsec, VdotCav);
+    for (const sgn of [1, -1]) {
+      segs.push({ a: [x1, 0, 0], b: [x1, sgn * Lsec, 0], rMm: rSec, level: 'secundario', VdotCcS: VdotCav, tStartS: t, tFillS: tSec });
+      cavities.push({ x: x1, y: sgn * (Lsec + 11), tStartS: t + tSec });
+    }
+  }
+  return {
+    segs, cavities, totalFillS: Math.max(...cavities.map((c) => c.tStartS)),
+    rows: [
+      { k: 'red', v: `SERIE 1×${2 * nP} — compacta pero DESBALANCEADA`, ref: 'Fig 6.13 · las lejanas llenan tarde (míralo en 💧)' },
+      { k: 'balanceo artificial', v: 'secundarios cercanos MÁS delgados', ref: '§6.4.6/Fig 6.13 · Eq 6.8 con el ΔP sobrante por ruta' },
+      { k: 'advertencia del libro', v: 'no garantiza calidad pareja al EMPACAR', ref: '§6.2.4 · por eso las precisas usan ramificada/radial' },
+    ],
+  };
+}
+
+/** Fig 6.16 — HÍBRIDA ramificada-radial: sprue → 2 primarios → 2 secundarios
+ *  c/u → CLUSTER RADIAL de 4 terciarios en cada punta = 16 cavidades.
+ *  "Menos material que la ramificada, balance natural" (p.136). */
+export function layoutHybrid(o: {
+  VdotCcS?: number; material?: string; sprueLenMm?: number; pitchMm?: number;
+}): FeedNetwork {
+  const Vdot = o.VdotCcS ?? 60;
+  const m = FEED_MATERIALS[o.material ?? 'ABS'] ?? FEED_MATERIALS.ABS;
+  const Lsprue = o.sprueLenMm ?? 70;
+  const pitch = o.pitchMm ?? 58, Rrad = 26;
+  const segs: FeedSeg[] = [];
+  const rSprue = Math.max(2.5, minRunnerRadius(m, Lsprue / 1000, Vdot * 1e-6, 10e6) * 1000);
+  const tSprue = fillS(rSprue, Lsprue, Vdot);
+  segs.push({ a: [0, 0, Lsprue], b: [0, 0, 0], rMm: rSprue, level: 'sprue', VdotCcS: Vdot, tStartS: 0, tFillS: tSprue });
+  const rPrim = Math.max(1.5, steelSafeDiaMm(2 * rSprue / Math.SQRT2) / 2);
+  const rSec = Math.max(1.25, steelSafeDiaMm(2 * rPrim / Math.SQRT2) / 2);
+  const rTer = Math.max(0.9, steelSafeDiaMm(2 * rSec / 2) / 2);          // Eq 6.1 con n=4
+  const tPrim = fillS(rPrim, pitch, Vdot / 2);
+  const tSec = fillS(rSec, pitch * 0.7, Vdot / 4);
+  const tTer = fillS(rTer, Rrad, Vdot / 16);
+  const cavities: FeedNetwork['cavities'] = [];
+  for (const sx of [1, -1]) {
+    segs.push({ a: [0, 0, 0], b: [sx * pitch, 0, 0], rMm: rPrim, level: 'primario', VdotCcS: Vdot / 2, tStartS: tSprue, tFillS: tPrim });
+    for (const sy of [1, -1]) {
+      const cx = sx * pitch, cy = sy * pitch * 0.7;
+      segs.push({ a: [cx, 0, 0], b: [cx, cy, 0], rMm: rSec, level: 'secundario', VdotCcS: Vdot / 4, tStartS: tSprue + tPrim, tFillS: tSec });
+      for (let k = 0; k < 4; k++) {
+        const th = (k / 4) * 2 * Math.PI + Math.PI / 4;
+        const b: [number, number, number] = [cx + Rrad * Math.cos(th), cy + Rrad * Math.sin(th), 0];
+        segs.push({ a: [cx, cy, 0], b, rMm: rTer, level: 'terciario-radial', VdotCcS: Vdot / 16, tStartS: tSprue + tPrim + tSec, tFillS: tTer });
+        cavities.push({ x: b[0] * 1.12, y: b[1] * 1.12, tStartS: tSprue + tPrim + tSec + tTer });
+      }
+    }
+  }
+  return {
+    segs, cavities, totalFillS: tSprue + tPrim + tSec + tTer,
+    rows: [
+      { k: 'red', v: 'HÍBRIDA ramificada→4 clusters radiales ×4 = 16', ref: 'Fig 6.16 · menos material + balance natural (p.136)' },
+      { k: 'reparto', v: `V̇ ${Vdot}→${(Vdot / 16).toFixed(1)} cc/s (½·½·¼)`, ref: 'Eq 6.1 por unión' },
+      { k: '⌀ cadena', v: `${(2 * rSprue).toFixed(1)}→${(2 * rPrim).toFixed(1)}→${(2 * rSec).toFixed(1)}→${(2 * rTer).toFixed(1)} mm`, ref: 'D/√n + fresas §6.5.4' },
+    ],
+  };
+}

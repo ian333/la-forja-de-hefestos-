@@ -10,8 +10,9 @@ const OUT = '/tmp/red';
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 160)));
   try {
     await p.goto('http://localhost:5179/forja-brep.html', { waitUntil: 'domcontentloaded', timeout: 90000 });
-    await p.waitForFunction(() => { const bt = document.querySelector('[data-testid="btn-red-6-14"]'); return !!bt && !bt.disabled; }, null, { timeout: 240000 });
-    await p.click('[data-testid="btn-red-6-14"]');
+    const SEL = process.env.BTN || '[data-testid="btn-red-6-14"]';
+    await p.waitForFunction((sel) => { const bt = document.querySelector(sel); return !!bt && !bt.disabled; }, SEL, { timeout: 240000 });
+    await p.click(SEL);
     await p.waitForFunction('window.__forgeBrep.moldGeom().length >= 2', null, { timeout: 60000 });
     await p.waitForTimeout(1200);
     await p.click('text=ISO').catch(() => {});
