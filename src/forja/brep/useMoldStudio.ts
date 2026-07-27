@@ -111,7 +111,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         { k: 't de llenado', v: `${tFill.toFixed(3)} s`, ref: 'L/v̄ · ~1.4 % del ciclo: por eso NO se ve a tiempo real' },
         { k: 'sin llenar', v: `${sf.unreachable} vértices`, ref: 'short shot §5.5 — sin camino al gate', warn: sf.unreachable > 0 },
       ];
-      return { maxFlowLenMm: sf.maxFlowLenMm, rows };
+      return { moldSim, moldThermalSim, liveCotas, maxFlowLenMm: sf.maxFlowLenMm, rows };
     } catch (e) { console.warn('FLOW_ERR', e); return null; }
   }, [flowOn, liveMoldSpec, moldParts]);
   // CARRERA DE APERTURA (§6.3.2 = 2.5 × altura de pieza) — la MISMA función que usa el
