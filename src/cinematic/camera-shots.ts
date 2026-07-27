@@ -41,6 +41,9 @@ export interface ShotCtx {
   nucX: number;    // x del núcleo objetivo (Re/2) — hacia dónde se clava el dive.
   bondR: number;   // separación viva del enlace en t (para seguir la vibración si hace falta).
   t: number;       // t global (para micro-vida coherente y continua entre tomas).
+  /** Puntos de interés REALES de la escena (p.ej. los O del anillo del trímero), en bohr.
+   *  La escena los pasa desde el .bin → las tomas apuntan a geometría medida, no inventada. */
+  pts?: Vec3[];
 }
 
 /** Una toma: progreso local u∈[0,1] → Pose. */
@@ -76,7 +79,7 @@ export function heroOrbit(o: { rMul?: number; elev?: number; azim0?: number; spa
     const r = Math.max(MINR, c.ex * (rMul - 0.12 * Math.sin(u * Math.PI)));   // respira acercándose a mitad
     const az = azim0 + dir * span * smooth(u);
     const el = elev + Math.sin(u * Math.PI * 1.3) * 0.14;
-    return { pos: sph(r, el, az), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, el, az), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -86,7 +89,7 @@ export function loomPush(o: { rFrom?: number; rTo?: number; elev?: number; azim?
   const { rFrom = 1.5, rTo = 0.72, elev = 0.10, azim = 0.9, fov = 34 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * lerp(rFrom, rTo, smoother(u)));            // acelera al final = se viene encima
-    return { pos: sph(r, elev + 0.05 * Math.sin(u * Math.PI), azim), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, elev + 0.05 * Math.sin(u * Math.PI), azim), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -97,7 +100,7 @@ export function craneUnder(o: { rMul?: number; elevFrom?: number; elevTo?: numbe
   return (u, c) => {
     const r = Math.max(MINR, c.ex * rMul);
     const el = lerp(elevFrom, elevTo, smoother(u));                           // cae por debajo → mira hacia arriba
-    return { pos: sph(r, el, azim0 + span * smooth(u)), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, el, azim0 + span * smooth(u)), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -108,7 +111,7 @@ export function eyeLevelLock(o: { rMul?: number; azim?: number; fov?: number } =
   return (u, c) => {
     const r = Math.max(MINR, c.ex * rMul);
     // micro-deriva mínima (peso), pero se queda de frente a nivel de ojo.
-    return { pos: sph(r, 0.02 * Math.sin(u * Math.PI), azim + 0.05 * Math.sin(u * Math.PI * 0.6)), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, 0.02 * Math.sin(u * Math.PI), azim + 0.05 * Math.sin(u * Math.PI * 0.6)), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -118,7 +121,7 @@ export function staticBreath(o: { rMul?: number; elev?: number; azim?: number; f
   const { rMul = 1.42, elev = 0.14, azim = 0.8, fov = 33 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * (rMul + 0.03 * Math.sin(u * Math.PI * 2)));
-    return { pos: sph(r, elev + 0.03 * Math.sin(u * Math.PI * 1.5), azim + 0.06 * Math.sin(u * Math.PI)), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, elev + 0.03 * Math.sin(u * Math.PI * 1.5), azim + 0.06 * Math.sin(u * Math.PI)), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -129,7 +132,7 @@ export function whipParallax(o: { rMul?: number; elevAmp?: number; azim0?: numbe
   return (u, c) => {
     const r = Math.max(MINR, c.ex * rMul * (1 - 0.06 * Math.sin(u * Math.PI * 2)));
     const az = azim0 + span * smoother(u);                                    // arranca lento, azota, frena
-    return { pos: sph(r, elevAmp * Math.sin(u * Math.PI), az), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, elevAmp * Math.sin(u * Math.PI), az), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -150,7 +153,7 @@ export function crashIn(o: { rMul?: number; elev?: number; azim0?: number; span?
   const { rMul = 0.98, elev = 0.02, azim0 = Math.PI / 2 - 1.2, span = 1.1, fov = 36 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * rMul * (1 - 0.07 * Math.sin(u * Math.PI * 2)));   // dolly con PULSO (violencia)
-    return { pos: sph(r, elev + 0.16 * smooth(u), azim0 + span * smooth(u)), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, elev + 0.16 * smooth(u), azim0 + span * smooth(u)), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -202,7 +205,7 @@ export function approachWide(o: { rFromMul?: number; rToMul?: number; elev?: num
   const { rFromMul = 1.9, rToMul = 1.4, elev = 0.06, azim0 = 0.5, span = 0.8, fov = 40 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * lerp(rFromMul, rToMul, smoother(u)));
-    return { pos: sph(r, elev + 0.10 * Math.sin(u * Math.PI), azim0 + span * smooth(u)), fov: lerp(fov, fov - 5, u), target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, elev + 0.10 * Math.sin(u * Math.PI), azim0 + span * smooth(u)), fov: lerp(fov, fov - 5, u), target: _mid(c), roll: ROLL };
   };
 }
 
@@ -218,7 +221,7 @@ export function twoShot(o: { rMul?: number; elev?: number; azim0?: number; span?
   const { rMul = 1.7, elev = 0.14, azim0 = 0.6, span = 1.4, dir = 1, fov = 40 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * (rMul - 0.10 * Math.sin(u * Math.PI)));
-    return { pos: sph(r, elev + 0.10 * Math.sin(u * Math.PI * 1.1), azim0 + dir * span * smooth(u)), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, elev + 0.10 * Math.sin(u * Math.PI * 1.1), azim0 + dir * span * smooth(u)), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -241,7 +244,7 @@ export function craneOverPair(o: { rMul?: number; elevFrom?: number; elevTo?: nu
   const { rMul = 1.55, elevFrom = 0.16, elevTo = -0.5, azim0 = 1.3, span = 0.9, fov = 42 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * rMul);
-    return { pos: sph(r, lerp(elevFrom, elevTo, smoother(u)), azim0 + span * smooth(u)), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, lerp(elevFrom, elevTo, smoother(u)), azim0 + span * smooth(u)), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -251,7 +254,7 @@ export function pushToBridge(o: { rFrom?: number; rTo?: number; elev?: number; a
   const { rFrom = 1.75, rTo = 0.62, elev = 0.08, azim = 1.1, fov = 40 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * lerp(rFrom, rTo, smoother(u)));
-    return { pos: sph(r, elev + 0.05 * Math.sin(u * Math.PI), azim), fov, target: [0, 0, 0], roll: ROLL };
+    return { pos: orbitAround(_mid(c), r, elev + 0.05 * Math.sin(u * Math.PI), azim), fov, target: _mid(c), roll: ROLL };
   };
 }
 
@@ -322,4 +325,92 @@ export function playShots(list: ShotEntry[], t: number, ctx: ShotCtx): Pose {
   pose.pos = [pose.pos[0], pose.pos[1] + bx, pose.pos[2]];
   pose.roll = pose.roll + 0.015 * Math.sin(ctx.t * 0.13);
   return pose;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRÍMERO — EL ANILLO (3 aguas, 9 átomos). Geometría MEDIDA del bin, no supuesta:
+// el anillo vive en el plano XY (normal ≈ [0.05,-0.16,0.985]); circunradio 6.1 bohr
+// (abierto) → 3.07 (cerrado); los O NO son coplanares (pucker |z| 0.33-0.46) = la
+// FRUSTRACIÓN UUD, que se ve DE CANTO. En la convención de sph(): la vertical es Y y
+// azim gira en el plano XZ, así que con elev≈0:
+//     azim ≈ 0     → cámara en +x  = anillo DE CANTO  (se ve el pucker: una volteada)
+//     azim ≈ π/2   → cámara en +z  = anillo DE FRENTE (se ve el TRIÁNGULO y sus 3 puentes)
+// roll=ROLL mantiene el 9:16 lleno (de canto el anillo queda VERTICAL en pantalla).
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const _pt = (c: ShotCtx, i: number): Vec3 => c.pts?.[i] ?? [0, 0, 0];
+/** Centro de MASA VISIBLE del anillo (los O reales). Apuntar aquí y no a [0,0,0] evita el
+ *  void: el anillo está inclinado y con pucker, así que su masa NO cae en el origen. */
+const _mid = (c: ShotCtx): Vec3 => {
+  const P = c.pts;
+  if (!P || P.length < 3) return [0, 0, 0];   // dímero/legacy: comportamiento IDÉNTICO al de siempre
+  let x = 0, y = 0, z = 0;
+  for (const p of P) { x += p[0]; y += p[1]; z += p[2]; }
+  return [x / P.length, y / P.length, z / P.length];
+};
+
+/** ringWide — PLANO DE LOS TRES: establece el anillo, ligeramente inclinado (ni de frente
+ *  ni de canto) para que se lea como objeto 3D. §5 inmersión. */
+export function ringWide(o: { rMul?: number; azim0?: number; span?: number; elev?: number; dir?: number; fov?: number } = {}): Shot {
+  const { rMul = 1.45, azim0 = 0.55, span = 1.2, elev = 0.32, dir = 1, fov = 40 } = o;
+  return (u, c) => {
+    const r = Math.max(MINR, c.ex * rMul);
+    const az = azim0 + dir * span * smooth(u);
+    const M = _mid(c);
+    return { pos: orbitAround(M, r, elev + 0.06 * Math.sin(u * Math.PI), az), fov, target: M, roll: ROLL };
+  };
+}
+
+/** ringFaceOn — DE FRENTE al anillo (cámara sobre la normal): se ve el TRIÁNGULO completo
+ *  y sus TRES puentes a la vez. La toma que solo el trímero puede dar. */
+export function ringFaceOn(o: { rMul?: number; azim0?: number; span?: number; elev?: number; fov?: number } = {}): Shot {
+  const { rMul = 1.15, azim0 = Math.PI / 2, span = 0.5, elev = 0.05, fov = 40 } = o;
+  return (u, c) => {
+    const r = Math.max(MINR, c.ex * rMul);
+    const M = _mid(c);
+    return { pos: orbitAround(M, r, elev, azim0 + span * smooth(u)), fov, target: M, roll: ROLL };
+  };
+}
+
+/** ringEdgeToFace — LA FIRMA DEL TRÍMERO: arranca DE CANTO (se ve que el anillo no es plano:
+ *  una agua quedó volteada = frustración por número impar) y ABRE hasta verlo DE FRENTE.
+ *  Hermana de la firma del agua v2 (recorrer el ángulo edge-on→face-on). `back` lo invierte. */
+export function ringEdgeToFace(o: { rMul?: number; fov?: number; back?: boolean; elev?: number } = {}): Shot {
+  const { rMul = 1.3, fov = 40, back = false, elev = 0.0 } = o;
+  return (u, c) => {
+    const r = Math.max(MINR, c.ex * rMul);
+    const s = smooth(u);
+    // DE CANTO REAL: azim 0 + elev 0 = cámara EN el plano del anillo → los 3 O se proyectan
+    // sobre una LÍNEA y el pucker (una quedó al revés) se vuelve offset vertical medible a ojo.
+    // Arrancar en 0.38 mataba la firma (los agentes: "nunca entrega el extremo edge"). Se
+    // compensa ALEJANDO (rMul), no rotando.
+    const az = back ? lerp(Math.PI / 2, 0.0, s) : lerp(0.0, Math.PI / 2, s);
+    // micro-elevación: separa las tres alturas del pucker (que el ojo lo LEA)
+    const M = _mid(c);
+    // elev queda en 0 mientras la voz dice "de canto"; se despega solo en la 2a mitad
+    const el = elev * smooth(Math.max(0, (u - 0.45) / 0.55)) + 0.12 * Math.sin(s * Math.PI) * smooth(u);
+    return { pos: orbitAround(M, r, el, az), fov, target: M, roll: ROLL };
+  };
+}
+
+/** ringOne — órbita ÍNTIMA de UNA agua del anillo (índice `which` de ctx.pts). §4 close-up.
+ *  Reusa el lenguaje de orbitOne del dímero, pero apuntando a geometría real del anillo. */
+export function ringOne(o: { which?: number; rMul?: number; azim0?: number; span?: number; elev?: number; fov?: number } = {}): Shot {
+  const { which = 0, rMul = 0.46, azim0 = 0.7, span = 1.9, elev = 0.16, fov = 38 } = o;
+  return (u, c) => {
+    const cen = _pt(c, which);
+    return { pos: orbitAround(cen, Math.max(MINR, c.ex * rMul), elev + 0.12 * Math.sin(u * Math.PI * 1.2), azim0 + span * smooth(u)), fov, target: cen, roll: ROLL };
+  };
+}
+
+/** ringToBridge — §6 LOOMING sobre UN PUENTE del anillo (punto medio entre dos aguas), que es
+ *  donde nace el Δρ. Se viene encima mientras el puente enciende. */
+export function ringToBridge(o: { a?: number; b?: number; rFrom?: number; rTo?: number; elev?: number; azim?: number; fov?: number } = {}): Shot {
+  const { a = 0, b = 1, rFrom = 1.5, rTo = 0.62, elev = 0.10, azim = 0.9, fov = 42 } = o;
+  return (u, c) => {
+    const A = _pt(c, a), B = _pt(c, b);
+    const mid: Vec3 = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2, (A[2] + B[2]) / 2];
+    const r = Math.max(MINR, c.ex * lerp(rFrom, rTo, smooth(u)));
+    return { pos: orbitAround(mid, r, elev, azim + 0.35 * smooth(u)), fov, target: mid, roll: ROLL };
+  };
 }

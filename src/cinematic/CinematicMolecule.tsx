@@ -28,12 +28,15 @@ import {
   approachWide, whipParallax, craneUnder, diveToNucleus, nucleusOrbit, pullOut,
   crashIn, heroOrbit, loomPush, staticBreath, dutchDrift,
   twoShot, throughBridge, craneOverPair, pushToBridge, orbitOne,
+  ringWide, ringFaceOn, ringEdgeToFace, ringOne, ringToBridge, eyeLevelLock,
 } from './camera-shots';
+import { evalCapas, type CapasSpec } from './capas';
 import { WaterMD } from './WaterMD';
 
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
-const WPAIR_DURATION = 77;   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
+const WPAIR_DURATION = 77;
+const WTRI_DURATION = 94;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
 // lenta ×3 (slow-motion de una dinámica real, no falseo): acercamiento ~3.3s +
@@ -404,6 +407,25 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 9, label: 'se acercan — looming al puente (l15-16)' },
     { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 9, label: 'el puente=nube — el enlace llena el cuadro (l17-18)' },
     { shot: pullOut({}), dur: 10, label: 'payoff (l19-20)' },
+  ],
+  // EL ANILLO (trímero, 3 aguas / 9 átomos). Cuenta lo que 2 aguas NO pueden:
+  //  · COOPERATIVIDAD — los 3 puentes juntos ligan MÁS que la suma de los pares
+  //    (medido: −2.05 kcal/mol = 11.8% del enlace; nace de 0.5% al cerrarse el anillo)
+  //  · FRUSTRACIÓN por número impar — el anillo NO es plano (pucker |z| 0.33-0.46 bohr,
+  //    medido del bin): una agua queda volteada. Se ve DE CANTO → esa es la toma firma.
+  // Duraciones provisionales (77s): RECALIBRAR a los segundos reales de segs.json
+  // cuando exista la narración (CANON-VIDEO §sincronía).
+  wtri: [
+    { shot: ringWide({ rMul: 1.62, azim0: 0.55, span: 1.0, elev: 0.30 }), dur: 6.1, label: 'las TRES separadas — que se CUENTEN 3' },
+    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 11.7, label: 'una sola en teleobjetivo (fuera de la nube)' },
+    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.8, label: 'DE FRENTE: el anillo entero con aire' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 7.1, label: 'el PUENTE entre dos (sin entrar a la nube)' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.4, label: 'el anillo CIERRA — se ven las tres' },
+    { shot: heroOrbit({ dir: 1, azim0: 1.1, span: 1.5, elev: 0.20, rMul: 1.42, fov: 32 }), dur: 13.0, label: 'COOPERATIVIDAD: órbita con las 3 SIEMPRE en cuadro' },
+    { shot: eyeLevelLock({ rMul: 1.40, azim: 2.1 }), dur: 6.7, label: 'el DATO (12%) — nivel de ojo, quieto' },
+    { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26 }), dur: 11.7, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
+    { shot: ringFaceOn({ rMul: 1.34, azim0: 2.4, span: 0.5, elev: -0.10 }), dur: 9.4, label: 'aguanta más + nada inventado (anillo entero)' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2 }), dur: 11.4, label: 'payoff — se aleja CON el anillo en cuadro' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -789,13 +811,13 @@ interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [n
 
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
+  wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
   ch4:  { name: 'Metano', formula: 'CH₄', fact: 'Cuatro enlaces perfectos a 109.5°: un tetraedro.' },
   nh3:  { name: 'Amoniaco', formula: 'NH₃', fact: 'Un par libre la vuelve una pirámide.' },
   co2:  { name: 'Dióxido de carbono', formula: 'CO₂', fact: 'Lineal y simétrica: 180° exactos.' },
   c2h4: { name: 'Etileno', formula: 'C₂H₄', fact: 'Un doble enlace: σ + π. Madura las frutas.' },
   c2h2: { name: 'Acetileno', formula: 'C₂H₂', fact: 'Un triple enlace: σ + 2π. Arde a 3000 °C.' },
   hcl:  { name: 'El ácido', formula: 'HCl', fact: 'El cloro jala el electrón del hidrógeno — y así se hace el ácido de tu estómago.' },
-  nacl: { name: 'Sal', formula: 'NaCl', fact: 'Enlace iónico: un átomo le robó el electrón al otro.' },
   c6h6: { name: 'Benceno', formula: 'C₆H₆', fact: 'Seis electrones bailando en círculo: aromático.' },
   h2:   { name: 'Hidrógeno', formula: 'H₂', fact: 'El enlace más simple del universo.' },
   f2:   { name: 'Flúor', formula: 'F₂', fact: 'El elemento más violento — con el enlace más débil.' },
@@ -963,6 +985,9 @@ const O2FLOW_VERT = `
   uniform float uSize;
   uniform float uRing;
   uniform float uCoreThin;
+  uniform vec3  uCores[8];   // centros que ARDEN (núcleos), en bohr
+  uniform int   uNCores;
+  uniform float uCoreR;      // radio² del raleo por núcleo
   uniform float uTime;      // reloj para el PARPADEO (0 en las nubes que no parpadean)
   uniform float uTwinkle;   // profundidad del parpadeo (0 = apagado → idéntico a antes)
   void main() {
@@ -979,7 +1004,18 @@ const O2FLOW_VERT = `
     vW = 1.0 + uRing * exp(-dRing * dRing / 0.16);
     // raleo del CORE: donde la suma ya es blanca, capas extra solo ENSUCIAN al
     // compresor — se atenúan las partículas pegadas al centro (la luz queda)
-    vW *= 1.0 - uCoreThin * exp(-dot(position, position) / 0.30);
+    // ANTI-QUEMADO GENERAL: ralear alrededor de CADA núcleo que arde, no solo del
+    // ORIGEN. En O2/dímero el core que quema SÍ está en el centro; en el trímero los
+    // tres oxígenos están en el anillo (r~3 bohr) y el origen es el HUECO → el raleo
+    // viejo atenuaba el vacío y dejaba quemar los cores. Medido: 29% >240 vs 6.6%
+    // del ganador. Con uNCores=0 el comportamiento es IDÉNTICO al de siempre.
+    float thin = exp(-dot(position, position) / 0.30);          // compat: el origen
+    for (int i = 0; i < 8; i++) {
+      if (i >= uNCores) break;
+      vec3 d = position - uCores[i];
+      thin = max(thin, exp(-dot(d, d) / uCoreR));
+    }
+    vW *= 1.0 - uCoreThin * thin;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     // el polvo SE APARTA del lente: al viajar DENTRO de la nube, las partículas
     // pegadas a cámara se desvanecen (vNear→0) pero el polvo cercano SÍ envuelve
@@ -1103,8 +1139,8 @@ function CarotenoFlow({ bundle, axis, cen, L, reveal, color, bright, time }:
 // Una nube advectada: cada frame interpola las POSICIONES entre las dos separaciones
 // que bracketean R(t) → las partículas se MUEVEN siguiendo la densidad (la carga
 // fluye al enlace). El color es fijo por partícula (viene del .bin o constante).
-function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0 }:
-  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number }) {
+function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30 }:
+  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -1112,7 +1148,7 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     g.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
     return g;
   }, [colors, N]);
-  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
+  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uCores: { value: Array.from({length:8},(_,i)=> new THREE.Vector3(...(cores?.[i] ?? [0,0,0]))) }, uNCores: { value: Math.min(8, cores?.length ?? 0) }, uCoreR: { value: coreR }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
   useEffect(() => {
     // bracket en Rvals (descendente Rmax→Rmin). frac entre k y k+1.
     let k = 0;
@@ -1126,8 +1162,10 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     const o0 = k * N * 3, o1 = (k + 1) * N * 3, inv = 1 / O2AI_POSQ, mf = 1 - frac;
     for (let i = 0; i < N * 3; i++) arr[i] = (posQ[o0 + i] * mf + posQ[o1 + i] * frac) * inv;
     pos.needsUpdate = true;
-    if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uBright.value = brightness; matRef.current.uniforms.uRing.value = ring; matRef.current.uniforms.uCoreThin.value = coreThin; matRef.current.uniforms.uTime.value = tw_time; matRef.current.uniforms.uTwinkle.value = twinkle; }
-  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo]);
+    if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uBright.value = brightness;
+      if (cores) { for (let i=0;i<8;i++) matRef.current.uniforms.uCores.value[i].set(...(cores[i] ?? [0,0,0])); matRef.current.uniforms.uNCores.value = Math.min(8, cores.length); matRef.current.uniforms.uCoreR.value = coreR; }
+      matRef.current.uniforms.uRing.value = ring; matRef.current.uniforms.uCoreThin.value = coreThin; matRef.current.uniforms.uTime.value = tw_time; matRef.current.uniforms.uTwinkle.value = twinkle; }
+  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo, cores, coreR]);
   return (
     <points geometry={geo} frustumCulled={false}>
       <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={O2FLOW_VERT}
@@ -1742,16 +1780,43 @@ function wapBracket(Rvals: Float32Array, K: number, R: number) {
 }
 // CÁMARA QUE VIAJA — REUSA la gramática de tomas de la serie (playShots + camera-shots.ts),
 // igual que O2/agua v2. NADA de cámara fija inventada. Secuencia mapeada al guion (77s).
+// COREOGRAFÍA DE CAPAS COMO DATOS (capas.ts). Cada capa es un objeto direccionable:
+// se prende, se apaga y se le sube el brillo por ventanas del guion — sin tocar el motor.
+// Un video nuevo trae SU spec; esto puede vivir en videos/<id>.json o servir botones del CAD.
+const WPAIR_CAPAS: CapasSpec = {
+  nubes:    { base: 1,    mods: [{ wins: [[41.5, 50.8]], a: -0.42, label: 'el CAMPO solo (nubes a 58%, no a muerto — el verificador cazó "alambre azul")' }] },
+  campo:    { base: 1,    mods: [{ wins: [[7.2, 19.6], [61.8, 68.8]], a: -0.85, label: 'campo BAJA: electrones (l3-6) y enlace=nube (l17-18)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[7.2, 19.6]], a: 0.42, label: 'PARPADEO: "son poquitos, parpadeando"' }] },
+  spin:     { base: 1,    mods: [{ wins: [[28.8, 40.5], [51.5, 68.8]], a: 0.9, label: 'Δρ magenta ARDE: cargas parciales + acercamiento/enlace' }] },
+  acc:      { base: 1,    mods: [{ wins: [[19.8, 28.6]], a: 0.5, label: 'ORO del oxígeno ("el corazón dorado es el oxígeno")' }] },
+};
+// CAPAS DEL ANILLO — derivadas de la VOZ (recalibrar-beats.py sobre segs.json), no a mano.
+const WTRI_CAPAS: CapasSpec = {
+  // el CAMPO manda cuando se habla de puente/carga/fuerza (antes lo APAGABA ahí: bug medido)
+  campo:    { base: 0.55, mods: [
+    { wins: [[27.4, 35.3]], a: 1.05, label: 'PROTAGONISTA: nace el puente / no es línea / es carga' },
+    { wins: [[39.7, 60.3]], a: 0.85, label: 'la fuerza: los tres jalan más + el 12%' },
+    { wins: [[6.1, 18.6]],  a: -0.40, label: 'baja cuando la voz mira los electrones de UNA' } ] },
+  // las nubes bajan donde estorban la lectura (campo protagonista y firma de canto)
+  nubes:    { base: 1, mods: [{ wins: [[27.4, 35.3], [60.3, 72.4]], a: -0.34, label: 'deja LEER el puente y el pucker' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[6.1, 18.6]], a: 0.42, label: 'los electrones parpadean cuando se nombran' }] },
+  spin:     { base: 1, mods: [{ wins: [[27.4, 35.3], [39.7, 60.3]], a: 0.85, label: 'Δρ ARDE: el puente y la cooperatividad' }] },
+  acc:      { base: 1, mods: [{ wins: [[6.1, 18.6]], a: 0.45, label: 'ORO del oxígeno en un oxígeno y dos hidrógenos' }] },
+  // los PALITOS O–H hacen contable "una molécula = tres átomos" (sin ellos son bolas sueltas)
+  enlaces:  { base: 0, mods: [{ wins: [[6.1, 18.6], [60.3, 78.6]], a: 1.0, label: 'los 3 átomos y la firma' }] },
+  // la FLECHA del dipolo es lo único que vuelve VISIBLE "una quedó al revés"
+  dipolo:   { base: 0, mods: [{ wins: [[60.3, 78.6]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
+};
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
 // Las tomas salen del REGISTRO (datos), no de constantes por video. Variante nueva =
 // otra entrada en CAMERA_SHOTS + ?cam=<x>, sin tocar este componente. Ver docs/CANON-VIDEO.md.
 const WPAIR_SHOTS_ACTIVE = CAMERA_SHOTS[WPAIR_CAM === 'b' ? 'wpair-b' : 'wpair'];
-function WaterPairCamera({ time, R }: { time: number; R: number }) {
+function WaterPairCamera({ time, R, shots, ex, pts }: { time: number; R: number; shots: ShotEntry[]; ex: number; pts?: Vec3[] }) {
   const { camera } = useThree();
   useEffect(() => {
     // R (bohr) = separación viva; nucX = R/2 (el O) para el dive. Vertical (reel) → roll intacto.
-    const { pos, fov, target, roll } = playShots(WPAIR_SHOTS_ACTIVE, time, { ex: WPAIR_EX, nucX: R / 2, bondR: R, t: time });
+    const { pos, fov, target, roll } = playShots(shots, time, { ex, nucX: R / 2, bondR: R, t: time, pts });
     camera.position.set(pos[0], pos[1], pos[2]);
     const fwd = new THREE.Vector3(target[0] - pos[0], target[1] - pos[1], target[2] - pos[2]).normalize();
     const up0 = new THREE.Vector3(0, 1, 0); if (Math.abs(fwd.dot(up0)) > 0.94) up0.set(0, 0, 1);
@@ -1763,20 +1828,84 @@ function WaterPairCamera({ time, R }: { time: number; R: number }) {
     const cam = camera as THREE.PerspectiveCamera;
     cam.fov = Math.min(95, fov * 1.42);
     const d = Math.hypot(pos[0] - target[0], pos[1] - target[1], pos[2] - target[2]);
-    cam.near = Math.max(0.02, d * 0.03); cam.far = Math.max(100, WPAIR_EX * 24); cam.updateProjectionMatrix();
-  }, [time, R, camera]);
+    cam.near = Math.max(0.02, d * 0.03); cam.far = Math.max(100, ex * 24); cam.updateProjectionMatrix();
+  }, [time, R, camera, shots, ex, pts]);
   return null;
 }
-function WaterPair({ time, onReady }: { time: number; onReady?: (r: boolean) => void }) {
+// EL PUENTE (wpair, 2 aguas) y EL ANILLO (wtri, 3 aguas / 9 átomos) comparten formato WAP2
+// y renderer: solo cambian los bins y la secuencia de tomas del registro. Cero componente nuevo.
+const WATER_BINS: Record<string, { bin: string; ef: string; ex: number }> = {
+  wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13 },
+  wtri:  { bin: 'water-trimer',   ef: 'water-trimer-efield',   ex: 10 },   // nube ±6.6 bohr: ex=15 dejaba void muerto
+};
+
+/** WaterSticks — ENLACES O–H y FLECHA DEL DIPOLO, calculados de los núcleos REALES del bin.
+ *
+ * Por qué existen (agentes, 2026-07-27): sin palitos "una molécula, tres átomos" son tres
+ * bolas sueltas y NUNCA se lee; y sin un vector por molécula, "una queda al revés" no tiene
+ * forma que ver — son nueve puntos amarillos iguales. Esto NO inventa física: el enlace se
+ * dibuja entre O y SUS dos H (del .bin) y el dipolo es la bisectriz H-O-H, que es la
+ * dirección real del momento dipolar del agua (apunta del O hacia el lado de los H, que es
+ * el positivo: p = Σ q·r con q_H>0). Es ANOTACIÓN sobre geometría medida, y se declara.
+ */
+function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
+  { nuc: Vec3[]; show?: number; showDip?: number; scale?: number }) {
+  const mols = Math.floor(nuc.length / 3);
+  const items = useMemo(() => {
+    const out: { mid: Vec3; q: THREE.Quaternion; len: number; kind: 'bond' | 'dip' }[] = [];
+    const UP = new THREE.Vector3(0, 1, 0);
+    for (let m = 0; m < mols; m++) {
+      const O = new THREE.Vector3(...nuc[3 * m]);
+      const Hs = [new THREE.Vector3(...nuc[3 * m + 1]), new THREE.Vector3(...nuc[3 * m + 2])];
+      for (const H of Hs) {
+        const d = H.clone().sub(O); const len = d.length();
+        const q = new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize());
+        out.push({ mid: O.clone().add(d.clone().multiplyScalar(0.5)).toArray() as Vec3, q, len, kind: 'bond' });
+      }
+      // DIPOLO = bisectriz H-O-H (dirección real del momento dipolar del agua)
+      const b = Hs[0].clone().sub(O).normalize().add(Hs[1].clone().sub(O).normalize()).normalize();
+      const L = 1.55 * scale;
+      const q = new THREE.Quaternion().setFromUnitVectors(UP, b);
+      out.push({ mid: O.clone().add(b.clone().multiplyScalar(L * 0.5)).toArray() as Vec3, q, len: L, kind: 'dip' });
+    }
+    return out;
+  }, [nuc, mols, scale]);
+  if (show <= 0.01 && showDip <= 0.01) return null;
+  return (
+    <>
+      {items.map((it, i) => {
+        const esDip = it.kind === 'dip';
+        const op = esDip ? showDip : show;
+        if (op <= 0.01) return null;
+        return (
+          <group key={i} position={it.mid} quaternion={it.q}>
+            <mesh>
+              <cylinderGeometry args={[esDip ? 0.052 : 0.030, esDip ? 0.052 : 0.030, it.len, 8]} />
+              <meshBasicMaterial color={esDip ? '#ffffff' : '#ffd9a0'} transparent opacity={op * (esDip ? 0.95 : 0.7)} depthWrite={false} />
+            </mesh>
+            {esDip && (
+              <mesh position={[0, it.len * 0.5 + 0.16, 0]}>
+                <coneGeometry args={[0.14, 0.34, 10]} />
+                <meshBasicMaterial color="#ffffff" transparent opacity={op} depthWrite={false} />
+              </mesh>
+            )}
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
+function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r: boolean) => void; mk?: string }) {
   const [wd, setWd] = useState<WAPData | null>(null);
   const [bondEf, setBondEf] = useState<BondEFieldData | null>(null);
   useEffect(() => {
     let alive = true; setWd(null); setBondEf(null);
-    fetch('/precomputed/water-approach.bin').then(r => r.arrayBuffer())
+    fetch(`/precomputed/${(WATER_BINS[mk] ?? WATER_BINS.wpair).bin}.bin`).then(r => r.arrayBuffer())
       .then(b => { if (alive) { setWd(parseWAP2(b)); onReady?.(true); } })
       .catch(e => console.error('water-approach load failed', e));
     // CAMPO ELÉCTRICO real (MEP, muchas líneas que se CONECTAN, como Li₂) — bin aparte
-    fetch('/precomputed/water-approach-efield.bin').then(r => r.arrayBuffer())
+    fetch(`/precomputed/${(WATER_BINS[mk] ?? WATER_BINS.wpair).ef}.bin`).then(r => r.arrayBuffer())
       .then(b => { if (alive) setBondEf(parseBondEField(b)); })
       .catch(e => console.error('water-approach efield load failed', e));
     return () => { alive = false; };
@@ -1836,32 +1965,47 @@ function WaterPair({ time, onReady }: { time: number; onReady?: (r: boolean) => 
                (wd.nucPos[o0 + 1] * mf + wd.nucPos[o1 + 1] * bb.frac) * inv,
                (wd.nucPos[o0 + 2] * mf + wd.nucPos[o1 + 2] * bb.frac) * inv]);
   }
+  // núcleos que ARDEN (los O: átomos 0,3,6…) → el raleo anti-quemado va AHÍ
+  const oCores = nucP.filter((_, i) => i % 3 === 0) as [number,number,number][];
+  // el ANILLO apila 3 moléculas: mismo brillo que el dímero = pared blanca (medido 30% >240
+  // vs 6.6% del ganador). bF baja el brillo SIN tocar color ni saturación.
+  const bF = mk === 'wtri' ? 0.52 : 1.0;
   const pulse = 0.92 + 0.08 * Math.sin(time * 2.0);   // el nebuloso RESPIRA (espectáculo vivo)
   // COREOGRAFÍA sincronizada al guion (segundos de segs.json):
-  const cloudGate = 1 - 0.42 * win(41.5, 50.8);       // nubes bajan a ~58% en el beat del campo (no a MUERTO — el verificador cazó "solo alambre azul")
-  const fieldGate = 1 - 0.85 * Math.max(win(7.2, 19.6), win(61.8, 68.8));  // campo BAJA → electrones (3-6) y enlace=nube (17-18)
-  const twk = 0.42 + 0.42 * win(7.2, 19.6);           // PARPADEO fuerte en "son sus electrones, pocos, parpadeando"
-  const spinB = 1 + 0.9 * Math.max(win(28.8, 40.5), win(51.5, 68.8));  // Δρ magenta ARDE: cargas parciales + acercamiento/enlace
-  const accB = 1 + 0.5 * win(19.8, 28.6);             // ORO del oxígeno resalta ("el corazón dorado es el oxígeno")
+  // CAPAS COMO OBJETOS (capas.ts): la coreografía vive en DATOS (WPAIR_CAPAS), no aquí.
+  // Matemáticamente idéntica a las constantes que había — verificado frame a frame.
+  const C = evalCapas(mk === 'wtri' ? WTRI_CAPAS : WPAIR_CAPAS, T);
+  const cloudGate = C.nubes, fieldGate = C.campo, twk = C.parpadeo, spinB = C.spin, accB = C.acc;
   // NADA de líneas de campo (una línea NO es el enlace ni el campo — es una convención que
   // engaña). El enlace ES la NUBE: el Δρ (magenta = electrones que LLEGAN al puente, azul =
   // de dónde salen), densidad electrónica REAL reacomodándose. Ab initio, no dibujado a mano.
   return (
     <>
-      <WaterPairCamera time={time} R={R} />
+      <WaterPairCamera time={time} R={R} ex={(WATER_BINS[mk] ?? WATER_BINS.wpair).ex}
+        shots={CAMERA_SHOTS[mk === 'wpair' && WPAIR_CAM === 'b' ? 'wpair-b' : mk] ?? CAMERA_SHOTS.wpair}
+        pts={nucP.filter((_, i) => i % 3 === 0)} />
       {/* size ×1.85 para 4K (a 2160×3840 los puntos quedan relativamente la mitad → nube rala;
           se compensa el tamaño para que la densidad se vea como en el preview 1080) */}
-      <O2Cloud posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * (0.3 + 0.7 * glow) * cloudGate} size={0.35} twinkle={twk} tw_time={time} />
-      <O2Cloud posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} />
-      <O2Cloud posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * pulse * cloudGate * spinB} size={0.46} twinkle={twk} tw_time={time} />
+      <O2Cloud posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
+      <O2Cloud posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} cores={oCores} coreR={0.55} />
+      <O2Cloud posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
       {bondEf && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
+      {/* ENLACES O–H + DIPOLO — solo el anillo, y gobernados por las capas (datos):
+          se PRENDEN en "un oxígeno y dos hidrógenos" y en la firma "una queda al revés". */}
+      {mk === 'wtri' && <WaterSticks nuc={nucP} show={C.enlaces ?? 0} showDip={C.dipolo ?? 0} />}
       {nucP.map((p, i) => (
         <group key={i} position={p}>
+          {/* BUG 5 (agentes): los H medían ~6 px ahogados por el bloom → "un oxígeno y dos
+              hidrógenos" y "una queda al revés" eran INDECIDIBLES. En el anillo los H se
+              agrandan y se pintan CÁLIDOS (el O queda frío) para que se cuenten 3 átomos
+              por molécula y se LEA hacia dónde apunta cada H (= el volteo). */}
           <Nucleus protons={wd.Z[i]} neutrons={wd.Z[i] === 8 ? 8 : 0} time={time}
-            clusterRadius={wd.Z[i] === 8 ? 0.10 : 0.05} nHot={[0.62, 0.9, 1.35]} nHue={0.55} />
+            clusterRadius={wd.Z[i] === 8 ? 0.10 : (mk === 'wtri' ? 0.115 : 0.05)}
+            nHot={wd.Z[i] === 8 || mk !== 'wtri' ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
+            nHue={wd.Z[i] === 8 || mk !== 'wtri' ? 0.55 : 0.08} />
         </group>
       ))}
     </>
@@ -2492,7 +2636,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   }, []);
 
   const isMD = molKey === 'wmd';   // agua = DINÁMICA MOLECULAR REAL (10 moléculas se auto-ensamblan)
-  const isPair = molKey === 'wpair';   // EL PUENTE: 2 aguas ab initio acercándose (nube densa V1 + Δρ)
+  const isPair = molKey === 'wpair' || molKey === 'wtri';   // mismo motor: 2 aguas o el ANILLO de 3   // EL PUENTE: 2 aguas ab initio acercándose (nube densa V1 + Δρ)
   const isWater = molKey === 'wdimer' || molKey === 'wsingle' || molKey === 'whex' || isMD || isPair;   // agua que INTERACTÚA (cluster + campo)
   const [waterReady, setWaterReady] = useState(false);
   const isChain = CHAIN_KEYS.has(molKey);
@@ -2559,7 +2703,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
+  const dur = molKey === 'wtri' ? WTRI_DURATION : isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -2601,7 +2745,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
       >
         <color attach="background" args={['#000']} />
         <FrameDriver time={time} />
-        {isPair && <WaterPair time={time} onReady={setWaterReady} />}
+        {isPair && <WaterPair time={time} onReady={setWaterReady} mk={molKey} />}
         {isMD && <WaterMD time={time} dur={dur} onReady={setWaterReady} />}
         {isWater && !isMD && !isPair && <WaterField molKey={molKey} time={time} dur={60} onReady={setWaterReady} />}
         {data && !isWater && (() => {

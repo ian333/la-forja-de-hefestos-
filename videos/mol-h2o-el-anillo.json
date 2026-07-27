@@ -1,0 +1,357 @@
+{
+  "id": "mol-h2o-el-anillo",
+  "titulo": "El anillo",
+  "subtitulo": "(H₂O)₃",
+  "nota": "3 aguas / 9 átomos. Manifiesto EXTENDIDO: además de la receta técnica trae el PROPÓSITO, qué debe mostrar cada toma, y las calificaciones del verificador de atención. Ver docs/CANON-VIDEO.md (Regla #0.5).",
+  "proposito": {
+    "wtf": "Los tres puentes juntos ligan MÁS que la suma de los tres pares — cooperatividad. Y como son TRES (número impar), el anillo no puede acomodarse parejo: una agua queda volteada.",
+    "hayQueMostrar": [
+      "que son TRES moléculas (9 átomos), no tres átomos — la confusión #1 del video anterior",
+      "el anillo CERRÁNDOSE y los 3 puentes encendiendo a la vez",
+      "la cooperatividad NACIENDO (0.5% → 11.8% del enlace) — es un proceso, no un dato",
+      "el anillo DE CANTO: no es plano, una quedó volteada (frustración por número impar)"
+    ],
+    "payoff": "Por esto el agua se agarra a sí misma, sube por las plantas y el hielo flota.",
+    "noHacer": [
+      "ilustrar en vez de simular",
+      "decir 'átomos' cuando son moléculas",
+      "puentes como líneas (son NUBE)"
+    ]
+  },
+  "fisica": {
+    "metodo": "RHF/cc-pVDZ, geometría optimizada con geomeTRIC (la encontró el optimizador, no se impuso)",
+    "gates": {
+      "geometria": "O-O 2.888/2.880/2.874 Å (medio 2.881) vs ~2.85 experimental = 1.1% · los tres DISTINTOS = frustración UUD",
+      "enlace": "-17.37 kcal/mol (anillo cerrado)",
+      "cooperatividad": "-2.05 kcal/mol = 11.8% del enlace (literatura -2 a -2.5) ✓",
+      "puentes": "∫Δρ>0 crece 0.0125 → 0.1876 (15×)"
+    },
+    "limitacion_declarada": "RHF sin dispersión ni corrección BSSE → el enlace TOTAL sobrestima ~10% vs alto nivel (-15.8). La COOPERATIVIDAD sí es robusta: en el agua la domina la INDUCCIÓN (campo medio), que RHF describe bien."
+  },
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wtri",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 94.0
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.wtriframes"
+  },
+  "tomas": {
+    "registro": "CAMERA_SHOTS.wtri (src/cinematic/CinematicMolecule.tsx) — la secuencia es DATO, no código nuevo",
+    "escala_ex": 10,
+    "lista": [
+      {
+        "t": [
+          0.0,
+          6.12
+        ],
+        "toma": "ringWide",
+        "muestra": "que son TRES moléculas + lazo abierto"
+      },
+      {
+        "t": [
+          6.52,
+          18.2
+        ],
+        "toma": "ringOne(0)",
+        "muestra": "🔑 LEGIBILIDAD: un oxígeno y dos hidrógenos = UNA molécula"
+      },
+      {
+        "t": [
+          18.6,
+          27.41
+        ],
+        "toma": "ringFaceOn",
+        "muestra": "el anillo y quién le presta hidrógeno a quién"
+      },
+      {
+        "t": [
+          27.81,
+          34.91
+        ],
+        "toma": "ringToBridge(0,1)",
+        "muestra": "el puente NO es línea: es carga moviéndose"
+      },
+      {
+        "t": [
+          35.31,
+          39.73
+        ],
+        "toma": "ringFaceOn",
+        "muestra": "el anillo CIERRA — 'y aquí está lo raro'"
+      },
+      {
+        "t": [
+          40.13,
+          53.16
+        ],
+        "toma": "loomPush",
+        "muestra": "COOPERATIVIDAD: se viene encima mientras dice que jalan más fuerte"
+      },
+      {
+        "t": [
+          53.56,
+          60.27
+        ],
+        "toma": "eyeLevelLock",
+        "muestra": "el beat del DATO (12%) — nivel de ojo = CONFIANZA"
+      },
+      {
+        "t": [
+          60.67,
+          72.34
+        ],
+        "toma": "ringEdgeToFace",
+        "muestra": "🔑 FIRMA: de canto, número impar, una al revés"
+      },
+      {
+        "t": [
+          72.74,
+          82.16
+        ],
+        "toma": "crashIn",
+        "muestra": "aguanta más + 'nada está inventado'"
+      },
+      {
+        "t": [
+          82.56,
+          94.0
+        ],
+        "toma": "pullOut",
+        "muestra": "payoff: se pega, sube por plantas, el hielo flota"
+      }
+    ],
+    "duraciones_shotentry": [
+      6.1,
+      11.7,
+      8.8,
+      7.1,
+      4.4,
+      13.0,
+      6.7,
+      11.7,
+      9.4,
+      11.4
+    ]
+  },
+  "capas": {
+    "spec": {
+      "nubes": {
+        "base": 1,
+        "mods": [
+          {
+            "wins": [
+              [
+                60.7,
+                72.3
+              ]
+            ],
+            "a": -0.3,
+            "label": "de canto: baja la nube para LEER el pucker"
+          }
+        ]
+      },
+      "campo": {
+        "base": 1,
+        "mods": [
+          {
+            "wins": [
+              [
+                27.8,
+                34.9
+              ]
+            ],
+            "a": -0.85,
+            "label": "campo baja cuando hablo de electrones/carga"
+          }
+        ]
+      },
+      "parpadeo": {
+        "base": 0.42,
+        "mods": []
+      },
+      "spin": {
+        "base": 1,
+        "mods": [
+          {
+            "wins": [
+              [
+                40.1,
+                53.2
+              ],
+              [
+                27.8,
+                34.9
+              ]
+            ],
+            "a": 0.9,
+            "label": "Δρ ARDE: los puentes y la cooperatividad"
+          }
+        ]
+      },
+      "acc": {
+        "base": 1,
+        "mods": [
+          {
+            "wins": [
+              [
+                6.5,
+                18.2
+              ],
+              [
+                6.5,
+                18.2
+              ]
+            ],
+            "a": 0.5,
+            "label": "ORO del oxígeno en \"un oxígeno y dos hidrógenos\""
+          }
+        ]
+      }
+    },
+    "origen": "derivadas de segs.json por recalibrar-beats.py"
+  },
+  "verificador": {
+    "script": "scripts/atencion-verify.py (economía de atención: movimiento Itti-Koch · colorfulness Hasler-Süsstrunk · figura-fondo Palmer-Schloss · sincronía audio-visual · gancho 0-5s · loop · quemado)",
+    "encuadre": {
+      "medido": {
+        "void_abajo_mediana": 0.051,
+        "void_abajo_max": 0.235,
+        "fill_mediana": 0.787
+      },
+      "referencia_ganadores": {
+        "o2": {
+          "void_max": 0.121,
+          "fill": 0.818
+        },
+        "el_puente": {
+          "void_max": 0.146,
+          "fill": 0.738
+        },
+        "c2": {
+          "void_max": 0.159,
+          "fill": 0.676
+        },
+        "h2o_v2": {
+          "void_max": 0.242,
+          "fill": 0.493
+        }
+      },
+      "veredicto": "DENTRO de la banda de los ganadores (fill supera a El puente y C₂). Comparar SIEMPRE contra los ganadores, no contra un umbral inventado."
+    },
+    "atencion": {
+      "pendiente": "correr atencion-verify.py sobre el video ensamblado y pegar aquí las notas"
+    }
+  },
+  "salida": {
+    "dir": "/mnt/e/forja-videos",
+    "master": "agua-el-anillo-4k-master.mp4",
+    "h264": "agua-el-anillo-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-trimer.bin",
+      "water-trimer-efield.bin"
+    ],
+    "guion": "wtri.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-water-trimer.py",
+      "atencion-verify.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-el-anillo.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-el-anillo-capsula.tar.gz",
+    "pieza": "mol-h2o el anillo"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/wtri.txt",
+    "lineas": 31,
+    "palabras": 172,
+    "duracion_estimada_s": 80.9,
+    "portero": "scripts/guion-check.py — ✅ limpio (0 avisos): ninguna línea >46 chars, sin '...', sin voseo, sin doble sentido",
+    "mapa_linea_toma": [
+      {
+        "lineas": "1-2",
+        "toma": "ringWide",
+        "muestra": "que son TRES moléculas + lazo abierto"
+      },
+      {
+        "lineas": "3-6",
+        "toma": "ringOne(0)",
+        "muestra": "🔑 LEGIBILIDAD: un oxígeno y dos hidrógenos = UNA molécula"
+      },
+      {
+        "lineas": "7-9",
+        "toma": "ringFaceOn",
+        "muestra": "el anillo y quién le presta hidrógeno a quién"
+      },
+      {
+        "lineas": "10-12",
+        "toma": "ringToBridge(0,1)",
+        "muestra": "el puente NO es línea: es carga moviéndose"
+      },
+      {
+        "lineas": "13-14",
+        "toma": "ringFaceOn",
+        "muestra": "el anillo CIERRA — 'y aquí está lo raro'"
+      },
+      {
+        "lineas": "15-18",
+        "toma": "loomPush",
+        "muestra": "COOPERATIVIDAD: se viene encima mientras dice que jalan más fuerte"
+      },
+      {
+        "lineas": "19-20",
+        "toma": "eyeLevelLock",
+        "muestra": "el beat del DATO (12%) — nivel de ojo = CONFIANZA"
+      },
+      {
+        "lineas": "21-25",
+        "toma": "ringEdgeToFace",
+        "muestra": "🔑 FIRMA: de canto, número impar, una al revés"
+      },
+      {
+        "lineas": "26-28",
+        "toma": "crashIn",
+        "muestra": "aguanta más + 'nada está inventado'"
+      },
+      {
+        "lineas": "29-31",
+        "toma": "pullOut",
+        "muestra": "payoff: se pega, sube por plantas, el hielo flota"
+      }
+    ],
+    "lecciones_aplicadas": [
+      "dice EXPLÍCITAMENTE que son moléculas de 3 átomos (la confusión #1 de El puente: 4 comentarios 'son 2 átomos')",
+      "revisado contra albures ANTES del TTS (caso 'míralos correrse')",
+      "toda línea ≤46 chars (caso CO: el subtítulo desbordó a 4K)"
+    ]
+  },
+  "audio": {
+    "dir": "dist-video/wtri-narracion",
+    "narracion": "wtri-narracion.mp3",
+    "musica": "wtri-music.wav",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 88,
+    "segs": "segs.json",
+    "ass": "wtri.ass"
+  }
+}

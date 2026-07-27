@@ -3,7 +3,7 @@
 # no un script propio. Reemplaza a wpair-full-pipeline.sh / wpairB-* / wpair-assemble.sh /
 # wpair-capsula.sh / render-li2*.sh. Ver docs/CANON-VIDEO.md.
 #
-#   bash scripts/video.sh <id> [paso]      paso = subs|render|ensamble|capsula|publicar|todo
+#   bash scripts/video.sh <id> [paso]      paso = subs|render|ensamble|verificar|capsula|publicar|todo
 #   bash scripts/video.sh mol-h2o-el-puente todo
 #   SHARDS=3 bash scripts/video.sh mol-h2o-el-puente render     # override puntual
 #
@@ -128,6 +128,28 @@ EOF
   [ "$vac" -eq 0 ] || echo "   ⚠ hay archivos vacíos en la cápsula — revisar"
 }
 
+paso_verificar() {
+  echo "── VERIFICADOR DE ATENCIÓN (economía de atención, docs/ECONOMIA-ATENCION.md) ──"
+  [ -f "$OH264" ] || { echo "   ✗ no existe $OH264 — corre 'ensamble' primero"; return 1; }
+  local J="$ROOT/dist-video/$ID-atencion.json"
+  python3 "$ROOT/scripts/atencion-verify.py" "$OH264" --json "$J" || return 1
+  echo "   → $J   (pegar las notas en videos/$ID.json § verificador.atencion)"
+  # encuadre vs los GANADORES (no contra un umbral inventado — ver CANON §LEGIBILIDAD)
+  [ -d "$FRAMES" ] && python3 - "$FRAMES" <<'EOF'
+import sys, glob, numpy as np
+from PIL import Image
+fs = sorted(glob.glob(sys.argv[1] + "/*.png"))[::max(1, len(glob.glob(sys.argv[1]+"/*.png"))//24)]
+bot=[]; fill=[]
+for f in fs:
+    a = np.asarray(Image.open(f).convert('L'), dtype=float)/255.0
+    r = a.mean(axis=1); v = np.where(r > 0.012)[0]
+    if len(v): bot.append(1 - v[-1]/len(r)); fill.append((a > 0.012).mean())
+if bot:
+    print(f"   encuadre: void↓ mediana {np.median(bot):.1%} max {max(bot):.1%} · fill {np.median(fill):.3f}")
+    print(f"   referencia ganadores → O2 void_max 12.1%/fill .818 · puente 14.6%/.738 · h2o_v2 24.2%/.493")
+EOF
+}
+
 paso_publicar() {
   echo "── PUBLICAR (PRIME + ATLAS) ──"
   local PRIME=ian@100.110.244.20 ATLAS_LAN=ian@192.168.100.4 ATLAS=ian@100.97.118.117
@@ -149,7 +171,8 @@ case "$PASO" in
   render)    paso_render ;;
   ensamble)  paso_ensamble ;;
   capsula)   paso_capsula ;;
+  verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
-  todo)      paso_subs && paso_render && paso_ensamble && paso_capsula && echo "✔ $ID LISTO (publicar aparte)" ;;
-  *) echo "paso inválido: $PASO (subs|render|ensamble|capsula|publicar|todo)"; exit 2 ;;
+  todo)      paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && echo "✔ $ID LISTO (publicar aparte)" ;;
+  *) echo "paso inválido: $PASO (subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
 esac
