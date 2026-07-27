@@ -1,3 +1,5 @@
+import { daylightNeededMm } from './threeplate';
+
 /**
  * MOLD BASE ESTÁNDAR + MATERIALES — Kazmer cap 4 §4.2-4.4 + Apéndice B (LITERAL).
  * ================================================================================
@@ -186,14 +188,23 @@ export interface MachineCheck {
   shotPct: number;                                        // % del barril
 }
 export function checkMachine(
-  mold: { wmm: number; lmm: number; stackMm: number; shotCc: number; clampNeedTons: number },
+  /** `openStrokeMm` = carrera de apertura (§6.3.2, `moldOpeningStrokeMm(altura de pieza)`). */
+  mold: { wmm: number; lmm: number; stackMm: number; shotCc: number; clampNeedTons: number; openStrokeMm: number },
   mc: Machine,
 ): MachineCheck {
   const issues: string[] = [];
   const fits = mold.wmm <= mc.tieHmm && mold.lmm <= mc.tieVmm;
   if (!fits) issues.push(`no pasa entre tie bars (${mc.tieHmm}×${mc.tieVmm})`);
   if (mold.stackMm < mc.minDaylightMm) issues.push(`stack ${mold.stackMm} < daylight mín ${mc.minDaylightMm}: el clamp no cierra`);
-  if (mold.stackMm > mc.maxDaylightMm) issues.push(`stack ${mold.stackMm} > daylight máx ${mc.maxDaylightMm}: no cabe abierto`);
+  // "no cabe abierto" se juzgaba con el molde CERRADO: el mensaje decía ABIERTO y medía
+  // el stack pelón. Abierto = stack + carrera (Tabla 6.1: 264 + 75 = 339).
+  // Sin carrera NO se puede juzgar: falla CERRADO (no aprobar a ciegas).
+  if (!Number.isFinite(mold.openStrokeMm)) {
+    issues.push('carrera de apertura no calculada: no se puede juzgar el daylight (§6.3.2) → pasar openStrokeMm = 2.5 × altura de pieza');
+  } else {
+    const need = daylightNeededMm(mold.stackMm, mold.openStrokeMm);
+    if (need > mc.maxDaylightMm) issues.push(`stack ${mold.stackMm} + carrera ${mold.openStrokeMm} = ${need} > daylight máx ${mc.maxDaylightMm}: CIERRA pero no ABRE (§6.3.2)`);
+  }
   const shotPct = 100 * mold.shotCc / mc.maxShotCc;
   if (shotPct < 25) issues.push(`shot ${shotPct.toFixed(0)}% del barril < 25%: residencia larga → degradación (§4.3.3)`);
   if (shotPct > 50) issues.push(`shot ${shotPct.toFixed(0)}% del barril > 50%: homogeneidad del fundido en riesgo (§4.3.3)`);

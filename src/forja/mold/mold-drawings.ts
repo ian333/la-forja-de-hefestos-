@@ -33,6 +33,12 @@ export interface PlateOpening {
  *  planta, puertos IN/OUT, plugs de sellado, y la profundidad detrás de la cavidad. */
 export interface CoolingCircuit {
   diaMm: number; zBehindMm: number; note: string;
+  /** línea del lado A medida desde la partición: dep + H (Eq 9.22 mide H desde la
+   *  SUPERFICIE MOLDEANTE — la impresión sube dep sobre la partición). undefined =
+   *  no cabe línea recta sin perforar la impresión (usar baffles §9.2.4). */
+  zAboveMm?: number;
+  /** advertencia del lado A (H_eff < 2D, o línea imposible). */
+  aWarn?: string;
   segs: Array<{ x0: number; y0: number; x1: number; y1: number }>;
   ports: Array<{ x: number; y: number; label: string }>;
   plugs: Array<{ x: number; y: number }>;

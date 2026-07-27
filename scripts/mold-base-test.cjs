@@ -41,11 +41,11 @@
   // ── §4.3.3: HM320 del libro (tie 800×630, daylight 350-800, 490 cc, 326 t) ──
   const hm = mb.MACHINES[0];
   checks.hm320_fiel = hm.tieHmm === 800 && hm.tieVmm === 630 && hm.minDaylightMm === 350 && hm.maxDaylightMm === 800 && hm.maxShotCc === 490 && hm.clampTons === 326;
-  const okCase = mb.checkMachine({ wmm: 500, lmm: 400, stackMm: 450, shotCc: 180, clampNeedTons: 200 }, hm);
+  const okCase = mb.checkMachine({ wmm: 500, lmm: 400, stackMm: 450, shotCc: 180, clampNeedTons: 200, openStrokeMm: 75 }, hm);
   checks.maquina_ok = okCase.ok && okCase.shotPct > 25 && okCase.shotPct < 51;
-  const bad1 = mb.checkMachine({ wmm: 900, lmm: 400, stackMm: 450, shotCc: 180, clampNeedTons: 200 }, hm);
+  const bad1 = mb.checkMachine({ wmm: 900, lmm: 400, stackMm: 450, shotCc: 180, clampNeedTons: 200, openStrokeMm: 75 }, hm);
   checks.detecta_tiebar = !bad1.fits;
-  const bad2 = mb.checkMachine({ wmm: 500, lmm: 400, stackMm: 300, shotCc: 60, clampNeedTons: 400 }, hm);
+  const bad2 = mb.checkMachine({ wmm: 500, lmm: 400, stackMm: 300, shotCc: 60, clampNeedTons: 400, openStrokeMm: 75 }, hm);
   checks.detecta_daylight_shot_clamp = bad2.issues.length >= 3;
 
   // ── §4.4: selector de acero con las razones del libro ──

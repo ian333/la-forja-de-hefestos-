@@ -34,8 +34,27 @@ const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL
 import SketchEditor from './SketchEditor';
 import RadialMenu from './RadialMenu';
 import * as OCC from './occt';                                   // namespace del kernel para armar el molde
-import { buildMoldParts, packageToAssemblySpec, type MoldPart } from '../mold/mold-plano-set';
-import { moldMachine } from '../mold/moldmachine';
+import { buildMoldParts, packageToAssemblySpec, plateStackZ, type MoldPart } from '../mold/mold-plano-set';
+import { insertarPercha, escalaContraccion, layoutDosCavidades, lineaParticion, toolingSplitCurso, toolingSplitCursoCarve, guiasCurso } from '../mold/curso-flow';
+import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto de revolución)
+import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';    // core/cavidad genérico (probado en el banco: cup/lid/…)
+import { analyzeAssembly, meshesInterfere, meshPenetration, meshContact } from '../mold/collision';   // solver de colisiones (fits + térmico + sólidos)
+import ProjectSwitcher, { inferType, type ProjItem } from './ProjectSwitcher';   // el LOBBY integrado
+import { fastenerPlan } from '../mold/mold-fasteners';
+import { moldRecipe } from '../mold/mold-recipe';
+import { componentDims, verifyDims } from '../mold/mold-dimensions';
+import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
+import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
+import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
+import { isoSurface } from '../../lib/viz/isosurface';
+import { tcLocalMap, paintTcColors, waterAdvice, type TcMap, type WaterAdvice } from '../mold/mold-tc-map';
+import { cavityGrid as moldCavityGrid, plateDepth as moldPlateDepth, insertDims } from '../mold/mold-drawing-set';
+import { moldOpeningStrokeMm } from '../mold/threeplate';
+import { forjaCommands, run as forjaRun } from '../commands/registry';   // el BUS: ui.run('dominio.verbo', {…})
+import { surfaceFlowLength, paintFlowColors } from '../mold/flowlen-surface';
+import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
+import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
+import { moldMachine, type MachineSpec } from '../mold/moldmachine';
 import type { MoldAssemblySpec } from '../mold/mold-assembly';
 import {
   initOCCT,
@@ -979,7 +998,7 @@ function buildShape(
       shape = applyPocket(oc, shape, op, ex?.depth ?? 12);
     }
   }
-  if (!shape) throw new Error('El documento no tiene sólido: agrega Extrude o Revolve.');
+  if (!shape) throw new Error('El documento no tiene sólido: agrega una Extrusión o una Revolución.');
   return shape;
 }
 
@@ -1874,8 +1893,8 @@ function sweepMeshingInterference(
 // ──────────────────────────────────────────────────────────────────
 /** Una pieza teselada con su color/acabado. opacity<1 → translúcida (ver adentro).
  *  clip = planos de sección (corta este cuerpo también). */
-function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1, clip }: {
-  geo: PartGeo; color: string; metalness?: number; roughness?: number; opacity?: number; clip?: THREE.Plane[] | null;
+function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1, clip, emissive, noShadow = false, winDepth = false }: {
+  geo: PartGeo; color: string; metalness?: number; roughness?: number; opacity?: number; clip?: THREE.Plane[] | null; emissive?: string | null; noShadow?: boolean; winDepth?: boolean;
 }) {
   const g = useMemo(() => {
     const b = new THREE.BufferGeometry();
@@ -1888,12 +1907,483 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1,
   useEffect(() => () => g.dispose(), [g]);
   const transparent = opacity < 1;
   return (
-    <mesh geometry={g} castShadow={!transparent} receiveShadow={!transparent} renderOrder={transparent ? 3 : 0}>
-      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} envMapIntensity={1.1}
+    <mesh geometry={g} castShadow={!transparent && !noShadow} receiveShadow={!transparent && !noShadow} renderOrder={transparent ? 3 : 0}>
+      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness}
+        envMapIntensity={noShadow ? 0.28 : 1.1}   /* molde: el envMap fuerte hace CEBRA en las astillas de la triangulación */
         side={THREE.DoubleSide} transparent={transparent} opacity={opacity} depthWrite={!transparent}
+        emissive={emissive ?? '#000000'} emissiveIntensity={emissive ? 0.55 : 0}
+        /* winDepth (pieza moldeada): sus caras COINCIDEN con las moldeantes (macho/cavidad
+           se tallaron del MISMO sólido) → z-fighting a rayas ("la flanera está dentro del
+           macho"). polygonOffset negativo = la pieza GANA el empate de profundidad. */
+        polygonOffset={winDepth} polygonOffsetFactor={winDepth ? -2 : 0} polygonOffsetUnits={winDepth ? -2 : 0}
         clippingPlanes={clip ?? undefined} />
     </mesh>
   );
+}
+
+// rampa térmica azul→cian→verde→amarillo→rojo (compartida por plano y cuerpos)
+function thermalRamp(t: number): [number, number, number] {
+  const x = Math.max(0, Math.min(1, t));
+  return x < 0.25 ? [0, x * 4 * 0.8, 1]
+    : x < 0.5 ? [0, 0.8 + (x - 0.25) * 0.8, 1 - (x - 0.25) * 4]
+    : x < 0.75 ? [(x - 0.5) * 4, 1, 0]
+    : [1, 1 - (x - 0.75) * 3.4, 0];
+}
+
+// TÉRMICO TRANSITORIO VIVO: avanza la PDE (FDM 3D) y pinta (a) el plano de la
+// partición y (b) los CUERPOS A/B por vértice — con rayos X se ve POR DENTRO.
+/** ⏱ t_c LOCAL SOBRE LA PIEZA: cada vértice coloreado por lo que tarda SU pared
+ *  (Eq 9.5) — azul enfría rápido, ROJO detiene el ciclo. Si hay consejo de baffle,
+ *  se dibuja el BAFFLE FANTASMA (cian) desde la línea B hasta bajo la zona. */
+function MoldTcPaint({ part, map, cells, marker }: {
+  part: MoldPart; map: TcMap;
+  cells: Array<{ cx: number; cy: number }>;
+  marker?: WaterAdvice['marker'];
+}) {
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(part.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(part.indices, 1));
+    // cada vértice → su cavidad más cercana → coords LOCALES de la pieza → color
+    const P = part.positions;
+    const local = new Float32Array(P.length);
+    for (let i = 0; i < P.length; i += 3) {
+      let best = cells[0], bd = 1e18;
+      for (const c of cells) {
+        const d = Math.abs(P[i] - c.cx) + Math.abs(P[i + 1] - c.cy);
+        if (d < bd) { bd = d; best = c; }
+      }
+      local[i] = P[i] - (best.cx - map.pw / 2);
+      local[i + 1] = P[i + 1] - (best.cy - map.ph / 2);
+      local[i + 2] = P[i + 2];
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(paintTcColors({ positions: local } as any, map), 3));
+    return g;
+  }, [part, map, cells]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  return (
+    <group>
+      <mesh geometry={geo} renderOrder={4}>
+        {/* SIN luz ni tonemapping: un mapa CAE es dato, no objeto iluminado —
+            las luces + ACES pasteleaban el colormap a blanco */}
+        <meshBasicMaterial vertexColors toneMapped={false} />
+      </mesh>
+      {marker && (
+        <group position={[marker.x, marker.y, (marker.z0 + marker.z1) / 2]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[marker.diaMm / 2, marker.diaMm / 2, Math.max(4, marker.z1 - marker.z0), 20]} />
+            <meshBasicMaterial color="#3ce0e0" transparent opacity={0.5} depthWrite={false} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[marker.diaMm / 2 + 1.2, marker.diaMm / 2 + 1.2, Math.max(4, marker.z1 - marker.z0), 20]} />
+            <meshBasicMaterial color="#3ce0e0" wireframe transparent opacity={0.35} depthWrite={false} />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+}
+
+/** 💧 EL LLENADO EN 3D SOBRE LA PIEZA — §5.5.5, la longitud de flujo MEDIDA del hueco.
+ *
+ *  "no debe de ser una fórmula de una figura: ¿cómo calcularás el relleno de una carcasa
+ *   de laptop? ¿o una pistola de agua? SE TIENE QUE CALCULAR CON EL MOLDE A/B" (user).
+ *  Por eso aquí NO hay ninguna fórmula de vaso: se mide L (la distancia que el fundido
+ *  recorre POR la pieza desde la compuerta) con Dijkstra sobre la malla — el camino "dual
+ *  domain" que usan los solvers comerciales para pared delgada, que es TODA pieza de
+ *  inyección (§2.3.1). Un vaso, una carcasa o un juguete entran igual: solo cambia la malla.
+ *
+ *  El COLOR no decora: dice CUÁNDO llegó el fundido. Amarillo = entró primero (el gate);
+ *  morado = lo último, donde llega más frío y a máxima presión; ROJO = nunca se llena
+ *  (short shot §5.5). El frente avanza imperativo (mutando el atributo `color`): cero
+ *  re-renders de React por cuadro, el patrón de `MoldOpenDriver`.
+ */
+function MoldFlowPaint({ part, gate, wallMm, speed = 0.35 }: {
+  part: MoldPart;
+  gate: { x: number; y: number; z: number };
+  /** pared nominal (mm) — empareja las caras opuestas de la pared (dual domain) */
+  wallMm: number;
+  /** fracción del recorrido por segundo (0.35 ⇒ ~3 s de punta a punta). La inyección REAL
+   *  dura 0.35 s de un ciclo de 25 (1.4 %): a tiempo real son 21 cuadros y no se ve nada.
+   *  Esto es cámara lenta HONESTA — el reloj de la izquierda dice los segundos de verdad. */
+  speed?: number;
+}) {
+  // ⚠ LA MALLA MANDA — y la del kernel es GRUESA (aristas de 32.8 mm de media, hasta 135).
+  // Dijkstra sobre aristas NO puede ir recto en una malla así: ZIGZAGUEA. Medido contra el
+  // vóxel (que atraviesa el hueco y da 137.95 ≈ radio 70 + alto 65): la superficie daba
+  // 254.9 mm, **85 % de más**. Lo cazó el cruce de los dos caminos; sin él "se veía bien".
+  // Por eso `surfaceFlowLength` recibe `wallMm`: empareja las caras opuestas de la pared
+  // (dual domain) y baja el error de 126 % a 85 %. Sigue sin ser bueno: el pintado sirve
+  // para VER POR DÓNDE va el frente (el orden de llegada es correcto), pero la L en mm
+  // NO es de fiar hasta que la malla se afine o esto lea del vóxel. El panel lo DICE.
+  const sf = useMemo(
+    () => surfaceFlowLength(
+      { positions: part.positions, indices: part.indices, normals: part.normals },
+      gate, wallMm),
+    [part, gate, wallMm],
+  );
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(part.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(part.indices, 1));
+    g.setAttribute('color', new THREE.BufferAttribute(paintFlowColors(sf, 0), 3));
+    return g;
+  }, [part, sf]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  const t0 = useRef(0);
+  useFrame(({ clock }) => {
+    if (!t0.current) t0.current = clock.elapsedTime;
+    const u = ((clock.elapsedTime - t0.current) * speed) % 1.25;      // 0..1 y una pausa llena
+    const front = Math.min(1, u) * sf.maxFlowLenMm;
+    const attr = geo.getAttribute('color') as THREE.BufferAttribute;
+    const col = paintFlowColors(sf, front);
+    (attr.array as Float32Array).set(col);
+    attr.needsUpdate = true;
+    (window as unknown as { __flowFront?: { frontMm: number; maxMm: number } }).__flowFront =
+      { frontMm: +front.toFixed(1), maxMm: sf.maxFlowLenMm };
+  });
+  return (
+    <group>
+      <mesh geometry={geo} renderOrder={5}>
+        {/* SIN luz ni tonemapping: un mapa de flujo es DATO, no objeto iluminado — las
+            luces + ACES pastelean el colormap (la misma lección que el mapa de t_c) */}
+        <meshBasicMaterial vertexColors toneMapped={false} />
+      </mesh>
+      {/* la COMPUERTA: por donde entra el fundido */}
+      <mesh position={[gate.x, gate.y, gate.z]}>
+        <sphereGeometry args={[2.2, 16, 12]} />
+        <meshBasicMaterial color="#57e6a8" toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+/** APERTURA ANIMADA del molde: el lado A (clamp/A/inserto-cav/agua-a/colada/anillo/
+ *  bujes/platina fija) SUBE y cada corredera se RETRAE con la cinemática REAL del
+ *  perno inclinado: u = min(S, apertura·tanφ) — la S se alcanza exactamente en la
+ *  apertura requerida L·cosφ del estudio (Eq 11.26). Imperativo (refs), 0 re-renders.
+ *  `window.__moldOpen(t)` fija t∈[0..1] determinista para capturas; null lo suelta.
+ *
+ *  La CARRERA viene del estudio (§6.3.2: 2.5 × altura de pieza), no de un número
+ *  fijo: había un `OPEN = 80` inventado que para el tupper (60 mm de fondo → 150 mm
+ *  de carrera) animaba el 53 % del recorrido — el molde de la pantalla no era el
+ *  molde del estudio. El mismo dato faltaba en el selector de máquina, que juzgaba
+ *  el daylight con el molde CERRADO y aprobaba máquinas incapaces de abrirlo. */
+// 'tornillos-cav' = los que sujetan la sujeción superior a la placa A: están ATORNILLADOS
+// a ella, así que suben CON ella. Los 'tornillos-core' se quedan con B. Cuando era UN solo
+// componente ('tornillos') con las dos mitades, ninguno se movía y los de cavidad quedaban
+// flotando en el hueco, como si amarraran A con B — lo que el user cazó a ojo.
+const MOLD_A_SIDE = new Set(['clamp', 'A', 'inserto-cav', 'agua-a', 'colada', 'anillo', 'bujes', 'platina-fija', 'tornillos-cav']);
+function MoldOpenDriver({ refs, ctl, parts, openMm, ejectMm, stripperRing }: {
+  refs: React.MutableRefObject<Record<string, THREE.Group | null>>;
+  ctl: React.MutableRefObject<{ on: boolean; manual: number | null; manualE: number | null; t0: number }>;
+  parts: MoldPart[];
+  /** carrera REAL de la partición (§6.3.2 = 2.5 × altura de pieza), NO un número fijo */
+  openMm: number;
+  /** carrera de EXPULSIÓN (≥ profundidad de pieza, cap 11: para LIBRAR el núcleo) */
+  ejectMm: number;
+  /** molde STRIPPER (§11.3.4): la placa B es el ANILLO flotante — las barras lo
+   *  empujan y su labio desnuda el vaso del macho (Fig 11.21). Sin esta bandera el
+   *  rol 'B' caía al else (posición 0) y la expulsión era invisible: "no entiendo
+   *  cómo se expulsa" (user 2026-07-24). */
+  stripperRing?: boolean;
+}) {
+  useEffect(() => {
+    // __moldOpen(t, e?): t = fracción de APERTURA, e = fracción de EXPULSIÓN —
+    // determinista para capturas (sin e no había forma de fotografiar el viaje
+    // del anillo/pines). null suelta el control manual.
+    (window as any).__moldOpen = (t: number | null, e?: number | null) => { ctl.current.manual = t; ctl.current.manualE = e ?? null; };
+    return () => { delete (window as any).__moldOpen; };
+  }, [ctl]);
+  useFrame(() => {
+    const c = ctl.current;
+    const OPEN = openMm;                                         // mm de carrera del lado A (del estudio, §6.3.2)
+    let frac = 0, eFrac = 0;
+    if (c.manual != null) { frac = Math.max(0, Math.min(1, c.manual)); eFrac = c.manualE != null ? Math.max(0, Math.min(1, c.manualE)) : 0; }
+    else if (c.on) {
+      // EL CICLO CON EXPULSIÓN — "los eyectores no eyectan cuando doy play" (user
+      // 2026-07-16): el ▶ solo ABRÍA. Un ciclo real expulsa: abre → los pines EMPUJAN
+      // la pieza (carrera ≥ profundidad, para LIBRAR el núcleo, cap 11) → retraen → cierra.
+      const t = (performance.now() - c.t0) / 1000;
+      const cyc = (t % 8) / 8;                                   // 8 s: abre·EYECTA·retrae·cierra
+      frac = cyc < 0.3 ? cyc / 0.3 : cyc < 0.72 ? 1 : 1 - (cyc - 0.72) / 0.28;
+      eFrac = cyc < 0.34 ? 0 : cyc < 0.48 ? (cyc - 0.34) / 0.14 : cyc < 0.58 ? 1
+        : cyc < 0.7 ? 1 - (cyc - 0.58) / 0.12 : 0;
+      frac = frac * frac * (3 - 2 * frac);                       // suavizado
+      eFrac = eFrac * eFrac * (3 - 2 * eFrac);
+    }
+    const O = OPEN * frac, E = ejectMm * eFrac;
+    for (const pt of parts) {
+      const g = refs.current[pt.role];
+      if (!g) continue;
+      if (MOLD_A_SIDE.has(pt.role) || pt.role.endsWith('-fijo')) {
+        g.position.set(0, 0, O);                                 // perno/inserto/talón van con A
+      } else if (pt.role === 'pines' || pt.role === 'ejector' || pt.role === 'ejector-ret' || pt.role === 'pieza'
+        || pt.role === 'pines-retorno' || (stripperRing && pt.role === 'B')) {
+        // 'pines-retorno' viaja SIEMPRE: van atornillados a la placa expulsora
+        // (en el stripper son LAS BARRAS que empujan el anillo — quietas, el
+        // anillo subía "empujado por nada", cazado a ojo en key-eject-mid).
+        // el PAQUETE EXPULSOR (placa + retenedora + pines) y LA PIEZA suben juntos:
+        // los pines están atornillados a la retenedora y la pieza viaja empujada.
+        // En el STRIPPER también viaja el ANILLO (placa B flotante): las barras lo
+        // empujan y el labio de su barreno pela el vaso del macho por TODO el borde.
+        g.position.set(0, 0, E);
+      } else if (pt.kin) {
+        const u = Math.min(pt.kin.strokeMm, O * Math.tan(pt.kin.angleDeg * Math.PI / 180));
+        g.position.set(pt.kin.dir[0] * u, pt.kin.dir[1] * u, 0);
+      } else if (g.position.lengthSq() > 0) {
+        g.position.set(0, 0, 0);
+      }
+    }
+  });
+  return null;
+}
+
+function MoldTransientThermal({ sim, z, parts, xray, sliceAxis = 'z', sliceFrac = 0.5 }: {
+  sim: ThermalSim; z: number; parts: MoldPart[]; xray: boolean;
+  sliceAxis?: 'x' | 'y' | 'z'; sliceFrac?: number;
+}) {
+  const [tick, setTick] = useState(0);
+  // CONTINUO, no a brincos. Antes: `setInterval(() => sim.step(2.5), 260)` — 2.5 s de
+  // física cada 260 ms de reloj = ~10 cuadros por MINUTO simulado: el campo saltaba de
+  // golpe y se veía por escalones ("no es continuo, se ve que va por pasos, eso es de
+  // kinder" — user 2026-07-15). El problema no era la PDE (adentro ya sub-divide a `dtMax`
+  // estable): era el MUESTREO de la pantalla, groserísimo.
+  // Ahora se avanza el tiempo simulado que de verdad transcurrió × la velocidad, cada
+  // FRAME (requestAnimationFrame ≈ 60 Hz) ⇒ 24× más muestras y el color fluye.
+  useEffect(() => {
+    let raf = 0, last = performance.now(), pendiente = 0;
+    const SPEED = 10;                                        // 10× tiempo real
+    const loop = (now: number) => {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      // ACUMULAR y disparar a ~9 Hz: el costo de un paso espectral es FIJO (no depende
+      // del dt — esa es su gracia), así que pagarlo cada frame era tirar 60 pasos/s
+      // donde 9 rinden lo mismo. Y cada setTick reconstruye rebanadas e isosuperficies:
+      // eso también iba a 60 Hz. "se traba, va lento" (user) — era esto.
+      pendiente += dt * SPEED;
+      if (pendiente >= 1.0) {
+        sim.step(pendiente);
+        pendiente = 0;
+        setTick((t) => t + 1);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [sim]);
+  const lo = sim.coolantC, hi = sim.coolantC + 30;        // rango fijo → colores estables
+  const bodies = useMemo(() => parts.filter((p) => !p.role.startsWith('platina')).map((p) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(p.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(p.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(p.indices, 1));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(p.positions.length), 3));
+    return { role: p.role, g };
+  }), [parts]);
+  useEffect(() => () => bodies.forEach((b) => b.g.dispose()), [bodies]);
+  useEffect(() => {   // repintar vértices con la T del grid (cada tick)
+    for (const b of bodies) {
+      const pos = b.g.getAttribute('position') as THREE.BufferAttribute;
+      const col = b.g.getAttribute('color') as THREE.BufferAttribute;
+      for (let i = 0; i < pos.count; i++) {
+        const T = sim.sampleAt(pos.getX(i), pos.getY(i), pos.getZ(i));
+        const [r, gg, bb] = thermalRamp((T - lo) / (hi - lo));
+        col.setXYZ(i, r, gg, bb);
+      }
+      col.needsUpdate = true;
+    }
+  }, [tick, bodies, sim, lo, hi]);
+  // CASCARONES 3D (isosuperficies, cada 4 ticks): la burbuja de calor que crece con
+  // los ciclos y que las líneas de agua muerden — el térmico EN 3D, no una capa
+  const shells = useMemo(() => {
+    if (tick % 4 !== 0 && tick > 0) return null;
+    const span = sim.maxC - sim.coolantC;
+    if (span < 6) return [];   // aún no hay burbuja que valga (evita cascarón-ruido)
+    // blending NORMAL y opacidad baja: aditivo satura a BLANCO (más luz ≠ más color).
+    // PISO de +4 °C en el nivel bajo: sin piso, la iso ~ambiente envolvía las camisas
+    // FRÍAS del agua y parecían "tubos fantasma" (feedback user: "¿tubos de inyección
+    // en el eje equivocado?") — los cascarones solo abrazan el CALOR.
+    const levels: Array<[number, string, number]> = [
+      [Math.max(sim.coolantC + 4, sim.coolantC + 0.35 * span), '#ffd24a', 0.16],
+      [sim.coolantC + 0.60 * span, '#ff8c2e', 0.26],
+      [sim.coolantC + 0.85 * span, '#ff3b2e', 0.40],
+    ];
+    return levels.map(([lv, color, op]) => {
+      const m = isoSurface(sim.T, sim.nx, sim.ny, sim.nz, lv, sim.dx, sim.x0, sim.y0, sim.z0);
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(m.positions, 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(m.normals, 3));
+      return { g, color, op, lv };
+    });
+  }, [tick, sim]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const lastShells = useRef<typeof shells>(null);
+  if (shells) { lastShells.current?.forEach((s) => s.g.dispose()); lastShells.current = shells; }
+  const drawShells = lastShells.current ?? [];
+  const sliceF = useMemo(() => sim.sliceAxis(sliceAxis, sliceFrac), [sim, sliceAxis, sliceFrac, tick]);   // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <group>
+      {bodies.map((b) => (
+        <mesh key={b.role} geometry={b.g} renderOrder={3}>
+          <meshStandardMaterial vertexColors transparent opacity={xray ? 0.35 : 0.55} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+      {drawShells.map((s, i) => (
+        <mesh key={i} geometry={s.g} renderOrder={5}>
+          <meshBasicMaterial color={s.color} transparent opacity={s.op} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+      <MoldThermalSliceAxis sim={sim} axis={sliceAxis} field={sliceF} />
+    </group>
+  );
+}
+
+/** REBANADA térmica en CUALQUIER eje: plano texturizado con el campo, colocado en
+ *  la cota real del corte — recorres el molde por dentro (X/Y/Z + slider). */
+function MoldThermalSliceAxis({ sim, axis, field }: {
+  sim: ThermalSim; axis: 'x' | 'y' | 'z';
+  field: ReturnType<ThermalSim['sliceAxis']>;
+}) {
+  const { tex, geo } = useMemo(() => {
+    const { nu, nv, u1, v1, posMm, T, minC, maxC } = field;
+    const data = new Uint8Array(nu * nv * 4);
+    const span = Math.max(0.1, maxC - minC);
+    for (let n = 0; n < nu * nv; n++) {
+      const t = (T[n] - minC) / span;
+      const c = t < 0.25 ? [0, t * 4 * 0.8, 1]
+        : t < 0.5 ? [0, 0.8 + (t - 0.25) * 0.8, 1 - (t - 0.25) * 4]
+        : t < 0.75 ? [(t - 0.5) * 4, 1, 0]
+        : [1, 1 - (t - 0.75) * 3.4, 0];
+      data[n * 4] = c[0] * 255; data[n * 4 + 1] = c[1] * 255; data[n * 4 + 2] = c[2] * 255; data[n * 4 + 3] = 235;
+    }
+    const tx = new THREE.DataTexture(data, nu, nv, THREE.RGBAFormat);
+    tx.needsUpdate = true;
+    tx.magFilter = THREE.LinearFilter; tx.minFilter = THREE.LinearFilter;
+    // plano a MANO en coords de mundo (cero líos de rotación): u/v según el eje
+    const g = new THREE.BufferGeometry();
+    let corners: number[];
+    if (axis === 'z') corners = [0, 0, posMm, u1, 0, posMm, u1, v1, posMm, 0, v1, posMm];
+    else if (axis === 'x') corners = [posMm, 0, 0, posMm, u1, 0, posMm, u1, v1, posMm, 0, v1];
+    else corners = [0, posMm, 0, u1, posMm, 0, u1, posMm, v1, 0, posMm, v1];
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(corners), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    g.computeVertexNormals();
+    return { tex: tx, geo: g };
+  }, [field, axis]);
+  useEffect(() => () => { tex.dispose(); geo.dispose(); }, [tex, geo]);
+  return (
+    <mesh geometry={geo} renderOrder={6}>
+      <meshBasicMaterial map={tex} transparent side={THREE.DoubleSide} depthWrite={false} />
+    </mesh>
+  );
+}
+
+// FEA MECÁNICO: superficie del paquete B+soporte+rieles coloreada por von Mises.
+function MoldFeaMesh({ ov }: { ov: MoldFeaOverlay }) {
+  const g = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(ov.positions, 3));
+    if (ov.normals.length) geo.setAttribute('normal', new THREE.BufferAttribute(ov.normals, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(ov.colors, 3));
+    geo.setIndex(new THREE.BufferAttribute(ov.indices, 1));
+    if (!ov.normals.length) geo.computeVertexNormals();   // frontera de tets: normales suaves
+    return geo;
+  }, [ov]);
+  useEffect(() => () => g.dispose(), [g]);
+  return (
+    <mesh geometry={g} renderOrder={1}>
+      <meshStandardMaterial vertexColors metalness={0.1} roughness={0.55} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+// CAMPO DE TEMPERATURA en la superficie de cavidad (Kazmer Fig 9.7): plano en la
+// línea de partición coloreado por vértice (azul=frío sobre línea de agua, rojo=
+// caliente entre líneas). El campo viene de mold-analysis (resistencias Eq 9.7+9.20).
+function MoldThermalPlane({ field, z }: { field: MoldAnalysis['thermal']['field']; z: number }) {
+  const geo = useMemo(() => {
+    const { nx, ny, x0, y0, x1, y1, T, minC, maxC } = field;
+    const g = new THREE.PlaneGeometry(x1 - x0, y1 - y0, nx - 1, ny - 1);
+    g.translate((x0 + x1) / 2, (y0 + y1) / 2, 0);
+    const colors = new Float32Array((nx * ny) * 3);
+    const span = Math.max(0.1, maxC - minC);
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      // PlaneGeometry ordena vértices de arriba a abajo → fila espejo
+      const vi = ((ny - 1 - j) * nx + i) * 3;
+      const t = (T[j * nx + i] - minC) / span;
+      // rampa térmica azul→cian→verde→amarillo→rojo
+      const c = t < 0.25 ? [0, t * 4 * 0.8, 1]
+        : t < 0.5 ? [0, 0.8 + (t - 0.25) * 0.8, 1 - (t - 0.25) * 4]
+        : t < 0.75 ? [(t - 0.5) * 4, 1, 0]
+        : [1, 1 - (t - 0.75) * 3.4, 0];
+      colors[vi] = c[0]; colors[vi + 1] = c[1]; colors[vi + 2] = c[2];
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return g;
+  }, [field]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  return (
+    <mesh geometry={geo} position={[0, 0, z]} renderOrder={4}>
+      <meshBasicMaterial vertexColors transparent opacity={0.92} depthWrite={false} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+// ARISTAS del molde como líneas nítidas (look CAD, mismas que el doc principal):
+// definen los bordes y matan el aliasing de paredes delgadas vistas de canto.
+function MoldEdges({ pts, clip }: { pts: Float32Array; clip?: THREE.Plane[] | null }) {
+  const g = useMemo(() => {
+    const b = new THREE.BufferGeometry();
+    b.setAttribute('position', new THREE.BufferAttribute(pts, 3));
+    return b;
+  }, [pts]);
+  useEffect(() => () => g.dispose(), [g]);
+  return (
+    <lineSegments geometry={g} renderOrder={2}>
+      <lineBasicMaterial color="#26313f" transparent opacity={0.85} clippingPlanes={clip ?? undefined} />
+    </lineSegments>
+  );
+}
+
+// 🚨 NUBE DE ALARMA: bolitas ROJAS en cada punto donde dos sólidos comparten acero.
+// depthTest=false + renderOrder alto → se ven ATRAVESANDO las placas translúcidas (el
+// punto es que la colisión SALTE desde cualquier ángulo, no que se esconda dentro).
+function AlarmCloud({ pts }: { pts: Float32Array }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const n = pts.length / 3;
+  useEffect(() => {
+    const m = ref.current; if (!m) return;
+    const d = new THREE.Object3D();
+    for (let i = 0; i < n; i++) { d.position.set(pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2]); d.updateMatrix(); m.setMatrixAt(i, d.matrix); }
+    m.instanceMatrix.needsUpdate = true;
+  }, [pts, n]);
+  return (
+    <instancedMesh ref={ref} args={[undefined as any, undefined as any, Math.max(1, n)]} renderOrder={999} frustumCulled={false}>
+      <sphereGeometry args={[2.2, 8, 8]} />
+      <meshBasicMaterial color="#ff1030" toneMapped={false} depthTest={false} transparent opacity={0.9} />
+    </instancedMesh>
+  );
+}
+
+// Núcleo del MODO ALARMA (compartido por el botón de la UI y la API de auto-revisión):
+// corre el estudio de contacto por VOLUMEN sobre la figura real y junta la nube de puntos
+// donde dos sólidos comparten acero. La 'pieza' y las platinas quedan fuera (contacto/contexto).
+function computeMoldAlarm(parts: MoldPart[], fitMm = 0.6, volFitMm3 = 15): { cloud: Float32Array; collisions: Array<{ a: string; b: string; volMm3: number; penMm: number }> } {
+  const IGNORE = new Set(['pieza', 'platina-fija', 'platina-movil']);
+  const bbox = (P: Float32Array) => { const mn: [number, number, number] = [1e18, 1e18, 1e18], mx: [number, number, number] = [-1e18, -1e18, -1e18]; for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { if (P[i + k] < mn[k]) mn[k] = P[i + k]; if (P[i + k] > mx[k]) mx[k] = P[i + k]; } return { mn, mx }; };
+  const ov = (a: any, b: any) => { for (let k = 0; k < 3; k++) if (Math.min(a.mx[k], b.mx[k]) - Math.max(a.mn[k], b.mn[k]) <= 0.4) return false; return true; };
+  const P = parts.filter((pt) => !IGNORE.has(pt.role)).map((pt) => ({ role: pt.role, positions: pt.positions, indices: pt.indices, bb: bbox(pt.positions) }));
+  const cloud: number[] = [], collisions: Array<{ a: string; b: string; volMm3: number; penMm: number }> = [];
+  for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
+    if (!ov(P[i].bb, P[j].bb)) continue;
+    const c = meshContact({ positions: P[i].positions, indices: P[i].indices }, { positions: P[j].positions, indices: P[j].indices }, { collect: true });
+    if (c.volMm3 > volFitMm3 || c.penMm > fitMm) { collisions.push({ a: P[i].role, b: P[j].role, volMm3: c.volMm3, penMm: c.penMm }); if (c.cloud) for (const v of c.cloud) cloud.push(v); }
+  }
+  collisions.sort((x, y) => y.volMm3 - x.volMm3);
+  return { cloud: new Float32Array(cloud), collisions };
 }
 
 // Colores por defecto de cada cuerpo de la caja (cada cosa distinta, como Fusion).
@@ -2877,9 +3367,9 @@ function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sketchCam, camera, controls]);
   // Las vistas con nombre y las órbitas también VIAJAN (nada salta ya).
-  const place = (px: number, py: number, pz: number) => {
+  const place = (px: number, py: number, pz: number, up: [number, number, number] = [0, 1, 0]) => {
     const [tx, ty, tz] = target;
-    flyTo([px + tx, py + ty, pz + tz], [0, 1, 0], [tx, ty, tz], 850);
+    flyTo([px + tx, py + ty, pz + tz], up, [tx, ty, tz], 850);
   };
   // GUARDIA POR NONCE: `target` (viewTarget) es un array nuevo en CADA render →
   // sin guardia, estos efectos re-aplicaban la ÚLTIMA vista en cada render y
@@ -2896,7 +3386,10 @@ function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name
       front: [0, d * 0.15, d * 1.25], back: [0, d * 0.15, -d * 1.25],
       right: [d * 1.25, d * 0.15, 0], left: [-d * 1.25, d * 0.15, 0],
     };
-    const p = P[view.name] ?? P.iso; place(p[0], p[1], p[2]);
+    // top/bottom: up NO puede ser +Y (paralelo a la vista → roll arbitrario, salía
+    // girado 45°); el up correcto deja el modelo "norte arriba" en pantalla.
+    const UP: Record<string, [number, number, number]> = { top: [0, 0, -1], bottom: [0, 0, 1] };
+    const p = P[view.name] ?? P.iso; place(p[0], p[1], p[2], UP[view.name] ?? [0, 1, 0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, dist, camera, controls, target, sketchCam]);
   // ÓRBITA arbitraria (az/el grados, r en unidades de mundo) — para barrer 30+ ángulos.
@@ -2911,7 +3404,7 @@ function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name
 }
 
 function CadViewport({
-  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, sketchCam, children,
+  cameraDistance, autoRotate, minDistance, maxDistance, enablePan = true, view, orbit, viewTarget, sketchCam, showGround = true, children,
 }: {
   cameraDistance: number;
   autoRotate: boolean;
@@ -2922,6 +3415,7 @@ function CadViewport({
   orbit?: { az: number; el: number; r: number; nonce: number } | null;
   viewTarget?: [number, number, number];
   sketchCam?: SketchCam;
+  showGround?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -2948,8 +3442,10 @@ function CadViewport({
           far: 20000,
         }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        // dpr mínimo 1.5: en monitores dpr=1 el MSAA no alcanza para las paredes
+        // DELGADAS casi de canto (ranuras/orejas del molde) → borde de cierre (zipper).
         style={{ background: 'transparent', width: '100%', height: '100%' }}
-        dpr={[1, 2]}
+        dpr={[1.5, 2]}
         onCreated={({ gl }) => {
           // ACES para PBR de metal — SIN grade cinematográfico (sin Bloom/Vignette/
           // Grain/CA). Exposición algo más baja para que el highlight del metal
@@ -3016,7 +3512,7 @@ function CadViewport({
             suave bajo la pieza. Anclan la geometría en el espacio (como Onshape)
             sin competir con ella. En el suelo del modelo (y=0 de mundo, el group
             del modelo está rotado para que su base quede sobre este plano). */}
-        <CadGround size={Math.max(60, cameraDistance * 1.2)} />
+        {showGround && <CadGround size={Math.max(60, cameraDistance * 1.2)} />}
       </Canvas>
     </div>
   );
@@ -3096,21 +3592,20 @@ function CadGround({ size, drop = 0.6 }: { size: number; drop?: number }) {
         args={[size, size]}
         cellSize={size / 60}
         cellThickness={0.6}
-        cellColor="#1b3347"
+        cellColor="#172c3d"
         sectionSize={size / 12}
         sectionThickness={1.0}
-        sectionColor="#28536e"
-        fadeDistance={size * 1.1}
-        fadeStrength={2.2}
-        infiniteGrid
+        sectionColor="#244a63"
+        fadeDistance={size * 0.7}
+        fadeStrength={3}
         followCamera={false}
       />
       <ContactShadows
-        position={[0, 0.005, 0]}
+        position={[0, drop - 0.02, 0]}
         scale={size * 0.85}
         far={size * 0.55}
         blur={2.4}
-        opacity={0.62}
+        opacity={0.5}
         color="#020610"
         resolution={1024}
       />
@@ -3415,6 +3910,7 @@ export default function ForgeBRepStudio() {
     winPos[id] ? { position: 'fixed', left: winPos[id].x, top: winPos[id].y, zIndex: 44, margin: 0 } : undefined;
   const toggleCollapse = useCallback((id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] })), []);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);   // el LOBBY integrado (baja del título)
   // Workspace (DS v2): DISEÑO = modelado; MANUFACTURA = las ops CAM (como Fusion
   // separa Design/Manufacture — la barra de modelado ya no carga los ⛏).
   const [workspace, setWorkspace] = useState<'diseno' | 'manufactura' | 'simulacion'>('diseno');
@@ -3429,6 +3925,19 @@ export default function ForgeBRepStudio() {
   // molde de verdad, en vivo. Sin STEP: se construye dentro de La Forja.
   const liveMoldRev = useRef(-1);
   const [liveMoldSpec, setLiveMoldSpec] = useState<MoldAssemblySpec | null>(null);
+  const [liveMoldMesh, setLiveMoldMesh] = useState<{ positions: Float32Array; indices: Uint32Array } | null>(null);
+  // INSERTOS del SÓLIDO REAL (splitMold de la figura) — la cavidad ES la pieza, no un tubo.
+  // INSERTOS como SÓLIDOS (no malla) → se taladran en el ensamble. Van por REF (los
+  // handles OCC no viven en React state) + un contador que dispara el re-build.
+  const liveRealSolidsRef = useRef<{ cav: any; core: any; piece?: any; zPartSplit: number } | null>(null);
+  const [liveRealSolidsRev, setLiveRealSolidsRev] = useState(0);
+  // VEREDICTO DE MOLDEABILIDAD medido sobre la malla (Kazmer §2.3, viaja en mold-live.json)
+  const [liveDfm, setLiveDfm] = useState<{ moldable: 'si' | 'con-mecanismos' | 'no'; verdicts: Array<{ param: string; valor: string; limite: string; ok: boolean; ref: string }> } | null>(null);
+  const b64ToArr = (b64: string, T: any) => {
+    const bin = atob(b64); const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return new T(u.buffer);
+  };
   useEffect(() => {
     const id = setInterval(async () => {
       try {
@@ -3437,7 +3946,23 @@ export default function ForgeBRepStudio() {
         const j = await r.json();
         if (typeof j.rev !== 'number' || j.rev === liveMoldRev.current) return;
         liveMoldRev.current = j.rev;
-        if (j.clear) { setLiveMoldSpec(null); return; }
+        liveRealSolidsRef.current = null;                      // una sesión viva (Tupper) NO es la flanera paramétrica
+        if (j.clear) { setLiveMoldSpec(null); setLiveMoldMesh(null); setLiveDfm(null); return; }
+        setLiveDfm(j.dfmMesh ?? null);
+        if (j.partMeshUrl) {
+          // la MALLA REAL de la pieza (STL decimado) viaja aparte — se baja UNA vez por rev
+          try {
+            const mr = await fetch(j.partMeshUrl + '?t=' + j.rev, { cache: 'no-store' });
+            const mj = await mr.json();
+            setLiveMoldMesh({ positions: b64ToArr(mj.positions, Float32Array), indices: b64ToArr(mj.indices, Uint32Array) });
+          } catch { setLiveMoldMesh(null); }
+        } else setLiveMoldMesh(null);
+        // generate:false = "comparte la pieza/DFM, NO armes el molde". Ignorar este
+        // flag fue EL freeze de prod del 2026-07-24: una sesión Tupper huérfana
+        // (rect → 63 pines) armaba el molde COMPLETO en el main thread en CADA
+        // carga de página, con el kernel recién llegado. El JSON sobrevive a los
+        // deploys (excluido a propósito) — el gate vive AQUÍ, no en el archivo.
+        if (j.generate === false) { setLiveMoldSpec(null); return; }
         if (j.assemblySpec) { setLiveMoldSpec(j.assemblySpec); return; }   // ejemplo del libro directo
         if (j.spec) { try { setLiveMoldSpec(packageToAssemblySpec(moldMachine(j.spec))); } catch { setLiveMoldSpec(null); } }
       } catch { /* sin sesión viva */ }
@@ -3447,19 +3972,461 @@ export default function ForgeBRepStudio() {
   // El MOLDE en vivo se arma como COMPONENTES (una placa = una pieza) para el
   // árbol: aislar / ocultar / opacidad, como Fusion/SolidWorks. Con primitivas.
   const [moldParts, setMoldParts] = useState<MoldPart[]>([]);
+  // Aviso "ARMANDO MOLDE…": el build es SÍNCRONO y congela el tab (segundos en
+  // moldes redondos, MINUTOS en cajas con 63 pines) — sin este banner el usuario
+  // solo ve una página muerta y le da Ctrl+Shift+R (freeze del 2026-07-24).
+  const [moldBuilding, setMoldBuilding] = useState(false);
   const [moldHidden, setMoldHidden] = useState<Record<string, boolean>>({});
   const [moldOpacity, setMoldOpacity] = useState<Record<string, number>>({});
+  const [moldSelected, setMoldSelected] = useState<string | null>(null);   // componente resaltado desde el árbol
+  const [moldHover, setMoldHover] = useState<string | null>(null);         // placa bajo el cursor en 3D (feedback de pick)
+  const [moldMoveMode, setMoldMoveMode] = useState(false);                  // gizmo de mover activo
+  const [moldOffset, setMoldOffset] = useState<Record<string, [number, number, number]>>({});  // desplazamiento por componente
+  // APERTURA ANIMADA (▶): refs imperativos — cero re-render por frame
+  const moldAnimRefs = useRef<Record<string, THREE.Group | null>>({});
+  const moldOpenRef = useRef<{ on: boolean; manual: number | null; manualE: number | null; t0: number }>({ on: false, manual: null, manualE: null, t0: 0 });
+  const [moldOpenOn, setMoldOpenOn] = useState(false);
+  const moldMoveRef = useRef<THREE.Group>(null);                            // grupo que arrastra el gizmo
+  const [moldColors, setMoldColors] = useState<Record<string, string>>({});  // color por componente (override del usuario)
+  // NUBE DE ALARMA: puntos ROJOS exactamente donde dos sólidos comparten acero — se ve
+  // desde CUALQUIER ángulo (lo que el número no me deja ver a ojo). La enciende moldAlarm().
+  const [alarmCloud, setAlarmCloud] = useState<Float32Array | null>(null);
+  const [moldExpanded, setMoldExpanded] = useState<Record<string, boolean>>({});  // componente desplegado (cuerpos + historia)
+  // ANÁLISIS POR COMPONENTE (cada placa sus números con su ecuación) — perezoso.
+  const moldCompAnalysis = useMemo(() => {
+    if (!liveMoldSpec) return null;
+    try { return componentAnalysis(liveMoldSpec); } catch (e) { console.warn('COMP_ANALYSIS_ERR', e); return null; }
+  }, [liveMoldSpec]);
+  // OJO AL ORDEN: esta línea DEBE ir antes del `useMemo` de abajo. El array de
+  // dependencias `[flowOn, ...]` se evalúa EN EL ACTO, así que una `const` declarada
+  // más abajo revienta con TDZ: "Cannot access 'kn' before initialization" — y tumba
+  // el CAD entero en producción. TypeScript NO lo ve (el hook es una llamada válida)
+  // y `vite dev` tampoco: solo truena en el bundle.
+  const [flowOn, setFlowOn] = useState(false);                   // 💧 el llenado sobre la pieza (§5.5.5)
+  // 💧 EL ESTUDIO DEL LLENADO — los números del cap 5 sobre la L REAL de la pieza.
+  // "mientras más datos haya más errores puedes cachar" (user): cada fila trae su
+  // ecuación, y las que salen del rango del libro se pintan en ROJO. Un panel que solo
+  // dice "todo bien" no sirve para cazar nada.
+  const liveFlow = useMemo(() => {
+    if (!flowOn || !liveMoldSpec) return null;
+    const pieza = moldParts.find((p) => p.role === 'pieza');
+    if (!pieza) return null;
+    try {
+      const P = pieza.positions;
+      let cx = 0, cy = 0, zLo = Infinity;
+      for (let i = 0; i < P.length; i += 3) { cx += P[i]; cy += P[i + 1]; if (P[i + 2] < zLo) zLo = P[i + 2]; }
+      cx /= P.length / 3; cy /= P.length / 3;
+      const wallMm = liveMoldSpec.cavity.wallMm ?? 2;
+      const sf = surfaceFlowLength({ positions: pieza.positions, indices: pieza.indices, normals: pieza.normals }, { x: cx, y: cy, z: zLo }, wallMm);
+      const melt = ABS_MG47, wallM = wallMm / 1000;
+      const v = convergeVelocity(melt, wallM);                      // Eq 5.23, iterada
+      const gam = shearRatePowerLaw(v, wallM, melt.n);              // Eq 5.21
+      const mu = viscosityPowerLaw(melt, gam);                      // μ = k·γ̇^(n−1)
+      const L = sf.maxFlowLenMm / 1000;
+      const dP = pressureDropSegment(melt, L, wallM, v) / 1e6;      // Eq 5.19
+      const tFill = L / v;
+      const ratio = sf.maxFlowLenMm / wallMm;                       // L/T: el número que manda
+      const rows: Array<{ k: string; v: string; ref: string; warn?: boolean }> = [
+        // ⚠ ESTA FILA DICE LA VERDAD SOBRE ESTE PANEL. La malla del kernel es gruesa
+        // (aristas ~33 mm) y Dijkstra zigzaguea ⇒ esta L sobreestima ~85 % contra el
+        // vóxel (137.95 mm en el vaso, que ≈ radio + alto). El ORDEN de llegada —lo que
+        // pinta el color— es correcto; los MILÍMETROS no. Un panel que se calla su error
+        // conocido miente con cara de dato: por eso sale en rojo y con el número real.
+        { k: 'longitud de flujo L', v: `${sf.maxFlowLenMm} mm`, ref: '§5.5.5 · MEDIDA del hueco A/B, no de una fórmula por figura' },
+        { k: '⚠ L en verificación', v: 'sobreestima ~85%', ref: 'malla gruesa (arista ~33 mm) ⇒ Dijkstra zigzaguea. El vóxel da 137.95 en el vaso. El COLOR (orden de llegada) sí vale; los mm no', warn: true },
+        { k: 'razón L/T', v: `${ratio.toFixed(0)} : 1`, ref: 'cap 5 · >200 exige colada caliente o más gates', warn: ratio > 200 },
+        { k: 'v̄ de diseño', v: `${v.toFixed(2)} m/s`, ref: 'Eq 5.23 (balance corte↔pérdida de calor, iterada)' },
+        { k: 'γ̇ en la pared', v: `${gam.toFixed(0)} 1/s`, ref: 'Eq 5.21 · >50k degrada el polímero', warn: gam > 50000 },
+        { k: 'μ al γ̇ actual', v: `${mu.toFixed(0)} Pa·s`, ref: 'μ = k·γ̇^(n−1) · pseudoplástico' },
+        { k: 'ΔP de llenado', v: `${dP.toFixed(1)} MPa`, ref: 'Eq 5.19 · >140 no lo da la máquina', warn: dP > 140 },
+        { k: 't de llenado', v: `${tFill.toFixed(3)} s`, ref: 'L/v̄ · ~1.4 % del ciclo: por eso NO se ve a tiempo real' },
+        { k: 'sin llenar', v: `${sf.unreachable} vértices`, ref: 'short shot §5.5 — sin camino al gate', warn: sf.unreachable > 0 },
+      ];
+      return { maxFlowLenMm: sf.maxFlowLenMm, rows };
+    } catch (e) { console.warn('FLOW_ERR', e); return null; }
+  }, [flowOn, liveMoldSpec, moldParts]);
+  // CARRERA DE APERTURA (§6.3.2 = 2.5 × altura de pieza) — la MISMA función que usa el
+  // selector de máquina para juzgar el daylight. Sin spec no hay pieza que medir: 0
+  // (el molde se queda cerrado) en vez de inventar un número.
+  const moldOpenStrokeMm = useMemo(
+    () => (liveMoldSpec ? moldOpeningStrokeMm(liveMoldSpec.cavity.depthMm) : 0),
+    [liveMoldSpec],
+  );
+  // ESTUDIO DE TORNILLERÍA EN VIVO (Shigley cap.8 + FED-STD-H28): la ELECCIÓN del
+  // tornillo por CARGA para cada mitad. fastenerPlan es PURA y toma el spec → se llama
+  // aquí directo (nada que plomear por mold-live.json).
+  const liveFastener = useMemo(() => {
+    if (!liveMoldSpec) return null;
+    try {
+      return {
+        cavity: fastenerPlan(liveMoldSpec, { half: 'cavity' }),
+        core: fastenerPlan(liveMoldSpec, { half: 'core' }),
+      };
+    } catch (e) { console.warn('FASTENER_PLAN_ERR', e); return null; }
+  }, [liveMoldSpec]);
+  const [fastHalf, setFastHalf] = useState<'cavity' | 'core'>('cavity');
+  // ── COTAS 3D: la receta CONTRA el sólido construido ────────────────────────
+  // "como no hay suficiente información en pantalla no extraes todos los errores"
+  // (user). Los dims salen de la RECETA (params del timeline, que ya sabe sus cotas)
+  // y se CONTRASTAN con el bbox REAL del componente que se armó. Si no cuadran, la
+  // cota sale roja: el error se ve, no se deduce.
+  const [cotasOn, setCotasOn] = useState(false);
+  const cotaRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const cotaAperturaRef = useRef<HTMLDivElement | null>(null);   // 📐 la carrera, cotada en vivo
+  const liveCotas: CotaSet[] = useMemo(() => {
+    if (!cotasOn || !liveMoldSpec || !moldParts.length) return [];
+    try {
+      return moldRecipe(liveMoldSpec).map((c) => {
+        const pt = moldParts.find((p) => p.role === c.role);
+        let measure;
+        if (pt?.positions?.length) {
+          const P = pt.positions, mn = [1e18, 1e18, 1e18], mx = [-1e18, -1e18, -1e18];
+          for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { mn[k] = Math.min(mn[k], P[i + k]); mx[k] = Math.max(mx[k], P[i + k]); }
+          measure = { bbox: [mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]] as [number, number, number], min: mn as [number, number, number] };
+        }
+        return { role: c.role, dims: verifyDims(componentDims(c), measure).dims };
+      });
+    } catch (e) { console.warn('COTAS_ERR', e); return []; }
+  }, [cotasOn, liveMoldSpec, moldParts]);
+  const cotaErrors = liveCotas.reduce((n, s) => n + s.dims.filter((d) => d.ok === false).length, 0);
+  // SIMULACIÓN del molde (térmico §9 + estructural §12, Kazmer) — al activar se calcula
+  // el análisis completo sobre el spec vivo y se pinta el CAMPO de temperatura (Fig 9.7).
+  const [moldSimOn, setMoldSimOn] = useState(false);
+  const moldSim: MoldAnalysis | null = useMemo(() => {
+    if (!moldSimOn || !liveMoldSpec) return null;
+    try { return moldAnalysis(liveMoldSpec); } catch (e) { console.warn('MOLD_SIM_ERR', e); return null; }
+  }, [moldSimOn, liveMoldSpec]);
+  const moldPartingZ = useMemo(() => {
+    if (!liveMoldSpec) return 0;
+    try { const z = plateStackZ(liveMoldSpec); return z.A; } catch { return 0; }
+  }, [liveMoldSpec]);
+  // 🩻 RAYOS X: todo el molde translúcido — se ve el interior SIN sección.
+  const [moldXray, setMoldXray] = useState(false);
+  // 🌡 TRANSITORIO: la PDE de calor (FDM 3D) viva — se crea al activar la sim.
+  const moldThermalSim: ThermalSim | null = useMemo(() => {
+    if (!moldSimOn || !liveMoldSpec) return null;
+    // el calor entra con la FORMA 3D de la pieza real (espesor local por columna)
+    try {
+      // celda VIVA más gruesa (≈N/3): el paso espectral baja de ~75 ms a ~15 — "se traba,
+      // va lento" (user). El análisis fino se queda para scripts/video; la UI necesita fps.
+      return createThermalSim(liveMoldSpec, { partMesh: liveMoldMesh ?? undefined, cell: Math.max(8, Math.round(liveMoldSpec.widthMm / 36)) });
+    } catch (e) { console.warn('MOLD_FDM_ERR', e); return null; }
+  }, [moldSimOn, liveMoldSpec, liveMoldMesh]);
+  // rebanada térmica 3D: eje + posición (el molde NO es 2D)
+  const [moldSliceAxis, setMoldSliceAxis] = useState<'x' | 'y' | 'z'>('z');
+  const [moldSliceFrac, setMoldSliceFrac] = useState(0.5);
+  // ⏱ t_c LOCAL sobre la pieza (Eq 9.5 por pared medida) + consejo de agua
+  const [moldTcOn, setMoldTcOn] = useState(false);
+  const moldTc = useMemo(() => {
+    if (!moldTcOn || !liveMoldSpec || !liveMoldMesh) return null;
+    try {
+      const map = tcLocalMap(liveMoldMesh);
+      if (!map) return null;
+      return { map, advice: waterAdvice(liveMoldSpec, map) };
+    } catch (e) { console.warn('TC_MAP_ERR', e); return null; }
+  }, [moldTcOn, liveMoldSpec, liveMoldMesh]);
+  // 🏗 FEA mecánico real (malla tet + CG) — bajo demanda (tarda ~5-20 s en wasm).
+  const [moldFea, setMoldFea] = useState<MoldFeaOverlay | null>(null);
+  const [moldFeaBusy, setMoldFeaBusy] = useState(false);
+  const runMoldFeaNow = useCallback(() => {
+    if (!oc || !liveMoldSpec || moldFeaBusy) return;
+    setMoldFeaBusy(true);
+    setTimeout(() => {
+      try { setMoldFea(runMoldFea(OCC, oc, liveMoldSpec, { pMeltMPa: 80, resolution: 22 })); }
+      catch (e) { console.warn('MOLD_FEA_ERR', e); setMoldFea(null); }
+      setMoldFeaBusy(false);
+    }, 60);
+  }, [oc, liveMoldSpec, moldFeaBusy]);
+  useEffect(() => { setMoldFea(null); setMoldXray(false); }, [liveMoldSpec]);
   useEffect(() => {
-    if (!oc || !liveMoldSpec) { setMoldParts([]); return; }
+    if (!oc || !liveMoldSpec) { setMoldParts([]); setMoldBuilding(false); return; }
     let cancelled = false;
-    const t = setTimeout(() => {   // deja pintar antes del build síncrono (~3s)
-      try { const parts = buildMoldParts(OCC, oc, liveMoldSpec, 'blocks'); if (!cancelled) { setMoldParts(parts); setMoldHidden({}); setMoldOpacity({}); } }
-      catch { if (!cancelled) setMoldParts([]); }
+    setMoldBuilding(true);         // el banner pinta ANTES de que el build congele el tab
+    const t = setTimeout(() => {   // deja pintar antes del build síncrono (segundos…minutos)
+      const t0 = performance.now();
+      try {
+        const parts = buildMoldParts(OCC, oc, liveMoldSpec, 'blocks', liveMoldMesh ?? undefined, liveRealSolidsRef.current ?? undefined);
+        // TELEMETRÍA del tiempo REAL del armado — la op más pesada del estudio.
+        // El freeze de hoy fue exactamente esto sin medir ni avisar.
+        mark('mold-build', performance.now() - t0, { name: liveMoldSpec.name ?? '?', parts: parts.length });
+        if (!cancelled) {
+          // platinas de la máquina ocultas por defecto (contexto): el molde se ve limpio.
+          setMoldParts(parts); setMoldHidden({ 'platina-fija': true, 'platina-movil': true }); setMoldOpacity({}); setMoldSelected(null); setMoldOffset({}); setMoldMoveMode(false); setMoldColors({});
+          // al cargar el molde: ABRE el árbol de componentes (Documento) y CIERRA el
+          // ruido (Caras=0, Simulación, Parámetros de croquis, Análisis de pieza) — así
+          // la pantalla no se amontona: sólo se ve lo que importa del molde.
+          setCollapsed((c) => ({ ...c, features: false, faces: true, sim: true, params: true, analysis: true }));
+          if (liveMoldSpec.name) setDocName(liveMoldSpec.name);   // el encabezado refleja el molde, no "Pieza 1"
+        }
+      }
+      catch (e) {
+        console.error('MOLD_BUILD_ERR:', e);
+        mark('mold-build', performance.now() - t0, { name: liveMoldSpec.name ?? '?', ok: false, err: String((e as Error)?.message ?? e).slice(0, 200) });
+        if (!cancelled) setMoldParts([]);
+      }
+      finally { if (!cancelled) setMoldBuilding(false); }
     }, 60);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [oc, liveMoldSpec]);
+  }, [oc, liveMoldSpec, liveMoldMesh, liveRealSolidsRev]);
   const toggleMoldPlate = useCallback((role: string) => setMoldHidden((h) => ({ ...h, [role]: !h[role] })), []);
   const showAllMold = useCallback(() => setMoldHidden({}), []);
+  // 🚨 Botón ALARMA: enciende/apaga la nube roja de colisiones + deja las placas fantasma.
+  // Así el usuario (que SÍ puede girar la figura) ve el acero compartido desde cualquier lado.
+  const toggleMoldAlarm = useCallback(() => {
+    if (alarmCloud) { setAlarmCloud(null); setMoldOpacity({}); setMoldColors({}); return; }
+    const { cloud } = computeMoldAlarm(moldParts);
+    setAlarmCloud(cloud.length ? cloud : null);
+    const opac: Record<string, number> = {}; moldParts.forEach((pt) => { opac[pt.role] = 0.1; });
+    setMoldOpacity(opac); setMoldHidden({}); setMoldColors({});
+  }, [alarmCloud, moldParts]);
+
+  // ── MOLD TOOLS · CURSO ALWIS (PROCESO-1): el pipeline del curso, botón por botón.
+  //    Cada botón = una feature del tutorial (Insert Part → Scale → Move/Copy →
+  //    Parting Lines → Tooling Split → Hole Wizard), llamando al kernel (curso-flow.ts).
+  //    Los botones se DESHABILITAN hasta su etapa (como Tooling Split gris en SW).
+  const [cursoStage, setCursoStage] = useState(0);
+  const [cursoBusy, setCursoBusy] = useState(false);
+  const [cursoReport, setCursoReport] = useState<string[]>([]);
+  const [cursoCollapsed, setCursoCollapsed] = useState(false);   // plegar el panel para no tapar el sólido
+  const cursoRef = useRef<{
+    pieza?: OCC.Shape; piezaE?: OCC.Shape; cuerpos?: [OCC.Shape, OCC.Shape]; cav?: OCC.Shape; core?: OCC.Shape;
+    carved?: boolean; vols: Record<string, number>; stage: number; report: string[];
+  }>({ vols: {}, stage: 0, report: [] });
+  const cursoPart = useCallback((shape: OCC.Shape, role: string, name: string, color: string, opacity = 1, deflection = 0.8): MoldPart => {
+    const m = OCC.tessellate(oc!, shape, deflection, deflection);
+    const positions = m.positions instanceof Float32Array ? m.positions : new Float32Array(m.positions);
+    const indices = m.indices instanceof Uint32Array ? m.indices : new Uint32Array(m.indices);
+    const normals = new Float32Array(positions.length);
+    for (let t = 0; t < indices.length; t += 3) {
+      const a = indices[t] * 3, b = indices[t + 1] * 3, c = indices[t + 2] * 3;
+      const ux = positions[b] - positions[a], uy = positions[b + 1] - positions[a + 1], uz = positions[b + 2] - positions[a + 2];
+      const vx = positions[c] - positions[a], vy = positions[c + 1] - positions[a + 1], vz = positions[c + 2] - positions[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      for (const q of [a, b, c]) { normals[q] += nx; normals[q + 1] += ny; normals[q + 2] += nz; }
+    }
+    for (let i = 0; i < normals.length; i += 3) { const l = Math.hypot(normals[i], normals[i + 1], normals[i + 2]) || 1; normals[i] /= l; normals[i + 1] /= l; normals[i + 2] /= l; }
+    return { role, name, material: role.startsWith('pieza') ? 'PP' : 'AISI P20', positions, normals, indices, color, opacity };
+  }, [oc]);
+  // la línea de partición como LISTÓN dorado (quad por segmento, 0.25 mm sobre el lazo)
+  const cursoLoopPart = useCallback((loops: Array<{ pts: Array<[number, number, number]> }>): MoldPart => {
+    const pos: number[] = []; const idx: number[] = [];
+    for (const L of loops) {
+      const n = L.pts.length;
+      for (let i = 0; i < n; i++) {
+        const p = L.pts[i], q = L.pts[(i + 1) % n];
+        const dx = q[0] - p[0], dy = q[1] - p[1]; const len = Math.hypot(dx, dy) || 1;
+        const ox = (-dy / len) * 0.9, oy = (dx / len) * 0.9;
+        // 0.6 mm DEBAJO del lazo: encima lo tapa la pieza (depth-sort) — cazado
+        // en el video del kernel; abajo se lee como contorno dorado alrededor.
+        const f = pos.length / 3;
+        pos.push(p[0] - ox, p[1] - oy, p[2] - 0.6, p[0] + ox, p[1] + oy, p[2] - 0.6,
+          q[0] + ox, q[1] + oy, q[2] - 0.6, q[0] - ox, q[1] - oy, q[2] - 0.6);
+        idx.push(f, f + 1, f + 2, f, f + 2, f + 3);
+      }
+    }
+    const positions = new Float32Array(pos); const indices = new Uint32Array(idx);
+    const normals = new Float32Array(positions.length);
+    for (let i = 0; i < normals.length; i += 3) normals[i + 2] = 1;
+    return { role: 'parting-line', name: 'Línea de partición', material: '—', positions, normals, indices, color: '#f0b429', opacity: 1 };
+  }, []);
+  const cursoRun = useCallback((fn: () => void) => {
+    if (!oc || cursoBusy) return;
+    setCursoBusy(true);
+    setTimeout(() => {
+      try { fn(); } catch (e) {
+        console.error('CURSO_ERR:', e);
+        setCursoReport((r) => { const nr = [...r, `ERROR: ${String(e).slice(0, 140)}`]; cursoRef.current.report = nr; return nr; });
+      } finally { setCursoBusy(false); }
+    }, 60);
+  }, [oc, cursoBusy]);
+  const cursoSet = useCallback((stage: number, report: string[], parts: MoldPart[]) => {
+    cursoRef.current.stage = stage; cursoRef.current.report = report;
+    setCursoStage(stage); setCursoReport(report); setMoldParts(parts);
+  }, []);
+  const cursoInsertar = useCallback(() => cursoRun(() => {
+    const r = insertarPercha(oc!);
+    cursoRef.current = { ...cursoRef.current, pieza: r.shape, vols: { pieza: r.volMm3 } };
+    setMoldHidden({}); setMoldOpacity({}); setMoldColors({}); setMoldOffset({}); setMoldSelected(null);
+    setDocName('Molde percha ×2 · curso Alwis');
+    cursoSet(1, r.report, [cursoPart(r.shape, 'pieza', 'PERCHA (curso)', '#e2554a')]);
+  }), [cursoRun, cursoSet, cursoPart, oc]);
+  const cursoFlanera = useCallback(() => cursoRun(() => {
+    const r = flanera(oc!);                                   // vaso PP Ø80→Ø72 · H40 · pared 1.2
+    cursoRef.current = { ...cursoRef.current, pieza: r.shape, vols: { flanera: r.volMm3 } };
+    setMoldHidden({}); setMoldOpacity({}); setMoldColors({}); setMoldOffset({}); setMoldSelected(null);
+    setDocName('Flanera PP · vaso (revolución)');
+    cursoSet(1, r.report, [cursoPart(r.shape, 'pieza', 'FLANERA (vaso PP)', '#e8dcc0', 0.96, 0.08)]);
+  }), [cursoRun, cursoSet, cursoPart, oc]);
+  // De la flanera → CORE + CAVIDAD (los dos insertos TORNEABLES). El vaso se
+  // revoluciona en +Y; el molde parte en Z → rotamos el eje del vaso a +Z (+90° en X),
+  // y splitMold (probado en el banco: cup/lid) saca cavidad+núcleo+macho.
+  // MOLDE COMPLETO de la flanera — UN SOLO PIPELINE: la FIGURA (sólido real) ES la
+  // cavidad. moldMachine da los NÚMEROS (placas, fuerza, cotización); splitMold da la
+  // GEOMETRÍA real (cavidad/núcleo del vaso). NADA de tubos regenerados de cotas.
+  const loadFlaneraMold = useCallback(() => {
+    try {
+      const spec: MachineSpec = {
+        name: 'Flanera Ø80×40 · PP · 6 cav',
+        Lmm: 80, Wmm: 80, Hmm: 40, cavityShape: 'round',
+        surfaceMm2: 15080, volumeMm3: 14266, wallMm: 1.2,
+        annualVolume: 500000, plastic: 'PP', finish: 'SPI B-3',
+      };
+      const aspec = packageToAssemblySpec(moldMachine(spec));   // NÚMEROS (placas/fuerza/costo)
+      const id = insertDims(aspec);
+      // FIGURA REAL → SÓLIDOS: el vaso se revoluciona en +Y; el molde parte en Z →
+      // rotamos el eje del vaso a +Z (+90° X). splitMold (banco: cup/lid) saca cavidad+núcleo.
+      const _T0 = performance.now(); const _mark = (n: string) => console.log('PERF flanera', n, Math.round(performance.now() - _T0), 'ms');
+      const f = flanera(oc!); _mark('vaso');
+      const up = OCC.transformShape(oc!, f.shape, { translate: [0, 0, 0], rotateAngle: Math.PI / 2, rotateAxis: { origin: [0, 0, 0], dir: [1, 0, 0] } });
+      // BLOQUE del inserto ACOTADO a la placa (no el auto-margen gigante de splitMold, que
+      // dejaba el inserto 24mm más alto que la placa A → se metía en el clamp). Ancho = la
+      // orilla del libro (id.ifx/ify); alto = grosor de placa A menos holgura de asiento.
+      const sc = scaleForShrinkage(oc!, up, 1.015);
+      const bb = shapeBBox(oc!, sc);
+      const zPartSplit = bb.max[2] - 0.5;                       // partición = boca del vaso (pinch)
+      const tA = aspec.plates.A ?? 56;
+      const cavH = Math.min(tA - 4, bb.max[2] - bb.min[2] + 12); // cabe en A, con piso bajo la base
+      const block = { w: id.ifx, d: id.ify, h: cavH, x: (bb.max[0] + bb.min[0]) / 2, y: (bb.max[1] + bb.min[1]) / 2, z: zPartSplit - cavH / 2 };
+      // §4.2.1 (Fig 4.13): el RESPALDO del inserto (rear→partición) = mínimo 3× el ⌀ de la
+      // línea de enfriamiento (acero detrás de la superficie moldeante, evita esfuerzo §12).
+      // El boss (macho, ARRIBA de la partición) SÍ es la profundidad real del vaso; el
+      // respaldo NO — antes usaba dep+26 (sumaba la prof que va arriba) → core GIGANTE 90mm.
+      const coolDiaMm = aspec.cooling?.diaMm ?? 8;
+      const coreBackMm = Math.min((aspec.plates.B ?? 56) - 4, Math.max(12, Math.round(3 * coolDiaMm)));
+      const r = splitMold(oc!, up, { scale: 1.015, zPart: zPartSplit, block, plateThickness: coreBackMm, pinch: 0.5 }); _mark('splitMold');
+      // VERDAD DEL KERNEL: intersección booleana EXACTA cav∩core (sin mallas). Si >0,
+      // los sólidos REALMENTE comparten acero; si ≈0, lo que reporte el estudio de
+      // contacto de mallas en este par es artefacto de teselación.
+      try {
+        // GOTCHA OCC: common() se CUELGA con la placa A nueva (76mm) en el camino stripper
+        // — kernel frágil, no determinista. Se salta para stripper; el par cav↔core queda
+        // a juicio de malla (artefacto conocido de la pared 1.2 facetada, ~13k falsos).
+        if (aspec.ejectors.type === 'stripper') throw new Error('skip-exact-stripper');
+        const interVol = OCC.volume(oc!, OCC.common(oc!, r.cavityPlate, r.corePlate));
+        (window as any).__flaneraCavCoreInterMm3 = +interVol.toFixed(1);
+        // REGISTRO DE VERDADES EXACTAS: el kernel (booleana OCC) MANDA sobre la malla.
+        // Para el par cav↔core la intersección exacta es 0 → cualquier "colisión" que la
+        // malla reporte ahí es ARTEFACTO de teselación (pared 1.2mm facetada), no acero.
+        (window as any).__exactPairsMm3 = { 'inserto-cav↔inserto-core': +interVol.toFixed(1) };
+        console.log('CAV∩CORE exacto:', interVol.toFixed(1), 'mm³');
+      } catch { (window as any).__flaneraCavCoreInterMm3 = null; }
+      // ── STRIPPER (§11.3.4 Fig 11.19): el núcleo = macho + LAND deslizante + respaldo
+      // anclado al SOPORTE ("core inserts fastened to the support plate"). El LAND
+      // (⌀ = interior − 0.6 del escalado = el witness-offset de Fig 11.21) cruza el
+      // anillo stripper; el bore del anillo = land + 0.10 (desliza). El respaldo (16 mm)
+      // queda ABAJO, sobre el soporte — el anillo flota entre él y la placa A.
+      let coreSolid = r.corePlate;
+      if (aspec.ejectors.type === 'stripper') {
+        try {
+          const tBz = aspec.plates.B ?? 36;
+          const landR = (id.fx - 2 * id.wall) / 2;               // MISMA fórmula que el bore (fuente única)
+          const landH = tBz - 16;
+          const land = OCC.makeCylinder(oc!, landR, landH, { origin: [0, 0, r.zPart], dir: [0, 0, 1] });
+          let backing = OCC.makeBox(oc!, id.ifx, id.ify, 16);
+          backing = OCC.transformShape(oc!, backing, { translate: [-id.ifx / 2, -id.ify / 2, r.zPart + landH] });
+          // COMPOUND, no fuse: los tres cuerpos se apilan cara-a-cara — la booleana de
+          // caras tangentes es CARÍSIMA en OCC (colgaba el build) y aquí no aporta nada.
+          coreSolid = OCC.makeCompound(oc!, [r.macho, land, backing]);   // apilados cara-a-cara, sin booleana
+        } catch (e) { console.warn('STRIPPER_CORE_ERR', e); coreSolid = r.corePlate; }
+      }
+      // Los SÓLIDOS viajan tal cual (marco local de splitMold): buildFunctionalParts los
+      // ESPEJA al ensamble y los TALADRA ahí. La pieza = vaso a escala de cavidad (sc).
+      liveRealSolidsRef.current = { cav: r.cavityPlate, core: coreSolid, piece: sc, zPartSplit: r.zPart };
+      setLiveRealSolidsRev((v) => v + 1);
+      setLiveMoldMesh(null);
+      setLiveMoldSpec(aspec); _mark('fin-click');
+    } catch (e) { console.error('FLANERA_MOLD_ERR', e); liveRealSolidsRef.current = null; setLiveRealSolidsRev((v) => v + 1); }
+  }, [oc]);
+  const cursoFlaneraMold = useCallback(() => cursoRun(() => {
+    const f = flanera(oc!);
+    const up = OCC.transformShape(oc!, f.shape, { translate: [0, 0, 0], rotateAngle: Math.PI / 2, rotateAxis: { origin: [0, 0, 0], dir: [1, 0, 0] } });
+    const r = splitMold(oc!, up, { scale: 1.015, margin: 26, plateThickness: 24, pinch: 0.5 });
+    cursoRef.current = { ...cursoRef.current, cav: r.cavityPlate, core: r.corePlate };
+    setMoldHidden({}); setMoldOpacity({}); setMoldColors({}); setMoldSelected(null);
+    setMoldOffset({ core: [0, 0, 55], cavity: [0, 0, 0] });   // EXPLOTA: núcleo arriba → se ve el hueco + el macho
+    setDocName('Molde flanera · core/cavidad');
+    cursoSet(2, [...f.report, ...r.report], [
+      cursoPart(r.cavityPlate, 'cavity', 'CAVIDAD — forma el exterior (torneable)', '#e8a8bc', 0.62, 0.12),
+      cursoPart(r.corePlate, 'core', 'NÚCLEO + macho — forma el interior (torneable)', '#a8c8e8', 1, 0.12),
+    ]);
+  }), [cursoRun, cursoSet, cursoPart, oc]);
+  const cursoEscala = useCallback(() => cursoRun(() => {
+    const r = escalaContraccion(oc!, cursoRef.current.pieza!, 1.015);
+    cursoRef.current.piezaE = r.shape; cursoRef.current.vols.piezaE = r.volDespues;
+    cursoSet(2, [...cursoRef.current.report, ...r.report], [cursoPart(r.shape, 'pieza', 'PERCHA ×1.015', '#e2554a')]);
+  }), [cursoRun, cursoSet, cursoPart, oc]);
+  const cursoLayout = useCallback(() => cursoRun(() => {
+    const r = layoutDosCavidades(oc!, cursoRef.current.piezaE!);
+    cursoRef.current.cuerpos = r.cuerpos; cursoRef.current.vols.total = r.volTotal;
+    cursoRef.current.vols.sinTraslape = r.sinTraslape ? 1 : 0;
+    cursoSet(3, [...cursoRef.current.report, ...r.report], [
+      cursoPart(r.cuerpos[0], 'pieza', 'Cavidad 1', '#e2554a'),
+      cursoPart(r.cuerpos[1], 'pieza-2', 'Cavidad 2', '#e2554a'),
+    ]);
+  }), [cursoRun, cursoSet, cursoPart, oc]);
+  const cursoParting = useCallback(() => cursoRun(() => {
+    const r = lineaParticion(oc!, cursoRef.current.cuerpos!);
+    cursoRef.current.vols.nVertices = r.nVertices; cursoRef.current.vols.mensajeVerde = r.ok ? 1 : 0;
+    setMoldParts((cur) => [...cur.filter((p) => p.role !== 'parting-line'), cursoLoopPart(r.loops)]);
+    const rep = [...cursoRef.current.report, ...r.report];
+    cursoRef.current.stage = 4; cursoRef.current.report = rep;
+    setCursoStage(4); setCursoReport(rep);
+  }), [cursoRun, cursoLoopPart, oc]);
+  // MALLA → MoldPart directo (para los insertos TALLADOS por heightfield, que no
+  // son B-Rep sino superficies rasterizadas — no pasan por cursoPart/tessellate).
+  const meshToMoldPart = useCallback((m: { positions: Float32Array; normals: Float32Array; indices: Uint32Array }, role: string, name: string, color: string, opacity = 1): MoldPart => ({
+    role, name, material: 'AISI P20', positions: m.positions, normals: m.normals, indices: m.indices, color, opacity,
+  }), []);
+  const cursoSplit = useCallback(() => cursoRun(() => {
+    let planar = false;
+    try {
+      const r = toolingSplitCurso(oc!, cursoRef.current.cuerpos!);
+      planar = true;
+      cursoRef.current.cav = r.cavityPlate; cursoRef.current.core = r.corePlate; cursoRef.current.carved = false;
+      cursoRef.current.vols.cavity = r.vols.cavity; cursoRef.current.vols.core = r.vols.core; cursoRef.current.vols.tmp = r.vols.tmp;
+      // cavidad rosa TRASLÚCIDA arriba, núcleo verde abajo (render del curso). Alza 0.5mm
+      // visuales: su cara inferior es coplanar con el núcleo → sin gap hace z-fighting.
+      setMoldOffset((o) => ({ ...o, cavity: [0, 0, 0.5] }));
+      cursoSet(5, [...cursoRef.current.report, ...r.report], [
+        cursoPart(r.cavityPlate, 'cavity', 'Placa CAVIDAD 350×630×145', '#e8a8bc', 0.42),
+        cursoPart(r.corePlate, 'core', 'Placa NÚCLEO 350×630×90', '#9ed0a8'),
+        cursoPart(cursoRef.current.cuerpos![0], 'pieza', 'Cavidad 1', '#e2554a'),
+        cursoPart(cursoRef.current.cuerpos![1], 'pieza-2', 'Cavidad 2', '#e2554a'),
+      ]);
+    } catch (e) {
+      if (planar) throw e;   // el error salió DESPUÉS del split → no es el de "no plana"
+      // PARTICIÓN NO PLANA (percha real curva) → TALLADO por heightfield (0.5s, robusto).
+      const c = toolingSplitCursoCarve(oc!, cursoRef.current.cuerpos!);
+      cursoRef.current.carved = true; cursoRef.current.cav = undefined; cursoRef.current.core = undefined;
+      cursoRef.current.vols.deltaZ = c.deltaZ;
+      setMoldOffset((o) => ({ ...o, 'inserto-cav': [0, 0, 0.5] }));
+      cursoSet(5, [...cursoRef.current.report, ...c.report], [
+        meshToMoldPart(c.cavMesh, 'inserto-cav', 'Inserto CAVIDAD tallado (impronta de las perchas)', '#e8a8bc', 0.6),
+        meshToMoldPart(c.coreMesh, 'inserto-core', 'Inserto NÚCLEO tallado (macho)', '#9ed0a8', 1),
+        cursoPart(cursoRef.current.cuerpos![0], 'pieza', 'Cavidad 1', '#e2554a'),
+        cursoPart(cursoRef.current.cuerpos![1], 'pieza-2', 'Cavidad 2', '#e2554a'),
+      ]);
+    }
+  }), [cursoRun, cursoSet, cursoPart, meshToMoldPart, oc]);
+  const cursoGuias = useCallback(() => cursoRun(() => {
+    if (cursoRef.current.carved || !cursoRef.current.cav) {
+      // insertos TALLADOS (heightfield) = mallas, no B-Rep → el Hole Wizard de guías
+      // (cortes cilíndricos B-Rep) no aplica aquí. Se declara honesto y se marca 6/6.
+      const rep = [...cursoRef.current.report, 'Hole Wizard: guías ⌀48/⌀35 sobre las PLACAS del bloque (los insertos tallados van montados dentro) — corte B-Rep pendiente para el molde no plano (v2)'];
+      cursoRef.current.stage = 6; cursoRef.current.report = rep;
+      setCursoStage(6); setCursoReport(rep);
+      return;
+    }
+    const r = guiasCurso(oc!, cursoRef.current.cav!, cursoRef.current.core!);
+    cursoRef.current.cav = r.cavity; cursoRef.current.core = r.core;
+    cursoRef.current.vols.quitadoCav = r.volQuitadoCav; cursoRef.current.vols.quitadoCore = r.volQuitadoCore;
+    cursoSet(6, [...cursoRef.current.report, ...r.report], [
+      cursoPart(r.cavity, 'cavity', 'Placa CAVIDAD + bushings ⌀48', '#e8a8bc', 0.5),
+      cursoPart(r.core, 'core', 'Placa NÚCLEO + pernos ⌀35', '#9ed0a8'),
+      cursoPart(cursoRef.current.cuerpos![0], 'pieza', 'Cavidad 1', '#e2554a'),
+      cursoPart(cursoRef.current.cuerpos![1], 'pieza-2', 'Cavidad 2', '#e2554a'),
+    ]);
+  }), [cursoRun, cursoSet, cursoPart, oc]);
   const isolateMoldPlate = useCallback((role: string) => {
     setMoldHidden((h) => {
       const already = !h[role] && moldParts.every((p) => p.role === role || h[p.role]);
@@ -3644,11 +4611,16 @@ export default function ForgeBRepStudio() {
   }, [sketch]);
 
   // ── Boot del kernel ──
+  // CARGANDO con progreso REAL: el .wasm pesa 65 MB — la telemetría mostró usuarios
+  // (el papá del user incluido) viendo pantalla muerta 30-60 s y cerrando ("ni cargó").
+  // bootPct: -1 = aún no baja bytes · 0-99 = descargando · 100 = compilando.
+  const [bootPct, setBootPct] = useState(-1);
+  const [bootMB, setBootMB] = useState(0);
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const instance = await initOCCT();
+        const instance = await initOCCT();   // sin prefetch: en prod colgaba el boot (brotli)
         if (!alive) return;
         _setActiveOCCT(instance);
         setOc(instance);
@@ -3659,6 +4631,11 @@ export default function ForgeBRepStudio() {
     })();
     return () => { alive = false; };
   }, []);
+  // Sonda WebGL2: si el navegador/GPU no lo soporta, el canvas moriría en silencio
+  // (telemetría: 31 "Error creating WebGL context") — mejor decirlo CLARO de entrada.
+  const webgl2Ok = useMemo(() => {
+    try { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); } catch { return false; }
+  }, []);
 
   // ── Replay del grafo → malla + invariantes + análisis de masa ──
   const rebuild = useCallback(() => {
@@ -3666,6 +4643,9 @@ export default function ForgeBRepStudio() {
     setBuilding(true);
     setOpErr(null);
     requestAnimationFrame(() => {
+      // Cronómetro del REBUILD completo (kernel→malla→STEP): es LA operación
+      // pesada del estudio y antes no se medía — "tiempos altos" invisibles.
+      const tRebuild0 = performance.now();
       try {
         // ── MODO ENSAMBLE: dos engranes engranados (sketch=gear + 2º agregado) ──
         const isAssembly = assembly.enabled && sketch.kind === 'gear';
@@ -3751,7 +4731,7 @@ export default function ForgeBRepStudio() {
           // Sin molde en el doc: el draft va al final, sobre la pieza terminada.
           applyDrafts();
           const allParts = acc ? [acc, ...parts] : parts;
-          if (allParts.length === 0) throw new Error('Documento vacío: agrega Extrude/Revolve o un Componente.');
+          if (allParts.length === 0) throw new Error('Documento vacío: agrega una Extrusión, una Revolución o un Componente.');
           shape = allParts.length === 1 ? allParts[0] : makeCompound(oc, allParts);
         }
 
@@ -3780,6 +4760,7 @@ export default function ForgeBRepStudio() {
         const built: BuildResult = { mesh, topo, volKernel, area, stepBytes: step.length, mass, faces, edges, edgeGeoms, assembly: assemblyResult };
         resultRef.current = built;
         setResult(built);
+        mark('rebuild', performance.now() - tRebuild0, { ops: boundDoc.ops.length, tris: Math.round(mesh.indices.length / 3) });
         shape.delete?.();
       } catch (e) {
         // console.error VISIBLE para el arnés (meta.errors): sin esto, un component que
@@ -3909,6 +4890,26 @@ export default function ForgeBRepStudio() {
   const deleteFromLibrary = useCallback((name: string) => {
     const lib = readLib(); delete lib[name]; writeLib(lib); refreshLib();
   }, [refreshLib]);
+  // ── LOBBY: proyectos guardados (biblioteca) + plantillas para arrancar ──
+  const switcherProjects = useMemo<ProjItem[]>(() => {
+    const lib = readLib();
+    return Object.keys(lib).sort().map((name) => {
+      const d = lib[name];
+      const nf = d?.ops?.length ?? 0, nc = d?.components?.length ?? 0;
+      const cur = name === docName;
+      return {
+        key: 'lib-' + name, name, type: inferType(name),
+        meta: `${nf} feature${nf === 1 ? '' : 's'}${nc ? ` · ${nc} comp` : ''}`,
+        status: cur ? 'abierto ahora' : 'guardado', statusColor: cur ? '#34d399' : undefined,
+        current: cur, action: () => loadFromLibrary(name),
+      };
+    });
+  }, [libNames, docName, loadFromLibrary]);   // libNames refresca al guardar/borrar
+  const switcherStarters = useMemo<ProjItem[]>(() => [
+    { key: 'st-flanera', name: 'Molde Flanera PP', type: 'molde', meta: 'Ø80·H40 · 6 cav · molde completo', status: 'plantilla', action: loadFlaneraMold },
+    { key: 'st-percha', name: 'Percha (curso Alwis)', type: 'molde', meta: 'gancho · partición curva', status: 'plantilla', action: cursoInsertar },
+    { key: 'st-cicloidal', name: 'Reductor cicloidal 10:1', type: 'mecanismo', meta: 'print-in-place · holgura 0.30', status: 'plantilla', action: () => loadDoc(cycloidalReducerDoc()) },
+  ], [loadFlaneraMold, cursoInsertar, loadDoc]);
   const exportDocFile = useCallback(() => {
     const safe = (docName.trim() || 'pieza').replace(/[^\w.-]+/g, '_');
     triggerDownload(new Blob([JSON.stringify(serializeDoc(), null, 2)], { type: 'application/json' }), `${safe}.forja.json`);
@@ -4530,12 +5531,18 @@ export default function ForgeBRepStudio() {
   );
   // ── SECCIÓN: corte por plano para ver las caras internas (clip) ──
   const [sectionOn, setSectionOn] = useState(false);
+  // La SECCIÓN interactiva (arriba) ≠ el CORTE cinematográfico (movie full-screen).
+  // Antes ambos colgaban de sectionOn → al activar la sección salía la película y
+  // tapaba la flecha interactiva. Separados: sectionOn = clip+flecha; sectionReveal = movie.
+  const [sectionReveal, setSectionReveal] = useState(false);
   const [sectionAxis, setSectionAxis] = useState<'x' | 'y' | 'z'>('y');
   const [sectionOffset, setSectionOffset] = useState(0);   // −1..1 sobre el bbox
   const [sectionFlip, setSectionFlip] = useState(false);
   const meshBBox = useMemo(() => {
-    // fuente: la pieza del doc, o (si el doc está vacío) el MOLDE en vivo (unión de placas)
-    const buffers: ArrayLike<number>[] = result ? [result.mesh.positions] : moldParts.map((p) => p.positions);
+    // fuente: la pieza del doc, o (si el doc está vacío) el MOLDE en vivo — SOLO los
+    // componentes VISIBLES (si aíslas el anillo, Encuadrar debe llenar con el anillo).
+    const vis = moldParts.filter((p) => !moldHidden[p.role]);
+    const buffers: ArrayLike<number>[] = result ? [result.mesh.positions] : (vis.length ? vis : moldParts).map((p) => p.positions);
     if (!buffers.length) return null;
     let mnx = Infinity, mny = Infinity, mnz = Infinity, mxx = -Infinity, mxy = -Infinity, mxz = -Infinity;
     for (const p of buffers) for (let i = 0; i < p.length; i += 3) {
@@ -4545,7 +5552,7 @@ export default function ForgeBRepStudio() {
     }
     if (!Number.isFinite(mnx)) return null;
     return { center: [(mnx + mxx) / 2, (mny + mxy) / 2, (mnz + mxz) / 2], half: [(mxx - mnx) / 2 || 1, (mxy - mny) / 2 || 1, (mxz - mnz) / 2 || 1] };
-  }, [result, moldParts]);
+  }, [result, moldParts, moldHidden]);
 
   // ── ESTUDIO VIENTO: mide el semiángulo δ de la pieza y corre la física real ──
   // δ = atan( (menor span / 2) / (mayor span) ): para la cuña dibujada (cuerda ≫
@@ -4612,7 +5619,9 @@ export default function ForgeBRepStudio() {
     const pW = new THREE.Vector3(pM[0], pM[2], -pM[1]);
     sectionClip[0].setFromNormalAndCoplanarPoint(nW, pW);
   }, [sectionOn, sectionAxis, sectionOffset, sectionFlip, meshBBox, sectionClip]);
-  const sectionPlanes = sectionClip;   // siempre el array (lejos cuando off)
+  // SOLO atar el clip cuando la sección está ACTIVA: el plano "lejano" (constante 1e6)
+  // permanentemente atado ditherea los bordes en ANGLE/D3D12 (bordes aserrados).
+  const sectionPlanes = sectionOn ? sectionClip : null;
   // ── MOTOR DE PLANOS: del sólido actual → plano de taller 2D (SVG) ──
   const [planoSvg, setPlanoSvg] = useState<string | null>(null);
   // ── CAM · CAREADO (libro Cimo cap 9): stock = bbox del sólido; zigzag + G-code ──
@@ -5716,9 +6725,102 @@ export default function ForgeBRepStudio() {
           distinct_face_ids: new Set(Array.from(result.mesh.faceIds)).size,
         } : null;
       },
+      // MOLD TOOLS · curso: estado del pipeline para el arnés (lee del REF — siempre fresco)
+      get curso() { return { stage: cursoRef.current.stage, vols: cursoRef.current.vols, report: cursoRef.current.report }; },
+      // BBOX numérico de cada parte del molde (para cazar TRASLAPES: dos placas que
+      // ocupan la misma Z = imposible en la realidad). El QA lo lee y compara rangos.
+      moldGeom: () => moldParts.map((pt) => {
+        const P = pt.positions; const mn = [1e18, 1e18, 1e18]; const mx = [-1e18, -1e18, -1e18];
+        for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { if (P[i + k] < mn[k]) mn[k] = P[i + k]; if (P[i + k] > mx[k]) mx[k] = P[i + k]; }
+        return { role: pt.role, name: pt.name, min: mn.map((v) => +v.toFixed(2)), max: mx.map((v) => +v.toFixed(2)) };
+      }),
+      // SOLVER DE COLISIONES (Fase 1): clasifica cada traslape como interfaz esperada
+      // o colisión real, con fits térmicos. tempC = temperatura del molde (default 60).
+      moldCollisions: (tempC?: number) => {
+        const parts = moldParts.map((pt) => {
+          const P = pt.positions; const mn: [number, number, number] = [1e18, 1e18, 1e18]; const mx: [number, number, number] = [-1e18, -1e18, -1e18];
+          for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { if (P[i + k] < mn[k]) mn[k] = P[i + k]; if (P[i + k] > mx[k]) mx[k] = P[i + k]; }
+          return { role: pt.role, name: pt.name, min: mn, max: mx, material: pt.material };
+        });
+        return analyzeAssembly(parts, { moldTempC: tempC });
+      },
+      // ESTUDIO DE CONTACTO (Fase 1b+): NO basta contar puntos traslapados — hay que medir
+      // la PROFUNDIDAD de penetración y compararla con el AJUSTE permitido (fits.ts). Dos
+      // sólidos NUNCA comparten volumen: o se TOCAN (contacto, ~0 mm), o hay press-fit de
+      // MICRAS, o es COLISIÓN real (mm de acero compartido = imposible). fitMm = envolvente
+      // del ajuste más holgado del molde (pin 0.13, pilar 1.0 → 0.6 mm de margen sano).
+      // La PIEZA queda FUERA del estudio: sus caras SON las caras moldeantes (la cavidad ES
+      // su negativo) — el contacto ahí es el DISEÑO, no una colisión (así lo hacen Fusion/Solid).
+      moldSolidCollisions: (step = 4, fitMm = 0.6, volFitMm3 = 15) => {
+        const IGNORE = new Set(['pieza', 'platina-fija', 'platina-movil']);
+        const bbox = (P: Float32Array) => { const mn: [number, number, number] = [1e18, 1e18, 1e18], mx: [number, number, number] = [-1e18, -1e18, -1e18]; for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { if (P[i + k] < mn[k]) mn[k] = P[i + k]; if (P[i + k] > mx[k]) mx[k] = P[i + k]; } return { mn, mx }; };
+        const ov = (a: any, b: any) => { for (let k = 0; k < 3; k++) if (Math.min(a.mx[k], b.mx[k]) - Math.max(a.mn[k], b.mn[k]) <= 0.4) return false; return true; };
+        const P = moldParts.filter((pt) => !IGNORE.has(pt.role)).map((pt) => ({ role: pt.role, positions: pt.positions, indices: pt.indices, bb: bbox(pt.positions) }));
+        const collisions: any[] = [], pressfits: any[] = [];
+        const exact = ((window as any).__exactPairsMm3 ?? {}) as Record<string, number>;
+        for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
+          if (!ov(P[i].bb, P[j].bb)) continue;   // bbox = SOLO filtro de búsqueda, no la prueba
+          const A = { positions: P[i].positions, indices: P[i].indices }, B = { positions: P[j].positions, indices: P[j].indices };
+          // ESTUDIO DE CONTACTO sobre la FIGURA REAL (tornillo=tornillo, buje=buje): volumen
+          // de acero COMPARTIDO + profundidad. Dos sólidos jamás comparten volumen.
+          const c = meshContact(A, B);
+          if (c.pointsInside === 0 && c.penMm === 0) continue;
+          const rec: any = { a: P[i].role, b: P[j].role, volMm3: c.volMm3, penMm: c.penMm };
+          // EL KERNEL MANDA: si la booleana EXACTA de OCC dice que este par comparte ~0,
+          // lo que vea la malla es artefacto de teselación (pared delgada facetada).
+          const ex = exact[`${P[i].role}↔${P[j].role}`] ?? exact[`${P[j].role}↔${P[i].role}`];
+          if (ex != null && ex <= volFitMm3) { rec.kernelMm3 = ex; rec.nota = 'kernel exacto ≈0: artefacto de malla'; pressfits.push(rec); continue; }
+          // COLISIÓN si penetra más que el ajuste, o si comparte volumen apreciable CON
+          // profundidad real (pen≈0 = puntos sobre la superficie = CONTACTO, no colisión).
+          ((c.penMm > fitMm || (c.volMm3 > volFitMm3 && c.penMm > 0.1)) ? collisions : pressfits).push(rec);
+        }
+        collisions.sort((x, y) => y.volMm3 - x.volMm3 || y.penMm - x.penMm);
+        pressfits.sort((x, y) => y.volMm3 - x.volMm3);
+        return { fitMm, volFitMm3, nCollisions: collisions.length, collisions, nPressfit: pressfits.length, pressfits };
+      },
+      // AISLAR una parte del molde (para auto-revisión: ver SÓLO la cavidad y confirmar
+      // que es el vaso real, no un tubo). moldShowAll() vuelve a mostrar todo.
+      moldIsolate: (role: string) => { isolateMoldPlate(role); },
+      moldShowAll: () => { showAllMold(); },
+      moldRoles: () => moldParts.map((pt) => pt.role),
+      moldSupport: () => (liveMoldSpec ? { supportPillars: liveMoldSpec.supportPillars ?? 0, supportMm: liveMoldSpec.plates?.support, widthMm: liveMoldSpec.widthMm } : null),
+      // 🚨 MODO ALARMA: enciende la NUBE ROJA en cada punto donde dos sólidos comparten
+      // acero + deja todas las placas FANTASMA (tenues) para que el rojo salte desde
+      // cualquier ángulo. Esto es "algo que me ayude a ver" — la colisión deja de estar
+      // escondida dentro del metal translúcido.
+      moldAlarm: (_step = 4, fitMm = 0.6, volFitMm3 = 15) => {
+        const { cloud, collisions } = computeMoldAlarm(moldParts, fitMm, volFitMm3);
+        setAlarmCloud(cloud.length ? cloud : null);
+        const opac: Record<string, number> = {}; moldParts.forEach((pt) => { opac[pt.role] = 0.1; });
+        setMoldOpacity(opac); setMoldHidden({}); setMoldColors({});
+        return { nCollisions: collisions.length, nPoints: cloud.length / 3, collisions };
+      },
+      moldAlarmOff: () => { setAlarmCloud(null); setMoldOpacity({}); setMoldColors({}); setMoldHidden({ 'platina-fija': true, 'platina-movil': true }); },
+      // ALARMA de UN PAR: oculta todo menos las 2 piezas, semitransparentes, + la nube roja
+      // ENTRE ellas → veo EXACTAMENTE cómo una cruza a la otra (p.ej. el agua contra el inserto).
+      moldAlarmPair: (a: string, b: string) => {
+        const pa = moldParts.find((p) => p.role === a), pb = moldParts.find((p) => p.role === b);
+        if (!pa || !pb) return { error: 'roles no encontrados', roles: moldParts.map((p) => p.role) };
+        const c = meshContact({ positions: pa.positions, indices: pa.indices }, { positions: pb.positions, indices: pb.indices }, { collect: true });
+        setAlarmCloud(c.cloud && c.cloud.length ? new Float32Array(c.cloud) : null);
+        const hid: Record<string, boolean> = {}; moldParts.forEach((p) => { hid[p.role] = p.role !== a && p.role !== b; });
+        setMoldHidden(hid); setMoldOpacity({ [a]: 0.4, [b]: 0.4 }); setMoldColors({});
+        return { pair: `${a} ↔ ${b}`, volMm3: c.volMm3, penMm: c.penMm, nPoints: (c.cloud || []).length / 3 };
+      },
+      orbitTo: (az: number, el: number, r: number) => orbitTo(az, el, r),
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
-    return () => { delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep; };
+    // EL BUS DE COMANDOS: `window.__forja.run('dominio.verbo', {…})` — mismo idioma
+    // para UI, agentes y tests. El oc vivo entra en el ctx (comandos de geometría v2).
+    (window as any).__forja = {
+      ...forjaCommands,
+      run: (id: string, params?: Record<string, any>, ctx?: Record<string, any>) =>
+        forjaRun(id, params ?? {}, { oc: oc ?? undefined, ...(ctx ?? {}) }),
+    };
+    return () => {
+      delete (window as unknown as { __forgeBrep?: unknown }).__forgeBrep;
+      delete (window as any).__forja;
+    };
     // NOTA: collapsed/optionsOpen NO van en deps a propósito — re-crear el hook en
     // cada toggle de panel/menú lo borraría a media interacción (los getters de QA
     // de esos dos leen el DOM, no el hook). Los callbacks son refs estables.
@@ -5817,6 +6919,57 @@ export default function ForgeBRepStudio() {
     <div className={`fb-root${hideChrome ? ' fb-chrome-off' : ''}${ribbonMin ? ' fb-ribbon-min' : ''}`}>
       <style>{CSS}</style>
 
+      {/* ── CARGANDO (boot del kernel): el .wasm pesa 65 MB — sin esta pantalla el
+            usuario ve la página muerta 30-60 s y cierra (telemetría lo confirmó). ── */}
+      {!oc && !bootErr && (
+        <div data-testid="boot-overlay" style={{
+          position: 'fixed', inset: 0, zIndex: 99000, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 18,
+          background: 'radial-gradient(1200px 700px at 50% 38%, #101725 0%, #0a0e16 70%)', color: '#dbe4f0',
+        }}>
+          <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: 2 }}>⚒ LA FORJA</div>
+          {!webgl2Ok ? (
+            <div style={{ maxWidth: 420, textAlign: 'center', lineHeight: 1.5, color: '#f0b3b3' }}>
+              Tu navegador o tarjeta de video <b>no soporta WebGL2</b>, que La Forja necesita para el 3D.
+              Prueba con Chrome/Edge actualizado, o activa la aceleración de hardware en la configuración del navegador.
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 14, letterSpacing: 1, color: '#8fa3bd' }}>
+                CARGANDO EL MOTOR DE GEOMETRÍA{bootPct >= 0 ? ` · ${bootMB} MB` : '…'}
+              </div>
+              <div style={{ width: 320, height: 8, borderRadius: 4, background: '#1c2636', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4, background: 'linear-gradient(90deg,#FDB813,#e88f2a)',
+                  width: bootPct >= 0 ? `${bootPct}%` : '30%', transition: 'width .3s',
+                  animation: bootPct < 0 ? 'fbBootPulse 1.2s ease-in-out infinite alternate' : undefined,
+                }} />
+              </div>
+              <div style={{ fontSize: 12, color: '#5d7089', maxWidth: 380, textAlign: 'center', lineHeight: 1.5 }}>
+                {bootPct >= 100 ? 'Compilando el kernel CAD…' : 'La primera vez tarda un poco (el kernel CAD completo viaja a tu navegador). Las siguientes abre al instante — queda guardado.'}
+              </div>
+              <style>{'@keyframes fbBootPulse{from{margin-left:0;width:30%}to{margin-left:70%;width:30%}}'}</style>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── ARMANDO MOLDE: el build del ensamble es síncrono y congela el tab
+            (minutos en moldes de caja). El banner pinta ANTES (el efecto cede
+            60 ms) — sin él, la página se ve muerta y el usuario recarga. ── */}
+      {moldBuilding && (
+        <div data-testid="mold-building" style={{
+          position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', zIndex: 98000,
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderRadius: 10,
+          background: '#131a28ee', border: '1px solid #FDB81355', color: '#f4d27a',
+          fontSize: 13, fontWeight: 700, letterSpacing: 1, boxShadow: '0 6px 24px #0009',
+        }}>
+          <span style={{ animation: 'fbBootPulse2 1.1s ease-in-out infinite alternate' }}>⚒</span>
+          ARMANDO MOLDE… (la pestaña puede pausarse — es normal, no recargues)
+          <style>{'@keyframes fbBootPulse2{from{opacity:.35}to{opacity:1}}'}</style>
+        </div>
+      )}
+
       {/* ── VIEWPORT ── */}
       <div
         className="fb-viewport" data-testid="viewport" ref={viewportRef}
@@ -5856,12 +7009,103 @@ export default function ForgeBRepStudio() {
             {!(gbMotion && gbParts) && !moldParts.length && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
             {moldParts.length ? (
               // MOLDE EN VIVO: cada PLACA es un componente separado (aislar/ocultar/
-              // opacidad desde el árbol; la SECCIÓN los corta a todos).
-              moldParts.map((pt) => (moldHidden[pt.role] ? null : (
-                <PartMesh key={pt.role} geo={{ positions: pt.positions, normals: pt.normals, indices: pt.indices }}
-                  color={pt.color} clip={sectionPlanes} opacity={moldOpacity[pt.role] ?? pt.opacity}
-                  metalness={0.35} roughness={0.5} />
-              )))
+              // opacidad desde el árbol; la SECCIÓN los corta a todos). Se LEVANTA sobre
+              //  la cuadrícula (+8mm) para que su base no z-fightee con el piso (parpadeo).
+              <group position={[0, 0, 8]}>
+                {/* COTAS: DENTRO de este grupo a propósito — hereda la rotación −90°X del
+                    modelo y el +8 de este group. Afuera, las etiquetas se proyectaban con
+                    coords crudas y salían amontonadas fuera del molde. */}
+                {cotasOn && liveCotas.length > 0 && (
+                  <>
+                    <CotaLines sets={liveCotas} />
+                    <CotaDriver sets={liveCotas} refs={cotaRefs} />
+                  </>
+                )}
+                {moldParts.map((pt) => {
+                  if (moldHidden[pt.role]) return null;
+                  // el TRANSITORIO pinta TODAS las placas por vértice; el FEA cubre B+soporte+rieles
+                  if (moldSimOn && moldThermalSim && !pt.role.startsWith('platina')) return null;
+                  if (moldFea && (pt.role === 'support' || pt.role === 'rieles' || pt.role === 'B')) return null;
+                  if (moldTc && pt.role === 'pieza') return null;   // ⏱ la pinta MoldTcPaint
+                  const off = moldOffset[pt.role] ?? [0, 0, 0];
+                  const baseOp = moldOpacity[pt.role] ?? pt.opacity;
+                  const mesh = (
+                    // CLICK EN 3D (como Fusion): seleccionar la placa/componente picándolo
+                    // en la escena, no solo desde el árbol. Hover = resalte + cursor.
+                    <group
+                      onClick={(e) => { e.stopPropagation(); setMoldSelected((s) => (s === pt.role ? null : pt.role)); }}
+                      onPointerOver={(e) => { e.stopPropagation(); setMoldHover(pt.role); document.body.style.cursor = 'pointer'; }}
+                      onPointerOut={() => { setMoldHover((h) => (h === pt.role ? null : h)); document.body.style.cursor = 'auto'; }}>
+                      <PartMesh geo={{ positions: pt.positions, normals: pt.normals, indices: pt.indices }}
+                        color={moldColors[pt.role] ?? pt.color} clip={sectionPlanes}
+                        opacity={moldXray ? Math.min(baseOp, 0.22) : baseOp}   /* 🩻 rayos X */
+                        emissive={moldSelected === pt.role ? GOLD : moldHover === pt.role ? '#6b5a2a' : null}
+                        noShadow   /* el shadow-map hace ACNÉ (borde aserrado) en placas grandes apiladas */
+                        winDepth={pt.role === 'pieza'}   /* la pieza gana el empate con sus caras moldeantes */
+                        metalness={0.35} roughness={0.5} />
+                      {pt.edges && pt.edges.length > 0 && <MoldEdges pts={pt.edges} clip={sectionPlanes} />}
+                    </group>
+                  );
+                  // MOVER (Fusion): el componente seleccionado en modo mover trae el gizmo de
+                  // traslación; al soltar se guarda su desplazamiento (persiste al apagar el modo).
+                  if (moldMoveMode && moldSelected === pt.role) {
+                    return (
+                      <TransformControls key={pt.role} mode="translate" size={0.8}
+                        onMouseUp={() => { const p = moldMoveRef.current?.position; if (p) setMoldOffset((o) => ({ ...o, [pt.role]: [p.x, p.y, p.z] })); }}>
+                        <group ref={moldMoveRef} position={off as [number, number, number]}>{mesh}</group>
+                      </TransformControls>
+                    );
+                  }
+                  return (
+                    <group key={pt.role} position={off as [number, number, number]}>
+                      <group ref={(g) => { moldAnimRefs.current[pt.role] = g; }}>{mesh}</group>
+                    </group>
+                  );
+                })}
+                {/* 🚨 NUBE DE ALARMA: bolitas rojas donde el acero se comparte (colisión) */}
+                {alarmCloud && alarmCloud.length > 0 && <AlarmCloud pts={alarmCloud} />}
+                {/* APERTURA ANIMADA: lado A sube y las CORREDERAS se retraen con la
+                    cinemática real del perno (u = apertura·tanφ, tope en S) */}
+                <MoldOpenDriver refs={moldAnimRefs} ctl={moldOpenRef} parts={moldParts}
+                  openMm={moldOpenStrokeMm}
+                  ejectMm={(liveMoldSpec?.cavity.depthMm ?? 30) + 8}
+                  stripperRing={liveMoldSpec?.ejectors?.type === 'stripper'} />
+                {/* 📐 LA CARRERA, COTADA: lee la placa A real y la enfrenta con el estudio */}
+                {cotasOn && liveMoldSpec && moldOpenStrokeMm > 0 && (
+                  <CotaApertura refs={moldAnimRefs} openMm={moldOpenStrokeMm}
+                    z0={plateStackZ(liveMoldSpec).A}
+                    x={-(liveMoldSpec.widthMm / 2 + 30)} y={0} labelRef={cotaAperturaRef} />
+                )}
+                {/* 💧 LLENADO: la pieza pintada por CUÁNDO le llega el fundido (§5.5.5).
+                    El gate sale de la propia pieza (su punto más bajo sobre el eje), no de
+                    un número tecleado — así funciona para cualquier figura. */}
+                {flowOn && (() => {
+                  const pieza = moldParts.find((p) => p.role === 'pieza');
+                  if (!pieza) return null;
+                  const P = pieza.positions;
+                  let cx = 0, cy = 0, zLo = Infinity;
+                  for (let i = 0; i < P.length; i += 3) { cx += P[i]; cy += P[i + 1]; if (P[i + 2] < zLo) zLo = P[i + 2]; }
+                  cx /= P.length / 3; cy /= P.length / 3;
+                  return <MoldFlowPaint part={pieza} gate={{ x: cx, y: cy, z: zLo }}
+                    wallMm={liveMoldSpec.cavity.wallMm ?? 2} />;
+                })()}
+                {/* ⏱ t_c LOCAL: pieza pintada por SU pared + baffle fantasma propuesto */}
+                {moldTc && liveMoldSpec && (() => {
+                  const pieza = moldParts.find((p) => p.role === 'pieza');
+                  if (!pieza) return null;
+                  return <MoldTcPaint part={pieza} map={moldTc.map}
+                    cells={moldCavityGrid(liveMoldSpec, moldPlateDepth(liveMoldSpec))}
+                    marker={moldTc.advice.marker} />;
+                })()}
+                {/* SIMULACIÓN TÉRMICA: TRANSITORIO vivo (PDE FDM 3D) — plano + cuerpos A/B */}
+                {moldSimOn && moldThermalSim && (
+                  <MoldTransientThermal sim={moldThermalSim} z={moldPartingZ}
+                    parts={moldParts.filter((p) => !moldHidden[p.role])} xray={moldXray}
+                    sliceAxis={moldSliceAxis} sliceFrac={moldSliceFrac} />
+                )}
+                {/* FEA MECÁNICO real: von Mises sobre B+soporte+rieles */}
+                {moldFea && <MoldFeaMesh ov={moldFea} />}
+              </group>
             ) : gbMotion && gbParts ? (
               <GearboxMotion data={gbParts} playing speed={gbSpeed} colors={gbColors} hidden={gbHidden} clip={sectionPlanes} />
             ) : sketch.kind === 'gearbox' && showOverhangs && result ? (
@@ -5923,6 +7167,15 @@ export default function ForgeBRepStudio() {
             )}
           </group>
         </CadViewport>
+
+        {/* COTAS 3D — las etiquetas van FUERA del Canvas (divs HUD): drei <Text> dentro
+            del Canvas es el gotcha conocido, y el texto DOM sale nítido a cualquier zoom.
+            CotaDriver (dentro del Canvas) les mueve el transform por frame. */}
+        {cotasOn && liveCotas.length > 0 && <CotaLabels sets={liveCotas} refs={cotaRefs} />}
+        {cotasOn && liveMoldSpec && moldOpenStrokeMm > 0 && (
+          <CotaAperturaLabel labelRef={cotaAperturaRef}
+            why={`§6.3.2: la apertura típica = 2-3 × la altura de la pieza (${liveMoldSpec.cavity.depthMm} mm) para que salga del núcleo y caiga. Tabla 6.1: daylight = stack + carrera (264 + 75 = 339).`} />
+        )}
 
         {/* EDITOR DE CROQUIS 2D — dibujar perfil con restricciones (solver en vivo). */}
         {sketchOpen && (
@@ -5988,12 +7241,58 @@ export default function ForgeBRepStudio() {
             <MoldUnscrewSim onClose={() => setUnscrewOn(false)} />
           </Suspense>
         )}
-        {sectionOn && (
+        {sectionReveal && (
           <Suspense fallback={null}>
-            <MoldSectionReveal onClose={() => setSectionOn(false)} />
+            <MoldSectionReveal onClose={() => setSectionReveal(false)} />
           </Suspense>
         )}
 
+        {/* MOLD TOOLS · CURSO — reporte del pipeline (mensaje verde = el gate del curso).
+            Panel ACOTADO (max-height + scroll) y PLEGABLE para no tapar el sólido; la
+            historia se atenúa, la línea vigente y el gate verde quedan en primer plano. */}
+        {cursoReport.length > 0 && (() => {
+          const gate = cursoReport.find((l) => l.startsWith('La línea de partición'));   // el mensaje verde nunca se pierde
+          const tail = cursoReport.slice(-6);
+          return (
+            <div data-testid="curso-report" style={{
+              position: 'absolute', left: 16, top: 138, zIndex: 5, width: 300,
+              background: 'rgba(9,14,21,0.94)', border: '1px solid #2c3a50', borderRadius: 8,
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: '#dfe7f2',
+              boxShadow: '0 6px 20px rgba(0,0,0,.5)',
+            }}>
+              <button
+                onClick={() => setCursoCollapsed((c) => !c)}
+                title={cursoCollapsed ? 'Mostrar el registro del curso' : 'Plegar (no tapar el sólido)'}
+                style={{
+                  all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                  padding: '8px 12px', color: GOLD, fontWeight: 700, fontSize: 11.5,
+                }}>
+                <span>MOLD TOOLS — curso Alwis · paso {cursoStage}/6</span>
+                <span style={{ color: '#8a97a8' }}>{cursoCollapsed ? '▸' : '▾'}</span>
+              </button>
+              {!cursoCollapsed && (
+                <div style={{ maxHeight: 168, overflowY: 'auto', padding: '0 12px 10px' }}>
+                  {gate && !tail.includes(gate) && (
+                    <div style={{ marginBottom: 4, lineHeight: 1.35, color: '#22c55e' }}>{gate}</div>
+                  )}
+                  {tail.map((l, i) => {
+                    const isGate = l.startsWith('La línea de partición');
+                    const isErr = l.startsWith('ERROR');
+                    const isLast = i === tail.length - 1;
+                    return (
+                      <div key={i} style={{
+                        marginTop: 4, lineHeight: 1.35,
+                        color: isGate ? '#22c55e' : isErr ? '#ef4444' : isLast ? '#dfe7f2' : '#7f8da3',
+                        opacity: isGate || isErr || isLast ? 1 : 0.55,
+                      }}>{l}</div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
         {/* PALETA DE ATAJOS estilo Fusion "S" en el cursor (se abre con la tecla S). */}
         {shortcutPos && (
           <ShortcutOverlay
@@ -6009,7 +7308,8 @@ export default function ForgeBRepStudio() {
           onClick={() => setShortcutPos({ x: 320, y: Math.max(180, window.innerHeight - 340) })}
           title="Paleta de atajos (o presiona S): C círculo · B rect · L línea · E extruir · F redondeo…"
           style={{
-            position: 'absolute', left: 14, bottom: 88, zIndex: 6, cursor: 'pointer',
+            // bottom-CENTRO: zona libre entre los rieles (nunca los tapa) — regla anti-encimado.
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 48, zIndex: 6, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 8,
             background: 'rgba(13,18,28,0.88)', border: `1px solid ${GOLD}66`, borderRadius: 9,
             padding: '7px 13px', fontSize: 12.5, color: '#e9eef5', fontFamily: "'JetBrains Mono', monospace",
@@ -6142,10 +7442,16 @@ export default function ForgeBRepStudio() {
                 estado + undo + Opciones — UNA sola banda, no tres. ── */}
           <header className="fb-header">
             <div className="fb-mark">⚒</div>
-            <div className="fb-titles">
-              <h1 data-testid="doc-title">{docName} <span className="fb-doc-studio">· Part Studio</span>
+            <button className={`fb-titles fb-doc-trigger ${switcherOpen ? 'on' : ''}`} data-testid="doc-switcher"
+              onClick={() => { refreshLib(); setSwitcherOpen((v) => !v); }}
+              title="Cambiar de proyecto — tus moldes, robots y mecanismos">
+              <h1 data-testid="doc-title">{docName} <span className="fb-doc-studio">· {moldParts.length ? 'Ensamble de molde' : 'Estudio de pieza'}</span>
                 {importedStep && <span className="fb-imported-tag" data-testid="imported-tag">STEP importado</span>}</h1>
-            </div>
+              <span className="fb-doc-chev">▾</span>
+            </button>
+            <ProjectSwitcher open={switcherOpen} onClose={() => setSwitcherOpen(false)}
+              projects={switcherProjects} starters={switcherStarters}
+              onNew={newDoc} onPick={(p) => p.action()} />
             <div className="fb-ws-tabs" role="tablist">
               <button className={workspace === 'diseno' ? 'on' : ''} data-testid="tab-diseno" role="tab"
                 onClick={() => setWorkspace('diseno')}>DISEÑO</button>
@@ -6337,6 +7643,42 @@ export default function ForgeBRepStudio() {
               </div>
               <div className="fb-group-cap">DOCUMENTAR</div>
             </div>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className={`fb-big ${sectionOn ? 'on' : ''}`} data-testid="btn-section-inspect"
+                  onClick={() => setSectionOn((v) => !v)} disabled={!result && !moldParts.length}
+                  title="Análisis de sección: corta el modelo con un plano y arrastra la flecha para inspeccionar adentro (X/Y/Z e invertir en el HUD)"><Ic name="seccion" /><span>Sección</span></button>
+                <button className={`fb-big ${alarmCloud ? 'on' : ''}`} data-testid="btn-alarm"
+                  onClick={toggleMoldAlarm} disabled={!moldParts.length}
+                  title="ALARMA de colisiones: puntos ROJOS donde dos sólidos comparten acero (imposible en la realidad). Placas en fantasma para que salte desde cualquier ángulo. Gira el molde y velo."><Ic name="seccion" /><span>Alarma</span></button>
+              </div>
+              <div className="fb-group-cap">INSPECCIONAR</div>
+            </div>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-flanera" onClick={loadFlaneraMold} disabled={!oc}
+                  title="Molde COMPLETO de la flanera (24 partes: placas, insertos sólidos, eyección, agua, guías) — como el del Tupper"><Ic name="revolucion" /><span>Flanera</span></button>
+                <button className="fb-big" data-testid="btn-flanera-vaso" onClick={cursoFlanera} disabled={!oc || cursoBusy}
+                  title="Solo el VASO de la flanera (revolución torneable — el producto)"><Ic name="pieza" /><span>Vaso</span></button>
+                <button className="fb-big" data-testid="btn-flanera-mold" onClick={cursoFlaneraMold} disabled={!oc || cursoBusy}
+                  title="Core/Cavidad de la flanera: los dos insertos torneables (splitMold) — el molde del vaso"><Ic name="extrude" /><span>Core/Cav</span></button>
+                <button className="fb-big" data-testid="btn-curso-pieza" onClick={cursoInsertar} disabled={!oc || cursoBusy}
+                  title="Insert > Part: la percha del curso (silueta declarada a proporción)"><Ic name="pieza" /><span>Pieza</span></button>
+                <button className="fb-big" data-testid="btn-curso-escala" onClick={cursoEscala} disabled={cursoBusy || cursoStage < 1}
+                  title="Scale: about Origin, uniforme ×1.015 (PP 1.5% — cota del curso)"><Ic name="escala" /><span>Escala</span></button>
+                <button className="fb-big" data-testid="btn-curso-layout" onClick={cursoLayout} disabled={cursoBusy || cursoStage < 2}
+                  title="Move/Copy Body: layout de 2 cavidades (copia rotada, sin traslape)"><Ic name="pattern" /><span>Move/Copy</span></button>
+                <button className="fb-big" data-testid="btn-curso-parting" onClick={cursoParting} disabled={cursoBusy || cursoStage < 3}
+                  title="Parting Lines: transición +/− del draft → lazo AUTOMÁTICO + mensaje verde (el curso pica 18 aristas a mano)"><Ic name="parting" /><span>Parting Line</span></button>
+                <button className="fb-big" data-testid="btn-curso-split" onClick={cursoSplit} disabled={cursoBusy || cursoStage < 4}
+                  title="Tooling Split: bloque 350×630, placas 145/90 (cotas del curso) — split + placa rectangular en UNA operación"><Ic name="extrude" /><span>Tooling Split</span></button>
+                <button className="fb-big" data-testid="btn-curso-guias" onClick={cursoGuias} disabled={cursoBusy || cursoStage < 5}
+                  title="Hole Wizard: bushings ⌀48+caja ⌀54×10 y pernos ⌀35+caja ⌀40×8 en ±142/±277 (cotas del curso)"><Ic name="hole" /><span>Guías</span></button>
+              </div>
+              <div className="fb-group-cap">MOLDE · CURSO ALWIS</div>
+            </div>
             </>}
             {workspace === 'manufactura' && <>
             <div className="fb-group">
@@ -6381,11 +7723,11 @@ export default function ForgeBRepStudio() {
           {/* ── HEADS-UP VIEW BAR (firma de SolidWorks): las ops de VISTA flotan sobre
                 el viewport, no engordan el ribbon. ── */}
           <div className="fb-hud-view" data-testid="hud-view">
-            <button data-testid="btn-fit" onClick={() => setView('iso')} disabled={!result} title="Encuadrar la pieza completa"><Ic name="encuadrar" /></button>
-            <button onClick={() => setView('iso')} disabled={!result} title="Vista isométrica">ISO</button>
-            <button onClick={() => setView('top')} disabled={!result} title="Vista superior">SUP</button>
-            <button onClick={() => setView('front')} disabled={!result} title="Vista frontal">FRE</button>
-            <button data-testid="btn-section-tool" className={sectionOn ? 'on' : ''} onClick={() => setSectionOn((v) => !v)} disabled={!result} title="Sección: corta la pieza para ver adentro"><Ic name="seccion" /></button>
+            <button data-testid="btn-fit" onClick={() => setView('iso')} disabled={!result && !moldParts.length} title="Encuadrar la pieza completa"><Ic name="encuadrar" /></button>
+            <button onClick={() => setView('iso')} disabled={!result && !moldParts.length} title="Vista isométrica">ISO</button>
+            <button onClick={() => setView('top')} disabled={!result && !moldParts.length} title="Vista superior">SUP</button>
+            <button onClick={() => setView('front')} disabled={!result && !moldParts.length} title="Vista frontal">FRE</button>
+            <button data-testid="btn-section-tool" className={sectionOn ? 'on' : ''} onClick={() => setSectionOn((v) => !v)} disabled={!result && !moldParts.length} title="Sección: corta la pieza para ver adentro"><Ic name="seccion" /></button>
           </div>
 
           {/* ── Panel izquierdo: GRAFO de features (clic = editar) ── */}
@@ -6477,22 +7819,42 @@ export default function ForgeBRepStudio() {
             {components.length > 0 && (
               <>
                 <div className="fb-feat-subhead" data-testid="components-head">Componentes · ensamble <b>{components.length}</b></div>
-                {components.map((c) => (
-                  <div key={c.id}
-                    className={`fb-feat-node comp ${activeComp === c.id ? 'active' : ''}`}
-                    data-testid={`comp-${c.kind}`}
-                    onClick={() => { setActiveComp(c.id); setActiveOp(null); setPickMode('none'); }}>
-                    <span className="ico">{c.kind === 'cyl' ? '🛢' : '🧩'}</span>
-                    <div className="fb-feat-body">
-                      <strong>{c.name}</strong>
-                      <em>{c.kind === 'cyl' ? `⌀${(c.r * 2).toFixed(0)}×${c.h.toFixed(0)}` : `${c.w.toFixed(0)}×${c.d.toFixed(0)}×${c.h.toFixed(0)}`} · @({c.x.toFixed(0)},{c.y.toFixed(0)},{c.z.toFixed(0)})</em>
-                    </div>
-                    <div className="fb-feat-actions">
-                      <button className="fb-feat-act del" data-testid={`comp-delete-${c.kind}`}
-                        onClick={(e) => { e.stopPropagation(); removeComponent(c.id); }} title="Eliminar componente">✕</button>
-                    </div>
-                  </div>
-                ))}
+                {(() => {
+                  // Numera los nombres REPETIDOS (Corte 1/2/3) para que no sean muros
+                  // indistinguibles, y da a cada componente una sublínea con DATO REAL
+                  // (nunca tres "0×0×0 · @(0,0,0)" idénticos — auditoría #7).
+                  const total = new Map<string, number>();
+                  for (const c of components) total.set(c.name, (total.get(c.name) ?? 0) + 1);
+                  const seen = new Map<string, number>();
+                  return components.map((c) => {
+                    const n = (seen.get(c.name) ?? 0) + 1; seen.set(c.name, n);
+                    const label = (total.get(c.name) ?? 1) > 1 ? `${c.name} ${n}` : c.name;
+                    const at = `@(${c.x.toFixed(0)},${c.y.toFixed(0)},${c.z.toFixed(0)})`;
+                    const sub =
+                      c.kind === 'cyl' ? `⌀${(c.r * 2).toFixed(0)}×${c.h.toFixed(0)} · ${at}`
+                      : c.kind === 'box' ? `${c.w.toFixed(0)}×${c.d.toFixed(0)}×${c.h.toFixed(0)} · ${at}`
+                      : c.kind === 'sketch' ? `${c.bool === 'subtract' ? 'corte' : 'saliente'} · ${c.circle ? `⌀${(c.circle.r * 2).toFixed(0)}` : `perfil ${c.profile?.length ?? 0} pts`} · prof ${c.depth ?? 0}mm · ${c.plane ?? 'xy'}`
+                      : c.kind === 'sweeppath' ? `barrido ${c.bool === 'subtract' ? 'corte' : 'saliente'} · ${c.path?.length ?? 0} pts · ${c.plane ?? 'xy'}`
+                      : c.kind === 'pieza' ? 'pieza insertada'
+                      : at;
+                    return (
+                      <div key={c.id}
+                        className={`fb-feat-node comp ${activeComp === c.id ? 'active' : ''}`}
+                        data-testid={`comp-${c.kind}`}
+                        onClick={() => { setActiveComp(c.id); setActiveOp(null); setPickMode('none'); }}>
+                        <span className="ico">{c.kind === 'cyl' ? '🛢' : c.kind === 'sketch' ? (c.bool === 'subtract' ? '⊟' : '⊞') : c.kind === 'sweeppath' ? '〰' : '🧩'}</span>
+                        <div className="fb-feat-body">
+                          <strong>{label}</strong>
+                          <em>{sub}</em>
+                        </div>
+                        <div className="fb-feat-actions">
+                          <button className="fb-feat-act del" data-testid={`comp-delete-${c.kind}`}
+                            onClick={(e) => { e.stopPropagation(); removeComponent(c.id); }} title="Eliminar componente">✕</button>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </>
             )}
             {/* ── CUERPOS de la CAJA: color + ocultar (como Fusion) ── */}
@@ -6538,17 +7900,128 @@ export default function ForgeBRepStudio() {
               <>
                 <div className="fb-feat-subhead" data-testid="mold-parts-head">
                   🏭 Molde · placas <b data-testid="mold-visible-count">{moldParts.filter((p) => !moldHidden[p.role]).length}/{moldParts.length}</b> vis.
-                  <button className="fb-feat-act" data-testid="mold-show-all" title="Mostrar todas las placas" onClick={showAllMold} style={{ marginLeft: 'auto' }}>👁</button>
+                  <button className={`fb-feat-act ${moldSimOn ? 'on' : ''}`} data-testid="mold-sim-toggle" style={{ marginLeft: 'auto' }}
+                    title="SIMULACIÓN TÉRMICA TRANSITORIA: PDE de calor (FDM 3D) con inyección por ciclo + líneas de agua reales — Kazmer §9"
+                    onClick={() => setMoldSimOn((v) => !v)}>🌡</button>
+                  <button className={`fb-feat-act ${moldFea ? 'on' : ''}`} data-testid="mold-fea-run"
+                    title="FEA MECÁNICO real (malla tet + CG): presión de fundido sobre la cavidad, rieles empotrados → von Mises + deflexión — §12"
+                    onClick={() => (moldFea ? setMoldFea(null) : runMoldFeaNow())}>{moldFeaBusy ? '⏳' : '🏗'}</button>
+                  <button className={`fb-feat-act ${moldXray ? 'on' : ''}`} data-testid="mold-xray-toggle"
+                    title="RAYOS X: todo el molde translúcido — ver esfuerzos/térmico por dentro sin sección"
+                    onClick={() => setMoldXray((v) => !v)}>🩻</button>
+                  <button className={`fb-feat-act ${cotasOn ? 'on' : ''}`} data-testid="mold-cotas-toggle"
+                    style={cotasOn && cotaErrors ? { color: '#ff6b6b', borderColor: '#ff6b6b' } : undefined}
+                    title="COTAS 3D: las medidas sobre la pieza, sin andar midiendo. Cada cota trae DOS cifras — lo que la RECETA dice vs lo que el SÓLIDO mide. Si no cuadran, sale en ROJO."
+                    onClick={() => setCotasOn((v) => !v)}>📐{cotasOn && cotaErrors ? ` ${cotaErrors}` : ''}</button>
+                  <button className={`fb-feat-act ${flowOn ? 'on' : ''}`} data-testid="mold-flow-toggle"
+                    title="LLENADO §5.5.5: la pieza pintada por CUÁNDO le llega el fundido. La longitud de flujo se MIDE del hueco A/B (Dijkstra sobre la malla), NO de una fórmula por figura — un vaso, una carcasa o un juguete entran igual. Amarillo = entra primero · morado = lo último (llega frío y a máxima presión) · ROJO = nunca se llena (short shot)."
+                    onClick={() => setFlowOn((v) => !v)}>💧</button>
+                  <button className={`fb-feat-act ${moldOpenOn ? 'on' : ''}`} data-testid="mold-open-toggle"
+                    title="APERTURA animada: el lado A sube y las correderas SE RETRAEN con la cinemática del perno inclinado (u = apertura·tanφ, Eq 11.26)"
+                    onClick={() => { setMoldOpenOn((v) => { moldOpenRef.current.on = !v; moldOpenRef.current.t0 = performance.now(); return !v; }); }}>▶</button>
+                  <button className={`fb-feat-act ${moldTcOn ? 'on' : ''}`} data-testid="mold-tc-toggle"
+                    title="⏱ t_c LOCAL: la pieza pintada por lo que tarda SU pared (Eq 9.5) + consejo de agua (mover línea / baffle §9.3.5.2)"
+                    onClick={() => setMoldTcOn((v) => !v)}>⏱</button>
+                  {moldSimOn && (
+                    <span data-testid="mold-slice-controls" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                      {(['x', 'y', 'z'] as const).map((ax) => (
+                        <button key={ax} className={`fb-feat-act ${moldSliceAxis === ax ? 'on' : ''}`} data-testid={`mold-slice-${ax}`}
+                          title={`REBANADA térmica ⊥${ax.toUpperCase()} — recorre el molde por dentro (el campo es 3D)`}
+                          onClick={() => setMoldSliceAxis(ax)}>{ax.toUpperCase()}</button>
+                      ))}
+                      <input type="range" min={0} max={1} step={0.02} value={moldSliceFrac} data-testid="mold-slice-frac"
+                        style={{ width: 64 }} title="posición del corte a lo largo del eje"
+                        onChange={(e) => setMoldSliceFrac(Number(e.target.value))} />
+                    </span>
+                  )}
+                  <button className={`fb-feat-act ${moldMoveMode ? 'on' : ''}`} data-testid="mold-move-mode"
+                    title={moldSelected ? 'Mover el componente seleccionado (arrastra la flecha)' : 'Selecciona un componente y actívalo para moverlo'}
+                    onClick={() => setMoldMoveMode((v) => !v)}>✥</button>
+                  {Object.keys(moldOffset).length > 0 && (
+                    <button className="fb-feat-act" data-testid="mold-reset-move" title="Reponer posiciones (todo a su lugar)"
+                      onClick={() => setMoldOffset({})}>↺</button>
+                  )}
+                  <button className="fb-feat-act" data-testid="mold-show-all" title="Mostrar todas las placas" onClick={showAllMold}>👁</button>
                 </div>
+                {moldTc && (
+                  <div className="fb-comp-tree" data-testid="mold-tc-report" style={{ margin: '4px 0 8px 4px' }}>
+                    <div className="fb-comp-row hdr">⏱ t_c LOCAL (Eq 9.5) · pared {moldTc.map.thMaxMm} mm manda · rango {moldTc.map.tcMinS}–{moldTc.map.tcMaxS} s</div>
+                    {moldTc.advice.rows.map((v, i) => (
+                      <div key={i} className="fb-comp-row feat" title={`límite: ${v.limite}`}>
+                        {v.ok ? '✓' : '⚠'} {v.param}: <b style={{ color: v.ok ? '#7ee0a0' : '#f2b45c' }}>{v.valor}</b> <span style={{ opacity: 0.6 }}>[{v.ref}]</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {moldSimOn && moldSim && (
+                  <div className="fb-comp-tree" data-testid="mold-sim-report" style={{ margin: '4px 0 8px 4px' }}>
+                    <div className="fb-comp-row hdr">🌡 TRANSITORIO (PDE FDM 3D, ×10) · t_c {moldSim.thermal.coolingTimeS}s · azul=frío rojo=caliente</div>
+                    {moldThermalSim && (() => {
+                      // ¿QUÉ ZONA CONTROLA EL CICLO? — espesor local MEDIDO de la malla
+                      // (t_c ∝ h², §9.1): la columna más gruesa manda en el enfriamiento
+                      // ⚠ EL MÁXIMO CRUDO MIENTE. Una columna de PARED VERTICAL mide su
+                      // ALTURA, no su espesor: la carcasa RPi4 reportaba "26.5 mm controla
+                      // el ciclo → t_c ×17.1" cuando su pared real son ~6 mm (los gussets).
+                      // Es el MISMO fantasma que `tcLocalMap` ya resolvió (erosión ×2 +
+                      // acotar al p95) — este display leía la malla en bruto: dos caminos a
+                      // la misma cantidad física, uno arreglado y el otro no.
+                      // Aquí se usa el P95 (robusto: una columna monstruo no puede ser el
+                      // p95) y, si el mapa t_c está activo, su `thMaxMm` YA erosionado.
+                      const g = moldThermalSim.thGrid;
+                      const ths: number[] = [];
+                      let iM = 0, jM = 0, thNom = 0, nCols = 0, rawMax = 0;
+                      for (let j = 0; j < g.ny; j++) for (let i = 0; i < g.nx; i++) {
+                        const th = g.thMm[j * g.nx + i];
+                        if (th <= 0) continue;
+                        nCols++; thNom += th; ths.push(th);
+                        if (th > rawMax) { rawMax = th; iM = i; jM = j; }
+                      }
+                      if (!nCols) return null;
+                      thNom /= nCols;
+                      ths.sort((a, b) => a - b);
+                      const p95 = ths[Math.min(ths.length - 1, (ths.length * 0.95) | 0)] ?? rawMax;
+                      const thMax = moldTc?.thMaxMm ?? p95;      // el eroded si existe; si no, p95
+                      const ratio = thMax / Math.max(0.1, thNom);
+                      return (
+                        <div className="fb-comp-row feat" data-testid="mold-cycle-driver" title="t_c ∝ h² (§9.1): la pared más gruesa fija el tiempo de enfriamiento del ciclo">
+                          {ratio > 1.8 ? '⚠' : '✓'} Zona que CONTROLA el ciclo: <b style={{ color: ratio > 1.8 ? '#f2b45c' : '#7ee0a0' }}>
+                            {thMax.toFixed(1)} mm @({Math.round((iM + 0.5) * g.cellMm)},{Math.round((jM + 0.5) * g.cellMm)})</b>
+                          {' '}vs media {thNom.toFixed(1)} mm → t_c ×{(ratio * ratio).toFixed(1)} <span style={{ opacity: 0.6 }}>[t_c ∝ h², §9.1]</span>
+                          {rawMax > thMax * 1.5 && (
+                            <span style={{ opacity: 0.55 }}> · (máx crudo {rawMax.toFixed(1)} mm descartado: pared vertical midiendo su altura)</span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    <div className="fb-comp-row hdr">🏗 Estructural §12 · δ soporte <b>{moldSim.structural.deflMm} mm</b> → pilares <b>{moldSim.structural.deflPillarsMm} mm</b></div>
+                    {moldFea && (
+                      <div className="fb-comp-row hdr" data-testid="mold-fea-report">⚙ FEA REAL ({moldFea.nNodes} nodos · {(moldFea.ms / 1000).toFixed(1)}s) · δ <b>{moldFea.maxDispMm} mm</b> · σ_vm <b>{moldFea.maxVonMisesMPa} MPa</b> <span style={{ opacity: 0.65 }}>(viga Eq 12.10: {moldFea.beamDeflMm} mm — subestima el cortante)</span></div>
+                    )}
+                    {moldSim.verdicts.map((v, i) => (
+                      <div key={i} className="fb-comp-row feat" title={`límite: ${v.limite}`}>
+                        {v.ok ? '✓' : '⚠'} {v.param}: <b style={{ color: v.ok ? '#7ee0a0' : '#f2b45c' }}>{v.valor}</b> <span style={{ opacity: 0.6 }}>[{v.ref}]</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="fb-bodies-list" data-testid="mold-parts-list">
                   {moldParts.map((pt) => {
                     const hidden = !!moldHidden[pt.role];
                     const op = moldOpacity[pt.role] ?? pt.opacity;
+                    const exp = !!moldExpanded[pt.role];
                     return (
-                      <div key={pt.role} className="fb-feat-node comp" data-testid={`mold-part-${pt.role}`}
+                      <div key={pt.role} data-testid={`mold-comp-${pt.role}`}>
+                      <div className={`fb-feat-node comp ${moldSelected === pt.role ? 'active' : ''}`} data-testid={`mold-part-${pt.role}`}
                         style={hidden ? { opacity: 0.5 } : undefined}
-                        onDoubleClick={() => isolateMoldPlate(pt.role)} title="Doble-clic = AISLAR (solo esta placa)">
-                        <span className="fb-color-dot" style={{ background: pt.color, borderRadius: '50%', width: 12, height: 12, display: 'inline-block', flex: '0 0 auto' }} />
+                        onClick={() => setMoldSelected((s) => (s === pt.role ? null : pt.role))}
+                        onDoubleClick={() => isolateMoldPlate(pt.role)} title="Clic = resaltar en 3D · Doble-clic = AISLAR">
+                        <button className="fb-comp-chev" data-testid={`mold-expand-${pt.role}`}
+                          onClick={(e) => { e.stopPropagation(); setMoldExpanded((m) => ({ ...m, [pt.role]: !m[pt.role] })); }}
+                          title="Ver cuerpos e historia del componente">{exp ? '▾' : '▸'}</button>
+                        <input type="color" className="fb-color-dot" style={{ borderRadius: '50%', width: 14, height: 14, flex: '0 0 auto' }}
+                          value={moldColors[pt.role] ?? pt.color} data-testid={`mold-color-${pt.role}`}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => setMoldColors((c) => ({ ...c, [pt.role]: e.target.value }))} title="Color del componente" />
                         <div className="fb-feat-body">
                           <strong>{pt.name}</strong>
                           <em>{pt.material} · {hidden ? 'oculta' : 'visible'}</em>
@@ -6568,6 +8041,64 @@ export default function ForgeBRepStudio() {
                           <div className="fb-comp-row hdr">🔩 Cuerpos <b>({pt.bodies ?? 1})</b></div>
                           {pt.features && pt.features.length > 0 && <div className="fb-comp-row hdr">🕮 Historia</div>}
                           {(pt.features ?? []).map((f, i) => <div key={i} className="fb-comp-row feat">· {f}</div>)}
+                          {pt.role === 'pieza' && flowOn && liveFlow && (
+                            <div data-testid="mold-flow-study">
+                              <div className="fb-comp-row hdr">
+                                💧 LLENADO — <b style={{ color: '#7ee0a0' }}>L máx {liveFlow.maxFlowLenMm} mm</b>
+                                <span style={{ opacity: 0.6 }}> [Kazmer cap 5 · §5.5.5]</span>
+                              </div>
+                              {liveFlow.rows.map((r, i) => (
+                                <div key={i} className="fb-comp-row feat" style={r.warn ? { color: '#ff6b6b' } : undefined}>
+                                  {r.warn ? '⚠ ' : '· '}{r.k}: <b>{r.v}</b> <span style={{ opacity: 0.55 }}>{r.ref}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {pt.role === 'tornillos' && liveFastener && (() => {
+                            const fp = liveFastener[fastHalf];
+                            return (
+                              <div data-testid="mold-fastener-study">
+                                <div className="fb-comp-row hdr">
+                                  🔩 ELECCIÓN DEL TORNILLO — <b style={{ color: '#7ee0a0' }}>{fp.count}× {fp.desig}</b>
+                                  <span style={{ opacity: 0.6 }}> [Shigley cap.8 · FED-STD-H28 · §12.4]</span>
+                                </div>
+                                <div className="fb-comp-row feat" style={{ display: 'flex', gap: 6 }}>
+                                  {(['cavity', 'core'] as const).map((h) => (
+                                    <button key={h} data-testid={`mold-fast-half-${h}`}
+                                      onClick={(e) => { e.stopPropagation(); setFastHalf(h); }}
+                                      style={{ flex: 1, cursor: 'pointer', padding: '2px 6px', borderRadius: 4,
+                                        border: `1px solid ${fastHalf === h ? '#7ee0a0' : '#555'}`,
+                                        background: fastHalf === h ? 'rgba(126,224,160,0.14)' : 'transparent',
+                                        color: fastHalf === h ? '#7ee0a0' : '#aaa', fontSize: 11 }}>
+                                      {h === 'cavity' ? 'mitad CAVIDAD (A)' : 'mitad NÚCLEO (B)'}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="fb-comp-row feat" title="§12.4 Fig 12.33: el molde colgado de UN tornillo con n_g=10 de choque de grúa. La carga NO se reparte: ese tornillo la ve solo.">
+                                  · carga sobre <b>UN</b> tornillo (§12.4 Fig 12.33, choque de grúa n_g=10): <b>{fp.perBoltKN} kN</b> de {fp.capacityKN} que aguanta = <b style={{ color: fp.utilPct < 90 ? '#7ee0a0' : '#f2b45c' }}>{fp.utilPct}%</b>
+                                </div>
+                                <div className="fb-comp-row feat" style={{ opacity: 0.7 }}>
+                                  · se colocan <b>{fp.count}</b> por mitad (redundancia y sujeción) — pero el Ø lo manda el peor caso de UNO solo
+                                </div>
+                                <div className="fb-comp-row feat" title="FED-STD-H28: el hilo externo rompe a tensión ANTES de barrer el interno">
+                                  · engrane: <b style={{ color: fp.engagementOK ? '#7ee0a0' : '#f27a6c' }}>{fp.engagementMm} mm</b> en placa de {fp.availableMm} mm {fp.engagementOK ? '✓ cabe' : '✗ NO CABE'} <span style={{ opacity: 0.55 }}>(acero Sy {fp.plateSyMPa} MPa)</span>
+                                </div>
+                                <div className="fb-comp-row feat">
+                                  · apriete <b>{fp.torqueNm} N·m</b> · broca piloto ⌀{fp.tapDrillMm} · área esf {fp.stressAreaMm2} mm²
+                                </div>
+                                <div className="fb-comp-row hdr" style={{ opacity: 0.85 }}>📋 Candidatos evaluados <span style={{ opacity: 0.6, fontWeight: 400 }}>— {fp.criterion}</span></div>
+                                {fp.candidates.map((c) => (
+                                  <div key={c.desig} className="fb-comp-row feat" data-testid={`mold-fast-cand-${c.desig}`}
+                                    title={c.why}
+                                    style={{ background: c.chosen ? 'rgba(126,224,160,0.10)' : undefined, opacity: c.fits ? 1 : 0.5 }}>
+                                    {c.chosen ? '★' : c.fits ? '·' : '✗'} <b style={{ color: c.chosen ? '#7ee0a0' : undefined }}>{String(c.count).padStart(2)}× {c.desig}</b>
+                                    <span style={{ opacity: 0.75 }}> · {c.utilPct}% util · engrane {c.engagementMm} mm</span>
+                                    <span style={{ opacity: 0.55 }}> — {c.why}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
                           {pt.role === 'pieza' && liveDfm && (
                             <>
                               <div className="fb-comp-row hdr" data-testid="mold-dfm-pieza">⚖ Moldeabilidad (Kazmer §2.3) — <b style={{
@@ -6640,7 +8171,7 @@ export default function ForgeBRepStudio() {
               <button className="fb-fea-run" data-testid="btn-unscrew" onClick={() => setUnscrewOn(true)} style={{ marginTop: 6 }}>
                 ▶ Molde que DESENROSCA (núcleo rotativo · tapa/tubo con rosca)
               </button>
-              <button className="fb-fea-run" data-testid="btn-section-reveal" onClick={() => setSectionOn(true)} style={{ marginTop: 6 }}>
+              <button className="fb-fea-run" data-testid="btn-section-reveal" onClick={() => setSectionReveal(true)} style={{ marginTop: 6 }}>
                 ▶ EL CORTE del molde (acero seccionándose · cavidad + agua + pines)
               </button>
               <button className="fb-fea-run" data-testid="btn-mold-machine" onClick={() => setMoldMachineOn(true)}
@@ -7793,6 +9324,11 @@ export default function ForgeBRepStudio() {
                   <span className="chk">{building ? 'recomputando…' : 'CPU(OCCT) → GPU(R3F)'}</span>
                 </div>
               </>
+            ) : moldParts.length ? (
+              <div className="inv">
+                <span className="k">Molde</span>
+                <span className="v">{plu(moldParts.length, 'placa')} {moldParts.length === 1 ? 'ensamblada' : 'ensambladas'}</span>
+              </div>
             ) : (
               <div className="inv">
                 <span className="k">Estado</span>
@@ -7869,13 +9405,15 @@ function opIcon(t: OpType): string {
 function opTitle(t: OpType): string {
   return { extrude: 'Extrude', hole: 'Hole', fillet: 'Fillet', chamfer: 'Chamfer', shell: 'Shell', draft: 'Draft', revolve: 'Revolve', loft: 'Loft', sweep: 'Sweep', pattern: 'Patrón', pocket: 'Corte' }[t];
 }
+/** Pluralización condicional en español: plu(1,'cara')→"1 cara", plu(3,'cara')→"3 caras". */
+const plu = (n: number, s: string, p = s + 's'): string => `${n} ${n === 1 ? s : p}`;
 function opSubtitle(op: Op): string {
   switch (op.type) {
     case 'extrude': return `${op.depth.toFixed(0)} mm`;
     case 'hole': return `⌀${op.diameter.toFixed(1)} · ${op.through ? 'pasante' : `${op.depth.toFixed(0)}mm`}`;
-    case 'fillet': return `R${op.radius.toFixed(1)} · ${op.edges.length || 'todas'} aristas`;
-    case 'chamfer': return `${op.dist.toFixed(1)}mm · ${op.edges.length || 'todas'} aristas`;
-    case 'shell': return `pared ${op.thickness.toFixed(1)} · ${op.faces.length} caras`;
+    case 'fillet': return `R${op.radius.toFixed(1)} · ${op.edges.length ? plu(op.edges.length, 'arista') : 'todas las aristas'}`;
+    case 'chamfer': return `${op.dist.toFixed(1)}mm · ${op.edges.length ? plu(op.edges.length, 'arista') : 'todas las aristas'}`;
+    case 'shell': return `pared ${op.thickness.toFixed(1)} · ${plu(op.faces.length, 'cara')}`;
     case 'draft': return `${op.angleDeg.toFixed(1)}° salida`;
     case 'revolve': return `${op.angle.toFixed(0)}°`;
     case 'loft': return `h${op.height.toFixed(0)} · ×${op.topScale.toFixed(2)}`;
@@ -8081,6 +9619,14 @@ const CSS = `
 .fb-mark{font-size:22px;color:${GOLD};filter:drop-shadow(0 0 8px ${GOLD}88);}
 .fb-titles h1{font-size:14px;font-weight:600;letter-spacing:.2px;margin:0;}
 .fb-titles p{font-size:11px;margin:2px 0 0;color:${STEEL};opacity:.8;}
+/* El TÍTULO es el disparador del LOBBY (proyectos). Se ve cliqueable. */
+.fb-doc-trigger{display:flex;align-items:center;gap:8px;border:1px solid transparent;background:transparent;
+  color:inherit;cursor:pointer;padding:5px 9px;margin-left:-6px;border-radius:9px;font-family:inherit;
+  transition:background .12s,border-color .12s;}
+.fb-doc-trigger:hover{background:rgba(111,216,236,.10);border-color:rgba(111,216,236,.28);}
+.fb-doc-trigger.on{background:rgba(111,216,236,.14);border-color:rgba(111,216,236,.45);}
+.fb-doc-chev{color:#6fd8ec;font-size:11px;transition:transform .18s ease;}
+.fb-doc-trigger.on .fb-doc-chev{transform:rotate(180deg);}
 .fb-kernel{display:flex;align-items:center;gap:7px;font-size:11px;padding:5px 11px;
   border-radius:20px;margin-left:8px;background:rgba(0,0,0,0.3);}
 .fb-kernel .dot{width:7px;height:7px;border-radius:50%;}
@@ -8140,6 +9686,17 @@ const CSS = `
 .fb-feat-act{border:0;background:rgba(255,255,255,0.05);color:${STEEL};font-size:11px;
   width:20px;height:20px;border-radius:5px;cursor:pointer;line-height:1;padding:0;transition:.1s;}
 .fb-feat-act:hover{background:${GOLD}22;color:${GOLD};}
+.fb-feat-act.on{background:${GOLD};color:#1a1206;font-weight:700;}
+/* Componente desplegable (estructura Fusion): chevron + cuerpos + historia */
+.fb-comp-chev{border:0;background:transparent;color:${STEEL};font-size:11px;cursor:pointer;
+  padding:0;width:14px;flex:0 0 auto;line-height:1;opacity:.75;}
+.fb-comp-chev:hover{color:${GOLD};opacity:1;}
+.fb-comp-tree{margin:2px 0 6px 22px;padding-left:9px;border-left:1px solid rgba(159,179,200,0.18);
+  display:flex;flex-direction:column;gap:2px;}
+.fb-comp-row{font-size:10px;color:${STEEL};font-family:'JetBrains Mono',monospace;line-height:1.5;}
+.fb-comp-row.hdr{color:#c2ccd8;font-weight:600;margin-top:3px;}
+.fb-comp-row.hdr b{color:${GOLD};}
+.fb-comp-row.feat{opacity:.82;padding-left:4px;}
 .fb-feat-act.del:hover{background:rgba(248,113,113,0.2);color:#fca5a5;}
 .fb-feat-act:disabled{opacity:.25;pointer-events:none;}
 .fb-feat-node.suppressed{opacity:.5;}
@@ -8387,7 +9944,7 @@ const CSS = `
 :root{
   --ds-bg:#0A101C; --ds-panel:#0F1725; --ds-panel2:#16202F; --ds-raise:#1D2A3D;
   --ds-line:rgba(140,180,255,0.10); --ds-line2:rgba(140,180,255,0.20);
-  --ds-text:#DCE7F5; --ds-dim:#8FA3BD; --ds-faint:#5E7089;
+  --ds-text:#DCE7F5; --ds-dim:#A6B4C8; --ds-faint:#7E90A9;
   --ds-accent:#41C7D4; --ds-accent-ink:#04252A; --ds-brand:#E8A33D;
   --ds-sky:#58A6FF; --ds-aurora:#5DDB8C; --ds-nebula:#8E7CFF;
 }
@@ -8448,6 +10005,7 @@ const CSS = `
 .fb-ribbon{display:flex;align-items:stretch;gap:2px;padding:4px 10px 2px;
   overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;}
 .fb-ribbon::-webkit-scrollbar{display:none;}
+.sk-toolbar::-webkit-scrollbar{display:none;}
 .fb-group{display:flex;flex-direction:column;align-items:center;gap:1px;flex:0 0 auto;}
 .fb-group-row{display:flex;align-items:stretch;gap:2px;}
 .fb-group-cap{font-size:8.5px;letter-spacing:1.3px;color:var(--ds-faint);font-weight:700;
@@ -8499,8 +10057,11 @@ const CSS = `
   box-shadow:0 18px 60px rgba(2,8,18,0.7)!important;border-color:var(--ds-line2)!important;}
 .fb-collapse-head{cursor:grab;}
 .fb-collapse-head:active{cursor:grabbing;}
-.fb-rail>aside.fb-features{flex:0 1 auto;min-height:120px;overflow:auto;}
+.fb-rail>aside.fb-features{flex:1 1 auto;min-height:180px;overflow:auto;}
 .fb-rail>aside.fb-params{flex:0 1 auto;overflow:auto;}
+/* La lista de componentes del MOLDE no anida su propio scroll: crece y el panel
+   (docked, flex) hace UN solo scroll → nada de triple barra amontonada. */
+.fb-bodies-list[data-testid="mold-parts-list"]{max-height:none;overflow:visible;}
 /* ── EL VIEWPORT ES UNA REGIÓN REAL (no un fondo tapado): empieza DEBAJO del
    header+ribbon y termina sobre el footer. El cubo de vistas ya no queda
    aplastado por la barra y la pieza se encuadra en el espacio que SE VE. ── */

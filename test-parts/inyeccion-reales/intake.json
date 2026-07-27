@@ -1,0 +1,552 @@
+{
+ "fecha": "2026-07-17",
+ "fuente": "Hammond Mfg (STEP públicos del fabricante, cajas ABS inyectadas)",
+ "piezas": [
+  {
+   "pieza": "1551F#0",
+   "dimMm": [
+    50,
+    35,
+    12
+   ],
+   "volCc": 6.63,
+   "wallEstMm": 1.85,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 11408
+   },
+   "flujo": {
+    "cellMm": 0.4625,
+    "LmaxMm": 42.58,
+    "errVolPct": 3,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 2567
+   }
+  },
+  {
+   "pieza": "1551F#1",
+   "dimMm": [
+    50,
+    35,
+    5
+   ],
+   "volCc": 3.85,
+   "wallEstMm": 1.74,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 8648
+   },
+   "flujo": {
+    "cellMm": 0.4545,
+    "LmaxMm": 31.56,
+    "errVolPct": 8.3,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 1281
+   }
+  },
+  {
+   "pieza": "1551F#2",
+   "dimMm": [
+    44.5,
+    29.5,
+    1
+   ],
+   "volCc": 1.23,
+   "wallEstMm": 1,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 6772
+   },
+   "flujo": {
+    "cellMm": 0.3333,
+    "LmaxMm": 26.78,
+    "errVolPct": 0.8,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 746
+   }
+  },
+  {
+   "pieza": "1591BSBK#0",
+   "dimMm": [
+    112,
+    62,
+    27
+   ],
+   "volCc": 37.89,
+   "wallEstMm": 2.09,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 2,
+    "viable": true,
+    "moldeUSD": 30678
+   },
+   "flujo": {
+    "cellMm": 0.9405,
+    "LmaxMm": 110.75,
+    "errVolPct": 3.4,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 2123
+   }
+  },
+  {
+   "pieza": "1591BSBK#1",
+   "dimMm": [
+    112,
+    62,
+    5.8
+   ],
+   "volCc": 16.32,
+   "wallEstMm": 1.92,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 25633
+   },
+   "flujo": {
+    "cellMm": 0.864,
+    "LmaxMm": 102.17,
+    "errVolPct": 2.4,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 671
+   }
+  },
+  {
+   "pieza": "1593D#0",
+   "dimMm": [
+    114,
+    35.7,
+    13.8
+   ],
+   "volCc": 15.81,
+   "wallEstMm": 2.2,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 20880
+   },
+   "flujo": {
+    "cellMm": 0.9900000000000001,
+    "LmaxMm": 64.46,
+    "errVolPct": 12.5,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 709
+   }
+  },
+  {
+   "pieza": "1593D#1",
+   "dimMm": [
+    114,
+    35.7,
+    12.9
+   ],
+   "volCc": 17.47,
+   "wallEstMm": 2.47,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 20559
+   },
+   "flujo": {
+    "cellMm": 1,
+    "LmaxMm": 65.63,
+    "errVolPct": 2.8,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 502
+   }
+  },
+  {
+   "pieza": "1593D#2",
+   "dimMm": [
+    20,
+    1.7,
+    29
+   ],
+   "volCc": 0.98,
+   "wallEstMm": 1.49,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 8,
+    "viable": true,
+    "moldeUSD": 8495
+   },
+   "flujo": {
+    "cellMm": 0.34,
+    "LmaxMm": 30.89,
+    "errVolPct": 0,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 402
+   }
+  },
+  {
+   "pieza": "1593D#3",
+   "dimMm": [
+    20,
+    1.7,
+    29
+   ],
+   "volCc": 0.98,
+   "wallEstMm": 1.49,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 8,
+    "viable": true,
+    "moldeUSD": 8495
+   },
+   "flujo": {
+    "cellMm": 0.34,
+    "LmaxMm": 30.89,
+    "errVolPct": 0,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 386
+   }
+  },
+  {
+   "pieza": "1593D#4",
+   "dimMm": [
+    29,
+    20,
+    3.5
+   ],
+   "volCc": 1.76,
+   "wallEstMm": 2.43,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 16,
+    "viable": true,
+    "moldeUSD": 9173
+   },
+   "flujo": {
+    "cellMm": 0.5833,
+    "LmaxMm": 17.8,
+    "errVolPct": 4.4,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 150
+   }
+  },
+  {
+   "pieza": "1593D#5",
+   "dimMm": [
+    29,
+    20,
+    3.5
+   ],
+   "volCc": 1.76,
+   "wallEstMm": 2.43,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 16,
+    "viable": true,
+    "moldeUSD": 9173
+   },
+   "flujo": {
+    "cellMm": 0.5833,
+    "LmaxMm": 17.62,
+    "errVolPct": 5.1,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 134
+   }
+  },
+  {
+   "pieza": "1593D#8",
+   "dimMm": [
+    105.8,
+    26,
+    1.6
+   ],
+   "volCc": 4.22,
+   "wallEstMm": 1.46,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 11172
+   },
+   "flujo": {
+    "cellMm": 0.4,
+    "LmaxMm": 56.1,
+    "errVolPct": 0.1,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 1313
+   }
+  },
+  {
+   "pieza": "1593K#0",
+   "dimMm": [
+    67.2,
+    66.2,
+    14.9
+   ],
+   "volCc": 15.59,
+   "wallEstMm": 2.27,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 21032
+   },
+   "flujo": {
+    "cellMm": 1,
+    "LmaxMm": 54.2,
+    "errVolPct": 9.5,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 483
+   }
+  },
+  {
+   "pieza": "1593K#1",
+   "dimMm": [
+    67.2,
+    66.2,
+    14
+   ],
+   "volCc": 15.87,
+   "wallEstMm": 2.33,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 20684
+   },
+   "flujo": {
+    "cellMm": 1,
+    "LmaxMm": 61.54,
+    "errVolPct": 4.8,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 419
+   }
+  },
+  {
+   "pieza": "1593K#2",
+   "dimMm": [
+    22.7,
+    1.7,
+    60
+   ],
+   "volCc": 2.31,
+   "wallEstMm": 1.54,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 17292
+   },
+   "flujo": {
+    "cellMm": 0.425,
+    "LmaxMm": 62.33,
+    "errVolPct": 0.6,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 441
+   }
+  },
+  {
+   "pieza": "1593K#3",
+   "dimMm": [
+    22.7,
+    1.7,
+    60
+   ],
+   "volCc": 2.31,
+   "wallEstMm": 1.54,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 17292
+   },
+   "flujo": {
+    "cellMm": 0.425,
+    "LmaxMm": 62.33,
+    "errVolPct": 0.6,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 417
+   }
+  },
+  {
+   "pieza": "1593K#4",
+   "dimMm": [
+    59.5,
+    22.6,
+    4.2
+   ],
+   "volCc": 2.88,
+   "wallEstMm": 1.61,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 7466
+   },
+   "flujo": {
+    "cellMm": 0.42,
+    "LmaxMm": 37.05,
+    "errVolPct": 0.6,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 1094
+   }
+  },
+  {
+   "pieza": "1593K#5",
+   "dimMm": [
+    59.5,
+    22.6,
+    4.2
+   ],
+   "volCc": 2.88,
+   "wallEstMm": 1.61,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 7466
+   },
+   "flujo": {
+    "cellMm": 0.42,
+    "LmaxMm": 37.41,
+    "errVolPct": 1.5,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 927
+   }
+  },
+  {
+   "pieza": "1593K#8",
+   "dimMm": [
+    57.7,
+    56.6,
+    1.6
+   ],
+   "volCc": 5.05,
+   "wallEstMm": 1.49,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 12682
+   },
+   "flujo": {
+    "cellMm": 0.4,
+    "LmaxMm": 41.33,
+    "errVolPct": 0.1,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 2554
+   }
+  },
+  {
+   "pieza": "1599BBK#0",
+   "dimMm": [
+    130,
+    65,
+    17.5
+   ],
+   "volCc": 36.98,
+   "wallEstMm": 2.36,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 2,
+    "viable": true,
+    "moldeUSD": 28614
+   },
+   "flujo": {
+    "cellMm": 1,
+    "LmaxMm": 114.76,
+    "errVolPct": 0.4,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 1641
+   }
+  },
+  {
+   "pieza": "1599BBK#1",
+   "dimMm": [
+    130,
+    65,
+    12.8
+   ],
+   "volCc": 29.47,
+   "wallEstMm": 2.41,
+   "moldeable": "si",
+   "dfmScore": null,
+   "maquina": {
+    "arch": "cold-2placas",
+    "nCav": 4,
+    "viable": true,
+    "moldeUSD": 34212
+   },
+   "flujo": {
+    "cellMm": 1,
+    "LmaxMm": 76.58,
+    "errVolPct": 7.4,
+    "unreachable": 0,
+    "unreachPct": 0,
+    "ms": 1257
+   }
+  }
+ ]
+}

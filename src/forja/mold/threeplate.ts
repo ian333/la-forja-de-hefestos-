@@ -39,6 +39,28 @@ export function moldOpeningVelocity(clampTons: number): number {
   return 184 + 13 * Math.log10(clampTons);
 }
 
+/** Factor de apertura del libro (§6.3.2): "apertura típica = 2 a 3 × la ALTURA de la
+ *  pieza". 2.5 = el centro del rango. */
+export const OPEN_FACTOR = 2.5;
+
+/** CARRERA DE APERTURA de la partición A-B (mm) — §6.3.2. La pieza tiene que salir
+ *  del núcleo Y dejar el hueco para caer, por eso son 2-3 alturas y no una.
+ *
+ *  FUENTE ÚNICA: la usan el layout de 3 placas, el selector de máquina (el daylight
+ *  debe tragar stack + ESTO) y la apertura animada. Si alguien vuelve a teclear un
+ *  número fijo (había un `OPEN = 80` en la animación), el molde de la pantalla deja
+ *  de ser el molde del estudio. */
+export function moldOpeningStrokeMm(partHeightMm: number, factor = OPEN_FACTOR): number {
+  return +(factor * Math.max(0, partHeightMm)).toFixed(1);
+}
+
+/** DAYLIGHT REQUERIDO (mm) = altura de cierre + carrera de apertura (Tabla 6.1:
+ *  2 placas 264 + 75 = 339; 3 placas 308 + 250 = 558). El molde CERRADO cabiendo en
+ *  el daylight NO basta: si no sobra la carrera, la máquina nunca lo abre. */
+export function daylightNeededMm(stackMm: number, openStrokeMm: number): number {
+  return +(stackMm + openStrokeMm).toFixed(1);
+}
+
 export function threePlateLayout(s: ThreePlateSpec): ThreePlateLayout {
   const P = { topClamp: 25, stripperX: 20, plateA: 40, plateB: 40, support: 25, railH: 60, rearClamp: 20, ...(s.plates ?? {}) };
   // stack (de abajo hacia arriba): rear | rails(+eyección) | support | B | A | X | top
@@ -57,7 +79,7 @@ export function threePlateLayout(s: ThreePlateSpec): ThreePlateLayout {
   push('placa X (stripper — runner en su cara)', P.stripperX, 'stripper');
   push('placa sujeción superior (sprue)', P.topClamp, 'fija');
 
-  const openAB = (s.openFactorAB ?? 2.5) * s.partHeightMm;      // 2-3× altura (libro)
+  const openAB = moldOpeningStrokeMm(s.partHeightMm, s.openFactorAB ?? OPEN_FACTOR);   // 2-3× altura (libro)
   const openAX = (s.runnerClearMm ?? 60);                       // caída libre de la colada
   const openTotal = openAB + openAX;
   const v = moldOpeningVelocity(s.clampTons);
@@ -65,7 +87,7 @@ export function threePlateLayout(s: ThreePlateSpec): ThreePlateLayout {
     stack: rows, stackMm: z,
     partingABz, partingAXz,
     openABMm: openAB, openAXMm: openAX, openTotalMm: openTotal,
-    daylightMm: z + openTotal,
+    daylightMm: daylightNeededMm(z, openTotal),
     boltABfreeMm: openAB, boltAXfreeMm: openAX,
     vOpenMmS: +v.toFixed(1), tOpenS: +(openTotal / v).toFixed(2),
   };

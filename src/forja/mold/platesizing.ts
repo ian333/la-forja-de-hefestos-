@@ -150,15 +150,42 @@ export function sizeCavityPlate(o: {
   };
 }
 
+/**
+ * RESUELVE la placa del NÚCLEO (retenedora B) desde SU PROPIO inserto — §4.2.1 (Fig 4.13):
+ * la altura del inserto de núcleo "de la cara TRASERA a la partición" = prof del núcleo BAJO
+ * la partición + 3·Ø de la línea de enfriamiento. En piezas donde el macho SOBRESALE hacia la
+ * cavidad (vaso, caja), la prof bajo-partición ≈ 0 → placa B = 3·Ø (el macho vive ARRIBA, en
+ * la región de A). NO es el cálculo de CAVIDAD (esa lleva la prof completa de la pieza).
+ * Copiar B de A (como estaba) viola §4.2.1: cada placa se dimensiona a SU inserto.
+ */
+export function sizeCorePlate(o: {
+  coreBelowPartingMm?: number; lineDiaMm: number; steelBehindDia?: number;
+}): CavityPlateSizing {
+  const below = o.coreBelowPartingMm ?? 0;
+  const behind = (o.steelBehindDia ?? 3) * o.lineDiaMm;   // 3·Ø detrás de la superficie moldeante del núcleo
+  const tReq = below + behind;
+  const governs = below >= behind ? 'cavidad' : 'enfriamiento';
+  const plate = snapToCommercialPlate(tReq);
+  const notas: string[] = [];
+  if (!plate) notas.push(`placa de núcleo ${tReq.toFixed(0)} mm excede el catálogo: inserto o base custom`);
+  return {
+    cavityDepthMm: below, coolingBehindMm: +behind.toFixed(1),
+    tRequiredMm: +tReq.toFixed(1), governs, plateThkMm: plate, notas,
+  };
+}
+
 export interface PlateOptimum {
   best: PlateSizing;
   options: PlateSizing[];                            // por nº de pilares
 }
 
 /**
- * OPTIMIZA el nº de pilares para MÍNIMO material: prueba 0..maxPillars, y elige
- * la placa comercial más delgada válida con menos acero. Pilares = menos claro =
- * placa más fina; el óptimo es el de menor masa que no da flash y usa catálogo.
+ * OPTIMIZA los pilares con política de MÍNIMO PILARES (simplicidad de taller — decisión
+ * del user 2026-07-23: "es más difícil construir los pilares"). Prueba 0..maxPillars y
+ * elige la opción VÁLIDA (sin flash, placa de catálogo) con MENOS pilares; a empate, menos
+ * acero. O sea: 0 pilares (placa sola más gruesa) si el catálogo lo permite; solo se meten
+ * pilares cuando ni la placa comercial más gruesa evita la rebaba. Un pilar = poste+barreno+
+ * dowel+ensamble; una placa más gruesa es UNA pieza. El costo real es la mano de obra.
  */
 export function optimizeSupportPlate(o: {
   clampTons: number; spanM: number; widthM: number; ventGapM?: number;
@@ -168,10 +195,10 @@ export function optimizeSupportPlate(o: {
   const maxP = o.maxPillars ?? 4;
   const options: PlateSizing[] = [];
   for (let n = 0; n <= maxP; n++) options.push(sizeSupportPlate({ ...o, nPillars: n }));
-  // válidas: sin flash y con placa de catálogo; mínimo acero; a empate, menos pilares
+  // válidas: sin flash y con placa de catálogo; MENOS PILARES primero, a empate menos acero
   const valid = options.filter((s) => s.flashOk && s.plateThkMm != null);
   const best = (valid.length ? valid : options).sort(
-    (a, b) => a.steelMassKg - b.steelMassKg || a.nPillars - b.nPillars,
+    (a, b) => a.nPillars - b.nPillars || a.steelMassKg - b.steelMassKg,
   )[0];
   return { best, options };
 }

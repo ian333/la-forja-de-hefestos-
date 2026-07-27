@@ -31,7 +31,7 @@
     projectedAreaM2: 0.0384, cavityPressureMPa: 36.46,
     partVolumeCc: 200, nCav: 1, runnerVolumeCc: 15, fillPressureMPa: 100, ejectionForceN: 4700,
   });
-  const bezSel = ms.selectInjectionMachine(bezReq, { wmm: 300, lmm: 300, stackMm: 400 });
+  const bezSel = ms.selectInjectionMachine(bezReq, { wmm: 300, lmm: 300, stackMm: 400, openStrokeMm: 25 });
   console.log('SEL bezel:', JSON.stringify({ maq: bezSel.machine?.name, ok: bezSel.ok, shot: bezSel.shotPct, clampUtil: bezSel.clampUtilPct }));
   checks.bezPicksIM250 = bezSel.ok && bezSel.machine.name === 'IM-250';
   checks.bezShotVentana = bezSel.shotPct >= 25 && bezSel.shotPct <= 50;   // §4.3.3
@@ -41,7 +41,7 @@
   const cupReq = ms.machineRequirements({
     projectedAreaM2: 0.008, cavityPressureMPa: 50, partVolumeCc: 25, nCav: 1, fillPressureMPa: 80, ejectionForceN: 1800,
   });
-  const cupSel = ms.selectInjectionMachine(cupReq, { wmm: 196, lmm: 196, stackMm: 250 });
+  const cupSel = ms.selectInjectionMachine(cupReq, { wmm: 196, lmm: 196, stackMm: 250, openStrokeMm: 100 });
   console.log('SEL cup:', JSON.stringify({ maq: cupSel.machine?.name, ok: cupSel.ok, shot: cupSel.shotPct, clampUtil: cupSel.clampUtilPct }));
   checks.cupPicksIM50 = cupSel.ok && cupSel.machine.name === 'IM-50';
   checks.cupExpulsionOk = cupSel.checks.expulsion === true;    // 9.8 kN provista >> 1.8 kN
@@ -50,7 +50,7 @@
   const huge = ms.machineRequirements({
     projectedAreaM2: 0.05, cavityPressureMPa: 120, partVolumeCc: 300, nCav: 4, fillPressureMPa: 150, ejectionForceN: 20000,
   });
-  const hugeSel = ms.selectInjectionMachine(huge, { wmm: 500, lmm: 500, stackMm: 500 });
+  const hugeSel = ms.selectInjectionMachine(huge, { wmm: 500, lmm: 500, stackMm: 500, openStrokeMm: 150 });
   console.log('SEL gigante:', JSON.stringify({ ok: hugeSel.ok, gob: hugeSel.governs, issue: hugeSel.issues[0]?.slice(0, 50) }));
   checks.hugeNoFit = hugeSel.ok === false && hugeSel.governs === 'cierre';
   checks.hugeAvisa = hugeSel.issues.some((i) => i.includes('2 moldes') || i.includes('clamp'));

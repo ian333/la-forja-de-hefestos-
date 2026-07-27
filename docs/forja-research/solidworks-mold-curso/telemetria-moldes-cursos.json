@@ -1,0 +1,27 @@
+{
+ "fecha": "2026-07-18",
+ "checks": {
+  "m1_sin_traslape": true,
+  "m1_impronta_conserva": true,
+  "m1_placas_separan": true,
+  "m2_familia_impronta": true,
+  "m2_interlocks": true,
+  "m3_llena": true,
+  "m3_bajo_limite": true
+ },
+ "m1": {
+  "vPerchaE": 126480.61161478182,
+  "vImp": 253079.03295410087
+ },
+ "m2": {
+  "vClip": 5288.000000000001,
+  "vPeine": 3666,
+  "nucleo": 912814.6763120147,
+  "cavidad": 797733.8999999997
+ },
+ "m3": {
+  "dP3": 50.6,
+  "dpFeed3": 34,
+  "Lmax": 139.02
+ }
+}

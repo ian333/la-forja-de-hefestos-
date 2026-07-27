@@ -36,14 +36,29 @@ export interface CycleParams {
   grid?: { nx: number; ny: number; hM: number; cavY0: number; cavY1: number; cavX0: number; cavX1: number; channels: Array<{ x: number; y: number; r: number }>; fillMode?: 'edge' | 'center' };
   /** Agua: caudal por circuito (m³/s) — del análisis de Reynolds cap 9. */
   coolantFlowM3s?: number;
+  /** SISTEMA DE ALIMENTACIÓN (cap 6): el fundido ENTRA por el bebedero, corre por el
+   *  canal y cruza la compuerta ANTES de tocar la cavidad. Sin esto el plástico
+   *  APARECÍA dentro de la cavidad ya adentro ("no veo cómo pasa por los canales"
+   *  — user 2026-07-15): la animación solo marcaba celdas de cavidad. */
+  feed?: {
+    /** volumen del bebedero + canales + compuertas (m³) → su tiempo sale del MISMO caudal */
+    volumeM3: number;
+    /** longitud del recorrido bebedero→compuerta (m), para su caída de presión (cap 5) */
+    lenM: number;
+    /** diámetro hidráulico del canal (m) */
+    diaM: number;
+  };
 }
 
 const K_STEEL = 32, RC_STEEL = 7850 * 460, K_ABS = 0.19, RC_ABS = 1050 * 2345;
 
 export interface CycleState {
   t: number; phase: Phase; cycle: number;
-  fillFrac: number;                    // 0..1 del frente
-  pressureMPa: number;                 // en el gate
+  fillFrac: number;                    // 0..1 del frente EN LA CAVIDAD (posición, no volumen)
+  /** 0..1 del alimentador (bebedero→canal→compuerta). La cavidad NO empieza hasta que
+   *  esto llega a 1: así se VE pasar el plástico por los canales. */
+  feedFrac: number;
+  pressureMPa: number;                 // en el gate (alimentador + cavidad, en serie)
   openForceTons: number; clampMarginTons: number;
   deflectionMm: number; flash: boolean;
   openMm: number; ejectMm: number; partDropMm: number; partVisible: boolean;
@@ -54,7 +69,15 @@ export interface CycleState {
 export function createCycleSim(p: CycleParams) {
   const melt = p.melt ?? ABS_MG47;
   const open = p.openStrokeMm ?? 90, eject = p.ejectStrokeMm ?? 45;
-  const tFill = p.flowLenM / p.vMeanMs;
+  // ── EL CAUDAL MANDA (la inyectora llena a velocidad controlada: Q ≈ cte) ──────
+  // De aquí sale TODO el llenado, en vez de un reloj. `fillFrac = u` (lo que había)
+  // decía "lo llenado = el tiempo que pasó": una regla de tres, no física.
+  const tCav = p.flowLenM / p.vMeanMs;              // cavidad: L/v̄ (cap 5, convergida)
+  const vCavM3 = Math.max(1e-12, p.projAreaM2 * p.wallM);   // volumen de la cavidad
+  const qM3s = vCavM3 / Math.max(1e-9, tCav);       // caudal implícito de ese L/v̄
+  // el ALIMENTADOR se llena con el MISMO caudal: su tiempo NO se inventa, se deduce.
+  const tFeed = p.feed ? p.feed.volumeM3 / qM3s : 0;
+  const tFill = tFeed + tCav;                       // inyección = alimentador + cavidad
   const PH: Array<[Phase, number]> = [
     ['cierre', 0.8], ['inyeccion', tFill], ['empaque', 0.8], ['enfriamiento', p.tCoolS],
     ['apertura', 1.2], ['expulsion', 0.6], ['caida', 0.8], ['retorno', 1.2],
@@ -114,12 +137,35 @@ export function createCycleSim(p: CycleParams) {
       if (i >= PH.length) { i = PH.length - 1; u = 1; }
       const ph = PH[i][0]; const e = ease(Math.min(1, u));
       // llenado + presión + térmico
-      let fillFrac = 0, P = 0;
-      if (ph === 'cierre') fillFrac = 0;
-      else if (ph === 'inyeccion') fillFrac = u;
-      else fillFrac = ['empaque', 'enfriamiento'].includes(ph) ? 1 : (['apertura', 'expulsion', 'caida'].includes(ph) ? 1 : 0);
+      let fillFrac = 0, feedFrac = 0, P = 0;
+      if (ph === 'cierre') { fillFrac = 0; feedFrac = 0; }
+      else if (ph === 'inyeccion') {
+        // ── EL FRENTE SALE DE CONSERVACIÓN DE VOLUMEN, NO DEL RELOJ ─────────────
+        // A caudal Q constante, el volumen llenado es V = Q·t. El FRENTE (posición)
+        // se obtiene invirtiendo el volumen SEGÚN LA FORMA — y ahí está el punto:
+        //   tira con gate lateral:  V = w·h·L    → L ∝ t       (LINEAL)
+        //   disco con gate central: V = π·r²·h   → r ∝ √t      (DESACELERA)
+        // `fillFrac = u` era LINEAL siempre: correcto por casualidad para el
+        // rectángulo, FALSO para el vaso redondo. El cuadrado tapaba el error; el
+        // círculo lo destapó. (Mismo patrón que el resto de la sesión.)
+        const tIn = u * tFill;                         // segundos dentro de la inyección
+        if (tIn < tFeed) {
+          // 1) el fundido baja por el bebedero y corre el canal: la cavidad SIGUE VACÍA
+          feedFrac = tFeed > 0 ? tIn / tFeed : 1;
+          fillFrac = 0;
+        } else {
+          feedFrac = 1;
+          const uc = tCav > 0 ? (tIn - tFeed) / tCav : 1;          // 0..1 en la cavidad
+          fillFrac = Math.min(1, g.fillMode === 'center' ? Math.sqrt(uc) : uc);
+        }
+      } else { feedFrac = 1; fillFrac = ['empaque', 'enfriamiento', 'apertura', 'expulsion', 'caida'].includes(ph) ? 1 : 0; }
       const Lnow = Math.max(1e-6, fillFrac * p.flowLenM);
-      if (ph === 'inyeccion') P = pressureDropSegment(melt, Lnow, p.wallM, p.vMeanMs) / 1e6;
+      // la presión en la compuerta paga TODO el recorrido: alimentador (cap 6) + cavidad
+      // (cap 5), en serie. Antes solo se cobraba la cavidad: el bebedero y el canal
+      // salían gratis.
+      const pFeed = p.feed && feedFrac > 0
+        ? pressureDropSegment(melt, p.feed.lenM * feedFrac, p.feed.diaM, p.vMeanMs) / 1e6 : 0;
+      if (ph === 'inyeccion') P = pFeed + pressureDropSegment(melt, Lnow, p.wallM, p.vMeanMs) / 1e6;
       else if (ph === 'empaque') P = 0.8 * pressureDropSegment(melt, p.flowLenM, p.wallM, p.vMeanMs) / 1e6;
       else if (ph === 'enfriamiento') P = 0.8 * pressureDropSegment(melt, p.flowLenM, p.wallM, p.vMeanMs) / 1e6 * Math.exp(-3 * u);
       // marca celdas llenas (frente en X de la sección) + inyecta calor
@@ -154,7 +200,7 @@ export function createCycleSim(p: CycleParams) {
       const mdot = (p.coolantFlowM3s ?? 5e-5) * 1000;              // kg/s
       const dTagua = dt > 0 ? (heatW / dt) * 1e-4 / (mdot * 4186) : 0;   // escala relativa de sección
       return {
-        t, phase: ph, cycle, fillFrac, pressureMPa: P,
+        t, phase: ph, cycle, fillFrac, feedFrac, pressureMPa: P,
         openForceTons: openF, clampMarginTons: p.clampTons - openF,
         deflectionMm: bend.deflectionM * 1000, flash,
         openMm, ejectMm, partDropMm: drop, partVisible: vis,

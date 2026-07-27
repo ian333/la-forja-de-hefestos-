@@ -16,6 +16,7 @@ import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { createCycleSim, type CycleState } from './cycle-engine';
+import { feedVolume, type RunnerSegment } from '../mold/feed';
 
 // ── molde del VASO (cup Kazmer): dimensiones del export canónico ──
 const W = 140, D = 140, Z_PART = 70;
@@ -45,11 +46,26 @@ const CAM_PRESETS: Record<string, { pos: [number, number, number]; tgt: [number,
   low:         { pos: [98, -218, 16],   tgt: [0, 0, 58] },    // contrapicada dramática (FLASH)
 };
 
+// EL ALIMENTADOR (cap 6), como SEGMENTOS reales — su volumen sale de `feedVolume`, no de
+// un número tecleado. El fundido baja el BEBEDERO (cónico, desde la nariz hasta la
+// partición: atraviesa clamp 36 + placa A 66 ≈ 100 mm) y cruza la COMPUERTA al centro
+// del vaso. Sin esto, la animación hacía APARECER el plástico ya dentro de la cavidad
+// ("no veo cómo pasa por los canales" — user 2026-07-15).
+const FEED_SEGMENTS: RunnerSegment[] = [
+  { name: 'bebedero', L: 0.100, R: 0.0025 },   // ⌀5 medio (cónico real), del clamp a la partición
+  { name: 'compuerta', L: 0.002, R: 0.0008 },  // ⌀1.6 · restricción de entrada (se desprende sola)
+];
+const FEED = {
+  volumeM3: feedVolume(FEED_SEGMENTS),
+  lenM: FEED_SEGMENTS.reduce((s, x) => s + x.L, 0),
+  diaM: 2 * FEED_SEGMENTS[0].R,
+};
+
 const cycleParams = (thinPlate: boolean) => ({
   flowLenM: 0.1, wallM: 0.003, vMeanMs: 0.35, projAreaM2: Math.PI * 0.03 * 0.03,
   clampTons: thinPlate ? 8 : 45,
   bendSpanM: 0.16, bendWM: 0.2, bendHM: thinPlate ? 0.03 : 0.1,   // 30 mm → δ 31 µm > venteo 20 µm = FUGA
-  tCoolS: 18.91, grid: GRID,
+  tCoolS: 18.91, grid: GRID, feed: FEED,
 });
 
 const PHASE_LABEL: Record<string, string> = {
@@ -190,7 +206,13 @@ function MoldScene({ playing, speed, section, xray, thinPlate, orbit, stRef }: S
       if (p2) camPreset.current = { pos: new THREE.Vector3(...p2.pos), tgt: new THREE.Vector3(...p2.tgt) };
       return !!p2;
     };
-    return () => { delete (window as any).__cycleCam; };
+    // paso manual: __cycleStep(dt) avanza dt segundos de PROCESO y devuelve el estado.
+    // Sin esto la inyección (0.35 s de un ciclo de 35 s) es incapturable a ojo.
+    (window as any).__cycleStep = (dt: number) => {
+      (window as any).__cycleManualDt = dt;
+      return (window as any).__cycleSimState ?? null;
+    };
+    return () => { delete (window as any).__cycleCam; delete (window as any).__cycleStep; };
   }, []);
   const COLD = useMemo(() => new THREE.Color('#cfc6ba'), []);   // ABS natural (crema) — azul+luz cálida daba LILA
   const HOT = useMemo(() => new THREE.Color('#ff8c1e'), []);
@@ -210,8 +232,14 @@ function MoldScene({ playing, speed, section, xray, thinPlate, orbit, stRef }: S
       controlsRef.current.target.lerp(camPreset.current.tgt, a);
     }
     controlsRef.current?.update();                               // sin esto la órbita NUNCA gira
-    if (!playing) return;
-    const dt = Math.min(delta, 1 / 30) * speed;
+    // AVANCE MANUAL determinista para capturas: `window.__cycleStep(dt)` da UN paso de
+    // dt segundos de proceso. La inyección dura ~0.35 s de un ciclo de ~35 s: a tiempo
+    // real es INCAPTURABLE (1 % de los cuadros), así que verificarla a ojo exigía suerte.
+    // Con esto se puede caminar el llenado paso a paso — el mismo patrón que __moldOpen.
+    const manual = (window as unknown as { __cycleManualDt?: number }).__cycleManualDt;
+    if (!playing && manual == null) return;
+    const dt = manual != null ? manual : Math.min(delta, 1 / 30) * speed;
+    if (manual != null) (window as unknown as { __cycleManualDt?: number }).__cycleManualDt = undefined;
     const st = sim.step(dt);
     stRef.current = st;
     (window as unknown as { __cycleSimState?: CycleState }).__cycleSimState = st;
@@ -230,7 +258,19 @@ function MoldScene({ playing, speed, section, xray, thinPlate, orbit, stRef }: S
     const bs = Math.max(1e-3, Math.min(1, s / 30));
     baseRef.current.scale.set(bs, bs, 1);
     fillPlane.constant = CUP_BASE + Math.max(0, s - 30) + (s > 99 ? 6 : 0);
-    if (sprueRodRef.current) sprueRodRef.current.visible = st.fillFrac > 0.05 && ['inyeccion', 'empaque', 'enfriamiento', 'apertura'].includes(st.phase);
+    // ── EL BEBEDERO SE LLENA: el fundido BAJA, no aparece ───────────────────
+    // Antes: `visible = fillFrac > 0.05` — el plástico del bebedero brincaba a existir
+    // YA FORMADO, y encima DESPUÉS de que la cavidad arrancaba. Nunca se veía pasar por
+    // los canales, porque nunca pasaba. Ahora la columna CRECE con `feedFrac`: entra por
+    // la nariz (z=125) y desciende hasta la compuerta (z=3); solo cuando toca la
+    // compuerta (feedFrac=1) la cavidad empieza a llenarse (lo garantiza el motor).
+    const rod = sprueRodRef.current;
+    if (rod) {
+      const f = st.phase === 'cierre' ? 0 : Math.max(st.feedFrac, st.fillFrac > 0 ? 1 : 0);
+      rod.visible = f > 0.01 && ['inyeccion', 'empaque', 'enfriamiento', 'apertura'].includes(st.phase);
+      rod.scale.set(1, 1, Math.max(1e-3, f));
+      rod.position.z = 125 - 61 * f;      // la punta baja; la cola queda pegada a la nariz
+    }
 
     // el plástico ENFRÍA de verdad: color por T̄ del FDM
     const u = Math.max(0, Math.min(1, (st.meltTempC - 60) / 180));

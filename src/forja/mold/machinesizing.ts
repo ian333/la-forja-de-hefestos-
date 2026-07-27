@@ -17,6 +17,7 @@
  */
 
 import { clampMetricTons } from './filling';
+import { daylightNeededMm } from './threeplate';
 
 export const TON_METRIC_N = 9806.65;      // 1 tonelada métrica (el libro, cap 4/5)
 
@@ -84,6 +85,9 @@ export interface MachineSelection {
   clampUtilPct: number;                    // % del clamp usado
   checks: { cierre: boolean; shotVentana: boolean; presion: boolean; expulsion: boolean; ajuste: boolean };
   issues: string[];
+  /** LA CARRERA, EN NÚMEROS (§6.3.2) — para pintarla en pantalla y en el plano.
+   *  Mientras esto no se veía, el punto ciego del daylight vivió sin que nadie lo notara. */
+  apertura: { strokeMm: number; stackMm: number; needMm: number; holguraMm: number };
 }
 
 /**
@@ -93,10 +97,15 @@ export interface MachineSelection {
  */
 export function selectInjectionMachine(
   req: MachineRequirements,
-  mold: { wmm: number; lmm: number; stackMm: number },
+  /** `openStrokeMm` = carrera de apertura (§6.3.2, `moldOpeningStrokeMm(altura)`).
+   *  OBLIGATORIO: sin él el daylight se juzgaba con el molde CERRADO y aprobaba
+   *  máquinas que no lo pueden abrir (barrido: 25 casos, hasta 92 mm de faltante). */
+  mold: { wmm: number; lmm: number; stackMm: number; openStrokeMm: number },
   catalog: InjectionMachine[] = INJECTION_MACHINES,
 ): MachineSelection {
   const sorted = [...catalog].sort((a, b) => a.clampTons - b.clampTons);
+  // el daylight tiene que tragar el molde ABIERTO (Tabla 6.1: 264 + 75 = 339).
+  const needMm = daylightNeededMm(mold.stackMm, mold.openStrokeMm);
   for (const m of sorted) {
     const cierre = m.clampTons >= req.clampNeedTons;
     const shotPct = 100 * req.shotNeedCc / m.shotCc;
@@ -106,9 +115,10 @@ export function selectInjectionMachine(
     const shotVentana = shotPct >= 25 && shotPct <= 50;
     const presion = m.maxInjPressureMPa >= req.injPressureNeedMPa;
     const expulsion = m.ejectionForceKN >= req.ejectionNeedKN;
-    // ajuste DURO: cabe entre columnas y NO excede el daylight abierto. Estar por
-    // debajo del daylight mínimo es solo advertencia (se agregan risers), no fallo.
-    const ajuste = mold.wmm <= m.tieHmm && mold.lmm <= m.tieVmm && mold.stackMm <= m.maxDaylightMm;
+    // ajuste DURO: cabe entre columnas y el daylight traga el molde ABIERTO
+    // (stack + carrera, §6.3.2) — NO el cerrado. Estar por debajo del daylight
+    // mínimo es solo advertencia (se agregan risers), no fallo.
+    const ajuste = mold.wmm <= m.tieHmm && mold.lmm <= m.tieVmm && needMm <= m.maxDaylightMm;
     if (cierre && shotFits && presion && expulsion && ajuste) {
       const issues: string[] = [];
       if (shotPct < 25) issues.push(`shot ${shotPct.toFixed(0)}% < 25%: barril grande para la pieza → subir cavidades o máquina más chica`);
@@ -117,6 +127,10 @@ export function selectInjectionMachine(
         machine: m, ok: true, governs: 'cierre',
         shotPct: +shotPct.toFixed(1), clampUtilPct: +(100 * req.clampNeedTons / m.clampTons).toFixed(1),
         checks: { cierre, shotVentana, presion, expulsion, ajuste }, issues,
+        apertura: {
+          strokeMm: mold.openStrokeMm, stackMm: mold.stackMm, needMm,
+          holguraMm: +(m.maxDaylightMm - needMm).toFixed(1),
+        },
       };
     }
   }
@@ -128,9 +142,12 @@ export function selectInjectionMachine(
     shotVentana: shotPct >= 25 && shotPct <= 50,
     presion: big.maxInjPressureMPa >= req.injPressureNeedMPa,
     expulsion: big.ejectionForceKN >= req.ejectionNeedKN,
-    ajuste: big.wmm ? false : (big.tieHmm >= mold.wmm && big.tieVmm >= mold.lmm),
+    // el ajuste es columnas + daylight del molde ABIERTO (antes: `big.wmm ? false : …`
+    // — campo inexistente en InjectionMachine, siempre caía al else y NUNCA miró el daylight).
+    ajuste: big.tieHmm >= mold.wmm && big.tieVmm >= mold.lmm && needMm <= big.maxDaylightMm,
   };
   const issues: string[] = [];
+  if (needMm > big.maxDaylightMm) issues.push(`daylight: stack ${mold.stackMm.toFixed(0)} + carrera ${mold.openStrokeMm.toFixed(0)} = ${needMm.toFixed(0)} mm > ${big.maxDaylightMm} mm de la ${big.name}: el molde CIERRA pero no ABRE (§6.3.2) → molde más compacto o pieza menos honda`);
   if (!checks.cierre) issues.push(`clamp requerido ${req.clampNeedTons.toFixed(0)} t > ${big.clampTons} t (máquina más grande): dividir en 2 moldes o menos cavidades`);
   if (shotPct < 25) issues.push(`shot ${shotPct.toFixed(0)}% < 25%: barril muy grande → residencia larga`);
   if (shotPct > 50) issues.push(`shot ${shotPct.toFixed(0)}% > 50% del barril máximo: fundido no homogéneo`);
@@ -141,5 +158,9 @@ export function selectInjectionMachine(
     machine: big, ok: false, governs,
     shotPct: +shotPct.toFixed(1), clampUtilPct: +(100 * req.clampNeedTons / big.clampTons).toFixed(1),
     checks, issues,
+    apertura: {
+      strokeMm: mold.openStrokeMm, stackMm: mold.stackMm, needMm,
+      holguraMm: +(big.maxDaylightMm - needMm).toFixed(1),
+    },
   };
 }

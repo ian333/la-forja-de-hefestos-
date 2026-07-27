@@ -12,19 +12,31 @@ import { renderAssemblySection, type StackComp, type AssemblyDrawing } from './m
 
 export interface MoldAssemblySpec {
   name: string; code?: string;
+  /** resina de la PIEZA (clave de PLASTICS). La necesita el campo térmico para saber si
+   *  corre con datos suyos o prestados — y decirlo. Sin ella se asumía ABS en silencio. */
+  plastic?: string;
   widthMm: number;                                  // ancho de la base (X en la sección)
+  /** FONDO real de la base (Y). Viene de `selectMoldBase` (§4.3) — la base estándar es
+   *  RECTANGULAR (p.ej. 296×396) y su segundo lado es un DATO, no una proporción.
+   *  Antes `plateDepth` lo fabricaba como widthMm×0.78 y el lmm elegido por el libro se
+   *  TIRABA: el embudo salía con base 296×396 y la geometría lo metía en 296×231 → el
+   *  inserto de 260 iba al lado corto y dejaba 18 mm de pared → los barrenos rompían el
+   *  asiento. Opcional por compatibilidad: los specs a mano caen al 0.78 de siempre. */
+  depthMm?: number;
   plates: { bottomClamp: number; ejectorHousing: number; support: number; B: number; A: number; topClamp: number };
   supportPillars?: number;
   // bolsa de cavidad. widthMm = ⌀ (redonda) o extensión X en planta (caja);
   // lenMm = extensión Y en planta (caja); depthMm = profundidad de la bolsa (Z).
-  cavity: { widthMm: number; depthMm: number; shape?: 'round' | 'rect'; lenMm?: number };
+  // frameMm/ribs: si la pieza es un MARCO (bezel) — rim de ancho frameMm con `ribs`
+  // costillas transversales; los expulsores van en el rim + costillas (no en la ventana).
+  cavity: { widthMm: number; depthMm: number; shape?: 'round' | 'rect'; lenMm?: number; wallMm?: number; frameMm?: number; ribs?: number };
   cooling: { diaMm: number; plug?: string; insetMm: number };  // líneas de agua
   ejectors: { type: 'pin' | 'blade' | 'sleeve' | 'stripper'; diaMm: number; count: number };
   core: { diaMm?: number; widthMm?: number; material: string };   // ⌀ (cup) o ancho de bloque (marco/bezel)
   cavityMetal: string; baseSteel?: string;
   machine?: string; clampTons?: number;
   // MOVIMIENTO lateral (§11.3.6-8): undercut que exige corredera/core-pull.
-  sideAction?: { aProjMm2: number; pMeltMPa: number; strokeMm: number; note?: string };
+  sideAction?: { aProjMm2: number; pMeltMPa: number; strokeMm: number; note?: string; hydraulic?: boolean };
   // ALIMENTACIÓN (§6-7): colada fría (bebedero+canales) vs CALIENTE (manifold+drops).
   feed?: 'cold-2placas' | 'cold-3placas' | 'hot-runner';
   nCav?: number;                                    // nº de cavidades (drops del hot runner)

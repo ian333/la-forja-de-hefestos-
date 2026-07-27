@@ -29,8 +29,9 @@ import {
 import { heatToRemove, ABS_KAZMER } from './cooling';
 import { designCoolingLines, type CoolingLineDesign } from './coolinglines';
 import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type EjectionVector } from './ejection';
-import { optimizeSupportPlate, sizeCavityPlate, type PlateSizing, type CavityPlateSizing } from './platesizing';
+import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, type PlateSizing, type CavityPlateSizing } from './platesizing';
 import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
+import { moldOpeningStrokeMm } from './threeplate';
 
 export type Arch = 'cold-2placas' | 'cold-3placas' | 'hot-runner';
 
@@ -38,6 +39,11 @@ export interface MachineSpec {
   name: string;
   /** Geometría (mm/mm²/mm³). */
   Lmm: number; Wmm: number; Hmm: number;
+  /** FORMA de la huella: 'round' = pieza de revolución (vaso, tapa, bote) → cavidad,
+   *  inserto y núcleo REDONDOS (§12.3.2 hoop, el ejemplo del vaso del libro). Sin esto
+   *  el molde salía siempre con cavidad CUADRADA: `packageToAssemblySpec` tenía
+   *  `shape: 'rect'` hardcodeado aunque el camino redondo ya existía. */
+  cavityShape?: 'rect' | 'round';
   surfaceMm2: number; volumeMm3: number; wallMm: number;
   /** Producción anual + horizonte total (piezas). */
   annualVolume: number; totalVolume?: number;
@@ -76,7 +82,7 @@ export interface DiseñoFisico {
   fillMPa: number; cavityMPa: number;
   enfriamiento: { qCavidadJ: number; qTotalW: number; cicloS: number; lineas: CoolingLineDesign };
   expulsion: { aEffM2: number; vector: EjectionVector; pines: ReturnType<typeof ejectorPinSizing> };
-  placas: { soporte: PlateSizing; soporteOpciones: PlateSizing[]; cavidad: CavityPlateSizing };
+  placas: { soporte: PlateSizing; soporteOpciones: PlateSizing[]; cavidad: CavityPlateSizing; nucleo: CavityPlateSizing };
   maquina: { requerimientos: MachineRequirements; seleccion: MachineSelection };
 }
 
@@ -246,7 +252,14 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   const spanM = (Math.min(base.base.wmm, base.base.lmm) / 1000) * 0.6;   // claro entre rieles
   const widthM = Math.max(base.base.wmm, base.base.lmm) / 1000;
   const soporte = optimizeSupportPlate({ clampTons: win.clampTons, spanM, widthM, maxPillars: 4 });
-  const cavidad = sizeCavityPlate({ cavityDepthMm: spec.Hmm, lineDiaMm: insertos.coolingDiaMm });
+  // §4.2.1: la placa cavidad = prof + 3·⌀ de la línea REAL. DEBE usar el ⌀ de `lineas`
+  // (designCoolingLines, física §9.2.4) — NO el estimado preliminar de sizeInserts, o la
+  // placa queda demasiado fina para la línea real → el lado A NO cabe y solo enfría B.
+  const realCoolDiaMm = lineas.plug?.diaMm ?? lineas.dMinMm ?? insertos.coolingDiaMm;
+  const cavidad = sizeCavityPlate({ cavityDepthMm: spec.Hmm, lineDiaMm: realCoolDiaMm });
+  // Placa B (retenedora del NÚCLEO) desde SU inserto (§4.2.1), NO copiada de la cavidad. El
+  // macho sobresale a la cavidad → prof bajo-partición ≈ 0 → placa B ≈ 3·⌀ de la línea.
+  const nucleo = sizeCorePlate({ lineDiaMm: realCoolDiaMm });
 
   // ── MÁQUINA: cuatro restricciones → inyectora comercial ──
   const projAreaM2 = nCav * spec.Lmm * spec.Wmm * 1e-6;
@@ -259,13 +272,16 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   // altura de cierre = placas A+B + soporte + (2 placas de sujeción ~60 + housing
   //  del expulsor ~140): estimado realista de shut height del stack del mold base
   const stackMm = base.plateAmm + base.plateBmm + (soporte.best.plateThkMm ?? 60) + 200;
-  const seleccion = selectInjectionMachine(requerimientos, { wmm: base.base.wmm, lmm: base.base.lmm, stackMm });
+  // la máquina no solo tiene que CERRARLO: tiene que ABRIRLO 2-3 alturas de pieza
+  // para que salga del núcleo y caiga (§6.3.2 · Tabla 6.1: 264 + 75 = 339).
+  const openStrokeMm = moldOpeningStrokeMm(spec.Hmm);
+  const seleccion = selectInjectionMachine(requerimientos, { wmm: base.base.wmm, lmm: base.base.lmm, stackMm, openStrokeMm });
 
   return {
     fillMPa: +fillMPa.toFixed(1), cavityMPa: +cavityMPa.toFixed(1),
     enfriamiento: { qCavidadJ: +qCavJ.toFixed(0), qTotalW: +qTotalW.toFixed(0), cicloS: +cicloS.toFixed(1), lineas },
     expulsion: { aEffM2, vector, pines },
-    placas: { soporte: soporte.best, soporteOpciones: soporte.options, cavidad },
+    placas: { soporte: soporte.best, soporteOpciones: soporte.options, cavidad, nucleo },
     maquina: { requerimientos, seleccion },
   };
 }

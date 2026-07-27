@@ -1,0 +1,143 @@
+{
+ "fecha": "2026-07-18",
+ "filas": [
+  {
+   "clave": "percha",
+   "nombre": "PERCHA ×2 (PP→proxy ABS)",
+   "sub": "placas 350×630 · colada fría ⌀6 (2 ramas)",
+   "wall": 10.15,
+   "cell": 1,
+   "tFillMs": 1117,
+   "tcMaxS": 276.1,
+   "tcNomS": 216.4,
+   "tcColadaS": 132.9,
+   "tReadyMaxS": 276.3,
+   "peorEsFeed": false,
+   "peor": {
+    "x": -16.119232177734375,
+    "y": -1.75128173828125,
+    "H": 11.46,
+    "frac": 0.167
+   },
+   "agua": {
+    "n": 5,
+    "diaMm": 6.35,
+    "depthMm": 25,
+    "pitchMm": 55,
+    "ys": [
+     253,
+     293,
+     349,
+     404,
+     444
+    ],
+    "D": 696,
+    "aguaD": 696
+   },
+   "bbox": {
+    "x0": -159.61923217773438,
+    "y0": -152.25128173828125,
+    "z0": -0.07500000298023224,
+    "x1": 159.61923217773438,
+    "y1": 152.25128173828125,
+    "z1": 10.074999809265137
+   },
+   "aguaD": 696
+  },
+  {
+   "clave": "familia",
+   "nombre": "CLIP + PEINE familia (ABS)",
+   "sub": "bloque 120×180 · colada fría ⌀6 (2 ramas)",
+   "wall": 4,
+   "cell": 1,
+   "tFillMs": 214,
+   "tcMaxS": 62.7,
+   "tcNomS": 33.6,
+   "tcColadaS": 36.4,
+   "tReadyMaxS": 62.8,
+   "peorEsFeed": false,
+   "peor": {
+    "x": -0.7378158569335938,
+    "y": 32.377532958984375,
+    "H": 5.46,
+    "frac": 0.254
+   },
+   "agua": {
+    "n": 2,
+    "diaMm": 6.35,
+    "depthMm": 25,
+    "pitchMm": 68,
+    "ys": [
+     164,
+     232
+    ],
+    "D": 396,
+    "aguaD": 396
+   },
+   "bbox": {
+    "x0": -39.237815856933594,
+    "y0": -52.122467041015625,
+    "z0": -0.012000000104308128,
+    "x1": 41.84578323364258,
+    "y1": 68.12000274658203,
+    "z1": 4.01200008392334
+   },
+   "aguaD": 396
+  },
+  {
+   "clave": "carcasa",
+   "nombre": "CARCASA Hammond 1591 (ABS real)",
+   "sub": "colada wizard SD6/RT4/GT2",
+   "wall": 2.09,
+   "cell": 0.9405,
+   "tFillMs": 192,
+   "tcMaxS": 66.9,
+   "tcNomS": 9.2,
+   "tcColadaS": 32.2,
+   "tReadyMaxS": 66.9,
+   "peorEsFeed": false,
+   "peor": {
+    "x": -1.4932499999999997,
+    "y": -2.0402500000000003,
+    "H": 5.64,
+    "frac": 0.096
+   },
+   "agua": {
+    "n": 3,
+    "diaMm": 9.53,
+    "depthMm": 38,
+    "pitchMm": 87,
+    "ys": [
+     63,
+     148,
+     235
+    ],
+    "D": 296,
+    "aguaD": 296
+   },
+   "bbox": {
+    "x0": -31,
+    "y0": -56,
+    "z0": -27,
+    "x1": 31,
+    "y1": 56,
+    "z1": 0
+   },
+   "aguaD": 296
+  }
+ ],
+ "checks": {
+  "percha_agua_H_libro": true,
+  "percha_agua_lineas": true,
+  "percha_llena": true,
+  "percha_acople_manda": true,
+  "familia_agua_H_libro": true,
+  "familia_agua_lineas": true,
+  "familia_llena": true,
+  "familia_acople_manda": true,
+  "carcasa_agua_H_libro": true,
+  "carcasa_agua_lineas": true,
+  "carcasa_llena": true,
+  "carcasa_acople_manda": true
+ }
+}

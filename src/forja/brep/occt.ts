@@ -69,6 +69,9 @@ export interface InitOptions {
   wasmBinary?: Uint8Array | ArrayBuffer;
   /** Resuelve la ruta del .wasm (Vite: URL servida; Node: ruta de disco). */
   locateFile?: (path: string) => string;
+  /** Progreso de descarga del .wasm (65 MB): (bytes, total|0, fase). La UI pinta
+   *  el "CARGANDO" — sin esto el usuario ve pantalla muerta 30-60 s y cierra. */
+  onProgress?: (loadedBytes: number, totalBytes: number, phase: 'download' | 'compile') => void;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -1876,4 +1879,60 @@ export function importSTEP(
     /* noop */
   }
   return shape;
+}
+
+// ═══ COSTURA Y CARAS TRIANGULARES (la base de la partición NO PLANA) ═══════
+// Los cursos de moldes cosen decenas de superficies a mano (Knit 47→7 cuerpos);
+// aquí la cuchilla de partición se arma de TRIÁNGULOS (siempre planos → caras
+// robustas) y se cose con BRepBuilderAPI_Sewing en una sola llamada.
+
+/** cara plana de un triángulo 3D (3 puntos SIEMPRE son coplanares). */
+export function makeTriFace(
+  oc: OC,
+  a: [number, number, number],
+  b: [number, number, number],
+  c: [number, number, number],
+): Shape {
+  const wm = new oc.BRepBuilderAPI_MakeWire_1();
+  const pts = [a, b, c];
+  for (let i = 0; i < 3; i++) {
+    const p = pts[i], q = pts[(i + 1) % 3];
+    const e = new oc.BRepBuilderAPI_MakeEdge_3(
+      new oc.gp_Pnt_3(p[0], p[1], p[2]),
+      new oc.gp_Pnt_3(q[0], q[1], q[2]),
+    ).Edge();
+    wm.Add_1(e);
+  }
+  const face = new oc.BRepBuilderAPI_MakeFace_15(wm.Wire(), true).Face();
+  wm.delete?.();
+  return face;
+}
+
+/** cose caras sueltas en un SHELL (tolerancia en mm — el Knit del curso usaba
+ *  0.0025; los triángulos exactos comparten aristas y cosen a tolerancia chica). */
+export function sewFaces(oc: OC, faces: Shape[], toleranceMm = 0.01): Shape {
+  const sew = new oc.BRepBuilderAPI_Sewing(toleranceMm, true, true, true, false);
+  for (const f of faces) sew.Add(f);
+  sew.Perform(new oc.Handle_Message_ProgressIndicator_1());   // handle NULO (API vieja de este build)
+  const out = sew.SewedShape();
+  sew.delete?.();
+  return out;
+}
+
+/** shell cerrado → SÓLIDO (la cuchilla que parte el bloque). */
+export function solidFromShell(oc: OC, shell: Shape): Shape {
+  // el sewed puede venir como SHELL directo o compound con un shell adentro
+  let sh = shell;
+  if (sh.ShapeType && sh.ShapeType() !== oc.TopAbs_ShapeEnum.TopAbs_SHELL) {
+    const shells = uniqueSubShapes(oc, shell, oc.TopAbs_ShapeEnum.TopAbs_SHELL);
+    if (shells.length) sh = shells[0];
+  }
+  // MakeSolid_3 exige el TIPO TopoDS_Shell, no el TopoDS_Shape genérico
+  const mk = new oc.BRepBuilderAPI_MakeSolid_3(oc.TopoDS.Shell_1(sh));
+  let solid: Shape = mk.Solid();
+  mk.delete?.();
+  // triángulos cosidos sin orden de winding ⇒ el shell puede quedar VOLTEADO
+  // (volumen negativo y los booleanos operan al revés) — se corrige midiendo
+  if (volume(oc, solid) < 0) solid = solid.Reversed();
+  return solid;
 }

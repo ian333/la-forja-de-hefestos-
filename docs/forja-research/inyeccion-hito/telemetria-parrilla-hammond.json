@@ -1,0 +1,488 @@
+{
+ "fecha": "2026-07-17",
+ "piezas": [
+  {
+   "nm": "1551F#0",
+   "dim": [
+    50,
+    35,
+    12
+   ],
+   "volCc": 6.6,
+   "wall": 1.85,
+   "cell": 0.4625,
+   "LmaxMm": 42.58,
+   "dPmax": 9.6,
+   "errVolPct": 3,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 49.56875,
+    "y": 8.40625,
+    "z": 11.71875
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1551F#1",
+   "dim": [
+    50,
+    35,
+    5
+   ],
+   "volCc": 3.8,
+   "wall": 1.74,
+   "cell": 0.4545,
+   "LmaxMm": 31.56,
+   "dPmax": 9.8,
+   "errVolPct": 8.3,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 46.404250000000005,
+    "y": 29.58775,
+    "z": 0.13624999999999998
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1551F#2",
+   "dim": [
+    44.5,
+    29.5,
+    1
+   ],
+   "volCc": 1.2,
+   "wall": 1,
+   "cell": 0.3333,
+   "LmaxMm": 26.78,
+   "dPmax": 13.9,
+   "errVolPct": 0.8,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 44.16205,
+    "y": 0.4997499999999997,
+    "z": 0.8331499999999998
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1591BSBK#0",
+   "dim": [
+    112,
+    62,
+    27
+   ],
+   "volCc": 37.9,
+   "wall": 2.09,
+   "cell": 0.9405,
+   "LmaxMm": 110.75,
+   "dPmax": 18.3,
+   "errVolPct": 3.4,
+   "unreachable": 0,
+   "weldN": 534,
+   "weldPct": 1.2,
+   "trap": {
+    "x": 111.33025,
+    "y": 30.447249999999997,
+    "z": 26.74475
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1591BSBK#1",
+   "dim": [
+    112,
+    62,
+    5.8
+   ],
+   "volCc": 16.3,
+   "wall": 1.92,
+   "cell": 0.864,
+   "LmaxMm": 102.17,
+   "dPmax": 16.8,
+   "errVolPct": 2.4,
+   "unreachable": 0,
+   "weldN": 308,
+   "weldPct": 1.2,
+   "trap": {
+    "x": 6.208,
+    "y": 36.448,
+    "z": 5.4799999999999995
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593D#0",
+   "dim": [
+    114,
+    35.7,
+    13.8
+   ],
+   "volCc": 15.8,
+   "wall": 2.2,
+   "cell": 0.9900000000000001,
+   "LmaxMm": 64.46,
+   "dPmax": 7,
+   "errVolPct": 12.5,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.4750000000000001,
+    "y": 4.4350000000000005,
+    "z": 11.375000000000002
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593D#1",
+   "dim": [
+    114,
+    35.7,
+    12.9
+   ],
+   "volCc": 17.5,
+   "wall": 2.47,
+   "cell": 1,
+   "LmaxMm": 65.63,
+   "dPmax": 6.9,
+   "errVolPct": 2.8,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.5,
+    "y": 31.5,
+    "z": 0.5
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593D#2",
+   "dim": [
+    20,
+    1.7,
+    29
+   ],
+   "volCc": 1,
+   "wall": 1.49,
+   "cell": 0.34,
+   "LmaxMm": 30.89,
+   "dPmax": 8.5,
+   "errVolPct": 0,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.8900000000000001,
+    "y": 0.20999999999999996,
+    "z": 28.750000000000004
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593D#3",
+   "dim": [
+    20,
+    1.7,
+    29
+   ],
+   "volCc": 1,
+   "wall": 1.49,
+   "cell": 0.34,
+   "LmaxMm": 30.89,
+   "dPmax": 8.5,
+   "errVolPct": 0,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.8900000000000001,
+    "y": 0.20999999999999996,
+    "z": 28.750000000000004
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593D#4",
+   "dim": [
+    29,
+    20,
+    3.5
+   ],
+   "volCc": 1.8,
+   "wall": 2.43,
+   "cell": 0.5833,
+   "LmaxMm": 17.8,
+   "dPmax": 2.3,
+   "errVolPct": 4.4,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.6248500000000003,
+    "y": 19.87375,
+    "z": 2.79145
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593D#5",
+   "dim": [
+    29,
+    20,
+    3.5
+   ],
+   "volCc": 1.8,
+   "wall": 2.43,
+   "cell": 0.5833,
+   "LmaxMm": 17.62,
+   "dPmax": 2.4,
+   "errVolPct": 5.1,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.6248500000000003,
+    "y": 19.87375,
+    "z": 0.45825000000000005
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593D#8",
+   "dim": [
+    105.8,
+    26,
+    1.6
+   ],
+   "volCc": 4.2,
+   "wall": 1.46,
+   "cell": 0.4,
+   "LmaxMm": 56.1,
+   "dPmax": 21.3,
+   "errVolPct": 0.1,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.20000000000000018,
+    "y": 0.20000000000000018,
+    "z": 1.2000000000000002
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593K#0",
+   "dim": [
+    67.2,
+    66.2,
+    14.9
+   ],
+   "volCc": 15.6,
+   "wall": 2.27,
+   "cell": 1,
+   "LmaxMm": 54.2,
+   "dPmax": 5.6,
+   "errVolPct": 9.5,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 27.5,
+    "y": 6.5,
+    "z": 13.5
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593K#1",
+   "dim": [
+    67.2,
+    66.2,
+    14
+   ],
+   "volCc": 15.9,
+   "wall": 2.33,
+   "cell": 1,
+   "LmaxMm": 61.54,
+   "dPmax": 9.4,
+   "errVolPct": 4.8,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 66.5,
+    "y": 64.5,
+    "z": 0.5
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593K#2",
+   "dim": [
+    22.7,
+    1.7,
+    60
+   ],
+   "volCc": 2.3,
+   "wall": 1.54,
+   "cell": 0.425,
+   "LmaxMm": 62.33,
+   "dPmax": 21.6,
+   "errVolPct": 0.6,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 1.6124999999999998,
+    "y": 0.3374999999999999,
+    "z": 59.9875
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593K#3",
+   "dim": [
+    22.7,
+    1.7,
+    60
+   ],
+   "volCc": 2.3,
+   "wall": 1.54,
+   "cell": 0.425,
+   "LmaxMm": 62.33,
+   "dPmax": 21.6,
+   "errVolPct": 0.6,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 1.6124999999999998,
+    "y": 0.3374999999999999,
+    "z": 59.9875
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593K#4",
+   "dim": [
+    59.5,
+    22.6,
+    4.2
+   ],
+   "volCc": 2.9,
+   "wall": 1.61,
+   "cell": 0.42,
+   "LmaxMm": 37.05,
+   "dPmax": 9.4,
+   "errVolPct": 0.6,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.31000000000000005,
+    "y": 11.229999999999999,
+    "z": 0.050000000000000044
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593K#5",
+   "dim": [
+    59.5,
+    22.6,
+    4.2
+   ],
+   "volCc": 2.9,
+   "wall": 1.61,
+   "cell": 0.42,
+   "LmaxMm": 37.41,
+   "dPmax": 7.9,
+   "errVolPct": 1.5,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 58.69,
+    "y": 22.57,
+    "z": 3.83
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1593K#8",
+   "dim": [
+    57.7,
+    56.6,
+    1.6
+   ],
+   "volCc": 5,
+   "wall": 1.49,
+   "cell": 0.4,
+   "LmaxMm": 41.33,
+   "dPmax": 15.7,
+   "errVolPct": 0.1,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 0.20000000000000018,
+    "y": 56.6,
+    "z": 1.2000000000000002
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1599BBK#0",
+   "dim": [
+    130,
+    65,
+    17.5
+   ],
+   "volCc": 37,
+   "wall": 2.36,
+   "cell": 1,
+   "LmaxMm": 114.76,
+   "dPmax": 18.3,
+   "errVolPct": 0.4,
+   "unreachable": 0,
+   "weldN": 5,
+   "weldPct": 0,
+   "trap": {
+    "x": 100.5,
+    "y": 60.5,
+    "z": 15.5
+   },
+   "moldeable": "si"
+  },
+  {
+   "nm": "1599BBK#1",
+   "dim": [
+    130,
+    65,
+    12.8
+   ],
+   "volCc": 29.5,
+   "wall": 2.41,
+   "cell": 1,
+   "LmaxMm": 76.58,
+   "dPmax": 8.8,
+   "errVolPct": 7.4,
+   "unreachable": 0,
+   "weldN": 0,
+   "weldPct": 0,
+   "trap": {
+    "x": 6.5,
+    "y": 7.5,
+    "z": 0.5
+   },
+   "moldeable": "si"
+  }
+ ]
+}

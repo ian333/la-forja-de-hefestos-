@@ -1,0 +1,908 @@
+Damith Herath & David St-Onge Eds.
+
+Foundations
+of Robotics
+A Multidisciplinary Approach with Python and ROS
+
+Foundations of Robotics
+
+Damith Herath · David St-Onge
+Editors
+
+Foundations of Robotics
+A Multidisciplinary Approach with Python
+and ROS
+
+Editors
+Damith Herath
+Collaborative Robotics Lab
+Human Centred Technology Research
+Centre
+University of Canberra
+Canberra, ACT, Australia
+
+David St-Onge
+Department of Mechanical Engineering
+École de technologie supérieure
+Montreal, QC, Canada
+
+Kinova Inc., Quebec
+This open-access book project has been fully funded by Kinova Robotics.
+https://www.kinovarobotics.com/
+
+ISBN 978-981-19-1982-4
+ISBN 978-981-19-1983-1 (eBook)
+https://doi.org/10.1007/978-981-19-1983-1
+© The Editor(s) (if applicable) and The Author(s) 2022. This book is an open access publication.
+Open Access This book is licensed under the terms of the Creative Commons AttributionNonCommercial-NoDerivatives 4.0 International License (http://creativecommons.org/licenses/by-ncnd/4.0/), which permits any noncommercial use, sharing, distribution and reproduction in any medium or
+format, as long as you give appropriate credit to the original author(s) and the source, provide a link to the
+Creative Commons license and indicate if you modified the licensed material. You do not have permission
+under this license to share adapted material derived from this book or parts of it.
+The images or other third party material in this book are included in the book’s Creative Commons license,
+unless indicated otherwise in a credit line to the material. If material is not included in the book’s Creative
+Commons license and your intended use is not permitted by statutory regulation or exceeds the permitted
+use, you will need to obtain permission directly from the copyright holder.
+This work is subject to copyright. All commercial rights are reserved by the author(s), whether the whole
+or part of the material is concerned, specifically the rights of translation, reprinting, reuse of illustrations,
+recitation, broadcasting, reproduction on microfilms or in any other physical way, and transmission or
+information storage and retrieval, electronic adaptation, computer software, or by similar or dissimilar
+methodology now known or hereafter developed. Regarding these commercial rights a non-exclusive
+license has been granted to the publisher.
+The use of general descriptive names, registered names, trademarks, service marks, etc. in this publication
+does not imply, even in the absence of a specific statement, that such names are exempt from the relevant
+protective laws and regulations and therefore free for general use.
+The publisher, the authors, and the editors are safe to assume that the advice and information in this book
+are believed to be true and accurate at the date of publication. Neither the publisher nor the authors or
+the editors give a warranty, expressed or implied, with respect to the material contained herein or for any
+errors or omissions that may have been made. The publisher remains neutral with regard to jurisdictional
+claims in published maps and institutional affiliations.
+Cover art by Laurent Pinabel (CC-BY-NC-ND)
+This Springer imprint is published by the registered company Springer Nature Singapore Pte Ltd.
+The registered company address is: 152 Beach Road, #21-01/04 Gateway East, Singapore 189721,
+Singapore
+
+To
+Dinendra and Nimali
+—Damith Herath
+Oscar, Arthur and Josée
+—David St-Onge
+In memory of Prof. Jean-Paul Laumond
+(1953–2021) for his life’s work as a
+roboticist, a humanist and a pioneer of robots
+and art research-creation.
+
+Foreword by Ken Goldberg
+
+Robots are Mirrors of Ourselves
+Man is a robot with defects.
+Emile Cioran
+
+Robots will always be fascinating because they reflect our very human fears and
+hopes. Robots are a perennial subject for artists and writers, who often wish for an
+accessible introduction to understanding how they work. Robots are also of great
+interest to engineers, who often wish for an accessible introduction to understanding
+their context in history and culture. This book, edited by leading artists and engineers
+Damith Herath and David St-Onge, provides both.
+The word “robot” emerged in 1920, shortly after the 1918 Pandemic. It was
+coined, by playwright Karel Capek, from a Czech word for hard work and central
+to his popular script about human-like machines rebelling against unfair working
+conditions. Although the word was new, the concept of human-like machines has a
+long history, dating back to Egyptian hydraulic machines, Pygmalian’s sculpture in
+ancient Greece, the medieval Golem, the alchemists’ automata, and Frankenstein.
+In 1942, Isaac Asimov introduced three “Laws” of robotics. Osamu Tezuka’s
+Astro Boy emerged in 1952, and artist Nam Jun Paik exhibited a series of sculptural
+robots in 1962. Countless robots have appeared in artworks, science fiction books,
+films, and television series.
+Real robots are of great interest for application in industry, exploration, defence,
+healthcare, and service. Robotics research has a long history, dating back to Nikola
+Tesla’s demonstration of a radio-controlled boat in 1898 and the emergence of “telerobots” to handle radioactive materials during World War II. The IEEE Robotics and
+Automation Society held its first conference in 1984 (a significant year for several
+reasons), and there are now dozens of conferences and journals devoted to robotics
+research.
+In 2022, during a huge resurgence of interest in AI and as the 2019 Pandemic
+begins to subside, robots continue to attract interest and maintain a strong hold on
+vii
+
+viii
+
+Foreword by Ken Goldberg
+
+our collective imagination. Books, films, and newspapers promote sensational stories
+about human-like robots “stealing” jobs and making humans obsolete. Companies such as Tesla, Google, GM, and Toyota are actively working on autonomous
+driving. Flying drones are being used for cinematography, inspection, and surveillance. Robots that sort packages are being adopted to keep up with skyrocketing
+demand for e-commerce.
+Although many artists and designers have worked with robots, almost all courses
+in robotics today are taught in engineering departments: in computer science or
+in engineering: electrical, mechanical, or industrial. As a result, current robotics
+textbooks are geared for engineers. They focus on mathematical models of coordinate
+frames, wrench mechanics, and control theory, assuming that readers have completed
+coursework in geometry, calculus, physics, and programming.
+This book is different. It is written for students of all ages and backgrounds
+who want to learn about the broad fundamentals of robotics. This includes artists,
+designers, and writers who want to learn more about the technical workings of robots,
+and engineers who want to learn more about the cultural history of robots.
+The book begins with a review of the rich history of robots. It then introduces
+chapters on teaching, designing, and programming, with details on the open access
+standard Robot Operating System (ROS) and a concise review of core mathematical
+concepts. The book then goes into the details of robot perception and actuation, with
+chapters on algorithms for robot control, motion planning, and manipulation. It also
+introduces active research topics such as bio-inspired robot design, human–robot
+interaction, ethics, and recent advances in robot learning.
+This book provides the “foundation” for understanding how robots work.
+It is the accessible introduction that artists and engineers have been waiting for.
+February 2022
+
+Ken Goldberg
+William S. Floyd Jr. Distinguished
+Chair in Engineering
+UC Berkeley
+Berkeley, CA, USA
+http://goldberg.berkeley.edu
+
+Foreword by Sue Keay
+
+The world is changing. Robotics and robotics technology is becoming increasingly
+pervasive. We have robots in our homes, in the form of things like vacuum cleaner
+robots, and in many cases, we don’t even notice their presence. For robots to become
+truly useful to humans, to understand us and operate in ways that make sense to us,
+and to be able to operate reliably and seamlessly in the cluttered, disorganised and
+unstructured world that we live in requires robot-builders that have a deep understanding of the complexity of not only technology but of the humans that use it and the
+complex environments that we inhabit. For this, traditional engineering-type learning
+is no longer sufficient. In the future, the pathway into a career in robotics is likely
+to be more complicated than via degrees in mechanical, electrical and mechatronics
+engineering, or computer science. A multidisciplinary approach, more human-centric
+design considerations, as well as pedagogy, safety, psychology, research design, and
+ethics is needed, all subjects of this text.
+The authors have a very human-centred approach to robotics and a keen eye
+for how to incorporate arts, creativity, and the social sciences into this traditionally engineering-heavy field. They also combined this with a deep understanding of
+industry context, how to meaningfully apply robotics R&D to solve industry problems, and the importance of keeping human workers engaged in the process through
+the use of collaborative robotics. After leading the development of Australia’s first
+national robotics roadmap, these are all themes that have come across very strongly
+both in case studies of the creation and use of robotics technology as well as in public
+consultations that I have been engaged in. The one burning issue for all robotics
+companies in Australia (and all around the world) is access to robotics talent, and
+that’s where this book, Foundations of Robotics, plays an important role.
+Foundation of Robotics provides the tools and building blocks necessary to train
+our next generation of robot technologists and equip them with a taste of the multidisciplinary considerations that are required to build modern robots. Importantly, the
+book also stresses the importance of diversity and culture, if we are to build robotic
+technologies that are truly representative of the communities within which they are
+used. In many cases, the robots will be used in industrial settings, and this is why the
+partnership with Kinova to develop this book is especially important to ensure that
+ix
+
+x
+
+Foreword by Sue Keay
+
+learning is related to industry best practices and that practical examples and exercises
+are given to students to consolidate their learnings.
+I highly commend this book to you, whether you are a student of robotics, a
+teacher, an experienced researcher, a hobbyist, an enthusiast, or just an interested
+observer. Damith, David, and their team of contributing authors are leading the way
+in expanding the horizons of future roboticists and smoothing the path for more
+extensive deployment of robotics technologies, especially cobots, in the future.
+February 2022
+
+Dr. Sue Keay, FTSE
+Chair, Board of Directors
+Robotics Australia Group
+Chair, Advisory Board
+Australian Cobotics Centre
+
+Preface
+
+These are exciting times to be engaged in robotics!
+Over the last couple of decades, we have had great fun building and programming
+some fascinating and interactive robots. Robotics is becoming pervasive, and robots
+are ever more in contact with ordinary humans away from research labs and manufacturing confines. However, as exciting as it may be, little has evolved in how robotics
+is taught at universities. Increasingly, this is becoming problematic as traditionally
+trained engineers are called to develop robots that could have an impact and interactions with the community at large. In our own practice, we have realised the evolving
+multidisciplinary nature of robotics. Recently, both of us have been developing new
+undergraduate programmes in robotics. While there are several exceptional textbooks
+that deal with various facets of robotics (books by such luminaries as Khatib, Siciliano, Thrun, Corke, Dudek comes to mind), we were at a loss in finding a comprehensive introductory textbook that touches on some critical elements of modern
+robotics that are usually omitted in traditional engineering programmes. Thus, the
+initial impetus came almost by necessity to develop a book that we can use in our
+courses that is true to our multidisciplinary backgrounds.
+Traditionally, robotics is aligned with one of the following foundational disciplines, Mechanical, Electrical and Computer Engineering (and these have their roots
+in physics). Depending on the alignment of the department, the course you study
+will have a flavour that accentuates the particular alignment to the point that sometimes even the terminology will be different (e.g. a robot may be referred to as a
+cyber-physical system!). To complicate matters further, you will soon find out that
+roboticists possibly do not agree on a singular definition for what a robot is. What
+all these allude to is that robotics is still a young and emerging discipline (compared
+to its founding roots), and we must collectively develop and contribute to its body
+of knowledge in an inclusive and mindful way so as to embrace its ever-expanding
+disciplinary boundaries. The book you are holding is our contribution to the field.
+We believe that a foundational book in robotics should be broadly multidisciplinary
+yet grounded in the fundamentals essential to understanding the standard building
+blocks of robotics.
+
+xi
+
+xii
+
+Preface
+
+In developing this book, we wanted to approach it not only from designing a robot
+from first principles firmly rooted in engineering but also from the point of view of
+the human element, present during the design process and throughout the robot’s
+journey post-fabrication. We started by asking what should a modern foundational
+textbook in robotics look like, particularly tapping into our experience working in the
+worlds of robotic art and human–robot interaction research. The natural realisation
+was that this book requires collaboration at the highest level with colleagues from
+many disciplines. What you are about to read is a fresh new look at robotics based
+on our own interactions with students and colleagues tempered by a desire to present
+robotics in a more humanistic light.
+A second intention has been to make the material relevant to the industrial practice
+and accessible. We believe one of the unique aspects of the book is the industry expert
+interviews dotted throughout the book. They inspire and provide insider insights as
+to what goes into making real robots for real commercial applications. We hope you
+enjoy the little personal stories shared by various experts in the field. We are ever
+so grateful to be associated with Kinova in this aspect. The Kinova team provided
+helpful feedback throughout the book’s development, providing insight into shaping
+the academic content of the book. The reader can be assured that the foundational
+concepts presented here will not be lost in the practical realities of working in the
+real world with real robots. We are also grateful to Kinova for funding1 the project
+to publish the book as a Springer open access book. Considering the ever-increasing
+cost of student textbooks, we hope that free accessibility to this book provides many
+aspiring roboticists access to relevant academic material without hindrance. Modern
+robotics is also about entrepreneurship. We like to invite you to read the inspiring
+story behind Kinova’s founding as narrated by Charles Deguire, the president and
+CEO of Kinova, embedded in the first chapter—we hope the book will ignite a spark
+of entrepreneurship in you!
+The book is divided into three main parts.
+We believe that robot design should be part of an ecosystem influenced by culture,
+contemporary thinking, and ancillary technologies of the day. Thus, the first part,
+Contextual Design, brings together an eclectic collection of ideas that will lay the
+contextual foundation on which the rest of the book is built. This part begins with a
+colourful historical perspective highlighting the mythological beginnings of robotics,
+its trends, and the importance of craft, arts, and creation in evolving modern robotics.
+We then explore the parallel pedagogical evolution in robotics. The second chapter
+highlights some of its missteps and approaches you can take to learn and teach
+robotics as a student or a teacher successfully. Next, the chapter on Design Thinking
+provides pointers to useful tools and ways of thinking in solving problems, robotic
+or otherwise. The final three chapters in this part provide introductory material
+on software, ROS—the Robot Operating System and mathematics, the ancillary
+technologies upon which modern robotics is being constructed.
+1 Although Kinova Robotics has generously funded this project, they have never interfered with the
+
+academic independence of the editors and the authors in developing the book.
+
+Preface
+
+xiii
+
+The second part develops your understanding of the foundational technical
+domains: the Embedded design. We start with an introduction to sensors, actuators, and algorithms, the building blocks of a robot. The eighth and ninth chapters
+develop the key ideas relevant to mobile robots—robots that can move around in
+the world (think self-driving cars!). The tenth chapter is a deep dive into robot arms
+that enable them to manipulate the environment. Then we explore how to assemble
+a swarm of robots. Concepts and challenges in deploying multi-robot systems are
+discussed in detail. Finally, the part concludes with a chapter revolving around prototyping and discussing the embedded design process. Topics including 3D printing and
+computer-aided design are discussed in practical detail, giving you the confidence to
+understand how to combine theoretical knowledge with actual implementations of
+prototypes that allows you to build and test your robot designs.
+While most industrial robots are still destined to be confined in isolated factory
+settings where human interaction is minimal, a paradigm shift is happening now in
+how we interact with robots. Increasingly, robots are being designed and deployed
+to be interactive and to be able to work with humans. The Interaction Design part
+explores the implications and some of the emerging new technical domains that
+underpin this (r)evolution. It is no longer enough to test your robots for their technical
+ability. They now need to be evaluated for their ability to work with or alongside
+humans. The first chapter in this part takes you through the emerging domain of
+human-robot interactions from a psychological perspective. It provides you with
+a thorough guide on developing user studies to test your hypotheses about robots
+interacting with humans with helpful case studies and statistical tools. Safety takes
+an elevated meaning in this new interactive world. The fourteenth chapter discusses
+the existing and emerging international safety standards related to various types of
+robots and robot deployments. It provides practical approaches and tools to deploy
+robots safely in interactive and collaborative settings.
+The robots and techniques we discussed in Part II rely on clearly defined world
+models and constraints restricting their use to relatively simple environments or use
+cases. While these techniques have allowed us to deploy robots successfully in a wide
+variety of tasks, we are now starting to see their limitations. As you would imagine,
+the human world is highly complex. Such simplistic models are no longer adequate
+to deploy robots in natural human-centred interactive settings (think self-driving cars
+again!). The chapter on Machine Learning discusses some of the cutting-edge ideas
+being developed in robotics. These emerging ideas enable robots to operate in more
+complex worlds and to attempt complicated tasks (as humans do) successfully. As
+robots begin to interact with us in such complex ways, they can no longer be treated
+as mere tools. On the one side, they are increasingly becoming human-like, and
+on the other, they are increasingly permeating and challenging our way of life. As a
+robot designer, you now have a fundamental responsibility to think about the broader
+implications of your robot design. The final chapter on Robot Ethics is a systematic
+guide to help you navigate the robot design process with an ethical framework.
+As detailed in the second chapter, no amount of theoretical work and instructions alone is sufficient to properly acquire the skills needed to design and deploy
+robots successfully. A hands-on, project-based approach is an essential pedagogical
+
+xiv
+
+Preface
+
+component in robotics. Therefore, the book includes two comprehensive projects
+that capture most of the theoretical elements covered in the book. In addition, we
+have included the necessary software and other resources needed to complete these
+projects on the companion website. We hope you make use of these resources to the
+fullest.
+We have endeavoured to make each chapter relatively self-contained, so if you are
+after a specific topic, it is bound to be covered in its entirety within a single chapter.
+Each chapter has a section at the beginning that describes the key learning objectives
+and a summary at the end. This should enable you to identify a particular topic you
+are after quickly. The parts and the chapters are laid out in a way that you can also
+read them consecutively, building on from one to the other.
+However you use it, we hope that you enjoy the book and be inspired by the truly
+interdisciplinary nature of the field.
+
+Please visit the companion website of the book for teaching and learning
+resources, updates and errata at: https://foundations-of-robotics.org
+Book’s GitHub: https://github.com/Foundations-of-Robotics
+
+Canberra, Australia
+Montreal, Canada
+January 2022
+
+Damith Herath
+David St-Onge
+
+Acknowledgements
+
+A book of this nature is simply the result of direct and indirect collaboration and
+support of many colleagues, students, family, and friends. So many have inspired
+and supported us along the journey to reach this point. Foremost, we want to thank
+all the contributing authors to the book. This is an enormous undertaking on their
+part, particularly during a pandemic. They have tirelessly worked around the clock
+to develop high-quality content within the brief time frame in which this project
+was set out. Our authors include early career researchers, graduate students, industry
+veterans, and senior academics from many disciplines. A genuinely multidisciplinary
+and multi-generational effort!
+To maintain the academic integrity of the content and make sure the chapters are
+presented in the best possible way, we have enlisted the help of several colleagues
+both from academia and the industry to carefully review and provide feedback to
+the authors of the chapters. In particular, we thank Ilian Bonev, Matt Bower, Jacob
+Choi, Jenny L. Davis, Samira Ebrahimi-Kahou, Sabrina Jocelyn, Rami Khushaba,
+Sarath Kodagoda, Dominic Millar, Adel Sghaier, Bill Smart, and Elizabeth Williams
+for their contributions to the high-quality review of the chapters.
+We want to acknowledge the efforts and extend our thanks to the student team
+which worked on putting the teaching labs together. The hexapod team includes
+Chris Lane, Bryce Cronin, Charles Raffaele, Dylan Morley, and Jed Hodson. The
+ROS mobile manipulator projects were built upon the efforts of Nerea Urrestilla
+Anguiozar, Rafael Gomes Braga, and Corentin Boucher. Without their tireless efforts,
+none of this would have been possible.
+This book is possible and openly accessible, thanks to the trust and support of our
+industrial partner, Kinova Robotics. More specifically, we thank Jonathan Lussier
+and Jean Guilbault for jumping into the project early on and sharing their thoughts all
+through the production. In addition, Marc-André Brault and Maude Goulet managed
+the interviews within each chapter, an essential feature of the book. We also want
+to thank all the industrial experts featured in our interviews dotted throughout the
+book.
+We appreciate the patience and support of the Springer Nature team for their
+tireless efforts to bring this book to life and into your hands.
+xv
+
+xvi
+
+Acknowledgements
+
+And of course, we thank you, the readers of the book. Whether you are a robotics
+student or an academic adapting the text for your teaching, we hope this book inspires
+you to see robotics in a whole new light. We would love to hear your feedback, so
+please feel free to drop us an email or drop in for a cuppa if you are in our part of the
+world!
+Finally, we wish to dedicate this book to our respective families, for they sustained
+us and endured the madness of being academics!
+
+Contents
+
+Part I
+1
+
+Contextual Design
+
+Genealogy of Artificial Beings: From Ancient Automata
+to Modern Robotics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+Nicolas Reeves and David St-Onge
+
+3
+
+2
+
+Teaching and Learning Robotics: A Pedagogical Perspective . . . . . .
+Eleni Petraki and Damith Herath
+
+43
+
+3
+
+Design Thinking: From Empathy to Evaluation . . . . . . . . . . . . . . . . . .
+Fanke Peng
+
+63
+
+4
+
+Software Building Blocks: From Python to Version Control . . . . . . .
+Damith Herath, Adam Haskard, and Niranjan Shukla
+
+83
+
+5
+
+The Robot Operating System (ROS1&2): Programming
+Paradigms and Deployment . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 105
+David St-Onge and Damith Herath
+
+6
+
+Mathematical Building Blocks: From Geometry
+to Quaternions to Bayesian . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 127
+Rebecca Stower, Bruno Belzile, and David St-Onge
+
+Part II
+
+Embedded Design
+
+7
+
+What Makes Robots? Sensors, Actuators, and Algorithms . . . . . . . . 177
+Jiefei Wang and Damith Herath
+
+8
+
+How to Move? Control, Navigation and Path Planning
+for Mobile Robots . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 205
+Jiefei Wang and Damith Herath
+
+9
+
+Lost in Space! Localisation and Mapping . . . . . . . . . . . . . . . . . . . . . . . . 239
+Damith Herath
+
+xvii
+
+xviii
+
+Contents
+
+10 How to Manipulate? Kinematics, Dynamics and Architecture
+of Robot Arms . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 265
+Bruno Belzile and David St-Onge
+11 Get Together! Multi-robot Systems: Bio-Inspired Concepts
+and Deployment Challenges . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 299
+Vivek Shankar Varadharajan and Giovanni Beltrame
+12 The Embedded Design Process: CAD/CAM and Prototyping . . . . . . 333
+Eddi Pianca
+Part III Interaction Design
+13 Social Robots: Principles of Interaction Design and User
+Studies . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 377
+Janie Busby Grant and Damith Herath
+14 Safety First: On the Safe Deployment of Robotic Systems . . . . . . . . . 415
+Bruno Belzile and David St-Onge
+15 Managing the World Complexity: From Linear Regression
+to Deep Learning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 441
+Yann Bouteiller
+16 Robot Ethics: Ethical Design Considerations . . . . . . . . . . . . . . . . . . . . . 473
+Dylan Cawthorne
+Part IV Projects
+17 Robot Hexapod Build Labs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 495
+David Hinwood and Damith Herath
+18 Deployment of Advanced Robotic Solutions: The ROS Mobile
+Manipulator Laboratories . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 515
+David St-Onge, Corentin Boucher, and Bruno Belzile
+Index . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 537
+
+Editors and Contributors
+
+About the Editors
+Damith Herath Associate Professor, Collaborative Robotics Lab, University of
+Canberra, Australia.
+Damith Herath is an Associate Professor in Robotics and Art at the University of
+Canberra. Damith is a multi-award winning entrepreneur and a roboticist with extensive experience leading multidisciplinary research teams on complex robotic integration, industrial and research projects for over two decades. He founded Australia’s
+first collaborative robotics startup in 2011 and was named one of the most innovative
+young tech companies in Australia in 2014. Teams he led in 2015 and 2016 consecutively became finalists and, in 2016, a top-ten category winner in the coveted Amazon
+Robotics Challenge—an industry-focused competition amongst the robotics research
+elite. In addition, Damith has chaired several international workshops on Robots
+and Art and is the lead editor of the book Robots and Art: Exploring an Unlikely
+Symbiosis—the first significant work to feature leading roboticists and artists together
+in the field of Robotic Art. e-mail: Damith.Herath@Canberra.edu.au
+David St-Onge Associate Professor, Department of Mechanical Engineering, ÉTS
+Montréal.
+David St-Onge (Ph.D., Mech. Eng.) is an Associate Professor in the Mechanical Engineering Department at the École de technologie supérieure and director
+of the INIT Robots Lab (initrobots.ca). David’s research focuses on human-swarm
+collaboration more specifically with respect to operators’ cognitive load and motionbased interactions. He has over 10 years’ experience in the field of interactive media
+(structure, automatization and sensing) as workshop production director and as R&D
+engineer. He is an active member of national clusters centered on human-robot interaction (REPARTI) and art-science collaborations (Hexagram). He participates in
+national training programs for highly qualified personnel for drone services (UTILI),
+as well as for the deployment of industrial cobots (CoRoM). He led the team effort
+
+xix
+
+xx
+
+Editors and Contributors
+
+to present the first large-scale symbiotic integration of robotic art at the IEEE International Conference on Robotics and Automation (ICRA 2019). e-mail: david.stonge@etsmtl.ca
+
+Contributors
+Beltrame Giovanni Department of Computer and Software Engineering, Polytechnique Montréal, Montreal, Canada
+Belzile Bruno Department of Mechanical Engineering, École de Technologie
+Supérieure, Montréal, Canada
+Boucher Corentin Department of Mechanical Engineering, École de Technologie
+Supérieure, Montréal, Canada
+Bouteiller Yann Department of Computer and Software Engineering, Polytechnique Montréal, Montreal, Canada
+Cawthorne Dylan Unmanned Aerial Systems Center, University of Southern
+Denmark, Odense, Denmark
+Grant Janie Discipline of Psychology, Faculty of Health, University of Canberra,
+Academic Fellow, Graduate Research, Canberra, Australia
+Haskard Adam Bluerydge, Canberra, ACT, Australia
+Herath Damith Collaborative Robotics Lab, University of Canberra, Canberra,
+Australia
+Hinwood David University of Canberra, Bruce, Australia
+Peng Fanke UniSA Creative, University of South Australia, Canberra, Australia
+Petraki Eleni Faculty of Education, University of Canberra, Canberra, Australia
+Pianca Eddi University of Canberra, Canberra, Australia
+Reeves Nicolas School of Design, University of Quebec in Montreal, Montreal,
+Canada
+Shukla Niranjan Accenture, Canberra, ACT, Australia
+St-Onge David Department of Mechanical Engineering, École de Technologie
+Supérieure, Montréal, Canada
+Stower Rebecca Department of Psychology, Université Vincennes-Paris 8, SaintDenis, France
+
+Editors and Contributors
+
+xxi
+
+Varadharajan Vivek Shankar Department of Computer and Software Engineering, Polytechnique Montréal, Montreal, Canada
+Wang Jiefei The School of Engineering and Information Technology, University
+of New South Wales, Canberra, Australia
+
+Part I
+
+Contextual Design
+
+Chapter 1
+
+Genealogy of Artificial Beings: From
+Ancient Automata to Modern Robotics
+Nicolas Reeves and David St-Onge
+
+Learning objectives
+• To understand the mythological origins of contemporary robots and automata
+• To be able to connect current trends in robotics to the history of artificial beings
+• To understand the role of crafts, arts and creation in the evolution of contemporary
+robotics.
+Introduction
+This chapter is an extensive overview of the history of automata and robotics from
+the Hellenistic period, which saw the birth of science and technology, and during
+which lived the founders of modern engineering, to today. Contemporary robotics
+is actually a very young field. It was preceded by a 2000-years period in which
+highly sophisticated automata were built for very different purposes—to entertain, to
+impress or to amaze—at different times. You will see that the methods and techniques
+that were used to build these automata, and that largely contributed to the development of robotics, were at times imported from unexpected fields—astronomy, music,
+weaving, jewellery; and that the impulse that drove automata makers to build their
+artificial beings was far from rational, but rather rooted in the age-old mythical desire
+to simulate, and even to realize, an entity from inert materials.
+
+N. Reeves (B)
+School of Design, University of Quebec in Montreal, Montreal, Canada
+e-mail: reeves.nicolas@uqam.ca
+D. St-Onge
+Department of Mechanical Engineering, ÉTS Montréal, Montreal, Canada
+e-mail: david.st-onge@etsmtl.ca
+
+© The Author(s) 2022
+D. Herath and D. St-Onge (eds.), Foundations of Robotics,
+https://doi.org/10.1007/978-981-19-1983-1_1
+
+3
+
+4
+
+N. Reeves and D. St-Onge
+
+1.1 What is a Robot?
+Whereas most of us would think they know what a robot actually is, a closer look
+at the concept will show that a precise definition of the term is actually not that
+easy to frame; and that it broadened again in the last decades to encompass a large
+variety of devices. From the first appearance of the word in the Czech theatre play
+R.U.R (Capek, 2004), in which it was referring to human beings artificially created
+to become perfect and servile workers (Fig. 1.1), it is now used for a range of devices
+as different as robotic arms in factories, battery-operated toys for kids, androids or
+biomorphic machines. It even came to describe entities that lie at the boundary of
+technology and biology and that cannot anymore be described as fully artificial.
+This evolution is less paradoxical than it seems. As opposed to a common idea,
+Capek’s robots where not strictly speaking artificial machines: they were created
+with organic materials synthesized by chemical processes. In the scenario, the core
+of the project was to build teams of workers that were free from everything that was
+not essential to the implementation of their tasks—feelings, emotions, sensibility.
+Their role was that of robots, but they were still living biological organisms, which
+makes them quite different from the highly sophisticated technological devices that
+come to mind when thinking of contemporary robots. They were in a sense much
+more related to automata, a word that Capek has actually used in a previous play, but
+that was completely replaced by “robots” in this one.
+This last point is worth noticing. At the time R.U.R. was written, the word
+“robot” was a neologism forged from slavish roots referring to work, chore, forced
+labour. Nothing in its original meaning implied that a robot should be a machine:
+an automaton created to help human beings in the implementation of some task
+
+Fig. 1.1 Scene from Capek’s play Rossum’s universal robots, with three robots on the right; 1920
+
+1 Genealogy of Artificial Beings: From Ancient Automata to Modern …
+
+5
+
+becomes a robot. In that respect, it actually contradicts the original meaning of the
+word “automaton”, which, etymologically, refers to an animated device which acts
+by itself . The word decomposes in the Greek roots auto, which precisely means
+“by itself”, whose origin, strangely enough, is unknown; and matos, “thinking” or
+“endowed with will”, from the older proto-Indo-European * mens, “to think”. It
+therefore designates an animated artificial being that is able to make decisions and to
+act autonomously, whereas “robot” is frequently associated with a machine that has
+been designed for the sole purpose of blindly executing sets of instructions crafted
+by a human being—the opposite of an autonomous entity. What is hardly disputable
+however is the fact that every contemporary robot finds its place in the age-old
+genealogy of automata. It might also be interesting to note that the oldest origins
+of the root “rob”, from which “robot” was created, evokes the fact of being orphan,
+which corresponds surprisingly well to these artificial beings which, as a matter of
+fact, never had a biological father or a mother.
+Since its first occurrence, the meaning and signification of “robot” have extended
+well beyond this gloomy etymology. A lot of robots are today created for research,
+experimentation or entertainment, without any practical use; but current roboticists
+do not yet agree on a single definition. Two elements however strike out as reaching
+a broad consensus: first, the device must present some form of intelligence; second,
+it must be embodied. As it is well known, “intelligence” is in itself a tricky notion to
+define. In this context, it does not indeed refer to human intelligence, less again does
+it correspond to the common perception of artificial intelligence, better represented
+by the concept of machine learning. Intelligence for a robot is only about taking
+decision on its own, based on the limited information it has from its context or
+from its internal states. Here again, etymology comes to help: the word comes from
+the Latin inter ligere—«to link between». The links can be elementary—a bumper
+sensing a wall makes the robot wheels stop—or more complex—the robot takes a
+decision by comparing information coming from multiple sources. The concept of
+embodiment refers to the physicality of the robot, as opposed to software “bots.” On
+its side, «automaton» today refers indifferently to a hardware or a software device.
+For the sake of the present chapter, we will tighten the meaning the word “robot”
+in order to encompass essentially hardware automata fulfilling two criteria: first,
+they must be dedicated to the autonomous implementation of DDD (Dangerous,
+Dull or Dirty) tasks, or to facilitate the implementation of such tasks for human
+beings; second, they must be able to take decisions through some form of interaction
+with their context. As we will see below, this definition itself has undergone several
+variations in the last decades, but we will keep it for the moment.
+
+1.2 A Mythical Origin
+The genealogy of robots, as well as the history of robotics, are then intimately linked
+to that of automata. An extensive recapitulation of this history would be far beyond
+the scope of this chapter, all the more since several books have already been written
+
+6
+
+N. Reeves and D. St-Onge
+
+on it (among many others: Demson & Clason, 2020; Mayor, 2018; Nocks, 2008;
+Foulkes, 2017 …). However, an efficient way to understand the fundamentals of
+human motivation and fascination for robots and robotic systems is to recapitulate
+some of its main chapters, and to locate in time the bifurcations that progressively
+separated robots from automata: the evolution of historical trends in robotics is of the
+greatest help to understand why some aspects of robotic research are better known,
+and better developed, than others.
+The first and likely most important point to consider is that the roots of robotics
+are not anchored in technology or science, but rather in a mythological ground that
+extends far beyond these fields, and that can be broadly divided in two layers. The first
+one is concerned by the myth of a being with supernatural power and unpredictable
+intentions, an image that still hovers over any robot or automaton. The second involves
+all the attempts that have been made along history to replicate through artificial
+mechanisms two natural phenomena that escape human understanding, namely life
+and cosmological events.
+These two layers are intricated at many levels, but they differ by their basic
+intentions. The first one is most likely at the origin of all humanoid or animal-like
+automata. It led to the pursuit of creating artificial beings whose power surpass those
+of human beings: autonomous entities that can be made insensitive to pain, fear,
+boredom, and to any form of emotion, less again empathy. A lot of examples of
+inventors who try to build such entities can be found in tales, science-fiction stories,
+movies and video games, covering all the spectrum of intentions towards mankind—
+from help, assistance and protection to destruction and domination. However, once
+it is built, because it should possess, as an automaton, a kind of free will, it can
+become uncontrollable and behave in unpredictable ways, even for its creator. This
+is illustrated by Capek’s play, but also by the wealth of works that has emanated from
+the Jewish myth of the Golem, first mentioned in the Talmudic literature. Being an
+artificial creature made of clay, the Golem was an embryonic form of life created
+for the sole purpose of helping or protecting his creator. It should be noted that
+historically speaking, Golem is most likely the first entity that corresponds to the
+above definition of a robot: an artificial entity built specifically for a implementing a
+practical task or function.
+Despite the highly functional and technological nature of most contemporary
+robotic systems, the evolution of automata and the emergence of robots cannot be
+fully understood without realizing that most of them originate from the will to simulate life; that automata makers have been developed highly advanced skills, and
+have been spending tremendous amounts of time and resources, in order to achieve
+this goal with the highest possible precision; and last but not least, that in every
+automaton maker rests the secret and hidden dream of seeing one day his own inanimate creatures come to life—a dream to which, in a previous work, we gave the
+name «Geppetto syndrome» (Reeves, 1992).
+From their very beginnings, automata were created to simulate. Their main—and
+often only—objective was to dissimulate what that they actually were: assemblages
+of inanimate matter pretending to act by themselves. It is not a coincidence if the
+first automata appeared at time during which a first, elementary understanding of
+
+1 Genealogy of Artificial Beings: From Ancient Automata to Modern …
+
+7
+
+physics was slowly emerging. Since only a tiny part of the population had access to
+it, its mastering was often perceived as magical by common people. Even if one of
+the main objectives of the new-born Greek science was to explain natural events by
+natural causes, that is, to get rid of supernatural explanation, its power could easily be
+confused with that of entities found in myths, tales or religious texts. Several works
+exploited it in order to create devices whose purpose was either to entertain, or to
+siderate crowds by simulating the intervention of supernatural forces. Automata built
+for practical purposes were virtually non-existent.
+This was not always obvious. At first glance, the perpetual clepsydra built by
+Ctesibios from Alexandria (Fig. 1.2), of whom we will talk below, could claim
+to be a primordial robot, since it has the function of giving the time of the day.
+An ordinary clepsydra cannot be considered as an automaton: it is akin to that of
+an hourglass that uses water instead of sand, and as such, it does not feature any
+autonomous component. But Ctesibios’ device, built three centuries BC, was coupled
+with a mechanism that refilled its tanks every day with water coming from a source,
+and that reconfigured its internal states in order to indicate the time for each day
+of the year. Being completely autonomous, it qualifies as an automaton. Since it
+Fig. 1.2 Ctesibio’s
+clepsydra, circa 250 B.C, as
+represented in the French
+translation of Vitruvius’
+treatise “ten books on
+architecture” by Claude
+Perrault (1864)
+
+8
+
+N. Reeves and D. St-Onge
+
+was built for a practical purpose, since it incorporates some kind of intelligence by
+reacting to the amount of water in its tanks, and since it was embodied, it could
+claim to be a first instantiation of a robot in the modern sense of the term. But this
+interpretation only holds when considering it with our contemporary eyes. Like most
+time-measuring devices, Ctesibios’ clepsydra was more an astronomical model than
+a clock: it transposed the movements of the Sun into an autonomous mechanism.
+Just like humanoid or zoomorphic automata were trying to describe, comprehend
+and replicate the functions and behaviour of living beings, the first clocks, up to
+the beginning of the scientific revolution, were mainly planetary or cosmological
+models built to translate a partial understanding of celestial mechanics.1 Vitruvius
+himself, while referring to Ctesibios’ clepsydra in the 10th book of its treatise De
+Architectura, does not attribute to it any practical function. The design and building of
+such instruments usually requested workers and craftsmen that were the best skilled of
+their generation. The technological challenges implied by such mechanisms triggered
+the development of fully new technological and theoretical knowledge, and often
+requested massive amounts of money that could be provided only by the wealthiest
+members of the society. They became symbols of prestige, and testified for the level
+of expertise achieved in their country of origin. Even today, building a clock with
+a very long revolution period is everything but a simple venture. It took more than
+fifteen years to design and twelve years to build the astronomical clock located at
+the Copenhagen City Hall, completed in 1955; its slowest gear completes one full
+revolution in 25,735 years (Mortensen, 1957).2
+All these examples, as well as many others, show that the impulse for creating
+automata is not originally driven by practical needs. It comes from the mythical desire
+to understand some of the deepest mechanisms at the origin of life and cosmological
+events, a desire that stands at the origin of major developments in mechanical science
+and in technology, and especially those at the origin of modern robotics. To qualify
+as an automaton, an artificial being does not need to be useful; it does not even need
+to move, or to do anything: it just has to be able to provide a convincing enough
+illusion of life (Reeves & St-Onge, 2016).
+
+1 In the first mechanical clocks, such as the one built by Richard of Wellington around 1330, the
+
+great astronomical orloj in Prague, or the very rare heliocentric clock at Olomouc, also in Czech
+Republic, counting the hours was only one of many different functions: the indication of time
+becomes almost anecdotical. Many other dials indicated the sidereal time, the signs of the Zodiac,
+the phases and position of the Moon, the movements of the Sun and of the Planets, the solstices
+and the equinoxes, the hours of the tides … Some needed several decades to accomplish a single
+revolution.
+2 Later devices, such as the eighteenth century Peacock clock in the Hermitage museum in Saint
+Petersburg, intimately associates the simulation of life with the measure of time (Zek et al., 2006).
+In this incredible piece of mechanics, once a week, a large peacock extends its wings, deploys its tail
+and moves its head; a rooster sings; an owl turns its head, blinks its eyes and rings a chime. A small
+dial, almost lost in the rest of the device, gives the time of the day: its presence is inconspicuous.
+The presence of time and the cycle of the days are mainly evoked by the three animals: the owl is
+a symbol of night, the rooster a symbol for the day, the peacock a symbol of rebirth.
+
+1 Genealogy of Artificial Beings: From Ancient Automata to Modern …
+
+An Industry Perspective
+Charles Deguire, President and CEO
+Kinova inc.
+
+I like to think that I was born an entrepreneur. Both my parents were
+entrepreneurs, as some of our family members, and from the day I had to
+decide what I was going to become, I knew the path I wanted to follow. But
+as in every business case, you need THE idea. In my case, I was raised with
+the idea … When I was younger, I had three uncles living with muscular
+dystrophy, all power wheelchair users, and very limited upper-body mobility.
+The challenges they faced never stopped them, they even founded a private
+company dedicated to the transportation of people with special needs. This
+concept evolved to become the public-adapted transport system of Montreal.
+One of my uncles, Jacques Forest, had only one finger that he could move.
+He was challenged by the idea to develop an arm that could be controlled
+by his active finger to allow him to become independent in his functionality
+and able to grasp and manipulate objects in his surroundings without external
+assistance. He generated various innovative technical ideas for such devices
+that were based on his own experience and intuition. The gripping device he
+succeeded to build was made from a desk lamp frame and ended by a hot dog
+pincer. The manipulator is built by every member of the family. It was put
+in motion by bicycle cables attached to windshield wipers motors that were
+assembled on plywood and located at the back of his wheelchair. Motors were
+activated through 14 electronic switches that he controlled through his unique
+moving finger.
+While I was studying to become an engineer, I came across all kinds of new
+technologies that were all extraordinary. But I realized how having an astronaut
+doing remote manipulation with a space robot arm could be an aberration when
+people in wheelchairs could not even pour themselves a glass of water alone.
+As I was already aware of the reality of people living with physical disabilities,
+I decided I would dedicate my life to solving those problems, starting with a
+robotic assistive device built from the ground up, specifically for wheelchair
+users.
+
+9
+
+10
+
+N. Reeves and D. St-Onge
+
+We move problems through a funnel. We start very wide, sort of chaotic. We
+look internally and externally, within our own industry and other industries,
+and ask, What process can I use to solve this? Once we’ve selected a few
+approaches that we believe have potential, we drill down and get really focused
+on executing each of them.
+We robotize tasks. We did that for people using wheelchairs, expanding
+their reach. In surgery, we expand the capabilities of the surgeon. In hazardous
+material handling, we robotized the manipulation of toxic or nuclear waste.
+But it’s always the same process, providing better tools to humans.
+Creativity is one of Canada’s greatest resources. This is what supports
+the growth of Kinova and which propels our Canadian manufacture to the
+international scope.
+
+1.3 Early Automata
+Ctesibios is considered as the founder of the Greek school of mechanics. After him,
+four characters stood up in the nascent field of automata around the Eastern part of the
+Mediterranean Sea: Philon of Byzantium; Vitruvius in Rome; Heron of Alexandria;
+and later, Ismail Al-Jaziri from Anatolia. By looking at a few examples of their work,
+we will see that working in the field of illusion and simulation did not prevent them
+to produce a major corpus of knowledge on the behaviour of real physical systems,
+to contribute with large instalments in their area and to leave technical writings that
+became major sources of inspiration for generations of engineers and scientists. The
+machines and automata they conceived are nothing less than technological wonders
+of their time.
+Philon of Byzantium lived around the third century B.C. He left a number of
+treatises that give a very precise account of the technological level of his country. He
+invented an automated waitress that was serving wine and water, and that is generally
+considered as the first real humanoid robot in history. About three centuries later,
+mathematician and engineer Heron of Alexandria designed a series of about eighty
+mechanical devices, one of which being considered as the first steam machine, some
+others being moved by the sole force of the wind. Since his researches were unknown
+to Western scholars for more than a millennium, and since most his machines were
+destroyed during the fire of the Alexandria library, the count of his invention can only
+be estimated; many may never have been realized. None of them were dedicated to
+the implementation of practical tasks: he fostered his knowledge of physics and
+mathematics (mostly geometry) in order to impress or to trigger mythological fascination through mechanisms whose description can be find in his treatises Automata
+
+1 Genealogy of Artificial Beings: From Ancient Automata to Modern …
+
+11
+
+Fig. 1.3 Drawings extracted from Chapuis, 1658 of devices made by Dionysus by Heron of
+Alexandria, first century A.D (left) and by Ismail Al-Jazari, 1206 (right)
+
+(Murphy, 1995) and Pneumatica (Woodcroft, 1851). In what is known as the first
+example of building automation, the doors of a temple would open after a sacrifice
+only if the visitors ignited a fire in a receptacle; the fire heated a hidden water reservoir; the accumulated pressure caused a part of the water to be transferred in a second
+reservoir suspended to a cable and pulleys system attached to the doors; since this
+reservoir became progressively heavier, it began to go down, which caused the doors
+to open.3
+Heron also designed a large animated sculpture of Dionysus (Fig. 1.3, left) in
+which water flowing from a reservoir to another triggered a sequence of actions:
+pouring “wine” (red-coloured water) from Dionysus’ glass; pouring “milk” (whitecoloured water) from his spear; rotating Dionysus central statue; rotating the statue
+of an angel over that of Dionysus; and finally pouring again wine and milk from
+opposite outputs. Some versions of the corresponding plans and diagrams include a
+group of dancers circling around the main statue, as well as a fire that was ignited
+automatically by a lighting device. Another of his treatise, Dioptra (Coulton, 2002), is
+3 This mechanism, as well as a number of the automata designed by Heron, have been reconstructed
+
+by the Kotsanas Museum of Ancient Greek Technology. They can be seen in function on a video
+produced by the Museum at http://kotsanas.com/gb/exh.php?exhibit=0301001 (accessed Dec 30
+21).
+
+

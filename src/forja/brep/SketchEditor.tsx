@@ -1127,8 +1127,10 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
         : '#0A101C',
       display: 'flex', flexDirection: 'column', fontFamily: 'Inter, system-ui, sans-serif', color: '#e9eef5',
     }} data-testid="sketch-editor">
-      {/* Toolbar (fondo propio: debe leerse aunque el editor sea transparente) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid #1b2430', background: 'rgba(9,14,21,0.94)' }}>
+      {/* Toolbar (fondo propio: debe leerse aunque el editor sea transparente).
+          overflow-x scroll + Cancelar/Terminar en cluster STICKY a la derecha → las
+          acciones primarias NUNCA se cortan aunque el tool activo agregue campos. */}
+      <div className="sk-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid #1b2430', background: 'rgba(9,14,21,0.94)', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden', scrollbarWidth: 'none' }}>
         <b style={{ color: GOLD, marginRight: 6 }}>✏ Boceto</b>
         <span style={grpLbl}>Dibujar</span>
         {TOOLS.map(([t, ic, title]) => (
@@ -1209,8 +1211,10 @@ export default function SketchEditor({ onFinish, onCancel, projScale }: {
               {polyMode === 'ins' ? 'Inscrito' : 'Circunscrito'}</button>
           </span>
         )}
-        <button data-testid="sk-cancel" onClick={onCancel} style={btn(false)}>Cancelar</button>
-        <button data-testid="sk-finish" onClick={finish} style={{ ...btn(false), background: GOLD, color: '#1a1206', fontWeight: 700, borderColor: GOLD }}>Terminar ✓</button>
+        <div style={{ marginLeft: 'auto', position: 'sticky', right: 0, display: 'flex', gap: 6, alignItems: 'center', paddingLeft: 10, background: 'linear-gradient(90deg, rgba(9,14,21,0) 0%, rgba(9,14,21,0.94) 14%)' }}>
+          <button data-testid="sk-cancel" onClick={onCancel} style={btn(false)}>Cancelar</button>
+          <button data-testid="sk-finish" onClick={finish} style={{ ...btn(false), background: GOLD, color: '#1a1206', fontWeight: 700, borderColor: GOLD }}>Terminar ✓</button>
+        </div>
       </div>
 
       {/* Lienzo SVG */}

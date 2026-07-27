@@ -110,7 +110,7 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
   const ins = mb.sizeInserts({ Lmm: 60, Wmm: 60, depthMm: 70 });
   const sel = mb.selectMoldBase(ins, { nx: 2, ny: 2 });
   const metal = mb.selectMetal({ produccionAnual: 500000 });
-  const chk = mb.checkMachine({ wmm: sel.base.wmm, lmm: sel.base.lmm, stackMm: 380, shotCc: 188, clampNeedTons: 4 * 3.5 * 1.3 }, mb.MACHINES[0]);
+  const chk = mb.checkMachine({ wmm: sel.base.wmm, lmm: sel.base.lmm, stackMm: 380, shotCc: 188, clampNeedTons: 4 * 3.5 * 1.3, openStrokeMm: 25 }, mb.MACHINES[0]);
   const R = [
     'MOLD BASE + MATERIALES — molde del vaso ×4 (Kazmer cap 4, Apéndice B)',
     '════════════════════════════════════════════════════════════════════',
