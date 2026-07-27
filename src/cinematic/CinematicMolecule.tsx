@@ -986,6 +986,15 @@ const O2FLOW_VERT = `
   uniform float uRing;
   uniform float uCoreThin;
   uniform vec3  uCores[8];   // centros que ARDEN (núcleos), en bohr
+  uniform vec3  uBondA[6];   // enlaces O–H: extremo A (el O)
+  uniform vec3  uBondB[6];   // extremo B (el H)
+  uniform int   uNBonds;
+  uniform float uBondGlow;   // 0 = nada; >0 = el eje del enlace SE ENCIENDE
+  float _distSeg(vec3 p, vec3 a, vec3 b) {
+    vec3 ab = b - a, ap = p - a;
+    float t = clamp(dot(ap, ab) / max(dot(ab, ab), 1e-6), 0.0, 1.0);
+    return length(ap - ab * t);
+  }
   uniform int   uNCores;
   uniform float uCoreR;      // radio² del raleo por núcleo
   uniform float uTime;      // reloj para el PARPADEO (0 en las nubes que no parpadean)
@@ -1016,6 +1025,18 @@ const O2FLOW_VERT = `
       thin = max(thin, exp(-dot(d, d) / uCoreR));
     }
     vW *= 1.0 - uCoreThin * thin;
+    // ESTRUCTURA QUE EMERGE (doctrina del proyecto: el polvo es real, no se dibuja encima).
+    // La densidad electrónica del agua SÍ se concentra sobre el eje O–H: aquí solo se le sube
+    // el peso a las partículas que ya están ahí → el enlace APARECE sin pintar un palito.
+    if (uNBonds > 0 && uBondGlow > 0.0) {
+      float bw = 0.0;
+      for (int i = 0; i < 6; i++) {
+        if (i >= uNBonds) break;
+        float d = _distSeg(position, uBondA[i], uBondB[i]);
+        bw = max(bw, exp(-d * d / 0.055));
+      }
+      vW *= 1.0 + uBondGlow * bw;
+    }
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     // el polvo SE APARTA del lente: al viajar DENTRO de la nube, las partículas
     // pegadas a cámara se desvanecen (vNear→0) pero el polvo cercano SÍ envuelve
@@ -1139,8 +1160,8 @@ function CarotenoFlow({ bundle, axis, cen, L, reveal, color, bright, time }:
 // Una nube advectada: cada frame interpola las POSICIONES entre las dos separaciones
 // que bracketean R(t) → las partículas se MUEVEN siguiendo la densidad (la carga
 // fluye al enlace). El color es fijo por partícula (viene del .bin o constante).
-function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30 }:
-  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number }) {
+function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30, bonds, bondGlow = 0 }:
+  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; bonds?: [[number,number,number],[number,number,number]][]; bondGlow?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -1148,7 +1169,7 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     g.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
     return g;
   }, [colors, N]);
-  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uCores: { value: Array.from({length:8},(_,i)=> new THREE.Vector3(...(cores?.[i] ?? [0,0,0]))) }, uNCores: { value: Math.min(8, cores?.length ?? 0) }, uCoreR: { value: coreR }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
+  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uCores: { value: Array.from({length:8},(_,i)=> new THREE.Vector3(...(cores?.[i] ?? [0,0,0]))) }, uNCores: { value: Math.min(8, cores?.length ?? 0) }, uCoreR: { value: coreR }, uBondA: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[0] ?? [0,0,0]))) }, uBondB: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[1] ?? [0,0,0]))) }, uNBonds: { value: Math.min(6, bonds?.length ?? 0) }, uBondGlow: { value: bondGlow }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
   useEffect(() => {
     // bracket en Rvals (descendente Rmax→Rmin). frac entre k y k+1.
     let k = 0;
@@ -1164,8 +1185,10 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     pos.needsUpdate = true;
     if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uBright.value = brightness;
       if (cores) { for (let i=0;i<8;i++) matRef.current.uniforms.uCores.value[i].set(...(cores[i] ?? [0,0,0])); matRef.current.uniforms.uNCores.value = Math.min(8, cores.length); matRef.current.uniforms.uCoreR.value = coreR; }
+      if (bonds) { for (let i=0;i<6;i++){ matRef.current.uniforms.uBondA.value[i].set(...(bonds[i]?.[0] ?? [0,0,0])); matRef.current.uniforms.uBondB.value[i].set(...(bonds[i]?.[1] ?? [0,0,0])); } matRef.current.uniforms.uNBonds.value = Math.min(6, bonds.length); }
+      matRef.current.uniforms.uBondGlow.value = bondGlow;
       matRef.current.uniforms.uRing.value = ring; matRef.current.uniforms.uCoreThin.value = coreThin; matRef.current.uniforms.uTime.value = tw_time; matRef.current.uniforms.uTwinkle.value = twinkle; }
-  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo, cores, coreR]);
+  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo, cores, coreR, bonds, bondGlow]);
   return (
     <points geometry={geo} frustumCulled={false}>
       <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={O2FLOW_VERT}
@@ -1839,7 +1862,10 @@ const WATER_BINS: Record<string, { bin: string; ef: string; ex: number }> = {
   wtri:  { bin: 'water-trimer',   ef: 'water-trimer-efield',   ex: 10 },   // nube ±6.6 bohr: ex=15 dejaba void muerto
 };
 
-/** WaterSticks — ENLACES O–H y FLECHA DEL DIPOLO, calculados de los núcleos REALES del bin.
+/** WaterSticks — FLECHA DEL DIPOLO (los palitos de enlace se QUITARON: dibujar geometría
+ * encima viola la doctrina "el polvo es real, la estructura EMERGE del polvo". El enlace O–H
+ * ahora se ve porque la NUBE se enciende sobre su eje (uBondGlow en el shader). El vector sí
+ * se dibuja: es la anotación de una MAGNITUD (dirección del dipolo), no una forma inventada.
  *
  * Por qué existen (agentes, 2026-07-27): sin palitos "una molécula, tres átomos" son tres
  * bolas sueltas y NUNCA se lee; y sin un vector por molécula, "una queda al revés" no tiene
@@ -1857,11 +1883,6 @@ function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
     for (let m = 0; m < mols; m++) {
       const O = new THREE.Vector3(...nuc[3 * m]);
       const Hs = [new THREE.Vector3(...nuc[3 * m + 1]), new THREE.Vector3(...nuc[3 * m + 2])];
-      for (const H of Hs) {
-        const d = H.clone().sub(O); const len = d.length();
-        const q = new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize());
-        out.push({ mid: O.clone().add(d.clone().multiplyScalar(0.5)).toArray() as Vec3, q, len, kind: 'bond' });
-      }
       // DIPOLO = bisectriz H-O-H (dirección real del momento dipolar del agua)
       const b = Hs[0].clone().sub(O).normalize().add(Hs[1].clone().sub(O).normalize()).normalize();
       const L = 1.55 * scale;
@@ -1967,6 +1988,11 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   }
   // núcleos que ARDEN (los O: átomos 0,3,6…) → el raleo anti-quemado va AHÍ
   const oCores = nucP.filter((_, i) => i % 3 === 0) as [number,number,number][];
+  // segmentos O–H reales del bin → el shader enciende la nube que vive sobre ellos
+  // OJO: cálculo PLANO, no useMemo — aquí ya pasamos un `return null` temprano y un hook
+  // condicional rompe el orden de hooks de React (la escena deja de llegar a `ready`).
+  const ohBonds: [Vec3, Vec3][] = [];
+  for (let m = 0; m * 3 + 2 < nucP.length; m++) { ohBonds.push([nucP[3 * m], nucP[3 * m + 1]]); ohBonds.push([nucP[3 * m], nucP[3 * m + 2]]); }
   // el ANILLO apila 3 moléculas: mismo brillo que el dímero = pared blanca (medido 30% >240
   // vs 6.6% del ganador). bF baja el brillo SIN tocar color ni saturación.
   const bF = mk === 'wtri' ? 0.52 : 1.0;
@@ -1987,7 +2013,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
       {/* size ×1.85 para 4K (a 2160×3840 los puntos quedan relativamente la mitad → nube rala;
           se compensa el tamaño para que la densidad se vea como en el preview 1080) */}
       <O2Cloud posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
-      <O2Cloud posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} cores={oCores} coreR={0.55} />
+      <O2Cloud posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={mk === 'wtri' ? ohBonds : undefined} bondGlow={mk === 'wtri' ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
       <O2Cloud posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica

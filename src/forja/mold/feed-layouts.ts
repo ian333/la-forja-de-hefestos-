@@ -22,10 +22,16 @@ export interface FeedSeg {
 }
 export interface FeedNetwork {
   segs: FeedSeg[];
-  cavities: Array<{ x: number; y: number; tStartS: number }>;
+  cavities: Array<{ x: number; y: number; tStartS: number;
+    /** llenado de LA CAVIDAD: V_cav/V̇_cav (Kazmer: fórmula, no forma) */
+    tFillS: number;
+    /** dónde la TOCA el gate — de ahí nace su frente radial */
+    gx: number; gy: number; gz: number }>;
   totalFillS: number;
   rows: Array<{ k: string; v: string; ref: string }>;
 }
+
+export const CAV_R = 8, CAV_H = 10, CAV_VOL_CC = Math.PI * CAV_R * CAV_R * CAV_H / 1000;
 
 const segLen = (s: Pick<FeedSeg, 'a' | 'b'>) =>
   Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1], s.b[2] - s.a[2]);
@@ -86,9 +92,11 @@ export function layoutBranched(o: {
       a: [h.x, h.y, 0], b: [h.x + drop * 0.7, h.y, -drop], rMm: rGate,
       level: 'gate-sumergido', VdotCcS: Vdot / nCav, tStartS: h.t, tFillS: tFill,
     });
-    cavities.push({ x: h.x + drop * 0.7 + 9, y: h.y, tStartS: h.t + tFill });
+    const gx = h.x + drop * 0.7, gy = h.y;
+    cavities.push({ x: gx + CAV_R - 1.5, y: gy, tStartS: h.t + tFill,
+      tFillS: CAV_VOL_CC / (Vdot / nCav), gx, gy, gz: -drop });
   }
-  const totalFillS = Math.max(...cavities.map((c) => c.tStartS));
+  const totalFillS = Math.max(...cavities.map((c) => c.tStartS + c.tFillS));
   const vol = segs.reduce((v, s) => v + Math.PI * s.rMm * s.rMm * segLen(s) / 1000, 0);
   return {
     segs, cavities, totalFillS,
@@ -123,10 +131,12 @@ export function layoutRadial(o: {
     const th = (i / nCav) * 2 * Math.PI;
     const b: [number, number, number] = [R * Math.cos(th), R * Math.sin(th), 0];
     segs.push({ a: [0, 0, 0], b, rMm: rBrazo, level: 'primario', VdotCcS: VdotBrazo, tStartS: tSprue, tFillS: tBrazo });
-    cavities.push({ x: b[0] * 1.18, y: b[1] * 1.18, tStartS: tSprue + tBrazo });
+    const ux = b[0] / R, uy = b[1] / R;
+    cavities.push({ x: b[0] + ux * (CAV_R - 1.5), y: b[1] + uy * (CAV_R - 1.5),
+      tStartS: tSprue + tBrazo, tFillS: CAV_VOL_CC / VdotBrazo, gx: b[0], gy: b[1], gz: 0 });
   }
   return {
-    segs, cavities, totalFillS: tSprue + tBrazo,
+    segs, cavities, totalFillS: tSprue + tBrazo + CAV_VOL_CC / VdotBrazo,
     rows: [
       { k: 'red', v: `radial ×${nCav} desde el diafragma`, ref: 'Fig 6.15 — balanceada, poco volumen' },
       { k: 'reparto de carga', v: `V̇ ${Vdot} → ${VdotBrazo.toFixed(1)} cc/s por brazo (÷${nCav})`, ref: 'Eq 6.1 con n=N' },
@@ -169,11 +179,12 @@ export function layoutSeries(o: {
     const tSec = fillS(rSec, Lsec, VdotCav);
     for (const sgn of [1, -1]) {
       segs.push({ a: [x1, 0, 0], b: [x1, sgn * Lsec, 0], rMm: rSec, level: 'secundario', VdotCcS: VdotCav, tStartS: t, tFillS: tSec });
-      cavities.push({ x: x1, y: sgn * (Lsec + 11), tStartS: t + tSec });
+      cavities.push({ x: x1, y: sgn * (Lsec + CAV_R - 1.5), tStartS: t + tSec,
+        tFillS: CAV_VOL_CC / VdotCav, gx: x1, gy: sgn * Lsec, gz: 0 });
     }
   }
   return {
-    segs, cavities, totalFillS: Math.max(...cavities.map((c) => c.tStartS)),
+    segs, cavities, totalFillS: Math.max(...cavities.map((c) => c.tStartS + c.tFillS)),
     rows: [
       { k: 'red', v: `SERIE 1×${2 * nP} — compacta pero DESBALANCEADA`, ref: 'Fig 6.13 · las lejanas llenan tarde (míralo en 💧)' },
       { k: 'balanceo artificial', v: 'secundarios cercanos MÁS delgados', ref: '§6.4.6/Fig 6.13 · Eq 6.8 con el ΔP sobrante por ruta' },
@@ -212,12 +223,14 @@ export function layoutHybrid(o: {
         const th = (k / 4) * 2 * Math.PI + Math.PI / 4;
         const b: [number, number, number] = [cx + Rrad * Math.cos(th), cy + Rrad * Math.sin(th), 0];
         segs.push({ a: [cx, cy, 0], b, rMm: rTer, level: 'terciario-radial', VdotCcS: Vdot / 16, tStartS: tSprue + tPrim + tSec, tFillS: tTer });
-        cavities.push({ x: b[0] * 1.12, y: b[1] * 1.12, tStartS: tSprue + tPrim + tSec + tTer });
+        const vx = (b[0] - cx) / Rrad, vy = (b[1] - cy) / Rrad;
+        cavities.push({ x: b[0] + vx * (CAV_R - 1.5), y: b[1] + vy * (CAV_R - 1.5),
+          tStartS: tSprue + tPrim + tSec + tTer, tFillS: CAV_VOL_CC / (Vdot / 16), gx: b[0], gy: b[1], gz: 0 });
       }
     }
   }
   return {
-    segs, cavities, totalFillS: tSprue + tPrim + tSec + tTer,
+    segs, cavities, totalFillS: tSprue + tPrim + tSec + tTer + CAV_VOL_CC / (Vdot / 16),
     rows: [
       { k: 'red', v: 'HÍBRIDA ramificada→4 clusters radiales ×4 = 16', ref: 'Fig 6.16 · menos material + balance natural (p.136)' },
       { k: 'reparto', v: `V̇ ${Vdot}→${(Vdot / 16).toFixed(1)} cc/s (½·½·¼)`, ref: 'Eq 6.1 por unión' },

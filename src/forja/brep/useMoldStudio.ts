@@ -553,10 +553,25 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // cavidades fantasma (a dónde REPARTE la carga)
       const cavSolids = net.cavities.map((c) => OCC.makeCylinder(oc!, 8, 10, { origin: [c.x, c.y, -12], dir: [0, 0, 1] }));
       const cmesh = tessellate(oc!, OCC.makeCompound(oc!, cavSolids), 0.3, 0.4);
+      // KAZMER = FÓRMULA, no forma: cada cavidad LLENA en su V/V̇ con frente
+      // RADIAL desde el punto donde la toca su gate.
+      const nCV = cmesh.positions.length / 3;
+      const cavT = new Float32Array(nCV);
+      for (let i = 0; i < nCV; i++) {
+        const px = cmesh.positions[3 * i], py = cmesh.positions[3 * i + 1], pz = cmesh.positions[3 * i + 2];
+        let best = Infinity, bc = net.cavities[0];
+        for (const c of net.cavities) {
+          const d = (px - c.x) * (px - c.x) + (py - c.y) * (py - c.y);
+          if (d < best) { best = d; bc = c; }
+        }
+        const dg = Math.hypot(px - bc.gx, py - bc.gy, pz - bc.gz);
+        cavT[i] = bc.tStartS + Math.min(1, dg / (2 * 8 + 10)) * bc.tFillS;
+      }
       parts.push({
-        role: 'cavidades', name: `${net.cavities.length} cavidades (fantasma)`, material: '—',
+        role: 'cavidades', name: `${net.cavities.length} cavidades · llenan en V/V̇ desde su gate`, material: '—',
         positions: cmesh.positions, normals: cmesh.normals, indices: cmesh.indices,
         color: '#5fa8c4', opacity: 0.28, bodies: net.cavities.length, features: [], edges: undefined,
+        flowT: cavT, flowTotalS: net.totalFillS,
       } as unknown as MoldPart);
       setLiveMoldSpec(null);
       liveRealSolidsRef.current = null;

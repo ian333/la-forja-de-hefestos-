@@ -6063,8 +6063,12 @@ export default function ForgeBRepStudio() {
                   const coladaSola = moldParts.find((p) => p.role === 'colada');
                   // DEMO de redes (sin pieza): el frente recorre la red en cámara
                   // lenta honesta (~2.5 s aunque el llenado real sea 0.1 s).
+                  const cavParts = moldParts.find((p) => p.role === 'cavidades');
                   if (!pieza) return coladaSola
-                    ? <FeedFill part={coladaSola} delayS={coladaSola.flowT ? 2.5 : 1.2} />
+                    ? (<>
+                        <FeedFill part={coladaSola} delayS={coladaSola.flowT ? 4 : 1.2} />
+                        {cavParts?.flowT && <FeedFill part={cavParts} delayS={4} />}
+                      </>)
                     : null;
                   const P = pieza.positions;
                   // El GATE está donde ATERRIZA el sprue: centro, tope de la pieza
