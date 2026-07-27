@@ -205,6 +205,23 @@ class Telemetry {
       this.event('webgl_probe_fail', { msg: (e as Error)?.message });
     }
 
+    // ─── Main thread BLOQUEADO (la métrica del "se traba") ────────
+    // longtask = tarea que retiene el main thread. Reportamos solo las que
+    // el usuario SIENTE (≥500 ms). El freeze del 2026-07-24 (una sesión viva
+    // huérfana armaba el molde completo al boot) dejó la telemetría MUDA
+    // justo cuando más se necesitaba — un longtask de minutos lo habría
+    // delatado en el primer vistazo al /raw.
+    try {
+      const po = new PerformanceObserver((list) => {
+        for (const e of list.getEntries()) {
+          if (e.duration >= 500) {
+            this.event('longtask', { ms: Math.round(e.duration), start: Math.round(e.startTime) });
+          }
+        }
+      });
+      po.observe({ type: 'longtask', buffered: true });
+    } catch { /* browser sin longtask API */ }
+
     // ─── Unload flush ─────────────────────────────────────────────
     window.addEventListener('pagehide', () => this.flushBeacon());
     window.addEventListener('beforeunload', () => this.flushBeacon());

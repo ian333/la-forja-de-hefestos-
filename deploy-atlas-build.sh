@@ -228,6 +228,11 @@ RSYNC_FLAGS_CODE="-az --delete \
   --exclude=test-results/ \
   --exclude=fit-diagnostics/ \
   --exclude=docs/ \
+  --exclude=firmware/ \
+  --exclude=test-parts/ \
+  --exclude=_*/ \
+  --exclude=__pycache__/ \
+  --exclude=*.pyc \
   --exclude=forja-shots/ \
   --exclude=*.pdf \
   --exclude=public/viz-data/ \
@@ -333,7 +338,33 @@ ssh "${ATLAS_USER}@${ATLAS_IP}" "
   test -d ${REMOTE_BUILD}/dist || { echo 'ERROR: no hay dist/'; exit 1; }
   OLD_SIZE=\$(du -sb ${REMOTE_DIST} 2>/dev/null | awk '{print \$1}')
   OLD_SIZE=\${OLD_SIZE:-0}
-  rsync -a --delete --info=stats1 ${REMOTE_BUILD}/dist/ ${REMOTE_DIST}/
+  # Respaldo del dist saliente ANTES de tocarlo (lección 2026-07-24: un deploy
+  # roto sin dist.prev = cero rollback). Vive en forja-build (ian sí escribe
+  # ahí; /mnt/hdd raíz es de root). Hardlinks: instantáneo y sin costo de
+  # disco — rsync publica con write-nuevo+rename, así que jamás muta los inodes
+  # enlazados. biblioteca/ (24 GB, espejo de PRIME) queda fuera del respaldo.
+  # Rollback manual:  rsync -a --exclude=biblioteca/ --exclude=mold-live.json ${REMOTE_BUILD}/dist.prev/ ${REMOTE_DIST}/
+  if [ -d ${REMOTE_DIST} ]; then
+    rm -rf ${REMOTE_BUILD}/dist.prev
+    rsync -a --link-dest=${REMOTE_DIST} \
+      --exclude='biblioteca/' --exclude='mold-live.json' \
+      ${REMOTE_DIST}/ ${REMOTE_BUILD}/dist.prev/
+    echo \"  respaldo: ${REMOTE_BUILD}/dist.prev (hardlinks, rollback instantáneo)\"
+  fi
+  # ⚠️ --delete borra TODO lo que no venga del build. Hay cosas que VIVEN en
+  # prod y NO nacen de dist/ — sin estos excludes se destruyen en cada deploy:
+  #   biblioteca/    24 GB de videos que sirve el Centro de Comando (VIDEO_BASE
+  #                  = '/biblioteca/'). Se borraba SIEMPRE: el Comando listaba
+  #                  las piezas y ningún video cargaba — nginx caía al fallback
+  #                  SPA y devolvía index.html con 206, así que ni un 404 salía
+  #                  a delatarlo. Se espeja desde PRIME, no desde el repo.
+  #   mold-live.json la sesión VIVA operador↔cliente (mold-live.sh la escribe en
+  #                  prod). Cada deploy mataba la sesión en curso.
+  # El registro de subidas (registro.json) NO necesita exclude: vive en
+  # /mnt/hdd/forja-telemetry, fuera de forja-dist.
+  rsync -a --delete --info=stats1 \
+    --exclude='biblioteca/' --exclude='mold-live.json' \
+    ${REMOTE_BUILD}/dist/ ${REMOTE_DIST}/
   NEW_SIZE=\$(du -sb ${REMOTE_DIST} 2>/dev/null | awk '{print \$1}')
   NEW_HUMAN=\$(du -sh ${REMOTE_DIST} 2>/dev/null | awk '{print \$1}')
   DELTA=\$((NEW_SIZE - OLD_SIZE))
