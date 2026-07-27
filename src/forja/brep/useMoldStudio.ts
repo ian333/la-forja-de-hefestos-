@@ -521,9 +521,10 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         const dx = sg.b[0] - sg.a[0], dy = sg.b[1] - sg.a[1], dz = sg.b[2] - sg.a[2];
         const L = Math.hypot(dx, dy, dz);
         const axis = { origin: sg.a as [number, number, number], dir: [dx / L, dy / L, dz / L] as [number, number, number] };
-        return sg.level === 'sprue'
-          ? OCC.makeCone(oc!, sg.rMm, sg.rMm * 0.6, L, axis)     // sprue cónico §6.3.1
-          : OCC.makeCylinder(oc!, sg.rMm, L, axis);
+        if (sg.level === 'sprue') return OCC.makeCone(oc!, sg.rMm, sg.rMm * 0.6, L, axis);   // §6.3.1
+        // TÚNEL Fig 7.12: CONO que se ADELGAZA hacia el orificio en la pared
+        if (sg.level === 'gate-sumergido') return OCC.makeCone(oc!, sg.rMm, 0.55, L, axis);
+        return OCC.makeCylinder(oc!, sg.rMm, L, axis);
       });
       const comp = OCC.makeCompound(oc!, solids);
       const mesh = tessellate(oc!, comp, 0.25, 0.35);
@@ -551,7 +552,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         flowT, flowTotalS: net.totalFillS,
       } as unknown as MoldPart];
       // cavidades fantasma (a dónde REPARTE la carga)
-      const cavSolids = net.cavities.map((c) => OCC.makeCylinder(oc!, 8, 10, { origin: [c.x, c.y, -12], dir: [0, 0, 1] }));
+      const cavSolids = net.cavities.map((c) => OCC.makeCylinder(oc!, 8, 10, { origin: [c.x, c.y, -10], dir: [0, 0, 1] }));
       const cmesh = tessellate(oc!, OCC.makeCompound(oc!, cavSolids), 0.3, 0.4);
       // KAZMER = FÓRMULA, no forma: cada cavidad LLENA en su V/V̇ con frente
       // RADIAL desde el punto donde la toca su gate.

@@ -32,6 +32,8 @@ export interface FeedNetwork {
 }
 
 export const CAV_R = 8, CAV_H = 10, CAV_VOL_CC = Math.PI * CAV_R * CAV_R * CAV_H / 1000;
+/** GATE DE BORDE (Fig 7.5): tierra corta y DELGADA runner→pared, medio-sumergida. */
+export const EDGE_GATE_L = 2.5, EDGE_GATE_R = 0.75;
 
 const segLen = (s: Pick<FeedSeg, 'a' | 'b'>) =>
   Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1], s.b[2] - s.a[2]);
@@ -86,15 +88,18 @@ export function layoutBranched(o: {
   const rGate = Math.max(0.6, rUp * 0.35);
   const cavities: FeedNetwork['cavities'] = [];
   for (const h of heads) {
-    const drop = 7;                                     // baja ~7 mm bajo la partición
-    const tFill = fillS(rGate, drop * Math.SQRT2, Vdot / nCav);
+    // TÚNEL (Fig 7.12): CONO que baja a 45° y PERFORA la pared bajo la
+    // partición con orificio chico — la cavidad se coloca para que el tip
+    // quede 0.6 mm DENTRO de su pared.
+    const drop = 3.5, run = 5;
+    const tFill = fillS(rGate, Math.hypot(run, drop), Vdot / nCav);
+    const gx = h.x + run, gy = h.y, gz = -drop;
     segs.push({
-      a: [h.x, h.y, 0], b: [h.x + drop * 0.7, h.y, -drop], rMm: rGate,
+      a: [h.x, h.y, 0], b: [gx, gy, gz], rMm: rGate,
       level: 'gate-sumergido', VdotCcS: Vdot / nCav, tStartS: h.t, tFillS: tFill,
     });
-    const gx = h.x + drop * 0.7, gy = h.y;
-    cavities.push({ x: gx + CAV_R - 1.5, y: gy, tStartS: h.t + tFill,
-      tFillS: CAV_VOL_CC / (Vdot / nCav), gx, gy, gz: -drop });
+    cavities.push({ x: gx + CAV_R - 0.6, y: gy, tStartS: h.t + tFill,
+      tFillS: CAV_VOL_CC / (Vdot / nCav), gx, gy, gz });
   }
   const totalFillS = Math.max(...cavities.map((c) => c.tStartS + c.tFillS));
   const vol = segs.reduce((v, s) => v + Math.PI * s.rMm * s.rMm * segLen(s) / 1000, 0);
@@ -132,8 +137,11 @@ export function layoutRadial(o: {
     const b: [number, number, number] = [R * Math.cos(th), R * Math.sin(th), 0];
     segs.push({ a: [0, 0, 0], b, rMm: rBrazo, level: 'primario', VdotCcS: VdotBrazo, tStartS: tSprue, tFillS: tBrazo });
     const ux = b[0] / R, uy = b[1] / R;
-    cavities.push({ x: b[0] + ux * (CAV_R - 1.5), y: b[1] + uy * (CAV_R - 1.5),
-      tStartS: tSprue + tBrazo, tFillS: CAV_VOL_CC / VdotBrazo, gx: b[0], gy: b[1], gz: 0 });
+    const gTip: [number, number, number] = [b[0] + ux * EDGE_GATE_L, b[1] + uy * EDGE_GATE_L, -0.9];
+    const tGate = fillS(EDGE_GATE_R, EDGE_GATE_L, VdotBrazo);
+    segs.push({ a: b, b: gTip, rMm: EDGE_GATE_R, level: 'gate-borde', VdotCcS: VdotBrazo, tStartS: tSprue + tBrazo, tFillS: tGate });
+    cavities.push({ x: gTip[0] + ux * (CAV_R - 0.6), y: gTip[1] + uy * (CAV_R - 0.6),
+      tStartS: tSprue + tBrazo + tGate, tFillS: CAV_VOL_CC / VdotBrazo, gx: gTip[0], gy: gTip[1], gz: gTip[2] });
   }
   return {
     segs, cavities, totalFillS: tSprue + tBrazo + CAV_VOL_CC / VdotBrazo,
@@ -179,8 +187,11 @@ export function layoutSeries(o: {
     const tSec = fillS(rSec, Lsec, VdotCav);
     for (const sgn of [1, -1]) {
       segs.push({ a: [x1, 0, 0], b: [x1, sgn * Lsec, 0], rMm: rSec, level: 'secundario', VdotCcS: VdotCav, tStartS: t, tFillS: tSec });
-      cavities.push({ x: x1, y: sgn * (Lsec + CAV_R - 1.5), tStartS: t + tSec,
-        tFillS: CAV_VOL_CC / VdotCav, gx: x1, gy: sgn * Lsec, gz: 0 });
+      const gTip: [number, number, number] = [x1, sgn * (Lsec + EDGE_GATE_L), -0.9];
+      const tGate = fillS(EDGE_GATE_R, EDGE_GATE_L, VdotCav);
+      segs.push({ a: [x1, sgn * Lsec, 0], b: gTip, rMm: EDGE_GATE_R, level: 'gate-borde', VdotCcS: VdotCav, tStartS: t + tSec, tFillS: tGate });
+      cavities.push({ x: x1, y: sgn * (Lsec + EDGE_GATE_L + CAV_R - 0.6), tStartS: t + tSec + tGate,
+        tFillS: CAV_VOL_CC / VdotCav, gx: gTip[0], gy: gTip[1], gz: gTip[2] });
     }
   }
   return {
@@ -224,8 +235,11 @@ export function layoutHybrid(o: {
         const b: [number, number, number] = [cx + Rrad * Math.cos(th), cy + Rrad * Math.sin(th), 0];
         segs.push({ a: [cx, cy, 0], b, rMm: rTer, level: 'terciario-radial', VdotCcS: Vdot / 16, tStartS: tSprue + tPrim + tSec, tFillS: tTer });
         const vx = (b[0] - cx) / Rrad, vy = (b[1] - cy) / Rrad;
-        cavities.push({ x: b[0] + vx * (CAV_R - 1.5), y: b[1] + vy * (CAV_R - 1.5),
-          tStartS: tSprue + tPrim + tSec + tTer, tFillS: CAV_VOL_CC / (Vdot / 16), gx: b[0], gy: b[1], gz: 0 });
+        const gTip: [number, number, number] = [b[0] + vx * EDGE_GATE_L, b[1] + vy * EDGE_GATE_L, -0.9];
+        const tGate = fillS(EDGE_GATE_R, EDGE_GATE_L, Vdot / 16);
+        segs.push({ a: b, b: gTip, rMm: EDGE_GATE_R, level: 'gate-borde', VdotCcS: Vdot / 16, tStartS: tSprue + tPrim + tSec + tTer, tFillS: tGate });
+        cavities.push({ x: gTip[0] + vx * (CAV_R - 0.6), y: gTip[1] + vy * (CAV_R - 0.6),
+          tStartS: tSprue + tPrim + tSec + tTer + tGate, tFillS: CAV_VOL_CC / (Vdot / 16), gx: gTip[0], gy: gTip[1], gz: gTip[2] });
       }
     }
   }

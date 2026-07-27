@@ -3,7 +3,7 @@
 # no un script propio. Reemplaza a wpair-full-pipeline.sh / wpairB-* / wpair-assemble.sh /
 # wpair-capsula.sh / render-li2*.sh. Ver docs/CANON-VIDEO.md.
 #
-#   bash scripts/video.sh <id> [paso]      paso = subs|render|ensamble|verificar|capsula|publicar|todo
+#   bash scripts/video.sh <id> [paso]      paso = campo|subs|render|ensamble|verificar|capsula|publicar|todo
 #   bash scripts/video.sh mol-h2o-el-puente todo
 #   SHARDS=3 bash scripts/video.sh mol-h2o-el-puente render     # override puntual
 #
@@ -128,6 +128,15 @@ EOF
   [ "$vac" -eq 0 ] || echo "   ⚠ hay archivos vacíos en la cápsula — revisar"
 }
 
+paso_campo() {
+  echo "── PORTERO DEL CAMPO (E hoy, B mañana) ──"
+  local BIN REF
+  BIN=$(m campo.bin); REF=$(m campo.referencia)
+  [ -n "$BIN" ] || { echo "   (esta pieza no declara campo — nada que verificar)"; return 0; }
+  python3 "$ROOT/scripts/verificar-campo.py" "$ROOT/public/precomputed/$BIN" \
+    ${REF:+--ref "$ROOT/public/precomputed/$REF"} --png "$ROOT/dist-video/$ID-campo2d"
+}
+
 paso_verificar() {
   echo "── VERIFICADOR DE ATENCIÓN (economía de atención, docs/ECONOMIA-ATENCION.md) ──"
   [ -f "$OH264" ] || { echo "   ✗ no existe $OH264 — corre 'ensamble' primero"; return 1; }
@@ -171,8 +180,9 @@ case "$PASO" in
   render)    paso_render ;;
   ensamble)  paso_ensamble ;;
   capsula)   paso_capsula ;;
+  campo)     paso_campo ;;
   verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
-  todo)      paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && echo "✔ $ID LISTO (publicar aparte)" ;;
+  todo)      paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && echo "✔ $ID LISTO (publicar aparte)" ;;
   *) echo "paso inválido: $PASO (subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
 esac

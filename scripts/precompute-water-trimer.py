@@ -211,15 +211,16 @@ def field_grid(R_A):
     """Semillas: corona alrededor del anillo + puntos entre los O (donde nace el puente)."""
     S = []
     Rc = (R_A / np.sqrt(3.0)) / BOHR
-    for rad in (Rc * 0.55, Rc * 1.0, Rc * 1.45, Rc * 1.95):
-        for j in range(26):
-            a = 2 * np.pi * j / 26
-            for zz in (-1.05, 0.0, 1.05):
+    for rad in (Rc * 0.5, Rc * 0.85, Rc * 1.2, Rc * 1.6, Rc * 2.1):
+        for j in range(30):
+            a = 2 * np.pi * j / 30
+            for zz in (-1.5, -0.6, 0.0, 0.6, 1.5):
                 S.append([rad * np.cos(a), rad * np.sin(a), zz])
     return np.array(S)
 
 
-def _smooth(p, k=5):
+def _smooth(p, k=9):   # k=9 (el dímero usa 5): el anillo tiene hueco central de campo débil
+                       # donde la dirección brinca → medido 11.4% de picos con k=5 vs 1.4% del dímero
     if len(p) < k: return p
     ker = np.ones(k) / k
     q = p.copy()
@@ -229,23 +230,42 @@ def _smooth(p, k=5):
     return q
 
 
-def trace_field3d(mol, dm, gb, seeds, LP, maxlen=9.0, h=0.19, THR=0.003):
-    """Líneas de fuerza CONTINUAS (paran en campo débil, sin zigzag)."""
-    out = np.zeros((len(seeds), LP, 3))
-    for i, s in enumerate(seeds):
-        p = np.array(s, dtype=float); path = [p.copy()]
-        for _ in range(LP * 3):
-            E = E3d(mol, dm, p[None, :])[0]
-            n = np.linalg.norm(E)
-            if n < THR or not np.isfinite(n): break
-            p = p + h * E / n
-            if np.linalg.norm(p) > maxlen * 2: break
-            path.append(p.copy())
-        P = np.array(path)
-        if len(P) < 2: P = np.repeat(p[None, :], 2, axis=0)
-        idx = np.linspace(0, len(P) - 1, LP)
-        R = np.stack([np.interp(idx, np.arange(len(P)), P[:, a]) for a in range(3)], axis=1)
-        out[i] = _smooth(R)
+# TRAZADOR COPIADO LITERAL del dímero (precompute-water-approach.py). Mi versión propia
+# perdió las 3 lecciones ya ganadas con Li₂ y medidas por scripts/verificar-campo.py:
+#   · BIDIRECCIONAL (+E y −E) → la línea va de + a − y NO se corta en el aire
+#   · PARA al llegar a un núcleo (<0.40 bohr) → no divaga
+#   · remuestreo por LONGITUD DE ARCO → espaciado uniforme (sin saltos ni zigzag)
+# Medido antes de copiar: saltos 20.2% vs 0.0% · picos 40.7% vs 1.4% del dímero.
+def trace_field3d(mol, dm, gb, seeds, LP, maxlen=9.0, h=0.19, THR=0.006):
+    Rn = gb                                                # los 6 núcleos (sumideros/fuentes)
+    NS = len(seeds); HALF = LP
+
+    def leg(sign):
+        P = seeds.copy(); paths = np.zeros((NS, HALF, 3)); dead = np.full(NS, HALF); alive = np.ones(NS, bool)
+        for st in range(HALF):
+            paths[:, st] = P
+            E = E3d(mol, dm, P); n = np.linalg.norm(E, axis=1, keepdims=True)
+            u = np.where(n > THR, sign * E / np.maximum(n, 1e-9), 0.0)
+            newP = P + u * h
+            near = np.zeros(NS, bool)
+            for rn in Rn:
+                near |= np.linalg.norm(newP - rn, axis=1) < 0.40
+            far = np.linalg.norm(newP, axis=1) > maxlen
+            stop = (n[:, 0] <= THR) | near | far          # PARA en campo débil (no divaga → sin zigzag)
+            jd = alive & stop; dead[jd] = np.minimum(dead[jd], st + 1); alive &= ~stop
+            P = np.where(alive[:, None], newP, P)
+        return paths, dead
+
+    pf, df = leg(+1); pb, db = leg(-1)
+    out = np.zeros((NS, LP, 3))
+    for i in range(NS):
+        full = _smooth(np.vstack([pb[i, :max(1, db[i])][::-1], pf[i, 1:max(1, df[i])]]))
+        seg = np.r_[0, np.cumsum(np.linalg.norm(np.diff(full, axis=0), axis=1))]
+        if seg[-1] < 1e-6:
+            out[i] = np.tile(full[0], (LP, 1))
+        else:
+            uu = np.linspace(0, seg[-1], LP)
+            out[i] = np.stack([np.interp(uu, seg, full[:, c]) for c in range(3)], axis=1)
     return out
 
 
@@ -372,7 +392,37 @@ def validate(bondMass, Ebind, E3body):
     return ok
 
 
+def solo_campo():
+    """Recomputa ÚNICAMENTE el .bin del campo (sin la malla de densidad, que es lo caro).
+    Sirve cuando el verificador (scripts/verificar-campo.py) reprueba el campo y hay que
+    re-trazarlo sin re-hacer las nubes."""
+    from pyscf import gto, scf
+    LP = 40
+    geom_at(R_EQ_A)
+    Oc = np.array([_GEQ[3 * i] for i in range(3)])
+    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in ((0, 1), (1, 2), (2, 0))]))
+    Rmin_eff = R0 * 0.975
+    Rv = R_MAX_A + (Rmin_eff - R_MAX_A) * (np.arange(K) / (K - 1))
+    NL_EF = len(field_grid(R_EQ_A))
+    ef = np.zeros((K, NL_EF, LP, 3))
+    print(f"=== SOLO CAMPO · {K} radios · {NL_EF} líneas × {LP} ===", flush=True)
+    for k in range(K):
+        R_A = float(Rv[k]); gb = geom_at(R_A)
+        atoms = [[int(Z[i]), tuple(gb[i])] for i in range(NNUC)]
+        mol = gto.M(atom=atoms, basis=BASIS, unit='Bohr', verbose=0)
+        mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
+        ef[k] = trace_field3d(mol, mf.make_rdm1(), gb, field_grid(R_A), LP)
+        print(f"  {k+1}/{K}  O-O {R_A:.2f} Å", flush=True)
+    with open(OUT_EF, 'wb') as fp:
+        fp.write(struct.pack('<3i', K, NL_EF, LP))
+        fp.write((Rv / BOHR).astype('<f4').tobytes())
+        fp.write(np.clip(np.round(ef * 2000), -32767, 32767).astype('<i2').tobytes())
+    print(f"OK  {OUT_EF}  {os.path.getsize(OUT_EF)/1024/1024:.2f} MB ({NL_EF}×{LP})", flush=True)
+
+
 if __name__ == '__main__':
+    if '--solo-campo' in sys.argv:
+        solo_campo(); sys.exit(0)
     a, d, s, bm, col, nuc, ef, nl, lp, Eb, E3 = build()
     write_bin(a, d, s, bm, col, nuc)
     write_efield(ef, nl, lp)

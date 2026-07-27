@@ -353,5 +353,15 @@
     "musicaFadeOutAt": 88,
     "segs": "segs.json",
     "ass": "wtri.ass"
+  },
+  "campo": {
+    "bin": "water-trimer-efield.bin",
+    "referencia": "water-approach-efield.bin",
+    "nota": "El PUENTE (dímero) es la referencia: su campo quedó bien (líneas continuas de + a −, sin zigzag). Li₂ fue donde se ganaron esas reglas. Si el verificador dice PEOR QUE LA REFERENCIA, NO se renderiza.",
+    "reglas": [
+      "trazado BIDIRECCIONAL (+E y −E): la línea va de + a − y NUNCA se corta en el aire",
+      "PARA al llegar a un núcleo (<0.40 bohr): no divaga",
+      "remuestreo por LONGITUD DE ARCO: espaciado uniforme, sin saltos ni picos"
+    ]
   }
 }

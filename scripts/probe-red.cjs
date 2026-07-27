@@ -6,7 +6,7 @@ const OUT = '/tmp/red';
   fs.mkdirSync(OUT, { recursive: true });
   const b = await chromium.launch({ headless: false, executablePath: '/usr/bin/google-chrome-stable',
     args: ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu', '--use-angle=gl', '--disable-software-rasterizer', '--window-size=1920,1080'] });
-  const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
+  const p = await b.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 2 });
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 160)));
   try {
     await p.goto('http://localhost:5179/forja-brep.html', { waitUntil: 'domcontentloaded', timeout: 90000 });
