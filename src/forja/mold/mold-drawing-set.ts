@@ -80,6 +80,7 @@ export const plateDepth = (s: MoldAssemblySpec) => Math.round(s.depthMm ?? s.wid
 
 /** Huella de la cavidad en planta: X e Y (⌀ para redonda). */
 import { sizeInserts } from './moldbase';
+import { sprueDesignFromCavity } from './feed';
 
 export function cavityFootprint(s: MoldAssemblySpec): { fx: number; fy: number; round: boolean } {
   const cav = s.cavity, round = cav.shape === 'round';
@@ -458,7 +459,13 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     if (s.feed === 'hot-runner') {
       for (const c of cells) holes.push({ x: c.cx, y: c.cy, dia: Math.max(4, Math.round(s.cavity.widthMm * 0.05)), type: 'boquilla caliente (drop §6)' });
     } else if (cells.length === 1) {
-      holes.push({ x: cells[0].cx, y: cells[0].cy, dia: 8, type: 'bebedero (sprue)' });
+      // El barreno del bebedero lo dicta EL DISEÑO del sprue (Eq 6.8 + taper
+      // §6.3.1), no un ⌀8 fijo: base del cono + holgura. Misma fuente que la
+      // geometría del fundido (sprueDesignFromCavity) — consistencia forzada.
+      const pd = plateDefs(s);
+      const Lsprue = (pd.find((d) => d.role === 'clamp')?.thick ?? 36) + (pd.find((d) => d.role === 'A')?.thick ?? 56) + 6 - s.cavity.depthMm;
+      const fd = sprueDesignFromCavity(s.plastic, s.cavity, Lsprue);
+      holes.push({ x: cells[0].cx, y: cells[0].cy, dia: Math.ceil(2 * fd.rBaseMm + 0.6), type: 'bebedero (sprue cónico §6.3.1)' });
     } else {
       for (const c of cells) holes.push({ x: c.cx, y: c.cy, dia: 3, type: 'compuerta (gate)' });
     }

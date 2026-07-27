@@ -43,6 +43,23 @@ export const gateDropCylNewt = (muPaS: number, L: number, R: number, Vdot: numbe
   (8 * muPaS * L * Vdot) / (Math.PI * R ** 4);
 
 /**
+ * Tabla 7.4 — TIEMPO DE CONGELAMIENTO del gate (pack time mínimo).
+ * strip:    t = h²/(π²·α) · ln( 8/π² · (Tmelt−Tcool)/(Tnoflow−Tcool) )
+ * cylinder: t = D²/(23.1·α) · ln( 0.692 · (Tmelt−Tcool)/(Tnoflow−Tcool) )
+ * VERIFICADO contra el ejemplo del pin-point ⌀2mm: 1.1 s ✓ (p.181).
+ * ⚠ ERRATA del libro: sus ejemplos de STRIP (fan 1.5 s, cup 24 s, p.181) NO
+ * reproducen con su propia fórmula (dan 0.76 s y 12.1 s — factor 2). La misma
+ * estructura con temperatura de EYECCIÓN (Eq 9.5, p.203) sí reproduce EXACTO
+ * (18.9 s) ⇒ la fórmula es el canon; los dos números impresos son errata.
+ */
+export function gateFreezeStripS(alphaM2s: number, hM: number, tMelt: number, tCool: number, tNoFlow: number): number {
+  return (hM * hM) / (Math.PI * Math.PI * alphaM2s) * Math.log((8 / (Math.PI * Math.PI)) * (tMelt - tCool) / (tNoFlow - tCool));
+}
+export function gateFreezeCylS(alphaM2s: number, dM: number, tMelt: number, tCool: number, tNoFlow: number): number {
+  return (dM * dM) / (23.1 * alphaM2s) * Math.log(0.692 * (tMelt - tCool) / (tNoFlow - tCool));
+}
+
+/**
  * §7.3.1-7.3.2: diseño del gate — espesor inicial (= pared para gates gruesos;
  * pared/2 para pin-point/tunnel/thermal) + chequeo de corte + veredicto.
  */

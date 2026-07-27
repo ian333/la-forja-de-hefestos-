@@ -31,6 +31,7 @@ import { generateDrawing } from '../brep/drawing';
 import { partSheet4View, type IsoStyle } from '../brep/isoview';
 import { dfmFromMesh } from './dfm-mesh';
 import { planSideActions, planFromSpec, sideActionVerdicts, type SideActionPlan } from './mold-sideaction-gen';
+import { sprueDesignFromCavity } from './feed';
 
 // ── PALETA de materiales (idéntica al PDF): acero azul-gris, plástico ámbar ──
 const STEEL: [number, number, number] = [150, 165, 185];
@@ -1037,8 +1038,24 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
           'thrust pads de TITANIO → fuerza al clamp con mínimo calor (Fig 6.12)',
           '~20 % menos ciclo y scrap que colada fría (§6.3.3)', 'gate térmico §7.2.8 concéntrico']);
     } else {
-      push('colada', 'Bebedero (colada fría)', 'colada fría',
-        feed.map((f) => cyl(Math.max(2.5, f.dia / 2), topZ - zPart, [f.x, f.y, zPart], [0, 0, 1])), '#9aa3b2', 0.9);
+      // COLADA FRÍA REAL (§6.3.1 + cap 7): el sprue CÓNICO diseñado por el libro —
+      // Eq 6.8 (radio por ΔP asignado) + taper de extracción + chequeos completos
+      // (γ̇ Tabla 7.2, Re Eq 6.2, t_c §6.4.7, regrind Eq 6.6, freeze Tabla 7.4).
+      // El FUNDIDO se VE (ámbar) y sus números viajan en la historia del árbol.
+      // El cono NACE en la base cerrada de la pieza (zPart + depth), NO en la
+      // partición: nacer en zPart lo metía POR DENTRO del macho — esa era la
+      // colisión pendiente inserto-core↔colada (45.8 mm³) del estudio.
+      const zGate = zPart + spec.cavity.depthMm;
+      const Lsprue = (topZ + 6) - zGate;                      // hasta la boca del bushing
+      const fd = sprueDesignFromCavity(spec.plastic, spec.cavity, Lsprue);
+      const melt = feed.map((f) => {
+        try {
+          return K.makeCone(oc, fd.rBaseMm - 0.05, fd.rTopMm - 0.05, Lsprue, { origin: [f.x, f.y, zGate], dir: [0, 0, 1] });
+        } catch { return cyl(Math.max(2.5, f.dia / 2), Lsprue, [f.x, f.y, zGate], [0, 0, 1]); }
+      });
+      push('colada', `Colada FRÍA §6.3.1 · sprue cónico ⌀${(2 * fd.rTopMm).toFixed(1)}→⌀${(2 * fd.rBaseMm).toFixed(1)}`,
+        `${spec.plastic ?? 'PP'} fundido`, melt, '#ffb347', 0.95,
+        fd.rows.map((r) => `${r.warn ? '⚠ ' : ''}${r.k}: ${r.v} [${r.ref}]`));
     }
   }
 

@@ -44,7 +44,7 @@ import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
-import { MoldTcPaint, MoldFlowPaint, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, computeMoldAlarm } from './MoldScene';
+import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
@@ -5998,6 +5998,9 @@ export default function ForgeBRepStudio() {
                   </>
                 )}
                 {moldParts.map((pt) => {
+                  // con 💧 encendido la colada la dibuja FeedFill (el revelado del
+                  // frente) — el mesh estático encima lo tapaba por completo
+                  if (flowOn && pt.role === 'colada') return null;
                   if (moldHidden[pt.role]) return null;
                   // el TRANSITORIO pinta TODAS las placas por vértice; el FEA cubre B+soporte+rieles
                   if (moldSimOn && moldThermalSim && !pt.role.startsWith('platina')) return null;
@@ -6059,11 +6062,18 @@ export default function ForgeBRepStudio() {
                   const pieza = moldParts.find((p) => p.role === 'pieza');
                   if (!pieza) return null;
                   const P = pieza.positions;
-                  let cx = 0, cy = 0, zLo = Infinity;
-                  for (let i = 0; i < P.length; i += 3) { cx += P[i]; cy += P[i + 1]; if (P[i + 2] < zLo) zLo = P[i + 2]; }
+                  // El GATE está donde ATERRIZA el sprue: centro, tope de la pieza
+                  // (zHi). Con zLo el frente nacía en el BORDE — el llenado al revés.
+                  let cx = 0, cy = 0, zHi = -Infinity;
+                  for (let i = 0; i < P.length; i += 3) { cx += P[i]; cy += P[i + 1]; if (P[i + 2] > zHi) zHi = P[i + 2]; }
                   cx /= P.length / 3; cy /= P.length / 3;
-                  return <MoldFlowPaint part={pieza} gate={{ x: cx, y: cy, z: zLo }}
-                    wallMm={liveMoldSpec.cavity.wallMm ?? 2} />;
+                  const colada = moldParts.find((p) => p.role === 'colada');
+                  const feedS = 1.2;                             // el sprue se llena en ~t_fill·V_sprue/V_total (cámara lenta honesta)
+                  return (<>
+                    {colada && <FeedFill part={colada} delayS={feedS} />}
+                    <MoldFlowPaint part={pieza} gate={{ x: cx, y: cy, z: zHi }}
+                      wallMm={liveMoldSpec.cavity.wallMm ?? 2} delayS={colada ? feedS : 0} />
+                  </>);
                 })()}
                 {/* ⏱ t_c LOCAL: pieza pintada por SU pared + baffle fantasma propuesto */}
                 {moldTc && liveMoldSpec && (() => {

@@ -175,6 +175,32 @@ export function makeCylinder(
   return shape;
 }
 
+/** CONO truncado (BRepPrimAPI_MakeCone): r1 en el ORIGEN del eje, r2 al final (z=h).
+ *  Nace para el SPRUE CÓNICO (§6.3.1: angosto en la boquilla, ancho hacia la
+ *  partición — así el bebedero solidificado se EXTRAE con la pieza). */
+export function makeCone(
+  oc: OC,
+  r1: number,
+  r2: number,
+  height: number,
+  axis?: { origin: [number, number, number]; dir: [number, number, number] },
+): Shape {
+  // OCC truena con Standard_DomainError si r1 == r2 → cilindro en ese caso
+  if (Math.abs(r1 - r2) < 1e-6) return makeCylinder(oc, r1, height, axis);
+  let maker: OC;
+  if (axis) {
+    const o = new oc.gp_Pnt_3(axis.origin[0], axis.origin[1], axis.origin[2]);
+    const d = new oc.gp_Dir_4(axis.dir[0], axis.dir[1], axis.dir[2]);
+    const ax2 = new oc.gp_Ax2_3(o, d);
+    maker = new oc.BRepPrimAPI_MakeCone_3(ax2, r1, r2, height);
+  } else {
+    maker = new oc.BRepPrimAPI_MakeCone_1(r1, r2, height);
+  }
+  const shape = maker.Shape();
+  maker.delete?.();
+  return shape;
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Extrusión de perfil 2D → sólido B-Rep (el PRIMER MOMENTO del diseñador)
 // ─────────────────────────────────────────────────────────────────

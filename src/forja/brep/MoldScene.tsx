@@ -61,7 +61,7 @@ export function MoldTcPaint({ part, map, cells, marker }: {
       <mesh geometry={geo} renderOrder={4}>
         {/* SIN luz ni tonemapping: un mapa CAE es dato, no objeto iluminado —
             las luces + ACES pasteleaban el colormap a blanco */}
-        <meshBasicMaterial vertexColors toneMapped={false} />
+        <meshBasicMaterial vertexColors toneMapped={false} depthTest={false} transparent opacity={0.92} />
       </mesh>
       {marker && (
         <group position={[marker.x, marker.y, (marker.z0 + marker.z1) / 2]}>
@@ -93,7 +93,45 @@ export function MoldTcPaint({ part, map, cells, marker }: {
  *  (short shot §5.5). El frente avanza imperativo (mutando el atributo `color`): cero
  *  re-renders de React por cuadro, el patrón de `MoldOpenDriver`.
  */
-export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35 }: {
+/** REVELADO del fundido en la COLADA: el frente baja del bushing al gate antes
+ *  de que la pieza empiece a pintarse — POR FIN se VE el canal y su flujo. */
+export function FeedFill({ part, delayS }: { part: MoldPart; delayS: number }) {
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(part.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(part.indices, 1));
+    return g;
+  }, [part]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  const zr = useMemo(() => {
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 2; i < part.positions.length; i += 3) { const z = part.positions[i]; if (z < lo) lo = z; if (z > hi) hi = z; }
+    return { lo, hi };
+  }, [part]);
+  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), -zr.hi), [zr]);
+  const t0 = useRef(0);
+  useFrame(({ clock }) => {
+    if (!t0.current) t0.current = clock.elapsedTime;
+    const period = delayS + 1 / 0.35 + 0.7;                      // mismo reloj que MoldFlowPaint
+    const tt = (clock.elapsedTime - t0.current) % period;
+    const f = Math.min(1, tt / delayS);
+    plane.constant = -(zr.hi - f * (zr.hi - zr.lo));             // visible: z > zFront (baja)
+  });
+  return (
+    <mesh geometry={geo} renderOrder={9}>
+      {/* RAYOS X: el fundido se ve A TRAVÉS del acero (depthTest off, como la
+          nube de alarma) — sin esto el flujo corre pero queda enterrado. */}
+      {/* meshBasic como el pintado de la pieza (PROBADO visible en rayos X) —
+          el standard+emissive se perdía con el tonemapping/luces de la escena. */}
+      <meshBasicMaterial color="#ff9a2e" toneMapped={false}
+        clippingPlanes={[plane]} side={THREE.DoubleSide}
+        depthTest={false} transparent opacity={0.95} />
+    </mesh>
+  );
+}
+
+export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0 }: {
   part: MoldPart;
   gate: { x: number; y: number; z: number };
   /** pared nominal (mm) — empareja las caras opuestas de la pared (dual domain) */
@@ -102,6 +140,8 @@ export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35 }: {
    *  dura 0.35 s de un ciclo de 25 (1.4 %): a tiempo real son 21 cuadros y no se ve nada.
    *  Esto es cámara lenta HONESTA — el reloj de la izquierda dice los segundos de verdad. */
   speed?: number;
+  /** espera (s) mientras la COLADA se llena antes de pintar la pieza */
+  delayS?: number;
 }) {
   // ⚠ LA MALLA MANDA — y la del kernel es GRUESA (aristas de 32.8 mm de media, hasta 135).
   // Dijkstra sobre aristas NO puede ir recto en una malla así: ZIGZAGUEA. Medido contra el
@@ -129,7 +169,9 @@ export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35 }: {
   const t0 = useRef(0);
   useFrame(({ clock }) => {
     if (!t0.current) t0.current = clock.elapsedTime;
-    const u = ((clock.elapsedTime - t0.current) * speed) % 1.25;      // 0..1 y una pausa llena
+    const period = delayS + 1.25 / speed + (delayS ? 0.7 - 0.25 / speed : 0);
+    const tt = (clock.elapsedTime - t0.current) % period;
+    const u = Math.max(0, (tt - delayS) * speed) % 1.25;             // 0..1 y una pausa llena (espera la colada)
     const front = Math.min(1, u) * sf.maxFlowLenMm;
     const attr = geo.getAttribute('color') as THREE.BufferAttribute;
     const col = paintFlowColors(sf, front);
@@ -140,10 +182,10 @@ export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35 }: {
   });
   return (
     <group>
-      <mesh geometry={geo} renderOrder={5}>
+      <mesh geometry={geo} renderOrder={8}>
         {/* SIN luz ni tonemapping: un mapa de flujo es DATO, no objeto iluminado — las
             luces + ACES pastelean el colormap (la misma lección que el mapa de t_c) */}
-        <meshBasicMaterial vertexColors toneMapped={false} />
+        <meshBasicMaterial vertexColors toneMapped={false} depthTest={false} transparent opacity={0.92} />
       </mesh>
       {/* la COMPUERTA: por donde entra el fundido */}
       <mesh position={[gate.x, gate.y, gate.z]}>
