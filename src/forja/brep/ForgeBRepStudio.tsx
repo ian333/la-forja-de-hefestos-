@@ -6060,7 +6060,12 @@ export default function ForgeBRepStudio() {
                     un número tecleado — así funciona para cualquier figura. */}
                 {flowOn && (() => {
                   const pieza = moldParts.find((p) => p.role === 'pieza');
-                  if (!pieza) return null;
+                  const coladaSola = moldParts.find((p) => p.role === 'colada');
+                  // DEMO de redes (sin pieza): el frente recorre la red en cámara
+                  // lenta honesta (~2.5 s aunque el llenado real sea 0.1 s).
+                  if (!pieza) return coladaSola
+                    ? <FeedFill part={coladaSola} delayS={coladaSola.flowT ? 2.5 : 1.2} />
+                    : null;
                   const P = pieza.positions;
                   // El GATE está donde ATERRIZA el sprue: centro, tope de la pieza
                   // (zHi). Con zLo el frente nacía en el BORDE — el llenado al revés.

@@ -119,13 +119,24 @@ export function FeedFill({ part, delayS }: { part: MoldPart; delayS: number }) {
     const period = delayS + 1 / 0.35 + 0.7;                      // mismo reloj que MoldFlowPaint
     const tt = (clock.elapsedTime - t0.current) % period;
     const f = Math.min(1, tt / delayS);
-    const zFront = zr.hi - f * (zr.hi - zr.lo);                  // el frente BAJA
     const attr = geo.getAttribute('color') as THREE.BufferAttribute;
     const col = attr.array as Float32Array;
     const P = part.positions;
-    for (let i = 0; i < P.length; i += 3) {
-      if (P[i + 2] >= zFront) { col[i] = 1.0; col[i + 1] = 0.62; col[i + 2] = 0.14; }   // LLENO: ámbar caliente
-      else { col[i] = 0.16; col[i + 1] = 0.15; col[i + 2] = 0.13; }                      // vacío: canal fantasma
+    const T = part.flowT;
+    if (T && part.flowTotalS) {
+      // MODO RED (Figs 6.13-6.17): cada vértice enciende cuando el frente LE
+      // LLEGA por su ruta — SE VE la carga repartiéndose en cada bifurcación.
+      const simT = f * part.flowTotalS;
+      for (let i = 0, v = 0; i < P.length; i += 3, v++) {
+        if (T[v] <= simT) { col[i] = 1.0; col[i + 1] = 0.62; col[i + 2] = 0.14; }
+        else { col[i] = 0.16; col[i + 1] = 0.15; col[i + 2] = 0.13; }
+      }
+    } else {
+      const zFront = zr.hi - f * (zr.hi - zr.lo);                // el frente BAJA (sprue directo)
+      for (let i = 0; i < P.length; i += 3) {
+        if (P[i + 2] >= zFront) { col[i] = 1.0; col[i + 1] = 0.62; col[i + 2] = 0.14; }
+        else { col[i] = 0.16; col[i + 1] = 0.15; col[i + 2] = 0.13; }
+      }
     }
     attr.needsUpdate = true;
   });

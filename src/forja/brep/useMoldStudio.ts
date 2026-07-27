@@ -30,6 +30,7 @@ import { surfaceFlowLength } from '../mold/flowlen-surface';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine } from '../mold/moldmachine';
+import { layoutBranched, layoutRadial, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
 export function useMoldStudio({ oc, setCollapsed, setDocName }: {
@@ -41,6 +42,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev } = useMoldLive();
   // árbol: aislar / ocultar / opacidad, como Fusion/SolidWorks. Con primitivas.
   const [moldParts, setMoldParts] = useState<MoldPart[]>([]);
+  // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
+  // armado NO debe barrerlas cuando liveMoldSpec es null.
+  const [feedDemo, setFeedDemo] = useState(false);
   // Aviso "ARMANDO MOLDE…": el build es SÍNCRONO y congela el tab (segundos en
   // moldes redondos, MINUTOS en cajas con 63 pines) — sin este banner el usuario
   // solo ve una página muerta y le da Ctrl+Shift+R (freeze del 2026-07-24).
@@ -208,7 +212,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   }, [oc, liveMoldSpec, moldFeaBusy]);
   useEffect(() => { setMoldFea(null); setMoldXray(false); }, [liveMoldSpec]);
   useEffect(() => {
-    if (!oc || !liveMoldSpec) { setMoldParts([]); setMoldBuilding(false); return; }
+    if (!oc || !liveMoldSpec) { if (!feedDemo) setMoldParts([]); setMoldBuilding(false); return; }
     let cancelled = false;
     setMoldBuilding(true);         // el banner pinta ANTES de que el build congele el tab
     const t = setTimeout(() => {   // deja pintar antes del build síncrono (segundos…minutos)
@@ -236,9 +240,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       finally { if (!cancelled) setMoldBuilding(false); }
     }, 60);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [oc, liveMoldSpec, liveMoldMesh, liveRealSolidsRev]);
+  }, [oc, liveMoldSpec, liveMoldMesh, liveRealSolidsRev, feedDemo]);
   const toggleMoldPlate = useCallback((role: string) => setMoldHidden((h) => ({ ...h, [role]: !h[role] })), []);
-  const showAllMold = useCallback(() => setMoldHidden({}), []);
+  const showAllMold = useCallback(() => setMoldHidden({}), [loadFeedDemo, feedDemo, ]);
   // 🚨 Botón ALARMA: enciende/apaga la nube roja de colisiones + deja las placas fantasma.
   // Así el usuario (que SÍ puede girar la figura) ve el acero compartido desde cualquier lado.
   const toggleMoldAlarm = useCallback(() => {
@@ -506,11 +510,70 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     });
   }, [moldParts]);
   const setMoldPlateOpacity = useCallback((role: string, v: number) => setMoldOpacity((o) => ({ ...o, [role]: v })), []);
+  // ── DEMO REDES DE COLADA (standalone: "solo lo conectaremos") ──
+  // Reproduce las figuras del libro como sólidos de fundido + cavidades
+  // fantasma; cada vértice sabe CUÁNDO le llega el frente (flowT).
+  const loadFeedDemo = useCallback((kind: 'ramificada' | 'radial') => {
+    if (!oc) return;
+    const net: FeedNetwork = kind === 'radial' ? layoutRadial({}) : layoutBranched({});
+    try {
+      const solids = net.segs.map((sg) => {
+        const dx = sg.b[0] - sg.a[0], dy = sg.b[1] - sg.a[1], dz = sg.b[2] - sg.a[2];
+        const L = Math.hypot(dx, dy, dz);
+        const axis = { origin: sg.a as [number, number, number], dir: [dx / L, dy / L, dz / L] as [number, number, number] };
+        return sg.level === 'sprue'
+          ? OCC.makeCone(oc!, sg.rMm, sg.rMm * 0.6, L, axis)     // sprue cónico §6.3.1
+          : OCC.makeCylinder(oc!, sg.rMm, L, axis);
+      });
+      const comp = OCC.makeCompound(oc!, solids);
+      const mesh = tessellate(oc!, comp, 0.25, 0.35);
+      // llegada por vértice: su segmento más cercano → t_start + frac·t_fill
+      const nV = mesh.positions.length / 3;
+      const flowT = new Float32Array(nV);
+      for (let i = 0; i < nV; i++) {
+        const px = mesh.positions[3 * i], py = mesh.positions[3 * i + 1], pz = mesh.positions[3 * i + 2];
+        let best = Infinity, bt = 0;
+        for (const sg of net.segs) {
+          const ux = sg.b[0] - sg.a[0], uy = sg.b[1] - sg.a[1], uz = sg.b[2] - sg.a[2];
+          const L2 = ux * ux + uy * uy + uz * uz;
+          const f = Math.max(0, Math.min(1, ((px - sg.a[0]) * ux + (py - sg.a[1]) * uy + (pz - sg.a[2]) * uz) / L2));
+          const qx = sg.a[0] + f * ux - px, qy = sg.a[1] + f * uy - py, qz = sg.a[2] + f * uz - pz;
+          const d = qx * qx + qy * qy + qz * qz;
+          if (d < best) { best = d; bt = sg.tStartS + f * sg.tFillS; }
+        }
+        flowT[i] = bt;
+      }
+      const parts: MoldPart[] = [{
+        role: 'colada', name: `Red ${kind} — ${net.rows[0].v}`, material: 'fundido',
+        positions: mesh.positions, normals: mesh.normals, indices: mesh.indices,
+        color: '#ffb347', opacity: 0.95, bodies: net.segs.length,
+        features: net.rows.map((r) => `${r.k}: ${r.v} [${r.ref}]`), edges: undefined,
+        flowT, flowTotalS: net.totalFillS,
+      } as unknown as MoldPart];
+      // cavidades fantasma (a dónde REPARTE la carga)
+      const cavSolids = net.cavities.map((c) => OCC.makeCylinder(oc!, 8, 10, { origin: [c.x, c.y, -12], dir: [0, 0, 1] }));
+      const cmesh = tessellate(oc!, OCC.makeCompound(oc!, cavSolids), 0.3, 0.4);
+      parts.push({
+        role: 'cavidades', name: `${net.cavities.length} cavidades (fantasma)`, material: '—',
+        positions: cmesh.positions, normals: cmesh.normals, indices: cmesh.indices,
+        color: '#5fa8c4', opacity: 0.28, bodies: net.cavities.length, features: [], edges: undefined,
+      } as unknown as MoldPart);
+      setLiveMoldSpec(null);
+      liveRealSolidsRef.current = null;
+      setFeedDemo(true);
+      setMoldParts(parts);
+      setMoldHidden({}); setMoldOpacity({}); setMoldColors({});
+      setFlowOn(true);
+      setDocName(`Red de colada ${kind} · Fig ${kind === 'radial' ? '6.15' : '6.14'}`);
+      mark('feed-demo', 0, { kind });
+    } catch (e) { console.error('FEED_DEMO_ERR', e); }
+  }, [oc]);
+
   // BOLSA MEMOIZADA: identidad estable entre renders. Sin esto, cada render del
   // Studio crea un objeto nuevo y la instrumentación DEV de React 19
   // (logComponentRender→addObjectDiffToProperties) re-camina TODO el diff de
   // props de los paneles — con moldParts (Float32Arrays de millones) eso es el
   // main thread muerto. Cazado con Debugger.pause el 2026-07-27.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => ({ liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
+  return useMemo(() => ({ loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
 }

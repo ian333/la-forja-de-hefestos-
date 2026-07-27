@@ -20,8 +20,8 @@ const OUT = process.env.OUT || '/tmp/canales';
     await p.click('text=FRE').catch(() => {});
     await p.waitForTimeout(800);
     await p.click('[data-testid="mold-flow-toggle"]', { force: true });
-    for (let i = 0; i < 8; i++) {
-      await p.waitForTimeout(650);
+    for (let i = 0; i < Number(process.env.N || 8); i++) {
+      await p.waitForTimeout(Number(process.env.DT || 650));
       await p.screenshot({ path: `${OUT}/flow-${i}.png`, timeout: 30000 });
     }
     // los números del sprue en el árbol (expandir colada)

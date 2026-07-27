@@ -316,7 +316,7 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
 /** El grupo del ribbon MOLDE · CURSO ALWIS (Flanera/Vaso/Core-Cav + los 6
  *  pasos del curso). Incluye su separador. */
 export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelReady: boolean }) {
-  const { cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias } = mold;
+  const { loadFeedDemo, cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias } = mold;
   return (
     <>
             <span className="fb-tb-sep" />
@@ -340,6 +340,10 @@ export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelRe
                   title="Tooling Split: bloque 350×630, placas 145/90 (cotas del curso) — split + placa rectangular en UNA operación"><Ic name="extrude" /><span>Tooling Split</span></button>
                 <button className="fb-big" data-testid="btn-curso-guias" onClick={cursoGuias} disabled={cursoBusy || cursoStage < 5}
                   title="Hole Wizard: bushings ⌀48+caja ⌀54×10 y pernos ⌀35+caja ⌀40×8 en ±142/±277 (cotas del curso)"><Ic name="hole" /><span>Guías</span></button>
+                <button className="fb-big" data-testid="btn-red-6-14" onClick={() => loadFeedDemo('ramificada')} disabled={!kernelReady}
+                  title="RED RAMIFICADA (Fig 6.14): sprue → 2 primarios → 4 secundarios → 8 gates sumergidos §7.2.7 — la carga se REPARTE ½ en cada unión (Eq 6.1). Prende 💧 para verla fluir."><Ic name="patron" /><span>Red 6.14</span></button>
+                <button className="fb-big" data-testid="btn-red-6-15" onClick={() => loadFeedDemo('radial')} disabled={!kernelReady}
+                  title="RED RADIAL (Fig 6.15): N brazos desde el diafragma del sprue — balanceada, poco volumen (Eq 6.1 con n=N)."><Ic name="engrane" /><span>Red 6.15</span></button>
               </div>
               <div className="fb-group-cap">MOLDE · CURSO ALWIS</div>
             </div>

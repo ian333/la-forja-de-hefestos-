@@ -303,6 +303,10 @@ export function plateStackZ(spec: MoldAssemblySpec): Record<string, number> {
 }
 
 export interface MoldPart {
+  /** llegada del frente por VÉRTICE (s) — redes de colada (Figs 6.13-6.17) */
+  flowT?: Float32Array;
+  /** duración total del llenado de la red (s) */
+  flowTotalS?: number;
   role: string; name: string; material: string;
   positions: Float32Array; normals: Float32Array; indices: Uint32Array;
   color: string; opacity: number;
