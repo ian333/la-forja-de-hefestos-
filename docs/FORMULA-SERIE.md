@@ -1,6 +1,7 @@
 # FÓRMULA DE LA SERIE — "Los Nobel son fenómenos naturales" (doctrina)
 
-> Hermana de `FILOSOFIA-CINE.md` y `CONTENIDO-ESTRATEGIA.md`. Aquellas dicen CÓMO se ve
+> Hermana de `FILOSOFIA-CINE.md` y `../CONTENIDO-ESTRATEGIA.md` (raíz). Para la serie de
+> moléculas el proceso canónico es `CANON-VIDEO.md` (gate #0). Aquellas dicen CÓMO se ve
 > y CÓMO se publica; ésta dice CÓMO SE DISEÑA un episodio para que sea imposible no verlo
 > desde el segundo 0.1 — y para que el cerebro se lleve la imagen POR DÍAS.
 > Nace de la ciencia descargada (Loewenstein, Muller, 3B1B, rule-of-8, guiones-animal,

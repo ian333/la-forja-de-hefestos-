@@ -33,8 +33,8 @@ REGLAS CUANDO YA ESTÁN HECHAS... es el mismo error SIEMPRE."**
 
 **Qué hacer, SIEMPRE, antes de escribir código:**
 1. **ABRE el CÓDIGO real** del último ganador (no la memoria — el CÓDIGO): su cámara
-   (`MolCameraRig` + `playShots` + `camera-shots.ts`), sus subtítulos (params EXACTOS de
-   `karaoke-ass.py` que usó ESE video), su estructura de beats, sus colores.
+   (`MolCameraRig` + `playShots` + `camera-shots.ts`), sus subtítulos (hoy centralizados en
+   `scripts/video-subs.py`), su estructura de beats, sus colores.
    - Escena/render: `src/cinematic/CinematicMolecule.tsx` (O2Cloud, Nucleus, BondEField, molCamera).
    - Cámara: `src/cinematic/camera-shots.ts` (la gramática de tomas).
    - Si necesitas el estado EXACTO con el que se entregó, desempaca su cápsula de PRIME.
@@ -104,16 +104,16 @@ frames idénticos en composición. Estandarizar NO cambió ni un pixel del entre
 4. AUDIO+TIMINGS   assemble-narracion.py <mol> → segs.json (duraciones REALES de cada línea)
 5. BEATS↔VOZ       recalibrar cámara/gates/bondR a los segundos de segs.json (§sincronía). SIEMPRE.
 6. MÚSICA          musica-eterea.py compose+master (lidio) — o remap de la pieza ganadora + ducking
-7. SUBTÍTULOS      karaoke-ass.py … --w 2160 --h 3840  (formato de la SERIE, no uno nuevo)
-8. SYNC → iangpu   rsync src/cinematic/ + scripts/ + public/precomputed/*.bin a iangpu (SIN --delete)
-9. RENDER 4K       render-clip.cjs (2160×3840 vertical / 3840×2160 horizontal)
-                   🚀 PARALELO: --nshards M --shard 0..M-1 (misma --out) = M workers, video M× más rápido
+7. SUBTÍTULOS      video.sh <id> subs   → video-subs.py = ÚNICA fuente del estilo de la serie
+8. SYNC → iangpu   rsync src/cinematic/ + scripts/ + videos/ + public/precomputed/*.bin (SIN --delete)
+9. RENDER 4K       video.sh <id> render → render-clip.cjs sharded (2160×3840 vert / 3840×2160 horiz)
+                   🚀 PARALELO: shards del manifiesto (NSHARDS=5 probado: 3.7× más rápido)
 10. 👁️ QA AGENTES  extraer ~50 frames de TODA la línea de tiempo → agentes los VEN y CALIFICAN →
                    sintetizar → ARREGLAR dead-spots → re-render (§paso de agentes). GATE de ojo.
-11. ENSAMBLE       <mol>-assemble.sh: mezcla voz+música (loudnorm) + quema ASS + NVENC 10-bit
+11. ENSAMBLE       video.sh <id> ensamble: voz+música (loudnorm) + quema ASS + NVENC 10-bit
                    HEVC master (yuv420p10le) + h264 entrega → /mnt/e/forja-videos (iangpu) + Downloads
 12. VERIFICAR ENTREGA  ver frames del VIDEO FINAL (no de la sonda) por toda la timeline (§verificación)
-13. CÁPSULA        video-capsula.sh <id> <mol> <narVer> → tar.gz a PRIME (obligatorio, §cápsula)
+13. CÁPSULA        video.sh <id> capsula → tar.gz a PRIME (obligatorio, §cápsula)
 14. PUBLICAR       SPECIAL en comando-catalogo.cjs + codigo:capsula + comando-catalogo.cjs +
                    rsync 2 JSONs a ATLAS (§publicación / comando)
 ```
@@ -299,8 +299,8 @@ Lo específico de la serie:
   render-clip por PID, LUEGO chrome.
 - **Crash "Execution context was destroyed"**: vite DEV (HMR) recarga la página a mitad del render →
   mata render-clip. Fix YA en `render-clip.cjs` (el motor se modificó): **freshCtx con reintentos +
-  try/catch por-frame (contexto fresco) + RESUME (salta frames ya hechos, `size > BLACK`)**. El
-  pipeline `wpair-full-pipeline.sh` reintenta el render (resumible) hasta completar.
+  try/catch por-frame (contexto fresco) + RESUME (salta frames ya hechos, `size > BLACK`)**.
+  `video.sh <id> render` reintenta la pasada completa (resumible) hasta completar.
 - **HMR también produce frames STALE** (viejos) en lotes contra vite dev. Mitigación: contexto FRESCO
   por lote + **no rsync-ear source a iangpu mientras renderiza** (tu propio sync dispara el HMR). Lo
   ideal es render contra BUILD+preview estático (sin HMR); si el build falla, dev con fresh-ctx +
@@ -318,9 +318,11 @@ Lo específico de la serie:
 aprobado lleva cápsula ANTES de publicarse:
 
 ```bash
-bash scripts/video-capsula.sh <video-id> <mol> <narVer>
-rsync -a dist-video/_capsulas/<id>-capsula.tar.gz ian@PRIME:/mnt/hdd/biblioteca/moleculas/_code/
+bash scripts/video.sh <id> capsula      # lee videos/<id>.json; audita archivos vacíos
+bash scripts/video.sh <id> publicar     # empuja video + cápsula a PRIME y ATLAS
 ```
+(El viejo `video-capsula.sh <video-id> <mol> <narVer>` sigue existiendo para las piezas
+diatómicas legacy que aún no tienen manifiesto; para todo lo nuevo, `video.sh`.)
 
 Contiene: escena (src/cinematic + entry html) · pipeline (scripts) · simulación (.bin) · guion ·
 segs.json/ASS/música · audio-final.wav · MANIFIESTO.md (receta EXACTA de render + estado de git). La

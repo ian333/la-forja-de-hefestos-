@@ -84,3 +84,10 @@ docs/forja-research/manuales/*.pdf
 
 # Builds de firmware (pico-sdk)
 firmware/**/build/
+
+# Artefactos de compilación LaTeX (docs/*.tex)
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+docs/*.out

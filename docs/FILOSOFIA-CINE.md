@@ -241,4 +241,4 @@ Cada uno: física real + las técnicas de §1–4. ULTRA-IMPACTANTE, pantalla co
 
 Ver también: `CLAUDE.md` (pipeline 4K + defectos conocidos), `docs/pulsar-blueprint.json`
 y `docs/pulsar-velocity-blueprint.json` (código del pulsar + gancho de velocidad),
-`CONTENIDO-ESTRATEGIA.md` (las 132 piezas).
+`../CONTENIDO-ESTRATEGIA.md` (en la raíz del repo — las 132 piezas).
