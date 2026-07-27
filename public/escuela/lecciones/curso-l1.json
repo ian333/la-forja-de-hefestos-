@@ -1,0 +1,125 @@
+{
+  "id": "curso-l1",
+  "titulo": "EL MOLDE del curso, reproducido EXACTO — percha ×2 (Alwis 2022) en La Forja",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Este molde salió de un curso real de SolidWorks: la percha de Alwis Design. Cuarenta y nueve pasos, y como el setenta por ciento del tiempo es picar aristas y llenar listas a mano. Hoy lo reconstruimos en La Forja con las mismas cotas — y verás cuántos clics quedan cuando la talacha la hace el kernel.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Insertar la pieza. En el curso es Insert Part con el archivo del gancho; aquí entra la percha con su silueta a proporción: trescientos por ciento cincuenta y tres, diez de espesor. El kernel reporta ciento veinte mil novecientos cincuenta y seis milímetros cúbicos.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-curso-pieza",
+          "settle": 6000
+        }
+      ],
+      "check": {
+        "js": "(() => { const c = window.__forgeBrep && window.__forgeBrep.curso; return !!c && c.stage >= 1 && Math.abs(c.vols.pieza - 120956) < 100; })()",
+        "desc": "pieza insertada, vol = 120,956 mm³"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Escala: uno punto cero quince, polipropileno. La regla del instructor es dura: la contracción se aplica ANTES de construir cualquier cosa del molde — si escalas después, las cavidades quedan chicas. El volumen sube exactamente el factor al cubo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-curso-escala",
+          "settle": 5000
+        }
+      ],
+      "check": {
+        "js": "(() => { const c = window.__forgeBrep && window.__forgeBrep.curso; return !!c && c.stage >= 2 && Math.abs(c.vols.piezaE / c.vols.pieza - 1.0457) < 0.002; })()",
+        "desc": "escala ×1.015 → vol ×1.0457 (=1.015³)"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Move Copy: la segunda cavidad es una copia rotada. El curso rota noventa grados, traslada cuarenta y duplica a ciento ochenta; aquí el layout queda a más menos noventa grados con centros a menos cinco y cinco — y el reporte confirma que las bandas no se traslapan.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-curso-layout",
+          "settle": 8000
+        }
+      ],
+      "check": {
+        "js": "(() => { const c = window.__forgeBrep && window.__forgeBrep.curso; return !!c && c.stage >= 3 && c.vols.sinTraslape === 1; })()",
+        "desc": "layout ×2 sin traslape (bandas disjuntas)"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "La línea de partición. En el curso esto es Draft Analysis a un grado y dieciocho aristas picadas a mano hasta que sale el mensaje verde. Aquí la transición de draft positivo a negativo la encadena el kernel solo — y ahí está, en verde: la línea de partición está completa.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-curso-parting",
+          "settle": 8000
+        }
+      ],
+      "check": {
+        "js": "(() => { const c = window.__forgeBrep && window.__forgeBrep.curso; return !!c && c.stage >= 4 && c.vols.mensajeVerde === 1 && c.report.some((l) => l.includes('línea de partición está completa')); })()",
+        "desc": "MENSAJE VERDE: el molde puede separarse"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Tooling Split. Bloque de trescientos cincuenta por seiscientos treinta, ciento cuarenta y cinco arriba, noventa abajo — las cotas del curso. Y fíjate: el curso necesita el split y luego un Boss Extrude para regularizar la placa; aquí las placas ya salen rectangulares exactas, con la impronta adentro. Cavidad rosa, núcleo verde, como el render del curso.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-curso-split",
+          "settle": 45000
+        }
+      ],
+      "check": {
+        "js": "(() => { const c = window.__forgeBrep && window.__forgeBrep.curso; return !!c && c.stage >= 5 && Math.abs(c.vols.cavity + c.vols.core - c.vols.tmp) / c.vols.tmp < 0.005 && Math.abs(c.vols.core - 19845000) < 100000; })()",
+        "desc": "split conserva volumen; núcleo = 350×630×90"
+      }
+    },
+    {
+      "id": "p07",
+      "dice": "Las guías con el Hole Wizard: cuatro bushings de cuarenta y ocho con caja de cincuenta y cuatro en la placa cavidad, y cuatro pernos de treinta y cinco con caja de cuarenta en el núcleo, a ciento cuarenta y dos y doscientos setenta y siete del origen. El acero removido cuadra con la fórmula del counterbore.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-curso-guias",
+          "settle": 45000
+        }
+      ],
+      "check": {
+        "js": "(() => { const c = window.__forgeBrep && window.__forgeBrep.curso; return !!c && c.stage >= 6 && Math.abs(c.vols.quitadoCav - 1068770) < 11000 && Math.abs(c.vols.quitadoCore - 355785) < 4000; })()",
+        "desc": "guías: acero removido = fórmulas ⌀48/⌀54 y ⌀35/⌀40"
+      }
+    },
+    {
+      "id": "p08",
+      "dice": "Y la verificación del propio curso: transparencia en la placa para ver las cavidades y los barrenos adentro, sin seccionar. Veintidós etapas del tutorial, seis clics en La Forja — mismas cotas, y cada paso con su número verificado. Esto es lo que pasa cuando la talacha la hace el kernel.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "mold-xray-toggle",
+          "settle": 4000
+        },
+        {
+          "type": "wait",
+          "ms": 2500
+        }
+      ],
+      "check": {
+        "js": "(() => { const c = window.__forgeBrep && window.__forgeBrep.curso; return !!c && c.stage >= 6; })()",
+        "desc": "molde completo en escena (paso 6/6)"
+      }
+    }
+  ]
+}

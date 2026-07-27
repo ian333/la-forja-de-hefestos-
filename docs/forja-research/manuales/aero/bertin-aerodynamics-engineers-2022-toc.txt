@@ -1,0 +1,1400 @@
+ISTUDY
+
+Aerodynamics
+for Engineers
+S I X T H ED I T I O N
+
+JOHN J. BERTIN
+RUSSELL M. CUMMINGS
+
+ISTUDY
+
+ISTUDY
+
+Aerodynamics for Engineers
+Sixth Edition
+Now reissued by Cambridge University Press, this sixth edition covers the fundamentals
+of aerodynamics using clear explanations and real-world examples. Aerodynamics concept
+boxes throughout showcase real-world applications, chapter objectives provide readers with a
+better understanding of the goal of each chapter and highlight the key “take-home” concepts,
+and example problems aid understanding of how to apply core concepts. Coverage also includes the importance of aerodynamics to aircraft performance, applications of potential flow
+theory to aerodynamics, high-lift military airfoils, subsonic compressible transformations,
+and the distinguishing characteristics of hypersonic flow.
+Supported online by a solutions manual for instructors, MATLAB® files for example problems, and lecture slides for most chapters, this is an ideal textbook for undergraduates taking
+introductory courses in aerodynamics, and for graduates taking preparatory courses in aerodynamics before progressing to more advanced study.
+John J. Bertin, deceased, was Professor Emeritus of Aeronautics at the U.S. Air Force Academy,
+formerly holding positions at NASA, The University of Texas at Austin, and Sandia National
+Laboratories.
+Russell M. Cummings is Professor of Aeronautics at the U.S. Air Force Academy. He is a
+Fellow of the American Institute of Aeronautics and the Royal Aeronautical Society, and the
+lead author of Applied Computational Aerodynamics (Cambridge University Press, 2015).
+
+ISTUDY
+
+ISTUDY
+
+Aerodynamics for Engineers
+Sixth Edition
+
+J O H N J. BERT IN
+US Air Force Academy
+
+R U S SE LL M . CUM MI N G S
+US Air Force Academy
+
+ISTUDY
+
+University Printing House, Cambridge CB2 8BS, United Kingdom
+One Liberty Plaza, 20th Floor, New York, NY 10006, USA
+477 Williamstown Road, Port Melbourne, VIC 3207, Australia
+314–321, 3rd Floor, Plot 3, Splendor Forum, Jasola District Centre, New Delhi – 110025, India
+103 Penang Road, #05–06/07, Visioncrest Commercial, Singapore 238467
+Cambridge University Press is part of the University of Cambridge.
+It furthers the University’s mission by disseminating knowledge in the pursuit of
+education, learning, and research at the highest international levels of excellence.
+www.cambridge.org
+Information on this title: www.cambridge.org/9781009098625
+DOI: 10.1017/9781009105842
+© Pearson Education, 2002, 2009, 2014
+© John J. Bertin and Russell M. Cummings, 2022
+This publication is in copyright. Subject to statutory exception
+and to the provisions of relevant collective licensing agreements,
+no reproduction of any part may take place without the written
+permission of Cambridge University Press.
+This book was previously published by Pearson Education, Inc. 2002, 2009, 2014
+Reissued by Cambridge University Press 2022
+A catalogue record for this publication is available from the British Library.
+ISBN 978-1-009-09862-5 Hardback
+Additional resources at www.cambridge.org/bertin-cummings6e
+Cambridge University Press has no responsibility for the persistence or accuracy of
+URLs for external or third-party internet websites referred to in this publication
+and does not guarantee that any content on such websites is, or will remain,
+accurate or appropriate.
+
+ISTUDY
+
+Contents
+PREFACE
+CHAPTER 1
+
+xi
+WHY STUDY AERODYNAMICS?
+1.1
+1.2
+1.3
+1.4
+
+1
+
+Aerodynamics and the Energy-Maneuverability
+Technique 2
+Solving for the Aerothermodynamic
+Parameters 8
+Description of an Airplane 26
+Summary 27
+Problems 28
+References 32
+
+CHAPTER 2
+
+FUNDAMENTALS OF FLUID MECHANICS
+2.1
+2.2
+2.3
+2.4
+2.5
+2.6
+2.7
+2.8
+2.9
+2.10
+
+Introduction to Fluid Dynamics 34
+Conservation of Mass 36
+Conservation of Linear Momentum 40
+Applications to Constant-Property Flows
+Reynolds Number and Mach Number as
+Similarity Parameters 55
+Concept of the Boundary Layer 63
+Conservation of Energy 65
+First Law of Thermodynamics 66
+Derivation of the Energy Equation 68
+Summary 76
+
+33
+
+46
+
+Problems 76
+References 87
+CHAPTER 3
+
+DYNAMICS OF AN INCOMPRESSIBLE,
+INVISCID FLOW FIELD
+3.1
+3.2
+3.3
+3.4
+3.5
+3.6
+3.7
+
+88
+
+Inviscid Flows 89
+Bernoulli’s Equation 90
+Use of Bernoulli’s Equation to Determine
+Airspeed 93
+The Pressure Coefficient 96
+Circulation 99
+Irrotational Flow 102
+Kelvin’s Theorem 103
+v
+
+ISTUDY
+
+Contents
+
+vi
+
+3.8
+3.9
+3.10
+3.11
+3.12
+3.13
+3.14
+3.15
+3.16
+3.17
+3.18
+
+Incompressible, Irrotational Flow and the
+Velocity Potential 104
+Stream Function in a Two-Dimensional,
+Incompressible Flow 107
+Relation between Streamlines and Equipotential
+Lines 109
+Superposition of Flows 112
+Elementary Flows 113
+Adding Elementary Flows to Describe Flow
+Around a Cylinder 126
+Lift and Drag Coefficients as Dimensionless
+Flow-Field Parameters 134
+Flow Around a Cylinder with Circulation 139
+Source Density Distribution on the Body
+Surface 144
+Incompressible, Axisymmetric Flow 149
+Summary 152
+Problems 152
+References 165
+
+CHAPTER 4
+
+VISCOUS BOUNDARY LAYERS
+4.1
+
+4.2
+4.3
+4.4
+4.5
+4.6
+4.7
+4.8
+4.9
+
+166
+
+Equations Governing the Boundary Layer
+for a Steady, Two-Dimensional, Incompressible
+Flow 167
+Boundary Conditions 170
+Incompressible, Laminar Boundary Layer 171
+Boundary-Layer Transition 189
+Incompressible, Turbulent Boundary Layer 193
+Eddy Viscosity and Mixing Length
+Concepts 202
+Integral Equations for a Flat-Plate Boundary
+Layer 204
+Thermal Boundary Layer for Constant-Property
+Flows 215
+Summary 221
+Problems 221
+References 225
+
+CHAPTER 5
+
+CHARACTERISTIC PARAMETERS FOR AIRFOIL
+AND WING AERODYNAMICS
+5.1
+5.2
+
+Characterization of Aerodynamic Forces and
+Moments 227
+Airfoil Geometry Parameters 231
+
+226
+
+ISTUDY
+
+Contents
+
+vii
+
+5.3
+5.4
+5.5
+
+Wing-Geometry Parameters 236
+Aerodynamic Force and Moment
+Coefficients 244
+Wings of Finite Span 273
+Problems 288
+References 292
+
+CHAPTER 6
+
+INCOMPRESSIBLE FLOWS AROUND AIRFOILS
+OF INFINITE SPAN
+6.1
+6.2
+6.3
+6.4
+6.5
+6.6
+6.7
+6.8
+6.9
+
+294
+
+General Comments 295
+Circulation and the Generation of Lift 296
+General Thin-Airfoil Theory 298
+Thin, Flat-Plate Airfoil (Symmetric Airfoil) 301
+Thin, Cambered Airfoil 306
+Laminar-Flow Airfoils 317
+High-Lift Airfoil Sections 321
+Multielement Airfoil Sections for Generating
+High Lift 327
+High-Lift Military Airfoils 334
+Problems 337
+References 339
+
+CHAPTER 7
+
+INCOMPRESSIBLE FLOW ABOUT WINGS
+OF FINITE SPAN
+7.1
+7.2
+7.3
+7.4
+7.5
+7.6
+7.7
+7.8
+7.9
+7.10
+7.11
+7.12
+
+General Comments 342
+Vortex System 345
+Lifting-Line Theory for Unswept Wings 346
+Panel Methods 375
+Vortex Lattice Method 379
+Factors Affecting Drag Due-to-Lift at Subsonic
+Speeds 401
+Delta Wings 404
+Leading-Edge Extensions 414
+Asymmetric Loads on the Fuselage at High
+Angles of Attack 418
+Flow Fields for Aircraft at High Angles of
+Attack 422
+Unmanned Air Vehicle Wings 424
+Summary 426
+Problems 426
+References 428
+
+341
+
+ISTUDY
+
+viii
+
+Contents
+
+CHAPTER 8
+
+DYNAMICS OF A COMPRESSIBLE FLOW FIELD
+8.1
+8.2
+8.3
+8.4
+8.5
+8.6
+8.7
+8.8
+8.9
+8.10
+8.11
+
+8.12
+
+431
+
+Thermodynamic Concepts 432
+Adiabatic Flow in a Variable-Area
+Streamtube 441
+Isentropic Flow in a Variable-Area Streamtube 445
+Converging-diverging Nozzles 451
+Characteristic Equations and Prandtl-Meyer
+Flows 454
+Shock Waves 462
+Viscous Boundary Layer 473
+Shock-Wave/Boundary-Layer Interactions 480
+Shock/Shock Interactions 482
+The Role of Experiments for Generating
+Information Defining the Flow Field 486
+Comments About the Scaling/Correction
+Process(es) for Relatively Clean Cruise
+Configurations 494
+Summary 495
+Problems 495
+References 502
+
+CHAPTER 9
+
+COMPRESSIBLE, SUBSONIC FLOWS
+AND TRANSONIC FLOWS
+9.1
+9.2
+9.3
+9.4
+9.5
+9.6
+
+505
+
+Compressible, Subsonic Flow 506
+Transonic Flow Past Unswept Airfoils 517
+Wave Drag Reduction by Design 526
+Swept Wings at Transonic Speeds 527
+Transonic Aircraft 543
+Summary 548
+Problems 548
+References 548
+
+CHAPTER 10 TWO-DIMENSIONAL, SUPERSONIC FLOWS
+AROUND THIN AIRFOILS
+10.1
+10.2
+10.3
+10.4
+
+Linear Theory 553
+Second-Order Theory (Busemann’s
+Theory) 561
+Shock-Expansion Technique 566
+Summary 572
+Problems 572
+References 575
+
+551
+
+ISTUDY
+
+Contents
+
+ix
+
+CHAPTER 11 SUPERSONIC FLOWS OVER WINGS
+AND AIRPLANE CONFIGURATIONS
+11.1
+11.2
+11.3
+11.4
+11.5
+11.6
+11.7
+11.8
+11.9
+11.10
+11.11
+11.12
+11.13
+
+11.14
+
+577
+
+General Remarks About Lift and Drag 579
+General Remarks About Supersonic
+Wings 581
+Governing Equation and Boundary
+Conditions 583
+Consequences of Linearity 584
+Solution Methods 585
+Conical-Flow Method 585
+Singularity-Distribution Method 598
+Design Considerations for Supersonic
+Aircraft 625
+Some Comments About the Design of the SST
+and of the HSCT 627
+Slender Body Theory 634
+Base Drag 636
+Aerodynamic Interaction 639
+Aerodynamic Analysis for Complete
+Configurations in a Supersonic Free
+Stream 642
+Summary 643
+Problems 644
+References 646
+
+CHAPTER 12 HYPERSONIC FLOWS
+12.1
+12.2
+12.3
+12.4
+12.5
+12.6
+12.7
+12.8
+12.9
+12.10
+
+The Five Distinguishing Characteristics 652
+Newtonian Flow Model 657
+Stagnation Region Flow-Field
+Properties 660
+Modified Newtonian Flow 665
+High L/D Hypersonic Configurations—
+Waveriders 682
+Aerodynamic Heating 691
+A Hypersonic Cruiser for the Twenty-First
+Century? 697
+Importance of Interrelating CFD, Ground-Test
+Data, and Flight-Test Data 700
+Boundary-Layer-Transition Methodology 702
+Summary 706
+Problems 706
+References 708
+
+649
+
+ISTUDY
+
+x
+
+Contents
+
+CHAPTER 13 AERODYNAMIC DESIGN CONSIDERATIONS
+13.1
+13.2
+13.3
+13.4
+13.5
+
+13.6
+13.7
+13.8
+13.9
+13.10
+
+711
+
+High-Lift Configurations 712
+Circulation Control Wing 725
+Design Considerations for Tactical Military
+Aircraft 727
+Drag Reduction 731
+Development of an Airframe Modification to
+Improve the Mission Effectiveness of an Existing
+Airplane 742
+Considerations for Wing/Canard, Wing/Tail, and
+Tailless Configurations 758
+Comments on the F-15 Design 763
+The Design of the F-22 764
+The Design of the F-35 767
+Summary 770
+Problems 770
+References 772
+
+CHAPTER 14 TOOLS FOR DEFINING THE AERODYNAMIC
+ENVIRONMENT
+14.1
+14.2
+14.3
+14.4
+14.5
+
+14.6
+
+Computational Tools 777
+Establishing the Credibility of CFD
+Simulations 783
+Ground-Based Test Programs 785
+Flight-Test Programs 788
+Integration of Experimental and Computational
+Tools: The Aerodynamic Design
+Philosophy 789
+Summary 790
+References
+
+APPENDIX A
+
+APPENDIX B
+
+775
+
+790
+
+THE EQUATIONS OF MOTION WRITTEN
+IN CONSERVATION FORM
+
+792
+
+A COLLECTION OF OFTEN USED TABLES
+
+798
+
+ANSWERS TO SELECTED PROBLEMS
+
+806
+
+CREDITS
+
+811
+
+INDEX
+
+815
+
+CONVERSION FACTORS
+
+827
+
+ISTUDY
+
+Preface
+A great deal has happened since the preface to the fifth edition of Aerodynamics for Engineers was written early in 2008. During the spring and early summer of 2008, John Bertin and
+I were busy checking chapter proofs for “The Book” (as he liked to call it). John was at home
+in Houston and teaching at his beloved Rice University (you may have noticed that covers
+of the various editions of Aerodynamics for Engineers were usually blue and light gray, the
+colors of Rice University). I was a visiting researcher at the Institute of Aerodynamics and
+Flow Technology at The German Aerospace Center (DLR) in Braunschweig. John had two
+major struggles in his life at the time: he was working through the last stages of the illness that
+would take his wife, Ruth, from him. He had also been diagnosed with pancreatic cancer, and
+was dealing with doctors, treatments, and hospitals. We spoke on the phone often about the
+various challenges he was facing, both with his wife’s and his own health. Through the support
+of his family, as well as his desire to finish the fifth edition, he made it through the summer
+of 2008 in reasonably good shape. Copies of the book were shipped to us in July 2008, and
+he was very glad that we had finished the undertaking we had started so many years earlier.
+Unfortunately, John’s pancreatic cancer took a turn for the worse in late summer
+of 2008, and he passed away on October 11, 2008. A large number of former co-workers
+from NASA and various universities, as well as his family and friends, attended his funeral
+later that month, and we all knew that a very special person had passed from our ranks.
+One of the things that John and I talked about during his last months of life was
+his desire for Aerodynamics for Engineers to continue to grow and evolve, even if he
+was not around to help with that task. I cannot help but think that he asked me to be
+his co-author for the fifth edition for this purpose. So, in spite of the fact that John is no
+longer with us, his spirit and excitement for learning will continue to live.
+So, there were many goals for writing the sixth edition of Aerodynamics for Engineers: (1) to continue the legacy of Professor Bertin; (2) to rewrite many of the sections
+that provide readers with a motivation for studying aerodynamics in a more casual, enjoyable, and readable manner; (3) to update the technical innovations and advancements
+that have taken place in aerodynamics since the writing of the previous edition; and (4) to
+add aerodynamics concept boxes throughout the book to enhance the interest of readers.
+To help achieve these goals I provided readers with the following new information:
+importance of aerodynamics to aircraft performance, a description of the airplane, the
+irrotational flow condition, applications of potential flow theory to aerodynamics, expanded descriptions of airfoil geometry and nomenclature, high lift military airfoils, the
+effect of taper ratio on wing efficiency, induced drag estimation, converging-diverging
+nozzles, shock/shock interactions, subsonic compressible transformations, additional
+compressibility corrections, critical Mach number, drag divergence Mach number, base
+drag, and the distinguishing characteristics of hypersonic flow. These new sections should
+greatly enhance the usability of the book.
+In addition, there are numerous new figures containing updated information, as
+well as numerous, additional up-to-date references throughout the book. Finally, numerous new example problems have been added throughout the book to enhance the
+xi
+
+ISTUDY
+
+xii
+
+Preface
+
+learning of aerodynamics by the reader, and answers to selected problems have been
+added to help students know when they have done the problems correctly. Users of the
+fifth edition of the book will find that all material included in that edition is still included
+in the sixth edition, with the new material added throughout the book to bring a realworld flavor to the concepts being developed. I hope that readers will find the inclusion
+of all of this additional material helpful and informative.
+Finally, no major revision of a book like Aerodynamics for Engineers can take place
+without the help of many people. I am especially indebted to everyone who aided in collecting new materials for the sixth edition. I want to especially thank Preston A. Henne and
+Robert van’t Riet of McDonnell Douglas; Eli Reshotko of Case Western Reserve University;
+David W. Hall of DHC Engineering; Stuart Rogers of NASA Ames Research Center; David
+McDaniel of the University of Alabama, Birmingham; Hans Hornung of Caltech; Andreas
+Schütte and Martin Hepperle of DLR; Patrick Champigny of ONERA; Aaron Byerley of
+the U.S. Air Force Academy; John McMasters of The Boeing Company; and William H.
+Mason of Virginia Tech. In addition, I am very grateful for the excellent suggestions and
+comments made by the reviewers of the sixth edition: Roger L. Simpson of Virginia Tech, Tej
+R. Gupta of Embry-Riddle Aeronautical University, Serhat Hosder of Missouri University
+of Science and Technology, and Lisa Grega of The College of New Jersey. The editorial and
+production staff at Pearson has been outstanding in their support of this new edition: I greatly
+appreciate their efforts. I am also extremely grateful to the many students at the U.S. Air
+Force Academy who have pointed out errors that they found in the previous edition. I hope
+that everyone who reads this book will find it useful and educational.
+
+WHAT’S NEW TO THIS EDITION?
+• Aerodynamics concept boxes added throughout the book to bring real-world examples and applications to light as new material is being learned
+• Chapter objectives to give readers a better understanding of the goal of each chapter and what concepts they should understand after reading through the chapter
+• Significant re-writing of material and derivations from previous editions to improve clarity and usefulness
+• Extra example problems to improve understanding of how to apply concepts to
+useful applications
+• Significant new sections added on the topics of: importance of aerodynamics to
+aircraft performance, a description of the airplane, the irrotational flow condition,
+applications of potential flow theory to aerodynamics, expanded description of
+airfoil geometry and nomenclature, high lift military airfoils, the effect of taper
+ratio on wing efficiency, induced drag estimation, converging-diverging nozzles,
+shock/shock interactions, subsonic compressible transformations, additional compressibility corrections, critical Mach number, drag divergence Mach number,
+base drag, and the distinguishing characteristics of hypersonic flow
+• Updated figures and photographs to help readers see concepts from real examples
+and on real aircraft
+• Answers to selected problems
+Enjoy your study of aerodynamics!
+
+ISTUDY
+
+Preface
+
+xiii
+
+INSTRUCTORS RESOURCES
+Resources to accompany the text are located at www.cambridge.org/bertin-cummings6e.
+RUSSELL M. CUMMINGS
+Larkspur, Colorado
+
+ISTUDY
+
+ISTUDY
+
+1 WHY STUDY
+AERODYNAMICS?
+
+Chapter Objectives
+• Learn why aerodynamics is important in determining the performance
+characteristics of airplanes
+• Develop a basic understanding of fluid properties such as density, temperature,
+pressure, and viscosity and know how to calculate these properties for a perfect
+gas
+• Learn about the atmosphere and why we use a “standard atmosphere” model
+to perform aerodynamic calculations; learn how to perform calculations of fluid
+properties in the atmosphere
+• Learn the basic components of an airplane and what they are used for
+
+The study of aerodynamics is a challenging and rewarding discipline within aeronautics
+since the ability of an airplane to perform (how high, how fast, and how far an airplane
+will fly, such as the F-15E shown in Fig. 1.1) is determined largely by the aerodynamics
+of the vehicle. However, determining the aerodynamics of a vehicle (finding the lift
+and drag) is one of the most difficult things you will ever do in engineering, requiring
+complex theories, experiments in wind tunnels, and simulations using modern highspeed computers. Doing any of these things is a challenge, but a challenge well worth
+the effort for those wanting to better understand aircraft flight.
+1
+
+ISTUDY
+
+2
+
+Chap. 1 / Why Study Aerodynamics?
+
+Figure 1.1 Aerodynamics is required for all components of the
+F-15E in flight, including the wing, fuselage, horizontal and vertical tails, stores, and how they interact with each other (U.S. Air
+Force photo by Staff Sgt. Samuel Rogers).
+
+In order to prepare you for the challenge of learning about aerodynamics, we
+will first look at some interesting aspects of aircraft performance, and how we could
+determine if one airplane will outperform another airplane in a dog fight. Hopefully
+this will lead us to the point where we realize that aerodynamics is one of the prime
+characteristics of an airplane, which will determine the performance of the vehicle.
+Of course, aerodynamics also requires that we understand some basic information about fluid dynamics, since physical materials known as fluids are made up of
+both liquids and gasses, and air is a gas. So some basic concepts about fluid properties
+and how we can describe a fluid will also be necessary. Since airplanes fly in the atmosphere, we will also develop a standard way to describe the properties of air in the
+atmosphere. And finally, we will discuss some of the basic geometry of an airplane,
+so we will have a common nomenclature for discussing how airplanes fly and for the
+aerodynamics of the various parts of an airplane. All of these pieces of background
+information will help us get started on the path to understanding aerodynamics, which
+is the goal of this book.
+
+1.1 AERODYNAMICS AND THE ENERGYMANEUVERABILITY TECHNIQUE
+Early in the First World War, fighter pilots (at least those good enough to survive
+their first engagement with the enemy) quickly developed tactics that were to serve
+them throughout the years. German aces, such as Oswald Boelcke and Max Immelman,
+
+ISTUDY
+
+Sec. 1.1 / Aerodynamics and the Energy-Maneuverability Technique
+
+3
+
+realized that if they initiated combat starting from an altitude that was greater than that
+of their adversary, they could dive upon their foe, trading potential energy (height) for
+kinetic energy (velocity). Using the greater speed of his airplane to close from the rear
+(i.e., from the target aircraft’s “six o’clock position”), the pilot of the attacking aircraft
+could dictate the conditions of the initial phase of the air-to-air combat. Starting from a
+superior altitude and converting potential energy to kinetic energy, the attacker might
+be able to destroy his opponent on the first pass. These tactics were refined, as the
+successful fighter aces gained a better understanding of the nuances of air combat by
+building an empirical database through successful air-to-air battles. A language grew
+up to codify these tactics: “Check your six.”
+This data base of tactics learned from successful combat provided an empirical
+understanding of factors that are important to aerial combat. Clearly, the sum of the
+potential energy plus the kinetic energy (i.e., the total energy) of the aircraft is one of
+the factors.
+EXAMPLE 1.1: The total energy
+Compare the total energy of a B-52 (shown in Fig. 1.2a) that weighs 450,000
+pounds and that is cruising at a true air speed of 250 knots at an altitude of
+20,000 ft with the total energy of an F-5 (shown in Fig. 1.2b) that weighs
+12,000 pounds and that is cruising at a true air speed of 250 knots at an altitude of 20,000 ft. The equation for the total energy is
+E =
+
+1
+mV2 + mgh
+2
+
+(1.1)
+
+Solution: To have consistent units, the units for velocity should be feet per second
+rather than knots. A knot is a nautical mile per hour and is equal to 1.69 ft per
+second, so 250 knots is equal to 422.5 ft/s. The mass is given by the equation:
+m =
+
+(a) B-52H
+
+W
+g
+
+(1.2)
+
+(b) F-5E
+
+Figure 1.2 Aircraft used in energy-maneuverability comparison
+(U.S. Air Force photos; B-52H photo by Mike Cassidy).
+
+ISTUDY
+
+4
+
+Chap. 1 / Why Study Aerodynamics?
+
+Note that the units of mass could be grams, kilograms, lbm, slugs, or lbf # s2 >ft.
+The choice of units often will reflect how mass appears in the application.
+The mass of the “Buff” (i.e., the B-52) is 13,986 lbf # s2 >ft or 13,986 slugs,
+while the mass for the F-5 is 373 slugs. The total energy for the B-52 is:
+E =
+
+1
+lbf # s2
+ft 2
+a 13,986
+b a 422.5 b + (450,000 lbf)(20,000 ft)
+s
+2
+ft
+
+E = 1.0248 * 1010 ft # lbf
+
+Similarly, the total energy of the F-5 fighter is
+E =
+
+lbf # s2
+ft 2
+1
+a 373
+b a 422.5 b + (12,000 lbf)(20,000 ft)
+s
+2
+ft
+
+E = 2.7329 * 108 ft # lbf
+
+The total energy of the B-52 is 37.5 times the total energy of the F-5.
+Even though the total energy of the B-52 is so very much greater than that for
+the F-5, it just doesn’t seem likely that a B-52 would have a significant advantage in air-to-air combat with an F-5. Notice that the two aircraft are cruising
+at the same flight conditions (velocity/altitude combination). So in this case
+the difference in total energy is in direct proportion to the difference in the
+weights of the two aircraft. Perhaps the specific energy (i.e., the energy per
+unit weight) is a more realistic parameter when trying to predict which aircraft
+would have an edge in air-to-air combat.
+
+EXAMPLE 1.2: The energy height
+Since the weight specific energy also has units of height, it will be given the
+symbol He and is called the energy height. Dividing the terms in equation
+(1.1) by the weight of the aircraft (W = m g)
+He =
+
+E
+V2
+=
++ h
+W
+2g
+
+(1.3)
+
+Compare the energy height of a B-52 flying at 250 knots at an altitude of
+20,000 ft with that of an F-5 cruising at the same altitude and at the same
+velocity.
+Solution: The energy height of the B-52 is
+ft 2
+a 422.5 b
+s
+1
+He =
++ 20000 ft
+2
+ft
+32.174 2
+s
+He = 22774 ft
+Since the F-5 is cruising at the same altitude and at the same true air speed as
+the B-52, it has the same energy height (i.e., the same weight specific energy).
+
+ISTUDY
+
+Sec. 1.1 / Aerodynamics and the Energy-Maneuverability Technique
+
+5
+
+If we consider only this weight specific energy, the B-52 and the F-5 are
+equivalent. This is obviously an improvement over the factor of 37.5 that
+the “Buff” had over the F-5, when the comparison was made based on the
+total energy. However, the fact that the energy height is the same for these
+two aircraft indicates that further effort is needed to provide a more realistic
+comparison for air-to-air combat.
+
+Based on these examples, there must be some additional parameters that are relevant when comparing the one-on-one capabilities of two aircraft in air-to-air combat.
+Captain Oswald Boelcke developed a series of rules based on his combat experience as a
+forty-victory ace by October 19, 1916. Boelcke specified seven rules, or “dicta” [Werner
+(2005)]. The first five, which deal with tactics, are
+1. Always try to secure an advantageous position before attacking. Climb before and
+during the approach in order to surprise the enemy from above, and dive on him
+swiftly from the rear when the moment to attack is at hand.
+2. Try to place yourself between the sun and the enemy. This puts the glare of the
+sun in the enemy’s eyes and makes it difficult to see you and impossible to shoot
+with any accuracy.
+3. Do not fire the machine guns until the enemy is within range and you have him
+squarely within your sights.
+4. Attack when the enemy least expects it or when he is preoccupied with other duties,
+such as observation, photography, or bombing.
+5. Never turn your back and try to run away from an enemy fighter. If you are
+surprised by an attack on your tail, turn and face the enemy with your guns.
+Although Boelcke’s dicta were to guide fighter pilots for decades to come, they were
+experienced-based empirical rules. The first dictum deals with your total energy, the
+sum of the potential energy plus the kinetic energy. We learned from the first two example calculations that predicting the probable victor in one-on-one air-to-air combat
+is not based on energy alone.
+Note that the fifth dictum deals with maneuverability. Energy AND Maneuverability! The governing equations should include maneuverability as well as the specific
+energy.
+It wasn’t until almost half a century later that a Captain in the U.S. Air Force
+brought the needed complement of talents to bear on the problem [Coram (2002)].
+Captain John R. Boyd was an aggressive and talented fighter pilot who had an insatiable
+intellectual curiosity for understanding the scientific equations that had to be the basis
+of the “Boelcke dicta.” John R. Boyd was driven to understand the physics that was
+the foundation of the tactics that, until that time, had been learned by experience for
+the fighter pilot lucky enough to survive his early air-to-air encounters with an enemy.
+In his role as Director of Academics at the U.S. Air Force Fighter Weapons School, it
+became not only his passion, but his job.
+Air combat is a dynamic ballet of move and countermove that occurs over a
+continuum of time. Therefore, Boyd postulated that perhaps the time derivatives of
+
+ISTUDY
+
+6
+
+Chap. 1 / Why Study Aerodynamics?
+
+the energy height are more relevant than the energy height itself. How fast can we,
+in the target aircraft, with an enemy on our “six.” quickly dump energy and allow
+the foe to pass? Once the enemy has passed, how quickly can we increase our energy height and take the offensive? John R. Boyd taught these tactics in the Fighter
+Weapons School. Now he became obsessed with the challenge of developing the
+science of fighter tactics.
+1.1.1 Specific Excess Power
+If the pilot of the 12,000 lbf F-5 that is flying at a velocity of 250 knots (422.5 ft/s) and at
+an altitude of 20,000 ft is to gain the upper hand in air-to-air combat, his aircraft must
+have sufficient power either to out-accelerate or to outclimb his adversary. Consider the
+case where the F-5 is flying at a constant altitude. If the engine is capable of generating
+more thrust than the drag acting on the aircraft, the acceleration of the aircraft can be
+calculated using Newton’s Law:
+a F = ma
+which for an aircraft accelerating at a constant altitude becomes
+T - D =
+
+W dV
+g dt
+
+(1.4)
+
+Multiplying both sides of equation (1.4) by V and dividing by W gives
+(T - D)V
+V dV
+=
+g dt
+W
+
+(1.5)
+
+which is the specific excess power, Ps.
+EXAMPLE 1.3: The specific excess power and acceleration
+The left-hand side of equation (1.5) is excess power per unit weight, or
+specific excess power, Ps. Use equation (1.5) to calculate the maximum
+acceleration for a 12,000-lbf F-5 that is flying at 250 knots (422.5 ft/s) at
+20,000 ft.
+Solution: Performance charts for an F-5 that is flying at these conditions indicate that
+it is capable of generating 3550 lbf thrust (T) with the afterburner lit, while
+the total drag (D) acting on the aircraft is 1750 lbf. Thus, the specific excess
+power is
+Ps =
+
+3(3550 - 1750) lbf4 422.5 ft>s
+(T - D)V
+=
+= 63.38 ft>s
+W
+12000 lbf
+
+Rearranging equation (1.5) to solve for the acceleration gives
+32.174 ft>s2
+g
+dV
+= Ps = (63.38 ft>s)
+= 4.83 ft>s2
+dt
+V
+422.5 ft>s
+
+ISTUDY
+
+Sec. 1.1 / Aerodynamics and the Energy-Maneuverability Technique
+
+7
+
+1.1.2 Using Specific Excess Power to Change the
+Energy Height
+Taking the derivative with respect to time of the two terms in equation (1.3), we obtain:
+dHe
+V dV
+dh
+=
++
+g dt
+dt
+dt
+
+(1.6)
+
+The first term on the right-hand side of equation (1.6) represents the rate of
+change of kinetic energy (per unit weight). It is a function of the rate of change of the
+dV
+velocity as seen by the pilot a
+b . The significance of the second term is even less
+dt
+cosmic. It is the rate of change of the potential energy (per unit weight). Note also that
+dh
+a b is the vertical component of the velocity [i.e., the rate of climb (ROC)] as seen
+dt
+by the pilot on his altimeter. Air speed and altitude—these are parameters that fighter
+pilots can take to heart.
+Combining the logic that led us to equations (1.5) and (1.6) leads us to the conclusion that the specific excess power is equal to the time-rate-of-change of the energy height.
+So,
+Ps =
+
+(T - D)V
+dHe
+V dV
+dh
+=
+=
++
+g dt
+W
+dt
+dt
+
+(1.7)
+
+Given the specific excess power calculated in Example 1.3, we could use equation (1.7)
+to calculate the maximum rate-of-climb (for a constant velocity) for the 12,000 lbf F-5
+as it passes through 20,000 ft at 250 knots.
+dh
+= Ps = 63.38 ft>s = 3802.8 ft>min
+dt
+Clearly, to be able to generate positive values for the terms in equation (1.7), we
+need an aircraft with excess power (i.e., one for which the thrust exceeds the drag).
+Weight is another important factor, since the lighter the aircraft, the greater the benefits
+of the available excess power.
+“Boyd, as a combat pilot in Korea and as a tactics instructor at Nellis AFB in the
+Nevada desert, observed, analyzed, and assimilated the relative energy states of his
+aircraft and those of his opponent’s during air combat engagements. c He also noted
+that, when in a position of advantage, his energy was higher than that of his opponent
+and that he lost that advantage when he allowed his energy to decay to less than that
+of his opponent.”
+“He knew that, when turning from a steady-state flight condition, the airplane
+under a given power setting would either slow down, lose altitude, or both. The result
+meant he was losing energy (the drag exceeded the thrust available from the engine).
+From these observations, he concluded that maneuvering for position was basically an
+energy problem. Winning required the proper management of energy available at the
+conditions existing at any point during a combat engagement” [Hillaker (1997)].
+
+ISTUDY
+
+8
+
+Chap. 1 / Why Study Aerodynamics?
+
+In the mid-1960s, Boyd had gathered energy-maneuverability data on all of the
+fighter aircraft in the U.S. Air Force inventory and on their adversaries. He sought to
+understand the intricacies of maneuvering flight. What was it about the airplane that
+would limit or prevent him from making it to do what he wanted it to do?
+1.1.3 John R. Boyd Meet Harry Hillaker
+The relation between John R. Boyd and Harry Hillaker “dated from an evening in the
+mid-1960s when a General Dynamics (GD) engineer named Harry Hillaker was sitting
+in the Officer’s Club at Eglin AFB, Florida, having an after dinner drink. Hillaker’s host
+introduced him to a tall, blustery pilot named John R. Boyd, who immediately launched
+a frontal attack on GD’s F-111 fighter. Hillaker was annoyed but bantered back” [Grier
+(2004)]. Hillaker countered that the F-111 was designated a fighter-bomber.
+“A few days later, he (Hillaker) received a call—Boyd had been impressed by
+Hillaker’s grasp of aircraft conceptual design and wanted to know if Hillaker was interested in more organized meetings.”
+“Thus was born a group that others in the Air Force dubbed the ‘fighter mafia.’ Their
+basic belief was that fighters did not need to overwhelm opponents with speed and size.
+Experience in Vietnam against nimble Soviet-built MiGs had convinced them that technology had not yet turned air-to-air combat into a long-range shoot-out.” [Grier (2004)]
+The fighter mafia knew that a small aircraft could enjoy a high thrust-to-weight
+ratio: small aircraft have less drag. “The original F-16 design had about one-third the
+drag of an F-4 in level flight and one-fifteenth the drag of an F-4 at a high angle-ofattack” [Grier (2004)].
+1.1.4 The Importance of Aerodynamics to Aircraft
+Performance
+The importance of the previous discussion is that aircraft performance is largely determined by the aerodynamic characteristics of the airplane (as well as the mass properties
+and thrust of the airplane). Parameters like lift and drag determine aircraft performance
+such as energy height. Lift and drag also determine more easy-to-understand parameters
+like range, rate of climb, and glide ratio (which is exactly the lift/drag ratio of the airplane).
+Without knowing the aerodynamics of the airplane (as well as the mass properties and
+thrust), we will not be able to determine how well an airplane will perform. This requires
+knowing the flow field around the airplane so that the pressures, shear stress, and heating
+on the surface of the airplane can be determined. That is why the study of aerodynamics
+is an essential stepping stone to gaining a fuller understanding of how an airplane will
+perform, and how to improve that performance to achieve flight requirements.
+1.2
+
+SOLVING FOR THE AEROTHERMODYNAMIC
+PARAMETERS
+The fundamental problem facing the aerodynamicist is to predict the aerodynamic
+forces and moments and the heat-transfer rates acting on a vehicle in flight. In order to
+predict these aerodynamic forces and moments with suitable accuracy, it is necessary
+
+ISTUDY
+
+Sec. 1.2 / Solving for the Aerothermodynamic Parameters
+
+9
+
+to be able to describe the pattern of flow around the vehicle. The resultant flow pattern
+depends on the geometry of the vehicle, its orientation with respect to the undisturbed
+free stream, and the altitude and speed at which the vehicle is traveling. In analyzing
+the various flows that an aerodynamicist may encounter, assumptions about the fluid
+properties may be introduced. In some applications, the temperature variations are
+so small that they do not affect the velocity field. In addition, for those applications
+where the temperature variations have a negligible effect on the flow field, it is often
+assumed that the density is essentially constant. However, in analyzing high-speed flows,
+the density variations cannot be neglected. Since density is a function of pressure and
+temperature, it may be expressed in terms of these two parameters. In fact, for a gas
+in thermodynamic equilibrium, any thermodynamic property may be expressed as a
+function of two other independent, thermodynamic properties. Thus, it is possible to
+formulate the governing equations using the enthalpy and the entropy as the flow properties instead of the pressure and the temperature.
+1.2.1 Concept of a Fluid
+From the point of view of fluid mechanics, matter can be in one of two states—either
+solid or fluid. The technical distinction between these two states lies in their response
+to an applied shear, or tangential, stress. A solid can resist a shear stress by a static
+deformation; a fluid cannot. A fluid is a substance that deforms continuously under the
+action of shearing forces. An important corollary of this definition is that there can be
+no shear stresses acting on fluid particles if there is no relative motion within the fluid;
+that is, such fluid particles are not deformed. Thus, if the fluid particles are at rest or
+if they are all moving at the same velocity, there are no shear stresses in the fluid. This
+zero shear stress condition is known as the hydrostatic stress condition.
+A fluid can be either a liquid or a gas. A liquid is composed of relatively closely
+packed molecules with strong cohesive forces. As a result, a given mass of liquid will
+occupy a definite volume of space. If a liquid is poured into a container, it assumes the
+shape of the container up to the volume it occupies and will form a free surface in a
+gravitational field if unconfined from above. The upper (or free) surface is planar and
+perpendicular to the direction of gravity. Gas molecules are widely spaced with relatively small cohesive forces. Therefore, if a gas is placed in a closed container, it will
+expand until it fills the entire volume of the container. A gas has no definite volume.
+Thus, if it is unconfined, it forms an atmosphere that is essentially hydrostatic.
+1.2.2 Fluid as a Continuum
+There are two basic ways to develop equations that describe the motion of a system of fluid particles: we can either define the motion of each and every molecule
+or define the average behavior of the molecules within a given elemental volume.
+Our primary concern for problems in this text will not be with the motion of individual molecules, but with the general behavior of the fluid. We are concerned
+with describing the fluid motion in physical spaces that are very large compared to
+molecular dimensions (the size of molecules), so our elemental volume will contain
+
+ISTUDY
+
+10
+
+Chap. 1 / Why Study Aerodynamics?
+
+a large number of molecules. The fluid in these problems may be considered to be a
+continuous material whose properties can be determined from a statistical average
+for the particles in the volume: a macroscopic representation. The assumption of a
+continuous fluid is valid when the smallest volume of fluid that is of interest contains
+so many molecules that statistical averages are meaningful. In addition, we will assume that the number of molecules within the volume will remain essentially constant even though there is a continuous flux of molecules through the boundaries. If
+the elemental volume is too large (as large as the vehicle or body being considered),
+there could be a noticeable variation in the fluid properties determined statistically
+at various points in the volume.
+For example, the number of molecules in a cubic meter of air at room temperature and at sea-level pressure is approximately 2.5 * 1025. So, there are 2.5 * 1010
+molecules in a cube 0.01 mm on a side. The mean free path of the molecules (the
+average distance a molecule travels between impacts with other molecules) at sea
+level is 6.6 * 10-8m. There are sufficient molecules in this volume for the fluid to be
+considered a continuum, and the fluid properties can be determined from statistical
+averages. In contrast, at a very high altitude of 130 km there are only 1.6 * 1017 molecules in a cube 1 m on a side; the mean free path at this altitude is 10.2 m. Therefore,
+at this altitude the fluid cannot be considered a continuum (this is known as low
+density of rarefied flow).
+A parameter that is commonly used to identify the onset of low-density effects is
+the Knudsen number, which is the ratio of the mean free path to a characteristic dimension of the body. Although there is no definitive criterion, the continuum flow model
+starts to break down when the Knudsen number is roughly of the order of 0.1. Because
+rarefied flows describe a fluid that is not a continuum, different equations would have
+to be derived than those for a continuum. This book will concentrate, however, on the
+development of equations for flow in a continuum.
+1.2.3 Fluid Properties
+By employing the concept of a continuum, we can describe the gross behavior of the
+fluid motion using certain observable, macroscopic properties. Properties used to describe a general fluid motion include the temperature, the pressure, the density, the
+viscosity, and the speed of sound.
+Temperature. We are all familiar with temperature in qualitative terms: an object feels hot (or cold) to the touch. However, because of the difficulty in quantitatively
+defining the temperature, we typically define situations where there is an equality of
+temperature. Two bodies have equality of temperature when no change in any observable property occurs when they are in thermal contact. Furthermore, two bodies respectively equal in temperature to a third body must be equal in temperature to each other.
+Because of this observation, an arbitrary scale of temperature can be defined in terms
+of a convenient temperature for a standard body (e.g., the freezing point of water).
+Pressure. Individual molecules of a fluid continually strike a surface that is
+placed in the fluid because of the random motion of the molecules due to their thermal
+
+ISTUDY
+
+Sec. 1.2 / Solving for the Aerothermodynamic Parameters
+
+11
+
+Positive gage pressure
+Atmospheric pressure
+Negative gage pressure
+Absolute pressure
+is greater than
+the atmospheric
+pressure
+Absolute pressure is less than
+the atmospheric pressure
+
+Zero pressure
+
+Figure 1.3 Terms used in pressure measurements.
+energy. These collisions occur even though the surface is at rest relative to the fluid. By
+Newton’s second law, a force is exerted on the surface equal to the time rate of change
+of the momentum of the rebounding molecules. Pressure is the magnitude of this force
+per unit area of surface and has units of (force)/(length)2. Since a fluid that is at rest
+cannot sustain tangential forces, the pressure on the surface must act in the direction
+perpendicular to that surface. Furthermore, the pressure acting at a point in a fluid at
+rest is the same in all directions.
+Standard atmospheric pressure at sea level is defined as the pressure that can
+support a column of mercury 760 mm in length when the density of the mercury is
+13.5951 g>cm3 and the acceleration due to gravity is the standard sea level value.
+The standard atmospheric pressure at sea level in SI (System International) units is
+1.01325 * 105 N>m2. In English units, the standard atmospheric pressure at sea level is
+14.696 lbf>in2 or 2116.22 lbf>ft2.
+In many aerodynamic applications, we are interested in the difference between the
+absolute value of the local pressure and the atmospheric pressure. Many pressure gages
+indicate the difference between the absolute pressure and the atmospheric pressure
+existing at the gage. This difference, which is referred to as gage pressure, is illustrated
+in Fig. 1.3.
+
+Aerodynamics Concept Box: Consistent Units
+Performing calculations with the correct units can be one of the most challenging aspects
+of aerodynamics (or any field of engineering for that matter). The fact that aerodynamics
+is often done in both SI and English units can make the challenge even greater. Performing
+calculations in consistent units can greatly reduce the chance of making errors and greatly
+increase the ease of getting results.
+
+ISTUDY
+
+12
+
+Chap. 1 / Why Study Aerodynamics?
+
+Consistent units are the units of length, time, force, and mass that make Newton’s
+second law balance for unit values of each term:
+F = ma
+1 force unit = 1 mass unit * 1 acceleration unit
+For calculations in the SI system, the consistent units are Newtons (force), kilograms (mass), and
+m>s2 (acceleration), or in other words:
+1 Newton = 1 kilogram * 1 m>s2
+Using these units in calculations will ensure that units cancel correctly. If any other units
+appear in a problem, they should immediately be converted to these consistent units prior
+to performing calculations (grams should be converted to kilograms, centimeters should be
+converted to meters, hours should be converted to seconds, etc.).
+For calculations in the English system, the consistent units are pounds force (often just
+called pounds), slugs, feet, and seconds:
+1 lbf (or lb) = 1 slug * 1 ft>s2
+Any other units appearing in problems are most easily dealt with by converting to these consistent units (pounds mass [lbm] should be converted to slugs, miles should be converted to
+feet, hours should be converted to seconds, etc.). Using consistent units consistently will save
+a great deal of pain and suffering while performing calculations!
+
+Density. The density of a fluid at a point in space is the mass of the fluid per unit
+volume surrounding the point. As is the case when evaluating the other fluid properties,
+the incremental volume must be large compared to molecular dimensions yet very small
+relative to the dimensions of the vehicle whose flow field we seek to analyze. Provided
+that the fluid may be assumed to be a continuum, the density at a point is defined as
+r =
+
+lim
+
+d(mass)
+
+d(vol) S 0 d(vol)
+
+(1.8)
+
+where d represents a change rather than a differential. The dimensions of density are
+(mass)>(length)3.
+In general, the density of a gas is a function of the composition of the gas, its temperature, and its pressure. The relation
+r(composition, T, p)
+
+(1.9)
+
+is known as an equation of state. For a thermally perfect gas, the equation of state is
+r =
+
+p
+RT
+
+(1.10)
+
+The gas constant R has a particular value for each substance. The gas constant for air has
+the value 287.05 N # m>kg # K in SI units and 53.34 ft # lbf>lbm # R or 1716.16 ft2 >s2 # ⴰ R
+in English units. The temperature in equation (1.10) should be in absolute units. Thus,
+the temperature is either in K or in °R, but never in °C or in °F. The density of air at
+standard day sea level conditions is 1.2250 kg/m3 or 0.002377 slug/ft3.
+
+ISTUDY
+
+Sec. 1.2 / Solving for the Aerothermodynamic Parameters
+
+13
+
+EXAMPLE 1.4: Density in SI units
+Calculate the density of air when the pressure is 1.01325 * 105 N>m2 and the
+temperature is 288.15 K. Since air at this pressure and temperature behaves
+as a perfect gas, we can use equation (1.10).
+Solution:
+
+1.01325 * 105 N>m2
+(287.05 N # m>kg # K)(288.15 K)
+= 1.2250 kg>m3
+
+r =
+
+EXAMPLE 1.5: Density in English units
+Calculate the density of air when the pressure is 2116.22 lbf>ft2 and the temperature is 518.67°R. Since air at this pressure and temperature behaves as a
+perfect gas, we can use equation (1.10). Note that throughout the remainder
+of this book, air will be assumed to behave as a perfect gas unless specifically
+stated otherwise.
+Solution:
+2116.22
+r =
+
+lbf
+ft2
+
+= 0.07649
+
+lbm
+ft3
+
+= 0.002377
+
+lbf # s2
+ft4
+
+ft # lbf
+a 53.34
+b (518.67R)
+lbm # R
+
+Alternatively,
+2116.22
+r =
+
+lbf
+ft2
+
+ft2
+a 1716.16 2
+b (518.67R)
+s # R
+
+The unit lbf # s2 >ft4 is often written as slugs>ft3, where slugs are alternative
+units of mass in the English system. One slug is the equivalent of 32.174 lbm.
+
+For vehicles that are flying at approximately 100 m/s (330 ft/s), or less, the density
+of the air flowing past the vehicle is assumed constant when obtaining a solution for the
+flow field. Rigorous application of equation (1.10) would require that the pressure and
+the temperature remain constant (or change proportionally) in order for the density
+to remain constant throughout the flow field. We know that the pressure around the
+vehicle is not constant, since the aerodynamic forces and moments in which we are interested are the result of pressure variations associated with the flow pattern. However,
+the assumption of constant density for velocities below 100 m/s is a valid approximation
+because the pressure changes that occur from one point to another in the flow field are
+small relative to the absolute value of the pressure.
+
+ISTUDY
+
+14
+
+Chap. 1 / Why Study Aerodynamics?
+
+Viscosity. In all real fluids, a shearing deformation is accompanied by a shearing
+stress. The fluids of interest in this text are Newtonian in nature; that is, the shearing
+stress is proportional to the rate of shearing deformation. The constant of proportionality is called the coefficient of viscosity, m. Therefore,
+shear stress = m * transverse gradient of velocity
+
+(1.11)
+
+There are many problems of interest for which the effects of viscosity can be neglected.
+In such problems, the magnitude of the coefficient of viscosity of the fluid and of the
+velocity gradients in the flow field are such that their product is negligible relative to
+the inertia of the fluid particles and to the pressure forces acting on them. We will use
+the term inviscid flow in these cases to emphasize the fact that it is the character both
+of the flow field and of the fluid that allows us to neglect viscous effects. No real fluid
+has a zero coefficient of viscosity, but there are times when the effects of viscosity are
+negligible.
+The viscosity of a fluid relates to the transport of momentum in the direction of
+the velocity gradient (but opposite in sense). Therefore, viscosity is a transport property.
+In general, the coefficient of viscosity is a function of the composition of the gas, its
+temperature, and its pressure. The viscosity of air is independent of pressure for temperatures below 3000 K (5400°R). In this temperature range, we could use Sutherland’s
+equation to calculate the coefficient of viscosity:
+m = C1
+
+T1.5
+T + C2
+
+(1.12)
+
+For SI units where temperature, T, is in units of K and m is in units of kg/s # m use
+C1 = 1.458 * 10 - 6 and C2 = 110.4. For English units where temperature, T, is in units
+of °R and m is in units of lbf # s>ft2, use C1 = 2.27 * 10 - 8 and C2 = 198.6.
+
+EXAMPLE 1.6: Viscosity in SI units
+Calculate the viscosity of air when the temperature is 288.15 K.
+Solution:
+
+(288.15)1.5
+288.15 + 110.4
+= 1.7894 * 10 - 5 kg>s # m
+
+m = 1.458 * 10 - 6
+
+EXAMPLE 1.7: Viscosity in English units
+Calculate the viscosity of air when the temperature is 59.0°F.
+Solution: First, convert the temperature to the absolute scale for English units, °R,
+59.0F + 459.67 = 518.67R.
+
+

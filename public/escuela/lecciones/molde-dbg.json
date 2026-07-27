@@ -1,0 +1,60 @@
+{
+  "id": "molde-dbg",
+  "titulo": "DEBUG — área del perfil del aro en el editor real",
+  "pasos": [
+    {
+      "id": "d01",
+      "dice": "Dibujo el aro abierto y mido el área del perfil extraído, dentro del editor.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1200 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1300 },
+        { "type": "tclick", "testid": "sk-tool-arc", "settle": 500 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "0" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "129" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "12" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "108.215" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-20.785" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "117" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 450 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "0" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "129" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "8.5" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "114.278" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-14.722" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "120.5" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 450 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 400 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "12" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "108.215" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "7" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "120" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "tclick", "testid": "sk-dyn-end", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-20.785" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "117" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "7" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "30" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "tclick", "testid": "sk-dyn-end", "settle": 300 }
+      ],
+      "check": { "js": "(() => { const sk = window.__sketchEditor; if (!sk) return false; const p = sk.profile(); let a = 0; for (let i = 0; i < p.length; i++) { const u = p[i], v = p[(i + 1) % p.length]; a += u.x * v.y - v.x * u.y; } const area = Math.abs(a / 2); window.__claseDbg = { area, nPts: p.length, nLines: sk.nLines, nPoints: sk.nPoints }; return Math.abs(area - 676) < 25; })()", "desc": "área del perfil ≈ 676 (banda C)" }
+    },
+    {
+      "id": "d02",
+      "dice": "Termino el boceto y extruyo diez: el volumen debe ser la banda por diez.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 1500 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 900 },
+        { "type": "fill", "testid": "input-altura", "text": "10" },
+        { "type": "wait", "ms": 2500 }
+      ],
+      "check": { "js": "(() => { const inv = window.__forgeBrep && window.__forgeBrep.invariants; window.__claseDbg = inv && inv.vol_kernel; return inv && Math.abs(inv.vol_kernel - 6738) < 250; })()", "desc": "vol aro solo ≈ 6,738 (banda teselada ×10)" }
+    }
+  ]
+}

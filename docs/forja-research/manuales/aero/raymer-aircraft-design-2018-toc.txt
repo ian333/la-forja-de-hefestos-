@@ -1,0 +1,1773 @@
+Aircraft Design:
+A Conceptual Approach
+Sixth Edition
+
+Sixth Edition
+
+Daniel P. Raymer
+
+Conceptual Research Corporation
+Playa <lei Rey, California
+
+A/AA EDUCATION SERIES
+
+Joseph A. Schetz, Editor-in-Chief
+
+Virginia Polytechnic Institute and State University
+Blacksburg, Virginia
+
+American Institute of Aeronautics and Astronautics, Inc.
+
+The cover shows a far-term tailless transport design developed by Dr. Raymer under
+contract to NASA-GRC. The use of advanced controls technologies permits the elim­
+ination of traditional tails, resulting in major savings in weight and drag. This exotic
+concept was designed and analyzed in the RDS-Professional aircraft design software
+and exported as a 3-D geometry file. The CAD rendering was done from that file by
+Alfredo Ramirez P. of the University of San Buenaventura, Bogota, Colombia, using
+the Blender 3D content creation suite and the YafaRay ray tracing program. Mr.
+Ramirez also created the colorful paint and marking scheme.
+American Institute of Aeronautics and Astronautics, Inc., Reston, Virginia
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+Library of Congress Cataloging-in-Publication Data
+
+Names: Raymer, Daniel P., author.
+Title: Aircraft design: a conceptual approach/Daniel P. Raymer, Conceptual
+Research Corporation, Playa del Rey, California.
+Description: Reston, VA: American Institute of Aeronautics and Astronautics,
+Inc., [201 8] I Series: AIAA education series I Includes bibliographical
+references and index.
+Identifiers: LCCN 2018033769 I ISBN 978 1624104909 (hardcover)
+Subjects: LCSH: Airplanes-Design and construction.
+Classification: LCC TL671.2 .R29 201 8 I DDC 629.1 34/ l-dc23 LC record available
+at https://na0 1 .safelinks.protection.outlook.com/?url=https%3A%2F%2Flccn.loc.gov
+%2F2018033769&amp;data=02%7CO 1%7Ckatb%40aiaa.org% 7C6d l 36c5f53c34ae3c7
+ad08d5fd5035f2%7C036e8604b674406a80987cb72daf432b%7CO%7CO%7C63669344
+3349896747&amp;sdata=EHvaCmS2wGY8ch%2BC%2Bd06brGtfNztrjgXtPwvZ9Y
+5L7k%3D&amp;reserved=O
+
+Copyright© 2018 by Daniel P. Raymer. All rights reserved. Published by the American
+Institute of Aeronautics and Astronautics, with permission. Printed in the United States
+of America. No part of this publication may be reproduced, distributed, or transmitted,
+in any form or by any means, or stored in a database or retrieval system, without the
+prior written permission of the publisher. There are NO authorized electronic down­
+loads so any website offering such is in violation of US and International copyright laws.
+Data and information appearing in this book are for information purposes only. Neither
+AIAA nor the author are responsible for any injury or damage resulting from use of or
+reliance upon the information contained in this book, nor do they warrant that use or
+reliance upon it will be free from privately owned rights.
+
+This book is dedicated to all who taught me, especially Lester Hendrix,
+Richard Hibma, Louis Hecq, Harry Scott, Richard Child, George Owl,
+Robert Maier, Ed McGachan, Doug Robinson, Steve White, Harvey Hoge,
+Michael Robinson, George Palmer, Henry Yang, Robert Swaim, C. T. Sun,
+David Schmidt, Bruce Reese, William Heiser, Tony Hays, Jess Sponable,
+and Gordon Raymer (test pilot, aeronautical engineer, and my father) .
+A special thanks, nearly 30 years after its initial publication, to the
+60,000+ purchasers of this book and to the hundreds of readers who have
+sent letters of appreciation and suggestions for improvements. You too
+have taught me.
+Thanks to Rockwell North American Aircraft Operations, Boeing, SAAB
+Aircraft, Composite Engineering, Mr. Alfredo Ramirez P., Mr. Lance Brad­
+shaw, and Lockheed Martin for permission to use various illustrations. All
+other artwork is original, in the public domain, or copyrighted by AIAA.
+
+Rockwell North American Aviation Advanced Design Department� 1980,
+Harry Scott at left, George Owl at far right. The author's drafting table was two
+rows in front of Harry's. (Photo courtesy of The Boeing Company.)
+
+A/AA EDUCATION SERIES
+Editor-in-Chief
+
+Joseph A. Schetz
+
+Virginia Polytechnic Institute and State University
+
+Editorial Board
+Joao Luiz F. Azevedo
+
+Brian Landrum
+
+Comando-Geral De Tecnologia
+
+'University of Alabama, Huntsville
+
+Aeroespacial
+
+Michael Mohaghegh
+
+Marty Bradley
+
+The Boeing Company
+James R. DeBonis
+
+NASA Glenn Research Center
+Kaja/ K. Gupta
+
+NASA Dryden Flight
+Research Center
+Rakesh K. Kapania
+
+The Boeing Company
+Conrad F. Newberry
+
+Naval Postgraduate School; California
+State Polytechnic University, Pomona
+Brett Newman
+
+Old Dominion University
+Hanspeter Schaub
+
+University of Colorado
+
+Virginia Polytechnic Institute and
+
+David M. Van Wie
+
+State University
+
+Johns Hopkins University
+
+www.aircraftdesign.com
+
+www.aiaa.org
+
+Author with Paris Airshow display model of his Advanced Supercruise Fighter
+Concept. c2oi (Photo courtesy of Rockwell International North American Aircraft.)
+
+FOREWORD
+The American Institute of Aeronautics and Astronautics is delighted to
+present another new edition of our bestselling textbook,
+by AIAA Fellow Dr. Daniel P. Raymer. This is the stan­
+dard textbook and reference throughout the world on the subject of aircraft
+conceptual design, and proudly sits in just about every design office on the
+planet. Most aeronautical engineers who've graduated in the last 25 years
+have used
+at some point in their education, and for most the
+book was a "keeper" even when the class was finished.
+In this sixth edition Dr. Raymer has expanded and updated his presen­
+tation of fast-moving technologies, added lots of new material, and rewritten
+introductory material to make it even more "user-friendly." Given the ever­
+growing importance of electric propulsion, Raymer has added a whole new
+chapter entitled
+This presents technologies, design-to gui­
+dance, and rules of thumb, and offers electric aircraft performance and
+sizing equations derived in a format familiar to those designing convention­
+ally powered airplanes.
+This encyclopedic book covers every topic necessary to the understanding
+of aircraft design. Preliminary sizing, aerodynamics, structures, stability and
+control, propulsion, configuration layout, performance, cost analysis, and
+much more are all presented starting from first principles and building to
+a set of tools allowing the reader to actually do a realistic job of aircraft con­
+ceptual design. All topics are presented from the point of view of the aircraft
+designer, not the specialist in any given topic area.
+After 19 chapters detailing the way to design "normal" aircraft, Raymer
+concludes with four more chapters describing the design of more exotic
+flight vehicles including electric aircraft, helicopters, vertical takeoff jets,
+hypersonic aircraft, launch vehicles, airships, flying wings, forward-swept
+wings, asymmetric airplanes, and much more. Enjoy!
+Daniel Raymer is uniquely qualified to write this book because of his
+broad expertise in the field. He actually is an aircraft conceptual designer,
+doing blank-sheet-of-paper designs for over 40 years for large and small air­
+craft companies. He also teaches aircraft design both in a university setting
+and in his famous design short courses, and is widely published with topics
+ranging from actual design studies, to design and CAD methodologies, to
+
+Conceptual Approach
+AD:A CA
+
+Electric Aircraft.
+
+Aircraft Design: A
+
+x
+
+A1rcratt 1Jes1gn: A Conceptual Approach
+
+esoteric optimization methods as applied to aircraft design. His command of
+the material is excellent, and he is able to organize and present it in a very
+clear manner. 60,000 + purchasers seem to agree!
+The AIAA Education Series is a premier provider of textbooks in the field of
+aerospace engineering. The Education Series covers a broad range of related
+topics and includes textbooks of basic theory, application, and design. Not
+just a "print house," the AIAA staff and working-engineer volunteers actively
+solicit submissions from world-renowned experts, then work with them to
+produce books which are suitable for both university usage and as archival
+sources of information for working engineers. A complete list of titles can
+be found at
+Suggestions for new topics and new authors are
+always welcome.
+
+www.aiaa.org.
+
+Joseph A. Schetz
+
+Editor-in-Chief
+
+AIAA Education Series
+
+CONTENTS
+Preface
+
+xvii
+
+Author's Note Concerning Use of Metric Weight Units
+
+xix
+
+Nomenclature
+
+xxi
+
+Supponing Materials
+
+xxix
+
+Chapter 1
+
+1 .1
+
+Design-A Separate Discipline
+
+What Is Design?
+1 .2 Design: How Does It Start?
+1.3 An Airplane Designer: How Can I Become One?
+1.4 The Book: What Is Here and How It Is Organized
+Chapter 2
+
+2.1
+
+2.2
+2.3
+2.4
+
+Requirements
+Phases of Aircraft Design
+Aircraft Conceptual Design Process
+Integrated Product Development and Aircraft Design
+
+Chapter 3
+
+3.1
+3.2
+3.3
+3.4
+3.5
+3.6
+
+Sizing from a Conceptual Sketch
+
+Introduction
+Takeoff-Weight Buildup
+Empty-Weight Estimation
+Fuel-Fraction Estimation
+Takeoff-Weight Calculation
+Design Example: ASW Aircraft
+
+Chapter 4
+
+4.1
+4.2
+4.3
+
+Overview of the Design Process
+
+Airfoil and Wing/ Tail Geometry Selection
+
+Introduction
+Airfoil Selection
+Wing Geometry
+
+1
+1
+2
+4
+6
+
+9
+9
+12
+18
+23
+
+27
+27
+28
+29
+31
+42
+42
+
+53
+53
+54
+72
+
+xi
+
+xii
+
+Aircraft Design: A Conceptual Approach
+
+4.4
+4.5
+
+Biplane Wings
+Tail Geometry and Arrangement
+
+Chapter 5
+
+5.1
+5.2
+5.3
+5.4
+
+Introduction
+Thrust-to-Weight Ratio
+Wing Loading
+Selection of Thrust to Weight and Wing Loading
+
+Chapter 6
+
+6.1
+6.2
+6.3
+6.4
+6.5
+6.6
+
+Thrust-to-Weight Ratio and Wing Loading
+
+Initial Sizing
+
+Introduction
+"Rubber" vs "Fixed-Size" Engines
+Rubber-Engine Sizing
+Fixed-Engine Sizing
+Geometry Sizing
+Control-Surface Sizing
+
+Chapter 7
+
+Configuration Layout and Loft
+
+7.1 Introduction
+7.2 End Products of Configuration Layout
+7.3 Conic Lofting
+7.4 Conic Fuselage Development
+7.5 Flat-Wrap Fuselage Lofting
+7.6 Circle-to-Square Adapter
+7.7 Loft Verification via Buttock-Plane Cuts
+7.8 Wing/Tail Layout and Loft
+7.9 Wetted-Area Determination
+7.10 Volume Determination
+7.11 Use of Computer-Aided Design (CAD)
+
+in Conceptual Design
+
+Chapter B
+
+8.1
+8.2
+8.3
+8.4
+8.5
+8.6
+8.7
+8.8
+8.9
+8.10
+8.11
+
+Special Considerations in Configuration Layout
+
+Introduction
+Aerodynamic Considerations
+Structural Considerations
+Radar Detectability
+Infrared Detectability
+Visual Detectability
+Aural Signature
+Vulnerability Considerations
+Crashworthiness Considerations
+Producibility Considerations
+Maintainability Considerations
+
+95
+97
+
+115
+115
+116
+123
+142
+
+145
+145
+146
+147
+154
+156
+161
+
+165
+165
+167
+175
+179
+185
+188
+189
+191
+204
+206
+207
+
+213
+213
+214
+223
+233
+243
+244
+245
+247
+249
+250
+257
+
+CONTENTS
+
+Chapter 9
+
+Crew Station, Passengers, and Payload
+
+9.1 Introduction
+9.2 Crew Station
+9.3 Passenger Compartment
+9.4 Cargo Provisions
+9.5 Weapons Carriage
+9.6 Gun Installation
+
+Chapter 10
+
+Propulsion and Fuel System Integration
+
+10.1 Introduction
+10.2 Propulsion Overview and Selection
+10.3 Jet-Engine Integration
+10.4 Propeller-Engine Integration
+10.5 Fuel System
+10.6 Green Propulsion
+
+Chapter 1 1
+
+11.1
+11.2
+11.3
+11.4
+11.5
+11.6
+11.7
+11.8
+
+Landing Gear and Subsystems
+
+Introduction
+Landing-Gear Arrangements
+Tire Sizing
+Shock Absorbers
+Castoring-Wheel Geometry
+Gear Retraction Geometry
+Seaplanes
+Subsystems
+
+Intermission
+
+Step-by-Step Development of a New Design
+
+Chapter 12
+
+Aerodynamics
+
+12.1
+12.2
+12.3
+12.4
+12.5
+12.6
+12.7
+
+Introduction
+Aerodynamic Forces
+Aerodynamic Coefficients
+Lift
+Parasite (Zero-Lift) Drag
+Drag Due to Lift (Including Induced Drag)
+Computational Fluid Dynamics
+
+Chapter 13
+
+13.1
+13.2
+13.3
+13.4
+13.5
+
+Propulsion
+
+Aircraft Thrust-The Big Picture
+Jet-Engine Thrust Considerations
+Jet-Engine Installed Thrust
+Part Power Operation
+Piston-Engine Overview
+
+261
+261
+262
+266
+267
+269
+273
+
+275
+275
+276
+281
+311
+323
+329
+
+337
+337
+338
+343
+351
+359
+360
+364
+366
+
+379
+
+389
+389
+390
+396
+397
+416
+442
+452
+
+463
+463
+466
+469
+479
+480
+
+xiii
+
+xiv
+
+Aircraft Design: A Conceptual Approach
+
+13.6
+13.7
+13.8
+
+Propeller Analysis
+Piston-Prop Thrust Corrections
+Turboprop Performance
+
+Chapter 14
+
+14.1
+14.2
+14.3
+14.4
+14.5
+14.6
+14.7
+14.8
+14.9
+14.10
+14.11
+
+Introduction
+Loads Categories
+Air Loads
+Inertial Loads
+Powerplant Loads
+Landing-Gear Loads
+Structures Fundamentals
+Material Selection
+Material Properties
+Structural-Analysis Fundamentals
+Finite Element Structural Analysis
+
+Chapter 15
+
+15.1
+15.2
+15.3
+15.4
+
+Stability, Control, and Handling Qualities
+
+Introduction
+Coordinate Systems and Definitions
+Longitudinal Static Stability and Control
+Lateral-Directional Static Stability and Control
+Stick-Free Stability
+Effects of Flexibility
+Dynamic Stability
+Quasi Steady State
+Inertia Coupling
+Handling Qualities
+
+Chapter 17
+17.1
+17.2
+17.3
+17.4
+17.5
+17.6
+17.7
+
+Weights
+
+Introduction
+Approximate Weight Methods
+Aircraft Statistical Weights Method
+Additional Considerations in Weights Estimation
+
+Chapter 16
+
+16.1
+16.2
+16.3
+16.4
+16.5
+16.6
+16.7
+16.8
+16.9
+16.10
+
+Structures and Loads
+
+Performance and Flight Mechanics
+
+Introduction and Equations of Motion
+Steady Level Flight
+Steady Climbing and Descending Flight
+Level Turning Flight
+Gliding Flight
+Energy-Maneuverability Methods
+Operating Envelope
+
+481
+486
+488
+
+491
+491
+492
+494
+505
+506
+506
+507
+513
+517
+527
+551
+
+559
+559
+567
+569
+579
+
+585
+585
+587
+589
+611
+620
+620
+622
+627
+629
+630
+
+637
+637
+639
+649
+653
+657
+661
+669
+
+CON T E NTS
+
+17.8
+17.9
+17.10
+
+Takeoff Analysis
+Landing Analysis
+Other Fighter Performance Measures of Merit
+
+Chapter 18
+
+18.1
+18.2
+18.3
+18.4
+18.5
+18.6
+18.7
+
+Introduction
+Elements of Life-Cycle Cost
+Cost-Estimating Methods
+RDT&E and Production Costs
+Operations and Maintenance Costs
+Cost Measures of Merit (Military)
+Aircraft and Airline Economics
+
+Chapter 19
+
+19.1
+19.2
+19.3
+19.4
+19.5
+
+Vertical Flight-Jet and Prop
+
+Introduction
+Jet VTOL
+Prop VTOL and Helicopter
+
+Chapter 22
+
+22.1
+22.2
+22.3
+22.4
+
+Electric Aircraft
+
+Introduction
+Review of Physics & Units
+Why Spark?
+Electric Motor Basics
+Power Supply: Batteries
+Power Supply: Fuel Cells
+Power Supply: Hybrid-Electric
+Power Supply: Solar Cells
+Power Supply: Beamed Power
+Electric Aircraft Run-Time, Range, Loiter, and Climb
+Electric Aircraft Initial Sizing
+
+Chapter 2 1
+
+21.1
+21.2
+21.3
+
+Sizing and Trade Studies
+
+Introduction
+Detailed Sizing Methods
+Improved Conceptual Sizing Methods
+Classic Optimization-Sizing Matrix and Carpet Plots
+Trade Studies
+
+Chapter 20
+
+20.1
+20.2
+20.3
+20.4
+20.5
+20.6
+20.7
+20.8
+20.9
+20.10
+20.11
+
+Cost Analysis
+
+Extremes of Flight
+
+Introduction
+Rockets, Launch Vehicles, and Spacecraft
+Hypersonic Vehicles
+Lighter Than Air
+
+671
+676
+679
+
+687
+687
+689
+691
+692
+699
+703
+704
+
+709
+709
+710
+711
+717
+724
+
+735
+735
+738
+739
+742
+745
+749
+750
+753
+754
+755
+757
+
+763
+763
+764
+783
+
+805
+805
+806
+819
+823
+
+xv
+
+xvi
+
+Aircraft Design: A Conceptual Approach
+
+Chapter 23
+
+23.1
+23.2
+23.3
+23.4
+23.5
+23.6
+23.7
+23.8
+23.9
+23.10
+23.11
+23.12
+
+Introduction
+Flying Wing, Lifting Fuselage, and Blended Wing Body
+Delta and Double-Delta Wing
+Forward-Swept Wing
+Canard-Pusher
+Multi-fuselage
+Asymmetric Airplanes
+Joined Wing
+Some More Innovative Wings
+Wing-in-Ground-Effect
+Unmanned/Uninhabited Aircraft
+Derivative Aircraft Design
+
+Chapter 24
+
+24.1
+24.2
+24.3
+
+Conceptual Design Examples
+
+Introduction
+Single-Seat Aerobatic Homebuilt
+Lightweight Supercruise Fighter
+
+Appendix A
+
+Appendix B
+
+Appendix c
+
+Appendix D
+Appendix E
+E.1
+E.2
+E.3
+
+Design of Unique Aircraft Concepts
+
+Unit Conversion
+Standard Atmosphere
+Airspeed
+Airfoil Data
+Typical Engine Performance Curves
+
+Afterburning Turbofan
+High-Bypass Turbofan
+Turboprop
+
+Appendix F
+
+Questions
+References
+Index
+
+Design Requirements and Specifications
+
+833
+833
+834
+839
+841
+843
+845
+847
+851
+852
+859
+860
+863
+
+867
+867
+868
+905
+
+959
+963
+969
+
+971
+
+987
+987
+991
+993
+
+995
+
+999
+
+7 009
+
+1017
+
+PREFACE
+Aircraft Design is a challenging, rewarding, and fun career. There are
+dozens of different activities involved in creating a new air vehicle concept,
+different specialties ranging from initial configuration layout to system optim­
+ization and cost estimation. These activities can be grouped into two equally
+While
+and
+important aspects of aircraft design:
+some people do both, in most cases these differing aspects attract different
+types of people. Certain people love playing with numbers and computers,
+whereas others can't stop doodling on every piece of paper within reach.
+This book offers a balanced overview of these two aspects of design, inte­
+grated together and presented in the manner typically seen in an aircraft
+design project at a major aerospace company. Whichever aspect you may
+lean towards, the book should help get you started and will provide a resource
+of material throughout your career.
+Aircraft design depends on the reliable calculation of numbers but in the
+end, the only thing that actually gets built is the configuration concept shown
+on the drawing or CAD file. Its creation is not a trivial task of drafting based
+upon the analysis results, but rather it is a key element of the overall design
+process and ultimately determines the performance, weight, and cost of the
+aircraft. Bluntly stated, if you don't have a good drawing, you don't have an
+aircraft design. The "Conceptual Approach" mentioned in the book's title
+refers to a design process centered around a realistic concept layout.
+It is difficult to visualize and draw a new aircraft that has a streamlined
+aerodynamic shape and an efficient internal layout and yet satisfies an incred­
+ible number of real-world constraints and design specifications. Aircraft con­
+ceptual design layout is a rare talent that takes years to cultivate. Although to
+some extent good designers are "born, not made," the proven methods and
+best practices of aircraft configuration layout can be taught and are
+covered here in the first half of this book. These apply equally to traditional
+drafting table drawings and to modern computer-aided design.
+It is also true that a nice aircraft drawing is nothing without the analytical
+results to support it, and it will be a much better design if clever optimization
+methods are employed. So, a good designer or design team must find an
+appropriate balance between design layout and design analysis. The second
+half of this book covers analysis and optimization methods that will tell
+
+design layout design analysis.
+
+xvii
+
+xviii
+
+Aircraft Design: A Conceptual Approach
+
+you if the design works, if it meets its design requirements, and how you can
+make it better in the next drawing.
+Writing-and rewriting-this book has been an educating and humbling
+experience. It is my sincere wish that it helps aspiring aircraft designers to
+"learn the ropes" more quickly. My greatest pride in the previous editions
+has been the thanks from the students who've used the book in their
+design classes, and the designers of built-and-flown airplanes who've told
+me that they made extensive use of my book. Thanks-that means a lot.
+Daniel P. Raymer
+
+Los Angeles, California
+June 201 8
+The author's Aircraft Conceptual Design Web site a t www.aircraftdesign.com
+includes examination questions for the book, advice to students and would­
+be inventors, sample aircraft design layouts, free design software, tips for the
+use of the companion RDS-Student design software, and information on aircraft
+design short courses. It is free, and all are welcome!
+
+Raymer's Reverse Installation Vectored Engine Thrust ("RIVET") supersonic
+VSTOL concept. r130J
+
+AUTHOR'S NOTE CONCERNING USE OF
+METRIC WEIGHT UNITS
+Metric units (SI or mks) are more universal and technically consistent
+than British Imperial units (fps) and also reduce the possibility of stupid
+errors in aircraft calculations. However, one must still decide exactly which
+metric unit multipliers to use. Should masses be defined in grams or in kilo­
+grams? Should time be in seconds or in hours, or used as needed to make the
+numbers "nice"? These decisions change the numbers, and, unfortunately,
+different organizations use slightly different combinations of unit multipliers
+and times. To maximize consistency with prior literature, the metric unit
+terms used in
+and in Stinton's
+were employed in this book. Values in this book are pre­
+sented first in British units, and then in metric units enclosed in braces {}.
+A key issue and the source of much confusion is the treatment of "weight"
+in metric units. Weight by definition is a force, not a mass. However,
+pilots and working engineers describing the weight of the Airbus A340
+would say 126,000 kg, not 1,235,682 kN. What those pilots and engineers
+really mean is, "the Airbus exerts a weight force equivalent to that exerted
+by a 126,000 kg mass in a 1 -g gravitational field." This book follows this
+common practice-don't let it confuse you! When doing an analysis such
+as calculating lift force and equating it to weight, the "weight" of
+126,000 kg (actually mass) must first be converted to proper force units
+(Newtons) by multiplying by the 1 -g acceleration constant (g 9.807 m/s2) .
+This verbal equating o f weight with force i n a 1 -g gravitational field is
+carried over to the definitions of ratios such as wing loading (kg/m2 ) and
+power loading (kg/kW) . Because of this, the values of these ratios as given
+in the tables are not technically correct when applied to the various equations
+that use them. The mass terms must be converted to force by multiplying by
+Thus, a wing loading given in "pilot talk" as 586 kg/m2 must be converted
+to 5,746.9 N/m2 to apply in equations relating lift to weight (for example, see
+Table 5.5).
+The values given for thrust-to-weight ratio ( T/W) do not require con­
+version. In traditional (fps) practice the thrust is given in lbs-force, and the
+weight is given in lbs-mass (exerted force assuming a 1 -g field), so that the
+
+s All the World's Aircraft[6]
+Jane'
+[47l
+of the Aeroplane
+
+The Design
+
+=
+
+g.
+
+xix
+
+xx
+
+Aircraft Design: A Conceptual Approach
+
+ratio is nondimensional and the same as the desired SI units of Newtons/
+Newton. A T/ greater than one means the aircraft can accelerate straight
+up, regardless of the units in which it was designed!
+
+W
+
+X-15 rollout (U.S. Air Force photo).
+
+Learjet (USAF C21-A) (U.S. Air Force photo).
+
+NOMENCLATURE
+Coefficients, parameters, and Greek letters commonly used in aircraft
+design are listed below, followed by various abbreviations and acronyms.
+For updates and more definitions, see www . aircraftdesign.com/abrv.html.
+The terms specific to the statistical weights equations presented in Chapter
+15 are listed in that chapter and are not repeated here.
+
+Aircraft Design Coefficients and Parameters
+A
+A
+Ac
+Awetted
+A*
+b
+
+EMF
+
+c
+c
+c
+cbleed
+CD
+CDi
+Comin
+Cowave
+CDo
+Cd
+Cf
+cfe
+CHT
+CL
+Ct
+Ct
+cfo
+C1a
+
+aspect ratio of wing (=b2/Sref)
+helicopter rotor disk area
+capture area of jet engine inlet duct
+wetted aspect ratio (=b2I Stotal wetted area)
+cross-section area if that flow stream was at Mach 1
+wing span
+Battery Mass Fraction
+chord length
+specific fuel consumption (also SFC)
+exhaust velocity (rockets)
+bleed coefficient (adjusts thrust for amount of bleed air)
+wing or whole airplane drag coefficient
+induced-drag coefficient
+minimum drag coefficient (= CDo if uncambered)
+supersonic wave-drag coefficient (also CDw)
+drag coefficient at zero lift
+airfoil drag coefficient
+flat-plate skin-friction coefficient
+equivalent skin-friction coefficient
+horizontal tail volume coefficient
+wing or whole airplane lift coefficient
+airfoil lift coefficient
+rolling-moment coefficient
+wing or whole airplane slope of the lift curve
+airfoil slope of the lift curve (=27T theoretically)
+xxi
+
+xxii
+
+Aircraft Design: A Conceptual Approach
+
+Ctf3
+Cm
+Cm
+Cma
+Cn
+Cnf3
+Cram
+CvT
+E
+EHA
+Esh
+Ewd
+e
+
+FAA
+FAI
+
+FF
+
+ls
+
+g
+
+J
+
+/(
+L/D
+LE
+M
+m
+
+MAC
+mb
+
+Mer
+Moo
+
+n
+
+Ps
+Fused
+Q
+Q
+
+rolling moment with sideslip angle (dihedral effect)
+airfoil pitching-moment coefficient
+wing or whole airplane pitching-moment coefficient
+pitching-moment derivative with angle of attack
+yawing-moment coefficient
+yawing-moment derivative with sideslip angle
+ram coefficient (adjusts thrust for inlet pressure recovery)
+vertical tail volume coefficient
+Young's modµlus, or modulus of elasticity
+Electrohydrostatic Actuator
+battery specific energy {wh/kg}
+wave-drag efficiency factor [ Cowave/ Cowave(Sears-Haack)l
+Oswald's span efficiency factor (adjusts aspect ratio)
+Federal Aviation Administration
+Federation Aeronautique International (aviation record
+certifying agency)
+form factor term (pressure drag) for parasitic drag
+calculation
+fuel specific energy (P5/fuel flow)
+acceleration due to gravity, standard values: 32. 174 ft/s2 or
+9.80665 m/s2
+shear modulus, or modulus of rigidity
+energy height (actual height plus height equivalent of kinetic
+energy)
+specific impulse (rocket propellant consumption)
+rolling mass moment of inertia
+pitching mass moment of inertia
+yawing mass moment of inertia
+incidence angle
+propeller advance ratio ( V/
+drag due to lift factor
+lift-to-drag ratio
+leading edge (of airfoil or wing)
+Mach number (multiple of speed of sound)
+total aircraft mass {kg}
+mean aerodynamic chord
+mass of batteries {kg}
+critical Mach number (where shocks first form)
+drag-divergent Mach number (where drag increases)
+load factor
+specific excess power
+average motor power used {kW}
+interference factor for parasitic drag calculation
+production quantity
+
+=
+
+= nD)
+
+Nomenclature
+
+q
+q
+R#
+RAND
+
+Rcutoff
+s
+Sexposed
+
+SFC
+T/W
+
+t
+
+t/c
+TE
+Ude
+Ve
+
+Vi
+Vi
+
+Wdg
+We
+Wr
+Wo
+W/S
+
+dynamic pressure (of air)
+dynamic pressure, = ! p V2
+Reynolds number (also R or R no.)
+RAND Corp. -Research ANd Development (think-tank for
+USAF)
+Cutoff Reynolds number, adjusts skin friction for roughness
+leading-edge suction (force or percent attainment)
+exposed wing planform (wing less portion of wing covered
+by fuselage)
+specific fuel consumption (also C)
+thrust-to-weight ratio
+airfoil thickness
+airfoil thickness-to-chord length ratio
+trailing edge (of airfoil or wing)
+derived equivalent gust velocities (used for gust load
+calculation)
+equivalent airspeed (dynamic pressure based, Ve= Vactual
+sqrt [p/ PoD
+never-exceed speed
+maneuver (pullup) speed (max. speed for full controls
+deflections)
+takeoff decision speed
+takeoff safety speed
+flight design gross weight
+empty weight
+fuel weight
+takeoff gross weight
+wing loading
+
+Aerospace Applications of Greek Letters
+a (alpha)
+f3 (beta)
+f3 (beta)
+8 (delta)
+8 (delta)
+Li (Delta)
+e (epsilon)
+y (gamma)
+y (gamma)
+f (Gamma)
+YJ (eta)
+Y/b2s
+Y/p (eta-p)
+
+angle of attack
+sideslip angle
+Prandtl-Glauert compressibility correction
+change in some parameter
+deflection of controls
+wing sweep (see also A)
+unit strain
+shearing strain
+flight-path angle
+wing dihedral angle
+efficiency
+total system efficiency from battery to motor output shaft
+propeller efficiency
+
+xxiii
+
+xxiv
+
+Aircraft Design: A Conceptual Approach
+Y/p (eta-p)
+
+A (lambda)
+A (Lambda)
+µ, (mu)
+µ, (mu)
+7r (pi)
+II (Pi)
+p (rho)
+p (rho)
+p (rho)
+o- (sigma)
+o- (sigma)
+� (Sigma)
+T (tau)
+
+propulsive efficiency (rockets)
+wing taper ratio ( Ctip/ Croot)
+wing sweep (see also Ll)
+viscosity
+micro (one millionth = 1 / 1 06)
+3.141 592653589793 . . .
+product operator
+air density
+conic shape parameter
+radius of gyration
+unit stress
+air density ratio ( = p/ Po)
+summation operator
+unit shear stress
+
+Abbreviations and Acronyms
+AAW
+ABC
+A/C
+AC
+AF
+AFRL
+AMAD
+AMPR
+AMRAAM
+AOA
+APU
+ASW
+ATC
+ATF
+AWACS
+BFL
+BINGO
+BL
+BMI
+BPR
+CAD
+CAIV
+CAM
+CAS
+CCC
+CER
+CFD
+
+active aeroelastic wing
+activity-based costing
+aircraft
+Alternating Current
+Air Force
+Air Force Research Lab
+airframe mounted accessory drive
+airframe manufacturers planning report
+advanced medium-range air-to-air missile (now AIM- 1 20)
+angle of attack
+auxiliary power unit
+antisubmarine warfare
+air traffic control
+Advanced Tactical Fighter (F-22 predecessor program)
+airborne warning and control system
+balanced field length
+fuel state at which a pilot must begin to return to base
+boundary layer
+bismaleimide (high-temp composite material)
+turbofan engine bypass ratio
+computer-aided design
+cost as an independent variable
+computer-aided manufacturing
+calibrated airspeed
+command, control, and communications ("C-cubed")
+cost-estimating relationship
+computational fluid dynamics
+
+Nomenclature
+
+e.g .
+COTS
+
+cs
+
+CTOL
+CV
+CVN
+DAPCA
+DARPA
+DATCOM
+DC
+DCPR
+Decalage
+DOC
+DoD
+DOF
+Drag Counts
+EAS
+ECCM
+ECM
+ECS
+EHP
+EASA
+ESHP
+EW
+F/A
+FAA
+FAR
+FAR
+FB
+FBW
+FEM
+FUR
+FOD
+FSW
+FY
+GA
+GA
+G&A
+Gap
+G&C
+GLOW
+GPS
+HALE
+
+center of gravity
+commercial off-the-shelf (no development required)
+EASA Certification Specifications (like FARs)
+conventional takeoff and landing
+aircraft carrier, heavier-than-air aircraft
+aircraft carrier, heavier-than-air, nuclear powered
+development and procurement cost of aircraft (cost model)
+Defense Advanced Research Projects Agency
+Data Compendium (USAF aerodynamics methodology
+report)
+Direct Current
+defense contractors planning report
+incidence angle between two wings of a biplane
+direct operating costs
+Department of Defense
+degree of freedom (6-DOF X, Y, Z, roll, pitch, yaw)
+four digits to right of decimal place in coefficient
+equivalent air speed
+electronic counter-countermeasures
+electronic countermeasures
+environmental control system
+equivalent horsepower
+European Aviation Safety Agency (like FAA)
+equivalent shaft horsepower (includes residual thrust)
+electronic warfare
+fighter/ attack
+Federal Aviation Administration
+Federal Aviati on Regulations (certification specs)
+Federal Acquisition Regulations
+fighter-bomber
+fly by wire
+finite element method (for calculation, usually of structures)
+forward-looking infrared
+foreign object damage
+forward-swept wings
+fiscal year
+general aviation
+genetic algorithm (optimization method)
+general and administrative (overhead expenses)
+vertical distance between two wings of a biplane
+guidance and control
+gross liftoff weight ( Wo for rockets)
+global positioning system
+high-altitude long endurance
+
+=
+
+xxv
+
+xxvi
+
+Aircraft Design: A Conceptual Approach
+
+Helo
+HGI
+hp
+HUD
+IAS
+!CAO
+IFR
+IFR
+ILS
+INS
+roe
+
+IPPD
+IPT
+IR
+ISO
+JAR
+JATO
+JDAM
+JP
+JSF
+KISS
+LCC
+LOX
+L&P
+LTA
+MECO
+MDO
+MMH/FH
+MSL
+MTOW
+MZFW
+NASA
+NASTRAN
+NAV
+NC
+NOTAR
+NPV
+NS
+NURBS
+O&S
+OEM
+OEI
+p-Effect
+
+helicopter
+hot-gas ingestion
+horsepower ( 550 ft-lb/s 746 W)
+head-up display
+indicated airspeed
+International Civil Aviation Organization
+instrument flight rules
+in-flight refueling
+instrument landing system
+inertial navigation system
+indirect operating costs
+integrated product and process development
+integrated product team
+infrared
+International Standards Organization
+joint aviation requirements (European cert. specs)
+jet-assisted takeoff
+joint direct attack munition
+jet propellant (kerosene-based fuel)
+Joint Strike Fighter (project leading to F-35)
+keep it simple, stupid (attributed to Ed Heinemann)
+life-cycle cost (total cost from product development to
+retirement)
+liquid oxygen
+leakage and protuberances (causing additional drag)
+lighter than air (airship)
+main engine cutoff (shutdown)
+multidisciplinary design optimization
+maintenance man-hours per flight hour
+mean sea level
+maximum takeoff weight
+maximum zero fuel weight
+National Aeronautics and Space Administration
+NASA Structural Analysis (FEM software)
+navigation
+numerically controlled
+no tail rotor (helicopter)
+net present value
+Navier-Stokes (high-end CFD)
+nonuniform rational B-Spline (curve equation for CAD)
+operations and support
+original equipment manufacturer
+one engine inoperative
+yawing moment due to propeller
+=
+
+=
+
+Nomenclature
+
+PPP!
+pre-preg
+QFD
+RCS
+RCS
+RDS
+RDT&E
+RFI
+RFP
+RFQ
+Reece
+Rec on
+RPM
+RP
+RPV
+SAM
+SAR
+S&C
+SHM
+SL
+SOP
+SST
+Stagger
+STOL
+STOVL
+T&E
+TAS
+TRL
+TOGW
+TPS
+TQM
+TVC
+UAV
+UCAV
+VFR
+VIFF
+V/STOL
+VTO
+VTOL
+WBS
+WIG
+ZFW
+
+preplanned product improvement (P3I or P-cubed I)
+pre-impregnated (composite materials)
+quality function deployment
+radar cross section
+reaction control system (small thrusters for control)
+Raymer's design system (aircraft design software)
+research, development, test, and evaluation (costs)
+request for information (usually unpaid)
+request for proposals
+request for quotations
+reconnaissance
+reconnaissance
+revolutions per minute
+rocket propellant (kerosene-based fuel)
+remote-piloted vehicle
+surface-to-air missile
+synthetic aperture radar
+stability and control
+structural health monitoring
+sea level
+standard operating procedure
+supersonic transport
+longitudinal offset of two wings of a biplane
+short takeoff and landing
+short takeoff/vertical landing
+test and evaluation
+true airspeed
+technology readiness level
+takeoff gross weight
+thermal protection system (for reentry)
+total quality management
+thrust vector control
+unmanned or uninhabited aerial (or air) vehicle
+unmanned or uninhabited combat air vehicle
+visual flight rules
+vectoring in forward flight
+vertical/ short takeoff and landing
+vertical takeoff
+vertical takeoff and landing
+work breakdown structure
+wing-in-ground effect
+zero fuel weight
+
+xxvii
+
+xxviii
+
+Aircraft Design: A Conceptual Approach
+
+Daniel P. Raymer at the North American Aviation Trisonic Wind Tunnel, holding a
+supersonic model of his Advanced Tactical Fighter design.
+
+SUPPORTING MATERIALS
+To download supplemental material files, please go to AIAA's electronic
+library, Aerospace Research Central (ARC), at arc.aiaa.org. Use the menu bar
+at the top to navigate to Books > AIAA Education Series; then, navigate to
+the desired book's landing page by clicking on its title. On the landing
+page, click the link beneath "Supplemental Materials," enter the password
+ADACA6E, and follow the directions provided.
+A complete listing of titles in the AIAA Education Series is available from
+AIAA's electronic library, Aerospace Research Central (ARC), at arc.aiaa.org.
+Visit ARC frequently to stay abreast of product changes, corrections, special
+offers, and new publications.
+AIAA is committed to devoting resources to the education of both
+practicing and future aerospace professionals. In 1 996, the AIAA Founda­
+tion was founded. Its programs enhance scientific literacy and advance
+the arts and sciences of aerospace. For more information, please visit
+www . aiaafoundation.org.
+
+xxx
+
+Aircraft Design: A Conceptual Approach
+
+

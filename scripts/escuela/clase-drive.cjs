@@ -50,10 +50,18 @@ console.log(`${lec.id}: ${lec.pasos.length} pasos, narración ${durs.every((d) =
 // SOFTGL=1: WebGL por SOFTWARE (SwiftShader) — corre en la laptop sin GPU, para
 // VERIFICAR lecciones contra prod (los checks del kernel son CPU). Sin video.
 const SOFTGL = process.env.SOFTGL === '1';
+// CPUVID=1: graba video pero renderizando por CPU (SwiftShader). En WSL el
+// recordVideo (screencast de Chrome) y el D3D12 real NO coexisten: juntos matan
+// el browser. Para lecciones del CAD (clicks + esperas de narración, no cine de
+// 3288 frames) la CPU basta y da video estable. (aislado a ojo 2026-07-15)
+const CPUVID = process.env.CPUVID === '1';
 (async () => {
   const browser = await chromium.launch({
-    headless: false, executablePath: '/usr/bin/google-chrome-stable',
-    args: SOFTGL
+    // headless:true SIEMPRE. Con headless:false Playwright pide ventana real y sin
+    // WSLg (p.ej. tras un reboot) Chrome muere al arrancar. El --headless=new de
+    // args ya hacía el trabajo. (cazado 2026-07-15)
+    headless: true, executablePath: '/usr/bin/google-chrome-stable',
+    args: SOFTGL || CPUVID
       ? ['--no-sandbox', '--headless=new', '--use-gl=angle', '--use-angle=swiftshader',
          '--hide-scrollbars', `--window-size=${W},${H}`]
       : ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu',
@@ -80,6 +88,17 @@ const SOFTGL = process.env.SOFTGL === '1';
       for (const n of lec.biblioteca) lib[n] = JSON.parse(fs.readFileSync(path.join(bibDir, `${n}.json`), 'utf8'));
       await page.addInitScript((l) => { localStorage.setItem('forja:library:v1', JSON.stringify(l)); }, lib);
       console.log(`biblioteca embarcada: ${lec.biblioteca.join(', ')}`);
+    }
+    // SESIÓN VIVA EMBARCADA: si la lección declara moldLive {at, spec}, el arnés
+    // intercepta /mold-live.json y lo ENCIENDE al llegar al paso `at` — el molde
+    // aparece en escena en el momento exacto del guion, sin tocar archivos del
+    // server ni depender de timing. rev FIJO: el Studio dedupe por rev.
+    let moldLiveOn = false;
+    if (lec.moldLive && lec.moldLive.spec) {
+      await page.route('**/mold-live.json*', (route) => {
+        if (moldLiveOn) route.fulfill({ contentType: 'application/json', body: JSON.stringify({ rev: 7, by: 'clase', spec: lec.moldLive.spec }) });
+        else route.fulfill({ status: 404, body: '' });
+      });
     }
     // La lección puede declarar SU página (p.ej. physics.html#fluids/aero-...):
     // se resuelve contra el server del URL base — la parrilla sirve a ambos cursos.
@@ -173,6 +192,7 @@ const SOFTGL = process.env.SOFTGL === '1';
 
     for (let i = 0; i < lec.pasos.length; i++) {
       const paso = lec.pasos[i];
+      if (lec.moldLive && lec.moldLive.at === paso.id) moldLiveOn = true;
       const alive = await page.evaluate('window.__claseMark === 1').catch(() => false);
       if (!alive) throw new Error(`RELOAD_DETECTADO antes de ${paso.id} — el doc se perdió, reintentar la clase`);
       const t0 = Date.now();
@@ -273,7 +293,8 @@ const SOFTGL = process.env.SOFTGL === '1';
             rec.check = await page.evaluate((js) => {
               const inv = window.__forgeBrep && window.__forgeBrep.invariants;
               const sk = window.__sketchEditor;
-              return { pass: !!eval(js), vol: inv && inv.vol_kernel, dof: sk && sk.dof };
+              // el js del check puede dejar un valor de diagnóstico en window.__claseDbg
+              return { pass: !!eval(js), vol: inv && inv.vol_kernel, dof: sk && sk.dof, dbg: window.__claseDbg };
             }, paso.check.js);
           } catch (e) { rec.check = { pass: false, err: String(e).slice(0, 120) }; }
           if (rec.check.pass) break;

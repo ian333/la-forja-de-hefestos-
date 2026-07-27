@@ -1,0 +1,192 @@
+{
+  "id": "molde-l1",
+  "titulo": "EL MOLDE desde cero, en La Forja — la percha del curso (Fase 2: la interfaz)",
+  "moldLive": {
+    "at": "p09",
+    "spec": {
+      "name": "Percha del curso ×2",
+      "Lmm": 300, "Wmm": 153, "Hmm": 10,
+      "volumeMm3": 120960, "surfaceMm2": 38000,
+      "wallMm": 10, "annualVolume": 60000,
+      "plastic": "PP", "finish": "SPI B-3"
+    }
+  },
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Esto que ves es La Forja, nuestro CAD. En el video anterior el molde de la percha lo construyó el kernel, beat por beat. Hoy lo reconstruimos aquí, con la interfaz: croquis por cotas, extrusión, y la máquina de moldes al final. Cada clic que veas es un clic real.",
+      "gestos": [ { "type": "wait", "ms": 1500 } ]
+    },
+    {
+      "id": "p02",
+      "dice": "Croquis en el plano equis ye. El marco de la percha es un trapecio: base de trescientos, altura ciento diez, y arriba cierra en veintiocho. Lo dibujo con la entrada dinámica: longitud y ángulo, nunca a ojo.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1200 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1300 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 500 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-150" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "0" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "300" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "0" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "174.917" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "141.034" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "28" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "180" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "174.917" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "218.966" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 600 }
+      ],
+      "check": { "js": "window.__sketchEditor && window.__sketchEditor.nLines >= 4", "desc": "trapecio: 4 líneas cerradas" }
+    },
+    {
+      "id": "p03",
+      "dice": "La ventana interior deja la banda de veinte milímetros del marco. Misma técnica: cuatro líneas por longitud y ángulo, y el lazo cierra solo cuando la última cae en el punto inicial.",
+      "gestos": [
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-102" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "20" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "204" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "0" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "112.606" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "146.600" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "16" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "180" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 350 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "112.606" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "213.400" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 500 }
+      ],
+      "check": { "js": "window.__sketchEditor && window.__sketchEditor.nLines >= 8", "desc": "ventana: 8 líneas en el boceto" }
+    },
+    {
+      "id": "p04",
+      "dice": "Extruyo diez milímetros. El kernel reporta el volumen exacto: marco menos ventana por espesor, ciento doce mil doscientos milímetros cúbicos. Si este número no cuadra, algo del croquis está mal — el volumen no sabe mentir.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 1500 },
+        { "type": "tclick", "testid": "btn-extrude", "settle": 900 },
+        { "type": "fill", "testid": "input-altura", "text": "10" },
+        { "type": "wait", "ms": 2500 }
+      ],
+      "check": { "js": "inv && Math.abs(inv.vol_kernel - 112200) < 1500", "desc": "vol marco = 112,200 mm³ ±1.5k" }
+    },
+    {
+      "id": "p05",
+      "dice": "El gancho es un aro abierto: radio exterior veinticuatro, interior diecisiete, y barre doscientos setenta grados. Dos arcos por centro, inicio y fin, y dos tapas radiales de siete milímetros. La abertura del gancho queda de verdad, no es un aro cerrado.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1100 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sketch-op-join", "settle": 500 },
+        { "type": "tclick", "testid": "sk-tool-arc", "settle": 500 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "0" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "129" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "12" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "108.215" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-20.785" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "117" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 450 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "0" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "129" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "8.5" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "114.278" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-14.722" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "120.5" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 450 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 400 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "12" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "108.215" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "7" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "120" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "tclick", "testid": "sk-dyn-end", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-20.785" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "117" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "7" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "30" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "tclick", "testid": "sk-dyn-end", "settle": 300 }
+      ],
+      "check": { "js": "(() => { const sk = window.__sketchEditor; if (!sk) return false; const p = sk.profile(); let a = 0; for (let i = 0; i < p.length; i++) { const u = p[i], v = p[(i + 1) % p.length]; a += u.x * v.y - v.x * u.y; } return Math.abs(Math.abs(a / 2) - 676) < 25; })()", "desc": "perfil del aro = banda C ≈ 676 mm²" }
+    },
+    {
+      "id": "p06",
+      "dice": "Termino el boceto y la interfaz crea el saliente con unir: suma material sobre la base. Le pongo profundidad diez, la de la pieza, y el volumen sube la banda del aro por diez: unos seis mil setecientos milímetros cúbicos más.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 1500 },
+        { "type": "fill", "testid": "input-comp-depth", "text": "10" },
+        { "type": "wait", "ms": 2500 }
+      ],
+      "check": { "js": "(() => { if (!inv) return false; window.__claseP06 = inv.vol_kernel; return Math.abs(inv.vol_kernel - 118915) < 300; })()", "desc": "vol marco+aro ≈ 118,915 mm³ (banda real ×10 − solape)" }
+    },
+    {
+      "id": "p07",
+      "dice": "El cuello une el marco con el gancho: un rectángulo de catorce por veintiséis. Cuatro líneas y se acabó el dibujo.",
+      "gestos": [
+        { "type": "tclick", "testid": "btn-sketch", "settle": 1100 },
+        { "type": "tclick", "testid": "chooser-plane-xy", "settle": 1200 },
+        { "type": "tclick", "testid": "sketch-op-join", "settle": 500 },
+        { "type": "tclick", "testid": "sk-tool-line", "settle": 400 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "-7" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "99" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "14" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "0" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "26" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "90" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "14" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "180" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 300 },
+        { "type": "fill", "testid": "sk-dyn-a", "text": "26" },
+        { "type": "fill", "testid": "sk-dyn-b", "text": "270" },
+        { "type": "tclick", "testid": "sk-dyn-go", "settle": 400 }
+      ],
+      "check": { "js": "window.__sketchEditor && window.__sketchEditor.nLines >= 4", "desc": "cuello: rectángulo de 4 líneas" }
+    },
+    {
+      "id": "p08",
+      "dice": "El cuello también a profundidad diez, y comparo contra el kernel del video pasado: ciento veintiún mil contra ciento veinte mil novecientos cincuenta y seis. Cero punto cero cinco por ciento de diferencia — que es exactamente el aro facetado del kernel contra el arco verdadero de la interfaz. Eso es paridad, con recibo.",
+      "gestos": [
+        { "type": "tclick", "testid": "sk-finish", "settle": 1500 },
+        { "type": "fill", "testid": "input-comp-depth", "text": "10" },
+        { "type": "wait", "ms": 2500 }
+      ],
+      "check": { "js": "inv && window.__claseP06 && Math.abs(inv.vol_kernel - (window.__claseP06 + 2100)) < 80 && Math.abs(inv.vol_kernel - 120960) < 600", "desc": "cuello suma 2,100 exactos y paridad kernel al 0.5%" }
+    },
+    {
+      "id": "p09",
+      "dice": "Y ahora la máquina. Le paso la pieza con su producción anual de sesenta mil al año en polipropileno, y el motor decide solo: cavidades por la ecuación del libro, placas, guías, expulsión y agua. El molde aparece en escena, placa por placa, como componentes reales.",
+      "gestos": [
+        { "type": "wait", "ms": 6000 }
+      ],
+      "check": { "js": "!!document.querySelector('[data-testid=\"mold-parts-head\"]')", "desc": "el molde vivo aparece en escena (panel de placas)" }
+    },
+    {
+      "id": "p10",
+      "dice": "Rayos equis: el acero se vuelve cristal y la percha queda atrapada adentro, con la colada y el agua a la vista. Esto en SolidWorks son tres display states a mano; aquí es un interruptor.",
+      "gestos": [
+        { "type": "tclick", "testid": "mold-xray-toggle", "settle": 2500 }
+      ]
+    },
+    {
+      "id": "p11",
+      "dice": "Y la apertura: la placa móvil se retira, los expulsores empujan y la pieza se libera. El ciclo completo del molde, en tu navegador, gratis. Esto que acabas de ver es La Forja construyendo un molde de verdad, desde cero.",
+      "gestos": [
+        { "type": "tclick", "testid": "mold-open-toggle", "settle": 5000 },
+        { "type": "wait", "ms": 2000 }
+      ]
+    }
+  ]
+}

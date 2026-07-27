@@ -1,0 +1,1406 @@
+John Anderson
+
+Fundamentals of
+
+Aerodynamics
+S I XTH E D ITION
+
+Fundamentals of Aerodynamics
+
+Sixth Edition
+
+John D. Anderson, Jr.
+
+McGRAW-HILL SERIES IN AERONAUTICAL AND
+AEROSPACE ENGINEERING
+
+T
+
+he Wright brothers invented the first practical airplane in the first decade
+of the twentieth century. Along with this came the rise of aeronautical
+engineering as an exciting, new, distinct discipline. College courses in
+aeronautical engineering were offered as early as 1914 at the University of
+Michigan and at MIT. Michigan was the first university to establish an aeronautics department with a four-year degree-granting program in 1916; by 1926 it
+had graduated over one hundred students. The need for substantive textbooks in
+various areas of aeronautical engineering became critical. Rising to this demand,
+McGraw-Hill became one of the first publishers of aeronautical engineering textbooks, starting with Airplane Design and Construction by Ottorino Pomilio in
+1919, and the classic and definitive text Airplane Design: Aerodynamics by the
+iconic Edward P. Warner in 1927. Warner’s book was a watershed in aeronautical
+engineering textbooks.
+Since then, McGraw-Hill has become the time-honored publisher of books in
+aeronautical engineering. With the advent of high-speed flight after World War II
+and the space program in 1957, aeronautical and aerospace engineering grew
+to new heights. There was, however, a hiatus that occurred in the 1970s when
+aerospace engineering went through a transition, and virtually no new books in
+the field were published for almost a decade by anybody. McGraw-Hill broke
+this hiatus with the foresight of its Chief Engineering Editor, B.J. Clark, who
+was instrumental in the publication of Introduction to Flight by John Anderson.
+First published in 1978, Introduction to Flight is now in its 8th edition. Clark’s
+bold decision was followed by McGraw-Hill riding the crest of a new wave of
+students and activity in aerospace engineering, and it opened the flood-gates for
+new textbooks in the field.
+In 1988, McGraw-Hill initiated its formal series in Aeronautical and
+Aerospace Engineering, gathering together under one roof all its existing texts
+in the field, and soliciting new manuscripts. This author is proud to have been
+made the consulting editor for this series, and to have contributed some of the
+titles. Starting with eight books in 1988, the series now embraces 24 books covering a broad range of discipline in the field. With this, McGraw-Hill continues
+its tradition, started in 1919, as the premier publisher of important textbooks in
+aeronautical and aerospace engineering.
+John D. Anderson, Jr.
+
+Fundamentals of Aerodynamics
+Sixth Edition
+
+John D. Anderson, Jr.
+Curator of Aerodynamics
+National Air and Space Museum
+Smithsonian Institution
+and
+Professor Emeritus
+University of Maryland
+
+FUNDAMENTALS OF AERODYNAMICS, SIXTH EDITION
+Published by McGraw-Hill Education, 2 Penn Plaza, New York, NY 10121. Copyright © 2017 by
+McGraw-Hill Education. All rights reserved. Printed in the United States of America. Previous editions
+© 2011, 2007, and 2001. No part of this publication may be reproduced or distributed in any form or by
+any means, or stored in a database or retrieval system, without the prior written consent of McGraw-Hill
+Education, including, but not limited to, in any network or other electronic storage or transmission, or
+broadcast for distance learning.
+Some ancillaries, including electronic and print components, may not be available to customers outside
+the United States.
+This book is printed on acid-free paper.
+1 2 3 4 5 6 7 8 9 0 DOC/DOC 1 0 9 8 7 6
+ISBN 978-1-259-12991-9
+MHID 1-259-12991-8
+Senior Vice President, Products & Markets: Kurt L. Strand
+Vice President, General Manager, Products & Markets: Marty Lange
+Vice President, Content Design & Delivery: Kimberly Meriwether David
+Managing Director: Thomas Timp
+Brand Manager: Thomas M. Scaife, Ph. D
+Director, Product Development: Rose Koos
+Product Developer: Jolynn Kilburg
+Marketing Manager: Nick McFadden
+Director of Digital Content: Chelsea Haupt, Ph. D
+Digital Product Analyst: Patrick Diller
+Director, Content Design & Delivery: Linda Avenarius
+Program Manager: Faye M. Herrig
+Content Project Managers: Heather Ervolino, Tammy Juran, Sandra Schnee
+Buyer: Susan K. Culbertson
+Content Licensing Specialist: Lorraine Buczek (Text)
+Cover Image: U.S. Navy photo by Mass Communication Specialist 2nd Class Ron Reeves
+Compositor: MPS Limited
+Printer R. R. Donnelley
+All credits appearing on page or at the end of the book are considered to be an extension of the copyright
+page.
+Library of Congress Cataloging-in-Publication Data
+Names: Anderson, John D., Jr. (John David), 1937- author.
+Title: Fundamentals of aerodynamics / John D. Anderson, Jr.
+Description: Sixth edition. | New York, NY : McGraw-Hill Education, [2017] |
+Series: McGraw-Hill series in aeronautical and aerospace engineering |
+Includes bibliographical references and index.
+Identifiers: LCCN 2015040997| ISBN 9781259129919 (alk. paper) | ISBN
+1259129918 (alk paper)
+Subjects: LCSH: Aerodynamics.
+Classification: LCC TL570 .A677 2017 | DDC 629.132/3–dc23 LC record
+available at http://lccn.loc.gov/2015040997
+
+The Internet addresses listed in the text were accurate at the time of publication. The inclusion of a
+website does not indicate an endorsement by the authors or McGraw-Hill Education, and McGraw-Hill
+Education does not guarantee the accuracy of the information presented at these sites.
+mheducation.com/highered
+
+ABOUT THE AUTHOR
+
+John D. Anderson, Jr., was born in Lancaster, Pennsylvania, on October 1, 1937.
+He attended the University of Florida, graduating in 1959 with high honors and
+a bachelor of aeronautical engineering degree. From 1959 to 1962, he was a
+lieutenant and task scientist at the Aerospace Research Laboratory at WrightPatterson Air Force Base. From 1962 to 1966, he attended the Ohio State University under the National Science Foundation and NASA Fellowships, graduating
+with a Ph.D. in aeronautical and astronautical engineering. In 1966, he joined the
+U.S. Naval Ordnance Laboratory as Chief of the Hypersonics Group. In 1973,
+he became Chairman of the Department of Aerospace Engineering at the University of Maryland, and since 1980 has been professor of Aerospace Engineering at the University of Maryland. In 1982, he was designated a Distinguished
+Scholar/Teacher by the University. During 1986–1987, while on sabbatical from
+the University, Dr. Anderson occupied the Charles Lindbergh Chair at the National Air and Space Museum of the Smithsonian Institution. He continued with
+the Air and Space Museum one day each week as their Special Assistant for Aerodynamics, doing research and writing on the history of aerodynamics. In addition
+to his position as professor of aerospace engineering, in 1993, he was made a
+full faculty member of the Committee for the History and Philosophy of Science
+and in 1996 an affiliate member of the History Department at the University of
+Maryland. In 1996, he became the Glenn L. Martin Distinguished Professor for
+Education in Aerospace Engineering. In 1999, he retired from the University of
+Maryland and was appointed Professor Emeritus. He is currently the Curator for
+Aerodynamics at the National Air and Space Museum, Smithsonian Institution.
+Dr. Anderson has published 11 books: Gasdynamic Lasers: An Introduction,
+Academic Press (1976), and under McGraw-Hill, Introduction to Flight (1978,
+1984, 1989, 2000, 2005, 2008, 2012, 2016), Modern Compressible Flow (1982,
+1990, 2003), Fundamentals of Aerodynamics (1984, 1991, 2001, 2007, 2011),
+Hypersonic and High Temperature Gas Dynamics (1989), Computational Fluid
+Dynamics: The Basics with Applications (1995), Aircraft Performance and Design (1999), A History of Aerodynamics and Its Impact on Flying Machines,
+Cambridge University Press (1997 hardback, 1998 paperback), The Airplane: A
+History of Its Technology, American Institute of Aeronautics and Astronautics
+(2003), Inventing Flight, Johns Hopkins University Press (2004), and X-15, The
+World’s Fastest Rocket Plane and the Pilots Who Ushered in the Space Age, with
+co-author Richard Passman, Zenith Press in conjunction with the Smithsonian
+Institution (2014). He is the author of over 120 papers on radiative gasdynamics, reentry aerothermodynamics, gasdynamic and chemical lasers, computational
+fluid dynamics, applied aerodynamics, hypersonic flow, and the history of aeronautics. Dr. Anderson is a member of the National Academy of Engineering, and
+v
+
+vi
+
+About the Author
+
+is in Who’s Who in America. He is an Honorary Fellow of the American Institute
+of Aeronautics and Astronautics (AIAA). He is also a fellow of the Royal Aeronautical Society, London. He is a member of Tau Beta Pi, Sigma Tau, Phi Kappa
+Phi, Phi Eta Sigma, The American Society for Engineering Education, the History
+of Science Society, and the Society for the History of Technology. In 1988, he was
+elected as Vice President of the AIAA for Education. In 1989, he was awarded
+the John Leland Atwood Award jointly by the American Society for Engineering
+Education and the American Institute of Aeronautics and Astronautics “for the
+lasting influence of his recent contributions to aerospace engineering education.”
+In 1995, he was awarded the AIAA Pendray Aerospace Literature Award “for
+writing undergraduate and graduate textbooks in aerospace engineering which
+have received worldwide acclaim for their readability and clarity of presentation,
+including historical content.” In 1996, he was elected Vice President of the AIAA
+for Publications. He has recently been honored by the AIAA with its 2000 von
+Karman Lectureship in Astronautics.
+From 1987 to the present, Dr. Anderson has been the senior consulting editor
+on the McGraw-Hill Series in Aeronautical and Astronautical Engineering.
+
+CONTENTS
+
+Preface to the Sixth Edition
+
+PART
+
+XV
+
+1
+
+Fundamental Principles
+
+1
+
+Chapter 1
+Aerodynamics: Some Introductory
+Thoughts 3
+1.1 Importance of Aerodynamics: Historical
+Examples 5
+1.2 Aerodynamics: Classification and Practical
+Objectives 11
+1.3 Road Map for This Chapter 15
+1.4 Some Fundamental Aerodynamic
+Variables 15
+
+1.13 Historical Note: The Illusive Center
+of Pressure 89
+1.14 Historical Note: Aerodynamic
+Coefficients 93
+1.15 Summary 97
+1.16 Integrated Work Challenge: Forward-Facing
+Axial Aerodynamic Force on an Airfoil—
+Can It Happen and, If So, How? 98
+1.17 Problems 101
+
+Chapter 2
+Aerodynamics: Some Fundamental Principles
+and Equations 105
+2.1
+2.2
+
+2.2.1 Some Vector Algebra 108
+2.2.2 Typical Orthogonal Coordinate
+Systems 109
+2.2.3 Scalar and Vector Fields 112
+2.2.4 Scalar and Vector Products 112
+2.2.5 Gradient of a Scalar Field 113
+2.2.6 Divergence of a Vector Field 115
+2.2.7 Curl of a Vector Field 116
+2.2.8 Line Integrals 116
+2.2.9 Surface Integrals 117
+2.2.10 Volume Integrals 118
+2.2.11 Relations Between Line, Surface,
+and Volume Integrals 119
+2.2.12 Summary 119
+
+1.4.1 Units 18
+
+1.5 Aerodynamic Forces and Moments 19
+1.6 Center of Pressure 32
+1.7 Dimensional Analysis: The Buckingham
+Pi Theorem 34
+1.8 Flow Similarity 41
+1.9 Fluid Statics: Buoyancy Force 52
+1.10 Types of Flow 62
+1.10.1 Continuum Versus Free Molecule
+Flow 62
+1.10.2 Inviscid Versus Viscous Flow 62
+1.10.3 Incompressible Versus Compressible
+Flows 64
+1.10.4 Mach Number Regimes 64
+
+1.11 Viscous Flow: Introduction to Boundary
+Layers 68
+1.12 Applied Aerodynamics: The Aerodynamic
+Coefficients—Their Magnitudes and
+Variations 75
+
+Introduction and Road Map 106
+Review of Vector Relations 107
+
+2.3
+
+Models of the Fluid: Control Volumes and
+Fluid Elements 119
+2.3.1 Finite Control Volume Approach 120
+2.3.2 Infinitesimal Fluid Element
+Approach 121
+2.3.3 Molecular Approach 121
+vii
+
+viii
+
+Contents
+
+3.4
+3.5
+3.6
+
+2.3.4 Physical Meaning of the Divergence
+of Velocity 122
+2.3.5 Specification of the Flow Field 123
+
+2.4
+2.5
+2.6
+
+Continuity Equation 127
+Momentum Equation 132
+An Application of the Momentum Equation:
+Drag of a Two-Dimensional Body 137
+
+3.7
+
+3.7.1 Infinity Boundary Conditions 241
+3.7.2 Wall Boundary Conditions 241
+
+2.6.1 Comment 146
+
+2.7 Energy Equation 146
+2.8 Interim Summary 151
+2.9 Substantial Derivative 152
+2.10 Fundamental Equations in Terms of the
+Substantial Derivative 158
+2.11 Pathlines, Streamlines, and Streaklines
+of a Flow 160
+2.12 Angular Velocity, Vorticity, and Strain 165
+2.13 Circulation 176
+2.14 Stream Function 179
+2.15 Velocity Potential 183
+2.16 Relationship Between the Stream Function
+and Velocity Potential 186
+2.17 How Do We Solve the Equations? 187
+2.17.1 Theoretical (Analytical) Solutions 187
+2.17.2 Numerical Solutions—Computational
+Fluid Dynamics (CFD) 189
+2.17.3 The Bigger Picture 196
+
+2.18 Summary 196
+2.19 Problems 200
+
+PART
+
+2
+
+Inviscid, Incompressible Flow
+
+203
+
+Chapter 3
+Fundamentals of Inviscid, Incompressible
+Flow 205
+3.1
+3.2
+3.3
+
+Introduction and Road Map 206
+Bernoulli’s Equation 209
+Incompressible Flow in a Duct: The Venturi
+and Low-Speed Wind Tunnel 213
+
+Pitot Tube: Measurement of Airspeed 226
+Pressure Coefficient 235
+Condition on Velocity for Incompressible
+Flow 237
+Governing Equation for Irrotational,
+Incompressible Flow: Laplace’s
+Equation 238
+
+3.8
+3.9
+
+Interim Summary 242
+Uniform Flow: Our First Elementary
+Flow 243
+3.10 Source Flow: Our Second Elementary
+Flow 245
+3.11 Combination of a Uniform Flow with a
+Source and Sink 249
+3.12 Doublet Flow: Our Third Elementary
+Flow 253
+3.13 Nonlifting Flow over a Circular
+Cylinder 255
+3.14 Vortex Flow: Our Fourth Elementary
+Flow 264
+3.15 Lifting Flow over a Cylinder 268
+3.16 The Kutta-Joukowski Theorem and the
+Generation of Lift 282
+3.17 Nonlifting Flows over Arbitrary Bodies:
+The Numerical Source Panel Method 284
+3.18 Applied Aerodynamics: The Flow over a
+Circular Cylinder—The Real Case 294
+3.19 Historical Note: Bernoulli and Euler—The
+Origins of Theoretical Fluid
+Dynamics 302
+3.20 Historical Note: d’Alembert and His
+Paradox 307
+3.21 Summary 308
+3.22 Integrated Work Challenge: Relation
+Between Aerodynamic Drag and the Loss of
+Total Pressure in the Flow Field 311
+3.23 Integrated Work Challenge: Conceptual
+Design of a Subsonic Wind Tunnel 314
+3.24 Problems 318
+
+Contents
+
+Chapter 4
+Incompressible Flow over Airfoils 321
+
+Chapter 5
+Incompressible Flow over Finite Wings 423
+
+4.1
+4.2
+4.3
+4.4
+
+5.1
+
+Introduction 323
+Airfoil Nomenclature 326
+Airfoil Characteristics 328
+Philosophy of Theoretical Solutions for
+Low-Speed Flow over Airfoils: The
+Vortex Sheet 333
+4.5 The Kutta Condition 338
+
+5.2
+5.3
+
+4.6 Kelvin’s Circulation Theorem and the
+Starting Vortex 342
+4.7 Classical Thin Airfoil Theory: The
+Symmetric Airfoil 346
+4.8 The Cambered Airfoil 356
+4.9 The Aerodynamic Center: Additional
+Considerations 365
+4.10 Lifting Flows over Arbitrary Bodies: The
+Vortex Panel Numerical Method 369
+4.11 Modern Low-Speed Airfoils 375
+4.12 Viscous Flow: Airfoil Drag 379
+4.12.1 Estimating Skin-Friction Drag:
+Laminar Flow 380
+4.12.2 Estimating Skin-Friction Drag:
+Turbulent Flow 382
+4.12.3 Transition 384
+4.12.4 Flow Separation 389
+4.12.5 Comment 394
+
+4.13 Applied Aerodynamics: The Flow over an
+Airfoil—The Real Case 395
+4.14 Historical Note: Early Airplane Design and
+the Role of Airfoil Thickness 406
+4.15 Historical Note: Kutta, Joukowski, and the
+Circulation Theory of Lift 411
+4.16 Summary 413
+4.17 Integrated Work Challenge: Wall Effects on
+Measurements Made in Subsonic Wind
+Tunnels 415
+4.18 Problems 419
+
+Introduction: Downwash and Induced
+Drag 427
+The Vortex Filament, the Biot-Savart Law,
+and Helmholtz’s Theorems 432
+Prandtl’s Classical Lifting-Line
+Theory 436
+5.3.1
+5.3.2
+5.3.3
+5.3.4
+
+4.5.1 Without Friction Could We
+Have Lift? 342
+
+ix
+
+Elliptical Lift Distribution 442
+General Lift Distribution 447
+Effect of Aspect Ratio 450
+Physical Significance 456
+
+5.4
+
+A Numerical Nonlinear Lifting-Line
+Method 465
+5.5 The Lifting-Surface Theory and the Vortex
+Lattice Numerical Method 469
+5.6 Applied Aerodynamics: The Delta
+Wing 476
+5.7 Historical Note: Lanchester and
+Prandtl—The Early Development of
+Finite-Wing Theory 488
+5.8 Historical Note: Prandtl—The Man 492
+5.9 Summary 495
+5.10 Problems 496
+
+Chapter 6
+Three-Dimensional Incompressible Flow 499
+6.1
+6.2
+6.3
+6.4
+
+Introduction 499
+Three-Dimensional Source 500
+Three-Dimensional Doublet 502
+Flow over a Sphere 504
+6.4.1 Comment on the Three-Dimensional
+Relieving Effect 506
+
+6.5
+6.6
+
+General Three-Dimensional Flows: Panel
+Techniques 507
+Applied Aerodynamics: The Flow over a
+Sphere—The Real Case 509
+
+x
+
+6.7
+
+6.8
+6.9
+
+Contents
+
+Applied Aerodynamics: Airplane Lift
+and Drag 512
+
+8.3
+
+6.7.1 Airplane Lift 512
+6.7.2 Airplane Drag 514
+6.7.3 Application of Computational Fluid
+Dynamics for the Calculation of Lift and
+Drag 519
+
+8.4
+8.5
+8.6
+
+Summary 523
+Problems 524
+
+PART
+
+3
+
+Inviscid, Compressible Flow
+
+525
+
+7.6
+7.7
+7.8
+
+Introduction 528
+A Brief Review of Thermodynamics
+
+530
+
+Definition of Compressibility 542
+Governing Equations for Inviscid,
+Compressible Flow 543
+Definition of Total (Stagnation)
+Conditions 545
+Some Aspects of Supersonic Flow: Shock
+Waves 552
+Summary 556
+Problems 558
+
+Chapter 8
+Normal Shock Waves and Related Topics 561
+8.1
+8.2
+
+Introduction 562
+The Basic Normal Shock Equations
+
+576
+
+Measurement of Velocity in a Compressible
+Flow 603
+
+8.8
+8.9
+
+Summary 608
+Problems 611
+
+Chapter 9
+Oblique Shock and Expansion Waves 613
+
+Perfect Gas 530
+Internal Energy and Enthalpy 530
+First Law of Thermodynamics 535
+Entropy and the Second Law of
+Thermodynamics 536
+7.2.5 Isentropic Relations 538
+
+7.5
+
+Special Forms of the Energy Equation
+When Is a Flow Compressible? 584
+Calculation of Normal Shock-Wave
+Properties 587
+
+8.7.1 Subsonic Compressible Flow 603
+8.7.2 Supersonic Flow 604
+
+7.2.1
+7.2.2
+7.2.3
+7.2.4
+
+7.3
+7.4
+
+567
+
+8.6.1 Comment on the Use of Tables to Solve
+Compressible Flow Problems 602
+
+8.7
+
+Chapter 7
+Compressible Flow: Some Preliminary
+Aspects 527
+7.1
+7.2
+
+Speed of Sound
+
+8.3.1 Comments 575
+
+563
+
+9.1
+9.2
+9.3
+
+Introduction 614
+Oblique Shock Relations 620
+Supersonic Flow over Wedges and
+Cones 634
+9.3.1 A Comment on Supersonic Lift and Drag
+Coefficients 637
+
+9.4
+9.5
+
+Shock Interactions and Reflections 638
+Detached Shock Wave in Front of a Blunt
+Body 644
+9.5.1 Comment on the Flow Field Behind a
+Curved Shock Wave: Entropy Gradients
+and Vorticity 648
+
+9.6
+9.7
+
+Prandtl-Meyer Expansion Waves 648
+Shock-Expansion Theory: Applications to
+Supersonic Airfoils 660
+9.8 A Comment on Lift and Drag
+Coefficients 664
+9.9 The X-15 and Its Wedge Tail 664
+9.10 Viscous Flow: Shock-Wave/
+Boundary-Layer Interaction 669
+9.11 Historical Note: Ernst Mach—A
+Biographical Sketch 671
+
+Contents
+
+9.12 Summary 674
+9.13 Integrated Work Challenge: Relation
+Between Supersonic Wave Drag and
+Entropy Increase—Is There a
+Relation? 675
+9.14 Integrated Work Challenge: The Sonic
+Boom 678
+9.15 Problems 681
+
+Chapter 10
+Compressible Flow Through Nozzles,
+Diffusers, and Wind Tunnels 689
+10.1 Introduction 690
+10.2 Governing Equations for
+Quasi-One-Dimensional Flow
+10.3 Nozzle Flows 701
+
+692
+
+10.3.1 More on Mass Flow 715
+
+10.4 Diffusers 716
+10.5 Supersonic Wind Tunnels 718
+10.6 Viscous Flow: Shock-Wave/
+Boundary-Layer Interaction Inside
+Nozzles 724
+10.7 Summary 726
+10.8 Integrated Work Challenge:
+Conceptual Design of a Supersonic
+Wind Tunnel 727
+10.9 Problems 736
+
+Chapter 11
+Subsonic Compressible Flow over Airfoils:
+Linear Theory 739
+11.1 Introduction 740
+11.2 The Velocity Potential Equation 742
+11.3 The Linearized Velocity Potential
+Equation 745
+11.4 Prandtl-Glauert Compressibility
+Correction 750
+11.5 Improved Compressibility
+Corrections 755
+
+11.6
+
+Critical Mach Number
+
+xi
+
+756
+
+11.6.1 A Comment on the Location of Minimum
+Pressure (Maximum Velocity) 765
+
+11.7
+
+Drag-Divergence Mach Number: The
+Sound Barrier 765
+11.8 The Area Rule 773
+11.9 The Supercritical Airfoil 775
+11.10 CFD Applications: Transonic Airfoils and
+Wings 777
+11.11 Applied Aerodynamics: The Blended
+Wing Body 782
+11.12 Historical Note: High-Speed
+Airfoils—Early Research and
+Development 788
+11.13 Historical Note: The Origin of the
+Swept-Wing Concept 792
+11.14 Historical Note: Richard T.
+Whitcomb—Architect of the Area Rule
+and the Supercritical Wing 801
+11.15 Summary 802
+11.16 Integrated Work Challenge: Transonic
+Testing by the Wing-Flow Method 804
+11.17 Problems 808
+
+Chapter 12
+Linearized Supersonic Flow 811
+12.1 Introduction 812
+12.2 Derivation of the Linearized Supersonic
+Pressure Coefficient Formula 812
+12.3 Application to Supersonic Airfoils 816
+12.4 Viscous Flow: Supersonic Airfoil
+Drag 822
+12.5 Summary 825
+12.6 Problems 826
+
+Chapter 13
+Introduction to Numerical Techniques for
+Nonlinear Supersonic Flow 829
+13.1 Introduction: Philosophy of Computational
+Fluid Dynamics 830
+
+xii
+
+Contents
+
+13.2 Elements of the Method of
+Characteristics 832
+
+14.8
+
+Hypersonic Viscous Flow: Aerodynamic
+Heating 901
+
+13.2.1 Internal Points 838
+13.2.2 Wall Points 839
+
+14.8.1 Aerodynamic Heating and Hypersonic
+Flow—The Connection 901
+14.8.2 Blunt Versus Slender Bodies in
+Hypersonic Flow 903
+14.8.3 Aerodynamic Heating to a Blunt
+Body 906
+
+13.3 Supersonic Nozzle Design 840
+13.4 Elements of Finite-Difference
+Methods 843
+13.4.1 Predictor Step 849
+13.4.2 Corrector Step 849
+
+13.5 The Time-Dependent Technique:
+Application to Supersonic Blunt
+Bodies 850
+13.5.1 Predictor Step 854
+13.5.2 Corrector Step 854
+
+13.6 Flow over Cones
+
+858
+
+13.6.1 Physical Aspects of Conical Flow 859
+13.6.2 Quantitative Formulation 860
+13.6.3 Numerical Procedure 865
+13.6.4 Physical Aspects of Supersonic Flow
+over Cones 866
+
+13.7 Summary 869
+13.8 Problem 870
+
+Chapter 14
+Elements of Hypersonic Flow 871
+14.1 Introduction 872
+14.2 Qualitative Aspects of Hypersonic
+Flow 873
+14.3 Newtonian Theory 877
+14.4 The Lift and Drag of Wings at Hypersonic
+Speeds: Newtonian Results for a Flat Plate
+at Angle of Attack 881
+14.4.1 Accuracy Considerations 888
+
+14.5 Hypersonic Shock-Wave Relations and
+Another Look at Newtonian Theory 892
+14.6 Mach Number Independence 896
+14.7 Hypersonics and Computational Fluid
+Dynamics 898
+
+14.9
+
+Applied Hypersonic Aerodynamics:
+Hypersonic Waveriders 908
+14.9.1 Viscous-Optimized Waveriders 914
+
+14.10 Summary 921
+14.11 Problems 922
+
+4
+Viscous Flow 923
+PART
+
+Chapter 15
+Introduction to the Fundamental Principles and
+Equations of Viscous Flow 925
+15.1 Introduction 926
+15.2 Qualitative Aspects of Viscous Flow 927
+15.3 Viscosity and Thermal Conduction 935
+15.4 The Navier-Stokes Equations 940
+15.5 The Viscous Flow Energy Equation 944
+15.6 Similarity Parameters 948
+15.7 Solutions of Viscous Flows: A Preliminary
+Discussion 952
+15.8 Summary 955
+15.9 Problems 957
+
+Chapter 16
+A Special Case: Couette Flow 959
+16.1 Introduction 959
+16.2 Couette Flow: General Discussion 960
+16.3 Incompressible (Constant Property) Couette
+Flow 964
+16.3.1 Negligible Viscous Dissipation 970
+
+Contents
+
+16.3.2 Equal Wall Temperatures 971
+16.3.3 Adiabatic Wall Conditions (Adiabatic
+Wall Temperature) 973
+16.3.4 Recovery Factor 976
+16.3.5 Reynolds Analogy 977
+16.3.6 Interim Summary 978
+
+16.4 Compressible Couette Flow
+
+980
+
+16.4.1 Shooting Method 982
+16.4.2 Time-Dependent Finite-Difference
+Method 984
+16.4.3 Results for Compressible Couette
+Flow 988
+16.4.4 Some Analytical Considerations 990
+
+16.5 Summary
+
+995
+
+Chapter 17
+Introduction to Boundary Layers 997
+17.1 Introduction 998
+17.2 Boundary-Layer Properties 1000
+17.3 The Boundary-Layer Equations 1006
+17.4 How Do We Solve the Boundary-Layer
+Equations? 1009
+17.5 Summary 1011
+
+Chapter 18
+Laminar Boundary Layers 1013
+18.1 Introduction 1013
+18.2 Incompressible Flow over a Flat Plate:
+The Blasius Solution 1014
+18.3 Compressible Flow over a Flat Plate 1021
+18.3.1 A Comment on Drag Variation with
+Velocity 1032
+
+18.4 The Reference Temperature Method
+
+1033
+
+18.4.1 Recent Advances: The Meador-Smart
+Reference Temperature
+Method 1036
+
+18.5 Stagnation Point Aerodynamic
+Heating 1037
+
+xiii
+
+18.6 Boundary Layers over Arbitrary Bodies:
+Finite-Difference Solution 1043
+18.6.1 Finite-Difference Method 1044
+
+18.7 Summary 1049
+18.8 Problems 1050
+
+Chapter 19
+Turbulent Boundary Layers 1051
+19.1 Introduction 1052
+19.2 Results for Turbulent Boundary Layers on
+a Flat Plate 1052
+19.2.1 Reference Temperature Method for
+Turbulent Flow 1054
+19.2.2 The Meador-Smart Reference
+Temperature Method for Turbulent
+Flow 1056
+19.2.3 Prediction of Airfoil Drag 1057
+
+19.3 Turbulence Modeling
+
+1057
+
+19.3.1 The Baldwin-Lomax Model 1058
+
+19.4 Final Comments 1060
+19.5 Summary 1061
+19.6 Problems 1062
+
+Chapter 20
+Navier-Stokes Solutions:
+Some Examples 1063
+20.1 Introduction 1064
+20.2 The Approach 1064
+20.3 Examples of Some Solutions
+
+1065
+
+20.3.1 Flow over a Rearward-Facing Step 1065
+20.3.2 Flow over an Airfoil 1065
+20.3.3 Flow over a Complete Airplane 1068
+20.3.4 Shock-Wave/Boundary-Layer
+Interaction 1069
+20.3.5 Flow over an Airfoil with a
+Protuberance 1070
+
+20.4 The Issue of Accuracy for the Prediction of
+Skin Friction Drag 1072
+20.5 Summary 1077
+
+xiv
+
+Contents
+
+Appendix A
+Isentropic Flow Properties
+
+1079
+
+Appendix B
+Normal Shock Properties
+
+Appendix E
+Standard Atmosphere, English Engineering
+Units 1103
+
+1085
+
+References
+
+Appendix C
+Prandtl-Meyer Function and Mach
+Angle 1089
+Appendix D
+Standard Atmosphere,
+SI Units 1093
+
+Index
+
+1117
+
+1111
+
+PREFACE TO THE SIXTH EDITION
+
+T
+
+his book follows in the same tradition as the previous editions: it is for
+students—to be read, understood, and enjoyed. It is consciously written in
+a clear, informal, and direct style to talk to the reader and gain his or her
+immediate interest in the challenging and yet beautiful discipline of aerodynamics.
+The explanation of each topic is carefully constructed to make sense to the reader.
+Moreover, the structure of each chapter is highly organized in order to keep
+the reader aware of where we are, where we were, and where we are going.
+Too frequently the student of aerodynamics loses sight of what is trying to be
+accomplished; to avoid this, I attempt to keep the reader informed of my intent
+at all times. For example, preview boxes are introduced at the beginning of each
+chapter. These short sections, literally set in boxes, inform the reader in plain
+language what to expect from each chapter and why the material is important and
+exciting. They are primarily motivational; they help to encourage the reader to
+actually enjoy reading the chapter, therefore enhancing the educational process.
+In addition, each chapter contains a road map—a block diagram designed to
+keep the reader well aware of the proper flow of ideas and concepts. The use of
+preview boxes and chapter road maps are unique features of this book. Also, to
+help organize the reader’s thoughts, there are special summary sections at the end
+of most chapters.
+The material in this book is at the level of college juniors and seniors in
+aerospace or mechanical engineering. It assumes no prior knowledge of fluid
+dynamics in general, or aerodynamics in particular. It does assume a familiarity
+with differential and integral calculus, as well as the usual physics background
+common to most students of science and engineering. Also, the language of
+vector analysis is used liberally; a compact review of the necessary elements
+of vector algebra and vector calculus is given in Chapter 2 in such a fashion
+that it can either educate or refresh the reader, whatever may be the case for
+each individual.
+This book is designed for a one-year course in aerodynamics. Chapters 1 to 6
+constitute a solid semester emphasizing inviscid, incompressible flow. Chapters 7
+to 14 occupy a second semester dealing with inviscid, compressible flow. Finally,
+Chapters 15 to 20 introduce some basic elements of viscous flow, mainly to serve
+as a contrast to and comparison with the inviscid flows treated throughout the bulk
+of the text. Specific sections on viscous flow, however, have been added much
+earlier in the book in order to give the reader some idea of how the inviscid results
+are tempered by the influence of friction. This is done by adding self-contained
+viscous flow sections at the end of various chapters, written and placed in such a
+way that they do not interfere with the flow of the inviscid flow discussion, but
+are there to complement the discussion. For example, at the end of Chapter 4 on
+xv
+
+xvi
+
+Preface to the Sixth Edition
+
+incompressible inviscid flow over airfoils, there is a viscous flow section that deals
+with the prediction of skin friction drag on such airfoils. A similar viscous flow
+section at the end of Chapter 12 deals with friction drag on high-speed airfoils.
+At the end of the chapters on shock waves and nozzle flows, there are viscous
+flow sections on shock wave/boundary-layer interactions. And so forth.
+Other features of this book are:
+1. An introduction to computational fluid dynamics as an integral part of the
+study of aerodynamics. Computational fluid dynamics (CFD) has recently
+become a third dimension in aerodynamics, complementing the previously
+existing dimension of pure experiment and pure theory. It is absolutely
+necessary that the modern student of aerodynamics be introduced to some
+of the basic ideas of CFD—he or she will most certainly come face to face
+with either its “machinery” or its results after entering the professional
+ranks of practicing aerodynamicists. Hence, such subjects as the source and
+vortex panel techniques, the method of characteristics, and explicit
+finite-difference solutions are introduced and discussed as they naturally
+arise during the course of our discussion. In particular, Chapter 13 is
+devoted exclusively to numerical techniques, couched at a level suitable to
+an introductory aerodynamics text.
+2. A chapter is devoted entirely to hypersonic flow. Although hypersonics is at
+one extreme end of the flight spectrum, it has current important applications
+to the design of hypervelocity missiles, planetary entry vehicles, and
+modern hypersonic atmospheric cruise vehicles. Therefore, hypersonic flow
+deserves some attention in any modern presentation of aerodynamics. This
+is the purpose of Chapter 14.
+3. Historical notes are placed at the end of many of the chapters. This follows
+in the tradition of some of my previous textbooks, Introduction to Flight: Its
+Engineering and History, 8th Edition (McGraw-Hill, 2016) and Modern
+Compressible Flow: With Historical Perspecive, 3rd Edition (McGraw-Hill,
+2003). Although aerodynamics is a rapidly evolving subject, its foundations
+are deeply rooted in the history of science and technology. It is important
+for the modern student of aerodynamics to have an appreciation for the
+historical origin of the tools of the trade. Therefore, this book addresses
+such questions as who Bernoulli, Euler, d’Alembert, Kutta, Joukowski, and
+Prandtl were; how the circulation theory of lift developed; and what
+excitement surrounded the early development of high-speed aerodynamics.
+I wish to thank various members of the staff of the National Air and Space
+Museum of the Smithsonian Institution for opening their extensive files for
+some of the historical research behind these history sections. Also, a
+constant biographical reference was the Dictionary of Scientific Biography,
+edited by C. C. Gillespie, Charles Schribner’s Sons, New York, 1980. This
+is a 16-volume set of books that is a valuable source of biographic
+information on the leading scientists in history.
+
+Preface to the Sixth Edition
+
+4. Design boxes are scattered throughout the book. These design boxes are
+special sections for the purpose of discussing design aspects associated with
+the fundamental material covered throughout the book. These sections are
+literally placed in boxes to set them apart from the mainline text. Modern
+engineering education is placing more emphasis on design, and the design
+boxes in this book are in this spirit. They are a means of making the
+fundamental material more relevant and making the whole process of
+learning aerodynamics more fun.
+Due to the extremely favorable comments from readers and users of the first
+five editions, virtually all the content of the earlier editions has been carried over
+intact to the present sixth edition. In this edition, however, a completely new educational tool has been introduced in some of the chapters in order to enhance and
+expand the reader’s learning process. Throughout the previous editions, numerous worked examples have been included at the end of many of the sections to
+illustrate and reinforce the ideas and methods discussed in that particular section.
+These are still included in the present sixth edition. However, added at the end of
+a number of the chapters in this sixth edition, a major challenge is given to the
+reader that integrates and uses thoughts and equations drawn from the chapter
+as a whole. These new sections are called END OF CHAPTER INTEGRATED
+WORK CHALLENGES. They are listed next:
+1. Chapter 1: A forward-facing axial aerodynamic force on an airfoil sounds
+not possible, but it can actually happen. What are the conditions under
+which it can happen?
+Also, the history of when such a forward-facing force was first observed is
+discussed.
+2. Chapter 2: Using the momentum equation, develop the relation between
+drag on an aerodynamic body and the loss of total pressure in the flow field.
+3. Chapter 3: Perform a conceptual design of a low-speed subsonic wind
+tunnel.
+4. Chapter 4: Find a way to account for the effects of wind tunnel walls on the
+measurements made on an aerodynamic body in a low-speed wind tunnel.
+5. Chapter 7: Obtain and discuss a relation between supersonic wave drag on
+a body and the entropy increase in the flow.
+6. Chapter 9: Consider the sonic boom generated from a body in supersonic
+flight. What is it? How is it created? How can its strength be reduced?
+7. Chapter 10: Perform a conceptual design of a supersonic wind tunnel.
+8. Chapter 11: At the end of World War II, in the face of the lack of reliable
+transonic wind tunnels and the extreme theoretical difficulty solving the
+nonlinear mathematical equations that govern transonic flow, the NACA
+developed an innovative experimental method for obtaining transonic
+aerodynamic data. Called the “wing-flow technique,” it involved mounting
+a small airfoil wing model vertically on the surface of the wing of a P-51
+
+xvii
+
+xviii
+
+Preface to the Sixth Edition
+
+fighter airplane at a location inside the bubble of locally supersonic flow
+formed on the P-51 wing when the airplane exceeded its critical Mach
+number. Design this apparatus, taking into account the size of the test
+model, the flow conditions over the test model, the optimum locations on the
+P-51 wing, etc. Also, the history of the wing-flow techniques will be given.
+The answers to these Integrated Work Challenges are given right there in the
+text so that the reader can gain instant gratification after working them out, just
+like the other worked examples; the answers are just more complex with a more
+widespread educational value.
+New homework problems have been added to McGraw-Hill’s online learning
+environment, Connect® . These question banks will include all end-of-chapter
+problems from the textbook and additional problems unique to Connect.
+All the new additional material not withstanding, the main thrust of this book
+remains the presentation of the fundamentals of aerodynamics; the new material
+is simply intended to enhance and support this thrust. I repeat that the book is
+organized along classical lines, dealing with inviscid incompressible flow, inviscid
+compressible flow, and viscous flow in sequence. My experience in teaching this
+material to undergraduates finds that it nicely divides into a two-semester course
+with Parts 1 and 2 in the first semester and Parts 3 and 4 in the second semester.
+Also, I have taught the entire book in a fast-paced, first-semester graduate course
+intended to introduce the fundamentals of aerodynamics to new graduate students
+who have not had this material as part of their undergraduate education. The book
+works well in such a mode.
+I would like to thank the McGraw-Hill editorial and production staff for their
+excellent help in producing this book, especially Jolynn Kilburg and Thomas
+Scaife, PhD, in Dubuque. Our photo researcher, David Tietz, was invaluable
+in searching out new and replacement photographs for the new edition to satisfy new McGraw-Hill guidelines; I don’t know what I would have done without him. Also, special thanks go to my long-time friend and associate, Sue
+Cunningham, whose expertise as a scientific typist is beyond comparison and
+who has typed all my book manuscripts for me, including this one, with great care
+and precision.
+I want to thank my students over the years for many stimulating discussions on
+the subject of aerodynamics, discussions that have influenced the development of
+this book. Special thanks go to three institutions: (1) The University of Maryland
+for providing a challenging intellectual atmosphere in which I have basked for
+the past 42 years; (2) The National Air and Space Museum of the Smithsonian
+Institution for opening the world of the history of the technology of flight for me;
+and (3) the Anderson household—Sarah-Allen, Katherine, and Elizabeth—who
+have been patient and understanding over the years while their husband and father
+was in his ivory tower. Also, I pay respect to the new generation, which includes
+my two beautiful granddaughters, Keegan and Tierney Glabus, who represent the
+future. To them, I dedicate this book.
+
+Preface to the Sixth Edition
+
+As a final comment, aerodynamics is a subject of intellectual beauty, composed and drawn by many great minds over the centuries. Fundamentals of Aerodynamics is intended to portray and convey this beauty. Do you feel challenged
+and interested by these thoughts? If so, then read on, and enjoy!
+John D. Anderson, Jr.
+
+xix
+
+P A R T
+
+1
+
+Fundamental Principles
+
+I
+
+n Part 1, we cover some of the basic principles that apply to aerodynamics in
+general. These are the pillars on which all of aerodynamics is based.
+
+1
+
+C H A P T E R
+
+1
+
+Aerodynamics: Some
+Introductory Thoughts
+The term “aerodynamics” is generally used for problems arising from flight and
+other topics involving the flow of air.
+Ludwig Prandtl, 1949
+Aerodynamics: The dynamics of gases, especially atmospheric interactions with
+moving objects.
+The American Heritage
+Dictionary of the English
+Language, 1969
+
+PREVIEW BOX
+Why learn about aerodynamics? For an answer, just
+take a look at the following five photographs showing
+a progression of airplanes over the past 70 years. The
+Douglas DC-3 (Figure 1.1), one of the most famous
+aircraft of all time, is a low-speed subsonic transport designed during the 1930s. Without a knowledge of low-speed aerodynamics, this aircraft would
+have never existed. The Boeing 707 (Figure 1.2)
+opened high-speed subsonic flight to millions of passengers beginning in the late 1950s. Without a knowledge of high-speed subsonic aerodynamics, most of
+us would still be relegated to ground transportation.
+
+Figure 1.1 Douglas DC-3 (NASA).
+
+3
+
+4
+
+PA RT 1
+
+Fundamental Principles
+
+Figure 1.2 Boeing 707 (© Everett Collection
+Historical/Alamy).
+
+Figure 1.5 Lockheed-Martin F-22 (U.S. Air Force
+Photo/Staff Sgt. Vernon Young Jr.).
+
+Figure 1.3 Bell X-1 (Library of Congress
+[LC-USZ6-1658]).
+
+Figure 1.6 Blended wing body (NASA).
+
+Figure 1.4 Lockheed F-104 (Library of Congress
+[LC-USZ62-94416]).
+
+The Bell X-1 (Figure 1.3) became the first piloted airplane to fly faster than sound, a feat accomplished
+with Captain Chuck Yeager at the controls on October 14, 1947. Without a knowledge of transonic
+aerodynamics (near, at, and just above the speed of
+sound), neither the X-1, nor any other airplane, would
+have ever broken the sound barrier. The Lockheed
+F-104 (Figure 1.4) was the first supersonic airplane
+
+point-designed to fly at twice the speed of sound,
+accomplished in the 1950s. The Lockheed-Martin
+F-22 (Figure 1.5) is a modern fighter aircraft designed
+for sustained supersonic flight. Without a knowledge
+of supersonic aerodynamics, these supersonic airplanes would not exist. Finally, an example of an
+innovative new vehicle concept for high-speed subsonic flight is the blended wing body shown in Figure
+1.6. At the time of writing, the blended-wing-body
+promises to carry from 400 to 800 passengers over
+long distances with almost 30 percent less fuel per
+seat-mile than a conventional jet transport. This would
+be a “renaissance” in long-haul transport. The salient
+design aspects of this exciting new concept are discussed in Section 11.10. The airplanes in Figures 1.1–
+1.6 are six good reasons to learn about aerodynamics.
+The major purpose of this book is to help you do this.
+As you continue to read this and subsequent chapters,
+you will progressively learn about low-speed aerodynamics, high-speed subsonic aerodynamics, transonic
+aerodynamics, supersonic aerodynamics, and more.
+
+C H A PTER 1
+
+Aerodynamics: Some Introductory Thoughts
+
+Airplanes are by no means the only application
+of aerodynamics. The air flow over an automobile,
+the gas flow through the internal combustion engine
+powering an automobile, weather and storm prediction, the flow through a windmill, the production of
+thrust by gas turbine jet engines and rocket engines,
+and the movement of air through building heater and
+air-conditioning systems are just a few other examples of the application of aerodynamics. The material
+in this book is powerful stuff—important stuff. Have
+fun reading and learning about aerodynamics.
+To learn a new subject, you simply have to start
+at the beginning. This chapter is the beginning of our
+study of aerodynamics; it weaves together a series
+of introductory thoughts, definitions, and concepts
+essential to our discussions in subsequent chapters.
+For example, how does nature reach out and grab
+hold of an airplane in flight—or any other object
+
+emmersed in a flowing fluid—and exert an aerodynamic force on the object? We will find out here. The
+resultant aerodynamic force is frequently resolved
+into two components defined as lift and drag; but
+rather than dealing with the lift and drag forces themselves, aerodynamicists deal instead with lift and drag
+coefficients. What is so magic about lift and drag
+coefficients? We will see. What is a Reynolds number?
+Mach number? Inviscid flow? Viscous flow? These
+rather mysterious sounding terms will be demystified
+in the present chapter. They and others constitute the
+language of aerodynamics, and as we all know, to
+do anything useful you have to know the language.
+Visualize this chapter as a beginning language lesson,
+necessary to go on to the exciting aerodynamic applications in later chapters. There is a certain enjoyment
+and satisfaction in learning a new language. Take this
+chapter in that spirit, and move on.
+
+1.1 IMPORTANCE OF AERODYNAMICS:
+HISTORICAL EXAMPLES
+On August 8, 1588, the waters of the English Channel churned with the gyrations
+of hundreds of warships. The great Spanish Armada had arrived to carry out an
+invasion of Elizabethan England and was met head-on by the English fleet under
+the command of Sir Francis Drake. The Spanish ships were large and heavy;
+they were packed with soldiers and carried formidable cannons that fired 50 lb
+round shot that could devastate any ship of that era. In contrast, the English
+ships were smaller and lighter; they carried no soldiers and were armed with
+lighter, shorter-range cannons. The balance of power in Europe hinged on the
+outcome of this naval encounter. King Philip II of Catholic Spain was attempting
+to squash Protestant England’s rising influence in the political and religious affairs
+of Europe; in turn, Queen Elizabeth I was attempting to defend the very existence
+of England as a sovereign state. In fact, on that crucial day in 1588, when the
+English floated six fire ships into the Spanish formation and then drove headlong
+into the ensuing confusion, the future history of Europe was in the balance.
+In the final outcome, the heavier, sluggish, Spanish ships were no match for the
+faster, more maneuverable, English craft, and by that evening the Spanish Armada
+lay in disarray, no longer a threat to England. This naval battle is of particular
+importance because it was the first in history to be fought by ships on both sides
+powered completely by sail (in contrast to earlier combinations of oars and sail),
+and it taught the world that political power was going to be synonymous with
+naval power. In turn, naval power was going to depend greatly on the speed and
+
+5
+
+6
+
+PA RT 1
+
+Fundamental Principles
+
+Figure 1.7 Isaac Newton’s model of fluid flow in the year 1687. This
+model was widely adopted in the seventeenth and eighteenth centuries
+but was later found to be conceptually inaccurate for most fluid flows.
+
+maneuverability of ships. To increase the speed of a ship, it is important to reduce
+the resistance created by the water flow around the ship’s hull. Suddenly, the
+drag on ship hulls became an engineering problem of great interest, thus giving
+impetus to the study of fluid mechanics.
+This impetus hit its stride almost a century later, when, in 1687, Isaac Newton
+(1642–1727) published his famous Principia, in which the entire second book
+was devoted to fluid mechanics. Newton encountered the same difficulty as others
+before him, namely, that the analysis of fluid flow is conceptually more difficult
+than the dynamics of solid bodies. A solid body is usually geometrically well
+defined, and its motion is therefore relatively easy to describe. On the other
+hand, a fluid is a “squishy” substance, and in Newton’s time it was difficult to
+decide even how to qualitatively model its motion, let alone obtain quantitative
+relationships. Newton considered a fluid flow as a uniform, rectilinear stream
+of particles, much like a cloud of pellets from a shotgun blast. As sketched in
+Figure 1.7, Newton assumed that upon striking a surface inclined at an angle θ
+to the stream, the particles would transfer their normal momentum to the surface
+but their tangential momentum would be preserved. Hence, after collision with
+the surface, the particles would then move along the surface. This led to an
+expression for the hydrodynamic force on the surface which varies as sin2 θ . This
+is Newton’s famous sine-squared law (described in detail in Chapter 14). Although
+its accuracy left much to be desired, its simplicity led to wide application in naval
+architecture. Later, in 1777, a series of experiments was carried out by Jean
+LeRond d’Alembert (1717–1783), under the support of the French government,
+in order to measure the resistance of ships in canals. The results showed that “the
+rule that for oblique planes resistance varies with the sine square of the angle of
+incidence holds good only for angles between 50 and 90◦ and must be abandoned
+for lesser angles.” Also, in 1781, Leonhard Euler (1707–1783) pointed out the
+physical inconsistency of Newton’s model (Figure 1.7) consisting of a rectilinear
+stream of particles impacting without warning on a surface. In contrast to this
+
+C H A PTER 1
+
+Aerodynamics: Some Introductory Thoughts
+
+model, Euler noted that the fluid moving toward a body “before reaching the latter,
+bends its direction and its velocity so that when it reaches the body it flows past
+it along the surface, and exercises no other force on the body except the pressure
+corresponding to the single points of contact.” Euler went on to present a formula
+for resistance that attempted to take into account the shear stress distribution
+along the surface, as well as the pressure distribution. This expression became
+proportional to sin2 θ for large incidence angles, whereas it was proportional to
+sin θ at small incidence angles. Euler noted that such a variation was in reasonable
+agreement with the ship-hull experiments carried out by d’Alembert.
+This early work in fluid dynamics has now been superseded by modern concepts and techniques. (However, amazingly enough, Newton’s sine-squared law
+has found new application in very high-speed aerodynamics, to be discussed in
+Chapter 14.) The major point here is that the rapid rise in the importance of
+naval architecture after the sixteenth century made fluid dynamics an important
+science, occupying the minds of Newton, d’Alembert, and Euler, among many
+others. Today, the modern ideas of fluid dynamics, presented in this book, are still
+driven in part by the importance of reducing hull drag on ships.
+Consider a second historical example. The scene shifts to Kill Devil Hills,
+4 mi south of Kitty Hawk, North Carolina. It is summer of 1901, and Wilbur
+and Orville Wright are struggling with their second major glider design, the first
+being a stunning failure the previous year. The airfoil shape and wing design of
+their glider are based on aerodynamic data published in the 1890s by the great
+German aviation pioneer Otto Lilienthal (1848–1896) and by Samuel Pierpont
+Langley (1934–1906), secretary of the Smithsonian Institution—the most prestigious scientific position in the United States at that time. Because their first glider
+in 1900 produced no meaningful lift, the Wright brothers have increased the wing
+area from 165 to 290 ft2 and have increased the wing camber (a measure of the
+airfoil curvature—the larger the camber, the more “arched” is the thin airfoil
+shape) by almost a factor of 2. But something is still wrong. In Wilbur’s words,
+the glider’s “lifting capacity seemed scarcely one-third of the calculated amount.”
+Frustration sets in. The glider is not performing even close to their expectations,
+although it is designed on the basis of the best available aerodynamic data. On
+August 20, the Wright brothers despairingly pack themselves aboard a train going
+back to Dayton, Ohio. On the ride back, Wilbur mutters that “nobody will fly for
+a thousand years.” However, one of the hallmarks of the Wrights is perseverance,
+and within weeks of returning to Dayton, they decide on a complete departure
+from their previous approach. Wilbur later wrote that “having set out with absolute faith in the existing scientific data, we were driven to doubt one thing after
+another, until finally after two years of experiment, we cast it all aside, and decided to rely entirely upon our own investigations.” Since their 1901 glider was
+of poor aerodynamic design, the Wrights set about determining what constitutes
+good aerodynamic design. In the fall of 1901, they design and build a 6 ft long,
+16 in square wind tunnel powered by a two-bladed fan connected to a gasoline
+engine. A replica of the Wrights’ tunnel is shown in Figure 1.8a. In their wind
+tunnel they test over 200 different wing and airfoil shapes, including flat plates,
+
+7
+
+
