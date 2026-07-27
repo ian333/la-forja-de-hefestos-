@@ -1,0 +1,23 @@
+CÁPSULA #1 — LA IMPRENTA (30 s, 9:16)
+Serie: "La economía son ideas" · idea concreta → conclusión de Romer sin nombrarlo.
+Regla: GANCHO primero, explicación después. Español mexicano. Cierre = la tesis.
+
+── GANCHO (0–9 s · la página se imprime) ──
+[0.5]   Esta hoja está por hacer algo imposible.
+[4.2]   Copiarse a sí misma. Sin gastarse nunca.
+
+── EXPLICACIÓN (9–16 s · se multiplica) ──
+[9.0]   Antes, copiar un libro tomaba meses.
+[12.85] La imprenta tiró ese costo casi a cero.
+
+── DERRAME / AMANECER (16–31 s · inunda el cielo) ──
+[16.5]  Una idea que copiar cuesta cero…
+[19.45] …se derrama sobre todo el mundo.
+[22.3]  Cambió cómo hablamos. Y con eso, la economía entera.
+[27.25] Porque la economía, en el fondo, son ideas.
+
+(tiempos = duraciones REALES de la voz Matilda, aire ~0.6 s; video = 31 s
+ para que la tesis respire — la voz acaba en 30.8)
+
+Título en pantalla (chico, arriba): LA IMPRENTA · 1440   [9.5–15]
+NOTA: no se menciona "Romer" ni "Nobel" — el público llega solo a la conclusión.

@@ -23,8 +23,17 @@ import {
   Nucleus, ElectronCloud, FrameDriver, Letterbox, CinemaVignette, MagneticField, smoothstep, buildAtomBundle, type AtomBundle,
 } from './CinematicAtom';
 import { CATALOG_KEYS, CATALOG_FIELD, CATALOG_FIELD_SUB, CATALOG_META, CATALOG_SCALE } from './catalog-data';
+import {
+  playShots, type ShotEntry,
+  approachWide, whipParallax, craneUnder, diveToNucleus, nucleusOrbit, pullOut,
+  crashIn, heroOrbit, loomPush, staticBreath, dutchDrift,
+  twoShot, throughBridge, craneOverPair, pushToBridge, orbitOne,
+} from './camera-shots';
+import { WaterMD } from './WaterMD';
 
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
+const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
+const WPAIR_DURATION = 77;   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
 // lenta ×3 (slow-motion de una dinámica real, no falseo): acercamiento ~3.3s +
@@ -58,13 +67,67 @@ function o2Flash(t: number): number {
 // pi = color de la 3a nube en singletes = la densidad π REAL (los MO π del enlace
 // múltiple), un anillo cian/frío alrededor del puente σ dorado. En O₂ la 3a nube es
 // el ESPÍN (violeta, el imán); sin pi definido cae al violeta por defecto.
-const BOND_ABINITIO: Record<string, { Re: number; mu: number; swirl: number; pi?: [number, number, number]; boost?: number; piColors?: [number, number, number][] }> = {
+const BOND_ABINITIO: Record<string, { Re: number; mu: number; swirl: number; pi?: [number, number, number]; boost?: number; piColors?: [number, number, number][]; shellR?: number; ionic?: boolean }> = {
   o2: { Re: 2.283, mu: 2, swirl: 0.10, boost: 1.3 },   // doble enlace · paramagnético · boost: su nube de espín tiene la mitad de masa que el π de N₂ → más luz
   n2: { Re: 2.074, mu: 0, swirl: 0.55, pi: [0.80, 0.34, 1.0] },  // triple · anillo π VIOLETA (el violeta hipnótico de O₂ — dorado+rojos+morados)
   f2: { Re: 2.668, mu: 0, swirl: 0.0, boost: 1.35 },    // enlace simple · sin π (no gira)
   c2: { Re: 2.348, mu: 0, swirl: 0.5, boost: 1.35, pi: [0.45, 0.75, 1.0], piColors: [[0.62, 0.86, 1.0], [0.30, 0.52, 1.0]] },  // ¡doble enlace de PURO π! — dos anillos hielo/azul (diamante)
   h2: { Re: 1.401, mu: 0, swirl: 0.0, boost: 1.45 },    // solo σ · 2 electrones = la nube más tenue → más luz
+  li2: { Re: 5.051, mu: 0, swirl: 0.0, boost: 1.5, shellR: 1.767 },    // boost de serie (O₂ ~1.3-1.5): nube densa violeta/cian/oro con puntos brillosos, sin lavar
+  be2: { Re: 4.637, mu: 0, swirl: 0.0, boost: 1.6, pi: [0.32, 0.80, 1.0], shellR: 1.098 },  // FANTASMA orden 0: acc=σ2g oro + 3ª nube=σ2u* CIAN; shellR=valle Be
+  // NaCl — EL ROBO: primer enlace IÓNICO (y primer heteronuclear) de la serie.
+  // El Δρ es ASIMÉTRICO total: el oro cae SOBRE el cloro (lo robado), el azul
+  // vacía al sodio (lo perdido) — en covalentes el oro va EN MEDIO; aquí no.
+  // Re = 4.462 bohr (2.3609 Å, Honig 1954). Verificado: μ(Re) = 9.10 D calc vs
+  // 9.00 D medido (1%). Singlete: sin π, sin espín. Curva q/μ por R en
+  // nacl-transfer.json (RHF exagera lo iónico a R grande — etiquetado).
+  nacl: { Re: 4.462, mu: 0, swirl: 0.0, boost: 1.45, ionic: true },
+  // HF — EL TIRANO: polar covalente (el contraste con el robo total de NaCl).
+  // El F (electronegatividad MÁXIMA, 3.98) jala pero NO arranca: q_H ≈ +0.35
+  // (NaCl era +0.98). El puente EXISTE (desplazado hacia el F) → glow covalente
+  // normal, sin bandera ionic. Re = 1.7325 bohr (0.9168 Å medido).
+  // μ(Re) = 1.94 D calc vs 1.826 medido (RHF exagera ~6% — etiquetado).
+  hf: { Re: 1.7325, mu: 0, swirl: 0.0, boost: 1.4 },
+  // CO — EL ABRAZO ASESINO: el enlace más fuerte de la naturaleza (1072 kJ/mol,
+  // triple, isoelectrónico con N₂). Heteronuclear pero CASI balanceado: μ medido
+  // 0.11 D — vive en el punto de cruce donde q_C cambia de signo (el scan real
+  // lo muestra: +0.19 a 1.23 Å, −0.20 a 0.93 Å). Verificado por Re, NO por μ
+  // (RHF invierte el signo de μ en CO — caso de libro, etiquetado): Re(RHF/cc-pVTZ)
+  // = 1.105 Å vs 1.1283 medido (2.1%). Identidad visual: anillos π BRASA/CARMESÍ
+  // (el asesino silencioso — se agarra de tu sangre). Re = 2.1322 bohr.
+  co: { Re: 2.1322, mu: 0, swirl: 0.5, boost: 1.15, pi: [1.0, 0.40, 0.35], piColors: [[1.0, 0.48, 0.30], [0.95, 0.24, 0.40]] },
+  // NO — EL MENSAJERO: radical de capa abierta. UN electrón desapareado en un π*
+  // ANTIENLAZANTE → orden de enlace 2.5 (media unión deshecha). Ese electrón suelto
+  // es la NUBE DE ESPÍN, y es la protagonista: por eso es un radical y por eso tu
+  // cuerpo lo usa para señalizar. mu: 1 = paramagnético de UN electrón (O₂ tiene 2).
+  // Color CIAN-AQUA (la señal): distinto del brasa de CO y del violeta de N₂/O₂.
+  // Re = 2.1747 bohr (1.1508 Å medido). Verificado por Re (3.0%) + ⟨S²⟩=0.795 vs
+  // 0.75 de doblete puro — μ NO sirve de gate aquí (0.159 D medido, campo medio lo
+  // erra 4×, mismo caso que CO).
+  no: { Re: 2.1747, mu: 1, swirl: 0.35, boost: 1.3, pi: [0.30, 0.95, 0.90] },
+  // HCl — EL ÁCIDO: covalente polar (misma familia que HF, jalón más suave). Capa
+  // cerrada, sin π, sin espín → nube dorada como HF/H2 (la identidad la dan la
+  // HISTORIA y la serie del jalón q(H): NaCl +0.98 → HF +0.35 → HCl +0.17). El Cl
+  // es GORDO → la nube es asimétrica y grande hacia la derecha. Re = 2.4086 bohr
+  // (1.2746 Å medido). Gate por Re (0.5%); μ RHF exagera ~17% (etiquetado).
+  hcl: { Re: 2.4086, mu: 0, swirl: 0.0, boost: 1.35 },
+  // H₂O — EL AGUA: primer TRIATÓMICO. El ángulo entra a la serie. Re aquí = distancia
+  // O-H de equilibrio (1.81 bohr) → R=Re·_appr brackets el escaneo de FORMACIÓN del
+  // bin (Svals·D_OH). La nube bent y los PARES LIBRES vienen directos del bin (O2Cloud
+  // dibuja posiciones crudas). Sin π (thirdRing=0); la 3ª nube = pares libres (violeta).
+  // V2 (métricas del agua = éxito): más COLOR. `pi` = MORADO vívido para los PARES
+  // LIBRES (isPi los sube de 0.34 → 0.55+glow y los pinta) — son la estrella (las
+  // "orejas" que doblan el agua) y contestan el comentario "por qué la nube no es
+  // simétrica". boost 1.55 = todo más luminoso. La gente ama los morados.
+  h2o: { Re: 1.8098, mu: 0, swirl: 0.0, boost: 1.12, pi: [0.82, 0.28, 1.0] },
 };
+// Triatómicas: geometría MEDIDA (los núcleos se fuerzan a esta pose, alineada con el
+// Δρ del bin — igual que los diatómicos se fuerzan a ±Re/2 en X). O en origen, 2 H en
+// el plano XY a D_OH·_appr, ángulo fijo. El eje C2 (dipolo) en +X.
+const TRIATOMIC: Record<string, { dOH: number; angle: number }> = {
+  h2o: { dOH: 1.8098, angle: 104.478 },   // bohr, grados (medidos)
+};
+const isTri = (k: string): boolean => k in TRIATOMIC;
 const isBond = (k: string): boolean => k in BOND_ABINITIO;
 
 type Vec3 = [number, number, number];
@@ -204,6 +267,15 @@ const BOND_KEYS: [number, number][] = [
 ];
 function bondR(t: number, mol = 'n2'): number {
   if (mol === 'o2') return 1.0;   // la SECUELA no re-cuenta la formación: molécula formada SIEMPRE (zpv aparte)
+  if (mol === 'h2o') return 1.0;  // AGUA v2 (aprobada): molécula FORMADA (frame 1 = pico ardiendo); el zpv da el latido
+  if (mol === 'li2') {            // Li₂: caen desde 3.8·Re → SOBREPASAN Re → VIBRAN amortiguado → se asientan.
+    // El asentamiento ES el pozo de energía hecho movimiento: caen dentro, rebotan, quedan
+    // ATRAPADOS oscilando en Re (vibración de punto cero real) = por qué NO se sueltan.
+    if (t >= 27) return 1.0;                                        // asentados en el fondo del pozo
+    if (t < 19) { const k = t / 19; return 3.8 + (1.0 - 3.8) * (k * k); }   // caen acelerando hasta Re en t19
+    const u = t - 19;                                              // vibración amortiguada alrededor de Re
+    return 1.0 - 0.18 * Math.sin(u * 1.9) * Math.exp(-u * 0.5);    // sobrepasan (bondR<1), rebotan, decaen a 1
+  }
   const K = BOND_KEYS;
   if (t <= K[0][0]) return K[0][1];
   if (t >= K[K.length - 1][0]) return K[K.length - 1][1];
@@ -247,8 +319,115 @@ function morseTau(t: number): number {
   return _tauCache[i0] * (1 - f) + _tauCache[i1] * f;
 }
 
+// ── LISTAS DE TOMAS por pieza (la VARIEDAD es datos, no código) ──────────────
+// Cada viaje ensambla la gramática de camera-shots.ts distinto, pero TODOS caen
+// en los mismos anclajes narrativos: dive al núcleo ~32-40s ("ven, mira el
+// corazón"), órbita íntima ~44-52, salida ~52-66. Lo que cambia es la APERTURA,
+// la TOMA-FIRMA y el ritmo → deja de ser el mismo viaje. Suman ~66s (cubren el
+// render; la última toma sostiene si sobra). Opt-in: solo estas moléculas usan
+// la gramática; o2/n2/f2/li2/caroteno/cadenas conservan su cámara a medida.
+// La COLA (dive→núcleo→salida→héroe) está SINCRONIZADA al horario del contenido
+// (transitDim, ~línea 2270): dim al entrar (30-32.5), núcleo brillante (39-51),
+// warp-out en la zona-muerta intencional (51.2-52.7) y el BRILLO REGRESA con la
+// molécula (53.9-56.2). Por eso la cola comparte TIEMPOS entre piezas — pero el
+// contenido difiere. La VARIEDAD vive en los primeros 27s: apertura + toma-firma
+// distintas por pieza (whip / loom / staticBreath / dutch / craneUnder).
+const TAIL: ShotEntry[] = [
+  { shot: diveToNucleus({ spin: 2.2 }), dur: 12, label: 'clavado 27-39' },
+  { shot: nucleusOrbit({}), dur: 12, label: 'corazón 39-51' },
+  { shot: pullOut({}), dur: 5, label: 'warp-out 51-56' },
+  { shot: heroOrbit({ dir: 1, span: 1.1, rMul: 1.32 }), dur: 10, label: 'héroe/loop 56-66' },
+];
+const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
+  // NaCl — EL ROBO A DISTANCIA: ver los dos separados → el electrón SALTA (whip) →
+  // el Cl⁻ se ALZA sobre ti (ángulo bajo = poder del ladrón) → COLA.
+  nacl: [
+    { shot: approachWide({ rFromMul: 2.0, rToMul: 1.5 }), dur: 8, label: 'ver los dos' },
+    { shot: whipParallax({ azim0: -1.6, span: 2.8 }), dur: 7, label: 'el salto' },
+    { shot: craneUnder({ elevTo: -0.44 }), dur: 12, label: 'el ladrón domina' },
+    ...TAIL,
+  ],
+  // CO — EL ABRAZO ASESINO: formación pegada (el abrazo) → órbita mostrando los 3
+  // anillos → "1072" SE VIENE ENCIMA (loom = fuerza-amenaza) → COLA.
+  co: [
+    { shot: crashIn({}), dur: 13, label: 'el abrazo' },
+    { shot: heroOrbit({ dir: 1, span: 1.6, rMul: 1.3 }), dur: 8, label: '3 anillos' },
+    { shot: loomPush({ rFrom: 1.4, rTo: 0.72 }), dur: 6, label: '1072 encima' },
+    ...TAIL,
+  ],
+  // NO — EL MENSAJERO (16:9): acercarse → QUIETUD sobre el electrón solo (silencio,
+  // contraste) → órbita AL REVÉS (variedad) por los conos de espín → COLA.
+  no: [
+    { shot: approachWide({ rFromMul: 1.55, rToMul: 1.32 }), dur: 12, label: 'acercarse' },
+    { shot: staticBreath({ rMul: 1.4 }), dur: 6, label: 'el electrón solo' },
+    { shot: heroOrbit({ dir: -1, span: 1.6, azim0: 2.4 }), dur: 9, label: 'conos de espín' },
+    ...TAIL,
+  ],
+  // HCl — EL ÁCIDO: acercarse → la polaridad (héroe) → algo TORCIDO en "δ+ δ−"
+  // (dutch, con moderación) → COLA.
+  hcl: [
+    { shot: approachWide({ rFromMul: 1.55, rToMul: 1.3 }), dur: 8, label: 'acercarse' },
+    { shot: heroOrbit({ dir: 1, span: 1.6 }), dur: 10, label: 'polaridad' },
+    { shot: dutchDrift({ rollAmp: 0.24 }), dur: 9, label: 'torcido' },
+    ...TAIL,
+  ],
+  // H₂O — EL AGUA (TRIATÓMICO): viaje PROPIO (no la cola diatómica). El clímax es la
+  // MOLÉCULA ENTERA ("disuelve, el hielo flota, no habría vida"), NO el núcleo → el
+  // dive es corto y TARDÍO ("mira el corazón", l8), y la cámara se queda en la "V"
+  // bent para el payoff. La firma: RECORRER EL ÁNGULO (edge-on→face-on: azim ~0 de
+  // canto → ~π/2 de frente = la V de 104.5° se ABRE). Anclado a la voz (54s).
+  h2o: [
+    // V2: FRAME 1 = EL PICO (molécula ardiendo cerca) + MÁS MOVIMIENTO (feedback Ian:
+    // "no se mueven lo suficiente") → órbitas AMPLIAS, un looming, buceo con más giro.
+    // La cámara VUELA alrededor de la V bent, no la contempla quieta.
+    { shot: heroOrbit({ dir: 1, azim0: 1.35, span: 1.6, elev: 0.18, rMul: 1.22 }), dur: 8.5, label: 'la gota ardiendo (l1)' },
+    { shot: heroOrbit({ dir: 1, azim0: -0.25, span: 2.3, elev: 0.20, rMul: 1.4 }), dur: 11.5, label: 'abre el ángulo (l3)' },
+    { shot: heroOrbit({ dir: -1, azim0: 2.0, span: 2.1, elev: 0.26, rMul: 1.36 }), dur: 8.5, label: 'los pares libres (l4-5)' },
+    { shot: craneUnder({ azim0: 1.4, span: 1.0, elevTo: -0.44, rMul: 1.32 }), dur: 11.5, label: 'polar, domina (l6)' },
+    { shot: loomPush({ rFrom: 1.55, rTo: 1.02, elev: 0.16, azim: 0.6 }), dur: 7.5, label: 'disuelve/flota — se viene encima (l7)' },
+    { shot: diveToNucleus({ spin: 2.8 }), dur: 5.5, label: 'al corazón O (l8)' },
+    { shot: nucleusOrbit({ span: 2.4 }), dur: 5, label: '8 protones' },
+    { shot: pullOut({}), dur: 3, label: 'salida' },
+    { shot: heroOrbit({ dir: 1, span: 1.7, rMul: 1.34 }), dur: 3.5, label: 'clímax (l9)' },
+  ],
+  // EL PUENTE (2 aguas) — la pieza Y SU VARIANTE DE CÁMARA viven aquí como DATOS.
+  // (v1 de wpair creó constantes sueltas WPAIR_SHOTS/WPAIR_SHOTS_B + componente propio =
+  // el reguero que Ian cachó. Una variante nueva = OTRA ENTRADA + ?cam=<x>, cero código.)
+  // Duraciones IDÉNTICAS entre variantes → siguen clavadas a la voz (7,9,4,8,11,10,9,9,10).
+  wpair: [
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.4, elev: 0.15, rMul: 1.58 }), dur: 7, label: 'espectáculo — plano de dos (l1-2)' },
+    { shot: orbitOne({ side: 1, azim0: 0.8, span: 2.0, rMul: 0.5 }), dur: 9, label: 'electrones de UNA, close (l3-4)' },
+    { shot: orbitOne({ side: -1, azim0: 2.5, span: 1.3, rMul: 0.5 }), dur: 4, label: 'probabilidad — nube de UNA, close (l5-6)' },
+    { shot: orbitOne({ side: -1, azim0: 1.6, span: 1.8, rMul: 0.5 }), dur: 8, label: 'el corazón dorado O (l7-8)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 11, label: 'cargas parciales — ángulo bajo (l9-11)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.7, elev: 0.22, rMul: 1.5 }), dur: 10, label: 'el campo — órbita (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 9, label: 'se acercan — looming al puente (l15-16)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 9, label: 'el puente=nube — el enlace llena el cuadro (l17-18)' },
+    { shot: pullOut({}), dur: 10, label: 'payoff (l19-20)' },
+  ],
+  'wpair-b': [
+    { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 9, label: 'electrones de la OTRA, close bajo (l3-4)' },
+    { shot: orbitOne({ side: 1, azim0: 0.3, span: 1.7, rMul: 0.42, elev: 0.2 }), dur: 4, label: 'probabilidad — flip de molécula (l5-6)' },
+    { shot: orbitOne({ side: 1, azim0: 2.2, span: 2.2, rMul: 0.48, elev: 0.35 }), dur: 8, label: 'el corazón dorado O — elevado (l7-8)' },
+    { shot: craneOverPair({ azim0: 2.9, span: 1.5, elevFrom: 0.5, elevTo: -0.55, rMul: 1.35 }), dur: 11, label: 'cargas parciales — grúa profunda otro azimut (l9-11)' },
+    { shot: twoShot({ dir: 1, azim0: 0.5, span: 2.3, elev: -0.12, rMul: 1.42 }), dur: 10, label: 'el campo — barrido bajo opuesto (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.95, rTo: 0.8, azim: 2.6, elev: 0.12 }), dur: 9, label: 'se acercan — looming otro lado (l15-16)' },
+    { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 9, label: 'el puente=nube — otro ángulo de choque (l17-18)' },
+    { shot: pullOut({ azim0: 1.0, span: 1.4 }), dur: 10, label: 'payoff con órbita (l19-20)' },
+  ],
+};
+
 function molCamera(t: number, f: Frame): Shot {
   if (f.dna) return dnaCamera(t, f);
+  // GRAMÁTICA DE TOMAS (opt-in): si la molécula tiene lista, la cámara es
+  // componible (variedad por pieza). Convención de núcleo: -nucX = átomo izquierdo
+  // (el que la narración nombra), igual que la cámara a medida original.
+  const shotList = f.mk ? CAMERA_SHOTS[f.mk] : undefined;
+  // +nucX = átomo índice 1 = el B de els=(A,B): el PESADO que la voz nombra (Cl en
+  // NaCl/HCl, O en CO/NO). Clavar ahí = "17 protones del cloro" se VE (no al H de 1).
+  // Triatómico (H₂O): el corazón es el O en el ORIGEN → nucX=0.
+  if (shotList) return playShots(shotList, t, { ex: f.ex, nucX: isTri(f.mk ?? '') ? 0 : (f.nucX ?? f.ex * 0.5), bondR: bondR(t, f.mk), t });
   const ease = (x: number) => { x = Math.max(0, Math.min(1, x)); return x * x * x * (x * (x * 6 - 15) + 10); };
   const P = (s: number, o1: number, o2: number): Vec3 => [
     f.c[0] + f.a[0] * s + f.p1[0] * o1 + f.p2[0] * o2,
@@ -326,6 +505,32 @@ function molCamera(t: number, f: Frame): Shot {
     const bx = Math.sin(t * 0.22) * 0.012;          // respiro lento (handheld con peso)
     const NX = f.nucX ?? 1.14;                       // x del núcleo objetivo (bohr) = Re/2
     const NUC: Vec3 = [-NX, 0, 0];                   // clavamos al átomo de la IZQUIERDA
+    // Li₂: ABRE en el shot del CAMPO (hero pulled-back, NO el velo cercano que quema),
+    // y los átomos se SEPARAN y se re-UNEN dentro del encuadre. Empata C0 con el héroe (t14).
+    // Li₂: CÁMARA COMPLETA sincronizada a la narración (58.6s). De LADO (azim ~π/2 =
+    // perpendicular al eje) durante el acercamiento → se VE la deformación del campo.
+    if (f.mk === 'li2') {
+      const roll0 = Math.PI / 2 + 0.04 * Math.sin(t * 0.17);   // más vida
+      if (t < 22) {                        // FORMACIÓN RECIA: lejos → choque (voz: se repelen, se pegan)
+        const k = ease(t / 22);
+        const dist = ex0 * lerp(2.4, 1.34, ease(Math.pow(k, 1.25)));       // se acerca acelerando (con el choque)
+        const azim = lerp(Math.PI / 2 + 0.2, 0.7, k) + bx + 0.14 * Math.sin(k * Math.PI * 2);  // barrido de lado con vida
+        return { pos: sph(dist, lerp(0.06, 0.18, k), azim), fov: lerp(44, 33, k), target: [0, 0, 0], roll: roll0 };
+      } else if (t < 30) {                 // HÉROE (voz: 3 electrones, el más flojo)
+        const k = ease((t - 22) / 8);
+        const dist = ex0 * (1.34 + 0.14 * Math.sin(k * Math.PI));
+        return { pos: sph(dist, 0.18 + 0.12 * Math.sin(k * Math.PI), 0.7 + k * 1.8 + bx), fov: 33, target: [0, 0, 0], roll: roll0 };
+      } else if (t < 38) {                 // CLAVADO al núcleo (voz: muy adentro, 3 protones)
+        const k = ease((t - 30) / 8);
+        const r = ex0 * lerp(1.34, 0.16, k);
+        const cen: Vec3 = [lerp(0, NUC[0], ease(Math.min(1, k / 0.5))), 0, 0];
+        return { pos: orbitAround(cen, r, lerp(0.18, 0.0, k), 2.5 + k * 2.0 + bx), fov: lerp(33, 42, k), target: cen, roll: roll0 };
+      }
+      // SALIDA: regresa a la molécula entera (cierre)
+      const k = ease((t - 38) / 6);
+      const cen: Vec3 = [lerp(NUC[0], 0, k), 0, 0];
+      return { pos: orbitAround(cen, ex0 * lerp(0.16, 1.5, k), lerp(0.0, 0.16, k), 4.5 + k * 0.9 + bx), fov: lerp(42, 34, k), target: cen, roll: roll0 };
+    }
     if (t < 9.5) {
       // VIAJE ENTRE LAS NUBES (in medias res): la cámara NACE rozando el velo del
       // átomo de abajo (looming — cerebro rápido), cruza el canal entre los dos con
@@ -486,7 +691,11 @@ function MolCameraRig({ frame, time, vertical }: { frame: Frame; time: number; v
     if (Math.abs(fwd.dot(up0)) > 0.94) up0.set(0, 0, 1);
     const right = new THREE.Vector3().crossVectors(fwd, up0).normalize();
     const trueUp = new THREE.Vector3().crossVectors(right, fwd).normalize();
-    const r = roll || 0;
+    // 16:9 — la cámara de ENLACE compone el eje con roll≈π/2 (eje en pantalla-vertical)
+    // para LLENAR el 9:16. En horizontal ese mismo roll deja la molécula atravesada con
+    // void muerto a los lados; se le quita el cuarto de vuelta → el eje queda HORIZONTAL
+    // y llena el 3840×2160. El wobble/banking authored se conserva intacto.
+    const r = (roll || 0) - (!vertical && frame.o2 ? Math.PI / 2 : 0);
     camera.up.copy(trueUp.multiplyScalar(Math.cos(r)).add(right.multiplyScalar(Math.sin(r))));
     camera.lookAt(target[0], target[1], target[2]);
     const cam = camera as THREE.PerspectiveCamera;
@@ -503,7 +712,7 @@ function MolCameraRig({ frame, time, vertical }: { frame: Frame; time: number; v
 
 // ── PostFX de molécula — grado de cine (ACES como en V8 — el look aprobado). El
 // bokeh lo hace el shader de la nube (uBokeh), no aquí. ──
-function MolPostFX({ live = false }: { live?: boolean }) {
+function MolPostFX({ live = false, sat = 0.5 }: { live?: boolean; sat?: number }) {
   // MSAA=0 en live: el combo multisampling + render target HDR-float revienta el
   // postFX a blanco en muchas GPUs (Intel, ANGLE, software) aunque la GPU de dev
   // lo renderee bien. Headless 4K (live=false) conserva MSAA=4. HDR buffer explícito.
@@ -514,7 +723,7 @@ function MolPostFX({ live = false }: { live?: boolean }) {
       <Bloom intensity={1.15} luminanceThreshold={0.20} luminanceSmoothing={0.6} radius={0.9} mipmapBlur />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
       <BrightnessContrast brightness={0.02} contrast={0.18} />
-      <HueSaturation saturation={0.5} />
+      <HueSaturation saturation={sat} />
       <ChromaticAberration offset={new THREE.Vector2(0.0010, 0.0010)} radialModulation modulationOffset={0.35} />
       <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.05} />
       <Vignette eskil={false} offset={0.20} darkness={0.68} />
@@ -579,13 +788,13 @@ interface Nuc { pos: Vec3; protons: number; neutrons: number; }
 interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [number, number][]; }
 
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
-  h2o:  { name: 'Agua', formula: 'H₂O', fact: 'Dos enlaces y dos pares libres: por eso el ángulo es 104.5°.' },
+  h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   ch4:  { name: 'Metano', formula: 'CH₄', fact: 'Cuatro enlaces perfectos a 109.5°: un tetraedro.' },
   nh3:  { name: 'Amoniaco', formula: 'NH₃', fact: 'Un par libre la vuelve una pirámide.' },
   co2:  { name: 'Dióxido de carbono', formula: 'CO₂', fact: 'Lineal y simétrica: 180° exactos.' },
   c2h4: { name: 'Etileno', formula: 'C₂H₄', fact: 'Un doble enlace: σ + π. Madura las frutas.' },
   c2h2: { name: 'Acetileno', formula: 'C₂H₂', fact: 'Un triple enlace: σ + 2π. Arde a 3000 °C.' },
-  hcl:  { name: 'Cloruro de hidrógeno', formula: 'HCl', fact: 'Enlace polar: el ácido del estómago.' },
+  hcl:  { name: 'El ácido', formula: 'HCl', fact: 'El cloro jala el electrón del hidrógeno — y así se hace el ácido de tu estómago.' },
   nacl: { name: 'Sal', formula: 'NaCl', fact: 'Enlace iónico: un átomo le robó el electrón al otro.' },
   c6h6: { name: 'Benceno', formula: 'C₆H₆', fact: 'Seis electrones bailando en círculo: aromático.' },
   h2:   { name: 'Hidrógeno', formula: 'H₂', fact: 'El enlace más simple del universo.' },
@@ -593,10 +802,18 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   c2:   { name: 'Carbono', formula: 'C₂', fact: 'Doble enlace de puro π: el carbono rompe las reglas.' },
   hehp: { name: 'Hidruro de helio', formula: 'HeH⁺', fact: 'La primera molécula que existió.' },
   li2:  { name: 'Dilitio', formula: 'Li₂', fact: 'El primer enlace entre dos metales.' },
+  nacl: { name: 'La sal', formula: 'NaCl', fact: 'El robo perfecto: el cloro le quita el electrón al sodio sin tocarlo.' },
+  hf:   { name: 'El tirano', formula: 'HF', fact: 'El elemento más hambriento del universo no logra robar — solo torcer.' },
+  be2:  { name: 'Diberilio', formula: 'Be₂', fact: 'Orden de enlace 0: no debería existir. Y existe — por pura correlación.' },
   n2:   { name: 'Nitrógeno', formula: 'N₂', fact: 'Triple enlace, el candado más fuerte: 78% del aire.' },
   o2:   { name: 'Oxígeno', formula: 'O₂', fact: 'Doble enlace magnético: lo que te mantiene vivo.' },
-  hf:   { name: 'Fluoruro de hidrógeno', formula: 'HF', fact: 'El puente de hidrógeno más fuerte.' },
-  co:   { name: 'Monóxido de carbono', formula: 'CO', fact: 'El faro con el que vemos nacer estrellas.' },
+  co:   { name: 'El abrazo asesino', formula: 'CO', fact: 'El enlace más fuerte de la naturaleza — por eso el monóxido no te suelta.' },
+  wdimer: { name: 'El puente', formula: 'H₂O···H₂O', fact: 'Dos moléculas de agua se agarran: el δ+ de un hidrógeno jala al δ− del oxígeno vecino.' },
+  whex: { name: 'El hexágono', formula: '(H₂O)₆', fact: 'Seis aguas en anillo: por esto el hielo es hexagonal y el copo de nieve tiene 6 puntas.' },
+  wsingle: { name: 'El agua', formula: 'H₂O', fact: 'Su campo eléctrico: del hidrógeno positivo al oxígeno negativo.' },
+  wmd: { name: 'Se buscan', formula: '(H₂O)₁₀', fact: 'Diez moléculas de agua, sueltas en el vacío, se encuentran SOLAS: sus campos eléctricos las pegan.' },
+  wpair: { name: 'El puente', formula: 'H₂O···H₂O', fact: 'El campo de una molécula JALA los electrones de la otra: los ves llegar (morado) al lugar exacto que dice la cuántica.' },
+  no:   { name: 'El mensajero', formula: 'NO', fact: 'Un electrón suelto: por eso tu cuerpo lo usa para hablarle a tus arterias.' },
   // ── CADENAS — la cámara las ATRAVIESA ──
   butane:       { name: 'Butano', formula: 'C₄H₁₀', fact: 'Cuatro carbonos en zig-zag: el gas del encendedor.' },
   pentane:      { name: 'Pentano', formula: 'C₅H₁₂', fact: 'Cinco carbonos: ya es líquido, base de la gasolina.' },
@@ -709,6 +926,7 @@ interface O2AbInitio {
   accPos: Int16Array; depPos: Int16Array; spinPos: Int16Array;   // K*N*3 (cuantizadas)
   accColor: Uint8Array;                                          // Nacc*3 (oro→ámbar)
   Rvals: Float32Array;                                           // K (descendente Rmax→Rmin)
+  accMass: Float32Array;                                         // K (carga en el ION — brillo de iónicos)
   bondMass: Float32Array;                                        // K (carga acumulada en el enlace → brillo)
   Nacc: number; Ndep: number; Nspin: number; K: number; Rmin: number; Rmax: number;
 }
@@ -722,13 +940,18 @@ function parseO2AbInitio(buf: ArrayBuffer): O2AbInitio {
   const Rmin = dv.getFloat32(off, true); off += 4;
   const Rmax = dv.getFloat32(off, true); off += 4;
   const Rvals = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
-  off += K * 4 * 3;                                    // accMass,depMass,spinMass (no usados en el render)
+  // accMass SÍ se usa ahora: en IÓNICOS (NaCl) el brillo se llavea a la carga
+  // ACUMULADA EN EL ION (0.7→1.0 e⁻ desde lejos = el robo a distancia), porque
+  // bondMass (carga en el punto MEDIO) es ≈0 en un iónico — no hay puente, esa
+  // es su gracia. Con bondMass el video salía NEGRO todo el acercamiento.
+  const accMass = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
+  off += K * 4 * 2;                                    // depMass,spinMass (no usados)
   const bondMass = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;  // carga del enlace → brillo
   const accColor = new Uint8Array(buf.slice(off, off + Nacc * 3)); off += Nacc * 3;
   const accPos = new Int16Array(buf.slice(off, off + K * Nacc * 3 * 2)); off += K * Nacc * 3 * 2;
   const depPos = new Int16Array(buf.slice(off, off + K * Ndep * 3 * 2)); off += K * Ndep * 3 * 2;
   const spinPos = new Int16Array(buf.slice(off, off + K * Nspin * 3 * 2)); off += K * Nspin * 3 * 2;
-  return { accPos, depPos, spinPos, accColor, Rvals, bondMass, Nacc, Ndep, Nspin, K, Rmin, Rmax };
+  return { accPos, depPos, spinPos, accColor, Rvals, accMass, bondMass, Nacc, Ndep, Nspin, K, Rmin, Rmax };
 }
 
 const O2FLOW_VERT = `
@@ -736,11 +959,19 @@ const O2FLOW_VERT = `
   varying vec3 vColor;
   varying float vNear;
   varying float vW;
+  varying float vTw;
   uniform float uSize;
   uniform float uRing;
   uniform float uCoreThin;
+  uniform float uTime;      // reloj para el PARPADEO (0 en las nubes que no parpadean)
+  uniform float uTwinkle;   // profundidad del parpadeo (0 = apagado → idéntico a antes)
   void main() {
     vColor = aColor;
+    // PARPADEO cuántico: cada punto aparece/desaparece a su propia fase (hash de su
+    // posición) → nube de PROBABILIDAD de pocos electrones (no materia sólida). uTwinkle=0
+    // en O2/los demás = sin efecto. Los electrones "están aquí, luego allá".
+    float ph = fract(sin(dot(position, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+    vTw = 1.0 - uTwinkle * (0.5 + 0.5 * sin(uTime * 7.0 + ph * 6.2831853));
     // ANILLO π EMERGENTE: las partículas REALES cerca del corazón del toro
     // (radio ≈1.05 bohr medido de la densidad π) brillan más — la estructura
     // emerge del polvo, no se dibuja encima. uRing=0 en las demás nubes.
@@ -762,10 +993,11 @@ const O2FLOW_FRAG = `
   varying vec3 vColor;
   varying float vNear;
   varying float vW;
+  varying float vTw;
   uniform float uBright;
   void main() {
     float d = length(gl_PointCoord - 0.5);
-    float a = smoothstep(0.5, 0.0, d) * vNear;
+    float a = smoothstep(0.5, 0.0, d) * vNear * vTw;
     if (a < 0.004) discard;
     gl_FragColor = vec4(vColor * a * uBright * vW, a);
   }`;
@@ -871,8 +1103,8 @@ function CarotenoFlow({ bundle, axis, cen, L, reveal, color, bright, time }:
 // Una nube advectada: cada frame interpola las POSICIONES entre las dos separaciones
 // que bracketean R(t) → las partículas se MUEVEN siguiendo la densidad (la carga
 // fluye al enlace). El color es fijo por partícula (viene del .bin o constante).
-function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0 }:
-  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; ring?: number; coreThin?: number }) {
+function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0 }:
+  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -880,7 +1112,7 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     g.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
     return g;
   }, [colors, N]);
-  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin } }), []);
+  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
   useEffect(() => {
     // bracket en Rvals (descendente Rmax→Rmin). frac entre k y k+1.
     let k = 0;
@@ -894,8 +1126,8 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     const o0 = k * N * 3, o1 = (k + 1) * N * 3, inv = 1 / O2AI_POSQ, mf = 1 - frac;
     for (let i = 0; i < N * 3; i++) arr[i] = (posQ[o0 + i] * mf + posQ[o1 + i] * frac) * inv;
     pos.needsUpdate = true;
-    if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uBright.value = brightness; matRef.current.uniforms.uRing.value = ring; matRef.current.uniforms.uCoreThin.value = coreThin; }
-  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, geo]);
+    if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uBright.value = brightness; matRef.current.uniforms.uRing.value = ring; matRef.current.uniforms.uCoreThin.value = coreThin; matRef.current.uniforms.uTime.value = tw_time; matRef.current.uniforms.uTwinkle.value = twinkle; }
+  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo]);
   return (
     <points geometry={geo} frustumCulled={false}>
       <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={O2FLOW_VERT}
@@ -908,8 +1140,8 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
 // El acto 1 de la película: DOS individuos, cada uno con su nube electrónica,
 // que al acercarse SE ENTRELAZAN. Se desvanece cuando el enlace se forma (la
 // atención pasa del átomo a la deformación Δρ = el enlace).
-function AtomCloud({ posQ, x, brightness }:
-  { posQ: Int16Array; x: number; brightness: number }) {
+function AtomCloud({ posQ, x, brightness, shellR }:
+  { posQ: Int16Array; x: number; brightness: number; shellR?: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const N = posQ.length / 3;
   const geo = useMemo(() => {
@@ -921,21 +1153,34 @@ function AtomCloud({ posQ, x, brightness }:
     // COLOR POR CAPA (real): la densidad radial del átomo tiene DOS picos — core 1s
     // (capa K, pegada al núcleo) y valencia 2s/2p (capa L). Corazón CÁLIDO dorado +
     // velo AZUL de valencia. Al acercarse los átomos se ve la verdad del enlace:
-    // SOLO las capas de valencia se unen; los cores nunca se tocan.
-    const core: [number, number, number] = [1.0, 0.86, 0.55];
-    const val: [number, number, number] = [0.62, 0.36, 1.0];
+    // SOLO las capas de valencia se unen; los cores nunca se tocan. shellR = valle
+    // radial 1s→2s REAL (calculado por elemento: O/N/F/C ~0.35, Li 1.77, Be 1.10).
+    // Sin shellR usa el valle compacto de la 2ª fila (retrocompatible).
+    const rv = shellR ?? 0.35, w = Math.max(0.12, rv * 0.5);
+    // PALETA JOYA de la serie (O₂/C₂): core CÁLIDO oro (K, 1s pegada al núcleo) +
+    // valencia MEZCLA violeta/cian con glints blancos (L, 2s difusa). Los "morados"
+    // que el user pidió = la valencia violeta; la variedad (violeta·cian·glint) da el
+    // destello tipo O₂. Mezcla DETERMINISTA por índice (hash) → reproducible por frame.
+    const core: [number, number, number] = [1.0, 0.74, 0.34];   // ORO CÁLIDO (K)
+    const valV: [number, number, number] = [0.62, 0.32, 1.0];   // VIOLETA (L) — los morados
+    const valC: [number, number, number] = [0.26, 0.64, 1.0];   // CIAN (variedad joya)
     const col = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
       const r = Math.hypot(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
-      const s = smoothstep((r - 0.28) / 0.18);       // K→L alrededor del valle radial (~0.35 bohr)
-      col[i * 3] = core[0] * (1 - s) + val[0] * s;
-      col[i * 3 + 1] = core[1] * (1 - s) + val[1] * s;
-      col[i * 3 + 2] = core[2] * (1 - s) + val[2] * s;
+      const s = smoothstep((r - (rv - w)) / w);      // K→L centrado en el valle real
+      const hRaw = (Math.sin(i * 12.9898) * 43758.5453) % 1; const h = hRaw < 0 ? hRaw + 1 : hRaw;
+      let vr: number, vg: number, vb: number;
+      if (h < 0.30) { vr = valC[0]; vg = valC[1]; vb = valC[2]; }        // ~30% cian
+      else if (h > 0.955) { vr = 1.0; vg = 0.95; vb = 1.0; }             // ~4% glint blanco (los "puntos brillosos")
+      else { vr = valV[0]; vg = valV[1]; vb = valV[2]; }                 // mayoría violeta
+      col[i * 3] = core[0] * (1 - s) + vr * s;
+      col[i * 3 + 1] = core[1] * (1 - s) + vg * s;
+      col[i * 3 + 2] = core[2] * (1 - s) + vb * s;
     }
     g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
     return g;
-  }, [posQ, N]);
-  const uniforms = useMemo(() => ({ uSize: { value: 0.20 }, uBright: { value: brightness }, uRing: { value: 0 }, uCoreThin: { value: 0 } }), []);
+  }, [posQ, N, shellR]);
+  const uniforms = useMemo(() => ({ uSize: { value: 0.20 }, uBright: { value: brightness }, uRing: { value: 0 }, uCoreThin: { value: 0 } }), []);   // sprites finos = DESTELLO tipo O₂ (puntos distintos, no papilla); densidad + brillo hacen el glitter
   useEffect(() => { if (matRef.current) matRef.current.uniforms.uBright.value = brightness; }, [brightness]);
   return (
     <points geometry={geo} position={[x, 0, 0]} frustumCulled={false}>
@@ -949,8 +1194,8 @@ function AtomCloud({ posQ, x, brightness }:
 //   acumulación → color por partícula (oro σ en el eje → ámbar π): el ENLACE que nace.
 //   vaciado     → azul frío tenue: de dónde salió la carga (bruma, no protagonista).
 //   espín       → violeta: los 2 e⁻ π* desapareados = por qué el O₂ es magnético.
-function O2BondFlow({ ai, R, swirl = 0, third, reveal = 1, aura = 1, RLag1 = 0, RLag2 = 0, ghost = 0, piSplit = null, sigmaMul = 1, pi1Mul = 1, pi2Mul = 1, spinMul = 1, boost = 1, piColors = null }:
-  { ai: O2AbInitio; R: number; swirl?: number; third?: [number, number, number]; reveal?: number; aura?: number; RLag1?: number; RLag2?: number; ghost?: number; piSplit?: Uint8Array | null; sigmaMul?: number; pi1Mul?: number; pi2Mul?: number; spinMul?: number; boost?: number; piColors?: [number, number, number][] | null }) {
+function O2BondFlow({ ai, R, swirl = 0, third, reveal = 1, aura = 1, RLag1 = 0, RLag2 = 0, ghost = 0, piSplit = null, sigmaMul = 1, pi1Mul = 1, pi2Mul = 1, spinMul = 1, boost = 1, piColors = null, thirdRing = 2.4, ionic = false, accMul = 1 }:
+  { ai: O2AbInitio; R: number; swirl?: number; third?: [number, number, number]; reveal?: number; aura?: number; RLag1?: number; RLag2?: number; ghost?: number; piSplit?: Uint8Array | null; sigmaMul?: number; pi1Mul?: number; pi2Mul?: number; spinMul?: number; boost?: number; piColors?: [number, number, number][] | null; thirdRing?: number; ionic?: boolean; accMul?: number }) {
   const accColors = useMemo(() => {
     const c = new Float32Array(ai.Nacc * 3);
     for (let i = 0; i < c.length; i++) c[i] = ai.accColor[i] / 255;
@@ -996,10 +1241,13 @@ function O2BondFlow({ ai, R, swirl = 0, third, reveal = 1, aura = 1, RLag1 = 0, 
   // normalizada) interpolada a R(t) → el enlace se ENCIENDE al formarse. Los electrones
   // NO aparecen/desaparecen (mismas partículas): solo brillan más donde la carga se junta.
   const bmNorm = useMemo(() => {
-    let mx = 1e-6; for (let k = 0; k < ai.K; k++) mx = Math.max(mx, ai.bondMass[k]);
-    const a = new Float32Array(ai.K); for (let k = 0; k < ai.K; k++) a[k] = ai.bondMass[k] / mx;
+    // IÓNICO: la señal es la carga EN EL ION (accMass, alta desde lejos = el robo
+    // a distancia); covalente: la carga en el PUENTE (bondMass, enciende al unirse).
+    const src = ionic ? ai.accMass : ai.bondMass;
+    let mx = 1e-6; for (let k = 0; k < ai.K; k++) mx = Math.max(mx, src[k]);
+    const a = new Float32Array(ai.K); for (let k = 0; k < ai.K; k++) a[k] = src[k] / mx;
     return a;
-  }, [ai]);
+  }, [ai, ionic]);
   let glow = 0;
   { const { Rvals, K } = ai; let k = 0;
     if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
@@ -1007,7 +1255,9 @@ function O2BondFlow({ ai, R, swirl = 0, third, reveal = 1, aura = 1, RLag1 = 0, 
     const r0 = Rvals[k], r1 = Rvals[k + 1], f = r0 === r1 ? 0 : Math.max(0, Math.min(1, (r0 - R) / (r0 - r1)));
     glow = bmNorm[k] * (1 - f) + bmNorm[k + 1] * f; }
   const isPi = !!third;                    // 3a nube = anillo π (N₂) vs espín/imán (O₂)
-  const accBright = (0.26 + 0.68 * glow) * boost;    // receta O₂: grandes+tenues = densidad LUMINOSA (no puntos duros)
+  // accMul: dampener SOLO del oro (acc). H₂O v2 con cámara CERCA reventaba el oro
+  // (whitegold del puente) a BLANCO por aditivo (feedback Ian) — sin tocar el morado.
+  const accBright = (0.26 + 0.68 * glow) * boost * accMul;    // receta O₂: grandes+tenues = densidad LUMINOSA (no puntos duros)
   // el anillo π es la FIRMA de N₂ → más brillo y cuerpo que el espín, para que compita con
   // el puente σ dorado (como el violeta/cian competía en O₂). Ambos crecen con la carga.
   const spinBright = (isPi ? (0.55 + 0.72 * glow) : (0.34 + 0.42 * glow)) * boost;
@@ -1020,7 +1270,7 @@ function O2BondFlow({ ai, R, swirl = 0, third, reveal = 1, aura = 1, RLag1 = 0, 
   // carga FLUIR (advección) mientras el enlace enciende.
   return (
     <group>
-      <O2Cloud posQ={ai.depPos} colors={depColors} Rvals={ai.Rvals} N={ai.Ndep} K={ai.K} R={R} brightness={0.26 * aura * boost} size={0.17} />
+      <O2Cloud posQ={ai.depPos} colors={depColors} Rvals={ai.Rvals} N={ai.Ndep} K={ai.K} R={R} brightness={(ionic ? 0.5 : 0.26) * aura * boost} size={ionic ? 0.27 : 0.17} />
       {/* π REAL girando: el ANILLO emerge de sus propias partículas. Con split:
           los DOS π perpendiculares en violeta y rosa, prendibles por separado */}
       <group rotation={[swirl * 0.7, 0, 0]}>
@@ -1030,7 +1280,7 @@ function O2BondFlow({ ai, R, swirl = 0, third, reveal = 1, aura = 1, RLag1 = 0, 
             <O2Cloud posQ={piAB.posB} colors={piAB.colB} Rvals={ai.Rvals} N={piAB.nB} K={ai.K} R={R} brightness={spinBright * aura * pi2Mul} size={spinSize} ring={2.4 * reveal} />
           </>
         ) : (
-          <O2Cloud posQ={ai.spinPos} colors={spinColors} Rvals={ai.Rvals} N={ai.Nspin} K={ai.K} R={R} brightness={spinBright * aura * spinMul} size={spinSize} ring={2.4 * reveal} />
+          <O2Cloud posQ={ai.spinPos} colors={spinColors} Rvals={ai.Rvals} N={ai.Nspin} K={ai.K} R={R} brightness={spinBright * aura * spinMul} size={spinSize} ring={thirdRing * reveal} />
         )}
       </group>
       {/* ESTELAS DE FLUJO reales: doble exposición de la advección — cada partícula
@@ -1043,7 +1293,7 @@ function O2BondFlow({ ai, R, swirl = 0, third, reveal = 1, aura = 1, RLag1 = 0, 
         <O2Cloud posQ={ai.accPos} colors={accColors} Rvals={ai.Rvals} N={ai.Nacc} K={ai.K} R={RLag2} brightness={accBright * reveal * ghost * 0.25} size={0.18} />
       )}
       <group rotation={[swirl, 0, 0]}>
-        <O2Cloud posQ={ai.accPos} colors={accColors} Rvals={ai.Rvals} N={ai.Nacc} K={ai.K} R={R} brightness={accBright * reveal * sigmaMul} size={0.22} coreThin={0.62} />
+        <O2Cloud posQ={ai.accPos} colors={accColors} Rvals={ai.Rvals} N={ai.Nacc} K={ai.K} R={R} brightness={accBright * reveal * sigmaMul} size={ionic ? 0.34 : 0.22} coreThin={ionic ? 0.3 : (accMul < 1 ? 0.9 : 0.62)} />
       </group>
     </group>
   );
@@ -1127,6 +1377,84 @@ const BOND_BEATS_MOL: Record<string, { t0: number; t1: number; big: string; sub:
     { t0: 19.6, t1: 21.5, big: 'π', sub: 'un anillo puro', color: '#7db8ff' },
     { t0: 21.5, t1: 23.4, big: 'π', sub: 'y el otro, cruzado — DOBLE enlace sin frontal', color: '#a5d3ff' },
     { t0: 30.4, t1: 34.9, big: '', sub: 'ese brillo ES la carga: miles de cargas sumando su luz', color: '#ffffff' },
+  ],
+  // Li₂: cartas-título (como C2/O2) que ESPEJEAN la voz — el user las pidió de vuelta.
+  li2: [
+    { t0: 5.4, t1: 8.5, big: '+  +', sub: 'dos núcleos positivos — SE REPELEN', color: '#ff9a6a' },
+    { t0: 16.0, t1: 20.4, big: '−', sub: 'la nube compartida jala a los DOS núcleos', color: '#8ec9ff' },
+    { t0: 20.9, t1: 25.0, big: '', sub: 'el pozo de energía — caen al fondo y ahí se quedan', color: '#ffd76e' },
+    { t0: 25.4, t1: 29.1, big: '3 e⁻', sub: 'dos amarrados al core · UNO que une', color: '#ffd76e' },
+    { t0: 29.6, t1: 34.0, big: 'σ', sub: 'el más flojo — el primer enlace metal-metal', color: '#ffd76e' },
+  ],
+  // NaCl — EL ROBO A DISTANCIA (mecanismo del arpón). Los números salen de
+  // nacl-transfer.json: q(Na) y μ por R del scan real; μ(Re) verificado al 1%.
+  nacl: [
+    { t0: 3.0, t1: 8.6, big: 'Na —— Cl', sub: 'AZUL: los electrones del sodio · ORO: lo que agarra el cloro', color: '#8ec9ff' },
+    { t0: 14.5, t1: 19.2, big: 'MÍRALO', sub: 'el azul del sodio... se está yendo', color: '#8ec9ff' },
+    { t0: 19.6, t1: 24.6, big: '¡SE LO ROBÓ!', sub: 'todo ese oro sobre el cloro ERA del sodio', color: '#ffd76e' },
+    { t0: 25.2, t1: 29.6, big: '+ −', sub: 'dos iones que ya no pueden soltarse', color: '#ffd76e' },
+    { t0: 30.1, t1: 34.4, big: '9 D', sub: 'el jalón gigante: calculado 9.1 — medido 9.0', color: '#c9a6ff' },
+  ],
+  // HF — EL JALONEO (polar): jala pero no arranca; el contraste con el robo de NaCl.
+  hf: [
+    { t0: 3.0, t1: 8.6, big: 'H —— F', sub: 'el átomo más chico · contra el más hambriento', color: '#8ec9ff' },
+    { t0: 14.5, t1: 19.2, big: 'JALA', sub: 'el flúor tuerce la nube hacia él — pero no la arranca', color: '#8ec9ff' },
+    { t0: 19.6, t1: 24.6, big: 'NO PUEDE', sub: 'el hidrógeno no suelta — la comparten TORCIDA', color: '#ffd76e' },
+    { t0: 25.2, t1: 29.6, big: 'δ− δ+', sub: 'un lado casi negativo, otro casi positivo: POLAR', color: '#ffd76e' },
+    { t0: 30.1, t1: 34.4, big: '1.9 D', sub: 'el jalón: calculado 1.94 — medido 1.83', color: '#c9a6ff' },
+  ],
+  // HCl — EL ÁCIDO: cierra la trilogía del jalón (NaCl robo / HF no puede / HCl suave
+  // y cotidiano). Números del scan real (hcl-transfer.json): q(H)=+0.17. Beats ABSOLUTOS
+  // (se reajustan con las duraciones reales del TTS). Anclados al buceo al núcleo ~33-48 s.
+  hcl: [
+    { t0: 2.4, t1: 8.9, big: 'H —— Cl', sub: 'el ácido que tienes AHORITA en el estómago', color: '#8ec9ff' },
+    { t0: 13.9, t1: 20.5, big: 'JALA', sub: 'el cloro tuerce la nube hacia él — suave, no la arranca', color: '#8ec9ff' },
+    { t0: 21.0, t1: 30.8, big: '+0.17', sub: 'el jalón más leve: robo 0.98 · flúor 0.35 · cloro 0.17', color: '#ffd76e' },
+    { t0: 31.4, t1: 37.8, big: 'δ+ δ−', sub: 'un lado + y otro − : eso es POLAR', color: '#ffd76e' },
+    { t0: 50.5, t1: 57.5, big: '1.27 Å', sub: 'la distancia medida — verificada al 0.5%', color: '#c9a6ff' },
+  ],
+  // CO — EL ABRAZO ASESINO. Números del scan real (co-transfer.json) y medidos:
+  // 1072 kJ/mol (enlace más fuerte), hemoglobina ~240× vs O₂, μ = 0.11 D medido.
+  // Beats ABSOLUTOS: anclados a las duraciones REALES del TTS (aire ≥0.48) Y al
+  // buceo al núcleo de la escena (~33-50 s) — por eso "Ven. Mira el corazón" es
+  // la línea 6, no la 8. Cada tarjeta cubre la línea que la nombra: la tarjeta
+  // NUNCA dice el dato antes que la voz.
+  co: [
+    { t0: 2.4, t1: 8.5, big: 'C —— O', sub: 'dos átomos comunes — a punto del abrazo más fuerte que existe', color: '#8ec9ff' },
+    { t0: 16.4, t1: 26.0, big: '≡', sub: 'TRES a la vez: σ y dos anillos π', color: '#ff7a6a' },
+    { t0: 26.3, t1: 31.8, big: '1072', sub: 'kJ/mol — el enlace más fuerte de la naturaleza', color: '#ffd76e' },
+    { t0: 38.8, t1: 47.8, big: '240×', sub: 'así se agarra de tu sangre — 240 veces más que el oxígeno', color: '#ff5a5a' },
+    { t0: 53.8, t1: 60.8, big: '0.1 D', sub: 'y por fuera casi ni se nota: perfectamente balanceado', color: '#c9a6ff' },
+  ],
+  // NO — EL MENSAJERO. Beats ABSOLUTOS desde las duraciones reales del TTS (aire 0.70)
+  // y anclados al buceo al núcleo (~33 s) → "Ven. Mira el corazón" es la línea 6.
+  // Datos: 11 e⁻ de valencia (impar), orden 2.5, Nobel de Medicina 1998 (Furchgott,
+  // Ignarro, Murad — el NO como señal que relaja el músculo liso vascular).
+  no: [
+    { t0: 2.4, t1: 8.6, big: 'N —— O', sub: 'del escape del coche… y de tus arterias', color: '#8ec9ff' },
+    { t0: 14.0, t1: 20.2, big: '11 e⁻', sub: 'un número IMPAR — uno se queda solo', color: '#4ff0dc' },
+    { t0: 20.7, t1: 26.5, big: 'RADICAL', sub: 'un electrón SIN PAREJA', color: '#4ff0dc' },
+    { t0: 26.9, t1: 32.5, big: '2.5', sub: 'ni doble ni triple — medio enlace menos', color: '#ffd76e' },
+    { t0: 44.1, t1: 50.0, big: '1998', sub: 'así le hablan tus arterias al músculo', color: '#c9a6ff' },
+  ],
+  // H₂O — EL AGUA (TRIATÓMICO): la historia es el ÁNGULO. 104.5° medido; los 2 pares
+  // libres del O empujan → doblan la molécula → polar → disuelve/hielo flota/vida.
+  // Beats DRAFT — se reajustan con las duraciones reales del TTS (beats absolutos).
+  // v2: CONTESTA las preguntas de los comentarios y REFUERZA con tarjetas. Beats
+  // absolutos a la voz nueva (l1 2.5 · l3 14.6 · l4 20.72 · l7 39.76 · l9 53.01).
+  h2o: [
+    { t0: 2.4, t1: 7.5, big: 'H₂O', sub: 'todo lo que eres cuelga de su forma', color: '#8ec9ff' },
+    { t0: 14.6, t1: 20.4, big: 'chueca', sub: 'la nube se carga de un solo lado — ¿por qué?', color: '#ffd76e' },
+    { t0: 20.7, t1: 32.8, big: '2 nubes', sub: 'los electrones que el oxígeno NO comparte: las moradas', color: '#c99cff' },
+    { t0: 39.8, t1: 45.6, big: 'imán', sub: 'un lado + y otro − : por eso se pega a sí misma', color: '#ffd76e' },
+    { t0: 52.9, t1: 59.5, big: 'ni mares', sub: 'si fuera recta, no habría gotas ni tú', color: '#ff9ac9' },
+  ],
+  // Be₂ FANTASMA: σ2g junta la carga, σ2u* la BORRA → orden 0; y aun así existe por correlación.
+  be2: [
+    { t0: 14.8, t1: 18.5, big: 'σ2g', sub: 'un enlace intenta formarse — la carga se junta', color: '#ffd76e' },
+    { t0: 18.5, t1: 23.0, big: 'σ2u*', sub: 'pero su gemelo la BORRA — orden de enlace CERO', color: '#5ad0ff' },
+    { t0: 23.5, t1: 29.2, big: '0', sub: 'no debería existir… y existe, atado por pura correlación', color: '#c9a6ff' },
+    { t0: 30.4, t1: 34.9, big: '', sub: 'el enlace fantasma: un susurro que el diagrama no ve', color: '#ffffff' },
   ],
 };
 function BondExplainer({ time, vertical, mol = 'n2' }: { time: number; vertical: boolean; mol?: string }) {
@@ -1247,6 +1575,500 @@ function RepulsionField({ nx, time }: { nx: number; time: number }) {
   </group>;
 }
 
+// ═══ AGUA QUE INTERACTÚA — dímero/cluster + PUENTE DE HIDRÓGENO + campo E real ═══
+// Lee water-<modo>.bin (precompute-water-field.py): Δρ de interacción (oro=acumula,
+// azul=vacía), líneas de campo (cian, del δ+ H al δ− O vecino) y núcleos. Es la
+// propiedad que define al agua: por qué se pega a sí misma → mares, gotas, hielo flota.
+const WATER_POSQ = 2000;
+interface WaterData {
+  acc: Float32Array; dep: Float32Array | null; NL: number; LP: number;
+  lines: Float32Array | null; nuc: { z: number; pos: Vec3 }[]; ex: number;
+}
+function parseWaterField(buf: ArrayBuffer): WaterData {
+  const dv = new DataView(buf); const inv = 1 / WATER_POSQ;
+  const accN = dv.getInt32(0, true), depN = dv.getInt32(4, true), NL = dv.getInt32(8, true), LP = dv.getInt32(12, true), NA = dv.getInt32(16, true);
+  let off = 20;
+  const rd = (n: number) => { const a = new Float32Array(n); for (let i = 0; i < n; i++) { a[i] = dv.getInt16(off, true) * inv; off += 2; } return a; };
+  const acc = rd(accN * 3);
+  const dep = depN ? rd(depN * 3) : null;
+  const lines = NL ? rd(NL * LP * 3) : null;
+  const zs: number[] = []; for (let i = 0; i < NA; i++) { zs.push(dv.getInt16(off, true)); off += 2; }
+  const nuc: { z: number; pos: Vec3 }[] = [];
+  for (let i = 0; i < NA; i++) { const x = dv.getInt16(off, true) * inv; off += 2; const y = dv.getInt16(off, true) * inv; off += 2; const z = dv.getInt16(off, true) * inv; off += 2; nuc.push({ z: zs[i], pos: [x, y, z] }); }
+  let ex = 1; for (const a of nuc) ex = Math.max(ex, Math.hypot(a.pos[0], a.pos[1], a.pos[2]));
+  return { acc, dep, NL, LP, lines, nuc, ex };
+}
+
+// nube de puntos aditivos (reusa el shader O2FLOW) con color uniforme
+function WaterCloud({ pos, color, size, bright }: { pos: Float32Array; color: [number, number, number]; size: number; bright: number }) {
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const c = new Float32Array(pos.length);
+    for (let i = 0; i < pos.length; i += 3) { c[i] = color[0]; c[i + 1] = color[1]; c[i + 2] = color[2]; }
+    g.setAttribute('aColor', new THREE.BufferAttribute(c, 3));
+    return g;
+  }, [pos, color]);
+  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: bright }, uRing: { value: 0 }, uCoreThin: { value: 0 } }), [size, bright]);
+  return (
+    <points geometry={geo} frustumCulled={false}>
+      <shaderMaterial uniforms={uniforms} vertexShader={O2FLOW_VERT} fragmentShader={O2FLOW_FRAG} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  );
+}
+
+// líneas de campo cian con FLUJO (pulso que corre del + al −)
+const WFIELD_VERT = `attribute float aU; varying float vU; uniform float uT;
+  void main(){ vU = aU; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
+const WFIELD_FRAG = `varying float vU; uniform float uT; uniform float uOp; uniform vec3 uCol;
+  void main(){ float flow = fract(vU*3.0 - uT*0.5); float p = 0.34 + 0.78*smoothstep(0.0,0.25,flow)*(1.0-smoothstep(0.55,0.95,flow));
+    gl_FragColor = vec4(uCol*p*uOp*2.4, p*uOp); }`;
+function WaterFieldLines({ lines, NL, LP, time, reveal }: { lines: Float32Array; NL: number; LP: number; time: number; reveal: number }) {
+  const { geo, mat } = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const segPerLine = LP - 1; const nv = NL * segPerLine * 2;
+    const pos = new Float32Array(nv * 3); const us = new Float32Array(nv);
+    let o = 0, uo = 0;
+    for (let j = 0; j < NL; j++) {
+      const b = j * LP * 3;
+      for (let s = 0; s < segPerLine; s++) {
+        const i0 = b + s * 3, i1 = b + (s + 1) * 3;
+        pos[o++] = lines[i0]; pos[o++] = lines[i0 + 1]; pos[o++] = lines[i0 + 2];
+        pos[o++] = lines[i1]; pos[o++] = lines[i1 + 1]; pos[o++] = lines[i1 + 2];
+        us[uo++] = s / segPerLine; us[uo++] = (s + 1) / segPerLine;
+      }
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('aU', new THREE.BufferAttribute(us, 1));
+    const m = new THREE.ShaderMaterial({ uniforms: { uT: { value: 0 }, uOp: { value: 1 }, uCol: { value: new THREE.Color(0.31, 0.94, 0.86) } },
+      vertexShader: WFIELD_VERT, fragmentShader: WFIELD_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    return { geo: g, mat: m };
+  }, [lines, NL, LP]);
+  mat.uniforms.uT.value = time; mat.uniforms.uOp.value = reveal;
+  return <lineSegments geometry={geo} material={mat} />;
+}
+
+// cámara del agua: órbita lenta con peso, eje O-O VERTICAL (roll π/2 → llena 9:16),
+// mira al centro; el barrido abre el plano para que se vea el PUENTE entre las dos.
+function WaterCamera({ time, ex, dur }: { time: number; ex: number; dur: number }) {
+  const { camera } = useThree();
+  useEffect(() => {
+    const t = time; const k = Math.min(1, t / dur);
+    // FRAME 1 = EL PICO: abre CERCA y de frente al plano del campo (el puente llena
+    // el cuadro, glorioso), luego respira hacia afuera revelando las dos moléculas.
+    const kout = k * k * (3 - 2 * k);                                                   // ease del pull-back
+    const az = 1.5 + 0.5 * Math.sin(k * Math.PI * 0.9) + 0.05 * Math.sin(t * 0.13);     // casi de frente al plano (líneas visibles)
+    const el = 0.05 + 0.10 * Math.sin(k * Math.PI * 1.2);                               // casi a nivel del plano
+    const dist = ex * (1.08 + 1.15 * kout - 0.06 * Math.sin(k * Math.PI * 2));          // MUY CERCA en t=0 (pico, llena el cuadro) → abre revelando
+    const cp = Math.cos(el);
+    const pos: Vec3 = [dist * cp * Math.cos(az), dist * Math.sin(el), dist * cp * Math.sin(az)];
+    camera.position.set(pos[0], pos[1], pos[2]);
+    const fwd = new THREE.Vector3(-pos[0], -pos[1], -pos[2]).normalize();
+    const up0 = new THREE.Vector3(0, 1, 0); if (Math.abs(fwd.dot(up0)) > 0.94) up0.set(0, 0, 1);
+    const right = new THREE.Vector3().crossVectors(fwd, up0).normalize();
+    const trueUp = new THREE.Vector3().crossVectors(right, fwd).normalize();
+    const roll = Math.PI / 2 + 0.02 * Math.sin(t * 0.11);
+    camera.up.copy(trueUp.multiplyScalar(Math.cos(roll)).add(right.multiplyScalar(Math.sin(roll))));
+    camera.lookAt(0, 0, 0);
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.fov = 40; cam.near = Math.max(0.01, dist * 0.03); cam.far = 200; cam.updateProjectionMatrix();
+  }, [time, ex, dur, camera]);
+  return null;
+}
+
+function WaterField({ molKey, time, dur, onReady }: { molKey: string; time: number; dur: number; onReady?: (r: boolean) => void }) {
+  const [wd, setWd] = useState<WaterData | null>(null);
+  const mode = molKey === 'whex' ? 'hexamer' : molKey === 'wsingle' ? 'single' : 'dimer';
+  useEffect(() => {
+    let alive = true; setWd(null);
+    fetch(`/precomputed/water-${mode}.bin`).then(r => r.arrayBuffer())
+      .then(buf => { if (alive) { setWd(parseWaterField(buf)); onReady?.(true); } })
+      .catch(e => console.error('water bin load failed', e));
+    return () => { alive = false; };
+  }, [mode, onReady]);
+  if (!wd) return null;
+  // FRAME 1 = EL PICO (regla dura): el puente ya está ENCENDIDO y glorioso desde el
+  // segundo cero — el campo NO se hace esperar (antes t~3-7s = gancho débil, gancho 35/100).
+  const reveal = Math.min(1, time / 0.5 + 0.55);
+  return (
+    <>
+      <WaterCamera time={time} ex={wd.ex} dur={dur} />
+      {wd.dep && <WaterCloud pos={wd.dep} color={[0.20, 0.45, 1.0]} size={0.22} bright={0.30} />}
+      <WaterCloud pos={wd.acc} color={[1.0, 0.72, 0.30]} size={0.24} bright={0.5} />
+      {wd.lines && <WaterFieldLines lines={wd.lines} NL={wd.NL} LP={wd.LP} time={time} reveal={reveal} />}
+      {wd.nuc.map((n, i) => (
+        <group key={i} position={n.pos}>
+          <Nucleus protons={n.z} neutrons={n.z === 8 ? 8 : 0} time={time}
+            clusterRadius={(n.z === 8 ? 0.10 : 0.055)} nHot={[0.62, 0.9, 1.35]} nHue={0.55} />
+        </group>
+      ))}
+    </>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EL PUENTE (wpair) — 2 aguas ab initio acercándose. Render con O2Cloud de V1 (la
+// nube DENSA), indexado por R(t): lejos → pegadas. Cuenta el mecanismo: el campo de
+// una MODIFICA los electrones de la otra (Δρ REAL). acc=ρ (oro+morado), spin=Δρ>0
+// (morado GLOW = electrones que LLEGAN, el puente), dep=Δρ<0 (azul = de dónde salen).
+// ══════════════════════════════════════════════════════════════════════════════
+interface WAPData {
+  Nacc: number; Ndep: number; Nspin: number; K: number; NNUC: number; NL: number; LP: number;
+  Rvals: Float32Array; bondMass: Float32Array; accColor: Float32Array; Z: Int16Array;
+  accPos: Int16Array; depPos: Int16Array; spinPos: Int16Array; nucPos: Int16Array; fieldLines: Int16Array;
+}
+function parseWAP2(buf: ArrayBuffer): WAPData {
+  const dv = new DataView(buf); let off = 4;   // salta magic 'WAP2'
+  const gi = () => { const v = dv.getInt32(off, true); off += 4; return v; };
+  const Nacc = gi(), Ndep = gi(), Nspin = gi(), K = gi(), NNUC = gi(), NL = gi(), LP = gi();
+  off += 4 + 8;   // POSQ + Rmin + Rmax (POSQ = O2AI_POSQ)
+  const Rvals = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
+  const bondMass = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
+  const acU = new Uint8Array(buf.slice(off, off + Nacc * 3)); off += Nacc * 3;
+  const accColor = new Float32Array(Nacc * 3); for (let i = 0; i < Nacc * 3; i++) accColor[i] = acU[i] / 255;
+  const Z = new Int16Array(buf.slice(off, off + NNUC * 2)); off += NNUC * 2;
+  const rd = (n: number) => { const a = new Int16Array(buf.slice(off, off + n * 2)); off += n * 2; return a; };
+  const accPos = rd(K * Nacc * 3), depPos = rd(K * Ndep * 3), spinPos = rd(K * Nspin * 3);
+  const nucPos = rd(K * NNUC * 3), fieldLines = rd(K * NL * LP * 3);
+  return { Nacc, Ndep, Nspin, K, NNUC, NL, LP, Rvals, bondMass, accColor, Z, accPos, depPos, spinPos, nucPos, fieldLines };
+}
+function wapBracket(Rvals: Float32Array, K: number, R: number) {
+  let k = 0;
+  if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
+  else { while (k < K - 2 && Rvals[k + 1] > R) k++; }
+  const r0 = Rvals[k], r1 = Rvals[k + 1];
+  const frac = r0 === r1 ? 0 : Math.max(0, Math.min(1, (r0 - R) / (r0 - r1)));
+  return { k, frac };
+}
+// CÁMARA QUE VIAJA — REUSA la gramática de tomas de la serie (playShots + camera-shots.ts),
+// igual que O2/agua v2. NADA de cámara fija inventada. Secuencia mapeada al guion (77s).
+const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
+const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
+// Las tomas salen del REGISTRO (datos), no de constantes por video. Variante nueva =
+// otra entrada en CAMERA_SHOTS + ?cam=<x>, sin tocar este componente. Ver docs/CANON-VIDEO.md.
+const WPAIR_SHOTS_ACTIVE = CAMERA_SHOTS[WPAIR_CAM === 'b' ? 'wpair-b' : 'wpair'];
+function WaterPairCamera({ time, R }: { time: number; R: number }) {
+  const { camera } = useThree();
+  useEffect(() => {
+    // R (bohr) = separación viva; nucX = R/2 (el O) para el dive. Vertical (reel) → roll intacto.
+    const { pos, fov, target, roll } = playShots(WPAIR_SHOTS_ACTIVE, time, { ex: WPAIR_EX, nucX: R / 2, bondR: R, t: time });
+    camera.position.set(pos[0], pos[1], pos[2]);
+    const fwd = new THREE.Vector3(target[0] - pos[0], target[1] - pos[1], target[2] - pos[2]).normalize();
+    const up0 = new THREE.Vector3(0, 1, 0); if (Math.abs(fwd.dot(up0)) > 0.94) up0.set(0, 0, 1);
+    const right = new THREE.Vector3().crossVectors(fwd, up0).normalize();
+    const trueUp = new THREE.Vector3().crossVectors(right, fwd).normalize();
+    const r = roll || 0;   // reel vertical: se conserva el roll (eje O-O vertical, llena 9:16)
+    camera.up.copy(trueUp.multiplyScalar(Math.cos(r)).add(right.multiplyScalar(Math.sin(r))));
+    camera.lookAt(target[0], target[1], target[2]);
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.fov = Math.min(95, fov * 1.42);
+    const d = Math.hypot(pos[0] - target[0], pos[1] - target[1], pos[2] - target[2]);
+    cam.near = Math.max(0.02, d * 0.03); cam.far = Math.max(100, WPAIR_EX * 24); cam.updateProjectionMatrix();
+  }, [time, R, camera]);
+  return null;
+}
+function WaterPair({ time, onReady }: { time: number; onReady?: (r: boolean) => void }) {
+  const [wd, setWd] = useState<WAPData | null>(null);
+  const [bondEf, setBondEf] = useState<BondEFieldData | null>(null);
+  useEffect(() => {
+    let alive = true; setWd(null); setBondEf(null);
+    fetch('/precomputed/water-approach.bin').then(r => r.arrayBuffer())
+      .then(b => { if (alive) { setWd(parseWAP2(b)); onReady?.(true); } })
+      .catch(e => console.error('water-approach load failed', e));
+    // CAMPO ELÉCTRICO real (MEP, muchas líneas que se CONECTAN, como Li₂) — bin aparte
+    fetch('/precomputed/water-approach-efield.bin').then(r => r.arrayBuffer())
+      .then(b => { if (alive) setBondEf(parseBondEField(b)); })
+      .catch(e => console.error('water-approach efield load failed', e));
+    return () => { alive = false; };
+  }, [onReady]);
+  const spinColors = useMemo(() => { const n = wd?.Nspin ?? 0; const c = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { c[i * 3] = 0.82; c[i * 3 + 1] = 0.30; c[i * 3 + 2] = 1.0; } return c; }, [wd]);
+  const depColors = useMemo(() => { const n = wd?.Ndep ?? 0; const c = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { c[i * 3] = 0.20; c[i * 3 + 1] = 0.45; c[i * 3 + 2] = 1.0; } return c; }, [wd]);
+  // PASO 1: color de la nube acc EXACTO como O2 (oro→ámbar-rojo→blanco-oro en el núcleo).
+  // El rojo/ámbar es la riqueza que faltaba; el morado NO va aquí (va en el Δρ).
+  const accColorWarm = useMemo(() => {
+    if (!wd) return new Float32Array(0);
+    const inv = 1 / O2AI_POSQ, kRef = wd.K - 1;
+    const nb = kRef * wd.NNUC * 3, pb = kRef * wd.Nacc * 3;
+    const O1 = [wd.nucPos[nb] * inv, wd.nucPos[nb + 1] * inv, wd.nucPos[nb + 2] * inv];
+    const O2n = [wd.nucPos[nb + 9] * inv, wd.nucPos[nb + 10] * inv, wd.nucPos[nb + 11] * inv];
+    // MÁS SATURACIÓN: tonos más profundos (menos verde/azul) + núcleo menos blanco
+    const gold = [1.0, 0.70, 0.14], amber = [1.0, 0.24, 0.03], whitegold = [1.0, 0.82, 0.42];
+    const c = new Float32Array(wd.Nacc * 3);
+    for (let i = 0; i < wd.Nacc; i++) {
+      const x = wd.accPos[pb + i * 3] * inv, y = wd.accPos[pb + i * 3 + 1] * inv, z = wd.accPos[pb + i * 3 + 2] * inv;
+      const d1 = Math.hypot(x - O1[0], y - O1[1], z - O1[2]), d2 = Math.hypot(x - O2n[0], y - O2n[1], z - O2n[2]);
+      const dO = Math.min(d1, d2), t = Math.min(1, dO / 2.4);
+      let col: number[];
+      if (dO < 0.9) col = whitegold;
+      else col = [gold[0] * (1 - t) + amber[0] * t, gold[1] * (1 - t) + amber[1] * t, gold[2] * (1 - t) + amber[2] * t];
+      c[i * 3] = col[0]; c[i * 3 + 1] = col[1]; c[i * 3 + 2] = col[2];
+    }
+    return c;
+  }, [wd]);
+  if (!wd) return null;
+  // ── BEATS SINCRONIZADOS AL GUION (narración 77s, ver scripts/guiones/wpair.txt) ──
+  // Hook pegadas (0-4) → separan (revelan 2, 4-9) → APART mientras explica electrones/oxígeno/
+  // cargas/campo (9-51) → se ACERCAN (líneas 15-16, 51-62) → pegadas: el enlace=nube (62-77).
+  const T = time;
+  const sw = (a: number, b: number) => { const t = Math.min(1, Math.max(0, (T - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const win = (a: number, b: number) => sw(a - 0.6, a) * (1 - sw(b, b + 0.6));   // 1 en [a,b], bordes suaves
+  const Rmin = wd.Rvals[wd.K - 1], Rmax = wd.Rvals[0];
+  // SE ACERCAN Y SE ALEJAN durante TODO el video (oscilación sobre los K=30 cálculos que YA
+  // existen → "distintos cálculos, distintas separaciones"). Arranca pegadas (pico), oscila
+  // ~2 veces, acercamiento limpio en "se acercan" (l15-16), y queda PEGADAS al final (el puente).
+  // amplitud REDUCIDA: oscila entre pegadas y MODERADO (nunca max lejos → las nubes y el
+  // campo SIEMPRE tienen cuerpo; el verificador cazó que "muy lejos" = cuadro vacío/muerto).
+  let esr = 0.30 + 0.34 * Math.cos(T * 0.30);        // 0 = pegadas, 0.64 = moderado
+  esr *= smoothstep(T / 5);                          // pegadas al inicio (l1-2, espectáculo)
+  esr *= (1 - smoothstep((T - 49) / 13));            // acercamiento final 49-62 → pegadas (enlace + payoff)
+  const es = Math.max(0, Math.min(1, esr));
+  const R = Rmin + (Rmax - Rmin) * es;
+  let bmMax = 1e-6; for (let i = 0; i < wd.K; i++) bmMax = Math.max(bmMax, wd.bondMass[i]);
+  const bb = wapBracket(wd.Rvals, wd.K, R);
+  const glow = (wd.bondMass[bb.k] * (1 - bb.frac) + wd.bondMass[bb.k + 1] * bb.frac) / bmMax;
+  const inv = 1 / O2AI_POSQ; const mf = 1 - bb.frac;
+  const nucP: Vec3[] = [];
+  for (let a = 0; a < wd.NNUC; a++) {
+    const o0 = (bb.k * wd.NNUC + a) * 3, o1 = ((bb.k + 1) * wd.NNUC + a) * 3;
+    nucP.push([(wd.nucPos[o0] * mf + wd.nucPos[o1] * bb.frac) * inv,
+               (wd.nucPos[o0 + 1] * mf + wd.nucPos[o1 + 1] * bb.frac) * inv,
+               (wd.nucPos[o0 + 2] * mf + wd.nucPos[o1 + 2] * bb.frac) * inv]);
+  }
+  const pulse = 0.92 + 0.08 * Math.sin(time * 2.0);   // el nebuloso RESPIRA (espectáculo vivo)
+  // COREOGRAFÍA sincronizada al guion (segundos de segs.json):
+  const cloudGate = 1 - 0.42 * win(41.5, 50.8);       // nubes bajan a ~58% en el beat del campo (no a MUERTO — el verificador cazó "solo alambre azul")
+  const fieldGate = 1 - 0.85 * Math.max(win(7.2, 19.6), win(61.8, 68.8));  // campo BAJA → electrones (3-6) y enlace=nube (17-18)
+  const twk = 0.42 + 0.42 * win(7.2, 19.6);           // PARPADEO fuerte en "son sus electrones, pocos, parpadeando"
+  const spinB = 1 + 0.9 * Math.max(win(28.8, 40.5), win(51.5, 68.8));  // Δρ magenta ARDE: cargas parciales + acercamiento/enlace
+  const accB = 1 + 0.5 * win(19.8, 28.6);             // ORO del oxígeno resalta ("el corazón dorado es el oxígeno")
+  // NADA de líneas de campo (una línea NO es el enlace ni el campo — es una convención que
+  // engaña). El enlace ES la NUBE: el Δρ (magenta = electrones que LLEGAN al puente, azul =
+  // de dónde salen), densidad electrónica REAL reacomodándose. Ab initio, no dibujado a mano.
+  return (
+    <>
+      <WaterPairCamera time={time} R={R} />
+      {/* size ×1.85 para 4K (a 2160×3840 los puntos quedan relativamente la mitad → nube rala;
+          se compensa el tamaño para que la densidad se vea como en el preview 1080) */}
+      <O2Cloud posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * (0.3 + 0.7 * glow) * cloudGate} size={0.35} twinkle={twk} tw_time={time} />
+      <O2Cloud posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} />
+      <O2Cloud posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * pulse * cloudGate * spinB} size={0.46} twinkle={twk} tw_time={time} />
+      {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
+          NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
+          al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
+      {bondEf && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
+      {nucP.map((p, i) => (
+        <group key={i} position={p}>
+          <Nucleus protons={wd.Z[i]} neutrons={wd.Z[i] === 8 ? 8 : 0} time={time}
+            clusterRadius={wd.Z[i] === 8 ? 0.10 : 0.05} nHot={[0.62, 0.9, 1.35]} nHue={0.55} />
+        </group>
+      ))}
+    </>
+  );
+}
+
+// ── CAMPO ELÉCTRICO de la diatómica (líneas de fuerza REALES, precompute-bond-efield.py) ──
+// V(r)=núcleos(+) − electrones(−), E=−∇V, integradas a líneas. Brotan de cada núcleo y
+// se curvan APANTALLADAS por las capas → el átomo COMPLETO, no un punto morado. Pulsos
+// cian viajan hacia afuera (la dirección del campo). Mismas coords bohr que el enlace.
+type BondEFieldData = { K: number; NL: number; LP: number; Rvals: Float32Array; frames: Float32Array[] };
+function parseBondEField(buf: ArrayBuffer): BondEFieldData {
+  const dv = new DataView(buf);
+  const K = dv.getInt32(0, true), NL = dv.getInt32(4, true), LP = dv.getInt32(8, true);
+  let off = 12;
+  const Rvals = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
+  const q = new Int16Array(buf, off, K * NL * LP * 3);
+  const stride = NL * LP * 3;
+  const frames: Float32Array[] = [];
+  for (let k = 0; k < K; k++) {
+    const fr = new Float32Array(stride);
+    for (let i = 0; i < stride; i++) fr[i] = q[k * stride + i] / 2000;
+    frames.push(fr);
+  }
+  return { K, NL, LP, Rvals, frames };
+}
+
+// El campo se INTERPOLA por R(t): a cada separación es el campo REAL calculado (dos campos
+// radiales separados → uno molecular al juntarse). Líneas ESTABLES; un pulso viaja hacia
+// afuera (dirección del campo). Sin sprites que se amontonen = sin "colapso".
+function BondEField({ data, R, time, reveal, col }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number] }) {
+  const { K, NL, LP, Rvals, frames } = data;
+  const cCol = col ?? [0.55, 0.85, 1.0];
+  const built = useMemo(() => {
+    const nseg = NL * (LP - 1);
+    const pos = new Float32Array(nseg * 6), aS = new Float32Array(nseg * 2), aL = new Float32Array(nseg * 2);
+    let os = 0, ol = 0;
+    for (let j = 0; j < NL; j++) for (let s = 0; s < LP - 1; s++) {
+      aS[os++] = s / (LP - 1); aS[os++] = (s + 1) / (LP - 1);
+      aL[ol++] = j; aL[ol++] = j;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
+    geo.setAttribute('aL', new THREE.BufferAttribute(aL, 1));
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uOp: { value: 0 }, uCol: { value: new THREE.Color(cCol[0], cCol[1], cCol[2]) }, uT: { value: 0 } },
+      vertexShader: `attribute float aS; attribute float aL; varying float vS; varying float vL;
+        void main(){ vS=aS; vL=aL; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      // CURVA suave: brillo a lo largo de toda la línea (fade suave en las puntas, sin picos)
+      // + un glow que VIAJA del + al − (dirección del campo). guard NaN (bloom).
+      fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; varying float vS; varying float vL;
+        void main(){ float s=clamp(vS,0.0,1.0);
+          float base=0.32*pow(max(sin(3.14159*s),0.0),0.38);   // LÍNEA CONTINUA brillante (manda) — antes 0.15 dejaba ver las cuentas del pulso = "pixeleado"
+          float ph=fract(uT*0.06 + vL*0.13);
+          float dd=s-ph; dd=dd-floor(dd+0.5);
+          float glow=exp(-dd*dd*7.0);                          // swell ANCHO y suave (no punto apretado) → viaja sin verse como dashes
+          float a=uOp*(base + 0.13*glow);                      // pulso sutil; la línea continua domina
+          gl_FragColor=vec4(uCol*a*2.0, a); }`,
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    return { geo, mat, pos };
+  }, [frames, NL, LP]);
+  if (reveal < 0.01) return null;
+  built.mat.uniforms.uOp.value = reveal;
+  built.mat.uniforms.uT.value = time;
+  // frame por R(t): el campo evoluciona CON los átomos (Rvals desc separado→junto)
+  let k = 0;
+  if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
+  else { while (k < K - 2 && Rvals[k + 1] > R) k++; }
+  const r0 = Rvals[k], r1 = Rvals[k + 1], f = r0 === r1 ? 0 : Math.max(0, Math.min(1, (r0 - R) / (r0 - r1)));
+  const A = frames[k], B = frames[k + 1], pos = built.pos, stride = LP * 3;
+  let o = 0;
+  for (let j = 0; j < NL; j++) {
+    const b0 = j * stride;
+    for (let s = 0; s < LP - 1; s++) {
+      const i0 = b0 + s * 3, i1 = b0 + (s + 1) * 3;
+      pos[o++] = A[i0] * (1 - f) + B[i0] * f; pos[o++] = A[i0 + 1] * (1 - f) + B[i0 + 1] * f; pos[o++] = A[i0 + 2] * (1 - f) + B[i0 + 2] * f;
+      pos[o++] = A[i1] * (1 - f) + B[i1] * f; pos[o++] = A[i1 + 1] * (1 - f) + B[i1 + 1] * f; pos[o++] = A[i1 + 2] * (1 - f) + B[i1 + 2] * f;
+    }
+  }
+  built.geo.attributes.position.needsUpdate = true;
+  return <lineSegments geometry={built.geo} material={built.mat} />;
+}
+
+// ── POZO DE ENERGÍA E(R) REAL del Li₂ (RHF/cc-pVTZ, electrón por electrón). El MÍNIMO
+// es el POR QUÉ del enlace: los dos átomos caen al fondo y quedan atrapados (vibrando).
+// HUD pinneado a la cámara (tercio inferior); la canica = la separación actual sobre la
+// curva real. Aparece en el clímax "nace el enlace" y se apaga. renderAt(t) PURO.
+const LI2_ER_R = [3.400, 3.774, 4.148, 4.522, 4.896, 5.270, 5.644, 6.019, 6.393, 6.767, 7.141, 7.515, 7.889, 8.263, 8.637, 9.011];
+const LI2_ER_E = [-550.8, -1161.5, -1557.9, -1791.0, -1905.5, -1936.4, -1909.6, -1844.1, -1753.4, -1647.0, -1531.8, -1412.3, -1292.1, -1173.3, -1057.6, -946.1];
+const LI2_ER_MIN = -1936.4, LI2_ER_RE = 5.270;   // fondo del pozo (bohr)
+function li2EnergyAt(rBohr: number): number {
+  const R = LI2_ER_R, E = LI2_ER_E;
+  if (rBohr <= R[0]) return E[0];
+  if (rBohr >= R[R.length - 1]) return E[E.length - 1];
+  let i = 0; while (i < R.length - 1 && R[i + 1] < rBohr) i++;
+  const f = (rBohr - R[i]) / (R[i + 1] - R[i]);
+  return E[i] * (1 - f) + E[i + 1] * f;
+}
+function EnergyWell({ sepBohr, reveal }: { sepBohr: number; reveal: number }) {
+  const { camera } = useThree();
+  const grp = useRef<THREE.Group>(null);
+  const ballRef = useRef<THREE.Mesh>(null);
+  const curveMatRef = useRef<THREE.PointsMaterial>(null);
+  const baseMatRef = useRef<THREE.PointsMaterial>(null);
+  const ballMatRef = useRef<THREE.MeshBasicMaterial>(null);
+  const HW = 0.30, HH = 0.14;                       // media anchura/altura del HUD (cabe en el tercio inferior a z=-2.1, fov~33)
+  const Rmin = 3.4, Rmax = 9.0;
+  const xOf = (r: number) => -HW + ((r - Rmin) / (Rmax - Rmin)) * (2 * HW);
+  const yOf = (e: number) => -HH + ((e - LI2_ER_MIN) / (0 - LI2_ER_MIN)) * (2 * HH);   // mínimo abajo, disociación arriba
+  // curva (muestreo fino) + línea base E=0 (nivel "separados")
+  const { curveGeo, baseGeo } = useMemo(() => {
+    const NP = 320; const cp = new Float32Array(NP * 3);
+    for (let i = 0; i < NP; i++) {
+      const r = Rmin + (Rmax - Rmin) * (i / (NP - 1));
+      cp[i * 3] = xOf(r); cp[i * 3 + 1] = yOf(li2EnergyAt(r)); cp[i * 3 + 2] = 0;
+    }
+    const cg = new THREE.BufferGeometry(); cg.setAttribute('position', new THREE.BufferAttribute(cp, 3));
+    const NB = 60; const bp = new Float32Array(NB * 3);
+    for (let i = 0; i < NB; i++) { bp[i * 3] = -HW + (2 * HW) * (i / (NB - 1)); bp[i * 3 + 1] = yOf(0); bp[i * 3 + 2] = 0; }
+    const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.BufferAttribute(bp, 3));
+    return { curveGeo: cg, baseGeo: bg };
+  }, []);
+  const st = useRef({ sep: 6, rev: 0 });
+  st.current.sep = sepBohr; st.current.rev = reveal;
+  useFrame(() => {
+    const g = grp.current; const rev = st.current.rev;
+    if (!g) return;
+    if (rev <= 0.002) { g.visible = false; return; }
+    g.visible = true;
+    // pin al tercio inferior, frente a la cámara
+    g.position.copy(camera.position);
+    g.quaternion.copy(camera.quaternion);
+    g.translateY(-0.30); g.translateZ(-2.1);
+    // canica en la separación actual (alineada al fondo del pozo real)
+    const bR = Math.max(Rmin, Math.min(Rmax, st.current.sep * (LI2_ER_RE / (BOND_ABINITIO.li2.Re))));
+    if (ballRef.current) ballRef.current.position.set(xOf(bR), yOf(li2EnergyAt(bR)) + 0.006, 0.01);
+    if (curveMatRef.current) curveMatRef.current.opacity = rev * 0.95;
+    if (baseMatRef.current) baseMatRef.current.opacity = rev * 0.22;
+    if (ballMatRef.current) ballMatRef.current.opacity = rev;
+  });
+  return (
+    <group ref={grp} visible={false}>
+      <points geometry={baseGeo}>
+        <pointsMaterial ref={baseMatRef} size={3.0} sizeAttenuation={false} color={new THREE.Color(0.5, 0.62, 0.8)}
+          transparent opacity={0} depthTest={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </points>
+      <points geometry={curveGeo}>
+        <pointsMaterial ref={curveMatRef} size={6.5} sizeAttenuation={false} color={new THREE.Color(0.55, 0.95, 1.4)}
+          transparent opacity={0} depthTest={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </points>
+      <mesh ref={ballRef}>
+        <sphereGeometry args={[0.026, 24, 24]} />
+        <meshBasicMaterial ref={ballMatRef} color={new THREE.Color(4.0, 2.6, 0.9)} transparent opacity={0}
+          depthTest={false} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
+  );
+}
+
+// ── LAS DOS FUERZAS — POR QUÉ se pega el enlace (Hellmann-Feynman, REAL) ──
+// En cada núcleo de Li conviven DOS fuerzas: el EMPUJE (repulsión nuclear Z²/R²,
+// rojo, hacia AFUERA) y el JALÓN de la nube de electrones acumulada en el centro
+// (cian, hacia el CENTRO). Magnitudes ∝ fuerzas reales de la curva E(R) de PySCF:
+//   fRep = 9/R²   (Z=3)              ·  fPull = fRep + dE/dR
+// Mientras se acercan (R>Re) dE/dR>0 → el JALÓN es mayor → CAEN juntos; en el
+// fondo del pozo (R=Re) dE/dR=0 → se IGUALAN: el enlace ES ese balance. El margen
+// (el "net" que decide) se amplifica ×G para que se LEA a ojo; dirección y signo
+// son exactos (lo evocativo, etiquetado: es el margen, no la dirección).
+function ForceDuel({ R, nx, op }: { R: number; nx: number; op: number }) {
+  const pushCol = useMemo(() => new THREE.Color().setRGB(3.6, 0.40, 0.12), []);   // ROJO puro: empuje (repulsión) — distinto del oro del core
+  const pullCol = useMemo(() => new THREE.Color().setRGB(0.42, 2.1, 3.6), []);    // CIAN puro: jalón de los electrones
+  if (op < 0.01) return null;
+  const dRd = 0.14;
+  const dEdR = (li2EnergyAt(R + dRd) - li2EnergyAt(R - dRd)) / (2 * dRd);          // meV/bohr
+  const netIn = Math.max(0, dEdR / 27211.4);                                       // au: jalón NETO hacia adentro (>0 si R>Re)
+  const fRep = 9 / (R * R);                                                         // au: repulsión hacia afuera
+  const S = 5.0, G = 3.0;
+  const lenPush = Math.min(2.1, Math.max(0.85, S * fRep));
+  const lenPull = Math.min(2.4, Math.max(0.85, S * fRep + S * G * netIn));
+  const GAP = 0.5;              // arranca FUERA del brillo del core (no se entierra)
+  const PY = 0.75;              // pequeño offset perpendicular (se lee al lado de la columna densa)
+  const arrows: { pos: Vec3; rotZ: number; len: number; col: THREE.Color; thick: number }[] = [];
+  for (const side of [1, -1]) {
+    const outRotZ = side > 0 ? -Math.PI / 2 : Math.PI / 2;   // hacia AFUERA (lejos del centro)
+    const inRotZ = side > 0 ? Math.PI / 2 : -Math.PI / 2;    // hacia el CENTRO
+    arrows.push({ pos: [side * nx, PY, 0], rotZ: outRotZ, len: lenPush, col: pushCol, thick: 0.80 });  // EMPUJE
+    arrows.push({ pos: [side * nx, PY, 0], rotZ: inRotZ, len: lenPull, col: pullCol, thick: 1.10 });   // JALÓN (más grueso: gana)
+  }
+  return (
+    <group>
+      {arrows.map((a, i) => (
+        <group key={i} position={a.pos} rotation={[0, 0, a.rotZ]}>
+          <mesh position={[0, GAP + a.len * 0.36, 0]}>
+            <cylinderGeometry args={[0.045 * a.thick, 0.060 * a.thick, a.len * 0.72, 12]} />
+            <meshBasicMaterial color={a.col} transparent opacity={op} toneMapped={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+          </mesh>
+          <mesh position={[0, GAP + a.len * 0.855, 0]}>
+            <coneGeometry args={[0.17 * a.thick, a.len * 0.32, 14]} />
+            <meshBasicMaterial color={a.col} transparent opacity={op} toneMapped={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 function MoleculeTitle({ mkey, time, vertical }: { mkey: string; time: number; vertical: boolean }) {
   const m = META[mkey] ?? META.h2o;
   const opacity = Math.min(1, Math.max(0, (time - 2.4) / 0.9)) * Math.min(1, Math.max(0, (21.3 - time) / 0.7));
@@ -1289,8 +2111,9 @@ const BASE_SCALE: Record<string, ScaleInfo> = {
   c2: { what: 'Lo que ves: la nube de electrones', measure: 'C=C · 1.24 Å', meaning: 'doble enlace de puro π — sin enlace frontal' },
   n2: { what: 'Lo que ves: la nube de electrones', measure: 'N≡N · 1.10 Å', meaning: 'triple enlace: el candado del aire' },
   o2: { what: 'Lo que ves: la nube de electrones', measure: 'O=O · 1.21 Å', meaning: 'doble enlace — y es magnético' },
-  co: { what: 'Lo que ves: la nube de electrones', measure: 'C≡O · 1.13 Å', meaning: '1 Å = el tamaño de un átomo' },
-  hcl: { what: 'Lo que ves: la nube de electrones', measure: 'H–Cl · 1.27 Å', meaning: 'el cloro jala los electrones' },
+  co: { what: 'Lo que ves: la nube de electrones', measure: 'C≡O · 1.13 Å', meaning: 'el enlace más fuerte de la naturaleza' },
+  no: { what: 'Lo que ves: la nube de electrones', measure: 'N=O · 1.15 Å', meaning: 'orden 2.5: medio enlace deshecho' },
+  hcl: { what: 'Lo que ves: la nube de electrones', measure: 'H–Cl · 1.27 Å', meaning: 'el ácido de tu estómago' },
   hf: { what: 'Lo que ves: la nube de electrones', measure: 'H–F · 0.92 Å', meaning: 'el enlace más polar que hay' },
   nacl: { what: 'Lo que ves: la nube de electrones', measure: 'Na···Cl · 2.36 Å', meaning: 'un átomo le robó el electrón al otro' },
 };
@@ -1412,7 +2235,7 @@ const BASE_FIELD_SUB: Record<string, string> = {
 const FIELD_SUB: Record<string, string> = { ...BASE_FIELD_SUB, ...CATALOG_FIELD_SUB };
 
 function FieldLabel({ molKey, polar, time, vertical }: { molKey: string; polar: boolean; time: number; vertical: boolean }) {
-  if (!polar) return null;
+  if (!polar || molKey === 'nacl' || molKey === 'hf' || molKey === 'co' || molKey === 'no' || molKey === 'hcl' || molKey === 'h2o') return null;   // nacl/hf/co/no/hcl/h2o: los beats propios son dueños de esa ventana
   const opacity = smoothstep((time - 12.5) / 0.8) * Math.min(1, Math.max(0, (18.5 - time) / 0.7));
   if (opacity < 0.01) return null;
   const sub = FIELD_SUB[molKey] ?? 'esta molécula es polar';
@@ -1648,6 +2471,8 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const [o2ai, setO2ai] = useState<O2AbInitio | null>(null);   // Δρ ab initio del enlace (O₂)
   const [atomCloud, setAtomCloud] = useState<Int16Array | null>(null);   // nube del átomo AISLADO (individuos)
   const [piSplit, setPiSplit] = useState<Uint8Array | null>(null);       // ¿a cuál π pertenece cada partícula? (triple enlace)
+  const [bondEf, setBondEf] = useState<BondEFieldData | null>(null);  // campo E REAL por separación (Li₂/Be₂: el átomo COMPLETO evolucionando, no un punto)
+  const [bondAttr, setBondAttr] = useState<BondEFieldData | null>(null);  // campo de ATRACCIÓN (el par − del centro jalando a los núcleos +) — lo que faltaba
   const [caroLUT, setCaroLUT] = useState<{ rgb: Vec3 }[] | null>(null);   // color observado REAL por longitud (PySCF/FEMO)
   const [time, setTime] = useState(0);
   const modes = useMemo(() => (molKey === 'h2o' ? computeWaterModes() : null), [molKey]);
@@ -1666,6 +2491,10 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  const isMD = molKey === 'wmd';   // agua = DINÁMICA MOLECULAR REAL (10 moléculas se auto-ensamblan)
+  const isPair = molKey === 'wpair';   // EL PUENTE: 2 aguas ab initio acercándose (nube densa V1 + Δρ)
+  const isWater = molKey === 'wdimer' || molKey === 'wsingle' || molKey === 'whex' || isMD || isPair;   // agua que INTERACTÚA (cluster + campo)
+  const [waterReady, setWaterReady] = useState(false);
   const isChain = CHAIN_KEYS.has(molKey);
   const isCatalog = CATALOG_KEYS.has(molKey);
   const isDNA = DNA_KEYS.has(molKey);
@@ -1675,6 +2504,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   useEffect(() => {
     let alive = true;
     if (live) setData(null);   // al cambiar de molécula en el lab, no dejar la anterior visible
+    if (isWater) return () => { alive = false; };   // el agua-cluster carga su propio bin (WaterField)
     const prefix = isDNA ? 'dna' : isCatalog ? 'catalog' : isChain ? 'chain' : 'mol';
     fetch(`/precomputed/${prefix}-${molKey}.bin`)
       .then(r => r.arrayBuffer())
@@ -1708,6 +2538,19 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         .then(r => (r.ok ? r.arrayBuffer() : null))
         .then(buf => { if (alive && buf) setPiSplit(new Uint8Array(buf.slice(4, 4 + new DataView(buf).getInt32(0, true)))); })
         .catch(() => { /* opcional */ });
+      // CAMPO ELÉCTRICO real (líneas de fuerza, precompute-bond-efield.py) — representa
+      // TODO el átomo (núcleo + apantallamiento de las capas), no un punto. Opcional (404 ok).
+      setBondEf(null);
+      fetch(`/precomputed/${molKey}-efield.bin`)
+        .then(r => (r.ok ? r.arrayBuffer() : null))
+        .then(buf => { if (alive && buf) setBondEf(parseBondEField(buf)); })
+        .catch(() => { /* opcional */ });
+      // campo de ATRACCIÓN (electrones − del enlace convergiendo al centro = jalan a los +). Opcional (404 ok).
+      setBondAttr(null);
+      fetch(`/precomputed/${molKey}-attraction.bin`)
+        .then(r => (r.ok ? r.arrayBuffer() : null))
+        .then(buf => { if (alive && buf) setBondAttr(parseBondEField(buf)); })
+        .catch(() => { /* opcional */ });
     }
     return () => { alive = false; };
   }, [molKey, isChain, isCatalog, isDNA, live]);
@@ -1716,7 +2559,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = isDNA ? DNA_DURATION : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;
+  const dur = isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -1724,11 +2567,11 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
     if (live) return;
     const api = {
       renderAt: (t: number) => setTime(Math.max(0, Math.min(dur, t))),
-      ready: !!data, duration: dur, molecule: molKey,
+      ready: isWater ? waterReady : !!data, duration: dur, molecule: molKey,
     };
     (window as unknown as { __cinematicAtom: typeof api }).__cinematicAtom = api;
     return () => { delete (window as unknown as { __cinematicAtom?: unknown }).__cinematicAtom; };
-  }, [molKey, data, live, dur]);
+  }, [molKey, data, live, dur, isWater, waterReady]);
 
   // Modo vivo: loop continuo (cuando se monta interactivo en el lab).
   useEffect(() => {
@@ -1758,7 +2601,10 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
       >
         <color attach="background" args={['#000']} />
         <FrameDriver time={time} />
-        {data && (() => {
+        {isPair && <WaterPair time={time} onReady={setWaterReady} />}
+        {isMD && <WaterMD time={time} dur={dur} onReady={setWaterReady} />}
+        {isWater && !isMD && !isPair && <WaterField molKey={molKey} time={time} dur={60} onReady={setWaterReady} />}
+        {data && !isWater && (() => {
           // FORMACIÓN DEL ENLACE (O₂) GUIADA POR LA FÍSICA: el oscilador de Morse
           // (morseR) da el acercamiento REAL — caen al pozo, sobrepasan re, rebotan
           // y vibran hasta asentarse. La nube/enlace/campo se forman cuando los
@@ -1814,6 +2660,18 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             // (brillo medio 0.01-0.05) y 0.32 da el acto vivo sin lavar la columna.
             transitDim = lerp(1, 0.32, _sw(27.8, 30.2));    // entra al cinturón (cruza el velo ~28.7)
             transitDim = lerp(transitDim, 1.0, _sw(54.2, 56.2));  // el brillo regresa con la molécula
+          } else if (molKey === 'h2o') {
+            // H₂O: la molécula (la V bent) es el show casi todo el tiempo → brillo pleno.
+            // Dim SOLO durante el dive corto y tardío al O (47.5-58, "mira el corazón"),
+            // el brillo REGRESA para el clímax de la molécula entera (l9 "si fuera recto").
+            transitDim = lerp(1, 0.20, _sw(47.5, 50.0));    // dive corto al núcleo O
+            transitDim = lerp(transitDim, 0.45, _sw(51.0, 52.5)); // órbita del núcleo (8 p⁺ resalta)
+            transitDim = lerp(transitDim, 1.0, _sw(56.5, 58.5));  // el brillo regresa (clímax molécula)
+          } else if (molKey === 'li2') {
+            // Li₂ RECIO (voz 38s): clavado al núcleo t30–38 → dim para que el nucleón
+            // resalte; el brillo REGRESA con la molécula en la salida (t40+).
+            transitDim = lerp(1, 0.13, _sw(30.5, 33.0));    // entra al núcleo → APAGA la nube para que el NUCLEÓN resalte (como O2/N2)
+            transitDim = lerp(transitDim, 1.0, _sw(40.0, 42.0));  // el brillo regresa (salida, cierre)
           } else if (isBond(molKey)) {
             // el dim entra cuando la cámara CRUZA el borde de la nube (~34.5s con el
             // clavado desde 1.95·ex) — NO antes: atenuar al sujeto en plano abierto
@@ -1826,15 +2684,28 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
           const animPos = _base.map(p => [_cen[0] + (p[0] - _cen[0]) * _appr, _cen[1] + (p[1] - _cen[1]) * _appr, _cen[2] + (p[2] - _cen[2]) * _appr] as Vec3);
           // O₂: los núcleos DIBUJADOS se alinean con la densidad ab initio (eje X, ±R/2)
           // sin importar el eje del mol-o2.bin. R(t)=2.28·_appr bohr → ±1.14·_appr.
-          const drawPos: Vec3[] = isBond(molKey)
-            ? animPos.map((_, i) => [(i === 0 ? -1 : 1) * (BOND_ABINITIO[molKey].Re / 2) * _appr, 0, 0] as Vec3)
-            : animPos;
+          // TRIATÓMICO (H₂O): 3 núcleos forzados a la geometría medida (O origen, 2 H a
+          // D_OH·_appr en el plano XY al ángulo). Alinea con el Δρ del bin. R=Re·_appr
+          // (Re=D_OH) → la distancia O-H de los núcleos = R del frame de la nube. Coherente.
+          const drawPos: Vec3[] = isTri(molKey)
+            ? (() => { const tg = TRIATOMIC[molKey]; const r = tg.dOH * _appr; const h = tg.angle * Math.PI / 360;
+                const cx = r * Math.cos(h), cy = r * Math.sin(h);
+                return [[0, 0, 0], [cx, cy, 0], [cx, -cy, 0]] as Vec3[]; })()
+            : isBond(molKey)
+              ? animPos.map((_, i) => [(i === 0 ? -1 : 1) * (BOND_ABINITIO[molKey].Re / 2) * _appr, 0, 0] as Vec3)
+              : animPos;
           return <>
             <MolCameraRig frame={frame} time={isBond(molKey) ? sceneT : time} vertical={vertical} />
             {data.nuclei.map((nuc, i) => (
               <group key={i} position={drawPos[i]}>
                 <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time}
-                  clusterRadius={0.022 + 0.009 * Math.cbrt(nuc.protons + nuc.neutrons)} />
+                  clusterRadius={(molKey === 'li2' ? 0.055 : 0.022) + (molKey === 'li2' ? 0.014 : 0.009) * Math.cbrt(nuc.protons + nuc.neutrons)}
+                  {...(isBond(molKey)
+                    /* núcleo CHICO diatómico: neutrón azul-hielo TENUE (no violeta HDR) →
+                       cero "punto morado"; los protones dorados dominan = "tres protones". */
+                    ? { nHot: [0.62, 0.9, 1.35] as [number, number, number], nHue: 0.55 }
+                    : {})} />
+
               </group>
             ))}
             {/* CAROTENO FLAGSHIP: la cadena por el MOTOR de O₂ (sprites grandes+tenues,
@@ -1853,9 +2724,11 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
                 a Δρ) pero no mueren: la molécula conserva sus nubes. */}
             {/* HANDOFF continuo: conforme el campo del enlace ENCIENDE (reveal), la
                 foto atómica congelada CEDE — se ve la unión, no dos nubes cruzándose. */}
-            {isBond(molKey) && atomCloud && [-1, 1].map(s => (
-              <AtomCloud key={s} posQ={atomCloud} x={s * (BOND_ABINITIO[molKey].Re / 2) * _appr}
-                brightness={(0.55 - 0.36 * smoothstep((1.7 - mr) / 0.35) - 0.15 * formed) * transitDim * (BOND_ABINITIO[molKey].boost ?? 1)} />
+            {isBond(molKey) && atomCloud && !isTri(molKey) && [-1, 1].map(s => (
+              <AtomCloud key={s} posQ={atomCloud} x={s * (BOND_ABINITIO[molKey].Re / 2) * _appr} shellR={BOND_ABINITIO[molKey].shellR}
+                brightness={(molKey === 'li2'
+                  ? 0.70 - 0.05 * formed   /* NO se apaga en las bandas tardías (pozo/σ, sin campo) — antes bajaba 0.14 al enlazar y quedaba oscuro/vacío (feedback) */
+                  : 0.55 - 0.36 * smoothstep((1.7 - mr) / 0.35) - 0.15 * formed) * transitDim * (BOND_ABINITIO[molKey].boost ?? 1)} />
             ))}
             {isBond(molKey) && o2ai && (() => {
               const mrL1 = Math.max(0.86, bondR(Math.max(0, sceneT - 0.10), molKey));
@@ -1875,13 +2748,21 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
               const sigmaMul = lerp(1, 1.30 * wS + fO * (1 - wS), solo);
               const pi1Mul = lerp(1, 1.45 * w1 + fP * (1 - w1), solo);
               const pi2Mul = lerp(1, 1.45 * w2 + fP * (1 - w2), solo);
-              const spinMul = isO2x ? lerp(1, 1.60 * wM + 0.35 * (1 - wM), solo) : 1;
+              // Be₂: el σ2u* (3ª nube) NO es anillo π → sin toro (thirdRing 0) y atenuado
+              // para que BALANCEE con el σ2g dorado = se vea la CANCELACIÓN (orden 0), no un mar cian.
+              // Li₂: capa CERRADA → sin π, sin espín → rho_third≈0; sus N_SPIN partículas
+              // muestrean campo cero y COLAPSAN al centro = el "punto morado" (artefacto NO
+              // físico, coloreado magenta por default). Se OCULTA. El charco real = acc (σ2s dorado).
+              // capa cerrada sin π real (li2/nacl/hf/hcl): la nube de espín está VACÍA y
+              // colapsa al centro como un punto morado (feedback Ian en NaCl) → spinMul=0.
+              const spinMul = isO2x ? lerp(1, 1.60 * wM + 0.35 * (1 - wM), solo) : (molKey === 'be2' ? 0.55 : (molKey === 'li2' || molKey === 'nacl' || molKey === 'hf' || molKey === 'hcl') ? 0 : 1);
               return <O2BondFlow ai={o2ai} R={BOND_ABINITIO[molKey].Re * _appr}
                 swirl={(BOND_ABINITIO[molKey].swirl || 0) * sceneT} third={BOND_ABINITIO[molKey].pi}
-                reveal={smoothstep((1.8 - mr) / 0.5) * transitDim}
-                aura={Math.max(smoothstep((1.8 - mr) / 0.5), 0.45) * transitDim}
+                reveal={(BOND_ABINITIO[molKey].ionic ? smoothstep((5.4 - mr) / 1.6) : smoothstep((1.8 - mr) / 0.5)) * transitDim}
+                aura={(BOND_ABINITIO[molKey].ionic ? (0.6 + 1.0 * smoothstep((sceneT - 13.5) / 1.5) * (1 - smoothstep((sceneT - 21) / 2.2))) : Math.max(smoothstep((1.8 - mr) / 0.5), 0.45)) * transitDim}
                 RLag1={BOND_ABINITIO[molKey].Re * mrL1} RLag2={BOND_ABINITIO[molKey].Re * mrL2} ghost={ghost}
-                piSplit={piSplit} sigmaMul={sigmaMul} pi1Mul={pi1Mul} pi2Mul={pi2Mul} spinMul={spinMul} boost={BOND_ABINITIO[molKey].boost ?? 1} piColors={BOND_ABINITIO[molKey].piColors ?? null} />;
+                thirdRing={molKey === 'be2' || molKey === 'li2' || molKey === 'h2o' ? 0 : 2.4}
+                piSplit={piSplit} sigmaMul={BOND_ABINITIO[molKey].ionic ? (0.45 + 1.7 * smoothstep((sceneT - 19.5) / 1.8)) : sigmaMul} pi1Mul={pi1Mul} pi2Mul={pi2Mul} spinMul={spinMul} boost={BOND_ABINITIO[molKey].boost ?? 1} piColors={BOND_ABINITIO[molKey].piColors ?? null} ionic={!!BOND_ABINITIO[molKey].ionic} accMul={molKey === 'h2o' ? 0.58 : 1} />;
             })()}
             {/* O₂ PARAMAGNÉTICO: campo DIPOLAR real de los 2 e⁻ π* desapareados (μ=2).
                 El oxígeno es de los poquísimos gases magnéticos — el O₂ líquido se cuelga
@@ -1896,6 +2777,32 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
                 iguales (integración numérica real) durante el acto medio. El muro que
                 debilita el enlace, visible; etiquetadas en el caption de 31s. */}
             {molKey === 'f2' && <RepulsionField nx={BOND_ABINITIO.f2.Re / 2} time={time} />}
+            {/* CAMPO ELÉCTRICO real (Li₂/Be₂): las líneas de fuerza calculadas rodean el
+                átomo COMPLETO — reemplaza el "punto" del enlace por su CAMPO. Aparece con
+                la molécula formada (héroe) y en el regreso; se apaga en el clavado al núcleo. */}
+            {/* Li₂: LAS DOS FUERZAS (empuje repulsión + jalón electrones, el jalón GANA →
+                caen; en el fondo se igualan). Es el POR QUÉ del enlace, calculado real.
+                Vive el acto del acercamiento (t≈9-26, sobre la voz "la nube jala a los dos
+                núcleos" → "la atracción vence a la repulsión"); se apaga antes del clavado. */}
+            {molKey === 'li2' && (
+              <ForceDuel R={BOND_ABINITIO.li2.Re * _appr} nx={(BOND_ABINITIO.li2.Re / 2) * _appr}
+                op={smoothstep((sceneT - 8) / 1.5) * (1 - smoothstep((sceneT - 18) / 2.5)) * transitDim} />
+            )}
+            {/* CAMPO ELÉCTRICO REAL (Li₂/Be₂) — LA FIRMA que O2/N2/C2 no tienen: las líneas de
+                fuerza calculadas (E=−∇V) que se CONECTAN en una sola al unirse los átomos
+                ("cómo se conectan las líneas"). Vive el acto del acercamiento mostrando la
+                UNIÓN de los dos campos → uno molecular; se apaga al bajar al núcleo (el campo
+                es la historia del ENLACE, a escala nuclear desaparece). */}
+            {isBond(molKey) && bondEf && (
+              <BondEField data={bondEf} R={BOND_ABINITIO[molKey].Re * _appr} time={sceneT}
+                col={molKey === 'be2' ? [0.95, 0.80, 0.60] : molKey === 'li2' ? [0.50, 0.86, 1.3] : [0.40, 0.78, 1.0]}
+                reveal={(molKey === 'li2' || molKey === 'nacl')
+                  ? smoothstep((sceneT - 1.2) / 1.4) * (1 - smoothstep((sceneT - 22) / 3.5)) * transitDim
+                  : (0.6 + 0.4 * smoothstep(sceneT / 0.6)) * (1 - 0.82 * smoothstep((sceneT - 14) / 4.0)) * (1 - smoothstep((sceneT - 30) / 2.5))
+                    + 0.4 * smoothstep((sceneT - 39) / 1.2) * (1 - smoothstep((sceneT - 44) / 1.0))} />
+            )}
+            {/* (gráfica del pozo QUITADA — rompía la estética de partículas; el pozo lo cuenta
+                el MOVIMIENTO: caen, sobrepasan Re, vibran amortiguado y se asientan = atrapados.) */}
             {/* cilindro de enlace para OTRAS moléculas; en O₂ el PUENTE de densidad ES el enlace */}
             {!isBond(molKey) && formed > 0.05 && data.bonds.map(([i, j], k) => (
               <Bond key={k} a={animPos[i]} b={animPos[j]} time={time} />
@@ -1914,18 +2821,21 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         })()}
         {/* live: sin EffectComposer (HDR-float+MSAA revienta a blanco en GPUs
             diversas). flat={!live} → tonemap ACES del renderer. PostFX solo headless. */}
-        {!live && <MolPostFX />}
+        {!live && <MolPostFX sat={isPair ? 0.65 : 0.5} />}
       </Canvas>
       <CinemaVignette />
       {!live && <>
         {!isCaro && !(isBond(molKey) && (BOND_BEATS_MOL[molKey] ?? []).some(b => time >= b.t0 - 0.4 && time <= b.t1 + 0.5)) &&
           <ScaleNote molKey={molKey} time={time} vertical={vertical} />}
         {isDNA && <AudioNote time={time} vertical={vertical} />}
-        <ModeLabel modes={modes} time={time} vertical={vertical} />
+        {!isBond(molKey) && <ModeLabel modes={modes} time={time} vertical={vertical} />}
         {!isCaro && <FieldLabel molKey={molKey} polar={isChain || (isCatalog && catField !== 'none') || (!isCatalog && !isDNA && !!data && partialCharges(data.nuclei).some(v => Math.abs(v) > 0.05))} time={time} vertical={vertical} />}
         {!isCaro && <MoleculeTitle mkey={molKey} time={time} vertical={vertical} />}
         {isBond(molKey) && <BondExplainer time={time} vertical={vertical} mol={molKey} />}
-        <Letterbox vertical={vertical} />
+        {/* 16:9 — el default horizontal es cinemascope 2.39:1 (barras de 12.8%) y eso
+            se COME el cuadro; el mandato es PANTALLA COMPLETA. Se iguala a la barra
+            fina de la serie en vertical (5%): firma de cine sin void muerto. */}
+        <Letterbox vertical={vertical} pct={vertical ? undefined : 4.5} />
       </>}
     </div>
   );

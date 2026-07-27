@@ -78,6 +78,23 @@ WEIGHTS = {
     "saturation":         -0.4,   # color: confirma, NO captura -> penaliza
 }
 
+# PERFIL EMPÍRICO — calibrado 2026-07-13 contra views REALES del canal (lote:
+# O2/F2/C2/H2 virales 5k-60k vs IMPRENTA 350 views). El lote INVIRTIÓ la teoría
+# magno: los ganadores son SATURADOS (0.64-0.86 vs 0.38 del flop), con textura
+# fina en todo el cuadro (lowfreq BAJA 0.52-0.62 vs 0.98) y movimiento presente
+# desde el cuadro 1; el flop tenía el MAYOR punch de luminancia (0.296). En este
+# canal el color y la textura eléctrica CAPTURAN; el contraste sobrio no.
+# Usar --perfil empirico para juzgar reels; magno queda como referencia teórica.
+WEIGHTS_EMPIRICO = {
+    "rms_contrast":       -0.3,   # el flop tenía el mayor punch — no salva
+    "michelson":           0.0,
+    "saliency_conc":       0.0,   # no separó ganadores de flops en el lote
+    "lowfreq_dom":        -0.8,   # forma grande/simple PERDIÓ vs textura fina
+    "motion_onset":        0.8,   # los virales se mueven desde el cuadro 1
+    "looming":             0.0,
+    "saturation":          1.4,   # el separador más limpio del lote
+}
+
 Z_CLIP = 2.5  # winsoriza el z-score: 1 métrica casi-constante no debe dominar
 
 WINDOW_S   = 1.0     # segundos analizados desde el inicio (captura ~0.5s + margen)
@@ -717,7 +734,14 @@ def main():
     ap.add_argument("--peaks", action="store_true",
                     help="escanea el timeline COMPLETO y caza picos/intervalos "
                          "(en vez de rankear solo el primer 0.5s)")
+    ap.add_argument("--perfil", choices=["magno", "empirico"], default="magno",
+                    help="pesos: magno = teoría magnocelular (default); "
+                         "empirico = calibrado a views reales del canal (reels)")
     args = ap.parse_args()
+
+    if args.perfil == "empirico":
+        global WEIGHTS
+        WEIGHTS = WEIGHTS_EMPIRICO
 
     paths = gather_paths(args.videos, args.all)
     if args.limit > 0:

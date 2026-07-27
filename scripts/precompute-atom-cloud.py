@@ -18,10 +18,11 @@ import numpy as np
 
 ATOMS = {  # elemento y espín del átomo AISLADO (regla de Hund, estado base real)
     'h2': ('H', 1), 'n2': ('N', 3), 'o2': ('O', 2), 'f2': ('F', 1), 'c2': ('C', 2),
+    'li2': ('Li', 1), 'be2': ('Be', 0),   # Li: 1s²2s¹ (1 desapareado) · Be: 1s²2s² (0)
 }
 MOL = (sys.argv[1] if len(sys.argv) > 1 else 'n2').lower()
 EL, SPIN = ATOMS[MOL]
-M = 9000
+M = 56000   # MUY denso: las bandas tardías (pozo/σ, sin campo) no deben verse vacías (feedback user)
 SEED = 20260701
 OUT = os.path.join(os.path.dirname(__file__), '..', 'public', 'precomputed', f'{MOL}-atomcloud.bin')
 
@@ -30,8 +31,8 @@ mol = gto.M(atom=[[EL, (0, 0, 0)]], basis='cc-pvtz', spin=SPIN, verbose=0)
 mf = scf.UHF(mol); mf.kernel()
 dm = mf.make_rdm1(); dm_tot = dm[0] + dm[1]
 
-# densidad radial en malla log (0.01 → 6 bohr)
-rs = np.geomspace(0.01, 6.0, 600)
+# densidad radial en malla log (0.01 → 8 bohr; Li/Be tienen 2s difuso, cola larga)
+rs = np.geomspace(0.01, 8.0, 700)
 pts = np.stack([rs, np.zeros_like(rs), np.zeros_like(rs)], axis=1)
 ao = mol.eval_gto('GTOval', pts)
 rho = np.einsum('pi,pi->p', ao @ dm_tot, ao)          # ρ(r) esférica (estado base UHF)

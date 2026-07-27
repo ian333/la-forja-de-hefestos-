@@ -72,7 +72,98 @@ const SPECIAL = {
     descripcion: `Este es el átomo que te construye. 💎 Y cuando el carbono se une consigo mismo, hace algo único en la química: NO forma enlace de frente — forma dos anillos puros de carga girando alrededor del eje. Caemos hasta su núcleo (seis protones, seis neutrones), el corazón de cada célula de tu cuerpo. De este enlace nacen las cadenas: el grafito, el diamante, el ADN. Nada está inventado: es la ecuación resuelta. La próxima vez... construimos una cadena.`,
     hashtags: ['#quimica', '#carbono', '#fisicacuantica', '#enlacequimico', '#adn', '#ciencia', '#stem', '#4k'],
   },
+  'mol-li2 dilitio': {
+    codigo: 'moleculas/_code/mol-li2-dilitio-capsula.tar.gz',
+    titulo: '¿Por qué se pegan dos metales? El enlace que por fin puedes VER',
+    descripcion: `Dos átomos de litio, el metal más ligero que existe — y los dos quieren REGALAR su electrón. Entonces, ¿por qué se pegan? ⚡⚛️ Por primera vez PUEDES VER el campo eléctrico: las líneas de fuerza de cada átomo conectándose en una sola. Sus núcleos se empujan, pero la nube de electrones del centro los jala MÁS fuerte — y caen al fondo del pozo. Es el enlace metal-metal más débil de la química. Luego bajamos hasta el corazón: tres protones. Eso es el litio. Nada está inventado: física cuántica REAL (PySCF), resuelta electrón por electrón.`,
+    hashtags: ['#quimica', '#litio', '#fisicacuantica', '#campoelectrico', '#enlacequimico', '#atomos', '#ciencia', '#stem', '#4k'],
+  },
 };
+// ── serie "La economía son ideas" (cápsulas de 30 s; #1 = la imprenta) ──
+SPECIAL['idea-imprenta'] = {
+  codigo: 'ideas/_code/idea-01-imprenta-capsula.tar.gz',
+  titulo: 'Copiar un libro costaba MESES — esta idea lo hizo casi gratis',
+  descripcion: `Esta hoja está por hacer algo imposible: copiarse a sí misma, sin gastarse nunca. 📜 En 1440, la imprenta tiró el costo de copiar un libro casi a CERO — y el saber se derramó sobre el mundo entero: cartas, mapas, remedios, geometrías. Cambió cómo hablamos, y con eso, la economía entera. La página que ves es un incunable REAL tipografiado (EB Garamond, capitular y todo) y las copias nacen por la ley de duplicación 1→2→4→…→2ⁿ. Nada está inventado.\n\nCápsula #1 de LA ECONOMÍA SON IDEAS: las ideas concretas que revolucionaron la economía, una por una. Porque la economía, en el fondo, son ideas. 🎓 GAIA University.`,
+  hashtags: ['#economia', '#historia', '#imprenta', '#gutenberg', '#ideas', '#educacion', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
+SPECIAL['idea-brujula'] = {
+  codigo: 'ideas/_code/idea-02-brujula-capsula.tar.gz',
+  titulo: 'Esta piedra apunta SOLA — y le quitó las orillas al mar',
+  descripcion: `En medio del océano, sin costa ni estrellas, estabas perdido — salvo que tuvieras esta piedra que apunta. 🧭 La brújula alineó una aguja imantada con la Tierra y los barcos cruzaron océanos que nadie cruzaba: el comercio dejó de tener orillas. Lo que ves es FÍSICA real: el campo dipolar de la aguja (r = L·sin²θ) dibujado en partículas, el torque que la clava al norte (relajación amortiguada de verdad) y una rosa de los vientos grabada con tipografía real. Nada está inventado.\n\nCápsula #2 de LA ECONOMÍA SON IDEAS. Porque la economía, en el fondo, son ideas. 🎓 GAIA University.`,
+  hashtags: ['#economia', '#historia', '#brujula', '#navegacion', '#ideas', '#educacion', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
+SPECIAL['idea-transistor'] = {
+  codigo: 'ideas/_code/idea-03-transistor-capsula.tar.gz',
+  titulo: 'Hay más de estos en tu bolsillo que estrellas en la galaxia',
+  descripcion: `Dentro de este cristal hay un río de electrones, congelado, esperando permiso. ⚡ El transistor es la idea más COPIADA de la historia: un cristal de silicio con impurezas exactas donde un voltaje diminuto abre y cierra un río de electrones — un interruptor sin partes móviles. Un sí o un no, millones de veces por segundo. Y como era una idea, se copió sin gastarse: hoy se fabrican más transistores por año que estrellas tiene la Vía Láctea. Lo que ves es FÍSICA real: la red cristalina cúbica-diamante del silicio, el canal que se abre con la compuerta, la duplicación exponencial. Nada está inventado.\n\nCápsula #3 de LA ECONOMÍA SON IDEAS. Porque la economía, en el fondo, son ideas. 🎓 GAIA University.`,
+  hashtags: ['#economia', '#historia', '#transistor', '#silicio', '#electronica', '#ideas', '#educacion', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
+SPECIAL['mol-silicio dopado'] = {
+  codigo: 'moleculas/_code/mol-silicio-dopado-capsula.tar.gz',
+  titulo: 'Cambiamos UN átomo del cristal — y nació la electrónica',
+  descripcion: `Esto no es un dibujo: es el interior de un cristal de silicio, calculado átomo por átomo con la ecuación de la química cuántica. 💎 Estás viajando a través de él como un rayo X: esas figuras doradas que nacen y mueren son los ENLACES — carga eléctrica real acumulada entre los átomos. Y entonces cambiamos un solo átomo por uno de fósforo: trae un electrón de más, y esa luz que se enciende es la carga que sobra. El electrón libre, solo, sin pareja, regado por el cristal — ESE es el que conduce. Eso es dopar. Y con eso, exactamente con eso, se hace cada chip que has tocado en tu vida. Todo lo que ves salió del cálculo (PySCF, DFT sobre el cristal periódico): densidad de deformación del enlace, la nube del donor y la densidad de espín. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#silicio', '#química', '#cuántica', '#chips', '#transistor', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
+SPECIAL['mol-nacl robo'] = {
+  codigo: 'moleculas/_code/mol-nacl-robo-capsula.tar.gz',
+  titulo: 'El cloro le roba el electrón al sodio SIN TOCARLO — así nace cada grano de sal',
+  descripcion: `Esto no es una animación: es la ecuación de Schrödinger resuelta para un sodio y un cloro acercándose (48 distancias, ab initio). 🧂 AZUL: los electrones del sodio. ORO: lo que el cloro agarra. El robo no ocurre al tocarse — ocurre ANTES, a distancia: el cloro jala el electrón… y ya no lo devuelve. Quedan dos iones que no pueden soltarse, con un jalón eléctrico gigante: dipolo calculado 9.1 debye, medido en el laboratorio 9.0 (1% de error). Las líneas que ves son el campo eléctrico REAL naciendo entre los dos: todas salen del sodio positivo y entran al cloro negativo. Eso, y nada más, es el enlace iónico. Así está hecha la sal de tu cocina: miles de millones de robos que duran para siempre. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#sal', '#química', '#cuántica', '#enlaceiónico', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
+};
+
+SPECIAL['mol-co abrazo'] = {
+  codigo: 'moleculas/_code/mol-co-abrazo-capsula.tar.gz',
+  titulo: 'El enlace más FUERTE de la naturaleza — y por eso mismo te mata',
+  descripcion: `Esto no es una animación: es la ecuación de Schrödinger resuelta para un carbono y un oxígeno acercándose (48 distancias, ab initio, base cc-pVTZ). 🔥 Aquí no se forma UN enlace: se forman TRES al mismo tiempo — uno de frente (σ) y dos anillos cruzados (π) que los abrazan. 1072 kJ/mol: nada en la naturaleza aguanta más. Y esa fuerza es exactamente el problema — tu sangre agarra al monóxido de carbono unas 240 veces más fuerte que al oxígeno: se mete en tu hemoglobina, ocupa el lugar del oxígeno, y ya no lo suelta. Lo más raro de todo: un abrazo brutal por dentro que por fuera casi ni se nota — dipolo medido 0.11 debye, prácticamente balanceado (tan sutil que el cálculo simple hasta se equivoca de lado: una paradoja de libro de texto). Todo lo que ves salió del cálculo: densidad de deformación del enlace y distancia de equilibrio verificada, 1.105 Å calculado contra 1.128 Å medido. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#monóxidodecarbono', '#química', '#cuántica', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#datocurioso', '#gaia'],
+};
+
+SPECIAL['mol-hf tirano'] = {
+  codigo: 'moleculas/_code/mol-hf-tirano-capsula.tar.gz',
+  titulo: 'El elemento más hambriento del universo intentó robar un electrón — y NO PUDO',
+  descripcion: `Esto no es una animación: es la ecuación de Schrödinger resuelta para un flúor y un hidrógeno acercándose (48 distancias, ab initio, base cc-pVTZ). ⚡ El flúor tiene la electronegatividad MÁXIMA de toda la tabla periódica (3.98) — jala electrones con más fuerza que cualquier otro átomo. Y aun así, no le arranca el electrón al hidrógeno: lo comparte TORCIDO, desigual, jalado hacia su lado. Compáralo con la sal: ahí el cloro sí se robó el electrón entero (carga +0.98 sobre el sodio); aquí el flúor solo consigue jalar un tercio (+0.35 sobre el hidrógeno). Ese jaloneo que nunca se resuelve tiene nombre: enlace covalente polar, y es lo que mantiene pegada el agua, tu ADN y a ti. El jalón se mide: dipolo calculado 1.94 debye contra 1.83 medido en el laboratorio. Todo salió del cálculo — densidad de deformación del enlace, desplazada hacia el flúor. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#flúor', '#química', '#cuántica', '#enlacepolar', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
+};
+
+SPECIAL['mol-no mensajero'] = {
+  codigo: 'moleculas/_code/mol-no-mensajero-capsula.tar.gz',
+  titulo: 'El veneno del escape de los coches que tu cuerpo fabrica a propósito para no matarte',
+  descripcion: `Esto no es una animación: es la ecuación de Schrödinger resuelta para un nitrógeno y un oxígeno acercándose (48 distancias, ab initio, base cc-pVTZ). 💠 El óxido nítrico tiene un número IMPAR de electrones de valencia: once. Los enlaces se arman de dos en dos… así que uno se queda SOLO. Esa nube que late es él — un electrón sin pareja. Eso es un radical. Y por ese electrón suelto el enlace ni siquiera llega a triple: se queda en dos y medio. Lo increíble es para qué sirve: tus arterias lo fabrican para decirle al músculo que se relaje — así se te abre la sangre y te baja la presión (le dieron el Nobel de Medicina en 1998). El mismo gas que ensucia una ciudad es el que tu cuerpo usa para mantenerte vivo. Verificado por su geometría: 1.117 Å calculado contra 1.151 medido, y el estado de espín de un radical real. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#óxidonítrico', '#química', '#cuántica', '#radical', '#ciencia', '#física', '#biología', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
+SPECIAL['mol-hcl acido'] = {
+  codigo: 'moleculas/_code/mol-hcl-acido-capsula.tar.gz',
+  titulo: 'Tienes un ácido que disuelve metal — ahorita, en tu estómago (y no te disuelve a ti)',
+  descripcion: `Esto no es una animación: es la ecuación de Schrödinger resuelta para un hidrógeno y un cloro acercándose (48 distancias, ab initio, base cc-pVTZ). 🧪 El cloro jala el electrón del hidrógeno hacia su lado — pero suave, sin arrancárselo. No es un robo como el de la sal: es solo un jalón, y es el más leve de la familia. Míralo en números: la sal se lleva casi todo el electrón (0.98), el flúor un tercio (0.35), el cloro apenas un sexto (0.17). Ese jaloneo deja un lado positivo y otro negativo — a eso se le llama enlace polar, y por ser polar disuelve casi todo lo que toca: por eso deshace tu comida. ¿Y por qué no te disuelve a ti? Porque tu estómago se forra de moco nuevo más rápido de lo que el ácido lo gasta. Todo salió del cálculo: densidad de deformación del enlace corrida hacia el cloro, y la distancia de equilibrio verificada — 1.268 Å calculado contra 1.275 Å medido (0.5%). Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#ácido', '#química', '#cuántica', '#estómago', '#ciencia', '#física', '#biología', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
+SPECIAL['mol-h2o agua'] = {
+  codigo: 'moleculas/_code/mol-h2o-agua-capsula.tar.gz',
+  titulo: 'Un ángulo de 104.5° decide que estés vivo — la molécula de agua como nunca la viste',
+  descripcion: `Esto no es una animación: es la ecuación de Schrödinger resuelta para una molécula de agua (base cc-pVTZ, ab initio). 💧 Un oxígeno y dos hidrógenos… que NO quedan en línea recta. Se doblan a ciento cuatro grados y medio. ¿Por qué torcida? Míralo: el oxígeno guarda dos pares de electrones sin compartir —esas dos nubes moradas de atrás, las "orejas"— y empujan a los hidrógenos hacia abajo, abriendo el ángulo. Y por estar doblada, un lado queda negativo y el otro positivo: el agua es POLAR. Por eso disuelve casi todo, por eso se pega a sí misma, por eso el hielo flota. Si este ángulo fuera recto, no habría océanos, ni sangre, ni tú — todo cuelga de 104.5°. Todo lo que ves salió del cálculo: la densidad de deformación del enlace, los pares libres, el ángulo medido (104.478°) y el dipolo verificado (2.03 D calculado contra 1.85 medido). Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#agua', '#química', '#cuántica', '#ciencia', '#física', '#biología', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
+};
+
+SPECIAL['mol-h2o agua v2'] = {
+  codigo: 'moleculas/_code/mol-h2o-agua-v2-capsula.tar.gz',
+  titulo: 'Por qué el agua está DOBLADA — y por qué sin esa forma no existirías',
+  descripcion: `Esto es una gota de agua por dentro, calculada átomo por átomo con física cuántica (ab initio, base cc-pVTZ). 💧 Un oxígeno y dos hidrógenos que NO quedan en línea recta. ¿Y por qué su nube de electrones no es pareja, sino que se amontona de un lado? Porque el oxígeno esconde dos nubes de electrones que no comparte con nadie —esas moradas de atrás—: viven de un solo lado y para allá jalan toda la carga. Esas mismas nubes empujan a los hidrógenos y doblan la molécula. Y al doblarse, un lado queda positivo y el otro negativo: el agua se vuelve un imán diminuto. Por eso una gota jala a la otra (el más con el menos) y el agua se pega a sí misma — por eso hay gotas, por eso sube por las plantas, por eso el hielo flota. Si fuera recta, todo se cancelaría: no habría mares, ni sangre, ni tú. Nada está inventado: todo salió del cálculo — la nube de deformación del enlace, los pares libres, el ángulo medido de 104.5° y el dipolo verificado (2.03 D calculado contra 1.85 medido). 🎓 GAIA University.`,
+  hashtags: ['#agua', '#química', '#cuántica', '#ciencia', '#física', '#biología', '#aprendeentiktok', '#4k', '#satisfying', '#datocurioso', '#gaia'],
+};
+
+SPECIAL['mol-h2o el puente'] = {
+  codigo: 'moleculas/_code/mol-h2o-el-puente-capsula.tar.gz',
+  titulo: 'El puente invisible que mantiene junta cada gota de agua',
+  descripcion: `Esto no es una animación: son DOS moléculas de agua resueltas con física cuántica (ab initio), acercándose de verdad. 💧 Cada uno de esos poquitos puntos que parpadean es un electrón —no vive en un lugar fijo, es una nube de probabilidad—. El oxígeno (ese corazón dorado) es tan tragón que jala los electrones y deja un lado negativo y otro positivo: por eso cada molécula es un imán diminuto. Y cuando dos se acercan, el más de una jala al menos de la otra y nace EL PUENTE: el enlace de hidrógeno, esa nube de carga que se enciende entre las dos. No es una rayita: es densidad de electrones real (Δρ) y el campo eléctrico calculado, línea por línea. Ese puente invisible es por qué el agua se pega a sí misma, por qué sube por las plantas, por qué el hielo flota, por qué existen las gotas… y por qué existes tú. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#agua', '#química', '#cuántica', '#enlacedehidrógeno', '#ciencia', '#física', '#biología', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
 function copyFor(piece) {
   if (SPECIAL[piece.id]) return SPECIAL[piece.id];
   const f = piece.familia;
@@ -89,6 +180,13 @@ function copyFor(piece) {
       titulo: `El átomo de ${name}`,
       descripcion: `Así se ve un átomo de ${name} — su espectro real convertido en sonido y luz. Física verdadera, cero adornos. ⚛️`,
       hashtags: ['#química', '#átomo', '#ciencia', '#física', '#tablaperiódica', '#gaia', '#satisfying', '#' + (piece.tema || 'atomo')],
+    };
+  }
+  if (f === 'idea') {
+    return {
+      titulo: `${piece.tema} — la idea que revolucionó la economía`,
+      descripcion: `Serie LA ECONOMÍA SON IDEAS: una idea concreta por cápsula, con su física real como espectáculo. Porque la economía, en el fondo, son ideas. 🎓 GAIA University.`,
+      hashtags: ['#economia', '#ideas', '#historia', '#educacion', '#aprendeentiktok', '#4k', '#gaia'],
     };
   }
   if (f === 'molecula') return { titulo: `La molécula ${piece.tema}`, descripcion: `${piece.tema}: sus orbitales y modos vibracionales reales en 3D. 🧪`, hashtags: ['#química', '#molécula', '#ciencia', '#3d', '#gaia', '#satisfying'] };
@@ -135,6 +233,11 @@ for (const v of prod.videos) {
     const sub = (v.serie.split('/')[1]) || 'misc';
     id = 'astro-' + v.name.replace(/\.mp4$|_master|_vertical|_1080x1920|_2160x3840|_FINAL|_PLAY/g, '');
     tema = sub; titulo = ASTRO_SUB[sub] || sub;
+  } else if (fam === 'ideas') {
+    // serie "La economía son ideas": biblioteca ideas/<tema>/<archivo>.mp4
+    familia = 'idea';
+    tema = (v.serie.split('/')[1]) || v.name.replace(/\.mp4$/, '');
+    id = 'idea-' + tema; titulo = tema;
   } else {
     familia = 'otro'; id = 'otro-' + v.name.replace('.mp4', ''); tema = fam; titulo = v.name.replace('.mp4', '');
   }

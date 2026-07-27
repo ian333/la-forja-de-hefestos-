@@ -37,7 +37,7 @@ for a in segs.json musica-fit.json $NAR-narracion.mp3 audio-final.wav $NAR-phras
 done
 
 # ── LA SIMULACIÓN (PySCF precomputado — el dato físico real del video) ──
-for b in mol-$MOL.bin $MOL-abinitio.bin $MOL-atomcloud.bin $MOL-pisplit.bin; do
+for b in mol-$MOL.bin $MOL-abinitio.bin $MOL-atomcloud.bin $MOL-pisplit.bin $MOL-efield.bin; do
   cp "$F"/public/precomputed/$b "$STAGE"/precomputed/ 2>/dev/null || true
 done
 

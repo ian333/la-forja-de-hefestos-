@@ -586,7 +586,7 @@ void main() {
 }
 `;
 
-export function Nucleus({ protons, neutrons, time, clusterRadius = 0.1 }: { protons: number; neutrons: number; time: number; clusterRadius?: number }) {
+export function Nucleus({ protons, neutrons, time, clusterRadius = 0.1, pHot, pHue, nHot, nHue }: { protons: number; neutrons: number; time: number; clusterRadius?: number; pHot?: [number, number, number]; pHue?: number; nHot?: [number, number, number]; nHue?: number }) {
   const groupRef = useRef<THREE.Group>(null);
   const pRef = useRef<THREE.InstancedMesh>(null);
   const nRef = useRef<THREE.InstancedMesh>(null);
@@ -603,16 +603,21 @@ export function Nucleus({ protons, neutrons, time, clusterRadius = 0.1 }: { prot
   // uniforms ESTABLES (ver feedback_r3f_stable_uniforms). Iridiscencia + núcleo
   // incandescente. Protón = sesgo cálido (oro-magenta), neutrón = sesgo frío
   // (cian-violeta). Distinguibles, pero NUNCA el rojo/azul plano de siempre.
+  // Defaults = look aprobado de la serie de átomos. Los videos de ENLACE (Li₂/Be₂)
+  // pasan un neutrón AZUL-HIELO tenue (nHot bajo, sin rojo) para que el núcleo CHICO
+  // NO bloomee a estrella magenta ("punto morado") y dominen los protones dorados.
+  const pc = pHot ?? [2.4, 1.05, 0.28];                   // ORO FUNDIDO (protón)
+  const nc = nHot ?? [0.95, 0.65, 2.6];                   // PLASMA violeta-azul (neutrón)
   const pUniforms = useMemo(() => ({
     uTime: { value: 0 }, uVib: { value: 0.07 },
-    uHot: { value: new THREE.Color(2.4, 1.05, 0.28) },    // ORO FUNDIDO (protón)
-    uHueBase: { value: 0.04 },                            // tornasol oro-magenta
-  }), []);
+    uHot: { value: new THREE.Color(pc[0], pc[1], pc[2]) },
+    uHueBase: { value: pHue ?? 0.04 },                    // tornasol oro-magenta
+  }), [pc[0], pc[1], pc[2], pHue]);
   const nUniforms = useMemo(() => ({
     uTime: { value: 0 }, uVib: { value: 0.07 },
-    uHot: { value: new THREE.Color(0.95, 0.65, 2.6) },    // PLASMA violeta-azul (neutrón)
-    uHueBase: { value: 0.46 },                            // tornasol cian-violeta
-  }), []);
+    uHot: { value: new THREE.Color(nc[0], nc[1], nc[2]) },
+    uHueBase: { value: nHue ?? 0.46 },                    // tornasol cian-violeta
+  }), [nc[0], nc[1], nc[2], nHue]);
 
   useEffect(() => {
     const m = new THREE.Matrix4();
@@ -769,10 +774,12 @@ export function DynamicPostFX({ time, live = false }: { time: number; live?: boo
 }
 
 // ── Cinematic letterbox (CSS overlay) ───────────────────────────────
-export function Letterbox({ vertical }: { vertical: boolean }) {
+export function Letterbox({ vertical, pct }: { vertical: boolean; pct?: number }) {
   // Horizontal → cinemascope 2.39:1 (barras ~12.8%).
   // Vertical (reel 9:16) → barras delgadas tipo cine (~5%), no comen el frame.
-  const pctH = vertical ? 5.0 : ((1 - (16 / 9) / 2.39) / 2) * 100;
+  // `pct` sobreescribe el porcentaje: la serie de enlaces en 16:9 lo usa para NO
+  // comerse el cuadro (CLAUDE.md: cero letterbox 2.39:1 en el entregable).
+  const pctH = pct ?? (vertical ? 5.0 : ((1 - (16 / 9) / 2.39) / 2) * 100);
   return (
     <>
       <div style={{

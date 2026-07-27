@@ -384,6 +384,22 @@ export const HE2_HYPOTHETICAL: Molecule3D = buildDiatomic1s({
     'de enlace = (2-2)/2 = 0. No hay enlace covalente. Se "ve" la cancelación.',
 });
 
+/** Diberilio — el enlace FANTASMA. σ2s² σ*2s² → orden de enlace 0 (Hartree-Fock NO
+ *  lo enlaza, De=0). Y SIN EMBARGO existe, ligado por CORRELACIÓN electrónica pura
+ *  (De≈0.1 eV, Re=2.45 Å). La molécula que "no debería existir". El render muestra la
+ *  cancelación σ2g/σ2u* (para el nucleón/encuadre solo importan los 2 núcleos Z=4). */
+export const BE2: Molecule3D = buildDiatomic1s({
+  name: 'Diberilio',
+  formula: 'Be₂',
+  elementA: 'Be', elementB: 'Be',
+  Za: 4, Zb: 4,
+  valenceElectrons: 4,       // σ2s² σ*2s² → orden 0 (el σ2g enlazante y su gemelo σ2u* se cancelan)
+  bondLength: 4.64,          // 2.45 Å experimental → 4.64 bohr (larguísimo para su periodo)
+  description:
+    'Orden de enlace 0: la teoría MO simple dice que NO existe, y Hartree-Fock coincide ' +
+    '(De=0). Pero existe, ligado por CORRELACIÓN pura (~0.1 eV). El enlace fantasma.',
+});
+
 /** Versión educativa del Li₂ — solo orbitales de valencia 2s */
 export const LI2: Molecule3D = (() => {
   const R = 5.05;  // 2.67 Å experimental → 5.05 bohr
@@ -795,6 +811,71 @@ export const CO: Molecule3D = (() => {
         coefficients: [
           { atomIndex: 0, orbitalKey: '2px', Zeff: Z_EFF_C_2sp, coefficient:  0.70 },
           { atomIndex: 1, orbitalKey: '2px', Zeff: Z_EFF_O_2sp, coefficient: -0.45 },
+        ],
+      },
+    ],
+  };
+})();
+
+/**
+ * NO — óxido nítrico. RADICAL de capa abierta: 11 electrones de valencia, o sea
+ * uno IMPAR. Diez llenan como en CO (triple), y el que sobra se va SOLO a un π*
+ * ANTIENLAZANTE → orden de enlace (8−3)/2 = 2.5. Ese electrón desapareado es la
+ * razón de todo: lo vuelve paramagnético, lo vuelve reactivo, y es por lo que el
+ * cuerpo lo usa para señalizar (Nobel de Medicina 1998 — relaja el músculo liso
+ * de las arterias). Polarización hacia O en los enlazantes (mayor EN), hacia N
+ * en los antienlazantes — misma convención que CO.
+ */
+export const NO: Molecule3D = (() => {
+  const R = 2.1747;  // bohr (1.1508 Å experimental, Huber-Herzberg)
+  return {
+    name: 'Óxido nítrico',
+    formula: 'NO',
+    atoms: [
+      { element: 'N', Z: 7, position: [-R / 2, 0, 0] },
+      { element: 'O', Z: 8, position: [ R / 2, 0, 0] },
+    ],
+    bondLength: R,
+    description:
+      'Radical: 11 electrones de valencia (impar). El que sobra vive solo en un π* ' +
+      'antienlazante → orden de enlace 2.5 y paramagnetismo de UN electrón. Ese ' +
+      'electrón suelto es lo que lo hace mensajero biológico (Nobel 1998).',
+    mos: [
+      { name: '3σ (2s)',  occupancy: 2, symmetry: 'bonding', energy: -21,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2s', Zeff: Z_EFF_N_2sp, coefficient: 0.45 },
+          { atomIndex: 1, orbitalKey: '2s', Zeff: Z_EFF_O_2sp, coefficient: 0.68 },
+        ],
+      },
+      { name: '4σ* (2s)', occupancy: 2, symmetry: 'antibonding', energy: -16,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2s', Zeff: Z_EFF_N_2sp, coefficient:  0.72 },
+          { atomIndex: 1, orbitalKey: '2s', Zeff: Z_EFF_O_2sp, coefficient: -0.52 },
+        ],
+      },
+      { name: '1π_y', occupancy: 2, symmetry: 'bonding', energy: -12.5,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2py', Zeff: Z_EFF_N_2sp, coefficient: 0.54 },
+          { atomIndex: 1, orbitalKey: '2py', Zeff: Z_EFF_O_2sp, coefficient: 0.68 },
+        ],
+      },
+      { name: '1π_z', occupancy: 2, symmetry: 'bonding', energy: -12.5,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2pz', Zeff: Z_EFF_N_2sp, coefficient: 0.54 },
+          { atomIndex: 1, orbitalKey: '2pz', Zeff: Z_EFF_O_2sp, coefficient: 0.68 },
+        ],
+      },
+      { name: '5σ', occupancy: 2, symmetry: 'bonding', energy: -11,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2px', Zeff: Z_EFF_N_2sp, coefficient:  0.68 },
+          { atomIndex: 1, orbitalKey: '2px', Zeff: Z_EFF_O_2sp, coefficient: -0.48 },
+        ],
+      },
+      // EL ELECTRÓN SOLITARIO — un solo π* ocupado por UNO. Aquí vive la historia.
+      { name: '2π*_y (SOMO)', occupancy: 1, symmetry: 'antibonding', energy: -9.3,
+        coefficients: [
+          { atomIndex: 0, orbitalKey: '2py', Zeff: Z_EFF_N_2sp, coefficient:  0.74 },
+          { atomIndex: 1, orbitalKey: '2py', Zeff: Z_EFF_O_2sp, coefficient: -0.58 },
         ],
       },
     ],

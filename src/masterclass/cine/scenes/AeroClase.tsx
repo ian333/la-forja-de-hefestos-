@@ -615,7 +615,7 @@ const SHOTS: Shot[] = [
 function buildCamKeys(): CineCamKey[] {
   const keys: CineCamKey[] = [];
   for (let i = 0; i < SHOTS.length; i++) {
-    const t0 = T[i], t1 = beatEnd(i);
+    const t0 = i === 0 ? 0 : T[i], t1 = beatEnd(i); // encuadre definido desde frame 0
     const lk = SHOTS[i].look ?? ([0, 0, 0] as [number, number, number]);
     keys.push({ t: t0, pos: SHOTS[i].p0, look: lk, cut: true });
     keys.push({ t: Math.max(t0 + 0.1, t1 - 0.08), pos: SHOTS[i].p1, look: lk });
@@ -668,7 +668,9 @@ export default function AeroClase() {
       <FlowFrame>
         <Wing />
         {/* el flujo (parcelas físicas) por ventana de α — corte seco entre beats */}
-        <FlowParticles alpha={8 * DEG} windows={[[T[0], T[11]], [T[12], T[13]], [T[15], END]]} />
+        {/* el viento sopla desde el frame 0 (cold open — y el detector de
+            frames vacíos del render necesita contenido en t=0) */}
+        <FlowParticles alpha={8 * DEG} windows={[[0, T[11]], [T[12], T[13]], [T[15], END]]} />
         <FlowParticles alpha={0} windows={[[T[11], T[12]]]} />
         <FlowParticles alpha={12 * DEG} windows={[[T[13], T[14]]]} />
         <FlowParticles alpha={15 * DEG} windows={[[T[14], T[15]]]} />

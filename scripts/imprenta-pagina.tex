@@ -1,0 +1,56 @@
+% imprenta-pagina.tex — LA HOJA de la cápsula #1 (serie "La economía son ideas").
+% Página de incunable tipografiada de verdad (EB Garamond + capitular): el texto
+% ES la idea de la cápsula — la hoja imprime su propia moraleja. Tinta negra
+% sobre blanco: el shader de PagePrint la usa como MÁSCARA de tinta y pone el
+% color (papel crema, tinta sepia, línea recién impresa en oro).
+%   pdflatex → pdftoppm -png -r 300 → public/textures/imprenta-pagina.png
+\documentclass[11pt]{article}
+\usepackage[paperwidth=135mm,paperheight=185mm,margin=15mm,top=13mm,bottom=14mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{ebgaramond}
+\usepackage{lettrine}
+\usepackage{setspace}
+\pagestyle{empty}
+\setstretch{1.16}
+\begin{document}
+
+\begin{center}
+\rule{0.72\textwidth}{0.6pt}\\[4pt]
+{\Large\scshape D\,e\; l\,a\; I\,m\,p\,r\,e\,n\,t\,a}\\[3pt]
+{\small\itshape Año de MCCCCXL \,·\, Maguncia}\\[4pt]
+\rule{0.72\textwidth}{0.6pt}
+\end{center}
+
+\vspace{6pt}
+
+\lettrine[lines=3,slope=0pt,findent=2pt,nindent=1pt]{E}{sta hoja} está por
+hacer algo imposible: \emph{copiarse a sí misma, sin gastarse nunca}. Un
+escriba tardaba meses en copiar un solo libro; la prensa de tipos móviles lo
+hace en un suspiro, y el costo de cada copia cae casi a cero.
+
+Una idea no es como el pan, que al repartirse se acaba. La idea que yo te doy
+la tenemos los dos; la fórmula no se gasta por usarse, ni la letra por leerse.
+Por eso, cuando el costo de copiar se desploma, el saber se derrama sobre todo
+el mundo: cartas, mapas, tablas, remedios, geometrías.
+
+Cada prensa enciende a la siguiente, y las copias engendran copias, por
+duplicación:
+\begin{center}
+$1 \,\longrightarrow\, 2 \,\longrightarrow\, 4 \,\longrightarrow\, 8
+\,\longrightarrow\, 16 \,\longrightarrow\, \dots \,\longrightarrow\, 2^{\,n}$
+\end{center}
+mientras el precio de cada una se hunde hacia la nada.
+
+Donde antes un libro vivía encadenado a un atril, ahora mil hijos suyos cruzan
+los mares. Cambió la manera en que hablamos, lo que sabemos y lo que podemos
+hacer juntos; y con ello cambió la economía entera.
+
+\vspace{8pt}
+\begin{center}
+{\itshape Porque la economía, en el fondo, son ideas.}\\[6pt]
+\rule{0.4\textwidth}{0.6pt}
+\end{center}
+
+\end{document}

@@ -1,0 +1,50 @@
+CÁPSULA #2 — LA BRÚJULA (30 s, 9:16)
+Serie: "La economía son ideas" · idea concreta (la brújula, s. XI) → conclusión de Romer.
+Regla: GANCHO primero, explicación después. Español mexicano. Cierre = la tesis.
+Mismo motor de PUNTOS que la imprenta, OTRA ley → OTRA coreografía (nada se anima a mano).
+
+── GANCHO (0–9 s · la aguja perdida gira en el vacío) ──
+[0.5]   En medio del océano, sin costa ni estrellas, estás perdido.
+[5.6]   Salvo que tengas esta piedra que apunta.
+
+── EXPLICACIÓN (9–18 s · aparece el campo, la aguja se ALINEA sola) ──
+[9.3]   Una aguja imantada se alinea sola con la Tierra.
+[13.85] Siempre marca el norte. Sin sol, sin mapa, sin nada.
+
+── DERRAME / AMANECER (17–34 s · el campo se vuelve ORO: las rutas) ──
+[18.85] Con eso, los barcos cruzaron océanos que nadie cruzaba.
+[23.5]  Y el comercio dejó de tener orillas.
+[26.45] Una piedra que apunta conectó al mundo entero.
+[30.45] Porque la economía, en el fondo, son ideas.
+
+(tiempos = duraciones REALES de la voz Matilda, aire ~0.55 s; video = 34 s —
+ la voz acaba en 33.8. Campo dipolar r=L·sin²θ gira CON la aguja; torque
+ subamortiguado τ=1.9, ω=1.35; la N flamea al clavar ~t=13; oro desde t=17.)
+
+Título en pantalla (chico, arriba): LA BRÚJULA · s. XI   [9.5–15]
+NOTA: sin "Romer" ni "Nobel" — el público llega solo a la conclusión.
+
+──────────────────────────────────────────────────────────────────────
+PLAN VISUAL (la FÍSICA es el espectáculo; la LEY mueve, cero keyframes)
+
+Objeto: una AGUJA hecha de puntos (barra delgada, ~igual muestreo que la imprenta)
+flotando en el claro de NebulaWorld. Un campo dipolar (r = L·sin²θ — la MISMA
+fórmula del imán del O₂) es la firma que estas cápsulas SÍ pueden mostrar.
+
+BEAT 1 · CAOS (0–9): la aguja gira sin rumbo (sin campo), fría/azul-pizarra.
+  Ley: θ(t) = θ0 + ruido lento — perdida. El mar-nebulosa oscuro alrededor.
+BEAT 2 · EL CAMPO + ALINEACIÓN (9–17): emergen las líneas de campo dipolar
+  (reveal suave). La aguja RELAJA su ángulo al del campo por TORQUE real:
+      θ(t) = θ_campo + (θ0 − θ_campo)·e^(−(t−9)/τ)    (τ≈1.8 s)
+  y ENCIENDE a oro conforme se alinea (marca el norte). Puro en t.
+BEAT 3 · RUTAS / AMANECER (17–30): pull-back; la aguja sobre un globo/océano
+  oscuro; RUTAS doradas se abren en abanico cruzando el mundo (líneas que nacen
+  del norte marcado). Amanecer de la nebulosa. Peak-end: el mundo conectado.
+
+Cámara: UN empuje continuo con peso (como la imprenta): close en la aguja →
+pull-back que revela el campo → subida final al mundo con rutas. Llenar la
+pantalla siempre (el amanecer llena los márgenes).
+
+Reuso: NebulaWorld (fondo aprobado) + el mismo shader de puntos que PagePrint,
+alimentado por la ley de torque en vez de la ley de duplicación. Registrar como
+'brujula-capsula'. Verificar coreografía con storyboard GPU-free ANTES de render.

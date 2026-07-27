@@ -19,7 +19,10 @@ const { spawn, execFileSync } = require('child_process');
 const fs = require('fs'); const path = require('path');
 
 const FMT = process.env.FMT || '916';
-const [W, H] = FMT === '169' ? [3840, 2160] : [2160, 3840];
+let [W, H] = FMT === '169' ? [3840, 2160] : [2160, 3840];
+// Override de resolución: W/H explícitos (p.ej. 1080 9:16 = W=1080 H=1920 para
+// previews/tests rápidos; el master de entrega sigue siendo 4K por mandato).
+if (process.env.W && process.env.H) { W = parseInt(process.env.W, 10); H = parseInt(process.env.H, 10); }
 const SLUG = process.env.SLUG || 'romer';
 const ID = process.env.ID || 'econ-2018-romer-nordhaus';
 const END = parseFloat(process.env.END || '226');
@@ -65,15 +68,50 @@ function encode(codec, pix, out) {
   process.on('exit', killSrv);
   await new Promise(r => setTimeout(r, 1500));
 
+  // GUARDA ANTI-SQUATTER: si el puerto ya estaba OCUPADO (otra sesión sirviendo
+  // OTRO árbol: /tmp/forja-mirror, ~/forja-aero/dist…), nuestro spawn falla EN
+  // SILENCIO (stdio ignore) y renderizaríamos 45 min de CÓDIGO AJENO/VIEJO.
+  // Verifica que lo servido sea EXACTAMENTE nuestro dist antes de tocar la GPU.
+  // (Nos mordió DOS veces el mismo día: squatter en 8123 y luego en 8127.)
+  const servido = await new Promise((res, rej) => {
+    require('http').get(`http://localhost:${PORT}/clase.html`, r => {
+      let d = ''; r.on('data', c => { d += c; }); r.on('end', () => res(d));
+    }).on('error', rej);
+  });
+  const enDisco = fs.readFileSync(path.join(ROOT, 'dist', 'clase.html'), 'utf8');
+  if (servido !== enDisco) {
+    killSrv();
+    throw new Error(`PUERTO ${PORT} SQUATTEADO: lo servido NO es nuestro dist (otra sesión sirve otro árbol). Relanza con otro PORT.`);
+  }
+
   const LAUNCH = () => chromium.launch({ headless: false, executablePath: '/usr/bin/google-chrome-stable',
     args: ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu', '--use-gl=angle',
       '--disable-software-rasterizer', '--autoplay-policy=no-user-gesture-required', '--mute-audio',
       '--hide-scrollbars', `--window-size=${W},${H}`] });
-  let browser = await LAUNCH();
+  // PIDs de los chrome que lanza ESTE render (los únicos que podemos matar).
+  // browser.process() NO existe en esta versión de Playwright → los detectamos
+  // por diferencia: los chrome que aparecen tras nuestro launch son nuestros.
+  const ourChromes = new Set();
+  const chromeSnapshot = () => {
+    try { return execFileSync('pgrep', ['-x', 'chrome'], { encoding: 'utf8' }).split('\n').filter(Boolean).map(Number); }
+    catch { return []; }                          // sin match = 0 chromes
+  };
+  const LAUNCH_TRACKED = async () => {
+    const before = new Set(chromeSnapshot());
+    const b = await chromium.launch({ headless: false, executablePath: '/usr/bin/google-chrome-stable',
+      args: ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu', '--use-gl=angle',
+        '--disable-software-rasterizer', '--autoplay-policy=no-user-gesture-required', '--mute-audio',
+        '--hide-scrollbars', `--window-size=${W},${H}`] });
+    for (const pid of chromeSnapshot()) if (!before.has(pid)) ourChromes.add(pid);
+    return b;
+  };
+  let browser = await LAUNCH_TRACKED();
   const WAIT = parseInt(process.env.WAIT || '8000', 10);
   // un frame CON contenido (nube 4K) pesa >1MB; uno vacío (context-lost: oscuro o
   // blanco uniforme) comprime a ~100KB. El tamaño delata el frame muerto.
-  const MINBYTES = Math.max(180000, Math.floor(W * H / 22));
+  // A 1080 los beats oscuros legítimos pueden caer bajo 180KB → override por env.
+  const MINBYTES = parseInt(process.env.MINBYTES || '', 10) ||
+    Math.max(180000, Math.floor(W * H / 22));
   // un evaluate puede colgarse PARA SIEMPRE si el GPU se congela (rAF nunca dispara).
   // race contra timeout → lanza → se trata como context-lost → reinicia browser.
   const withT = (p, ms, lbl) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`timeout ${lbl}`)), ms))]);
@@ -83,7 +121,17 @@ function encode(codec, pix, out) {
   console.log(`render ${SLUG} (${ID}) · ${W}×${H} @ ${FPS}fps · ${N} frames · audio:${HAS_AUDIO ? 'sí' : 'no'} · MINBYTES ${MINBYTES} · empieza en ${i}`);
 
   let batchRetries = 0;
-  const killChrome = () => { try { execFileSync('pkill', ['-9', '-x', 'chrome'], { stdio: 'ignore' }); } catch { /* sin match */ } };
+  // killChrome — mata SOLO el chrome de ESTE render (su árbol de procesos).
+  //
+  // ⚠️ NUNCA volver a `pkill -9 -x chrome`: iangpu la comparten 2-3 AGENTES y ese
+  // pkill es GLOBAL — mataba el Chrome de los otros agentes en pleno render (y los
+  // suyos mataban el nuestro). ESA era la causa real de los "frame VACÍO
+  // (context-lost)": no era la GPU, ni TDR, ni VRAM (medido: 987 MiB de 12282
+  // usados, 0 errores en probe aislado). Cazado con telemetría 2026-07-15.
+  const killChrome = () => {
+    for (const pid of ourChromes) { try { process.kill(pid, 'SIGKILL'); } catch { /* ya murió */ } }
+    ourChromes.clear();
+  };
   // tope de pared por lote: red final si CUALQUIER op (launch/newContext/goto/nebula/render)
   // se cuelga sin disparar su propio timeout → corta, mata chrome y reintenta.
   const BATCH_WALL = 120000 + BATCH * 4000;
@@ -95,7 +143,7 @@ function encode(codec, pix, out) {
         // entre lotes. Cerrar (con timeout) y FORZAR kill de chrome trabado antes de relanzar.
         try { await withT(browser.close(), 8000, 'close'); } catch { /* colgado */ }
         killChrome();
-        browser = await withT(LAUNCH(), 60000, 'launch');
+        browser = await withT(LAUNCH_TRACKED(), 60000, 'launch');
         const ctx = await withT(browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 }), 60000, 'newctx');
         const page = await withT(ctx.newPage(), 30000, 'newpage');
         await withT(page.goto(`http://localhost:${PORT}/clase.html?id=${ID}`, { waitUntil: 'load', timeout: 60000 }), 70000, 'goto');

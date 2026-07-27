@@ -38,6 +38,10 @@ export interface NebulaWorldProps {
   heart?: [number, number, number];
   /** Tiempos de ignición de la cadena (clavados a beats de la voz). */
   chain?: number[];
+  /** Dibuja los SPRITES de estrella de la ignición/cadena (default true).
+   *  false = la energía/frente/amanecer siguen, pero sin bolas de luz en cuadro
+   *  (p.ej. cápsulas donde la estrella compite con el objeto principal). */
+  igniteStars?: boolean;
   /** t del amanecer pleno (la nube encendida al máximo). */
   dawnAt?: number;
   /** Exposición global de la nube. */
@@ -121,9 +125,14 @@ void main(){
   vA = tw * (0.78 + 0.22 * ignited) * hole;
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
-  // uRS = escala de resolución (lado largo / 1920): mismo grosor RELATIVO en 4K
-  // puntos FINOS (cap 3px): con ~12M partículas dan niebla CONTINUA, no grano grueso.
-  gl_PointSize = min(1.25 * (0.45 + 1.0 * aBright) * (uPx * uRS / -mv.z), 3.2 * uRS);
+  // CAP ABSOLUTO en px (SIN ·uRS): el tamaño pre-cap sí escala con uRS (lado/1920,
+  // mismo grosor relativo), pero el TOPE queda clavado en px → el FILL aditivo
+  // total de los ~12M de puntos es CONSTANTE = el nivel probado a 1080, en toda
+  // resolución. Con cap ∝uRS, una cámara que encuadra la nebulosa ENTERA a
+  // 2160×3840 pasa el límite TDR (~2s) del driver D3D12 y MATA el contexto
+  // (VALIDATE_STATUS false con logs vacíos, frame blanco/negro/parcial).
+  // Cazado en brújula v2 t=0 (bisect: sin nebulosa el 4K vivía).
+  gl_PointSize = min(1.25 * (0.45 + 1.0 * aBright) * (uPx * uRS / -mv.z), 3.2);
 }`;
 const CLOUD_FRAG = /* glsl */ `
 precision highp float;
@@ -164,7 +173,7 @@ void main(){
   vA = L;
   vec4 mv = modelViewMatrix * vec4(aPos, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = min(aBig * (12.0 + flash * 14.0) * (uPx * uRS / -mv.z), 220.0 * uRS);
+  gl_PointSize = min(aBig * (12.0 + flash * 14.0) * (uPx * uRS / -mv.z), 220.0);
 }`;
 const STARS_FRAG = /* glsl */ `
 precision highp float;
@@ -208,6 +217,7 @@ export default function NebulaWorld({
   firstIgnite = 85.8,
   heart = [0.15, -0.1, 0.05],
   chain = [],
+  igniteStars = true,
   dawnAt = 207,
   exposure = 0.52,
   starBright = 1.2,
@@ -444,7 +454,7 @@ export default function NebulaWorld({
       {geo && <points geometry={geo} material={matBack} frustumCulled={false} renderOrder={-52} />}
       {geo && <points geometry={geo} material={matMain} frustumCulled={false} renderOrder={-50} />}
       {geo && <points geometry={geo} material={matNear} frustumCulled={false} renderOrder={-49} />}
-      <points geometry={starGeo} material={starMat} frustumCulled={false} renderOrder={-48} />
+      {igniteStars && <points geometry={starGeo} material={starMat} frustumCulled={false} renderOrder={-48} />}
     </group>
   );
 }

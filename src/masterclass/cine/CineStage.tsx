@@ -51,7 +51,51 @@ export interface CineStageProps {
   subtitles?: { text: string; at: number; until: number }[];
   /** Título elegante arriba (mismo reloj), visible sólo en su ventana [at, until). */
   title?: { text: string; at: number; until: number };
+  /** Marca estilo reel O₂/átomos: bloque abajo-izquierda PERSISTENTE (nombre en
+   *  peso 200 gigante + acento mono cyan), subtítulos suben a vivir encima y el
+   *  cromo superior (chapter/GAIA) se oculta — el look exacto de la serie mol. */
+  brand?: { name: string; sub: string; at?: number; until?: number };
   children?: ReactNode;
+}
+
+// Marca de reel (el look de MoleculeTitle de la serie mol, calcado): "Oxígeno"
+// weight-200 11vw + fórmula mono cyan. Persistente casi todo el video.
+function BrandOverlay({ brand, audioRef, duration }: {
+  brand: { name: string; sub: string; at?: number; until?: number };
+  audioRef: React.RefObject<HTMLAudioElement | null>;
+  duration: number;
+}) {
+  const at = brand.at ?? 2.4;
+  const until = brand.until ?? Math.max(at + 1, duration - 0.7);
+  const [op, setOp] = useState(0);
+  useEffect(() => {
+    let raf = 0; let clock = 0; let last = performance.now();
+    const tick = () => {
+      const a = audioRef.current;
+      let t: number;
+      const ov = (window as unknown as { __cineT?: number }).__cineT;
+      if (typeof ov === 'number') t = ov;
+      else if (a) t = a.currentTime;
+      else { const now = performance.now(); clock = (clock + (now - last) / 1000) % (duration > 0 ? duration : 1e9); last = now; t = clock; }
+      const fin = Math.min(1, Math.max(0, (t - at) / 0.9));
+      const fout = Math.min(1, Math.max(0, (until - t) / 0.7));
+      setOp(t >= at && t < until ? Math.min(fin, fout) : 0);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [brand, at, until, audioRef, duration]);
+  if (op < 0.01) return null;
+  return (
+    <div style={{ position: 'absolute', bottom: '14%', left: '7%', zIndex: 11,
+      pointerEvents: 'none', opacity: op, fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ fontSize: '11vw', fontWeight: 200, color: '#fff',
+        letterSpacing: '-0.03em', lineHeight: 1, textShadow: '0 4px 40px rgba(0,0,0,0.85)' }}>{brand.name}</div>
+      <div style={{ fontSize: '5vw', fontWeight: 500, color: 'rgba(127,212,255,0.9)',
+        letterSpacing: '0.08em', marginTop: '1.6vw',
+        fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{brand.sub}</div>
+    </div>
+  );
 }
 
 // Título de capítulo/episodio: arriba-centro, misma familia que los subtítulos
@@ -98,10 +142,12 @@ function TitleOverlay({ title, audioRef, duration }: {
 
 // Subtítulos HUD: leen el tiempo del audio (fuente de verdad) → sincronía exacta.
 // Siempre abajo-centro, legibles, pase lo que pase con la cámara.
-function Subtitles({ subs, audioRef, duration }: {
+function Subtitles({ subs, audioRef, duration, mol = false }: {
   subs: { text: string; at: number; until: number }[];
   audioRef: React.RefObject<HTMLAudioElement | null>;
   duration: number;
+  /** estilo reel mol: más grandes y ARRIBA del bloque de marca (look O₂). */
+  mol?: boolean;
 }) {
   const [text, setText] = useState<string | null>(null);
   const lastRef = useRef<string | null>(null);
@@ -126,11 +172,12 @@ function Subtitles({ subs, audioRef, duration }: {
   }, [subs, audioRef, duration]);
 
   return (
-    <div className="absolute left-1/2 -translate-x-1/2 bottom-[7%] w-[88%] max-w-[1180px] text-center pointer-events-none">
+    <div className={`absolute left-1/2 -translate-x-1/2 ${mol ? 'bottom-[27%]' : 'bottom-[7%]'} w-[88%] max-w-[1180px] text-center pointer-events-none`}>
       {text && (
         <span className="inline-block text-white leading-tight"
               style={{ fontFamily: "'Outfit', 'Inter', system-ui, sans-serif", fontWeight: 600, letterSpacing: '0.015em',
-                       fontSize: 'clamp(16px, 2.4vmin, 60px)', textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.7)' }}>
+                       fontSize: mol ? '3.4vw' : 'clamp(16px, 2.4vmin, 60px)',
+                       textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.7)' }}>
           {text}
         </span>
       )}
@@ -176,6 +223,7 @@ export default function CineStage({
   aspect = '16 / 9',
   subtitles,
   title,
+  brand,
   children,
 }: CineStageProps) {
   const layout = useCineLayout();
@@ -235,24 +283,28 @@ export default function CineStage({
         </CineTimeContext.Provider>
       </Canvas>
 
-      {/* HUD de cine */}
+      {/* HUD de cine — con `brand` (reel mol) se quita el cromo superior: el
+          cuadro es del objeto, la marca vive abajo-izquierda como en O₂ */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 right-0 h-[10%] bg-gradient-to-b from-black/45 to-transparent" />
+        {!brand && <div className="absolute top-0 left-0 right-0 h-[10%] bg-gradient-to-b from-black/45 to-transparent" />}
         <div className="absolute bottom-0 left-0 right-0 h-[16%] bg-gradient-to-t from-black/65 to-transparent" />
-        {chapter && (
+        {!brand && chapter && (
           <div className="absolute top-4 left-5 uppercase tracking-[0.3em] font-mono text-[#FFE5A0]/60"
                style={{ fontSize: 'clamp(8px, 1vmin, 22px)' }}>
             {chapter}
           </div>
         )}
-        <div className="absolute top-4 right-5 uppercase tracking-[0.3em] font-mono text-[#94A3B8]/50"
-             style={{ fontSize: 'clamp(8px, 1vmin, 22px)' }}>
-          GAIA · masterclass
-        </div>
+        {!brand && (
+          <div className="absolute top-4 right-5 uppercase tracking-[0.3em] font-mono text-[#94A3B8]/50"
+               style={{ fontSize: 'clamp(8px, 1vmin, 22px)' }}>
+            GAIA · masterclass
+          </div>
+        )}
         {subtitles && subtitles.length > 0 && (
-          <Subtitles subs={subtitles} audioRef={audioRef} duration={duration} />
+          <Subtitles subs={subtitles} audioRef={audioRef} duration={duration} mol={!!brand} />
         )}
         {title && <TitleOverlay title={title} audioRef={audioRef} duration={duration} />}
+        {brand && <BrandOverlay brand={brand} audioRef={audioRef} duration={duration} />}
       </div>
 
       {/* Botón de inicio (solo con audio) */}

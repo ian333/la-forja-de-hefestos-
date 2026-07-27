@@ -345,7 +345,7 @@ function NonRival({ start, end }: { start: number; end: number }) {
 }
 
 // ╔═══ 14 — Mil cocinas: una idea se copia a una multitud ════════════════════╗
-function IdeaToMany({ start, end }: { start: number; end: number }) {
+export function IdeaToMany({ start, end }: { start: number; end: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
   const M = 16;
@@ -406,7 +406,7 @@ function CombineTwo({ start, end }: { start: number; end: number }) {
 }
 
 // ╔═══ 16 — Cadena: rueda→carreta→coche→teléfono (complejidad que se acumula) ╗
-function CombineChain({ start, end }: { start: number; end: number }) {
+export function CombineChain({ start, end }: { start: number; end: number }) {
   const timeRef = useCineTime();
   const g = useRef<THREE.Group>(null);
   const groups = useRef<THREE.Group[]>([]);

@@ -21,7 +21,9 @@ const NAME = process.env.NAME || 'romer';
 const TIMES = (process.env.TIMES || '5,40,86,113').split(',').map(Number);
 const BASE = process.env.BASE_URL || 'http://localhost:8099';
 const WAIT = parseInt(process.env.WAIT || '6000', 10);
-const MINBYTES = Math.max(120000, Math.floor(W * H / 26));   // frame vivo >> esto; vacío <<
+const MINBYTES = parseInt(process.env.MINBYTES || '', 10) ||
+  Math.max(120000, Math.floor(W * H / 26));   // frame vivo >> esto; vacío << (override por env:
+  // un frame NEGRO con HUD comprime ~300KB y pasa el umbral base — MINBYTES=1000000 fuerza real)
 
 const LAUNCH = () => chromium.launch({ headless: false, executablePath: '/usr/bin/google-chrome-stable',
   args: ['--no-sandbox', '--headless=new', '--ignore-gpu-blocklist', '--enable-gpu', '--use-gl=angle',
