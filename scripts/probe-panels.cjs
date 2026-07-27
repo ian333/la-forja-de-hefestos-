@@ -18,7 +18,9 @@ const fs = require('fs');
   try {
     await p.goto(URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await p.waitForFunction('!!(window.__forgeBrep && window.__forgeBrep.moldSolidCollisions)', { timeout: 180000 });
-    await p.waitForSelector('[data-testid="btn-flanera"]:not([disabled])', { timeout: 60000 });   // el flag del kernel gana la carrera al re-render
+    // waitForFunction (no waitForSelector): sobrevive re-montajes del botón y
+    // al optimize-reload de vite dev tras un restart. 240s: box compartido con renderq.
+    await p.waitForFunction(() => { const b = document.querySelector('[data-testid="btn-flanera"]'); return !!b && !b.disabled; }, { timeout: 240000 });
     await p.click('[data-testid="btn-flanera"]');
     await p.waitForFunction('window.__forgeBrep.moldGeom().length > 8', { timeout: 300000 });
     await p.waitForTimeout(2500);

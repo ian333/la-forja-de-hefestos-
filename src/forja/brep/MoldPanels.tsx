@@ -7,6 +7,7 @@
  */
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
+import { Ic } from './icons';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
 
@@ -72,7 +73,9 @@ export function CursoPanel({ mold }: { mold: MoldBag }) {
           );
 }
 
-export function MoldTreePanel({ mold, oc }: { mold: MoldBag; oc: any }) {
+// kernelReady (booleano) y NUNCA `oc`: pasar el módulo WASM como prop = la
+// instrumentación dev de React camina el heap entero de embind (freeze cazado).
+export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelReady: boolean }) {
   const { liveDfm, moldParts, moldHidden, moldOpacity, moldSelected, setMoldSelected, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldOpenRef, moldOpenOn, setMoldOpenOn, moldColors, setMoldColors, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaErrors, moldSimOn, setMoldSimOn, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, isolateMoldPlate, setMoldPlateOpacity } = mold;
   if (moldParts.length === 0) return null;
   return (
@@ -307,5 +310,39 @@ export function MoldTreePanel({ mold, oc }: { mold: MoldBag; oc: any }) {
                   })}
                 </div>
               </>
+  );
+}
+
+/** El grupo del ribbon MOLDE · CURSO ALWIS (Flanera/Vaso/Core-Cav + los 6
+ *  pasos del curso). Incluye su separador. */
+export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelReady: boolean }) {
+  const { cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias } = mold;
+  return (
+    <>
+            <span className="fb-tb-sep" />
+            <div className="fb-group">
+              <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-flanera" onClick={loadFlaneraMold} disabled={!kernelReady}
+                  title="Molde COMPLETO de la flanera (24 partes: placas, insertos sólidos, eyección, agua, guías) — como el del Tupper"><Ic name="revolucion" /><span>Flanera</span></button>
+                <button className="fb-big" data-testid="btn-flanera-vaso" onClick={cursoFlanera} disabled={!kernelReady || cursoBusy}
+                  title="Solo el VASO de la flanera (revolución torneable — el producto)"><Ic name="pieza" /><span>Vaso</span></button>
+                <button className="fb-big" data-testid="btn-flanera-mold" onClick={cursoFlaneraMold} disabled={!kernelReady || cursoBusy}
+                  title="Core/Cavidad de la flanera: los dos insertos torneables (splitMold) — el molde del vaso"><Ic name="extrude" /><span>Core/Cav</span></button>
+                <button className="fb-big" data-testid="btn-curso-pieza" onClick={cursoInsertar} disabled={!kernelReady || cursoBusy}
+                  title="Insert > Part: la percha del curso (silueta declarada a proporción)"><Ic name="pieza" /><span>Pieza</span></button>
+                <button className="fb-big" data-testid="btn-curso-escala" onClick={cursoEscala} disabled={cursoBusy || cursoStage < 1}
+                  title="Scale: about Origin, uniforme ×1.015 (PP 1.5% — cota del curso)"><Ic name="escala" /><span>Escala</span></button>
+                <button className="fb-big" data-testid="btn-curso-layout" onClick={cursoLayout} disabled={cursoBusy || cursoStage < 2}
+                  title="Move/Copy Body: layout de 2 cavidades (copia rotada, sin traslape)"><Ic name="pattern" /><span>Move/Copy</span></button>
+                <button className="fb-big" data-testid="btn-curso-parting" onClick={cursoParting} disabled={cursoBusy || cursoStage < 3}
+                  title="Parting Lines: transición +/− del draft → lazo AUTOMÁTICO + mensaje verde (el curso pica 18 aristas a mano)"><Ic name="parting" /><span>Parting Line</span></button>
+                <button className="fb-big" data-testid="btn-curso-split" onClick={cursoSplit} disabled={cursoBusy || cursoStage < 4}
+                  title="Tooling Split: bloque 350×630, placas 145/90 (cotas del curso) — split + placa rectangular en UNA operación"><Ic name="extrude" /><span>Tooling Split</span></button>
+                <button className="fb-big" data-testid="btn-curso-guias" onClick={cursoGuias} disabled={cursoBusy || cursoStage < 5}
+                  title="Hole Wizard: bushings ⌀48+caja ⌀54×10 y pernos ⌀35+caja ⌀40×8 en ±142/±277 (cotas del curso)"><Ic name="hole" /><span>Guías</span></button>
+              </div>
+              <div className="fb-group-cap">MOLDE · CURSO ALWIS</div>
+            </div>
+    </>
   );
 }
