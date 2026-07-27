@@ -94,13 +94,17 @@ export function MoldTcPaint({ part, map, cells, marker }: {
  *  re-renders de React por cuadro, el patrón de `MoldOpenDriver`.
  */
 /** REVELADO del fundido en la COLADA: el frente baja del bushing al gate antes
- *  de que la pieza empiece a pintarse — POR FIN se VE el canal y su flujo. */
+ *  de que la pieza empiece a pintarse — POR FIN se VE el canal y su flujo.
+ *  Pintado POR VÉRTICES (como MoldFlowPaint, probado): clippingPlanes son de
+ *  espacio MUNDO y el grupo del molde va transformado (CAD Z-arriba) — el
+ *  plano recortaba en un eje ajeno y el cono jamás se veía. */
 export function FeedFill({ part, delayS }: { part: MoldPart; delayS: number }) {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
     g.setAttribute('normal', new THREE.BufferAttribute(part.normals, 3));
     g.setIndex(new THREE.BufferAttribute(part.indices, 1));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(part.positions.length), 3));
     return g;
   }, [part]);
   useEffect(() => () => geo.dispose(), [geo]);
@@ -109,24 +113,25 @@ export function FeedFill({ part, delayS }: { part: MoldPart; delayS: number }) {
     for (let i = 2; i < part.positions.length; i += 3) { const z = part.positions[i]; if (z < lo) lo = z; if (z > hi) hi = z; }
     return { lo, hi };
   }, [part]);
-  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), -zr.hi), [zr]);
   const t0 = useRef(0);
   useFrame(({ clock }) => {
     if (!t0.current) t0.current = clock.elapsedTime;
     const period = delayS + 1 / 0.35 + 0.7;                      // mismo reloj que MoldFlowPaint
     const tt = (clock.elapsedTime - t0.current) % period;
     const f = Math.min(1, tt / delayS);
-    plane.constant = -(zr.hi - f * (zr.hi - zr.lo));             // visible: z > zFront (baja)
+    const zFront = zr.hi - f * (zr.hi - zr.lo);                  // el frente BAJA
+    const attr = geo.getAttribute('color') as THREE.BufferAttribute;
+    const col = attr.array as Float32Array;
+    const P = part.positions;
+    for (let i = 0; i < P.length; i += 3) {
+      if (P[i + 2] >= zFront) { col[i] = 1.0; col[i + 1] = 0.62; col[i + 2] = 0.14; }   // LLENO: ámbar caliente
+      else { col[i] = 0.16; col[i + 1] = 0.15; col[i + 2] = 0.13; }                      // vacío: canal fantasma
+    }
+    attr.needsUpdate = true;
   });
   return (
     <mesh geometry={geo} renderOrder={9}>
-      {/* RAYOS X: el fundido se ve A TRAVÉS del acero (depthTest off, como la
-          nube de alarma) — sin esto el flujo corre pero queda enterrado. */}
-      {/* meshBasic como el pintado de la pieza (PROBADO visible en rayos X) —
-          el standard+emissive se perdía con el tonemapping/luces de la escena. */}
-      <meshBasicMaterial color="#ff9a2e" toneMapped={false}
-        clippingPlanes={[plane]} side={THREE.DoubleSide}
-        depthTest={false} transparent opacity={0.95} />
+      <meshBasicMaterial vertexColors toneMapped={false} depthTest={false} transparent opacity={0.95} side={THREE.DoubleSide} />
     </mesh>
   );
 }
