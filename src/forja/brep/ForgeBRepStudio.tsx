@@ -45,6 +45,7 @@ import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
 import { MoldTcPaint, MoldFlowPaint, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, computeMoldAlarm } from './MoldScene';
+import { useMoldLive } from './useMoldLive';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
 import { isoSurface } from '../../lib/viz/isosurface';
@@ -3457,56 +3458,11 @@ export default function ForgeBRepStudio() {
   const [tpSimOn, setTpSimOn] = useState(false);
   const [moldMachineOn, setMoldMachineOn] = useState(false);
   const [unscrewOn, setUnscrewOn] = useState(false);
-  // SESIÓN VIVA compartida: el operador remoto (Claude) publica una pieza en
-  // /mold-live.json; el Studio ARMA el molde con las PRIMITIVAS del kernel
-  // (buildMoldAssembly) y lo pone en la escena 3D real → el cliente ve y GIRA el
-  // molde de verdad, en vivo. Sin STEP: se construye dentro de La Forja.
-  const liveMoldRev = useRef(-1);
-  const [liveMoldSpec, setLiveMoldSpec] = useState<MoldAssemblySpec | null>(null);
-  const [liveMoldMesh, setLiveMoldMesh] = useState<{ positions: Float32Array; indices: Uint32Array } | null>(null);
-  // INSERTOS del SÓLIDO REAL (splitMold de la figura) — la cavidad ES la pieza, no un tubo.
-  // INSERTOS como SÓLIDOS (no malla) → se taladran en el ensamble. Van por REF (los
-  // handles OCC no viven en React state) + un contador que dispara el re-build.
-  const liveRealSolidsRef = useRef<{ cav: any; core: any; piece?: any; zPartSplit: number } | null>(null);
-  const [liveRealSolidsRev, setLiveRealSolidsRev] = useState(0);
-  // VEREDICTO DE MOLDEABILIDAD medido sobre la malla (Kazmer §2.3, viaja en mold-live.json)
-  const [liveDfm, setLiveDfm] = useState<{ moldable: 'si' | 'con-mecanismos' | 'no'; verdicts: Array<{ param: string; valor: string; limite: string; ok: boolean; ref: string }> } | null>(null);
-  const b64ToArr = (b64: string, T: any) => {
-    const bin = atob(b64); const u = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-    return new T(u.buffer);
-  };
-  useEffect(() => {
-    const id = setInterval(async () => {
-      try {
-        const r = await fetch('/mold-live.json?t=' + Date.now(), { cache: 'no-store' });
-        if (!r.ok) return;
-        const j = await r.json();
-        if (typeof j.rev !== 'number' || j.rev === liveMoldRev.current) return;
-        liveMoldRev.current = j.rev;
-        liveRealSolidsRef.current = null;                      // una sesión viva (Tupper) NO es la flanera paramétrica
-        if (j.clear) { setLiveMoldSpec(null); setLiveMoldMesh(null); setLiveDfm(null); return; }
-        setLiveDfm(j.dfmMesh ?? null);
-        if (j.partMeshUrl) {
-          // la MALLA REAL de la pieza (STL decimado) viaja aparte — se baja UNA vez por rev
-          try {
-            const mr = await fetch(j.partMeshUrl + '?t=' + j.rev, { cache: 'no-store' });
-            const mj = await mr.json();
-            setLiveMoldMesh({ positions: b64ToArr(mj.positions, Float32Array), indices: b64ToArr(mj.indices, Uint32Array) });
-          } catch { setLiveMoldMesh(null); }
-        } else setLiveMoldMesh(null);
-        // generate:false = "comparte la pieza/DFM, NO armes el molde". Ignorar este
-        // flag fue EL freeze de prod del 2026-07-24: una sesión Tupper huérfana
-        // (rect → 63 pines) armaba el molde COMPLETO en el main thread en CADA
-        // carga de página, con el kernel recién llegado. El JSON sobrevive a los
-        // deploys (excluido a propósito) — el gate vive AQUÍ, no en el archivo.
-        if (j.generate === false) { setLiveMoldSpec(null); return; }
-        if (j.assemblySpec) { setLiveMoldSpec(j.assemblySpec); return; }   // ejemplo del libro directo
-        if (j.spec) { try { setLiveMoldSpec(packageToAssemblySpec(moldMachine(j.spec))); } catch { setLiveMoldSpec(null); } }
-      } catch { /* sin sesión viva */ }
-    }, 1500);
-    return () => clearInterval(id);
-  }, []);
+  // SESIÓN VIVA compartida (operador↔cliente): vive en useMoldLive.ts — el hook
+  // es dueño del poll de /mold-live.json, la spec viva, la malla real y los
+  // SÓLIDOS del splitMold. Aquí solo se consume la bolsa (paso 2.2 extracción).
+  const { liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm,
+    liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev } = useMoldLive();
   // El MOLDE en vivo se arma como COMPONENTES (una placa = una pieza) para el
   // árbol: aislar / ocultar / opacidad, como Fusion/SolidWorks. Con primitivas.
   const [moldParts, setMoldParts] = useState<MoldPart[]>([]);
