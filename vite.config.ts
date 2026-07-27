@@ -78,6 +78,7 @@ export default defineConfig({
         "cinematic-bhdisk": resolve(import.meta.dirname, "cinematic-bhdisk.html"),
         "cinematic-limones": resolve(import.meta.dirname, "cinematic-limones.html"),
         "cinematic-ideas": resolve(import.meta.dirname, "cinematic-ideas.html"),
+        "cinematic-romer": resolve(import.meta.dirname, "cinematic-romer.html"),
         "forja-brep": resolve(import.meta.dirname, "forja-brep.html"),
         "forja-mecanismos": resolve(import.meta.dirname, "forja-mecanismos.html"),
         nova: resolve(import.meta.dirname, "nova.html"),

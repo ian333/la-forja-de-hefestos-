@@ -7,6 +7,22 @@ Render en **iangpu** (RTX 4070 Ti, WSL). El operador es **ian**.
 
 ---
 
+## 🥇 REGLA #0 — ANTES DE CUALQUIER VIDEO DE LA SERIE: LEE `docs/CANON-VIDEO.md`
+
+**Antes de tocar 1 línea de un video de moléculas/enlaces: LEE `docs/CANON-VIDEO.md` y COPIA el
+código del último GANADOR (O₂, N₂, C₂, H₂O v1/v2 — su código está respaldado en cápsulas).**
+NO reinventes cámara, subtítulos ni estructura — reusa `O2Cloud`/`camera-shots.ts`/el formato ASS
+de la serie y cambia lo MÍNIMO, 1 cambio a la vez. Reinventar lo ya hecho = EL fallo #1 recurrente.
+CANON-VIDEO.md es el flujo canónico completo (física→voz→beats→render 4K→QA de agentes→ensamble→
+cápsula→Comando) + los gotchas ya pagados. No es sugerencia: es un gate.
+
+**Y un video nuevo NO crea archivos: es un MANIFIESTO.** `videos/<id>.json` + `bash scripts/video.sh
+<id> todo` (subs→render paralelo→ensamble→cápsula). Las tomas van al registro `CAMERA_SHOTS` de
+`CinematicMolecule.tsx`; una variante de cámara = otra entrada + `?cam=<x>`. PROHIBIDO crear
+`<mol>-pipeline.sh`/`<mol>-assemble.sh`/`<mol>-ass*.py` o constantes `<MOL>_SHOTS` (ver Regla #0.5).
+
+---
+
 ## 🎬 MANDATO 4K (regla #1, dura)
 
 **TODO el video que se entregue va en 4K.** Vertical (reels) = **2160×3840**. Horizontal = **3840×2160**.
