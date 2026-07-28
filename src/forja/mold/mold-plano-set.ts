@@ -1541,6 +1541,7 @@ export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
       widthMm: Math.round(s.Lmm), lenMm: Math.round(s.Wmm), depthMm: Math.round(s.Hmm),
       shape: s.cavityShape ?? 'rect',
       wallMm: s.wallMm,
+      volMm3: s.volumeMm3,        // volumen REAL del sólido → masa del disparo (Eq 9.10)
     },
     // LA RESINA VIAJA CON EL MOLDE: sin esto el campo térmico no sabe de qué es la pieza
     // y corría ABS en silencio para todo. No se cae por defecto: se DECLARA (ThermalSim.material).

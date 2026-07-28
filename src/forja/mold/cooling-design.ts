@@ -32,6 +32,34 @@
 export interface Coolant { name: string; rhoKgM3: number; cpJkgC: number; muPaS: number; kWmC: number }
 export const AGUA: Coolant = { name: 'agua', rhoKgM3: 1000, cpJkgC: 4200, muPaS: 0.001, kWmC: 0.6 };
 
+/**
+ * APÉNDICE A — las propiedades TÉRMICAS que pide §9.2, LITERALES del libro
+ * (p. 390-393). Nada derivado, nada redondeado: se leyeron de la tabla.
+ *   rhoRT   = "Density at 20 °C"       (Eq 9.10 usa ÉSTA, no la del fundido)
+ *   cp      = "Specific heat"
+ *   alpha   = "Thermal diffusivity"
+ *   tMelt   = "Mid-range melt temperature"
+ *   tEject  = "DTUL (0.45 MPa, ASTM D648)" — el criterio de expulsión del libro
+ *   tCool   = medio del rango "Minimum/Maximum coolant temperature"
+ */
+export const PLASTICOS_A: Record<string, {
+  grado: string; rhoRTKgM3: number; cpJkgC: number; kWmC: number; alphaM2s: number;
+  tMeltC: number; tEjectC: number; tCoolC: number; tCoolMinC: number; tCoolMaxC: number;
+}> = {
+  ABS: { grado: 'Cycolac MG47', rhoRTKgM3: 1044, cpJkgC: 2340, kWmC: 0.19, alphaM2s: 8.73e-8, tMeltC: 239, tEjectC: 96.7, tCoolC: 60, tCoolMinC: 49, tCoolMaxC: 71 },
+  PP: { grado: 'Dow Inspire 702', rhoRTKgM3: 929, cpJkgC: 2890, kWmC: 0.184, alphaM2s: 8.15e-8, tMeltC: 220, tEjectC: 80, tCoolC: 35, tCoolMinC: 20, tCoolMaxC: 50 },
+  PS: { grado: 'Dow Styron 478', rhoRTKgM3: 1036, cpJkgC: 1820, kWmC: 0.133, alphaM2s: 7.63e-8, tMeltC: 200, tEjectC: 87, tCoolC: 50, tCoolMinC: 40, tCoolMaxC: 60 },
+  PC: { grado: 'PC alto impacto', rhoRTKgM3: 1192, cpJkgC: 1260, kWmC: 0.25, alphaM2s: 1.89e-7, tMeltC: 293, tEjectC: 138, tCoolC: 82, tCoolMinC: 70, tCoolMaxC: 95 },
+  POM: { grado: 'Acetal', rhoRTKgM3: 1435, cpJkgC: 2020, kWmC: 0.23, alphaM2s: 9.91e-8, tMeltC: 205, tEjectC: 160, tCoolC: 77, tCoolMinC: 50, tCoolMaxC: 105 },
+  PA6: { grado: 'Nylon 6', rhoRTKgM3: 1153, cpJkgC: 2630, kWmC: 0.28, alphaM2s: 1.10e-7, tMeltC: 265, tEjectC: 160, tCoolC: 90, tCoolMinC: 70, tCoolMaxC: 110 },
+};
+/** Acero del molde: k y límite de fatiga (§9.2.5 + §12.2). */
+export const ACEROS_MOLDE: Record<string, { kWmC: number; sigmaEnduranceMPa: number }> = {
+  P20: { kWmC: 32, sigmaEnduranceMPa: 456 },
+  H13: { kWmC: 28.6, sigmaEnduranceMPa: 690 },
+  'QC-7': { kWmC: 160, sigmaEnduranceMPa: 166 },     // aluminio (§9.2.5: P_melt cae a 50 MPa a 1D)
+};
+
 /** Tabla 9.2 — plugs de enfriamiento comerciales (DME). El ⌀ final DEBE ser uno de éstos. */
 export const PLUGS_DME: Array<{ plug: string; npt: string; diaMm: number }> = [
   { plug: 'JP-250', npt: '1/16', diaMm: 4.76 },
@@ -178,7 +206,10 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
   for (; iters < 20; iters++) {
     hLineM = pickH(diaMm);
     wLineMm = wOverHTarget * hLineM * 1000;                       // Eq 9.24
-    const nNew = o.forceLinesPerSide ?? Math.max(1, Math.floor(o.bandMm / wLineMm) + 1); // caben en la banda
+    // Nº DE LÍNEAS PARA QUE EL PASO NO SE PASE DE W (Eq 9.24). Con floor() se
+    // subcuenta: cubrir 188 mm con 3 líneas deja huecos de 94 mm cuando el
+    // techo es 64. Los HUECOS son ceil(banda/W) ⇒ las líneas, uno más.
+    const nNew = o.forceLinesPerSide ?? Math.max(1, Math.ceil(o.bandMm / wLineMm) + 1);
     const nLinesNew = nNew * sides;
     qLineW = qCoolingW / nLinesNew;
     vDotLine = qLineW / (c.rhoKgM3 * c.cpJkgC * dT);              // Eq 9.13

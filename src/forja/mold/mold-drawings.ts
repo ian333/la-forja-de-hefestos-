@@ -42,6 +42,11 @@ export interface CoolingCircuit {
   segs: Array<{ x0: number; y0: number; x1: number; y1: number }>;
   ports: Array<{ x: number; y: number; label: string }>;
   plugs: Array<{ x: number; y: number }>;
+  /** el proceso §9.2 que PRODUJO este trazo (t_c, Q̇, V̇, H, W, n_lines, fallas) */
+  design?: import('./cooling-design').CoolingDesignOut;
+  /** reglas del libro que el trazo NO alcanzó (paso, nº de líneas, controlador).
+   *  Vacío = el circuito cumple §9.2 entero. NUNCA se calla un incumplimiento. */
+  avisos?: string[];
 }
 export interface PlateSpec {
   code: string; name: string; material?: string;

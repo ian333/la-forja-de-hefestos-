@@ -14,6 +14,8 @@ import { moldMassKg, worstCaseScrewForce, selectMoldScrew } from './fasteners';
 import { ventMaxThickness } from './venting';
 import { sideActionDesign } from './sideactions';
 import { ejectorPinFit } from './fits';   // holgura pin↔barreno 0.13mm (Kazmer §8.3.2)
+import { coolingDesign, PLASTICOS_A, ACEROS_MOLDE } from './cooling-design';   // el proceso §9.2 completo
+import { estPartVolumeCc } from './feed';
 
 export interface DrawingPage { name: string; svg: string }
 export interface MoldDrawingSet { title: string; code: string; pages: DrawingPage[] }
@@ -146,6 +148,34 @@ export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; 
   return out;
 }
 
+/**
+ * EL PROCESO §9.2 APLICADO AL MOLDE REAL — traduce el spec del ensamble a la
+ * entrada de `coolingDesign` y devuelve, además del diseño, la BANDA en Y que
+ * las líneas tienen que cubrir (la huella COMPLETA de la rejilla, no la de una
+ * cavidad). Es la fuente única: el trazo, el plano y el reporte leen esto.
+ */
+export function coolingCircuitDesign(s: MoldAssemblySpec, D: number) {
+  const cells = cavityGrid(s, D), { fy } = cavityFootprint(s);
+  const ys = cells.map((c) => c.cy);
+  const bandY0 = Math.min(...ys) - fy / 2, bandY1 = Math.max(...ys) + fy / 2;
+  const mat = PLASTICOS_A[(s.plastic ?? 'PP').toUpperCase()] ?? PLASTICOS_A.PP;
+  const acero = ACEROS_MOLDE[s.cavityMetal ?? 'P20'] ?? ACEROS_MOLDE.P20;
+  // largo de línea DISPONIBLE = ancho de placa menos los cantos (el recorte fino
+  // por barrenos se hace después, línea por línea)
+  const edge = Math.max(16, Math.round(s.widthMm * 0.05));
+  const cd = coolingDesign({
+    // volumen REAL si el sólido lo trae; si no, el estimador de cascarón
+    nCav: cells.length, partVolCc: s.cavity.volMm3 ? s.cavity.volMm3 / 1000 : estPartVolumeCc(s.cavity),
+    thickestMm: s.cavity.wallMm ?? 2,
+    rhoRTKgM3: mat.rhoRTKgM3, cpJkgC: mat.cpJkgC, alphaM2s: mat.alphaM2s,
+    tMeltC: mat.tMeltC, tEjectC: mat.tEjectC, tCoolantC: mat.tCoolC,
+    kMoldWmC: acero.kWmC, sigmaEnduranceMPa: acero.sigmaEnduranceMPa,
+    bandMm: bandY1 - bandY0, lineLenMm: s.widthMm - 2 * edge,
+    linesInSeries: 2, sides: 2, forceDiaMm: s.cooling.diaMm,
+  });
+  return { ...cd, bandY0, bandY1 };
+}
+
 /** CIRCUITO de enfriamiento en SERPENTÍN, AUTOMATIZADO desde la rejilla de
  *  cavidades: N canales rectos barrenados a lo ancho, cubriendo la banda de las
  *  impresiones, conectados en extremos alternos (cross-drill) y sellados con plugs;
@@ -153,81 +183,119 @@ export function cavityGrid(s: MoldAssemblySpec, D: number): Array<{ cx: number; 
 export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   const dia = s.cooling.diaMm;
   const edge = Math.max(16, Math.round(s.widthMm * 0.05));
-  // PROFUNDIDAD y PASO POR EL LIBRO (Kazmer §9.2, reproducido en kazmer-bezel-mold.cjs):
-  //   Eq 9.22:  H (línea → cavidad) = 4·D,  con 2D < H < 5D.
-  //   Eq 9.24:  W (paso entre líneas) ∈ [H, 2H]; el libro usa 1.75·H para el bezel.
-  const H = Math.round(4 * dia);
-  const pitch = Math.round(1.75 * H);
-  // LIBRAR LOS PILARES GUÍA de las esquinas (mismo cálculo que standardHoles).
-  const inset = Math.max(20, Math.round(s.widthMm * 0.06));
-  const gp = s.widthMm > 300 ? 32 : s.widthMm > 200 ? 25 : 20;
-  const gi = inset + Math.round(gp / 2) + 4;
-  const guard = gi + Math.round(gp / 2) + Math.ceil(dia / 2) + 6;
-  const xL = Math.max(edge, guard), xR = s.widthMm - Math.max(edge, guard);
-  // N LÍNEAS PARALELAS (en X) repartidas en D con el PASO del libro (no un ruteo inventado).
-  //   nLines = floor(span / W) + 1   — igual que kazmer-bezel-mold.cjs.
-  // los canales cubren la BANDA DE LA PIEZA ± medio paso (el calor vive ahí; §9.2.6
-  // "cooling line pitch across the mold cavity") — no toda la placa (los flancos
-  // lejanos solo chocan con tornillos/pilares del borde sin quitar calor).
+  // ══ EL TRAZO SALE DEL PROCESO §9.2, NO DE UNA REGLA SUELTA ══════════════
+  // Antes: H = 4·D y W = 1.75·H, a secas. El 4·D es la regla ESTRUCTURAL
+  // (Eq 9.22); a ⌀9.53 en P20 da 38 mm y VIOLA Eq 9.21 (H < k/1000 = 32 mm):
+  // la línea queda tan honda que ella misma alarga el ciclo. Ahora se llama a
+  // `coolingDesign`, que resuelve la cadena completa (t_c → Q̇ → V̇ → D → H →
+  // W → n_lines) con el lazo cerrado y RECORTA H con la térmica.
+  const cd = coolingCircuitDesign(s, D);
+  const H = Math.round(cd.hLineMm);
+  const pitch = Math.round(cd.wLineMm);
+  // BANDA A CUBRIR = la huella COMPLETA de la rejilla de cavidades, no la de UNA.
+  // Con la huella de una sola cavidad el molde de 4 flaneras (cavidades de y=29 a
+  // y=217) recibía una banda de 49..197 → el esquive la dejaba en UNA línea de
+  // 124 mm para 4.6 kW. El calor vive donde están TODAS las impresiones.
   const yEdge = Math.max(14, Math.round(D * 0.08));
-  const { fy: fyPart } = cavityFootprint(s);
   const cyMid = D / 2;
-  // la banda se ACOTA a la zona segura en Y (lejos del marco de pilares/tornillos,
-  // mismo guard que en X): en moldes chicos "pieza ± paso/2" caía sobre las filas
-  // de tornillos y el esquive ELIMINABA todas las líneas → molde SIN agua (bug carcasa).
-  const yLo = Math.max(yEdge, guard, Math.round(cyMid - fyPart / 2 - pitch / 2));
-  const yHi = Math.min(D - yEdge, D - guard, Math.round(cyMid + fyPart / 2 + pitch / 2));
+  // el `guard` de las esquinas YA NO recorta la banda: los pilares son
+  // obstáculos PUNTUALES y se esquivan uno por uno (abajo). Recortarlo global
+  // dejaba 124×124 útiles en una placa de 246×246 → 1 línea para 4 cavidades.
+  const yLo = Math.max(yEdge, Math.round(cd.bandY0));
+  const yHi = Math.min(D - yEdge, Math.round(cd.bandY1));
   const span = yHi - yLo;
+  // ── ESQUIVAR BARRENOS (feedback user: "el agua sigue chocando") ──
+  // obstáculos = expulsores + pilares + KO + tornillos de las placas A/B; si un canal
+  // pasa a menos de (r_canal + r_barreno + 3 mm) de un barreno dentro de su tramo X,
+  // el canal se CORRE en Y al primer hueco libre.
+  const obstacles: Array<{ x: number; y: number; r: number }> = [];
+  for (const role of ['A', 'B'] as const)
+    for (const h of standardHoles(s, role)) obstacles.push({ x: h.x, y: h.y, r: h.dia / 2 });
+  const rLine = dia / 2, CLR = 3;                          // §9.2.7: holgura a cualquier otro componente
+  const xMin = edge, xMax = s.widthMm - edge, xMid = (xMin + xMax) / 2;
+  /**
+   * TRAMO LIBRE EN X A UNA ALTURA Y — el cambio de fondo. Antes se recortaba
+   * TODA línea por el guard de las esquinas (donde viven los pilares guía), lo
+   * que reducía la placa útil a 124×124 mm de 246×246. Los pilares son cuatro
+   * puntos: una línea a media altura ni los roza. Aquí cada línea se estira
+   * hasta el canto y sólo la recortan los barrenos que estorban A SU Y; si uno
+   * cae en MEDIO (partiría el canal en dos), se devuelve null y la línea se
+   * mueve en Y — que es lo que el esquive ya sabía hacer.
+   */
+  const xSpanAt = (y: number): { a: number; b: number } | null => {
+    let a = xMin, b = xMax;
+    for (const o of obstacles) {
+      if (Math.abs(y - o.y) >= rLine + o.r + CLR) continue;         // no estorba a esta altura
+      const lo = o.x - o.r - rLine - CLR, hi = o.x + o.r + rLine + CLR;
+      if (hi <= xMid) a = Math.max(a, hi);                          // estorbo por la izquierda → arranca después
+      else if (lo >= xMid) b = Math.min(b, lo);                     // por la derecha → termina antes
+      else return null;                                             // en medio → partiría el canal
+    }
+    return b - a >= 40 ? { a: Math.round(a), b: Math.round(b) } : null;
+  };
+  // OFFSETS DEL ESQUIVE, proporcionales al paso (antes fijos a ±14 mm: con
+  // líneas de ⌀15.9 y pilares de ⌀32 no alcanzaban y el canal se CAÍA, dejando
+  // huecos de 112 y 160 mm — arriba del techo 2H de Eq 9.24, en silencio).
+  const offs: number[] = [];
+  for (let d = 2; d <= Math.max(16, Math.round(pitch / 2)); d += 2) offs.push(d, -d);
+  /** coloca n canales uniformes en la banda y los esquiva; devuelve los que sobreviven */
+  const colocar = (n: number): number[] => {
+    const y: number[] = [];
+    for (let i = 0; i < n; i++) y.push(n === 1 ? Math.round(cyMid) : Math.round(yLo + (i * span) / (n - 1)));
+    for (let i = 0; i < y.length; i++) {
+      if (xSpanAt(y[i])) continue;
+      const lo = i > 0 ? y[i - 1] + dia + 4 : yEdge;
+      const hi = i < y.length - 1 ? y[i + 1] - dia - 4 : D - yEdge;
+      for (const off of offs) {
+        const y2 = y[i] + off;
+        if (y2 >= lo && y2 <= hi && xSpanAt(y2)) { y[i] = y2; break; }
+      }
+    }
+    // canal que quedó partido por barrenos → se ELIMINA: mejor un canal menos
+    // que un canal que perfora un tornillo.
+    return y.filter((v) => xSpanAt(v));
+  };
   let chY: number[] = [];
   if (span <= 4) {
     chY = [Math.round(cyMid)];                     // molde muy chico: UNA línea central
   } else {
-    const nCh = Math.max(2, Math.floor(span / pitch) + 1);
-    for (let i = 0; i < nCh; i++) chY.push(Math.round(yLo + (i * span) / (nCh - 1)));
-  }
-  // ── ESQUIVAR BARRENOS (feedback user: "el agua sigue chocando") ──
-  // obstáculos = expulsores + pilares + KO + tornillos de las placas A/B; si un canal
-  // pasa a menos de (r_canal + r_barreno + 3 mm) de un barreno dentro de su tramo X,
-  // el canal se CORRE en Y al primer hueco libre (±2..±14 mm), respetando el orden.
-  {
-    const obstacles: Array<{ x: number; y: number; r: number }> = [];
-    for (const role of ['A', 'B'] as const)
-      for (const h of standardHoles(s, role)) obstacles.push({ x: h.x, y: h.y, r: h.dia / 2 });
-    const rLine = dia / 2;
-    const clearOf = (y: number) => obstacles.every((o) =>
-      o.x < xL - o.r || o.x > xR + o.r || Math.abs(y - o.y) >= rLine + o.r + 3);
-    for (let i = 0; i < chY.length; i++) {
-      if (clearOf(chY[i])) continue;
-      const lo = i > 0 ? chY[i - 1] + dia + 4 : yEdge;
-      const hi = i < chY.length - 1 ? chY[i + 1] - dia - 4 : D - yEdge;
-      for (const off of [2, -2, 4, -4, 6, -6, 8, -8, 10, -10, 12, -12, 14, -14]) {
-        const y2 = chY[i] + off;
-        if (y2 >= lo && y2 <= hi && clearOf(y2)) { chY[i] = y2; break; }
-      }
-    }
-    // canal sin salida (rodeado de barrenos) → se ELIMINA: mejor un canal menos
-    // que un canal que perfora un tornillo (el serpentín se re-teje con los demás).
-    chY = chY.filter((y) => clearOf(y));
-    // NUNCA cero líneas: un molde sin agua no es molde. Barrido fino de TODA la
-    // banda segura buscando la Y libre más cercana al centro de la pieza.
-    if (!chY.length) {
-      let best: number | null = null;
-      for (let y = Math.max(yEdge, guard); y <= D - Math.max(yEdge, guard); y++)
-        if (clearOf(y) && (best == null || Math.abs(y - cyMid) < Math.abs(best - cyMid))) best = y;
-      chY = best != null ? [best] : [Math.round(cyMid)];   // último recurso: central (ruta manual)
+    // los canales se reparten UNIFORMES en la banda, y son los suficientes para
+    // que el paso resultante span/(n−1) NO se pase de W (Eq 9.24): huecos =
+    // ceil(span/W). Con floor() salían 3 canales a 94 mm en una banda de 188.
+    const need = Math.max(2, Math.ceil(span / pitch) + 1);
+    // Si el esquive tira canales, se REPONEN: se pide uno más y se recoloca. Sin
+    // esto, perder el canal de en medio dejaba el doble de paso sin avisar.
+    for (let extra = 0; extra <= 4; extra++) {
+      chY = colocar(need + extra);
+      if (chY.length >= need) break;
     }
   }
+  // NUNCA cero líneas: un molde sin agua no es molde. Barrido fino de TODA la
+  // placa buscando la Y libre más cercana al centro de la pieza.
+  if (!chY.length) {
+    let best: number | null = null;
+    for (let y = yEdge; y <= D - yEdge; y++)
+      if (xSpanAt(y) && (best == null || Math.abs(y - cyMid) < Math.abs(best - cyMid))) best = y;
+    chY = best != null ? [best] : [Math.round(cyMid)];   // último recurso: central (ruta manual)
+  }
+  chY.sort((a, b) => a - b);
   const nCh2 = chY.length;                                 // tras el esquive/drop
+  // cada canal trae SU tramo (los de las filas de pilares son más cortos)
+  const spanOf = chY.map((y) => xSpanAt(y) ?? { a: xMin, b: xMax });
   const segs: CoolingCircuit['segs'] = [];
-  for (let i = 0; i < nCh2; i++) segs.push({ x0: xL, y0: chY[i], x1: xR, y1: chY[i] });   // canal recto (a lo ancho)
-  for (let i = 0; i + 1 < nCh2; i++)                                                      // serpentín: cross-drill en extremo alterno
-    segs.push({ x0: i % 2 === 0 ? xR : xL, y0: chY[i], x1: i % 2 === 0 ? xR : xL, y1: chY[i + 1] });
-  const outX = (nCh2 - 1) % 2 === 0 ? xR : xL;                                            // extremo abierto del último canal
-  const portEnds = new Set([`0:${xL}`, `${nCh2 - 1}:${outX}`]);
-  const ports = [{ x: xL, y: chY[0], label: 'IN' }, { x: outX, y: chY[nCh2 - 1], label: 'OUT' }];
+  for (let i = 0; i < nCh2; i++) segs.push({ x0: spanOf[i].a, y0: chY[i], x1: spanOf[i].b, y1: chY[i] });
+  // serpentín: cross-drill en extremo alterno. Con tramos DISTINTOS el barreno
+  // transversal va donde los dos canales coinciden (el más corto manda).
+  for (let i = 0; i + 1 < nCh2; i++) {
+    const x = i % 2 === 0 ? Math.min(spanOf[i].b, spanOf[i + 1].b) : Math.max(spanOf[i].a, spanOf[i + 1].a);
+    segs.push({ x0: x, y0: chY[i], x1: x, y1: chY[i + 1] });
+  }
+  const outX = (nCh2 - 1) % 2 === 0 ? spanOf[nCh2 - 1].b : spanOf[nCh2 - 1].a;   // extremo abierto del último canal
+  const portEnds = new Set([`0:${spanOf[0].a}`, `${nCh2 - 1}:${outX}`]);
+  const ports = [{ x: spanOf[0].a, y: chY[0], label: 'IN' }, { x: outX, y: chY[nCh2 - 1], label: 'OUT' }];
   // cada canal se barrena PASANTE a los dos cantos → se sella con plug salvo IN/OUT
   const plugs: CoolingCircuit['plugs'] = [];
-  for (let i = 0; i < nCh2; i++) for (const x of [xL, xR])
+  for (let i = 0; i < nCh2; i++) for (const x of [spanOf[i].a, spanOf[i].b])
     if (!portEnds.has(`${i}:${x}`)) plugs.push({ x, y: chY[i] });
   // LADO B (detrás del núcleo): la línea corre POR el respaldo del inserto, que §4.2.1
   // (Fig 4.13) dimensiona a 3·⌀ EXACTAMENTE para hospedarla. A 4·⌀ caía en la COSTURA
@@ -249,7 +317,29 @@ export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   } else if (zAbove - dep < 2 * dia) {
     aWarn = `H_eff lado A = ${Math.round(zAbove - dep)} mm < 2D (Eq 9.22 pide 2D–5D) — engrosar placa A`;
   }
-  return { diaMm: dia, zBehindMm: behind, zAboveMm: zAbove, aWarn, segs, ports, plugs, note: `serpentín §9.2 · ⌀${dia} · prof B ${H} / A ${zAbove != null ? `${Math.round(zAbove)} (libra impresión de ${dep})` : '— SIN LÍNEA'} (Eq 9.22 desde la sup. moldeante) · paso ${pitch} (∈[H,2H], Eq 9.24) · ${nCh2} líneas (esquiva barrenos) · plug ${s.cooling.plug ?? '—'}${aWarn ? ' · ⚠ ' + aWarn : ''}` };
+  // el circuito se barrena en LOS DOS lados (cavidad y núcleo) → n_lines = 2·nCh2.
+  // Si no llega a lo que pide el proceso, se DICE: es el veredicto del estudio.
+  const faltan = cd.nPerSide - nCh2;
+  // PASO REALMENTE LOGRADO — si el esquive no pudo respetar Eq 9.24 hay que
+  // DECIRLO. Pasa cuando el campo de pines expulsores tapiza la huella (rejilla
+  // de ⌀12 cada ~10 mm): NINGUNA Y deja pasar un barreno recto. Es justo el
+  // conflicto que §9.2.7 anuncia ("limits the placement of other mold
+  // components such as ejector pins and bolts") y cuya salida es §9.3.5.2:
+  // baffles/bubblers, o mover los pines. Nunca un paso silenciosamente malo.
+  const pasoReal = chY.length > 1 ? Math.max(...chY.slice(1).map((y, i) => y - chY[i])) : 0;
+  const violaPaso = chY.length > 1 && pasoReal > 2 * cd.hLineMm + 2;
+  const avisos = [
+    ...cd.fallas,
+    ...(faltan > 0 ? [`trazo ${nCh2}/${cd.nPerSide} líneas/lado (barrenos en medio)`] : []),
+    ...(violaPaso ? [`paso real ${pasoReal} mm > 2H = ${(2 * cd.hLineMm).toFixed(0)} (Eq 9.24): los expulsores/barrenos tapizan la banda — §9.3.5.2 pide baffles o bubblers`] : []),
+    ...(aWarn ? [aWarn] : []),
+  ];
+  // El rótulo del PLANO va corto (se desbordaba de la hoja A3 y se metía en la
+  // tabla de barrenos). El detalle completo del proceso vive en `design`.
+  return {
+    diaMm: dia, zBehindMm: behind, zAboveMm: zAbove, aWarn, segs, ports, plugs, design: cd, avisos,
+    note: `serpentín §9.2 · ⌀${dia} ${s.cooling.plug ?? ''} · ${nCh2} líneas/lado · H ${H} (B) / ${zAbove != null ? Math.round(zAbove) : '—'} (A) · paso ${pitch} · ${cd.qCoolingW.toFixed(0)} W @ t_c ${cd.tcS.toFixed(1)} s${avisos.length ? ' · ⚠ ' + avisos.length + ' aviso(s)' : ''}`,
+  };
 }
 
 /** Abertura(s) de cavidad de una placa A/B — CONSCIENTE de la pieza (círculo/caja

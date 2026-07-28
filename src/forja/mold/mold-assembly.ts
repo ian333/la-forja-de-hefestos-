@@ -29,7 +29,10 @@ export interface MoldAssemblySpec {
   // lenMm = extensión Y en planta (caja); depthMm = profundidad de la bolsa (Z).
   // frameMm/ribs: si la pieza es un MARCO (bezel) — rim de ancho frameMm con `ribs`
   // costillas transversales; los expulsores van en el rim + costillas (no en la ventana).
-  cavity: { widthMm: number; depthMm: number; shape?: 'round' | 'rect'; lenMm?: number; wallMm?: number; frameMm?: number; ribs?: number };
+  /** volMm3 = volumen REAL del sólido cuando se conoce (lo trae la Máquina). El
+   *  estimador de cascarón `estPartVolumeCc` se pasa ~27 % en la flanera, y de
+   *  ese volumen sale la masa del disparo (Eq 9.10) ⇒ la potencia de agua. */
+  cavity: { widthMm: number; depthMm: number; shape?: 'round' | 'rect'; lenMm?: number; wallMm?: number; frameMm?: number; ribs?: number; volMm3?: number };
   cooling: { diaMm: number; plug?: string; insetMm: number };  // líneas de agua
   ejectors: { type: 'pin' | 'blade' | 'sleeve' | 'stripper'; diaMm: number; count: number };
   core: { diaMm?: number; widthMm?: number; material: string };   // ⌀ (cup) o ancho de bloque (marco/bezel)
