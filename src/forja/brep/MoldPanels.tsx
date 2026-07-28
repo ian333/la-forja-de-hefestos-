@@ -135,6 +135,22 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
                     ))}
                   </div>
                 )}
+                {moldSimOn && moldThermalSim && (
+                  <div className="fb-comp-tree" data-testid="mold-field-legend" style={{ margin: '4px 0 8px 4px' }}>
+                    <div className="fb-comp-row hdr">
+                      🌡 CAMPO VIVO · t {moldThermalSim.timeS.toFixed(0)} s (régimen: 8 ciclos precalentados)
+                    </div>
+                    <div className="fb-comp-row feat">
+                      escala AUTO <b style={{ color: '#6ba8ff' }}>{moldThermalSim.minC.toFixed(1)}°</b> →
+                      <b style={{ color: '#ff6b3b' }}> {moldThermalSim.maxC.toFixed(1)}°C</b>
+                      <span style={{ opacity: 0.65 }}> · Δ {(moldThermalSim.maxC - moldThermalSim.minC).toFixed(1)}°C sobre el agua a {moldThermalSim.coolantC}°</span>
+                    </div>
+                    <div className="fb-comp-row feat" style={{ opacity: 0.75 }}>
+                      plástico en el centro: <b style={{ color: '#ffb347' }}>{moldThermalSim.plasticCenterMaxC().toFixed(0)}°C</b>
+                      <span style={{ opacity: 0.7 }}> · el acero sube POCO sobre el agua (R_conv domina, Eq 9.7/9.21)</span>
+                    </div>
+                  </div>
+                )}
                 {moldSimOn && moldSim && (
                   <div className="fb-comp-tree" data-testid="mold-sim-report" style={{ margin: '4px 0 8px 4px' }}>
                     <div className="fb-comp-row hdr">🌡 TRANSITORIO (PDE FDM 3D, ×10) · t_c {moldSim.thermal.coolingTimeS}s · azul=frío rojo=caliente</div>

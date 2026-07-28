@@ -205,7 +205,9 @@ N_DIR_SUP = 1200          # direcciones de rayo por núcleo (la malla de la supe
 # el mismo Φ₀, solo cambia cuánto vale ese flujo. Elegido a ojo por Ian (2026-07-28) sobre la
 # comparación 1100/550/275/138: con 1100 el campo se lee como PELO y se pierden los arcos que
 # van de una molécula a otra, que es justo lo que el video tiene que enseñar.
-NL_CAMPO = 275            # líneas; cada una carga el MISMO flujo Φ₀
+NL_CAMPO = 550            # líneas; cada una carga el MISMO flujo Φ₀ (275 se leía VACÍO
+                          # en el video: la comparación 2D las muestra todas de golpe, pero con
+                          # la cámara cerrada y las moléculas separadas caen poquísimas en cuadro)
 LP_CAMPO = 80             # puntos por línea (antes 40: la línea se veía a cuentas)
 # ρ DE LA SUPERFICIE DE SIEMBRA — no es la convención, es un criterio FÍSICO (Ian, 2026-07-28:
 # "las lineas que desaparecen en el aire se ven despeinadas"). Una línea se va y no vuelve solo

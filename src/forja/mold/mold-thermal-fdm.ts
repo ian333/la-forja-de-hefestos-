@@ -55,6 +55,13 @@ export interface ThermalSim {
   /** T MÁXIMA de línea central del plástico entre columnas (°C) — la sonda de
    *  expulsión: cae a T_eject en ~t_c del libro si la física está bien. */
   plasticCenterMaxC(): number;
+  /** T del PLÁSTICO en una columna (x,y en mm de placa) — el material más
+   *  caliente del molde vive en las micro-pilas, NO en el grid de acero: sin
+   *  esta sonda la pieza se pintaba con la T del ACERO que la rodea. */
+  plasticTempAt(x: number, y: number): number;
+  /** lleva el molde a RÉGIMEN cíclico (Kazmer §9.1: el molde de producción NO
+   *  opera frío). Sin esto el campo arranca plano y "no se ve nada". */
+  warmUp(cycles?: number): void;
 }
 
 export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; coolantC?: number; partMesh?: { positions: Float32Array; indices: Uint32Array } }): ThermalSim {
@@ -178,9 +185,14 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
     // 140×140 → 27% más área caliente (4/π) y las esquinas, que no existen, enfriando.
     // "no me muestra la figura de un círculo, no está simulando el molde que hiciste"
     // (user 2026-07-15).
-    const dentro = (px: number, py: number) => (round
-      ? Math.hypot(px - cx, py - cy) < fx / 2
-      : Math.abs(px - cx) < fx / 2 && Math.abs(py - cy) < fy / 2);
+    // LA REJILLA, no el centro: `cx,cy` era el CENTRO DEL MOLDE — con 4 cavidades
+    // el calor se depositaba en un solo blob central donde NO hay impresión (y las
+    // 4 cavidades reales quedaban frías). Ahora cada celda de cavityGrid mete SU
+    // huella (el hot spot sale donde de verdad está el plástico).
+    const cellsFlat = cavityGrid(spec, D);
+    const dentro = (px: number, py: number) => cellsFlat.some((c) => (round
+      ? Math.hypot(px - c.cx, py - c.cy) < fx / 2
+      : Math.abs(px - c.cx) < fx / 2 && Math.abs(py - c.cy) < fy / 2));
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
       const px = (i + 0.5) * cell, py = (j + 0.5) * cell;
       if (dentro(px, py)) {
@@ -354,6 +366,22 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
       return { nu, nv, u1, v1, posMm: +posMm.toFixed(1), T: S, minC: +mn.toFixed(1), maxC: +mx.toFixed(1) };
     },
     thGrid: { nx, ny, cellMm: cell, thMm },
+    plasticTempAt(x: number, y: number) {
+      const i = Math.max(0, Math.min(nx - 1, Math.floor(x / cell)));
+      const j = Math.max(0, Math.min(ny - 1, Math.floor(y / cell)));
+      const ci = cols.indexOf(j * nx + i);
+      if (ci < 0) return sim.sampleAt(x, y, zPart);        // fuera de pieza: el acero
+      let mx = -1e9;
+      for (let side = 0; side < 2; side++) {
+        const v = pStack[(ci * 2 + side) * PCELLS];
+        if (v > mx) mx = v;
+      }
+      return mx;
+    },
+    warmUp(cycles = 8) {
+      const target = sim.timeS + cycles * sim.cycleS;
+      while (sim.timeS < target) sim.step(1);
+    },
     plasticCenterMaxC() {
       let mx = -1e9;
       for (let ci = 0; ci < cols.length; ci++) {

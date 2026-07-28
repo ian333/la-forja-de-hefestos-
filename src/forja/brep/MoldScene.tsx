@@ -15,6 +15,12 @@ import { type MoldAnalysis } from '../mold/mold-analysis';
 import { surfaceFlowLength, paintFlowColors } from '../mold/flowlen-surface';
 import { type MoldFeaOverlay } from '../mold/mold-fea';
 import { type ThermalSim } from '../mold/mold-thermal-fdm';
+// CABLES SUELTOS del corte 2.1 (extracción del monolito): isoSurface (cascarones
+// 3D del térmico) y paintTcColors (mapa t_c) se quedaron sin import — esbuild NO
+// hace typecheck, así que el build pasaba y el componente TRONABA en runtime
+// dentro de un ErrorBoundary (que no dispara pageerror: invisible para el arnés).
+import { isoSurface } from '../../lib/viz/isosurface';
+import { paintTcColors } from '../mold/mold-tc-map';
 
 function thermalRamp(t: number): [number, number, number] {
   const x = Math.max(0, Math.min(1, t));
@@ -328,7 +334,10 @@ export function MoldTransientThermal({ sim, z, parts, xray, sliceAxis = 'z', sli
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [sim]);
-  const lo = sim.coolantC, hi = sim.coolantC + 30;        // rango fijo → colores estables
+  // AUTOESCALA (el bug de "no se ve nada"): el rango FIJO 60→90 dejaba el campo
+  // real —6.2 °C de contraste, medido— dentro del 21 % de la rampa: todo azul.
+  // El molde de producción sube POCO sobre el agua; el ojo necesita ver ESE delta.
+  const lo = sim.minC, hi = Math.max(sim.maxC, sim.minC + 1.5);
   const bodies = useMemo(() => parts.filter((p) => !p.role.startsWith('platina')).map((p) => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(p.positions, 3));
@@ -342,8 +351,14 @@ export function MoldTransientThermal({ sim, z, parts, xray, sliceAxis = 'z', sli
     for (const b of bodies) {
       const pos = b.g.getAttribute('position') as THREE.BufferAttribute;
       const col = b.g.getAttribute('color') as THREE.BufferAttribute;
+      // LA PIEZA se pinta con la T del PLÁSTICO (vive en las micro-pilas del
+      // motor, no en el grid de acero) — es lo más caliente del molde y era
+      // justo lo que no se veía. El resto: el campo del acero.
+      const esPieza = b.role === 'pieza';
       for (let i = 0; i < pos.count; i++) {
-        const T = sim.sampleAt(pos.getX(i), pos.getY(i), pos.getZ(i));
+        const T = esPieza
+          ? sim.plasticTempAt(pos.getX(i), pos.getY(i))
+          : sim.sampleAt(pos.getX(i), pos.getY(i), pos.getZ(i));
         const [r, gg, bb] = thermalRamp((T - lo) / (hi - lo));
         col.setXYZ(i, r, gg, bb);
       }
@@ -355,7 +370,7 @@ export function MoldTransientThermal({ sim, z, parts, xray, sliceAxis = 'z', sli
   const shells = useMemo(() => {
     if (tick % 4 !== 0 && tick > 0) return null;
     const span = sim.maxC - sim.coolantC;
-    if (span < 6) return [];   // aún no hay burbuja que valga (evita cascarón-ruido)
+    if (span < 1.5) return [];   // umbral acorde al contraste REAL del molde (era 6: nunca disparaba)
     // blending NORMAL y opacidad baja: aditivo satura a BLANCO (más luz ≠ más color).
     // PISO de +4 °C en el nivel bajo: sin piso, la iso ~ambiente envolvía las camisas
     // FRÍAS del agua y parecían "tubos fantasma" (feedback user: "¿tubos de inyección
