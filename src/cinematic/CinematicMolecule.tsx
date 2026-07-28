@@ -1849,9 +1849,15 @@ const WTRI_CAPAS: CapasSpec = {
   enlaces:  { base: 0, mods: [{ wins: [[0.0, 21.5], [59.6, 80.5]], a: 1.0, label: 'los 3 átomos (desde el SEGUNDO 0: la línea nueva dice H dos O) y la firma' }] },
   dipolo:   { base: 0, mods: [{ wins: [[59.6, 80.5]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
   // el anillo CIERRA sobre la línea "el anillo cierra" (toma 5: 36.9-40.9) y ya no vuelve a abrir
-  apertura: { base: 0, mods: [
-    { wins: [[2.0, 12.0]], a: 0.34, label: 'acto 1: las TRES bien separadas, que se cuenten' },
-    { wins: [[2.0, 39.0]], a: 0.28, label: 'separadas pero LEGIBLES como anillo hasta que cierra' } ] },
+  apertura: { base: 0.08, mods: [
+    // base 0.08 = el equilibrio (O–O ≈ 3.0 Å), para que la respiración pueda ir a los DOS
+    // lados en vez de recortarse contra el cierre. Encima, la coreografía DRAMÁTICA: cada
+    // acercamiento está motivado por la línea que suena, no es oscilación de adorno.
+    { wins: [[0.0, 9.5]],   a: 0.50, label: 'acto 1: las TRES bien separadas, que se cuenten' },
+    { wins: [[10.5, 23.5]], a: 0.28, label: 'una sola / se acomodan en un anillo' },
+    { wins: [[24.0, 30.3]], a: 0.10, label: 'SE ACERCAN al nacer el primer puente' },
+    { wins: [[24.0, 37.0]], a: 0.10, label: 'y el resto CIERRA en "el anillo cierra"' },
+    { wins: [[73.5, 77.5]], a: 0.22, label: '"AGUANTA MÁS": se estiran y VUELVEN — el jalón se ve' } ] },
 };
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
@@ -2017,7 +2023,18 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // Si la pieza no declara `apertura`, se usa la fórmula de siempre → wpair queda idéntico.
   let es: number;
   if (C.apertura !== undefined) {
-    es = Math.max(0, Math.min(1, C.apertura));
+    // RESPIRACIÓN (Ian, 2026-07-28: "no se mueven las moléculas de distancia, por lo tanto NO
+    // VEO EL CAMPO ACTUANDO ni que se repartan las cargas"). Tenía razón: al cerrar el anillo
+    // para que dejara de contradecir a la voz lo dejé QUIETO, y sin cambio de distancia el Δρ
+    // no crece — o sea que la carga repartiéndose, que es LO que el video cuenta, no ocurre.
+    // Las ventanas de capas tienen MESETA: dan movimiento en los beats y luego se congelan
+    // (medido: 7 tramos de >4 s sin cambio). Encima va una vibración continua.
+    // ES FÍSICA REAL, DECLARADA: el modo intermolecular O···O del trímero está en ~180 cm⁻¹ y
+    // su amplitud de punto cero es 0.102 Å (calculada, x_rms = √(ħ/2μω) con μ≈9 uma). Aquí se
+    // dibuja EXAGERADA ×2.2 (±0.22 Å) para que se lea en pantalla, y RALENTIZADA: el periodo
+    // real es 0.185 ps y aquí son 4 s (2×10¹³ veces más lento). Las dos licencias, declaradas.
+    const respira = 0.08 * Math.sin(2 * Math.PI * T / 4.0);
+    es = Math.max(0, Math.min(1, C.apertura + respira));
   } else {
     let esr = 0.30 + 0.34 * Math.cos(T * 0.30);      // 0 = pegadas, 0.64 = moderado
     esr *= smoothstep(T / 5);                        // pegadas al inicio (l1-2, espectáculo)
