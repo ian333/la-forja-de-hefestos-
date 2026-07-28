@@ -207,7 +207,7 @@ def E3d(mol, dm, P, h=0.03):
     return E
 
 
-def field_grid(R_A, gb=None, por_H=96):
+def field_grid(R_A, gb=None, por_H=210):
     """SIEMBRA CANÓNICA (reglas de libro de física, no rejilla inventada):
 
       1. Las líneas de campo EMPIEZAN en carga + y TERMINAN en carga −. El trímero es
@@ -268,9 +268,20 @@ def trace_field3d(mol, dm, gb, seeds, LP, maxlen=6.6, h=0.19, THR=0.006):
         P = seeds.copy(); paths = np.zeros((NS, HALF, 3)); dead = np.full(NS, HALF); alive = np.ones(NS, bool)
         for st in range(HALF):
             paths[:, st] = P
+            # RK4 (4o orden) en vez de EULER (1er orden). Medido en el banco de soluciones
+            # exactas (scripts/validar-trazador-campo.py): la deriva de la funcion de flujo
+            # psi = sum q_i cos(theta_i) — que por Gauss DEBE ser constante — baja de
+            # 1.85e-2 (Euler) a 4.87e-7 (RK4). 38,000x. Es lo que hacia que el campo se
+            # viera "raro/no natural": cada linea acumulaba error cerca de los nucleos.
+            def _u(X):
+                Ex = E3d(mol, dm, X); nx = np.linalg.norm(Ex, axis=1, keepdims=True)
+                return np.where(nx > THR, sign * Ex / np.maximum(nx, 1e-9), 0.0)
             E = E3d(mol, dm, P); n = np.linalg.norm(E, axis=1, keepdims=True)
-            u = np.where(n > THR, sign * E / np.maximum(n, 1e-9), 0.0)
-            newP = P + u * h
+            k1 = np.where(n > THR, sign * E / np.maximum(n, 1e-9), 0.0)
+            k2 = _u(P + 0.5 * h * k1)
+            k3 = _u(P + 0.5 * h * k2)
+            k4 = _u(P + h * k3)
+            newP = P + (h / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
             near = np.zeros(NS, bool)
             for rn in Rn:
                 near |= np.linalg.norm(newP - rn, axis=1) < 0.40

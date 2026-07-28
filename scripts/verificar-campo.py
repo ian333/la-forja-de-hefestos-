@@ -68,8 +68,15 @@ def metricas(K, NL, LP, R, L, etiqueta, nuc=None):
         Os = np.array([nuc[3 * k] for k in range(len(nuc) // 3)])
         Hs = np.array([nuc[i] for i in range(len(nuc)) if i % 3 != 0])
         ini = Q[:, 0, :]; fin = Q[:, -1, :]
-        nace = (np.linalg.norm(ini[:, None, :] - Hs[None], axis=2).min(axis=1) < 1.2).mean() * 100
-        muere = (np.linalg.norm(fin[:, None, :] - Os[None], axis=2).min(axis=1) < 1.2).mean() * 100
+        # OJO: en una MOLÉCULA la carga negativa NO es un punto en el núcleo de O: es la nube
+        # (sobre todo los pares libres), que vive a ~2 bohr del O. Exigir que la línea muera
+        # "encima del núcleo" es el criterio de cargas PUNTUALES y da 0% siempre (medido en
+        # dímero Y trímero). El criterio físico correcto es de qué carga está MÁS CERCA.
+        dHi = np.linalg.norm(ini[:, None, :] - Hs[None], axis=2).min(axis=1)
+        dOf = np.linalg.norm(fin[:, None, :] - Os[None], axis=2).min(axis=1)
+        dHf = np.linalg.norm(fin[:, None, :] - Hs[None], axis=2).min(axis=1)
+        nace = (dHi < 1.2).mean() * 100                      # nace pegada al H (δ+): sí es puntual
+        muere = (dOf < dHf).mean() * 100                     # muere del lado del O (δ−), en su nube
 
     pts = Q.reshape(-1, 3)
     lo, hi = pts.min(0), pts.max(0); rng = np.maximum(hi - lo, 1e-6)
@@ -81,7 +88,7 @@ def metricas(K, NL, LP, R, L, etiqueta, nuc=None):
     print("  CURVATURA kappa=|r1xr2|/|r1|^3   mediana %.3f  p95 %.3f  bohr-1   [indep. del muestreo]" % (k_med, k_p95))
     print("  TORSION |tau| mediana            %.3f bohr-1" % t_med)
     print("  regla 1 - nace en H (d+):        %5.1f %%   [libro: 100]" % nace)
-    print("  regla 1 - muere en O (d-):       %5.1f %%   [libro: 100]" % muere)
+    print("  regla 1 - muere del lado O (d-):  %5.1f %%   [libro: alto; la nube, no el nucleo]" % muere)
     print("  semillas muertas:                %5.1f %%   [bien: <10]" % muertas)
     print("  saltos (linea CORTADA):          %5.2f %%   [bien: <0.5]" % salto)
     print("  densidad (ocupacion 24^3):       %5.1f %%   [mas = mejor]" % ocup)
