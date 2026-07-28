@@ -384,8 +384,12 @@ export function ringFaceOn(o: { rMul?: number; azim0?: number; span?: number; el
 /** ringEdgeToFace — LA FIRMA DEL TRÍMERO: arranca DE CANTO (se ve que el anillo no es plano:
  *  una agua quedó volteada = frustración por número impar) y ABRE hasta verlo DE FRENTE.
  *  Hermana de la firma del agua v2 (recorrer el ángulo edge-on→face-on). `back` lo invierte. */
-export function ringEdgeToFace(o: { rMul?: number; fov?: number; back?: boolean; elev?: number } = {}): Shot {
-  const { rMul = 1.3, fov = 40, back = false, elev = 0.0 } = o;
+export function ringEdgeToFace(o: { rMul?: number; fov?: number; back?: boolean; elev?: number; span?: number } = {}): Shot {
+  // `span` (opcional, default = el recorrido completo de siempre) acota el barrido de azimut.
+  // Medido en el anillo: la firma ("una queda al revés") solo se ENTIENDE alrededor de t=63.5;
+  // de ahí la cámara seguía orbitando hasta quedar casi paralela a dos de los tres dipolos y
+  // los escorzaba a un muñón — y la línea de pago cae justo en esos cuadros rotos.
+  const { rMul = 1.3, fov = 40, back = false, elev = 0.0, span = Math.PI / 2 } = o;
   return (u, c) => {
     const r = Math.max(MINR, c.ex * rMul);
     const s = smooth(u);
@@ -393,7 +397,7 @@ export function ringEdgeToFace(o: { rMul?: number; fov?: number; back?: boolean;
     // sobre una LÍNEA y el pucker (una quedó al revés) se vuelve offset vertical medible a ojo.
     // Arrancar en 0.38 mataba la firma (los agentes: "nunca entrega el extremo edge"). Se
     // compensa ALEJANDO (rMul), no rotando.
-    const az = back ? lerp(Math.PI / 2, 0.0, s) : lerp(0.0, Math.PI / 2, s);
+    const az = back ? lerp(span, 0.0, s) : lerp(0.0, span, s);
     // micro-elevación: separa las tres alturas del pucker (que el ojo lo LEA)
     const M = _mid(c);
     // elev queda en 0 mientras la voz dice "de canto"; se despega solo en la 2a mitad

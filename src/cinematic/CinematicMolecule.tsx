@@ -430,7 +430,7 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.31, label: 'el anillo CIERRA — se ven las tres' },
     { shot: loomPush({ rFrom: 1.46, rTo: 1.05, elev: 0.16, azim: 1.1, fov: 32 }), dur: 12.16, label: 'COOPERATIVIDAD: SE VIENE ENCIMA (el manifiesto pedía loomPush, el código tenía heroOrbit plantado 13 s)' },
     { shot: eyeLevelLock({ rMul: 1.40, azim: 2.1 }), dur: 6.18, label: 'el DATO (12%) — nivel de ojo, quieto' },
-    { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26 }), dur: 11.82, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
+    { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26, span: 0.62 }), dur: 11.82, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
     { shot: crashIn({ rFrom: 1.40, rTo: 1.02 }), dur: 9.49, label: 'aguanta más + nada inventado — CRASH IN (lo que pedía el manifiesto)' },
     { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.09, label: 'payoff — SALE del anillo (no de dentro de la nube): 7.2 → 14.2 bohr' },
   ],
@@ -1167,8 +1167,8 @@ function CarotenoFlow({ bundle, axis, cen, L, reveal, color, bright, time }:
 // Una nube advectada: cada frame interpola las POSICIONES entre las dos separaciones
 // que bracketean R(t) → las partículas se MUEVEN siguiendo la densidad (la carga
 // fluye al enlace). El color es fijo por partícula (viene del .bin o constante).
-function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30, bonds, bondGlow = 0, qScale = O2AI_POSQ }:
-  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; bonds?: [[number,number,number],[number,number,number]][]; bondGlow?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number; qScale?: number }) {
+function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30, bonds, bondGlow = 0, qScale = O2AI_POSQ, premul = false }:
+  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; bonds?: [[number,number,number],[number,number,number]][]; bondGlow?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number; qScale?: number; premul?: boolean }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -1198,8 +1198,14 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
   }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo, cores, coreR, bonds, bondGlow]);
   return (
     <points geometry={geo} frustumCulled={false}>
+      {/* premul: el frag YA sale multiplicado por `a`, pero AdditiveBlending sin
+          premultipliedAlpha usa blendFunc(SRC_ALPHA, ONE) y lo vuelve a multiplicar →
+          la contribución real es color·a², o sea ×0.57 de luz TIRADA y el núcleo del
+          sprite ~40% más chico. Es la mitad del "sal y pimienta". Va como PROP porque
+          el shader lo comparten O₂/N₂/C₂/agua v2, que son GANADORES: default false. */}
       <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={O2FLOW_VERT}
-        fragmentShader={O2FLOW_FRAG} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        fragmentShader={O2FLOW_FRAG} transparent depthWrite={false}
+        premultipliedAlpha={premul} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
@@ -1907,16 +1913,32 @@ function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
   { nuc: Vec3[]; show?: number; showDip?: number; scale?: number }) {
   const mols = Math.floor(nuc.length / 3);
   const items = useMemo(() => {
-    const out: { mid: Vec3; q: THREE.Quaternion; len: number; kind: 'bond' | 'dip' }[] = [];
+    const out: { mid: Vec3; q: THREE.Quaternion; len: number; kind: 'bond' | 'dip'; impar: boolean }[] = [];
     const UP = new THREE.Vector3(0, 1, 0);
+    // LA VOLTEADA SE DETECTA DE LA GEOMETRÍA, no se marca a mano. Se proyecta cada dipolo
+    // sobre la NORMAL del anillo (de los 3 oxígenos): en el mínimo UUD dos apuntan a un lado
+    // de ese plano y una al contrario. La que le lleva la contraria a la mayoría es la impar.
+    // Antes las 3 flechas eran idénticas y blancas: aunque se vieran, NADA decía cuál quedó
+    // al revés — un juez las leyó como "tres direcciones al azar" (2026-07-28).
+    const Os = [0, 1, 2].map(m => new THREE.Vector3(...nuc[3 * m]));
+    const nrm = mols >= 3
+      ? Os[1].clone().sub(Os[0]).cross(Os[2].clone().sub(Os[0])).normalize()
+      : new THREE.Vector3(0, 0, 1);
+    const bis: THREE.Vector3[] = [];
     for (let m = 0; m < mols; m++) {
       const O = new THREE.Vector3(...nuc[3 * m]);
       const Hs = [new THREE.Vector3(...nuc[3 * m + 1]), new THREE.Vector3(...nuc[3 * m + 2])];
-      // DIPOLO = bisectriz H-O-H (dirección real del momento dipolar del agua)
-      const b = Hs[0].clone().sub(O).normalize().add(Hs[1].clone().sub(O).normalize()).normalize();
-      const L = 1.55 * scale;
+      bis.push(Hs[0].clone().sub(O).normalize().add(Hs[1].clone().sub(O).normalize()).normalize());
+    }
+    const sgn = bis.map(b => Math.sign(b.dot(nrm)));
+    const mayoria = sgn.reduce((a, b) => a + b, 0) >= 0 ? 1 : -1;
+    for (let m = 0; m < mols; m++) {
+      const O = new THREE.Vector3(...nuc[3 * m]);
+      const b = bis[m];
+      const impar = mols >= 3 && sgn[m] !== mayoria;
+      const L = (impar ? 1.85 : 1.55) * scale;      // la impar, MÁS LARGA además de otro color
       const q = new THREE.Quaternion().setFromUnitVectors(UP, b);
-      out.push({ mid: O.clone().add(b.clone().multiplyScalar(L * 0.5)).toArray() as Vec3, q, len: L, kind: 'dip' });
+      out.push({ mid: O.clone().add(b.clone().multiplyScalar(L * 0.5)).toArray() as Vec3, q, len: L, kind: 'dip', impar });
     }
     return out;
   }, [nuc, mols, scale]);
@@ -1930,13 +1952,15 @@ function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
         return (
           <group key={i} position={it.mid} quaternion={it.q}>
             <mesh>
-              <cylinderGeometry args={[esDip ? 0.040 : 0.016, esDip ? 0.040 : 0.016, it.len, 8]} />
-              <meshBasicMaterial color={esDip ? '#ffffff' : '#ffd9a0'} transparent opacity={op * (esDip ? 0.95 : 0.5)} depthWrite={false} />
+              <cylinderGeometry args={[esDip ? (it.impar ? 0.058 : 0.036) : 0.016, esDip ? (it.impar ? 0.058 : 0.036) : 0.016, it.len, 8]} />
+              <meshBasicMaterial color={esDip ? (it.impar ? '#ffb03a' : '#bcd8ff') : '#ffd9a0'} transparent opacity={op * (esDip ? 0.95 : 0.5)} depthWrite={false} />
             </mesh>
             {esDip && (
               <mesh position={[0, it.len * 0.5 + 0.16, 0]}>
-                <coneGeometry args={[0.11, 0.28, 10]} />
-                <meshBasicMaterial color="#ffffff" transparent opacity={op} depthWrite={false} />
+                {/* la punta de la IMPAR es más gorda: aunque el dipolo apunte casi a cámara y
+                    el cilindro se escorce, sigue leyéndose CUÁL es la distinta. */}
+                <coneGeometry args={[it.impar ? 0.17 : 0.10, it.impar ? 0.40 : 0.26, 12]} />
+                <meshBasicMaterial color={it.impar ? '#ffb03a' : '#bcd8ff'} transparent opacity={op} depthWrite={false} />
               </mesh>
             )}
           </group>
@@ -2062,7 +2086,11 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   for (let m = 0; m * 3 + 2 < nucP.length; m++) { ohBonds.push([nucP[3 * m], nucP[3 * m + 1]]); ohBonds.push([nucP[3 * m], nucP[3 * m + 2]]); }
   // el ANILLO apila 3 moléculas: mismo brillo que el dímero = pared blanca (medido 30% >240
   // vs 6.6% del ganador). bF baja el brillo SIN tocar color ni saturación.
-  const bF = mk === 'wtri' ? 0.52 : 1.0;
+  // bF compensa las DOS ganancias nuevas: premultipliedAlpha (×1.75 de luz que antes se
+  // tiraba porque el alfa se aplicaba dos veces) y sprites 1.35× de radio (área ×1.8).
+  // Sin bajarlo, medido: meanY 123 y 3.7% de píxeles >240 = puré blanco sin estructura.
+  // La regla del proyecto: la masa la da la DENSIDAD, no la intensidad por partícula.
+  const bF = mk === 'wtri' ? 0.34 : 1.0;   // calibrado: con 0.23 el reventado quedaba en 0.2% y el ganador O₂ tolera 6.6% — había margen
   const pulse = 0.92 + 0.08 * Math.sin(time * 2.0);   // el nebuloso RESPIRA (espectáculo vivo)
   // COREOGRAFÍA sincronizada al guion (segundos de segs.json):
   // CAPAS COMO OBJETOS (capas.ts): la coreografía vive en DATOS (WPAIR_CAPAS), no aquí.
@@ -2078,9 +2106,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
         pts={nucP.filter((_, i) => i % 3 === 0)} />
       {/* size ×1.85 para 4K (a 2160×3840 los puntos quedan relativamente la mitad → nube rala;
           se compensa el tamaño para que la densidad se vea como en el preview 1080) */}
-      <O2Cloud qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
-      <O2Cloud qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={mk === 'wtri' ? ohBonds : undefined} bondGlow={mk === 'wtri' ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
-      <O2Cloud qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
+      <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={mk === 'wtri' ? 0.47 : 0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
+      <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={mk === 'wtri' ? 0.59 : 0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={mk === 'wtri' ? ohBonds : undefined} bondGlow={mk === 'wtri' ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
+      <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={mk === 'wtri' ? 0.62 : 0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
