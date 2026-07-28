@@ -54,5 +54,54 @@ const e3 = Math.abs(slabCenterlineTheta(0.1, 3) - slabCenterlineTheta(0.1, 30));
 console.log(`  Fo=0.1: |1 término − exacto| = ${e1.toExponential(2)} · |3 términos − exacto| = ${e3.toExponential(2)}`);
 T('a Fo≥0.1 un término basta (err<1e-3)', 1 + e1, 1, 0.1);
 
-console.log(`\n${fail === 0 ? '✅' : '❌'} ${pass} pasan · ${fail} fallan`);
+// ═══════════ CAPAS: plástico → acero → agua (LA BASE que estaba mal) ═══════════
+const { TM_ABS_MELT, TM_P20, effusivity, contactTemperature, makeLayeredFDM, steadyFluxChain } = require('../src/forja/mold/thermal-layers.ts');
+const { tcSlabSeriesS: tcS } = require('../src/forja/mold/thermal-series.ts');
+console.log('═══ CAPAS · contacto por EFUSIVIDAD (por qué el acero gana) ═══');
+T('b_ABS fundido √(kρCp)', effusivity(TM_ABS_MELT), 643, 1);
+T('b_P20', effusivity(TM_P20), 11186, 1);
+T('T contacto ABS 239° ↔ P20 60° [°C]', contactTemperature(TM_ABS_MELT, 239, TM_P20, 60), 69.7, 1);
+T('α ABS impresa = k/(ρ_FUNDIDO·Cp)', TM_ABS_MELT.k / (TM_ABS_MELT.rho * TM_ABS_MELT.cp) / 8.73e-8, 1, 1);
+T('α P20 impresa', TM_P20.k / (TM_P20.rho * TM_P20.cp) / 8.18e-6, 1, 1);
+
+console.log('═══ CAPAS · el FDM multicapa contra sus jueces ═══');
+// JUEZ 1 — reducción a 1 capa isoterma: acero "infinitamente conductor" (h_c
+// gigante y sin acero) debe reproducir la SERIE EXACTA de la placa.
+{
+  // h_c=20,000 (Bi=158 ≫ 1 ≈ isotermo al 1%) — h_c=1e9 mataba el dt (2e-8 s)
+  const f = makeLayeredFDM([{ mat: TM_ABS_MELT, thickMm: 1.5, cells: 60, T0: 239 }], 20000, 60);
+  const t = f.runUntil(() => f.Tcenter <= 97.6, 60);
+  T('FDM 1 capa (media pared 1.5mm, Bi≫1) vs serie [s]', t, tcS(8.73e-8, 0.003, 239, 60, 97.6), 2.5);
+}
+// JUEZ 2 — contacto: a tiempos cortos la interfaz plástico|acero debe estar
+// en la T de efusividades (69.7°), NO en el promedio simple (149.5°).
+{
+  const f = makeLayeredFDM([
+    { mat: TM_ABS_MELT, thickMm: 1.5, cells: 90, T0: 239 },
+    { mat: TM_P20, thickMm: 10, cells: 90, T0: 60 },
+  ], 1000, 60);
+  f.runUntil(() => f.t >= 0.02, 1);                      // 20 ms de contacto
+  T('interfaz FDM a 20ms vs efusividades [°C]', f.interfaceT(0), 69.7, 4);
+  console.log(`  → promedio ingenuo daría 149.5° — la media armónica + capas da lo FÍSICO`);
+}
+// JUEZ 3 — permanente: fuente fija en el centro → flujo = cadena de resistencias.
+{
+  const HOLD = 239;
+  const f = makeLayeredFDM([
+    { mat: TM_ABS_MELT, thickMm: 1.5, cells: 30, T0: HOLD },
+    { mat: TM_P20, thickMm: 25, cells: 60, T0: 60 },
+  ], 1000, 60);
+  for (let i = 0; i < 400000; i++) { f.step(); f.T[0] = HOLD; }   // sostener la fuente
+  const qChain = steadyFluxChain(HOLD, 60, [
+    { thickMm: 1.5 - (1.5 / 30) / 2, k: TM_ABS_MELT.k },          // del centro de la celda fuente
+    { thickMm: 25, k: TM_P20.k },
+  ], 1000);
+  T('flujo permanente FDM vs cadena ΣR [W/m²]', f.fluxOut, qChain, 2);
+}
+// LA LECCIÓN DE PLACAS (Eq 9.20-9.21): el acero casi no estorba, el agua manda
+{
+  const R_acero25 = 0.025 / TM_P20.k, R_conv = 1 / 1000;
+  console.log(`  → R acero 25mm = ${(R_acero25 * 1e3).toFixed(2)} vs R convección = ${(R_conv * 1e3).toFixed(2)} m²°C/kW: el AGUA domina (Eq 9.7) — profundidad de línea casi no cambia el flujo (Eq 9.21), cambia la UNIFORMIDAD`);
+}
+console.log(`\n${fail === 0 ? '✅' : '❌'} ${pass} pasan · ${fail} fallan (con capas)`);
 process.exit(fail === 0 ? 0 : 1);

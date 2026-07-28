@@ -170,6 +170,39 @@ for nom, (q, c) in casos.items():
     print(f"   {nom:<12} {de:12.2e} {dr:12.2e} {da:12.2e} {evr:9d} {eva:9d}")
 veredicto("el trazador adaptativo conserva el flujo", peor_ad < 1e-5, f"(peor deriva {peor_ad:.1e})")
 
+# dos patrones exactos más, absorbidos del viejo validar-trazador-campo.py (ese archivo se
+# borró: duplicaba este banco, y su prueba del ANILLO era INVÁLIDA — ψ = Σqᵢcosθᵢ solo vale
+# para cargas SOBRE UN EJE, así que el "error de 1e-1" que reportaba no significaba nada).
+# CUIDADO CON ESTE (es la MISMA trampa que la prueba del anillo que resultó inválida):
+# r = r₀·sin²θ es la línea del dipolo PUNTUAL. Dos cargas separadas d NO la cumplen de cerca:
+# les sobra un cuadrupolo que va como (d/r)². Medido: con máscara r>2d el desvío es 8.3 %, y
+# con r>5d baja a 0.54 % — y da IGUAL si d=1.0 o d=0.2, o sea que es la asintótica, no el
+# trazador. Por eso la máscara es r>5d. Si algún día esto reprueba con r>5d, ahí sí es el
+# trazador. (El test EXACTO para cargas finitas es ψ, arriba; este es el de forma cerrada.)
+D_SEP = 1.0
+cp = CampoPuntual([1., -1.], [[0, 0, D_SEP / 2], [0, 0, -D_SEP / 2]])
+peor_dip = 0.0
+for th0 in (0.35, 0.5, 0.8):
+    s = cp.R[0] + 0.10 * np.array([np.sin(th0), 0, np.cos(th0)])
+    SP, SS, nm, _ = trazar(cp, s[None], sentido=+1, tol=1e-8, r_core=0.06, r_caja=60.0,
+                           s_max=140.0, e_min=1e-14, nucleos=cp.R, max_pasos=6000, max_muestras=4000)
+    L = SP[0, :int(nm[0])]
+    rr = np.linalg.norm(L, axis=1); th = np.arccos(np.clip(L[:, 2] / np.maximum(rr, 1e-12), -1, 1))
+    m = (rr > 5.0 * D_SEP) & (np.sin(th) > 0.3)            # zona ASINTÓTICA (r ≫ d)
+    if m.sum() < 8: continue
+    r0 = np.median(rr[m] / np.sin(th[m]) ** 2)             # r = r₀·sin²θ  (fórmula cerrada de libro)
+    peor_dip = max(peor_dip, float(np.abs(rr[m] / (r0 * np.sin(th[m]) ** 2) - 1).max()))
+veredicto("dipolo lejano: la línea ES r = r₀·sin²θ", peor_dip < 0.015,
+          f"(desvío máx {peor_dip*100:.2f} % en r>5d; la cola de cuadrupolo va como (d/r)²)")
+
+cp1 = CampoPuntual([1.], [[0, 0, 0]])
+SP, SS, nm, _ = trazar(cp1, np.array([[0.3, 0.2, 0.5]]), sentido=+1, tol=1e-8, r_core=0.05,
+                       r_caja=25.0, s_max=40.0, e_min=1e-9, nucleos=cp1.R, max_pasos=3000, max_muestras=2000)
+L = SP[0, :int(nm[0])]
+v = np.diff(L, axis=0); v /= np.linalg.norm(v, axis=1, keepdims=True)
+tors = float(np.degrees(np.arccos(np.clip((v[:-1] * v[1:]).sum(axis=1), -1, 1))).max())
+veredicto("carga única: la línea es RECTA (κ=0 exacta)", tors < 0.05, f"(giro máx {tors:.2e}°)")
+
 # ═════════════════════════════ G5 · TUBO DE FLUJO ═════════════════════════════
 titulo("G5 · TUBO DE FLUJO SOBRE LA MOLÉCULA REAL   ← EL GATE QUE DECIDE")
 print("   Tres líneas vecinas forman un tubo. Gauss obliga:  dΦ/ds = −4π ρ_e A")

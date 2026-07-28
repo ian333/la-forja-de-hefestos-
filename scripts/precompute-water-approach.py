@@ -284,7 +284,54 @@ def validate(accPos, depPos, spinPos, bondMass, nucPos, efield):
         print("fig falló:", e, flush=True)
 
 
+# ══════════════ CAMPO SOLO — motor scripts/campo_lineas.py (mismo que el trímero) ══════════════
+# El campo de ESTE archivo tenía el mismo defecto que el del trímero, y peor: sembraba en una
+# REJILLA RECTANGULAR (`field_grid`, líneas cada 1.35 bohr), que no tiene NADA que ver con el
+# flujo — así que la densidad de líneas no significaba la intensidad del campo. Más: Euler de
+# paso fijo (1er orden), media móvil ×5, y corte por radio en |r|=9. Se recalcula con el motor
+# nuevo, que sí cumple Gauss (gates en scripts/campo-gate.py).
+def solo_campo():
+    from pyscf import gto, scf
+    import time
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from campo_lineas import (CampoMEP, superficie_molecular, sembrar_por_flujo,
+                              superficie_en_rayos, trazar_bidireccional, E_PUENTE)
+    N_DIR, NL, LP = 1200, 900, 80
+    TZ = dict(tol=1e-8, r_core=0.25, r_caja=16.0, s_max=30.0, e_min=1e-4,
+              max_pasos=1500, max_muestras=900)
+
+    def mol_en(R_A):
+        gb = geom_at(R_A)
+        m = gto.M(atom=[[int(Z[i]), tuple(gb[i])] for i in range(6)], basis=BASIS, unit='Bohr', verbose=0)
+        f = scf.RHF(m); f.max_cycle = 200; f.kernel()
+        return m, f.make_rdm1()
+
+    # referencia = el dímero PEGADO (el puente formado), igual que en el trímero
+    mr, dmr = mol_en(float(Rvals[-1]) * BOHR)
+    cr = CampoMEP(mr, dmr)
+    sup = superficie_molecular(cr, n_dir=N_DIR)
+    idx, Phi0, info = sembrar_por_flujo(cr, sup, NL)
+    ia_r, id_r = sup['ray'][0][idx], sup['ray'][1][idx]
+    print(f"  siembra por flujo: {len(idx)} líneas · Φ₀ = {Phi0:.3e} · ∮E·n̂dA = {info['flujo_neto']:+.3f}", flush=True)
+    ef = np.zeros((K, len(ia_r), LP, 3))
+    print(f"=== DÍMERO SOLO CAMPO · {K} radios · {len(ia_r)} líneas × {LP} pts · corte |E|≥{E_PUENTE} ===", flush=True)
+    for k in range(K):
+        t0 = time.time()
+        R_A = float(Rvals[k]) * BOHR
+        m, dm = mol_en(R_A)
+        c = CampoMEP(m, dm)
+        S, hay, _ = superficie_en_rayos(c, ia_r, id_r, N_DIR)
+        L, largo, viva, mf_, mb_ = trazar_bidireccional(c, S, LP=LP, e_dibujo=E_PUENTE, **TZ)
+        ef[k] = L
+        rr = np.linalg.norm(L[viva].reshape(-1, 3), axis=1)
+        print(f"  {k+1}/{K}  R {R_A:.2f} Å · {int(viva.sum())}/{len(ia_r)} vivas · largo mediano "
+              f"{np.median(largo[viva]):.2f} · r95 {np.percentile(rr,95):.1f} bohr · {time.time()-t0:.0f} s", flush=True)
+    write_efield(ef, len(ia_r), LP)
+
+
 if __name__ == '__main__':
+    if '--solo-campo' in sys.argv:
+        solo_campo(); sys.exit(0)
     accPos, depPos, spinPos, bondMass, accColor, nucPos, efield, NL_EF, LP = build()
     write_bin(accPos, depPos, spinPos, bondMass, accColor, nucPos)
     write_efield(efield, NL_EF, LP)

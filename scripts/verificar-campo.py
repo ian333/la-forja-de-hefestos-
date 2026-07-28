@@ -63,20 +63,33 @@ def metricas(K, NL, LP, R, L, etiqueta, nuc=None):
     tau = (cx * r3).sum(axis=2) / np.maximum(np.linalg.norm(cx, axis=2) ** 2, 1e-12)
     t_med = float(np.median(np.abs(tau)))
 
+    # ── DETECTOR DE AMPUTACIÓN (el defecto que tuvo este proyecto y no se vio en meses) ──
+    # Si un trazador corta las líneas contra una esfera de radio fijo, MUCHOS finales caen
+    # exactamente al mismo radio. En el .bin viejo del trímero el radio MÁXIMO de todo punto
+    # era 6.60 bohr clavado: era la pared `maxlen`. Esto lo caza sin saber nada del trazador.
+    rfin = np.linalg.norm(Q[:, -1, :], axis=1)
+    rmax_todo = float(np.linalg.norm(Q.reshape(-1, 3), axis=1).max())
+    pared = float((np.abs(rfin - rmax_todo) < 0.01 * max(rmax_todo, 1e-9)).mean() * 100)
+
+    # OJO — CAMBIÓ EL CRITERIO (2026-07-27): la siembra ya no es "una cáscara alrededor de cada
+    # H", es la SUPERFICIE MOLECULAR ρ=0.002 con densidad ∝ flujo, y la línea se recorta donde
+    # |E| baja del umbral del puente de H. Entonces una línea NO tiene por qué nacer pegada a
+    # un H: nace donde el flujo la puso. Medir "% que nace en H" contra el esquema nuevo daba
+    # una regresión FALSA. Lo que sí sigue significando algo es de qué lado MUERE (δ− = la
+    # nube del O), y eso se conserva. La prueba dura de la siembra es G7 de campo-gate.py
+    # (densidad de líneas = |E|/Φ₀), que necesita la molécula y por eso vive allá.
     nace = muere = float('nan')
     if nuc is not None and len(nuc) >= 3:
         Os = np.array([nuc[3 * k] for k in range(len(nuc) // 3)])
         Hs = np.array([nuc[i] for i in range(len(nuc)) if i % 3 != 0])
         ini = Q[:, 0, :]; fin = Q[:, -1, :]
-        # OJO: en una MOLÉCULA la carga negativa NO es un punto en el núcleo de O: es la nube
-        # (sobre todo los pares libres), que vive a ~2 bohr del O. Exigir que la línea muera
-        # "encima del núcleo" es el criterio de cargas PUNTUALES y da 0% siempre (medido en
-        # dímero Y trímero). El criterio físico correcto es de qué carga está MÁS CERCA.
         dHi = np.linalg.norm(ini[:, None, :] - Hs[None], axis=2).min(axis=1)
+        dOi = np.linalg.norm(ini[:, None, :] - Os[None], axis=2).min(axis=1)
         dOf = np.linalg.norm(fin[:, None, :] - Os[None], axis=2).min(axis=1)
         dHf = np.linalg.norm(fin[:, None, :] - Hs[None], axis=2).min(axis=1)
-        nace = (dHi < 1.2).mean() * 100                      # nace pegada al H (δ+): sí es puntual
-        muere = (dOf < dHf).mean() * 100                     # muere del lado del O (δ−), en su nube
+        # la línea va del lado δ+ al lado δ−: empieza más cerca de un H y acaba más cerca de un O
+        nace = (dHi < dOi).mean() * 100
+        muere = (dOf < dHf).mean() * 100
 
     pts = Q.reshape(-1, 3)
     lo, hi = pts.min(0), pts.max(0); rng = np.maximum(hi - lo, 1e-6)
@@ -87,13 +100,15 @@ def metricas(K, NL, LP, R, L, etiqueta, nuc=None):
     print("  lineas %d x %d puntos - %d frames - largo mediano %.2f bohr" % (NL, LP, K, np.median(largo[vivas])))
     print("  CURVATURA kappa=|r1xr2|/|r1|^3   mediana %.3f  p95 %.3f  bohr-1   [indep. del muestreo]" % (k_med, k_p95))
     print("  TORSION |tau| mediana            %.3f bohr-1" % t_med)
-    print("  regla 1 - nace en H (d+):        %5.1f %%   [libro: 100]" % nace)
-    print("  regla 1 - muere del lado O (d-):  %5.1f %%   [libro: alto; la nube, no el nucleo]" % muere)
+    print("  nace del lado + (mas cerca de H): %5.1f %%" % nace)
+    print("  muere del lado - (la nube del O): %5.1f %%   [libro: alto; la nube, no el nucleo]" % muere)
     print("  semillas muertas:                %5.1f %%   [bien: <10]" % muertas)
     print("  saltos (linea CORTADA):          %5.2f %%   [bien: <0.5]" % salto)
     print("  densidad (ocupacion 24^3):       %5.1f %%   [mas = mejor]" % ocup)
+    print("  AMPUTACION - finales en la pared: %5.1f %%  de r=%.2f bohr   [bien: <2; >10 = hay muro]"
+          % (pared, rmax_todo))
     return dict(kappa=k_med, k95=k_p95, tau=t_med, nace=nace, muere=muere,
-                muertas=muertas, salto=salto, ocup=ocup, NL=NL)
+                muertas=muertas, salto=salto, ocup=ocup, NL=NL, pared=pared, rmax=rmax_todo)
 
 def proyecciones(P, out, etiqueta, nuc=None):
     """Proyecciones 2D XY / XZ / YZ CON AYUDAS VISUALES — el campo se juzga A OJO.
@@ -179,7 +194,7 @@ if REF:
     print("\n── VEREDICTO (contra la referencia que ya funcionó) ──")
     ok = True
     for k, nom, peor_es in (('kappa', 'curvatura kappa', 'mayor'), ('muertas', 'semillas muertas', 'mayor'),
-                            ('salto', 'saltos', 'mayor'), ('nace', 'nace en H (regla 1)', 'menor'),
+                            ('salto', 'saltos', 'mayor'), ('pared', 'AMPUTACION', 'mayor'),
                             ('muere', 'muere en O (regla 1)', 'menor'), ('ocup', 'densidad', 'menor')):
         a, b = m[k], mr[k]
         mal = (a > b * 1.5 + 1) if peor_es == 'mayor' else (a < b * 0.7)
