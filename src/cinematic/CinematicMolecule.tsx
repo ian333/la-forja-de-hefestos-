@@ -415,17 +415,24 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   //    medido del bin): una agua queda volteada. Se ve DE CANTO → esa es la toma firma.
   // Duraciones provisionales (77s): RECALIBRAR a los segundos reales de segs.json
   // cuando exista la narración (CANON-VIDEO §sincronía).
+  // DURACIONES = los ARRANQUES REALES de la voz, con los huecos incluidos (2026-07-28).
+  // BUG que estuvo entregado: `playShots` encadena por SUMA ACUMULADA de `dur`, pero aquí
+  // estaban los ANCHOS de cada ventana del manifiesto SIN los 0.4 s de hueco entre líneas.
+  // Resultado: cada toma arrancaba 0.4·i segundos ANTES que su línea (−3.7 s al final), las
+  // capas quedaban desfasadas de las tomas (las flechas del dipolo entraban 2.5 s tarde y se
+  // derramaban a la toma siguiente), y como Σ dur = 90.3 < WTRI_DURATION = 94, los últimos
+  // 3.7 s la cámara quedaba CONGELADA por el clamp de playShots. Ahora dur[i] = ini[i+1]−ini[i].
   wtri: [
-    { shot: ringWide({ rMul: 1.62, azim0: 0.55, span: 1.0, elev: 0.30 }), dur: 6.1, label: 'las TRES separadas — que se CUENTEN 3' },
-    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 11.7, label: 'una sola en teleobjetivo (fuera de la nube)' },
-    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.8, label: 'DE FRENTE: el anillo entero con aire' },
-    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 7.1, label: 'el PUENTE entre dos (sin entrar a la nube)' },
-    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.4, label: 'el anillo CIERRA — se ven las tres' },
-    { shot: heroOrbit({ dir: 1, azim0: 1.1, span: 1.5, elev: 0.20, rMul: 1.42, fov: 32 }), dur: 13.0, label: 'COOPERATIVIDAD: órbita con las 3 SIEMPRE en cuadro' },
-    { shot: eyeLevelLock({ rMul: 1.40, azim: 2.1 }), dur: 6.7, label: 'el DATO (12%) — nivel de ojo, quieto' },
-    { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26 }), dur: 11.7, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
-    { shot: ringFaceOn({ rMul: 1.34, azim0: 2.4, span: 0.5, elev: -0.10 }), dur: 9.4, label: 'aguanta más + nada inventado (anillo entero)' },
-    { shot: pullOut({ azim0: 0.9, span: 1.2 }), dur: 11.4, label: 'payoff — se aleja CON el anillo en cuadro' },
+    { shot: ringWide({ rMul: 1.62, azim0: 0.55, span: 1.0, elev: 0.30 }), dur: 6.52, label: 'las TRES separadas — que se CUENTEN 3' },
+    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 12.08, label: 'una sola en teleobjetivo (fuera de la nube)' },
+    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 9.21, label: 'DE FRENTE: el anillo entero con aire' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 7.5, label: 'el PUENTE entre dos (sin entrar a la nube)' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.82, label: 'el anillo CIERRA — se ven las tres' },
+    { shot: heroOrbit({ dir: 1, azim0: 1.1, span: 1.5, elev: 0.20, rMul: 1.42, fov: 32 }), dur: 13.43, label: 'COOPERATIVIDAD: órbita con las 3 SIEMPRE en cuadro' },
+    { shot: eyeLevelLock({ rMul: 1.40, azim: 2.1 }), dur: 7.11, label: 'el DATO (12%) — nivel de ojo, quieto' },
+    { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26 }), dur: 12.07, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
+    { shot: ringFaceOn({ rMul: 1.34, azim0: 2.4, span: 0.5, elev: -0.10 }), dur: 9.82, label: 'aguanta más + nada inventado (anillo entero)' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2 }), dur: 11.44, label: 'payoff — se aleja CON el anillo en cuadro' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -1829,6 +1836,18 @@ const WTRI_CAPAS: CapasSpec = {
   enlaces:  { base: 0, mods: [{ wins: [[6.1, 18.6], [60.3, 78.6]], a: 1.0, label: 'los 3 átomos y la firma' }] },
   // la FLECHA del dipolo es lo único que vuelve VISIBLE "una quedó al revés"
   dipolo:   { base: 0, mods: [{ wins: [[60.3, 78.6]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
+  // LA APERTURA DEL ANILLO, coreografiada a la VOZ (0 = pegadas, 1 = lo más separadas).
+  // El acto 1 las muestra separadas para que se CUENTEN TRES; el anillo CIERRA en la línea
+  // que dice que cierra (35.3-39.7) y YA NO VUELVE A ABRIR — porque a partir de ahí la voz
+  // habla de cooperatividad y de los tres puentes, que solo existen con el anillo cerrado.
+  // Dos moduladores que SE SUMAN: el acto 1 las abre de más (0.62) para que se CUENTEN
+  // TRES; a partir del segundo 8.5 baja a 0.28 — separadas pero ya legibles como ANILLO,
+  // porque desde el 18.6 la voz dice "se acomodan en un anillo" y no puede estar mintiendo.
+  // Cierra del todo en 35.6, sobre la línea "el anillo cierra", y ya no vuelve a abrir.
+  // (Geometría medida: abierto de más, el trímero NO CABE en 9:16 sin morder un borde.)
+  apertura: { base: 0, mods: [
+    { wins: [[1.6, 8.5]],  a: 0.34, label: 'acto 1: las TRES bien separadas, que se cuenten' },
+    { wins: [[1.6, 35.6]], a: 0.28, label: 'separadas pero LEGIBLES como anillo hasta que cierra' } ] },
 };
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
@@ -1970,10 +1989,28 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // ~2 veces, acercamiento limpio en "se acercan" (l15-16), y queda PEGADAS al final (el puente).
   // amplitud REDUCIDA: oscila entre pegadas y MODERADO (nunca max lejos → las nubes y el
   // campo SIEMPRE tienen cuerpo; el verificador cazó que "muy lejos" = cuadro vacío/muerto).
-  let esr = 0.30 + 0.34 * Math.cos(T * 0.30);        // 0 = pegadas, 0.64 = moderado
-  esr *= smoothstep(T / 5);                          // pegadas al inicio (l1-2, espectáculo)
-  esr *= (1 - smoothstep((T - 49) / 13));            // acercamiento final 49-62 → pegadas (enlace + payoff)
-  const es = Math.max(0, Math.min(1, esr));
+  // LAS CAPAS SE EVALÚAN AQUÍ ARRIBA porque `apertura` (abajo) las necesita. Estaba
+  // declarada 34 líneas más abajo y el scene moría en TDZ: `page.waitForFunction`
+  // timeout, la escena nunca llegaba a ready. Es el mismo gotcha del replace ciego
+  // que ya mordió en los canales del molde.
+  const C = evalCapas(mk === 'wtri' ? WTRI_CAPAS : WPAIR_CAPAS, T);
+  // LA APERTURA ES UNA CAPA (2026-07-28). Antes esta fórmula estaba QUEMADA aquí con los
+  // segundos de EL PUENTE (`T−49`, `/13`) y el anillo la heredó. Medido sobre la curva vieja:
+  // en t≈21 la voz dice "el anillo y quién le presta hidrógeno" con el anillo 65% ABIERTO;
+  // en t≈37 dice "el anillo CIERRA" mientras se está ABRIENDO; y en t≈42 habla de
+  // COOPERATIVIDAD con el anillo 64% abierto — cuando la cooperatividad SOLO existe con el
+  // anillo cerrado. No era un defecto estético: la imagen contradecía la física de la voz.
+  // (También explica la "L": abierto, el trímero NO CABE en 9:16 sin morder un borde.)
+  // Si la pieza no declara `apertura`, se usa la fórmula de siempre → wpair queda idéntico.
+  let es: number;
+  if (C.apertura !== undefined) {
+    es = Math.max(0, Math.min(1, C.apertura));
+  } else {
+    let esr = 0.30 + 0.34 * Math.cos(T * 0.30);      // 0 = pegadas, 0.64 = moderado
+    esr *= smoothstep(T / 5);                        // pegadas al inicio (l1-2, espectáculo)
+    esr *= (1 - smoothstep((T - 49) / 13));          // acercamiento final 49-62 → pegadas
+    es = Math.max(0, Math.min(1, esr));
+  }
   const R = Rmin + (Rmax - Rmin) * es;
   let bmMax = 1e-6; for (let i = 0; i < wd.K; i++) bmMax = Math.max(bmMax, wd.bondMass[i]);
   const bb = wapBracket(wd.Rvals, wd.K, R);
@@ -2000,7 +2037,6 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // COREOGRAFÍA sincronizada al guion (segundos de segs.json):
   // CAPAS COMO OBJETOS (capas.ts): la coreografía vive en DATOS (WPAIR_CAPAS), no aquí.
   // Matemáticamente idéntica a las constantes que había — verificado frame a frame.
-  const C = evalCapas(mk === 'wtri' ? WTRI_CAPAS : WPAIR_CAPAS, T);
   const cloudGate = C.nubes, fieldGate = C.campo, twk = C.parpadeo, spinB = C.spin, accB = C.acc;
   // NADA de líneas de campo (una línea NO es el enlace ni el campo — es una convención que
   // engaña). El enlace ES la NUBE: el Δρ (magenta = electrones que LLEGAN al puente, azul =
@@ -3026,7 +3062,8 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             diversas). flat={!live} → tonemap ACES del renderer. PostFX solo headless. */}
         {!live && <MolPostFX sat={isPair ? 0.65 : 0.5} />}
       </Canvas>
-      <CinemaVignette />
+      {/* DOS viñetas se sumaban (esta DOM + la de MolPostFX): en wtri se queda UNA. */}
+      {molKey !== 'wtri' && <CinemaVignette />}
       {!live && <>
         {!isCaro && !(isBond(molKey) && (BOND_BEATS_MOL[molKey] ?? []).some(b => time >= b.t0 - 0.4 && time <= b.t1 + 0.5)) &&
           <ScaleNote molKey={molKey} time={time} vertical={vertical} />}
@@ -3038,7 +3075,11 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         {/* 16:9 — el default horizontal es cinemascope 2.39:1 (barras de 12.8%) y eso
             se COME el cuadro; el mandato es PANTALLA COMPLETA. Se iguala a la barra
             fina de la serie en vertical (5%): firma de cine sin void muerto. */}
-        <Letterbox vertical={vertical} pct={vertical ? undefined : 4.5} />
+        {/* LETTERBOX — acotado a wtri (2026-07-28). El default vertical es 5% ARRIBA y 5%
+            ABAJO = 10% del cuadro en negro DURO por construcción, y el anillo ya venía con
+            55-88% de negro muerto medido por los jueces. Se apaga SOLO para 'wtri': O₂/N₂/C₂
+            y agua v2 son GANADORES y su barra de cine se queda igual (canon regla #0). */}
+        <Letterbox vertical={vertical} pct={molKey === 'wtri' ? 0 : (vertical ? undefined : 4.5)} />
       </>}
     </div>
   );
