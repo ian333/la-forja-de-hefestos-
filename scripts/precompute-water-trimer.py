@@ -207,15 +207,37 @@ def E3d(mol, dm, P, h=0.03):
     return E
 
 
-def field_grid(R_A):
-    """Semillas: corona alrededor del anillo + puntos entre los O (donde nace el puente)."""
+def field_grid(R_A, gb=None, por_H=96):
+    """SIEMBRA CANÓNICA (reglas de libro de física, no rejilla inventada):
+
+      1. Las líneas de campo EMPIEZAN en carga + y TERMINAN en carga −. El trímero es
+         NEUTRO → todas deben cerrar entre cargas; ninguna debe nacer en el aire.
+      2. El número de líneas por carga es PROPORCIONAL a su magnitud.
+      3. Se siembran UNIFORMEMENTE alrededor de cada carga (una esferita en torno a ella).
+      5. Las líneas no se cruzan (se cumple solo si 1-3 se cumplen).
+
+    Por eso se siembra en una CÁSCARA alrededor de cada H (δ+, la fuente del campo), con el
+    hemisferio que mira HACIA AFUERA de su propio O — si no, la línea se devuelve a su O y
+    no dibuja el puente (gotcha ya conocido del agua). La versión vieja sembraba en coronas
+    concéntricas alrededor del anillo: por eso 11% de picos y líneas nacidas en el vacío.
+    """
+    if gb is None:
+        gb = geom_at(R_A)
+    r0 = 0.62                                     # cáscara pegada al H (bohr)
+    # puntos casi-uniformes en la esfera (espiral de Fibonacci)
+    k = np.arange(por_H) + 0.5
+    phi = np.arccos(1 - 2 * k / por_H)
+    theta = np.pi * (1 + 5 ** 0.5) * k
+    esfera = np.stack([np.cos(theta) * np.sin(phi), np.sin(theta) * np.sin(phi), np.cos(phi)], axis=1)
     S = []
-    Rc = (R_A / np.sqrt(3.0)) / BOHR
-    for rad in (Rc * 0.5, Rc * 0.85, Rc * 1.2, Rc * 1.6, Rc * 2.1):
-        for j in range(30):
-            a = 2 * np.pi * j / 30
-            for zz in (-1.5, -0.6, 0.0, 0.6, 1.5):
-                S.append([rad * np.cos(a), rad * np.sin(a), zz])
+    for m in range(3):
+        O = gb[3 * m]
+        for h in (gb[3 * m + 1], gb[3 * m + 2]):
+            fuera = h - O; fuera /= np.linalg.norm(fuera)      # dirección O→H = hacia afuera
+            for e in esfera:
+                if np.dot(e, fuera) < -0.15:                    # descarta el hemisferio que mira al O propio
+                    continue
+                S.append(h + r0 * e)
     return np.array(S)
 
 
@@ -236,7 +258,9 @@ def _smooth(p, k=9):   # k=9 (el dímero usa 5): el anillo tiene hueco central d
 #   · PARA al llegar a un núcleo (<0.40 bohr) → no divaga
 #   · remuestreo por LONGITUD DE ARCO → espaciado uniforme (sin saltos ni zigzag)
 # Medido antes de copiar: saltos 20.2% vs 0.0% · picos 40.7% vs 1.4% del dímero.
-def trace_field3d(mol, dm, gb, seeds, LP, maxlen=9.0, h=0.19, THR=0.006):
+# maxlen 9→6.6: las líneas que ESCAPABAN lejos salían RECTAS (campo casi uniforme allá)
+# y leían como picos/glitch. Medido: 40.7% → 11.4% de picos; el resto son estas fugas.
+def trace_field3d(mol, dm, gb, seeds, LP, maxlen=6.6, h=0.19, THR=0.006):
     Rn = gb                                                # los 6 núcleos (sumideros/fuentes)
     NS = len(seeds); HALF = LP
 
@@ -256,7 +280,11 @@ def trace_field3d(mol, dm, gb, seeds, LP, maxlen=9.0, h=0.19, THR=0.006):
             P = np.where(alive[:, None], newP, P)
         return paths, dead
 
-    pf, df = leg(+1); pb, db = leg(-1)
+    pf, df = leg(+1)
+    # semilla EN la carga + (siembra canónica) → la línea nace ahí y solo va hacia adelante.
+    # La pata −E se metía al núcleo del H en 1 paso y dejaba un CODO en la unión (18.6% de
+    # los picos estaban en el INICIO de la línea, medido).
+    pb = pf[:, :1].copy(); db = np.ones(NS, int)
     out = np.zeros((NS, LP, 3))
     for i in range(NS):
         full = _smooth(np.vstack([pb[i, :max(1, db[i])][::-1], pf[i, 1:max(1, df[i])]]))
@@ -284,7 +312,7 @@ def build():
     accPos = np.zeros((K, N_ACC, 3)); depPos = np.zeros((K, N_DEP, 3)); spinPos = np.zeros((K, N_SPIN, 3))
     bondMass = np.zeros(K); nucPos = np.zeros((K, NNUC, 3))
     Ebind = np.zeros(K); E3body = np.zeros(K)
-    SEEDS0 = field_grid(R_EQ_A); NL_EF = len(SEEDS0)
+    SEEDS0 = field_grid(R_EQ_A, geom_at(R_EQ_A)); NL_EF = len(SEEDS0)
     efield = np.zeros((K, NL_EF, LP, 3))
 
     print(f"=== TRÍMERO DE AGUA (9 átomos) · {K} radios · {BASIS} · malla {NXY}×{NXY}×{NZ} ===", flush=True)
@@ -333,7 +361,7 @@ def build():
         depPos[k] = sample_field(dep_field, U_dep)
         spinPos[k] = sample_field(spin_field, U_spin)
         nucPos[k] = gb
-        efield[k] = trace_field3d(mol, dm, gb, field_grid(R_A), LP)
+        efield[k] = trace_field3d(mol, dm, gb, field_grid(R_A, gb), LP)
         print(f"{k:2d}  {R_A:5.2f}  {mf.e_tot:12.5f}  {e_bind:8.2f}     {e_3b:8.2f}      {coop:5.1f}%  {bondMass[k]:.4f}", flush=True)
 
     # color: MISMA paleta del agua v2/wpair (oro cálido + morado en los O). NO inventar color nuevo.
@@ -403,7 +431,7 @@ def solo_campo():
     R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in ((0, 1), (1, 2), (2, 0))]))
     Rmin_eff = R0 * 0.975
     Rv = R_MAX_A + (Rmin_eff - R_MAX_A) * (np.arange(K) / (K - 1))
-    NL_EF = len(field_grid(R_EQ_A))
+    NL_EF = len(field_grid(R_EQ_A, geom_at(R_EQ_A)))
     ef = np.zeros((K, NL_EF, LP, 3))
     print(f"=== SOLO CAMPO · {K} radios · {NL_EF} líneas × {LP} ===", flush=True)
     for k in range(K):
@@ -411,7 +439,7 @@ def solo_campo():
         atoms = [[int(Z[i]), tuple(gb[i])] for i in range(NNUC)]
         mol = gto.M(atom=atoms, basis=BASIS, unit='Bohr', verbose=0)
         mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
-        ef[k] = trace_field3d(mol, mf.make_rdm1(), gb, field_grid(R_A), LP)
+        ef[k] = trace_field3d(mol, mf.make_rdm1(), gb, field_grid(R_A, gb), LP)
         print(f"  {k+1}/{K}  O-O {R_A:.2f} Å", flush=True)
     with open(OUT_EF, 'wb') as fp:
         fp.write(struct.pack('<3i', K, NL_EF, LP))

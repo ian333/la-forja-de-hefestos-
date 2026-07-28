@@ -13,7 +13,7 @@ const OUT = '/tmp/red';
     const SEL = process.env.BTN || '[data-testid="btn-red-6-14"]';
     await p.waitForFunction((sel) => { const bt = document.querySelector(sel); return !!bt && !bt.disabled; }, SEL, { timeout: 240000 });
     await p.click(SEL);
-    await p.waitForFunction('window.__forgeBrep.moldGeom().length >= 2', null, { timeout: 60000 });
+    await p.waitForFunction('window.__forgeBrep.moldGeom().length >= 1', null, { timeout: 60000 });
     await p.waitForTimeout(1200);
     await p.click('text=ISO').catch(() => {});
     await p.waitForTimeout(600);

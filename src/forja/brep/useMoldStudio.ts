@@ -526,54 +526,37 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         if (sg.level === 'gate-sumergido') return OCC.makeCone(oc!, sg.rMm, 0.55, L, axis);
         return OCC.makeCylinder(oc!, sg.rMm, L, axis);
       });
-      const comp = OCC.makeCompound(oc!, solids);
+      // ── LA SIMULACIÓN REAL (feedback user: 'si llenan sin tocarse, no está
+      // simulado'): runners+gates+CAVIDADES = UNA malla; el frente se propaga
+      // por Dijkstra sobre la GEOMETRÍA (surfaceFlowLength — el mismo motor
+      // del llenado de piezas, suelda vértices coincidentes). Si un gate no
+      // TOCA su cavidad, esa cavidad queda unreachable y JAMÁS llena — la
+      // simulación delata los huecos en vez de esconderlos.
+      const cavSolids = net.cavities.map((c) => OCC.makeCylinder(oc!, 8, 10, { origin: [c.x, c.y, -10], dir: [0, 0, 1] }));
+      const comp = OCC.makeCompound(oc!, [...solids, ...cavSolids]);
       const mesh = tessellate(oc!, comp, 0.25, 0.35);
-      // llegada por vértice: su segmento más cercano → t_start + frac·t_fill
+      const inlet = net.segs[0].a;                       // la boca del sprue
+      const sf = surfaceFlowLength(
+        { positions: mesh.positions, normals: mesh.normals, indices: mesh.indices },
+        { x: inlet[0], y: inlet[1], z: inlet[2] }, 2);
       const nV = mesh.positions.length / 3;
       const flowT = new Float32Array(nV);
       for (let i = 0; i < nV; i++) {
-        const px = mesh.positions[3 * i], py = mesh.positions[3 * i + 1], pz = mesh.positions[3 * i + 2];
-        let best = Infinity, bt = 0;
-        for (const sg of net.segs) {
-          const ux = sg.b[0] - sg.a[0], uy = sg.b[1] - sg.a[1], uz = sg.b[2] - sg.a[2];
-          const L2 = ux * ux + uy * uy + uz * uz;
-          const f = Math.max(0, Math.min(1, ((px - sg.a[0]) * ux + (py - sg.a[1]) * uy + (pz - sg.a[2]) * uz) / L2));
-          const qx = sg.a[0] + f * ux - px, qy = sg.a[1] + f * uy - py, qz = sg.a[2] + f * uz - pz;
-          const d = qx * qx + qy * qy + qz * qz;
-          if (d < best) { best = d; bt = sg.tStartS + f * sg.tFillS; }
-        }
-        flowT[i] = bt;
+        const d = sf.flowLenMm[i];
+        flowT[i] = Number.isFinite(d) ? d : Infinity;    // sin camino = NUNCA llena
       }
       const parts: MoldPart[] = [{
-        role: 'colada', name: `Red ${kind} — ${net.rows[0].v}`, material: 'fundido',
+        role: 'colada',
+        name: `Disparo ${kind} · frente SIMULADO en malla` + (sf.unreachable ? ` · ⚠ ${sf.unreachable} vért. SIN CAMINO` : ' · todo conectado ✓'),
+        material: 'fundido',
         positions: mesh.positions, normals: mesh.normals, indices: mesh.indices,
-        color: '#ffb347', opacity: 0.95, bodies: net.segs.length,
-        features: net.rows.map((r) => `${r.k}: ${r.v} [${r.ref}]`), edges: undefined,
-        flowT, flowTotalS: net.totalFillS,
+        color: '#ffb347', opacity: 0.95, bodies: net.segs.length + net.cavities.length,
+        features: [
+          `SIMULACIÓN: Dijkstra sobre la malla desde la boca del sprue — L máx ${sf.maxFlowLenMm} mm, ${sf.unreachable} vértices inalcanzables`,
+          ...net.rows.map((r) => `${r.k}: ${r.v} [${r.ref}]`),
+        ], edges: undefined,
+        flowT, flowTotalS: sf.maxFlowLenMm,
       } as unknown as MoldPart];
-      // cavidades fantasma (a dónde REPARTE la carga)
-      const cavSolids = net.cavities.map((c) => OCC.makeCylinder(oc!, 8, 10, { origin: [c.x, c.y, -10], dir: [0, 0, 1] }));
-      const cmesh = tessellate(oc!, OCC.makeCompound(oc!, cavSolids), 0.3, 0.4);
-      // KAZMER = FÓRMULA, no forma: cada cavidad LLENA en su V/V̇ con frente
-      // RADIAL desde el punto donde la toca su gate.
-      const nCV = cmesh.positions.length / 3;
-      const cavT = new Float32Array(nCV);
-      for (let i = 0; i < nCV; i++) {
-        const px = cmesh.positions[3 * i], py = cmesh.positions[3 * i + 1], pz = cmesh.positions[3 * i + 2];
-        let best = Infinity, bc = net.cavities[0];
-        for (const c of net.cavities) {
-          const d = (px - c.x) * (px - c.x) + (py - c.y) * (py - c.y);
-          if (d < best) { best = d; bc = c; }
-        }
-        const dg = Math.hypot(px - bc.gx, py - bc.gy, pz - bc.gz);
-        cavT[i] = bc.tStartS + Math.min(1, dg / (2 * 8 + 10)) * bc.tFillS;
-      }
-      parts.push({
-        role: 'cavidades', name: `${net.cavities.length} cavidades · llenan en V/V̇ desde su gate`, material: '—',
-        positions: cmesh.positions, normals: cmesh.normals, indices: cmesh.indices,
-        color: '#5fa8c4', opacity: 0.28, bodies: net.cavities.length, features: [], edges: undefined,
-        flowT: cavT, flowTotalS: net.totalFillS,
-      } as unknown as MoldPart);
       setLiveMoldSpec(null);
       liveRealSolidsRef.current = null;
       setFeedDemo(true);
