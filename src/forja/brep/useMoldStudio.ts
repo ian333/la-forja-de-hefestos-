@@ -30,7 +30,7 @@ import { surfaceFlowLength } from '../mold/flowlen-surface';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine } from '../mold/moldmachine';
-import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, type FeedNetwork } from '../mold/feed-layouts';
+import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
 export function useMoldStudio({ oc, setCollapsed, setDocName }: {
@@ -516,6 +516,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   const loadFeedDemo = useCallback((kind: 'ramificada' | 'radial' | 'serie' | 'hibrida') => {
     if (!oc) return;
     const net: FeedNetwork = kind === 'radial' ? layoutRadial({}) : kind === 'serie' ? layoutSeries({}) : kind === 'hibrida' ? layoutHybrid({}) : layoutBranched({});
+    applyResistanceNetwork(net);          // V̇ y tiempos FÍSICOS (§6.4.6), no estimados
     try {
       const solids = net.segs.map((sg) => {
         const dx = sg.b[0] - sg.a[0], dy = sg.b[1] - sg.a[1], dz = sg.b[2] - sg.a[2];

@@ -10,7 +10,7 @@
  * por TIEMPO DE RUTA, no por altura. Sistema STANDALONE: se conecta a
  * cualquier molde después.
  */
-import { FEED_MATERIALS, minRunnerRadius, steelSafeDiaMm } from './feed';
+import { FEED_MATERIALS, minRunnerRadius, steelSafeDiaMm, pressureDropRunner } from './feed';
 
 export interface FeedSeg {
   a: [number, number, number]; b: [number, number, number];
@@ -251,4 +251,62 @@ export function layoutHybrid(o: {
       { k: '⌀ cadena', v: `${(2 * rSprue).toFixed(1)}→${(2 * rPrim).toFixed(1)}→${(2 * rSec).toFixed(1)}→${(2 * rTer).toFixed(1)} mm`, ref: 'D/√n + fresas §6.5.4' },
     ],
   };
+}
+
+/**
+ * RED DE RESISTENCIAS — dirección ANÁLISIS (§6.4.6): dada la geometría, ¿qué
+ * V̇ le toca REALMENTE a cada rama? Con ΔP = K·V̇ⁿ (power-law, Eq 6.5) y el
+ * mismo n en toda la red, el álgebra es CERRADA como resistores generalizados:
+ *   serie:    C = Ca + Cb
+ *   paralelo: C = ( Σᵢ (1/Cᵢ)^(1/n) )⁻ⁿ     (conductancias^(1/n) se suman)
+ *   reparto:  V̇ᵢ ∝ (1/Cᵢ)^(1/n)             (ΔP igual en rutas paralelas)
+ * Se reduce hojas→tronco (postorden) y se reparte tronco→hojas (preorden).
+ * El "balanceo artificial" del libro es DISEÑAR para que estas C queden
+ * iguales — esta función es el juez que dice si lo logró.
+ * MUTA la red: V̇/tiempos de cada segmento y cavidad pasan a ser los físicos.
+ */
+export function applyResistanceNetwork(net: FeedNetwork, material = 'ABS'): void {
+  const m = FEED_MATERIALS[material] ?? FEED_MATERIALS.ABS;
+  const n = m.n;
+  const segs = net.segs;
+  const keyOf = (pt: [number, number, number]) => `${pt[0].toFixed(2)},${pt[1].toFixed(2)},${pt[2].toFixed(2)}`;
+  const byStart = new Map<string, number[]>();
+  segs.forEach((sg, i) => { const k = keyOf(sg.a); if (!byStart.has(k)) byStart.set(k, []); byStart.get(k)!.push(i); });
+  const children = segs.map((sg) => byStart.get(keyOf(sg.b)) ?? []);
+  // K de Eq 6.5 con V̇=1 m³/s (unidades SI)
+  const K = segs.map((sg) => pressureDropRunner(m, { name: sg.level, L: segLen(sg) / 1000, R: sg.rMm / 1000, Vdot: 1 }));
+  const C = new Float64Array(segs.length);
+  const post = (i: number): number => {
+    if (!children[i].length) { C[i] = K[i]; return C[i]; }
+    let sum = 0;
+    for (const c of children[i]) sum += Math.pow(1 / post(c), 1 / n);
+    C[i] = K[i] + Math.pow(sum, -n);
+    return C[i];
+  };
+  post(0);                                              // el sprue es la raíz
+  const pre = (i: number, VdotM3s: number, t0: number) => {
+    segs[i].VdotCcS = VdotM3s * 1e6;
+    segs[i].tStartS = t0;
+    segs[i].tFillS = (Math.PI * segs[i].rMm * segs[i].rMm * segLen(segs[i]) / 1000) / (VdotM3s * 1e6);
+    const w = children[i].map((c) => Math.pow(1 / C[c], 1 / n));
+    const W = w.reduce((a2, b2) => a2 + b2, 0);
+    children[i].forEach((c, j) => pre(c, VdotM3s * (w[j] / W), t0 + segs[i].tFillS));
+  };
+  pre(0, segs[0].VdotCcS * 1e-6, 0);
+  // cavidades: cuelgan del gate cuyo extremo b es su punto de contacto
+  let vmin = Infinity, vmax = 0;
+  for (const c of net.cavities) {
+    const gi = segs.findIndex((sg) => Math.abs(sg.b[0] - c.gx) < 0.01 && Math.abs(sg.b[1] - c.gy) < 0.01 && Math.abs(sg.b[2] - c.gz) < 0.01);
+    if (gi >= 0) {
+      c.tStartS = segs[gi].tStartS + segs[gi].tFillS;
+      c.tFillS = CAV_VOL_CC / segs[gi].VdotCcS;
+      vmin = Math.min(vmin, segs[gi].VdotCcS); vmax = Math.max(vmax, segs[gi].VdotCcS);
+    }
+  }
+  net.totalFillS = Math.max(...net.cavities.map((c) => c.tStartS + c.tFillS));
+  net.rows.push({
+    k: '⚖ V̇ REAL por cavidad',
+    v: `${vmin.toFixed(1)}–${vmax.toFixed(1)} cc/s${vmax / vmin > 1.05 ? ` · DESBALANCE ${((vmax / vmin - 1) * 100).toFixed(0)}%` : ' · balanceada ✓'}`,
+    ref: 'red de resistencias §6.4.6: ΔP igual en rutas paralelas · serie C=Ca+Cb · paralelo (Σ(1/C)^(1/n))⁻ⁿ',
+  });
 }
