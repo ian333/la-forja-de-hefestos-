@@ -62,6 +62,13 @@ import numpy as np
 BOHR = 0.529177210903
 RHO_SUP = 0.002          # u.a. — superficie molecular de Bader (JACS 1987)
 
+# ¿HASTA DÓNDE SE DIBUJA UNA LÍNEA? Por MAGNITUD del campo, jamás por radio (el radio fue el
+# bug de la versión vieja). Escalas físicas, para elegir con criterio y no con el gusto:
+E_TERMICO = 0.00095      # kT a 300 K por bohr: debajo de esto el campo pierde ante el ruido térmico
+E_PUENTE = 0.0080        # 5 kcal/mol por bohr = la energía de UN puente de hidrógeno.
+                         # Es el corte que usa la serie del agua: se dibuja el campo capaz de
+                         # hacer el trabajo del que habla el video, y nada más.
+
 
 # ───────────────────────────────── EL CAMPO ─────────────────────────────────
 class CampoMEP:
@@ -243,24 +250,73 @@ def remuestrear(SP, SS, nm, LP):
     return out
 
 
-def trazar_bidireccional(campo, semillas, LP=80, **kw):
-    """+E y −E desde la misma semilla, pegadas en UNA línea (de la carga + a la −)."""
+def trazar_bidireccional(campo, semillas, LP=80, e_dibujo=None, **kw):
+    """+E y −E desde la misma semilla, pegadas en UNA línea (de la carga + a la −).
+
+    `e_dibujo`: si se da, la línea se recorta al TRAMO CONTINUO MÁS LARGO donde |E| ≥ e_dibujo.
+    El corte es por MAGNITUD DE CAMPO, nunca por radio (el radio fue el bug de la versión
+    vieja: una esfera de 6.6 bohr amputaba todo). Y se elige con una escala física declarada
+    — ver E_PUENTE abajo.
+    """
     Pf, Sf, nf, mf = trazar(campo, semillas, sentido=+1, **kw)
     Pb, Sb, nb, mb = trazar(campo, semillas, sentido=-1, **kw)
     N = len(semillas)
-    total = np.zeros((N, LP, 3)); largo = np.zeros(N)
+    total = np.zeros((N, LP, 3)); largo = np.zeros(N); viva = np.ones(N, bool)
+    caminos = []
     for i in range(N):
         a = int(max(nb[i], 1)); b = int(max(nf[i], 1))
-        cam = np.vstack([Pb[i, :a][::-1], Pf[i, 1:b]])
+        caminos.append(np.vstack([Pb[i, :a][::-1], Pf[i, 1:b]]))
+    if e_dibujo is not None:
+        off = np.concatenate([[0], np.cumsum([len(c) for c in caminos])])
+        nE = np.linalg.norm(campo(np.vstack(caminos)), axis=1)
+        for i, cam in enumerate(caminos):
+            ok = (nE[off[i]:off[i + 1]] >= e_dibujo).view(np.int8)
+            d = np.diff(np.r_[0, ok, 0])
+            ini = np.flatnonzero(d == 1); fin = np.flatnonzero(d == -1)
+            if len(ini) == 0:
+                viva[i] = False; continue
+            j = int(np.argmax(fin - ini))
+            if fin[j] - ini[j] < 3:
+                viva[i] = False; continue
+            caminos[i] = cam[ini[j]:fin[j]]
+    for i, cam in enumerate(caminos):
         seg = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(cam, axis=0), axis=1))]
         largo[i] = seg[-1]
         if seg[-1] < 1e-9:
-            total[i] = cam[0]
+            total[i] = cam[0]; viva[i] = False
         else:
             u = np.linspace(0, seg[-1], LP)
             for c in range(3):
                 total[i, :, c] = np.interp(u, seg, cam[:, c])
-    return total, largo, mf, mb
+    return total, largo, viva, mf, mb
+
+
+def superficie_en_rayos(campo, ia, id_, n_dir, rho_c=RHO_SUP, r_ini=0.40, r_fin=11.0, dr=0.14):
+    """Los MISMOS rayos (núcleo, dirección) evaluados en OTRA geometría.
+
+    Es lo que da la CORRESPONDENCIA LAGRANGIANA entre cuadros: la línea j es siempre el mismo
+    rayo, así que al moverse las moléculas la línea se desliza suave en vez de brincar. La
+    selección por flujo se hace UNA vez, en el cuadro de referencia (el anillo cerrado, que es
+    el que cuenta la historia), y se reusa. Declarado: en los cuadros lejanos la ponderación
+    por flujo ya no es exacta, y el error se reporta cuadro a cuadro.
+    """
+    D = _fibonacci(n_dir)
+    Rn = campo.R
+    rs = np.arange(r_ini, r_fin + 1e-9, dr)
+    NR = len(rs)
+    X = (Rn[ia][:, None, :] + rs[None, :, None] * D[id_][:, None, :]).reshape(-1, 3)
+    rho = campo.rho(X).reshape(len(ia), NR)
+    dentro = rho >= rho_c
+    cruce = dentro[:, :-1] & ~dentro[:, 1:]
+    hay = cruce.any(axis=1)
+    ult = NR - 2 - np.argmax(cruce[:, ::-1], axis=1)
+    lo = rs[np.clip(ult, 0, NR - 2)].astype(float); hi = lo + dr
+    for _ in range(9):
+        mid = 0.5 * (lo + hi)
+        d_ = campo.rho(Rn[ia] + mid[:, None] * D[id_]) >= rho_c
+        lo = np.where(d_, mid, lo); hi = np.where(d_, hi, mid)
+    r = 0.5 * (lo + hi)
+    return Rn[ia] + r[:, None] * D[id_], hay, r
 
 
 # ─────────────────── SIEMBRA POR FLUJO SOBRE LA SUPERFICIE MOLECULAR ───────────────────
@@ -382,10 +438,21 @@ def tubo_de_flujo(campo, semilla, eps=0.02, LP=None, **kw):
     a /= np.linalg.norm(a); b = np.cross(e, a)
     S = np.array([x0, x0 + eps * a, x0 + eps * (0.5 * a + 0.8660254 * b)])
     SP, SS, nm, mot = trazar(campo, S, sentido=+1, **kw)
-    n = int(nm.min())
-    if n < 6:
+    if nm.min() < 6:
         return None
-    p = SP[:, :n]                                             # (3, n, 3)
+    # OJO (bug que costó un gate): las 3 líneas se integran con pasos ADAPTATIVOS distintos,
+    # así que la muestra i de una NO está al mismo arco que la muestra i de otra. Hay que
+    # remuestrear las tres sobre el MISMO arco antes de medir la sección del tubo.
+    s_com = min(float(SS[j, int(nm[j]) - 1]) for j in range(3))
+    s = SS[0, :int(nm[0])]
+    s = s[s <= s_com]
+    if len(s) < 6:
+        return None
+    p = np.zeros((3, len(s), 3))
+    for j in range(3):
+        nj = int(nm[j])
+        for c in range(3):
+            p[j, :, c] = np.interp(s, SS[j, :nj], SP[j, :nj, c])
     Ec = campo(p[0])
     nE = np.linalg.norm(Ec, axis=1)
     eh = Ec / np.maximum(nE, 1e-30)[:, None]
@@ -394,10 +461,10 @@ def tubo_de_flujo(campo, semilla, eps=0.02, LP=None, **kw):
     v = v - (v * eh).sum(axis=1)[:, None] * eh
     A = 0.5 * np.linalg.norm(np.cross(u, v), axis=1)
     Phi = nE * A
-    s = SS[0, :n]
     rho = campo.rho(p[0])
     carga = np.concatenate([[0.0], np.cumsum(0.5 * (rho[1:] * A[1:] + rho[:-1] * A[:-1]) * np.diff(s))])
     inv = Phi + 4 * np.pi * carga
     res = float(np.abs(inv - inv[0]).max() / max(abs(inv[0]), 1e-30))
     return dict(s=s, Phi=Phi, A=A, carga=carga, invariante=inv, residuo=res,
+                Phi0=float(Phi[0]), Phi_fin=float(Phi[-1]), q_tragada=float(carga[-1]),
                 caida=float(1 - Phi[-1] / max(Phi[0], 1e-30)), motivo=int(mot[0]))

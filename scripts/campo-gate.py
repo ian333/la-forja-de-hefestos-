@@ -134,30 +134,40 @@ casos = {
     'cuadrupolo': ([1., -2., 1.], [[0, 0, 1.], [0, 0, 0.], [0, 0, -1.]]),
     'cadena 8':   (list(np.where(np.arange(8) % 2, -1., 1.)), [[0, 0, i * .55 - 1.9] for i in range(8)]),
 }
-print(f"\n   {'caso':<12} {'Euler h=.02':>12} {'RK4 h=.02':>12} {'ADAPTATIVO':>12}   {'evals ad.':>10}")
+SEMILLAS_TH = (0.35, 0.7, 1.05, 1.4, 1.75, 2.1)
+
+
+def deriva(cp, metodo, tol=None):
+    """max|ψ − ψ(0)| sobre 6 líneas + cuántas evaluaciones de campo costó."""
+    dd = []; cp.n_eval = 0
+    for th0 in SEMILLAS_TH:
+        s = cp.R[0] + 0.10 * np.array([np.sin(th0), 0, np.cos(th0)])
+        if metodo == 'adap':
+            SP, SS, nm, _ = trazar(cp, s[None], sentido=+1, tol=tol, r_core=0.06,
+                                   r_caja=30.0, s_max=60.0, e_min=1e-9, nucleos=cp.R,
+                                   max_pasos=4000, max_muestras=2000)
+            L = SP[0, :int(nm[0])]
+        else:
+            L = fijo(cp, s, 0.02, 4 if metodo == 'rk4' else 1)
+            cp.n_eval += len(L) * (4 if metodo == 'rk4' else 1)
+        if len(L) < 5: continue
+        ps = cp.psi(L); dd.append(np.abs(ps - ps[0]).max())
+    return (max(dd) if dd else np.nan), cp.n_eval
+
+
+print("\n   ¿por qué tol=1e-8? porque se midió (dipolo · deriva de ψ vs evaluaciones):")
+cpd = CampoPuntual(*casos['dipolo'])
+for tol in (3e-4, 1e-6, 1e-8, 1e-10):
+    d, ev = deriva(cpd, 'adap', tol)
+    print(f"      tol={tol:<7g} → deriva {d:.2e}   ({ev:6d} evaluaciones)")
+print()
+print(f"   {'caso':<12} {'Euler h=.02':>12} {'RK4 h=.02':>12} {'ADAPTATIVO':>12} {'ev.RK4':>9} {'ev.adap':>9}")
 peor_ad = 0.0
 for nom, (q, c) in casos.items():
     cp = CampoPuntual(q, c)
-    derivas = {}
-    for etq in ('euler', 'rk4', 'adap'):
-        dd = []
-        for th0 in (0.35, 0.7, 1.05, 1.4, 1.75, 2.1):
-            s = cp.R[0] + 0.10 * np.array([np.sin(th0), 0, np.cos(th0)])
-            if etq == 'adap':
-                cp.n_eval = 0
-                SP, SS, nm, mot = trazar(cp, s[None], sentido=+1, tol=3e-4, hmax=0.55,
-                                         r_core=0.06, r_caja=30.0, s_max=60.0,
-                                         e_min=1e-9, nucleos=cp.R, max_pasos=900)
-                L = SP[0, :int(nm[0])]
-                ev = cp.n_eval
-            else:
-                L = fijo(cp, s, 0.02, 4 if etq == 'rk4' else 1)
-            if len(L) < 5: continue
-            ps = cp.psi(L)
-            dd.append(np.abs(ps - ps[0]).max())
-        derivas[etq] = max(dd) if dd else np.nan
-    peor_ad = max(peor_ad, derivas['adap'])
-    print(f"   {nom:<12} {derivas['euler']:12.2e} {derivas['rk4']:12.2e} {derivas['adap']:12.2e}   {ev:10d}")
+    de, _ = deriva(cp, 'euler'); dr, evr = deriva(cp, 'rk4'); da, eva = deriva(cp, 'adap', 1e-8)
+    peor_ad = max(peor_ad, da)
+    print(f"   {nom:<12} {de:12.2e} {dr:12.2e} {da:12.2e} {evr:9d} {eva:9d}")
 veredicto("el trazador adaptativo conserva el flujo", peor_ad < 1e-5, f"(peor deriva {peor_ad:.1e})")
 
 # ═════════════════════════════ G5 · TUBO DE FLUJO ═════════════════════════════
@@ -171,12 +181,15 @@ for hidx in Hs[:4]:
     Rh = campo.R[hidx]; Ro = campo.R[3 * (hidx // 3)]
     dirs = Rh - Ro; dirs /= np.linalg.norm(dirs)
     x0 = Rh + 1.05 * dirs
-    t = tubo_de_flujo(campo, x0, eps=0.02, tol=1e-4, hmax=0.35, r_core=0.22,
-                      r_caja=15.0, s_max=22.0, e_min=3e-4, max_pasos=700)
+    t = tubo_de_flujo(campo, x0, eps=0.02, tol=1e-9, r_core=0.22,
+                      r_caja=15.0, s_max=22.0, e_min=3e-4, max_pasos=3000, max_muestras=1600)
     if t is None: continue
     tubos.append((hidx, t))
-    print(f"   tubo desde H{hidx}: largo {t['s'][-1]:5.2f} bohr · Φ cae {t['caida']*100:5.1f} % "
-          f"(se traga {t['carga'][-1]:.4f} e⁻) · residuo del invariante {t['residuo']:.2e}  [{MOTIVO[t['motivo']]}]")
+    print(f"   H{hidx}: largo {t['s'][-1]:5.2f} bohr · Φ: {t['Phi0']:.3e} → {t['Phi_fin']:.3e} "
+          f"(cae {t['caida']*100:5.1f} %) · se traga {t['q_tragada']:.3e} e⁻ "
+          f"⇒ 4πq = {4*np.pi*t['q_tragada']:.3e}")
+    print(f"        balance de Gauss: ΔΦ = {t['Phi_fin']-t['Phi0']:+.3e}  vs  −4πq = "
+          f"{-4*np.pi*t['q_tragada']:+.3e}   residuo {t['residuo']*100:.2f} %  [{MOTIVO[t['motivo']]}]")
 peor_t = max(t['residuo'] for _, t in tubos) if tubos else 1.0
 veredicto("el tubo obedece a Gauss", peor_t < 0.05, f"(peor residuo {peor_t*100:.2f} %)")
 
@@ -202,6 +215,79 @@ err6 = abs(info['flujo_neto'] - esperado) / max(abs(esperado), 1e-9)
 print(f"   flujo BRUTO ∮|E·n̂| dA = {info['flujo_bruto']:.4f}  ⇒  Φ₀ = {Phi0:.3e} por línea")
 print(f"   semillas elegidas: {len(idx)} · duplicadas: {info['duplicados']}")
 veredicto("la cuadratura de siembra respeta Gauss", err6 < 0.20, f"(error {err6*100:.1f} %)")
+
+# ═════════════════════════════ G7 · el dibujo no miente ═════════════════════════════
+titulo("G7 · DENSIDAD DE LÍNEAS = |E|/Φ₀   ← se mide sobre el .bin ENTREGADO")
+print("   Si toda línea carga el mismo flujo Φ₀, el número que cruza un área ⊥ al campo es")
+print("   |E|·A/Φ₀. Eso equivale a: longitud de línea por unidad de VOLUMEN = |E|/Φ₀.")
+print("   Es la razón de ser del dibujo: que la densidad SIGNIFIQUE la intensidad.\n")
+
+
+def densidad_vs_E(ruta, Phi0, lado=0.55, rmin=2.0, rmax=8.0, emin=0.024, emax=0.30, nmin=14):
+    import struct
+    if not os.path.exists(ruta):
+        return None
+    with open(ruta, 'rb') as fp:
+        K, NL, LP = struct.unpack('<3i', fp.read(12))
+        fp.read(K * 4)
+        L = np.frombuffer(fp.read(K * NL * LP * 3 * 2), dtype='<i2').astype(float) / 2000.0
+    P = L.reshape(K, NL, LP, 3)[-1]
+    a, b = P[:, :-1, :], P[:, 1:, :]
+    mid = (0.5 * (a + b)).reshape(-1, 3)
+    dl = np.linalg.norm(b - a, axis=2).reshape(-1)
+    vivo = dl > 1e-6
+    mid, dl = mid[vivo], dl[vivo]
+    ix = np.floor(mid / lado).astype(int)
+    key = (ix[:, 0] + 512) * 1048576 + (ix[:, 1] + 512) * 1024 + (ix[:, 2] + 512)
+    ordn = np.argsort(key); key, dl2, mid2 = key[ordn], dl[ordn], mid[ordn]
+    lim = np.flatnonzero(np.r_[True, key[1:] != key[:-1], True])
+    largo = np.add.reduceat(dl2, lim[:-1])
+    cuenta = np.diff(lim)
+    cen = np.add.reduceat(mid2 * dl2[:, None], lim[:-1], axis=0) / largo[:, None]
+    dens = largo / lado ** 3
+    Ec = np.linalg.norm(campo(cen), axis=1)
+    rc = np.linalg.norm(cen, axis=1)
+    m = (cuenta >= nmin) & (rc > rmin) & (rc < rmax) & (Ec > emin) & (Ec < emax)
+    if m.sum() < 25:
+        return None
+    x = Ec[m] / Phi0; y = dens[m]
+    r = float(np.corrcoef(np.log(x), np.log(y))[0, 1])
+    pend = float(np.polyfit(np.log(x), np.log(y), 1)[0])
+    return dict(x=x, y=y, r=r, pendiente=pend, n=int(m.sum()),
+                sesgo=float(np.median(y / x)))
+
+
+PRE = os.path.join(HERE, '..', 'public', 'precomputed')
+res_new = densidad_vs_E(os.path.join(PRE, 'water-trimer-efield.bin'), Phi0)
+if res_new:
+    print(f"   AHORA  ({res_new['n']} voxeles de 0.55 bohr): correlación log-log r = {res_new['r']:.3f} · "
+          f"pendiente {res_new['pendiente']:.3f} (la ley dice 1.000) · factor {res_new['sesgo']:.2f}")
+    veredicto("la densidad de líneas ES la intensidad del campo",
+              res_new['r'] > 0.85 and abs(res_new['pendiente'] - 1) < 0.25,
+              f"(r={res_new['r']:.3f}, pendiente={res_new['pendiente']:.3f})")
+else:
+    print("   (todavía no hay .bin nuevo que medir)")
+
+try:
+    import matplotlib; matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    if res_new:
+        fg, axd = plt.subplots(figsize=(6.4, 6.0), facecolor='#0a0a0e')
+        axd.loglog(res_new['x'], res_new['y'], '.', ms=3, color='#ffc24a', alpha=0.55)
+        lo = min(res_new['x'].min(), res_new['y'].min()); hi = max(res_new['x'].max(), res_new['y'].max())
+        axd.loglog([lo, hi], [lo, hi], '--', color='#00e0a0', lw=1.4, label='la ley: densidad = |E|/Φ₀')
+        axd.set_xlabel('|E| / Φ₀   (lo que manda la física)', color='#aaa')
+        axd.set_ylabel('longitud de línea por volumen  (lo que hay en el .bin)', color='#aaa')
+        axd.set_title(f'G7 · el dibujo no miente\nr = {res_new["r"]:.3f} · pendiente = {res_new["pendiente"]:.3f}',
+                      color='white', fontsize=11)
+        axd.legend(fontsize=8, labelcolor='white', facecolor='#0a0a0e', edgecolor='#333')
+        axd.set_facecolor('#0a0a0e'); axd.tick_params(colors='#777', labelsize=8)
+        axd.grid(alpha=0.12, color='white', which='both')
+        for sp in axd.spines.values(): sp.set_color('#333')
+        plt.tight_layout(); plt.savefig(os.path.join(PNG, 'G7-densidad.png'), dpi=125, facecolor='#0a0a0e')
+        plt.close(); print(f"   → {os.path.join(PNG,'G7-densidad.png')}")
+except Exception as e:
+    print("  (sin figura G7:", e, ")")
 
 # ═════════════════════════════ figuras ═════════════════════════════
 try:

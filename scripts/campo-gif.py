@@ -32,6 +32,14 @@ def nucleos(p):
 NUC = nucleos(RUTA)
 
 BOHR = 0.529177
+# ENCUADRE FIJO para TODOS los cuadros: si los límites cambian por cuadro, el GIF "respira"
+# y el ojo lee ese zoom como si el campo creciera. Se toma el p99.5 del radio de todo el .bin.
+_lg = np.linalg.norm(np.diff(L, axis=2), axis=3).sum(axis=2)
+_vv = _lg >= 0.35
+_rr = np.linalg.norm(L[_vv].reshape(-1, 3), axis=1)
+LIM = float(np.ceil(np.percentile(_rr, 99.5)))
+print(f"  encuadre fijo ±{LIM:.0f} bohr (p99.5 del radio)")
+
 for k in range(K):
     P = L[k]; largo = np.linalg.norm(np.diff(P, axis=1), axis=2).sum(axis=1); viva = largo >= 0.35
     nuc = NUC[k] if NUC is not None else None
@@ -47,11 +55,12 @@ for k in range(K):
             Os = [nuc[3*i] for i in range(len(nuc)//3)]
             cyc = Os + [Os[0]]
             ax.plot([o[a] for o in cyc], [o[b] for o in cyc], '--', lw=1.0, color='#00e0a0', alpha=0.8)
-        ax.set_xlim(-9, 9); ax.set_ylim(-9, 9); ax.set_aspect('equal')
+        ax.set_xlim(-LIM, LIM); ax.set_ylim(-LIM, LIM); ax.set_aspect('equal')
         ax.set_facecolor('#08080c'); ax.set_title(nom, color='white', fontsize=11)
         ax.tick_params(colors='#666', labelsize=7); ax.grid(alpha=0.08, color='white')
         for sp in ax.spines.values(): sp.set_color('#333')
-    fig.suptitle(f'CAMPO ELÉCTRICO · frame {k+1}/{K} · O–O = {R[k]*BOHR:.2f} Å · {int(viva.sum())} líneas (RK4)',
+    fig.suptitle(f'CAMPO ELÉCTRICO DEL TRÍMERO · cuadro {k+1}/{K} · O–O = {R[k]*BOHR:.2f} Å · '
+                 f'{int(viva.sum())} líneas, cada una con el MISMO flujo',
                  color='white', fontsize=13)
     plt.tight_layout(rect=[0, 0, 1, 0.94])
     plt.savefig(os.path.join(OUT, f'campo_{k:02d}.png'), dpi=90, facecolor='#08080c'); plt.close()

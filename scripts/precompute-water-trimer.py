@@ -179,139 +179,70 @@ def sample_field(field, U):
     return np.stack([x, y, z], axis=1)
 
 
-# ── campo eléctrico REAL: MEP V = Σ Z/|r−R| − ∫ρ/|r−r'| ; E = −∇V (idéntico a Li₂/wpair) ──
-def esp3d(mol, dm, pts, chunk=4000):
-    from pyscf import gto as _gto
-    V = np.empty(pts.shape[0])
-    coords = mol.atom_coords(); charges = mol.atom_charges()
-    for a in range(0, pts.shape[0], chunk):
-        P = pts[a:a + chunk]
-        with mol.with_rinv_origin((0, 0, 0)):
-            pass
-        fakemol = _gto.fakemol_for_charges(P)
-        from pyscf import df
-        ints = df.incore.aux_e2(mol, fakemol, intor='int3c2e')
-        Vel = np.einsum('ijp,ij->p', ints, dm)
-        Vnuc = np.zeros(P.shape[0])
-        for Zc, Rc in zip(charges, coords):
-            Vnuc += Zc / np.maximum(np.linalg.norm(P - Rc, axis=1), 1e-8)
-        V[a:a + chunk] = Vnuc - Vel
-    return V
+# NOTA: aquí vivían esp3d/E3d, que calculaban E = −∇V por DIFERENCIAS FINITAS del potencial
+# (h=0.03 bohr, 6 evaluaciones de ESP por punto). Se borraron a propósito: metían hasta 0.77 %
+# de error en E (medido contra el analítico) y costaban 1.7× más. El campo ahora sale de
+# campo_lineas.CampoMEP, que deriva las integrales ANALÍTICAMENTE. No las revivas.
 
 
-def E3d(mol, dm, P, h=0.03):
-    E = np.zeros_like(P)
-    for ax in range(3):
-        dP = np.zeros(3); dP[ax] = h
-        E[:, ax] = -(esp3d(mol, dm, P + dP) - esp3d(mol, dm, P - dP)) / (2 * h)
-    return E
+# ══════════════════ CAMPO ELÉCTRICO — motor scripts/campo_lineas.py ══════════════════
+# La versión vieja de este bloque (siembra propia + RK4 de paso fijo + media móvil) tenía
+# TRES fallas medidas el 2026-07-27, ver la autopsia en campo_lineas.py:
+#   · amputaba toda línea en una esfera de |r|=6.6 bohr (el radio MÁXIMO de todo punto del
+#     .bin era 6.60 exacto: no era un campo, era un peinado);
+#   · sembraba 210 líneas por cada H y CERO en los O, violando la regla que el propio
+#     comentario citaba ("líneas ∝ magnitud de la carga") — y el O es Z=+8;
+#   · borraba la curvatura con un boxcar de k=9 sobre líneas de 40 puntos (el 22%).
+# Ahora: E analítico exacto, Cash–Karp adaptativo, siembra por FLUJO sobre la superficie
+# molecular ρ=0.002, sin suavizado y sin cortes por radio. Gates: scripts/campo-gate.py.
+sys.path.insert(0, HERE)
+from campo_lineas import (CampoMEP, superficie_molecular, sembrar_por_flujo,      # noqa: E402
+                          superficie_en_rayos, trazar_bidireccional, E_PUENTE, MOTIVO)
+
+N_DIR_SUP = 1200          # direcciones de rayo por núcleo (la malla de la superficie)
+NL_CAMPO = 1100           # líneas; cada una carga el MISMO flujo Φ₀
+LP_CAMPO = 80             # puntos por línea (antes 40: la línea se veía a cuentas)
+TRAZA = dict(tol=1e-8, r_core=0.25, r_caja=16.0, s_max=30.0, e_min=1e-4,
+             max_pasos=1500, max_muestras=900)
 
 
-def field_grid(R_A, gb=None, por_H=210):
-    """SIEMBRA CANÓNICA (reglas de libro de física, no rejilla inventada):
-
-      1. Las líneas de campo EMPIEZAN en carga + y TERMINAN en carga −. El trímero es
-         NEUTRO → todas deben cerrar entre cargas; ninguna debe nacer en el aire.
-      2. El número de líneas por carga es PROPORCIONAL a su magnitud.
-      3. Se siembran UNIFORMEMENTE alrededor de cada carga (una esferita en torno a ella).
-      5. Las líneas no se cruzan (se cumple solo si 1-3 se cumplen).
-
-    Por eso se siembra en una CÁSCARA alrededor de cada H (δ+, la fuente del campo), con el
-    hemisferio que mira HACIA AFUERA de su propio O — si no, la línea se devuelve a su O y
-    no dibuja el puente (gotcha ya conocido del agua). La versión vieja sembraba en coronas
-    concéntricas alrededor del anillo: por eso 11% de picos y líneas nacidas en el vacío.
-    """
-    if gb is None:
-        gb = geom_at(R_A)
-    r0 = 0.62                                     # cáscara pegada al H (bohr)
-    # puntos casi-uniformes en la esfera (espiral de Fibonacci)
-    k = np.arange(por_H) + 0.5
-    phi = np.arccos(1 - 2 * k / por_H)
-    theta = np.pi * (1 + 5 ** 0.5) * k
-    esfera = np.stack([np.cos(theta) * np.sin(phi), np.sin(theta) * np.sin(phi), np.cos(phi)], axis=1)
-    S = []
-    for m in range(3):
-        O = gb[3 * m]
-        for h in (gb[3 * m + 1], gb[3 * m + 2]):
-            fuera = h - O; fuera /= np.linalg.norm(fuera)      # dirección O→H = hacia afuera
-            for e in esfera:
-                if np.dot(e, fuera) < -0.15:                    # descarta el hemisferio que mira al O propio
-                    continue
-                S.append(h + r0 * e)
-    return np.array(S)
+def elegir_rayos(mol_ref, dm_ref):
+    """UNA sola vez, en el anillo CERRADO: qué rayos de la superficie molecular se quedan.
+    Se reusan en todos los cuadros (correspondencia lagrangiana → cero parpadeo)."""
+    c = CampoMEP(mol_ref, dm_ref)
+    sup = superficie_molecular(c, n_dir=N_DIR_SUP)
+    idx, Phi0, info = sembrar_por_flujo(c, sup, NL_CAMPO)
+    ia, id_ = sup['ray']
+    print(f"  siembra por flujo: {len(idx)} líneas · Φ₀ = {Phi0:.3e} · duplicadas {info['duplicados']}"
+          f" · ∮E·n̂dA = {info['flujo_neto']:+.3f}", flush=True)
+    return ia[idx], id_[idx]
 
 
-def _smooth(p, k=9):   # k=9 (el dímero usa 5): el anillo tiene hueco central de campo débil
-                       # donde la dirección brinca → medido 11.4% de picos con k=5 vs 1.4% del dímero
-    if len(p) < k: return p
-    ker = np.ones(k) / k
-    q = p.copy()
-    for ax in range(3):
-        q[:, ax] = np.convolve(p[:, ax], ker, mode='same')
-    q[0] = p[0]; q[-1] = p[-1]
-    return q
+def campo_frame(mol, dm, ia, id_):
+    """Las líneas de UN cuadro. Devuelve (NL, LP, 3) en bohr + diagnóstico."""
+    c = CampoMEP(mol, dm)
+    S, hay, _ = superficie_en_rayos(c, ia, id_, N_DIR_SUP)
+    L, largo, viva, mf_, mb_ = trazar_bidireccional(c, S, LP=LP_CAMPO, e_dibujo=E_PUENTE, **TRAZA)
+    rr = np.linalg.norm(L[viva].reshape(-1, 3), axis=1) if viva.any() else np.zeros(1)
+    return L, dict(viva=int(viva.sum()), sin_rayo=int((~hay).sum()),
+                   largo=float(np.median(largo[viva])) if viva.any() else 0.0,
+                   r95=float(np.percentile(rr, 95)), rmax=float(rr.max()),
+                   caja=float((mf_ == 3).mean() * 100))
 
 
-# TRAZADOR COPIADO LITERAL del dímero (precompute-water-approach.py). Mi versión propia
-# perdió las 3 lecciones ya ganadas con Li₂ y medidas por scripts/verificar-campo.py:
-#   · BIDIRECCIONAL (+E y −E) → la línea va de + a − y NO se corta en el aire
-#   · PARA al llegar a un núcleo (<0.40 bohr) → no divaga
-#   · remuestreo por LONGITUD DE ARCO → espaciado uniforme (sin saltos ni zigzag)
-# Medido antes de copiar: saltos 20.2% vs 0.0% · picos 40.7% vs 1.4% del dímero.
-# maxlen 9→6.6: las líneas que ESCAPABAN lejos salían RECTAS (campo casi uniforme allá)
-# y leían como picos/glitch. Medido: 40.7% → 11.4% de picos; el resto son estas fugas.
-def trace_field3d(mol, dm, gb, seeds, LP, maxlen=6.6, h=0.19, THR=0.006):
-    Rn = gb                                                # los 6 núcleos (sumideros/fuentes)
-    NS = len(seeds); HALF = LP
-
-    def leg(sign):
-        P = seeds.copy(); paths = np.zeros((NS, HALF, 3)); dead = np.full(NS, HALF); alive = np.ones(NS, bool)
-        for st in range(HALF):
-            paths[:, st] = P
-            # RK4 (4o orden) en vez de EULER (1er orden). Medido en el banco de soluciones
-            # exactas (scripts/validar-trazador-campo.py): la deriva de la funcion de flujo
-            # psi = sum q_i cos(theta_i) — que por Gauss DEBE ser constante — baja de
-            # 1.85e-2 (Euler) a 4.87e-7 (RK4). 38,000x. Es lo que hacia que el campo se
-            # viera "raro/no natural": cada linea acumulaba error cerca de los nucleos.
-            def _u(X):
-                Ex = E3d(mol, dm, X); nx = np.linalg.norm(Ex, axis=1, keepdims=True)
-                return np.where(nx > THR, sign * Ex / np.maximum(nx, 1e-9), 0.0)
-            E = E3d(mol, dm, P); n = np.linalg.norm(E, axis=1, keepdims=True)
-            k1 = np.where(n > THR, sign * E / np.maximum(n, 1e-9), 0.0)
-            k2 = _u(P + 0.5 * h * k1)
-            k3 = _u(P + 0.5 * h * k2)
-            k4 = _u(P + h * k3)
-            newP = P + (h / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
-            near = np.zeros(NS, bool)
-            for rn in Rn:
-                near |= np.linalg.norm(newP - rn, axis=1) < 0.40
-            far = np.linalg.norm(newP, axis=1) > maxlen
-            stop = (n[:, 0] <= THR) | near | far          # PARA en campo débil (no divaga → sin zigzag)
-            jd = alive & stop; dead[jd] = np.minimum(dead[jd], st + 1); alive &= ~stop
-            P = np.where(alive[:, None], newP, P)
-        return paths, dead
-
-    pf, df = leg(+1)
-    # semilla EN la carga + (siembra canónica) → la línea nace ahí y solo va hacia adelante.
-    # La pata −E se metía al núcleo del H en 1 paso y dejaba un CODO en la unión (18.6% de
-    # los picos estaban en el INICIO de la línea, medido).
-    pb = pf[:, :1].copy(); db = np.ones(NS, int)
-    out = np.zeros((NS, LP, 3))
-    for i in range(NS):
-        full = _smooth(np.vstack([pb[i, :max(1, db[i])][::-1], pf[i, 1:max(1, df[i])]]))
-        seg = np.r_[0, np.cumsum(np.linalg.norm(np.diff(full, axis=0), axis=1))]
-        if seg[-1] < 1e-6:
-            out[i] = np.tile(full[0], (LP, 1))
-        else:
-            uu = np.linspace(0, seg[-1], LP)
-            out[i] = np.stack([np.interp(uu, seg, full[:, c]) for c in range(3)], axis=1)
-    return out
+def _rayos_de_referencia(gto, scf, R_ref):
+    """El cuadro de REFERENCIA para la siembra es el anillo CERRADO (el que cuenta la
+    historia). Ahí se decide qué rayos llevan el flujo; los demás cuadros reusan esos."""
+    gbr = geom_at(R_ref)
+    mr = gto.M(atom=[[int(Z[i]), tuple(gbr[i])] for i in range(NNUC)], basis=BASIS, unit='Bohr', verbose=0)
+    fr = scf.RHF(mr); fr.max_cycle = 200; fr.kernel()
+    return elegir_rayos(mr, fr.make_rdm1())
 
 
 def build():
     from pyscf import gto, scf
     global Rvals, R_MIN
-    LP = 40
+    LP = LP_CAMPO
     # el barrido TERMINA en el equilibrio que encontró el optimizador (no en un número elegido)
     geom_at(R_EQ_A)                                    # fuerza optimización/carga de _GEQ
     Oc = np.array([_GEQ[3 * i] for i in range(3)])
@@ -323,7 +254,8 @@ def build():
     accPos = np.zeros((K, N_ACC, 3)); depPos = np.zeros((K, N_DEP, 3)); spinPos = np.zeros((K, N_SPIN, 3))
     bondMass = np.zeros(K); nucPos = np.zeros((K, NNUC, 3))
     Ebind = np.zeros(K); E3body = np.zeros(K)
-    SEEDS0 = field_grid(R_EQ_A, geom_at(R_EQ_A)); NL_EF = len(SEEDS0)
+    ia_r, id_r = _rayos_de_referencia(gto, scf, float(Rvals[-1]))
+    NL_EF = len(ia_r)
     efield = np.zeros((K, NL_EF, LP, 3))
 
     print(f"=== TRÍMERO DE AGUA (9 átomos) · {K} radios · {BASIS} · malla {NXY}×{NXY}×{NZ} ===", flush=True)
@@ -372,8 +304,9 @@ def build():
         depPos[k] = sample_field(dep_field, U_dep)
         spinPos[k] = sample_field(spin_field, U_spin)
         nucPos[k] = gb
-        efield[k] = trace_field3d(mol, dm, gb, field_grid(R_A, gb), LP)
-        print(f"{k:2d}  {R_A:5.2f}  {mf.e_tot:12.5f}  {e_bind:8.2f}     {e_3b:8.2f}      {coop:5.1f}%  {bondMass[k]:.4f}", flush=True)
+        efield[k], dg = campo_frame(mol, dm, ia_r, id_r)
+        print(f"{k:2d}  {R_A:5.2f}  {mf.e_tot:12.5f}  {e_bind:8.2f}     {e_3b:8.2f}      {coop:5.1f}%  {bondMass[k]:.4f}"
+              f"   campo: {dg['viva']}/{NL_EF} vivas, largo {dg['largo']:.1f}, r95 {dg['r95']:.1f} bohr", flush=True)
 
     # color: MISMA paleta del agua v2/wpair (oro cálido + morado en los O). NO inventar color nuevo.
     kEq = int(np.argmin(np.abs(Rvals - R_EQ_A)))
@@ -436,22 +369,27 @@ def solo_campo():
     Sirve cuando el verificador (scripts/verificar-campo.py) reprueba el campo y hay que
     re-trazarlo sin re-hacer las nubes."""
     from pyscf import gto, scf
-    LP = 40
+    import time
+    LP = LP_CAMPO
     geom_at(R_EQ_A)
     Oc = np.array([_GEQ[3 * i] for i in range(3)])
     R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in ((0, 1), (1, 2), (2, 0))]))
     Rmin_eff = R0 * 0.975
     Rv = R_MAX_A + (Rmin_eff - R_MAX_A) * (np.arange(K) / (K - 1))
-    NL_EF = len(field_grid(R_EQ_A, geom_at(R_EQ_A)))
+    ia_r, id_r = _rayos_de_referencia(gto, scf, float(Rv[-1]))
+    NL_EF = len(ia_r)
     ef = np.zeros((K, NL_EF, LP, 3))
-    print(f"=== SOLO CAMPO · {K} radios · {NL_EF} líneas × {LP} ===", flush=True)
+    print(f"=== SOLO CAMPO · {K} radios · {NL_EF} líneas × {LP} pts · corte |E|≥{E_PUENTE} u.a. ===", flush=True)
     for k in range(K):
+        t0 = time.time()
         R_A = float(Rv[k]); gb = geom_at(R_A)
         atoms = [[int(Z[i]), tuple(gb[i])] for i in range(NNUC)]
         mol = gto.M(atom=atoms, basis=BASIS, unit='Bohr', verbose=0)
         mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
-        ef[k] = trace_field3d(mol, mf.make_rdm1(), gb, field_grid(R_A, gb), LP)
-        print(f"  {k+1}/{K}  O-O {R_A:.2f} Å", flush=True)
+        ef[k], dg = campo_frame(mol, mf.make_rdm1(), ia_r, id_r)
+        print(f"  {k+1}/{K}  O-O {R_A:.2f} Å · {dg['viva']}/{NL_EF} vivas · largo mediano "
+              f"{dg['largo']:.2f} · r95 {dg['r95']:.1f} rmax {dg['rmax']:.1f} bohr · "
+              f"caja {dg['caja']:.0f}% · {time.time()-t0:.0f} s", flush=True)
     with open(OUT_EF, 'wb') as fp:
         fp.write(struct.pack('<3i', K, NL_EF, LP))
         fp.write((Rv / BOHR).astype('<f4').tobytes())
