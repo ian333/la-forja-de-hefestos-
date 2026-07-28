@@ -143,40 +143,77 @@
     ]
   },
   "capas": {
+    "fuente": "WTRI_CAPAS en src/cinematic/CinematicMolecule.tsx — ESTA sección es un ESPEJO. Si divergen, manda el código.",
+    "aviso": "2026-07-28: esta sección estaba DESINCRONIZADA (decía campo base 1 con una ventana) y me hizo diagnosticar como defecto lo que era coreografía. El campo a t=9 está al 15% A PROPÓSITO.",
     "spec": {
+      "campo": {
+        "base": 0.55,
+        "mods": [
+          {
+            "wins": [
+              [
+                27.4,
+                35.3
+              ]
+            ],
+            "a": 1.05,
+            "label": "PROTAGONISTA: nace el puente / no es línea / es carga"
+          },
+          {
+            "wins": [
+              [
+                39.7,
+                60.3
+              ]
+            ],
+            "a": 0.85,
+            "label": "la fuerza: los tres jalan más + el 12%"
+          },
+          {
+            "wins": [
+              [
+                6.1,
+                18.6
+              ]
+            ],
+            "a": -0.4,
+            "label": "baja cuando la voz mira los electrones de UNA (cuenta átomos, no líneas)"
+          }
+        ]
+      },
       "nubes": {
         "base": 1,
         "mods": [
           {
             "wins": [
               [
-                60.7,
-                72.3
-              ]
-            ],
-            "a": -0.3,
-            "label": "de canto: baja la nube para LEER el pucker"
-          }
-        ]
-      },
-      "campo": {
-        "base": 1,
-        "mods": [
-          {
-            "wins": [
+                27.4,
+                35.3
+              ],
               [
-                27.8,
-                34.9
+                60.3,
+                72.4
               ]
             ],
-            "a": -0.85,
-            "label": "campo baja cuando hablo de electrones/carga"
+            "a": -0.34,
+            "label": "deja LEER el puente y el pucker"
           }
         ]
       },
       "parpadeo": {
         "base": 0.42,
-        "mods": []
+        "mods": [
+          {
+            "wins": [
+              [
+                6.1,
+                18.6
+              ]
+            ],
+            "a": 0.42,
+            "label": "los electrones parpadean cuando se nombran"
+          }
+        ]
       },
       "spin": {
         "base": 1,
@@ -184,16 +221,16 @@
           {
             "wins": [
               [
-                40.1,
-                53.2
+                27.4,
+                35.3
               ],
               [
-                27.8,
-                34.9
+                39.7,
+                60.3
               ]
             ],
-            "a": 0.9,
-            "label": "Δρ ARDE: los puentes y la cooperatividad"
+            "a": 0.85,
+            "label": "Δρ ARDE: el puente y la cooperatividad"
           }
         ]
       },
@@ -203,16 +240,46 @@
           {
             "wins": [
               [
-                6.5,
-                18.2
-              ],
-              [
-                6.5,
-                18.2
+                6.1,
+                18.6
               ]
             ],
-            "a": 0.5,
-            "label": "ORO del oxígeno en \"un oxígeno y dos hidrógenos\""
+            "a": 0.45,
+            "label": "ORO del oxígeno"
+          }
+        ]
+      },
+      "enlaces": {
+        "base": 0,
+        "mods": [
+          {
+            "wins": [
+              [
+                6.1,
+                18.6
+              ],
+              [
+                60.3,
+                78.6
+              ]
+            ],
+            "a": 1.0,
+            "label": "los 3 átomos y la firma"
+          }
+        ]
+      },
+      "dipolo": {
+        "base": 0,
+        "mods": [
+          {
+            "wins": [
+              [
+                60.3,
+                78.6
+              ]
+            ],
+            "a": 1.0,
+            "label": "FIRMA: se ve que una apunta al contrario"
           }
         ]
       }
@@ -366,6 +433,7 @@
       "NADA de recortes por radio ni por |E|: la línea va completa hasta la escala térmica (kT/bohr a 300 K) y el BRILLO del shader la apaga (canal uint8 de |E| en el .bin). Recortar era lo que la dejaba 'despeinada'.",
       "cero suavizado: la curvatura que se ve es la del campo"
     ],
-    "correspondencia": "la línea j es SIEMPRE el mismo rayo (núcleo, dirección) de la superficie → se desliza suave entre cuadros, cero parpadeo. La selección por flujo se hace una vez, en el anillo cerrado."
+    "correspondencia": "la línea j es SIEMPRE el mismo rayo (núcleo, dirección) de la superficie → se desliza suave entre cuadros, cero parpadeo. La selección por flujo se hace una vez, en el anillo cerrado.",
+    "lineas": "550 (NL_CAMPO en precompute-water-trimer.py). 275 se veía ralo en las tomas donde el campo ES protagonista (t=27-60); en t=6-18 se ve tenue por COREOGRAFÍA (capas.campo=0.15), no por falta de líneas."
   }
 }
