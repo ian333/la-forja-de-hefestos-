@@ -34,7 +34,14 @@ BOHR = 0.529177210903
 HART2KCAL = 627.5094740631
 BASIS = 'cc-pVDZ'
 SEED = 20260727
-POSQ = 5000.0
+# POSQ = escala de cuantización a int16: bohr = valor/POSQ, y el techo es 32767/POSQ.
+# Con 5000 el techo era 6.5534 bohr POR EJE y la nube se RECORTABA ahí: medido en el anillo
+# abierto, 9.56 % de las partículas aplastadas contra x=±6.5534 y 4.93 % contra y — un CUBO
+# de caras planas, y justo en los cuadros del gancho (`ringWide`/`ringFaceOn` miran de frente
+# a esa cara). Con 2000 el techo sube a 16.38 bohr y el paso sigue siendo 0.0005 bohr.
+# El renderer LEE este número del encabezado (siempre estuvo escrito ahí), así que los .bin
+# viejos con 5000 se siguen viendo igual.
+POSQ = 2000.0
 
 # ── monómero LITERAL (experimental) ──
 D_OH_A = 0.9578          # Å
@@ -58,7 +65,7 @@ Rvals = R_MAX_A + (R_MIN_A - R_MAX_A) * (np.arange(K) / (K - 1))   # descendente
 R_MIN = R_MIN_A / BOHR; R_MAX = R_MAX_A / BOHR
 
 # caja (bohr): el anillo abierto (R=5.6 Å) tiene circunradio 3.23 Å = 6.1 bohr; + nube
-LXY, LZ_ = 10.6, 6.6
+LXY, LZ_ = 10.6, 8.4   # LZ_ subió: con POSQ=5000 el techo del int16 (6.55) enmascaraba este corte
 dx = (2 * LXY) / NXY; dz = (2 * LZ_) / NZ
 xs = -LXY + (np.arange(NXY) + 0.5) * dx
 zs = -LZ_ + (np.arange(NZ) + 0.5) * dz

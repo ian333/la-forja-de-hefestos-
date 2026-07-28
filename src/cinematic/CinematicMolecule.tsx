@@ -432,7 +432,7 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: eyeLevelLock({ rMul: 1.40, azim: 2.1 }), dur: 7.11, label: 'el DATO (12%) — nivel de ojo, quieto' },
     { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26 }), dur: 12.07, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
     { shot: ringFaceOn({ rMul: 1.34, azim0: 2.4, span: 0.5, elev: -0.10 }), dur: 9.82, label: 'aguanta más + nada inventado (anillo entero)' },
-    { shot: pullOut({ azim0: 0.9, span: 1.2 }), dur: 11.44, label: 'payoff — se aleja CON el anillo en cuadro' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.44, label: 'payoff — SALE del anillo (no de dentro de la nube): 7.2 → 14.2 bohr' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -1167,8 +1167,8 @@ function CarotenoFlow({ bundle, axis, cen, L, reveal, color, bright, time }:
 // Una nube advectada: cada frame interpola las POSICIONES entre las dos separaciones
 // que bracketean R(t) → las partículas se MUEVEN siguiendo la densidad (la carga
 // fluye al enlace). El color es fijo por partícula (viene del .bin o constante).
-function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30, bonds, bondGlow = 0 }:
-  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; bonds?: [[number,number,number],[number,number,number]][]; bondGlow?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number }) {
+function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30, bonds, bondGlow = 0, qScale = O2AI_POSQ }:
+  { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; bonds?: [[number,number,number],[number,number,number]][]; bondGlow?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number; qScale?: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -1187,7 +1187,7 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     const frac = r0 === r1 ? 0 : Math.max(0, Math.min(1, (r0 - R) / (r0 - r1)));
     const pos = geo.getAttribute('position') as THREE.BufferAttribute;
     const arr = pos.array as Float32Array;
-    const o0 = k * N * 3, o1 = (k + 1) * N * 3, inv = 1 / O2AI_POSQ, mf = 1 - frac;
+    const o0 = k * N * 3, o1 = (k + 1) * N * 3, inv = 1 / qScale, mf = 1 - frac;
     for (let i = 0; i < N * 3; i++) arr[i] = (posQ[o0 + i] * mf + posQ[o1 + i] * frac) * inv;
     pos.needsUpdate = true;
     if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uBright.value = brightness;
@@ -1215,7 +1215,7 @@ function AtomCloud({ posQ, x, brightness, shellR }:
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     const pos = new Float32Array(N * 3);
-    const inv = 1 / O2AI_POSQ;
+    const inv = 1 / qScale;
     for (let i = 0; i < N * 3; i++) pos[i] = posQ[i] * inv;
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     // COLOR POR CAPA (real): la densidad radial del átomo tiene DOS picos — core 1s
@@ -1784,12 +1784,20 @@ interface WAPData {
   Nacc: number; Ndep: number; Nspin: number; K: number; NNUC: number; NL: number; LP: number;
   Rvals: Float32Array; bondMass: Float32Array; accColor: Float32Array; Z: Int16Array;
   accPos: Int16Array; depPos: Int16Array; spinPos: Int16Array; nucPos: Int16Array; fieldLines: Int16Array;
+  /** escala de cuantización leída del ENCABEZADO (bohr = int16/posq). Los .bin viejos traen 5000. */
+  posq: number;
 }
 function parseWAP2(buf: ArrayBuffer): WAPData {
   const dv = new DataView(buf); let off = 4;   // salta magic 'WAP2'
   const gi = () => { const v = dv.getInt32(off, true); off += 4; return v; };
   const Nacc = gi(), Ndep = gi(), Nspin = gi(), K = gi(), NNUC = gi(), NL = gi(), LP = gi();
-  off += 4 + 8;   // POSQ + Rmin + Rmax (POSQ = O2AI_POSQ)
+  // POSQ SE LEE DEL ENCABEZADO (2026-07-28). Estaba escrito en el .bin desde siempre y el
+  // parser lo tiraba, asumiendo O2AI_POSQ=5000 → techo de int16 en 32767/5000 = 6.5534
+  // bohr POR EJE. Medido en el anillo abierto: 9.56 % de las partículas aplastadas contra
+  // x=±6.5534 y 4.93 % contra y — un CUBO de caras planas, justo en los cuadros del gancho.
+  // Leerlo es retro-compatible: los .bin viejos traen 5000 en el encabezado.
+  const posq = dv.getFloat32(off, true);
+  off += 4 + 8;   // POSQ + Rmin + Rmax
   const Rvals = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
   const bondMass = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
   const acU = new Uint8Array(buf.slice(off, off + Nacc * 3)); off += Nacc * 3;
@@ -1798,7 +1806,7 @@ function parseWAP2(buf: ArrayBuffer): WAPData {
   const rd = (n: number) => { const a = new Int16Array(buf.slice(off, off + n * 2)); off += n * 2; return a; };
   const accPos = rd(K * Nacc * 3), depPos = rd(K * Ndep * 3), spinPos = rd(K * Nspin * 3);
   const nucPos = rd(K * NNUC * 3), fieldLines = rd(K * NL * LP * 3);
-  return { Nacc, Ndep, Nspin, K, NNUC, NL, LP, Rvals, bondMass, accColor, Z, accPos, depPos, spinPos, nucPos, fieldLines };
+  return { Nacc, Ndep, Nspin, K, NNUC, NL, LP, posq, Rvals, bondMass, accColor, Z, accPos, depPos, spinPos, nucPos, fieldLines };
 }
 function wapBracket(Rvals: Float32Array, K: number, R: number) {
   let k = 0;
@@ -1958,17 +1966,26 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // El rojo/ámbar es la riqueza que faltaba; el morado NO va aquí (va en el Δρ).
   const accColorWarm = useMemo(() => {
     if (!wd) return new Float32Array(0);
-    const inv = 1 / O2AI_POSQ, kRef = wd.K - 1;
+    const inv = 1 / (wd.posq || O2AI_POSQ), kRef = wd.K - 1;
     const nb = kRef * wd.NNUC * 3, pb = kRef * wd.Nacc * 3;
-    const O1 = [wd.nucPos[nb] * inv, wd.nucPos[nb + 1] * inv, wd.nucPos[nb + 2] * inv];
-    const O2n = [wd.nucPos[nb + 9] * inv, wd.nucPos[nb + 10] * inv, wd.nucPos[nb + 11] * inv];
+    // TODOS los oxígenos (átomos 0, 3, 6…), no dos. Estaba escrito a mano para el DÍMERO
+    // (nb y nb+9) y el anillo lo heredó: el TERCER oxígeno no existía en el cálculo, así que
+    // su nube caía siempre en `t=1` = ámbar puro. Luminancia Rec.709 del ámbar 0.387 contra
+    // 0.724 del oro ⇒ UN TERCIO de la nube iba a la mitad de brillo y con otro tono. Eso es
+    // parte del "muy poca saturación" que se reportó a ojo.
+    const Os: number[][] = [];
+    for (let m = 0; m * 3 < wd.NNUC; m++) {
+      const o = nb + m * 9;
+      Os.push([wd.nucPos[o] * inv, wd.nucPos[o + 1] * inv, wd.nucPos[o + 2] * inv]);
+    }
     // MÁS SATURACIÓN: tonos más profundos (menos verde/azul) + núcleo menos blanco
     const gold = [1.0, 0.70, 0.14], amber = [1.0, 0.24, 0.03], whitegold = [1.0, 0.82, 0.42];
     const c = new Float32Array(wd.Nacc * 3);
     for (let i = 0; i < wd.Nacc; i++) {
       const x = wd.accPos[pb + i * 3] * inv, y = wd.accPos[pb + i * 3 + 1] * inv, z = wd.accPos[pb + i * 3 + 2] * inv;
-      const d1 = Math.hypot(x - O1[0], y - O1[1], z - O1[2]), d2 = Math.hypot(x - O2n[0], y - O2n[1], z - O2n[2]);
-      const dO = Math.min(d1, d2), t = Math.min(1, dO / 2.4);
+      let dO = Infinity;
+      for (const O of Os) { const d = Math.hypot(x - O[0], y - O[1], z - O[2]); if (d < dO) dO = d; }
+      const t = Math.min(1, dO / 2.4);
       let col: number[];
       if (dO < 0.9) col = whitegold;
       else col = [gold[0] * (1 - t) + amber[0] * t, gold[1] * (1 - t) + amber[1] * t, gold[2] * (1 - t) + amber[2] * t];
@@ -2015,7 +2032,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   let bmMax = 1e-6; for (let i = 0; i < wd.K; i++) bmMax = Math.max(bmMax, wd.bondMass[i]);
   const bb = wapBracket(wd.Rvals, wd.K, R);
   const glow = (wd.bondMass[bb.k] * (1 - bb.frac) + wd.bondMass[bb.k + 1] * bb.frac) / bmMax;
-  const inv = 1 / O2AI_POSQ; const mf = 1 - bb.frac;
+  const inv = 1 / (wd.posq || O2AI_POSQ); const mf = 1 - bb.frac;
   const nucP: Vec3[] = [];
   for (let a = 0; a < wd.NNUC; a++) {
     const o0 = (bb.k * wd.NNUC + a) * 3, o1 = ((bb.k + 1) * wd.NNUC + a) * 3;
@@ -2048,9 +2065,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
         pts={nucP.filter((_, i) => i % 3 === 0)} />
       {/* size ×1.85 para 4K (a 2160×3840 los puntos quedan relativamente la mitad → nube rala;
           se compensa el tamaño para que la densidad se vea como en el preview 1080) */}
-      <O2Cloud posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
-      <O2Cloud posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={mk === 'wtri' ? ohBonds : undefined} bondGlow={mk === 'wtri' ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
-      <O2Cloud posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
+      <O2Cloud qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
+      <O2Cloud qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={mk === 'wtri' ? ohBonds : undefined} bondGlow={mk === 'wtri' ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
+      <O2Cloud qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}

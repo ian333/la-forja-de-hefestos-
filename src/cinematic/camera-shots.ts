@@ -189,13 +189,22 @@ export function nucleusOrbit(o: { r?: number; elevAmp?: number; azim0?: number; 
 
 /** pullOut — Powers-of-Ten de REGRESO: el átomo se hace chico, vuelve la molécula
  *  completa. Cierra o encadena al héroe/loop. */
-export function pullOut(o: { rTdMul?: number; fovFrom?: number; fovTo?: number; azim0?: number; span?: number } = {}): Shot {
-  const { rTdMul = 1.30, fovFrom = 42, fovTo = 33, azim0 = 7.9, span = 1.2 } = o;
+export function pullOut(o: { rTdMul?: number; rFromMul?: number; fovFrom?: number; fovTo?: number; azim0?: number; span?: number } = {}): Shot {
+  const { rTdMul = 1.30, rFromMul, fovFrom = 42, fovTo = 33, azim0 = 7.9, span = 1.2 } = o;
   return (u, c) => {
-    const r0 = 0.18, r1 = c.ex * rTdMul;
+    // ARRANQUE: `r0 = 0.18` está pensado para ENCADENAR después de `nucleusOrbit` (r≈0.205).
+    // Usado como payoff detrás de un plano amplio, mete la cámara a 0.18 bohr DENTRO de la
+    // nube. Medido en el anillo: 11 s sin ningún sujeto en pantalla (t79-86.5, cinco cuadros
+    // seguidos), justo donde caen 2 de las 4 frases del payoff. `rFromMul` (opcional) lo hace
+    // relativo a la escala de la pieza; sin él, comportamiento IDÉNTICO al de siempre.
+    const r0 = rFromMul !== undefined ? c.ex * rFromMul : 0.18, r1 = c.ex * rTdMul;
     const r = Math.max(MINR, r0 * Math.pow(r1 / r0, smooth(u)));
     const m = smooth(Math.min(1, u / 0.6));                                   // la mirada regresa a la molécula
-    const cen: Vec3 = [lerp(c.nucX, 0, m), 0, 0];
+    // OBJETIVO: `[nucX,0,0]` es convención DIATÓMICA (dos átomos en ±x). En el anillo, nucX
+    // = R/2 NO cae sobre ningún núcleo (los O están a R/√3 en azimuts 0°/120°/240°) → la
+    // cámara miraba a un punto fantasma. `_mid` devuelve [0,0,0] si pts<3 → dímero intacto.
+    const M = _mid(c);
+    const cen: Vec3 = [lerp(c.nucX, M[0], m), lerp(0, M[1], m), lerp(0, M[2], m)];
     return { pos: orbitAround(cen, r, lerp(-0.16, 0.20, u), azim0 + span * u), fov: lerp(fovFrom, fovTo, u), target: cen, roll: ROLL };
   };
 }
