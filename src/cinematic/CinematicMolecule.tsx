@@ -36,7 +36,7 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const WTRI_DURATION = 94;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
+const WTRI_DURATION = 92;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
 // lenta ×3 (slow-motion de una dinámica real, no falseo): acercamiento ~3.3s +
@@ -423,16 +423,16 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // derramaban a la toma siguiente), y como Σ dur = 90.3 < WTRI_DURATION = 94, los últimos
   // 3.7 s la cámara quedaba CONGELADA por el clamp de playShots. Ahora dur[i] = ini[i+1]−ini[i].
   wtri: [
-    { shot: ringWide({ rMul: 1.62, azim0: 0.55, span: 1.0, elev: 0.30 }), dur: 6.52, label: 'las TRES separadas — que se CUENTEN 3' },
-    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 12.08, label: 'una sola en teleobjetivo (fuera de la nube)' },
-    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 9.21, label: 'DE FRENTE: el anillo entero con aire' },
-    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 7.5, label: 'el PUENTE entre dos (sin entrar a la nube)' },
-    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.82, label: 'el anillo CIERRA — se ven las tres' },
-    { shot: heroOrbit({ dir: 1, azim0: 1.1, span: 1.5, elev: 0.20, rMul: 1.42, fov: 32 }), dur: 13.43, label: 'COOPERATIVIDAD: órbita con las 3 SIEMPRE en cuadro' },
-    { shot: eyeLevelLock({ rMul: 1.40, azim: 2.1 }), dur: 7.11, label: 'el DATO (12%) — nivel de ojo, quieto' },
-    { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26 }), dur: 12.07, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
-    { shot: ringFaceOn({ rMul: 1.34, azim0: 2.4, span: 0.5, elev: -0.10 }), dur: 9.82, label: 'aguanta más + nada inventado (anillo entero)' },
-    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.44, label: 'payoff — SALE del anillo (no de dentro de la nube): 7.2 → 14.2 bohr' },
+    { shot: ringWide({ rMul: 1.62, azim0: 0.55, span: 1.0, elev: 0.30 }), dur: 10.73, label: 'las TRES separadas — que se CUENTEN 3' },
+    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 11.17, label: 'una sola en teleobjetivo (fuera de la nube)' },
+    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.38, label: 'DE FRENTE: el anillo entero con aire' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 6.66, label: 'el PUENTE entre dos (sin entrar a la nube)' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.31, label: 'el anillo CIERRA — se ven las tres' },
+    { shot: loomPush({ rFrom: 1.46, rTo: 1.05, elev: 0.16, azim: 1.1, fov: 32 }), dur: 12.16, label: 'COOPERATIVIDAD: SE VIENE ENCIMA (el manifiesto pedía loomPush, el código tenía heroOrbit plantado 13 s)' },
+    { shot: eyeLevelLock({ rMul: 1.40, azim: 2.1 }), dur: 6.18, label: 'el DATO (12%) — nivel de ojo, quieto' },
+    { shot: ringEdgeToFace({ rMul: 1.55, elev: 0.26 }), dur: 11.82, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
+    { shot: crashIn({ rFrom: 1.40, rTo: 1.02 }), dur: 9.49, label: 'aguanta más + nada inventado — CRASH IN (lo que pedía el manifiesto)' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.09, label: 'payoff — SALE del anillo (no de dentro de la nube): 7.2 → 14.2 bohr' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -1830,38 +1830,28 @@ const WPAIR_CAPAS: CapasSpec = {
 };
 // CAPAS DEL ANILLO — derivadas de la VOZ (recalibrar-beats.py sobre segs.json), no a mano.
 const WTRI_CAPAS: CapasSpec = {
-  // el CAMPO manda cuando se habla de puente/carga/fuerza (antes lo APAGABA ahí: bug medido)
+  // REMAPEADAS a la voz NUEVA (2026-07-28, tras insertar "H dos O. Dos hidrógenos y un
+  // oxígeno."). Las ventanas son las FRONTERAS REALES de cada toma según segs.json:
+  //   ringWide 0-10.3 · ringOne 10.7-21.5 · ringFaceOn 21.9-29.9 · ringToBridge 30.3-36.5
+  //   ringFaceOn 36.9-40.9 · loomPush 41.3-53.0 · eyeLevel 53.4-59.2 · edgeToFace 59.6-71.0
+  //   crashIn 71.4-80.5 · pullOut 80.9-92.0
+  // OJO: `recalibrar-beats.py` regenera las capas desde una PLANTILLA vieja (campo base 1, y
+  // pierde enlaces/dipolo/apertura). De ese script se toman las DURACIONES, no las capas.
   campo:    { base: 0.55, mods: [
-    // FRAME 0 = EL PICO (Ian, 2026-07-28, viendo los stills: "los valores del campo de esos
-    // paneles se deberían aplicar al frame 0"). Los beats que más le gustaron son t=30 (campo
-    // 1.60) y t=42 (1.40); el arranque estaba en 0.55 = la config más apagada de la pieza,
-    // en los 5 s que IG usa para decidir. El canon ya lo decía: "Frame 1 = el pico, nada de
-    // fade-in tímido" — O₂ arranca formada ARDIENDO.
-    { wins: [[0.0, 6.1]],   a: 1.00, label: 'FRAME 0 = EL PICO: el campo entra a tope' },
-    { wins: [[27.4, 35.3]], a: 1.05, label: 'PROTAGONISTA: nace el puente / no es línea / es carga' },
-    { wins: [[39.7, 60.3]], a: 0.85, label: 'la fuerza: los tres jalan más + el 12%' },
-    { wins: [[6.1, 18.6]],  a: -0.40, label: 'baja cuando la voz mira los electrones de UNA' } ] },
-  // las nubes bajan donde estorban la lectura (campo protagonista y firma de canto)
-  nubes:    { base: 1, mods: [{ wins: [[27.4, 35.3], [60.3, 72.4]], a: -0.34, label: 'deja LEER el puente y el pucker' }] },
-  parpadeo: { base: 0.42, mods: [{ wins: [[6.1, 18.6]], a: 0.42, label: 'los electrones parpadean cuando se nombran' }] },
-  spin:     { base: 1, mods: [{ wins: [[27.4, 35.3], [39.7, 60.3]], a: 0.85, label: 'Δρ ARDE: el puente y la cooperatividad' }] },
-  acc:      { base: 1, mods: [{ wins: [[6.1, 18.6]], a: 0.45, label: 'ORO del oxígeno en un oxígeno y dos hidrógenos' }] },
-  // los PALITOS O–H hacen contable "una molécula = tres átomos" (sin ellos son bolas sueltas)
-  enlaces:  { base: 0, mods: [{ wins: [[6.1, 18.6], [60.3, 78.6]], a: 1.0, label: 'los 3 átomos y la firma' }] },
-  // la FLECHA del dipolo es lo único que vuelve VISIBLE "una quedó al revés"
-  dipolo:   { base: 0, mods: [{ wins: [[60.3, 78.6]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
-  // LA APERTURA DEL ANILLO, coreografiada a la VOZ (0 = pegadas, 1 = lo más separadas).
-  // El acto 1 las muestra separadas para que se CUENTEN TRES; el anillo CIERRA en la línea
-  // que dice que cierra (35.3-39.7) y YA NO VUELVE A ABRIR — porque a partir de ahí la voz
-  // habla de cooperatividad y de los tres puentes, que solo existen con el anillo cerrado.
-  // Dos moduladores que SE SUMAN: el acto 1 las abre de más (0.62) para que se CUENTEN
-  // TRES; a partir del segundo 8.5 baja a 0.28 — separadas pero ya legibles como ANILLO,
-  // porque desde el 18.6 la voz dice "se acomodan en un anillo" y no puede estar mintiendo.
-  // Cierra del todo en 35.6, sobre la línea "el anillo cierra", y ya no vuelve a abrir.
-  // (Geometría medida: abierto de más, el trímero NO CABE en 9:16 sin morder un borde.)
+    { wins: [[0.0, 10.3]],  a: 1.00, label: 'FRAME 0 = EL PICO: el campo entra a tope' },
+    { wins: [[30.3, 36.5]], a: 1.05, label: 'PROTAGONISTA: nace el puente / no es línea / es carga' },
+    { wins: [[41.3, 59.2]], a: 0.85, label: 'la fuerza: los tres jalan más + el 12%' },
+    { wins: [[10.7, 21.5]], a: -0.40, label: 'baja cuando la voz mira los electrones de UNA' } ] },
+  nubes:    { base: 1, mods: [{ wins: [[30.3, 36.5], [59.6, 71.0]], a: -0.34, label: 'deja LEER el puente y el pucker' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[10.7, 21.5]], a: 0.42, label: 'los electrones parpadean cuando se nombran' }] },
+  spin:     { base: 1, mods: [{ wins: [[30.3, 36.5], [41.3, 59.2]], a: 0.85, label: 'Δρ ARDE: el puente y la cooperatividad' }] },
+  acc:      { base: 1, mods: [{ wins: [[10.7, 21.5]], a: 0.45, label: 'ORO del oxígeno en un oxígeno y dos hidrógenos' }] },
+  enlaces:  { base: 0, mods: [{ wins: [[0.0, 21.5], [59.6, 80.5]], a: 1.0, label: 'los 3 átomos (desde el SEGUNDO 0: la línea nueva dice H dos O) y la firma' }] },
+  dipolo:   { base: 0, mods: [{ wins: [[59.6, 80.5]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
+  // el anillo CIERRA sobre la línea "el anillo cierra" (toma 5: 36.9-40.9) y ya no vuelve a abrir
   apertura: { base: 0, mods: [
-    { wins: [[1.6, 8.5]],  a: 0.34, label: 'acto 1: las TRES bien separadas, que se cuenten' },
-    { wins: [[1.6, 35.6]], a: 0.28, label: 'separadas pero LEGIBLES como anillo hasta que cierra' } ] },
+    { wins: [[2.0, 12.0]], a: 0.34, label: 'acto 1: las TRES bien separadas, que se cuenten' },
+    { wins: [[2.0, 39.0]], a: 0.28, label: 'separadas pero LEGIBLES como anillo hasta que cierra' } ] },
 };
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';

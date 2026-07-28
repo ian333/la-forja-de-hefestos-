@@ -37,7 +37,7 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 94.0
+    "dur": 92.0
   },
   "render": {
     "shards": 5,
@@ -50,101 +50,102 @@
     "lista": [
       {
         "t": [
-          0.0,
-          6.12
+          0,
+          10.33
         ],
         "toma": "ringWide",
         "muestra": "que son TRES moléculas + lazo abierto"
       },
       {
         "t": [
-          6.52,
-          18.2
+          10.73,
+          21.5
         ],
         "toma": "ringOne(0)",
         "muestra": "🔑 LEGIBILIDAD: un oxígeno y dos hidrógenos = UNA molécula"
       },
       {
         "t": [
-          18.6,
-          27.41
+          21.91,
+          29.89
         ],
         "toma": "ringFaceOn",
         "muestra": "el anillo y quién le presta hidrógeno a quién"
       },
       {
         "t": [
-          27.81,
-          34.91
+          30.29,
+          36.55
         ],
         "toma": "ringToBridge(0,1)",
         "muestra": "el puente NO es línea: es carga moviéndose"
       },
       {
         "t": [
-          35.31,
-          39.73
+          36.95,
+          40.86
         ],
         "toma": "ringFaceOn",
         "muestra": "el anillo CIERRA — 'y aquí está lo raro'"
       },
       {
         "t": [
-          40.13,
-          53.16
+          41.26,
+          53.02
         ],
         "toma": "loomPush",
         "muestra": "COOPERATIVIDAD: se viene encima mientras dice que jalan más fuerte"
       },
       {
         "t": [
-          53.56,
-          60.27
+          53.42,
+          59.2
         ],
         "toma": "eyeLevelLock",
         "muestra": "el beat del DATO (12%) — nivel de ojo = CONFIANZA"
       },
       {
         "t": [
-          60.67,
-          72.34
+          59.6,
+          71.02
         ],
         "toma": "ringEdgeToFace",
         "muestra": "🔑 FIRMA: de canto, número impar, una al revés"
       },
       {
         "t": [
-          72.74,
-          82.16
+          71.42,
+          80.51
         ],
         "toma": "crashIn",
         "muestra": "aguanta más + 'nada está inventado'"
       },
       {
         "t": [
-          82.56,
-          94.0
+          80.91,
+          92.0
         ],
         "toma": "pullOut",
         "muestra": "payoff: se pega, sube por plantas, el hielo flota"
       }
     ],
     "duraciones_shotentry": [
-      6.1,
-      11.7,
-      8.8,
-      7.1,
-      4.4,
-      13.0,
-      6.7,
-      11.7,
-      9.4,
-      11.4
-    ]
+      10.73,
+      11.17,
+      8.38,
+      6.66,
+      4.31,
+      12.16,
+      6.18,
+      11.82,
+      9.49,
+      11.09
+    ],
+    "nota_duraciones": "Σ = 92.00 = formato.dur EXACTO. Son SALTO AL SIGUIENTE ARRANQUE, no el ancho de la ventana de voz: playShots encadena por suma acumulada, así que usar los anchos (que no traen los 0.4 s de hueco entre líneas) desfasa la cámara 0.4·i s y congela la cola. recalibrar-beats.py ya lo emite bien y trae un assert."
   },
   "capas": {
-    "fuente": "WTRI_CAPAS en src/cinematic/CinematicMolecule.tsx — ESTA sección es un ESPEJO. Si divergen, manda el código.",
-    "aviso": "2026-07-28: esta sección estaba DESINCRONIZADA (decía campo base 1 con una ventana) y me hizo diagnosticar como defecto lo que era coreografía. El campo a t=9 está al 15% A PROPÓSITO.",
+    "fuente": "WTRI_CAPAS en src/cinematic/CinematicMolecule.tsx — ESPEJO. Si divergen, manda el código.",
+    "aviso": "recalibrar-beats.py REGENERA esta sección desde una plantilla VIEJA (campo base 1, y pierde enlaces/dipolo/apertura). De ese script se toman las DURACIONES, no las capas. Restaurado a mano 2026-07-28.",
     "spec": {
       "campo": {
         "base": 0.55,
@@ -152,18 +153,28 @@
           {
             "wins": [
               [
-                27.4,
-                35.3
+                0.0,
+                10.3
               ]
             ],
-            "a": 1.05,
-            "label": "PROTAGONISTA: nace el puente / no es línea / es carga"
+            "a": 1.0,
+            "label": "FRAME 0 = EL PICO"
           },
           {
             "wins": [
               [
-                39.7,
-                60.3
+                30.3,
+                36.5
+              ]
+            ],
+            "a": 1.05,
+            "label": "PROTAGONISTA: nace el puente"
+          },
+          {
+            "wins": [
+              [
+                41.3,
+                59.2
               ]
             ],
             "a": 0.85,
@@ -172,12 +183,12 @@
           {
             "wins": [
               [
-                6.1,
-                18.6
+                10.7,
+                21.5
               ]
             ],
             "a": -0.4,
-            "label": "baja cuando la voz mira los electrones de UNA (cuenta átomos, no líneas)"
+            "label": "baja cuando la voz mira los electrones de UNA"
           }
         ]
       },
@@ -187,12 +198,12 @@
           {
             "wins": [
               [
-                27.4,
-                35.3
+                30.3,
+                36.5
               ],
               [
-                60.3,
-                72.4
+                59.6,
+                71.0
               ]
             ],
             "a": -0.34,
@@ -206,12 +217,12 @@
           {
             "wins": [
               [
-                6.1,
-                18.6
+                10.7,
+                21.5
               ]
             ],
             "a": 0.42,
-            "label": "los electrones parpadean cuando se nombran"
+            "label": "los electrones parpadean"
           }
         ]
       },
@@ -221,16 +232,16 @@
           {
             "wins": [
               [
-                27.4,
-                35.3
+                30.3,
+                36.5
               ],
               [
-                39.7,
-                60.3
+                41.3,
+                59.2
               ]
             ],
             "a": 0.85,
-            "label": "Δρ ARDE: el puente y la cooperatividad"
+            "label": "Δρ ARDE"
           }
         ]
       },
@@ -240,8 +251,8 @@
           {
             "wins": [
               [
-                6.1,
-                18.6
+                10.7,
+                21.5
               ]
             ],
             "a": 0.45,
@@ -255,16 +266,16 @@
           {
             "wins": [
               [
-                6.1,
-                18.6
+                0.0,
+                21.5
               ],
               [
-                60.3,
-                78.6
+                59.6,
+                80.5
               ]
             ],
             "a": 1.0,
-            "label": "los 3 átomos y la firma"
+            "label": "los 3 átomos desde el segundo 0 y la firma"
           }
         ]
       },
@@ -274,17 +285,42 @@
           {
             "wins": [
               [
-                60.3,
-                78.6
+                59.6,
+                80.5
               ]
             ],
             "a": 1.0,
-            "label": "FIRMA: se ve que una apunta al contrario"
+            "label": "FIRMA"
+          }
+        ]
+      },
+      "apertura": {
+        "base": 0,
+        "mods": [
+          {
+            "wins": [
+              [
+                2.0,
+                12.0
+              ]
+            ],
+            "a": 0.34,
+            "label": "acto 1: las TRES separadas"
+          },
+          {
+            "wins": [
+              [
+                2.0,
+                39.0
+              ]
+            ],
+            "a": 0.28,
+            "label": "legibles como anillo hasta que cierra"
           }
         ]
       }
     },
-    "origen": "derivadas de segs.json por recalibrar-beats.py"
+    "origen": "duraciones de recalibrar-beats.py sobre segs.json; capas portadas a mano a las fronteras nuevas"
   },
   "verificador": {
     "script": "scripts/atencion-verify.py (economía de atención: movimiento Itti-Koch · colorfulness Hasler-Süsstrunk · figura-fondo Palmer-Schloss · sincronía audio-visual · gancho 0-5s · loop · quemado)",
