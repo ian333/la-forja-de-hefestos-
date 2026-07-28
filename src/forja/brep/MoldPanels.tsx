@@ -8,7 +8,8 @@
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
 import { Ic } from './icons';
-import { moldThermalResistanceStudy } from '../mold/thermal-resistance';
+import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resistance';
+import { estPartVolumeCc } from '../mold/feed';
 import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
@@ -165,7 +166,10 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
                         nCav: liveMoldSpec.nCav ?? 1,
                         fxMm: liveMoldSpec.cavity.widthMm, fyMm: liveMoldSpec.cavity.lenMm ?? liveMoldSpec.cavity.widthMm,
                         depthMm: liveMoldSpec.cavity.depthMm, round: liveMoldSpec.cavity.shape === 'round',
-                        fluxWm2: st.fluxCavWm2 || 15000,
+                        qTotalW: heatToExtractW({
+                          nCav: liveMoldSpec.nCav ?? 1, volCcPerCav: estPartVolumeCc(liveMoldSpec.cavity),
+                          rhoMeltKgM3: 781, cpJkgC: 2100, tMeltC: 220, tEjectC: 80, cycleS: 30,
+                        }),
                         lineDiaMm: cc.diaMm, lineDepthMm: cc.zBehindMm, lineLenMm: cc.segs.reduce((a, g) => a + Math.hypot(g.x1 - g.x0, g.y1 - g.y0), 0),
                         tCoolantC: moldThermalSim.coolantC, kSteel: 32, hC: 1000, coreBaffle: false,
                       });

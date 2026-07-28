@@ -193,6 +193,10 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // Arrancando en frío el contraste era 2.5 °C y "no se veía nada"; a régimen
       // son ~6 °C con el gradiente REAL alrededor de cada cavidad.
       sim.warmUp(8);
+      // EL CAMPO CON FORMA (cycle-averaged, k variable): a partir de aquí la
+      // escena pinta ESTE campo — el plástico es un aislante con la geometría
+      // del vaso y el calor tiene que rodearlo (§9.2 + práctica BEM/Moldflow).
+      sim.computeSteady();
       return sim;
     } catch (e) { console.warn('MOLD_FDM_ERR', e); return null; }
   }, [moldSimOn, liveMoldSpec, liveMoldMesh, moldParts]);

@@ -35,6 +35,9 @@ export interface SteadyField {
   minC: number; maxC: number;
   /** T sobre la superficie moldeante (celdas de acero que tocan plástico) */
   surfMinC: number; surfMaxC: number; surfMeanC: number;
+  /** rango SOLO DEL ACERO — la escala de color que el molderista lee (el
+   *  plástico a ~250 °C aplastaba todo el acero al 15 % bajo de la rampa) */
+  steelMinC: number; steelMaxC: number;
 }
 
 export function solveSteadyMoldField(o: {
@@ -131,10 +134,12 @@ export function solveSteadyMoldField(o: {
 
   // estadísticas + superficie moldeante (acero que TOCA plástico)
   let mn = 1e9, mx = -1e9, sMn = 1e9, sMx = -1e9, sSum = 0, sN = 0;
+  let stMn = 1e9, stMx = -1e9;
   for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
     const n = idx(i, j, k), v = T[n];
     if (v < mn) mn = v; if (v > mx) mx = v;
     if (o.plastic[n] === 1) continue;
+    if (v < stMn) stMn = v; if (v > stMx) stMx = v;         // rango del ACERO
     const vecino = (i > 0 && o.plastic[idx(i - 1, j, k)] === 1) || (i < nx - 1 && o.plastic[idx(i + 1, j, k)] === 1)
       || (j > 0 && o.plastic[idx(i, j - 1, k)] === 1) || (j < ny - 1 && o.plastic[idx(i, j + 1, k)] === 1)
       || (k > 0 && o.plastic[idx(i, j, k - 1)] === 1) || (k < nz - 1 && o.plastic[idx(i, j, k + 1)] === 1);
@@ -150,5 +155,7 @@ export function solveSteadyMoldField(o: {
     surfMinC: sN ? +sMn.toFixed(2) : o.tCoolantC,
     surfMaxC: sN ? +sMx.toFixed(2) : o.tCoolantC,
     surfMeanC: sN ? +(sSum / sN).toFixed(2) : o.tCoolantC,
+    steelMinC: +(stMn === 1e9 ? mn : stMn).toFixed(2),
+    steelMaxC: +(stMx === -1e9 ? mx : stMx).toFixed(2),
   };
 }

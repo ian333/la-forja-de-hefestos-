@@ -381,7 +381,7 @@ export function MoldTransientThermal({ sim, z, parts, xray, sliceAxis = 'z', sli
       [sim.coolantC + 0.85 * span, '#ff3b2e', 0.40],
     ];
     return levels.map(([lv, color, op]) => {
-      const m = isoSurface(sim.T, sim.nx, sim.ny, sim.nz, lv, sim.dx, sim.x0, sim.y0, sim.z0);
+      const m = isoSurface(sim.Tview, sim.nx, sim.ny, sim.nz, lv, sim.dx, sim.x0, sim.y0, sim.z0);
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(m.positions, 3));
       g.setAttribute('normal', new THREE.BufferAttribute(m.normals, 3));

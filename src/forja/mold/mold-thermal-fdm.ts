@@ -17,6 +17,9 @@ import { coolingCircuit, cavityFootprint, cavityGrid, plateDepth } from './mold-
 import { plateStackZ } from './mold-plano-set';
 import { ABS_KAZMER } from './cooling';
 import { crearDifusionEspectral } from '../campo/campo';
+import { solveSteadyMoldField, type SteadyField } from './thermal-steady';
+import { heatToExtractW } from './thermal-resistance';
+import { estPartVolumeCc, FEED_MATERIALS } from './feed';
 
 // Apéndice B (LITERAL): P20 k=32, ρ=7820, cp=500 → α=8.18e-6 ✓ impreso
 const K_STEEL = 32, RHO_STEEL = 7820, CP_STEEL = 500;
@@ -62,6 +65,13 @@ export interface ThermalSim {
   /** lleva el molde a RÉGIMEN cíclico (Kazmer §9.1: el molde de producción NO
    *  opera frío). Sin esto el campo arranca plano y "no se ve nada". */
   warmUp(cycles?: number): void;
+  /** CAMPO CÍCLICO-PROMEDIO con k VARIABLE (la FORMA de la pieza deforma el
+   *  campo). Al calcularlo, TODA la visualización (sampleAt/slice/isosuperficies)
+   *  pasa a leerlo: es el entregable estándar de la industria. */
+  computeSteady(): SteadyField | null;
+  steady: SteadyField | null;
+  /** el array que la ESCENA debe pintar: el steady si existe, si no el transitorio */
+  readonly Tview: Float32Array;
   /** VOXELES DE PLÁSTICO (1=plástico) — la FORMA de la pieza dentro del grid.
    *  Sin esto el campo no puede tener la forma del vaso. */
   plasticVoxels(): Uint8Array;
@@ -340,14 +350,14 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
       const i = Math.max(0, Math.min(nx - 1, Math.round(x / cell - 0.5)));
       const j = Math.max(0, Math.min(ny - 1, Math.round(y / cell - 0.5)));
       const k = Math.max(0, Math.min(nz - 1, Math.round((zq - zLo) / cell - 0.5)));
-      return T[idx(i, j, k)];
+      return sim.Tview[idx(i, j, k)];      // steady (con FORMA) si está calculado
     },
     slice(zq: number) {
       const k = Math.max(0, Math.min(nz - 1, Math.round((zq - zLo) / cell - 0.5)));
       const S = new Float32Array(nx * ny);
       let mn = 1e9, mx = -1e9;
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-        const v = T[idx(i, j, k)];
+        const v = sim.Tview[idx(i, j, k)];
         S[j * nx + i] = v;
         if (v < mn) mn = v; if (v > mx) mx = v;
       }
@@ -362,7 +372,7 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         const k = Math.max(0, Math.min(nz - 1, Math.round(f * (nz - 1))));
         posMm = zLo + (k + 0.5) * cell;
         for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-          const v = T[idx(i, j, k)]; S[j * nx + i] = v;
+          const v = sim.Tview[idx(i, j, k)]; S[j * nx + i] = v;
           if (v < mn) mn = v; if (v > mx) mx = v;
         }
         nu = nx; nv = ny; u1 = spec.widthMm; v1 = D;
@@ -370,7 +380,7 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         const i = Math.max(0, Math.min(nx - 1, Math.round(f * (nx - 1))));
         posMm = (i + 0.5) * cell;
         for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) {
-          const v = T[idx(i, j, k)]; S[k * ny + j] = v;
+          const v = sim.Tview[idx(i, j, k)]; S[k * ny + j] = v;
           if (v < mn) mn = v; if (v > mx) mx = v;
         }
         nu = ny; nv = nz; u1 = D; v1 = zHi - zLo;
@@ -378,7 +388,7 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         const j = Math.max(0, Math.min(ny - 1, Math.round(f * (ny - 1))));
         posMm = (j + 0.5) * cell;
         for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
-          const v = T[idx(i, j, k)]; S[k * nx + i] = v;
+          const v = sim.Tview[idx(i, j, k)]; S[k * nx + i] = v;
           if (v < mn) mn = v; if (v > mx) mx = v;
         }
         nu = nx; nv = nz; u1 = spec.widthMm; v1 = zHi - zLo;
@@ -401,6 +411,28 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
     warmUp(cycles = 8) {
       const target = sim.timeS + cycles * sim.cycleS;
       while (sim.timeS < target) sim.step(1);
+    },
+    steady: null as SteadyField | null,
+    get Tview() { return sim.steady ? sim.steady.T : T; },
+    computeSteady() {
+      try {
+        const volCc = estPartVolumeCc(spec.cavity);
+        const fm = FEED_MATERIALS[(spec.plastic ?? 'PP').toUpperCase()] ?? FEED_MATERIALS.PP;
+        const q = heatToExtractW({
+          nCav: Math.max(1, spec.nCav ?? 1), volCcPerCav: volCc,
+          rhoMeltKgM3: fm.rhoMeltKgM3, cpJkgC: 2100,
+          tMeltC: fm.tMelt, tEjectC: fm.tEject, cycleS: sim.cycleS,
+        });
+        sim.steady = solveSteadyMoldField({
+          nx, ny, nz, dxMm: cell, x0: 0, y0: 0, z0: zLo,
+          plastic: sim.plasticVoxels(), cool, tCoolantC: sim.coolantC,
+          qTotalW: q, lineDiaM: cc.diaMm / 1000, maxIters: 500, tolC: 1e-3,
+        });
+        // la ESCALA de la escena es la del ACERO (lo que se lee del molde);
+        // el plástico a ~250 °C saturaría la rampa y todo el acero saldría plano.
+        sim.minC = sim.steady.steelMinC; sim.maxC = sim.steady.steelMaxC;
+        return sim.steady;
+      } catch (e) { console.warn('STEADY_ERR', e); return null; }
     },
     plasticVoxels() {
       // el rasterizador ya dejó, por columna, el espesor y las superficies

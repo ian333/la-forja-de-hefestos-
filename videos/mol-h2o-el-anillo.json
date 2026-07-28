@@ -349,58 +349,58 @@
   },
   "guion": {
     "archivo": "scripts/guiones/wtri.txt",
-    "lineas": 31,
+    "lineas": 32,
     "palabras": 172,
     "duracion_estimada_s": 80.9,
     "portero": "scripts/guion-check.py — ✅ limpio (0 avisos): ninguna línea >46 chars, sin '...', sin voseo, sin doble sentido",
     "mapa_linea_toma": [
       {
-        "lineas": "1-2",
+        "lineas": "1-3",
         "toma": "ringWide",
         "muestra": "que son TRES moléculas + lazo abierto"
       },
       {
-        "lineas": "3-6",
+        "lineas": "4-7",
         "toma": "ringOne(0)",
         "muestra": "🔑 LEGIBILIDAD: un oxígeno y dos hidrógenos = UNA molécula"
       },
       {
-        "lineas": "7-9",
+        "lineas": "8-10",
         "toma": "ringFaceOn",
         "muestra": "el anillo y quién le presta hidrógeno a quién"
       },
       {
-        "lineas": "10-12",
+        "lineas": "11-13",
         "toma": "ringToBridge(0,1)",
         "muestra": "el puente NO es línea: es carga moviéndose"
       },
       {
-        "lineas": "13-14",
+        "lineas": "14-15",
         "toma": "ringFaceOn",
         "muestra": "el anillo CIERRA — 'y aquí está lo raro'"
       },
       {
-        "lineas": "15-18",
+        "lineas": "16-19",
         "toma": "loomPush",
         "muestra": "COOPERATIVIDAD: se viene encima mientras dice que jalan más fuerte"
       },
       {
-        "lineas": "19-20",
+        "lineas": "20-21",
         "toma": "eyeLevelLock",
         "muestra": "el beat del DATO (12%) — nivel de ojo = CONFIANZA"
       },
       {
-        "lineas": "21-25",
+        "lineas": "22-26",
         "toma": "ringEdgeToFace",
         "muestra": "🔑 FIRMA: de canto, número impar, una al revés"
       },
       {
-        "lineas": "26-28",
+        "lineas": "27-29",
         "toma": "crashIn",
         "muestra": "aguanta más + 'nada está inventado'"
       },
       {
-        "lineas": "29-31",
+        "lineas": "30-32",
         "toma": "pullOut",
         "muestra": "payoff: se pega, sube por plantas, el hielo flota"
       }
@@ -409,7 +409,8 @@
       "dice EXPLÍCITAMENTE que son moléculas de 3 átomos (la confusión #1 de El puente: 4 comentarios 'son 2 átomos')",
       "revisado contra albures ANTES del TTS (caso 'míralos correrse')",
       "toda línea ≤46 chars (caso CO: el subtítulo desbordó a 4K)"
-    ]
+    ],
+    "nota_h2o": "Línea 2 NUEVA (Ian, 2026-07-28): 'H dos O. Dos hidrógenos y un oxígeno.' — dicha en voz alta enseña a LEER la fórmula y evita la corrección en comentarios que ya pasó en El puente ('son 2 átomos' siendo 2 moléculas). Toda la voz se regeneró, así que TODOS los tiempos cambiaron: recalibrado con scripts/recalibrar-beats.py."
   },
   "audio": {
     "dir": "dist-video/wtri-narracion",

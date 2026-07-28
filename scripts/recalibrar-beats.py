@@ -56,8 +56,21 @@ for f in filas:
     print(f"{f['toma']:20s} {f['lineas']:>6s}  {f['ini']:6.2f} {f['fin']:6.2f} {f['dur']:6.2f}   {f['muestra'][:44]}")
 print(f"\nDURACIÓN DEL VIDEO: {DUR_VIDEO}s  (voz {segs[-1]['end']:.1f}s + 3s de cola)")
 
+# ── LO QUE VA AL REGISTRO NO ES EL ANCHO DE LA VENTANA, ES EL SALTO AL SIGUIENTE ──
+# BUG que este mismo script producía (medido 2026-07-28): `playShots` encadena las tomas por
+# SUMA ACUMULADA de `dur`, pero aquí se imprimía `fin - ini` = el ANCHO de la ventana de voz,
+# SIN los 0.4 s de hueco entre líneas. Σ anchos = 88.4 contra 92.0 de video ⇒ cada toma
+# arrancaba 0.4·i segundos ANTES que su línea (−3.6 s al final) y la cámara quedaba CONGELADA
+# los últimos 3.6 s por el clamp de playShots. Además desincronizaba las CAPAS (que sí usan
+# segundos de voz) de las TOMAS. El paso al siguiente arranque es lo único que encadena bien.
+saltos = [(filas[i + 1]['ini'] - filas[i]['ini']) if i + 1 < len(filas)
+          else (DUR_VIDEO - filas[i]['ini']) for i in range(len(filas))]
+for f, d in zip(filas, saltos):
+    f['dur'] = d
 print("\n── ShotEntry para CAMERA_SHOTS (pegar las dur) ──")
-print("   " + "  ".join(f"{f['dur']:.1f}" for f in filas))
+print("   " + "  ".join(f"{f['dur']:.2f}" for f in filas))
+print(f"   Σ = {sum(saltos):.2f}  (debe ser IGUAL a la duración del video: {DUR_VIDEO:.2f})")
+assert abs(sum(saltos) - DUR_VIDEO) < 0.02, "las duraciones NO suman la duración del video"
 
 # CAPAS: las ventanas salen de las tomas cuyo propósito lo pide (busca palabras clave)
 def win_de(clave):
@@ -76,7 +89,7 @@ print(json.dumps(capas, ensure_ascii=False, indent=1))
 if APLICAR:
     man['formato']['dur'] = DUR_VIDEO
     man['tomas']['lista'] = [{'t': [round(f['ini'], 2), round(f['fin'], 2)], 'toma': f['toma'], 'muestra': f['muestra']} for f in filas]
-    man['tomas']['duraciones_shotentry'] = [round(f['dur'], 1) for f in filas]
+    man['tomas']['duraciones_shotentry'] = [round(f['dur'], 2) for f in filas]
     man['tomas'].pop('pendiente', None)
     man['capas'] = {'spec': capas, 'origen': 'derivadas de segs.json por recalibrar-beats.py'}
     json.dump(man, open(MF, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
