@@ -182,14 +182,20 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     try {
       // celda VIVA más gruesa (≈N/3): el paso espectral baja de ~75 ms a ~15 — "se traba,
       // va lento" (user). El análisis fino se queda para scripts/video; la UI necesita fps.
-      const sim = createThermalSim(liveMoldSpec, { partMesh: liveMoldMesh ?? undefined, cell: Math.max(8, Math.round(liveMoldSpec.widthMm / 36)) });
+      // LA GEOMETRÍA REAL manda: si no hay malla de sesión viva, se usa la de la
+      // PIEZA ya construida (moldParts). Sin ella el modelo es una placa plana
+      // simétrica ⇒ cavidad y núcleo salen IDÉNTICOS y el estudio no dice nada
+      // (el núcleo debe estar más caliente: lo rodea el plástico, §9.3.6).
+      const piezaPart = moldParts.find((p) => p.role === 'pieza');
+      const mesh = liveMoldMesh ?? (piezaPart ? { positions: piezaPart.positions, indices: piezaPart.indices } : undefined);
+      const sim = createThermalSim(liveMoldSpec, { partMesh: mesh, cell: Math.max(8, Math.round(liveMoldSpec.widthMm / 36)) });
       // RÉGIMEN, no arranque frío (Kazmer §9.1: el molde de producción cicla).
       // Arrancando en frío el contraste era 2.5 °C y "no se veía nada"; a régimen
       // son ~6 °C con el gradiente REAL alrededor de cada cavidad.
       sim.warmUp(8);
       return sim;
     } catch (e) { console.warn('MOLD_FDM_ERR', e); return null; }
-  }, [moldSimOn, liveMoldSpec, liveMoldMesh]);
+  }, [moldSimOn, liveMoldSpec, liveMoldMesh, moldParts]);
   // rebanada térmica 3D: eje + posición (el molde NO es 2D)
   const [moldSliceAxis, setMoldSliceAxis] = useState<'x' | 'y' | 'z'>('z');
   const [moldSliceFrac, setMoldSliceFrac] = useState(0.5);

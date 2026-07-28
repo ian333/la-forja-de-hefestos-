@@ -62,6 +62,19 @@ export interface ThermalSim {
   /** lleva el molde a RÉGIMEN cíclico (Kazmer §9.1: el molde de producción NO
    *  opera frío). Sin esto el campo arranca plano y "no se ve nada". */
   warmUp(cycles?: number): void;
+  /** ESTUDIO POR PLACA (§9.2-9.3): la CARA MOLDEANTE de cavidad y de núcleo
+   *  medidas POR SEPARADO — el mapa difuso global no es un estudio térmico. */
+  surfaceStudy(): {
+    cav: { minC: number; maxC: number; meanC: number; dTC: number; n: number };
+    core: { minC: number; maxC: number; meanC: number; dTC: number; n: number };
+    /** penetración térmica por ciclo δ=√(α·t_ciclo) [mm]: qué espesor de acero
+     *  SIENTE el ciclo (capa oscilante) y a partir de dónde el bulk es estable. */
+    deltaMm: number;
+    /** flujo de calor que cada lado entrega al acero en el ciclo [W/m²] */
+    fluxCavWm2: number; fluxCoreWm2: number;
+    /** ΔT a través del acero: cara moldeante → celda de línea de agua */
+    dTSteelCavC: number; dTSteelCoreC: number;
+  };
 }
 
 export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; coolantC?: number; partMesh?: { positions: Float32Array; indices: Uint32Array } }): ThermalSim {
@@ -238,6 +251,9 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
   for (let m = 0; m < nx * ny; m++) if (thMm[m] > 0 && (kTop[m] >= 0 || kBot[m] >= 0)) cols.push(m);
   // pilas: [col][lado(0=top,1=bot)][celda 0=línea central … PCELLS-1=pegada al acero]
   const pStack = new Float32Array(cols.length * 2 * PCELLS).fill(Tc);
+  // energía entregada por lado en el ciclo en curso (J/m²) → flujo MEDIO real
+  const eCycle = [0, 0];
+  let eCycleT0 = 0;
   const pDx = (m: number) => Math.max(0.15e-3, (thMm[m] / 2 / PCELLS) / 1000);  // m
   const CP_VOL_P = RHO_ABS * CP_ABS;                     // J/m³°C del plástico
   /** sub-integra la pila `ci`,`side` un tiempo dtS contra el vóxel `vox` (T casi
@@ -288,7 +304,7 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         // (disparo nuevo) — y de ahí el calor entra al acero A SU RITMO FÍSICO
         // (conducción por capas, no depósito instantáneo).
         const tIn = sim.timeS % sim.cycleS;
-        if (tIn < dt) pStack.fill(Tm);
+        if (tIn < dt) { pStack.fill(Tm); eCycle[0] = 0; eCycle[1] = 0; eCycleT0 = sim.timeS; }
         // ── EL PLÁSTICO CONDUCE (F2b): cada pila entrega su flujo al vóxel de
         // superficie; la energía acumulada del paso calienta ese vóxel. La zona
         // gruesa (más pila) sigue metiendo más calor: el hot spot emerge, pero
@@ -301,6 +317,7 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
             if (kv < 0) continue;
             const v = idx(i, j, kv);
             const eJm2 = stepStack(ci, side, m, dt, T[v]);
+            eCycle[side] += eJm2 / cols.length;            // acumula para el flujo MEDIO
             T[v] += eJm2 / (RHO_STEEL * CP_STEEL * dx);   // J/m² → °C del vóxel (dx de fondo)
           }
         }
@@ -381,6 +398,60 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
     warmUp(cycles = 8) {
       const target = sim.timeS + cycles * sim.cycleS;
       while (sim.timeS < target) sim.step(1);
+    },
+    surfaceStudy() {
+      const stat = (vals: number[]) => {
+        if (!vals.length) return { minC: Tc, maxC: Tc, meanC: Tc, dTC: 0, n: 0 };
+        let mn = 1e9, mx = -1e9, sum = 0;
+        for (const v of vals) { if (v < mn) mn = v; if (v > mx) mx = v; sum += v; }
+        return { minC: +mn.toFixed(2), maxC: +mx.toFixed(2), meanC: +(sum / vals.length).toFixed(2), dTC: +(mx - mn).toFixed(2), n: vals.length };
+      };
+      const cavT: number[] = [], coreT: number[] = [];
+      for (const m of cols) {
+        const i = m % nx, j = (m / nx) | 0;
+        if (kTop[m] >= 0) cavT.push(T[idx(i, j, kTop[m])]);
+        if (kBot[m] >= 0) coreT.push(T[idx(i, j, kBot[m])]);
+      }
+      // flujo por lado: el que las pilas de plástico entregaron en el último paso
+      // flujo MEDIO del ciclo (no el instante final, cuando el plástico ya está
+      // frío y da ~0): energía acumulada / tiempo transcurrido del ciclo.
+      const qSide = (side: number) => {
+        const dtc = Math.max(0.5, sim.timeS - eCycleT0);
+        return +(eCycle[side] / dtc).toFixed(0);
+      };
+      // ΔT a través del acero: cara moldeante → la celda de agua más cercana
+      // ΔT cara moldeante → LÍNEA DE AGUA más cercana (Eq 9.21). Busca en TODO
+      // el dominio (la línea puede no caer en la misma columna) y guarda el k.
+      // (Antes comparaba dos closures distintas con === : SIEMPRE false ⇒ 0 °C.)
+      const dTsteel = (kOf: Int16Array) => {
+        let acc = 0, n2 = 0;
+        for (const m of cols) {
+          const i = m % nx, j = (m / nx) | 0;
+          const ks = kOf[m];
+          if (ks < 0) continue;
+          let best = Infinity, kBest = -1;
+          for (let k = 0; k < nz; k++) {
+            if (cool[idx(i, j, k)] <= 0) continue;
+            const d = Math.abs(k - ks);
+            if (d < best) { best = d; kBest = k; }
+          }
+          if (kBest < 0) {                       // sin línea en la columna: la más cercana del plano
+            for (let jj = 0; jj < ny && kBest < 0; jj++) for (let ii = 0; ii < nx && kBest < 0; ii++) {
+              for (let k = 0; k < nz; k++) if (cool[idx(ii, jj, k)] > 0 && Math.abs(k - ks) < best) { best = Math.abs(k - ks); kBest = k; }
+            }
+          }
+          if (kBest < 0) continue;
+          acc += T[idx(i, j, ks)] - T[idx(i, j, kBest)];
+          n2++;
+        }
+        return n2 ? +(acc / n2).toFixed(2) : 0;
+      };
+      return {
+        cav: stat(cavT), core: stat(coreT),
+        deltaMm: +(Math.sqrt(ALPHA * sim.cycleS) * 1000).toFixed(1),
+        fluxCavWm2: qSide(0), fluxCoreWm2: qSide(1),
+        dTSteelCavC: dTsteel(kTop), dTSteelCoreC: dTsteel(kBot),
+      };
     },
     plasticCenterMaxC() {
       let mx = -1e9;

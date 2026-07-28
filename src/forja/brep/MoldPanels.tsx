@@ -8,6 +8,8 @@
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
 import { Ic } from './icons';
+import { moldThermalResistanceStudy } from '../mold/thermal-resistance';
+import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
 
@@ -76,7 +78,7 @@ export function CursoPanel({ mold }: { mold: MoldBag }) {
 // kernelReady (booleano) y NUNCA `oc`: pasar el módulo WASM como prop = la
 // instrumentación dev de React camina el heap entero de embind (freeze cazado).
 export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelReady: boolean }) {
-  const { moldSim, moldThermalSim, liveDfm, moldParts, moldHidden, moldOpacity, moldSelected, setMoldSelected, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldOpenRef, moldOpenOn, setMoldOpenOn, moldColors, setMoldColors, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaErrors, moldSimOn, setMoldSimOn, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, isolateMoldPlate, setMoldPlateOpacity } = mold;
+  const { liveMoldSpec, moldSim, moldThermalSim, liveDfm, moldParts, moldHidden, moldOpacity, moldSelected, setMoldSelected, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldOpenRef, moldOpenOn, setMoldOpenOn, moldColors, setMoldColors, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaErrors, moldSimOn, setMoldSimOn, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, isolateMoldPlate, setMoldPlateOpacity } = mold;
   if (moldParts.length === 0) return null;
   return (
               <>
@@ -135,6 +137,57 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
                     ))}
                   </div>
                 )}
+                {moldSimOn && moldThermalSim && (() => {
+                  // ESTUDIO POR PLACA (§9.2-9.3) — no un mapa difuso: cada cara
+                  // moldeante con sus números, la profundidad que SIENTE el ciclo
+                  // (δ=√(α·t)) y el flujo que cada lado entrega al acero.
+                  const st = moldThermalSim.surfaceStudy();
+                  const dPl = st.core.meanC - st.cav.meanC;
+                  return (
+                  <div className="fb-comp-tree" data-testid="mold-plate-study" style={{ margin: '4px 0 8px 4px' }}>
+                    <div className="fb-comp-row hdr">🌡 ESTUDIO POR PLACA · cara moldeante (§9.2-9.3)</div>
+                    <div className="fb-comp-row feat">
+                      CAVIDAD (A): <b style={{ color: '#7ee0a0' }}>{st.cav.meanC}°C</b> media · {st.cav.minC}–{st.cav.maxC} · ΔT <b>{st.cav.dTC}°C</b>
+                    </div>
+                    <div className="fb-comp-row feat">
+                      NÚCLEO (B): <b style={{ color: '#f2b45c' }}>{st.core.meanC}°C</b> media · {st.core.minC}–{st.core.maxC} · ΔT <b>{st.core.dTC}°C</b>
+                    </div>
+                    <div className="fb-comp-row feat" title="§9.3.6: el núcleo lo rodea el plástico y tiene menos acero para disipar">
+                      Δ entre placas (FDM): <b style={{ color: '#8fa3bd' }}>{dPl >= 0 ? '+' : ''}{dPl.toFixed(2)}°C</b>
+                      <span style={{ opacity: 0.7 }}> ⚠ el FDM difunde con α uniforme: no ve el aislamiento del plástico</span>
+                    </div>
+                    {(() => {
+                      // LA ASIMETRÍA, ANALÍTICA (§9.2-9.3): red de resistencias con la
+                      // geometría real — lo que el campo numérico no puede resolver.
+                      const cc = liveMoldSpec ? coolingCircuit(liveMoldSpec, plateDepth(liveMoldSpec)) : null;
+                      if (!liveMoldSpec || !cc) return null;
+                      const an = moldThermalResistanceStudy({
+                        nCav: liveMoldSpec.nCav ?? 1,
+                        fxMm: liveMoldSpec.cavity.widthMm, fyMm: liveMoldSpec.cavity.lenMm ?? liveMoldSpec.cavity.widthMm,
+                        depthMm: liveMoldSpec.cavity.depthMm, round: liveMoldSpec.cavity.shape === 'round',
+                        fluxWm2: st.fluxCavWm2 || 15000,
+                        lineDiaMm: cc.diaMm, lineDepthMm: cc.zBehindMm, lineLenMm: cc.segs.reduce((a, g) => a + Math.hypot(g.x1 - g.x0, g.y1 - g.y0), 0),
+                        tCoolantC: moldThermalSim.coolantC, kSteel: 32, hC: 1000, coreBaffle: false,
+                      });
+                      return (<>
+                        <div className="fb-comp-row hdr">📐 ANALÍTICO · red de resistencias (lo que el FDM no ve)</div>
+                        {an.rows.map((r, i) => (
+                          <div key={i} className="fb-comp-row feat" title={r.ref}>
+                            {r.k}: <b style={{ color: r.warn ? '#ff8c5a' : '#7ee0a0' }}>{r.v}</b>
+                            <span style={{ opacity: 0.6 }}> [{r.ref.slice(0, 64)}]</span>
+                          </div>
+                        ))}
+                      </>);
+                    })()}
+                    <div className="fb-comp-row feat" title="δ=√(α·t_ciclo): el acero más profundo NO siente el ciclo">
+                      velocidad de conducción: δ = <b style={{ color: '#6ba8ff' }}>{st.deltaMm} mm</b> por ciclo <span style={{ opacity: 0.7 }}>(P20 · más allá, bulk estable)</span>
+                    </div>
+                    <div className="fb-comp-row feat">
+                      flujo al acero: cav <b>{(st.fluxCavWm2 / 1000).toFixed(1)}</b> · núcleo <b>{(st.fluxCoreWm2 / 1000).toFixed(1)}</b> kW/m²
+                      <span style={{ opacity: 0.7 }}> · gradiente cara→agua: {st.dTSteelCavC}° / {st.dTSteelCoreC}° [Eq 9.21]</span>
+                    </div>
+                  </div>);
+                })()}
                 {moldSimOn && moldThermalSim && (
                   <div className="fb-comp-tree" data-testid="mold-field-legend" style={{ margin: '4px 0 8px 4px' }}>
                     <div className="fb-comp-row hdr">
