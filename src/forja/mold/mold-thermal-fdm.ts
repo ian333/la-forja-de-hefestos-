@@ -62,6 +62,9 @@ export interface ThermalSim {
   /** lleva el molde a RÉGIMEN cíclico (Kazmer §9.1: el molde de producción NO
    *  opera frío). Sin esto el campo arranca plano y "no se ve nada". */
   warmUp(cycles?: number): void;
+  /** VOXELES DE PLÁSTICO (1=plástico) — la FORMA de la pieza dentro del grid.
+   *  Sin esto el campo no puede tener la forma del vaso. */
+  plasticVoxels(): Uint8Array;
   /** ESTUDIO POR PLACA (§9.2-9.3): la CARA MOLDEANTE de cavidad y de núcleo
    *  medidas POR SEPARADO — el mapa difuso global no es un estudio térmico. */
   surfaceStudy(): {
@@ -398,6 +401,19 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
     warmUp(cycles = 8) {
       const target = sim.timeS + cycles * sim.cycleS;
       while (sim.timeS < target) sim.step(1);
+    },
+    plasticVoxels() {
+      // el rasterizador ya dejó, por columna, el espesor y las superficies
+      // (kTop = cara de cavidad, kBot = cara de núcleo): el plástico ocupa las
+      // celdas ENTRE ambas — ahí está la forma real del vaso.
+      const v = new Uint8Array(N);
+      for (const m of cols) {
+        const i = m % nx, j = (m / nx) | 0;
+        const a = Math.min(kTop[m], kBot[m]), b = Math.max(kTop[m], kBot[m]);
+        if (a < 0) continue;
+        for (let k = a; k <= b; k++) v[idx(i, j, k)] = 1;
+      }
+      return v;
     },
     surfaceStudy() {
       const stat = (vals: number[]) => {

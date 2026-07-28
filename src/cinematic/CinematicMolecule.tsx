@@ -1832,6 +1832,12 @@ const WPAIR_CAPAS: CapasSpec = {
 const WTRI_CAPAS: CapasSpec = {
   // el CAMPO manda cuando se habla de puente/carga/fuerza (antes lo APAGABA ahí: bug medido)
   campo:    { base: 0.55, mods: [
+    // FRAME 0 = EL PICO (Ian, 2026-07-28, viendo los stills: "los valores del campo de esos
+    // paneles se deberían aplicar al frame 0"). Los beats que más le gustaron son t=30 (campo
+    // 1.60) y t=42 (1.40); el arranque estaba en 0.55 = la config más apagada de la pieza,
+    // en los 5 s que IG usa para decidir. El canon ya lo decía: "Frame 1 = el pico, nada de
+    // fade-in tímido" — O₂ arranca formada ARDIENDO.
+    { wins: [[0.0, 6.1]],   a: 1.00, label: 'FRAME 0 = EL PICO: el campo entra a tope' },
     { wins: [[27.4, 35.3]], a: 1.05, label: 'PROTAGONISTA: nace el puente / no es línea / es carga' },
     { wins: [[39.7, 60.3]], a: 0.85, label: 'la fuerza: los tres jalan más + el 12%' },
     { wins: [[6.1, 18.6]],  a: -0.40, label: 'baja cuando la voz mira los electrones de UNA' } ] },
