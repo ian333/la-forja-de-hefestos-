@@ -6077,10 +6077,16 @@ export default function ForgeBRepStudio() {
                   for (let i = 0; i < P.length; i += 3) { cx += P[i]; cy += P[i + 1]; if (P[i + 2] > zHi) zHi = P[i + 2]; }
                   cx /= P.length / 3; cy /= P.length / 3;
                   const colada = moldParts.find((p) => p.role === 'colada');
-                  const feedS = 1.2;                             // el sprue se llena en ~t_fill·V_sprue/V_total (cámara lenta honesta)
+                  // rejilla multi-cav: los GATES reales de la red (gatesXYZ) siembran
+                  // el llenado de CADA vaso; 1 cav: el punto donde aterriza el sprue.
+                  const gates = colada?.gatesXYZ && colada.gatesXYZ.length >= 3
+                    ? Array.from({ length: colada.gatesXYZ.length / 3 }, (_, gi) => ({
+                        x: colada.gatesXYZ![3 * gi], y: colada.gatesXYZ![3 * gi + 1], z: colada.gatesXYZ![3 * gi + 2] }))
+                    : { x: cx, y: cy, z: zHi };
+                  const feedS = colada?.flowT ? 2.2 : 1.2;       // cámara lenta honesta de la red
                   return (<>
                     {colada && <FeedFill part={colada} delayS={feedS} />}
-                    <MoldFlowPaint part={pieza} gate={{ x: cx, y: cy, z: zHi }}
+                    <MoldFlowPaint part={pieza} gate={gates}
                       wallMm={liveMoldSpec.cavity.wallMm ?? 2} delayS={colada ? feedS : 0} />
                   </>);
                 })()}

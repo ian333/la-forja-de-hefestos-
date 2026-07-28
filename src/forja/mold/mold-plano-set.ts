@@ -31,7 +31,8 @@ import { generateDrawing } from '../brep/drawing';
 import { partSheet4View, type IsoStyle } from '../brep/isoview';
 import { dfmFromMesh } from './dfm-mesh';
 import { planSideActions, planFromSpec, sideActionVerdicts, type SideActionPlan } from './mold-sideaction-gen';
-import { sprueDesignFromCavity } from './feed';
+import { sprueDesignFromCavity, estPartVolumeCc } from './feed';
+import { layoutForGrid, flowTForSegs } from './feed-layouts';
 
 // ── PALETA de materiales (idéntica al PDF): acero azul-gris, plástico ámbar ──
 const STEEL: [number, number, number] = [150, 165, 185];
@@ -307,6 +308,8 @@ export interface MoldPart {
   flowT?: Float32Array;
   /** duración total del llenado de la red (s) */
   flowTotalS?: number;
+  /** puntos de GATE (x,y,z aplanados) — semillas del llenado de la(s) pieza(s) */
+  gatesXYZ?: number[];
   role: string; name: string; material: string;
   positions: Float32Array; normals: Float32Array; indices: Uint32Array;
   color: string; opacity: number;
@@ -1042,7 +1045,44 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
           'thrust pads de TITANIO → fuerza al clamp con mínimo calor (Fig 6.12)',
           '~20 % menos ciclo y scrap que colada fría (§6.3.3)', 'gate térmico §7.2.8 concéntrico']);
     } else {
+      const cells2 = cavityGrid(spec, D);
+      if (cells2.length > 1) {
+        // ══ LA INTEGRACIÓN: red de canales REAL sobre la rejilla del molde ══
+        // sprue centro → primarios → secundarios → gates de borde al RIM de
+        // cada vaso, con reparto por RED DE RESISTENCIAS y flujo animable
+        // (flowT por vértice). Los vasos llenan desde SU gate (gatesXYZ).
+        const rimR = (spec.cavity.widthMm / 2) * 1.015;   // rim escalado (contracción)
+        const net = layoutForGrid(cells2, {
+          centerX: spec.widthMm / 2, centerY: D / 2, zPart, sprueTopZ: topZ + 6,
+          rimRmm: rimR, partVolCc: estPartVolumeCc(spec.cavity), material: spec.plastic,
+        });
+        const meltG: any[] = [];
+        for (const sg of net.segs) {
+          const ddx = sg.b[0] - sg.a[0], ddy = sg.b[1] - sg.a[1], ddz = sg.b[2] - sg.a[2];
+          const L = Math.hypot(ddx, ddy, ddz);
+          if (L < 0.3) continue;
+          const axis = { origin: sg.a as [number, number, number], dir: [ddx / L, ddy / L, ddz / L] as [number, number, number] };
+          try {
+            meltG.push(sg.level === 'sprue'
+              ? K.makeCone(oc, sg.rMm, sg.rMm * 0.6, L, axis)
+              : K.makeCylinder(oc, sg.rMm, L, axis));
+          } catch { /* segmento degenerado: se omite */ }
+        }
+        let meshFlow: Float32Array | undefined;
+        let partCol: any = null;
+        try { partCol = K.makeCompound(oc, meltG); } catch { partCol = meltG[0]; }
+        push('colada', `Colada FRÍA en rejilla ${cells2.length} cav · red ${net.segs.length} segmentos`,
+          `${spec.plastic ?? 'PP'} fundido`, [partCol], '#ffb347', 0.95,
+          net.rows.map((r) => `${r.k}: ${r.v} [${r.ref}]`));
+        const cp = out[out.length - 1];
+        if (cp && cp.positions?.length) {
+          cp.flowT = flowTForSegs(cp.positions, net.segs);
+          cp.flowTotalS = net.totalFillS;
+          cp.gatesXYZ = net.cavities.flatMap((c) => [c.gx, c.gy, c.gz]);
+        }
+      } else {
       // COLADA FRÍA REAL (§6.3.1 + cap 7): el sprue CÓNICO diseñado por el libro —
+      // (1 cavidad: sprue directo — el caso clásico de la flanera)
       // Eq 6.8 (radio por ΔP asignado) + taper de extracción + chequeos completos
       // (γ̇ Tabla 7.2, Re Eq 6.2, t_c §6.4.7, regrind Eq 6.6, freeze Tabla 7.4).
       // El FUNDIDO se VE (ámbar) y sus números viajan en la historia del árbol.
@@ -1060,6 +1100,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       push('colada', `Colada FRÍA §6.3.1 · sprue cónico ⌀${(2 * fd.rTopMm).toFixed(1)}→⌀${(2 * fd.rBaseMm).toFixed(1)}`,
         `${spec.plastic ?? 'PP'} fundido`, melt, '#ffb347', 0.95,
         fd.rows.map((r) => `${r.warn ? '⚠ ' : ''}${r.k}: ${r.v} [${r.ref}]`));
+      }
     }
   }
 

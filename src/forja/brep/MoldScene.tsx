@@ -150,7 +150,7 @@ export function FeedFill({ part, delayS }: { part: MoldPart; delayS: number }) {
 
 export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0 }: {
   part: MoldPart;
-  gate: { x: number; y: number; z: number };
+  gate: { x: number; y: number; z: number } | Array<{ x: number; y: number; z: number }>;
   /** pared nominal (mm) — empareja las caras opuestas de la pared (dual domain) */
   wallMm: number;
   /** fracción del recorrido por segundo (0.35 ⇒ ~3 s de punta a punta). La inyección REAL
@@ -204,11 +204,12 @@ export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0 }: 
             luces + ACES pastelean el colormap (la misma lección que el mapa de t_c) */}
         <meshBasicMaterial vertexColors toneMapped={false} depthTest={false} transparent opacity={0.92} />
       </mesh>
-      {/* la COMPUERTA: por donde entra el fundido */}
-      <mesh position={[gate.x, gate.y, gate.z]}>
+      {/* la(s) COMPUERTA(s): por donde entra el fundido */}
+      {(Array.isArray(gate) ? gate : [gate]).map((g, gi) => (
+      <mesh key={gi} position={[g.x, g.y, g.z]}>
         <sphereGeometry args={[2.2, 16, 12]} />
         <meshBasicMaterial color="#57e6a8" toneMapped={false} />
-      </mesh>
+      </mesh>))}
     </group>
   );
 }

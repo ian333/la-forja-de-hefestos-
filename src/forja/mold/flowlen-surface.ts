@@ -34,7 +34,7 @@ export interface SurfaceFlow {
  */
 export function surfaceFlowLength(
   mesh: { positions: Float32Array | number[]; indices: Uint32Array | number[]; normals?: Float32Array | number[] },
-  gateMm: { x: number; y: number; z: number },
+  gateMm: { x: number; y: number; z: number } | Array<{ x: number; y: number; z: number }>,
   /** pared nominal (mm) — la necesita el EMPAREJADO de caras opuestas (dual domain) */
   wallMm?: number,
   /** SOLDADURA POR ÉPSILON (mm): une vértices de CUERPOS DISTINTOS que se tocan
@@ -142,13 +142,21 @@ export function surfaceFlowLength(
     }
   }
 
-  // la compuerta = el vértice más cercano al punto dado
-  let gate = 0, bd = Infinity;
-  for (let v = 0; v < nV; v++) {
-    if (rep[v] !== v) continue;
-    const d = (P[v * 3] - gateMm.x) ** 2 + (P[v * 3 + 1] - gateMm.y) ** 2 + (P[v * 3 + 2] - gateMm.z) ** 2;
-    if (d < bd) { bd = d; gate = v; }
+  // la(s) compuerta(s) = el vértice más cercano a CADA punto dado.
+  // MULTI-GATE (rejilla multi-cavidad): cada vaso llena desde SU gate — con
+  // una sola semilla, los otros cuerpos del compound quedaban inalcanzables.
+  const gatePts = Array.isArray(gateMm) ? gateMm : [gateMm];
+  const seeds: number[] = [];
+  for (const g of gatePts) {
+    let gate0 = 0, bd = Infinity;
+    for (let v = 0; v < nV; v++) {
+      if (rep[v] !== v) continue;
+      const d = (P[v * 3] - g.x) ** 2 + (P[v * 3 + 1] - g.y) ** 2 + (P[v * 3 + 2] - g.z) ** 2;
+      if (d < bd) { bd = d; gate0 = v; }
+    }
+    seeds.push(gate0);
   }
+  const gate = seeds[0];
 
   // Dijkstra.
   // ⚠ LÍMITE CONOCIDO: la cola extrae el mínimo en O(n) lineal (sin binary heap). Con las
@@ -156,9 +164,9 @@ export function surfaceFlowLength(
   // vale la simplicidad; a partir de ~50k vértices esto se vuelve O(n²) y hay que meter
   // un heap de verdad. El gate mide el tiempo (< 250 ms) — si un día truena, es esto.
   const dist = new Float32Array(nV).fill(Infinity);
-  dist[gate] = 0;
+  for (const sd of seeds) dist[sd] = 0;
   const done = new Uint8Array(nV);
-  const heap: number[] = [gate];
+  const heap: number[] = [...seeds];
   while (heap.length) {
     let bi = 0;
     for (let t = 1; t < heap.length; t++) if (dist[heap[t]] < dist[heap[bi]]) bi = t;

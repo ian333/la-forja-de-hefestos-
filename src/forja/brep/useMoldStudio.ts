@@ -339,12 +339,18 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   const loadFlaneraMold = useCallback(() => {
     try {
       const spec: MachineSpec = {
-        name: 'Flanera Ø80×40 · PP · 6 cav',
+        name: 'Flanera Ø80×40 · PP · 4 cav',
         Lmm: 80, Wmm: 80, Hmm: 40, cavityShape: 'round',
         surfaceMm2: 15080, volumeMm3: 14266, wallMm: 1.2,
         annualVolume: 500000, plastic: 'PP', finish: 'SPI B-3',
       };
-      const aspec = packageToAssemblySpec(moldMachine(spec));   // NÚMEROS (placas/fuerza/costo)
+      const pkg = moldMachine(spec);                            // NÚMEROS (placas/fuerza/costo)
+      // 4 CAVIDADES con la BASE de su variante real (no un override a ciegas):
+      // la economía recomienda 1, pero el molde didáctico enseña la RED de
+      // canales — se elige la variante cold-2placas×4 del propio paquete.
+      const v4 = pkg.variantes.find((v: any) => v.arch === 'cold-2placas' && v.nCav === 4);
+      if (v4?.factible) pkg.recomendacion = { arch: 'cold-2placas', nCav: 4, porQue: ['demo didáctica: red de canales en rejilla 2×2'] };
+      const aspec = packageToAssemblySpec(pkg);
       const id = insertDims(aspec);
       // FIGURA REAL → SÓLIDOS: el vaso se revoluciona en +Y; el molde parte en Z →
       // rotamos el eje del vaso a +Z (+90° X). splitMold (banco: cup/lid) saca cavidad+núcleo.

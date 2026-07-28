@@ -380,14 +380,23 @@ def superficie_molecular(campo, n_dir=1200, rho_c=RHO_SUP, r_ini=0.40, r_fin=11.
                 clamp=float((np.abs((nhat * dhat).sum(axis=1)) < cos_min).mean()))
 
 
-def sembrar_por_flujo(campo, sup, n_obj, offset=0.0):
-    """Elige n_obj rayos de modo que CADA línea cargue el MISMO flujo Φ₀ = Φ_bruto/n_obj.
-    Muestreo sistemático sobre el flujo acumulado |E·n̂| dA w: determinista (sin RNG), y por
-    eso reproducible frame a frame.  Devuelve los índices elegidos y Φ₀.
+def sembrar_por_flujo(campo, sup, n_obj, offset=0.0, solo_salientes=True):
+    """Elige n_obj rayos de modo que CADA línea cargue el MISMO flujo Φ₀. Muestreo sistemático
+    sobre el flujo acumulado: determinista (sin RNG), reproducible cuadro a cuadro.
+
+    `solo_salientes` (medido, no opinión): un tubo que SALE de Σ por un lado y vuelve a ENTRAR
+    por otro cruza la superficie dos veces. Si se siembra en |E·n̂| (las dos cruzadas) y luego
+    se traza bidireccional, ESE MISMO TUBO se dibuja DOS VECES. Medido sobre el trímero: la
+    densidad de línea salía 1.86× la que manda la ley (≈2), y el flujo bruto 9.05 = 6.03
+    saliente + 3.02 entrante, o sea que el flujo de tubos DISTINTOS es justo el saliente.
+    Sembrando solo en las cruzadas salientes el factor baja a 1.28 y, con las mismas 1100
+    líneas, se dibujan 1100 tubos distintos en vez de ~550 repetidos.
+    (El 1.28 que queda son los tubos que salen de Σ más de una vez — entran por el hueco del
+    anillo y vuelven a salir. Está medido y declarado, no escondido.)
     """
     E = campo(sup['x'])
     En = (E * sup['n']).sum(axis=1)
-    phi = np.abs(En) * sup['dA'] * sup['w']
+    phi = (np.maximum(En, 0) if solo_salientes else np.abs(En)) * sup['dA'] * sup['w']
     C = np.concatenate([[0.0], np.cumsum(phi)])
     T = C[-1]
     Phi0 = T / n_obj

@@ -310,3 +310,79 @@ export function applyResistanceNetwork(net: FeedNetwork, material = 'ABS'): void
     ref: 'red de resistencias §6.4.6: ΔP igual en rutas paralelas · serie C=Ca+Cb · paralelo (Σ(1/C)^(1/n))⁻ⁿ',
   });
 }
+
+/** flowT por vértice para una malla del FUNDIDO: t de llegada del segmento
+ *  más cercano (el mismo criterio del demo, exportado para el MOLDE real). */
+export function flowTForSegs(positions: Float32Array, segs: FeedSeg[]): Float32Array {
+  const nV = positions.length / 3;
+  const out = new Float32Array(nV);
+  for (let i = 0; i < nV; i++) {
+    const px = positions[3 * i], py = positions[3 * i + 1], pz = positions[3 * i + 2];
+    let best = Infinity, bt = 0;
+    for (const sg of segs) {
+      const ux = sg.b[0] - sg.a[0], uy = sg.b[1] - sg.a[1], uz = sg.b[2] - sg.a[2];
+      const L2 = ux * ux + uy * uy + uz * uz || 1;
+      const f = Math.max(0, Math.min(1, ((px - sg.a[0]) * ux + (py - sg.a[1]) * uy + (pz - sg.a[2]) * uz) / L2));
+      const qx = sg.a[0] + f * ux - px, qy = sg.a[1] + f * uy - py, qz = sg.a[2] + f * uz - pz;
+      const d = qx * qx + qy * qy + qz * qz - sg.rMm * sg.rMm;
+      if (d < best) { best = d; bt = sg.tStartS + f * sg.tFillS; }
+    }
+    out[i] = bt;
+  }
+  return out;
+}
+
+/**
+ * RED PARA LA REJILLA REAL DEL MOLDE (la integración: canales ↔ molde).
+ * Coordenadas ABSOLUTAS de placa: sprue en el centro del molde bajando hasta
+ * la partición (zPart), primarios ±x sobre la partición a cada columna de
+ * cavidades, secundarios ±y hasta el RIM de cada vaso, GATE DE BORDE (Fig 7.5)
+ * entrando 0.6 mm en la pared. Radios por Eq 6.1+6.8 con fresas estándar y
+ * reparto REAL por red de resistencias (§6.4.6).
+ */
+export function layoutForGrid(
+  cells: Array<{ cx: number; cy: number }>,
+  o: {
+    centerX: number; centerY: number; zPart: number; sprueTopZ: number;
+    rimRmm: number; partVolCc: number; material?: string; fillTimeS?: number;
+  },
+): FeedNetwork {
+  const m = FEED_MATERIALS[o.material ?? 'PP'] ?? FEED_MATERIALS.PP;
+  const Vdot = (o.partVolCc * cells.length) / (o.fillTimeS ?? 1);
+  const Lsprue = o.sprueTopZ - o.zPart;
+  const segs: FeedSeg[] = [];
+  const rSprue = Math.max(2.5, minRunnerRadius(m, Lsprue / 1000, Vdot * 1e-6, 15e6) * 1000);
+  segs.push({ a: [o.centerX, o.centerY, o.sprueTopZ], b: [o.centerX, o.centerY, o.zPart], rMm: rSprue, level: 'sprue', VdotCcS: Vdot, tStartS: 0, tFillS: 0 });
+  const zR = o.zPart;                                     // runners SOBRE la partición
+  const colXs = [...new Set(cells.map((c) => c.cx))].sort((a, b) => a - b);
+  const rPrim = Math.max(1.5, steelSafeDiaMm(2 * rSprue / Math.SQRT2) / 2);
+  const rSec = Math.max(1.25, steelSafeDiaMm(2 * rPrim / Math.SQRT2) / 2);
+  const cavities: FeedNetwork['cavities'] = [];
+  for (const cx of colXs) {
+    segs.push({ a: [o.centerX, o.centerY, zR], b: [cx, o.centerY, zR], rMm: rPrim, level: 'primario', VdotCcS: 0, tStartS: 0, tFillS: 0 });
+    for (const c of cells.filter((q) => q.cx === cx)) {
+      const dy = Math.sign(c.cy - o.centerY) || 1;
+      const rimY = c.cy - dy * o.rimRmm;                  // punto del rim hacia el runner
+      const secEnd: [number, number, number] = [cx, rimY - dy * EDGE_GATE_L, zR];
+      segs.push({ a: [cx, o.centerY, zR], b: secEnd, rMm: rSec, level: 'secundario', VdotCcS: 0, tStartS: 0, tFillS: 0 });
+      const gTip: [number, number, number] = [cx, rimY + dy * 0.6, zR - 0.9];   // 0.6 DENTRO de la pared
+      segs.push({ a: secEnd, b: gTip, rMm: EDGE_GATE_R, level: 'gate-borde', VdotCcS: 0, tStartS: 0, tFillS: 0 });
+      cavities.push({ x: c.cx, y: c.cy, tStartS: 0, tFillS: 0, gx: gTip[0], gy: gTip[1], gz: gTip[2] });
+    }
+  }
+  const net: FeedNetwork = {
+    segs, cavities, totalFillS: 0,
+    rows: [
+      { k: 'red', v: `rejilla ${cells.length} cav · sprue centro + ${colXs.length} primarios + gates de borde al RIM`, ref: 'Figs 6.5/6.14 + 7.5 sobre la rejilla REAL del molde' },
+      { k: '⌀ cadena', v: `sprue ${(2 * rSprue).toFixed(1)} → prim ${(2 * rPrim).toFixed(1)} → sec ${(2 * rSec).toFixed(1)} → gate ${(2 * EDGE_GATE_R).toFixed(1)} mm`, ref: 'Eq 6.1 D/√2 + Eq 6.8 + fresas §6.5.4' },
+    ],
+  };
+  applyResistanceNetwork(net, o.material ?? 'PP');        // V̇/tiempos FÍSICOS
+  // llenado de cada vaso con SU caudal real (V/V̇ — Kazmer, no forma)
+  for (const c of net.cavities) c.tFillS = o.partVolCc / Math.max(1e-6, segByTip(net, c).VdotCcS);
+  net.totalFillS = Math.max(...net.cavities.map((c) => c.tStartS + c.tFillS));
+  return net;
+}
+function segByTip(net: FeedNetwork, c: { gx: number; gy: number; gz: number }): FeedSeg {
+  return net.segs.find((sg) => Math.abs(sg.b[0] - c.gx) < 0.01 && Math.abs(sg.b[1] - c.gy) < 0.01 && Math.abs(sg.b[2] - c.gz) < 0.01) ?? net.segs[net.segs.length - 1];
+}

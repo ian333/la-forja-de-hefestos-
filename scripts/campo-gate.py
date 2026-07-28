@@ -256,7 +256,16 @@ print("   |E|·A/Φ₀. Eso equivale a: longitud de línea por unidad de VOLUMEN
 print("   Es la razón de ser del dibujo: que la densidad SIGNIFIQUE la intensidad.\n")
 
 
-def densidad_vs_E(ruta, Phi0, lado=0.55, rmin=2.0, rmax=8.0, emin=0.024, emax=0.30, nmin=14):
+def densidad_vs_E(ruta, Phi0, lado=0.8, LB=12.0, emax=0.10, nbin=7):
+    """CUIDADO — así se mide MAL (yo lo hice y el gate mintió): si se filtran los voxeles por
+    "que tengan al menos N segmentos", se está CONDICIONANDO SOBRE LA VARIABLE MEDIDA. Solo
+    se miran voxeles densos ⇒ el factor sale >1 por construcción y la correlación se destruye
+    (daba r=0.04 con datos que en realidad cumplen la ley con r=0.99).
+
+    Lo correcto: enumerar TODAS las celdas de la región — incluidas las que tienen CERO línea —
+    y promediar la densidad por bins de |E|. Y la región es SOLO FUERA de la superficie
+    molecular, que es donde se dibujan tubos; adentro no hay ninguno y la ley no aplica ahí.
+    """
     import struct
     if not os.path.exists(ruta):
         return None
@@ -270,34 +279,46 @@ def densidad_vs_E(ruta, Phi0, lado=0.55, rmin=2.0, rmax=8.0, emin=0.024, emax=0.
     dl = np.linalg.norm(b - a, axis=2).reshape(-1)
     vivo = dl > 1e-6
     mid, dl = mid[vivo], dl[vivo]
-    ix = np.floor(mid / lado).astype(int)
-    key = (ix[:, 0] + 512) * 1048576 + (ix[:, 1] + 512) * 1024 + (ix[:, 2] + 512)
-    ordn = np.argsort(key); key, dl2, mid2 = key[ordn], dl[ordn], mid[ordn]
-    lim = np.flatnonzero(np.r_[True, key[1:] != key[:-1], True])
-    largo = np.add.reduceat(dl2, lim[:-1])
-    cuenta = np.diff(lim)
-    cen = np.add.reduceat(mid2 * dl2[:, None], lim[:-1], axis=0) / largo[:, None]
-    dens = largo / lado ** 3
+    n = int(2 * LB / lado)
+    ix = np.floor((mid + LB) / lado).astype(int)
+    ok = ((ix >= 0) & (ix < n)).all(axis=1)
+    flat = (ix[ok, 0] * n + ix[ok, 1]) * n + ix[ok, 2]
+    largo = np.bincount(flat, weights=dl[ok], minlength=n ** 3)   # ← las celdas VACÍAS cuentan
+    gx = -LB + (np.arange(n) + 0.5) * lado
+    CX, CY, CZ = np.meshgrid(gx, gx, gx, indexing='ij')
+    cen = np.stack([CX.ravel(), CY.ravel(), CZ.ravel()], axis=1)
     Ec = np.linalg.norm(campo(cen), axis=1)
-    rc = np.linalg.norm(cen, axis=1)
-    m = (cuenta >= nmin) & (rc > rmin) & (rc < rmax) & (Ec > emin) & (Ec < emax)
-    if m.sum() < 25:
+    rc = campo.rho(cen)
+    dens = largo / lado ** 3
+    m = (rc < RHO_SUP) & (Ec > E_PUENTE) & (Ec < emax)
+    bordes = np.exp(np.linspace(np.log(E_PUENTE), np.log(emax), nbin + 1))
+    xs, ys, ns = [], [], []
+    for lo, hi in zip(bordes[:-1], bordes[1:]):
+        mb = m & (Ec >= lo) & (Ec < hi)
+        if mb.sum() < 20:
+            continue
+        xs.append(Ec[mb].mean() / Phi0); ys.append(dens[mb].mean()); ns.append(int(mb.sum()))
+    if len(xs) < 3:
         return None
-    x = Ec[m] / Phi0; y = dens[m]
-    r = float(np.corrcoef(np.log(x), np.log(y))[0, 1])
-    pend = float(np.polyfit(np.log(x), np.log(y), 1)[0])
-    return dict(x=x, y=y, r=r, pendiente=pend, n=int(m.sum()),
-                sesgo=float(np.median(y / x)))
+    xs, ys = np.array(xs), np.array(ys)
+    return dict(x=xs, y=ys, ns=ns, n=int(m.sum()),
+                r=float(np.corrcoef(np.log(xs), np.log(ys))[0, 1]),
+                pendiente=float(np.polyfit(np.log(xs), np.log(ys), 1)[0]),
+                sesgo=float(np.median(ys / xs)))
 
 
 PRE = os.path.join(HERE, '..', 'public', 'precomputed')
 res_new = densidad_vs_E(os.path.join(PRE, 'water-trimer-efield.bin'), Phi0)
 if res_new:
-    print(f"   AHORA  ({res_new['n']} voxeles de 0.55 bohr): correlación log-log r = {res_new['r']:.3f} · "
-          f"pendiente {res_new['pendiente']:.3f} (la ley dice 1.000) · factor {res_new['sesgo']:.2f}")
+    print(f"   {res_new['n']} celdas de 0.8 bohr FUERA de la superficie molecular (vacías incluidas)")
+    print("     |E| medio    densidad medida    |E|/Φ₀ (la ley)   razón   celdas")
+    for xx, yy, nn in zip(res_new['x'], res_new['y'], res_new['ns']):
+        print(f"     {xx*Phi0:.4f}       {yy:8.2f}           {xx:8.2f}      {yy/xx:5.2f}   {nn:5d}")
+    print(f"   ⇒ correlación log-log r = {res_new['r']:.4f} · pendiente {res_new['pendiente']:.3f} "
+          f"(la ley dice 1.000) · factor {res_new['sesgo']:.2f}")
     veredicto("la densidad de líneas ES la intensidad del campo",
-              res_new['r'] > 0.85 and abs(res_new['pendiente'] - 1) < 0.25,
-              f"(r={res_new['r']:.3f}, pendiente={res_new['pendiente']:.3f})")
+              res_new['r'] > 0.97 and abs(res_new['pendiente'] - 1) < 0.20,
+              f"(r={res_new['r']:.4f}, pendiente={res_new['pendiente']:.3f})")
 else:
     print("   (todavía no hay .bin nuevo que medir)")
 
@@ -306,7 +327,8 @@ try:
     import matplotlib.pyplot as plt
     if res_new:
         fg, axd = plt.subplots(figsize=(6.4, 6.0), facecolor='#0a0a0e')
-        axd.loglog(res_new['x'], res_new['y'], '.', ms=3, color='#ffc24a', alpha=0.55)
+        axd.loglog(res_new['x'], res_new['y'], 'o-', ms=7, lw=1.4, color='#ffc24a',
+                   label='medido en el .bin (promedio por bin de |E|)')
         lo = min(res_new['x'].min(), res_new['y'].min()); hi = max(res_new['x'].max(), res_new['y'].max())
         axd.loglog([lo, hi], [lo, hi], '--', color='#00e0a0', lw=1.4, label='la ley: densidad = |E|/Φ₀')
         axd.set_xlabel('|E| / Φ₀   (lo que manda la física)', color='#aaa')
