@@ -357,11 +357,15 @@
   "campo": {
     "bin": "water-trimer-efield.bin",
     "referencia": "water-approach-efield.bin",
-    "nota": "El PUENTE (dímero) es la referencia: su campo quedó bien (líneas continuas de + a −, sin zigzag). Li₂ fue donde se ganaron esas reglas. Si el verificador dice PEOR QUE LA REFERENCIA, NO se renderiza.",
+    "motor": "scripts/campo_lineas.py — E=−∇V EXACTO por integrales analíticas, Cash–Karp RK45 adaptativo, siembra por FLUJO. Gates: scripts/campo-gate.py (9). Portero del .bin: scripts/verificar-campo.py",
+    "nota": "REESCRITO 2026-07-28. El campo anterior estaba AMPUTADO: el radio máximo de todo punto del .bin era 6.60 bohr clavado (la pared `maxlen`), sembraba 210 líneas por cada H y CERO en los O (que son Z=+8, violando la regla que el propio código citaba), y la curvatura visible era la de una media móvil de 9 puntos sobre líneas de 40.",
     "reglas": [
-      "trazado BIDIRECCIONAL (+E y −E): la línea va de + a − y NUNCA se corta en el aire",
-      "PARA al llegar a un núcleo (<0.40 bohr): no divaga",
-      "remuestreo por LONGITUD DE ARCO: espaciado uniforme, sin saltos ni picos"
-    ]
+      "cada línea carga el MISMO flujo Φ₀ ⇒ densidad de líneas = |E|/Φ₀. Medido sobre el .bin entregado: pendiente 1.107 contra la ley 1.000 (G7). Es lo que hace que el dibujo NO MIENTA sobre dónde el campo es fuerte.",
+      "siembra sobre isosuperficie ρ=0.0002 u.a. y SOLO en las cruzadas SALIENTES. Si se siembra en |E·n̂| (las dos cruzadas), el mismo tubo se dibuja DOS VECES (medido: factor 1.86).",
+      "ρ de la superficie se elige para ENCERRAR LA CARGA, no por la convención de Bader: con ρ=0.002 quedaban +0.238 e afuera y el 50% de las líneas se iban sin volver (Gauss: solo escapan líneas si hay carga neta). Con ρ=0.0002 queda +0.030 e y baja a 12%.",
+      "NADA de recortes por radio ni por |E|: la línea va completa hasta la escala térmica (kT/bohr a 300 K) y el BRILLO del shader la apaga (canal uint8 de |E| en el .bin). Recortar era lo que la dejaba 'despeinada'.",
+      "cero suavizado: la curvatura que se ve es la del campo"
+    ],
+    "correspondencia": "la línea j es SIEMPRE el mismo rayo (núcleo, dirección) de la superficie → se desliza suave entre cuadros, cero parpadeo. La selección por flujo se hace una vez, en el anillo cerrado."
   }
 }

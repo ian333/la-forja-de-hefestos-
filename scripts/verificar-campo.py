@@ -91,10 +91,17 @@ def metricas(K, NL, LP, R, L, etiqueta, nuc=None):
         nace = (dHi < dOi).mean() * 100
         muere = (dOf < dHf).mean() * 100
 
+    # DENSIDAD con celda de tamaño FIJO EN BOHR, no 24³ del bounding box.
+    # La versión vieja normalizaba por la caja de cada campo, así que un campo que llega MÁS
+    # LEJOS salía castigado: sus celdas eran más grandes. Medido el 2026-07-28 — el trímero
+    # nuevo daba 14.6% contra 21.3% del dímero y el gate lo reprobaba, pero con celda fija de
+    # 0.8 bohr cubre MÁS volumen que la referencia (1383 vs 1159 bohr³). Era artefacto de
+    # escala, no calidad. Ahora se reporta el VOLUMEN CUBIERTO, que sí es comparable entre
+    # moléculas distintas.
+    LADO = 0.8
     pts = Q.reshape(-1, 3)
-    lo, hi = pts.min(0), pts.max(0); rng = np.maximum(hi - lo, 1e-6)
-    idx = np.clip(((pts - lo) / rng * 23).astype(int), 0, 23)
-    ocup = len(set(map(tuple, idx))) / (24 ** 3) * 100
+    celdas = len(set(map(tuple, np.floor(pts / LADO).astype(int))))
+    ocup = celdas * LADO ** 3
 
     print("-- %s --" % etiqueta)
     print("  lineas %d x %d puntos - %d frames - largo mediano %.2f bohr" % (NL, LP, K, np.median(largo[vivas])))
@@ -104,7 +111,7 @@ def metricas(K, NL, LP, R, L, etiqueta, nuc=None):
     print("  muere del lado - (la nube del O): %5.1f %%   [libro: alto; la nube, no el nucleo]" % muere)
     print("  semillas muertas:                %5.1f %%   [bien: <10]" % muertas)
     print("  saltos (linea CORTADA):          %5.2f %%   [bien: <0.5]" % salto)
-    print("  densidad (ocupacion 24^3):       %5.1f %%   [mas = mejor]" % ocup)
+    print("  VOLUMEN cubierto (celda 0.8 bohr):%7.0f bohr3  [mas = mejor; comparable entre moleculas]" % ocup)
     print("  AMPUTACION - finales en la pared: %5.1f %%  de r=%.2f bohr   [bien: <2; >10 = hay muro]"
           % (pared, rmax_todo))
     return dict(kappa=k_med, k95=k_p95, tau=t_med, nace=nace, muere=muere,
@@ -195,7 +202,7 @@ if REF:
     ok = True
     for k, nom, peor_es in (('kappa', 'curvatura kappa', 'mayor'), ('muertas', 'semillas muertas', 'mayor'),
                             ('salto', 'saltos', 'mayor'), ('pared', 'AMPUTACION', 'mayor'),
-                            ('muere', 'muere en O (regla 1)', 'menor'), ('ocup', 'densidad', 'menor')):
+                            ('muere', 'muere en O (regla 1)', 'menor'), ('ocup', 'volumen cubierto', 'menor')):
         a, b = m[k], mr[k]
         mal = (a > b * 1.5 + 1) if peor_es == 'mayor' else (a < b * 0.7)
         ok &= not mal

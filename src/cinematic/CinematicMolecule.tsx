@@ -2042,7 +2042,8 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
 // V(r)=núcleos(+) − electrones(−), E=−∇V, integradas a líneas. Brotan de cada núcleo y
 // se curvan APANTALLADAS por las capas → el átomo COMPLETO, no un punto morado. Pulsos
 // cian viajan hacia afuera (la dirección del campo). Mismas coords bohr que el enlace.
-type BondEFieldData = { K: number; NL: number; LP: number; Rvals: Float32Array; frames: Float32Array[] };
+type BondEFieldData = { K: number; NL: number; LP: number; Rvals: Float32Array;
+                        frames: Float32Array[]; inten: Uint8Array[] | null };
 function parseBondEField(buf: ArrayBuffer): BondEFieldData {
   const dv = new DataView(buf);
   const K = dv.getInt32(0, true), NL = dv.getInt32(4, true), LP = dv.getInt32(8, true);
@@ -2056,44 +2057,64 @@ function parseBondEField(buf: ArrayBuffer): BondEFieldData {
     for (let i = 0; i < stride; i++) fr[i] = q[k * stride + i] / 2000;
     frames.push(fr);
   }
-  return { K, NL, LP, Rvals, frames };
+  // BLOQUE OPCIONAL AL FINAL: uint8 |E| por punto (log). Si el .bin no lo trae (los viejos
+  // no lo traen), inten queda null y el shader usa el perfil de siempre. Sin este brillo la
+  // línea termina CORTADA en el aire = el "despeinado"; con él se apaga sola.
+  off += K * stride * 2;
+  let inten: Uint8Array[] | null = null;
+  if (buf.byteLength >= off + K * NL * LP) {
+    const raw = new Uint8Array(buf, off, K * NL * LP);
+    inten = [];
+    for (let k = 0; k < K; k++) inten.push(raw.subarray(k * NL * LP, (k + 1) * NL * LP));
+  }
+  return { K, NL, LP, Rvals, frames, inten };
 }
 
 // El campo se INTERPOLA por R(t): a cada separación es el campo REAL calculado (dos campos
 // radiales separados → uno molecular al juntarse). Líneas ESTABLES; un pulso viaja hacia
 // afuera (dirección del campo). Sin sprites que se amontonen = sin "colapso".
 function BondEField({ data, R, time, reveal, col }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number] }) {
-  const { K, NL, LP, Rvals, frames } = data;
+  const { K, NL, LP, Rvals, frames, inten } = data;
   const cCol = col ?? [0.55, 0.85, 1.0];
   const built = useMemo(() => {
     const nseg = NL * (LP - 1);
     const pos = new Float32Array(nseg * 6), aS = new Float32Array(nseg * 2), aL = new Float32Array(nseg * 2);
+    const aE = new Float32Array(nseg * 2);
     let os = 0, ol = 0;
     for (let j = 0; j < NL; j++) for (let s = 0; s < LP - 1; s++) {
       aS[os++] = s / (LP - 1); aS[os++] = (s + 1) / (LP - 1);
       aL[ol++] = j; aL[ol++] = j;
     }
+    aE.fill(1);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
     geo.setAttribute('aL', new THREE.BufferAttribute(aL, 1));
+    geo.setAttribute('aE', new THREE.BufferAttribute(aE, 1));
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uOp: { value: 0 }, uCol: { value: new THREE.Color(cCol[0], cCol[1], cCol[2]) }, uT: { value: 0 } },
-      vertexShader: `attribute float aS; attribute float aL; varying float vS; varying float vL;
-        void main(){ vS=aS; vL=aL; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      // CURVA suave: brillo a lo largo de toda la línea (fade suave en las puntas, sin picos)
-      // + un glow que VIAJA del + al − (dirección del campo). guard NaN (bloom).
-      fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; varying float vS; varying float vL;
+      uniforms: { uOp: { value: 0 }, uCol: { value: new THREE.Color(cCol[0], cCol[1], cCol[2]) },
+                  uT: { value: 0 }, uUsaE: { value: inten ? 1 : 0 } },
+      vertexShader: `attribute float aS; attribute float aL; attribute float aE;
+        varying float vS; varying float vL; varying float vE;
+        void main(){ vS=aS; vL=aL; vE=aE; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      // EL BRILLO ES |E|. Sin esto la línea se acaba de golpe donde se cortó y se lee
+      // "despeinada" (Ian, 2026-07-28); con esto se apaga sola donde el campo ya no importa,
+      // igual que en la escalera de cargas puntuales. vE viene del .bin en escala LOG.
+      // uUsaE=0 → .bin viejo sin intensidad: se cae al perfil de siempre.
+      fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE;
+        varying float vS; varying float vL; varying float vE;
         void main(){ float s=clamp(vS,0.0,1.0);
-          float base=0.32*pow(max(sin(3.14159*s),0.0),0.38);   // LÍNEA CONTINUA brillante (manda) — antes 0.15 dejaba ver las cuentas del pulso = "pixeleado"
+          float perfil=pow(max(sin(3.14159*s),0.0),0.38);      // el de siempre (bin sin |E|)
+          float campo=pow(clamp(vE,0.0,1.0),2.2);              // 2.2: la cola débil cae rápido a negro
+          float base=0.32*mix(perfil,campo,uUsaE);
           float ph=fract(uT*0.06 + vL*0.13);
           float dd=s-ph; dd=dd-floor(dd+0.5);
           float glow=exp(-dd*dd*7.0);                          // swell ANCHO y suave (no punto apretado) → viaja sin verse como dashes
-          float a=uOp*(base + 0.13*glow);                      // pulso sutil; la línea continua domina
+          float a=uOp*(base + 0.13*glow*mix(1.0,campo,uUsaE)); // el pulso tampoco brilla donde no hay campo
           gl_FragColor=vec4(uCol*a*2.0, a); }`,
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-    return { geo, mat, pos };
-  }, [frames, NL, LP]);
+    return { geo, mat, pos, aE };
+  }, [frames, NL, LP, inten]);
   if (reveal < 0.01) return null;
   built.mat.uniforms.uOp.value = reveal;
   built.mat.uniforms.uT.value = time;
@@ -2113,6 +2134,18 @@ function BondEField({ data, R, time, reveal, col }: { data: BondEFieldData; R: n
     }
   }
   built.geo.attributes.position.needsUpdate = true;
+  if (inten) {                                   // |E| por punto, interpolado por R(t) igual que la geometría
+    const EA = inten[k], EB = inten[k + 1], aE = built.aE, st2 = LP;
+    let e = 0;
+    for (let j = 0; j < NL; j++) {
+      const b0 = j * st2;
+      for (let s = 0; s < LP - 1; s++) {
+        aE[e++] = (EA[b0 + s] * (1 - f) + EB[b0 + s] * f) / 255;
+        aE[e++] = (EA[b0 + s + 1] * (1 - f) + EB[b0 + s + 1] * f) / 255;
+      }
+    }
+    built.geo.attributes.aE.needsUpdate = true;
+  }
   return <lineSegments geometry={built.geo} material={built.mat} />;
 }
 

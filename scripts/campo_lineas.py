@@ -70,6 +70,29 @@ E_PUENTE = 0.0080        # 5 kcal/mol por bohr = la energía de UN puente de hid
                          # hacer el trabajo del que habla el video, y nada más.
 
 
+# ──────────────────────── EL CAMPO (cargas puntuales) ────────────────────────
+class CampoPuntual:
+    """E = Σ qᵢ(r−rᵢ)/|r−rᵢ|³. El caso con solución EXACTA: sirve de patrón para los gates y
+    de escalera pedagógica (2, 3, 4, 5, 6 cargas) antes de creerle nada a una molécula."""
+
+    def __init__(self, q, c):
+        self.q = np.asarray(q, float); self.R = np.asarray(c, float); self.Z = self.q
+        self.n_eval = 0
+
+    def __call__(self, P):
+        P = np.asarray(P, float).reshape(-1, 3); self.n_eval += len(P)
+        d = P[:, None, :] - self.R[None]
+        r = np.maximum(np.linalg.norm(d, axis=2), 1e-12)
+        return (self.q[None, :, None] * d / (r ** 3)[:, :, None]).sum(axis=1)
+
+    def psi(self, P):
+        """Función de flujo de Stokes ψ = Σqᵢcosθᵢ. CONSTANTE sobre una línea — pero OJO,
+        solo vale si las cargas están SOBRE UN EJE (el eje z). Para un anillo NO vale."""
+        d = np.asarray(P, float).reshape(-1, 3)[:, None, :] - self.R[None]
+        r = np.maximum(np.linalg.norm(d, axis=2), 1e-12)
+        return (self.q[None, :] * d[:, :, 2] / r).sum(axis=1)
+
+
 # ───────────────────────────────── EL CAMPO ─────────────────────────────────
 class CampoMEP:
     """E(r) = −∇V, con V = Σ_A Z_A/|r−R_A| − ∫ρ_e(r')/|r−r'| d³r'  (u.a.).
@@ -288,7 +311,19 @@ def trazar_bidireccional(campo, semillas, LP=80, e_dibujo=None, **kw):
             u = np.linspace(0, seg[-1], LP)
             for c in range(3):
                 total[i, :, c] = np.interp(u, seg, cam[:, c])
-    return total, largo, viva, mf, mb
+    # |E| EN CADA PUNTO DIBUJADO. Es lo que hace que la línea se APAGUE sola donde el campo
+    # ya no importa, en vez de terminar cortada en el aire ("despeinada", Ian 2026-07-28).
+    # Es la misma receta de la escalera de cargas puntuales, que sí se ve bien: nada se
+    # recorta, el BRILLO lleva la intensidad.
+    nE = np.linalg.norm(campo(total.reshape(-1, 3)), axis=1).reshape(len(total), LP)
+    return total, largo, viva, nE, mf, mb
+
+
+def intensidad_u8(nE, e_lo=1e-4, e_hi=0.30):
+    """|E| → uint8 en escala LOGARÍTMICA (el campo abarca 4 décadas; lineal apagaría todo
+    menos los núcleos). El shader multiplica el brillo por esto."""
+    t = (np.log(np.maximum(nE, 1e-30)) - np.log(e_lo)) / (np.log(e_hi) - np.log(e_lo))
+    return np.clip(np.round(np.clip(t, 0.0, 1.0) * 255), 0, 255).astype(np.uint8)
 
 
 def superficie_en_rayos(campo, ia, id_, n_dir, rho_c=RHO_SUP, r_ini=0.40, r_fin=11.0, dr=0.14):

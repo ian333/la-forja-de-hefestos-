@@ -197,20 +197,40 @@ def sample_field(field, U):
 # molecular ρ=0.002, sin suavizado y sin cortes por radio. Gates: scripts/campo-gate.py.
 sys.path.insert(0, HERE)
 from campo_lineas import (CampoMEP, superficie_molecular, sembrar_por_flujo,      # noqa: E402
-                          superficie_en_rayos, trazar_bidireccional, E_PUENTE, MOTIVO)
+                          superficie_en_rayos, trazar_bidireccional, intensidad_u8,
+                          E_PUENTE, E_TERMICO, MOTIVO)
 
 N_DIR_SUP = 1200          # direcciones de rayo por núcleo (la malla de la superficie)
-NL_CAMPO = 1100           # líneas; cada una carga el MISMO flujo Φ₀
+# CUÁNTAS LÍNEAS es decisión de LEGIBILIDAD, no de física: en todas ellas cada línea carga
+# el mismo Φ₀, solo cambia cuánto vale ese flujo. Elegido a ojo por Ian (2026-07-28) sobre la
+# comparación 1100/550/275/138: con 1100 el campo se lee como PELO y se pierden los arcos que
+# van de una molécula a otra, que es justo lo que el video tiene que enseñar.
+NL_CAMPO = 275            # líneas; cada una carga el MISMO flujo Φ₀
 LP_CAMPO = 80             # puntos por línea (antes 40: la línea se veía a cuentas)
-TRAZA = dict(tol=1e-8, r_core=0.25, r_caja=16.0, s_max=30.0, e_min=1e-4,
-             max_pasos=1500, max_muestras=900)
+# ρ DE LA SUPERFICIE DE SIEMBRA — no es la convención, es un criterio FÍSICO (Ian, 2026-07-28:
+# "las lineas que desaparecen en el aire se ven despeinadas"). Una línea se va y no vuelve solo
+# si hay CARGA NETA (Gauss). Si Σ deja carga afuera, la molécula VISTA DESDE Σ parece cargada y
+# esa fracción de líneas se despeina. Medido sobre el trímero:
+#     ρ_c=0.002 (Bader) → deja +0.238 e afuera → 50 % de las líneas se van y no vuelven
+#     ρ_c=0.0005        → +0.066 e            → 22 %
+#     ρ_c=0.0002        → +0.030 e            → 12 %   ← se usa esta (99.9 % de la carga adentro)
+# La convención de Bader (0.001-0.002) define el VOLUMEN molecular; aquí no queremos el
+# volumen, queremos una superficie que encierre la carga para que el dibujo CIERRE.
+RHO_SIEMBRA = 0.0002
+R_FIN_RAYO = 14.0         # los rayos deben llegar más lejos: esta superficie es más grande
+# NO se recorta la línea por |E| (`e_dibujo`). Recortar era lo que la dejaba terminando en
+# el aire: el pedazo débil se borraba de golpe. Ahora la línea va COMPLETA hasta la escala
+# TÉRMICA (kT/bohr a 300 K, donde el campo ya pierde contra el ruido) y el BRILLO la apaga —
+# igual que en scripts/campo-escalera.py, que es el que sí se ve bien.
+TRAZA = dict(tol=1e-8, r_core=0.25, r_caja=16.0, s_max=34.0, e_min=E_TERMICO,
+             max_pasos=1800, max_muestras=1100)
 
 
 def elegir_rayos(mol_ref, dm_ref):
     """UNA sola vez, en el anillo CERRADO: qué rayos de la superficie molecular se quedan.
     Se reusan en todos los cuadros (correspondencia lagrangiana → cero parpadeo)."""
     c = CampoMEP(mol_ref, dm_ref)
-    sup = superficie_molecular(c, n_dir=N_DIR_SUP)
+    sup = superficie_molecular(c, n_dir=N_DIR_SUP, rho_c=RHO_SIEMBRA, r_fin=R_FIN_RAYO)
     idx, Phi0, info = sembrar_por_flujo(c, sup, NL_CAMPO)
     ia, id_ = sup['ray']
     print(f"  siembra por flujo: {len(idx)} líneas · Φ₀ = {Phi0:.3e} · duplicadas {info['duplicados']}"
@@ -221,10 +241,10 @@ def elegir_rayos(mol_ref, dm_ref):
 def campo_frame(mol, dm, ia, id_):
     """Las líneas de UN cuadro. Devuelve (NL, LP, 3) en bohr + diagnóstico."""
     c = CampoMEP(mol, dm)
-    S, hay, _ = superficie_en_rayos(c, ia, id_, N_DIR_SUP)
-    L, largo, viva, mf_, mb_ = trazar_bidireccional(c, S, LP=LP_CAMPO, e_dibujo=E_PUENTE, **TRAZA)
+    S, hay, _ = superficie_en_rayos(c, ia, id_, N_DIR_SUP, rho_c=RHO_SIEMBRA, r_fin=R_FIN_RAYO)
+    L, largo, viva, nE, mf_, mb_ = trazar_bidireccional(c, S, LP=LP_CAMPO, **TRAZA)
     rr = np.linalg.norm(L[viva].reshape(-1, 3), axis=1) if viva.any() else np.zeros(1)
-    return L, dict(viva=int(viva.sum()), sin_rayo=int((~hay).sum()),
+    return L, intensidad_u8(nE), dict(viva=int(viva.sum()), sin_rayo=int((~hay).sum()),
                    largo=float(np.median(largo[viva])) if viva.any() else 0.0,
                    r95=float(np.percentile(rr, 95)), rmax=float(rr.max()),
                    caja=float((mf_ == 3).mean() * 100))
@@ -256,7 +276,7 @@ def build():
     Ebind = np.zeros(K); E3body = np.zeros(K)
     ia_r, id_r = _rayos_de_referencia(gto, scf, float(Rvals[-1]))
     NL_EF = len(ia_r)
-    efield = np.zeros((K, NL_EF, LP, 3))
+    efield = np.zeros((K, NL_EF, LP, 3)); eint = np.zeros((K, NL_EF, LP), np.uint8)
 
     print(f"=== TRÍMERO DE AGUA (9 átomos) · {K} radios · {BASIS} · malla {NXY}×{NXY}×{NZ} ===", flush=True)
     print("k   O-O(Å)  E(Ha)         Ebind(kcal)  3-cuerpos(kcal)  %coop   ∫Δρ>0", flush=True)
@@ -304,7 +324,7 @@ def build():
         depPos[k] = sample_field(dep_field, U_dep)
         spinPos[k] = sample_field(spin_field, U_spin)
         nucPos[k] = gb
-        efield[k], dg = campo_frame(mol, dm, ia_r, id_r)
+        efield[k], eint[k], dg = campo_frame(mol, dm, ia_r, id_r)
         print(f"{k:2d}  {R_A:5.2f}  {mf.e_tot:12.5f}  {e_bind:8.2f}     {e_3b:8.2f}      {coop:5.1f}%  {bondMass[k]:.4f}"
               f"   campo: {dg['viva']}/{NL_EF} vivas, largo {dg['largo']:.1f}, r95 {dg['r95']:.1f} bohr", flush=True)
 
@@ -316,7 +336,7 @@ def build():
     gold = np.array([1.0, 0.72, 0.30]); purple = np.array([0.82, 0.28, 1.0])
     col = gold[None, :] * (1 - pw[:, None]) + purple[None, :] * pw[:, None]
     accColor = np.clip(col * 255, 0, 255).astype(np.uint8)
-    return accPos, depPos, spinPos, bondMass, accColor, nucPos, efield, NL_EF, LP, Ebind, E3body
+    return accPos, depPos, spinPos, bondMass, accColor, nucPos, efield, eint, NL_EF, LP, Ebind, E3body
 
 
 def write_bin(accPos, depPos, spinPos, bondMass, accColor, nucPos):
@@ -335,11 +355,16 @@ def write_bin(accPos, depPos, spinPos, bondMass, accColor, nucPos):
     print(f"OK  {OUT}  {os.path.getsize(OUT)/1024/1024:.2f} MB (nubes, {NNUC} núcleos)", flush=True)
 
 
-def write_efield(efield, NL_EF, LP):
+def write_efield(efield, NL_EF, LP, eint=None):
+    """Formato BondEField + un BLOQUE NUEVO AL FINAL: uint8 |E| por punto (escala log).
+    Va al final a propósito: el parser de JS lee la geometría con longitudes explícitas, así
+    que un .bin con intensidad lo lee igual un renderer viejo (solo ignora la cola)."""
     with open(OUT_EF, 'wb') as fp:
         fp.write(struct.pack('<3i', K, NL_EF, LP))
         fp.write((Rvals / BOHR).astype('<f4').tobytes())
         fp.write(np.clip(np.round(efield * 2000), -32767, 32767).astype('<i2').tobytes())
+        if eint is not None:
+            fp.write(np.ascontiguousarray(eint, dtype=np.uint8).tobytes())
     print(f"OK  {OUT_EF}  {os.path.getsize(OUT_EF)/1024/1024:.2f} MB (campo MEP, {NL_EF}×{LP})", flush=True)
 
 
@@ -378,29 +403,27 @@ def solo_campo():
     Rv = R_MAX_A + (Rmin_eff - R_MAX_A) * (np.arange(K) / (K - 1))
     ia_r, id_r = _rayos_de_referencia(gto, scf, float(Rv[-1]))
     NL_EF = len(ia_r)
-    ef = np.zeros((K, NL_EF, LP, 3))
-    print(f"=== SOLO CAMPO · {K} radios · {NL_EF} líneas × {LP} pts · corte |E|≥{E_PUENTE} u.a. ===", flush=True)
+    ef = np.zeros((K, NL_EF, LP, 3)); eint = np.zeros((K, NL_EF, LP), np.uint8)
+    print(f"=== SOLO CAMPO · {K} radios · {NL_EF} líneas × {LP} pts · SIN recorte, brillo=|E| ===", flush=True)
     for k in range(K):
         t0 = time.time()
         R_A = float(Rv[k]); gb = geom_at(R_A)
         atoms = [[int(Z[i]), tuple(gb[i])] for i in range(NNUC)]
         mol = gto.M(atom=atoms, basis=BASIS, unit='Bohr', verbose=0)
         mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
-        ef[k], dg = campo_frame(mol, mf.make_rdm1(), ia_r, id_r)
+        ef[k], eint[k], dg = campo_frame(mol, mf.make_rdm1(), ia_r, id_r)
         print(f"  {k+1}/{K}  O-O {R_A:.2f} Å · {dg['viva']}/{NL_EF} vivas · largo mediano "
               f"{dg['largo']:.2f} · r95 {dg['r95']:.1f} rmax {dg['rmax']:.1f} bohr · "
               f"caja {dg['caja']:.0f}% · {time.time()-t0:.0f} s", flush=True)
-    with open(OUT_EF, 'wb') as fp:
-        fp.write(struct.pack('<3i', K, NL_EF, LP))
-        fp.write((Rv / BOHR).astype('<f4').tobytes())
-        fp.write(np.clip(np.round(ef * 2000), -32767, 32767).astype('<i2').tobytes())
-    print(f"OK  {OUT_EF}  {os.path.getsize(OUT_EF)/1024/1024:.2f} MB ({NL_EF}×{LP})", flush=True)
+    global Rvals
+    Rvals = Rv
+    write_efield(ef, NL_EF, LP, eint)
 
 
 if __name__ == '__main__':
     if '--solo-campo' in sys.argv:
         solo_campo(); sys.exit(0)
-    a, d, s, bm, col, nuc, ef, nl, lp, Eb, E3 = build()
+    a, d, s, bm, col, nuc, ef, ei, nl, lp, Eb, E3 = build()
     write_bin(a, d, s, bm, col, nuc)
-    write_efield(ef, nl, lp)
+    write_efield(ef, nl, lp, ei)
     validate(bm, Eb, E3)
