@@ -25,13 +25,18 @@ for k in '$1'.split('.'):
     d=d.get(k,'') if isinstance(d,dict) else ''
 print(' '.join(map(str,d)) if isinstance(d,list) else d)"; }
 
-W=$(m formato.w); H=$(m formato.h); FPS=$(m formato.fps); DUR=$(m formato.dur)
+# PREVIEW: W/H por env (mismo patrón que SHARDS). El MASTER siempre es 4K — CLAUDE.md
+# regla #1: "el 1080 solo existe como derivado/preview, jamás como entregable final".
+# Si W/H difieren del manifiesto se le pone SUFIJO a los frames y a las salidas, para que
+# un preview NUNCA sobrescriba el master 4K ya rendido.
+W="${W:-$(m formato.w)}"; H="${H:-$(m formato.h)}"; FPS=$(m formato.fps); DUR=$(m formato.dur)
+SUF=""; if [ "$W" != "$(m formato.w)" ] || [ "$H" != "$(m formato.h)" ]; then SUF="-${W}x${H}"; fi
 HTML=$(m escena.html); QUERY=$(m escena.query); HOOK=$(m escena.hook)
-FRAMES="$ROOT/$(m render.frames)"; BATCH=$(m render.batch); SHARDS="${SHARDS:-$(m render.shards)}"
+FRAMES="$ROOT/$(m render.frames)$SUF"; BATCH=$(m render.batch); SHARDS="${SHARDS:-$(m render.shards)}"
 ADIR="$ROOT/$(m audio.dir)"; NARR=$(m audio.narracion); MUS=$(m audio.musica)
 MVOL=$(m audio.musicaVol); MFIN=$(m audio.musicaFadeIn); MFOUT=$(m audio.musicaFadeOutAt)
 SEGS="$ADIR/$(m audio.segs)"; ASS="$ADIR/$(m audio.ass)"
-ODIR=$(m salida.dir); OMASTER="$ODIR/$(m salida.master)"; OH264="$ODIR/$(m salida.h264)"
+ODIR=$(m salida.dir); OMASTER="$ODIR/$(basename "$(m salida.master)" .mp4)$SUF.mp4"; OH264="$ODIR/$(basename "$(m salida.h264)" .mp4)$SUF.mp4"
 NFRAMES=$(python3 -c "print(round($DUR*$FPS))")
 BASE_URL="${BASE_URL:-http://localhost:5178}"
 export DISPLAY=${DISPLAY:-:0} GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
