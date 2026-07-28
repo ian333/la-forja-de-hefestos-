@@ -18,11 +18,13 @@ import { plateStackZ } from './mold-plano-set';
 import { ABS_KAZMER } from './cooling';
 import { crearDifusionEspectral } from '../campo/campo';
 
-const K_STEEL = 32, RHO_STEEL = 7800, CP_STEEL = 460;
-const ALPHA = K_STEEL / (RHO_STEEL * CP_STEEL);          // 8.92e-6 m²/s
+// Apéndice B (LITERAL): P20 k=32, ρ=7820, cp=500 → α=8.18e-6 ✓ impreso
+const K_STEEL = 32, RHO_STEEL = 7820, CP_STEEL = 500;
+const ALPHA = K_STEEL / (RHO_STEEL * CP_STEEL);          // 8.18e-6 m²/s (libro)
 const H_COOL = 1000;                                      // W/m²·°C (Eq 9.7)
-// plástico ABS (§9.2.2): conduce poco — se modela como capa con α propio
-const K_ABS = 0.25, RHO_ABS = 1050, CP_ABS = 2345;
+// plástico ABS FUNDIDO (Apéndice A LITERAL): k=0.19, ρ_melt=930, cp=2340
+// → α=8.73e-8 ✓ impreso (antes: 0.25/1050/2345 — ni literales ni usados bien)
+const K_ABS = 0.19, RHO_ABS = 930, CP_ABS = 2340;
 
 export interface ThermalSim {
   nx: number; ny: number; nz: number;
@@ -50,6 +52,9 @@ export interface ThermalSim {
   sliceAxis(axis: 'x' | 'y' | 'z', frac: number): { nu: number; nv: number; u1: number; v1: number; posMm: number; T: Float32Array; minC: number; maxC: number };
   /** espesor local de plástico por columna (mm) — el mapa que manda en el ciclo. */
   thGrid: { nx: number; ny: number; cellMm: number; thMm: Float32Array };
+  /** T MÁXIMA de línea central del plástico entre columnas (°C) — la sonda de
+   *  expulsión: cae a T_eject en ~t_c del libro si la física está bien. */
+  plasticCenterMaxC(): number;
 }
 
 export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; coolantC?: number; partMesh?: { positions: Float32Array; indices: Uint32Array } }): ThermalSim {
@@ -210,6 +215,41 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
     }
   }
   const dtMax = (dx * dx) / (6 * ALPHA) * 0.9;   // ya solo informativo: el espectral no lo necesita
+  // ══ F2b: EL PLÁSTICO EXISTE ══ (antes: depósito INSTANTÁNEO de calor + difusión
+  // todo-acero → el metal recibía en 0 s lo que el plástico entrega en ~t_c ≈ 19 s;
+  // "está mal la transferencia del plástico al metal en todas las placas" — user).
+  // Cada columna con pieza lleva DOS micro-pilas 1D de MEDIA pared (simetría
+  // adiabática en la línea central): lado CAVIDAD → vóxel kTop, lado NÚCLEO →
+  // vóxel kBot. Acople por MEDIA ARMÓNICA (validado en thermal-layers 23/23).
+  const PCELLS = 6;
+  const cols: number[] = [];
+  for (let m = 0; m < nx * ny; m++) if (thMm[m] > 0 && (kTop[m] >= 0 || kBot[m] >= 0)) cols.push(m);
+  // pilas: [col][lado(0=top,1=bot)][celda 0=línea central … PCELLS-1=pegada al acero]
+  const pStack = new Float32Array(cols.length * 2 * PCELLS).fill(Tc);
+  const pDx = (m: number) => Math.max(0.15e-3, (thMm[m] / 2 / PCELLS) / 1000);  // m
+  const CP_VOL_P = RHO_ABS * CP_ABS;                     // J/m³°C del plástico
+  /** sub-integra la pila `ci`,`side` un tiempo dtS contra el vóxel `vox` (T casi
+   *  cte en el paso). Devuelve la ENERGÍA entregada al acero (J/m²). */
+  const stepStack = (ci: number, side: number, m: number, dtS: number, Tvox: number): number => {
+    const off = (ci * 2 + side) * PCELLS;
+    const dxp = pDx(m);
+    const gInt = 1 / (dxp / (2 * K_ABS) + dx / (2 * K_STEEL));   // plástico|acero ARMÓNICA
+    const gPP = K_ABS / dxp;                                      // interno plástico
+    const dtp = Math.min(dtS, 0.4 * (CP_VOL_P * dxp) / (2 * Math.max(gPP, gInt)));
+    let e = 0, t = 0;
+    while (t < dtS - 1e-12) {
+      const h = Math.min(dtp, dtS - t);
+      for (let c = 0; c < PCELLS; c++) {
+        let q = 0;
+        if (c > 0) q += gPP * (pStack[off + c - 1] - pStack[off + c]);
+        if (c < PCELLS - 1) q += gPP * (pStack[off + c + 1] - pStack[off + c]);
+        else { const qi = gInt * (Tvox - pStack[off + c]); q += qi; e -= qi * h; }
+        pStack[off + c] += (h / (CP_VOL_P * dxp)) * q;
+      }
+      t += h;
+    }
+    return e;                                             // J/m² hacia el acero
+  };
   // EL OPERADOR comparte el MISMO buffer T (mismo layout (k*ny+j)*nx+i que idx3): cero
   // copias. Cara NEUMANN = bordes aislados, exactamente el fantasma-de-copia del loop
   // explícito que este paso sustituye. Unidades: ALPHA m²/s → mm²/s (×1e6), cell en mm.
@@ -232,19 +272,24 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
       while (remaining > 1e-9) {
         const dt = Math.min(1.0, remaining);
         remaining -= dt;
-        // INYECCIÓN al inicio de cada ciclo: DEPÓSITO 3D CON LA FORMA DE LA PIEZA:
-        // cada columna mete Q″ = ρ_p·cp_p·(T_melt−T_c)·ESPESOR LOCAL, mitad a la
-        // celda de superficie de CAVIDAD y mitad a la de NÚCLEO → la zona gruesa
-        // calienta más SU pedazo de acero (el hot spot emerge en 3D, no en capa).
+        // INYECCIÓN al inicio de cada ciclo: las pilas de plástico NACEN a T_melt
+        // (disparo nuevo) — y de ahí el calor entra al acero A SU RITMO FÍSICO
+        // (conducción por capas, no depósito instantáneo).
         const tIn = sim.timeS % sim.cycleS;
-        if (tIn < dt) {
-          for (let m = 0; m < nx * ny; m++) {
-            if (thMm[m] <= 0) continue;
-            const qArea = RHO_ABS * CP_ABS * (Tm - sim.coolantC) * (thMm[m] / 1000);   // J/m²
-            const dTshot = (qArea / 2) / (RHO_STEEL * CP_STEEL * dx);                  // °C por lado
-            const i = m % nx, j = (m / nx) | 0;
-            if (kTop[m] >= 0) T[idx(i, j, kTop[m])] += dTshot;
-            if (kBot[m] >= 0) T[idx(i, j, kBot[m])] += dTshot;
+        if (tIn < dt) pStack.fill(Tm);
+        // ── EL PLÁSTICO CONDUCE (F2b): cada pila entrega su flujo al vóxel de
+        // superficie; la energía acumulada del paso calienta ese vóxel. La zona
+        // gruesa (más pila) sigue metiendo más calor: el hot spot emerge, pero
+        // ahora con el TIEMPO correcto (~t_c, no 0 s).
+        for (let ci = 0; ci < cols.length; ci++) {
+          const m = cols[ci];
+          const i = m % nx, j = (m / nx) | 0;
+          for (let side = 0; side < 2; side++) {
+            const kv = side === 0 ? kTop[m] : kBot[m];
+            if (kv < 0) continue;
+            const v = idx(i, j, kv);
+            const eJm2 = stepStack(ci, side, m, dt, T[v]);
+            T[v] += eJm2 / (RHO_STEEL * CP_STEEL * dx);   // J/m² → °C del vóxel (dx de fondo)
           }
         }
         // 1) DIFUSIÓN: un paso espectral EXACTO (mismo modelo todo-acero de siempre)
@@ -309,6 +354,16 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
       return { nu, nv, u1, v1, posMm: +posMm.toFixed(1), T: S, minC: +mn.toFixed(1), maxC: +mx.toFixed(1) };
     },
     thGrid: { nx, ny, cellMm: cell, thMm },
+    plasticCenterMaxC() {
+      let mx = -1e9;
+      for (let ci = 0; ci < cols.length; ci++) {
+        for (let side = 0; side < 2; side++) {
+          const v = pStack[(ci * 2 + side) * PCELLS];     // celda 0 = línea central
+          if (v > mx) mx = v;
+        }
+      }
+      return mx === -1e9 ? Tc : mx;
+    },
   };
   return sim;
 }
