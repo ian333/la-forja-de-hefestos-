@@ -480,6 +480,17 @@ export function extrudeSpline(
 // (`_3`) construye y resuelve sin requerir Message_ProgressRange.
 
 /** Unión booleana A ∪ B. */
+/** FUSIÓN en cascada de N sólidos → UNA pieza (si de verdad se tocan).
+ *  Nace para el DISPARO de colada: runners+gates+cavidades deben salir como
+ *  un solo cuerpo; si algo no toca, el resultado trae islas y el contador de
+ *  componentes lo delata en vez de esconderlo. */
+export function fuseAll(oc: OC, shapes: Shape[]): Shape {
+  if (!shapes.length) throw new Error('fuseAll: sin sólidos');
+  let acc = shapes[0];
+  for (let i = 1; i < shapes.length; i++) acc = fuse(oc, acc, shapes[i]);
+  return acc;
+}
+
 export function fuse(oc: OC, a: Shape, b: Shape): Shape {
   const op = new oc.BRepAlgoAPI_Fuse_3(a, b);
   const shape = op.Shape();

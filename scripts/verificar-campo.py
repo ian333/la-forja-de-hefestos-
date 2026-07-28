@@ -29,42 +29,64 @@ def leer(p):
         L = np.frombuffer(fp.read(K * NL * LP * 3 * 2), dtype='<i2').astype(np.float64) / 2000.0
     return K, NL, LP, R, L.reshape(K, NL, LP, 3)
 
-def metricas(K, NL, LP, R, L, etiqueta):
-    """Todo se mide en el frame de EQUILIBRIO (el último, anillo/enlace cerrado)."""
-    P = L[K - 1]                                   # (NL, LP, 3)
-    d = np.linalg.norm(np.diff(P, axis=1), axis=2) # (NL, LP-1) paso entre puntos
-    largo = d.sum(axis=1)                          # largo de cada línea
-    # 1) SEMILLAS MUERTAS: la línea no avanzó (se resamplea a LP puntos → sale una RECTA)
-    muertas = (largo < 0.35).mean() * 100
-    # 2) CONTINUIDAD: el paso debe ser casi constante (h fijo). Saltos = línea cortada.
+def metricas(K, NL, LP, R, L, etiqueta, nuc=None):
+    """Métricas con las FÓRMULAS de geometría diferencial y las reglas del libro de física.
+
+    NADA de heurísticas inventadas. El "ángulo entre segmentos" que usaba antes es kappa*ds:
+    mide curvatura MULTIPLICADA por el espaciado, así que penaliza las líneas LARGAS, no las
+    rugosas. Por eso daba ~11% pasara lo que pasara (las del anillo miden 9 bohr contra 7.2
+    del dímero, con los mismos 40 puntos).
+
+      · CURVATURA (Frenet):   kappa = |r1 x r2| / |r1|^3     [bohr^-1, INDEPENDIENTE del muestreo]
+      · TORSION:              tau = (r1 x r2).r3 / |r1 x r2|^2
+      · REGLA 1 del libro:    la línea NACE en carga + (H) y MUERE en carga - (O);
+                              en un sistema NEUTRO ninguna se escapa al infinito.
+      · CONTINUIDAD:          paso constante (arco uniforme) => sin cortes.
+      · DENSIDAD (regla 4):   proxy = ocupación del volumen.
+    """
+    P = L[K - 1]
+    d = np.linalg.norm(np.diff(P, axis=1), axis=2)
+    largo = d.sum(axis=1)
+    vivas = largo >= 0.35
+    muertas = (~vivas).mean() * 100
     paso_med = np.median(d[d > 1e-6]) if (d > 1e-6).any() else 0.0
     salto = (d > max(paso_med * 3.0, 1e-6)).mean() * 100
-    # 3) SUAVIDAD: ángulo entre segmentos consecutivos. Picos = zigzag/artefacto poligonal.
-    v = np.diff(P, axis=1)
-    n = np.linalg.norm(v, axis=2, keepdims=True)
-    u = v / np.maximum(n, 1e-9)
-    cos = np.clip((u[:, :-1] * u[:, 1:]).sum(axis=2), -1, 1)
-    ang = np.degrees(np.arccos(cos))
-    vivas = largo >= 0.35
-    picos = (ang[vivas] > 35).mean() * 100 if vivas.any() else 0.0
-    ang_med = np.median(ang[vivas]) if vivas.any() else 0.0
-    # 4) DENSIDAD: fracción de celdas de una rejilla 24³ que alguna línea toca
-    pts = P[vivas].reshape(-1, 3)
-    if len(pts):
-        lo, hi = pts.min(0), pts.max(0)
-        rng = np.maximum(hi - lo, 1e-6)
-        idx = np.clip(((pts - lo) / rng * 23).astype(int), 0, 23)
-        ocup = len(set(map(tuple, idx))) / (24 ** 3) * 100
-    else:
-        ocup = 0.0
-    print(f"── {etiqueta} ──")
-    print(f"  líneas {NL} × {LP} puntos · {K} frames")
-    print(f"  1) semillas MUERTAS (salen rectas):  {muertas:5.1f} %   [bien: <10]")
-    print(f"  2) saltos (línea CORTADA):           {salto:5.2f} %   [bien: <0.5]")
-    print(f"  3) picos >35° (zigzag/poligonal):    {picos:5.1f} %   [bien: <5]  · ángulo mediano {ang_med:.1f}°")
-    print(f"  4) densidad (celdas ocupadas 24³):   {ocup:5.1f} %   [más = mejor]")
-    print(f"  largo mediano de línea: {np.median(largo[vivas]) if vivas.any() else 0:.2f} bohr")
-    return dict(muertas=muertas, salto=salto, picos=picos, ocup=ocup, NL=NL)
+
+    Q = P[vivas]
+    ds = np.maximum(np.linalg.norm(np.diff(Q, axis=1), axis=2).mean(axis=1, keepdims=True), 1e-9)
+    r1 = np.gradient(Q, axis=1) / ds[:, :, None]
+    r2 = np.gradient(r1, axis=1) / ds[:, :, None]
+    cx = np.cross(r1, r2)
+    kappa = np.linalg.norm(cx, axis=2) / np.maximum(np.linalg.norm(r1, axis=2) ** 3, 1e-12)
+    k_med = float(np.median(kappa)); k_p95 = float(np.percentile(kappa, 95))
+    r3 = np.gradient(r2, axis=1) / ds[:, :, None]
+    tau = (cx * r3).sum(axis=2) / np.maximum(np.linalg.norm(cx, axis=2) ** 2, 1e-12)
+    t_med = float(np.median(np.abs(tau)))
+
+    nace = muere = float('nan')
+    if nuc is not None and len(nuc) >= 3:
+        Os = np.array([nuc[3 * k] for k in range(len(nuc) // 3)])
+        Hs = np.array([nuc[i] for i in range(len(nuc)) if i % 3 != 0])
+        ini = Q[:, 0, :]; fin = Q[:, -1, :]
+        nace = (np.linalg.norm(ini[:, None, :] - Hs[None], axis=2).min(axis=1) < 1.2).mean() * 100
+        muere = (np.linalg.norm(fin[:, None, :] - Os[None], axis=2).min(axis=1) < 1.2).mean() * 100
+
+    pts = Q.reshape(-1, 3)
+    lo, hi = pts.min(0), pts.max(0); rng = np.maximum(hi - lo, 1e-6)
+    idx = np.clip(((pts - lo) / rng * 23).astype(int), 0, 23)
+    ocup = len(set(map(tuple, idx))) / (24 ** 3) * 100
+
+    print("-- %s --" % etiqueta)
+    print("  lineas %d x %d puntos - %d frames - largo mediano %.2f bohr" % (NL, LP, K, np.median(largo[vivas])))
+    print("  CURVATURA kappa=|r1xr2|/|r1|^3   mediana %.3f  p95 %.3f  bohr-1   [indep. del muestreo]" % (k_med, k_p95))
+    print("  TORSION |tau| mediana            %.3f bohr-1" % t_med)
+    print("  regla 1 - nace en H (d+):        %5.1f %%   [libro: 100]" % nace)
+    print("  regla 1 - muere en O (d-):       %5.1f %%   [libro: 100]" % muere)
+    print("  semillas muertas:                %5.1f %%   [bien: <10]" % muertas)
+    print("  saltos (linea CORTADA):          %5.2f %%   [bien: <0.5]" % salto)
+    print("  densidad (ocupacion 24^3):       %5.1f %%   [mas = mejor]" % ocup)
+    return dict(kappa=k_med, k95=k_p95, tau=t_med, nace=nace, muere=muere,
+                muertas=muertas, salto=salto, ocup=ocup, NL=NL)
 
 def proyecciones(P, out, etiqueta, nuc=None):
     """Proyecciones 2D XY / XZ / YZ CON AYUDAS VISUALES — el campo se juzga A OJO.
@@ -120,8 +142,6 @@ def proyecciones(P, out, etiqueta, nuc=None):
     plt.savefig(f, dpi=115, facecolor='#08080c'); plt.close()
     print(f"  → {f}   (rojo = líneas con picos)")
 
-K, NL, LP, R, L = leer(RUTA)
-m = metricas(K, NL, LP, R, L, os.path.basename(RUTA))
 def _nucleos(binruta):
     """Lee los núcleos del .bin de nubes hermano (…-efield.bin → ….bin) para marcarlos."""
     cand = binruta.replace('-efield.bin', '.bin')
@@ -138,17 +158,22 @@ def _nucleos(binruta):
     except Exception:
         return None
 
+
+K, NL, LP, R, L = leer(RUTA)
+m = metricas(K, NL, LP, R, L, os.path.basename(RUTA), _nucleos(RUTA))
+
 if PNGDIR: proyecciones(L[K - 1], PNGDIR, os.path.basename(RUTA).replace('.bin', ''), _nucleos(RUTA))
 
 if REF:
     print()
     Kr, NLr, LPr, Rr, Lr = leer(REF)
-    mr = metricas(Kr, NLr, LPr, Rr, Lr, f"REFERENCIA {os.path.basename(REF)}")
+    mr = metricas(Kr, NLr, LPr, Rr, Lr, f"REFERENCIA {os.path.basename(REF)}", _nucleos(REF))
     if PNGDIR: proyecciones(Lr[Kr - 1], PNGDIR, os.path.basename(REF).replace('.bin', ''), _nucleos(REF))
     print("\n── VEREDICTO (contra la referencia que ya funcionó) ──")
     ok = True
-    for k, nom, peor_es in (('muertas', 'semillas muertas', 'mayor'), ('salto', 'saltos', 'mayor'),
-                            ('picos', 'picos/zigzag', 'mayor'), ('ocup', 'densidad', 'menor')):
+    for k, nom, peor_es in (('kappa', 'curvatura kappa', 'mayor'), ('muertas', 'semillas muertas', 'mayor'),
+                            ('salto', 'saltos', 'mayor'), ('nace', 'nace en H (regla 1)', 'menor'),
+                            ('muere', 'muere en O (regla 1)', 'menor'), ('ocup', 'densidad', 'menor')):
         a, b = m[k], mr[k]
         mal = (a > b * 1.5 + 1) if peor_es == 'mayor' else (a < b * 0.7)
         ok &= not mal

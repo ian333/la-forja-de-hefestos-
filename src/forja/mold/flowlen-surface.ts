@@ -37,6 +37,12 @@ export function surfaceFlowLength(
   gateMm: { x: number; y: number; z: number },
   /** pared nominal (mm) — la necesita el EMPAREJADO de caras opuestas (dual domain) */
   wallMm?: number,
+  /** SOLDADURA POR ÉPSILON (mm): une vértices de CUERPOS DISTINTOS que se tocan
+   *  sin coincidir (compound de sólidos traslapados — las redes de colada). La
+   *  teselación de un compound no comparte vértices entre cuerpos: sin esto,
+   *  cada empalme es una isla y TODO sale inalcanzable (visto en la Fig 6.13:
+   *  el frente se atoraba en el sprue para siempre). 0 = solo exacta. */
+  weldEpsMm = 0,
 ): SurfaceFlow {
   const P = mesh.positions, I = mesh.indices, N = mesh.normals;
   const nV = Math.floor(P.length / 3);
@@ -52,6 +58,30 @@ export function surfaceFlowLength(
     const k = `${Math.round(P[v * 3] * 1000)},${Math.round(P[v * 3 + 1] * 1000)},${Math.round(P[v * 3 + 2] * 1000)}`;
     const hit = key.get(k);
     if (hit === undefined) { key.set(k, v); rep[v] = v; } else rep[v] = hit;
+  }
+
+  if (weldEpsMm > 0) {
+    // UNION-FIND transitivo sobre celdas de tamaño eps (27 vecinas): los caps de un
+    // gate 0.6 mm DENTRO de la pared de su cavidad quedan a <eps de sus vértices.
+    const find = (v: number): number => { let r = v; while (rep[r] !== r) r = rep[r]; while (rep[v] !== r) { const n = rep[v]; rep[v] = r; v = n; } return r; };
+    const cell = new Map<string, number[]>();
+    const cs = weldEpsMm;
+    for (let v = 0; v < nV; v++) {
+      if (rep[v] !== v) continue;                        // solo representantes
+      const cx = Math.floor(P[v * 3] / cs), cy = Math.floor(P[v * 3 + 1] / cs), cz = Math.floor(P[v * 3 + 2] / cs);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+        const kk = `${cx + dx},${cy + dy},${cz + dz}`;
+        const bucket = cell.get(kk);
+        if (bucket) for (const u of bucket) {
+          const d = Math.hypot(P[v * 3] - P[u * 3], P[v * 3 + 1] - P[u * 3 + 1], P[v * 3 + 2] - P[u * 3 + 2]);
+          if (d <= weldEpsMm) { const ru = find(u), rv = find(v); if (ru !== rv) rep[rv] = ru; }
+        }
+      }
+      const k0 = `${cx},${cy},${cz}`;
+      if (!cell.has(k0)) cell.set(k0, []);
+      cell.get(k0)!.push(v);
+    }
+    for (let v = 0; v < nV; v++) rep[v] = find(v);        // aplanar para el grafo
   }
 
   // grafo de aristas (sobre los representantes)

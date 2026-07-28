@@ -526,36 +526,72 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         if (sg.level === 'gate-sumergido') return OCC.makeCone(oc!, sg.rMm, 0.55, L, axis);
         return OCC.makeCylinder(oc!, sg.rMm, L, axis);
       });
-      // ── LA SIMULACIÓN REAL (feedback user: 'si llenan sin tocarse, no está
-      // simulado'): runners+gates+CAVIDADES = UNA malla; el frente se propaga
-      // por Dijkstra sobre la GEOMETRÍA (surfaceFlowLength — el mismo motor
-      // del llenado de piezas, suelda vértices coincidentes). Si un gate no
-      // TOCA su cavidad, esa cavidad queda unreachable y JAMÁS llena — la
-      // simulación delata los huecos en vez de esconderlos.
+      // ── EL DISPARO COMO UNA SOLA PIEZA (feedback user: 'si llenan sin
+      // tocarse no está simulado'). Dos verdades separadas:
+      //  1) CONECTIVIDAD = geometría: se FUSIONAN runners+gates+cavidades; si
+      //     algo no toca, quedan ISLAS y el contador lo delata (no se esconde).
+      //  2) TIEMPO = fórmula de Kazmer: V/V̇ acumulado por la ruta (la distancia
+      //     geodésica NO es tiempo cuando el ⌀ cambia — el frente va más lento
+      //     en un runner gordo que en el gate delgado, a igual longitud).
       const cavSolids = net.cavities.map((c) => OCC.makeCylinder(oc!, 8, 10, { origin: [c.x, c.y, -10], dir: [0, 0, 1] }));
-      const comp = OCC.makeCompound(oc!, [...solids, ...cavSolids]);
-      const mesh = tessellate(oc!, comp, 0.25, 0.35);
-      const inlet = net.segs[0].a;                       // la boca del sprue
-      const sf = surfaceFlowLength(
-        { positions: mesh.positions, normals: mesh.normals, indices: mesh.indices },
-        { x: inlet[0], y: inlet[1], z: inlet[2] }, 2);
+      let shot: any;
+      try { shot = OCC.fuseAll(oc!, [...solids, ...cavSolids]); }
+      catch { shot = OCC.makeCompound(oc!, [...solids, ...cavSolids]); }
+      const mesh = tessellate(oc!, shot, 0.25, 0.35);
+      // ISLAS: union-find sobre vértices soldados (1 isla = todo tocándose)
       const nV = mesh.positions.length / 3;
+      const rep = new Int32Array(nV);
+      const key = new Map<string, number>();
+      for (let v = 0; v < nV; v++) {
+        const k = `${Math.round(mesh.positions[3 * v] * 100)},${Math.round(mesh.positions[3 * v + 1] * 100)},${Math.round(mesh.positions[3 * v + 2] * 100)}`;
+        const hit = key.get(k);
+        if (hit === undefined) { key.set(k, v); rep[v] = v; } else rep[v] = hit;
+      }
+      const uf = new Int32Array(nV);
+      for (let v = 0; v < nV; v++) uf[v] = rep[v];
+      const find = (a: number): number => { while (uf[a] !== a) { uf[a] = uf[uf[a]]; a = uf[a]; } return a; };
+      const uni = (a: number, b: number) => { const ra = find(rep[a]), rb = find(rep[b]); if (ra !== rb) uf[ra] = rb; };
+      for (let t = 0; t + 2 < mesh.indices.length; t += 3) {
+        uni(mesh.indices[t], mesh.indices[t + 1]); uni(mesh.indices[t + 1], mesh.indices[t + 2]);
+      }
+      const islas = new Set<number>();
+      for (let v = 0; v < nV; v++) if (rep[v] === v) islas.add(find(v));
+      // TIEMPO por vértice: el segmento/cavidad más cercano da su reloj V/V̇
       const flowT = new Float32Array(nV);
       for (let i = 0; i < nV; i++) {
-        const d = sf.flowLenMm[i];
-        flowT[i] = Number.isFinite(d) ? d : Infinity;    // sin camino = NUNCA llena
+        const px = mesh.positions[3 * i], py = mesh.positions[3 * i + 1], pz = mesh.positions[3 * i + 2];
+        let best = Infinity, bt = 0;
+        for (const sg of net.segs) {
+          const ux = sg.b[0] - sg.a[0], uy = sg.b[1] - sg.a[1], uz = sg.b[2] - sg.a[2];
+          const L2 = ux * ux + uy * uy + uz * uz;
+          const f = Math.max(0, Math.min(1, ((px - sg.a[0]) * ux + (py - sg.a[1]) * uy + (pz - sg.a[2]) * uz) / L2));
+          const qx = sg.a[0] + f * ux - px, qy = sg.a[1] + f * uy - py, qz = sg.a[2] + f * uz - pz;
+          const d = qx * qx + qy * qy + qz * qz - sg.rMm * sg.rMm;
+          if (d < best) { best = d; bt = sg.tStartS + f * sg.tFillS; }
+        }
+        for (const c of net.cavities) {
+          const dx = px - c.x, dy = py - c.y;
+          const d = dx * dx + dy * dy - 8 * 8;
+          if (d < best) {
+            best = d;
+            const dg = Math.hypot(px - c.gx, py - c.gy, pz - c.gz);
+            bt = c.tStartS + Math.min(1, dg / 26) * c.tFillS;      // frente radial desde SU gate
+          }
+        }
+        flowT[i] = bt;
       }
       const parts: MoldPart[] = [{
         role: 'colada',
-        name: `Disparo ${kind} · frente SIMULADO en malla` + (sf.unreachable ? ` · ⚠ ${sf.unreachable} vért. SIN CAMINO` : ' · todo conectado ✓'),
+        name: `Disparo ${kind} · ${islas.size === 1 ? 'UNA pieza ✓ todo conectado' : `⚠ ${islas.size} ISLAS sueltas`}`,
         material: 'fundido',
         positions: mesh.positions, normals: mesh.normals, indices: mesh.indices,
         color: '#ffb347', opacity: 0.95, bodies: net.segs.length + net.cavities.length,
         features: [
-          `SIMULACIÓN: Dijkstra sobre la malla desde la boca del sprue — L máx ${sf.maxFlowLenMm} mm, ${sf.unreachable} vértices inalcanzables`,
+          `conectividad: ${islas.size} isla(s) tras FUSIONAR — 1 = el disparo sale de una pieza`,
+          `tiempo: V/V̇ acumulado por ruta (Kazmer) — total ${net.totalFillS.toFixed(3)} s`,
           ...net.rows.map((r) => `${r.k}: ${r.v} [${r.ref}]`),
         ], edges: undefined,
-        flowT, flowTotalS: sf.maxFlowLenMm,
+        flowT, flowTotalS: net.totalFillS,
       } as unknown as MoldPart];
       setLiveMoldSpec(null);
       liveRealSolidsRef.current = null;
