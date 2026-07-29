@@ -103,11 +103,15 @@ paso_ensamble() {
       -filter_complex "[1:a]volume=$MVOL,afade=t=in:st=0:d=$MFIN,afade=t=out:st=$MFOUT:d=3.5[mus]; \
                        [0:a]volume=1.0[nar]; \
                        [nar][mus]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[mix]; \
-                       [mix]loudnorm=I=-15:TP=-1.5:LRA=11[out]" \
+                       [mix]loudnorm=I=-15:TP=-1.5:LRA=11,apad=whole_dur=$DUR[out]" \
       -map "[out]" -ar 48000 -c:a pcm_s16le "$mix" || return 1
   else
-    ffmpeg -y -v error -i "$ADIR/$NARR" -af "loudnorm=I=-15:TP=-1.5:LRA=11" -ar 48000 -c:a pcm_s16le "$mix" || return 1
+    ffmpeg -y -v error -i "$ADIR/$NARR" -af "loudnorm=I=-15:TP=-1.5:LRA=11,apad=whole_dur=$DUR" -ar 48000 -c:a pcm_s16le "$mix" || return 1
   fi
+  # apad + -shortest: sin el pad, `-shortest` corta el VIDEO al largo de la narración y se
+  # TIRAN los frames finales sin avisar. Medido el 2026-07-29: el anillo entregaba 2253 de
+  # 2331 frames (75.1 s de 77.7) y el corte se comía justo la separación final. El pad deja
+  # que -shortest recorte al VIDEO, que es la duración del manifiesto.
   echo "   master 4K 10-bit HEVC"
   ffmpeg -y -v error -framerate "$FPS" -i "$FRAMES/%05d.png" -i "$mix" -vf "ass=$ASS" \
     -c:v hevc_nvenc -preset p5 -rc vbr -cq 21 -b:v 55M -maxrate 90M -pix_fmt yuv420p10le \
