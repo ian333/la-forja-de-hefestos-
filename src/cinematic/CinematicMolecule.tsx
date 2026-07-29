@@ -1862,12 +1862,23 @@ const WTRI_CAPAS: CapasSpec = {
   acc:      { base: 1, mods: [{ wins: [[10.9, 18.9]], a: 0.45, label: 'ORO del oxígeno' }] },
   enlaces:  { base: 0, mods: [{ wins: [[0.0, 18.9], [46.4, 65.9]], a: 1.0, label: 'los 3 átomos desde el segundo 0 y la firma' }] },
   dipolo:   { base: 0, mods: [{ wins: [[46.4, 65.9]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
-  apertura: { base: 0.08, mods: [
-    { wins: [[0.0, 8.5]],   a: 0.50, label: 'acto 1: las TRES bien separadas' },
-    { wins: [[9.7, 21.0]],  a: 0.28, label: 'una sola / se acomodan en un anillo' },
-    { wins: [[21.5, 28.1]], a: 0.10, label: 'SE ACERCAN al nacer el primer puente' },
-    { wins: [[21.5, 33.5]], a: 0.10, label: 'y el resto CIERRA en "el anillo cierra"' },
-    { wins: [[59.0, 63.0]], a: 0.22, label: '"AGUANTA MÁS": se estiran y VUELVEN' } ] },
+  // los CEROS del campo: se encienden cuando la voz habla del puente y de la fuerza — ahí es
+  // donde el espectador ve las líneas "acabarse en el aire" y necesita saber POR QUÉ.
+  ceros:    { base: 0, mods: [{ wins: [[28.1, 46.0]], a: 1.0, label: 'donde el campo se CANCELA (E=0 exacto)' }] },
+  apertura: { base: 0.10, mods: [
+    // EL VIAJE (Ian, 2026-07-28: "hay muy poca separación, no se muestra el viaje ni cómo se
+    // va modificando el campo… que se alejen más y se acerquen, se queden un ratito vibrando
+    // compartiendo carga, y se vuelvan a alejar"). Antes el recorrido se quedaba corto: la
+    // apertura llegaba a 0.60 y el O–O a 4.5 Å. Ahora va hasta 0.92 (O–O 5.4 Å, el máximo
+    // que el .bin tiene calculado ab initio) y BAJA a ~0.10 (2.9 Å) para quedarse VIBRANDO
+    // mientras la voz habla del puente y de la cooperatividad. Cada tramo, motivado:
+    { wins: [[0.0, 9.0]],   a: 0.82, label: 'LEJOS de verdad: tres moléculas sueltas, se cuentan' },
+    { wins: [[9.7, 19.0]],  a: 0.55, label: 'siguen separadas mientras mira UNA' },
+    { wins: [[19.5, 26.0]], a: 0.30, label: 'SE ACERCAN: se acomodan en un anillo' },
+    { wins: [[19.5, 32.0]], a: 0.10, label: 'y CIERRAN en el puente / "el anillo cierra"' },
+    // 33-58: QUIETAS Y VIBRANDO (la respiración del modo O···O manda) = compartiendo carga
+    { wins: [[59.5, 66.0]], a: 0.30, label: '"AGUANTA MÁS": se estiran y VUELVEN' },
+    { wins: [[70.0, 77.7]], a: 0.68, label: 'PAYOFF: se vuelven a alejar — el viaje cierra donde empezó' } ] },
 };
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
@@ -1878,7 +1889,8 @@ function WaterPairCamera({ time, R, shots, ex, pts }: { time: number; R: number;
   const { camera } = useThree();
   useEffect(() => {
     // R (bohr) = separación viva; nucX = R/2 (el O) para el dive. Vertical (reel) → roll intacto.
-    const { pos, fov, target, roll } = playShots(shots, time, { ex, nucX: R / 2, bondR: R, t: time, pts });
+    const asp = (camera as THREE.PerspectiveCamera).aspect;
+    const { pos, fov, target, roll } = playShots(shots, time, { ex, nucX: R / 2, bondR: R, t: time, pts, aspect: asp });
     camera.position.set(pos[0], pos[1], pos[2]);
     const fwd = new THREE.Vector3(target[0] - pos[0], target[1] - pos[1], target[2] - pos[2]).normalize();
     const up0 = new THREE.Vector3(0, 1, 0); if (Math.abs(fwd.dot(up0)) > 0.94) up0.set(0, 0, 1);
@@ -1984,6 +1996,7 @@ function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
 function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r: boolean) => void; mk?: string }) {
   const [wd, setWd] = useState<WAPData | null>(null);
   const [bondEf, setBondEf] = useState<BondEFieldData | null>(null);
+  const [ceros, setCeros] = useState<CerosData | null>(null);
   useEffect(() => {
     let alive = true; setWd(null); setBondEf(null);
     fetch(`/precomputed/${(WATER_BINS[mk] ?? WATER_BINS.wpair).bin}.bin`).then(r => r.arrayBuffer())
@@ -1993,6 +2006,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
     fetch(`/precomputed/${(WATER_BINS[mk] ?? WATER_BINS.wpair).ef}.bin`).then(r => r.arrayBuffer())
       .then(b => { if (alive) setBondEf(parseBondEField(b)); })
       .catch(e => console.error('water-approach efield load failed', e));
+    // los CEROS del campo (solo el anillo los tiene calculados)
+    if (mk === 'wtri') fetch('/precomputed/water-trimer-ceros.json').then(r => r.json())
+      .then(j => { if (alive) setCeros(parseCeros(j)); }).catch(() => {});
     return () => { alive = false; };
   }, [onReady]);
   const spinColors = useMemo(() => { const n = wd?.Nspin ?? 0; const c = new Float32Array(n * 3);
@@ -2123,6 +2139,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
+      {ceros && <FieldNulls data={ceros} R={R} reveal={C.ceros ?? 0} time={time} />}
       {bondEf && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
       {/* ENLACES O–H + DIPOLO — solo el anillo, y gobernados por las capas (datos):
           se PRENDEN en "un oxígeno y dos hidrógenos" y en la firma "una queda al revés". */}
@@ -2139,6 +2156,68 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
             nHue={wd.Z[i] === 8 || mk !== 'wtri' ? 0.55 : 0.08} />
         </group>
       ))}
+    </>
+  );
+}
+
+// ── LOS PUNTOS DONDE EL CAMPO VALE CERO ────────────────────────────────────────────────
+// Ian, 2026-07-28: "sé que los campos se cancelan, MUÉSTRAMELO ENTONCES". Aquí están: entre
+// cada oxígeno y el hidrógeno que le donan hay un punto con E = 0 EXACTO — medido en los 26
+// cuadros con |E| entre 1e-14 y 1e-24, o sea cero a precisión de máquina
+// (scripts/precompute-water-trimer.py --ceros). Una carga de prueba puesta ahí NO SE MUEVE.
+//
+// Y explica lo que se veía "raro": las líneas de campo no se desvanecen en el aire por un
+// defecto de dibujo — LLEGAN a este punto y se acaban, porque más allá el campo cambia de
+// signo. Es la frontera real del oxígeno.
+//
+// Se dibuja como un ANILLO fino y hueco: lo que hay ahí es nada, y un punto lleno diría lo
+// contrario. Las posiciones se interpolan por R(t) igual que todo lo demás, así que viajan
+// con las moléculas.
+type CerosData = { K: number; Rvals: Float32Array; pts: Float32Array[] };
+function parseCeros(j: { K: number; Rvals: number[]; cuadros: { ceros: number[][] }[] }): CerosData {
+  return { K: j.K, Rvals: new Float32Array(j.Rvals),
+           pts: j.cuadros.map(c => new Float32Array(c.ceros.flat())) };
+}
+function FieldNulls({ data, R, reveal, time }: { data: CerosData; R: number; reveal: number; time: number }) {
+  const { camera } = useThree();
+  if (reveal < 0.01) return null;
+  const { K, Rvals, pts } = data;
+  let k = 0;
+  if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
+  else { while (k < K - 2 && Rvals[k + 1] > R) k++; }
+  const r0 = Rvals[k], r1 = Rvals[k + 1];
+  const f = r0 === r1 ? 0 : Math.max(0, Math.min(1, (r0 - R) / (r0 - r1)));
+  const A = pts[k], B = pts[k + 1];
+  const n = Math.min(A.length, B.length) / 3;
+  const out: Vec3[] = [];
+  for (let i = 0; i < n; i++) out.push([A[i * 3] * (1 - f) + B[i * 3] * f,
+                                        A[i * 3 + 1] * (1 - f) + B[i * 3 + 1] * f,
+                                        A[i * 3 + 2] * (1 - f) + B[i * 3 + 2] * f]);
+  const pul = 0.86 + 0.14 * Math.sin(time * 2.4);
+  return (
+    <>
+      {out.map((p, i) => {
+        // ENCARA A LA CÁMARA. Con rotación FIJA el toro se ve de canto desde muchos ángulos y
+        // queda como una rayita blanca — parece un destello, no un anillo (visto en el 16:9).
+        // Billboard: el anillo se lee como anillo siempre, que es el punto de dibujarlo hueco.
+        const q = new THREE.Quaternion();
+        const m = new THREE.Matrix4().lookAt(camera.position,
+          new THREE.Vector3(p[0], p[1], p[2]), camera.up);
+        q.setFromRotationMatrix(m);
+        return (
+          <group key={i} position={p} quaternion={q}>
+            <mesh>
+              <torusGeometry args={[0.34 * pul, 0.030, 8, 40]} />
+              <meshBasicMaterial color="#7dfbe0" transparent opacity={reveal * 0.95} depthWrite={false} />
+            </mesh>
+            {/* segundo anillo más tenue: da volumen sin llenar el hueco */}
+            <mesh>
+              <torusGeometry args={[0.52 * pul, 0.014, 8, 40]} />
+              <meshBasicMaterial color="#7dfbe0" transparent opacity={reveal * 0.35} depthWrite={false} />
+            </mesh>
+          </group>
+        );
+      })}
     </>
   );
 }

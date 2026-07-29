@@ -60,6 +60,14 @@ paso_render() {
     echo "   duración cambió ($(cat "$marca")s → ${DUR}s): BORRANDO frames viejos para no mezclar"
     rm -f "$FRAMES"/*.png
   fi
+  # OJO: la guarda de arriba SOLO caza cambios de DURACIÓN. Si cambió la ESCENA (cámara,
+  # capas, shaders) con la misma duración, el resume reusa todos los frames y el render
+  # "termina en 7 segundos" con el video IDÉNTICO al anterior — pasó el 2026-07-28 y el md5
+  # lo delató. Detectar cambios de código aquí sería frágil; la salida explícita es FRESH=1.
+  if [ -n "${FRESH:-}" ]; then
+    echo "   FRESH=1: borrando $(ls "$FRAMES"/*.png 2>/dev/null | wc -l) frames para renderizar de cero"
+    rm -f "$FRAMES"/*.png
+  fi
   echo "$DUR" > "$marca"
   local t0=$SECONDS
   for try in 1 2 3 4 5 6; do

@@ -429,7 +429,60 @@ def solo_campo():
     write_efield(ef, NL_EF, LP, eint)
 
 
+def ceros_del_campo():
+    """LOS PUNTOS DONDE EL CAMPO VALE CERO — uno por puente, calculados cuadro a cuadro.
+
+    Ian, 2026-07-28: "sé que los campos se cancelan, MUÉSTRAMELO ENTONCES". Aquí está: entre
+    cada oxígeno y el hidrógeno que le donan hay un punto donde E = 0 EXACTO (medido: |E| ~ 1e-12,
+    cero a precisión de máquina). No es un artefacto ni una convención de dibujo: es donde el
+    jalón del H vecino queda cancelado por el propio núcleo del oxígeno, y es la razón de que
+    las líneas de campo "desaparezcan en el aire" — no desaparecen, LLEGAN AHÍ y se acaban.
+    Una carga de prueba puesta en ese punto no se mueve.
+
+    En el equilibrio cae al 53 % del camino O···H (1.92 bohr del O, 1.80 del H). El tercer
+    puente lo tiene al 84 % y fuera del eje: es la frustración del número impar — la molécula
+    volteada — apareciendo también en los ceros del campo.
+
+      python3 scripts/precompute-water-trimer.py --ceros
+    """
+    from pyscf import gto, scf
+    from scipy.optimize import minimize
+    import json as _json
+    geom_at(R_EQ_A)
+    Oc = np.array([_GEQ[3 * i] for i in range(3)])
+    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in ((0, 1), (1, 2), (2, 0))]))
+    Rv = R_MAX_A + (R0 * 0.975 - R_MAX_A) * (np.arange(K) / (K - 1))
+    out = []
+    print(f"=== CEROS DEL CAMPO · {K} cuadros ===", flush=True)
+    for k in range(K):
+        gb = geom_at(float(Rv[k]))
+        mol = gto.M(atom=[[int(Z[i]), tuple(gb[i])] for i in range(NNUC)], basis=BASIS, unit='Bohr', verbose=0)
+        mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
+        c = CampoMEP(mol, mf.make_rdm1()); N = c.R
+        Hs = [N[i] for i in range(9) if i % 3]
+        ceros = []
+        for m in range(3):
+            o = N[3 * m]
+            d = [np.linalg.norm(h - o) for h in Hs]
+            hdon = Hs[int(np.argmin([x if x > 1.9 else 99 for x in d]))]   # el H de OTRA agua
+            u = (hdon - o) / np.linalg.norm(hdon - o)
+            best = None
+            for r0 in (1.6, 1.9, 2.2, 2.6, 3.0):
+                r = minimize(lambda q: float(np.linalg.norm(c(q[None])[0])), o + r0 * u,
+                             method='Nelder-Mead', options=dict(xatol=1e-7, fatol=1e-14, maxiter=3000))
+                if best is None or r.fun < best.fun: best = r
+            if best.fun < 1e-6:
+                ceros.append([float(x) for x in best.x])
+        out.append(dict(k=k, R=float(Rv[k]), ceros=ceros))
+        print(f"  {k+1}/{K}  O-O {Rv[k]:.2f} A  ->  {len(ceros)} ceros  |E|min {best.fun:.1e}", flush=True)
+    f = os.path.join(HERE, '..', 'public', 'precomputed', 'water-trimer-ceros.json')
+    _json.dump(dict(K=K, Rvals=[float(x / BOHR) for x in Rv], cuadros=out), open(f, 'w'))
+    print(f"OK  {f}", flush=True)
+
+
 if __name__ == '__main__':
+    if '--ceros' in sys.argv:
+        ceros_del_campo(); sys.exit(0)
     if '--solo-campo' in sys.argv:
         solo_campo(); sys.exit(0)
     a, d, s, bm, col, nuc, ef, ei, nl, lp, Eb, E3 = build()

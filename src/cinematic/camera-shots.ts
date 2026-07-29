@@ -44,6 +44,10 @@ export interface ShotCtx {
   /** Puntos de interés REALES de la escena (p.ej. los O del anillo del trímero), en bohr.
    *  La escena los pasa desde el .bin → las tomas apuntan a geometría medida, no inventada. */
   pts?: Vec3[];
+  /** ancho/alto del cuadro. Si viene, se aplica la LEY DE ENCUADRE (ver playShots). */
+  aspect?: number;
+  /** radio del halo luminoso (bohr). Por defecto se mide de `pts` + HALO. */
+  rHalo?: number;
 }
 
 /** Una toma: progreso local u∈[0,1] → Pose. */
@@ -53,6 +57,9 @@ export type Shot = (u: number, ctx: ShotCtx) => Pose;
 export interface ShotEntry { shot: Shot; dur: number; label?: string; }
 
 const ROLL = Math.PI / 2;                 // convención vertical (el rig de 16:9 lo resuelve)
+const SAFE = 0.86;   // margen de seguridad en el eje CORTO: nada del sujeto toca el borde
+const FILL = 0.97;   // el halo alcanza el eje LARGO: cero barras muertas
+const HALO = 3.2;    // bohr de nube+campo alrededor del último núcleo (medido en el .bin)
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (t: number) => { const x = clamp01(t); return x * x * (3 - 2 * x); };
@@ -327,6 +334,36 @@ export function playShots(list: ShotEntry[], t: number, ctx: ShotCtx): Pose {
     const w = smooth((BLEND - local) / (2 * BLEND));             // 0→0.5
     const pv = list[i - 1].shot(1, ctx);
     pose = blendPose(pose, pv, w);
+  }
+
+  // ══════════════ LEY DE ENCUADRE (Ian, 2026-07-28: "siempre estás muy cerca… tienes
+  // pantalla, se necesita ver TODO") ══════════════════════════════════════════════════
+  // Un cuadro con un sujeto redondo NO puede a la vez llenar el eje LARGO y no cortarse por
+  // el CORTO. La ley resuelve la tensión distinguiendo dos radios, ambos MEDIDOS de `pts`:
+  //   rCore = lo que DEBE poder leerse (los 3 oxígenos)  → cabe en el eje CORTO con margen
+  //   rHalo = el radio luminoso (nube + campo)           → ALCANZA el eje LARGO
+  // El halo sangra por los lados, como una cara en un retrato — que es justo lo que hacía el
+  // mejor cuadro del video. Se aplica DESPUÉS del blend (sobrevive a las costuras) y ANTES de
+  // la micro-vida; es un clamp de función continua, así que sigue siendo C0 y puro en t.
+  // Si la escena no pasa `aspect`, no hace NADA → O₂/N₂/C₂/agua v2 quedan bit-idénticos.
+  if (ctx.aspect && ctx.pts && ctx.pts.length >= 3) {
+    const M = _mid(ctx);
+    let rCore = 0;
+    for (const p of ctx.pts) rCore = Math.max(rCore, Math.hypot(p[0] - M[0], p[1] - M[1], p[2] - M[2]));
+    const rHalo = ctx.rHalo ?? (rCore + HALO);
+    const dir: Vec3 = [pose.pos[0] - pose.target[0], pose.pos[1] - pose.target[1], pose.pos[2] - pose.target[2]];
+    const d = Math.hypot(dir[0], dir[1], dir[2]);
+    if (d > 1e-6 && rCore > 1e-6) {
+      // three.js: `fov` es el VERTICAL. El rig lo abre ×1.42 solo en vertical (9:16).
+      const vH = (pose.fov * (ctx.aspect < 1 ? 1.42 : 1)) * Math.PI / 360;
+      const hH = Math.atan(Math.tan(vH) * ctx.aspect);
+      const corto = Math.min(vH, hH), largo = Math.max(vH, hH);
+      const dMin = rCore / Math.tan(SAFE * corto);       // más cerca → se corta la estructura
+      const dMax = rHalo / Math.tan(FILL * largo);       // más lejos → void muerto
+      const dFit = Math.max(dMin, Math.min(Math.max(dMin, dMax), d));
+      const k = dFit / d;
+      pose.pos = [pose.target[0] + dir[0] * k, pose.target[1] + dir[1] * k, pose.target[2] + dir[2] * k];
+    }
   }
 
   // micro-vida global (peso): respiro lento continuo, no rompe C0.
