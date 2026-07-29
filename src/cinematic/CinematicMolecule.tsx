@@ -1001,6 +1001,7 @@ const O2FLOW_VERT = `
   varying float vW;
   varying float vTw;
   uniform float uSize;
+  uniform float uPix;        // alto del framebuffer / 3840 → tamaño INVARIANTE a la resolución
   uniform float uRing;
   uniform float uCoreThin;
   uniform vec3  uCores[8];   // centros que ARDEN (núcleos), en bohr
@@ -1061,7 +1062,15 @@ const O2FLOW_VERT = `
     // (rango corto 0.85 bohr = inmersión al volar entre nubes); la pared blanca
     // del clavado la mata el transit-dim por fase, no este fade.
     vNear = smoothstep(0.22, 0.85, -mv.z);
-    gl_PointSize = min(uSize * (300.0 / -mv.z), 64.0);
+    // uPix = alto_del_framebuffer / 3840 (el alto del MASTER 4K vertical, o sea el de los
+    // ganadores O₂/N₂/C₂/agua v2 → uPix=1 y su look queda IDÉNTICO).
+    // gl_PointSize está en PÍXELES: sin este factor el mismo electrón ocupa el DOBLE de
+    // cuadro en un preview de 1080 de alto que en el master de 3840, y 4× en el 16:9 de
+    // 1080. Medido el 2026-07-29 en t=20: radio/alto = 0.093% / 0.181% / 0.044% para
+    // 1080×1920 / 1920×1080 / 2160×3840 — el radio en px era el MISMO (1.7-1.9). Por eso
+    // "los electrones se ven difuminados": el preview NUNCA predecía el master.
+    // El max(1.2) evita que en una ventana chica el punto caiga a sub-píxel y titile.
+    gl_PointSize = max(1.2, min(uSize * (300.0 / -mv.z) * uPix, 64.0 * uPix));
     gl_Position = projectionMatrix * mv;
   }`;
 const O2FLOW_FRAG = `
@@ -1181,13 +1190,21 @@ function CarotenoFlow({ bundle, axis, cen, L, reveal, color, bright, time }:
 function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, coreThin = 0, twinkle = 0, tw_time = 0, cores, coreR = 0.30, bonds, bondGlow = 0, qScale = O2AI_POSQ, premul = false }:
   { posQ: Int16Array; colors: Float32Array; Rvals: Float32Array; N: number; K: number; R: number; brightness: number; size: number; cores?: [number,number,number][]; coreR?: number; bonds?: [[number,number,number],[number,number,number]][]; bondGlow?: number; ring?: number; coreThin?: number; twinkle?: number; tw_time?: number; qScale?: number; premul?: boolean }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
+  // el tamaño del sprite se mide contra el ALTO REAL del framebuffer, no contra el píxel:
+  // así el preview de 1080 muestra el mismo electrón que el master 4K (ver uPix en el vert).
+  const gl = useThree(s => s.gl);
+  const alto = useThree(s => s.size.height) * useThree(s => s.viewport.dpr);
+  const uPix = useMemo(() => {
+    const v = new THREE.Vector2(); gl.getDrawingBufferSize(v);
+    return (v.y || alto || 3840) / 3840;
+  }, [gl, alto]);
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
     g.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
     return g;
   }, [colors, N]);
-  const uniforms = useMemo(() => ({ uSize: { value: size }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uCores: { value: Array.from({length:8},(_,i)=> new THREE.Vector3(...(cores?.[i] ?? [0,0,0]))) }, uNCores: { value: Math.min(8, cores?.length ?? 0) }, uCoreR: { value: coreR }, uBondA: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[0] ?? [0,0,0]))) }, uBondB: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[1] ?? [0,0,0]))) }, uNBonds: { value: Math.min(6, bonds?.length ?? 0) }, uBondGlow: { value: bondGlow }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
+  const uniforms = useMemo(() => ({ uSize: { value: size }, uPix: { value: 1 }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uCores: { value: Array.from({length:8},(_,i)=> new THREE.Vector3(...(cores?.[i] ?? [0,0,0]))) }, uNCores: { value: Math.min(8, cores?.length ?? 0) }, uCoreR: { value: coreR }, uBondA: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[0] ?? [0,0,0]))) }, uBondB: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[1] ?? [0,0,0]))) }, uNBonds: { value: Math.min(6, bonds?.length ?? 0) }, uBondGlow: { value: bondGlow }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
   useEffect(() => {
     // bracket en Rvals (descendente Rmax→Rmin). frac entre k y k+1.
     let k = 0;
@@ -1201,12 +1218,12 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     const o0 = k * N * 3, o1 = (k + 1) * N * 3, inv = 1 / qScale, mf = 1 - frac;
     for (let i = 0; i < N * 3; i++) arr[i] = (posQ[o0 + i] * mf + posQ[o1 + i] * frac) * inv;
     pos.needsUpdate = true;
-    if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uBright.value = brightness;
+    if (matRef.current) { matRef.current.uniforms.uSize.value = size; matRef.current.uniforms.uPix.value = uPix; matRef.current.uniforms.uBright.value = brightness;
       if (cores) { for (let i=0;i<8;i++) matRef.current.uniforms.uCores.value[i].set(...(cores[i] ?? [0,0,0])); matRef.current.uniforms.uNCores.value = Math.min(8, cores.length); matRef.current.uniforms.uCoreR.value = coreR; }
       if (bonds) { for (let i=0;i<6;i++){ matRef.current.uniforms.uBondA.value[i].set(...(bonds[i]?.[0] ?? [0,0,0])); matRef.current.uniforms.uBondB.value[i].set(...(bonds[i]?.[1] ?? [0,0,0])); } matRef.current.uniforms.uNBonds.value = Math.min(6, bonds.length); }
       matRef.current.uniforms.uBondGlow.value = bondGlow;
       matRef.current.uniforms.uRing.value = ring; matRef.current.uniforms.uCoreThin.value = coreThin; matRef.current.uniforms.uTime.value = tw_time; matRef.current.uniforms.uTwinkle.value = twinkle; }
-  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo, cores, coreR, bonds, bondGlow]);
+  }, [posQ, Rvals, N, K, R, brightness, size, ring, coreThin, twinkle, tw_time, geo, cores, coreR, bonds, bondGlow, uPix]);
   return (
     <points geometry={geo} frustumCulled={false}>
       {/* premul: el frag YA sale multiplicado por `a`, pero AdditiveBlending sin
@@ -1862,9 +1879,13 @@ const WTRI_CAPAS: CapasSpec = {
   acc:      { base: 1, mods: [{ wins: [[10.9, 18.9]], a: 0.45, label: 'ORO del oxígeno' }] },
   enlaces:  { base: 0, mods: [{ wins: [[0.0, 18.9], [46.4, 65.9]], a: 1.0, label: 'los 3 átomos desde el segundo 0 y la firma' }] },
   dipolo:   { base: 0, mods: [{ wins: [[46.4, 65.9]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
-  // los CEROS del campo: se encienden cuando la voz habla del puente y de la fuerza — ahí es
-  // donde el espectador ve las líneas "acabarse en el aire" y necesita saber POR QUÉ.
-  ceros:    { base: 0, mods: [{ wins: [[28.1, 46.0]], a: 1.0, label: 'donde el campo se CANCELA (E=0 exacto)' }] },
+  // los CEROS del campo: APAGADOS. La física está bien (E=0 exacto, |E| ~1e-20) y el JSON se
+  // queda, pero el anillo cae donde el campo es MÁS DÉBIL — justo donde el corte térmico deja
+  // de dibujar líneas. Resultado: un aro flotando en el vacío sin NADA que se vea cancelar.
+  // Ian, 2026-07-29: "veo 3 círculos mostrando cómo se cancelan, pero nunca veo ninguna línea
+  // cerca". Para revivirlos hay que resolver primero eso: dibujar las líneas que MUEREN en el
+  // cero (integrar hacia el punto crítico en vez de cortar por |E| mínimo).
+  ceros:    { base: 0, mods: [] },
   apertura: { base: 0.10, mods: [
     // EL VIAJE (Ian, 2026-07-28: "hay muy poca separación, no se muestra el viaje ni cómo se
     // va modificando el campo… que se alejen más y se acerquen, se queden un ratito vibrando
@@ -2117,7 +2138,10 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // tiraba porque el alfa se aplicaba dos veces) y sprites 1.35× de radio (área ×1.8).
   // Sin bajarlo, medido: meanY 123 y 3.7% de píxeles >240 = puré blanco sin estructura.
   // La regla del proyecto: la masa la da la DENSIDAD, no la intensidad por partícula.
-  const bF = mk === 'wtri' ? 0.34 : 1.0;   // calibrado: con 0.23 el reventado quedaba en 0.2% y el ganador O₂ tolera 6.6% — había margen
+  // bF se recalibró al arreglar uPix: con los sprites en su tamaño de PUNTO el área iluminada
+  // cae ~4× y el cuadro se va a meanY 8 (rala y apagada). La masa la da la DENSIDAD y el BRILLO
+  // del punto, no el radio: 0.34 → 0.85. Medido en el master 4K, no en un preview.
+  const bF = mk === 'wtri' ? 1.5 : 1.0;
   const pulse = 0.92 + 0.08 * Math.sin(time * 2.0);   // el nebuloso RESPIRA (espectáculo vivo)
   // COREOGRAFÍA sincronizada al guion (segundos de segs.json):
   // CAPAS COMO OBJETOS (capas.ts): la coreografía vive en DATOS (WPAIR_CAPAS), no aquí.
@@ -2131,8 +2155,15 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
       <WaterPairCamera time={time} R={R} ex={(WATER_BINS[mk] ?? WATER_BINS.wpair).ex}
         shots={CAMERA_SHOTS[mk === 'wpair' && WPAIR_CAM === 'b' ? 'wpair-b' : mk] ?? CAMERA_SHOTS.wpair}
         pts={nucP.filter((_, i) => i % 3 === 0)} />
-      {/* size ×1.85 para 4K (a 2160×3840 los puntos quedan relativamente la mitad → nube rala;
-          se compensa el tamaño para que la densidad se vea como en el preview 1080) */}
+      {/* TAMAÑO EN FRACCIÓN DE CUADRO, no en píxeles. Antes esto se compensaba A MANO por
+          resolución ("×1.85 para 4K") y quedaba a medias: el 16:9 de 1080 salió con electrones
+          del DOBLE de tamaño que el preview vertical y 4× que el master (medido: radio/alto
+          0.181% vs 0.093% vs 0.044%) → "se ven difuminados, no son puntos" (Ian, 2026-07-29).
+          Ahora uPix normaliza contra 3840 de alto y estos números valen para TODA resolución.
+          El valor se calibra contra el MASTER 4K, no contra el preview: en un crop 1:1 a 2160×3840
+          estos tamaños son PUNTOS, y al duplicarlos se vuelven manchas suaves (el sprite tiene
+          borde degradado: agrandarlo muestra la degradación, no el punto). O sea el look bueno
+          era el del master; el preview de 1080 era el que mentía. */}
       <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={mk === 'wtri' ? 0.47 : 0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
       <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={mk === 'wtri' ? 0.59 : 0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={mk === 'wtri' ? ohBonds : undefined} bondGlow={mk === 'wtri' ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
       <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={mk === 'wtri' ? 0.62 : 0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
