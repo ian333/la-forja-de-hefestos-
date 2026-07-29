@@ -36,7 +36,7 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const WTRI_DURATION = 72.9;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
+const WTRI_DURATION = 74.3;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
 // lenta ×3 (slow-motion de una dinámica real, no falseo): acercamiento ~3.3s +
@@ -440,10 +440,10 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.38, label: 'DE FRENTE: el anillo entero con aire' },
     { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 4.78, label: 'el PUENTE entre dos (sin entrar a la nube)' },
     { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.31, label: 'el anillo CIERRA — se ven las tres' },
-    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 6.69, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 8.13, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
     { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 11.82, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
     { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 7.14, label: 'aguanta más — CRASH IN' },
-    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.12, label: 'payoff — SALE del anillo (no de dentro de la nube)' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.08, label: 'payoff — SALE del anillo (no de dentro de la nube)' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -1854,20 +1854,20 @@ const WTRI_CAPAS: CapasSpec = {
   campo:    { base: 0.55, mods: [
     { wins: [[0.0, 10.3]],  a: 1.00, label: 'FRAME 0 = EL PICO: el campo entra a tope' },
     { wins: [[27.0, 31.4]], a: 1.05, label: 'PROTAGONISTA: nace el puente / es carga moviéndose' },
-    { wins: [[36.1, 42.4]], a: 0.85, label: 'la fuerza: los tres jalan más' },
+    { wins: [[36.1, 43.9]], a: 0.85, label: 'la fuerza: los tres jalan más' },
     { wins: [[10.7, 18.3]], a: -0.40, label: 'baja cuando la voz mira los electrones de UNA' } ] },
-  nubes:    { base: 1, mods: [{ wins: [[27.0, 31.4], [42.8, 54.2]], a: -0.34, label: 'deja LEER el puente y el pucker' }] },
+  nubes:    { base: 1, mods: [{ wins: [[27.0, 31.4], [44.3, 55.7]], a: -0.34, label: 'deja LEER el puente y el pucker' }] },
   parpadeo: { base: 0.42, mods: [{ wins: [[10.7, 18.3]], a: 0.42, label: 'los electrones parpadean cuando se nombran' }] },
-  spin:     { base: 1, mods: [{ wins: [[27.0, 31.4], [36.1, 42.4]], a: 0.85, label: 'Δρ ARDE: el puente y la cooperatividad' }] },
+  spin:     { base: 1, mods: [{ wins: [[27.0, 31.4], [36.1, 43.9]], a: 0.85, label: 'Δρ ARDE: el puente y la cooperatividad' }] },
   acc:      { base: 1, mods: [{ wins: [[10.7, 18.3]], a: 0.45, label: 'ORO del oxígeno' }] },
-  enlaces:  { base: 0, mods: [{ wins: [[0.0, 18.3], [42.8, 61.4]], a: 1.0, label: 'los 3 átomos desde el segundo 0 y la firma' }] },
-  dipolo:   { base: 0, mods: [{ wins: [[42.8, 61.4]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
+  enlaces:  { base: 0, mods: [{ wins: [[0.0, 18.3], [44.3, 62.8]], a: 1.0, label: 'los 3 átomos desde el segundo 0 y la firma' }] },
+  dipolo:   { base: 0, mods: [{ wins: [[44.3, 62.8]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
   apertura: { base: 0.08, mods: [
     { wins: [[0.0, 8.5]],   a: 0.50, label: 'acto 1: las TRES bien separadas' },
     { wins: [[9.5, 20.5]],  a: 0.28, label: 'una sola / se acomodan en un anillo' },
     { wins: [[21.0, 27.0]], a: 0.10, label: 'SE ACERCAN al nacer el primer puente' },
     { wins: [[21.0, 32.0]], a: 0.10, label: 'y el resto CIERRA en "el anillo cierra"' },
-    { wins: [[55.0, 59.0]], a: 0.22, label: '"AGUANTA MÁS": se estiran y VUELVEN' } ] },
+    { wins: [[56.5, 60.5]], a: 0.22, label: '"AGUANTA MÁS": se estiran y VUELVEN' } ] },
 };
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';

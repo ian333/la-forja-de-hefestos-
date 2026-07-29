@@ -37,7 +37,7 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 72.9
+    "dur": 74.3
   },
   "render": {
     "shards": 5,
@@ -127,10 +127,10 @@
       8.38,
       4.78,
       4.31,
-      6.69,
+      8.13,
       11.82,
       7.14,
-      11.12
+      11.08
     ],
     "nota_duraciones": "Σ = 92.00 = formato.dur EXACTO. Son SALTO AL SIGUIENTE ARRANQUE, no el ancho de la ventana de voz: playShots encadena por suma acumulada, así que usar los anchos (que no traen los 0.4 s de hueco entre líneas) desfasa la cámara 0.4·i s y congela la cola. recalibrar-beats.py ya lo emite bien y trae un assert."
   },
@@ -428,7 +428,8 @@
       "toda línea ≤46 chars (caso CO: el subtítulo desbordó a 4K)"
     ],
     "nota_h2o": "Línea 2 NUEVA (Ian, 2026-07-28): 'H dos O. Dos hidrógenos y un oxígeno.' — dicha en voz alta enseña a LEER la fórmula y evita la corrección en comentarios que ya pasó en El puente ('son 2 átomos' siendo 2 moléculas). Toda la voz se regeneró, así que TODOS los tiempos cambiaron: recalibrado con scripts/recalibrar-beats.py.",
-    "corte_2026_07_28": "Ian: 'es muy largo y tarda mucho para llegar a los vectores'. Fuera 7 líneas de relleno: la 5 repetía la 2 (redundancia que introduje YO al agregar 'H dos O'), la cooperatividad se decía CUATRO veces (16-19), y el beat del dato. 32→25 líneas, voz 89.0→70.3 s. La toma eyeLevelLock se quedó SIN líneas y se elimina — de paso quita una de las cuatro tomas que se parecían entre sí. PERDIDO: el número del 12%; se puede recuperar plegándolo a 'A eso se le llama cooperatividad' con una sola re-grabación."
+    "corte_2026_07_28": "Ian: 'es muy largo y tarda mucho para llegar a los vectores'. Fuera 7 líneas de relleno: la 5 repetía la 2 (redundancia que introduje YO al agregar 'H dos O'), la cooperatividad se decía CUATRO veces (16-19), y el beat del dato. 32→25 líneas, voz 89.0→70.3 s. La toma eyeLevelLock se quedó SIN líneas y se elimina — de paso quita una de las cuatro tomas que se parecían entre sí. PERDIDO: el número del 12%; se puede recuperar plegándolo a 'A eso se le llama cooperatividad' con una sola re-grabación.",
+    "nota_12pct": "El 12% se recuperó plegándolo a la línea de cooperatividad (Ian: 'no hay que ser tan estrictos'): 'A eso se le llama cooperatividad, casi el doce por ciento.' Son 58 chars; video-subs.py ahora PARTE las líneas largas en 2 renglones en vez de solo avisar."
   },
   "audio": {
     "dir": "dist-video/wtri-narracion",

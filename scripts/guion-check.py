@@ -33,7 +33,7 @@ for i, L in enumerate(lineas, 1):
     p = len(L.split()); palabras_tot += p
     msgs = []
     if len(L) > MAXCH:
-        msgs.append(f"LARGA {len(L)} chars (>{MAXCH}: desborda a 4K)")
+        msgs.append(f"LARGA {len(L)} chars (>{MAXCH}) — video-subs.py la PARTE en 2 renglones; ok si la frase lo aguanta")
     if '...' in L or '…' in L:
         msgs.append('"..." → XTTS lo LEE como "punto punto"')
     if ':' in L:

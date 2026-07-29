@@ -45,19 +45,34 @@ Style: K,Outfit Thin SemiBold,{st['size']},&H00FFFFFF,&H00FFFFFF,&H8C0A0A0A,&H00
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"""
 
+    def partir(t, lim=46):
+        """Parte en DOS renglones equilibrados si se pasa del límite (gotcha CO: >46 chars
+        desborda a 4K). Antes esto solo AVISABA, y el aviso obligaba a escribir el guion
+        contra la herramienta — o a entregar un subtítulo desbordado. Se parte por el espacio
+        más cercano al centro, que es donde menos se nota el salto."""
+        if len(t) <= lim:
+            return t
+        mid = len(t) // 2
+        esp = [i for i, ch in enumerate(t) if ch == ' ']
+        if not esp:
+            return t
+        i = min(esp, key=lambda k: abs(k - mid))
+        return t[:i] + r"\N" + t[i + 1:]
+
     lines = [head]
     largas = []
     for s in segs:
         txt = s["text"].strip()
-        if len(txt) > 46:                      # gotcha CO: >~40-46 chars desborda a 4K
+        if len(txt) > 46:
             largas.append(txt)
+        txt = partir(txt)
         lines.append(f"Dialogue: 0,{ts(s['start'])},{ts(s['end'])},K,,0,0,0,,{{\\fad(180,180)\\blur10.0}}{txt}")
 
     open(a.out, "w").write("\n".join(lines) + "\n")
     print(f"✓ {a.out} — {len(segs)} frases · estilo SERIE {'9:16' if a.h>=a.w else '16:9'} "
           f"(Outfit Thin SemiBold {st['size']}, abajo, MarginV {st['marginv']})")
     for t in largas:
-        print(f"  ⚠ línea larga ({len(t)} chars, puede desbordar a 4K): {t[:60]}…")
+        print(f"  ↩ partida en 2 renglones ({len(t)} chars): {t[:60]}…")
 
 if __name__ == "__main__":
     main()

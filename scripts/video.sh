@@ -51,6 +51,16 @@ paso_subs() {
 paso_render() {
   echo "── RENDER 4K (paralelo, resumible) ──"
   mkdir -p "$FRAMES"
+  # GUARDA DE DURACIÓN: render-clip.cjs es RESUMIBLE — salta todo frame que ya exista y no
+  # sea negro (línea 100). Eso es lo que hace barato reintentar… y lo que MEZCLA dos versiones
+  # si la duración del video cambió: los frames viejos sobreviven y el resultado es un
+  # Frankenstein que nadie nota hasta verlo. Pasó el 2026-07-28 al cortar de 92 a 74.3 s.
+  local marca="$FRAMES/.dur"
+  if [ -f "$marca" ] && [ "$(cat "$marca")" != "$DUR" ]; then
+    echo "   duración cambió ($(cat "$marca")s → ${DUR}s): BORRANDO frames viejos para no mezclar"
+    rm -f "$FRAMES"/*.png
+  fi
+  echo "$DUR" > "$marca"
   local t0=$SECONDS
   for try in 1 2 3 4 5 6; do
     if [ "$SHARDS" -gt 1 ]; then
