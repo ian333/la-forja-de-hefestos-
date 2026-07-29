@@ -29,6 +29,8 @@ export interface FeedNetwork {
     gx: number; gy: number; gz: number }>;
   totalFillS: number;
   rows: Array<{ k: string; v: string; ref: string }>;
+  /** el cálculo narrado (fórmula + sustitución + resultado) — pantalla de fórmulas */
+  pasos?: import('./cooling-design').CalcPaso[];
 }
 
 export const CAV_R = 8, CAV_H = 10, CAV_VOL_CC = Math.PI * CAV_R * CAV_R * CAV_H / 1000;
@@ -381,6 +383,59 @@ export function layoutForGrid(
   // llenado de cada vaso con SU caudal real (V/V̇ — Kazmer, no forma)
   for (const c of net.cavities) c.tFillS = o.partVolCc / Math.max(1e-6, segByTip(net, c).VdotCcS);
   net.totalFillS = Math.max(...net.cavities.map((c) => c.tStartS + c.tFillS));
+  // ── EL CÁLCULO NARRADO (pantalla de fórmulas del componente colada) ───────
+  const f2 = (x: number, d = 2) => +x.toFixed(d);
+  const vDots = net.cavities.map((c) => segByTip(net, c).VdotCcS);
+  const vMin = Math.min(...vDots), vMax = Math.max(...vDots);
+  const volColada = net.segs.reduce((a, sg) => {
+    const L = Math.hypot(sg.b[0] - sg.a[0], sg.b[1] - sg.a[1], sg.b[2] - sg.a[2]);
+    return a + Math.PI * sg.rMm * sg.rMm * L / 1000;
+  }, 0);
+  const desb = vMax > 0 ? (vMax - vMin) / vMax * 100 : 0;
+  net.pasos = [
+    {
+      titulo: 'Caudal total (lo fija la cavidad, no la máquina)',
+      formula: 'V̇ = n_cav · V_pieza / t_llenado',
+      sustitucion: `${cells.length} · ${f2(o.partVolCc, 1)}cc / ${o.fillTimeS ?? 1}s`,
+      resultado: `${f2(Vdot, 1)} cc/s`, ref: '§6.4.6', ok: true,
+    },
+    {
+      titulo: 'Radio del sprue por caída de presión asignada',
+      formula: 'R ≥ [ (ΔP/(k·L))·(n/(3n+1))ⁿ·(π/V̇)ⁿ ]^(−1/(3n+1))   (ley de potencia)',
+      sustitucion: `ΔP=15 MPa · L=${f2(Lsprue, 0)}mm · k=${m.k} Pa·sⁿ · n=${m.n} (${o.material ?? 'PP'})`,
+      resultado: `⌀ sprue = ${f2(2 * rSprue, 1)} mm`, ref: 'Eq 6.8 (de Eq 6.5)', ok: true,
+    },
+    {
+      titulo: 'La cadena de diámetros (cada rama parte el flujo en 2)',
+      formula: 'D_down = D_up/√2 → redondeado a FRESA estándar (steel-safe)',
+      sustitucion: `${f2(2 * rSprue, 1)} → ${f2(2 * rSprue / Math.SQRT2, 2)}→${f2(2 * rPrim, 1)} → ${f2(2 * rPrim / Math.SQRT2, 2)}→${f2(2 * rSec, 1)} → gate ${f2(2 * EDGE_GATE_R, 1)}`,
+      resultado: `⌀ ${f2(2 * rSprue, 1)} / ${f2(2 * rPrim, 1)} / ${f2(2 * rSec, 1)} / ${f2(2 * EDGE_GATE_R, 1)} mm`,
+      ref: 'Eq 6.1 + §6.5.4', ok: true,
+      nota: 'igual sección de corte por rama ⇒ mismo γ̇ y mismo ΔP en cada camino',
+    },
+    {
+      titulo: 'Reparto del flujo por RED DE RESISTENCIAS (no por fe)',
+      formula: 'C_serie = Ca+Cb · C_par = (Σ(1/Cᵢ)^(1/n))⁻ⁿ · V̇ᵢ ∝ (1/Cᵢ)^(1/n)',
+      sustitucion: `n=${m.n} · hojas→tronco→hojas sobre ${net.segs.length} segmentos`,
+      resultado: `V̇ por cavidad: ${f2(vMin, 1)}…${f2(vMax, 1)} cc/s (desbalance ${f2(desb, 1)}%)`,
+      ref: '§6.4.6 + Eq 6.5', ok: desb < 5,
+      nota: desb >= 5 ? 'desbalance > 5% — las cavidades NO llenan juntas (Fig 6.16: balancear R)' : 'las 4 ramas son gemelas ⇒ llenan a la vez',
+    },
+    {
+      titulo: 'Llenado por cavidad (fórmula, no animación)',
+      formula: 't_fill = V_cav / V̇_cav   ·   total = max(t_start + t_fill)',
+      sustitucion: `${f2(o.partVolCc, 1)}cc / ${f2(vMax, 1)}cc/s`,
+      resultado: `total ${f2(net.totalFillS, 2)} s`, ref: '§6.4.6', ok: true,
+    },
+    {
+      titulo: 'Material que se va a la colada (regrind/scrap)',
+      formula: 'V_colada = Σ π·r²·L   vs   V_piezas',
+      sustitucion: `${f2(volColada, 2)}cc vs ${f2(o.partVolCc * cells.length, 1)}cc`,
+      resultado: `${f2(volColada / (o.partVolCc * cells.length) * 100, 1)}% del disparo`,
+      ref: 'Eq 6.6', ok: volColada < 0.2 * o.partVolCc * cells.length,
+      nota: 'colada fría = material molido o tirado; >20% del disparo pide repensar la red',
+    },
+  ];
   return net;
 }
 function segByTip(net: FeedNetwork, c: { gx: number; gy: number; gz: number }): FeedSeg {

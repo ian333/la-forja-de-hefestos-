@@ -319,6 +319,9 @@ export interface MoldPart {
   /** CINEMÁTICA del componente móvil: al ABRIR el molde la corredera se retrae
    *  u = min(S, apertura·tanφ) en dir — la animación de apertura lo usa. */
   kin?: { dir: [number, number]; strokeMm: number; angleDeg: number };
+  /** EL CÁLCULO NARRADO del componente (fórmula + sustitución + resultado por
+   *  paso) — la pantalla de fórmulas: el árbol lo muestra al expandir. */
+  calc?: import('./cooling-design').CalcPaso[];
 }
 
 type CarvedMesh = { positions: Float32Array; normals: Float32Array; indices: Uint32Array };
@@ -831,12 +834,15 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     // profundidad del LIBRO (Eq 9.22, H desde la SUPERFICIE MOLDEANTE): B a zBehindMm
     // bajo la partición; A a zAboveMm (= impresión + H) — LIBRA la cavidad tallada.
     const HcoolB = Math.min(tB - r - 1, cc.zBehindMm);
-    const coolFeatB = [`⌀${cc.diaMm} mm · serpentín`, `prof ${cc.zBehindMm} mm (4D, Eq 9.22)`, `IN/OUT + ${cc.plugs.length} tapones`];
+    // 2D (no "4D": la pantalla de fórmulas cazó el rótulo viejo) — la línea B va
+    // CENTRADA en el respaldo del inserto, que §4.2.1/Fig 4.13 dimensiona a 3⌀.
+    const coolFeatB = [`⌀${cc.diaMm} mm · serpentín`, `prof ${cc.zBehindMm} mm (2D, piso de Eq 9.22 — centrada en el respaldo Fig 4.13)`, `IN/OUT + ${cc.plugs.length} tapones`];
     if (cc.zAboveMm != null) {
       const zA = Math.min(cc.zAboveMm, tA - r - 1);
       const coolFeatA = [`⌀${cc.diaMm} mm · serpentín`, `alt ${Math.round(zA)} mm sobre partición (impresión ${spec.cavity.depthMm} + H, Eq 9.22)`,
         ...(cc.aWarn ? [`⚠ ${cc.aWarn}`] : []), `IN/OUT + ${cc.plugs.length} tapones`];
       push('agua-a', `Enfriamiento placa A · ⌀${cc.diaMm}${plug}`, `agua (${cc.ports.length} puertos)`, circuit(zPart + zA), '#31b6e8', 1, coolFeatA, undefined, 0.2);
+      if (out.length && out[out.length - 1].role === 'agua-a') out[out.length - 1].calc = cc.design?.pasos;   // pantalla de fórmulas §9.2
     } else {
       push('agua-a', `Enfriamiento placa A · ⚠ SIN LÍNEA RECTA`, 'requiere baffles §9.2.4', [], '#31b6e8', 1,
         [cc.aWarn ?? 'impresión demasiado alta para la placa A', 'el lazo generativo debe ENGROSAR la placa A']);
@@ -844,6 +850,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
     const strip = spec.ejectors.type === 'stripper';
     const zB2 = strip ? zPart - tB - 2 * cc.diaMm : zPart - HcoolB;   // stripper: línea en el SOPORTE (el anillo flota)
     push('agua-b', `Enfriamiento ${strip ? 'placa de SOPORTE (bajo el stripper)' : 'placa B'} · ⌀${cc.diaMm}${plug}`, 'agua', circuit(zB2), '#1f8fc4', 1, coolFeatB, undefined, 0.2);
+    if (out.length && out[out.length - 1].role === 'agua-b') out[out.length - 1].calc = cc.design?.pasos;
   }
 
   // 4) EL MOLDE MISMO — INSERTO DE CAVIDAD (hembra) en A + INSERTO DE NÚCLEO (macho)
@@ -1079,6 +1086,7 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
           cp.flowT = flowTForSegs(cp.positions, net.segs);
           cp.flowTotalS = net.totalFillS;
           cp.gatesXYZ = net.cavities.flatMap((c) => [c.gx, c.gy, c.gz]);
+          cp.calc = net.pasos;                              // pantalla de fórmulas cap 6-7
         }
       } else {
       // COLADA FRÍA REAL (§6.3.1 + cap 7): el sprue CÓNICO diseñado por el libro —

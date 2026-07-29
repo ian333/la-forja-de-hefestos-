@@ -152,6 +152,26 @@ export interface CoolingDesignIn {
   forceLinesPerSide?: number;
 }
 
+/**
+ * UN PASO DEL CÁLCULO NARRADO — la fórmula del libro, la sustitución con LOS
+ * NÚMEROS DE ESTE MOLDE y el resultado. Es la pantalla de fórmulas que pide el
+ * user: con la sustitución visible los errores SALTAN (un exponente mal, una
+ * unidad corrida, un valor absurdo se ven a simple vista — sin ella, no).
+ */
+export interface CalcPaso {
+  titulo: string;
+  /** fórmula simbólica en ASCII (t_c = h²/(π²·α)·ln(...)) */
+  formula: string;
+  /** la MISMA fórmula con los números de este molde sustituidos */
+  sustitucion: string;
+  resultado: string;
+  ref: string;
+  /** false = este paso VIOLA la regla del libro (se pinta rojo) */
+  ok?: boolean;
+  /** por qué / qué significa (1 línea, opcional) */
+  nota?: string;
+}
+
 export interface CoolingDesignOut {
   tcS: number; massKg: number; qShotJ: number; qCoolingW: number;
   nLines: number; nPerSide: number; qLineW: number;
@@ -163,6 +183,8 @@ export interface CoolingDesignOut {
   iters: number;
   rows: Array<{ k: string; v: string; ref: string }>;
   fallas: string[];
+  /** el cálculo completo NARRADO paso a paso (fórmula + sustitución + resultado) */
+  pasos: CalcPaso[];
 }
 
 /**
@@ -275,6 +297,88 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
     { k: 'controlador', v: ctrl ? `${ctrl.name} (1)` : `${nCtrl} × ${base.name} · total ${GPM(vDotTotal).toFixed(1)} GPM`, ref: 'Tabla 9.1' },
   ];
 
+  // ── EL CÁLCULO NARRADO: cada fórmula con SUS números sustituidos ──────────
+  const f2 = (x: number, d = 2) => +x.toFixed(d);
+  const hM = o.thickestMm / 1000;
+  const ratio = (o.tMeltC - o.tCoolantC) / (o.tEjectC - o.tCoolantC);
+  const pasos: CalcPaso[] = [
+    {
+      titulo: 'Tiempo de enfriamiento (manda la sección MÁS GRUESA)',
+      formula: 't_c = h²/(π²·α) · ln( 4/π · (T_melt−T_agua)/(T_eject−T_agua) )',
+      sustitucion: `(${o.thickestMm}mm)²/(π²·${o.alphaM2s.toExponential(2)}) · ln(1.273·(${o.tMeltC}−${o.tCoolantC})/(${o.tEjectC}−${o.tCoolantC})) = ${f2((hM * hM) / (Math.PI * Math.PI * o.alphaM2s))} s · ln(${f2(1.2732 * ratio)})`,
+      resultado: `${f2(tcS)} s`, ref: 'Eq 9.5', ok: true,
+      nota: o.tcS != null ? 't_c DADO por el proceso (no calculado aquí)' : `pared delgada ⇒ t_c corto ⇒ el mismo calor en menos tiempo`,
+    },
+    {
+      titulo: 'Calor del disparo (piezas + colada fría)',
+      formula: 'Q = m · Cp · (T_melt − T_eject)   con  m = V·ρ(20°C)',
+      sustitucion: `m = ${f2((o.nCav * o.partVolCc + (o.runnerVolCc ?? 0)), 1)}cc·${o.rhoRTKgM3}kg/m³ = ${f2(massKg * 1000, 1)} g → ${f2(massKg, 4)}·${o.cpJkgC}·(${o.tMeltC}−${o.tEjectC})`,
+      resultado: `${f2(qShotJ / 1000, 1)} kJ`, ref: 'Eq 9.10', ok: true,
+      nota: 'ρ a TEMPERATURA AMBIENTE (Apéndice A) — la del fundido daría la masa MAL',
+    },
+    {
+      titulo: 'Potencia de enfriamiento',
+      formula: 'Q̇ = Q / t_c',
+      sustitucion: `${f2(qShotJ / 1000, 1)} kJ / ${f2(tcS)} s`,
+      resultado: `${f2(qCoolingW / 1000, 2)} kW`, ref: 'Eq 9.11', ok: true,
+    },
+    {
+      titulo: 'Cuántas líneas (el paso NO puede pasar de 2H)',
+      formula: 'n/lado = ceil(banda/W) + 1   ·   n = n/lado · 2 lados',
+      sustitucion: `ceil(${f2(o.bandMm, 0)}/${f2(wLineMm, 0)}) + 1 = ${nPerSide} por lado`,
+      resultado: `${nLines} líneas`, ref: 'Eq 9.24', ok: true,
+      nota: 'con floor() se subcuenta y quedan huecos > 2H — error ya pagado',
+    },
+    {
+      titulo: 'Calor y caudal POR LÍNEA (ΔT del agua ≤ ' + dT + ' °C)',
+      formula: 'Q̇_line = Q̇/n   ·   V̇ = Q̇_line/(ρ_agua·Cp_agua·ΔT)',
+      sustitucion: `${f2(qCoolingW, 0)}/${nLines} = ${f2(qLineW, 0)} W → ${f2(qLineW, 0)}/(1000·4200·${dT})`,
+      resultado: `${vDotLine.toExponential(2)} m³/s = ${f2(GPM(vDotLine))} GPM`, ref: 'Eqs 9.12 + 9.13', ok: true,
+    },
+    {
+      titulo: 'Turbulencia (el agua laminar NO arranca el calor)',
+      formula: 'Re = 4·ρ·V̇/(π·μ·D) > 4000',
+      sustitucion: `4·1000·${vDotLine.toExponential(2)}/(π·0.001·${f2(dM, 4)})`,
+      resultado: `Re = ${f2(re, 0)} ${re > 4000 ? '✓ turbulento' : '✗ LAMINAR'}`, ref: 'Eq 9.14', ok: re > 4000,
+    },
+    {
+      titulo: 'Ventana del ⌀ y elección del plug estándar',
+      formula: 'D_min (ΔP ≤ ' + f2(dPAllow / 1000, 0) + ' kPa, Eq 9.17)  <  D  <  D_max (Re>4000, Eq 9.15)',
+      sustitucion: `${f2(dMinMm)} < ${diaMm} < ${f2(dMaxMm, 1)} mm · ΔP real = ${f2(dPKPa, 1)} kPa con ${inSeries} en serie (Eq 9.16)`,
+      resultado: `⌀${diaMm} mm (${plug}, Tabla 9.2) ${diaMm >= dMinMm && diaMm <= dMaxMm ? '✓' : '✗ FUERA'}`,
+      ref: 'Eqs 9.15-9.17 + Tabla 9.2', ok: diaMm >= dMinMm - 1e-9 && diaMm <= dMaxMm + 1e-9,
+    },
+    {
+      titulo: 'Profundidad: la estructural RECORTADA por la térmica',
+      formula: '2D < H < 5D (esfuerzo, Eq 9.22)   ∧   H < k_molde/1000 (ciclo, Eq 9.21)',
+      sustitucion: `objetivo ${hOverD}D = ${f2(hOverD * diaMm, 1)} mm · techo térmico ${f2(o.kMoldWmC)}/1000 = ${f2(hMaxTermicaM * 1000, 0)} mm`,
+      resultado: `H = ${f2(hLineMm, 1)} mm (${f2(hLineMm / diaMm, 1)}D)`, ref: 'Eqs 9.21 + 9.22',
+      ok: hLineMm <= hMaxTermicaM * 1000 + 1e-6 && hLineMm >= 2 * diaMm - 1e-6,
+      nota: hOverD * diaMm > hMaxTermicaM * 1000 ? `4D violaría Eq 9.21 — el acero manda: recortada a ${f2(hMaxTermicaM * 1000, 0)} mm` : undefined,
+    },
+    {
+      titulo: 'Concentración de esfuerzo del barreno',
+      formula: 'P_melt_max = σ_endurance / SCF(H/D)     (SCF: 3.3 @1D … 2.6 @4D, Fig 9.4)',
+      sustitucion: `${o.sigmaEnduranceMPa} MPa / ${f2(scf)}`,
+      resultado: `P_melt ≤ ${f2(pMeltMaxMPa, 0)} MPa`, ref: 'Eq 9.19 + Fig 9.4', ok: true,
+      nota: 'presión de inyección arriba de esto = grietas por fatiga desde el barreno',
+    },
+    {
+      titulo: 'Paso entre líneas (uniformidad del flujo de calor)',
+      formula: 'H < W < 2H   (variación de flujo < 5% hasta W = 2H, Fig 9.5)',
+      sustitucion: `W = ${f2(wLineMm / hLineMm, 1)}·H`,
+      resultado: `W = ${f2(wLineMm, 0)} mm`, ref: 'Eq 9.24', ok: wLineMm >= hLineMm - 1 && wLineMm <= 2 * hLineMm + 1,
+    },
+    {
+      titulo: 'El controlador que lo alimenta (Tabla 9.1)',
+      formula: 'V̇_total = n · V̇_line  ≤  V̇_controlador   ∧   Q̇ ≤ capacidad',
+      sustitucion: `${nLines}·${f2(GPM(vDotLine))} = ${f2(GPM(vDotTotal), 1)} GPM · Q̇ = ${f2(qCoolingW / 1000, 2)} kW`,
+      resultado: ctrl ? `${ctrl.name} ✓ (1 basta)` : `✗ hacen falta ${nCtrl} × ${base.name}`,
+      ref: 'Tabla 9.1', ok: !!ctrl,
+      nota: ctrl ? undefined : 'ningún controlador solo puede — o más ΔT permitido, o dos unidades',
+    },
+  ];
+
   return {
     tcS, massKg, qShotJ, qCoolingW, nLines, nPerSide, qLineW,
     vDotLineM3s: vDotLine, vDotLineGPM: GPM(vDotLine), vDotTotalM3s: vDotTotal, vDotTotalGPM: GPM(vDotTotal),
@@ -282,6 +386,6 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
     hLineMm, hLineMaxMm: hMaxTermicaM * 1000, scf, pMeltMaxMPa,
     wLineMm, wOverH: wLineMm / hLineMm,
     controlador: ctrl?.name ?? null, nControladores: ctrl ? 1 : nCtrl,
-    iters, rows, fallas,
+    iters, rows, fallas, pasos,
   };
 }

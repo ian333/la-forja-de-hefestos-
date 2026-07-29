@@ -11,8 +11,39 @@ import { Ic } from './icons';
 import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resistance';
 import { estPartVolumeCc } from '../mold/feed';
 import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
+import type { CalcPaso } from '../mold/cooling-design';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
+
+/**
+ * LA PANTALLA DE FÓRMULAS — el cálculo automático EXPLICADO (orden del user:
+ * "quiero la pantalla de sus fórmulas y la explicación del cálculo… para que
+ * cacemos más errores"). Cada paso: la fórmula del libro, la sustitución con
+ * LOS NÚMEROS DE ESTE MOLDE y el resultado. Un paso que viola su regla se
+ * pinta rojo — el error salta a la vista en la sustitución, no en el código.
+ */
+export function CalcRows({ pasos, testid }: { pasos: CalcPaso[]; testid: string }) {
+  return (
+    <div data-testid={testid}>
+      {pasos.map((p, i) => (
+        <div key={i} className="fb-comp-row feat" title={p.nota ?? p.ref}
+          style={{ display: 'block', padding: '5px 6px 6px', marginTop: 3, borderRadius: 6,
+            background: p.ok === false ? 'rgba(242,122,108,0.10)' : 'rgba(255,255,255,0.03)',
+            borderLeft: `2px solid ${p.ok === false ? '#f27a6c' : '#2c3a50'}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: p.ok === false ? '#f27a6c' : '#dfe7f2' }}>
+            {p.ok === false ? '✗ ' : '· '}{p.titulo} <span style={{ opacity: 0.55, fontWeight: 400 }}>[{p.ref}]</span>
+          </div>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: '#9fb2c8', marginTop: 2, whiteSpace: 'pre-wrap' }}>{p.formula}</div>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: '#7f8da3', marginTop: 1, whiteSpace: 'pre-wrap' }}>= {p.sustitucion}</div>
+          <div style={{ fontSize: 11.5, marginTop: 2 }}>
+            → <b style={{ color: p.ok === false ? '#f27a6c' : '#7ee0a0' }}>{p.resultado}</b>
+            {p.nota && <span style={{ opacity: 0.62, fontSize: 10.5 }}> — {p.nota}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function MoldBuildingBanner({ on }: { on: boolean }) {
   if (!on) return null;
@@ -211,6 +242,9 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
                 {moldSimOn && moldSim && (
                   <div className="fb-comp-tree" data-testid="mold-sim-report" style={{ margin: '4px 0 8px 4px' }}>
                     <div className="fb-comp-row hdr">🌡 TRANSITORIO (PDE FDM 3D, ×10) · t_c {moldSim.thermal.coolingTimeS}s · azul=frío rojo=caliente</div>
+                    {moldThermalSim?.pasos && (
+                      <CalcRows pasos={moldThermalSim.pasos()} testid="mold-calc-termica" />
+                    )}
                     {moldThermalSim && (() => {
                       // ¿QUÉ ZONA CONTROLA EL CICLO? — espesor local MEDIDO de la malla
                       // (t_c ∝ h², §9.1): la columna más gruesa manda en el enfriamiento
@@ -296,6 +330,16 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
                           <div className="fb-comp-row hdr">🔩 Cuerpos <b>({pt.bodies ?? 1})</b></div>
                           {pt.features && pt.features.length > 0 && <div className="fb-comp-row hdr">🕮 Historia</div>}
                           {(pt.features ?? []).map((f, i) => <div key={i} className="fb-comp-row feat">· {f}</div>)}
+                          {pt.calc && (
+                            <>
+                              <div className="fb-comp-row hdr" title="Cada paso: la fórmula del libro, la sustitución con LOS NÚMEROS de este molde, y el resultado. Rojo = viola la regla.">
+                                𝑓 EL CÁLCULO, PASO A PASO — <b style={{ color: pt.calc.some((p) => p.ok === false) ? '#f27a6c' : '#7ee0a0' }}>
+                                  {pt.calc.filter((p) => p.ok !== false).length}/{pt.calc.length} reglas ✓</b>
+                                <span style={{ opacity: 0.6 }}> [Kazmer]</span>
+                              </div>
+                              <CalcRows pasos={pt.calc} testid={`mold-calc-${pt.role}`} />
+                            </>
+                          )}
                           {pt.role === 'pieza' && flowOn && liveFlow && (
                             <div data-testid="mold-flow-study">
                               <div className="fb-comp-row hdr">

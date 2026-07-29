@@ -213,8 +213,12 @@ def gen_line(text, final):
 # "7,8,9" la evalua como aritmetica (operador coma) y queda solo el ULTIMO numero.
 # Usar LINEAS; LINES se mantiene por compatibilidad para valores de un solo numero.
 ONLY = os.environ.get('LINEAS') or os.environ.get('LINES')   # "4" o "4,7": regenerar SOLO esas lineas
-TAKES = int(os.environ.get('TAKES', '1'))  # >1: genera N tomas y se queda con la MAS CORTA
-                                            # (la vocal alargada de XTTS = duracion extra)
+TAKES = int(os.environ.get('TAKES', '1'))  # >1: genera N tomas y se queda con la MEDIANA.
+# ANTES se quedaba con la MAS CORTA, con la idea de que la vocal alargada de XTTS mete
+# duracion de mas. Pero eso selecciona SIEMPRE la toma mas apurada: regenere las 25 lineas
+# del anillo con TAKES=3 y el resultado fue 'se escuchan raras' (Ian, 2026-07-28) — cada
+# frase era la version atropellada de tres. La MEDIANA evita los dos extremos: ni la
+# arrastrada ni la comida. Con TARGET/TARGETS sigue mandando la cercania al objetivo.
 TARGET = float(os.environ.get('TARGET', '0'))  # >0: elegir la toma mas CERCANA a esta duracion
                                                 # (para no mover el timing de un video ya rendido)
 TARGETS = os.environ.get('TARGETS')     # "4.86,3.28,...": target POR LINEA (indice 1..n; 0 = sin target)
@@ -224,16 +228,20 @@ for i, text in enumerate(lines, 1):
         continue
     tgt = (_tgts[i - 1] if _tgts and i <= len(_tgts) else TARGET)
     f = os.path.join(OUT, f"{MOL}_l{i:02d}.wav")
-    best = None
+    best = None; tomas = []
     for tk in range(TAKES):
         cand = f[:-4] + f"_take{tk}.wav" if TAKES > 1 else f
         d, trimmed = gen_line(text, cand)
         score = abs(d - tgt) if tgt > 0 else d
-        if best is None or score < best[3]:
+        tomas.append((d, cand, trimmed, score))
+        if tgt > 0 and (best is None or score < best[3]):
             best = (d, cand, trimmed, score)
         print(f"  l{i:02d}.t{tk} {d:5.2f}s {'(recortado)' if trimmed else ''}  {text[:40]}", flush=True)
     if TAKES > 1:
         import shutil
+        if tgt <= 0:                      # sin objetivo: la MEDIANA, no la mas corta
+            tomas.sort(key=lambda t: t[0])
+            best = tomas[len(tomas) // 2]
         shutil.copyfile(best[1], f)
         for tk in range(TAKES):
             c = f[:-4] + f"_take{tk}.wav"

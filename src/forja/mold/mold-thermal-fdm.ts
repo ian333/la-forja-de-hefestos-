@@ -20,6 +20,8 @@ import { crearDifusionEspectral } from '../campo/campo';
 import { solveSteadyMoldField, type SteadyField } from './thermal-steady';
 import { heatToExtractW } from './thermal-resistance';
 import { estPartVolumeCc, FEED_MATERIALS } from './feed';
+import { effusivity, contactTemperature } from './thermal-layers';
+import type { CalcPaso } from './cooling-design';
 
 // Apéndice B (LITERAL): P20 k=32, ρ=7820, cp=500 → α=8.18e-6 ✓ impreso
 const K_STEEL = 32, RHO_STEEL = 7820, CP_STEEL = 500;
@@ -58,6 +60,9 @@ export interface ThermalSim {
   /** T MÁXIMA de línea central del plástico entre columnas (°C) — la sonda de
    *  expulsión: cae a T_eject en ~t_c del libro si la física está bien. */
   plasticCenterMaxC(): number;
+  /** el estudio NARRADO (fórmula + sustitución + resultado) — la pantalla de
+   *  fórmulas del 🌡: qué se resolvió, con qué números, y qué salió. */
+  pasos(): CalcPaso[];
   /** T del PLÁSTICO en una columna (x,y en mm de placa) — el material más
    *  caliente del molde vive en las micro-pilas, NO en el grid de acero: sin
    *  esta sonda la pieza se pintaba con la T del ACERO que la rodea. */
@@ -510,6 +515,54 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         }
       }
       return mx === -1e9 ? Tc : mx;
+    },
+    pasos() {
+      const f2 = (x: number, d = 2) => +x.toFixed(d);
+      const matP = { k: K_ABS, rho: RHO_ABS, cp: CP_ABS };
+      const matS = { k: K_STEEL, rho: RHO_STEEL, cp: CP_STEEL };
+      const bP = effusivity(matP), bS = effusivity(matS);
+      const tCont = contactTemperature(matP, Tm, matS, Tc);
+      const delta = Math.sqrt(ALPHA * sim.cycleS) * 1000;
+      const st = sim.steady;
+      const nPlast = (() => { let n = 0; const v = sim.plasticVoxels(); for (let i = 0; i < v.length; i++) if (v[i]) n++; return n; })();
+      const out: CalcPaso[] = [
+        {
+          titulo: 'Temperatura de CONTACTO instantánea (por qué el acero no se funde)',
+          formula: 'T_contacto = (b_p·T_melt + b_s·T_molde)/(b_p + b_s)  ·  b = √(k·ρ·Cp)',
+          sustitucion: `b_plástico = ${f2(bP, 0)} vs b_acero = ${f2(bS, 0)} → (${f2(bP, 0)}·${Tm} + ${f2(bS, 0)}·${Tc})/${f2(bP + bS, 0)}`,
+          resultado: `${f2(tCont, 1)} °C en la cara al tocar`, ref: 'efusividades (§9.1)', ok: true,
+          nota: 'el promedio simple diría (239+60)/2 ≈ 150 °C — la efusividad 17× del acero manda',
+        },
+        {
+          titulo: 'Piel térmica del ciclo (por qué el bulk del molde es ESTABLE)',
+          formula: 'δ = √(α_acero · t_ciclo)',
+          sustitucion: `√(${ALPHA.toExponential(2)} · ${f2(sim.cycleS, 0)}s)`,
+          resultado: `δ = ${f2(delta, 1)} mm oscilan; el resto promedia`, ref: '§9.1', ok: true,
+        },
+        {
+          titulo: 'El dominio que se resolvió',
+          formula: 'molde completo voxelizado + FORMA real de la pieza (celdas entre kTop y kBot)',
+          sustitucion: `${nx}×${ny}×${nz} celdas de ${cell} mm · ${nPlast} celdas de plástico (k=${K_ABS}) en acero (k=${K_STEEL})`,
+          resultado: `${(nx * ny * nz / 1000).toFixed(0)}k celdas`, ref: 'FDM + micro-pilas', ok: true,
+          nota: material.esProxy ? material.nota : undefined,
+        },
+      ];
+      if (st) {
+        out.push({
+          titulo: 'Campo CÍCLICO-PROMEDIO (el entregable estándar de la industria)',
+          formula: '∇·(k∇T) + q‴ = 0 · agua Robin (Eq 9.7) · q‴ = Q̇/V_plástico (Eq 9.10)',
+          sustitucion: `gradiente conjugado matrix-free: ${st.iters} iters, residual ${st.residualC}`,
+          resultado: `acero ${st.steelMinC}…${st.steelMaxC} °C · superficie moldeante ${st.surfMinC}…${st.surfMaxC} °C`,
+          ref: 'Moldflow/BEM desacoplado', ok: st.residualC < 0.1,
+          nota: st.surfMaxC > 110 ? '⚠ superficie arriba de 110 °C: el circuito de agua NO alcanza (ver estudio §9.2 del agua)' : undefined,
+        });
+      } else {
+        out.push({
+          titulo: 'Campo cíclico-promedio', formula: '∇·(k∇T) + q‴ = 0',
+          sustitucion: 'aún no calculado (computeSteady)', resultado: '—', ref: 'thermal-steady', ok: true,
+        });
+      }
+      return out;
     },
   };
   return sim;

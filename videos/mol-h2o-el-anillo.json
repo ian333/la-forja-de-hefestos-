@@ -37,7 +37,7 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 74.3
+    "dur": 77.7
   },
   "render": {
     "shards": 5,
@@ -122,15 +122,15 @@
       }
     ],
     "duraciones_shotentry": [
-      10.73,
-      7.92,
-      8.38,
-      4.78,
-      4.31,
-      8.13,
-      11.82,
-      7.14,
-      11.08
+      10.91,
+      8.34,
+      8.89,
+      5.29,
+      4.46,
+      8.49,
+      12.27,
+      7.62,
+      11.41
     ],
     "nota_duraciones": "Σ = 92.00 = formato.dur EXACTO. Son SALTO AL SIGUIENTE ARRANQUE, no el ancho de la ventana de voz: playShots encadena por suma acumulada, así que usar los anchos (que no traen los 0.4 s de hueco entre líneas) desfasa la cámara 0.4·i s y congela la cola. recalibrar-beats.py ya lo emite bien y trae un assert."
   },

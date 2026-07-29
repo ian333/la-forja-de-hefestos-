@@ -36,7 +36,7 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const WTRI_DURATION = 74.3;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
+const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
 // lenta ×3 (slow-motion de una dinámica real, no falseo): acercamiento ~3.3s +
@@ -435,15 +435,15 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // `eyeLevelLock` se quedó SIN líneas al cortar el beat del dato y se elimina: además era
     // una de las cuatro tomas que caían en la misma banda de distancia y se parecían entre sí.
     // Ritmo de ESCALA deliberado: encima (0.92) → lejos y de canto (1.92) → crash (0.74).
-    { shot: ringWide({ rMul: 1.14, azim0: 0.55, span: 1.0, elev: 0.30, fov: 34 }), dur: 10.73, label: 'las TRES separadas — que se CUENTEN 3' },
-    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 7.92, label: 'una sola en teleobjetivo (fuera de la nube)' },
-    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.38, label: 'DE FRENTE: el anillo entero con aire' },
-    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 4.78, label: 'el PUENTE entre dos (sin entrar a la nube)' },
-    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.31, label: 'el anillo CIERRA — se ven las tres' },
-    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 8.13, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
-    { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 11.82, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
-    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 7.14, label: 'aguanta más — CRASH IN' },
-    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.08, label: 'payoff — SALE del anillo (no de dentro de la nube)' },
+    { shot: ringWide({ rMul: 1.14, azim0: 0.55, span: 1.0, elev: 0.30, fov: 34 }), dur: 10.91, label: 'las TRES separadas — que se CUENTEN 3' },
+    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 8.34, label: 'una sola en teleobjetivo (fuera de la nube)' },
+    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.89, label: 'DE FRENTE: el anillo entero con aire' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 5.29, label: 'el PUENTE entre dos (sin entrar a la nube)' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.46, label: 'el anillo CIERRA — se ven las tres' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 8.49, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
+    { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 12.27, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
+    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 7.62, label: 'aguanta más — CRASH IN' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.41, label: 'payoff — SALE del anillo (no de dentro de la nube)' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -1852,22 +1852,22 @@ const WTRI_CAPAS: CapasSpec = {
   //   ringFaceOn 31.8-35.7 · loomPush 36.1-42.4 · ringEdgeToFace 42.8-54.2 · crashIn 54.6-61.4
   //   pullOut 61.8-72.9
   campo:    { base: 0.55, mods: [
-    { wins: [[0.0, 10.3]],  a: 1.00, label: 'FRAME 0 = EL PICO: el campo entra a tope' },
-    { wins: [[27.0, 31.4]], a: 1.05, label: 'PROTAGONISTA: nace el puente / es carga moviéndose' },
-    { wins: [[36.1, 43.9]], a: 0.85, label: 'la fuerza: los tres jalan más' },
-    { wins: [[10.7, 18.3]], a: -0.40, label: 'baja cuando la voz mira los electrones de UNA' } ] },
-  nubes:    { base: 1, mods: [{ wins: [[27.0, 31.4], [44.3, 55.7]], a: -0.34, label: 'deja LEER el puente y el pucker' }] },
-  parpadeo: { base: 0.42, mods: [{ wins: [[10.7, 18.3]], a: 0.42, label: 'los electrones parpadean cuando se nombran' }] },
-  spin:     { base: 1, mods: [{ wins: [[27.0, 31.4], [36.1, 43.9]], a: 0.85, label: 'Δρ ARDE: el puente y la cooperatividad' }] },
-  acc:      { base: 1, mods: [{ wins: [[10.7, 18.3]], a: 0.45, label: 'ORO del oxígeno' }] },
-  enlaces:  { base: 0, mods: [{ wins: [[0.0, 18.3], [44.3, 62.8]], a: 1.0, label: 'los 3 átomos desde el segundo 0 y la firma' }] },
-  dipolo:   { base: 0, mods: [{ wins: [[44.3, 62.8]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
+    { wins: [[0.0, 10.5]],  a: 1.00, label: 'FRAME 0 = EL PICO: el campo entra a tope' },
+    { wins: [[28.1, 33.0]], a: 1.05, label: 'PROTAGONISTA: nace el puente / es carga moviéndose' },
+    { wins: [[37.9, 46.0]], a: 0.85, label: 'la fuerza: los tres jalan más' },
+    { wins: [[10.9, 18.9]], a: -0.40, label: 'baja cuando la voz mira los electrones de UNA' } ] },
+  nubes:    { base: 1, mods: [{ wins: [[28.1, 33.0], [46.4, 58.3]], a: -0.34, label: 'deja LEER el puente y el pucker' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[10.9, 18.9]], a: 0.42, label: 'los electrones parpadean cuando se nombran' }] },
+  spin:     { base: 1, mods: [{ wins: [[28.1, 33.0], [37.9, 46.0]], a: 0.85, label: 'Δρ ARDE: el puente y la cooperatividad' }] },
+  acc:      { base: 1, mods: [{ wins: [[10.9, 18.9]], a: 0.45, label: 'ORO del oxígeno' }] },
+  enlaces:  { base: 0, mods: [{ wins: [[0.0, 18.9], [46.4, 65.9]], a: 1.0, label: 'los 3 átomos desde el segundo 0 y la firma' }] },
+  dipolo:   { base: 0, mods: [{ wins: [[46.4, 65.9]], a: 1.0, label: 'FIRMA: se ve que una apunta al contrario' }] },
   apertura: { base: 0.08, mods: [
     { wins: [[0.0, 8.5]],   a: 0.50, label: 'acto 1: las TRES bien separadas' },
-    { wins: [[9.5, 20.5]],  a: 0.28, label: 'una sola / se acomodan en un anillo' },
-    { wins: [[21.0, 27.0]], a: 0.10, label: 'SE ACERCAN al nacer el primer puente' },
-    { wins: [[21.0, 32.0]], a: 0.10, label: 'y el resto CIERRA en "el anillo cierra"' },
-    { wins: [[56.5, 60.5]], a: 0.22, label: '"AGUANTA MÁS": se estiran y VUELVEN' } ] },
+    { wins: [[9.7, 21.0]],  a: 0.28, label: 'una sola / se acomodan en un anillo' },
+    { wins: [[21.5, 28.1]], a: 0.10, label: 'SE ACERCAN al nacer el primer puente' },
+    { wins: [[21.5, 33.5]], a: 0.10, label: 'y el resto CIERRA en "el anillo cierra"' },
+    { wins: [[59.0, 63.0]], a: 0.22, label: '"AGUANTA MÁS": se estiran y VUELVEN' } ] },
 };
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
@@ -1884,11 +1884,18 @@ function WaterPairCamera({ time, R, shots, ex, pts }: { time: number; R: number;
     const up0 = new THREE.Vector3(0, 1, 0); if (Math.abs(fwd.dot(up0)) > 0.94) up0.set(0, 0, 1);
     const right = new THREE.Vector3().crossVectors(fwd, up0).normalize();
     const trueUp = new THREE.Vector3().crossVectors(right, fwd).normalize();
-    const r = roll || 0;   // reel vertical: se conserva el roll (eje O-O vertical, llena 9:16)
+    // FORMATO: todo lo del reel (roll π/2 para poner el eje del anillo a lo largo del lado
+    // ALTO, y el lente ×1.42 porque en 9:16 el eje angosto es el horizontal) vale SOLO en
+    // vertical. En 16:9 el eje angosto se voltea: el roll deja el sujeto cruzado
+    // desperdiciando los lados, y el ×1.42 aleja 42% de más. MolCameraRig ya condicionaba el
+    // lente (línea 743); esta cámara no — por eso el anillo nunca se había podido sacar en
+    // horizontal. Se deriva del ASPECTO de la cámara: vale para cualquier formato sin props.
+    const cam = camera as THREE.PerspectiveCamera;
+    const esVert = cam.aspect < 1;
+    const r = esVert ? (roll || 0) : 0;
     camera.up.copy(trueUp.multiplyScalar(Math.cos(r)).add(right.multiplyScalar(Math.sin(r))));
     camera.lookAt(target[0], target[1], target[2]);
-    const cam = camera as THREE.PerspectiveCamera;
-    cam.fov = Math.min(95, fov * 1.42);
+    cam.fov = esVert ? Math.min(95, fov * 1.42) : fov;
     const d = Math.hypot(pos[0] - target[0], pos[1] - target[1], pos[2] - target[2]);
     cam.near = Math.max(0.02, d * 0.03); cam.far = Math.max(100, ex * 24); cam.updateProjectionMatrix();
   }, [time, R, camera, shots, ex, pts]);

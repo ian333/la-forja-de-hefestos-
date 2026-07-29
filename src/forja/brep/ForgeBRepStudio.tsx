@@ -1924,6 +1924,27 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1,
   );
 }
 
+/** Resalte FANTASMA para componentes ENTERRADOS (agua/colada): una segunda
+ *  pasada con depthTest OFF → se ve A TRAVÉS de las placas (mismo truco que la
+ *  nube de alarma). Sin esto "Clic = resaltar en 3D" no resalta NADA en esos
+ *  componentes: el emissive dorado queda tapado por el acero — la auditoría
+ *  visual encontró el serpentín §9.2 perfecto e invisible. */
+function GhostMesh({ geo, color }: { geo: PartGeo; color: string }) {
+  const g = useMemo(() => {
+    const b = new THREE.BufferGeometry();
+    b.setAttribute('position', new THREE.BufferAttribute(geo.positions, 3));
+    b.setIndex(new THREE.BufferAttribute(geo.indices, 1));
+    b.computeBoundingSphere();
+    return b;
+  }, [geo]);
+  useEffect(() => () => g.dispose(), [g]);
+  return (
+    <mesh geometry={g} renderOrder={997} frustumCulled={false}>
+      <meshBasicMaterial color={color} transparent opacity={0.45} depthTest={false} depthWrite={false} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
 // rampa térmica azul→cian→verde→amarillo→rojo (compartida por plano y cuerpos)
 
 // Colores por defecto de cada cuerpo de la caja (cada cosa distinta, como Fusion).
@@ -6023,6 +6044,11 @@ export default function ForgeBRepStudio() {
                         winDepth={pt.role === 'pieza'}   /* la pieza gana el empate con sus caras moldeantes */
                         metalness={0.35} roughness={0.5} />
                       {pt.edges && pt.edges.length > 0 && <MoldEdges pts={pt.edges} clip={sectionPlanes} />}
+                      {/* agua/colada viven DENTRO del acero: seleccionadas se ven a través */}
+                      {moldSelected === pt.role && (pt.role.startsWith('agua') || pt.role === 'colada') && (
+                        <GhostMesh geo={{ positions: pt.positions, normals: pt.normals, indices: pt.indices }}
+                          color={moldColors[pt.role] ?? pt.color} />
+                      )}
                     </group>
                   );
                   // MOVER (Fusion): el componente seleccionado en modo mover trae el gizmo de
