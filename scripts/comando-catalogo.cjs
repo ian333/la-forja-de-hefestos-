@@ -164,6 +164,13 @@ SPECIAL['mol-h2o el puente'] = {
   hashtags: ['#agua', '#química', '#cuántica', '#enlacedehidrógeno', '#ciencia', '#física', '#biología', '#aprendeentiktok', '#4k', '#gaia'],
 };
 
+SPECIAL['mol-h2o el anillo'] = {
+  codigo: 'moleculas/_code/mol-h2o-el-anillo-capsula.tar.gz',
+  titulo: 'TRES gotas de agua hacen un anillo — y juntas jalan 12% más fuerte que en pareja',
+  descripcion: `Esto no es una animación: son TRES moléculas de agua resueltas con física cuántica (ab initio), nueve átomos, acercándose de verdad. 💧 Cada punto que parpadea es un electrón —no vive en un lugar fijo, es una nube de probabilidad—. Y esas líneas azules son el campo eléctrico REAL, calculado línea por línea desde el potencial de la molécula: no es una rayita dibujada. Mira lo que pasa cuando se juntan: cada una le presta un hidrógeno a la vecina, nace un puente, y el anillo SE CIERRA. Ahí está lo raro: los tres puentes juntos jalan más fuerte que dos solas — casi doce por ciento más. Eso se llama cooperatividad, y es la razón de que el agua se comporte como se comporta. Y míralo de canto: el anillo NO es plano. Son tres, número impar, no caben todas igual y una queda al revés… y aun torcida aguanta más. Por esto el agua se pega a sí misma, por esto sube por las plantas y por esto el hielo flota. Nada está inventado: la nube de deformación (Δρ) y el campo salen del cálculo.\n\n🎓 GAIA University.`,
+  hashtags: ['#agua', '#química', '#cuántica', '#enlacedehidrógeno', '#campoeléctrico', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
+};
+
 function copyFor(piece) {
   if (SPECIAL[piece.id]) return SPECIAL[piece.id];
   const f = piece.familia;
