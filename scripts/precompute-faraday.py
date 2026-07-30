@@ -66,24 +66,56 @@ TRAZA = dict(tol=1e-9, hmax=25.0, hmin=5e-4, r_core=R0 * 0.9, r_caja=400.0,
              s_max=260.0, e_min=1e-7, max_pasos=4000, max_muestras=2000)
 
 
-def barras_del_cubo():
-    """Los 12 filos de un cubo, discretizados. Es una JAULA: hay hueco entre
-    barra y barra — el apantallamiento no viene de tapar, viene del conductor."""
+def malla_del_cubo(hilos):
+    """MALLA sobre las 6 caras del cubo. `hilos` = alambres por dirección y cara.
+
+    hilos=0 → solo los 12 FILOS (un marco, no una jaula: las caras quedan
+    abiertas de par en par). Sirve como CONTRASTE medible: el cálculo dice que
+    un marco NO apantalla, y ese es justo el beat que hace interesante la pieza.
+    """
     h = L / 2.0
     pts = []
-    t = (np.arange(POR_ARISTA) + 0.5) / POR_ARISTA          # centros, sin duplicar esquinas
-    for eje in range(3):
-        for s1 in (-h, h):
-            for s2 in (-h, h):
+    t = (np.arange(POR_ARISTA) + 0.5) / POR_ARISTA
+    if hilos <= 0:
+        for eje in range(3):
+            for s1 in (-h, h):
+                for s2 in (-h, h):
+                    p = np.zeros((POR_ARISTA, 3))
+                    p[:, eje] = -h + t * L
+                    p[:, (eje + 1) % 3] = s1
+                    p[:, (eje + 2) % 3] = s2
+                    pts.append(p)
+        return np.concatenate(pts, axis=0)
+    # alambres tejidos en cada cara: `hilos` en una dirección y `hilos` en la otra
+    w = (np.arange(hilos) + 0.5) / hilos
+    for eje in range(3):                       # eje = normal de la cara
+        for lado in (-h, h):
+            a, b = (eje + 1) % 3, (eje + 2) % 3
+            for wv in w:
                 p = np.zeros((POR_ARISTA, 3))
-                p[:, eje] = -h + t * L
-                p[:, (eje + 1) % 3] = s1
-                p[:, (eje + 2) % 3] = s2
+                p[:, eje] = lado
+                p[:, a] = -h + t * L
+                p[:, b] = -h + wv * L
                 pts.append(p)
-    return np.concatenate(pts, axis=0)
+                p2 = np.zeros((POR_ARISTA, 3))
+                p2[:, eje] = lado
+                p2[:, b] = -h + t * L
+                p2[:, a] = -h + wv * L
+                pts.append(p2)
+    P = np.concatenate(pts, axis=0)
+    # DEDUPE OBLIGATORIO: los alambres de las dos direcciones se CRUZAN, y en cada
+    # cruce quedaban dos elementos en el MISMO punto → distancia 0 → 1/R = inf y la
+    # matriz del conductor sale envenenada. Se veía en el resultado: la malla 3x3
+    # apantallaba MÁS que la 5x5, que es físicamente imposible.
+    llave = np.round(P / 1e-6).astype(np.int64)
+    _, idx = np.unique(llave, axis=0, return_index=True)
+    return P[np.sort(idx)]
 
 
-JAULA = barras_del_cubo()
+HILOS = int(os.environ.get('HILOS', '5'))     # alambres por dirección y cara
+
+
+JAULA = malla_del_cubo(HILOS)
 M = len(JAULA)
 
 
@@ -149,7 +181,7 @@ def main():
     frames = np.zeros((K, NL, LP, 3), np.float32)
     inten = np.zeros((K, NL, LP), np.uint8)
     meta = []
-    print(f"jaula: cubo de {L} bohr · {M} elementos · carga externa Q={Q_EXT}")
+    print(f"jaula: cubo de {L} bohr · HILOS={HILOS} · {M} elementos · carga externa Q={Q_EXT}")
     print(f"{'k':>3} {'d_carga':>8} {'|E| sin jaula':>14} {'|E| dentro':>12} "
           f"{'apantalla':>11}  {'Σq':>9}")
     peor = 1e9
