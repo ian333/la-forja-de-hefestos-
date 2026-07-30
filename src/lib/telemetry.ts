@@ -268,6 +268,12 @@ class Telemetry {
       this.queue = [];
     } catch { /* no-op */ }
   }
+
+  /** Vacía la cola YA, por sendBeacon. Público porque quien registra un evento
+   *  justo al salir (p. ej. el abandono de una clase) no puede confiar en el
+   *  orden de los listeners de `pagehide`: si el de telemetry corre primero,
+   *  su evento se perdería. Llamando esto explícitamente, no se pierde. */
+  flush() { this.flushBeacon(); }
 }
 
 function safeStr(x: unknown): string {

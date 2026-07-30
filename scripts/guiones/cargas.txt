@@ -1,14 +1,14 @@
 Seis cargas: tres positivas y tres negativas.
-Ciento ochenta líneas de campo, y ninguna se escapa. Empecemos por una sola.
-Sola, su campo se va al infinito: sesenta líneas.
+Trescientas líneas de campo, y ninguna se escapa. Empecemos por una sola.
+Sola, su campo se va al infinito: cien líneas.
 Ahora traemos su opuesta.
-Y ninguna se escapa: las sesenta mueren en el menos.
+Y ninguna se escapa: las cien mueren en el menos.
 Otra carga, y vuelve a haber fuga.
 Su pareja, y se cierra otra vez.
 Esto es la ley de Gauss.
 Lo que sale solo depende de la carga que hay adentro.
 Si la suma da cero, no sale nada.
-Las seis: ciento ochenta líneas, cero fugas.
+Las seis: trescientas líneas, cero fugas.
 Y en el centro, el campo vale cero exacto.
 Pero son bolitas ideales. ¿Y la materia de verdad?
 Un átomo de hidrógeno: un protón y su electrón.

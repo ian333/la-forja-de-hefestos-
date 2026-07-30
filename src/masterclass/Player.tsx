@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState, lazy } from 'react';
 import { Suspense } from 'react';
+import { telemetry } from '../lib/telemetry';
 import Void from './scenes/Void';
 import ComplexPlane from './scenes/ComplexPlane';
 import MobiusScene from './scenes/MobiusScene';
@@ -247,6 +248,69 @@ export default function Player() {
     setStarted(true);
     setIdx(0);
   }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // ¿ALGUIEN TERMINA UNA CLASE? Hasta hoy no se sabía: el reproductor no
+  // emitía UN solo evento, así que no había forma de saber si una persona
+  // en la historia había llegado al final — y sin eso, cualquier decisión
+  // sobre formato o precio es adivinanza. Cuatro eventos, en orden de valor:
+  //   · masterclass.fin       ¿llegó al final?  (el que importa)
+  //   · masterclass.abandono  ¿EN QUÉ ESCENA se fue?  (dónde arreglar)
+  //   · masterclass.escena    el avance, para el embudo escena a escena
+  //   · masterclass.inicio    cuántos le dan a "empezar" vs cuántos abren
+  // El abandono se manda con sendBeacon (via telemetry.flush) porque al
+  // cerrar la pestaña un fetch normal se cancela y el dato se pierde.
+  // ══════════════════════════════════════════════════════════════════════
+  const claseId = manifest?.id ?? id;
+  const nEscenas = manifest?.scenes.length ?? 0;
+  const t0Ref = useRef<number | null>(null);
+  const maxIdxRef = useRef(0);
+  const finRef = useRef(false);
+  const segundos = () => (t0Ref.current ? Math.round((Date.now() - t0Ref.current) / 1000) : 0);
+
+  useEffect(() => {
+    if (!started || RENDER_MODE || t0Ref.current) return;
+    t0Ref.current = Date.now();
+    telemetry.event('masterclass.inicio', { clase: claseId, escenas: nEscenas });
+  }, [started, claseId, nEscenas]);
+
+  useEffect(() => {
+    if (!started || RENDER_MODE || !nEscenas) return;
+    if (idx > maxIdxRef.current) maxIdxRef.current = idx;
+    telemetry.event('masterclass.escena', {
+      clase: claseId, i: idx + 1, de: nEscenas,
+      escena: manifest?.scenes[idx]?.id, pct: Math.round(((idx + 1) / nEscenas) * 100), s: segundos(),
+    });
+  }, [idx, started, claseId, nEscenas, manifest]);
+
+  useEffect(() => {
+    if (!endReached || RENDER_MODE || finRef.current) return;
+    finRef.current = true;
+    telemetry.event('masterclass.fin', { clase: claseId, escenas: nEscenas, s: segundos() });
+  }, [endReached, claseId, nEscenas]);
+
+  // ABANDONO: al ocultar o cerrar la pestaña, si NO terminó, se manda dónde
+  // se quedó. Es el dato que dice qué escena hay que rehacer.
+  useEffect(() => {
+    if (RENDER_MODE) return;
+    const salida = () => {
+      if (!t0Ref.current || finRef.current) return;
+      finRef.current = true;                       // una sola vez por sesión
+      telemetry.event('masterclass.abandono', {
+        clase: claseId, escena: maxIdxRef.current + 1, de: nEscenas,
+        pct: nEscenas ? Math.round(((maxIdxRef.current + 1) / nEscenas) * 100) : 0,
+        s: segundos(),
+      });
+      telemetry.flush?.();
+    };
+    const onVis = () => { if (document.visibilityState === 'hidden') salida(); };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', salida);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pagehide', salida);
+    };
+  }, [claseId, nEscenas]);
 
   function togglePause() {
     if (!audioRef.current) return;

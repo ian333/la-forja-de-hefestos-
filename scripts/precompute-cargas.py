@@ -45,7 +45,10 @@ OUT_EF = os.path.join(HERE, '..', 'public', 'precomputed', 'cargas-gauss-efield.
 OUT_JS = os.path.join(HERE, '..', 'public', 'precomputed', 'cargas-gauss.json')
 
 RAD = 1.55                 # radio del hexágono (bohr) — compacto: la caja de trazado le queda 10×
-POR_CARGA = 60             # líneas por unidad de carga (regla del libro: N ∝ |q|)
+POR_CARGA = 100            # líneas por unidad de carga (regla del libro: N ∝ |q|). 60→100 (Ian:
+                           # "que sean MÁS"): 600 ranuras, 300 líneas vivas en el hexágono.
+                           # OJO: los números SE DICEN en la voz — cambiar esto obliga a
+                           # regrabar las 4 frases que los nombran (cien/trescientas).
 #            ↑ subido de 30 a 60 el 2026-07-29: la densidad de líneas es lo ÚNICO que se puede
 #            subir para que el campo tenga presencia sin engordar la línea (WebGL la fija en 1 px).
 #            Y NO rompe la cuenta de Gauss: la predicción sigue siendo exacta, POR_CARGA·Q.
