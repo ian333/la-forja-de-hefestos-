@@ -87,4 +87,38 @@ if (errs.length) {
   console.log(`\n  ⚠ ERRORES vistos por visitantes reales: ${errs.length}`);
   for (const e of errs.slice(-6)) console.log(`   ${fecha(e.t)} ${pag(e.url)} — ${JSON.stringify(e.data).slice(0, 110)}`);
 }
+
+// ── ¿ALGUIEN TERMINA UNA CLASE? ──────────────────────────────────────────
+// La pregunta que no se podía contestar: el reproductor no emitía eventos.
+// Aquí sale el embudo real — cuántos abren, cuántos le dan a empezar,
+// cuántos llegan al final, y EN QUÉ ESCENA se cae la gente.
+const clases = enVentana.filter((r) => !esNuestro(r) && !esBot(r) && String(r.type || '').startsWith('masterclass.'));
+console.log('\n═══ CLASES ═══');
+if (!clases.length) {
+  console.log('  sin datos todavía (la medición se instaló el 2026-07-30; hace falta que entre gente)');
+} else {
+  const porClase = new Map();
+  for (const r of clases) {
+    const c = r.data?.clase ?? '?';
+    if (!porClase.has(c)) porClase.set(c, { inicio: 0, fin: 0, abandono: [], seg: [] });
+    const o = porClase.get(c);
+    const t = String(r.type).split('.')[1];
+    if (t === 'inicio') o.inicio++;
+    if (t === 'fin') { o.fin++; o.seg.push(r.data?.s ?? 0); }
+    if (t === 'abandono') o.abandono.push({ escena: r.data?.escena ?? 0, de: r.data?.de ?? 0, pct: r.data?.pct ?? 0, s: r.data?.s ?? 0 });
+  }
+  for (const [c, o] of [...porClase].sort((a, b) => b[1].inicio - a[1].inicio)) {
+    const tasa = o.inicio ? Math.round((o.fin / o.inicio) * 100) : 0;
+    const medS = o.seg.length ? Math.round(o.seg.reduce((a, b) => a + b, 0) / o.seg.length) : 0;
+    console.log(`\n  ${c}: empezaron ${o.inicio} · TERMINARON ${o.fin} (${tasa}%)${medS ? ` · ${Math.floor(medS / 60)}m${medS % 60}s de media` : ''}`);
+    if (o.abandono.length) {
+      const hist = new Map();
+      for (const a of o.abandono) hist.set(a.escena, (hist.get(a.escena) || 0) + 1);
+      const peor = [...hist].sort((a, b) => b[1] - a[1]).slice(0, 5);
+      console.log(`    se fueron en la escena: ${peor.map(([e, n]) => `${e}${n > 1 ? `(×${n})` : ''}`).join(', ')}  de ${o.abandono[0].de}`);
+      const medPct = Math.round(o.abandono.reduce((a, b) => a + b.pct, 0) / o.abandono.length);
+      console.log(`    abandono medio al ${medPct}% de la clase`);
+    }
+  }
+}
 console.log('');

@@ -261,7 +261,11 @@ export default function Player() {
   // El abandono se manda con sendBeacon (via telemetry.flush) porque al
   // cerrar la pestaña un fetch normal se cancela y el dato se pierde.
   // ══════════════════════════════════════════════════════════════════════
-  const claseId = manifest?.id ?? id;
+  // Player no recibe props: la clase viene del ?id= de la URL (y el manifest
+  // ya cargado es la fuente buena cuando existe).
+  const claseId = manifest?.id
+    ?? (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('id') : null)
+    ?? 'desconocida';
   const nEscenas = manifest?.scenes.length ?? 0;
   const t0Ref = useRef<number | null>(null);
   const maxIdxRef = useRef(0);
