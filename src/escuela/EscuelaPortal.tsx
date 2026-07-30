@@ -72,7 +72,11 @@ export default function EscuelaPortal() {
             <div className="text-[10px] text-[#64748B] uppercase tracking-[0.2em]">3D-real · sin pizarrón</div>
           </div>
         </div>
-        <nav className="flex items-center gap-5 text-[12px] text-[#94A3B8] font-mono">
+        {/* NAV: nueve enlaces NO caben en 360 px — se desbordaban por el borde
+            derecho (medido con visitantes reales de la campaña de IG). En móvil
+            solo va "Clases", que es lo único que le sirve a quien acaba de
+            llegar; el resto aparece desde `sm`. */}
+        <nav className="hidden sm:flex items-center gap-5 text-[12px] text-[#94A3B8] font-mono">
           <a href="/perfil.html" className="hover:text-[#FDB813] transition">Tu recorrido</a>
           <a href="#carreras" className="hover:text-[#FDB813] transition">Carreras</a>
           <a href="#misiones" className="hover:text-[#FDB813] transition">Misiones</a>
@@ -83,10 +87,58 @@ export default function EscuelaPortal() {
           <a href="/tutoriales.html" className="hover:text-[#FDB813] transition">Tutoriales →</a>
           <a href="/precios.html" className="hover:text-[#FDB813] transition">Planes →</a>
         </nav>
+        <a href="#clases" className="sm:hidden text-[12px] font-mono text-[#FDB813] border border-[#FDB813]/40 rounded-lg px-3 py-1.5">
+          Clases
+        </a>
       </header>
 
-      {/* Hero */}
-      <section className="relative z-10 px-6 max-w-[1400px] mx-auto pt-12 pb-16 text-center">
+      {/* ═══════════════════════════════════════════════════════════════════
+          PRIMER PANTALLAZO EN MÓVIL — la clase ES el hero.
+          Antes: "Cinco pilares. Una clase de verdad." en 64 px empujaba TODA
+          la oferta fuera de pantalla; los dos visitantes de pago medidos el
+          2026-07-30 (iPhone de Argentina y Android de México) se fueron en
+          ≤1.9 s sin tocar nada. Un anuncio promete algo concreto y la página
+          contestaba con un eslogan.
+          Ahora lo primero es un FRAME REAL del render de la clase (no un
+          gradiente: el pixel que produce el simulador), el dato que marea, y
+          UN botón que dice qué pasa al tocarlo. En `md` vuelve el hero de
+          escritorio, que ahí sí funcionaba.
+          ═══════════════════════════════════════════════════════════════════ */}
+      <a href="/masterclass.html?id=blackhole" className="md:hidden relative z-10 block px-4 pt-1 pb-8 group">
+        {/* El objeto SOLO, sin texto encima: es la doctrina visual del proyecto
+            (un objeto, fondo negro, sin competencia) y además el título en
+            ámbar sobre el disco ámbar perdía contraste. El texto vive debajo,
+            en negro puro. */}
+        <div className="relative rounded-2xl overflow-hidden border border-[#FDB813]/25">
+          <img
+            src="/img/bh-hero.webp" alt="Agujero negro con su disco de acreción curvado por la gravedad"
+            width={1400} height={787} fetchPriority="high" decoding="async"
+            className="w-full h-[31vh] min-h-[190px] object-cover"
+          />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#05060A] to-transparent" />
+        </div>
+        <div className="mt-4 text-[10px] font-mono uppercase tracking-[0.28em] text-[#FDB813]">
+          Física · Clase 1
+        </div>
+        {/* UN acento, no tres. El color ya lo pone la imagen. */}
+        <h1 className="mt-2 text-[31px] font-extrabold leading-[1.04] tracking-tight text-white">
+          Una hora aquí,<br />
+          <span className="text-[#FDB813]">siete años en casa.</span>
+        </h1>
+        <p className="mt-3 text-[14px] leading-relaxed text-[#CBD5E1]">
+          El planeta de Miller, Gargantua y TON&nbsp;618: por qué el tiempo se dobla
+          cerca de un agujero negro.
+        </p>
+        <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-[#FDB813] bg-[#FDB813]/15 px-6 py-4 text-[17px] font-bold text-[#FDB813]">
+          <span aria-hidden>▶</span> Ver la clase
+        </div>
+        <p className="mt-3 text-center text-[10.5px] font-mono text-[#64748B]">
+          30 escenas · narrada · simulador en vivo
+        </p>
+      </a>
+
+      {/* Hero de ESCRITORIO (en móvil manda el bloque de la clase, arriba) */}
+      <section className="hidden md:block relative z-10 px-6 max-w-[1400px] mx-auto pt-12 pb-16 text-center">
         <div className="text-[11px] uppercase tracking-[0.3em] text-[#FDB813] mb-4">
           La escuela que querías cuando ibas a clase
         </div>
@@ -109,11 +161,13 @@ export default function EscuelaPortal() {
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* MASTERCLASS — clases narradas por Matilda                    */}
       {/* ═══════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 px-6 max-w-[1400px] mx-auto pb-12">
-        {/* Física · Clase 1 — Agujeros negros */}
+      <section id="clases" className="relative z-10 px-6 max-w-[1400px] mx-auto pb-12">
+        {/* Física · Clase 1 — Agujeros negros.
+            En móvil se OCULTA: es exactamente la clase que ya ocupa el primer
+            pantallazo, y repetirla empujaba las demás aún más abajo. */}
         <a
           href="/masterclass.html?id=blackhole"
-          className="group block relative rounded-3xl overflow-hidden border-2 border-[#FDB813]/30 hover:border-[#FDB813] transition-all mb-6"
+          className="hidden md:block group relative rounded-3xl overflow-hidden border-2 border-[#FDB813]/30 hover:border-[#FDB813] transition-all mb-6"
           style={{
             background: 'linear-gradient(135deg, #1A0F08 0%, #05060A 55%, #150B22 100%)',
           }}

@@ -323,14 +323,18 @@ export default function Player() {
         />
       </div>
 
-      {/* Chalkboard — floating panel top-right (only when scene doesn't own it). */}
+      {/* Chalkboard — floating panel top-right (only when scene doesn't own it).
+          Medía 440 px FIJOS anclados a la derecha: en un teléfono de 360 px se
+          salía ~100 px por la IZQUIERDA y se comía el título de la clase
+          (medido a 360×686 siguiendo el embudo del anuncio de IG). Ahora se
+          acota al ancho disponible y baja para librar el título, que en móvil
+          ocupa dos o tres líneas. En escritorio queda igual que antes. */}
       {scene.scene !== 'econ-board' && scene.board && scene.board.length > 0 && (
         <div
-          className="absolute right-5 z-20 pointer-events-none"
+          className="absolute right-5 z-20 pointer-events-none top-[104px] sm:top-[68px]"
           style={{
-            top: '68px',
-            width: '440px',
-            maxHeight: 'calc(100vh - 180px)',
+            width: 'min(440px, calc(100vw - 2.5rem))',
+            maxHeight: 'calc(100vh - 210px)',
             overflow: 'hidden',
           }}
         >
