@@ -93,6 +93,33 @@ class CampoPuntual:
         return (self.q[None, :] * d[:, :, 2] / r).sum(axis=1)
 
 
+class CampoHidrogeno:
+    """El átomo de hidrógeno 1s: un protón + SU nube. Cerrado y EXACTO, sin base ni SCF.
+
+    Por simetría esférica, Gauss deja el campo en función de la carga ENCERRADA:
+        ρ_e(r) = e^{-2r}/π                        (1s normalizada, u.a.)
+        Q_e(r) = ∫₀^r ρ_e 4πr'² dr' = 1 − e^{-2r}(1 + 2r + 2r²)
+        Q(r)   = 1 − Q_e(r) = e^{-2r}(1 + 2r + 2r²)      ← carga NETA dentro de r
+        E(r)   = Q(r)/r² · r̂
+
+    Los dos límites son la pieza entera: en r→0 queda E = 1/r², el protón DESNUDO; y como el
+    átomo es NEUTRO, Q(r)→0 exponencialmente y el campo se apaga. La misma ley del hexágono
+    cerrado, ahora en un átomo de verdad: afuera no queda nada que se escape.
+    """
+
+    def __init__(self):
+        self.R = np.zeros((1, 3)); self.Z = np.array([1.0]); self.q = self.Z
+        self.n_eval = 0
+
+    def q_enc(self, r):
+        return np.exp(-2 * r) * (1 + 2 * r + 2 * r * r)
+
+    def __call__(self, P):
+        P = np.asarray(P, float).reshape(-1, 3); self.n_eval += len(P)
+        r = np.maximum(np.linalg.norm(P, axis=1), 1e-12)
+        return (self.q_enc(r) / r ** 3)[:, None] * P
+
+
 # ───────────────────────────────── EL CAMPO ─────────────────────────────────
 class CampoMEP:
     """E(r) = −∇V, con V = Σ_A Z_A/|r−R_A| − ∫ρ_e(r')/|r−r'| d³r'  (u.a.).

@@ -37,7 +37,7 @@ import os, sys, json, struct
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from campo_lineas import CampoPuntual, trazar, intensidad_u8
+from campo_lineas import CampoPuntual, CampoHidrogeno, trazar, intensidad_u8
 
 QUICK = '--quick' in sys.argv
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -52,8 +52,9 @@ POR_CARGA = 60             # líneas por unidad de carga (regla del libro: N ∝
 R0 = 0.05                  # cascarita de siembra
 LP = 80
 ETAPAS = 6                 # 1..6 cargas
+ETAPAS_H = 1               # + el ÁTOMO DE HIDRÓGENO: el mismo teorema, ya en materia real
 FR_ETAPA = 4 if QUICK else 11
-K = ETAPAS * FR_ETAPA
+K = (ETAPAS + ETAPAS_H) * FR_ETAPA
 NL = ETAPAS * POR_CARGA    # ranuras fijas (6 cargas × 30) — la ranura j es SIEMPRE la misma línea
 
 # hexágono, signos alternados: al encender de una en una, Q alterna +1, 0, +1, 0, …
@@ -70,21 +71,27 @@ ORDEN = [0, 3, 4, 1, 2, 5]
 
 TRAZA = dict(tol=1e-9, hmax=25.0, hmin=5e-4, r_core=R0 * 0.9, r_caja=3000.0,
              s_max=9000.0, e_min=1e-18, max_pasos=6000, max_muestras=2600)
+# Para el ÁTOMO el corte NO puede ser 1e-18: en un neutro esférico las líneas son rayos
+# radiales que no mueren en ninguna carga — se APAGAN. Se corta donde el campo deja de
+# importar físicamente: E_TÉRMICO = 9.5e-4 u.a., la agitación térmica a 298 K. Con eso las
+# líneas del protón terminan solas en el borde real del átomo (~4 bohr ≈ 2 Å).
+E_TERMICO = 9.5e-4
+TRAZA_ATOMO = dict(TRAZA, e_min=E_TERMICO, s_max=200.0, r_caja=60.0)
 R_DIBUJO = 15.0            # el .bin guarda hasta aquí (int16 bohr×2000 topa en 16.38)
 R_SEGURO = 20 * RAD        # 31 bohr: afuera de aquí el campo ya es monopolar → sin regreso
 
-def _vdc(n):
-    """van der Corput base 2 en [0,1): cualquier prefijo es cuasi-uniforme."""
-    out = np.zeros(n)
-    for i in range(n):
-        f, r, k = 0.5, 0.0, i
-        while k:
-            r += f * (k & 1); k >>= 1; f *= 0.5
-        out[i] = r
-    return out
+def _fibonacci_esfera(n):
+    """n direcciones repartidas en la ESFERA (espiral de Fibonacci): cada una se lleva el
+    mismo ángulo sólido 4π/n, o sea el mismo FLUJO. Esa es la condición que vuelve exacta la
+    cuenta de líneas de Gauss — sembrar ángulos iguales dentro de un PLANO no la cumple."""
+    i = np.arange(n) + 0.5
+    z = 1 - 2 * i / n
+    r = np.sqrt(np.maximum(0.0, 1 - z * z))
+    th = np.pi * (1 + 5 ** 0.5) * i          # ángulo áureo
+    return np.stack([r * np.cos(th), r * np.sin(th), z], axis=1)
 
 
-VDC = _vdc(POR_CARGA)      # ranura i → ángulo 2π·VDC[i] (FIJO entre cuadros: la ranura j es la misma línea)
+DIRS = _fibonacci_esfera(POR_CARGA)   # ranura i → dirección FIJA entre cuadros (la ranura j es la misma línea)
 
 
 def cargas_en(k):
@@ -153,44 +160,53 @@ def main():
     print(f"=== CARGAS · {K} cuadros · {NL} ranuras × {LP} pts · hexágono R={RAD} bohr ===", flush=True)
     print("k   n  Q total   líneas  se ESCAPAN   ceros del campo", flush=True)
     for k in range(K):
-        q = cargas_en(k)
-        act = np.abs(q) > 1e-6
-        cp = CampoPuntual(q[act], POS[act])
+        # ── ÚLTIMA ETAPA: EL ÁTOMO DE HIDRÓGENO ──
+        # El viaje va de la partícula ideal a la materia real. Un protón y SU nube: el mismo
+        # teorema del hexágono cerrado (carga neta cero ⇒ nada se escapa), pero aquí el − no es
+        # otra bolita, es una nube de probabilidad. Y el campo tiene forma CERRADA exacta:
+        #   Q(r) = e^{-2r}(1+2r+2r²)   ·   E(r) = Q(r)/r²      (1s, u.a.)
+        # En r→0 es el protón desnudo (1/r²); a 10 bohr el campo es 2 millones de veces menor
+        # que el de un protón desnudo. La nube se lo comió. Verificado: el flujo por una esfera
+        # da 4π·Q(r) a 1e-15.
+        atomo = k >= ETAPAS * FR_ETAPA
+        if atomo:
+            cp = CampoHidrogeno()
+            q = np.zeros(6); q[0] = 1.0
+            act = np.zeros(6, bool); act[0] = True
+        else:
+            q = cargas_en(k)
+            act = np.abs(q) > 1e-6
+            cp = CampoPuntual(q[act], POS[act])
         # semillas: ranura (carga n, dirección i) FIJA → correspondencia entre cuadros.
         # OJO: la ranura de una carga APAGADA no se traza. Sembrarla en la posición de esa
         # carga (que no está en cp) la convertía en una línea de campo REAL de las demás —
         # 150 líneas fantasma en el cuadro 2, contadas como fugas y además DIBUJADAS.
         S = np.zeros((NL, 3)); activa = np.zeros(NL, bool)
         for n in range(6):
-            # ORDEN DE BAJA DISCREPANCIA (van der Corput base 2): las direcciones son las mismas
-            # POR_CARGA de siempre, pero RECORRIDAS de modo que cualquier PREFIJO ya cubre el
-            # círculo casi uniforme. Antes, una carga a medio encender (q fraccionario) sembraba
-            # sus round(60·q) líneas en un ARCO CONTIGUO — un abanico de un solo lado, que no
-            # representa una carga puntual y hacía fallar la cuenta de Gauss en los cuadros de
-            # transición (en los de carga ENTERA el error era 0.7 líneas: la ley sí se cumplía).
-            a = 2 * np.pi * (VDC + 0.5 / POR_CARGA)
             nlin = int(round(POR_CARGA * q[n])) if q[n] > 1e-6 else 0   # solo las + nacen líneas
             for i in range(POR_CARGA):
                 j = n * POR_CARGA + i
                 S[j] = POS[n]
                 if i < nlin:
-                    S[j] = POS[n] + R0 * np.array([np.cos(a[i]), np.sin(a[i]), 0.0])
+                    orig = np.zeros(3) if atomo else POS[n]   # el átomo siembra en el PROTÓN
+                    S[j] = orig + R0 * DIRS[i]       # 3D: la ley es de ÁNGULO SÓLIDO, no de ángulo plano
                     activa[j] = True
         # ¿Vale el criterio geométrico de escape en ESTE cuadro? Solo si Q>0 y el campo ya es
         # saliente en toda la esfera R_SEGURO. Con Q=0 (el hexágono cerrado) NO vale: el campo
         # de ahí para afuera es dipolar y una línea lejana todavía puede regresar. Aplicarlo
         # igual metía 1 fuga fantasma justo en el cuadro que es el CLÍMAX de la pieza
         # ("carga neta cero ⇒ NADA escapa"), que es la afirmación que no puede fallar.
-        Q = float(q.sum())
+        Q = 0.0 if atomo else float(q.sum())   # el ÁTOMO es neutro: protón + electrón
         th = np.arccos(1 - 2 * (np.arange(240) + 0.5) / 240)
         ph = np.pi * (1 + 5 ** 0.5) * np.arange(240)
         U = np.stack([np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)], axis=1)
         radial_ok = bool(Q > 1e-9 and np.einsum('ij,ij->i', cp(U * R_SEGURO), U).min() > 0)
         idx_a = np.flatnonzero(activa)
         ef[k] = S[:, None, :]                          # por defecto: degenerada (invisible)
-        escapan = 0; absorbidas = 0; indet = 0
+        escapan = 0; absorbidas = 0; indet = 0; apagadas = 0
         if len(idx_a):
-            SP, SS, nm, mot = trazar(cp, S[idx_a], sentido=+1, nucleos=cp.R, **TRAZA)
+            SP, SS, nm, mot = trazar(cp, S[idx_a], sentido=+1, nucleos=cp.R,
+                                     **(TRAZA_ATOMO if atomo else TRAZA))
             for t, j in enumerate(idx_a):
                 n_j = int(nm[t])
                 cam = SP[t, :max(n_j, 1)]
@@ -219,6 +235,8 @@ def main():
                     escapan += 1
                 elif mot[t] == 2:
                     absorbidas += 1
+                elif mot[t] == 1:
+                    apagadas += 1        # el campo cayó por debajo del corte: la línea SE APAGA
                 else:
                     indet += 1
                 corte = int(np.argmax(~dentro)) if (~dentro).any() else len(cam)
@@ -229,9 +247,10 @@ def main():
                 ef[k, j] = pts
                 ei[k, j] = intensidad_u8(np.linalg.norm(cp(pts), axis=1), e_lo=2e-4, e_hi=40.0)
         nulos = ceros_del_campo(cp)
-        meta.append(dict(k=k, q=q.tolist(), pos=POS.tolist(), Q=Q,
+        meta.append(dict(k=k, q=q.tolist(), pos=(np.zeros((6, 3)).tolist() if atomo else POS.tolist()),
+                         atomo=bool(atomo), Q=Q,
                          n_activas=int(act.sum()), escapan=escapan,
-                         absorbidas=absorbidas, indet=indet,
+                         absorbidas=absorbidas, apagadas=apagadas, indet=indet,
                          ceros=[list(map(float, x)) for x in nulos]))
         # LA PREDICCIÓN DURA: por Gauss, el flujo que se va al infinito es 4πQ, y cada línea
         # carga 4π/POR_CARGA. Entonces las fugas TIENEN que ser POR_CARGA × Q. Si esto no
@@ -244,16 +263,15 @@ def main():
         # no exacto — el flujo sí es exacto y eso lo verifica campo-gate.py (Gauss a 6e-7).
         if abs(Q) < 1e-9 and escapan != 0:
             raise SystemExit(f"✗ cuadro {k}: Q=0 y se escapan {escapan} líneas — eso ROMPE la pieza")
-        # TOLERANCIA: ±3 líneas, no ±1.5. Cada línea vale 4π/POR_CARGA de flujo y la separatriz
-        # corta la esfera de siembra por donde cae: las líneas que nacen pegadas a esa frontera
-        # pueden irse a cualquiera de los dos lados. Con 60 líneas por carga el borde son ~√60≈8
-        # candidatas y el error medido en los 66 cuadros es 0.83 líneas (máximo 3). El caso
-        # NEUTRO no tiene ese error — ahí es 0 exacto, y por eso es la afirmación de la pieza.
+        # TOLERANCIA: con siembra ISOTRÓPICA EN 3D cada línea se lleva exactamente 4π/POR_CARGA
+        # de flujo, así que "escapan = POR_CARGA·Q" es teorema y no aproximación. Lo único que
+        # queda es el error de borde: las líneas que nacen pegadas a la separatriz pueden caer
+        # de cualquiera de los dos lados, y son ~√POR_CARGA de las POR_CARGA. Se mide abajo.
         esp = POR_CARGA * Q
         err = abs(escapan - esp)
         print(f"{k:2d}  {int(act.sum())}  {Q:+6.2f}   {int(activa.sum()):5d}"
               f"      {escapan:4d}   esperado {esp:5.1f}  {'OK ' if err <= 3 else 'X  '}   {len(nulos)}"
-              f"   radial:{'si' if radial_ok else 'NO'}  cierran:{absorbidas:3d}  indet:{indet:2d}", flush=True)
+              f"   radial:{'si' if radial_ok else 'NO'}  cierran:{absorbidas:3d}  apagan:{apagadas:3d}  indet:{indet:2d}", flush=True)
 
     with open(OUT_EF, 'wb') as fp:
         fp.write(struct.pack('<3i', K, NL, LP))

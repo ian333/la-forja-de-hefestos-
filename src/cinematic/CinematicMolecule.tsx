@@ -31,12 +31,13 @@ import {
   ringWide, ringFaceOn, ringEdgeToFace, ringOne, ringToBridge, eyeLevelLock,
 } from './camera-shots';
 import { evalCapas, type CapasSpec } from './capas';
+import katex from 'katex';
 import { WaterMD } from './WaterMD';
 
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const CARGAS_DURATION = 46.0;   // primer corte SIN voz: 5 tomas para aprobar a ojo
+const CARGAS_DURATION = 58.0;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO (sin voz todavía)
 const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -352,7 +353,11 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: ringFaceOn({ rMul: 1.05, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 8.0, label: 'entra el − : la primera línea MUERE' },
     { shot: heroOrbit({ rMul: 1.25, elev: 0.40, azim0: 1.2, span: 1.5, fov: 36 }), dur: 9.0, label: 'órbita: el campo es 3D, no un dibujo' },
     { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 8.0, label: 'la SEXTA cierra: ya nada escapa' },
-    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.86, rTdMul: 1.55, fovFrom: 34, fovTo: 40 }), dur: 12.0, label: 'payoff: el campo cerrado sobre sí mismo' },
+    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.86, rTdMul: 1.55, fovFrom: 34, fovTo: 40 }), dur: 10.0, label: 'payoff: el campo cerrado sobre sí mismo' },
+    // EL ÁTOMO: se entra despacio (el sujeto pasa de 11 a 4.6 bohr) y se orbita para que se
+    // vea que la nube ENVUELVE al protón en 3D — no es un disco.
+    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.0, label: 'ENTRA el átomo: protón + su nube' },
+    { shot: heroOrbit({ rMul: 0.66, elev: 0.30, azim0: 1.1, span: 1.9, fov: 33 }), dur: 10.0, label: 'órbita: las líneas SE APAGAN dentro de la nube' },
   ],
   // NaCl — EL ROBO A DISTANCIA: ver los dos separados → el electrón SALTA (whip) →
   // el Cl⁻ se ALZA sobre ti (ángulo bajo = poder del ladrón) → COLA.
@@ -2240,36 +2245,59 @@ function FieldNulls({ data, R, reveal, time, esc = 1 }: { data: CerosData; R: nu
   const pul = 0.86 + 0.14 * Math.sin(time * 2.4);
   return (
     <>
-      {out.map((p, i) => {
-        // ENCARA A LA CÁMARA. Con rotación FIJA el toro se ve de canto desde muchos ángulos y
-        // queda como una rayita blanca — parece un destello, no un anillo (visto en el 16:9).
-        // Billboard: el anillo se lee como anillo siempre, que es el punto de dibujarlo hueco.
-        // El EJE del toro (su +Y local) tiene que apuntar A la cámara. Antes usaba
-        // Matrix4.lookAt(camera.position, p, up), que da la orientación de un objeto QUE ESTÁ
-        // en la cámara mirando a p — no la de un objeto en p encarando la cámara: por eso en
-        // las cargas el anillo salía de CANTO (una rayita). setFromUnitVectors es lo correcto.
-        // OJO con el eje: TorusGeometry se genera en el plano XY, así que su eje es +Z (no +Y).
-        // Alineando +Y con la cámara el anillo queda inclinado y se ve OVALADO — se notó en las
-        // cargas, donde el cero está solo en el centro del cuadro y no hay dónde esconderlo.
-        const q = new THREE.Quaternion().setFromUnitVectors(
-          new THREE.Vector3(0, 0, 1),
-          new THREE.Vector3(camera.position.x - p[0], camera.position.y - p[1],
-                            camera.position.z - p[2]).normalize());
-        return (
-          <group key={i} position={p} quaternion={q}>
-            <mesh>
-              <torusGeometry args={[0.34 * pul * esc, 0.030 * esc, 8, 40]} />
-              <meshBasicMaterial color="#7dfbe0" transparent opacity={reveal * 0.95} depthWrite={false} />
-            </mesh>
-            {/* segundo anillo más tenue: da volumen sin llenar el hueco */}
-            <mesh>
-              <torusGeometry args={[0.52 * pul * esc, 0.014 * esc, 8, 40]} />
-              <meshBasicMaterial color="#7dfbe0" transparent opacity={reveal * 0.35} depthWrite={false} />
-            </mesh>
-          </group>
-        );
-      })}
+      {out.map((p, i) => (
+        <sprite key={i} position={p} scale={[1.30 * pul * esc, 1.30 * pul * esc, 1]}>
+          <spriteMaterial map={RING_TEX} color="#7dfbe0" transparent opacity={reveal * 0.95}
+            depthWrite={false} blending={THREE.AdditiveBlending} />
+        </sprite>
+      ))}
     </>
+  );
+}
+
+// ── FÓRMULAS EN LaTeX (KaTeX) — la ecuación Y qué representa cada símbolo ──
+// Va como overlay DOM sobre el canvas, no dentro del Canvas: drei <Text> revienta con
+// EffectComposer (regla del proyecto). KaTeX ya es dependencia y su CSS entra por main.css.
+// Cada fórmula aparece cuando su física está EN PANTALLA — la ecuación no es decoración,
+// es el pie de foto de lo que se está viendo.
+interface FormulaBeat { t0: number; t1: number; tex: string; que: string; }
+const CARGAS_FORMULAS: FormulaBeat[] = [
+  { t0: 5.5, t1: 10.0, tex: String.raw`\vec{E}=\frac{q}{r^{2}}\,\hat{r}`,
+    que: 'Coulomb: el campo de UNA carga cae con el cuadrado de la distancia' },
+  { t0: 12.5, t1: 18.0, tex: String.raw`\oint \vec{E}\cdot d\vec{A}=4\pi Q`,
+    que: 'Gauss: el flujo que atraviesa una superficie cerrada solo depende de la carga de ADENTRO' },
+  { t0: 20.0, t1: 25.5, tex: String.raw`N_{\text{escapan}}=\frac{Q}{q_{\text{línea}}}`,
+    que: 'Por eso se pueden CONTAR: cada línea lleva el mismo flujo' },
+  { t0: 33.0, t1: 39.0, tex: String.raw`\sum q_i = 0 \;\Rightarrow\; N_{\text{escapan}} = 0`,
+    que: 'Carga neta cero: las 180 líneas nacen en un + y mueren en un −' },
+  { t0: 41.5, t1: 47.0, tex: String.raw`Q(r)=e^{-2r}\left(1+2r+2r^{2}\right)`,
+    que: 'Hidrógeno 1s: la carga que queda DENTRO del radio r (protón menos nube)' },
+  { t0: 48.0, t1: 55.0, tex: String.raw`\vec{E}(r)=\frac{Q(r)}{r^{2}}\,\hat{r}`,
+    que: 'Misma ley de Coulomb… pero la nube se come la carga: a 10 bohr el campo es 2 millones de veces menor' },
+];
+
+function FormulaOverlay({ time, vertical, beats }: { time: number; vertical: boolean; beats: FormulaBeat[] }) {
+  const b = beats.find(x => time >= x.t0 - 0.5 && time <= x.t1 + 0.5);
+  const html = useMemo(() => {
+    if (!b) return '';
+    try { return katex.renderToString(b.tex, { displayMode: true, throwOnError: false }); }
+    catch { return ''; }
+  }, [b]);
+  if (!b || !html) return null;
+  const op = smoothstep((time - (b.t0 - 0.5)) / 0.5) * (1 - smoothstep((time - b.t1) / 0.5));
+  if (op < 0.01) return null;
+  return (
+    <div style={{ position: 'absolute', top: vertical ? '9%' : '7%', left: 0, right: 0, zIndex: 12,
+      pointerEvents: 'none', opacity: op, textAlign: 'center',
+      fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div className="chalk-katex" style={{ color: '#eaf6ff', fontSize: vertical ? '6.4vw' : '2.5vw',
+        textShadow: '0 4px 42px rgba(0,0,0,0.9)' }}
+        dangerouslySetInnerHTML={{ __html: html }} />
+      <div style={{ marginTop: vertical ? '2.4vw' : '0.9vw', color: 'rgba(127,212,255,0.92)',
+        fontSize: vertical ? '3.2vw' : '1.15vw', fontWeight: 500, lineHeight: 1.35,
+        maxWidth: vertical ? '84%' : '58%', margin: '0 auto',
+        textShadow: '0 2px 24px rgba(0,0,0,0.95)' }}>{b.que}</div>
+    </div>
   );
 }
 
@@ -2300,7 +2328,22 @@ const GLOW_TEX = (() => {
   const t = new THREE.CanvasTexture(c); t.needsUpdate = true; return t;
 })();
 
-type CargasCuadro = { k: number; q: number[]; pos: number[][]; Q: number; n_activas: number; escapan: number; ceros: number[][] };
+// textura del CERO: dos anillas concéntricas huecas. Va como SPRITE, no como toro, porque un
+// sprite lo encara three.js EN EL MOMENTO DE DIBUJAR. Calculando yo el quaternion con
+// camera.position quedaba un frame ATRASADO (el efecto que mueve la cámara corre DESPUÉS del
+// render), y con la cámara en movimiento el anillo salía ladeado: medido 1.130 de alto/ancho
+// en una toma con paneo contra 0.966 en una quieta. Un cero del campo no puede verse ovalado.
+const RING_TEX = (() => {
+  const N = 256, c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d')!;
+  g.strokeStyle = 'rgba(255,255,255,1)'; g.lineWidth = N * 0.055;
+  g.beginPath(); g.arc(N / 2, N / 2, N * 0.30, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,0.38)'; g.lineWidth = N * 0.022;
+  g.beginPath(); g.arc(N / 2, N / 2, N * 0.44, 0, Math.PI * 2); g.stroke();
+  const t = new THREE.CanvasTexture(c); t.needsUpdate = true; return t;
+})();
+
+type CargasCuadro = { k: number; q: number[]; pos: number[][]; Q: number; n_activas: number; escapan: number; ceros: number[][]; atomo?: boolean };
 type CargasMeta = { K: number; NL: number; LP: number; radio: number; por_carga: number; cuadros: CargasCuadro[] };
 
 // Coreografía como DATOS (capas.ts). `paso` recorre los 24 cuadros con PAUSAS donde la voz
@@ -2316,25 +2359,29 @@ const CARGAS_CAPAS: CapasSpec = {
   // configuraciones distintas, así que la carga nueva no aparece de golpe: las líneas SE
   // REACOMODAN. Y arranca con el hexágono COMPLETO (in medias res) porque abrir en la carga
   // sola dejaba el gancho casi en negro (medido: meanY 1.5, 97.7% del cuadro negro).
-  paso:    { base: 0.077, mods: [
-    { wins: [[0.0, 3.2]],   a: 0.846, label: 'GANCHO: ya cerrado, las 6, el campo entero' },
-    { wins: [[10.0, 13.0]], a: 0.169, label: '2 cargas: Q=0 y las 60 líneas CIERRAN' },
-    { wins: [[15.0, 18.5]], a: 0.338, label: '3 cargas: vuelve a haber fuga' },
-    { wins: [[20.5, 24.0]], a: 0.508, label: '4 cargas: cierra otra vez' },
-    { wins: [[26.0, 30.0]], a: 0.677, label: '5 cargas: 57 de 180 se van' },
-    { wins: [[32.0, 44.0]], a: 0.846, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas' }],
+  // 7 etapas en el .bin (77 cuadros = 7 × 11): 1..6 cargas + EL ÁTOMO. El centro de la etapa s
+  // es paso = (s·11 + 5)/76, así ninguna se salta. Base 0.066 = una sola carga.
+  paso:    { base: 0.066, mods: [
+    { wins: [[0.0, 3.2]],   a: 0.723, label: 'GANCHO: ya cerrado, las 6, el campo entero' },
+    { wins: [[10.0, 13.5]], a: 0.145, label: '2 cargas OPUESTAS: Q=0 y las 60 líneas CIERRAN' },
+    { wins: [[15.5, 18.5]], a: 0.289, label: '3: vuelve a haber fuga' },
+    { wins: [[20.5, 23.5]], a: 0.434, label: '4: cierra otra vez, 120 de 120' },
+    { wins: [[25.5, 28.5]], a: 0.579, label: '5: 59 de 180 se van' },
+    { wins: [[30.5, 39.0]], a: 0.723, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas' },
+    { wins: [[41.0, 58.0]], a: 0.868, label: 'EL ÁTOMO DE HIDRÓGENO: la misma ley en materia real' }],
   },
   campo:   { base: 0.95 },
   cargas:  { base: 1.0 },
   // el CERO del campo: aquí SÍ tiene sentido dibujarlo — cae en el centro del hexágono, con
   // líneas alrededor que se ven cancelarse (en el trímero caía en un hueco sin líneas y no
   // mostraba nada; ver el commit del 2026-07-29).
-  cero:    { base: 0, mods: [{ wins: [[36.0, 46.0]], a: 1.0, label: 'donde las seis se cancelan: E=0' }] },
+  cero:    { base: 0, mods: [{ wins: [[34.0, 39.0]], a: 1.0, label: 'donde las seis se cancelan: E=0' }] },
 };
 
 function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => void }) {
   const [ef, setEf] = useState<BondEFieldData | null>(null);
   const [meta, setMeta] = useState<CargasMeta | null>(null);
+  const bundleH = useMemo(() => buildAtomBundle(elementByZ(1)!), []);
   useEffect(() => {
     let alive = true;
     fetch('/precomputed/cargas-gauss-efield.bin').then(r => r.arrayBuffer())
@@ -2359,13 +2406,29 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
   const pts: Vec3[] = cu.pos.map(p => [p[0], p[1], p[2]] as Vec3);
   return (
     <>
-      <CargasCamera time={time} pts={pts} radio={meta.radio} />
+      {/* halo declarado por etapa: el hexágono llena ~11 bohr, el átomo muere a 3.95 bohr
+          (donde su campo cae al umbral térmico). Sin esto la cámara encuadra el átomo con el
+          tamaño del hexágono y queda un punto perdido en medio del cuadro. */}
+      <CargasCamera time={time} pts={pts} radio={meta.radio} rHalo={cu.atomo ? 4.6 : 11.0} />
       {/* el CAMPO: mismas líneas del anillo, mismo shader, mismo color de la serie */}
       {/* LÍNEAS MÁS BRILLANTES que en el agua: aquí el campo ES el sujeto (en el agua compite
           con la nube de electrones). El color es aditivo, así que subirlo = línea más presente
           sin engordarla — engordarla exigiría cambiar de líneas WebGL (1 px fijo) a geometría. */}
       <BondEField data={ef} R={R} time={time * 8} reveal={C.campo} col={[0.85, 1.45, 3.1]} />
-      {cu.pos.map((p, i) => {
+      {/* EL ÁTOMO: un protón y SU nube real (buildAtomBundle del hidrógeno = la misma
+          maquinaria de la serie de átomos). Las líneas de campo salen del .bin igual que
+          antes; lo que cambia es que aquí el − no es otra bolita sino una nube de
+          probabilidad, y por eso las líneas no MUEREN en nada: se APAGAN. */}
+      {cu.atomo && (
+        <>
+          <Nucleus protons={1} neutrons={0} time={time} clusterRadius={0.055}
+            nHot={[1.5, 0.72, 0.22]} nHue={0.08} />
+          {/* la nube del H tiene POCOS electrones (uno) → sin subir el brillo lee como polvo
+              de estrellas y no como una nube que ENVUELVE. 1.15 → 2.4, medido a ojo en 4K. */}
+          <ElectronCloud bundle={bundleH} time={time} holeRadius={0.05} brightness={2.4} />
+        </>
+      )}
+      {!cu.atomo && cu.pos.map((p, i) => {
         const q = cu.q[i];
         if (Math.abs(q) < 1e-6) return null;
         const mas = q > 0;
@@ -2398,13 +2461,13 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
 /** Cámara de las cargas: el SUJETO es el campo, no las bolitas. Por eso rHalo se declara
  *  grande a mano — la ley de encuadre mide el núcleo con `pts` (radio del hexágono = 1.55
  *  bohr) y si no le dices que el halo llega a ~11 bohr, encuadra las cargas y CORTA el campo. */
-function CargasCamera({ time, pts, radio }: { time: number; pts: Vec3[]; radio: number }) {
+function CargasCamera({ time, pts, radio, rHalo = 11.0 }: { time: number; pts: Vec3[]; radio: number; rHalo?: number }) {
   const { camera, size } = useThree();
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera;
     const asp = size.width / Math.max(1, size.height);
     const p = playShots(CAMERA_SHOTS.cargas, time,
-      { ex: radio * 4.2, nucX: 0, bondR: radio, t: time, pts, aspect: asp, rHalo: 11.0 });
+      { ex: radio * 4.2, nucX: 0, bondR: radio, t: time, pts, aspect: asp, rHalo });
     cam.position.set(p.pos[0], p.pos[1], p.pos[2]);
     cam.lookAt(p.target?.[0] ?? 0, p.target?.[1] ?? 0, p.target?.[2] ?? 0);
     const esVert = asp < 1;
@@ -3415,6 +3478,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         {!isCaro && <FieldLabel molKey={molKey} polar={isChain || (isCatalog && catField !== 'none') || (!isCatalog && !isDNA && !!data && partialCharges(data.nuclei).some(v => Math.abs(v) > 0.05))} time={time} vertical={vertical} />}
         {!isCaro && <MoleculeTitle mkey={molKey} time={time} vertical={vertical} />}
         {isBond(molKey) && <BondExplainer time={time} vertical={vertical} mol={molKey} />}
+        {isCargas && <FormulaOverlay time={time} vertical={vertical} beats={CARGAS_FORMULAS} />}
         {/* 16:9 — el default horizontal es cinemascope 2.39:1 (barras de 12.8%) y eso
             se COME el cuadro; el mandato es PANTALLA COMPLETA. Se iguala a la barra
             fina de la serie en vertical (5%): firma de cine sin void muerto. */}
