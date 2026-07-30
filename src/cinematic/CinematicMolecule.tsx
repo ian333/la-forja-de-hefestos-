@@ -37,7 +37,7 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const CARGAS_DURATION = 77.7;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (76.96s)
+const CARGAS_DURATION = 80.0;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (79.66s, 19 frases)
 const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -348,7 +348,7 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // plano z=0, así que DE FRENTE (face-on) es la toma que muestra la cuenta: se ven las líneas
   // escapar por los huecos… y dejar de escapar cuando entra la sexta carga.
   // Los cortes caen EN LOS SILENCIOS de la voz (segs.json de dist-video/cargas-narracion):
-  // 5.8 · 12.0 · 18.7 · 25.5 · 32.9 · 41.0 · 45.5 · 49.8 · 58.2 · 66.9 → suman 77.7 s.
+  // 9.6 · 15.6 · 22.4 · 29.3 · 36.5 · 43.8 · 48.4 · 52.8 · 61.3 · 68.8 → suman 80.0 s.
   cargas: [
     // GANCHO: el hexágono CERRADO, denso, oro + violeta. Es la imagen que captura (la receta
     // medida de los frame 0 que sí funcionaron), y la voz la nombra: "seis cargas…".
@@ -356,22 +356,22 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // del rig azim=π/2 pone la cámara SOBRE su normal → se ve plano, "desde arriba", y todo el
     // 3D se desperdicia (Ian: "eso lo arruina todo"). azim0≈0.8 es tres cuartos —entre el canto
     // y el frente— con elevación: se ven las líneas SALIR DEL PLANO hacia ti. Y orbita.
-    { shot: heroOrbit({ rMul: 1.18, elev: 0.34, azim0: 0.80, span: 0.85, fov: 38 }), dur: 8.4, label: 'GANCHO 3D: 6 cargas, 3 y 3, orbitando (voz 0.4-8.2)' },
+    { shot: heroOrbit({ rMul: 1.18, elev: 0.34, azim0: 0.80, span: 0.85, fov: 38 }), dur: 9.6, label: 'GANCHO 3D: 6 cargas, 3 y 3, orbitando (voz 0.4-8.2)' },
     // …y REBOBINA a una sola carga, ENCIMA: con rMul 1.02 el cuadro salía 96.8% NEGRO.
-    { shot: ringFaceOn({ rMul: 0.52, azim0: Math.PI / 2 + 0.25, span: 0.30, elev: 0.06, fov: 40 }), dur: 6.2, label: 'UNA carga sola, ENCIMA: todo escapa (voz 6.3-10.7)' },
-    { shot: ringFaceOn({ rMul: 0.95, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 6.7, label: 'entra el − : las 60 MUEREN (voz 11.3-18.0)' },
-    { shot: heroOrbit({ rMul: 1.12, elev: 0.34, azim0: 1.2, span: 1.1, fov: 35 }), dur: 6.8, label: 'órbita 3 y 4 cargas: el campo es 3D (voz 18.6-24.9)' },
-    { shot: ringFaceOn({ rMul: 1.20, azim0: Math.PI / 2, span: 0.22, elev: 0.05, fov: 36 }), dur: 7.4, label: 'GAUSS: contar lo que sale (voz 25.5-32.2)' },
-    { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 8.1, label: 'la SEXTA cierra: 180 de 180 (voz 32.8-40.3)' },
+    { shot: ringFaceOn({ rMul: 0.52, azim0: Math.PI / 2 + 0.25, span: 0.30, elev: 0.06, fov: 40 }), dur: 6.0, label: 'UNA carga sola, ENCIMA: todo escapa (voz 6.3-10.7)' },
+    { shot: ringFaceOn({ rMul: 0.95, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 6.8, label: 'entra el − : las 60 MUEREN (voz 11.3-18.0)' },
+    { shot: heroOrbit({ rMul: 1.12, elev: 0.34, azim0: 1.2, span: 1.1, fov: 35 }), dur: 6.9, label: 'órbita 3 y 4 cargas: el campo es 3D (voz 18.6-24.9)' },
+    { shot: ringFaceOn({ rMul: 1.20, azim0: Math.PI / 2, span: 0.22, elev: 0.05, fov: 36 }), dur: 7.2, label: 'GAUSS: contar lo que sale (voz 25.5-32.2)' },
+    { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 7.3, label: 'la SEXTA cierra: 180 de 180 (voz 32.8-40.3)' },
     // "y en el centro el campo vale cero exacto": la cámara SE METE al hueco del hexágono.
     // El cero no se dibuja (Ian lo mandó quitar) — se ve: ahí no pasa NINGUNA línea.
-    { shot: crashIn({ rFrom: 1.00, rTo: 0.62, elev: 0.05, azim0: Math.PI / 2, fov: 34 }), dur: 4.5, label: 'AL CENTRO: el hueco donde E=0 (voz 40.9-44.9)' },
-    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.72, rTdMul: 1.45, fovFrom: 34, fovTo: 40 }), dur: 4.3, label: '"pero son bolitas ideales" (voz 45.5-49.2)' },
+    { shot: crashIn({ rFrom: 1.00, rTo: 0.62, elev: 0.05, azim0: Math.PI / 2, fov: 34 }), dur: 4.6, label: 'AL CENTRO: el hueco donde E=0 (voz 40.9-44.9)' },
+    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.72, rTdMul: 1.45, fovFrom: 34, fovTo: 40 }), dur: 4.4, label: '"pero son bolitas ideales" (voz 45.5-49.2)' },
     // EL ÁTOMO: se entra despacio (el sujeto pasa de 11 a 4.6 bohr) y se orbita para que se
     // vea que la nube ENVUELVE al protón en 3D — no es un disco.
-    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.4, label: 'ENTRA el átomo: protón + su nube (voz 49.8-57.6)' },
-    { shot: heroOrbit({ rMul: 0.72, elev: 0.30, azim0: 1.1, span: 1.2, fov: 33 }), dur: 8.7, label: 'la nube ENVUELVE al protón (voz 58.2-66.3)' },
-    { shot: heroOrbit({ rMul: 0.62, elev: -0.18, azim0: 2.6, span: 1.6, fov: 35 }), dur: 10.8, label: 'las líneas SE APAGAN dentro de la nube (voz 66.9-76.4)' },
+    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.5, label: 'ENTRA el átomo: protón + su nube (voz 49.8-57.6)' },
+    { shot: heroOrbit({ rMul: 0.72, elev: 0.30, azim0: 1.1, span: 1.2, fov: 33 }), dur: 7.5, label: 'la nube ENVUELVE al protón (voz 58.2-66.3)' },
+    { shot: heroOrbit({ rMul: 0.62, elev: -0.18, azim0: 2.6, span: 1.6, fov: 35 }), dur: 11.2, label: 'las líneas SE APAGAN dentro de la nube (voz 66.9-76.4)' },
   ],
   // NaCl — EL ROBO A DISTANCIA: ver los dos separados → el electrón SALTA (whip) →
   // el Cl⁻ se ALZA sobre ti (ángulo bajo = poder del ladrón) → COLA.
@@ -2281,17 +2281,17 @@ interface FormulaBeat { t0: number; t1: number; tex: string; que: string; }
 const CARGAS_FORMULAS: FormulaBeat[] = [
 // El `que` va a UNA sola línea: a 3.2vw sobre 84% de un 9:16 caben ~50 caracteres, y la
 // segunda línea caía justo encima de la carga de arriba (medido en el still de t=36).
-  { t0: 6.4, t1: 10.7, tex: String.raw`\vec{E}=\frac{q}{r^{2}}\,\hat{r}`,
+  { t0: 9.9, t1: 14.4, tex: String.raw`\vec{E}=\frac{q}{r^{2}}\,\hat{r}`,
     que: 'Coulomb: el campo cae con el CUADRADO de r' },
-  { t0: 14.0, t1: 18.0, tex: String.raw`Q_{\text{dentro}} = (+q) + (-q) = 0`,
+  { t0: 17.8, t1: 21.9, tex: String.raw`Q_{\text{dentro}} = (+q) + (-q) = 0`,
     que: 'Carga neta 0 adentro: las 60 líneas CIERRAN' },
-  { t0: 25.5, t1: 32.1, tex: String.raw`\oint \vec{E}\cdot d\vec{A}=4\pi Q`,
+  { t0: 29.4, t1: 35.3, tex: String.raw`\oint \vec{E}\cdot d\vec{A}=4\pi Q`,
     que: 'El flujo solo depende de la carga de ADENTRO' },
-  { t0: 32.8, t1: 40.3, tex: String.raw`\sum q_i = 0 \;\Rightarrow\; N_{\text{escapan}} = 0`,
+  { t0: 35.9, t1: 43.3, tex: String.raw`\sum q_i = 0 \;\Rightarrow\; N_{\text{escapan}} = 0`,
     que: '180 líneas: todas nacen en + y mueren en −' },
-  { t0: 49.8, t1: 57.5, tex: String.raw`Q(r)=e^{-2r}\left(1+2r+2r^{2}\right)`,
+  { t0: 52.8, t1: 60.8, tex: String.raw`Q(r)=e^{-2r}\left(1+2r+2r^{2}\right)`,
     que: 'H 1s: la carga que queda DENTRO del radio r' },
-  { t0: 62.1, t1: 71.7, tex: String.raw`\vec{E}(r)=\frac{Q(r)}{r^{2}}\,\hat{r}`,
+  { t0: 64.2, t1: 74.0, tex: String.raw`\vec{E}(r)=\frac{Q(r)}{r^{2}}\,\hat{r}`,
     que: 'La nube se come la carga: el campo se APAGA' },
 ];
 
@@ -2417,13 +2417,13 @@ const CARGAS_CAPAS: CapasSpec = {
   // sumarse consigo mismo. La subida cae en el segundo EXACTO en que la voz lo dice
   // (segs.json: 8.68 · 16.15 · 19.75 · 25.82 · 30.08 · 48.29).
   paso:    { base: 0.0658, mods: [
-    { wins: [[0.0, 5.2]],    a: 0.72368, label: 'GANCHO: el hexágono CERRADO, 180 líneas (voz 0.40)' },
-    { wins: [[12.0, 18.7]],  a: 0.14474, label: '2 OPUESTAS: Q=0 y las 60 líneas CIERRAN (voz 11.30)' },
-    { wins: [[19.3, 22.2]],  a: 0.28947, label: '3: vuelve a haber fuga (voz 18.61)' },
-    { wins: [[22.8, 28.4]],  a: 0.43421, label: '4: cierra otra vez, 120 de 120 (voz 22.08)' },
-    { wins: [[29.0, 32.9]],  a: 0.57895, label: '5: 59 de 180 se van (voz 28.29)' },
-    { wins: [[33.5, 49.8]],  a: 0.72368, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas (voz 32.78)' },
-    { wins: [[50.4, 77.7]],  a: 0.86842, label: 'EL ÁTOMO DE HIDRÓGENO: la misma ley en materia real (voz 49.83)' }],
+    { wins: [[0.0, 9.3]],    a: 0.72368, label: 'GANCHO: 6 cargas, 3 y 3, las 180 líneas (voz 0.40-9.31)' },
+    { wins: [[15.7, 22.6]],  a: 0.14474, label: '2 OPUESTAS: Q=0 y las 60 líneas CIERRAN (voz 14.96)' },
+    { wins: [[23.2, 26.2]],  a: 0.28947, label: '3: vuelve a haber fuga (voz 22.49)' },
+    { wins: [[26.8, 32.1]],  a: 0.43421, label: '4: cierra otra vez, 120 de 120 (voz 26.06)' },
+    { wins: [[32.7, 36.0]],  a: 0.57895, label: '5: 59 de 180 se van (voz 31.98)' },
+    { wins: [[36.6, 52.9]],  a: 0.72368, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas (voz 35.87)' },
+    { wins: [[53.5, 80.0]],  a: 0.86842, label: 'EL ÁTOMO DE HIDRÓGENO: la misma ley en materia real (voz 52.79)' }],
   },
   campo:   { base: 0.95 },
   cargas:  { base: 1.0 },
@@ -2469,7 +2469,7 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
   // ventana el ancla es el hexágono real: al abrir en el hexágono cerrado (el gancho) hay que
   // encuadrarlo COMPLETO, no la carga.
   const iSola = cu.q.findIndex(q => Math.abs(q) > 1e-6);
-  const sola = smoothstep((time - 5.4) / 0.8) * (1 - smoothstep((time - 11.4) / 0.8));
+  const sola = smoothstep((time - 9.0) / 0.9) * (1 - smoothstep((time - 15.1) / 0.9));
   const d0: Vec3 = (!cu.atomo && iSola >= 0 && sola > 0.001)
     ? [cu.pos[iSola][0] * sola, cu.pos[iSola][1] * sola, cu.pos[iSola][2] * sola]
     : [0, 0, 0];

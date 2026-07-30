@@ -6,7 +6,7 @@
     "query": "m=cargas",
     "hook": "__cinematicAtom"
   },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 77.7 },
+  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 80.0 },
   "render": { "shards": 5, "batch": 40, "frames": "dist-video/.cargasframes" },
   "audio": {
     "dir": "dist-video/cargas-narracion",
@@ -14,7 +14,7 @@
     "musica": "cargas-music.wav",
     "musicaVol": 0.17,
     "musicaFadeIn": 2.5,
-    "musicaFadeOutAt": 71,
+    "musicaFadeOutAt": 73,
     "segs": "segs.json",
     "ass": "cargas.ass"
   },
