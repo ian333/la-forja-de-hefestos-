@@ -1,0 +1,37 @@
+Esto es una carga eléctrica.
+Sola, su campo se va al infinito.
+Cuenta las líneas: sesenta.
+Ahora traemos su opuesta.
+Y mira lo que pasa.
+Ninguna se escapa.
+Las sesenta nacen en el más y mueren en el menos.
+El campo se cerró sobre sí mismo.
+Agregamos otra carga.
+Vuelve a haber fuga.
+Porque otra vez sobra carga.
+Ponemos su pareja y se vuelve a cerrar.
+Ciento veinte líneas, y ninguna se va.
+Esto no es un dibujo bonito.
+Es la ley de Gauss.
+El flujo que sale de una superficie cerrada solo depende de la carga que hay adentro.
+Si la suma da cero, no sale nada.
+Las seis cargas.
+Ciento ochenta líneas.
+Cero fugas.
+Y en el centro, un punto donde el campo vale cero exacto.
+Ahí una carga de prueba no se movería.
+Pero todo esto son bolitas ideales.
+¿Y la materia de verdad?
+Este es un átomo de hidrógeno.
+Un protón, y su electrón.
+El electrón no es una bolita: es esta nube.
+El protón jala hacia afuera con toda su fuerza.
+Pero la nube tiene la carga contraria.
+Y el átomo, completo, es neutro.
+Mira las líneas.
+No mueren en ninguna parte: se apagan.
+A dos angstroms ya no queda campo.
+La nube se comió el noventa y ocho por ciento.
+A diez radios de Bohr, el campo es dos millones de veces más débil.
+La misma ley que contamos con bolitas.
+Ahora en materia real.
