@@ -1,3 +1,4 @@
+Seis cargas: tres positivas y tres negativas.
 Ciento ochenta líneas de campo, y ninguna se escapa. Empecemos por una sola.
 Sola, su campo se va al infinito: sesenta líneas.
 Ahora traemos su opuesta.

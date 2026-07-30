@@ -350,9 +350,13 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // Los cortes caen EN LOS SILENCIOS de la voz (segs.json de dist-video/cargas-narracion):
   // 5.8 · 12.0 · 18.7 · 25.5 · 32.9 · 41.0 · 45.5 · 49.8 · 58.2 · 66.9 → suman 77.7 s.
   cargas: [
-    // GANCHO: el hexágono CERRADO, denso, oro + magenta. Es la imagen que captura (la receta
-    // medida de los frame 0 que sí funcionaron), y la voz la nombra: "ciento ochenta líneas".
-    { shot: ringFaceOn({ rMul: 1.10, azim0: Math.PI / 2, span: 0.16, elev: 0.05, fov: 36 }), dur: 5.8, label: 'GANCHO: 180 líneas y ninguna se escapa (voz 0.4-5.7)' },
+    // GANCHO: el hexágono CERRADO, denso, oro + violeta. Es la imagen que captura (la receta
+    // medida de los frame 0 que sí funcionaron), y la voz la nombra: "seis cargas…".
+    // EN 3D Y EN MOVIMIENTO, no de frente. El hexágono vive en el plano z=0 y en la convención
+    // del rig azim=π/2 pone la cámara SOBRE su normal → se ve plano, "desde arriba", y todo el
+    // 3D se desperdicia (Ian: "eso lo arruina todo"). azim0≈0.8 es tres cuartos —entre el canto
+    // y el frente— con elevación: se ven las líneas SALIR DEL PLANO hacia ti. Y orbita.
+    { shot: heroOrbit({ rMul: 1.18, elev: 0.34, azim0: 0.80, span: 0.85, fov: 38 }), dur: 8.4, label: 'GANCHO 3D: 6 cargas, 3 y 3, orbitando (voz 0.4-8.2)' },
     // …y REBOBINA a una sola carga, ENCIMA: con rMul 1.02 el cuadro salía 96.8% NEGRO.
     { shot: ringFaceOn({ rMul: 0.52, azim0: Math.PI / 2 + 0.25, span: 0.30, elev: 0.06, fov: 40 }), dur: 6.2, label: 'UNA carga sola, ENCIMA: todo escapa (voz 6.3-10.7)' },
     { shot: ringFaceOn({ rMul: 0.95, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 6.7, label: 'entra el − : las 60 MUEREN (voz 11.3-18.0)' },
@@ -2487,7 +2491,7 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
           con la nube de electrones). El color es aditivo, así que subirlo = línea más presente
           sin engordarla — engordarla exigiría cambiar de líneas WebGL (1 px fijo) a geometría. */}
       {/* aquí el campo ES el sujeto (no compite con una nube de electrones): cinta más gruesa */}
-      <BondEField data={ef} R={R} time={time * 8} reveal={C.campo} col={[0.85, 1.45, 3.1]} ancho={3.8} />
+      <BondEField data={ef} R={R} time={time * 8} reveal={C.campo} col={[0.85, 1.45, 3.1]} ancho={3.8} rampa={1} />
       {/* EL ÁTOMO: un protón y SU nube real (buildAtomBundle del hidrógeno = la misma
           maquinaria de la serie de átomos). Las líneas de campo salen del .bin igual que
           antes; lo que cambia es que aquí el − no es otra bolita sino una nube de
@@ -2593,10 +2597,11 @@ function parseBondEField(buf: ArrayBuffer): BondEFieldData {
 // y Ian lo cachó como "hay muy poco espectáculo visual". Ahora cada segmento es una CINTA
 // orientada a la pantalla, con perfil suave a lo ancho para que lea como filamento de luz
 // y no como listón plano.
-// `rampa`: colorea la línea por |E| en vez de un azul fijo. MEDIDA Y RECHAZADA (2026-07-30):
-// baja el colorido de 41.2 a 39.4 porque el oro que mete cerca de las cargas compite con el
-// oro de la carga misma y el cian de en medio desatura. Se queda apagada por default; está
-// aquí para que no se vuelva a proponer sin medirla.
+// `rampa`: colorea la línea por la DIRECCIÓN del campo (oro donde nace en el +, violeta donde
+// muere en el −). Ian: "usa colores, unos son positivos y otros negativos, aquí las líneas son
+// iguales". Antes probé colorear por |E| y lo MEDÍ: bajaba el colorido de 41.2 a 39.4 (el oro
+// competía con el de la carga y el cian desaturaba). Por dirección sí paga, y además enseña.
+// Default 0 = apagada, para no mover el look ya aprobado de O₂/agua.
 function BondEField({ data, R, time, reveal, col, ancho = 2.6, rampa = 0 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number }) {
   const { K, NL, LP, Rvals, frames, inten } = data;
   const cCol = col ?? [0.55, 0.85, 1.0];
@@ -2665,14 +2670,15 @@ function BondEField({ data, R, time, reveal, col, ancho = 2.6, rampa = 0 }: { da
           float a=uOp*(base + 0.13*glow*mix(1.0,campo,uUsaE)); // el pulso tampoco brilla donde no hay campo
           // perfil A LO ANCHO: núcleo brillante que se desvanece al borde = filamento, no listón.
           a *= pow(max(0.0, 1.0 - vLado*vLado), 1.1);
-          // TONO POR |E|: azul profundo (campo débil) → cian → oro blanco (campo intenso).
+          // EL COLOR ES LA DIRECCIÓN DEL CAMPO. En el precompute SOLO las cargas +
+          // siembran líneas y se trazan hacia adelante, así que s=0 es SIEMPRE el extremo +
+          // y s=1 el −. Pintarlo oro→violeta no es adorno: dice de dónde NACE y dónde MUERE
+          // cada línea, y hace juego con el color de las cargas (+ oro, − magenta).
           vec3 c = uCol;
           if (uRampa > 0.5) {
-            float e = clamp(vE, 0.0, 1.0);
-            vec3 frio = vec3(0.10, 0.30, 1.35);
-            vec3 medio = vec3(0.30, 1.05, 2.05);
-            vec3 cal  = vec3(2.30, 1.50, 0.62);
-            c = e < 0.62 ? mix(frio, medio, e/0.62) : mix(medio, cal, (e-0.62)/0.38);
+            vec3 nace  = vec3(2.35, 1.30, 0.40);   // ORO: sale del +
+            vec3 muere = vec3(1.30, 0.42, 2.45);   // VIOLETA: entra al −
+            c = mix(nace, muere, smoothstep(0.12, 0.88, s));
           }
           gl_FragColor=vec4(c*a*2.0, a); }`,
       // DoubleSide OBLIGATORIO: el sentido de giro del quad depende de hacia dónde apunta el
