@@ -331,10 +331,14 @@ export default function Player() {
           ocupa dos o tres líneas. En escritorio queda igual que antes. */}
       {scene.scene !== 'econ-board' && scene.board && scene.board.length > 0 && (
         <div
-          className="absolute right-5 z-20 pointer-events-none top-[104px] sm:top-[68px]"
+          // En vertical NO caben pizarrón + escena + narración a tamaño de
+          // escritorio. Acotar la ALTURA cortaba el marco de madera a la mitad
+          // (se ve feo y además miente sobre dónde termina). Se achica el ancho:
+          // el pizarrón encoge entero, las fórmulas siguen legibles, y la
+          // escena 3D —lo que la clase promete— recupera pantalla.
+          className="absolute right-5 z-20 pointer-events-none top-[104px] sm:top-[68px] max-h-[calc(100vh-210px)]"
           style={{
-            width: 'min(440px, calc(100vw - 2.5rem))',
-            maxHeight: 'calc(100vh - 210px)',
+            width: 'min(440px, 64vw)',
             overflow: 'hidden',
           }}
         >
@@ -349,7 +353,9 @@ export default function Player() {
 
       {/* Cinematic top/bottom gradient overlays */}
       <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/80 to-transparent pointer-events-none" />
-      <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/95 to-transparent pointer-events-none" />
+      {/* 224 px de degradado en una pantalla de 686 es un tercio del alto: en
+          móvil se come la escena. */}
+      <div className="absolute inset-x-0 bottom-0 h-40 sm:h-56 bg-gradient-to-t from-black/95 to-transparent pointer-events-none" />
 
       {/* Title bar */}
       <div className="absolute top-4 left-6 right-6 flex items-center justify-between text-[12px] font-mono">
@@ -364,10 +370,13 @@ export default function Player() {
         )}
       </div>
 
-      {/* Subtitle */}
-      <div className="absolute bottom-24 left-0 right-0 px-12 pointer-events-none">
+      {/* Subtitle — en móvil iba a 20 px con 48 px de padding por lado: sobre
+          360 px de pantalla quedaban 264 px útiles y la narración salía en OCHO
+          líneas que tapaban la escena 3D (que es justo lo que la clase promete
+          y lo único que no se veía en el teléfono). */}
+      <div className="absolute bottom-[86px] sm:bottom-24 left-0 right-0 px-5 sm:px-12 pointer-events-none">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-[20px] leading-snug text-white font-medium tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+          <p className="text-[14.5px] sm:text-[20px] leading-snug text-white font-medium tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
             {started ? scene.text.replace(/\[[^\]]+\]/g, '').replace(/\.\.\./g, '…').replace(/\s+/g, ' ').trim() : 'Pon los audífonos. Una sola idea, llevada hasta el final.'}
           </p>
         </div>
