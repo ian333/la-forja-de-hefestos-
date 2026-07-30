@@ -19,7 +19,7 @@
  * Playwright haga clic de forma estable (btn-extrude, input-altura, …).
  */
 
-import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, lazy, Suspense, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, lazy, Suspense, Component, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { ACESFilmicToneMapping } from 'three';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
@@ -1924,6 +1924,21 @@ function PartMesh({ geo, color, metalness = 0.15, roughness = 0.55, opacity = 1,
   );
 }
 
+/**
+ * ErrorBoundary MINÚSCULO para el HDRI del entorno. Es lo único que separa
+ * "se ven menos bonitos los reflejos" de "La Forja no abre": sin él, un fallo
+ * de red en un .hdr de 1.7 MB propaga hasta el boundary del módulo y mata el
+ * CAD completo (le pasó a un visitante real, 2026-07-21 — lo cazó la
+ * telemetría). Falla en silencio a propósito: la escena sigue iluminada por
+ * las luces direccionales.
+ */
+class EnvBoundary extends Component<{ children: ReactNode }, { caido: boolean }> {
+  state = { caido: false };
+  static getDerivedStateFromError() { return { caido: true }; }
+  componentDidCatch(e: unknown) { console.warn('HDRI del entorno no cargó (se sigue sin reflejos):', e); }
+  render() { return this.state.caido ? null : this.props.children; }
+}
+
 /** Resalte FANTASMA para componentes ENTERRADOS (agua/colada): una segunda
  *  pasada con depthTest OFF → se ve A TRAVÉS de las placas (mismo truco que la
  *  nube de alarma). Sin esto "Clic = resaltar en 3D" no resalta NADA en esos
@@ -3019,8 +3034,19 @@ function CadViewport({
         {/* HDRI de estudio que el METAL REFLEJA (es lo que lo hace ver real, como
             KeyShot/Plasticity). environmentIntensity ~1.0 → reflejos vivos en las
             caras; los directionales bajan para no doblar el highlight. Sin
-            background (el fondo lo pone el div en degradado). */}
-        <Environment files="/hdri/studio_small_03_1k.hdr" background={false} environmentIntensity={1.0} />
+            background (el fondo lo pone el div en degradado).
+
+            EN SU PROPIO ErrorBoundary + Suspense: son 1.7 MB y el `useLoader` de
+            <Environment> LANZA si la descarga falla. La telemetría cazó a un
+            VISITANTE REAL (2026-07-21) al que se le cayó la red a media carga y
+            el ErrorBoundary del módulo se tragó LA FORJA ENTERA por un reflejo.
+            Un asset decorativo jamás debe tumbar el CAD: si no baja, se pierden
+            los reflejos y se sigue trabajando con las luces direccionales. */}
+        <EnvBoundary>
+          <Suspense fallback={null}>
+            <Environment files="/hdri/studio_small_03_1k.hdr" background={false} environmentIntensity={1.0} />
+          </Suspense>
+        </EnvBoundary>
 
         {/* LUZ DE ESTUDIO SUAVE — el HDRI hace el grueso del modelado; estos solo
             dan dirección y la sombra de contacto al piso. Intensidades bajas para
