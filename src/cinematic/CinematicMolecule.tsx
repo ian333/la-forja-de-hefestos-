@@ -2602,33 +2602,43 @@ function parseBondEField(buf: ArrayBuffer): BondEFieldData {
 // iguales". Antes probé colorear por |E| y lo MEDÍ: bajaba el colorido de 41.2 a 39.4 (el oro
 // competía con el de la carga y el cian desaturaba). Por dirección sí paga, y además enseña.
 // Default 0 = apagada, para no mover el look ya aprobado de O₂/agua.
-function BondEField({ data, R, time, reveal, col, ancho = 2.6, rampa = 0 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number }) {
+function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number }) {
   const { K, NL, LP, Rvals, frames, inten } = data;
   const cCol = col ?? [0.55, 0.85, 1.0];
   const gl = useThree(s => s.gl);
   const alto = useThree(s => s.size.height) * useThree(s => s.viewport.dpr);
   const built = useMemo(() => {
-    const nseg = NL * (LP - 1);
-    // 4 vértices por segmento (una cinta): [pA-, pA+, pB-, pB+]
-    const pos = new Float32Array(nseg * 12), otro = new Float32Array(nseg * 12);
-    const aS = new Float32Array(nseg * 4), aL = new Float32Array(nseg * 4);
-    const aE = new Float32Array(nseg * 4), aLado = new Float32Array(nseg * 4);
-    const idx = new Uint32Array(nseg * 6);
-    let os = 0, ol = 0, od = 0, oi = 0, seg = 0;
-    for (let j = 0; j < NL; j++) for (let s = 0; s < LP - 1; s++) {
-      const s0 = s / (LP - 1), s1 = (s + 1) / (LP - 1);
-      aS[os++] = s0; aS[os++] = s0; aS[os++] = s1; aS[os++] = s1;
-      aL[ol++] = j; aL[ol++] = j; aL[ol++] = j; aL[ol++] = j;
-      aLado[od++] = -1; aLado[od++] = 1; aLado[od++] = -1; aLado[od++] = 1;
-      const b = seg * 4;
-      idx[oi++] = b; idx[oi++] = b + 1; idx[oi++] = b + 2;
-      idx[oi++] = b + 2; idx[oi++] = b + 1; idx[oi++] = b + 3;
-      seg++;
+    // UNA TIRA CONTINUA POR LÍNEA (2 vértices por punto), no cuadros sueltos por
+    // segmento. Con cuadros sueltos cada uno se ensancha perpendicular a SU propia
+    // dirección y en cada unión los bordes no coinciden: a 10 px de ancho eso se ve
+    // como RIZADO en todas las líneas (Ian, 2026-07-30). Con la tira, cada punto
+    // conoce a sus DOS vecinos y se ensancha por el MITER (tangente promedio).
+    const V = NL * LP;
+    const pos = new Float32Array(V * 6), ant = new Float32Array(V * 6), sig = new Float32Array(V * 6);
+    const aS = new Float32Array(V * 2), aL = new Float32Array(V * 2);
+    const aE = new Float32Array(V * 2), aLado = new Float32Array(V * 2);
+    const idx = new Uint32Array(NL * (LP - 1) * 6);
+    let o = 0, oi = 0;
+    for (let j = 0; j < NL; j++) {
+      for (let s = 0; s < LP; s++) {
+        const u = s / (LP - 1);
+        aS[o] = u; aS[o + 1] = u;
+        aL[o] = j; aL[o + 1] = j;
+        aLado[o] = -1; aLado[o + 1] = 1;
+        o += 2;
+      }
+      const b = j * LP * 2;
+      for (let s = 0; s < LP - 1; s++) {
+        const q = b + s * 2;
+        idx[oi++] = q; idx[oi++] = q + 1; idx[oi++] = q + 2;
+        idx[oi++] = q + 2; idx[oi++] = q + 1; idx[oi++] = q + 3;
+      }
     }
     aE.fill(1);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('aOtro', new THREE.BufferAttribute(otro, 3));
+    geo.setAttribute('aAnt', new THREE.BufferAttribute(ant, 3));
+    geo.setAttribute('aSig', new THREE.BufferAttribute(sig, 3));
     geo.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
     geo.setAttribute('aL', new THREE.BufferAttribute(aL, 1));
     geo.setAttribute('aE', new THREE.BufferAttribute(aE, 1));
@@ -2639,59 +2649,61 @@ function BondEField({ data, R, time, reveal, col, ancho = 2.6, rampa = 0 }: { da
                   uT: { value: 0 }, uUsaE: { value: inten ? 1 : 0 },
                   uRes: { value: new THREE.Vector2(2160, 3840) }, uW: { value: 4.4 },
                   uRampa: { value: 0 } },
-      // La cinta se ANCHA en espacio de PANTALLA: se proyectan los dos extremos, se saca la
-      // normal en píxeles y se desplaza ±uW/2. Así el grosor no depende de la distancia a la
-      // cámara (una línea de campo lejana sigue siendo visible) ni del zoom.
-      vertexShader: `attribute vec3 aOtro; attribute float aS; attribute float aL; attribute float aE; attribute float aLado;
+      // MITER en espacio de PANTALLA: la normal sale de la tangente PROMEDIO de los dos
+      // segmentos que llegan al punto, y la anchura se divide entre cos(θ/2) para que la
+      // cinta no se adelgace en las curvas. El clamp evita púas en giros muy cerrados.
+      vertexShader: `attribute vec3 aAnt; attribute vec3 aSig; attribute float aS; attribute float aL; attribute float aE; attribute float aLado;
         uniform vec2 uRes; uniform float uW;
         varying float vS; varying float vL; varying float vE; varying float vLado;
         void main(){ vS=aS; vL=aL; vE=aE; vLado=aLado;
-          vec4 cA=projectionMatrix*modelViewMatrix*vec4(position,1.0);
-          vec4 cB=projectionMatrix*modelViewMatrix*vec4(aOtro,1.0);
-          vec2 nA=cA.xy/cA.w, nB=cB.xy/cB.w;
-          vec2 d=(nB-nA)*uRes; float L=length(d);
-          vec2 dir = L>1e-6 ? d/L : vec2(1.0,0.0);
-          vec2 nrm = vec2(-dir.y, dir.x);
-          cA.xy += nrm*(uW/uRes)*aLado*cA.w;   // uW/uRes = media anchura de uW px en NDC
-          gl_Position=cA; }`,
+          vec4 cA=projectionMatrix*modelViewMatrix*vec4(aAnt,1.0);
+          vec4 cC=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+          vec4 cS=projectionMatrix*modelViewMatrix*vec4(aSig,1.0);
+          vec2 nA=cA.xy/cA.w, nC=cC.xy/cC.w, nS=cS.xy/cS.w;
+          vec2 d1=(nC-nA)*uRes, d2=(nS-nC)*uRes;
+          float l1=length(d1), l2=length(d2);
+          vec2 t1 = l1>1e-6 ? d1/l1 : vec2(0.0);
+          vec2 t2 = l2>1e-6 ? d2/l2 : vec2(0.0);
+          vec2 tm = t1+t2;
+          tm = length(tm)>1e-6 ? normalize(tm) : (l1>1e-6 ? t1 : (l2>1e-6 ? t2 : vec2(1.0,0.0)));
+          vec2 nm = vec2(-tm.y, tm.x);
+          vec2 n1 = l1>1e-6 ? vec2(-t1.y, t1.x) : nm;
+          float cos2 = max(abs(dot(nm, n1)), 0.35);   // 1/cos(θ/2), acotado
+          cC.xy += nm*(uW/uRes)*(aLado/cos2)*cC.w;
+          gl_Position=cC; }`,
       // EL BRILLO ES |E|. Sin esto la línea se acaba de golpe donde se cortó y se lee
-      // "despeinada" (Ian, 2026-07-28); con esto se apaga sola donde el campo ya no importa,
-      // igual que en la escalera de cargas puntuales. vE viene del .bin en escala LOG.
-      // uUsaE=0 → .bin viejo sin intensidad: se cae al perfil de siempre.
+      // "despeinada" (Ian, 2026-07-28); con esto se apaga sola donde el campo ya no importa.
+      // vE viene del .bin en escala LOG. uUsaE=0 → .bin viejo: perfil de siempre.
       fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE; uniform float uRampa;
         varying float vS; varying float vL; varying float vE; varying float vLado;
         void main(){ float s=clamp(vS,0.0,1.0);
-          float perfil=pow(max(sin(3.14159*s),0.0),0.38);      // el de siempre (bin sin |E|)
-          float campo=pow(clamp(vE,0.0,1.0),2.2);              // 2.2: la cola débil cae rápido a negro
+          float perfil=pow(max(sin(3.14159*s),0.0),0.38);
+          float campo=pow(clamp(vE,0.0,1.0),2.2);
           float base=0.44*mix(perfil,campo,uUsaE);
           float ph=fract(uT*0.06 + vL*0.13);
           float dd=s-ph; dd=dd-floor(dd+0.5);
-          float glow=exp(-dd*dd*7.0);                          // swell ANCHO y suave (no punto apretado) → viaja sin verse como dashes
-          float a=uOp*(base + 0.13*glow*mix(1.0,campo,uUsaE)); // el pulso tampoco brilla donde no hay campo
-          // PERFIL A LO ANCHO EN DOS PARTES (Ian: "añádele una difuminación a las líneas"):
-          //   núcleo APRETADO (~0.18·ancho de FWHM) = el filamento nítido que se sigue con el ojo
-          //   halo ANCHO (~0.55·ancho, peso 0.68)   = la DIFUMINACIÓN que ocupa espacio y brilla
-          // Un solo perfil no da las dos cosas: o queda listón plano o queda hilo sin cuerpo.
+          float glow=exp(-dd*dd*7.0);
+          float a=uOp*(base + 0.13*glow*mix(1.0,campo,uUsaE));
+          // PERFIL A LO ANCHO EN DOS PARTES: núcleo apretado (el filamento nítido) +
+          // halo ancho y tenue (la DIFUMINACIÓN que ocupa espacio y brilla).
           float l = abs(vLado);
           float nucleo = pow(max(0.0, 1.0 - l), 3.5);
           float halo   = pow(max(0.0, 1.0 - l*l), 1.6);
           a *= (nucleo + 0.68 * halo);
-          // EL COLOR ES LA DIRECCIÓN DEL CAMPO. En el precompute SOLO las cargas +
-          // siembran líneas y se trazan hacia adelante, así que s=0 es SIEMPRE el extremo +
-          // y s=1 el −. Pintarlo oro→violeta no es adorno: dice de dónde NACE y dónde MUERE
-          // cada línea, y hace juego con el color de las cargas (+ oro, − magenta).
+          // EL COLOR ES LA DIRECCIÓN DEL CAMPO: en el precompute solo las cargas +
+          // siembran líneas y se trazan hacia adelante, así que s=0 es SIEMPRE el
+          // extremo + y s=1 el −. Oro donde nace, violeta donde muere.
           vec3 c = uCol;
           if (uRampa > 0.5) {
-            vec3 nace  = vec3(2.35, 1.30, 0.40);   // ORO: sale del +
-            vec3 muere = vec3(1.30, 0.42, 2.45);   // VIOLETA: entra al −
+            vec3 nace  = vec3(2.35, 1.30, 0.40);
+            vec3 muere = vec3(1.30, 0.42, 2.45);
             c = mix(nace, muere, smoothstep(0.12, 0.88, s));
           }
           gl_FragColor=vec4(c*a*2.0, a); }`,
-      // DoubleSide OBLIGATORIO: el sentido de giro del quad depende de hacia dónde apunta el
-      // segmento EN PANTALLA, así que con FrontSide la mitad de las cintas se descartan por
-      // culling (medido: el campo salió MÁS TENUE que con líneas de 1 px, no más brillante).
+      // DoubleSide OBLIGATORIO: el giro del triángulo depende de hacia dónde apunta la
+      // línea EN PANTALLA; con FrontSide se descarta la mitad por culling.
       transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-    return { geo, mat, pos, otro, aE };
+    return { geo, mat, pos, ant, sig, aE };
   }, [frames, NL, LP, inten]);
   const dib = useMemo(() => { const v = new THREE.Vector2(); gl.getDrawingBufferSize(v); return v; }, [gl, alto]);
   if (reveal < 0.01) return null;
@@ -2705,33 +2717,34 @@ function BondEField({ data, R, time, reveal, col, ancho = 2.6, rampa = 0 }: { da
   if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
   else { while (k < K - 2 && Rvals[k + 1] > R) k++; }
   const r0 = Rvals[k], r1 = Rvals[k + 1], f = r0 === r1 ? 0 : Math.max(0, Math.min(1, (r0 - R) / (r0 - r1)));
-  const A = frames[k], B = frames[k + 1], pos = built.pos, otro = built.otro, stride = LP * 3;
+  const A = frames[k], B = frames[k + 1], pos = built.pos, ant = built.ant, sig = built.sig, stride = LP * 3;
   let o = 0;
   for (let j = 0; j < NL; j++) {
     const b0 = j * stride;
-    for (let s = 0; s < LP - 1; s++) {
-      const i0 = b0 + s * 3, i1 = b0 + (s + 1) * 3;
-      const ax = A[i0] * (1 - f) + B[i0] * f, ay = A[i0 + 1] * (1 - f) + B[i0 + 1] * f, az = A[i0 + 2] * (1 - f) + B[i0 + 2] * f;
-      const bx = A[i1] * (1 - f) + B[i1] * f, by = A[i1 + 1] * (1 - f) + B[i1 + 1] * f, bz = A[i1 + 2] * (1 - f) + B[i1 + 2] * f;
-      // los 2 vértices de la punta A miran a B, y los de B miran a A (para sacar la normal)
-      pos[o] = ax; pos[o + 1] = ay; pos[o + 2] = az;  otro[o] = bx; otro[o + 1] = by; otro[o + 2] = bz;
-      pos[o + 3] = ax; pos[o + 4] = ay; pos[o + 5] = az;  otro[o + 3] = bx; otro[o + 4] = by; otro[o + 5] = bz;
-      pos[o + 6] = bx; pos[o + 7] = by; pos[o + 8] = bz;  otro[o + 6] = ax; otro[o + 7] = ay; otro[o + 8] = az;
-      pos[o + 9] = bx; pos[o + 10] = by; pos[o + 11] = bz; otro[o + 9] = ax; otro[o + 10] = ay; otro[o + 11] = az;
-      o += 12;
+    for (let s = 0; s < LP; s++) {
+      const i0 = b0 + s * 3;
+      const x = A[i0] * (1 - f) + B[i0] * f, y = A[i0 + 1] * (1 - f) + B[i0 + 1] * f, z = A[i0 + 2] * (1 - f) + B[i0 + 2] * f;
+      // vecinos: en las puntas se repite el propio punto → el shader lo detecta (d=0)
+      const ia = b0 + Math.max(0, s - 1) * 3, is = b0 + Math.min(LP - 1, s + 1) * 3;
+      const ax = A[ia] * (1 - f) + B[ia] * f, ay = A[ia + 1] * (1 - f) + B[ia + 1] * f, az = A[ia + 2] * (1 - f) + B[ia + 2] * f;
+      const sx = A[is] * (1 - f) + B[is] * f, sy = A[is + 1] * (1 - f) + B[is + 1] * f, sz = A[is + 2] * (1 - f) + B[is + 2] * f;
+      pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;  pos[o + 3] = x; pos[o + 4] = y; pos[o + 5] = z;
+      ant[o] = ax; ant[o + 1] = ay; ant[o + 2] = az;  ant[o + 3] = ax; ant[o + 4] = ay; ant[o + 5] = az;
+      sig[o] = sx; sig[o + 1] = sy; sig[o + 2] = sz;  sig[o + 3] = sx; sig[o + 4] = sy; sig[o + 5] = sz;
+      o += 6;
     }
   }
   built.geo.attributes.position.needsUpdate = true;
-  built.geo.attributes.aOtro.needsUpdate = true;
-  if (inten) {                                   // |E| por punto, interpolado por R(t) igual que la geometría
+  built.geo.attributes.aAnt.needsUpdate = true;
+  built.geo.attributes.aSig.needsUpdate = true;
+  if (inten) {                                   // |E| por punto, interpolado por R(t)
     const EA = inten[k], EB = inten[k + 1], aE = built.aE, st2 = LP;
     let e = 0;
     for (let j = 0; j < NL; j++) {
       const b0 = j * st2;
-      for (let s = 0; s < LP - 1; s++) {
-        const e0 = (EA[b0 + s] * (1 - f) + EB[b0 + s] * f) / 255;
-        const e1 = (EA[b0 + s + 1] * (1 - f) + EB[b0 + s + 1] * f) / 255;
-        aE[e++] = e0; aE[e++] = e0; aE[e++] = e1; aE[e++] = e1;
+      for (let s = 0; s < LP; s++) {
+        const v = (EA[b0 + s] * (1 - f) + EB[b0 + s] * f) / 255;
+        aE[e++] = v; aE[e++] = v;
       }
     }
     built.geo.attributes.aE.needsUpdate = true;
