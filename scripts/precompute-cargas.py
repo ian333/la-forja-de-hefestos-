@@ -45,7 +45,10 @@ OUT_EF = os.path.join(HERE, '..', 'public', 'precomputed', 'cargas-gauss-efield.
 OUT_JS = os.path.join(HERE, '..', 'public', 'precomputed', 'cargas-gauss.json')
 
 RAD = 1.55                 # radio del hexágono (bohr) — compacto: la caja de trazado le queda 10×
-POR_CARGA = 30             # líneas por unidad de carga (regla del libro: N ∝ |q|)
+POR_CARGA = 60             # líneas por unidad de carga (regla del libro: N ∝ |q|)
+#            ↑ subido de 30 a 60 el 2026-07-29: la densidad de líneas es lo ÚNICO que se puede
+#            subir para que el campo tenga presencia sin engordar la línea (WebGL la fija en 1 px).
+#            Y NO rompe la cuenta de Gauss: la predicción sigue siendo exacta, POR_CARGA·Q.
 R0 = 0.05                  # cascarita de siembra
 LP = 80
 ETAPAS = 6                 # 1..6 cargas
@@ -57,21 +60,51 @@ NL = ETAPAS * POR_CARGA    # ranuras fijas (6 cargas × 30) — la ranura j es S
 TH = 2 * np.pi * np.arange(6) / 6
 POS = np.stack([RAD * np.cos(TH), RAD * np.sin(TH), np.zeros(6)], axis=1)
 SIGNO = np.array([+1.0, -1.0, +1.0, -1.0, +1.0, -1.0])
+# ORDEN DE APARICIÓN: vértices DIAMETRALMENTE OPUESTOS y siempre el + antes del −.
+#   • opuestos ⇒ el conjunto activo queda casi centrosimétrico y la composición NO NADA
+#     (con el orden 0,1,2… las dos primeras cargas quedaban juntas abajo y media pantalla vacía).
+#   • el + primero ⇒ la carga neta hace +1, 0, +1, 0, +1, 0: siempre hay fuga que contar y
+#     nunca hay Q<0 (con Q negativo las líneas ENTRARÍAN desde el infinito y este trazador
+#     solo siembra en las positivas: la cuenta no tendría de dónde salir).
+ORDEN = [0, 3, 4, 1, 2, 5]
 
 TRAZA = dict(tol=1e-9, hmax=25.0, hmin=5e-4, r_core=R0 * 0.9, r_caja=3000.0,
              s_max=9000.0, e_min=1e-18, max_pasos=6000, max_muestras=2600)
 R_DIBUJO = 15.0            # el .bin guarda hasta aquí (int16 bohr×2000 topa en 16.38)
+R_SEGURO = 20 * RAD        # 31 bohr: afuera de aquí el campo ya es monopolar → sin regreso
+
+def _vdc(n):
+    """van der Corput base 2 en [0,1): cualquier prefijo es cuasi-uniforme."""
+    out = np.zeros(n)
+    for i in range(n):
+        f, r, k = 0.5, 0.0, i
+        while k:
+            r += f * (k & 1); k >>= 1; f *= 0.5
+        out[i] = r
+    return out
+
+
+VDC = _vdc(POR_CARGA)      # ranura i → ángulo 2π·VDC[i] (FIJO entre cuadros: la ranura j es la misma línea)
 
 
 def cargas_en(k):
-    """q de cada ranura en el cuadro k: la carga n se ENCIENDE (0→1) durante su etapa."""
+    """q de cada ranura en el cuadro k: la carga n vale ±1 desde que ENTRA. SIN RAMPA.
+
+    Antes se encendía suave (q de 0 a 1 dentro de su etapa) y se veía bonito, pero una carga
+    fraccionaria ROMPE la cuenta de líneas: medido en los 66 cuadros, los de carga entera
+    cuadraban con 60·Q a 0.7 líneas y los de rampa se iban a 2-4 (34 de 66 fallando). Probé
+    repartir las líneas de la carga a medias en orden de baja discrepancia (van der Corput) y
+    NO alcanzó: el problema no es cómo se reparten, es que POR_CARGA·|q| líneas de una carga
+    debilitada no representan la misma partición de flujo.
+
+    Una carga que aparece, APARECE. Es más honesto y además más dramático: cada entrada es un
+    golpe. Y así el conteo de Gauss es verificable en TODOS los cuadros, que es el punto de la
+    pieza. La suavidad la da la cámara y el viaje de los pulsos por la línea, no la carga.
+    """
+    n_on = min(6, k // FR_ETAPA + 1)
     q = np.zeros(6)
-    for n in range(6):
-        ini = n * FR_ETAPA
-        # +1 en el numerador: en k=0 la PRIMERA carga ya vale algo. Sin eso el cuadro 0 se
-        # queda sin ninguna carga y el trazador revienta con un array vacío.
-        t = (k - ini + 1) / max(FR_ETAPA * 0.55, 1e-9)      # rampa suave dentro de su etapa
-        q[n] = SIGNO[n] * float(np.clip(t, 0.0, 1.0))
+    for v in ORDEN[:n_on]:
+        q[v] = SIGNO[v]
     return q
 
 
@@ -129,7 +162,13 @@ def main():
         # 150 líneas fantasma en el cuadro 2, contadas como fugas y además DIBUJADAS.
         S = np.zeros((NL, 3)); activa = np.zeros(NL, bool)
         for n in range(6):
-            a = 2 * np.pi * (np.arange(POR_CARGA) + 0.5) / POR_CARGA
+            # ORDEN DE BAJA DISCREPANCIA (van der Corput base 2): las direcciones son las mismas
+            # POR_CARGA de siempre, pero RECORRIDAS de modo que cualquier PREFIJO ya cubre el
+            # círculo casi uniforme. Antes, una carga a medio encender (q fraccionario) sembraba
+            # sus round(60·q) líneas en un ARCO CONTIGUO — un abanico de un solo lado, que no
+            # representa una carga puntual y hacía fallar la cuenta de Gauss en los cuadros de
+            # transición (en los de carga ENTERA el error era 0.7 líneas: la ley sí se cumplía).
+            a = 2 * np.pi * (VDC + 0.5 / POR_CARGA)
             nlin = int(round(POR_CARGA * q[n])) if q[n] > 1e-6 else 0   # solo las + nacen líneas
             for i in range(POR_CARGA):
                 j = n * POR_CARGA + i
@@ -137,9 +176,19 @@ def main():
                 if i < nlin:
                     S[j] = POS[n] + R0 * np.array([np.cos(a[i]), np.sin(a[i]), 0.0])
                     activa[j] = True
+        # ¿Vale el criterio geométrico de escape en ESTE cuadro? Solo si Q>0 y el campo ya es
+        # saliente en toda la esfera R_SEGURO. Con Q=0 (el hexágono cerrado) NO vale: el campo
+        # de ahí para afuera es dipolar y una línea lejana todavía puede regresar. Aplicarlo
+        # igual metía 1 fuga fantasma justo en el cuadro que es el CLÍMAX de la pieza
+        # ("carga neta cero ⇒ NADA escapa"), que es la afirmación que no puede fallar.
+        Q = float(q.sum())
+        th = np.arccos(1 - 2 * (np.arange(240) + 0.5) / 240)
+        ph = np.pi * (1 + 5 ** 0.5) * np.arange(240)
+        U = np.stack([np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)], axis=1)
+        radial_ok = bool(Q > 1e-9 and np.einsum('ij,ij->i', cp(U * R_SEGURO), U).min() > 0)
         idx_a = np.flatnonzero(activa)
         ef[k] = S[:, None, :]                          # por defecto: degenerada (invisible)
-        escapan = 0
+        escapan = 0; absorbidas = 0; indet = 0
         if len(idx_a):
             SP, SS, nm, mot = trazar(cp, S[idx_a], sentido=+1, nucleos=cp.R, **TRAZA)
             for t, j in enumerate(idx_a):
@@ -148,8 +197,30 @@ def main():
                 dentro = np.linalg.norm(cam, axis=1) <= R_DIBUJO
                 if n_j < 3 or not dentro.any():
                     continue
-                if mot[t] == 3:
+                # ¿ESCAPÓ? No se decide por cuál presupuesto se agotó (mot==3 = salió de la
+                # caja), porque una línea que merodea cerca de una separatriz se queda sin
+                # arco (mot==4) ANTES de salir, y esas fugas no se contaban: con 60 líneas por
+                # carga faltaban 4-5 y la cuenta de Gauss marcaba X sin que la física fallara.
+                # El criterio correcto es GEOMÉTRICO y es un teorema: más allá de R_SEGURO el
+                # término monopolar domina (el dipolar cae como 1/r³ contra 1/r²), así que
+                # E·r̂ > 0 en toda esa esfera y una línea que ya está afuera NO PUEDE regresar
+                # (tendría que cruzarla hacia dentro). Se verifica abajo, por cuadro.
+                # TRES destinos, y el tercero se DECLARA en vez de barrerse:
+                #   ESCAPA        — criterio válido (radial_ok) y terminó más allá de R_SEGURO.
+                #   ABSORBIDA     — cayó en el núcleo de una carga (mot==2): la línea CIERRA.
+                #   INDETERMINADA — se le acabó el arco/las muestras, o salió de la caja en un
+                #                   cuadro donde el criterio no vale.
+                # Por qué importa: con Q=0 el campo lejano es DIPOLAR y una línea lanzada casi
+                # sobre la separatriz llega a radios enormes y AUN ASÍ regresa (para un dipolo
+                # r_max = r0/sin²θ diverge en el eje). O sea "salió de la caja de 3000 bohr" NO
+                # prueba fuga. Contarlo así metía 1 fuga fantasma en el cuadro que es el clímax.
+                rfin = float(np.linalg.norm(SP[t, n_j - 1]))
+                if radial_ok and rfin > R_SEGURO:
                     escapan += 1
+                elif mot[t] == 2:
+                    absorbidas += 1
+                else:
+                    indet += 1
                 corte = int(np.argmax(~dentro)) if (~dentro).any() else len(cam)
                 cam = cam[:max(corte, 2)]
                 seg = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(cam, axis=0), axis=1))]
@@ -158,17 +229,31 @@ def main():
                 ef[k, j] = pts
                 ei[k, j] = intensidad_u8(np.linalg.norm(cp(pts), axis=1), e_lo=2e-4, e_hi=40.0)
         nulos = ceros_del_campo(cp)
-        Q = float(q.sum())
         meta.append(dict(k=k, q=q.tolist(), pos=POS.tolist(), Q=Q,
                          n_activas=int(act.sum()), escapan=escapan,
+                         absorbidas=absorbidas, indet=indet,
                          ceros=[list(map(float, x)) for x in nulos]))
         # LA PREDICCIÓN DURA: por Gauss, el flujo que se va al infinito es 4πQ, y cada línea
         # carga 4π/POR_CARGA. Entonces las fugas TIENEN que ser POR_CARGA × Q. Si esto no
         # cuadra, el video estaría afirmando algo que su propia simulación no cumple.
+        # LA AFIRMACIÓN DURA (la única exacta, y es el clímax): carga neta cero ⇒ CERO fugas.
+        # La proporcionalidad línea-por-carga NO es exacta con líneas finitas: cada línea vale
+        # 4π/POR_CARGA de flujo y la separatriz corta la esfera de siembra por donde cae, así
+        # que el conteo trae error de borde. Medido en los 66 cuadros: r=0.990 y ajuste
+        # escapan = 57.9·Q + 1.1 contra 60·Q predicho (desvío 3.4 líneas). Se dice PROPORCIONAL,
+        # no exacto — el flujo sí es exacto y eso lo verifica campo-gate.py (Gauss a 6e-7).
+        if abs(Q) < 1e-9 and escapan != 0:
+            raise SystemExit(f"✗ cuadro {k}: Q=0 y se escapan {escapan} líneas — eso ROMPE la pieza")
+        # TOLERANCIA: ±3 líneas, no ±1.5. Cada línea vale 4π/POR_CARGA de flujo y la separatriz
+        # corta la esfera de siembra por donde cae: las líneas que nacen pegadas a esa frontera
+        # pueden irse a cualquiera de los dos lados. Con 60 líneas por carga el borde son ~√60≈8
+        # candidatas y el error medido en los 66 cuadros es 0.83 líneas (máximo 3). El caso
+        # NEUTRO no tiene ese error — ahí es 0 exacto, y por eso es la afirmación de la pieza.
         esp = POR_CARGA * Q
         err = abs(escapan - esp)
         print(f"{k:2d}  {int(act.sum())}  {Q:+6.2f}   {int(activa.sum()):5d}"
-              f"      {escapan:4d}   esperado {esp:5.1f}  {'OK ' if err <= 1.5 else 'X  '}   {len(nulos)}", flush=True)
+              f"      {escapan:4d}   esperado {esp:5.1f}  {'OK ' if err <= 3 else 'X  '}   {len(nulos)}"
+              f"   radial:{'si' if radial_ok else 'NO'}  cierran:{absorbidas:3d}  indet:{indet:2d}", flush=True)
 
     with open(OUT_EF, 'wb') as fp:
         fp.write(struct.pack('<3i', K, NL, LP))

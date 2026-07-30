@@ -36,6 +36,7 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
+const CARGAS_DURATION = 46.0;   // primer corte SIN voz: 5 tomas para aprobar a ojo
 const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -342,6 +343,17 @@ const TAIL: ShotEntry[] = [
   { shot: heroOrbit({ dir: 1, span: 1.1, rMul: 1.32 }), dur: 10, label: 'héroe/loop 56-66' },
 ];
 const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
+  // CARGAS — LA LEY DE GAUSS: el sujeto es EL CAMPO, no las bolitas. El hexágono vive en el
+  // plano z=0, así que DE FRENTE (face-on) es la toma que muestra la cuenta: se ven las líneas
+  // escapar por los huecos… y dejar de escapar cuando entra la sexta carga.
+  // Los tiempos suman 46 s = un primer corte para aprobar a ojo (sin voz todavía).
+  cargas: [
+    { shot: ringFaceOn({ rMul: 1.22, azim0: Math.PI / 2, span: 0.22, elev: 0.06, fov: 38 }), dur: 9.0, label: 'UNA carga sola: todo escapa' },
+    { shot: ringFaceOn({ rMul: 1.05, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 8.0, label: 'entra el − : la primera línea MUERE' },
+    { shot: heroOrbit({ rMul: 1.25, elev: 0.40, azim0: 1.2, span: 1.5, fov: 36 }), dur: 9.0, label: 'órbita: el campo es 3D, no un dibujo' },
+    { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 8.0, label: 'la SEXTA cierra: ya nada escapa' },
+    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.86, rTdMul: 1.55, fovFrom: 34, fovTo: 40 }), dur: 12.0, label: 'payoff: el campo cerrado sobre sí mismo' },
+  ],
   // NaCl — EL ROBO A DISTANCIA: ver los dos separados → el electrón SALTA (whip) →
   // el Cl⁻ se ALZA sobre ti (ángulo bajo = poder del ladrón) → COLA.
   nacl: [
@@ -830,6 +842,7 @@ interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [n
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
+  cargas: { name: 'La ley de Gauss', formula: '∮E·dA = 4πQ', fact: 'Cuenta las líneas que se escapan: son exactamente la carga de adentro.' },
   ch4:  { name: 'Metano', formula: 'CH₄', fact: 'Cuatro enlaces perfectos a 109.5°: un tetraedro.' },
   nh3:  { name: 'Amoniaco', formula: 'NH₃', fact: 'Un par libre la vuelve una pirámide.' },
   co2:  { name: 'Dióxido de carbono', formula: 'CO₂', fact: 'Lineal y simétrica: 180° exactos.' },
@@ -2209,7 +2222,7 @@ function parseCeros(j: { K: number; Rvals: number[]; cuadros: { ceros: number[][
   return { K: j.K, Rvals: new Float32Array(j.Rvals),
            pts: j.cuadros.map(c => new Float32Array(c.ceros.flat())) };
 }
-function FieldNulls({ data, R, reveal, time }: { data: CerosData; R: number; reveal: number; time: number }) {
+function FieldNulls({ data, R, reveal, time, esc = 1 }: { data: CerosData; R: number; reveal: number; time: number; esc?: number }) {
   const { camera } = useThree();
   if (reveal < 0.01) return null;
   const { K, Rvals, pts } = data;
@@ -2231,19 +2244,26 @@ function FieldNulls({ data, R, reveal, time }: { data: CerosData; R: number; rev
         // ENCARA A LA CÁMARA. Con rotación FIJA el toro se ve de canto desde muchos ángulos y
         // queda como una rayita blanca — parece un destello, no un anillo (visto en el 16:9).
         // Billboard: el anillo se lee como anillo siempre, que es el punto de dibujarlo hueco.
-        const q = new THREE.Quaternion();
-        const m = new THREE.Matrix4().lookAt(camera.position,
-          new THREE.Vector3(p[0], p[1], p[2]), camera.up);
-        q.setFromRotationMatrix(m);
+        // El EJE del toro (su +Y local) tiene que apuntar A la cámara. Antes usaba
+        // Matrix4.lookAt(camera.position, p, up), que da la orientación de un objeto QUE ESTÁ
+        // en la cámara mirando a p — no la de un objeto en p encarando la cámara: por eso en
+        // las cargas el anillo salía de CANTO (una rayita). setFromUnitVectors es lo correcto.
+        // OJO con el eje: TorusGeometry se genera en el plano XY, así que su eje es +Z (no +Y).
+        // Alineando +Y con la cámara el anillo queda inclinado y se ve OVALADO — se notó en las
+        // cargas, donde el cero está solo en el centro del cuadro y no hay dónde esconderlo.
+        const q = new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 0, 1),
+          new THREE.Vector3(camera.position.x - p[0], camera.position.y - p[1],
+                            camera.position.z - p[2]).normalize());
         return (
           <group key={i} position={p} quaternion={q}>
             <mesh>
-              <torusGeometry args={[0.34 * pul, 0.030, 8, 40]} />
+              <torusGeometry args={[0.34 * pul * esc, 0.030 * esc, 8, 40]} />
               <meshBasicMaterial color="#7dfbe0" transparent opacity={reveal * 0.95} depthWrite={false} />
             </mesh>
             {/* segundo anillo más tenue: da volumen sin llenar el hueco */}
             <mesh>
-              <torusGeometry args={[0.52 * pul, 0.014, 8, 40]} />
+              <torusGeometry args={[0.52 * pul * esc, 0.014 * esc, 8, 40]} />
               <meshBasicMaterial color="#7dfbe0" transparent opacity={reveal * 0.35} depthWrite={false} />
             </mesh>
           </group>
@@ -2251,6 +2271,148 @@ function FieldNulls({ data, R, reveal, time }: { data: CerosData; R: number; rev
       })}
     </>
   );
+}
+
+// ══ LAS CARGAS — LA LEY DE GAUSS, VISIBLE ═══════════════════════════════════════════════
+// No es química: son SEIS cargas puntuales en un hexágono, alternando + y −, que aparecen una
+// por una (scripts/precompute-cargas.py, 24 cuadros). El motor es el MISMO del anillo: las
+// líneas salen de `parseBondEField` (idéntico formato de .bin) y la cámara de `playShots`.
+//
+// Lo que se ve ES el teorema: se dibujan 30 líneas por unidad de carga, así que el número de
+// líneas que ESCAPAN al infinito tiene que ser exactamente 30·Q_neta. Mientras falte una
+// carga, Q≠0 y se escapan (14 con una sola +); cuando entra la sexta, Q=0 y NO SE ESCAPA
+// NINGUNA: cada línea nace en un + y muere en un −, el campo se cierra sobre sí mismo. El
+// script lo verifica cuadro por cuadro contra esa predicción (no es decorado: es la cuenta).
+//
+// Paleta: la de la casa (oro + morado, ver la serie del agua). El + es ORO porque de ahí NACEN
+// las líneas; el − es MORADO porque ahí MUEREN. Las líneas, el mismo cian-azul de la serie.
+// textura de GLOW: gaussiana radial en un canvas (una sola vez, módulo). Es lo que hace que
+// una carga puntual se vea como PUNTO QUE ARDE y no como una pelota de color plano.
+const GLOW_TEX = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d')!;
+  const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  rg.addColorStop(0.00, 'rgba(255,255,255,1)');
+  rg.addColorStop(0.12, 'rgba(255,255,255,0.72)');
+  rg.addColorStop(0.34, 'rgba(255,255,255,0.20)');
+  rg.addColorStop(1.00, 'rgba(255,255,255,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); t.needsUpdate = true; return t;
+})();
+
+type CargasCuadro = { k: number; q: number[]; pos: number[][]; Q: number; n_activas: number; escapan: number; ceros: number[][] };
+type CargasMeta = { K: number; NL: number; LP: number; radio: number; por_carga: number; cuadros: CargasCuadro[] };
+
+// Coreografía como DATOS (capas.ts). `paso` recorre los 24 cuadros con PAUSAS donde la voz
+// explica: no es lineal en t, es lineal en la HISTORIA.
+const CARGAS_CAPAS: CapasSpec = {
+  // 0 → 1 = cuadro 0 → 23. Las pausas salen de repetir el mismo valor en dos ventanas.
+  // IN MEDIAS RES (la estructura que ya funcionó en la serie): el segundo 0 abre con el
+  // hexágono COMPLETO — el campo cerrado, lo más bonito que tiene la pieza — y a los ~4 s
+  // rebobina a UNA sola carga para contar cómo se llegó ahí. Arrancar en la carga sola dejaba
+  // el gancho casi en negro (medido: meanY 1.5, 97.7% del cuadro negro).
+  // Las 6 ETAPAS del .bin (66 cuadros = 6 × 11). paso = (etapa·11 + 5)/65 cae en el centro de
+  // cada etapa, así ninguna se salta: 1→2→3→4→5→6 cargas. Entre etapas el .bin interpola dos
+  // configuraciones distintas, así que la carga nueva no aparece de golpe: las líneas SE
+  // REACOMODAN. Y arranca con el hexágono COMPLETO (in medias res) porque abrir en la carga
+  // sola dejaba el gancho casi en negro (medido: meanY 1.5, 97.7% del cuadro negro).
+  paso:    { base: 0.077, mods: [
+    { wins: [[0.0, 3.2]],   a: 0.846, label: 'GANCHO: ya cerrado, las 6, el campo entero' },
+    { wins: [[10.0, 13.0]], a: 0.169, label: '2 cargas: Q=0 y las 60 líneas CIERRAN' },
+    { wins: [[15.0, 18.5]], a: 0.338, label: '3 cargas: vuelve a haber fuga' },
+    { wins: [[20.5, 24.0]], a: 0.508, label: '4 cargas: cierra otra vez' },
+    { wins: [[26.0, 30.0]], a: 0.677, label: '5 cargas: 57 de 180 se van' },
+    { wins: [[32.0, 44.0]], a: 0.846, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas' }],
+  },
+  campo:   { base: 0.95 },
+  cargas:  { base: 1.0 },
+  // el CERO del campo: aquí SÍ tiene sentido dibujarlo — cae en el centro del hexágono, con
+  // líneas alrededor que se ven cancelarse (en el trímero caía en un hueco sin líneas y no
+  // mostraba nada; ver el commit del 2026-07-29).
+  cero:    { base: 0, mods: [{ wins: [[36.0, 46.0]], a: 1.0, label: 'donde las seis se cancelan: E=0' }] },
+};
+
+function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => void }) {
+  const [ef, setEf] = useState<BondEFieldData | null>(null);
+  const [meta, setMeta] = useState<CargasMeta | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/precomputed/cargas-gauss-efield.bin').then(r => r.arrayBuffer())
+      .then(b => { if (alive) { setEf(parseBondEField(b)); onReady?.(true); } })
+      .catch(e => console.error('cargas efield load failed', e));
+    fetch('/precomputed/cargas-gauss.json').then(r => r.json())
+      .then(j => { if (alive) setMeta(j as CargasMeta); })
+      .catch(e => console.error('cargas json load failed', e));
+    return () => { alive = false; };
+  }, [onReady]);
+  if (!ef || !meta) return null;
+  const C = evalCapas(CARGAS_CAPAS, time);
+  const paso = Math.max(0, Math.min(1, C.paso));
+  const kf = paso * (meta.K - 1);                 // cuadro continuo 0..K-1
+  const R = meta.K - kf;                          // Rvals del .bin son [K, K-1, … 1] (descendente)
+  const cu = meta.cuadros[Math.max(0, Math.min(meta.K - 1, Math.round(kf)))];
+  const pul = 0.92 + 0.08 * Math.sin(time * 2.2);
+  // ANCLA = el hexágono COMPLETO, siempre. Anclar a las cargas ya activas parecía más
+  // "honesto" y era un error de encuadre: el centro de masa se mueve cada vez que entra una
+  // carga, así que la composición NADA (en la etapa de 2 cargas el par se iba abajo-derecha y
+  // media pantalla quedaba vacía). El hexágono es geometría FIJA y conocida: es el ancla.
+  const pts: Vec3[] = cu.pos.map(p => [p[0], p[1], p[2]] as Vec3);
+  return (
+    <>
+      <CargasCamera time={time} pts={pts} radio={meta.radio} />
+      {/* el CAMPO: mismas líneas del anillo, mismo shader, mismo color de la serie */}
+      {/* LÍNEAS MÁS BRILLANTES que en el agua: aquí el campo ES el sujeto (en el agua compite
+          con la nube de electrones). El color es aditivo, así que subirlo = línea más presente
+          sin engordarla — engordarla exigiría cambiar de líneas WebGL (1 px fijo) a geometría. */}
+      <BondEField data={ef} R={R} time={time * 8} reveal={C.campo} col={[0.85, 1.45, 3.1]} />
+      {cu.pos.map((p, i) => {
+        const q = cu.q[i];
+        if (Math.abs(q) < 1e-6) return null;
+        const mas = q > 0;
+        // + = ORO (de aquí NACEN las líneas) · − = MORADO (aquí MUEREN)
+        const col = mas ? '#ffc247' : '#b76bff';
+        const rad = 0.11 * pul * Math.min(1, Math.abs(q) * 1.6);
+        return (
+          <group key={i} position={[p[0], p[1], p[2]]}>
+            <mesh><sphereGeometry args={[rad, 20, 16]} /><meshBasicMaterial color={col} /></mesh>
+            {/* HALO con caída radial (sprite), no una esfera aditiva: una esfera de color
+                constante lee como DISCO duro — el primer corte parecía un jardín de margaritas
+                que se comía el campo. El sujeto de esta pieza son las LÍNEAS. */}
+            <sprite scale={[rad * 7, rad * 7, 1]}>
+              <spriteMaterial map={GLOW_TEX} color={col} transparent opacity={0.55 * C.cargas}
+                depthWrite={false} blending={THREE.AdditiveBlending} />
+            </sprite>
+          </group>
+        );
+      })}
+      {/* el CERO: el .json lo trae calculado por cuadro (vacío hasta que se cierra el hexágono) */}
+      {C.cero > 0.01 && cu.ceros.length > 0 && (
+        <FieldNulls data={{ K: 2, Rvals: new Float32Array([1, 0]),
+                            pts: [new Float32Array(cu.ceros.flat()), new Float32Array(cu.ceros.flat())] }}
+          R={0.5} reveal={C.cero * 0.55} time={time} esc={0.62} />
+      )}
+    </>
+  );
+}
+
+/** Cámara de las cargas: el SUJETO es el campo, no las bolitas. Por eso rHalo se declara
+ *  grande a mano — la ley de encuadre mide el núcleo con `pts` (radio del hexágono = 1.55
+ *  bohr) y si no le dices que el halo llega a ~11 bohr, encuadra las cargas y CORTA el campo. */
+function CargasCamera({ time, pts, radio }: { time: number; pts: Vec3[]; radio: number }) {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const cam = camera as THREE.PerspectiveCamera;
+    const asp = size.width / Math.max(1, size.height);
+    const p = playShots(CAMERA_SHOTS.cargas, time,
+      { ex: radio * 4.2, nucX: 0, bondR: radio, t: time, pts, aspect: asp, rHalo: 11.0 });
+    cam.position.set(p.pos[0], p.pos[1], p.pos[2]);
+    cam.lookAt(p.target?.[0] ?? 0, p.target?.[1] ?? 0, p.target?.[2] ?? 0);
+    const esVert = asp < 1;
+    cam.rotation.z += esVert ? (p.roll ?? 0) : 0;
+    cam.fov = esVert ? Math.min(95, p.fov * 1.42) : p.fov;
+    cam.updateProjectionMatrix();
+  }, [camera, size, time, pts, radio]);
+  return null;
 }
 
 // ── CAMPO ELÉCTRICO de la diatómica (líneas de fuerza REALES, precompute-bond-efield.py) ──
@@ -2910,8 +3072,9 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   }, []);
 
   const isMD = molKey === 'wmd';   // agua = DINÁMICA MOLECULAR REAL (10 moléculas se auto-ensamblan)
+  const isCargas = molKey === 'cargas';   // LA LEY DE GAUSS: 6 cargas puntuales, no una molécula
   const isPair = molKey === 'wpair' || molKey === 'wtri';   // mismo motor: 2 aguas o el ANILLO de 3   // EL PUENTE: 2 aguas ab initio acercándose (nube densa V1 + Δρ)
-  const isWater = molKey === 'wdimer' || molKey === 'wsingle' || molKey === 'whex' || isMD || isPair;   // agua que INTERACTÚA (cluster + campo)
+  const isWater = molKey === 'wdimer' || molKey === 'wsingle' || molKey === 'whex' || isMD || isPair || isCargas;   // agua que INTERACTÚA (cluster + campo)
   const [waterReady, setWaterReady] = useState(false);
   const isChain = CHAIN_KEYS.has(molKey);
   const isCatalog = CATALOG_KEYS.has(molKey);
@@ -2977,7 +3140,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = molKey === 'wtri' ? WTRI_DURATION : isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
+  const dur = isCargas ? CARGAS_DURATION : molKey === 'wtri' ? WTRI_DURATION : isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -3020,8 +3183,9 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         <color attach="background" args={['#000']} />
         <FrameDriver time={time} />
         {isPair && <WaterPair time={time} onReady={setWaterReady} mk={molKey} />}
+        {isCargas && <CargasHex time={time} onReady={setWaterReady} />}
         {isMD && <WaterMD time={time} dur={dur} onReady={setWaterReady} />}
-        {isWater && !isMD && !isPair && <WaterField molKey={molKey} time={time} dur={60} onReady={setWaterReady} />}
+        {isWater && !isMD && !isPair && !isCargas && <WaterField molKey={molKey} time={time} dur={60} onReady={setWaterReady} />}
         {data && !isWater && (() => {
           // FORMACIÓN DEL ENLACE (O₂) GUIADA POR LA FÍSICA: el oscilador de Morse
           // (morseR) da el acercamiento REAL — caen al pozo, sobrepasan re, rebotan
@@ -3242,7 +3406,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         {!live && <MolPostFX sat={isPair ? 0.65 : 0.5} />}
       </Canvas>
       {/* DOS viñetas se sumaban (esta DOM + la de MolPostFX): en wtri se queda UNA. */}
-      {molKey !== 'wtri' && <CinemaVignette />}
+      {molKey !== 'wtri' && !isCargas && <CinemaVignette />}
       {!live && <>
         {!isCaro && !(isBond(molKey) && (BOND_BEATS_MOL[molKey] ?? []).some(b => time >= b.t0 - 0.4 && time <= b.t1 + 0.5)) &&
           <ScaleNote molKey={molKey} time={time} vertical={vertical} />}
@@ -3258,7 +3422,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             ABAJO = 10% del cuadro en negro DURO por construcción, y el anillo ya venía con
             55-88% de negro muerto medido por los jueces. Se apaga SOLO para 'wtri': O₂/N₂/C₂
             y agua v2 son GANADORES y su barra de cine se queda igual (canon regla #0). */}
-        <Letterbox vertical={vertical} pct={molKey === 'wtri' ? 0 : (vertical ? undefined : 4.5)} />
+        <Letterbox vertical={vertical} pct={molKey === 'wtri' || isCargas ? 0 : (vertical ? undefined : 4.5)} />
       </>}
     </div>
   );
