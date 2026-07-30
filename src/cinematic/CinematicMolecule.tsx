@@ -37,7 +37,7 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const CARGAS_DURATION = 58.0;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO (sin voz todavía)
+const CARGAS_DURATION = 77.5;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (76.70s)
 const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -347,17 +347,23 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // CARGAS — LA LEY DE GAUSS: el sujeto es EL CAMPO, no las bolitas. El hexágono vive en el
   // plano z=0, así que DE FRENTE (face-on) es la toma que muestra la cuenta: se ven las líneas
   // escapar por los huecos… y dejar de escapar cuando entra la sexta carga.
-  // Los tiempos suman 46 s = un primer corte para aprobar a ojo (sin voz todavía).
+  // Los cortes caen EN LOS SILENCIOS de la voz (segs.json de dist-video/cargas-narracion):
+  // 9.6 · 15.9 · 23.2 · 30.1 · 37.9 · 42.8 · 48.3 · 56.5 · 64.5 → suman 77.5 s.
   cargas: [
-    { shot: ringFaceOn({ rMul: 1.22, azim0: Math.PI / 2, span: 0.22, elev: 0.06, fov: 38 }), dur: 9.0, label: 'UNA carga sola: todo escapa' },
-    { shot: ringFaceOn({ rMul: 1.05, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 8.0, label: 'entra el − : la primera línea MUERE' },
-    { shot: heroOrbit({ rMul: 1.25, elev: 0.40, azim0: 1.2, span: 1.5, fov: 36 }), dur: 9.0, label: 'órbita: el campo es 3D, no un dibujo' },
-    { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 8.0, label: 'la SEXTA cierra: ya nada escapa' },
-    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.86, rTdMul: 1.55, fovFrom: 34, fovTo: 40 }), dur: 10.0, label: 'payoff: el campo cerrado sobre sí mismo' },
+    { shot: ringFaceOn({ rMul: 1.02, azim0: Math.PI / 2, span: 0.22, elev: 0.06, fov: 36 }), dur: 9.6, label: 'UNA carga sola: todo escapa (voz 0.4-8.1)' },
+    { shot: ringFaceOn({ rMul: 0.95, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 6.3, label: 'entra el − : las 60 MUEREN (voz 8.7-15.6)' },
+    { shot: heroOrbit({ rMul: 1.12, elev: 0.34, azim0: 1.2, span: 1.1, fov: 35 }), dur: 7.3, label: 'órbita 3 y 4 cargas: el campo es 3D (voz 16.2-22.6)' },
+    { shot: ringFaceOn({ rMul: 1.20, azim0: Math.PI / 2, span: 0.22, elev: 0.05, fov: 36 }), dur: 6.9, label: 'GAUSS: contar lo que sale (voz 23.2-29.5)' },
+    { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 7.8, label: 'la SEXTA cierra: 180 de 180 (voz 30.1-37.8)' },
+    // "y en el centro el campo vale cero exacto": la cámara SE METE al hueco del hexágono.
+    // El cero no se dibuja (Ian lo mandó quitar) — se ve: ahí no pasa NINGUNA línea.
+    { shot: crashIn({ rFrom: 1.00, rTo: 0.62, elev: 0.05, azim0: Math.PI / 2, fov: 34 }), dur: 4.9, label: 'AL CENTRO: el hueco donde E=0 (voz 38.4-42.2)' },
+    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.72, rTdMul: 1.45, fovFrom: 34, fovTo: 40 }), dur: 5.5, label: '"pero son bolitas ideales" (voz 42.8-47.7)' },
     // EL ÁTOMO: se entra despacio (el sujeto pasa de 11 a 4.6 bohr) y se orbita para que se
     // vea que la nube ENVUELVE al protón en 3D — no es un disco.
-    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.0, label: 'ENTRA el átomo: protón + su nube' },
-    { shot: heroOrbit({ rMul: 0.66, elev: 0.30, azim0: 1.1, span: 1.9, fov: 33 }), dur: 10.0, label: 'órbita: las líneas SE APAGAN dentro de la nube' },
+    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.2, label: 'ENTRA el átomo: protón + su nube (voz 48.3-56.5)' },
+    { shot: heroOrbit({ rMul: 0.72, elev: 0.30, azim0: 1.1, span: 1.2, fov: 33 }), dur: 8.0, label: 'la nube ENVUELVE al protón (voz 57.1-64.5)' },
+    { shot: heroOrbit({ rMul: 0.62, elev: -0.18, azim0: 2.6, span: 1.6, fov: 35 }), dur: 13.0, label: 'las líneas SE APAGAN dentro de la nube (voz 65-76.7)' },
   ],
   // NaCl — EL ROBO A DISTANCIA: ver los dos separados → el electrón SALTA (whip) →
   // el Cl⁻ se ALZA sobre ti (ángulo bajo = poder del ladrón) → COLA.
@@ -2261,19 +2267,24 @@ function FieldNulls({ data, R, reveal, time, esc = 1 }: { data: CerosData; R: nu
 // Cada fórmula aparece cuando su física está EN PANTALLA — la ecuación no es decoración,
 // es el pie de foto de lo que se está viendo.
 interface FormulaBeat { t0: number; t1: number; tex: string; que: string; }
+// El rótulo de la serie (MoleculeTitle) vive de 2.4 s a 21.3 s y YA dice "∮E·dA = 4πQ".
+// Por eso la de Gauss en LaTeX entra hasta 23.1 s, justo cuando la voz la nombra: dos veces
+// la misma ecuación en pantalla al mismo tiempo es ruido, no énfasis.
 const CARGAS_FORMULAS: FormulaBeat[] = [
-  { t0: 5.5, t1: 10.0, tex: String.raw`\vec{E}=\frac{q}{r^{2}}\,\hat{r}`,
-    que: 'Coulomb: el campo de UNA carga cae con el cuadrado de la distancia' },
-  { t0: 12.5, t1: 18.0, tex: String.raw`\oint \vec{E}\cdot d\vec{A}=4\pi Q`,
-    que: 'Gauss: el flujo que atraviesa una superficie cerrada solo depende de la carga de ADENTRO' },
-  { t0: 20.0, t1: 25.5, tex: String.raw`N_{\text{escapan}}=\frac{Q}{q_{\text{línea}}}`,
-    que: 'Por eso se pueden CONTAR: cada línea lleva el mismo flujo' },
-  { t0: 33.0, t1: 39.0, tex: String.raw`\sum q_i = 0 \;\Rightarrow\; N_{\text{escapan}} = 0`,
-    que: 'Carga neta cero: las 180 líneas nacen en un + y mueren en un −' },
-  { t0: 41.5, t1: 47.0, tex: String.raw`Q(r)=e^{-2r}\left(1+2r+2r^{2}\right)`,
-    que: 'Hidrógeno 1s: la carga que queda DENTRO del radio r (protón menos nube)' },
-  { t0: 48.0, t1: 55.0, tex: String.raw`\vec{E}(r)=\frac{Q(r)}{r^{2}}\,\hat{r}`,
-    que: 'Misma ley de Coulomb… pero la nube se come la carga: a 10 bohr el campo es 2 millones de veces menor' },
+// El `que` va a UNA sola línea: a 3.2vw sobre 84% de un 9:16 caben ~50 caracteres, y la
+// segunda línea caía justo encima de la carga de arriba (medido en el still de t=36).
+  { t0: 4.0, t1: 9.5, tex: String.raw`\vec{E}=\frac{q}{r^{2}}\,\hat{r}`,
+    que: 'Coulomb: el campo cae con el CUADRADO de r' },
+  { t0: 11.6, t1: 15.7, tex: String.raw`Q_{\text{dentro}} = (+q) + (-q) = 0`,
+    que: 'Carga neta 0 adentro: las 60 líneas CIERRAN' },
+  { t0: 23.1, t1: 29.6, tex: String.raw`\oint \vec{E}\cdot d\vec{A}=4\pi Q`,
+    que: 'El flujo solo depende de la carga de ADENTRO' },
+  { t0: 30.1, t1: 37.9, tex: String.raw`\sum q_i = 0 \;\Rightarrow\; N_{\text{escapan}} = 0`,
+    que: '180 líneas: todas nacen en + y mueren en −' },
+  { t0: 48.3, t1: 56.5, tex: String.raw`Q(r)=e^{-2r}\left(1+2r+2r^{2}\right)`,
+    que: 'H 1s: la carga que queda DENTRO del radio r' },
+  { t0: 61.0, t1: 71.9, tex: String.raw`\vec{E}(r)=\frac{Q(r)}{r^{2}}\,\hat{r}`,
+    que: 'La nube se come la carga: el campo se APAGA' },
 ];
 
 function FormulaOverlay({ time, vertical, beats }: { time: number; vertical: boolean; beats: FormulaBeat[] }) {
@@ -2314,19 +2325,43 @@ function FormulaOverlay({ time, vertical, beats }: { time: number; vertical: boo
 //
 // Paleta: la de la casa (oro + morado, ver la serie del agua). El + es ORO porque de ahí NACEN
 // las líneas; el − es MORADO porque ahí MUEREN. Las líneas, el mismo cian-azul de la serie.
-// textura de GLOW: gaussiana radial en un canvas (una sola vez, módulo). Es lo que hace que
-// una carga puntual se vea como PUNTO QUE ARDE y no como una pelota de color plano.
-const GLOW_TEX = (() => {
-  const c = document.createElement('canvas'); c.width = c.height = 128;
-  const g = c.getContext('2d')!;
-  const rg = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  rg.addColorStop(0.00, 'rgba(255,255,255,1)');
-  rg.addColorStop(0.12, 'rgba(255,255,255,0.72)');
-  rg.addColorStop(0.34, 'rgba(255,255,255,0.20)');
-  rg.addColorStop(1.00, 'rgba(255,255,255,0)');
-  g.fillStyle = rg; g.fillRect(0, 0, 128, 128);
+// EL ASPECTO DE UNA CARGA. Ian (2026-07-30): "los puntos de carga se ven supersimples,
+// aburridos". Lo eran: esferas de color plano con un degradado inventado encima. Dos cambios,
+// y los dos vienen de la física, no del gusto:
+//
+//  1. El halo NO es una gaussiana: es |E| = q/r², el campo de verdad, pintado píxel a píxel y
+//     saturado en el núcleo. Así el brillo alrededor de la carga CAE como cae el campo.
+//  2. Un + y un − dejan de ser "la misma bolita de otro color": son distintos EN ESPECIE.
+//     El + es una FUENTE (núcleo blanco ardiendo, de ahí nacen las líneas) y el − es un POZO
+//     (centro OSCURO con un anillo luminoso: el campo se hunde ahí). Se lee de un vistazo
+//     quién emite y quién traga, que es justo lo que la pieza está contando.
+function _texCampo(pozo: boolean) {
+  const N = 192, c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d')!, im = g.createImageData(N, N), d = im.data;
+  const R = N / 2;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const dx = (x - R + 0.5) / R, dy = (y - R + 0.5) / R;
+    const r = Math.hypot(dx, dy);
+    let a = 0;
+    if (r <= 1) {
+      // |E| ∝ 1/r², normalizado a r=1 y saturado cerca del centro (donde diverge)
+      a = Math.min(1, 0.020 / (r * r + 1e-4));
+      if (pozo) {
+        // POZO: el centro se vacía y queda un anillo — el campo ENTRA, no sale.
+        const anillo = Math.exp(-Math.pow((r - 0.30) / 0.10, 2));
+        a = Math.max(anillo, a * 0.45) * (r < 0.18 ? 0.10 : 1);
+      }
+      a *= 1 - Math.pow(r, 3);                     // borde limpio, sin corte duro
+    }
+    const i = (y * N + x) * 4;
+    d[i] = d[i + 1] = d[i + 2] = 255;
+    d[i + 3] = Math.round(255 * Math.max(0, Math.min(1, a)));
+  }
+  g.putImageData(im, 0, 0);
   const t = new THREE.CanvasTexture(c); t.needsUpdate = true; return t;
-})();
+}
+const FUENTE_TEX = _texCampo(false);   // carga +
+const POZO_TEX = _texCampo(true);      // carga −
 
 // textura del CERO: dos anillas concéntricas huecas. Va como SPRITE, no como toro, porque un
 // sprite lo encara three.js EN EL MOMENTO DE DIBUJAR. Calculando yo el quaternion con
@@ -2361,21 +2396,26 @@ const CARGAS_CAPAS: CapasSpec = {
   // sola dejaba el gancho casi en negro (medido: meanY 1.5, 97.7% del cuadro negro).
   // 7 etapas en el .bin (77 cuadros = 7 × 11): 1..6 cargas + EL ÁTOMO. El centro de la etapa s
   // es paso = (s·11 + 5)/76, así ninguna se salta. Base 0.066 = una sola carga.
-  paso:    { base: 0.066, mods: [
-    { wins: [[0.0, 3.2]],   a: 0.723, label: 'GANCHO: ya cerrado, las 6, el campo entero' },
-    { wins: [[10.0, 13.5]], a: 0.145, label: '2 cargas OPUESTAS: Q=0 y las 60 líneas CIERRAN' },
-    { wins: [[15.5, 18.5]], a: 0.289, label: '3: vuelve a haber fuga' },
-    { wins: [[20.5, 23.5]], a: 0.434, label: '4: cierra otra vez, 120 de 120' },
-    { wins: [[25.5, 28.5]], a: 0.579, label: '5: 59 de 180 se van' },
-    { wins: [[30.5, 39.0]], a: 0.723, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas' },
-    { wins: [[41.0, 58.0]], a: 0.868, label: 'EL ÁTOMO DE HIDRÓGENO: la misma ley en materia real' }],
+  // SIN in-medias-res aquí: la voz abre con "esto es UNA carga eléctrica" y el público cree lo
+  // que VE, no lo que oye — abrir con el hexágono completo mientras se dice "una" es
+  // exactamente el fallo de legibilidad que ya pagamos. El gancho lo carga la estrella: con la
+  // textura de fuente (|E|∝1/r²) una sola carga con sus 60 líneas ya llena el cuadro.
+  // OJO con `evalCapas`: los mods SUMAN a `base`, no lo sustituyen. Por eso `a` es un DELTA
+  // (s·11/76) sobre base=5/76 → paso = (s·11+5)/76 = el CENTRO de la etapa s, nunca el borde
+  // entre dos configuraciones. Y cada ventana CIERRA 0.6 s antes de que abra la siguiente
+  // (edge=0.6), así la caída de una coincide con la subida de la otra: el paso morfea sin
+  // sumarse consigo mismo. La subida cae en el segundo EXACTO en que la voz lo dice
+  // (segs.json: 8.68 · 16.15 · 19.75 · 25.82 · 30.08 · 48.29).
+  paso:    { base: 0.0658, mods: [
+    { wins: [[9.6, 16.1]],   a: 0.14474, label: '2 OPUESTAS: Q=0 y las 60 líneas CIERRAN (voz 8.68)' },
+    { wins: [[16.7, 19.7]],  a: 0.28947, label: '3: vuelve a haber fuga (voz 16.15)' },
+    { wins: [[20.3, 25.8]],  a: 0.43421, label: '4: cierra otra vez, 120 de 120 (voz 19.75)' },
+    { wins: [[26.4, 30.1]],  a: 0.57895, label: '5: 59 de 180 se van (voz 25.82)' },
+    { wins: [[30.7, 48.3]],  a: 0.72368, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas (voz 30.08)' },
+    { wins: [[48.9, 77.5]],  a: 0.86842, label: 'EL ÁTOMO DE HIDRÓGENO: la misma ley en materia real (voz 48.29)' }],
   },
   campo:   { base: 0.95 },
   cargas:  { base: 1.0 },
-  // el CERO del campo: aquí SÍ tiene sentido dibujarlo — cae en el centro del hexágono, con
-  // líneas alrededor que se ven cancelarse (en el trímero caía en un hueco sin líneas y no
-  // mostraba nada; ver el commit del 2026-07-29).
-  cero:    { base: 0, mods: [{ wins: [[34.0, 39.0]], a: 1.0, label: 'donde las seis se cancelan: E=0' }] },
 };
 
 function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => void }) {
@@ -2403,7 +2443,23 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
   // "honesto" y era un error de encuadre: el centro de masa se mueve cada vez que entra una
   // carga, así que la composición NADA (en la etapa de 2 cargas el par se iba abajo-derecha y
   // media pantalla quedaba vacía). El hexágono es geometría FIJA y conocida: es el ancla.
-  const pts: Vec3[] = cu.pos.map(p => [p[0], p[1], p[2]] as Vec3);
+  //
+  // UNA excepción, medida: en la etapa de la carga SOLA el hexágono es un fantasma (5 de sus 6
+  // vértices están vacíos) y encuadrarlo deja la estrella en (50%, 73%) con el 40% de arriba en
+  // negro muerto (still de t=1.5) — justo el void que prohíbe la doctrina, y encima en el
+  // gancho. Se corrige DESPLAZANDO el hexágono entero para que su centro caiga sobre la carga
+  // viva, y el desplazamiento vuelve a cero entre 9.6 y 11.6 s. Desplazar TODOS los puntos por
+  // igual deja rCore intacto (1.55 bohr) → la ley de encuadre se comporta idéntico; lo único
+  // que se mueve es A DÓNDE MIRA la cámara. El arranque del retorno cae en el corte de 9.6 s.
+  // La primera carga (ORDEN[0]) queda activa TODA la pieza, así que `iSola` no cambia y el
+  // desplazamiento es continuo en t — no se puede condicionar a n_activas===1: ese salto
+  // caería a mitad de la rampa (t≈9.3), dentro de la toma, y se vería el brinco de cámara.
+  const iSola = cu.q.findIndex(q => Math.abs(q) > 1e-6);
+  const vuelta = smoothstep((time - 9.6) / 2.0);
+  const d0: Vec3 = (!cu.atomo && iSola >= 0 && vuelta < 0.999)
+    ? [cu.pos[iSola][0] * (1 - vuelta), cu.pos[iSola][1] * (1 - vuelta), cu.pos[iSola][2] * (1 - vuelta)]
+    : [0, 0, 0];
+  const pts: Vec3[] = cu.pos.map(p => [p[0] + d0[0], p[1] + d0[1], p[2] + d0[2]] as Vec3);
   return (
     <>
       {/* halo declarado por etapa: el hexágono llena ~11 bohr, el átomo muere a 3.95 bohr
@@ -2432,28 +2488,27 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
         const q = cu.q[i];
         if (Math.abs(q) < 1e-6) return null;
         const mas = q > 0;
-        // + = ORO (de aquí NACEN las líneas) · − = MORADO (aquí MUEREN)
+        // + = ORO ardiendo (de aquí NACEN las líneas) · − = MORADO hundiéndose (aquí MUEREN)
         const col = mas ? '#ffc247' : '#b76bff';
         const rad = 0.11 * pul * Math.min(1, Math.abs(q) * 1.6);
         return (
           <group key={i} position={[p[0], p[1], p[2]]}>
-            <mesh><sphereGeometry args={[rad, 20, 16]} /><meshBasicMaterial color={col} /></mesh>
-            {/* HALO con caída radial (sprite), no una esfera aditiva: una esfera de color
-                constante lee como DISCO duro — el primer corte parecía un jardín de margaritas
-                que se comía el campo. El sujeto de esta pieza son las LÍNEAS. */}
-            <sprite scale={[rad * 7, rad * 7, 1]}>
-              <spriteMaterial map={GLOW_TEX} color={col} transparent opacity={0.55 * C.cargas}
+            {/* el núcleo SOLO en la fuente: el pozo no tiene centro brillante, tiene hueco */}
+            {mas && <mesh><sphereGeometry args={[rad * 0.62, 20, 16]} />
+              <meshBasicMaterial color="#fffdf2" /></mesh>}
+            <sprite scale={[rad * 11, rad * 11, 1]}>
+              <spriteMaterial map={mas ? FUENTE_TEX : POZO_TEX} color={col}
+                transparent opacity={(mas ? 0.95 : 1.0) * C.cargas}
                 depthWrite={false} blending={THREE.AdditiveBlending} />
             </sprite>
           </group>
         );
       })}
-      {/* el CERO: el .json lo trae calculado por cuadro (vacío hasta que se cierra el hexágono) */}
-      {C.cero > 0.01 && cu.ceros.length > 0 && (
-        <FieldNulls data={{ K: 2, Rvals: new Float32Array([1, 0]),
-                            pts: [new Float32Array(cu.ceros.flat()), new Float32Array(cu.ceros.flat())] }}
-          R={0.5} reveal={C.cero * 0.55} time={time} esc={0.62} />
-      )}
+      {/* El CERO del campo NO se dibuja. Ian lo mandó quitar ("quítale esas cosas feas que
+          muestran dónde se cancela el campo") y tenía razón dos veces: el anillo es un símbolo
+          pegado encima, no física que se vea. Aquí el cero se MUESTRA solo — la cámara se mete
+          al hueco del hexágono y ahí no pasa ni una línea. El dato sigue en el .json
+          (cu.ceros) por si vuelve a hacer falta. */}
     </>
   );
 }

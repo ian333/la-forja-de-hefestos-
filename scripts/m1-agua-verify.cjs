@@ -19,7 +19,9 @@ const OUT = process.env.OUT || '/tmp/m1';
   try {
     await p.goto(URL, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await p.waitForFunction('!!(window.__forgeBrep && window.__forgeBrep.moldAlarm)', null, { timeout: 120000 });
-    await p.waitForTimeout(1000);
+    // PROD: el kernel son 65 MB de WASM — esperar a que el botón se HABILITE
+    await p.waitForFunction('!document.querySelector(\'[data-testid="btn-flanera"]\')?.disabled', null, { timeout: 240000 });
+    await p.waitForTimeout(500);
     await p.click('[data-testid="btn-flanera"]');
     await p.waitForFunction('window.__forgeBrep.moldGeom().length > 8', null, { timeout: 90000 });
     await p.waitForTimeout(2000);
