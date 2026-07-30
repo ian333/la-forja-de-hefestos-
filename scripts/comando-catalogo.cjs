@@ -206,6 +206,7 @@ function copyFor(piece) {
   if (f === 'molecula') return { titulo: `La molécula ${piece.tema}`, descripcion: `${piece.tema}: sus orbitales y modos vibracionales reales en 3D. 🧪`, hashtags: ['#química', '#molécula', '#ciencia', '#3d', '#gaia', '#satisfying'] };
   if (f === 'adn')      return { titulo: `ADN — ${piece.tema}`, descripcion: `Una hebra real de ADN (${piece.tema}) en 4K. La vida, a escala molecular. 🧬`, hashtags: ['#adn', '#biología', '#genética', '#ciencia', '#4k', '#gaia'] };
   if (f === 'astro')    return { titulo: piece.titulo, descripcion: `${piece.titulo} — física relativista real, renderizada en 4K. El universo como nunca lo viste. 🌌`, hashtags: ['#astrofísica', '#espacio', '#universo', '#4k', '#ciencia', '#gaia'] };
+  if (f === 'fisica')   return { titulo: piece.titulo, descripcion: `${piece.titulo} — la ley y la simulación que la comprueba, cuadro por cuadro. Nada inventado. ⚡`, hashtags: ['#física', '#ciencia', '#educación', '#4k', '#aprendeentiktok', '#gaia'] };
   return { titulo: piece.titulo || piece.id, descripcion: '', hashtags: ['#gaia', '#ciencia'] };
 }
 
@@ -247,6 +248,9 @@ for (const v of prod.videos) {
     const sub = (v.serie.split('/')[1]) || 'misc';
     id = 'astro-' + v.name.replace(/\.mp4$|_master|_vertical|_1080x1920|_2160x3840|_FINAL|_PLAY/g, '');
     tema = sub; titulo = ASTRO_SUB[sub] || sub;
+  } else if (fam === 'fisica') {
+    // FÍSICA: leyes con la simulación como prueba (Gauss = contar las líneas). biblioteca fisica/<archivo>.mp4
+    familia = 'fisica'; tema = v.name.replace(/\.mp4$/, '').replace(/-/g, ' '); id = 'fisica-' + tema; titulo = tema;
   } else if (fam === 'ideas') {
     // serie "La economía son ideas": biblioteca ideas/<tema>/<archivo>.mp4
     familia = 'idea';

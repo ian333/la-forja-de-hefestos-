@@ -350,7 +350,9 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // Los cortes caen EN LOS SILENCIOS de la voz (segs.json de dist-video/cargas-narracion):
   // 9.6 · 15.9 · 23.2 · 30.1 · 37.9 · 42.8 · 48.3 · 56.5 · 64.5 → suman 77.5 s.
   cargas: [
-    { shot: ringFaceOn({ rMul: 1.02, azim0: Math.PI / 2, span: 0.22, elev: 0.06, fov: 36 }), dur: 9.6, label: 'UNA carga sola: todo escapa (voz 0.4-8.1)' },
+    // ABRE ENCIMA de la carga: con rMul 1.02 el cuadro salía 96.8% NEGRO (medido) — una
+    // estrellita en medio de la nada. Pegado, sus 60 líneas SON el cuadro y el gancho existe.
+    { shot: ringFaceOn({ rMul: 0.52, azim0: Math.PI / 2, span: 0.30, elev: 0.06, fov: 40 }), dur: 9.6, label: 'UNA carga sola, ENCIMA: todo escapa (voz 0.4-8.1)' },
     { shot: ringFaceOn({ rMul: 0.95, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 6.3, label: 'entra el − : las 60 MUEREN (voz 8.7-15.6)' },
     { shot: heroOrbit({ rMul: 1.12, elev: 0.34, azim0: 1.2, span: 1.1, fov: 35 }), dur: 7.3, label: 'órbita 3 y 4 cargas: el campo es 3D (voz 16.2-22.6)' },
     { shot: ringFaceOn({ rMul: 1.20, azim0: Math.PI / 2, span: 0.22, elev: 0.05, fov: 36 }), dur: 6.9, label: 'GAUSS: contar lo que sale (voz 23.2-29.5)' },
@@ -2459,7 +2461,13 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
   const d0: Vec3 = (!cu.atomo && iSola >= 0 && vuelta < 0.999)
     ? [cu.pos[iSola][0] * (1 - vuelta), cu.pos[iSola][1] * (1 - vuelta), cu.pos[iSola][2] * (1 - vuelta)]
     : [0, 0, 0];
-  const pts: Vec3[] = cu.pos.map(p => [p[0] + d0[0], p[1] + d0[1], p[2] + d0[2]] as Vec3);
+  // …y el hexágono también se ENCOGE, no solo se mueve. La ley de encuadre (camera-shots.ts)
+  // mide rCore sobre `pts` y aleja la cámara para que quepa: con el hexágono a tamaño real
+  // clavaba la distancia mínima en 6.45 bohr y el `rMul` de la toma no hacía NADA (medido:
+  // bajar rMul de 1.02 a 0.52 dejó el frame 0 igual, 96.4% negro). En la etapa de la carga
+  // sola el hexágono es un fantasma, así que su radio no debe mandar sobre el encuadre.
+  const esc = 0.28 + 0.72 * vuelta;
+  const pts: Vec3[] = cu.pos.map(p => [p[0] * esc + d0[0], p[1] * esc + d0[1], p[2] * esc + d0[2]] as Vec3);
   return (
     <>
       {/* halo declarado por etapa: el hexágono llena ~11 bohr, el átomo muere a 3.95 bohr
@@ -2470,7 +2478,8 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
       {/* LÍNEAS MÁS BRILLANTES que en el agua: aquí el campo ES el sujeto (en el agua compite
           con la nube de electrones). El color es aditivo, así que subirlo = línea más presente
           sin engordarla — engordarla exigiría cambiar de líneas WebGL (1 px fijo) a geometría. */}
-      <BondEField data={ef} R={R} time={time * 8} reveal={C.campo} col={[0.85, 1.45, 3.1]} />
+      {/* aquí el campo ES el sujeto (no compite con una nube de electrones): cinta más gruesa */}
+      <BondEField data={ef} R={R} time={time * 8} reveal={C.campo} col={[0.85, 1.45, 3.1]} ancho={3.8} />
       {/* EL ÁTOMO: un protón y SU nube real (buildAtomBundle del hidrógeno = la misma
           maquinaria de la serie de átomos). Las líneas de campo salen del .bin igual que
           antes; lo que cambia es que aquí el − no es otra bolita sino una nube de
@@ -2568,36 +2577,71 @@ function parseBondEField(buf: ArrayBuffer): BondEFieldData {
 // El campo se INTERPOLA por R(t): a cada separación es el campo REAL calculado (dos campos
 // radiales separados → uno molecular al juntarse). Líneas ESTABLES; un pulso viaja hacia
 // afuera (dirección del campo). Sin sprites que se amontonen = sin "colapso".
-function BondEField({ data, R, time, reveal, col }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number] }) {
+// `ancho` = grosor de la línea EN PÍXELES DEL MASTER 4K (3840 de alto). Se normaliza por la
+// resolución real, así el preview 1080 predice el master — misma lección que gl_PointSize
+// (ver feedback_juzgar_a_resolucion_del_master). ANTES esto era <lineSegments>, o sea líneas
+// WebGL de 1 px: en WebGL el grosor de línea NO se puede subir, y a 4K un píxel es NADA.
+// Medido: el frame 0 de las cuatro piezas salía 80-97% negro contra 12-24% de los ganadores,
+// y Ian lo cachó como "hay muy poco espectáculo visual". Ahora cada segmento es una CINTA
+// orientada a la pantalla, con perfil suave a lo ancho para que lea como filamento de luz
+// y no como listón plano.
+function BondEField({ data, R, time, reveal, col, ancho = 2.6 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number }) {
   const { K, NL, LP, Rvals, frames, inten } = data;
   const cCol = col ?? [0.55, 0.85, 1.0];
+  const gl = useThree(s => s.gl);
+  const alto = useThree(s => s.size.height) * useThree(s => s.viewport.dpr);
   const built = useMemo(() => {
     const nseg = NL * (LP - 1);
-    const pos = new Float32Array(nseg * 6), aS = new Float32Array(nseg * 2), aL = new Float32Array(nseg * 2);
-    const aE = new Float32Array(nseg * 2);
-    let os = 0, ol = 0;
+    // 4 vértices por segmento (una cinta): [pA-, pA+, pB-, pB+]
+    const pos = new Float32Array(nseg * 12), otro = new Float32Array(nseg * 12);
+    const aS = new Float32Array(nseg * 4), aL = new Float32Array(nseg * 4);
+    const aE = new Float32Array(nseg * 4), aLado = new Float32Array(nseg * 4);
+    const idx = new Uint32Array(nseg * 6);
+    let os = 0, ol = 0, od = 0, oi = 0, seg = 0;
     for (let j = 0; j < NL; j++) for (let s = 0; s < LP - 1; s++) {
-      aS[os++] = s / (LP - 1); aS[os++] = (s + 1) / (LP - 1);
-      aL[ol++] = j; aL[ol++] = j;
+      const s0 = s / (LP - 1), s1 = (s + 1) / (LP - 1);
+      aS[os++] = s0; aS[os++] = s0; aS[os++] = s1; aS[os++] = s1;
+      aL[ol++] = j; aL[ol++] = j; aL[ol++] = j; aL[ol++] = j;
+      aLado[od++] = -1; aLado[od++] = 1; aLado[od++] = -1; aLado[od++] = 1;
+      const b = seg * 4;
+      idx[oi++] = b; idx[oi++] = b + 1; idx[oi++] = b + 2;
+      idx[oi++] = b + 2; idx[oi++] = b + 1; idx[oi++] = b + 3;
+      seg++;
     }
     aE.fill(1);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('aOtro', new THREE.BufferAttribute(otro, 3));
     geo.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
     geo.setAttribute('aL', new THREE.BufferAttribute(aL, 1));
     geo.setAttribute('aE', new THREE.BufferAttribute(aE, 1));
+    geo.setAttribute('aLado', new THREE.BufferAttribute(aLado, 1));
+    geo.setIndex(new THREE.BufferAttribute(idx, 1));
     const mat = new THREE.ShaderMaterial({
       uniforms: { uOp: { value: 0 }, uCol: { value: new THREE.Color(cCol[0], cCol[1], cCol[2]) },
-                  uT: { value: 0 }, uUsaE: { value: inten ? 1 : 0 } },
-      vertexShader: `attribute float aS; attribute float aL; attribute float aE;
-        varying float vS; varying float vL; varying float vE;
-        void main(){ vS=aS; vL=aL; vE=aE; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+                  uT: { value: 0 }, uUsaE: { value: inten ? 1 : 0 },
+                  uRes: { value: new THREE.Vector2(2160, 3840) }, uW: { value: 2.6 } },
+      // La cinta se ANCHA en espacio de PANTALLA: se proyectan los dos extremos, se saca la
+      // normal en píxeles y se desplaza ±uW/2. Así el grosor no depende de la distancia a la
+      // cámara (una línea de campo lejana sigue siendo visible) ni del zoom.
+      vertexShader: `attribute vec3 aOtro; attribute float aS; attribute float aL; attribute float aE; attribute float aLado;
+        uniform vec2 uRes; uniform float uW;
+        varying float vS; varying float vL; varying float vE; varying float vLado;
+        void main(){ vS=aS; vL=aL; vE=aE; vLado=aLado;
+          vec4 cA=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+          vec4 cB=projectionMatrix*modelViewMatrix*vec4(aOtro,1.0);
+          vec2 nA=cA.xy/cA.w, nB=cB.xy/cB.w;
+          vec2 d=(nB-nA)*uRes; float L=length(d);
+          vec2 dir = L>1e-6 ? d/L : vec2(1.0,0.0);
+          vec2 nrm = vec2(-dir.y, dir.x);
+          cA.xy += nrm*(uW/uRes)*aLado*cA.w;   // uW/uRes = media anchura de uW px en NDC
+          gl_Position=cA; }`,
       // EL BRILLO ES |E|. Sin esto la línea se acaba de golpe donde se cortó y se lee
       // "despeinada" (Ian, 2026-07-28); con esto se apaga sola donde el campo ya no importa,
       // igual que en la escalera de cargas puntuales. vE viene del .bin en escala LOG.
       // uUsaE=0 → .bin viejo sin intensidad: se cae al perfil de siempre.
       fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE;
-        varying float vS; varying float vL; varying float vE;
+        varying float vS; varying float vL; varying float vE; varying float vLado;
         void main(){ float s=clamp(vS,0.0,1.0);
           float perfil=pow(max(sin(3.14159*s),0.0),0.38);      // el de siempre (bin sin |E|)
           float campo=pow(clamp(vE,0.0,1.0),2.2);              // 2.2: la cola débil cae rápido a negro
@@ -2606,42 +2650,58 @@ function BondEField({ data, R, time, reveal, col }: { data: BondEFieldData; R: n
           float dd=s-ph; dd=dd-floor(dd+0.5);
           float glow=exp(-dd*dd*7.0);                          // swell ANCHO y suave (no punto apretado) → viaja sin verse como dashes
           float a=uOp*(base + 0.13*glow*mix(1.0,campo,uUsaE)); // el pulso tampoco brilla donde no hay campo
+          // perfil A LO ANCHO: núcleo brillante que se desvanece al borde = filamento, no listón.
+          a *= pow(max(0.0, 1.0 - vLado*vLado), 1.1);
           gl_FragColor=vec4(uCol*a*2.0, a); }`,
-      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-    return { geo, mat, pos, aE };
+      // DoubleSide OBLIGATORIO: el sentido de giro del quad depende de hacia dónde apunta el
+      // segmento EN PANTALLA, así que con FrontSide la mitad de las cintas se descartan por
+      // culling (medido: el campo salió MÁS TENUE que con líneas de 1 px, no más brillante).
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    return { geo, mat, pos, otro, aE };
   }, [frames, NL, LP, inten]);
+  const dib = useMemo(() => { const v = new THREE.Vector2(); gl.getDrawingBufferSize(v); return v; }, [gl, alto]);
   if (reveal < 0.01) return null;
   built.mat.uniforms.uOp.value = reveal;
   built.mat.uniforms.uT.value = time;
+  built.mat.uniforms.uRes.value.set(dib.x || 2160, dib.y || 3840);
+  built.mat.uniforms.uW.value = Math.max(1.0, ancho * ((dib.y || 3840) / 3840));
   // frame por R(t): el campo evoluciona CON los átomos (Rvals desc separado→junto)
   let k = 0;
   if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
   else { while (k < K - 2 && Rvals[k + 1] > R) k++; }
   const r0 = Rvals[k], r1 = Rvals[k + 1], f = r0 === r1 ? 0 : Math.max(0, Math.min(1, (r0 - R) / (r0 - r1)));
-  const A = frames[k], B = frames[k + 1], pos = built.pos, stride = LP * 3;
+  const A = frames[k], B = frames[k + 1], pos = built.pos, otro = built.otro, stride = LP * 3;
   let o = 0;
   for (let j = 0; j < NL; j++) {
     const b0 = j * stride;
     for (let s = 0; s < LP - 1; s++) {
       const i0 = b0 + s * 3, i1 = b0 + (s + 1) * 3;
-      pos[o++] = A[i0] * (1 - f) + B[i0] * f; pos[o++] = A[i0 + 1] * (1 - f) + B[i0 + 1] * f; pos[o++] = A[i0 + 2] * (1 - f) + B[i0 + 2] * f;
-      pos[o++] = A[i1] * (1 - f) + B[i1] * f; pos[o++] = A[i1 + 1] * (1 - f) + B[i1 + 1] * f; pos[o++] = A[i1 + 2] * (1 - f) + B[i1 + 2] * f;
+      const ax = A[i0] * (1 - f) + B[i0] * f, ay = A[i0 + 1] * (1 - f) + B[i0 + 1] * f, az = A[i0 + 2] * (1 - f) + B[i0 + 2] * f;
+      const bx = A[i1] * (1 - f) + B[i1] * f, by = A[i1 + 1] * (1 - f) + B[i1 + 1] * f, bz = A[i1 + 2] * (1 - f) + B[i1 + 2] * f;
+      // los 2 vértices de la punta A miran a B, y los de B miran a A (para sacar la normal)
+      pos[o] = ax; pos[o + 1] = ay; pos[o + 2] = az;  otro[o] = bx; otro[o + 1] = by; otro[o + 2] = bz;
+      pos[o + 3] = ax; pos[o + 4] = ay; pos[o + 5] = az;  otro[o + 3] = bx; otro[o + 4] = by; otro[o + 5] = bz;
+      pos[o + 6] = bx; pos[o + 7] = by; pos[o + 8] = bz;  otro[o + 6] = ax; otro[o + 7] = ay; otro[o + 8] = az;
+      pos[o + 9] = bx; pos[o + 10] = by; pos[o + 11] = bz; otro[o + 9] = ax; otro[o + 10] = ay; otro[o + 11] = az;
+      o += 12;
     }
   }
   built.geo.attributes.position.needsUpdate = true;
+  built.geo.attributes.aOtro.needsUpdate = true;
   if (inten) {                                   // |E| por punto, interpolado por R(t) igual que la geometría
     const EA = inten[k], EB = inten[k + 1], aE = built.aE, st2 = LP;
     let e = 0;
     for (let j = 0; j < NL; j++) {
       const b0 = j * st2;
       for (let s = 0; s < LP - 1; s++) {
-        aE[e++] = (EA[b0 + s] * (1 - f) + EB[b0 + s] * f) / 255;
-        aE[e++] = (EA[b0 + s + 1] * (1 - f) + EB[b0 + s + 1] * f) / 255;
+        const e0 = (EA[b0 + s] * (1 - f) + EB[b0 + s] * f) / 255;
+        const e1 = (EA[b0 + s + 1] * (1 - f) + EB[b0 + s + 1] * f) / 255;
+        aE[e++] = e0; aE[e++] = e0; aE[e++] = e1; aE[e++] = e1;
       }
     }
     built.geo.attributes.aE.needsUpdate = true;
   }
-  return <lineSegments geometry={built.geo} material={built.mat} />;
+  return <mesh geometry={built.geo} material={built.mat} frustumCulled={false} />;
 }
 
 // ── POZO DE ENERGÍA E(R) REAL del Li₂ (RHF/cc-pVTZ, electrón por electrón). El MÍNIMO

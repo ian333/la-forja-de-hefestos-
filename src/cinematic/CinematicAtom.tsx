@@ -494,6 +494,12 @@ function nucleonField(protons: number, neutrons: number, Rc: number) {
   for (let i = 0; i < neutrons; i++) types.push(0);
   for (let i = types.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [types[i], types[j]] = [types[j], types[i]]; }
   const pos: Vec3[] = [];
+  // UN solo nucleón (hidrógeno) = el núcleo ES ese nucleón: va EXACTO en el origen.
+  // Sembrarlo al azar dentro del cúmulo lo dejaba hasta `inner` (0.039 bohr con Rc=0.055)
+  // fuera del centro, y en "La ley de Gauss" eso se vio feo: las líneas de campo, que SÍ
+  // nacen en el origen, convergían visiblemente abajo-a-la-izquierda del protón (medido en
+  // un crop 1:1 a 4K). Con un nucleón no hay cúmulo que distribuir.
+  if (total === 1) { pos.push([0, 0, 0]); return { total, pos, types, rn }; }
   for (let i = 0; i < total; i++) {
     let x = 0, y = 0, z = 0, d2 = 2;
     while (d2 > 1 || d2 < 1e-4) { x = rnd() * 2 - 1; y = rnd() * 2 - 1; z = rnd() * 2 - 1; d2 = x * x + y * y + z * z; }
