@@ -37,7 +37,7 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const CARGAS_DURATION = 77.5;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (76.70s)
+const CARGAS_DURATION = 77.7;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (76.96s)
 const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -348,24 +348,26 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // plano z=0, así que DE FRENTE (face-on) es la toma que muestra la cuenta: se ven las líneas
   // escapar por los huecos… y dejar de escapar cuando entra la sexta carga.
   // Los cortes caen EN LOS SILENCIOS de la voz (segs.json de dist-video/cargas-narracion):
-  // 9.6 · 15.9 · 23.2 · 30.1 · 37.9 · 42.8 · 48.3 · 56.5 · 64.5 → suman 77.5 s.
+  // 5.8 · 12.0 · 18.7 · 25.5 · 32.9 · 41.0 · 45.5 · 49.8 · 58.2 · 66.9 → suman 77.7 s.
   cargas: [
-    // ABRE ENCIMA de la carga: con rMul 1.02 el cuadro salía 96.8% NEGRO (medido) — una
-    // estrellita en medio de la nada. Pegado, sus 60 líneas SON el cuadro y el gancho existe.
-    { shot: ringFaceOn({ rMul: 0.52, azim0: Math.PI / 2, span: 0.30, elev: 0.06, fov: 40 }), dur: 9.6, label: 'UNA carga sola, ENCIMA: todo escapa (voz 0.4-8.1)' },
-    { shot: ringFaceOn({ rMul: 0.95, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 6.3, label: 'entra el − : las 60 MUEREN (voz 8.7-15.6)' },
-    { shot: heroOrbit({ rMul: 1.12, elev: 0.34, azim0: 1.2, span: 1.1, fov: 35 }), dur: 7.3, label: 'órbita 3 y 4 cargas: el campo es 3D (voz 16.2-22.6)' },
-    { shot: ringFaceOn({ rMul: 1.20, azim0: Math.PI / 2, span: 0.22, elev: 0.05, fov: 36 }), dur: 6.9, label: 'GAUSS: contar lo que sale (voz 23.2-29.5)' },
-    { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 7.8, label: 'la SEXTA cierra: 180 de 180 (voz 30.1-37.8)' },
+    // GANCHO: el hexágono CERRADO, denso, oro + magenta. Es la imagen que captura (la receta
+    // medida de los frame 0 que sí funcionaron), y la voz la nombra: "ciento ochenta líneas".
+    { shot: ringFaceOn({ rMul: 1.10, azim0: Math.PI / 2, span: 0.16, elev: 0.05, fov: 36 }), dur: 5.8, label: 'GANCHO: 180 líneas y ninguna se escapa (voz 0.4-5.7)' },
+    // …y REBOBINA a una sola carga, ENCIMA: con rMul 1.02 el cuadro salía 96.8% NEGRO.
+    { shot: ringFaceOn({ rMul: 0.52, azim0: Math.PI / 2 + 0.25, span: 0.30, elev: 0.06, fov: 40 }), dur: 6.2, label: 'UNA carga sola, ENCIMA: todo escapa (voz 6.3-10.7)' },
+    { shot: ringFaceOn({ rMul: 0.95, azim0: Math.PI / 2 + 0.3, span: 0.3, elev: 0.10, fov: 34 }), dur: 6.7, label: 'entra el − : las 60 MUEREN (voz 11.3-18.0)' },
+    { shot: heroOrbit({ rMul: 1.12, elev: 0.34, azim0: 1.2, span: 1.1, fov: 35 }), dur: 6.8, label: 'órbita 3 y 4 cargas: el campo es 3D (voz 18.6-24.9)' },
+    { shot: ringFaceOn({ rMul: 1.20, azim0: Math.PI / 2, span: 0.22, elev: 0.05, fov: 36 }), dur: 7.4, label: 'GAUSS: contar lo que sale (voz 25.5-32.2)' },
+    { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 8.1, label: 'la SEXTA cierra: 180 de 180 (voz 32.8-40.3)' },
     // "y en el centro el campo vale cero exacto": la cámara SE METE al hueco del hexágono.
     // El cero no se dibuja (Ian lo mandó quitar) — se ve: ahí no pasa NINGUNA línea.
-    { shot: crashIn({ rFrom: 1.00, rTo: 0.62, elev: 0.05, azim0: Math.PI / 2, fov: 34 }), dur: 4.9, label: 'AL CENTRO: el hueco donde E=0 (voz 38.4-42.2)' },
-    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.72, rTdMul: 1.45, fovFrom: 34, fovTo: 40 }), dur: 5.5, label: '"pero son bolitas ideales" (voz 42.8-47.7)' },
+    { shot: crashIn({ rFrom: 1.00, rTo: 0.62, elev: 0.05, azim0: Math.PI / 2, fov: 34 }), dur: 4.5, label: 'AL CENTRO: el hueco donde E=0 (voz 40.9-44.9)' },
+    { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.72, rTdMul: 1.45, fovFrom: 34, fovTo: 40 }), dur: 4.3, label: '"pero son bolitas ideales" (voz 45.5-49.2)' },
     // EL ÁTOMO: se entra despacio (el sujeto pasa de 11 a 4.6 bohr) y se orbita para que se
     // vea que la nube ENVUELVE al protón en 3D — no es un disco.
-    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.2, label: 'ENTRA el átomo: protón + su nube (voz 48.3-56.5)' },
-    { shot: heroOrbit({ rMul: 0.72, elev: 0.30, azim0: 1.1, span: 1.2, fov: 33 }), dur: 8.0, label: 'la nube ENVUELVE al protón (voz 57.1-64.5)' },
-    { shot: heroOrbit({ rMul: 0.62, elev: -0.18, azim0: 2.6, span: 1.6, fov: 35 }), dur: 13.0, label: 'las líneas SE APAGAN dentro de la nube (voz 65-76.7)' },
+    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.4, label: 'ENTRA el átomo: protón + su nube (voz 49.8-57.6)' },
+    { shot: heroOrbit({ rMul: 0.72, elev: 0.30, azim0: 1.1, span: 1.2, fov: 33 }), dur: 8.7, label: 'la nube ENVUELVE al protón (voz 58.2-66.3)' },
+    { shot: heroOrbit({ rMul: 0.62, elev: -0.18, azim0: 2.6, span: 1.6, fov: 35 }), dur: 10.8, label: 'las líneas SE APAGAN dentro de la nube (voz 66.9-76.4)' },
   ],
   // NaCl — EL ROBO A DISTANCIA: ver los dos separados → el electrón SALTA (whip) →
   // el Cl⁻ se ALZA sobre ti (ángulo bajo = poder del ladrón) → COLA.
@@ -2275,17 +2277,17 @@ interface FormulaBeat { t0: number; t1: number; tex: string; que: string; }
 const CARGAS_FORMULAS: FormulaBeat[] = [
 // El `que` va a UNA sola línea: a 3.2vw sobre 84% de un 9:16 caben ~50 caracteres, y la
 // segunda línea caía justo encima de la carga de arriba (medido en el still de t=36).
-  { t0: 4.0, t1: 9.5, tex: String.raw`\vec{E}=\frac{q}{r^{2}}\,\hat{r}`,
+  { t0: 6.4, t1: 10.7, tex: String.raw`\vec{E}=\frac{q}{r^{2}}\,\hat{r}`,
     que: 'Coulomb: el campo cae con el CUADRADO de r' },
-  { t0: 11.6, t1: 15.7, tex: String.raw`Q_{\text{dentro}} = (+q) + (-q) = 0`,
+  { t0: 14.0, t1: 18.0, tex: String.raw`Q_{\text{dentro}} = (+q) + (-q) = 0`,
     que: 'Carga neta 0 adentro: las 60 líneas CIERRAN' },
-  { t0: 23.1, t1: 29.6, tex: String.raw`\oint \vec{E}\cdot d\vec{A}=4\pi Q`,
+  { t0: 25.5, t1: 32.1, tex: String.raw`\oint \vec{E}\cdot d\vec{A}=4\pi Q`,
     que: 'El flujo solo depende de la carga de ADENTRO' },
-  { t0: 30.1, t1: 37.9, tex: String.raw`\sum q_i = 0 \;\Rightarrow\; N_{\text{escapan}} = 0`,
+  { t0: 32.8, t1: 40.3, tex: String.raw`\sum q_i = 0 \;\Rightarrow\; N_{\text{escapan}} = 0`,
     que: '180 líneas: todas nacen en + y mueren en −' },
-  { t0: 48.3, t1: 56.5, tex: String.raw`Q(r)=e^{-2r}\left(1+2r+2r^{2}\right)`,
+  { t0: 49.8, t1: 57.5, tex: String.raw`Q(r)=e^{-2r}\left(1+2r+2r^{2}\right)`,
     que: 'H 1s: la carga que queda DENTRO del radio r' },
-  { t0: 61.0, t1: 71.9, tex: String.raw`\vec{E}(r)=\frac{Q(r)}{r^{2}}\,\hat{r}`,
+  { t0: 62.1, t1: 71.7, tex: String.raw`\vec{E}(r)=\frac{Q(r)}{r^{2}}\,\hat{r}`,
     que: 'La nube se come la carga: el campo se APAGA' },
 ];
 
@@ -2398,10 +2400,12 @@ const CARGAS_CAPAS: CapasSpec = {
   // sola dejaba el gancho casi en negro (medido: meanY 1.5, 97.7% del cuadro negro).
   // 7 etapas en el .bin (77 cuadros = 7 × 11): 1..6 cargas + EL ÁTOMO. El centro de la etapa s
   // es paso = (s·11 + 5)/76, así ninguna se salta. Base 0.066 = una sola carga.
-  // SIN in-medias-res aquí: la voz abre con "esto es UNA carga eléctrica" y el público cree lo
-  // que VE, no lo que oye — abrir con el hexágono completo mientras se dice "una" es
-  // exactamente el fallo de legibilidad que ya pagamos. El gancho lo carga la estrella: con la
-  // textura de fuente (|E|∝1/r²) una sola carga con sus 60 líneas ya llena el cuadro.
+  // ABRE EN EL HEXÁGONO CERRADO, y la voz lo dice ("ciento ochenta líneas… empecemos por una
+  // sola") — así lo que se OYE es lo que se VE y aun así el gancho es la imagen densa.
+  // Por qué: medido contra los frame 0 que SÍ funcionaron (dímero/trímero), una carga sola da
+  // colorido 15 y detalle 1.2 contra 56-59 y 8-13 de los ganadores. Los ganadores también son
+  // ~80% negro; ganan porque el 20% encendido tiene MUCHAS líneas CURVAS que se CRUZAN y 3-4
+  // tonos a la vez. Un sujeto solo y simétrico no puede llegar ahí (ver feedback_frame0_es_el_gancho).
   // OJO con `evalCapas`: los mods SUMAN a `base`, no lo sustituyen. Por eso `a` es un DELTA
   // (s·11/76) sobre base=5/76 → paso = (s·11+5)/76 = el CENTRO de la etapa s, nunca el borde
   // entre dos configuraciones. Y cada ventana CIERRA 0.6 s antes de que abra la siguiente
@@ -2409,12 +2413,13 @@ const CARGAS_CAPAS: CapasSpec = {
   // sumarse consigo mismo. La subida cae en el segundo EXACTO en que la voz lo dice
   // (segs.json: 8.68 · 16.15 · 19.75 · 25.82 · 30.08 · 48.29).
   paso:    { base: 0.0658, mods: [
-    { wins: [[9.6, 16.1]],   a: 0.14474, label: '2 OPUESTAS: Q=0 y las 60 líneas CIERRAN (voz 8.68)' },
-    { wins: [[16.7, 19.7]],  a: 0.28947, label: '3: vuelve a haber fuga (voz 16.15)' },
-    { wins: [[20.3, 25.8]],  a: 0.43421, label: '4: cierra otra vez, 120 de 120 (voz 19.75)' },
-    { wins: [[26.4, 30.1]],  a: 0.57895, label: '5: 59 de 180 se van (voz 25.82)' },
-    { wins: [[30.7, 48.3]],  a: 0.72368, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas (voz 30.08)' },
-    { wins: [[48.9, 77.5]],  a: 0.86842, label: 'EL ÁTOMO DE HIDRÓGENO: la misma ley en materia real (voz 48.29)' }],
+    { wins: [[0.0, 5.2]],    a: 0.72368, label: 'GANCHO: el hexágono CERRADO, 180 líneas (voz 0.40)' },
+    { wins: [[12.0, 18.7]],  a: 0.14474, label: '2 OPUESTAS: Q=0 y las 60 líneas CIERRAN (voz 11.30)' },
+    { wins: [[19.3, 22.2]],  a: 0.28947, label: '3: vuelve a haber fuga (voz 18.61)' },
+    { wins: [[22.8, 28.4]],  a: 0.43421, label: '4: cierra otra vez, 120 de 120 (voz 22.08)' },
+    { wins: [[29.0, 32.9]],  a: 0.57895, label: '5: 59 de 180 se van (voz 28.29)' },
+    { wins: [[33.5, 49.8]],  a: 0.72368, label: 'la SEXTA: 180 de 180 CIERRAN, cero fugas (voz 32.78)' },
+    { wins: [[50.4, 77.7]],  a: 0.86842, label: 'EL ÁTOMO DE HIDRÓGENO: la misma ley en materia real (voz 49.83)' }],
   },
   campo:   { base: 0.95 },
   cargas:  { base: 1.0 },
@@ -2456,17 +2461,20 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
   // La primera carga (ORDEN[0]) queda activa TODA la pieza, así que `iSola` no cambia y el
   // desplazamiento es continuo en t — no se puede condicionar a n_activas===1: ese salto
   // caería a mitad de la rampa (t≈9.3), dentro de la toma, y se vería el brinco de cámara.
+  // `sola` = 1 SOLO mientras vive la carga única (5.4→11.4 s con bordes suaves). Fuera de esa
+  // ventana el ancla es el hexágono real: al abrir en el hexágono cerrado (el gancho) hay que
+  // encuadrarlo COMPLETO, no la carga.
   const iSola = cu.q.findIndex(q => Math.abs(q) > 1e-6);
-  const vuelta = smoothstep((time - 9.6) / 2.0);
-  const d0: Vec3 = (!cu.atomo && iSola >= 0 && vuelta < 0.999)
-    ? [cu.pos[iSola][0] * (1 - vuelta), cu.pos[iSola][1] * (1 - vuelta), cu.pos[iSola][2] * (1 - vuelta)]
+  const sola = smoothstep((time - 5.4) / 0.8) * (1 - smoothstep((time - 11.4) / 0.8));
+  const d0: Vec3 = (!cu.atomo && iSola >= 0 && sola > 0.001)
+    ? [cu.pos[iSola][0] * sola, cu.pos[iSola][1] * sola, cu.pos[iSola][2] * sola]
     : [0, 0, 0];
   // …y el hexágono también se ENCOGE, no solo se mueve. La ley de encuadre (camera-shots.ts)
   // mide rCore sobre `pts` y aleja la cámara para que quepa: con el hexágono a tamaño real
   // clavaba la distancia mínima en 6.45 bohr y el `rMul` de la toma no hacía NADA (medido:
   // bajar rMul de 1.02 a 0.52 dejó el frame 0 igual, 96.4% negro). En la etapa de la carga
   // sola el hexágono es un fantasma, así que su radio no debe mandar sobre el encuadre.
-  const esc = 0.28 + 0.72 * vuelta;
+  const esc = 1 - 0.72 * sola;
   const pts: Vec3[] = cu.pos.map(p => [p[0] * esc + d0[0], p[1] * esc + d0[1], p[2] * esc + d0[2]] as Vec3);
   return (
     <>
@@ -2585,7 +2593,11 @@ function parseBondEField(buf: ArrayBuffer): BondEFieldData {
 // y Ian lo cachó como "hay muy poco espectáculo visual". Ahora cada segmento es una CINTA
 // orientada a la pantalla, con perfil suave a lo ancho para que lea como filamento de luz
 // y no como listón plano.
-function BondEField({ data, R, time, reveal, col, ancho = 2.6 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number }) {
+// `rampa`: colorea la línea por |E| en vez de un azul fijo. MEDIDA Y RECHAZADA (2026-07-30):
+// baja el colorido de 41.2 a 39.4 porque el oro que mete cerca de las cargas compite con el
+// oro de la carga misma y el cian de en medio desatura. Se queda apagada por default; está
+// aquí para que no se vuelva a proponer sin medirla.
+function BondEField({ data, R, time, reveal, col, ancho = 2.6, rampa = 0 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number }) {
   const { K, NL, LP, Rvals, frames, inten } = data;
   const cCol = col ?? [0.55, 0.85, 1.0];
   const gl = useThree(s => s.gl);
@@ -2620,7 +2632,8 @@ function BondEField({ data, R, time, reveal, col, ancho = 2.6 }: { data: BondEFi
     const mat = new THREE.ShaderMaterial({
       uniforms: { uOp: { value: 0 }, uCol: { value: new THREE.Color(cCol[0], cCol[1], cCol[2]) },
                   uT: { value: 0 }, uUsaE: { value: inten ? 1 : 0 },
-                  uRes: { value: new THREE.Vector2(2160, 3840) }, uW: { value: 2.6 } },
+                  uRes: { value: new THREE.Vector2(2160, 3840) }, uW: { value: 2.6 },
+                  uRampa: { value: 0 } },
       // La cinta se ANCHA en espacio de PANTALLA: se proyectan los dos extremos, se saca la
       // normal en píxeles y se desplaza ±uW/2. Así el grosor no depende de la distancia a la
       // cámara (una línea de campo lejana sigue siendo visible) ni del zoom.
@@ -2640,7 +2653,7 @@ function BondEField({ data, R, time, reveal, col, ancho = 2.6 }: { data: BondEFi
       // "despeinada" (Ian, 2026-07-28); con esto se apaga sola donde el campo ya no importa,
       // igual que en la escalera de cargas puntuales. vE viene del .bin en escala LOG.
       // uUsaE=0 → .bin viejo sin intensidad: se cae al perfil de siempre.
-      fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE;
+      fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE; uniform float uRampa;
         varying float vS; varying float vL; varying float vE; varying float vLado;
         void main(){ float s=clamp(vS,0.0,1.0);
           float perfil=pow(max(sin(3.14159*s),0.0),0.38);      // el de siempre (bin sin |E|)
@@ -2652,7 +2665,16 @@ function BondEField({ data, R, time, reveal, col, ancho = 2.6 }: { data: BondEFi
           float a=uOp*(base + 0.13*glow*mix(1.0,campo,uUsaE)); // el pulso tampoco brilla donde no hay campo
           // perfil A LO ANCHO: núcleo brillante que se desvanece al borde = filamento, no listón.
           a *= pow(max(0.0, 1.0 - vLado*vLado), 1.1);
-          gl_FragColor=vec4(uCol*a*2.0, a); }`,
+          // TONO POR |E|: azul profundo (campo débil) → cian → oro blanco (campo intenso).
+          vec3 c = uCol;
+          if (uRampa > 0.5) {
+            float e = clamp(vE, 0.0, 1.0);
+            vec3 frio = vec3(0.10, 0.30, 1.35);
+            vec3 medio = vec3(0.30, 1.05, 2.05);
+            vec3 cal  = vec3(2.30, 1.50, 0.62);
+            c = e < 0.62 ? mix(frio, medio, e/0.62) : mix(medio, cal, (e-0.62)/0.38);
+          }
+          gl_FragColor=vec4(c*a*2.0, a); }`,
       // DoubleSide OBLIGATORIO: el sentido de giro del quad depende de hacia dónde apunta el
       // segmento EN PANTALLA, así que con FrontSide la mitad de las cintas se descartan por
       // culling (medido: el campo salió MÁS TENUE que con líneas de 1 px, no más brillante).
@@ -2665,6 +2687,7 @@ function BondEField({ data, R, time, reveal, col, ancho = 2.6 }: { data: BondEFi
   built.mat.uniforms.uT.value = time;
   built.mat.uniforms.uRes.value.set(dib.x || 2160, dib.y || 3840);
   built.mat.uniforms.uW.value = Math.max(1.0, ancho * ((dib.y || 3840) / 3840));
+  built.mat.uniforms.uRampa.value = rampa;
   // frame por R(t): el campo evoluciona CON los átomos (Rvals desc separado→junto)
   let k = 0;
   if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
