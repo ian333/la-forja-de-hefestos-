@@ -254,7 +254,11 @@ Detalle de guion (MX): revisar doble sentido ANTES del TTS ("míralos correrse" 
 - **Palabra ambigua al final** = zona de riesgo prosódico ("que tomas"→"Tomás"): reescribir.
 - **Énfasis mal puesto**: acento GUÍA solo en el texto TTS ("enláce"); el guion/subs conservan la
   ortografía correcta.
-- `TAKES=4` y elegir la MÁS CORTA. `TARGET=<dur>` para no mover un timing ya rendido. `LINES=n`
+- **`TAKES=4` SIEMPRE** (el default es 1 = CERO selección → sale la toma que caiga, arrastrada
+  incluida; pasó en "La ley de Gauss" 2026-07-30 y Ian lo oyó: "se escucha raro, se siente lenta").
+  El script se queda con la **MEDIANA**, NO con la más corta: la más corta elige siempre la versión
+  atropellada y sonó "raras" en el anillo (nota en `narracion-gen.py`, 2026-07-28). `TARGET=<dur>`
+  para no mover un timing ya rendido. `LINEAS=n` (NO `LINES` en zsh: es variable especial)
   regenera solo esa línea.
 
 ## ✅ VERIFICACIÓN (el OJO es el juez final)
