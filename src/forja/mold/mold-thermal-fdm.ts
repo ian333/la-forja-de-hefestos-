@@ -243,17 +243,28 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
     const kL = Math.round((zLine - zLo) / cell);
     if (kL < 0 || kL >= nz) continue;
     for (const g of cc.segs) {
+      // ── IDENTIDAD GEOMÉTRICA (§9): el área mojada del segmento es π·D·L, ni más
+      //    ni menos. El bug anterior capturaba ~2 celdas por lado (dd ≤ r + cell/2
+      //    con cell 7 mm) y a CADA UNA le daba el perímetro COMPLETO π·D·dx → el
+      //    área mojada salía 2.00× la real y el molde se enfriaba al doble. Además
+      //    asignaba con `=`, así que dos segmentos que se cruzan se borraban.
+      //    Fix: recolectar las celdas del segmento, repartir su área REAL entre
+      //    ellas, y ACUMULAR (+=) para que un cruce sume en vez de pisar.
+      const capturadas: number[] = [];
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
         const px = (i + 0.5) * cell, py = (j + 0.5) * cell;
         const vx = g.x1 - g.x0, vy = g.y1 - g.y0;
         const len2 = vx * vx + vy * vy || 1;
         const tt = Math.max(0, Math.min(1, ((px - g.x0) * vx + (py - g.y0) * vy) / len2));
         const dd = Math.hypot(px - (g.x0 + tt * vx), py - (g.y0 + tt * vy));
-        if (dd <= cc.diaMm / 2 + cell / 2) {
-          // factor Robin por celda: h·A_lateral/(ρ·cp·V) con A≈π·d·dx por celda
-          const a = Math.PI * (cc.diaMm / 1000) * dx;
-          cool[idx(i, j, kL)] = (H_COOL * a) / (RHO_STEEL * CP_STEEL * dx * dx * dx);
-        }
+        if (dd <= cc.diaMm / 2 + cell / 2) capturadas.push(idx(i, j, kL));
+      }
+      if (!capturadas.length) continue;
+      const lSegM = Math.hypot(g.x1 - g.x0, g.y1 - g.y0) / 1000;      // largo real (m)
+      const aSeg = Math.PI * (cc.diaMm / 1000) * lSegM;               // π·D·L del segmento
+      const aPorCelda = aSeg / capturadas.length;                     // repartida, no duplicada
+      for (const id of capturadas) {
+        cool[id] += (H_COOL * aPorCelda) / (RHO_STEEL * CP_STEEL * dx * dx * dx);
       }
     }
   }

@@ -401,13 +401,37 @@ server {
     listen 80;
     server_name university.gaiaprime.com.mx;
 
-    # Asset caching para los MP3 grandes y los JS de la app
-    location ~* \.(mp3|js|css|woff2?|wasm)$ {
+    # DATOS PRECOMPUTADOS — la física ya calculada (nubes ab initio de los 118 átomos,
+    # campos, moléculas). Medido el 2026-07-31: salían con `no-cache, no-store` y
+    # `cf-cache-status: BYPASS`, o sea que CADA vista de un elemento bajaba 182 KB desde la
+    # casa de Ian atravesando el túnel. La prueba de carga saturaba en 3.2 MB/s —el uplink
+    # doméstico— y a 60 concurrentes un átomo tardaba 3.5 s.
+    # Son DERIVADOS INMUTABLES: un carbono resuelto no cambia. Se cachean 30 días para que
+    # Cloudflare los sirva del borde y el uplink deje de ser el techo. Sin `immutable` a
+    # propósito: si se recalculan con mejor base, un purge/recarga dura los propaga.
+    location /precomputed/ {
         proxy_pass http://gaia_forja_atlas:80;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_hide_header Cache-Control;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        gzip on;
+        gzip_types application/octet-stream application/json;
+        gzip_min_length 4096;
+    }
+
+    # Asset caching para los MP3 grandes y los JS de la app
+    location ~* \.(mp3|js|css|woff2?|wasm|bin)$ {
+        proxy_pass http://gaia_forja_atlas:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # el upstream mandaba `no-cache, no-store`: sin ocultarlo, `expires` no gana
+        proxy_hide_header Cache-Control;
         expires 7d;
         add_header Cache-Control "public, max-age=604800, immutable";
     }
