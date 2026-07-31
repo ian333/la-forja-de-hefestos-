@@ -45,7 +45,8 @@ SEED = 20260731
 POSQ = 2000.0          # bohr = int16/POSQ → techo 16.38 bohr por eje
 Z_MAX = int(os.environ.get('Z_MAX', '118'))
 N_PTS = int(os.environ.get('N_PTS', '26000'))     # puntos por átomo (todas las subcapas)
-NG = int(os.environ.get('NG', '88'))              # malla NG³
+NR = int(os.environ.get('NR', '170'))             # anillos radiales (log) — resuelven el core
+NDIR = int(os.environ.get('NDIR', '900'))         # direcciones (espiral de Fibonacci)
 
 SIMBOLO = ('H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn '
            'Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce '
@@ -83,11 +84,35 @@ DESAPAREADOS = {
 BASES = ['def2-tzvp', 'def2-svp', 'stuttgart-rlc', 'crenbl', 'lanl2dz', 'sarc-dkh']
 
 
-def malla(L, ng):
-    xs = np.linspace(-L, L, ng)
-    d = xs[1] - xs[0]
-    G = np.stack(np.meshgrid(xs, xs, xs, indexing='ij'), axis=-1).reshape(-1, 3)
-    return G, d
+def malla_esferica(L, nr=160, ndir=900):
+    """MALLA ESFÉRICA CON RADIO LOGARÍTMICO — reemplaza a la cartesiana.
+
+    ⚠ POR QUÉ SE CAMBIÓ (Ian, 2026-07-31: "ESTOY VIENDO LITERALMENTE CUBOS"):
+    la versión anterior evaluaba en una malla cartesiana de 88³ sobre ±L. Con L≈10 bohr eso
+    son celdas de ~0.23 bohr… pero la densidad 1s de un átomo pesado vive dentro de 0.1 bohr,
+    o sea MÁS CHICA QUE UNA CELDA. Todo el core caía en dos o tres celdas, y esas celdas SON
+    un cubo: por eso del neón en adelante el núcleo se veía como una caja brillante (medido en
+    capturas de Ne, Mg, Al, Si, S, Cl, Ar, Ca, Ti, Cu). El hidrógeno y el litio se salvaban
+    solo porque su nube es difusa y abarca muchas celdas.
+    Aquí el radio va en escala LOGARÍTMICA (resuelve el core con la misma cantidad de puntos)
+    y las direcciones son una espiral de Fibonacci (cobertura isotrópica, sin ejes
+    privilegiados). Un cubo ya no puede aparecer: no hay ninguno en la construcción.
+
+    Devuelve (puntos, pesos) donde el peso YA lleva el jacobiano r²·dr·dΩ, así que muestrear
+    ∝ peso·ρ da la distribución correcta en 3D.
+    """
+    # radio: log-espaciado desde muy dentro del core hasta la cola
+    r = np.geomspace(2e-3, L, nr)
+    dr = np.gradient(r)
+    # direcciones: espiral de Fibonacci = puntos casi equiespaciados en la esfera
+    i = np.arange(ndir) + 0.5
+    phi = np.arccos(1 - 2 * i / ndir)
+    theta = np.pi * (1 + 5 ** 0.5) * i
+    u = np.stack([np.cos(theta) * np.sin(phi), np.sin(theta) * np.sin(phi), np.cos(phi)], axis=1)
+    P = (r[:, None, None] * u[None, :, :]).reshape(-1, 3)
+    # peso de volumen: r²·dr·(4π/ndir)
+    w = np.repeat(r ** 2 * dr * (4.0 * np.pi / ndir), ndir)
+    return np.ascontiguousarray(P), w
 
 
 def radio_util(mol, mf, rmax=18.0):
@@ -105,20 +130,29 @@ def radio_util(mol, mf, rmax=18.0):
     return float(r[fuera[-1]]) if len(fuera) else 6.0
 
 
-def muestrea(campo, n, rng, L, ng):
-    """Inverse-CDF sobre la malla 3D (mismo método que la serie del agua). Devuelve n puntos
-    distribuidos ∝ densidad, con jitter dentro de la celda para que no se vea reticulado."""
-    f = np.maximum(campo.ravel(), 0.0)
-    tot = f.sum()
+def muestrea_esf(dens, pesos, P, n, rng, nr, ndir):
+    """Inverse-CDF sobre la malla esférica. El jitter se hace EN COORDENADAS ESFÉRICAS
+    (radio dentro de su anillo logarítmico, dirección dentro de su casquete), nunca en un
+    cubo: mezclar rejillas es justo lo que metía las caras planas."""
+    peso = np.maximum(dens, 0.0) * pesos
+    tot = peso.sum()
     if tot <= 0:
         return np.zeros((0, 3))
-    cdf = np.cumsum(f) / tot
-    idx = np.searchsorted(cdf, rng.random(n))
-    idx = np.clip(idx, 0, f.size - 1)
-    i, j, k = np.unravel_index(idx, (ng, ng, ng))
-    paso = 2.0 * L / (ng - 1)
-    base = np.stack([i, j, k], axis=1).astype(float) * paso - L
-    return base + (rng.random((n, 3)) - 0.5) * paso
+    cdf = np.cumsum(peso) / tot
+    idx = np.clip(np.searchsorted(cdf, rng.random(n)), 0, peso.size - 1)
+    ir, idir = idx // ndir, idx % ndir
+    base = P[idx]
+    rbase = np.linalg.norm(base, axis=1)
+    u = base / np.maximum(rbase, 1e-12)[:, None]
+    # radio: se sortea DENTRO del anillo logarítmico (factor multiplicativo, no aditivo)
+    f = np.exp((rng.random(n) - 0.5) * (np.log(1e4) / nr))   # ancho de un anillo en log
+    rr = rbase * f
+    # dirección: pequeña perturbación dentro del casquete que le toca a cada punto
+    ang = np.sqrt(4.0 / ndir)                                # radio angular del casquete
+    a = rng.normal(0, ang * 0.42, (n, 3))
+    v = u + a
+    v /= np.linalg.norm(v, axis=1)[:, None]
+    return v * rr[:, None]
 
 
 def calcula(Z):
@@ -256,9 +290,9 @@ def main():
             fusion[e['Z']] = e
         os.makedirs(OUT_DIR, exist_ok=True)
         with open(_mf, 'w') as f:
-            json.dump(dict(seed=SEED, posq=POSQ, grid=NG,
+            json.dump(dict(seed=SEED, posq=POSQ, grid=f'{NR}x{NDIR} esferica',
                            elements=[fusion[k] for k in sorted(fusion)]), f)
-    print(f"=== TABLA PERIÓDICA AB INITIO · {len(lista)} elementos · malla {NG}³ · {N_PTS} pts ===",
+    print(f"=== TABLA PERIÓDICA AB INITIO · {len(lista)} elementos · malla esférica {NR}×{NDIR} · {N_PTS} pts ===",
           flush=True)
     print(f"{'Z':>4} {'el':<3} {'base':<10} {'método':<5} {'E (Ha)':>14} {'L(bohr)':>8} "
           f"{'subcapas':>9} {'KB':>6}", flush=True)
@@ -271,7 +305,7 @@ def main():
             continue
         metodo = 'UHF' if DESAPAREADOS[Z] else 'RHF'
         L = min(16.0, max(3.5, radio_util(mol, mf) * 1.05))
-        G, _ = malla(L, NG)
+        G, W = malla_esferica(L, NR, NDIR)
         grupos = subcapas(mol, mf)
 
         # peso de cada subcapa = sus electrones → los puntos se reparten por OCUPACIÓN
@@ -285,7 +319,7 @@ def main():
                 for c, o in orbs:
                     dens[a:a + 60000] += o * (ao @ c) ** 2
             n_sub = max(200, int(round(N_PTS * pesos[nl] / tot_e)))
-            p = muestrea(dens.reshape(NG, NG, NG), n_sub, rng, L, NG)
+            p = muestrea_esf(dens, W, G, n_sub, rng, NR, NDIR)
             pts_all.append(p); sidx_all.append(np.full(len(p), si, np.uint8))
             shells.append((nl, int(round(pesos[nl]))))
         pts = np.concatenate(pts_all); sidx = np.concatenate(sidx_all)

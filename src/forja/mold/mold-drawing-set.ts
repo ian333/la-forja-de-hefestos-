@@ -211,7 +211,12 @@ export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   const obstacles: Array<{ x: number; y: number; r: number }> = [];
   for (const role of ['A', 'B'] as const)
     for (const h of standardHoles(s, role)) obstacles.push({ x: h.x, y: h.y, r: h.dia / 2 });
-  const rLine = dia / 2, CLR = 3;                          // §9.2.7: holgura a cualquier otro componente
+  const rLine = dia / 2;
+  // §9.2.7 LITERAL: "at least HALF A COOLING DIAMETER between the surface of the
+  // cooling line and the surface of any other mold component". Antes eran 3 mm
+  // fijos: con ⌀15.9 el libro pide 7.95, o sea que el ruteador esquivaba con menos
+  // de la mitad de la holgura exigida y el auditor lo cazaba después.
+  const CLR = dia / 2;
   const xMin = edge, xMax = s.widthMm - edge, xMid = (xMin + xMax) / 2;
   /**
    * TRAMO LIBRE EN X A UNA ALTURA Y — el cambio de fondo. Antes se recortaba
@@ -286,8 +291,37 @@ export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
   for (let i = 0; i < nCh2; i++) segs.push({ x0: spanOf[i].a, y0: chY[i], x1: spanOf[i].b, y1: chY[i] });
   // serpentín: cross-drill en extremo alterno. Con tramos DISTINTOS el barreno
   // transversal va donde los dos canales coinciden (el más corto manda).
+  // ── Y EL CROSS-DRILL TAMBIÉN ESQUIVA (§9.2.7) ──
+  // El esquive de arriba solo miraba los canales HORIZONTALES: los tramos
+  // verticales de conexión se plantaban en el extremo del span sin verificar nada,
+  // y ahí es justo donde viven los tornillos de las esquinas. De ahí salían los
+  // críticos del auditor con canal x=19 / x=376 / x=471 contra pernos M8-M12: el
+  // circuito "esquivado" chocaba por los tramos que nadie revisó.
+  /** ¿el tramo VERTICAL en x, entre ya y yb, libra todos los obstáculos? */
+  const verticalLibre = (x: number, ya: number, yb: number): boolean => {
+    const lo = Math.min(ya, yb), hi = Math.max(ya, yb);
+    for (const o of obstacles) {
+      const hol = rLine + o.r + CLR;
+      if (o.y < lo - hol || o.y > hi + hol) continue;              // fuera del tramo
+      if (Math.abs(x - o.x) < hol) return false;
+    }
+    return true;
+  };
+  /** X del cross-drill: desde el extremo hacia adentro hasta encontrar tramo libre. */
+  const crossX = (xExtremo: number, haciaDentro: number, ya: number, yb: number): number => {
+    for (let d = 0; d <= 60; d += 2) {
+      const x = xExtremo + haciaDentro * d;
+      if (x < xMin || x > xMax) break;
+      if (verticalLibre(x, ya, yb)) return Math.round(x);
+    }
+    return Math.round(xExtremo);                                    // sin hueco: se reporta, no se finge
+  };
+  const crossXs: number[] = [];
   for (let i = 0; i + 1 < nCh2; i++) {
-    const x = i % 2 === 0 ? Math.min(spanOf[i].b, spanOf[i + 1].b) : Math.max(spanOf[i].a, spanOf[i + 1].a);
+    const derecha = i % 2 === 0;
+    const x0 = derecha ? Math.min(spanOf[i].b, spanOf[i + 1].b) : Math.max(spanOf[i].a, spanOf[i + 1].a);
+    const x = crossX(x0, derecha ? -1 : +1, chY[i], chY[i + 1]);
+    crossXs.push(x);
     segs.push({ x0: x, y0: chY[i], x1: x, y1: chY[i + 1] });
   }
   const outX = (nCh2 - 1) % 2 === 0 ? spanOf[nCh2 - 1].b : spanOf[nCh2 - 1].a;   // extremo abierto del último canal
