@@ -82,8 +82,10 @@ def malla_del_cubo(hilos):
     un marco NO apantalla, y ese es justo el beat que hace interesante la pieza.
     """
     h = L / 2.0
-    pts = []
+    pts, dirs = [], []
     t = (np.arange(POR_ARISTA) + 0.5) / POR_ARISTA
+    def eje_unit(e):
+        v = np.zeros(3); v[e] = 1.0; return np.tile(v, (POR_ARISTA, 1))
     if hilos <= 0:
         for eje in range(3):
             for s1 in (-h, h):
@@ -92,8 +94,8 @@ def malla_del_cubo(hilos):
                     p[:, eje] = -h + t * L
                     p[:, (eje + 1) % 3] = s1
                     p[:, (eje + 2) % 3] = s2
-                    pts.append(p)
-        return np.concatenate(pts, axis=0)
+                    pts.append(p); dirs.append(eje_unit(eje))
+        return np.concatenate(pts, axis=0), np.concatenate(dirs, axis=0)
     # alambres tejidos en cada cara: `hilos` en una dirección y `hilos` en la otra
     w = (np.arange(hilos) + 0.5) / hilos
     for eje in range(3):                       # eje = normal de la cara
@@ -104,37 +106,60 @@ def malla_del_cubo(hilos):
                 p[:, eje] = lado
                 p[:, a] = -h + t * L
                 p[:, b] = -h + wv * L
-                pts.append(p)
+                pts.append(p); dirs.append(eje_unit(a))
                 p2 = np.zeros((POR_ARISTA, 3))
                 p2[:, eje] = lado
                 p2[:, b] = -h + t * L
                 p2[:, a] = -h + wv * L
-                pts.append(p2)
+                pts.append(p2); dirs.append(eje_unit(b))
     P = np.concatenate(pts, axis=0)
+    D = np.concatenate(dirs, axis=0)
     # DEDUPE OBLIGATORIO: los alambres de las dos direcciones se CRUZAN, y en cada
     # cruce quedaban dos elementos en el MISMO punto → distancia 0 → 1/R = inf y la
     # matriz del conductor sale envenenada. Se veía en el resultado: la malla 3x3
     # apantallaba MÁS que la 5x5, que es físicamente imposible.
     llave = np.round(P / 1e-6).astype(np.int64)
     _, idx = np.unique(llave, axis=0, return_index=True)
-    return P[np.sort(idx)]
+    idx = np.sort(idx)
+    return P[idx], D[idx]
 
 
 HILOS = int(os.environ.get('HILOS', '5'))     # alambres por dirección y cara
 
 
-JAULA = malla_del_cubo(HILOS)
+JAULA, THILO = malla_del_cubo(HILOS)
 M = len(JAULA)
+DL = L / POR_ARISTA          # longitud del tramo que representa cada elemento
+
+
+def _pot_tramo(P, C, T, dl, a):
+    """Potencial en P de un tramo RECTO de longitud dl, radio a, con carga UNITARIA
+    repartida uniforme. Forma CERRADA, exacta a precisión de máquina:
+
+        V = (1/dl)·[ asinh(u2/ρ) − asinh(u1/ρ) ]
+
+    con ρ = distancia perpendicular al eje del tramo y u1,u2 las coordenadas de sus
+    extremos medidas desde P a lo largo del eje. La forma con asinh (en vez de
+    ln(u+√(u²+ρ²))) evita la cancelación catastrófica cuando u es grande y negativo.
+
+    Esto sustituye la colocación PUNTO-A-PUNTO (1/r entre centros), que es la
+    aproximación más burda posible: trata un alambre como un collar de cuentas y el
+    campo se cuela entre cuenta y cuenta. Con la integral exacta el término propio
+    ya no es un parche — sale de la MISMA fórmula con ρ=a y u=∓dl/2.
+    """
+    d = P[:, None, :] - C[None, :, :]                 # (NP, M, 3)
+    sfw = np.einsum('pmc,mc->pm', d, T)               # proyección sobre el eje
+    perp2 = np.maximum((d * d).sum(axis=2) - sfw * sfw, 0.0)
+    rho = np.sqrt(np.maximum(perp2, a * a))           # nunca dentro del alambre
+    u1 = -dl / 2.0 - sfw
+    u2 = dl / 2.0 - sfw
+    return (np.arcsinh(u2 / rho) - np.arcsinh(u1 / rho)) / dl
 
 
 def resolver_jaula(rq):
     """Carga inducida en cada elemento para una carga Q_EXT en `rq`.
     Devuelve (q_i, V0). Conductor AISLADO y neutro."""
-    d = JAULA[:, None, :] - JAULA[None, :, :]
-    R = np.linalg.norm(d, axis=2)
-    A = 1.0 / np.maximum(R, 1e-12)
-    dl = L / POR_ARISTA                            # longitud del tramo que representa cada elemento
-    np.fill_diagonal(A, (2.0 / dl) * np.arcsinh(dl / (2.0 * A_HILO)))
+    A = _pot_tramo(JAULA, JAULA, THILO, DL, A_HILO)
     vext = Q_EXT / np.maximum(np.linalg.norm(JAULA - rq, axis=1), 1e-9)
     # [A  -1] [q ]   [-vext]
     # [1   0] [V0] = [  0  ]
