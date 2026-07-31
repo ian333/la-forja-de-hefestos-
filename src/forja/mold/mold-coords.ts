@@ -107,8 +107,21 @@ export function coordAudit(s: MoldAssemblySpec): { findings: CoordFinding[]; fea
         if (d < worst) { worst = d; wi = `${f.type}@(${f.x},${f.y},${f.plate}) vs canal ${horiz ? 'y=' + g.y0 : 'x=' + g.x0}`; }
       }
     }
-    if (worst < 2) F.push({ sev: 'CRÍTICO', check: 'agua-choca-barreno', detail: `holgura ${worst.toFixed(1)} mm (${wi})` });
-    else if (worst < 4.5) F.push({ sev: 'ADVERTENCIA', check: 'agua-cerca-barreno', detail: `holgura ${worst.toFixed(1)} mm (${wi})` });
+    // §9.2.7 LITERAL: "the mold design should provide AT LEAST HALF A COOLING
+    // DIAMETER between the surface of the cooling line and the surface of any other
+    // mold component. This requirement maintains the structural integrity of the
+    // mold while also minimizing cooling leaks during mold operation due to
+    // corrosion." El umbral es ½⌀ y ESCALA con el diámetro — antes eran 2 mm fijos
+    // (crítico) y 4.5 mm (advertencia), números sin fuente que con ⌀15.9 quedaban
+    // 4× más flojos que el libro: el auditor daba ámbar donde el libro dice rojo.
+    const claroMin = cc.diaMm / 2;
+    if (worst < claroMin) {
+      F.push({ sev: 'CRÍTICO', check: 'agua-choca-barreno',
+        detail: `holgura ${worst.toFixed(1)} mm < ½⌀ = ${claroMin.toFixed(1)} mm exigido §9.2.7 (${wi})` });
+    } else if (worst < claroMin * 1.5) {
+      F.push({ sev: 'ADVERTENCIA', check: 'agua-cerca-barreno',
+        detail: `holgura ${worst.toFixed(1)} mm apenas sobre el ½⌀ = ${claroMin.toFixed(1)} mm §9.2.7 (${wi})` });
+    }
   }
 
   // ── 3b) BARRENO ∩ ASIENTO DEL INSERTO (cazado 2026-07-15 con las COTAS 3D en
