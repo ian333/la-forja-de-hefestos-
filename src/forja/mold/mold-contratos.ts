@@ -819,7 +819,7 @@ export function contratoLayout(pkg: MoldPackage): ContratoSubsistema {
     id: 'layout-material-base', subsistema: S, cita: '§4.4.4',
     criterio: 'el acero del inserto y el de la base son catálogos DISTINTOS (las bases solo vienen en 1045, 4140 o P20)',
     estado: 'SIN-MÓDULO',
-    detalle: `se elige un acero (${pkg.metal.metal.name ?? '—'}) para los insertos, pero no se verifica que la BASE exista en ese material`,
+    detalle: `se elige un acero (${pkg.metal.metal.key}) para los insertos, pero no se verifica que la BASE exista en ese material`,
     deuda: 'moldbase debe exponer el material de la base por separado y restringirlo a 1045/4140/P20',
   });
 
@@ -975,7 +975,8 @@ const ICON: Record<ContratoEstado, string> = {
 export function contratos(pkg: MoldPackage): ContratoReporte {
   const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg), contratoEnfriamiento(pkg),
     contratoExpulsion(pkg), contratoEstructural(pkg),
-    contratoLlenado(pkg), contratoGates(pkg)];
+    contratoLlenado(pkg), contratoGates(pkg),
+    contratoLayout(pkg), contratoCosto(pkg), contratoContraccion(pkg)];
   const t = { criterios: 0, cumple: 0, advierte: 0, viola: 0, sinCablear: 0, sinModulo: 0 };
   for (const s of subsistemas) {
     t.criterios += s.criterios.length; t.cumple += s.cumple; t.advierte += s.advierte;
