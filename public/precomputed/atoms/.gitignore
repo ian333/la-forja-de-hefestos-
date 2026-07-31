@@ -1,0 +1,6 @@
+# Los .bin de los átomos NO van a git: son DATOS derivados (~19 MB), reproducibles con
+#   python3 scripts/precompute-atom-orbitals.py
+# Al servidor llegan por el deploy (rsync de public/), igual que el resto de precomputed/.
+# Lo que SÍ se versiona es manifest.json: es la declaración de qué método, qué base y qué
+# límites tiene cada elemento — eso es la afirmación científica, no el dato pesado.
+*.bin

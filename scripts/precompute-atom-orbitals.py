@@ -236,7 +236,28 @@ def main():
     args = [int(a) for a in sys.argv[1:] if a.isdigit()]
     lista = args or list(range(1, Z_MAX + 1))
     rng = np.random.default_rng(SEED)
+    # ⚠ EL MANIFIESTO SE FUSIONA, NO SE PISA (bug 2026-07-31): correr un subconjunto
+    # —p.ej. solo los lantánidos— reescribía manifest.json desde cero y borraba la
+    # declaración de método/base de los otros 93. Los .bin sobrevivían, pero la
+    # AFIRMACIÓN CIENTÍFICA de con qué se calculó cada uno se perdía, que es lo único
+    # que no se puede reconstruir del dato.
+    previo = {}
+    _mf = os.path.join(OUT_DIR, 'manifest.json')
+    if os.path.exists(_mf):
+        try:
+            previo = {e['Z']: e for e in json.load(open(_mf)).get('elements', [])}
+        except Exception:
+            previo = {}
     manifiesto = []
+
+    def _guarda():
+        fusion = dict(previo)
+        for e in manifiesto:
+            fusion[e['Z']] = e
+        os.makedirs(OUT_DIR, exist_ok=True)
+        with open(_mf, 'w') as f:
+            json.dump(dict(seed=SEED, posq=POSQ, grid=NG,
+                           elements=[fusion[k] for k in sorted(fusion)]), f)
     print(f"=== TABLA PERIÓDICA AB INITIO · {len(lista)} elementos · malla {NG}³ · {N_PTS} pts ===",
           flush=True)
     print(f"{'Z':>4} {'el':<3} {'base':<10} {'método':<5} {'E (Ha)':>14} {'L(bohr)':>8} "
@@ -246,6 +267,7 @@ def main():
         if mol is None:
             print(f"{Z:>4} {SIMBOLO[Z-1]:<3} — SIN BASE DISPONIBLE (se declara el hueco)", flush=True)
             manifiesto.append(dict(Z=Z, sym=SIMBOLO[Z-1], ok=False, motivo='sin base'))
+            _guarda()
             continue
         metodo = 'UHF' if DESAPAREADOS[Z] else 'RHF'
         L = min(16.0, max(3.5, radio_util(mol, mf) * 1.05))
@@ -277,8 +299,7 @@ def main():
                                energia_fiable=energia_fiable,
                                energy_ha=float(mf.e_tot), L_bohr=L, points=len(pts),
                                shells=[dict(n=n, l=l, electrons=ne) for (n, l), ne in shells]))
-        with open(os.path.join(OUT_DIR, 'manifest.json'), 'w') as f:
-            json.dump(dict(seed=SEED, posq=POSQ, grid=NG, elements=manifiesto), f)
+        _guarda()
     ok = sum(1 for m in manifiesto if m['ok'])
     print(f"\n✅ {ok}/{len(lista)} elementos ab initio en {OUT_DIR}", flush=True)
 
