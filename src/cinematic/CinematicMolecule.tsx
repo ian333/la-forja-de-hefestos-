@@ -37,7 +37,8 @@ import { WaterMD } from './WaterMD';
 const DURATION = 22;   // más largo: la escena RESPIRA (cámara lenta y lejana)
 const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica real)
 const WPAIR_DURATION = 77;
-const CARGAS_DURATION = 83.2;   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
+const CARGAS_DURATION = 83.2;
+const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
 const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -372,6 +373,19 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.9, label: 'ENTRA el átomo: protón + su nube (voz 49.8-57.6)' },
     { shot: heroOrbit({ rMul: 0.72, elev: 0.30, azim0: 1.1, span: 1.2, fov: 33 }), dur: 8.6, label: 'la nube ENVUELVE al protón (voz 58.2-66.3)' },
     { shot: heroOrbit({ rMul: 0.62, elev: -0.18, azim0: 2.6, span: 1.6, fov: 35 }), dur: 11.7, label: 'las líneas SE APAGAN dentro de la nube (voz 66.9-76.4)' },
+  ],
+  // FARADAY — LA JAULA: el "rayo" (carga externa) se acerca y el campo NO ENTRA.
+  // Mismo lenguaje que cargas: 3/4 en 3D (nunca de frente al plano), la cámara ORBITA,
+  // y el corte al hueco central donde se ve que no pasa ni una línea.
+  faraday: [
+    // NUNCA meter la cámara DENTRO del cubo: sin un vértice y dos aristas convergiendo el
+    // cerebro no lee "jaula", lee "muro de azulejos" (veredicto de los agentes, 2026-07-30).
+    // Todas las tomas en 3/4 y por fuera; lo que cambia es el ángulo y la distancia.
+    { shot: heroOrbit({ rMul: 1.45, elev: 0.34, azim0: 0.80, span: 0.7, fov: 36 }), dur: 10.0, label: 'la jaula en 3/4, el rayo lejos' },
+    { shot: heroOrbit({ rMul: 1.30, elev: 0.20, azim0: 1.35, span: 0.6, fov: 36 }), dur: 9.0, label: 'se acerca: las líneas se doblan hacia la jaula' },
+    { shot: heroOrbit({ rMul: 1.20, elev: -0.26, azim0: 2.20, span: 0.8, fov: 36 }), dur: 9.0, label: 'órbita baja: las líneas ABRAZAN el cubo' },
+    { shot: ringFaceOn({ rMul: 1.15, azim0: 0.95, span: 0.30, elev: 0.30, fov: 34 }), dur: 9.0, label: 'el hueco NEGRO de adentro contra el campo de afuera' },
+    { shot: pullOut({ azim0: 0.9, span: 0.8, rFromMul: 1.05, rTdMul: 1.55, fovFrom: 34, fovTo: 40 }), dur: 9.0, label: 'payoff: el rayo encima y el interior intacto' },
   ],
   // NaCl — EL ROBO A DISTANCIA: ver los dos separados → el electrón SALTA (whip) →
   // el Cl⁻ se ALZA sobre ti (ángulo bajo = poder del ladrón) → COLA.
@@ -861,6 +875,7 @@ interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [n
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
+  faraday: { name: 'La jaula de Faraday', formula: 'E_dentro = 0', fact: 'Un marco de barras no te protege; una malla cerrada, 160 veces.' },
   cargas: { name: 'La ley de Gauss', formula: '∮E·dA = 4πQ', fact: 'Cuenta las líneas que se escapan: son exactamente la carga de adentro.' },
   ch4:  { name: 'Metano', formula: 'CH₄', fact: 'Cuatro enlaces perfectos a 109.5°: un tetraedro.' },
   nh3:  { name: 'Amoniaco', formula: 'NH₃', fact: 'Un par libre la vuelve una pirámide.' },
@@ -2534,6 +2549,83 @@ function CargasHex({ time, onReady }: { time: number; onReady?: (r: boolean) => 
   );
 }
 
+// ══ FARADAY — LA JAULA ═══════════════════════════════════════════════════════════════════
+// REUSA TODO: el campo son las MISMAS cintas de BondEField (mismo .bin, mismo shader con
+// difuminado y color por dirección), la cámara es playShots + CAMERA_SHOTS.faraday, y las
+// cargas usan las mismas texturas FUENTE_TEX/POZO_TEX. Lo único propio es la geometría de
+// la jaula, que viene del .json del solver.
+type FaradayCuadro = { k: number; d: number; rq: number[]; apantalla: number; e_dentro: number; e_sin: number };
+type FaradayMeta = { K: number; NL: number; LP: number; L: number; jaula: number[][]; apantalla_min: number; cuadros: FaradayCuadro[] };
+
+const FARADAY_CAPAS: CapasSpec = {
+  paso:  { base: 0, mods: [{ wins: [[0.0, FARADAY_DURATION]], a: 1.0, label: 'la carga se acerca de 26 a 5.6 bohr' }] },
+  campo: { base: 0.95 },
+};
+
+function JaulaHilos({ pts, L }: { pts: number[][]; L: number }) {
+  // los alambres, como puntos de acero tenue: NO deben competir con el campo (es el sujeto).
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const a = new Float32Array(pts.length * 3);
+    pts.forEach((p, i) => { a[i * 3] = p[0]; a[i * 3 + 1] = p[1]; a[i * 3 + 2] = p[2]; });
+    g.setAttribute('position', new THREE.BufferAttribute(a, 3));
+    return g;
+  }, [pts]);
+  // CON TEXTURA REDONDA y CHICOS: sin `map`, PointsMaterial dibuja CUADRADOS sólidos y la
+  // jaula sale como un tablero de Minecraft tapando el campo (medido a ojo en el still t=21).
+  // Y tenues a propósito: el sujeto es el CAMPO, la jaula es el obstáculo.
+  const mat = useMemo(() => new THREE.PointsMaterial({
+    size: L * 0.030, sizeAttenuation: true, map: FUENTE_TEX,
+    color: new THREE.Color(0.78, 0.86, 1.05),
+    transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending,
+  }), [L]);
+  return <points geometry={geo} material={mat} />;
+}
+
+function FaradayJaula({ time, onReady }: { time: number; onReady?: (r: boolean) => void }) {
+  const [ef, setEf] = useState<BondEFieldData | null>(null);
+  const [meta, setMeta] = useState<FaradayMeta | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/precomputed/faraday-jaula-efield.bin').then(r => r.arrayBuffer())
+      .then(b => { if (alive) { setEf(parseBondEField(b)); onReady?.(true); } })
+      .catch(e => console.error('faraday efield load failed', e));
+    fetch('/precomputed/faraday-jaula.json').then(r => r.json())
+      .then(j => { if (alive) setMeta(j as FaradayMeta); })
+      .catch(e => console.error('faraday json load failed', e));
+    return () => { alive = false; };
+  }, [onReady]);
+  if (!ef || !meta) return null;
+  const C = evalCapas(FARADAY_CAPAS, time);
+  const paso = Math.max(0, Math.min(1, C.paso));
+  const kf = paso * (meta.K - 1);
+  const R = meta.K - kf;
+  const cu = meta.cuadros[Math.max(0, Math.min(meta.K - 1, Math.round(kf)))];
+  const rq = cu.rq as Vec3;
+  const pul = 0.92 + 0.08 * Math.sin(time * 2.2);
+  const rad = 0.30 * pul;
+  // ANCLA: la jaula + la carga, para que ambas quepan mientras se acerca.
+  // ANCLA = SOLO la jaula, geometría FIJA (misma lección del hexágono). Meter la carga en el
+  // ancla movía el encuadre de 26 a 5.6 bohr y la composición nadaba en cada cuadro.
+  const pts: Vec3[] = meta.jaula.map(p => [p[0], p[1], p[2]] as Vec3);
+  return (
+    <>
+      <CargasCamera time={time} pts={pts} radio={meta.L * 0.5} rHalo={meta.L * 1.75} />
+      <BondEField data={ef} R={R} time={time * 8} reveal={C.campo} col={[0.85, 1.45, 3.1]}
+        ancho={10.5} rampa={1} caja={meta.L * 0.5} />
+      <JaulaHilos pts={meta.jaula} L={meta.L} />
+      {/* el "rayo": la carga externa, con la MISMA textura de fuente que en cargas */}
+      <group position={rq}>
+        <mesh><sphereGeometry args={[rad * 0.62, 20, 16]} /><meshBasicMaterial color="#fffdf2" /></mesh>
+        <sprite scale={[rad * 11, rad * 11, 1]}>
+          <spriteMaterial map={FUENTE_TEX} color="#ffc247" transparent opacity={0.95}
+            depthWrite={false} blending={THREE.AdditiveBlending} />
+        </sprite>
+      </group>
+    </>
+  );
+}
+
 /** Cámara de las cargas: el SUJETO es el campo, no las bolitas. Por eso rHalo se declara
  *  grande a mano — la ley de encuadre mide el núcleo con `pts` (radio del hexágono = 1.55
  *  bohr) y si no le dices que el halo llega a ~11 bohr, encuadra las cargas y CORTA el campo. */
@@ -2602,7 +2694,7 @@ function parseBondEField(buf: ArrayBuffer): BondEFieldData {
 // iguales". Antes probé colorear por |E| y lo MEDÍ: bajaba el colorido de 41.2 a 39.4 (el oro
 // competía con el de la carga y el cian desaturaba). Por dirección sí paga, y además enseña.
 // Default 0 = apagada, para no mover el look ya aprobado de O₂/agua.
-function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0 }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number }) {
+function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0, caja }: { data: BondEFieldData; R: number; time: number; reveal: number; col?: [number, number, number]; ancho?: number; rampa?: number; caja?: number }) {
   const { K, NL, LP, Rvals, frames, inten } = data;
   const cCol = col ?? [0.55, 0.85, 1.0];
   const gl = useThree(s => s.gl);
@@ -2648,14 +2740,18 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0 }: { da
       uniforms: { uOp: { value: 0 }, uCol: { value: new THREE.Color(cCol[0], cCol[1], cCol[2]) },
                   uT: { value: 0 }, uUsaE: { value: inten ? 1 : 0 },
                   uRes: { value: new THREE.Vector2(2160, 3840) }, uW: { value: 4.4 },
-                  uRampa: { value: 0 } },
+                  uRampa: { value: 0 }, uCaja: { value: 0 } },
       // MITER en espacio de PANTALLA: la normal sale de la tangente PROMEDIO de los dos
       // segmentos que llegan al punto, y la anchura se divide entre cos(θ/2) para que la
       // cinta no se adelgace en las curvas. El clamp evita púas en giros muy cerrados.
       vertexShader: `attribute vec3 aAnt; attribute vec3 aSig; attribute float aS; attribute float aL; attribute float aE; attribute float aLado;
-        uniform vec2 uRes; uniform float uW;
-        varying float vS; varying float vL; varying float vE; varying float vLado;
+        uniform vec2 uRes; uniform float uW; uniform float uCaja;
+        varying float vS; varying float vL; varying float vE; varying float vLado; varying float vDentro;
         void main(){ vS=aS; vL=aL; vE=aE; vLado=aLado;
+          // 1 = el punto está DENTRO del cubo de semilado uCaja (0 = no hay caja)
+          vec3 q = abs(position) - vec3(uCaja);
+          float fuera = length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+          vDentro = uCaja > 0.0 ? (1.0 - smoothstep(-0.15 * uCaja, 0.12 * uCaja, fuera)) : 0.0;
           vec4 cA=projectionMatrix*modelViewMatrix*vec4(aAnt,1.0);
           vec4 cC=projectionMatrix*modelViewMatrix*vec4(position,1.0);
           vec4 cS=projectionMatrix*modelViewMatrix*vec4(aSig,1.0);
@@ -2675,7 +2771,7 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0 }: { da
       // "despeinada" (Ian, 2026-07-28); con esto se apaga sola donde el campo ya no importa.
       // vE viene del .bin en escala LOG. uUsaE=0 → .bin viejo: perfil de siempre.
       fragmentShader: `uniform float uOp; uniform vec3 uCol; uniform float uT; uniform float uUsaE; uniform float uRampa;
-        varying float vS; varying float vL; varying float vE; varying float vLado;
+        varying float vS; varying float vL; varying float vE; varying float vLado; varying float vDentro;
         void main(){ float s=clamp(vS,0.0,1.0);
           float perfil=pow(max(sin(3.14159*s),0.0),0.38);
           float campo=pow(clamp(vE,0.0,1.0),2.2);
@@ -2690,6 +2786,11 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0 }: { da
           float nucleo = pow(max(0.0, 1.0 - l), 3.5);
           float halo   = pow(max(0.0, 1.0 - l*l), 1.6);
           a *= (nucleo + 0.68 * halo);
+          // EL INTERIOR SE APAGA. No es truco: ahí el campo está 23-34x más débil (medido por
+          // el solver). En proyección 2D no se distingue 'dentro' de 'delante/detrás', y sin
+          // esto las líneas que pasan POR FUERA parecen atravesar la jaula — que es justo lo
+          // contrario de lo que la pieza afirma.
+          a *= (1.0 - 0.97 * vDentro);
           // EL COLOR ES LA DIRECCIÓN DEL CAMPO: en el precompute solo las cargas +
           // siembran líneas y se trazan hacia adelante, así que s=0 es SIEMPRE el
           // extremo + y s=1 el −. Oro donde nace, violeta donde muere.
@@ -2712,6 +2813,7 @@ function BondEField({ data, R, time, reveal, col, ancho = 4.4, rampa = 0 }: { da
   built.mat.uniforms.uRes.value.set(dib.x || 2160, dib.y || 3840);
   built.mat.uniforms.uW.value = Math.max(1.0, ancho * ((dib.y || 3840) / 3840));
   built.mat.uniforms.uRampa.value = rampa;
+  built.mat.uniforms.uCaja.value = caja ?? 0;
   // frame por R(t): el campo evoluciona CON los átomos (Rvals desc separado→junto)
   let k = 0;
   if (R >= Rvals[0]) k = 0; else if (R <= Rvals[K - 1]) k = K - 2;
@@ -3298,7 +3400,8 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   }, []);
 
   const isMD = molKey === 'wmd';   // agua = DINÁMICA MOLECULAR REAL (10 moléculas se auto-ensamblan)
-  const isCargas = molKey === 'cargas';   // LA LEY DE GAUSS: 6 cargas puntuales, no una molécula
+  const isCargas = molKey === 'cargas';
+  const isFaraday = molKey === 'faraday';   // LA JAULA: conductor + carga externa, no una molécula
   const isPair = molKey === 'wpair' || molKey === 'wtri';   // mismo motor: 2 aguas o el ANILLO de 3   // EL PUENTE: 2 aguas ab initio acercándose (nube densa V1 + Δρ)
   const isWater = molKey === 'wdimer' || molKey === 'wsingle' || molKey === 'whex' || isMD || isPair || isCargas;   // agua que INTERACTÚA (cluster + campo)
   const [waterReady, setWaterReady] = useState(false);
@@ -3312,6 +3415,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
     let alive = true;
     if (live) setData(null);   // al cambiar de molécula en el lab, no dejar la anterior visible
     if (isWater) return () => { alive = false; };   // el agua-cluster carga su propio bin (WaterField)
+    if (isFaraday) return () => { alive = false; };  // la jaula carga SU bin (FaradayJaula); no hay mol-faraday.bin
     const prefix = isDNA ? 'dna' : isCatalog ? 'catalog' : isChain ? 'chain' : 'mol';
     fetch(`/precomputed/${prefix}-${molKey}.bin`)
       .then(r => r.arrayBuffer())
@@ -3366,7 +3470,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = isCargas ? CARGAS_DURATION : molKey === 'wtri' ? WTRI_DURATION : isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
+  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : molKey === 'wtri' ? WTRI_DURATION : isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -3374,11 +3478,11 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
     if (live) return;
     const api = {
       renderAt: (t: number) => setTime(Math.max(0, Math.min(dur, t))),
-      ready: isWater ? waterReady : !!data, duration: dur, molecule: molKey,
+      ready: (isWater || isFaraday) ? waterReady : !!data, duration: dur, molecule: molKey,
     };
     (window as unknown as { __cinematicAtom: typeof api }).__cinematicAtom = api;
     return () => { delete (window as unknown as { __cinematicAtom?: unknown }).__cinematicAtom; };
-  }, [molKey, data, live, dur, isWater, waterReady]);
+  }, [molKey, data, live, dur, isWater, isFaraday, waterReady]);
 
   // Modo vivo: loop continuo (cuando se monta interactivo en el lab).
   useEffect(() => {
@@ -3410,6 +3514,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         <FrameDriver time={time} />
         {isPair && <WaterPair time={time} onReady={setWaterReady} mk={molKey} />}
         {isCargas && <CargasHex time={time} onReady={setWaterReady} />}
+              {isFaraday && <FaradayJaula time={time} onReady={setWaterReady} />}
         {isMD && <WaterMD time={time} dur={dur} onReady={setWaterReady} />}
         {isWater && !isMD && !isPair && !isCargas && <WaterField molKey={molKey} time={time} dur={60} onReady={setWaterReady} />}
         {data && !isWater && (() => {
@@ -3649,7 +3754,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             ABAJO = 10% del cuadro en negro DURO por construcción, y el anillo ya venía con
             55-88% de negro muerto medido por los jueces. Se apaga SOLO para 'wtri': O₂/N₂/C₂
             y agua v2 son GANADORES y su barra de cine se queda igual (canon regla #0). */}
-        <Letterbox vertical={vertical} pct={molKey === 'wtri' || isCargas ? 0 : (vertical ? undefined : 4.5)} />
+        <Letterbox vertical={vertical} pct={molKey === 'wtri' || isCargas || isFaraday ? 0 : (vertical ? undefined : 4.5)} />
       </>}
     </div>
   );

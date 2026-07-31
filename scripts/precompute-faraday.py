@@ -59,7 +59,9 @@ A_HILO = 0.08              # RADIO FÍSICO del alambre (bohr). El término propi
 
 # ── LA CARGA QUE SE ACERCA (el "rayo") ───────────────────────────────────────
 Q_EXT = 12.0               # carga externa (grande: es un rayo, no un electrón)
-D_LEJOS = 26.0             # dónde empieza (bohr desde el centro)
+D_LEJOS = 13.0             # dónde empieza. 26 era el DOBLE de lo útil: con la jaula de 6
+                           # bohr llenando el cuadro, la carga quedaba fuera de pantalla y solo
+                           # se veían rayos rectos de paso — se leía 'explosión', no 'blindaje'.
 D_CERCA = 5.6              # a dónde llega (pegada a la cara, sin tocarla)
 
 K = 66                     # cuadros
@@ -67,7 +69,7 @@ POR_ETAPA = K
 NL = 220                   # líneas de campo dibujadas
 LP = 80                    # puntos por línea
 R0 = 0.22                  # radio de siembra alrededor de la carga externa
-R_DIBUJO = 34.0            # el .bin guarda hasta aquí (int16 bohr×900)
+R_DIBUJO = 20.0            # el .bin guarda hasta aquí (int16 bohr×900)
 ESC = 900.0
 
 TRAZA = dict(tol=1e-9, hmax=25.0, hmin=5e-4, r_core=R0 * 0.9, r_caja=400.0,

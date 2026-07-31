@@ -1,0 +1,63 @@
+{
+  "titulo": "La jaula de Faraday",
+  "nota": "El apantallamiento EMERGE del cálculo: método de momentos con la integral EXACTA del tramo recto (V=(1/dl)[asinh(u2/rho)-asinh(u1/rho)]). Convergido a 10.11x refinando 6x. La ley que sostiene la pieza: partir el hueco a la mitad multiplica el apantallamiento por ~16 (marco 12 barras 1.91x -> malla 7x7 160.5x). Ver scripts/precompute-faraday.py.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=faraday",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 46.0
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.faradayframes"
+  },
+  "audio": {
+    "dir": "dist-video/faraday-narracion",
+    "narracion": "faraday-narracion.mp3",
+    "musica": "faraday-music.wav",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 76,
+    "segs": "segs.json",
+    "ass": "faraday.ass"
+  },
+  "salida": {
+    "dir": "/mnt/e/forja-videos",
+    "master": "faraday-jaula-4k-master.mp4",
+    "h264": "faraday-jaula-4k.mp4"
+  },
+  "campo": {
+    "bin": "faraday-jaula-efield.bin",
+    "nota": "220 lineas sembradas en la carga externa; el campo es carga externa + cargas inducidas resueltas cuadro por cuadro."
+  },
+  "capsula": {
+    "bins": [
+      "faraday-jaula-efield.bin",
+      "faraday-jaula.json"
+    ],
+    "guion": "faraday.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-faraday.py",
+      "campo_lineas.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "fisica/faraday-jaula.mp4",
+    "capsulaRel": "fisica/_code/faraday-jaula-capsula.tar.gz",
+    "pieza": "faraday jaula"
+  }
+}
