@@ -35,6 +35,7 @@ import {
   type PopulatedOrbital,
 } from '@/lib/chem/quantum/atom-builder';
 import { ORBITALS, sampleOrbital } from '@/lib/chem/quantum/orbitals';
+import { loadAtomAbInitio, bundleFromAbInitio } from '@/lib/chem/quantum/atom-abinitio';
 
 // Duración VARIABLE por # de subcapas: el zoom-out (regreso) dura MÁS en átomos
 // con muchas órbitas, para que la cascada de capas/etiquetas alcance a terminar
@@ -1332,7 +1333,26 @@ function RadioactiveDecay({ Z, time, nucR }: { Z: number; time: number; nucR: nu
 // ── Main ────────────────────────────────────────────────────────────
 function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) {
   const element = useMemo(() => elementByZ(Z) ?? elementByZ(1)!, [Z]);
-  const bundle = useMemo(() => buildAtomBundle(element), [element]);
+  // NUBE AB INITIO si existe .bin para este Z; si no, el modelo hidrogenoide de siempre.
+  // Se arranca SIEMPRE con el hidrogenoide (es síncrono) y se cambia cuando llega el fetch:
+  // así no hay cuadro en blanco ni espera, y si el .bin falla la escena sigue viva.
+  // `window.__atomFuente` deja que el lab diga en pantalla cuál se está viendo — la
+  // diferencia importa y no se esconde.
+  const hidro = useMemo(() => buildAtomBundle(element), [element]);
+  const [abin, setAbin] = useState<ReturnType<typeof bundleFromAbInitio> | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    setAbin(null);
+    loadAtomAbInitio(element.Z).then(d => {
+      if (!vivo) return;
+      setAbin(d ? bundleFromAbInitio(d) : null);
+      (window as unknown as Record<string, unknown>).__atomFuente =
+        d ? { Z: element.Z, fuente: 'abinitio', shells: d.shells.length }
+          : { Z: element.Z, fuente: 'hidrogenoide' };
+    });
+    return () => { vivo = false; };
+  }, [element.Z]);
+  const bundle = abin ?? hidro;
   // Duración variable por # de subcapas (define la longitud del zoom-out). Se fija
   // en el módulo (RUN_DURATION) para que findCut/shellLabelTime la lean.
   const duration = useMemo(() => {

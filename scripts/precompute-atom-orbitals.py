@@ -74,7 +74,13 @@ DESAPAREADOS = {
 #   Del rutherfordio (Z=104) en adelante PySCF NO trae base: esos quedan como HUECO DECLARADO
 #   y el laboratorio los dibuja con el modelo hidrogenoide, diciéndolo. Mejor un hueco
 #   etiquetado que un número inventado con cara de ab initio.
-BASES = ['def2-tzvp', 'def2-svp', 'stuttgart-rlc', 'crenbl', 'lanl2dz']
+# sarc-dkh va AL FINAL y con una advertencia: es una base ALL-ELECTRON diseñada para el
+# hamiltoniano relativista DKH, y aquí se usa con HF no relativista. Las ENERGÍAS que da no
+# son de fiar para lantánidos/actínidos (faltan efectos relativistas que ahí ya pesan); la
+# FORMA y las ocupaciones sí quedan razonables, y es lo que el laboratorio dibuja. Se marca
+# `relativista: false` en el manifiesto para que el lab lo diga en pantalla. Sin ella, Ce–Ho
+# quedaban como hueco EN MEDIO de la tabla.
+BASES = ['def2-tzvp', 'def2-svp', 'stuttgart-rlc', 'crenbl', 'lanl2dz', 'sarc-dkh']
 
 
 def malla(L, ng):
@@ -265,7 +271,10 @@ def main():
         etiquetas = ' '.join(f"{n}{'spdfg'[l]}{ne}" for (n, l), ne in shells)
         print(f"{Z:>4} {SIMBOLO[Z-1]:<3} {base:<10} {metodo:<5} {mf.e_tot:>14.5f} {L:>8.2f} "
               f"{len(shells):>9} {size/1024:>6.0f}   {etiquetas}", flush=True)
+        # aviso honesto: con sarc-dkh (lantánidos/actínidos) la energía NO es comparable
+        energia_fiable = base != 'sarc-dkh'
         manifiesto.append(dict(Z=Z, sym=SIMBOLO[Z-1], ok=True, basis=base, method=metodo,
+                               energia_fiable=energia_fiable,
                                energy_ha=float(mf.e_tot), L_bohr=L, points=len(pts),
                                shells=[dict(n=n, l=l, electrons=ne) for (n, l), ne in shells]))
         with open(os.path.join(OUT_DIR, 'manifest.json'), 'w') as f:
