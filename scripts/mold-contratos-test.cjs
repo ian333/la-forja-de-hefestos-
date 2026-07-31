@@ -65,6 +65,23 @@
   checks.detectaCasoDificil = violaAlgo;
   console.log(`\ncaso difícil (pared 0.8): score ${repD.score}, violaciones ${repD.subsistemas.reduce((a, s) => a + s.viola, 0)}`);
 
+  // ── 7b) El contrato mide el molde ENSAMBLADO cuando se le pasa, y juzga con el
+  //     umbral DEL LIBRO (½⌀), no con el de coordAudit (2 mm fijos). ──
+  const { packageToAssemblySpec } = await import(R('mold-plano-set.ts'));
+  const bezel = moldMachine({
+    name: 'bezel', Lmm: 168, Wmm: 120, Hmm: 13, surfaceMm2: 22000, volumeMm3: 40000,
+    wallMm: 1.5, plastic: 'ABS', annualVolume: 500000, totalVolume: 2000000,
+  });
+  const ens = K.medirEnsamble(packageToAssemblySpec(bezel));
+  checks.mideEnsamble = typeof ens.holguraAguaMm === 'number';
+  const repE = K.contratos(bezel, ens);
+  const cAgua = repE.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'agua-claro');
+  checks.aguaSeJuzga = cAgua.estado !== 'SIN-CABLEAR';
+  // con ensamble hay MENOS criterios sin cablear que sin él
+  const repSinEns = K.contratos(bezel);
+  checks.ensambleDestraba = repE.total.sinCablear < repSinEns.total.sinCablear;
+  console.log(`\nbezel: holgura agua ${ens.holguraAguaMm} mm → ${cAgua.estado} (límite del libro ${cAgua.limite?.toFixed(2)} mm)`);
+
   // ── 8) Determinismo: dos corridas iguales dan el mismo reporte ──
   checks.determinista = JSON.stringify(K.contratos(pkg).total) === JSON.stringify(rep.total);
 

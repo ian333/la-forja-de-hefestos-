@@ -25,7 +25,22 @@ import type { MoldPackage } from './moldmachine';
 import { estPartVolumeCc, FEED_MATERIALS, STANDARD_RUNNER_DIAMM, steelSafeDiaMm } from './feed';
 import { VENT_TABLE_MM } from './venting';
 import { GATE_TABLE } from './gating';
+import { coordAudit } from './mold-coords';
+import type { MoldAssemblySpec } from './mold-assembly';
 const GATE_TABLE_DEGATING = Object.fromEntries(Object.entries(GATE_TABLE).map(([k, v]) => [k, v.degating])) as Record<string, string>;
+
+/**
+ * Medidas que SOLO existen sobre el molde ENSAMBLADO. Los criterios geométricos del
+ * libro (§9.2.7 claro del agua, §11.2.5 acero del expulsor) no se pueden juzgar
+ * desde el paquete numérico: necesitan coordenadas. Quien las tenga las pasa; quien
+ * no, deja esos criterios SIN-CABLEAR — que NO es lo mismo que aprobados.
+ */
+export interface EnsambleMedido {
+  /** holgura mínima medida entre línea de agua y cualquier barreno (mm) */
+  holguraAguaMm?: number;
+  /** acero mínimo medido entre barreno de expulsor y pared de cavidad (mm) */
+  holguraPinCavidadMm?: number;
+}
 
 export type ContratoEstado = 'CUMPLE' | 'ADVIERTE' | 'VIOLA' | 'SIN-CABLEAR' | 'SIN-MÓDULO';
 
@@ -282,7 +297,7 @@ export function contratoVenteo(pkg: MoldPackage): ContratoSubsistema {
  * CoolingLineDesign resuelto. Aquí el contrato juzga datos REALES del paquete —
  * es la prueba de que un contrato no es un mapa de deuda, es un juez.
  */
-export function contratoEnfriamiento(pkg: MoldPackage): ContratoSubsistema {
+export function contratoEnfriamiento(pkg: MoldPackage, ens?: EnsambleMedido): ContratoSubsistema {
   const S = 'enfriamiento';
   const C: Criterio[] = [];
   const L = pkg.diseno.enfriamiento.lineas;
@@ -360,13 +375,22 @@ export function contratoEnfriamiento(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 8) Claro ≥ ½⌀ contra cualquier otro componente — §9.2.7 ──
+  // §9.2.7 exige ≥ ½⌀ de claro. Si viene el molde ENSAMBLADO, coordAudit lo mide
+  // sobre la geometría real; si no, el criterio queda sin medir (no aprobado).
+  const holguraAgua = ens?.holguraAguaMm;
   C.push({
     id: 'agua-claro', subsistema: S, cita: '§9.2.7',
     criterio: 'al menos medio diámetro de claro entre la línea y CUALQUIER otro componente (estructura + fugas por corrosión)',
-    limite: D / 2, unidad: 'mm',
-    estado: 'SIN-CABLEAR',
-    detalle: `claro exigido ${num(D / 2, 2)} mm contra cavidad, insertos, expulsores, return pins, guías, bushing del sprue y tornillos`,
-    deuda: 'coordAudit() en mold-coords.ts ya mide holguras agua↔barreno sobre la geometría; el contrato debe recibir el molde ENSAMBLADO (parts) para juzgarlo aquí — hoy mold-audit-test reporta holguras NEGATIVAS (bezel −2.7 mm) que este criterio debería reflejar',
+    medido: holguraAgua, limite: D / 2, unidad: 'mm',
+    estado: holguraAgua == null ? 'SIN-CABLEAR'
+      : (holguraAgua < D / 2 ? 'VIOLA' : 'CUMPLE'),
+    detalle: holguraAgua == null
+      ? `claro exigido ${num(D / 2, 2)} mm contra cavidad, insertos, expulsores, return pins, guías, bushing del sprue y tornillos — sin molde ensamblado no se puede medir`
+      : `holgura MEDIDA ${num(holguraAgua, 2)} mm vs exigida ${num(D / 2, 2)} mm (½ de ⌀${num(D, 2)})`
+        + (holguraAgua < D / 2
+          ? ` — VIOLA §9.2.7. OJO: coordAudit usa un umbral FIJO de 2 mm, más flojo que el ½⌀ del libro, así que puede estar en verde mientras esto está en rojo`
+          : ' ✓'),
+    deuda: holguraAgua == null ? 'pasa el MoldAssemblySpec a contratos(pkg, ens) — packageToAssemblySpec(pkg) lo construye' : undefined,
   });
 
   // ── 9) t_c: el enfriamiento cumple el ciclo prometido — §9.2.1 ──
@@ -389,7 +413,7 @@ export function contratoEnfriamiento(pkg: MoldPackage): ContratoSubsistema {
  * conservador (§11.2.2 "without the use of safety factors") y lo que sale del
  * cálculo es un LÍMITE INFERIOR, no un diseño (§11.2.4).
  */
-export function contratoExpulsion(pkg: MoldPackage): ContratoSubsistema {
+export function contratoExpulsion(pkg: MoldPackage, ens?: EnsambleMedido): ContratoSubsistema {
   const S = 'expulsión';
   const C: Criterio[] = [];
   const e = pkg.diseno.expulsion;
@@ -453,10 +477,13 @@ export function contratoExpulsion(pkg: MoldPackage): ContratoSubsistema {
   C.push({
     id: 'eject-acero-minimo', subsistema: S, cita: '§11.2.5',
     criterio: 'al menos UN diámetro de pin de acero entre el barreno del expulsor y la superficie de la cavidad',
-    limite: pines.dMinMm, unidad: 'mm',
-    estado: 'SIN-CABLEAR',
-    detalle: `exigido ≥ ${num(pines.dMinMm, 2)} mm de acero — con menos, el barreno se ovala bajo presión, el pin se traba y salen grietas hacia la cavidad`,
-    deuda: 'coordAudit() en mold-coords.ts ya enumera barrenos con su XYZ; falta el check contra la pared de la cavidad',
+    medido: ens?.holguraPinCavidadMm, limite: pines.dMinMm, unidad: 'mm',
+    estado: ens?.holguraPinCavidadMm == null ? 'SIN-CABLEAR'
+      : (ens.holguraPinCavidadMm < pines.dMinMm ? 'VIOLA' : 'CUMPLE'),
+    detalle: ens?.holguraPinCavidadMm == null
+      ? `exigido ≥ ${num(pines.dMinMm, 2)} mm de acero — con menos, el barreno se ovala bajo presión, el pin se traba y salen grietas hacia la cavidad. Sin molde ensamblado no se puede medir`
+      : `acero MEDIDO ${num(ens.holguraPinCavidadMm, 2)} mm vs exigido ≥ ${num(pines.dMinMm, 2)} mm (1 diámetro de pin)`,
+    deuda: ens?.holguraPinCavidadMm == null ? 'pasa el MoldAssemblySpec a contratos(pkg, ens)' : undefined,
   });
 
   // ── 7) Pines iguales, y NUNCA casi-iguales — §11.2.6 ──
@@ -998,9 +1025,9 @@ const ICON: Record<ContratoEstado, string> = {
 };
 
 /** Corre TODOS los contratos disponibles sobre un paquete y arma el reporte. */
-export function contratos(pkg: MoldPackage): ContratoReporte {
-  const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg), contratoEnfriamiento(pkg),
-    contratoExpulsion(pkg), contratoEstructural(pkg),
+export function contratos(pkg: MoldPackage, ens?: EnsambleMedido): ContratoReporte {
+  const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg), contratoEnfriamiento(pkg, ens),
+    contratoExpulsion(pkg, ens), contratoEstructural(pkg),
     contratoLlenado(pkg), contratoGates(pkg),
     contratoLayout(pkg), contratoCosto(pkg), contratoContraccion(pkg)];
   const t = { criterios: 0, cumple: 0, advierte: 0, viola: 0, sinCablear: 0, sinModulo: 0 };
@@ -1027,4 +1054,29 @@ export function contratos(pkg: MoldPackage): ContratoReporte {
   lineas.push(`SCORE contra el cliente: ${score}/100 (${t.cumple}/${t.criterios} criterios cumplidos)`);
   lineas.push(`🔌 ${t.sinCablear} calculables HOY pero no cableados · ∅ ${t.sinModulo} sin módulo · ✗ ${t.viola} violados`);
   return { subsistemas, total: t, score, lineas };
+}
+
+/**
+ * Extrae del auditor por coordenadas las medidas que el contrato necesita del molde
+ * ENSAMBLADO. Vive aparte de coordAudit a propósito: coordAudit juzga con SUS
+ * umbrales (2 mm fijos para el agua) y el contrato juzga con los DEL LIBRO (½⌀).
+ * Que los dos umbrales convivan y no coincidan es información, no un problema —
+ * mientras nadie los sincronice a mano, que es lo que siempre acaba mintiendo.
+ */
+export function medirEnsamble(spec: MoldAssemblySpec): EnsambleMedido {
+  const out: EnsambleMedido = {};
+  try {
+    const r = coordAudit(spec);
+    // coordAudit reporta la holgura del agua dentro del detalle del hallazgo
+    for (const f of r.findings) {
+      if (f.check === 'agua-choca-barreno' || f.check === 'agua-cerca-barreno') {
+        const m = /holgura (-?[\d.]+) mm/.exec(f.detail);
+        if (m) {
+          const v = parseFloat(m[1]);
+          out.holguraAguaMm = out.holguraAguaMm == null ? v : Math.min(out.holguraAguaMm, v);
+        }
+      }
+    }
+  } catch { /* sin geometría disponible: los criterios quedan SIN-CABLEAR, que es la verdad */ }
+  return out;
 }
