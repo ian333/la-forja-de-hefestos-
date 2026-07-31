@@ -416,8 +416,9 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_hide_header Cache-Control;
+        # `expires` ya emite Cache-Control por sí solo: con add_header salían DOS
+        # cabeceras (verificado golpeando el gateway directo). Se deja solo una.
         expires 30d;
-        add_header Cache-Control "public, max-age=2592000";
         gzip on;
         gzip_types application/octet-stream application/json;
         gzip_min_length 4096;
@@ -433,7 +434,6 @@ server {
         # el upstream mandaba `no-cache, no-store`: sin ocultarlo, `expires` no gana
         proxy_hide_header Cache-Control;
         expires 7d;
-        add_header Cache-Control "public, max-age=604800, immutable";
     }
 
     location / {

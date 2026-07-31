@@ -57,6 +57,18 @@ export interface ThermalSim {
   sliceAxis(axis: 'x' | 'y' | 'z', frac: number): { nu: number; nv: number; u1: number; v1: number; posMm: number; T: Float32Array; minC: number; maxC: number };
   /** espesor local de plástico por columna (mm) — el mapa que manda en el ciclo. */
   thGrid: { nx: number; ny: number; cellMm: number; thMm: Float32Array };
+  /**
+   * LIBRO MAYOR DE ENERGÍA (J) — con TODOS los almacenes, que es la única forma de
+   * verificar conservación. Sumar solo el acero y compararlo contra la entalpía
+   * completa del disparo da un déficit gigante que no es fuga: es el calor que
+   * todavía está EN EL PLÁSTICO (pStack). Ese error hacía infalsificable al gate
+   * de conservación — a 0.05 s el máximo físico transferible al acero son ~1.6 %,
+   * así que un solver perfecto también habría "fallado" con −98 %.
+   */
+  energyLedger(): {
+    aceroJ: number; plasticoJ: number; totalJ: number;
+    inyectadoJ: number; residuoRel: number;
+  };
   /** T MÁXIMA de línea central del plástico entre columnas (°C) — la sonda de
    *  expulsión: cae a T_eject en ~t_c del libro si la física está bien. */
   plasticCenterMaxC(): number;
@@ -361,6 +373,30 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
       let mn = 1e9, mx = -1e9;
       for (let n = 0; n < N; n++) { if (T[n] < mn) mn = T[n]; if (T[n] > mx) mx = T[n]; }
       sim.minC = mn; sim.maxC = mx;
+    },
+    energyLedger() {
+      // acero: ρ·cp·ΔT por vóxel de acero
+      const vCell = Math.pow(cell / 1000, 3);
+      let aceroJ = 0;
+      for (let n = 0; n < T.length; n++) if (steel[n]) aceroJ += (T[n] - Tc) * RHO_STEEL * CP_STEEL * vCell;
+      // plástico: las micro-pilas guardan el calor que aún NO entregó al acero
+      let plasticoJ = 0;
+      const aCol = Math.pow(cell / 1000, 2);
+      for (let ci = 0; ci < cols.length; ci++) {
+        const m = cols[ci];
+        const dxp = pDx(m);                                      // media pared / PCELLS (m), la MISMA que usa stepStack
+        for (let side = 0; side < 2; side++) {
+          const off = (ci * 2 + side) * PCELLS;
+          for (let c = 0; c < PCELLS; c++) plasticoJ += (pStack[off + c] - Tc) * CP_VOL_P * dxp * aCol;
+        }
+      }
+      // inyectado: la entalpía que el disparo trajo, contada sobre la MISMA
+      // discretización de las pilas (2 lados × PCELLS × dxp), no sobre thMm crudo:
+      // comparar dos discretizaciones distintas mete un error que no es física.
+      let inyectadoJ = 0;
+      for (const ci of cols) inyectadoJ += CP_VOL_P * (Tm - Tc) * (2 * PCELLS * pDx(ci)) * aCol;
+      const totalJ = aceroJ + plasticoJ;
+      return { aceroJ, plasticoJ, totalJ, inyectadoJ, residuoRel: inyectadoJ > 0 ? (totalJ - inyectadoJ) / inyectadoJ : 0 };
     },
     sampleAt(x: number, y: number, zq: number): number {
       const i = Math.max(0, Math.min(nx - 1, Math.round(x / cell - 0.5)));
