@@ -22,6 +22,7 @@
 
 import { useEffect, useMemo, useRef, useState, memo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, ChromaticAberration, BrightnessContrast, HueSaturation, ToneMapping, Noise } from '@react-three/postprocessing';
 import { BlendFunction, ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
@@ -1405,21 +1406,35 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   useEffect(() => () => { if (live) { try { glRef.current?.forceContextLoss(); glRef.current?.dispose(); } catch { /* noop */ } } }, [live]);
 
+  // `flat` SIEMPRE: el tonemap ACES lo hace el EffectComposer. Si además lo hiciera el
+  // renderer serían DOS (defecto documentado en CLAUDE.md §doble tonemap).
+  // DPR: en el lab bajamos el techo porque ahora hay postFX y los teléfonos REALES de la
+  // audiencia son Mali-G52/G57 y Adreno 610/619 (medido en la telemetría de hoy). A 2× con
+  // bloom se arrastran; a 1.5× se ve igual en una pantalla de 6".
   return (
     <div style={{ position: live ? 'absolute' : 'fixed', inset: 0, background: '#000' }}>
       <Canvas
-        flat={!live}
+        flat
         onCreated={({ gl }) => { glRef.current = gl; }}
-        camera={{ position: [0, 0, extent * 0.5], fov: 35, near: 0.01, far: 200 }}
+        {/* El video arranca CERCA a propósito (la cámara viaja después). En el lab no hay
+            viaje: si arranca ahí, el núcleo con bloom se come la nube y no se leen las capas
+            de color, que es justo lo que se vino a ver. Se abre a 0.95 → el átomo COMPLETO
+            con aire, y de ahí el usuario acerca con el dedo. */}
+        camera={{ position: [0, 0, extent * (live ? 0.95 : 0.5)], fov: 35, near: 0.01, far: 200 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
-        dpr={[1, 2]}
+        dpr={live ? [1, 1.5] : [1, 2]}
         frameloop="always"
         style={{ background: '#000' }}
       >
         <color attach="background" args={['#000']} />
         {/* nucleones y electrones usan shaders propios — no dependen de luces */}
         <FrameDriver time={time} />
-        <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} />
+        {/* El video necesita cámara PURA en t (determinismo del render por lotes).
+            El lab necesita que la puedas girar con el dedo. Misma escena, dos manos. */}
+        {live
+          ? <OrbitControls enablePan={false} enableDamping dampingFactor={0.08}
+              minDistance={extent * 0.22} maxDistance={extent * 1.6} autoRotate autoRotateSpeed={0.55} />
+          : <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} />}
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
           coreRadius={coreR}
@@ -1440,11 +1455,19 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
           <RadioHalo time={time} nucR={nucR} />
           <RadioactiveDecay Z={element.Z} time={time} nucR={nucR} />
         </>}
-        {/* En el lab (live) NO usamos el EffectComposer: su pipeline HDR-float+MSAA
-            revienta a blanco en GPUs diversas (Intel/ANGLE D3D11). flat={!live} deja
-            que el renderer haga el tonemap ACES directo → negro garantizado en toda
-            GPU. El postFX cinematográfico se conserva SOLO para el render 4K headless. */}
-        {!live && <DynamicPostFX time={time} />}
+        {/* EL MISMO POSTFX QUE EL VIDEO, TAMBIÉN EN EL LAB (Ian, 2026-07-31: "esas
+            simulaciones de los átomos no se parecen en nada a nuestros videos").
+            Tenía razón y la causa era esta línea: el lab renderizaba SIN EffectComposer,
+            o sea SIN BLOOM — y el bloom de umbral bajo es exactamente lo que hace que
+            los picos revienten y la nube se vea como en el reel. Sin él es el mismo
+            cálculo con otra fotografía.
+            POR QUÉ ESTABA APAGADO: el combo MSAA + render target HDR-float reventaba a
+            blanco en Intel/ANGLE D3D11. Esa mitigación YA EXISTÍA sin usarse —
+            DynamicPostFX acepta `live` y pone multisampling=0 justo para eso— así que
+            aquí solo se conecta. Y la telemetría de hoy dice que el riesgo no está en la
+            audiencia real: de los visitantes medidos, 100 % reporta webgl2 sobre Apple
+            GPU, Mali-G52/G57, Adreno 610/619 y PowerVR. Cero Intel/ANGLE D3D11. */}
+        <DynamicPostFX time={time} live={live} />
       </Canvas>
       <CinemaVignette />
       {/* En el lab (live) ocultamos los overlays/letterbox: el dock ya muestra la

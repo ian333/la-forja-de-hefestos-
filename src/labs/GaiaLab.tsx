@@ -186,7 +186,7 @@ export default function GaiaLab() {
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         {/* DOCK — siempre visible (colapsable). PeriodicTable + hover info + nav */}
         {dockOpen && (
-          <aside className="shrink-0 w-full md:w-[336px] max-h-[46%] md:max-h-none order-last md:order-first
+          <aside className="shrink-0 w-full md:w-[336px] max-h-[34%] md:max-h-none order-last md:order-first
                             border-t md:border-t-0 md:border-r border-[#1E293B] bg-[#070A11]/60 backdrop-blur-md overflow-y-auto">
             <div className="p-3 space-y-3">
               <div>
@@ -251,7 +251,10 @@ function AtomHero({ element }: { element: ReturnType<typeof elementByZ> extends 
   const [showEdu, setShowEdu] = useState(true);
   // 'lab' = MultiElectronAtomView interactivo (paneles educativos) ·
   // 'cine' = la escena CINEMATIC viva (bloom + núcleo molten, contemplativa)
-  const [view, setView] = useState<'lab' | 'cine'>('lab');
+  // ABRE EN CINE. Es la vista que se ve como los reels (mismo postFX, mismo bloom), y es
+  // de donde viene la persona. `ψ Lab` se queda a un toque porque enseña algo que la otra
+  // no: los subshells por separado con su Zeff. Pero deja de ser lo PRIMERO.
+  const [view, setView] = useState<'lab' | 'cine'>('cine');
 
   return (
     <div className="absolute inset-0 flex flex-col">

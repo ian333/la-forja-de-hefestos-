@@ -512,7 +512,10 @@ por defecto de un eje de transmisión.
 
 ---
 
-## 8. LOS DIEZ ⭐ — los detalles que una máquina lineal se salta
+## 8. LOS DIEZ ⭐ DEL NÚCLEO (caps 1–7, 18–20)
+
+*(La lista definitiva del libro completo, escogiendo entre los ~50 ⭐ de todos los capítulos, está en la
+sección 13 al final.)*
 
 1. **§5-2 — En carga estática con material dúctil, Kt = 1.** El material fluye en la muesca y endurece. Con
    tres excepciones que hay que codificar: fractura frágil posible, hierro fundido (ya trae la muesca en el
@@ -544,18 +547,469 @@ barrido de los capítulos 8–17, más abajo.)*
 
 ---
 
-## 8.5 BARRIDO DE LOS CAPÍTULOS 8–17
+## 9. BARRIDO DE LOS CAPÍTULOS 8–17
 
-<!--MARCADOR-CAPS-8-17-->
+Barrido completo hecho sobre los capítulos 8–17. Las notas exhaustivas por bloque (con las ecuaciones,
+tablas transcritas y citas literales) quedan como anexos en esta misma carpeta:
+`anexo-shigley-caps8-9.md` (1211 líneas) · `anexo-shigley-caps10-11.md` (2155) ·
+`anexo-shigley-caps13-15.md` (1090) · `anexo-shigley-caps16-17.md` (~1770).
+Aquí va lo condensado y accionable.
+
+### 9.1 Uniones atornilladas (cap 8) y soldadas (cap 9)
+
+**El proceso a mano — junta a tensión con precarga:**
+```
+kb = Ad·At·E / (Ad·lt + At·ld)                                          [8-17]
+km = frustos de α=30° EN SERIE, uno por material y por tramo,
+     con D propagándose de un frusto al siguiente                       [8-18..8-20]
+     (cerrada 8-22 si es simétrica; Wileman 8-23 SOLO si toda la junta es del mismo material)
+C  = kb/(kb+km)   →   Fb = C·P + Fi ,  Fm = (1−C)·P − Fi                [8-24, 8-25]
+T  = K·Fi·d , K de (8-26) o Tabla 8-15                                  [8-26]
+np = Sp·At/(C·P+Fi)   ·   nL = (Sp·At − Fi)/(C·P)   ·   n0 = Fi/(P(1−C)) [8-28..8-30]
+Fi = 0.75·Fp reusable   |   0.90·Fp permanente
+```
+**Fatiga del perno (§8-11):** σa = C(Pmax−Pmin)/2At, σm = … + Fi/At, σi = Fi/At; Goodman (8-38) general y
+(8-45..8-47) para carga repetida; nf con precarga (8-48); tope `Fi ≤ (1−C)·Sut·At` (8-50).
+
+**Soldadura — el método "cordón como línea" (§9-3, §9-4):**
+```
+garganta = 0.707·h
+J = 0.707·h·Ju      I = 0.707·h·Iu         (Ju, Iu de Tablas 9-1 y 9-2, por patrón geométrico)
+τ' = V/A            τ'' = M·r/J   ó   M·c/I
+τ  = sqrt(τ'² + τ''²)        — todo referido al centroide del grupo de cordones
+```
+Fatiga de soldadura (§9-7): ka = 12.7·Sut^−0.758 (**siempre el de forjado**), kb = 1, kc = 0.59,
+Kfs de la Tabla 9-5, Ssu = 0.67·Sut, Goodman en cortante.
+
+**Reglas de prosa que valen oro:**
+- §8-5: *"It is easy to program the numbered equations in this section, and **you should do so**."*
+  → El cliente literalmente nos está encargando el módulo.
+- §8-5: *"Equation (8-20), or (8-19), **must be solved separately for each frustum** in the joint."*
+- §8-5: *"it is very important to note that **the entire joint must be made up of the same material**"*
+  (condición de validez de Wileman).
+- §8-5: *"If one of the members is a **soft gasket**, its stiffness… is usually so small that… only the
+  gasket stiffness [is] used."*
+- §8-3: *"The ideal bolt length is one in which only one or two threads project from the nut."*
+- §8-3: *"**washers must always be used under the bolt head**. They should be of hardened steel."*
+- §8-3: *"you should **NEVER reuse nuts**; in fact, it can be dangerous to do so."*
+- §8-6: *"**The grade of the nut should be the grade of the bolt.**"* y *"If such marks are missing,
+  assume the bolt strength is unregulated."*
+- §8-8: *"**Do not rely too much on wrench torque when the range of acceptable preload is narrow.** If
+  high reliability is a requirement, then preload should be determined by **bolt elongation**."*
+- §8-10 empaques: espaciamiento `3 ≤ π·Db/(N·d) ≤ 6`.
+
+**⭐ de este bloque (los 10 completos están en `anexo-shigley-caps8-9.md`):**
+1. ⭐ **km no es una fórmula, es un ensamble de frustos en serie.** Hay que partir el agarre por material
+   **y** por el plano medio de la junta, y el diámetro exterior de cada frusto es el que dejó el anterior.
+   En el Ej 8-2 la diferencia es **9.378 vs 14.64 Mlbf/in — 36%**.
+2. ⭐ **Las roscas NO comparten la carga: 0.38 / 0.25 / 0.18 / … / 0 en la séptima.** La receta del cliente
+   es meter `0.38·F` con `nt = 1` (si hay ≥6 roscas engranadas). Repartir F/nt subestima ~2.3×.
+3. ⭐ **Sp ≠ Sy, y los códigos especifican Sp, no Sy.** Fallback documentado: `Sp ≈ 0.85·Sy`.
+4. ⭐ **Kf ya viene DENTRO de Se en la Tabla 8-17** (roscas laminadas). Aplicarlo otra vez es doble castigo;
+   y si decides aplicarlo a esfuerzos, va a σa **y** a σm o las fórmulas cerradas dejan de valer.
+5. ⭐ **El plano de la cara de la tuerca solo es el punto crítico si hay rondana y el runout tiene semicono
+   ≤15°.** Los datos: 15% de fallas bajo la cabeza, 20% en el runout, **65% donde el diseñador puso
+   atención**. *"It does little good to concentrate on the plane of the nut washer face if it is not the
+   weakest location."*
+6. ⭐ **El 0.707h y el "todo es cortante" son conservadurismo CALIBRADO, no simplificación.** El análisis
+   riguroso da τmax = 1.207·F/(hl); el modelo usa 1.414 — **17% inflado a propósito**, y las pruebas
+   validaron ESE número. Un implementador que "corrija" el modelo rompe la calibración experimental.
+   Igual con Iu: el libro **reconoce** que usar (d+h) sería más exacto **y lo rechaza** por conservadurismo.
+7. ⭐ **En soldadura casi siempre manda el METAL BASE, no el cordón** (τ_base ≤ 0.40·Sy, Tabla 9-4). Y
+   **soldar una barra estirada en frío le borra las propiedades de CD y la deja en HR** cerca del cordón:
+   la resistencia del miembro **cambia por el hecho de soldarlo**.
+
+**Tablas de catálogo:** 8-9 SAE / 8-10 ASTM / 8-11 métrica — **indexadas por grado × RANGO DE DIÁMETRO**
+(grado 5: 85/120/92 kpsi hasta 1 in, pero 74/105/81 de 1⅛–1½; clase 8.8: 600/830/660 MPa M16–M36).
+8-8 Wileman (A, B por material). 8-15 K por acabado (0.30 negro … 0.09 Bowman-Grip). 8-16 Kf y 8-17 Se ya
+corregida, por grado × tamaño. 9-1/9-2 Ju/Iu por patrón (6 y 9 casos). 9-3 electrodos E60xx–E120xx.
+9-4 AISC (tensión 0.60Sy, aplastamiento 0.90Sy, cortante 0.30Sut, tope 0.40Sy en base). 9-5 Kfs por tipo de
+junta (1.2 / 1.5 / **2.7** / 2.0). **9-6-B tamaño mínimo de filete por el espesor de la parte más GRUESA.**
+
+### 9.2 Resortes (cap 10) y rodamientos (cap 11)
+
+**Resorte de compresión, servicio estático (§10-7).** El cliente **barre `d` sobre el catálogo discreto de
+alambre** y llena una tabla; no optimiza continuo.
+```
+A priori: material (hard-drawn primero, costo relativo 1.0) · tipo de extremo · ξ = 0.15 ·
+          (ns)d = 1.2 · as-wound vs set-removed · topología (over-a-rod / free / in-a-hole)
+POR CADA d DEL CATÁLOGO (Fig 10-3):
+  Ssy = const(A)/d^m   (ó 0.65·A/d^m si set-removed)
+  α = Ssy/ns ;  β = 8(1+ξ)Fmax/(π d²)
+  C ← Ec (10-23), RAÍZ MAYOR        →  D = C·d  →  KB  →  τs  →  ns
+  OD / ID
+  Na = G·d⁴·ymax/(8·D³·Fmax)  →  Nt, Ls, L0 (Tabla 10-1)
+  (L0)cr = 2.63·D/α
+  fom = −(costo relativo)·γ·π²·d²·Nt·D/4
+LUEGO: tabla completa → inspección → TACHAR LOS INFACTIBLES → la fom decide entre los que quedan
+```
+**Fatiga (§10-10):** el mismo esqueleto con **un solo cambio** — la Ec (10-23) se reusa con `α = Sse/nf` y
+`β = 8·Fa/(π d²)`. Datos de Zimmerli (10-28): sin granallar Ssa = 35 / Ssm = 55 kpsi; granallado 57.5 / 77.5.
+`Ssu = 0.67·Sut`. Sse por Gerber (10-29b), Goodman (10-29a) o Sines (Sse = Ssa).
+
+**Criterios de aceptación del resorte (§10-7, lista explícita del cliente):**
+`4 ≤ C ≤ 12` (10-18, y el autor lo llama *"the first item of the design assessment"*) · `3 ≤ Na ≤ 15`
+(10-19) · `ξ ≥ 0.15` (10-20) · `ns ≥ 1.2` **a altura sólida** (10-21) · `(L0)cr > L0` (no pandea, 10-13) ·
+`fn ≥ 15–20 ×` la frecuencia de excitación (§10-8).
+
+**Rodamientos (§11-5, §11-8, §11-9):**
+```
+C10 = af · FD · [ xD / (x0 + (θ − x0)(1 − RD)^(1/b)) ]^(1/a)
+  a = 3 (bolas) | 10/3 (rodillos) · xD = 60·ℒD·nD/LR · RD = ⁿ√(R_conjunto)
+BOLAS CON EMPUJE: iterar Y2 → C10 → rodamiento de catálogo → C0 → Y2 nuevo …
+  PARAR cuando SE REPITE EL MISMO RODAMIENTO
+CÓNICOS: Fi = 0.47·Fr/K (semilla K ≈ 1.5 radial, 0.75 ángulo pronunciado); X = 0.4 y V = 1 siempre; Y = K
+  Etiqueta A = el rodamiento QUE EL EMPUJE EXTERNO APRIETA
+  si FiA ≤ (FiB + Fae):  FeA = 0.4·FrA + KA(FiB + Fae) ,  FeB = FrB      (si no, al revés)
+  Fe = max(Fe, Fr)                     ← regla de piso
+  Trial 2 con los K REALES del catálogo
+```
+
+**⭐ de este bloque (los 10 completos en `anexo-shigley-caps10-11.md`):**
+1. ⭐ **La figura de mérito decide SOLO ENTRE LOS FACTIBLES.** En el Ej 10-2 el mejor fom global
+   (−0.398 en d = 0.071) **pierde**; gana −0.417 en d = 0.080 porque los mejores están descartados por
+   restricción. **Un optimizador con penalizaciones blandas da la respuesta equivocada.**
+2. ⭐ **"Ninguno cumple" es un resultado NORMAL, y la respuesta correcta es NEGOCIAR.** El Ej 10-5 termina
+   sin solución factible y el cliente **jerarquiza las restricciones**: C = 12.14 se tolera, Ls = 1.116 hay
+   que preguntarle al ensamble, y si dicen que no → aceptar C = 14, empacar los resortes individualmente y
+   reconsiderar el soporte. **El software tiene que modelar la NEGOCIABILIDAD de cada restricción**, no
+   solo si se cumple.
+3. ⭐ **El factor de seguridad del resorte se evalúa a ALTURA SÓLIDA, no a la carga de operación.**
+   `ns = Ssy/τs` con τs en `Fs = (1+ξ)·Fmax`. El resorte se dimensiona **para sobrevivir a que alguien lo
+   cierre por completo**.
+4. ⭐ **La Tabla 10-6 cambia el FACTOR DE CORRECCIÓN, no solo el porcentaje:** "antes de set removal"
+   incluye KW o KB; "después" incluye **Ks**. Copiar el % y usar siempre KB rompe el caso set-removed.
+5. ⭐ **El modo de montaje INVIERTE entradas y salidas.** En *over-a-rod* / *in-a-hole*, D lo fija la
+   geometría y ns sale como consecuencia; en *free*, ns es entrada y C sale de la cuadrática. *"Had the
+   spring been in a hole or over a rod, the helix diameter would be chosen without reference to (ns)d."*
+6. ⭐ **El gancho del resorte de extensión tiene DOS radios en planos PERPENDICULARES:** r1 en el plano de
+   la espira (flexión, punto A) y r2 a 90° (torsión, punto B) — y en fatiga **su línea de carga arranca en
+   τi, no en el origen**: `r = τa/(τm − τi)`.
+7. ⭐ **El rodamiento cónico ES UNA BOMBA de aceite**, y el sentido depende del montaje directo o indirecto.
+   Eso determina **por dónde perforas el conducto en la carcasa**. Ninguna ecuación de C10 lo revela.
+8. ⭐ **El aro FIJO se monta con ajuste deslizante A PROPÓSITO**, para que repte y empareje el desgaste; el
+   aro que GIRA va a presión. **El juego es intencional, no un defecto** — un verificador de ajustes
+   ingenuo lo marcaría como error.
+9. ⭐ **La convergencia de la selección de rodamiento es la IDENTIDAD del rodamiento**, no una tolerancia
+   numérica: *"If the same bearing is obtained, stop."* Punto fijo sobre un conjunto **discreto**.
+10. ⭐ **(LR, x0, θ, b) de Weibull es una TUPLA POR FABRICANTE.** Timken: 90(10⁶) rev, 0, 4.48, 1.5.
+    Fabricante 2: 1(10⁶), 0.02, 4.459, 1.483. **Mezclarlas mete un factor 90 en la vida, en silencio.**
+
+**Y una regla de sistema (§11-5):** la confiabilidad es **del conjunto**, `R = Π Ri`, no rodamiento por
+rodamiento; el reparto es libre (√R como arranque) y si un rodamiento sobra se *"round down"* en el otro.
+Cuando no se llega a la meta, **se sube un tamaño el más cargado, no los dos**.
+
+**Tablas de catálogo:** 10-1 (Ne, Nt, L0, Ls, p) por **tipo de extremo** · 10-2 (α) por condición de apoyo ·
+**10-4 (A, m y COSTO RELATIVO del alambre) por material × RANGO DE DIÁMETRO** — el costo relativo es lo que
+hace funcionar la fom · 10-5 (E, G) por material **y por diámetro** (en music wire y HD cambian con d, que
+es justo la variable de barrido) · 10-6 (τ permisible) por material × antes/después de set removal ·
+10-7 / 10-9 / 10-10 para extensión y torsión · **11-1 (e, X1, Y1, X2, Y2) por Fa/C0** con interpolación
+lineal y clamp en 0.014 · 11-2 (serie 02 bolas) y 11-3 (cilíndricos 02/03) por barreno ·
+**11-4 vida recomendada por CONSECUENCIA DE LA FALLA**, no por tipo de máquina · 11-5 af por nivel de
+impacto (rango, no valor) · **11-6 (LR, x0, θ, b) por FABRICANTE** · Fig 11-15 catálogo Timken con rating
+radial **y** de empuje, K y centro efectivo a₂.
+
+**Cap 12 (cojinetes de deslizamiento), en breve:** 5 regímenes; `μN/P ≥ 1.7e-6` para lubricación estable;
+4 variables controladas (μ, W/P, N, r-c-β-l) contra 4 dependientes (f, ΔT, Q, h0); los **4 criterios de
+Trumpler** (`h0 ≥ 0.0002 + 0.00004·d`, `Tmax ≤ 250 °F`, `Wst/(l·D) ≤ 300 psi`, `nd ≥ 2`); y la regla de
+⭐ **diseñar la holgura en la zona sombreada porque el desgaste mueve el punto de operación a la derecha**.
+`l/d ≈ 1` es la práctica actual.
+
+### 9.3 Engranes (caps 13, 14, 15)
+
+**El proceso a mano — §14-19 *Design of a Gear Mesh*.** El cliente separa las variables en clases y esa
+partición **es** la arquitectura del módulo:
+
+- **A priori** (las fija la función o el criterio, no el cálculo): carga, velocidad, razón mG, vida, Ko;
+  el riesgo no cuantificable (SF, SH); el sistema de dientes (ϕ, ψ, addendum, dedendum, radio de raíz);
+  NP y NG; la calidad Qv.
+- **De diseño, y el cliente las ordena POR COSTO DE RETRABAJO:**
+  **① paso P → ② ancho de cara F → ③ material y durezas del piñón → ④ material y durezas del engrane.**
+- **A posteriori** (salen del cálculo): esfuerzos, los factores de seguridad, la dureza requerida, el tamaño.
+
+```
+escoge P
+  └→ examina implicaciones en F, diámetros y material
+       ├─ ¿no satisface? ──────────────→ REGRESA A P
+       └→ material y dureza del piñón (revisa núcleo y capa)
+            ├─ ¿no satisface? ─────────→ REGRESA A P
+            └→ material y dureza del engrane
+                 └─ ¿no satisface? ────→ REGRESA A P
+CRITERIO DE PARO: "iterate until no decisions are changed"
+```
+
+> ⭐ **El criterio de paro es un PUNTO FIJO SOBRE LAS DECISIONES, no sobre los esfuerzos.** *"iterate until
+> no decisions are changed."* Un optimizador numérico converge cuando el residual baja; el cliente converge
+> cuando **deja de cambiar de opinión**. Eso se implementa distinto: hay que guardar el vector de
+> decisiones y compararlo iteración contra iteración.
+
+**Detalles del procedimiento:** F de arranque = 4π/P (rango 3p–5p) → despeja el St necesario → escoge
+material y dureza que lo den → si F sale fuera del rango disponible, **cambia P** (no F). Luego flexión del
+engrane (solo cambia J), después desgaste del piñón y desgaste del engrane. **Son CUATRO factores de
+seguridad, no dos.**
+
+> ⭐ **Y el cierre es una regla de ingeniería de consecuencias, no de optimización:** el cliente
+> **deliberadamente NO iguala los cuatro factores**. Deja el de flexión alto a propósito, porque un diente
+> roto dobla las flechas y traba la caja, mientras que la picadura solo degrada. **Un optimizador que
+> minimice material igualando los cuatro FS produce una caja peor.**
+
+Las cuatro ecuaciones madre (cap 14): σ_flexión (14-15), σ_contacto (14-16), σ_all,flexión (14-17),
+σ_all,contacto (14-18); y de ahí SF y SH.
+
+**Ecuaciones de curva-ajuste de resistencia verificadas en el texto** (Brinell → psi):
+`St = 77.3·HB + 12 800` (templado y revenido, grado 1) · `St = 102·HB + 16 400` (grado 2) ·
+`Sc = 322·HB + 29 100` (grado 1) · `Sc = 349·HB + 34 300` (grado 2).
+Nitrurados: 4140/4340 `82.3·HB + 12 150` (g1) y `108.6·HB + 15 890` (g2); Nitralloy `86.2·HB + 12 730` (g1)
+y `113.8·HB + 16 650` (g2). Cónicos: `sac = 341·HB + 23 620` (g1), `sat = 44·HB + 2100` (g1).
+
+**Reglas de prosa clave:**
+- §14-19 declara faltante la función objetivo: *"a figure of merit in gear design is complex… because
+  material and processing costs vary. The possibility of using a process depends on the manufacturing
+  facility if gears are made in house."* → ⭐ **el cliente NO tiene función de costo y nos la está pidiendo
+  como hueco abierto.** Para LATAM esto es la oportunidad: la figura de mérito es local.
+- Número mínimo de dientes: **13** (par 1:1, 20°), **16** (mG = 4), **18** (cremallera o generado con hob),
+  y se entra **por la razón**, no por el número de dientes (Tabla 13-1 col. 4). En cónicos otra tabla
+  (16/16, 15/17, 14/20, 13/30). En sinfín otra más (Tabla 15-10, por ϕn).
+- Ancho de cara **3p ≤ F ≤ 5p** — y §13-2/§14-1 aclaran que **no es física, es disponibilidad comercial**.
+- Razón por etapa: hasta **10:1** con un par (§18-3); compuesto revertido llega a 100:1.
+- Carga invertida (ruedas locas): **70% de la resistencia** (§14-4, §15-3) — es una regla de **tren**, no de
+  par de engranes, y ninguna ecuación la contiene.
+- CH aplica **solo al engrane, nunca al piñón**; y si fP > 64 μin, CH = 1.
+
+**⭐ de este bloque (los 10 completos en `anexo-shigley-caps13-15.md`):**
+1. ⭐ **F (ancho de cara) NO es una variable independiente: aparece en TRES lugares.** Está en Ks (14-29), en
+   Cpf→Km (14-32/14-30) **y** en el denominador del esfuerzo. El Ej 14-8 recalcula Ks (1.137→1.147) y Km
+   (1.242→1.259) al pasar F de 3.0 a 3.5 in. "Solo dividir entre F" da mal.
+2. ⭐ **nb y nc NO son comparables tal cual.** *"the ratio of loads is the ratio of stresses squared"*
+   (§14-2). En cap 14 se corrige con `nc,linear = nc^i` (i=2 lineal/helicoidal, i=3 esférico/coronado); en
+   cap 15 la comparación directa es **√SH contra SF**. Un traductor de ecuaciones reporta `min(nb,nc)` y
+   **nombra mal el modo que amenaza**.
+3. ⭐ **El factor de diseño entra por lados OPUESTOS según el tipo de engrane.** Rectos/helicoidales: SF y SH
+   **dividen la resistencia**. Cónicos: SF = nd pero **SH = √nd**. Sinfín: **nd MULTIPLICA LA CARGA**
+   (15-58), y encima convive con un Ka aparte. Un solo campo "factor de seguridad" está mal en 2 de 3 casos.
+4. ⭐ **Cp acero = 2300 √psi en el cap 14 y 2290 √psi en el cap 15.** Mismo material, dos estándares AGMA
+   (2001-D04 vs 2003-B97), dos números. Igual el exponente de CH: −0.0112 vs −0.0122. **No es errata: los
+   estándares no se hablan. El sistema debe versionar el factor por estándar.**
+5. ⭐ **YN y ZN se evalúan en CICLOS DISTINTOS para piñón y engrane**: (YN)P con N, **(YN)G con N/mG**. Y en
+   la zona sombreada de las curvas, el valor **es un juicio** (velocidad de línea de paso, limpieza,
+   esfuerzo residual, ductilidad, tenacidad), no un cálculo.
+6. ⭐ **El chequeo del RIN (KB) va al final y puede tirar todo el diseño.** El Ej 14-8 corre completo con
+   *"Assume mB ≥ 1.2… KB = 1"* y hasta el último párrafo verifica tR, con la instrucción *"if it does not,
+   review and modify this mesh design"*. Precondición asumida al inicio, verificable solo al final.
+7. ⭐ **En rectos JG > JP, pero en cónicos JP > JG: la amenaza de flexión CAMBIA DE MIEMBRO.** El que hereda
+   la intuición de rectos endurece el engrane equivocado.
+8. ⭐ **El propio texto tiene erratas que un implementador copiaría** (Ej 15-1 imprime "Ko = 100" por 1.00;
+   Ej 14-7 usa 29 200 donde la Fig 14-5 dice 29 100). **El cliente no es un oráculo: hay que validar sus
+   números contra sus propias figuras.**
+
+**Advertencias que el cliente hace sobre SUS PROPIOS métodos** (hay que propagarlas a la UI, no esconderlas):
+- §14-1 (Lewis): *"this is a rough estimate, and **this approach must not be used for important
+  applications**."* y *"these results should be accepted only as **preliminary estimates**."*
+  → ⭐ Nuestro `gear-mechanics.ts` **ya implementa Lewis** y hoy lo presenta como si fuera un resultado.
+  Hay que etiquetarlo como estimación preliminar, tal como el autor exige.
+- §14-1: *"**Dynamic factor Kv has been redefined as the reciprocal of that used in previous AGMA
+  standards. It is now greater than 1.0.** … Care must be taken in referring to work done prior to this
+  change."* → ⭐ **El mismo símbolo significa cosas inversas según la edición del estándar.** Versionar.
+- §14-5: *"the form factor Y in Equation (14-20) **is not the Lewis factor at all**."* → dos "Y" distintas.
+- §14-5: precauciones sobre Eq 14-25 (si alguno de los dos primeros términos del corchete excede al tercero,
+  **se reemplaza por el tercero**; y el radio exterior efectivo puede ser menor que r+a por desbarbado).
+- §14-5: los helicoidales de baja relación de contacto (mF ≤ 1) **no están cubiertos**; la aproximación de mN
+  exige **mF > 2.0**.
+- §14-10: *"**There is no rationale to use Equation (14-29) for contact stress**"* — y sin embargo los
+  ejemplos 14-4/14-5/14-8 **sí** meten Ks en σc. ⭐ Contradicción real del texto: el sistema debe hacerla
+  explícita y dejar la política al usuario, no elegirla en silencio.
+
+**Los factores AGMA y qué los indexa** (todos son catálogo duro, la mayoría en tablas o figuras):
+Ko (fuente de potencia × máquina conducida) · Kv y (Vt)max (Qv + velocidad de línea de paso; **hay que
+VALIDAR** que V < (Vt)max) · Ks (por-engrane, vía Y(z), F y P) · KH/Km (Cmc, Cpf con F y d, Cpm, Cma por
+tipo de unidad, Ce) · ZR/Cf · ZW/CH (razón de durezas, solo al engrane) · YN/ZN (ciclos, distintos por
+miembro) · YZ/KR (confiabilidad) · Yθ/KT (temperatura) · KB (razón de espesor de rin mB) · ZE/Cp (par de
+materiales, **versionado por estándar**) · I y J (geometría, de figuras) · St y Sc (dureza Brinell × grado
+1/2, con ecuaciones de curva-ajuste).
+
+### 9.4 Embragues, frenos, volantes (cap 16) y elementos flexibles (cap 17)
+
+**La costura arquitectónica nos la dio el cliente, literal (intro cap 16):**
+> *"The torque transmitted… is a problem in statics, which will have to be studied **separately for each
+> geometric configuration**. However, temperature rise… **can be studied without regard to the type of brake
+> or clutch**, because the geometry of interest is that of the heat-dissipating surfaces."*
+
+→ **Requisito:** un módulo de estática **por geometría** (zapata interna, zapata externa, banda, disco
+axial, caliper, cono) + **UN SOLO** módulo térmico compartido.
+
+**El algoritmo maestro (§16-1), tres pasos:**
+```
+1. Estima, MODELA o mide la distribución de presión p(u)   ← esto es un JUICIO, no una ecuación
+2. Relaciona la presión máxima con la presión en cualquier punto
+3. Equilibrio estático → fuerza de frenado, par y reacciones en los apoyos
+```
+
+**El procedimiento de banda plana (§17-2, 9 pasos)** y **el de banda en V (§17-3, 4 pasos)** están
+transcritos completos en `anexo-shigley-caps16-17.md`. El de cadena (§17-5) y el de cable (§17-6) también.
+
+**⭐ de este bloque (los 10 completos en `anexo-shigley-caps16-17.md`):**
+1. ⭐ **El modelo de presión es un JUICIO, no un default.** El cliente resuelve el mismo problema dos veces
+   (Ej 16-1) y demuestra que suponer presión uniforme **subestima el pico 24%**, burlándose del atajo:
+   *"because the pad was small, or because the arithmetic would be easier?"*
+2. ⭐ **"El nuevo se hará viejo".** Presión uniforme siempre predice MÁS par ⇒ no conservadora. En el rango
+   típico la diferencia es ~2%. Pero el argumento decisivo del cliente **no es numérico**: *"the certainty
+   that new clutches get old"*. Es razonamiento de **ciclo de vida**. Y la pregunta correcta al usuario no
+   es "¿desgaste o presión uniforme?" sino **"¿discos rígidos o con resortes? ¿nuevo o rodado?"**
+3. ⭐ **F no se multiplica por el número de superficies; T SÍ.** (16-23) vale para cualquier número de pares;
+   (16-25) es **por un solo par**. La trampa más fácil del capítulo.
+4. ⭐ **Dónde ocurre la presión máxima cambia con la GEOMETRÍA:** zapata interna corta → θ2; larga →
+   **θa = 90°**; banda → **en la punta (toe)**; pad anular → **en ri**; pad circular → pav × (pmax/pav) de la
+   Tabla 16-1, **hasta 1.875×**. Comparar el valor equivocado contra p_max del material rompe el diseño en
+   silencio.
+5. ⭐ **El auto-energizado se DOSIFICA con la dimensión `a`** y hay que evitar activamente el auto-bloqueo
+   (MN > Mf). Precio cuantificado: **30% de caída en f → 50% de cambio en la fuerza de pedal**. Y el signo
+   se **invierte** entre zapata interna y externa según el sentido de giro. Además: la **condición**
+   cualitativa de auto-bloqueo no depende de conocer p(u), pero el **valor** de f_cr sí.
+6. ⭐ **La térmica es un motor de SENSIBILIDAD y es un PUNTO FIJO.** El cliente dice de su propio modelo:
+   *"it would be most unlikely that such an analysis would even approximate experimental results… most
+   useful in pinpointing those design parameters that have the greatest effect."* Y hr/hc dependen de
+   (T − T∞), que es la incógnita: el Ej 16-5 **itera** de 209 °F a 220 °F y **cierra contra la Tmax continua
+   de la Tabla 16-3**.
+7. ⭐ **`f′ < f` es lo que separa un diseño que funciona de uno que patina.** Los pasos 1–7 dan tensiones que
+   "aguantan"; el paso 8 pregunta otra cosa: **¿la fricción REQUERIDA por esas tensiones existe?** Y la
+   fórmula de f′ **cambia** entre banda elastomérica (con Fc) y banda metálica (sin Fc).
+8. ⭐ **Los catálogos son dominios DISCRETOS y cada elemento redondea distinto:** ancho de banda plana → al
+   siguiente disponible; Nb de bandas V → entero **hacia arriba** (con la advertencia de que *"an undersized
+   belt set that is augmented by one belt can be substantially oversized"*); longitud de cadena → al **PAR**
+   más cercano hacia arriba (evita eslabón especial); dientes del piñón → **impar preferible**. Un
+   optimizador continuo viola las cuatro.
+9. ⭐ **Los guardarraíles de validez y los estados "no sé" son REQUISITOS, no cortesías.** Vida de banda V:
+   el Ej 17-4 calcula 11×10⁹ pasadas y **reporta ">10⁹"**, *"without placing confidence in numerical values
+   beyond the validity interval"*. Lubricación de cadena tipo **C′** no es un resultado: es *"submit design
+   to manufacturer for evaluation"*. Y el cable *"implies that a wire rope has a fatigue limit; **but this
+   is not true at all**"*. El software debe **saturar, marcar, escalar al fabricante y advertir sin número**.
+10. ⭐ **Más grueso no es más seguro, y el desempate final es COSTO.** En cable nf = (Ff − Fb)/Ft con Ff ∝ d
+    pero **Fb ∝ d³**, así que *"for each m the factor of safety exhibits a maximum"* — subir d
+    monótonamente **empeora** nf pasado el óptimo. Y el cierre no lo da el FS: *"The costs include not only
+    the wires, but the grooved winch drums."* Igual en banda plana: hay que ver *"which of the satisfactory
+    alternatives is best"*. **Satisfactorio ≠ mejor: el cliente quiere un CONJUNTO de alternativas
+    satisfactorias ordenado por costo, no una respuesta.**
+
+**Mención transversal que aplica a TODO el producto:** el entregable del cliente incluye **mantenimiento**.
+Intro cap 17 pide calendario de inspección y reemplazo *"at the first sign of deterioration"*; §17-2 exige
+que Fi sea *"(1) provided, (2) sustained, (3) in the proper amount, and (4) maintained by routine
+inspection"*; §17-6 dice *"it is extremely important that the designer specify and insist"* en la
+inspección periódica. **Un plano sin plan de mantenimiento es un entregable incompleto.**
+
+**Tablas de catálogo (cap 16):** 16-1 por R/e → δ y pmax/pav · 16-2 por *duty cycle × tipo de freno* →
+in²/(Btu/s) · **16-3 por material → f, pmax, T instantánea, T continua, Vmax** (14 filas) · 16-4 por
+construcción del forro · 16-5 por *par de materiales* → **f wet vs f dry** · Figs 16-24a/b por (T−T∞) y por
+velocidad de ventilación.
+**(cap 17):** 17-9 por sección A–E → d_min de sheave y rango de HP · 17-12 Htab por sección × diámetro de
+paso × velocidad · 17-13 K1 por (D−d)/C con **dos columnas VV / V-flat** · 17-14 K2 por sección × longitud ·
+**17-15 Ks por máquina conducida × fuente de potencia → RANGOS (1.0–1.8), no valores** (y sirve también para
+banda plana y redonda) · 17-19/17-20 cadenas ANSI por número y rpm — **y la zona de la tabla determina la
+clase de lubricación A/B/C/C′** · 17-22 K1 por N1 con **dos columnas pre/post-extreme** · 17-23 K2 por
+torones (1→1.0, 2→1.7, 3→2.5, 4→3.3, 6→4.6, 8→6.0) · 17-25 FS de cable por aplicación (3.2–11.9, **con la
+nota de que no descarta falla por fatiga**).
 
 ---
 
-## 9. BRECHA CONTRA LA FORJA
+## 10. LOS SIETE PATRONES TRANSVERSALES — lo que se repite en TODOS los capítulos
+
+Estos son los requisitos de arquitectura de verdad. No salen de un capítulo: salen de ver los diez juntos.
+
+### P1 — Todo dominio de diseño es DISCRETO, y cada elemento redondea con su propia regla
+El cliente **nunca** optimiza continuo. Barre catálogos.
+
+| Elemento | Dominio discreto | Regla de redondeo | § |
+|---|---|---|---|
+| Eje | tamaños preferentes (Tabla A-17) | al siguiente arriba, y **recalcular n** | §1-11 |
+| Resorte | diámetros de alambre de catálogo | **barrido**, tabla, tachar infactibles | §10-7 |
+| Rodamiento | catálogo del fabricante | **identidad** del rodamiento | §11-8 |
+| Perno | longitudes de existencias | al siguiente, y **re-dispara kb** | §8-4, Tabla 8-7 |
+| Engrane | dientes **enteros** | *"increase the pinion size to the next integer and try again"* | §13-13 |
+| Banda plana | anchos disponibles | al siguiente, y **re-verificar f′** | §17-2 |
+| Banda V | número de bandas Nb | entero **arriba** (ojo con el sobredimensionado) | §17-3 |
+| Cadena | longitud L/p | al **PAR** más cercano arriba (evita eslabón especial) | §17-5 |
+| Cadena | dientes del piñón | **impar preferible** | §17-5 |
+| Resorte de torsión | Nb con parte fraccionaria fija (…5.3, 6.3, 7.3) | **no se redondea libre** | §10-12 |
+
+> ⭐⭐ **Y por eso el criterio de convergencia NO es numérico.** §14-19: *"iterate until no decisions are
+> changed."* §11-8: *"If the same bearing is obtained, stop."* **Punto fijo sobre DECISIONES y sobre
+> IDENTIDADES de catálogo, no sobre un residual.** Esto cambia por completo cómo se escribe el bucle: hay
+> que serializar el vector de decisiones y compararlo entre iteraciones.
+
+### P2 — "Ninguna opción cumple" es un resultado NORMAL, y la salida correcta es NEGOCIAR
+El Ej 10-5 termina **sin solución factible** y el cliente jerarquiza qué restricción aflojar y a quién
+preguntarle. Requisito: cada restricción lleva un atributo de **negociabilidad** y un **dueño** (¿es del
+ensamble? ¿del cliente? ¿es física?). El software propone el orden de negociación, no dice "infactible".
+
+### P3 — Los factores de seguridad de distintos modos NO son comparables sin transformarlos
+- §14-2: *"the ratio of loads is the ratio of stresses squared."*
+- Cap 14: `nc,linear = nc^i` (i = 2 lineal/helicoidal, 3 esférico/coronado).
+- Cap 15: la comparación válida es **√SH contra SF**.
+- Cap 16 y 17: el FS de cable tiene **dos definiciones** ((Fu−Fb)/Ft o Fu/Ft) y "5" significa dos cosas.
+
+> **Requisito:** cada factor de seguridad se guarda con **su base declarada** (¿contra esfuerzo o contra
+> carga? ¿qué exponente?) y el sistema **se niega a comparar** dos factores de bases distintas sin
+> convertirlos. Y `min(n_i)` **solo se calcula sobre factores homogéneos** — si no, nombra mal la amenaza.
+
+### P4 — Los factores hay que VERSIONARLOS por estándar y por fabricante
+- `Cp` acero = **2300 √psi** (AGMA 2001-D04, cap 14) vs **2290 √psi** (AGMA 2003-B97, cap 15).
+- Exponente de CH: **−0.0112** (rectos) vs **−0.0122** (cónicos).
+- Ventana del diámetro del sinfín: `C^0.875/1.7` (§13-11) vs `C^0.875/1.6` (§15-6).
+- `Kv` **fue redefinido como el recíproco** del de estándares AGMA anteriores: *"Care must be taken in
+  referring to work done prior to this change."*
+- La tupla Weibull `(LR, x0, θ, b)` es **por fabricante**; mezclarlas mete **un factor 90** en la vida.
+
+> **Requisito:** no existe "el" valor de un factor. Existe `factor(nombre, estándar, edición, fabricante)`.
+> Un `const CP_ACERO = 2300` global es un bug esperando su turno.
+
+### P5 — Guardarraíles de validez y estados "no sé" son REQUISITOS de primera clase
+| Situación | Qué exige el cliente | § |
+|---|---|---|
+| NP > 10⁹ pasadas de banda V | **reportar ">10⁹"**, no el número | §17-3 |
+| Lubricación de cadena tipo C′ | *"submit design to manufacturer for evaluation"* | §17-5 |
+| Cable de acero | *"implies that a wire rope has a fatigue limit; **but this is not true at all**"* | §17-6 |
+| Ambiente corrosivo | **no existe vida infinita** | §6-9 |
+| T > 40% de T_fusión absoluta | el método esfuerzo-vida **ya no aplica** | §6-9 |
+| V ≥ (Vt)max | el Kv calculado **no aplica**; sube Qv | §14-7 |
+| mF ≤ 1 (helicoidal de baja relación) | *"will not be considered here"* | §14-5 |
+| Resortes Belleville | *"beyond the scope of this book"* | §10-13 |
+| Condiciones de operación malas | *"life will be much shorter"* — **advertencia SIN número** | §17-5 |
+
+> **Requisito:** el motor de cálculo devuelve un valor **o** un estado (`saturado`, `fuera-de-validez`,
+> `escalar-al-fabricante`, `sin-número-pero-peor`). Nunca un número silencioso fuera de su rango.
+
+### P6 — El desempate final es COSTO, y el cliente NO TIENE función de costo: nos la está pidiendo
+§14-19 lo declara hueco abierto: *"a figure of merit in gear design is complex… because material and
+processing costs vary. **The possibility of using a process depends on the manufacturing facility if gears
+are made in house.**"* §17-6: *"The costs include not only the wires, but the grooved winch drums."*
+§17-2: hay que ver *"which of the satisfactory alternatives is best"*.
+
+> ⭐⭐ **Aquí está la oportunidad de producto para LATAM.** La función de costo del cliente depende del
+> taller, y por eso él no la puede escribir en un libro. Nosotros SÍ podemos: el *perfil de taller* que
+> §1-3 ya exige como "implied specification" (qué máquinas hay, qué material se consigue, a qué precio)
+> **es exactamente la figura de mérito que falta**. Ese es el diferenciador contra un Fusion de $12k que
+> asume costos de otro país.
+> **Y el entregable no es "una respuesta": es un CONJUNTO de alternativas satisfactorias ordenado por costo.**
+
+### P7 — El entregable incluye MANTENIMIENTO, no solo geometría
+- Intro cap 17: calendario de inspección y reemplazo *"at the first sign of deterioration"*.
+- §17-2: la tensión inicial debe ser *"(1) provided, (2) sustained, (3) in the proper amount, and
+  (4) maintained by routine inspection"* — **sin Fi no hay par transmitido, punto**.
+- §17-6: *"it is extremely important that the designer specify and insist"* en la inspección periódica.
+- §11-10: rutas y volumen de lubricante suficientes para mantener la temperatura de operación.
+- §1-18 (especificación del caso de estudio): revisión de lubricación cada 2000 h, cambio cada 8000 h,
+  acceso a drenar y rellenar **sin desarmar ni abrir juntas con empaque**.
+
+> **Requisito:** todo diseño emite un **plan de mantenimiento** junto con el plano. Un plano sin él es un
+> entregable incompleto según este cliente.
+
+---
+
+## 11. BRECHA CONTRA LA FORJA
 
 > Base: inventario técnico del repo `/home/ian/Orkesta/la-forja` (auditoría hecha para este pliego).
 > Leyenda: ✅ existe y sirve · 🟡 existe parcial / hay que extender · ❌ no existe.
 
-### 9.1 Lo que YA TENEMOS y el cliente reconocería como suyo
+### 11.1 Lo que YA TENEMOS y el cliente reconocería como suyo
 
 | Capacidad | Dónde vive | Qué § de Shigley cubre |
 |---|---|---|
@@ -571,7 +1025,7 @@ barrido de los capítulos 8–17, más abajo.)*
 | ✅ **Patrón libro→módulo→test→gate** con ~40 suites | `src/forja/mold/*` + `scripts/*-test.cjs` + `scripts/forja-gate.cjs` | — (infraestructura) |
 | ✅ **Presión de interferencia** (Lamé) | `src/lib/formulas.ts` `lameThickCylinder` | §3-16 (falta despejar p de δ, Ec 3-60/3-61) |
 
-### 9.2 Lo que se puede construir CON LO QUE HAY (semanas, no meses)
+### 11.2 Lo que se puede construir CON LO QUE HAY (semanas, no meses)
 
 | Qué | Con qué se apalanca | § |
 |---|---|---|
@@ -583,7 +1037,7 @@ barrido de los capítulos 8–17, más abajo.)*
 | 🟡 **AGMA de engranes rectos** | `gear-mechanics.ts` ya trae Lewis Y(z) y `gear-pair.ts` la relación de contacto; falta la maquinaria de factores AGMA | §14 |
 | 🟡 **Cuñas** | tenemos catálogo DIN y roscas; la cuña es una tabla indexada por diámetro + un cheque de aplastamiento | §7-7, §18-10 |
 
-### 9.3 Lo que FALTA POR COMPLETO
+### 11.3 Lo que FALTA POR COMPLETO
 
 | # | Hueco | Impacto para un taller LATAM | § |
 |---|---|---|---|
@@ -603,7 +1057,7 @@ barrido de los capítulos 8–17, más abajo.)*
 | **H14** | **Fractura (LEFM)**: KIc, damage-tolerant design. | **Bajo** para taller LATAM. | §5-12, §6-5 |
 | **H15** | **Cojinetes de deslizamiento (journal)**: tenemos tribología propia (`cojinete-continuo.ts`, `cojinete-jaula.ts`) pero no las cartas de Raimondi-Boyd del cap 12. | **Bajo-medio.** | §12 |
 
-### 9.4 Lo que el cliente NOS PIDE que NO hagamos (y hoy podríamos estar haciendo mal)
+### 11.4 Lo que el cliente NOS PIDE que NO hagamos (y hoy podríamos estar haciendo mal)
 
 1. **§6-9 — No presentes Se con precisión falsa.** El propio autor dice que la multiplicatividad de Marin
    *"has not been thoroughly tested and proven"*. Nuestro `FEAResult.minSafetyFactor` hoy sale como un número
@@ -617,9 +1071,9 @@ barrido de los capítulos 8–17, más abajo.)*
 
 ---
 
-## 10. PLAN DE CONSTRUCCIÓN — qué módulo primero y por qué
+## 12. PLAN DE CONSTRUCCIÓN — qué módulo primero y por qué
 
-### 10.1 La decisión
+### 12.1 La decisión
 
 > **Módulo #1 = `src/forja/maquinas/fatiga.ts` — el motor de fatiga esfuerzo-vida completo del capítulo 6.**
 
@@ -641,11 +1095,12 @@ barrido de los capítulos 8–17, más abajo.)*
 5. **Arregla deuda existente.** Hoy `basquinSN` tiene Se' = 0.5·Sut y f = 0.9 clavados, sin Marin. Eso está
    **mal** según §6-8/§6-9 y hay que corregirlo, no envolverlo.
 
-### 10.2 Orden propuesto
+### 12.2 Orden propuesto
 
 | Orden | Módulo | Depende de | Gate (verificación contra el libro) |
 |---|---|---|---|
-| **1** | `fatiga.ts` — Se' (6-10), Marin ka..ke (6-17..6-28), f (6-11), a/b (6-13,6-14), q/Kf Neuber (6-33..6-36), los 7 criterios (6-40..6-57), σar equivalente (6-59..6-62), Miner + rainflow (6-68,6-69) | `MATERIAL_DATABASE` | Ej 6-2..6-18 + los 4 n del Ej 7-1 |
+| **0** | `nucleo.ts` — **la capa transversal de los patrones P1–P7**: tipo `Catalogo<T>` con su regla de redondeo; tipo `Restriccion` con negociabilidad y dueño; tipo `FactorSeguridad` con **base declarada** (esfuerzo vs carga, exponente) que **se niega a compararse** con otra base; `Factor` versionado por `(estándar, edición, fabricante)`; y el tipo `Resultado<T> = Valor \| Saturado \| FueraDeValidez \| EscalarAFabricante`. Más el bucle de **punto fijo sobre el vector de DECISIONES** | — | los invariantes: `min()` rechaza bases mixtas; Cp devuelve 2300 con 2001-D04 y 2290 con 2003-B97; NP se satura a 10⁹ |
+| **1** | `fatiga.ts` — Se' (6-10), Marin ka..ke (6-17..6-28), f (6-11), a/b (6-13,6-14), q/Kf Neuber (6-33..6-36), los 7 criterios (6-40..6-57), σar equivalente (6-59..6-62), Miner + rainflow (6-68,6-69) | 0, `MATERIAL_DATABASE` | Ej 6-2..6-18 + los 4 n del Ej 7-1 |
 | **1b** | `kt.ts` — digitalización de las cartas A-15 + Tabla A-16 numérica + Tabla 7-1 | — | Tabla A-16 literal; A-15 con error de ajuste declarado |
 | **1c** | `aceros.ts` — Tablas A-20, A-21, A-23, A-24 | — | valores literales |
 | **2** | `eje.ts` — V(x)/M(x)/T(x), DE-* despejadas para d (7-6..7-16), Tabla 7-1, Tabla 7-2, velocidad crítica (7-22,7-23), cuña (Tabla 7-6 + aplastamiento), anillos, ajustes (7-9) | 1, 1b, 1c | Ej 7-1, Ej 7-2, Ej 7-3, Ej 7-6 y el caso de estudio del cap 18 completo |
@@ -660,7 +1115,26 @@ barrido de los capítulos 8–17, más abajo.)*
 > §1-18) es el **test de aceptación de todo el sistema**: si La Forja lo reproduce de punta a punta y
 > coincide con las respuestas del libro, el módulo está terminado.
 
-### 10.3 Cómo se engancha a lo que ya existe
+> **Por qué el módulo 0 va antes que todo:** los cuatro barridos de capítulos independientes (8-9, 10-11,
+> 13-15, 16-17) llegaron **por separado** a los mismos siete patrones. Eso no es coincidencia: es la forma
+> del proceso del cliente. Si `fatiga.ts` se escribe sin la capa transversal, va a nacer con un
+> `const CP = 2300` global, un `Math.min(nb, nc)` que nombra mal la amenaza, y un `while (|Δ| < tol)` que
+> nunca converge sobre un catálogo discreto. Son **tres bugs estructurales** que después hay que sacar de
+> siete módulos a la vez. La capa 0 es chica (un archivo de tipos y cuatro helpers) y evita eso.
+
+### 12.3 El diferenciador de producto que salió de este ejercicio
+
+El cliente **declara explícitamente que le falta la función de costo** (§14-19) y que **el taller disponible
+es una especificación implícita del problema** (§1-3). Nadie puede escribir esa función en un libro porque
+depende del taller. **Nosotros sí, y para México/LATAM eso es exactamente lo que un Fusion de $12k USD no
+tiene**: sus defaults asumen costos, materiales y procesos de otro país.
+
+**Requisito de producto derivado:** el proyecto tiene un **perfil de taller** (máquinas, materiales que se
+consiguen, precios, procesos disponibles) y ese perfil **es** la figura de mérito. Toda pantalla de
+selección devuelve un **conjunto de alternativas satisfactorias ordenado por costo local**, no una respuesta
+única. Es lo que el cliente hace a mano y lo que ningún libro puede traer de fábrica.
+
+### 12.4 Cómo se engancha a lo que ya existe
 
 - **Registro en el bus** (`src/forja/commands/registry.ts`) con dominio nuevo `fatiga` y el campo `eq`
   apuntando a la ecuación de Shigley, igual que hoy `clamp.force` apunta a `Eq 5.29` de Kazmer:
@@ -673,3 +1147,52 @@ barrido de los capítulos 8–17, más abajo.)*
 - **Materiales**: extender `MATERIAL_DATABASE` con los campos que la fatiga necesita y hoy no están
   (acabado superficial por defecto, σ'f, b, ε'f, c, dureza HB) — o crear `aceros.ts` aparte y cruzarlo.
 
+
+---
+
+## 13. LOS DIEZ ⭐ DEFINITIVOS — escogidos entre los ~50 de todo el libro
+
+Criterio de selección: que un implementador competente que traduce ecuaciones **lo haga mal sin darse
+cuenta**, y que el error **no se vea** en el resultado.
+
+1. ⭐ **§5-2 — En carga estática con material dúctil, Kt = 1.** El material fluye en la muesca y endurece.
+   Tres excepciones que hay que codificar (fractura frágil posible · hierro fundido, que ya trae la muesca
+   dentro del ensayo · carga no estática). Es la regla que más se implementa al revés.
+2. ⭐ **§6-13 vs §6-14 — El criterio de fatiga cambia según la PREGUNTA.** Goodman para el factor de
+   seguridad a vida infinita; **Walker > Morrow > SWT > Goodman** para estimar vida finita, donde Goodman
+   es *"very inaccurate"*. Un criterio para todo produce vidas absurdamente conservadoras.
+3. ⭐ **Doble conteo en fatiga (§6-9, §6-16).** O corriges Sut por temperatura **o** aplicas kd, nunca las
+   dos. Y con torsión combinada, kc = 1 porque el von Mises ya lo contó. Dos trampas que dan un número
+   plausible y falso.
+4. ⭐ **§6-17 — El ciclo escondido.** *"The most damaging cycle is number 1. It could have been lost."* El
+   conteo ingenuo de picos pierde **justo** el ciclo que rompe la pieza. Y el `c` de Miner va de 0.7 a 2.2:
+   reportar D = 0.97 como "pasa" es falso rigor.
+5. ⭐ **§14-19 / §11-8 — El criterio de convergencia NO es numérico.** *"iterate until no decisions are
+   changed"* y *"If the same bearing is obtained, stop."* Punto fijo sobre **decisiones** y sobre
+   **identidades de catálogo**, no sobre un residual. Un `while (|Δ| < tol)` nunca converge sobre un
+   dominio discreto.
+6. ⭐ **§10-7 / §10-10 — La figura de mérito decide SOLO ENTRE LOS FACTIBLES, y "ninguno cumple" es normal.**
+   En el Ej 10-2 el mejor fom global **pierde** contra uno peor que sí es factible. Y el Ej 10-5 termina sin
+   solución y el cliente **negocia por jerarquía de restricciones**. Un optimizador con penalizaciones
+   blandas contesta mal las dos veces.
+7. ⭐ **§14-2 / §14-18 / §15-3 — Los factores de seguridad de distintos modos no son comparables.** *"the
+   ratio of loads is the ratio of stresses squared."* `nc,linear = nc^i` en rectos, **√SH vs SF** en
+   cónicos. Un `min(nb, nc)` ingenuo **nombra mal el modo que amenaza** y endurece la pieza equivocada.
+8. ⭐ **§16-1 / §16-5 — El modelo de presión es un JUICIO, y el argumento decisivo no es numérico.** Suponer
+   presión uniforme subestima el pico **24%**; y el cliente elige desgaste uniforme por *"the certainty that
+   new clutches get old"* — razonamiento de ciclo de vida, no de física del instante.
+9. ⭐ **§9-2 / §9-5 — El 0.707h y el "todo es cortante" son conservadurismo CALIBRADO, no simplificación.**
+   El análisis riguroso da 1.207·F/(hl) y el modelo usa 1.414 — **17% inflado a propósito**, validado por
+   prueba. Y en Iu el libro **reconoce** que (d+h) sería más exacto **y lo rechaza**. Un implementador que
+   "corrige" el modelo hacia el análisis exacto **rompe la calibración experimental**.
+10. ⭐ **P4 — No existe "el" valor de un factor: hay que versionarlo.** Cp acero = 2300 √psi en el cap 14 y
+    **2290 en el cap 15** (dos estándares AGMA que no se hablan); Kv **fue redefinido como el recíproco** del
+    de ediciones previas; y la tupla Weibull (LR, x0, θ, b) es **por fabricante** — mezclarlas mete **un
+    factor 90 en la vida, en silencio**.
+
+**Los que se quedaron a un pelo:** el hueco del extractor y el hombro "de relleno" flojo (§7-3, §18-4) · la
+regla d/10 entre concentradores (§7-7) · el 65% de las fallas de perno *"donde el diseñador puso atención"*
+(§8-6) · el rodamiento cónico **como bomba de aceite** que decide dónde perforas el conducto (§11-10) · el
+aro fijo montado deslizante **a propósito** para emparejar el desgaste (§11-12) · que una transición brusca
+de malla **fabrica** un concentrador que la pieza no tiene (§19-4) · y que **soldar una barra estirada en
+frío la devuelve a HR** cerca del cordón (§9-5).

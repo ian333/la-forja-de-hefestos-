@@ -381,6 +381,209 @@ export function contratoEnfriamiento(pkg: MoldPackage): ContratoSubsistema {
   return resumir(S, C);
 }
 
+/**
+ * CONTRATO DE LA EXPULSIÓN — cap 11 (§11.1 objetivos + §11.2 el proceso de 6 pasos)
+ * El libro es explícito en dos cosas que un optimizador rompe: el análisis YA es
+ * conservador (§11.2.2 "without the use of safety factors") y lo que sale del
+ * cálculo es un LÍMITE INFERIOR, no un diseño (§11.2.4).
+ */
+export function contratoExpulsion(pkg: MoldPackage): ContratoSubsistema {
+  const S = 'expulsión';
+  const C: Criterio[] = [];
+  const e = pkg.diseno.expulsion;
+  const v = e.vector, pines = e.pines;
+  const clampTons = pkg.variantes.find((x) => x.arch === pkg.recomendacion.arch && x.nCav === pkg.recomendacion.nCav)?.clampTons ?? 0;
+
+  // ── 1) F_eject validada contra la capacidad de la máquina — §11.2.2 ──
+  // El libro valida por orden de magnitud: la expulsión de la máquina ≈ 2 % del
+  // tonelaje de cierre, y sus estimaciones caen ~0.5 %. Fuera de esa banda el
+  // número es sospechoso aunque la fórmula esté bien.
+  const clampForceN = clampTons * 9806.65;
+  const pctClamp = clampForceN > 0 ? (v.fEjectN / clampForceN) * 100 : NaN;
+  C.push({
+    id: 'eject-fuerza', subsistema: S, cita: '§11.2.2',
+    criterio: 'la fuerza de expulsión debe caber en la de la máquina (≈2 % del tonelaje) y caer en el orden del libro (~0.5 %)',
+    medido: pctClamp, limite: 2, unidad: '% del clamp',
+    estado: !Number.isFinite(pctClamp) ? 'SIN-MÓDULO' : (pctClamp > 2 ? 'VIOLA' : 'CUMPLE'),
+    detalle: `F_eject ${num(v.fEjectN, 0)} N = ${num(pctClamp, 2)} % del cierre (${num(clampTons, 0)} t) · la máquina entrega ≈2 % · el libro cae en ~0.5 %`
+      + ` — σ residual ${num(v.sigmaPa / 1e6)} MPa, peso ${num(v.weightN)} N`,
+  });
+
+  // ── 2) NO aplicar factor de seguridad encima — §11.2.2 ──
+  C.push({
+    id: 'eject-sin-fs', subsistema: S, cita: '§11.2.2',
+    criterio: 'el análisis ya es conservador: NO se le suma factor de seguridad ("without the use of safety factors")',
+    estado: 'CUMPLE',
+    detalle: 'A_eff es la sección que abraza el núcleo (no el área proyectada) y el análisis va del lado seguro — sumarle un FS sería sobre-diseño §1.2',
+  });
+
+  // ── 3) ¿Qué restricción MANDA? — §11.2.3 ──
+  // "the design of the ejector system is driven more by the yield stresses exerted
+  // on the plastic molding rather than by the compressive stresses on the pin".
+  const manda = pines.dMinShearMm >= pines.dMinCompressionMm ? 'cortante en la PIEZA' : 'compresión en el PIN';
+  C.push({
+    id: 'eject-driver', subsistema: S, cita: '§11.2.3',
+    criterio: 'declarar qué restricción gobierna el diámetro (normalmente el cortante en la pieza, no la compresión del pin)',
+    medido: pines.dMinMm, unidad: 'mm',
+    estado: 'CUMPLE',
+    detalle: `manda ${manda}: ⌀ por cortante ${num(pines.dMinShearMm, 2)} mm vs ⌀ por compresión ${num(pines.dMinCompressionMm, 2)} mm → ⌀ ${num(pines.dMinMm, 2)} mm`
+      + (manda.includes('PIN') ? ' ⚠ inusual: revisar el largo del pin (§11.3.1 dice que el driver cambia con L)' : ''),
+  });
+
+  // ── 4) Es un LÍMITE INFERIOR, no un diseño — §11.2.4 ──
+  C.push({
+    id: 'eject-limite-inferior', subsistema: S, cita: '§11.2.4',
+    criterio: 'el cálculo da el MÍNIMO; el diseñador puede (y suele) añadir pines o subir el ⌀ para uniformar la expulsión',
+    estado: 'CUMPLE',
+    detalle: `⌀ ${num(pines.dMinMm, 2)} mm es piso, no receta — "The mold designer can always add ejectors or increase the ejector size"`,
+  });
+
+  // ── 5) Dónde van los pines: donde la pieza SE PEGA — §11.2.5 ──
+  C.push({
+    id: 'eject-layout', subsistema: S, cita: '§11.2.5',
+    criterio: 'los pines van donde se generan las fuerzas de agarre (costillas, bosses), NO repartidos uniformemente',
+    estado: 'SIN-MÓDULO',
+    detalle: 'la Máquina coloca pines por rejilla; no existe el mapa de fuerza de agarre que diría dónde se pega la pieza — el libro nombra el layout uniforme como el anti-patrón común',
+    deuda: 'dfm-mesh.ts ya mide costillas y espesor local; de ahí sale el mapa de agarre. Falta el colocador que lo consuma',
+  });
+
+  // ── 6) Acero mínimo: 1 diámetro de pin entre barreno y cavidad — §11.2.5 ──
+  C.push({
+    id: 'eject-acero-minimo', subsistema: S, cita: '§11.2.5',
+    criterio: 'al menos UN diámetro de pin de acero entre el barreno del expulsor y la superficie de la cavidad',
+    limite: pines.dMinMm, unidad: 'mm',
+    estado: 'SIN-CABLEAR',
+    detalle: `exigido ≥ ${num(pines.dMinMm, 2)} mm de acero — con menos, el barreno se ovala bajo presión, el pin se traba y salen grietas hacia la cavidad`,
+    deuda: 'coordAudit() en mold-coords.ts ya enumera barrenos con su XYZ; falta el check contra la pared de la cavidad',
+  });
+
+  // ── 7) Pines iguales, y NUNCA casi-iguales — §11.2.6 ──
+  C.push({
+    id: 'eject-pines-casi-iguales', subsistema: S, cita: '§11.2.6',
+    criterio: 'mismo largo y ⌀ siempre que se pueda; JAMÁS dos pines que difieran apenas (el moldeador los intercambia y daña el molde)',
+    estado: 'SIN-MÓDULO',
+    detalle: 'la Máquina usa un solo ⌀ para todos los pines (cumple por construcción), pero nadie verifica el caso de longitudes casi-iguales cuando el molde tiene pines contorneados',
+    deuda: 'cuando existan pines de largo variable: tabla ordenada por (⌀, L) + umbral de similitud (1.0 mm) → hallazgo crítico',
+  });
+
+  return resumir(S, C);
+}
+
+/**
+ * CONTRATO ESTRUCTURAL — cap 12
+ * Aquí vive LA comparación cruzada que el libro usa para reprobar un molde
+ * (§12.1.2): la deflexión no se juzga contra un número abstracto, se juzga contra
+ * el ESPESOR DEL VENTEO. Si las mitades se separan más que el vent, hay flash
+ * garantizado — y ninguna de las dos pantallas por separado lo ve.
+ */
+export function contratoEstructural(pkg: MoldPackage): ContratoSubsistema {
+  const S = 'estructural';
+  const C: Criterio[] = [];
+  const sp = pkg.diseno.placas.soporte;
+  const vent = pkg.diseno.venteo;
+
+  // ── 1) ⭐ DEFLEXIÓN vs ESPESOR DEL VENTEO — §12.1.2 ──
+  const deflex = sp.deflectionAtPlateMm;
+  const hVent = vent.hSpecMm;
+  const ratio = hVent > 0 ? deflex / hVent : NaN;
+  C.push({
+    id: 'estr-deflexion-vs-venteo', subsistema: S, cita: '§12.1.2 · cap 8',
+    criterio: 'la separación de las mitades bajo carga debe ser MENOR que el espesor del venteo (si no, flash garantizado)',
+    medido: deflex, limite: hVent, unidad: 'mm',
+    estado: !Number.isFinite(ratio) ? 'SIN-MÓDULO' : (deflex > hVent ? 'VIOLA' : 'CUMPLE'),
+    detalle: `deflexión ${num(deflex, 3)} mm vs venteo ${num(hVent, 3)} mm = ${num(ratio, 1)}× — `
+      + (deflex > hVent
+        ? `FLASH GARANTIZADO: "The mold design must be improved" §12.1.2. Y la rebaba DESGASTA el plano de partición hasta pedir resuperficiado §8.1.2`
+        : `las mitades cierran más fino que el venteo ✓`),
+  });
+
+  // ── 2) El criterio de flash del dimensionador coincide con el contrato ──
+  C.push({
+    id: 'estr-flash-coherente', subsistema: S, cita: '§12.1.2',
+    criterio: 'el veredicto de flash del dimensionador de placas debe coincidir con la comparación deflexión↔venteo',
+    estado: sp.flashOk === (deflex <= hVent) ? 'CUMPLE' : 'VIOLA',
+    detalle: `platesizing dice flashOk=${sp.flashOk} (su propio gap ${num(sp.ventGapMm, 3)} mm) y el contrato mide ${num(deflex, 3)} vs ${num(hVent, 3)} mm`
+      + (sp.flashOk === (deflex <= hVent) ? ' — coinciden ✓' : ' — ⚠ DOS VERDADES: uno de los dos miente (el patrón que ya nos mordió 4 veces)'),
+  });
+
+  // ── 3) Qué gobierna el espesor de la placa — §12.1.3 / §12.2.2 ──
+  C.push({
+    id: 'estr-gobierna', subsistema: S, cita: '§12.1.3',
+    criterio: 'declarar qué gobierna el espesor (deflexión / enfriamiento / expulsión) — la rigidez va con el CUBO del espesor',
+    medido: sp.plateThkMm ?? undefined, unidad: 'mm',
+    estado: sp.plateThkMm ? 'CUMPLE' : 'VIOLA',
+    detalle: `gobierna ${sp.governs}: requerido ${num(sp.tRequiredMm)} mm → placa comercial ${sp.plateThkMm ?? '—'} mm`
+      + ' · OJO §12.1.3: cambiar de acero NO reduce la deflexión (todos ≈200 GPa), solo la geometría',
+  });
+
+  // ── 4) Pilares: dónde y cuántos — §12.2.3 ──
+  C.push({
+    id: 'estr-pilares', subsistema: S, cita: '§12.2.3',
+    criterio: 'los pilares van bajo las zonas que generan fuerza; un solo pilar central no sirve y choca con el vástago de expulsión',
+    medido: sp.nPillars, unidad: 'pilares',
+    estado: sp.nPillars === 1 ? 'ADVIERTE' : 'CUMPLE',
+    detalle: sp.nPillars === 1
+      ? '1 pilar central: §12.2.3 avisa que "will not greatly reduce the deflection" (la placa dobla por los costados) y que suele chocar con el knock-out central'
+      : `${sp.nPillars} pilares · masa acero ${num(sp.steelMassKg)} kg (placa ${num(sp.plateMassKg)} + pilares ${num(sp.pillarMassKg)})`,
+  });
+
+  // ── 4b) ⭐ EL MENÚ pilares↔placa: el libro NO dice "mínimo acero" ni "mínimos
+  //     pilares" — dice que tras meter pilares se REGRESA a adelgazar la placa
+  //     (§12.2.3) y que las alternativas se le presentan al cliente (§3.2.2).
+  //     Aquí es donde se resuelve la disputa de la política "mínimo pilares". ──
+  const ops = pkg.diseno.placas.soporteOpciones ?? [];
+  const validas = ops.filter((o) => o.plateThkMm != null);
+  if (validas.length > 1) {
+    const porAcero = [...validas].sort((a, b) => a.steelMassKg - b.steelMassKg);
+    const masLigera = porAcero[0];
+    const ahorroKg = sp.steelMassKg - masLigera.steelMassKg;
+    C.push({
+      id: 'estr-menu-pilares', subsistema: S, cita: '§12.2.3 · §3.2.2',
+      criterio: 'las alternativas pilares↔espesor de placa se presentan como MENÚ con su costo en acero, no se eligen en silencio',
+      medido: sp.steelMassKg, limite: masLigera.steelMassKg, unidad: 'kg',
+      estado: ahorroKg > 1 ? 'ADVIERTE' : 'CUMPLE',
+      detalle: `elegida: ${sp.nPillars} pilares · placa ${sp.plateThkMm} mm · ${num(sp.steelMassKg)} kg. `
+        + `La más ligera del menú: ${masLigera.nPillars} pilares · placa ${masLigera.plateThkMm} mm · ${num(masLigera.steelMassKg)} kg`
+        + (ahorroKg > 1
+          ? ` → ${num(ahorroKg)} kg de acero de diferencia. §12.2.3: "the thickness of the B plate and/or support plate could be slightly reduced" tras meter pilares — la elección es del humano, no del optimizador`
+          : ' → la elegida ya es la más ligera'),
+    });
+  }
+
+  // ── 5) Pre-carga de pilares — §12.2.3 (el truco de artesano) ──
+  C.push({
+    id: 'estr-precarga', subsistema: S, cita: '§12.2.3',
+    criterio: 'los pilares pueden fabricarse MÁS LARGOS por la deflexión calculada para que el molde quede plano bajo carga',
+    medido: deflex, unidad: 'mm',
+    estado: 'SIN-MÓDULO',
+    detalle: sp.nPillars > 0
+      ? `con ${sp.nPillars} pilares y ${num(deflex, 3)} mm de deflexión, la pre-carga daría una cota de DOS valores (fabricar L+${num(deflex, 3)} / en operación L) — la deflexión no se elimina, se CANCELA`
+      : 'sin pilares no aplica',
+    deuda: 'mold-dimensions.ts tendría que soportar cotas de dos valores (fabricado vs en operación) y el plano dibujarlas',
+  });
+
+  // ── 6) σ_limit: nunca factor de seguridad CON peor caso — §12.1.1 ──
+  C.push({
+    id: 'estr-no-apilar-sesgos', subsistema: S, cita: '§12.1.1',
+    criterio: 'σ_limit = min(σ_yield/f, σ_endurance) con UN método: prohibido combinar factor de seguridad con escenario de peor caso',
+    estado: 'SIN-MÓDULO',
+    detalle: 'la Máquina no expone qué método usó para fijar el esfuerzo admisible, así que no se puede verificar que no los esté apilando (= sobre-diseño §1.2)',
+    deuda: 'platesizing/structural deben declarar {metodo: "yield/f" | "peor-caso", f, sigmaLimitMPa} y el contrato verificar que no vengan los dos',
+  });
+
+  // ── 7) La vida del molde es ENTRADA, no resultado — §12.1.1 ──
+  C.push({
+    id: 'estr-vida-ciclos', subsistema: S, cita: '§12.1.1',
+    criterio: 'el número de ciclos objetivo entra al cálculo estructural (el aluminio NO tiene límite de fatiga: 545/370/170 MPa a 1e3/1e4/1e6)',
+    medido: pkg.spec.totalVolume, unidad: 'piezas',
+    estado: 'SIN-MÓDULO',
+    detalle: `el spec declara ${pkg.spec.totalVolume?.toLocaleString() ?? '—'} piezas de horizonte, pero el dimensionado estructural no lo consume: usa un σ_endurance fijo`,
+    deuda: 'moldbase/platesizing deben tomar cyclesTarget y elegir σ_limit de la curva S-N del metal (crítico si se elige aluminio)',
+  });
+
+  return resumir(S, C);
+}
+
 function resumir(subsistema: string, criterios: Criterio[]): ContratoSubsistema {
   const n = (e: ContratoEstado) => criterios.filter((c) => c.estado === e).length;
   const viola = n('VIOLA'), sinCablear = n('SIN-CABLEAR'), sinModulo = n('SIN-MÓDULO');
@@ -397,7 +600,8 @@ const ICON: Record<ContratoEstado, string> = {
 
 /** Corre TODOS los contratos disponibles sobre un paquete y arma el reporte. */
 export function contratos(pkg: MoldPackage): ContratoReporte {
-  const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg), contratoEnfriamiento(pkg)];
+  const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg), contratoEnfriamiento(pkg),
+    contratoExpulsion(pkg), contratoEstructural(pkg)];
   const t = { criterios: 0, cumple: 0, advierte: 0, viola: 0, sinCablear: 0, sinModulo: 0 };
   for (const s of subsistemas) {
     t.criterios += s.criterios.length; t.cumple += s.cumple; t.advierte += s.advierte;
