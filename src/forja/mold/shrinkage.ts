@@ -54,3 +54,58 @@ export function shrinkage(
   const linear = 1 - Math.cbrt(rv);                 // Eq 10.13
   return { vPack, vUse, rv, linear, moldScale: 1 / (1 - linear) };
 }
+
+/**
+ * LA RECOMENDACIÓN DE CONTRACCIÓN COMO PROCESO — §10.1.6 + §10.1.7
+ * =================================================================
+ * El libro NO entrega un número: entrega un RANGO y una recomendación de proceso.
+ * El límite INFERIOR sale de empacar largo y fuerte; el SUPERIOR de empacar corto
+ * y flojo, con el fundido más caliente. Literales de §10.1.6:
+ *   "A practical upper limit for the packing pressure may be the greater of 120 %
+ *    of the injection pressure or 100 MPa"
+ *   "a low packing pressure (equal to the lesser of 40 % of the injection pressure
+ *    or 30 MPa) and a high melt temperature (equal, perhaps, to the temperature
+ *    half-way between the no-flow temperature and the melt temperature)"
+ *
+ * Y trae la ALARMA CONTRAINTUITIVA (§10.1.6): una contracción ≤ 0 no es precisión,
+ * es sobre-empaque — sin contracción positiva la pieza no se despega de la cavidad
+ * ni sale de costillas y bosses. Un optimizador que la minimice diseña un molde
+ * que no expulsa.
+ */
+export function shrinkageRecommendation(o: {
+  tait: TaitCoeffs; fillMPa: number; tNoFlowC: number; tMeltC: number; tUseC?: number;
+}): {
+  nominalPct: number; lowPct: number; highPct: number; spanPct: number;
+  moldScale: number; positiva: boolean; anchoExcesivo: boolean; notas: string[];
+} {
+  const K = (c: number) => c + 273.15;
+  const tUseK = K(o.tUseC ?? 20);
+  // nominal: el pack típico del libro = 80 % de la presión de llenado (§10.1.2)
+  const pNom = 0.8 * o.fillMPa * 1e6;
+  const nominal = shrinkage(o.tait, { tNoFlowK: K(o.tNoFlowC), pPackPa: pNom, tUseK });
+  // límite INFERIOR de contracción: pack alto y largo
+  const pHigh = Math.max(1.2 * o.fillMPa, 100) * 1e6;
+  const low = shrinkage(o.tait, { tNoFlowK: K(o.tNoFlowC), pPackPa: pHigh, tUseK });
+  // límite SUPERIOR: pack bajo y fundido a medio camino entre no-flow y melt
+  const pLow = Math.min(0.4 * o.fillMPa, 30) * 1e6;
+  const tHot = (o.tNoFlowC + o.tMeltC) / 2;
+  const high = shrinkage(o.tait, { tNoFlowK: K(tHot), pPackPa: pLow, tUseK });
+
+  const lowPct = low.linear * 100, highPct = high.linear * 100, nomPct = nominal.linear * 100;
+  const spanPct = highPct - lowPct;
+  const notas: string[] = [];
+  const positiva = lowPct > 0;
+  if (!positiva) {
+    notas.push('⚠ §10.1.6 contracción ≤ 0 en el límite inferior: SOBRE-EMPAQUE. La pieza no se despegará de la cavidad ni saldrá de costillas/bosses — no es precisión, es un molde que no expulsa');
+  }
+  // El libro llama la atención cuando el rango es muy ancho (su ejemplo: 0.3 → 1.9 %)
+  const anchoExcesivo = spanPct > 3 * Math.max(nomPct, 0.05);
+  if (anchoExcesivo) {
+    notas.push(`§10.1.6 el rango es ancho (${lowPct.toFixed(2)}–${highPct.toFixed(2)} %): recomendar al moldeador PACK EXTENDIDO con presiones altas`);
+  }
+  notas.push('§10.1.7 este análisis NO decide solo: verifica al proveedor, al molde previo y a la simulación. El número final lleva RESPONSABLE');
+  return {
+    nominalPct: nomPct, lowPct, highPct, spanPct,
+    moldScale: nominal.moldScale, positiva, anchoExcesivo, notas,
+  };
+}

@@ -42,12 +42,29 @@ export const viscosityPowerLaw = (m: MeltMaterial, shearRate: number): number =>
  * (Eq 5.23)… hasta converger. Devuelve la velocidad de diseño.
  */
 export function convergeVelocity(m: MeltMaterial, hMeters: number, v0 = 0.5, iters = 24): number {
+  return convergeVelocityTraced(m, hMeters, v0, iters).v;
+}
+
+/**
+ * La MISMA convergencia, pero AUDITABLE — §5.5.1 publica la escalera completa
+ * (0.5 → 0.69 → 0.77 → 0.80 → 0.82 m/s) porque un número sin su convergencia no se
+ * puede revisar. Devolver solo el último valor escondía dos cosas: si convergió de
+ * verdad, y cuántas vueltas costó.
+ */
+export function convergeVelocityTraced(
+  m: MeltMaterial, hMeters: number, v0 = 0.5, iters = 24, tol = 1e-4,
+): { v: number; escalera: number[]; convergio: boolean; vueltas: number } {
   let v = v0;
+  const escalera: number[] = [v];
+  let convergio = false, vueltas = iters;
   for (let i = 0; i < iters; i++) {
     const mu = viscosityPowerLaw(m, shearRateNewtonian(v, hMeters));
-    v = recommendedVelocity(m, mu);
+    const next = recommendedVelocity(m, mu);
+    escalera.push(next);
+    if (Math.abs(next - v) < tol) { v = next; convergio = true; vueltas = i + 1; break; }
+    v = next;
   }
-  return v;
+  return { v, escalera, convergio, vueltas };
 }
 
 /**

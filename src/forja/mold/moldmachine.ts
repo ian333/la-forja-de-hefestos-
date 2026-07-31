@@ -20,7 +20,7 @@
  * (node-testeable): el análisis geométrico B-Rep (splitMold, planos) se
  * engancha aparte con la Shape; la máquina razona sobre las dimensiones.
  */
-import { ABS_MG47, convergeVelocity, pressureDropSegment, clampMetricTons, type MeltMaterial } from './filling';
+import { ABS_MG47, convergeVelocity, convergeVelocityTraced, pressureDropSegment, clampMetricTons, type MeltMaterial } from './filling';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
 import { sizeInserts, selectMoldBase, selectMetal, type InsertSizing, type BaseSelection, type MoldMetal } from './moldbase';
 import {
@@ -33,6 +33,8 @@ import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, type PlateSizing,
 import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
 import { moldOpeningStrokeMm } from './threeplate';
 import { designFeedSystem, estPartVolumeCc, type FeedSystemDesign } from './feed';
+import { shrinkageRecommendation, ABS_TAIT } from './shrinkage';
+import { designGateProcess, type GateProcessDesign, type GateType } from './gating';
 import { ventDesign } from './venting';
 
 export type Arch = 'cold-2placas' | 'cold-3placas' | 'hot-runner';
@@ -88,12 +90,19 @@ interface ArchCav {
  */
 export interface DiseñoFisico {
   fillMPa: number; cavityMPa: number;
+  /** §5.5.1: la velocidad y SU ESCALERA de convergencia (un número sin su
+   *  convergencia no es auditable — el libro publica la escalera completa). */
+  velocidad: { vMs: number; escalera: number[]; convergio: boolean; vueltas: number };
   /** §6.4: el feed como LAZO (ΔP asignado → si la colada domina el ciclo, bajar ⌀).
    *  Antes la Máquina solo etiquetaba la arquitectura y estimaba el volumen del
    *  runner con una proporción fabricada (partCc × 0.25). */
   alimentacion: FeedSystemDesign;
   /** cap 8: espesor de venteo entre el mínimo (aire) y el máximo (rebaba). */
   venteo: ReturnType<typeof ventDesign>;
+  /** §10.1.6: la contracción como RANGO + la alarma de sobre-empaque (s ≤ 0). */
+  contraccion: ReturnType<typeof shrinkageRecommendation>;
+  /** §7.3: el gate como PROCESO de 5 pasos, con freeze-vs-empaque y el salto de nivel. */
+  gate: GateProcessDesign;
   enfriamiento: { qCavidadJ: number; qTotalW: number; cicloS: number; lineas: CoolingLineDesign };
   expulsion: { aEffM2: number; vector: EjectionVector; pines: ReturnType<typeof ejectorPinSizing> };
   placas: { soporte: PlateSizing; soporteOpciones: PlateSizing[]; cavidad: CavityPlateSizing; nucleo: CavityPlateSizing };
@@ -119,6 +128,11 @@ export interface MoldPackage {
 
 /** Densidad del plástico (kg/m³) para masa/calor por ciclo. */
 const PLASTIC_RHO: Record<string, number> = { ABS: 1050, PP: 905, PS: 1040, PC: 1200, PE: 950, PA: 1140, POM: 1410 };
+/** T de no-flujo (°C) — Apéndice A, mismos valores que FEED_MATERIALS en feed.ts. */
+const PLASTIC_TNOFLOW: Record<string, number> = { ABS: 132, PP: 176 };
+/** γ̇ máx y difusividad — Apéndice A (mismos valores que FEED_MATERIALS). */
+const PLASTIC_SHEARMAX: Record<string, number> = { ABS: 50000, PP: 100000 };
+const PLASTIC_ALPHA: Record<string, number> = { ABS: 8.73e-8, PP: 8.15e-8 };
 const PLASTIC_CP: Record<string, number> = { ABS: 2000, PP: 2100, PS: 1900, PC: 1250, PE: 2300, PA: 1700, POM: 1500 };
 
 const FINISH_MAP: Record<string, { spi: 'texture' | 'SPI A-1' | 'SPI A-3' | 'SPI B-3' }['spi']> = {
@@ -142,7 +156,8 @@ const CAVITY_PRESSURE_FACTOR = 0.5;
 /** Presión de llenado + clamp por cavidad (filling.ts, puro). */
 function clampFor(spec: MachineSpec, melt: MeltMaterial, nCav: number): { dPMPa: number; clampTons: number } {
   const wallM = spec.wallMm / 1000, flowM = spec.Lmm / 1000;   // longitud de flujo ≈ largo (aprox)
-  const v = convergeVelocity(melt, wallM);
+  const vTrace = convergeVelocityTraced(melt, wallM);
+  const v = vTrace.v;
   const dP = pressureDropSegment(melt, flowM, wallM, v);
   const projAreaM2 = nCav * (spec.Lmm * spec.Wmm) * 1e-6;      // área proyectada = L×W por cavidad
   const clamp = clampMetricTons(dP * CAVITY_PRESSURE_FACTOR, projAreaM2);
@@ -245,7 +260,8 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
 function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, insertos: InsertSizing, melt: MeltMaterial, plastic: string): DiseñoFisico {
   const nCav = win.nCav;
   const wallM = spec.wallMm / 1000, flowM = spec.Lmm / 1000;
-  const v = convergeVelocity(melt, wallM);
+  const vTrace = convergeVelocityTraced(melt, wallM);
+  const v = vTrace.v;
   const fillPa = pressureDropSegment(melt, flowM, wallM, v);
   const fillMPa = fillPa / 1e6, cavityMPa = fillMPa * CAVITY_PRESSURE_FACTOR;  // media ≈ ½ del pico
 
@@ -270,6 +286,29 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   const venteo = ventDesign({
     VdotAirM3s: (partCcReal * 1e-6) / 1,                          // t_llenado = 1 s, convención del libro
     lM: 0.01, wM: 0.01, lFlashM: 0.2e-3,
+  });
+
+  // ── CONTRACCIÓN (§10.1.6): rango, no número. Y la alarma que un optimizador
+  //    rompería por diseño: s ≤ 0 no es precisión, es una pieza que no expulsa. ──
+  const contraccion = shrinkageRecommendation({
+    tait: ABS_TAIT, fillMPa,
+    tNoFlowC: PLASTIC_TNOFLOW[plastic] ?? 132,
+    tMeltC: melt.tMelt,
+  });
+
+  // ── GATE (§7.3, proceso de 5 pasos): el tipo lo sugiere la arquitectura
+  //    (2 placas → edge manual · 3 placas → pin-point · caliente → thermal-sprue),
+  //    y el lazo ajusta dimensiones. El freeze puede reprobar lo que ya pasó
+  //    corte y presión (§7.1.5), y el ajuste puede escalar al TIPO DE MOLDE. ──
+  const GATE_POR_ARCH: Record<Arch, GateType> = {
+    'cold-2placas': 'edge', 'cold-3placas': 'pin-point', 'hot-runner': 'thermal-sprue',
+  };
+  const gate = designGateProcess({
+    type: GATE_POR_ARCH[win.arch], wallMm: spec.wallMm,
+    VdotM3s: (partCcReal * 1e-6) / 1, shearMaxS: PLASTIC_SHEARMAX[plastic] ?? 50000,
+    melt, alphaM2s: PLASTIC_ALPHA[plastic] ?? 8.73e-8,
+    tMeltC: melt.tMelt, tCoolC: melt.tWall, tNoFlowC: PLASTIC_TNOFLOW[plastic] ?? 132,
+    tPackNeededS: alimentacion.tcPartS,   // Eq 9.5 de la pared, ya calculada por el feed: UNA fuente
   });
 
   // ── ENFRIAMIENTO: calor por ciclo → caudal → Ø turbulento → plug DME ──
@@ -319,7 +358,8 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
 
   return {
     fillMPa: +fillMPa.toFixed(1), cavityMPa: +cavityMPa.toFixed(1),
-    alimentacion, venteo,
+    velocidad: { vMs: v, escalera: vTrace.escalera, convergio: vTrace.convergio, vueltas: vTrace.vueltas },
+    alimentacion, venteo, contraccion, gate,
     enfriamiento: { qCavidadJ: +qCavJ.toFixed(0), qTotalW: +qTotalW.toFixed(0), cicloS: +cicloS.toFixed(1), lineas },
     expulsion: { aEffM2, vector, pines },
     placas: { soporte: soporte.best, soporteOpciones: soporte.options, cavidad, nucleo },

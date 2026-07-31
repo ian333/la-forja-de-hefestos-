@@ -77,3 +77,112 @@ export function gateDesign(o: {
     report: `${o.type}: t=${tMm}mm${isCyl ? '' : ` w=${wMm}mm`} · γ̇ ${Math.round(shear).toLocaleString()} 1/s ${ok ? '✓' : `⚠ > máx ${o.shearMaxS.toLocaleString()} — agrandar gate o bajar flujo`}`,
   };
 }
+
+/** ¿El tipo de gate se puede AGRANDAR en el tryout? §7.3.5 — el atributo que no
+ *  trae ningún catálogo comercial, solo el libro: el acero se quita, no se pone. */
+export const GATE_AGRANDABLE: Record<GateType, boolean> = {
+  'sprue': false,          // lo fija el bushing
+  'pin-point': true, 'edge': true, 'tab': true, 'flash': true, 'fan': true,
+  'tunnel': true,
+  'thermal-pin': false, 'thermal-sprue': false, 'valve': false,   // §6.2.3: en caliente, abrir cuesta caro
+};
+
+export interface GateIteration { paso: number; que: string; accion: string; }
+
+/**
+ * EL GATE COMO PROCESO DE 5 PASOS — §7.3
+ * =======================================
+ * §7.3.1 tipo → §7.3.2 semilla + cortante → §7.3.3 ΔP → §7.3.4 freeze vs empaque
+ * → §7.3.5 ajuste. Dos cosas que un cálculo de una pasada no tiene:
+ *
+ * 1) §7.1.5 — el t_freeze puede REPROBAR un gate que YA pasó corte y presión:
+ *    "the dimensions should be adjusted EVEN IF the shear rates and pressure drops
+ *    were found acceptable". Por eso el freeze es un paso propio y no un adorno.
+ * 2) §7.3.2/§7.3.4 — el ajuste puede escalar de nivel: ensanchar un edge gate más
+ *    allá de cierto punto "would require a change in the gate type to a fan gate",
+ *    y gatear a sección delgada obliga a "consider a three-plate or hot runner
+ *    mold". El lazo REPORTA ese salto; no lo toma solo.
+ *
+ * Y el resultado sale STEEL-SAFE (§7.3.5/§7.4): se especifica el gate CHICO a
+ * propósito, con su disparador de apertura declarado para el tryout.
+ */
+export function designGateProcess(o: {
+  type: GateType; wallMm: number; wallAtGateMm?: number; VdotM3s: number;
+  shearMaxS: number; melt: MeltMaterial; alphaM2s: number;
+  tMeltC: number; tCoolC: number; tNoFlowC: number;
+  /** empaque que la PIEZA necesita (t_c de la pared) — §7.3.4 lo compara */
+  tPackNeededS: number;
+  gateLenMm?: number;
+}) {
+  const iters: GateIteration[] = [];
+  const props = GATE_TABLE[o.type];
+  const cyl = ['sprue', 'pin-point', 'tunnel', 'thermal-pin', 'thermal-sprue', 'valve'].includes(o.type);
+  iters.push({ paso: 1, que: `tipo ${o.type}`, accion: `§7.3.1 runner ${props.runner} · degatado ${props.degating} · flujo ${props.flow} · agrandable ${GATE_AGRANDABLE[o.type] ? 'SÍ' : 'NO'}` });
+
+  // §7.3.2 SEMILLA: gates gruesos = espesor de pared; delgados = la mitad.
+  const thin = ['pin-point', 'flash', 'tunnel', 'thermal-pin'].includes(o.type);
+  let t = o.wallMm * (thin ? 0.5 : 1);
+  let w = 2 * t;                                                   // §7.3.2 ancho inicial
+  const L = (o.gateLenMm ?? Math.max(1, t)) / 1000;
+  const ev = () => {
+    const shear = cyl ? shearRateCyl(o.VdotM3s, t / 2000) : shearRateStrip(o.VdotM3s, w / 1000, t / 1000);
+    const dPMPa = (cyl
+      ? gateDropCylNewt(o.melt.k, L, t / 2000, o.VdotM3s)
+      : gateDropStripPL(o.melt, L, w / 1000, t / 1000, o.VdotM3s)) / 1e6;
+    const freezeS = cyl
+      ? gateFreezeCylS(o.alphaM2s, t / 1000, o.tMeltC, o.tCoolC, o.tNoFlowC)
+      : gateFreezeStripS(o.alphaM2s, t / 1000, o.tMeltC, o.tCoolC, o.tNoFlowC);
+    return { shear, dPMPa, freezeS };
+  };
+  let r = ev();
+  iters.push({ paso: 2, que: `semilla t=${t.toFixed(2)} mm${cyl ? '' : ` w=${w.toFixed(2)} mm`}`, accion: `§7.3.2 ${thin ? 'gate delgado: ½ de la pared' : 'gate grueso: espesor de pared'} · γ̇ ${Math.round(r.shear).toLocaleString()} 1/s` });
+
+  // §7.3.5 AJUSTE por cortante: agrandar hasta cumplir γ̇max
+  let escalaTipo: string | null = null;
+  for (let k = 0; k < 12 && r.shear > o.shearMaxS; k++) {
+    if (cyl) t *= 1.15; else w *= 1.25;
+    r = ev();
+    // §7.3.2: un edge gate demasiado ancho YA ES un fan gate
+    if (!cyl && w > 14 && o.type === 'edge') {
+      escalaTipo = `§7.3.2 el ancho llegó a ${w.toFixed(1)} mm — "would require a change in the gate type to a FAN GATE"`;
+      break;
+    }
+  }
+  if (r.shear <= o.shearMaxS) {
+    iters.push({ paso: 3, que: `γ̇ ${Math.round(r.shear).toLocaleString()} 1/s`, accion: `§7.1.4 dentro del máximo (${o.shearMaxS.toLocaleString()}) con t=${t.toFixed(2)}${cyl ? '' : ` w=${w.toFixed(2)}`} mm` });
+  }
+
+  // §7.3.3 ΔP: 2 MPa típico · >6 sospechoso · >10 mal diseñado
+  const dpVeredicto = r.dPMPa > 10 ? 'MAL DISEÑADO (muy delgado o muy largo)' : r.dPMPa > 6 ? 'sospechoso' : 'típico';
+  iters.push({ paso: 4, que: `ΔP ${r.dPMPa.toFixed(2)} MPa`, accion: `§7.3.3 ${dpVeredicto} (marcas del libro: 2 típico / 6 sospechoso / 10 mal diseñado)` });
+
+  // §7.3.4 FREEZE vs EMPAQUE — puede reprobar lo que ya pasó corte y presión
+  const freezeCorto = r.freezeS < o.tPackNeededS;
+  iters.push({
+    paso: 5, que: `freeze ${r.freezeS.toFixed(2)} s vs empaque necesario ${o.tPackNeededS.toFixed(2)} s`,
+    accion: freezeCorto
+      ? '§7.1.5 el gate CONGELA ANTES de terminar el empaque → contracción volumétrica excesiva. Engrosar el gate, subir presión de empaque, o adelgazar la pieza — AUNQUE γ̇ y ΔP estén bien'
+      : '§7.3.4 el gate aguanta el empaque que la pieza necesita ✓ (ojo: la ecuación da el MÍNIMO, ignora la convección del flujo — el real será mayor)',
+  });
+
+  // §7.3.4 ¿gateando a sección delgada? → escala a TIPO DE MOLDE
+  const wallGate = o.wallAtGateMm ?? o.wallMm;
+  const seccionDelgada = wallGate < o.wallMm * 0.9;
+  if (seccionDelgada) {
+    escalaTipo = (escalaTipo ? escalaTipo + ' · ' : '')
+      + `§7.3.4 el gate entra a ${wallGate.toFixed(2)} mm y debe empacar ${o.wallMm.toFixed(2)} mm — "a three-plate mold or hot runner mold should be considered"`;
+  }
+
+  // §7.3.5/§7.4 STEEL SAFE: especificar CHICO y abrir en el tryout
+  const tSafe = +(t * 0.85).toFixed(2);
+  return {
+    type: o.type, agrandable: GATE_AGRANDABLE[o.type],
+    thicknessMm: +t.toFixed(3), widthMm: cyl ? null : +w.toFixed(2),
+    thicknessSteelSafeMm: GATE_AGRANDABLE[o.type] ? tSafe : +t.toFixed(2),
+    shear: r.shear, shearMax: o.shearMaxS, dPMPa: r.dPMPa, freezeS: r.freezeS,
+    tPackNeededS: o.tPackNeededS, freezeCorto, dpVeredicto,
+    escalaTipo, iteraciones: iters,
+    ok: r.shear <= o.shearMaxS && r.dPMPa <= 10 && !freezeCorto && !escalaTipo,
+  };
+}
+export type GateProcessDesign = ReturnType<typeof designGateProcess>;

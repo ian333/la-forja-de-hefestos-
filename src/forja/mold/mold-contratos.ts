@@ -24,6 +24,8 @@
 import type { MoldPackage } from './moldmachine';
 import { estPartVolumeCc, FEED_MATERIALS, STANDARD_RUNNER_DIAMM, steelSafeDiaMm } from './feed';
 import { VENT_TABLE_MM } from './venting';
+import { GATE_TABLE } from './gating';
+const GATE_TABLE_DEGATING = Object.fromEntries(Object.entries(GATE_TABLE).map(([k, v]) => [k, v.degating])) as Record<string, string>;
 
 export type ContratoEstado = 'CUMPLE' | 'ADVIERTE' | 'VIOLA' | 'SIN-CABLEAR' | 'SIN-MÓDULO';
 
@@ -623,21 +625,25 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 3) La velocidad recomendada CONVERGIÓ — §5.5.1 ──
+  const vel = pkg.diseno.velocidad;
   C.push({
     id: 'llenado-convergencia', subsistema: S, cita: '§5.5.1',
     criterio: 'la velocidad sale de un lazo v↔γ̇↔μ que debe converger, y la escalera de iteraciones es auditable',
-    estado: 'SIN-CABLEAR',
-    detalle: 'convergeVelocity() itera 24 veces a ciegas y devuelve solo el último valor — no se puede verificar que convergió ni mostrar la escalera (el libro la publica: 0.5 → 0.69 → 0.77 → 0.80 → 0.82 m/s)',
-    deuda: 'filling.ts:convergeVelocity debe devolver {v, iteraciones[], convergio} en vez de un número suelto',
+    medido: vel.vueltas, unidad: 'vueltas',
+    estado: vel.convergio ? 'CUMPLE' : 'VIOLA',
+    detalle: vel.convergio
+      ? `convergió en ${vel.vueltas} vueltas: ${vel.escalera.slice(0, 6).map((x) => x.toFixed(2)).join(' → ')}${vel.escalera.length > 6 ? ' → …' : ''} m/s (el libro publica 0.5 → 0.69 → 0.77 → 0.80 → 0.82)`
+      : `NO convergió en ${vel.vueltas} vueltas — el número que se está usando (${num(vel.vMs, 3)} m/s) no es de fiar`,
   });
 
   // ── 4) Velocidad lineal en la banda del libro — §5.5.1 ──
   C.push({
     id: 'llenado-velocidad', subsistema: S, cita: '§5.5.1',
     criterio: 'la velocidad lineal del fundido cae entre 0.01 y 1 m/s',
-    estado: 'SIN-CABLEAR',
-    detalle: 'la velocidad convergida no viaja al paquete, así que no se puede contrastar contra la banda 0.01–1 m/s',
-    deuda: 'DiseñoFisico debe exponer la velocidad de llenado junto a fillMPa',
+    medido: vel.vMs, limite: 1, unidad: 'm/s',
+    estado: vel.vMs >= 0.01 && vel.vMs <= 1 ? 'CUMPLE' : 'ADVIERTE',
+    detalle: `v̄ ${num(vel.vMs, 3)} m/s · banda del libro 0.01–1 m/s`
+      + (vel.vMs > 1 ? ' — por encima: revisar el espesor o el material' : vel.vMs < 0.01 ? ' — por debajo: llenado muy lento' : ' ✓'),
   });
 
   // ── 5) Tonelaje: llenado Y empaque, el mayor manda, con piso de 50 MPa — §5.5.3 ──
@@ -675,63 +681,68 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
 export function contratoGates(pkg: MoldPackage): ContratoSubsistema {
   const S = 'gates';
   const C: Criterio[] = [];
-  const DEUDA = 'gating.ts:gateDesign() existe y está gateado, pero solo hace 1 de los 5 pasos de §7.3 (tipo→cortante→ΔP→freeze→ajuste) y moldMachine no lo llama';
+  const g = pkg.diseno.gate;
 
   C.push({
-    id: 'gate-tipo', subsistema: S, cita: '§7.3.1 · Tabla 7.1',
-    criterio: 'el tipo de gate se elige por runner (frío/caliente), método de degatado, régimen de corte, tipo de flujo y si se puede AGRANDAR',
-    estado: 'SIN-CABLEAR',
-    detalle: 'la Máquina elige la ARQUITECTURA de alimentación pero nunca el tipo de gate — no hay gate en el paquete',
-    deuda: DEUDA,
+    id: 'gate-tipo', subsistema: S, cita: '§7.3.1 · Tabla 7.1 · §7.3.5',
+    criterio: 'el tipo se elige por runner, degatado, régimen de corte, tipo de flujo y —el que no trae ningún catálogo— si se puede AGRANDAR',
+    estado: 'CUMPLE',
+    detalle: `${g.type}: ${g.iteraciones[0].accion.replace('§7.3.1 ', '')}`
+      + (g.agrandable ? '' : ' ⚠ NO agrandable: en caliente abrir el gate cuesta caro §6.2.3, así que el steel-safe no aplica igual'),
   });
 
   C.push({
-    id: 'gate-shear', subsistema: S, cita: '§7.1.4',
-    criterio: 'γ̇ en el gate ≤ máximo del material (el apéndice orienta; el proveedor manda y muchas veces se puede más)',
-    estado: 'SIN-CABLEAR',
-    detalle: 'sin gate diseñado no hay γ̇ que juzgar',
-    deuda: DEUDA,
+    ...juzgaMax({
+      id: 'gate-shear', subsistema: S, cita: '§7.1.4',
+      criterio: 'γ̇ en el gate ≤ máximo del material (el apéndice orienta; el proveedor manda y muchas veces se puede más)',
+      medido: g.shear, limite: g.shearMax, unidad: '1/s',
+      detalle: `γ̇ ${Math.round(g.shear).toLocaleString()} vs máx ${g.shearMax.toLocaleString()} 1/s · t=${num(g.thicknessMm, 2)} mm${g.widthMm ? ` w=${num(g.widthMm, 2)} mm` : ''}`,
+    }),
   });
 
   C.push({
     id: 'gate-dp', subsistema: S, cita: '§7.1.4 · §7.3.3',
     criterio: 'ΔP del gate: ~2 MPa típico · >6 MPa sospechoso · >10 MPa = mal diseñado (muy delgado o muy largo)',
-    limite: 10, unidad: 'MPa',
-    estado: 'SIN-CABLEAR',
-    detalle: 'las tres marcas del libro están listas para usarse en cuanto exista el gate',
-    deuda: DEUDA,
+    medido: g.dPMPa, limite: 10, unidad: 'MPa',
+    estado: g.dPMPa > 10 ? 'VIOLA' : (g.dPMPa > 6 ? 'ADVIERTE' : 'CUMPLE'),
+    detalle: `ΔP ${num(g.dPMPa, 2)} MPa — ${g.dpVeredicto}`,
   });
 
+  // ⭐ El criterio que puede reprobar un gate que YA pasó los dos anteriores
   C.push({
     id: 'gate-freeze', subsistema: S, cita: '§7.1.5 · §7.3.4',
-    criterio: 'el t_freeze del gate se contrasta contra el t_pack que la pieza necesita; puede REPROBAR un gate que ya pasó corte y presión',
-    estado: 'SIN-CABLEAR',
-    detalle: 'gateFreezeCylS/StripS existen y están verificadas; nadie las contrasta contra el empaque requerido. §7.1.5: "the dimensions should be adjusted EVEN IF the shear rates and pressure drops were found acceptable"',
-    deuda: 'gating.ts tiene las dos funciones de freeze; falta el paso 4 del proceso §7.3.4 que las compara',
+    criterio: 'el t_freeze del gate debe cubrir el empaque que la pieza necesita — puede REPROBAR un gate que ya pasó corte y presión',
+    medido: g.freezeS, limite: g.tPackNeededS, unidad: 's',
+    estado: g.freezeCorto ? 'VIOLA' : 'CUMPLE',
+    detalle: `freeze ${num(g.freezeS, 2)} s vs empaque necesario ${num(g.tPackNeededS, 2)} s — `
+      + (g.freezeCorto
+        ? 'CONGELA ANTES: contracción volumétrica excesiva. §7.1.5 "the dimensions should be adjusted EVEN IF the shear rates and pressure drops were found acceptable". Remedios en su orden §7.3.5: (1) subir presión de empaque, (2) engrosar el gate, (3) adelgazar la pieza'
+        : 'aguanta el empaque ✓ · ojo: la ecuación da el MÍNIMO (ignora la convección del flujo), el real será mayor'),
   });
 
   C.push({
-    id: 'gate-seccion-delgada', subsistema: S, cita: '§7.3.4',
-    criterio: 'no gatear a una sección más delgada que la que debe empacar — y si toca, la conclusión puede ser CAMBIAR EL TIPO DE MOLDE',
-    estado: 'SIN-MÓDULO',
-    detalle: 'nadie compara el espesor en el punto del gate contra el espesor de la sección a empacar; ese es el salto de dos niveles que dispara "considera 3 placas o cámara caliente"',
-    deuda: 'requiere espesor local en el punto del gate (dfm-mesh ya lo tiene) + el lazo que escale la decisión a la arquitectura',
-  });
-
-  C.push({
-    id: 'gate-degatado', subsistema: S, cita: '§7.1.2 · §7.2.7',
-    criterio: 'debe existir una ruta de degatado declarada (manual / automático por apertura / robot) y el acceso físico para ejecutarla',
-    estado: 'SIN-MÓDULO',
-    detalle: 'para tunnel gate el libro exige 45° al plano, cono incluido ≥20°, ≥3 diámetros fuera del plano Y sucker pins en el runner — sin los sucker pins el degatado automático NO EXISTE aunque la geometría del gate pase',
-    deuda: 'el check debe ser del ENSAMBLE (gate + runner + sucker pins), no del gate aislado',
+    id: 'gate-escala-nivel', subsistema: S, cita: '§7.3.2 · §7.3.4',
+    criterio: 'el ajuste dimensional puede escalar de nivel: cambiar el TIPO de gate, o incluso el TIPO DE MOLDE',
+    estado: g.escalaTipo ? 'ADVIERTE' : 'CUMPLE',
+    detalle: g.escalaTipo ?? 'el gate se resolvió dentro de su tipo, sin necesidad de escalar a fan gate ni a 3 placas/cámara caliente ✓',
   });
 
   C.push({
     id: 'gate-steel-safe', subsistema: S, cita: '§7.3.5 · §7.4',
-    criterio: 'el gate se especifica deliberadamente CHICO para abrirlo en el tryout, y el tipo se elige entre otras cosas por si se puede agrandar',
+    criterio: 'el gate se especifica CHICO a propósito para abrirlo en el tryout',
+    medido: g.thicknessSteelSafeMm, limite: g.thicknessMm, unidad: 'mm',
+    estado: 'CUMPLE',
+    detalle: g.agrandable
+      ? `maquinar ${num(g.thicknessSteelSafeMm, 2)} mm, abrir hasta ${num(g.thicknessMm, 2)} mm si hay short shot o γ̇ alto — "specify a smaller gate with the intent that the mold will be tested and the gate sizes increased as necessary"`
+      : `${num(g.thicknessMm, 2)} mm sin margen: el tipo ${g.type} no es agrandable barato`,
+  });
+
+  C.push({
+    id: 'gate-degatado', subsistema: S, cita: '§7.1.2 · §7.2.7',
+    criterio: 'la ruta de degatado necesita el ENSAMBLE completo: para tunnel gate, sin sucker pins en el runner el degatado automático NO EXISTE',
     estado: 'SIN-MÓDULO',
-    detalle: 'no existe el atributo "agrandable" ni el plan de tryout que diga hasta dónde crece cada gate',
-    deuda: 'el atributo agrandable no está en ningún catálogo comercial, solo en el libro — hay que modelarlo nosotros',
+    detalle: `${g.type} degata ${GATE_TABLE_DEGATING[g.type]} — falta verificar el acceso físico (pinzas del operador) y, en tunnel, los sucker pins`,
+    deuda: 'el check debe ser del ENSAMBLE (gate + runner + sucker pins), no del gate aislado',
   });
 
   return resumir(S, C);
@@ -912,22 +923,37 @@ export function contratoCosto(pkg: MoldPackage): ContratoSubsistema {
 export function contratoContraccion(pkg: MoldPackage): ContratoSubsistema {
   const S = 'contracción';
   const C: Criterio[] = [];
-  const DEUDA = 'shrinkage.ts implementa Tait doble dominio y está gateado (bezel 0.31 % exacto); moldMachine no lo llama — cablear a DiseñoFisico.contraccion';
+  const sh = pkg.diseno.contraccion;
 
+  // ── 1) ⭐ La alarma que un optimizador rompería por diseño — §10.1.6 ──
   C.push({
     id: 'contr-positiva', subsistema: S, cita: '§10.1.6',
     criterio: 'la contracción debe ser POSITIVA: se necesita que la pieza se despegue de la cavidad y abrace el núcleo para poder expulsarla',
-    estado: 'SIN-CABLEAR',
-    detalle: 'contracción ≤ 0 NO es precisión: es sobre-empaque y la pieza no sale de costillas ni bosses. Un optimizador que la minimice diseña un molde que no expulsa',
-    deuda: DEUDA,
+    medido: sh.nominalPct, unidad: '%',
+    // El libro distingue DISEÑAR de OPERAR: "molds are not usually designed OR
+    // OPERATED with the intent of obtaining zero or negative shrinkage". Si el
+    // NOMINAL sale ≤ 0, el molde está mal diseñado (VIOLA). Si solo el extremo del
+    // rango lo hace, el molde está bien pero existe una condición de proceso
+    // alcanzable que sobre-empaca: eso se ADVIERTE al moldeador, no se reprueba.
+    estado: sh.nominalPct <= 0 ? 'VIOLA' : (sh.positiva ? 'CUMPLE' : 'ADVIERTE'),
+    detalle: sh.nominalPct <= 0
+      ? `⚠ la contracción NOMINAL da ${num(sh.nominalPct, 2)} % ≤ 0: el molde está diseñado en SOBRE-EMPAQUE. No es precisión — la pieza no sale de costillas ni bosses. `
+        + 'Un optimizador que minimice contracción diseña un molde que NO EXPULSA'
+      : sh.positiva
+        ? `nominal ${num(sh.nominalPct, 2)} % y el límite inferior ${num(sh.lowPct, 2)} % siguen positivos ✓ (escala del molde ×${sh.moldScale.toFixed(5)})`
+        : `nominal ${num(sh.nominalPct, 2)} % ✓, pero empacando al máximo del libro (${num(Math.max(1.2 * pkg.diseno.fillMPa, 100), 0)} MPa) la contracción cae a ${num(sh.lowPct, 2)} % ≤ 0: `
+          + 'AVISAR al moldeador que existe una ventana de proceso que sobre-empaca y trabaría la pieza en costillas y bosses §10.1.6',
   });
 
+  // ── 2) La recomendación es un RANGO, no un número — §10.1.6 ──
   C.push({
-    id: 'contr-rango', subsistema: S, cita: '§10.1.6 · §10.1.7',
-    criterio: 'la recomendación es un RANGO (límite inferior con pack largo/alto, superior con pack corto/bajo), no un número',
-    estado: 'SIN-CABLEAR',
-    detalle: 'límites del libro: P_max = max(1.2·Pinj, 100 MPa) y P_min = min(0.4·Pinj, 30 MPa) con T=(T_noflow+T_melt)/2 — si el rango sale muy ancho, se recomienda pack extendido al moldeador',
-    deuda: DEUDA,
+    id: 'contr-rango', subsistema: S, cita: '§10.1.6',
+    criterio: 'la recomendación es un RANGO (inferior con pack largo y alto, superior con pack corto y flojo), y si sale ancho se recomienda pack extendido',
+    medido: sh.spanPct, unidad: '% de span',
+    estado: sh.anchoExcesivo ? 'ADVIERTE' : 'CUMPLE',
+    detalle: `rango ${num(sh.lowPct, 2)} – ${num(sh.highPct, 2)} % (span ${num(sh.spanPct, 2)}), nominal ${num(sh.nominalPct, 2)} % `
+      + `· límites del libro: P_max = max(1.2·Pinj, 100 MPa), P_min = min(0.4·Pinj, 30 MPa) con T = (T_noflow+T_melt)/2`
+      + (sh.anchoExcesivo ? ' — ANCHO: recomendar al moldeador pack extendido con presiones altas' : ''),
   });
 
   C.push({
