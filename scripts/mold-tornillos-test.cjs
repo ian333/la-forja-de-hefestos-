@@ -24,6 +24,7 @@ const check = (n, c, d) => { console.log(` ${c ? '✓' : '❌'} ${n} — ${d}`);
   const T = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'parts', 'tupper.ts'));
   const MM = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'moldmachine.ts'));
   const PS = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-plano-set.ts'));
+  const DS = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-drawing-set.ts'));
 
   const asm = PS.packageToAssemblySpec(MM.moldMachine(T.tupperMachineSpec()));
   const z = PS.plateStackZ(asm), p = asm.plates;
@@ -53,6 +54,24 @@ const check = (n, c, d) => { console.log(` ${c ? '✓' : '❌'} ${n} — ${d}`);
     for (let i = 2; i < q.positions.length; i += 3) { const v = q.positions[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
     return { lo, hi };
   };
+  // ⚠ LA LEY 3 MEDÍA SOLO EN Z Y DABA FALSO POSITIVO. El tornillo del núcleo SÍ
+  // atraviesa el rango z del housing — tiene que hacerlo, sube desde la sujeción
+  // inferior hasta roscar en B (§12.2.3: "the support plate is secured to the REAR
+  // CLAMP PLATE with socket head cap screws"). Lo que NO puede es chocar con la
+  // PLACA EXPULSORA, que no ocupa todo el housing: vive ENTRE LOS RIELES
+  // (mold-plano-set: makeBox(W−130, D−40) trasladada a (65,20)), y los tornillos van
+  // en railX ≈ 0.065·W, o sea DENTRO del riel — acero con barreno, no hueco. Con
+  // W=381 eso son 24.8 mm contra los 65 donde empieza la placa: 40 mm de holgura.
+  // El check correcto es volumétrico, no de traslape en z.
+  const EJ_INSET_X = 65, EJ_INSET_Y = 20;
+  const chocaExpulsora = (q, ejeLo, ejeHi, W, D) => {
+    for (let i = 0; i < q.positions.length; i += 3) {
+      const x = q.positions[i], y = q.positions[i + 1], z = q.positions[i + 2];
+      if (z < ejeLo - 0.01 || z > ejeHi + 0.01) continue;              // fuera del rango del housing
+      if (x > EJ_INSET_X && x < W - EJ_INSET_X && y > EJ_INSET_Y && y < D - EJ_INSET_Y) return { x, y, z };
+    }
+    return null;
+  };
   for (const q of tor) {
     const s = zSpan(q);
     const esCav = q.role === 'tornillos-cav';
@@ -66,10 +85,11 @@ const check = (n, c, d) => { console.log(` ${c ? '✓' : '❌'} ${n} — ${d}`);
     const agarra = s.hi > plate.lo + 1 && s.lo < plate.hi - 1;
     check(`[${q.role}] AGARRA de verdad la placa ${plate.n} (z[${plate.lo}..${plate.hi}])`, agarra,
       agarra ? `entra ${(Math.min(s.hi, plate.hi) - Math.max(s.lo, plate.lo)).toFixed(1)} mm en la placa` : 'NO la toca: es adorno');
-    // LEY 3 — nadie invade el hueco del expulsor
-    const invade = s.lo < ejeHi - 0.01 && s.hi > ejeLo + 0.01;
-    check(`[${q.role}] NO invade el hueco del expulsor (z[${ejeLo}..${ejeHi}])`, !invade,
-      invade ? 'CHOCA con la placa expulsora móvil' : 'libre');
+    // LEY 3 — nadie choca con la PLACA EXPULSORA (volumétrico: x,y,z)
+    const golpe = chocaExpulsora(q, ejeLo, ejeHi, asm.widthMm, DS.plateDepth(asm));
+    check(`[${q.role}] NO choca con la placa expulsora (x[${EJ_INSET_X}..W−${EJ_INSET_X}] × z[${ejeLo}..${ejeHi}])`, !golpe,
+      golpe ? `CHOCA en (${golpe.x.toFixed(0)}, ${golpe.y.toFixed(0)}, ${golpe.z.toFixed(0)})`
+        : (s.lo < ejeHi && s.hi > ejeLo ? 'cruza el housing POR EL RIEL (acero), libre de la placa móvil' : 'libre'));
   }
 
   console.log(fails ? `\n❌ ${fails} fallaron` : '\n✓ TORNILLERÍA: dos mitades independientes · nadie cruza la partición · todos AGARRAN su placa · el expulsor va libre');
