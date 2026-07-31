@@ -57,6 +57,7 @@ EL GATE QUE DECIDE SI EL CAMPO ES REAL — `tubo_de_flujo`:
   Si el trazador es correcto, Φ(s) + 4π∫ρ_e A ds' es CONSTANTE a lo largo del tubo. Eso no
   lo cumple un dibujo bonito: lo cumple un campo.
 """
+import os
 import numpy as np
 
 BOHR = 0.529177210903
@@ -120,6 +121,29 @@ class CampoHidrogeno:
         return (self.q_enc(r) / r ** 3)[:, None] * P
 
 
+# ─────────────────────── ¿HAY GPU USABLE PARA EL CAMPO? ───────────────────────
+# El trazado del campo, NO el SCF, es lo que domina estos cálculos: medido sobre un cuadro
+# del tetrámero, trazar 733 líneas = 84.3 s = 72 % del cuadro, contra 16.2 s = 14 % de TODOS
+# los SCF juntos. Por eso instalar gpu4pyscf y dejar el campo en CPU casi no sirve (techo
+# 1.16×): lo que hay que mover a la GPU es ESTA integral.
+#
+# ⚠ GOTCHA DE WSL: sin `LD_LIBRARY_PATH=/usr/lib/wsl/lib` cupy responde "no CUDA-capable
+# device is detected" y parece que la máquina no tiene GPU. El driver de NVIDIA vive ahí.
+# Por eso `_gpu_disponible()` PRUEBA de verdad en vez de confiar en el import.
+#
+# Se apaga con CAMPO_GPU=0. Verificación obligatoria: scripts/campo-gate.py (gate_campo_gpu).
+def _gpu_disponible():
+    if os.environ.get('CAMPO_GPU', '1') == '0':
+        return False
+    try:
+        import cupy as cp
+        from gpu4pyscf.gto.int3c1e_ip import int1e_grids_ip2   # noqa: F401
+        cp.cuda.runtime.getDeviceCount()
+        return True
+    except Exception:
+        return False
+
+
 # ───────────────────────────────── EL CAMPO ─────────────────────────────────
 class CampoMEP:
     """E(r) = −∇V, con V = Σ_A Z_A/|r−R_A| − ∫ρ_e(r')/|r−r'| d³r'  (u.a.).
@@ -131,11 +155,35 @@ class CampoMEP:
     analítico. Ver gate `gate_campo_exacto`.
     """
 
-    def __init__(self, mol, dm, chunk=1200):
+    def __init__(self, mol, dm, chunk=1200, gpu=None):
         self.mol, self.dm, self.chunk = mol, dm, chunk
         self.R = mol.atom_coords()                       # bohr
         self.Z = mol.atom_charges().astype(float)
         self.n_eval = 0
+        self.gpu = _gpu_disponible() if gpu is None else bool(gpu)
+        if self.gpu:
+            import cupy as cp
+            self._dm_gpu = cp.asarray(dm)
+
+    def _el_cpu(self, P):
+        """+∇V_el en CPU: `int1e_grids_ip` arma el tensor COMPLETO (3, g, i, j) y luego se
+        contrae con dm. Para 733 puntos y 96 funciones eso son 162 MB por llamada — por eso
+        esta etapa domina el cálculo (medido: 72 % del cuadro del tetrámero)."""
+        out = np.empty((len(P), 3))
+        for a in range(0, len(P), self.chunk):
+            Q = np.ascontiguousarray(P[a:a + self.chunk])
+            ip = self.mol.intor('int1e_grids_ip', grids=Q)
+            out[a:a + self.chunk] = 2.0 * np.einsum('xgij,ij->xg', ip, self.dm).T
+        return out
+
+    def _el_gpu(self, P):
+        """Lo MISMO en GPU. `int1e_grids_ip2` contrae con dm DENTRO del kernel (nunca arma el
+        tensor de 162 MB) y devuelve (3, g). Convención: sale con el signo OPUESTO al del
+        camino CPU — medido, coincide con `-g.T` a 6e-14 relativo (ver gate_campo_gpu)."""
+        import cupy as cp
+        from gpu4pyscf.gto.int3c1e_ip import int1e_grids_ip2
+        g = int1e_grids_ip2(self.mol, np.ascontiguousarray(P), dm=self._dm_gpu)
+        return -np.asarray(cp.asnumpy(g)).T
 
     def __call__(self, P):
         P = np.ascontiguousarray(np.asarray(P, dtype=float).reshape(-1, 3))
@@ -145,10 +193,7 @@ class CampoMEP:
         d = P[:, None, :] - self.R[None, :, :]
         r = np.maximum(np.linalg.norm(d, axis=2), 1e-10)
         E = (self.Z[None, :, None] * d / (r ** 3)[:, :, None]).sum(axis=1)   # −∇V_nuc
-        for a in range(0, len(P), self.chunk):
-            Q = np.ascontiguousarray(P[a:a + self.chunk])
-            ip = self.mol.intor('int1e_grids_ip', grids=Q)
-            E[a:a + self.chunk] += 2.0 * np.einsum('xgij,ij->xg', ip, self.dm).T   # +∇V_el
+        E += self._el_gpu(P) if self.gpu else self._el_cpu(P)                # +∇V_el
         return E
 
     def potencial(self, P, chunk=2000):

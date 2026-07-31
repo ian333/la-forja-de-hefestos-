@@ -406,6 +406,32 @@ try:
 except Exception as e:
     print("  (sin figuras:", e, ")")
 
+# ══════════════════ GATE GPU: el atajo rápido tiene que dar LO MISMO ══════════════════
+# El trazado del campo es el 72 % del costo de estos cálculos (medido en el tetrámero: 84.3 s
+# de 117.5 s por cuadro), así que CampoMEP puede evaluar +∇V_el en la GPU con
+# `gpu4pyscf.gto.int3c1e_ip.int1e_grids_ip2`, que contrae con dm DENTRO del kernel en vez de
+# armar el tensor (3, g, i, j) de 162 MB. Es un atajo de implementación, NO de física: si no
+# reproduce el camino de CPU, no se usa. La convención de signo es OPUESTA — ese fue el
+# hallazgo (con `+` el error relativo era 0.97, o sea otro campo por completo).
+titulo('GATE GPU — ¿el campo en GPU es el MISMO campo?')
+from campo_lineas import _gpu_disponible
+if not _gpu_disponible():
+    print("   (sin GPU utilizable — se salta; en WSL revisa LD_LIBRARY_PATH=/usr/lib/wsl/lib)")
+else:
+    import time
+    rng_g = np.random.default_rng(20260731)
+    Pg = rng_g.normal(0.0, 4.0, (4000, 3))
+    Pg = np.ascontiguousarray(Pg[np.linalg.norm(Pg[:, None, :] - mol.atom_coords()[None], axis=2).min(axis=1) > 0.5])
+    dm_g = mf.make_rdm1()
+    c_cpu = CampoMEP(mol, dm_g, gpu=False)
+    c_gpu = CampoMEP(mol, dm_g, gpu=True)
+    c_gpu(Pg[:8])                                     # calentar (la 1a llamada trae el init de CUDA)
+    t = time.time(); E_c = c_cpu(Pg); t_c = time.time() - t
+    t = time.time(); E_g = c_gpu(Pg); t_g = time.time() - t
+    rel = np.abs(E_g - E_c).max() / max(np.abs(E_c).max(), 1e-30)
+    veredicto('campo GPU == campo CPU', rel < 1e-10,
+              f"error relativo {rel:.2e} sobre {len(Pg)} puntos · CPU {t_c:.3f}s GPU {t_g:.3f}s ({t_c/t_g:.1f}×)")
+
 print("\n" + "═" * 78)
 print("✅ TODOS LOS GATES OK — el campo cumple las leyes" if OK else "❌ HAY GATES EN FALLA")
 print("═" * 78)
