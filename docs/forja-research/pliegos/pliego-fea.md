@@ -542,7 +542,7 @@ llegar y reinicias el incremento más chico.
 `Δu · R(u + λΔu) = 0`, aproximando linealmente entre λ=0 (residuo conocido del incremento previo)
 y λ=1 (residuo actual) → **λ sale sin cálculos extra**. Defaults: **λ_min = 0.25, λ_max = 1.01**.
 
-### 2.9 Contacto (CalculiX §6.7.6; Code_Aster ver §2.9-bis)
+### 2.9 Contacto (CalculiX §6.7.6 — Code_Aster va en §6.1, que es mucho más prescriptivo)
 
 **Elección del método (Golden rule #5):** *"If you include contact in your calculations and you are
 using quadratic elements, use the **face-to-face penalty** contact method or the **mortar** method...
@@ -726,12 +726,22 @@ elementos**. Si falla, *"such gaps would multiply and may absorb or release spur
 | **G8** | **Equilibrio global** | `‖ΣR + ΣF_aplicada‖ / ‖ΣF_aplicada‖ < 1e−8`. **R se calcula con la K ORIGINAL: `R = K_orig·u − f`, filas fijas.** Y hay que **separar reacción de carga** en los nodos que tienen ambas (§2.7) | O(nnz) | ensamble, aplicación de Dirichlet |
 | **G9** | **Equilibrio de MOMENTOS** | `‖Σ(xᵢ × Rᵢ) + Σ(xᵢ × Fᵢ)‖ / (L_ref·‖ΣF‖) < 1e−8` | O(n) | cargas repartidas asimétricamente, torsión parásita |
 | **G10** | **Residuo VERDADERO del solver** | Al salir del CG, **recalcular** `‖f − K·u‖/‖f‖` (no confiar en el residuo recursivo, que se desvía). Exigir `< tol` con `tol = 1e−8` para producción | 1 matvec | estancamiento del CG, pérdida de ortogonalidad |
-| **G11** | **Energía: trabajo externo = energía de deformación** | `|½·fᵀu − Σₑ ½·εᵀDε·Vₑ| / (½ fᵀu) < 1e−10` | O(nElem) | recuperación de esfuerzos inconsistente con el ensamble |
+| **G11** | **Energía: trabajo externo = energía de deformación** | `abs(½·fᵀu − Σₑ ½·εᵀDε·Vₑ) / (½·fᵀu) < 1e−10` | O(nElem) | recuperación de esfuerzos inconsistente con el ensamble |
 | **G12** | **∫σ·n dA sobre la cara de reacción ≈ carga** | Integrar el tensor de esfuerzos sobre la superficie empotrada. **NO es 1e−8: es un test de MALLA.** Criterio: `< 5 %` para entregar, `< 10 %` para explorar. (Referencia: CalculiX §5.18 falló al 20 % con malla gruesa y 30 % de estimador) | O(nCaras) | **discretización insuficiente** — el único gate barato que la mide |
 | **G13** | **Estimador de gradiente (`ERR` de CalculiX)** | Por nodo: `max sobre elementos incidentes de [ (max−min del principal seleccionado en los ptos de integración) / max\|principal\| ]`. Criterio operativo: **el valor en el nodo donde σ_vm es máximo debe ser < 0.10**; si es > 0.30 el número no se reporta | O(nElem) | malla gruesa **donde importa** |
-| **G14** | **Convergencia de malla (3 niveles)** | Refinar `h, h/2, h/4` (o r=1.5). Con `Q_h` la cantidad de interés: **orden observado** `p = ln((Q_h − Q_{h/2})/(Q_{h/2} − Q_{h/4})) / ln(r)`; **extrapolación de Richardson** `Q_ext = Q_{h/4} + (Q_{h/4} − Q_{h/2})/(r^p − 1)`; **GCI** = `1.25·|Q_{h/4}−Q_{h/2}|/(|Q_{h/4}|(r^p−1))`. Criterios: `p` cercano al teórico (1 en energía para lineales, 2 en desplazamiento) y **GCI < 5 %** | 3 solves | discretización, y **delata singularidades** (p sale bajo o errático) |
+| **G14** | **Convergencia de malla (3 niveles)** | Refinar `h, h/2, h/4` (o r=1.5). Con `Q_h` la cantidad de interés: **orden observado** `p = ln((Q_h − Q_{h/2})/(Q_{h/2} − Q_{h/4})) / ln(r)`; **extrapolación de Richardson** `Q_ext = Q_{h/4} + (Q_{h/4} − Q_{h/2})/(r^p − 1)`; **GCI** = `1.25·\|Q_{h/4}−Q_{h/2}\|/(\|Q_{h/4}\|(r^p−1))`. Criterios: **GCI < 5 %** y `p` cercano al teórico. Equivalente en log-log (la forma que usa Babuška): `α_obs = log(e₁/e₂)/log(N₂/N₁)` | 3 solves | discretización, y **delata singularidades** (p sale bajo) |
+| **G14b** | **Interpretar el orden observado** (teorema inverso de Babuška) | Con elementos de orden `p`: si `α_obs ≈ p` → solución suave, todo bien. Si `α_obs < p` → **hay singularidad y la solución sólo está en `H^(1+α)`**. Referencias medidas: grieta LEFM → **0.5**; esquina entrante en elasticidad con ν=0.3 → **0.76**; ν=0.4999 → **0.69** | ninguno extra | **que el modelo, no la malla, sea el problema** |
 | **G15** | **Cordura del régimen lineal** | (a) `max‖u‖ / L_característica < 1/10` → si no, el resultado lineal no vale (regla del 1/10); (b) rotación estimada `< 10°`; (c) **`max σ_vm < σ_y`** → si se pasa, el número reportado NO existe y el "factor de seguridad" es ficción | trivial | uso del solver fuera de su dominio |
-| **G16** | **Benchmark contra referencia** | Un caso con solución cerrada (viga) + un caso NAFEMS con su valor de referencia. Criterio: dentro del % que declare el benchmark | CI | todo |
+| **G16** | **Benchmark contra referencia** | Un caso con solución cerrada (viga) + casos NAFEMS. **Criterio del propio documento NAFEMS: < 3 % contra el valor de referencia, y error de discretización estimado < 1 %.** Candidatos para nosotros: **LE1** (92.7 MPa) y **LE11** (−105 MPa, 3D térmico) | CI | todo |
+| **G17** | **Dispersión promediado vs sin promediar** (fe-safe) | Por nodo: `(σ_max − σ_min)` entre los elementos incidentes, relativo al promedio. **Criterio literal: > 15 % indica malla inadecuada.** Es primo hermano de G13 pero sobre la componente que se reporta | ~gratis | malla insuficiente, medida donde se lee el número |
+| **G18** | **Esfuerzo fuera de plano en la superficie** (fe-safe) | En un nodo de superficie libre, la componente directa **normal a la superficie debe ser ≈ 0**. *"A significant out-of-plane stress is an indication of inadequate meshing."* | barato | malla insuficiente **y** condición de frontera natural mal impuesta |
+| **G19** | **Suma de pesos de la cuadratura** (Code_Aster) | La suma de los pesos de Gauss debe dar el volumen del elemento de referencia: hexa → **8**, quad → **4**, triángulo → **1/2**, **tetraedro → 1/6**. Ojo: hay reglas correctas con **pesos negativos** (TETRA FPG5 usa −2/15) | trivial | tablas de cuadratura mal transcritas |
+| **G20** | **Signo del jacobiano al portar** | Al copiar funciones de forma de otro código, verificar la **numeración de nodos**. Code_Aster numera el TETRA como N1=(0,1,0), N2=(0,0,1), N3=(0,0,0), N4=(1,0,0) — **no es la estándar** y voltea el signo de `det J` | trivial | volúmenes negativos silenciosos |
+
+> **Procedencia de G14.** El marco `‖e‖_E = C·N^(−α)` y el teorema inverso son de Babuška & Szabó.
+> **La extrapolación de Richardson y el GCI NO están en ese paper** (ni la palabra "Richardson" aparece).
+> Son la consecuencia estándar y directa de ese marco, pero hay que marcarlas en el código como
+> **derivadas**, no como cita.
 
 **Nota sobre G6 (patch test).** Es el gate con mejor relación valor/costo de toda la lista y el que
 más cosas cubre a la vez. Históricamente es la invención de Irons (Felippa §1.7.2: *"the invention of
@@ -1449,10 +1459,6 @@ aristas, `c1c2²` en las 6 caras, `c2³` en el centro.
 **no es la numeración estándar**. Al portar fórmulas entre códigos, esto invierte el signo del
 jacobiano. ⭐
 
-<!--ANCLA-CODEASTER-->
-
----
-
 ## 7. BRECHA CONTRA LA FORJA
 
 ### 7.1 Qué tenemos hoy (leído del código, no del README)
@@ -1509,7 +1515,8 @@ iteraciones).
 | **G15 cordura del régimen** | 3 comparaciones: `max‖u‖ vs L/10`, `max σ_vm vs σ_y`. Hoy `minSafetyFactor` puede salir 0.3 y se reporta como si el número fuera real. **Si SF < 1, el resultado lineal no describe la pieza** — hay que decirlo en la UI. |
 | **G4 K·r = 0** | 6 matvecs sobre la K sin restringir. Detecta cualquier bug de ensamble futuro. Es un test unitario, no runtime. |
 | **G11 energía** | `½fᵀu` contra `Σ ½εᵀDε V`. Los dos números ya existen en el flujo. |
-| **G13 estimador de gradiente** | **Casi gratis y de altísimo valor.** Hoy ya se recorren los tets calculando σ; sólo falta, por nodo, el `max−min` del principal seleccionado entre los tets incidentes, dividido entre `max|principal|`. Da un **mapa de confianza** que se puede pintar al lado del von Mises. Además hace de gatillo automático de refinamiento. |
+| **G13 estimador de gradiente** | **Casi gratis y de altísimo valor.** Hoy ya se recorren los tets calculando σ; sólo falta, por nodo, el `max−min` del principal seleccionado entre los tets incidentes, dividido entre `max\|principal\|`. Da un **mapa de confianza** que se puede pintar al lado del von Mises. Además hace de gatillo automático de refinamiento. |
+| **G17 dispersión 15 %** | El **más barato de todos**: `runFEA` ya acumula `vmNodalAcc/vmNodalCnt` para promediar; basta guardar también min y max. Si `(max−min)/prom > 0.15` en el nodo crítico, la malla es inadecuada **según fe-safe, con número literal**. Dos líneas. |
 | **G12 ∫σ·n dA** | Sumar `σ·n·A` sobre las caras triangulares de frontera del conjunto empotrado. Es EL gate que mide malla. Criterio 5 %. |
 
 #### NIVEL 1 — mejoras de modelo, alto retorno
@@ -1531,9 +1538,26 @@ iteraciones).
    **fusiona** las placas con `K.fuse` y empotra los rieles — o sea, modela como monolítico algo que
    está atornillado y en contacto. El criterio de negocio ya está en `structural.ts`:
    `flashRisk = δ > 0.02 mm` (venteo). **Ese es un problema de contacto/separación, no de flexión de
-   una viga fusionada.** Camino de menor riesgo: **contacto de penalidad normal sin fricción,
-   nodo-a-nodo** entre mallas coincidentes de placas apiladas (los voxeles se pueden alinear entre
-   placas), con `K = 5..50 × E` y el σ∞ = 0.25 % del esfuerzo máximo esperado. Sin fricción primero.
+   una viga fusionada.**
+
+   **Camino de menor riesgo, con los números de las fuentes:**
+   - Empezar **sin fricción** — Code_Aster: *"it is advised in the studies to initially treat only the
+     contact, this in order to introduce non-linearities the ones after the others."*
+   - **Contacto de penalidad normal**, nodo a nodo, aprovechando que los voxeles de placas apiladas se
+     pueden **alinear** (mallas coincidentes ⇒ el apareamiento es trivial y desaparece la mitad de los
+     problemas del documento de Code_Aster).
+   - Rigidez inicial: CalculiX `K = 5..50 × E` (unidades F/L³) ó Code_Aster `E_N₀ = 10·E·L_car`
+     (unidades F/L). **Luego ×10 hasta que se estabilicen los ESFUERZOS, no sólo los desplazamientos.**
+   - `σ∞ ≈ 0.25 %` del esfuerzo máximo esperado (la tracción parásita del resorte lineal).
+   - Esclavo = la malla **más fina**, la superficie **más pequeña**, la **menos rígida**. Aquí es la
+     placa que se abre; maestro = el paquete rígido.
+   - **Estamos por debajo del límite duro de 500 GDL en contacto** si sólo se maneja la línea de
+     partición de una placa a resolución 16 → alcanza el algoritmo simple sin ajuste.
+   - Gate obligado desde el día 1: **medir la interpenetración residual**. Code_Aster:
+     *"only the explication [de la interpenetración] is a NON-checking of the geometrical criterion"*,
+     y su criterio por default es **1 % del desplazamiento del paso**, endurecible a 0.5 %.
+   - Y el que nos aplica directísimo: un patrón de presión de contacto **"un nodo sí, uno no"** es la
+     firma de malla demasiado gruesa en la zona de contacto.
 2. **PANDEO / rigidez geométrica** — los pilares de soporte (support pillars) bajo la placa trasera
    son **columnas a compresión**. Hoy sólo se checa σ. Un pilar esbelto falla por pandeo mucho antes
    que por fluencia. `*BUCKLE` de CalculiX (Lanczos, precisión default 0.01) sobre la K geométrica.
@@ -1544,17 +1568,31 @@ iteraciones).
    esfuerzos** con gradientes térmicos fuertes. Si se va a tet10, **interpolar T linealmente**.
 4. **MODAL** — valor bajo para moldes estáticos, pero es el gate de rigidez más rápido que existe:
    la primera frecuencia es un escalar sensible a TODA la rigidez del modelo. Como test de regresión
-   vale más que como producto.
+   vale más que como producto. Si se hace, se hace con las **dos post-verificaciones obligatorias** de
+   Code_Aster: **norma del residuo `‖Ku − λMu‖/‖Ku‖ < 1e−6`** (normalizando antes por `‖u‖∞`, con el
+   conmutador a criterio absoluto si `|λ| < 1e−2` para no dividir entre casi-cero) **y conteo de modos**.
+   Criterio de suficiencia: **≥ 90 % de masa modal efectiva** — recordando que una ménsula necesita
+   **4 modos** para llegar apenas al 89.9 % (el primero solo capta el 61 %).
 5. **PLASTICIDAD (J2)** — valor bajo en moldes: el acero P20/H13 se diseña **elástico**, y si se
    plastifica el molde ya se arruinó. Su valor real es **decir la verdad**: hoy cuando `σ_vm > σ_y`
    se reporta un factor de seguridad ficticio. Con G15 (barato) se resuelve el 90 % del daño sin
-   implementar plasticidad.
+   implementar plasticidad. Si algún día se hace, el argumento a favor de **J2 isótropo lineal** es que
+   el retorno radial tiene **solución CERRADA** (`Δp = (σ_eq^e − σ_y − R'p⁻)/(R' + 3μ)`): no hay
+   iteración local, no hay tolerancia de integración que calibrar, y el propio Code_Aster no documenta
+   ninguna porque no la necesita.
 6. **FATIGA** — un molde hace 10⁵–10⁶ ciclos de apertura/cierre y `structural.ts` ya cita el límite de
    fatiga del P20 (456 MPa). Es la capacidad de **mayor valor comercial a largo plazo** (predecir
-   vida del molde en número de disparos), pero exige antes: esfuerzos superficiales confiables
-   (⟹ arreglar la superficie escalonada) + ciclo de carga + conteo rainflow.
+   vida del molde en número de disparos), pero **el manual de fe-safe nos dice que el número que hoy
+   reportamos —von Mises— es precisamente el que NO sirve**, y que ni siquiera se le puede aplicar
+   rainflow porque siempre es positivo. Prerrequisitos, en orden: (a) esfuerzos **superficiales**
+   confiables ⟹ arreglar la superficie escalonada; (b) guardar el **tensor completo** por nodo, no sólo
+   el escalar; (c) criterio de **plano crítico** si las direcciones principales rotan; (d) ciclo de carga
+   + rainflow. Y poner en la UI la expectativa honesta del manual: **la vida real cae entre el 50 % y el
+   200 % de la calculada**.
 
-**Orden recomendado: NIVEL 0 completo → EbE + hexa C3D8I → G14 con GCI → contacto normal → pandeo.**
+**Orden recomendado: NIVEL 0 completo (empezando por G8 reacciones, G17 dispersión y G15 cordura, que son
+los tres más baratos) → EbE por área tributaria → hexa C3D8I → G14 con GCI → LE1/LE11 de NAFEMS en CI →
+contacto normal sin fricción → pandeo.**
 
 ---
 
@@ -1609,13 +1647,19 @@ de esquina, donde **el valor exacto es 0**. Con 5 elementos el desplazamiento me
 y **el cortante nodal sigue igual de mal**. La máquina promedia a nodos porque es lo que se pinta, y
 ese error NO converge.
 
-**⭐8 — Reducir un cuadrilátero a triángulo colapsando un nodo pone J = 0. Y el mismo defecto, a
-propósito, es un elemento de grieta.**
-Felippa §19.4.2 contra un mito de libro de texto: *"This contradicts the (erroneous) advise of some FE
-books, which state that quadrilaterals can be reduced to triangles as special cases."* Y del otro
-lado: mover el nodo medio al **punto de cuarto** anula J en la esquina — *"Although this is disastrous
-in ordinary FE work, it has applications in the construction of special 'crack' elements."* El mismo
-número (J=0) es un bug o una herramienta según la intención. Ningún gate distingue eso.
+**⭐8 — El único número que reportamos, von Mises, es exactamente el que NO sirve para fatiga —
+y ni siquiera se le puede aplicar rainflow.**
+fe-safe, tres veces y con distintas palabras: *"The von Mises criteria are **not successful**"*,
+*"von Mises strain. **Not recommended**"*, *"**von Mises stress is not an adequate parameter for fatigue
+analysis**"*. Y la razón estructural, no de opinión: *"the von Mises stress or strain is **always
+positive**… and so **Rainflow cycle counting cannot be applied directly**."* Peor: el reemplazo
+"obvio" tampoco sirve — el esfuerzo principal *"gives **very unsafe** fatigue life predictions for more
+ductile metals including most commonly used steels"*. Una máquina reporta el escalar que ya tiene y le
+pone un "factor de seguridad" encima. Lo correcto es guardar el **tensor completo por nodo** y decidir
+el criterio (Brown-Miller para dúctiles) según el material. Corolario del mismo manual, igual de
+incómodo: hay que usar valores **nodales sin promediar** para la superficie —donde no hay puntos de
+Gauss—, aunque sean menos exactos, y usar su **dispersión (> 15 % = malla mala)** como medida de
+calidad. Precisión y ubicación tiran en direcciones opuestas, y el analista elige.
 
 **⭐9 — Simplificar la geometría CREA singularidades; el máximo de von Mises deja de existir.**
 Quitar un filete para "aligerar la malla" mete una esquina entrante viva. El esfuerzo ahí no converge:
@@ -1624,14 +1668,45 @@ El analista sabe que ese número no existe y elige otra cantidad de interés (de
 distancia, energía). Felippa §8.2.1 lista las esquinas entrantes como la primera "zona de peligro" —
 no para reportarlas, para **no creerles**.
 
-**⭐10 — Un solver de producción tiene un sacudón ALEATORIO documentado, y sabe abortar antes de fallar.**
-CalculiX §6.10.2: cuando el residuo crece pero la solución casi no cambia (mínimo local del contacto),
-se remueve *"a percentage of the contacts (default: 10 %) **in an aleatoric way in order to stir the
-complete structure**"*. Y §6.10.1: a partir de la iteración `I_R = 8` se **extrapola logarítmicamente**
-cuántas iteraciones faltarían, y si la predicción pasa de `I_C = 16` **se corta el incremento a la
-mitad sin llegar a fallar**. También: divergencia sólo se declara si el residuo subió en **DOS**
-iteraciones consecutivas, no en una. Una máquina implementa "if (residual > prev) fail". La
-convergencia real de un problema no lineal es un proceso con paciencia, memoria, predicción y hasta
-azar deliberado.
+**⭐10 — La convergencia real tiene paciencia, memoria, predicción, azar deliberado, y CAMBIA DE
+CRITERIO cuando la carga se va a cero.**
+Cuatro cosas que ningún `if (residual < tol)` contiene:
+1. **Divergencia sólo si el residuo subió en DOS iteraciones consecutivas** (CalculiX: `r_{i−1} > r_{i−2}`
+   Y `r_i > r_{i−2}`), no en una. Una subida es Newton haciendo su trabajo.
+2. **Abortar antes de fallar**: desde la iteración `I_R = 8` se **extrapola logarítmicamente** cuántas
+   iteraciones faltan; si la predicción pasa de `I_C = 16`, el incremento se corta a la mitad **sin
+   llegar a agotar el presupuesto**.
+3. **Sacudón aleatorio documentado**: si el residuo crece pero la solución casi no cambia (mínimo local
+   del contacto), CalculiX remueve *"a percentage of the contacts (default: 10 %) **in an aleatoric way
+   in order to stir the complete structure**"*.
+4. **El criterio relativo se rompe con carga cero, y hay que preverlo**. Code_Aster R5.03.01:
+   *"the criterion can become singular if the external loading becomes null… If such a case arises
+   (i.e. **loading 10⁻⁶ time smaller than the smallest loading observed until this increment**), the code
+   uses the criterion then **RESI_GLOB_MAXI with like value that observed with the convergence of the
+   preceding increment**. When the loading becomes again not null, one returns to the initial criterion."*
+   Un solver casero que sólo mira `‖r‖/‖f‖` **falla exactamente cuando `f → 0`**, que es el caso de la
+   descarga total — o sea, el momento más común de todos.
+
+Y como coda del mismo espíritu: la tolerancia del solver lineal **no debe ser fija**. Newton-Krylov afloja
+el CG cuando estás lejos (`η₀ = 0.9`) y lo aprieta cuadráticamente al acercarte
+(`η_{n+1} = γ‖Rⁿ‖²/‖R^{n−1}‖²`, `γ = 0.1`). Resolver la primera iteración de Newton a 1e−6 es tiempo
+tirado a la basura.
+
+---
+
+### Menciones de honor (⭐ que no cupieron en el top 10, todas desarrolladas arriba)
+
+- **J = 0 es un bug o una herramienta según la intención**: colapsar un cuadrilátero a triángulo es un
+  error (*"This contradicts the (erroneous) advise of some FE books"*), pero mover el nodo medio al
+  **punto de cuarto** anula J a propósito y produce un **elemento de grieta** válido para LEFM (§2.2).
+- **Maestro y esclavo NO son simétricos**: 8 reglas duras de Code_Aster, y cuando se contradicen
+  *"the art of the engineer must prevail"* (§6.1).
+- **La pendiente del estudio de convergencia mide la SUAVIDAD de la solución, no la calidad de tu malla**
+  (teorema inverso de Babuška, §6.6).
+- **Hay reglas de cuadratura correctas con pesos NEGATIVOS** (TETRA FPG5 usa −2/15) — un validador
+  ingenuo las rechazaría (§6.9).
+- **Un factor de amplificación de deformada ≠ 1 hace "ver" interpenetraciones que no existen** (§6.1).
+- **La suma de masas modales efectivas de los 3 primeros modos de una ménsula NO llega al 90 %**;
+  el primer modo capta apenas el 61 % (§6.5).
 
 ---

@@ -549,3 +549,127 @@ barrido de los capítulos 8–17, más abajo.)*
 <!--MARCADOR-CAPS-8-17-->
 
 ---
+
+## 9. BRECHA CONTRA LA FORJA
+
+> Base: inventario técnico del repo `/home/ian/Orkesta/la-forja` (auditoría hecha para este pliego).
+> Leyenda: ✅ existe y sirve · 🟡 existe parcial / hay que extender · ❌ no existe.
+
+### 9.1 Lo que YA TENEMOS y el cliente reconocería como suyo
+
+| Capacidad | Dónde vive | Qué § de Shigley cubre |
+|---|---|---|
+| ✅ **FEA tet4 + CG disperso + von Mises + FS** | `src/forja/brep/fea.ts` (`brepToVolumeTetMesh`, `sparseCG`, `runFEA`, `prepareFeaSession`/`solveLoadOnSession`) | §5 (dúctil, DE) y §19 parcialmente |
+| ✅ **Formulario mecánico** (tet4, vigas Euler-Bernoulli y Timoshenko, von Mises, principales, cortante máximo, Euler, secciones, Lamé) | `src/lib/formulas.ts` (1457 líneas) | §3, §4 parcial |
+| ✅ **Base de materiales** (E, ν, ρ, Sy, Sut, k, cp, α, G) — 17 materiales | `src/lib/formulas.ts` `MATERIAL_DATABASE` | §2, Tabla A-5/A-20 parcial |
+| ✅ **Tornillería a tensión**: Fp = At·Sp, longitud de engrane FED-STD-H28, precarga 0.75·At·Sp, par T = 0.2·Fi·d | `src/forja/mold/mold-fasteners.ts`, `fasteners.ts` | §8-6, §8-8 parcial |
+| ✅ **Catálogo DIN + roscas ISO 68-1 procedurales** | `src/lib/parts/fasteners/`, `src/forja/mold/mold-threads.ts`, `src/forja/brep/thread.ts` | §8-1, Tablas A-26..A-30 |
+| ✅ **Involuta, módulo, Lewis, relación de contacto, planetario, cremallera, cicloidales** | `src/lib/parts/{involute-gear-sketch,gear-pair,gear-mechanics,planetary}.ts`, `src/forja/mech/cycloidal.ts` | §13-2..13-6, §13-13, §14-1 |
+| ✅ **Ajustes y tolerancias** (Kazmer, literal) | `src/forja/mold/fits.ts` | §7-8, Tablas A-11..A-14 |
+| ✅ **Planos ISO con HLR real**, 1er/3er ángulo, ISO 2768/1302/7200 | `src/forja/brep/drawing.ts`, `isoview.ts` | §1-14, §20 parcial |
+| ✅ **Bus de comandos** `ui.run` (61 comandos, 15 dominios, con campo `eq` de trazabilidad al libro) | `src/forja/commands/registry.ts` | — (infraestructura) |
+| ✅ **Patrón libro→módulo→test→gate** con ~40 suites | `src/forja/mold/*` + `scripts/*-test.cjs` + `scripts/forja-gate.cjs` | — (infraestructura) |
+| ✅ **Presión de interferencia** (Lamé) | `src/lib/formulas.ts` `lameThickCylinder` | §3-16 (falta despejar p de δ, Ec 3-60/3-61) |
+
+### 9.2 Lo que se puede construir CON LO QUE HAY (semanas, no meses)
+
+| Qué | Con qué se apalanca | § |
+|---|---|---|
+| 🟡 **Módulo de fatiga completo** (Marin ka..ke, q/Kf de Neuber, Basquin, Goodman/Morrow/Gerber/Soderberg/ASME/SWT/Walker, Miner, rainflow) | ya hay `basquinSN` y `goodmanFatigueSafety` en `formulas.ts` (con Se'=0.5Sut hardcodeado y f=0.9 fijo — hay que **corregirlos**, no extenderlos); `MATERIAL_DATABASE` da Sut/Sy | §6 completo |
+| 🟡 **Fatiga sobre el FEA que ya tenemos** | `prepareFeaSession` + `solveLoadOnSession` YA resuelve N cargas sobre una K ensamblada una vez → correr caso `max` y caso `min`, sacar σa y σm nodales, aplicar Marin/Goodman por nodo y pintar un **mapa de nf** en vez de un mapa de FS estático | §6-16, §19 |
+| 🟡 **Árbol de selección de criterio de falla estática (Fig 5-21)** | tenemos von Mises y principales; falta Coulomb-Mohr, Mohr modificado y el ÁRBOL | §5-11 |
+| 🟡 **Euler + J. B. Johnson con transición** | `eulerBucklingLoad` ya existe con 4 condiciones de extremo; falta la parábola de Johnson y el corte en (l/k)₁ = (2π²CE/Sy)^½ | §4-12, §4-13 |
+| 🟡 **Diagramas V(x), M(x), T(x) + deflexión de eje escalonado** | `beamStiffnessEulerBernoulli`, `beamStiffnessTimoshenko` y el solver CG ya están; falta el ensamblador 1-D de vigas por tramos y las funciones de singularidad | §3-2, §4-6, §7-5 |
+| 🟡 **AGMA de engranes rectos** | `gear-mechanics.ts` ya trae Lewis Y(z) y `gear-pair.ts` la relación de contacto; falta la maquinaria de factores AGMA | §14 |
+| 🟡 **Cuñas** | tenemos catálogo DIN y roscas; la cuña es una tabla indexada por diámetro + un cheque de aplastamiento | §7-7, §18-10 |
+
+### 9.3 Lo que FALTA POR COMPLETO
+
+| # | Hueco | Impacto para un taller LATAM | § |
+|---|---|---|---|
+| **H1** | **Fatiga con Marin.** No existe ka/kb/kc/kd/ke, ni q/Kf, ni criterios de esfuerzo medio más allá de un Goodman suelto, ni Miner, ni rainflow. | **Crítico.** Es la columna vertebral: ejes, engranes, resortes, tornillos y soldadura la usan. Sin esto solo sabemos decir "no fluye", que es la mitad del trabajo. | §6 |
+| **H2** | **Diseño de ejes.** No hay V/M, ni DE-Goodman despejado para d, ni Tabla 7-1, ni Tabla 7-2, ni velocidad crítica, ni cuñas, ni anillos. | **Crítico.** "Diséñame este eje" es de lo que más se cobra. | §7, §18 |
+| **H3** | **Rodamientos.** Cero. No hay L10, ni C/P, ni Weibull, ni X/Y, ni catálogo, ni el árbol de casos IA/IB/IIA/IIB de cónicos. | **Alto.** Sin esto la caja de engranes no cierra. | §11 |
+| **H4** | **Resortes helicoidales.** Cero. No hay Wahl, ni C = D/d, ni k = Gd⁴/(8D³Na), ni pandeo, ni Sut = A/d^m, ni Zimmerli. | **Alto.** Es de los trabajos más pedidos y más fáciles de cobrar. | §10 |
+| **H5** | **Soldadura.** Cero. Lo que el repo llama `weld` son líneas de flujo de plástico y fusión FDM. No hay garganta, ni cordón-como-línea, ni electrodos, ni fatiga de soldadura. | **Alto.** En LATAM medio catálogo de piezas es soldado. | §9 |
+| **H6** | **Rigidez de junta atornillada.** Tenemos el tornillo como barra a tensión, pero no kb, km (frusta 30°), C = kb/(kb+km), separación de junta ni fatiga del perno. | **Medio-alto.** Sin C, la precarga que ya calculamos no sabe repartir la carga externa. | §8-4, §8-5, §8-9, §8-11 |
+| **H7** | **Kt de catálogo (Tabla A-15).** Solo tenemos `ktPlateWithHole`. Faltan filete de eje escalonado (flexión/torsión/axial), ranura, cuñero, ranura de anillo. **Y viven en GRÁFICAS, hay que digitalizarlas.** | **Crítico** (bloquea H1 y H2). | §3-13, Tabla A-15/A-16 |
+| **H8** | **AGMA completo** (Ko, Kv/Qv, Ks, KH, ZR, ZW, YN/ZN, YZ, Yθ, KB, ZE, I, J, St/Sc por dureza y grado). Helicoidales, cónicos y sinfín. | **Alto.** Lewis solo no vende una caja. | §14, §15 |
+| **H9** | **Embragues, frenos y volantes.** Cero. | **Medio.** Nicho, pero se cobra caro. | §16 |
+| **H10** | **Bandas y cadenas.** Cero. | **Medio-alto.** Es el trabajo diario de un taller de transmisiones. | §17 |
+| **H11** | **Esfuerzos de contacto de Hertz.** Cero. Es la base de la fatiga superficial de engranes y rodamientos. | **Medio** (habilitador de H3 y H8). | §3-19, §6-18 |
+| **H12** | **Confiabilidad / estadística.** No hay Φ(z), ni la relación nd↔R de §1-13, ni Weibull. | **Medio.** El cliente lo usa para justificar el nd. | §1-12, §1-13, §11-4 |
+| **H13** | **Aceros del libro** (Tablas A-20/A-21/A-23: HR/CD por UNS, tratados térmicos por temperatura de revenido, y **propiedades cíclicas σ'f, b, ε'f, c**). Tenemos 17 materiales; el libro trae decenas y con los datos que la fatiga necesita. | **Alto** (habilitador de H1). | Tablas A-20..A-24 |
+| **H14** | **Fractura (LEFM)**: KIc, damage-tolerant design. | **Bajo** para taller LATAM. | §5-12, §6-5 |
+| **H15** | **Cojinetes de deslizamiento (journal)**: tenemos tribología propia (`cojinete-continuo.ts`, `cojinete-jaula.ts`) pero no las cartas de Raimondi-Boyd del cap 12. | **Bajo-medio.** | §12 |
+
+### 9.4 Lo que el cliente NOS PIDE que NO hagamos (y hoy podríamos estar haciendo mal)
+
+1. **§6-9 — No presentes Se con precisión falsa.** El propio autor dice que la multiplicatividad de Marin
+   *"has not been thoroughly tested and proven"*. Nuestro `FEAResult.minSafetyFactor` hoy sale como un número
+   pelón; en fatiga eso sería peor.
+2. **§1-11 — No inventes confiabilidad a partir del método determinista.** *"In neither case is there any
+   information about a statistical percentage of failures."*
+3. **§19-7 — No metas más malla porque sí.** Nuestro `brepToVolumeTetMesh` tiene `resolution`: la UI debe
+   preguntar primero *¿deflexión, esfuerzo, o ambos?* y recomendar el modelo, no maximizar elementos.
+4. **§7-4 Tabla 7-1 — No dejes vivos los Kt de arranque.** Si el flujo estima Kt=2.7 en la iteración 1, el
+   sistema tiene que **exigir** que se recalculen cuando aparezcan r y D reales.
+
+---
+
+## 10. PLAN DE CONSTRUCCIÓN — qué módulo primero y por qué
+
+### 10.1 La decisión
+
+> **Módulo #1 = `src/forja/maquinas/fatiga.ts` — el motor de fatiga esfuerzo-vida completo del capítulo 6.**
+
+**Por qué ése y no el de ejes (que es lo que más se cobra):**
+
+1. **Es la columna vertebral.** Ejes (§7), engranes (§14-4 con YN/ZN), resortes (§10-9/10-10), tornillos
+   (§8-11) y soldadura (§9-7) **todos** cuelgan de Se, Kf y de un criterio de esfuerzo medio. Si construyes
+   ejes primero, construyes fatiga a medias y enterrada adentro; después la vas a tener que sacar.
+2. **Es puro TypeScript sin OCCT ni React**, exactamente el perfil del patrón que ya funciona
+   (`src/forja/mold/structural.ts` → `scripts/mold-structural-test.cjs` → alta en `forja-gate.cjs`).
+3. **Se verifica contra números literales del libro.** El cap 6 trae ejemplos resueltos numerados (Ej 6-2 a
+   6-18) y el cap 7 trae el Ej 7-1 con **cuatro** factores de seguridad para el mismo eje
+   (DE-Goodman 1.52 · DE-Morrow 1.60 · DE-Gerber 1.73 · DE-SWT 1.38). Ese ejemplo solo es un gate de cuatro
+   invariantes en una línea, del mismo estilo que los gates de Kazmer.
+4. **Convierte el FEA que ya tenemos en un producto distinto.** `prepareFeaSession` + `solveLoadOnSession` ya
+   resuelven N casos de carga sobre una sola K ensamblada. Con fatiga encima, dos corridas (carga máxima y
+   mínima) producen un **mapa nodal de factor de seguridad a fatiga** en lugar del mapa estático de hoy.
+   Eso es una capacidad que Fusion cobra en su nivel de simulación de pago.
+5. **Arregla deuda existente.** Hoy `basquinSN` tiene Se' = 0.5·Sut y f = 0.9 clavados, sin Marin. Eso está
+   **mal** según §6-8/§6-9 y hay que corregirlo, no envolverlo.
+
+### 10.2 Orden propuesto
+
+| Orden | Módulo | Depende de | Gate (verificación contra el libro) |
+|---|---|---|---|
+| **1** | `fatiga.ts` — Se' (6-10), Marin ka..ke (6-17..6-28), f (6-11), a/b (6-13,6-14), q/Kf Neuber (6-33..6-36), los 7 criterios (6-40..6-57), σar equivalente (6-59..6-62), Miner + rainflow (6-68,6-69) | `MATERIAL_DATABASE` | Ej 6-2..6-18 + los 4 n del Ej 7-1 |
+| **1b** | `kt.ts` — digitalización de las cartas A-15 + Tabla A-16 numérica + Tabla 7-1 | — | Tabla A-16 literal; A-15 con error de ajuste declarado |
+| **1c** | `aceros.ts` — Tablas A-20, A-21, A-23, A-24 | — | valores literales |
+| **2** | `eje.ts` — V(x)/M(x)/T(x), DE-* despejadas para d (7-6..7-16), Tabla 7-1, Tabla 7-2, velocidad crítica (7-22,7-23), cuña (Tabla 7-6 + aplastamiento), anillos, ajustes (7-9) | 1, 1b, 1c | Ej 7-1, Ej 7-2, Ej 7-3, Ej 7-6 y el caso de estudio del cap 18 completo |
+| **3** | `rodamiento.ts` — L10, Weibull 3P, X/Y, af, cónicos IA/IB/IIA/IIB | 1 | Ejemplos del cap 11 + caso de estudio §18-9 |
+| **4** | `resorte.ts` — estático (10-7) y fatiga (10-10) | 1 | procedimientos §10-7/§10-10 |
+| **5** | `union.ts` — kb/km/C, separación, fatiga del perno (§8) + soldadura cordón-como-línea (§9) | 1 | Tablas 9-1/9-2 + ejemplos |
+| **6** | `agma.ts` — engrane recto y helicoidal | 1, 11 (Hertz) | §14-19 diseño de malla |
+| **7** | `transmision.ts` — el ORQUESTADOR del §18-1: el grafo de 10 pasos con sus 14 lazos de retorno | 2,3,4,6 | caso de estudio cap 18 de punta a punta |
+
+> El paso **7 es el producto de verdad**. Los pasos 1–6 son piezas; §18-1 es lo que el cliente hace. Y el
+> caso de estudio del capítulo 18 (reductor de 20 hp, 1750→85 rpm, con sus especificaciones completas en
+> §1-18) es el **test de aceptación de todo el sistema**: si La Forja lo reproduce de punta a punta y
+> coincide con las respuestas del libro, el módulo está terminado.
+
+### 10.3 Cómo se engancha a lo que ya existe
+
+- **Registro en el bus** (`src/forja/commands/registry.ts`) con dominio nuevo `fatiga` y el campo `eq`
+  apuntando a la ecuación de Shigley, igual que hoy `clamp.force` apunta a `Eq 5.29` de Kazmer:
+  ```
+  reg({ id: 'fatiga.marin', domain: 'fatiga', eq: 'Ec 6-17', status: 'implementado',
+        summary: 'Se = ka·kb·kc·kd·ke·Se\'', run: (p) => marin(p) })
+  ```
+- **Gate**: una suite por módulo en `scripts/forja-gate.cjs`, grupo nuevo `shigley`, con el `why` citando el
+  ejemplo del libro que verifica.
+- **Materiales**: extender `MATERIAL_DATABASE` con los campos que la fatiga necesita y hoy no están
+  (acabado superficial por defecto, σ'f, b, ε'f, c, dureza HB) — o crear `aceros.ts` aparte y cruzarlo.
+
