@@ -180,12 +180,32 @@ export interface PlateOptimum {
 }
 
 /**
- * OPTIMIZA los pilares con política de MÍNIMO PILARES (simplicidad de taller — decisión
- * del user 2026-07-23: "es más difícil construir los pilares"). Prueba 0..maxPillars y
- * elige la opción VÁLIDA (sin flash, placa de catálogo) con MENOS pilares; a empate, menos
- * acero. O sea: 0 pilares (placa sola más gruesa) si el catálogo lo permite; solo se meten
- * pilares cuando ni la placa comercial más gruesa evita la rebaba. Un pilar = poste+barreno+
- * dowel+ensamble; una placa más gruesa es UNA pieza. El costo real es la mano de obra.
+ * OPTIMIZA los pilares — POLÍTICA DEL LIBRO §12.1.3 + §12.2.3
+ * ===========================================================
+ * El criterio es MINIMIZAR EL TAMAÑO DEL MOLDE, y los pilares son una de las dos
+ * herramientas para lograrlo. §12.1.3 literal: "the repeated use of very large and
+ * thick plates can result in an overly heavy and expensive mold with a stack height
+ * that limits the availability of molding machines. For this reason, the mold
+ * designer should seek to MINIMIZE THE SIZE OF THE MOLD through appropriate analysis
+ * and careful specification of plate thicknesses AND SUPPORT STRUCTURES SUCH AS
+ * PILLARS and interlocks."
+ *
+ * Y §12.2.3 muestra el proceso: mete el pilar, y si la deflexión no alcanza AGRANDA
+ * el pilar (Ø37.5 → Ø50 en el bezel) — nunca lo quita. Al cerrar el ejemplo:
+ * "the thickness of the B plate and/or support plate could be slightly reduced while
+ * still meeting the deflection requirement" — o sea, con pilar la placa ADELGAZA.
+ *
+ * ⚠ CAMBIO DE POLÍTICA (2026-07-31): antes se ordenaba por MENOS PILARES primero
+ * (simplicidad de taller). El contrato §12.2.3 midió el costo de esa política en el
+ * vaso del libro: 0 pilares pedía placa de 126 mm y 287.5 kg de acero, contra 4
+ * pilares con placa de 27 mm y 63.4 kg — 4.5× más acero Y peor deflexión (0.0184 vs
+ * 0.0150 mm). La opción elegida estaba DOMINADA EN AMBOS EJES. El libro es ley: se
+ * ordena por acero total, que es la traducción directa de "minimize the size".
+ *
+ * ÚNICA excepción, también del libro: el pilar ÚNICO Y CENTRAL es antipatrón —
+ * "will not greatly reduce the deflection… since the majority of the plate bending
+ * will occur due to the loading on the left and right sides", y además choca con el
+ * vástago de expulsión central de la máquina. Se desempata en su contra.
  */
 export function optimizeSupportPlate(o: {
   clampTons: number; spanM: number; widthM: number; ventGapM?: number;
@@ -195,10 +215,13 @@ export function optimizeSupportPlate(o: {
   const maxP = o.maxPillars ?? 4;
   const options: PlateSizing[] = [];
   for (let n = 0; n <= maxP; n++) options.push(sizeSupportPlate({ ...o, nPillars: n }));
-  // válidas: sin flash y con placa de catálogo; MENOS PILARES primero, a empate menos acero
+  // válidas: sin flash y con placa de catálogo
   const valid = options.filter((s) => s.flashOk && s.plateThkMm != null);
+  // §12.1.3 minimizar el TAMAÑO del molde = menos acero total (placa + pilares);
+  // a empate, el pilar único central pierde (§12.2.3 antipatrón).
+  const antipatron = (s: PlateSizing) => (s.nPillars === 1 ? 1 : 0);
   const best = (valid.length ? valid : options).sort(
-    (a, b) => a.nPillars - b.nPillars || a.steelMassKg - b.steelMassKg,
+    (a, b) => a.steelMassKg - b.steelMassKg || antipatron(a) - antipatron(b),
   )[0];
   return { best, options };
 }

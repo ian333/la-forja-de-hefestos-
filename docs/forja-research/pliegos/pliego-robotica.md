@@ -610,7 +610,7 @@ Los 3 métodos de solución: **(1)** directo, O((n+n_c)³), el más simple y el 
 
 ## 5. CASOS DE VERIFICACIÓN — LOS GATES
 
-**Todos los valores de esta sección fueron VERIFICADOS numéricamente** implementando el RNEA espacial de la Tabla 2.6 de [F] y comparándolo contra la forma cerrada `H(q)q̈ + C(q,q̇)q̇ + τ_g(q)`. Script de referencia: `scratchpad/rnea_check.py` (transferible a `tests/` cuando se implemente el módulo).
+**Todos los valores de esta sección fueron VERIFICADOS numéricamente** implementando el RNEA espacial de la Tabla 2.6 de [F] y comparándolo contra la forma cerrada `H(q)q̈ + C(q,q̇)q̇ + τ_g(q)`. Cada valor trae además su **verificación a mano independiente** en la misma tabla, para que el gate no dependa de ningún script: se puede reconstruir con lápiz y papel.
 
 ### 5.1 Modelo de referencia — brazo 2R planar (el "péndulo doble accionado")
 
@@ -740,7 +740,7 @@ q̇  = [6.2832, 0, 0] rad/s    (60 rpm en el hombro)
 
 **Criterio de aprobación del gate:** `|τ_RNEA(q,0,0) − jointTorques(spec)|` de `brazo.ts` debe coincidir a < 1e-3 N·m en la pose extendida (compatibilidad hacia atrás con el módulo existente), Y `τ_RNEA` debe ser distinto de cero en el caso (d) donde el módulo actual da cero.
 
-### 5.9 GATE 8 — barrido del espacio de trabajo (¿cuál es la PEOR pose?)
+### 5.7 GATE 6 — barrido del espacio de trabajo (¿cuál es la PEOR pose?)
 
 Barrido estático de 73³ = 389,017 poses en `q ∈ [−π, π]³`:
 ```
@@ -750,7 +750,7 @@ Barrido estático de 73³ = 389,017 poses en `q ∈ [−π, π]³`:
 
 ⭐ **Y eso es justo lo que hace peligroso el hueco:** el modelo estático es *correcto y completo dentro de su alcance*, así que nada en el sistema grita que falta algo. El error no se manifiesta como un número raro; se manifiesta como un reductor que se rompe en el prototipo.
 
-### 5.7 GATE 6 — cinemática directa de la pata de hexápodo [H] Tabla 17.1
+### 5.8 GATE 7 — cinemática directa de la pata de hexápodo [H] Tabla 17.1
 
 Los parámetros DH reales del proyecto del libro (convención estándar: `A_i = Rz(q_i)·Tz(d_i)·Tx(a_i)·Rx(α_i)`):
 
@@ -775,9 +775,9 @@ Los parámetros DH reales del proyecto del libro (convención estándar: `A_i = 
 
 ⭐ **Bonus del cliente — el test de validación de IK que él mismo prescribe:**
 > **[H] §17.3.3.3:** *"**Validate your inverse kinematics algorithm.** Validation can occur by running through the workspace of the leg and **comparing outputs from your direct and inverse kinematic solutions**."*
-> **Gate 6b (round-trip):** para N poses aleatorias dentro de `qlim`, `‖FK(IK(FK(q))) − FK(q)‖ < tol`. Nótese que NO se compara `q` contra `IK(FK(q))` — porque hay VARIAS soluciones válidas. Se compara en el espacio de la POSE. Un implementador que compare ángulos va a "fallar" tests correctos.
+> **Gate 7b (round-trip):** para N poses aleatorias dentro de `qlim`, `‖FK(IK(FK(q))) − FK(q)‖ < tol`. Nótese que NO se compara `q` contra `IK(FK(q))` — porque hay VARIAS soluciones válidas. Se compara en el espacio de la POSE. Un implementador que compare ángulos va a "fallar" tests correctos.
 
-### 5.8 GATE 7 — la grúa de contenedores [S] §2, Ejemplo 1
+### 5.9 GATE 8 — la grúa de contenedores [S] §2, Ejemplo 1
 
 Carro + péndulo de masa puntual, 2 GDL `q = (x, φ)`. Ecuación de referencia:
 ```
@@ -957,7 +957,7 @@ Siguiendo el patrón de la casa (`reference_forja_gate.md`, el carril Kazmer), s
 
 6. **Y el argumento de La Forja:** el gate de energía (§5.5) es una **simulación** del péndulo doble cayendo, con `1.855e-12 J` de deriva de telemetría dura para el overlay (`feedback_telemetria_videos_sim.md`) — y **cruzable contra `dpStep`/`dpEnergy` que ya existen en `src/lib/physics/mech.ts`**. Video el mismo día (`feedback_siempre_videos.md`), con dos implementaciones independientes coincidiendo.
 
-**SEGUNDO — `dimensionar.ts`, solo estático.** `rnea(q,0,0)` barriendo el espacio de trabajo → mapa de par por pose (§5.9 ya lo corrió: 389,017 poses, peor caso confirmado). Y el cambio de una línea que cierra el lazo de verdad:
+**SEGUNDO — `dimensionar.ts`, solo estático.** `rnea(q,0,0)` barriendo el espacio de trabajo → mapa de par por pose (§5.7 ya lo corrió: 389,017 poses, peor caso confirmado). Y el cambio de una línea que cierra el lazo de verdad:
 ```ts
 // evolucion.ts — ANTES:
 export const DEFAULT_PROBLEM = { torqueTarget_Nm: 8.5, ... };
@@ -1046,13 +1046,17 @@ Igual que hicimos con Kazmer (`feedback_kazmer_no_inventar.md`), aquí va la lis
 
 ## 10. RESUMEN EJECUTIVO — LOS 6 REQUISITOS QUE DEFINEN EL MÓDULO
 
-1. **`robot/rnea.ts` con los 7 gates de §5 en verde, primero. Un día de trabajo, valor inmediato, verificación independiente de la fuente.**
+1. **`src/forja/mech/rnea.ts` con los 8 gates de §5 en verde, PRIMERO.** Un día de trabajo. Verificación independiente de la fuente. Regresión contra `brazo.ts:jointTorques()` incluida.
 2. **`qlim` y la topología viven en el MODELO** (`p(i) < i` validado al construir), no en capas de validación posteriores. [F] §2.4.1, [H] §17.3.2
 3. **La gravedad entra como `a₀ = −a_g`, y los `a_i` intermedios jamás se exponen como aceleración física.** [F] §2.5.1
 4. **Matrices 6×6 densas en v1.** La optimización a `(m;h;Ī)`/`(R;p)` es una segunda pasada con benchmark. Lo dice el autor. [F] §2.2.13
 5. **Singularidad = alerta de DISEÑO con nombre propio** (hombro / codo / muñeca), y el tipo de configuración es restricción de la trayectoria COMPLETA. [H] §10.4.6, §10.4.3
 6. **El veredicto del reductor cita `pliego-shigley.md`, nunca este pliego.** El par requerido lo damos nosotros; si el cicloidal aguanta, lo dice otro libro. Decirlo en la UI. §3.3, §9
 
+**Y el criterio de éxito del módulo, en una línea:**
+> `evolucion.ts` deja de tener `torqueTarget_Nm: 8.5` hardcodeado y pasa a recibir `peakTorque(brazo, tarea)`.
+> El día que ese diff exista, el lazo diseño↔física está cerrado.
+
 ---
 
-*Fin del pliego. Valores numéricos de §5 verificados con `scratchpad/rnea_check.py` y `scratchpad/dp2.py` (RNEA espacial vs. forma cerrada 2R, diferencia máx. 4.4e-16). Hallazgos negativos verificados por `grep` sobre el texto extraído completo de los tres documentos.*
+*Fin del pliego. Valores numéricos de §5 verificados implementando el RNEA espacial de [F] Tabla 2.6 en Python y contrastándolo contra la forma cerrada (RNEA espacial vs. forma cerrada 2R: diferencia máx. **4.4e-16**; brazo real de La Forja: τ estático **[8.5275, 4.7106, 1.9415] N·m** reproduce los objetivos hardcodeados **[8.5, 4.7, 1.9]** a 3 cifras). Hallazgos negativos verificados por `grep` sobre el texto extraído completo de los tres documentos.*
