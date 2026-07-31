@@ -584,6 +584,159 @@ export function contratoEstructural(pkg: MoldPackage): ContratoSubsistema {
   return resumir(S, C);
 }
 
+/**
+ * CONTRATO DEL LLENADO — cap 5
+ * El criterio que más se malinterpreta del libro entero: §5.1 tiene DOS COLAS.
+ * El techo de diseño es 100 MPa aunque la máquina dé ~200 (el margen 2× es a
+ * propósito), y una ΔP demasiado BAJA reprueba igual — "very low melt pressures
+ * are indicative of a poor molded part design": pared engordada = material y ciclo
+ * desperdiciados. Un optimizador que minimiza presión produce lo que el cliente
+ * reprueba.
+ */
+export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
+  const S = 'llenado';
+  const C: Criterio[] = [];
+  const fill = pkg.diseno.fillMPa, cav = pkg.diseno.cavityMPa;
+  const win = pkg.variantes.find((x) => x.arch === pkg.recomendacion.arch && x.nCav === pkg.recomendacion.nCav);
+
+  // ── 1) Techo de diseño 100 MPa — §5.1 ──
+  C.push({
+    ...juzgaMax({
+      id: 'llenado-techo', subsistema: S, cita: '§5.1',
+      criterio: 'ΔP de cavidad ≤ 100 MPa de DISEÑO (la máquina da ~200: el margen 2× cubre el feed system y las varianzas)',
+      medido: fill, limite: 100, unidad: 'MPa',
+      detalle: `ΔP ${num(fill)} MPa · techo de diseño 100 · capacidad de máquina ~200`,
+    }),
+  });
+
+  // ── 2) ⭐ La COLA INFERIOR: una ΔP muy baja también reprueba — §5.1 ──
+  // El libro no da umbral numérico; el que usamos va DECLARADO como nuestro.
+  const PISO_DECLARADO = 20;
+  C.push({
+    id: 'llenado-cola-baja', subsistema: S, cita: '§5.1',
+    criterio: 'una ΔP demasiado BAJA reprueba: delata pared engordada (material y ciclo desperdiciados) — adelgazar y poner costillas §2.3.2',
+    medido: fill, limite: PISO_DECLARADO, unidad: 'MPa',
+    estado: fill < PISO_DECLARADO ? 'ADVIERTE' : 'CUMPLE',
+    detalle: fill < PISO_DECLARADO
+      ? `ΔP ${num(fill)} MPa MUY holgada — "indicative of a poor molded part design": revisar si la pared de ${num(pkg.spec.wallMm, 1)} mm está engordada`
+      : `ΔP ${num(fill)} MPa por encima del piso ${PISO_DECLARADO} MPa (umbral DECLARADO nuestro: el libro no lo fija en número)`,
+  });
+
+  // ── 3) La velocidad recomendada CONVERGIÓ — §5.5.1 ──
+  C.push({
+    id: 'llenado-convergencia', subsistema: S, cita: '§5.5.1',
+    criterio: 'la velocidad sale de un lazo v↔γ̇↔μ que debe converger, y la escalera de iteraciones es auditable',
+    estado: 'SIN-CABLEAR',
+    detalle: 'convergeVelocity() itera 24 veces a ciegas y devuelve solo el último valor — no se puede verificar que convergió ni mostrar la escalera (el libro la publica: 0.5 → 0.69 → 0.77 → 0.80 → 0.82 m/s)',
+    deuda: 'filling.ts:convergeVelocity debe devolver {v, iteraciones[], convergio} en vez de un número suelto',
+  });
+
+  // ── 4) Velocidad lineal en la banda del libro — §5.5.1 ──
+  C.push({
+    id: 'llenado-velocidad', subsistema: S, cita: '§5.5.1',
+    criterio: 'la velocidad lineal del fundido cae entre 0.01 y 1 m/s',
+    estado: 'SIN-CABLEAR',
+    detalle: 'la velocidad convergida no viaja al paquete, así que no se puede contrastar contra la banda 0.01–1 m/s',
+    deuda: 'DiseñoFisico debe exponer la velocidad de llenado junto a fillMPa',
+  });
+
+  // ── 5) Tonelaje: llenado Y empaque, el mayor manda, con piso de 50 MPa — §5.5.3 ──
+  const clampT = win?.clampTons ?? 0;
+  C.push({
+    id: 'llenado-tonelaje', subsistema: S, cita: '§5.5.3',
+    criterio: 'el tonelaje se calcula en llenado Y en empaque (gana el mayor) sobre área PROYECTADA, con piso de 50 MPa de presión de cavidad',
+    medido: cav, limite: 50, unidad: 'MPa',
+    estado: cav < 50 ? 'ADVIERTE' : 'CUMPLE',
+    detalle: `presión de cavidad ${num(cav)} MPa → ${num(clampT, 0)} t. `
+      + (cav < 50
+        ? `⚠ §5.5.3: "molders will generally use packing pressures in the vicinity of 50 MPa" — el moldeador empacará ahí aunque el análisis diga menos, así que el tonelaje real será mayor`
+        : 'por encima del piso de empaque del libro ✓'),
+  });
+
+  // ── 6) Área PROYECTADA, con descuento por ventanas — §5.5.3 / §3.4.3 ──
+  C.push({
+    id: 'llenado-area-proyectada', subsistema: S, cita: '§5.5.3 · §3.4.3',
+    criterio: 'el tonelaje va sobre área PROYECTADA, y las ventanas/huecos de la pieza se descuentan (si no, sobreestima)',
+    estado: 'SIN-MÓDULO',
+    detalle: 'la Máquina usa L×W como área proyectada (el rectángulo envolvente) — el libro advierte que en el bezel con ventana grande "the true required clamp tonnage is likely less"',
+    deuda: 'dfm-mesh.ts ya rasteriza la pieza: el área proyectada REAL sale de contar columnas ocupadas, no del bbox',
+  });
+
+  return resumir(S, C);
+}
+
+/**
+ * CONTRATO DE LOS GATES — cap 7
+ * El tipo de gate NO es un enum plano: tiene cinco atributos consultables
+ * (§7.3.1 Tabla 7.1 + notas), y el quinto —¿se puede AGRANDAR?— no aparece en
+ * ningún catálogo comercial, solo en el libro (§7.3.5), porque el acero se quita,
+ * no se pone.
+ */
+export function contratoGates(pkg: MoldPackage): ContratoSubsistema {
+  const S = 'gates';
+  const C: Criterio[] = [];
+  const DEUDA = 'gating.ts:gateDesign() existe y está gateado, pero solo hace 1 de los 5 pasos de §7.3 (tipo→cortante→ΔP→freeze→ajuste) y moldMachine no lo llama';
+
+  C.push({
+    id: 'gate-tipo', subsistema: S, cita: '§7.3.1 · Tabla 7.1',
+    criterio: 'el tipo de gate se elige por runner (frío/caliente), método de degatado, régimen de corte, tipo de flujo y si se puede AGRANDAR',
+    estado: 'SIN-CABLEAR',
+    detalle: 'la Máquina elige la ARQUITECTURA de alimentación pero nunca el tipo de gate — no hay gate en el paquete',
+    deuda: DEUDA,
+  });
+
+  C.push({
+    id: 'gate-shear', subsistema: S, cita: '§7.1.4',
+    criterio: 'γ̇ en el gate ≤ máximo del material (el apéndice orienta; el proveedor manda y muchas veces se puede más)',
+    estado: 'SIN-CABLEAR',
+    detalle: 'sin gate diseñado no hay γ̇ que juzgar',
+    deuda: DEUDA,
+  });
+
+  C.push({
+    id: 'gate-dp', subsistema: S, cita: '§7.1.4 · §7.3.3',
+    criterio: 'ΔP del gate: ~2 MPa típico · >6 MPa sospechoso · >10 MPa = mal diseñado (muy delgado o muy largo)',
+    limite: 10, unidad: 'MPa',
+    estado: 'SIN-CABLEAR',
+    detalle: 'las tres marcas del libro están listas para usarse en cuanto exista el gate',
+    deuda: DEUDA,
+  });
+
+  C.push({
+    id: 'gate-freeze', subsistema: S, cita: '§7.1.5 · §7.3.4',
+    criterio: 'el t_freeze del gate se contrasta contra el t_pack que la pieza necesita; puede REPROBAR un gate que ya pasó corte y presión',
+    estado: 'SIN-CABLEAR',
+    detalle: 'gateFreezeCylS/StripS existen y están verificadas; nadie las contrasta contra el empaque requerido. §7.1.5: "the dimensions should be adjusted EVEN IF the shear rates and pressure drops were found acceptable"',
+    deuda: 'gating.ts tiene las dos funciones de freeze; falta el paso 4 del proceso §7.3.4 que las compara',
+  });
+
+  C.push({
+    id: 'gate-seccion-delgada', subsistema: S, cita: '§7.3.4',
+    criterio: 'no gatear a una sección más delgada que la que debe empacar — y si toca, la conclusión puede ser CAMBIAR EL TIPO DE MOLDE',
+    estado: 'SIN-MÓDULO',
+    detalle: 'nadie compara el espesor en el punto del gate contra el espesor de la sección a empacar; ese es el salto de dos niveles que dispara "considera 3 placas o cámara caliente"',
+    deuda: 'requiere espesor local en el punto del gate (dfm-mesh ya lo tiene) + el lazo que escale la decisión a la arquitectura',
+  });
+
+  C.push({
+    id: 'gate-degatado', subsistema: S, cita: '§7.1.2 · §7.2.7',
+    criterio: 'debe existir una ruta de degatado declarada (manual / automático por apertura / robot) y el acceso físico para ejecutarla',
+    estado: 'SIN-MÓDULO',
+    detalle: 'para tunnel gate el libro exige 45° al plano, cono incluido ≥20°, ≥3 diámetros fuera del plano Y sucker pins en el runner — sin los sucker pins el degatado automático NO EXISTE aunque la geometría del gate pase',
+    deuda: 'el check debe ser del ENSAMBLE (gate + runner + sucker pins), no del gate aislado',
+  });
+
+  C.push({
+    id: 'gate-steel-safe', subsistema: S, cita: '§7.3.5 · §7.4',
+    criterio: 'el gate se especifica deliberadamente CHICO para abrirlo en el tryout, y el tipo se elige entre otras cosas por si se puede agrandar',
+    estado: 'SIN-MÓDULO',
+    detalle: 'no existe el atributo "agrandable" ni el plan de tryout que diga hasta dónde crece cada gate',
+    deuda: 'el atributo agrandable no está en ningún catálogo comercial, solo en el libro — hay que modelarlo nosotros',
+  });
+
+  return resumir(S, C);
+}
+
 function resumir(subsistema: string, criterios: Criterio[]): ContratoSubsistema {
   const n = (e: ContratoEstado) => criterios.filter((c) => c.estado === e).length;
   const viola = n('VIOLA'), sinCablear = n('SIN-CABLEAR'), sinModulo = n('SIN-MÓDULO');
@@ -601,7 +754,8 @@ const ICON: Record<ContratoEstado, string> = {
 /** Corre TODOS los contratos disponibles sobre un paquete y arma el reporte. */
 export function contratos(pkg: MoldPackage): ContratoReporte {
   const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg), contratoEnfriamiento(pkg),
-    contratoExpulsion(pkg), contratoEstructural(pkg)];
+    contratoExpulsion(pkg), contratoEstructural(pkg),
+    contratoLlenado(pkg), contratoGates(pkg)];
   const t = { criterios: 0, cumple: 0, advierte: 0, viola: 0, sinCablear: 0, sinModulo: 0 };
   for (const s of subsistemas) {
     t.criterios += s.criterios.length; t.cumple += s.cumple; t.advierte += s.advierte;
