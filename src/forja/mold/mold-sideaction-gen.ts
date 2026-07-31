@@ -180,14 +180,23 @@ export function planSideAction(r: UndercutRegion, o?: { pMeltMPa?: number }): Si
       ],
     };
   }
+  // §11.3.7 define los dos tipos por su ACCIONAMIENTO, no por su forma: "core pulls
+  // require ACTUATORS, auxiliary control, and significant space. For this reason,
+  // mold designers often prefer to use sliding cores that are ACTUATED BY INCLINED
+  // ANGLE PINS". Si lleva cilindro hidráulico ES un core pull — "slide hidráulico"
+  // era una contradicción con la nomenclatura del libro, y hacía que el molde
+  // reportara corredera mecánica donde en realidad hay que colgar un actuador,
+  // plomería y control auxiliar. §11.1.1 fija además la jerarquía: primero
+  // accionamiento por la apertura del molde, y solo si no se puede, actuador.
   return {
-    ...base, kind: 'slide', hydraulic: true, feasible: true,
+    ...base, kind: 'core-pull', hydraulic: true, feasible: true,
     boreMm: +bore.toFixed(0),
     notes: [
-      `SLIDE HIDRÁULICO §11.3.6: corredera lateral + CILINDRO (carrera ${S} mm > ${SLIDE_MAX_STROKE_MM} mm — el perno angular no alcanza)`,
+      `CORE PULL HIDRÁULICO §11.3.6: la carrera ${S} mm supera los ${SLIDE_MAX_STROKE_MM} mm del catálogo de correderas — el perno angular no alcanza y hay que ACTUAR el corazón`,
       `F = ${P}·${aProj} = ${F.toFixed(1)} kN (Eq 11.24)`,
       `bore = √(4F/π·${P_HYD_MPA} MPa) = ${bore.toFixed(0)} mm (Eq 11.25) + risers`,
-      'corredera en rieles/gib + cilindro atornillado a B + interlock al frente + limit switches (avance/retraído)',
+      'cuesta lo que el libro advierte: actuador + control auxiliar + espacio (§11.3.7) — contra una corredera, que solo necesita la apertura del molde',
+      'corazón en rieles/gib + cilindro atornillado a B + interlock al frente + limit switches (avance/retraído §11.1.1)',
     ],
   };
 }
