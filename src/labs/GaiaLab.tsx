@@ -164,7 +164,10 @@ export default function GaiaLab() {
             <TabButton active={tab === 'sandbox'} onClick={() => { setTab('sandbox'); completeLesson('quimica', 'tab:sandbox'); }}>✧ Sandbox</TabButton>
           </nav>
 
-          <div className="ml-auto flex items-center gap-3 text-[10px] text-[#64748B] font-mono">
+          {/* Navegación secundaria SOLO en escritorio: en 390 px se llevaba un renglón
+              entero del alto (que aquí es el recurso escaso) para links que nadie toca en la
+              primera visita. El regreso a la escuela vive en el botón de arriba a la izquierda. */}
+          <div className="ml-auto hidden md:flex items-center gap-3 text-[10px] text-[#64748B] font-mono">
             <span className="hidden md:inline">{element.symbol} · Z={element.Z} · {configCompact(element.Z)}</span>
             <a href="/escuela.html" className="text-[#64748B] hover:text-[#FDB813] transition">← Γ Escuela</a>
             <a href="/math.html" className="text-[#64748B] hover:text-[#4FC3F7] transition">Σ Mate</a>
@@ -186,7 +189,7 @@ export default function GaiaLab() {
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         {/* DOCK — siempre visible (colapsable). PeriodicTable + hover info + nav */}
         {dockOpen && (
-          <aside className="shrink-0 w-full md:w-[336px] max-h-[34%] md:max-h-none order-last md:order-first
+          <aside className="shrink-0 w-full md:w-[336px] max-h-[30%] md:max-h-none order-last md:order-first
                             border-t md:border-t-0 md:border-r border-[#1E293B] bg-[#070A11]/60 backdrop-blur-md overflow-y-auto">
             <div className="p-3 space-y-3">
               <div>

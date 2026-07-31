@@ -1406,6 +1406,10 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   const glRef = useRef<THREE.WebGLRenderer | null>(null);
   useEffect(() => () => { if (live) { try { glRef.current?.forceContextLoss(); glRef.current?.dispose(); } catch { /* noop */ } } }, [live]);
 
+  // CÁMARA: el video arranca CERCA a propósito (viaja después). El lab no viaja, así que si
+  // arrancara ahí el núcleo con bloom se comería la nube y no se leerían las capas de color
+  // —justo lo que se vino a ver—. En live abre a 0.95·extent = el átomo COMPLETO con aire,
+  // y de ahí el usuario acerca con el dedo.
   // `flat` SIEMPRE: el tonemap ACES lo hace el EffectComposer. Si además lo hiciera el
   // renderer serían DOS (defecto documentado en CLAUDE.md §doble tonemap).
   // DPR: en el lab bajamos el techo porque ahora hay postFX y los teléfonos REALES de la
@@ -1416,10 +1420,6 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
       <Canvas
         flat
         onCreated={({ gl }) => { glRef.current = gl; }}
-        {/* El video arranca CERCA a propósito (la cámara viaja después). En el lab no hay
-            viaje: si arranca ahí, el núcleo con bloom se come la nube y no se leen las capas
-            de color, que es justo lo que se vino a ver. Se abre a 0.95 → el átomo COMPLETO
-            con aire, y de ahí el usuario acerca con el dedo. */}
         camera={{ position: [0, 0, extent * (live ? 0.95 : 0.5)], fov: 35, near: 0.01, far: 200 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
         dpr={live ? [1, 1.5] : [1, 2]}
