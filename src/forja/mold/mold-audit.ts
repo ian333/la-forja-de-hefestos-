@@ -223,9 +223,27 @@ export function auditMold(parts: MoldPart[], spec: MoldAssemblySpec): Finding[] 
     const col = by('colada')[0];
     if (col) {
       const b = bbox(col.positions);
-      if (b.mn[2] > zPart + 2) F.push({ sev: 'CRÍTICO', check: 'colada-no-alimenta', role: 'colada',
-        detail: `la colada arranca en z=${b.mn[2].toFixed(0)}, no llega a la partición ${zPart}`,
-        camera: { isolate: ['colada', 'pieza'], view: 'FRE', xray: true } });
+      // El criterio NO es "llega a la partición": es "TOCA LA PIEZA". Con un SPRUE
+      // GATE (§7.2.1) el sprue "discharges directly into the cavity; the gate is the
+      // interface between the bottom of the sprue and THE TOP OF THE CAVITY" — con la
+      // cavidad alojada en la placa A, ese techo está en zPart + profundidad, y exigir
+      // que la colada bajara hasta zPart marcaba como roto un molde correcto (era el
+      // caso del embudo: colada en z=211 contra partición 160, con la pieza ocupando
+      // justo 160..211). Con edge gate el contacto sí cae en la partición, y este
+      // criterio lo cubre igual porque ahí es donde está la pieza.
+      const pz = by('pieza')[0];
+      if (pz) {
+        const p = bbox(pz.positions);
+        const tocaEnZ = b.mn[2] <= p.mx[2] + 2 && b.mx[2] >= p.mn[2] - 2;
+        if (!tocaEnZ) F.push({ sev: 'CRÍTICO', check: 'colada-no-alimenta', role: 'colada',
+          detail: `la colada ocupa z[${b.mn[2].toFixed(0)}..${b.mx[2].toFixed(0)}] y la pieza z[${p.mn[2].toFixed(0)}..${p.mx[2].toFixed(0)}]: no se tocan, el fundido no entra`,
+          camera: { isolate: ['colada', 'pieza'], view: 'FRE', xray: true } });
+      } else if (b.mn[2] > zPart + 2) {
+        // sin componente 'pieza' (spec sin malla) se conserva el criterio anterior
+        F.push({ sev: 'CRÍTICO', check: 'colada-no-alimenta', role: 'colada',
+          detail: `la colada arranca en z=${b.mn[2].toFixed(0)}, no llega a la partición ${zPart} (sin componente 'pieza' para contrastar)`,
+          camera: { isolate: ['colada'], view: 'FRE', xray: true } });
+      }
     }
   }
 

@@ -1060,7 +1060,10 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
         // (flowT por vértice). Los vasos llenan desde SU gate (gatesXYZ).
         const rimR = (spec.cavity.widthMm / 2) * 1.015;   // rim escalado (contracción)
         const net = layoutForGrid(cells2, {
-          centerX: spec.widthMm / 2, centerY: D / 2, zPart, sprueTopZ: topZ + 6,
+          // sprueTopZ = la CARA del clamp, no 6 mm arriba (§9.1.6 / §1.3.1: la brida
+          // del bushing va rebajada 2.5 mm; nada sobresale). Mismo +6 que en la rama
+          // del sprue simple: la constante estaba duplicada en los dos caminos.
+          centerX: spec.widthMm / 2, centerY: D / 2, zPart, sprueTopZ: topZ,
           rimRmm: rimR, partVolCc: estPartVolumeCc(spec.cavity), material: spec.plastic,
         });
         const meltG: any[] = [];
@@ -1098,7 +1101,15 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       // partición: nacer en zPart lo metía POR DENTRO del macho — esa era la
       // colisión pendiente inserto-core↔colada (45.8 mm³) del estudio.
       const zGate = zPart + spec.cavity.depthMm;
-      const Lsprue = (topZ + 6) - zGate;                      // hasta la boca del bushing
+      // El fundido llega HASTA LA CARA del clamp, que es donde la boquilla lo
+      // inyecta — no más allá. Antes era (topZ + 6) y el componente 'colada' se
+      // asomaba 6 mm sobre el molde: contra eso apoya la platina, y §9.1.6 es
+      // explícito en que nada externo sobresale ("all external components should be
+      // recessed"). De hecho el asiento de la brida del bushing va 2.5 mm REBAJADO
+      // en la cara del clamp (§1.3.1), o sea el sprue queda a ras o hundido, jamás
+      // saliente. Era el crítico `contención-vertical` en tres de las cuatro piezas
+      // de referencia, siempre con los mismos 6.0 mm — la firma de una constante.
+      const Lsprue = topZ - zGate;
       const fd = sprueDesignFromCavity(spec.plastic, spec.cavity, Lsprue);
       const melt = feed.map((f) => {
         try {
