@@ -1433,7 +1433,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
             El lab necesita que la puedas girar con el dedo. Misma escena, dos manos. */}
         {live
           ? <OrbitControls enablePan={false} enableDamping dampingFactor={0.08}
-              minDistance={extent * 0.22} maxDistance={extent * 1.6} autoRotate autoRotateSpeed={0.55} />
+              minDistance={extent * 0.004} maxDistance={extent * 2.2} autoRotate autoRotateSpeed={0.55} />
           : <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} />}
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}

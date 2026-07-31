@@ -737,6 +737,226 @@ export function contratoGates(pkg: MoldPackage): ContratoSubsistema {
   return resumir(S, C);
 }
 
+/**
+ * CONTRATO DEL LAYOUT — cap 4 (partición, insertos, base, máquina)
+ * El cap 4 es una cadena estrictamente ordenada donde cada paso consume grados de
+ * libertad del siguiente, y termina en la verificación más física de todas: ¿el
+ * molde CABE y trabaja en una inyectora real?
+ */
+export function contratoLayout(pkg: MoldPackage): ContratoSubsistema {
+  const S = 'layout';
+  const C: Criterio[] = [];
+  const ins = pkg.insertos, base = pkg.base, ms = pkg.diseno.maquina.seleccion;
+
+  // ── 1) Cheek: el MAYOR de 3·⌀agua y la profundidad de cavidad — §4.2.2 ──
+  const cheekMin = Math.max(3 * ins.coolingDiaMm, pkg.spec.Hmm);
+  C.push({
+    id: 'layout-cheek', subsistema: S, cita: '§4.2.2 · §12.2.4',
+    criterio: 'el borde del inserto es el MAYOR de: 3 diámetros de línea de agua por lado, o la profundidad de la cavidad',
+    medido: ins.cheekMm, limite: cheekMin, unidad: 'mm',
+    estado: ins.cheekMm >= cheekMin - 0.5 ? 'CUMPLE' : 'VIOLA',
+    detalle: `cheek ${num(ins.cheekMm)} mm vs exigido ${num(cheekMin)} mm = max(3×⌀${num(ins.coolingDiaMm, 2)}=${num(3 * ins.coolingDiaMm)}, prof ${num(pkg.spec.Hmm)}) — manda ${ins.driver}`
+      + ' · el libro verifica los DOS casos: el bezel lo gana enfriamiento, el vaso lo gana estructura',
+  });
+
+  // ── 2) Aspect ratio del envelope < 2:1 — §4.3.1 ──
+  C.push({
+    ...juzgaMax({
+      id: 'layout-aspect', subsistema: S, cita: '§4.3.1',
+      criterio: 'la relación ancho:largo del envelope de cavidades debe mantenerse bajo 2:1',
+      medido: base.aspect, limite: 2, unidad: ':1',
+      detalle: `aspecto ${num(base.aspect, 2)}:1 · envelope ${num(base.envelope.wmm, 0)}×${num(base.envelope.lmm, 0)} mm → base ${base.base.wmm}×${base.base.lmm} mm`,
+    }),
+  });
+
+  // ── 3) Base dentro del catálogo comercial 200–1000 mm — §4.3.2 ──
+  const bMax = Math.max(base.base.wmm, base.base.lmm);
+  C.push({
+    id: 'layout-base-catalogo', subsistema: S, cita: '§4.3.2',
+    criterio: 'la base debe existir en catálogo: entre 200 y 1000 mm de lado',
+    medido: bMax, limite: 1000, unidad: 'mm',
+    estado: bMax > 1000 ? 'VIOLA' : (bMax < 200 ? 'ADVIERTE' : 'CUMPLE'),
+    detalle: `base ${base.base.wmm}×${base.base.lmm} mm · catálogo 200–1000 mm`
+      + (base.warnings.length ? ` · avisos: ${base.warnings.join('; ')}` : ''),
+  });
+
+  // ── 4) ⭐ El molde CABE Y TRABAJA en la inyectora — §4.3.3 ──
+  // Los DOS extremos fallan: sin daylight mínimo no genera tonelaje, y un tonelaje
+  // excesivo sobre un molde subdimensionado lo destruye.
+  C.push({
+    id: 'layout-maquina', subsistema: S, cita: '§4.3.3',
+    criterio: 'el molde cabe entre barras, dentro del daylight, con shot y tonelaje adecuados — y NO groseramente sobrados',
+    estado: ms.ok ? 'CUMPLE' : 'VIOLA',
+    detalle: ms.machine
+      ? `${ms.machine.name}: shot ${num(ms.shotPct, 0)} % del barril, cierre ${num(ms.clampUtilPct, 0)} % · gobierna ${ms.governs ?? '—'}`
+        + (ms.issues.length ? ` · ${ms.issues.join('; ')}` : '')
+      : `ninguna inyectora del catálogo satisface: ${ms.issues.join('; ')}`,
+  });
+
+  // ── 5) La ventana cómoda de disparo es 25–50 % del barril — §4.3.3 ──
+  C.push({
+    id: 'layout-shot-ventana', subsistema: S, cita: '§4.3.3',
+    criterio: 'el disparo debe caer en la ventana cómoda (~25–50 % del máximo), no solo "caber"',
+    medido: ms.shotPct, unidad: '%',
+    estado: !ms.machine ? 'SIN-MÓDULO'
+      : (ms.shotPct >= 25 && ms.shotPct <= 50 ? 'CUMPLE' : 'ADVIERTE'),
+    detalle: `disparo ${num(ms.shotPct, 0)} % del barril · ventana cómoda 25–50 % — `
+      + (ms.shotPct > 50 ? 'muy lleno: poco margen de empaque'
+        : ms.shotPct < 25 ? 'muy vacío: el fundido se degrada residiendo en el barril §4.3.3' : 'en ventana ✓'),
+  });
+
+  // ── 6) El ancho contra barras incluye lo que SOBRESALE — §4.3.3 ──
+  C.push({
+    id: 'layout-ancho-con-plugs', subsistema: S, cita: '§4.3.3',
+    criterio: 'el ancho que se compara contra las barras de amarre incluye plugs de agua y conectores, menos holgura de inserción',
+    estado: 'SIN-MÓDULO',
+    detalle: `se compara la base pelada (${bMax} mm); los plugs DME y los conectores sobresalen y nadie los suma`,
+    deuda: 'coolingCircuit ya conoce los plugs; falta sumar su saliente al ancho antes de comparar contra tie bars',
+  });
+
+  // ── 7) Dos catálogos de material distintos: inserto ≠ base — §4.4.4 ──
+  C.push({
+    id: 'layout-material-base', subsistema: S, cita: '§4.4.4',
+    criterio: 'el acero del inserto y el de la base son catálogos DISTINTOS (las bases solo vienen en 1045, 4140 o P20)',
+    estado: 'SIN-MÓDULO',
+    detalle: `se elige un acero (${pkg.metal.metal.name ?? '—'}) para los insertos, pero no se verifica que la BASE exista en ese material`,
+    deuda: 'moldbase debe exponer el material de la base por separado y restringirlo a 1045/4140/P20',
+  });
+
+  return resumir(S, C);
+}
+
+/**
+ * CONTRATO DEL COSTO — cap 3
+ * Aquí vive la alarma contraintuitiva más importante del libro (§3.4.4): si el
+ * molde amortizado DOMINA el costo por pieza, no es señal de calidad — es
+ * bandera de SOBREDISEÑO, y hay que generar la alternativa barata y compararla.
+ */
+export function contratoCosto(pkg: MoldPackage): ContratoSubsistema {
+  const S = 'costo';
+  const C: Criterio[] = [];
+  const cp = pkg.costoPieza;
+  const total = cp.partUSD || 1;
+  const pctMolde = (cp.moldPerPart / total) * 100;
+  const pctMat = (cp.materialPerPart / total) * 100;
+  const pctProc = (cp.processPerPart / total) * 100;
+
+  // ── 1) ⭐ La bandera de SOBREDISEÑO — §3.4.4 ──
+  C.push({
+    id: 'costo-sobrediseno', subsistema: S, cita: '§3.4.4 · §3.5',
+    criterio: 'si el molde amortizado domina el costo por pieza, es bandera de SOBREDISEÑO: hay que generar y comparar la alternativa más barata',
+    medido: pctMolde, limite: 50, unidad: '%',
+    estado: pctMolde > 50 ? 'ADVIERTE' : 'CUMPLE',
+    detalle: `costo/pieza $${cp.partUSD.toFixed(4)} = molde ${num(pctMolde, 0)} % · material ${num(pctMat, 0)} % · proceso ${num(pctProc, 0)} %`
+      + (pctMolde > 50
+        ? ` — "The large cost of the mold relative to the material and processing costs indicates that the mold may have been OVER DESIGNED" §3.4.4`
+        : ' — proporción sana ✓'),
+  });
+
+  // ── 2) ⭐ El MENÚ de diseños, no un veredicto único — §3.2.2 ──
+  const factibles = pkg.variantes.filter((v) => v.factible);
+  const ordenadas = [...factibles].sort((a, b) => a.totalUSD - b.totalUSD);
+  const ganadora = ordenadas[0], segunda = ordenadas[1];
+  C.push({
+    id: 'costo-menu', subsistema: S, cita: '§3.2.2 · §3.5',
+    criterio: 'el entregable puede ser MÁS DE UN diseño ("the customer can be given more than one design"), con su break-even',
+    medido: factibles.length, unidad: 'variantes',
+    estado: factibles.length > 1 ? 'CUMPLE' : 'ADVIERTE',
+    detalle: `${factibles.length} variantes factibles de ${pkg.variantes.length} evaluadas · gana ${ganadora?.arch} ×${ganadora?.nCav} ($${ganadora?.totalUSD.toFixed(0)})`
+      + (segunda ? ` · 2ª ${segunda.arch} ×${segunda.nCav} ($${segunda.totalUSD.toFixed(0)}, +${num(((segunda.totalUSD / (ganadora?.totalUSD || 1)) - 1) * 100, 1)} %)` : ''),
+  });
+
+  // ── 3) Los VETOS no económicos pueden tumbar al ganador — §3.2.2 ──
+  C.push({
+    id: 'costo-vetos', subsistema: S, cita: '§3.2.2',
+    criterio: 'factores no económicos pueden vetar al ganador del break-even: cambios de color, capacidad del moldeador, estandarización lean, payback exigido',
+    estado: 'SIN-MÓDULO',
+    detalle: 'la Máquina elige por costo total y no expone los vetos — el libro dice que el molde "should be designed to MAXIMIZE THE MOLDER\'S CAPABILITY"',
+    deuda: 'MachineSpec debe aceptar vetos (cambioColorFrecuente, capacidadMoldeador, paybackMaxMeses) y el optimizador filtrar con ellos',
+  });
+
+  // ── 4) El factor de mantenimiento es interpolado a juicio — §3.4.1 ──
+  C.push({
+    id: 'costo-mantenimiento', subsistema: S, cita: '§3.4.1 · Tabla 3.11',
+    criterio: 'el coeficiente de mantenimiento (2 a 20 según abrasividad vs dureza) se interpola a juicio y debe declararse',
+    estado: 'SIN-MÓDULO',
+    detalle: 'se usa el ×3 del ejemplo del libro sin declarar que es una interpolación de juicio ni de qué caso viene — "the maintenance costs can far exceed the purchase cost"',
+    deuda: 'estimatePartCost recibe fMaintenance con default 3; debe viajar al reporte con su justificación (resina abrasiva × dureza del acero)',
+  });
+
+  // ── 5) Todo coeficiente es sobreescribible por dato del taller — §3.3 ──
+  C.push({
+    id: 'costo-datos-taller', subsistema: S, cita: '§3.3 · §3.3.1.3',
+    criterio: 'los coeficientes del libro son defaults: la tarifa negociada del taller, si existe, MANDA sobre la tabla',
+    estado: 'CUMPLE',
+    detalle: `machiningRateUSDh es parámetro del spec (${pkg.spec.machiningRateUSDh ? `$${pkg.spec.machiningRateUSDh}/h del taller` : 'default del libro'}) — el mandato se repite 3 veces en §3.3`,
+  });
+
+  // ── 6) Sesgos conservadores declarados — §3.3.1.3 / §3.3.2 ──
+  C.push({
+    id: 'costo-sesgos', subsistema: S, cita: '§3.3.1.3 · §3.3.2',
+    criterio: 'cada estimado conservador va ETIQUETADO: volumen a remover = el inserto entero, eficiencia de maquinado 25 %, layout ceiling(√n)',
+    estado: 'SIN-MÓDULO',
+    detalle: 'los tres sesgos están implementados con los valores del libro, pero el reporte no los declara — el usuario no puede saber cuánto está inflado',
+    deuda: 'CostBreakdown debe traer sesgos[]: {que, direccion, magnitud, cita} y el reporte imprimirlos',
+  });
+
+  return resumir(S, C);
+}
+
+/**
+ * CONTRATO DE CONTRACCIÓN Y ALABEO — cap 10
+ * El criterio más contraintuitivo del libro: contracción CERO no es precisión,
+ * es una pieza que no se puede expulsar (§10.1.6).
+ */
+export function contratoContraccion(pkg: MoldPackage): ContratoSubsistema {
+  const S = 'contracción';
+  const C: Criterio[] = [];
+  const DEUDA = 'shrinkage.ts implementa Tait doble dominio y está gateado (bezel 0.31 % exacto); moldMachine no lo llama — cablear a DiseñoFisico.contraccion';
+
+  C.push({
+    id: 'contr-positiva', subsistema: S, cita: '§10.1.6',
+    criterio: 'la contracción debe ser POSITIVA: se necesita que la pieza se despegue de la cavidad y abrace el núcleo para poder expulsarla',
+    estado: 'SIN-CABLEAR',
+    detalle: 'contracción ≤ 0 NO es precisión: es sobre-empaque y la pieza no sale de costillas ni bosses. Un optimizador que la minimice diseña un molde que no expulsa',
+    deuda: DEUDA,
+  });
+
+  C.push({
+    id: 'contr-rango', subsistema: S, cita: '§10.1.6 · §10.1.7',
+    criterio: 'la recomendación es un RANGO (límite inferior con pack largo/alto, superior con pack corto/bajo), no un número',
+    estado: 'SIN-CABLEAR',
+    detalle: 'límites del libro: P_max = max(1.2·Pinj, 100 MPa) y P_min = min(0.4·Pinj, 30 MPa) con T=(T_noflow+T_melt)/2 — si el rango sale muy ancho, se recomienda pack extendido al moldeador',
+    deuda: DEUDA,
+  });
+
+  C.push({
+    id: 'contr-responsable', subsistema: S, cita: '§10.1.7',
+    criterio: 'el número final de contracción lleva RESPONSABLE asignado; si nadie firma, la salida es "hace falta molde prototipo"',
+    estado: 'SIN-MÓDULO',
+    detalle: 'no hay campo de responsabilidad: el libro dice que en algunos contratos es del cliente, en otros nadie la acepta y se acuerda un prototipo',
+    deuda: 'es un campo del registro de decisiones (§13.10), no un cálculo',
+  });
+
+  C.push({
+    id: 'contr-steel-safe', subsistema: S, cita: '§10.2.2',
+    criterio: 'las DOS escuelas de steel-safe se ofrecen: asimétrico (cavidad −Δ / núcleo +Δ) o valor medio constante — ninguna es el default',
+    estado: 'SIN-MÓDULO',
+    detalle: 'el asimétrico garantiza retrabajo (el nominal sale fuera de tolerancia a propósito); el valor medio confía en que el moldeador ajuste. El libro no elige: "many mold designers prefer to use a constant but mid-range estimate"',
+    deuda: 'decisión de menú (§3.2.2) + su asiento en el registro',
+  });
+
+  C.push({
+    id: 'contr-warpage-topologia', subsistema: S, cita: '§10.3.1',
+    criterio: 'el alabeo lo decide la TOPOLOGÍA: un marco con ventana está desacoplado y no alabea; un área cerrada pandea si (s_borde − s_centro) > 0.44·(h/W)²',
+    estado: 'SIN-MÓDULO',
+    detalle: 'no existe módulo de alabeo (la brecha de física más grande del libro en nuestro código) — y el criterio ni siquiera es un mapa de contracción, es la topología de la pieza',
+    deuda: 'dfm-mesh ya distingue regiones y huecos: de ahí sale la clasificación marco-abierto vs área-cerrada',
+  });
+
+  return resumir(S, C);
+}
+
 function resumir(subsistema: string, criterios: Criterio[]): ContratoSubsistema {
   const n = (e: ContratoEstado) => criterios.filter((c) => c.estado === e).length;
   const viola = n('VIOLA'), sinCablear = n('SIN-CABLEAR'), sinModulo = n('SIN-MÓDULO');
