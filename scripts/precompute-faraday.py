@@ -46,8 +46,16 @@ OUT = os.path.join(ROOT, 'public', 'precomputed')
 
 # ── LA JAULA ─────────────────────────────────────────────────────────────────
 L = 6.0                    # arista del cubo (bohr)
-POR_ARISTA = 14            # elementos por arista → 12·14 = 168 elementos
-A_ELEM = 0.30              # radio del elemento (bohr) — término propio 1/a
+POR_ARISTA = int(os.environ.get('POR_ARISTA', '14'))   # elementos a lo largo de cada alambre
+A_HILO = 0.08              # RADIO FÍSICO del alambre (bohr). El término propio ya NO es un
+                           # 1/a inventado: es el potencial EXACTO en el centro de un tramo
+                           # recto de longitud dl y radio a, uniformemente cargado:
+                           #     V_propio = (2/dl)·asinh(dl/2a)
+                           # Tiene que crecer cuando dl se achica, o el vecino acaba pesando
+                           # MÁS que uno mismo (con dl=0.12 el vecino daba 8.3 contra 3.3 del
+                           # propio fijo): la matriz pierde la dominancia diagonal y el
+                           # resultado es RUIDO. Se veía en el estudio de convergencia:
+                           # 65x → 57x → 199x → 25x → 15x al refinar. No convergía: oscilaba.
 
 # ── LA CARGA QUE SE ACERCA (el "rayo") ───────────────────────────────────────
 Q_EXT = 12.0               # carga externa (grande: es un rayo, no un electrón)
@@ -124,8 +132,9 @@ def resolver_jaula(rq):
     Devuelve (q_i, V0). Conductor AISLADO y neutro."""
     d = JAULA[:, None, :] - JAULA[None, :, :]
     R = np.linalg.norm(d, axis=2)
-    np.fill_diagonal(R, A_ELEM)                    # término propio: 1/a
-    A = 1.0 / R
+    A = 1.0 / np.maximum(R, 1e-12)
+    dl = L / POR_ARISTA                            # longitud del tramo que representa cada elemento
+    np.fill_diagonal(A, (2.0 / dl) * np.arcsinh(dl / (2.0 * A_HILO)))
     vext = Q_EXT / np.maximum(np.linalg.norm(JAULA - rq, axis=1), 1e-9)
     # [A  -1] [q ]   [-vext]
     # [1   0] [V0] = [  0  ]
@@ -149,7 +158,7 @@ class CampoJaula:
     def _e_de(self, P, cen, car):
         d = P[:, None, :] - cen[None, :, :]
         r = np.linalg.norm(d, axis=2)
-        r = np.maximum(r, 0.12)                    # suaviza el núcleo del elemento
+        r = np.maximum(r, A_HILO)                  # el campo no se evalúa dentro del alambre
         return (car[None, :, None] * d / r[:, :, None] ** 3).sum(axis=1)
 
     def __call__(self, P):
