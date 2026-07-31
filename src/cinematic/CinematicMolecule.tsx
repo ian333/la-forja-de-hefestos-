@@ -39,7 +39,9 @@ const MD_DURATION = 16;   // agua MD: 10 moléculas se auto-ensamblan (dinámica
 const WPAIR_DURATION = 77;
 const CARGAS_DURATION = 83.2;
 const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
-const WTRI_DURATION = 77.7;   // EL ANILLO: voz 91.0s + 3s de cola (medido de segs.json)   // EL PUENTE: 1 min con narración (beats sincronizados al guion)
+const WTRI_DURATION = 77.7;
+const WTET_DURATION = 82.0;   // EL CUARTETO: voz 79.54s (segs.json) + 2.5s de cola
+// (WTRI_DURATION: voz 91.0s + 3s de cola · WPAIR_DURATION: 1 min, beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
 // lenta ×3 (slow-motion de una dinámica real, no falseo): acercamiento ~3.3s +
@@ -501,16 +503,27 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // ⚠ DURACIONES PROVISIONALES (copiadas del anillo, Σ=77.7) para poder verificar ENCUADRE en
   // still 4K antes de grabar. RECALIBRAR a los arranques REALES de segs.json en cuanto exista
   // la voz: dur[i] = ini[i+1] − ini[i], NO los anchos de ventana (ese bug estuvo entregado).
+  // DURACIONES REALES de segs.json (dur[i] = arranque[i+1] − arranque[i], con los huecos de
+  // respiración incluidos — NO los anchos de ventana: ese bug estuvo entregado en el anillo y
+  // congelaba la cámara al final). La toma 1 arranca en t=0 y dura hasta el ARRANQUE de la
+  // línea 2 (2.88), no hasta el fin de la línea 1. Σ = 82.02 ≥ WTET_DURATION 82.0 (el orden
+  // correcto: si Σ quedara CORTA, playShots congela la cámara en la cola).
+  // Ritmo de ESCALA deliberado, como en el anillo: abre lejos (1.14) → teleobjetivo a UNA
+  // (0.98) → de frente con aire (1.50) → puente (1.12) → de canto y LEJOS (1.92) → encima
+  // (0.92) → crash (0.74) → salida. Ninguna toma se parece a su vecina.
   wtet: [
-    { shot: ringWide({ rMul: 1.14, azim0: 0.55, span: 1.0, elev: 0.30, fov: 34 }), dur: 10.91, label: 'las CUATRO separadas — que se CUENTEN 4' },
-    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 8.34, label: 'una sola en teleobjetivo — 3 átomos = 1 molécula' },
-    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.89, label: 'DE FRENTE: el cuadrado entero con aire' },
-    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 5.29, label: 'el PUENTE entre dos (sin entrar a la nube)' },
-    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.46, label: 'el anillo CIERRA — los 4 puentes a la vez' },
-    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 8.49, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
-    { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 12.27, label: 'FIRMA: DE CANTO real → aquí sí es PLANO (lo opuesto al trímero)' },
-    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 7.62, label: 'aguanta más — CRASH IN' },
-    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.41, label: 'payoff — SALE del anillo' },
+    { shot: ringWide({ rMul: 1.14, azim0: 0.55, span: 0.9, elev: 0.30, fov: 34 }), dur: 2.88, label: 'las CUATRO separadas — que se CUENTEN 4' },
+    { shot: ringOne({ which: 0, rMul: 0.98, azim0: 0.7, span: 1.5, fov: 21 }), dur: 7.20, label: 'LEGIBILIDAD: una sola — un O y dos H = UNA molécula' },
+    { shot: ringFaceOn({ rMul: 1.50, azim0: 0.2, span: 0.55, elev: 0.22 }), dur: 4.64, label: '"la otra vez viste tres / tres no encajaban" — sitio y aire' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 8.47, label: 'presta y recibe — el puente NO es línea, es carga' },
+    { shot: ringFaceOn({ rMul: 1.26, azim0: 1.35, span: 0.5, elev: 0.10 }), dur: 8.60, label: 'los 4 puentes a la vez — el cálculo los da IDÉNTICOS' },
+    { shot: ringFaceOn({ rMul: 1.40, azim0: 2.5, span: 0.7, elev: 0.34 }), dur: 7.01, label: 'contraste con el trímero: allá ninguno medía igual' },
+    { shot: ringEdgeToFace({ rMul: 1.72, elev: 0.10, span: 0.40 }), dur: 5.12, label: '🔑 ALTERNANCIA: arriba, abajo, arriba, abajo (flechas del dipolo)' },
+    { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.02, span: 0.30 }), dur: 5.15, label: '🔑 FIRMA: DE CANTO real → por fin es PLANO (lo opuesto al trímero)' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 6.73, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
+    { shot: ringFaceOn({ rMul: 1.18, azim0: 4.0, span: 0.9, elev: 0.18 }), dur: 10.38, label: 'los números: 12% → 19%, +28% por agua' },
+    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 3.78, label: 'física cuántica real — CRASH IN' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 12.06, label: 'payoff — SALE del anillo, gancho abierto al hexámero' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -1971,6 +1984,41 @@ const WTRI_CAPAS: CapasSpec = {
     { wins: [[59.5, 66.0]], a: 0.30, label: '"AGUANTA MÁS": se estiran y VUELVEN' },
     { wins: [[70.0, 77.7]], a: 0.68, label: 'PAYOFF: se vuelven a alejar — el viaje cierra donde empezó' } ] },
 };
+// CAPAS DEL CUARTETO — fronteras tomadas de los ARRANQUES REALES de segs.json (voz 79.5 s).
+// Portadas A MANO desde WTRI_CAPAS: recalibrar-beats.py regenera esta sección desde una
+// plantilla vieja y pierde enlaces/dipolo/apertura (aviso ya pagado en el anillo).
+//   ringWide 0.4-2.9 · ringOne 2.9-10.1 · faceOn lejos 10.1-14.7 · toBridge 14.7-23.2
+//   faceOn cerca 23.2-31.8 · faceOn azim 31.8-38.8 · ALTERNANCIA 38.8-43.9 · FIRMA 43.9-49.1
+//   loomPush 49.1-55.8 · números 55.8-66.2 · crashIn 66.2-70.0 · pullOut 70.0-82.0
+const WTET_CAPAS: CapasSpec = {
+  campo:    { base: 0.55, mods: [
+    { wins: [[0.0, 2.9]],   a: 1.00, label: 'FRAME 0 = EL PICO: el campo entra a tope' },
+    { wins: [[2.9, 10.1]],  a: -0.40, label: 'baja mientras la voz lee la fórmula sobre UNA molécula' },
+    { wins: [[14.7, 23.2]], a: 1.05, label: 'PROTAGONISTA: "presta un hidrógeno" — el puente es carga moviéndose' },
+    { wins: [[49.1, 55.8]], a: 0.85, label: 'la fuerza: los cuatro jalan más juntos' } ] },
+  nubes:    { base: 1, mods: [{ wins: [[14.7, 23.2], [38.8, 49.1]], a: -0.34, label: 'deja LEER el puente y la alternancia' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[2.9, 10.1]], a: 0.42, label: 'la molécula sola respira mientras se deletrea H₂O' }] },
+  spin:     { base: 1, mods: [{ wins: [[14.7, 23.2], [49.1, 55.8]], a: 0.85, label: 'Δρ ARDE: los puentes y la cooperatividad' }] },
+  acc:      { base: 1, mods: [{ wins: [[2.9, 10.1]], a: 0.45, label: 'ORO del oxígeno' }] },
+  enlaces:  { base: 0, mods: [{ wins: [[0.0, 10.1], [38.8, 55.8]], a: 1.0, label: 'los 3 átomos de cada una: al abrir y en la firma' }] },
+  // ⚠ AQUÍ ESTÁ EL CAMBIO QUE NO SE PODÍA COPIAR DEL ANILLO. Allá el dipolo servía para
+  // señalar LA VOLTEADA (la firma de la frustración impar). Aquí NO hay volteada: el reparto
+  // es 2-2 y WaterSticks ya no marca ninguna como impar. Las flechas ahora dicen otra cosa —
+  // la ALTERNANCIA arriba-abajo-arriba-abajo, que es LA razón de que cuatro encaje y tres no.
+  // Por eso la ventana cae exactamente sobre "Cuatro alternan perfecto / Arriba, abajo…"
+  // (38.8-43.5) y se sostiene durante la toma de canto que lo demuestra.
+  dipolo:   { base: 0, mods: [{ wins: [[38.8, 49.1]], a: 1.0, label: 'ALTERNANCIA: dos apuntan arriba y dos abajo' }] },
+  ceros:    { base: 0, mods: [] },   // no se calcularon para el tetrámero (ver el anillo: se apagaron)
+  apertura: { base: 0.10, mods: [
+    { wins: [[0.0, 2.9]],   a: 0.82, label: 'LEJOS: cuatro moléculas sueltas, se CUENTAN' },
+    { wins: [[2.9, 10.1]],  a: 0.55, label: 'siguen separadas mientras mira UNA' },
+    { wins: [[14.7, 20.0]], a: 0.30, label: 'SE ACOMODAN ("ahora míralas acomodarse")' },
+    { wins: [[14.7, 31.8]], a: 0.10, label: 'y CIERRAN — con el anillo cerrado los 4 puentes existen' },
+    // 32-62: CERRADO Y VIBRANDO — la alternancia, la firma de canto y la cooperatividad solo
+    // significan algo con el anillo cerrado. Nada de aperturas ahí.
+    { wins: [[62.3, 66.0]], a: 0.28, label: '"aguanta 28% más": se estiran y VUELVEN' },
+    { wins: [[73.5, 82.0]], a: 0.68, label: 'PAYOFF: se alejan — el viaje cierra donde empezó' } ] },
+};
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
 // Las tomas salen del REGISTRO (datos), no de constantes por video. Variante nueva =
@@ -2029,7 +2077,8 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // EL CUARTETO (H₂O)₄ — 4 aguas / 12 átomos. ex sube con el circunradio del polígono
   // (R/(2·sin(π/N)): +22 % de 3 a 4 lados), si no el anillo muerde los bordes del 9:16.
   // capas/dur se llenan cuando existan los tiempos REALES de la voz (§sincronía del canon).
-  wtet:  { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true },
+  wtet:  { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true,
+           capas: WTET_CAPAS, dur: WTET_DURATION },
 };
 /** ¿Es un anillo cíclico de N aguas? (wtri, wtet, …) — NO el dímero. */
 const esAnillo = (mk: string) => !!WATER_BINS[mk]?.anillo;

@@ -41,8 +41,8 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": null,
-    "pendiente": "dur = duración REAL de la voz + colchón, de dist-video/wtet-narracion/segs.json (CANON §sincronía). Estimado del guion: ~68.5s de voz."
+    "dur": 82.0,
+    "origen_dur": "voz 79.54s (último cue de segs.json) + 2.46s de cola = 82.0 · 2460 frames a 30fps"
   },
   "render": {
     "shards": 5,
@@ -54,12 +54,135 @@
     "escala_ex": 12,
     "nota_ex": "sube de 10 (trímero) a 12 porque el circunradio del polígono regular crece: R/(2·sin(π/N)) da 0.577·R con 3 lados y 0.707·R con 4 = +22%. Con ex=10 el anillo mordería los bordes del 9:16. VERIFICAR en still 4K real.",
     "reuso": "las tomas del anillo (ringWide, ringOne, ringFaceOn, ringToBridge, loomPush, ringEdgeToFace, crashIn, pullOut) son genéricas en N — se reusan tal cual. La FIRMA sigue siendo ringEdgeToFace, pero aquí muestra lo contrario: que el anillo es PLANO.",
-    "pendiente": "lista + duraciones = arranques REALES de segs.json (dur[i] = ini[i+1] − ini[i], NO los anchos de ventana: ese bug estuvo entregado en el anillo)."
+    "lista": [
+      {
+        "t": [
+          0.0,
+          2.88
+        ],
+        "toma": "ringWide",
+        "lineas": "1",
+        "muestra": "las CUATRO separadas — que se CUENTEN 4"
+      },
+      {
+        "t": [
+          2.88,
+          10.08
+        ],
+        "toma": "ringOne(0)",
+        "lineas": "2-3",
+        "muestra": "🔑 LEGIBILIDAD: un O y dos H = UNA molécula"
+      },
+      {
+        "t": [
+          10.08,
+          14.72
+        ],
+        "toma": "ringFaceOn lejos",
+        "lineas": "4-5",
+        "muestra": "'la otra vez viste tres / tres no encajaban'"
+      },
+      {
+        "t": [
+          14.72,
+          23.19
+        ],
+        "toma": "ringToBridge(0,1)",
+        "lineas": "6-8",
+        "muestra": "presta y recibe — el puente NO es línea, es carga"
+      },
+      {
+        "t": [
+          23.19,
+          31.79
+        ],
+        "toma": "ringFaceOn cerca",
+        "lineas": "9-11",
+        "muestra": "los 4 puentes — el cálculo los da IDÉNTICOS"
+      },
+      {
+        "t": [
+          31.79,
+          38.8
+        ],
+        "toma": "ringFaceOn azim",
+        "lineas": "12-13",
+        "muestra": "contraste: en el trímero ninguno medía igual"
+      },
+      {
+        "t": [
+          38.8,
+          43.92
+        ],
+        "toma": "ringEdgeToFace",
+        "lineas": "14-15",
+        "muestra": "🔑 ALTERNANCIA: arriba, abajo, arriba, abajo"
+      },
+      {
+        "t": [
+          43.92,
+          49.07
+        ],
+        "toma": "ringEdgeToFace",
+        "lineas": "16-17",
+        "muestra": "🔑 FIRMA: de canto — por fin es PLANO"
+      },
+      {
+        "t": [
+          49.07,
+          55.8
+        ],
+        "toma": "loomPush",
+        "lineas": "18-19",
+        "muestra": "COOPERATIVIDAD: se viene encima"
+      },
+      {
+        "t": [
+          55.8,
+          66.18
+        ],
+        "toma": "ringFaceOn",
+        "lineas": "20-22",
+        "muestra": "los números: 12% → 19%, +28% por agua"
+      },
+      {
+        "t": [
+          66.18,
+          69.96
+        ],
+        "toma": "crashIn",
+        "lineas": "23",
+        "muestra": "física cuántica real"
+      },
+      {
+        "t": [
+          69.96,
+          82.02
+        ],
+        "toma": "pullOut",
+        "lineas": "24-26",
+        "muestra": "payoff + gancho abierto al hexámero"
+      }
+    ],
+    "duraciones_shotentry": [
+      2.88,
+      7.2,
+      4.64,
+      8.47,
+      8.6,
+      7.01,
+      5.12,
+      5.15,
+      6.73,
+      10.38,
+      3.78,
+      12.06
+    ],
+    "nota_duraciones": "Σ = 82.02 ≥ formato.dur 82.0. Son SALTO AL SIGUIENTE ARRANQUE de voz (con los huecos de respiración), NO el ancho de la ventana: usar los anchos desfasa la cámara y congela la cola (bug entregado en el anillo). La toma 1 corre de t=0 al ARRANQUE de la línea 2."
   },
   "capas": {
-    "fuente": "WTET_CAPAS en src/cinematic/CinematicMolecule.tsx (referenciada desde WATER_BINS.wtet.capas)",
-    "pendiente": "portar a mano desde WTRI_CAPAS a las fronteras nuevas. AVISO del anillo que sigue vigente: recalibrar-beats.py REGENERA esta sección desde una plantilla VIEJA y pierde enlaces/dipolo/apertura — de ese script se toman las DURACIONES, no las capas.",
-    "cambio_obligado": "la capa `dipolo` en el anillo servía para señalar LA VOLTEADA. Aquí no hay volteada; el dipolo debe usarse para mostrar la ALTERNANCIA (dos arriba, dos abajo), que es la firma de esta pieza."
+    "fuente": "WTET_CAPAS en src/cinematic/CinematicMolecule.tsx — portadas A MANO desde WTRI_CAPAS a las fronteras reales de segs.json",
+    "cambio_obligado": "la capa `dipolo` en el anillo señalaba LA VOLTEADA. Aquí no hay volteada (reparto 2-2) y las flechas señalan la ALTERNANCIA — ventana 38.8-49.1, justo sobre \"Cuatro alternan perfecto / Arriba, abajo…\" y la toma de canto que lo demuestra."
   },
   "guion": {
     "archivo": "scripts/guiones/wtet.txt",
@@ -80,7 +203,7 @@
     "musica": "wtet-music.wav",
     "musicaVol": 0.17,
     "musicaFadeIn": 2.5,
-    "musicaFadeOutAt": null,
+    "musicaFadeOutAt": 74,
     "segs": "segs.json",
     "ass": "wtet.ass",
     "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (el default TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')"
