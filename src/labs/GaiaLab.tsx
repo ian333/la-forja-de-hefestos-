@@ -174,11 +174,20 @@ export default function GaiaLab() {
         </div>
       </header>
 
-      {/* Main: dock + hero */}
-      <div className="flex-1 flex min-h-0">
+      {/* Main: dock + hero.
+          MÓVIL = COLUMNA, Y EL ÁTOMO ARRIBA. Antes era `flex` (fila) siempre, con el dock en
+          `w-[336px] shrink-0`: a 390 px de ancho —o sea TODO el tráfico que llega de Instagram—
+          el dock se comía 336 y dejaba 54 px para el hero, así que el átomo salía REBANADO por
+          el borde y el texto se partía en tiras. Medido en captura a 390×844 el 2026-07-31; en
+          escritorio nunca se vio porque ahí sobra ancho. Es el mismo defecto que el reproductor
+          de masterclass (440 px fijos).
+          Y el orden importa: en móvil el átomo va PRIMERO (`order-first`) porque es lo que la
+          persona vino a ver — llega de un reel de moléculas, no de un índice. */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0">
         {/* DOCK — siempre visible (colapsable). PeriodicTable + hover info + nav */}
         {dockOpen && (
-          <aside className="shrink-0 w-[336px] border-r border-[#1E293B] bg-[#070A11]/60 backdrop-blur-md overflow-y-auto">
+          <aside className="shrink-0 w-full md:w-[336px] max-h-[46%] md:max-h-none order-last md:order-first
+                            border-t md:border-t-0 md:border-r border-[#1E293B] bg-[#070A11]/60 backdrop-blur-md overflow-y-auto">
             <div className="p-3 space-y-3">
               <div>
                 <div className="flex items-baseline justify-between mb-2">
@@ -211,8 +220,9 @@ export default function GaiaLab() {
           </aside>
         )}
 
-        {/* HERO — el viewport llena lo que sobra */}
-        <main className="flex-1 min-w-0 relative overflow-hidden">
+        {/* HERO — el viewport llena lo que sobra. min-h-0 además de min-w-0: en columna
+            (móvil) el que puede desbordar es el ALTO, no el ancho. */}
+        <main className="flex-1 min-w-0 min-h-0 relative overflow-hidden">
           {tab === 'atom'     && <AtomHero element={element} />}
           {tab === 'molecule' && <MoleculeHero />}
           {tab === 'bond'     && <BondTab />}
@@ -249,7 +259,7 @@ function AtomHero({ element }: { element: ReturnType<typeof elementByZ> extends 
       <div className="flex-1 min-h-0 relative">
         {view === 'cine'
           ? <CinematicAtom Z={element.Z} live />
-          : <MultiElectronAtomView element={element} height="100%" nPoints={15000} />}
+          : <MultiElectronAtomView element={element} height="100%" nPoints={15000} chrome={false} />}
 
         {/* Toggle ψ Lab ↔ Cinematic */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex rounded-md border border-[#1E293B] bg-[#05060A]/70 backdrop-blur overflow-hidden text-[10px] uppercase tracking-wider">

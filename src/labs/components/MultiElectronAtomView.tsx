@@ -28,6 +28,11 @@ interface MultiElectronAtomViewProps {
   element: Element;
   nPoints?: number;
   height?: number | string;
+  /** Dibujar la etiqueta propia del elemento. `false` cuando el anfitrión ya pone la suya:
+   *  GaiaLab tenía su tarjeta "Átomo activo" en `top-3 left-3` y este componente OTRA en la
+   *  MISMA posición, así que se apilaban y asomaba un "Carbono" detrás del otro (visible en
+   *  escritorio y en móvil, capturas del 2026-07-31). */
+  chrome?: boolean;
 }
 
 function PointCloud({ samples, subshellVisible }: {
@@ -103,7 +108,7 @@ function Nucleus({ protons, neutrons }: { protons: number; neutrons: number }) {
 }
 
 export default function MultiElectronAtomView({
-  element, nPoints = 14000, height = 560,
+  element, nPoints = 14000, height = 560, chrome = true,
 }: MultiElectronAtomViewProps) {
   const samples = useMemo(
     () => sampleAtom(element, nPoints, 42),
@@ -164,8 +169,8 @@ export default function MultiElectronAtomView({
         />
       </Canvas>
 
-      {/* Etiqueta del elemento */}
-      <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md rounded-lg px-4 py-3 text-white border border-white/10">
+      {/* Etiqueta del elemento — SOLO si el anfitrión no pone la suya (ver `chrome`) */}
+      {chrome && <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md rounded-lg px-4 py-3 text-white border border-white/10">
         <div className="flex items-baseline gap-3">
           <div className="text-[10px] font-mono text-[#94A3B8] uppercase tracking-wider">
             Z = {element.Z}
@@ -178,10 +183,12 @@ export default function MultiElectronAtomView({
         <div className="mt-1.5 text-[11px] font-mono text-[#7DD3FC]">
           {configCompact(element.Z)}
         </div>
-      </div>
+      </div>}
 
-      {/* Propiedades físicas */}
-      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-lg px-3 py-2 text-[11px] text-[#CBD5E1] border border-white/10 font-mono space-y-0.5 min-w-[170px]">
+      {/* Propiedades físicas. En móvil se esconden: a 390 px este panel de 170 px se montaba
+          SOBRE la nube (medido en captura a 390×844) y tapaba justo lo que la persona vino a
+          ver. Los mismos números ya están completos en la ficha del dock, abajo. */}
+      <div className="hidden md:block absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-lg px-3 py-2 text-[11px] text-[#CBD5E1] border border-white/10 font-mono space-y-0.5 min-w-[170px]">
         <PropRow label="Masa"    value={`${element.mass.toFixed(3)} u`} />
         <PropRow label="Protones"  value={`${nucleus.protons}`} />
         <PropRow label="Neutrones" value={`${nucleus.neutrons}`} />

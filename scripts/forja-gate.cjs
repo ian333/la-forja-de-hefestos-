@@ -89,6 +89,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-gating-test.cjs'] },
   { group: 'kernel', n: 'mold-venting', why: 'Kazmer cap 8: venteo h_min 0.06mm (aire viscoso) / h_max por flash + tabla handbooks',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-venting-test.cjs'] },
+  { group: 'kernel', n: 'mold-contratos', why: 'CONTRATOS: los criterios de aceptación del CLIENTE por subsistema (§6.4 feed, cap 8 venteo) — exige que el contrato diga la verdad: lo no medido NUNCA cuenta como cumplido',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-contratos-test.cjs'] },
   { group: 'kernel', n: 'mold-cooling', why: 'Kazmer cap 9: t_c placa/barra (Eq 9.5/9.6) contra ejemplos del libro (8.4/18.9/22.9s), sim 1D transitoria (Eq 9.4), Q por ciclo',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-cooling-test.cjs'] },
   { group: 'kernel', n: 'mold-engine', why: 'MOTOR DE MOLDES cap 6: draft analysis, shrinkage, core&cavity con shut-offs (tina+tapa refs exactas), split plano (jabonera)',
