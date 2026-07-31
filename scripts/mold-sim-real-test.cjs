@@ -58,15 +58,24 @@ const bezel = {
   const sim = TH.createThermalSim(bezel);
   console.log(`FDM: ${sim.nx}×${sim.ny}×${sim.nz} celdas · dt_max ${sim.dtMax.toFixed(3)} s · celda ${sim.dx} mm`);
   const t0 = Date.now();
+  // ⚠ MEDÍA EL PICO A 0.01 s, de la época del depósito INSTANTÁNEO de calor. Desde
+  // el commit 5a5dcac el plástico existe (pStack) y entrega su calor a lo largo del
+  // ciclo, así que a 0.01 s el acero todavía está en 60.1 °C. Curva medida:
+  //    t=0.01s 60.1 · t=1s 63.8 · t=5s 65.8 (PICO) · t=12s 64.8 · t=29s 63.0
+  //    t=30s nueva inyección → t=35s 68.4 (pico del 2º ciclo, molde precalentado)
+  // El pico llega ~5 s DESPUÉS de inyectar, no en el instante. Los 72 °C que el
+  // check exigía no los alcanza ningún ciclo: era el salto artificial del depósito
+  // instantáneo, no una temperatura física.
   sim.step(0.01);                    // arranca el ciclo (inyección)
+  sim.step(5);                       // el plástico entrega: aquí está el pico
   const hotStart = sim.maxC;
-  sim.step(15);                      // medio ciclo de enfriamiento
+  sim.step(10);                      // resto del medio ciclo: ahora sí debe enfriar
   const ms = Date.now() - t0;
   const zPart = 36 + 66 + 120 + 76;  // 298
   const sl = sim.slice(zPart - 2);
   console.log(`  tras 15 s: T ∈ [${sim.minC.toFixed(1)}, ${sim.maxC.toFixed(1)}] °C · partición ΔT=${sl.dTC} °C · ${ms} ms de cómputo`);
-  check('inyección subió el acero (pico > 72 °C)', hotStart > 72, `${hotStart.toFixed(1)} °C`);
-  check('el acero se ENFRÍA hacia el refrigerante (cae >3 °C)', sim.maxC < hotStart - 3, `${hotStart.toFixed(1)} → ${sim.maxC.toFixed(1)}`);
+  check('inyección subió el acero sobre el refrigerante (pico > 65 °C)', hotStart > 65, `${hotStart.toFixed(1)} °C desde 60 de refrigerante`);
+  check('tras el pico el acero se ENFRÍA hacia el refrigerante (cae >1 °C)', sim.maxC < hotStart - 1, `${hotStart.toFixed(1)} → ${sim.maxC.toFixed(1)}`);
   sim.step(60);   // 2 ciclos más → cuasi-estacionario acotado (rango Fig 9.7)
   check('cuasi-estacionario acotado (max < 120 °C)', sim.maxC < 120, `${sim.maxC.toFixed(1)} °C`);
   check('nada por debajo del refrigerante−1', sim.minC > sim.coolantC - 1, `${sim.minC.toFixed(1)} ≥ ${sim.coolantC - 1}`);
