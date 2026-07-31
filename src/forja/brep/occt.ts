@@ -1691,6 +1691,18 @@ export function tessellate(
   deflection = 0.1,
   angle = 0.5,
 ): TessellatedMesh {
+  // ⚠ LIMPIAR LA TRIANGULACIÓN PREVIA ANTES DE REMALLAR.
+  // BRepMesh_IncrementalMesh es *incremental*: si la forma ya trae una malla pegada
+  // (y la trae en cuanto pasó por un fillet, un boolean o un tessellate anterior),
+  // la CONSERVA y la deflexión que pides se ignora en silencio. Sobre una forma
+  // fresca sí responde — medido en un cilindro ⌀140×65: deflexión 2.0 → 100 tris,
+  // 0.4 → 164, 0.05 → 468 — pero sobre una forma reconstruida por receta devolvía
+  // siempre la misma malla gruesa. De ahí venía el "tessellate ignora la deflexión:
+  // 380 triángulos SIEMPRE" que estaba anotado como bug aparte en mold-flow-cross:
+  // no es que ignore el parámetro, es que no tiraba la malla vieja.
+  // Con aristas de ~33 mm, cualquier Dijkstra sobre la superficie zigzaguea y la
+  // longitud de flujo salía +89 % sobre la real.
+  try { oc.BRepTools.Clean(shape, true); } catch { /* build sin Clean: seguimos con lo que haya */ }
   // Genera la triangulación incremental in-place sobre la forma.
   // _2(shape, deflection, isRelative, angDeflection, isInParallel)
   const mesh = new oc.BRepMesh_IncrementalMesh_2(

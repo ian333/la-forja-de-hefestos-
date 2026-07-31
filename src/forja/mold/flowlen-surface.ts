@@ -44,6 +44,12 @@ export function surfaceFlowLength(
    *  el frente se atoraba en el sprue para siempre). 0 = solo exacta. */
   weldEpsMm = 0,
 ): SurfaceFlow {
+  // NOTA de un intento que NO funcionó (para que nadie lo repita): subdividir los
+  // triángulos grandes antes de caminar EMPEORA el resultado (242 → 264 mm). Los
+  // vértices nuevos de la cara interior no tienen pareja en la exterior, así que
+  // rompen el emparejado dual-domain de más abajo y el camino acaba rodeando por el
+  // borde en vez de cruzar la pared. Si se vuelve a intentar, hay que subdividir las
+  // DOS caras de forma emparejada, o emparejar por proyección en vez de por vértice.
   const P = mesh.positions, I = mesh.indices, N = mesh.normals;
   const nV = Math.floor(P.length / 3);
   if (!nV) return { flowLenMm: new Float32Array(0), maxFlowLenMm: 0, gateVertex: 0, unreachable: 0, nVertices: 0 };
@@ -97,6 +103,51 @@ export function surfaceFlowLength(
   };
   for (let t = 0; t + 2 < I.length; t += 3) {
     link(I[t], I[t + 1]); link(I[t + 1], I[t + 2]); link(I[t + 2], I[t]);
+  }
+
+  // ── GEODÉSICA POR DESPLIEGUE (unfolding) — sin esto Dijkstra ZIGZAGUEA ──
+  // Caminar solo por aristas no da la distancia sobre la superficie: da la distancia
+  // por el perímetro de los triángulos. Con aristas de ~33 mm el fundido "sube en
+  // escalera" y el recorrido salía 254.9 mm donde el real es ~135 (+89 %). La
+  // corrección estándar es desplegar cada par de triángulos que comparten una arista
+  // sobre un plano y conectar sus vértices OPUESTOS por la recta desplegada, que sí
+  // es la geodésica a través de esa arista. Coste O(E), sigue corriendo en el CAD.
+  {
+    const porArista = new Map<string, number[]>();          // arista → vértices opuestos
+    const kAr = (a: number, b: number) => (a < b ? `${a}_${b}` : `${b}_${a}`);
+    for (let t = 0; t + 2 < I.length; t += 3) {
+      const [a, b, c] = [rep[I[t]], rep[I[t + 1]], rep[I[t + 2]]];
+      for (const [e0, e1, op] of [[a, b, c], [b, c, a], [c, a, b]] as const) {
+        if (e0 === e1) continue;
+        const k = kAr(e0, e1);
+        (porArista.get(k) ?? porArista.set(k, []).get(k)!).push(op);
+      }
+    }
+    const dist = (u: number, v: number) =>
+      Math.hypot(P[u * 3] - P[v * 3], P[u * 3 + 1] - P[v * 3 + 1], P[u * 3 + 2] - P[v * 3 + 2]);
+    for (const [k, ops] of porArista) {
+      if (ops.length < 2) continue;                          // arista de borde: no hay qué desplegar
+      const [s0, s1] = k.split('_').map(Number);
+      const e = dist(s0, s1);
+      if (e < 1e-9) continue;
+      // coordenadas locales: s0=(0,0), s1=(e,0); cada opuesto a un lado del eje
+      const local = (op: number) => {
+        const d0 = dist(op, s0), d1 = dist(op, s1);
+        const x = (d0 * d0 + e * e - d1 * d1) / (2 * e);
+        return { x, y: Math.sqrt(Math.max(0, d0 * d0 - x * x)) };
+      };
+      for (let i = 0; i < ops.length; i++) for (let j = i + 1; j < ops.length; j++) {
+        const A = local(ops[i]), B = local(ops[j]);
+        // B se despliega al OTRO lado del eje ⇒ su y cambia de signo
+        const dGeo = Math.hypot(A.x - B.x, A.y + B.y);
+        const ra = rep[ops[i]], rb = rep[ops[j]];
+        if (ra === rb) continue;
+        if (!adj.has(ra)) adj.set(ra, []);
+        if (!adj.has(rb)) adj.set(rb, []);
+        adj.get(ra)!.push([rb, dGeo]);
+        adj.get(rb)!.push([ra, dGeo]);
+      }
+    }
   }
 
   // ── EMPAREJAR LAS CARAS OPUESTAS DE LA PARED — esto ES "dual domain" ─────
