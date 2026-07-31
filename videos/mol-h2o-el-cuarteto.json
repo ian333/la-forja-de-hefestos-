@@ -1,0 +1,125 @@
+{
+  "id": "mol-h2o-el-cuarteto",
+  "titulo": "El cuarteto",
+  "subtitulo": "(H₂O)₄",
+  "nota": "4 aguas / 12 átomos. Tercera pieza de la serie del agua: dímero (El puente) → trímero (El anillo) → tetrámero (El cuarteto). Manifiesto EXTENDIDO (ver docs/CANON-VIDEO.md, Regla #0.5). El motor es el MISMO: scripts/precompute-water-ring.py con NWAT=4 y una entrada en WATER_BINS. Cero scripts nuevos, cero componentes nuevos.",
+  "proposito": {
+    "wtf": "El trímero estaba FRUSTRADO: tres es impar, los H libres no pueden alternar arriba-abajo sin que dos queden del mismo lado, y una agua acaba volteada. Con cuatro sí cierra la alternancia — el anillo se aplana, los cuatro puentes salen IDÉNTICOS, y la cooperatividad casi se duplica.",
+    "hayQueMostrar": [
+      "que son CUATRO moléculas (12 átomos), no cuatro átomos — la confusión #1 de la serie",
+      "la ALTERNANCIA arriba-abajo-arriba-abajo, que es la razón de que cuatro encaje y tres no",
+      "el anillo DE CANTO: en el trímero esa toma mostraba la volteada; aquí muestra que es PLANO. Misma toma, significado opuesto — ahí está el remate",
+      "los cuatro puentes encendiendo a la vez y con el mismo brillo (son equivalentes, no es licencia visual)"
+    ],
+    "payoff": "Mientras más aguas se juntan, más fuerte se agarran entre ellas: por eso el agua se comporta como una red y no como gotas sueltas. Y esto apenas va en cuatro (gancho abierto hacia el hexámero).",
+    "noHacer": [
+      "reusar la firma del trímero: aquí NO hay ninguna volteada, y marcar una sería mentir",
+      "decir 'átomos' cuando son moléculas",
+      "puentes como líneas (son NUBE)"
+    ],
+    "continuidad": "Es pieza HERMANA de El anillo: MISMA paleta (oro+ámbar+morado del Δρ), mismas tomas del registro, mismo formato de subtítulos. Ver [[feedback_extender_reusa_paleta]]."
+  },
+  "fisica": {
+    "metodo": "RHF/cc-pVDZ, geometría optimizada con geomeTRIC desde una semilla de cuadrado regular (la encontró el optimizador, no se impuso)",
+    "gates": {
+      "geometria": "O-O 2.841/2.841/2.841/2.841 Å — LOS CUATRO IGUALES a 4 cifras. Es el gate MÁS fuerte de la pieza: el optimizador tenía libertad de deformar el anillo (en el trímero SÍ lo hizo: 2.888/2.880/2.874, los tres distintos) y aquí no lo hizo. Eso es la simetría S₄ EMERGIENDO del cálculo.",
+      "acortamiento": "el puente se APRIETA de 2.881 Å (trímero) a 2.841 Å (tetrámero) — signo correcto: más cooperatividad = puente más corto",
+      "enlace": "-29.55 kcal/mol total = -7.39 por agua (trímero: -17.37 total, -5.79 por agua) → +28% por molécula",
+      "cooperatividad": "-5.51 kcal/mol = 18.7% del enlace total (trímero: -2.05 = 11.8%). Casi se duplica.",
+      "puentes": "∫Δρ>0 crece 0.0224 → 0.3126 (14×) al cerrarse el anillo"
+    },
+    "comparabilidad": "El 11.8% del trímero y el 18.7% del tetrámero son DIRECTAMENTE comparables: mismo método, misma base, y el término de muchos cuerpos se calcula igual (Σ sobre TODOS los pares i<j). Ver el ⚠ del encabezado de precompute-water-ring.py: la versión vieja restaba solo pares vecinos, que en el trímero es lo mismo (todo par es vecino) pero desde N=4 no.",
+    "limitacion_declarada": "RHF sin dispersión ni corrección BSSE → el enlace TOTAL sobrestima ~8-10% frente a alto nivel, igual que en el trímero (O-O 2.841 vs ~2.79 experimental = 1.8%). La COOPERATIVIDAD y el ORDEN (tetrámero > trímero) sí son robustos: en el agua los domina la INDUCCIÓN (campo medio), que RHF describe bien."
+  },
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wtet",
+    "hook": "__cinematicAtom",
+    "wiring": "UNA entrada en WATER_BINS de src/cinematic/CinematicMolecule.tsx: { bin, ef, ex: 12, anillo: true, capas, dur }. `anillo: true` prende palitos O–H, dipolos, encuadre sin letterbox y tipografía del anillo — antes eso eran ~15 comparaciones `mk === 'wtri'` regadas por el archivo."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": null,
+    "pendiente": "dur = duración REAL de la voz + colchón, de dist-video/wtet-narracion/segs.json (CANON §sincronía). Estimado del guion: ~68.5s de voz."
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.wtetframes"
+  },
+  "tomas": {
+    "registro": "CAMERA_SHOTS.wtet (src/cinematic/CinematicMolecule.tsx) — la secuencia es DATO, no código nuevo",
+    "escala_ex": 12,
+    "nota_ex": "sube de 10 (trímero) a 12 porque el circunradio del polígono regular crece: R/(2·sin(π/N)) da 0.577·R con 3 lados y 0.707·R con 4 = +22%. Con ex=10 el anillo mordería los bordes del 9:16. VERIFICAR en still 4K real.",
+    "reuso": "las tomas del anillo (ringWide, ringOne, ringFaceOn, ringToBridge, loomPush, ringEdgeToFace, crashIn, pullOut) son genéricas en N — se reusan tal cual. La FIRMA sigue siendo ringEdgeToFace, pero aquí muestra lo contrario: que el anillo es PLANO.",
+    "pendiente": "lista + duraciones = arranques REALES de segs.json (dur[i] = ini[i+1] − ini[i], NO los anchos de ventana: ese bug estuvo entregado en el anillo)."
+  },
+  "capas": {
+    "fuente": "WTET_CAPAS en src/cinematic/CinematicMolecule.tsx (referenciada desde WATER_BINS.wtet.capas)",
+    "pendiente": "portar a mano desde WTRI_CAPAS a las fronteras nuevas. AVISO del anillo que sigue vigente: recalibrar-beats.py REGENERA esta sección desde una plantilla VIEJA y pierde enlaces/dipolo/apertura — de ese script se toman las DURACIONES, no las capas.",
+    "cambio_obligado": "la capa `dipolo` en el anillo servía para señalar LA VOLTEADA. Aquí no hay volteada; el dipolo debe usarse para mostrar la ALTERNANCIA (dos arriba, dos abajo), que es la firma de esta pieza."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/wtet.txt",
+    "lineas": 26,
+    "palabras": 146,
+    "duracion_estimada_s": 68.5,
+    "portero": "scripts/guion-check.py — ✅ limpio (0 avisos)",
+    "lecciones_aplicadas": [
+      "dice EXPLÍCITAMENTE 'cuatro moléculas' y 'doce átomos' (la confusión #1 de El puente)",
+      "conserva la línea 'H dos O. Dos hidrógenos y un oxígeno.' que Ian pidió en el anillo: enseña a LEER la fórmula",
+      "apoya en la pieza anterior ('la otra vez viste tres') — la serie se acumula",
+      "cierra con lazo causal abierto ('y esto apenas va en cuatro') hacia el hexámero, ver docs/NEUROCIENCIA-DEL-GANCHO.md"
+    ]
+  },
+  "audio": {
+    "dir": "dist-video/wtet-narracion",
+    "narracion": "wtet-narracion.mp3",
+    "musica": "wtet-music.wav",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": null,
+    "segs": "segs.json",
+    "ass": "wtet.ass",
+    "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (el default TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')"
+  },
+  "campo": {
+    "bin": "water-tetramer-efield.bin",
+    "motor": "scripts/campo_lineas.py — E=−∇V EXACTO por integrales analíticas, Cash–Karp RK45 adaptativo, siembra por FLUJO. Sin cambios respecto al anillo.",
+    "lineas": "733 = 550·N/3. El 550 lo eligió Ian a ojo sobre el trímero; mantener el número fijo en un anillo 22% más grande bajaría la densidad de líneas en pantalla.",
+    "medido": "siembra por flujo: 733 líneas, 0 duplicadas, ∮E·n̂dA = +0.467"
+  },
+  "salida": {
+    "dir": "/mnt/e/forja-videos",
+    "master": "agua-el-cuarteto-4k-master.mp4",
+    "h264": "agua-el-cuarteto-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "water-tetramer.bin",
+      "water-tetramer-efield.bin",
+      "water-tetramer-geom.json"
+    ],
+    "guion": "wtet.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-water-ring.py",
+      "campo_lineas.py",
+      "atencion-verify.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-el-cuarteto.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-el-cuarteto-capsula.tar.gz",
+    "pieza": "mol-h2o el cuarteto"
+  }
+}

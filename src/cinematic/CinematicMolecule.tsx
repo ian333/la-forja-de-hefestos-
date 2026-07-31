@@ -490,6 +490,28 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 7.62, label: 'aguanta más — CRASH IN' },
     { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.41, label: 'payoff — SALE del anillo (no de dentro de la nube)' },
   ],
+  // EL CUARTETO (tetrámero, 4 aguas / 12 átomos). Cuenta lo que el trímero NO puede:
+  //  · ENCAJA — con N par los H libres alternan arriba-abajo todo el ciclo, así que el anillo
+  //    se aplana y el optimizador deja los 4 puentes IDÉNTICOS (2.841 Å ×4, medido; en el
+  //    trímero salieron 2.888/2.880/2.874 = los tres distintos).
+  //  · COOPERATIVIDAD casi DOBLE — 18.7% del enlace contra 11.8% del trímero.
+  // MISMAS TOMAS que el anillo: son genéricas en N, se reusan tal cual (Regla #0). La FIRMA
+  // sigue siendo ringEdgeToFace, pero aquí dice lo OPUESTO: ahí se veía la volteada, aquí se
+  // ve que por fin es PLANO. Misma imagen, significado invertido — ese es el remate.
+  // ⚠ DURACIONES PROVISIONALES (copiadas del anillo, Σ=77.7) para poder verificar ENCUADRE en
+  // still 4K antes de grabar. RECALIBRAR a los arranques REALES de segs.json en cuanto exista
+  // la voz: dur[i] = ini[i+1] − ini[i], NO los anchos de ventana (ese bug estuvo entregado).
+  wtet: [
+    { shot: ringWide({ rMul: 1.14, azim0: 0.55, span: 1.0, elev: 0.30, fov: 34 }), dur: 10.91, label: 'las CUATRO separadas — que se CUENTEN 4' },
+    { shot: ringOne({ which: 0, rMul: 1.05, azim0: 0.7, span: 1.4, fov: 21 }), dur: 8.34, label: 'una sola en teleobjetivo — 3 átomos = 1 molécula' },
+    { shot: ringFaceOn({ rMul: 1.45, span: 0.5 }), dur: 8.89, label: 'DE FRENTE: el cuadrado entero con aire' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 5.29, label: 'el PUENTE entre dos (sin entrar a la nube)' },
+    { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.46, label: 'el anillo CIERRA — los 4 puentes a la vez' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 8.49, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
+    { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 12.27, label: 'FIRMA: DE CANTO real → aquí sí es PLANO (lo opuesto al trímero)' },
+    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 7.62, label: 'aguanta más — CRASH IN' },
+    { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.41, label: 'payoff — SALE del anillo' },
+  ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
     { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 9, label: 'electrones de la OTRA, close bajo (l3-4)' },
@@ -875,6 +897,7 @@ interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [n
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
+  wtet: { name: 'El cuarteto', formula: '(H₂O)₄', fact: 'Tres no encajaban. Cuatro sí: los cuatro puentes salen idénticos.' },
   faraday: { name: 'La jaula de Faraday', formula: 'E_dentro = 0', fact: 'Un marco de barras no te protege; una malla cerrada, 160 veces.' },
   cargas: { name: 'La ley de Gauss', formula: '∮E·dA = 4πQ', fact: 'Cuenta las líneas que se escapan: son exactamente la carga de adentro.' },
   ch4:  { name: 'Metano', formula: 'CH₄', fact: 'Cuatro enlaces perfectos a 109.5°: un tetraedro.' },
