@@ -28,13 +28,27 @@ def main():
     ap.add_argument("--w", type=int, default=2160); ap.add_argument("--h", type=int, default=3840)
     a = ap.parse_args()
 
-    st = ESTILO["vertical" if a.h >= a.w else "horizontal"]
+    vert = a.h >= a.w
+    st = ESTILO["vertical" if vert else "horizontal"]
     segs = json.load(open(a.segs))
+
+    # PlayRes = SIEMPRE la resolución CANÓNICA, no la del render. En ASS, `Fontsize` y
+    # `MarginV` están en unidades de PlayRes y libass las escala al video: con PlayRes fijo,
+    # un preview 1080 y el master 4K salen con subtítulos IDÉNTICOS en composición.
+    #
+    # BUG QUE ESTO ARREGLA (cazado por Ian en el preview del cuarteto, 2026-07-31): al pasar
+    # --w 1080 --h 1920 se escribía PlayRes 1080×1920 pero los números del estilo seguían
+    # siendo los del 4K (96 / 1120). Resultado: la fuente al DOBLE de tamaño relativo y el
+    # MarginV 1120 sobre 1920 = 58 % de la altura, o sea el subtítulo a MEDIA PANTALLA en vez
+    # de abajo, encimado con el objeto. El master 4K nunca tuvo el defecto — por eso no se
+    # había visto: es el mismo engaño de `gl_PointSize` (el preview 1080 MIENTE, ver
+    # [[feedback_juzgar_a_resolucion_del_master]]).
+    PRX, PRY = (2160, 3840) if vert else (3840, 2160)
 
     head = f"""[Script Info]
 ScriptType: v4.00+
-PlayResX: {a.w}
-PlayResY: {a.h}
+PlayResX: {PRX}
+PlayResY: {PRY}
 WrapStyle: 0
 ScaledBorderAndShadow: yes
 
