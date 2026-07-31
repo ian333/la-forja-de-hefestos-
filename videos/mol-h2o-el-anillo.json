@@ -355,7 +355,7 @@
       "render-clip.cjs",
       "video.sh",
       "video-subs.py",
-      "precompute-water-trimer.py",
+      "precompute-water-ring.py",
       "atencion-verify.py"
     ],
     "escenaSrc": [
@@ -454,6 +454,6 @@
       "cero suavizado: la curvatura que se ve es la del campo"
     ],
     "correspondencia": "la línea j es SIEMPRE el mismo rayo (núcleo, dirección) de la superficie → se desliza suave entre cuadros, cero parpadeo. La selección por flujo se hace una vez, en el anillo cerrado.",
-    "lineas": "550 (NL_CAMPO en precompute-water-trimer.py). 275 se veía ralo en las tomas donde el campo ES protagonista (t=27-60); en t=6-18 se ve tenue por COREOGRAFÍA (capas.campo=0.15), no por falta de líneas."
+    "lineas": "550 (NL_CAMPO en precompute-water-ring.py, que ahora escala con N: 550·N/3). 275 se veía ralo en las tomas donde el campo ES protagonista (t=27-60); en t=6-18 se ve tenue por COREOGRAFÍA (capas.campo=0.15), no por falta de líneas."
   }
 }

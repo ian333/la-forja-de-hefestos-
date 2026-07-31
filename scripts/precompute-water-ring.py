@@ -1,30 +1,42 @@
 #!/usr/bin/env python3
 """
-precompute-water-trimer.py — EL ANILLO: 3 moléculas de agua (9 átomos) cerrando el
-trímero cíclico, ab initio. Hermano de precompute-water-approach.py (2 aguas), MISMO
-formato WAP2 → el renderer (O2Cloud/Nucleus/BondEField) lo lee sin cambios (NNUC=9).
+precompute-water-ring.py — EL ANILLO CÍCLICO DE N AGUAS, ab initio. N es un DATO
+(env `NWAT`), no código: 3 = el trímero ("El anillo", ya entregado), 4 = el tetrámero,
+5/6 = los que siguen. Hermano de precompute-water-approach.py (2 aguas), MISMO formato
+WAP2 → el renderer (O2Cloud/Nucleus/BondEField) lo lee sin cambios (NNUC = 3N).
 
-EL FENÓMENO NUEVO QUE 2 AGUAS NO PUEDEN MOSTRAR — **COOPERATIVIDAD**:
-los 3 puentes juntos son MÁS fuertes que la suma de los 3 pares por separado. Es un
+    NWAT=4 python3 scripts/precompute-water-ring.py          # tetrámero
+    NWAT=3 python3 scripts/precompute-water-ring.py --quick  # el trímero de siempre
+
+EL FENÓMENO QUE 2 AGUAS NO PUEDEN MOSTRAR — **COOPERATIVIDAD**:
+los N puentes juntos son MÁS fuertes que la suma de los pares por separado. Es un
 efecto de MUCHOS CUERPOS real y medido: al donar un protón, el agua se vuelve mejor
-aceptora para la siguiente → el anillo se refuerza a sí mismo. Ese es el salto
-conceptual de 2→3 y el GATE de este cálculo:
+aceptora para la siguiente → el anillo se refuerza a sí mismo. Ese es el GATE:
 
-    E_enlace(trímero) = E(3-mero) − 3·E(monómero)
-    Σ pares          = Σ_{i<j} [ E(dímero_ij) − 2·E(monómero) ]
-    E_3cuerpos       = E_enlace − Σ pares        ← debe ser NEGATIVO (estabiliza extra)
+    E_enlace(N-mero) = E(N-mero) − N·E(monómero)
+    Σ pares          = Σ_{i<j} [ E(dímero_ij) − 2·E(monómero) ]     ← TODOS los pares
+    E_muchos_cuerpos = E_enlace − Σ pares        ← debe ser NEGATIVO (estabiliza extra)
+
+⚠ EL PAR DIAGONAL (bug cazado al generalizar, 2026-07-31): la versión de 3 aguas restaba
+solo los pares VECINOS (i, i+1). En el trímero da igual — con 3 nodos todo par ES vecino —
+pero desde N=4 hay pares diagonales (0-2, 1-3) y omitirlos INFLA la cooperatividad, porque
+su interacción (real, aunque débil y repulsiva) se cuela en el término de muchos cuerpos.
+Aquí se suman TODOS los i<j, como dice la fórmula de arriba. Para N=3 el resultado es
+idéntico al publicado, así que el trímero entregado sigue siendo válido.
+
+LA PARIDAD ES LA HISTORIA (y EMERGE, no se impone): los H libres alternan arriba/abajo con
+`(-1)^i`. Con N IMPAR el ciclo no cierra — dos vecinos quedan del mismo lado y una agua se
+voltea: eso es la FRUSTRACIÓN del trímero, su firma en video. Con N PAR alterna perfecto
+(el tetrámero es S₄, plano y con los 4 puentes equivalentes) y la cooperatividad sube.
 
 GEOMETRÍA (declarada, ver [[feedback_kazmer_no_inventar]] — lo literal y lo construido):
   • LITERAL (experimental): monómero O-H 0.9578 Å, ángulo HOH 104.478°.
-  • LITERAL (VRT del trímero): O···O ≈ 2.85 Å en el equilibrio.
-  • CONSTRUIDO (declarado): anillo C3 idealizado — los 3 O en triángulo equilátero, cada
-    agua dona un H hacia el O siguiente (donador lineal) y deja un H libre alternando
-    fuera del plano. El mínimo global real es UUD/C1 (los H libres arriba-arriba-abajo),
-    casi isoenergético; usamos C3 por simetría del acercamiento. NO se afirma que sea el
-    mínimo global: se declara como idealización y los GATES validan la FÍSICA (energía de
-    enlace y cooperatividad), que es lo que el video cuenta.
-
-  python3 scripts/precompute-water-trimer.py [--quick]
+  • LITERAL (VRT): O···O ≈ 2.85 Å (trímero), ≈ 2.79 Å (tetrámero) en el equilibrio.
+  • CONSTRUIDO (declarado): SEMILLA de anillo regular con los donadores doblados — los N O
+    en polígono regular, cada agua dona un H hacia el O siguiente y deja el H libre fuera
+    del plano según (-1)^i. Es SOLO el punto de partida: la geometría de equilibrio la
+    ENCUENTRA el optimizador (RHF/cc-pVDZ + geomeTRIC), no se impone. Los GATES validan la
+    FÍSICA (energía de enlace y cooperatividad), que es lo que el video cuenta.
 """
 import os, sys, struct
 import numpy as np
@@ -47,25 +59,47 @@ POSQ = 2000.0
 D_OH_A = 0.9578          # Å
 ANG_HOH = 104.478        # grados
 
-# ── anillo: O···O del trímero ──
-R_EQ_A = 2.85            # Å (equilibrio, VRT)
-R_MAX_A = 5.60           # lejos: 3 aguas casi libres
-R_MIN_A = 2.76           # anillo cerrado (ligeramente comprimido)
+# ── N: EL ÚNICO parámetro que cambia entre piezas de esta familia ──
+NW = int(os.environ.get('NWAT', '3'))
+if NW < 3:
+    raise SystemExit('NWAT >= 3 (con 2 aguas usa precompute-water-approach.py — es el dímero)')
+NOMBRE = {3: 'trimer', 4: 'tetramer', 5: 'pentamer', 6: 'hexamer'}.get(NW, f'{NW}mer')
+ES_PAR = (NW % 2 == 0)
+
+# ── anillo: O···O de equilibrio, SEMILLA del optimizador (LITERAL, espectroscopía VRT) ──
+# El anillo se APRIETA al crecer N (más cooperatividad = puente más corto): trímero 2.85,
+# tetrámero 2.79, pentámero 2.76, hexámero-anillo 2.75 Å. Son semillas: la geometría final
+# la encuentra geomeTRIC. Para N no tabulado se extrapola al límite del hielo (2.74 Å).
+R_EQ_A = {3: 2.85, 4: 2.79, 5: 2.76, 6: 2.75}.get(NW, 2.74)
+R_MAX_A = 5.60           # lejos: las N aguas casi libres
+R_MIN_A = R_EQ_A - 0.09  # anillo cerrado (ligeramente comprimido)
 
 if QUICK:
     K = 6;  N_ACC, N_DEP, N_SPIN = 6000, 3000, 3000;   NXY, NZ = 64, 44
 else:
     K = 26; N_ACC, N_DEP, N_SPIN = 54000, 20000, 20000; NXY, NZ = 112, 76
+# Las nubes escalan con el NÚMERO DE ÁTOMOS: si N crece y el conteo no, la nube se RALEA
+# (el mismo polvo repartido en un anillo más grande) y se pierde el "dorado" denso de O₂.
+_ESC_N = NW / 3.0
+N_ACC, N_DEP, N_SPIN = (int(round(n * _ESC_N)) for n in (N_ACC, N_DEP, N_SPIN))
 
-Z = np.array([8, 1, 1] * 3)                      # 3 aguas: O,H,H · O,H,H · O,H,H
-NNUC = 9
-WAT = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]          # índices de cada agua
+Z = np.array([8, 1, 1] * NW)                     # N aguas: (O,H,H) × N
+NNUC = 3 * NW
+WAT = [[3 * i, 3 * i + 1, 3 * i + 2] for i in range(NW)]   # índices de cada agua
+VEC = [(i, (i + 1) % NW) for i in range(NW)]               # pares VECINOS (los puentes)
+PARES = [(a, b) for a in range(NW) for b in range(a + 1, NW)]   # TODOS los pares (muchos cuerpos)
 
 Rvals = R_MAX_A + (R_MIN_A - R_MAX_A) * (np.arange(K) / (K - 1))   # descendente (como O2/wpair)
 R_MIN = R_MIN_A / BOHR; R_MAX = R_MAX_A / BOHR
 
-# caja (bohr): el anillo abierto (R=5.6 Å) tiene circunradio 3.23 Å = 6.1 bohr; + nube
-LXY, LZ_ = 10.6, 8.4   # LZ_ subió: con POSQ=5000 el techo del int16 (6.55) enmascaraba este corte
+# caja (bohr): SALE DE LA GEOMETRÍA, no de un número a mano — el circunradio de un polígono
+# regular de N lados con lado R es R/(2·sin(π/N)), y la nube se extiende ~4.5 bohr más.
+# (Para N=3 y R_MAX=5.6 Å esto da 6.11+4.5 = 10.6 bohr = EXACTO el valor que estaba escrito
+#  a mano, así que el trímero no cambia ni un pixel.)
+_RC_MAX = (R_MAX_A / (2.0 * np.sin(np.pi / NW))) / BOHR
+LXY = round(_RC_MAX + 4.5, 1)
+LZ_ = 8.4              # el pucker fuera del plano no crece con N: el anillo se aplana
+NXY = int(round(NXY * LXY / 10.6 / 8)) * 8      # dx CONSTANTE al crecer la caja (múltiplo de 8)
 dx = (2 * LXY) / NXY; dz = (2 * LZ_) / NZ
 xs = -LXY + (np.arange(NXY) + 0.5) * dx
 zs = -LZ_ + (np.arange(NZ) + 0.5) * dz
@@ -77,21 +111,25 @@ rng = np.random.default_rng(SEED)
 U_acc = rng.random((N_ACC, 3)); U_dep = rng.random((N_DEP, 3)); U_spin = rng.random((N_SPIN, 3))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, '..', 'public', 'precomputed', 'water-trimer.bin')
-OUT_EF = os.path.join(HERE, '..', 'public', 'precomputed', 'water-trimer-efield.bin')
+OUT = os.path.join(HERE, '..', 'public', 'precomputed', f'water-{NOMBRE}.bin')
+OUT_EF = os.path.join(HERE, '..', 'public', 'precomputed', f'water-{NOMBRE}-efield.bin')
 
 
 def _guess(R_A, tilt_deg=22.0):
-    """Semilla UUD: anillo con los H donadores DOBLADOS fuera del plano y los H libres
-    arriba-arriba-abajo. (Un anillo C3 con donadores LINEALES es geométricamente imposible:
+    """Semilla del anillo: los H donadores DOBLADOS fuera del plano y los H libres alternando
+    con (-1)^i. (Un anillo con donadores LINEALES es geométricamente imposible en el trímero:
     los H donadores vecinos quedan a 1.56-1.64 Å = choque duro. Medido, ver GATE fallido
-    del 2026-07-27. Por eso el mínimo real del trímero es UUD/C1 y con puentes DOBLADOS.)"""
-    Rc = R_A / np.sqrt(3.0)
+    del 2026-07-27. Por eso el mínimo real del trímero es UUD/C1 y con puentes DOBLADOS.)
+
+    LA FRUSTRACIÓN NO SE IMPONE, SALE DE LA PARIDAD: con (-1)^i y N impar el ciclo no cierra
+    (el último y el primero quedan del mismo lado) → UUD, una agua volteada = el trímero. Con
+    N par alterna perfecto → S₄ en el tetrámero. Un solo renglón describe ambos casos."""
+    Rc = R_A / (2.0 * np.sin(np.pi / NW))          # circunradio del polígono regular de lado R_A
     ang = np.deg2rad(ANG_HOH); tilt = np.deg2rad(tilt_deg)
-    UUD = [+1.0, +1.0, -1.0]                       # frustración por número impar (el mínimo real)
-    g = np.zeros((9, 3))
-    for i in range(3):
-        th = 2.0 * np.pi * i / 3.0; th_n = 2.0 * np.pi * ((i + 1) % 3) / 3.0
+    UUD = [(-1.0) ** i for i in range(NW)]         # impar ⇒ frustrado; par ⇒ alternancia perfecta
+    g = np.zeros((NNUC, 3))
+    for i in range(NW):
+        th = 2.0 * np.pi * i / NW; th_n = 2.0 * np.pi * ((i + 1) % NW) / NW
         O = np.array([Rc * np.cos(th), Rc * np.sin(th), 0.0])
         O_next = np.array([Rc * np.cos(th_n), Rc * np.sin(th_n), 0.0])
         d = O_next - O; d /= np.linalg.norm(d)
@@ -107,7 +145,7 @@ def _guess(R_A, tilt_deg=22.0):
     return g - g.mean(axis=0)                      # Å, centrado
 
 
-_OPT_CACHE = os.path.join(HERE, '..', 'public', 'precomputed', 'water-trimer-geom.json')
+_OPT_CACHE = os.path.join(HERE, '..', 'public', 'precomputed', f'water-{NOMBRE}-geom.json')
 
 def optimized_geom():
     """La geometría de equilibrio la ENCUENTRA el optimizador (regla del proyecto: la forma
@@ -121,12 +159,12 @@ def optimized_geom():
     from pyscf.geomopt.geometric_solver import optimize
     g0 = _guess(R_EQ_A)
     mol = gto.M(atom=[[int(Z[i]), tuple(g0[i])] for i in range(NNUC)], basis=BASIS, unit='Angstrom', verbose=0)
-    print("  optimizando el trímero (RHF/cc-pVDZ, geomeTRIC)…", flush=True)
+    print(f"  optimizando el {NOMBRE} ({NW} aguas, RHF/cc-pVDZ, geomeTRIC)…", flush=True)
     mol_eq = optimize(scf.RHF(mol), maxsteps=80)
     xyz = mol_eq.atom_coords() * BOHR                       # → Å
     xyz -= xyz.mean(axis=0)
-    OO = [np.linalg.norm(xyz[3 * a] - xyz[3 * b]) for a, b in ((0, 1), (1, 2), (2, 0))]
-    print(f"  ✓ equilibrio: O-O = {OO[0]:.3f}/{OO[1]:.3f}/{OO[2]:.3f} Å (medio {np.mean(OO):.3f})", flush=True)
+    OO = [np.linalg.norm(xyz[3 * a] - xyz[3 * b]) for a, b in VEC]
+    print(f"  ✓ equilibrio: O-O = {'/'.join(f'{x:.3f}' for x in OO)} Å (medio {np.mean(OO):.3f})", flush=True)
     os.makedirs(os.path.dirname(_OPT_CACHE), exist_ok=True)
     json.dump({'xyz_A': xyz.tolist(), 'ROO': float(np.mean(OO)), 'OO': OO, 'basis': BASIS}, open(_OPT_CACHE, 'w'))
     return xyz
@@ -141,12 +179,12 @@ def geom_at(R_A):
     if _GEQ is None:
         _GEQ = optimized_geom()
     xyz = _GEQ.copy()
-    Ocen = np.array([xyz[3 * i] for i in range(3)])
+    Ocen = np.array([xyz[3 * i] for i in range(NW)])
     C = Ocen.mean(axis=0)
-    R0 = np.mean([np.linalg.norm(Ocen[a] - Ocen[b]) for a, b in ((0, 1), (1, 2), (2, 0))])
+    R0 = np.mean([np.linalg.norm(Ocen[a] - Ocen[b]) for a, b in VEC])
     s = R_A / R0
     g = xyz.copy()
-    for i in range(3):
+    for i in range(NW):
         shift = (s - 1.0) * (Ocen[i] - C)           # traslación rígida de las 3 partículas
         g[3 * i:3 * i + 3] += shift
     g -= g.mean(axis=0)
@@ -212,7 +250,10 @@ N_DIR_SUP = 1200          # direcciones de rayo por núcleo (la malla de la supe
 # el mismo Φ₀, solo cambia cuánto vale ese flujo. Elegido a ojo por Ian (2026-07-28) sobre la
 # comparación 1100/550/275/138: con 1100 el campo se lee como PELO y se pierden los arcos que
 # van de una molécula a otra, que es justo lo que el video tiene que enseñar.
-NL_CAMPO = 550            # líneas; cada una carga el MISMO flujo Φ₀ (275 se leía VACÍO
+NL_CAMPO = int(round(550 * NW / 3.0))   # ESCALA CON N: 550 lo eligió Ian a ojo sobre el
+                          # trímero; mantener el número fijo en un anillo más grande baja la
+                          # densidad de líneas en pantalla (mismo Φ₀ total repartido en más área).
+                          # líneas; cada una carga el MISMO flujo Φ₀ (275 se leía VACÍO
                           # en el video: la comparación 2D las muestra todas de golpe, pero con
                           # la cámara cerrada y las moléculas separadas caen poquísimas en cuadro)
 LP_CAMPO = 80             # puntos por línea (antes 40: la línea se veía a cuentas)
@@ -274,8 +315,8 @@ def build():
     LP = LP_CAMPO
     # el barrido TERMINA en el equilibrio que encontró el optimizador (no en un número elegido)
     geom_at(R_EQ_A)                                    # fuerza optimización/carga de _GEQ
-    Oc = np.array([_GEQ[3 * i] for i in range(3)])
-    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in ((0, 1), (1, 2), (2, 0))]))
+    Oc = np.array([_GEQ[3 * i] for i in range(NW)])
+    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in VEC]))
     Rmin_eff = R0 * 0.975                              # apenas comprimido (como wpair)
     Rvals = R_MAX_A + (Rmin_eff - R_MAX_A) * (np.arange(K) / (K - 1))
     R_MIN = Rmin_eff / BOHR
@@ -287,8 +328,11 @@ def build():
     NL_EF = len(ia_r)
     efield = np.zeros((K, NL_EF, LP, 3)); eint = np.zeros((K, NL_EF, LP), np.uint8)
 
-    print(f"=== TRÍMERO DE AGUA (9 átomos) · {K} radios · {BASIS} · malla {NXY}×{NXY}×{NZ} ===", flush=True)
-    print("k   O-O(Å)  E(Ha)         Ebind(kcal)  3-cuerpos(kcal)  %coop   ∫Δρ>0", flush=True)
+    print(f"=== ANILLO DE {NW} AGUAS ({NNUC} átomos, {NOMBRE}) · {K} radios · {BASIS} · "
+          f"malla {NXY}×{NXY}×{NZ} · caja ±{LXY} bohr ===", flush=True)
+    print(f"    paridad: {'PAR → alternancia perfecta' if ES_PAR else 'IMPAR → frustrado (una volteada)'}"
+          f" · {len(PARES)} pares ({NW} vecinos + {len(PARES)-NW} diagonales)", flush=True)
+    print("k   O-O(Å)  E(Ha)         Ebind(kcal)  muchos-cuerpos  %coop   ∫Δρ>0", flush=True)
 
     for k in range(K):
         R_A = float(Rvals[k])
@@ -305,16 +349,16 @@ def build():
             mfw = scf.RHF(mw); mfw.kernel()
             mons.append(mw); dms_m.append(mfw.make_rdm1()); e_m.append(mfw.e_tot)
 
-        # dímeros (para la NO-ADITIVIDAD = cooperatividad)
-        e_dim = []
-        for a in range(3):
-            b = (a + 1) % 3
+        # dímeros — TODOS los pares i<j, no solo los vecinos (ver ⚠ del encabezado: desde N=4
+        # los diagonales existen y omitirlos infla la cooperatividad).
+        e_dim = {}
+        for (a, b) in PARES:
             md = gto.M(atom=[atoms[i] for i in WAT[a] + WAT[b]], basis=BASIS, unit='Bohr', verbose=0)
-            mfd = scf.RHF(md); mfd.kernel(); e_dim.append(mfd.e_tot)
+            mfd = scf.RHF(md); mfd.kernel(); e_dim[(a, b)] = mfd.e_tot
 
         e_bind = (mf.e_tot - sum(e_m)) * HART2KCAL
-        e_pairs = sum((e_dim[a] - e_m[a] - e_m[(a + 1) % 3]) for a in range(3)) * HART2KCAL
-        e_3b = e_bind - e_pairs                       # < 0 = los 3 juntos se agarran MÁS
+        e_pairs = sum((e_dim[(a, b)] - e_m[a] - e_m[b]) for (a, b) in PARES) * HART2KCAL
+        e_3b = e_bind - e_pairs                       # < 0 = las N juntas se agarran MÁS
         Ebind[k] = e_bind; E3body[k] = e_3b
         coop = (e_3b / e_bind * 100.0) if abs(e_bind) > 1e-9 else 0.0
 
@@ -340,7 +384,7 @@ def build():
     # color: MISMA paleta del agua v2/wpair (oro cálido + morado en los O). NO inventar color nuevo.
     kEq = int(np.argmin(np.abs(Rvals - R_EQ_A)))
     P = accPos[kEq]
-    dO = np.min(np.stack([np.linalg.norm(P - nucPos[kEq, 3 * i], axis=1) for i in range(3)]), axis=0)
+    dO = np.min(np.stack([np.linalg.norm(P - nucPos[kEq, 3 * i], axis=1) for i in range(NW)]), axis=0)
     pw = np.clip(1.0 - dO / 1.4, 0, 1)
     gold = np.array([1.0, 0.72, 0.30]); purple = np.array([0.82, 0.28, 1.0])
     col = gold[None, :] * (1 - pw[:, None]) + purple[None, :] * pw[:, None]
@@ -380,15 +424,18 @@ def write_efield(efield, NL_EF, LP, eint=None):
 def validate(bondMass, Ebind, E3body):
     print("\n────────── GATES ──────────", flush=True)
     ok = True
-    # 1) el anillo LIGA (energía de enlace negativa y creciente al cerrarse)
-    print(f"1) E_enlace: {Ebind[0]:+.2f} (lejos) → {Ebind[-1]:+.2f} kcal/mol (anillo cerrado)")
-    g1 = Ebind[-1] < -8.0
-    print("   GATE_ENLACE_OK" if g1 else "   GATE_ENLACE_FAIL (esperado < -8 kcal/mol)"); ok &= g1
-    # 2) COOPERATIVIDAD: el término de 3 cuerpos es NEGATIVO y significativo
+    # 1) el anillo LIGA. Umbral POR AGUA (-2.7 kcal/mol c/u), no un número fijo: con N=3 vale
+    #    -8.1 (el umbral de siempre) y escala solo al crecer el anillo.
+    umbral = -2.7 * NW
+    print(f"1) E_enlace: {Ebind[0]:+.2f} (lejos) → {Ebind[-1]:+.2f} kcal/mol (anillo cerrado)"
+          f" = {Ebind[-1]/NW:+.2f} por agua")
+    g1 = Ebind[-1] < umbral
+    print("   GATE_ENLACE_OK" if g1 else f"   GATE_ENLACE_FAIL (esperado < {umbral:.1f} kcal/mol)"); ok &= g1
+    # 2) COOPERATIVIDAD: el término de muchos cuerpos es NEGATIVO y significativo
     coop = E3body[-1] / Ebind[-1] * 100.0
-    print(f"2) 3-cuerpos: {E3body[-1]:+.2f} kcal/mol = {coop:.1f}% del enlace total")
-    g2 = (E3body[-1] < 0) and (5.0 < coop < 40.0)
-    print("   GATE_COOPERATIVIDAD_OK — los 3 juntos se agarran MÁS que la suma de pares"
+    print(f"2) muchos-cuerpos: {E3body[-1]:+.2f} kcal/mol = {coop:.1f}% del enlace total")
+    g2 = (E3body[-1] < 0) and (5.0 < coop < 45.0)
+    print(f"   GATE_COOPERATIVIDAD_OK — las {NW} juntas se agarran MÁS que la suma de pares"
           if g2 else "   GATE_COOPERATIVIDAD_FAIL"); ok &= g2
     # 3) el puente CRECE al cerrar el anillo (monótono)
     print(f"3) ∫Δρ>0: {bondMass[0]:.4f} (lejos) → {bondMass[-1]:.4f} (cerrado)")
@@ -406,8 +453,8 @@ def solo_campo():
     import time
     LP = LP_CAMPO
     geom_at(R_EQ_A)
-    Oc = np.array([_GEQ[3 * i] for i in range(3)])
-    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in ((0, 1), (1, 2), (2, 0))]))
+    Oc = np.array([_GEQ[3 * i] for i in range(NW)])
+    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in VEC]))
     Rmin_eff = R0 * 0.975
     Rv = R_MAX_A + (Rmin_eff - R_MAX_A) * (np.arange(K) / (K - 1))
     ia_r, id_r = _rayos_de_referencia(gto, scf, float(Rv[-1]))
@@ -443,14 +490,14 @@ def ceros_del_campo():
     puente lo tiene al 84 % y fuera del eje: es la frustración del número impar — la molécula
     volteada — apareciendo también en los ceros del campo.
 
-      python3 scripts/precompute-water-trimer.py --ceros
+      NWAT=4 python3 scripts/precompute-water-ring.py --ceros
     """
     from pyscf import gto, scf
     from scipy.optimize import minimize
     import json as _json
     geom_at(R_EQ_A)
-    Oc = np.array([_GEQ[3 * i] for i in range(3)])
-    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in ((0, 1), (1, 2), (2, 0))]))
+    Oc = np.array([_GEQ[3 * i] for i in range(NW)])
+    R0 = float(np.mean([np.linalg.norm(Oc[a] - Oc[b]) for a, b in VEC]))
     Rv = R_MAX_A + (R0 * 0.975 - R_MAX_A) * (np.arange(K) / (K - 1))
     out = []
     print(f"=== CEROS DEL CAMPO · {K} cuadros ===", flush=True)
@@ -459,9 +506,9 @@ def ceros_del_campo():
         mol = gto.M(atom=[[int(Z[i]), tuple(gb[i])] for i in range(NNUC)], basis=BASIS, unit='Bohr', verbose=0)
         mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
         c = CampoMEP(mol, mf.make_rdm1()); N = c.R
-        Hs = [N[i] for i in range(9) if i % 3]
+        Hs = [N[i] for i in range(NNUC) if i % 3]
         ceros = []
-        for m in range(3):
+        for m in range(NW):
             o = N[3 * m]
             d = [np.linalg.norm(h - o) for h in Hs]
             hdon = Hs[int(np.argmin([x if x > 1.9 else 99 for x in d]))]   # el H de OTRA agua
@@ -475,7 +522,7 @@ def ceros_del_campo():
                 ceros.append([float(x) for x in best.x])
         out.append(dict(k=k, R=float(Rv[k]), ceros=ceros))
         print(f"  {k+1}/{K}  O-O {Rv[k]:.2f} A  ->  {len(ceros)} ceros  |E|min {best.fun:.1e}", flush=True)
-    f = os.path.join(HERE, '..', 'public', 'precomputed', 'water-trimer-ceros.json')
+    f = os.path.join(HERE, '..', 'public', 'precomputed', f'water-{NOMBRE}-ceros.json')
     _json.dump(dict(K=K, Rvals=[float(x / BOHR) for x in Rv], cuadros=out), open(f, 'w'))
     print(f"OK  {f}", flush=True)
 

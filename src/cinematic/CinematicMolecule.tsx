@@ -1981,12 +1981,35 @@ function WaterPairCamera({ time, R, shots, ex, pts }: { time: number; R: number;
   }, [time, R, camera, shots, ex, pts]);
   return null;
 }
-// EL PUENTE (wpair, 2 aguas) y EL ANILLO (wtri, 3 aguas / 9 átomos) comparten formato WAP2
-// y renderer: solo cambian los bins y la secuencia de tomas del registro. Cero componente nuevo.
-const WATER_BINS: Record<string, { bin: string; ef: string; ex: number }> = {
-  wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13 },
-  wtri:  { bin: 'water-trimer',   ef: 'water-trimer-efield',   ex: 10 },   // nube ±6.6 bohr: ex=15 dejaba void muerto
+// LA FAMILIA DEL AGUA — EL PUENTE (2 aguas), EL ANILLO (3), EL CUARTETO (4)… comparten
+// formato WAP2 y renderer: solo cambian los bins y la secuencia de tomas del registro.
+//
+// ESTA TABLA ES LA PIEZA (2026-07-31). Antes el comportamiento del anillo estaba regado en
+// ~15 comparaciones `mk === 'wtri'` a lo largo del archivo, así que una molécula nueva de la
+// misma familia obligaba a cazarlas TODAS y a que alguna se quedara sin actualizar. Ahora
+// `anillo` es un DATO: agregar el tetrámero (o el hexámero) es UN renglón aquí + sus tomas en
+// CAMERA_SHOTS + su manifiesto. Cero código nuevo. (Ian: "ahora son objetos en lugar de andar
+// hardcodeando, el renderizador".) Para wtri todos los valores son los que ya tenía → la
+// pieza entregada no cambia.
+type WaterEntry = {
+  bin: string; ef: string; ex: number;
+  anillo?: boolean;          // N-mero cíclico: palitos O–H, dipolos, tipografía y encuadre del ANILLO
+  ceros?: string;            // json de los ceros del campo, si la pieza los calculó
+  capas?: CapasSpec;         // coreografía (si falta, la de EL PUENTE)
+  dur?: number;              // duración de la pieza
 };
+const WATER_BINS: Record<string, WaterEntry> = {
+  wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
+  // nube ±6.6 bohr: ex=15 dejaba void muerto
+  wtri:  { bin: 'water-trimer',   ef: 'water-trimer-efield',   ex: 10, anillo: true,
+           ceros: 'water-trimer-ceros', capas: WTRI_CAPAS, dur: WTRI_DURATION },
+  // EL CUARTETO (H₂O)₄ — 4 aguas / 12 átomos. ex sube con el circunradio del polígono
+  // (R/(2·sin(π/N)): +22 % de 3 a 4 lados), si no el anillo muerde los bordes del 9:16.
+  // capas/dur se llenan cuando existan los tiempos REALES de la voz (§sincronía del canon).
+  wtet:  { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true },
+};
+/** ¿Es un anillo cíclico de N aguas? (wtri, wtet, …) — NO el dímero. */
+const esAnillo = (mk: string) => !!WATER_BINS[mk]?.anillo;
 
 /** WaterSticks — FLECHA DEL DIPOLO (los palitos de enlace se QUITARON: dibujar geometría
  * encima viola la doctrina "el polvo es real, la estructura EMERGE del polvo". El enlace O–H
@@ -2022,11 +2045,18 @@ function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
       bis.push(Hs[0].clone().sub(O).normalize().add(Hs[1].clone().sub(O).normalize()).normalize());
     }
     const sgn = bis.map(b => Math.sign(b.dot(nrm)));
-    const mayoria = sgn.reduce((a, b) => a + b, 0) >= 0 ? 1 : -1;
+    // FRUSTRACIÓN = que UNA se quede SOLA del lado contrario, y eso solo pasa con N IMPAR.
+    // Con "la minoría" (la regla vieja, escrita para el trímero) el tetrámero reparte 2-2 y el
+    // desempate marcaba DOS como volteadas — o sea, dibujaba la firma del trímero en la pieza
+    // cuya física dice justo lo contrario (S₄: las cuatro equivalentes). Aquí solo hay impar si
+    // el conteo deja exactamente una sola. Trímero (2-1): idéntico a antes. Tetrámero (2-2):
+    // ninguna, que es la verdad.
+    const nPos = sgn.filter(s => s > 0).length;
+    const solitaria = nPos === 1 ? 1 : (mols - nPos) === 1 ? -1 : 0;
     for (let m = 0; m < mols; m++) {
       const O = new THREE.Vector3(...nuc[3 * m]);
       const b = bis[m];
-      const impar = mols >= 3 && sgn[m] !== mayoria;
+      const impar = mols >= 3 && solitaria !== 0 && sgn[m] === solitaria;
       const L = (impar ? 1.85 : 1.55) * scale;      // la impar, MÁS LARGA además de otro color
       const q = new THREE.Quaternion().setFromUnitVectors(UP, b);
       out.push({ mid: O.clone().add(b.clone().multiplyScalar(L * 0.5)).toArray() as Vec3, q, len: L, kind: 'dip', impar });
@@ -2062,20 +2092,22 @@ function WaterSticks({ nuc, show = 1, showDip = 1, scale = 1 }:
 }
 
 function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r: boolean) => void; mk?: string }) {
+  const W = WATER_BINS[mk] ?? WATER_BINS.wpair;
+  const anillo = !!W.anillo;          // wtri, wtet… (ver WATER_BINS: el comportamiento es DATO)
   const [wd, setWd] = useState<WAPData | null>(null);
   const [bondEf, setBondEf] = useState<BondEFieldData | null>(null);
   const [ceros, setCeros] = useState<CerosData | null>(null);
   useEffect(() => {
     let alive = true; setWd(null); setBondEf(null);
-    fetch(`/precomputed/${(WATER_BINS[mk] ?? WATER_BINS.wpair).bin}.bin`).then(r => r.arrayBuffer())
+    fetch(`/precomputed/${W.bin}.bin`).then(r => r.arrayBuffer())
       .then(b => { if (alive) { setWd(parseWAP2(b)); onReady?.(true); } })
       .catch(e => console.error('water-approach load failed', e));
     // CAMPO ELÉCTRICO real (MEP, muchas líneas que se CONECTAN, como Li₂) — bin aparte
-    fetch(`/precomputed/${(WATER_BINS[mk] ?? WATER_BINS.wpair).ef}.bin`).then(r => r.arrayBuffer())
+    fetch(`/precomputed/${W.ef}.bin`).then(r => r.arrayBuffer())
       .then(b => { if (alive) setBondEf(parseBondEField(b)); })
       .catch(e => console.error('water-approach efield load failed', e));
-    // los CEROS del campo (solo el anillo los tiene calculados)
-    if (mk === 'wtri') fetch('/precomputed/water-trimer-ceros.json').then(r => r.json())
+    // los CEROS del campo (solo las piezas que los calcularon los declaran en la tabla)
+    if (W.ceros) fetch(`/precomputed/${W.ceros}.json`).then(r => r.json())
       .then(j => { if (alive) setCeros(parseCeros(j)); }).catch(() => {});
     return () => { alive = false; };
   }, [onReady]);
@@ -2131,7 +2163,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // declarada 34 líneas más abajo y el scene moría en TDZ: `page.waitForFunction`
   // timeout, la escena nunca llegaba a ready. Es el mismo gotcha del replace ciego
   // que ya mordió en los canales del molde.
-  const C = evalCapas(mk === 'wtri' ? WTRI_CAPAS : WPAIR_CAPAS, T);
+  const C = evalCapas(W.capas ?? WPAIR_CAPAS, T);
   // LA APERTURA ES UNA CAPA (2026-07-28). Antes esta fórmula estaba QUEMADA aquí con los
   // segundos de EL PUENTE (`T−49`, `/13`) y el anillo la heredó. Medido sobre la curva vieja:
   // en t≈21 la voz dice "el anillo y quién le presta hidrógeno" con el anillo 65% ABIERTO;
@@ -2188,7 +2220,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // bF se recalibró al arreglar uPix: con los sprites en su tamaño de PUNTO el área iluminada
   // cae ~4× y el cuadro se va a meanY 8 (rala y apagada). La masa la da la DENSIDAD y el BRILLO
   // del punto, no el radio: 0.34 → 0.85. Medido en el master 4K, no en un preview.
-  const bF = mk === 'wtri' ? 1.5 : 1.0;
+  const bF = anillo ? 1.5 : 1.0;
   const pulse = 0.92 + 0.08 * Math.sin(time * 2.0);   // el nebuloso RESPIRA (espectáculo vivo)
   // COREOGRAFÍA sincronizada al guion (segundos de segs.json):
   // CAPAS COMO OBJETOS (capas.ts): la coreografía vive en DATOS (WPAIR_CAPAS), no aquí.
@@ -2199,7 +2231,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // de dónde salen), densidad electrónica REAL reacomodándose. Ab initio, no dibujado a mano.
   return (
     <>
-      <WaterPairCamera time={time} R={R} ex={(WATER_BINS[mk] ?? WATER_BINS.wpair).ex}
+      <WaterPairCamera time={time} R={R} ex={W.ex}
         shots={CAMERA_SHOTS[mk === 'wpair' && WPAIR_CAM === 'b' ? 'wpair-b' : mk] ?? CAMERA_SHOTS.wpair}
         pts={nucP.filter((_, i) => i % 3 === 0)} />
       {/* TAMAÑO EN FRACCIÓN DE CUADRO, no en píxeles. Antes esto se compensaba A MANO por
@@ -2211,9 +2243,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
           estos tamaños son PUNTOS, y al duplicarlos se vuelven manchas suaves (el sprite tiene
           borde degradado: agrandarlo muestra la degradación, no el punto). O sea el look bueno
           era el del master; el preview de 1080 era el que mentía. */}
-      <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={mk === 'wtri' ? 0.47 : 0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
-      <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={mk === 'wtri' ? 0.59 : 0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={mk === 'wtri' ? ohBonds : undefined} bondGlow={mk === 'wtri' ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
-      <O2Cloud premul={mk === 'wtri'} qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={mk === 'wtri' ? 0.62 : 0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
+      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={anillo ? 0.47 : 0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
+      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={anillo ? 0.59 : 0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={anillo ? ohBonds : undefined} bondGlow={anillo ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
+      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={anillo ? 0.62 : 0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
@@ -2221,7 +2253,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
       {bondEf && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
       {/* ENLACES O–H + DIPOLO — solo el anillo, y gobernados por las capas (datos):
           se PRENDEN en "un oxígeno y dos hidrógenos" y en la firma "una queda al revés". */}
-      {mk === 'wtri' && <WaterSticks nuc={nucP} show={C.enlaces ?? 0} showDip={C.dipolo ?? 0} />}
+      {anillo && <WaterSticks nuc={nucP} show={C.enlaces ?? 0} showDip={C.dipolo ?? 0} />}
       {nucP.map((p, i) => (
         <group key={i} position={p}>
           {/* BUG 5 (agentes): los H medían ~6 px ahogados por el bloom → "un oxígeno y dos
@@ -2229,9 +2261,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
               agrandan y se pintan CÁLIDOS (el O queda frío) para que se cuenten 3 átomos
               por molécula y se LEA hacia dónde apunta cada H (= el volteo). */}
           <Nucleus protons={wd.Z[i]} neutrons={wd.Z[i] === 8 ? 8 : 0} time={time}
-            clusterRadius={wd.Z[i] === 8 ? (mk === 'wtri' ? 0.165 : 0.10) : (mk === 'wtri' ? 0.068 : 0.05)}
-            nHot={wd.Z[i] === 8 || mk !== 'wtri' ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
-            nHue={wd.Z[i] === 8 || mk !== 'wtri' ? 0.55 : 0.08} />
+            clusterRadius={wd.Z[i] === 8 ? (anillo ? 0.165 : 0.10) : (anillo ? 0.068 : 0.05)}
+            nHot={wd.Z[i] === 8 || !anillo ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
+            nHue={wd.Z[i] === 8 || !anillo ? 0.55 : 0.08} />
         </group>
       ))}
     </>
@@ -2242,7 +2274,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
 // Ian, 2026-07-28: "sé que los campos se cancelan, MUÉSTRAMELO ENTONCES". Aquí están: entre
 // cada oxígeno y el hidrógeno que le donan hay un punto con E = 0 EXACTO — medido en los 26
 // cuadros con |E| entre 1e-14 y 1e-24, o sea cero a precisión de máquina
-// (scripts/precompute-water-trimer.py --ceros). Una carga de prueba puesta ahí NO SE MUEVE.
+// (NWAT=3 scripts/precompute-water-ring.py --ceros). Una carga de prueba puesta ahí NO SE MUEVE.
 //
 // Y explica lo que se veía "raro": las líneas de campo no se desvanecen en el aire por un
 // defecto de dibujo — LLEGAN a este punto y se acaban, porque más allá el campo cambia de
@@ -3402,7 +3434,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const isMD = molKey === 'wmd';   // agua = DINÁMICA MOLECULAR REAL (10 moléculas se auto-ensamblan)
   const isCargas = molKey === 'cargas';
   const isFaraday = molKey === 'faraday';   // LA JAULA: conductor + carga externa, no una molécula
-  const isPair = molKey === 'wpair' || molKey === 'wtri';   // mismo motor: 2 aguas o el ANILLO de 3   // EL PUENTE: 2 aguas ab initio acercándose (nube densa V1 + Δρ)
+  const isPair = molKey in WATER_BINS;   // LA FAMILIA DEL AGUA, mismo motor: dímero, anillo de 3, de 4… (ver WATER_BINS)
   const isWater = molKey === 'wdimer' || molKey === 'wsingle' || molKey === 'whex' || isMD || isPair || isCargas;   // agua que INTERACTÚA (cluster + campo)
   const [waterReady, setWaterReady] = useState(false);
   const isChain = CHAIN_KEYS.has(molKey);
@@ -3470,7 +3502,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : molKey === 'wtri' ? WTRI_DURATION : isPair ? WPAIR_DURATION : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
+  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : isPair ? (WATER_BINS[molKey].dur ?? WPAIR_DURATION) : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -3737,7 +3769,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
         {!live && <MolPostFX sat={isPair ? 0.65 : 0.5} />}
       </Canvas>
       {/* DOS viñetas se sumaban (esta DOM + la de MolPostFX): en wtri se queda UNA. */}
-      {molKey !== 'wtri' && !isCargas && <CinemaVignette />}
+      {!esAnillo(molKey) && !isCargas && <CinemaVignette />}
       {!live && <>
         {!isCaro && !(isBond(molKey) && (BOND_BEATS_MOL[molKey] ?? []).some(b => time >= b.t0 - 0.4 && time <= b.t1 + 0.5)) &&
           <ScaleNote molKey={molKey} time={time} vertical={vertical} />}
@@ -3754,7 +3786,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             ABAJO = 10% del cuadro en negro DURO por construcción, y el anillo ya venía con
             55-88% de negro muerto medido por los jueces. Se apaga SOLO para 'wtri': O₂/N₂/C₂
             y agua v2 son GANADORES y su barra de cine se queda igual (canon regla #0). */}
-        <Letterbox vertical={vertical} pct={molKey === 'wtri' || isCargas || isFaraday ? 0 : (vertical ? undefined : 4.5)} />
+        <Letterbox vertical={vertical} pct={esAnillo(molKey) || isCargas || isFaraday ? 0 : (vertical ? undefined : 4.5)} />
       </>}
     </div>
   );
