@@ -171,6 +171,15 @@ SPECIAL['mol-h2o el anillo'] = {
   hashtags: ['#agua', '#química', '#cuántica', '#enlacedehidrógeno', '#campoeléctrico', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
 };
 
+// EL CUARTETO — la pieza que sigue a "El anillo". El copy abre con el REMATE, igual que el
+// video (in medias res): primero "cuatro encajan", después por qué tres no podía.
+SPECIAL['mol-h2o el cuarteto'] = {
+  codigo: 'moleculas/_code/mol-h2o-el-cuarteto-capsula.tar.gz',
+  titulo: 'A TRES gotas de agua no les cuadra el anillo. A cuatro sí — y se agarran 28% más fuerte',
+  descripcion: `Cuatro moléculas de agua encajan perfectamente. 💧 Arriba, abajo, arriba, abajo — y de canto el anillo por fin es PLANO. Eso no le pasa a cualquier número, y aquí está por qué. En el video anterior viste tres: tres es impar, así que los hidrógenos libres no pueden alternar sin que dos queden del mismo lado, una agua acaba volteada y el anillo queda torcido. Con cuatro, no. Lo bonito es que nadie lo impuso: el optimizador cuántico tenía la misma libertad en los dos casos, y en el trímero DEFORMÓ el anillo —2.888, 2.880, 2.874 ångströms, los tres puentes distintos— mientras que aquí los dejó idénticos hasta la cuarta cifra. La simetría salió del cálculo, no del dibujo. Y juntos jalan más fuerte que por separado: en tres eso valía casi doce por ciento, aquí sube a casi diecinueve, y cada agua aguanta veintiocho por ciento más que en el trío. Se llama cooperatividad. Doce átomos, ab initio: cada punto que parpadea es un electrón —una nube de probabilidad, no una bolita— y las líneas azules son el campo eléctrico REAL, trazado desde el potencial de la molécula. Por esto el agua actúa como una red y no como gotas sueltas. Y esto apenas va en cuatro. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#agua', '#química', '#cuántica', '#enlacedehidrógeno', '#campoeléctrico', '#simetría', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
+};
+
 SPECIAL['fisica-cargas gauss'] = {
   codigo: 'fisica/_code/cargas-gauss-capsula.tar.gz',
   titulo: 'Puedes CONTAR las líneas del campo eléctrico — y siempre te dan la carga de adentro',
