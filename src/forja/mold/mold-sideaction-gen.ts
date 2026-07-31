@@ -7,10 +7,13 @@
  *   · Eq 11.26  S_slide = L_angle_pin · sin(φ)            (φ limitado a ~20°; bezel:
  *               12 mm / sin 20° = 35 mm de contacto + 25 mm de encastre ≈ 60 mm)
  *
- * Decisión slide vs core pull (§11.3.7): "mold designers often prefer to use sliding
- * cores actuated by inclined angle pins" — corredera por defecto; cilindro HIDRÁULICO
- * cuando la carrera excede lo práctico del perno (el ejemplo del libro selecciona un
- * cilindro estándar de 25.4 mm de carrera — usamos 25 mm como frontera).
+ * Decisión slide vs core pull (§11.3.7) — la frontera es el ACCIONAMIENTO, no la
+ * forma: "core pulls require ACTUATORS, auxiliary control, and significant space. For
+ * this reason, mold designers often prefer to use sliding cores that are ACTUATED BY
+ * INCLINED ANGLE PINS". Corredera (angle pin) por defecto; en cuanto hace falta
+ * cilindro, el plan es CORE PULL — con el costo que el libro advierte. La frontera
+ * práctica es la carrera: el ejemplo del libro selecciona un cilindro estándar de
+ * 25.4 mm, y el catálogo de correderas llega a 30 mm (CU-90).
  *
  * El kit de la corredera (Figs 11.27-11.28): corredera + perno inclinado + inserto del
  * perno + GIB DE BRONCE (guía lubricada, dowels+tornillos) + HEEL BLOCK (da la fuerza
@@ -30,9 +33,14 @@ import { pickSlideUnit, type SlideUnit } from './mechanism-catalog';
 
 export interface SideActionPlan {
   kind: 'slide' | 'core-pull';
-  /** SLIDE HIDRÁULICO (§11.3.6): corredera lateral EMPUJADA por cilindro, no por perno
-   *  angular. Se usa cuando el stroke pasa el límite del perno (~25mm) — el caso del
-   *  Phone Holder de Alwis. Geometría = cuerpo+rieles+gib de slide + cilindro+vástago. */
+  /** El corazón móvil lo mueve un CILINDRO, no la apertura del molde. §11.3.7 define
+   *  los dos tipos por su accionamiento: "core pulls require ACTUATORS, auxiliary
+   *  control, and significant space… mold designers often prefer sliding cores
+   *  ACTUATED BY INCLINED ANGLE PINS". Por eso hydraulic ⇒ kind='core-pull' siempre:
+   *  un "slide hidráulico" no existe en la nomenclatura del libro, y llamarlo slide
+   *  hacía que el molde reportara corredera mecánica donde hay que colgar actuador,
+   *  plomería y control. Se usa cuando la carrera pasa el catálogo de correderas
+   *  (>25 mm) — el caso del Phone Holder de Alwis. */
   hydraulic?: boolean;
   /** false = el ESTUDIO veta el mecanismo (F > 100 kN → split cavity §13.9.1):
    *  no se genera actuador — solo el núcleo insertado + la advertencia. */
@@ -242,11 +250,15 @@ export function planFromSpec(sa: { aProjMm2: number; pMeltMPa: number; strokeMm:
     };
   }
   const bore = Math.sqrt((4 * F * 1000) / (Math.PI * P_HYD_MPA * 1e6)) * 1000;
+  // MISMA regla que en planSideAction (§11.3.7): lo que lleva ACTUADOR es un core
+  // pull; lo que se mueve con la apertura del molde vía angle pin es un slide.
   return {
-    kind: 'slide', hydraulic: true, dir: [1, 0], coreWmm: +coreW.toFixed(1), coreHmm, penetrationMm: 3,
+    kind: 'core-pull', hydraulic: true, dir: [1, 0], coreWmm: +coreW.toFixed(1), coreHmm, penetrationMm: 3,
     strokeMm: S, aProjMm2: sa.aProjMm2, forceKN: +F.toFixed(1), angleDeg: ANGLE_DEG,
-    boreMm: +bore.toFixed(0), region,
-    notes: [`SLIDE HIDRÁULICO §11.3.6 (declarado): A=${sa.aProjMm2} mm² · S=${S} mm — ${sa.hydraulic ? 'el cliente eligió cilindro (actuación independiente)' : `S>${SLIDE_MAX_STROKE_MM} mm, fuera del catálogo de pernos`}`,
-      `F = ${F.toFixed(1)} kN (Eq 11.24)`, `bore = ${bore.toFixed(0)} mm (Eq 11.25, P_h=${P_HYD_MPA} MPa)`, 'corredera en rieles/gib + cilindro atornillado a B + limit switches'],
+    boreMm: +bore.toFixed(0), feasible: true, region,
+    notes: [`CORE PULL HIDRÁULICO §11.3.6 (declarado): A=${sa.aProjMm2} mm² · S=${S} mm — ${sa.hydraulic ? 'el cliente eligió cilindro (actuación independiente)' : `S>${SLIDE_MAX_STROKE_MM} mm, fuera del catálogo de correderas`}`,
+      `F = ${F.toFixed(1)} kN (Eq 11.24)`, `bore = ${bore.toFixed(0)} mm (Eq 11.25, P_h=${P_HYD_MPA} MPa)`,
+      'lo que cuesta frente a una corredera (§11.3.7): actuador + control auxiliar + espacio',
+      'corazón en rieles/gib + cilindro atornillado a B + limit switches'],
   };
 }
