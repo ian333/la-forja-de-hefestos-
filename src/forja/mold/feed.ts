@@ -104,18 +104,19 @@ export function designSprueFeed(o: {
   fillTimeS?: number; dPAllocMPa?: number; nozzleOrificeMm?: number; taperDeg?: number;
 }) {
   const m = FEED_MATERIALS[o.material] ?? FEED_MATERIALS.PP;
+  const mm = m as unknown as MeltMaterial;                         // FEED_MATERIALS trae el subconjunto power-law que usan estas Eq
   const tFill = o.fillTimeS ?? 1;                                  // convención de los ejemplos del libro
   const Vdot = (o.partVolumeCc * 1e-6) / tFill;                    // m³/s
   const L = o.sprueLenMm / 1000;
   const dP = (o.dPAllocMPa ?? 20) * 1e6;                           // p.147: 20 MPa al sprue
-  const Rdesign = minRunnerRadius(m, L, Vdot, dP);
+  const Rdesign = minRunnerRadius(mm, L, Vdot, dP);
   const rNozzle = (o.nozzleOrificeMm ?? 4.5) / 2 / 1000;           // orificio estándar de boquilla
   const rTop = rNozzle + 0.25e-3;                                  // §6.3.1: entrada > orificio (que la rebaba quede en la boquilla)
   const taper = ((o.taperDeg ?? 1.5) * Math.PI) / 180;             // taper por lado (extracción)
   const rBase = Math.max(Rdesign, rTop + L * Math.tan(taper));     // salida (lado pieza)
   const rMean = (rTop + rBase) / 2;
   const seg: RunnerSegment = { name: 'sprue', L, R: rMean, Vdot };
-  const dPMPa = pressureDropRunner(m, seg) / 1e6;
+  const dPMPa = pressureDropRunner(mm, seg) / 1e6;
   const shear = shearRateRunner(Vdot, rTop);                       // γ̇ máximo = en la sección MÁS angosta
   const re = reynolds(m.rhoMeltKgM3, Vdot, 100, 2 * rMean);
   const volCc = ((Math.PI * L) / 3) * (rTop * rTop + rTop * rBase + rBase * rBase) * 1e6;  // cono truncado
@@ -161,6 +162,131 @@ export function sprueDesignFromCavity(
     partWallMm: cavity.wallMm ?? 2, sprueLenMm,
   });
 }
+
+/** Una vuelta del lazo de diseño del feed, con la razón citada de por qué se dio. */
+export interface FeedIteration {
+  paso: number; diaBaseMm: number; dPMPa: number; tcSprueS: number; accion: string;
+}
+
+/**
+ * EL SISTEMA DE ALIMENTACIÓN COMO LAZO — §6.4.5 + §6.4.7 + §6.5.5
+ * ================================================================
+ * El libro NO diseña el feed de una pasada: asigna el ΔP, calcula, y si el
+ * enfriamiento de la colada DOMINA el ciclo, REGRESA a reducir el diámetro
+ * ("reducir el diámetro del sprue, albeit with a higher pressure drop", §6.4.7).
+ * Ese retorno es el primer lazo real de la Máquina.
+ *
+ * El lazo tiene un CONFLICTO built-in y hay que decirlo en voz alta: bajar el ⌀
+ * arregla el ciclo (§6.4.7) y empeora la presión (§6.2.2). Cuando no existe ⌀ que
+ * satisfaga ambos, la función NO elige por su cuenta — reporta el conflicto para
+ * que lo arbitre el humano (§1.2: "It is up to the mold designer to consider the
+ * relative importance of the conflicting requirements").
+ *
+ * Y el diámetro final se redondea HACIA ABAJO a talla de catálogo (§6.5.5,
+ * steel-safe): se puede abrir en el tryout, cerrarlo cuesta soldadura.
+ */
+export function designFeedSystem(o: {
+  material: string; partVolumeCc: number; partWallMm: number; sprueLenMm: number;
+  nCav: number; fillMPa: number; fillTimeS?: number; nozzleOrificeMm?: number; taperDeg?: number;
+  /** colada caliente: el límite de volumen es otro (§6.2.3, n_turns ≈ 1) */
+  hotRunner?: boolean;
+}) {
+  const m = FEED_MATERIALS[o.material] ?? FEED_MATERIALS.PP;
+  const mm = m as unknown as MeltMaterial;                       // FEED_MATERIALS trae el subconjunto power-law que usan estas Eq
+  const tFill = o.fillTimeS ?? 1;
+  const Vdot = (o.partVolumeCc * 1e-6) / tFill;
+  const L = o.sprueLenMm / 1000;
+  const limDPMPa = Math.min(0.5 * o.fillMPa, 50);                // §6.2.2
+  const limPct = o.hotRunner ? 100 : 30;                         // §6.2.3
+  const rNozzle = (o.nozzleOrificeMm ?? 4.5) / 2 / 1000;
+  const rTop = rNozzle + 0.25e-3;                                // §6.3.1: entrada > orificio
+  const taper = ((o.taperDeg ?? 1.5) * Math.PI) / 180;
+
+  // t_c de la PIEZA (Eq 9.5) — la referencia contra la que se juzga la colada.
+  const h = o.partWallMm / 1000;
+  const tcPartS = (h * h) / (Math.PI * Math.PI * m.alpha)
+    * Math.log((4 / Math.PI) * (m.tMelt - m.tCool) / (m.tEject - m.tCool));
+
+  /** Evalúa un ⌀ de base concreto: ΔP, t_c, volumen, corte, Reynolds. */
+  const evalDia = (diaBaseMm: number) => {
+    const rBase = diaBaseMm / 2 / 1000;
+    const rMean = (rTop + rBase) / 2;
+    const dPMPa = pressureDropRunner(mm, { name: 'sprue', L, R: rMean, Vdot }) / 1e6;
+    const tcSprueS = runnerCoolingTimeS(m.alpha, 2 * rBase, m.tMelt, m.tCool, m.tEject);
+    const volCc = ((Math.PI * L) / 3) * (rTop * rTop + rTop * rBase + rBase * rBase) * 1e6;
+    return {
+      diaBaseMm, dPMPa, tcSprueS, volCc,
+      shear: shearRateRunner(Vdot, rTop),                        // γ̇ máx = sección más angosta
+      re: reynolds(m.rhoMeltKgM3, Vdot, 100, 2 * rMean),
+      pctRegrind: (volCc / (o.partVolumeCc * o.nCav)) * 100,
+    };
+  };
+
+  // ── PASO 1 (§6.4.5): ⌀ de arranque por el ΔP asignado, acotado por extracción ──
+  const rDesign = minRunnerRadius(mm, L, Vdot, limDPMPa * 1e6);
+  const rBase0 = Math.max(rDesign, rTop + L * Math.tan(taper));
+  const diaDesign = rBase0 * 2 * 1000;
+  const cat = STANDARD_RUNNER_DIAMM;
+  const iters: FeedIteration[] = [];
+
+  // §6.5.5 pide redondear HACIA ABAJO a catálogo (steel-safe). Pero el steel-safe
+  // NO puede romper el presupuesto de presión que §6.4.5 acaba de asignar: bajar el
+  // ⌀ sube ΔP, y arriba del catálogo los escalones son grandes (9.5→8 mm ya duplica
+  // el ΔP). Se aplica sólo si el ⌀ de catálogo sigue cumpliendo §6.2.2; si no, se
+  // conserva el ⌀ de diseño y se DICE por qué no se aplicó (el sesgo declarado de
+  // §3.3.1.3 vale también para las reglas que decidimos NO aplicar).
+  const diaSafe = steelSafeDiaMm(diaDesign);
+  const evSafe = evalDia(diaSafe);
+  let dia: number, ev: ReturnType<typeof evalDia>;
+  if (evSafe.dPMPa <= limDPMPa) {
+    dia = diaSafe; ev = evSafe;
+    iters.push({ paso: 1, diaBaseMm: dia, dPMPa: ev.dPMPa, tcSprueS: ev.tcSprueS,
+      accion: `§6.4.5 ⌀ por ΔP asignado (${limDPMPa.toFixed(1)} MPa) = ${diaDesign.toFixed(2)} mm → §6.5.5 steel-safe a catálogo hacia abajo` });
+  } else {
+    dia = diaDesign; ev = evalDia(dia);
+    iters.push({ paso: 1, diaBaseMm: dia, dPMPa: ev.dPMPa, tcSprueS: ev.tcSprueS,
+      accion: `§6.4.5 ⌀ por ΔP asignado = ${diaDesign.toFixed(2)} mm · §6.5.5 steel-safe NO aplicado: bajar a ⌀${diaSafe} daría ΔP ${evSafe.dPMPa.toFixed(1)} > ${limDPMPa.toFixed(1)} MPa (el sprue no se rige por el catálogo de fresas del runner)` });
+  }
+
+  // ── PASO 2+ (§6.4.7): mientras la colada DOMINE el ciclo, bajar un escalón ──
+  let conflicto: string | null = null;
+  for (let paso = 2; paso <= 8; paso++) {
+    if (ev.tcSprueS <= tcPartS) break;                           // la pieza manda el ciclo: listo
+    // siguiente escalón por DEBAJO del ⌀ actual (el actual puede no estar en catálogo)
+    const i = cat.findIndex((d) => d >= dia);
+    if (i <= 0) {
+      conflicto = `§6.4.7 vs catálogo: la colada domina el ciclo (t_c ${ev.tcSprueS.toFixed(1)} s > ${tcPartS.toFixed(1)} s de la pieza) y ya estás en el ⌀ más chico del catálogo (${dia} mm)`;
+      break;
+    }
+    const next = evalDia(cat[i - 1]);
+    if (next.dPMPa > limDPMPa) {
+      // El conflicto del libro, explícito: no lo resuelve el software.
+      conflicto = `§6.4.7 (ciclo) CHOCA con §6.2.2 (presión): bajar de ⌀${dia.toFixed(2)} a ⌀${cat[i - 1]} mm arreglaría el ciclo (t_c ${ev.tcSprueS.toFixed(1)}→${next.tcSprueS.toFixed(1)} s) pero rompe el presupuesto de presión (ΔP ${next.dPMPa.toFixed(1)} > ${limDPMPa.toFixed(1)} MPa). Lo arbitra el humano §1.2 — el libro admite que "el runner no necesita la misma rigidez que la pieza" §9.2.1`;
+      break;
+    }
+    dia = cat[i - 1]; ev = next;
+    iters.push({ paso, diaBaseMm: dia, dPMPa: ev.dPMPa, tcSprueS: ev.tcSprueS,
+      accion: `§6.4.7 la colada dominaba el ciclo → bajar un escalón de catálogo (sube ΔP, es el costo declarado)` });
+  }
+
+  const notas: string[] = [];
+  if (ev.dPMPa > limDPMPa) notas.push(`ΔP ${ev.dPMPa.toFixed(1)} > ${limDPMPa.toFixed(1)} MPa §6.2.2`);
+  if (ev.pctRegrind > limPct) notas.push(`volumen ${ev.pctRegrind.toFixed(1)} % > ${limPct} % §6.2.3`);
+  if (ev.tcSprueS > tcPartS) notas.push(`la colada domina el ciclo §6.4.7`);
+  if (ev.shear > m.shearMax) notas.push(`γ̇ ${Math.round(ev.shear)} > ${m.shearMax} 1/s §7.1.4`);
+
+  return {
+    diaBaseMm: dia, diaTopMm: rTop * 2 * 1000, sprueLenMm: o.sprueLenMm,
+    dPMPa: ev.dPMPa, limDPMPa,
+    volCc: ev.volCc, pctRegrind: ev.pctRegrind, limPct,
+    tcSprueS: ev.tcSprueS, tcPartS,
+    shear: ev.shear, shearMax: m.shearMax, re: ev.re,
+    VdotCcS: Vdot * 1e6,
+    iteraciones: iters, conflicto, notas,
+    ok: notas.length === 0 && !conflicto,
+  };
+}
+export type FeedSystemDesign = ReturnType<typeof designFeedSystem>;
 
 /**
  * OPTIMIZADOR del libro (§6.4.5): asigna ΔP_max proporcional a la longitud de

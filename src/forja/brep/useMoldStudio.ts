@@ -107,11 +107,21 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         // conocido miente con cara de dato: por eso sale en rojo y con el número real.
         { k: 'longitud de flujo L', v: `${sf.maxFlowLenMm} mm`, ref: '§5.5.5 · MEDIDA del hueco A/B, no de una fórmula por figura' },
         { k: '⚠ L en verificación', v: 'sobreestima ~85%', ref: 'malla gruesa (arista ~33 mm) ⇒ Dijkstra zigzaguea. El vóxel da 137.95 en el vaso. El COLOR (orden de llegada) sí vale; los mm no', warn: true },
-        { k: 'razón L/T', v: `${ratio.toFixed(0)} : 1`, ref: 'cap 5 · >200 exige colada caliente o más gates', warn: ratio > 200 },
+        { k: 'razón L/T', v: `${ratio.toFixed(0)} : 1`, ref: 'regla de industria (NO del libro): el criterio de Kazmer es ΔP §5.1, no L/T', warn: ratio > 200 },
         { k: 'v̄ de diseño', v: `${v.toFixed(2)} m/s`, ref: 'Eq 5.23 (balance corte↔pérdida de calor, iterada)' },
         { k: 'γ̇ en la pared', v: `${gam.toFixed(0)} 1/s`, ref: 'Eq 5.21 · >50k degrada el polímero', warn: gam > 50000 },
         { k: 'μ al γ̇ actual', v: `${mu.toFixed(0)} Pa·s`, ref: 'μ = k·γ̇^(n−1) · pseudoplástico' },
-        { k: 'ΔP de llenado', v: `${dP.toFixed(1)} MPa`, ref: 'Eq 5.19 · >140 no lo da la máquina', warn: dP > 140 },
+        // §5.1: el techo de DISEÑO es 100 MPa aunque la máquina dé ~200 — el margen
+        // de 2× es a propósito (feed system + varianzas). El 140 anterior no salía
+        // del libro. Y §5.1 tiene DOS colas: una ΔP muy baja también reprueba
+        // ("indicative of a poor molded part design": pared gruesa = material y
+        // ciclo desperdiciados → adelgazar y poner costillas §2.3.2). El libro no
+        // da umbral inferior numérico, así que se advierte sin inventar uno.
+        { k: 'ΔP de llenado', v: `${dP.toFixed(1)} MPa`,
+          ref: dP < 20
+            ? '§5.1 ¡MUY BAJA! pared engordada → adelgazar + costillas §2.3.2 (umbral 20 declarado NUESTRO, el libro no lo fija)'
+            : 'Eq 5.19 · techo de DISEÑO 100 MPa §5.1 (la máquina da ~200: el margen 2× es a propósito)',
+          warn: dP > 100 || dP < 20 },
         { k: 't de llenado', v: `${tFill.toFixed(3)} s`, ref: 'L/v̄ · ~1.4 % del ciclo: por eso NO se ve a tiempo real' },
         { k: 'sin llenar', v: `${sf.unreachable} vértices`, ref: 'short shot §5.5 — sin camino al gate', warn: sf.unreachable > 0 },
       ];

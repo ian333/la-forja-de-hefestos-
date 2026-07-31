@@ -32,6 +32,8 @@ import { ABS_EJECT, ejectionVector, effectiveArea, ejectorPinSizing, type Ejecti
 import { optimizeSupportPlate, sizeCavityPlate, sizeCorePlate, type PlateSizing, type CavityPlateSizing } from './platesizing';
 import { machineRequirements, selectInjectionMachine, type MachineRequirements, type MachineSelection } from './machinesizing';
 import { moldOpeningStrokeMm } from './threeplate';
+import { designFeedSystem, estPartVolumeCc, type FeedSystemDesign } from './feed';
+import { ventDesign } from './venting';
 
 export type Arch = 'cold-2placas' | 'cold-3placas' | 'hot-runner';
 
@@ -62,6 +64,12 @@ export interface MachineSpec {
   /** El CLIENTE exige una alimentación (p.ej. Sony/LEGO piden colada caliente por
    *  calidad/sin regrind). Si se fija, la optimización se restringe a ella. */
   feedPref?: Arch;
+  /** El CLIENTE exige un número de cavidades. Tabla 2.3 trae "Number of cavities
+   *  per mold" con la advertencia de DOBLE NATURALEZA (§2.2.2): normalmente es un
+   *  resultado intermedio del diseño, pero "some customers WILL provide these
+   *  details as specifications that the mold designer must satisfy". Sin esto el
+   *  motor siempre optimizaba y el cliente no podía imponer. */
+  cavPref?: number;
   /** Margen de venta sobre el costo del molde (default 1.6 = 60 %). */
   margin?: number;
 }
@@ -80,6 +88,12 @@ interface ArchCav {
  */
 export interface DiseñoFisico {
   fillMPa: number; cavityMPa: number;
+  /** §6.4: el feed como LAZO (ΔP asignado → si la colada domina el ciclo, bajar ⌀).
+   *  Antes la Máquina solo etiquetaba la arquitectura y estimaba el volumen del
+   *  runner con una proporción fabricada (partCc × 0.25). */
+  alimentacion: FeedSystemDesign;
+  /** cap 8: espesor de venteo entre el mínimo (aire) y el máximo (rebaba). */
+  venteo: ReturnType<typeof ventDesign>;
   enfriamiento: { qCavidadJ: number; qTotalW: number; cicloS: number; lineas: CoolingLineDesign };
   expulsion: { aEffM2: number; vector: EjectionVector; pines: ReturnType<typeof ejectorPinSizing> };
   placas: { soporte: PlateSizing; soporteOpciones: PlateSizing[]; cavidad: CavityPlateSizing; nucleo: CavityPlateSizing };
@@ -158,7 +172,9 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
   // el cliente puede EXIGIR la alimentación (colada caliente por calidad); si no,
   // se optimiza sobre las tres arquitecturas por costo total.
   const archs: Arch[] = spec.feedPref ? [spec.feedPref] : ['cold-2placas', 'cold-3placas', 'hot-runner'];
-  const cavs = [1, 2, 4, 8, 16];
+  // Igual que feedPref: si el cliente IMPONE la cavitación (§2.2.2 Tabla 2.3), la
+  // optimización se restringe a ella; si no, se barre el catálogo.
+  const cavs = spec.cavPref ? [spec.cavPref] : [1, 2, 4, 8, 16];
   const HORAS_ANO = 6000;                                     // molder típico 2-3 turnos
   const todas: ArchCav[] = [];
   for (const arch of archs) for (const nCav of cavs) {
@@ -233,6 +249,29 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   const fillPa = pressureDropSegment(melt, flowM, wallM, v);
   const fillMPa = fillPa / 1e6, cavityMPa = fillMPa * CAVITY_PRESSURE_FACTOR;  // media ≈ ½ del pico
 
+  // ── ALIMENTACIÓN (§6.4, LAZO): ΔP asignado → ⌀; si la colada domina el ciclo,
+  //    regresar y bajar el ⌀ (§6.4.7). El conflicto §6.4.7↔§6.2.2 se REPORTA, no
+  //    se resuelve en silencio (§1.2: la importancia relativa la juzga el humano). ──
+  const partCcReal = estPartVolumeCc({
+    shape: spec.cavityShape, widthMm: spec.Wmm, lenMm: spec.Lmm,
+    depthMm: spec.Hmm, wallMm: spec.wallMm,
+  });
+  // el sprue va de la cara de la boquilla al plano de partición: clamp + placa A
+  const sprueLenMm = base.plateAmm + 25.4;                       // 25.4 = clamp de 1", estándar de las bases
+  const alimentacion = designFeedSystem({
+    material: plastic === 'ABS' ? 'ABS' : 'PP', partVolumeCc: partCcReal,
+    partWallMm: spec.wallMm, sprueLenMm, nCav, fillMPa,
+    hotRunner: win.arch === 'hot-runner',
+  });
+
+  // ── VENTEO (cap 8): el aire desplazado ≈ el volumen inyectado (§8.2.1) y cada
+  //    venteo se dimensiona para TODO el flujo local, no para el flujo dividido
+  //    entre venteos (§8.2.3: dividir NO es conservador). ──
+  const venteo = ventDesign({
+    VdotAirM3s: (partCcReal * 1e-6) / 1,                          // t_llenado = 1 s, convención del libro
+    lM: 0.01, wM: 0.01, lFlashM: 0.2e-3,
+  });
+
   // ── ENFRIAMIENTO: calor por ciclo → caudal → Ø turbulento → plug DME ──
   const rho = PLASTIC_RHO[plastic] ?? 1050, cp = PLASTIC_CP[plastic] ?? 2000;
   const massKg = spec.volumeMm3 * 1e-9 * rho;                   // masa por cavidad
@@ -266,7 +305,8 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
   const partCc = spec.volumeMm3 * 1e-3;
   const requerimientos = machineRequirements({
     projectedAreaM2: projAreaM2, cavityPressureMPa: cavityMPa,
-    partVolumeCc: partCc, nCav, runnerVolumeCc: partCc * (win.arch === 'hot-runner' ? 0.02 : 0.25),
+    // volumen REAL de la colada (§6.2.3), no la proporción fabricada partCc×0.25
+    partVolumeCc: partCc, nCav, runnerVolumeCc: alimentacion.volCc,
     fillPressureMPa: fillMPa, ejectionForceN: vector.fEjectN,
   });
   // altura de cierre = placas A+B + soporte + (2 placas de sujeción ~60 + housing
@@ -279,6 +319,7 @@ function physicalDesign(spec: MachineSpec, win: ArchCav, base: BaseSelection, in
 
   return {
     fillMPa: +fillMPa.toFixed(1), cavityMPa: +cavityMPa.toFixed(1),
+    alimentacion, venteo,
     enfriamiento: { qCavidadJ: +qCavJ.toFixed(0), qTotalW: +qTotalW.toFixed(0), cicloS: +cicloS.toFixed(1), lineas },
     expulsion: { aEffM2, vector, pines },
     placas: { soporte: soporte.best, soporteOpciones: soporte.options, cavidad, nucleo },

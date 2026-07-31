@@ -14,16 +14,16 @@
  * LOS CINCO ESTADOS (el diseño importa):
  *   CUMPLE / ADVIERTE / VIOLA  → la Máquina dio el dato y se juzgó.
  *   SIN-CABLEAR → EXISTE módulo verificado que lo calcula, pero el paquete no lo
- *                 trae. El contrato lo calcula aquí para reportar el número y
- *                 deja la deuda anotada. Es el estado más valioso: es el mapa de
- *                 lo que hay que conectar.
+ *                 trae. Se reporta con la deuda anotada (qué función lo produce y
+ *                 quién debería consumirla). Es el mapa de lo que falta conectar
+ *                 — así se cablearon alimentación y venteo (§6.4 y cap 8).
  *   SIN-MÓDULO  → nadie lo calcula todavía. Hueco real, dicho en voz alta.
  * Un criterio SIN-CABLEAR o SIN-MÓDULO NUNCA cuenta como aprobado. Un contrato
  * que aprueba en silencio lo que no midió miente igual que un cálculo malo.
  */
 import type { MoldPackage } from './moldmachine';
-import { designSprueFeed, estPartVolumeCc, FEED_MATERIALS, STANDARD_RUNNER_DIAMM, steelSafeDiaMm } from './feed';
-import { ventDesign, VENT_TABLE_MM } from './venting';
+import { estPartVolumeCc, FEED_MATERIALS, STANDARD_RUNNER_DIAMM, steelSafeDiaMm } from './feed';
+import { VENT_TABLE_MM } from './venting';
 
 export type ContratoEstado = 'CUMPLE' | 'ADVIERTE' | 'VIOLA' | 'SIN-CABLEAR' | 'SIN-MÓDULO';
 
@@ -93,26 +93,15 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
   const nCav = pkg.recomendacion.nCav;
   const fillMPa = pkg.diseno.fillMPa;
 
-  // El paquete NO trae diseño de feed: solo la ETIQUETA de arquitectura y un volumen
-  // de runner por proporción (partCc × 0.25). designSprueFeed() sí lo resuelve y está
-  // gateado — lo corremos aquí para dar el número y dejar la deuda anotada.
+  // La Máquina YA diseña el feed como lazo (§6.4) — el contrato JUZGA su salida, no
+  // la recalcula. Un contrato que recalcula se estaría auditando a sí mismo.
+  const feed = pkg.diseno.alimentacion;
   const plastic = (pkg.spec.plastic ?? 'PP').toUpperCase();
   const mat = FEED_MATERIALS[plastic] ? plastic : 'PP';
-  const cav = {
+  const partCc = estPartVolumeCc({
     shape: pkg.spec.cavityShape, widthMm: pkg.spec.Wmm, lenMm: pkg.spec.Lmm,
     depthMm: pkg.spec.Hmm, wallMm: pkg.spec.wallMm,
-  };
-  const partCc = estPartVolumeCc(cav);
-  // El sprue va de la cara de la boquilla al plano de partición = clamp + placa A.
-  // SESGO DECLARADO (§3.3.1.3: los estimados conservadores se etiquetan, no se
-  // esconden): la Máquina no expone el espesor del clamp en el paquete, así que se
-  // asume 25.4 mm (1 in, el estándar de las bases) y se dice en el reporte.
-  const CLAMP_ASUMIDO_MM = 25.4;
-  const sprueLenMm = pkg.base.plateAmm + CLAMP_ASUMIDO_MM;
-  const feed = designSprueFeed({
-    material: mat, partVolumeCc: partCc, partWallMm: pkg.spec.wallMm, sprueLenMm,
   });
-  const DEUDA_FEED = 'designSprueFeed()/optimizeFeedSystem() en feed.ts ya lo resuelven y están gateados; moldMachine no los llama — cablear a DiseñoFisico.alimentacion';
 
   // ── 1) ΔP del feed ≤ min(50 % de la cavidad, 50 MPa) — §6.2.2 ──
   const limDP = Math.min(0.5 * fillMPa, 50);
@@ -121,10 +110,8 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
       id: 'feed-dp', subsistema: S, cita: '§6.2.2 / §6.4',
       criterio: 'ΔP del sistema de alimentación ≤ min(50 % de la presión de cavidad, 50 MPa)',
       medido: feed.dPMPa, limite: limDP, unidad: 'MPa',
-      detalle: `ΔP sprue ${num(feed.dPMPa)} MPa vs límite ${num(limDP)} MPa (50 % de ${num(fillMPa)} MPa de cavidad, tope 50) · sprue L=${num(sprueLenMm)} mm = placa A ${num(pkg.base.plateAmm)} + clamp ${CLAMP_ASUMIDO_MM} ASUMIDO`,
+      detalle: `ΔP sprue ${num(feed.dPMPa)} MPa vs límite ${num(limDP)} MPa (50 % de ${num(fillMPa)} MPa de cavidad, tope 50) · ⌀${num(feed.diaBaseMm, 2)} mm, sprue L=${num(feed.sprueLenMm)} mm`,
     }),
-    estado: feed.dPMPa > limDP ? 'VIOLA' : 'SIN-CABLEAR',
-    deuda: DEUDA_FEED,
   });
 
   // ── 2) Volumen del feed ≤ 30 % de las cavidades (frío) — §6.2.3 ──
@@ -140,8 +127,6 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
       medido: pctReal, limite: limPct, unidad: '%',
       detalle: `colada ${num(feed.volCc)} cc vs ${num(vCavCc)} cc de cavidades (${nCav} cav) = ${num(pctReal)} % · límite ${limPct} %`,
     }),
-    estado: pctReal > limPct ? 'VIOLA' : 'SIN-CABLEAR',
-    deuda: `${DEUDA_FEED}. OJO: moldmachine.ts:269 usa runnerVolumeCc = partCc × 0.25 (proporción FABRICADA, no del libro)`,
   });
 
   // ── 3) El feed NO extiende el ciclo — §6.4.7 ──
@@ -149,9 +134,8 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
     id: 'feed-ciclo', subsistema: S, cita: '§6.4.7',
     criterio: 'el tiempo de enfriamiento de la colada no debe exceder al de la cavidad',
     medido: feed.tcSprueS, limite: feed.tcPartS, unidad: 's',
-    estado: feed.tcSprueS > feed.tcPartS * 1.25 ? 'VIOLA' : (feed.tcSprueS > feed.tcPartS ? 'ADVIERTE' : 'SIN-CABLEAR'),
-    detalle: `t_c colada ${num(feed.tcSprueS)} s vs t_c pieza ${num(feed.tcPartS)} s — ${feed.tcSprueS > feed.tcPartS ? 'la colada DOMINA el ciclo: reducir ⌀ (steel-safe)' : 'la pieza manda el ciclo ✓'}`,
-    deuda: DEUDA_FEED,
+    estado: feed.tcSprueS > feed.tcPartS * 1.25 ? 'VIOLA' : (feed.tcSprueS > feed.tcPartS ? 'ADVIERTE' : 'CUMPLE'),
+    detalle: `t_c colada ${num(feed.tcSprueS)} s vs t_c pieza ${num(feed.tcPartS)} s — ${feed.tcSprueS > feed.tcPartS ? 'la colada DOMINA el ciclo: reducir ⌀ (steel-safe)' : 'la pieza manda el ciclo ✓'} · el lazo §6.4.7 corrió ${feed.iteraciones.length} paso(s)`,
   });
 
   // ── 4) γ̇ dentro del máximo del material — §7.1.4 / Tabla 7.2 ──
@@ -163,8 +147,6 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
       medido: feed.shear, limite: shearMax, unidad: '1/s',
       detalle: `γ̇ ${Math.round(feed.shear).toLocaleString()} 1/s vs máx ${shearMax.toLocaleString()} 1/s (${mat}, Apéndice A)`,
     }),
-    estado: feed.shear > shearMax ? 'VIOLA' : 'SIN-CABLEAR',
-    deuda: DEUDA_FEED,
   });
 
   // ── 5) Flujo laminar — §6.4.3 ──
@@ -172,31 +154,41 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
     id: 'feed-reynolds', subsistema: S, cita: '§6.4.3',
     criterio: 'Re < 2300 (flujo laminar, condición de Hagen-Poiseuille)',
     medido: feed.re, limite: 2300, unidad: '',
-    estado: feed.re > 2300 ? 'VIOLA' : 'SIN-CABLEAR',
+    estado: feed.re > 2300 ? 'VIOLA' : 'CUMPLE',
     detalle: `Re ${feed.re.toExponential(1)} · límite 2300`,
-    deuda: DEUDA_FEED,
   });
 
   // ── 6) Diámetros a catálogo y redondeados HACIA ABAJO (steel-safe) — §6.5.4 / §6.5.5 ──
-  const dBase = feed.rBaseMm * 2;
-  const dSafe = steelSafeDiaMm(dBase);
+  const dBase = feed.diaBaseMm;
+  const enCatalogo = STANDARD_RUNNER_DIAMM.includes(dBase);
   C.push({
     id: 'feed-steel-safe', subsistema: S, cita: '§6.5.4 / §6.5.5',
     criterio: 'diámetros de colada a talla de catálogo, redondeados HACIA ABAJO (se puede abrir en el tryout, no cerrar)',
-    medido: dBase, limite: dSafe, unidad: 'mm',
-    estado: 'SIN-CABLEAR',
-    detalle: `⌀ calculado ${num(dBase, 2)} mm → especificar ${num(dSafe, 2)} mm (catálogo ${STANDARD_RUNNER_DIAMM.join('/')}) — redondear hacia ARRIBA condena el molde a desperdiciar material toda su vida`,
-    deuda: 'steelSafeDiaMm() existe en feed.ts; nadie la aplica al construir la geometría de la colada',
+    medido: dBase, limite: steelSafeDiaMm(dBase), unidad: 'mm',
+    estado: enCatalogo ? 'CUMPLE' : 'ADVIERTE',
+    detalle: enCatalogo
+      ? `⌀ ${num(dBase, 2)} mm es talla de catálogo (${STANDARD_RUNNER_DIAMM.join('/')}) y el lazo bajó desde ${num(feed.iteraciones[0].diaBaseMm, 2)} mm`
+      : `⌀ ${num(dBase, 2)} mm fuera de catálogo — la Máquina lo declara: ${feed.iteraciones[0].accion}`,
   });
 
   // ── 7) El orificio de la boquilla ROMPE la monotonía — §6.3.1 ──
   C.push({
     id: 'feed-boquilla', subsistema: S, cita: '§6.3.1',
     criterio: 'orificio de la boquilla < entrada del sprue (si se invierte, el sprue se queda en la mitad A)',
-    medido: feed.rTopMm * 2, unidad: 'mm',
+    medido: feed.diaTopMm, unidad: 'mm',
     estado: 'SIN-MÓDULO',
-    detalle: `entrada del sprue ⌀ ${num(feed.rTopMm * 2, 2)} mm — la Máquina no conoce el orificio de la boquilla de la máquina de inyección: no se puede verificar`,
+    detalle: `entrada del sprue ⌀ ${num(feed.diaTopMm, 2)} mm — la Máquina no conoce el orificio de la boquilla de la inyectora: no se puede verificar`,
     deuda: 'MachineSelection debería exponer nozzleOrificeMm y el contrato compararlo',
+  });
+
+  // ── 8) El LAZO del libro: ¿convergió o hay conflicto que arbitrar? — §6.4.7 / §1.2 ──
+  C.push({
+    id: 'feed-lazo', subsistema: S, cita: '§6.4.7 · §1.2',
+    criterio: 'el lazo de diseño del feed converge, o el conflicto se reporta para que lo arbitre el humano',
+    estado: feed.conflicto ? 'ADVIERTE' : 'CUMPLE',
+    detalle: feed.conflicto
+      ? `CONFLICTO ABIERTO — ${feed.conflicto}`
+      : `el lazo convergió en ${feed.iteraciones.length} paso(s): ${feed.iteraciones.map((i) => `⌀${num(i.diaBaseMm, 2)}`).join(' → ')}`,
   });
 
   return resumir(S, C);
@@ -214,23 +206,21 @@ export function contratoVenteo(pkg: MoldPackage): ContratoSubsistema {
   const plastic = (pkg.spec.plastic ?? 'PP').toUpperCase();
   const mat = FEED_MATERIALS[plastic] ? plastic : 'PP';
 
-  // El aire desplazado ≈ el volumen inyectado (§8.2.1). V̇ del llenado:
+  // La Máquina ya diseña el venteo (cap 8) — el contrato juzga su salida.
+  const v = pkg.diseno.venteo;
   const partCc = estPartVolumeCc({
     shape: pkg.spec.cavityShape, widthMm: pkg.spec.Wmm, lenMm: pkg.spec.Lmm,
     depthMm: pkg.spec.Hmm, wallMm: pkg.spec.wallMm,
   });
-  const tFillS = 1;                                   // convención de los ejemplos del libro
-  const VdotAir = (partCc * 1e-6) / tFillS;           // m³/s — TODO el flujo local (§8.2.3: NO se divide)
-  const v = ventDesign({ VdotAirM3s: VdotAir, lM: 0.01, wM: 0.01, lFlashM: 0.2e-3 });
+  const VdotAir = (partCc * 1e-6) / 1;                // §8.2.1: el aire ≈ el volumen inyectado
 
   // ── 1) h_min ≤ h ≤ h_max, y el que manda es el MÁXIMO (rebaba) — §8.2.3 ──
   C.push({
     id: 'vent-espesor', subsistema: S, cita: '§8.2.3',
     criterio: 'espesor del venteo entre el mínimo (deja salir el aire) y el máximo (no rebaba); manda el máximo',
     medido: v.hSpecMm, limite: v.hMaxMm, unidad: 'mm',
-    estado: v.feasible ? 'SIN-CABLEAR' : 'VIOLA',
-    detalle: `h ∈ [${num(v.hMinMm, 3)}, ${num(v.hMaxMm, 3)}] mm → especificar ${num(v.hSpecMm, 3)} mm ${v.feasible ? '' : '⚠ ventana imposible: se necesitan MÁS venteos y más anchos'}`,
-    deuda: 'ventDesign() existe en venting.ts y está gateado; moldMachine NO importa venting.ts — el molde se entrega sin venteo especificado',
+    estado: v.feasible ? 'CUMPLE' : 'VIOLA',
+    detalle: `h ∈ [${num(v.hMinMm, 3)}, ${num(v.hMaxMm, 3)}] mm → especificar ${num(v.hSpecMm, 3)} mm ${v.feasible ? '(manda el MÁXIMO, no el mínimo §8.2.3)' : '⚠ ventana imposible: se necesitan MÁS venteos y más anchos'}`,
   });
 
   // ── 2) Cada venteo se dimensiona para TODO el flujo local — §8.2.3 ──
@@ -238,9 +228,8 @@ export function contratoVenteo(pkg: MoldPackage): ContratoSubsistema {
     id: 'vent-flujo-completo', subsistema: S, cita: '§8.2.3',
     criterio: 'cada venteo se dimensiona para TODO el flujo local, NUNCA para el flujo dividido entre venteos',
     medido: VdotAir * 1e6, unidad: 'cc/s',
-    estado: 'SIN-CABLEAR',
+    estado: 'CUMPLE',
     detalle: `V̇ de aire ${num(VdotAir * 1e6)} cc/s aplicado íntegro a cada venteo (dividirlo entre N NO es conservador: no se sabe dónde cae el final de llenado)`,
-    deuda: 'regla implementada en este contrato; falta que el diseñador de venteos la respete cuando exista',
   });
 
   // ── 3) Práctica del libro: 0.02 mm en partición (steel-safe) — §8.3.1 ──
@@ -249,7 +238,7 @@ export function contratoVenteo(pkg: MoldPackage): ContratoSubsistema {
     id: 'vent-practica', subsistema: S, cita: '§8.3.1',
     criterio: 'venteos en el plano de partición: usarlos con moderación y arrancar en ~0.02 mm; abrir en el tryout si falta',
     medido: 0.02, limite: v.hMaxMm, unidad: 'mm',
-    estado: 'SIN-CABLEAR',
+    estado: 0.02 <= v.hMaxMm ? 'CUMPLE' : 'VIOLA',
     detalle: `práctica 0.02 mm (el cálculo pide ${num(v.hMinMm, 3)} mm mínimo) · Tabla 8.1 para ${tabla.materials}: Glanvill ${tabla.glanvill} / Rosato ${tabla.rosato} / Menges ${tabla.menges} mm — más presión y resina más fluida ⇒ venteo más delgado`,
     deuda: 'VENT_TABLE_MM existe; nadie la consulta al construir el molde',
   });
