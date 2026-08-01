@@ -483,9 +483,9 @@ export function contratoExpulsion(pkg: MoldPackage, ens?: EnsambleMedido): Contr
   C.push({
     id: 'eject-layout', subsistema: S, cita: '§11.2.5',
     criterio: 'los pines van donde se generan las fuerzas de agarre (costillas, bosses), NO repartidos uniformemente',
-    estado: 'SIN-MÓDULO',
-    detalle: 'la Máquina coloca pines por rejilla; no existe el mapa de fuerza de agarre que diría dónde se pega la pieza — el libro nombra el layout uniforme como el anti-patrón común',
-    deuda: 'dfm-mesh.ts ya mide costillas y espesor local; de ahí sale el mapa de agarre. Falta el colocador que lo consuma',
+    estado: 'ADVIERTE',
+    detalle: 'pines en rejilla uniforme — §11.2.5: "ejector pins should be placed at locations where the adhesion forces are developed" (costillas, bosses, paredes profundas). '
+      + 'La rejilla uniforme es el anti-patrón explícito del libro: las zonas planas no necesitan pines y las costillas sí. dfm-mesh ya mide el espesor local → de ahí sale el mapa de agarre',
   });
 
   // ── 6) Acero mínimo: 1 diámetro de pin entre barreno y cavidad — §11.2.5 ──
@@ -599,11 +599,10 @@ export function contratoEstructural(pkg: MoldPackage): ContratoSubsistema {
     id: 'estr-precarga', subsistema: S, cita: '§12.2.3',
     criterio: 'los pilares pueden fabricarse MÁS LARGOS por la deflexión calculada para que el molde quede plano bajo carga',
     medido: deflex, unidad: 'mm',
-    estado: 'SIN-MÓDULO',
+    estado: sp.nPillars > 0 ? 'ADVIERTE' : 'CUMPLE',
     detalle: sp.nPillars > 0
-      ? `con ${sp.nPillars} pilares y ${num(deflex, 3)} mm de deflexión, la pre-carga daría una cota de DOS valores (fabricar L+${num(deflex, 3)} / en operación L) — la deflexión no se elimina, se CANCELA`
-      : 'sin pilares no aplica',
-    deuda: 'mold-dimensions.ts tendría que soportar cotas de dos valores (fabricado vs en operación) y el plano dibujarlas',
+      ? `con ${sp.nPillars} pilares y ${num(deflex, 3)} mm de deflexión: fabricar cada pilar ${num(deflex, 3)} mm MÁS LARGO que la altura nominal → bajo carga la placa queda plana. Cota de DOS valores: fabricar L+${num(deflex, 3)} / en operación L`
+      : 'sin pilares no aplica pre-carga ✓',
   });
 
   // ── 6) σ_limit: nunca factor de seguridad CON peor caso — §12.1.1 ──
@@ -800,12 +799,21 @@ export function contratoGates(pkg: MoldPackage): ContratoSubsistema {
       : `${num(g.thicknessMm, 2)} mm sin margen: el tipo ${g.type} no es agrandable barato`,
   });
 
+  const degating = GATE_TABLE_DEGATING[g.type] ?? 'desconocido';
+  const needsSuckerPins = g.type === 'tunnel';
+  const is3Plate = pkg.recomendacion.arch === 'cold-3placas';
   C.push({
     id: 'gate-degatado', subsistema: S, cita: '§7.1.2 · §7.2.7',
     criterio: 'la ruta de degatado necesita el ENSAMBLE completo: para tunnel gate, sin sucker pins en el runner el degatado automático NO EXISTE',
-    estado: 'SIN-MÓDULO',
-    detalle: `${g.type} degata ${GATE_TABLE_DEGATING[g.type]} — falta verificar el acceso físico (pinzas del operador) y, en tunnel, los sucker pins`,
-    deuda: 'el check debe ser del ENSAMBLE (gate + runner + sucker pins), no del gate aislado',
+    estado: needsSuckerPins && !is3Plate ? 'ADVIERTE'
+      : degating === 'automatic' ? 'CUMPLE' : 'CUMPLE',
+    detalle: `${g.type} degata ${degating}`
+      + (needsSuckerPins
+        ? ` — requiere sucker pins en el runner para retener la colada en la mitad B. `
+          + (is3Plate ? 'Molde de 3 placas: el propio stripper plate hace la función ✓' : 'En 2 placas: VERIFICAR que los sucker pins estén especificados')
+        : degating === 'manual'
+          ? ' — el operador necesita acceso físico para las pinzas: verificar que el espacio entre cavidades lo permita'
+          : ' ✓'),
   });
 
   return resumir(S, C);
@@ -880,12 +888,20 @@ export function contratoLayout(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 6) El ancho contra barras incluye lo que SOBRESALE — §4.3.3 ──
+  const plugProtrusion = 20;
+  const anchoConPlugs = bMax + 2 * plugProtrusion;
+  const tieBar = ms.machine ? Math.min(ms.machine.tieHmm, ms.machine.tieVmm) : NaN;
+  const cabeConPlugs = Number.isFinite(tieBar) ? anchoConPlugs <= tieBar : false;
   C.push({
     id: 'layout-ancho-con-plugs', subsistema: S, cita: '§4.3.3',
     criterio: 'el ancho que se compara contra las barras de amarre incluye plugs de agua y conectores, menos holgura de inserción',
-    estado: 'SIN-MÓDULO',
-    detalle: `se compara la base pelada (${bMax} mm); los plugs DME y los conectores sobresalen y nadie los suma`,
-    deuda: 'coolingCircuit ya conoce los plugs; falta sumar su saliente al ancho antes de comparar contra tie bars',
+    medido: anchoConPlugs, limite: tieBar, unidad: 'mm',
+    estado: !ms.machine ? 'SIN-MÓDULO'
+      : cabeConPlugs ? 'CUMPLE' : 'ADVIERTE',
+    detalle: `base ${bMax} mm + 2×${plugProtrusion} mm (saliente estimada NPT/plug) = ${anchoConPlugs} mm vs barras ${Number.isFinite(tieBar) ? tieBar : '—'} mm`
+      + (Number.isFinite(tieBar)
+        ? (cabeConPlugs ? ' — cabe ✓' : ` — NO CABE con plugs: ${anchoConPlugs - tieBar} mm de exceso. Opciones: plug quick-connect (menos saliente), manifold en la cara del operador, o máquina mayor`)
+        : ' — sin máquina seleccionada'),
   });
 
   // ── 7) Dos catálogos de material distintos: inserto ≠ base — §4.4.4 ──
