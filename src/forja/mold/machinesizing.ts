@@ -30,6 +30,8 @@ export interface InjectionMachine {
   tieHmm: number; tieVmm: number;          // luz entre columnas
   minDaylightMm: number; maxDaylightMm: number;
   ejectionForceKN: number;                 // fuerza de expulsión provista (~2 % clamp)
+  /** §6.3.1: orificio de boquilla (mm). 4.0 mm típico para nozzles estándar. */
+  nozzleOrificeMm?: number;
 }
 
 /**

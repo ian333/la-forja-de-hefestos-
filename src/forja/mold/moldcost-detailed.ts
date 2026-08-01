@@ -104,6 +104,7 @@ export interface CostBreakdown {
   moldBase: { LmM: number; WmM: number; HmM: number; massKg: number; USD: number };
   customization: { sumCavity: number; sumMold: number; USD: number };
   totalUSD: number;
+  sesgos: CostSesgo[];
 }
 
 const mm2m = (mm: number) => mm / 1000;
@@ -160,6 +161,17 @@ export function estimateMoldCost(inp: CostInputs): CostBreakdown {
     .reduce((s, cat) => s + sum(cat, inp.custom[cat] as string[] | undefined, 1), 0);
   const customUSD = cavitiesUSD * sumCavity + moldBaseUSD * sumMold;
 
+  const sesgos: CostSesgo[] = [
+    { que: 'volumen a remover = inserto entero', direccion: 'conservador',
+      magnitud: `${(volM3 * 1e9).toFixed(0)} mm³ (el mecanizado real remueve menos)`,
+      cita: '§3.3.1.2 Eq 3.7' },
+    { que: 'eficiencia de maquinado', direccion: 'conservador',
+      magnitud: `${((eta) * 100).toFixed(0)} % (el 75 % restante es posicionado, cambio de herramienta, inspección)`,
+      cita: '§3.3.1.3' },
+    { que: 'layout ceiling(√n)', direccion: 'conservador',
+      magnitud: `${nSide} × ${nSide} con rejilla cuadrada (la rejilla óptima puede usar menos columnas)`,
+      cita: '§3.3.2' },
+  ];
   return {
     cavity: { LmM: d.LmM, WmM: d.WmM, HmM: d.HmM, volM3, materialUSD,
       tVolH, tAreaH, complexity, tMachiningH, machiningUSD, tFinishH, finishingUSD, setUSD },
@@ -167,6 +179,7 @@ export function estimateMoldCost(inp: CostInputs): CostBreakdown {
     moldBase: { LmM: LmoldM, WmM: WmoldM, HmM: HmoldM, massKg, USD: moldBaseUSD },
     customization: { sumCavity, sumMold, USD: customUSD },
     totalUSD: cavitiesUSD + moldBaseUSD + customUSD,
+    sesgos,
   };
 }
 
@@ -204,9 +217,14 @@ export interface PartCostInputs {
   cycleMode: keyof typeof CYCLE_EFFICIENCY; hotRunner: boolean;
   fMachine?: number; yield_?: number; fMaintenance?: number;
 }
+export interface CostSesgo {
+  que: string; direccion: 'conservador' | 'agresivo'; magnitud: string; cita: string;
+}
 export interface PartCostBreakdown {
   moldPerPart: number; materialPerPart: number; processPerPart: number;
   cycleTimeS: number; machineRateUSDh: number; partUSD: number;
+  fMaintenance: number;
+  fMaintenanceJustificacion: string;
 }
 /** §3.4 completo: costo por pieza (Eq 3.19-3.24). */
 export function estimatePartCost(totalMoldUSD: number, annualOrTotalQty: number, p: PartCostInputs): PartCostBreakdown {
@@ -220,7 +238,11 @@ export function estimatePartCost(totalMoldUSD: number, annualOrTotalQty: number,
   const processPerPart = (cycleTimeS / p.nCavities) * (machineRateUSDh / 3600);   // Eq 3.22
   const yld = p.yield_ ?? 0.98;
   const partUSD = (moldPerPart + materialPerPart + processPerPart) / yld; // Eq 3.19
-  return { moldPerPart, materialPerPart, processPerPart, cycleTimeS, machineRateUSDh, partUSD };
+  const fMaintenanceJustificacion = fMaint === 3
+    ? 'default del libro (§3.4.1 ejemplo): interpolación media en Tabla 3.11 para resina no abrasiva sobre acero P20'
+    : `valor suministrado (${fMaint}): sobreescribe el default 3 del libro`;
+  return { moldPerPart, materialPerPart, processPerPart, cycleTimeS, machineRateUSDh, partUSD,
+    fMaintenance: fMaint, fMaintenanceJustificacion };
 }
 
 /** Cotización legible (para el reporte al cliente). */

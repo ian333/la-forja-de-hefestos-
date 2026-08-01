@@ -29,6 +29,14 @@ export interface DfmMeshReport {
   /** relieve del núcleo (§11: la pieza debe ABRAZAR el núcleo B al abrir) medido en
    *  esta orientación vs volteada π sobre X — el importador decide el volteo con esto. */
   orient: { coreReliefAsIsMm: number; coreReliefFlippedMm: number; flipRecommended: boolean };
+  /** área proyectada REAL de la pieza (columnas sólidas del raster, mm²) —
+   *  descontando ventanas/huecos, a diferencia del bbox L×W. */
+  projectedAreaMm2: number;
+  /** §10.3.1: clasificación topológica para alabeo.
+   *  'marco' = ventana interior >30% del bbox, bordes desacoplados (bezel).
+   *  'placa' = sólida cerrada, pandea si (s_borde − s_centro) > 0.44·(h/W)².
+   *  'mixta' = ni tan abierta ni tan cerrada. */
+  warpageTopology: { tipo: 'marco' | 'placa' | 'mixta'; solidFrac: number; interiorEmptyFrac: number };
   /** GEOMETRÍA de cada región de undercut (coords locales de la pieza, min en 0):
    *  bbox XY + rango z del hueco + DIRECCIÓN DE JALE (votación de venteos laterales)
    *  — el insumo del GENERADOR de mecanismos §11.3.6-7. */
@@ -49,6 +57,23 @@ export const DRAFT_TABLE_2_14: Array<{ finish: string; resin: string; draftDeg: 
   { finish: 'Leather texture', resin: 'ABS', draftDeg: 7.5 },
 ];
 const DRAFT_MIN_DEG = 0.5;   // §2.3.6 "A minimum draft angle of 0.5° is usually necessary"
+
+function classifyWarpageTopology(solid: Uint8Array, G: number, GY: number) {
+  const margin = Math.max(1, Math.round(Math.min(G, GY) * 0.1));
+  let interiorSolid = 0, interiorEmpty = 0;
+  for (let i = margin; i < G - margin; i++) {
+    for (let j = margin; j < GY - margin; j++) {
+      if (solid[i * GY + j]) interiorSolid++; else interiorEmpty++;
+    }
+  }
+  const interiorTotal = interiorSolid + interiorEmpty;
+  const solidFrac = interiorTotal > 0 ? interiorSolid / interiorTotal : 1;
+  const interiorEmptyFrac = interiorTotal > 0 ? interiorEmpty / interiorTotal : 0;
+  const tipo = interiorEmptyFrac > 0.3 ? 'marco' as const
+    : interiorEmptyFrac < 0.05 ? 'placa' as const
+    : 'mixta' as const;
+  return { tipo, solidFrac: +solidFrac.toFixed(3), interiorEmptyFrac: +interiorEmptyFrac.toFixed(3) };
+}
 
 export function dfmFromMesh(
   mesh: { positions: Float32Array | number[]; indices: Uint32Array | number[] },
@@ -289,6 +314,8 @@ export function dfmFromMesh(
     draft: { pctBelowMin: +draftMinPct.toFixed(1), pctBelowTable: +draftTabPct.toFixed(1), minDeg: DRAFT_MIN_DEG, tableDeg, lateralAreaMm2: Math.round(latArea) },
     wall: { nominalMm: +nominal.toFixed(2), p50Mm: +p50.toFixed(2), p95Mm: +p95.toFixed(2), ratio: +ratio.toFixed(2) },
     orient: { coreReliefAsIsMm: +reliefAsIs.toFixed(1), coreReliefFlippedMm: +reliefFlip.toFixed(1), flipRecommended },
+    projectedAreaMm2: +(nSolid * cellA).toFixed(1),
+    warpageTopology: classifyWarpageTopology(solid, G, GY),
     regionsDetail,
   };
 }

@@ -74,6 +74,14 @@ export interface MachineSpec {
   cavPref?: number;
   /** Margen de venta sobre el costo del molde (default 1.6 = 60 %). */
   margin?: number;
+  /** Área proyectada REAL (mm²) desde dfm-mesh. Si se omite, se usa L×W (bbox). */
+  projectedAreaMm2?: number;
+  /** §10.3.1: topología de alabeo desde dfm-mesh. */
+  warpageTopology?: { tipo: 'marco' | 'placa' | 'mixta'; solidFrac: number; interiorEmptyFrac: number };
+  /** §10.1.7: quién firma la contracción (diseñador/moldeador/cliente/prototipo). */
+  shrinkageResponsible?: string;
+  /** §3.2.2: vetos no económicos que pueden tumbar al ganador. */
+  vetos?: { cambioColorFrecuente?: boolean; paybackMaxMeses?: number; nota?: string };
 }
 
 interface ArchCav {

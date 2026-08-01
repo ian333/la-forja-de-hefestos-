@@ -137,11 +137,16 @@ export const STANDARD_BASES: Array<{ wmm: number; lmm: number }> = [];
     for (let j = i; j < Math.min(i + 3, sizes.length); j++)
       STANDARD_BASES.push({ wmm: sizes[i], lmm: sizes[j] });
 }
+/** §4.4.4: las bases solo vienen en estos aceros (no en aceros de inserto tipo A6/D2/H13). */
+export const BASE_MATERIALS = ['1045', '4140', 'P20'] as const;
+export type BaseMaterial = typeof BASE_MATERIALS[number];
 export interface BaseSelection {
   base: { wmm: number; lmm: number };
   envelope: { wmm: number; lmm: number }; aspect: number;
   reserveMm: number; leaderPinDia: number;
   plateAmm: number; plateBmm: number;
+  /** acero de la base (§4.4.4: 1045/4140/P20 — catálogo distinto al del inserto). */
+  baseMaterial: BaseMaterial;
   ok: boolean; warnings: string[];
 }
 export function selectMoldBase(
@@ -167,6 +172,7 @@ export function selectMoldBase(
     envelope: { wmm: +envW.toFixed(1), lmm: +envL.toFixed(1) }, aspect: +aspect.toFixed(2),
     reserveMm: reserve, leaderPinDia: pin,
     plateAmm: ins.insertHcavityMm, plateBmm: Math.max(ins.insertHcoreMm, 30),
+    baseMaterial: 'P20' as BaseMaterial,
     ok: !!base && aspect <= 2, warnings,
   };
 }

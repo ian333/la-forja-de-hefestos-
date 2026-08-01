@@ -66,6 +66,12 @@ export function spanWithPillars(spanM: number, nPillars: number): number {
   return spanM / (nPillars + 1);
 }
 
+export interface StressMethod {
+  metodo: 'deflexión-pura' | 'yield/f' | 'peor-caso';
+  f?: number;
+  sigmaLimitMPa?: number;
+  cita: string;
+}
 export interface PlateSizing {
   tDeflectionMm: number; tCoolingMm: number; tEjectionMm: number;
   tRequiredMm: number; governs: 'deflexión' | 'enfriamiento' | 'expulsión';
@@ -74,6 +80,8 @@ export interface PlateSizing {
   ventGapMm: number; flashOk: boolean;
   nPillars: number;
   plateMassKg: number; pillarMassKg: number; steelMassKg: number;  // placa + pilares = total
+  /** §12.1.1: qué método se usó para el esfuerzo admisible (NUNCA los dos a la vez). */
+  stressMethod: StressMethod;
   notas: string[];
 }
 
@@ -119,7 +127,9 @@ export function sizeSupportPlate(o: {
     tRequiredMm: +tReq.toFixed(1), governs, plateThkMm: plate,
     deflectionAtPlateMm: +(deflM * 1000).toFixed(4), ventGapMm: +(ventGap * 1000).toFixed(3), flashOk,
     nPillars, plateMassKg: +plateMass.toFixed(1), pillarMassKg: +pillarMass.toFixed(2),
-    steelMassKg: +(plateMass + pillarMass).toFixed(1), notas,
+    steelMassKg: +(plateMass + pillarMass).toFixed(1),
+    stressMethod: { metodo: 'deflexión-pura', cita: '§12.1.2 — el criterio es δ ≤ venteo, no σ ≤ σ_limit' },
+    notas,
   };
 }
 

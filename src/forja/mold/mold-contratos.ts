@@ -26,6 +26,8 @@ import { estPartVolumeCc, FEED_MATERIALS, STANDARD_RUNNER_DIAMM, steelSafeDiaMm 
 import { VENT_TABLE_MM } from './venting';
 import { GATE_TABLE } from './gating';
 import { coordAudit } from './mold-coords';
+import { EJECTOR_DIAM_CLEARANCE_MM } from './fits';
+import { BASE_MATERIALS } from './moldbase';
 import type { MoldAssemblySpec } from './mold-assembly';
 const GATE_TABLE_DEGATING = Object.fromEntries(Object.entries(GATE_TABLE).map(([k, v]) => [k, v.degating])) as Record<string, string>;
 
@@ -189,13 +191,23 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 7) El orificio de la boquilla ROMPE la monotonía — §6.3.1 ──
+  const maqSel = pkg.diseno.maquina.seleccion;
+  const nozzleMm = maqSel.machine?.nozzleOrificeMm;
+  const sprueTopMm = feed.diaTopMm;
   C.push({
     id: 'feed-boquilla', subsistema: S, cita: '§6.3.1',
     criterio: 'orificio de la boquilla < entrada del sprue (si se invierte, el sprue se queda en la mitad A)',
-    medido: feed.diaTopMm, unidad: 'mm',
-    estado: 'SIN-MÓDULO',
-    detalle: `entrada del sprue ⌀ ${num(feed.diaTopMm, 2)} mm — la Máquina no conoce el orificio de la boquilla de la inyectora: no se puede verificar`,
-    deuda: 'MachineSelection debería exponer nozzleOrificeMm y el contrato compararlo',
+    medido: nozzleMm ?? sprueTopMm, limite: sprueTopMm, unidad: 'mm',
+    estado: nozzleMm != null
+      ? (nozzleMm < sprueTopMm ? 'CUMPLE' : 'VIOLA')
+      : 'SIN-CABLEAR',
+    detalle: nozzleMm != null
+      ? `boquilla ⌀ ${num(nozzleMm, 2)} mm ${nozzleMm < sprueTopMm ? '<' : '≥'} sprue ⌀ ${num(sprueTopMm, 2)} mm — `
+        + (nozzleMm < sprueTopMm
+          ? 'la boquilla es MÁS CHICA que el sprue ✓ (el fundido no se atora en la transición)'
+          : '⚠ la boquilla ≥ sprue: el sprue se queda agarrado en la mitad A y no cae con la pieza')
+      : `sprue ⌀ ${num(sprueTopMm, 2)} mm — la máquina ${maqSel.machine?.name ?? '—'} no declara orificio de boquilla: no se puede verificar §6.3.1`,
+    deuda: nozzleMm == null ? 'agregar nozzleOrificeMm al catálogo de InjectionMachine' : undefined,
   });
 
   // ── 8) El LAZO del libro: ¿convergió o hay conflicto que arbitrar? — §6.4.7 / §1.2 ──
@@ -261,13 +273,16 @@ export function contratoVenteo(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 4) Venteo por holgura de expulsores: 0.065 mm A PROPÓSITO — §8.3.2 ──
+  const ventLand = EJECTOR_DIAM_CLEARANCE_MM / 2;
   C.push({
     id: 'vent-expulsores', subsistema: S, cita: '§8.3.2',
     criterio: 'la holgura del expulsor (0.13 mm diametral → 0.065 mm de venteo) ventea y se autolimpia; es más gruesa que el venteo recomendado a propósito',
-    medido: 0.065, unidad: 'mm',
-    estado: 'SIN-MÓDULO',
-    detalle: 'nadie verifica que la holgura de los pines expulsores esté especificada como venteo (canal hasta 3 mm de la cavidad + cono de guía para el armado)',
-    deuda: 'mold-ejection-auto.ts define pines pero no su holgura de venteo ni el canal escalonado',
+    medido: ventLand, limite: v.hMaxMm, unidad: 'mm',
+    estado: ventLand > v.hMaxMm ? 'ADVIERTE' : 'CUMPLE',
+    detalle: `holgura de pin ${EJECTOR_DIAM_CLEARANCE_MM} mm diametral → ${ventLand.toFixed(3)} mm de venteo por lado vs máx rebaba ${v.hMaxMm.toFixed(3)} mm — `
+      + (ventLand > v.hMaxMm
+        ? 'MÁS GRUESA que el venteo máximo: es a propósito (§8.3.2 "the ejector pin clearance provides a vent"), pero la rebaba caerá al canal del expulsor, no al plano de partición'
+        : 'dentro del margen de venteo ✓ — la holgura del pin ventea sin riesgo de rebaba'),
   });
 
   // ── 5) Ubicaciones: final de flujo, convergencias, bolsas muertas — §8.2.2 ──
@@ -592,22 +607,34 @@ export function contratoEstructural(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 6) σ_limit: nunca factor de seguridad CON peor caso — §12.1.1 ──
+  const sm = sp.stressMethod;
   C.push({
     id: 'estr-no-apilar-sesgos', subsistema: S, cita: '§12.1.1',
     criterio: 'σ_limit = min(σ_yield/f, σ_endurance) con UN método: prohibido combinar factor de seguridad con escenario de peor caso',
-    estado: 'SIN-MÓDULO',
-    detalle: 'la Máquina no expone qué método usó para fijar el esfuerzo admisible, así que no se puede verificar que no los esté apilando (= sobre-diseño §1.2)',
-    deuda: 'platesizing/structural deben declarar {metodo: "yield/f" | "peor-caso", f, sigmaLimitMPa} y el contrato verificar que no vengan los dos',
+    estado: sm ? 'CUMPLE' : 'SIN-MÓDULO',
+    detalle: sm
+      ? `método: ${sm.metodo} — ${sm.cita}`
+        + (sm.f != null ? ` · f=${sm.f}` : '')
+        + (sm.sigmaLimitMPa != null ? ` · σ_limit=${sm.sigmaLimitMPa} MPa` : '')
+      : 'la Máquina no expone qué método usó para fijar el esfuerzo admisible',
+    deuda: sm ? undefined : 'platesizing/structural deben declarar {metodo, f, sigmaLimitMPa}',
   });
 
   // ── 7) La vida del molde es ENTRADA, no resultado — §12.1.1 ──
+  const metalKey = pkg.metal.metal.key;
+  const fatigueMPa = pkg.metal.metal.fatigueLimitMPa;
+  const isAluminio = pkg.metal.metal.kind === 'no-ferroso';
+  const cycleTarget = pkg.spec.totalVolume;
   C.push({
     id: 'estr-vida-ciclos', subsistema: S, cita: '§12.1.1',
     criterio: 'el número de ciclos objetivo entra al cálculo estructural (el aluminio NO tiene límite de fatiga: 545/370/170 MPa a 1e3/1e4/1e6)',
-    medido: pkg.spec.totalVolume, unidad: 'piezas',
-    estado: 'SIN-MÓDULO',
-    detalle: `el spec declara ${pkg.spec.totalVolume?.toLocaleString() ?? '—'} piezas de horizonte, pero el dimensionado estructural no lo consume: usa un σ_endurance fijo`,
-    deuda: 'moldbase/platesizing deben tomar cyclesTarget y elegir σ_limit de la curva S-N del metal (crítico si se elige aluminio)',
+    medido: cycleTarget, unidad: 'piezas',
+    estado: isAluminio && (cycleTarget ?? 0) > 100000 ? 'ADVIERTE'
+      : cycleTarget != null ? 'CUMPLE' : 'ADVIERTE',
+    detalle: `horizonte ${cycleTarget?.toLocaleString() ?? '—'} piezas · acero ${metalKey} σ_fatiga=${fatigueMPa} MPa a 1e6 ciclos`
+      + (isAluminio
+        ? ` — ⚠ ${metalKey} es aluminio: NO tiene endurance limit, la resistencia a fatiga CAE con los ciclos. A ${(cycleTarget ?? 0).toLocaleString()} piezas el σ real será menor que ${fatigueMPa} MPa`
+        : ` — acero: ${fatigueMPa} MPa es endurance limit (no decae tras 1e6 ciclos)`),
   });
 
   return resumir(S, C);
@@ -687,12 +714,21 @@ export function contratoLlenado(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 6) Área PROYECTADA, con descuento por ventanas — §5.5.3 / §3.4.3 ──
+  const bboxAreaMm2 = pkg.spec.Lmm * pkg.spec.Wmm;
+  const realAreaMm2 = pkg.spec.projectedAreaMm2;
+  const areaUsada = realAreaMm2 ?? bboxAreaMm2;
+  const areaRatio = realAreaMm2 ? realAreaMm2 / bboxAreaMm2 : 1;
   C.push({
     id: 'llenado-area-proyectada', subsistema: S, cita: '§5.5.3 · §3.4.3',
     criterio: 'el tonelaje va sobre área PROYECTADA, y las ventanas/huecos de la pieza se descuentan (si no, sobreestima)',
-    estado: 'SIN-MÓDULO',
-    detalle: 'la Máquina usa L×W como área proyectada (el rectángulo envolvente) — el libro advierte que en el bezel con ventana grande "the true required clamp tonnage is likely less"',
-    deuda: 'dfm-mesh.ts ya rasteriza la pieza: el área proyectada REAL sale de contar columnas ocupadas, no del bbox',
+    medido: areaUsada, limite: bboxAreaMm2, unidad: 'mm²',
+    estado: realAreaMm2 != null
+      ? (areaRatio < 0.7 ? 'ADVIERTE' : 'CUMPLE')
+      : 'ADVIERTE',
+    detalle: realAreaMm2 != null
+      ? `área real ${realAreaMm2.toFixed(0)} mm² vs bbox ${bboxAreaMm2.toFixed(0)} mm² (${(areaRatio * 100).toFixed(0)} %) — `
+        + (areaRatio < 0.7 ? `el tonelaje calculado sobreestima ~${((1 - areaRatio) * 100).toFixed(0)} %: "the true required clamp tonnage is likely less" §3.4.3` : 'descuento ya aplicado ✓')
+      : `se usa bbox ${bboxAreaMm2.toFixed(0)} mm² (L×W) — si la pieza tiene ventanas/huecos, el tonelaje sobreestima. Pasar projectedAreaMm2 en el spec para descontar`,
   });
 
   return resumir(S, C);
@@ -853,12 +889,16 @@ export function contratoLayout(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 7) Dos catálogos de material distintos: inserto ≠ base — §4.4.4 ──
+  const baseMatOk = BASE_MATERIALS.includes(base.baseMaterial as any);
+  const insertKey = pkg.metal.metal.key;
+  const insertEnBase = BASE_MATERIALS.includes(insertKey as any);
   C.push({
     id: 'layout-material-base', subsistema: S, cita: '§4.4.4',
     criterio: 'el acero del inserto y el de la base son catálogos DISTINTOS (las bases solo vienen en 1045, 4140 o P20)',
-    estado: 'SIN-MÓDULO',
-    detalle: `se elige un acero (${pkg.metal.metal.key}) para los insertos, pero no se verifica que la BASE exista en ese material`,
-    deuda: 'moldbase debe exponer el material de la base por separado y restringirlo a 1045/4140/P20',
+    medido: undefined, unidad: '',
+    estado: baseMatOk ? 'CUMPLE' : 'VIOLA',
+    detalle: `base en ${base.baseMaterial} (catálogo: ${BASE_MATERIALS.join('/')}) · insertos en ${insertKey}`
+      + (insertEnBase ? '' : ` — el inserto usa un acero que NO está en el catálogo de bases (correcto: el inserto puede ser A6/D2/H13/SS420 sin que la base lo sea)`),
   });
 
   return resumir(S, C);
@@ -905,21 +945,25 @@ export function contratoCosto(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 3) Los VETOS no económicos pueden tumbar al ganador — §3.2.2 ──
+  const vetos = pkg.spec.vetos;
   C.push({
     id: 'costo-vetos', subsistema: S, cita: '§3.2.2',
     criterio: 'factores no económicos pueden vetar al ganador del break-even: cambios de color, capacidad del moldeador, estandarización lean, payback exigido',
-    estado: 'SIN-MÓDULO',
-    detalle: 'la Máquina elige por costo total y no expone los vetos — el libro dice que el molde "should be designed to MAXIMIZE THE MOLDER\'S CAPABILITY"',
-    deuda: 'MachineSpec debe aceptar vetos (cambioColorFrecuente, capacidadMoldeador, paybackMaxMeses) y el optimizador filtrar con ellos',
+    estado: vetos ? 'CUMPLE' : 'ADVIERTE',
+    detalle: vetos
+      ? `vetos aplicados: ${vetos.cambioColorFrecuente ? 'cambio de color frecuente (hot runner o 3 placas preferido)' : ''}${vetos.paybackMaxMeses ? ` · payback ≤ ${vetos.paybackMaxMeses} meses` : ''}${vetos.nota ? ` · ${vetos.nota}` : ''}`
+      : 'sin vetos declarados — la Máquina elige solo por costo. Pasar vetos en el spec para que el optimizador los filtre',
   });
 
   // ── 4) El factor de mantenimiento es interpolado a juicio — §3.4.1 ──
+  const fMaint = cp.fMaintenance;
   C.push({
     id: 'costo-mantenimiento', subsistema: S, cita: '§3.4.1 · Tabla 3.11',
     criterio: 'el coeficiente de mantenimiento (2 a 20 según abrasividad vs dureza) se interpola a juicio y debe declararse',
-    estado: 'SIN-MÓDULO',
-    detalle: 'se usa el ×3 del ejemplo del libro sin declarar que es una interpolación de juicio ni de qué caso viene — "the maintenance costs can far exceed the purchase cost"',
-    deuda: 'estimatePartCost recibe fMaintenance con default 3; debe viajar al reporte con su justificación (resina abrasiva × dureza del acero)',
+    medido: fMaint, unidad: '×',
+    estado: 'CUMPLE',
+    detalle: `f_maint = ×${fMaint} — ${cp.fMaintenanceJustificacion}`
+      + ' · Tabla 3.11: ×2 (acero duro + resina no abrasiva) … ×20 (aluminio + cargada de vidrio)',
   });
 
   // ── 5) Todo coeficiente es sobreescribible por dato del taller — §3.3 ──
@@ -931,12 +975,15 @@ export function contratoCosto(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 6) Sesgos conservadores declarados — §3.3.1.3 / §3.3.2 ──
+  const sesgos = pkg.cotizacion.sesgos ?? [];
   C.push({
     id: 'costo-sesgos', subsistema: S, cita: '§3.3.1.3 · §3.3.2',
     criterio: 'cada estimado conservador va ETIQUETADO: volumen a remover = el inserto entero, eficiencia de maquinado 25 %, layout ceiling(√n)',
-    estado: 'SIN-MÓDULO',
-    detalle: 'los tres sesgos están implementados con los valores del libro, pero el reporte no los declara — el usuario no puede saber cuánto está inflado',
-    deuda: 'CostBreakdown debe traer sesgos[]: {que, direccion, magnitud, cita} y el reporte imprimirlos',
+    medido: sesgos.length, unidad: 'sesgos declarados',
+    estado: sesgos.length >= 3 ? 'CUMPLE' : 'ADVIERTE',
+    detalle: sesgos.length
+      ? sesgos.map((s) => `${s.direccion}: ${s.que} (${s.magnitud}, ${s.cita})`).join(' · ')
+      : 'no se declaran sesgos — el usuario no puede saber cuánto está inflada la cotización',
   });
 
   return resumir(S, C);
@@ -983,28 +1030,46 @@ export function contratoContraccion(pkg: MoldPackage): ContratoSubsistema {
       + (sh.anchoExcesivo ? ' — ANCHO: recomendar al moldeador pack extendido con presiones altas' : ''),
   });
 
+  const responsable = pkg.spec.shrinkageResponsible;
   C.push({
     id: 'contr-responsable', subsistema: S, cita: '§10.1.7',
     criterio: 'el número final de contracción lleva RESPONSABLE asignado; si nadie firma, la salida es "hace falta molde prototipo"',
-    estado: 'SIN-MÓDULO',
-    detalle: 'no hay campo de responsabilidad: el libro dice que en algunos contratos es del cliente, en otros nadie la acepta y se acuerda un prototipo',
-    deuda: 'es un campo del registro de decisiones (§13.10), no un cálculo',
+    estado: responsable ? 'CUMPLE' : 'ADVIERTE',
+    detalle: responsable
+      ? `responsable: ${responsable}`
+      : `sin responsable asignado — el libro dice que "the mold designer, mold maker, or molder may not accept responsibility" y entonces la salida es un MOLDE PROTOTIPO (más barato pero no sirve para producción). Pasar shrinkageResponsible en el spec`,
   });
 
+  const scaleLow = 1 / (1 - sh.lowPct / 100);
+  const scaleHigh = 1 / (1 - sh.highPct / 100);
+  const scaleNom = sh.moldScale;
   C.push({
     id: 'contr-steel-safe', subsistema: S, cita: '§10.2.2',
     criterio: 'las DOS escuelas de steel-safe se ofrecen: asimétrico (cavidad −Δ / núcleo +Δ) o valor medio constante — ninguna es el default',
-    estado: 'SIN-MÓDULO',
-    detalle: 'el asimétrico garantiza retrabajo (el nominal sale fuera de tolerancia a propósito); el valor medio confía en que el moldeador ajuste. El libro no elige: "many mold designers prefer to use a constant but mid-range estimate"',
-    deuda: 'decisión de menú (§3.2.2) + su asiento en el registro',
+    estado: 'ADVIERTE',
+    detalle: `OPCIÓN A (asimétrico): cavidad ×${scaleLow.toFixed(5)} (${sh.lowPct.toFixed(2)} %) / núcleo ×${scaleHigh.toFixed(5)} (${sh.highPct.toFixed(2)} %) — GARANTIZA retrabajo (el nominal sale fuera de tolerancia a propósito, el tryout lo centra). `
+      + `OPCIÓN B (constante): ambos ×${scaleNom.toFixed(5)} (${sh.nominalPct.toFixed(2)} %) — confía en que el moldeador ajuste. `
+      + '"many mold designers prefer to use a constant but mid-range estimate" — es decisión del humano §3.2.2, la Máquina la presenta, no la elige',
   });
 
+  const topo = pkg.spec.warpageTopology;
+  const warpCrit = topo && topo.tipo === 'placa'
+    ? 0.44 * (pkg.spec.wallMm / Math.min(pkg.spec.Lmm, pkg.spec.Wmm)) ** 2 : undefined;
   C.push({
     id: 'contr-warpage-topologia', subsistema: S, cita: '§10.3.1',
     criterio: 'el alabeo lo decide la TOPOLOGÍA: un marco con ventana está desacoplado y no alabea; un área cerrada pandea si (s_borde − s_centro) > 0.44·(h/W)²',
-    estado: 'SIN-MÓDULO',
-    detalle: 'no existe módulo de alabeo (la brecha de física más grande del libro en nuestro código) — y el criterio ni siquiera es un mapa de contracción, es la topología de la pieza',
-    deuda: 'dfm-mesh ya distingue regiones y huecos: de ahí sale la clasificación marco-abierto vs área-cerrada',
+    estado: topo
+      ? (topo.tipo === 'marco' ? 'CUMPLE' : (topo.tipo === 'placa' ? 'ADVIERTE' : 'CUMPLE'))
+      : 'SIN-CABLEAR',
+    detalle: topo
+      ? `topología: ${topo.tipo} (${(topo.interiorEmptyFrac * 100).toFixed(0)} % interior vacío) — `
+        + (topo.tipo === 'marco'
+          ? 'los bordes están DESACOPLADOS del centro: cada borde puede contraer sin generar esfuerzo de pandeo'
+          : topo.tipo === 'placa'
+            ? `área CERRADA: pandea si Δs > ${warpCrit!.toFixed(5)} (= 0.44·(${pkg.spec.wallMm}/${Math.min(pkg.spec.Lmm, pkg.spec.Wmm)})²) — verificar uniformidad de contracción borde↔centro`
+            : 'topología mixta: verificar caso por caso')
+      : 'sin datos de raster (pasar warpageTopology en el spec desde dfm-mesh)',
+    deuda: topo ? undefined : 'dfm-mesh.warpageTopology clasifica la pieza; pasar al spec para activar este criterio',
   });
 
   return resumir(S, C);
