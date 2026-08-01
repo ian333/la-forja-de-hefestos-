@@ -407,6 +407,16 @@ varying float vAlpha;
 varying float vBokeh;
 void main() {
   vec2 uv = gl_PointCoord;
+  // ⚠ RECORTE CIRCULAR — ESTO ES LO QUE HACÍA "CUBOS" (Ian, 2026-07-31: "ESTOY VIENDO
+  // LITERALMENTE CUBOS"). Este shader era el ÚNICO del archivo que no lo tenía: confiaba en
+  // que el sprite se apagara solo en las esquinas. En aditivo eso no alcanza — si en la
+  // esquina queda medio por ciento de alfa y ahí se encinan diez mil puntos, ese medio por
+  // ciento se SUMA hasta hacerse visible, y lo que se ve es el CONTORNO CUADRADO de la
+  // textura. Por eso salía en Ne, Mg, Al, Si, S, Cl, Ar, Ca, Ti, Cr, Fe, Cu, Zn, Br, Kr —
+  // los de core denso— y no en H o Li, cuya nube difusa nunca satura.
+  // El resto de los shaders de puntos de este archivo ya hacen exactamente esto.
+  vec2 d = uv - 0.5;
+  if (dot(d, d) > 0.25) discard;
   vec4 t = texture2D(uSprite, uv);
   float a = t.a * vAlpha;
   // bokeh: el disco desenfocado reparte su energía → más tenue y plano
