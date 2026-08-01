@@ -28,6 +28,7 @@ import { GATE_TABLE } from './gating';
 import { coordAudit } from './mold-coords';
 import { EJECTOR_DIAM_CLEARANCE_MM } from './fits';
 import { BASE_MATERIALS } from './moldbase';
+import type { PlanVenteo } from './venting-locations';
 import type { MoldAssemblySpec } from './mold-assembly';
 const GATE_TABLE_DEGATING = Object.fromEntries(Object.entries(GATE_TABLE).map(([k, v]) => [k, v.degating])) as Record<string, string>;
 
@@ -42,6 +43,9 @@ export interface EnsambleMedido {
   holguraAguaMm?: number;
   /** acero mínimo medido entre barreno de expulsor y pared de cavidad (mm) */
   holguraPinCavidadMm?: number;
+  /** §8.2.2: el plan de venteos de `enumerarVenteos(campoDeFlujo)`. Necesita el
+   *  campo de flujo (voxelizado del hueco A/B), que no vive en el paquete numérico. */
+  planVenteo?: PlanVenteo;
 }
 
 export type ContratoEstado = 'CUMPLE' | 'ADVIERTE' | 'VIOLA' | 'SIN-CABLEAR' | 'SIN-MÓDULO';
@@ -229,7 +233,7 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
  * perdona (§8.4). El entregable tiene DOS listas: los venteos maquinados y la
  * capacidad reservada para los que se añadirán tras el tryout (§8.1).
  */
-export function contratoVenteo(pkg: MoldPackage): ContratoSubsistema {
+export function contratoVenteo(pkg: MoldPackage, ens?: EnsambleMedido): ContratoSubsistema {
   const S = 'venteo';
   const C: Criterio[] = [];
   const plastic = (pkg.spec.plastic ?? 'PP').toUpperCase();
@@ -286,21 +290,36 @@ export function contratoVenteo(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 5) Ubicaciones: final de flujo, convergencias, bolsas muertas — §8.2.2 ──
+  // `enumerarVenteos` (venting-locations.ts) los saca del campo de flujo: los
+  // máximos locales de RESISTENCIA (no de distancia — §5.5.5 los desacopla), las
+  // knit-lines de la máscara de soldadura y las bolsas cerradas por el frente.
+  const pv = ens?.planVenteo;
+  const tipos = pv ? [...new Set(pv.maquinar.concat(pv.reservados).map((c) => c.tipo))] : [];
+  const faltaSoldadura = pv ? !tipos.includes('soldadura') : false;
   C.push({
     id: 'vent-ubicaciones', subsistema: S, cita: '§8.2.2',
     criterio: 'venteo en cada final de flujo, en cada convergencia de frentes (knit-line) y en cada bolsa muerta',
-    estado: 'SIN-MÓDULO',
-    detalle: 'la Máquina no enumera ubicaciones candidatas de venteo (el libro saca ~36 en el bezel y maquina 8)',
-    deuda: 'flowlen-mesh/dfm-mesh ya calculan el frente de llenado y las regiones — de ahí salen los candidatos; falta el enumerador + la lista de RESERVADOS',
+    medido: pv?.maquinar.length, limite: pv?.nCandidatos, unidad: 'venteos',
+    estado: pv == null ? 'SIN-CABLEAR' : (faltaSoldadura ? 'ADVIERTE' : 'CUMPLE'),
+    detalle: pv == null
+      ? 'sin campo de flujo no hay ubicaciones (el libro saca ~36 candidatos en el bezel y maquina 8)'
+      : `${pv.nCandidatos} candidatos (${tipos.join(', ')}) → ${pv.maquinar.length} a maquinar, ${pv.reservados.length} RESERVADOS §8.1`
+        + (pv.maquinar[0]
+          ? ` · el más urgente en (${pv.maquinar[0].x}, ${pv.maquinar[0].y}, ${pv.maquinar[0].z}) llega al ${(pv.maquinar[0].fracLlenado * 100).toFixed(0)} % del llenado`
+          : '')
+        + (faltaSoldadura ? ' — ⚠ NO se enumeraron knit-lines: pasar la máscara de computeWeldMask' : ''),
+    deuda: pv == null ? 'enumerarVenteos(campo) en venting-locations.ts ya los produce; pasar el plan en contratos(pkg, {planVenteo})' : undefined,
   });
 
   // ── 6) Los canales de alivio no chocan con el agua — §8.3.2 ──
   C.push({
     id: 'vent-vs-agua', subsistema: S, cita: '§8.3.2',
     criterio: 'los canales de alivio del venteo no deben cruzar líneas de enfriamiento (el venteo cede el paso al agua)',
-    estado: 'SIN-MÓDULO',
-    detalle: 'no hay venteos en la geometría, así que el auditor de colisiones no puede verificarlo',
-    deuda: 'cuando existan venteos: agregarlos a coordAudit como cuerpos con rango XYZ',
+    estado: 'SIN-CABLEAR',
+    detalle: pv
+      ? `hay ${pv.maquinar.length} venteos con coordenadas, pero no son cuerpos en el ensamble: coordAudit no puede medirlos contra las líneas de agua`
+      : 'no hay venteos en la geometría, así que el auditor de colisiones no puede verificarlo',
+    deuda: 'agregar los venteos de enumerarVenteos a coordAudit como cuerpos con rango XYZ (el canal de alivio, no solo el punto)',
   });
 
   return resumir(S, C);
@@ -1107,7 +1126,7 @@ const ICON: Record<ContratoEstado, string> = {
 
 /** Corre TODOS los contratos disponibles sobre un paquete y arma el reporte. */
 export function contratos(pkg: MoldPackage, ens?: EnsambleMedido): ContratoReporte {
-  const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg), contratoEnfriamiento(pkg, ens),
+  const subsistemas = [contratoAlimentacion(pkg), contratoVenteo(pkg, ens), contratoEnfriamiento(pkg, ens),
     contratoExpulsion(pkg, ens), contratoEstructural(pkg),
     contratoLlenado(pkg), contratoGates(pkg),
     contratoLayout(pkg), contratoCosto(pkg), contratoContraccion(pkg)];
