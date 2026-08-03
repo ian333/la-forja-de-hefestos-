@@ -23,7 +23,7 @@ import { resolveThread, threadSurfaceMesh, plainShaftMesh, type Mesh as ThreadMe
 import { resolveHead, headMesh, seatSpec, tipChamfer } from './mold-heads';
 import { engagementLengthMm, plateYieldMPa, fastenerPlan } from './mold-fasteners';
 import { pillarClearanceFit, guideGeom } from './fits';   // tolerancias LITERALES del libro (no inventar)
-import { autoEjectionPlan } from './mold-ejection-auto';  // el CEREBRO §11: pin/blade/sleeve/STRIPPER desde la figura
+import { autoEjectionPlan, maxPinDiaForSteelMm, STANDARD_EJECTOR_PIN_MM } from './mold-ejection-auto';  // el CEREBRO §11: pin/blade/sleeve/STRIPPER desde la figura
 // UNA fuente de verdad para el tamaño del inserto (§4.2.2): la misma que dimensiona la base
 import { sizeInserts } from './moldbase';
 import { planInterlocks } from './mold-interlocks';
@@ -1580,7 +1580,14 @@ export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
         const esVaso = s.cavityShape === 'round' && (s.wallMm ?? 2) <= 2 && s.Hmm >= 0.35 * Math.min(s.Lmm, s.Wmm);
         const plan = autoEjectionPlan({ kind: esVaso ? 'cup' : 'box', Lmm: s.Lmm, Wmm: s.Wmm, Hmm: s.Hmm, wallMm: s.wallMm ?? 2, draftDeg: s.dfm?.draftDeg ?? 2, round: s.cavityShape === 'round' }, s.plastic ?? 'ABS');
         return { type: plan.type as 'pin' | 'blade' | 'sleeve' | 'stripper', diaMm: plan.pinDiaMm ?? +Math.max(2, d.expulsion.pines.dMinMm).toFixed(2), count: plan.nPins ?? Math.max(4, 4 * nCav) };
-      } catch { return { type: 'pin' as const, diaMm: +Math.max(2, d.expulsion.pines.dMinMm).toFixed(2), count: Math.max(4, 4 * nCav) }; }
+      } catch {
+        // fallback SIN plan: el ⌀ igual respeta el techo de acero §11.2.5 — con la
+        // huella chica el pin se ENCOGE al estándar que cabe (remedio del libro)
+        const techo = maxPinDiaForSteelMm(Math.min(s.Lmm, s.Wmm) / 2);
+        const cabe = STANDARD_EJECTOR_PIN_MM.filter((x) => x <= Math.min(8, techo));
+        const dia = Math.max(+Math.max(2, d.expulsion.pines.dMinMm).toFixed(2), 0);
+        return { type: 'pin' as const, diaMm: Math.min(dia, cabe.length ? cabe[cabe.length - 1] : 1), count: Math.max(4, 4 * nCav) };
+      }
     })(),
     core: { widthMm: Math.round(s.Lmm), material: pkg.metal.metal.key },
     cavityMetal: pkg.metal.metal.key, baseSteel: '1.1730 (C45)',

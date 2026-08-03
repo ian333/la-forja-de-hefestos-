@@ -11,9 +11,25 @@
  * Clave que el user cazó: un VASO de pared delgada NO se expulsa con pines (perforan
  * el fondo de 1.2 mm) → chooseEjectorType lo manda a STRIPPER (empuja el borde).
  */
-import { ejectionForce, effectiveArea, ejectorPinSizing, type EjectionMaterial, ABS_EJECT } from './ejection';
+import { ejectionForce, effectiveArea, ejectorPinSizing, pinBuckling, type EjectionMaterial, ABS_EJECT } from './ejection';
 import { chooseEjectorType, type EjectorType } from './ejectortypes';
 import { ejectorPinFit } from './fits';
+
+/** §11.3.1 LITERAL: pines estándar "in standard diameters (ranging from 1 mm to
+ *  25 mm)". La serie intermedia es de catálogo comercial (DME/HASCO) —
+ *  extensión DECLARADA dentro del rango del libro. */
+export const STANDARD_EJECTOR_PIN_MM = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 16, 20, 25];
+
+/**
+ * §11.2.5 EN DESPEJE: el ⌀ máximo de pin que cabe con 1⌀ de acero contra la pared
+ * moldeante más cercana. El colocador exige del centro del pin al muro
+ * keepOut = ⌀ + ½barreno + 1 de guarda = 1.5·⌀ + 1.065 ≤ espacio disponible
+ * ⇒ ⌀ ≤ (2·espacio − 2.13)/3. El remedio es del libro, no nuestro: "the ejector
+ * pins should be made smaller and more strategically located" (§11.2.3-11.2.5).
+ */
+export function maxPinDiaForSteelMm(espacioAlMuroMm: number): number {
+  return (2 * espacioAlMuroMm - 2.13) / 3;
+}
 
 // ── Materiales de EXPULSIÓN por plástico (E, CTE, T, µ, σy, ρ). ABS del libro. ──
 export const PP_EJECT: EjectionMaterial = { E: 1.5e9, cte: 1.5e-4, tSolid: 130, tEject: 90, mu: 0.4, sigmaYield: 35e6, rho: 905 };
@@ -60,12 +76,24 @@ export function autoEjectionPlan(fig: PartFigure, materialKey = 'ABS'): Ejection
   plan.report.push(`Tipo: ${type.toUpperCase()} — ${porQue}`);
 
   if (type === 'pin' || type === 'blade') {
-    // Diámetro ESTÁNDAR por tamaño de pieza; la CUENTA sale de la fuerza (el cortante
-    // en el plástico, Eq 11.12, suele gobernar → muchos pines chicos, no pocos gigantes).
-    const stdDia = fig.Lmm > 120 ? 12 : fig.Lmm > 60 ? 10 : 8;    // mm
+    // ── EL ⌀ SALE DE DOS RESTRICCIONES DEL LIBRO, no del tamaño de la pieza ──
+    // TECHO §11.2.5: 1⌀ de acero contra la pared moldeante — si la huella es
+    //   chica, el pin SE ENCOGE ("the ejector pins should be made smaller").
+    // La CUENTA compensa (§11.2.3, ejemplo del bezel: 10×⌀4.5 ≡ 40×⌀1.125 —
+    //   mismo perímetro total, mismo cortante en la pieza).
+    // PISO §11.3.1: pandeo de columna (pinBuckling, SF ≥ 2) — si el ⌀ chico
+    //   pandea, se suben PINES (menos F por pin); si ni así, step-pin (declarado).
+    const pref = fig.Lmm > 120 ? 12 : fig.Lmm > 60 ? 10 : 8;      // preferencia práctica
+    const dMaxSteel = maxPinDiaForSteelMm(Math.min(fig.Lmm, fig.Wmm) / 2);
+    const cabe = STANDARD_EJECTOR_PIN_MM.filter((d) => d <= Math.min(pref, dMaxSteel));
+    const stdDia = cabe.length ? cabe[cabe.length - 1] : STANDARD_EJECTOR_PIN_MM[0];
     const nComp = Math.ceil(4 * (F / 450e6) / (Math.PI * (stdDia * 1e-3) ** 2));   // Eq 11.10 (compresión/fatiga)
     const nShear = Math.ceil((2 * F / (m.sigmaYield * fig.wallMm * 1e-3)) / (Math.PI * stdDia * 1e-3)); // Eq 11.12 (cortante)
-    const nPins = Math.max(4, nComp, nShear);
+    // PISO de pandeo §11.3.1 (largo libre = 150 mm, el MÍNIMO de catálogo del
+    // libro — conservador y declarado): n sube hasta que cada pin aguante SF≥2.
+    const fCrit = pinBuckling({ diaMm: stdDia, freeLenMm: 150, fPerPinN: 1 }).fCritN;
+    const nBuck = Math.ceil((2 * F) / fCrit);
+    const nPins = Math.max(4, nComp, nShear, nBuck);
     const holeDia = ejectorPinFit(stdDia).holeDiaMm;
     plan.nPins = nPins; plan.pinDiaMm = stdDia; plan.holeDiaMm = holeDia;
     // rejilla nx×ny bajo la huella (margen 15%)
@@ -75,6 +103,9 @@ export function autoEjectionPlan(fig: PartFigure, materialKey = 'ABS'): Ejection
       pos.push({ x: Math.round(mx + (c * (fig.Lmm - 2 * mx)) / Math.max(1, nx - 1)), y: Math.round(my + (r * (fig.Wmm - 2 * my)) / Math.max(1, ny - 1)) });
     plan.positions = pos;
     plan.report.push(`${nPins} pines ⌀${stdDia} mm (cortante gobierna, Eq 11.12) · barreno ⌀${holeDia} (holgura 0.13, fits.ts)`);
+    if (stdDia < pref) plan.report.push(`⌀ ENCOGIDO ${pref}→${stdDia} mm por acero §11.2.5 (huella mín ${Math.min(fig.Lmm, fig.Wmm)} mm admite ⌀≤${dMaxSteel.toFixed(1)}): "the ejector pins should be made smaller" — la cuenta compensa (§11.2.3: mismo perímetro total)`);
+    if (!cabe.length) plan.report.push(`⚠ NI el ⌀1 estándar cabe con 1⌀ de acero §11.2.5 (huella mín ${Math.min(fig.Lmm, fig.Wmm)} mm) — considerar blade §11.3.2 o ejector pad §11.2.5; el auditor lo marcará CRÍTICO`);
+    if (nBuck > Math.max(nComp, nShear)) plan.report.push(`el PANDEO gobierna la cuenta (§11.3.1, L=150 mm de catálogo, SF≥2): n sube a ${nPins} — alternativa: step-pin con hombro +1 mm`);
     if (nPins > 30) plan.report.push(`⚠ ${nPins} pines es MUCHO — sube el draft (hoy ${fig.draftDeg.toFixed(1)}°) para bajar la fuerza de expulsión`);
   } else if (type === 'stripper') {
     const perim = fig.round ? Math.PI * ((fig.Lmm + fig.Wmm) / 2) : 2 * (fig.Lmm + fig.Wmm);

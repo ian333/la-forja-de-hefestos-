@@ -54,8 +54,9 @@ const DIR = process.env.SHOTDIR || '/home/ian/Orkesta/la-forja/forja-shots';
       || filas[i - 1].crit > f.crit
       || (filas[i - 1].crit === f.crit && filas[i - 1].viola > f.viola)
       || (filas[i - 1].crit === f.crit && filas[i - 1].viola === f.viola && filas[i - 1].score <= f.score));
-    // al menos un modelo del lote trae CRÍTICO del ensamble (LEGO: pin ⌀8 en pieza
-    // de 16 mm — §11.2.5 no cabe; la tabla existe para cazar exactamente esto)
+    // al menos un modelo del lote trae CRÍTICO del ensamble y ENCABEZA la tabla
+    // (hoy: el vaso, agua frontera 4.76 < 4.765 §9.2.7 — el LEGO ya se curó con el
+    // pin auto-encogido §11.2.5). La tabla existe para cazar exactamente esto.
     out.checks.hay_critico_cazado = filas.some((f) => f.crit > 0) && filas[0].crit > 0;
     await page.screenshot({ path: `${DIR}/revisar-lote-tabla.png`, timeout: 30000 });
 
