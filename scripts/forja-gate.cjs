@@ -93,6 +93,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-contratos-test.cjs'] },
   { group: 'kernel', n: 'mold-venteo-ubicaciones', why: 'DÓNDE va cada venteo (§8.2.2): sale del campo de flujo, NO de la figura. La prueba decisiva: una pieza cuyo brazo DELGADO está más CERCA que el grueso — el venteo debe ir al delgado (se llena al final por resistencia, §5.5.5 race tracking), no al punto más lejano. Elegir por distancia manda el venteo al lugar equivocado y el molde sale quemado',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-venteo-ubicaciones-test.cjs'] },
+  { group: 'kernel', n: 'mold-revisar', why: 'LA LLAMADA ÚNICA revisarModelo(): malla o spec → dfm → moldMachine → ensamble medido → campo de flujo → venteos → contratos → expediente §13.10. La prueba decisiva: lo que el consumidor ingenuo deja SIN-CABLEAR (6) la llamada única lo destraba sola (3) — sin ella cada pantalla de la UI re-cablearía distinto y renace EL bug de contabilidad. Incluye el lote N-29 (tabla por severidad) y el registro de decisiones con firmas',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-revisar-test.cjs'] },
   { group: 'kernel', n: 'mold-cooling', why: 'Kazmer cap 9: t_c placa/barra (Eq 9.5/9.6) contra ejemplos del libro (8.4/18.9/22.9s), sim 1D transitoria (Eq 9.4), Q por ciclo',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-cooling-test.cjs'] },
   { group: 'kernel', n: 'mold-engine', why: 'MOTOR DE MOLDES cap 6: draft analysis, shrinkage, core&cavity con shut-offs (tina+tapa refs exactas), split plano (jabonera)',
