@@ -330,6 +330,13 @@ uniform float uHoleR;
 uniform float uCoreR;
 uniform float uBright;
 uniform float uBokeh;
+// uPix = alto_del_framebuffer / 3840 (el alto del MASTER 4K vertical). Copiado de O2Cloud,
+// el renderizador de los GANADORES (O2, N2, C2, agua v2). gl_PointSize esta en PIXELES:
+// sin este factor el mismo electron ocupa el MISMO numero de pixeles a 760 px que a 3840,
+// o sea que EN PROPORCION sale 5 veces mas chico en el laboratorio = confeti. En el 4K
+// uPix=1 y el look queda identico al del video. Es la leccion de
+// feedback_juzgar_a_resolucion_del_master: O2Cloud si la tenia, ElectronCloud nunca.
+uniform float uPix;
 attribute vec3 aColor;
 attribute float aSize;
 attribute float aShellIdx;
@@ -396,8 +403,8 @@ void main() {
   float coc = uBokeh > 0.0001 ? clamp(abs(-mv.z - focusDepth) * uBokeh - 0.12, 0.0, 1.0) : 0.0;
   vBokeh = coc;
   float spread = 1.0 + coc * 4.0;
-  float maxSz = uBokeh > 0.0001 ? 58.0 : 22.0;
-  gl_PointSize = clamp(aSize * 520.0 * (0.7 + 0.5 * pulse) / -mv.z * spread, 1.0, maxSz);
+  float maxSz = (uBokeh > 0.0001 ? 58.0 : 22.0) * uPix;
+  gl_PointSize = clamp(aSize * 520.0 * (0.7 + 0.5 * pulse) / -mv.z * spread * uPix, 1.2, maxSz);
 }
 `;
 const POINTS_FRAG = /* glsl */ `
@@ -429,6 +436,7 @@ void main() {
 export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, brightness = 1, bokeh = 0, rotRate = 0.55, revealAll = false }: { bundle: AtomBundle; time: number; holeRadius?: number; coreRadius?: number; brightness?: number; bokeh?: number; rotRate?: number; revealAll?: boolean }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const sprite = useMemo(() => makeSpriteTexture(), []);
+  const { gl } = useThree();          // para leer el alto REAL del framebuffer (uPix)
 
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -446,6 +454,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     uTime:       { value: 0 },
     uHoleR:      { value: 0 },
     uCoreR:      { value: 0 },
+    uPix:        { value: 1 },
     uBright:     { value: 1 },
     uBokeh:      { value: 0 },
   }), [sprite]);
@@ -465,6 +474,9 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     matRef.current.uniforms.uTime.value = time;
     matRef.current.uniforms.uHoleR.value = holeRadius;
     matRef.current.uniforms.uCoreR.value = coreRadius;
+    // uPix se mide del framebuffer REAL en cada cuadro: el lab corre a ~760-1200 px y el
+    // render 4K a 3840. Sin esto el mismo átomo se ve con puntos 5× más chicos en el lab.
+    matRef.current.uniforms.uPix.value = Math.max(0.28, gl.domElement.height / 3840);
     matRef.current.uniforms.uBright.value = brightness;
     matRef.current.uniforms.uBokeh.value = bokeh;
     matRef.current.uniformsNeedUpdate = true;

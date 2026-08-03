@@ -43,8 +43,15 @@ OUT_DIR = os.path.join(HERE, '..', 'public', 'precomputed', 'atoms')
 BOHR = 0.529177210903
 SEED = 20260731
 POSQ = 2000.0          # bohr = int16/POSQ → techo 16.38 bohr por eje
+VERSION_BIN = 2        # v1 = ATM1 cartesiano 26k · v2 = ATM2 esférico 110k con densidad
 Z_MAX = int(os.environ.get('Z_MAX', '118'))
-N_PTS = int(os.environ.get('N_PTS', '26000'))     # puntos por átomo (todas las subcapas)
+# PUNTOS POR ÁTOMO. 26 000 daba CONFETI: el video (buildAtomBundle) genera hasta 200 000
+# —`200000/totalElectrons` por electrón— y ahí está la diferencia entre una masa luminosa
+# continua y motas separadas con negro entre ellas. Comparado lado a lado el 2026-07-31
+# (Ian: "no se parecen en nada a nuestros videos"). A 110 000 el archivo pesa ~800 KB, que
+# con el caché de borde ya encendido se sirve sin dolor, y solo se baja el elemento que se
+# está viendo.
+N_PTS = int(os.environ.get('N_PTS', '110000'))
 NR = int(os.environ.get('NR', '170'))             # anillos radiales (log) — resuelven el core
 NDIR = int(os.environ.get('NDIR', '900'))         # direcciones (espiral de Fibonacci)
 
@@ -152,7 +159,12 @@ def muestrea_esf(dens, pesos, P, n, rng, nr, ndir):
     a = rng.normal(0, ang * 0.42, (n, 3))
     v = u + a
     v /= np.linalg.norm(v, axis=1)[:, None]
-    return v * rr[:, None]
+    # DENSIDAD relativa del punto (0-255): normalizada por el percentil 99 para que un pico
+    # nuclear extremo no aplaste todo lo demás a cero. El renderer la usa para tamaño y brillo.
+    d = dens[idx]
+    ref = np.percentile(dens[dens > 0], 99) if (dens > 0).any() else 1.0
+    d8 = np.clip(np.power(np.clip(d / max(ref, 1e-30), 0, 1), 0.45) * 255, 0, 255).astype(np.uint8)
+    return v * rr[:, None], d8
 
 
 def calcula(Z):
@@ -251,18 +263,30 @@ def subcapas(mol, mf):
     return dict(sorted(grupos.items(), key=lambda kv: (kv[0][0], kv[0][1])))
 
 
-def escribe(Z, L, shells, pts, sidx, base, metodo, e_tot):
+def escribe(Z, L, shells, pts, sidx, base, metodo, e_tot, dens=None):
+    """ATM2 = ATM1 + un uint8 de DENSIDAD por punto. El video modula TAMAÑO y BRILLO con la
+    densidad local (0.030-0.085 de tamaño); sin ese dato todos los puntos salen iguales y la
+    nube se ve plana. Un byte por punto es barato y es la diferencia entre polvo y cuerpo."""
     os.makedirs(OUT_DIR, exist_ok=True)
-    ruta = os.path.join(OUT_DIR, f'z{Z:03d}.bin')
+    # ⚠ EL NOMBRE LLEVA VERSIÓN. Los .bin se sirven con caché inmutable de 30 días en el
+    # borde de Cloudflare (ver deploy/nginx-forja.conf), así que reescribir z006.bin NO
+    # invalida nada: medido el 2026-07-31, tras recalcular los 118 el mundo seguía recibiendo
+    # el ATM1 viejo con `cf-cache-status: HIT`. Versionar el NOMBRE es la única forma limpia:
+    # archivo nuevo = clave de caché nueva, sin purgar nada a mano. Subir VERSION_BIN cada vez
+    # que cambie el formato o el muestreo.
+    ruta = os.path.join(OUT_DIR, f'z{Z:03d}-v{VERSION_BIN}.bin')
     q = np.clip(np.round(pts * POSQ), -32767, 32767).astype('<i2')
     with open(ruta, 'wb') as fp:
-        fp.write(b'ATM1')
+        fp.write(b'ATM2')
         fp.write(struct.pack('<4i', Z, len(pts), len(shells), 0))
         fp.write(struct.pack('<2f', POSQ, L))
         for (n, l), ne in shells:
             fp.write(struct.pack('<3i', n, l, ne))
         fp.write(q.tobytes())
         fp.write(np.asarray(sidx, dtype=np.uint8).tobytes())
+        if dens is None:
+            dens = np.full(len(pts), 160, np.uint8)
+        fp.write(np.asarray(dens, dtype=np.uint8).tobytes())
     return ruta, os.path.getsize(ruta)
 
 
@@ -290,7 +314,7 @@ def main():
             fusion[e['Z']] = e
         os.makedirs(OUT_DIR, exist_ok=True)
         with open(_mf, 'w') as f:
-            json.dump(dict(seed=SEED, posq=POSQ, grid=f'{NR}x{NDIR} esferica',
+            json.dump(dict(seed=SEED, posq=POSQ, version=VERSION_BIN, grid=f'{NR}x{NDIR} esferica',
                            elements=[fusion[k] for k in sorted(fusion)]), f)
     print(f"=== TABLA PERIÓDICA AB INITIO · {len(lista)} elementos · malla esférica {NR}×{NDIR} · {N_PTS} pts ===",
           flush=True)
@@ -311,7 +335,7 @@ def main():
         # peso de cada subcapa = sus electrones → los puntos se reparten por OCUPACIÓN
         pesos = {nl: sum(o for _, o in v) for nl, v in grupos.items()}
         tot_e = sum(pesos.values())
-        pts_all, sidx_all, shells = [], [], []
+        pts_all, sidx_all, dens_all, shells = [], [], [], []
         for si, (nl, orbs) in enumerate(grupos.items()):
             dens = np.zeros(G.shape[0])
             for a in range(0, G.shape[0], 60000):
@@ -319,11 +343,13 @@ def main():
                 for c, o in orbs:
                     dens[a:a + 60000] += o * (ao @ c) ** 2
             n_sub = max(200, int(round(N_PTS * pesos[nl] / tot_e)))
-            p = muestrea_esf(dens, W, G, n_sub, rng, NR, NDIR)
+            p, d8 = muestrea_esf(dens, W, G, n_sub, rng, NR, NDIR)
             pts_all.append(p); sidx_all.append(np.full(len(p), si, np.uint8))
+            dens_all.append(d8)
             shells.append((nl, int(round(pesos[nl]))))
         pts = np.concatenate(pts_all); sidx = np.concatenate(sidx_all)
-        ruta, size = escribe(Z, L, shells, pts, sidx, base, metodo, float(mf.e_tot))
+        dq = np.concatenate(dens_all)
+        ruta, size = escribe(Z, L, shells, pts, sidx, base, metodo, float(mf.e_tot), dq)
         etiquetas = ' '.join(f"{n}{'spdfg'[l]}{ne}" for (n, l), ne in shells)
         print(f"{Z:>4} {SIMBOLO[Z-1]:<3} {base:<10} {metodo:<5} {mf.e_tot:>14.5f} {L:>8.2f} "
               f"{len(shells):>9} {size/1024:>6.0f}   {etiquetas}", flush=True)
