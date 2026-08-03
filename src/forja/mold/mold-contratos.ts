@@ -26,6 +26,7 @@ import { estPartVolumeCc, FEED_MATERIALS, STANDARD_RUNNER_DIAMM, steelSafeDiaMm 
 import { VENT_TABLE_MM } from './venting';
 import { GATE_TABLE } from './gating';
 import { coordAudit } from './mold-coords';
+import { coolingCircuit, plateDepth } from './mold-drawing-set';
 import { EJECTOR_DIAM_CLEARANCE_MM } from './fits';
 import { BASE_MATERIALS } from './moldbase';
 import type { PlanVenteo } from './venting-locations';
@@ -48,6 +49,11 @@ export interface EnsambleMedido {
   /** §8.2.2: el plan de venteos de `enumerarVenteos(campoDeFlujo)`. Necesita el
    *  campo de flujo (voxelizado del hueco A/B), que no vive en el paquete numérico. */
   planVenteo?: PlanVenteo;
+  /** §9.1.6: conexiones externas de agua POR MITAD según el circuito RUTEADO
+   *  (coolingCircuit conecta las N líneas en serpentín con cross-drills → 2 puertos). */
+  aguaPuertosPorMitad?: number;
+  /** plugs que sellan los barrenos pasantes del serpentín (§9.3.1) */
+  aguaPlugs?: number;
 }
 
 export type ContratoEstado = 'CUMPLE' | 'ADVIERTE' | 'VIOLA' | 'SIN-CABLEAR' | 'SIN-MÓDULO';
@@ -401,13 +407,20 @@ export function contratoEnfriamiento(pkg: MoldPackage, ens?: EnsambleMedido): Co
   });
 
   // ── 7) Usabilidad de taller: ≤2 conexiones por mitad — §9.1.6 ──
+  // El ruteo YA existe: coolingCircuit (drawing-set) conecta las N líneas en
+  // SERPENTÍN con cross-drills y plugs → puertos IN/OUT. Este criterio vivió como
+  // SIN-MÓDULO porque el contrato leía el diseño numérico (N líneas) sin ver que
+  // la geometría las une en un circuito — el bug de contabilidad de siempre.
+  const puertos = ens?.aguaPuertosPorMitad;
   C.push({
     id: 'agua-conexiones', subsistema: S, cita: '§9.1.6',
     criterio: 'máximo 2 conexiones externas por mitad de molde (una entrada, una salida); si hay más, etiquetadas in/out',
-    medido: L.nLines, limite: 2, unidad: 'líneas',
-    estado: 'SIN-MÓDULO',
-    detalle: `${L.nLines} líneas diseñadas, pero la Máquina no modela el MANIFOLD INTERNO (§9.3.1, "very little added cost while delivering both increased performance and ease of use") que las reduciría a 2 conexiones`,
-    deuda: 'falta el ruteo de manifold interno + tapones: hoy cada línea es una conexión externa',
+    medido: puertos ?? L.nLines, limite: 2, unidad: 'conexiones',
+    estado: puertos == null ? 'SIN-CABLEAR' : (puertos <= 2 ? 'CUMPLE' : 'VIOLA'),
+    detalle: puertos == null
+      ? `${L.nLines} líneas en el diseño numérico — el circuito ruteado (coolingCircuit: serpentín + cross-drills + plugs) sí las reduce a 2 puertos, pero sin ensamble no se mide`
+      : `${puertos} puerto(s) por mitad (IN/OUT del serpentín) · ${ens?.aguaPlugs ?? 0} plugs sellan los barrenos pasantes — §9.3.1: manifold interno a "very little added cost" ✓`,
+    deuda: puertos == null ? 'pasa el MoldAssemblySpec a contratos(pkg, ens) — medirEnsamble cuenta los puertos del circuito' : undefined,
   });
 
   // ── 8) Claro ≥ ½⌀ contra cualquier otro componente — §9.2.7 ──
@@ -1179,5 +1192,12 @@ export function medirEnsamble(spec: MoldAssemblySpec): EnsambleMedido {
     out.holguraPinCavidadMm = r.medidas.holguraPinCavidadMm;
     out.pinDiaEnsambleMm = r.medidas.pinDiaMm;
   } catch { /* sin geometría disponible: los criterios quedan SIN-CABLEAR, que es la verdad */ }
+  try {
+    // §9.1.6: las conexiones externas se cuentan del circuito RUTEADO, no del
+    // diseño numérico (N líneas ≠ N conexiones: el serpentín las une)
+    const cc = coolingCircuit(spec, plateDepth(spec));
+    out.aguaPuertosPorMitad = cc.ports.length;
+    out.aguaPlugs = cc.plugs.length;
+  } catch { /* idem */ }
   return out;
 }

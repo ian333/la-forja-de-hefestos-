@@ -82,6 +82,10 @@
   checks.aguaSeJuzga = cAgua.estado !== 'SIN-CABLEAR';
   const cAcero = repE.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'eject-acero-minimo');
   checks.aceroSeJuzga = cAcero.estado !== 'SIN-CABLEAR';
+  // §9.1.6: las conexiones se cuentan del circuito RUTEADO (2 puertos), no de las
+  // N líneas del diseño numérico — el serpentín de coolingCircuit las une
+  const cConex = repE.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'agua-conexiones');
+  checks.conexionesDelCircuito = cConex.estado === 'CUMPLE' && ens.aguaPuertosPorMitad === 2;
   // §11.2.5: el límite es 1⌀ del pin REAL del ensamble, no del mínimo teórico
   checks.aceroContraPinReal = cAcero.limite === ens.pinDiaEnsambleMm;
   // con ensamble hay MENOS criterios sin cablear que sin él
