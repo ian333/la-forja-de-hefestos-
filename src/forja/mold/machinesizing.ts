@@ -40,13 +40,17 @@ export interface InjectionMachine {
  * ≈ 2 % del clamp (survey del libro §11.2.2).
  */
 export const INJECTION_MACHINES: InjectionMachine[] = [
-  { name: 'IM-50',  clampTons: 50,  shotCc: 63,   maxInjPressureMPa: 210, plasticizeGs: 12, tieHmm: 310, tieVmm: 310, minDaylightMm: 150, maxDaylightMm: 420, ejectionForceKN: 9.8 },
-  { name: 'IM-90',  clampTons: 90,  shotCc: 130,  maxInjPressureMPa: 210, plasticizeGs: 20, tieHmm: 360, tieVmm: 360, minDaylightMm: 180, maxDaylightMm: 500, ejectionForceKN: 17.7 },
-  { name: 'IM-150', clampTons: 150, shotCc: 280,  maxInjPressureMPa: 200, plasticizeGs: 33, tieHmm: 460, tieVmm: 460, minDaylightMm: 220, maxDaylightMm: 600, ejectionForceKN: 29.4 },
-  { name: 'IM-250', clampTons: 250, shotCc: 510,  maxInjPressureMPa: 200, plasticizeGs: 52, tieHmm: 570, tieVmm: 570, minDaylightMm: 280, maxDaylightMm: 720, ejectionForceKN: 49.0 },
-  { name: 'Battenfeld HM320 (libro)', clampTons: 326, shotCc: 490, maxInjPressureMPa: 200, plasticizeGs: 60, tieHmm: 800, tieVmm: 630, minDaylightMm: 350, maxDaylightMm: 800, ejectionForceKN: 64 },
-  { name: 'IM-350', clampTons: 350, shotCc: 900,  maxInjPressureMPa: 190, plasticizeGs: 70, tieHmm: 660, tieVmm: 660, minDaylightMm: 320, maxDaylightMm: 820, ejectionForceKN: 68.6 },
-  { name: 'IM-500', clampTons: 500, shotCc: 1400, maxInjPressureMPa: 180, plasticizeGs: 95, tieHmm: 810, tieVmm: 810, minDaylightMm: 380, maxDaylightMm: 950, ejectionForceKN: 98.1 },
+  // nozzleOrificeMm: puntas de boquilla en tallas COMERCIALES (1/8"=3.2, 5/32"=4.0,
+  // 3/16"=4.8, 1/4"=6.4), representativas por clase de tonelaje como el resto de la
+  // fila. Son INTERCAMBIABLES en máquina: si §6.3.1 reprueba (boquilla ≥ sprue), la
+  // salida práctica es especificar una punta menor, no rediseñar el molde.
+  { name: 'IM-50',  clampTons: 50,  shotCc: 63,   maxInjPressureMPa: 210, plasticizeGs: 12, tieHmm: 310, tieVmm: 310, minDaylightMm: 150, maxDaylightMm: 420, ejectionForceKN: 9.8, nozzleOrificeMm: 3.2 },
+  { name: 'IM-90',  clampTons: 90,  shotCc: 130,  maxInjPressureMPa: 210, plasticizeGs: 20, tieHmm: 360, tieVmm: 360, minDaylightMm: 180, maxDaylightMm: 500, ejectionForceKN: 17.7, nozzleOrificeMm: 4.0 },
+  { name: 'IM-150', clampTons: 150, shotCc: 280,  maxInjPressureMPa: 200, plasticizeGs: 33, tieHmm: 460, tieVmm: 460, minDaylightMm: 220, maxDaylightMm: 600, ejectionForceKN: 29.4, nozzleOrificeMm: 4.0 },
+  { name: 'IM-250', clampTons: 250, shotCc: 510,  maxInjPressureMPa: 200, plasticizeGs: 52, tieHmm: 570, tieVmm: 570, minDaylightMm: 280, maxDaylightMm: 720, ejectionForceKN: 49.0, nozzleOrificeMm: 4.8 },
+  { name: 'Battenfeld HM320 (libro)', clampTons: 326, shotCc: 490, maxInjPressureMPa: 200, plasticizeGs: 60, tieHmm: 800, tieVmm: 630, minDaylightMm: 350, maxDaylightMm: 800, ejectionForceKN: 64, nozzleOrificeMm: 4.8 },
+  { name: 'IM-350', clampTons: 350, shotCc: 900,  maxInjPressureMPa: 190, plasticizeGs: 70, tieHmm: 660, tieVmm: 660, minDaylightMm: 320, maxDaylightMm: 820, ejectionForceKN: 68.6, nozzleOrificeMm: 4.8 },
+  { name: 'IM-500', clampTons: 500, shotCc: 1400, maxInjPressureMPa: 180, plasticizeGs: 95, tieHmm: 810, tieVmm: 810, minDaylightMm: 380, maxDaylightMm: 950, ejectionForceKN: 98.1, nozzleOrificeMm: 6.4 },
 ];
 
 export interface MachineRequirements {

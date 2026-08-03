@@ -110,6 +110,35 @@ const check = (name, cond, detail) => {
     } else console.log('(salta embudo: no está test-parts/funnel-130.stl)');
   }
 
+  // ── TOPOLOGÍA DE ALABEO §10.3.1 + ÁREA PROYECTADA §5.5.3 (mallas sintéticas:
+  // solo tapas — el raster es de rayos verticales, no necesita paredes) ──
+  {
+    const slab = (P, I, x0, y0, x1, y1, h) => {
+      for (const z of [0, h]) {
+        const b = P.length / 3;
+        P.push(x0, y0, z, x1, y0, z, x1, y1, z, x0, y1, z);
+        I.push(b, b + 1, b + 2, b, b + 2, b + 3);
+      }
+    };
+    const P1 = [], I1 = [];
+    slab(P1, I1, 0, 0, 100, 80, 3);                      // placa MACIZA 100×80×3
+    const rPl = DFM.dfmFromMesh({ positions: new Float32Array(P1), indices: new Uint32Array(I1) }, { wallMm: 3 });
+    check('placa maciza clasifica \x27placa\x27 (§10.3.1: pandea si Δs > 0.44·(h/W)²)',
+      rPl.warpageTopology.tipo === 'placa', JSON.stringify(rPl.warpageTopology));
+    check('área proyectada de la placa = bbox (sin ventanas no hay descuento)',
+      Math.abs(rPl.projectedAreaMm2 - 8000) < 200, `${rPl.projectedAreaMm2} vs 8000`);
+    const P2 = [], I2 = [];
+    slab(P2, I2, 0, 0, 100, 15, 3);                      // MARCO: rim de 15 con ventana 70×50
+    slab(P2, I2, 0, 65, 100, 80, 3);
+    slab(P2, I2, 0, 15, 15, 65, 3);
+    slab(P2, I2, 85, 15, 100, 65, 3);
+    const rMa = DFM.dfmFromMesh({ positions: new Float32Array(P2), indices: new Uint32Array(I2) }, { wallMm: 3 });
+    check('marco con ventana clasifica \x27marco\x27 (§10.3.1: bordes desacoplados, no alabea)',
+      rMa.warpageTopology.tipo === 'marco', JSON.stringify(rMa.warpageTopology));
+    check('área proyectada del marco DESCUENTA la ventana (§5.5.3: el tonelaje sobre bbox sobreestima)',
+      Math.abs(rMa.projectedAreaMm2 - 4500) < 250, `${rMa.projectedAreaMm2} vs 4500 real (bbox diría 8000)`);
+  }
+
   console.log(fails ? `\n❌ ${fails} checks fallaron` : '\n✓ el juez de moldeabilidad calza con el libro (Fig 2.7 + §2.3.6 + §2.3.1)');
   process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error('TEST_FATAL', e); process.exit(1); });

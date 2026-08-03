@@ -211,7 +211,7 @@ export function contratoAlimentacion(pkg: MoldPackage): ContratoSubsistema {
       ? `boquilla ⌀ ${num(nozzleMm, 2)} mm ${nozzleMm < sprueTopMm ? '<' : '≥'} sprue ⌀ ${num(sprueTopMm, 2)} mm — `
         + (nozzleMm < sprueTopMm
           ? 'la boquilla es MÁS CHICA que el sprue ✓ (el fundido no se atora en la transición)'
-          : '⚠ la boquilla ≥ sprue: el sprue se queda agarrado en la mitad A y no cae con la pieza')
+          : '⚠ la boquilla ≥ sprue: el sprue se queda agarrado en la mitad A y no cae con la pieza — REMEDIO práctico: especificar una punta de boquilla menor (son intercambiables) o agrandar la entrada del sprue §6.3.1')
       : `sprue ⌀ ${num(sprueTopMm, 2)} mm — la máquina ${maqSel.machine?.name ?? '—'} no declara orificio de boquilla: no se puede verificar §6.3.1`,
     deuda: nozzleMm == null ? 'agregar nozzleOrificeMm al catálogo de InjectionMachine' : undefined,
   });

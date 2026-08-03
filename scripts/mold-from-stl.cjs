@@ -103,10 +103,14 @@ console.log(`  bbox ${size[0]}×${size[1]}×${size[2]} mm · vol ${(vol / 1000).
   }
 
   // ── spec con las dimensiones ORIENTADAS (L=x, W=y, H=z de apertura) ──
+  // projectedAreaMm2 + warpageTopology salen del raster de dfm-mesh: con ellos el
+  // contrato §5.5.3 descuenta ventanas del tonelaje y §10.3.1 clasifica el alabeo.
   const spec = {
     name, Lmm: +mxo[0].toFixed(1), Wmm: +mxo[1].toFixed(1), Hmm: +mxo[2].toFixed(1),
     surfaceMm2: Math.round(area), volumeMm3: Math.round(vol), wallMm: wall,
     annualVolume: 500000, plastic: 'ABS', finish: 'SPI B-3',
+    projectedAreaMm2: dfmMesh.projectedAreaMm2,
+    warpageTopology: dfmMesh.warpageTopology,
   };
   console.log('  MachineSpec:', JSON.stringify(spec));
 

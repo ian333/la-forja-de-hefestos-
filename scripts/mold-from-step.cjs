@@ -83,6 +83,13 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
     for (const v of r.verdicts) console.log(`   ${v.ok ? '✓' : '⚠'} ${v.param}: ${v.valor} [${v.ref}]`);
   } catch (e) { console.log('  (veredicto DFM no disponible:', String(e).slice(0, 80), ')'); }
 
+  // el raster de dfm-mesh alimenta los contratos: §5.5.3 (tonelaje sobre área REAL,
+  // descontando ventanas) y §10.3.1 (topología de alabeo marco/placa)
+  if (dfmMesh) {
+    spec.projectedAreaMm2 = dfmMesh.projectedAreaMm2;
+    spec.warpageTopology = dfmMesh.warpageTopology;
+  }
+
   if (push) {
     // manda TAMBIÉN la malla teselada (los insertos se tallan con la pieza real)
     const ATLAS = 'ian@100.97.118.117', DIST = '/mnt/hdd/forja-dist';
