@@ -31,7 +31,7 @@ import {
 } from '@/lib/chem/quantum/periodic-table';
 import {
   populateAtom, atomExtent, nucleusInfo,
-  subshellColor, subshellLabel,
+  subshellColor, subshellColorLive, subshellLabel,
   type PopulatedOrbital,
 } from '@/lib/chem/quantum/atom-builder';
 import { ORBITALS, sampleOrbital } from '@/lib/chem/quantum/orbitals';
@@ -221,10 +221,18 @@ export interface AtomBundle {
   colors: Float32Array;
   sizes: Float32Array;
   shellIdx: Float32Array;
-  shells: { label: string; n: number; l: number; color: THREE.Color }[];
+  // `electrons` = los que REALMENTE se dibujan en esa subcapa. Importa en los 57 elementos
+  // con pseudopotencial (Z≥37): ahí el core no existe y sumarlos NO da Z.
+  shells: { label: string; n: number; l: number; color: THREE.Color; electrons?: number }[];
 }
 
-export function buildAtomBundle(element: Element): AtomBundle {
+// `live` = laboratorio interactivo. Cambia SOLO dos cosas y las dos están medidas en la
+// memoria lab-atomo-vista: la paleta segura en aditivo (la del video suma a blanco: azul+naranja
+// = 255,255,255) y la modulación por densidad INVERTIDA (los puntos ya se muestrean ∝|ψ|², así
+// que multiplicar tamaño y brillo por d otra vez pinta densidad² = confeti en el halo).
+// Con `live=false` —o sea en TODO render de video— esta función es byte por byte la de antes.
+export function buildAtomBundle(element: Element, live = false): AtomBundle {
+  const tono = (n: number, l: number) => (live ? subshellColorLive(n, l) : subshellColor(n, l));
   const populated = populateAtom(element);
   const subshellGroups = new Map<string, { orbs: PopulatedOrbital[]; total: number; n: number; l: number }>();
   for (const o of populated) {
@@ -242,7 +250,8 @@ export function buildAtomBundle(element: Element): AtomBundle {
     })
     .map(([label, g]) => ({
       label, n: g.n, l: g.l,
-      color: new THREE.Color(subshellColor(g.n, g.l)),
+      color: new THREE.Color(tono(g.n, g.l)),
+      electrons: g.total,
     }));
 
   const totalElectrons = populated.reduce((s, o) => s + o.electrons, 0);
@@ -284,12 +293,14 @@ export function buildAtomBundle(element: Element): AtomBundle {
         // distinguen): comunica la fase real de la función de onda.
         if (p.sign < 0) tint.offsetHSL(0.06, 0.0, 0.0);
         // brillo PLANO (no dispara el additive): la densidad modula sutil, no quema.
-        const bright = 0.70 + 0.20 * p.density;
+        // En `live` la modulación va INVERTIDA (ver el comentario de buildAtomBundle y
+        // bundleFromAbInitio): grande y tenue en el halo ralo, chico y sobrio en el core denso.
+        const bright = live ? 0.42 - 0.12 * p.density : 0.70 + 0.20 * p.density;
         colors[cursor * 3 + 0] = tint.r * bright;
         colors[cursor * 3 + 1] = tint.g * bright;
         colors[cursor * 3 + 2] = tint.b * bright;
         // puntos más finos → estrellas nítidas, no glow gordo que se funde.
-        sizes[cursor] = 0.030 + 0.055 * p.density;
+        sizes[cursor] = live ? 0.085 - 0.048 * p.density : 0.030 + 0.055 * p.density;
         shellIdx[cursor] = si;
         cursor++;
       }
@@ -337,6 +348,12 @@ uniform float uBokeh;
 // uPix=1 y el look queda identico al del video. Es la leccion de
 // feedback_juzgar_a_resolucion_del_master: O2Cloud si la tenia, ElectronCloud nunca.
 uniform float uPix;
+// uPixGain = LA OTRA MITAD DE LA REGLA. uPix encoge el punto (bien: mata el quemado) pero el
+// area del sprite cae con uPix^2 — a 760 px del lab eso es 11 veces menos luz por electron y
+// la nube se lee como motas separadas. El canon dice "achicar -> SUBIR BRILLO"; esto es el
+// brillo. Vale 1.0 en el render 4K (uPix=1) o sea que el VIDEO NO CAMBIA.
+uniform float uPixGain;
+uniform float uCoreFloor;
 attribute vec3 aColor;
 attribute float aSize;
 attribute float aShellIdx;
@@ -389,10 +406,14 @@ void main() {
   // se quema a blanco. Bajamos su alfa gradualmente (no corte duro) → el centro
   // deja de reventar y las capas externas con FORMA (p,d,f) lucen su color. El
   // core esférico no tiene forma interesante, así que no se pierde nada bello.
+  // uCoreFloor = 0.16 en el VIDEO (el valor de siempre). En el lab baja en proporcion a
+  // uPixGain: la ganancia por resolucion es para el HALO, que perdio area; el corazon ya
+  // estaba en su punto y multiplicarlo por 3.4 lo devuelve a blanco quemado (medido: 0.22 %
+  // de pixeles reventados y 4.3 % lavados en el carbono cuando la ganancia lo tocaba).
   float coreAtten = uCoreR > 0.0001
-    ? mix(0.16, 1.0, smoothstep(0.0, uCoreR, length(position)))
+    ? mix(uCoreFloor, 1.0, smoothstep(0.0, uCoreR, length(position)))
     : 1.0;
-  vAlpha = reveal * pulse * uBright * coreAtten;
+  vAlpha = reveal * pulse * uBright * coreAtten * uPixGain;
 
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
@@ -433,10 +454,19 @@ void main() {
 }
 `;
 
-export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, brightness = 1, bokeh = 0, rotRate = 0.55, revealAll = false }: { bundle: AtomBundle; time: number; holeRadius?: number; coreRadius?: number; brightness?: number; bokeh?: number; rotRate?: number; revealAll?: boolean }) {
+// Exponente de la compensacion de brillo por resolucion (solo live). 1.0 = calibrado a ojo y
+// medido; `?pk=` lo barre sin recompilar (0 = apagado, 2 = compensacion total del area).
+function pixGainExp(): number {
+  if (typeof window === 'undefined') return 1;
+  const v = parseFloat(new URLSearchParams(window.location.search).get('pk') || '');
+  return Number.isFinite(v) ? Math.max(0, Math.min(2, v)) : 1;
+}
+
+export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, brightness = 1, bokeh = 0, rotRate = 0.55, revealAll = false, live = false }: { bundle: AtomBundle; time: number; holeRadius?: number; coreRadius?: number; brightness?: number; bokeh?: number; rotRate?: number; revealAll?: boolean; live?: boolean }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const sprite = useMemo(() => makeSpriteTexture(), []);
   const { gl } = useThree();          // para leer el alto REAL del framebuffer (uPix)
+  const pk = useMemo(() => (live ? pixGainExp() : 0), [live]);
 
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -455,6 +485,8 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     uHoleR:      { value: 0 },
     uCoreR:      { value: 0 },
     uPix:        { value: 1 },
+    uPixGain:    { value: 1 },
+    uCoreFloor:  { value: 0.16 },
     uBright:     { value: 1 },
     uBokeh:      { value: 0 },
   }), [sprite]);
@@ -476,11 +508,18 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     matRef.current.uniforms.uCoreR.value = coreRadius;
     // uPix se mide del framebuffer REAL en cada cuadro: el lab corre a ~760-1200 px y el
     // render 4K a 3840. Sin esto el mismo átomo se ve con puntos 5× más chicos en el lab.
-    matRef.current.uniforms.uPix.value = Math.max(0.28, gl.domElement.height / 3840);
+    const px = Math.max(0.28, gl.domElement.height / 3840);
+    matRef.current.uniforms.uPix.value = px;
+    // ACHICAR → SUBIR BRILLO: el area del sprite cae con px^2, así que el brillo sube con
+    // px^-pk. pk=0 (video, y cualquier consumidor que no pida live) deja la ganancia en 1
+    // EXACTO — el render 4K ni se entera de que este uniform existe.
+    const gain = pk > 0 ? Math.min(4, Math.pow(px, -pk)) : 1;
+    matRef.current.uniforms.uPixGain.value = gain;
+    matRef.current.uniforms.uCoreFloor.value = 0.16 / gain;   // gain=1 (video) ⇒ 0.16 EXACTO
     matRef.current.uniforms.uBright.value = brightness;
     matRef.current.uniforms.uBokeh.value = bokeh;
     matRef.current.uniformsNeedUpdate = true;
-  }, [time, bundle.shells.length, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll]);
+  }, [time, bundle.shells.length, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll, pk]);
 
   return (
     <points geometry={geo} frustumCulled={false}>
@@ -1360,20 +1399,20 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   // así no hay cuadro en blanco ni espera, y si el .bin falla la escena sigue viva.
   // `window.__atomFuente` deja que el lab diga en pantalla cuál se está viendo — la
   // diferencia importa y no se esconde.
-  const hidro = useMemo(() => buildAtomBundle(element), [element]);
+  const hidro = useMemo(() => buildAtomBundle(element, live), [element, live]);
   const [abin, setAbin] = useState<ReturnType<typeof bundleFromAbInitio> | null>(null);
   useEffect(() => {
     let vivo = true;
     setAbin(null);
     loadAtomAbInitio(element.Z).then(d => {
       if (!vivo) return;
-      setAbin(d ? bundleFromAbInitio(d) : null);
+      setAbin(d ? bundleFromAbInitio(d, live) : null);
       (window as unknown as Record<string, unknown>).__atomFuente =
         d ? { Z: element.Z, fuente: 'abinitio', shells: d.shells.length }
           : { Z: element.Z, fuente: 'hidrogenoide' };
     });
     return () => { vivo = false; };
-  }, [element.Z]);
+  }, [element.Z, live]);
   const bundle = abin ?? hidro;
   // Duración variable por # de subcapas (define la longitud del zoom-out). Se fija
   // en el módulo (RUN_DURATION) para que findCut/shellLabelTime la lean.
@@ -1391,10 +1430,32 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   // no revienta a blanco y las capas externas con forma lucen su color.
   // Atenúa el centro: el núcleo brillante LAVA la estructura de la nube. Más
   // hueco central → se ven las capas/lóbulos exteriores (la FORMA) al rotar.
+  // En el LAB el radio lleva PISO (0.12·extent), no factor. La ganancia de brillo por
+  // resolución también le pega al corazón y en los LIGEROS (C, O) la cúspide 1s/2s vive
+  // justo AFUERA del radio viejo (0.059·extent) → 0.18 % de píxeles reventados y 4.3 %
+  // lavados. Probado antes con un factor ×2.4 y fue peor el remedio: a los PESADOS, cuyo
+  // radio ya vale 0.12-0.16, les comió la nube entera (Mo: 60 % del anillo en negro, Nd
+  // 70 %). El piso sube a los ligeros y deja intactos a los pesados. Video: factor 1.
+  // Y el piso NO aplica a H/He: con UNA sola subcapa no hay nada que queme (medido: 0 % de
+  // píxeles reventados y 0 % lavados en las dos), y 0.12·extent les vaciaba el centro —
+  // justo lo único que tienen que enseñar.
   const coreR = useMemo(
-    () => extent * (0.03 + 0.16 * (1 - Math.exp(-element.Z / 30))),
-    [extent, element.Z],
+    () => extent * (live && element.Z >= 3
+      ? Math.max(0.12, 0.03 + 0.16 * (1 - Math.exp(-element.Z / 30)))
+      : 0.03 + 0.16 * (1 - Math.exp(-element.Z / 30))),
+    [extent, element.Z, live],
   );
+  // El techo de brillo `3.4/√Z` existe para que el CORE de los pesados no queme el aditivo.
+  // Pero en los 57 elementos con pseudopotencial (Z≥37) ese core NO SE DIBUJA: el oro
+  // enseña 19 electrones, no 79, y aun así se le aplicaba el castigo del 79 — quedaban
+  // apagados (medido: Mo con anY 12 contra 34 del resto). En `live` el techo cuenta los
+  // electrones DIBUJADOS. En un átomo todo-electrón la suma ES Z, o sea: sin cambio.
+  // El video sigue leyendo element.Z, punto.
+  const zBrillo = useMemo(() => {
+    if (!live) return element.Z;
+    const e = bundle.shells.reduce((s, x) => s + (x.electrons ?? 0), 0);
+    return e > 0 ? e : element.Z;
+  }, [live, bundle, element.Z]);
   const [time, setTime] = useState(0);
   const [vertical, setVertical] = useState(
     () => typeof window !== 'undefined' && window.innerHeight > window.innerWidth
@@ -1480,8 +1541,9 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
           coreRadius={coreR}
+          live={live}
           rotRate={1.15}
-          brightness={Math.min(0.82, 3.4 / Math.sqrt(element.Z)) * (1 - 0.45 * smoothstep((time - 17.3) / 0.8))} />
+          brightness={Math.min(0.82, 3.4 / Math.sqrt(zBrillo)) * (1 - 0.45 * smoothstep((time - 17.3) / 0.8))} />
         {/* Física visible (gated a la mirada al núcleo): campo eléctrico de
             Coulomb, campo magnético dipolar si es paramagnético, y decaimiento
             radiactivo si el isótopo es inestable. Todo determinista en t. */}

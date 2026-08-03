@@ -233,6 +233,45 @@ export function subshellColor(n: number, l: number): string {
   return '#9E9E9E';
 }
 
+/**
+ * PALETA SEGURA EN ADITIVO — solo para el LABORATORIO interactivo (`live`).
+ *
+ * ⚠ NO la usan los videos: `subshellColor` (arriba) es el canon de los reels y no se toca.
+ *
+ * EL DEFECTO QUE ARREGLA (medido, no opinado): azul de s `#4FC3F7` (79,195,247) + naranja de
+ * p `#FF7043` (255,112,67) = RGB(334,307,314) → **blanco EXACTO**. Dos matices complementarios
+ * SUMADOS dan gris a CUALQUIER nivel de exposición: el corazón del átomo se lavaba por
+ * construcción de la paleta, no por estar sobreexpuesto. Y `1s` y `2s` compartían el mismo hex,
+ * así que las dos primeras capas eran indistinguibles.
+ *
+ * LA REGLA: en TODOS los colores el canal VERDE queda por debajo del azul o del rojo. Ninguna
+ * suma de esta paleta puede llegar a neutro — siempre queda un canal dominante, o sea CROMA.
+ * Comprobado: azul(2s) + magenta(2p) = (285,218,402) → sigue siendo AZUL-VIOLETA, no blanco.
+ *
+ * Y el reparto se decidió MIRANDO capturas, no en el papel: la primera versión puso p en
+ * violeta y en el silicio el 3p no se distinguía del 3s (60° de tono no alcanzan sobre negro
+ * con bloom). p se movió a MAGENTA (130° del azul) y d se quedó con el violeta, que cae justo
+ * entre los dos.
+ *
+ * ⚠ EL `n` CORRE EL TONO, NO LA LUMINANCIA. `bundleFromAbInitio` aplasta todo con
+ * `min(0.60, l)` (anti-lavado del aditivo), así que un degradado hecho a base de claros se
+ * COLAPSA: `#4FC3F7` y `#9BE0FF` tienen EXACTAMENTE el mismo tono (198.6°) y salían del cap
+ * como el mismo pixel — 3s y 4s indistinguibles. Y el 1s no puede ser el más oscuro: en el
+ * hidrógeno el 1s es TODO el átomo (medido: con el azul profundo el H se apagó de coreY 162
+ * a 48). Por eso la rampa de s va cian(1s) → celeste(2s) → azul(3s) → azul profundo(4s+),
+ * toda a luminancia alta.
+ */
+export function subshellColorLive(n: number, l: number): string {
+  if (typeof globalThis !== 'undefined' && (globalThis as unknown as Record<string, unknown>).__GAIA_BRAND) {
+    return subshellColor(n, l);
+  }
+  if (l === 0) return n <= 1 ? '#4FC3F7' : n === 2 ? '#2F8BF0' : n === 3 ? '#5EB0D8' : '#6E9BE0';
+  if (l === 1) return n <= 2 ? '#FF2E9A' : n === 3 ? '#FF5BD8' : '#FF3D6E';
+  if (l === 2) return n <= 3 ? '#B84BFF' : '#D14BE8';
+  if (l === 3) return '#6A4CFF';
+  return '#8FA3C8';
+}
+
 /** Nombre legible del subshell */
 export function subshellLabel(n: number, l: number): string {
   const labels = ['s', 'p', 'd', 'f', 'g', 'h'];

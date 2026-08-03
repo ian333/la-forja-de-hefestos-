@@ -159,6 +159,12 @@ function ElementCell({
   return (
     <button
       onClick={onClick}
+      // En modo compacto la celda sólo pinta el símbolo, así que su nombre
+      // accesible era "Fe" — y no había forma estable de apuntarle desde un
+      // arnés de pruebas. `aria-label` lo arregla para lector de pantalla y
+      // `data-z` da el selector fijo (`[data-z="26"]`).
+      aria-label={`${element.name} (Z=${element.Z})`}
+      data-z={element.Z}
       onMouseEnter={() => onHover(element.Z)}
       onMouseLeave={() => onHover(null)}
       className={`${sizeClass} rounded border ${col.border} ${col.bg} ${col.text} transition relative flex flex-col items-center justify-center leading-none ${

@@ -36,6 +36,7 @@ const SECTIONS: LegalSection[] = [
           'Datos de la cuenta: planes activos, fechas de suscripción y registros de acceso.',
           'Datos de pago: los procesa Stripe; nosotros guardamos un identificador de cliente y el estado de tu suscripción, no los datos completos de tu tarjeta.',
           'Datos técnicos mínimos: dirección IP y registros necesarios para seguridad y para evitar abuso (por ejemplo, límites de envío de enlaces).',
+          'Datos de uso agregados: qué páginas y secciones se visitan, qué elementos del laboratorio se tocan, cuánto tarda el sitio en tu dispositivo y qué errores ocurren. Sirven para arreglar y mejorar los laboratorios. No grabamos tu sesión, ni lo que escribes, ni el movimiento de tu ratón, ni construimos perfiles de personas.',
         ]} />
         <p>
           No recabamos datos personales sensibles. No solicitamos información que no sea
@@ -54,6 +55,7 @@ const SECTIONS: LegalSection[] = [
           'Procesar tus pagos y administrar tu suscripción a través de Stripe.',
           'Brindarte soporte y enviarte avisos importantes sobre tu cuenta o el servicio.',
           'Garantizar la seguridad de la plataforma y prevenir fraude o abuso.',
+          'Medir de forma agregada el uso y el rendimiento del sitio para corregir fallas y mejorar los laboratorios.',
         ]} />
         <p><b>Finalidades secundarias</b> (no necesarias; puedes oponerte):</p>
         <Bullets items={[

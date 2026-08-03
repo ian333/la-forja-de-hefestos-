@@ -24,6 +24,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { PERIODIC_TABLE, elementByZ, configCompact } from '@/lib/chem/quantum/periodic-table';
 import { completeLesson } from '@/lib/progress';
+import { telemetry } from '@/lib/telemetry';
 import PeriodicTable from './components/PeriodicTable';
 import MultiElectronAtomView from './components/MultiElectronAtomView';
 import CinematicAtom from '@/cinematic/CinematicAtom';
@@ -62,6 +63,36 @@ const ELEMENT_AUDIO: Record<number, string> = {
 type Tab = 'atom' | 'molecule' | 'bond' | 'reaction' | 'sandbox';
 type ElementSubs = { dur: number; cues: { t: number; text: string }[] };
 
+// ═══════════════════════════════════════════════════════════════
+// TELEMETRÍA CON NOMBRE — qué TOCA la gente que sí se queda
+//
+// Los clics crudos que ya se guardaban son anónimos: `{tag:"BUTTON",
+// cls:"px-3 py-1.5 rounded…", text:"siguien"}` no dice si tocaron el hierro
+// o cambiaron de pestaña. Con 130 clics registrados no se podía contestar
+// NADA. Estos eventos llevan la intención, no el DOM.
+//
+// La medida que decide si el hub funciona es `nOrdinal`: cuántos elementos
+// DISTINTOS toca una sesión. Si la mediana es 1, la tabla no está invitando
+// a explorar y el problema no es el contenido sino la puerta.
+//
+// Los contadores viven a nivel de módulo (no en un ref) porque la pregunta
+// es por SESIÓN, y los componentes que los alimentan (dock, hero, galería)
+// se montan y desmontan al cambiar de pestaña.
+// ═══════════════════════════════════════════════════════════════
+const tocados = { elementos: new Set<number>(), moleculas: new Set<string>(), orbito: false };
+
+function labElemento(Z: number, via: 'tabla' | 'nav') {
+  const nuevo = !tocados.elementos.has(Z);
+  tocados.elementos.add(Z);
+  telemetry.event('lab.elemento', {
+    Z,
+    simbolo: elementByZ(Z)?.symbol,
+    nOrdinal: tocados.elementos.size,   // ← elementos DISTINTOS de la sesión
+    nuevo,                              // false = volvió a uno que ya vio
+    via,                                // tabla periódica vs botones ← →
+  });
+}
+
 export default function GaiaLab() {
   const [tab, setTab] = useState<Tab>('atom');
   const [selectedZ, setSelectedZ] = useState(6);
@@ -71,6 +102,8 @@ export default function GaiaLab() {
   const [caption, setCaption] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const subsRef = useRef<Record<number, ElementSubs> | null>(null);
+  const heroRef = useRef<HTMLElement | null>(null);
+  const tabRef = useRef<Tab>('atom');
 
   // Carga perezosa del JSON de subtítulos (timestamps por frase, vía forced
   // alignment de ElevenLabs — no gasta cuota de TTS).
@@ -90,9 +123,19 @@ export default function GaiaLab() {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.ontimeupdate = null; audioRef.current = null; }
     const audio = new Audio(`/audio/tabla-periodica/${slug}.mp3`);
     const cues = subsRef.current?.[Z]?.cues ?? [];
-    audio.onplay = () => setAudioPlaying(true);
+    const simbolo = elementByZ(Z)?.symbol;
+    audio.onplay = () => {
+      setAudioPlaying(true);
+      // Escuchar es la señal de intención más cara que puede dar alguien en el
+      // lab: se queda quieto minuto y medio. Se mide el arranque y el final por
+      // separado porque la diferencia es la retención de la narración.
+      telemetry.event('lab.audio', { Z, simbolo, accion: 'play' });
+    };
     // Progreso: escuchar una narración de elemento COMPLETA = la tabla ya te habló.
-    audio.onended = () => { setAudioPlaying(false); setCaption(''); completeLesson('quimica', 'tabla-viva'); };
+    audio.onended = () => {
+      setAudioPlaying(false); setCaption(''); completeLesson('quimica', 'tabla-viva');
+      telemetry.event('lab.audio', { Z, simbolo, accion: 'fin', s: Math.round(audio.duration || 0) });
+    };
     audio.onpause = () => setAudioPlaying(false);
     audio.ontimeupdate = () => {
       if (!cues.length) return;
@@ -101,7 +144,13 @@ export default function GaiaLab() {
       for (const c of cues) { if (t >= c.t) cur = c.text; else break; }
       setCaption(cur);
     };
-    audio.play().catch(() => setAudioPlaying(false));
+    // Si el navegador BLOQUEA la reproducción (política de autoplay de iOS)
+    // hay que saberlo: sin este evento, "nadie escuchó" y "a nadie lo dejaron
+    // escuchar" se ven exactamente igual en el log, y son problemas distintos.
+    audio.play().catch(() => {
+      setAudioPlaying(false);
+      telemetry.event('lab.audio', { Z, simbolo, accion: 'bloqueado' });
+    });
     audioRef.current = audio;
   }, []);
 
@@ -113,9 +162,61 @@ export default function GaiaLab() {
   }, [selectedZ, playElementAudio]);
 
   const handleSelect = useCallback((Z: number) => {
+    labElemento(Z, 'tabla');
     setSelectedZ(Z);
     playElementAudio(Z);
   }, [playElementAudio]);
+
+  const handleSelectNav = useCallback((Z: number) => {
+    labElemento(Z, 'nav');
+    setSelectedZ(Z);
+    playElementAudio(Z);
+  }, [playElementAudio]);
+
+  // El "de" sale del ref y NO del updater de setTab: en StrictMode los
+  // updaters corren dos veces y el evento saldría duplicado en desarrollo.
+  const cambiarTab = useCallback((a: Tab) => {
+    const de = tabRef.current;
+    if (de !== a) telemetry.event('lab.tab', { de, a });
+    setTab(a);
+    completeLesson('quimica', `tab:${a}`);
+  }, []);
+
+  // La pestaña activa es "dónde está" el usuario dentro del lab: se la
+  // declaramos a la telemetría para que el evento `salida` diga de qué mesa
+  // de trabajo se fue. El lab no scrollea, así que sin esto no hay sección.
+  useEffect(() => {
+    tabRef.current = tab;
+    telemetry.seccion(`lab:${tab}`);
+  }, [tab]);
+
+  // ORBITAR = la señal de que están JUGANDO, no mirando. Es el único gesto
+  // que prueba que la escena 3D respondió en su teléfono. Se detecta un
+  // arrastre (>12 px con el dedo abajo) y se emite UNA sola vez por sesión:
+  // no se guardan coordenadas ni trayectoria, sólo el hecho.
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    let x0 = 0, y0 = 0, abajo = false;
+    const down = (e: PointerEvent) => { abajo = true; x0 = e.clientX; y0 = e.clientY; };
+    const up = () => { abajo = false; };
+    const move = (e: PointerEvent) => {
+      if (!abajo || tocados.orbito) return;
+      if (Math.hypot(e.clientX - x0, e.clientY - y0) < 12) return;
+      tocados.orbito = true;
+      telemetry.event('lab.orbita', { tab: tabRef.current });
+    };
+    el.addEventListener('pointerdown', down, { passive: true });
+    el.addEventListener('pointermove', move, { passive: true });
+    el.addEventListener('pointerup', up, { passive: true });
+    el.addEventListener('pointercancel', up, { passive: true });
+    return () => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+  }, []);
 
   const element = elementByZ(selectedZ) ?? PERIODIC_TABLE[0];
   const previewZ = hoverZ ?? selectedZ;
@@ -157,11 +258,11 @@ export default function GaiaLab() {
 
           <nav className="flex items-center gap-0.5 p-0.5 rounded-lg bg-[#0B0F17] border border-[#1E293B]">
             {/* Progreso: explorar cada mesa de trabajo cuenta como lección de química. */}
-            <TabButton active={tab === 'atom'} onClick={() => { setTab('atom'); completeLesson('quimica', 'tab:atom'); }}>ψ Átomo</TabButton>
-            <TabButton active={tab === 'molecule'} onClick={() => { setTab('molecule'); completeLesson('quimica', 'tab:molecule'); }}>⬡ Molécula</TabButton>
-            <TabButton active={tab === 'bond'} onClick={() => { setTab('bond'); completeLesson('quimica', 'tab:bond'); }}>⟮⟯ Enlace</TabButton>
-            <TabButton active={tab === 'reaction'} onClick={() => { setTab('reaction'); completeLesson('quimica', 'tab:reaction'); }}>⇌ Reacción</TabButton>
-            <TabButton active={tab === 'sandbox'} onClick={() => { setTab('sandbox'); completeLesson('quimica', 'tab:sandbox'); }}>✧ Sandbox</TabButton>
+            <TabButton active={tab === 'atom'} onClick={() => cambiarTab('atom')}>ψ Átomo</TabButton>
+            <TabButton active={tab === 'molecule'} onClick={() => cambiarTab('molecule')}>⬡ Molécula</TabButton>
+            <TabButton active={tab === 'bond'} onClick={() => cambiarTab('bond')}>⟮⟯ Enlace</TabButton>
+            <TabButton active={tab === 'reaction'} onClick={() => cambiarTab('reaction')}>⇌ Reacción</TabButton>
+            <TabButton active={tab === 'sandbox'} onClick={() => cambiarTab('sandbox')}>✧ Sandbox</TabButton>
           </nav>
 
           {/* Navegación secundaria SOLO en escritorio: en 390 px se llevaba un renglón
@@ -217,7 +318,7 @@ export default function GaiaLab() {
                 audioPlaying={audioPlaying && previewZ === selectedZ}
                 onToggleAudio={toggleAudio}
               />
-              <NavButtons selectedZ={selectedZ} onSelect={handleSelect} />
+              <NavButtons selectedZ={selectedZ} onSelect={handleSelectNav} />
               <ReferencePanel />
             </div>
           </aside>
@@ -225,7 +326,7 @@ export default function GaiaLab() {
 
         {/* HERO — el viewport llena lo que sobra. min-h-0 además de min-w-0: en columna
             (móvil) el que puede desbordar es el ALTO, no el ancho. */}
-        <main className="flex-1 min-w-0 min-h-0 relative overflow-hidden">
+        <main ref={heroRef} className="flex-1 min-w-0 min-h-0 relative overflow-hidden">
           {tab === 'atom'     && <AtomHero element={element} />}
           {tab === 'molecule' && <MoleculeHero />}
           {tab === 'bond'     && <BondTab />}
@@ -259,6 +360,14 @@ function AtomHero({ element }: { element: ReturnType<typeof elementByZ> extends 
   // no: los subshells por separado con su Zeff. Pero deja de ser lo PRIMERO.
   const [view, setView] = useState<'lab' | 'cine'>('cine');
 
+  // ψ Lab ↔ ✦ Cinematic. Abre en `cine`; cada cambio se registra porque
+  // responde a una pregunta de producto concreta: ¿la gente que llega del reel
+  // se queda en la vista que se parece al reel, o busca la analítica?
+  const cambiarVista = (a: 'lab' | 'cine') => {
+    if (a !== view) telemetry.event('lab.vista', { de: view, a, Z: element.Z });
+    setView(a);
+  };
+
   return (
     <div className="absolute inset-0 flex flex-col">
       {/* Viewport 3D ocupa todo el espacio disponible */}
@@ -269,8 +378,8 @@ function AtomHero({ element }: { element: ReturnType<typeof elementByZ> extends 
 
         {/* Toggle ψ Lab ↔ Cinematic */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex rounded-md border border-[#1E293B] bg-[#05060A]/70 backdrop-blur overflow-hidden text-[10px] uppercase tracking-wider">
-          <button onClick={() => setView('lab')} className={`px-3 py-1.5 transition ${view === 'lab' ? 'bg-[#4FC3F7] text-[#05060A] font-semibold' : 'text-[#94A3B8] hover:text-white'}`}>ψ Lab</button>
-          <button onClick={() => setView('cine')} className={`px-3 py-1.5 transition ${view === 'cine' ? 'bg-[#FDB813] text-[#05060A] font-semibold' : 'text-[#94A3B8] hover:text-white'}`}>✦ Cinematic</button>
+          <button onClick={() => cambiarVista('lab')} className={`px-3 py-1.5 transition ${view === 'lab' ? 'bg-[#4FC3F7] text-[#05060A] font-semibold' : 'text-[#94A3B8] hover:text-white'}`}>ψ Lab</button>
+          <button onClick={() => cambiarVista('cine')} className={`px-3 py-1.5 transition ${view === 'cine' ? 'bg-[#FDB813] text-[#05060A] font-semibold' : 'text-[#94A3B8] hover:text-white'}`}>✦ Cinematic</button>
         </div>
 
         {/* Overlay título de la molécula/átomo, arriba a la izquierda */}
@@ -313,6 +422,14 @@ function MoleculeHero() {
   const [molKey, setMolKey] = useState('h2o');
   const [galleryOpen, setGalleryOpen] = useState(true);
   const meta = molMeta(molKey);
+
+  // Mismo criterio que `lab.elemento`: en la pestaña Molécula lo que se "toca"
+  // son moléculas, y la pregunta —¿cuántas DISTINTAS?— es idéntica.
+  const elegirMolecula = (k: string) => {
+    tocados.moleculas.add(k);
+    telemetry.event('lab.molecula', { key: k, formula: molMeta(k)?.formula, nOrdinal: tocados.moleculas.size });
+    setMolKey(k);
+  };
 
   return (
     <div className="absolute inset-0 flex flex-col">
@@ -358,7 +475,7 @@ function MoleculeHero() {
                     return (
                       <button
                         key={k}
-                        onClick={() => setMolKey(k)}
+                        onClick={() => elegirMolecula(k)}
                         title={m?.name}
                         className={`px-2 py-1 rounded-md text-[11px] font-mono border transition ${
                           active

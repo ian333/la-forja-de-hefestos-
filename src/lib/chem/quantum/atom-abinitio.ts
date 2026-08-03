@@ -19,7 +19,7 @@
  *   M × uint8 índice de subcapa
  */
 import * as THREE from 'three';
-import { subshellColor, subshellLabel } from './atom-builder';
+import { subshellColor, subshellColorLive, subshellLabel } from './atom-builder';
 
 export interface AtomAbInitio {
   Z: number;
@@ -62,19 +62,29 @@ export function parseAtomBin(buf: ArrayBuffer): AtomAbInitio {
 /**
  * Del .bin al formato que ya consume `ElectronCloud`. Mismo contrato que `buildAtomBundle`.
  *
- * ⚠ TAMAÑO Y BRILLO SE MODULAN POR DENSIDAD, IGUAL QUE EL VIDEO (corregido 2026-07-31).
- * La primera versión los dejaba CONSTANTES razonando que la densidad ya se ve como
- * concentración de puntos. Comparado lado a lado contra `cinematic-atom.html` eso resultó
- * falso: el video se ve como una masa luminosa continua y el lab como CONFETI (Ian: "no se
- * parecen en nada a nuestros videos"). Aquí se calca la fórmula de `buildAtomBundle`:
+ * ⚠ TAMAÑO Y BRILLO SE MODULAN POR DENSIDAD, IGUAL QUE EL VIDEO (2026-07-31):
  *     tamaño = 0.030 + 0.055·d        brillo = 0.70 + 0.20·d
- * Junto con subir de 26 000 a 110 000 puntos, es lo que le da CUERPO a la nube.
+ * Ese es el CANON DEL VIDEO y aquí se conserva intacto (`live=false`).
+ *
+ * ⚠⚠ PERO EN EL LABORATORIO (`live=true`) LA MODULACIÓN VA AL REVÉS. Por qué:
+ * los puntos YA se muestrean ∝ |ψ|² (donde hay densidad hay MÁS PUNTOS), así que
+ * multiplicar ADEMÁS tamaño y brillo por `d` pinta un mapa ∝ densidad². El halo vive en
+ * d≈0.06 ⇒ le tocaba el tamaño MÍNIMO con brillo casi máximo = puntitos chiquitos y
+ * fuertes, separados entre sí: la receta literal del CONFETI (medido: 30 % del anillo en
+ * negro puro en C, 47 % en Fe). Dos jueces independientes midieron lo mismo y propusieron
+ * invertirlo:
+ *     tamaño = 0.085 − 0.048·d        brillo = 0.42 − 0.12·d
+ * o sea GRANDE Y TENUE donde hay pocos puntos (tapan el hueco y se funden en nube) y
+ * CHICO Y SOBRIO donde hay muchos (la masa la da la DENSIDAD, no la intensidad por
+ * partícula — la misma ley que ya gobierna a O2Cloud en los videos ganadores).
+ * En el video no se toca porque ahí la resolución 4K resuelve el punto y el look ya ganó.
  */
-export function bundleFromAbInitio(data: AtomAbInitio) {
+export function bundleFromAbInitio(data: AtomAbInitio, live = false) {
   const { pos, shellOf, shells, dens } = data;
   const M = shellOf.length;
+  const hex = (n: number, l: number) => (live ? subshellColorLive(n, l) : subshellColor(n, l));
   const paleta = shells.map(s => {
-    const c = new THREE.Color(subshellColor(s.n, s.l));
+    const c = new THREE.Color(hex(s.n, s.l));
     const hsl = { h: 0, s: 0, l: 0 };
     c.getHSL(hsl);
     // Saturación empujada y luminancia acotada: en aditivo el color ES la saturación
@@ -92,11 +102,11 @@ export function bundleFromAbInitio(data: AtomAbInitio) {
     positions[i * 3 + 2] = pos[i * 3 + 2];
     const c = paleta[Math.min(shellOf[i], paleta.length - 1)];
     const d = dens[i] / 255;
-    const bright = 0.70 + 0.20 * d;
+    const bright = live ? 0.42 - 0.12 * d : 0.70 + 0.20 * d;
     colors[i * 3] = c.r * bright;
     colors[i * 3 + 1] = c.g * bright;
     colors[i * 3 + 2] = c.b * bright;
-    sizes[i] = 0.030 + 0.055 * d;
+    sizes[i] = live ? 0.085 - 0.048 * d : 0.030 + 0.055 * d;
     shellIdx[i] = shellOf[i];
   }
   return {
@@ -104,7 +114,8 @@ export function bundleFromAbInitio(data: AtomAbInitio) {
     shells: shells.map(s => ({
       label: subshellLabel(s.n, s.l),
       n: s.n, l: s.l,
-      color: new THREE.Color(subshellColor(s.n, s.l)),
+      color: new THREE.Color(hex(s.n, s.l)),
+      electrons: s.electrons,
     })),
   };
 }

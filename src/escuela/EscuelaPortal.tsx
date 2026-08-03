@@ -150,8 +150,11 @@ export default function EscuelaPortal() {
         </p>
       </a>
 
-      {/* Hero de ESCRITORIO (en móvil manda el bloque de la clase, arriba) */}
-      <section className="hidden md:block relative z-10 px-6 max-w-[1400px] mx-auto pt-12 pb-16 text-center">
+      {/* Hero de ESCRITORIO (en móvil manda el bloque de la clase, arriba).
+          `data-seccion` no es decorativo: la telemetría marca la última sección
+          vista y la reporta en el evento `salida`, así que este atributo es lo
+          que convierte "se fue" en "se fue ANTES de llegar a los pilares". */}
+      <section data-seccion="hero" className="hidden md:block relative z-10 px-6 max-w-[1400px] mx-auto pt-12 pb-16 text-center">
         <div className="text-[11px] uppercase tracking-[0.3em] text-[#FDB813] mb-4">
           La escuela que querías cuando ibas a clase
         </div>
@@ -452,7 +455,7 @@ export default function EscuelaPortal() {
       </section>
 
       {/* 3 pillars */}
-      <section className="relative z-10 px-6 max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-20">
+      <section data-seccion="pilares" className="relative z-10 px-6 max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-20">
         <PillarCard
           href="/math.html"
           glyph="Σ"
@@ -689,7 +692,7 @@ export default function EscuelaPortal() {
       </section>
 
       {/* Manifesto */}
-      <section className="relative z-10 px-6 max-w-[900px] mx-auto pb-16 text-[14px] leading-relaxed text-[#CBD5E1] space-y-4">
+      <section data-seccion="manifiesto" className="relative z-10 px-6 max-w-[900px] mx-auto pb-16 text-[14px] leading-relaxed text-[#CBD5E1] space-y-4">
         <h2 className="text-[24px] font-semibold text-white">¿Por qué esta escuela?</h2>
         <p>
           Porque las matemáticas se enseñan como cómputo, no como arte (Lockhart 2002).
