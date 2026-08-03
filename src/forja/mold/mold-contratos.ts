@@ -49,6 +49,10 @@ export interface EnsambleMedido {
   /** §8.2.2: el plan de venteos de `enumerarVenteos(campoDeFlujo)`. Necesita el
    *  campo de flujo (voxelizado del hueco A/B), que no vive en el paquete numérico. */
   planVenteo?: PlanVenteo;
+  /** §11.2.5: cómo se colocaron los pines — 'agarre' (junto a paredes/costillas,
+   *  Fig 11.11, de gripEjectorLayout) · 'rejilla' (el antipatrón nombrado) ·
+   *  'plana-uniforme' (pieza sin paredes: el agarre ES uniforme, rejilla válida). */
+  ejectLayout?: 'agarre' | 'rejilla' | 'plana-uniforme';
   /** §9.1.6: conexiones externas de agua POR MITAD según el circuito RUTEADO
    *  (coolingCircuit conecta las N líneas en serpentín con cross-drills → 2 puertos). */
   aguaPuertosPorMitad?: number;
@@ -514,12 +518,16 @@ export function contratoExpulsion(pkg: MoldPackage, ens?: EnsambleMedido): Contr
   });
 
   // ── 5) Dónde van los pines: donde la pieza SE PEGA — §11.2.5 ──
+  const layout = ens?.ejectLayout;
   C.push({
     id: 'eject-layout', subsistema: S, cita: '§11.2.5',
     criterio: 'los pines van donde se generan las fuerzas de agarre (costillas, bosses), NO repartidos uniformemente',
-    estado: 'ADVIERTE',
-    detalle: 'pines en rejilla uniforme — §11.2.5: "ejector pins should be placed at locations where the adhesion forces are developed" (costillas, bosses, paredes profundas). '
-      + 'La rejilla uniforme es el anti-patrón explícito del libro: las zonas planas no necesitan pines y las costillas sí. dfm-mesh ya mide el espesor local → de ahí sale el mapa de agarre',
+    estado: layout === 'agarre' || layout === 'plana-uniforme' ? 'CUMPLE' : 'ADVIERTE',
+    detalle: layout === 'agarre'
+      ? 'pines POR AGARRE: junto a las paredes/costillas donde la pieza abraza el núcleo (§11.2.5 Fig 11.11, gripEjectorLayout desde la malla) — "ejectors will be more effective when placed near the locations where the ejection forces are generated" ✓'
+      : layout === 'plana-uniforme'
+        ? 'pieza plana/maciza sin paredes: el agarre ES uniforme y la rejilla no es el antipatrón aquí (declarado por el raster) ✓'
+        : 'pines en rejilla uniforme — §11.2.5: la rejilla es el antipatrón explícito ("a common but ineffective layout"). Con malla, gripEjectorLayout coloca por agarre; sin malla no hay mapa',
   });
 
   // ── 6) Acero mínimo: 1 diámetro de pin entre barreno y cavidad — §11.2.5 ──

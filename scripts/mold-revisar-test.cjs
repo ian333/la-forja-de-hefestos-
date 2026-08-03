@@ -15,13 +15,29 @@ let fails = 0;
 const check = (n, c, d) => { console.log(` ${c ? '✓' : '❌'} ${n} — ${d}`); if (!c) fails++; };
 
 // caja cerrada L×W×H (12 triángulos, winding hacia afuera) — malla mínima real
+function boxAt(x0, y0, z0, x1, y1, z1) {
+  const P = [x0,y0,z0, x1,y0,z0, x1,y1,z0, x0,y1,z0, x0,y0,z1, x1,y0,z1, x1,y1,z1, x0,y1,z1];
+  const I = [0,2,1, 0,3,2,  4,5,6, 4,6,7,  0,1,5, 0,5,4,  2,3,7, 2,7,6,  3,0,4, 3,4,7,  1,2,6, 1,6,5];
+  return { P, I };
+}
 function boxMesh(L, W, H) {
-  const P = new Float32Array([0,0,0, L,0,0, L,W,0, 0,W,0, 0,0,H, L,0,H, L,W,H, 0,W,H]);
-  const I = new Uint32Array([
-    0,2,1, 0,3,2,   4,5,6, 4,6,7,   0,1,5, 0,5,4,
-    2,3,7, 2,7,6,   3,0,4, 3,4,7,   1,2,6, 1,6,5,
-  ]);
-  return { positions: P, indices: I };
+  const b = boxAt(0, 0, 0, L, W, H);
+  return { positions: new Float32Array(b.P), indices: new Uint32Array(b.I) };
+}
+// CONCHA: caja abierta con fondo + 4 paredes (5 cajas cerradas DISJUNTAS que se
+// tocan sin traslaparse — la paridad del ray-cast funciona por caja). Es la pieza
+// de la Fig 11.11 del libro: la fuerza de expulsión vive en las paredes.
+function shellMesh(L, W, H, t) {
+  const cajas = [
+    boxAt(0, 0, 0, L, W, t),               // fondo
+    boxAt(0, 0, t, t, W, H),               // pared x0
+    boxAt(L - t, 0, t, L, W, H),           // pared x1
+    boxAt(t, 0, t, L - t, t, H),           // pared y0
+    boxAt(t, W - t, t, L - t, W, H),       // pared y1
+  ];
+  const P = [], I = [];
+  for (const c of cajas) { const off = P.length / 3; P.push(...c.P); I.push(...c.I.map((i) => i + off)); }
+  return { positions: new Float32Array(P), indices: new Uint32Array(I) };
 }
 
 (async () => {
@@ -131,6 +147,39 @@ function boxMesh(L, W, H) {
       || (lote.filas[i - 1].criticos === f.criticos && lote.filas[i - 1].viola > f.viola)
       || (lote.filas[i - 1].criticos === f.criticos && lote.filas[i - 1].viola === f.viola && lote.filas[i - 1].score <= f.score)),
     lote.filas.map((f) => `${f.nombre}(c${f.criticos}/v${f.viola}/s${f.score})`).join(' → '));
+
+  // ── 5b) LAYOUT POR AGARRE §11.2.5 (la segunda mitad de la frase del libro) ──
+  // La CONCHA (Fig 11.11): la fuerza vive en las paredes → los pines van JUNTO a
+  // ellas, no en rejilla. La PLACA maciza no tiene paredes → rejilla VÁLIDA.
+  const EL = await import(R('eject-layout.ts'));
+  const concha = shellMesh(120, 80, 25, 4);
+  const rc = RM.revisarModelo({ mesh: concha, nombre: 'concha 120×80×25', annualVolume: 200000, totalVolume: 1000000 });
+  console.log(`\n[concha] score ${rc.fila.score} · layout ${rc.ens.ejectLayout} · criticos ${rc.fila.criticos}`);
+  for (const n of rc.notas.filter((x) => /agarre/.test(x))) console.log('   ·', n);
+  check('la concha coloca los pines POR AGARRE (§11.2.5 Fig 11.11)',
+    rc.ens.ejectLayout === 'agarre', `ejectLayout = ${rc.ens.ejectLayout}`);
+  const cLay = rc.contratos.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'eject-layout');
+  check('el contrato eject-layout pasa a CUMPLE con el layout por agarre',
+    cLay.estado === 'CUMPLE' && /Fig 11\.11/.test(cLay.detalle), `${cLay.estado}`);
+  check('la concha queda sin CRÍTICOS del ensamble (el acero §11.2.5 aguanta con pines junto a la pared)',
+    rc.fila.criticos === 0, `${rc.fila.criticos} críticos`);
+  // la GEOMETRÍA: cada pin del plan queda en la banda [keepOut, keepOut+6+celda]
+  // de una pared (ni encima de ella, ni lejos en el centro — Fig 11.10 vs 11.11)
+  {
+    const grip = EL.gripEjectorLayout(concha, { nPins: 12, pinDiaMm: 6 });
+    const keepOut = 6 + (6 + 0.13) / 2 + 1;
+    const dPared = (p) => Math.min(p.x - 4, 116 - p.x, p.y - 4, 76 - p.y);  // a la cara interna de la pared
+    const dists = grip.positions.map(dPared);
+    check('todos los pines de agarre caen en la BANDA junto a la pared (ni encima, ni al centro)',
+      grip.positions.length >= 4 && dists.every((d) => d >= keepOut - 4.5 && d <= keepOut + 8),
+      `${grip.positions.length} pines · d(pared interna) = ${dists.map((d) => d.toFixed(1)).join(', ')} · keepOut ${keepOut.toFixed(1)}`);
+  }
+  check('la PLACA maciza declara agarre uniforme (la rejilla NO es antipatrón en pieza plana)',
+    placa.ens.ejectLayout === 'plana-uniforme' || placa.ens.ejectLayout === 'rejilla',
+    `ejectLayout = ${placa.ens.ejectLayout}`);
+  const cLayP = placa.contratos.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'eject-layout');
+  check('…y su contrato eject-layout NO regaña en falso (plana-uniforme ⇒ CUMPLE)',
+    placa.ens.ejectLayout !== 'plana-uniforme' || cLayP.estado === 'CUMPLE', `${placa.ens.ejectLayout} → ${cLayP.estado}`);
 
   // ── 6) DETERMINISMO: misma entrada ⇒ misma fila ──────────────────────────
   const vaso2 = RM.revisarModelo({ spec: vasoSpec });

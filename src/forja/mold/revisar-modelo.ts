@@ -19,6 +19,7 @@ import { dfmFromMesh, type DfmMeshReport } from './dfm-mesh';
 import { solidFromMesh, defaultGate, type MeshLike } from './flowlen-mesh';
 import { measureFlowLength, type FlowField } from './flowlen';
 import { enumerarVenteos, type PlanVenteo } from './venting-locations';
+import { gripEjectorLayout } from './eject-layout';
 import { moldMachine, type MachineSpec, type MoldPackage } from './moldmachine';
 import { contratos, medirEnsamble, type ContratoReporte, type EnsambleMedido } from './mold-contratos';
 import { coordAudit, type CoordFinding } from './mold-coords';
@@ -145,11 +146,29 @@ export function revisarModelo(input: RevisionInput): RevisionModelo {
   const pkg = moldMachine(spec);
 
   // ── 4) EL ENSAMBLE MEDIDO: agua, acero del expulsor, puertos del circuito ──
+  // Con malla, los pines se colocan POR AGARRE antes de medir (§11.2.5 Fig 11.11):
+  // el auditor juzga las posiciones REALES, no la rejilla que se va a descartar.
   let ens: EnsambleMedido = {};
   let criticos: CoordFinding[] = [];
   try {
     const asm = packageToAssemblySpec(pkg);
-    ens = medirEnsamble(asm);
+    if (asm.ejectors.type !== 'stripper') {
+      if (input.mesh) {
+        const grip = gripEjectorLayout(input.mesh, { nPins: asm.ejectors.count, pinDiaMm: asm.ejectors.diaMm });
+        if (grip.centered.length >= Math.min(4, asm.ejectors.count)) {
+          asm.ejectors.positions = grip.centered;
+          asm.ejectors.count = grip.centered.length;
+          ens.ejectLayout = 'agarre';
+        } else {
+          ens.ejectLayout = grip.nParedes === 0 ? 'plana-uniforme' : 'rejilla';
+        }
+        notas.push(...grip.notas.map((n) => `agarre §11.2.5: ${n}`));
+      } else {
+        ens.ejectLayout = 'rejilla';
+      }
+    }
+    const med = medirEnsamble(asm);
+    ens = { ...med, ejectLayout: ens.ejectLayout };
     criticos = coordAudit(asm).findings.filter((f) => f.sev === 'CRÍTICO');
   } catch (e) {
     notas.push(`ensamble NO medible: ${String(e).slice(0, 120)} — los criterios geométricos quedan SIN-CABLEAR`);

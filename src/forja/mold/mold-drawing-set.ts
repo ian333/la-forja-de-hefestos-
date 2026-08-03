@@ -536,6 +536,16 @@ function ejectorKeepOutMm(pinDiaMm: number): number {
   return pinDiaMm + ejectorPinFit(pinDiaMm).holeDiaMm / 2 + 1;
 }
 
+/** Posiciones de expulsores de UNA celda: por AGARRE si el spec las trae
+ *  (§11.2.5 Fig 11.11, de gripEjectorLayout — relativas al centro de la huella),
+ *  si no la rejilla/círculo/rim de siempre. UNA función para los DOS call sites
+ *  (B/support y ejector/ejector-ret): si divergen, pasajes y cabezas desalinean. */
+function ejectorCellPositions(s: MoldAssemblySpec, cell: { cx: number; cy: number }, fx: number, fy: number, round: boolean, perCav: number, frame?: { frameMm: number; ribs: number }): Array<[number, number]> {
+  const grip = s.ejectors.positions;
+  if (grip?.length) return grip.map((p) => [Math.round(cell.cx + p.x), Math.round(cell.cy + p.y)]);
+  return ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame, ejectorKeepOutMm(s.ejectors.diaMm));
+}
+
 export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[] {
   const W = s.widthMm, D = plateDepth(s);
   const inset = Math.max(20, Math.round(W * 0.06));
@@ -580,7 +590,7 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     // STRIPPER (§11.3.4): NO hay pines — el anillo empuja el perímetro; cero barrenos.
     const ejHole = ejectorPinFit(s.ejectors.diaMm).holeDiaMm;
     if (s.ejectors.type !== 'stripper')
-      for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame, ejectorKeepOutMm(s.ejectors.diaMm)))
+      for (const cell of cells) for (const [x, y] of ejectorCellPositions(s, cell, fx, fy, round, perCav, frame))
         holes.push({ x, y, dia: ejHole, type: `expulsor (${s.ejectors.type})` });
     // HOLGURA de los RETURN PINS (⌀12): bajan del paquete y CRUZAN soporte+B para topar
     // en la cara de A. Ajuste deslizante REAL 0.13mm (fits.ts), no 1mm inventado.
@@ -615,7 +625,7 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     const perCav = Math.max(1, Math.round(s.ejectors.count / Math.max(1, cells.length)));
     const frame = s.cavity.frameMm ? { frameMm: s.cavity.frameMm, ribs: s.cavity.ribs ?? 0 } : undefined;
     if (s.ejectors.type !== 'stripper')   // stripper: sin pines → sin alojamientos de cabeza
-      for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame, ejectorKeepOutMm(s.ejectors.diaMm)))
+      for (const cell of cells) for (const [x, y] of ejectorCellPositions(s, cell, fx, fy, round, perCav, frame))
         holes.push({ x, y, dia: role === 'ejector' ? s.ejectors.diaMm + 3 : s.ejectors.diaMm + 0.5,
           type: role === 'ejector' ? 'aloj. cabeza de expulsor' : 'pasaje de expulsor' });
     // pines de retorno en las esquinas de la PLACA EXPULSORA real (más angosta que el

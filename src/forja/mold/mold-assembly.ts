@@ -34,7 +34,12 @@ export interface MoldAssemblySpec {
    *  ese volumen sale la masa del disparo (Eq 9.10) ⇒ la potencia de agua. */
   cavity: { widthMm: number; depthMm: number; shape?: 'round' | 'rect'; lenMm?: number; wallMm?: number; frameMm?: number; ribs?: number; volMm3?: number };
   cooling: { diaMm: number; plug?: string; insetMm: number };  // líneas de agua
-  ejectors: { type: 'pin' | 'blade' | 'sleeve' | 'stripper'; diaMm: number; count: number };
+  ejectors: {
+    type: 'pin' | 'blade' | 'sleeve' | 'stripper'; diaMm: number; count: number;
+    /** §11.2.5 Fig 11.11: posiciones POR AGARRE (relativas al centro de la huella,
+     *  mm) — de gripEjectorLayout. Sin ellas, el colocador cae a la rejilla. */
+    positions?: Array<{ x: number; y: number }>;
+  };
   core: { diaMm?: number; widthMm?: number; material: string };   // ⌀ (cup) o ancho de bloque (marco/bezel)
   cavityMetal: string; baseSteel?: string;
   machine?: string; clampTons?: number;
