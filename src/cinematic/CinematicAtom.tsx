@@ -1399,13 +1399,33 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   // así no hay cuadro en blanco ni espera, y si el .bin falla la escena sigue viva.
   // `window.__atomFuente` deja que el lab diga en pantalla cuál se está viendo — la
   // diferencia importa y no se esconde.
-  const hidro = useMemo(() => buildAtomBundle(element, live), [element, live]);
+  // ⚠ EL HIDROGENOIDE YA NO SE CONSTRUYE DE ENTRADA EN EL LAB. Estaba aquí como "respaldo
+  // instantáneo" mientras llegaba el .bin, pero `buildAtomBundle` muestrea hasta 200 000
+  // puntos orbital por orbital de forma SÍNCRONA: medido con el arnés de telemetría, tocar
+  // un elemento daba INP ≈ 5000 ms en una RTX 4070 Ti. O sea que el "respaldo instantáneo"
+  // era justo lo que congelaba el teléfono 5 segundos por toque — y la audiencia real corre
+  // en Mali-G52 y Adreno 610. El .bin llega del borde en ~200 ms, así que ahora se espera:
+  // solo se construye el hidrogenoide si ese elemento NO tiene .bin (los 15 superpesados) o
+  // fuera del lab (el render de video, que lo necesita síncrono y determinista).
+  // Cuántas subcapas tiene el elemento, SIN muestrear: populateAtom solo llena la
+  // configuración electrónica. Así la duración y el brillo no esperan a la nube.
+  const nSubcapas = useMemo(() => {
+    const vistas = new Set(populateAtom(element).map(o => `${o.n}-${o.l}`));
+    return Math.max(1, vistas.size);
+  }, [element]);
+  const [sinBin, setSinBin] = useState(!live);
+  const hidro = useMemo(
+    () => (sinBin ? buildAtomBundle(element, live) : null),
+    [element, live, sinBin],
+  );
   const [abin, setAbin] = useState<ReturnType<typeof bundleFromAbInitio> | null>(null);
   useEffect(() => {
     let vivo = true;
     setAbin(null);
+    if (live) setSinBin(false);          // mientras carga NO se paga el muestreo síncrono
     loadAtomAbInitio(element.Z).then(d => {
       if (!vivo) return;
+      if (!d && live) setSinBin(true);    // sin .bin (Z>=104): ahí sí toca el hidrogenoide
       setAbin(d ? bundleFromAbInitio(d, live) : null);
       (window as unknown as Record<string, unknown>).__atomFuente =
         d ? { Z: element.Z, fuente: 'abinitio', shells: d.shells.length }
@@ -1413,11 +1433,15 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
     });
     return () => { vivo = false; };
   }, [element.Z, live]);
-  const bundle = abin ?? hidro;
+  // Mientras no haya ninguno de los dos se mantiene el ANTERIOR: cambiar de elemento deja
+  // la nube vieja ~200 ms en vez de parpadear a vacío, que se lee mejor y no cuesta nada.
+  const ultimo = useRef<AtomBundle | null>(null);
+  const bundle = abin ?? hidro ?? ultimo.current;
+  if (bundle) ultimo.current = bundle;
   // Duración variable por # de subcapas (define la longitud del zoom-out). Se fija
   // en el módulo (RUN_DURATION) para que findCut/shellLabelTime la lean.
   const duration = useMemo(() => {
-    RUN_DURATION = durationForShells(bundle.shells.length);
+    RUN_DURATION = durationForShells(bundle?.shells.length ?? nSubcapas);
     return RUN_DURATION;
   }, [bundle]);
   const extent = useMemo(() => atomExtent(element), [element]);
@@ -1453,7 +1477,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
   // El video sigue leyendo element.Z, punto.
   const zBrillo = useMemo(() => {
     if (!live) return element.Z;
-    const e = bundle.shells.reduce((s, x) => s + (x.electrons ?? 0), 0);
+    const e = bundle?.shells.reduce((s, x) => s + (x.electrons ?? 0), 0) ?? element.Z;
     return e > 0 ? e : element.Z;
   }, [live, bundle, element.Z]);
   const [time, setTime] = useState(0);
@@ -1539,11 +1563,11 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
               minDistance={extent * 0.004} maxDistance={extent * 2.2} autoRotate autoRotateSpeed={0.55} />
           : <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} />}
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
-        <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
+        {bundle && <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
           coreRadius={coreR}
           live={live}
           rotRate={1.15}
-          brightness={Math.min(0.82, 3.4 / Math.sqrt(zBrillo)) * (1 - 0.45 * smoothstep((time - 17.3) / 0.8))} />
+          brightness={Math.min(0.82, 3.4 / Math.sqrt(zBrillo)) * (1 - 0.45 * smoothstep((time - 17.3) / 0.8))} />}
         {/* Física visible (gated a la mirada al núcleo): campo eléctrico de
             Coulomb, campo magnético dipolar si es paramagnético, y decaimiento
             radiactivo si el isótopo es inestable. Todo determinista en t. */}
@@ -1579,7 +1603,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
       {!live && <>
         <DatoCurioso element={element} time={time} vertical={vertical} />
         <ScaleNote element={element} time={time} vertical={vertical} />
-        <AtomTitle element={element} shells={bundle.shells} time={time} vertical={vertical} />
+        {bundle && <AtomTitle element={element} shells={bundle.shells} time={time} vertical={vertical} />}
         <Letterbox vertical={vertical} />
       </>}
     </div>

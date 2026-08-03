@@ -52,8 +52,19 @@ export function parseAtomBin(buf: ArrayBuffer): AtomAbInitio {
     });
     o += 12;
   }
+  // RUTA RÁPIDA: una vista Int16Array sobre el buffer en vez de 330 000 llamadas a
+  // getInt16 (con 110 000 puntos eso son 3 lecturas por punto, una por una). El único
+  // requisito es alineación a 2 bytes; el encabezado mide 28 + 12·S, siempre par, así que
+  // se cumple — pero se comprueba y hay respaldo por si el formato cambia.
   const pos = new Float32Array(M * 3);
-  for (let i = 0; i < M * 3; i++) { pos[i] = dv.getInt16(o, true) / POSQ; o += 2; }
+  if (o % 2 === 0) {
+    const raw = new Int16Array(buf, o, M * 3);          // cero copias, cero DataView
+    const inv = 1 / POSQ;
+    for (let i = 0; i < M * 3; i++) pos[i] = raw[i] * inv;
+    o += M * 6;
+  } else {
+    for (let i = 0; i < M * 3; i++) { pos[i] = dv.getInt16(o, true) / POSQ; o += 2; }
+  }
   const shellOf = new Uint8Array(buf.slice(o, o + M)); o += M;
   const dens = magic === 'ATM2' ? new Uint8Array(buf.slice(o, o + M)) : new Uint8Array(M).fill(160);
   return { Z, L, shells, pos, shellOf, dens };
