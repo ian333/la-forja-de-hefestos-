@@ -129,12 +129,14 @@ export function coordAudit(s: MoldAssemblySpec): { findings: CoordFinding[]; fea
     // 4× más flojos que el libro: el auditor daba ámbar donde el libro dice rojo.
     const claroMin = cc.diaMm / 2;
     if (worst < 1e8) medidas.holguraAguaMm = +worst.toFixed(2);   // la MEDIDA viaja siempre
+    // 2 decimales: los casos FRONTERA (4.76 vs 4.765) a 1 decimal se pintaban
+    // "4.8 < 4.8" — un veredicto que se lee como sinsentido esconde el margen real
     if (worst < claroMin) {
       F.push({ sev: 'CRÍTICO', check: 'agua-choca-barreno',
-        detail: `holgura ${worst.toFixed(1)} mm < ½⌀ = ${claroMin.toFixed(1)} mm exigido §9.2.7 (${wi})` });
+        detail: `holgura ${worst.toFixed(2)} mm < ½⌀ = ${claroMin.toFixed(2)} mm exigido §9.2.7 (${wi})` });
     } else if (worst < claroMin * 1.5) {
       F.push({ sev: 'ADVERTENCIA', check: 'agua-cerca-barreno',
-        detail: `holgura ${worst.toFixed(1)} mm apenas sobre el ½⌀ = ${claroMin.toFixed(1)} mm §9.2.7 (${wi})` });
+        detail: `holgura ${worst.toFixed(2)} mm apenas sobre el ½⌀ = ${claroMin.toFixed(2)} mm §9.2.7 (${wi})` });
     }
   }
 
@@ -182,10 +184,10 @@ export function coordAudit(s: MoldAssemblySpec): { findings: CoordFinding[]; fea
       const minSteel = s.ejectors.diaMm;                     // 1 ⌀ del pin REAL
       if (worstSteel < minSteel) {
         F.push({ sev: 'CRÍTICO', check: 'expulsor-sin-acero',
-          detail: `acero ${worstSteel.toFixed(1)} mm < 1⌀ = ${minSteel.toFixed(1)} mm exigido §11.2.5 (${wp}) — el barreno se ovala y agrieta hacia la cavidad` });
+          detail: `acero ${worstSteel.toFixed(2)} mm < 1⌀ = ${minSteel.toFixed(2)} mm exigido §11.2.5 (${wp}) — el barreno se ovala y agrieta hacia la cavidad` });
       } else if (worstSteel < minSteel * 1.2) {
         F.push({ sev: 'ADVERTENCIA', check: 'expulsor-acero-justo',
-          detail: `acero ${worstSteel.toFixed(1)} mm apenas sobre 1⌀ = ${minSteel.toFixed(1)} mm §11.2.5 (${wp})` });
+          detail: `acero ${worstSteel.toFixed(2)} mm apenas sobre 1⌀ = ${minSteel.toFixed(2)} mm §11.2.5 (${wp})` });
       }
     }
   }

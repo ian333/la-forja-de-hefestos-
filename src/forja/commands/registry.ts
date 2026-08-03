@@ -42,6 +42,7 @@ import { optimizeSupportPlate, snapToCommercialPlate, sizeCavityPlate } from '..
 import { draftForFinish, checkDFM } from '../mold/dfm';
 // ── v2: orquestador + tecnología + DFM de malla + geometría (needsOc) ──
 import { moldMachine, type MachineSpec } from '../mold/moldmachine';
+import { revisarModelo, revisarLote } from '../mold/revisar-modelo';
 import { chooseMoldTechnology } from '../mold/moldtech';
 import { dfmFromMesh } from '../mold/dfm-mesh';
 import { pickDrawAxis } from '../mold/draw-axis';
@@ -246,6 +247,14 @@ reg({ id: 'mold.machine', domain: 'orquestador', eq: 'cap 4-12', status: 'implem
     machiningRateUSDh: p.machiningRateUSDh, dfm: p.dfm, abrasive: p.abrasive, corrosive: p.corrosive,
     mirror: p.mirror, undercuts: p.undercuts, margin: p.margin,
   } as MachineSpec) });
+
+// ── LA LLAMADA ÚNICA (revisar-modelo.ts): spec/malla → expediente completo ──
+reg({ id: 'revisar.modelo', domain: 'orquestador', eq: 'contratos + §13.10', status: 'implementado',
+  summary: 'spec o malla → dfm → molde → ensamble → venteos → contratos → expediente',
+  run: (p) => revisarModelo(p as any) });
+reg({ id: 'revisar.lote', domain: 'orquestador', eq: 'N-29', status: 'implementado',
+  summary: 'lote de modelos → tabla por severidad (modo REVISAR EN VOLUMEN)',
+  run: (p) => revisarLote((p.inputs ?? []) as any[]) });
 
 // ── FÁBRICA (factory.ts) — GEOMETRÍA (needsOc): arma la caja de dims y barre variantes ──
 const buildPart = (p: Record<string, any>, ctx: CommandCtx) => {

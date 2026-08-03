@@ -29,6 +29,7 @@ import ShortcutOverlay from '../../components/ShortcutOverlay';
 const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación del ciclo de inyección (chunk aparte)
 const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
 const MoldMachinePanel = lazy(() => import('../mold/MoldMachinePanel'));   // LA MÁQUINA: cliente sube pieza → cotización
+const RevisarLotePanel = lazy(() => import('../mold/RevisarLotePanel'));   // REVISAR EN VOLUMEN (N-29): contratos sobre un lote
 const MoldUnscrewSim = lazy(() => import('../sim/MoldUnscrewSim'));        // molde que desenrosca (núcleo rotativo)
 const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL CORTE: acero seccionándose (esténcil + env)
 import SketchEditor from './SketchEditor';
@@ -3465,6 +3466,7 @@ export default function ForgeBRepStudio() {
   const [cycleSimOn, setCycleSimOn] = useState(false);
   const [tpSimOn, setTpSimOn] = useState(false);
   const [moldMachineOn, setMoldMachineOn] = useState(false);
+  const [revisarLoteOn, setRevisarLoteOn] = useState(false);
   const [unscrewOn, setUnscrewOn] = useState(false);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
@@ -6289,6 +6291,11 @@ export default function ForgeBRepStudio() {
             <MoldMachinePanel onClose={() => setMoldMachineOn(false)} />
           </Suspense>
         )}
+        {revisarLoteOn && (
+          <Suspense fallback={null}>
+            <RevisarLotePanel onClose={() => setRevisarLoteOn(false)} />
+          </Suspense>
+        )}
         {unscrewOn && (
           <Suspense fallback={null}>
             <MoldUnscrewSim onClose={() => setUnscrewOn(false)} />
@@ -6933,6 +6940,10 @@ export default function ForgeBRepStudio() {
               <button className="fb-fea-run" data-testid="btn-mold-machine" onClick={() => setMoldMachineOn(true)}
                 style={{ marginTop: 6, background: GOLD, color: '#1a1206', fontWeight: 700 }}>
                 🏭 LA MÁQUINA — cotizar molde de una pieza
+              </button>
+              <button className="fb-fea-run" data-testid="btn-revisar-lote" onClick={() => setRevisarLoteOn(true)}
+                style={{ marginTop: 6 }}>
+                📋 REVISAR EN VOLUMEN — contratos de Kazmer sobre un lote
               </button>
             </div>
 
