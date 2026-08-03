@@ -43,6 +43,8 @@ export interface EnsambleMedido {
   holguraAguaMm?: number;
   /** acero mínimo medido entre barreno de expulsor y pared de cavidad (mm) */
   holguraPinCavidadMm?: number;
+  /** ⌀ del pin REAL del ensamble — §11.2.5 exige 1⌀ del pin real, no del mínimo teórico */
+  pinDiaEnsambleMm?: number;
   /** §8.2.2: el plan de venteos de `enumerarVenteos(campoDeFlujo)`. Necesita el
    *  campo de flujo (voxelizado del hueco A/B), que no vive en el paquete numérico. */
   planVenteo?: PlanVenteo;
@@ -508,15 +510,18 @@ export function contratoExpulsion(pkg: MoldPackage, ens?: EnsambleMedido): Contr
   });
 
   // ── 6) Acero mínimo: 1 diámetro de pin entre barreno y cavidad — §11.2.5 ──
+  // El límite es 1⌀ DEL PIN REAL del ensamble (si el diseñador subió el ⌀ sobre el
+  // mínimo §11.2.4, el acero exigido sube con él), no del mínimo teórico.
+  const dPinReal = ens?.pinDiaEnsambleMm ?? pines.dMinMm;
   C.push({
     id: 'eject-acero-minimo', subsistema: S, cita: '§11.2.5',
     criterio: 'al menos UN diámetro de pin de acero entre el barreno del expulsor y la superficie de la cavidad',
-    medido: ens?.holguraPinCavidadMm, limite: pines.dMinMm, unidad: 'mm',
+    medido: ens?.holguraPinCavidadMm, limite: dPinReal, unidad: 'mm',
     estado: ens?.holguraPinCavidadMm == null ? 'SIN-CABLEAR'
-      : (ens.holguraPinCavidadMm < pines.dMinMm ? 'VIOLA' : 'CUMPLE'),
+      : (ens.holguraPinCavidadMm < dPinReal ? 'VIOLA' : 'CUMPLE'),
     detalle: ens?.holguraPinCavidadMm == null
-      ? `exigido ≥ ${num(pines.dMinMm, 2)} mm de acero — con menos, el barreno se ovala bajo presión, el pin se traba y salen grietas hacia la cavidad. Sin molde ensamblado no se puede medir`
-      : `acero MEDIDO ${num(ens.holguraPinCavidadMm, 2)} mm vs exigido ≥ ${num(pines.dMinMm, 2)} mm (1 diámetro de pin)`,
+      ? `exigido ≥ ${num(dPinReal, 2)} mm de acero — con menos, el barreno se ovala bajo presión, el pin se traba y salen grietas hacia la cavidad. Sin molde ensamblado no se puede medir`
+      : `acero MEDIDO ${num(ens.holguraPinCavidadMm, 2)} mm vs exigido ≥ ${num(dPinReal, 2)} mm (1⌀ del pin real ⌀${num(dPinReal, 2)})`,
     deuda: ens?.holguraPinCavidadMm == null ? 'pasa el MoldAssemblySpec a contratos(pkg, ens)' : undefined,
   });
 
@@ -1167,16 +1172,12 @@ export function medirEnsamble(spec: MoldAssemblySpec): EnsambleMedido {
   const out: EnsambleMedido = {};
   try {
     const r = coordAudit(spec);
-    // coordAudit reporta la holgura del agua dentro del detalle del hallazgo
-    for (const f of r.findings) {
-      if (f.check === 'agua-choca-barreno' || f.check === 'agua-cerca-barreno') {
-        const m = /holgura (-?[\d.]+) mm/.exec(f.detail);
-        if (m) {
-          const v = parseFloat(m[1]);
-          out.holguraAguaMm = out.holguraAguaMm == null ? v : Math.min(out.holguraAguaMm, v);
-        }
-      }
-    }
+    // coordAudit expone las MEDIDAS siempre (haya o no hallazgo): antes esto parseaba
+    // el texto del hallazgo con regex, así que el agua solo se medía cuando YA estaba
+    // mal — un molde sano quedaba SIN-CABLEAR eterno.
+    out.holguraAguaMm = r.medidas.holguraAguaMm;
+    out.holguraPinCavidadMm = r.medidas.holguraPinCavidadMm;
+    out.pinDiaEnsambleMm = r.medidas.pinDiaMm;
   } catch { /* sin geometría disponible: los criterios quedan SIN-CABLEAR, que es la verdad */ }
   return out;
 }

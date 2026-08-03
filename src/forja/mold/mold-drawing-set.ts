@@ -502,17 +502,25 @@ function frameEjectorPositions(cx: number, cy: number, fx: number, fy: number, f
   return pts;
 }
 
-function ejectorPositions(cx: number, cy: number, fx: number, fy: number, round: boolean, n: number, frame?: { frameMm: number; ribs: number }): Array<[number, number]> {
+/** `keepOutMm` = distancia mínima del CENTRO del pin a la pared moldeante — §11.2.5
+ *  LITERAL: 1⌀ de acero entre el barreno y la superficie de cavidad, o sea
+ *  keepOut = ⌀pin + ½⌀barreno (+1 mm de guarda por el redondeo de posiciones).
+ *  El margen fijo (12 %) IGNORABA el pin: con ⌀12 en una huella chica, el barreno
+ *  quedaba a 2.9 mm del muro (carcasa) y en el benchy lo CORTABA (−0.6 mm). */
+function ejectorPositions(cx: number, cy: number, fx: number, fy: number, round: boolean, n: number, frame?: { frameMm: number; ribs: number }, keepOutMm = 0): Array<[number, number]> {
   const pts: Array<[number, number]> = [];
   if (frame && !round && frame.frameMm > 0) return frameEjectorPositions(cx, cy, fx, fy, frame.frameMm, frame.ribs, n);
   if (round) {
-    const r = Math.max(5, (fx / 2) * 0.55);
+    // el radio del círculo de pines respeta el acero contra la pared del pocket
+    const rMax = fx / 2 - keepOutMm;
+    const r = Math.max(0, Math.min(Math.max(5, (fx / 2) * 0.55), rMax));
     for (let i = 0; i < n; i++) { const a = (2 * Math.PI * i) / n - Math.PI / 2; pts.push([Math.round(cx + r * Math.cos(a)), Math.round(cy + r * Math.sin(a))]); }
   } else {
-    // rejilla nx×ny DISTRIBUIDA por TODA la huella (no apiñada al centro): margen
-    // 12% del borde → los pines cubren el ~76% de la cara, que es lo que expulsa parejo.
+    // rejilla nx×ny DISTRIBUIDA por la huella: margen 12 % O el acero §11.2.5,
+    // el que sea MAYOR (el 12 % solo reparte; el acero es regla dura del libro).
     const nx = Math.max(1, Math.round(Math.sqrt(n))), ny = Math.ceil(n / nx);
-    const mx = fx * 0.12, my = fy * 0.12;
+    const mx = Math.min(Math.max(fx * 0.12, keepOutMm), fx / 2);
+    const my = Math.min(Math.max(fy * 0.12, keepOutMm), fy / 2);
     let k = 0;
     for (let r = 0; r < ny && k < n; r++) for (let c = 0; c < nx && k < n; c++, k++) {
       const px = nx === 1 ? cx : cx - fx / 2 + mx + (c * (fx - 2 * mx)) / (nx - 1);
@@ -521,6 +529,11 @@ function ejectorPositions(cx: number, cy: number, fx: number, fy: number, round:
     }
   }
   return pts;
+}
+
+/** keepOut §11.2.5 para un pin dado: 1⌀ de acero + ½ barreno + 1 mm de guarda. */
+function ejectorKeepOutMm(pinDiaMm: number): number {
+  return pinDiaMm + ejectorPinFit(pinDiaMm).holeDiaMm / 2 + 1;
 }
 
 export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[] {
@@ -567,7 +580,7 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     // STRIPPER (§11.3.4): NO hay pines — el anillo empuja el perímetro; cero barrenos.
     const ejHole = ejectorPinFit(s.ejectors.diaMm).holeDiaMm;
     if (s.ejectors.type !== 'stripper')
-      for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame))
+      for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame, ejectorKeepOutMm(s.ejectors.diaMm)))
         holes.push({ x, y, dia: ejHole, type: `expulsor (${s.ejectors.type})` });
     // HOLGURA de los RETURN PINS (⌀12): bajan del paquete y CRUZAN soporte+B para topar
     // en la cara de A. Ajuste deslizante REAL 0.13mm (fits.ts), no 1mm inventado.
@@ -602,7 +615,7 @@ export function standardHoles(s: MoldAssemblySpec, role: PlateRole): PlateHole[]
     const perCav = Math.max(1, Math.round(s.ejectors.count / Math.max(1, cells.length)));
     const frame = s.cavity.frameMm ? { frameMm: s.cavity.frameMm, ribs: s.cavity.ribs ?? 0 } : undefined;
     if (s.ejectors.type !== 'stripper')   // stripper: sin pines → sin alojamientos de cabeza
-      for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame))
+      for (const cell of cells) for (const [x, y] of ejectorPositions(cell.cx, cell.cy, fx, fy, round, perCav, frame, ejectorKeepOutMm(s.ejectors.diaMm)))
         holes.push({ x, y, dia: role === 'ejector' ? s.ejectors.diaMm + 3 : s.ejectors.diaMm + 0.5,
           type: role === 'ejector' ? 'aloj. cabeza de expulsor' : 'pasaje de expulsor' });
     // pines de retorno en las esquinas de la PLACA EXPULSORA real (más angosta que el

@@ -14,7 +14,7 @@
 import type { MoldAssemblySpec } from './mold-assembly';
 import { plateStackZ } from './mold-plano-set';
 import { insertDims } from './mold-drawing-set';
-import { plateDepth, plateDefs, standardHoles, coolingCircuit, moldBoltSizing } from './mold-drawing-set';
+import { plateDepth, plateDefs, standardHoles, coolingCircuit, moldBoltSizing, cavityFootprint, cavityGrid } from './mold-drawing-set';
 import { fastenerPlan, boltCapacityKN } from './mold-fasteners';
 import { planInterlocks } from './mold-interlocks';
 import { resolveThread } from './mold-threads';
@@ -49,9 +49,22 @@ export function enumerateVFeatures(s: MoldAssemblySpec): VFeature[] {
 const zOverlap = (a: VFeature, b: VFeature) => a.zLo < b.zHi - 0.2 && b.zLo < a.zHi - 0.2;
 const dist = (a: VFeature, b: VFeature) => Math.hypot(a.x - b.x, a.y - b.y);
 
+/** Medidas del ensamble que el CONTRATO necesita (mold-contratos §9.2.7/§11.2.5).
+ *  Se reportan SIEMPRE, haya o no hallazgo: un criterio no puede juzgar con un
+ *  número que solo existe cuando algo ya salió mal. */
+export interface CoordMedidas {
+  /** holgura mínima línea de agua ↔ cualquier barreno (mm) */
+  holguraAguaMm?: number;
+  /** acero mínimo barreno de expulsor ↔ pared moldeante de la cavidad (mm) */
+  holguraPinCavidadMm?: number;
+  /** ⌀ del pin expulsor del ensamble (el límite §11.2.5 es 1 ⌀ DEL PIN REAL) */
+  pinDiaMm?: number;
+}
+
 /** análisis completo por coordenadas → findings + evidencia. */
-export function coordAudit(s: MoldAssemblySpec): { findings: CoordFinding[]; features: VFeature[]; screws: { cavityHalf: number; coreHalf: number; perScrewKN: number; capKN: number } } {
+export function coordAudit(s: MoldAssemblySpec): { findings: CoordFinding[]; features: VFeature[]; medidas: CoordMedidas; screws: { cavityHalf: number; coreHalf: number; perScrewKN: number; capKN: number } } {
   const F: CoordFinding[] = [];
+  const medidas: CoordMedidas = {};
   const feats = enumerateVFeatures(s);
   const z = plateStackZ(s);
   const zPart = z.A;   // línea de partición (tope de B = base de A)
@@ -115,12 +128,65 @@ export function coordAudit(s: MoldAssemblySpec): { findings: CoordFinding[]; fea
     // (crítico) y 4.5 mm (advertencia), números sin fuente que con ⌀15.9 quedaban
     // 4× más flojos que el libro: el auditor daba ámbar donde el libro dice rojo.
     const claroMin = cc.diaMm / 2;
+    if (worst < 1e8) medidas.holguraAguaMm = +worst.toFixed(2);   // la MEDIDA viaja siempre
     if (worst < claroMin) {
       F.push({ sev: 'CRÍTICO', check: 'agua-choca-barreno',
         detail: `holgura ${worst.toFixed(1)} mm < ½⌀ = ${claroMin.toFixed(1)} mm exigido §9.2.7 (${wi})` });
     } else if (worst < claroMin * 1.5) {
       F.push({ sev: 'ADVERTENCIA', check: 'agua-cerca-barreno',
         detail: `holgura ${worst.toFixed(1)} mm apenas sobre el ½⌀ = ${claroMin.toFixed(1)} mm §9.2.7 (${wi})` });
+    }
+  }
+
+  // ── 3d) ACERO DEL EXPULSOR §11.2.5 LITERAL: "at least one pin diameter of steel
+  //    between the ejector hole and the cavity surface" — con menos, el barreno se
+  //    OVALA bajo la presión de inyección, el pin se traba y salen grietas hacia la
+  //    cavidad. Se mide en planta: del borde del barreno (en B) a la pared moldeante
+  //    más cercana — la pared del pocket, y en un MARCO también la de la VENTANA. ──
+  if (s.ejectors.type !== 'stripper') {
+    const D3 = plateDepth(s);
+    const { fx, fy, round } = cavityFootprint(s);
+    const cells = cavityGrid(s, D3);
+    const frameMm = s.cavity.frameMm ?? 0;
+    // distancia |punto → frontera de un rectángulo| (dentro Y fuera): la pared del
+    // pocket de CUALQUIER cavidad es superficie moldeante, esté el pin dentro de la
+    // suya o entre dos vecinas — el acero entre barreno y pared importa igual.
+    const dRectWall = (dx: number, dy: number, hx: number, hy: number): number => {
+      const ex = Math.abs(dx) - hx, ey = Math.abs(dy) - hy;
+      return (ex > 0 || ey > 0)
+        ? Math.hypot(Math.max(ex, 0), Math.max(ey, 0))     // fuera: al muro más cercano
+        : Math.min(-ex, -ey);                              // dentro: al muro más cercano
+    };
+    let worstSteel = 1e9, wp = '';
+    for (const f of feats) {
+      if (f.plate !== 'B' || !f.type.startsWith('expulsor (')) continue;
+      const r = f.dia / 2;
+      // el acero más chico contra la pared moldeante MÁS CERCANA de cualquier cavidad
+      let best = 1e9;
+      for (const cell of cells) {
+        const dx = f.x - cell.cx, dy = f.y - cell.cy;
+        // pared EXTERIOR del pocket
+        let d = (round
+          ? Math.abs(fx / 2 - Math.hypot(dx, dy))
+          : dRectWall(dx, dy, fx / 2, fy / 2)) - r;
+        // pared INTERIOR (la ventana del marco): otra superficie moldeante a frameMm
+        if (!round && frameMm > 0)
+          d = Math.min(d, dRectWall(dx, dy, fx / 2 - frameMm, fy / 2 - frameMm) - r);
+        if (d < best) best = d;
+      }
+      if (best < worstSteel) { worstSteel = best; wp = `${f.type}@(${f.x},${f.y})`; }
+    }
+    if (worstSteel < 1e8) {
+      medidas.holguraPinCavidadMm = +worstSteel.toFixed(2);
+      medidas.pinDiaMm = s.ejectors.diaMm;
+      const minSteel = s.ejectors.diaMm;                     // 1 ⌀ del pin REAL
+      if (worstSteel < minSteel) {
+        F.push({ sev: 'CRÍTICO', check: 'expulsor-sin-acero',
+          detail: `acero ${worstSteel.toFixed(1)} mm < 1⌀ = ${minSteel.toFixed(1)} mm exigido §11.2.5 (${wp}) — el barreno se ovala y agrieta hacia la cavidad` });
+      } else if (worstSteel < minSteel * 1.2) {
+        F.push({ sev: 'ADVERTENCIA', check: 'expulsor-acero-justo',
+          detail: `acero ${worstSteel.toFixed(1)} mm apenas sobre 1⌀ = ${minSteel.toFixed(1)} mm §11.2.5 (${wp})` });
+      }
     }
   }
 
@@ -196,5 +262,5 @@ export function coordAudit(s: MoldAssemblySpec): { findings: CoordFinding[]; fea
       detail: `${perScrewKN.toFixed(1)} kN sobre UN tornillo > ${capKN.toFixed(1)} kN de capacidad ${plan.desig} — sube el ⌀ (agregar tornillos NO ayuda: Fig 12.33 el molde cuelga de uno solo)` });
 
   F.sort((a, b) => (a.sev === 'CRÍTICO' ? 0 : 1) - (b.sev === 'CRÍTICO' ? 0 : 1));
-  return { findings: F, features: feats, screws: { cavityHalf, coreHalf, perScrewKN: +perScrewKN.toFixed(1), capKN: +capKN.toFixed(1) } };
+  return { findings: F, features: feats, medidas, screws: { cavityHalf, coreHalf, perScrewKN: +perScrewKN.toFixed(1), capKN: +capKN.toFixed(1) } };
 }

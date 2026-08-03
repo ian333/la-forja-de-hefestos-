@@ -74,13 +74,21 @@
   });
   const ens = K.medirEnsamble(packageToAssemblySpec(bezel));
   checks.mideEnsamble = typeof ens.holguraAguaMm === 'number';
+  // la MEDIDA viaja aunque el molde esté SANO (antes salía de un regex sobre el
+  // hallazgo: solo existía cuando el agua YA estaba mal — SIN-CABLEAR eterno del sano)
+  checks.mideAceroExpulsor = typeof ens.holguraPinCavidadMm === 'number' && typeof ens.pinDiaEnsambleMm === 'number';
   const repE = K.contratos(bezel, ens);
   const cAgua = repE.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'agua-claro');
   checks.aguaSeJuzga = cAgua.estado !== 'SIN-CABLEAR';
+  const cAcero = repE.subsistemas.flatMap((s) => s.criterios).find((c) => c.id === 'eject-acero-minimo');
+  checks.aceroSeJuzga = cAcero.estado !== 'SIN-CABLEAR';
+  // §11.2.5: el límite es 1⌀ del pin REAL del ensamble, no del mínimo teórico
+  checks.aceroContraPinReal = cAcero.limite === ens.pinDiaEnsambleMm;
   // con ensamble hay MENOS criterios sin cablear que sin él
   const repSinEns = K.contratos(bezel);
   checks.ensambleDestraba = repE.total.sinCablear < repSinEns.total.sinCablear;
   console.log(`\nbezel: holgura agua ${ens.holguraAguaMm} mm → ${cAgua.estado} (límite del libro ${cAgua.limite?.toFixed(2)} mm)`);
+  console.log(`bezel: acero expulsor ${ens.holguraPinCavidadMm} mm → ${cAcero.estado} (1⌀ del pin real = ${cAcero.limite?.toFixed(2)} mm)`);
 
   // ── 8) Determinismo: dos corridas iguales dan el mismo reporte ──
   checks.determinista = JSON.stringify(K.contratos(pkg).total) === JSON.stringify(rep.total);
