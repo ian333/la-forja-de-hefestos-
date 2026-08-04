@@ -277,6 +277,60 @@ function shellMesh(L, W, H, t) {
     }
   }
 
+  // ── TANDA 3: venteo §8.2.3 · contracción §10.1 ──
+  {
+    const { laminaVenteo, laminaContraccion } = await import(R('laminas-visuales.ts'));
+    const { moldMachine } = await import(R('moldmachine.ts'));
+    const { VENT_TABLE_MM } = await import(R('venting.ts'));
+    const { EJECTOR_DIAM_CLEARANCE_MM } = await import(R('fits.ts'));
+    const { shrinkage, ABS_TAIT } = await import(R('shrinkage.ts'));
+    const { flowFieldFromMesh } = await import(R('revisar-modelo.ts'));
+
+    const v5 = moldMachine({ name: 'vaso Kazmer', Lmm: 100, Wmm: 100, Hmm: 60, cavityShape: 'round',
+      surfaceMm2: 30000, volumeMm3: 60000, wallMm: 3, plastic: 'ABS', annualVolume: 200000, totalVolume: 1000000 });
+    const vt = v5.diseno.venteo;
+    laminas.push(laminaVenteo({
+      nombre: `${v5.spec.name} · ABS`, hSpecMm: vt.hSpecMm, hMinMm: vt.hMinMm, hMaxMm: vt.hMaxMm,
+      pinDiaMm: 10, holguraPinMm: EJECTOR_DIAM_CLEARANCE_MM, tabla: VENT_TABLE_MM.medViscosity,
+    }));
+    console.log(`venteo: h ${vt.hSpecMm.toFixed(3)} en [${vt.hMinMm.toFixed(3)}, ${vt.hMaxMm.toFixed(3)}]`);
+
+    // CONTRACCIÓN: s(x,y) evaluando el Tait a la PRESIÓN LOCAL. La presión cae
+    // del gate al frente con la resistencia acumulada (∝ ΔP, Eq 5.22) — el mismo
+    // campo que ordena el llenado ordena la contracción.
+    if (fs.existsSync(stl)) {
+      const meshC = parseSTL(fs.readFileSync(stl).buffer);
+      const campoC = flowFieldFromMesh(meshC, { wallMm: 1.5, maxVoxels: 80000 });
+      const sh5 = v5.diseno.contraccion;
+      const Ppack = 66e6, Tnf = 132 + 273.15;
+      // presión local = pack menos lo que ya se gastó; el máximo de resistencia
+      // marca el punto que recibe MENOS empaque (el final de llenado)
+      const rMax = campoC.maxResistance || 1;
+      const nx = campoC.nx, ny = campoC.ny;
+      const sPct = new Float32Array(nx * ny).fill(NaN);
+      const cache = new Map();
+      for (let k = 0; k < campoC.nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const t = campoC.idx(i, j, k);
+        if (!campoC.cavity[t] || !Number.isFinite(campoC.resistance[t])) continue;
+        const frac = campoC.resistance[t] / rMax;
+        const P = Math.max(0, Ppack * (1 - frac));
+        const key = Math.round(P / 1e5);
+        let s = cache.get(key);
+        if (s === undefined) { s = shrinkage(ABS_TAIT, { tNoFlowK: Tnf, pPackPa: key * 1e5 }).linear * 100; cache.set(key, s); }
+        const p = j * nx + i;
+        if (!Number.isFinite(sPct[p]) || s > sPct[p]) sPct[p] = s;   // el PEOR del pilar
+      }
+      const half = Math.min(v5.spec.Lmm, v5.spec.Wmm) / 2;
+      laminas.push(laminaContraccion(
+        { nx, ny, sx: campoC.cellMm, sy: campoC.cellMm, x0: campoC.x0, y0: campoC.y0, sPct },
+        { nombre: 'carcasa RPi4 (STL real) · s a la presión LOCAL', sNomPct: sh5.nominalPct,
+          sLowPct: sh5.lowPct, sHighPct: sh5.highPct,
+          umbralPandeo: 0.44 * Math.pow(1.5 / half, 2), topologia: 'mixta' }));
+      const vv = sPct.filter((x) => Number.isFinite(x));
+      console.log(`contraccion: s de ${Math.min(...vv).toFixed(3)} a ${Math.max(...vv).toFixed(3)} %`);
+    }
+  }
+
   // ── HTML + PNG por lámina (para que el OJO las abra con Read) ──
   const html = path.join(OUT, 'laminas.html');
   fs.writeFileSync(html, laminasToHTML(laminas, 'Láminas visuales del molde'));

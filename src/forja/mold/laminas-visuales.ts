@@ -783,6 +783,119 @@ export function laminaMaquina(o: {
     svg };
 }
 
+/**
+ * LÁMINA §8.2.3 — DETALLE DEL VENTEO EN SECCIÓN (V8.6 Fig 8.6 · V8.8 Fig 8.8).
+ * Dos detalles acotados con las cifras LITERALES del libro:
+ *   · en el plano de partición: land delgado (h_vent, L=2 mm) → canal de alivio
+ *     de 2 mm → salida ⌀3 mm. Falla = land largo o SIN alivio: el aire no sale.
+ *   · alrededor del expulsor: holgura diametral 0.13 mm ⇒ venteo 0.065 mm, canal
+ *     hasta 3 mm de la cavidad y taper de guía. "Both of these elements should
+ *     be present in a good vent design" — LOS DOS, no uno.
+ */
+export function laminaVenteo(o: {
+  nombre: string; hSpecMm: number; hMinMm: number; hMaxMm: number;
+  pinDiaMm: number; holguraPinMm: number;
+  tabla: { materials: string; glanvill: number; rosato: number; menges: number };
+}): Lamina {
+  const W = 1000, H = 700, PAD = 62;
+  const LAND_L = 2, CANAL = 2, SALIDA = 3;             // mm, LITERALES §8.2.3
+  const kx = 150;                                      // px por mm (detalle ampliado)
+  const kh = 900;                                      // los espesores son décimas: escala aparte
+  const y0 = 250, x0 = PAD + 40;
+  const hPx = Math.max(2, o.hSpecMm * kh);
+  const largo = o.hSpecMm > o.hMaxMm;                  // el land no puede pasar el máximo
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">DETALLE DEL VENTEO · sección</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§8.2.3 · Fig 8.6 (plano de partición) y Fig 8.8 (alrededor del expulsor)</text>
+<text class="lblSm" x="${PAD}" y="92">espesores a escala ×${kh / kx} respecto al largo: son DÉCIMAS de mm contra milímetros</text>
+
+<text class="lbl" style="font:700 12px 'JetBrains Mono',monospace" x="${PAD}" y="140">1 · EN EL PLANO DE PARTICIÓN (Fig 8.6)</text>
+<text class="lblSm" x="${PAD}" y="158">land ${LAND_L} mm → canal de alivio ${CANAL} mm → salida ⌀${SALIDA} mm · el ANCHO se hace alto a propósito "for uncertainty in the last area to fill"</text>
+<rect x="${x0 - 90}" y="${y0 - 70}" width="90" height="70" fill="#3a2a12" stroke="#c9a227" stroke-width="1.4"/>
+<text class="lblSm" x="${x0 - 86}" y="${y0 - 46}">cavidad</text>
+<rect x="${x0 - 90}" y="${y0}" width="${90 + LAND_L * kx + CANAL * kx + 80}" height="60" fill="#1b2534" stroke="#2c3a50"/>
+<rect x="${x0}" y="${y0 - hPx}" width="${LAND_L * kx}" height="${hPx}" fill="#59d98c"/>
+<rect x="${x0 + LAND_L * kx}" y="${y0 - 40}" width="${CANAL * kx}" height="40" fill="#2a4a5a"/>
+<rect x="${x0 + (LAND_L + CANAL) * kx}" y="${y0 - 56}" width="70" height="56" fill="#2a4a5a"/>
+<line x1="${x0}" y1="${y0 - hPx - 14}" x2="${x0 + LAND_L * kx}" y2="${y0 - hPx - 14}" stroke="#c9a227" stroke-width="1.2"/>
+<text class="cita" x="${x0 + 8}" y="${y0 - hPx - 20}">land ${LAND_L} mm · h = ${o.hSpecMm.toFixed(3)} mm</text>
+<text class="lblSm" x="${x0 + LAND_L * kx + 8}" y="${y0 - 46}">alivio ${CANAL} mm</text>
+<text class="lblSm" x="${x0 + (LAND_L + CANAL) * kx + 4}" y="${y0 - 62}">salida ⌀${SALIDA}</text>
+
+<text class="lbl" style="font:700 12px 'JetBrains Mono',monospace" x="${PAD}" y="430">2 · ALREDEDOR DEL EXPULSOR (Fig 8.8)</text>
+<text class="lblSm" x="${PAD}" y="448">holgura diametral ${o.holguraPinMm} mm ⇒ venteo ${(o.holguraPinMm / 2).toFixed(4)} mm por lado · canal hasta 3 mm de la cavidad + taper de guía</text>
+<rect x="${PAD + 40}" y="480" width="300" height="26" fill="#3a2a12" stroke="#c9a227" stroke-width="1.2"/>
+<text class="lblSm" x="${PAD + 46}" y="498">superficie de cavidad</text>
+<rect x="${PAD + 150}" y="506" width="${o.pinDiaMm * 4}" height="120" fill="#5a6b82"/>
+<text class="lblSm" x="${PAD + 150 + o.pinDiaMm * 4 + 8}" y="540">pin ⌀${o.pinDiaMm} mm</text>
+<line x1="${PAD + 150 - 4}" y1="506" x2="${PAD + 150 - 4}" y2="${506 + 3 * 12}" stroke="#59d98c" stroke-width="3"/>
+<line x1="${PAD + 150 + o.pinDiaMm * 4 + 4}" y1="506" x2="${PAD + 150 + o.pinDiaMm * 4 + 4}" y2="${506 + 3 * 12}" stroke="#59d98c" stroke-width="3"/>
+<text class="ok" style="font:700 11px 'JetBrains Mono',monospace" x="${PAD + 40}" y="${506 + 3 * 12 + 16}">canal ajustado los primeros 3 mm ✓</text>
+<line x1="${PAD + 150 - 10}" y1="${506 + 3 * 12}" x2="${PAD + 150 - 4}" y2="${506 + 3 * 12 + 30}" stroke="#6db3f2" stroke-width="2.4"/>
+<line x1="${PAD + 150 + o.pinDiaMm * 4 + 10}" y1="${506 + 3 * 12}" x2="${PAD + 150 + o.pinDiaMm * 4 + 4}" y2="${506 + 3 * 12 + 30}" stroke="#6db3f2" stroke-width="2.4"/>
+<text class="lblSm" style="fill:#6db3f2" x="${PAD + 40}" y="${506 + 3 * 12 + 48}">taper de guía para el armado ✓ — "Both of these elements should be present in a good vent design"</text>
+
+<text class="${largo ? 'mal' : 'ok'}" style="font:700 13px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 32}">${largo ? `✗ h ${o.hSpecMm.toFixed(3)} > h_max ${o.hMaxMm.toFixed(3)} mm — REBABA` : `✓ h ${o.hSpecMm.toFixed(3)} mm ∈ [${o.hMinMm.toFixed(3)}, ${o.hMaxMm.toFixed(3)}] · manda el MÁXIMO (§8.2.3), no el mínimo`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 14}">Tabla 8.1 para ${ESC(o.tabla.materials)}: Glanvill ${o.tabla.glanvill} / Rosato ${o.tabla.rosato} / Menges ${o.tabla.menges} mm · práctica del libro en partición: arrancar en 0.02 y abrir en el tryout</text>
+</svg>`;
+  return { id: 'venteo', titulo: `Detalle de venteo — ${o.nombre}`, cita: '§8.2.3 · Fig 8.6 y 8.8',
+    queMirar: '¿están LOS DOS elementos? En la partición: land corto + canal de alivio (sin alivio el aire no sale). En el expulsor: canal ajustado los primeros 3 mm + taper de guía. El libro exige ambos, no uno.',
+    svg };
+}
+
+/**
+ * LÁMINA §10.1 — MAPA DE CONTRACCIÓN SOBRE LA PIEZA (V10.3-10.5).
+ * La contracción NO es un número: depende de la presión de empaque LOCAL, y la
+ * presión cae del gate hacia el final de llenado. Se pinta s(x,y) evaluando el
+ * Tait a la presión que sobrevive en cada punto — de ahí sale directo el Δs que
+ * dispara el pandeo (Ec. 10.19) y el sesgo steel-safe de §10.2.2 (cavidad hacia
+ * MENOS contracción, núcleo hacia MÁS).
+ */
+export function laminaContraccion(m: {
+  nx: number; ny: number; sx: number; sy: number; x0: number; y0: number;
+  sPct: Float32Array;                       // contracción local (%) · NaN sin material
+}, o: {
+  nombre: string; sNomPct: number; sLowPct: number; sHighPct: number;
+  umbralPandeo: number; topologia?: string;
+}): Lamina {
+  const W = 1000, H = 700, PAD = 62, TOP = 100, BOT = 78;
+  const k = Math.min((W - 2 * PAD) / (m.nx * m.sx), (H - TOP - BOT) / (m.ny * m.sy));
+  // ESCALA FIJA en el rango que el propio paquete declara [low, high] — no
+  // percentiles de la pieza: así dos piezas se comparan entre sí.
+  const lo = Math.min(o.sLowPct, o.sNomPct), hi = Math.max(o.sHighPct, o.sNomPct);
+  const BANDA = ['#2b5f8f', '#3f8fa8', '#59d98c', '#a8b234', '#e8a02a', '#d12f3f'];
+  const celdas: string[] = [];
+  let sMin = Infinity, sMax = -Infinity;
+  for (let j = 0; j < m.ny; j++) for (let i = 0; i < m.nx; i++) {
+    const s = m.sPct[j * m.nx + i];
+    if (!Number.isFinite(s)) continue;
+    sMin = Math.min(sMin, s); sMax = Math.max(sMax, s);
+    const u = hi > lo ? (s - lo) / (hi - lo) : 0;
+    const b = Math.max(0, Math.min(5, Math.floor(u * 6)));
+    celdas.push(`<rect x="${(PAD + i * m.sx * k).toFixed(1)}" y="${(TOP + j * m.sy * k).toFixed(1)}" width="${(m.sx * k + 0.6).toFixed(1)}" height="${(m.sy * k + 0.6).toFixed(1)}" fill="${BANDA[b]}"/>`);
+  }
+  const ds = (sMax - sMin) / 100;
+  const pandea = ds > o.umbralPandeo && o.topologia !== 'marco';
+  const leyenda = BANDA.map((c, i) =>
+    `<rect x="${PAD + i * 64}" y="${H - 44}" width="64" height="10" fill="${c}"/>`
+    + `<text class="lblSm" x="${PAD + i * 64}" y="${H - 48}">${(lo + (hi - lo) * i / 5).toFixed(2)}%</text>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">MAPA DE CONTRACCIÓN · planta</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§10.1 · la contracción NO es un número: sigue a la presión de empaque, que CAE del gate al final de llenado</text>
+<text class="lblSm" x="${PAD}" y="92">escala FIJA en el rango declarado del paquete [${o.sLowPct.toFixed(2)}, ${o.sHighPct.toFixed(2)}] % — no percentiles, para poder comparar piezas</text>
+${celdas.join('')}${leyenda}
+<text class="${pandea ? 'mal' : 'ok'}" style="font:700 13px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 24}">${pandea ? `✗ Δs ${ds.toFixed(5)} > umbral ${o.umbralPandeo.toFixed(5)} (Ec. 10.19) — el área cerrada PANDEA` : `✓ Δs ${ds.toFixed(5)} vs umbral de pandeo ${o.umbralPandeo.toFixed(5)}${o.topologia === 'marco' ? ' · MARCO: §10.3.1 no aplica' : ''}`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 8}">s ∈ [${sMin.toFixed(3)}, ${sMax.toFixed(3)}] % · nominal ${o.sNomPct.toFixed(2)} % · §10.2.2 steel-safe: cavidad hacia MENOS contracción, núcleo hacia MÁS</text>
+</svg>`;
+  return { id: 'contraccion', titulo: `Mapa de contracción — ${o.nombre}`, cita: '§10.1 · §10.2.2 · Ec. 10.19',
+    queMirar: '¿el color es parejo o hay gradiente del gate al borde? Ese Δs es exactamente lo que dispara el pandeo (Ec. 10.19) — y decide si el steel-safe va asimétrico (cavidad −Δ / núcleo +Δ) o constante.',
+    svg };
+}
+
 /** Envuelve láminas en una hoja HTML imprimible/capturable (una por página). */
 export function laminasToHTML(ls: Lamina[], titulo: string): string {
   return `<!doctype html><meta charset="utf-8"><title>${ESC(titulo)}</title>
