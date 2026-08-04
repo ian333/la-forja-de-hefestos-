@@ -20,6 +20,9 @@ import { solidFromMesh, defaultGate, type MeshLike } from './flowlen-mesh';
 import { measureFlowLength, type FlowField } from './flowlen';
 import { enumerarVenteos, type PlanVenteo } from './venting-locations';
 import { gripEjectorLayout } from './eject-layout';
+import { laminaExpulsores, laminaEspesor, laminaDeflexion, laminaAlabeo, type Lamina } from './laminas-visuales';
+import { alabeoPorEspesor, alabeoPorArea } from './warpage';
+import { ABS_TAIT } from './shrinkage';
 import { moldMachine, type MachineSpec, type MoldPackage } from './moldmachine';
 import { contratos, medirEnsamble, type ContratoReporte, type EnsambleMedido } from './mold-contratos';
 import { coordAudit, type CoordFinding } from './mold-coords';
@@ -212,6 +215,48 @@ export function revisarModelo(input: RevisionInput): RevisionModelo {
   };
 
   return { nombre: spec.name, spec, pkg, ens, contratos: rep, expediente, dfm, campo, planVenteo, criticos, fila, notas };
+}
+
+/**
+ * LAS LÁMINAS de una revisión — el OJO del libro sobre ESTE modelo.
+ * Se generan BAJO DEMANDA (no dentro de revisarModelo) porque son SVG grandes:
+ * meterlas en cada fila del lote inflaría 12 modelos de golpe. La pantalla las
+ * pide solo del modelo que el usuario abrió.
+ */
+export function laminasDeRevision(r: RevisionModelo, mesh?: MeshLike): Lamina[] {
+  const out: Lamina[] = [];
+  const spec = r.spec;
+  // §11.2.5 — la planta del núcleo con los expulsores (necesita malla)
+  if (mesh) {
+    try {
+      const dia = r.ens.pinDiaEnsambleMm ?? r.pkg.diseno.expulsion.pines.dMinMm;
+      const g = gripEjectorLayout(mesh, { nPins: 12, pinDiaMm: dia, wallMm: spec.wallMm });
+      if (g.grid) out.push(laminaExpulsores(g, { pinDiaMm: dia, nombre: r.nombre, modo: r.ens.ejectLayout ?? 'rejilla' }));
+    } catch { /* sin raster no hay lámina; el resto sigue */ }
+    // §2.3.1 — el mapa de espesor de pared
+    try {
+      const d = r.dfm ?? dfmFromMesh(mesh, { wallMm: spec.wallMm });
+      out.push(laminaEspesor(d.thickMap, { nombre: r.nombre, nominalMm: d.wall.nominalMm, p95Mm: d.wall.p95Mm, ratio: d.wall.ratio }));
+    } catch { /* idem */ }
+  }
+  // §12.1.2 — deflexión contra el espesor del venteo (siempre disponible)
+  const sp = r.pkg.diseno.placas.soporte;
+  out.push(laminaDeflexion({
+    nombre: r.nombre, deflexionMm: sp.deflectionAtPlateMm, venteoMm: r.pkg.diseno.venteo.hSpecMm,
+    spanMm: 0.6 * Math.min(r.pkg.base.base.wmm, r.pkg.base.base.lmm),
+    placaMm: sp.plateThkMm ?? 0, nPilares: sp.nPillars, gobierna: sp.governs,
+  }));
+  // §10.3.1 — las dos formas del alabeo, con la topología REAL de la pieza
+  try {
+    const half = Math.min(spec.Lmm, spec.Wmm) / 2;
+    const esp = alabeoPorEspesor(ABS_TAIT, { wallMm: spec.wallMm, halfWidthMm: half, tCavityC: 132, tCoreC: 134, pPackPa: 66e6 });
+    const are = alabeoPorArea(ABS_TAIT, {
+      wallMm: spec.wallMm, halfWidthMm: half, tC: 132, pCenterPa: 66e6, pEdgePa: 0,
+      topologia: spec.warpageTopology?.tipo,
+    });
+    out.push(laminaAlabeo({ nombre: r.nombre, halfWidthMm: half, wallMm: spec.wallMm, espesor: esp, area: are, dtC: 2 }));
+  } catch { /* idem */ }
+  return out;
 }
 
 /** El modo REVISAR EN VOLUMEN (N-29) en una línea: tabla ordenada por severidad. */

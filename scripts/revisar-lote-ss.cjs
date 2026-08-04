@@ -108,6 +108,13 @@ const DIR = process.env.SHOTDIR || '/home/ian/Orkesta/la-forja/forja-shots';
     const detRpi = await page.$eval('[data-testid="rl-detail"]', (el) => el.textContent ?? '');
     out.checks.rpi4_layout_por_agarre = /POR AGARRE/.test(detRpi) && /Fig 11\.11/.test(detRpi);
     out.checks.rpi4_supuestos_declarados = /ASUMIDO|DERIVADA|VOLTEAR/.test(detRpi);
+    // EL OJO en la pantalla: las figuras del libro dibujadas con esta pieza
+    const lams = await page.$$eval('[data-testid^="rl-lamina-"]', (els) => els.map((e) => e.getAttribute('data-testid')));
+    out.laminas = lams;
+    out.checks.ojo_en_pantalla = lams.length >= 3;
+    out.checks.ojo_dibuja_svg = await page.$$eval('[data-testid="rl-laminas"] svg', (s) => s.length >= 3);
+    const capOjo = await page.$eval('[data-testid="rl-laminas"]', (el) => el.textContent ?? '');
+    out.checks.ojo_cita_libro = /§11\.2\.5|§2\.3\.1|§12\.1\.2|§10\.3\.1/.test(capOjo) && /QUÉ MIRAR/.test(capOjo);
     await page.screenshot({ path: `${DIR}/revisar-lote-rpi4.png`, timeout: 30000 });
 
     // ── quitar un modelo del lote: la tabla reacciona ──

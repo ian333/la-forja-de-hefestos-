@@ -14,8 +14,8 @@
  * Más el EXPEDIENTE §13.10: decisiones con firma (responsable + fecha) y el
  * plan de tryout. El expediente NO cierra con pendientes.
  */
-import { useEffect, useRef, useState } from 'react';
-import { revisarModelo, type RevisionModelo, type RevisionInput, type FilaRevision } from './revisar-modelo';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { revisarModelo, laminasDeRevision, type RevisionModelo, type RevisionInput, type FilaRevision } from './revisar-modelo';
 import { registrarDecision, type Expediente } from './expediente';
 import { parseSTL } from './stl';
 import type { MeshLike } from './flowlen-mesh';
@@ -219,6 +219,11 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
               </div>
             )}
 
+            {/* EL OJO: las figuras del libro con los datos de ESTE modelo (§ propia
+                cada una). Es el modo APRENDER: no un número, la vista que Kazmer
+                juzga. Se generan bajo demanda — solo del modelo abierto. */}
+            <LaminasDelModelo rev={rev} mesh={meshCache.current[LOTE.find((e) => e.nombre === rev.nombre)?.label ?? '']} />
+
             {/* contratos por subsistema — cada criterio con su § y su detalle vivo */}
             <div style={{ ...box }}>
               <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 8 }}>CONTRATOS DE SUBSISTEMA — los criterios de aceptación del cliente</div>
@@ -274,6 +279,35 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4, fontSize: 13 }}>activa un modelo del lote</div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * EL OJO en la pantalla — las figuras del libro dibujadas con los datos de este
+ * modelo. Colapsable y perezoso: los SVG son grandes y solo se generan al abrir.
+ */
+function LaminasDelModelo({ rev, mesh }: { rev: RevisionModelo; mesh?: MeshLike }) {
+  const [abierto, setAbierto] = useState(true);
+  const laminas = useMemo(() => {
+    if (!abierto) return [];
+    try { return laminasDeRevision(rev, mesh); } catch (e) { console.error('laminas', e); return []; }
+  }, [rev, mesh, abierto]);
+  return (
+    <div style={{ ...box }} data-testid="rl-laminas">
+      <div onClick={() => setAbierto((v) => !v)} style={{ fontSize: 11, opacity: 0.7, marginBottom: abierto ? 10 : 0, cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
+        <span>👁 EL OJO — las figuras del libro con los datos de esta pieza</span>
+        <span style={{ color: GOLD }}>{abierto ? '▾ ocultar' : `▸ ver ${laminas.length || ''} láminas`}</span>
+      </div>
+      {abierto && laminas.map((l) => (
+        <div key={l.id} data-testid={`rl-lamina-${l.id}`} style={{ marginBottom: 14 }}>
+          <div style={{ width: '100%', overflowX: 'auto' }} dangerouslySetInnerHTML={{ __html: l.svg }} />
+          <div style={{ fontSize: 10.5, opacity: 0.62, lineHeight: 1.45, marginTop: 4 }}>
+            <b style={{ color: GOLD }}>QUÉ MIRAR [{l.cita}]:</b> {l.queMirar}
+          </div>
+        </div>
+      ))}
+      {abierto && !laminas.length && <div style={{ fontSize: 11, opacity: 0.5 }}>sin láminas para este modelo (¿falta la malla?)</div>}
     </div>
   );
 }
