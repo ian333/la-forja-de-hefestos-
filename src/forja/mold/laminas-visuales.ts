@@ -591,6 +591,198 @@ ${celdas.join('')}
   };
 }
 
+/**
+ * LÁMINA §4.3.1 — PLANTA DEL PLANO DE PARTICIÓN (V4.10, Fig 4.17→4.20).
+ * La cota DURA del libro: "the width to length ratio of the bounding envelope
+ * around all cavities should be kept less than 2 : 1". Y la razón: aspectos
+ * altos "require the use of large molds that are significantly under utilized
+ * … producing structural loadings across the mold for which molding machine
+ * platens may not be designed. Furthermore … requires an unbalanced feed
+ * system". Se dibuja la base, las impresiones, la envolvente y la colada.
+ */
+export function laminaParticion(o: {
+  nombre: string; baseW: number; baseL: number;
+  celdas: Array<{ cx: number; cy: number }>; fx: number; fy: number; round: boolean;
+  envW: number; envL: number; aspect: number;
+  canales?: Array<{ x0: number; y0: number; x1: number; y1: number }>;
+  sprue?: { x: number; y: number };
+}): Lamina {
+  const W = 1000, H = 700, PAD = 62, TOP = 100, BOT = 62;
+  const k = Math.min((W - 2 * PAD) / o.baseW, (H - TOP - BOT) / o.baseL);
+  const px = (x: number) => PAD + x * k, py = (y: number) => TOP + y * k;
+  const imp = o.celdas.map((c) => o.round
+    ? `<circle cx="${px(c.cx).toFixed(1)}" cy="${py(c.cy).toFixed(1)}" r="${(o.fx / 2 * k).toFixed(1)}" fill="#3a2a12" stroke="#c9a227" stroke-width="1.4"/>`
+    : `<rect x="${px(c.cx - o.fx / 2).toFixed(1)}" y="${py(c.cy - o.fy / 2).toFixed(1)}" width="${(o.fx * k).toFixed(1)}" height="${(o.fy * k).toFixed(1)}" fill="#3a2a12" stroke="#c9a227" stroke-width="1.4"/>`).join('');
+  // la ENVOLVENTE de todas las cavidades: lo que el criterio 2:1 mide
+  const ex0 = Math.min(...o.celdas.map((c) => c.cx)) - o.fx / 2, ex1 = Math.max(...o.celdas.map((c) => c.cx)) + o.fx / 2;
+  const ey0 = Math.min(...o.celdas.map((c) => c.cy)) - o.fy / 2, ey1 = Math.max(...o.celdas.map((c) => c.cy)) + o.fy / 2;
+  const mal = o.aspect > 2;
+  const canales = (o.canales ?? []).map((g) =>
+    `<line x1="${px(g.x0).toFixed(1)}" y1="${py(g.y0).toFixed(1)}" x2="${px(g.x1).toFixed(1)}" y2="${py(g.y1).toFixed(1)}" stroke="#6db3f2" stroke-width="2" opacity="0.7"/>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">PLANTA DEL PLANO DE PARTICIÓN</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§4.3.1 · Fig 4.17 (línea = "simple but poor") → 4.18 (rejilla) → 4.20 (híbrido)</text>
+<text class="lblSm" x="${PAD}" y="92">ámbar = impresiones · azul = colada · el rectángulo punteado es la ENVOLVENTE que mide el criterio 2:1</text>
+<rect x="${px(0)}" y="${py(0)}" width="${(o.baseW * k).toFixed(1)}" height="${(o.baseL * k).toFixed(1)}" fill="#1b2534" stroke="#2c3a50" stroke-width="1.5"/>
+${canales}${imp}
+<rect x="${px(ex0).toFixed(1)}" y="${py(ey0).toFixed(1)}" width="${((ex1 - ex0) * k).toFixed(1)}" height="${((ey1 - ey0) * k).toFixed(1)}" fill="none" stroke="${mal ? '#ff5c5c' : '#59d98c'}" stroke-width="1.6" stroke-dasharray="6 4"/>
+${o.sprue ? `<circle cx="${px(o.sprue.x).toFixed(1)}" cy="${py(o.sprue.y).toFixed(1)}" r="6" fill="none" stroke="#6db3f2" stroke-width="2.2"/>` : ''}
+<text class="${mal ? 'mal' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 32}">${mal ? `✗ aspecto ${o.aspect.toFixed(2)}:1 > 2:1 — "large molds significantly under utilized" y feed DESBALANCEADO` : `✓ aspecto ${o.aspect.toFixed(2)}:1 < 2:1 (§4.3.1)`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 14}">base ${o.baseW}×${o.baseL} mm · envolvente ${(ex1 - ex0).toFixed(0)}×${(ey1 - ey0).toFixed(0)} · ${o.celdas.length} impresión(es) · ocupación ${(100 * (ex1 - ex0) * (ey1 - ey0) / (o.baseW * o.baseL)).toFixed(0)} % de la base</text>
+</svg>`;
+  return { id: 'particion', titulo: `Plano de partición — ${o.nombre}`, cita: '§4.3.1 · Fig 4.17-4.20',
+    queMirar: '¿la envolvente punteada de las cavidades cabe en 2:1? Un layout en línea es "simple but poor": molde grande desaprovechado, carga estructural que la platina no espera y feed desbalanceado.',
+    svg };
+}
+
+/**
+ * LÁMINA §12.2 — LA PLACA DE SOPORTE: PILARES vs EXPULSORES vs BARRA KO.
+ * Del tipo que más vale según el análisis de las 283 figuras: SUPERPONE dos
+ * subsistemas. §12.2.3 avisa que un pilar central "will not greatly reduce the
+ * deflection" y que suele CHOCAR con el knock-out; y los pilares tienen que
+ * caber entre los expulsores. Ninguno de los dos se ve mirando un subsistema.
+ */
+export function laminaSoporte(o: {
+  nombre: string; baseW: number; baseL: number;
+  pilares: Array<{ x: number; y: number; d: number }>;
+  expulsores: Array<{ x: number; y: number; d: number }>;
+  ko?: { x: number; y: number; d: number };
+  /** de dónde salen las posiciones de los PILARES. `platesizing` calcula CUÁNTOS
+   *  (por masa de acero §12.1.3) pero nadie calcula DÓNDE — si el llamador los
+   *  propone, la lámina lo dice: juzgar una colocación inventada como si fuera
+   *  del motor sería exactamente la mentira que estas láminas existen para cazar. */
+  pilaresPropuestos?: boolean;
+}): Lamina {
+  const W = 1000, H = 700, PAD = 62, TOP = 100, BOT = 62;
+  const k = Math.min((W - 2 * PAD) / o.baseW, (H - TOP - BOT) / o.baseL);
+  const px = (x: number) => PAD + x * k, py = (y: number) => TOP + y * k;
+  // choques: pilar↔expulsor y pilar↔KO (superficie contra superficie)
+  const choques: string[] = [];
+  for (const p of o.pilares) {
+    for (const e of o.expulsores) {
+      const g = Math.hypot(p.x - e.x, p.y - e.y) - p.d / 2 - e.d / 2;
+      if (g < 0) choques.push(`pilar@(${p.x.toFixed(0)},${p.y.toFixed(0)}) ∩ expulsor (${g.toFixed(1)} mm)`);
+    }
+    if (o.ko) {
+      const g = Math.hypot(p.x - o.ko.x, p.y - o.ko.y) - p.d / 2 - o.ko.d / 2;
+      if (g < 0) choques.push(`pilar@(${p.x.toFixed(0)},${p.y.toFixed(0)}) ∩ barra KO (${g.toFixed(1)} mm)`);
+    }
+  }
+  const hayChoque = choques.length > 0;
+  const cen = o.pilares.length === 1;
+  const dib = (a: Array<{ x: number; y: number; d: number }>, fill: string, r?: number) => a.map((p) =>
+    `<circle cx="${px(p.x).toFixed(1)}" cy="${py(p.y).toFixed(1)}" r="${Math.max(3, (r ?? p.d / 2) * k).toFixed(1)}" fill="${fill}" opacity="0.85"/>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">PLACA DE SOPORTE · pilares vs expulsores vs barra KO</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§12.2.3 — un pilar central "will not greatly reduce the deflection" y CHOCA con el knock-out</text>
+<text class="lblSm" x="${PAD}" y="92">gris = pilares · verde = expulsores · azul = barra KO — la vista existe para ver los CHOQUES entre subsistemas</text>
+<rect x="${px(0)}" y="${py(0)}" width="${(o.baseW * k).toFixed(1)}" height="${(o.baseL * k).toFixed(1)}" fill="#1b2534" stroke="#2c3a50" stroke-width="1.5"/>
+${dib(o.expulsores, '#59d98c')}
+${dib(o.pilares, hayChoque ? '#ff5c5c' : '#8fa3bd')}
+${o.ko ? `<circle cx="${px(o.ko.x).toFixed(1)}" cy="${py(o.ko.y).toFixed(1)}" r="${Math.max(5, o.ko.d / 2 * k).toFixed(1)}" fill="none" stroke="#6db3f2" stroke-width="2.4"/>` : ''}
+<text class="${hayChoque ? 'mal' : cen ? 'warn' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 32}">${hayChoque ? `✗ ${choques.length} CHOQUE(S): ${ESC(choques[0])}` : cen ? '⚠ UN pilar central: §12.2.3 "will not greatly reduce the deflection" (la placa dobla por los costados)' : `✓ ${o.pilares.length} pilares sin chocar con ${o.expulsores.length} expulsores ni con el KO`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 16}">${o.pilares.length} pilares ⌀${o.pilares[0]?.d ?? '—'} · ${o.expulsores.length} expulsores ⌀${o.expulsores[0]?.d.toFixed(1) ?? '—'} · barra KO ${o.ko ? `⌀${o.ko.d}` : 'no declarada'}</text>
+${o.pilaresPropuestos ? `<text class="warn" style="font:700 11px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 2}">⚠ las POSICIONES de los pilares son una PROPUESTA de esta lámina: platesizing calcula cuántos (§12.1.3) pero nadie calcula dónde — hueco declarado</text>` : ''}
+</svg>`;
+  return { id: 'soporte', titulo: `Placa de soporte — ${o.nombre}`, cita: '§12.2.3 · Fig 12.9',
+    queMirar: '¿algún pilar pisa un expulsor o la barra del knock-out? Es el choque que ninguna de las dos pantallas por separado ve. Y si hay UN solo pilar central: el libro avisa que casi no sirve.',
+    svg };
+}
+
+/**
+ * LÁMINA §2.3.7 — UNDERCUTS Y SUS DIRECCIONES DE JALE (Fig 2.7 · V2.7).
+ * "a window in a side wall, an overhang above the bottom wall, a horizontal
+ * boss, and a snap finger" — cada región con dirección lateral es una corredera
+ * (§11.3.6); una región SELLADA no la alcanza ningún mecanismo.
+ */
+export function laminaUndercuts(o: {
+  nombre: string; Lmm: number; Wmm: number;
+  regiones: Array<{ x0: number; x1: number; y0: number; y1: number; volMm3: number; dir: [number, number] | null }>;
+  moldable: string;
+}): Lamina {
+  const W = 1000, H = 660, PAD = 62, TOP = 100, BOT = 62;
+  const k = Math.min((W - 2 * PAD) / o.Lmm, (H - TOP - BOT) / o.Wmm);
+  const px = (x: number) => PAD + x * k, py = (y: number) => TOP + y * k;
+  const selladas = o.regiones.filter((r) => !r.dir).length;
+  const cajas = o.regiones.map((r, i) => {
+    const col = r.dir ? '#ffb347' : '#ff5c5c';
+    const cx = px((r.x0 + r.x1) / 2), cy = py((r.y0 + r.y1) / 2);
+    const flecha = r.dir
+      ? `<line x1="${cx}" y1="${cy}" x2="${(cx + r.dir[0] * 42).toFixed(1)}" y2="${(cy + r.dir[1] * 42).toFixed(1)}" stroke="${col}" stroke-width="2.4"/>`
+        + `<circle cx="${(cx + r.dir[0] * 42).toFixed(1)}" cy="${(cy + r.dir[1] * 42).toFixed(1)}" r="4" fill="${col}"/>` : '';
+    return `<rect x="${px(r.x0).toFixed(1)}" y="${py(r.y0).toFixed(1)}" width="${((r.x1 - r.x0) * k).toFixed(1)}" height="${((r.y1 - r.y0) * k).toFixed(1)}" fill="${col}33" stroke="${col}" stroke-width="1.6"/>${flecha}`
+      + `<text class="lblSm" x="${px(r.x0).toFixed(1)}" y="${(py(r.y0) - 4).toFixed(1)}">#${i + 1} ${r.volMm3.toFixed(0)} mm³ ${r.dir ? 'corredera' : 'SELLADA'}</text>`;
+  }).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">UNDERCUTS · regiones y DIRECCIÓN DE JALE</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§2.3.7 · Fig 2.7 — cada región con flecha es una CORREDERA (§11.3.6); sin flecha, no la alcanza ningún mecanismo</text>
+<text class="lblSm" x="${PAD}" y="92">ámbar = venteable lateralmente · rojo = SELLADA (cavidad interna: no moldeable por inyección)</text>
+<rect x="${px(0)}" y="${py(0)}" width="${(o.Lmm * k).toFixed(1)}" height="${(o.Wmm * k).toFixed(1)}" fill="#1b2534" stroke="#2c3a50" stroke-width="1.5"/>
+${cajas}
+<text class="${selladas ? 'mal' : o.regiones.length ? 'warn' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 32}">${selladas ? `✗ ${selladas} región(es) SELLADA(S) — cavidad interna cerrada, NO moldeable por inyección` : o.regiones.length ? `⚠ ${o.regiones.length} undercut(s) ⇒ ${o.regiones.length} mecanismo(s) §11.3.6 — cada uno sube el costo del molde` : '✓ sin undercuts: sale con dos placas'}</text>
+<text class="lblSm" x="${PAD}" y="${H - 14}">veredicto DFM: ${ESC(o.moldable)} · el libro: evitarlos por costo salvo que la función sea vital (§2.3.7)</text>
+</svg>`;
+  return { id: 'undercuts', titulo: `Undercuts — ${o.nombre}`, cita: '§2.3.7 · Fig 2.7',
+    queMirar: 'cuenta las regiones: cada una con flecha es una corredera que hay que pagar. Una región SIN flecha está sellada — ningún mecanismo la alcanza y la pieza no se puede inyectar así.',
+    svg };
+}
+
+/**
+ * LÁMINA §4.3.3 — EL MOLDE CONTRA LA MÁQUINA (V4.13, Fig 4.23/4.24).
+ * Los DOS extremos reprueban: "If the mold is smaller than [A], then the
+ * molding machine platen can not fully close the mold and build clamp tonnage.
+ * If the mold is larger than [B], then the mold will not fit between the two
+ * platens." Y la planta contra el patrón de tie bars.
+ */
+export function laminaMaquina(o: {
+  nombre: string; maquina: string;
+  moldW: number; moldL: number; tieH: number; tieV: number;
+  stackMm: number; aperturaMm: number; minDay: number; maxDay: number;
+  shotPct: number; clampPct: number;
+}): Lamina {
+  const W = 1000, H = 680, PAD = 62, TOP = 104;
+  // izquierda: planta contra tie bars · derecha: elevación contra daylight
+  const kA = Math.min(370 / Math.max(o.tieH, o.moldW), 300 / Math.max(o.tieV, o.moldL));
+  const ox = PAD + 30, oy = TOP + 40;
+  const cabeH = o.moldW <= o.tieH, cabeV = o.moldL <= o.tieV;
+  const need = o.stackMm + o.aperturaMm;
+  const cabeDay = need <= o.maxDay, generaTon = o.stackMm >= o.minDay;
+  const kB = 300 / Math.max(o.maxDay, need);
+  const bx = W / 2 + 90;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">EL MOLDE CONTRA LA MÁQUINA</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)} · ${ESC(o.maquina)}</text>
+<text class="cita" x="${PAD}" y="75">§4.3.3 · Fig 4.23 (tie bars) y 4.24 (daylight) — los DOS extremos reprueban</text>
+<text class="lbl" style="font:700 12px 'JetBrains Mono',monospace" x="${ox}" y="${TOP + 16}">1 · PLANTA vs BARRAS DE AMARRE</text>
+<rect x="${ox}" y="${oy}" width="${(o.tieH * kA).toFixed(1)}" height="${(o.tieV * kA).toFixed(1)}" fill="none" stroke="#6db3f2" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="${ox}" y="${oy}" width="${(o.moldW * kA).toFixed(1)}" height="${(o.moldL * kA).toFixed(1)}" fill="${cabeH && cabeV ? '#2a4a3a' : '#4a2020'}" stroke="${cabeH && cabeV ? '#59d98c' : '#ff5c5c'}" stroke-width="2"/>
+<text class="lblSm" x="${ox}" y="${oy + o.tieV * kA + 16}">molde ${o.moldW}×${o.moldL} · barras ${o.tieH}×${o.tieV} mm</text>
+<text class="lbl" style="font:700 12px 'JetBrains Mono',monospace" x="${bx}" y="${TOP + 16}">2 · ALTURA vs DAYLIGHT</text>
+<line x1="${bx}" y1="${oy}" x2="${bx + 200}" y2="${oy}" stroke="#6db3f2" stroke-width="2"/>
+<line x1="${bx}" y1="${(oy + o.maxDay * kB).toFixed(1)}" x2="${bx + 200}" y2="${(oy + o.maxDay * kB).toFixed(1)}" stroke="#6db3f2" stroke-width="2"/>
+<text class="lblSm" x="${bx + 205}" y="${(oy + o.maxDay * kB).toFixed(1)}">máx ${o.maxDay}</text>
+<line x1="${bx}" y1="${(oy + o.minDay * kB).toFixed(1)}" x2="${bx + 200}" y2="${(oy + o.minDay * kB).toFixed(1)}" stroke="#8fa3bd" stroke-width="1" stroke-dasharray="5 4"/>
+<text class="lblSm" x="${bx + 205}" y="${(oy + o.minDay * kB).toFixed(1)}">mín ${o.minDay}</text>
+<rect x="${bx + 40}" y="${oy}" width="120" height="${(o.stackMm * kB).toFixed(1)}" fill="${generaTon ? '#2a4a3a' : '#4a2020'}" stroke="${generaTon ? '#59d98c' : '#ff5c5c'}" stroke-width="2"/>
+<text class="lblSm" x="${bx + 46}" y="${(oy + o.stackMm * kB / 2).toFixed(1)}">stack ${o.stackMm}</text>
+<rect x="${bx + 40}" y="${(oy + o.stackMm * kB).toFixed(1)}" width="120" height="${(o.aperturaMm * kB).toFixed(1)}" fill="none" stroke="#c9a227" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text class="lblSm" x="${bx + 46}" y="${(oy + (o.stackMm + o.aperturaMm / 2) * kB).toFixed(1)}">apertura ${o.aperturaMm}</text>
+<text class="${!generaTon || !cabeDay || !cabeH || !cabeV ? 'mal' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 48}">${!cabeH || !cabeV ? '✗ NO CABE entre las barras de amarre' : !generaTon ? `✗ stack ${o.stackMm} < daylight MÍNIMO ${o.minDay} — la platina no cierra y NO genera tonelaje` : !cabeDay ? `✗ stack+apertura ${need} > daylight MÁXIMO ${o.maxDay} — no abre para expulsar` : '✓ cabe entre barras, genera tonelaje y abre lo suficiente'}</text>
+<text class="lblSm" x="${PAD}" y="${H - 30}">"If the mold is smaller than A … can not fully close the mold and build clamp tonnage. If larger than B … will not fit between the two platens."</text>
+<text class="lblSm" x="${PAD}" y="${H - 12}">disparo ${o.shotPct.toFixed(0)} % del barril (ventana cómoda 25-50 %) · cierre ${o.clampPct.toFixed(0)} % · stack+apertura ${need} mm ∈ [${o.minDay}, ${o.maxDay}]</text>
+</svg>`;
+  return { id: 'maquina', titulo: `Molde vs máquina — ${o.nombre}`, cita: '§4.3.3 · Fig 4.23-4.24',
+    queMirar: '¿el rectángulo del molde cabe dentro del punteado de las barras? ¿el stack llega al daylight MÍNIMO (si no, la platina no genera tonelaje) y stack+apertura no pasa el MÁXIMO (si no, no abre para expulsar)?',
+    svg };
+}
+
 /** Envuelve láminas en una hoja HTML imprimible/capturable (una por página). */
 export function laminasToHTML(ls: Lamina[], titulo: string): string {
   return `<!doctype html><meta charset="utf-8"><title>${ESC(titulo)}</title>

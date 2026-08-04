@@ -217,6 +217,66 @@ function shellMesh(L, W, H, t) {
     } catch (e) { console.log('(térmico no disponible:', String(e).slice(0, 90), ')'); }
   }
 
+  // ── TANDA 2: partición §4.3.1 · soporte §12.2.3 · undercuts §2.3.7 · máquina §4.3.3 ──
+  {
+    const { laminaParticion, laminaSoporte, laminaUndercuts, laminaMaquina } = await import(R('laminas-visuales.ts'));
+    const { moldMachine } = await import(R('moldmachine.ts'));
+    const { packageToAssemblySpec } = await import(R('mold-plano-set.ts'));
+    const { coolingCircuit, plateDepth, cavityGrid, cavityFootprint, standardHoles } = await import(R('mold-drawing-set.ts'));
+    const { dfmFromMesh } = await import(R('dfm-mesh.ts'));
+    const v4 = moldMachine({ name: 'vaso Kazmer', Lmm: 100, Wmm: 100, Hmm: 60, cavityShape: 'round',
+      surfaceMm2: 30000, volumeMm3: 60000, wallMm: 3, plastic: 'ABS', annualVolume: 200000, totalVolume: 1000000 });
+    const s4 = packageToAssemblySpec(v4);
+    const D4 = plateDepth(s4), cel = cavityGrid(s4, D4), fp = cavityFootprint(s4);
+    const cc4 = coolingCircuit(s4, D4);
+    laminas.push(laminaParticion({
+      nombre: `${s4.name} · ${cel.length} cavidades`, baseW: s4.widthMm, baseL: D4,
+      celdas: cel, fx: fp.fx, fy: fp.fy, round: fp.round,
+      envW: v4.base.envelope.wmm, envL: v4.base.envelope.lmm, aspect: v4.base.aspect,
+      canales: cc4.segs.map((g) => ({ x0: g.x0, y0: g.y0, x1: g.x1, y1: g.y1 })),
+      sprue: { x: s4.widthMm / 2, y: D4 / 2 },
+    }));
+    console.log(`partición: aspecto ${v4.base.aspect} · ${cel.length} cavidades en base ${s4.widthMm}x${D4}`);
+
+    const hb = standardHoles(s4, 'B').filter((h) => /expulsor/.test(h.type));
+    const sp4 = v4.diseno.placas.soporte;
+    const nP = sp4.nPillars;
+    const pil = Array.from({ length: nP }, (_, i) => {
+      const ang = (2 * Math.PI * i) / Math.max(1, nP) - Math.PI / 4;
+      const r = Math.min(s4.widthMm, D4) * 0.28;
+      return { x: s4.widthMm / 2 + (nP === 1 ? 0 : r * Math.cos(ang)), y: D4 / 2 + (nP === 1 ? 0 : r * Math.sin(ang)), d: 30 };
+    });
+    laminas.push(laminaSoporte({
+      nombre: `${s4.name} · placa de soporte`, baseW: s4.widthMm, baseL: D4,
+      pilares: pil, expulsores: hb.map((h) => ({ x: h.x, y: h.y, d: h.dia })),
+      ko: { x: s4.widthMm / 2, y: D4 / 2, d: 40 },
+      pilaresPropuestos: true,   // el motor da el NÚMERO, no las posiciones
+    }));
+    console.log(`soporte: ${nP} pilares vs ${hb.length} expulsores + barra KO`);
+
+    if (fs.existsSync(stl)) {
+      const du = dfmFromMesh(parseSTL(fs.readFileSync(stl).buffer), { wallMm: 1.5 });
+      laminas.push(laminaUndercuts({
+        nombre: 'carcasa RPi4 (STL real)', Lmm: du.thickMap.nx * du.thickMap.sx, Wmm: du.thickMap.ny * du.thickMap.sy,
+        regiones: du.regionsDetail.map((r) => ({ x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1, volMm3: r.volMm3, dir: r.dir })),
+        moldable: du.moldable,
+      }));
+      console.log(`undercuts: ${du.regionsDetail.length} regiones · ${du.regionsDetail.filter((r) => !r.dir).length} selladas · ${du.moldable}`);
+    }
+
+    const ms = v4.diseno.maquina.seleccion;
+    if (ms.machine) {
+      laminas.push(laminaMaquina({
+        nombre: s4.name, maquina: ms.machine.name,
+        moldW: v4.base.base.wmm, moldL: v4.base.base.lmm, tieH: ms.machine.tieHmm, tieV: ms.machine.tieVmm,
+        stackMm: ms.apertura.stackMm, aperturaMm: ms.apertura.strokeMm,
+        minDay: ms.machine.minDaylightMm, maxDay: ms.machine.maxDaylightMm,
+        shotPct: ms.shotPct, clampPct: ms.clampUtilPct,
+      }));
+      console.log(`maquina: ${ms.machine.name} · stack ${ms.apertura.stackMm} + apertura ${ms.apertura.strokeMm} en [${ms.machine.minDaylightMm}, ${ms.machine.maxDaylightMm}]`);
+    }
+  }
+
   // ── HTML + PNG por lámina (para que el OJO las abra con Read) ──
   const html = path.join(OUT, 'laminas.html');
   fs.writeFileSync(html, laminasToHTML(laminas, 'Láminas visuales del molde'));
