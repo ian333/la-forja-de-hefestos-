@@ -236,7 +236,13 @@ export function coolingCircuit(s: MoldAssemblySpec, D: number): CoolingCircuit {
       else if (lo >= xMid) b = Math.min(b, lo);                     // por la derecha → termina antes
       else return null;                                             // en medio → partiría el canal
     }
-    return b - a >= 40 ? { a: Math.round(a), b: Math.round(b) } : null;
+    // REDONDEO DIRECCIONAL (la doctrina steel-safe del libro, §6.5.5/§4.2.1
+    // aplicada al ruteo): el canal SE ENCOGE al redondear — arranque hacia
+    // ARRIBA, final hacia ABAJO — nunca crece hacia el obstáculo. Con
+    // `Math.round` en los dos extremos el canal podía comerse hasta 0.5 mm de
+    // la holgura §9.2.7 y reprobar por centésimas: RPi4 medía 4.73 contra
+    // 4.76 exigido, un déficit de 0.03 mm puramente de redondeo.
+    return b - a >= 40 ? { a: Math.ceil(a), b: Math.floor(b) } : null;
   };
   // OFFSETS DEL ESQUIVE, proporcionales al paso (antes fijos a ±14 mm: con
   // líneas de ⌀15.9 y pilares de ⌀32 no alcanzaban y el canal se CAÍA, dejando

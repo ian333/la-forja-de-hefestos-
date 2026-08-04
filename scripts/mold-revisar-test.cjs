@@ -181,6 +181,36 @@ function shellMesh(L, W, H, t) {
   check('…y su contrato eject-layout NO regaña en falso (plana-uniforme ⇒ CUMPLE)',
     placa.ens.ejectLayout !== 'plana-uniforme' || cLayP.estado === 'CUMPLE', `${placa.ens.ejectLayout} → ${cLayP.estado}`);
 
+  // ── 5c) LOS STL REALES DEL BANCO: el camino completo malla→expediente ────
+  // Una pieza real no es una caja: trae undercuts, paredes finas y bosses. Si el
+  // camino aguanta el benchy y la carcasa, aguanta lo que suba el cliente.
+  {
+    const fs = require('fs');
+    const { parseSTL } = await import(R('stl.ts'));
+    const banco = [
+      ['test-parts/rpi4-bottom.stl', 'carcasa RPi4', 500000],
+      ['test-parts/phone-holder.stl', 'phone holder', 200000],
+    ];
+    let vistos = 0;
+    for (const [rel, nombre, anual] of banco) {
+      const f = path.resolve(__dirname, '..', rel);
+      if (!fs.existsSync(f)) { console.log(`(salta ${nombre}: no está ${rel})`); continue; }
+      const t = Date.now();
+      const mesh = parseSTL(fs.readFileSync(f).buffer);
+      const r = RM.revisarModelo({ mesh, nombre, annualVolume: anual, totalVolume: 2000000, flowMaxVoxels: 80000 });
+      vistos++;
+      console.log(`\n[${nombre}] ${(mesh.indices.length / 3).toLocaleString()} △ · ${Date.now() - t} ms · score ${r.fila.score} · crit ${r.fila.criticos} · layout ${r.ens.ejectLayout} · venteos ${r.planVenteo ? r.planVenteo.maquinar.length : '—'}`);
+      check(`${nombre}: el camino STL→expediente completa (contratos + expediente + venteos)`,
+        r.contratos.total.criterios === 69 && r.expediente.decisiones.length >= 4 && !!r.planVenteo,
+        `${r.contratos.total.criterios} criterios · ${r.expediente.decisiones.length} decisiones · ${r.planVenteo?.nCandidatos ?? 0} candidatos de venteo`);
+      check(`${nombre}: SIN críticos de ensamble (acero §11.2.5 + agua §9.2.7 respetados en pieza real)`,
+        r.fila.criticos === 0, r.criticos.map((c) => c.check).join(', ') || 'limpio');
+      check(`${nombre}: el raster DECLARA sus supuestos (pared derivada / plástico asumido)`,
+        r.notas.some((n) => /DERIVADA|ASUMIDO/.test(n)), `${r.notas.length} notas`);
+    }
+    check('el banco de STL reales corrió (si están los archivos)', vistos >= 1, `${vistos} piezas del banco revisadas`);
+  }
+
   // ── 6) DETERMINISMO: misma entrada ⇒ misma fila ──────────────────────────
   const vaso2 = RM.revisarModelo({ spec: vasoSpec });
   check('determinista (misma entrada ⇒ misma fila y mismo total de contratos)',

@@ -14,9 +14,11 @@
  * Más el EXPEDIENTE §13.10: decisiones con firma (responsable + fecha) y el
  * plan de tryout. El expediente NO cierra con pendientes.
  */
-import { useMemo, useState } from 'react';
-import { revisarLote, type RevisionModelo, type RevisionInput } from './revisar-modelo';
+import { useEffect, useRef, useState } from 'react';
+import { revisarModelo, type RevisionModelo, type RevisionInput, type FilaRevision } from './revisar-modelo';
 import { registrarDecision, type Expediente } from './expediente';
+import { parseSTL } from './stl';
+import type { MeshLike } from './flowlen-mesh';
 import type { MachineSpec } from './moldmachine';
 import type { ContratoEstado } from './mold-contratos';
 
@@ -29,16 +31,34 @@ const ESTADO_ICON: Record<ContratoEstado, string> = {
   'CUMPLE': '✓', 'ADVIERTE': '⚠', 'VIOLA': '✗', 'SIN-CABLEAR': '🔌', 'SIN-MÓDULO': '∅',
 };
 
-// EL LOTE DE ARRANQUE: las piezas de referencia del proyecto (mismas specs que la
-// Máquina + el vaso del libro y el bezel). El cliente agrega/quita con los toggles.
-const LOTE: Array<{ label: string } & MachineSpec> = [
-  { label: 'vaso', name: 'vaso Kazmer', Lmm: 100, Wmm: 100, Hmm: 60, cavityShape: 'round', surfaceMm2: 30000, volumeMm3: 60000, wallMm: 3, plastic: 'ABS', annualVolume: 200_000, totalVolume: 1_000_000 },
-  { label: 'bezel', name: 'bezel', Lmm: 168, Wmm: 120, Hmm: 13, surfaceMm2: 22000, volumeMm3: 40000, wallMm: 1.5, plastic: 'ABS', annualVolume: 500_000, totalVolume: 2_000_000 },
-  { label: 'LEGO', name: 'Ladrillo LEGO 2×4', Lmm: 32, Wmm: 16, Hmm: 11, surfaceMm2: 3300, volumeMm3: 2500, wallMm: 1.5, annualVolume: 20_000_000, plastic: 'ABS', finish: 'SPI A-3', feedPref: 'hot-runner' },
-  { label: 'Sony', name: 'Carcasa de control Sony', Lmm: 150, Wmm: 45, Hmm: 22, surfaceMm2: 43000, volumeMm3: 43000, wallMm: 2, annualVolume: 2_000_000, plastic: 'ABS', finish: 'SPI B-3', feedPref: 'hot-runner' },
-  { label: 'charola', name: 'Charola contenedora', Lmm: 90, Wmm: 90, Hmm: 35, surfaceMm2: 49000, volumeMm3: 49000, wallMm: 2, annualVolume: 200_000, plastic: 'PP', finish: 'SPI B-3' },
-  { label: 'tapa', name: 'Tapa rosca', Lmm: 40, Wmm: 40, Hmm: 15, surfaceMm2: 6500, volumeMm3: 2800, wallMm: 1.2, annualVolume: 8_000_000, plastic: 'PP', finish: 'SPI A-3' },
+// EL LOTE DE ARRANQUE: specs numéricos de referencia + los STL REALES del banco
+// (test-parts/). El STL corre el camino completo: raster → agarre → campo de
+// flujo → venteos → contratos. El cliente agrega/quita con los toggles.
+interface Entrada {
+  label: string; nombre: string;
+  spec?: MachineSpec;
+  /** ruta del STL bajo la raíz del repo (se sirve vía /@fs en dev) */
+  stl?: string;
+  plastic?: string; annualVolume?: number; totalVolume?: number;
+}
+const S = (label: string, spec: MachineSpec): Entrada => ({ label, nombre: spec.name, spec });
+const LOTE: Entrada[] = [
+  S('vaso', { name: 'vaso Kazmer', Lmm: 100, Wmm: 100, Hmm: 60, cavityShape: 'round', surfaceMm2: 30000, volumeMm3: 60000, wallMm: 3, plastic: 'ABS', annualVolume: 200_000, totalVolume: 1_000_000 }),
+  S('bezel', { name: 'bezel', Lmm: 168, Wmm: 120, Hmm: 13, surfaceMm2: 22000, volumeMm3: 40000, wallMm: 1.5, plastic: 'ABS', annualVolume: 500_000, totalVolume: 2_000_000 }),
+  S('LEGO', { name: 'Ladrillo LEGO 2×4', Lmm: 32, Wmm: 16, Hmm: 11, surfaceMm2: 3300, volumeMm3: 2500, wallMm: 1.5, annualVolume: 20_000_000, plastic: 'ABS', finish: 'SPI A-3', feedPref: 'hot-runner' }),
+  S('Sony', { name: 'Carcasa de control Sony', Lmm: 150, Wmm: 45, Hmm: 22, surfaceMm2: 43000, volumeMm3: 43000, wallMm: 2, annualVolume: 2_000_000, plastic: 'ABS', finish: 'SPI B-3', feedPref: 'hot-runner' }),
+  S('charola', { name: 'Charola contenedora', Lmm: 90, Wmm: 90, Hmm: 35, surfaceMm2: 49000, volumeMm3: 49000, wallMm: 2, annualVolume: 200_000, plastic: 'PP', finish: 'SPI B-3' }),
+  S('tapa', { name: 'Tapa rosca', Lmm: 40, Wmm: 40, Hmm: 15, surfaceMm2: 6500, volumeMm3: 2800, wallMm: 1.2, annualVolume: 8_000_000, plastic: 'PP', finish: 'SPI A-3' }),
+  // ── los STL del banco (piezas REALES) ──
+  { label: 'RPi4', nombre: 'carcasa RPi4', stl: 'test-parts/rpi4-bottom.stl', annualVolume: 500_000, totalVolume: 2_000_000 },
+  { label: 'phone', nombre: 'phone holder', stl: 'test-parts/phone-holder.stl', annualVolume: 200_000 },
+  { label: 'tapaMed', nombre: 'tapa médica', stl: 'test-parts/screw-cap-medical.stl', annualVolume: 2_000_000, plastic: 'PP' },
+  { label: 'cajaTTC', nombre: 'caja TTC', stl: 'test-parts/ttc-box-a.stl', annualVolume: 300_000 },
+  { label: 'embudo', nombre: 'embudo 130', stl: 'test-parts/funnel-130.stl', annualVolume: 200_000, plastic: 'PP' },
+  { label: 'benchy', nombre: 'benchy', stl: 'test-parts/3dbenchy.stl', annualVolume: 100_000 },
 ];
+const ordenar = (filas: FilaRevision[]) => [...filas]
+  .sort((a, b) => b.criticos - a.criticos || b.viola - a.viola || a.score - b.score);
 
 const box: React.CSSProperties = { background: 'rgba(14,20,30,0.8)', border: '1px solid #223046', borderRadius: 10, padding: '12px 15px' };
 
@@ -47,13 +67,69 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
   const [sel, setSel] = useState<string | null>(null);
   // firmas del expediente por modelo (la revisión es pura; la firma vive en la sesión)
   const [firmas, setFirmas] = useState<Record<string, Expediente>>({});
+  // ── MOTOR INCREMENTAL: una revisión a la vez (los STL tardan ~1-3 s cada uno);
+  //    la tabla pinta lo que ya está y marca ⏳ lo que falta. Resultados cacheados
+  //    por label (la revisión es PURA: mismo modelo ⇒ mismo expediente). ──
+  const [revs, setRevs] = useState<Record<string, RevisionModelo>>({});
+  const [estado, setEstado] = useState<Record<string, string>>({});   // 'cargando STL' | 'calculando' | 'error: …'
+  const meshCache = useRef<Record<string, MeshLike>>({});
+  const corriendo = useRef(false);
+  // refs FRESCOS para el loop async: un cleanup-con-deps-de-estado mataba al
+  // corredor en el primer setEstado (calculaba, no guardaba, y el guard
+  // bloqueaba el reintento → deadlock en "calculando"). El loop lee refs, no
+  // closures; los errores viven en ref para no re-disparar el efecto.
+  const activosRef = useRef(activos); activosRef.current = activos;
+  const revsRef = useRef(revs);
+  const errores = useRef<Record<string, boolean>>({});
 
-  const lote = useMemo(() => {
-    const inputs: RevisionInput[] = LOTE.filter((p) => activos[p.label]).map(({ label: _l, ...spec }) => ({ spec }));
-    try { return revisarLote(inputs); } catch (e) { console.error('revisarLote', e); return { filas: [], revisiones: [] as RevisionModelo[] }; }
+  useEffect(() => {
+    if (corriendo.current) return;
+    corriendo.current = true;
+    (async () => {
+      try {
+        let hubo = true;
+        while (hubo) {                                    // barre hasta que no quede nada activable
+          hubo = false;
+          for (const e of LOTE) {
+            if (!activosRef.current[e.label] || revsRef.current[e.label] || errores.current[e.label]) continue;
+            hubo = true;
+            try {
+              let mesh: MeshLike | undefined;
+              if (e.stl) {
+                if (!meshCache.current[e.label]) {
+                  setEstado((s) => ({ ...s, [e.label]: 'cargando STL' }));
+                  // dev sirve la raíz del repo (y /@fs como respaldo; mismo path en laptop e iangpu)
+                  let r = await fetch('/' + e.stl);
+                  if (!r.ok) r = await fetch('/@fs/home/ian/Orkesta/la-forja/' + e.stl);
+                  if (!r.ok) throw new Error(`STL no servido (${r.status})`);
+                  meshCache.current[e.label] = parseSTL(await r.arrayBuffer());
+                }
+                mesh = meshCache.current[e.label];
+              }
+              setEstado((s) => ({ ...s, [e.label]: 'calculando' }));
+              await new Promise((res) => setTimeout(res, 30));      // deja pintar el ⏳
+              const input: RevisionInput = e.spec
+                ? { spec: e.spec }
+                : { mesh, nombre: e.nombre, plastic: e.plastic, annualVolume: e.annualVolume, totalVolume: e.totalVolume, flowMaxVoxels: 80_000 };
+              const r = revisarModelo(input);
+              revsRef.current = { ...revsRef.current, [e.label]: r };
+              setRevs(revsRef.current);
+              setEstado((s) => { const { [e.label]: _x, ...resto } = s; return resto; });
+            } catch (err) {
+              console.error('revisar', e.label, err);
+              errores.current[e.label] = true;
+              setEstado((s) => ({ ...s, [e.label]: `error: ${String(err).slice(0, 60)}` }));
+            }
+          }
+        }
+      } finally { corriendo.current = false; }
+    })();
   }, [activos]);
 
-  const rev = lote.revisiones.find((r) => r.nombre === sel) ?? lote.revisiones[0];
+  const revisiones = LOTE.filter((e) => activos[e.label] && revs[e.label]).map((e) => revs[e.label]);
+  const filas = ordenar(revisiones.map((r) => r.fila));
+  const pendCalc = LOTE.filter((e) => activos[e.label] && !revs[e.label]);
+  const rev = revisiones.find((r) => r.nombre === sel) ?? revisiones[0];
   const exp = rev ? (firmas[rev.nombre] ?? rev.expediente) : null;
 
   const firmar = (id: string, eleccion: string, responsable: string) => {
@@ -87,8 +163,8 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
           <div style={{ fontSize: 10, opacity: 0.55, display: 'grid', gridTemplateColumns: '1fr 44px 90px 34px', gap: 6, padding: '4px 8px', letterSpacing: 0.5 }}>
             <span>MODELO</span><span>SCORE</span><span>✗ 🔌 ∅ CRIT</span><span>❄</span>
           </div>
-          {lote.filas.map((f) => {
-            const r = lote.revisiones.find((x) => x.nombre === f.nombre)!;
+          {filas.map((f) => {
+            const r = revisiones.find((x) => x.nombre === f.nombre)!;
             const e = firmas[f.nombre] ?? r.expediente;
             const on = rev?.nombre === f.nombre;
             const scoreColor = f.criticos > 0 || f.viola > 2 ? '#ff5c5c' : f.viola > 0 ? '#ffb347' : '#59d98c';
@@ -110,7 +186,18 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
               </div>
             );
           })}
-          {!lote.filas.length && <div style={{ fontSize: 12, opacity: 0.5, padding: 20 }}>lote vacío — activa modelos arriba</div>}
+          {pendCalc.map((e) => (
+            <div key={e.label} data-testid={`rl-pend-${e.label}`} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '9px 8px', opacity: 0.55, fontSize: 11.5 }}>
+              <span>⏳</span>
+              <div>
+                <div style={{ fontWeight: 700 }}>{e.nombre}</div>
+                <div style={{ fontSize: 9.5, color: estado[e.label]?.startsWith('error') ? '#ff5c5c' : undefined }}>
+                  {estado[e.label] ?? 'en cola'}{e.stl ? ' · STL real del banco' : ''}
+                </div>
+              </div>
+            </div>
+          ))}
+          {!filas.length && !pendCalc.length && <div style={{ fontSize: 12, opacity: 0.5, padding: 20 }}>lote vacío — activa modelos arriba</div>}
           <div style={{ fontSize: 9.5, opacity: 0.45, padding: '10px 8px', lineHeight: 1.5 }}>
             orden: CRÍTICOS del ensamble → violaciones → score. ✗ viola · 🔌 sin-cablear (módulo existe, falta el dato) · ∅ sin-módulo · ❄ subsistemas congelables de 10.
           </div>

@@ -98,8 +98,13 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
       if (dd < d2) d2 = dd;
     }
     const d = Math.sqrt(d2);
-    if (d >= keepOut && d <= keepOut + 6) {               // CERCA (Fig 11.11) con el acero a salvo (§11.2.5)
-      candidatos.push({ x: b.x0 + (i + 0.5) * sx, y: b.y0 + (j + 0.5) * sy, dWall: d });
+    const x = b.x0 + (i + 0.5) * sx, y = b.y0 + (j + 0.5) * sy;
+    // el BORDE de la huella también es pared moldeante (la del pocket): el pin
+    // le debe el mismo keepOut §11.2.5 — sin esto, un candidato junto a un boss
+    // interior podía quedar a 3 mm del muro exterior (RPi4: acero −2.07, cazado)
+    const dBorde = Math.min(x - b.x0, b.x1 - x, y - b.y0, b.y1 - y);
+    if (d >= keepOut && d <= keepOut + 6 && dBorde >= keepOut) {  // CERCA (Fig 11.11) con el acero a salvo
+      candidatos.push({ x, y, dWall: d });
     }
   }
   candidatos.sort((a, c) => a.dWall - c.dWall);           // lo más pegado al agarre primero

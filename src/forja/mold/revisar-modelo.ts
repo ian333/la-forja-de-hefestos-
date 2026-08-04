@@ -74,6 +74,8 @@ export interface RevisionInput {
   /** overrides del camino B (lo no dado se DERIVA de la malla o cae a default DECLARADO) */
   wallMm?: number; plastic?: string; annualVolume?: number; totalVolume?: number;
   cavityShape?: 'rect' | 'round';
+  /** tope de vóxeles del campo de flujo (default 250k; la UI usa menos para no trabarse) */
+  flowMaxVoxels?: number;
 }
 
 export interface FilaRevision {
@@ -179,7 +181,7 @@ export function revisarModelo(input: RevisionInput): RevisionModelo {
   let planVenteo: PlanVenteo | undefined;
   if (input.mesh) {
     try {
-      const field = flowFieldFromMesh(input.mesh, { wallMm: spec.wallMm, expectVolumeMm3: spec.volumeMm3 });
+      const field = flowFieldFromMesh(input.mesh, { wallMm: spec.wallMm, expectVolumeMm3: spec.volumeMm3, maxVoxels: input.flowMaxVoxels });
       campo = {
         nVoxeles: field.nx * field.ny * field.nz, cellMm: field.cellMm,
         maxFlowLenMm: field.maxFlowLenMm, unreachable: field.unreachable, warnings: field.warnings,

@@ -25,7 +25,7 @@ const DIR = process.env.SHOTDIR || '/home/ian/Orkesta/la-forja/forja-shots';
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     // GOTCHA conocido: NO esperar .ready (el documento inicial está VACÍO y ready
     // nunca llega) — esperar __forgeBrep + canvas (reference_forja_brep_verify_gotcha)
-    await page.waitForFunction('window.__forgeBrep && !!document.querySelector("canvas")', { timeout: 45000 });
+    await page.waitForFunction('window.__forgeBrep && !!document.querySelector("canvas")', null, { timeout: 45000 });
     await page.waitForTimeout(900);
 
     // ── abrir: workspace simulación → botón REVISAR EN VOLUMEN ──
@@ -39,7 +39,16 @@ const DIR = process.env.SHOTDIR || '/home/ian/Orkesta/la-forja/forja-shots';
       await page.$eval('[data-testid="btn-revisar-lote"]', (el) => el.click());
     });
     await page.waitForSelector('[data-testid="revisar-lote-view"]', { timeout: 15000 });
-    await page.waitForTimeout(1200);                          // el lote calcula 6 modelos
+    // el lote ahora trae 6 specs numéricos + 6 STL REALES del banco: el motor
+    // incremental los calcula uno a uno (⏳). Sondeo diagnóstico: si la cola no
+    // vacía, reporta QUÉ quedó atorado (un waitForFunction pelón muere mudo).
+    for (let i = 0; i < 90; i++) {
+      const pend = await page.$$eval('[data-testid^="rl-pend-"]', (els) => els.map((e) => e.textContent?.trim().slice(0, 90)));
+      if (!pend.length) break;
+      if (i === 89) out.pendAtorados = pend;
+      await page.waitForTimeout(2000);
+    }
+    await page.waitForTimeout(400);
 
     // ── la TABLA: filas presentes y ordenadas por severidad ──
     const filas = await page.$$eval('[data-testid^="rl-row-"]', (rows) => rows.map((r) => ({
@@ -48,16 +57,21 @@ const DIR = process.env.SHOTDIR || '/home/ian/Orkesta/la-forja/forja-shots';
       score: Number(r.getAttribute('data-score')),
     })));
     out.filas = filas;
-    out.checks.tabla_6_modelos = filas.length === 6;
+    out.checks.tabla_12_modelos = filas.length === 12;
+    out.checks.stl_del_banco_presentes = ['carcasa RPi4', 'benchy', 'embudo 130', 'phone holder']
+      .every((n) => filas.some((f) => f.testid === `rl-row-${n}`));
     // ORDEN por severidad EXACTO: críticos desc → violaciones desc → score asc
     out.checks.orden_por_severidad = filas.every((f, i) => i === 0
       || filas[i - 1].crit > f.crit
       || (filas[i - 1].crit === f.crit && filas[i - 1].viola > f.viola)
       || (filas[i - 1].crit === f.crit && filas[i - 1].viola === f.viola && filas[i - 1].score <= f.score));
-    // al menos un modelo del lote trae CRÍTICO del ensamble y ENCABEZA la tabla
-    // (hoy: el vaso, agua frontera 4.76 < 4.765 §9.2.7 — el LEGO ya se curó con el
-    // pin auto-encogido §11.2.5). La tabla existe para cazar exactamente esto.
-    out.checks.hay_critico_cazado = filas.some((f) => f.crit > 0) && filas[0].crit > 0;
+    // si HAY críticos, el peor encabeza (el orden es la promesa de la pantalla).
+    // Hoy el lote sale LIMPIO: los tres críticos que cazó esta tabla ya se
+    // curaron en el motor (LEGO pin ⌀8→4 §11.2.5 · RPi4 y vaso: redondeo
+    // direccional del ruteo de agua §9.2.7). Exigir que SIEMPRE haya un crítico
+    // sería premiar el molde malo: se verifica el ORDEN, no la existencia.
+    out.checks.peor_encabeza = !filas.some((f) => f.crit > 0) || filas[0].crit > 0;
+    out.criticosEnLote = filas.filter((f) => f.crit > 0).map((f) => `${f.testid}:${f.crit}`);
     await page.screenshot({ path: `${DIR}/revisar-lote-tabla.png`, timeout: 30000 });
 
     // ── drill-down al bezel: contratos con § + números vivos ──
@@ -88,11 +102,19 @@ const DIR = process.env.SHOTDIR || '/home/ian/Orkesta/la-forja/forja-shots';
     out.checks.pendientes_bajaron = (detalle.match(/(\d+) pendiente/) ?? [])[1] !== undefined;
     await page.screenshot({ path: `${DIR}/revisar-lote-detalle.png`, timeout: 30000 });
 
+    // ── drill-down a la pieza REAL: la carcasa RPi4 debe traer layout POR AGARRE ──
+    await page.click('[data-testid="rl-row-carcasa RPi4"]');
+    await page.waitForTimeout(500);
+    const detRpi = await page.$eval('[data-testid="rl-detail"]', (el) => el.textContent ?? '');
+    out.checks.rpi4_layout_por_agarre = /POR AGARRE/.test(detRpi) && /Fig 11\.11/.test(detRpi);
+    out.checks.rpi4_supuestos_declarados = /ASUMIDO|DERIVADA|VOLTEAR/.test(detRpi);
+    await page.screenshot({ path: `${DIR}/revisar-lote-rpi4.png`, timeout: 30000 });
+
     // ── quitar un modelo del lote: la tabla reacciona ──
     await page.click('[data-testid="rl-toggle-LEGO"]');
     await page.waitForTimeout(900);
     const filas2 = await page.$$('[data-testid^="rl-row-"]');
-    out.checks.toggle_quita_modelo = filas2.length === 5;
+    out.checks.toggle_quita_modelo = filas2.length === 11;
 
     out.checks.cero_errores_de_pagina = errs.length === 0;
   } catch (e) {
