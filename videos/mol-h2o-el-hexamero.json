@@ -1,0 +1,65 @@
+{
+  "id": "mol-h2o-el-hexamero",
+  "titulo": "El hexágono",
+  "subtitulo": "(H₂O)₆",
+  "nota": "6 aguas / 18 átomos. CIERRA la serie del agua: dímero (El puente) → trímero (El anillo) → tetrámero (El cuarteto) → hexámero (El hexágono). Motor idéntico: scripts/precompute-water-ring.py con NWAT=6 + una entrada en WATER_BINS. Cero scripts nuevos (canon Regla #0.5).",
+  "proposito": {
+    "wtf": "Seis aguas cierran un anillo plano con los seis puentes IDÉNTICOS, y esa forma de seis es la misma que el agua repite millones de veces al congelarse. Por eso el copo de nieve tiene seis puntas.",
+    "hayQueMostrar": [
+      "que son SEIS moléculas (18 átomos), no seis átomos — la confusión #1 de la serie",
+      "los SEIS puentes encendiendo a la vez y con el mismo brillo (2.821 Å los seis, medido)",
+      "el anillo de canto: PLANO, como el tetrámero — la paridad sigue mandando",
+      "el remate: contar los lados, y entonces el copo de nieve"
+    ],
+    "payoff": "Cuenta los lados. Seis. Ahora mira un copo de nieve.",
+    "noHacer": [
+      "decir que esto ES un pedazo de hielo — NO lo es (ver `honestidad_del_copo`)",
+      "decir 'átomos' cuando son moléculas",
+      "prometer el prisma/la jaula: son OTRA pieza, y este método no puede decidir esa competencia"
+    ],
+    "continuidad": "Pieza hermana de El anillo y El cuarteto: MISMA paleta (oro+ámbar+morado del Δρ), mismas tomas del registro, mismos subtítulos. Ver [[feedback_extender_reusa_paleta]]."
+  },
+  "fisica": {
+    "metodo": "RHF/cc-pVDZ, geometría optimizada con geomeTRIC desde una semilla de hexágono regular (la encontró el optimizador, no se impuso)",
+    "gates": {
+      "geometria": "O-O 2.821 Å en los SEIS puentes, dispersión 0.0000 — idénticos a 4 cifras. Grosor fuera del plano 0.145 Å: el anillo es PLANO.",
+      "enlace": "-47.63 kcal/mol total = -7.94 por agua",
+      "cooperatividad": "-11.74 kcal/mol = 24.7% del enlace total",
+      "puentes": "∫Δρ>0 crece 0.0391 → 0.4937 al cerrarse el anillo"
+    },
+    "la_serie_completa": "Con el MISMO método en las tres piezas, y sin que se le dijera al cálculo: el puente se APRIETA 2.881 → 2.841 → 2.821 Å y la cooperatividad SUBE 11.8% → 18.7% → 24.7% (trímero → tetrámero → hexámero). Las dos tendencias son monótonas y emergen del SCF. Ese es el arco de la serie y es verificable.",
+    "honestidad_del_copo": "⚠ LA FRASE DEL PAYOFF TIENE QUE SER EXACTA. El hielo Ih SÍ está construido de anillos hexagonales de agua, y esa simetría de seis es la que llega hasta el copo. PERO este hexámero NO es un pedazo de hielo recortado, y hay dos diferencias medibles: (1) aquí cada agua tiene DOS puentes (dona uno, acepta uno) y en el hielo tiene CUATRO, en disposición tetraédrica — por eso el hielo es red 3D y esto es un anillo; (2) el anillo del hielo está plegado en forma de SILLA, como el ciclohexano, y el nuestro salió plano (0.145 Å). La frase honesta es 'esta forma de seis es la misma que el agua repite al congelarse', NUNCA 'esto es hielo'. En El puente, cuatro comentaristas corrigieron 'son 2 átomos' aunque la voz decía moléculas: el público cree lo que VE, así que la afirmación tiene que aguantar a un químico.",
+    "limitacion_declarada": "RHF sin dispersión ni BSSE → el enlace TOTAL sobrestima ~8-10%, igual que en el trímero y el tetrámero. La COOPERATIVIDAD y el ORDEN de la serie sí son robustos (los domina la INDUCCIÓN, que RHF describe bien).",
+    "por_que_NO_el_prisma": "El mínimo global del hexámero NO es el anillo: son las estructuras compactas (prisma, jaula), con el libro en medio — resultado de CCSD(T) y confirmado experimentalmente por espectroscopía de rotación de banda ancha (Science 2012). Pero la diferencia es de ~2 kcal/mol sobre un enlace de ~45 (un 4%), y lo que inclina esa balanza es la DISPERSIÓN, a la que Hartree-Fock es CIEGO por construcción. O sea: este método no puede decidir esa competencia, y fingir que sí sería inventar. Se intentó calcular el prisma (FORMA=prisma) y el gate de FORMA lo reprobó: la semilla se desarmó (6 puentes en vez de 9, O-O hasta 9 Å). Queda como PIEZA APARTE — 'la gota más chica no tiene una sola forma' — con MP2 o un funcional con dispersión, que es lo que la literatura dice que hace falta."
+  },
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=whex6",
+    "hook": "__cinematicAtom",
+    "wiring": "UNA entrada en WATER_BINS: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 14, anillo: true, capas, dur }. ⚠ La clave `whex` YA ESTÁ OCUPADA por la escena vieja de agua MD (mode='hexamer' en isWater) — por eso esta pieza usa `whex6`.",
+    "nota_ex": "ex sube de 12 (tetrámero) a ~14: el circunradio del polígono regular es R/(2·sin(π/N)) = 0.577·R con 3 lados, 0.707·R con 4 y 1.000·R con 6. VERIFICAR en still 4K real antes de rendir."
+  },
+  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": null,
+    "pendiente": "dur = voz REAL de segs.json + colchón (canon §sincronía)" },
+  "render": { "shards": 5, "batch": 40, "frames": "dist-video/.whex6frames" },
+  "tomas": {
+    "registro": "CAMERA_SHOTS.whex6 — la secuencia es DATO, no código nuevo",
+    "reuso": "las tomas del anillo son genéricas en N (ringWide, ringOne, ringFaceOn, ringToBridge, loomPush, ringEdgeToFace, crashIn, pullOut). La FIRMA sigue siendo ringEdgeToFace: aquí muestra que es PLANO, como en el cuarteto.",
+    "pendiente": "duraciones = arranques REALES de segs.json (dur[i] = ini[i+1] − ini[i], NO los anchos de ventana: ese bug estuvo entregado en el anillo)"
+  },
+  "capas": { "fuente": "WHEX6_CAPAS", "pendiente": "portar a mano desde WTET_CAPAS a las fronteras de segs.json. recalibrar-beats.py NO sirve para esto: regenera de una plantilla vieja y pierde enlaces/dipolo/apertura." },
+  "guion": { "archivo": "scripts/guiones/whex6.txt", "pendiente": "escribir. Debe apoyarse en las tres piezas anteriores y cerrar con el copo — respetando `honestidad_del_copo`." },
+  "audio": { "dir": "dist-video/whex6-narracion", "narracion": "whex6-narracion.mp3", "musica": "whex6-music.wav",
+    "musicaVol": 0.17, "musicaFadeIn": 2.5, "segs": "segs.json", "ass": "whex6.ass",
+    "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')" },
+  "campo": { "bin": "water-hexamer-efield.bin", "motor": "scripts/campo_lineas.py sin cambios",
+    "lineas": "1100 = 550·N/3" },
+  "salida": { "dir": "/mnt/e/forja-videos", "master": "agua-el-hexagono-4k-master.mp4", "h264": "agua-el-hexagono-4k.mp4" },
+  "capsula": {
+    "bins": ["water-hexamer.bin", "water-hexamer-efield.bin", "water-hexamer-geom.json"],
+    "guion": "whex6.txt",
+    "scripts": ["render-clip.cjs", "video.sh", "video-subs.py", "precompute-water-ring.py", "campo_lineas.py"],
+    "escenaSrc": ["CinematicMolecule.tsx", "camera-shots.ts", "capas.ts"]
+  },
+  "publicar": { "biblioteca": "moleculas/mol-h2o-el-hexamero.mp4", "capsulaRel": "moleculas/_code/mol-h2o-el-hexamero-capsula.tar.gz", "pieza": "mol-h2o el hexagono" }
+}

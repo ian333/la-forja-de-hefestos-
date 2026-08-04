@@ -64,6 +64,23 @@ NW = int(os.environ.get('NWAT', '3'))
 if NW < 3:
     raise SystemExit('NWAT >= 3 (con 2 aguas usa precompute-water-approach.py — es el dímero)')
 NOMBRE = {3: 'trimer', 4: 'tetramer', 5: 'pentamer', 6: 'hexamer'}.get(NW, f'{NW}mer')
+
+# ── LA FORMA es OTRO DATO, igual que N (Regla #0.5 del canon: un video nuevo no crea
+# scripts). `FORMA=anillo` (default) mantiene TODO como estaba; `FORMA=prisma` cambia solo
+# la SEMILLA — el mismo optimizador, el mismo campo, los mismos gates.
+#
+# POR QUÉ EXISTE: del dímero al pentámero la respuesta siempre fue un anillo. En el HEXÁMERO
+# la naturaleza deja de hacer anillos por primera vez y gana una estructura TRIDIMENSIONAL —
+# es el resultado famoso y la razón de que se le llame "la gota de agua más chica". Un video
+# del hexámero que solo muestre el anillo estaría contando lo contrario de lo que pasa.
+# Aquí se calculan las DOS y se comparan sus energías; el número que salga es el remate.
+FORMA = os.environ.get('FORMA', 'anillo').lower()
+if FORMA not in ('anillo', 'prisma'):
+    raise SystemExit("FORMA debe ser 'anillo' o 'prisma'")
+if FORMA == 'prisma':
+    if NW % 2 or NW < 6:
+        raise SystemExit('el prisma son DOS anillos apilados: NWAT par y >= 6')
+    NOMBRE = f'{NOMBRE}-prisma'
 ES_PAR = (NW % 2 == 0)
 
 # ── anillo: O···O de equilibrio, SEMILLA del optimizador (LITERAL, espectroscopía VRT) ──
@@ -86,7 +103,15 @@ N_ACC, N_DEP, N_SPIN = (int(round(n * _ESC_N)) for n in (N_ACC, N_DEP, N_SPIN))
 Z = np.array([8, 1, 1] * NW)                     # N aguas: (O,H,H) × N
 NNUC = 3 * NW
 WAT = [[3 * i, 3 * i + 1, 3 * i + 2] for i in range(NW)]   # índices de cada agua
-VEC = [(i, (i + 1) % NW) for i in range(NW)]               # pares VECINOS (los puentes)
+if FORMA == 'prisma':
+    # El prisma tiene 9 puentes con 6 aguas: 3+3 dentro de cada piso y 3 VERTICALES entre
+    # pisos. El anillo tiene 6. Esa es toda la apuesta de la estructura compacta — más
+    # puentes, cada uno peor orientado — y por eso los vecinos no son un ciclo simple.
+    _m = NW // 2
+    VEC = ([(p * _m + k, p * _m + (k + 1) % _m) for p in (0, 1) for k in range(_m)]
+           + [(k, _m + k) for k in range(_m)])
+else:
+    VEC = [(i, (i + 1) % NW) for i in range(NW)]               # pares VECINOS (los puentes)
 PARES = [(a, b) for a in range(NW) for b in range(a + 1, NW)]   # TODOS los pares (muchos cuerpos)
 
 Rvals = R_MAX_A + (R_MIN_A - R_MAX_A) * (np.arange(K) / (K - 1))   # descendente (como O2/wpair)
@@ -98,7 +123,10 @@ R_MIN = R_MIN_A / BOHR; R_MAX = R_MAX_A / BOHR
 #  a mano, así que el trímero no cambia ni un pixel.)
 _RC_MAX = (R_MAX_A / (2.0 * np.sin(np.pi / NW))) / BOHR
 LXY = round(_RC_MAX + 4.5, 1)
-LZ_ = 8.4              # el pucker fuera del plano no crece con N: el anillo se aplana
+# El anillo se aplana, así que 8.4 bohr basta. El PRISMA no: son dos pisos separados
+# ~2.75 Å (5.2 bohr) más la nube de cada uno. Si la caja no crece, se recorta justo por
+# donde el prisma es interesante — y sería el mismo bug del cubo, otra vez.
+LZ_ = 8.4 if FORMA == 'anillo' else 11.6
 NXY = int(round(NXY * LXY / 10.6 / 8)) * 8      # dx CONSTANTE al crecer la caja (múltiplo de 8)
 dx = (2 * LXY) / NXY; dz = (2 * LZ_) / NZ
 xs = -LXY + (np.arange(NXY) + 0.5) * dx
@@ -113,6 +141,49 @@ U_acc = rng.random((N_ACC, 3)); U_dep = rng.random((N_DEP, 3)); U_spin = rng.ran
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'public', 'precomputed', f'water-{NOMBRE}.bin')
 OUT_EF = os.path.join(HERE, '..', 'public', 'precomputed', f'water-{NOMBRE}-efield.bin')
+
+
+def _guess_prisma(R_A, tilt_deg=22.0):
+    """SEMILLA DEL PRISMA: dos anillos de N/2 aguas, uno encima del otro.
+
+    Es la estructura compacta que compite con el anillo plano en el hexámero. Cada agua queda
+    con DOS vecinos en su propio anillo y UNO justo arriba/abajo: 9 puentes contra los 6 del
+    anillo. Esa es toda la apuesta — más puentes, cada uno peor orientado.
+
+    IGUAL QUE EL ANILLO, ESTO ES SOLO EL PUNTO DE PARTIDA: geomeTRIC encuentra el mínimo. No
+    se afirma que la semilla sea la estructura real; se afirma lo que el optimizador devuelva.
+    Los H donadores apuntan alternando dentro-del-anillo / hacia-el-otro-piso, que es el patrón
+    que hace posible cerrar los tres puentes verticales sin chocar.
+    """
+    m = NW // 2                                     # aguas por piso
+    Rc = R_A / (2.0 * np.sin(np.pi / m))            # circunradio de cada triángulo
+    alto = 2.75                                     # separación entre pisos (Å), del O···O típico
+    ang = np.deg2rad(ANG_HOH); tilt = np.deg2rad(tilt_deg)
+    g = np.zeros((NNUC, 3))
+    for piso in (0, 1):
+        z = (piso - 0.5) * alto
+        giro = 0.0                                  # eclipsado: el prisma, no el antiprisma
+        for k in range(m):
+            i = piso * m + k
+            th = 2.0 * np.pi * k / m + giro
+            th_n = 2.0 * np.pi * ((k + 1) % m) / m + giro
+            O = np.array([Rc * np.cos(th), Rc * np.sin(th), z])
+            O_sig = np.array([Rc * np.cos(th_n), Rc * np.sin(th_n), z])
+            # H donador 1: al vecino de SU piso
+            d = O_sig - O; d /= np.linalg.norm(d)
+            zt = np.array([0.0, 0.0, 1.0]) * (1.0 if piso == 0 else -1.0)
+            d_bent = np.cos(tilt) * d + np.sin(tilt) * zt
+            d_bent /= np.linalg.norm(d_bent)
+            # H donador 2: al agua de ENFRENTE en el otro piso (el puente vertical)
+            v = np.array([0.0, 0.0, 1.0]) * (1.0 if piso == 0 else -1.0)
+            perp = v - np.dot(v, d_bent) * d_bent
+            nn = np.linalg.norm(perp)
+            perp = perp / nn if nn > 1e-9 else np.cross(d_bent, [0, 0, 1.0])
+            u = np.cos(ang) * d_bent + np.sin(ang) * perp
+            g[3 * i + 0] = O
+            g[3 * i + 1] = O + D_OH_A * d_bent
+            g[3 * i + 2] = O + D_OH_A * u
+    return g - g.mean(axis=0)
 
 
 def _guess(R_A, tilt_deg=22.0):
@@ -157,7 +228,7 @@ def optimized_geom():
         return np.array(d['xyz_A'])
     from pyscf import gto, scf
     from pyscf.geomopt.geometric_solver import optimize
-    g0 = _guess(R_EQ_A)
+    g0 = _guess_prisma(R_EQ_A) if FORMA == 'prisma' else _guess(R_EQ_A)
     mol = gto.M(atom=[[int(Z[i]), tuple(g0[i])] for i in range(NNUC)], basis=BASIS, unit='Angstrom', verbose=0)
     print(f"  optimizando el {NOMBRE} ({NW} aguas, RHF/cc-pVDZ, geomeTRIC)…", flush=True)
     mol_eq = optimize(scf.RHF(mol), maxsteps=80)
@@ -185,6 +256,9 @@ def geom_at(R_A):
     s = R_A / R0
     g = xyz.copy()
     for i in range(NW):
+        # anillo: la traslación es radial en el plano. prisma: desde el CENTROIDE en 3D, para
+        # que los dos pisos también se separen al abrir (si no, se abriría solo de ancho y el
+        # "viaje" no mostraría la estructura desarmándose).
         shift = (s - 1.0) * (Ocen[i] - C)           # traslación rígida de las 3 partículas
         g[3 * i:3 * i + 3] += shift
     g -= g.mean(axis=0)
