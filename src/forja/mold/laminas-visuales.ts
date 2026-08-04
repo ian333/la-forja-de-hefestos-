@@ -146,6 +146,111 @@ ${pines.join('')}
   };
 }
 
+/**
+ * LÁMINA §9.2.7 — LA SECCIÓN DEL AGUA (la tríada Fig 9.9 → 9.10 → 9.11).
+ * El libro corta el molde PERPENDICULAR a los canales para verlos como círculos
+ * y juzga TRES cosas de un vistazo:
+ *   Fig 9.9  "Infeasible initial cooling line layout" — alguna línea CRUZA un
+ *            componente crítico. Inviable.
+ *   Fig 9.10 "Feasible but poor cooling line layout" — nada choca, pero el agua
+ *            quedó LEJOS de la cavidad: "will reduce the rate of heat transfer
+ *            and necessitate longer cycle times". LA LECCIÓN: no chocar ≠ estar
+ *            bien. Y el núcleo hondo enfriado solo por la base.
+ *   Fig 9.11 el gradiente que eso produce.
+ * Se dibuja con los datos del circuito REAL (coolingCircuit) y de la cavidad.
+ */
+export function laminaAgua(o: {
+  nombre: string;
+  /** fondo de la placa (mm) y su ancho en la sección */
+  depthMm: number;
+  /** placas: z de la partición y espesores */
+  zPart: number; tA: number; tB: number;
+  /** las impresiones que corta esta sección (rango en Y de CADA una) — el molde
+   *  es multi-cavidad: medir contra una sola daba "136 mm de la impresión"
+   *  cuando el canal estaba junto a OTRA cavidad (lo cazó esta misma lámina). */
+  impresiones: Array<{ y0: number; y1: number }>;
+  cavDepthMm: number;
+  /** hacia dónde CRECE la impresión desde la partición. En el vaso el macho SUBE
+   *  hacia A (por eso la placa A mide 96 mm y la B solo 36): dibujarla hacia
+   *  abajo la sacaba de la placa y medía contra el plano equivocado. */
+  ladoImpresion: 'A' | 'B';
+  /** canales: su Y y su Z (ya resueltos por el circuito) */
+  canales: Array<{ y: number; z: number; lado: 'A' | 'B' }>;
+  diaMm: number;
+  /** holgura mínima MEDIDA agua↔cualquier barreno (de coordAudit) */
+  holguraMinMm?: number;
+}): Lamina {
+  const W = 1000, H = 560, PAD = 62, TOP = 100, BOT = 62;
+  const yMin = -10, yMax = o.depthMm + 10;
+  const zMin = o.zPart - o.tB - 12, zMax = o.zPart + o.tA + 12;
+  const k = Math.min((W - 2 * PAD) / (yMax - yMin), (H - TOP - BOT) / (zMax - zMin));
+  const px = (y: number) => PAD + (y - yMin) * k;
+  const pz = (z: number) => (H - BOT) - (z - zMin) * k;     // Z hacia ARRIBA
+
+  const claroMin = o.diaMm / 2;
+  // el RECTÁNGULO que ocupa cada impresión en la sección: crece desde la
+  // partición hacia el lado que lo aloja (en el vaso, hacia A — el macho SUBE)
+  const izq = o.ladoImpresion === 'A' ? o.zPart : o.zPart - o.cavDepthMm;
+  const der = o.ladoImpresion === 'A' ? o.zPart + o.cavDepthMm : o.zPart;
+  // distancia del canal a la superficie de la impresión MÁS CERCANA: punto ↔
+  // RECTÁNGULO (no a un plano). Midiendo contra un plano, una línea al costado
+  // de una impresión honda salía "lejos" cuando la está abrazando.
+  const dCav = (c: { y: number; z: number }) => {
+    let best = Infinity;
+    for (const im of o.impresiones) {
+      const dy = c.y < im.y0 ? im.y0 - c.y : c.y > im.y1 ? c.y - im.y1 : 0;
+      const dz = c.z < izq ? izq - c.z : c.z > der ? c.z - der : 0;
+      best = Math.min(best, Math.hypot(dy, dz));
+    }
+    return best - o.diaMm / 2;
+  };
+  const dists = o.canales.map(dCav);
+  const peorLejos = dists.length ? Math.max(...dists) : 0;
+  const nLejos = dists.filter((d) => d > 5 * o.diaMm).length;      // >5⌀ del molde: "far from the mold cavity"
+
+  const placas = `
+   <rect x="${px(yMin)}" y="${pz(o.zPart + o.tA)}" width="${(yMax - yMin) * k}" height="${o.tA * k}" fill="#1b2534" stroke="#2c3a50"/>
+   <rect x="${px(yMin)}" y="${pz(o.zPart)}" width="${(yMax - yMin) * k}" height="${o.tB * k}" fill="#1b2534" stroke="#2c3a50"/>
+   <line x1="${px(yMin)}" y1="${pz(o.zPart)}" x2="${px(yMax)}" y2="${pz(o.zPart)}" stroke="#c9a227" stroke-width="1.4" stroke-dasharray="8 4"/>
+   <text class="lblSm" x="${px(yMax) - 96}" y="${pz(o.zPart) - 6}">partición</text>`;
+  // las impresiones: huecos bajo la partición — lo que hay que enfriar
+  const cav = o.impresiones.map((im, i) =>
+    `<rect x="${px(im.y0)}" y="${pz(der)}" width="${(im.y1 - im.y0) * k}" height="${o.cavDepthMm * k}" fill="#3a2a12" stroke="#c9a227" stroke-width="1.2"/>`
+    + (i === 0 ? `<text class="lblSm" x="${px(im.y0) + 4}" y="${pz(der) - 6}">impresión (prof ${o.cavDepthMm.toFixed(0)} mm, lado ${o.ladoImpresion})</text>` : '')).join('');
+
+  const canales = o.canales.map((c, i) => {
+    const d = dists[i];
+    const col = d > 5 * o.diaMm ? '#ff5c5c' : d > 3 * o.diaMm ? '#ffb347' : '#59d98c';
+    return `<circle cx="${px(c.y)}" cy="${pz(c.z)}" r="${Math.max(3, (o.diaMm / 2) * k)}" fill="none" stroke="${col}" stroke-width="2"/>`
+      + `<circle cx="${px(c.y)}" cy="${pz(c.z)}" r="${Math.max(1.5, (o.diaMm / 2) * k * 0.35)}" fill="${col}"/>`;
+  }).join('');
+
+  const choca = o.holguraMinMm != null && o.holguraMinMm < claroMin;
+  const ver = choca
+    ? { txt: `✗ INVIABLE (Fig 9.9): línea a ${o.holguraMinMm!.toFixed(2)} mm de un componente < ½⌀ = ${claroMin.toFixed(2)} mm §9.2.7`, cls: 'mal', sub: 'el libro: "many of the cooling lines intersect critical mold features"' }
+    : nLejos > 0
+      ? { txt: `⚠ FACTIBLE PERO POBRE (Fig 9.10): ${nLejos} de ${o.canales.length} líneas a >5⌀ de toda impresión`, cls: 'warn', sub: '"will reduce the rate of heat transfer and necessitate longer cycle times" — no chocar NO es estar bien' }
+      : { txt: `✓ sin choques §9.2.7 y el agua ABRAZA las impresiones — ni Fig 9.9 ni Fig 9.10`, cls: 'ok', sub: `las ${o.canales.length} líneas dentro de 5⌀ de una impresión` };
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">SECCIÓN DEL AGUA · perpendicular a los canales</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§9.2.7 · Fig 9.9 (inviable: choca) → Fig 9.10 (factible pero POBRE: lejos) → Fig 9.11 (el gradiente)</text>
+<text class="lblSm" x="${PAD}" y="90">verde ≤3⌀ de la impresión · ámbar 3-5⌀ · rojo >5⌀ — "no chocar" NO es "estar bien"</text>
+${placas}${cav}${canales}
+<text class="${ver.cls}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 44}">${ESC(ver.txt)}</text>
+<text class="lblSm" x="${PAD}" y="${H - 28}">${ESC(ver.sub)}</text>
+<text class="lblSm" x="${PAD}" y="${H - 12}">${o.canales.length} canales ⌀${o.diaMm.toFixed(2)} · ${o.impresiones.length} impresión(es) · holgura a barrenos ${o.holguraMinMm?.toFixed(2) ?? '—'} mm (exigida ${claroMin.toFixed(2)}) · el más lejano: ${peorLejos.toFixed(1)} mm = ${(peorLejos / o.diaMm).toFixed(1)}⌀</text>
+</svg>`;
+
+  return {
+    id: 'agua', titulo: `Sección del agua — ${o.nombre}`, cita: '§9.2.7 · Fig 9.9 → 9.10 → 9.11',
+    queMirar: '¿alguna línea cruza un componente (Fig 9.9 inviable)? ¿los círculos ABRAZAN la impresión o quedan lejos en el acero (Fig 9.10: factible pero pobre — ciclo largo)? ¿el núcleo es hondo y solo se enfría por la base?',
+    svg,
+  };
+}
+
 /** Envuelve láminas en una hoja HTML imprimible/capturable (una por página). */
 export function laminasToHTML(ls: Lamina[], titulo: string): string {
   return `<!doctype html><meta charset="utf-8"><title>${ESC(titulo)}</title>

@@ -70,6 +70,44 @@ function shellMesh(L, W, H, t) {
     console.log(`${p.nombre}: ${g.nParedes} columnas de pared · ${g.positions.length} pines por agarre vs ${rejilla.length} en rejilla`);
   }
 
+  // ── LÁMINA DEL AGUA §9.2.7 (TOP-1 del libro): la tríada 9.9→9.10→9.11 ──
+  {
+    const { laminaAgua } = await import(R('laminas-visuales.ts'));
+    const { moldMachine } = await import(R('moldmachine.ts'));
+    const { packageToAssemblySpec } = await import(R('mold-plano-set.ts'));
+    const { coolingCircuit, plateDepth, plateDefs, cavityGrid, cavityFootprint } = await import(R('mold-drawing-set.ts'));
+    const { plateStackZ } = await import(R('mold-plano-set.ts'));
+    const { coordAudit } = await import(R('mold-coords.ts'));
+    const vaso = moldMachine({ name: 'vaso Kazmer', Lmm: 100, Wmm: 100, Hmm: 60, cavityShape: 'round',
+      surfaceMm2: 30000, volumeMm3: 60000, wallMm: 3, plastic: 'ABS', annualVolume: 200000, totalVolume: 1000000 });
+    const s = packageToAssemblySpec(vaso);
+    const D = plateDepth(s), z = plateStackZ(s), cc = coolingCircuit(s, D);
+    const defs = plateDefs(s);
+    const tA = defs.find((d) => d.role === 'A')?.thick ?? 40, tB = defs.find((d) => d.role === 'B')?.thick ?? 40;
+    const { fy } = cavityFootprint(s), celdas = cavityGrid(s, D);
+    // TODAS las impresiones que la sección corta (el molde es multi-cavidad):
+    // medir contra una sola daba "136 mm de la impresión" con el canal pegado a otra
+    const ysUnicos = [...new Set(celdas.map((c) => c.cy))].sort((a, b) => a - b);
+    const impresiones = ysUnicos.map((y) => ({ y0: y - fy / 2, y1: y + fy / 2 }));
+    const cy = celdas[0].cy;
+    // los canales corren en X → en el corte perpendicular se ven como círculos
+    const canales = [];
+    for (const g of cc.segs) {
+      if (g.y0 !== g.y1) continue;
+      canales.push({ y: g.y0, z: z.A - Math.min(tB - cc.diaMm / 2 - 1, cc.zBehindMm), lado: 'B' });
+    }
+    if (cc.zAboveMm != null) canales.push({ y: cy, z: z.A + Math.min(cc.zAboveMm, tA - cc.diaMm / 2 - 1), lado: 'A' });
+    const med = coordAudit(s).medidas;
+    laminas.push(laminaAgua({
+      nombre: `${s.name} · circuito real`, depthMm: D, zPart: z.A, tA, tB,
+      impresiones, cavDepthMm: s.cavity.depthMm,
+      // dónde vive la impresión: si la placa A la aloja (A ≳ prof), el macho SUBE
+      ladoImpresion: tA >= s.cavity.depthMm ? 'A' : 'B',
+      canales, diaMm: cc.diaMm, holguraMinMm: med.holguraAguaMm,
+    }));
+    console.log(`agua: ${canales.length} canales ⌀${cc.diaMm} · ${impresiones.length} impresiones · holgura ${med.holguraAguaMm} mm`);
+  }
+
   // ── HTML + PNG por lámina (para que el OJO las abra con Read) ──
   const html = path.join(OUT, 'laminas.html');
   fs.writeFileSync(html, laminasToHTML(laminas, 'Láminas visuales del molde'));
@@ -116,10 +154,11 @@ function shellMesh(L, W, H, t) {
   let fails = 0;
   const check = (n, c, d) => { console.log(` ${c ? '✓' : '❌'} ${n} — ${d}`); if (!c) fails++; };
   const veredicto = (l) => (/✗/.test(l.svg) ? 'MAL' : /✓ los/.test(l.svg) ? 'BIEN' : 'plana');
-  const conPared = laminas.filter((l) => !/plana/.test(veredicto(l)));
+  // los pares de expulsores van de dos en dos; las demás láminas se juzgan aparte
+  const pares = laminas.filter((l) => /-rejilla$|-agarre$/.test(l.id));
   let distinguio = 0;
-  for (let i = 0; i < laminas.length; i += 2) {
-    const rej = laminas[i], agr = laminas[i + 1];
+  for (let i = 0; i < pares.length; i += 2) {
+    const rej = pares[i], agr = pares[i + 1];
     if (!agr) break;
     const pieza = rej.titulo.replace(/ · REJILLA.*/, '').replace('Planta del núcleo · expulsores — ', '');
     // El layout POR AGARRE debe aprobar SIEMPRE: es lo que la Máquina produce.
@@ -133,9 +172,13 @@ function shellMesh(L, W, H, t) {
     console.log(`   · ${pieza}: rejilla ${veredicto(rej)} vs agarre ${veredicto(agr)}${veredicto(rej) === 'BIEN' ? ' (pieza angosta: la rejilla también cae junto al agarre — verdad geométrica)' : ''}`);
   }
   check('la lámina DISTINGUE el antipatrón en al menos una pieza (si nunca reprobara, sería un sello)',
-    distinguio >= 1, `${distinguio} de ${laminas.length / 2} pares con rejilla reprobada`);
-  check('cada lámina cita el libro y dice qué mirar',
-    laminas.every((l) => /§11\.2\.5/.test(l.cita) && l.queMirar.length > 30), `${laminas.length} láminas`);
+    distinguio >= 1, `${distinguio} de ${pares.length / 2} pares con rejilla reprobada`);
+  check('cada lámina cita el libro (§) y dice qué mirar',
+    laminas.every((l) => /§\d+\.\d/.test(l.cita) && l.queMirar.length > 30),
+    laminas.map((l) => l.cita.split(' ·')[0]).join(', '));
+  check('la lámina del AGUA juzga la tríada §9.2.7 (choca / lejos / bien), no solo choques',
+    laminas.some((l) => l.id === 'agua' && /Fig 9\.9/.test(l.cita) && /9\.10/.test(l.svg + l.queMirar)),
+    laminas.find((l) => l.id === 'agua') ? 'presente' : 'AUSENTE');
   check('los PNG existen y pesan (se pueden abrir con ojos)',
     laminas.every((l) => fs.statSync(path.join(OUT, `${l.id}.png`)).size > 20000), 'todos >20 KB');
 
