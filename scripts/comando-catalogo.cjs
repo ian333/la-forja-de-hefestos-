@@ -180,6 +180,20 @@ SPECIAL['mol-h2o el cuarteto'] = {
   hashtags: ['#agua', '#química', '#cuántica', '#enlacedehidrógeno', '#campoeléctrico', '#simetría', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
 };
 
+// EL HEXÁGONO — cierra la serie del agua (2 → 3 → 4 → 6). El copy abre con el LAZO CAUSAL
+// ABIERTO (cuenta las puntas / cuenta los lados) y lo cierra hasta el final, que es lo que
+// sostiene la retención. ⚠ La afirmación del copo va MEDIDA, no adornada: el hielo Ih sí está
+// hecho de anillos hexagonales de agua, pero este hexámero NO es un pedazo de hielo, y el
+// párrafo lo dice con las dos diferencias (2 puentes vs 4, plano vs silla). En "El puente",
+// cuatro comentaristas corrigieron "son 2 átomos" aunque la voz decía moléculas: el público
+// cree lo que VE, así que la afirmación tiene que aguantar a un químico.
+SPECIAL['mol-h2o el hexagono'] = {
+  codigo: 'moleculas/_code/mol-h2o-el-hexamero-capsula.tar.gz',
+  titulo: 'Cuenta las puntas de un copo de nieve: seis. Cuenta los lados de esto: seis. No es casualidad',
+  descripcion: `Seis moléculas de agua cerrando un anillo. ❄️ No seis átomos: seis MOLÉCULAS, dieciocho átomos en total, y cada vértice que ves es un oxígeno con sus dos hidrógenos. Cada una le presta un hidrógeno a la vecina y recibe uno de la otra, y así se cierra el circuito: seis puentes. El cálculo cuántico los da IDÉNTICOS —2.821 ångströms los seis— y el anillo sale plano. Nadie se lo impuso: el optimizador tenía la misma libertad que en el trímero, donde DEFORMÓ el anillo y dejó los tres puentes distintos. Y juntos jalan más fuerte que por separado: en tres eso valía casi doce por ciento, en cuatro casi diecinueve, aquí llega al veinticinco. Mientras más aguas, más se aprietan — el puente se acorta de 2.881 a 2.841 a 2.821 ångströms a lo largo de la serie, y las dos tendencias salieron del cálculo, no del guion. Ahora la parte que importa: cuando el agua se congela, repite esta misma forma de seis, millones y millones de veces. Esa simetría de seis es la que llega hasta las puntas del copo. Con una honestidad: esto NO es un pedazo de hielo recortado. En el hielo cada agua tiene CUATRO puentes en vez de dos —por eso es una red en tres dimensiones y esto es un anillo— y el hexágono del hielo va plegado en forma de silla. Lo que se repite es el MOTIVO de seis, y ese sí es el mismo. Dieciocho átomos ab initio: cada punto que parpadea es un electrón —una nube de probabilidad, no una bolita— y las líneas azules son el campo eléctrico REAL, trazado desde el potencial de la molécula. Nada está inventado.\n\n🎓 GAIA University.`,
+  hashtags: ['#agua', '#copodenieve', '#química', '#cuántica', '#enlacedehidrógeno', '#hielo', '#simetría', '#ciencia', '#física', '#aprendeentiktok', '#4k', '#satisfying', '#gaia'],
+};
+
 SPECIAL['fisica-cargas gauss'] = {
   codigo: 'fisica/_code/cargas-gauss-capsula.tar.gz',
   titulo: 'Puedes CONTAR las líneas del campo eléctrico — y siempre te dan la carga de adentro',
