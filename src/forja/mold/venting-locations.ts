@@ -61,6 +61,84 @@ export interface PlanVenteo {
 const N6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]] as const;
 
 /**
+ * §5.5.4 — ¿EL CIERRE DEL FRENTE ES VENTEABLE O ES TRAMPA DE GAS?
+ * ============================================================================
+ * El libro distingue dos cierres que se ven igual en el mapa y NO son lo mismo:
+ * uno en el BORDE de la huella lo alcanza el venteo desde la partición; uno en
+ * el INTERIOR no — "especially problematic since it is difficult to vent. As
+ * such, the trapped air will likely combust, causing a burn mark to appear at
+ * this location."
+ *
+ * Se decide en PLANTA: se proyecta la cavidad y se pregunta si la columna del
+ * candidato toca el contorno de la huella. Puro; el campo ya trae todo.
+ */
+export function clasificarCierres(f: FlowField, cands: CandidatoVenteo[]): Array<CandidatoVenteo & { interior: boolean }> {
+  // huella en planta: una columna es sólida si algún vóxel de su vertical lo es
+  const solido = new Uint8Array(f.nx * f.ny);
+  for (let k = 0; k < f.nz; k++) for (let j = 0; j < f.ny; j++) for (let i = 0; i < f.nx; i++)
+    if (f.cavity[f.idx(i, j, k)]) solido[j * f.nx + i] = 1;
+  // BORDE = columna sólida con al menos un vecino (4-conexo) vacío o fuera
+  const borde = new Uint8Array(f.nx * f.ny);
+  for (let j = 0; j < f.ny; j++) for (let i = 0; i < f.nx; i++) {
+    if (!solido[j * f.nx + i]) continue;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const a = i + di, b = j + dj;
+      if (a < 0 || b < 0 || a >= f.nx || b >= f.ny || !solido[b * f.nx + a]) { borde[j * f.nx + i] = 1; break; }
+    }
+  }
+  return cands.map((c) => {
+    const i = Math.max(0, Math.min(f.nx - 1, Math.round((c.x - f.x0) / f.cellMm - 0.5)));
+    const j = Math.max(0, Math.min(f.ny - 1, Math.round((c.y - f.y0) / f.cellMm - 0.5)));
+    // vecindad de 1 celda: el raster no cae exacto sobre el contorno
+    let tocaBorde = false;
+    for (let dj = -1; dj <= 1 && !tocaBorde; dj++) for (let di = -1; di <= 1; di++) {
+      const a = i + di, b = j + dj;
+      if (a >= 0 && b >= 0 && a < f.nx && b < f.ny && borde[b * f.nx + a]) { tocaBorde = true; break; }
+    }
+    return { ...c, interior: !tocaBorde };
+  });
+}
+
+/**
+ * Proyecta el campo a PLANTA para la lámina de isócronas.
+ * Cada columna se pinta con la ÚLTIMA llegada — cuándo TERMINA de llenarse —
+ * porque el aire queda donde el llenado acaba (§8.2.2), no donde empieza. Con
+ * la primera llegada el mapa se aplanaba: en el vaso, toda la pared heredaba la
+ * fracción baja de su base y el labio (que se llena al final) no se veía.
+ *
+ * LÍMITE DECLARADO de esta vista: una pared vertical se proyecta sobre una sola
+ * columna, así que su gradiente de altura se pierde. La vista completa del libro
+ * para eso es el LAY-FLAT (§5.5.5, Fig 5.18) — pendiente.
+ */
+export function frenteEnPlanta(f: FlowField): {
+  nx: number; ny: number; sx: number; sy: number; x0: number; y0: number;
+  llegada: Float32Array; solido: Uint8Array;
+} {
+  const res: number[] = [];
+  for (let t = 0; t < f.cavity.length; t++)
+    if (f.cavity[t] && Number.isFinite(f.resistance[t])) res.push(f.resistance[t]);
+  res.sort((a, b) => a - b);
+  const frac = (r: number): number => {
+    let lo = 0, hi = res.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (res[m] <= r) lo = m + 1; else hi = m; }
+    return res.length ? lo / res.length : 0;
+  };
+  const llegada = new Float32Array(f.nx * f.ny).fill(NaN);
+  const solido = new Uint8Array(f.nx * f.ny);
+  for (let k = 0; k < f.nz; k++) for (let j = 0; j < f.ny; j++) for (let i = 0; i < f.nx; i++) {
+    const t = f.idx(i, j, k);
+    if (!f.cavity[t]) continue;
+    const p = j * f.nx + i;
+    solido[p] = 1;
+    if (!Number.isFinite(f.resistance[t])) continue;
+    const v = frac(f.resistance[t]);
+    // la columna se PINTA con la ÚLTIMA llegada: ahí es donde queda el aire
+    if (!Number.isFinite(llegada[p]) || v > llegada[p]) llegada[p] = v;
+  }
+  return { nx: f.nx, ny: f.ny, sx: f.cellMm, sy: f.cellMm, x0: f.x0, y0: f.y0, llegada, solido };
+}
+
+/**
  * ENUMERA los candidatos de venteo del campo de flujo (§8.2.2).
  *
  * `weld` es la máscara de `computeWeldMask` (opcional: sin varias compuertas no hay

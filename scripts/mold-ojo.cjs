@@ -108,6 +108,43 @@ function shellMesh(L, W, H, t) {
     console.log(`agua: ${canales.length} canales ⌀${cc.diaMm} · ${impresiones.length} impresiones · holgura ${med.holguraAguaMm} mm`);
   }
 
+  // ── LÁMINA DEL FRENTE §5.5.4 (L14, la de mayor rendimiento del libro) ──
+  {
+    const { laminaFrente } = await import(R('laminas-visuales.ts'));
+    const { flowFieldFromMesh } = await import(R('revisar-modelo.ts'));
+    const { enumerarVenteos, clasificarCierres, frenteEnPlanta } = await import(R('venting-locations.ts'));
+    // el VASO del libro: 100 mm de ancho, 60 de profundidad — el caso EXACTO de
+    // §5.5.4 ("the 60 mm depth is more than one-half the 100 mm width")
+    const Rv = 50, Hv = 60, Wv = 3;
+    const P = [], I = [];
+    const NSEG = 48;
+    const anillo = (r, z, base) => { for (let a = 0; a < NSEG; a++) { const th = 2*Math.PI*a/NSEG; P.push(r*Math.cos(th), r*Math.sin(th), z); } return base; };
+    // vaso = cilindro hueco: pared exterior, interior, fondo y borde
+    let b0 = P.length/3; anillo(Rv, 0, b0); let b1 = P.length/3; anillo(Rv, Hv, b1);
+    let b2 = P.length/3; anillo(Rv-Wv, Wv, b2); let b3 = P.length/3; anillo(Rv-Wv, Hv, b3);
+    const quad = (a,b,c,d) => I.push(a,b,c, a,c,d);
+    for (let a = 0; a < NSEG; a++) { const n = (a+1)%NSEG;
+      quad(b0+a, b1+a, b1+n, b0+n);            // exterior
+      quad(b2+a, b2+n, b3+n, b3+a);            // interior
+      quad(b1+a, b3+a, b3+n, b1+n);            // borde superior
+    }
+    const cFondo = P.length/3; P.push(0,0,0); const cFondoT = P.length/3; P.push(0,0,Wv);
+    for (let a = 0; a < NSEG; a++) { const n = (a+1)%NSEG;
+      I.push(cFondo, b0+n, b0+a);              // fondo exterior
+      I.push(cFondoT, b2+a, b2+n);             // fondo interior
+    }
+    const meshVaso = { positions: new Float32Array(P), indices: new Uint32Array(I) };
+    const campo = flowFieldFromMesh(meshVaso, { wallMm: Wv, maxVoxels: 120000 });
+    const plan = enumerarVenteos(campo, { nMaquinar: 8 });
+    const cls = clasificarCierres(campo, plan.maquinar);
+    const planta = frenteEnPlanta(campo);
+    laminas.push(laminaFrente(planta, {
+      nombre: 'vaso Kazmer ⌀100 × 60 (el caso de §5.5.4)',
+      venteos: cls, profMm: Hv, anchoMm: 2 * Rv,
+    }));
+    console.log(`frente: campo ${campo.nx}×${campo.ny}×${campo.nz} · ${plan.nCandidatos} cierres · ${cls.filter(c=>c.interior).length} trampas de gas`);
+  }
+
   // ── HTML + PNG por lámina (para que el OJO las abra con Read) ──
   const html = path.join(OUT, 'laminas.html');
   fs.writeFileSync(html, laminasToHTML(laminas, 'Láminas visuales del molde'));

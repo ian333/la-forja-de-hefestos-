@@ -251,6 +251,100 @@ ${placas}${cav}${canales}
   };
 }
 
+/**
+ * LÁMINA §5.5.4 + §8.2.2 — LAS ISÓCRONAS DEL FRENTE (Fig 5.17 / 5.20).
+ * ============================================================================
+ * La vista de mayor rendimiento del libro: de ella salen el race-tracking, las
+ * líneas de soldadura, las TRAMPAS DE GAS y todas las ubicaciones de venteo del
+ * cap. 8. El libro pinta el lay-flat con los arcos del frente y busca DÓNDE SE
+ * CIERRAN — y distingue dos casos que nosotros no distinguíamos:
+ *
+ *   · cierre en un BORDE de la huella → el venteo lo alcanza en la partición.
+ *   · cierre en el INTERIOR → TRAMPA DE GAS. §5.5.4 literal: "especially
+ *     problematic since it is difficult to vent. As such, the trapped air will
+ *     likely combust, causing a burn mark to appear at this location."
+ *
+ * ESCALA DE COLOR FIJA (regla transversal del libro): bandas de 10 % de llenado.
+ * Kazmer juzga CONTANDO contornos; auto-escalar destruiría el criterio.
+ */
+export interface FrenteLamina {
+  nx: number; ny: number; sx: number; sy: number; x0: number; y0: number;
+  /** fracción de llenado con que llega el frente a cada columna (NaN = sin material) */
+  llegada: Float32Array;
+  /** true si la columna tiene material */
+  solido: Uint8Array;
+}
+export function laminaFrente(f: FrenteLamina, o: {
+  nombre: string;
+  venteos: Array<{ x: number; y: number; tipo: string; fracLlenado: number; interior?: boolean }>;
+  /** §5.5.4: la regla directa del race-tracking */
+  LperimetroMm?: number; LcenterlineMm?: number;
+  profMm?: number; anchoMm?: number;
+}): Lamina {
+  const W = 1000, H = 700, PAD = 62, TOP = 100, BOT = 78;
+  const anchoMm = f.nx * f.sx, altoMm = f.ny * f.sy;
+  const k = Math.min((W - 2 * PAD) / anchoMm, (H - TOP - BOT) / altoMm);
+  const px = (x: number) => PAD + (x - f.x0) * k;
+  const py = (y: number) => TOP + (y - f.y0) * k;
+
+  // ESCALA FIJA: 10 bandas de 10 % — de frío (primero) a caliente (último)
+  const BANDA = ['#12324a', '#154b60', '#1a6a6a', '#2c8a5e', '#68a544', '#a8b234', '#d8a52c', '#e8802a', '#e35434', '#d12f3f'];
+  const celdas: string[] = [];
+  for (let j = 0; j < f.ny; j++) for (let i = 0; i < f.nx; i++) {
+    const t = j * f.nx + i;
+    if (!f.solido[t]) continue;
+    const v = f.llegada[t];
+    const col = Number.isFinite(v) ? BANDA[Math.max(0, Math.min(9, Math.floor(v * 10)))] : '#2a3648';
+    celdas.push(`<rect x="${px(f.x0 + i * f.sx).toFixed(1)}" y="${py(f.y0 + j * f.sy).toFixed(1)}" width="${(f.sx * k + 0.6).toFixed(1)}" height="${(f.sy * k + 0.6).toFixed(1)}" fill="${col}"/>`);
+  }
+
+  const trampas = o.venteos.filter((v) => v.interior);
+  const marcas = o.venteos.map((v) => {
+    const cx = px(v.x), cy = py(v.y);
+    const col = v.interior ? '#ff5c5c' : '#59d98c';
+    return v.interior
+      ? `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" fill="none" stroke="${col}" stroke-width="2.4"/>`
+        + `<line x1="${(cx - 5).toFixed(1)}" y1="${(cy - 5).toFixed(1)}" x2="${(cx + 5).toFixed(1)}" y2="${(cy + 5).toFixed(1)}" stroke="${col}" stroke-width="2.4"/>`
+        + `<line x1="${(cx + 5).toFixed(1)}" y1="${(cy - 5).toFixed(1)}" x2="${(cx - 5).toFixed(1)}" y2="${(cy + 5).toFixed(1)}" stroke="${col}" stroke-width="2.4"/>`
+      : `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="6" fill="none" stroke="${col}" stroke-width="2.2"/>`
+        + `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="2" fill="${col}"/>`;
+  }).join('');
+
+  // §5.5.4: race-tracking por la regla directa del libro
+  const raceL = o.LperimetroMm != null && o.LcenterlineMm != null && o.LperimetroMm < o.LcenterlineMm;
+  const raceProf = o.profMm != null && o.anchoMm != null && o.profMm > o.anchoMm / 2;
+  const ver = trampas.length > 0
+    ? { txt: `✗ ${trampas.length} TRAMPA(S) DE GAS: el frente cierra en el INTERIOR, donde el venteo no llega`, cls: 'mal',
+        sub: '§5.5.4: "difficult to vent. As such, the trapped air will likely combust, causing a burn mark"' }
+    : raceL || raceProf
+      ? { txt: `⚠ RACE-TRACKING probable (§5.5.4) — todos los cierres son venteables, pero el frente corre por el perímetro`, cls: 'warn',
+          sub: raceProf ? `prof ${o.profMm} mm > ½ del ancho ${o.anchoMm} mm — el caso exacto del libro (60 vs 100 mm)` : `L_perímetro ${o.LperimetroMm} < L_centerline ${o.LcenterlineMm} mm` }
+      : { txt: `✓ los ${o.venteos.length} cierres del frente caen en BORDES — venteables en la partición`, cls: 'ok',
+          sub: 'sin trampas de gas: ningún frente se cierra en el interior de una superficie' };
+
+  const leyenda = BANDA.map((c, i) =>
+    `<rect x="${PAD + i * 26}" y="${H - 40}" width="26" height="9" fill="${c}"/>`
+    + (i % 3 === 0 ? `<text class="lblSm" x="${PAD + i * 26}" y="${H - 44}">${i * 10}%</text>` : '')).join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">ISÓCRONAS DEL FRENTE · planta</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§5.5.4 · Fig 5.17 (race-tracking, weld line y GAS TRAP) · §8.2.2 (de aquí salen los venteos)</text>
+<text class="lblSm" x="${PAD}" y="90">bandas FIJAS de 10 % de llenado (el libro cuenta contornos: auto-escalar destruye el criterio) · ✕ rojo = trampa de gas · ○ verde = cierre venteable</text>
+${celdas.join('')}${marcas}
+${leyenda}
+<text class="${ver.cls}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 22}">${ESC(ver.txt)}</text>
+<text class="lblSm" x="${PAD}" y="${H - 8}">${ESC(ver.sub)}</text>
+</svg>`;
+
+  return {
+    id: 'frente', titulo: `Isócronas del frente — ${o.nombre}`, cita: '§5.5.4 · Fig 5.17 · §8.2.2',
+    queMirar: '¿dónde SE CIERRA el frente? Un cierre en el borde se ventea en la partición (○ verde); uno en el INTERIOR es trampa de gas (✕ rojo) y quema la pieza. ¿el color corre por el perímetro antes que por el centro (race-tracking)?',
+    svg,
+  };
+}
+
 /** Envuelve láminas en una hoja HTML imprimible/capturable (una por página). */
 export function laminasToHTML(ls: Lamina[], titulo: string): string {
   return `<!doctype html><meta charset="utf-8"><title>${ESC(titulo)}</title>
