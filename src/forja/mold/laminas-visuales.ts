@@ -345,6 +345,160 @@ ${leyenda}
   };
 }
 
+/**
+ * LÁMINA §10.3.1 — LA PIEZA ALABEADA CON SU CAUSA AL LADO (Fig 10.14 / 10.15).
+ * El libro dibuja la CADENA CAUSAL: circuito desigual → gradiente térmico → la
+ * pieza curvada con su radio acotado. Y son DOS FORMAS distintas: curvatura
+ * (a través del espesor) y pandeo (a través del área). Se dibuja la sección con
+ * la deformación EXAGERADA y el número real acotado — el libro compara el
+ * alabeo contra la contracción total, y ahí está su argumento: 2 °C de
+ * diferencia dan MÁS alabeo que toda la contracción de la pieza.
+ */
+export function laminaAlabeo(o: {
+  nombre: string; halfWidthMm: number; wallMm: number;
+  espesor: { sCorePct: number; sCavityPct: number; radiusMm: number; deltaMm: number; contraccionTotalMm: number; superaContraccion: boolean };
+  area: { sCenterPct: number; sEdgePct: number; deltaS: number; umbral: number; pandea: boolean; deltaMm: number; aplica: boolean; nota: string; advertencia: string };
+  dtC: number;
+}): Lamina {
+  const W = 1000, H = 640, PAD = 62;
+  const mid = W / 2, half = (mid - PAD) - 30;
+  const dib = (cx: number, delta: number, modo: 'curva' | 'pandeo', y: number) => {
+    const k = half / o.halfWidthMm;
+    const EXA = delta > 0 ? Math.min(46 / delta, 60) : 1;   // exageración visible, DECLARADA
+    const pts: string[] = [];
+    for (let i = 0; i <= 40; i++) {
+      const u = -1 + (2 * i) / 40;                          // −1 … 1 (centro→bordes)
+      const dy = modo === 'curva'
+        ? delta * EXA * (u * u)                             // curvatura: los bordes suben
+        : delta * EXA * (1 - u * u);                        // pandeo: el centro sale
+      pts.push(`${(cx + u * half).toFixed(1)},${(y - dy).toFixed(1)}`);
+    }
+    return `<polyline points="${pts.join(' ')}" fill="none" stroke="#c9a227" stroke-width="3"/>`
+      + `<line x1="${cx - half}" y1="${y}" x2="${cx + half}" y2="${y}" stroke="#3a4a60" stroke-width="1" stroke-dasharray="5 4"/>`
+      + `<text class="lblSm" x="${cx - half}" y="${y + 18}">plano nominal · deformación ×${EXA.toFixed(0)}</text>`;
+  };
+  const eSup = o.espesor.superaContraccion;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">ALABEO · las DOS formas del libro</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§10.3.1 · Fig 10.14 (a través del ESPESOR = curvatura) · Fig 10.15 (a través del ÁREA = pandeo)</text>
+
+<text class="lbl" style="font:700 13px 'JetBrains Mono',monospace" x="${PAD}" y="120">1 · A TRAVÉS DEL ESPESOR (Ec. 10.17-10.18)</text>
+<text class="lblSm" x="${PAD}" y="138">causa: el núcleo ${o.dtC.toFixed(1)} °C más caliente que la cavidad ⇒ contrae más de ese lado</text>
+<text class="lblSm" x="${PAD}" y="153">s_core ${o.espesor.sCorePct}% vs s_cav ${o.espesor.sCavityPct}% · R = 2h/Δs = ${o.espesor.radiusMm} mm</text>
+${dib(mid, o.espesor.deltaMm, 'curva', 250)}
+<text class="${eSup ? 'mal' : 'warn'}" style="font:700 14px 'JetBrains Mono',monospace" x="${PAD}" y="292">δ = ${o.espesor.deltaMm} mm fuera de plano${eSup ? ` — MÁS que toda la contracción de la pieza (${o.espesor.contraccionTotalMm} mm)` : ''}</text>
+<text class="lblSm" x="${PAD}" y="309">${eSup ? 'ese es el argumento del libro para exigir un circuito de agua PAREJO: bastan 2 °C' : `contracción total de borde a borde ${o.espesor.contraccionTotalMm} mm`}</text>
+
+<text class="lbl" style="font:700 13px 'JetBrains Mono',monospace" x="${PAD}" y="368">2 · A TRAVÉS DEL ÁREA — PANDEO (Ec. 10.19-10.20)</text>
+<text class="lblSm" x="${PAD}" y="386">causa: compuerta central ⇒ el empaque cae del centro al borde ⇒ el borde contrae más</text>
+<text class="lblSm" x="${PAD}" y="401">s_centro ${o.area.sCenterPct}% vs s_borde ${o.area.sEdgePct}% · Δs ${o.area.deltaS.toFixed(5)} ${o.area.deltaS > o.area.umbral ? '>' : '≤'} 0.44·(h/W)² = ${o.area.umbral.toFixed(5)}</text>
+${o.area.pandea ? dib(mid, o.area.deltaMm, 'pandeo', 500) : `<text class="ok" style="font:700 14px 'JetBrains Mono',monospace" x="${PAD}" y="470">✓ NO pandea</text>`}
+<text class="${o.area.pandea ? 'mal' : 'ok'}" style="font:700 14px 'JetBrains Mono',monospace" x="${PAD}" y="${o.area.pandea ? 545 : 492}">${o.area.pandea ? `δ = ${o.area.deltaMm} mm de pandeo` : 'sin pandeo'}</text>
+<text class="lblSm" x="${PAD}" y="${o.area.pandea ? 562 : 509}">${ESC(o.area.nota.slice(0, 118))}</text>
+${o.area.pandea ? `<text class="warn" style="font:700 11px 'JetBrains Mono',monospace" x="${PAD}" y="580">⚠ ${ESC(o.area.advertencia.slice(0, 132))}</text>` : ''}
+<text class="lblSm" x="${PAD}" y="${H - 14}">las dos formas son INDEPENDIENTES y se suman: h ${o.wallMm} mm · semiancho ${o.halfWidthMm} mm · Ec. 10.17-10.20 verificadas contra los ejemplos del libro (1.6 y 6.6 mm)</text>
+</svg>`;
+  return {
+    id: 'alabeo', titulo: `Alabeo — ${o.nombre}`, cita: '§10.3.1 · Fig 10.14 y 10.15',
+    queMirar: '¿la pieza se CURVA (gradiente a través del espesor: el circuito de agua no es parejo) o PANDEA (gradiente a través del área: la compuerta no empaca el borde)? ¿el alabeo supera a la contracción total — la alarma del libro?',
+    svg,
+  };
+}
+
+/**
+ * LÁMINA §12.1.2 — DEFLEXIÓN DEL MOLDE CONTRA EL ESPESOR DEL VENTEO (Fig 12.6).
+ * El umbral ABSOLUTO más raro del libro: la separación de las mitades bajo carga
+ * se compara contra el venteo (~0.02 mm). Si la supera, "a significant amount of
+ * flashing is expected. The mold design must be improved to reduce this
+ * deflection." Se dibuja la placa deformada (exagerada) con las dos cotas.
+ */
+export function laminaDeflexion(o: {
+  nombre: string; deflexionMm: number; venteoMm: number;
+  spanMm: number; placaMm: number; nPilares: number; gobierna: string;
+}): Lamina {
+  const W = 1000, H = 520, PAD = 62;
+  const half = (W / 2 - PAD) - 20, mid = W / 2, yBase = 300;
+  const EXA = o.deflexionMm > 0 ? Math.min(70 / o.deflexionMm, 400) : 1;
+  const pts: string[] = [];
+  for (let i = 0; i <= 48; i++) {
+    const u = -1 + (2 * i) / 48;
+    pts.push(`${(mid + u * half).toFixed(1)},${(yBase + o.deflexionMm * EXA * (1 - u * u)).toFixed(1)}`);
+  }
+  const flash = o.deflexionMm > o.venteoMm;
+  const pilares = Array.from({ length: o.nPilares }, (_, i) => {
+    const u = o.nPilares === 1 ? 0 : -1 + (2 * i) / (o.nPilares - 1);
+    const x = mid + u * half * 0.82;
+    return `<line x1="${x.toFixed(1)}" y1="${yBase + 6}" x2="${x.toFixed(1)}" y2="${yBase + 74}" stroke="#5a6b82" stroke-width="7"/>`;
+  }).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">DEFLEXIÓN DEL MOLDE vs ESPESOR DEL VENTEO</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§12.1.2 · Fig 12.6 — el umbral ABSOLUTO: si la separación supera el venteo, hay rebaba</text>
+<text class="lblSm" x="${PAD}" y="92">la placa se dibuja deformada ×${EXA.toFixed(0)} · gris = pilares de soporte</text>
+<line x1="${mid - half}" y1="${yBase}" x2="${mid + half}" y2="${yBase}" stroke="#3a4a60" stroke-width="1" stroke-dasharray="5 4"/>
+<polyline points="${pts.join(' ')}" fill="none" stroke="${flash ? '#ff5c5c' : '#59d98c'}" stroke-width="3.5"/>
+${pilares}
+<line x1="${mid}" y1="${yBase}" x2="${mid}" y2="${(yBase + o.deflexionMm * EXA).toFixed(1)}" stroke="#c9a227" stroke-width="1.6"/>
+<text class="cita" x="${mid + 10}" y="${(yBase + o.deflexionMm * EXA / 2).toFixed(1)}">δ ${o.deflexionMm.toFixed(4)} mm</text>
+<text class="${flash ? 'mal' : 'ok'}" style="font:700 14px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 60}">${flash ? `✗ FLASH GARANTIZADO: δ ${o.deflexionMm.toFixed(4)} > venteo ${o.venteoMm.toFixed(3)} mm` : `✓ δ ${o.deflexionMm.toFixed(4)} mm < venteo ${o.venteoMm.toFixed(3)} mm — las mitades cierran más fino que el vent`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 42}">${flash ? '"a significant amount of flashing is expected. The mold design must be improved to reduce this deflection."' : 'el criterio de §12.1.2 se cumple con margen de ' + (o.venteoMm / Math.max(1e-9, o.deflexionMm)).toFixed(1) + '×'}</text>
+<text class="lblSm" x="${PAD}" y="${H - 22}">claro ${o.spanMm.toFixed(0)} mm · placa ${o.placaMm} mm · ${o.nPilares} pilares · gobierna ${ESC(o.gobierna)} — §12.1.3: cambiar de acero NO ayuda (todos ≈200 GPa), solo la geometría</text>
+</svg>`;
+  return {
+    id: 'deflexion', titulo: `Deflexión vs venteo — ${o.nombre}`, cita: '§12.1.2 · Fig 12.6',
+    queMirar: '¿la curva de la placa deformada abre las mitades MÁS que el espesor del venteo? Ese es el único umbral absoluto del libro: por encima, hay rebaba garantizada.',
+    svg,
+  };
+}
+
+/**
+ * LÁMINA §2.3.1 — MAPA DE ESPESOR DE PARED (Fig 2.2).
+ * El PRIMER gate del libro: todo lo demás (llenado, contracción, ciclo) hereda
+ * de aquí. Escala FIJA en múltiplos de la pared nominal para poder comparar
+ * piezas entre sí — auto-escalar haría ver uniforme a una pieza pésima.
+ */
+export function laminaEspesor(m: {
+  nx: number; ny: number; sx: number; sy: number; x0: number; y0: number; thick: Float32Array;
+}, o: { nombre: string; nominalMm: number; p95Mm: number; ratio: number }): Lamina {
+  const W = 1000, H = 700, PAD = 62, TOP = 100, BOT = 74;
+  const k = Math.min((W - 2 * PAD) / (m.nx * m.sx), (H - TOP - BOT) / (m.ny * m.sy));
+  // ESCALA FIJA en múltiplos del nominal: ≤0.5 · 0.75 · 1 · 1.5 · 2 · >2
+  const BANDA = ['#2b5f8f', '#3f8fa8', '#59d98c', '#a8b234', '#e8a02a', '#d12f3f'];
+  const banda = (t: number) => t <= 0.5 ? 0 : t <= 0.85 ? 1 : t <= 1.15 ? 2 : t <= 1.5 ? 3 : t <= 2 ? 4 : 5;
+  const celdas: string[] = [];
+  let nGrueso = 0, nTotal = 0;
+  for (let j = 0; j < m.ny; j++) for (let i = 0; i < m.nx; i++) {
+    const t = m.thick[j * m.nx + i];
+    if (!Number.isFinite(t) || t <= 0) continue;
+    nTotal++;
+    const r = t / o.nominalMm;
+    if (r > 1.5) nGrueso++;
+    celdas.push(`<rect x="${(PAD + i * m.sx * k).toFixed(1)}" y="${(TOP + j * m.sy * k).toFixed(1)}" width="${(m.sx * k + 0.6).toFixed(1)}" height="${(m.sy * k + 0.6).toFixed(1)}" fill="${BANDA[banda(r)]}"/>`);
+  }
+  const pctGrueso = nTotal ? (nGrueso / nTotal) * 100 : 0;
+  const mal = o.ratio > 2;
+  const leyenda = ['≤0.5×', '0.85×', '1×', '1.5×', '2×', '>2×'].map((lb, i) =>
+    `<rect x="${PAD + i * 62}" y="${H - 42}" width="62" height="10" fill="${BANDA[i]}"/><text class="lblSm" x="${PAD + i * 62}" y="${H - 46}">${lb}</text>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">MAPA DE ESPESOR DE PARED · planta</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§2.3.1 · Fig 2.2 — el PRIMER gate del libro: llenado, contracción y ciclo heredan de aquí</text>
+<text class="lblSm" x="${PAD}" y="92">escala FIJA en múltiplos del nominal ${o.nominalMm} mm (auto-escalar haría ver uniforme a una pieza pésima)</text>
+${celdas.join('')}${leyenda}
+<text class="${mal ? 'mal' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 22}">${mal ? `✗ p95 ${o.p95Mm} mm = ${o.ratio}× el nominal — "internal voids may be formed"` : `✓ p95 ${o.p95Mm} mm = ${o.ratio}× el nominal (límite 2×)`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 8}">${pctGrueso.toFixed(1)} % de la huella por encima de 1.5× · las zonas ámbar/rojas son las que dan rechupe y alargan el ciclo (§2.3.1)</text>
+</svg>`;
+  return {
+    id: 'espesor', titulo: `Mapa de espesor — ${o.nombre}`, cita: '§2.3.1 · Fig 2.2',
+    queMirar: '¿la pieza es de un color parejo o hay islas ámbar/rojas? Cada isla gruesa es rechupe, vacío interno y ciclo largo. Las transiciones deben ser graduales, no escalones.',
+    svg,
+  };
+}
+
 /** Envuelve láminas en una hoja HTML imprimible/capturable (una por página). */
 export function laminasToHTML(ls: Lamina[], titulo: string): string {
   return `<!doctype html><meta charset="utf-8"><title>${ESC(titulo)}</title>

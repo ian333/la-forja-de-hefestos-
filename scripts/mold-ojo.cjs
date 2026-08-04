@@ -145,6 +145,41 @@ function shellMesh(L, W, H, t) {
     console.log(`frente: campo ${campo.nx}×${campo.ny}×${campo.nz} · ${plan.nCandidatos} cierres · ${cls.filter(c=>c.interior).length} trampas de gas`);
   }
 
+  // ── TIER A: alabeo §10.3.1 · deflexión §12.1.2 · espesor §2.3.1 ──
+  {
+    const { laminaAlabeo, laminaDeflexion, laminaEspesor } = await import(R('laminas-visuales.ts'));
+    const { alabeoPorEspesor, alabeoPorArea } = await import(R('warpage.ts'));
+    const { ABS_TAIT } = await import(R('shrinkage.ts'));
+    const { dfmFromMesh } = await import(R('dfm-mesh.ts'));
+    const { moldMachine } = await import(R('moldmachine.ts'));
+
+    // L17 ALABEO — el bezel del libro (240 mm, pared 1.5, núcleo 2 °C más caliente)
+    const DT = 2, half = 120, wall = 1.5;
+    const esp = alabeoPorEspesor(ABS_TAIT, { wallMm: wall, halfWidthMm: half, tCavityC: 132, tCoreC: 132 + DT, pPackPa: 66e6 });
+    // el bezel ES un marco (tiene ventana): §10.3.1 dice que NO pandea — el
+    // contraste con la curvatura es justo lo que la figura enseña
+    const topo = 'marco';
+    const are = alabeoPorArea(ABS_TAIT, { wallMm: wall, halfWidthMm: half, tC: 132, pCenterPa: 66e6, pEdgePa: 0, topologia: topo });
+    laminas.push(laminaAlabeo({ nombre: 'bezel 240 mm · pared 1.5 (el ejemplo de §10.3.1)', halfWidthMm: half, wallMm: wall, espesor: esp, area: are, dtC: DT }));
+    console.log(`alabeo: espesor δ ${esp.deltaMm} mm (R ${esp.radiusMm}) · área ${are.pandea ? 'PANDEA δ ' + are.deltaMm : 'no pandea'}`);
+
+    // L20 DEFLEXIÓN — del paquete real del vaso
+    const v2 = moldMachine({ name: 'vaso Kazmer', Lmm: 100, Wmm: 100, Hmm: 60, cavityShape: 'round',
+      surfaceMm2: 30000, volumeMm3: 60000, wallMm: 3, plastic: 'ABS', annualVolume: 200000, totalVolume: 1000000 });
+    const sp = v2.diseno.placas.soporte;
+    laminas.push(laminaDeflexion({ nombre: `${v2.spec.name} · placa de soporte real`, deflexionMm: sp.deflectionAtPlateMm,
+      venteoMm: v2.diseno.venteo.hSpecMm, spanMm: 0.6 * Math.min(v2.base.base.wmm, v2.base.base.lmm),
+      placaMm: sp.plateThkMm ?? 0, nPilares: sp.nPillars, gobierna: sp.governs }));
+    console.log(`deflexión: δ ${sp.deflectionAtPlateMm} mm vs venteo ${v2.diseno.venteo.hSpecMm} mm`);
+
+    // L13 ESPESOR — sobre la carcasa RPi4 (STL real)
+    if (fs.existsSync(stl)) {
+      const d = dfmFromMesh(parseSTL(fs.readFileSync(stl).buffer), { wallMm: 1.5 });
+      laminas.push(laminaEspesor(d.thickMap, { nombre: 'carcasa RPi4 (STL real)', nominalMm: d.wall.nominalMm, p95Mm: d.wall.p95Mm, ratio: d.wall.ratio }));
+      console.log(`espesor: nominal ${d.wall.nominalMm} · p95 ${d.wall.p95Mm} · ratio ${d.wall.ratio}×`);
+    }
+  }
+
   // ── HTML + PNG por lámina (para que el OJO las abra con Read) ──
   const html = path.join(OUT, 'laminas.html');
   fs.writeFileSync(html, laminasToHTML(laminas, 'Láminas visuales del molde'));

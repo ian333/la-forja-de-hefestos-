@@ -1113,23 +1113,30 @@ export function contratoContraccion(pkg: MoldPackage): ContratoSubsistema {
       + '"many mold designers prefer to use a constant but mid-range estimate" — es decisión del humano §3.2.2, la Máquina la presenta, no la elige',
   });
 
+  // §10.3.1 con la FÍSICA del libro (Ec. 10.19): el pandeo se evalúa con las
+  // contracciones que el propio paquete ya calculó en sus extremos de empaque —
+  // s_centro con pack alto (lowPct) y s_borde con pack flojo (highPct).
   const topo = pkg.spec.warpageTopology;
-  const warpCrit = topo && topo.tipo === 'placa'
-    ? 0.44 * (pkg.spec.wallMm / Math.min(pkg.spec.Lmm, pkg.spec.Wmm)) ** 2 : undefined;
+  const Whalf = Math.min(pkg.spec.Lmm, pkg.spec.Wmm) / 2;
+  const warpCrit = 0.44 * (pkg.spec.wallMm / Whalf) ** 2;
+  const dsPandeo = (sh.highPct - sh.lowPct) / 100;
+  const pandearia = dsPandeo > warpCrit;
   C.push({
     id: 'contr-warpage-topologia', subsistema: S, cita: '§10.3.1',
     criterio: 'el alabeo lo decide la TOPOLOGÍA: un marco con ventana está desacoplado y no alabea; un área cerrada pandea si (s_borde − s_centro) > 0.44·(h/W)²',
-    estado: topo
-      ? (topo.tipo === 'marco' ? 'CUMPLE' : (topo.tipo === 'placa' ? 'ADVIERTE' : 'CUMPLE'))
-      : 'SIN-CABLEAR',
-    detalle: topo
-      ? `topología: ${topo.tipo} (${(topo.interiorEmptyFrac * 100).toFixed(0)} % interior vacío) — `
+    medido: dsPandeo, limite: warpCrit, unidad: 'Δs',
+    estado: !topo ? 'SIN-CABLEAR'
+      : topo.tipo === 'marco' ? 'CUMPLE'
+        : pandearia ? 'VIOLA' : 'CUMPLE',
+    detalle: !topo
+      ? `sin datos de raster — el criterio del libro sería Δs > ${warpCrit.toFixed(5)} = 0.44·(${pkg.spec.wallMm}/${Whalf.toFixed(0)})²`
+      : `topología: ${topo.tipo} (${(topo.interiorEmptyFrac * 100).toFixed(0)} % interior vacío) · Δs de empaque ${dsPandeo.toFixed(5)} vs umbral ${warpCrit.toFixed(5)} (Ec. 10.19) — `
         + (topo.tipo === 'marco'
-          ? 'los bordes están DESACOPLADOS del centro: cada borde puede contraer sin generar esfuerzo de pandeo'
-          : topo.tipo === 'placa'
-            ? `área CERRADA: pandea si Δs > ${warpCrit!.toFixed(5)} (= 0.44·(${pkg.spec.wallMm}/${Math.min(pkg.spec.Lmm, pkg.spec.Wmm)})²) — verificar uniformidad de contracción borde↔centro`
-            : 'topología mixta: verificar caso por caso')
-      : 'sin datos de raster (pasar warpageTopology en el spec desde dfm-mesh)',
+          ? 'MARCO: "the material within the molding is in continuous contact" NO aplica — la contracción despareja se acomoda EN EL PLANO, no pandea ✓'
+          : pandearia
+            ? 'ÁREA CERRADA sobre el umbral: "may only be resolved through out of plane distortion of the part" — PANDEA. Remedio: emparejar el empaque (gate/pack) o abrir el área'
+            : 'área cerrada pero Δs bajo el umbral: no pandea ✓')
+        + ' · el alabeo por ESPESOR (Ec. 10.17-10.18, gradiente núcleo↔cavidad) lo calcula warpage.ts: 2 °C bastan para 1.6 mm',
     deuda: topo ? undefined : 'dfm-mesh.warpageTopology clasifica la pieza; pasar al spec para activar este criterio',
   });
 

@@ -37,6 +37,9 @@ export interface DfmMeshReport {
    *  'placa' = sólida cerrada, pandea si (s_borde − s_centro) > 0.44·(h/W)².
    *  'mixta' = ni tan abierta ni tan cerrada. */
   warpageTopology: { tipo: 'marco' | 'placa' | 'mixta'; solidFrac: number; interiorEmptyFrac: number };
+  /** EL MAPA de espesor local (§2.3.1 Fig 2.2) — para la lámina L13 y el juicio
+   *  visual de uniformidad. NaN donde no hay material. */
+  thickMap: { nx: number; ny: number; sx: number; sy: number; x0: number; y0: number; thick: Float32Array };
   /** GEOMETRÍA de cada región de undercut (coords locales de la pieza, min en 0):
    *  bbox XY + rango z del hueco + DIRECCIÓN DE JALE (votación de venteos laterales)
    *  — el insumo del GENERADOR de mecanismos §11.3.6-7. */
@@ -316,6 +319,7 @@ export function dfmFromMesh(
     orient: { coreReliefAsIsMm: +reliefAsIs.toFixed(1), coreReliefFlippedMm: +reliefFlip.toFixed(1), flipRecommended },
     projectedAreaMm2: +(nSolid * cellA).toFixed(1),
     warpageTopology: classifyWarpageTopology(solid, G, GY),
+    thickMap: { nx: G, ny: GY, sx: dxg, sy: dyg, x0: mnx, y0: mny, thick: colThick },
     regionsDetail,
   };
 }
