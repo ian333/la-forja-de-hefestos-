@@ -156,7 +156,7 @@ export function revisarModelo(input: RevisionInput): RevisionModelo {
     const asm = packageToAssemblySpec(pkg);
     if (asm.ejectors.type !== 'stripper') {
       if (input.mesh) {
-        const grip = gripEjectorLayout(input.mesh, { nPins: asm.ejectors.count, pinDiaMm: asm.ejectors.diaMm });
+        const grip = gripEjectorLayout(input.mesh, { nPins: asm.ejectors.count, pinDiaMm: asm.ejectors.diaMm, wallMm: spec.wallMm });
         if (grip.centered.length >= Math.min(4, asm.ejectors.count)) {
           asm.ejectors.positions = grip.centered;
           asm.ejectors.count = grip.centered.length;

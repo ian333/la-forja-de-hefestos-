@@ -33,6 +33,15 @@ export interface GripLayout {
   /** posiciones RELATIVAS al centro de la huella (para el ensamble multi-cavidad) */
   centered: Array<{ x: number; y: number }>;
   nParedes: number; nCandidatos: number;
+  /** EL RASTER, para poder DIBUJAR la lámina §11.2.5 y juzgarla a ojo (Fig 11.10/11.11):
+   *  wall = la pieza abraza el núcleo ahí · push = hay material que empujar. */
+  grid?: {
+    nx: number; ny: number; sx: number; sy: number;
+    x0: number; y0: number;
+    wall: boolean[]; push: boolean[];
+  };
+  /** el claro exigido del centro del pin al muro (§11.2.5) con este ⌀ */
+  keepOutMm: number;
   notas: string[];
 }
 
@@ -45,6 +54,9 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
   nPins: number; pinDiaMm: number;
   /** celda del raster (mm). Default 2. */
   cellMm?: number;
+  /** pared nominal de la pieza (mm) — ATA el muestreo vertical y el umbral de
+   *  agarre. Sin ella se asume 2 mm y se DECLARA en las notas. */
+  wallMm?: number;
 }): GripLayout {
   const notas: string[] = [];
   const q = solidFromMesh(mesh);
@@ -53,12 +65,20 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
   const cell = Math.max(1, o.cellMm ?? 2);
   const nx = Math.max(4, Math.round((b.x1 - b.x0) / cell));
   const ny = Math.max(4, Math.round((b.y1 - b.y0) / cell));
-  const NZ = 16;                                          // muestreo vertical por columna
+  // MUESTREO VERTICAL atado a la PARED, no a un número fijo. Con NZ=16 sobre la
+  // carcasa RPi4 (H=26.5) el paso era 1.66 mm y la lámina de 1.5 mm daba span=0:
+  // la mediana salía 0.00 y TODA la pieza se marcaba como agarre. Mismo patrón
+  // que la celda del campo de flujo: lo que no resuelve la pared, miente.
+  const pared = o.wallMm && o.wallMm > 0 ? o.wallMm : 2;
+  if (!o.wallMm) notas.push('pared ASUMIDA 2 mm para el muestreo vertical (no declarada)');
+  const NZ = Math.max(16, Math.min(240, Math.ceil(H / Math.max(0.25, pared / 2))));
   const keepOut = o.pinDiaMm + ejectorPinFit(o.pinDiaMm).holeDiaMm / 2 + 1;
 
   // ── raster de columnas: pared vs empujable ──
   const wall: boolean[] = new Array(nx * ny).fill(false);
   const push: boolean[] = new Array(nx * ny).fill(false);
+  const span: number[] = new Array(nx * ny).fill(0);
+  const solido: boolean[] = new Array(nx * ny).fill(false);
   for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
     const x = b.x0 + (i + 0.5) * ((b.x1 - b.x0) / nx);
     const y = b.y0 + (j + 0.5) * ((b.y1 - b.y0) / ny);
@@ -68,10 +88,20 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
       if (q.inside(x, y, z)) { any = true; if (z < lo) lo = z; if (z > hi) hi = z; }
     }
     if (!any) continue;
-    const span = hi - lo;
-    if (span >= 0.55 * H) wall[j * nx + i] = true;        // abraza el núcleo → agarre
-    if (lo <= b.z0 + Math.max(0.15 * H, 1.5 * cell)) push[j * nx + i] = true;  // material en el fondo → empujable
+    const t = j * nx + i;
+    solido[t] = true;
+    span[t] = hi - lo;
+    if (lo <= b.z0 + Math.max(0.15 * H, 1.5 * cell)) push[t] = true;   // material en el fondo → empujable
   }
+  // ── QUÉ ES "AGARRE" (§11.2.5): lo que SOBRESALE del fondo ─────────────────
+  // "the ribs and bosses will tend to shrink onto the core and so require
+  // nearby ejector pins" — paredes, costillas Y BOSSES, no solo paredes de
+  // altura completa. El umbral sale de la PIEZA: una columna agarra si su
+  // material sube ≥3 paredes (ya no es lámina de fondo) y ≥¼ de la altura (es
+  // una subida real, no una rugosidad). Con 0.55·H la carcasa RPi4 dejaba
+  // fuera torres y costillas — lo cazó la LÁMINA, no los números.
+  const umbralAgarre = Math.max(3 * pared, 0.25 * H);
+  for (let t = 0; t < nx * ny; t++) if (solido[t] && span[t] >= umbralAgarre) wall[t] = true;
   const nSolidas = push.filter(Boolean).length + wall.filter((w, t) => w && !push[t]).length;
   const nParedes = wall.filter(Boolean).length;
   // pieza PLANA (sin paredes) o MACIZA (toda columna abarca la altura): el agarre
@@ -80,7 +110,8 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
     notas.push(nParedes
       ? 'pieza maciza/plana (toda columna abarca la altura): el agarre es uniforme — la rejilla no es antipatrón aquí'
       : 'sin columnas de PARED (pieza plana sin costillas): el agarre es uniforme y la rejilla no es antipatrón aquí');
-    return { positions: [], centered: [], nParedes: 0, nCandidatos: 0, notas };
+    return { positions: [], centered: [], nParedes: 0, nCandidatos: 0, keepOutMm: keepOut,
+      grid: { nx, ny, sx: (b.x1 - b.x0) / nx, sy: (b.y1 - b.y0) / ny, x0: b.x0, y0: b.y0, wall, push }, notas };
   }
 
   // ── distancia de cada columna empujable a la pared más cercana (mm) ──
@@ -125,6 +156,8 @@ export function gripEjectorLayout(mesh: MeshLike, o: {
   return {
     positions: sel,
     centered: sel.map((p) => ({ x: +(p.x - cx).toFixed(1), y: +(p.y - cy).toFixed(1) })),
-    nParedes, nCandidatos: candidatos.length, notas,
+    nParedes, nCandidatos: candidatos.length, keepOutMm: keepOut,
+    grid: { nx, ny, sx, sy, x0: b.x0, y0: b.y0, wall, push },
+    notas,
   };
 }
