@@ -40,6 +40,10 @@ export interface DfmMeshReport {
   /** EL MAPA de espesor local (§2.3.1 Fig 2.2) — para la lámina L13 y el juicio
    *  visual de uniformidad. NaN donde no hay material. */
   thickMap: { nx: number; ny: number; sx: number; sy: number; x0: number; y0: number; thick: Float32Array };
+  /** EL MAPA DE DRAFT (§2.3.6 Fig 2.x · V2.6): ángulo de salida mínimo por
+   *  columna, en GRADOS. NaN donde no hay cara lateral. Las regiones bajo el
+   *  mínimo SON los undercuts — contarlas conexas da el nº de mecanismos. */
+  draftMap: { nx: number; ny: number; sx: number; sy: number; x0: number; y0: number; deg: Float32Array; minDeg: number; tableDeg: number };
   /** GEOMETRÍA de cada región de undercut (coords locales de la pieza, min en 0):
    *  bbox XY + rango z del hueco + DIRECCIÓN DE JALE (votación de venteos laterales)
    *  — el insumo del GENERADOR de mecanismos §11.3.6-7. */
@@ -98,6 +102,7 @@ export function dfmFromMesh(
   // DRAFT por área: laterales = |n_z| < sin(45°) (más vertical que 45° se considera
   // pared de salida; lo demás es cara superior/inferior que no roza al expulsar)
   let latArea = 0, areaBelowMin = 0, areaBelowTable = 0;
+  const draftMap = new Float32Array(G * GY).fill(NaN);   // §2.3.6: draft mín por columna
   const table = (o?.finish || o?.resin)
     ? DRAFT_TABLE_2_14.find((t) =>
       (!o?.finish || t.finish.toLowerCase().includes((o.finish || '').toLowerCase().replace('spi ', ''))) &&
@@ -121,6 +126,19 @@ export function dfmFromMesh(
       latArea += triArea;
       if (Math.abs(nz) < sinMin) areaBelowMin += triArea;
       if (Math.abs(nz) < sinTab) areaBelowTable += triArea;
+      // EL MAPA DE DRAFT (§2.3.6 · V2.6): el ángulo de salida de esta cara es
+      // asin(|nz|) — 0° = pared perfectamente vertical (se raya al expulsar),
+      // y si la cara mira HACIA ABAJO en la dirección de apertura es UNDERCUT.
+      // Se guarda el PEOR (mínimo) por columna: la lámina pinta lo que duele.
+      const drf = Math.asin(Math.min(1, Math.abs(nz))) * 180 / Math.PI;
+      const di0 = Math.max(0, Math.floor(Math.min(ax, bx, cx) / dxg));
+      const di1 = Math.min(G - 1, Math.ceil(Math.max(ax, bx, cx) / dxg));
+      const dj0 = Math.max(0, Math.floor(Math.min(ay, by, cy) / dyg));
+      const dj1 = Math.min(GY - 1, Math.ceil(Math.max(ay, by, cy) / dyg));
+      for (let jj = dj0; jj <= dj1; jj++) for (let ii = di0; ii <= di1; ii++) {
+        const p = jj * G + ii;
+        if (!(draftMap[p] <= drf)) draftMap[p] = drf;     // NaN-safe: toma el menor
+      }
     }
     // cruces del rayo vertical: SOLO triángulos no verticales (un rayo ∥ a la cara
     // vertical no la cruza transversalmente)
@@ -320,6 +338,7 @@ export function dfmFromMesh(
     projectedAreaMm2: +(nSolid * cellA).toFixed(1),
     warpageTopology: classifyWarpageTopology(solid, G, GY),
     thickMap: { nx: G, ny: GY, sx: dxg, sy: dyg, x0: mnx, y0: mny, thick: colThick },
+    draftMap: { nx: G, ny: GY, sx: dxg, sy: dyg, x0: mnx, y0: mny, deg: draftMap, minDeg: DRAFT_MIN_DEG, tableDeg },
     regionsDetail,
   };
 }

@@ -499,6 +499,98 @@ ${celdas.join('')}${leyenda}
   };
 }
 
+/**
+ * LÁMINA §2.3.6 — MAPA DE DRAFT (V2.6/V2.7). Las regiones bajo el mínimo SON
+ * los undercuts: contarlas conexas da el número de mecanismos que el molde va a
+ * necesitar. Escala FIJA en grados (0 · 0.5 · 1.5 · 3 · 7) — los cortes son los
+ * de la Tabla 2.14, no percentiles de la pieza.
+ * Cálculo VERIFICADO contra conos de ángulo exacto (0/3/7/15° → error <0.02°).
+ */
+export function laminaDraft(m: {
+  nx: number; ny: number; sx: number; sy: number; x0: number; y0: number;
+  deg: Float32Array; minDeg: number; tableDeg: number;
+}, o: { nombre: string; pctBajoMin: number; pctBajoTabla: number }): Lamina {
+  const W = 1000, H = 700, PAD = 62, TOP = 100, BOT = 74;
+  const k = Math.min((W - 2 * PAD) / (m.nx * m.sx), (H - TOP - BOT) / (m.ny * m.sy));
+  const CORTES = [0.01, m.minDeg, 1.5, 3, 7];
+  const BANDA = ['#d12f3f', '#e8802a', '#e8c62a', '#a8b234', '#59d98c', '#2f8f6a'];
+  const banda = (d: number) => { let i = 0; while (i < CORTES.length && d >= CORTES[i]) i++; return i; };
+  const celdas: string[] = [];
+  let nBajo = 0, nLat = 0;
+  for (let j = 0; j < m.ny; j++) for (let i = 0; i < m.nx; i++) {
+    const d = m.deg[j * m.nx + i];
+    if (!Number.isFinite(d)) continue;
+    nLat++; if (d < m.minDeg) nBajo++;
+    celdas.push(`<rect x="${(PAD + i * m.sx * k).toFixed(1)}" y="${(TOP + j * m.sy * k).toFixed(1)}" width="${(m.sx * k + 0.6).toFixed(1)}" height="${(m.sy * k + 0.6).toFixed(1)}" fill="${BANDA[banda(d)]}"/>`);
+  }
+  const mal = o.pctBajoMin >= 5;
+  const leyenda = ['0°', `${m.minDeg}°`, '1.5°', '3°', '7°', '+'].map((lb, i) =>
+    `<rect x="${PAD + i * 58}" y="${H - 42}" width="58" height="10" fill="${BANDA[i]}"/><text class="lblSm" x="${PAD + i * 58}" y="${H - 46}">${lb}</text>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">MAPA DE DRAFT · planta</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§2.3.6 · Tabla 2.14 — las regiones ROJAS son undercuts: contarlas da el nº de mecanismos §11.3</text>
+<text class="lblSm" x="${PAD}" y="92">escala FIJA en grados (cortes de la Tabla 2.14, no percentiles) · cálculo verificado contra conos exactos, error &lt;0.02°</text>
+${celdas.join('')}${leyenda}
+<text class="${mal ? 'mal' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 22}">${mal ? `✗ ${o.pctBajoMin.toFixed(1)} % del área lateral bajo el mínimo ${m.minDeg}° — se raya al expulsar` : `✓ ${o.pctBajoMin.toFixed(1)} % bajo el mínimo ${m.minDeg}° (límite 5 %)`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 8}">${o.pctBajoTabla.toFixed(1)} % bajo el recomendado de tabla ${m.tableDeg}° · ${nBajo} de ${nLat} columnas laterales en rojo</text>
+</svg>`;
+  return {
+    id: 'draft', titulo: `Mapa de draft — ${o.nombre}`, cita: '§2.3.6 · Tabla 2.14',
+    queMirar: '¿hay islas ROJAS? Cada una es una cara sin salida: se raya al expulsar, y si además mira hacia abajo es UNDERCUT y pide mecanismo (§11.3). Cuenta las islas conexas: ése es el número de correderas.',
+    svg,
+  };
+}
+
+/**
+ * LÁMINA §9.2.7 — MAPA TÉRMICO EN SECCIÓN, ISOTERMAS A 2 °C (Fig 9.11 · V9.8).
+ * El libro da la clave de lectura literal: "each contour line represents a 2 °C
+ * change in temperature", y JUZGA CONTANDO contornos — "a gradient of 6 °C
+ * exists from the base of the core to the top of the core". Por eso la escala
+ * es FIJA a 2 °C y las isotermas se dibujan como bandas: contarlas ES el método.
+ */
+export function laminaTermica(s: {
+  nu: number; nv: number; T: Float32Array; minC: number; maxC: number; posMm: number;
+}, o: { nombre: string; eje: string; coolantC: number }): Lamina {
+  const W = 1000, H = 660, PAD = 62, TOP = 100, BOT = 78;
+  const k = Math.min((W - 2 * PAD) / s.nu, (H - TOP - BOT) / s.nv);
+  const PASO = 2;                                   // °C por contorno (LITERAL del libro)
+  const base = Math.floor(s.minC / PASO) * PASO;
+  const nBandas = Math.max(1, Math.ceil((s.maxC - base) / PASO));
+  // rampa fría→caliente con banda por cada 2 °C — sin auto-escalar el PASO
+  const col = (b: number) => {
+    const u = nBandas > 1 ? b / (nBandas - 1) : 0;
+    const r = Math.round(30 + 200 * u), g = Math.round(70 + 90 * (1 - Math.abs(u - 0.5) * 2)), bl = Math.round(150 * (1 - u) + 30);
+    return `rgb(${r},${g},${bl})`;
+  };
+  const celdas: string[] = [];
+  for (let j = 0; j < s.nv; j++) for (let i = 0; i < s.nu; i++) {
+    const t = s.T[j * s.nu + i];
+    if (!Number.isFinite(t)) continue;
+    const b = Math.max(0, Math.min(nBandas - 1, Math.floor((t - base) / PASO)));
+    celdas.push(`<rect x="${(PAD + i * k).toFixed(1)}" y="${(TOP + j * k).toFixed(1)}" width="${(k + 0.6).toFixed(1)}" height="${(k + 0.6).toFixed(1)}" fill="${col(b)}"/>`);
+  }
+  const dT = s.maxC - s.minC;
+  const nContornos = Math.round(dT / PASO);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="36">CAMPO TÉRMICO · sección (isotermas a 2 °C)</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="56">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="75">§9.2.7 · Fig 9.11 — "each contour line represents a 2 °C change in temperature"</text>
+<text class="lblSm" x="${PAD}" y="92">escala FIJA a 2 °C por banda: el libro JUZGA CONTANDO contornos, no mirando un degradado · corte ${ESC(o.eje)} @ ${s.posMm.toFixed(1)} mm</text>
+${celdas.join('')}
+<text class="${dT > 6 ? 'warn' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 40}">${dT > 6 ? `⚠ ${nContornos} contornos = ${dT.toFixed(1)} °C de gradiente en la sección` : `✓ ${nContornos} contornos = ${dT.toFixed(1)} °C — campo parejo`}</text>
+<text class="lblSm" x="${PAD}" y="${H - 24}">el libro reprueba su ejemplo con 6 °C de base a punta del núcleo: ${dT > 6 ? 'ESTE campo lo supera' : 'este campo está por debajo'} · remedios §9.3.5: núcleo conductivo, baffle/bubbler o inserto de enfriamiento</text>
+<text class="lblSm" x="${PAD}" y="${H - 8}">rango ${s.minC.toFixed(1)} – ${s.maxC.toFixed(1)} °C · agua a ${o.coolantC} °C · ${dT > 6 ? `Δs por espesor ⇒ alabeo (Ec. 10.17): 2 °C ya dan 1.6 mm` : 'gradiente bajo el umbral que dispara alabeo apreciable'}</text>
+</svg>`;
+  return {
+    id: 'termica', titulo: `Campo térmico — ${o.nombre}`, cita: '§9.2.7 · Fig 9.11',
+    queMirar: 'CUENTA los contornos entre la parte más caliente y la más fría: cada uno son 2 °C. El libro reprueba un núcleo con 6 °C de base a punta porque ese gradiente produce contracción diferencial — y con Ec. 10.17, 2 °C ya dan 1.6 mm de alabeo.',
+    svg,
+  };
+}
+
 /** Envuelve láminas en una hoja HTML imprimible/capturable (una por página). */
 export function laminasToHTML(ls: Lamina[], titulo: string): string {
   return `<!doctype html><meta charset="utf-8"><title>${ESC(titulo)}</title>

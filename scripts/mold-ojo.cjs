@@ -180,6 +180,43 @@ function shellMesh(L, W, H, t) {
     }
   }
 
+  // ── DRAFT §2.3.6 + TÉRMICO §9.2.7 (isotermas a 2 °C) ──
+  {
+    const { laminaDraft, laminaTermica } = await import(R('laminas-visuales.ts'));
+    const { dfmFromMesh } = await import(R('dfm-mesh.ts'));
+    if (fs.existsSync(stl)) {
+      const d = dfmFromMesh(parseSTL(fs.readFileSync(stl).buffer), { wallMm: 1.5 });
+      laminas.push(laminaDraft(d.draftMap, { nombre: 'carcasa RPi4 (STL real)', pctBajoMin: d.draft.pctBelowMin, pctBajoTabla: d.draft.pctBelowTable }));
+      console.log(`draft: ${d.draft.pctBelowMin}% bajo ${d.draftMap.minDeg}° · ${d.draft.pctBelowTable}% bajo tabla ${d.draftMap.tableDeg}°`);
+    }
+    // el campo térmico REAL del molde del vaso, corrido hasta cerca del ciclo
+    try {
+      const { createThermalSim } = await import(R('mold-thermal-fdm.ts'));
+      const { moldMachine } = await import(R('moldmachine.ts'));
+      const { packageToAssemblySpec } = await import(R('mold-plano-set.ts'));
+      const v3 = moldMachine({ name: 'vaso Kazmer', Lmm: 100, Wmm: 100, Hmm: 60, cavityShape: 'round',
+        surfaceMm2: 30000, volumeMm3: 60000, wallMm: 3, plastic: 'ABS', annualVolume: 200000, totalVolume: 1000000 });
+      const asm3 = packageToAssemblySpec(v3);
+      const CELL = 6;
+      const sim = createThermalSim(asm3, { cell: CELL });
+      sim.step(60);                       // dos ciclos: el campo ya no es transitorio de arranque
+      // LA SECCIÓN CRÍTICA: barrer y quedarse con la de MAYOR gradiente. Cortar a
+      // ciegas en el medio caía ENTRE cavidades y mostraba 1.2 °C de rango — el
+      // molde es multi-cavidad y el plano medio no pasa por la impresión.
+      let sl = null, mejor = -1, fracSel = 0;
+      for (let f = 0.1; f <= 0.9; f += 0.05) {
+        const cand = sim.sliceAxis('y', f);
+        const g = cand.maxC - cand.minC;
+        if (g > mejor) { mejor = g; sl = cand; fracSel = f; }
+      }
+      laminas.push(laminaTermica(sl, {
+        nombre: `${v3.spec.name} · sección Y crítica (${(fracSel * 100).toFixed(0)} %) a 60 s · celda ${CELL} mm`,
+        eje: 'Y', coolantC: sim.coolantC,
+      }));
+      console.log(`térmico: ${sl.minC.toFixed(1)}–${sl.maxC.toFixed(1)} °C · ${Math.round((sl.maxC-sl.minC)/2)} contornos de 2 °C`);
+    } catch (e) { console.log('(térmico no disponible:', String(e).slice(0, 90), ')'); }
+  }
+
   // ── HTML + PNG por lámina (para que el OJO las abra con Read) ──
   const html = path.join(OUT, 'laminas.html');
   fs.writeFileSync(html, laminasToHTML(laminas, 'Láminas visuales del molde'));
