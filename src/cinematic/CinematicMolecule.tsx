@@ -41,6 +41,7 @@ const CARGAS_DURATION = 83.2;
 const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
 const WTRI_DURATION = 77.7;
 const WTET_DURATION = 88.0;   // EL CUARTETO: voz 85.51s (segs.json, 27 líneas) + 2.5s de cola
+const WHEX6_DURATION = 94.55; // EL HEXÁGONO: voz 92.05s (segs.json, 31 líneas) + 2.5s de cola (misma cola que el cuarteto)
 // (WTRI_DURATION: voz 91.0s + 3s de cola · WPAIR_DURATION: 1 min, beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -530,8 +531,45 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: ringFaceOn({ rMul: 1.44, azim0: 3.3, span: 0.45, elev: 0.30 }), dur: 3.78, label: 'contraste: en el trímero ninguno medía igual' },
     { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 7.09, label: 'COOPERATIVIDAD: se viene encima' },
     { shot: ringEdgeToFace({ rMul: 1.80, elev: 0.08, span: 0.38 }), dur: 10.56, label: 'VUELVE la firma con los números: 12% a 19%, +28% por agua' },
-    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 3.82, label: 'física cuántica real — CRASH IN' },
+    // ⚠ `rFrom`/`rTo` NO EXISTEN en crashIn (su firma es rMul/elev/azim0/span/fov) → esbuild
+    // los tira sin avisar (vite build NO corre tsc) y esta toma rindió con los DEFAULTS. La
+    // pieza entregada es esa, así que los valores se quedan; pero NO los copies: para acercar
+    // el crash se usa `rMul`. Ver whex6 más abajo, que ya usa la firma real.
+    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 3.82, label: 'física cuántica real — CRASH IN (rindió con defaults, ver aviso)' },
     { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 12.52, label: 'payoff — SALE del anillo, gancho abierto al hexámero' },
+  ],
+  // EL HEXÁGONO (H₂O)₆ — mismos builders que el cuarteto (son genéricos en N), otra SECUENCIA.
+  //
+  // LA DIFERENCIA DE DISEÑO con wtet, y es del guion: el gancho del cuarteto era "de canto,
+  // es plano" → ringEdgeToFace en el frame 0. Aquí la línea 1 es «cuenta las puntas de un copo
+  // … ahora cuenta los LADOS de esto» → el frame 0 tiene que ser DE FRENTE o no hay nada que
+  // contar. Lo plano pasa a ser un beat propio (t46.5, la voz lo pide literal: «míralo de canto»).
+  //
+  // DURACIONES = arranques REALES de segs.json (dur[i] = ini[i+1] − ini[i], NO los anchos de
+  // ventana: ese bug estuvo entregado en el anillo). Σ = 94.55 = WHEX6_DURATION.
+  // RIMA: la toma 15 vuelve al hexágono de frente justo en «repite esta misma forma de seis»
+  // — el mismo encuadre del frame 0, para que el ojo cierre el círculo antes que la voz.
+  whex6: [
+    { shot: ringFaceOn({ rMul: 2.80, azim0: 1.05, span: 0.52, elev: 0.05 }), dur: 4.99, label: 'EL GANCHO — el hexágono GIRA hasta darte la cara: "cuenta las puntas de un copo / seis"' },
+    { shot: ringFaceOn({ rMul: 2.55, azim0: 1.42, span: 0.30, elev: 0.03 }), dur: 4.82, label: 'corte seco, más cerca y meciéndose por el face-on exacto: "cuenta los LADOS"' },
+    { shot: ringFaceOn({ rMul: 2.45, azim0: 1.60, span: 0.65, elev: 0.16 }), dur: 4.96, label: 'se INCLINA y gana 3D: no son seis puntas, son seis MOLÉCULAS' },
+    // `rCore: 2.6` = el radio de UNA agua, no el del anillo. Sin él la LEY DE ENCUADRE mide los
+    // seis oxígenos y clava la cámara a 99 bohr: rMul 0.55, 0.30 y 0.16 daban EL MISMO cuadro
+    // (medido). Con él, este es el único close-up de verdad de la serie del agua.
+    { shot: ringOne({ which: 0, rMul: 2.4, azim0: 0.7, span: 1.2, fov: 21, rCore: 2.6 }), dur: 4.85, label: 'LEGIBILIDAD: un O dorado y sus dos H = UNA molécula' },
+    { shot: ringFaceOn({ rMul: 2.70, azim0: 1.50, span: 0.25, elev: 0.08 }), dur: 2.90, label: '"dieciocho átomos EN TOTAL": el anillo entero de frente, para poder contarlos' },
+    { shot: ringFaceOn({ rMul: 2.60, azim0: 2.30, span: -0.72, elev: 0.12 }), dur: 6.22, label: 'vuelve a la cara justo en "seis encajan igual de bien" (span NEGATIVO: cierra a face-on)' },
+    { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.5, rTo: 1.12, azim: 0.9, fov: 30 }), dur: 8.24, label: 'presta y recibe — el puente es NUBE, no palito' },
+    { shot: ringFaceOn({ rMul: 2.50, azim0: 1.57, span: 0.26, elev: 0.06 }), dur: 5.11, label: 'LOS SEIS puentes a la vez, DE FRENTE — el cálculo los da idénticos' },
+    { shot: ringFaceOn({ rMul: 2.35, azim0: 4.60, span: 0.30, elev: 0.10 }), dur: 4.43, label: '2.821 Å los seis — LA OTRA CARA (azim ~3pi/2), para que se vea que no es truco de ángulo' },
+    { shot: ringEdgeToFace({ rMul: 1.85, elev: 0.03, span: 0.22 }), dur: 4.56, label: 'DE CANTO y se QUEDA de canto (span corto): el anillo es PLANO' },
+    { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 5.98, label: 'COOPERATIVIDAD: se viene encima' },
+    { shot: ringEdgeToFace({ rMul: 2.00, elev: 0.08, span: 0.38 }), dur: 9.36, label: 'LA FIRMA vuelve con los números: 12 → 19 → 25 %' },
+    { shot: ringFaceOn({ rMul: 2.30, azim0: 1.35, span: 0.22, elev: 0.14 }), dur: 3.27, label: '"mientras más aguas, más se aprietan"' },
+    { shot: crashIn({ rMul: 1.30, azim0: 1.20, span: 0.60, elev: 0.10 }), dur: 3.74, label: 'física cuántica real — CRASH IN (firma REAL: rMul, no rFrom/rTo)' },
+    { shot: ringFaceOn({ rMul: 2.20, azim0: 1.90, span: 0.30, elev: 0.10 }), dur: 5.10, label: '"ahora la parte que importa" / "cuando el agua se congela"' },
+    { shot: ringFaceOn({ rMul: 2.80, azim0: 1.57, span: 0.20, elev: 0.04 }), dur: 6.18, label: 'LA RIMA: EL MISMO encuadre del frame 0 — "repite esta misma forma de seis"' },
+    { shot: pullOut({ azim0: 1.57, span: 0.50, rFromMul: 2.80, rTdMul: 3.30 }), dur: 9.84, label: 'payoff — se ALEJA de frente y el hexágono se hace chico: "esta forma, hecha grande"' },
   ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
@@ -919,6 +957,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
   wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
   wtet: { name: 'El cuarteto', formula: '(H₂O)₄', fact: 'Tres no encajaban. Cuatro sí: los cuatro puentes salen idénticos.' },
+  whex6: { name: 'El hexágono', formula: '(H₂O)₆', fact: 'Cuenta los lados: seis. Es la misma forma que el agua repite al congelarse.' },
   faraday: { name: 'La jaula de Faraday', formula: 'E_dentro = 0', fact: 'Un marco de barras no te protege; una malla cerrada, 160 veces.' },
   cargas: { name: 'La ley de Gauss', formula: '∮E·dA = 4πQ', fact: 'Cuenta las líneas que se escapan: son exactamente la carga de adentro.' },
   ch4:  { name: 'Metano', formula: 'CH₄', fact: 'Cuatro enlaces perfectos a 109.5°: un tetraedro.' },
@@ -2036,6 +2075,44 @@ const WTET_CAPAS: CapasSpec = {
     { wins: [[13.53, 33.85]], a: 0.55, label: 'REBOBINA: se abre para contarlas y mirar UNA' },
     { wins: [[75.50, 88.0]],  a: 0.68, label: 'PAYOFF: se alejan — el viaje cierra' } ] },
 };
+// CAPAS DEL HEXÁGONO — fronteras = arranques REALES de segs.json (voz 92.05 s, 31 líneas).
+// Portadas A MANO desde WTET_CAPAS (recalibrar-beats.py regenera de una plantilla vieja y
+// pierde enlaces/dipolo/apertura — aviso ya pagado dos veces).
+//   GANCHO "cuenta los lados" 0-14.77 · UNA molécula 14.77-22.52 · rebobina 22.52-28.74 ·
+//   puentes 28.74-42.09 · 2.821 Å 42.09-46.52 · DE CANTO 46.52-51.08 ·
+//   cooperatividad+números 51.08-66.42 · se aprietan + cuántica 66.42-73.43 · EL COPO 73.43-94.55
+//
+// ⚡ EL FRAME 0 ES UN HEXÁGONO CERRADO Y DE FRENTE. La línea 1 pide CONTAR LOS LADOS: si la
+// apertura arranca alta (como arrancaba el cuarteto antes de arreglarlo) no hay hexágono que
+// contar, hay seis manchas sueltas. apertura=0.10 desde t=0, y solo se abre cuando la voz
+// rebobina a mirar UNA.
+const WHEX6_CAPAS: CapasSpec = {
+  campo:    { base: 0.55, mods: [
+    { wins: [[28.74, 42.09]], a: 1.05, label: 'PROTAGONISTA: "presta un hidrógeno" — el puente es carga moviéndose' },
+    { wins: [[51.08, 66.42]], a: 0.85, label: 'la fuerza: los SEIS jalan más juntos' } ] },
+  nubes:    { base: 1, mods: [
+    { wins: [[0.0, 14.77]], a: -0.34, label: 'EL GANCHO: la nube cede para que se LEAN los seis lados' },
+    { wins: [[28.74, 42.09], [46.52, 51.08]], a: -0.34, label: 'deja leer el puente y el canto (que es plano)' } ] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[14.77, 22.52]], a: 0.42, label: 'la molécula sola respira mientras se deletrea H₂O' }] },
+  spin:     { base: 1, mods: [{ wins: [[28.74, 42.09], [51.08, 66.42]], a: 0.85, label: 'Δρ ARDE: los puentes y la cooperatividad' }] },
+  acc:      { base: 1, mods: [{ wins: [[14.77, 22.52]], a: 0.45, label: 'ORO del oxígeno' }] },
+  enlaces:  { base: 0, mods: [
+    { wins: [[0.0, 22.52]], a: 1.0, label: 'desde el FRAME 0: los 3 átomos de cada una — "seis MOLÉCULAS", no seis puntas' },
+    { wins: [[57.06, 73.43]], a: 1.0, label: 'firma con los números y el crash' } ] },
+  // LAS FLECHAS DIBUJAN EL HEXÁGONO. En el cuarteto marcaban la alternancia 2-2; aquí los seis
+  // dipolos van EN CADENA alrededor del anillo (cada uno apunta a la vecina) y ese circuito
+  // cerrado es literalmente lo que hace que el ojo cuente SEIS LADOS en el frame 0.
+  dipolo:   { base: 0, mods: [
+    { wins: [[0.0, 14.77]], a: 1.0, label: 'FRAME 0: los seis en cadena — el hexágono se lee' },
+    { wins: [[57.06, 66.42]], a: 1.0, label: 'vuelven con los números' } ] },
+  ceros:    { base: 0, mods: [] },
+  // APERTURA SIEMPRE CERRADA (mods vacíos), y es una decisión de la PIEZA, no un olvido: este
+  // video trata de una FORMA. Abrir el anillo la deshace. Medido: con apertura 0.45 la toma
+  // íntima daba 87% de cuadro NEGRO — al separarse, el Δρ del puente (el magenta) desaparece
+  // porque las moléculas ya son casi aisladas, que es físicamente correcto y visualmente muerto.
+  // La molécula se aísla con la CÁMARA (ringOne), no desarmando el hexágono.
+  apertura: { base: 0.10, mods: [] },
+};
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
 // Las tomas salen del REGISTRO (datos), no de constantes por video. Variante nueva =
@@ -2096,6 +2173,14 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // capas/dur se llenan cuando existan los tiempos REALES de la voz (§sincronía del canon).
   wtet:  { bin: 'water-tetramer', ef: 'water-tetramer-efield', ex: 12, anillo: true,
            capas: WTET_CAPAS, dur: WTET_DURATION },
+  // EL HEXÁGONO (H₂O)₆ — 6 aguas / 18 átomos. `ex` MEDIDO, no estimado: el radio del núcleo
+  // más lejano al origen es 4.40 bohr en el trímero (ex=10, ratio 2.27) y 5.03 en el cuarteto
+  // (ex=12, ratio 2.384); el hexámero da 6.54 → ex = 2.384·6.54 = 15.6 ≈ 15.5 conserva EXACTO
+  // el encuadre del cuarteto. Con el ex=14 que estimé del circunradio teórico, el ratio caía a
+  // 2.14 (más apretado que ninguna pieza previa) y el anillo mordía los bordes del 9:16.
+  // ⚠ La clave es `whex6` y no `whex`: `whex` ya la ocupa la escena vieja de agua MD.
+  whex6: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
+           capas: WHEX6_CAPAS, dur: WHEX6_DURATION },
 };
 /** ¿Es un anillo cíclico de N aguas? (wtri, wtet, …) — NO el dímero. */
 const esAnillo = (mk: string) => !!WATER_BINS[mk]?.anillo;

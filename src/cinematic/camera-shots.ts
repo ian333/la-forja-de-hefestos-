@@ -33,7 +33,19 @@
 // convención vertical.
 
 export type Vec3 = [number, number, number];
-export interface Pose { pos: Vec3; fov: number; target: Vec3; roll: number; }
+export interface Pose {
+  pos: Vec3; fov: number; target: Vec3; roll: number;
+  /** RADIO DEL SUJETO DE **ESTA** TOMA (bohr), opcional. La LEY DE ENCUADRE (ver playShots)
+   *  mide `rCore` de TODOS los `pts` — o sea, del anillo COMPLETO — y empuja la cámara hasta
+   *  que quepa. Eso es correcto para un plano del conjunto y hace IMPOSIBLE un close-up: en el
+   *  hexámero, rCore = 6.30 bohr fija la distancia en 99.4 bohr y `rMul` 0.55, 0.30 y 0.16 dan
+   *  el MISMO cuadro (medido con la sonda, 2026-08-04). Cuando el sujeto real de la toma es UNA
+   *  molécula y no el anillo, la toma declara aquí su propio radio y la ley se aplica a ESE
+   *  sujeto — no es un escape a la ley, es la ley bien apuntada. Sin este campo, comportamiento
+   *  IDÉNTICO al de siempre → las piezas ya entregadas (O₂/N₂/C₂/agua v2/anillo/cuarteto) no
+   *  cambian ni un pixel. */
+  rCore?: number;
+}
 
 /** Geometría del sujeto en t, que la escena pasa a cada toma. */
 export interface ShotCtx {
@@ -298,6 +310,10 @@ function blendPose(a: Pose, b: Pose, w: number): Pose {
     target: [L(a.target[0], b.target[0]), L(a.target[1], b.target[1]), L(a.target[2], b.target[2])],
     fov: L(a.fov, b.fov),
     roll: L(a.roll, b.roll),
+    // rCore también se interpola: si una toma íntima se cruza con una amplia, el sujeto de la
+    // ley pasa de una a otra sin salto (si ninguna lo declara, queda undefined = ley normal).
+    rCore: a.rCore === undefined && b.rCore === undefined ? undefined
+         : L(a.rCore ?? b.rCore!, b.rCore ?? a.rCore!),
   };
 }
 
@@ -350,6 +366,9 @@ export function playShots(list: ShotEntry[], t: number, ctx: ShotCtx): Pose {
     const M = _mid(ctx);
     let rCore = 0;
     for (const p of ctx.pts) rCore = Math.max(rCore, Math.hypot(p[0] - M[0], p[1] - M[1], p[2] - M[2]));
+    // Si la TOMA declaró el radio de su propio sujeto (close-up a UNA molécula), ese manda:
+    // la ley sigue aplicándose, pero sobre lo que esta toma de verdad tiene que dejar leer.
+    if (pose.rCore !== undefined && pose.rCore > 1e-6) rCore = pose.rCore;
     const rHalo = ctx.rHalo ?? (rCore + HALO);
     const dir: Vec3 = [pose.pos[0] - pose.target[0], pose.pos[1] - pose.target[1], pose.pos[2] - pose.target[2]];
     const d = Math.hypot(dir[0], dir[1], dir[2]);
@@ -445,11 +464,14 @@ export function ringEdgeToFace(o: { rMul?: number; fov?: number; back?: boolean;
 
 /** ringOne — órbita ÍNTIMA de UNA agua del anillo (índice `which` de ctx.pts). §4 close-up.
  *  Reusa el lenguaje de orbitOne del dímero, pero apuntando a geometría real del anillo. */
-export function ringOne(o: { which?: number; rMul?: number; azim0?: number; span?: number; elev?: number; fov?: number } = {}): Shot {
-  const { which = 0, rMul = 0.46, azim0 = 0.7, span = 1.9, elev = 0.16, fov = 38 } = o;
+export function ringOne(o: { which?: number; rMul?: number; azim0?: number; span?: number; elev?: number; fov?: number; rCore?: number } = {}): Shot {
+  // `rCore` (bohr, opcional): radio de la molécula que se mira, para que la LEY DE ENCUADRE
+  // deje de medir el anillo ENTERO y esta toma pueda ser un close-up de verdad. Un agua mide
+  // ~1.8 bohr de O a H, así que 2.0-2.4 es el rango útil. Sin él, comportamiento de siempre.
+  const { which = 0, rMul = 0.46, azim0 = 0.7, span = 1.9, elev = 0.16, fov = 38, rCore } = o;
   return (u, c) => {
     const cen = _pt(c, which);
-    return { pos: orbitAround(cen, Math.max(MINR, c.ex * rMul), elev + 0.12 * Math.sin(u * Math.PI * 1.2), azim0 + span * smooth(u)), fov, target: cen, roll: ROLL };
+    return { pos: orbitAround(cen, Math.max(MINR, c.ex * rMul), elev + 0.12 * Math.sin(u * Math.PI * 1.2), azim0 + span * smooth(u)), fov, target: cen, roll: ROLL, rCore };
   };
 }
 

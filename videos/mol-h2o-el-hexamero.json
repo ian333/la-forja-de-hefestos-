@@ -36,19 +36,21 @@
     "html": "cinematic-molecule.html",
     "query": "m=whex6",
     "hook": "__cinematicAtom",
-    "wiring": "UNA entrada en WATER_BINS: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 14, anillo: true, capas, dur }. ⚠ La clave `whex` YA ESTÁ OCUPADA por la escena vieja de agua MD (mode='hexamer' en isWater) — por eso esta pieza usa `whex6`.",
-    "nota_ex": "ex sube de 12 (tetrámero) a ~14: el circunradio del polígono regular es R/(2·sin(π/N)) = 0.577·R con 3 lados, 0.707·R con 4 y 1.000·R con 6. VERIFICAR en still 4K real antes de rendir."
+    "wiring": "UNA entrada en WATER_BINS: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true, capas, dur }. ⚠ La clave `whex` YA ESTÁ OCUPADA por la escena vieja de agua MD (mode='hexamer' en isWater) — por eso esta pieza usa `whex6`.",
+    "nota_ex": "ex = 15.5, MEDIDO (no estimado). La estimación inicial de 14 salía del circunradio teórico del polígono regular; el radio REAL de los núcleos en el .bin manda. Rmax(núcleo desde el origen): trímero 4.40 bohr con ex=10 (ratio 2.27), tetrámero 5.03 con ex=12 (ratio 2.384), hexámero 6.54 → ex = 2.384 × 6.54 = 15.6 ≈ 15.5 para conservar EXACTAMENTE el encuadre del cuarteto. Con ex=14 el ratio caía a 2.14 (más apretado que cualquier pieza previa) y el anillo mordía los bordes del 9:16 — el defecto que el comentario de wtet ya advierte. VERIFICAR igual en still 4K real: el gancho es CONTAR LOS LADOS, así que el hexágono completo tiene que caber."
   },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": null,
-    "pendiente": "dur = voz REAL de segs.json + colchón (canon §sincronía)" },
+  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 94.55,
+    "nota_dur": "voz REAL 92.05s (segs.json, 31 líneas, lead 0.40 / gap 0.40 = los mismos del trímero y del cuarteto) + 2.5s de cola, la misma cola del cuarteto." },
   "render": { "shards": 5, "batch": 40, "frames": "dist-video/.whex6frames" },
   "tomas": {
     "registro": "CAMERA_SHOTS.whex6 — la secuencia es DATO, no código nuevo",
-    "reuso": "las tomas del anillo son genéricas en N (ringWide, ringOne, ringFaceOn, ringToBridge, loomPush, ringEdgeToFace, crashIn, pullOut). La FIRMA sigue siendo ringEdgeToFace: aquí muestra que es PLANO, como en el cuarteto.",
-    "pendiente": "duraciones = arranques REALES de segs.json (dur[i] = ini[i+1] − ini[i], NO los anchos de ventana: ese bug estuvo entregado en el anillo)"
+    "reuso": "las tomas del anillo son genéricas en N (ringWide, ringOne, ringFaceOn, ringToBridge, loomPush, ringEdgeToFace, crashIn, pullOut). 16 tomas, Σ = 94.55 = la duración de la pieza, y los 15 cortes caen EXACTOS sobre arranques de línea de segs.json (verificado).",
+    "gancho_de_frente": "LA DIFERENCIA DE DISEÑO con el cuarteto, y sale del guion: el gancho del cuarteto era de canto (ringEdgeToFace en el frame 0, «el anillo es plano»). Aquí la línea 1 dice «cuenta los LADOS de esto» → el frame 0 tiene que ser DE FRENTE o no hay nada que contar. Lo plano pasa a ser un beat propio en t=46.52, donde la voz lo pide literal («míralo de canto»). La toma 15 vuelve al hexágono de frente en «repite esta misma forma de seis»: misma composición del frame 0, para que el ojo cierre el círculo antes que la voz.",
+    "gotcha_crashIn": "crashIn NO tiene `rFrom`/`rTo` (su firma es rMul/elev/azim0/span/fov). El cuarteto los pasa y esbuild los TIRA sin avisar — vite build no corre tsc — así que esa toma rindió con los defaults. Está anotado en el código; whex6 usa la firma real."
   },
-  "capas": { "fuente": "WHEX6_CAPAS", "pendiente": "portar a mano desde WTET_CAPAS a las fronteras de segs.json. recalibrar-beats.py NO sirve para esto: regenera de una plantilla vieja y pierde enlaces/dipolo/apertura." },
-  "guion": { "archivo": "scripts/guiones/whex6.txt", "pendiente": "escribir. Debe apoyarse en las tres piezas anteriores y cerrar con el copo — respetando `honestidad_del_copo`." },
+  "capas": { "fuente": "WHEX6_CAPAS", "fronteras": "arranques REALES de segs.json, portadas A MANO desde WTET_CAPAS (recalibrar-beats.py regenera de una plantilla vieja y pierde enlaces/dipolo/apertura).",
+    "frame0": "apertura 0.10 = HEXÁGONO CERRADO, dipolos a 1.0 (los seis en cadena dibujan los seis lados), enlaces a 1.0 (que se vea que cada vértice son 3 átomos, no uno). Si la apertura arranca alta no hay hexágono que contar: hay seis manchas sueltas y el gancho muere." },
+  "guion": { "archivo": "scripts/guiones/whex6.txt", "lineas": 31, "palabras": 165, "portero": "guion-check.py limpio" },
   "audio": { "dir": "dist-video/whex6-narracion", "narracion": "whex6-narracion.mp3", "musica": "whex6-music.wav",
     "musicaVol": 0.17, "musicaFadeIn": 2.5, "segs": "segs.json", "ass": "whex6.ass",
     "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')" },
