@@ -579,5 +579,14 @@ export function proyectarParaLamina(
     }),
   }));
 
-  return { caras, marcas, ancho: o.ancho, alto: o.alto, vistaNombre: vis.vistas[iv].nombre };
+  // La CÁMARA de esta proyección, para que la lámina pueda plantar el FIDUCIAL en su
+  // esquina con exactamente la misma vista. El fiducial es el objeto de calibración:
+  // si la escala, un eje o la mano del dibujo están mal, se ve y se mide sobre él.
+  const camara = {
+    nombre: vis.vistas[iv].nombre,
+    dir: vis.vistas[iv].dir,
+    k, cx, cy,
+    yAbajo: true,
+  };
+  return { caras, marcas, ancho: o.ancho, alto: o.alto, vistaNombre: vis.vistas[iv].nombre, camara };
 }

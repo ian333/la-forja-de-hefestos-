@@ -1253,7 +1253,16 @@ export function bandaDe(sigma: number, sigmaLimit: number): number {
 }
 export const colorBanda = (b: number): string => (b >= N_BANDAS ? DESBORDE : hex(RAMPA[b]));
 
-export function laminaVonMises(c: CampoVonMises): Lamina {
+export interface OpcLaminaVM {
+  /** banda al 95 % de σ_max (GCI de Roache · ASME V&V 20). Si falta, la lámina lo DICE:
+   *  un número de simulación sin incertidumbre no es un resultado, es una opinión con
+   *  decimales. La calcula el llamador con TRES mallas refinadas a la misma razón. */
+  banda95MPa?: number;
+  /** false ⇒ la banda es INDICATIVA, no garantía (fuera del rango asintótico) */
+  enRangoAsintotico?: boolean;
+}
+
+export function laminaVonMises(c: CampoVonMises, o: OpcLaminaVM = {}): Lamina {
   const W = 1080, H = 760;
   const PADX = 38, TOP = 124;
   const anchoDib = 462, altoDib = 470;
@@ -1424,11 +1433,18 @@ export function laminaVonMises(c: CampoVonMises): Lamina {
   }
   yy += 5;
   if (lim.errata) for (const w of envuelve(lim.errata, CHARS)) row(ESC(w), 'lblSm', 11);
+    // BARRA DE ERROR del entregable (arnés GCI · ASME V&V 20). Un número de simulación
+    // sin incertidumbre no es un resultado: es una opinión con decimales. La banda la
+    // calcula el llamador con tres mallas refinadas a la MISMA razón (verif-gci) y se
+    // imprime PEGADA al número. Si no la pasan, se dice que no la hay — no se finge.
+    const bandaTxt = o.banda95MPa != null
+      ? ` ± ${o.banda95MPa.toFixed(0)}${o.enRangoAsintotico === false ? ' (indic.)' : ''}`
+      : ' [sin banda: 1 malla]';
 
   const veredicto = sl == null
     ? `SIN VEREDICTO: ${ESC(lim.material)} no tiene σ_limit sin nº de ciclos declarado (§12.1.1)`
     : c.pctSobreLimite! > 0
-      ? `✗ σ_max ${c.sigmaMaxMPa.toFixed(0)} MPa > σ_limit ${sl} MPa · ${c.pctSobreLimite!.toFixed(2)} % del área REBASA (Ec. 12.1)`
+      ? `✗ σ_max ${c.sigmaMaxMPa.toFixed(0)}${bandaTxt} MPa > σ_limit ${sl} MPa · ${c.pctSobreLimite!.toFixed(2)} % del área REBASA (Ec. 12.1)`
       : `✓ σ_max ${c.sigmaMaxMPa.toFixed(0)} MPa < σ_limit ${sl} MPa — Ec. 12.1 se cumple con ${(sl / Math.max(1e-9, c.sigmaMaxMPa)).toFixed(2)}× de margen`;
   const clsVer = sl == null ? 'warn' : c.pctSobreLimite! > 0 ? 'mal' : 'ok';
 

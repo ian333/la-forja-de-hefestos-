@@ -16,6 +16,7 @@
  * PURO (devuelve SVG como string) → node-testeable y renderizable a PNG.
  */
 import type { GripLayout } from './eject-layout';
+import { dibujarFiducial, fiducialPorDefecto } from '../verificacion/fiducial';
 
 const ESC = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -929,6 +930,8 @@ export function laminaUsuario(r: {
     puntos: Array<{ x: number; y: number; visible: boolean }>;
   }>;
   vistaNombre: string;
+  /** la cámara de esta proyección — para plantar el fiducial de calibración */
+  camara?: { nombre: string; dir: [number, number, number]; k: number; cx: number; cy: number; yAbajo?: boolean };
 }, o: {
   nombre: string;
   pctVisible: number;
@@ -999,6 +1002,16 @@ export function laminaUsuario(r: {
     return head + cita + cuerpoTxt;
   }).join('');
 
+  // FIDUCIAL de calibración en la esquina: mismo objeto que el arnés MIDE. Si el
+  // dibujo y los números se separan, uno de los dos miente y el residuo lo dice.
+  // Va chico (rótulo 0.62) para orientar sin robarle la vista a la pieza.
+  let fid = '';
+  if (r.camara) {
+    const lado = 34;
+    const cam = { ...r.camara, k: lado / 40, cx: PAD + 58, cy: TOP + r.alto - 52 };
+    try { fid = `<g opacity="0.92">${dibujarFiducial(fiducialPorDefecto(40), cam as never, { cotas: false, rotulo: 0.62, grosor: 1.8 })}</g>`
+      + `<text class="lblSm" x="${PAD + 12}" y="${TOP + r.alto - 8}">fiducial · ${ESC(r.camara.nombre)}</text>`; } catch { fid = ''; }
+  }
   const nota = o.vistasDeclaradas
     ? `${o.nVistas} vistas de uso DECLARADAS por el cliente`
     : `${o.nVistas} vistas del supuesto de la taza (§4.1.2/§7.1.3) — EXTENSIÓN DECLARADA, no del libro`;
@@ -1010,6 +1023,7 @@ export function laminaUsuario(r: {
 <text class="cita" x="${PAD}" y="73">§4.1.2 Fig 4.6 · §7.1.3 Fig 7.1 · §4.1.4 Fig 4.11-4.12 · §11.2.5 Fig 11.12</text>
 <text class="lblSm" x="${PAD}" y="90">CLARO = a la vista · OSCURO = escondido · línea ROJA GRUESA = tramo de la marca que asoma</text>
 <g transform="translate(${PAD},${TOP})">${cuerpo}${marcas}</g>
+${fid}
 ${filas}
 <text class="lblSm" x="${PAD}" y="${H - 40}">${ESC(nota)} · ${o.pctVisible.toFixed(1)} % del área a la vista · ${o.areaOcultaMm2.toFixed(0)} mm² tapados por la propia pieza</text>
 <text class="${nViola ? 'mal' : nAdv ? 'warn' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 20}">${nViola

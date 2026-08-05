@@ -72,6 +72,7 @@ import {
 import { steelSafeDiaMm, FEED_MATERIALS, sprueDesignFromCavity } from './feed';
 import { shearRateCyl, shearRateStrip, gateDropStripPL, GATE_TABLE, type GateType } from './gating';
 import { suckerPinDesign } from './threeplate';
+import { verificarTamanoMinimo, type RasgoBajoJuicio } from '../verificacion/fiducial';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
@@ -1489,6 +1490,20 @@ export function laminaCompuerta(o: OpcionesCompuerta): Lamina & {
   const rec = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n - 1) + '…');
 
   const dib = pintaSeccion(sec, meta.ventana, BOX, 'c7', defs);
+
+  // ── ¿SE PUEDE JUZGAR LO QUE ESTA LÁMINA JUZGA? (arnés de render 3D) ──────────
+  // Un rasgo de 1.5 px no es "difícil de ver": es IMPOSIBLE. El tunnel gate ⌀0.30
+  // en una lámina de 5 px/mm medía exactamente eso. La lámina ahora MIDE si cada
+  // cota que promete juzgar alcanza el mínimo legible, y si no, lo DICE en el pie
+  // en vez de fingir que la dibujó.
+  const kPxMm = Math.min(BOX.w / Math.max(1e-6, meta.ventana.u1 - meta.ventana.u0),
+                         BOX.h / Math.max(1e-6, meta.ventana.v1 - meta.ventana.v0));
+  const rasgos: RasgoBajoJuicio[] = [
+    { nombre: 'espesor del gate', tamanoMm: meta.gateEspesorMm, queSeJuzga: 'V7.6 espesor a minimizar' },
+    { nombre: '⌀ del canal', tamanoMm: meta.runnerDiaMm, queSeJuzga: 'V6.3 perfil del runner' },
+    { nombre: 'pared de la pieza', tamanoMm: meta.paredMm, queSeJuzga: 'V7.6 gate vs pared local' },
+  ].map((r) => ({ ...r } as RasgoBajoJuicio));
+  const tam = verificarTamanoMinimo(rasgos, { k: kPxMm, dir: [0, 0, -1] } as never);
   const { X, Y, k } = dib;
   const cuerpo: string[] = [dib.svg];
 

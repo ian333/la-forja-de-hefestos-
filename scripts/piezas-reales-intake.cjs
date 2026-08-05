@@ -30,6 +30,7 @@ const cjsGlue = path.join(distDir, 'opencascade.wasm.cjs');
   const MM = await import(path.join(ROOT, 'src', 'forja', 'mold', 'moldmachine.ts'));
   const FL = await import(path.join(ROOT, 'src', 'forja', 'mold', 'flowlen.ts'));
   const FM = await import(path.join(ROOT, 'src', 'forja', 'mold', 'flowlen-mesh.ts'));
+  const MT = await import(path.join(ROOT, 'src', 'forja', 'verificacion', 'matricula.ts'));
 
   // OJO: el explorador quiere el ENUM (objeto emscripten), NO su .value numérico —
   // con el número devolvía el COMPOUND entero como "1 sólido" y el DFM analizaba
@@ -50,7 +51,11 @@ const cjsGlue = path.join(distDir, 'opencascade.wasm.cjs');
       const volMm3 = K.volume(oc, solid);
       if (volMm3 < 800) { si++; continue; }               // tornillitos/insertos: fuera
       const nm = `${f.replace(/\.(stp|step)$/i, '')}#${si++}`;
-      const mesh = K.tessellate(oc, solid, 0.3, 0.3);
+      // DEFLEXIÓN 0.1, no 0.3 (2026-08-05). El censo de matrículas encontró 5 mallas
+      // rotas de 73 a deflexión 0.3, y DOS de ellas (1552C3BK#1, 1553D#1) sanan solas
+      // al bajar a 0.1: la rotura era del TESELADO, no de la pieza. El DFM, moldMachine
+      // y el campo de flujo llevaban tiempo corriendo sobre esas mallas.
+      const mesh = K.tessellate(oc, solid, 0.1, 0.1);
       // eje de apertura + DFM del eje ganador (el pipeline del lote de STL)
       const idx2 = mesh.indices ?? new Uint32Array(mesh.positions.length / 3).map((_, i) => i);
       let area = 0;
@@ -103,6 +108,19 @@ const cjsGlue = path.join(distDir, 'opencascade.wasm.cjs');
         maquina: { arch: pkg.recomendacion.arch, nCav: pkg.recomendacion.nCav, viable: pkg.veredicto.viable, moldeUSD: Math.round(pkg.veredicto.precioMoldeUSD) },
         flujo: { cellMm: cell, LmaxMm: field.maxFlowLenMm, errVolPct: errVol, unreachable: field.unreachable, unreachPct, ms: Date.now() - t0 },
       };
+      // ── LA MATRÍCULA: la malla se verifica ANTES de creerle a lo que se calculó
+      //    sobre ella. chi por conteo, chi por geometría (Gauss-Bonnet), volumen con
+      //    signo y quiralidad. Una malla incoherente invalida su propia fila.
+      try {
+        const mm = MT.matriculaDeMalla({ positions: mesh.positions, indices: idx2 });
+        const co = MT.coherente(mm);
+        row.matricula = {
+          chi: mm.chi, genero: mm.genero, cerrada: mm.cerrada,
+          volMm3: +mm.volumenConSigno.toFixed(2), quiral: +mm.quiralidad.toExponential(2),
+          coherente: co.ok, problemas: co.problemas.map((x) => x.codigo),
+        };
+        if (!co.ok) console.log(`    ⚠ MALLA INCOHERENTE (${co.problemas.map((x) => x.codigo).join(', ')}) — lo de abajo se calculó sobre una malla rota`);
+      } catch (e) { row.matricula = { error: String(e).slice(0, 80) }; }
       out.push(row);
       console.log(`  · ${nm}: ${dim.join('×')} · ${(volMm3 / 1000).toFixed(1)} cc · pared~${wall} · DFM ${dfm.moldable} · ${pkg.recomendacion.arch}×${pkg.recomendacion.nCav} $${Math.round(pkg.veredicto.precioMoldeUSD)} · flujo L=${field.maxFlowLenMm} err=${errVol}% muertos=${field.unreachable} (${row.flujo.ms} ms)`);
     }
@@ -110,6 +128,9 @@ const cjsGlue = path.join(distDir, 'opencascade.wasm.cjs');
   fs.writeFileSync(path.join(DIR, 'intake.json'), JSON.stringify({ fecha: '2026-07-17', fuente: 'Hammond Mfg (STEP públicos del fabricante, cajas ABS inyectadas)', piezas: out }, null, 1));
   const okDFM = out.filter((r) => r.moldeable === 'si' || r.moldeable === true).length;
   const okFlow = out.filter((r) => r.flujo.errVolPct < 15 && r.flujo.unreachPct < 3).length;
+  const okMalla = out.filter((r) => r.matricula && r.matricula.coherente).length;
+  const rotas = out.filter((r) => r.matricula && r.matricula.coherente === false).map((r) => r.pieza);
   console.log(`\nLOTE: ${out.length} sólidos · DFM moldeable: ${okDFM} · flujo sano (err<15 %, muertos<3 %): ${okFlow}`);
-  console.log('VERIFY_RESULT=' + JSON.stringify({ pass: out.length >= 6 && okFlow >= out.length - 2, piezas: out.length, okDFM, okFlow }));
+  console.log(`MALLAS: ${okMalla}/${out.length} coherentes${rotas.length ? ` · ROTAS: ${rotas.join(', ')}` : ''}`);
+  console.log('VERIFY_RESULT=' + JSON.stringify({ pass: out.length >= 6 && okFlow >= out.length - 2, piezas: out.length, okDFM, okFlow, okMalla, rotas }));
 })().catch((e) => { console.error('FATAL', String(e && e.stack || e).slice(0, 500)); process.exit(1); });

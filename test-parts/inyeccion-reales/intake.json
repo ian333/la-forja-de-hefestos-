@@ -17,15 +17,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 11408
+    "moldeUSD": 11412
    },
    "flujo": {
     "cellMm": 0.4625,
     "LmaxMm": 42.58,
-    "errVolPct": 3,
+    "errVolPct": 2.8,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1413
+    "ms": 2031
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 6630.12,
+    "quiral": -0.0228,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -43,7 +52,7 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 8648
+    "moldeUSD": 8651
    },
    "flujo": {
     "cellMm": 0.4545,
@@ -51,7 +60,16 @@
     "errVolPct": 8.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 733
+    "ms": 1060
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 3845.3,
+    "quiral": 0.0655,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -77,7 +95,16 @@
     "errVolPct": 0.8,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 397
+    "ms": 421
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 1228.25,
+    "quiral": -2.09e-14,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -95,15 +122,26 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 24754
+    "moldeUSD": 24766
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 72.57,
-    "errVolPct": 4.2,
+    "LmaxMm": 72.44,
+    "errVolPct": 1.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 550
+    "ms": 1614
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 19249.48,
+    "quiral": -7.81e-8,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -114,22 +152,33 @@
     14.4
    ],
    "volCc": 18.11,
-   "wallEstMm": 2.28,
+   "wallEstMm": 2.27,
    "moldeable": "con-mecanismos",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 24290
+    "moldeUSD": 24328
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 87.98,
-    "errVolPct": 6.9,
+    "LmaxMm": 86.3,
+    "errVolPct": 6.1,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 326
+    "ms": 848
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 18102.39,
+    "quiral": -0.00000112,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -152,10 +201,19 @@
    "flujo": {
     "cellMm": 0.4273,
     "LmaxMm": 21.51,
-    "errVolPct": 6.7,
+    "errVolPct": 6.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 206
+    "ms": 260
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 1261.92,
+    "quiral": -0.00000245,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -181,7 +239,16 @@
     "errVolPct": 3.2,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 173
+    "ms": 266
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 1261.92,
+    "quiral": -0.00000245,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -192,22 +259,31 @@
     12
    ],
    "volCc": 25.16,
-   "wallEstMm": 2.24,
+   "wallEstMm": 2.23,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 33306
+    "moldeUSD": 33275
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 82.28,
+    "LmaxMm": 82.27,
     "errVolPct": 11.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 359
+    "ms": 597
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 25149.97,
+    "quiral": -0.000239,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -225,15 +301,26 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 24939
+    "moldeUSD": 24968
    },
    "flujo": {
     "cellMm": 0.9540000000000001,
-    "LmaxMm": 77.52,
-    "errVolPct": 9.2,
+    "LmaxMm": 77.04,
+    "errVolPct": 9.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 658
+    "ms": 1199
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 24995.72,
+    "quiral": -0.000103,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -256,18 +343,27 @@
    "flujo": {
     "cellMm": 0.4,
     "LmaxMm": 34.67,
-    "errVolPct": 4,
+    "errVolPct": 2.8,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 380
+    "ms": 397
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2323.35,
+    "quiral": 0.0000154,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
    "pieza": "1553B#3",
    "dimMm": [
     102.6,
-    12,
-    11.7
+    11.7,
+    12
    ],
    "volCc": 2.69,
    "wallEstMm": 1.53,
@@ -277,23 +373,32 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 8818
+    "moldeUSD": 8838
    },
    "flujo": {
     "cellMm": 0.3825,
-    "LmaxMm": 55.56,
-    "errVolPct": 0.4,
+    "LmaxMm": 55.54,
+    "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 658
+    "ms": 846
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2686.92,
+    "quiral": 0.0000133,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
    "pieza": "1553B#4",
    "dimMm": [
     102.6,
-    12,
-    11.7
+    11.7,
+    12
    ],
    "volCc": 2.69,
    "wallEstMm": 1.53,
@@ -303,15 +408,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 8819
+    "moldeUSD": 8839
    },
    "flujo": {
     "cellMm": 0.3825,
-    "LmaxMm": 56.77,
-    "errVolPct": 0.7,
+    "LmaxMm": 55.2,
+    "errVolPct": 0.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 699
+    "ms": 834
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2687.68,
+    "quiral": -0.000326,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -322,22 +436,31 @@
     12
    ],
    "volCc": 2.71,
-   "wallEstMm": 1.55,
+   "wallEstMm": 1.54,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 8845
+    "moldeUSD": 8832
    },
    "flujo": {
-    "cellMm": 0.3875,
-    "LmaxMm": 55.34,
-    "errVolPct": 0.5,
+    "cellMm": 0.385,
+    "LmaxMm": 55.66,
+    "errVolPct": 0.4,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 648
+    "ms": 833
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2713.02,
+    "quiral": -0.000126,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -348,22 +471,31 @@
     12
    ],
    "volCc": 2.71,
-   "wallEstMm": 1.55,
+   "wallEstMm": 1.54,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 8845
+    "moldeUSD": 8832
    },
    "flujo": {
-    "cellMm": 0.3875,
-    "LmaxMm": 55.39,
-    "errVolPct": 0.1,
+    "cellMm": 0.385,
+    "LmaxMm": 55.75,
+    "errVolPct": 0.4,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 693
+    "ms": 834
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2712.74,
+    "quiral": -0.000385,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -381,15 +513,24 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 18958
+    "moldeUSD": 18972
    },
    "flujo": {
     "cellMm": 0.5333,
     "LmaxMm": 63.05,
-    "errVolPct": 0.5,
+    "errVolPct": 0.4,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1175
+    "ms": 1338
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 11357.39,
+    "quiral": -4.92e-15,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -407,15 +548,24 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 33699
+    "moldeUSD": 33734
    },
    "flujo": {
     "cellMm": 0.9630000000000001,
     "LmaxMm": 92.4,
-    "errVolPct": 10,
+    "errVolPct": 10.4,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1125
+    "ms": 2302
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 35296.84,
+    "quiral": -0.000223,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -426,22 +576,33 @@
     14.5
    ],
    "volCc": 36.48,
-   "wallEstMm": 2.26,
+   "wallEstMm": 2.25,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 33779
+    "moldeUSD": 33747
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 107.72,
-    "errVolPct": 8,
+    "LmaxMm": 105.25,
+    "errVolPct": 5.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 898
+    "ms": 1872
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 36462.08,
+    "quiral": -0.000339,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -467,7 +628,16 @@
     "errVolPct": 6.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 840
+    "ms": 917
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2329.03,
+    "quiral": -6.09e-7,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -493,7 +663,16 @@
     "errVolPct": 0.1,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1693
+    "ms": 2113
+   },
+   "matricula": {
+    "chi": -14,
+    "genero": 8,
+    "cerrada": true,
+    "volMm3": 15400.11,
+    "quiral": -5.08e-12,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -511,23 +690,32 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 11159
+    "moldeUSD": 11167
    },
    "flujo": {
     "cellMm": 0.385,
-    "LmaxMm": 71.71,
-    "errVolPct": 0.2,
+    "LmaxMm": 71.61,
+    "errVolPct": 1,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1096
+    "ms": 1377
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 3608.9,
+    "quiral": 0.000865,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
    "pieza": "1553D#5",
    "dimMm": [
     133,
-    12.5,
-    13.5
+    13.5,
+    12.5
    ],
    "volCc": 3.61,
    "wallEstMm": 1.54,
@@ -537,15 +725,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 11169
+    "moldeUSD": 11167
    },
    "flujo": {
     "cellMm": 0.385,
-    "LmaxMm": 71.37,
-    "errVolPct": 0.8,
+    "LmaxMm": 71.22,
+    "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1142
+    "ms": 1468
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 3606.83,
+    "quiral": 0.000226,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -563,23 +760,32 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 11201
+    "moldeUSD": 11211
    },
    "flujo": {
     "cellMm": 0.39,
-    "LmaxMm": 71.26,
-    "errVolPct": 1.3,
+    "LmaxMm": 71.42,
+    "errVolPct": 1.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1086
+    "ms": 1322
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 3643.95,
+    "quiral": 0.00146,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
    "pieza": "1553D#7",
    "dimMm": [
     133,
-    12.5,
-    13.6
+    13.6,
+    12.5
    ],
    "volCc": 3.64,
    "wallEstMm": 1.56,
@@ -589,15 +795,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 11216
+    "moldeUSD": 11211
    },
    "flujo": {
     "cellMm": 0.39,
-    "LmaxMm": 72.4,
-    "errVolPct": 0.4,
+    "LmaxMm": 71.4,
+    "errVolPct": 1.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1113
+    "ms": 1453
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 3641.86,
+    "quiral": 0.000833,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -615,15 +830,28 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 30733
+    "moldeUSD": 30750
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 62.98,
-    "errVolPct": 2.7,
+    "LmaxMm": 62.75,
+    "errVolPct": 3.1,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 827
+    "ms": 1616
+   },
+   "matricula": {
+    "chi": 28,
+    "genero": -13,
+    "cerrada": false,
+    "volMm3": 32933.12,
+    "quiral": -0.00127,
+    "coherente": false,
+    "problemas": [
+     "EULER-vs-GAUSS",
+     "NO-MANIFOLD",
+     "CARAS-DUPLICADAS"
+    ]
    }
   },
   {
@@ -634,22 +862,33 @@
     15.5
    ],
    "volCc": 26.65,
-   "wallEstMm": 3,
+   "wallEstMm": 2.99,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 23259
+    "moldeUSD": 23226
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 51.36,
-    "errVolPct": 7.7,
+    "LmaxMm": 69.94,
+    "errVolPct": 7.4,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 640
+    "ms": 1188
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 26652.96,
+    "quiral": 0.00398,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -660,22 +899,36 @@
     15
    ],
    "volCc": 40.53,
-   "wallEstMm": 2.94,
+   "wallEstMm": 2.93,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 33105
+    "moldeUSD": 33072
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 60.21,
-    "errVolPct": 1.4,
+    "LmaxMm": 60.58,
+    "errVolPct": 0.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1524
+    "ms": 3826
+   },
+   "matricula": {
+    "chi": -16,
+    "genero": 9,
+    "cerrada": false,
+    "volMm3": 40523.71,
+    "quiral": -0.000178,
+    "coherente": false,
+    "problemas": [
+     "EULER-vs-GAUSS",
+     "GRIETA",
+     "NO-MANIFOLD",
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -693,15 +946,26 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 45386
+    "moldeUSD": 45449
    },
    "flujo": {
     "cellMm": 1,
     "LmaxMm": 71.07,
-    "errVolPct": 0.2,
+    "errVolPct": 0.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1978
+    "ms": 6507
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 50276.56,
+    "quiral": 1.59e-7,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -712,22 +976,31 @@
     5.5
    ],
    "volCc": 1.74,
-   "wallEstMm": 2.48,
+   "wallEstMm": 2.47,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 16,
     "viable": true,
-    "moldeUSD": 9593
+    "moldeUSD": 9579
    },
    "flujo": {
     "cellMm": 0.6,
-    "LmaxMm": 24.79,
+    "LmaxMm": 24.89,
     "errVolPct": 4.7,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 82
+    "ms": 129
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 1741.11,
+    "quiral": -0.000949,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -738,22 +1011,31 @@
     5.5
    ],
    "volCc": 1.74,
-   "wallEstMm": 2.48,
+   "wallEstMm": 2.47,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 16,
     "viable": true,
-    "moldeUSD": 9593
+    "moldeUSD": 9579
    },
    "flujo": {
     "cellMm": 0.6,
     "LmaxMm": 24.78,
-    "errVolPct": 5,
+    "errVolPct": 4.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 81
+    "ms": 130
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 1741.11,
+    "quiral": -0.000949,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -771,15 +1053,24 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 30678
+    "moldeUSD": 30682
    },
    "flujo": {
     "cellMm": 0.9405,
     "LmaxMm": 110.75,
-    "errVolPct": 3.4,
+    "errVolPct": 3.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1194
+    "ms": 2044
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 37891.67,
+    "quiral": -8.88e-8,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -797,15 +1088,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 25633
+    "moldeUSD": 25638
    },
    "flujo": {
     "cellMm": 0.864,
     "LmaxMm": 102.17,
-    "errVolPct": 2.4,
+    "errVolPct": 2.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 351
+    "ms": 614
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 16321.49,
+    "quiral": -3.95e-8,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -823,15 +1123,24 @@
     "arch": "cold-2placas",
     "nCav": 1,
     "viable": true,
-    "moldeUSD": 21325
+    "moldeUSD": 21331
    },
    "flujo": {
     "cellMm": 0.846,
-    "LmaxMm": 114.14,
-    "errVolPct": 7.9,
+    "LmaxMm": 114.76,
+    "errVolPct": 8,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 2762
+    "ms": 5767
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 43411.68,
+    "quiral": 2.68e-7,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -849,15 +1158,24 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 23503
+    "moldeUSD": 23506
    },
    "flujo": {
     "cellMm": 0.7785,
     "LmaxMm": 73.43,
-    "errVolPct": 17,
+    "errVolPct": 16.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 762
+    "ms": 1771
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 19389.95,
+    "quiral": -0.000194,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -875,7 +1193,7 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 20880
+    "moldeUSD": 20887
    },
    "flujo": {
     "cellMm": 0.9900000000000001,
@@ -883,7 +1201,16 @@
     "errVolPct": 12.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 254
+    "ms": 534
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 15809.25,
+    "quiral": -0.0153,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -894,14 +1221,14 @@
     12.9
    ],
    "volCc": 17.47,
-   "wallEstMm": 2.47,
+   "wallEstMm": 2.46,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 20559
+    "moldeUSD": 20522
    },
    "flujo": {
     "cellMm": 1,
@@ -909,15 +1236,24 @@
     "errVolPct": 2.8,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 228
+    "ms": 532
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 17467.74,
+    "quiral": 0.0147,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
    "pieza": "1593D#2",
    "dimMm": [
-    20,
+    29,
     1.7,
-    29
+    20
    ],
    "volCc": 0.98,
    "wallEstMm": 1.49,
@@ -927,23 +1263,32 @@
     "arch": "cold-2placas",
     "nCav": 8,
     "viable": true,
-    "moldeUSD": 8495
+    "moldeUSD": 7157
    },
    "flujo": {
     "cellMm": 0.34,
-    "LmaxMm": 30.89,
+    "LmaxMm": 24.4,
     "errVolPct": 0,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 187
+    "ms": 380
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 982.71,
+    "quiral": -3.1e-17,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
    "pieza": "1593D#3",
    "dimMm": [
-    20,
+    29,
     1.7,
-    29
+    20
    ],
    "volCc": 0.98,
    "wallEstMm": 1.49,
@@ -953,15 +1298,24 @@
     "arch": "cold-2placas",
     "nCav": 8,
     "viable": true,
-    "moldeUSD": 8495
+    "moldeUSD": 7157
    },
    "flujo": {
     "cellMm": 0.34,
-    "LmaxMm": 30.89,
+    "LmaxMm": 24.4,
     "errVolPct": 0,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 191
+    "ms": 306
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 982.71,
+    "quiral": -1.65e-15,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -988,6 +1342,15 @@
     "unreachable": 0,
     "unreachPct": 0,
     "ms": 83
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 1759.39,
+    "quiral": 6.47e-9,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1013,7 +1376,16 @@
     "errVolPct": 5.1,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 69
+    "ms": 138
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 1759.39,
+    "quiral": 6.47e-9,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1039,7 +1411,16 @@
     "errVolPct": 0.1,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 677
+    "ms": 1537
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 4219.67,
+    "quiral": 3.17e-15,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1050,22 +1431,31 @@
     14.9
    ],
    "volCc": 15.59,
-   "wallEstMm": 2.27,
+   "wallEstMm": 2.26,
    "moldeable": "si",
    "dfmScore": null,
    "maquina": {
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 21032
+    "moldeUSD": 20989
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 54.2,
-    "errVolPct": 9.5,
+    "LmaxMm": 54.38,
+    "errVolPct": 10,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 256
+    "ms": 460
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 15587.08,
+    "quiral": -0.000109,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1083,15 +1473,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 20684
+    "moldeUSD": 20690
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 61.54,
-    "errVolPct": 4.8,
+    "LmaxMm": 65.01,
+    "errVolPct": 4.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 209
+    "ms": 385
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 15875.15,
+    "quiral": -0.00000239,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1117,7 +1516,16 @@
     "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 192
+    "ms": 229
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2312.11,
+    "quiral": 6.14e-15,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1143,7 +1551,16 @@
     "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 184
+    "ms": 258
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2312.11,
+    "quiral": -2.05e-15,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1169,7 +1586,16 @@
     "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 512
+    "ms": 738
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2879.32,
+    "quiral": -3.08e-10,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1195,7 +1621,16 @@
     "errVolPct": 1.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 447
+    "ms": 594
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2879.32,
+    "quiral": -3.08e-10,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1221,7 +1656,16 @@
     "errVolPct": 0.1,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1344
+    "ms": 1832
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 5046.05,
+    "quiral": 8.81e-16,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1239,15 +1683,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 27140
+    "moldeUSD": 27148
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 66.42,
-    "errVolPct": 5.1,
+    "LmaxMm": 66.19,
+    "errVolPct": 6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 411
+    "ms": 1674
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 21485.45,
+    "quiral": 0.000284,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1265,15 +1718,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 27026
+    "moldeUSD": 27035
    },
    "flujo": {
     "cellMm": 1,
     "LmaxMm": 63.86,
-    "errVolPct": 10.9,
+    "errVolPct": 10.8,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 403
+    "ms": 1335
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 22181.6,
+    "quiral": -0.00000282,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1299,7 +1761,16 @@
     "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 184
+    "ms": 489
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2312.11,
+    "quiral": 8.26e-14,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1325,7 +1796,16 @@
     "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 173
+    "ms": 352
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2312.11,
+    "quiral": -9.03e-14,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1347,11 +1827,20 @@
    },
    "flujo": {
     "cellMm": 0.42,
-    "LmaxMm": 37.2,
-    "errVolPct": 1.1,
+    "LmaxMm": 37.41,
+    "errVolPct": 1.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 453
+    "ms": 748
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2879.32,
+    "quiral": 2.39e-11,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1377,7 +1866,16 @@
     "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 491
+    "ms": 901
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 2879.32,
+    "quiral": 2.39e-11,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1400,10 +1898,19 @@
    "flujo": {
     "cellMm": 0.4,
     "LmaxMm": 51.06,
-    "errVolPct": 24.9,
+    "errVolPct": 24.8,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 3215
+    "ms": 6062
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 7185.09,
+    "quiral": -3.94e-15,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1421,15 +1928,26 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 49337
+    "moldeUSD": 49344
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 99.58,
-    "errVolPct": 7.6,
+    "LmaxMm": 90.5,
+    "errVolPct": 0.4,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1524
+    "ms": 4391
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 55819.28,
+    "quiral": -5.26e-7,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -1447,7 +1965,7 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 31458
+    "moldeUSD": 31464
    },
    "flujo": {
     "cellMm": 1,
@@ -1455,7 +1973,18 @@
     "errVolPct": 4.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 608
+    "ms": 1640
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 33294.53,
+    "quiral": 0.0000276,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -1473,15 +2002,24 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 54617
+    "moldeUSD": 54627
    },
    "flujo": {
     "cellMm": 1,
     "LmaxMm": 175.93,
-    "errVolPct": 7.2,
+    "errVolPct": 7.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 3448
+    "ms": 12477
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 80255.07,
+    "quiral": -0.0000327,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1507,7 +2045,16 @@
     "errVolPct": 3.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1486
+    "ms": 3273
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 9504,
+    "quiral": 0,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1525,7 +2072,7 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 54206
+    "moldeUSD": 54215
    },
    "flujo": {
     "cellMm": 1,
@@ -1533,7 +2080,16 @@
     "errVolPct": 7.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 3236
+    "ms": 17567
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 79891.29,
+    "quiral": -0.0000355,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1551,15 +2107,24 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 28614
+    "moldeUSD": 28624
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 114.76,
-    "errVolPct": 0.4,
+    "LmaxMm": 115.44,
+    "errVolPct": 1.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 859
+    "ms": 1894
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 36974.82,
+    "quiral": -0.00000183,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1577,15 +2142,26 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 34212
+    "moldeUSD": 34226
    },
    "flujo": {
     "cellMm": 1,
     "LmaxMm": 76.58,
-    "errVolPct": 7.4,
+    "errVolPct": 7.7,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 619
+    "ms": 1300
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 29463.23,
+    "quiral": -0.0000114,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -1603,15 +2179,24 @@
     "arch": "cold-2placas",
     "nCav": 1,
     "viable": true,
-    "moldeUSD": 43014
+    "moldeUSD": 43030
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 207.31,
-    "errVolPct": 6.7,
+    "LmaxMm": 205.25,
+    "errVolPct": 7.2,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 4793
+    "ms": 10067
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 118698.28,
+    "quiral": 9.22e-8,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1629,7 +2214,7 @@
     "arch": "cold-2placas",
     "nCav": 1,
     "viable": true,
-    "moldeUSD": 28840
+    "moldeUSD": 28843
    },
    "flujo": {
     "cellMm": 1,
@@ -1637,7 +2222,20 @@
     "errVolPct": 0.6,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1828
+    "ms": 3162
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": false,
+    "volMm3": 85411.66,
+    "quiral": 0.0000255,
+    "coherente": false,
+    "problemas": [
+     "EULER-vs-GAUSS",
+     "NO-MANIFOLD",
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -1655,15 +2253,26 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 1066595
+    "moldeUSD": 1066779
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 443.8,
-    "errVolPct": 2.5,
+    "LmaxMm": 443.14,
+    "errVolPct": 2.4,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 86410
+    "ms": 248700
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 1034796.53,
+    "quiral": -9.79e-7,
+    "coherente": true,
+    "problemas": [
+     "DEGENERADOS"
+    ]
    }
   },
   {
@@ -1681,15 +2290,24 @@
     "arch": "cold-2placas",
     "nCav": 2,
     "viable": true,
-    "moldeUSD": 256742
+    "moldeUSD": 256765
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 276.55,
+    "LmaxMm": 276.71,
     "errVolPct": 7.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 22966
+    "ms": 39992
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 525826.76,
+    "quiral": -0.00000809,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1707,15 +2325,24 @@
     "arch": "cold-2placas",
     "nCav": 1,
     "viable": true,
-    "moldeUSD": 55722
+    "moldeUSD": 55741
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 559.52,
+    "LmaxMm": 559.75,
     "errVolPct": 8.2,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 921
+    "ms": 1482
+   },
+   "matricula": {
+    "chi": 0,
+    "genero": 1,
+    "cerrada": true,
+    "volMm3": 38982.86,
+    "quiral": 3.15e-10,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1741,7 +2368,16 @@
     "errVolPct": 2.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 144
+    "ms": 151
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 2563.91,
+    "quiral": -1.37e-8,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1767,7 +2403,16 @@
     "errVolPct": 2.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 172
+    "ms": 148
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 2563.91,
+    "quiral": -1.13e-8,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1793,7 +2438,16 @@
     "errVolPct": 2.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 140
+    "ms": 153
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 2563.91,
+    "quiral": 8.36e-9,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1819,7 +2473,16 @@
     "errVolPct": 2.9,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 143
+    "ms": 154
+   },
+   "matricula": {
+    "chi": -2,
+    "genero": 2,
+    "cerrada": true,
+    "volMm3": 2563.91,
+    "quiral": 1.12e-8,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1845,7 +2508,16 @@
     "errVolPct": 1.3,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 8337
+    "ms": 8816
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 155915.07,
+    "quiral": -2.72e-11,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1863,15 +2535,24 @@
     "arch": "cold-2placas",
     "nCav": 1,
     "viable": true,
-    "moldeUSD": 19865
+    "moldeUSD": 19869
    },
    "flujo": {
     "cellMm": 0.9720000000000001,
     "LmaxMm": 102.75,
-    "errVolPct": 6.1,
+    "errVolPct": 6.2,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 1584
+    "ms": 3043
+   },
+   "matricula": {
+    "chi": 2,
+    "genero": 0,
+    "cerrada": true,
+    "volMm3": 47857.09,
+    "quiral": -0.0000187,
+    "coherente": true,
+    "problemas": []
    }
   },
   {
@@ -1889,15 +2570,24 @@
     "arch": "cold-2placas",
     "nCav": 4,
     "viable": true,
-    "moldeUSD": 35572
+    "moldeUSD": 35575
    },
    "flujo": {
     "cellMm": 1,
-    "LmaxMm": 73.14,
+    "LmaxMm": 73.55,
     "errVolPct": 13.5,
     "unreachable": 0,
     "unreachPct": 0,
-    "ms": 509
+    "ms": 816
+   },
+   "matricula": {
+    "chi": -6,
+    "genero": 4,
+    "cerrada": true,
+    "volMm3": 28996.97,
+    "quiral": -0.0000555,
+    "coherente": true,
+    "problemas": []
    }
   }
  ]
