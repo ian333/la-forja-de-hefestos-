@@ -114,15 +114,133 @@ def angulo_del_codo(coords_C):
     return math.degrees(math.acos(np.clip(cos, -1.0, 1.0)))
 
 
+def _cache(nombre):
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public',
+                        'precomputed', f'geom-{nombre}-{BASE_OPT}.npz')
+
+
 def optimiza(at, nombre):
+    """Optimiza la geometría, con CACHÉ. Cada optimización son ~3 min y el resultado es
+    determinista, así que re-correr el script para ajustar la NUBE no tiene por qué volver a
+    pagarlas. Borrar el .npz fuerza recalcular."""
     from pyscf import gto, scf
     from pyscf.geomopt.geometric_solver import optimize
+    ruta = _cache(nombre)
+    if os.path.exists(ruta):
+        d = np.load(ruta, allow_pickle=True)
+        eq = gto.M(atom=[[str(s_), tuple(p)] for s_, p in zip(d['simb'], d['xyz'])],
+                   basis=BASE_OPT, unit='Angstrom', verbose=0)
+        print(f'   {nombre}: geometría en caché ({os.path.basename(ruta)}) — no se re-optimiza', flush=True)
+        return eq
     mol = gto.M(atom=a_texto(at), basis=BASE_OPT, unit='Angstrom', verbose=0)
     print(f'   {nombre}: {mol.natm} átomos · {mol.nao} funciones de base · base {BASE_OPT}', flush=True)
     mf = scf.RHF(mol)
     mf.max_cycle = 200
     eq = optimize(mf, maxsteps=120)
+    np.savez(ruta, xyz=eq.atom_coords() * BOHR,
+             simb=np.array([eq.atom_symbol(i) for i in range(eq.natm)]))
     return eq
+
+
+# ══ NUBE ELECTRÓNICA Y .bin ═══════════════════════════════════════════════════════════════
+# Formato IDÉNTICO al de precompute-chain.ts, así que `parseBin` de la escena lo lee sin
+# tocar una línea del renderer:
+#   int32 N · int32 K · float32 extent · float32[K*4] núcleos(x,y,z,Z)
+#   float32[N*3] pos · float32[N*3] color · float32[N] size · float32[N] shell
+#
+# La diferencia con precompute-chain.ts es HONESTIDAD, no formato: ese arma la nube con
+# orbitales de enlace localizados y longitudes de libro (bien justificado, pero dibujado).
+# Aquí la geometría la OPTIMIZÓ el cálculo y la densidad es |ψ|² de verdad, muestreada. Es el
+# estándar de la serie del agua y es lo que sostiene el "nada está inventado" del copy.
+# La GEOMETRÍA y la NUBE se pueden pedir a calidades distintas: la forma ya pasó su gate con
+# una base mínima (179.9° / 125.5°, y es determinista), así que subir la nube NO tiene por qué
+# volver a pagar los ~3 min de optimización. RHO=6-31g PTS=130000 sube solo lo que se ve.
+BASE_RHO = os.environ.get('RHO', 'sto-3g' if RAPIDO else '6-31g')
+N_PTS = int(os.environ.get('PTS', '40000' if RAPIDO else '130000'))
+# Paleta de las cadenas (precompute-chain.ts): NO se inventa color nuevo — pieza hermana,
+# misma paleta ([[feedback_extender_reusa_paleta]]).
+COL_C = np.array([0.26, 0.86, 0.96])    # esqueleto de carbono, teal
+COL_H = np.array([1.00, 0.60, 0.26])    # C–H, ámbar cálido
+COL_O = np.array([1.00, 0.78, 0.30])    # el oxígeno del ácido, ORO (como en toda la serie)
+
+
+def nube(mol, dm, xyz, Zs, n_pts, semilla=1337):
+    """Muestrea n_pts puntos con probabilidad ∝ ρ(r).
+
+    ⚠ NO se inventa muestreador: este es EL MISMO de precompute-caroteno-formacion.py
+    (`rng.choice` sobre la malla con p ∝ densidad, más una sacudida gaussiana), que es el
+    precedente de CADENA LARGA de la casa. La otra familia de la serie —`sample_field` en
+    water-ring/o2/bond— es para nubes ANIMADAS: mantiene la correspondencia de partículas
+    entre frames para que no parpadeen. Aquí la molécula es estática, así que esa maquinaria
+    sobra. Cuando la pieza necesite animar (p.ej. la cadena intentando enderezarse contra la
+    barrera del doble enlace), se usa `sample_field`, no un tercero nuevo."""
+    rng = np.random.default_rng(semilla)
+    lo, hi = xyz.min(axis=0) - 2.4, xyz.max(axis=0) + 2.4
+    paso = 0.22                                        # Å — fino frente a un enlace de 1.5
+    ejes = [np.arange(lo[k], hi[k] + paso, paso) for k in range(3)]
+    G = np.stack(np.meshgrid(*ejes, indexing='ij'), axis=-1).reshape(-1, 3)
+    print(f'      malla {len(ejes[0])}x{len(ejes[1])}x{len(ejes[2])} = {len(G)} celdas', flush=True)
+    w = eval_rho_pts(mol, dm, G)
+    idx = rng.choice(len(G), size=n_pts, p=w / w.sum())
+    pos = G[idx] + rng.normal(scale=paso * 0.55, size=(n_pts, 3))
+    d = eval_rho_pts(mol, dm, pos)
+    d = np.clip(d / (np.percentile(d, 99) + 1e-12), 0, 1)
+    # color por el átomo MÁS CERCANO: el ojo lee el esqueleto y distingue el ácido
+    cerca = np.argmin(((pos[:, None, :] - xyz[None, :, :]) ** 2).sum(axis=2), axis=1)
+    Zc = Zs[cerca][:, None]
+    base = np.where(Zc == 8, COL_O, np.where(Zc == 6, COL_C, COL_H))
+    hot = np.clip(d * d * 0.5, 0, 1)[:, None]
+    bright = (0.24 + 0.55 * d)[:, None]
+    col = (base * (1 - hot) + np.array([1.0, 0.96, 0.86]) * hot) * bright
+    # TAMAÑO: la fórmula del agua (0.030+0.055·d) está calibrada para una molécula de ~6 Å.
+    # Una cadena de 22 Å ocupa ~14× más volumen, así que la MISMA cantidad de puntos del mismo
+    # tamaño se ve como polvo suelto — medido en stills: esqueleto de palitos, no la nube densa
+    # que es la firma de la serie. Se compensa con el tamaño, no subiendo el brillo (más luz no
+    # es más color: [[feedback_mas_luz_no_es_color]]).
+    size = (0.075 + 0.130 * d).astype('<f4')
+    return pos.astype('<f4'), col.astype('<f4'), size, d.astype('<f4')
+
+
+def eval_rho_pts(mol, dm, pts, chunk=40000):
+    out = np.empty(pts.shape[0])
+    for a in range(0, pts.shape[0], chunk):
+        ao = mol.eval_gto('GTOval', pts[a:a + chunk] / BOHR)   # PySCF quiere BOHR
+        out[a:a + chunk] = np.einsum('pi,pi->p', ao @ dm, ao)
+    return np.maximum(out, 0.0)
+
+
+def escribe_bin(ruta, xyz, Zs, pos, col, size, shell):
+    import struct
+    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    cen = xyz.mean(axis=0)
+    xyz = xyz - cen; pos = pos - cen
+    extent = float(np.abs(np.concatenate([xyz, pos])).max())
+    with open(ruta, 'wb') as fp:
+        fp.write(struct.pack('<2i', len(pos), len(xyz)))
+        fp.write(struct.pack('<f', extent))
+        for i in range(len(xyz)):
+            fp.write(struct.pack('<4f', *xyz[i], float(Zs[i])))
+        for a in (pos, col):
+            fp.write(np.ascontiguousarray(a, dtype='<f4').tobytes())
+        for a in (size, shell):
+            fp.write(np.ascontiguousarray(a, dtype='<f4').tobytes())
+    print(f'   OK  {os.path.basename(ruta)}  {os.path.getsize(ruta)/1024/1024:.2f} MB '
+          f'({len(pos)} pts, {len(xyz)} núcleos, extent {extent:.1f} Å)', flush=True)
+
+
+def densidad_y_bin(eq, nombre):
+    from pyscf import gto, scf
+    xyz = eq.atom_coords() * BOHR
+    Zs = np.array([eq.atom_charge(i) for i in range(eq.natm)])
+    mol = gto.M(atom=[[eq.atom_symbol(i), tuple(xyz[i])] for i in range(eq.natm)],
+                basis=BASE_RHO, unit='Angstrom', verbose=0)
+    print(f'   densidad {nombre}: base {BASE_RHO} · {mol.nao} funciones', flush=True)
+    mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
+    dm = mf.make_rdm1()
+    pos, col, size, shell = nube(mol, dm, xyz, Zs, N_PTS)
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public',
+                        'precomputed', f'chain-{nombre}.bin')
+    escribe_bin(ruta, xyz, Zs, pos, col, size, shell)
 
 
 def main():
@@ -140,7 +258,7 @@ def main():
         ang = angulo_del_codo(Cs)
         largo = float(np.linalg.norm(Cs[0] - Cs[-1]))
         print(f'   codo OPTIMIZADO:         {ang:6.1f}°   ·  C1→C18 {largo:5.2f} Å', flush=True)
-        resultados[nombre] = dict(ang=ang, largo=largo, xyz=xyz, simb=simb, nC=len(Cs))
+        resultados[nombre] = dict(ang=ang, largo=largo, xyz=xyz, simb=simb, nC=len(Cs), eq=eq)
         np.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public',
                              'precomputed', f'geom-{nombre}.npy'), xyz)
 
@@ -161,7 +279,14 @@ def main():
         print('✗ el codo no acorta la cadena lo suficiente para verse'); ok = False
 
     print('\n' + ('✅ GATE DE FORMA OK — hay pieza' if ok else '❌ GATE DE FORMA REPROBADO — NO hay video'), flush=True)
-    return 0 if ok else 1
+    if not ok:
+        return 1
+    # La nube SOLO se calcula si la forma pasó: no tiene caso muestrear electrones de una
+    # geometría que no cuenta la historia.
+    print('\n────────── NUBE ELECTRÓNICA ──────────', flush=True)
+    for nombre in ('estearico', 'oleico'):
+        densidad_y_bin(resultados[nombre]['eq'], nombre)
+    return 0
 
 
 if __name__ == '__main__':

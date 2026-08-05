@@ -585,6 +585,26 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: ringFaceOn({ rMul: 2.60, azim0: 2.40, span: 0.40, elev: 0.20 }), dur: 6.22, label: '"la otra vez viste cuatro / seis encajan igual de bien"' },
     { shot: pullOut({ azim0: 1.57, span: 0.50, rFromMul: 2.60, rTdMul: 3.30 }), dur: 6.30, label: 'payoff — "no es adorno. Es esta forma, hecha grande"' },
   ],
+  // ── CADENA "LA FORMA MANDA", pieza 1: EL CODO ───────────────────────────────────────────
+  // Una entrada en CAMERA_SHOTS MANDA sobre el modo automático (molCamera revisa esta tabla
+  // ANTES de decidir orbit-vs-traversal por elongación). Aquí eso es indispensable: la cadena
+  // es larga, así que el automático elige TRAVERSAL y la cámara se mete DENTRO de la molécula.
+  // Para el caroteno eso es correcto —el sujeto es el río π por el que se vuela—, pero aquí
+  // el sujeto es la SILUETA: si la cámara va por dentro, el codo no existe.
+  //
+  // Medido en stills antes de rendir nada (que para eso son): con traversal se veían pedazos
+  // sueltos de enlaces y CERO codo. Estas tomas miran desde AFUERA y de perfil, que es el
+  // único ángulo donde un codo de 125.5° se lee.
+  estearico: [
+    { shot: heroOrbit({ rMul: 3.40, elev: 0.10, azim0: 1.35, span: 0.45, fov: 34 }), dur: 7, label: 'la vara completa, de perfil' },
+    { shot: heroOrbit({ rMul: 3.10, elev: 0.28, azim0: 2.10, span: 0.65, fov: 34 }), dur: 8, label: 'gira despacio: sigue siendo recta desde cualquier lado' },
+    { shot: heroOrbit({ rMul: 3.60, elev: 0.05, azim0: 0.60, span: 0.42, fov: 32 }), dur: 7, label: 'de canto — el zigzag del esqueleto' },
+  ],
+  oleico: [
+    { shot: heroOrbit({ rMul: 3.40, elev: 0.10, azim0: 1.35, span: 0.45, fov: 34 }), dur: 7, label: 'EL CODO — mismo encuadre que el esteárico, para que la comparación sea justa' },
+    { shot: heroOrbit({ rMul: 3.10, elev: 0.28, azim0: 2.10, span: 0.65, fov: 34 }), dur: 8, label: 'gira: el codo no se endereza desde ningún ángulo' },
+    { shot: heroOrbit({ rMul: 3.60, elev: 0.05, azim0: 0.60, span: 0.42, fov: 32 }), dur: 7, label: 'de canto — se ve dónde vive el doble enlace' },
+  ],
   'wpair-b': [
     { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
     { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 9, label: 'electrones de la OTRA, close bajo (l3-4)' },
@@ -1018,6 +1038,8 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   tetradecaheptaene: { name: 'Tetradecaheptaeno', formula: 'C₁₄H₁₆', fact: 'Siete dobles: el río π más largo, casi rojo.' },
   hexadecaoctaene:   { name: 'Hexadecaoctaeno', formula: 'C₁₆H₁₈', fact: 'Ocho dobles conjugados: absorbe color visible.' },
   caroteno:     { name: 'Caroteno (cromóforo)', formula: 'cadena π', fact: 'La cadena conjugada que pinta la zanahoria — y la que te deja VER.' },
+  estearico:    { name: 'Ácido esteárico', formula: 'C₁₈H₃₆O₂', fact: 'La grasa de la mantequilla: recta, 179.9° — se apila como leña y queda sólida.' },
+  oleico:       { name: 'Ácido oleico', formula: 'C₁₈H₃₄O₂', fact: 'La misma cadena con UN doble enlace: 125.5°. El codo impide apilarse — y por eso el aceite es líquido.' },
   // ── ADN — doble hélice B-form real ──
   brca1:    { name: 'ADN · BRCA1', formula: 'doble hélice', fact: 'Un trozo de tu gen BRCA1: cuando falla, aumenta el riesgo de cáncer.' },
   telomero: { name: 'ADN · telómero', formula: 'TTAGGG', fact: 'El extremo de tus cromosomas: se acorta cada vez que una célula se divide.' },
@@ -1026,7 +1048,12 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
 const META: Record<string, { name: string; formula: string; fact: string }> = { ...BASE_META, ...CATALOG_META };
 
 // Cadenas: se cargan de chain-<key>.bin y disparan la cámara TRAVERSAL.
-const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno']);
+// `estearico` y `oleico` (cadena LA FORMA MANDA, pieza 1 "El codo") entran aquí como dos
+// claves más: el renderizador de cadenas y su cámara TRAVERSAL ya existían, así que la pieza
+// no necesita escena nueva. Su .bin sí es distinto en ORIGEN —no en formato—: lo escribe
+// scripts/precompute-cadena.py con geometría OPTIMIZADA y densidad |ψ|² real, en vez de
+// orbitales localizados con longitudes de libro. Ver docs/CADENA-LA-FORMA-MANDA.md.
+const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno', 'estearico', 'oleico']);
 // Conjugadas (con sistema π): llevan campo de CARAS π (MEP). Los alcanos NO (apolares, planos eléctricamente → inertes).
 const CONJUGATED_KEYS = new Set(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno']);
 // ADN: doble hélice B-form real (dna-<key>.bin). Alargada → cámara traversal vuela por el eje.
