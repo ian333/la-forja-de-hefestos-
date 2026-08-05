@@ -23,7 +23,12 @@ RAIZ=/mnt/hdd/forja-dist
 
 echo "▶ publicando a $DESTINO:$RAIZ"
 echo "── 1/2 assets y todo lo demás (el HTML NO) ──"
-rsync -a --info=stats2 -e "$RE" --exclude='*.html' dist/ "$DESTINO:$RAIZ/" | tail -3 || exit 1
+# ⚠ EXCLUIR comando/*.json (2026-08-05, lo pisé): esos archivos son DATOS que genera
+# comando-scan.cjs desde la laptop —inventario y telemetría en vivo— pero viven en public/,
+# así que el build los copia a dist/. Como el build corre en iangpu, se hornea la copia VIEJA
+# de iangpu y al publicar aplasta la buena: el tablero volvió a decir "telemetría sin
+# conectar" media hora después de haberla arreglado. Un deploy de código no debe tocar datos.
+rsync -a --info=stats2 -e "$RE" --exclude='*.html' --exclude='comando/*.json' dist/ "$DESTINO:$RAIZ/" | tail -3 || exit 1
 
 echo "── 2/2 ahora sí el HTML ──"
 rsync -a -e "$RE" --include='*.html' --include='*/' --exclude='*' dist/ "$DESTINO:$RAIZ/" || exit 1

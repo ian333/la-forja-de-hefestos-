@@ -35,7 +35,8 @@ const FAMILIAS: Record<string, string> = { tutorial: '🎬 Videotutoriales', cla
 interface Piece { id: string; familia: string; tema: string; titulo: string; descripcion: string; hashtags: string[]; formatos: Record<string, string>; guion?: string; codigo?: string; }
 interface Cat { pieces: Piece[]; generatedAt: string; }
 interface Video { serie: string; name: string; fmt: string; master: boolean; mb: number; rel: string; }
-interface Prod { videos: Video[]; narracion: Record<string, { narration: boolean; aligned: boolean }>; telemetria: { connected: boolean; sessions?: number; pageviews?: number; clicks?: number; errors?: number; topPages?: { u: string; n: number }[] }; generatedAt: string; }
+interface Limpio { sesiones: number; descartadas: number; c1_segunda_pagina: number; mediana_s: number; p75_s: number; p90_s: number; rebote_3s_pct: number; movil_pct: number; inapp_pct: number; clicks_por_sesion: number; entradas: Record<string, number>; }
+interface Prod { videos: Video[]; narracion: Record<string, { narration: boolean; aligned: boolean }>; telemetria: { connected: boolean; sessions?: number; pageviews?: number; clicks?: number; errors?: number; topPages?: { u: string; n: number }[]; limpio?: Limpio; origen?: Record<string, number>; ipsSospechosas?: { ip: string; sesiones: number; escritorio: number }[] }; generatedAt: string; }
 
 // registro por pieza (editable + persistido)
 interface Reg { titulo?: string; descripcion?: string; hashtags?: string; plataformas?: Record<string, { subido?: boolean; fecha?: string }>; }
@@ -503,6 +504,35 @@ export default function ComandoCenter() {
           <div>
             {!tele.connected ? <div style={{ color: '#8893A8' }}>Telemetría sin conectar.</div> : (
               <>
+                {/* EL EMBUDO LIMPIO manda. Los crudos incluyen NUESTRAS pruebas y bots: con
+                    ellos el tablero decía 1731 sesiones y mediana de 1.5s, y 270 entradas al
+                    CAD que éramos nosotros en escritorio. Ver scripts/telemetria-limpia.cjs. */}
+                {tele.limpio && (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#34D399', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Embudo REAL — sin nuestras pruebas ni bots
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                      <Stat n={tele.limpio.sesiones} label="sesiones reales" color="#34D399" />
+                      <Stat n={`${tele.limpio.c1_segunda_pagina}%`} label="llegan a 2a página" color={tele.limpio.c1_segunda_pagina < 5 ? '#FF6B5A' : '#34D399'} />
+                      <Stat n={`${tele.limpio.mediana_s}s`} label="mediana de sesión" color={tele.limpio.mediana_s < 3 ? '#FF6B5A' : '#FDB813'} />
+                      <Stat n={`${tele.limpio.rebote_3s_pct}%`} label="se van en ≤3s" color={tele.limpio.rebote_3s_pct > 50 ? '#FF6B5A' : '#FDB813'} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <Stat n={`${tele.limpio.p75_s}s`} label="p75 (los que sí se quedan)" color="#46C2FF" />
+                      <Stat n={`${tele.limpio.p90_s}s`} label="p90" color="#46C2FF" />
+                      <Stat n={`${tele.limpio.inapp_pct}%`} label="dentro de IG/TikTok" color="#A78BFA" />
+                      <Stat n={tele.limpio.descartadas} label="descartadas (nosotros/bots)" color="#5A6678" />
+                    </div>
+                    {!!tele.ipsSospechosas?.length && (
+                      <div style={{ fontSize: 12, color: '#FDB813', marginBottom: 18 }}>
+                        ⚠ {tele.ipsSospechosas.length} IP(s) huelen a máquina de pruebas ({tele.ipsSospechosas.map(x => `${x.ip} (${x.sesiones})`).join(', ')}) — si son nuestras, agrégalas a config/telemetria-ignorar.json
+                      </div>
+                    )}
+                    <div style={{ height: 18 }} />
+                  </>
+                )}
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#5A6678', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Crudo (incluye pruebas y bots)</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
                   <Stat n={tele.sessions!} label="sesiones" color="#A78BFA" />
                   <Stat n={tele.pageviews!} label="pageviews" color="#46C2FF" />
