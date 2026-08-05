@@ -104,13 +104,31 @@ function embudo(ses) {
   };
 }
 
-function analizar(texto) {
+// ═══ LA FRONTERA ═══════════════════════════════════════════════════════════════════════
+// El 2026-08-05 a las 12:43:32 (hora local) se publicó el arreglo que llevó el montaje de
+// React de 31.4 s a 1.1 s. TODO lo medido ANTES viene de un sitio que tardaba medio minuto
+// en funcionar, con una mediana de sesión de 0.9 s: nadie lo había visto trabajar, así que
+// ese c1 de 1.65% no mide el sitio — mide la espera.
+//
+// Sin esta frontera, en una semana los números serán una MEZCLA de los dos sitios y el
+// antes/después se vuelve irrecuperable. No se borra nada: se PARTE.
+const FRONTERA_PERF = 1785955412000;   // ms epoch · react en su propio chunk, en producción
+
+function analizar(texto, desde = null) {
   const eventos = [];
   for (const l of texto.split('\n')) { if (!l.trim()) continue; try { eventos.push(JSON.parse(l)); } catch { /* línea rota */ } }
-  const ses = sesiones(eventos);
+  const todas = sesiones(eventos);
+  const ses = desde ? todas.filter(s => (s.t1 ?? 0) >= desde) : todas;
   const motivos = {};
   for (const s of ses) motivos[s.motivo] = (motivos[s.motivo] || 0) + 1;
-  return { eventos: eventos.length, motivos, embudo: embudo(ses), sospechosas: sospechosas(ses) };
+  const antes = todas.filter(s => (s.t1 ?? 0) < FRONTERA_PERF);
+  const despues = todas.filter(s => (s.t1 ?? 0) >= FRONTERA_PERF);
+  return {
+    eventos: eventos.length, motivos, embudo: embudo(ses), sospechosas: sospechosas(ses),
+    // El antes/después del arreglo de rendimiento, cada uno por su lado. `despues` es el
+    // único que mide el sitio ACTUAL; `antes` se queda de referencia histórica.
+    perf: { frontera: FRONTERA_PERF, antes: embudo(antes), despues: embudo(despues) },
+  };
 }
 
 module.exports = { clasificar, sesiones, embudo, sospechosas, analizar };
@@ -131,6 +149,14 @@ if (require.main === module) {
   console.log(`   móvil ${E.movil_pct} % · dentro de app ${E.inapp_pct} % · clicks/sesión ${E.clicks_por_sesion}`);
   console.log('   entradas:');
   for (const [u, n] of Object.entries(E.entradas)) console.log(`      ${String(n).padStart(5)}  ${u}`);
+  const P = r.perf;
+  if (P && P.despues.sesiones > 0) {
+    console.log(`\nANTES vs DESPUÉS del arreglo de rendimiento (frontera 2026-08-05 12:43)`);
+    const fila = (n, e) => `   ${n.padEnd(9)} ${String(e.sesiones).padStart(5)} ses · c1 ${String(e.c1_segunda_pagina).padStart(5)}% · mediana ${String(e.mediana_s).padStart(5)}s · rebote≤3s ${String(e.rebote_3s_pct).padStart(5)}%`;
+    console.log(fila('ANTES', P.antes));
+    console.log(fila('DESPUÉS', P.despues));
+    if (P.despues.sesiones < 300) console.log(`   ⚠ solo ${P.despues.sesiones} sesiones después — todavía NO concluyas nada (hacen falta ~950 por rama)`);
+  }
   if (r.sospechosas.length) {
     console.log('\n⚠ IPs que HUELEN a máquina de pruebas (no se descartaron; revisar y, si son nuestras,');
     console.log('  agregarlas a config/telemetria-ignorar.json):');
