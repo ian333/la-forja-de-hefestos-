@@ -22,7 +22,18 @@ const OUT_DIR = path.join(ROOT, 'public', 'comando');
 const IANGPU = 'ian@100.65.173.85';
 const PRIME = 'ian@100.110.244.20';
 const ATLAS = 'ian@100.97.118.117';
-const sh = (cmd) => { try { return execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30000 }); } catch { return ''; } };
+// ⚠ maxBuffer: el default de execSync es 1 MB y la telemetría son ~5 MB (8000 eventos de
+// ~600 bytes). Reventaba con ENOBUFS, el catch se lo tragaba en SILENCIO y el Comando decía
+// "telemetría sin conectar" — como si no hubiera datos, cuando llevaba meses acumulando 7.4 MB.
+// El fallo no era de red ni de permisos: era un buffer. (2026-08-05)
+const sh = (cmd, quiet = false) => {
+  try {
+    return execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
+  } catch (e) {
+    if (!quiet) console.error(`   ⚠ falló: ${cmd.slice(0, 70)}… → ${e.code || e.message.slice(0, 60)}`);
+    return '';
+  }
+};
 
 // ── 1. inventario de videos — lee la BIBLIOTECA LIMPIA en atlas (taxonomía) ──
 // rel = ruta relativa a la raíz de biblioteca (ej. economia/clases/coase/x.mp4).
