@@ -30,6 +30,19 @@ REGLAS CUANDO YA ESTÁN HECHAS... es el mismo error SIEMPRE."**
 - **C₂ "carbono"** — `mol-c2-carbono-capsula.tar.gz`. Los dos anillos π sin σ frontal. Paleta hielo/azul.
 - **H₂O v1 y v2 "agua"** — `mol-h2o-agua-capsula.tar.gz`, `mol-h2o-agua-v2-capsula.tar.gz`. El
   triatómico, el ángulo, los pares libres. v2 = el copy y la cámara que más gustó.
+- **(H₂O)₆ "El hexágono"** — `mol-h2o-el-hexamero-capsula.tar.gz`. **REVENTÓ EN INSTAGRAM
+  (2026-08-05).** Es el ganador más reciente y el más completo, así que es el primero que hay
+  que abrir. Lo que hizo distinto, y es copiable:
+  - **El gancho es una TRANSICIÓN, no una toma.** Lo que impacta es el campo ENCENDIÉNDOSE
+    (`campo` 0.25 → 1.20 con la rampa de 0.6 s de `win()`), no la cámara. Medido: el frío
+    pasa de 0.53 % a 24 % del cuadro en un segundo. Mover la cámara de un beat bueno al
+    frente NO reproduce nada si el encendido ya ocurrió.
+  - **La premisa se vuelve PRUEBA al final.** El bloque de contar ("cuenta las puntas de un
+    copo: seis; cuenta los lados de esto: seis") abría el corte v1 y CIERRA el v2. Ahí gana.
+  - **`ringOne` con `rCore`** = el único close-up de verdad de la serie. Sin declarar el radio
+    del sujeto, la ley de encuadre mide el anillo COMPLETO y clava la cámara a 99 bohr.
+  - **La afirmación aguanta a un químico** (`honestidad_del_copo` en su manifiesto): se dice
+    que el agua REPITE la forma de seis al congelarse, nunca que esto SEA hielo.
 
 **Qué hacer, SIEMPRE, antes de escribir código:**
 1. **ABRE el CÓDIGO real** del último ganador (no la memoria — el CÓDIGO): su cámara
