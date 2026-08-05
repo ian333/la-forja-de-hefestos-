@@ -34,17 +34,41 @@ if len(wavs) != len(lines):
     sys.exit(f'✗ {len(wavs)} wavs vs {len(lines)} líneas del guion')
 
 
+# Whisper ESCRIBE en cifras lo que se DIJO en letra ("2.82", "12%", "H2"). Eso no es un
+# error de pronunciación, es formato — y si el gate lo reporta como falla, cría lobos y en
+# tres corridas nadie lo lee. Se normaliza a palabras ANTES de comparar.
+UNI = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve']
+ESP = {10: 'diez', 11: 'once', 12: 'doce', 13: 'trece', 14: 'catorce', 15: 'quince',
+       16: 'dieciseis', 17: 'diecisiete', 18: 'dieciocho', 19: 'diecinueve', 20: 'veinte',
+       21: 'veintiuno', 22: 'veintidos', 23: 'veintitres', 24: 'veinticuatro',
+       25: 'veinticinco', 30: 'treinta', 40: 'cuarenta', 50: 'cincuenta', 100: 'cien'}
+
+
+def _num(tok):
+    """'2.82' → 'dos punto ocho dos' · '25' → 'veinticinco' (como lo LEE una persona)."""
+    if '.' in tok or ',' in tok:
+        ent, _, dec = tok.replace(',', '.').partition('.')
+        return ' '.join([_num(ent), 'punto'] + [UNI[int(d)] for d in dec if d.isdigit()])
+    n = int(tok)
+    if n < 10: return UNI[n]
+    if n in ESP: return ESP[n]
+    if n < 100: return f'{ESP[n // 10 * 10]} y {UNI[n % 10]}'
+    return tok
+
+
 def norm(s):
-    """minúsculas, sin acentos ni puntuación — comparamos FONÉTICA, no ortografía."""
+    """minúsculas, sin acentos, cifras a palabras — comparamos FONÉTICA, no ortografía."""
     s = unicodedata.normalize('NFD', s.lower())
     s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
-    return re.sub(r'[^a-zñ0-9 ]', ' ', s).split()
-
-
-# números que el guion escribe con letra y Whisper suele devolver como dígito
-CIFRAS = {'0': 'cero', '1': 'uno', '2': 'dos', '3': 'tres', '4': 'cuatro', '5': 'cinco',
-          '6': 'seis', '7': 'siete', '8': 'ocho', '9': 'nueve', '10': 'diez', '12': 'doce',
-          '18': 'dieciocho', '19': 'diecinueve', '25': 'veinticinco'}
+    s = s.replace('%', ' por ciento ')
+    s = re.sub(r'\bh2\b', 'h dos', s)                      # Whisper escribe la fórmula
+    s = re.sub(r'[^a-zñ0-9 .,]', ' ', s)
+    out = []
+    for t in s.split():
+        t = t.strip('.,')
+        if not t: continue
+        out.extend(_num(t).split() if re.fullmatch(r'\d+(?:[.,]\d+)?', t) else [t])
+    return out
 
 from faster_whisper import WhisperModel
 model = WhisperModel('large-v3', device='cuda', compute_type='float16')
@@ -54,7 +78,7 @@ print(f'{MOL}: {len(wavs)} líneas · modelo large-v3 · comparando contra el gu
 for i, (w, texto) in enumerate(zip(wavs, lines), 1):
     segs, _ = model.transcribe(w, language='es', beam_size=5)
     oido = ' '.join(s.text for s in segs).strip()
-    a, b = norm(texto), [CIFRAS.get(x, x) for x in norm(oido)]
+    a, b = norm(texto), norm(oido)
     if a == b:
         estado = 'ok'
     else:
