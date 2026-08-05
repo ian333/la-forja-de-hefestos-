@@ -2117,7 +2117,13 @@ const WHEX6_CAPAS: CapasSpec = {
     { wins: [[63.51, 85.22]], a: 0.30, label: 'el remate: algo sigue vivo mientras se cuenta' } ] },
   nubes: { base: 1, mods: [
     { wins: [[0.0, 17.59]], a: -0.30, label: 'la nube cede para que se LEAN los puentes encendiendo' },
-    { wins: [[25.25, 29.75]], a: -0.34, label: 'deja leer el canto (que es plano)' } ] },
+    { wins: [[25.25, 29.75]], a: -0.34, label: 'deja leer el canto (que es plano)' },
+    // DE CANTO LA NUBE SE APILA. Las seis moléculas se proyectan sobre una banda, así que la
+    // densidad por píxel se multiplica; con `acc` a 1.45 eso REVENTÓ en pared blanca (mancha
+    // clara conexa = 10.25% del cuadro en t=39, contra ≤3.3% en todo el resto). Ojo: el gate
+    // de %quemado del canon NO lo caza, porque mide >240 y la zona reventada vive en 200-240
+    // — lo que lo delata es el tamaño de la MANCHA CONEXA, no el conteo de píxeles sueltos.
+    { wins: [[35.27, 42.05]], a: -0.42, label: 'la firma de canto: baja la nube o revienta' } ] },
   parpadeo: { base: 0.42, mods: [{ wins: [[77.70, 85.22]], a: 0.42, label: 'la molécula sola respira mientras se deletrea H₂O' }] },
   spin: { base: 1, mods: [
     { wins: [[0.0, 17.59]], a: 0.95, label: 'Δρ ARDE desde el frame 0 — es el destello' },
@@ -2127,6 +2133,7 @@ const WHEX6_CAPAS: CapasSpec = {
   // con azul). El oro de los oxígenos era demasiado chico para contar como cúmulo cálido.
   acc: { base: 1.45, mods: [
     { wins: [[0.0, 17.59]], a: 0.55, label: 'el ORO de los seis oxígenos contra el azul del campo' },
+    { wins: [[35.27, 42.05]], a: -0.40, label: 'menos oro DE CANTO: ahí la nube ya viene apilada' },
     { wins: [[77.70, 85.22]], a: 0.55, label: 'y en el close-up, donde el O es el sujeto' } ] },
   enlaces: { base: 0, mods: [
     { wins: [[0.0, 17.59]], a: 1.0, label: 'desde el FRAME 0: cada vértice son 3 átomos' },
