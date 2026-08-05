@@ -19,12 +19,25 @@ MOL = (sys.argv[1] if len(sys.argv) > 1 else 'n2').lower()
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GUION = os.path.join(ROOT, "scripts", "guiones", f"{MOL}.txt")
 OUT = os.path.join(ROOT, "dist-video", f"{MOL}-narracion")
-REFS = [
+# VOCES DE REFERENCIA (el timbre y el ACENTO salen de aquí, no del texto: XTTS solo habla
+# "es" genérico y clona lo que le des). Override: REFS=/ruta/a.mp3,/ruta/b.mp3
+# ⚠ 2026-08-04: TRES de las cuatro `mat_*.mp3` DESAPARECIERON del home de iangpu. Si faltan,
+# XTTS clona con menos condicionamiento y la voz CAMBIA sin avisar — por eso ahora se filtra
+# lo que existe y se GRITA lo que falta, en vez de fallar en silencio.
+REFS = [r for r in (os.environ.get("REFS", "").split(",") if os.environ.get("REFS") else [
     "/home/ian/mat_048eaee5ef6a8a43439fd57ca0f9d255.mp3",
     "/home/ian/mat_7a8ee26aba0546a34e5fe200b7c1d45e.mp3",
     "/home/ian/mat_93f350ea97ee0873117d6a23fcd60580.mp3",
     "/home/ian/mat_f205feda7e04b50d3eab555e742caea9.mp3",
-]
+]) if r.strip()]
+_faltan = [r for r in REFS if not os.path.exists(r)]
+REFS = [r for r in REFS if os.path.exists(r)]
+if _faltan:
+    print(f"⚠ FALTAN {len(_faltan)} voces de referencia (la voz NO sonará igual que antes):", flush=True)
+    for r in _faltan: print(f"    {r}", flush=True)
+if not REFS:
+    raise SystemExit("✗ cero voces de referencia — XTTS no puede clonar")
+print(f"voces de referencia en uso ({len(REFS)}): {[os.path.basename(r) for r in REFS]}", flush=True)
 lines = [l.strip() for l in open(GUION, encoding="utf-8") if l.strip()]
 os.makedirs(OUT, exist_ok=True)
 print(f"{MOL}: {len(lines)} frases -> {OUT}", flush=True)

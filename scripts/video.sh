@@ -148,11 +148,26 @@ El video es DATOS: **manifiesto.json** (incluido). Cero scripts por-video.
 
 La voz NO se regenera (XTTS no es determinista): los audios finales van dentro.
 EOF
-  ( cd "$ROOT/dist-video/_capsulas" && tar -czf "$ID-capsula.tar.gz" "$ID" )
-  # auditoría: ningún archivo clave vacío (gotcha li2: cápsula con narración VACÍA)
+  # AUDITORÍA. Dos preguntas DISTINTAS, y durante meses solo se hizo la primera:
+  #   (a) ¿algún archivo presente está vacío?   (gotcha li2: narración de 0 bytes)
+  #   (b) ¿FALTA algún archivo que debería estar?
+  # El 2026-08-04 la cápsula de EL HEXÁGONO salió a PRIME y ATLAS con la carpeta narracion/
+  # COMPLETAMENTE VACÍA — cero segs.json, cero .ass, cero voz, cero música — y la auditoría
+  # dijo "archivos vacíos: 0", porque los `cp` de arriba llevan 2>/dev/null y no había nada
+  # que copiar. Una cápsula sin voz NO es reproducible: XTTS no es determinista, esos takes
+  # no vuelven. Ahora se exige la PRESENCIA de lo que hace a la cápsula una cápsula.
   local vac; vac=$(find "$S" -type f -size -1c | wc -l)
-  echo "   $ID-capsula.tar.gz ($(du -m "$ROOT/dist-video/_capsulas/$ID-capsula.tar.gz" | cut -f1)MB) · archivos vacíos: $vac"
-  [ "$vac" -eq 0 ] || echo "   ⚠ hay archivos vacíos en la cápsula — revisar"
+  local falta=0
+  for f in "narracion/$(basename "$SEGS")" "narracion/$(basename "$ASS")" "narracion/$NARR" \
+           "manifiesto.json" "scripts/guiones/$(m capsula.guion)"; do
+    [ -s "$S/$f" ] || { echo "   ✗ FALTA (o vacío): $f"; falta=$((falta+1)); }
+  done
+  [ -f "$ADIR/$MUS" ] && { [ -s "$S/narracion/$MUS" ] || { echo "   ✗ FALTA: narracion/$MUS"; falta=$((falta+1)); }; }
+  local nbin; nbin=$(ls "$S/precomputed" 2>/dev/null | wc -l)
+  [ "$nbin" -gt 0 ] || { echo "   ✗ FALTA: los .bin de la simulación"; falta=$((falta+1)); }
+  ( cd "$ROOT/dist-video/_capsulas" && tar -czf "$ID-capsula.tar.gz" "$ID" )
+  echo "   $ID-capsula.tar.gz ($(du -m "$ROOT/dist-video/_capsulas/$ID-capsula.tar.gz" | cut -f1)MB) · vacíos: $vac · faltantes: $falta"
+  [ "$vac" -eq 0 ] && [ "$falta" -eq 0 ] || { echo "   ✗ CÁPSULA INCOMPLETA — no publicar así"; return 1; }
 }
 
 paso_campo() {
