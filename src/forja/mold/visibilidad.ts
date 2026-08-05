@@ -215,7 +215,15 @@ function rasterizarVista(
     const py = Math.min(res - 1, Math.max(0, Math.round(cv - 0.5)));
     const cd = cen[t * 3] * w[0] + cen[t * 3 + 1] * w[1] + cen[t * 3 + 2] * w[2];
     const df = depth[py * res + px];
-    frac[t] = !Number.isFinite(df) || cd <= df + tolPunto ? 1 : 0;
+    // Se compara el punto MÁS CERCANO del triángulo, no su centroide. En la silueta de
+    // un cuerpo curvo un triángulo casi de canto abarca mucha profundidad dentro de un
+    // solo píxel: juzgarlo por el centroide con una tolerancia global lo declaraba
+    // tapado por su propio vecino. Como cd ≥ min_profundidad ≥ cd − rango, la cota
+    // conservadora es cd − rango. Sin esto, una esfera CONVEXA reportaba área oculta
+    // (hasta 0.21 %) y encima de forma NO monótona con la resolución —el síntoma de que
+    // era artefacto de rasterizado, no geometría. Lo destapó corregir el devanado del
+    // fixture (2026-08-05): antes el error quedaba enmascarado.
+    frac[t] = !Number.isFinite(df) || cd - rango <= df + tolPunto ? 1 : 0;
   }
   return { frac, depth, w, u, v, su0, sv0, sU, sV, tol: tolPunto };
 }

@@ -43,7 +43,15 @@ function caja(x0, y0, z0, x1, y1, z1, P, I) {
   for (const t of f) I.push(b + t[0], b + t[1], b + t[2]);
 }
 
-/** esfera UV con normales salientes. */
+/**
+ * esfera UV con normales SALIENTES.
+ * ⚠ 2026-08-05: tenía el devanado INVERTIDO (volumen −4181 en vez de +4189) y el
+ * comentario decía "salientes". Aquí era inofensivo — el z-buffer no depende del
+ * sentido y el área de media esfera es la misma por simetría — pero es exactamente
+ * el bug que `verificacion/matricula.ts` existe para cazar, viviendo en el gate.
+ * Lo destapó el censo de mallas. Ahora el devanado es correcto Y el check V0b lo
+ * verifica por volumen, igual que la taza.
+ */
 function esfera(r, nu, nv) {
   const P = [], I = [];
   for (let j = 0; j <= nv; j++) {
@@ -55,8 +63,8 @@ function esfera(r, nu, nv) {
   }
   const id = (i, j) => j * (nu + 1) + i;
   for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) {
-    I.push(id(i, j), id(i + 1, j), id(i + 1, j + 1));
-    I.push(id(i, j), id(i + 1, j + 1), id(i, j + 1));
+    I.push(id(i, j), id(i + 1, j + 1), id(i + 1, j));
+    I.push(id(i, j), id(i, j + 1), id(i + 1, j + 1));
   }
   return { positions: Float32Array.from(P), indices: Uint32Array.from(I) };
 }
@@ -121,6 +129,14 @@ function volumen(m) {
     `oculta=${vc.areaOcultaPorSiMismaMm2.toFixed(4)} mm² (debe ser exactamente 0)`);
 
   const esf = esfera(10, 96, 48);
+  {
+    const vTeo = (4 / 3) * Math.PI * 1000;
+    const vMed = volumen(esf);
+    const e = Math.abs(vMed - vTeo) / vTeo * 100;
+    check('V0b fixture: la esfera es sólida con normales SALIENTES (volumen analítico)',
+      vMed > 0 && e < 0.5,
+      `V=${vMed.toFixed(1)} vs teórico ${vTeo.toFixed(1)} mm³ → error ${e.toFixed(3)} % (tenía el devanado INVERTIDO hasta 2026-08-05)`);
+  }
   const ve = V.clasificarVisibilidad(esf, { res: 256 });
   check('V1b esfera convexa: CERO área oculta por sí misma',
     ve.areaOcultaPorSiMismaMm2 === 0,
