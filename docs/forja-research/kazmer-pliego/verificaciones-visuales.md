@@ -591,8 +591,15 @@ fueron verificadas con `grep` contra el texto extraído.
   > *"A properly designed pin-point gate will have a reverse taper between the cavity surface and the gate breakpoint
   > as shown in Figure 7.4."*
   Longitud del gate *"typically on the order of its diameter"*.
-- **Juzgable por píxeles:** **SÍ.** En la sección, medir el **signo del cono** entre cavidad y breakpoint (debe abrirse
-  hacia la cavidad) y la razón longitud/diámetro.
+- **Juzgable por píxeles:** **SÍ.** En la sección, medir el **signo del cono** entre cavidad y breakpoint y la razón
+  longitud/diámetro. El ⌀ debe **CRECER HACIA EL BREAKPOINT**, o sea alejándose de la pieza.
+  > ⚠ **CORRECCIÓN (2026-08-04).** Esta glosa decía antes "debe abrirse hacia la cavidad", y está mal: eso da el
+  > **mismo** signo que el bebedero y contradice el pie de la propia figura. Fig 7.4 se titula *"Pin-point gate
+  > designed with **inverted sprue**"* — invertido **respecto al bebedero**, que sí crece hacia la pieza porque se
+  > extrae hacia ella (§6.3.1). Con el ⌀ creciendo hacia el breakpoint la sección MÍNIMA queda pegada a la pieza:
+  > el slug se va con el canal y truena ahí, dejando el vestigio diminuto que es todo el propósito del pin-point.
+  > Con la glosa vieja el vestigio quedaría en el extremo ANCHO. El texto literal citado arriba ("reverse taper")
+  > no cambia; lo que estaba mal era la paráfrasis de este renglón, no el libro.
 
 ### V7.4 — Edge gate → tab gate (gate a sección delgada) ★ TOP-10
 - **§** 7.2.3 → 7.2.4
