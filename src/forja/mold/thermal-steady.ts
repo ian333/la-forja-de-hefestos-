@@ -31,7 +31,11 @@ export interface SteadyField {
   T: Float32Array;
   /** 0=acero, 1=plástico (la FORMA), 2=celda con línea de agua */
   mat: Uint8Array;
-  iters: number; residualC: number;
+  iters: number;
+  /** residuo VERDADERO ‖b−A·T‖ recalculado al final (no el recursivo del CG, que deriva) */
+  residualC: number;
+  /** el mismo, relativo a ‖b‖ — es el que hay que mirar: no depende de las unidades */
+  residualRel: number;
   minC: number; maxC: number;
   /** T sobre la superficie moldeante (celdas de acero que tocan plástico) */
   surfMinC: number; surfMaxC: number; surfMeanC: number;
@@ -131,6 +135,16 @@ export function solveSteadyMoldField(o: {
     for (let n = 0; n < N; n++) pv[n] = r[n] + beta * pv[n];
     rs = rs2; resid = Math.sqrt(rs2); iters++;
   }
+  // RESIDUO VERDADERO, recalculado una vez: ‖b − A·T‖. El `r` del lazo es el residuo
+  // RECURSIVO (r ← r − α·A·p), que en float32 DERIVA del verdadero y termina reportando
+  // 0 cuando el real vale 7.7e-3 W (medido con MMS, 2026-08-05). Como `residualC` se usa
+  // de bandera de calidad en mold-thermal-fdm (`ok: residualC < 0.1`), la bandera salía
+  // optimista. Cuesta un producto matriz-vector y deja de mentir.
+  applyA(T, Ap);
+  let rv = 0, bn = 0;
+  for (let n = 0; n < N; n++) { const d = b[n] - Ap[n]; rv += d * d; bn += b[n] * b[n]; }
+  resid = Math.sqrt(rv);
+  const residRel = bn > 0 ? Math.sqrt(rv / bn) : 0;
 
   // estadísticas + superficie moldeante (acero que TOCA plástico)
   let mn = 1e9, mx = -1e9, sMn = 1e9, sMx = -1e9, sSum = 0, sN = 0;
@@ -150,7 +164,7 @@ export function solveSteadyMoldField(o: {
   for (let n = 0; n < N; n++) mat[n] = o.plastic[n] === 1 ? 1 : (o.cool[n] > 0 ? 2 : 0);
   return {
     nx, ny, nz, dxMm: o.dxMm, x0: o.x0, y0: o.y0, z0: o.z0, T, mat,
-    iters, residualC: +resid.toFixed(4),
+    iters, residualC: +resid.toFixed(4), residualRel: +residRel.toExponential(3),
     minC: +mn.toFixed(2), maxC: +mx.toFixed(2),
     surfMinC: sN ? +sMn.toFixed(2) : o.tCoolantC,
     surfMaxC: sN ? +sMx.toFixed(2) : o.tCoolantC,
