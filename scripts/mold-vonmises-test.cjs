@@ -318,9 +318,25 @@ const rel = (a, b) => Math.abs(a - b) / Math.max(1e-12, Math.abs(b));
   {
     const e1 = rel(c5.sigmaMaxMPa, c8.sigmaMaxMPa);
     const e2 = rel(Math.abs(c5.lados['móvil'].fibras.flexionMPa), Math.abs(c8.lados['móvil'].fibras.flexionMPa));
-    check('C3 CONVERGENCIA de malla: σ_max y la flexión no cambian al refinar h 8 → 5 mm',
+    // ⚠ C3 MEDÍA UNA CONVERGENCIA FALSA (corregido 2026-08-05). Refinaba SOLO `hMallaMm`
+    // y dejaba `divBarreno` congelado en 12 — pero σ_max vive en el BORDE DE UNA LÍNEA DE
+    // AGUA, y ahí la malla la manda divBarreno, no hMm. Medido: refinar solo hMm mueve
+    // σ_max 0.44 % ("convergido" bajo el umbral de 2 %); refinar divBarreno 12→18 con el
+    // mismo hMm lo mueve 8.08 %, 18× más. El check refinaba donde NO está la respuesta.
+    // Ahora C3 es una cota necesaria pero NO suficiente y lo dice; el veredicto de
+    // convergencia real lo da `scripts/verif-gci-test.cjs` con las dos mallas refinadas a
+    // la MISMA razón (GCI 15.73 %, fuera de rango asintótico).
+    check('C3 cota parcial: refinar SOLO h (8 → 5 mm) mueve poco — NO basta, ver verif-gci',
       e1 < 0.02 && e2 < 0.02,
       `σ_max ${c8.sigmaMaxMPa.toFixed(1)} → ${c5.sigmaMaxMPa.toFixed(1)} MPa (${(100 * e1).toFixed(2)} %) · flexión ${Math.abs(c8.lados['móvil'].fibras.flexionMPa).toFixed(1)} → ${Math.abs(c5.lados['móvil'].fibras.flexionMPa).toFixed(1)} MPa (${(100 * e2).toFixed(2)} %)`);
+    // C3b — la prueba de que C3 sola MIENTE: refinar el parámetro que sí manda mueve el
+    // resultado un orden de magnitud más. Si algún día este check deja de fallar la
+    // desigualdad, es que la malla ya no depende de divBarreno y hay que revisarlo.
+    const cDiv = V.campoVonMises(V.seccionBezelLibro({ hMallaMm: 5, divBarreno: 18 }));
+    const eDiv = rel(cDiv.sigmaMaxMPa, c5.sigmaMaxMPa);
+    check('C3b σ_max depende MUCHO MÁS de divBarreno que de h ⇒ C3 sola es convergencia falsa',
+      eDiv > e1 * 3,
+      `solo h 8→5: ${(100 * e1).toFixed(2)} % · divBarreno 12→18 con h=5: ${(100 * eDiv).toFixed(2)} % (${(eDiv / Math.max(e1, 1e-9)).toFixed(0)}× más) — σ_max vive en el borde de una línea de agua`);
     check('C4 la SINGULARIDAD de esquina viva NO converge (crece al refinar) ⇒ bien apartada',
       c5.sigmaEsquinaMPa > c8.sigmaEsquinaMPa * 1.02,
       `pico en esquina ${c8.sigmaEsquinaMPa.toFixed(0)} → ${c5.sigmaEsquinaMPa.toFixed(0)} MPa · apartado en discos de ${c8.rSingularidadMm} mm (${c8.areaExcluidaMm2.toFixed(0)} mm² fuera del veredicto)`);
