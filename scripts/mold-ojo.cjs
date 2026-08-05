@@ -331,6 +331,52 @@ function shellMesh(L, W, H, t) {
     }
   }
 
+  // ── L21 §7.1.3/§4.1.2 — LA PIEZA COMO LA VE EL USUARIO (STL real) ──
+  if (fs.existsSync(stl)) {
+    const { clasificarVisibilidad, juzgarMarcas, proyectarParaLamina } = await import(R('visibilidad.ts'));
+    const { laminaUsuario } = await import(R('laminas-visuales.ts'));
+    const { solidFromMesh, defaultGate } = await import(R('flowlen-mesh.ts'));
+    const meshU = parseSTL(fs.readFileSync(stl).buffer);
+    const visU = clasificarVisibilidad(meshU, { res: 512 });
+    const qU = solidFromMesh(meshU, { maxVoxels: 60000 });
+    const gU = defaultGate(qU);
+    // el par del libro sobre la pieza REAL: el bebedero del fondo (§7.2.1) contra una
+    // compuerta lateral a media altura, que es el "gating on side wall" de Fig 7.1
+    // el punto va SOBRE un triángulo real de la pared exterior (el centroide de la cara
+    // más externa a media altura). Sacarlo del vóxel `inside` lo dejaba DENTRO del
+    // material, no sobre la superficie, y entonces el predicado lo daba por escondido.
+    const zMid = (qU.bbox.z0 + qU.bbox.z1) / 2;
+    const cxU = (qU.bbox.x0 + qU.bbox.x1) / 2, cyU = (qU.bbox.y0 + qU.bbox.y1) / 2;
+    let lateral = null, mejorR = -1;
+    for (let t = 0; t < meshU.indices.length / 3; t++) {
+      const a = meshU.indices[t * 3] * 3, b = meshU.indices[t * 3 + 1] * 3, c = meshU.indices[t * 3 + 2] * 3;
+      const P0 = meshU.positions;
+      const gx = (P0[a] + P0[b] + P0[c]) / 3, gy = (P0[a + 1] + P0[b + 1] + P0[c + 1]) / 3;
+      const gz = (P0[a + 2] + P0[b + 2] + P0[c + 2]) / 3;
+      if (Math.abs(gz - zMid) > (qU.bbox.z1 - qU.bbox.z0) * 0.15) continue;
+      const ux = P0[b] - P0[a], uy = P0[b + 1] - P0[a + 1], uz = P0[b + 2] - P0[a + 2];
+      const vx = P0[c] - P0[a], vy = P0[c + 1] - P0[a + 1], vz = P0[c + 2] - P0[a + 2];
+      const nz = ux * vy - uy * vx, nl = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, nz);
+      if (nl < 1e-12 || Math.abs(nz / nl) > 0.3) continue;      // solo paredes verticales
+      const rr = Math.hypot(gx - cxU, gy - cyU);
+      if (rr > mejorR) { mejorR = rr; lateral = [gx, gy, gz]; }
+    }
+    const marcasU = [
+      { tipo: 'compuerta', nombre: 'bebedero en el fondo (§7.2.1)', puntos: [[gU.x, gU.y, gU.z]] },
+    ];
+    if (lateral) marcasU.push({ tipo: 'compuerta', nombre: 'alternativa: compuerta lateral (Fig 7.1 "on side wall")', puntos: [lateral] });
+    const verU = juzgarMarcas(visU, marcasU);
+    const proyU = proyectarParaLamina(meshU, visU, { vista: 5, ancho: 590, alto: 610, marcas: marcasU, veredictos: verU });
+    laminas.push(laminaUsuario(proyU, {
+      nombre: 'carcasa RPi4 (STL real)',
+      pctVisible: visU.areaVisibleMm2 / (visU.areaTotalMm2 || 1) * 100,
+      areaOcultaMm2: visU.areaOcultaPorSiMismaMm2,
+      veredictos: verU, vistasDeclaradas: visU.vistasDeclaradas, nVistas: visU.vistas.length,
+    }));
+    console.log(`usuario: ${(visU.areaVisibleMm2 / visU.areaTotalMm2 * 100).toFixed(1)} % a la vista · ` +
+      verU.map((v) => `${v.nombre.slice(0, 22)}=${v.estado}`).join(' · '));
+  }
+
   // ── HTML + PNG por lámina (para que el OJO las abra con Read) ──
   const html = path.join(OUT, 'laminas.html');
   fs.writeFileSync(html, laminasToHTML(laminas, 'Láminas visuales del molde'));

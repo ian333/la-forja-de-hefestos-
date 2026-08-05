@@ -20,7 +20,8 @@ import { solidFromMesh, defaultGate, type MeshLike } from './flowlen-mesh';
 import { measureFlowLength, type FlowField } from './flowlen';
 import { enumerarVenteos, type PlanVenteo } from './venting-locations';
 import { gripEjectorLayout } from './eject-layout';
-import { laminaExpulsores, laminaEspesor, laminaDeflexion, laminaAlabeo, type Lamina } from './laminas-visuales';
+import { laminaExpulsores, laminaEspesor, laminaDeflexion, laminaAlabeo, laminaUsuario, type Lamina } from './laminas-visuales';
+import { clasificarVisibilidad, juzgarMarcas, proyectarParaLamina, type MarcaProceso } from './visibilidad';
 import { alabeoPorEspesor, alabeoPorArea } from './warpage';
 import { ABS_TAIT } from './shrinkage';
 import { moldMachine, type MachineSpec, type MoldPackage } from './moldmachine';
@@ -237,6 +238,38 @@ export function laminasDeRevision(r: RevisionModelo, mesh?: MeshLike): Lamina[] 
     try {
       const d = r.dfm ?? dfmFromMesh(mesh, { wallMm: spec.wallMm });
       out.push(laminaEspesor(d.thickMap, { nombre: r.nombre, nominalMm: d.wall.nominalMm, p95Mm: d.wall.p95Mm, ratio: d.wall.ratio }));
+    } catch { /* idem */ }
+    // L21 §7.1.3/§4.1.2 — la pieza como la ve el usuario, con las marcas del proceso
+    try {
+      const vis = clasificarVisibilidad(mesh, { res: 512 });
+      const q = solidFromMesh(mesh, { maxVoxels: 60000 });
+      const g = defaultGate(q);
+      const marcas: MarcaProceso[] = [
+        { tipo: 'compuerta', nombre: 'compuerta (bebedero §7.2.1)', puntos: [[g.x, g.y, g.z]] },
+      ];
+      // los expulsores empujan por el lado B: su marca cae donde toca el pin
+      try {
+        const dia = r.ens.pinDiaEnsambleMm ?? r.pkg.diseno.expulsion.pines.dMinMm;
+        const gl = gripEjectorLayout(mesh, { nPins: 12, pinDiaMm: dia, wallMm: spec.wallMm });
+        for (const p of (gl.grid?.pins ?? []).slice(0, 12)) {
+          marcas.push({ tipo: 'expulsor', nombre: `marca de expulsor ⌀${dia}`, puntos: [[p.x, p.y, q.bbox.z0]] });
+        }
+      } catch { /* sin layout no hay marcas de expulsor; el resto sigue */ }
+      const ver = juzgarMarcas(vis, marcas);
+      const proy = proyectarParaLamina(mesh, vis, { vista: 5, ancho: 590, alto: 610, marcas, veredictos: ver });
+      out.push(laminaUsuario(proy, {
+        nombre: r.nombre,
+        pctVisible: vis.areaVisibleMm2 / (vis.areaTotalMm2 || 1) * 100,
+        areaOcultaMm2: vis.areaOcultaPorSiMismaMm2,
+        // la LÍNEA DE PARTICIÓN todavía no se cablea: la silueta del molde no sale de
+        // este módulo. Se DECLARA pendiente en vez de inventarla (V4.3 sigue sin medir).
+        veredictos: [...ver, {
+          nombre: 'línea de partición', cita: '§4.1.2 · Fig 4.6',
+          estado: 'ADVIERTE' as const,
+          porque: 'SIN CABLEAR: la silueta de partición no llega a esta lámina todavía — V4.3 no está medida',
+        }],
+        vistasDeclaradas: vis.vistasDeclaradas, nVistas: vis.vistas.length,
+      }));
     } catch { /* idem */ }
   }
   // §12.1.2 — deflexión contra el espesor del venteo (siempre disponible)

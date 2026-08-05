@@ -906,3 +906,121 @@ export function laminasToHTML(ls: Lamina[], titulo: string): string {
 <body>${ls.map((l) => `<div class="l" data-lamina="${ESC(l.id)}">${l.svg}
  <p class="cap"><b>QUÉ MIRAR [${ESC(l.cita)}]:</b> ${ESC(l.queMirar)}</p></div>`).join('')}</body>`;
 }
+
+/**
+ * LÁMINA L21 §4.1.2 · §7.1.3 · §4.1.4 · §11.2.5 — LA PIEZA COMO LA VE EL USUARIO.
+ *
+ * El libro no da un número para la estética: da un PREDICADO, y lo usa igual en cuatro
+ * capítulos — *"locate gates on NON-VISIBLE SURFACES such as underneath a side wall"*
+ * (§7.1.3), *"a better location for the parting line is at the bottom of the rim"*
+ * (§4.1.2), *"any location… would be acceptable since the entire shelf is hidden from
+ * view"* (§4.1.4). Esta lámina lo dibuja: la pieza RENDERIZADA desde la vista de uso,
+ * pintada por visibilidad, con cada marca del proceso encima y su veredicto.
+ *
+ * Se juzga a ojo exactamente como en Fig 7.1: ¿el punto de la compuerta cae sobre la
+ * zona clara (a la vista) o sobre la oscura (escondida)?
+ */
+export function laminaUsuario(r: {
+  /** proyección ya resuelta: polígonos 2D en px con su visibilidad y profundidad */
+  caras: Array<{ pts: number[]; vis: number; z: number }>;
+  ancho: number; alto: number;
+  marcas: Array<{
+    nombre: string; tipo: string; estado: 'CUMPLE' | 'ADVIERTE' | 'VIOLA';
+    puntos: Array<{ x: number; y: number; visible: boolean }>;
+  }>;
+  vistaNombre: string;
+}, o: {
+  nombre: string;
+  pctVisible: number;
+  areaOcultaMm2: number;
+  veredictos: Array<{ nombre: string; cita: string; estado: 'CUMPLE' | 'ADVIERTE' | 'VIOLA'; porque: string }>;
+  vistasDeclaradas: boolean;
+  nVistas: number;
+}): Lamina {
+  const W = 1080, H = 760, PAD = 44, TOP = 100, COL = 664;
+  // pintado de atrás hacia adelante (algoritmo del pintor) — las caras vienen con su z
+  const caras = [...r.caras].sort((a, b) => b.z - a.z);
+  const cuerpo = caras.map((c) => {
+    // OSCURO = escondido al usuario · CLARO = a la vista. Es la única codificación
+    // de la lámina: el libro juzga por "¿se ve o no se ve?", nada más.
+    const g = Math.round(26 + 150 * c.vis);
+    const b = Math.round(34 + 120 * c.vis);
+    const col = `rgb(${Math.round(g * 0.86)},${g},${b})`;
+    // el stroke del MISMO color cierra la costura entre triángulos: sin él, el
+    // antialias deja una rejilla de líneas claras que se lee como textura inexistente
+    return `<polygon points="${c.pts.map((v) => v.toFixed(1)).join(' ')}" fill="${col}" stroke="${col}" stroke-width="0.7"/>`;
+  }).join('');
+
+  // envoltura de texto a un ancho fijo de columna (SVG no envuelve solo)
+  const envolver = (t: string, n: number) => {
+    const out: string[] = []; let ln = '';
+    for (const p of t.split(' ')) {
+      if ((ln + ' ' + p).trim().length > n) { out.push(ln.trim()); ln = p; } else ln += ' ' + p;
+    }
+    if (ln.trim()) out.push(ln.trim());
+    return out;
+  };
+  const COLOR = { CUMPLE: '#59d98c', ADVIERTE: '#ffb347', VIOLA: '#ff5c5c' };
+  const marcas = r.marcas.map((m) => {
+    const c = COLOR[m.estado];
+    if (m.puntos.length > 2) {
+      // LÍNEA (partición, testigo del stripper): el tramo VISIBLE en rojo y grueso,
+      // el escondido punteado y tenue — el ojo va directo a lo que el libro castiga
+      const seg: string[] = [];
+      for (let i = 1; i < m.puntos.length; i++) {
+        const a = m.puntos[i - 1], b = m.puntos[i];
+        const asoma = a.visible || b.visible;
+        seg.push(`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${asoma ? c : '#7d8ea6'}" stroke-width="${asoma ? 3.2 : 1.4}" ${asoma ? '' : 'stroke-dasharray="3 3"'}/>`);
+      }
+      return seg.join('');
+    }
+    // PUNTO (compuerta, expulsor): diana, que es como Fig 7.1 marca el gate
+    return m.puntos.map((p) =>
+      `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="11" fill="none" stroke="${c}" stroke-width="2.6"/>`
+      + `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.4" fill="${c}"/>`).join('');
+  }).join('');
+
+  const nViola = o.veredictos.filter((v) => v.estado === 'VIOLA').length;
+  const nAdv = o.veredictos.filter((v) => v.estado === 'ADVIERTE').length;
+  let yy = TOP + 8;
+  const filas = o.veredictos.slice(0, 8).map((v) => {
+    const c = COLOR[v.estado];
+    const ico = v.estado === 'CUMPLE' ? '✓' : v.estado === 'VIOLA' ? '✗' : '⚠';
+    const head = envolver(`${ico} ${v.nombre}`, 40).map((l) => {
+      const t = `<text class="lbl" style="fill:${c};font-weight:700" x="${COL}" y="${yy}">${ESC(l)}</text>`;
+      yy += 15; return t;
+    }).join('');
+    const cita = `<text class="cita" style="font-size:10.5px" x="${COL}" y="${yy}">${ESC(v.cita)}</text>`;
+    yy += 14;
+    const cuerpoTxt = envolver(v.porque, 48).map((l) => {
+      const t = `<text class="lblSm" x="${COL}" y="${yy}">${ESC(l)}</text>`; yy += 13; return t;
+    }).join('');
+    yy += 12;
+    return head + cita + cuerpoTxt;
+  }).join('');
+
+  const nota = o.vistasDeclaradas
+    ? `${o.nVistas} vistas de uso DECLARADAS por el cliente`
+    : `${o.nVistas} vistas del supuesto de la taza (§4.1.2/§7.1.3) — EXTENSIÓN DECLARADA, no del libro`;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<style>${CSS}</style><rect class="bg" width="${W}" height="${H}"/>
+<text class="tit" x="${PAD}" y="34">LA PIEZA COMO LA VE EL USUARIO · vista ${ESC(r.vistaNombre)}</text>
+<text class="sub" style="font:700 14px 'JetBrains Mono',monospace;fill:#e9eef5" x="${PAD}" y="54">${ESC(o.nombre)}</text>
+<text class="cita" x="${PAD}" y="73">§4.1.2 Fig 4.6 · §7.1.3 Fig 7.1 · §4.1.4 Fig 4.11-4.12 · §11.2.5 Fig 11.12</text>
+<text class="lblSm" x="${PAD}" y="90">CLARO = a la vista · OSCURO = escondido · línea ROJA GRUESA = tramo de la marca que asoma</text>
+<g transform="translate(${PAD},${TOP})">${cuerpo}${marcas}</g>
+${filas}
+<text class="lblSm" x="${PAD}" y="${H - 40}">${ESC(nota)} · ${o.pctVisible.toFixed(1)} % del área a la vista · ${o.areaOcultaMm2.toFixed(0)} mm² tapados por la propia pieza</text>
+<text class="${nViola ? 'mal' : nAdv ? 'warn' : 'ok'}" style="font:700 13.5px 'JetBrains Mono',monospace" x="${PAD}" y="${H - 20}">${nViola
+    ? `✗ ${nViola} marca(s) del proceso caen en superficie VISIBLE — vestigio/línea testigo a la vista`
+    : nAdv ? `⚠ sin marcas visibles, pero ${nAdv} pide criterio de experto (§11.3.4)`
+      : '✓ ninguna marca del proceso cae en superficie visible'}</text>
+</svg>`;
+  return {
+    id: 'usuario', titulo: `La pieza como la ve el usuario — ${o.nombre}`,
+    cita: '§4.1.2 · §7.1.3 · §4.1.4 · §11.2.5',
+    queMirar: 'mira SOLO las marcas: ¿alguna cae sobre zona CLARA? Un vestigio de compuerta o una línea de partición sobre superficie visible es el defecto que Kazmer llama "unusable" (§4.1.2). Sobre zona oscura, el libro lo aprueba sin más discusión (§4.1.4).',
+    svg,
+  };
+}

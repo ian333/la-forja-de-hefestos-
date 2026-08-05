@@ -95,6 +95,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-venteo-ubicaciones-test.cjs'] },
   { group: 'kernel', n: 'fisica-verify', why: 'VERIFICACIÓN INDEPENDIENTE DEL LIBRO: reproducir un número de Kazmer prueba que copiamos bien la fórmula, NO que el solver esté bien. 8 pruebas contra física conocida — eigenmodo exacto, INDEPENDENCIA DEL dt (el solver dice ser exacto en tiempo: se prueba distinguiendo error de método de redondeo float32, no aflojando la tolerancia), orden de convergencia O(h²) medido, conservación con bordes aislados, la SERIE DE FOURIER analítica juzgando al código, Robin exacto, isotropía (caza ejes transpuestos) y principio del máximo',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/fisica-verify.cjs'] },
+  { group: 'kernel', n: 'mold-visibilidad', why: 'EL PREDICADO DEL LIBRO (§4.1.2 · §4.1.4 · §7.1.3 · §11.2.5): Kazmer no da número para la estética, da UNA pregunta — ¿la marca del proceso cae en superficie visible? — y la usa igual en cuatro capítulos. Se verifica contra geometría ANALÍTICA, no contra el libro: convexo ⇒ CERO auto-oclusión (exacto), esfera desde una vista = 2πr², oclusión medida = huella analítica de la caja de encima (144 mm²), conservación y convergencia. Y reproduce los dos pares bueno/malo del libro: gate "on side wall" vs "below side wall" (Fig 7.1) y partición en el labio vs en la base del reborde (Fig 4.6). Dos bugs que solo cazó esto: el booleano por triángulo perdía TODA el área tapada bajo un saliente, y el test de profundidad sin la normal daba por visible una cara que mira hacia abajo',
+    cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-visibilidad-test.cjs'] },
   { group: 'kernel', n: 'mold-ojo', why: 'EL OJO: el libro tiene 283 figuras y enseña COMPARANDO (Fig 11.10 rejilla = antipatrón vs Fig 11.11 pines junto al agarre). Dibuja esas figuras con NUESTROS datos y verifica que el veredicto visual NO MIENTA — la primera versión pintaba VERDE una rejilla con los pines tirados al centro. Un juez visual que aprueba el antipatrón del libro es peor que no tenerlo',
     cmd: NODE, args: ['--import', 'tsx', 'scripts/mold-ojo.cjs'] },
   { group: 'kernel', n: 'mold-revisar', why: 'LA LLAMADA ÚNICA revisarModelo(): malla o spec → dfm → moldMachine → ensamble medido → campo de flujo → venteos → contratos → expediente §13.10. La prueba decisiva: lo que el consumidor ingenuo deja SIN-CABLEAR (6) la llamada única lo destraba sola (3) — sin ella cada pantalla de la UI re-cablearía distinto y renace EL bug de contabilidad. Incluye el lote N-29 (tabla por severidad) y el registro de decisiones con firmas',
@@ -175,6 +177,8 @@ const SUITES = [
     cmd: NODE, args: ['--import', 'tsx', 'scripts/topopt-node-test.cjs'] },
   { group: 'unit', n: 'vitest-forja',    why: 'croquis (solver DOF/L-M), planos (HLR), topopt-AM (auto-soporte 45°), soportes, evolución GA',
     cmd: VITEST, args: ['run', 'src/forja', '--reporter=dot'] },
+  { group: 'unit', n: 'vitest-aero',     why: 'ISA 7 capas vs U.S. Std 1976 + geopotencial, flujo potencial (∮u·dl=−Γ), θ-β-M con desprendimiento declarado, Ej. 1.1 de Anderson',
+    cmd: VITEST, args: ['run', 'src/aero', '--reporter=dot'] },
 ];
 
 // e2e por GPU (opcional, requiere preview vivo en iangpu)
