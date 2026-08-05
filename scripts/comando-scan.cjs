@@ -81,10 +81,16 @@ function narracion() {
 }
 
 // ── 3. resumen de telemetría (events.jsonl en atlas) ──
+// ⚠ Los números que salen de aquí se LIMPIAN antes de publicarse: probamos en producción,
+// así que nuestras sesiones caen en el mismo archivo. Sin limpiar, el tablero dijo 1731
+// sesiones / mediana 1.5s / 277 entradas al CAD — y 270 de esas entradas éramos nosotros
+// en escritorio. Ver scripts/telemetria-limpia.cjs y config/telemetria-ignorar.json.
+const limpia = require('./telemetria-limpia.cjs');
 function telemetria() {
-  const raw = sh(`ssh -o ConnectTimeout=12 ${ATLAS} 'sudo docker exec gaia_telemetry_forja cat /data/events.jsonl 2>/dev/null | tail -8000'`)
-    || sh(`ssh -o ConnectTimeout=12 ${ATLAS} 'sudo docker cp gaia_telemetry_forja:/data/events.jsonl /tmp/tele.jsonl 2>/dev/null; tail -8000 /tmp/tele.jsonl 2>/dev/null'`);
+  const raw = sh(`ssh -o ConnectTimeout=12 ${ATLAS} 'sudo docker exec gaia_telemetry_forja cat /data/events.jsonl 2>/dev/null | tail -25000'`)
+    || sh(`ssh -o ConnectTimeout=12 ${ATLAS} 'sudo docker cp gaia_telemetry_forja:/data/events.jsonl /tmp/tele.jsonl 2>/dev/null; tail -25000 /tmp/tele.jsonl 2>/dev/null'`);
   if (!raw.trim()) return { connected: false };
+  const an = limpia.analizar(raw);
   const sids = new Set(); const pages = {}; let pv = 0, errs = 0, clicks = 0; let last = 0;
   for (const line of raw.trim().split('\n')) {
     let e; try { e = JSON.parse(line); } catch { continue; }
@@ -95,7 +101,12 @@ function telemetria() {
     else if (e.type === 'click') clicks++;
   }
   const topPages = Object.entries(pages).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([u, n]) => ({ u, n }));
-  return { connected: true, sessions: sids.size, pageviews: pv, clicks, errors: errs, lastEvent: last, topPages };
+  // `sessions`/`pageviews` quedan como el CRUDO (para no romper lo que ya los lee) y el
+  // embudo LIMPIO va aparte: es el que hay que mirar para decidir cualquier cosa.
+  return {
+    connected: true, sessions: sids.size, pageviews: pv, clicks, errors: errs, lastEvent: last, topPages,
+    limpio: an.embudo, origen: an.motivos, ipsSospechosas: an.sospechosas,
+  };
 }
 
 const data = {
@@ -106,4 +117,11 @@ const data = {
 };
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.writeFileSync(path.join(OUT_DIR, 'produccion.json'), JSON.stringify(data));
-console.log(`✓ produccion.json — ${data.videos.length} videos, ${Object.keys(data.narracion).length} clases con narración, telemetría ${data.telemetria.connected ? data.telemetria.sessions + ' sesiones' : 'sin conectar'}`);
+const T = data.telemetria;
+console.log(`✓ produccion.json — ${data.videos.length} videos, ${Object.keys(data.narracion).length} clases con narración, telemetría ${T.connected ? T.sessions + ' sesiones crudas' : 'sin conectar'}`);
+if (T.connected && T.limpio) {
+  const L = T.limpio;
+  console.log(`   LIMPIO: ${L.sesiones} sesiones reales (${L.descartadas} nuestras/bots) · c1 ${L.c1_segunda_pagina}% · mediana ${L.mediana_s}s · rebote≤3s ${L.rebote_3s_pct}% · in-app ${L.inapp_pct}%`);
+  if (T.ipsSospechosas && T.ipsSospechosas.length)
+    console.log(`   ⚠ ${T.ipsSospechosas.length} IP(s) huelen a máquina de pruebas — revisar config/telemetria-ignorar.json`);
+}

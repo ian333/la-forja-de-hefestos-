@@ -1,0 +1,32 @@
+{
+  "_comentario": [
+    "QUIÉN NO ES UN USUARIO. Esto es DATO, no código: agregar una máquina de pruebas es",
+    "editar este archivo, no tocar el analizador.",
+    "",
+    "Por qué existe (2026-08-05): el Comando reportaba 1731 sesiones, mediana de 1.5s y",
+    "277 entradas al CAD con 11.6 clicks cada una. Sonaba a que el laboratorio enganchaba.",
+    "Ian lo cachó de un vistazo: 'el CAD es de PC, ¿cómo entran?'. Eran NUESTRAS pruebas.",
+    "Limpio quedaron 1399 sesiones, mediana 0.9s y 12 entradas al CAD. La conclusión que",
+    "yo había sacado estaba invertida — probamos en producción, así que nuestro tráfico",
+    "cae en el mismo pozo que el de la gente."
+  ],
+  "ips": [
+    { "prefijo": "187.190.194.239", "quien": "casa/oficina — 173 sesiones al CAD en escritorio" },
+    { "prefijo": "189.217.82.175", "quien": "segunda salida a internet nuestra" },
+    { "prefijo": "201.165.24.", "quien": "rango de pruebas" },
+    { "prefijo": "201.165.25.", "quien": "rango de pruebas" },
+    { "prefijo": "2806:2f0:a0e0:e713", "quien": "IPv6 de casa" }
+  ],
+  "bots": [
+    { "prefijo": "66.249.", "quien": "Googlebot" },
+    { "prefijo": "157.55.", "quien": "Bingbot" },
+    { "prefijo": "40.77.", "quien": "Bingbot" },
+    { "prefijo": "17.241.", "quien": "Applebot" },
+    { "prefijo": "2a03:2880:", "quien": "facebookexternalhit" }
+  ],
+  "umbral_sospecha": {
+    "sesiones_minimas": 8,
+    "fraccion_escritorio": 0.9,
+    "_nota": "Una IP con muchas sesiones y casi todo escritorio NO se descarta sola — se REPORTA, para que una máquina de pruebas nueva salga a la luz en vez de contaminar en silencio. El tráfico real es 98.8% móvil."
+  }
+}
