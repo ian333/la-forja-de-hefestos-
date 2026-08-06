@@ -238,11 +238,30 @@ export default function EstudioVivo({ onClose }: { onClose: () => void }) {
     setCruda(null); setFallo(''); setCargando(`cargando ${pieza.nombre}…`);
     (async () => {
       try {
+        // ⚠ EL 200 MENTIROSO. nginx sirve la app con `try_files $uri $uri/ /index.html`,
+        // así que un archivo QUE NO EXISTE devuelve **200 con el index.html** en vez de
+        // 404. Con `r.ok` a secas el respaldo nunca se dispara y el parser recibe HTML,
+        // reportando "STL ilegible" — cierto pero engañoso: el archivo no está publicado.
+        // Ya nos costó caro una vez (los .mp4 de la biblioteca daban 206 y nadie lo vio
+        // en meses). Por eso aquí se verifica el CONTENIDO, no el código de estado.
+        const pareceHtml = (b: ArrayBuffer) => {
+          const t = new TextDecoder().decode(b.slice(0, 512)).trimStart().toLowerCase();
+          return t.startsWith('<!doctype html') || t.startsWith('<html');
+        };
         // dev sirve la raíz del repo; /@fs es el respaldo (mismo path en laptop e iangpu)
         let r = await fetch('/' + pieza.ruta);
-        if (!r.ok) r = await fetch('/@fs/home/ian/Orkesta/la-forja/' + pieza.ruta);
-        if (!r.ok) throw new Error(`HTTP ${r.status} al pedir ${pieza.ruta}`);
-        const m = parseSTL(await r.arrayBuffer());
+        let buf = r.ok ? await r.arrayBuffer() : null;
+        if (!buf || pareceHtml(buf)) {
+          const r2 = await fetch('/@fs/home/ian/Orkesta/la-forja/' + pieza.ruta);
+          if (r2.ok) { const b2 = await r2.arrayBuffer(); if (!pareceHtml(b2)) buf = b2; }
+        }
+        if (!buf) throw new Error(`HTTP ${r.status} al pedir ${pieza.ruta}`);
+        if (pareceHtml(buf)) {
+          throw new Error(`${pieza.ruta} NO ESTÁ PUBLICADO en este servidor: la petición `
+            + `devolvió el index.html (el "200 mentiroso" de try_files), no el STL. `
+            + `Los STL del banco se publican desde public/test-parts/.`);
+        }
+        const m = parseSTL(buf);
         if (vivo) { setCruda(m); setCargando(''); }
       } catch (e) {
         if (vivo) { setFallo(String(e).slice(0, 200)); setCargando(''); }
