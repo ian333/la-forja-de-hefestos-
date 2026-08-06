@@ -310,8 +310,9 @@ V13.x + apéndice de erratas) y `cruce.md`.
 - **CRITERIO:** [JUICIO] el libro presenta las tres y NO elige. El software tampoco debe elegir.
 - **INVALIDA:** que el tryout entregue la contracción real (entonces se remueve el acero de reserva
   y la opción C se resuelve).
-- **¿TENEMOS?** **SÍ para A y B.** `mold-contratos.ts:contr-steel-safe` presenta las dos escuelas con
-  sus factores calculados y declara *"ninguna es el default"*; `expediente.ts` la levanta como
+- **¿TENEMOS?** **Parcial — SÍ para A y B.** `mold-contratos.ts:contr-steel-safe` presenta las dos escuelas con
+  sus factores calculados y deja escrito que **ninguna de las dos es el default** (frase nuestra, no
+  del libro); `expediente.ts` la levanta como
   decisión firmable. **FALTA la opción C** (features semi-acabados con su impacto en cronograma) —
   no hay estado "semi-terminado" en el modelo de features.
 
@@ -586,7 +587,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   largo**: *"The mold designer should perform analysis for their molding application to confirm the
   driving constraint."*
 - **INVALIDA:** cambiar el stack de placas (cambia `L`), o cambiar `n`.
-- **¿TENEMOS?** **SÍ, con una desviación que hay que corregir.** `ejection.ts:pinBuckling()` usa
+- **¿TENEMOS?** **Parcial — SÍ el cálculo, con una desviación.** `ejection.ts:pinBuckling()` usa
   `K = 2` (empotrado-libre, voladizo) y exige `sf >= 2`, mientras el libro usa **0.7·L**
   (soportado-articulado) sin factor. Son modelos distintos: el nuestro es más conservador pero **no
   reproduce el 1.86 mm del ejemplo**. Hay que ofrecer `K = 0.7` como el modo "Kazmer literal".
@@ -667,7 +668,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
 - **CRITERIO:** [LIBRO] holgura de acero contra cualquier componente; conflicto declarado en el
   propio texto de la Fig. 11.11.
 - **INVALIDA:** cualquier cambio de layout de cualquiera de los dos subsistemas.
-- **¿TENEMOS?** **SÍ.** `collision.ts` + `mold-contratos.ts:agua-claro` (½ diámetro contra cualquier
+- **¿TENEMOS?** **Parcial.** `collision.ts` + `mold-contratos.ts:agua-claro` (½ diámetro contra cualquier
   componente) y `vent-vs-agua`. **FALTA** que el conflicto ofrezca automáticamente la salida
   "achicar el pin" con el recálculo de A-86 encadenado.
 
@@ -841,7 +842,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   *"hydraulic actuators have a power density an order of magnitude"* por encima de neumático o
   eléctrico, más disponibilidad, costo e integración con la máquina.
 - **INVALIDA:** que la planta opere a otra presión (dato externo a pedir).
-- **¿TENEMOS?** **SÍ.** `sideactions.ts:hydraulicBore()`, `STD_BORES_MM` (incluye 82.55) y
+- **¿TENEMOS?** **Parcial.** `sideactions.ts:hydraulicBore()`, `STD_BORES_MM` (incluye 82.55) y
   `pickStdBore()`. **FALTA** el check de carrera contra la envolvente y la regla de "un solo lado".
 
 ### A-101 — Slide con perno ángel: ángulo y carrera
@@ -881,7 +882,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   [JUICIO] argumentado. Si el retorno temprano debe **garantizarse** antes de cerrar ⇒ **limit switch
   de reset obligatorio**.
 - **INVALIDA:** que el molder exija retorno temprano; cambio de máquina (otros knock-out rods).
-- **¿TENEMOS?** **SÍ para resortes.** `sideactions.ts:springReturnCheck(freeLenMm, diaMm, compressMm)`
+- **¿TENEMOS?** **Parcial — SÍ para resortes.** `sideactions.ts:springReturnCheck(freeLenMm, diaMm, compressMm)`
   cubre el 4×D y el 40 %. **FALTA** el ¼·F_eject como dimensionado de fuerza y el registro del dato
   externo (ubicación/Ø/rosca de los knock-out rods).
 
@@ -938,7 +939,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   factor of safety with the worst case scenario"* — combinarlos es sobre-diseño. El sistema debe
   **bloquear** la combinación.
 - **INVALIDA:** cambio de metal o de presión esperada.
-- **¿TENEMOS?** **SÍ, auditado.** `platesizing.ts:StressMethod {metodo: 'deflexión-pura'|'yield/f'|
+- **¿TENEMOS?** **Parcial — auditado pero sin los dos caminos.** `platesizing.ts:StressMethod {metodo: 'deflexión-pura'|'yield/f'|
   'peor-caso', f, sigmaLimitMPa, cita}` y `mold-contratos.ts:estr-no-apilar-sesgos` reprueba si el
   módulo no declara cuál método usó. **Nota de deuda propia:** hoy `sizeSupportPlate()` devuelve
   siempre `'deflexión-pura'`, así que los caminos (a) y (b) existen como tipo pero no como cálculo.
@@ -961,7 +962,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   una etiqueta (SPI 101–105) y se vuelve un número que entra al cálculo**. El corpus declara que el
   libro **no trae** tabla de clases SPI, y que este mecanismo es el equivalente funcional y mejor.
 - **INVALIDA:** que cambie el volumen de producción comprometido con el cliente.
-- **¿TENEMOS?** **SÍ.** `moldbase.ts:MOLD_METALS` trae `fatigueLimitMPa` (S-N a 1e6, FS=1, nota B.4)
+- **¿TENEMOS?** **Parcial.** `moldbase.ts:MOLD_METALS` trae `fatigueLimitMPa` (S-N a 1e6, FS=1, nota B.4)
   para los 11 metales, y `mold-contratos.ts:estr-vida-ciclos` cruza el horizonte de piezas contra el
   metal y **advierte explícitamente cuando el metal es aluminio**. **FALTA la curva S-N como función**
   (hoy es un solo punto a 1e6): con aluminio a 10,000 ciclos el límite bueno es 370 MPa, no el 166/170
@@ -1015,7 +1016,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   para compensar.
 - **CRITERIO:** [JUICIO] "no necesita más consideración" salvo la excepción declarada.
 - **INVALIDA:** cambio de tonelaje o del área de soporte (mover leader pins, agrandar cavidad).
-- **¿TENEMOS?** **SÍ el cálculo, FALTA el área.** `structural.ts:plateCompression(fN, aM2, lM)` da
+- **¿TENEMOS?** **Parcial — SÍ el cálculo, falta el área.** `structural.ts:plateCompression(fN, aM2, lM)` da
   sigma/epsilon/delta. **FALTA** la resta explícita de cavidad + leader pins + bushings (V12.5, que es
   un cálculo de área sobre la planta del plano de partición) y la compensación de profundidad de
   cavidad.
@@ -1037,7 +1038,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   **Multicavidad:** descomponer en porciones (agrupar, p. ej., 3 cavidades) y usar el ancho efectivo
   de ese grupo.
 - **INVALIDA:** cambiar el mold base (cambia el claro entre rieles) o el layout de cavidades.
-- **¿TENEMOS?** **SÍ.** `structural.ts:plateBending()`, `rectInertia()`, `shearArea()`,
+- **¿TENEMOS?** **Parcial.** `structural.ts:plateBending()`, `rectInertia()`, `shearArea()`,
   `minPlateThickness()`; `platesizing.ts:thicknessByDeflection()` y `sizeSupportPlate()`.
   **FALTA** la descomposición multicavidad por grupos (V12.7) y la exclusión explícita del espesor de
   corazones.
@@ -1080,9 +1081,10 @@ V13.x + apéndice de erratas) y `cruce.md`.
   únicos umbrales absolutos de deflexión** del libro (ficha V12.9). El 297 MPa del primer intento
   además ronda el endurance del SAE1040: la vara es fatiga, no yield.
 - **INVALIDA:** cambiar el número de pilares (cambia el reparto de carga).
-- **¿TENEMOS?** **Parcial.** `optimizeSupportPlate()` busca el óptimo de placa+pilares por masa de
-  acero, pero **no hace la superposición Ecs. 12.12–12.13** ni evalúa `sigma` en el pilar contra el
-  endurance. **FALTA** — y es lo que decide el Ø del pilar.
+- **¿TENEMOS?** **FALTA.** `platesizing.ts:optimizeSupportPlate()` busca el óptimo de placa+pilares
+  **por masa de acero**, no por la meta de 0.1 mm: no hace la superposición Ecs. 12.12–12.13 ni evalúa
+  `sigma` en el pilar contra el endurance. Es el único análisis ausente que gobierna una cota real
+  del molde (el Ø del pilar).
 
 ### A-112 — Pre-carga de pilares
 - **§** 12.2.3 · **CUÁNDO:** después de A-111, como refinamiento de artesano.
@@ -1253,7 +1255,7 @@ V13.x + apéndice de erratas) y `cruce.md`.
   Nota de conflicto declarada por el libro: un flow leader en la superficie **interior** puede estorbar
   si la pieza contiene fluidos ⇒ pasarlo a la superficie exterior, en la cavidad.
 - **INVALIDA:** cambio de gate (cambia `delta_P`) o interlockear la punta (cambia el modelo entero).
-- **¿TENEMOS?** **SÍ el cálculo.** `cores.ts:coreInertiaM4()` y `coreBendingMm()` (verificados:
+- **¿TENEMOS?** **Parcial — SÍ el cálculo.** `cores.ts:coreInertiaM4()` y `coreBendingMm()` (verificados:
   I 5.1e-7, delta_flex 0.03 mm del cup). `flowleaders.ts` existe como recurso de llenado. **FALTA**
   la escalera de remedios como decisión encadenada (sobre todo el "interlock de punta → 10 %" y el
   retorno a alimentación).
@@ -1367,6 +1369,607 @@ V13.x + apéndice de erratas) y `cruce.md`.
   presentación, no de motor.
 
 ---
-<!-- CONTINUA -->
+# CAPÍTULO 13 — TECNOLOGÍAS DE MOLDE
+
+> El cap. 13 es **descriptivo**: casi no trae ecuaciones nuevas. Su aporte al grafo es de otro tipo y
+> es doble. (1) **La decisión temprana**: el árbol de la Fig. 13.1 se corre **antes** de que empiecen
+> los caps. 4–12, porque elegir canal caliente vs frío, o stack, o multi-shot, cambia todo lo de abajo.
+> (2) **§13.10, la gobernanza**: el entregable no es la geometría, es el **registro de decisiones
+> aprobado y documentado entre todas las partes**. Las pocas fichas con número que trae el capítulo
+> son casi todas **reusos** de análisis de los caps. 9 y 12 aplicados a un contexto nuevo.
+
+### A-127 — Selección de tecnología de molde (la decisión temprana)
+- **§** 13.1, Fig. 13.1 · **CUÁNDO:** **antes** del layout del molde; es una decisión de arquitectura,
+  no de detalle.
+- **ENTRADAS:** la necesidad de negocio en la raíz del árbol (calidad / costo / time-to-market) y su
+  rama concreta: multi-material · pieza hueca · superficie estética · geometría compleja · mejor
+  control de flujo · más cavitación · menos tonelaje de cierre · menos desperdicio · menor herramental
+  · más rápido al mercado.
+- **CÁLCULO:** **CUALITATIVO**, recorrido del flow chart. Mapa completo:
+  plástico sobre otro material → **insert mold** · plástico sobre plástico → **multi-shot** ·
+  plástico dentro de plástico → **coinyección** · fluido dentro del plástico → **gas/water assist** ·
+  plástico inflado → **injection blow** · interior complejo → **lost core** · superficie decorada →
+  **in-mold labeling** · superficie brillante/transparente → **control de T de pared** ·
+  sin marcas de testigo → **reverse ejection** · exterior complejo → **split cavity** ·
+  features interiores → **rotating core** · tolerancias cerradas → **inyección-compresión** ·
+  mejor control de flujo → **Dynamic Feed / Melt Flipper** · mayor cavitación → **canal caliente** ·
+  menor tonelaje → **stack mold** · menos desperdicio → **insulated runner** · menor cavitación →
+  **dos placas** · más rápido al mercado → **molde prototipo** (HSM).
+- **SALIDA:** la tecnología elegida + su §.
+- **DECIDE:** la arquitectura del molde entero, y por tanto qué análisis de los caps. 4–12 aplican.
+- **CRITERIO:** [JUICIO] — el árbol es un índice de decisiones, no un criterio de defecto (ficha V13.1
+  lo dice explícito). El valor está en poder **justificar** la elección ("¿por qué canal caliente y no
+  tres placas?").
+- **INVALIDA:** cambio de requisito de negocio o de volumen de producción.
+- **¿TENEMOS?** **Parcial.** `moldtech.ts:chooseMoldTechnology()` cubre bien la rama **§13.9**
+  (split-cavity, collapsible, unscrewing, reverse-ejection, side-action, estándar) con los criterios
+  literales. **FALTA la rama de costo/productividad** del árbol (hot runner, stack, insulated runner,
+  dos placas, prototipo) — que en la práctica es la que más plata mueve; hoy la arquitectura
+  frío/caliente se decide en `feed.ts`/`moldmachine.ts` por break-even, no por el árbol de §13.1.
+
+### A-128 — Meta-material de coinyección
+- **§** 13.2.2 · **CUÁNDO:** si A-127 eligió coinyección.
+- **ENTRADAS:** propiedades de los dos materiales · espesor de cada capa.
+- **CÁLCULO:** dos ajustes al análisis normal. (a) **Llenado:** diseñar la cavidad para que llene
+  completa **solo con el material MÁS VISCOSO**. (b) **Enfriamiento, contracción y expulsión:** derivar
+  un **"meta-material"** con propiedades ponderadas por el espesor de las dos capas.
+- **SALIDA:** propiedades del meta-material (E, CTE, k, rho, cp) que se inyectan a A-63, A-81 y al
+  cap. 9.
+- **DECIDE:** con qué números se corren los caps. 5, 9, 10 y 11 en una pieza de dos materiales.
+- **CRITERIO:** [LIBRO] *"many conventional molds can be successfully used in a coinjection process
+  since the mechanisms for coinjection are mostly integrated with the molding machine and not the mold
+  itself"* — o sea: el molde casi no cambia, **los números sí**.
+- **INVALIDA:** cambiar la relación de espesores entre capas.
+- **¿TENEMOS?** **FALTA.** No hay coinyección ni meta-material.
+
+### A-129 — Canal de flujo para gas/water assist
+- **§** 13.2.3 · **CUÁNDO:** si A-127 eligió asistido por fluido.
+- **ENTRADAS:** secciones candidatas de canal (Fig. 13.5) · espesor de pared remanente medido
+  radialmente alrededor del canal.
+- **CÁLCULO:** **uniformidad del espesor de pared remanente** — desviación estándar del espesor medido
+  radialmente en cada sección candidata. La sección superior derecha de la Fig. 13.5 es
+  **la peor** (pared irregular); las demás son aceptables.
+- **SALIDA:** ranking de secciones por uniformidad.
+- **DECIDE:** la geometría del canal de gas.
+- **CRITERIO:** [LIBRO] **la regla contraintuitiva del capítulo**: el espesor uniforme —virtud clásica
+  del diseño de pieza— **arruina** el asistido por fluido, porque el gas o el agua *"finger"* en
+  direcciones aleatorias por una cavidad de espesor parejo, debilitando la pieza sin quitarle peso.
+  Por eso se **añaden canales gruesos** que dirijan el fluido.
+  Y para water assist, dos consecuencias de diseño: hay que **sacar el agua** antes de abrir, y la
+  humedad y la corrosión piden un material resistente como **SS420**.
+- **INVALIDA:** cambio de la geometría de la pieza.
+- **¿TENEMOS?** **FALTA.** No hay gas/water assist. La métrica de uniformidad de espesor existe en
+  `dfm-mesh.ts` para el DFM de pieza y sería reusable.
+
+### A-130 — Espesor de la segunda capa en multi-shot
+- **§** 13.5 · **CUÁNDO:** si A-127 eligió multi-shot.
+- **ENTRADAS:** espesor de la primera capa · análisis de flujo de calor **a un solo lado** (§9.3.5.6).
+- **CÁLCULO:** la primera capa **aísla**, así que el calor de la segunda solo puede salir por un lado ⇒
+  *"the second layer should be 40% thinner than the first layer to avoid extending the cycle time"*.
+- **SALIDA:** espesor máximo de la segunda capa [mm].
+- **DECIDE:** la geometría de la segunda capa, y el tiempo de ciclo del molde.
+- **CRITERIO:** [LIBRO] umbral relativo literal (−40 %). Y una **doble cara declarada**: el segundo
+  disparo **funde y borra** imperfecciones y líneas de testigo de la primera capa (oportunidad), pero
+  por lo mismo **degrada detalle fino** — hay que evitar poner detalles finos donde el segundo tiro
+  los va a lavar.
+- **INVALIDA:** cambio del espesor de la primera capa.
+- **¿TENEMOS?** **FALTA.** El motor térmico de una cara existe (`thermal-layers.ts`,
+  `thermal-series.ts`) pero no la regla del −40 % ni el multi-shot como arquitectura.
+
+### A-131 — Core-back: cuchillas divisorias
+- **§** 13.5.2 · **CUÁNDO:** si el multi-shot se resuelve con core-back.
+- **ENTRADAS:** espesor de cavidad · presión de fundido · geometría de las cuchillas.
+- **CÁLCULO:** **reuso del cap. 12**: cortante y flexión de las cuchillas divisorias con los métodos
+  de A-109/A-113, para el espesor de cavidad y la presión de fundido.
+- **SALIDA:** espesor mínimo de cuchilla [mm]; veredicto.
+- **DECIDE:** el diseño preferido del libro es **un solo juego de cuchillas que interlockea con una
+  ranura en la cara opuesta** de la cavidad. Alternativa: **una sección central actuada** — y el
+  hallazgo es que **no requiere gran fuerza de actuación**, porque esa sección no ve presión mientras
+  se moldean las zonas laterales, y al retraerse se apoya en un hombro.
+- **CRITERIO:** [LIBRO] los métodos estructurales del cap. 12 aplicados a un componente nuevo.
+- **INVALIDA:** cambio de la partición entre disparos.
+- **¿TENEMOS?** **FALTA.** No hay core-back.
+
+### A-132 — Insulated runner: piel congelada
+- **§** 13.6.1 · **CUÁNDO:** al evaluar arquitecturas de alimentación de bajo costo.
+- **ENTRADAS:** Ø de runner · tiempo de ciclo.
+- **CÁLCULO:** con Ø de runner grande (~**25 mm**) y ciclos de ~**60 s**, la piel congelada queda de
+  ~**6 mm** y el canal opera como hot runner **sin calentadores ni termopares**.
+- **SALIDA:** Ø de runner y espesor de piel [mm]; ¿opera sin calentar?
+- **DECIDE:** usar insulated runner en vez de hot runner. El cambio de color se resuelve abriendo la
+  sección de runner y sacando el sistema completo.
+- **CRITERIO:** [JUICIO] el libro **declara que su uso decayó** al abaratarse los hot runners; se
+  presenta como opción de bajo costo con incertidumbre de proceso.
+- **INVALIDA:** cambio de tiempo de ciclo (si el ciclo se alarga mucho, el canal se congela entero).
+- **¿TENEMOS?** **FALTA.** `feed.ts`/`feed-layouts.ts` cubren frío y caliente, no insulated.
+
+### A-133 — Stack mold: clamp compartido contra sus cinco costos
+- **§** 13.6.2 · **CUÁNDO:** al elegir arquitectura, si hay presión de productividad.
+- **ENTRADAS:** área proyectada por nivel · tonelaje disponible · altura de apilamiento disponible en
+  la máquina (stack height) · volumen de inyección · plan de cambios de color.
+- **CÁLCULO:** el clamp es proporcional al **área proyectada**, así que cavidades **apiladas comparten
+  la fuerza de cierre**: dos niveles producen el doble con **el mismo clamp y el mismo ciclo**.
+- **SALIDA:** número de niveles factible + tonelaje requerido + stack height requerido.
+- **DECIDE:** stack mold sí o no. El libro exige balancearlo contra **cinco** cosas: inversión,
+  mantenimiento, cambio de color, stack height y volumen de inyección.
+- **CRITERIO:** [JUICIO] de negocio, con los cinco ejes nombrados. Nota histórica útil: el diseño viejo
+  con sprue extendido tenía scrap y desbalance; **el hot runner resuelve ambos**.
+- **INVALIDA:** cambio de máquina (stack height y volumen de inyección son de la máquina).
+- **¿TENEMOS?** **FALTA como arquitectura.** `machinesizing.ts` sabe de tonelaje y ventana de shot, y
+  `moldcost-detailed.ts` de break-even, pero el stack mold no está modelado.
+
+### A-134 — Desbalance térmico de runner ramificado (Melt Flipper)
+- **§** 13.6.3 · **CUÁNDO:** en cualquier feed system con **dos o más niveles de ramificación**.
+- **ENTRADAS:** topología del árbol de runners (número de niveles de branch) · reología del material ·
+  condiciones de proceso.
+- **CÁLCULO:** **CUALITATIVO con mecanismo explícito.** Aun con balance geométrico ("naturally
+  balanced"), el perfil térmico y de corte **lateral** del fundido desbalancea ramas idénticas: el
+  núcleo viscoso va rodeado de una capa más caliente y menos viscosa, y al ramificar el material de
+  baja viscosidad se queda del lado exterior ⇒ **cavidades más pesadas según su posición**.
+  Remedio: **cambio de nivel justo antes de la rama** (inserto de cavidad + corazón) que reorienta la
+  variación de viscosidad **a vertical**.
+- **SALIDA:** bandera de riesgo de desbalance + posición recomendada del cambio de nivel.
+- **DECIDE:** meter o no un Melt Flipper y **dónde**.
+- **CRITERIO:** [LIBRO] con la **contra-trampa**: la variación *"is only"* reorientada y no eliminada,
+  así que encadenar dos cambios de nivel en ramas consecutivas **`re-establish`** el desbalance. Y el
+  efecto depende de la reología y del proceso.
+- **INVALIDA:** cambio de la topología del feed system.
+- **¿TENEMOS?** **FALTA.** `feed-layouts.ts` sabe de balanceo **geométrico** (serie vs H) y advierte
+  el desbalance de las ramas en serie, pero **no modela el desbalance térmico/de corte** ni el cambio
+  de nivel. Es una alarma barata: "≥2 niveles de branching ⇒ bandera".
+
+### A-135 — Pulsed cooling: energía por ciclo
+- **§** 13.7.1 · **CUÁNDO:** si se evalúa control activo de temperatura de pared.
+- **ENTRADAS:** masa de acero que se cicla térmicamente · rango de temperatura · costo de la energía.
+- **CÁLCULO:** cálculo económico con el número del libro: **100 kg de P20 ± 100 °C = 10 MJ ≈ 3 kWh ≈
+  $0.30 USD por ciclo SOLO de energía**.
+- **SALIDA:** costo energético por ciclo [USD].
+- **DECIDE:** casi siempre **no usarlo** — el libro concluye que no se usa salvo en aplicaciones muy
+  exigentes. Si se usa: minimizar masa térmica, meter air gaps y hojas aislantes contra las platinas,
+  con dos fluidos separados (uno caliente, uno frío) conmutados.
+- **CRITERIO:** [LIBRO] el criterio es **económico y calculado**, no técnico. Ésa es la lección.
+- **INVALIDA:** cambio del costo de energía o de la masa del inserto.
+- **¿TENEMOS?** **FALTA.**
+
+### A-136 — Conduction heating: potencia mínima contra el drenaje al agua
+- **§** 13.7.2 · **CUÁNDO:** si se evalúa calentar la pared por resistencia.
+- **ENTRADAS:** potencia del calefactor · flujo de calor hacia el circuito de agua · área de superficie.
+- **CÁLCULO:** el calefactor debe **primero vencer el drenaje hacia el agua** antes de subir la
+  temperatura de la superficie: en el ejemplo, ~**1.4 W/cm²**, o **≥420 W** de entrega solo para
+  empatar la fuga. El libro **desnuda una patente** con este análisis: 113 W entregados contra
+  ~0.13 kWh necesarios — no cuadra.
+- **SALIDA:** potencia mínima [W] y densidad [W/cm²].
+- **DECIDE:** descartar o dimensionar. **Tres razones de fracaso en la práctica**, declaradas: la
+  presión cíclica **fatiga** los calefactores; la uniformidad de temperatura de pared es difícil; y el
+  calefactor queda **entre cavidad y agua**, así que alarga el enfriamiento.
+- **CRITERIO:** [LIBRO] balance de potencia; el criterio es que la entrega supere la fuga.
+- **INVALIDA:** cambio del circuito de agua.
+- **¿TENEMOS?** **FALTA.** Tenemos el motor de resistencia térmica (`thermal-resistance.ts`,
+  `thermal-steady.ts`) que haría este balance casi gratis.
+
+### A-137 — Induction heating: ventana de potencia y gradiente
+- **§** 13.7.3 · **CUÁNDO:** si se evalúa calentar la pared por inducción.
+- **ENTRADAS:** frecuencia, corriente y densidad de espiras · mapa térmico de la superficie del molde.
+- **CÁLCULO:** potencia proporcional a `f²·I²·(densidad de espiras)²`. **Ventana experimental:** una
+  potencia **menor a 100 W/cm²** *"did not significantly increase the mold surface temperature and
+  eventually caused the overload breaker to actuate"*; por encima de **10,000 W/cm²** la subida se
+  vuelve incontrolable. Ejemplo: 400 kHz, ~10 s para +50 °C.
+- **SALIDA:** densidad de potencia [W/cm²] y `delta_T` sobre la superficie [°C].
+- **DECIDE:** parámetros del inductor, o descartar.
+- **CRITERIO:** [LIBRO] **umbral absoluto y visible en un mapa térmico**: diferencias de más de
+  **50 °C** sobre la superficie producen irregularidades de brillo y sink. La ficha V13.3 lo llama el
+  gemelo caliente del gradiente de 6 °C del cap. 9.
+- **INVALIDA:** cambio de geometría del inductor.
+- **¿TENEMOS?** **FALTA.**
+
+### A-138 — In-mold labeling: carga sobre el film
+- **§** 13.8.1 · **CUÁNDO:** si A-127 eligió IML.
+- **ENTRADAS:** espesor del film (~**0.15 mm**, 5 mils, del **mismo** polímero que la pieza) ·
+  velocidad del frente de flujo (no la presión) · zonas impresas.
+- **CÁLCULO:** **la trampa:** la carga estructural sobre el film la manda el **CORTANTE del flujo**
+  (o sea la velocidad), **no la magnitud de la presión** de fundido — se analiza con §5.3.1.
+- **SALIDA:** cortante sobre el film [Pa] y veredicto de integridad.
+- **DECIDE:** el perfil de velocidad de inyección y el espesor del film. Si el film es **muy delgado**
+  se funde completo y **destruye el diseño impreso**; si la impresión no fusiona,
+  *"the printing may be imperceptibly"* dithered para permitir la unión por las zonas no impresas.
+- **CRITERIO:** [LIBRO] criterio de mecanismo (cortante, no presión), sin umbral numérico en el corpus.
+  **NO OBSERVADO EN EL CORPUS:** un valor límite de cortante para el film.
+- **INVALIDA:** cambio del perfil de velocidad de llenado.
+- **¿TENEMOS?** **FALTA.** El cortante del frente sí lo tenemos (`gating.ts`, `mold-contratos.ts:
+  gate-shear` contra Tabla 7.2), así que la pieza que falta es el film como componente.
+
+### A-139 — Collapsible core: colapso disponible contra el undercut
+- **§** 13.9.2 · **CUÁNDO:** undercut **interno** que A-98 no resuelve elásticamente.
+- **ENTRADAS:** Ø del corazón · profundidad del undercut interno.
+- **CÁLCULO:** catálogo comercial **Ø13 a 90 mm** con colapso ≈ **6 % del diámetro**; comparar el
+  colapso disponible contra la profundidad del undercut.
+- **SALIDA:** colapso disponible [mm] vs undercut requerido [mm]; veredicto.
+- **DECIDE:** collapsible core sí o no, y de qué tamaño.
+- **CRITERIO:** [LIBRO] el 6 % es umbral duro de catálogo. **ALARMA:** deja **witness lines interiores**
+  en las juntas de los segmentos — si el interior es crítico, la tecnología **no aplica** y hay que ir
+  a rotating core (A-140).
+- **INVALIDA:** cambio del Ø interior de la pieza.
+- **¿TENEMOS?** **SÍ.** `unscrewing.ts:collapsibleCoreCheck(t, undercutDepthMm)` con el 6 % y el rango
+  13–90 mm; `chooseInternalCoreMethod()` decide entre colapsable, hélice y planetario.
+
+### A-140 — Rotating core: anti-rotación y arquitectura de accionamiento
+- **§** 13.9.3 · **CUÁNDO:** roscas internas donde el testigo del collapsible no es aceptable.
+- **ENTRADAS:** paso y número de vueltas de la rosca · número de cavidades · torque requerido ·
+  altura disponible (stack height).
+- **CÁLCULO:** dos arquitecturas comparadas. **Hélice de paso grueso:** el paso debe ser grueso porque
+  torque y desgaste **suben sustancialmente al disminuir el paso**, y el largo de la hélice sale de la
+  fricción y el número de vueltas ⇒ **stack height enorme**. **Tren sol-planetas con rack-pinion:**
+  desacopla el accionamiento de la rotación, permite **retrasar y programar** el giro y es compacto en
+  el eje; contras: muchos engranes y un **layout radial de cavidades** que exige moldes grandes si hay
+  muchas cavidades ⇒ preferible con **pocas cavidades y torque alto**.
+- **SALIDA:** arquitectura elegida + vueltas + torque [N·m] + stack height [mm].
+- **DECIDE:** el mecanismo de desenrosque. **Y una REGLA obligatoria:** la pieza necesita
+  **anti-rotación**. El runner y el gate pueden no bastar, porque la fuerza de expulsión varía con
+  material, proceso y acabado (cap. 11) ⇒ **undercut leve o feature asimétrico**.
+- **CRITERIO:** [JUICIO] con trade-off explícito, más la regla dura de anti-rotación.
+- **INVALIDA:** cambio del número de cavidades (puede tumbar el planetario).
+- **¿TENEMOS?** **Parcial — SÍ en gran parte.** `unscrewing.ts:unscrewTurns()`, `unscrewTorque()`,
+  `helixDrive()` y `chooseInternalCoreMethod()` cubren vueltas, torque, hélice y la decisión
+  hélice↔planetario. **FALTA el check de anti-rotación de la pieza** (¿hay undercut leve o feature
+  asimétrico?), que es la regla que el libro marca como obligatoria.
+
+### A-141 — Gobernanza: el acta de decisiones aprobada
+- **§** 13.10 · **CUÁNDO:** **gate de cierre del proyecto entero**, y en cada decisión crítica de
+  tecnología.
+- **ENTRADAS:** todas las decisiones que el software **no puede tomar**: la contracción recomendada y
+  su responsable ←A-67 · la escuela de steel-safe ←A-70 · la tecnología de molde ←A-127 · la clase de
+  fit y su fuerza de inserción ←A-123 · los vetos no económicos.
+- **CÁLCULO:** **CUALITATIVO**. Por cada decisión: opciones reales (con sus números), elección,
+  responsable, fecha, y costos/beneficios/riesgos explícitos.
+- **SALIDA:** **ENTREGABLE: registro de decisiones aprobado y documentado.** Más el plan de tryout
+  (qué quedó deliberadamente chico y hacia dónde crece).
+- **DECIDE:** si el proyecto cierra. Con decisiones pendientes de firma, **no cierra**.
+- **CRITERIO:** [LIBRO] la frase que cierra el libro entero: el asunto a deliberar
+  *"not what can be done but rather what should be done"* para una aplicación específica, y por eso
+  las decisiones críticas *"approved and documented between all the involved parties"* con
+  entendimiento común de costos, beneficios y riesgos.
+- **INVALIDA:** que cambie cualquier decisión firmada — se re-abre el acta.
+- **¿TENEMOS?** **Parcial.** `expediente.ts:decisionesDelPaquete()` deriva las decisiones pendientes **con
+  sus opciones numéricas reales** y `registrarDecision(exp, id, eleccion, responsable, fecha)` las
+  firma; `Expediente.pendientes/cerrable` implementa el "no cierra con pendientes". `revisar-modelo.ts`
+  lo integra al reporte. **FALTA** el campo de costos/beneficios/riesgos por decisión (hoy hay
+  opciones y notas, no la terna explícita que pide §13.10).
+
+---
+
+# APÉNDICES — las bases de datos que alimentan los veredictos
+
+Los Apéndices A–F **no son análisis** (no producen veredicto): son **fuentes de datos**. Se listan aquí
+por completitud, y solo los dos que sí ejercen un juicio llevan ficha.
+
+| Apéndice | Contenido | ¿Lo tenemos? |
+|---|---|---|
+| **A** | 16 materiales plásticos: coeficientes Tait `b1m..b9`, T de no-flujo, módulo, yield, strain-to-yield, CTE, contracción mín/máx y paralela/perpendicular, densidades, costo $/kg y $/m³, rangos de melt y de refrigerante | **Parcial** — `shrinkage.ts:ABS_TAIT` (solo ABS), `ejection.ts:ABS_EJECT` + `mold-ejection-auto.ts` (ABS/PP/PS/PC), `moldcost-detailed.ts:PLASTICS`. **FALTA la tabla de 16 con todos los campos.** |
+| **B** | Metales de molde (Al 7075/QC-7/Cu 940; 1045/4140/P20; A6/D2/H13/S7/SS420) con yield, **límite de fatiga** (S-N a 1e6 ciclos, f = 1.0), dureza, tasas de maquinado (m³/h y m²/h) y costo | **SÍ, completo** — `moldbase.ts:MOLD_METALS` (11 metales, 14 columnas) + `metalByKey()` |
+| **C** | Refrigerantes (agua / etilenglicol / aceite ISO 32): rangos de uso, propiedades térmicas, viscosidad a 50/100 °C | **Parcial** — `cooling-design.ts` maneja agua; no hay tabla de los tres fluidos |
+| **D** | Tarifas de labor: salarios EUA por oficio (**×3** declarado para tarifa cargada) + tabla internacional de proporción | **Parcial** — `moldcost-detailed.ts:machiningRateUSDh` documenta "Apéndice D ×3" y `moldmachine.ts` maneja región, pero no está la tabla de oficios |
+| **E** | Conversión de unidades (MPa↔psi, ton métrica↔N…) — necesaria porque el libro mezcla catálogo imperial (3/32", ½"-13, 3.25 in) con análisis SI | **Parcial** — hay constantes sueltas (`TON_N`, `STD_BORES_MM` con 82.55); no hay capa de conversión |
+| **F** | `NO OBSERVADO EN EL CORPUS` — el corpus derivado nombra "Apéndices A–F" pero solo describe A–E | — |
+
+### A-142 — Selección de metal de molde por límite de fatiga
+- **§** Apéndice B + §12.2.6 + §12.3.1 · **CUÁNDO:** después de A-105 y A-115; y otra vez si A-118 o
+  A-119 reprueban.
+- **ENTRADAS:** vida objetivo en ciclos ←A-105 · `sigma_local` máximo esperado ←A-106/A-115/A-117 ·
+  presión de fundido · requisitos de corrosión y pulido · costo y maquinabilidad (Apéndice B).
+- **CÁLCULO:** filtrar los metales cuyo `fatigueLimitMPa` supere el `sigma_local` a la vida objetivo, y
+  ordenar por costo y por tasa de maquinado.
+- **SALIDA:** metal elegido + margen contra fatiga [MPa] + costo del inserto.
+- **DECIDE:** el acero (o aluminio) de insertos y placas.
+- **CRITERIO:** [LIBRO] tres reglas concretas repartidas por el capítulo: alta presión de fundido ⇒
+  aceros de **alto endurance** (A6, D2, H13); 216 MPa en el corazón del cup ⇒ **ni acero suave ni
+  aluminio**; water assist ⇒ **SS420** por corrosión.
+- **INVALIDA:** cambio del volumen de producción (A-105) o de la presión esperada.
+- **¿TENEMOS?** **Parcial.** `moldbase.ts:MOLD_METALS` + `mold-contratos.ts:layout-material-base` (con la
+  alarma anti-default-P20 de §4.4) + `cores.ts:designCore({metalKey})` que compara contra
+  `fatigueLimitMPa`. **FALTA** que la selección se dispare automáticamente desde el `sigma_local`
+  máximo del molde en vez de ser una entrada.
+
+### A-143 — Costo de maquinado y cotización
+- **§** Apéndice B (tasas) + Apéndice D (tarifas) + cap. 3 · **CUÁNDO:** en cada iteración de diseño;
+  es lo que convierte un cambio técnico en un número que el cliente entiende.
+- **ENTRADAS:** volumen y área a maquinar por componente · tasas del metal elegido
+  (`volMachineM3h`, `areaMachineM2h`) ←Apéndice B/A-142 · tarifa cargada ($/h) ←Apéndice D, con el
+  **×3** declarado sobre el salario · región de manufactura.
+- **CÁLCULO:** horas = volumen/tasa volumétrica + área/tasa superficial; costo = horas × tarifa
+  cargada; más material, acabado y componentes comprados.
+- **SALIDA:** costo del molde [USD] y costo por pieza [USD].
+- **DECIDE:** la cotización, y el arbitraje de todos los trade-offs del pliego (más acero contra menos
+  deflexión, más compuertas contra más uniformidad, pilares contra placa gruesa).
+- **CRITERIO:** [LIBRO] los coeficientes son **defaults**; si el taller tiene tarifa negociada, **manda
+  la del taller**.
+- **INVALIDA:** cambio de metal, de región o de la geometría de cualquier componente.
+- **¿TENEMOS?** **SÍ.** `moldcost-detailed.ts:estimateMoldCost()`, `estimatePartCost()`,
+  `quoteReport()`, `MACHINING_FACTOR`, `FINISH_RATE`, `MOLD_STEEL_COEF`; `mold-contratos.ts:
+  costo-datos-taller` codifica que la tarifa del taller manda sobre la tabla.
+
+---
+
+# ERRATAS: cómo tratan a los análisis que dependen de ellas
+
+El apéndice de erratas de `verificaciones-visuales.md` reporta seis anomalías del texto fuente.
+**Cuatro tocan directo a los análisis de este pliego.** La regla: se reporta la anomalía **sin corregir
+el texto**, y se declara qué valor codificamos y por qué.
+
+**1. El "1050 mm" de la Ec. 10.18 (afecta al enlace C10-b).**
+El texto calcula `R_warpage = 2·1.5/(0.34 % − 0.31 %) = 9050 mm` y dos líneas después evalúa
+`delta = 120·sin(120/1050) = 1.6 mm`. Los dos radios no coinciden. **El resultado publicado (1.6 mm) es
+el consistente con R = 9050** evaluando el seno en **radianes**: `120·sin(120/9050) = 1.59`; con 1050
+saldrían ≈13.7 mm. **Conclusión: "1050 mm" es el typo; la fórmula y el resultado son correctos.**
+*Trato:* codificar la Ec. 10.17 tal cual y evaluar en radianes. Ya está así en `warpage.ts`, que
+documenta la errata en su encabezado. **Riesgo si se hubiera copiado el 1050:** el alabeo predicho
+saldría **8.6× mayor**, el molde entero se rediseñaría por un fantasma, y el argumento del cap. 9 —que
+2 °C bastan— quedaría irreconocible.
+
+**2. El endurance del P20: 450 vs 456 MPa (afecta A-105, A-115, A-116, A-117, A-142).**
+El texto de §12.1.1 dice *"approximately 450 MPa"*, la Fig. 12.5 rotula *"Endurance = 456 MPa"* y
+§9.2.5 usa 456 en su cálculo. **Se usa 456 MPa.**
+*Trato:* `moldbase.ts:MOLD_METALS` ya carga P20 con `fatigueLimitMPa: 456`. **Ojo con no
+"corregir" el 450 de §11.2.3** (A-83): ése no es la misma cifra ni la misma errata — ahí el libro
+declara explícitamente que 450 es una elección **conservadora** frente a los 800 MPa de un pin
+endurecido. Son dos decisiones distintas que casualmente comparten número. Confundirlas haría que un
+pin se dimensione con la vara de una placa.
+
+**3. El QC7: yield 420 (Fig. 12.3) vs 545 MPa (§12.1.1) (afecta A-104, A-105, A-117, A-119).**
+Inconsistencia entre figura y prosa **para el mismo material**. El corpus no resuelve cuál es la buena.
+*Trato:* codificamos **545 MPa**, que es el valor con el que el libro **hace la aritmética** de sus
+ejemplos (el barreno de eyector de A-117 compara 530 MPa contra "yield 545"; el hueco máximo por
+sobrepresión de A-119 también). `moldbase.ts` carga QC-7 con `yieldMPa: 545`. **Se declara la
+discrepancia en la ficha del material**, porque si algún día el número bueno fuera 420, el ejemplo de
+A-117 cambiaría de veredicto: 530 MPa pasaría de "abajo del yield pero muere por fatiga" a
+"**cede en el primer ciclo**" — que es una conclusión distinta, no un ajuste de margen.
+
+**4. El endurance del QC7: 166 vs 170 MPa (no está en el apéndice de erratas, lo detecté aquí).**
+§12.1.1 da la curva S-N con **170 MPa a 1e6 ciclos**, mientras §9.2.5 y el ejemplo de §12.2.6 usan
+**166 MPa** (que es el valor del Apéndice B). Diferencia de 2.4 %, sin consecuencia práctica en ningún
+veredicto del libro. *Trato:* se usa **166 MPa** (Apéndice B, que es la fuente tabulada), y se anota
+que la curva de §12.1.1 es una **lectura de gráfica**, no una tabla. `moldbase.ts` carga
+`Al QC-7: fatigueLimitMPa 166`. **Y el hueco real es otro:** hoy solo tenemos el punto de 1e6; la curva
+completa (545 / 370 / 170 a 1e3 / 1e4 / 1e6) **no está codificada**, y sin ella un molde de aluminio
+para 10,000 piezas se juzga con la vara equivocada — **demasiado estricta**, en este caso: 166 en vez
+de 370. Ver A-105.
+
+**5. Fig. 10.10 con caption cruzado** (*"PvT behavior for an acetal"* sobre la figura del steel-safe
+0.4/0.5/0.6 %). No afecta ningún cálculo: es un problema de extracción de captions. Toca a A-70 solo en
+la trazabilidad de la figura citada.
+
+**6. Tabla 8.1, dispersión de un orden de magnitud entre fuentes para el espesor de venteo** (media
+viscosidad: Glanvill 0.2 · Rosato 0.3 · Menges 0.03 mm). **No es errata: es dispersión real de la
+literatura.** *Trato:* A-107 y A-93 usan **0.02 mm**, que es el valor de trabajo del propio libro en
+§8.2.3 y §12.1.2, **y lo declaran como tal**. Cualquier umbral de venteo que codifiquemos tiene que
+decir de qué fuente sale, porque el veredicto de flash es un umbral absoluto y con 0.3 mm en vez de
+0.02 mm el molde del ejemplo del libro **pasaría**.
+
+---
+
+# GRAFO — la secuencia, las dependencias y los retornos
+
+Notación: `A → B` = A alimenta a B. `⟲` = **RETORNO** (invalida y obliga a recorrer hacia atrás).
+`‖` = corren en paralelo. `[gate]` = no se avanza sin veredicto. Los nodos `C10-a`/`C10-b` viven en
+`analisis-caps7-9.md`.
+
+## Cadena principal del cap. 10 (contracción)
+
+```
+(cap 5: P_llenado) ──┐
+(Apéndice A: rangos) ┴─→ A-60 ─→ A-61 ─→ A-62 [gate: ¿el PvT reproduce la densidad?]
+                                   │
+                                   └─→ A-63 ─┬─→ C10-a (contracción lineal, caps7-9)
+                                             └─→ A-64 (solo si hay fibra/LCP)  ←── A-73
+                     A-61 ──────────────────────→ A-65 ─→ A-66 [gate: s > 0]
+   C10-a ‖ A-64 ‖ A-65 ────────────────────────→ A-67 [gate: acta + responsable]
+                                                    │
+                                                    ├─→ A-68  (escala el acero)
+                                                    └─→ A-70  (sesgo steel-safe A/B/C)
+   A-61 ──→ A-72 (bandera semicristalino) ─────────→ A-67
+```
+
+## Validación y alabeo del cap. 10
+
+```
+(cap 6: feed system) ─→ A-69 ─┬─→ A-71 (perfil de pack: ¿alcanza sin gastar acero?)
+                              └─→ A-67   [COMPARA: el mapa valida al cálculo a mano]
+
+(cap 9: circuito de agua) ─→ C10-b  [2 °C ⇒ 1.6 mm]  ─→ A-77
+(geometría de la pieza)  ─→ A-74 [gate topológico] ─→ A-75 ─→ A-77
+A-76 (checklist de uniformidad) corre ‖ y condiciona a A-69, C10-b y A-75
+```
+
+## Cap. 10 → cap. 11 (el dato que viaja)
+
+```
+C10-a (s recomendada) ──→ A-81   § 10.4: la contracción es lo que aprieta la pieza sobre el corazón
+```
+
+## Cadena principal del cap. 11 (expulsión) — el orden que declara §11.4
+
+```
+A-78 ─→ A-79 ─┬─(por apertura)─→ A-101
+              └─(por actuador)─→ A-99 ─→ A-100
+
+A-78 ─→ A-98 [gate: ¿ε < 2 %?]  ─(no)→ A-79 / A-139 / A-140
+                                 (sí)→ sin mecanismo
+
+A-80 ─→ A-81 ─→ A-82 [gate: ~0.5 % del clamp]
+          │
+          ├─→ A-83 ─┐
+          ├─→ A-84 ─┼─→ A-86 [max de tres] ─→ A-87 ─→ A-89 ─→ A-103
+          └─→ A-85 ─┘        ↑                        │
+                     A-88 ───┘ (acero disponible)     ├─→ A-90 ⟲ AGUA
+                     A-91 ───┘ (D_pin vs h_pared)     └─→ A-92 ─(100 % estético)→ A-127
+A-86 ─→ A-93 · A-94 ─→ A-95 · A-96 · A-97
+A-81 ─→ A-97 (balance entre cavidades)  ·  A-81 ─→ A-102 (¼ de F para resortes)
+```
+
+## Cadena principal del cap. 12 (estructural)
+
+```
+(volumen de producción) ─→ A-105 ─┐
+(criticidad, P esperada) ─→ A-104 ─┴─→ σ_limit ─→ A-106 ‖ A-107   [DOS semáforos independientes]
+
+A-108 ─→ A-109 ─→ A-110 ─→ A-111 [gate: δ < 0.1 mm] ─→ A-112
+                    ↑ ⟲ EXPULSIÓN (A-89): la deflexión gana sobre el layout de eyectores
+A-113 ─(no cierra)→ A-114
+A-115 ─┬─→ A-116 ⟲ AGUA
+       └─→ A-117 [trampa: pasa yield, muere por fatiga]
+A-118 ‖ A-119 [doble vara: fatiga y sobrepresión] ‖ A-120 ←─ A-121
+                                                    A-120 ─→ ⟲ ALIMENTACIÓN (gate central / 2 gates)
+A-122 ─→ A-123 [gate: ¿hay prensa?] ─(no)→ A-122 con fit LN
+A-124 ‖ A-125 [gate: ¿se desarma a mano?]
+TODO ─→ A-126 [gate de cierre: 3 veredictos separados] ─→ ⟲ cualquier subsistema
+```
+
+## Cap. 13: la decisión temprana y el cierre
+
+```
+A-127  se corre ANTES de los caps. 4-12 y condiciona a TODOS
+   ├─ coinyección   → A-128
+   ├─ gas/water     → A-129 (+ SS420 → A-142)
+   ├─ multi-shot    → A-130 → A-131
+   ├─ insulated     → A-132
+   ├─ stack         → A-133
+   ├─ hot runner    → A-134 (si hay ≥2 niveles de branch)
+   ├─ T de pared    → A-135 ‖ A-136 ‖ A-137
+   ├─ IML           → A-138
+   ├─ collapsible   → A-139
+   ├─ rotating      → A-140
+   └─ reverse eject → (desde A-92)
+
+A-67 · A-70 · A-123 · A-127 ──→ A-141 [gate FINAL: no cierra con firmas pendientes]
+A-105 ─→ A-142 ─→ A-143 (y A-143 arbitra TODOS los trade-offs de arriba)
+```
+
+## Los RETORNOS, en una lista
+
+| # | Retorno | Disparador | Costo declarado por el libro |
+|---|---|---|---|
+| R1 | **A-67/A-68 ⟲ TODO río abajo** | cambia la contracción recomendada | re-escala cavidad y corazón; invalida superficies, tooling-split, planos y cotización. El más caro del pliego |
+| R2 | **A-69 ⟲ alimentación** | contracción despareja ⇒ más compuertas (2→4) | puede exigir manifold nuevo ("straight bar"→"H"/"X"), barrenos nuevos en lado A y **re-ruteo de líneas de agua** |
+| R3 | **A-77 ⟲ pieza** | alabeo ⇒ costillas someras | rediseño de pieza |
+| R4 | **A-77 ⟲ cavidad (contorneada)** | alabeo que no cede | ALTO RIESGO: los corrimientos *"may exceed steel safe limits"*, costos muy altos |
+| R5 | **A-90 ⟲ agua** | el pin no deja pasar la línea de enfriamiento | achicar el pin (→ recalcular A-86) o re-rutear |
+| R6 | **A-97 ⟲ pieza** | el stripper no tiene cara plana de empuje | pedir rediseño de la sección — salida legítima |
+| R7 | **A-110 ⟲ expulsión** | hace falta espacio para pilares grandes | reacomodar el layout de eyección: **la deflexión gana** |
+| R8 | **A-116 ⟲ agua** | línea de agua demasiado cerca de la cavidad | re-rutear el circuito |
+| R9 | **A-120 ⟲ alimentación** | el corazón esbelto flexiona | compuerta central arriba o dos compuertas opuestas abajo |
+| R10 | **A-123 ⟲ A-122** | el fit pide más prensa de la que hay | bajar de FN a LN |
+| R11 | **A-101 ⟲ A-99** | el slide no alcanza la carrera con 20° | pasar a core pull con actuador |
+| R12 | **A-98 ⟲ A-78** | ε ≥ 2 % (o material cargado y frágil) | el undercut exige mecanismo: cambia el costo del molde |
+| R13 | **A-126 ⟲ cualquier subsistema** | los sujetadores chocan con eyección o agua | *"iterative redesign of the mold may be required"* |
+| R14 | **A-141 ⟲ la decisión firmada** | cambia una decisión aprobada | se re-abre el acta |
+
+## Lo que corre en PARALELO (y a veces se olvida que sí)
+
+- **A-106 ‖ A-107** — esfuerzo y deflexión son **dos semáforos distintos**; un molde puede pasar
+  esfuerzo y aun así producir flash.
+- **A-118 ‖ A-119 ‖ A-120** — los tres modos de falla del corazón se corren juntos y el peor manda.
+- **A-119 se corre DOS VECES** con dos varas distintas (fatiga a presión de operación, fluencia a
+  sobrepresión) y el resultado más chico gobierna.
+- **A-135 ‖ A-136 ‖ A-137** — las tres tecnologías de calentamiento de pared se evalúan en paralelo y
+  compiten.
+- **A-76 corre transversal** a todo el cap. 10: es una precondición, no un paso.
+
+## La forma del grafo, en una frase
+
+El cap. 10 es una **cadena** que termina en una firma; el cap. 11 es un **árbol** que se abre por tipo
+de eyector y se cierra con el peor de tres límites; el cap. 12 es una **malla** de verificaciones
+independientes atadas por un solo `sigma_limit` que la fatiga define; y el cap. 13 es una **raíz** que
+se corre antes que todo lo demás y una **firma** que se pone al final.
+
+---
+
+# RESUMEN — qué tenemos y qué falta
+
+**84 análisis fichados** (A-60 a A-143), más 2 enlaces a `analisis-caps7-9.md` (C10-a, C10-b).
+Reparto: cap. 10 → 18 · cap. 11 → 26 · cap. 12 → 23 · cap. 13 → 15 · Apéndices → 2.
+
+## Ya lo tenemos, completo — 31 de 84
+
+`shrinkage.ts` → A-61 A-63 A-65 A-66 A-68 · `warpage.ts` → A-74 A-75 ·
+`parting.ts` + `dfm.ts` + `moldtech.ts` → A-78 ·
+`ejection.ts` → A-80 A-81 A-82 A-83 A-84 A-86 · `eject-layout.ts` → A-89 ·
+`mold-ejection-auto.ts` → A-88 · `ejectortypes.ts` → A-94 A-98 ·
+`sideactions.ts` → A-99 A-101 · `unscrewing.ts` → A-139 ·
+`mold-fea.ts` + `lamina-vonmises.ts` → A-106 A-115 · `platesizing.ts` → A-107 ·
+`mold-contratos.ts` → A-112 ·
+`mold-interlocks.ts` → A-114 · `cores.ts` → A-118 A-119 · `fits.ts` → A-122 ·
+`fasteners.ts` + `mold-fasteners.ts` → A-124 · `moldcost-detailed.ts` → A-143
+
+## Parcial — el motor está, falta la pieza que decide — 28 de 84
+
+A-60 (faltan los rangos min/max del proveedor) · A-67 (falta registrar **cuál** de las 4 fuentes) ·
+A-70 (falta la opción C, features semi-acabados) · A-72 (falta el cruce semicristalino×tolerancia) ·
+A-76 (los 4 puntos existen sueltos, falta el veredicto único) · A-79 (falta la jerarquía como
+veredicto y el registro de limit switches) ·
+A-85 (usa `K = 2`, no el `0.7·L` del libro — **no reproduce el 1.86 mm del ejemplo**) ·
+A-87 (falta el menú de escenarios) · A-90 (falta encadenar "achicar el pin" al recálculo) ·
+A-92 (falta el mapa estético como dato de primera clase) · A-97 (falta el balance entre cavidades) ·
+A-100 (falta carrera vs envolvente y la regla de "un solo lado") · A-102 (falta el ¼·F y el dato del
+knock-out rod) · A-103 (falta el escalón 2–3 Ø con chaflán, la holgura de 0.5 mm y la tabla de
+eyectores) · A-104 (el tipo `StressMethod` existe pero hoy siempre sale `deflexión-pura`) ·
+A-105 (falta la **curva S-N**; hoy solo el punto de 1e6) ·
+A-108 (falta restar cavidad + leader pins + bushings del área de soporte) ·
+A-109 (falta la descomposición multicavidad y excluir el espesor de corazones) ·
+A-110 (falta colisión pilar↔cuchilla/pin y pilar↔knock-out central) ·
+A-113 (falta la Ec. 12.15 exacta y la Ec. 12.17 de deflexión de pared) ·
+A-116 (usa la K de Fig. 9.4, no el despeje de la Ec. 12.19) ·
+A-117 (falta el veredicto combinado yield/fatiga por barreno) ·
+A-120 (falta la escalera de remedios y el interlock de punta) ·
+A-126 (falta separar los 3 semáforos) · A-127 (falta la rama de costo/productividad del árbol) ·
+A-140 (falta el check de anti-rotación de la pieza) ·
+A-141 (falta la terna costo/beneficio/riesgo por decisión) ·
+A-142 (falta disparar la selección desde el `sigma_local` máximo)
+
+## FALTA por completo — 25 de 84
+
+**Cap. 10 (6):** A-62 gate de densidad · A-64 anisotropía por iteración · A-69 mapa de contracción
+`s(x,y)` y su uniformidad · A-71 sensibilidad al proceso y perfil de pack · A-73 Tabla 10.1 de
+rellenos · A-77 escalera de remedios de alabeo.
+*(Transversal a casi todas: la BD de 16 materiales del Apéndice A.)*
+**Cap. 11 (4):** A-91 interferencia térmica del pin · A-93 largo del pin contorneado vs venteo ·
+A-95 carrera de servicio de la cuchilla (+ land de EDM) · A-96 stack-up de concentricidad del sleeve.
+**Cap. 12 (4):** A-111 superposición compresión+flexión del pilar (**es la que decide el Ø**) ·
+A-121 estimación de `delta_P` sobre el corazón · A-123 fuerza de inserción vs prensa del taller ·
+A-125 Tabla 12.2 de dowels y su peor caso de interferencia.
+**Cap. 13 (11):** A-128 coinyección · A-129 gas/water assist · A-130 multi-shot −40 % ·
+A-131 core-back · A-132 insulated runner · A-133 stack mold · A-134 desbalance térmico /
+Melt Flipper · A-135 pulsed cooling · A-136 conduction heating · A-137 induction heating · A-138 IML.
+
+## Las cinco brechas que más duelen (por lo que decidirían)
+
+1. **A-111** — sin la superposición, el diámetro del pilar se elige por masa de acero, no por la meta
+   de 0.1 mm que el libro fija. Es el único análisis FALTANTE que gobierna una cota real del molde.
+2. **A-105 con curva S-N completa** — hoy el aluminio se juzga con el punto de 1e6 aunque el molde sea
+   para 10,000 piezas. La vara está mal por un factor de 2.2.
+3. **A-123** — un ajuste que pasa todos los checks dimensionales y pide 808 kN de prensa **no se puede
+   armar**, y nada lo delata.
+4. **A-69** — sin mapa de contracción no hay validación de la contracción calculada, y §10.1.7 dice
+   textualmente que el análisis *"should not be used in isolation"*.
+5. **La rama de costo del árbol de A-127** — hot runner / stack / insulated / dos placas es donde el
+   cap. 13 mueve más dinero, y hoy esa arquitectura se decide por break-even sin pasar por el árbol.
+
+## Lo que quedó NO OBSERVADO EN EL CORPUS
+
+- **Apéndice F.** El corpus nombra "Apéndices A–F" pero solo describe A–E. Contenido desconocido.
+- **Umbral numérico de cortante admisible sobre el film de IML** (A-138): el libro da el mecanismo
+  (cortante, no presión) y remite a §5.3.1, pero el corpus no capturó un valor límite.
+- **Umbral de concentricidad del sleeve** (A-96): la ficha V11.13 declara explícitamente que el libro
+  no da número aquí.
+- **Tabla tipo SPI de clases de molde 101–105:** el corpus declara que **no existe** en estos
+  capítulos, y que el equivalente funcional —mejor— es que el número de ciclos entre directo a
+  `sigma_limit` (A-105).
+- **Ojos de izaje / hoist rings:** única mención en el corpus es como valor de factor de seguridad
+  (6.0, §12.1.1). Sin dimensionamiento, ubicación ni especificación.
+- **Placas de identificación, straps de transporte, interlock eléctrico de seguridad del operador:**
+  no aparecen en caps. 10–13. Lo eléctrico que sí está son **limit switches** de protección de
+  máquina/molde y de secuencia (§11.1.1, §11.3.6, §11.3.7, §11.3.8), no de seguridad del operador.
+  Si hacen falta, buscarlos en los capítulos de mold base / componentes estándar (caps. 3–4).
+- **Accesibilidad de mantenimiento** como sección propia: no existe; está disperso en A-103 (etiquetar
+  pines), A-125 (desarmable a mano) y §13.9.1 (gibs reemplazables + wear plates).
+
 
 

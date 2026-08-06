@@ -150,6 +150,15 @@ export function ejectionKinematics(o: {
 export function pinBuckling(o: {
   diaMm: number; freeLenMm: number; fPerPinN: number; eSteelPa?: number; K?: number;
 }): { fCritN: number; sf: number; ok: boolean } {
+  // ⚠ DESVIACIÓN DECLARADA DEL LIBRO (hallada por el pliego de análisis, A-85).
+  // §11.3.1 Ec. 11.16 modela el pin como columna de longitud efectiva **0.7·L**
+  // (empotrado-articulado: la cabeza va capturada en la retenedora), literal:
+  // "Verificación de pandeo de pin (Euler, columna 0.7L)". Aquí el default es
+  // K = 2 (empotrado-LIBRE, voladizo), que da F_crit (0.7/2)² = 8.2× MENOR.
+  // O sea que vamos del lado SEGURO: exigimos pines más gruesos que el libro, no
+  // más delgados. Por eso NO se cambió el default a la ligera. Consecuencia: este
+  // cálculo NO reproduce el D ≥ 1.86 mm del ejemplo de §11.3.1 — para el "modo
+  // Kazmer literal" hay que pasar K = 0.7 explícitamente.
   const E = o.eSteelPa ?? 205e9, K = o.K ?? 2;
   const D = o.diaMm / 1000, L = o.freeLenMm / 1000;
   const I = (Math.PI * Math.pow(D, 4)) / 64;
