@@ -32,6 +32,7 @@ const MoldMachinePanel = lazy(() => import('../mold/MoldMachinePanel'));   // LA
 const RevisarLotePanel = lazy(() => import('../mold/RevisarLotePanel'));   // REVISAR EN VOLUMEN (N-29): contratos sobre un lote
 const EstudioVivo = lazy(() => import('../mold/EstudioVivo'));           // EL ESTUDIO VIVO: el análisis en 3D, girable y consultable a dedo
 const EstudioCiclo = lazy(() => import('../mold/EstudioCiclo'));         // EL CICLO: el estudio en TIEMPO REAL, no en capas
+const EstudioMolde = lazy(() => import('../mold/EstudioMolde'));         // EL MOLDE: la herramienta completa — la pieza es solo la entrada
 const MoldUnscrewSim = lazy(() => import('../sim/MoldUnscrewSim'));        // molde que desenrosca (núcleo rotativo)
 const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL CORTE: acero seccionándose (esténcil + env)
 import SketchEditor from './SketchEditor';
@@ -3471,6 +3472,7 @@ export default function ForgeBRepStudio() {
   const [revisarLoteOn, setRevisarLoteOn] = useState(false);
   const [estudioVivoOn, setEstudioVivoOn] = useState(false);
   const [estudioCicloOn, setEstudioCicloOn] = useState(false);
+  const [estudioMoldeOn, setEstudioMoldeOn] = useState(false);
   const [unscrewOn, setUnscrewOn] = useState(false);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
@@ -6310,6 +6312,11 @@ export default function ForgeBRepStudio() {
             <EstudioCiclo onClose={() => setEstudioCicloOn(false)} />
           </Suspense>
         )}
+        {estudioMoldeOn && (
+          <Suspense fallback={null}>
+            <EstudioMolde onClose={() => setEstudioMoldeOn(false)} />
+          </Suspense>
+        )}
         {unscrewOn && (
           <Suspense fallback={null}>
             <MoldUnscrewSim onClose={() => setUnscrewOn(false)} />
@@ -6966,6 +6973,10 @@ export default function ForgeBRepStudio() {
               <button className="fb-fea-run" data-testid="btn-estudio-ciclo" onClick={() => setEstudioCicloOn(true)}
                 style={{ marginTop: 6 }}>
                 ⏱ EL CICLO — el estudio en TIEMPO REAL: inyectar → empacar → enfriar → abrir → expulsar
+              </button>
+              <button className="fb-fea-run" data-testid="btn-estudio-molde" onClick={() => setEstudioMoldeOn(true)}
+                style={{ marginTop: 6 }}>
+                ⚒ EL MOLDE — la herramienta completa: stack, despiece, subsistemas y los números
               </button>
             </div>
 
