@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#05070B" />
+  <meta name="description" content="La Forja — EL CORTE VIVO: el plano de sección que se mueve, en 3D, dentro del Estudio Vivo" />
+  <title>⚒ La Forja · El Corte Vivo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>html,body{margin:0;padding:0;background:#05070B;overflow:hidden;}</style>
+</head>
+<body>
+  <!-- ENTRADA DE DESARROLLO/ARNÉS. El destino de producción de esta vista es EL
+       ESTUDIO VIVO: `EstudioVivo.tsx` monta el <group> de `vista3d-corte.tsx`
+       dentro de su Canvas. Esta página existe para que
+       `scripts/vista3d-corte-ss.cjs` pueda MANEJAR el corte (mover el plano,
+       cambiar de eje, orbitar, sondear) sin tocar el panel — y para abrir la
+       vista sola, sin cargar el kernel OCCT. NO va en vite.config.ts. -->
+  <div id="root"></div>
+  <script type="module" src="/src/vista3d-corte-main.tsx"></script>
+</body>
+</html>

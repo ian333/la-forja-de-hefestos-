@@ -1,0 +1,94 @@
+{
+  "id": "mol-grasa-butirico",
+  "titulo": "Cómo nace una grasa",
+  "subtitulo": "ácido butírico · C₄H₈O₂",
+  "nota": "PRIMERA pieza de FORMACIÓN de una molécula poliatómica de la serie. Antes solo las diatómicas (O₂/N₂/C₂/Li₂) y el agua tenían barrido; aquí el barrido es de una grasa. Motor: scripts/precompute-grasa.py, que NO inventa nada — Δρ contra promolécula como precompute-bond-abinitio.py, y el campo con campo_lineas.py.",
+  "proposito": {
+    "wtf": "La molécula que hace que la mantequilla huela a mantequilla, naciendo: catorce átomos sueltos, cada uno con su nube y su campo, que se juntan y sueltan 943 kcal/mol formando trece enlaces.",
+    "hayQueMostrar": [
+      "los átomos SEPARADOS, cada uno con su propia nube y su propio estallido de campo",
+      "la carga CAYENDO al espacio entre núcleos: eso es el enlace, y se ve nacer",
+      "el campo reorganizándose de muchos átomos a UN sistema",
+      "que nada está dibujado: la densidad es cálculo y las líneas son el campo real"
+    ],
+    "payoff": "El olor de la mantequilla es esta forma.",
+    "noHacer": [
+      "decir que la mantequilla se fabrica así — es un BARRIDO, no un mecanismo de reacción",
+      "dibujar enlaces como palitos: el enlace EMERGE del Δρ o no se muestra",
+      "hablar de por qué la mantequilla es sólida: eso es de la cadena larga, otra pieza"
+    ],
+    "continuidad": "Paleta de la serie sin cambio: oro/ámbar en `acc`, magenta en el Δρ>0, azul en `dep` y en el campo. Son los valores LITERALES del anillo de agua."
+  },
+  "fisica": {
+    "molecula": "Ácido butírico C₄H₈O₂ — la cadena más corta que la mantequilla contiene de verdad; le da su nombre (butyrum) y su olor.",
+    "metodo": "Geometría optimizada con geomeTRIC. Barrido de 24 cuadros sobre una expansión uniforme s de 3.50 a 1.00. En cada cuadro: UHF/6-31G, ρ, y Δρ = ρ(molécula) − ρ(promolécula) con `scf.hf.init_guess_by_atom` (átomos neutros esféricamente promediados, EL MISMO que usan las diatómicas).",
+    "campo": "campo_lineas.py — V = Σ Z/|r−R| − ∫ρ/|r−r'| con gradiente analítico (int1e_grids_ip), siembra sobre la superficie molecular ρ=0.002 (Bader) y trazado bidireccional. 420 líneas, todas cargando el MISMO flujo Φ₀, retrazadas en los 24 cuadros desde los mismos rayos.",
+    "gates": {
+      "formacion": "APROBADO ×5085: la carga en la región de enlace va de 0.000 (sueltos) a 0.870 e⁻ (formada). Se mide en bolas de 0.40 Å alrededor de los puntos medios de enlace, NO en todo el espacio.",
+      "energia": "monótona y sin brincos: −304.2281 → −305.7307 Ha en los 24 cuadros = 1.5026 Ha = 943 kcal/mol al formar 13 enlaces.",
+      "campo": "420/420 líneas vivas en 20 de 24 cuadros (mínimo 405 en el tramo medio)."
+    },
+    "por_que_el_total_no_sirve": "∫Δρ>0 sobre TODO el espacio tiene un piso de ~2.3 e⁻ que no es enlace: la promolécula usa átomos esféricamente promediados y el C/O reales son ³P, asféricos. Con esa métrica el número BAJABA al formarse y el gate reprobaba una física correcta. Medido y documentado para no repetirlo.",
+    "limitacion_declarada": "Es un BARRIDO de expansión uniforme, no un mecanismo de reacción: nadie forma una grasa juntando sus catorce átomos a la vez. Lo dice el propio guion (línea 23). UHF y no RHF porque la capa cerrada restringida no describe enlaces estirados."
+  },
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=butirico",
+    "hook": "__cinematicAtom",
+    "wiring": "GRASA_KEYS en CinematicMolecule.tsx → tres O2Cloud (dep/acc/spin) + BondEField, los MISMOS componentes del anillo de agua. R(t) recorre las escalas del .bin; los núcleos se interpolan con el mismo bracket que las nubes, para que la densidad no se despegue de ellos.",
+    "gancho": "ABRE FORMADA y REBOBINA. El cuadro de átomos sueltos sale en 91% de negro y el canon pide primer cuadro denso, así que la pieza abre con la molécula hecha y se va hacia atrás. Solo cambia la curva R(t), que es dato."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 86.4,
+    "nota_dur": "voz REAL 83.88s (24 líneas, lead/gap 0.40) + 2.5s de cola"
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.butframes"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/butirico.txt",
+    "lineas": 24,
+    "palabras": 159
+  },
+  "audio": {
+    "dir": "dist-video/butirico-narracion",
+    "narracion": "butirico-narracion.mp3",
+    "segs": "segs.json",
+    "ass": "butirico.ass",
+    "voz": "XTTS Matilda, TAKES=4 mediana. ⚠ pasar scripts/voz-check.py ANTES de rendir.",
+    "musica": null
+  },
+  "salida": {
+    "dir": "/mnt/e/forja-videos",
+    "master": "grasa-butirico-4k-master.mp4",
+    "h264": "grasa-butirico-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "grasa-butirico.bin",
+      "grasa-butirico-efield.bin"
+    ],
+    "guion": "butirico.txt",
+    "scripts": [
+      "precompute-grasa.py",
+      "campo_lineas.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-grasa-butirico.mp4",
+    "capsulaRel": "moleculas/_code/mol-grasa-butirico-capsula.tar.gz",
+    "pieza": "mol-grasa butirico"
+  }
+}

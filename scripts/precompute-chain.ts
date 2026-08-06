@@ -65,6 +65,49 @@ function alkane(n: number): Chain {
   return { atoms, bonds, conjugated: false };
 }
 
+// ── ÁCIDO GRASO SATURADO CnH(2n)O2 — una cadena de alcano con cabeza de ácido ──
+// El n=4 es el ÁCIDO BUTÍRICO, que es literalmente la grasa de la mantequilla: le da su
+// nombre (butyrum) y su olor, y es la cadena más corta que la mantequilla contiene de
+// verdad. Se arma con el mismo vocabulario del archivo (longitudes de libro, declaradas):
+// el carbono de la punta pasa de sp³ a sp² y cambia sus H por =O y −O−H.
+//   C=O 1.21 Å · C−O 1.34 Å · O−H 0.97 Å · O=C−O 123° (valores de libro, como el resto)
+function acidoGraso(n: number): Chain {
+  const dCO2 = 1.21, dCO = 1.34, dOH = 0.97;
+  const base = alkane(n);
+  // el carbono de la punta es el índice n-1; se le quitan sus hidrógenos
+  const cAc = n - 1;
+  const atoms: Atom[] = [], bonds: Bond[] = [];
+  const remap = new Map<number, number>();
+  base.atoms.forEach((a, i) => {
+    const esHDelAcido = a.Z === 1 && base.bonds.some(b => (b.i === cAc && b.j === i) || (b.j === cAc && b.i === i));
+    if (esHDelAcido) return;
+    remap.set(i, atoms.length); atoms.push({ Z: a.Z, pos: a.pos });
+  });
+  for (const b of base.bonds) {
+    const i = remap.get(b.i), j = remap.get(b.j);
+    if (i !== undefined && j !== undefined) bonds.push({ i, j, order: b.order });
+  }
+  // el grupo ácido, PLANO (la cadena del alcano ya vive en z=0)
+  const iC = remap.get(cAc)!, p = atoms[iC].pos;
+  const u = norm(sub(atoms[remap.get(cAc - 1)!].pos, p));       // hacia la cadena
+  const v = norm(cross([0, 0, 1], u));
+  const gira = (ang: number, d: number): V3 =>
+    add(p, mul(add(mul(u, Math.cos(ang)), mul(v, Math.sin(ang))), d));
+  const a120 = 118.5 * Math.PI / 180;
+  const iO2 = atoms.length; atoms.push({ Z: 8, pos: gira(+a120, dCO2) });   // el =O
+  bonds.push({ i: iC, j: iO2, order: 2 });
+  const iO1 = atoms.length; atoms.push({ Z: 8, pos: gira(-a120, dCO) });    // el −O−
+  bonds.push({ i: iC, j: iO1, order: 1 });
+  // el H del hidroxilo: C−O−H ≈ 106°, en el mismo plano y hacia afuera
+  const w = norm(sub(atoms[iO1].pos, p));
+  const wp = norm(cross([0, 0, 1], w));
+  const aOH = 106 * Math.PI / 180;
+  const dirH = add(mul(w, Math.cos(Math.PI - aOH)), mul(wp, -Math.sin(Math.PI - aOH)));
+  const iH = atoms.length; atoms.push({ Z: 1, pos: add(atoms[iO1].pos, mul(norm(dirH), dOH)) });
+  bonds.push({ i: iO1, j: iH, order: 1 });
+  return { atoms, bonds, conjugated: false };
+}
+
 // ── POLIENO conjugado lineal (todo-trans): sp², 120°, alterna C=C 1.34 / C–C 1.45 ──
 // CnH(n+2). El sistema π corre por toda la cadena (deslocalizado).
 function polyene(n: number): Chain {
@@ -127,6 +170,8 @@ function completeTetra(occupied: V3[]): V3[] {
 
 // ── catálogo de cadenas ──────────────────────────────────────────────────────
 const CHAINS: Record<string, () => Chain> = {
+  // MANTEQUILLA, la versión mínima: ácido butírico C₄H₈O₂ (4 carbonos + cabeza de ácido).
+  butirico: () => acidoGraso(4),
   butane: () => alkane(4),
   pentane: () => alkane(5),
   hexane: () => alkane(6),

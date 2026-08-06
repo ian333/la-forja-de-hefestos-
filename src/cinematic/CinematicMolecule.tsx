@@ -565,6 +565,25 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // tres planos parecidos mientras la voz recita números.
   //
   // DURACIONES = arranques REALES de segs.json (voz 95.24s). Σ = 97.74 = WHEX6_DURATION.
+  // BUTÍRICO — la grasa mínima de la mantequilla. Tomas con la MISMA gramática del hexámero
+  // (heroOrbit/ringFaceOn del registro), no un modo automático: sin entrada aquí la cámara
+  // caía al modo por defecto y dejaba el sujeto en un tercio del cuadro (83 % de negro contra
+  // el 36 % del hexámero, medido). Los rMul son los suyos porque `ex` usa su mismo ratio 2.38.
+  // BUTÍRICO — duraciones = arranques REALES de segs.json (voz 83.88 s) + 2.5 de cola. Σ = 86.4.
+  // La cámara ACOMPAÑA la apertura: lejos cuando los átomos están sueltos, cerrada cuando la
+  // molécula se forma. `ex` está medido en la molécula FORMADA, así que el tramo abierto
+  // necesita rMul grande — para eso es loomPush, la toma de la casa que mueve r dentro del beat.
+  // rMul del tramo abierto MEDIDO, no estimado: con 5.0 esos 11 s salían al 91 % de negro (el
+  // hexámero en su cuadro más abierto llega a 65 %). Con 3.35 los átomos llenan el cuadro.
+  butirico: [
+    { shot: heroOrbit({ rMul: 1.95, elev: 0.14, azim0: 0.85, span: 0.55, fov: 34 }), dur: 12.42, label: 'GANCHO: la molécula HECHA — "esto huele a mantequilla" (l1-4)' },
+    { shot: loomPush({ rFrom: 2.4, rTo: 3.35, elev: 0.18, azim: 1.30, fov: 35 }), dur: 11.84, label: 'REBOBINA y ABRE: los átomos sueltos, cada uno con su campo (l5-7)' },
+    { shot: loomPush({ rFrom: 3.35, rTo: 1.95, elev: 0.10, azim: 1.75, fov: 34 }), dur: 16.25, label: 'LA FORMACIÓN: se juntan y la carga cae a los enlaces (l8-12)' },
+    { shot: ringFaceOn({ rMul: 1.78, azim0: 1.57, span: 0.28, elev: 0.07 }), dur: 11.53, label: 'LOS NÚMEROS: 0 → 0.87 electrones, trece enlaces (l13-16)' },
+    { shot: heroOrbit({ rMul: 1.88, elev: -0.16, azim0: 2.30, span: 0.9, fov: 33 }), dur: 10.66, label: 'la energía que sueltan — órbita baja (l17-19)' },
+    { shot: heroOrbit({ rMul: 2.05, elev: 0.22, azim0: 3.40, span: 1.0, fov: 34 }), dur: 12.60, label: '"nada de esto está dibujado" — el campo entero (l20-22)' },
+    { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.24, elev: 0.10 }), dur: 11.10, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l23-24)' },
+  ],
   whex6: [
     { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.30, rTo: 1.05, azim: 1.20, fov: 34 }), dur: 4.04, label: 'EL DESTELLO — el campo ENCIENDE sobre "mira cómo se agarran"' },
     { shot: ringToBridge({ a: 2, b: 3, rFrom: 1.45, rTo: 1.10, azim: 2.60, fov: 32 }), dur: 6.03, label: 'presta y recibe — otro puente, el Δρ ardiendo' },
@@ -1038,6 +1057,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   tetradecaheptaene: { name: 'Tetradecaheptaeno', formula: 'C₁₄H₁₆', fact: 'Siete dobles: el río π más largo, casi rojo.' },
   hexadecaoctaene:   { name: 'Hexadecaoctaeno', formula: 'C₁₆H₁₈', fact: 'Ocho dobles conjugados: absorbe color visible.' },
   caroteno:     { name: 'Caroteno (cromóforo)', formula: 'cadena π', fact: 'La cadena conjugada que pinta la zanahoria — y la que te deja VER.' },
+  butirico:     { name: 'Ácido butírico', formula: 'C₄H₈O₂', fact: 'La grasa más corta de la MANTEQUILLA — le da su nombre (butyrum) y su olor. Cuatro carbonos y una cabeza de ácido: el esqueleto mínimo de una grasa.' },
   estearico:    { name: 'Ácido esteárico', formula: 'C₁₈H₃₆O₂', fact: 'La grasa de la mantequilla: recta, 179.9° — se apila como leña y queda sólida.' },
   oleico:       { name: 'Ácido oleico', formula: 'C₁₈H₃₄O₂', fact: 'La misma cadena con UN doble enlace: 125.5°. El codo impide apilarse — y por eso el aceite es líquido.' },
   // ── ADN — doble hélice B-form real ──
@@ -1053,6 +1073,46 @@ const META: Record<string, { name: string; formula: string; fact: string }> = { 
 // no necesita escena nueva. Su .bin sí es distinto en ORIGEN —no en formato—: lo escribe
 // scripts/precompute-cadena.py con geometría OPTIMIZADA y densidad |ψ|² real, en vez de
 // orbitales localizados con longitudes de libro. Ver docs/CADENA-LA-FORMA-MANDA.md.
+// GRASAS CALCULADAS: su .bin lo hace scripts/precompute-grasa.py con densidad ab initio y
+// líneas de campo de campo_lineas.py. No van por CHAIN_KEYS porque esa familia PINTA los
+// enlaces (lóbulos σ dibujados sobre longitudes de libro) y aquí el enlace EMERGE del Δρ.
+const GRASA_KEYS = new Set(['butirico']);
+// COREOGRAFÍA DEL BUTÍRICO. `apertura`: 0 = molécula formada, 1 = átomos sueltos.
+// Las fronteras son los arranques REALES de segs.json (se llenan al tener la voz).
+// La pieza ABRE FORMADA y REBOBINA: el cuadro de átomos sueltos sale en 91 % de negro y el
+// canon pide primer cuadro denso, así que el gancho es la molécula hecha y de ahí se va atrás.
+// voz REAL 83.88 s (24 líneas, segs.json) + 2.5 de cola. Sin esto la escena reportaba los
+// 22 s del default de cadenas y TODO lo posterior al segundo 22 se renderizaba congelado.
+const BUTIRICO_DURATION = 86.4;
+const BUTIRICO_CAPAS: CapasSpec = {
+  // Fronteras = arranques REALES de segs.json (voz 83.88 s, 24 líneas):
+  //   gancho FORMADA 0.40-12.42 · REBOBINA en "hace un instante no existía" ·
+  //   átomos sueltos 12.82-24.26 · LA FORMACIÓN 24.26-47.87 · formada el resto.
+  //
+  // `apertura` 1 = átomos sueltos, 0 = molécula formada. Arranca en 0 (el gancho es la
+  // molécula hecha) y el REBOBINADO ocurre justo sobre la línea 4, que es la que lo dice.
+  // La formación luego baja de 1 a 0 a lo largo de las líneas 8-15, que son las que la narran
+  // ("míralos acercarse" → "juntos: cero punto ocho siete electrones").
+  apertura: { base: 0, mods: [
+    { wins: [[12.42, 24.26]], a: 1.0, label: 'REBOBINA: los átomos sueltos, mientras se los presenta (l5-7)' },
+    { wins: [[24.26, 26.15]], a: 0.82, label: '"míralos acercarse" — empiezan a caer' },
+    { wins: [[26.15, 28.59]], a: 0.58, label: '"los campos se buscan"' },
+    { wins: [[28.59, 31.58]], a: 0.34, label: '"mira dónde se va la carga" — el Δρ ya se ve nacer' },
+    { wins: [[31.58, 34.85]], a: 0.16, label: '"se cae al espacio de en medio"' },
+    { wins: [[34.85, 40.11]], a: 0.05, label: 'casi cerrada mientras se define qué es un enlace' },
+  ] },
+};
+/** Núcleo `i` en el instante del barrido R: MISMO bracket que usa O2Cloud para las nubes, así
+ *  los núcleos y su densidad viajan juntos (si se dibujaran fijos, la nube se separaría de
+ *  ellos y la formación se vería como un truco). */
+function posNuc(g: WAPData, R: number, i: number): Vec3 {
+  const { k, frac } = wapBracket(g.Rvals, g.K, R);
+  const inv = 1 / (g.posq || O2AI_POSQ), mf = 1 - frac;
+  const o0 = (k * g.NNUC + i) * 3, o1 = ((k + 1) * g.NNUC + i) * 3;
+  return [(g.nucPos[o0] * mf + g.nucPos[o1] * frac) * inv,
+          (g.nucPos[o0 + 1] * mf + g.nucPos[o1 + 1] * frac) * inv,
+          (g.nucPos[o0 + 2] * mf + g.nucPos[o1 + 2] * frac) * inv];
+}
 const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno', 'estearico', 'oleico']);
 // Conjugadas (con sistema π): llevan campo de CARAS π (MEP). Los alcanos NO (apolares, planos eléctricamente → inertes).
 const CONJUGATED_KEYS = new Set(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno']);
@@ -3650,7 +3710,9 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const [piSplit, setPiSplit] = useState<Uint8Array | null>(null);       // ¿a cuál π pertenece cada partícula? (triple enlace)
   const [bondEf, setBondEf] = useState<BondEFieldData | null>(null);  // campo E REAL por separación (Li₂/Be₂: el átomo COMPLETO evolucionando, no un punto)
   const [bondAttr, setBondAttr] = useState<BondEFieldData | null>(null);  // campo de ATRACCIÓN (el par − del centro jalando a los núcleos +) — lo que faltaba
-  const [caroLUT, setCaroLUT] = useState<{ rgb: Vec3 }[] | null>(null);   // color observado REAL por longitud (PySCF/FEMO)
+  const [caroLUT, setCaroLUT] = useState<{ rgb: Vec3 }[] | null>(null);
+  const [grasa, setGrasa] = useState<WAPData | null>(null);
+  const [grasaEf, setGrasaEf] = useState<BondEFieldData | null>(null);   // color observado REAL por longitud (PySCF/FEMO)
   const [time, setTime] = useState(0);
   const modes = useMemo(() => (molKey === 'h2o' ? computeWaterModes() : null), [molKey]);
   const [vertical, setVertical] = useState(
@@ -3674,6 +3736,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const isPair = molKey in WATER_BINS;   // LA FAMILIA DEL AGUA, mismo motor: dímero, anillo de 3, de 4… (ver WATER_BINS)
   const isWater = molKey === 'wdimer' || molKey === 'wsingle' || molKey === 'whex' || isMD || isPair || isCargas;   // agua que INTERACTÚA (cluster + campo)
   const [waterReady, setWaterReady] = useState(false);
+  const isGrasa = GRASA_KEYS.has(molKey);
   const isChain = CHAIN_KEYS.has(molKey);
   const isCatalog = CATALOG_KEYS.has(molKey);
   const isDNA = DNA_KEYS.has(molKey);
@@ -3685,6 +3748,15 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
     if (live) setData(null);   // al cambiar de molécula en el lab, no dejar la anterior visible
     if (isWater) return () => { alive = false; };   // el agua-cluster carga su propio bin (WaterField)
     if (isFaraday) return () => { alive = false; };  // la jaula carga SU bin (FaradayJaula); no hay mol-faraday.bin
+    if (GRASA_KEYS.has(molKey)) {
+      setGrasa(null); setGrasaEf(null);
+      fetch(`/precomputed/grasa-${molKey}.bin`).then(r => (r.ok ? r.arrayBuffer() : null))
+        .then(b => { if (alive && b) setGrasa(parseWAP2(b)); }).catch(e => console.error('grasa', e));
+      fetch(`/precomputed/grasa-${molKey}-efield.bin`).then(r => (r.ok ? r.arrayBuffer() : null))
+        .then(b => { if (alive && b) setGrasaEf(parseBondEField(b)); }).catch(() => {});
+    }
+    // OJO: el fetch de la grasa va ARRIBA de este return, o no corre nunca.
+    if (isGrasa) return;   // la grasa no tiene mol-*.bin: sus núcleos vienen en el WAP2
     const prefix = isDNA ? 'dna' : isCatalog ? 'catalog' : isChain ? 'chain' : 'mol';
     fetch(`/precomputed/${prefix}-${molKey}.bin`)
       .then(r => r.arrayBuffer())
@@ -3736,10 +3808,32 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   }, [molKey, isChain, isCatalog, isDNA, live]);
 
   // Marco geométrico (eje principal, elongación) → decide orbit vs traversal.
-  const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
+  // GRASA: los núcleos y la escala salen del propio .bin calculado.
+  const nucGrasa = useMemo(() => {
+    if (!grasa) return null;
+    const inv = 1 / (grasa.posq || O2AI_POSQ);
+    const nuc: { pos: Vec3; protons: number; neutrons: number }[] = [];
+    let ex = 1;
+    // La escala se mide en el cuadro FORMADO (el último), no en el 0. El cuadro 0 es el de los
+    // átomos SUELTOS, 3.5× más grande: con él la cámara se iba lejísimos y la molécula quedaba
+    // en un punto (medido: 90 % de negro en toda la pieza). El sujeto de la pieza es la
+    // molécula; que el arranque desborde es correcto, y de eso se encarga la toma.
+    const b0 = (grasa.K - 1) * grasa.NNUC * 3;
+    for (let i = 0; i < grasa.NNUC; i++) {
+      const p: Vec3 = [grasa.nucPos[b0 + i * 3] * inv, grasa.nucPos[b0 + i * 3 + 1] * inv, grasa.nucPos[b0 + i * 3 + 2] * inv];
+      const el = elementByZ(grasa.Z[i]);
+      const info = el ? nucleusInfo(el) : { protons: grasa.Z[i], neutrons: grasa.Z[i] };
+      nuc.push({ pos: p, protons: info.protons, neutrons: info.neutrons });
+      ex = Math.max(ex, Math.hypot(p[0], p[1], p[2]));
+    }
+    return { nuc, ex: ex * 2.38 };   // mismo ratio medido que usa el anillo de agua
+  }, [grasa]);
+  const frame = useMemo<Frame>(() => (nucGrasa
+    ? { ...frameFromNuclei(nucGrasa.nuc, nucGrasa.ex), mk: molKey }
+    : { ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey, nucGrasa]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : isPair ? (WATER_BINS[molKey].dur ?? WPAIR_DURATION) : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
+  const dur = isGrasa ? BUTIRICO_DURATION : isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : isPair ? (WATER_BINS[molKey].dur ?? WPAIR_DURATION) : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -3747,11 +3841,11 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
     if (live) return;
     const api = {
       renderAt: (t: number) => setTime(Math.max(0, Math.min(dur, t))),
-      ready: (isWater || isFaraday) ? waterReady : !!data, duration: dur, molecule: molKey,
+      ready: (isWater || isFaraday) ? waterReady : isGrasa ? !!grasa : !!data, duration: dur, molecule: molKey,
     };
     (window as unknown as { __cinematicAtom: typeof api }).__cinematicAtom = api;
     return () => { delete (window as unknown as { __cinematicAtom?: unknown }).__cinematicAtom; };
-  }, [molKey, data, live, dur, isWater, isFaraday, waterReady]);
+  }, [molKey, data, live, dur, isWater, isFaraday, waterReady, isGrasa, grasa]);
 
   // Modo vivo: loop continuo (cuando se monta interactivo en el lab).
   useEffect(() => {
@@ -3786,6 +3880,56 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
               {isFaraday && <FaradayJaula time={time} onReady={setWaterReady} />}
         {isMD && <WaterMD time={time} dur={dur} onReady={setWaterReady} />}
         {isWater && !isMD && !isPair && !isCargas && <WaterField molKey={molKey} time={time} dur={60} onReady={setWaterReady} />}
+        {/* ═══ GRASA CALCULADA ═══════════════════════════════════════════════════════
+            El mismo montaje que los ganadores, con los MISMOS componentes de la casa:
+            tres O2Cloud de la densidad de deformación + BondEField con las líneas del
+            campo. Nada dibujado: el enlace EMERGE de Δρ y las líneas salen de
+            campo_lineas.py (V = ΣZ/|r−R| − ∫ρ/|r−r'|, siembra en la superficie ρ=0.002). */}
+        {grasa && nucGrasa && (() => {
+          const pulse = 0.92 + 0.08 * Math.sin(time * 2.0);
+          const bF = 1.5;
+          const inv = 1 / (grasa.posq || O2AI_POSQ);
+          // LA FORMACIÓN: R(t) recorre el barrido de escalas del .bin, de los átomos SUELTOS
+          // (Rvals[0]) a la molécula FORMADA (Rvals[K-1]). El motor interpola entre cuadros y,
+          // como las partículas llevan semillas fijas, la carga FLUYE hacia los enlaces en vez
+          // de parpadear. Curva ease-out: llegan rápido y el nacimiento del enlace se saborea.
+          const sLejos = grasa.Rvals[0], sCerca = grasa.Rvals[grasa.K - 1];
+          // `apertura` = 0 formada, 1 átomos sueltos. Es una CAPA (capas.ts), como en el anillo
+          // de agua: la coreografía vive en datos y se ata a los segundos REALES de segs.json.
+          const ap = Math.min(1, Math.max(0, evalCapas(BUTIRICO_CAPAS, time).apertura ?? 0));
+          const Rt = sCerca + (sLejos - sCerca) * ap;
+          // RALEO ANTI-QUEMADO en TODOS los átomos pesados, no solo los oxígenos. El anillo de
+          // agua ralea en sus O porque son los únicos pesados que tiene; aquí los 4 carbonos
+          // también concentran densidad y sin ralear reventaban en blanco sólido (medido: 10.8 %
+          // de píxeles >200 contra el 4.8 % del hexámero). Caben: 6 pesados, 8 lugares.
+          const cores: [number, number, number][] = [];
+          for (let i = 0; i < grasa.NNUC && cores.length < 8; i++)
+            if (grasa.Z[i] > 1) cores.push([grasa.nucPos[i * 3] * inv, grasa.nucPos[i * 3 + 1] * inv, grasa.nucPos[i * 3 + 2] * inv]);
+          const plano = (n: number, r: number, g: number, b: number) => {
+            const c = new Float32Array(n * 3);
+            for (let i = 0; i < n; i++) { c[i * 3] = r; c[i * 3 + 1] = g; c[i * 3 + 2] = b; }
+            return c;
+          };
+          return <>
+            <MolCameraRig frame={frame} time={time} vertical={vertical} />
+            {nucGrasa.nuc.map((n, i) => (
+              <group key={i} position={posNuc(grasa, Rt, i)}>
+                <Nucleus protons={n.protons} neutrons={n.neutrons} time={time}
+                  clusterRadius={0.022 + 0.009 * Math.cbrt(n.protons + n.neutrons)} />
+              </group>
+            ))}
+            <O2Cloud premul qScale={grasa.posq} posQ={grasa.depPos} colors={plano(grasa.Ndep, 0.20, 0.45, 1.0)}
+              Rvals={grasa.Rvals} N={grasa.Ndep} K={grasa.K} R={Rt}
+              brightness={0.26 * bF} size={0.47} cores={cores} coreR={0.9} coreThin={0.55} />
+            <O2Cloud premul qScale={grasa.posq} posQ={grasa.accPos} colors={grasa.accColor}
+              Rvals={grasa.Rvals} N={grasa.Nacc} K={grasa.K} R={Rt}
+              brightness={0.30 * bF * pulse} size={0.59} coreThin={0.72} cores={cores} coreR={0.55} />
+            <O2Cloud premul qScale={grasa.posq} posQ={grasa.spinPos} colors={plano(grasa.Nspin, 0.82, 0.30, 1.0)}
+              Rvals={grasa.Rvals} N={grasa.Nspin} K={grasa.K} R={Rt}
+              brightness={1.39 * bF * pulse} size={0.62} cores={cores} coreR={0.9} coreThin={0.80} />
+            {grasaEf && <BondEField data={grasaEf} R={Rt} time={time * 8} reveal={1.0} col={[0.42, 0.72, 1.6]} />}
+          </>;
+        })()}
         {data && !isWater && (() => {
           // FORMACIÓN DEL ENLACE (O₂) GUIADA POR LA FÍSICA: el oscilador de Morse
           // (morseR) da el acercamiento REAL — caen al pozo, sobrepasan re, rebotan

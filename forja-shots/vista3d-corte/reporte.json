@@ -1,0 +1,1102 @@
+{
+  "url": "http://localhost:5191/vista3d-corte.html",
+  "checks": {
+    "gpu_real": true,
+    "molde_armado": true,
+    "sin_error_de_montaje": true,
+    "corte_mueve": true,
+    "tapa_siempre_maciza": true,
+    "sin_lazos_abiertos": true,
+    "sin_caras_tangentes": true,
+    "L5_corta_todo": true,
+    "L5_con_cotas": true,
+    "L5_cota_agua": true,
+    "L5_cota_inserto": true,
+    "L5_cota_mejilla": true,
+    "L5_cota_cavidad": true,
+    "instantaneo_por_corte": true,
+    "eje_y_corta": true,
+    "eje_z_corta": true,
+    "eje_z_declara_sin_cotas": true,
+    "arrastre_fluido": true,
+    "arrastre_mueve_el_corte": true,
+    "orbitar_no_sondea": true,
+    "sonda_devuelve_componente": true,
+    "sonda_trae_seccion": true,
+    "sonda_trae_cota": true,
+    "sonda_en_panel": true,
+    "cambia_de_pieza": true,
+    "multicavidad_avisa": true,
+    "impresion_corta_la_pieza": true,
+    "sin_spec_declara_supuesto": true,
+    "sin_errores_de_consola": true
+  },
+  "estados": {
+    "x-t02": {
+      "t": 0.2,
+      "cMm": 39.2,
+      "ms": 43,
+      "cortadas": 11,
+      "areaMm2": 49495.5,
+      "tapasFallidas": 0,
+      "lazosAbiertos": 0,
+      "carasTangentes": 0,
+      "corrimientoMm": 0,
+      "tapas": [
+        "p-bottom:8856mm²/6tri",
+        "p-riel:4139.5mm²/12tri",
+        "p-ejector:3155mm²/6tri",
+        "p-ejector-ret:2278.6mm²/6tri",
+        "p-support:5412mm²/6tri",
+        "p-B:3060mm²/18tri",
+        "p-A:5436mm²/18tri",
+        "p-clamp:8856mm²/6tri",
+        "i-cav:5840mm²/6tri",
+        "i-core:2336mm²/6tri",
+        "agua:126.3mm²/376tri"
+      ],
+      "cotas": [],
+      "veredictos": [
+        {
+          "id": "V1.1",
+          "estado": "CUMPLE",
+          "medido": "11 componentes cortados, cada uno con su achurado",
+          "limite": null,
+          "porque": "el libro publica esta vista SIN criterio de bueno/malo: es nomenclatura. Se exige que cada componente se distinga por su achurado."
+        },
+        {
+          "id": "V4.7",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "la sección no cortó inserto y moldeo a la vez"
+        },
+        {
+          "id": "V4.8/V12.10/V13.4",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "sin inserto y moldeo en la misma sección no hay mejilla que medir"
+        },
+        {
+          "id": "V4.9",
+          "estado": "ADVIERTE",
+          "medido": "118×146 P20, huella 64×92",
+          "limite": null,
+          "porque": "bezel: \"the thickness of the surrounding cheek may not allow for sufficient cooling around the periphery … while also providing space for other mold components\""
+        },
+        {
+          "id": "V9.1",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no cortó ninguna línea de agua"
+        },
+        {
+          "id": "V11.2",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "pásale el diseño físico (pkg.diseno.expulsion) para dibujar los vectores"
+        },
+        {
+          "id": "V12.14",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el libro AVISA contra creerle a esta misma imagen: \"a more robust design may be provided by assuming that the cooling insert provides no support\", aunque en la vista parezca que lo sostiene. La deflexión del núcleo no está cableada a esta lámina — no se pinta verde."
+        },
+        {
+          "id": "V12.18",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no corta ningún tornillo de sujeción en este molde (los de la mitad cavidad están en las esquinas)"
+        }
+      ],
+      "rotulos": [
+        "PLACA B",
+        "PLACA A",
+        "INSERTO A"
+      ]
+    },
+    "x-t035": {
+      "t": 0.35,
+      "cMm": 68.6,
+      "ms": 42,
+      "cortadas": 12,
+      "areaMm2": 51916.4,
+      "tapasFallidas": 0,
+      "lazosAbiertos": 0,
+      "carasTangentes": 0,
+      "corrimientoMm": 0,
+      "tapas": [
+        "p-bottom:8856mm²/6tri",
+        "p-riel:4139.5mm²/12tri",
+        "p-ejector:3155mm²/6tri",
+        "p-ejector-ret:2278.6mm²/6tri",
+        "p-support:5412mm²/6tri",
+        "p-B:3060mm²/18tri",
+        "p-A:5436mm²/18tri",
+        "p-clamp:8856mm²/6tri",
+        "i-cav:5840mm²/6tri",
+        "i-core:4536mm²/12tri",
+        "moldeo:220.9mm²/96tri",
+        "agua:126.3mm²/376tri"
+      ],
+      "cotas": [
+        {
+          "id": "hA",
+          "texto": "H_ins A 13.5",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "hB",
+          "texto": "H_ins B 16.0",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "cheek",
+          "texto": "W_cheek 27.3",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hcav",
+          "texto": "H_cavity 26.5",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hagua",
+          "texto": "H_line 12.3 = 1.94⌀",
+          "estado": "VIOLA"
+        }
+      ],
+      "veredictos": [
+        {
+          "id": "V1.1",
+          "estado": "CUMPLE",
+          "medido": "12 componentes cortados, cada uno con su achurado",
+          "limite": null,
+          "porque": "el libro publica esta vista SIN criterio de bueno/malo: es nomenclatura. Se exige que cada componente se distinga por su achurado."
+        },
+        {
+          "id": "V4.7",
+          "estado": "VIOLA",
+          "medido": "A 13.5 mm · B 16.0 mm",
+          "limite": "≥ 19.0 mm (3 × ⌀6.35)",
+          "porque": "el lado A deja 13.5 mm de acero entre la superficie moldeante y el lomo del inserto. El límite usa el ⌀ REALMENTE ruteado (⌀6.35, §9.2), no el ⌀ que §4.2.1 ESTIMA por tamaño (⌀4.76), con el que se dimensionó el inserto."
+        },
+        {
+          "id": "V4.8/V12.10/V13.4",
+          "estado": "CUMPLE",
+          "medido": "27.3 mm (izq 27.3 · der 27.3)",
+          "limite": "≥ 26.5 mm — manda estructural (W_cheek = H_cavity)",
+          "porque": "H_cavity 26.5 vs 3⌀ 19.0: estructural (W_cheek = H_cavity). El libro repite esta regla en §4.2.2, §12.2.4 y §13.9."
+        },
+        {
+          "id": "V4.9",
+          "estado": "ADVIERTE",
+          "medido": "118×146 P20, huella 64×92",
+          "limite": null,
+          "porque": "bezel: \"the thickness of the surrounding cheek may not allow for sufficient cooling around the periphery … while also providing space for other mold components\""
+        },
+        {
+          "id": "V9.1",
+          "estado": "VIOLA",
+          "medido": "12.3 mm = 1.94·⌀ (4 líneas cortadas)",
+          "limite": "2·⌀ < H < 5·⌀ (Eq 9.22)",
+          "porque": "\"the magnitude of the stress increases as the cooling line approaches the mold wall\". El factor de concentración NO se interpola: Fig 9.4 solo rotula 1⌀ → 3.3·P_melt y 4⌀ → 2.6·P_melt, y sale de la gráfica, no de la imagen. El déficit son 0.37 mm: el trazo pide 2·⌀ = 12.70 y lo redondea a 12 con Math.round. En el PISO de Eq 9.22 el redondeo tiene que ir hacia ARRIBA (steel-safe), como ya se hace con los extremos de los canales."
+        },
+        {
+          "id": "V11.2",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "pásale el diseño físico (pkg.diseno.expulsion) para dibujar los vectores"
+        },
+        {
+          "id": "V12.14",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el libro AVISA contra creerle a esta misma imagen: \"a more robust design may be provided by assuming that the cooling insert provides no support\", aunque en la vista parezca que lo sostiene. La deflexión del núcleo no está cableada a esta lámina — no se pinta verde."
+        },
+        {
+          "id": "V12.15",
+          "estado": "SIN CABLEAR",
+          "medido": "macho 24.5 × 88.0 mm → esbeltez L/D 0.28",
+          "limite": null,
+          "porque": "el apoyo del extremo libre del núcleo NO está modelado en el molde (ni el kernel lo genera todavía): es presencia/ausencia y hoy no se puede afirmar. El premio que promete el libro si se interconecta: \"reduces the lateral deflection of the pin to approximately 10 % of the deflection for a pin that is supported on only one end\"."
+        },
+        {
+          "id": "V12.18",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no corta ningún tornillo de sujeción en este molde (los de la mitad cavidad están en las esquinas)"
+        }
+      ],
+      "rotulos": [
+        "H_ins A 13.5",
+        "H_ins B 16.0",
+        "W_cheek 27.3",
+        "H_cavity 26.5",
+        "H_line 12.3 = 1.94⌀",
+        "PLACA B",
+        "PLACA A",
+        "INSERTO A"
+      ]
+    },
+    "x-sprue-L5": {
+      "t": 0.5,
+      "cMm": 98,
+      "ms": 36,
+      "cortadas": 14,
+      "areaMm2": 56510.2,
+      "tapasFallidas": 0,
+      "lazosAbiertos": 0,
+      "carasTangentes": 0,
+      "corrimientoMm": 0,
+      "tapas": [
+        "p-bottom:8856mm²/6tri",
+        "p-riel:4139.5mm²/12tri",
+        "p-ejector:3155mm²/6tri",
+        "p-ejector-ret:2278.6mm²/6tri",
+        "p-support:5412mm²/6tri",
+        "p-B:3060mm²/18tri",
+        "p-A:5436mm²/18tri",
+        "p-clamp:8856mm²/6tri",
+        "i-cav:5840mm²/6tri",
+        "i-core:4536mm²/12tri",
+        "moldeo:148.7mm²/147tri",
+        "colada:362.9mm²/4tri",
+        "pines:4240mm²/16tri",
+        "agua:189.5mm²/564tri"
+      ],
+      "cotas": [
+        {
+          "id": "hA",
+          "texto": "H_ins A 13.5",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "hB",
+          "texto": "H_ins B 16.0",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "cheek",
+          "texto": "W_cheek 27.3",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hcav",
+          "texto": "H_cavity 26.5",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hagua",
+          "texto": "H_line 12.3 = 1.94⌀",
+          "estado": "VIOLA"
+        }
+      ],
+      "veredictos": [
+        {
+          "id": "V1.1",
+          "estado": "CUMPLE",
+          "medido": "14 componentes cortados, cada uno con su achurado",
+          "limite": null,
+          "porque": "el libro publica esta vista SIN criterio de bueno/malo: es nomenclatura. Se exige que cada componente se distinga por su achurado."
+        },
+        {
+          "id": "V4.7",
+          "estado": "VIOLA",
+          "medido": "A 13.5 mm · B 16.0 mm",
+          "limite": "≥ 19.0 mm (3 × ⌀6.35)",
+          "porque": "el lado A deja 13.5 mm de acero entre la superficie moldeante y el lomo del inserto. El límite usa el ⌀ REALMENTE ruteado (⌀6.35, §9.2), no el ⌀ que §4.2.1 ESTIMA por tamaño (⌀4.76), con el que se dimensionó el inserto."
+        },
+        {
+          "id": "V4.8/V12.10/V13.4",
+          "estado": "CUMPLE",
+          "medido": "27.3 mm (izq 27.3 · der 27.3)",
+          "limite": "≥ 26.5 mm — manda estructural (W_cheek = H_cavity)",
+          "porque": "H_cavity 26.5 vs 3⌀ 19.0: estructural (W_cheek = H_cavity). El libro repite esta regla en §4.2.2, §12.2.4 y §13.9."
+        },
+        {
+          "id": "V4.9",
+          "estado": "ADVIERTE",
+          "medido": "118×146 P20, huella 64×92",
+          "limite": null,
+          "porque": "bezel: \"the thickness of the surrounding cheek may not allow for sufficient cooling around the periphery … while also providing space for other mold components\""
+        },
+        {
+          "id": "V9.1",
+          "estado": "VIOLA",
+          "medido": "12.3 mm = 1.94·⌀ (6 líneas cortadas)",
+          "limite": "2·⌀ < H < 5·⌀ (Eq 9.22)",
+          "porque": "\"the magnitude of the stress increases as the cooling line approaches the mold wall\". El factor de concentración NO se interpola: Fig 9.4 solo rotula 1⌀ → 3.3·P_melt y 4⌀ → 2.6·P_melt, y sale de la gráfica, no de la imagen. El déficit son 0.37 mm: el trazo pide 2·⌀ = 12.70 y lo redondea a 12 con Math.round. En el PISO de Eq 9.22 el redondeo tiene que ir hacia ARRIBA (steel-safe), como ya se hace con los extremos de los canales."
+        },
+        {
+          "id": "V11.2",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "pásale el diseño físico (pkg.diseno.expulsion) para dibujar los vectores"
+        },
+        {
+          "id": "V12.14",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el libro AVISA contra creerle a esta misma imagen: \"a more robust design may be provided by assuming that the cooling insert provides no support\", aunque en la vista parezca que lo sostiene. La deflexión del núcleo no está cableada a esta lámina — no se pinta verde."
+        },
+        {
+          "id": "V12.15",
+          "estado": "SIN CABLEAR",
+          "medido": "macho 24.5 × 88.0 mm → esbeltez L/D 0.28",
+          "limite": null,
+          "porque": "el apoyo del extremo libre del núcleo NO está modelado en el molde (ni el kernel lo genera todavía): es presencia/ausencia y hoy no se puede afirmar. El premio que promete el libro si se interconecta: \"reduces the lateral deflection of the pin to approximately 10 % of the deflection for a pin that is supported on only one end\"."
+        },
+        {
+          "id": "V12.18",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no corta ningún tornillo de sujeción en este molde (los de la mitad cavidad están en las esquinas)"
+        }
+      ],
+      "rotulos": [
+        "H_ins A 13.5",
+        "H_ins B 16.0",
+        "W_cheek 27.3",
+        "H_cavity 26.5",
+        "H_line 12.3 = 1.94⌀",
+        "PLACA B",
+        "PLACA A",
+        "INSERTO A",
+        "PIEZA",
+        "BEBEDERO",
+        "EXPULSOR"
+      ]
+    },
+    "x-t065": {
+      "t": 0.65,
+      "cMm": 127.4,
+      "ms": 37,
+      "cortadas": 12,
+      "areaMm2": 51979.6,
+      "tapasFallidas": 0,
+      "lazosAbiertos": 0,
+      "carasTangentes": 0,
+      "corrimientoMm": 0,
+      "tapas": [
+        "p-bottom:8856mm²/6tri",
+        "p-riel:4139.5mm²/12tri",
+        "p-ejector:3155mm²/6tri",
+        "p-ejector-ret:2278.6mm²/6tri",
+        "p-support:5412mm²/6tri",
+        "p-B:3060mm²/18tri",
+        "p-A:5436mm²/18tri",
+        "p-clamp:8856mm²/6tri",
+        "i-cav:5840mm²/6tri",
+        "i-core:4536mm²/12tri",
+        "moldeo:220.9mm²/112tri",
+        "agua:189.5mm²/564tri"
+      ],
+      "cotas": [
+        {
+          "id": "hA",
+          "texto": "H_ins A 13.5",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "hB",
+          "texto": "H_ins B 16.0",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "cheek",
+          "texto": "W_cheek 27.3",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hcav",
+          "texto": "H_cavity 26.5",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hagua",
+          "texto": "H_line 12.3 = 1.94⌀",
+          "estado": "VIOLA"
+        }
+      ],
+      "veredictos": [
+        {
+          "id": "V1.1",
+          "estado": "CUMPLE",
+          "medido": "12 componentes cortados, cada uno con su achurado",
+          "limite": null,
+          "porque": "el libro publica esta vista SIN criterio de bueno/malo: es nomenclatura. Se exige que cada componente se distinga por su achurado."
+        },
+        {
+          "id": "V4.7",
+          "estado": "VIOLA",
+          "medido": "A 13.5 mm · B 16.0 mm",
+          "limite": "≥ 19.0 mm (3 × ⌀6.35)",
+          "porque": "el lado A deja 13.5 mm de acero entre la superficie moldeante y el lomo del inserto. El límite usa el ⌀ REALMENTE ruteado (⌀6.35, §9.2), no el ⌀ que §4.2.1 ESTIMA por tamaño (⌀4.76), con el que se dimensionó el inserto."
+        },
+        {
+          "id": "V4.8/V12.10/V13.4",
+          "estado": "CUMPLE",
+          "medido": "27.3 mm (izq 27.3 · der 27.3)",
+          "limite": "≥ 26.5 mm — manda estructural (W_cheek = H_cavity)",
+          "porque": "H_cavity 26.5 vs 3⌀ 19.0: estructural (W_cheek = H_cavity). El libro repite esta regla en §4.2.2, §12.2.4 y §13.9."
+        },
+        {
+          "id": "V4.9",
+          "estado": "ADVIERTE",
+          "medido": "118×146 P20, huella 64×92",
+          "limite": null,
+          "porque": "bezel: \"the thickness of the surrounding cheek may not allow for sufficient cooling around the periphery … while also providing space for other mold components\""
+        },
+        {
+          "id": "V9.1",
+          "estado": "VIOLA",
+          "medido": "12.3 mm = 1.94·⌀ (6 líneas cortadas)",
+          "limite": "2·⌀ < H < 5·⌀ (Eq 9.22)",
+          "porque": "\"the magnitude of the stress increases as the cooling line approaches the mold wall\". El factor de concentración NO se interpola: Fig 9.4 solo rotula 1⌀ → 3.3·P_melt y 4⌀ → 2.6·P_melt, y sale de la gráfica, no de la imagen. El déficit son 0.37 mm: el trazo pide 2·⌀ = 12.70 y lo redondea a 12 con Math.round. En el PISO de Eq 9.22 el redondeo tiene que ir hacia ARRIBA (steel-safe), como ya se hace con los extremos de los canales."
+        },
+        {
+          "id": "V11.2",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "pásale el diseño físico (pkg.diseno.expulsion) para dibujar los vectores"
+        },
+        {
+          "id": "V12.14",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el libro AVISA contra creerle a esta misma imagen: \"a more robust design may be provided by assuming that the cooling insert provides no support\", aunque en la vista parezca que lo sostiene. La deflexión del núcleo no está cableada a esta lámina — no se pinta verde."
+        },
+        {
+          "id": "V12.15",
+          "estado": "SIN CABLEAR",
+          "medido": "macho 24.5 × 88.0 mm → esbeltez L/D 0.28",
+          "limite": null,
+          "porque": "el apoyo del extremo libre del núcleo NO está modelado en el molde (ni el kernel lo genera todavía): es presencia/ausencia y hoy no se puede afirmar. El premio que promete el libro si se interconecta: \"reduces the lateral deflection of the pin to approximately 10 % of the deflection for a pin that is supported on only one end\"."
+        },
+        {
+          "id": "V12.18",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no corta ningún tornillo de sujeción en este molde (los de la mitad cavidad están en las esquinas)"
+        }
+      ],
+      "rotulos": [
+        "H_ins A 13.5",
+        "H_ins B 16.0",
+        "W_cheek 27.3",
+        "H_cavity 26.5",
+        "H_line 12.3 = 1.94⌀",
+        "PLACA B",
+        "PLACA A",
+        "INSERTO A"
+      ]
+    },
+    "x-t08": {
+      "t": 0.8,
+      "cMm": 156.8,
+      "ms": 37,
+      "cortadas": 11,
+      "areaMm2": 49558.7,
+      "tapasFallidas": 0,
+      "lazosAbiertos": 0,
+      "carasTangentes": 0,
+      "corrimientoMm": 0,
+      "tapas": [
+        "p-bottom:8856mm²/6tri",
+        "p-riel:4139.5mm²/12tri",
+        "p-ejector:3155mm²/6tri",
+        "p-ejector-ret:2278.6mm²/6tri",
+        "p-support:5412mm²/6tri",
+        "p-B:3060mm²/18tri",
+        "p-A:5436mm²/18tri",
+        "p-clamp:8856mm²/6tri",
+        "i-cav:5840mm²/6tri",
+        "i-core:2336mm²/6tri",
+        "agua:189.5mm²/564tri"
+      ],
+      "cotas": [],
+      "veredictos": [
+        {
+          "id": "V1.1",
+          "estado": "CUMPLE",
+          "medido": "11 componentes cortados, cada uno con su achurado",
+          "limite": null,
+          "porque": "el libro publica esta vista SIN criterio de bueno/malo: es nomenclatura. Se exige que cada componente se distinga por su achurado."
+        },
+        {
+          "id": "V4.7",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "la sección no cortó inserto y moldeo a la vez"
+        },
+        {
+          "id": "V4.8/V12.10/V13.4",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "sin inserto y moldeo en la misma sección no hay mejilla que medir"
+        },
+        {
+          "id": "V4.9",
+          "estado": "ADVIERTE",
+          "medido": "118×146 P20, huella 64×92",
+          "limite": null,
+          "porque": "bezel: \"the thickness of the surrounding cheek may not allow for sufficient cooling around the periphery … while also providing space for other mold components\""
+        },
+        {
+          "id": "V9.1",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no cortó ninguna línea de agua"
+        },
+        {
+          "id": "V11.2",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "pásale el diseño físico (pkg.diseno.expulsion) para dibujar los vectores"
+        },
+        {
+          "id": "V12.14",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el libro AVISA contra creerle a esta misma imagen: \"a more robust design may be provided by assuming that the cooling insert provides no support\", aunque en la vista parezca que lo sostiene. La deflexión del núcleo no está cableada a esta lámina — no se pinta verde."
+        },
+        {
+          "id": "V12.18",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no corta ningún tornillo de sujeción en este molde (los de la mitad cavidad están en las esquinas)"
+        }
+      ],
+      "rotulos": [
+        "PLACA B",
+        "PLACA A",
+        "INSERTO A"
+      ]
+    },
+    "y-sprue": {
+      "eje": "y",
+      "t": 0.5,
+      "cMm": 123,
+      "ms": 36,
+      "cortadas": 13,
+      "cotas": [
+        {
+          "id": "hA",
+          "texto": "H_ins A 13.5",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "hB",
+          "texto": "H_ins B 16.0",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "cheek",
+          "texto": "W_cheek 27.0",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hcav",
+          "texto": "H_cavity 26.5",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hagua",
+          "texto": "H_line 34.5 = 5.44⌀",
+          "estado": "VIOLA"
+        }
+      ],
+      "tapasFallidas": 0
+    },
+    "z-planta": {
+      "eje": "z",
+      "t": 0.66,
+      "cMm": 150.48,
+      "ms": 39,
+      "cortadas": 4,
+      "cotas": [],
+      "razon": "las cotas de §4.2.1 (altura de inserto), §4.2.2/§12.2.4 (mejilla) y §9.2.5 (profundidad del agua) se miden en ALTURA sobre un corte VERTICAL. Este es un corte en PLANTA: aquí no hay alturas que medir. Cambia a eje X o Y.",
+      "tapasFallidas": 0
+    },
+    "pieza-tapa": {
+      "t": 0.5,
+      "cMm": 123.01,
+      "cortadas": 10,
+      "ms": 319,
+      "cotas": [],
+      "tapasFallidas": 0,
+      "carasTangentes": 0,
+      "corrimientoMm": 0.01,
+      "aviso": "molde de 4 impresiones: el plano del sprue pasa por el CENTRO del molde (123, 123) y NO corta ninguna impresión. Las impresiones están en x = 98, 149, 98, 149 mm. Mueve el corte hasta una de ellas para ver cavidad, núcleo y pieza.",
+      "nTriMoldeo": 22456,
+      "rango": {
+        "min": 0,
+        "max": 246
+      },
+      "tapas": [
+        "p-bottom:8856mm²/6tri",
+        "p-riel:4620mm²/12tri",
+        "p-ejector:3024mm²/6tri",
+        "p-ejector-ret:2184mm²/6tri",
+        "p-support:5412mm²/6tri",
+        "p-B:5412mm²/36tri",
+        "p-A:8856mm²/36tri",
+        "p-clamp:8856mm²/6tri",
+        "colada:370.8mm²/50tri",
+        "agua:189.5mm²/564tri"
+      ],
+      "molde": {
+        "nCav": 4,
+        "W": 246,
+        "D": 246,
+        "fx": 33,
+        "fy": 33,
+        "ifx": 49,
+        "ify": 49,
+        "Hc": 30,
+        "Hk": 16,
+        "round": false,
+        "xSprue": 123,
+        "ySprue": 123,
+        "ejeSprue": "x",
+        "nCavCortadasEnElSprue": 0
+      },
+      "veredictos": [
+        {
+          "id": "V1.1",
+          "estado": "CUMPLE",
+          "medido": "10 componentes cortados, cada uno con su achurado",
+          "limite": null,
+          "porque": "el libro publica esta vista SIN criterio de bueno/malo: es nomenclatura. Se exige que cada componente se distinga por su achurado."
+        },
+        {
+          "id": "V4.7",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "la sección no cortó inserto y moldeo a la vez"
+        },
+        {
+          "id": "V4.8/V12.10/V13.4",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "sin inserto y moldeo en la misma sección no hay mejilla que medir"
+        },
+        {
+          "id": "V4.9",
+          "estado": "ADVIERTE",
+          "medido": "49×49 P20, huella 33×33",
+          "limite": null,
+          "porque": "bezel: \"the thickness of the surrounding cheek may not allow for sufficient cooling around the periphery … while also providing space for other mold components\""
+        },
+        {
+          "id": "V9.1",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no cortó ninguna línea de agua"
+        },
+        {
+          "id": "V11.2",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "pásale el diseño físico (pkg.diseno.expulsion) para dibujar los vectores"
+        },
+        {
+          "id": "V12.14",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el libro AVISA contra creerle a esta misma imagen: \"a more robust design may be provided by assuming that the cooling insert provides no support\", aunque en la vista parezca que lo sostiene. La deflexión del núcleo no está cableada a esta lámina — no se pinta verde."
+        },
+        {
+          "id": "V12.18",
+          "estado": "SIN CABLEAR",
+          "medido": null,
+          "limite": null,
+          "porque": "el plano del sprue no corta ningún tornillo de sujeción en este molde (los de la mitad cavidad están en las esquinas)"
+        }
+      ]
+    },
+    "tapa-impresion": {
+      "t": 0.4,
+      "cMm": 98.4,
+      "cortadas": 13,
+      "cotas": [
+        {
+          "id": "hA",
+          "texto": "H_ins A 14.2",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "hB",
+          "texto": "H_ins B 16.0",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "cheek",
+          "texto": "W_cheek 8.6",
+          "estado": "VIOLA"
+        },
+        {
+          "id": "hcav",
+          "texto": "H_cavity 15.8",
+          "estado": "CUMPLE"
+        },
+        {
+          "id": "hagua",
+          "texto": "H_line 13.0 = 2.05⌀",
+          "estado": "CUMPLE"
+        }
+      ],
+      "tapasFallidas": 0,
+      "carasTangentes": 0,
+      "tapas": [
+        "p-bottom:8856mm²/6tri",
+        "p-riel:4620mm²/12tri",
+        "p-ejector:3024mm²/6tri",
+        "p-ejector-ret:2184mm²/6tri",
+        "p-support:5412mm²/6tri",
+        "p-B:3812mm²/24tri",
+        "p-A:5856mm²/24tri",
+        "p-clamp:8856mm²/6tri",
+        "i-cav:2940mm²/12tri",
+        "i-core:2380mm²/24tri",
+        "moldeo:233.4mm²/144tri",
+        "pines:3358.6mm²/136tri",
+        "agua:189.5mm²/564tri"
+      ]
+    },
+    "sin-spec": {
+      "supuesto": "pared nominal 2 mm SUPUESTA (el Estudio no pasó spec): con ella se dimensionaron inserto y mejilla",
+      "cortadas": 13,
+      "ms": 40
+    }
+  },
+  "errs": [],
+  "warns": [
+    "warning: THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ /.vite/deps/chunk-65BBDVDB.js?v=1b7745c4",
+    "warning: THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ /.vite/deps/chunk-65BBDVDB.js?v=1b7745c4",
+    "warning: THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ /.vite/deps/chunk-65BBDVDB.js?v=1b7745c4"
+  ],
+  "ignorados": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5191/favicon.ico"
+  ],
+  "fallidas": [],
+  "shots": [
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/x-t02.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/x-t035.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/x-sprue-L5.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/x-t065.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/x-t08.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/y-sprue.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/z-planta.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/arrastrado.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/orbitada.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/orbitada-al-otro-lado.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/acercada.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/sondeada.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/encuadre-pieza.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/tapa-impresion.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/pieza-tapa.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/vista3d-corte/sin-spec.png"
+  ],
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Ti), OpenGL 4.6)",
+  "molde": {
+    "molde": {
+      "nCav": 1,
+      "W": 196,
+      "D": 246,
+      "fx": 64,
+      "fy": 92,
+      "ifx": 118,
+      "ify": 146,
+      "Hc": 40,
+      "Hk": 16,
+      "round": false,
+      "xSprue": 98,
+      "ySprue": 123,
+      "ejeSprue": "x",
+      "nCavCortadasEnElSprue": 1
+    },
+    "origen": "spec de la Máquina que traía el Estudio",
+    "supuesto": null,
+    "nTriMolde": 10268,
+    "nTriMoldeo": 4204,
+    "cajaMolde": {
+      "x0": -66,
+      "x1": 130,
+      "y0": -77.25,
+      "y1": 168.75,
+      "z0": -146,
+      "z1": 82
+    },
+    "zPartMm": 146,
+    "tSprue": {
+      "x": 0.5,
+      "y": 0.5,
+      "z": 0.6403508771929824
+    }
+  },
+  "msPorCorte": [
+    43,
+    42,
+    36,
+    37,
+    37
+  ],
+  "arrastre": {
+    "fps": 56.7,
+    "peorFrameMs": 65,
+    "tFinal": 0.735,
+    "cMm": 144.06,
+    "desfasado": false
+  },
+  "orbita": {
+    "lecAntes": "null",
+    "lecDespues": "null",
+    "traza": {
+      "downs": 3,
+      "ups": 0,
+      "sondas": 0,
+      "rechazos": 0,
+      "ultDown": [
+        617.5,
+        500
+      ],
+      "ultUp": [
+        0,
+        0
+      ]
+    }
+  },
+  "sondas": [
+    {
+      "punto": [
+        0.34,
+        0.34
+      ],
+      "uv": [
+        22,
+        173.62
+      ],
+      "lectura": {
+        "titulo": "Placa A (cavidad)",
+        "valor": "5436 mm² de sección",
+        "nota": "material P20",
+        "seccion": "§4.2.1"
+      }
+    },
+    {
+      "punto": [
+        0.34,
+        0.46
+      ],
+      "uv": [
+        19.93,
+        120.04
+      ],
+      "lectura": {
+        "titulo": "Placa de soporte",
+        "valor": "5412 mm² de sección",
+        "nota": "material 1.1730 (C45)",
+        "seccion": "§12.2.5"
+      }
+    },
+    {
+      "punto": [
+        0.34,
+        0.58
+      ],
+      "uv": [
+        17.78,
+        64.22
+      ],
+      "lectura": {
+        "titulo": "Rieles del housing (spacer)",
+        "valor": "4140 mm² de sección",
+        "nota": "material 1.1730 (C45)",
+        "seccion": "§1.3.1 · Fig 1.4"
+      }
+    },
+    {
+      "punto": [
+        0.46,
+        0.34
+      ],
+      "uv": [
+        99.38,
+        178.25
+      ],
+      "lectura": {
+        "titulo": "Inserto de CAVIDAD (rectangular §4.2.3)",
+        "valor": "5840 mm² de sección",
+        "nota": "material P20 · 118×146×40 mm · H_ins A 13.5 mm vs mínimo 3·⌀ = 19.1 mm (§4.2.1)",
+        "seccion": "§4.2.1-3 · Fig 4.13-4.16"
+      }
+    },
+    {
+      "punto": [
+        0.46,
+        0.46
+      ],
+      "uv": [
+        98.93,
+        128.23
+      ],
+      "lectura": {
+        "titulo": "Placa B (núcleo)",
+        "valor": "3060 mm² de sección",
+        "nota": "material P20",
+        "seccion": "§4.2.1"
+      }
+    },
+    {
+      "punto": [
+        0.46,
+        0.58
+      ],
+      "uv": [
+        98.46,
+        76.27
+      ],
+      "lectura": {
+        "titulo": "aire (el corte no toca material aquí)",
+        "valor": "u 98.5 · v 76.3 mm",
+        "nota": "el plano pasa por un hueco del ensamble: no hay componente que reportar. No es un defecto de la vista, es lo que hay en ese punto del molde.",
+        "seccion": "§1.3.2 · Fig 1.6"
+      }
+    },
+    {
+      "punto": [
+        0.54,
+        0.34
+      ],
+      "uv": [
+        145.72,
+        181.02
+      ],
+      "lectura": {
+        "titulo": "Inserto de CAVIDAD (rectangular §4.2.3)",
+        "valor": "5840 mm² de sección",
+        "nota": "material P20 · 118×146×40 mm · H_ins A 13.5 mm vs mínimo 3·⌀ = 19.1 mm (§4.2.1)",
+        "seccion": "§4.2.1-3 · Fig 4.13-4.16"
+      }
+    },
+    {
+      "punto": [
+        0.54,
+        0.46
+      ],
+      "uv": [
+        146.13,
+        133.13
+      ],
+      "lectura": {
+        "titulo": "Inserto de NÚCLEO (macho)",
+        "valor": "4536 mm² de sección",
+        "nota": "material P20 · 118×146×16 mm + macho 25 mm · H_ins B 16.0 mm vs mínimo 3·⌀ = 19.1 mm (§4.2.1)",
+        "seccion": "§4.2.1-3 · Fig 4.13-4.16"
+      }
+    },
+    {
+      "punto": [
+        0.54,
+        0.58
+      ],
+      "uv": [
+        146.56,
+        83.45
+      ],
+      "lectura": {
+        "titulo": "aire (el corte no toca material aquí)",
+        "valor": "u 146.6 · v 83.5 mm",
+        "nota": "el plano pasa por un hueco del ensamble: no hay componente que reportar. No es un defecto de la vista, es lo que hay en ese punto del molde.",
+        "seccion": "§1.3.2 · Fig 1.6"
+      }
+    },
+    {
+      "punto": [
+        0.66,
+        0.34
+      ],
+      "uv": [
+        208.55,
+        184.78
+      ],
+      "lectura": {
+        "titulo": "Placa A (cavidad)",
+        "valor": "5436 mm² de sección",
+        "nota": "material P20",
+        "seccion": "§4.2.1"
+      }
+    },
+    {
+      "punto": [
+        0.66,
+        0.46
+      ],
+      "uv": [
+        210.02,
+        139.76
+      ],
+      "lectura": {
+        "titulo": "Placa B (núcleo)",
+        "valor": "3060 mm² de sección",
+        "nota": "material P20",
+        "seccion": "§4.2.1"
+      }
+    },
+    {
+      "punto": [
+        0.66,
+        0.58
+      ],
+      "uv": [
+        211.55,
+        93.16
+      ],
+      "lectura": {
+        "titulo": "aire (el corte no toca material aquí)",
+        "valor": "u 211.6 · v 93.2 mm",
+        "nota": "el plano pasa por un hueco del ensamble: no hay componente que reportar. No es un defecto de la vista, es lo que hay en ese punto del molde.",
+        "seccion": "§1.3.2 · Fig 1.6"
+      }
+    }
+  ],
+  "componentesSondeados": [
+    "Placa A (cavidad)",
+    "Placa de soporte",
+    "Rieles del housing (spacer)",
+    "Inserto de CAVIDAD (rectangular §4.2.3)",
+    "Placa B (núcleo)",
+    "aire (el corte no toca material aquí)",
+    "Inserto de NÚCLEO (macho)"
+  ],
+  "panelLectura": "SONDA — clic en la cara del corteaire (el corte no toca material aquí)u 211.6 · v 93.2 mmel plano pasa por un hueco del ensamble: no hay componente que reportar. No es un defecto de la vista, es lo que hay en ese punto del molde.§1.3.2 · Fig 1.6",
+  "reprobados": [],
+  "veredicto": "PASA"
+}

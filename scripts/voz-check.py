@@ -71,6 +71,11 @@ def norm(s):
     s = s.replace('%', ' por ciento ')
     s = re.sub(r'\bh2\b', 'h dos', s)                      # Whisper escribe la fórmula
     s = re.sub(r'[^a-zñ0-9 .,]', ' ', s)
+    # GÉNERO de las centenas: Whisper escribe '943' en CIFRAS y `_num` sólo sabe expandir en
+    # masculino, así que 'novecientas kilocalorías' (femenino, correcto) salía marcado como
+    # error de voz. El defecto era del gate, no del TTS. Se canoniza a masculino de los dos
+    # lados: la distinción no es pronunciación, es concordancia.
+    s = s.replace('cientas', 'cientos')
     out = []
     for t in s.split():
         t = t.strip('.,')
