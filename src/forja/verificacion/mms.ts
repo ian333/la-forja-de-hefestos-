@@ -322,9 +322,21 @@ export interface CaraFrontera {
   interna: boolean;
 }
 
+/**
+ * `dReal` = CELDA CORTADA (Shortley-Weller). Distancia VERDADERA del centro de celda
+ * a la superficie a lo largo de la normal de la cara, en metros.
+ *
+ * Sin ella, el dato de frontera se aplica en la cara del vóxel, o sea a h/2 del centro
+ * SIEMPRE — aunque la superficie real esté a 0.03·h o a 0.97·h. Eso desplaza la CF hasta
+ * media celda y, peor, el patrón de escalones CAMBIA con cada malla: el error deja de
+ * bajar monótono y el orden se derrumba de 2 a ~0.66 (medido con MMS sobre la carcasa
+ * Hammond 1554B). Con la distancia real el esquema recupera su orden.
+ *
+ * Si se omite, se usa h/2 y el comportamiento es el de antes (escalonado).
+ */
 export type CondFrontera =
-  | { tipo: 'dirichlet'; T: number }
-  | { tipo: 'robin'; hConv: number; tInf: number }
+  | { tipo: 'dirichlet'; T: number; dReal?: number }
+  | { tipo: 'robin'; hConv: number; tInf: number; dReal?: number }
   | { tipo: 'neumann'; qSaliente: number };
 
 /**
@@ -451,9 +463,14 @@ export function ensamblarFV(p: ProblemaFV): SistemaFV {
         b[n] -= cond.qSaliente * A2;
         caras.push({ n, g: 0, tBc: 0, qA: cond.qSaliente * A2 });
       } else {
+        // CELDA CORTADA: la distancia real manda sobre el h/2 del vóxel. Se acota por
+        // abajo a 1e-3·h para que una celda casi tangente no dispare la conductancia
+        // (el "small cell problem" clásico de las fronteras embebidas) — la cota va
+        // DECLARADA porque es una extensión, no un resultado del esquema.
+        const dEff = Math.max(cond.dReal ?? dBc, h * 1e-3);
         const g = cond.tipo === 'dirichlet'
-          ? A2 / (dBc / p.k[n])                          // clausura de media celda
-          : A2 / (dBc / p.k[n] + 1 / cond.hConv);        // Robin en serie con el medio-paso
+          ? A2 / (dEff / p.k[n])                         // clausura hasta la superficie
+          : A2 / (dEff / p.k[n] + 1 / cond.hConv);       // Robin en serie con ese tramo
         const tBc = cond.tipo === 'dirichlet' ? cond.T : cond.tInf;
         d += g;
         b[n] += g * tBc;
