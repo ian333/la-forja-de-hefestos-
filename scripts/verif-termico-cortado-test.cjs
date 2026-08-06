@@ -159,8 +159,13 @@ const check = (n, c, d) => { console.log(` ${c ? '✓' : '❌'} ${n} — ${d}`);
       check('R2 la FRACCIÓN EXACTA reproduce la losa a mejor de 1 %',
         errFr < 0.01,
         `${(100 * errFr).toFixed(3)} % · q_prima = Q/V va con ese error DIRECTO a la fuente`);
+      const rp = sim.resuelveLaPared();
+      console.log(`  resolución: ${rp.razon}`);
+      check('R3 el solver DECLARA si la rejilla resuelve la pared (y aquí NO la resuelve)',
+        rp.ok === false && rp.celdaMm > rp.paredMinMm,
+        `celda ${rp.celdaMm.toFixed(2)} mm vs pared mínima ${rp.paredMinMm.toFixed(2)} mm — el 100 % de los vóxeles "plástico" tienen el centro FUERA de la pared, así que el campo binario es una MEZCLA. Es la limitación que manda sobre la posición de la interfaz, y por eso el sdf 3D se reserva para cuando la celda alcance`);
       const f = sim.computeSteady();
-      check('R3 el cable llega al solver: el campo se resuelve con celdas CORTADAS',
+      check('R4 el cable llega al solver: el campo se resuelve con celdas CORTADAS',
         !!f && f.carasCortadas > 0,
         f ? `${f.carasCortadas} caras cortadas · acero ${f.steelMinC.toFixed(1)}-${f.steelMaxC.toFixed(1)} °C · residuoRel ${f.residualRel}` : 'sin campo');
     } else {

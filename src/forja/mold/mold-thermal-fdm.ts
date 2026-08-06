@@ -18,6 +18,7 @@ import { plateStackZ } from './mold-plano-set';
 import { ABS_KAZMER } from './cooling';
 import { crearDifusionEspectral } from '../campo/campo';
 import { solveSteadyMoldField, type SteadyField } from './thermal-steady';
+import { sdfDeMalla } from './sdf-malla';
 import { heatToExtractW } from './thermal-resistance';
 import { estPartVolumeCc, FEED_MATERIALS } from './feed';
 import { effusivity, contactTemperature } from './thermal-layers';
@@ -499,6 +500,17 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         return sim.steady;
       } catch (e) { console.warn('STEADY_ERR', e); return null; }
     },
+    /** ¿la rejilla RESUELVE la pared de la pieza? Si no, todo lo que se calcule sobre
+     *  el campo binario plástico/acero es una MEZCLA, no la pieza. Se reporta, no se
+     *  esconde: es la limitación que manda por encima de la posición de la interfaz. */
+    resuelveLaPared() {
+      let mn = Infinity, mx = 0;
+      for (let m = 0; m < thMm.length; m++) if (thMm[m] > 0.2) { mn = Math.min(mn, thMm[m]); mx = Math.max(mx, thMm[m]); }
+      const ok = Number.isFinite(mn) && cell <= mn;
+      return { ok, celdaMm: cell, paredMinMm: Number.isFinite(mn) ? mn : 0, paredMaxMm: mx,
+        razon: ok ? 'la celda cabe en la pared: el sdf 3D aplica'
+          : `la celda (${cell.toFixed(2)} mm) es ${(cell / Math.max(mn, 1e-9)).toFixed(1)}x más gruesa que la pared (${mn.toFixed(2)} mm): el vóxel es una MEZCLA y el sdf 3D no halla cruces` };
+    },
     /**
      * DISTANCIA CON SIGNO a la superficie de la pieza en el centro de cada celda (mm),
      * negativa dentro del plástico. Es lo que `solveSteadyMoldField` necesita para la
@@ -516,6 +528,30 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
      * no está hecho.
      */
     sdfPieza() {
+      // SDF 3D VERDADERO cuando hay malla del cliente: distancia exacta a los
+      // triángulos, con el signo por paridad de cruces. Cumple |∇φ| = 1 (medido
+      // 1.66e-3 en verif-sdf-malla) mientras que la losa en z daba 1.08 — 650×
+      // peor, porque en las paredes LATERALES no era una distancia en absoluto.
+      // …PERO solo sirve si la celda RESUELVE la pared. Medido en la carcasa RPi4
+      // (celda 7 mm, pared 1.5 mm): el 100 % de las celdas marcadas "plástico" tienen
+      // su centro FUERA de la pared, así que el sdf 3D —siendo correcto— no encuentra
+      // NINGÚN cruce de signo y la celda cortada queda inerte. No es falla del sdf:
+      // es que a esa resolución el campo binario plástico/acero YA ES UNA FICCIÓN
+      // (cada vóxel es una mezcla de pared delgada y acero). El sdf lo DESTAPA.
+      // Se usa el sdf 3D cuando la celda alcanza a resolver la pared; si no, se cae a
+      // la losa —que al menos es consistente con la máscara— y se DECLARA por qué.
+      let paredMinMm = Infinity;
+      for (let m = 0; m < thMm.length; m++) if (thMm[m] > 0.2) paredMinMm = Math.min(paredMinMm, thMm[m]);
+      if (o?.partMesh && Number.isFinite(paredMinMm) && cell <= paredMinMm) {
+        try {
+          const r = sdfDeMalla(o.partMesh, { nx, ny, nz, dxMm: cell, x0: 0, y0: 0, z0: zLo },
+            { bandaCeldas: 3 });
+          return r.sdf;
+        } catch { /* si la malla no se deja, cae a la losa declarada de abajo */ }
+      }
+      // RESPALDO DECLARADO: losa en z por columna. Exacto para las dos paredes
+      // grandes; en las laterales la distancia NO se modela (a la columna vacía se
+      // le asigna +cell). Solo se usa cuando no hay malla (camino "capa plana").
       const sd = new Float32Array(N).fill(cell);
       for (const m of cols) {
         const zT = zTopMm[m], zB = zBotMm[m];
