@@ -249,8 +249,29 @@ def densidad_y_bin(eq, nombre):
     return dict(xyz=xyz, Z=Zs, pos=pos, col=col, size=size, shell=shell)
 
 
+def lee_bin(nombre):
+    """Relee un chain-<n>.bin ya escrito. Sirve para rearmar SOLO el montaje sin repetir el
+    SCF ni el muestreo: la física de cada molécula no cambia cuando lo que se ajusta es cómo se
+    POSAN las dos juntas, y volver a pagarla por un cambio de encuadre es puro desperdicio."""
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public',
+                        'precomputed', f'chain-{nombre}.bin')
+    b = open(ruta, 'rb').read()
+    N, K = np.frombuffer(b, '<i4', 2, 0); o = 12
+    nuc = np.frombuffer(b, '<f4', K * 4, o).reshape(K, 4); o += K * 16
+    pos = np.frombuffer(b, '<f4', N * 3, o).reshape(N, 3); o += N * 12
+    col = np.frombuffer(b, '<f4', N * 3, o).reshape(N, 3); o += N * 12
+    siz = np.frombuffer(b, '<f4', N, o); o += N * 4
+    shl = np.frombuffer(b, '<f4', N, o)
+    return dict(xyz=nuc[:, :3].copy(), Z=np.rint(nuc[:, 3]).astype(int),
+                pos=pos.copy(), col=col.copy(), size=siz.copy(), shell=shl.copy())
+
+
 def main():
     print('═══ CADENA "LA FORMA MANDA" · pieza 1: EL CODO ═══\n', flush=True)
+    if os.environ.get('SOLO_JUNTAS'):
+        print('SOLO_JUNTAS: rearmando el montaje desde los .bin ya calculados\n', flush=True)
+        juntas({n: lee_bin(n) for n in ('estearico', 'oleico')})
+        return 0
     resultados = {}
     for nombre, doble in (('estearico', None), ('oleico', 9)):
         at, nC = cadena_grasa(doble)
@@ -307,14 +328,47 @@ def main():
     return 0
 
 
+def alinea(xyz, Zs, pos):
+    """Pone la molécula en una POSE canónica: eje largo en X, plano en XY, ácido en −X.
+
+    Es una ROTACIÓN RÍGIDA: no toca distancias ni ángulos, así que la física (y el gate de
+    forma: 179.9° / 125.5°) queda idéntica. Existe porque geomeTRIC entrega cada geometría en
+    la orientación en que convergió, y `centra()` sólo trasladaba. En el montaje eso dejaba a
+    las dos cadenas en ángulos distintos — y la pieza ENTERA es compararlas ("una derecha, otra
+    doblada"). Dos cadenas en poses distintas no se pueden comparar: el público cree lo que VE
+    ([[feedback_estructura_legible_primeros_segundos]]). Misma pose para ambas ⇒ lo único que
+    cambia entre ellas es la forma, que es justo la variable del experimento.
+    """
+    c = xyz.mean(axis=0)
+    X, P = xyz - c, pos - c
+    # ejes propios de la inercia de los núcleos PESADOS (los H son ruido de superficie)
+    pes = X[Zs > 1]
+    _, _, Vt = np.linalg.svd(pes - pes.mean(axis=0), full_matrices=True)
+    R = Vt                                             # filas = e1 (largo), e2, e3 (delgado)
+    if np.linalg.det(R) < 0:                           # mantener mano derecha (no espejear)
+        R[2] *= -1
+    X, P = X @ R.T, P @ R.T
+    # SIGNO de X: el grupo ácido (los dos O) va a −X en AMBAS, para que la comparación esté
+    # alineada punta con punta y no una al revés de la otra.
+    if X[Zs == 8].mean(axis=0)[0] > 0:
+        R[0] *= -1; R[2] *= -1                         # voltear X conservando la mano derecha
+        X, P = (xyz - c) @ R.T, (pos - c) @ R.T
+    # SIGNO de Y: el codo abre hacia +Y. En la recta el medio cae en ~0 y esto no hace nada.
+    medio = X[Zs > 1][len(X[Zs > 1]) // 3: 2 * len(X[Zs > 1]) // 3].mean(axis=0)[1]
+    if medio < 0:
+        R[1] *= -1; R[2] *= -1
+        X, P = (xyz - c) @ R.T, (pos - c) @ R.T
+    return X, P
+
+
 def juntas(g, sep=14.0):
-    import struct
     izq, der = g['estearico'], g['oleico']
-    def centra(d, dx):
-        xyz = d['xyz'] - d['xyz'].mean(axis=0); pos = d['pos'] - d['xyz'].mean(axis=0)
-        off = np.array([0.0, dx, 0.0])
+    def centra(d, dy):
+        xyz, pos = alinea(d['xyz'], d['Z'], d['pos'])
+        off = np.array([0.0, dy, 0.0])
         return xyz + off, pos + off
-    # ejes: la cadena es larga en X, así que se separan en Y — quedan una AL LADO de la otra
+    # ejes: ya alineadas, la cadena es larga en X — se separan en Y y quedan PARALELAS, una al
+    # lado de la otra, vistas desde el eje delgado (Z). Con roll=π/2 de la serie eso llena el 9:16.
     xyzA, posA = centra(izq, +sep / 2); xyzB, posB = centra(der, -sep / 2)
     xyz = np.vstack([xyzA, xyzB]); Zs = np.concatenate([izq['Z'], der['Z']])
     pos = np.vstack([posA, posB])
