@@ -75,6 +75,18 @@ export function solveSteadyMoldField(o: {
    * dos centros (θ = φ_a/(φ_a−φ_b)) y la conductancia pasa a A/(d_a/k_a + d_b/k_b).
    */
   sdfMm?: Float32Array;
+  /**
+   * FRACCIÓN DE PLÁSTICO POR CELDA (0..1), EXACTA, cuando el llamador la sabe. Manda
+   * sobre la estimación lineal que se deriva de `sdfMm`.
+   *
+   * Hace falta porque la estimación lineal del level-set supone UNA interfaz plana
+   * cruzando la celda, y en un molde la pared suele ser MÁS DELGADA QUE LA CELDA: las
+   * dos superficies caen adentro y la fórmula 0.5 − φ/h ya no aplica. Medido en la
+   * carcasa RPi4 (celda 7 mm, pared 1.5 mm): vóxeles enteros sobreestiman el volumen
+   * de plástico 48.7 %, el level-set lineal 10.0 %, y la fracción exacta acierta.
+   * Como q''' = Q̇/V_plástico, ese error va DIRECTO a la densidad de fuente.
+   */
+  fracPlasticoCelda?: Float32Array;
 }): SteadyField {
   const { nx, ny, nz } = o;
   const kS = o.kSteel ?? 32, kP = o.kPlastic ?? 0.19, hC = o.hC ?? 1000;
@@ -98,13 +110,15 @@ export function solveSteadyMoldField(o: {
     kOf[n] = p ? kP : kS;
     if (p) nPlast++;
     let f = p ? 1 : 0;
-    if (o.sdfMm) {
+    if (o.fracPlasticoCelda) f = Math.min(1, Math.max(0, o.fracPlasticoCelda[n]));
+    else if (o.sdfMm) {
       const phi = o.sdfMm[n];
       if (Number.isFinite(phi)) f = Math.min(1, Math.max(0, 0.5 - phi / o.dxMm));
     }
     fracPl[n] = f; vPlastFrac += f;
   }
-  const vPlast = Math.max(1e-9, o.sdfMm ? vPlastFrac : Math.max(1, nPlast)) * dx * dx * dx;
+  const usaFrac = !!(o.fracPlasticoCelda || o.sdfMm);
+  const vPlast = Math.max(1e-9, usaFrac ? vPlastFrac : Math.max(1, nPlast)) * dx * dx * dx;
   const qVol = o.qTotalW / vPlast;                // W/m³
   // ── GRADIENTE CONJUGADO matrix-free (SPD: conducción + Robin) ───────────
   // SOR necesitaba MILES de barridos para propagar el calor hasta el agua en

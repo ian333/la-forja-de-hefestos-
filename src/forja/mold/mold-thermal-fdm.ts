@@ -158,6 +158,13 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
   const thMm = new Float32Array(nx * ny);                 // espesor local de plástico por columna
   const kTop = new Int16Array(nx * ny).fill(-1);          // celda de superficie de cavidad
   const kBot = new Int16Array(nx * ny).fill(-1);          // celda de superficie de núcleo
+  // La z REAL de las dos superficies, SIN redondear a celda. kTop/kBot son índices
+  // enteros y ahí se tira justo la información que la CELDA CORTADA necesita: la
+  // superficie de la pieza casi nunca cae en una cara de vóxel, y contar el plástico
+  // en vóxeles enteros es EL error dominante del campo (medido: la cuantización del
+  // volumen predice el error del solver a tres cifras, ver verif-termico-cortado).
+  const zTopMm = new Float32Array(nx * ny).fill(NaN);
+  const zBotMm = new Float32Array(nx * ny).fill(NaN);
   if (o?.partMesh && o.partMesh.positions.length) {
     const P = o.partMesh.positions, I = o.partMesh.indices;
     let mnx = 1e18, mny = 1e18, mnz2 = 1e18, mxx = -1e18, mxy = -1e18;
@@ -215,8 +222,10 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         const m = jj * nx + ii;
         if (tk > thMm[m]) {
           thMm[m] = tk;
-          kTop[m] = Math.max(0, Math.min(nz - 1, Math.round((zPart + zs[zs.length - 1] - zLo) / cell)));
-          kBot[m] = Math.max(0, Math.min(nz - 1, Math.round((zPart + zs[0] - zLo) / cell)));
+          const zT = zPart + zs[zs.length - 1] - zLo, zB = zPart + zs[0] - zLo;
+          kTop[m] = Math.max(0, Math.min(nz - 1, Math.round(zT / cell)));
+          kBot[m] = Math.max(0, Math.min(nz - 1, Math.round(zB / cell)));
+          zTopMm[m] = zT; zBotMm[m] = zB;                 // sin redondear: para el sdf
         }
       }
     }
@@ -242,6 +251,8 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
         const m = j * nx + i;
         thMm[m] = spec.cavity.wallMm ?? 2;
         kBot[m] = kPart; kTop[m] = Math.min(nz - 1, kPart + 1);   // núcleo abajo, cavidad arriba
+        // capa plana: las superficies SÍ caen en caras de vóxel, así que el sdf es exacto
+        zBotMm[m] = kPart * cell; zTopMm[m] = kPart * cell + thMm[m];
         steel[idx(i, j, kPart)] = 2;
       }
     }
@@ -479,12 +490,65 @@ export function createThermalSim(spec: MoldAssemblySpec, o?: { cell?: number; co
           nx, ny, nz, dxMm: cell, x0: 0, y0: 0, z0: zLo,
           plastic: sim.plasticVoxels(), cool, tCoolantC: sim.coolantC,
           qTotalW: q, lineDiaM: cc.diaMm / 1000, maxIters: 500, tolC: 1e-3,
+          sdfMm: sim.sdfPieza(),                        // conductancia de la interfaz
+          fracPlasticoCelda: sim.fracPlastico(),        // densidad de fuente EXACTA
         });
         // la ESCALA de la escena es la del ACERO (lo que se lee del molde);
         // el plástico a ~250 °C saturaría la rampa y todo el acero saldría plano.
         sim.minC = sim.steady.steelMinC; sim.maxC = sim.steady.steelMaxC;
         return sim.steady;
       } catch (e) { console.warn('STEADY_ERR', e); return null; }
+    },
+    /**
+     * DISTANCIA CON SIGNO a la superficie de la pieza en el centro de cada celda (mm),
+     * negativa dentro del plástico. Es lo que `solveSteadyMoldField` necesita para la
+     * CELDA CORTADA: sin esto cuenta el plástico en vóxeles enteros y la densidad de
+     * fuente q''' = Q̇/V sale mal (25-33× más error, medido en verif-termico-cortado).
+     *
+     * Modelo: en cada columna el plástico ocupa la losa z ∈ [zBot, zTop], así que
+     * φ = max(zBot − zc, zc − zTop). Para las DOS PAREDES GRANDES (cavidad y núcleo,
+     * que miran en z) esto es EXACTO — la fracción de volumen que el solver deriva,
+     * clamp(0.5 − φ/h), reproduce la superposición exacta de la losa con la celda.
+     *
+     * ⚠ DECLARADO: en las paredes LATERALES (columna con plástico junto a columna sin
+     * él) la distancia lateral no se modela; a la columna vacía se le asigna φ = +cell.
+     * El cruce lateral queda aproximado. Se arregla con un sdf 3D verdadero de la malla;
+     * no está hecho.
+     */
+    sdfPieza() {
+      const sd = new Float32Array(N).fill(cell);
+      for (const m of cols) {
+        const zT = zTopMm[m], zB = zBotMm[m];
+        if (!Number.isFinite(zT) || !Number.isFinite(zB)) continue;
+        const i = m % nx, j = (m / nx) | 0;
+        for (let k = 0; k < nz; k++) {
+          const zc = (k + 0.5) * cell;
+          sd[idx(i, j, k)] = Math.max(zB - zc, zc - zT);
+        }
+      }
+      return sd;
+    },
+    /**
+     * FRACCIÓN EXACTA de plástico por celda: la superposición de la losa [zBot, zTop]
+     * de cada columna con el intervalo z de la celda. Es exacta sin importar si la
+     * pared es más delgada que la celda — el caso normal en un molde, y donde la
+     * estimación lineal del level-set se queda corta (medido en la carcasa RPi4 con
+     * celda 7 mm y pared 1.5 mm: vóxeles enteros +48.7 %, level-set lineal +10.0 %).
+     */
+    fracPlastico() {
+      const fr = new Float32Array(N);
+      for (const m of cols) {
+        const zT = zTopMm[m], zB = zBotMm[m];
+        if (!Number.isFinite(zT) || !Number.isFinite(zB)) continue;
+        const i = m % nx, j = (m / nx) | 0;
+        const k0 = Math.max(0, Math.floor(zB / cell) - 1), k1 = Math.min(nz - 1, Math.ceil(zT / cell) + 1);
+        for (let k = k0; k <= k1; k++) {
+          const a = k * cell, b = a + cell;                 // extensión z de la celda
+          const ov = Math.min(b, zT) - Math.max(a, zB);     // superposición con la losa
+          if (ov > 0) fr[idx(i, j, k)] = Math.min(1, ov / cell);
+        }
+      }
+      return fr;
     },
     plasticVoxels() {
       // el rasterizador ya dejó, por columna, el espesor y las superficies
