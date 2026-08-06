@@ -14,8 +14,15 @@
  */
 
 import { useEffect } from 'react';
+import { variante } from '../lib/ab';
 
 export default function EscuelaPortal() {
+  // PRUEBA A/B del primer pantallazo móvil (ver src/lib/ab.ts y el bloque de
+  // abajo). Se resuelve AQUÍ, en el cuerpo del componente y antes del primer
+  // render: es una función pura del sid, así que no hay frame con la variante
+  // equivocada ni salto de layout.
+  const heroMovil = variante('lab-vs-clase');
+
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -104,51 +111,24 @@ export default function EscuelaPortal() {
           UN botón que dice qué pasa al tocarlo. En `md` vuelve el hero de
           escritorio, que ahí sí funcionaba.
           ═══════════════════════════════════════════════════════════════════ */}
-      {/* ═══ EL ATERRIZAJE APUNTA A DONDE VIENEN (2026-07-31) ═══════════════
-          Antes esta portada era la clase del AGUJERO NEGRO. Se eligió por dato
-          —era la página más vista— pero ese dato es de ANTES de que el canal
-          empezara a traer gente con química. Hoy el 100% del tráfico llega de
-          reels de MOLÉCULAS DE AGUA y O₂… y aterrizaba en una clase de física
-          sin una sola palabra de química en la primera pantalla. Ese desajuste
-          anuncio↔promesa es la hipótesis que quedaba viva para el rebote.
-          Y el destino pedía UNA HORA (30 escenas) cuando el reel entregó su
-          premio en 60 segundos: medido, 4 personas empezaron una clase y CERO
-          la terminaron (abandono al 7-14%). Kahneman: la gente vuelve por el
-          PICO, no por el temario.
-          Ahora la portada continúa el video y promete una victoria de 5 min:
-          tocas un elemento y ves SU nube. El frame es un pixel REAL del propio
-          laboratorio (no un gradiente), y la bajada contesta de frente al
-          comentario más votado en contra: "¿no será IA?". ═══════════════════ */}
-      <a href="/lab.html" className="md:hidden relative z-10 block px-4 pt-1 pb-8 group">
-        {/* El objeto SOLO, sin texto encima: doctrina visual del proyecto
-            (un objeto, fondo negro, sin competencia). El texto vive debajo. */}
-        <div className="relative rounded-2xl overflow-hidden border border-[#4FC3F7]/25">
-          <img
-            src="/img/lab-hero.webp" alt="Nube de electrones de un átomo de carbono resuelta orbital por orbital"
-            width={880} height={495} fetchPriority="high" decoding="async"
-            className="w-full h-[31vh] min-h-[190px] object-cover"
-          />
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#05060A] to-transparent" />
-        </div>
-        <div className="mt-4 text-[10px] font-mono uppercase tracking-[0.28em] text-[#4FC3F7]">
-          Química · Laboratorio
-        </div>
-        {/* UN acento, no tres. El color ya lo pone la imagen. */}
-        <h1 className="mt-2 text-[31px] font-extrabold leading-[1.04] tracking-tight text-white">
-          Toca un elemento<br />
-          <span className="text-[#4FC3F7]">y mira sus electrones.</span>
-        </h1>
-        <p className="mt-3 text-[14px] leading-relaxed text-[#CBD5E1]">
-          Los 118, resueltos con la ecuación de Schrödinger. No es un dibujo:
-          cada punto es una muestra de la nube real.
-        </p>
-        <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-[#4FC3F7] bg-[#4FC3F7]/15 px-6 py-4 text-[17px] font-bold text-[#4FC3F7]">
-          <span aria-hidden>▶</span> Abrir el laboratorio
-        </div>
-        <p className="mt-3 text-center text-[10.5px] font-mono text-[#64748B]">
-          118 elementos · narrados · sin registro
-        </p>
-      </a>
+      {/* ═══ PRUEBA A/B — ¿LABORATORIO O CLASE? (2026-08-03) ════════════════
+          Las DOS ramas son hipótesis que ya se defendieron con argumentos, y
+          ninguna se ha medido contra la otra:
+
+          · a = LABORATORIO. El 2026-07-31 se cambió la portada de la clase al
+            lab porque el tráfico llega de reels de MOLÉCULAS y aterrizaba en
+            una clase de física sin una palabra de química; y porque el destino
+            pedía UNA HORA cuando el reel entregó su premio en 60 s (medido: 4
+            empezaron una clase, CERO la terminaron). Promete una victoria de
+            5 min: tocas un elemento y ves SU nube.
+          · b = CLASE DEL AGUJERO NEGRO. Era la portada anterior y se eligió
+            porque era la página más vista del sitio.
+
+          El cambio se hizo A CIEGAS, sin A contra B, así que no sabemos si el
+          rebote del 65 % bajó, subió o no se movió. Esto lo mide. El reparto,
+          la estabilidad y el evento `ab` viven en src/lib/ab.ts; el análisis
+          con intervalo de confianza, en scripts/visitas.cjs. ═══════════════ */}
+      {heroMovil === 'b' ? <HeroClase /> : <HeroLab />}
 
       {/* Hero de ESCRITORIO (en móvil manda el bloque de la clase, arriba).
           `data-seccion` no es decorativo: la telemetría marca la última sección
@@ -926,6 +906,93 @@ function PillarCard({ href, glyph, name, accent, bgFrom, bgTo, quote, tagline, m
         <span className="text-[#94A3B8]">Entrar →</span>
         <span style={{ color: accent }} className="font-mono group-hover:translate-x-1 transition-transform">⇒</span>
       </div>
+    </a>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   LAS DOS RAMAS DEL PRIMER PANTALLAZO MÓVIL (prueba `lab-vs-clase`).
+
+   Sólo cambia el bloque `md:hidden`: el hero de ESCRITORIO es el mismo en las
+   dos ramas, así que el experimento no toca a quien entra por computadora.
+
+   Las dos comparten la misma anatomía —imagen real arriba, kicker, titular a
+   31 px, bajada, UN botón, línea de garantía— para que lo único distinto sea
+   LA PROMESA. Si además cambiara el layout no se sabría cuál de los dos
+   cambios movió la aguja.
+
+   `data-ab` no es decorativo: es lo que deja que la sonda de captura afirme
+   con certeza QUÉ rama se pintó, en vez de deducirlo del color.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/** Rama A — el laboratorio. Victoria de 5 minutos, continúa el reel de química. */
+function HeroLab() {
+  return (
+    <a href="/lab.html" data-ab="lab-vs-clase:a" className="md:hidden relative z-10 block px-4 pt-1 pb-8 group">
+      {/* El objeto SOLO, sin texto encima: doctrina visual del proyecto
+          (un objeto, fondo negro, sin competencia). El texto vive debajo. */}
+      <div className="relative rounded-2xl overflow-hidden border border-[#4FC3F7]/25">
+        <img
+          src="/img/lab-hero.webp" alt="Nube de electrones de un átomo de carbono resuelta orbital por orbital"
+          width={880} height={495} fetchPriority="high" decoding="async"
+          className="w-full h-[31vh] min-h-[190px] object-cover"
+        />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#05060A] to-transparent" />
+      </div>
+      <div className="mt-4 text-[10px] font-mono uppercase tracking-[0.28em] text-[#4FC3F7]">
+        Química · Laboratorio
+      </div>
+      {/* UN acento, no tres. El color ya lo pone la imagen. */}
+      <h1 className="mt-2 text-[31px] font-extrabold leading-[1.04] tracking-tight text-white">
+        Toca un elemento<br />
+        <span className="text-[#4FC3F7]">y mira sus electrones.</span>
+      </h1>
+      <p className="mt-3 text-[14px] leading-relaxed text-[#CBD5E1]">
+        Los 118, resueltos con la ecuación de Schrödinger. No es un dibujo:
+        cada punto es una muestra de la nube real.
+      </p>
+      <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-[#4FC3F7] bg-[#4FC3F7]/15 px-6 py-4 text-[17px] font-bold text-[#4FC3F7]">
+        <span aria-hidden>▶</span> Abrir el laboratorio
+      </div>
+      <p className="mt-3 text-center text-[10.5px] font-mono text-[#64748B]">
+        118 elementos · narrados · sin registro
+      </p>
+    </a>
+  );
+}
+
+/** Rama B — la clase del agujero negro. Era la portada hasta el 2026-07-31. */
+function HeroClase() {
+  return (
+    <a href="/masterclass.html?id=blackhole" data-ab="lab-vs-clase:b" className="md:hidden relative z-10 block px-4 pt-1 pb-8 group">
+      {/* Mismo criterio que la rama A: el frame es un pixel REAL del render de
+          la clase, no un gradiente, y el título va debajo (en ámbar sobre el
+          disco ámbar se perdía el contraste). */}
+      <div className="relative rounded-2xl overflow-hidden border border-[#FDB813]/25">
+        <img
+          src="/img/bh-hero.webp" alt="Agujero negro con su disco de acreción curvado por la gravedad"
+          width={1400} height={787} fetchPriority="high" decoding="async"
+          className="w-full h-[31vh] min-h-[190px] object-cover"
+        />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#05060A] to-transparent" />
+      </div>
+      <div className="mt-4 text-[10px] font-mono uppercase tracking-[0.28em] text-[#FDB813]">
+        Física · Clase 1
+      </div>
+      <h1 className="mt-2 text-[31px] font-extrabold leading-[1.04] tracking-tight text-white">
+        Una hora aquí,<br />
+        <span className="text-[#FDB813]">siete años en casa.</span>
+      </h1>
+      <p className="mt-3 text-[14px] leading-relaxed text-[#CBD5E1]">
+        El planeta de Miller, Gargantua y TON&nbsp;618: por qué el tiempo se dobla
+        cerca de un agujero negro.
+      </p>
+      <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-[#FDB813] bg-[#FDB813]/15 px-6 py-4 text-[17px] font-bold text-[#FDB813]">
+        <span aria-hidden>▶</span> Ver la clase
+      </div>
+      <p className="mt-3 text-center text-[10.5px] font-mono text-[#64748B]">
+        30 escenas · narrada · simulador en vivo
+      </p>
     </a>
   );
 }

@@ -191,8 +191,14 @@ export function integrateParcel(
 
 /**
  * ∮ u·dl sobre un círculo de radio r centrado en el cuerpo — por el teorema de
- * Stokes debe dar EXACTAMENTE Γ (el vórtice ligado). Es el verificador global
- * del campo: si la implementación tuviera un error, esta integral lo delata.
+ * Stokes vale la circulación encerrada. Es el verificador global del campo: si
+ * la implementación tuviera un error de signo, rama o jacobiano, esta integral
+ * lo delata (así se cazó el bug del vórtice del lab original, que daba ~0).
+ *
+ * ⚠️ SIGNO: el lazo se recorre ANTIHORARIO y el vórtice ligado gira HORARIO
+ * (es lo que acelera el aire por encima del ala) → el resultado es **−Γ**, no
+ * +Γ. Así lo verifica `potencial.test.ts`. No lo "corrijas" para que dé +Γ:
+ * el que estaba mal era este comentario, no la función.
  */
 export function circulationIntegral(alpha: number, r: number, n: number, opts?: FlowOpts): number {
   let acc = 0;

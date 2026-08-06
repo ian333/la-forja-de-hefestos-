@@ -9,8 +9,10 @@
  *   node scripts/visitas.cjs            # últimos 30 días
  *   node scripts/visitas.cjs --dias 90  # ventana distinta
  *   node scripts/visitas.cjs --todo     # historia completa
+ *   node scripts/visitas.cjs --archivo <jsonl>   # lee un log local en vez de ATLAS
  */
 const { execFileSync } = require('child_process');
+const fs = require('fs');
 
 const ATLAS = process.env.ATLAS || 'ian@100.97.118.117';
 const LOG = '/mnt/hdd/forja-telemetry/events.jsonl';
@@ -34,7 +36,16 @@ const esBot = (r) => {
     || /bot|spider|crawl|preview|externalhit|curl|python-requests|node-fetch/.test(ua);
 };
 
-const raw = execFileSync('ssh', [ATLAS, `cat ${LOG}`], { maxBuffer: 256 * 1024 * 1024 }).toString();
+// `--archivo` lee un .jsonl local con el MISMO formato. Existe porque la parte
+// de estadística (el bloque A/B) no se puede probar contra producción sin
+// esperar días de tráfico: con un archivo de eventos sintéticos se comprueba
+// que un empate se reporta como empate y una diferencia real como diferencia.
+// Un intervalo de confianza mal programado es peor que no tenerlo — se lee
+// como rigor.
+const ARCHIVO = args.includes('--archivo') ? args[args.indexOf('--archivo') + 1] : null;
+const raw = ARCHIVO
+  ? fs.readFileSync(ARCHIVO, 'utf8')
+  : execFileSync('ssh', [ATLAS, `cat ${LOG}`], { maxBuffer: 256 * 1024 * 1024 }).toString();
 const rows = [];
 for (const l of raw.split('\n')) {
   if (!l.trim()) continue;
@@ -325,6 +336,194 @@ if (!clases.length) {
       console.log(`    se fueron en la escena: ${peor.map(([e, n]) => `${e}${n > 1 ? `(×${n})` : ''}`).join(', ')}  de ${o.abandono[0].de}`);
       const medPct = Math.round(o.abandono.reduce((a, b) => a + b.pct, 0) / o.abandono.length);
       console.log(`    abandono medio al ${medPct}% de la clase`);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PRUEBA A/B — la mitad de las sesiones ve una portada y la mitad la otra.
+// El reparto lo hace src/lib/ab.ts hasheando el `sid`, y cada sesión anuncia
+// su rama UNA vez con el evento `ab` {prueba, variante}. Sin ese evento no
+// hay análisis posible: no se sabría qué vio cada quien.
+//
+// POR QUÉ HAY ESTADÍSTICA AQUÍ Y NO SOLO DOS PORCENTAJES: con ~350 sesiones
+// por rama al día, dos ramas IDÉNTICAS se separan sola ±7 puntos de un día
+// para otro. Leer eso como "ganó B" y cambiar la portada es perseguir ruido
+// —y peor, archivarlo como aprendizaje—. El intervalo de confianza dice
+// cuánto de lo que se ve es señal; cuando todavía no alcanza, este reporte lo
+// DICE con todas sus letras en vez de coronar a un ganador falso.
+//
+// Se excluyen las sesiones con `forzado` (?ab=…): son mis sondas de captura.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Φ(z) — normal acumulada. Abramowitz & Stegun 7.1.26 (error < 1.5e-7), que
+// para decidir a 2 decimales de p sobra. Sin dependencias: este script corre
+// con `node` pelón y así debe seguir.
+const erf = (x) => {
+  const s = x < 0 ? -1 : 1, a = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * a);
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592)
+    * t * Math.exp(-a * a);
+  return s * y;
+};
+const normCdf = (z) => 0.5 * (1 + erf(z / Math.SQRT2));
+
+// Prueba de dos proporciones. El estadístico z usa el error estándar POOLED
+// (es la hipótesis nula: las dos ramas salen de la misma proporción) y el
+// intervalo de confianza usa el NO-pooled (bajo H0 no estamos: estimamos una
+// diferencia real). Mezclarlos es el error clásico que hace que el p-valor y
+// el IC se contradigan.
+function propTest(xa, na, xb, nb) {
+  if (!na || !nb) return null;
+  const pa = xa / na, pb = xb / nb, dif = pb - pa;         // + = gana B
+  const pool = (xa + xb) / (na + nb);
+  const sePool = Math.sqrt(pool * (1 - pool) * (1 / na + 1 / nb));
+  const seUnp = Math.sqrt((pa * (1 - pa)) / na + (pb * (1 - pb)) / nb);
+  const z = sePool > 0 ? dif / sePool : 0;
+  return {
+    pa, pb, dif, z,
+    p: 2 * (1 - normCdf(Math.abs(z))),
+    lo: dif - 1.96 * seUnp, hi: dif + 1.96 * seUnp,
+    // Diferencia mínima detectable con el n que YA hay (α=0.05 bilateral,
+    // potencia 80 %). Si |dif| < mde, "no significativo" NO quiere decir
+    // "no hay efecto": quiere decir que aún no alcanza para verlo.
+    mde: 2.80158 * Math.sqrt(pool * (1 - pool) * (1 / na + 1 / nb)),
+  };
+}
+// Sesiones POR RAMA que harían falta para detectar una diferencia de `d`.
+const nParaDetectar = (p, d) => (d <= 0 ? Infinity : Math.ceil(2 * p * (1 - p) * ((2.80158 / d) ** 2)));
+
+const evAb = enVentana.filter((r) => !esNuestro(r) && !esBot(r) && r.type === 'ab');
+if (!evAb.length) {
+  console.log('\n═══ PRUEBA A/B ═══');
+  console.log('  sin datos (el evento `ab` se instaló el 2026-08-03; hace falta tráfico nuevo)');
+} else {
+  // sid → eventos, ya sin operador ni bots (sesGente se armó para el embudo).
+  const pruebas = new Map();   // prueba → Map(sid → variante)
+  const forzados = new Set();
+  for (const r of evAb) if (r.data?.forzado) forzados.add(r.sid);
+  for (const r of evAb) {
+    if (forzados.has(r.sid)) continue;        // la sesión ENTERA queda fuera
+    const p = r.data?.prueba ?? '?', v = r.data?.variante === 'b' ? 'b' : 'a';
+    if (!pruebas.has(p)) pruebas.set(p, new Map());
+    pruebas.get(p).set(r.sid, v);   // si algo la re-emitiera, gana la última
+  }
+
+  // Destino e interacción REAL dependen de la rama: cada portada manda a un
+  // lugar distinto, así que "convirtió" significa cosas distintas. Lo que se
+  // compara es la PROFUNDIDAD alcanzada, no la URL.
+  const DESTINO = {
+    a: { ruta: '/lab.html', nombre: 'laboratorio', hizo: (ev) => ev.some((r) => r.type === 'lab.elemento') },
+    b: {
+      ruta: '/masterclass.html', nombre: 'clase',
+      hizo: (ev) => ev.some((r) => r.type === 'masterclass.escena' && (r.data?.i ?? 0) > 2),
+    },
+  };
+  const duracionSes = (ev) => {
+    const sal = [...ev].reverse().find((r) => r.type === 'salida');
+    if (sal && typeof sal.data?.s === 'number') return sal.data.s;
+    return (ev[ev.length - 1].t - ev[0].t) / 1000;
+  };
+
+  for (const [nombrePrueba, asignacion] of pruebas) {
+    console.log(`\n═══ PRUEBA A/B · ${nombrePrueba} ═══`);
+    const ramas = { a: [], b: [] };
+    for (const [sid, v] of asignacion) {
+      const ev = (sesGente.get(sid) || []).slice().sort((x, y) => x.t - y.t);
+      if (!ev.length) continue;
+      const d = duracionSes(ev);
+      ramas[v].push({
+        sid, ev, dur: d,
+        paso3: d >= 3,
+        llegoDestino: ev.some((r) => r.type === 'pageview' && pag(r.url).startsWith(DESTINO[v].ruta)),
+        interactuo: DESTINO[v].hizo(ev),
+      });
+    }
+    const na = ramas.a.length, nb = ramas.b.length, N = na + nb;
+    if (!N) { console.log('  el evento `ab` llegó pero sin sesiones asociadas (¿telemetría a medias?)'); continue; }
+
+    const ts = evAb.map((r) => r.t);
+    const dias = Math.max((Math.max(...ts) - Math.min(...ts)) / 864e5, 1 / 24);
+    console.log(`  viva desde ${fecha(Math.min(...ts))} · ${dias.toFixed(1)} días · ${Math.round(N / dias / 2)} sesiones/día por rama`);
+    console.log(`  a = ${DESTINO.a.nombre} (${DESTINO.a.ruta}) · b = ${DESTINO.b.nombre} (${DESTINO.b.ruta})`);
+    if (forzados.size) console.log(`  (${forzados.size} sesiones forzadas con ?ab= EXCLUIDAS: son sondas de verificación)`);
+
+    // ── SRM: reparto desbalanceado = asignación rota ────────────────────
+    // Un 50/50 real se desvía poco: con N=600 el desbalance típico es ±25.
+    // Si el z de la binomial se dispara, el hash o el momento en que se
+    // resuelve la variante están mal, y CUALQUIER conclusión de abajo sobra.
+    const zSrm = N > 0 ? (na - N / 2) / (0.5 * Math.sqrt(N)) : 0;
+    const pSrm = 2 * (1 - normCdf(Math.abs(zSrm)));
+    const veredictoSrm = pSrm < 0.001 ? '✗ ROTO' : pSrm < 0.05 ? '~ vigilar' : '✓ ok';
+    console.log(`  reparto: a ${na} · b ${nb}  (esperado 50/50 — z=${zSrm.toFixed(2)} p=${pSrm.toFixed(3)} ${veredictoSrm})`);
+    if (pSrm < 0.001) {
+      console.log('  ⚠⚠ RAMAS DESBALANCEADAS. Eso NO pasa por azar: revisa src/lib/ab.ts');
+      console.log('     (¿se resuelve la variante antes del render? ¿el sid existe cuando se hashea?)');
+      console.log('     Con la asignación rota, las diferencias de abajo NO son interpretables.');
+    }
+
+    // ── Tabla por rama ──────────────────────────────────────────────────
+    const medA = pct(ramas.a.map((s) => s.dur).sort((x, y) => x - y), 0.5);
+    const medB = pct(ramas.b.map((s) => s.dur).sort((x, y) => x - y), 0.5);
+    console.log('');
+    console.log('                              RAMA a          RAMA b        Δ (b−a)         IC 95 %            p');
+    const fila = (nom, xa, xb, invertir, sinPrueba) => {
+      const t = sinPrueba ? null : propTest(xa, na, xb, nb);
+      const cA = `${String(xa).padStart(4)} ${String(Math.round((xa / na) * 100)).padStart(3)}%`;
+      const cB = `${String(xb).padStart(4)} ${String(Math.round((xb / nb) * 100)).padStart(3)}%`;
+      if (!t) return console.log(`  ${nom.padEnd(26)} ${cA}      ${cB}`);
+      const pp = (v) => `${v >= 0 ? '+' : '−'}${(Math.abs(v) * 100).toFixed(1)}`;
+      // `invertir` = métrica donde MENOS es mejor (el rebote). La flecha
+      // apunta a la rama que gana, no al signo del número.
+      const gana = t.p < 0.05 ? (invertir ? (t.dif < 0 ? ' ← b' : ' ← a') : (t.dif > 0 ? ' ← b' : ' ← a')) : '';
+      console.log(`  ${nom.padEnd(26)} ${cA}      ${cB}   ${pp(t.dif).padStart(6)} pp  [${pp(t.lo).padStart(6)},${pp(t.hi).padStart(6)}]  ${t.p.toFixed(3)}${gana}`);
+      return t;
+    };
+
+    fila('rebote <3 s', ramas.a.filter((s) => !s.paso3).length, ramas.b.filter((s) => !s.paso3).length, true);
+    console.log(`  ${'duración mediana'.padEnd(26)} ${num(medA).padStart(4)} s      ${num(medB).padStart(4)} s`);
+    console.log('  EMBUDO (denominador = todas las sesiones de la rama):');
+    fila(' llegó', na, nb, false, true);   // 100 % contra 100 %: no hay nada que probar
+    fila(' pasó de 3 s', ramas.a.filter((s) => s.paso3).length, ramas.b.filter((s) => s.paso3).length);
+    fila(' llegó al destino', ramas.a.filter((s) => s.llegoDestino).length, ramas.b.filter((s) => s.llegoDestino).length);
+    const clave = fila(' INTERACTUÓ allí', ramas.a.filter((s) => s.interactuo).length, ramas.b.filter((s) => s.interactuo).length);
+
+    // ── Veredicto sobre la métrica que decide ───────────────────────────
+    // "INTERACTUÓ allí" es la única que mide lo que queremos (que la persona
+    // haga algo, no que haga clic). Es la que manda; las de arriba explican
+    // EN QUÉ ESCALÓN se perdió la diferencia.
+    console.log('');
+    if (pSrm < 0.001) {
+      // Con las ramas desbalanceadas, las dos poblaciones no son comparables:
+      // lo que sea que rompió el reparto pudo tirar sesiones de forma sesgada.
+      // Dar un veredicto aquí sería el peor resultado posible — un número con
+      // pinta de rigor construido sobre datos que ya sabemos que están mal.
+      console.log('  ⚖ SIN VEREDICTO: el reparto está roto (ver arriba). Arregla la asignación');
+      console.log('     y reinicia la prueba; los datos de esta ventana no sirven.');
+    } else if (!clave) {
+      console.log('  ⚖ sin muestras suficientes para una prueba.');
+    } else if (clave.p < 0.05) {
+      const g = clave.dif > 0 ? 'b' : 'a';
+      console.log(`  ⚖ VEREDICTO: gana la rama ${g} en "interactuó allí" `
+        + `(${(clave.pa * 100).toFixed(1)}% vs ${(clave.pb * 100).toFixed(1)}%, p=${clave.p.toFixed(3)}).`);
+      console.log(`     La diferencia real está, con 95 % de confianza, entre ${(clave.lo * 100).toFixed(1)} y ${(clave.hi * 100).toFixed(1)} puntos.`);
+    } else {
+      const base = (clave.pa + clave.pb) / 2 || 0.01;
+      const porRamaDia = Math.max(N / dias / 2, 1);
+      const sg = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v * 100).toFixed(1)}`;
+      console.log('  ⚖ VEREDICTO: AÚN NO CONCLUYENTE. No hay ganador — y eso NO es lo mismo que un empate.');
+      console.log(`     Observado ${sg(clave.dif)} pp, pero el IC 95 % `
+        + `[${sg(clave.lo)}, ${sg(clave.hi)}] pp CRUZA EL CERO: con estos datos`);
+      console.log('     la portada contraria podría ser la mejor. NO cambies nada por este número.');
+      console.log(`     Con ${na}/${nb} sesiones sólo se detectarían diferencias de ${(clave.mde * 100).toFixed(1)} pp o más.`);
+      const objetivo = [0.07, 0.05, 0.03];
+      console.log('     Para tener potencia sobre una diferencia de:');
+      for (const d of objetivo) {
+        const n = nParaDetectar(base, d);
+        const dd = Math.max(0, (n - Math.min(na, nb)) / porRamaDia);
+        console.log(`      ${(d * 100).toFixed(0)} pp → ${n} sesiones por rama (${dd < 0.5 ? 'YA' : `faltan ~${Math.ceil(dd)} días`})`);
+      }
+      console.log('     Déjala correr. Cortar una prueba temprano es cómo se fabrica un aprendizaje falso.');
     }
   }
 }

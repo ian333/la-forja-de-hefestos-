@@ -45,8 +45,11 @@ const ENDPOINT = (typeof window !== 'undefined' && (window as { __TELEMETRY_URL?
 const BATCH_MS = 2000;
 const MAX_BATCH = 50;
 
-// session id persistente por tab (sessionStorage)
-function getSid(): string {
+// session id persistente por tab (sessionStorage).
+// EXPORTADO porque `lib/ab.ts` reparte las variantes hasheando ESTE mismo id:
+// si cada módulo generara el suyo, la variante que se muestra y la que se
+// reporta podrían no ser la misma y el experimento mediría ruido.
+export function getSid(): string {
   if (typeof window === 'undefined') return 'srv';
   try {
     let sid = sessionStorage.getItem('__forja_sid');

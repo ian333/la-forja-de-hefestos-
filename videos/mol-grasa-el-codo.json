@@ -32,7 +32,7 @@
       "energia": "SCF convergido en ambas, y comparar solo lo comparable (misma base, misma convergencia)."
     },
     "limitacion_declarada": "El apilamiento y el punto de fusión son propiedades del CONJUNTO, no de una molécula sola. Lo que se calcula ab initio es la FORMA; el apilamiento se muestra como consecuencia geométrica de esa forma, y se dice así. No se inventa una simulación de fusión.",
-    "nube": "420k-520k puntos, densidad |ψ|² ab initio muestreada con el muestreador de precompute-caroteno-formacion.py (el precedente de cadena larga de la casa — NO se escribió uno nuevo). ⚠ La fórmula de tamaño del agua está calibrada para ~6 Å; una cadena de 22 Å ocupa ~14× más volumen y los mismos puntos se ven como polvo. Se compensa con TAMAÑO (0.075+0.130·d), no subiendo brillo."
+    "nube": "600k puntos, densidad |ψ|² ab initio con el muestreador de precompute-caroteno-formacion.py. ⚠ La nube NO es lo que se ve a esta distancia: con la cámara a d≈45-65 sus sprites caen contra el piso de 1.2 px del shader (CinematicAtom.tsx:428). Probado por AISLAMIENTO: rendir con 300 puntos da la MISMA imagen. Lo que dibuja la pieza son los núcleos y el ChainField de cada molécula."
   },
   "escena": {
     "html": "cinematic-molecule.html",
@@ -40,7 +40,7 @@
     "hook": "__cinematicAtom",
     "pendiente": null,
     "montaje": "Clave `codo` = las DOS moléculas en un solo .bin, lado a lado (separadas 14 Å). El video compara dos moléculas y la escena carga UNA; la salida limpia no es un script por video (Regla #0.5) sino un tercer bin. Honestidad: son DOS cálculos independientes, no un sistema de dos moléculas — a 14 Å no hay interacción relevante, así que juntarlas es un MONTAJE para comparar y no finge una física que no calculamos.",
-    "camara": "⚠ La cámara automática elige TRAVERSAL para una cadena (por elongación) y se mete DENTRO de la molécula. Para el caroteno es correcto —el sujeto es el río π— pero aquí el sujeto es la SILUETA y por dentro el codo NO EXISTE. Medido en stills antes de rendir. Fix: entrada en CAMERA_SHOTS, que manda sobre el modo automático. Tomas externas y LEJOS (rMul 4.3-4.8): las dos cadenas tienen que caber ENTERAS."
+    "camara": "Tomas en CAMERA_SHOTS.codo, recortadas contra segs.json: la cámara va DONDE APUNTA LA VOZ. Los planos de una sola cadena son ringOne({which}) alimentada con los centroides del montaje (la misma toma del hexámero). Los beats que COMPARAN se quedan con las dos en cuadro: el codo desplaza ~un ancho de cadena, y solo se lee contra la recta."
   },
   "formato": {
     "w": 2160,
@@ -77,8 +77,9 @@
   },
   "capsula": {
     "bins": [
-      "esteárico.bin",
-      "oleico.bin"
+      "chain-estearico.bin",
+      "chain-oleico.bin",
+      "chain-codo.bin"
     ],
     "guion": "codo.txt",
     "scripts": [
@@ -91,7 +92,8 @@
       "CinematicMolecule.tsx",
       "camera-shots.ts",
       "capas.ts"
-    ]
+    ],
+    "nota_bins": "Los nombres son los REALES en public/precomputed/ (con el prefijo `chain-`). Antes decía 'esteárico.bin'/'oleico.bin' y el `cp` fallaba en silencio (lleva 2>/dev/null): la cápsula salía sin simulación. Y faltaba chain-codo.bin, que es EL montaje — o sea, la pieza."
   },
   "publicar": {
     "biblioteca": "moleculas/mol-grasa-el-codo.mp4",

@@ -60,10 +60,23 @@ paso_render() {
     echo "   duración cambió ($(cat "$marca")s → ${DUR}s): BORRANDO frames viejos para no mezclar"
     rm -f "$FRAMES"/*.png
   fi
-  # OJO: la guarda de arriba SOLO caza cambios de DURACIÓN. Si cambió la ESCENA (cámara,
-  # capas, shaders) con la misma duración, el resume reusa todos los frames y el render
-  # "termina en 7 segundos" con el video IDÉNTICO al anterior — pasó el 2026-07-28 y el md5
-  # lo delató. Detectar cambios de código aquí sería frágil; la salida explícita es FRESH=1.
+  # HUELLA DE LA ESCENA: la guarda de arriba sólo caza cambios de DURACIÓN. Si cambió la ESCENA
+  # (cámara, capas, shaders) con la misma duración, el resume reusa los frames viejos.
+  # Se creía que detectar eso era frágil y que bastaba con acordarse de exportar FRESH=1. No
+  # basta: el 2026-08-05 se me olvidó y salió un 1080 MEZCLADO — y peor que "idéntico al
+  # anterior", porque el criterio de reanudar es tamaño>BLACK: sobrevivieron justo los frames
+  # PESADOS, que eran los de la pared de luz, y se re-rindieron sólo los oscuros. Un
+  # Frankenstein donde la mitad mala es la que se conserva.
+  # Un flag que hay que recordar no es una guarda. Esto sí: md5 de las fuentes de la escena y
+  # del manifiesto. Barre de más (cualquier edición en src/cinematic/ tira los frames), y eso
+  # está bien: después de tocar la escena, RE-RENDERIZAR es justo lo que se quiere.
+  local huella="$FRAMES/.huella"
+  local hoy; hoy=$( { cat "$ROOT"/src/cinematic/*.ts "$ROOT"/src/cinematic/*.tsx "$MF" 2>/dev/null; } | md5sum | cut -c1-12)
+  if [ -f "$huella" ] && [ "$(cat "$huella")" != "$hoy" ]; then
+    echo "   la ESCENA cambió ($(cat "$huella") → $hoy): BORRANDO frames viejos para no mezclar"
+    rm -f "$FRAMES"/*.png
+  fi
+  echo "$hoy" > "$huella"
   if [ -n "${FRESH:-}" ]; then
     echo "   FRESH=1: borrando $(ls "$FRAMES"/*.png 2>/dev/null | wc -l) frames para renderizar de cero"
     rm -f "$FRAMES"/*.png

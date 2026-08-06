@@ -19,7 +19,7 @@
  */
 
 import { atmosferaISA } from '@/aero/atmosfera';
-import { betaChoqueOblicuo } from '@/aero/cuna-anderson';
+import { resolverChoqueOblicuo } from '@/aero/cuna-anderson';
 
 export interface VientoSuperParams {
   /** semiángulo de la cuña [rad] — MEDIDO de la pieza (atan(semialtura/cuerda)) */
@@ -53,6 +53,17 @@ export interface VientoSuperResultado {
   mach: number;
   hM: number;
   cuerdaM: number;
+  /**
+   * true cuando la cuña es DEMASIADO gruesa (o el Mach demasiado bajo) para
+   * sostener un choque adherido: θ > θmax. La teoría de cuña deja de valer y
+   * los campos de fuerza salen en 0 — NO son un resultado, son un "no aplica".
+   * La UI debe mostrar `aviso`, no los números.
+   */
+  desprendido: boolean;
+  /** deflexión máxima sostenible a este Mach [°] */
+  thetaMaxDeg: number;
+  /** texto para el usuario cuando el análisis sale de su dominio de validez */
+  aviso: string | null;
 }
 
 const GAMMA = 1.4;
@@ -65,8 +76,26 @@ export function estudioVientoSupersonico(prm: VientoSuperParams): VientoSuperRes
   const V = mach * atm.aSonido;
   const q = 0.5 * atm.rho * V * V;
 
-  // choque oblicuo débil → presión sobre las caras
-  const beta = betaChoqueOblicuo(mach, delta, GAMMA);
+  // choque oblicuo débil → presión sobre las caras.
+  // δ lo MIDE la geometría del alumno: puede ser cualquier cosa, incluso una
+  // cuña tan gruesa que no sostenga choque adherido. Eso no se calla.
+  const ch = resolverChoqueOblicuo(mach, delta, GAMMA);
+  const thetaMaxDeg = ch.thetaMax * 180 / Math.PI;
+  if (ch.beta === null) {
+    return {
+      deltaDeg: delta * 180 / Math.PI,
+      beta: NaN, betaDeg: NaN,
+      p2: NaN, pInf: atm.p, rho: atm.rho, T: atm.T, aSonido: atm.aSonido, V, q,
+      Dp: 0, Df: 0, D: 0, cd: 0, fraccionPresion: 0,
+      nPaneles: n, mach, hM, cuerdaM: c,
+      desprendido: true, thetaMaxDeg,
+      aviso:
+        `Choque DESPRENDIDO: a Mach ${mach.toFixed(2)} la deflexión máxima con choque adherido ` +
+        `es ${thetaMaxDeg.toFixed(1)}°, y esta pieza pide ${(delta * 180 / Math.PI).toFixed(1)}°. ` +
+        `Se forma una onda de proa curva y la teoría de cuña ya no vale: adelgaza la pieza o sube el Mach.`,
+    };
+  }
+  const beta = ch.beta;
   const M1n2 = (mach * Math.sin(beta)) ** 2;
   const p2 = atm.p * (1 + (2 * GAMMA / (GAMMA + 1)) * (M1n2 - 1));
 
@@ -94,5 +123,6 @@ export function estudioVientoSupersonico(prm: VientoSuperParams): VientoSuperRes
     cd: D / (q * c),
     fraccionPresion: D !== 0 ? Dp / D : 0,
     nPaneles: n, mach, hM, cuerdaM: c,
+    desprendido: false, thetaMaxDeg, aviso: null,
   };
 }

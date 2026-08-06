@@ -3684,7 +3684,11 @@ function ChainField({ frame, time, alkane, desde = 13.0, destapa }: { frame: Fra
   /** segundo en que el campo entra. 13 = el de las piezas de cadena de 22 s, donde el campo
    *  llega al REVELAR. En el montaje de 96 s ese default dejaba los primeros 17 SEGUNDOS —el
    *  gancho, "esto es mantequilla / y esto es aceite"— al 93% negros: sin halo, la nube sola
-   *  no alcanza a d≈65. El default no se toca; el montaje pide el suyo. */
+   *  no alcanza a d≈65. El default no se toca; el montaje pide el suyo.
+   *  Y lo pide NEGATIVO: con `desde` en 0.15 la rampa de 3 s dejaba los primeros 20
+   *  cuadros (0.67 s) en 99.9% negro — con la voz ya diciendo "esto es mantequilla" en
+   *  el 0.40. El cuadro 0 es el gancho y la miniatura ([[feedback_frame0_es_el_gancho]]):
+   *  aquí no hay revelación que escenificar, la pieza abre CON las dos cadenas. */
   desde?: number;
   /** [t0,t1] donde el halo BAJA a un tercio. El halo ámbar son los hidrógenos, y mide ~330 px
    *  de ancho contra los ~100 px que desvía el codo: mientras está a full, la silueta de las
@@ -4141,7 +4145,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
                 misma ChainField — no un campo nuevo: es el halo ámbar que hace legible al
                 esteárico solo, ahora dicho dos veces y con la geometría correcta. */}
             {framesMontaje.map((f, i) => (
-              <ChainField key={i} frame={f} time={time} alkane={!CONJUGATED_KEYS.has(molKey)} desde={0.15} destapa={VENTANA_SILUETA} />
+              <ChainField key={i} frame={f} time={time} alkane={!CONJUGATED_KEYS.has(molKey)} desde={-3.0} destapa={VENTANA_SILUETA} />
             ))}
             {isCatalog && catField === 'pi' && <ChainField frame={frame} time={time} alkane={false} />}
             {isCatalog && catField === 'sigma' && <ChainField frame={frame} time={time} alkane={true} />}

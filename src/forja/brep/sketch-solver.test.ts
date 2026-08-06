@@ -212,3 +212,76 @@ describe('solveSketch — casos límite', () => {
     expect(a.points[2].y).toBe(b.points[2].y);
   });
 });
+
+/**
+ * REGRESIÓN — la cota alineada en geometría CASI-HORIZONTAL.
+ *
+ * El caso real que lo destapó: la CUERDA de un perfil alar. Un perfil es casi
+ * plano, así que ∂(distancia)/∂y → 0 y la diagonal de JtJ para esa restricción
+ * se hace ~0. Con el amortiguamiento ABSOLUTO que tenía el LM (`+1e-12`), el
+ * paso se dividía entre ~1e-12 y explotaba: los 8 reintentos se rechazaban, el
+ * solver salía con `iters=0` y el croquis se quedaba ROJO. Fallaba ya con 4
+ * puntos. Bloqueaba la primera lección de aerodinámica dentro del CAD.
+ */
+describe('solveSketch — geometría casi-horizontal (la cuerda del perfil)', () => {
+  const perfilAplanado = (): Sketch => ({
+    // silueta de extradós: casi plana, como cualquier perfil alar real
+    points: [{ x: 0, y: 0 }, { x: 30, y: 1.5 }, { x: 70, y: 1.2 }, { x: 100, y: 0.02 }],
+    lines: [{ a: 0, b: 1 }, { a: 1, b: 2 }, { a: 2, b: 3 }],
+    circles: [],
+    constraints: [
+      { t: 'fix', p: 0 },
+      { t: 'distance', p: 0, q: 3, d: 120 },   // ACOTAR la cuerda
+    ],
+  });
+
+  it('converge, itera, y la cuerda queda en la cota pedida', () => {
+    const s = perfilAplanado();
+    const r = solveSketch(s);
+    expect(r.converged).toBe(true);
+    expect(r.iters).toBeGreaterThan(0);        // iters=0 era la firma del bug
+    const d = Math.hypot(s.points[3].x - s.points[0].x, s.points[3].y - s.points[0].y);
+    expect(d).toBeCloseTo(120, 4);
+  });
+
+  it('aguanta el caso degenerado: EXACTAMENTE horizontal (∂/∂y = 0 justo)', () => {
+    const s: Sketch = {
+      points: [{ x: 0, y: 0 }, { x: 40, y: 0 }, { x: 80, y: 0 }],
+      lines: [{ a: 0, b: 1 }, { a: 1, b: 2 }],
+      circles: [],
+      constraints: [{ t: 'fix', p: 0 }, { t: 'distance', p: 0, q: 2, d: 100 }],
+    };
+    const r = solveSketch(s);
+    expect(r.converged).toBe(true);
+    expect(Math.hypot(s.points[2].x, s.points[2].y)).toBeCloseTo(100, 4);
+  });
+
+  it('escala invariante: en metros (cuerda 0.1) converge igual que en mm', () => {
+    // con tolerancia ABSOLUTA, una matriz legítimamente pequeña se descartaba
+    const s: Sketch = {
+      points: [{ x: 0, y: 0 }, { x: 0.03, y: 0.0015 }, { x: 0.1, y: 0.00002 }],
+      lines: [{ a: 0, b: 1 }, { a: 1, b: 2 }],
+      circles: [],
+      constraints: [{ t: 'fix', p: 0 }, { t: 'distance', p: 0, q: 2, d: 0.12 }],
+    };
+    const r = solveSketch(s);
+    expect(r.converged).toBe(true);
+    expect(Math.hypot(s.points[2].x, s.points[2].y)).toBeCloseTo(0.12, 6);
+  });
+
+  it('16 puntos casi-horizontales (densidad de un perfil real) también converge', () => {
+    const pts = Array.from({ length: 16 }, (_, i) => ({
+      x: (i / 15) * 100,
+      y: 12 * Math.sin(Math.PI * (i / 15)) * 0.08,   // comba de ~1% de la cuerda
+    }));
+    const s: Sketch = {
+      points: pts,
+      lines: pts.slice(1).map((_, i) => ({ a: i, b: i + 1 })),
+      circles: [],
+      constraints: [{ t: 'fix', p: 0 }, { t: 'distance', p: 0, q: 15, d: 150 }],
+    };
+    const r = solveSketch(s);
+    expect(r.converged).toBe(true);
+    expect(Math.hypot(s.points[15].x - s.points[0].x, s.points[15].y - s.points[0].y)).toBeCloseTo(150, 3);
+  });
+});

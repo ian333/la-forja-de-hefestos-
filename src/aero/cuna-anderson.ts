@@ -51,21 +51,93 @@ export interface CunaResultado {
  * Puro y determinista: mismos args → mismo resultado.
  */
 /**
- * Ángulo β del choque oblicuo (solución DÉBIL) de la relación θ-β-M:
+ * Relación θ-β-M en su forma DIRECTA (Anderson §9.2, ec. 9.23):
  *   tan θ = 2·cot β·(M²sin²β − 1) / (M²(γ + cos 2β) + 2)
- * Para M=2, θ=5° la carta (Anderson Ap. / NACA 1135) da β ≈ 34.3°.
- * Bisección entre el ángulo de Mach μ=asin(1/M) y 90°.
+ * Dado β devuelve θ. Es la única forma cerrada: el problema inverso (β dado θ)
+ * no tiene solución elemental y se resuelve por bisección más abajo.
+ */
+export function thetaDeBeta(M: number, beta: number, gamma = 1.4): number {
+  const num = 2 * (M * M * Math.sin(beta) ** 2 - 1);
+  const den = Math.tan(beta) * (M * M * (gamma + Math.cos(2 * beta)) + 2);
+  return Math.atan(num / den);
+}
+
+/**
+ * Deflexión MÁXIMA que un choque oblicuo adherido puede sostener a este Mach,
+ * y el β donde ocurre. Es la frontera entre las dos ramas: por debajo de βmax
+ * la solución es DÉBIL (la física), por encima FUERTE.
+ *
+ * θ(β) es unimodal en [μ, 90°] (vale 0 en ambos extremos) → búsqueda ternaria.
+ * Referencia: para M=2, θmax ≈ 22.97° en β ≈ 64.7°. Por eso el bracket fijo de
+ * 65° que tenía la versión anterior recortaba soluciones válidas.
+ */
+export function deflexionMaxima(M: number, gamma = 1.4): { thetaMax: number; betaEnMax: number } {
+  if (M <= 1) return { thetaMax: 0, betaEnMax: Math.PI / 2 };
+  let lo = Math.asin(1 / M), hi = Math.PI / 2;
+  for (let i = 0; i < 200; i++) {
+    const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3;
+    if (thetaDeBeta(M, m1, gamma) < thetaDeBeta(M, m2, gamma)) lo = m1; else hi = m2;
+  }
+  const betaEnMax = (lo + hi) / 2;
+  return { thetaMax: thetaDeBeta(M, betaEnMax, gamma), betaEnMax };
+}
+
+export interface ChoqueOblicuo {
+  /** ángulo del choque [rad], o null si está DESPRENDIDO */
+  beta: number | null;
+  /** true cuando θ > θmax: no existe choque adherido, se forma una onda de proa */
+  desprendido: boolean;
+  /** deflexión máxima sostenible a este Mach [rad] */
+  thetaMax: number;
+  betaEnMax: number;
+}
+
+/**
+ * Resuelve el choque oblicuo DECLARANDO si está desprendido en vez de fallar
+ * callado. Úsala siempre que θ venga del usuario o de una geometría medida.
+ *
+ * ⚠️ Por qué existe: la versión anterior biseccionaba en un bracket fijo de 65°
+ * y, cuando θ > θmax, devolvía 65° EN SILENCIO — un número plausible y falso.
+ * Probado con M=2/θ=30°, M=1.5/θ=20° y M=3/θ=40°: los tres mentían.
+ *
+ * @param rama 'debil' (la que ocurre en la naturaleza) o 'fuerte'
+ */
+export function resolverChoqueOblicuo(
+  M: number, theta: number, gamma = 1.4, rama: 'debil' | 'fuerte' = 'debil',
+): ChoqueOblicuo {
+  const { thetaMax, betaEnMax } = deflexionMaxima(M, gamma);
+  if (M <= 1 || theta < 0 || theta > thetaMax) {
+    return { beta: null, desprendido: true, thetaMax, betaEnMax };
+  }
+  // θ(β) crece en [μ, βmax] y decrece en [βmax, 90°] → bisección monótona por rama
+  const mu = Math.asin(1 / M);
+  let lo = rama === 'debil' ? mu : betaEnMax;
+  let hi = rama === 'debil' ? betaEnMax : Math.PI / 2;
+  const creciente = rama === 'debil';
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    const t = thetaDeBeta(M, mid, gamma);
+    if ((t < theta) === creciente) lo = mid; else hi = mid;
+  }
+  return { beta: (lo + hi) / 2, desprendido: false, thetaMax, betaEnMax };
+}
+
+/**
+ * Ángulo β del choque oblicuo, rama DÉBIL. Para M=2, θ=5° la carta
+ * (Anderson Ap. / NACA 1135) da β ≈ 34.3°.
+ *
+ * ⚠️ LANZA si el choque está desprendido. Es deliberado: antes devolvía 65°
+ * sin avisar. Si θ no está bajo tu control, usa `resolverChoqueOblicuo`.
  */
 export function betaChoqueOblicuo(M: number, theta: number, gamma = 1.4): number {
-  const f = (b: number) =>
-    Math.tan(theta) - (2 / Math.tan(b)) * (M * M * Math.sin(b) ** 2 - 1) / (M * M * (gamma + Math.cos(2 * b)) + 2);
-  let lo = Math.asin(1 / M) + 1e-6; // f(lo) > 0 (θ pedido mayor que 0 desviación)
-  let hi = 65 * Math.PI / 180;      // pasado el máximo de la rama débil, f < 0
-  for (let i = 0; i < 80; i++) {
-    const mid = (lo + hi) / 2;
-    if (f(mid) > 0) lo = mid; else hi = mid;
+  const r = resolverChoqueOblicuo(M, theta, gamma);
+  if (r.beta === null) {
+    throw new Error(
+      `betaChoqueOblicuo: choque DESPRENDIDO — M=${M}, θ=${(theta * 180 / Math.PI).toFixed(2)}° ` +
+      `excede θmax=${(r.thetaMax * 180 / Math.PI).toFixed(2)}°. No existe choque oblicuo adherido.`,
+    );
   }
-  return (lo + hi) / 2;
+  return r.beta;
 }
 
 export function cunaAnderson(n = 200): CunaResultado {

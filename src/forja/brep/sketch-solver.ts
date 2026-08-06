@@ -205,24 +205,49 @@ function jacobian(s: Sketch, vm: VarMap, v: number[], r0: number[]): number[][] 
 }
 
 // ── Álgebra lineal mínima ────────────────────────────────────────────
+/**
+ * Gauss-Jordan con pivoteo parcial y tolerancia RELATIVA a la magnitud de la
+ * matriz (igual que `rankAndMovable`, que sí lo hacía bien).
+ *
+ * ⚠️ Por qué relativa: con el umbral absoluto de 1e-14 que había antes, una
+ * matriz legítimamente pequeña pasaba el filtro y se dividía entre ~1e-12,
+ * produciendo un paso gigantesco; y una columna saltada dejaba en su lugar el
+ * término independiente SIN dividir, o sea basura silenciosa. Las columnas sin
+ * pivote ahora devuelven 0 explícito, que es la solución de mínima norma para
+ * una dirección indeterminada.
+ */
 function solveDense(A: number[][], b: number[]): number[] {
   const n = b.length;
+  if (n === 0) return [];
   const M = A.map((row, i) => [...row, b[i]]);
-  for (let col = 0; col < n; col++) {
-    let piv = col;
-    for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
-    if (Math.abs(M[piv][col]) < 1e-14) continue;
-    [M[col], M[piv]] = [M[piv], M[col]];
-    const d = M[col][col];
-    for (let c = col; c <= n; c++) M[col][c] /= d;
+  let scale = 0;
+  for (const row of A) for (let j = 0; j < n; j++) scale = Math.max(scale, Math.abs(row[j]));
+  const tol = 1e-12 * Math.max(scale, 1e-300);
+  const pivotRowOfCol = new Array<number>(n).fill(-1);
+  let rank = 0;
+  for (let col = 0; col < n && rank < n; col++) {
+    let piv = rank;
+    for (let r = rank + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+    if (Math.abs(M[piv][col]) <= tol) continue;      // columna dependiente → x=0
+    [M[rank], M[piv]] = [M[piv], M[rank]];
+    const d = M[rank][col];
+    for (let c = col; c <= n; c++) M[rank][c] /= d;
     for (let r = 0; r < n; r++) {
-      if (r === col) continue;
+      if (r === rank) continue;
       const f = M[r][col];
       if (f === 0) continue;
-      for (let c = col; c <= n; c++) M[r][c] -= f * M[col][c];
+      for (let c = col; c <= n; c++) M[r][c] -= f * M[rank][c];
     }
+    pivotRowOfCol[col] = rank;
+    rank++;
   }
-  return M.map((row) => row[n]);
+  const x = new Array<number>(n).fill(0);
+  for (let col = 0; col < n; col++) {
+    if (pivotRowOfCol[col] < 0) continue;
+    const v = M[pivotRowOfCol[col]][n];
+    x[col] = Number.isFinite(v) ? v : 0;
+  }
+  return x;
 }
 
 // Rango numérico + VARIABLES MÓVILES por eliminación de Gauss-Jordan (RREF) con
@@ -303,9 +328,25 @@ export function solveSketch(sketch: Sketch, opts: { maxIters?: number; tol?: num
       let s = 0; for (let i = 0; i < m; i++) s += J[i][a] * r[i];
       Jtr[a] = s;
     }
+    // AMORTIGUAMIENTO ESCALADO A LA MATRIZ (Levenberg-Marquardt, forma de MINPACK).
+    //
+    // ⚠️ Antes era `JtJ[i][i]·(1+λ) + 1e-12`: Marquardt puro con un piso ABSOLUTO.
+    // Marquardt escala cada diagonal por SU PROPIA magnitud, así que el cociente
+    // entre ellas no cambia y el condicionamiento no mejora. En una cota alineada
+    // sobre geometría casi-horizontal ∂d/∂y → 0, y JtJ queda con número de
+    // condición ~(dx/dy)²: para una cuerda de 100 con 0.02 de comba, 2.5e7. El
+    // paso salía con Δy ≈ 44,000, los 8 reintentos lo rechazaban, y el solver
+    // devolvía iters=0 con el croquis en ROJO. Se reproducía con DOS puntos.
+    //
+    // El término λ·dmax·I sí regulariza la dirección degenerada, y como dmax es
+    // la escala de la propia matriz, el resultado no depende de si el croquis
+    // está en milímetros o en metros.
+    let dmax = 0;
+    for (let a = 0; a < n; a++) dmax = Math.max(dmax, Math.abs(JtJ[a][a]));
+    const damp = Math.max(dmax, 1e-300);
     let applied = false;
     for (let tries = 0; tries < 8 && !applied; tries++) {
-      const A = JtJ.map((row, i) => row.map((x, j) => (i === j ? x * (1 + lambda) + 1e-12 : x)));
+      const A = JtJ.map((row, i) => row.map((x, j) => (i === j ? x + lambda * damp : x)));
       const delta = solveDense(A, Jtr.map((x) => -x));
       const vNew = v.map((x, i) => x + delta[i]);
       unpack(vNew, sketch, vm);
