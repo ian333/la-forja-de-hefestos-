@@ -4,6 +4,19 @@
  *   Fig 6.15 radial (N primarios desde el diafragma del sprue)
  *   §7.2.7 gates SUMERGIDOS (túnel a 45°, taper 20°, ⌀ chico en la pieza)
  * La CARGA SE REPARTE: en cada bifurcación V̇ se divide entre las ramas y el
+ * ⚠⚠ DESVIACIÓN GRAVE DEL LIBRO — hallada por el pliego de análisis (A-77), 2026-08-06.
+ * Estos layouts dimensionan con Eq (6.1) D_down = D_up/√n, y el libro la presenta
+ * como CONTRAEJEMPLO, no como regla. Literal de §6.4: conserva la velocidad lineal
+ * pero "the resulting designs are inferior" en ΔP y en material. El propio pliego de
+ * UI lo tenía bien extraído y nosotros hicimos lo contrario:
+ *   R-061 "Regla histórica mostrada SOLO como contraejemplo … la UI la enseña y
+ *          explica por qué NO se usa"
+ *   R-116 "si el usuario escala por √n, la UI lo DETECTA y propone el solver por
+ *          restricción de ΔP"
+ * El sustituto correcto YA EXISTE y no se usa: reparto por longitud + solver de ΔP
+ * en `feed.ts`. Mientras se recablea, estos layouts quedan MARCADOS: producen el
+ * diseño que Kazmer llama inferior. NO es una preferencia de estilo — cambia el ΔP
+ * y el material del árbol de colada.
  * diámetro baja con Eq (6.1) D_down = D_up/√n (velocidad constante), luego
  * Eq (6.8) valida contra el ΔP asignado. Cada segmento sabe CUÁNDO le llega
  * el frente (t_start = suma de llenados aguas arriba) — el flujo se anima
@@ -68,7 +81,7 @@ export function layoutBranched(o: {
   let rUp = rSprue;
   const names = ['primario', 'secundario', 'terciario', 'cuaternario'];
   for (let lv = 0; lv < levels; lv++) {
-    const rTeor = rUp / Math.SQRT2;                     // Eq (6.1)
+    const rTeor = rUp / Math.SQRT2;                     // ⚠ Eq (6.1): el CONTRAEJEMPLO del libro (ver cabecera)
     const r = Math.max(1.25, steelSafeDiaMm(2 * rTeor) / 2);   // §6.5.4-6.5.5
     const VdotSeg = Vdot / Math.pow(2, lv + 1);         // LA CARGA REPARTIDA
     const L = pitch * Math.pow(0.72, lv);               // ramas más cortas al bajar
