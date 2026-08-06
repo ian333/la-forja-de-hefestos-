@@ -41,6 +41,7 @@ const CARGAS_DURATION = 83.2;
 const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
 const WTRI_DURATION = 77.7;
 const WTET_DURATION = 88.0;   // EL CUARTETO: voz 85.51s (segs.json, 27 líneas) + 2.5s de cola
+const CODO_DURATION = 96.1;   // EL CODO: voz 93.61s (segs.json, 33 líneas) + 2.5s de cola
 const WHEX6_DURATION = 97.74; // EL HEXÁGONO v2: voz 95.24s (segs.json, 31 líneas) + 2.5s de cola
 // (WTRI_DURATION: voz 91.0s + 3s de cola · WPAIR_DURATION: 1 min, beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
@@ -600,6 +601,23 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: heroOrbit({ rMul: 3.10, elev: 0.28, azim0: 2.10, span: 0.65, fov: 34 }), dur: 8, label: 'gira despacio: sigue siendo recta desde cualquier lado' },
     { shot: heroOrbit({ rMul: 3.60, elev: 0.05, azim0: 0.60, span: 0.42, fov: 32 }), dur: 7, label: 'de canto — el zigzag del esqueleto' },
   ],
+  // LAS DOS JUNTAS = la pieza. La comparación tiene que caber ENTERA en el cuadro, y las dos
+  // cadenas están separadas en Y, así que el encuadre manda: nada de acercarse.
+  // EL CODO — duraciones = arranques REALES de segs.json (voz 93.61s, 33 líneas). Σ = 96.1.
+  // Las dos cadenas tienen que caber ENTERAS en cada toma: la pieza ES la comparación, así
+  // que ninguna se acerca (rMul 4.2-4.9). Medido en stills antes de rendir.
+  codo: [
+    { shot: heroOrbit({ rMul: 4.60, elev: 0.04, azim0: 1.57, span: 0.16, fov: 34 }), dur: 7.34, label: 'LAS DOS: "esto es mantequilla / y esto es aceite / los mismos átomos"' },
+    { shot: heroOrbit({ rMul: 4.45, elev: 0.10, azim0: 1.72, span: 0.22, fov: 34 }), dur: 10.53, label: 'se cuentan los 18 y el grupo ácido — y el remate: ladrillo vs derrama' },
+    { shot: heroOrbit({ rMul: 4.25, elev: 0.03, azim0: 1.48, span: 0.14, fov: 33 }), dur: 4.69, label: '"mira otra vez": la izquierda va DERECHA' },
+    { shot: heroOrbit({ rMul: 4.25, elev: 0.03, azim0: 1.62, span: 0.14, fov: 33 }), dur: 5.34, label: '"la de la derecha se DOBLA" — mismo encuadre, comparación justa' },
+    { shot: heroOrbit({ rMul: 4.05, elev: 0.14, azim0: 1.80, span: 0.30, fov: 33 }), dur: 8.19, label: 'el enlace doble: uno solo, a media cadena' },
+    { shot: heroOrbit({ rMul: 4.40, elev: 0.06, azim0: 2.05, span: 0.34, fov: 34 }), dur: 7.54, label: 'simple gira / doble se traba — la torcedura se QUEDA' },
+    { shot: heroOrbit({ rMul: 4.70, elev: 0.02, azim0: 1.57, span: 0.18, fov: 33 }), dur: 14.03, label: 'LOS NÚMEROS: 179.9 vs 125.5, y los 2.5 Å que se acortan' },
+    { shot: heroOrbit({ rMul: 4.20, elev: 0.20, azim0: 1.35, span: 0.40, fov: 34 }), dur: 16.34, label: 'el apilamiento: leña que queda firme vs el codo que estorba' },
+    { shot: heroOrbit({ rMul: 4.35, elev: 0.05, azim0: 1.90, span: 0.26, fov: 34 }), dur: 9.96, label: 'ladrillo y derrame — la consecuencia cotidiana' },
+    { shot: heroOrbit({ rMul: 4.90, elev: 0.02, azim0: 1.57, span: 0.20, fov: 32 }), dur: 12.14, label: 'EL REMATE: cuenta los codos. Cero: mantequilla. Uno: aceite.' },
+  ],
   oleico: [
     { shot: heroOrbit({ rMul: 3.40, elev: 0.10, azim0: 1.35, span: 0.45, fov: 34 }), dur: 7, label: 'EL CODO — mismo encuadre que el esteárico, para que la comparación sea justa' },
     { shot: heroOrbit({ rMul: 3.10, elev: 0.28, azim0: 2.10, span: 0.65, fov: 34 }), dur: 8, label: 'gira: el codo no se endereza desde ningún ángulo' },
@@ -1040,6 +1058,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   caroteno:     { name: 'Caroteno (cromóforo)', formula: 'cadena π', fact: 'La cadena conjugada que pinta la zanahoria — y la que te deja VER.' },
   estearico:    { name: 'Ácido esteárico', formula: 'C₁₈H₃₆O₂', fact: 'La grasa de la mantequilla: recta, 179.9° — se apila como leña y queda sólida.' },
   oleico:       { name: 'Ácido oleico', formula: 'C₁₈H₃₄O₂', fact: 'La misma cadena con UN doble enlace: 125.5°. El codo impide apilarse — y por eso el aceite es líquido.' },
+  codo:         { name: 'El codo', formula: 'mantequilla vs aceite', fact: 'Los mismos 18 carbonos. Un enlace doble dobla la cadena 55° — y lo que no se apila, no se congela.' },
   // ── ADN — doble hélice B-form real ──
   brca1:    { name: 'ADN · BRCA1', formula: 'doble hélice', fact: 'Un trozo de tu gen BRCA1: cuando falla, aumenta el riesgo de cáncer.' },
   telomero: { name: 'ADN · telómero', formula: 'TTAGGG', fact: 'El extremo de tus cromosomas: se acorta cada vez que una célula se divide.' },
@@ -1053,7 +1072,7 @@ const META: Record<string, { name: string; formula: string; fact: string }> = { 
 // no necesita escena nueva. Su .bin sí es distinto en ORIGEN —no en formato—: lo escribe
 // scripts/precompute-cadena.py con geometría OPTIMIZADA y densidad |ψ|² real, en vez de
 // orbitales localizados con longitudes de libro. Ver docs/CADENA-LA-FORMA-MANDA.md.
-const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno', 'estearico', 'oleico']);
+const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno', 'estearico', 'oleico', 'codo']);
 // Conjugadas (con sistema π): llevan campo de CARAS π (MEP). Los alcanos NO (apolares, planos eléctricamente → inertes).
 const CONJUGATED_KEYS = new Set(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno']);
 // ADN: doble hélice B-form real (dna-<key>.bin). Alargada → cámara traversal vuela por el eje.
@@ -3739,7 +3758,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : isPair ? (WATER_BINS[molKey].dur ?? WPAIR_DURATION) : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
+  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : isPair ? (WATER_BINS[molKey].dur ?? WPAIR_DURATION) : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : molKey === 'codo' ? CODO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.

@@ -27,32 +27,76 @@
     "por_que_este_par": "Mismo número de carbonos (18) y mismo grupo ácido en la punta. La ÚNICA diferencia es ese enlace doble. Eso convierte al video en un experimento controlado: si cambia el comportamiento, no puede ser por otra cosa.",
     "metodo": "RHF/6-31G(d) con geometría optimizada (geomeTRIC). ~500 funciones de base → conviene gpu4pyscf (gana arriba de ~350 bf). Ver [[reference_gpu4pyscf_iangpu]].",
     "gates": {
-      "forma": "⚠ EL GATE QUE NO PUEDE FALTAR. Ángulo de la cadena medido entre el vector C1→C9 y el C10→C18: el esteárico debe salir casi recto (>150°) y el oleico DOBLADO (~120°). En el prisma del hexámero la ENERGÍA salió correcta sobre una geometría desarmada y casi reporto un resultado falso — si la pieza depende de que se vea un codo, se mide el codo.",
+      "forma": "APROBADO y reproducible: esteárico 179.9° (recto, >150 pedido) · oleico 125.5° (doblado, 100-145 pedido) · el codo acorta la cadena 2.46 Å (21.83 → 19.37). Nadie puso esos números: se armaron las dos cadenas IGUALES y la única instrucción distinta fue que el diedro del doble enlace fuera cis.",
       "rigidez": "el enlace doble no gira: la barrera de rotación cis→trans es ~60 kcal/mol contra ~3 de un enlace simple. Eso es lo que hace que el codo se QUEDE, y es citable.",
       "energia": "SCF convergido en ambas, y comparar solo lo comparable (misma base, misma convergencia)."
     },
-    "limitacion_declarada": "El apilamiento y el punto de fusión son propiedades del CONJUNTO, no de una molécula sola. Lo que se calcula ab initio es la FORMA; el apilamiento se muestra como consecuencia geométrica de esa forma, y se dice así. No se inventa una simulación de fusión."
+    "limitacion_declarada": "El apilamiento y el punto de fusión son propiedades del CONJUNTO, no de una molécula sola. Lo que se calcula ab initio es la FORMA; el apilamiento se muestra como consecuencia geométrica de esa forma, y se dice así. No se inventa una simulación de fusión.",
+    "nube": "420k-520k puntos, densidad |ψ|² ab initio muestreada con el muestreador de precompute-caroteno-formacion.py (el precedente de cadena larga de la casa — NO se escribió uno nuevo). ⚠ La fórmula de tamaño del agua está calibrada para ~6 Å; una cadena de 22 Å ocupa ~14× más volumen y los mismos puntos se ven como polvo. Se compensa con TAMAÑO (0.075+0.130·d), no subiendo brillo."
   },
   "escena": {
     "html": "cinematic-molecule.html",
     "query": "m=codo",
     "hook": "__cinematicAtom",
-    "pendiente": "tomas nuevas: la cadena NO es un anillo. Hacen falta recorrerla a lo largo y verla de perfil (donde el codo se lee). Se agregan a CAMERA_SHOTS como datos. Ojo con la LEY DE ENCUADRE: en una cadena de 18 carbonos deja la molécula chiquita — usar `rCore` por toma, que es lo que desbloqueó el close-up del hexámero."
+    "pendiente": null,
+    "montaje": "Clave `codo` = las DOS moléculas en un solo .bin, lado a lado (separadas 14 Å). El video compara dos moléculas y la escena carga UNA; la salida limpia no es un script por video (Regla #0.5) sino un tercer bin. Honestidad: son DOS cálculos independientes, no un sistema de dos moléculas — a 14 Å no hay interacción relevante, así que juntarlas es un MONTAJE para comparar y no finge una física que no calculamos.",
+    "camara": "⚠ La cámara automática elige TRAVERSAL para una cadena (por elongación) y se mete DENTRO de la molécula. Para el caroteno es correcto —el sujeto es el río π— pero aquí el sujeto es la SILUETA y por dentro el codo NO EXISTE. Medido en stills antes de rendir. Fix: entrada en CAMERA_SHOTS, que manda sobre el modo automático. Tomas externas y LEJOS (rMul 4.3-4.8): las dos cadenas tienen que caber ENTERAS."
   },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": null, "pendiente": "dur = voz REAL de segs.json + colchón" },
-  "render": { "shards": 5, "batch": 40, "frames": "dist-video/.codoframes" },
-  "guion": { "archivo": "scripts/guiones/codo.txt", "pendiente": "escribir DESPUÉS de que pasen los gates — la sim se aprueba antes que el guion ([[feedback_simulacion_primero_hook]])" },
-  "audio": { "dir": "dist-video/codo-narracion", "narracion": "codo-narracion.mp3", "musica": "codo-music.wav",
-    "musicaVol": 0.17, "musicaFadeIn": 2.5, "segs": "segs.json", "ass": "codo.ass",
-    "voz": "XTTS Matilda, TAKES=4 mediana. ⚠ pasar scripts/voz-check.py ANTES de rendir: en el hexámero 'copo' sonó 'popo' y se descubrió con el video ya publicado." },
-  "salida": { "dir": "/mnt/e/forja-videos", "master": "grasa-el-codo-4k-master.mp4", "h264": "grasa-el-codo-4k.mp4" },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 96.1,
+    "nota_dur": "voz REAL 93.61s (33 líneas, lead/gap 0.40 como toda la serie) + 2.5s de cola"
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.codoframes"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/codo.txt",
+    "lineas": 33,
+    "palabras": 171,
+    "portero": "guion-check: 5 avisos, todos por \":\" que narracion-gen convierte en coma antes del TTS"
+  },
+  "audio": {
+    "dir": "dist-video/codo-narracion",
+    "narracion": "codo-narracion.mp3",
+    "musica": "codo-music.wav",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "segs": "segs.json",
+    "ass": "codo.ass",
+    "voz": "XTTS Matilda, TAKES=4 mediana. ⚠ pasar scripts/voz-check.py ANTES de rendir: en el hexámero 'copo' sonó 'popo' y se descubrió con el video ya publicado."
+  },
+  "salida": {
+    "dir": "/mnt/e/forja-videos",
+    "master": "grasa-el-codo-4k-master.mp4",
+    "h264": "grasa-el-codo-4k.mp4"
+  },
   "capsula": {
-    "bins": ["esteárico.bin", "oleico.bin"],
+    "bins": [
+      "esteárico.bin",
+      "oleico.bin"
+    ],
     "guion": "codo.txt",
-    "scripts": ["render-clip.cjs", "video.sh", "video-subs.py", "precompute-cadena.py"],
-    "escenaSrc": ["CinematicMolecule.tsx", "camera-shots.ts", "capas.ts"]
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-cadena.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
   },
-  "publicar": { "biblioteca": "moleculas/mol-grasa-el-codo.mp4", "capsulaRel": "moleculas/_code/mol-grasa-el-codo-capsula.tar.gz",
+  "publicar": {
+    "biblioteca": "moleculas/mol-grasa-el-codo.mp4",
+    "capsulaRel": "moleculas/_code/mol-grasa-el-codo-capsula.tar.gz",
     "pieza": "mol-grasa el codo",
-    "nota_id": "el `id` lo genera comando-scan.cjs del NOMBRE DEL ARCHIVO, no del título — la llave del SPECIAL debe ser exactamente 'mol-grasa el codo' o la pieza sale con título genérico (pasó con el hexámero)." }
+    "nota_id": "el `id` lo genera comando-scan.cjs del NOMBRE DEL ARCHIVO, no del título — la llave del SPECIAL debe ser exactamente 'mol-grasa el codo' o la pieza sale con título genérico (pasó con el hexámero)."
+  }
 }

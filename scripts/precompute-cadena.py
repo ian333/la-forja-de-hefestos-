@@ -197,7 +197,12 @@ def nube(mol, dm, xyz, Zs, n_pts, semilla=1337):
     # tamaño se ve como polvo suelto — medido en stills: esqueleto de palitos, no la nube densa
     # que es la firma de la serie. Se compensa con el tamaño, no subiendo el brillo (más luz no
     # es más color: [[feedback_mas_luz_no_es_color]]).
-    size = (0.075 + 0.130 * d).astype('<f4')
+    # TAMAÑO. ⚠ Se probó duplicarlo (0.075+0.130) para que la nube leyera con la cámara cerca
+    # de UNA molécula; con las dos juntas y la cámara a ~65 unidades esos sprites se suman en
+    # aditivo hasta SATURAR: a rMul 4.25 el cuadro es una pared de luz y a 4.60 casi negro, sin
+    # punto medio. El tamaño se queda en el de la casa y la densidad se sube con PUNTOS, que es
+    # lo que no revienta el blend.
+    size = (0.034 + 0.060 * d).astype('<f4')
     return pos.astype('<f4'), col.astype('<f4'), size, d.astype('<f4')
 
 
@@ -241,6 +246,7 @@ def densidad_y_bin(eq, nombre):
     ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public',
                         'precomputed', f'chain-{nombre}.bin')
     escribe_bin(ruta, xyz, Zs, pos, col, size, shell)
+    return dict(xyz=xyz, Z=Zs, pos=pos, col=col, size=size, shell=shell)
 
 
 def main():
@@ -284,9 +290,40 @@ def main():
     # La nube SOLO se calcula si la forma pasó: no tiene caso muestrear electrones de una
     # geometría que no cuenta la historia.
     print('\n────────── NUBE ELECTRÓNICA ──────────', flush=True)
+    guardado = {}
     for nombre in ('estearico', 'oleico'):
-        densidad_y_bin(resultados[nombre]['eq'], nombre)
+        guardado[nombre] = densidad_y_bin(resultados[nombre]['eq'], nombre)
+
+    # ── LAS DOS JUNTAS, que es LA PIEZA ────────────────────────────────────────────────
+    # El video compara dos moléculas y la escena carga UNA. La salida limpia no es un script
+    # por video (Regla #0.5 lo prohíbe) sino un tercer .bin con las dos lado a lado: mismo
+    # formato, una sola clave `codo`, y la comparación queda DENTRO del cuadro.
+    #
+    # Honestidad: son DOS cálculos independientes, no un sistema de dos moléculas. Se separan
+    # 14 Å —más de 4 veces el alcance de cualquier interacción de dispersión relevante— así que
+    # ponerlas juntas es un MONTAJE para comparar, y no finge una interacción que no calculamos.
+    print('\n────────── LAS DOS JUNTAS (la pieza) ──────────', flush=True)
+    juntas(guardado)
     return 0
+
+
+def juntas(g, sep=14.0):
+    import struct
+    izq, der = g['estearico'], g['oleico']
+    def centra(d, dx):
+        xyz = d['xyz'] - d['xyz'].mean(axis=0); pos = d['pos'] - d['xyz'].mean(axis=0)
+        off = np.array([0.0, dx, 0.0])
+        return xyz + off, pos + off
+    # ejes: la cadena es larga en X, así que se separan en Y — quedan una AL LADO de la otra
+    xyzA, posA = centra(izq, +sep / 2); xyzB, posB = centra(der, -sep / 2)
+    xyz = np.vstack([xyzA, xyzB]); Zs = np.concatenate([izq['Z'], der['Z']])
+    pos = np.vstack([posA, posB])
+    col = np.vstack([izq['col'], der['col']]); size = np.concatenate([izq['size'], der['size']])
+    shell = np.concatenate([izq['shell'], der['shell']])
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'public',
+                        'precomputed', 'chain-codo.bin')
+    escribe_bin(ruta, xyz, Zs, pos, col, size, shell)
+    print(f'      arriba: esteárico RECTO · abajo: oleico CON CODO · separadas {sep} Å', flush=True)
 
 
 if __name__ == '__main__':

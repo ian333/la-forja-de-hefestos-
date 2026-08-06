@@ -90,7 +90,13 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
   console.log(`[clip] ${N} frames · ${dur}s @ ${fps}fps · ${W}x${H} (dsf ${sup}) · lote ${batch}`
     + (nshards > 1 ? ` · SHARD ${shard}/${nshards} (${mine} frames de este worker)` : ''));
   const t0 = Date.now();
-  const BLACK = 150000;   // bytes: un frame 4K con contenido pesa MB; negro ≈ 40KB
+  // Umbral de "frame negro" POR BYTES. Calibrado para escenas densas (agua, átomos), donde
+  // un 4K con contenido pesa MB. ⚠ NO vale para todas: "El codo" son dos cadenas delgadas
+  // sobre negro, así que el PNG comprime a ~126 KB con contenido PERFECTO — y el guardián
+  // los reprobaba en bucle: 660 de 2883 cuadros tras 6 intentos, con la escena bien.
+  // Por eso es configurable: BLACK=<bytes> para escenas de sujeto delgado. El default no
+  // cambia, así que ninguna pieza anterior se mueve.
+  const BLACK = parseInt(process.env.BLACK || '150000', 10);
   let blacks = 0;
   for (let i = 0; i < N; i++) {
     // PARALELO: cada worker rinde solo su franja por stride (índices disjuntos → sin colisión)

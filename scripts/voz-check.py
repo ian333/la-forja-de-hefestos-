@@ -41,7 +41,8 @@ UNI = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho',
 ESP = {10: 'diez', 11: 'once', 12: 'doce', 13: 'trece', 14: 'catorce', 15: 'quince',
        16: 'dieciseis', 17: 'diecisiete', 18: 'dieciocho', 19: 'diecinueve', 20: 'veinte',
        21: 'veintiuno', 22: 'veintidos', 23: 'veintitres', 24: 'veinticuatro',
-       25: 'veinticinco', 30: 'treinta', 40: 'cuarenta', 50: 'cincuenta', 100: 'cien'}
+       25: 'veinticinco', 30: 'treinta', 40: 'cuarenta', 50: 'cincuenta',
+       60: 'sesenta', 70: 'setenta', 80: 'ochenta', 90: 'noventa', 100: 'cien'}
 
 
 def _num(tok):
@@ -53,6 +54,13 @@ def _num(tok):
     if n < 10: return UNI[n]
     if n in ESP: return ESP[n]
     if n < 100: return f'{ESP[n // 10 * 10]} y {UNI[n % 10]}'
+    # CENTENAS: sin esto el gate gritaba por "179" (Whisper) contra "ciento setenta y nueve"
+    # (guion) — un falso positivo por FORMATO, que es justo lo que hace que nadie lea un gate.
+    if n < 1000:
+        c, r = n // 100, n % 100
+        cab = 'cien' if n == 100 else ('ciento' if c == 1 else
+              {5: 'quinientos', 7: 'setecientos', 9: 'novecientos'}.get(c, UNI[c] + 'cientos'))
+        return cab if r == 0 else f'{cab} {_num(str(r))}'
     return tok
 
 
