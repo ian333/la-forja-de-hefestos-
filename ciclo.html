@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#05070B" />
+  <meta name="description" content="La Forja — EL CICLO: el estudio del molde organizado por TIEMPO REAL (inyectar → empacar → enfriar → abrir → expulsar)" />
+  <title>⚒ La Forja · El Ciclo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>html,body{margin:0;padding:0;background:#05070B;overflow:hidden;}</style>
+</head>
+<body>
+  <!-- ENTRADA DE DESARROLLO/ARNÉS. El destino de producción es un overlay dentro de
+       forja-brep.html (import lazy + estado + bloque de render). Esta página existe
+       para que `scripts/ciclo-ss.cjs` pueda MANEJAR el reloj real sin tocar el
+       monolito, y para poder abrir la pantalla sin cargar el kernel OCCT. -->
+  <div id="root"></div>
+  <script type="module" src="/src/ciclo-main.tsx"></script>
+</body>
+</html>

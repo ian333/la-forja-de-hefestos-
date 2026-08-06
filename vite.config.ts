@@ -119,6 +119,7 @@ export default defineConfig({
         // EL ESTUDIO VIVO y las vistas 3D animadas: pantallas propias además del
         // botón que ya vive dentro de forja-brep, para poder abrirlas directo.
         "estudio-vivo": resolve(import.meta.dirname, "estudio-vivo.html"),
+        "ciclo": resolve(import.meta.dirname, "ciclo.html"),
         "vista3d-anim": resolve(import.meta.dirname, "vista3d-anim.html"),
         "forja-mecanismos": resolve(import.meta.dirname, "forja-mecanismos.html"),
         nova: resolve(import.meta.dirname, "nova.html"),
