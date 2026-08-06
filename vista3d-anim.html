@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#05070B" />
+  <meta name="description" content="La Forja — LAS DOS VISTAS 3D ANIMADAS: el molde que abre y el frente que llena" />
+  <title>⚒ La Forja · vistas 3D animadas (apertura · llenado)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>html,body{margin:0;padding:0;background:#05070B;overflow:hidden;}</style>
+</head>
+<body>
+  <!-- ENTRADA DE DESARROLLO/ARNÉS — NO va en `vite.config.ts` (no se construye).
+       Existe para que `scripts/vista3d-anim-ss.cjs` pueda MANEJAR las dos vistas 3D
+       (barrer el slider, orbitar, sondear) sin tocar `EstudioVivo.tsx`: el destino de
+       producción de estos dos componentes es el visor del Estudio, y la integración la
+       hace quien monta el panel. Copia el patrón de `estudio-vivo.html`. -->
+  <div id="root"></div>
+  <script type="module" src="/src/vista3d-anim-main.tsx"></script>
+</body>
+</html>
