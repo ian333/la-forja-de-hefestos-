@@ -41,7 +41,6 @@ const CARGAS_DURATION = 83.2;
 const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz todavía)   // 6 etapas de cargas + EL ÁTOMO DE HIDRÓGENO, a la voz REAL (82.80s, 19 frases, TAKES=4 mediana, 300 líneas)
 const WTRI_DURATION = 77.7;
 const WTET_DURATION = 88.0;   // EL CUARTETO: voz 85.51s (segs.json, 27 líneas) + 2.5s de cola
-const CODO_DURATION = 96.1;   // EL CODO: voz 93.61s (segs.json, 33 líneas) + 2.5s de cola
 const WHEX6_DURATION = 97.74; // EL HEXÁGONO v2: voz 95.24s (segs.json, 31 líneas) + 2.5s de cola
 // (WTRI_DURATION: voz 91.0s + 3s de cola · WPAIR_DURATION: 1 min, beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
@@ -159,11 +158,7 @@ const normV = (a: Vec3): Vec3 => { const l = Math.hypot(a[0], a[1], a[2]) || 1; 
 // Marco geométrico de la molécula: eje principal (a) + plano perpendicular (p1,p2),
 // centroide (c), semilongitud (L) y radio perpendicular (Rp). `chain` = la molécula
 // es ALARGADA (cadena) → la cámara la ATRAVIESA en vez de orbitarla.
-interface Frame { ex: number; chain: boolean; L: number; Rp: number; a: Vec3; p1: Vec3; p2: Vec3; c: Vec3; planeN: Vec3; dna?: boolean; o2?: boolean; nucX?: number; mk?: string;
-  /** MONTAJE: centroide de cada molécula del .bin. Se le pasa a playShots como `pts` para que
-   *  `ringOne({which})` —la toma con la que el hexámero aísla UNA molécula del anillo— sirva
-   *  igual aquí para irse cerrando sobre UNA cadena. Reusa la gramática, no inventa tomas. */
-  pts?: Vec3[]; }
+interface Frame { ex: number; chain: boolean; L: number; Rp: number; a: Vec3; p1: Vec3; p2: Vec3; c: Vec3; planeN: Vec3; dna?: boolean; o2?: boolean; nucX?: number; mk?: string; }
 
 function frameFromNuclei(nuclei: { pos: Vec3 }[], ex: number): Frame {
   const base: Frame = { ex, chain: false, L: ex, Rp: ex * 0.4, a: [1, 0, 0], p1: [0, 1, 0], p2: [0, 0, 1], c: [0, 0, 0], planeN: [0, 0, 1] };
@@ -605,39 +600,6 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: heroOrbit({ rMul: 3.10, elev: 0.28, azim0: 2.10, span: 0.65, fov: 34 }), dur: 8, label: 'gira despacio: sigue siendo recta desde cualquier lado' },
     { shot: heroOrbit({ rMul: 3.60, elev: 0.05, azim0: 0.60, span: 0.42, fov: 32 }), dur: 7, label: 'de canto — el zigzag del esqueleto' },
   ],
-  // ── EL CODO — el MONTAJE (las dos juntas) = la pieza ────────────────────────────────
-  // Duraciones = arranques REALES de segs.json (voz 93.61 s, 33 líneas) + 2.5 de cola. Σ = 96.1.
-  //
-  // Recorte del 5-ago tras el 1080 fallido. La versión anterior era heroOrbit en TODAS las tomas
-  // a rMul 4.2-4.9 "para que las dos quepan siempre": correcto para comparar, pero el guion no
-  // sólo compara — se mete a ver el codo, y a 65 unidades un codo de 5 Å son 150 px perdidos
-  // dentro del halo. La regla que gana: LA CÁMARA VA DONDE APUNTA LA VOZ. Cuando dice "las dos",
-  // caben las dos; cuando dice "la de la derecha se dobla", se va a ESA.
-  //
-  // Los planos de una sola cadena son `ringOne({which})`, la MISMA toma con la que el hexámero
-  // aísla una molécula del anillo: centra en ctx.pts[which], que aquí son los centroides de cada
-  // molécula del montaje. Componente 0 = esteárico (+Y → pantalla IZQUIERDA), 1 = oleico (−Y →
-  // DERECHA), y así lo dice el guion. No se inventó una toma nueva.
-  //
-  // Pero ringOne NO se usa en los beats que COMPARAN. El codo del oleico desplaza la cadena
-  // ~5 Å: un ancho de cadena. Solo, se ve una cadena algo chueca; AL LADO de la recta se ve
-  // doblada. En 'la de la izquierda va derecha / la de la derecha se dobla' la voz señala, y el
-  // que ve tiene que poder COMPROBARLO en el mismo cuadro — así que ahí quedan las dos y el
-  // encuadre es idéntico en ambas líneas. ringOne se reserva para donde el sujeto SÍ es una
-  // sola: el doble enlace a media cadena, la órbita al codo y 'no cabe entre sus vecinas'.
-  codo: [
-    { shot: heroOrbit({ rMul: 3.40, elev: 0.04, azim0: 1.57, span: 0.16, fov: 34 }), dur: 7.34, label: 'LAS DOS enteras: "esto es mantequilla / y esto es aceite / los mismos átomos" (l1-3)' },
-    { shot: heroOrbit({ rMul: 3.20, elev: 0.08, azim0: 1.66, span: 0.20, fov: 33 }), dur: 10.53, label: 'se acerca a CONTAR: 18 carbonos y el grupo ácido — ladrillo vs derrama (l4-6)' },
-    { shot: heroOrbit({ rMul: 3.10, elev: 0.03, azim0: 1.52, span: 0.14, fov: 33 }), dur: 4.69, label: '"mira otra vez / la de la IZQUIERDA va derecha" — LAS DOS, para poder verificarlo (l7-8)' },
-    { shot: heroOrbit({ rMul: 3.10, elev: 0.03, azim0: 1.62, span: 0.14, fov: 33 }), dur: 5.34, label: 'EL CODO: "la de la DERECHA se dobla" — MISMO encuadre que l7-8: la recta queda de patrón (l9-10)' },
-    { shot: ringOne({ which: 1, rMul: 2.85, azim0: 1.62, span: 0.30, elev: 0.04, fov: 26 }), dur: 5.16, label: '"un enlace doble, uno solo, A MEDIA CADENA" — cerrado sobre el codo (l11-12)' },
-    { shot: ringOne({ which: 1, rMul: 3.60, azim0: 1.20, span: 0.90, elev: 0.12, fov: 26 }), dur: 8.23, label: 'ORBITA el codo: "simple gira / el doble se traba / la torcedura se QUEDA" (l13-15)' },
-    { shot: heroOrbit({ rMul: 3.50, elev: 0.02, azim0: 1.57, span: 0.18, fov: 33 }), dur: 16.37, label: 'LOS NÚMEROS lado a lado: 179.9 vs 125.5 y los 2.5 Å (l16-20) — quieta, para comparar' },
-    { shot: heroOrbit({ rMul: 3.25, elev: 0.16, azim0: 1.40, span: 0.34, fov: 34 }), dur: 11.60, label: 'el apilamiento: "como leña, una junto a otra / queda firme" (l21-24)' },
-    { shot: ringOne({ which: 1, rMul: 3.80, azim0: 1.50, span: 0.34, elev: 0.10, fov: 26 }), dur: 8.29, label: '"la del codo NO CABE / le estorba a sus vecinas" — el estorbo es la forma (l25-27)' },
-    { shot: heroOrbit({ rMul: 3.30, elev: 0.05, azim0: 1.84, span: 0.26, fov: 34 }), dur: 10.32, label: 'ladrillo y derrame + "física cuántica real" — vuelven las dos (l28-30)' },
-    { shot: heroOrbit({ rMul: 3.55, elev: 0.02, azim0: 1.57, span: 0.20, fov: 33 }), dur: 8.23, label: 'EL REMATE: "cuenta los codos. Cero: mantequilla. Uno: aceite." (l31-33)' },
-  ],
   oleico: [
     { shot: heroOrbit({ rMul: 3.40, elev: 0.10, azim0: 1.35, span: 0.45, fov: 34 }), dur: 7, label: 'EL CODO — mismo encuadre que el esteárico, para que la comparación sea justa' },
     { shot: heroOrbit({ rMul: 3.10, elev: 0.28, azim0: 2.10, span: 0.65, fov: 34 }), dur: 8, label: 'gira: el codo no se endereza desde ningún ángulo' },
@@ -665,9 +627,7 @@ function molCamera(t: number, f: Frame): Shot {
   // +nucX = átomo índice 1 = el B de els=(A,B): el PESADO que la voz nombra (Cl en
   // NaCl/HCl, O en CO/NO). Clavar ahí = "17 protones del cloro" se VE (no al H de 1).
   // Triatómico (H₂O): el corazón es el O en el ORIGEN → nucX=0.
-  // `pts` sólo lo trae el MONTAJE (los centroides de sus dos moléculas) → habilita ringOne({which}).
-  // Con 2 puntos la LEY DE ENCUADRE no se activa (pide ≥3), así que nada cambia para las demás piezas.
-  if (shotList) return playShots(shotList, t, { ex: f.ex, nucX: isTri(f.mk ?? '') ? 0 : (f.nucX ?? f.ex * 0.5), bondR: bondR(t, f.mk), t, pts: f.pts });
+  if (shotList) return playShots(shotList, t, { ex: f.ex, nucX: isTri(f.mk ?? '') ? 0 : (f.nucX ?? f.ex * 0.5), bondR: bondR(t, f.mk), t });
   const ease = (x: number) => { x = Math.max(0, Math.min(1, x)); return x * x * x * (x * (x * 6 - 15) + 10); };
   const P = (s: number, o1: number, o2: number): Vec3 => [
     f.c[0] + f.a[0] * s + f.p1[0] * o1 + f.p2[0] * o2,
@@ -945,12 +905,6 @@ function MolCameraRig({ frame, time, vertical }: { frame: Frame; time: number; v
       cam.near = Math.max(0.01, d * 0.03);
       cam.far = Math.max(100, frame.ex * 24);
       cam.updateProjectionMatrix();
-      // SONDA (inerte): publica la cámara REAL. Existe porque en "El codo" pasé tres
-      // rondas DEDUCIENDO dónde estaba la cámara desde el código y me equivoqué cada vez
-      // (culpé al traversal, luego al tamaño de sprites). Un still dice "está mal"; esto
-      // dice POR QUÉ. No escribe nada de la escena: solo expone números.
-      (window as any).__molProbe = { t: time, pos: [pos[0], pos[1], pos[2]], target,
-        d, fov: cam.fov, near: cam.near, far: cam.far, ex: frame.ex, mk: frame.mk };
     }
   }, [time, frame, camera, vertical]);
   return null;
@@ -1086,7 +1040,6 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   caroteno:     { name: 'Caroteno (cromóforo)', formula: 'cadena π', fact: 'La cadena conjugada que pinta la zanahoria — y la que te deja VER.' },
   estearico:    { name: 'Ácido esteárico', formula: 'C₁₈H₃₆O₂', fact: 'La grasa de la mantequilla: recta, 179.9° — se apila como leña y queda sólida.' },
   oleico:       { name: 'Ácido oleico', formula: 'C₁₈H₃₄O₂', fact: 'La misma cadena con UN doble enlace: 125.5°. El codo impide apilarse — y por eso el aceite es líquido.' },
-  codo:         { name: 'El codo', formula: 'mantequilla vs aceite', fact: 'Los mismos 18 carbonos. Un enlace doble dobla la cadena 55° — y lo que no se apila, no se congela.' },
   // ── ADN — doble hélice B-form real ──
   brca1:    { name: 'ADN · BRCA1', formula: 'doble hélice', fact: 'Un trozo de tu gen BRCA1: cuando falla, aumenta el riesgo de cáncer.' },
   telomero: { name: 'ADN · telómero', formula: 'TTAGGG', fact: 'El extremo de tus cromosomas: se acorta cada vez que una célula se divide.' },
@@ -1100,23 +1053,7 @@ const META: Record<string, { name: string; formula: string; fact: string }> = { 
 // no necesita escena nueva. Su .bin sí es distinto en ORIGEN —no en formato—: lo escribe
 // scripts/precompute-cadena.py con geometría OPTIMIZADA y densidad |ψ|² real, en vez de
 // orbitales localizados con longitudes de libro. Ver docs/CADENA-LA-FORMA-MANDA.md.
-const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno', 'estearico', 'oleico', 'codo']);
-
-// MONTAJES: un .bin con DOS moléculas independientes lado a lado, para compararlas. No son un
-// sistema: son dos cálculos separados puestos en el mismo cuadro (ver videos/mol-grasa-el-codo.json).
-//
-// `ChainField` NO aplica aquí, y por dos razones distintas — la segunda es la grave:
-//  1. Estética: su esfera de radio L·1.2 (≈36 con las dos cadenas) desborda un cuadro tomado a
-//     d≈65 para que quepan ambas, y su acumulación aditiva satura. Medido 2026-08-05: el 1080 de
-//     "El codo" era una pared teal/ámbar — los colores LITERALES de CHAINFIELD_FRAG. Apagarlo con
-//     la nube en 300 puntos dio la MISMA imagen: el campo era el 100% del cuadro, la nube el 0%.
-//  2. Honestidad: el campo se arma de UN eje (frame.a/c/Rp) ajustado sobre los 110 núcleos de las
-//     DOS cadenas. Ese eje no describe a ninguna de las dos. Era un campo inventado sobre una
-//     molécula que no existe — y eso lo prohíbe la regla de física real del proyecto.
-const MONTAJE_KEYS = new Set(['codo']);
-// Los segundos en que la voz SEÑALA la forma (l7-l15: "mira otra vez" → "la torcedura se
-// queda"). Ahí el halo de hidrógenos se abre para que la silueta de la cadena quede desnuda.
-const VENTANA_SILUETA: [number, number] = [17.5, 41.0];
+const CHAIN_KEYS = new Set(['butane', 'pentane', 'hexane', 'heptane', 'octane', 'nonane', 'decane', 'dodecane', 'pentadecane', 'hexadecane', 'heptadecane', 'eicosane', 'hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno', 'estearico', 'oleico']);
 // Conjugadas (con sistema π): llevan campo de CARAS π (MEP). Los alcanos NO (apolares, planos eléctricamente → inertes).
 const CONJUGATED_KEYS = new Set(['hexatriene', 'octatetraene', 'decapentaene', 'dodecahexaene', 'tetradecaheptaene', 'hexadecaoctaene', 'caroteno']);
 // ADN: doble hélice B-form real (dna-<key>.bin). Alargada → cámara traversal vuela por el eje.
@@ -3680,21 +3617,7 @@ void main(){
   gl_FragColor = vec4(acc * uOpacity, 1.0);
 }`;
 
-function ChainField({ frame, time, alkane, desde = 13.0, destapa }: { frame: Frame; time: number; alkane: boolean;
-  /** segundo en que el campo entra. 13 = el de las piezas de cadena de 22 s, donde el campo
-   *  llega al REVELAR. En el montaje de 96 s ese default dejaba los primeros 17 SEGUNDOS —el
-   *  gancho, "esto es mantequilla / y esto es aceite"— al 93% negros: sin halo, la nube sola
-   *  no alcanza a d≈65. El default no se toca; el montaje pide el suyo.
-   *  Y lo pide NEGATIVO: con `desde` en 0.15 la rampa de 3 s dejaba los primeros 20
-   *  cuadros (0.67 s) en 99.9% negro — con la voz ya diciendo "esto es mantequilla" en
-   *  el 0.40. El cuadro 0 es el gancho y la miniatura ([[feedback_frame0_es_el_gancho]]):
-   *  aquí no hay revelación que escenificar, la pieza abre CON las dos cadenas. */
-  desde?: number;
-  /** [t0,t1] donde el halo BAJA a un tercio. El halo ámbar son los hidrógenos, y mide ~330 px
-   *  de ancho contra los ~100 px que desvía el codo: mientras está a full, la silueta de las
-   *  dos cadenas es el MISMO rectángulo y "la de la derecha se dobla" no se puede verificar.
-   *  Medido por el crítico sobre stills, 5-ago. No se apaga: se destapa mientras se señala. */
-  destapa?: [number, number] }) {
+function ChainField({ frame, time, alkane }: { frame: Frame; time: number; alkane: boolean }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const off = 1.25;                                            // bohr: donde pica la densidad π fuera del plano
   const Rf = Math.max(frame.L * 1.2, frame.Rp * 1.7, off + 3.0);
@@ -3709,18 +3632,10 @@ function ChainField({ frame, time, alkane, desde = 13.0, destapa }: { frame: Fra
     matRef.current.uniforms.uTime.value = time;
     // entra al REVELAR, cuando la cámara YA se alejó (no en el túnel cerrado) — sutil.
     // El campo σ del alcano es DÉBIL (más tenue); el de caras π es más presente.
-    const velo = destapa
-      ? 1 - 0.68 * smoothstep((time - destapa[0]) / 1.2) * (1 - smoothstep((time - destapa[1]) / 1.2))
-      : 1;
-    matRef.current.uniforms.uOpacity.value = smoothstep((time - desde) / 3.0) * (alkane ? 0.26 : 0.33) * velo;
-  }, [time, alkane, desde, destapa]);
+    matRef.current.uniforms.uOpacity.value = smoothstep((time - 13.0) / 3.0) * (alkane ? 0.26 : 0.33);
+  }, [time, alkane]);
   return (
-    // La malla va en `frame.c`, que es lo que el shader YA suponía: traza su esfera analítica
-    // centrada en uC (`oc = ro - uC`). Con una sola molécula el centroide cae en el origen y
-    // ambas coincidían por accidente — por eso nunca se notó. Con el montaje, cada mitad tiene
-    // su centroide en y=±7 y la geometría se quedaba a 7 unidades de la esfera marchada: el
-    // fragment corría sobre los píxeles equivocados y pintaba un disco lleno con borde duro.
-    <mesh frustumCulled={false} position={frame.c}>
+    <mesh frustumCulled={false}>
       <sphereGeometry args={[Rf, 24, 24]} />
       <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={PLASMA_VERT} fragmentShader={CHAINFIELD_FRAG}
         transparent depthWrite={false} side={THREE.BackSide} blending={THREE.AdditiveBlending} />
@@ -3773,23 +3688,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
     const prefix = isDNA ? 'dna' : isCatalog ? 'catalog' : isChain ? 'chain' : 'mol';
     fetch(`/precomputed/${prefix}-${molKey}.bin`)
       .then(r => r.arrayBuffer())
-      .then(buf => { if (alive) { const d = parseBin(buf); setData(d);
-        // SONDA: el `extent` DECLARADO en el .bin contra el que se MIDE de los puntos.
-        // Si no coinciden, la cámara está encuadrando una molécula que no existe.
-        const P = d.bundle.positions; let rP = 0, rN = 0;
-        const bb = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
-        for (let i = 0; i < P.length; i += 3) {
-          rP = Math.max(rP, Math.hypot(P[i], P[i + 1], P[i + 2]));
-          for (let k = 0; k < 3; k++) { bb[k] = Math.min(bb[k], P[i + k]); bb[k + 3] = Math.max(bb[k + 3], P[i + k]); }
-        }
-        for (const n of d.nuclei) rN = Math.max(rN, Math.hypot(n.pos[0], n.pos[1], n.pos[2]));
-        // ⚠ `Math.min(...typedArray)` con 480k puntos DESBORDA LA PILA y mata la carga
-        // entera (mol load failed). Recorrer, no spread.
-        let sMin = Infinity, sMax = -Infinity;
-        for (let i = 0; i < d.bundle.sizes.length; i++) { const s = d.bundle.sizes[i]; if (s < sMin) sMin = s; if (s > sMax) sMax = s; }
-        (window as any).__binProbe = { extentDeclarado: d.extent, radioPuntos: rP, radioNucleos: rN,
-          nPuntos: P.length / 3, nNucleos: d.nuclei.length, bbox: bb, tam: { min: sMin, max: sMax } };
-      } })
+      .then(buf => { if (alive) setData(parseBin(buf)); })
       .catch(e => console.error('mol load failed', e));
     // CAROTENO: LUT del color OBSERVADO real por longitud de conjugación (calculado:
     // FEMO calibrado a λmax medida + verificado con PySCF). El "color nace del largo".
@@ -3837,53 +3736,10 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
   }, [molKey, isChain, isCatalog, isDNA, live]);
 
   // Marco geométrico (eje principal, elongación) → decide orbit vs traversal.
-  const framesMontaje = useMemo<Frame[]>(() => {
-    if (!data || !MONTAJE_KEYS.has(molKey)) return [];
-    // Separar por COMPONENTES CONEXAS, no por un plano. Primero corté por el signo de Y —las
-    // moléculas se escriben separadas 14 Å en Y— y una de las dos seguía saliendo como blob:
-    // `centra()` en precompute-cadena.py TRASLADA pero no ROTA, así que cada cadena conserva la
-    // orientación arbitraria en que la dejó el optimizador y un plano fijo la parte a la mitad.
-    // Con enlaces de ~1.1-1.5 Å y 14 Å de separación, un umbral de 2 Å las separa exactamente,
-    // sin suponer nada sobre cómo quedaron orientadas.
-    const N = data.nuclei.length, comp = new Array<number>(N).fill(-1);
-    let nc = 0;
-    for (let i = 0; i < N; i++) {
-      if (comp[i] >= 0) continue;
-      comp[i] = nc; const pila = [i];
-      while (pila.length) {
-        const k = pila.pop()!, a = data.nuclei[k].pos;
-        for (let j = 0; j < N; j++) {
-          if (comp[j] >= 0) continue;
-          const b = data.nuclei[j].pos;
-          if (Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) < 2.0) { comp[j] = nc; pila.push(j); }
-        }
-      }
-      nc++;
-    }
-    const grupos: { pos: Vec3 }[][] = Array.from({ length: nc }, () => []);
-    data.nuclei.forEach((n, i) => grupos[comp[i]].push(n));
-    const fs = grupos.filter(g => g.length >= 6).map(g => ({ ...frameFromNuclei(g, data.extent), mk: molKey }));
-    // MISMO Rp para las dos. `frameFromNuclei` mide Rp como la distancia MÁXIMA al eje recto que
-    // ajusta; en la cadena doblada ese máximo lo produce EL CODO, no el grosor de la cadena. Con
-    // ese Rp inflado el tubo de ChainField salía al doble de ancho y la comparación mentía: se
-    // leía "una flaca y una gorda" cuando las dos son C18 y tienen la MISMA sección transversal.
-    // Lo que cambia entre ellas es que el eje se dobla, y eso ya lo dicen los núcleos.
-    const rp = Math.min(...fs.map(f => f.Rp));
-    return fs.map(f => ({ ...f, Rp: rp }));
-  }, [data, molKey]);
-
-  const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey,
-    pts: framesMontaje.length ? framesMontaje.map(f => f.c) : undefined }), [data, isDNA, molKey, framesMontaje]);
-
-  // MONTAJE: un frame POR MOLÉCULA. `frameFromNuclei` saca el eje principal por covarianza, y
-  // sobre dos cadenas paralelas separadas 14 Å ese eje sale apuntando a la SEPARACIÓN, no a
-  // ninguna cadena (la varianza entre centros le gana a la del largo). Con ese eje, el campo de
-  // ChainField deja de abrazar una molécula y llena su esfera entera: la pared teal/ámbar del
-  // 1080 del 5-ago. Separadas por el signo de Y —que es como las escribe precompute-cadena.py
-  // (`juntas`, sep en Y)—, cada mitad recupera SU eje y su campo vuelve a ser el de esa molécula.
+  const frame = useMemo<Frame>(() => ({ ...frameFromNuclei(data?.nuclei ?? [], data?.extent ?? 8), dna: isDNA, o2: isBond(molKey), nucX: isBond(molKey) ? BOND_ABINITIO[molKey].Re / 2 : undefined, mk: molKey }), [data, isDNA, molKey]);
 
   const isCaro = molKey === 'caroteno';
-  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : isPair ? (WATER_BINS[molKey].dur ?? WPAIR_DURATION) : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : molKey === 'codo' ? CODO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
+  const dur = isFaraday ? FARADAY_DURATION : isCargas ? CARGAS_DURATION : isPair ? (WATER_BINS[molKey].dur ?? WPAIR_DURATION) : isMD ? MD_DURATION : isWater ? 60 : isDNA ? DNA_DURATION : molKey === 'li2' ? 44 : isBond(molKey) ? O2_FILM_DURATION : isCaro ? CARO_DURATION : DURATION;   // Li₂ RECIO: 44s (retención) sincronizado a la voz de 38s
 
   // API determinista (render headless) — ready solo cuando la nube cargó.
   // En modo `live` (montado en el quimilab) NO exponemos la API: corre el RAF.
@@ -4140,13 +3996,7 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             {/* O₂ paramagnético: el imán NO se dibuja con anillos (eso era HUD falso) —
                 EMERGE de la densidad real de los π* (los lóbulos violeta = los 2 e⁻
                 desapareados). La física lo muestra sola. */}
-            {isChain && !isCaro && !MONTAJE_KEYS.has(molKey) && <ChainField frame={frame} time={time} alkane={!CONJUGATED_KEYS.has(molKey)} />}
-            {/* MONTAJE: el campo de CADA cadena, con el eje de CADA cadena. Dos llamadas a la
-                misma ChainField — no un campo nuevo: es el halo ámbar que hace legible al
-                esteárico solo, ahora dicho dos veces y con la geometría correcta. */}
-            {framesMontaje.map((f, i) => (
-              <ChainField key={i} frame={f} time={time} alkane={!CONJUGATED_KEYS.has(molKey)} desde={-3.0} destapa={VENTANA_SILUETA} />
-            ))}
+            {isChain && !isCaro && <ChainField frame={frame} time={time} alkane={!CONJUGATED_KEYS.has(molKey)} />}
             {isCatalog && catField === 'pi' && <ChainField frame={frame} time={time} alkane={false} />}
             {isCatalog && catField === 'sigma' && <ChainField frame={frame} time={time} alkane={true} />}
           </>;

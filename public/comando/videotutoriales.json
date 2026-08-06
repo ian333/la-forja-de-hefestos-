@@ -467,6 +467,24 @@
     "#méxico"
    ],
    "formatos": {}
+  },
+  {
+   "id": "tutorial-28-conteo-lector",
+   "familia": "tutorial",
+   "tema": "hermes",
+   "titulo": "28. Actualiza tu inventario con el lector",
+   "descripcion": "Pasa el producto, cuenta, aplica  ·  Archivo: 28-conteo-lector-4k.mp4  ·  🎙️ con voz",
+   "guion": "01. Cada tanto hay que contar lo que de verdad hay en los estantes. Con el lector se hace rápido.\n02. Entramos a Inventario.\n03. Y a Conteo físico. Aquí el lector trabaja solo: no hay que picarle a ningún campo.\n04. Pasas el primer producto por el lector y aparece solo, con lo que el sistema cree que tienes.\n05. Cada vez que lo pasas, suma uno. Así vas contando pieza por pieza.\n06. Y si vienen en caja, no pases doce veces la misma lata: escribes la cantidad y listo.\n07. Fíjate que ahora la diferencia quedó en una rayita: contaste cuatro y el sistema decía cuatro. Ese producto cuadra.\n08. Vamos con el siguiente producto.\n09. Aquí contaste cinco, pero el sistema tenía seis.\n10. Y ahí está lo que te interesa: te marca que falta uno. Eso es una merma, una venta que no se registró, o algo que se rompió.\n11. Al aplicar, el stock queda en lo que TÚ contaste, no en lo que decía el sistema.\n12. Listo. Los que cuadraban ni se tocan, para no ensuciar el historial. Sólo se corrige lo que estaba mal.\n13. Y cada corrección queda en el kardex con tu nombre y la fecha, por si después alguien pregunta por qué cambió.",
+   "hashtags": [
+    "#tutorial",
+    "#erp",
+    "#hermes",
+    "#gaiaprime",
+    "#facturación",
+    "#pyme",
+    "#méxico"
+   ],
+   "formatos": {}
   }
  ],
  "generatedAt": ""
