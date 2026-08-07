@@ -4,7 +4,7 @@
  *   Fig 6.15 radial (N primarios desde el diafragma del sprue)
  *   §7.2.7 gates SUMERGIDOS (túnel a 45°, taper 20°, ⌀ chico en la pieza)
  * La CARGA SE REPARTE: en cada bifurcación V̇ se divide entre las ramas y el
- * ⚠⚠ DESVIACIÓN GRAVE DEL LIBRO — hallada por el pliego de análisis (A-77), 2026-08-06.
+ * ⚠⚠ DESVIACIÓN GRAVE DEL LIBRO — hallada por el pliego de análisis (A-136), 2026-08-06.
  * Estos layouts dimensionan con Eq (6.1) D_down = D_up/√n, y el libro la presenta
  * como CONTRAEJEMPLO, no como regla. Literal de §6.4: conserva la velocidad lineal
  * pero "the resulting designs are inferior" en ΔP y en material. El propio pliego de

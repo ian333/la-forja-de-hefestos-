@@ -150,7 +150,7 @@ export function ejectionKinematics(o: {
 export function pinBuckling(o: {
   diaMm: number; freeLenMm: number; fPerPinN: number; eSteelPa?: number; K?: number;
 }): { fCritN: number; sf: number; ok: boolean } {
-  // ⚠ DESVIACIÓN DECLARADA DEL LIBRO (hallada por el pliego de análisis, A-85).
+  // ⚠ DESVIACIÓN DECLARADA DEL LIBRO (hallada por el pliego de análisis, A-234).
   // §11.3.1 Ec. 11.16 modela el pin como columna de longitud efectiva **0.7·L**
   // (empotrado-articulado: la cabeza va capturada en la retenedora), literal:
   // "Verificación de pandeo de pin (Euler, columna 0.7L)". Aquí el default es

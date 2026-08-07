@@ -59,9 +59,10 @@ construyó sobre el corpus DERIVADO, que sí conserva **citas literales verifica
   entre dos análisis · **[JUICIO]** = Kazmer decide sin número (y lo dice).
 - Las tres piezas de ejemplo del libro se citan por su nombre: **bezel** (marco de tablet, ABS,
   pared 1.5 mm), **cup** (vaso, ABS, pared 3 mm) y **lid** (tapa, ABS, pared 2 mm).
-- **Numeración:** `A-01 … A-71` son locales a este tomo. `analisis-caps4-6.md` declara la regla de
-  fusión: sus IDs son `A-01…A-76` y **los de este tomo se corren a partir de A-77** al empalmar los
-  cuatro. Dentro de este documento se usan siempre los locales.
+- **Numeración:** `A-138 … A-208`, en el espacio ÚNICO del pliego (`A-001 … A-292`, en orden de libro).
+  Los cuatro tomos se escribieron por separado y dos reiniciaron en `A-01`; la colisión se resolvió el
+  2026-08-07 renumerando cap. 1-3 → 4-6 → 7-9 → 10-13. Este tomo era local `A-01 … A-71` (+137).
+  Índice maestro y tabla viejo→nuevo: [`INDICE-ANALISIS.md`](./INDICE-ANALISIS.md).
 
 ## Tres cosas que este tomo trata como de primera clase, porque el libro las trata así
 
@@ -91,7 +92,7 @@ análisis (son la función objetivo); los pasos sí. La forma del capítulo: se 
 dimensión por regla de dedo, se corren tres veredictos independientes sobre ella, y se ajusta —
 a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de molde**.
 
-### A-01 · Ruta de degatado (¿quién separa la colada de la pieza?)
+### A-138 · Ruta de degatado (¿quién separa la colada de la pieza?)
 - **CUÁNDO:** al arrancar el cap. 7, antes de elegir el tipo de compuerta — porque es uno de los
   cuatro factores primarios de esa elección.
 - **ENTRADAS:** tipo de molde (2 placas / 3 placas / canal caliente) ←cap. 4 · si el moldeador tiene
@@ -105,7 +106,7 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   defects into the moldings"*.
 - **SALIDA:** ruta elegida ∈ {apertura del molde, canal caliente, robot, manual} + la nota de
   coordinación obligatoria si es robot.
-- **DECIDE:** el filtro de la columna "degatado" de la Tabla 7.1 en A-02; y, si es robot, dispara una
+- **DECIDE:** el filtro de la columna "degatado" de la Tabla 7.1 en A-139; y, si es robot, dispara una
   conversación con el moldeador — literal: *"the mold designer should discuss alternative gate types
   and locations with the molder to provide access for pick-up of the molding and de-gating"*.
 - **CRITERIO:** **[JUICIO]** con sesgo declarado hacia el automático. Ojo con la nota 2 de la
@@ -116,9 +117,9 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   el tipo de compuerta con el ensamble y detecta el caso mortal del túnel sin sucker pins. Lo que
   **FALTA** es la pantalla de decisión previa: la ruta se infiere del tipo, no se elige antes.
 
-### A-02 · Selección del TIPO de compuerta (Tabla 7.1)
-- **CUÁNDO:** paso 1 de §7.3, después de A-01. Y otra vez cada vez que A-07 o A-13 escalan.
-- **ENTRADAS:** tipo de runner (frío/caliente) ←cap. 6 · ruta de degatado ←A-01 · corte permisible
+### A-139 · Selección del TIPO de compuerta (Tabla 7.1)
+- **CUÁNDO:** paso 1 de §7.3, después de A-138. Y otra vez cada vez que A-144 o A-150 escalan.
+- **ENTRADAS:** tipo de runner (frío/caliente) ←cap. 6 · ruta de degatado ←A-138 · corte permisible
   del material ←ficha de material · flujo deseado (radial vs lineal) ←cap. 5.
 - **EL CÁLCULO:** consulta tabular sobre 10 tipos × 4 atributos. Los cuatro factores primarios,
   literal: *"the type of runner system, the desired method of de-gating, the allowable level of
@@ -128,8 +129,8 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
 - **SALIDA:** tipo ∈ {sprue, pin-point, edge, tab, flash/diaphragm, fan, tunnel/submarine,
   thermal pin-point, thermal sprue, valve} + un quinto atributo que el libro añade fuera de la tabla:
   **¿se puede agrandar en el tryout?** (§7.3.5).
-- **DECIDE:** todo lo que sigue — la geometría de la semilla (A-05), qué fórmula de corte aplica
-  (tira vs cilindro, A-06), si hay reglas geométricas extra (A-14) y el vestigio esperado (A-03).
+- **DECIDE:** todo lo que sigue — la geometría de la semilla (A-142), qué fórmula de corte aplica
+  (tira vs cilindro, A-143), si hay reglas geométricas extra (A-151) y el vestigio esperado (A-140).
 - **CRITERIO:** **[JUICIO]** declarado como tal: *"Often, the selection of a type of gate is obvious."*
   El experto reconoce el tipo de golpe y luego valida; el software debe permitir **saltar** a un tipo.
 - **INVALIDA:** cambio de tipo de molde o de runner; y **la propia dimensión**: ensanchar un edge gate
@@ -140,8 +141,8 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   (*"a hot runner system in which each drop feeds a plurality cold 'sub-runners'"*, 4 drops × 4 = 16
   cavidades) no está modelado — el tipo de runner es global, no por rama.
 
-### A-03 · Zona gateable y destino del vestigio
-- **CUÁNDO:** junto con A-02, antes de dimensionar. Es una restricción de ubicación, no de tamaño.
+### A-140 · Zona gateable y destino del vestigio
+- **CUÁNDO:** junto con A-139, antes de dimensionar. Es una restricción de ubicación, no de tamaño.
 - **ENTRADAS:** superficies visibles al usuario ←cap. 2 (worksheet de estética) · superficies de
   acoplamiento del ensamble · mapa de espesores de la pieza ←cap. 2.
 - **EL CÁLCULO:** cualitativo, clasificación por superficie. Dos recetas del libro (§7.1.3):
@@ -166,7 +167,7 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   §7.1.3 · Fig 7.1. **Hueco:** la segunda mitad del criterio —interferencia con **superficies de
   acoplamiento**— no se evalúa; solo la visibilidad.
 
-### A-04 · Caudal volumétrico supuesto por compuerta
+### A-141 · Caudal volumétrico supuesto por compuerta
 - **CUÁNDO:** antes del primer cálculo de corte. Es la entrada que **condiciona todos los veredictos**
   de esta fase.
 - **ENTRADAS:** caudal total en la boquilla ←cap. 5 (análisis de llenado) · número de compuertas ←
@@ -174,7 +175,7 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
 - **EL CÁLCULO:** reparto simple `Vdot_gate = Vdot_nozzle / n_gates`. Ejemplo bezel: 125 cc/s en la
   boquilla con 2 edge gates → **62.5 cc/s por compuerta**.
 - **SALIDA:** caudal por compuerta [m³/s].
-- **DECIDE:** el valor de corte (A-06) y de ΔP (A-10); y su **incertidumbre** decide si los veredictos
+- **DECIDE:** el valor de corte (A-143) y de ΔP (A-147); y su **incertidumbre** decide si los veredictos
   se emiten como firmes o como condicionados.
 - **CRITERIO:** **[JUICIO]**, y el libro lo declara supuesto: *"the mold designer should assume a
   reasonable flow rate for analysis"*. El caudal real no se conocerá hasta que el moldeador optimice
@@ -187,27 +188,27 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   no existen como objeto. El expediente (`expediente.ts`) sí vuelca el plan de tryout, pero no
   etiqueta los veredictos como "condicionados al caudal supuesto".
 
-### A-05 · Semilla dimensional de la compuerta
+### A-142 · Semilla dimensional de la compuerta
 - **CUÁNDO:** paso 2 de §7.3, **antes** de calcular nada. Es el arranque que un optimizador se saltaría.
-- **ENTRADAS:** tipo de compuerta ←A-02 · espesor de pared de la pieza **en el punto de la compuerta**
-  ←cap. 2 · longitud de la arista donde se quiere flujo lineal (solo flash/diafragma) ←A-16.
+- **ENTRADAS:** tipo de compuerta ←A-139 · espesor de pared de la pieza **en el punto de la compuerta**
+  ←cap. 2 · longitud de la arista donde se quiere flujo lineal (solo flash/diafragma) ←A-153.
 - **EL CÁLCULO:** regla de dedo por clase (§7.3.2), toda ella tabular:
   - gruesos (**sprue, edge, tab, fan, valve**): `h0 = espesor de pared en la compuerta`
   - delgados (**pin-point, flash, diaphragm, tunnel, submarine, thermal**): `h0 = espesor de pared / 2`
   - ancho de tira: flash y diafragma → `W0 = longitud de la arista` (para el diafragma, la
     **circunferencia**); los demás → `W0 = 2 · h`, y de ahí se sube o baja para ajustar el corte.
 - **SALIDA:** `h0` [mm] y `W0` [mm] (o `D0` para cilíndricas).
-- **DECIDE:** el punto de partida de la iteración A-06 → A-07. No es una decisión de diseño: es la
+- **DECIDE:** el punto de partida de la iteración A-143 → A-144. No es una decisión de diseño: es la
   condición inicial del lazo.
 - **CRITERIO:** **[LIBRO]**, regla de dedo pura, sin justificación física en el texto.
-- **INVALIDA:** cambio de tipo (A-02) o de espesor local de la pieza.
+- **INVALIDA:** cambio de tipo (A-139) o de espesor local de la pieza.
 - **¿TENEMOS?** **SÍ, literal.** `gating.ts::gateDesign` y `gating.ts::designGateProcess` (paso 2)
   aplican exactamente la partición grueso/delgado y `W0 = 2h`. El comentario del código cita §7.3.2.
 
-### A-06 · Tasa de corte de la compuerta y su veredicto
+### A-143 · Tasa de corte de la compuerta y su veredicto
 - **CUÁNDO:** paso 2 de §7.3; se re-corre en cada iteración de dimensión.
-- **ENTRADAS:** caudal por compuerta ←A-04 · dimensiones ←A-05 (o ←A-07 en iteraciones) ·
-  geometría equivalente ←A-08 · `gammadot_max` del material (Apéndice A o dato del proveedor).
+- **ENTRADAS:** caudal por compuerta ←A-141 · dimensiones ←A-142 (o ←A-144 en iteraciones) ·
+  geometría equivalente ←A-145 · `gammadot_max` del material (Apéndice A o dato del proveedor).
 - **EL CÁLCULO:** Tabla 7.2, dos geometrías (versión newtoniana; el libro da también las variantes
   power-law):
   - tira: `gammadot = 6·Vdot / (W · h^2)`
@@ -216,8 +217,8 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   caudal. Para el sprue gate hay una regla especial: *"For the verification of the shear rate, the
   smallest diameter of the sprue should be used."*
 - **SALIDA:** `gammadot` [s⁻¹] + veredicto verde/rojo.
-- **DECIDE:** si se acepta la dimensión, si se ensancha (A-07), si se baja el caudal (A-04), o si se
-  **cambia el tipo** (A-02). El bezel es el caso escuela: `h=0.75 mm, W=6 mm, 62.5 cc/s → 111,000 s⁻¹`
+- **DECIDE:** si se acepta la dimensión, si se ensancha (A-144), si se baja el caudal (A-141), o si se
+  **cambia el tipo** (A-139). El bezel es el caso escuela: `h=0.75 mm, W=6 mm, 62.5 cc/s → 111,000 s⁻¹`
   contra un máximo de 50,000 → ensanchar a 14 mm (pero eso ya es un fan gate) o bajar a 60 cc/s
   (pero eso duplica el llenado).
 - **CRITERIO:** **[LIBRO] con confianza declarada baja.** *"the shear rate should be calculated and
@@ -237,29 +238,29 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   cuando el libro insiste en que es orientativo; (c) la regla del **diámetro menor del sprue** no está
   automatizada.
 
-### A-07 · Despeje inverso: la dimensión que da el corte objetivo
-- **CUÁNDO:** cuando A-06 reprueba. Es el atajo que evita iterar a ciegas.
-- **ENTRADAS:** caudal ←A-04 · `gammadot_max` ←material.
-- **EL CÁLCULO:** para compuerta cilíndrica, despeje directo de la fórmula de A-06:
+### A-144 · Despeje inverso: la dimensión que da el corte objetivo
+- **CUÁNDO:** cuando A-143 reprueba. Es el atajo que evita iterar a ciegas.
+- **ENTRADAS:** caudal ←A-141 · `gammadot_max` ←material.
+- **EL CÁLCULO:** para compuerta cilíndrica, despeje directo de la fórmula de A-143:
   `R = cbrt( 4·Vdot / (pi · gammadot_max) )`. Ejemplo cup: 1.03 mm → **⌀ ≈ 2 mm**.
   Para tira se despeja el ancho `W = 6·Vdot / (gammadot_max · h^2)`.
 - **SALIDA:** dimensión mínima que satisface el corte [mm].
 - **DECIDE:** el nuevo tamaño candidato — **pero no se adopta tal cual**. El libro inmediatamente
   contrapone el costo: *"This larger diameter would leave a larger gate vestige and require greater
   forces for de-gating. It may be reasonable to initially specify the lesser diameter of 1.5 mm, and
-  then increase the diameter if issues are encountered"*. O sea: el despeje da el número, y A-17
+  then increase the diameter if issues are encountered"*. O sea: el despeje da el número, y A-154
   decide especificar **menos**.
 - **CRITERIO:** **[COMPARA]** el resultado del despeje contra el costo del vestigio y la fuerza de
   degatado. En el edge gate hay además un umbral de clase: si el ancho necesario supera el diámetro
   del runner, ya no es un edge gate.
-- **INVALIDA:** lo mismo que A-06.
+- **INVALIDA:** lo mismo que A-143.
 - **¿TENEMOS?** **SÍ.** `gating.ts::gateRadiusForShear` = `Math.cbrt((4*Vdot)/(Math.PI*shearMax))`,
   literal. Y `designGateProcess` itera el ancho hasta 12 veces y **escala de tipo** cuando el ancho
   cruza el umbral (contrato `gate-escala-nivel`, §7.3.2 · §7.3.4).
 
-### A-08 · Reducción a geometría equivalente (diafragma y fan)
-- **CUÁNDO:** antes de A-06 y A-10, cuando el tipo no es una tira ni un cilindro limpios.
-- **ENTRADAS:** geometría real de la compuerta ←A-02/A-05.
+### A-145 · Reducción a geometría equivalente (diafragma y fan)
+- **CUÁNDO:** antes de A-143 y A-147, cuando el tipo no es una tira ni un cilindro limpios.
+- **ENTRADAS:** geometría real de la compuerta ←A-139/A-142.
 - **EL CÁLCULO:** dos conversiones distintas, ambas declaradas:
   - **Diafragma → tira.** Literal: *"Even though the geometry of the diaphragm gate is cylindrical,
     the analysis is correctly performed according to a strip geometry with a width equal to the
@@ -268,7 +269,7 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
     a number of small segments each with a different section"*, o la aproximación de rectángulo con
     ancho y espesor **a la mitad del camino** entre el inicio circular y el final rectangular.
 - **SALIDA:** `(W_eq, h_eq)` o la lista de segmentos.
-- **DECIDE:** qué fórmula de A-06/A-10 se aplica. Y desactiva una alarma: estos tipos *"parecen"*
+- **DECIDE:** qué fórmula de A-143/A-147 se aplica. Y desactiva una alarma: estos tipos *"parecen"*
   imponer corte brutal por delgados, pero *"these gates' large width will result in relatively low
   linear melt velocities even at high volumetric flow rates"*.
 - **CRITERIO:** **[LIBRO]**, es una regla de modelado, no un umbral. La conversión debe ser **visible**
@@ -279,13 +280,13 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   Es un hueco barato y de consecuencia grande: sin la conversión, un diafragma se dimensiona con el
   ancho equivocado por un factor de pi·D/h.
 
-### A-09 · Viscosidad evaluada a la tasa de corte de la compuerta
-- **CUÁNDO:** entre A-06 y A-10. Es el eslabón que hace que los dos veredictos puedan discrepar.
-- **ENTRADAS:** `gammadot` ←A-06 · modelo reológico del material (Cross-WLF o power-law).
+### A-146 · Viscosidad evaluada a la tasa de corte de la compuerta
+- **CUÁNDO:** entre A-143 y A-147. Es el eslabón que hace que los dos veredictos puedan discrepar.
+- **ENTRADAS:** `gammadot` ←A-143 · modelo reológico del material (Cross-WLF o power-law).
 - **EL CÁLCULO:** la Tabla 7.3 ofrece dos rutas: newtoniana *"usando viscosidad evaluada A LA SHEAR
   RATE del gate vía Cross-WLF"*, o directamente power-law.
 - **SALIDA:** `mu` [Pa·s] a las condiciones de la compuerta.
-- **DECIDE:** el ΔP de A-10 — y con él, la posibilidad de que un corte "fatal" dé una presión sana.
+- **DECIDE:** el ΔP de A-147 — y con él, la posibilidad de que un corte "fatal" dé una presión sana.
 - **CRITERIO:** **[LIBRO]** como método. El número resultante es la contraintuición estrella del
   capítulo: `gammadot = 132,000 s⁻¹` con `mu = 5.4 Pa·s` por shear thinning → `ΔP = 1.9 MPa`, aceptable.
 - **INVALIDA:** cambio de material o de temperatura de masa.
@@ -294,9 +295,9 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   existe** en `src/forja/mold/` — solo power-law. Con power-law se reproduce el ejemplo, pero el
   libro nombra Cross-WLF como la ruta principal.
 
-### A-10 · Caída de presión de la compuerta y su veredicto
-- **CUÁNDO:** paso 3 de §7.3, después de A-06 y A-09.
-- **ENTRADAS:** dimensiones ←A-05/A-07 · caudal ←A-04 · viscosidad ←A-09 · longitud de la compuerta.
+### A-147 · Caída de presión de la compuerta y su veredicto
+- **CUÁNDO:** paso 3 de §7.3, después de A-143 y A-146.
+- **ENTRADAS:** dimensiones ←A-142/A-144 · caudal ←A-141 · viscosidad ←A-146 · longitud de la compuerta.
 - **EL CÁLCULO:** Tabla 7.3:
   - tira power-law: `dP = (2·k·L/H) · [ 2·(2 + 1/n)·Vdot / (W·H^2) ]^n`
   - cilindro newtoniano: `dP = 8·mu·L·Vdot / (pi·R^4)`
@@ -311,15 +312,15 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   rate is permissible, then the pressure drop is usually acceptable as well. However, the mold
   designer should calculate the pressure drop to ensure that it is not excessive."* — *usually*,
   no *always*: por eso es un veredicto propio.
-- **INVALIDA:** lo mismo que A-06, más cambio de longitud de la compuerta.
+- **INVALIDA:** lo mismo que A-143, más cambio de longitud de la compuerta.
 - **¿TENEMOS?** **SÍ.** `gating.ts::gateDropStripPL` y `gating.ts::gateDropCylNewt` son las dos
   fórmulas de la Tabla 7.3, literales; el veredicto vive en `designGateProcess` (`dpVeredicto`) y en
   el contrato `gate-dp` (§7.1.4 · §7.3.3). La banda de 6 MPa aparece; la de 2 MPa como referencia
   típica está en el reporte.
 
-### A-11 · Tiempo de congelamiento de la compuerta
+### A-148 · Tiempo de congelamiento de la compuerta
 - **CUÁNDO:** paso 4 de §7.3.
-- **ENTRADAS:** dimensión final de la compuerta ←A-07 · `alpha` del material · `T_melt`, `T_cool` ·
+- **ENTRADAS:** dimensión final de la compuerta ←A-144 · `alpha` del material · `T_melt`, `T_cool` ·
   **`T_no_flow`** del Apéndice A.
 - **EL CÁLCULO:** Tabla 7.4:
   - tira: `ts = (h^2 / (pi^2 · alpha)) · ln( (8/pi^2) · (Tmelt − Tcool)/(Tnoflow − Tcool) )`
@@ -327,7 +328,7 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   El criterio de "no flujo" del Apéndice A es una **viscosidad de 100,000 Pa·s "arbitrarily selected"**
   (Fig 7.18).
 - **SALIDA:** `ts` [s] — el tiempo mínimo de empaque que permite la compuerta.
-- **DECIDE:** nada por sí solo. Su valor está en A-12.
+- **DECIDE:** nada por sí solo. Su valor está en A-149.
 - **CRITERIO:** **[LIBRO]** con sesgo declarado: son **mínimos**. Asumen conducción perfecta e
   **ignoran la convección** del flujo que sigue cruzando la compuerta y que tiende a impedir que
   congele. Literal: *"gate pack times should be expected to be significantly longer than those
@@ -339,10 +340,10 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   tira impresos en el libro (fan 1.5 s, cup 24 s) **no reproducen con su propia fórmula** (dan 0.76 s
   y 12.1 s, factor 2) → se toma la fórmula como canon y los números impresos como errata.
 
-### A-12 · Semáforo congelamiento vs empaque requerido (el veredicto que puede tirar todo)
-- **CUÁNDO:** inmediatamente después de A-11, y es el **último** de los tres semáforos de la compuerta.
-- **ENTRADAS:** `ts` de la compuerta ←A-11 · tiempo de solidificación de la sección de la pieza que
-  hay que empacar ←A-39 (cap. 9).
+### A-149 · Semáforo congelamiento vs empaque requerido (el veredicto que puede tirar todo)
+- **CUÁNDO:** inmediatamente después de A-148, y es el **último** de los tres semáforos de la compuerta.
+- **ENTRADAS:** `ts` de la compuerta ←A-148 · tiempo de solidificación de la sección de la pieza que
+  hay que empacar ←A-176 (cap. 9).
 - **EL CÁLCULO:** comparación directa `ts_gate` vs `tc_pieza`. Caso escuela del cup: compuerta de
   2 mm congela en **1.1 s** contra una pared de 3 mm que necesita **24 s** → *"It is likely that the
   gate will freeze prematurely and the cup may not be adequately packed"*.
@@ -354,15 +355,15 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
 - **CRITERIO:** **[COMPARA]** entre dos análisis, sin umbral absoluto. Las dos puntas duelen:
   compuerta chica → congela prematuro → contracción volumétrica excesiva; compuerta grande → o el
   molde aguanta un empaque larguísimo, o el fundido **se regresa** de la cavidad al runner.
-- **INVALIDA:** cualquier cambio en A-11 o en el tiempo de enfriamiento de la pieza (A-39/A-41).
+- **INVALIDA:** cualquier cambio en A-148 o en el tiempo de enfriamiento de la pieza (A-176/A-178).
   Nota de acoplamiento con el proceso: *"the molder should set up the molding machine to end the
   packing stage at gate freeze-off and begin the plastication stage."*
 - **¿TENEMOS?** **SÍ.** `designGateProcess` calcula `freezeCorto = r.freezeS < o.tPackNeededS`
   y lo reporta como paso 5 con su cita; contrato `gate-freeze` (§7.1.5 · §7.3.4). El `ok` final del
   diseño exige los tres: `shear <= max && dPMPa <= 10 && !freezeCorto`.
 
-### A-13 · ¿La compuerta entra a una sección delgada?
-- **CUÁNDO:** junto con A-12, y es el disparador del retorno más caro del capítulo.
+### A-150 · ¿La compuerta entra a una sección delgada?
+- **CUÁNDO:** junto con A-149, y es el disparador del retorno más caro del capítulo.
 - **ENTRADAS:** espesor local de la pieza **en el punto de entrada** ←cap. 2 · espesor de la sección
   que hay que empacar (la gruesa vecina).
 - **EL CÁLCULO:** comparación de espesores locales. El disparador literal del tab gate (§7.2.4):
@@ -387,8 +388,8 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   contra el mapa de espesores, que es exactamente lo que la ficha visual V7.4 declara juzgable por
   píxeles: *"Comparar el espesor local de la pieza en el punto de entrada contra el espesor máximo"*.
 
-### A-14 · Geometría del túnel: los tres números que "must be specified"
-- **CUÁNDO:** solo si A-02 eligió tunnel/submarine. Antes de liberar a maquinado.
+### A-151 · Geometría del túnel: los tres números que "must be specified"
+- **CUÁNDO:** solo si A-139 eligió tunnel/submarine. Antes de liberar a maquinado.
 - **ENTRADAS:** eje del túnel · plano de partición · diámetro del túnel.
 - **EL CÁLCULO:** tres medidas geométricas sobre la sección, todas con umbral literal:
   1. *"a nominal 45 degree angle should be maintained between the centerline of the tunnel gate and
@@ -412,8 +413,8 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   verificación `V7.7` con el criterio completo; `lamina-compuerta.ts` dibuja la sección acotada.
   `feed-layouts.ts` genera el túnel a 45°/20°.
 
-### A-15 · Retención del sistema de alimentación del lado del núcleo
-- **CUÁNDO:** junto con A-14, y es el análisis que **no se puede hacer mirando solo la compuerta**.
+### A-152 · Retención del sistema de alimentación del lado del núcleo
+- **CUÁNDO:** junto con A-151, y es el análisis que **no se puede hacer mirando solo la compuerta**.
 - **ENTRADAS:** lado donde queda el runner al abrir ←cap. 6 · presencia de sucker pins ←cap. 6 ·
   tipo de molde.
 - **EL CÁLCULO:** cualitativo, un booleano de ensamble. Literal: *"the runners should be designed with
@@ -421,7 +422,7 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   system remain on the cavity side, then they can not be removed through actuation of the ejection
   system."*
 - **SALIDA:** veredicto `degatado automático viable / imposible`.
-- **DECIDE:** si el molde puede operar desatendido. Sin esto, A-01 mintió.
+- **DECIDE:** si el molde puede operar desatendido. Sin esto, A-138 mintió.
 - **CRITERIO:** **[LIBRO]** binario. En 3 placas lo resuelve el propio stripper plate; en 2 placas hay
   que especificar los sucker pins.
 - **INVALIDA:** cambio del layout de alimentación o del lado de retención.
@@ -429,10 +430,10 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   el caso de 3 placas del de 2 placas; `lamina-compuerta.ts` importa `suckerPinDesign` de
   `threeplate.ts` y dibuja la intrusión del sucker en el canal (V6.5, §6.5.2).
 
-### A-16 · Criterios de flujo lineal (fan, flash, diafragma)
+### A-153 · Criterios de flujo lineal (fan, flash, diafragma)
 - **CUÁNDO:** solo si el patrón de llenado deseado es lineal (viene del cap. 5).
-- **ENTRADAS:** ancho de la pieza donde se quiere flujo lineal · geometría del abanico ←A-02/A-05 ·
-  resistencia de flujo a lo ancho ←A-08.
+- **ENTRADAS:** ancho de la pieza donde se quiere flujo lineal · geometría del abanico ←A-139/A-142 ·
+  resistencia de flujo a lo ancho ←A-145.
 - **EL CÁLCULO:** dos condiciones que el libro marca como obligatorias (*"must be met"*, §7.2.5):
   *"First, the fan gate must span the width of the molding across which linear flow is desired.
   Second, the flow resistance across the width of the fan gate must be negligible."*
@@ -448,10 +449,10 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   función verifica las dos condiciones. Tampoco se contrasta contra el campo de llenado
   (`flowlen.ts` / `flowlen-surface.ts` tienen el frente, y nadie les pregunta si salió recto).
 
-### A-17 · Decisión steel-safe de la compuerta
-- **CUÁNDO:** al cerrar el dimensionado, después de que A-06/A-10/A-12 dieron verde.
-- **ENTRADAS:** dimensión que satisface los tres semáforos ←A-07 · incertidumbre del caudal ←A-04 ·
-  el atributo "¿se puede agrandar?" del tipo ←A-02.
+### A-154 · Decisión steel-safe de la compuerta
+- **CUÁNDO:** al cerrar el dimensionado, después de que A-143/A-147/A-149 dieron verde.
+- **ENTRADAS:** dimensión que satisface los tres semáforos ←A-144 · incertidumbre del caudal ←A-141 ·
+  el atributo "¿se puede agrandar?" del tipo ←A-139.
 - **EL CÁLCULO:** cualitativo con una dirección fija. Literal: *"Given this dilemma and the ease of
   increasing the size of gates, it may be desirable for the mold designer to be 'steel safe' and
   specify a smaller gate with the intent that the mold will be tested and the gate sizes increased as
@@ -471,9 +472,9 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   `GATE <tipo>: maquinar X mm y abrir hasta Y mm si hay short shot o γ̇ alto (§7.3.5)`.
   Es de los lugares donde el motor **sí** hace lo que el libro pide.
 
-### A-18 · ¿Se puede balancear el llenado con las compuertas?
+### A-155 · ¿Se puede balancear el llenado con las compuertas?
 - **CUÁNDO:** cuando el análisis de llenado (cap. 5) reporta desbalance entre cavidades.
-- **ENTRADAS:** desbalance medido ←cap. 5 · dimensiones actuales de las compuertas ←A-07.
+- **ENTRADAS:** desbalance medido ←cap. 5 · dimensiones actuales de las compuertas ←A-144.
 - **EL CÁLCULO:** cualitativo, y la respuesta del libro es **no**: *"The extent of the balancing that
   can be achieved through gate design is extremely limited due to the small size of the gate. To
   bring about large changes in flow, the gate dimensions must vary by such significant amounts that
@@ -490,9 +491,9 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   redirección correcta — pero el sistema nunca **niega** el camino por compuertas, porque nunca lo
   ofrece. La regla no está escrita; el comportamiento coincide por accidente.
 
-### A-19 · Remedios contra contracción volumétrica excesiva por congelamiento prematuro
-- **CUÁNDO:** cuando A-12 da `prematuro`.
-- **ENTRADAS:** veredicto de A-12 · presión de empaque disponible ←cap. 5 · espesores de la pieza.
+### A-156 · Remedios contra contracción volumétrica excesiva por congelamiento prematuro
+- **CUÁNDO:** cuando A-149 da `prematuro`.
+- **ENTRADAS:** veredicto de A-149 · presión de empaque disponible ←cap. 5 · espesores de la pieza.
 - **EL CÁLCULO:** cualitativo, tres opciones que el libro ordena **por frecuencia real de uso**:
   1. *"The most common approach used by the molder is to impose a very high packing pressure before
      the gate freezes"* — con su riesgo: *"can lead to excessive flashing and/or residual stresses"*.
@@ -504,14 +505,14 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
 - **DECIDE:** si el problema se resuelve en la prensa, en el acero o en la pieza. Nota: la opción 1
   no es del diseñador de molde, es del moldeador — el análisis reparte responsabilidad.
 - **CRITERIO:** **[JUICIO]** ordenado por frecuencia observada, no por calidad.
-- **INVALIDA:** que A-12 cambie de veredicto.
+- **INVALIDA:** que A-149 cambie de veredicto.
 - **¿TENEMOS?** **FALTA.** Detectamos el congelamiento prematuro (`freezeCorto`) pero no ofrecemos el
   menú de tres remedios con su riesgo y su dueño. El libro convierte un semáforo rojo en una decisión
   con opciones; nosotros lo dejamos en rojo.
 
-### A-20 · Checklist de cierre de compuertas (§7.4)
+### A-157 · Checklist de cierre de compuertas (§7.4)
 - **CUÁNDO:** al congelar el diseño de compuertas, antes de pasar al venteo.
-- **ENTRADAS:** todos los análisis A-01…A-19.
+- **ENTRADAS:** todos los análisis A-138…A-156.
 - **EL CÁLCULO:** conjunción de veredictos. Los nueve criterios de aceptación destilados del §7.4:
   tipo coherente con el tipo de molde y con el degatado deseado y el flujo deseado; corte ≤ máximo;
   ΔP en banda; congelamiento contrastado contra el empaque; la compuerta no entra a sección más
@@ -530,7 +531,7 @@ a veces la dimensión, a veces el tipo de compuerta, y a veces **el tipo de mold
   (`gate-tipo`, `gate-shear`, `gate-dp`, `gate-freeze`, `gate-escala-nivel`, `gate-steel-safe`,
   `gate-degatado`) y el volcado a `expediente.ts`. **Huecos** contra los nueve del libro: falta el
   criterio de **acceso físico** para degatar (la longitud del edge gate la fija *"the molding machine
-  operator access for de-gating with gate cutters"*, no la física) y el de **flujo lineal** (A-16).
+  operator access for de-gating with gate cutters"*, no la física) y el de **flujo lineal** (A-153).
 
 ---
 
@@ -546,15 +547,15 @@ El proceso declarado son tres pasos (§8.2): estimar el aire, ubicar los venteos
 La cota es de dos colas: *"the thickness must be greater than some minimum value to ensure adequate
 venting while also smaller than some maximum amount to avoid excessive flashing."*
 
-### A-21 · Gasto de aire desplazado
+### A-158 · Gasto de aire desplazado
 - **CUÁNDO:** paso 1 de §8.2, en cuanto hay caudal de llenado.
-- **ENTRADAS:** caudal de fundido ←cap. 5 / ←A-04.
+- **ENTRADAS:** caudal de fundido ←cap. 5 / ←A-141.
 - **EL CÁLCULO:** una igualdad con supuesto declarado: `Vdot_aire = Vdot_melt`. Literal:
   *"The amount of air displaced will be approximately equal to the volume of the injected plastic."*
   La justificación es una cancelación: el aire se expande al calentarse contra el fundido pero se
   enfría al rozar el acero, y las dos se compensan.
 - **SALIDA:** `Vdot_aire` [m³/s].
-- **DECIDE:** el espesor mínimo de cada venteo (A-25). Y crea una **dependencia viva** alimentación →
+- **DECIDE:** el espesor mínimo de cada venteo (A-162). Y crea una **dependencia viva** alimentación →
   venteo: si cambia el caudal de llenado, todos los venteos se recalculan solos.
 - **CRITERIO:** **[LIBRO]** como supuesto, no como umbral.
 - **INVALIDA:** cambio del caudal de llenado o del tiempo de llenado.
@@ -562,9 +563,9 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   fórmula existe implícitamente — pero **nadie la cablea al caudal de llenado**. El supuesto
   `V_aire = V_melt` no está escrito en ninguna función; el usuario tiene que saberlo y pasarlo.
 
-### A-22 · Reparto del flujo de aire entre venteos (la regla anti-prorrateo)
-- **CUÁNDO:** entre A-21 y A-25. Es el paso que un implementador "razonable" hace mal.
-- **ENTRADAS:** `Vdot_aire` ←A-21 · número de venteos ←A-24 · partición del flujo por zona.
+### A-159 · Reparto del flujo de aire entre venteos (la regla anti-prorrateo)
+- **CUÁNDO:** entre A-158 y A-162. Es el paso que un implementador "razonable" hace mal.
+- **ENTRADAS:** `Vdot_aire` ←A-158 · número de venteos ←A-161 · partición del flujo por zona.
 - **EL CÁLCULO:** **NO se divide entre n**. Literal: *"It may seem reasonable to estimate the air flow
   through each vent as the total volumetric air flow divided by the number of vents. **However, this
   approach would not be conservative.** The reason is that the exact location of the end of fill is
@@ -572,7 +573,7 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   each available vent.**"* En el bezel: 125 cc/s se parte en dos flujos locales de 62.5 (arriba y
   abajo), y **cada** venteo de ese lado se diseña para los 62.5 cc/s completos, no para 62.5/4.
 - **SALIDA:** `Vdot_por_vent` [m³/s] = el flujo **local**, no el prorrateado.
-- **DECIDE:** el valor que entra a A-25 en cada venteo.
+- **DECIDE:** el valor que entra a A-162 en cada venteo.
 - **CRITERIO:** **[LIBRO]**, y el criterio es **conservadurismo**, no exactitud: la razón es la
   ignorancia sobre dónde cae el final de llenado, no un modelo físico.
 - **INVALIDA:** que el análisis de llenado localice el final de llenado con certeza (no ocurre).
@@ -580,7 +581,7 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   precisamente que cada venteo se dimensione para todo el flujo local. Es una de las trampas del
   libro que sí quedó cazada.
 
-### A-23 · Mapa de ubicaciones candidatas (los tres tipos)
+### A-160 · Mapa de ubicaciones candidatas (los tres tipos)
 - **CUÁNDO:** paso 2 de §8.2, en cuanto hay patrón de llenado.
 - **ENTRADAS:** patrón de llenado / isócronas ←cap. 5 · geometría de la pieza (bosses, costillas,
   recortes) ←cap. 2 · plano de partición y shut-offs ←cap. 4.
@@ -594,7 +595,7 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   costilla donde chocan dos frentes; esquina de costilla con recorte que atrapa el flujo diagonal.
 - **SALIDA:** lista de candidatos, cada uno con `(x,y,z)` y tipo ∈ {fin-de-flujo, soldadura,
   bolsa-muerta}. En el bezel: ~12 en el plano de partición + ~20 bolsas muertas ≈ **tres docenas**.
-- **DECIDE:** el universo sobre el que trabaja A-24. Y cruza a **expulsión**: cada candidato de tipo 2
+- **DECIDE:** el universo sobre el que trabaja A-161. Y cruza a **expulsión**: cada candidato de tipo 2
   debería coincidir con un pin expulsor.
 - **CRITERIO:** **[LIBRO]** taxonómico, con una alarma de humildad: *"These locations may seem obvious,
   but on closer consideration these locations may not be so trivial to identify."*
@@ -606,9 +607,9 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   con hueco (≥4 de 6 encerrado ⇒ bolsa). `venting-locations.ts::clasificarCierres` marca si el cierre
   es interior. Contrato `vent-ubicaciones` (§8.2.2).
 
-### A-24 · Clasificación obligatorio / opcional / diferido, y el corte
-- **CUÁNDO:** justo después de A-23.
-- **ENTRADAS:** candidatos ←A-23 · dirección del flujo (radial vs lineal) ←cap. 5 · costo de un cambio
+### A-161 · Clasificación obligatorio / opcional / diferido, y el corte
+- **CUÁNDO:** justo después de A-160.
+- **ENTRADAS:** candidatos ←A-160 · dirección del flujo (radial vs lineal) ←cap. 5 · costo de un cambio
   de molde posterior.
 - **EL CÁLCULO:** cualitativo con tres reglas:
   1. **Obligatorios:** los del final de flujo. *"The other four vent locations at the end of flow
@@ -631,9 +632,9 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   comentario citando §8.1 sobre la capacidad reservada. `expediente.ts:145` vuelca los reservados al
   plan de tryout.
 
-### A-25 · Espesor MÍNIMO del venteo (Eq 8.2)
+### A-162 · Espesor MÍNIMO del venteo (Eq 8.2)
 - **CUÁNDO:** paso 3 de §8.2, por cada venteo.
-- **ENTRADAS:** `Vdot` local ←A-22 · longitud del land `L` y ancho `W` (los fija la geometría:
+- **ENTRADAS:** `Vdot` local ←A-159 · longitud del land `L` y ancho `W` (los fija la geometría:
   *"In general, the length and width of the vent are determined by the application geometry."*).
 - **EL CÁLCULO:** Eq 8.2, flujo viscoso del aire por una rendija:
   `h_min = cbrt( 12 · mu_aire · Vdot_aire · L / (dP_aire · W) )`
@@ -642,7 +643,7 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   drop across the vent is **one atmosphere** (14.7 psi or 0.1 MPa)."*
   Ejemplo: 100 cc/s, W=10 mm, L=10 mm → **0.06 mm**.
 - **SALIDA:** `h_min` [mm].
-- **DECIDE:** el piso de la banda de A-29. Pero **casi nunca manda**, y el libro explica por qué con
+- **DECIDE:** el piso de la banda de A-166. Pero **casi nunca manda**, y el libro explica por qué con
   tres razones de conservadurismo acumulado: (a) el modelo laminar predice más caída que el turbulento
   real; (b) se supuso un solo venteo chico con todo el flujo; (c) la viscosidad a temperatura ambiente
   es mayor que la del aire caliente real. Conclusión literal: *"the minimum thickness of the vent will
@@ -653,13 +654,13 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   `Math.cbrt((12 * MU_AIR * VdotAirM3s * lM) / (dPPa * wM))` con `MU_AIR = 1.8e-5` y `dPPa = 0.1e6`
   por default. El encabezado del archivo declara la verificación: `h_min=0.06mm`.
 
-### A-26 · Tiempo de solidificación DENTRO del venteo (t_flash)
-- **CUÁNDO:** entre A-25 y A-28. Es un análisis del cap. 7 reutilizado en el cap. 8.
-- **ENTRADAS:** espesor tentativo del venteo ←A-25 · propiedades térmicas del fundido.
-- **EL CÁLCULO:** se aplican **las ecuaciones de congelamiento de la Tabla 7.4** (las de A-11) al
+### A-163 · Tiempo de solidificación DENTRO del venteo (t_flash)
+- **CUÁNDO:** entre A-162 y A-165. Es un análisis del cap. 7 reutilizado en el cap. 8.
+- **ENTRADAS:** espesor tentativo del venteo ←A-162 · propiedades térmicas del fundido.
+- **EL CÁLCULO:** se aplican **las ecuaciones de congelamiento de la Tabla 7.4** (las de A-148) al
   espesor del venteo. Para 0.06 mm da `t_flash ≈ 0.003 s`.
 - **SALIDA:** `t_flash` [s].
-- **DECIDE:** entra a A-27 y a A-28. Es la razón por la que el venteo funciona: el fundido congela
+- **DECIDE:** entra a A-164 y a A-165. Es la razón por la que el venteo funciona: el fundido congela
   antes de recorrer mucho.
 - **CRITERIO:** **[LIBRO]** por reutilización explícita de la Tabla 7.4.
 - **INVALIDA:** cambio de espesor del venteo o de material.
@@ -669,23 +670,23 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   exacto del patrón que este pliego persigue: **el dato existe, se calcula bien en otro lado, y no
   llega**. Consecuencia: si el material o el espesor cambian, `h_max` no se entera.
 
-### A-27 · Presión del fundido en el instante del flash (Eq 8.4)
-- **CUÁNDO:** junto con A-26.
-- **ENTRADAS:** rampa de presión del proceso `dP/dt` · `t_flash` ←A-26.
+### A-164 · Presión del fundido en el instante del flash (Eq 8.4)
+- **CUÁNDO:** junto con A-163.
+- **ENTRADAS:** rampa de presión del proceso `dP/dt` · `t_flash` ←A-163.
 - **EL CÁLCULO:** `P_melt = (dP/dt) · t_flash`, con `dP/dt < 100 MPa/s` para la mayoría de los
   procesos (el corpus recoge la cota en paráfrasis, no como cita literal).
 - **SALIDA:** `P_melt` [Pa] — la presión que empuja la rebaba, que es mucho menor que la presión de
   inyección porque el flash ocurre **al principio** de la rampa.
-- **DECIDE:** entra a A-28.
+- **DECIDE:** entra a A-165.
 - **CRITERIO:** **[LIBRO]** con la cota de la rampa.
 - **INVALIDA:** cambio del perfil de presión del proceso.
 - **¿TENEMOS?** **SÍ.** `venting.ts::meltPressureAtVent = rampPaS * tFlashS`, con
-  `rampPaS = 100e6` por default. Mismo problema que A-26: la rampa es un default, no un dato del
+  `rampPaS = 100e6` por default. Mismo problema que A-163: la rampa es un default, no un dato del
   proceso.
 
-### A-28 · Espesor MÁXIMO del venteo por rebaba (Eq 8.3)
-- **CUÁNDO:** paso 3 de §8.2, después de A-27.
-- **ENTRADAS:** `P_melt` ←A-27 · `t_flash` ←A-26 · viscosidad del fundido en el venteo ·
+### A-165 · Espesor MÁXIMO del venteo por rebaba (Eq 8.3)
+- **CUÁNDO:** paso 3 de §8.2, después de A-164.
+- **ENTRADAS:** `P_melt` ←A-164 · `t_flash` ←A-163 · viscosidad del fundido en el venteo ·
   longitud de rebaba tolerada `L_flash`.
 - **EL CÁLCULO:** `h_max = sqrt( 12·mu / (P_melt · t_flash) ) · L_flash`, con
   `mu ≈ 10 Pa·s` — *"Since the vent is thin, there will be significant shear thinning so a low
@@ -702,9 +703,9 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   `Math.sqrt((12 * muMeltPaS) / (P * tFlashS)) * lFlashM`, con `muMeltPaS = 10` por default.
   El encabezado del archivo documenta `h_max = 0.4·L_flash`.
 
-### A-29 · Banda de espesor y su palanca
+### A-166 · Banda de espesor y su palanca
 - **CUÁNDO:** al cerrar el dimensionado de cada venteo.
-- **ENTRADAS:** `h_min` ←A-25 · `h_max` ←A-28 · número y ancho de venteos ←A-24.
+- **ENTRADAS:** `h_min` ←A-162 · `h_max` ←A-165 · número y ancho de venteos ←A-161.
 - **EL CÁLCULO:** verificación de banda `h_min <= h_vent <= h_max`. En el ejemplo:
   `0.06 <= h <= 0.08 mm` — **la ventana es angosta**. Y la palanca cuando aprieta:
   *"If less flashing was desired, then **more and wider vents** could be used to reduce the required
@@ -712,14 +713,14 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   adequate air flow."*
 - **SALIDA:** `h_vent` especificado [mm] + veredicto de factibilidad.
 - **DECIDE:** el espesor que se maquina; y si la banda se cierra (`h_min > h_max`), obliga a volver a
-  A-24 con **más venteos y más anchos**.
+  A-161 con **más venteos y más anchos**.
 - **CRITERIO:** **[COMPARA]** entre dos análisis. Pero encima hay una **recomendación operativa que
   contradice al cálculo**, y está bien: *"it is recommended that vents on the parting plane be used
   **sparingly** with a thickness on the order of **0.02 mm**. If venting is subsequently found to be
   inadequate, then additional vents can be added or the thickness of existing vents increased."*
   El cálculo dio 0.06 mm de mínimo; la práctica dice arrancar en 0.02 y abrir en el tryout. Es el
-  mismo steel-safe de A-17 aplicado al venteo.
-- **INVALIDA:** cualquier cambio en A-25 o A-28.
+  mismo steel-safe de A-154 aplicado al venteo.
+- **INVALIDA:** cualquier cambio en A-162 o A-165.
 - **¿TENEMOS?** **SÍ, con las dos capas.** `venting.ts::ventDesign` devuelve
   `{ hMinMm, hMaxMm, hSpecMm, feasible }` con
   `hSpec = Math.min(Math.max(hMin, 0.02), hMax)` — o sea, aplica literalmente la práctica de 0.02 mm
@@ -728,8 +729,8 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   **Hueco:** la palanca "más venteos y más anchos" no se ejecuta automáticamente cuando `feasible`
   es falso; solo se reporta.
 
-### A-30 · Contraste contra los handbooks (Tabla 8.1)
-- **CUÁNDO:** junto con A-29, como segunda opinión.
+### A-167 · Contraste contra los handbooks (Tabla 8.1)
+- **CUÁNDO:** junto con A-166, como segunda opinión.
 - **ENTRADAS:** familia de viscosidad del material.
 - **EL CÁLCULO:** consulta de tres fuentes con año, en mm:
 
@@ -739,7 +740,7 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   | media | PS, ABS, PC, PMMA | 0.2 | 0.3 | **0.03** |
 
 - **SALIDA:** tres números por material, no uno.
-- **DECIDE:** la sanidad del `h_vent` de A-29. Difieren hasta **10×** entre sí, así que el sistema
+- **DECIDE:** la sanidad del `h_vent` de A-166. Difieren hasta **10×** entre sí, así que el sistema
   debe mostrar las tres con su año, nunca un número mágico.
 - **CRITERIO:** **[JUICIO]** histórico, y el libro lo explica en vez de promediar: *"there has been a
   long term trend in the plastics industry to move to thinner walls, faster injection rates, and
@@ -751,8 +752,8 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   de fuente. **Hueco:** los **años** (1965 / 1986 / 2000) no están en el dato, y son justamente lo que
   hace legible la divergencia.
 
-### A-31 · Espesor del venteo de expulsor a partir de la holgura de manufactura
-- **CUÁNDO:** cuando la solución del candidato es un pin o una cuchilla expulsora (tipo 2 de A-23).
+### A-168 · Espesor del venteo de expulsor a partir de la holgura de manufactura
+- **CUÁNDO:** cuando la solución del candidato es un pin o una cuchilla expulsora (tipo 2 de A-160).
 - **ENTRADAS:** holgura diametral de taller entre pin y barreno.
 - **EL CÁLCULO:** aritmética directa. Literal: *"Holes for ejector pins are normally **drilled and
   subsequently reamed**. In mold manufacturing, the **diametral clearance between the ejector pin and
@@ -772,9 +773,9 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   holgura literal pin↔barreno de **0.13 mm** (registrada además en la memoria del proyecto).
   Las tres razones del libro están en el criterio del contrato.
 
-### A-32 · Anatomía del venteo (land, alivio, salida)
-- **CUÁNDO:** al detallar cada venteo, después de A-29/A-31.
-- **ENTRADAS:** `h_vent` ←A-29/A-31 · tipo de solución ←A-34 · ubicación.
+### A-169 · Anatomía del venteo (land, alivio, salida)
+- **CUÁNDO:** al detallar cada venteo, después de A-166/A-168.
+- **ENTRADAS:** `h_vent` ←A-166/A-168 · tipo de solución ←A-171 · ubicación.
 - **EL CÁLCULO:** verificación de presencia de elementos, con cotas del ejemplo:
   - **Partición (bezel):** land `h = 0.06 mm, L = 2 mm` → canal de alivio de **2 mm** → salida
     **⌀3 mm** al centro y arriba del inserto. El ancho `W` va deliberadamente alto:
@@ -796,15 +797,15 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
 - **CRITERIO:** **[LIBRO]** de presencia. La longitud del land es negociable: *"The vent length, L, of
   3 mm has been chosen for illustrative purposes and is certainly not mandatory."*
 - **INVALIDA:** cambio de ubicación o de solución.
-- **¿TENEMOS?** **FALTA la geometría.** Tenemos el espesor (A-29) y la ubicación (A-23), pero **no
+- **¿TENEMOS?** **FALTA la geometría.** Tenemos el espesor (A-166) y la ubicación (A-160), pero **no
   existe el objeto "venteo" con land + canal de alivio + salida** ni la verificación de los dos
   elementos del expulsor. La ficha visual V8.6/V8.8 declara esto juzgable por píxeles y hoy no hay
   qué juzgar: `PlanVenteo` guarda puntos, no secciones.
 
-### A-33 · Rebaba por deflexión de placas sobre cara estética
-- **CUÁNDO:** después de A-29, y otra vez cuando el cap. 12 entrega la deflexión calculada.
-- **ENTRADAS:** `h_vent` en el plano de partición ←A-29 · deflexión de placas bajo presión de fundido
-  ←cap. 12 · clasificación de superficies visibles ←A-03.
+### A-170 · Rebaba por deflexión de placas sobre cara estética
+- **CUÁNDO:** después de A-166, y otra vez cuando el cap. 12 entrega la deflexión calculada.
+- **ENTRADAS:** `h_vent` en el plano de partición ←A-166 · deflexión de placas bajo presión de fundido
+  ←cap. 12 · clasificación de superficies visibles ←A-140.
 - **EL CÁLCULO:** comparación directa `deflexion_placas` vs `h_vent`. Literal: *"they are susceptible
   to flashing with bending of the mold plates ... Any significant deflection will tend to increase the
   thickness of the vents and thereby increase the likelihood and amount of flashing."*
@@ -822,8 +823,8 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   subsistemas que sí están cableados. **Hueco:** no se pondera por si la cara es estética o manipulada
   (el dato existe en `visibilidad.ts`, no se consulta aquí).
 
-### A-34 · Solución para cada bolsa muerta
-- **CUÁNDO:** por cada candidato de tipo 3 (bolsa muerta) de A-23.
+### A-171 · Solución para cada bolsa muerta
+- **CUÁNDO:** por cada candidato de tipo 3 (bolsa muerta) de A-160.
 - **ENTRADAS:** geometría de la bolsa (ancho de la costilla, si la superficie es plana) · si conviene
   expulsar ahí ←cap. 11 · presupuesto de mantenimiento.
 - **EL CÁLCULO:** cualitativo, tres opciones con criterio:
@@ -852,9 +853,9 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
   sinterizado, ni aplica la regla del ancho de costilla, ni la restricción de superficie plana del
   sinterizado. Es un cruce venteo↔expulsión que el libro resuelve en una frase y nosotros no tenemos.
 
-### A-35 · Ruteo del canal de venteo contra las líneas de agua
-- **CUÁNDO:** al detallar el canal (A-32), y otra vez cuando el ruteo de agua (A-61) cambia.
-- **ENTRADAS:** trayectoria del canal de alivio ←A-32 · layout de líneas de agua ←A-61.
+### A-172 · Ruteo del canal de venteo contra las líneas de agua
+- **CUÁNDO:** al detallar el canal (A-169), y otra vez cuando el ruteo de agua (A-198) cambia.
+- **ENTRADAS:** trayectoria del canal de alivio ←A-169 · layout de líneas de agua ←A-198.
 - **EL CÁLCULO:** detección de interferencia. La regla la da el libro como conveniencia de longitud:
   *"it may be desirable to **avoid a large vent channel near cooling lines**"* — el venteo **cede el
   paso** al agua. Y la segunda conveniencia es de maquinado: *"a mold may be more economically
@@ -867,12 +868,12 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
 - **INVALIDA:** cualquier cambio del layout de agua.
 - **¿TENEMOS?** **PARCIAL — el contrato existe y no tiene qué medir.** `mold-contratos.ts` id
   `vent-vs-agua` (§8.3.2).
-  **Hueco:** sin geometría de canal (A-32) el contrato no tiene qué medir; es un criterio que hoy
+  **Hueco:** sin geometría de canal (A-169) el contrato no tiene qué medir; es un criterio que hoy
   se evalúa sobre un objeto que no existe.
 
-### A-36 · Checklist de cierre de venteo (§8.4)
+### A-173 · Checklist de cierre de venteo (§8.4)
 - **CUÁNDO:** al congelar el subsistema.
-- **ENTRADAS:** A-21…A-35.
+- **ENTRADAS:** A-158…A-172.
 - **EL CÁLCULO:** conjunción de nueve criterios: venteo en **todo** final de flujo; venteo (típicamente
   un expulsor) en **cada** convergencia interna; cada bolsa muerta con ruta de escape o riesgo
   declarado; `h_min <= h <= h_max` con arranque práctico 0.02 mm en partición y 0.065 mm en expulsores;
@@ -890,14 +891,14 @@ venting while also smaller than some maximum amount to avoid excessive flashing.
 - **INVALIDA:** cambio del patrón de llenado o del layout de expulsión.
 - **¿TENEMOS?** **PARCIAL.** Seis contratos de venteo existen (`vent-espesor`, `vent-flujo-completo`,
   `vent-practica`, `vent-expulsores`, `vent-ubicaciones`, `vent-vs-agua`). Faltan los criterios que
-  dependen de geometría de venteo (canal de alivio + salida, A-32) y de la solución por bolsa (A-34).
+  dependen de geometría de venteo (canal de alivio + salida, A-169) y de la solución por bolsa (A-171).
   Y falta el **mapa de venteo** como entregable con la fuente del espesor citada por venteo.
 
   > **Nota de mantenimiento, sin ficha.** §8.1.3 pide diseñar venteos de **mantenimiento mínimo**
   > porque *"Many polymers will off-gas in the molten state, releasing particles that can build up and
   > clog the venting system. **Such clogged vents can occur especially quickly with the use of mold
   > release.**"* No lleva ficha porque no produce número ni veredicto; es un sesgo de diseño que
-  > favorece los venteos autolimpiables (expulsores) sobre los sinterizados en A-34.
+  > favorece los venteos autolimpiables (expulsores) sobre los sinterizados en A-171.
 
 ---
 
@@ -919,13 +920,13 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 
 ## C.1 — Del plástico al tiempo de ciclo
 
-### A-37 · Sección gobernante (la más gruesa)
+### A-174 · Sección gobernante (la más gruesa)
 - **CUÁNDO:** primer paso de §9.2.1, antes de cualquier ecuación.
 - **ENTRADAS:** mapa de espesores de la pieza ←cap. 2 · diámetros del sistema de alimentación ←cap. 6.
 - **EL CÁLCULO:** selección del máximo, con la regla literal: *"the mold designer should consider
   **the thickest section** that is likely to require the longest time to solidify."*
 - **SALIDA:** `h_gob` [mm] y de qué sección viene (pieza o runner).
-- **DECIDE:** qué espesor entra a A-39. Toda la cadena del capítulo cuelga de este número — y va al
+- **DECIDE:** qué espesor entra a A-176. Toda la cadena del capítulo cuelga de este número — y va al
   cuadrado.
 - **CRITERIO:** **[LIBRO]** por máximo. Nota de método: el criterio de rigidez es de **línea central**,
   no de promedio, y el libro lo justifica dos veces: *"First, it is **conservative**... Second, this
@@ -933,19 +934,19 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   but semi-molten at the centerline. Since the plastic at the centerline is not able to transmit the
   shear stresses from one wall to the opposing wall under ejection loads, the deformation of the molded
   part will be much higher."*
-- **INVALIDA:** rediseño de espesores; cambio de diámetro de runner (A-42).
+- **INVALIDA:** rediseño de espesores; cambio de diámetro de runner (A-179).
 - **¿TENEMOS?** **SÍ.** `cooling.ts::coolingReport` recorre una lista de secciones
   (`{name, kind:'plate'|'rod', sizeMm}`) y devuelve `governing` + `cycleCoolingS` tomando el máximo;
   `cooling-design.ts::coolingDesign` recibe `thickestMm` y lo reporta. `cooling.ts::centerlineTemperature`
   implementa la solución en serie de la **línea central** (Eq 9.4), o sea el criterio correcto.
 
-### A-38 · Temperatura de expulsión (T_eject)
-- **CUÁNDO:** junto con A-37.
+### A-175 · Temperatura de expulsión (T_eject)
+- **CUÁNDO:** junto con A-174.
 - **ENTRADAS:** ficha del material.
 - **EL CÁLCULO:** lectura de propiedad. El criterio de rigidez es la **HDT / DTUL (ASTM D648)**.
   Ejemplo cup/lid en ABS: `T_melt = 239 °C`, `T_cool = 60 °C`, `T_eject = 96.7 °C`.
 - **SALIDA:** `T_eject` [°C].
-- **DECIDE:** el argumento del logaritmo de A-39 y el `ΔT` de A-47.
+- **DECIDE:** el argumento del logaritmo de A-176 y el `ΔT` de A-184.
 - **CRITERIO:** **[LIBRO]** por norma citada.
 - **INVALIDA:** cambio de material.
 - **¿TENEMOS?** **SÍ, con la errata del libro cazada.** `cooling.ts::ABS_KAZMER` fija
@@ -955,16 +956,16 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   errata #1). **Hueco:** `T_eject` no se deriva de una tabla de HDT por material; hay una constante
   por material en `PLASTICOS_A` (`cooling-design.ts`), no un catálogo ASTM D648.
 
-### A-39 · Tiempo de enfriamiento (Eqs 9.5 y 9.6)
+### A-176 · Tiempo de enfriamiento (Eqs 9.5 y 9.6)
 - **CUÁNDO:** paso 1 de los siete. Es la raíz de toda la cadena.
-- **ENTRADAS:** `h_gob` ←A-37 · `T_eject` ←A-38 · `T_melt`, `T_cool` ←proceso · `alpha` ←material.
+- **ENTRADAS:** `h_gob` ←A-174 · `T_eject` ←A-175 · `T_melt`, `T_cool` ←proceso · `alpha` ←material.
 - **EL CÁLCULO:** dos geometrías:
   - placa (Eq 9.5): `tc = h^2/(pi^2·alpha) · ln( (4/pi) · (Tmelt − Tcool)/(Teject − Tcool) )`
   - cilindro/barra (Eq 9.6): `tc = D^2/(23.1·alpha) · ln( 1.60 · (Tmelt − Tcool)/(Teject − Tcool) )`
   Ejemplo cup/lid en ABS: lid 2 mm → **8.4 s**; cup 3 mm → **18.9 s**; runner → **22.9 s**.
 - **SALIDA:** `tc` [s] por sección.
-- **DECIDE:** el tiempo de ciclo (A-43), la potencia de enfriamiento (A-48), y el empaque disponible
-  que A-12 compara contra el congelamiento de la compuerta.
+- **DECIDE:** el tiempo de ciclo (A-180), la potencia de enfriamiento (A-185), y el empaque disponible
+  que A-149 compara contra el congelamiento de la compuerta.
 - **CRITERIO:** **[LIBRO]**, con **dos letras chicas que hay que mostrar**: (a) los tiempos reales son
   sustancialmente mayores por **resistencia térmica de contacto**, agravada por *"thin gaps which open
   up between the shrunken molding and the mold walls"*; (b) *"the cooling time is often not driven by
@@ -975,14 +976,14 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   Los tres números del ejemplo del libro se reproducen. **Hueco:** las dos letras chicas no salen en
   ningún reporte — el número se presenta sin su sesgo.
 
-### A-40 · Contraste con la regla de dedo (Eqs 9.8 y 9.9)
-- **CUÁNDO:** junto a A-39, como segunda opinión barata.
-- **ENTRADAS:** `h_gob` [mm] ←A-37.
+### A-177 · Contraste con la regla de dedo (Eqs 9.8 y 9.9)
+- **CUÁNDO:** junto a A-176, como segunda opinión barata.
+- **ENTRADAS:** `h_gob` [mm] ←A-174.
 - **EL CÁLCULO:** `tc [s] = 2 · (h [mm])^2`. Kazmer no la cita: **la deriva y la valida** —
   con `alpha ≈ 0.09 mm²/s` y una razón térmica `(Tmelt−Tcool)/(Teject−Tcool) ≈ 5` el coeficiente sale
   **2.08** (Eq 9.9). Con 3 mm: 18 s de dedo contra 19.2 s analíticos.
-- **SALIDA:** `tc_dedo` [s] y la discrepancia contra A-39.
-- **DECIDE:** la confianza en A-39, y un dato de planeación: *"Eq. (9.9) provides an estimate of the
+- **SALIDA:** `tc_dedo` [s] y la discrepancia contra A-176.
+- **DECIDE:** la confianza en A-176, y un dato de planeación: *"Eq. (9.9) provides an estimate of the
   cooling time, **which is roughly half of the cycle time**."*
 - **CRITERIO:** **[COMPARA]**, con la jerarquía declarada: *"While Eq. (9.8) is an excellent guideline,
   **it is a good idea to use Eqs. (9.5) and (9.6)** to evaluate the cooling time for the specific
@@ -993,9 +994,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   **Hueco:** no se muestran juntas ni se reporta la discrepancia; y la relación
   *"roughly half of the cycle time"* no se usa para estimar ciclo en ningún lado.
 
-### A-41 · Corrección por frontera convectiva
-- **CUÁNDO:** después de A-39, cuando importa la magnitud real y no el orden.
-- **ENTRADAS:** `tc` isotérmico ←A-39 · coeficiente de convección al refrigerante `h_c ≈ 1000 W/(m²·°C)`.
+### A-178 · Corrección por frontera convectiva
+- **CUÁNDO:** después de A-176, cuando importa la magnitud real y no el orden.
+- **ENTRADAS:** `tc` isotérmico ←A-176 · coeficiente de convección al refrigerante `h_c ≈ 1000 W/(m²·°C)`.
 - **EL CÁLCULO:** se resuelve la conducción con frontera de Robin en vez de temperatura impuesta.
   El libro da el resultado del ejemplo: **19 s → 24 s**, es decir **+25 %** sobre el ideal isotérmico.
 - **SALIDA:** `tc_real` [s].
@@ -1010,10 +1011,10 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 - **¿TENEMOS?** **PARCIAL — por otro camino y sin conectar.** `mold-thermal-fdm.ts` resuelve el
   transitorio 3D real con frontera de Robin `q = h·(T − T_c)` y `h = 1000 W/m²·°C` citando **Eq 9.7** —
   o sea, tenemos la física completa. Pero el `tc` que alimenta la cadena de `cooling-design.ts` sigue
-  siendo el **isotérmico** de A-39. Tenemos el número bueno y usamos el optimista.
+  siendo el **isotérmico** de A-176. Tenemos el número bueno y usamos el optimista.
 
-### A-42 · Tiempo de enfriamiento del runner contra el de la pieza
-- **CUÁNDO:** junto con A-39, sobre las secciones del sistema de alimentación.
+### A-179 · Tiempo de enfriamiento del runner contra el de la pieza
+- **CUÁNDO:** junto con A-176, sobre las secciones del sistema de alimentación.
 - **ENTRADAS:** diámetros del runner y del sprue ←cap. 6 · Eq 9.6.
 - **EL CÁLCULO:** misma Eq 9.6 aplicada al runner, y comparación contra el `tc` de la pieza.
   En el ejemplo el runner da **22.9 s** contra los 18.9 s del cup: **el runner domina**.
@@ -1032,9 +1033,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   y la marca como `warn` cuando `tcSprueS > tcPartS`. Es uno de los pocos retornos que el motor
   **señala** de verdad. **Hueco:** señala, no ejecuta: no reduce el diámetro solo.
 
-### A-43 · Tiempo de ciclo gobernante del molde
-- **CUÁNDO:** al cerrar A-39/A-42, sobre todas las cavidades del molde.
-- **ENTRADAS:** `tc` de cada sección y de cada pieza del molde familiar ←A-39, A-42.
+### A-180 · Tiempo de ciclo gobernante del molde
+- **CUÁNDO:** al cerrar A-176/A-179, sobre todas las cavidades del molde.
+- **ENTRADAS:** `tc` de cada sección y de cada pieza del molde familiar ←A-176, A-179.
 - **EL CÁLCULO:** máximo sobre todas las secciones. En el molde familiar cup/lid: `max(8.4, 18.9, 22.9)`.
 - **SALIDA:** `tc_ciclo` [s].
 - **DECIDE:** ⇒ **RETORNO a arquitectura.** *"the family mold will be forced to operate at the much
@@ -1050,9 +1051,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   comparación "un molde familiar vs dos moldes" con su trade-off de color matching y ensamble a pie
   de prensa. Es una decisión que el motor de costeo (cap. 3) podría resolver y hoy nadie plantea.
 
-### A-44 · Flujo de calor por un solo lado (h → 2h)
+### A-181 · Flujo de calor por un solo lado (h → 2h)
 - **CUÁNDO:** cuando la geometría lo impone: núcleo esbelto largo, o capa aislante debajo (two-shot).
-- **ENTRADAS:** espesor de la capa ←A-37 · detección de la condición de un solo lado.
+- **ENTRADAS:** espesor de la capa ←A-174 · detección de la condición de un solo lado.
 - **EL CÁLCULO:** sustitución, no ecuación nueva: *"Eqs. (9.5), (9.6), and (9.8) may be used by
   **substituting twice the thickness** of the molding for the variable, h. The result is that any
   molding application with a one sided heat flow will have a **four fold increase in the cooling
@@ -1060,7 +1061,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   plastic melt were on top of each other**. This double thickness representation is valid since the
   temperature distribution is symmetric across the centerline so there is no associated heat flux."*
 - **SALIDA:** `tc` corregido [s] — **×4**.
-- **DECIDE:** si la geometría es viable económicamente, y dispara A-45 y A-63.
+- **DECIDE:** si la geometría es viable económicamente, y dispara A-182 y A-200.
 - **CRITERIO:** **[LIBRO]** exacto (el factor 4 sale de que `tc` va con `h²`).
 - **INVALIDA:** que se agregue enfriamiento por el segundo lado.
 - **¿TENEMOS?** **PARCIAL — solo en la lámina.** `lamina-nucleo-enfriamiento.ts:608` hace
@@ -1071,9 +1072,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   heat down the length of the core pins and **act primarily as insulators**"*, y ese caso debería
   disparar la sustitución solo.
 
-### A-45 · Orden de las capas en two-shot
-- **CUÁNDO:** solo en sobremoldeo, después de A-44.
-- **ENTRADAS:** espesores y materiales de las dos capas · `tc` de cada orden ←A-44.
+### A-182 · Orden de las capas en two-shot
+- **CUÁNDO:** solo en sobremoldeo, después de A-181.
+- **ENTRADAS:** espesores y materiales de las dos capas · `tc` de cada orden ←A-181.
 - **EL CÁLCULO:** comparación de dos escenarios completos. ABS 3 mm sobre PC (aislante) → **75.6 s**,
   antieconómico porque el ciclo aplica a ambas capas. PC 2 mm al final → **13.5 s**, menor que los
   18.9 s del ABS solo, o sea **no añade tiempo de ciclo**.
@@ -1087,26 +1088,26 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 
 ## C.2 — Del tiempo de ciclo al caudal
 
-### A-46 · Masa del disparo
+### A-183 · Masa del disparo
 - **CUÁNDO:** paso 2 de los siete (§9.2.2).
 - **ENTRADAS:** volumen de las piezas ←cap. 2 · volumen de los **runners fríos** ←cap. 6 · densidad.
 - **EL CÁLCULO:** `m = (V_piezas + V_runners) · rho`, con la nota literal de que se estima
   *"as the volume of these moldings times their density at room temperature"* — densidad a **20 °C**,
   no la del fundido. Ejemplo: **62.6 g** de ABS.
 - **SALIDA:** `m` [kg].
-- **DECIDE:** el calor a extraer (A-47). Olvidar los runners subestima el calor.
+- **DECIDE:** el calor a extraer (A-184). Olvidar los runners subestima el calor.
 - **CRITERIO:** **[LIBRO]** de alcance: la masa **incluye la colada fría**.
 - **INVALIDA:** cambio de cavidades o de diámetros de runner.
 - **¿TENEMOS?** **SÍ, y con la densidad correcta.** `cooling-design.ts::PLASTICOS_A` documenta
   explícitamente que `rhoRT` = *"Density at 20 °C"* y que **Eq 9.10 usa ÉSTA, no la del fundido**.
   `coolingDesign` calcula `massKg` y lo reporta como `disparo`.
 
-### A-47 · Calor a extraer por ciclo (Eq 9.10)
-- **CUÁNDO:** paso 2, después de A-46.
-- **ENTRADAS:** `m` ←A-46 · `Cp` ←material · `T_melt`, `T_eject` ←A-38.
+### A-184 · Calor a extraer por ciclo (Eq 9.10)
+- **CUÁNDO:** paso 2, después de A-183.
+- **ENTRADAS:** `m` ←A-183 · `Cp` ←material · `T_melt`, `T_eject` ←A-175.
 - **EL CÁLCULO:** `Q = m · Cp · (T_melt − T_eject)` [J]. Ejemplo: 62.6 g de ABS → **20,900 J**.
 - **SALIDA:** `Q` [J/ciclo].
-- **DECIDE:** la potencia (A-48).
+- **DECIDE:** la potencia (A-185).
 - **CRITERIO:** **[LIBRO]**, balance de energía sensible.
   ⚠ **NO OBSERVADO EN EL CORPUS:** el corpus derivado da la fórmula y el número **pero no le pone
   número de ecuación**. El número "Eq 9.10" viene del encargo y **coincide con lo que el código ya
@@ -1116,16 +1117,16 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 - **¿TENEMOS?** **SÍ.** `cooling.ts::heatToRemove(mKg, cpJPerKgC, m)` y
   `cooling-design.ts::heatPerShotJ`, ambas rotuladas Eq 9.10.
 
-### A-48 · Potencia de enfriamiento total y por línea (Eqs 9.11 y 9.12)
+### A-185 · Potencia de enfriamiento total y por línea (Eqs 9.11 y 9.12)
 - **CUÁNDO:** paso 2, cierre.
-- **ENTRADAS:** `Q` ←A-47 · `tc` ←A-39 · número de líneas `n_lines` ←A-59 (¡lazo!).
+- **ENTRADAS:** `Q` ←A-184 · `tc` ←A-176 · número de líneas `n_lines` ←A-196 (¡lazo!).
 - **EL CÁLCULO:** `Qdot = Q / tc` (Eq 9.11) y `Qdot_line = Qdot / n_lines` (Eq 9.12), con el supuesto
   literal *"Assuming that the mold is well designed and each cooling line removes the same amount of
   heat"*. Ejemplo: 20,900 J a 20 s → **1,050 W**; con 4 líneas → **260 W por línea**.
 - **SALIDA:** `Qdot` [W] y `Qdot_line` [W].
-- **DECIDE:** el caudal de refrigerante por línea (A-50).
+- **DECIDE:** el caudal de refrigerante por línea (A-187).
 - **CRITERIO:** **[LIBRO]** con supuesto de reparto uniforme declarado.
-- **INVALIDA:** ⇒ **EL LAZO INTERIOR DEL CAPÍTULO.** `n_lines` se decide en A-59 (paso 6, el paso) y
+- **INVALIDA:** ⇒ **EL LAZO INTERIOR DEL CAPÍTULO.** `n_lines` se decide en A-196 (paso 6, el paso) y
   **regresa aquí** (paso 2). Kazmer lo declara en el propio §9.2.2: *"multiple design iterations may
   be necessary to perform the cooling analysis for different cooling line layouts with varying number
   of cooling lines."* No es un pipeline de 7 pasos: es 7 pasos con realimentación de 9.2.6 → 9.2.2.
@@ -1134,33 +1135,33 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   *"Nº DE LÍNEAS PARA QUE EL PASO NO SE PASE DE W (Eq 9.24)"*) y **recalcula** `qLineW` y `vDotLine`
   con ese número. El lazo 9.2.6 → 9.2.2 está implementado.
 
-### A-49 · ΔT admisible del refrigerante
+### A-186 · ΔT admisible del refrigerante
 - **CUÁNDO:** paso 3 (§9.2.3), antes de calcular caudal.
 - **ENTRADAS:** clase de la pieza (commodity vs precisión) ←cap. 2.
 - **EL CÁLCULO:** selección entre dos anclas. Literal: *"A typical allowable increase in the coolant
   temperature is **1 °C**. For a **precision part**, the allowable increase may be **0.1 °C**."*
 - **SALIDA:** `ΔT` [°C].
-- **DECIDE:** el caudal (A-50) — que va **inversamente** con `ΔT`, así que 0.1 °C multiplica el caudal
+- **DECIDE:** el caudal (A-187) — que va **inversamente** con `ΔT`, así que 0.1 °C multiplica el caudal
   por diez.
 - **CRITERIO:** **[LIBRO]** con un techo de beneficio explícito: *"Much tighter control of the coolant
   temperature requires much higher flow rates, **and yet provides little added benefit** given that the
   mold cavity surface temperatures will tend to vary more significantly **between the cooling lines**."*
-  Traducido: **no sirve apretar el refrigerante si el paso está flojo** — A-49 está subordinado a A-59.
+  Traducido: **no sirve apretar el refrigerante si el paso está flojo** — A-186 está subordinado a A-196.
 - **INVALIDA:** cambio de la clase de tolerancia de la pieza.
 - **¿TENEMOS?** **PARCIAL.** `cooling-design.ts` toma `dT` como entrada y lo usa en Eq 9.13, y el
   reporte lo imprime. **FALTA** la selección automática por clase de pieza (1 °C vs 0.1 °C) y, sobre
   todo, **la advertencia del techo de beneficio**: nada avisa que apretar `ΔT` con paso ancho es tirar
   caudal a la basura.
 
-### A-50 · Caudal de refrigerante por línea (Eq 9.13)
+### A-187 · Caudal de refrigerante por línea (Eq 9.13)
 - **CUÁNDO:** paso 3.
-- **ENTRADAS:** `Qdot_line` ←A-48 · `ΔT` ←A-49 · `rho` y `Cp` del refrigerante (Apéndice C).
+- **ENTRADAS:** `Qdot_line` ←A-185 · `ΔT` ←A-186 · `rho` y `Cp` del refrigerante (Apéndice C).
 - **EL CÁLCULO:** `Vdot = Qdot_line / (ΔT · rho · Cp)`. Ejemplo agua: 260 W con 1 °C →
   **6.2e-5 m³/s ≈ 1 GPM**. Y la corrección de topología: *"if two cooling lines were connected **in
   series**, then the cooling power would also be **doubled** such that **twice the flow rate** would be
   needed to maintain the same temperature distribution."*
 - **SALIDA:** `Vdot_line` [m³/s].
-- **DECIDE:** el rango de diámetro (A-52, A-53) y la carga sobre el controlador (A-51).
+- **DECIDE:** el rango de diámetro (A-189, A-190) y la carga sobre el controlador (A-188).
 - **CRITERIO:** **[LIBRO]**, balance de energía.
 - **INVALIDA:** cambio de `Qdot_line`, de `ΔT`, de refrigerante o de la topología serie/paralelo.
 - **¿TENEMOS?** **PARCIAL — con un error del lado optimista.**
@@ -1170,9 +1171,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   inSeries`) pero **no a la potencia por circuito**: dos líneas en serie deberían duplicar el caudal
   requerido y el motor no lo hace. Es un error del lado optimista.
 
-### A-51 · Factibilidad contra el controlador comercial (Tabla 9.1)
+### A-188 · Factibilidad contra el controlador comercial (Tabla 9.1)
 - **CUÁNDO:** paso 3, cierre. Es un gate de realidad.
-- **ENTRADAS:** `Vdot_line · n_lines` ←A-50/A-59 · presión requerida ←A-53 · temperatura objetivo del
+- **ENTRADAS:** `Vdot_line · n_lines` ←A-187/A-196 · presión requerida ←A-190 · temperatura objetivo del
   molde.
 - **EL CÁLCULO:** comparación contra catálogo:
 
@@ -1197,9 +1198,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 
 ## C.3 — Del caudal al diámetro
 
-### A-52 · Diámetro MÁXIMO por turbulencia (Eqs 9.14 y 9.15)
+### A-189 · Diámetro MÁXIMO por turbulencia (Eqs 9.14 y 9.15)
 - **CUÁNDO:** paso 4 (§9.2.4).
-- **ENTRADAS:** `Vdot_line` ←A-50 · `rho`, `mu` del refrigerante.
+- **ENTRADAS:** `Vdot_line` ←A-187 · `rho`, `mu` del refrigerante.
 - **EL CÁLCULO:** `Re = 4·rho·Vdot / (pi·mu·D)` (Eq 9.14) con la condición `Re > 4000`, de donde
   `D_max = 4·rho·Vdot / (pi·mu·4000)` (Eq 9.15). Ejemplo: **20 mm**.
 - **SALIDA:** `D_max` [mm].
@@ -1213,13 +1214,13 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   `coolinglines.ts::reynolds` y `::maxLineDiameter`. Contrato `agua-turbulento` (§9.2.4) con el
   mensaje correcto: *"flujo LAMINAR, el agua no arranca el calor (Eq 9.14)"*.
 
-### A-53 · Diámetro MÍNIMO por caída de presión (Eqs 9.16 y 9.17)
-- **CUÁNDO:** paso 4, junto con A-52.
-- **ENTRADAS:** `Vdot_line` ←A-50 · **longitud real del circuito** (las líneas en serie se **suman**) ·
-  `ΔP` admisible ←presión del controlador (A-51).
+### A-190 · Diámetro MÍNIMO por caída de presión (Eqs 9.16 y 9.17)
+- **CUÁNDO:** paso 4, junto con A-189.
+- **ENTRADAS:** `Vdot_line` ←A-187 · **longitud real del circuito** (las líneas en serie se **suman**) ·
+  `ΔP` admisible ←presión del controlador (A-188).
 - **EL CÁLCULO:** `ΔP = rho·L·Vdot^2 / (10·pi·D^5)` (Eq 9.16), de donde
   `D_min = ( rho·L·Vdot^2 / (10·pi·ΔP) )^(1/5)` (Eq 9.17). Ejemplo: dos líneas de 302 mm en serie →
-  `L = 0.6 m`, con 100 kPa → **3.7 mm**. Junto con A-52: **3.7 mm < D < 20 mm**, y el libro comenta
+  `L = 0.6 m`, con 100 kPa → **3.7 mm**. Junto con A-189: **3.7 mm < D < 20 mm**, y el libro comenta
   *"While this is quite a broad range, the allowable range may be much smaller depending on the
   molding application."*
 - **SALIDA:** `D_min` [mm].
@@ -1237,9 +1238,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   **Verificar:** que el `ΔP` admisible se fije en **½** de la presión del controlador y no en la
   nominal — el default `inSeries = 2` sí reproduce el ejemplo del libro.
 
-### A-54 · Selección del diámetro estándar (Tabla 9.2)
+### A-191 · Selección del diámetro estándar (Tabla 9.2)
 - **CUÁNDO:** paso 4, cierre. Es donde el óptimo continuo se rinde al catálogo.
-- **ENTRADAS:** `[D_min, D_max]` ←A-52/A-53 · catálogo de plugs del moldeador.
+- **ENTRADAS:** `[D_min, D_max]` ←A-189/A-190 · catálogo de plugs del moldeador.
 - **EL CÁLCULO:** elegir dentro del rango un tamaño de catálogo:
 
   | Plug DME | Rosca NPT | ⌀ línea |
@@ -1252,7 +1253,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 
   Elección del ejemplo: **6.35 mm**.
 - **SALIDA:** `D` [mm] de catálogo + el plug asociado.
-- **DECIDE:** el diámetro que se maquina, y con él la profundidad (A-58) y el paso (A-59), que van
+- **DECIDE:** el diámetro que se maquina, y con él la profundidad (A-195) y el paso (A-196), que van
   en múltiplos de `D`.
 - **CRITERIO:** **[JUICIO] del taller, no del cálculo.** Literal: *"the mold designer should consider
   the **manufacturability** of the cooling lines and **the molder's standards regarding cooling plugs,
@@ -1264,7 +1265,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   *"ningún plug DME en el rango"* y manda la línea a medida. Contrato `agua-catalogo`
   (§9.2.4 · Tabla 9.2) y `agua-diametro` (§9.2.4).
 
-### A-55 · Refrigerante viscoso: régimen laminar (Eq 9.18)
+### A-192 · Refrigerante viscoso: régimen laminar (Eq 9.18)
 - **CUÁNDO:** solo si el refrigerante no es agua.
 - **ENTRADAS:** propiedades del glicol o del aceite.
 - **EL CÁLCULO:** con `mu` alta la turbulencia no se logra, así que el ΔP se calcula con
@@ -1283,9 +1284,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 
 ## C.4 — Del diámetro al layout
 
-### A-56 · Profundidad por concentración de esfuerzo (Eq 9.19)
+### A-193 · Profundidad por concentración de esfuerzo (Eq 9.19)
 - **CUÁNDO:** paso 5 (§9.2.5). Es la restricción que **empuja la línea hacia el fondo**.
-- **ENTRADAS:** `D` ←A-54 · presión de fundido esperada ←cap. 5 · límite de fatiga del acero del molde.
+- **ENTRADAS:** `D` ←A-191 · presión de fundido esperada ←cap. 5 · límite de fatiga del acero del molde.
 - **EL CÁLCULO:** factores de concentración medidos sobre la sección (Fig 9.4):
   `H = 1D → sigma = 3.3 · P_melt` · `H = 4D → sigma = 2.6 · P_melt`,
   de donde `P_melt_max = sigma_endurance / K_t` (Eq 9.19).
@@ -1304,8 +1305,8 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   `::maxMeltPressureMPa(sigmaEnduranceMPa, scf)` aplica Eq 9.19, y `ACEROS_MOLDE` guarda
   `sigmaEnduranceMPa` por acero. La trampa del aluminio (50 MPa) es reproducible con el mismo código.
 
-### A-57 · Profundidad por transferencia de calor (Eqs 9.20 y 9.21)
-- **CUÁNDO:** paso 5, en tensión con A-56. Es la restricción que **jala la línea hacia la superficie**.
+### A-194 · Profundidad por transferencia de calor (Eqs 9.20 y 9.21)
+- **CUÁNDO:** paso 5, en tensión con A-193. Es la restricción que **jala la línea hacia la superficie**.
 - **ENTRADAS:** conductividad del acero `k_mold` · coeficiente de convección al refrigerante
   `h_c ≈ 1000 W/(m²·°C)`.
 - **EL CÁLCULO:** el acero sobre la línea se modela como una conductancia `h_conduction = k_mold / H_line`
@@ -1314,16 +1315,16 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 - **SALIDA:** `H_max_termica` [mm].
 - **DECIDE:** el techo de profundidad. Si se rebasa, **la propia línea alarga el ciclo**.
 - **CRITERIO:** **[LIBRO]** por comparación de resistencias.
-  ⚠ Inconsistencia de unidades del libro, ya anotada en A-41: `h_c` se escribe *"1000 W/°C"* y
+  ⚠ Inconsistencia de unidades del libro, ya anotada en A-178: `h_c` se escribe *"1000 W/°C"* y
   *"1000 W/m°C"*; para que la cuenta dé 32 mm tienen que ser **W/(m²·°C)**.
 - **INVALIDA:** cambio de acero (Cu 940 sube muchísimo este techo) o del caudal.
 - **¿TENEMOS?** **SÍ.** `cooling-design.ts::hConduction = kMoldWmC / hLineM` (Eq 9.20) y
   `::hLineMaxM = kMoldWmC / 1000` (Eq 9.21). El mensaje de falla es exacto:
   *"la línea está tan honda que ELLA alarga el ciclo (Eq 9.21)"*.
 
-### A-58 · Ventana de profundidad 2D < H < 5D (Eq 9.22)
-- **CUÁNDO:** paso 5, cierre. Sintetiza A-56 y A-57.
-- **ENTRADAS:** `D` ←A-54 · `P_melt_max` ←A-56 · `H_max_termica` ←A-57.
+### A-195 · Ventana de profundidad 2D < H < 5D (Eq 9.22)
+- **CUÁNDO:** paso 5, cierre. Sintetiza A-193 y A-194.
+- **ENTRADAS:** `D` ←A-191 · `P_melt_max` ←A-193 · `H_max_termica` ←A-194.
 - **EL CÁLCULO:** intersección de las dos restricciones, con la recomendación literal:
   *"Combining the structural and heat transfer requirements for a typical 6.35 mm diameter cooling
   line, the recommended range for the cooling line depth is **2 D < H_line < 5 D**, which is a commonly
@@ -1332,7 +1333,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   or heat transfer requirements."*
   Ejemplo: `D = 6.35 mm` con `H = 4D` → **25.4 mm**.
 - **SALIDA:** `H_line` [mm].
-- **DECIDE:** la profundidad que se maquina, y **la base del paso** (A-59, que va en múltiplos de `H`).
+- **DECIDE:** la profundidad que se maquina, y **la base del paso** (A-196, que va en múltiplos de `H`).
 - **CRITERIO:** **[LIBRO]**, y el propio libro declara que dentro del rango la elección es
   **arbitraria**: el análisis se reserva para casos especiales. Es honestidad poco común —
   dice cuándo su propio cálculo no hace falta.
@@ -1343,9 +1344,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   Contrato `agua-profundidad` (§9.2.5), que además emite la falla correcta cuando `H < 2D`:
   *"concentración de esfuerzo, el acero se agrieta desde el barreno"*.
 
-### A-59 · Paso entre líneas (Eqs 9.23 y 9.24)
-- **CUÁNDO:** paso 6 (§9.2.6). Y **desde aquí sale el número de líneas que regresa a A-48**.
-- **ENTRADAS:** `H_line` ←A-58 · clase de tolerancia del producto ←cap. 2 · ancho a cubrir.
+### A-196 · Paso entre líneas (Eqs 9.23 y 9.24)
+- **CUÁNDO:** paso 6 (§9.2.6). Y **desde aquí sale el número de líneas que regresa a A-185**.
+- **ENTRADAS:** `H_line` ←A-195 · clase de tolerancia del producto ←cap. 2 · ancho a cubrir.
 - **EL CÁLCULO:** la recomendación es `H_line < W_line < 2·H_line` (Eq 9.24), sostenida por la curva
   empírica de Menges (Eq 9.23, Fig 9.5) que mide **variación porcentual del flujo de calor** contra la
   razón paso:profundidad. El hallazgo numérico: *"the variation in the heat flux is **less than 5% up
@@ -1356,8 +1357,8 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   tolerance** applications or for applications requiring **faster cycle times or more uniform cooling**,
   a closer spacing **equal to the cooling line depth** is desirable."*
 - **SALIDA:** `W_line` [mm] y, dividiendo el ancho a cubrir, **`n_lines`**.
-- **DECIDE:** dos cosas: la uniformidad del campo térmico (A-62 → alabeo A-71), y ⇒ **el regreso a
-  A-48** con el nuevo `n_lines`.
+- **DECIDE:** dos cosas: la uniformidad del campo térmico (A-199 → alabeo A-208), y ⇒ **el regreso a
+  A-185** con el nuevo `n_lines`.
 - **CRITERIO:** **[LIBRO]** con umbral del 5 % de variación, más **[JUICIO]** por clase de producto.
   Nota de estatus: para la temperatura *"no suitable analytical treatment has yet been developed"* —
   la curva de Menges es una estimación empírica, no teoría.
@@ -1367,9 +1368,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   `qLineW` y `vDotLine` — el retorno 9.2.6 → 9.2.2 que el libro declara.
   `::heatFluxVariation(wOverH)` implementa la curva de Menges (Eq 9.23). Contrato `agua-paso` (§9.2.6).
 
-### A-60 · La trampa del material conductivo a paso ancho
+### A-197 · La trampa del material conductivo a paso ancho
 - **CUÁNDO:** cada vez que alguien propone menos líneas porque el molde es de aluminio o cobre.
-- **ENTRADAS:** conductividad del material del molde · razón `W/H` ←A-59.
+- **ENTRADAS:** conductividad del material del molde · razón `W/H` ←A-196.
 - **EL CÁLCULO:** lectura de la misma Fig 9.5, en la rama del material conductivo. Literal:
   *"Figure 9.5 indicates that the use of highly conductive materials (such as aluminum or copper)
   **actually increases the variation in heat flux** by improving the heat conduction between the
@@ -1392,9 +1393,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   empeora la uniformidad. Hoy el motor puede sugerir cobre y dejar el paso flojo — justo el error que
   el libro dedica un párrafo a prevenir.
 
-### A-61 · Ruteo: interferencia y claro de medio diámetro
+### A-198 · Ruteo: interferencia y claro de medio diámetro
 - **CUÁNDO:** paso 7 (§9.2.7). Es donde todo choca.
-- **ENTRADAS:** layout de líneas ←A-54/A-58/A-59 · geometría de **todos** los demás componentes.
+- **ENTRADAS:** layout de líneas ←A-191/A-195/A-196 · geometría de **todos** los demás componentes.
 - **EL CÁLCULO:** detección de interferencia con un claro mínimo: *"In general, the mold design should
   provide **at least half a cooling diameter** between the surface of the cooling line and the surface
   of **any other mold component**. This requirement maintains the structural integrity of the mold
@@ -1417,7 +1418,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
     gaskets.**"* Costo: menor transferencia y ciclos más largos.
 - **CRITERIO:** **[LIBRO]** geométrico (½·D) para la factibilidad; **[JUICIO]** económico para elegir
   entre (A) y (B). La lección de la tríada Fig 9.9 → 9.10 → 9.11 es que **"no colisiona" no significa
-  "está bien"**: el layout (B) pasa el check de colisión y produce el campo térmico malo de A-62.
+  "está bien"**: el layout (B) pasa el check de colisión y produce el campo térmico malo de A-199.
 - **INVALIDA:** cualquier cambio de `D`, `H`, `W`, del layout de expulsión o del tamaño de insertos.
 - **¿TENEMOS?** **PARCIAL, y el propio código denuncia su hueco.** El contrato `agua-claro` (§9.2.7)
   tiene el criterio literal *"al menos medio diámetro de claro entre la línea y CUALQUIER otro
@@ -1432,10 +1433,10 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   Y **falta por completo el retorno**: no existe la elección entre (A) agrandar la base y (B) alejar
   las líneas, con su costo.
 
-### A-62 · Campo térmico del molde y gradiente del núcleo profundo
-- **CUÁNDO:** después de A-61, sobre el layout ya ruteado. Es el juez de todo el capítulo.
-- **ENTRADAS:** layout de líneas ←A-61 · materiales de inserto ←A-65 · `T_coolant` · carga térmica
-  ←A-47 · geometría del núcleo.
+### A-199 · Campo térmico del molde y gradiente del núcleo profundo
+- **CUÁNDO:** después de A-198, sobre el layout ya ruteado. Es el juez de todo el capítulo.
+- **ENTRADAS:** layout de líneas ←A-198 · materiales de inserto ←A-202 · `T_coolant` · carga térmica
+  ←A-184 · geometría del núcleo.
 - **EL CÁLCULO:** resolver el campo de temperatura del molde y la pieza al final del ciclo y **contar
   isotermas**. Clave de lectura del libro: *"each contour line represents a 2 °C change in temperature."*
   Los dos números que se leen del mapa (Fig 9.11): *"Due to the relatively deep core, a gradient of
@@ -1445,8 +1446,8 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 - **SALIDA:** dos gradientes [°C] — base↔punta del núcleo, y núcleo↔cavidad a través de la pared — más
   el mapa.
 - **DECIDE:** dos cosas: (1) dispara los tres remedios de §9.3 — *"using a **highly conductive core
-  insert**, implementing a **baffle or bubbler**, or designing a **cooling insert**"* (A-63, A-65);
-  (2) alimenta el alabeo (A-71). El libro lo dice explícito: *"The temperature gradient in Figure 9.11
+  insert**, implementing a **baffle or bubbler**, or designing a **cooling insert**"* (A-200, A-202);
+  (2) alimenta el alabeo (A-208). El libro lo dice explícito: *"The temperature gradient in Figure 9.11
   will drive differential shrinkage along the axis of the cup as well as differential shrinkage through
   the wall thickness of the molding."*
 - **CRITERIO:** **[LIBRO]** por conteo de contornos, con **6 °C** como el valor que el propio libro
@@ -1462,8 +1463,8 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   reprueba contra el umbral del libro: *"el libro reprueba su ejemplo con 6 °C de base a punta del
   núcleo"*, cerrando con el enlace al alabeo: *"2 °C ya dan 1.6 mm"*.
 
-### A-63 · Selector de enfriamiento para núcleo esbelto (Tabla 9.3)
-- **CUÁNDO:** cuando A-62 detecta gradiente en un núcleo, o cuando la esbeltez lo anticipa.
+### A-200 · Selector de enfriamiento para núcleo esbelto (Tabla 9.3)
+- **CUÁNDO:** cuando A-199 detecta gradiente en un núcleo, o cuando la esbeltez lo anticipa.
 - **ENTRADAS:** **diámetro del núcleo** [mm] · longitud del núcleo · espacio para el barreno.
 - **EL CÁLCULO:** selección tabular por diámetro:
 
@@ -1480,7 +1481,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   el calor a la superficie del núcleo y **convectarlo por el centro**. Cotas extra: baffle mínimo
   ⌀ barreno **> 6.35 mm (1/4")**; bubbler de **< 2 mm en barreno < 3 mm**.
 - **SALIDA:** método elegido + ⌀ de barreno.
-- **DECIDE:** qué componente entra al núcleo, y con él A-64 (integridad estructural).
+- **DECIDE:** qué componente entra al núcleo, y con él A-201 (integridad estructural).
 - **CRITERIO:** **[LIBRO]** dimensional, con una **preferencia declarada** que no es de desempeño sino
   de riesgo: *"In terms of availability, **baffles are standard components readily available from a
   number of suppliers, whereas cooling inserts must be designed and manufactured**. Given the
@@ -1498,9 +1499,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   axial" es **INFERIDO** — el libro habla de *"high length to diameter ratio"* sin dar el número.
   ⚠ **NO OBSERVADO EN EL CORPUS:** el valor de `L/D` a partir del cual el núcleo se declara esbelto.
 
-### A-64 · Integridad estructural del núcleo con el dispositivo dentro
-- **CUÁNDO:** inmediatamente después de A-63.
-- **ENTRADAS:** ⌀ de barreno ←A-63 · ⌀ de núcleo · presión de fundido · tipo de dispositivo.
+### A-201 · Integridad estructural del núcleo con el dispositivo dentro
+- **CUÁNDO:** inmediatamente después de A-200.
+- **ENTRADAS:** ⌀ de barreno ←A-200 · ⌀ de núcleo · presión de fundido · tipo de dispositivo.
 - **EL CÁLCULO:** balance declarado: *"Larger cooling channels ... allow for higher coolant flow rates
   and higher rates of heat transfer. Larger cooling channels, however, require the removal of more
   volume inside the core and **a lessening of the core's structural integrity**."*
@@ -1512,7 +1513,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   the back surface of the core** so that forces resulting from the melt pressure are **transmitted
   directly to the support plate**."*
 - **SALIDA:** espesor de pared requerido del núcleo [mm] + veredicto.
-- **DECIDE:** si el ⌀ de barreno de A-63 se acepta o se reduce. Con la autocrítica del propio Kazmer
+- **DECIDE:** si el ⌀ de barreno de A-200 se acepta o se reduce. Con la autocrítica del propio Kazmer
   sobre su figura: *"This particular design **may favor cooling at too great an expense of core
   strength**. Depending on the melt pressures, it may be warranted to **move the cooling channels
   further from the cavity surface while reducing their width**."*
@@ -1523,9 +1524,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   (`(pMPa * phiCoreMm) / (2 * hWallMm)`). **Hueco:** las dos piezas no se encadenan — nadie verifica
   el espesor resultante contra la presión con el dispositivo elegido.
 
-### A-65 · Material asimétrico núcleo / cavidad
-- **CUÁNDO:** cuando A-62 muestra gradiente a través del espesor, sobre todo en esquinas internas.
-- **ENTRADAS:** gradiente medido ←A-62 · presiones de operación · abrasividad del material · volumen.
+### A-202 · Material asimétrico núcleo / cavidad
+- **CUÁNDO:** cuando A-199 muestra gradiente a través del espesor, sobre todo en esquinas internas.
+- **ENTRADAS:** gradiente medido ←A-199 · presiones de operación · abrasividad del material · volumen.
 - **EL CÁLCULO:** cualitativo, apoyado en una asimetría física medida:
   *"Because of the heat transfer **in three dimensions** and limitations regarding the proximity of the
   cooling line to the mold wall, **the cavity insert will conduct approximately twice the amount of
@@ -1551,7 +1552,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   es peor". Es un hueco de alto valor: el motor puede producir exactamente el diseño que el libro
   señala como error.
 
-### A-66 · Retorno de inversión del material conductivo
+### A-203 · Retorno de inversión del material conductivo
 - **CUÁNDO:** cuando se evalúa comprar acero o cobre caro para el molde.
 - **ENTRADAS:** razón de conductividades · costo del material ←cap. 3.
 - **EL CÁLCULO:** comparación de expectativa contra realidad. Literal: *"molds made out of highly
@@ -1573,9 +1574,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 
 ## C.5 — El circuito como objeto de operación
 
-### A-67 · Arquitectura del circuito
-- **CUÁNDO:** después de A-61, al conectar las líneas entre sí.
-- **ENTRADAS:** layout de líneas ←A-61 · tipo de molde (2 placas / 3 placas / canal caliente) ·
+### A-204 · Arquitectura del circuito
+- **CUÁNDO:** después de A-198, al conectar las líneas entre sí.
+- **ENTRADAS:** layout de líneas ←A-198 · tipo de molde (2 placas / 3 placas / canal caliente) ·
   hardware del moldeador.
 - **EL CÁLCULO:** cualitativo, cuatro arquitecturas ordenadas **de peor a mejor**:
   1. **Serie improvisada** por el operador con mangueras cortas — la peor. *"Such a setup has **two
@@ -1594,7 +1595,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   La llave que abre las opciones 3 y 4: *"**Once plugging is considered an option** in the routing of
   cooling lines, many more complex cooling line layout become available."*
 - **SALIDA:** arquitectura elegida + número de tapones + número de conexiones externas.
-- **DECIDE:** el número de conexiones (A-68), el ΔP del circuito (A-53) y el tiempo de setup del molde.
+- **DECIDE:** el número de conexiones (A-205), el ΔP del circuito (A-190) y el tiempo de setup del molde.
 - **CRITERIO:** **[JUICIO]** con **lean manufacturing como criterio de diseño explícito** (menos
   complejidad de proceso, menos tiempo de setup, menos modos de falla del operador).
   ⚠ **Y una condición dura que depende de otro capítulo:** el circuito perimetral solo vale con molde
@@ -1604,11 +1605,11 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 - **¿TENEMOS?** **FALTA.** No hay ningún modelo de arquitectura de circuito en `src/forja/mold/`:
   ni serie/paralelo, ni manifold interno, ni tapones como objeto, ni el veto del perimetral con molde
   de 2 placas. Se rutean líneas, no circuitos. Es el hueco más grande del cap. 9 en el motor, y es
-  además el que gobierna la **usabilidad** (A-68), que sí auditamos sin poder calcularla bien.
+  además el que gobierna la **usabilidad** (A-205), que sí auditamos sin poder calcularla bien.
 
-### A-68 · Usabilidad del circuito para el operador
-- **CUÁNDO:** al cerrar A-67.
-- **ENTRADAS:** número de conexiones por mitad ←A-67 · geometría de los componentes externos.
+### A-205 · Usabilidad del circuito para el operador
+- **CUÁNDO:** al cerrar A-204.
+- **ENTRADAS:** número de conexiones por mitad ←A-204 · geometría de los componentes externos.
 - **EL CÁLCULO:** tres verificaciones literales (§9.1.6):
   1. *"The number of external connections should be kept to a minimum, and **preferably two (one inlet
      and one outlet) per mold half**."*
@@ -1620,15 +1621,15 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 - **DECIDE:** si el molde es operable sin error. Es un **objetivo de diseño medible** que casi ningún
   software modela.
 - **CRITERIO:** **[LIBRO]**, ≤ 2 por mitad.
-- **INVALIDA:** cambio de arquitectura (A-67).
+- **INVALIDA:** cambio de arquitectura (A-204).
 - **¿TENEMOS?** **PARCIAL, y con el detalle correcto.** `mold-contratos.ts` id `agua-conexiones`
   (§9.1.6) audita el máximo de 2 conexiones por mitad, y el comentario de la línea 1211 muestra que
   el conteo se hace bien: *"las conexiones externas se cuentan del circuito RUTEADO, no del diseño
   numérico (N líneas ≠ N conexiones: el serpentín las une)"*. **FALTA** el etiquetado in/out, la
   detección de **circuito muerto** y el check de componentes empotrados.
 
-### A-69 · Expulsores dentro del área sellada por gasket
-- **CUÁNDO:** solo si A-67 o A-63 eligieron canales fresados en la cara trasera del inserto (§9.3.2).
+### A-206 · Expulsores dentro del área sellada por gasket
+- **CUÁNDO:** solo si A-204 o A-200 eligieron canales fresados en la cara trasera del inserto (§9.3.2).
 - **ENTRADAS:** contorno del gasket · posiciones de pines expulsores ←cap. 11.
 - **EL CÁLCULO:** booleano de contención punto-en-polígono. Literal: *"a groove has been provided and
   fitted with a **gasket**. When fastened tightly to the support plate, the gasket will prevent leakage
@@ -1646,12 +1647,12 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
   > **Enfriamiento conformal (§9.3.3), sin ficha.** El libro nombra el SLS y su efecto —
   > líneas helicoidales que siguen la cavidad, *"eliminating the temperature gradients"* — pero **no
   > da criterio de selección, ni cotas, ni cálculo**. Es una opción de manufactura a evaluar por costo
-  > y disponibilidad, no un análisis. Si se implementa, su juez es A-62 (el campo térmico resultante),
+  > y disponibilidad, no un análisis. Si se implementa, su juez es A-199 (el campo térmico resultante),
   > no una regla propia.
 
-### A-70 · Checklist de cierre de enfriamiento (§9.4)
+### A-207 · Checklist de cierre de enfriamiento (§9.4)
 - **CUÁNDO:** al congelar el subsistema de agua.
-- **ENTRADAS:** A-37…A-69.
+- **ENTRADAS:** A-174…A-206.
 - **EL CÁLCULO:** conjunción de quince criterios: `t_c` con criterio de línea central sobre la sección
   más gruesa, contrastado contra `2·h²` y consciente de que la realidad será mayor; potencia, caudal y
   `ΔT` verificados contra un controlador real; `ΔT ≤ 1 °C` (0.1 en precisión); `Re > 4000` en cada
@@ -1669,7 +1670,7 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 - **¿TENEMOS?** **PARCIAL.** Ocho contratos de agua existen (`agua-diametro`, `agua-catalogo`,
   `agua-turbulento`, `agua-profundidad`, `agua-paso`, `agua-controlador`, `agua-conexiones`,
   `agua-claro`, `agua-ciclo`). Faltan los criterios que dependen de lo que no modelamos: circuito
-  muerto (A-68), gasket (A-69), y la evaluación del gradiente como criterio de cierre (A-62 existe
+  muerto (A-205), gasket (A-206), y la evaluación del gradiente como criterio de cierre (A-199 existe
   como lámina, no como contrato).
 
 ---
@@ -1679,9 +1680,9 @@ optimized. **The goal is for the mold designer to reach a good compromise**."*
 El cap. 9 nunca dice "tu circuito está mal" con un número de pieza. Lo dice el cap. 10, y por eso
 esta ficha vive aquí: **es la consecuencia que justifica todo el capítulo anterior.**
 
-### A-71 · Alabeo por contracción diferencial a través del espesor (Ecs. 10.17 y 10.18)
-- **CUÁNDO:** después de A-62, con el gradiente núcleo↔cavidad ya medido.
-- **ENTRADAS:** `ΔT` a través del espesor ←A-62 · contracción de cada cara a su temperatura ←cap. 10
+### A-208 · Alabeo por contracción diferencial a través del espesor (Ecs. 10.17 y 10.18)
+- **CUÁNDO:** después de A-199, con el gradiente núcleo↔cavidad ya medido.
+- **ENTRADAS:** `ΔT` a través del espesor ←A-199 · contracción de cada cara a su temperatura ←cap. 10
   (cadena PvT) · espesor `h` de la pieza · semiancho `W` (centro→borde).
 - **EL CÁLCULO:**
   `R_warpage = 2·h / (s_core − s_cavity)` (Ec. 10.17)
@@ -1697,7 +1698,7 @@ esta ficha vive aquí: **es la consecuencia que justifica todo el capítulo ante
   piso: *"this warpage estimate is not sensitive to the overall temperature of the molding, but only
   to the temperature gradient through the thickness."* Subir o bajar la temperatura del molde no lo
   arregla; solo emparejarlo.
-- **INVALIDA:** cualquier cambio del campo térmico (A-62) o de la contracción del material.
+- **INVALIDA:** cualquier cambio del campo térmico (A-199) o de la contracción del material.
 - **¿TENEMOS?** **SÍ, y con una errata del libro documentada.** `warpage.ts::alabeoPorEspesor`
   implementa las Ecs. 10.17–10.18 y devuelve `{ radiusMm, deltaMm, contraccionTotalMm,
   superaContraccion }` — o sea **también hace la comparación del criterio**. El encabezado documenta
@@ -1715,16 +1716,16 @@ produce número ni veredicto que alimente una decisión.
 
 | Qué | § | Por qué no es análisis |
 |---|---|---|
-| Anatomía y función de cada tipo de compuerta (cómo entra el fundido, qué se ve en la sección) | §7.2.1–7.2.9 | Descripción. El análisis es la **selección** (A-02) y las cotas (A-05, A-14) |
-| El truco físico del flash gate (sección gruesa que presuriza y fuerza a la delgada) | §7.2.6 | Explica **por qué** funciona; el análisis es A-16 (las condiciones) |
-| Mecánica del thermal gate: torpedo con *"three or four orifices"*, capa aislante, black specks, vetas de color | §7.2.8 | Pros/contras cualitativos que **entran a A-02** como atributos del tipo, no como cálculo propio |
+| Anatomía y función de cada tipo de compuerta (cómo entra el fundido, qué se ve en la sección) | §7.2.1–7.2.9 | Descripción. El análisis es la **selección** (A-139) y las cotas (A-142, A-151) |
+| El truco físico del flash gate (sección gruesa que presuriza y fuerza a la delgada) | §7.2.6 | Explica **por qué** funciona; el análisis es A-153 (las condiciones) |
+| Mecánica del thermal gate: torpedo con *"three or four orifices"*, capa aislante, black specks, vetas de color | §7.2.8 | Pros/contras cualitativos que **entran a A-139** como atributos del tipo, no como cálculo propio |
 | Que el valve gate cueste *"twice the cost of a hot runner system with thermal gates"* | §7.2.9 | Dato de costo que consume el cap. 3, no un análisis del cap. 7 |
-| Los tres defectos por no ventear (short shot, dieseling/burn marks, soldadura débil con v-notches) | §8.1.1 | Motivación. Pero **la v-notch es estructural, no cosmética**, y eso califica el criterio de A-36 |
-| Que la rebaba desgaste el plano de partición y obligue a *resurfacing* | §8.1.2 | Consecuencia que fundamenta el sesgo *"fewer and smaller vents are preferred"* (A-29/A-34) |
-| Mantenimiento de venteos y el off-gassing acelerado por desmoldante | §8.1.3 | Sesgo de diseño hacia autolimpiables; nota puesta al pie de A-36 |
-| Que cada línea de agua debilite el molde (concentrador + fatiga + corrosión que propaga grietas) | §9.1.5 | Fundamenta A-56 y el claro de ½·D de A-61; no calcula nada aparte |
-| Enfriamiento conformal por SLS | §9.3.3 | El libro **no da criterio ni cotas**; se juzga por su campo térmico (A-62). Nota al pie de A-69 |
-| Descripción de baffle / bubbler / heat pipe (cómo funciona cada uno) | §9.3.5.1–9.3.5.6 | Mecanismo. El análisis es la **selección** (A-63) y la carga (A-64) |
+| Los tres defectos por no ventear (short shot, dieseling/burn marks, soldadura débil con v-notches) | §8.1.1 | Motivación. Pero **la v-notch es estructural, no cosmética**, y eso califica el criterio de A-173 |
+| Que la rebaba desgaste el plano de partición y obligue a *resurfacing* | §8.1.2 | Consecuencia que fundamenta el sesgo *"fewer and smaller vents are preferred"* (A-166/A-171) |
+| Mantenimiento de venteos y el off-gassing acelerado por desmoldante | §8.1.3 | Sesgo de diseño hacia autolimpiables; nota puesta al pie de A-173 |
+| Que cada línea de agua debilite el molde (concentrador + fatiga + corrosión que propaga grietas) | §9.1.5 | Fundamenta A-193 y el claro de ½·D de A-198; no calcula nada aparte |
+| Enfriamiento conformal por SLS | §9.3.3 | El libro **no da criterio ni cotas**; se juzga por su campo térmico (A-199). Nota al pie de A-206 |
+| Descripción de baffle / bubbler / heat pipe (cómo funciona cada uno) | §9.3.5.1–9.3.5.6 | Mecanismo. El análisis es la **selección** (A-200) y la carga (A-201) |
 | Reparto de responsabilidad dimensional entre diseñador de pieza, proveedor, moldeador y diseñador de molde | §10 intro | Gobierno del proyecto. Define el entregable de estos capítulos (*"balanced melt filling and cooling"*) pero no es cálculo |
 
 ---
@@ -1735,22 +1736,22 @@ El corpus derivado es bueno en prosa, ecuaciones y ejemplos numéricos, y **cieg
 apéndices**. Lo que falta, en orden de cuánto duele:
 
 1. **El Apéndice A completo.** Los `gammadot_max` por material, las **no-flow temperatures** y las
-   propiedades térmicas se **citan** en los caps. 7 y 9 y **no vienen** en el corpus. Sin eso, A-06 y
-   A-11 no tienen umbral propio: hay que traerlo del proveedor. El libro además avisa que sus valores
+   propiedades térmicas se **citan** en los caps. 7 y 9 y **no vienen** en el corpus. Sin eso, A-143 y
+   A-148 no tienen umbral propio: hay que traerlo del proveedor. El libro además avisa que sus valores
    son *"aproximados en el mejor de los casos"*, así que el hueco es menos grave de lo que parece —
    pero es un hueco.
 2. **El Apéndice C completo.** Propiedades de refrigerantes (`rho`, `Cp`, `mu`, `k` por fluido).
-   A-50 y A-52 las necesitan; hoy salen de constantes nuestras (`AGUA`, `GLYCOL`, `OIL`).
+   A-187 y A-189 las necesitan; hoy salen de constantes nuestras (`AGUA`, `GLYCOL`, `OIL`).
 3. **Las variantes power-law completas de las Tablas 7.2 y 7.3.** El corpus da la forma newtoniana de
    cada una y menciona *"con variantes power-law"* sin transcribirlas. Tenemos una (tira) en código
    porque se reconstruyó; las demás filas de ambas tablas no están observadas.
-4. **La ecuación de la corrección convectiva de §9.2.1 (A-41).** El corpus da `h_c ≈ 1000` y el
+4. **La ecuación de la corrección convectiva de §9.2.1 (A-178).** El corpus da `h_c ≈ 1000` y el
    resultado (19 s → 24 s) pero **no la expresión**. Lo suplimos resolviendo el problema completo por
    FDM, que es más caro y más correcto, pero no es lo que el libro escribió.
 5. **El número de ecuación de `Q = m·Cp·(Tmelt − Teject)`.** El corpus da la fórmula y el ejemplo
    (20,900 J) sin numerarla. La rotulamos **Eq 9.10** porque así estaba ya en el código antes de este
    pliego — evidencia independiente, no cita.
-6. **El umbral `L/D` que define "núcleo esbelto" (A-63).** El libro dice *"high length to diameter
+6. **El umbral `L/D` que define "núcleo esbelto" (A-200).** El libro dice *"high length to diameter
    ratio"*; nuestro `L/⌀ > 3` es **INFERIDO**.
 7. **La expresión de la curva de Menges (Eq 9.23).** El corpus da el hallazgo (variación < 5 % hasta
    `W = 2H`, y luego *"increases dramatically"*) y la forma de la figura, no la función. La nuestra
@@ -1790,19 +1791,19 @@ Ninguna es opinión: todas salen de reproducir los ejemplos numéricamente.
 
 | Capítulo | Análisis | Rango |
 |---|---|---|
-| Cap. 7 — compuertas | **20** | A-01 … A-20 |
-| Cap. 8 — venteo | **16** | A-21 … A-36 |
-| Cap. 9 — enfriamiento | **34** | A-37 … A-70 |
-| Cap. 10 §10.3.1 (frontera) | **1** | A-71 |
+| Cap. 7 — compuertas | **20** | A-138 … A-157 |
+| Cap. 8 — venteo | **16** | A-158 … A-173 |
+| Cap. 9 — enfriamiento | **34** | A-174 … A-207 |
+| Cap. 10 §10.3.1 (frontera) | **1** | A-208 |
 
 Que el cap. 9 pese la mitad del tomo no es sesgo de extracción: es el capítulo más cuantitativo del
 libro y el único con una cadena de veintitantos eslabones donde cada número sale del anterior.
 
 | Estado | Cuántos | Cuáles |
 |---|---|---|
-| **SÍ (implementado con ancla verificada)** | **38** | A-02, A-05, A-07, A-10, A-11, A-12, A-14, A-15, A-17, A-22, A-23, A-24, A-25, A-27, A-28, A-29, A-30, A-31, A-33, A-37, A-38, A-39, A-40, A-42, A-46, A-47, A-48, A-51, A-52, A-53, A-54, A-56, A-57, A-58, A-59, A-62, A-63, A-71 |
-| **PARCIAL** | **20** | A-01, A-03, A-04, A-06, A-09, A-13, A-20, A-21, A-35, A-36, A-41, A-43, A-44, A-49, A-50, A-55, A-61, A-64, A-68, A-70 |
-| **FALTA** | **13** | A-08, A-16, A-18, A-19, A-26, A-32, A-34, A-45, A-60, A-65, A-66, A-67, A-69 |
+| **SÍ (implementado con ancla verificada)** | **38** | A-139, A-142, A-144, A-147, A-148, A-149, A-151, A-152, A-154, A-159, A-160, A-161, A-162, A-164, A-165, A-166, A-167, A-168, A-170, A-174, A-175, A-176, A-177, A-179, A-183, A-184, A-185, A-188, A-189, A-190, A-191, A-193, A-194, A-195, A-196, A-199, A-200, A-208 |
+| **PARCIAL** | **20** | A-138, A-140, A-141, A-143, A-146, A-150, A-157, A-158, A-172, A-173, A-178, A-180, A-181, A-186, A-187, A-192, A-198, A-201, A-205, A-207 |
+| **FALTA** | **13** | A-145, A-153, A-155, A-156, A-163, A-169, A-171, A-182, A-197, A-202, A-203, A-204, A-206 |
 
 El patrón, en una frase: **las ecuaciones están casi todas y los objetos casi ninguno.**
 Sabemos calcular `h_min`, `h_max`, `t_c`, `Re`, `D_min`, `H`, `W` y el campo térmico completo — y no
@@ -1810,38 +1811,38 @@ existe el objeto "venteo" con su land y su alivio, ni el objeto "circuito" con s
 tapones, ni la decisión de material **por lado**. Todo lo que falta es *forma*, no *física*.
 
 Y hay un segundo patrón, más incómodo: **los sesgos que faltan empujan todos en la misma dirección
-optimista.** El `t_c` que alimenta la cadena es el isotérmico (A-41: tenemos el convectivo y no lo
-usamos); dos líneas en serie no duplican el caudal requerido (A-50); las dos letras chicas de §9.2.1
-no salen en ningún reporte (A-39). Cada una por separado es menor; juntas hacen que el ciclo se vea
+optimista.** El `t_c` que alimenta la cadena es el isotérmico (A-178: tenemos el convectivo y no lo
+usamos); dos líneas en serie no duplican el caudal requerido (A-187); las dos letras chicas de §9.2.1
+no salen en ningún reporte (A-176). Cada una por separado es menor; juntas hacen que el ciclo se vea
 más corto de lo que va a ser.
 
 ### Los 8 huecos que más duelen
 
-1. **A-67 · No existe el circuito, solo las líneas.** Es el hueco más grande del cap. 9. Sin
+1. **A-204 · No existe el circuito, solo las líneas.** Es el hueco más grande del cap. 9. Sin
    arquitectura (serie / paralelo con manifold en máquina / manifold interno / perimetral) no hay
    tapones, no hay conteo real de conexiones, y el **veto del perimetral con molde de 2 placas** no se
-   puede ni plantear. Y A-68 (usabilidad) audita un número que no sabemos calcular bien.
-2. **A-65 · El material del inserto no es una decisión por lado.** El motor elige un material para el
+   puede ni plantear. Y A-205 (usabilidad) audita un número que no sabemos calcular bien.
+2. **A-202 · El material del inserto no es una decisión por lado.** El motor elige un material para el
    molde. El libro exige asimetría (cavidad drena ~2× el calor que el núcleo) y avisa que
    **hacer ambos de Cu 940 es peor que solo el núcleo**. Hoy podemos producir exactamente el diseño
    que el libro señala como error, con el catálogo que ya tenemos.
-3. **A-26 · `t_flash` está hardcodeado en 0.003 s.** `venting.ts::ventMaxThickness` recibe el tiempo
+3. **A-163 · `t_flash` está hardcodeado en 0.003 s.** `venting.ts::ventMaxThickness` recibe el tiempo
    de solidificación como default fijo, cuando `gating.ts::gateFreezeStripS` sabe calcularlo, está en
    el mismo directorio y el libro dice explícitamente que se use. Cambia el material y `h_max` no se
    entera. **Dato bien calculado que no llega** — el mismo patrón que ya cazamos en el cap. 3.
-4. **A-32 · El venteo no tiene geometría.** `PlanVenteo` guarda puntos; el libro pide land + canal de
+4. **A-169 · El venteo no tiene geometría.** `PlanVenteo` guarda puntos; el libro pide land + canal de
    alivio + salida, y en el expulsor exige **los dos** elementos (canal a 3 mm + taper de guía) con la
    frase *"Both of these elements should be present in a good vent design"*. Sin geometría, el
-   contrato `vent-vs-agua` (A-35) mide sobre un objeto que no existe.
-5. **A-60 · Falta la alarma del conductivo a paso ancho.** `moldbase.ts` puede recomendar Cu 940
+   contrato `vent-vs-agua` (A-172) mide sobre un objeto que no existe.
+5. **A-197 · Falta la alarma del conductivo a paso ancho.** `moldbase.ts` puede recomendar Cu 940
    porque *"El ciclo manda"* y dejar el paso flojo — la combinación exacta que el libro dedica un
    párrafo a prohibir, porque el conductivo **aumenta** la variación de flujo de calor.
-6. **A-08 · Falta la conversión del diafragma a tira.** Sin `W = pi·D_diafragma` la compuerta se
+6. **A-145 · Falta la conversión del diafragma a tira.** Sin `W = pi·D_diafragma` la compuerta se
    dimensiona con el ancho equivocado por un factor grande. Es media línea de código.
-7. **A-34 · Nadie decide la solución del dead pocket.** Tenemos las cuchillas dimensionadas
+7. **A-171 · Nadie decide la solución del dead pocket.** Tenemos las cuchillas dimensionadas
    (`ejectortypes.ts`, con su pandeo) y las bolsas localizadas (`venting-locations.ts`), y falta la
    frase que las une: la cuchilla gana casi siempre porque **ventea y expulsa**.
-8. **A-61 · El claro de agua se exige a ½·D y se mide a 2 mm fijos.** El contrato `agua-claro` calcula
+8. **A-198 · El claro de agua se exige a ½·D y se mide a 2 mm fijos.** El contrato `agua-claro` calcula
    bien el límite (`limite: D / 2`) pero consume una holgura medida por `coordAudit` con umbral fijo
    de 2 mm. El propio código lo dice: *"puede estar en verde mientras esto está en rojo"*. Un criterio
    bien citado evaluado con la métrica equivocada es peor que no tenerlo. Y con ⌀6.35 mm el ½⌀ son
@@ -1880,208 +1881,208 @@ El volcado del orden en que Kazmer piensa en estos tres capítulos. `→` = alim
 ```
 
 Las tres fases **no son secuenciales puras**: el venteo hereda el caudal de llenado (no de las
-compuertas), y el enfriamiento le devuelve a las compuertas el `t_c` que decide si empacan (A-39 → A-12).
+compuertas), y el enfriamiento le devuelve a las compuertas el `t_c` que decide si empacan (A-176 → A-149).
 
 ## Fase A — Compuertas
 
 ```
-A-01 ruta de degatado ─┐
-A-03 zona gateable    ─┼─→ A-02 TIPO (Tabla 7.1) ──→ A-05 semilla dimensional
+A-138 ruta de degatado ─┐
+A-140 zona gateable    ─┼─→ A-139 TIPO (Tabla 7.1) ──→ A-142 semilla dimensional
 [cap.6 tipo de runner]─┘         │                          │
 [cap.5 flujo deseado] ─┘         │                          ▼
-                                 │                   A-08 geometría equivalente
+                                 │                   A-145 geometría equivalente
                                  │                          │
-[cap.5 caudal] → A-04 caudal por compuerta ─────────────────┤
+[cap.5 caudal] → A-141 caudal por compuerta ─────────────────┤
                                                             ▼
-                                              A-06 CORTE  ──┬──→ A-07 despeje inverso
+                                              A-143 CORTE  ──┬──→ A-144 despeje inverso
                                                             │         │
-                                              A-09 viscosidad al corte│
+                                              A-146 viscosidad al corte│
                                                             ▼         │
-                                              A-10 CAÍDA DE PRESIÓN   │
+                                              A-147 CAÍDA DE PRESIÓN   │
                                                             │         │
-                                              A-11 congelamiento ◄────┘
+                                              A-148 congelamiento ◄────┘
                                                             ▼
-                            [FASE C: A-39 t_c] ──→ A-12 FREEZE vs EMPAQUE
+                            [FASE C: A-176 t_c] ──→ A-149 FREEZE vs EMPAQUE
                                                             │
-                                                   A-13 ¿sección delgada?
+                                                   A-150 ¿sección delgada?
                                                             ▼
-                                        A-17 steel-safe → A-20 cierre §7.4
-  reglas por tipo, en paralelo:  A-14 túnel (45°/20°/3D) → A-15 sucker pins
-                                 A-16 flujo lineal (fan/flash/diafragma)
-  disparados por veredicto:      A-18 ¿balancear con gates?   A-19 remedios de contracción
+                                        A-154 steel-safe → A-157 cierre §7.4
+  reglas por tipo, en paralelo:  A-151 túnel (45°/20°/3D) → A-152 sucker pins
+                                 A-153 flujo lineal (fan/flash/diafragma)
+  disparados por veredicto:      A-155 ¿balancear con gates?   A-156 remedios de contracción
 ```
 
-**Paralelo:** A-01 ‖ A-03 (independientes) · A-14 ‖ A-16 (reglas por tipo, no se estorban) ·
-los `n` gates del molde se analizan en paralelo salvo por A-18.
+**Paralelo:** A-138 ‖ A-140 (independientes) · A-151 ‖ A-153 (reglas por tipo, no se estorban) ·
+los `n` gates del molde se analizan en paralelo salvo por A-155.
 
 ## Fase B — Venteo
 
 ```
-[cap.5 caudal] → A-21 gasto de aire → A-22 REPARTO (NO dividir entre n)
-[cap.5 patrón de llenado] → A-23 candidatos (3 tipos) → A-24 obligatorio/opcional/diferido
+[cap.5 caudal] → A-158 gasto de aire → A-159 REPARTO (NO dividir entre n)
+[cap.5 patrón de llenado] → A-160 candidatos (3 tipos) → A-161 obligatorio/opcional/diferido
                                      │                          │
                                      │                          ├─(tipo 2 knit)→ [cap.11 pin expulsor]
-                                     │                          └─(tipo 3 bolsa)→ A-34 inserto/cuchilla/sinterizado
+                                     │                          └─(tipo 3 bolsa)→ A-171 inserto/cuchilla/sinterizado
                                      ▼
-        A-22 ─→ A-25 h_min (Eq 8.2) ──┐
-                                       ├──→ A-29 BANDA h_min ≤ h ≤ h_max ──→ A-32 anatomía
-   A-26 t_flash ─→ A-27 P_melt ─→ A-28 h_max (Eq 8.3) ┘          │                  │
-                                       A-30 Tabla 8.1 (3 handbooks) ┘               │
-        (expulsores) A-31 h = 0.065 por holgura 0.13 ──────────────────────────────┤
+        A-159 ─→ A-162 h_min (Eq 8.2) ──┐
+                                       ├──→ A-166 BANDA h_min ≤ h ≤ h_max ──→ A-169 anatomía
+   A-163 t_flash ─→ A-164 P_melt ─→ A-165 h_max (Eq 8.3) ┘          │                  │
+                                       A-167 Tabla 8.1 (3 handbooks) ┘               │
+        (expulsores) A-168 h = 0.065 por holgura 0.13 ──────────────────────────────┤
                                                                                     ▼
-                              [cap.12 deflexión] → A-33 flash sobre cara estética   │
-                              [FASE C layout]    → A-35 vent vs línea de agua ──────┤
+                              [cap.12 deflexión] → A-170 flash sobre cara estética   │
+                              [FASE C layout]    → A-172 vent vs línea de agua ──────┤
                                                                                     ▼
-                                                                        A-36 cierre §8.4
+                                                                        A-173 cierre §8.4
 ```
 
-**Paralelo:** A-25 ‖ la rama (A-26 → A-27 → A-28); convergen en A-29. Cada candidato de A-24 se
+**Paralelo:** A-162 ‖ la rama (A-163 → A-164 → A-165); convergen en A-166. Cada candidato de A-161 se
 dimensiona de forma independiente.
 
 ## Fase C — Enfriamiento (la cadena larga)
 
 ```
-[cap.2 espesores] → A-37 sección gobernante ─┐
-[material]        → A-38 T_eject (HDT/DTUL) ─┤
+[cap.2 espesores] → A-174 sección gobernante ─┐
+[material]        → A-175 T_eject (HDT/DTUL) ─┤
                                               ▼
-                                    A-39 t_c (Eqs 9.5/9.6) ──→ [FASE A: A-12]
-                                       │   ‖ A-40 regla 2h²
-                                       │   ‖ A-41 corrección convectiva (+25%)
-                                       │   ‖ A-44 un solo lado (h→2h, ×4) → A-45 orden two-shot
+                                    A-176 t_c (Eqs 9.5/9.6) ──→ [FASE A: A-149]
+                                       │   ‖ A-177 regla 2h²
+                                       │   ‖ A-178 corrección convectiva (+25%)
+                                       │   ‖ A-181 un solo lado (h→2h, ×4) → A-182 orden two-shot
                                        ▼
-                            A-42 t_c del runner  ⇒RETORNO a cap.6
+                            A-179 t_c del runner  ⇒RETORNO a cap.6
                                        ▼
-                            A-43 t_c GOBERNANTE  ⇒RETORNO a arquitectura (¿2 moldes?)
+                            A-180 t_c GOBERNANTE  ⇒RETORNO a arquitectura (¿2 moldes?)
                                        │
-[cap.2 volumen] → A-46 masa del disparo (piezas + coladas)
+[cap.2 volumen] → A-183 masa del disparo (piezas + coladas)
                                        ▼
-                            A-47 Q = m·Cp·ΔT  (Eq 9.10)
+                            A-184 Q = m·Cp·ΔT  (Eq 9.10)
                                        ▼
-                            A-48 Qdot = Q/t_c ; Qdot_line = Qdot/n_lines   ◄══════════╗
+                            A-185 Qdot = Q/t_c ; Qdot_line = Qdot/n_lines   ◄══════════╗
                                        ▼                                              ║
-                            A-49 ΔT admisible (1 °C / 0.1 °C)                         ║
+                            A-186 ΔT admisible (1 °C / 0.1 °C)                         ║
                                        ▼                                              ║
-                            A-50 Vdot por línea (Eq 9.13)  ──→ A-51 controlador (T9.1) ║
+                            A-187 Vdot por línea (Eq 9.13)  ──→ A-188 controlador (T9.1) ║
                                        │                                              ║
                         ┌──────────────┴──────────────┐                               ║
                         ▼                             ▼                               ║
-            A-52 D_max turbulencia         A-53 D_min por ΔP (½ presión, L en serie)   ║
-                        └──────────────┬──────────────┘   ‖ A-55 laminar (Eq 9.18)     ║
+            A-189 D_max turbulencia         A-190 D_min por ΔP (½ presión, L en serie)   ║
+                        └──────────────┬──────────────┘   ‖ A-192 laminar (Eq 9.18)     ║
                                        ▼                                              ║
-                            A-54 D ESTÁNDAR (Tabla 9.2 DME)                            ║
+                            A-191 D ESTÁNDAR (Tabla 9.2 DME)                            ║
                                        │                                              ║
                         ┌──────────────┴──────────────┐                               ║
                         ▼                             ▼                               ║
-            A-56 profundidad estructural   A-57 profundidad térmica                    ║
+            A-193 profundidad estructural   A-194 profundidad térmica                    ║
                         └──────────────┬──────────────┘                               ║
                                        ▼                                              ║
-                            A-58 VENTANA 2D < H < 5D (Eq 9.22)                         ║
+                            A-195 VENTANA 2D < H < 5D (Eq 9.22)                         ║
                                        ▼                                              ║
-                            A-59 PASO H < W < 2H (Eq 9.24) → n_lines ═══════════════════╝
+                            A-196 PASO H < W < 2H (Eq 9.24) → n_lines ═══════════════════╝
                                        │                      EL LAZO INTERIOR (§9.2.2)
-                                       ├── A-60 trampa del conductivo a paso ancho
+                                       ├── A-197 trampa del conductivo a paso ancho
                                        ▼
-                            A-61 RUTEO · claro ≥ ½·D   ⇒RETORNO (A) base+placas / (B) alejar
+                            A-198 RUTEO · claro ≥ ½·D   ⇒RETORNO (A) base+placas / (B) alejar
                                        ▼
-                            A-62 CAMPO TÉRMICO (isotermas a 2 °C, gradiente 6 °C)
+                            A-199 CAMPO TÉRMICO (isotermas a 2 °C, gradiente 6 °C)
                                        │
                         ┌──────────────┼──────────────┬──────────────┐
                         ▼              ▼              ▼              ▼
-              A-63 Tabla 9.3    A-65 material   A-66 ROI del    A-67 arquitectura
+              A-200 Tabla 9.3    A-202 material   A-203 ROI del    A-204 arquitectura
               (núcleo esbelto)  asimétrico      conductivo      del circuito
                         ▼                                            ▼
-              A-64 integridad del núcleo                   A-68 usabilidad (≤2 conexiones)
-                                                           A-69 expulsores dentro del gasket
+              A-201 integridad del núcleo                   A-205 usabilidad (≤2 conexiones)
+                                                           A-206 expulsores dentro del gasket
                                        ▼
-                            A-70 cierre §9.4
+                            A-207 cierre §9.4
                                        ▼
-                            A-71 ALABEO (Ecs 10.17-10.18): 2 °C ⇒ 1.6 mm
+                            A-208 ALABEO (Ecs 10.17-10.18): 2 °C ⇒ 1.6 mm
 ```
 
 ## LOS RETORNOS (lo que hace que esto sea un grafo y no un wizard)
 
 ```
-R1  ⇒ A-06/A-07 → A-02      LA DIMENSIÓN CAMBIA LA CLASE. Ensanchar el edge gate del bezel a 14 mm
+R1  ⇒ A-143/A-144 → A-139      LA DIMENSIÓN CAMBIA LA CLASE. Ensanchar el edge gate del bezel a 14 mm
                             para bajar el corte "would require a change in the gate type to a fan
                             gate". §7.3.2. TENEMOS: contrato `gate-escala-nivel` y la iteración de
                             `designGateProcess` escalan de tipo.
 
-R2  ⇒ A-13 → arquitectura   EL CÁLCULO DE UNA COMPUERTA CONCLUYE "CAMBIA EL TIPO DE MOLDE".
+R2  ⇒ A-150 → arquitectura   EL CÁLCULO DE UNA COMPUERTA CONCLUYE "CAMBIA EL TIPO DE MOLDE".
       de molde (cap. 3-4)   "a three-plate mold or hot runner mold should be considered". §7.3.4.
                             Invalida compuerta Y runner dimensionados. PARCIAL: detectamos el nivel,
                             no ejecutamos el regreso.
 
-R3  ⇒ A-12 → A-05/A-07      FREEZE PREMATURO CON TODO LO DEMÁS EN VERDE. "the dimensions should be
+R3  ⇒ A-149 → A-142/A-144      FREEZE PREMATURO CON TODO LO DEMÁS EN VERDE. "the dimensions should be
                             adjusted even if the shear rates and pressure drops were found
                             acceptable". §7.1.5/§7.3.5. TENEMOS el veredicto; FALTA el menú de
-                            remedios (A-19).
+                            remedios (A-156).
 
-R4  ⇒ A-18 → cap. 6         NO BALANCEES CON COMPUERTAS. El balanceo por gate es "extremely limited";
+R4  ⇒ A-155 → cap. 6         NO BALANCEES CON COMPUERTAS. El balanceo por gate es "extremely limited";
       (diámetros de runner) va a runners o a control dinámico (§13.6.4). §7.3.5. Coincide por
                             accidente: `feed-layouts.ts` balancea con radios y nunca ofrece gates.
 
-R5  ⇒ A-29 → A-24           BANDA CERRADA. Si h_min > h_max: "more and wider vents could be used to
+R5  ⇒ A-166 → A-161           BANDA CERRADA. Si h_min > h_max: "more and wider vents could be used to
                             reduce the required air flow, after which the vent thickness could be
                             reduced". §8.2.3. PARCIAL: reportamos `feasible:false`, no ejecutamos.
 
-R6  ⇒ tryout → A-24/A-29    STEEL-SAFE DEL VENTEO. Los reservados se abren y los espesores crecen
+R6  ⇒ tryout → A-161/A-166    STEEL-SAFE DEL VENTEO. Los reservados se abren y los espesores crecen
                             si aparece quemado. §8.3.1/§8.4. TENEMOS: `expediente.ts` emite las dos
                             líneas del plan de tryout.
 
-R7  ⇒ A-33 → cap. 12        FLASH POR FLEXIÓN DE PLACAS. No es problema del venteo: rediseño
+R7  ⇒ A-170 → cap. 12        FLASH POR FLEXIÓN DE PLACAS. No es problema del venteo: rediseño
       / stripper plate      estructural, o venteo interno en placa desmoldeadora (§11.3.4). §8.3.1.
                             TENEMOS el cruce (`estr-deflexion-vs-venteo`); falta la ruta de salida.
 
-R8  ⇒ A-61 → A-35           EL AGUA MUEVE AL VENTEO. "it may be desirable to avoid a large vent
+R8  ⇒ A-198 → A-172           EL AGUA MUEVE AL VENTEO. "it may be desirable to avoid a large vent
                             channel near cooling lines" — el venteo cede el paso. §8.3.2.
                             Contrato `vent-vs-agua`, sin geometría que medir.
 
-R9  ⇒ A-42 → cap. 6         EL RUNNER DOMINA EL CICLO (22.9 s > 18.9 s). "it is important to minimize
+R9  ⇒ A-179 → cap. 6         EL RUNNER DOMINA EL CICLO (22.9 s > 18.9 s). "it is important to minimize
       (diámetros de runner) the runner diameters not just for material savings but also to maintain a
                             productive molding process". §9.2.1. Invalida t_c, potencia, caudal y
                             costo. TENEMOS la señal (`feed.ts:135`), no la acción.
 
-R10 ⇒ A-43 → arquitectura   MOLDE FAMILIAR CON ESPESORES DISTINTOS. Dos moldes serían más económicos
+R10 ⇒ A-180 → arquitectura   MOLDE FAMILIAR CON ESPESORES DISTINTOS. Dos moldes serían más económicos
                             "However, such a mold design strategy gives up color matching and
                             at-press assembly". §9.2.1. Juicio de negocio sobre número físico. FALTA.
 
-R11 ⇒ A-59 → A-48           ★ EL LAZO INTERIOR, DECLARADO POR EL AUTOR. El paso fija n_lines, que
+R11 ⇒ A-196 → A-185           ★ EL LAZO INTERIOR, DECLARADO POR EL AUTOR. El paso fija n_lines, que
                             regresa a repartir la potencia: "multiple design iterations may be
                             necessary ... with varying number of cooling lines". §9.2.2 ↔ §9.2.6.
                             TENEMOS: `coolingDesign` deriva n_lines del paso y recalcula Qdot_line
                             y el caudal. Es el único lazo del tomo que está realmente cerrado.
 
-R12 ⇒ A-61 → (A) cap. 4     LAYOUT INFACTIBLE (Fig 9.9). Dos rescates con costo declarado:
-             (B) A-58/A-59  (A) agrandar insertos y mold base — "redesign of the mold, procurement of
+R12 ⇒ A-198 → (A) cap. 4     LAYOUT INFACTIBLE (Fig 9.9). Dos rescates con costo declarado:
+             (B) A-195/A-196  (A) agrandar insertos y mold base — "redesign of the mold, procurement of
                             a larger mold base, and more machining", invalida base y placas;
                             (B) alejar las líneas manteniendo el ratio paso:profundidad — "poor
                             cooling performance, it is quite common", se maquina en un solo setup
                             sin sellos. §9.2.7. FALTA la elección; solo detectamos la colisión.
 
-R13 ⇒ A-62 → A-63/A-65      GRADIENTE DE 6 °C EN NÚCLEO PROFUNDO → los tres remedios: "using a highly
+R13 ⇒ A-199 → A-200/A-202      GRADIENTE DE 6 °C EN NÚCLEO PROFUNDO → los tres remedios: "using a highly
                             conductive core insert, implementing a baffle or bubbler, or designing a
                             cooling insert". §9.2.7→§9.3. TENEMOS el gradiente y la Tabla 9.3;
                             FALTA el disparo automático y el material asimétrico.
 
-R14 ⇒ A-51 → A-49/A-67      EL CONTROLADOR NO ALCANZA. "multiple mold temperature controllers would
+R14 ⇒ A-188 → A-186/A-204      EL CONTROLADOR NO ALCANZA. "multiple mold temperature controllers would
                             be needed if the allowable temperature increase were set to 0.1 °C, or if
                             the number of cavities was increased from 2 to 8". §9.2.3. TENEMOS el
                             check, no la consecuencia sobre el circuito.
 
-R15 ⇒ A-64 → A-63           EL DISPOSITIVO DEBILITA EL NÚCLEO. "may favor cooling at too great an
+R15 ⇒ A-201 → A-200           EL DISPOSITIVO DEBILITA EL NÚCLEO. "may favor cooling at too great an
                             expense of core strength ... move the cooling channels further from the
                             cavity surface while reducing their width". §9.3.5.1. PARCIAL: acotamos
                             el barreno a ⅔·⌀, no verificamos contra la presión.
 
-R16 ⇒ A-67 → cap. 6         EL PERIMETRAL DEPENDE DE LA ALIMENTACIÓN. Solo vale con 3 placas o canal
+R16 ⇒ A-204 → cap. 6         EL PERIMETRAL DEPENDE DE LA ALIMENTACIÓN. Solo vale con 3 placas o canal
                             caliente; con 2 placas y runner frío el centro SÍ genera calor. §9.3.1.
                             FALTA por completo (no hay arquitectura de circuito).
 
-R17 ⇒ A-69 → cap. 11        FUGA GARANTIZADA. "leakage should be expected at any ejector pins located
+R17 ⇒ A-206 → cap. 11        FUGA GARANTIZADA. "leakage should be expected at any ejector pins located
                             internal to the area surrounded by gasket" → placa desmoldeadora. §9.3.2.
                             FALTA.
 
-R18 ⇒ A-71 → A-59/A-61      ★ EL RETORNO QUE CIERRA EL CAPÍTULO. 2 °C de desbalance dan 1.6 mm de
+R18 ⇒ A-208 → A-196/A-198      ★ EL RETORNO QUE CIERRA EL CAPÍTULO. 2 °C de desbalance dan 1.6 mm de
                             alabeo, más que los 0.8 mm de contracción total borde a borde. Y no se
                             arregla con temperatura global: "not sensitive to the overall temperature
                             of the molding, but only to the temperature gradient through the
@@ -2089,33 +2090,33 @@ R18 ⇒ A-71 → A-59/A-61      ★ EL RETORNO QUE CIERRA EL CAPÍTULO. 2 °C de
                             (`warpage.ts::alabeoPorEspesor` devuelve `superaContraccion`);
                             FALTA que ese veredicto reabra el layout de agua.
 
-R19 ⇒ A-53 → A-54/A-67      D_min POR ENCIMA DEL DESEADO. Subir al plug estándar siguiente, o partir
+R19 ⇒ A-190 → A-191/A-204      D_min POR ENCIMA DEL DESEADO. Subir al plug estándar siguiente, o partir
                             el circuito para reducir la longitud en serie. §9.2.4. PARCIAL.
 
-R20 ⇒ A-45 → proceso        INVERTIR EL ORDEN DE LOS DISPAROS. 75.6 s → 13.5 s moldeando la capa
+R20 ⇒ A-182 → proceso        INVERTIR EL ORDEN DE LOS DISPAROS. 75.6 s → 13.5 s moldeando la capa
                             delgada al final. §9.3.6. FALTA.
 ```
 
 ## Lo que se puede correr en paralelo (para quien lo implemente)
 
-- **Fase A:** A-01 ‖ A-03 (arranque) · A-14 ‖ A-16 (reglas por tipo) · las `n` compuertas del molde
-  son independientes entre sí salvo por A-18.
-- **Fase B:** A-25 ‖ (A-26 → A-27 → A-28) convergen en A-29 · cada uno de los ~36 candidatos de A-23
+- **Fase A:** A-138 ‖ A-140 (arranque) · A-151 ‖ A-153 (reglas por tipo) · las `n` compuertas del molde
+  son independientes entre sí salvo por A-155.
+- **Fase B:** A-162 ‖ (A-163 → A-164 → A-165) convergen en A-166 · cada uno de los ~36 candidatos de A-160
   se clasifica y dimensiona por separado: es **vergonzosamente paralelo**.
-- **Fase C:** A-40 ‖ A-41 ‖ A-44 cuelgan de A-39 sin tocarse · A-52 ‖ A-53 convergen en A-54 ·
-  A-56 ‖ A-57 convergen en A-58 · el bloque C.5 (A-67, A-68, A-69) corre en paralelo a A-63/A-65 una
-  vez que A-61 entregó el ruteo.
-- **Entre fases:** A-21 (aire) puede correr en cuanto hay caudal de llenado, sin esperar a que las
-  compuertas cierren. Solo A-12 y A-35 obligan a sincronizar.
+- **Fase C:** A-177 ‖ A-178 ‖ A-181 cuelgan de A-176 sin tocarse · A-189 ‖ A-190 convergen en A-191 ·
+  A-193 ‖ A-194 convergen en A-195 · el bloque C.5 (A-204, A-205, A-206) corre en paralelo a A-200/A-202 una
+  vez que A-198 entregó el ruteo.
+- **Entre fases:** A-158 (aire) puede correr en cuanto hay caudal de llenado, sin esperar a que las
+  compuertas cierren. Solo A-149 y A-172 obligan a sincronizar.
 
 ## Los tres lugares donde el grafo se muerde la cola
 
-1. **A-48 ↔ A-59** (potencia ↔ número de líneas). El único lazo que el propio Kazmer declara, y el
+1. **A-185 ↔ A-196** (potencia ↔ número de líneas). El único lazo que el propio Kazmer declara, y el
    único que tenemos cerrado en código.
-2. **A-12 ↔ A-39** (empaque de la compuerta ↔ enfriamiento de la pieza). Un análisis del cap. 7 que
+2. **A-149 ↔ A-176** (empaque de la compuerta ↔ enfriamiento de la pieza). Un análisis del cap. 7 que
    no se puede resolver sin un número del cap. 9. Por eso los capítulos no son subsistemas
    independientes por más que sus checklists de cierre (§7.4, §8.4, §9.4) lo sugieran.
-3. **A-71 → A-59/A-61 → A-62 → A-71** (alabeo ↔ layout de agua). El lazo exterior: el paso y el ruteo
+3. **A-208 → A-196/A-198 → A-199 → A-208** (alabeo ↔ layout de agua). El lazo exterior: el paso y el ruteo
    producen el campo térmico, el campo produce el alabeo, y el alabeo condena el paso. Hoy lo
    recorremos una vez, en un solo sentido.
 
