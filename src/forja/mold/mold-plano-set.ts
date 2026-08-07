@@ -1530,9 +1530,27 @@ export function laminasToPrintHTML(pages: DrawingPage[], title = 'Planos del mol
  *  espesores por deflexión/enfriamiento, plug DME, pines) — no inventa. */
 export function packageToAssemblySpec(pkg: MoldPackage): MoldAssemblySpec {
   const s = pkg.spec, d = pkg.diseno, base = pkg.base.base;
-  const support = Math.round(d.placas.soporte.plateThkMm ?? 46);
-  const cavPlate = Math.round(d.placas.cavidad.plateThkMm ?? 56);   // placa A = inserto de CAVIDAD (§4.2.1)
-  const corePlate = Math.round(d.placas.nucleo?.plateThkMm ?? cavPlate);   // placa B = inserto de NÚCLEO (§4.2.1), NO copiada de A
+  // ⚠ EL `??` ESTABA BORRANDO UN VEREDICTO (2026-08-07). `snapToCommercialPlate`
+  // devuelve `null` A PROPÓSITO cuando el espesor requerido excede el catálogo
+  // comercial, y deja la nota "excede el catálogo: inserto o base custom". Los
+  // defaults 46/56 tomaban ese "no existe placa así" y lo convertían en una placa
+  // chiquita, en silencio. Medido: cubeta 300×300×250 → el dimensionador pide
+  // t=274 mm y devuelve null → se DIBUJABA una placa A de 56 mm con un inserto de
+  // cavidad de 280 mm adentro. El molde del plano no podía existir.
+  // El espesor REQUERIDO ya está calculado (`tRequiredMm`): usarlo NO inventa nada,
+  // solo deja de tirar el número. El default solo sobrevive si tampoco hay requerido.
+  // Y el requerido puede venir NaN: `selectMoldBase` usa `{wmm: NaN, lmm: NaN}` como
+  // CENTINELA de "no hay base estándar ≤ 996 mm: molde CUSTOM (§4.3.4)", y ese NaN
+  // envenena toda la cadena aguas abajo (hasta la nota "placa de cavidad NaN mm excede
+  // el catálogo", que se lee como ingeniería y no lo es). Aquí el dibujo necesita un
+  // número o no hay plano: se cae al default DECLARADO, y el semáforo `base` de
+  // `estudio-molde-datos.ts` es el que dice en pantalla que la base es CUSTOM.
+  const finito = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+  const espesor = (p: { plateThkMm: number | null; tRequiredMm?: number } | undefined, porDefecto: number) =>
+    Math.round(finito(p?.plateThkMm) ? p.plateThkMm : finito(p?.tRequiredMm) ? p.tRequiredMm : porDefecto);
+  const support = espesor(d.placas.soporte, 46);
+  const cavPlate = espesor(d.placas.cavidad, 56);   // placa A = inserto de CAVIDAD (§4.2.1)
+  const corePlate = espesor(d.placas.nucleo, cavPlate);   // placa B = inserto de NÚCLEO (§4.2.1), NO copiada de A
   const line = d.enfriamiento.lineas;
   const nCav = pkg.recomendacion.nCav;
   const win = pkg.variantes.find((v) => v.arch === pkg.recomendacion.arch && v.nCav === nCav);

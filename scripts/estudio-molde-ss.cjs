@@ -128,9 +128,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     out.checks.numeros_costo = typeof n.costoMoldeUSD === 'number' && n.costoMoldeUSD > 0;
     out.checks.numeros_aceros_por_placa = Array.isArray(n.aceros) && n.aceros.length >= 8 && n.aceros.every((a) => !!a.nombre);
     out.checks.numeros_arquitectura = !!n.arquitectura;
-    out.checks.semaforos_los_cuatro =
-      Array.isArray(n.semaforos) && n.semaforos.length === 4 &&
-      ['tiebars', 'daylight', 'shot', 'tonelaje'].every((id) => n.semaforos.some((s) => s.id === id));
+    // 5 desde 2026-08-07: se agregó `base` (§4.3.4). El catálogo de bases se juzga
+    // APARTE de las columnas porque cuando no hay base estándar el molde es CUSTOM y
+    // las tie bars quedan SIN MEDIR — antes eso salía como VIOLA "base NaN×NaN".
+    out.checks.semaforos_los_cinco =
+      Array.isArray(n.semaforos) && n.semaforos.length === 5 &&
+      ['base', 'tiebars', 'daylight', 'shot', 'tonelaje'].every((id) => n.semaforos.some((s) => s.id === id));
     out.checks.semaforos_con_porque = (n.semaforos || []).every((s) => s.porque && s.seccion && s.medido);
     out.semaforos = (n.semaforos || []).map((s) => `${s.estado} · ${s.id} · ${s.medido} vs ${s.limite}`);
 

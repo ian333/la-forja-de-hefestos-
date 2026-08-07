@@ -153,6 +153,16 @@ export function selectInjectionMachine(
     ajuste: big.tieHmm >= mold.wmm && big.tieVmm >= mold.lmm && needMm <= big.maxDaylightMm,
   };
   const issues: string[] = [];
+  // ⚠ EL FALLO DE COLUMNAS ERA MUDO (2026-08-07). `ajuste` son DOS cosas —caber entre
+  // columnas y abrir dentro del daylight— y solo la segunda se reportaba. Medido con un
+  // vaso ⌀90×100: base 696×996 mm contra columnas de 810×810 de la máquina más grande ⇒
+  // `governs: 'ajuste'`, `ok: false`… y el único issue listado era "shot 9 % < 25 %".
+  // Quien leyera el veredicto concluía que el problema era el barril.
+  // `selectMoldBase` marca "no hay base estándar" con wmm/lmm = NaN (§4.3.4). Sin base
+  // medida no se puede juzgar el ajuste: se dice ESO, no "no pasa entre columnas".
+  const baseMedida = Number.isFinite(mold.wmm) && Number.isFinite(mold.lmm);
+  if (!baseMedida) issues.push(`columnas: SIN JUZGAR — no hay base estándar para este envolvente, el molde es CUSTOM (§4.3.4) y no hay huella que comparar contra las tie bars`);
+  else if (!(big.tieHmm >= mold.wmm && big.tieVmm >= mold.lmm)) issues.push(`columnas: base ${mold.wmm.toFixed(0)}×${mold.lmm.toFixed(0)} mm no pasa entre las tie bars de ${big.tieHmm}×${big.tieVmm} mm de la ${big.name} (§4.3.3) → girar 90°, menos cavidades o base custom`);
   if (needMm > big.maxDaylightMm) issues.push(`daylight: stack ${mold.stackMm.toFixed(0)} + carrera ${mold.openStrokeMm.toFixed(0)} = ${needMm.toFixed(0)} mm > ${big.maxDaylightMm} mm de la ${big.name}: el molde CIERRA pero no ABRE (§6.3.2) → molde más compacto o pieza menos honda`);
   if (!checks.cierre) issues.push(`clamp requerido ${req.clampNeedTons.toFixed(0)} t > ${big.clampTons} t (máquina más grande): dividir en 2 moldes o menos cavidades`);
   if (shotPct < 25) issues.push(`shot ${shotPct.toFixed(0)}% < 25%: barril muy grande → residencia larga`);

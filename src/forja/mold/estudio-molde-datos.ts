@@ -395,6 +395,7 @@ function semaforosDeMaquina(pkg: MoldPackage | null, asm: MoldAssemblySpec, stac
   const gris = (id: string, nombre: string, porque: string, seccion: string): Semaforo =>
     ({ id, nombre, estado: 'SIN MEDIR', medido: '—', limite: '—', porque, seccion });
   if (!pkg) return [
+    gris('base', 'base estándar (§4.3.4)', 'sin paquete de la Máquina no hay selección de base', '§4.3.4'),
     gris('tiebars', 'columnas (tie bars)', 'sin paquete de la Máquina no hay inyectora seleccionada', '§4.3.3'),
     gris('daylight', 'daylight (abre)', 'sin paquete de la Máquina no hay carrera de apertura', '§6.3.2'),
     gris('shot', 'shot (barril)', 'sin paquete de la Máquina no hay volumen de disparo', '§4.3.3'),
@@ -404,13 +405,20 @@ function semaforosDeMaquina(pkg: MoldPackage | null, asm: MoldAssemblySpec, stac
   const req = pkg.diseno.maquina.requerimientos;
   const m = sel.machine;
   if (!m) return [
+    gris('base', 'base estándar (§4.3.4)', 'ninguna inyectora del catálogo fue seleccionada', '§4.3.4'),
     gris('tiebars', 'columnas (tie bars)', 'ninguna inyectora del catálogo fue seleccionada', '§4.3.3'),
     gris('daylight', 'daylight (abre)', 'ninguna inyectora del catálogo fue seleccionada', '§6.3.2'),
     gris('shot', 'shot (barril)', 'ninguna inyectora del catálogo fue seleccionada', '§4.3.3'),
     gris('tonelaje', 'tonelaje de cierre', 'ninguna inyectora del catálogo fue seleccionada', '§5.4 · Eq 5.29'),
   ];
   const baseW = pkg.base.base.wmm, baseL = pkg.base.base.lmm;
-  const cabe = baseW <= m.tieHmm && baseL <= m.tieVmm;
+  // ⚠ `selectMoldBase` marca "no hay base estándar ≤ 996 mm" con wmm/lmm = NaN (§4.3.4),
+  // y `NaN <= tie` es false ⇒ el semáforo salía VIOLA "base NaN×NaN no pasa entre
+  // columnas". Es un diagnóstico FALSO: no es que no quepa, es que no hay base que medir
+  // (el molde es CUSTOM). Sin esto, el estudio culpaba a la máquina de un problema que
+  // vive en el catálogo de bases. Medido con una cubeta 300×300×250 (envolvente 800×800).
+  const baseMedida = Number.isFinite(baseW) && Number.isFinite(baseL);
+  const cabe = baseMedida && baseW <= m.tieHmm && baseL <= m.tieVmm;
   const need = sel.apertura.needMm, holgura = sel.apertura.holguraMm;
   const shot = sel.shotPct;
   const util = sel.clampUtilPct;
@@ -427,13 +435,29 @@ function semaforosDeMaquina(pkg: MoldPackage | null, asm: MoldAssemblySpec, stac
     : '';
   return [
     {
+      id: 'base', nombre: 'base estándar (§4.3.4)',
+      estado: baseMedida ? (pkg.base.ok ? 'CUMPLE' : 'ADVIERTE') : 'VIOLA',
+      medido: baseMedida
+        ? `base ${baseW}×${baseL} mm para un envolvente de ${pkg.base.envelope.wmm}×${pkg.base.envelope.lmm} mm (aspecto ${pkg.base.aspect}:1)`
+        : `envolvente ${pkg.base.envelope.wmm}×${pkg.base.envelope.lmm} mm — NINGUNA base del catálogo lo aloja`,
+      limite: 'catálogo de bases estándar hasta 996 mm',
+      porque: baseMedida
+        ? (pkg.base.ok
+          ? 'hay base estándar comercial para este envolvente: la cotización usa precios de catálogo'
+          : `hay base pero con avisos: ${pkg.base.warnings.join(' · ')}`)
+        : `molde CUSTOM: sin base de catálogo, los espesores de placa que se dibujan son DEFAULTS declarados, no dimensionados — ${pkg.base.warnings.join(' · ')}`,
+      seccion: '§4.3.4',
+    },
+    {
       id: 'tiebars', nombre: 'columnas (tie bars)',
-      estado: cabe ? 'CUMPLE' : 'VIOLA',
-      medido: `base ${baseW}×${baseL} mm`,
+      estado: cabe ? 'CUMPLE' : baseMedida ? 'VIOLA' : 'SIN MEDIR',
+      medido: baseMedida ? `base ${baseW}×${baseL} mm` : 'sin base estándar que medir',
       limite: `luz ${m.tieHmm}×${m.tieVmm} mm de la ${m.name}`,
-      porque: cabe
-        ? 'el molde pasa entre las columnas de la inyectora seleccionada'
-        : 'el molde NO pasa entre columnas: hay que girarlo 90°, bajar cavidades o subir de máquina',
+      porque: !baseMedida
+        ? 'no se juzga: el molde es CUSTOM (§4.3.4) y no hay huella de base que comparar contra las columnas'
+        : cabe
+          ? 'el molde pasa entre las columnas de la inyectora seleccionada'
+          : 'el molde NO pasa entre columnas: hay que girarlo 90°, bajar cavidades o subir de máquina',
       seccion: '§4.3.3',
     },
     {

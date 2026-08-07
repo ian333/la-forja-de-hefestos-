@@ -238,11 +238,19 @@ export function moldMachine(spec: MachineSpec): MoldPackage {
   if (dfm.errors > 0) banderas.push(`DFM: ${dfm.errors} error(es) de diseño de pieza — corregir antes de cortar acero`);
   if (win.cost.cavity.complexity > 3) banderas.push(`pieza muy compleja (${win.cost.cavity.complexity.toFixed(1)}): maquinado por EDM domina el costo`);
   if (throughputForzado) banderas.push(`el volumen anual exige >16 cavidades (ciclo ${win.part.cycleTimeS.toFixed(0)}s) — considerar 2 moldes o ciclo más corto`);
-  if (!maq?.ok) banderas.push('ninguna máquina del catálogo calza limpio — verificar tie bars/daylight/clamp');
+  // ⚠ EL VEREDICTO NO MIRABA LA MÁQUINA (2026-08-07) — el bug de contabilidad otra vez:
+  // `selectInjectionMachine` calcula las cinco restricciones de §4.3.3 con su cita y las
+  // deja EXACTAS en `issues`, y `viable` solo miraba DFM y costo. Medido con una cubeta
+  // 300×300×250: el molde NO ABRE (stack 570 + carrera 625 = 1195 > 950 de daylight),
+  // pide 1130 t en una máquina de 500, y el disparo es 518 % del barril — y salía
+  // `viable: true`, cotizado en $3 M, bajo una bandera que solo decía "verificar".
+  // `sel.ok` es la señal correcta: solo es true si pasan las cinco restricciones DURAS;
+  // las advertencias blandas (shot <25 %, risers) viven en el otro brazo y no lo apagan.
+  if (!maq?.ok) banderas.push(`NINGUNA inyectora del catálogo admite este molde (§4.3.3): ${maq.issues.join(' · ')}`);
   const margin = spec.margin ?? 1.6;
   const precioMolde = Math.round(win.cost.totalUSD * margin);
   const entregaSemanas = Math.ceil(win.cost.cavity.tMachiningH / 40) + (win.arch === 'hot-runner' ? 4 : 2) + 2;
-  const viable = dfm.errors === 0 && Number.isFinite(win.cost.totalUSD) && win.cost.totalUSD > 0;
+  const viable = dfm.errors === 0 && Number.isFinite(win.cost.totalUSD) && win.cost.totalUSD > 0 && !!maq?.ok;
 
   const reporte = buildReport(spec, dfm, metal, win, base, maq, precioMolde, entregaSemanas, be, complexity, machiningFactor, diseno);
 

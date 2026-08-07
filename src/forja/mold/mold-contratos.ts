@@ -897,13 +897,23 @@ export function contratoLayout(pkg: MoldPackage): ContratoSubsistema {
   });
 
   // ── 3) Base dentro del catálogo comercial 200–1000 mm — §4.3.2 ──
+  // ⚠ ESTE CRITERIO SE APROBABA A SÍ MISMO CUANDO FALLABA (2026-08-07).
+  // `selectMoldBase` marca "no hay base estándar" con wmm/lmm = NaN, y entonces
+  // `bMax = Math.max(NaN, NaN) = NaN`: ni `> 1000` ni `< 200` ⇒ caía al `CUMPLE` del
+  // else. O sea, el único criterio que pregunta "¿existe esta base en el catálogo?"
+  // contestaba que SÍ justo en el caso en que NO existe. El aviso ya venía en
+  // `detalle` — el dato estaba bien y el JUEZ no lo leía. Medido con una cubeta
+  // 300×300×250 (envolvente 800×800 mm → ninguna base estándar).
   const bMax = Math.max(base.base.wmm, base.base.lmm);
+  const bMedida = Number.isFinite(bMax);
   C.push({
     id: 'layout-base-catalogo', subsistema: S, cita: '§4.3.2',
     criterio: 'la base debe existir en catálogo: entre 200 y 1000 mm de lado',
     medido: bMax, limite: 1000, unidad: 'mm',
-    estado: bMax > 1000 ? 'VIOLA' : (bMax < 200 ? 'ADVIERTE' : 'CUMPLE'),
-    detalle: `base ${base.base.wmm}×${base.base.lmm} mm · catálogo 200–1000 mm`
+    estado: !bMedida ? 'VIOLA' : bMax > 1000 ? 'VIOLA' : (bMax < 200 ? 'ADVIERTE' : 'CUMPLE'),
+    detalle: (bMedida
+      ? `base ${base.base.wmm}×${base.base.lmm} mm · catálogo 200–1000 mm`
+      : `NINGUNA base del catálogo aloja el envolvente ${num(base.envelope.wmm, 0)}×${num(base.envelope.lmm, 0)} mm: molde CUSTOM (§4.3.4)`)
       + (base.warnings.length ? ` · avisos: ${base.warnings.join('; ')}` : ''),
   });
 
