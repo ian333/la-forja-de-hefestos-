@@ -36,7 +36,7 @@ import { moldMachine, type MoldPackage, type MachineSpec, type Arch } from './mo
 import { packageToAssemblySpec, plateStackZ } from './mold-plano-set';
 import {
   plateDefs, plateDepth, moldStackHeight, coolingCircuit, standardHoles, moldBoltSizing,
-  cavityFootprint, cavityGrid,
+  cavityFootprint, cavityGrid, insertDims,
   type PlateDef,
 } from './mold-drawing-set';
 import { pinBuckling } from './ejection';
@@ -1167,5 +1167,75 @@ export function estacion2Dado(): Estacion2Dado {
         : `⚠ el molde es el ${pct.toFixed(0)} % del costo total → huele a SOBREDISEÑO (§3.4.4): revisar cavidades/acabado/acero antes de firmar`,
     },
     veredicto: { viable: pkg.veredicto.viable, precioMoldeUSD: pkg.veredicto.precioMoldeUSD, entregaSemanas: pkg.veredicto.entregaSemanas },
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 3: ARQUITECTURA (cap 4)                       */
+/* (orden 2026-08-10-ciclo-dado-estacion3)                                    */
+/* ══════════════════════════════════════════════════════════════════════════ */
+export interface Estacion3Dado {
+  apertura: string;
+  particion: string;
+  draft: string;
+  insertos: Array<{ nombre: string; dims: string; porque: string }>;
+  base: { aritmetica: string; porque: string };
+  stack: Array<{ nombre: string; espesorMm: number; acero: string; porque: string }>;
+  stackMm: number;
+  retornos: string[];
+}
+
+/** La arquitectura del molde del dado, EXPLICADA — cada dimensión con la
+ *  aritmética que la produjo, nada de números caídos del cielo. Todo sale del
+ *  MISMO pkg de la estación 2 (una sola corrida de la Máquina por ciclo). */
+export function estacion3Dado(pkg: MoldPackage): Estacion3Dado {
+  const asm = packageToAssemblySpec(pkg);
+  const id = insertDims(asm);
+  const b = pkg.base;
+  const p = asm.plates;
+  const acero = (rol: string) => {
+    // P20 SOLO donde se moldea; C45 donde solo se sujeta (§4.4.4) — pagar acero
+    // de molde en una placa de sujeción es tirar dinero.
+    const moldeante = rol === 'A' || rol === 'B';
+    return {
+      acero: moldeante ? aceroNombre(asm.cavityMetal ?? 'P20') : '1.1730 (C45)',
+      porque: moldeante ? 'placa MOLDEANTE: aloja inserto — acero de molde' : 'solo estructura/sujeción: C45 basta (§4.4.4)',
+    };
+  };
+  const filas: Array<[string, number, string]> = [
+    ['Placa de sujeción superior', p.topClamp, 'clamp'],
+    ['Placa A (cavidad)', p.A, 'A'],
+    ['Placa B (núcleo)', p.B, 'B'],
+    ['Placa de soporte', p.support, 'support'],
+    ['Rieles del housing', p.ejectorHousing, 'housing'],
+    ['Placa de sujeción inferior', p.bottomClamp, 'bottom'],
+  ];
+  const need = Math.max(b.envelope.wmm, b.envelope.lmm) + 2 * b.reserveMm;
+  return {
+    apertura: 'Z — la decide LA BOCA del dado (única dirección sin undercuts; el DFM de la estación 1 ya lo garantizó)',
+    particion: `PLANA, en la boca (z=0 de la pieza): la partición más simple que existe — complejidad mínima, sello perfecto (A-061/A-062)`,
+    draft: 'el dado gana su draft REAL: 1.5° tallado (Tabla 2.14, ABS·SPI B-3) — hasta la estación 2 iba DECLARADO; aquí el acero se lo impone a la pieza',
+    insertos: [
+      {
+        nombre: 'INSERTO DE CAVIDAD (hembra — talla el exterior)',
+        dims: `${id.ifx}×${id.ify}×${id.Hc} mm · P20`,
+        porque: `huella ${id.fx}×${id.fy} + borde ${id.border}/lado (§4.2.1) · alto = prof ${id.dep} + acero p/agua detrás → ${id.Hc}`,
+      },
+      {
+        nombre: 'INSERTO DE NÚCLEO (el macho que hace el hueco)',
+        dims: `${id.ifx}×${id.ify}×${id.Hk} mm · P20`,
+        porque: `el macho vive ARRIBA de la partición (dentro de la región de A); su respaldo solo carga el agua → ${id.Hk} (§4.2.1 Fig 4.13)`,
+      },
+    ],
+    base: {
+      aritmetica: `envolvente ${b.envelope.wmm}×${b.envelope.lmm} + reserva 2×${b.reserveMm} (pilares ⌀${b.leaderPinDia} + holgura §4.3.2) = necesita ${need} → catálogo: ${b.base.wmm}×${b.base.lmm} ✓`,
+      porque: 'la base SE COMPRA, no se fabrica (§4.3.2): la primera medida comercial que aloja la necesidad',
+    },
+    stack: filas.map(([nombre, espesorMm, rol]) => ({ nombre, espesorMm, ...acero(rol) })),
+    stackMm: moldStackHeight(asm),
+    retornos: [
+      '⟲ estación 9 (contracción, cap 10): REABRE este acero — la cavidad se escala +s% (por eso splitMold corre HOY con escala 1.0)',
+      '⟲ estación 11 (estructura, cap 12): si una placa no aguanta von Mises/deflexión, ENGORDA — y el stack de 248 se re-juzga contra el daylight',
+    ],
   };
 }

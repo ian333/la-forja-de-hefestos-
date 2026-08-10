@@ -548,7 +548,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -607,7 +607,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           ▶ estación 2 — ECONOMÍA: ¿cuántos dados por disparo?
         </button>
       )}
-      {ciclo.e2 && <CicloE2 e2={ciclo.e2} />}
+      {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
+      {ciclo.estacion >= 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} />}
     </>
   );
 }
@@ -616,7 +617,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
  *  La columna clave es el DESGLOSE: amortización (molde$/Q, declarando que ignora el
  *  factor de mantenimiento §3.4.1) + material/proceso = total. La tabla ES la prueba:
  *  se puede sumar a mano. */
-function CicloE2({ e2 }: { e2: import('../mold/estudio-molde-datos').Estacion2Dado }) {
+function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estacion2Dado; onE3?: () => void }) {
   return (
     <>
       <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
@@ -662,8 +663,58 @@ function CicloE2({ e2 }: { e2: import('../mold/estudio-molde-datos').Estacion2Da
       <div style={{ fontSize: 10.5, color: '#7ee0a0', padding: '0 6px 4px' }}>
         veredicto: {e2.veredicto.viable ? 'VIABLE ✓' : 'REVISAR ⚠'} · precio molde ${e2.veredicto.precioMoldeUSD.toLocaleString()} · {e2.veredicto.entregaSemanas} semanas
       </div>
-      <div style={{ fontSize: 10, color: '#66748a', padding: '0 6px 6px' }}>
-        ▶ estación 3 — ARQUITECTURA (cap 4): nace el primer acero · siguiente orden
+      {onE3 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e3" onClick={onE3} style={{ margin: '4px 6px 6px' }}
+          title="ARQUITECTURA (cap 4): el dado gana su draft REAL (1.5° tallado), splitMold talla cavidad y núcleo, la base se compra con su aritmética a la vista — y los semáforos §4.3.3 despiertan.">
+          ▶ estación 3 — ARQUITECTURA: nace el primer acero
+        </button>
+      )}
+    </>
+  );
+}
+
+
+/** Estación 3 desplegada — la arquitectura EXPLICADA: cada dimensión con la
+ *  aritmética que la produjo (la base no "es" 196: NECESITA 184 y 196 es la
+ *  primera medida del catálogo). Los retornos van declarados al pie: este acero
+ *  se va a REABRIR y el panel lo dice desde hoy. */
+function CicloE3({ e3 }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado }) {
+  const fila = (titulo: string, cuerpo: string, porque: string, testid: string, color = '#9db4d0') => (
+    <div className="fb-comp-row feat" data-testid={testid} title={porque}
+      style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
+        background: 'rgba(255,255,255,0.02)', borderLeft: `2px solid ${color}` }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#dfe7f2' }}>{titulo}</div>
+      <div style={{ fontSize: 10.5, color: '#9fb2c8', fontFamily: "'JetBrains Mono', monospace" }}>{cuerpo}</div>
+      <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 1 }}>{porque}</div>
+    </div>
+  );
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 3 — arquitectura (cap 4): el primer acero, con su aritmética a la vista
+      </div>
+      {fila('A-060 · dirección de apertura', 'Z', e3.apertura, 'e3-apertura', '#7ee0a0')}
+      {fila('A-061 · línea de partición', 'plana · z = boca', e3.particion, 'e3-particion', '#f4d27a')}
+      {fila('§2.3.6 · el draft se TALLA', '1.5° reales (loft)', e3.draft, 'e3-draft', '#7ee0a0')}
+      {e3.insertos.map((i, k) => fila(i.nombre, i.dims, i.porque, `e3-inserto-${k}`))}
+      {fila('§4.3.2 · la base SE COMPRA', e3.base.aritmetica, e3.base.porque, 'e3-base', '#f4d27a')}
+      <div data-testid="e3-stack" style={{ padding: '3px 6px' }}>
+        <div style={{ fontSize: 10.5, color: '#dfe7f2', fontWeight: 700 }}>EL STACK — {e3.stackMm} mm, acero por placa</div>
+        {e3.stack.map((f, k) => (
+          <div key={k} title={f.porque} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, fontSize: 10.5, padding: '1px 0', color: '#9fb2c8' }}>
+            <span>{f.nombre}</span><span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{f.espesorMm} mm · {f.acero}</span>
+          </div>
+        ))}
+        <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 2 }}>P20 SOLO donde se moldea; C45 donde solo se sujeta — pagar acero de molde en una placa de sujeción es tirar dinero (§4.4.4)</div>
+      </div>
+      <div data-testid="e3-semaforos-nota" style={{ fontSize: 10.5, color: '#f4d27a', padding: '2px 6px' }}>
+        🚦 los semáforos §4.3.3 DESPERTARON — míralos arriba en «Análisis del molde» (el daylight ya ADVIERTE con 8 mm)
+      </div>
+      {e3.retornos.map((r, k) => (
+        <div key={k} data-testid={`e3-retorno-${k}`} style={{ fontSize: 10.5, color: '#8fa1b8', padding: '1px 6px' }}>{r}</div>
+      ))}
+      <div style={{ fontSize: 10, color: '#66748a', padding: '3px 6px 6px' }}>
+        ▶ estación 4 — LLENADO (cap 5): ¿por dónde entra el plástico? · siguiente orden
       </div>
     </>
   );
