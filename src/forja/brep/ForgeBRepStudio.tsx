@@ -30,9 +30,8 @@ const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación
 const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
 const MoldMachinePanel = lazy(() => import('../mold/MoldMachinePanel'));   // LA MÁQUINA: cliente sube pieza → cotización
 const RevisarLotePanel = lazy(() => import('../mold/RevisarLotePanel'));   // REVISAR EN VOLUMEN (N-29): contratos sobre un lote
-const EstudioVivo = lazy(() => import('../mold/EstudioVivo'));           // EL ESTUDIO VIVO: el análisis en 3D, girable y consultable a dedo
-const EstudioCiclo = lazy(() => import('../mold/EstudioCiclo'));         // EL CICLO: el estudio en TIEMPO REAL, no en capas
-const EstudioMolde = lazy(() => import('../mold/EstudioMolde'));         // EL MOLDE: la herramienta completa — la pieza es solo la entrada
+// (EstudioVivo/EstudioCiclo/EstudioMolde MURIERON — orden 2026-08-10-limpieza-molde:
+//  eran visores DUPLICADOS de este mismo CAD; su análisis vive en MoldAnalisisPanel.)
 const MoldUnscrewSim = lazy(() => import('../sim/MoldUnscrewSim'));        // molde que desenrosca (núcleo rotativo)
 const MoldSectionReveal = lazy(() => import('../sim/MoldSectionReveal'));  // EL CORTE: acero seccionándose (esténcil + env)
 import SketchEditor from './SketchEditor';
@@ -50,7 +49,7 @@ import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio } from './useMoldStudio';
-import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup } from './MoldPanels';
+import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
 import { isoSurface } from '../../lib/viz/isosurface';
@@ -3470,9 +3469,6 @@ export default function ForgeBRepStudio() {
   const [tpSimOn, setTpSimOn] = useState(false);
   const [moldMachineOn, setMoldMachineOn] = useState(false);
   const [revisarLoteOn, setRevisarLoteOn] = useState(false);
-  const [estudioVivoOn, setEstudioVivoOn] = useState(false);
-  const [estudioCicloOn, setEstudioCicloOn] = useState(false);
-  const [estudioMoldeOn, setEstudioMoldeOn] = useState(false);
   const [unscrewOn, setUnscrewOn] = useState(false);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
@@ -6302,21 +6298,6 @@ export default function ForgeBRepStudio() {
             <RevisarLotePanel onClose={() => setRevisarLoteOn(false)} />
           </Suspense>
         )}
-        {estudioVivoOn && (
-          <Suspense fallback={null}>
-            <EstudioVivo onClose={() => setEstudioVivoOn(false)} />
-          </Suspense>
-        )}
-        {estudioCicloOn && (
-          <Suspense fallback={null}>
-            <EstudioCiclo onClose={() => setEstudioCicloOn(false)} />
-          </Suspense>
-        )}
-        {estudioMoldeOn && (
-          <Suspense fallback={null}>
-            <EstudioMolde onClose={() => setEstudioMoldeOn(false)} />
-          </Suspense>
-        )}
         {unscrewOn && (
           <Suspense fallback={null}>
             <MoldUnscrewSim onClose={() => setUnscrewOn(false)} />
@@ -6913,6 +6894,8 @@ export default function ForgeBRepStudio() {
             )}
             {/* ── MOLDE EN VIVO: componentes (placas) — aislar / ocultar / opacidad, como Fusion ── */}
             <MoldTreePanel mold={mold} kernelReady={!!oc} />
+            {/* ── ANÁLISIS §4.3.3 del paquete de la Máquina — EN el CAD, no en una pantalla aparte ── */}
+            <MoldAnalisisPanel mold={mold} />
           </aside>
           <aside className={`fb-facelist ${collapsed.faces ? 'collapsed' : ''} ${winPos.faces ? 'floating' : ''}`} data-testid="face-list" onPointerDown={winDrag('faces')} onDoubleClick={winUndock('faces')} style={winStyle('faces')}>
             <CollapseHead id="faces" title="Caras del sólido" collapsed={!!collapsed.faces}
@@ -6965,18 +6948,6 @@ export default function ForgeBRepStudio() {
               <button className="fb-fea-run" data-testid="btn-revisar-lote" onClick={() => setRevisarLoteOn(true)}
                 style={{ marginTop: 6 }}>
                 📋 REVISAR EN VOLUMEN — contratos de Kazmer sobre un lote
-              </button>
-              <button className="fb-fea-run" data-testid="btn-estudio-vivo" onClick={() => setEstudioVivoOn(true)}
-                style={{ marginTop: 6 }}>
-                🔬 EL ESTUDIO VIVO — el análisis en 3D, girable y consultable a dedo
-              </button>
-              <button className="fb-fea-run" data-testid="btn-estudio-ciclo" onClick={() => setEstudioCicloOn(true)}
-                style={{ marginTop: 6 }}>
-                ⏱ EL CICLO — el estudio en TIEMPO REAL: inyectar → empacar → enfriar → abrir → expulsar
-              </button>
-              <button className="fb-fea-run" data-testid="btn-estudio-molde" onClick={() => setEstudioMoldeOn(true)}
-                style={{ marginTop: 6 }}>
-                ⚒ EL MOLDE — la herramienta completa: stack, despiece, subsistemas y los números
               </button>
             </div>
 

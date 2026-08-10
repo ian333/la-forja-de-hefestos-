@@ -42,7 +42,27 @@ import { moldMassKg } from './fasteners';
 import { MOLD_METALS } from './moldbase';
 import { material as materialProps } from './materials';
 import { solidosDeMolde, type MallaSec, type MetaMolde, type RolSeccion, type SolidoSeccion } from './lamina-seccion';
-import { volumenArea, type Caja, type MallaSimple } from './estudio-vivo-datos';
+/* Antes estos tres vivían en estudio-vivo-datos.ts; al morir esa pantalla
+ * (orden 2026-08-10-limpieza-molde) los ~25 líneas se INLINEARON aquí, que es
+ * su único consumidor. Son puros: caja AABB y volumen/área por divergencia. */
+export interface MallaSimple { positions: Float32Array | number[]; indices: Uint32Array | number[] }
+export interface Caja { x0: number; y0: number; z0: number; x1: number; y1: number; z1: number }
+
+/** Volumen (divergencia, malla cerrada saliente) y área de una malla cruda. */
+export function volumenArea(m: MallaSimple): { volumeMm3: number; areaMm2: number } {
+  const P = m.positions, I = m.indices;
+  let vol6 = 0, area2 = 0;
+  for (let t = 0; t + 2 < I.length; t += 3) {
+    const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+    const ax = P[a], ay = P[a + 1], az = P[a + 2];
+    const bx = P[b], by = P[b + 1], bz = P[b + 2];
+    const cx = P[c], cy = P[c + 1], cz = P[c + 2];
+    vol6 += ax * (by * cz - bz * cy) + ay * (bz * cx - bx * cz) + az * (bx * cy - by * cx);
+    const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+    area2 += Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx);
+  }
+  return { volumeMm3: Math.abs(vol6) / 6, areaMm2: area2 / 2 };
+}
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 /* PALETA — el molde se lee por PLACA, no por rol                             */

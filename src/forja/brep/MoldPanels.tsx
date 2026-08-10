@@ -5,6 +5,7 @@
  * de ARMANDO MOLDE. Reciben la BOLSA de useMoldStudio como prop — cero estado
  * propio, puro render. El grupo del ribbon se queda en el Studio (usa <Ic>).
  */
+import { useMemo } from 'react';
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
 import { Ic } from './icons';
@@ -12,6 +13,8 @@ import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resi
 import { estPartVolumeCc } from '../mold/feed';
 import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 import type { CalcPaso } from '../mold/cooling-design';
+import { construirMolde } from '../mold/estudio-molde-datos';
+import { mallaCaja } from '../mold/lamina-seccion';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
 
@@ -468,6 +471,68 @@ export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelRe
               </div>
               <div className="fb-group-cap">MOLDE · CURSO ALWIS</div>
             </div>
+    </>
+  );
+}
+
+/**
+ * ANÁLISIS DEL MOLDE §4.3.3/§4.3.4 — los números del paquete de la Máquina, EN el CAD.
+ * (Orden 2026-08-10-limpieza-molde: esto vivía en la pantalla duplicada EstudioMolde —
+ * 746 líneas con su propio Canvas de cajas — y se migró aquí, donde el visor es el
+ * molde B-Rep REAL de al lado.) Todo sale de `construirMolde(pkg)`: semáforos con su
+ * cita, cotización, masa por geometría e invariantes del modelo analítico. La malla
+ * que se le pasa es la CAJA de la pieza — solo pinta la masa del MOLDEO (gramos);
+ * el sólido real de la pieza ya está en el viewport, no se duplica aquí.
+ */
+export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
+  const { moldPkg, moldParts } = mold;
+  const arm = useMemo(() => {
+    if (!moldPkg) return null;
+    try {
+      const s: any = moldPkg.spec;
+      const caja = { x0: 0, y0: 0, z0: 0, x1: s.Lmm, y1: s.Wmm, z1: s.Hmm };
+      const m = mallaCaja(0, 0, 0, s.Lmm, s.Wmm, s.Hmm);
+      return construirMolde(moldPkg, caja, { positions: m.positions, indices: m.indices }, s.name ?? 'pieza');
+    } catch (e) { console.warn('MOLD_ANALISIS_ERR', e); return null; }
+  }, [moldPkg]);
+  if (!arm || moldParts.length === 0) return null;
+  const n = arm.numeros;
+  const COLOR: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c', 'SIN MEDIR': '#7f8da3' };
+  const invMal = arm.invariantes.filter((i) => i.ok === false);
+  const fila = (k: string, v: string) => (
+    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11, padding: '1px 6px' }}>
+      <span style={{ color: '#8fa1b8' }}>{k}</span><b style={{ color: '#dfe7f2', textAlign: 'right' }}>{v}</b>
+    </div>
+  );
+  return (
+    <>
+      <div className="fb-feat-subhead" data-testid="mold-analisis">
+        📋 Análisis del molde <span style={{ opacity: 0.6, fontWeight: 400 }}>· {(moldPkg as any).spec?.name ?? 'pieza'} · {arm.ms} ms</span>
+      </div>
+      {fila('bloque L×W×H', `${n.Lmm}×${n.Wmm}×${n.Hmm} mm`)}
+      {fila('masa Σ vol×ρ · macizo', `${n.masaAceroKg} kg · ${n.masaBloqueKg} kg`)}
+      {fila('cavidades · arquitectura', `${n.nCav} · ${n.arquitecturaEs}`)}
+      {n.costoMoldeUSD != null && fila('molde → precio', `$${n.costoMoldeUSD.toLocaleString()} → $${(n.precioMoldeUSD ?? 0).toLocaleString()}`)}
+      {n.costoPiezaUSD != null && fila('costo por pieza', `$${n.costoPiezaUSD}`)}
+      {n.entregaSemanas != null && fila('entrega · inyectora', `${n.entregaSemanas} sem · ${n.maquina ?? '—'}`)}
+      {n.sinPaquete && <div style={{ fontSize: 10.5, color: '#f4d27a', padding: '2px 6px' }}>⚠ {n.sinPaquete}</div>}
+      {n.semaforos.map((s) => (
+        <div key={s.id} className="fb-comp-row feat" data-testid={`mold-semaforo-${s.id}`} title={`${s.porque} · ${s.seccion}`}
+          style={{ display: 'block', padding: '4px 6px', marginTop: 3, borderRadius: 6,
+            background: s.estado === 'VIOLA' ? 'rgba(242,122,108,0.10)' : 'rgba(255,255,255,0.03)',
+            borderLeft: `2px solid ${COLOR[s.estado]}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: COLOR[s.estado] }}>{s.estado} · {s.nombre}</div>
+          <div style={{ fontSize: 10.5, color: '#9fb2c8', fontFamily: "'JetBrains Mono', monospace" }}>{s.medido}</div>
+          <div style={{ fontSize: 10, color: '#7f8da3' }}>vs {s.limite} · {s.seccion}</div>
+        </div>
+      ))}
+      <div data-testid="mold-invariantes" style={{ fontSize: 11, padding: '3px 6px', color: invMal.length ? '#f27a6c' : '#7ee0a0' }}>
+        invariantes: {arm.invariantes.filter((i) => i.ok === true).length}/{arm.invariantes.length} PASAN
+        {invMal.length > 0 && ` — ✘ ${invMal.map((i) => i.nombre).join(' · ')}`}
+      </div>
+      {arm.avisos.map((a, i) => (
+        <div key={i} style={{ fontSize: 10.5, color: '#f4d27a', padding: '1px 6px' }}>⚠ {a}</div>
+      ))}
     </>
   );
 }
