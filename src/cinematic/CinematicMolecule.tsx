@@ -590,7 +590,7 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // ⚠ FIRMAS: pullOut es (rFromMul/rTdMul/fovFrom/fovTo/azim0/span) y throughBridge es
   // (side/rSpan/off/fov). Escribí rFrom/rTo/elev/rMul y esbuild los TIRA EN SILENCIO — el
   // mismo gotcha que este archivo ya documenta para crashIn. Copiar la firma, no suponerla.
-  // BUTÍRICO — duraciones = arranques REALES de segs.json (voz 63.53 s) + 2.5 de cola. Σ = 66.0.
+  // BUTÍRICO — duraciones = arranques REALES de segs.json (voz 57.89 s) + 2.5 de cola. Σ = 60.4.
   //
   // REGLA DE ESTA LISTA: **toda toma apunta a la molécula.** El 4K del 7-ago salió con 162
   // cuadros 100 % NEGROS (157 seguidos) porque usé `throughBridge`, que vuela de UNA molécula
@@ -599,13 +599,13 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // vacío: loomPush (dolly), diveToNucleus (entra, y su target MIGRA al núcleo) y whipParallax
   // (barrido lateral violento que SIEMPRE apunta al centro).
   butirico: [
-    { shot: heroOrbit({ rMul: 1.95, elev: 0.14, azim0: 0.85, span: 0.55, fov: 34 }), dur: 12.69, label: 'GANCHO: la molécula HECHA — "esto huele a mantequilla" (l1-4)' },
-    { shot: loomPush({ rFrom: 2.4, rTo: 3.35, elev: 0.18, azim: 1.30, fov: 35 }), dur: 7.92, label: 'REBOBINA y ABRE: los átomos sueltos, cada uno con su campo (l5-6)' },
-    { shot: loomPush({ rFrom: 3.35, rTo: 1.95, elev: 0.10, azim: 1.75, fov: 34 }), dur: 13.23, label: 'LA FORMACIÓN: se juntan y la carga cae a los enlaces (l7-10)' },
-    { shot: diveToNucleus({ rFromMul: 1.85, rTo: 0.78, fovFrom: 34, fovTo: 44, spin: 2.0 }), dur: 12.10, label: 'CLAVADO: entra con "0.87 electrones / trece enlaces" (l11-12)' },
-    { shot: pullOut({ rFromMul: 0.78, rTdMul: 2.05, fovFrom: 44, fovTo: 34, azim0: 2.30, span: 1.2 }), dur: 5.30, label: 'SALE volando — "nada de esto está dibujado" (l13)' },
-    { shot: whipParallax({ rMul: 1.62, elevAmp: 0.26, azim0: 2.60, span: 2.4, fov: 37 }), dur: 8.25, label: 'BARRIDO con parallax: "las líneas son el campo real" (l14)' },
-    { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.30, elev: 0.10 }), dur: 6.51, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l15-16)' },
+    { shot: heroOrbit({ rMul: 1.95, elev: 0.14, azim0: 0.85, span: 0.55, fov: 34 }), dur: 11.66, label: 'GANCHO: la molécula HECHA — "esto huele a mantequilla" (l1-4)' },
+    { shot: loomPush({ rFrom: 2.4, rTo: 3.35, elev: 0.18, azim: 1.30, fov: 35 }), dur: 7.34, label: 'REBOBINA y ABRE: los átomos sueltos, cada uno con su campo (l5-6)' },
+    { shot: loomPush({ rFrom: 3.35, rTo: 1.95, elev: 0.10, azim: 1.75, fov: 34 }), dur: 12.14, label: 'LA FORMACIÓN: se juntan y la carga cae a los enlaces (l7-10)' },
+    { shot: diveToNucleus({ rFromMul: 1.85, rTo: 0.78, fovFrom: 34, fovTo: 44, spin: 2.0 }), dur: 10.83, label: 'CLAVADO: entra con "0.87 electrones / trece enlaces" (l11-12)' },
+    { shot: pullOut({ rFromMul: 0.78, rTdMul: 2.05, fovFrom: 44, fovTo: 34, azim0: 2.30, span: 1.2 }), dur: 4.29, label: 'SALE volando — "nada de esto está dibujado" (l13)' },
+    { shot: whipParallax({ rMul: 1.62, elevAmp: 0.26, azim0: 2.60, span: 2.4, fov: 37 }), dur: 7.29, label: 'BARRIDO con parallax: "las líneas son el campo real" (l14)' },
+    { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.30, elev: 0.10 }), dur: 6.85, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l15-16)' },
   ],
   whex6: [
     { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.30, rTo: 1.05, azim: 1.20, fov: 34 }), dur: 4.04, label: 'EL DESTELLO — el campo ENCIENDE sobre "mira cómo se agarran"' },
@@ -1104,11 +1104,11 @@ const GRASA_KEYS = new Set(['butirico']);
 // Las fronteras son los arranques REALES de segs.json (se llenan al tener la voz).
 // La pieza ABRE FORMADA y REBOBINA: el cuadro de átomos sueltos sale en 91 % de negro y el
 // canon pide primer cuadro denso, así que el gancho es la molécula hecha y de ahí se va atrás.
-// voz REAL 63.53 s (16 líneas, segs.json) + 2.5 de cola. Sin esto la escena reportaba los
+// voz REAL 57.89 s (16 líneas, VEL=1.10 en el TTS) + 2.5 de cola. Sin esto la escena reportaba los
 // 22 s del default de cadenas y TODO lo posterior al segundo 22 se renderizaba congelado.
-const BUTIRICO_DURATION = 66.0;
+const BUTIRICO_DURATION = 60.4;
 const BUTIRICO_CAPAS: CapasSpec = {
-  // Fronteras = arranques REALES de segs.json (voz 63.53 s, 16 líneas).
+  // Fronteras = arranques REALES de segs.json (voz 57.89 s, 16 líneas).
   //
   // UNA NUBE A LA VEZ — el mecanismo de O₂/N₂ (`sigmaMul`/`pi1Mul`/`spinMul`), aquí en datos.
   // Allá, cuando un beat está "solo", la nube que toca sube y las OTRAS caen a un piso (0.34
@@ -1116,40 +1116,40 @@ const BUTIRICO_CAPAS: CapasSpec = {
   // Ian, 2026-08-06 — "acá está encendido TODO TODO el tiempo", y de ahí venían también el
   // quemado a blanco y que el campo se viera débil: competía con tres nubes al máximo.
   apertura: { base: 0, mods: [
-    { wins: [[12.69, 20.61]], a: 1.0, label: 'REBOBINA: los átomos sueltos (l5-6)' },
-    { wins: [[20.61, 22.46]], a: 0.78, label: '"míralos acercarse"' },
-    { wins: [[22.46, 25.35]], a: 0.48, label: '"mira dónde se va la carga"' },
-    { wins: [[25.35, 28.72]], a: 0.20, label: '"se cae al espacio de en medio"' },
-    { wins: [[28.72, 33.84]], a: 0.05, label: 'casi cerrada mientras define qué es un enlace' },
+    { wins: [[11.66, 19.00]], a: 1.0, label: 'REBOBINA: los átomos sueltos (l5-6)' },
+    { wins: [[19.00, 20.80]], a: 0.78, label: '"míralos acercarse"' },
+    { wins: [[20.80, 23.56]], a: 0.48, label: '"mira dónde se va la carga"' },
+    { wins: [[23.56, 26.23]], a: 0.20, label: '"se cae al espacio de en medio"' },
+    { wins: [[26.23, 31.14]], a: 0.05, label: 'casi cerrada mientras define qué es un enlace' },
   ] },
   acc: { base: 1, mods: [
-    { wins: [[16.55, 20.21]], a: 0.28, label: 'SU beat: "cada uno con su nube…"' },
-    { wins: [[22.46, 33.45]], a: -0.62, label: 'cede: el sujeto es la carga que CAE al enlace' },
-    { wins: [[33.84, 45.94]], a: -0.52, label: 'cede: los números son del enlace' },
-    { wins: [[49.37, 54.19]], a: -0.70, label: 'cede: "las líneas son el campo real"' },
+    { wins: [[15.26, 18.60]], a: 0.28, label: 'SU beat: "cada uno con su nube…"' },
+    { wins: [[20.80, 30.74]], a: -0.62, label: 'cede: el sujeto es la carga que CAE al enlace' },
+    { wins: [[31.14, 41.97]], a: -0.52, label: 'cede: los números son del enlace' },
+    { wins: [[45.09, 49.26]], a: -0.70, label: 'cede: "las líneas son el campo real"' },
   ] },
   spin: { base: 1, mods: [
-    { wins: [[0.40, 20.61]], a: -0.80, label: 'no hay enlace que mostrar (átomos sueltos)' },
-    { wins: [[22.46, 33.45]], a: 0.55, label: 'SU beat: la carga cae al espacio de en medio' },
-    { wins: [[33.84, 45.94]], a: 0.45, label: 'SU beat: 0.87 electrones · trece enlaces' },
-    { wins: [[49.37, 54.19]], a: -0.55, label: 'cede al campo' },
+    { wins: [[0.40, 19.00]], a: -0.80, label: 'no hay enlace que mostrar (átomos sueltos)' },
+    { wins: [[20.80, 30.74]], a: 0.55, label: 'SU beat: la carga cae al espacio de en medio' },
+    { wins: [[31.14, 41.97]], a: 0.45, label: 'SU beat: 0.87 electrones · trece enlaces' },
+    { wins: [[45.09, 49.26]], a: -0.55, label: 'cede al campo' },
   ] },
   dep: { base: 0.85, mods: [
-    { wins: [[49.37, 54.19]], a: -0.55, label: 'cede al campo' },
+    { wins: [[45.09, 49.26]], a: -0.55, label: 'cede al campo' },
   ] },
   // TRÁNSITO — el `transitDim` de O₂/N₂. Cuando la cámara ENTRA a la nube, la densidad
   // aditiva por delante del lente se acumula y el cuadro revienta (medido: 45.7 % de píxeles
   // >200 en el clavado sin esto). La escena de enlaces apaga la nube al entrar "para que el
   // NUCLEÓN resalte" y devuelve el brillo al salir. Multiplica a las tres.
   transito: { base: 1, mods: [
-    { wins: [[35.5, 45.94]], a: -0.75, label: 'CLAVADO: adentro, la nube cede al núcleo' },
-    { wins: [[46.34, 49.00]], a: -0.55, label: 'salida: el brillo REGRESA con la molécula' },
+    { wins: [[33.0, 41.97]], a: -0.75, label: 'CLAVADO: adentro, la nube cede al núcleo' },
+    { wins: [[42.37, 44.90]], a: -0.55, label: 'salida: el brillo REGRESA con la molécula' },
   ] },
   // EL CAMPO: base alta (Ian lo pidió MÁS FUERTE) y dos beats donde se queda solo.
   campo: { base: 1.15, mods: [
-    { wins: [[16.55, 22.46]], a: 0.85, label: 'SU beat: "con su campo eléctrico"' },
-    { wins: [[49.37, 54.19]], a: 0.90, label: 'SU beat: "las líneas son el campo real"' },
-    { wins: [[25.35, 45.94]], a: -0.35, label: 'cede mientras el sujeto es la carga del enlace' },
+    { wins: [[15.26, 20.80]], a: 0.85, label: 'SU beat: "con su campo eléctrico"' },
+    { wins: [[45.09, 49.26]], a: 0.90, label: 'SU beat: "las líneas son el campo real"' },
+    { wins: [[23.56, 41.97]], a: -0.35, label: 'cede mientras el sujeto es la carga del enlace' },
   ] },
 };
 /** Núcleo `i` en el instante del barrido R: MISMO bracket que usa O2Cloud para las nubes, así

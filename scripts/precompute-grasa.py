@@ -279,17 +279,46 @@ def main():
     # Rvals = la escala s, DESCENDENTE (el motor busca el bracket asumiendo orden descendente,
     # igual que O₂ con su R). Así R(t) grande = átomos separados, R(t)→1 = molécula formada.
     q = lambda a: np.clip(np.round(np.asarray(a) * POSQ), -32767, 32767).astype('<i2')
+    # ── COLOR POR ELEMENTO, con la regla de la NATURALEZA ────────────────────────────────
+    # El oxígeno se queda con el oro/ámbar de la serie. El CARBONO estrena paleta, y no es
+    # gusto: son sus BANDAS DE SWAN — la transición d³Πg → a³Πu del C₂, descrita por William
+    # Swan en 1856. Es literalmente cómo se ve el carbono cuando emite: el cono interior
+    # verde-azul de una flama de hidrocarburo, y el color de las comas de los cometas. Para una
+    # GRASA —que es puro hidrocarburo— es el color que le toca por física, no por diseño.
+    #
+    # Las longitudes de onda son las cabezas de banda reales, convertidas a sRGB con las
+    # funciones de color CIE 1931 (ajuste multi-lobo de Wyman, Sklar & Sloan, JCGT 2013):
+    # ⚠ NO se toma una línea suelta: 473.7 nm en sRGB da AZUL PURO y, sumado al azul que ya
+    # ponen el campo y la nube `dep`, el verde desaparecía (medido: canal G 44 contra B 101).
+    # Se INTEGRA el sistema con las intensidades relativas de sus cabezas — la secuencia Δv=0
+    # (516.5/512.9/509.8/505.5) domina, Δv=±1 pesan ~0.3 — y eso da el verde-menta real del
+    # cono de la flama. La orilla usa la cola Δv=−1 (563.6/558.6): verde-lima, misma familia.
+    # El núcleo se blanquea 45 %, exactamente el mismo recurso que el "white-gold" del oxígeno:
+    # no es un color nuevo, es la MISMA banda a brillo de saturación.
     gold, amber, wgold = np.array([1., .70, .14]), np.array([1., .24, .03]), np.array([1., .82, .42])
-    # el color de `acc` se fija en el cuadro FORMADO y viaja con la partícula (correspondencia
-    # lagrangiana): así el punto que termina en un enlace ya venía siendo el mismo desde lejos.
+    swan_nuc = np.array([0.45, 1.00, 0.678])    # + 45 % blanco  → núcleo blanco-menta
+    swan_cue = np.array([0.00, 1.00, 0.414])    # cuerpo         → verde-menta
+    swan_ori = np.array([0.441, 1.00, 0.00])    # cola Δv=−1     → verde-lima
+
     accf = P['acc'][-1] / BOHR
-    pesf = (nucK[-1] / BOHR)[Zs > 1]
-    d = np.empty(len(accf))
+    nucf = nucK[-1] / BOHR
+    pes_i = np.where(Zs > 1)[0]
+    pesf = nucf[pes_i]
+    d = np.empty(len(accf)); cual = np.empty(len(accf), dtype=int)
     for a0 in range(0, len(accf), 20000):
-        d[a0:a0 + 20000] = np.sqrt(((accf[a0:a0 + 20000, None, :] - pesf[None]) ** 2).sum(2)).min(1)
+        dd = np.sqrt(((accf[a0:a0 + 20000, None, :] - pesf[None]) ** 2).sum(2))
+        j = dd.argmin(1)
+        d[a0:a0 + 20000] = dd[np.arange(len(j)), j]
+        cual[a0:a0 + 20000] = Zs[pes_i[j]]          # Z del núcleo pesado MÁS CERCANO
     t = np.clip((d - 0.55) / 1.85, 0, 1)[:, None]
-    col = gold * (1 - t) + amber * t
-    col[d < 0.55] = wgold
+    col = np.where((cual == 6)[:, None],
+                   swan_cue * (1 - t) + swan_ori * t,      # CARBONO: Swan (0,0) → (1,0)
+                   gold * (1 - t) + amber * t)             # OXÍGENO: sin cambio
+    nucleo = d < 0.55
+    col[nucleo & (cual == 6)] = swan_nuc
+    col[nucleo & (cual != 6)] = wgold
+    print(f'   color: {(cual==6).sum()} puntos al CARBONO (Swan) · {(cual!=6).sum()} al OXÍGENO (oro)', flush=True)
+
     Rv = np.ascontiguousarray(ESCALAS, dtype='<f4')
 
     out = os.path.join(PRE, f'grasa-{NOMBRE}.bin')

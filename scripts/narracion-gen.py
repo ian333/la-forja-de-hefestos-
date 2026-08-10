@@ -143,7 +143,10 @@ def gen_trim(text, final):
         tts_text = tts_text[:-1]
     tts_text = tts_text.replace('. ', ', ')
     tts_text = ' '.join(tts_text.split())
-    tts.tts_to_file(text=tts_text, language="es", speaker_wav=REFS, file_path=raw)
+    # VELOCIDAD (env VEL, default 1.0 = como siempre). XTTS habla parejo y en frases largas
+    # arrastra; Ian, 2026-08-10: "suena raro, un poco lento también". 1.0 deja INTACTAS las
+    # piezas ya entregadas — sólo la que lo pida cambia.
+    tts.tts_to_file(text=tts_text, language="es", speaker_wav=REFS, file_path=raw, speed=VEL)
     dur_raw = _dur(raw)
     # duracion ESPERADA del habla (~0.38s/palabra). Solo cortamos si el clip salio
     # ANOMALAMENTE largo (probable balbuceo de XTTS), y en la pausa CERCA/DESPUES del
@@ -226,6 +229,7 @@ def gen_line(text, final):
 # "7,8,9" la evalua como aritmetica (operador coma) y queda solo el ULTIMO numero.
 # Usar LINEAS; LINES se mantiene por compatibilidad para valores de un solo numero.
 ONLY = os.environ.get('LINEAS') or os.environ.get('LINES')   # "4" o "4,7": regenerar SOLO esas lineas
+VEL = float(os.environ.get('VEL', '1.0'))
 TAKES = int(os.environ.get('TAKES', '1'))  # >1: genera N tomas y se queda con la MEDIANA.
 # ANTES se quedaba con la MAS CORTA, con la idea de que la vocal alargada de XTTS mete
 # duracion de mas. Pero eso selecciona SIEMPRE la toma mas apurada: regenere las 25 lineas

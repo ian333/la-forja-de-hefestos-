@@ -29,7 +29,8 @@
       "campo": "420/420 líneas vivas en 20 de 24 cuadros (mínimo 405 en el tramo medio)."
     },
     "por_que_el_total_no_sirve": "∫Δρ>0 sobre TODO el espacio tiene un piso de ~2.3 e⁻ que no es enlace: la promolécula usa átomos esféricamente promediados y el C/O reales son ³P, asféricos. Con esa métrica el número BAJABA al formarse y el gate reprobaba una física correcta. Medido y documentado para no repetirlo.",
-    "limitacion_declarada": "Es un BARRIDO de expansión uniforme, no un mecanismo de reacción: nadie forma una grasa juntando sus catorce átomos a la vez. Lo dice el propio guion (línea 23). UHF y no RHF porque la capa cerrada restringida no describe enlaces estirados."
+    "limitacion_declarada": "Es un BARRIDO de expansión uniforme, no un mecanismo de reacción: nadie forma una grasa juntando sus catorce átomos a la vez. Lo dice el propio guion (línea 23). UHF y no RHF porque la capa cerrada restringida no describe enlaces estirados.",
+    "color": "OXÍGENO: oro/ámbar de la serie, sin cambio. CARBONO: bandas de Swan del C2 (d3Pig->a3Piu, Swan 1856) — el verde del cono interior de una flama de hidrocarburo y de las comas de cometas. Sistema INTEGRADO con las intensidades de sus cabezas (Dv=0 domina), convertido a sRGB con las funciones CIE 1931 (Wyman-Sklar-Sloan 2013). Tomar 473.7 nm suelta daba AZUL puro y el verde desaparecia contra el campo."
   },
   "escena": {
     "html": "cinematic-molecule.html",
@@ -42,8 +43,8 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 66.0,
-    "nota_dur": "voz REAL 63.53s (16 líneas, lead/gap 0.40) + 2.5s de cola"
+    "dur": 60.4,
+    "nota_dur": "voz REAL 57.89s (16 líneas, VEL=1.10 en el TTS, lead/gap 0.40) + 2.5s de cola"
   },
   "render": {
     "shards": 2,
@@ -61,7 +62,7 @@
     "narracion": "butirico-narracion.mp3",
     "segs": "segs.json",
     "ass": "butirico.ass",
-    "voz": "XTTS Matilda, TAKES=4 mediana. ⚠ pasar scripts/voz-check.py ANTES de rendir.",
+    "voz": "XTTS Matilda, TAKES=4 mediana, VEL=1.10 (Ian: sonaba lento). ⚠ pasar scripts/voz-check.py ANTES de rendir.",
     "musica": null
   },
   "salida": {
