@@ -1239,3 +1239,139 @@ export function estacion3Dado(pkg: MoldPackage): Estacion3Dado {
     ],
   };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* E3-VERIFICACIÓN — cotas en todo, medido del SÓLIDO, no del papel           */
+/* (orden 2026-08-10-ciclo-dado-e3-verificacion)                              */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * ian frenó la estación 3: "no avanzaremos a menos de que añadas dimensiones —
+ * TODAS — y verifiques desde distintas caras". Y cazó la clase de bug exacta:
+ * el panel declaraba insertos de COMPRA 60/16 y el acero dibujado medía 52/14.
+ * Doctrina de aquí en adelante (la misma de las cotas del CAD): cada dimensión
+ * trae DOS cifras — la declarada y la MEDIDA del B-Rep — y si no cuadran, ROJO.
+ */
+import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft } from '../brep/occt';
+import { splitMold, shapeBBox, volume as occVolume, draftAnalysis, type SplitMoldResult } from './mold';
+
+/** El dado RECTO de las estaciones 1-2 (boca abajo, sin draft). */
+export function dadoRectoShape(oc: any) {
+  const outer = occMakeBox(oc, 40, 40, 40);
+  const inner = occTransform(oc, occMakeBox(oc, 36, 36, 39), { translate: [2, 2, -0.5] });
+  return occCut(oc, outer, inner);
+}
+
+/** El dado con su draft REAL de 1.5° (E3): boca ARRIBA (convención splitMold),
+ *  pared nominal 2 medida EN la partición, piso 2. Loft NURBS exacto. */
+export function dadoDraftShape(oc: any) {
+  const t15 = Math.tan(1.5 * Math.PI / 180);
+  const R = (a: number, b: number) => [{ x: a, y: a }, { x: b, y: a }, { x: b, y: b }, { x: a, y: b }];
+  const pl = (z: number) => ({ origin: [0, 0, z] as [number, number, number], uDir: [1, 0, 0] as [number, number, number], vDir: [0, 1, 0] as [number, number, number] });
+  const outer = occLoft(oc, [
+    { pts: R(40 * t15, 40 - 40 * t15), plane: pl(0) },
+    { pts: R(0, 40), plane: pl(40) },
+  ], { solid: true, ruled: true });
+  const inner = occLoft(oc, [
+    { pts: R(2 + 38 * t15, 38 - 38 * t15), plane: pl(2) },
+    { pts: R(2 - t15, 38 + t15), plane: pl(41) },
+  ], { solid: true, ruled: true });
+  return occCut(oc, outer, inner);
+}
+
+export interface AceroE3 {
+  dadoD: any; r: SplitMoldResult; zPart: number;
+  /** dims de COMPRA (insertDims) — las MISMAS que el bloque tallado usa ahora */
+  compra: { ifx: number; ify: number; Hc: number; Hk: number };
+}
+
+/** El acero de la E3 con las dims de COMPRA reales — el bug de ian era que el
+ *  bloque tallado (52/14) no era el acero comprado (60/16). UNA fuente: insertDims. */
+export function construirAceroE3(oc: any, pkg: MoldPackage): AceroE3 {
+  const asm = packageToAssemblySpec(pkg);
+  const id = insertDims(asm);
+  const dadoD = dadoDraftShape(oc);
+  const zPart = 39.5;                                        // boca 40 − pinch 0.5
+  const r = splitMold(oc, dadoD, {
+    scale: 1,                                                // contracción = estación 9 (retorno declarado)
+    pinch: 0.5,
+    plateThickness: id.Hk,                                   // respaldo del núcleo = COMPRA
+    block: { w: id.ifx, d: id.ify, h: id.Hc, x: 20, y: 20, z: zPart - id.Hc / 2 },   // cavidad = COMPRA
+  });
+  return { dadoD, r, zPart, compra: { ifx: id.ifx, ify: id.ify, Hc: id.Hc, Hk: id.Hk } };
+}
+
+export interface MedidaE3 {
+  componente: string; cota: string;
+  declarado: number; medido: number; tolMm: number;
+  ok: boolean;
+  /** desde qué cara/vista se verifica (dibujo técnico: una cota vive en una vista) */
+  vista: string;
+}
+export interface VerificacionE3 { medidas: MedidaE3[]; ok: boolean; resumen: string }
+
+/** TODAS las dimensiones, medidas del sólido — cada una con la VISTA del dibujo
+ *  técnico donde se comprueba. El draft no se lee del parámetro: se mide de las
+ *  NORMALES de las caras (draftAnalysis). La conservación de volumen ata las tres
+ *  piezas al bloque: si algo se tallo mal, la suma delata. */
+export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
+  const M: MedidaE3[] = [];
+  const mide = (componente: string, cota: string, declarado: number, medido: number, tolMm: number, vista: string) =>
+    M.push({ componente, cota, declarado: +declarado.toFixed(3), medido: +medido.toFixed(3), tolMm, ok: Math.abs(medido - declarado) <= tolMm, vista });
+
+  const bbD = shapeBBox(oc, a.dadoD);
+  const bbC = shapeBBox(oc, a.r.cavityPlate);
+  const bbM = shapeBBox(oc, a.r.macho);
+  const bbK = shapeBBox(oc, a.r.corePlate);
+
+  // ── EL DADO (la pieza) ──
+  mide('dado', 'ancho X en la boca', 40, bbD.max[0] - bbD.min[0], 0.02, 'PLANTA (SUP)');
+  mide('dado', 'fondo Y en la boca', 40, bbD.max[1] - bbD.min[1], 0.02, 'PLANTA (SUP)');
+  mide('dado', 'alto Z', 40, bbD.max[2] - bbD.min[2], 0.02, 'FRENTE (FRE)');
+  // pared nominal EN la partición: (exterior − hueco)/2, ambos máximos ocurren arriba
+  mide('dado', 'pared nominal EN la partición', 2, ((bbD.max[0] - bbD.min[0]) - (bbM.max[0] - bbM.min[0])) / 2, 0.06, 'SECCIÓN frontal');
+  mide('dado', 'piso', 2, bbM.min[2] - bbD.min[2], 0.05, 'SECCIÓN frontal');
+  // draft MEDIDO DEL SÓLIDO por rebanadas (dibujo técnico): ancho abajo vs ancho
+  // arriba → ángulo. NO se usa draftAnalysis para esto: las paredes del loft son
+  // superficies REGLADAS (BSpline, no 'plane') y las mandaba a 'curvas' sin medir —
+  // el gate cazó ese falso PASA en su primera corrida (8≠0) y por eso está esto.
+  const rebanada = (shape: any, z0: number, z1: number) => {
+    const tapa = occTransform(oc, occMakeBox(oc, 400, 400, 200), { translate: [-180, -180, z1] });
+    return shapeBBox(oc, occCut(oc, shape, tapa));
+  };
+  const slabExt = rebanada(a.dadoD, 0, 0.4);                 // pie del exterior
+  const wPie = slabExt.max[0] - slabExt.min[0];
+  const draftExt = Math.atan((((bbD.max[0] - bbD.min[0]) - wPie) / 2) / (bbD.max[2] - 0.4)) * 180 / Math.PI;
+  mide('dado', 'draft EXTERIOR medido (°)', 1.5, draftExt, 0.1, 'FRENTE (rebanadas)');
+  const slabInt = rebanada(a.r.macho, 2, 2.4);               // pie del hueco (el macho lo copia)
+  const wPieInt = slabInt.max[0] - slabInt.min[0];
+  const draftInt = Math.atan((((bbM.max[0] - bbM.min[0]) - wPieInt) / 2) / (bbM.max[2] - 2.4)) * 180 / Math.PI;
+  mide('dado', 'draft INTERIOR del hueco medido (°)', 1.5, draftInt, 0.1, 'FRENTE (rebanadas)');
+  // complementario: ninguna cara PLANA casi-vertical sin draft (las regladas ya se midieron arriba)
+  const da = draftAnalysis(oc, a.dadoD, [0, 0, 1], 1.4);
+  mide('dado', 'caras PLANAS sin draft (<1.4°)', 0, da.requiresDraft.length, 0, 'todas las caras');
+
+  // ── INSERTO DE CAVIDAD = acero de COMPRA ──
+  mide('inserto cavidad', 'ancho X', a.compra.ifx, bbC.max[0] - bbC.min[0], 0.02, 'PLANTA (SUP)');
+  mide('inserto cavidad', 'fondo Y', a.compra.ify, bbC.max[1] - bbC.min[1], 0.02, 'PLANTA (SUP)');
+  mide('inserto cavidad', 'alto = Hc de compra', a.compra.Hc, bbC.max[2] - bbC.min[2], 0.02, 'FRENTE (FRE)');
+  mide('inserto cavidad', 'cara superior EN la partición', a.zPart, bbC.max[2], 0.02, 'FRENTE (FRE)');
+
+  // ── NÚCLEO ──
+  mide('núcleo (respaldo)', 'espesor de placa = Hk de compra', a.compra.Hk, bbK.max[2] - a.zPart, 0.02, 'FRENTE (FRE)');
+  mide('núcleo (macho)', 'entra hasta el piso', 2, bbM.min[2], 0.05, 'SECCIÓN frontal');
+  mide('núcleo (macho)', 'ancho del hueco en la boca', 36, bbM.max[0] - bbM.min[0], 0.06, 'PLANTA (SUP)');
+
+  // ── INVARIANTES DEL CONJUNTO ──
+  mide('conjunto', 'cuerpos del molde (cavity + macho)', 2, a.r.bodies, 0, 'booleana');
+  const vBloque = a.compra.ifx * a.compra.ify * a.compra.Hc;
+  const vSuma = a.r.vols.cavity + a.r.vols.macho + a.r.vols.piezaEscalada;
+  mide('conjunto', 'Σ cavidad+macho+pieza = bloque (%)', 100, 100 * vSuma / vBloque, 0.5, 'volumen (divergencia)');
+
+  const malas = M.filter((m) => !m.ok);
+  return {
+    medidas: M, ok: malas.length === 0,
+    resumen: malas.length === 0
+      ? `${M.length}/${M.length} medidas CUADRAN (declarado ≈ medido del B-Rep)`
+      : `✗ ${malas.length}/${M.length} medidas NO cuadran: ${malas.map((m) => `${m.componente}·${m.cota} (${m.declarado}≠${m.medido})`).join(' · ')}`,
+  };
+}

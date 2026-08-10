@@ -608,7 +608,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
         </button>
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
-      {ciclo.estacion >= 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} />}
+      {ciclo.estacion >= 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} />}
     </>
   );
 }
@@ -678,7 +678,7 @@ function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estac
  *  aritmética que la produjo (la base no "es" 196: NECESITA 184 y 196 es la
  *  primera medida del catálogo). Los retornos van declarados al pie: este acero
  *  se va a REABRIR y el panel lo dice desde hoy. */
-function CicloE3({ e3 }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado }) {
+function CicloE3({ e3, e3v }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado; e3v?: import('../mold/estudio-molde-datos').VerificacionE3 }) {
   const fila = (titulo: string, cuerpo: string, porque: string, testid: string, color = '#9db4d0') => (
     <div className="fb-comp-row feat" data-testid={testid} title={porque}
       style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
@@ -707,6 +707,23 @@ function CicloE3({ e3 }: { e3: import('../mold/estudio-molde-datos').Estacion3Da
         ))}
         <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 2 }}>P20 SOLO donde se moldea; C45 donde solo se sujeta — pagar acero de molde en una placa de sujeción es tirar dinero (§4.4.4)</div>
       </div>
+      {e3v && (
+        <div data-testid="e3-medidas" style={{ padding: '4px 6px 2px' }}>
+          <div style={{ fontSize: 10.5, color: '#dfe7f2', fontWeight: 700 }}>
+            📏 MEDIDAS — declarado vs MEDIDO del sólido (dibujo técnico: cada cota en su vista)
+          </div>
+          <div style={{ fontSize: 10, color: e3v.ok ? '#7ee0a0' : '#f27a6c', margin: '2px 0' }}>{e3v.resumen} · interferencia: IMPOSIBLE por construcción (las 3 piezas parten el bloque; la fila Σ=bloque lo mide)</div>
+          {e3v.medidas.map((m, k) => (
+            <div key={k} data-testid={`e3-medida-${k}`} title={m.vista}
+              style={{ display: 'flex', justifyContent: 'space-between', gap: 6, fontSize: 10,
+                fontFamily: "'JetBrains Mono', monospace", padding: '1px 0',
+                color: m.ok ? '#9fb2c8' : '#f27a6c', fontWeight: m.ok ? 400 : 700 }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.ok ? '✓' : '✗'} {m.componente} · {m.cota}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>{m.declarado} ≈ {m.medido}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div data-testid="e3-semaforos-nota" style={{ fontSize: 10.5, color: '#f4d27a', padding: '2px 6px' }}>
         🚦 los semáforos §4.3.3 DESPERTARON — míralos arriba en «Análisis del molde» (el daylight ya ADVIERTE con 8 mm)
       </div>

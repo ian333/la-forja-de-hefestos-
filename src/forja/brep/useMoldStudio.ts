@@ -30,7 +30,7 @@ import { surfaceFlowLength } from '../mold/flowlen-surface';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
@@ -60,7 +60,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // EL CICLO DEL DADO (orden 2026-08-10-ciclo-dado-estacion1): el molde del cubo se
   // construye estación por estación EN ORDEN DE LIBRO. `estacion` = dónde vamos;
   // `e1` = el juicio de la estación 1 (macizo REPROBADO vs dado APROBADO, Eq 9.5).
-  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado } | null>(null);
+  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3 } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
   // armado NO debe barrerlas cuando liveMoldSpec es null.
   const [feedDemo, setFeedDemo] = useState(false);
@@ -382,7 +382,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     if (!oc) return;
     try {
       const e1 = estacion1Dado();
-      const dado = dadoShape(oc);
+      const dado = dadoRectoShape(oc);
       const macizo = OCC.transformShape(oc, OCC.makeBox(oc, 50, 50, 50), { translate: [-75, -5, 0] });
       setCiclo({ estacion: 1, e1 });
       setDocName('EL DADO · ciclo de Kazmer — estación 1 (DFM cap 2)');
@@ -441,26 +441,23 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     try {
       const pkg = ciclo.e2.pkg;
       const e3 = estacion3Dado(pkg);
-      const t15 = Math.tan(1.5 * Math.PI / 180);
-      const R = (a: number, b: number) => [{ x: a, y: a }, { x: b, y: a }, { x: b, y: b }, { x: a, y: b }];
-      const pl = (z: number) => ({ origin: [0, 0, z] as [number, number, number], uDir: [1, 0, 0] as [number, number, number], vDir: [0, 1, 0] as [number, number, number] });
-      // exterior: 40×40 en la BOCA (z40, la partición) → −2·40·tan1.5° en la base
-      const outer = OCC.loftSections(oc, [
-        { pts: R(40 * t15, 40 - 40 * t15), plane: pl(0) },
-        { pts: R(0, 40), plane: pl(40) },
-      ], { solid: true, ruled: true });
-      // hueco: 36×36 en la boca, piso de 2 — la pared NOMINAL se mide EN la partición
-      const inner = OCC.loftSections(oc, [
-        { pts: R(2 + 38 * t15, 38 - 38 * t15), plane: pl(2) },
-        { pts: R(2 - t15, 38 + t15), plane: pl(41) },
-      ], { solid: true, ruled: true });
-      const dadoD = OCC.cut(oc, outer, inner);
-      const r = splitMold(oc, dadoD, { scale: 1, pinch: 0.5, plateThickness: 14, block: { w: 120, d: 120, h: 52, x: 20, y: 20, z: 39.5 - 26 } });
+      // EL ACERO VERIFICADO (orden e3-verificacion): construirAceroE3 talla con las
+      // dims de COMPRA (insertDims — el bug de ian: 60/16 declarados vs 52/14
+      // dibujados) y verificacionE3 mide TODO del B-Rep: 17 cotas declarado≈medido,
+      // draft por rebanadas, Σ volúmenes = bloque, cuerpos=2. La tabla va al panel.
+      const acero = construirAceroE3(oc, pkg);
+      const dadoD = acero.dadoD;
+      const r = acero.r;
+      // SIN computeMoldAlarm aquí: congelaba el tab MINUTOS (vóxeles sobre bloques
+      // de 120³ en el hilo del click) y además es REDUNDANTE — cavity/macho/pieza son
+      // una PARTICIÓN EXACTA del bloque por construcción booleana, y la fila
+      // "Σ cavidad+macho+pieza = bloque" ya lo prueba: traslape = suma > 100 %.
+      const e3v = verificacionE3(oc, acero);
       const partPlano = OCC.transformShape(oc, OCC.makeBox(oc, 150, 150, 0.8), { translate: [-55, -55, 39.1] });
       const placaA = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 66), { translate: [-78, -78, -79] });
       const placaB = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 22), { translate: [-78, -78, 96] });
       setMoldPkg(pkg);
-      setCiclo({ ...ciclo, estacion: 3, e3 });
+      setCiclo({ ...ciclo, estacion: 3, e3, e3v });
       setDocName('EL DADO · estación 3 — ARQUITECTURA (cap 4): nace el primer acero');
       setCollapsed((c) => ({ ...c, features: false }));
       cursoSet(3, [
