@@ -36,8 +36,10 @@ import { moldMachine, type MoldPackage, type MachineSpec, type Arch } from './mo
 import { packageToAssemblySpec, plateStackZ } from './mold-plano-set';
 import {
   plateDefs, plateDepth, moldStackHeight, coolingCircuit, standardHoles, moldBoltSizing,
+  cavityFootprint, cavityGrid,
   type PlateDef,
 } from './mold-drawing-set';
+import { pinBuckling } from './ejection';
 import { moldMassKg } from './fasteners';
 import { MOLD_METALS } from './moldbase';
 import { material as materialProps } from './materials';
@@ -828,4 +830,166 @@ export const MODOS: Array<{ id: ModoMolde; nombre: string; icono: string; que: s
 /** El resumen de una línea que va arriba: qué molde es, para qué pieza. */
 export function tituloDelMolde(m: MoldeArmado, piezaNombre: string): string {
   return `${m.asm.name ?? 'Molde'} · ${m.numeros.Lmm}×${m.numeros.Wmm}×${m.numeros.Hmm} mm · ${m.numeros.nCav} cavidad(es) · para ${piezaNombre}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL JUICIO DE LOS PINES — piloto de "cada análisis vive en su pieza"        */
+/* (orden 2026-08-10-juicio-pines-3d)                                         */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * Juzga CADA pin expulsor EN SU VECINDARIO — porque el pin no se estudia solo:
+ * su ⌀ lo dimensiona el cap 11, su holgura es un venteo del cap 8, su barreno
+ * pelea con el agua del cap 9 (el RETORNO A-239) y con la pared de la cavidad
+ * (§11.2.5, el benchy con el barreno cortando la pared moldeante −0.6 mm).
+ *
+ * TODO se MIDE del molde ya colocado, no de la intención:
+ *  - posiciones/holguras: `standardHoles(spec,'B')` — LA MISMA fuente que barrena
+ *    las placas (si divergieran, el juicio juzgaría otro molde).
+ *  - agua: `coolingCircuit` YA ESQUIVA pines; lo que queda de cerca, y sobre todo
+ *    sus `avisos` (líneas tiradas, paso violado) ES el conflicto real.
+ *  - pandeo: `pinBuckling` (A-234, con su desviación K=2 declarada en ejection.ts).
+ *
+ * La premisa del ejercicio (ian): el molde ESTÁ MAL — este juicio existe para
+ * ENCONTRAR dónde, y devolver PUNTOS XYZ para verlo, no párrafos.
+ */
+export interface PinJuzgado {
+  i: number; x: number; y: number;
+  diaMm: number; holguraMm: number; libreMm: number;
+  /** restricción gobernante del ⌀ (A-235): la peor de compresión/cortante/pandeo */
+  gobierna: 'cortante' | 'compresión' | 'pandeo' | 'ninguna';
+  sfPandeo: number | null;
+  dAguaMm: number | null;   // superficie a superficie contra la línea de agua más cercana (lado B)
+  aguaOk: boolean | null;   // §9.2.7: claro ≥ ½·⌀agua
+  aceroCavMm: number | null; // pared entre el barreno y la pared vertical de la cavidad
+  aceroOk: boolean | null;  // §11.2.5: ≥ 1·⌀pin
+  estado: 'CUMPLE' | 'ADVIERTE' | 'VIOLA';
+  porque: string[];
+}
+export interface JuicioPines {
+  tipo: string;
+  /** si el molde NO expulsa por pines (stripper §11.3.4), se DECLARA — no se calla */
+  declaracion: string | null;
+  pines: PinJuzgado[];
+  /** nube ROJA: violaciones puntuales (agua/acero) · ÁMBAR: advertencias (pandeo, banda) */
+  nubeRoja: Float32Array; nubeAmbar: Float32Array;
+  /** el RETORNO A-239 en su forma real: lo que el agua NO pudo colocar por el campo de pines */
+  avisosAgua: string[];
+  resumen: string;
+  peor: 'CUMPLE' | 'ADVIERTE' | 'VIOLA';
+}
+
+export function juzgarPines(spec: MoldAssemblySpec, pkg: MoldPackage | null): JuicioPines {
+  const vacio = (tipo: string, declaracion: string): JuicioPines => ({
+    tipo, declaracion, pines: [], nubeRoja: new Float32Array(0), nubeAmbar: new Float32Array(0),
+    avisosAgua: [], resumen: declaracion, peor: 'CUMPLE',
+  });
+  const tipo = spec.ejectors?.type ?? 'pin';
+  if (tipo === 'stripper')
+    return vacio(tipo, 'este molde expulsa por STRIPPER (§11.3.4): el anillo empuja TODO el perímetro — no hay pines que juzgar; su análisis es el balance del stripper (A-246)');
+
+  const D = plateDepth(spec);
+  const dia = spec.ejectors.diaMm;
+  // pines COLOCADOS = los barrenos de expulsor de la placa B (la fuente que barrena)
+  const holes = standardHoles(spec, 'B').filter((h) => h.type.startsWith('expulsor'));
+  if (!holes.length) return vacio(tipo, `expulsión tipo "${tipo}" sin barrenos de pin en B — nada que juzgar`);
+
+  // L LIBRE del pin: de la cara superior de la retenedora a la partición — la misma
+  // aritmética de zonas de mold-plano-set (bottom+4+retH … top de B).
+  const p = spec.plates;
+  const retH = Math.max(15, Math.round(p.ejectorHousing * 0.28));
+  const libre = p.ejectorHousing + p.support + p.B - 4 - retH;
+  const zPart = p.bottomClamp + p.ejectorHousing + p.support + p.B;   // partición (top de B)
+
+  // fuerza por pin: del paquete (vector §11.1); sin paquete, esos checks van SIN MEDIR
+  const fPin = pkg ? pkg.diseno.expulsion.vector.fEjectN / Math.max(1, holes.length) : null;
+  const sizing = pkg ? pkg.diseno.expulsion.pines : null;
+
+  // agua REAL colocada (lado B: z = top de B − zBehind) + lo que NO se pudo colocar
+  const cc = coolingCircuit(spec, D);
+  const zAgua = zPart - cc.zBehindMm;
+  const rAgua = cc.diaMm / 2;
+  const claroAgua = cc.diaMm / 2;                                     // §9.2.7: ½ ⌀ de claro
+  const avisosAgua = (cc.avisos ?? []).slice();
+
+  // borde de la cavidad por celda (pared vertical que el barreno NO debe comer)
+  const { fx, fy, round } = cavityFootprint(spec);
+  const cells = cavityGrid(spec, D);
+
+  const rojo: number[] = [], ambar: number[] = [];
+  const pines: PinJuzgado[] = holes.map((h, i) => {
+    const rBarreno = h.dia / 2;
+    const porque: string[] = [];
+    let estado: PinJuzgado['estado'] = 'CUMPLE';
+    const peorA = (e: PinJuzgado['estado']) => { if (e === 'VIOLA' || estado === 'VIOLA') estado = 'VIOLA'; else if (e === 'ADVIERTE') estado = 'ADVIERTE'; };
+
+    // ── A-232/233/235: el ⌀ contra compresión y cortante (gobierna el peor) ──
+    let gobierna: PinJuzgado['gobierna'] = 'ninguna';
+    if (sizing) {
+      const req = Math.max(sizing.dMinCompressionMm, sizing.dMinShearMm);
+      gobierna = sizing.dMinShearMm >= sizing.dMinCompressionMm ? 'cortante' : 'compresión';
+      if (dia < req) { peorA('VIOLA'); porque.push(`⌀${dia} < ⌀ mínimo ${req.toFixed(2)} (${gobierna}, A-233/A-232)`); }
+      else if (dia < 1.15 * req) { peorA('ADVIERTE'); porque.push(`⌀${dia} apenas 15 % sobre el mínimo ${req.toFixed(2)} (${gobierna})`); }
+    }
+    // ── A-234: pandeo del cuerpo libre ──
+    let sf: number | null = null;
+    if (fPin != null) {
+      const b = pinBuckling({ diaMm: dia, freeLenMm: libre, fPerPinN: fPin });
+      sf = +b.sf.toFixed(1);
+      if (!b.ok) { peorA('VIOLA'); porque.push(`pandeo: SF ${b.sf.toFixed(1)} < 2 con L=${libre} mm (A-234)`); gobierna = 'pandeo'; }
+      else if (b.sf < 3) { peorA('ADVIERTE'); porque.push(`pandeo justo: SF ${b.sf.toFixed(1)} (A-234)`); }
+    }
+    // ── A-239: el agua más cercana (superficie a superficie, líneas del lado B) ──
+    let dAgua: number | null = null, aguaOk: boolean | null = null;
+    for (const s2 of cc.segs) {
+      if (h.x < Math.min(s2.x0, s2.x1) - 2 || h.x > Math.max(s2.x0, s2.x1) + 2) continue;
+      const d2 = Math.abs(h.y - s2.y0) - rAgua - rBarreno;            // ejes ⟂: |Δy| − radios
+      if (dAgua == null || d2 < dAgua) dAgua = +d2.toFixed(1);
+    }
+    if (dAgua != null) {
+      aguaOk = dAgua >= claroAgua;
+      if (!aguaOk) {
+        peorA('VIOLA'); porque.push(`agua a ${dAgua} mm < claro ½⌀ = ${claroAgua.toFixed(1)} (§9.2.7, A-239)`);
+        rojo.push(h.x, h.y, zAgua);
+      }
+    }
+    // ── A-237/§11.2.5: pared entre el barreno y la pared vertical de la cavidad ──
+    let acero: number | null = null;
+    for (const c of cells) {
+      const e = round
+        ? fx / 2 - Math.hypot(h.x - c.cx, h.y - c.cy)
+        : Math.min(fx / 2 - Math.abs(h.x - c.cx), fy / 2 - Math.abs(h.y - c.cy));
+      if (e > -rBarreno) {                                           // el pin vive en/junto a esta celda
+        const wall = Math.abs(e) - rBarreno;                          // pared al plano vertical de la cavidad
+        if (acero == null || wall < acero) acero = +wall.toFixed(2);
+      }
+    }
+    const aceroOk = acero == null ? null : acero >= dia;
+    if (acero != null && !aceroOk) {
+      peorA(acero < dia / 2 ? 'VIOLA' : 'ADVIERTE');
+      porque.push(`pared al muro de cavidad ${acero} mm < 1⌀ = ${dia} (§11.2.5 — el caso benchy)`);
+      (acero < dia / 2 ? rojo : ambar).push(h.x, h.y, zPart);
+    }
+    return {
+      i, x: h.x, y: h.y, diaMm: dia, holguraMm: +(h.dia - dia).toFixed(2), libreMm: libre,
+      gobierna, sfPandeo: sf, dAguaMm: dAgua, aguaOk, aceroCavMm: acero, aceroOk, estado, porque,
+    };
+  });
+
+  // ── el RETORNO A-239 en conjunto: lo que el agua NO logró por el campo de pines ──
+  // ámbar sobre CADA pin dentro de la banda de agua cuando el circuito dejó avisos
+  if (avisosAgua.length) {
+    const ys = cc.segs.map((s2) => s2.y0);
+    const y0 = Math.min(...ys) - 20, y1 = Math.max(...ys) + 20;
+    for (const q of pines) if (q.y >= y0 && q.y <= y1) ambar.push(q.x, q.y, zAgua);
+  }
+
+  const peor = pines.some((q) => q.estado === 'VIOLA') ? 'VIOLA'
+    : (pines.some((q) => q.estado === 'ADVIERTE') || avisosAgua.length) ? 'ADVIERTE' : 'CUMPLE';
+  const n = { v: pines.filter((q) => q.estado === 'VIOLA').length, a: pines.filter((q) => q.estado === 'ADVIERTE').length };
+  return {
+    tipo, declaracion: null, pines,
+    nubeRoja: new Float32Array(rojo), nubeAmbar: new Float32Array(ambar), avisosAgua,
+    resumen: `${pines.length} pines ⌀${dia}×L${libre}: ${n.v} VIOLAN · ${n.a} ADVIERTEN · ${pines.length - n.v - n.a} cumplen${avisosAgua.length ? ` · el agua dejó ${avisosAgua.length} aviso(s) por el campo de pines (A-239)` : ''}`,
+    peor,
+  };
 }
