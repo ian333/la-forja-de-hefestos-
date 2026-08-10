@@ -13,7 +13,7 @@ import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resi
 import { estPartVolumeCc } from '../mold/feed';
 import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 import type { CalcPaso } from '../mold/cooling-design';
-import { construirMolde } from '../mold/estudio-molde-datos';
+import { construirMolde, CICLO_KAZMER } from '../mold/estudio-molde-datos';
 import { mallaCaja } from '../mold/lamina-seccion';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
@@ -436,12 +436,14 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
 /** El grupo del ribbon MOLDE · CURSO ALWIS (Flanera/Vaso/Core-Cav + los 6
  *  pasos del curso). Incluye su separador. */
 export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelReady: boolean }) {
-  const { loadFeedDemo, cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias } = mold;
+  const { loadFeedDemo, cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias, loadDado } = mold;
   return (
     <>
             <span className="fb-tb-sep" />
             <div className="fb-group">
               <div className="fb-group-row">
+                <button className="fb-big" data-testid="btn-dado" onClick={loadDado} disabled={!kernelReady}
+                  title="EL DADO — el ciclo de Kazmer estación por estación sobre la pieza mínima: cubo hueco 40×40×40 pared 2. Estación 1: el DFM reprueba al macizo (t_c 88 min, Eq 9.5) y aprueba al dado"><Ic name="cajacic" /><span>El DADO</span></button>
                 <button className="fb-big" data-testid="btn-flanera" onClick={loadFlaneraMold} disabled={!kernelReady}
                   title="Molde COMPLETO de la flanera (24 partes: placas, insertos sólidos, eyección, agua, guías) — como el del Tupper"><Ic name="revolucion" /><span>Flanera</span></button>
                 <button className="fb-big" data-testid="btn-flanera-vaso" onClick={cursoFlanera} disabled={!kernelReady || cursoBusy}
@@ -533,6 +535,70 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
       {arm.avisos.map((a, i) => (
         <div key={i} style={{ fontSize: 10.5, color: '#f4d27a', padding: '1px 6px' }}>⚠ {a}</div>
       ))}
+    </>
+  );
+}
+
+/**
+ * EL CICLO DE KAZMER — el conductor visible (orden 2026-08-10-ciclo-dado-estacion1).
+ * El molde del dado se construye estación por estación EN ORDEN DE LIBRO; este panel
+ * dice SIEMPRE dónde estamos, qué existe ya y qué retorno puede reabrir cada paso.
+ * La estación 1 muestra el juicio de las dos entradas lado a lado: el cubo MACIZO
+ * reprobado con su t_c real (Eq 9.5) y el DADO aprobado — el visual de "el libro
+ * corrige la pieza ANTES de gastar un gramo de acero".
+ */
+export function CicloPanel({ mold }: { mold: MoldBag }) {
+  const { ciclo } = mold;
+  if (!ciclo) return null;
+  const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
+    const mal = c.veredicto === 'REPROBADO';
+    return (
+      <div className="fb-comp-row feat" data-testid={testid}
+        style={{ display: 'block', padding: '5px 6px', marginTop: 3, borderRadius: 6,
+          background: mal ? 'rgba(242,122,108,0.10)' : 'rgba(126,224,160,0.07)',
+          borderLeft: `2px solid ${mal ? '#f27a6c' : '#7ee0a0'}` }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: mal ? '#f27a6c' : '#7ee0a0' }}>
+          {mal ? '✗' : '✓'} {c.nombre} — {c.veredicto}
+        </div>
+        <div style={{ fontSize: 10.5, color: '#9fb2c8', fontFamily: "'JetBrains Mono', monospace" }}>
+          t_c = {c.tcS > 120 ? (c.tcS / 60).toFixed(1) + ' min' : c.tcS.toFixed(1) + ' s'} (Eq 9.5)
+        </div>
+        {c.porque.slice(1).map((q, i) => (
+          <div key={i} style={{ fontSize: 10, color: mal ? '#e0a9a2' : '#7f8da3', marginTop: 1 }}>{q}</div>
+        ))}
+      </div>
+    );
+  };
+  return (
+    <>
+      <div className="fb-feat-subhead" data-testid="ciclo-head">
+        🔁 CICLO DE KAZMER <span style={{ opacity: 0.6, fontWeight: 400 }}>· estación {ciclo.estacion}/12</span>
+      </div>
+      <div data-testid="ciclo-estaciones" style={{ padding: '2px 6px', display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+        {CICLO_KAZMER.map((e) => {
+          const hecha = e.n < ciclo.estacion, activa = e.n === ciclo.estacion;
+          return (
+            <span key={e.n} data-testid={`ciclo-est-${e.n}`}
+              title={`${e.titulo} (${e.cap}) — ${e.aparece}${e.retorno ? ' · RETORNO: ' + e.retorno : ''}`}
+              style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, whiteSpace: 'nowrap',
+                border: `1px solid ${activa ? GOLD : hecha ? '#3a5a45' : '#2c3a50'}`,
+                color: activa ? GOLD : hecha ? '#7ee0a0' : '#66748a',
+                fontWeight: activa ? 700 : 400 }}>
+              {hecha ? '✓' : activa ? '▶' : e.n} {e.titulo}
+            </span>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '3px 6px' }}>
+        estación 1 — DFM de la pieza (cap 2): dos entradas, un juez
+      </div>
+      {cand(ciclo.e1.macizo, 'ciclo-macizo')}
+      {cand(ciclo.e1.dado, 'ciclo-dado')}
+      <div data-testid="ciclo-comparacion" style={{ padding: '2px 6px' }}>
+        {ciclo.e1.comparacion.map((c, i) => (
+          <div key={i} style={{ fontSize: 10.5, color: '#f4d27a', marginTop: 2 }}>→ {c}</div>
+        ))}
+      </div>
     </>
   );
 }

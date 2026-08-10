@@ -49,7 +49,7 @@ import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio } from './useMoldStudio';
-import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel } from './MoldPanels';
+import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
 import { isoSurface } from '../../lib/viz/isosurface';
@@ -6896,6 +6896,8 @@ export default function ForgeBRepStudio() {
             <MoldTreePanel mold={mold} kernelReady={!!oc} />
             {/* ── ANÁLISIS §4.3.3 del paquete de la Máquina — EN el CAD, no en una pantalla aparte ── */}
             <MoldAnalisisPanel mold={mold} />
+            {/* ── EL CICLO DE KAZMER: el conductor del molde del dado, estación por estación ── */}
+            <CicloPanel mold={mold} />
           </aside>
           <aside className={`fb-facelist ${collapsed.faces ? 'collapsed' : ''} ${winPos.faces ? 'floating' : ''}`} data-testid="face-list" onPointerDown={winDrag('faces')} onDoubleClick={winUndock('faces')} style={winStyle('faces')}>
             <CollapseHead id="faces" title="Caras del sólido" collapsed={!!collapsed.faces}

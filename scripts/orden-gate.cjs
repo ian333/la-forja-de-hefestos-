@@ -39,8 +39,12 @@ const arg = (k) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : nu
 let ordenPath = arg('--orden');
 if (!ordenPath) {
   const dir = path.join(REPO, 'ordenes');
-  const md = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'PLANTILLA.md').sort() : [];
+  // la VIGENTE es la de mtime más nuevo — el sort alfabético eligió la orden
+  // equivocada cuando hubo dos del mismo día (cazado 2026-08-10: juzgó contra
+  // la de la limpieza mientras corría la del dado).
+  const md = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'PLANTILLA.md') : [];
   if (!md.length) { console.log('ORDEN_GATE: ROJO — no hay ninguna orden en ordenes/ (copia PLANTILLA.md)'); process.exit(1); }
+  md.sort((a, b) => fs.statSync(path.join(dir, a)).mtimeMs - fs.statSync(path.join(dir, b)).mtimeMs);
   ordenPath = path.join('ordenes', md[md.length - 1]);
 }
 const texto = fs.readFileSync(path.join(REPO, ordenPath), 'utf8');
@@ -84,7 +88,10 @@ for (const ruta of sh('git ls-files --others --exclude-standard').split('\n').fi
 
 let rojos = 0;
 const juzga = (c) => {
-  if (EXENTAS.some((re) => re.test(c.ruta)) || PREV.has(c.ruta)) return null;
+  // PREEXISTENTE acepta PREFIJOS ('public/atrio/'): otra sesión en paralelo puede
+  // seguir creando archivos ahí y la lista exacta sería un blanco móvil.
+  const prev = PREV.has(c.ruta) || [...PREV].some((p2) => p2.endsWith('/') && c.ruta.startsWith(p2));
+  if (EXENTAS.some((re) => re.test(c.ruta)) || prev) return null;
   if (c.estado === 'A') return CREA.has(c.ruta) ? null : `CREADO sin declarar en CREA: ${c.ruta}`;
   if (c.estado === 'D') return BORRA.has(c.ruta) ? null : `BORRADO sin declarar en BORRA: ${c.ruta}`;
   return (TOCA.has(c.ruta) || BORRA.has(c.ruta)) ? null : `MODIFICADO sin declarar en TOCA: ${c.ruta}`;

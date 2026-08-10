@@ -40,6 +40,8 @@ import {
   type PlateDef,
 } from './mold-drawing-set';
 import { pinBuckling } from './ejection';
+import { checkDFM, type DFMPart, type DFMReport } from './dfm';
+import { PLASTICOS_A, tcPlateS } from './cooling-design';
 import { moldMassKg } from './fasteners';
 import { MOLD_METALS } from './moldbase';
 import { material as materialProps } from './materials';
@@ -992,4 +994,95 @@ export function juzgarPines(spec: MoldAssemblySpec, pkg: MoldPackage | null): Ju
     resumen: `${pines.length} pines ⌀${dia}×L${libre}: ${n.v} VIOLAN · ${n.a} ADVIERTEN · ${pines.length - n.v - n.a} cumplen${avisosAgua.length ? ` · el agua dejó ${avisosAgua.length} aviso(s) por el campo de pines (A-239)` : ''}`,
     peor,
   };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 1: DFM de la pieza (cap 2)                    */
+/* (orden 2026-08-10-ciclo-dado-estacion1)                                    */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * Las 12 estaciones del ciclo de Kazmer, en orden de LIBRO. El molde del dado
+ * se construye caminándolas — y los RETORNOS (§1.5 Fig 1.9) van declarados en
+ * cada una: qué estación posterior puede obligar a ésta a rehacerse.
+ */
+export interface EstacionCiclo {
+  n: number; titulo: string; cap: string;
+  /** qué existe en 3D cuando esta estación termina */
+  aparece: string;
+  /** el retorno documentado del libro que puede REABRIRLA */
+  retorno?: string;
+}
+export const CICLO_KAZMER: EstacionCiclo[] = [
+  { n: 0, titulo: 'Admisión', cap: '§2.1.5', aparece: '4 datos: tamaño · pared · cantidad · material' },
+  { n: 1, titulo: 'DFM de la pieza', cap: 'cap 2', aparece: 'LA PIEZA sola, juzgada (§2.3)', retorno: 'cualquier estación puede devolver la pieza a rediseño' },
+  { n: 2, titulo: 'Economía', cap: 'cap 3', aparece: 'nada 3D: cavidades + arquitectura + break-even' },
+  { n: 3, titulo: 'Arquitectura', cap: 'cap 4', aparece: 'partición · insertos cav/núcleo · base · ¿cabe en la inyectora?', retorno: 'cap 12: si B engorda, el stack crece y el daylight se re-juzga' },
+  { n: 4, titulo: 'Llenado', cap: 'cap 5', aparece: 'la pieza pintada por dónde entra el plástico (💧)' },
+  { n: 5, titulo: 'Alimentación', cap: 'cap 6', aparece: 'sprue + runners' },
+  { n: 6, titulo: 'Compuerta', cap: 'cap 7', aparece: 'el gate y su vestigio', retorno: '§7.3.4: un gate imposible puede cambiar el TIPO de molde' },
+  { n: 7, titulo: 'Venteo', cap: 'cap 8', aparece: 'los venteos en la partición' },
+  { n: 8, titulo: 'Enfriamiento', cap: 'cap 9', aparece: 'las líneas de agua — el rey del ciclo (t_c)' },
+  { n: 9, titulo: 'Contracción', cap: 'cap 10', aparece: 'el acero ESCALADO (cavidad +s%)' },
+  { n: 10, titulo: 'Expulsión', cap: 'cap 11', aparece: 'los pines (juzgarPines ya espera aquí)', retorno: 'A-239: los pines roban carriles → REABRE la estación 8' },
+  { n: 11, titulo: 'Estructura', cap: 'cap 12', aparece: 'von Mises + deflexión de placas', retorno: 'placas que engordan → REABRE la 3' },
+  { n: 12, titulo: 'El acta', cap: '§13.10', aparece: 'decisiones firmadas + plan de tryout' },
+];
+
+/**
+ * ESTACIÓN 1 — el juez de las dos entradas del dado. `checkDFM` juzga las reglas
+ * §2.3.x sobre CADA candidato, y el A-013 (trade-off pared nominal vs pared
+ * delgada — 🟥 FALTA del índice hasta hoy) se resuelve como el libro lo hace:
+ * COMPARANDO, con la Eq 9.5 real (t_c ∝ t²), el ciclo del macizo contra el del
+ * hueco. Nada de umbral inventado: el macizo se condena con SU número.
+ */
+export interface CandidatoDado {
+  nombre: string; wallMm: number;
+  dfm: DFMReport;
+  tcS: number;                    // Eq 9.5 con ABS (Cycolac MG47, tabla A.1)
+  veredicto: 'APROBADO' | 'REPROBADO';
+  porque: string[];
+}
+export interface Estacion1Dado { macizo: CandidatoDado; dado: CandidatoDado; comparacion: string[] }
+
+export function estacion1Dado(): Estacion1Dado {
+  const abs = PLASTICOS_A.ABS;
+  const tc = (wallMm: number) => tcPlateS(wallMm / 1000, abs.alphaM2s, abs.tMeltC, abs.tEjectC, abs.tCoolC);
+  const juzga = (nombre: string, wallMm: number, p: DFMPart): CandidatoDado => {
+    const dfm = checkDFM(p);
+    const tcS = tc(wallMm);
+    const porque: string[] = [...dfm.resumen];
+    // A-013 [COMPARA]: la sección se condena por su CONSECUENCIA térmica, no por adjetivo
+    const factor = tcS / tc(2);
+    if (factor > 4) porque.push(`sección ${wallMm} mm: t_c = ${tcS > 120 ? (tcS / 60).toFixed(1) + ' MINUTOS' : tcS.toFixed(1) + ' s'} (Eq 9.5, t²) = ${factor.toFixed(0)}× el de una pared de 2 mm — el libro manda pared delgada + costillas (§2.3.1, A-013)`);
+    const veredicto = dfm.errors > 0 || factor > 4 ? 'REPROBADO' : 'APROBADO';
+    return { nombre, wallMm, dfm, tcS, veredicto, porque };
+  };
+  const macizo = juzga('cubo MACIZO 50×50×50', 50, {
+    nominalWallMm: 50,
+    walls: [{ label: 'sección completa', thicknessMm: 50 }],
+    corners: [{ label: 'aristas', kind: 'externo' }],           // vivas: sin filete declarado
+    surface: { finish: 'SPI B-3', roughnessUm: 12 },
+    draftDeg: 0,                                                 // un cubo "puro" no trae draft
+    material: { resin: 'ABS' },
+  });
+  const dado = juzga('DADO hueco 40×40×40 · pared 2', 2, {
+    nominalWallMm: 2,
+    walls: [
+      { label: 'paredes laterales', thicknessMm: 2 },
+      { label: 'techo', thicknessMm: 2 },
+    ],
+    corners: [
+      { label: 'esquinas internas', kind: 'interno', radiusMm: 1 },   // 0.5·t ✓
+      { label: 'esquinas externas', kind: 'externo', radiusMm: 3 },   // 1.5·t ✓
+    ],
+    surface: { finish: 'SPI B-3', roughnessUm: 12 },
+    draftDeg: 1.5,                                               // Tabla 2.14: B-3/ABS → 1.5°
+    material: { resin: 'ABS' },
+  });
+  const comparacion = [
+    `t_c macizo ${(macizo.tcS / 60).toFixed(1)} min vs dado ${dado.tcS.toFixed(1)} s → ${(macizo.tcS / dado.tcS).toFixed(0)}× (Eq 9.5: el enfriamiento escala con t²)`,
+    `masa: macizo ~${(125 * 1.044).toFixed(0)} g vs dado ~${(14.8 * 1.044).toFixed(1)} g de ABS → ${(125 / 14.8).toFixed(1)}× material`,
+    'el remedio del libro (§2.3.1): pared delgada UNIFORME + costillas si falta rigidez — el dado ES el cubo tras esa regla',
+  ];
+  return { macizo, dado, comparacion };
 }
