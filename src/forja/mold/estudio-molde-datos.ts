@@ -1375,3 +1375,47 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
       : `✗ ${malas.length}/${M.length} medidas NO cuadran: ${malas.map((m) => `${m.componente}·${m.cota} (${m.declarado}≠${m.medido})`).join(' · ')}`,
   };
 }
+
+/**
+ * COTAS 3D DE LA ESTACIÓN 3 — "yo quiero las dimensiones VISUALES en el 3D, no
+ * quiero entrar al plano para ver el tamaño de mis cotas" (ian). Cada medida
+ * geométrica de verificacionE3 se vuelve una Dim3D con sus extremos EN LA ESCENA
+ * (líneas de extensión fuera del sólido, como manda el dibujo técnico) y viaja
+ * por la MISMA tubería del 📐 del CAD: CotaLines + CotaLabels, doble cifra,
+ * ROJO si no cuadra. liftNucleo = el desplazamiento con que la escena muestra
+ * el núcleo abierto (la cota apunta a lo que VES).
+ */
+export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number): Array<{ role: string; dims: import('./mold-dimensions').Dim3D[] }> {
+  const M = new Map(v.medidas.map((m) => [m.componente + '·' + m.cota, m]));
+  const dim = (
+    key: string, label: string, pa: [number, number, number], pb: [number, number, number],
+    critical = false,
+  ): import('./mold-dimensions').Dim3D | null => {
+    const m = M.get(key);
+    if (!m) return null;
+    return {
+      id: 'e3-' + key.replace(/[^a-z0-9]+/gi, '-'), label,
+      kind: 'lineal', a: pa, b: pb,
+      value: m.declarado, measured: m.medido, ok: m.ok,
+      why: m.vista, critical,
+    };
+  };
+  const zP = a.zPart, L = liftNucleo;
+  const dims = [
+    // ── la pieza ──
+    dim('dado·ancho X en la boca', 'boca X', [0, -12, 40], [40, -12, 40], true),
+    dim('dado·fondo Y en la boca', 'boca Y', [-12, 0, 40], [-12, 40, 40]),
+    dim('dado·alto Z', 'alto', [46, -6, 0], [46, -6, 40]),
+    dim('dado·pared nominal EN la partición', 'pared', [0, 20, 42.5], [2.01, 20, 42.5], true),
+    dim('dado·piso', 'piso', [43, 20, 0], [43, 20, 2]),
+    // el draft como línea INCLINADA siguiendo la pared (se VE la conicidad)
+    dim('dado·draft EXTERIOR medido (°)', 'draft', [40 * 0.0262, -6, 0], [0, -6, 40]),
+    // ── el acero ──
+    dim('inserto cavidad·ancho X', 'cavidad X', [-40, -52, -20.5], [80, -52, -20.5]),
+    dim('inserto cavidad·alto = Hc de compra', 'Hc compra', [88, -40, zP - a.compra.Hc], [88, -40, zP], true),
+    dim('inserto cavidad·cara superior EN la partición', 'partición', [84, -46, zP], [84, 86, zP]),
+    dim('núcleo (respaldo)·espesor de placa = Hk de compra', 'Hk compra', [88, 80, zP + L], [88, 80, zP + L + a.compra.Hk], true),
+    dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', [2.01, 52, zP + L], [37.99, 52, zP + L]),
+  ].filter((d): d is import('./mold-dimensions').Dim3D => !!d);
+  return [{ role: 'ciclo-e3', dims }];
+}

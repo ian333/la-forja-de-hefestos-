@@ -67,6 +67,12 @@ ciclo completo para que E1-E3 queden vigiladas para siempre.
 - evidencia: vistas FRE/PLANTA/ISO + tabla MEDIDAS (dado-e3v-*.png) → Downloads laptop
   + /mnt/e/forja-videos. La FRENTE muestra lo que la ISO escondía: el núcleo en T
   entrando por la boca hasta el piso.
+- ENMIENDA 2 (ian: "quiero las dimensiones VISUALES en el 3D, no quiero entrar al
+  plano"): `cotasCicloE3` convierte las medidas geométricas en Dim3D con extremos EN
+  LA ESCENA y las sirve por la MISMA tubería del 📐 (CotaLines+CotaLabels, doble
+  cifra, rojo si no cuadra). cicloEstacion3 PRENDE el 📐 solo. 11 cotas vivas en
+  pantalla verificadas por el arnés: boca X/Y, alto, pared, piso, draft (línea
+  inclinada que ENSEÑA la conicidad), cavidad X, Hc compra, partición, Hk compra,
+  hueco. Evidencia: dado-e3-cotas-*.png en Downloads.
 - preguntas abiertas: el gate del ciclo aún no está en forja-gate.cjs (siguiente orden
-  chica); las cotas DIBUJADAS sobre las vistas 2D (líneas de cota con flechas) son la
-  versión pro del dibujo técnico — hoy la cota vive en la tabla con su vista nombrada.
+  chica); afinar el amontonamiento de etiquetas cerca de la boca si a ian le estorba.

@@ -30,7 +30,7 @@ import { surfaceFlowLength } from '../mold/flowlen-surface';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
@@ -60,7 +60,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // EL CICLO DEL DADO (orden 2026-08-10-ciclo-dado-estacion1): el molde del cubo se
   // construye estación por estación EN ORDEN DE LIBRO. `estacion` = dónde vamos;
   // `e1` = el juicio de la estación 1 (macizo REPROBADO vs dado APROBADO, Eq 9.5).
-  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3 } | null>(null);
+  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[] } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
   // armado NO debe barrerlas cuando liveMoldSpec es null.
   const [feedDemo, setFeedDemo] = useState(false);
@@ -176,6 +176,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   const cotaRefs = useRef<Array<HTMLDivElement | null>>([]);
   const cotaAperturaRef = useRef<HTMLDivElement | null>(null);   // 📐 la carrera, cotada en vivo
   const liveCotas: CotaSet[] = useMemo(() => {
+    // EL CICLO DEL DADO trae sus propias cotas (dims VISUALES en 3D — orden de ian):
+    // misma tubería 📐 (CotaLines+CotaLabels), doble cifra, rojo si no cuadra.
+    if (cotasOn && ciclo?.e3cotas?.length) return ciclo.e3cotas;
     if (!cotasOn || !liveMoldSpec || !moldParts.length) return [];
     try {
       return moldRecipe(liveMoldSpec).map((c) => {
@@ -189,7 +192,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         return { role: c.role, dims: verifyDims(componentDims(c), measure).dims };
       });
     } catch (e) { console.warn('COTAS_ERR', e); return []; }
-  }, [cotasOn, liveMoldSpec, moldParts]);
+  }, [cotasOn, liveMoldSpec, moldParts, ciclo]);
   const cotaErrors = liveCotas.reduce((n, s) => n + s.dims.filter((d) => d.ok === false).length, 0);
   // SIMULACIÓN del molde (térmico §9 + estructural §12, Kazmer) — al activar se calcula
   // el análisis completo sobre el spec vivo y se pinta el CAMPO de temperatura (Fig 9.7).
@@ -453,11 +456,13 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // una PARTICIÓN EXACTA del bloque por construcción booleana, y la fila
       // "Σ cavidad+macho+pieza = bloque" ya lo prueba: traslape = suma > 100 %.
       const e3v = verificacionE3(oc, acero);
+      const e3cotas = cotasCicloE3(e3v, acero, 34);   // 34 = el lift con que la escena abre el núcleo
+      setCotasOn(true);                               // las dimensiones SE VEN, no se buscan
       const partPlano = OCC.transformShape(oc, OCC.makeBox(oc, 150, 150, 0.8), { translate: [-55, -55, 39.1] });
       const placaA = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 66), { translate: [-78, -78, -79] });
       const placaB = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 22), { translate: [-78, -78, 96] });
       setMoldPkg(pkg);
-      setCiclo({ ...ciclo, estacion: 3, e3, e3v });
+      setCiclo({ ...ciclo, estacion: 3, e3, e3v, e3cotas });
       setDocName('EL DADO · estación 3 — ARQUITECTURA (cap 4): nace el primer acero');
       setCollapsed((c) => ({ ...c, features: false }));
       cursoSet(3, [
