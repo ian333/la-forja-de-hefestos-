@@ -548,7 +548,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo } = mold;
+  const { ciclo, cicloEstacion2 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -589,6 +589,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           );
         })}
       </div>
+      {ciclo.estacion === 1 && (<>
       <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '3px 6px' }}>
         estación 1 — DFM de la pieza (cap 2): dos entradas, un juez
       </div>
@@ -598,6 +599,71 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
         {ciclo.e1.comparacion.map((c, i) => (
           <div key={i} style={{ fontSize: 10.5, color: '#f4d27a', marginTop: 2 }}>→ {c}</div>
         ))}
+      </div>
+      </>)}
+      {ciclo.estacion === 1 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e2" onClick={cicloEstacion2} style={{ margin: '6px 6px 2px' }}
+          title="ECONOMÍA (cap 3): ¿cuántas cavidades? — la Máquina corre las variantes, el break-even A-049, la banda de sensibilidad A-050 y la lectura de sobrediseño A-054. Todavía CERO acero: puro dinero.">
+          ▶ estación 2 — ECONOMÍA: ¿cuántos dados por disparo?
+        </button>
+      )}
+      {ciclo.e2 && <CicloE2 e2={ciclo.e2} />}
+    </>
+  );
+}
+
+/** Estación 2 desplegada — TODO explicado ("no números sueltos: su porqué al lado").
+ *  La columna clave es el DESGLOSE: amortización (molde$/Q, declarando que ignora el
+ *  factor de mantenimiento §3.4.1) + material/proceso = total. La tabla ES la prueba:
+ *  se puede sumar a mano. */
+function CicloE2({ e2 }: { e2: import('../mold/estudio-molde-datos').Estacion2Dado }) {
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 2 — economía (cap 3): la tabla se puede sumar a mano (amort + resto = total)
+      </div>
+      {e2.variantes.map((v, i) => (
+        <div key={i} className="fb-comp-row feat" data-testid={`e2-var-${v.arch}-${v.nCav}`} title={v.porque}
+          style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
+            background: v.ganadora ? 'rgba(244,210,122,0.10)' : 'rgba(255,255,255,0.02)',
+            borderLeft: `2px solid ${v.ganadora ? '#f4d27a' : '#2c3a50'}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: v.ganadora ? '#f4d27a' : '#9fb2c8' }}>
+            {v.ganadora ? '★ ' : ''}{v.arch} ×{v.nCav} <span style={{ opacity: 0.6, fontWeight: 400 }}>· molde ${v.moldeUSD.toLocaleString()}</span>
+          </div>
+          <div style={{ fontSize: 10.5, color: '#9fb2c8', fontFamily: "'JetBrains Mono', monospace" }}>
+            ${v.amortPzaUSD} amort + ${v.restoPzaUSD} mat/proc = <b style={{ color: v.ganadora ? '#7ee0a0' : '#dfe7f2' }}>${v.totalPzaUSD}/pza</b>
+          </div>
+          {!v.ganadora && <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 1 }}>{v.porque}</div>}
+        </div>
+      ))}
+      <div data-testid="e2-breakeven" style={{ fontSize: 10.5, color: '#8fa1b8', padding: '4px 6px 0' }}>
+        <b style={{ color: '#dfe7f2' }}>A-049 break-even:</b> {e2.breakEven.join(' · ')}
+      </div>
+      <div data-testid="e2-banda" style={{ padding: '4px 6px 0' }}>
+        <div style={{ fontSize: 10.5, color: '#dfe7f2', fontWeight: 700 }}>A-050 ¿y si vendieras MÁS? — la banda de sensibilidad</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 3 }}>
+          {e2.banda.map((b, i) => {
+            const cambia = i > 0 && (b.nCav !== e2.banda[i - 1].nCav || b.arch !== e2.banda[i - 1].arch);
+            return (
+              <span key={b.q} data-testid={`e2-banda-${b.q}`}
+                title={`a ${b.q.toLocaleString()} piezas totales gana ${b.arch} ×${b.nCav} con $${b.pzaUSD}/pza`}
+                style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8,
+                  border: `1px solid ${cambia ? GOLD : '#2c3a50'}`, color: cambia ? GOLD : '#9fb2c8', fontWeight: cambia ? 700 : 400 }}>
+                {b.q / 1000}k → ×{b.nCav} (${b.pzaUSD})
+              </span>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 10.5, color: '#f4d27a', marginTop: 3 }}>→ {e2.bandaLectura}</div>
+      </div>
+      <div data-testid="e2-proporcion" style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px' }}>
+        <b style={{ color: '#dfe7f2' }}>A-054 sobrediseño:</b> molde ${e2.proporcion.moldeUSD.toLocaleString()} vs producción ${e2.proporcion.produccionUSD.toLocaleString()} — {e2.proporcion.lectura}
+      </div>
+      <div style={{ fontSize: 10.5, color: '#7ee0a0', padding: '0 6px 4px' }}>
+        veredicto: {e2.veredicto.viable ? 'VIABLE ✓' : 'REVISAR ⚠'} · precio molde ${e2.veredicto.precioMoldeUSD.toLocaleString()} · {e2.veredicto.entregaSemanas} semanas
+      </div>
+      <div style={{ fontSize: 10, color: '#66748a', padding: '0 6px 6px' }}>
+        ▶ estación 3 — ARQUITECTURA (cap 4): nace el primer acero · siguiente orden
       </div>
     </>
   );

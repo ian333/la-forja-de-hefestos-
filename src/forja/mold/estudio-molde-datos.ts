@@ -1086,3 +1086,86 @@ export function estacion1Dado(): Estacion1Dado {
   ];
   return { macizo, dado, comparacion };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 2: ECONOMÍA (cap 3)                           */
+/* (orden 2026-08-10-ciclo-dado-estacion2)                                    */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/** EL DADO como spec de la Máquina — UNA sola fuente para todas las estaciones
+ *  (la geometría de loadDado dibuja EXACTAMENTE esto: 40³, pared 2, ABS). */
+export const DADO_SPEC: MachineSpec = {
+  name: 'EL DADO', Lmm: 40, Wmm: 40, Hmm: 40, cavityShape: 'rect',
+  surfaceMm2: 14500, volumeMm3: 14800, wallMm: 2,
+  annualVolume: 100_000, totalVolume: 100_000, plastic: 'ABS', finish: 'SPI B-3',
+} as MachineSpec;
+
+export interface VarianteE2 {
+  arch: string; nCav: number; ganadora: boolean;
+  moldeUSD: number;
+  /** el desglose que EXPLICA la tabla: amortización = molde$/Q (se declara que
+   *  ignora el factor de mantenimiento §3.4.1) + resto (material+proceso) = total */
+  amortPzaUSD: number; restoPzaUSD: number; totalPzaUSD: number;
+  cicloS: number;
+  porque: string;
+}
+export interface Estacion2Dado {
+  pkg: MoldPackage;
+  variantes: VarianteE2[];
+  breakEven: string[];                    // A-049, del motor
+  /** A-050 — la banda de sensibilidad (🟥 FALTA del índice hasta hoy): la Máquina
+   *  corrida en varios volúmenes; el dato que un cliente paga por ver es DÓNDE
+   *  cambia el ganador. */
+  banda: Array<{ q: number; arch: string; nCav: number; pzaUSD: number }>;
+  bandaLectura: string;
+  /** A-054 — la lectura de proporción (sobrediseño §3.4.4) */
+  proporcion: { moldeUSD: number; produccionUSD: number; pct: number; lectura: string };
+  veredicto: { viable: boolean; precioMoldeUSD: number; entregaSemanas: number };
+}
+
+export function estacion2Dado(): Estacion2Dado {
+  const Q = (DADO_SPEC as any).totalVolume ?? 100_000;
+  const pkg = moldMachine(DADO_SPEC);
+  const win = pkg.recomendacion;
+  const filas = pkg.variantes
+    .filter((v: any) => v.factible)
+    .sort((a: any, b: any) => a.partUSD - b.partUSD)
+    .slice(0, 5)
+    .map((v: any): VarianteE2 => {
+      const amort = v.cost.totalUSD / Q;
+      const gana = v.arch === win.arch && v.nCav === win.nCav;
+      return {
+        arch: v.arch, nCav: v.nCav, ganadora: gana,
+        moldeUSD: Math.round(v.cost.totalUSD),
+        amortPzaUSD: +amort.toFixed(4),
+        restoPzaUSD: +(v.partUSD - amort).toFixed(4),
+        totalPzaUSD: +v.partUSD.toFixed(4),
+        cicloS: +v.part.cycleTimeS.toFixed(1),
+        porque: gana
+          ? 'mínimo costo TOTAL a esta cantidad'
+          : `pierde por aritmética: molde +$${Math.round(v.cost.totalUSD - pkg.cotizacion.totalUSD).toLocaleString()} = +$${((v.cost.totalUSD - pkg.cotizacion.totalUSD) / Q).toFixed(3)}/pza de amortización que el proceso no recupera a ${Q.toLocaleString()} pzas`,
+      };
+    });
+  // A-050: correr la MISMA máquina en 5 volúmenes — sin fórmula nueva
+  const banda = [50_000, 100_000, 250_000, 500_000, 1_000_000].map((q) => {
+    const p = moldMachine({ ...(DADO_SPEC as any), annualVolume: q, totalVolume: q } as MachineSpec);
+    const v = p.variantes.find((x: any) => x.arch === p.recomendacion.arch && x.nCav === p.recomendacion.nCav);
+    return { q, arch: p.recomendacion.arch, nCav: p.recomendacion.nCav, pzaUSD: +(v?.partUSD ?? 0).toFixed(3) };
+  });
+  const cambio = banda.find((b, i) => i > 0 && (b.arch !== banda[0].arch || b.nCav !== banda[0].nCav));
+  const bandaLectura = cambio
+    ? `el ganador CAMBIA en ~${cambio.q.toLocaleString()} pzas → ${cambio.arch}×${cambio.nCav}: ANTES de ese volumen, pagar más molde es tirar dinero`
+    : `el ganador NO cambia ni a ${banda[banda.length - 1].q.toLocaleString()} pzas: para el dado, el molde simple domina toda la banda`;
+  const produccionUSD = pkg.veredicto.costoPiezaUSD * Q;
+  const pct = 100 * pkg.cotizacion.totalUSD / produccionUSD;
+  return {
+    pkg, variantes: filas, breakEven: pkg.breakEven as any,
+    banda, bandaLectura,
+    proporcion: {
+      moldeUSD: Math.round(pkg.cotizacion.totalUSD), produccionUSD: Math.round(produccionUSD), pct: +pct.toFixed(0),
+      lectura: pct < 30
+        ? `el molde es el ${pct.toFixed(0)} % del costo total del proyecto → SANO (§3.4.4: la bandera de sobrediseño es un molde que DOMINA el costo)`
+        : `⚠ el molde es el ${pct.toFixed(0)} % del costo total → huele a SOBREDISEÑO (§3.4.4): revisar cavidades/acabado/acero antes de firmar`,
+    },
+    veredicto: { viable: pkg.veredicto.viable, precioMoldeUSD: pkg.veredicto.precioMoldeUSD, entregaSemanas: pkg.veredicto.entregaSemanas },
+  };
+}
