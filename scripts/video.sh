@@ -105,6 +105,25 @@ paso_render() {
   NF=$(ls "$FRAMES"/*.png 2>/dev/null | wc -l)
   echo "   frames: $NF/$NFRAMES en $((SECONDS-t0))s"
   [ "$NF" -ge $((NFRAMES-2)) ] || { echo "✗ RENDER INCOMPLETO"; return 1; }
+  # ── GATE DE CUADRO NEGRO, POR PÍXELES ────────────────────────────────────────────────
+  # render-clip.cjs detecta "negro" por TAMAÑO del archivo, y a 4K ESO NO FUNCIONA: el grano
+  # de película vuelve el PNG incompresible y un cuadro 100 % negro pesa 200 KB, muy por
+  # encima de cualquier umbral razonable. Medido el 2026-08-07: 162 cuadros negros (157
+  # seguidos, 5.2 s) pasaron el guardián, pasaron el chequeo de corrupción —el PNG está bien
+  # formado— y llegaron al ensamble. La única prueba que los caza es MIRAR LOS PÍXELES.
+  python3 - "$FRAMES" <<'PYNEG'
+import glob, os, sys
+from PIL import Image
+import numpy as np
+fs = sorted(glob.glob(os.path.join(sys.argv[1], '*.png')))
+negros = [os.path.basename(f) for f in fs
+          if np.asarray(Image.open(f).convert('L').resize((96, 96)), dtype=float).mean() < 0.5]
+if negros:
+    print(f'   ✗ {len(negros)} CUADROS NEGROS (primero {negros[0]}, último {negros[-1]})')
+    sys.exit(1)
+print(f'   ✓ cero cuadros negros ({len(fs)} verificados por píxeles)')
+PYNEG
+  [ $? -eq 0 ] || { echo "✗ hay cuadros negros — NO ensamblar"; return 1; }
 }
 
 paso_ensamble() {

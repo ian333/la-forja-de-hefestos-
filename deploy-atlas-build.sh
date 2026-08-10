@@ -531,21 +531,50 @@ SMOKE_PATHS=(
   "forja-brep.html"
   "forja-mecanismos.html"
   "nova.html"
+  "estudio-vivo.html"
+  "ciclo.html"
+  "molde.html"
+  "vista3d-anim.html"
   "occt-import-js.wasm"
   "audio/masterclass/blackhole/manifest.json"
   "audio/masterclass/blackhole/01-pregunta.mp3"
   "audio/masterclass/phys-einstein-pe/manifest.json"
   "audio/masterclass/phys-einstein-pe/01-sensor.mp3"
+  # EL MOLDE y EL ESTUDIO leen el banco de piezas reales por /test-parts/. Si el
+  # rsync los deja fuera, la pantalla carga y truena al abrir el STL — y el smoke
+  # de solo-código no lo veía porque `try_files` devuelve index.html con 200.
+  "test-parts/rpi4-bottom.stl"
+  "test-parts/phone-holder.stl"
+  "test-parts/screw-cap-medical.stl"
+  "test-parts/ttc-box-a.stl"
+  "test-parts/funnel-130.stl"
 )
+# ⚠ EL CÓDIGO DE ESTADO NO ALCANZA — ya nos costó dos veces. nginx tiene
+# `try_files $uri $uri/ /index.html`, así que un archivo AUSENTE devuelve el
+# index.html con **200** (y con 206 si hay Range): un .stl o un .mp4 que no existe
+# se ve idéntico a uno sano si solo miras el número. Aquí se exige además que el
+# content-type NO sea text/html para todo lo que no es una página.
 for path in "${SMOKE_PATHS[@]}"; do
-  code=$(curl -sI -m 12 -o /dev/null -w '%{http_code}|%{size_download}|%{time_total}' "${URL}/${path}" 2>/dev/null || echo "ERR|0|0")
+  code=$(curl -s -m 20 -o /dev/null -w '%{http_code}|%{size_download}|%{time_total}|%{content_type}' "${URL}/${path}" 2>/dev/null || echo "ERR|0|0|")
   http_code=$(echo "$code" | cut -d'|' -f1)
+  size=$(echo "$code" | cut -d'|' -f2)
   time_total=$(echo "$code" | cut -d'|' -f3)
-  if [ "$http_code" = "200" ]; then
-    printf "  ${GREEN}✓${NC} %-50s ${DIM}%s · %.2fs${NC}\n" "/${path:-(root)}" "$http_code" "$time_total"
+  ctype=$(echo "$code" | cut -d'|' -f4)
+  # ¿esta ruta debe entregar algo que NO es una página?
+  if [[ -z "$path" || "$path" == *.html ]]; then espera_html=true; else espera_html=false; fi
+  motivo=""
+  if [ "$http_code" != "200" ]; then
+    motivo="$http_code"
+  elif ! $espera_html && [[ "$ctype" == text/html* ]]; then
+    motivo="200 MENTIROSO: devolvió index.html ($size b), el archivo NO está publicado"
+  elif [ "${size:-0}" -lt 200 ]; then
+    motivo="200 pero solo $size b"
+  fi
+  if [ -z "$motivo" ]; then
+    printf "  ${GREEN}✓${NC} %-50s ${DIM}%s · %s b · %.2fs${NC}\n" "/${path:-(root)}" "$http_code" "$size" "$time_total"
     TESTS_PASS=$((TESTS_PASS + 1))
   else
-    printf "  ${RED}✗${NC} %-50s ${RED}%s${NC}\n" "/${path:-(root)}" "$http_code"
+    printf "  ${RED}✗${NC} %-50s ${RED}%s${NC}\n" "/${path:-(root)}" "$motivo"
     TESTS_FAIL=$((TESTS_FAIL + 1))
     ok=false
   fi

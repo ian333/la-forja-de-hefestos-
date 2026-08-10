@@ -575,14 +575,37 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // necesita rMul grande — para eso es loomPush, la toma de la casa que mueve r dentro del beat.
   // rMul del tramo abierto MEDIDO, no estimado: con 5.0 esos 11 s salían al 91 % de negro (el
   // hexámero en su cuadro más abierto llega a 65 %). Con 3.35 los átomos llenan el cuadro.
+  // BUTÍRICO — duraciones = arranques REALES de segs.json (voz 83.88 s) + 2.5 de cola. Σ = 86.4.
+  // VIAJE, no sólo movimiento (Ian, 2026-08-06: "hay muy poco viaje, viajar entre las
+  // moléculas"). `diveToNucleus` es la toma de la casa que ATRAVIESA —la del clavado de O₂—:
+  // cae exponencialmente hasta la escala nuclear en espiral, y ahí el cuadro deja de ser una
+  // órbita alrededor de una bolita y se vuelve un lugar por donde se pasa.
+  // ⚠ throughBridge con rSpan 1.05 SALE POR EL OTRO LADO y se queda mirando el vacío: el 4K
+  // del 7-ago tuvo 157 CUADROS 100 % NEGROS seguidos (t 69.9-75.1) por eso, agravado porque
+  // el tránsito atenuaba las nubes en la misma ventana. Es el defecto que este archivo ya
+  // documenta para pullOut ("11 s sin ningún sujeto en pantalla"). rSpan 0.58 = cruza pero
+  // no se despega, y el tránsito baja a -0.42 ahí.
+  // ⚠ Y el guardián de cuadro negro NO puede ser por TAMAÑO a 4K: un cuadro 100 % negro pesa
+  // 200 KB porque el grano de película lo vuelve incompresible. Se verifica por PÍXELES.
+  // ⚠ FIRMAS: pullOut es (rFromMul/rTdMul/fovFrom/fovTo/azim0/span) y throughBridge es
+  // (side/rSpan/off/fov). Escribí rFrom/rTo/elev/rMul y esbuild los TIRA EN SILENCIO — el
+  // mismo gotcha que este archivo ya documenta para crashIn. Copiar la firma, no suponerla.
+  // BUTÍRICO — duraciones = arranques REALES de segs.json (voz 63.53 s) + 2.5 de cola. Σ = 66.0.
+  //
+  // REGLA DE ESTA LISTA: **toda toma apunta a la molécula.** El 4K del 7-ago salió con 162
+  // cuadros 100 % NEGROS (157 seguidos) porque usé `throughBridge`, que vuela de UNA molécula
+  // a la OTRA pasando por el puente: con un solo sujeto, la segunda mitad mira al vacío. No es
+  // cosa de acortarle el rango — es la toma equivocada. Para "viaje" sin riesgo de cuadro
+  // vacío: loomPush (dolly), diveToNucleus (entra, y su target MIGRA al núcleo) y whipParallax
+  // (barrido lateral violento que SIEMPRE apunta al centro).
   butirico: [
-    { shot: heroOrbit({ rMul: 1.95, elev: 0.14, azim0: 0.85, span: 0.55, fov: 34 }), dur: 12.42, label: 'GANCHO: la molécula HECHA — "esto huele a mantequilla" (l1-4)' },
-    { shot: loomPush({ rFrom: 2.4, rTo: 3.35, elev: 0.18, azim: 1.30, fov: 35 }), dur: 11.84, label: 'REBOBINA y ABRE: los átomos sueltos, cada uno con su campo (l5-7)' },
-    { shot: loomPush({ rFrom: 3.35, rTo: 1.95, elev: 0.10, azim: 1.75, fov: 34 }), dur: 16.25, label: 'LA FORMACIÓN: se juntan y la carga cae a los enlaces (l8-12)' },
-    { shot: ringFaceOn({ rMul: 1.78, azim0: 1.57, span: 0.28, elev: 0.07 }), dur: 11.53, label: 'LOS NÚMEROS: 0 → 0.87 electrones, trece enlaces (l13-16)' },
-    { shot: heroOrbit({ rMul: 1.88, elev: -0.16, azim0: 2.30, span: 0.9, fov: 33 }), dur: 10.66, label: 'la energía que sueltan — órbita baja (l17-19)' },
-    { shot: heroOrbit({ rMul: 2.05, elev: 0.22, azim0: 3.40, span: 1.0, fov: 34 }), dur: 12.60, label: '"nada de esto está dibujado" — el campo entero (l20-22)' },
-    { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.24, elev: 0.10 }), dur: 11.10, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l23-24)' },
+    { shot: heroOrbit({ rMul: 1.95, elev: 0.14, azim0: 0.85, span: 0.55, fov: 34 }), dur: 12.69, label: 'GANCHO: la molécula HECHA — "esto huele a mantequilla" (l1-4)' },
+    { shot: loomPush({ rFrom: 2.4, rTo: 3.35, elev: 0.18, azim: 1.30, fov: 35 }), dur: 7.92, label: 'REBOBINA y ABRE: los átomos sueltos, cada uno con su campo (l5-6)' },
+    { shot: loomPush({ rFrom: 3.35, rTo: 1.95, elev: 0.10, azim: 1.75, fov: 34 }), dur: 13.23, label: 'LA FORMACIÓN: se juntan y la carga cae a los enlaces (l7-10)' },
+    { shot: diveToNucleus({ rFromMul: 1.85, rTo: 0.78, fovFrom: 34, fovTo: 44, spin: 2.0 }), dur: 12.10, label: 'CLAVADO: entra con "0.87 electrones / trece enlaces" (l11-12)' },
+    { shot: pullOut({ rFromMul: 0.78, rTdMul: 2.05, fovFrom: 44, fovTo: 34, azim0: 2.30, span: 1.2 }), dur: 5.30, label: 'SALE volando — "nada de esto está dibujado" (l13)' },
+    { shot: whipParallax({ rMul: 1.62, elevAmp: 0.26, azim0: 2.60, span: 2.4, fov: 37 }), dur: 8.25, label: 'BARRIDO con parallax: "las líneas son el campo real" (l14)' },
+    { shot: ringFaceOn({ rMul: 1.72, azim0: 1.50, span: 0.30, elev: 0.10 }), dur: 6.51, label: 'EL REMATE: "el olor de la mantequilla es esta forma" (l15-16)' },
   ],
   whex6: [
     { shot: ringToBridge({ a: 0, b: 1, rFrom: 1.30, rTo: 1.05, azim: 1.20, fov: 34 }), dur: 4.04, label: 'EL DESTELLO — el campo ENCIENDE sobre "mira cómo se agarran"' },
@@ -1081,25 +1104,52 @@ const GRASA_KEYS = new Set(['butirico']);
 // Las fronteras son los arranques REALES de segs.json (se llenan al tener la voz).
 // La pieza ABRE FORMADA y REBOBINA: el cuadro de átomos sueltos sale en 91 % de negro y el
 // canon pide primer cuadro denso, así que el gancho es la molécula hecha y de ahí se va atrás.
-// voz REAL 83.88 s (24 líneas, segs.json) + 2.5 de cola. Sin esto la escena reportaba los
+// voz REAL 63.53 s (16 líneas, segs.json) + 2.5 de cola. Sin esto la escena reportaba los
 // 22 s del default de cadenas y TODO lo posterior al segundo 22 se renderizaba congelado.
-const BUTIRICO_DURATION = 86.4;
+const BUTIRICO_DURATION = 66.0;
 const BUTIRICO_CAPAS: CapasSpec = {
-  // Fronteras = arranques REALES de segs.json (voz 83.88 s, 24 líneas):
-  //   gancho FORMADA 0.40-12.42 · REBOBINA en "hace un instante no existía" ·
-  //   átomos sueltos 12.82-24.26 · LA FORMACIÓN 24.26-47.87 · formada el resto.
+  // Fronteras = arranques REALES de segs.json (voz 63.53 s, 16 líneas).
   //
-  // `apertura` 1 = átomos sueltos, 0 = molécula formada. Arranca en 0 (el gancho es la
-  // molécula hecha) y el REBOBINADO ocurre justo sobre la línea 4, que es la que lo dice.
-  // La formación luego baja de 1 a 0 a lo largo de las líneas 8-15, que son las que la narran
-  // ("míralos acercarse" → "juntos: cero punto ocho siete electrones").
+  // UNA NUBE A LA VEZ — el mecanismo de O₂/N₂ (`sigmaMul`/`pi1Mul`/`spinMul`), aquí en datos.
+  // Allá, cuando un beat está "solo", la nube que toca sube y las OTRAS caen a un piso (0.34
+  // en O₂, 0.14 en N₂). Esta pieza salió con las tres nubes y el campo a tope todo el tiempo:
+  // Ian, 2026-08-06 — "acá está encendido TODO TODO el tiempo", y de ahí venían también el
+  // quemado a blanco y que el campo se viera débil: competía con tres nubes al máximo.
   apertura: { base: 0, mods: [
-    { wins: [[12.42, 24.26]], a: 1.0, label: 'REBOBINA: los átomos sueltos, mientras se los presenta (l5-7)' },
-    { wins: [[24.26, 26.15]], a: 0.82, label: '"míralos acercarse" — empiezan a caer' },
-    { wins: [[26.15, 28.59]], a: 0.58, label: '"los campos se buscan"' },
-    { wins: [[28.59, 31.58]], a: 0.34, label: '"mira dónde se va la carga" — el Δρ ya se ve nacer' },
-    { wins: [[31.58, 34.85]], a: 0.16, label: '"se cae al espacio de en medio"' },
-    { wins: [[34.85, 40.11]], a: 0.05, label: 'casi cerrada mientras se define qué es un enlace' },
+    { wins: [[12.69, 20.61]], a: 1.0, label: 'REBOBINA: los átomos sueltos (l5-6)' },
+    { wins: [[20.61, 22.46]], a: 0.78, label: '"míralos acercarse"' },
+    { wins: [[22.46, 25.35]], a: 0.48, label: '"mira dónde se va la carga"' },
+    { wins: [[25.35, 28.72]], a: 0.20, label: '"se cae al espacio de en medio"' },
+    { wins: [[28.72, 33.84]], a: 0.05, label: 'casi cerrada mientras define qué es un enlace' },
+  ] },
+  acc: { base: 1, mods: [
+    { wins: [[16.55, 20.21]], a: 0.28, label: 'SU beat: "cada uno con su nube…"' },
+    { wins: [[22.46, 33.45]], a: -0.62, label: 'cede: el sujeto es la carga que CAE al enlace' },
+    { wins: [[33.84, 45.94]], a: -0.52, label: 'cede: los números son del enlace' },
+    { wins: [[49.37, 54.19]], a: -0.70, label: 'cede: "las líneas son el campo real"' },
+  ] },
+  spin: { base: 1, mods: [
+    { wins: [[0.40, 20.61]], a: -0.80, label: 'no hay enlace que mostrar (átomos sueltos)' },
+    { wins: [[22.46, 33.45]], a: 0.55, label: 'SU beat: la carga cae al espacio de en medio' },
+    { wins: [[33.84, 45.94]], a: 0.45, label: 'SU beat: 0.87 electrones · trece enlaces' },
+    { wins: [[49.37, 54.19]], a: -0.55, label: 'cede al campo' },
+  ] },
+  dep: { base: 0.85, mods: [
+    { wins: [[49.37, 54.19]], a: -0.55, label: 'cede al campo' },
+  ] },
+  // TRÁNSITO — el `transitDim` de O₂/N₂. Cuando la cámara ENTRA a la nube, la densidad
+  // aditiva por delante del lente se acumula y el cuadro revienta (medido: 45.7 % de píxeles
+  // >200 en el clavado sin esto). La escena de enlaces apaga la nube al entrar "para que el
+  // NUCLEÓN resalte" y devuelve el brillo al salir. Multiplica a las tres.
+  transito: { base: 1, mods: [
+    { wins: [[35.5, 45.94]], a: -0.75, label: 'CLAVADO: adentro, la nube cede al núcleo' },
+    { wins: [[46.34, 49.00]], a: -0.55, label: 'salida: el brillo REGRESA con la molécula' },
+  ] },
+  // EL CAMPO: base alta (Ian lo pidió MÁS FUERTE) y dos beats donde se queda solo.
+  campo: { base: 1.15, mods: [
+    { wins: [[16.55, 22.46]], a: 0.85, label: 'SU beat: "con su campo eléctrico"' },
+    { wins: [[49.37, 54.19]], a: 0.90, label: 'SU beat: "las líneas son el campo real"' },
+    { wins: [[25.35, 45.94]], a: -0.35, label: 'cede mientras el sujeto es la carga del enlace' },
   ] },
 };
 /** Núcleo `i` en el instante del barrido R: MISMO bracket que usa O2Cloud para las nubes, así
@@ -3896,7 +3946,9 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
           const sLejos = grasa.Rvals[0], sCerca = grasa.Rvals[grasa.K - 1];
           // `apertura` = 0 formada, 1 átomos sueltos. Es una CAPA (capas.ts), como en el anillo
           // de agua: la coreografía vive en datos y se ata a los segundos REALES de segs.json.
-          const ap = Math.min(1, Math.max(0, evalCapas(BUTIRICO_CAPAS, time).apertura ?? 0));
+          const C = evalCapas(BUTIRICO_CAPAS, time);
+          const ap = Math.min(1, Math.max(0, C.apertura ?? 0));
+          const tr = Math.max(0.08, C.transito ?? 1);   // atenuación al ENTRAR a la nube
           const Rt = sCerca + (sLejos - sCerca) * ap;
           // RALEO ANTI-QUEMADO en TODOS los átomos pesados, no solo los oxígenos. El anillo de
           // agua ralea en sus O porque son los únicos pesados que tiene; aquí los 4 carbonos
@@ -3920,14 +3972,14 @@ function CinematicMoleculeInner({ molKey, live = false }: { molKey: string; live
             ))}
             <O2Cloud premul qScale={grasa.posq} posQ={grasa.depPos} colors={plano(grasa.Ndep, 0.20, 0.45, 1.0)}
               Rvals={grasa.Rvals} N={grasa.Ndep} K={grasa.K} R={Rt}
-              brightness={0.26 * bF} size={0.47} cores={cores} coreR={0.9} coreThin={0.55} />
+              brightness={0.26 * bF * Math.max(0, C.dep ?? 1) * tr} size={0.47} cores={cores} coreR={0.9} coreThin={0.55} />
             <O2Cloud premul qScale={grasa.posq} posQ={grasa.accPos} colors={grasa.accColor}
               Rvals={grasa.Rvals} N={grasa.Nacc} K={grasa.K} R={Rt}
-              brightness={0.30 * bF * pulse} size={0.59} coreThin={0.72} cores={cores} coreR={0.55} />
+              brightness={0.30 * bF * pulse * Math.max(0, C.acc ?? 1) * tr} size={0.59} coreThin={0.72} cores={cores} coreR={0.55} />
             <O2Cloud premul qScale={grasa.posq} posQ={grasa.spinPos} colors={plano(grasa.Nspin, 0.82, 0.30, 1.0)}
               Rvals={grasa.Rvals} N={grasa.Nspin} K={grasa.K} R={Rt}
-              brightness={1.39 * bF * pulse} size={0.62} cores={cores} coreR={0.9} coreThin={0.80} />
-            {grasaEf && <BondEField data={grasaEf} R={Rt} time={time * 8} reveal={1.0} col={[0.42, 0.72, 1.6]} />}
+              brightness={1.39 * bF * pulse * Math.max(0, C.spin ?? 1) * tr} size={0.62} cores={cores} coreR={0.9} coreThin={0.80} />
+            {grasaEf && <BondEField data={grasaEf} R={Rt} time={time * 8} reveal={Math.max(0, C.campo ?? 1)} col={[0.42, 0.72, 1.6]} ancho={5.6} />}
           </>;
         })()}
         {data && !isWater && (() => {

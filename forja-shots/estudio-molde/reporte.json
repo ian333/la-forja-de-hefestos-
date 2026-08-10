@@ -1,0 +1,916 @@
+{
+  "url": "http://localhost:5195/molde.html",
+  "checks": {
+    "gpu_real": true,
+    "molde_armado": true,
+    "sin_error_de_montaje": true,
+    "inv_A_suma_espesores": true,
+    "inv_B_placas_se_tocan": true,
+    "inv_C_expulsor_en_el_housing": true,
+    "inv_D_nada_fuera_del_bloque": true,
+    "inv_E_masa_vs_bloque_macizo": true,
+    "inv_F_volumen_exacto": true,
+    "inv_G_despiece_no_traslapa": true,
+    "inv_H_despiece_cero_es_el_molde": true,
+    "stack_en_orden": true,
+    "stack_suma_espesores": true,
+    "numeros_bloque": true,
+    "numeros_masa": true,
+    "numeros_costo": true,
+    "numeros_aceros_por_placa": true,
+    "numeros_arquitectura": true,
+    "semaforos_los_cuatro": true,
+    "semaforos_con_porque": true,
+    "sonda_devuelve_componentes": true,
+    "sonda_trae_cotas": true,
+    "orbitar_no_sondea": true,
+    "despiece_mueve": true,
+    "despiece_cero_es_el_armado": true,
+    "sub_placas_apaga_y_prende": true,
+    "sub_insertos_apaga_y_prende": true,
+    "sub_moldeo_apaga_y_prende": true,
+    "sub_agua_apaga_y_prende": true,
+    "sub_colada_apaga_y_prende": true,
+    "sub_expulsores_apaga_y_prende": true,
+    "sub_tornillos_apaga_y_prende": true,
+    "conteos_no_vacios": true,
+    "solo_agua": true,
+    "rayos_x": true,
+    "modo_corte_vivo": true,
+    "modo_abriendo_vivo": true,
+    "cambia_de_pieza": true,
+    "invariantes_tambien_en_otra_pieza": true,
+    "sin_errores_de_consola": true
+  },
+  "estados": {
+    "despiece-0": {
+      "t": 0,
+      "z": [
+        "p-bottom:0.0",
+        "p-riel:36.0",
+        "p-ejector:40.0",
+        "p-ejector-ret:58.0",
+        "p-support:102.0",
+        "p-B:124.0",
+        "p-A:146.0",
+        "p-clamp:192.0"
+      ]
+    },
+    "despiece-025": {
+      "t": 0.25,
+      "z": [
+        "p-bottom:-68.4",
+        "p-riel:-17.0",
+        "p-ejector:-26.8",
+        "p-ejector-ret:-6.3",
+        "p-support:80.7",
+        "p-B:105.2",
+        "p-A:181.5",
+        "p-clamp:260.4"
+      ]
+    },
+    "despiece-05": {
+      "t": 0.5,
+      "z": [
+        "p-bottom:-136.8",
+        "p-riel:-69.9",
+        "p-ejector:-93.7",
+        "p-ejector-ret:-70.6",
+        "p-support:59.3",
+        "p-B:86.5",
+        "p-A:216.9",
+        "p-clamp:328.8"
+      ]
+    },
+    "despiece-075": {
+      "t": 0.75,
+      "z": [
+        "p-bottom:-205.2",
+        "p-riel:-122.9",
+        "p-ejector:-160.5",
+        "p-ejector-ret:-134.9",
+        "p-support:38.0",
+        "p-B:67.7",
+        "p-A:252.4",
+        "p-clamp:397.2"
+      ]
+    },
+    "despiece-1": {
+      "t": 1,
+      "z": [
+        "p-bottom:-273.7",
+        "p-riel:-175.9",
+        "p-ejector:-227.4",
+        "p-ejector-ret:-199.1",
+        "p-support:16.6",
+        "p-B:48.9",
+        "p-A:287.9",
+        "p-clamp:465.7"
+      ]
+    },
+    "pieza-tapa": {
+      "pieza": "tapa médica",
+      "numeros": {
+        "Lmm": 246,
+        "Wmm": 246,
+        "Hmm": 218,
+        "stackMm": 218,
+        "masaAceroKg": 91,
+        "masaBloqueKg": 102.9,
+        "masaCotizacionKg": 108.4,
+        "nCav": 4,
+        "arquitectura": "cold-2placas",
+        "arquitecturaEs": "colada FRÍA · molde de 2 placas",
+        "aceros": [
+          {
+            "placa": "Placa de sujeción inferior",
+            "clave": "1.1730 (C45)",
+            "nombre": "1.1730 (C45)",
+            "espesorMm": 36,
+            "masaKg": 17.1
+          },
+          {
+            "placa": "Rieles del housing (spacer)",
+            "clave": "1.1730 (C45)",
+            "nombre": "1.1730 (C45)",
+            "espesorMm": 66,
+            "masaKg": 8.92
+          },
+          {
+            "placa": "Placa expulsora",
+            "clave": "1.1730 (C45)",
+            "nombre": "1.1730 (C45)",
+            "espesorMm": 18,
+            "masaKg": 5.46
+          },
+          {
+            "placa": "Placa retenedora (cabezas)",
+            "clave": "1.1730 (C45)",
+            "nombre": "1.1730 (C45)",
+            "espesorMm": 13,
+            "masaKg": 3.94
+          },
+          {
+            "placa": "Placa de soporte",
+            "clave": "1.1730 (C45)",
+            "nombre": "1.1730 (C45)",
+            "espesorMm": 22,
+            "masaKg": 10.45
+          },
+          {
+            "placa": "Placa B (núcleo)",
+            "clave": "P20",
+            "nombre": "P20 · DIN 1.2311 / 1.2738",
+            "espesorMm": 22,
+            "masaKg": 9.16
+          },
+          {
+            "placa": "Placa A (cavidad)",
+            "clave": "P20",
+            "nombre": "P20 · DIN 1.2311 / 1.2738",
+            "espesorMm": 36,
+            "masaKg": 14.69
+          },
+          {
+            "placa": "Placa de sujeción superior",
+            "clave": "1.1730 (C45)",
+            "nombre": "1.1730 (C45)",
+            "espesorMm": 36,
+            "masaKg": 17.1
+          }
+        ],
+        "costoMoldeUSD": 6294,
+        "precioMoldeUSD": 10071,
+        "costoPiezaUSD": 0.1011,
+        "entregaSemanas": 5,
+        "maquina": "IM-50",
+        "semaforos": [
+          {
+            "id": "tiebars",
+            "nombre": "columnas (tie bars)",
+            "estado": "CUMPLE",
+            "medido": "base 246×246 mm",
+            "limite": "luz 310×310 mm de la IM-50",
+            "porque": "el molde pasa entre las columnas de la inyectora seleccionada",
+            "seccion": "§4.3.3"
+          },
+          {
+            "id": "daylight",
+            "nombre": "daylight (que ABRA, no que cierre)",
+            "estado": "CUMPLE",
+            "medido": "stack 292 + carrera 40 = 332 mm",
+            "limite": "daylight máx 420 mm (holgura 89 mm)",
+            "porque": "la inyectora abre lo suficiente para que la pieza salga del núcleo y caiga ⚠ el daylight se juzgó con un stack ESTIMADO de 292 mm (placas A+B+soporte+200 de physicalDesign), no con los 218 mm GEOMÉTRICOS que se dibujan aquí: el juicio es CONSERVADOR por 74 mm.",
+            "seccion": "§6.3.2 · Tabla 6.1"
+          },
+          {
+            "id": "shot",
+            "nombre": "shot (uso del barril)",
+            "estado": "CUMPLE",
+            "medido": "31.3 % de 63 cm³ (19.7 cm³ de disparo)",
+            "limite": "ventana 25-50 % · tope duro 85 %",
+            "porque": "el disparo cae en la ventana de §4.3.3",
+            "seccion": "§4.3.3"
+          },
+          {
+            "id": "tonelaje",
+            "nombre": "tonelaje de cierre",
+            "estado": "CUMPLE",
+            "medido": "2 t requeridas (uso 4 %)",
+            "limite": "50 t de la IM-50",
+            "porque": "el cierre aguanta la presión media de cavidad sobre el área proyectada (Eq 5.29 · SF 1.1)",
+            "seccion": "§5.4 Eq 5.29 · §4.3.3"
+          }
+        ],
+        "sinPaquete": null
+      },
+      "ms": 21,
+      "invReprobados": []
+    }
+  },
+  "errs": [],
+  "warns": [
+    "warning: THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ /.vite/deps/chunk-HAIGUF33.js?v=23e1ec1e",
+    "warning: THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ /.vite/deps/chunk-HAIGUF33.js?v=23e1ec1e",
+    "warning: THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ /.vite/deps/chunk-HAIGUF33.js?v=23e1ec1e"
+  ],
+  "ignorados": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5195/favicon.ico"
+  ],
+  "fallidas": [],
+  "shots": [
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/01-armado.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/02-armado-sondeado.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/03-armado-orbitado.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/04-despiece-0.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/04-despiece-025.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/04-despiece-05.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/04-despiece-075.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/04-despiece-1.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/05-despiece-subsistemas.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/06-solo-agua.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/07-rayosx-agua-dentro-del-acero.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/08-rayosx-solo-tripas.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/09-solo-expulsores.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/10-corte.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/11-abriendo.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/12-abriendo-pleno.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/13-otra-pieza-tapa.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/14-otra-pieza-despiece.png",
+    "/home/ian/Orkesta/la-forja/forja-shots/estudio-molde/15-final-armado.png"
+  ],
+  "notas": [],
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (NVIDIA GeForce RTX 4070 Ti), OpenGL 4.6)",
+  "molde": {
+    "origen": "spec de la Máquina que traía el Estudio → moldMachine",
+    "supuesto": null,
+    "ms": 26,
+    "zPartMm": 146,
+    "numeros": {
+      "Lmm": 196,
+      "Wmm": 246,
+      "Hmm": 228,
+      "stackMm": 228,
+      "masaAceroKg": 77.6,
+      "masaBloqueKg": 85.7,
+      "masaCotizacionKg": 123.6,
+      "nCav": 1,
+      "arquitectura": "cold-2placas",
+      "arquitecturaEs": "colada FRÍA · molde de 2 placas",
+      "aceros": [
+        {
+          "placa": "Placa de sujeción inferior",
+          "clave": "1.1730 (C45)",
+          "nombre": "1.1730 (C45)",
+          "espesorMm": 36,
+          "masaKg": 13.63
+        },
+        {
+          "placa": "Rieles del housing (spacer)",
+          "clave": "1.1730 (C45)",
+          "nombre": "1.1730 (C45)",
+          "espesorMm": 66,
+          "masaKg": 6.37
+        },
+        {
+          "placa": "Placa expulsora",
+          "clave": "1.1730 (C45)",
+          "nombre": "1.1730 (C45)",
+          "espesorMm": 18,
+          "masaKg": 4.46
+        },
+        {
+          "placa": "Placa retenedora (cabezas)",
+          "clave": "1.1730 (C45)",
+          "nombre": "1.1730 (C45)",
+          "espesorMm": 13,
+          "masaKg": 3.22
+        },
+        {
+          "placa": "Placa de soporte",
+          "clave": "1.1730 (C45)",
+          "nombre": "1.1730 (C45)",
+          "espesorMm": 22,
+          "masaKg": 8.33
+        },
+        {
+          "placa": "Placa B (núcleo)",
+          "clave": "P20",
+          "nombre": "P20 · DIN 1.2311 / 1.2738",
+          "espesorMm": 22,
+          "masaKg": 6.11
+        },
+        {
+          "placa": "Placa A (cavidad)",
+          "clave": "P20",
+          "nombre": "P20 · DIN 1.2311 / 1.2738",
+          "espesorMm": 46,
+          "masaKg": 11.87
+        },
+        {
+          "placa": "Placa de sujeción superior",
+          "clave": "1.1730 (C45)",
+          "nombre": "1.1730 (C45)",
+          "espesorMm": 36,
+          "masaKg": 13.63
+        }
+      ],
+      "costoMoldeUSD": 15076,
+      "precioMoldeUSD": 24122,
+      "costoPiezaUSD": 0.3214,
+      "entregaSemanas": 6,
+      "maquina": "IM-50",
+      "semaforos": [
+        {
+          "id": "tiebars",
+          "nombre": "columnas (tie bars)",
+          "estado": "CUMPLE",
+          "medido": "base 246×196 mm",
+          "limite": "luz 310×310 mm de la IM-50",
+          "porque": "el molde pasa entre las columnas de la inyectora seleccionada",
+          "seccion": "§4.3.3"
+        },
+        {
+          "id": "daylight",
+          "nombre": "daylight (que ABRA, no que cierre)",
+          "estado": "CUMPLE",
+          "medido": "stack 302 + carrera 66 = 368 mm",
+          "limite": "daylight máx 420 mm (holgura 52 mm)",
+          "porque": "la inyectora abre lo suficiente para que la pieza salga del núcleo y caiga ⚠ el daylight se juzgó con un stack ESTIMADO de 302 mm (placas A+B+soporte+200 de physicalDesign), no con los 228 mm GEOMÉTRICOS que se dibujan aquí: el juicio es CONSERVADOR por 74 mm.",
+          "seccion": "§6.3.2 · Tabla 6.1"
+        },
+        {
+          "id": "shot",
+          "nombre": "shot (uso del barril)",
+          "estado": "CUMPLE",
+          "medido": "31.7 % de 63 cm³ (20.0 cm³ de disparo)",
+          "limite": "ventana 25-50 % · tope duro 85 %",
+          "porque": "el disparo cae en la ventana de §4.3.3",
+          "seccion": "§4.3.3"
+        },
+        {
+          "id": "tonelaje",
+          "nombre": "tonelaje de cierre",
+          "estado": "CUMPLE",
+          "medido": "6 t requeridas (uso 11 %)",
+          "limite": "50 t de la IM-50",
+          "porque": "el cierre aguanta la presión media de cavidad sobre el área proyectada (Eq 5.29 · SF 1.1)",
+          "seccion": "§5.4 Eq 5.29 · §4.3.3"
+        }
+      ],
+      "sinPaquete": null
+    },
+    "bloque": {
+      "x0": 0,
+      "y0": 0,
+      "z0": 0,
+      "x1": 196,
+      "y1": 246,
+      "z1": 228
+    },
+    "cajaDespiece": {
+      "x0": 0,
+      "y0": 0,
+      "z0": -273.6575,
+      "x1": 196,
+      "y1": 246,
+      "z1": 501.6575
+    },
+    "placas": [
+      {
+        "id": "p-bottom",
+        "rol": "bottom",
+        "nombre": "Placa de sujeción inferior",
+        "codigo": "MLD-CARCAS-06",
+        "z0": 0,
+        "z1": 36,
+        "espesor": 36,
+        "material": "1.1730 (C45)",
+        "materialNombre": "1.1730 (C45)",
+        "flotante": false,
+        "masaKg": 13.63
+      },
+      {
+        "id": "p-riel",
+        "rol": "housing",
+        "nombre": "Rieles del housing (spacer)",
+        "codigo": "MLD-CARCAS-07",
+        "z0": 36,
+        "z1": 102,
+        "espesor": 66,
+        "material": "1.1730 (C45)",
+        "materialNombre": "1.1730 (C45)",
+        "flotante": false,
+        "masaKg": 6.37
+      },
+      {
+        "id": "p-ejector",
+        "rol": "ejector",
+        "nombre": "Placa expulsora",
+        "codigo": "MLD-CARCAS-05b",
+        "z0": 40,
+        "z1": 58,
+        "espesor": 18,
+        "material": "1.1730 (C45)",
+        "materialNombre": "1.1730 (C45)",
+        "flotante": true,
+        "masaKg": 4.46
+      },
+      {
+        "id": "p-ejector-ret",
+        "rol": "ejector-ret",
+        "nombre": "Placa retenedora (cabezas)",
+        "codigo": "MLD-CARCAS-05a",
+        "z0": 58,
+        "z1": 71,
+        "espesor": 13,
+        "material": "1.1730 (C45)",
+        "materialNombre": "1.1730 (C45)",
+        "flotante": true,
+        "masaKg": 3.22
+      },
+      {
+        "id": "p-support",
+        "rol": "support",
+        "nombre": "Placa de soporte",
+        "codigo": "MLD-CARCAS-04",
+        "z0": 102,
+        "z1": 124,
+        "espesor": 22,
+        "material": "1.1730 (C45)",
+        "materialNombre": "1.1730 (C45)",
+        "flotante": false,
+        "masaKg": 8.33
+      },
+      {
+        "id": "p-B",
+        "rol": "B",
+        "nombre": "Placa B (núcleo)",
+        "codigo": "MLD-CARCAS-03",
+        "z0": 124,
+        "z1": 146,
+        "espesor": 22,
+        "material": "P20",
+        "materialNombre": "P20 · DIN 1.2311 / 1.2738",
+        "flotante": false,
+        "masaKg": 6.11
+      },
+      {
+        "id": "p-A",
+        "rol": "A",
+        "nombre": "Placa A (cavidad)",
+        "codigo": "MLD-CARCAS-02",
+        "z0": 146,
+        "z1": 192,
+        "espesor": 46,
+        "material": "P20",
+        "materialNombre": "P20 · DIN 1.2311 / 1.2738",
+        "flotante": false,
+        "masaKg": 11.87
+      },
+      {
+        "id": "p-clamp",
+        "rol": "clamp",
+        "nombre": "Placa de sujeción superior",
+        "codigo": "MLD-CARCAS-01",
+        "z0": 192,
+        "z1": 228,
+        "espesor": 36,
+        "material": "1.1730 (C45)",
+        "materialNombre": "1.1730 (C45)",
+        "flotante": false,
+        "masaKg": 13.63
+      }
+    ],
+    "conteos": [
+      {
+        "id": "placas",
+        "n": 8,
+        "unidad": "placas",
+        "detalle": "6 en la cadena + 2 flotantes del paquete expulsor"
+      },
+      {
+        "id": "insertos",
+        "n": 2,
+        "unidad": "insertos",
+        "detalle": "cavidad + núcleo × 1 impresión(es)"
+      },
+      {
+        "id": "moldeo",
+        "n": 1,
+        "unidad": "impresiones",
+        "detalle": "la pieza 1 vez(ces) en la partición"
+      },
+      {
+        "id": "agua",
+        "n": 10,
+        "unidad": "tramos",
+        "detalle": "⌀6.35 mm · 5 tramos × 2 lado(s) · H_B 13.0 mm · H_A 38.8 mm · plugs 4 · puertos 2"
+      },
+      {
+        "id": "colada",
+        "n": 1,
+        "unidad": "bebedero",
+        "detalle": "cónico, eje en x=98 y=123"
+      },
+      {
+        "id": "expulsores",
+        "n": 21,
+        "unidad": "pines",
+        "detalle": "pin ⌀10 mm (el colocador §11.2.5 los pone donde agarra)"
+      },
+      {
+        "id": "tornillos",
+        "n": 4,
+        "unidad": "tornillos",
+        "detalle": "M5 · izaje peor caso 11.2 kN sobre 86 kg (§12.4 Fig 12.33)"
+      }
+    ],
+    "avisos": [
+      "paso real 73 mm > 2H = 51 (Eq 9.24): los expulsores/barrenos tapizan la banda — §9.3.5.2 pide baffles o bubblers",
+      "H_eff lado A = 12 mm < 2D (Eq 9.22 pide 2D–5D) — engrosar placa A"
+    ],
+    "extensiones": [
+      "rieles del housing a 31 mm en los dos costados que cruza la sección (el spec no fija la orientación del riser)",
+      "la CABEZA del pin no se modela (el libro da el ⌀ del pin y el barreno, no la geometría de la cabeza)",
+      "el tornillo entra 10 mm (2·d) en la placa A: el libro da las proporciones de la CABEZA, no el agarre"
+    ],
+    "piezas": [
+      "p-bottom|Placa de sujeción inferior|z 0..36|1735.8cc|13.63kg|rango 0|dz -273.66",
+      "p-riel|Rieles del housing (spacer)|z 36..102|811.3cc|6.37kg|rango 3|dz -211.88",
+      "p-ejector|Placa expulsora|z 40..58|567.9cc|4.46kg|rango 1|dz -267.4",
+      "p-ejector-ret|Placa retenedora (cabezas)|z 58..71|410.2cc|3.22kg|rango 2|dz -257.14",
+      "p-support|Placa de soporte|z 102..124|1060.8cc|8.33kg|rango 5|dz -85.36",
+      "p-B|Placa B (núcleo)|z 124..146|780.9cc|6.11kg|rango 6|dz -75.1",
+      "p-A|Placa A (cavidad)|z 146..192|1518.2cc|11.87kg|rango 11|dz 141.88",
+      "p-clamp|Placa de sujeción superior|z 192..228|1735.8cc|13.63kg|rango 14|dz 273.66",
+      "i-cav|Inserto de CAVIDAD (rectangular §4.2.3)|z 146..186|689.1cc|5.39kg|rango 10|dz 91.62",
+      "i-core|Inserto de NÚCLEO (macho)|z 130..171|407.6cc|3.19kg|rango 7|dz -48.84",
+      "moldeo|MOLDEO (pieza de plástico)|z 146..172.5|17cc|0.02kg|rango 9|dz 54.86",
+      "agua|Líneas de agua ⌀6.35 JP-251|z 129.82..188|27.4cc|0.22kg|rango 8|dz 2.6",
+      "colada|Bebedero (sprue) §6.3.1|z 173..228|1.9cc|0kg|rango 12|dz 171.14",
+      "pines|Expulsores pin ⌀10|z 40..146|173.7cc|1.36kg|rango 4|dz -139.62",
+      "tornillos|Tornillos M5 (§12.3.2)|z 182..228|4.1cc|0.03kg|rango 13|dz 227.4"
+    ]
+  },
+  "invariantes": [
+    {
+      "id": "A_suma_espesores",
+      "nombre": "Σ espesores de placa = altura del stack",
+      "ok": true,
+      "medido": "Σ = 228 mm · moldStackHeight = 228 mm · bbox de la geometría = 228.000 mm",
+      "esperado": "los tres iguales (tolerancia 1e-6 mm)",
+      "porque": "si la suma de placas no da la altura del bloque, la pantalla y el plano describen moldes distintos"
+    },
+    {
+      "id": "B_placas_se_tocan",
+      "nombre": "en despiece 0 las placas se TOCAN (ni hueco ni traslape)",
+      "ok": true,
+      "medido": "6 placas contiguas, 0.000 mm de junta",
+      "esperado": "z_i + espesor_i = z_{i+1} para toda la cadena",
+      "porque": "un hueco entre placas es un molde que no cierra; un traslape es acero compartido (dos piezas ocupando el mismo lugar)"
+    },
+    {
+      "id": "C_expulsor_en_el_housing",
+      "nombre": "el paquete expulsor FLOTA dentro del housing",
+      "ok": true,
+      "medido": "paquete [40.0, 71.0] mm · housing [36.0, 102.0] mm · carrera libre 31.0 mm",
+      "esperado": "el paquete contenido en el housing, con carrera libre por arriba",
+      "porque": "si el paquete se sale del housing, la expulsión choca con la placa de soporte (es el hallazgo de L6)"
+    },
+    {
+      "id": "D_nada_fuera_del_bloque",
+      "nombre": "ningún componente se sale del bloque (despiece 0)",
+      "ok": true,
+      "medido": "15 componentes dentro (peor exceso 0.000 mm)",
+      "esperado": "exceso ≤ 0.01 mm",
+      "porque": "una pieza fuera del bloque es una pieza mal colocada — se vería flotando, que es justo lo que el operador NO quiere"
+    },
+    {
+      "id": "E_masa_vs_bloque_macizo",
+      "nombre": "masa = Σ volumen×densidad, por debajo del bloque MACIZO",
+      "ok": true,
+      "medido": "geometría 78 kg · bloque macizo 86 kg · 90 %",
+      "esperado": "50 % < masa/bloque ≤ 100 % (un molde es casi todo acero, pero tiene housing y bolsas)",
+      "porque": "la masa la usa §12.4 para dimensionar el tornillo de izaje: si la geometría y el bloque macizo no se parecen, uno de los dos miente"
+    },
+    {
+      "id": "F_volumen_exacto",
+      "nombre": "el integrador de volumen es exacto sobre una placa maciza",
+      "ok": true,
+      "medido": "p-bottom 1735.8 cm³ · W·D·t = 1735.8 cm³ (error relativo 0.0e+0)",
+      "esperado": "error relativo < 1e-9",
+      "porque": "sin esto la masa de todo el molde sería un número bonito sin respaldo (mallas abiertas o normales invertidas darían basura)"
+    },
+    {
+      "id": "G_despiece_no_traslapa",
+      "nombre": "a despiece PLENO ninguna pieza traslapa a otra",
+      "ok": true,
+      "medido": "holgura mínima 10.26 mm en Placa expulsora ↔ Placa retenedora (cabezas)",
+      "esperado": "holgura ≥ 0 entre bboxes consecutivas",
+      "porque": "un despiece con piezas encimadas no enseña las tripas: enseña otra masa de acero"
+    },
+    {
+      "id": "H_despiece_cero_es_el_molde",
+      "nombre": "despiece 0 = el molde armado (identidad)",
+      "ok": true,
+      "medido": "dz(t) = t · dz_pleno ⇒ dz(0) = 0 para los 15 componentes",
+      "esperado": "el desplazamiento es lineal en t y nace en cero",
+      "porque": "si el molde armado no fuera la posición real, todo lo medido encima (juntas, masa, colisiones) sería sobre un molde que no existe"
+    }
+  ],
+  "invariantesReprobados": [],
+  "stack": [
+    "p-bottom [0..36] 36mm 1.1730 (C45) 13.63kg",
+    "p-riel [36..102] 66mm 1.1730 (C45) 6.37kg",
+    "p-support [102..124] 22mm 1.1730 (C45) 8.33kg",
+    "p-B [124..146] 22mm P20 · DIN 1.2311 / 1.2738 6.11kg",
+    "p-A [146..192] 46mm P20 · DIN 1.2311 / 1.2738 11.87kg",
+    "p-clamp [192..228] 36mm 1.1730 (C45) 13.63kg"
+  ],
+  "semaforos": [
+    "CUMPLE · tiebars · base 246×196 mm vs luz 310×310 mm de la IM-50",
+    "CUMPLE · daylight · stack 302 + carrera 66 = 368 mm vs daylight máx 420 mm (holgura 52 mm)",
+    "CUMPLE · shot · 31.7 % de 63 cm³ (20.0 cm³ de disparo) vs ventana 25-50 % · tope duro 85 %",
+    "CUMPLE · tonelaje · 6 t requeridas (uso 11 %) vs 50 t de la IM-50"
+  ],
+  "sondas": [
+    {
+      "punto": [
+        0.52,
+        0.34
+      ],
+      "lectura": {
+        "titulo": "Placa de sujeción superior",
+        "valor": "placas · rol placa",
+        "cotas": 9
+      }
+    },
+    {
+      "punto": [
+        0.52,
+        0.5
+      ],
+      "lectura": {
+        "titulo": "Placa A (cavidad)",
+        "valor": "placas · rol placa",
+        "cotas": 9
+      }
+    },
+    {
+      "punto": [
+        0.52,
+        0.63
+      ],
+      "lectura": {
+        "titulo": "Placa B (núcleo)",
+        "valor": "placas · rol placa",
+        "cotas": 9
+      }
+    },
+    {
+      "punto": [
+        0.44,
+        0.55
+      ],
+      "lectura": {
+        "titulo": "Placa A (cavidad)",
+        "valor": "placas · rol placa",
+        "cotas": 9
+      }
+    },
+    {
+      "punto": [
+        0.62,
+        0.46
+      ],
+      "lectura": {
+        "titulo": "Placa A (cavidad)",
+        "valor": "placas · rol placa",
+        "cotas": 9
+      }
+    }
+  ],
+  "componentesSondeados": [
+    "Placa de sujeción superior",
+    "Placa A (cavidad)",
+    "Placa B (núcleo)"
+  ],
+  "subsistemas": {
+    "placas": {
+      "apagado": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "tornillos"
+      ],
+      "prendido": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "conteo": {
+        "id": "placas",
+        "n": 8,
+        "unidad": "placas",
+        "detalle": "6 en la cadena + 2 flotantes del paquete expulsor"
+      }
+    },
+    "insertos": {
+      "apagado": [
+        "agua",
+        "colada",
+        "expulsores",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "prendido": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "conteo": {
+        "id": "insertos",
+        "n": 2,
+        "unidad": "insertos",
+        "detalle": "cavidad + núcleo × 1 impresión(es)"
+      }
+    },
+    "moldeo": {
+      "apagado": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "placas",
+        "tornillos"
+      ],
+      "prendido": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "conteo": {
+        "id": "moldeo",
+        "n": 1,
+        "unidad": "impresiones",
+        "detalle": "la pieza 1 vez(ces) en la partición"
+      }
+    },
+    "agua": {
+      "apagado": [
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "prendido": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "conteo": {
+        "id": "agua",
+        "n": 10,
+        "unidad": "tramos",
+        "detalle": "⌀6.35 mm · 5 tramos × 2 lado(s) · H_B 13.0 mm · H_A 38.8 mm · plugs 4 · puertos 2"
+      }
+    },
+    "colada": {
+      "apagado": [
+        "agua",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "prendido": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "conteo": {
+        "id": "colada",
+        "n": 1,
+        "unidad": "bebedero",
+        "detalle": "cónico, eje en x=98 y=123"
+      }
+    },
+    "expulsores": {
+      "apagado": [
+        "agua",
+        "colada",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "prendido": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "conteo": {
+        "id": "expulsores",
+        "n": 21,
+        "unidad": "pines",
+        "detalle": "pin ⌀10 mm (el colocador §11.2.5 los pone donde agarra)"
+      }
+    },
+    "tornillos": {
+      "apagado": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas"
+      ],
+      "prendido": [
+        "agua",
+        "colada",
+        "expulsores",
+        "insertos",
+        "moldeo",
+        "placas",
+        "tornillos"
+      ],
+      "conteo": {
+        "id": "tornillos",
+        "n": 4,
+        "unidad": "tornillos",
+        "detalle": "M5 · izaje peor caso 11.2 kN sobre 86 kg (§12.4 Fig 12.33)"
+      }
+    }
+  },
+  "corte": {
+    "modo": "corte",
+    "tel": {
+      "listo": true,
+      "cortadas": 14,
+      "areaMm2": 56510.2,
+      "tapasFallidas": 0,
+      "cMm": 98
+    }
+  },
+  "apertura": {
+    "listo": true,
+    "fase": "apertura",
+    "tMm": 58.85,
+    "recorridoMm": 107,
+    "nSolidos": 17,
+    "choques": 1
+  },
+  "reprobados": [],
+  "veredicto": "PASA"
+}

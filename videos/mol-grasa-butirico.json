@@ -42,18 +42,19 @@
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 86.4,
-    "nota_dur": "voz REAL 83.88s (24 líneas, lead/gap 0.40) + 2.5s de cola"
+    "dur": 66.0,
+    "nota_dur": "voz REAL 63.53s (16 líneas, lead/gap 0.40) + 2.5s de cola"
   },
   "render": {
-    "shards": 5,
+    "shards": 2,
     "batch": 40,
-    "frames": "dist-video/.butframes"
+    "frames": "dist-video/.butframes",
+    "nota_shards": "2, NO 5: con 5 shards a 2160×3840 iangpu SE CAYÓ (Tailscale offline 43 min). Cada shard levanta su Chrome con contexto WebGL de 8.3 MP y esta escena carga 3 nubes de 188k partículas + 420 líneas de campo con 24 cuadros. A 1080 los 5 corrían en 436 s."
   },
   "guion": {
     "archivo": "scripts/guiones/butirico.txt",
-    "lineas": 24,
-    "palabras": 159
+    "lineas": 16,
+    "palabras": 128
   },
   "audio": {
     "dir": "dist-video/butirico-narracion",
