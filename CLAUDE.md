@@ -23,6 +23,24 @@ cápsula→Comando) + los gotchas ya pagados. No es sugerencia: es un gate.
 
 ---
 
+## 🔒 REGLA #0.7 — TRABAJO SOLO = BAJO ORDEN · y el CAD del molde YA EXISTE
+
+**Trabajo en La Forja sin ian presente: SIEMPRE bajo una orden** (`ordenes/<fecha>-<slug>.md`,
+copia `ordenes/PLANTILLA.md`). La orden declara TOCA/CREA/BORRA + evidencia ANTES de trabajar
+— lo normal es `CREA: (nada)`. El juez es **`node scripts/orden-gate.cjs`**: mecánico, archivo
+no declarado o censo que sube (archivos con `<Canvas` en `src/forja/`, entradas de vite,
+`*.html` en raíz) = exit 1. Si a medio camino "necesitas" crear un archivo: **ALTO y pregunta**
+— la orden se enmienda, no se improvisa.
+
+**Toda vista 3D de molde/pieza vive en `ForgeBRepStudio.tsx`** (bag `mold` de `useMoldStudio.ts`,
+paneles DOM en `MoldPanels.tsx`, comandos en `registry.ts`). Un `<Canvas>` nuevo bajo `src/forja/`
+= deuda, salvo orden explícita de ian. Ya se pagó caro: 4 pantallas nuevas (6,880 líneas) cuando
+el CAD ya tenía despiece/corte/apertura/rayos-X/sonda — y sus gates dieron 40/40 PASA, porque un
+gate escrito por el mismo que comete el error mide coherencia interna, no derecho a existir.
+(Las escenas de cine/átomos son OTRO dominio: ahí una escena por pieza es el diseño.)
+
+---
+
 ## 🎬 MANDATO 4K (regla #1, dura)
 
 **TODO el video que se entregue va en 4K.** Vertical (reels) = **2160×3840**. Horizontal = **3840×2160**.
