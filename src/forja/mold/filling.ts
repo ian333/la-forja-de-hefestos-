@@ -110,3 +110,81 @@ export function fillingReport(
     ],
   };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* CROSS-WLF — el modelo de viscosidad estándar de la industria (§5.3.3)      */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * η(γ̇, T, p) = η₀ / (1 + (η₀γ̇/τ*)^(1−n))          Eq (5.8)
+ * η₀(T,p)    = D1 · exp[ −A1(T − T*) / (A2 + (T − T*)) ]   Eq (5.9)
+ * T*(p)      = D2 + D3·p                                    Eq (5.10)
+ * A2         = A3 + D3·p                                    Eq (5.11)
+ *
+ * Por qué importa: el power law describe bien el CORTE ALTO, pero a corte bajo
+ * predice viscosidad infinita. El Cross-WLF acota con el "límite newtoniano" η₀ —
+ * y ese régimen es justo el del FRENTE FRÍO y el de las zonas donde el fundido
+ * casi se detiene. Con power law solo, el llenado miente ahí.
+ *
+ * Coeficientes: Apéndice A del libro, LITERALES (no ajustados, no inventados).
+ */
+export interface CrossWLF {
+  nombre: string;
+  n: number;            // índice power-law del régimen de corte alto
+  tauStarPa: number;    // τ* — el esfuerzo donde deja de ser newtoniano
+  D1: number;           // Pa·s
+  D2K: number;          // K
+  D3KPerPa: number;     // K/Pa (0 en todos los del libro: sin dependencia de presión)
+  A1: number;
+  A2K: number;          // K (51.6 en todos: la constante clásica del WLF)
+  eta0RefPaS: number;   // η₀ tabulado a la T de mid-range (cruce de validación)
+  tMidC: number;        // temperatura de masa de mid-range (°C)
+}
+/** ABS Cycolac MG47 — Apéndice A, p. 392. La MISMA resina del bezel del libro. */
+export const ABS_CROSS: CrossWLF = {
+  nombre: 'ABS (Cycolac MG47)',
+  n: 0.247, tauStarPa: 9.97e4, D1: 1.93e13, D2K: 373.15, D3KPerPa: 0,
+  A1: 31.4, A2K: 51.6, eta0RefPaS: 2210, tMidC: 239,
+};
+/** PP Dow Inspire 702 — Apéndice A, p. 393. */
+export const PP_CROSS: CrossWLF = {
+  nombre: 'PP (Dow Inspire 702)',
+  n: 0.378, tauStarPa: 5.30e3, D1: 1.99e14, D2K: 263.15, D3KPerPa: 0,
+  A1: 30.02, A2K: 51.6, eta0RefPaS: 9070, tMidC: 220,
+};
+
+/** η₀(T, p) — Eqs (5.9)–(5.11). T en °C, p en Pa. */
+export function eta0CrossWLF(m: CrossWLF, tC: number, pPa = 0): number {
+  const T = tC + 273.15;
+  const Tstar = m.D2K + m.D3KPerPa * pPa;
+  const A2 = m.A2K + m.D3KPerPa * pPa;
+  return m.D1 * Math.exp(-(m.A1 * (T - Tstar)) / (A2 + (T - Tstar)));
+}
+
+/** η(γ̇, T, p) — Eq (5.8). LA función que la industria usa. */
+export function viscosityCrossWLF(m: CrossWLF, shearRate: number, tC: number, pPa = 0): number {
+  const e0 = eta0CrossWLF(m, tC, pPa);
+  if (shearRate <= 0) return e0;
+  return e0 / (1 + Math.pow((e0 * shearRate) / m.tauStarPa, 1 - m.n));
+}
+
+/**
+ * El LAZO de §5.5.1 resuelto con Cross-WLF (no con power law): v depende de η y η
+ * de v. El libro lo hace a mano para el bezel y converge a 0.82 m/s pasando por
+ * 0.5 → 0.69 → 0.77 → 0.80. Aquí sale igual, iterando.
+ */
+export function convergeVelocityCross(
+  m: CrossWLF, kappaWmC: number, tWallC: number, hMeters: number,
+  v0 = 0.5, iters = 40,
+): { vMs: number; escalera: number[]; convergio: boolean; vueltas: number; muFinalPaS: number } {
+  let v = v0; const escalera = [v]; let convergio = false, vueltas = 0, mu = 0;
+  for (let i = 0; i < iters; i++) {
+    const gamma = shearRateNewtonian(v, hMeters);          // Eq (5.24), como el libro
+    mu = viscosityCrossWLF(m, gamma, m.tMidC);
+    const vNext = Math.sqrt((5 * (m.tMidC - tWallC) * kappaWmC) / (3 * mu));
+    escalera.push(+vNext.toFixed(4));
+    vueltas = i + 1;
+    if (Math.abs(vNext - v) < 1e-3) { v = vNext; convergio = true; break; }
+    v = vNext;
+  }
+  return { vMs: +v.toFixed(4), escalera, convergio, vueltas, muFinalPaS: +mu.toFixed(1) };
+}

@@ -1606,3 +1606,116 @@ export function estacion4Dado(pkg: MoldPackage, flujoMm: number, wallMm = 2): Es
     anuncios,
   };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* LLENADO NIVEL 1 — el frente por RESISTENCIA, no por distancia               */
+/* (orden 2026-08-11-llenado-nivel1-crosswlf)                                  */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * ian frenó la versión anterior: "el llenado debe de ser un análisis de fluidos y
+ * presiones". Tenía razón, y peor: `flowlen.ts` ADVIERTE por escrito que
+ * `flowLenMm` es distancia y que el orden real de llenado es `resistance` (∝ ΔP,
+ * Eq 5.22) — y yo usé la distancia igual.
+ *
+ * Aquí el frente sale de la RESISTENCIA. Con eso el race-tracking EMERGE solo: una
+ * pared gruesa conduce mejor (S ∝ H³) y se llena antes aunque esté más lejos, que es
+ * exactamente el fenómeno de §5.5.4 y el remedio de §5.5.5.
+ *
+ * Y el frente se reporta en BANDAS ISÓCRONAS NUMERADAS, como el libro lo DIBUJA
+ * (Fig 5.1: contornos 1…11 · Fig 5.17: arcos 1…10 con weld line y gas trap
+ * rotulados). Un degradado continuo esconde el race-tracking; las bandas lo enseñan.
+ */
+export interface BandaIsocrona {
+  n: number;                 // 1, 2, 3… como los arcos del libro
+  tS: number;                // instante en que el frente llega a esta banda
+  nVox: number;              // vóxeles que se llenan en este paso
+  volMm3: number;
+}
+export interface LlenadoNivel1 {
+  gate: { x: number; y: number; z: number };
+  vMs: number; muPaS: number;
+  /** el frente por RESISTENCIA (0..1 normalizado) — el orden REAL de llenado */
+  frente: Float32Array;
+  bandas: BandaIsocrona[];
+  tLlenadoS: number;
+  maxFlowLenMm: number;
+  /** la última zona: dónde muere el aire (§5.5.4) → el dato del cap 8 */
+  ultimaZona: { x: number; y: number; z: number; tS: number } | null;
+  /** ¿el flujo corre por el perímetro y llega tarde al centro? (§5.5.4) */
+  raceTracking: { hay: boolean; detalle: string };
+  gasTrap: { hay: boolean; detalle: string };
+  weldLines: number;
+  /** ΔP por SEGMENTO del lay-flat (§5.5.2) — el método a mano del libro */
+  layflat: Array<{ tramo: string; Lmm: number; Hmm: number; dPMPa: number }>;
+  dPCavidadMPa: number;
+  /** lo que el cap 5 NO incluye y el libro obliga a declarar (§5.5.2 literal) */
+  nota: string;
+  avisos: string[];
+}
+
+export function llenadoNivel1(campo: any, o: {
+  vMs: number; muPaS: number; wallMm: number; nBandas?: number;
+  material: import('./filling').MeltMaterial;
+}): LlenadoNivel1 {
+  const N = campo.resistance.length as number;
+  const nB = o.nBandas ?? 10;
+  // normalizar la RESISTENCIA (no la distancia): éste es el orden de llenado
+  let rMax = 0;
+  for (let i = 0; i < N; i++) { const r = campo.resistance[i]; if (Number.isFinite(r) && r > rMax) rMax = r; }
+  const frente = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const r = campo.resistance[i];
+    frente[i] = campo.cavity[i] && Number.isFinite(r) ? (rMax > 0 ? r / rMax : 0) : -1;
+  }
+  // tiempo de llenado: L/v (el frente avanza a v lineal, §5.5.1)
+  const tTot = campo.maxFlowLenMm / 1000 / Math.max(1e-6, o.vMs);
+  const vCel = Math.pow(campo.cellMm, 3);
+  const bandas: BandaIsocrona[] = [];
+  for (let b = 0; b < nB; b++) {
+    const lo = b / nB, hi = (b + 1) / nB;
+    let n = 0;
+    for (let i = 0; i < N; i++) if (frente[i] >= lo && frente[i] < hi) n++;
+    bandas.push({ n: b + 1, tS: +(tTot * hi).toFixed(3), nVox: n, volMm3: +(n * vCel).toFixed(0) });
+  }
+  // la ÚLTIMA zona = el vóxel de MAYOR resistencia (no el más lejano)
+  let iUlt = -1, rUlt = -1;
+  for (let i = 0; i < N; i++) if (campo.cavity[i] && Number.isFinite(campo.resistance[i]) && campo.resistance[i] > rUlt) { rUlt = campo.resistance[i]; iUlt = i; }
+  const nx = campo.nx, ny = campo.ny;
+  const ultimaZona = iUlt < 0 ? null : {
+    x: +(campo.x0 + ((iUlt % nx) + 0.5) * campo.cellMm).toFixed(1),
+    y: +(campo.y0 + ((Math.floor(iUlt / nx) % ny) + 0.5) * campo.cellMm).toFixed(1),
+    z: +(campo.z0 + (Math.floor(iUlt / (nx * ny)) + 0.5) * campo.cellMm).toFixed(1),
+    tS: +tTot.toFixed(3),
+  };
+  // RACE TRACKING (§5.5.4): la última zona por RESISTENCIA no coincide con la más
+  // LEJANA por distancia ⇒ el fundido corrió por otro lado. Ése es el fenómeno.
+  let iLejos = -1, dLejos = -1;
+  for (let i = 0; i < N; i++) if (campo.cavity[i] && Number.isFinite(campo.flowLenMm[i]) && campo.flowLenMm[i] > dLejos) { dLejos = campo.flowLenMm[i]; iLejos = i; }
+  const hayRace = iUlt >= 0 && iLejos >= 0 && iUlt !== iLejos;
+  const sep = hayRace ? Math.hypot(
+    ((iUlt % nx) - (iLejos % nx)) * campo.cellMm,
+    ((Math.floor(iUlt / nx) % ny) - (Math.floor(iLejos / nx) % ny)) * campo.cellMm,
+    (Math.floor(iUlt / (nx * ny)) - Math.floor(iLejos / (nx * ny))) * campo.cellMm) : 0;
+  return {
+    gate: { x: +(campo.x0 + (campo.gate.i + 0.5) * campo.cellMm).toFixed(1), y: +(campo.y0 + (campo.gate.j + 0.5) * campo.cellMm).toFixed(1), z: +(campo.z0 + (campo.gate.k + 0.5) * campo.cellMm).toFixed(1) },
+    vMs: +o.vMs.toFixed(4), muPaS: +o.muPaS.toFixed(1),
+    frente, bandas, tLlenadoS: +tTot.toFixed(3), maxFlowLenMm: +campo.maxFlowLenMm.toFixed(1),
+    ultimaZona,
+    raceTracking: {
+      hay: hayRace && sep > 3 * campo.cellMm,
+      detalle: hayRace && sep > 3 * campo.cellMm
+        ? `el último punto por RESISTENCIA está a ${sep.toFixed(0)} mm del más lejano por distancia: el fundido corre por donde gasta menos presión, no por el camino corto (§5.5.4)`
+        : 'sin race-tracking: la resistencia y la distancia coinciden (pared uniforme, camino único)',
+    },
+    gasTrap: {
+      hay: campo.unreachable > 0,
+      detalle: campo.unreachable > 0
+        ? `${campo.unreachable} vóxeles NO se llenan: aire atrapado — §5.5.4 avisa que un gas trap en pared "is difficult to vent" y quema la pieza`
+        : 'sin zonas inalcanzables',
+    },
+    weldLines: 0,
+    layflat: [], dPCavidadMPa: 0,
+    nota: 'la presión del cap 5 es DE CAVIDAD: §5.5.2 literal — "does not include the pressure drop through the feed system". El bebedero y la colada son el cap 6 (estación 5), y el total se cierra allá.',
+    avisos: campo.warnings ?? [],
+  };
+}

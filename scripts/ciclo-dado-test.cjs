@@ -101,6 +101,35 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const flaco = ed.estacion4Dado(e2.pkg, 60, 0.35);
   check('CONTROL NEGATIVO: pared de 0.35 mm REPRUEBA por L/T', flaco.ltRatio > 150 && flaco.filas.some((r) => r.id === 'lt' && r.estado === 'VIOLA'), `L/T = ${flaco.ltRatio}`);
 
+  // ══ CROSS-WLF + NIVEL 1 — contra los EJEMPLOS RESUELTOS del libro ══
+  console.log('── CROSS-WLF · reproducir el libro línea por línea');
+  const f = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'filling.ts'));
+  check('η₀(239°C) ≈ 2210 Pa·s (Apéndice A)', cerca(f.eta0CrossWLF(f.ABS_CROSS, 239), 2210, 40), f.eta0CrossWLF(f.ABS_CROSS, 239).toFixed(0));
+  const mu2k = f.viscosityCrossWLF(f.ABS_CROSS, 2000, 239);
+  check('η(γ̇=2000, 239°C) ≈ 120 Pa·s (§5.5.1, el ejemplo del bezel)', cerca(mu2k, 120, 3), mu2k.toFixed(1));
+  const lz = f.convergeVelocityCross(f.ABS_CROSS, 0.19, 60, 0.0015);
+  check('el lazo converge a ≈0.82 m/s (§5.5.1)', lz.convergio && cerca(lz.vMs, 0.82, 0.02), `${lz.escalera[0]} → ${lz.vMs} en ${lz.vueltas} vueltas`);
+  const dpBezel = f.pressureDropSegment(f.ABS_MG47, 0.2, 0.0015, 0.82) / 1e6;
+  check('lay-flat del bezel = 83.2 MPa (§5.5.2, el número impreso)', cerca(dpBezel, 83.2, 0.5), dpBezel.toFixed(1) + ' MPa');
+
+  console.log('── NIVEL 1 · el frente por RESISTENCIA (y el par bueno/malo del libro)');
+  const fl = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'flowlen.ts'));
+  const W = 100, L = 160, Hc = 60;
+  const cont = (pl) => (x, y, z) => (x < 0 || x > W || y < 0 || y > L || z < 0 || z > Hc) ? false
+    : (z > Hc - 2 ? true : (x < pl || x > W - pl || y < pl || y > L - pl));
+  const correN1 = (pl) => {
+    const campo = fl.measureFlowLength({ x0: -1, y0: -1, z0: -1, x1: W + 1, y1: L + 1, z1: Hc + 1, cellMm: 1.6,
+      inCavity: cont(pl), gateMm: { x: 0, y: L / 2, z: Hc - 1 }, wallMm: pl, meltN: 0.348 });
+    return ed.llenadoNivel1(campo, { vMs: lz.vMs, muPaS: lz.muFinalPaS, wallMm: pl, material: f.ABS_MG47 });
+  };
+  const uni = correN1(2.0), leader = correN1(1.5);
+  check('§5.5.4: el contenedor de pared UNIFORME da RACE-TRACKING', uni.raceTracking.hay, uni.raceTracking.detalle.slice(0, 80));
+  check('§5.5.5: con FLOW LEADER (1.5 mm) el race-tracking se CURA (Fig 5.19/5.20)', !leader.raceTracking.hay);
+  // el llenado se EMPAREJA: la banda más cargada baja respecto al total (§5.2 objetivo)
+  const pico = (n1) => Math.max(...n1.bandas.map((b) => b.nVox)) / n1.bandas.reduce((a, b) => a + b.nVox, 0);
+  check('y el llenado se EMPAREJA (la banda pico pesa menos)', pico(leader) < pico(uni), `${(pico(uni) * 100).toFixed(0)}% → ${(pico(leader) * 100).toFixed(0)}%`);
+  check('el frente sale de RESISTENCIA, no de distancia (bandas isócronas)', uni.bandas.length === 10 && uni.bandas.every((b) => b.tS > 0));
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);
