@@ -24,22 +24,43 @@ import { subshellColor, subshellColorLive, subshellLabel } from './atom-builder'
 export interface AtomAbInitio {
   Z: number;
   L: number;                       // semi-lado de la caja del cálculo (bohr)
-  shells: { n: number; l: number; electrons: number }[];
+  /** `m` >= 0 ⇒ el canal es UN ORBITAL (ATM3). `m` = -1 ⇒ la subcapa entera (ATM2). */
+  shells: { n: number; l: number; electrons: number; m: number }[];
   pos: Float32Array;               // M×3 en bohr
   shellOf: Uint8Array;             // M
   dens: Uint8Array;                // M — densidad relativa (0-255), para tamaño y brillo
 }
 
+/** Nombre del canal: `2pₓ`, `3d_z²`… o `2p` si el bin trae la subcapa entera. */
+export const ORB_M: Record<number, string[]> = {
+  0: ['s'],
+  1: ['pₓ', 'p_y', 'p_z'],
+  2: ['d_xy', 'd_yz', 'd_z²', 'd_xz', 'd_x²−y²'],
+  3: ['f₁', 'f₂', 'f₃', 'f_z³', 'f₅', 'f₆', 'f₇'],
+};
+export function orbLabel(n: number, l: number, m: number): string {
+  if (m < 0) return subshellLabel(n, l);
+  return `${n}${(ORB_M[l] ?? ['?'])[m] ?? '?'}`;
+}
+
 export function parseAtomBin(buf: ArrayBuffer): AtomAbInitio {
   const dv = new DataView(buf);
   const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
-  // ATM2 = ATM1 + un uint8 de densidad por punto. Se aceptan ambos: si llega un ATM1 viejo
-  // se rellena con densidad media y se ve plano, pero no truena.
-  if (magic !== 'ATM1' && magic !== 'ATM2') throw new Error(`bin de átomo con firma inesperada: ${magic}`);
+  // ATM1 → sin densidad. ATM2 → + densidad por punto, un canal por SUBCAPA.
+  // ATM3 → un canal por ORBITAL (n,l,m): 16 bytes por canal en vez de 12.
+  //
+  // POR QUÉ EXISTE ATM3 (Ian, 2026-08-11: "son simples puntos en una nube circular, no hay
+  // orbitales"). Tenía razón: el ATM2 guarda la densidad SUMADA sobre la subcapa, y una
+  // subcapa llena es una ESFERA por el teorema de Unsöld. Con ese archivo el neón, el cromo
+  // y el cobre no tenían UNA SOLA forma que enseñar. ATM3 guarda R_nl(r)·|Y_lm|² por
+  // separado — la factorización es EXACTA para un átomo aislado, y la base real de m es la
+  // convención del libro (pₓ/p_y/p_z, d_xy/d_z²/…), declarada como tal.
+  if (magic !== 'ATM1' && magic !== 'ATM2' && magic !== 'ATM3') throw new Error(`bin de átomo con firma inesperada: ${magic}`);
+  const porOrbital = magic === 'ATM3';
   let o = 4;
   const Z = dv.getInt32(o, true); o += 4;
   const M = dv.getInt32(o, true); o += 4;
-  const S = dv.getInt32(o, true); o += 8;      // +4 del reservado
+  const S = dv.getInt32(o, true); o += 8;      // +4 del reservado (=1 en ATM3)
   const POSQ = dv.getFloat32(o, true); o += 4;
   const L = dv.getFloat32(o, true); o += 4;
 
@@ -49,8 +70,9 @@ export function parseAtomBin(buf: ArrayBuffer): AtomAbInitio {
       n: dv.getInt32(o, true),
       l: dv.getInt32(o + 4, true),
       electrons: dv.getInt32(o + 8, true),
+      m: porOrbital ? dv.getInt32(o + 12, true) : -1,
     });
-    o += 12;
+    o += porOrbital ? 16 : 12;
   }
   // RUTA RÁPIDA: una vista Int16Array sobre el buffer en vez de 330 000 llamadas a
   // getInt16 (con 110 000 puntos eso son 3 lecturas por punto, una por una). El único
@@ -66,7 +88,8 @@ export function parseAtomBin(buf: ArrayBuffer): AtomAbInitio {
     for (let i = 0; i < M * 3; i++) { pos[i] = dv.getInt16(o, true) / POSQ; o += 2; }
   }
   const shellOf = new Uint8Array(buf.slice(o, o + M)); o += M;
-  const dens = magic === 'ATM2' ? new Uint8Array(buf.slice(o, o + M)) : new Uint8Array(M).fill(160);
+  // ATM2 y ATM3 traen densidad por punto; sólo el ATM1 viejo no (ahí se rellena plano).
+  const dens = magic === 'ATM1' ? new Uint8Array(M).fill(160) : new Uint8Array(buf.slice(o, o + M));
   return { Z, L, shells, pos, shellOf, dens };
 }
 
@@ -123,7 +146,7 @@ export function bundleFromAbInitio(data: AtomAbInitio, live = false) {
   return {
     positions, colors, sizes, shellIdx,
     shells: shells.map(s => ({
-      label: subshellLabel(s.n, s.l),
+      label: orbLabel(s.n, s.l, s.m),
       n: s.n, l: s.l,
       color: new THREE.Color(hex(s.n, s.l)),
       electrons: s.electrons,
@@ -131,7 +154,10 @@ export function bundleFromAbInitio(data: AtomAbInitio, live = false) {
   };
 }
 
-const VERSION_BIN = 2;   // debe coincidir con precompute-atom-orbitals.py
+// v3 = un canal por ORBITAL (ATM3). Se INTENTA primero y se cae a v2 (por subcapa) para los
+// elementos que todavía no se han recalculado: así el laboratorio nunca se queda sin nube, y
+// los .bin viejos siguen sirviendo sin borrar nada.
+const VERSIONES_BIN = [3, 2];
 const cache = new Map<number, AtomAbInitio | null>();
 
 /** Carga la nube ab initio de Z. `null` = ese elemento no tiene .bin (hueco declarado). */
@@ -142,11 +168,15 @@ export async function loadAtomAbInitio(Z: number): Promise<AtomAbInitio | null> 
     // días en el borde: reescribirlos no invalida nada (medido: tras recalcular los 118,
     // producción seguía entregando el formato viejo con cf-cache-status HIT). Subir este
     // número junto con VERSION_BIN de precompute-atom-orbitals.py.
-    const r = await fetch(`/precomputed/atoms/z${String(Z).padStart(3, '0')}-v${VERSION_BIN}.bin`);
-    if (!r.ok) { cache.set(Z, null); return null; }
-    const d = parseAtomBin(await r.arrayBuffer());
-    cache.set(Z, d);
-    return d;
+    for (const v of VERSIONES_BIN) {
+      const r = await fetch(`/precomputed/atoms/z${String(Z).padStart(3, '0')}-v${v}.bin`);
+      if (!r.ok) continue;
+      const d = parseAtomBin(await r.arrayBuffer());
+      cache.set(Z, d);
+      return d;
+    }
+    cache.set(Z, null);
+    return null;
   } catch {
     cache.set(Z, null);
     return null;

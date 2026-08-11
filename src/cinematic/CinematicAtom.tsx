@@ -53,7 +53,12 @@ import { win } from './capas';
 // que el nombre `3d⁷` se enciende exactamente cuando su nube toma el escenario.
 const BANDA_T0 = 15.2;        // arranca el barrido (idéntico al que ya tenían las etiquetas)
 const BANDA_COLA = 3.4;       // tras la última banda: el campo B y el cierre
-const BANDA_PISO = 0.12;      // las nubes que no están en turno
+// Las nubes que NO están en turno. 0.05, no 0.12: con los canales por ORBITAL lo que define
+// a un p es su NODO —el hueco en el núcleo— y a un d sus lóbulos separados. Las otras nubes,
+// que viven justo ahí, RELLENABAN el nodo y la mancuerna se leía como una bola alargada
+// (medido en el neón, 2026-08-11). Se queda un rastro para no perder el contexto de dónde
+// vive el orbital, pero la forma manda.
+const BANDA_PISO = 0.05;
 const BANDA_ENCUADRE = 3.2;   // distancia de cámara en radios de la banda (ver bandaRadio)
 // AL MAGNIFICAR UNA BANDA HAY QUE ENGORDAR EL PUNTO. Medido en el cromo: una banda sola
 // aporta ~50 000 puntos y, repartidos en los 8.3 Mpx del cuadro 4K, cubren el 2.4 % — o sea

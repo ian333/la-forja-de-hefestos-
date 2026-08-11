@@ -44,6 +44,9 @@ BOHR = 0.529177210903
 SEED = 20260731
 POSQ = 2000.0          # bohr = int16/POSQ → techo 16.38 bohr por eje
 VERSION_BIN = 2        # v1 = ATM1 cartesiano 26k · v2 = ATM2 esférico 110k con densidad
+# ORB=1 → UN CANAL POR ORBITAL (ATM3, z###-v3.bin). El v2 por SUBCAPA se queda intacto:
+# lo usa el laboratorio y no se borra nada. Ver el comentario de ang2() para el porqué.
+ORB = os.environ.get('ORB', '') == '1'
 Z_MAX = int(os.environ.get('Z_MAX', '118'))
 # PUNTOS POR ÁTOMO. 26 000 daba CONFETI: el video (buildAtomBundle) genera hasta 200 000
 # —`200000/totalElectrons` por electrón— y ahí está la diferencia entre una masa luminosa
@@ -135,6 +138,69 @@ def radio_util(mol, mf, rmax=18.0):
     pico = rho.max()
     fuera = np.where(rho > pico * 1e-4)[0]
     return float(r[fuera[-1]]) if len(fuera) else 6.0
+
+
+def ang2(l, u):
+    """|Y_lm(θ,φ)|² REAL para los 2l+1 valores de m, sobre direcciones unitarias u (N,3).
+
+    POR QUÉ ESTO EXISTE (Ian, 2026-08-11: "son simples puntos en una nube circular, no hay
+    orbitales, así no funcionan los electrones"). Tenía razón, y el defecto estaba una línea
+    más abajo: la densidad se sumaba SOBRE LA SUBCAPA antes de muestrear, y sumar los
+    orbitales de una subcapa llena da una ESFERA — es el teorema de Unsöld, no un bug de
+    render. Con eso, el neón (1s² 2s² 2p⁶), el cromo (…3d⁵) y el cobre (…3d¹⁰) no tenían UNA
+    SOLA forma que enseñar: tres bolas cada uno.
+
+    LA FACTORIZACIÓN NO ES UNA APROXIMACIÓN. El átomo aislado tiene potencial esféricamente
+    simétrico, así que sus funciones propias son EXACTAMENTE R_nl(r)·Y_lm(θ,φ). El radial sale
+    del SCF (promediando la subcapa sobre esferas) y el angular es el armónico esférico real.
+    Lo ÚNICO convencional es escoger la base real de m —cualquier rotación unitaria dentro del
+    multiplete degenerado es igual de válida— y es la misma convención del libro de texto:
+    p_x/p_y/p_z, d_xy/d_yz/d_z²/d_xz/d_x²−y².
+
+    Se normaliza cada m para que integre lo mismo sobre la esfera (media 1 sobre las
+    direcciones de Fibonacci, que son casi equiespaciadas): así los 2l+1 orbitales de una
+    subcapa pesan igual, que es lo correcto, y no hay constantes que se puedan teclear mal.
+    """
+    x, y, z = u[:, 0], u[:, 1], u[:, 2]
+    if l == 0:
+        f = np.array([np.ones_like(x)])
+    elif l == 1:
+        f = np.array([x, y, z])                                   # p_x, p_y, p_z
+    elif l == 2:
+        f = np.array([x * y, y * z, (3 * z * z - 1.0), x * z, (x * x - y * y)])
+    elif l == 3:
+        f = np.array([
+            y * (3 * x * x - y * y),          # f_y(3x²−y²)
+            x * y * z,                        # f_xyz
+            y * (5 * z * z - 1.0),            # f_yz²
+            z * (5 * z * z - 3.0),            # f_z³
+            x * (5 * z * z - 1.0),            # f_xz²
+            z * (x * x - y * y),              # f_z(x²−y²)
+            x * (x * x - 3 * y * y),          # f_x(x²−3y²)
+        ])
+    else:
+        f = np.array([np.ones_like(x)])                            # g+: sin forma declarada
+    f2 = f ** 2
+    return f2 / np.maximum(f2.mean(axis=1, keepdims=True), 1e-30)
+
+
+def ocupacion_hund(ne, l):
+    """Reparte `ne` electrones entre los 2l+1 orbitales: uno a cada uno y luego se aparean.
+    Es la regla de Hund, y es la MISMA convención que el libro dibuja. Cuál de los m se llena
+    primero es arbitrario en un átomo aislado (están degenerados): se declara, no se afirma."""
+    m = 2 * l + 1
+    occ = [0.0] * m
+    for k in range(int(round(ne))):
+        occ[k % m] += 1.0
+    return occ
+
+
+ETIQ_M = {
+    0: ['s'],
+    1: ['pₓ', 'p_y', 'p_z'],
+    2: ['d_xy', 'd_yz', 'd_z²', 'd_xz', 'd_x²−y²'],
+    3: ['f₁', 'f₂', 'f₃', 'f_z³', 'f₅', 'f₆', 'f₇'],
+}
 
 
 def muestrea_esf(dens, pesos, P, n, rng, nr, ndir):
@@ -274,14 +340,19 @@ def escribe(Z, L, shells, pts, sidx, base, metodo, e_tot, dens=None):
     # el ATM1 viejo con `cf-cache-status: HIT`. Versionar el NOMBRE es la única forma limpia:
     # archivo nuevo = clave de caché nueva, sin purgar nada a mano. Subir VERSION_BIN cada vez
     # que cambie el formato o el muestreo.
-    ruta = os.path.join(OUT_DIR, f'z{Z:03d}-v{VERSION_BIN}.bin')
+    ruta = os.path.join(OUT_DIR, f'z{Z:03d}-v{3 if ORB else VERSION_BIN}.bin')
     q = np.clip(np.round(pts * POSQ), -32767, 32767).astype('<i2')
     with open(ruta, 'wb') as fp:
-        fp.write(b'ATM2')
-        fp.write(struct.pack('<4i', Z, len(pts), len(shells), 0))
+        # ATM3 = un canal por ORBITAL (n,l,m). ATM2 = un canal por SUBCAPA (m = -1).
+        # El único cambio de layout es el int32 `m` que se añade a cada canal.
+        fp.write(b'ATM3' if ORB else b'ATM2')
+        fp.write(struct.pack('<4i', Z, len(pts), len(shells), 1 if ORB else 0))
         fp.write(struct.pack('<2f', POSQ, L))
-        for (n, l), ne in shells:
-            fp.write(struct.pack('<3i', n, l, ne))
+        for (n, l), ne, m in shells:
+            if ORB:
+                fp.write(struct.pack('<4i', n, l, ne, m))
+            else:
+                fp.write(struct.pack('<3i', n, l, ne))
         fp.write(q.tobytes())
         fp.write(np.asarray(sidx, dtype=np.uint8).tobytes())
         if dens is None:
@@ -336,21 +407,45 @@ def main():
         pesos = {nl: sum(o for _, o in v) for nl, v in grupos.items()}
         tot_e = sum(pesos.values())
         pts_all, sidx_all, dens_all, shells = [], [], [], []
-        for si, (nl, orbs) in enumerate(grupos.items()):
+        # direcciones de la malla (las mismas NDIR para todos los anillos) — para el angular
+        u_dir = G.reshape(NR, NDIR, 3)[-1]
+        u_dir = u_dir / np.linalg.norm(u_dir, axis=1)[:, None]
+        for nl, orbs in grupos.items():
+            n_, l_ = nl
             dens = np.zeros(G.shape[0])
             for a in range(0, G.shape[0], 60000):
                 ao = mol.eval_gto('GTOval', G[a:a + 60000])
                 for c, o in orbs:
                     dens[a:a + 60000] += o * (ao @ c) ** 2
-            n_sub = max(200, int(round(N_PTS * pesos[nl] / tot_e)))
-            p, d8 = muestrea_esf(dens, W, G, n_sub, rng, NR, NDIR)
-            pts_all.append(p); sidx_all.append(np.full(len(p), si, np.uint8))
-            dens_all.append(d8)
-            shells.append((nl, int(round(pesos[nl]))))
+            if not ORB:
+                si = len(shells)
+                n_sub = max(200, int(round(N_PTS * pesos[nl] / tot_e)))
+                p, d8 = muestrea_esf(dens, W, G, n_sub, rng, NR, NDIR)
+                pts_all.append(p); sidx_all.append(np.full(len(p), si, np.uint8))
+                dens_all.append(d8)
+                shells.append((nl, int(round(pesos[nl])), -1))
+                continue
+            # ── UN CANAL POR ORBITAL ──────────────────────────────────────────────
+            # radial: la subcapa PROMEDIADA sobre esferas ⇒ |R_nl(r)|² salvo constante.
+            # (la malla es (NR anillos)×(NDIR direcciones), así que el promedio es exacto)
+            rad = dens.reshape(NR, NDIR).mean(axis=1)
+            A = ang2(l_, u_dir)                                   # (2l+1, NDIR)
+            occ_m = ocupacion_hund(pesos[nl], l_)
+            for m, om in enumerate(occ_m):
+                if om <= 0:
+                    continue
+                si = len(shells)
+                d_orb = (rad[:, None] * A[m][None, :]).ravel() * om
+                n_sub = max(200, int(round(N_PTS * om / tot_e)))
+                p, d8 = muestrea_esf(d_orb, W, G, n_sub, rng, NR, NDIR)
+                pts_all.append(p); sidx_all.append(np.full(len(p), si, np.uint8))
+                dens_all.append(d8)
+                shells.append((nl, int(round(om)), m))
         pts = np.concatenate(pts_all); sidx = np.concatenate(sidx_all)
         dq = np.concatenate(dens_all)
         ruta, size = escribe(Z, L, shells, pts, sidx, base, metodo, float(mf.e_tot), dq)
-        etiquetas = ' '.join(f"{n}{'spdfg'[l]}{ne}" for (n, l), ne in shells)
+        etiquetas = ' '.join((f"{n}{ETIQ_M[l][m] if (m >= 0 and l in ETIQ_M) else 'spdfg'[l]}"
+                              if m >= 0 else f"{n}{'spdfg'[l]}{ne}") for (n, l), ne, m in shells)
         print(f"{Z:>4} {SIMBOLO[Z-1]:<3} {base:<10} {metodo:<5} {mf.e_tot:>14.5f} {L:>8.2f} "
               f"{len(shells):>9} {size/1024:>6.0f}   {etiquetas}", flush=True)
         # aviso honesto: con sarc-dkh (lantánidos/actínidos) la energía NO es comparable
@@ -358,7 +453,7 @@ def main():
         manifiesto.append(dict(Z=Z, sym=SIMBOLO[Z-1], ok=True, basis=base, method=metodo,
                                energia_fiable=energia_fiable,
                                energy_ha=float(mf.e_tot), L_bohr=L, points=len(pts),
-                               shells=[dict(n=n, l=l, electrons=ne) for (n, l), ne in shells]))
+                               shells=[dict(n=n, l=l, electrons=ne, m=m) for (n, l), ne, m in shells]))
         _guarda()
     ok = sum(1 for m in manifiesto if m['ok'])
     print(f"\n✅ {ok}/{len(lista)} elementos ab initio en {OUT_DIR}", flush=True)
