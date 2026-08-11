@@ -84,6 +84,23 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('CONTROL NEGATIVO: el dado con draft INVERTIDO reprueba', malo.p.veredicto === 'NO SALE' && malo.p.atrapados > 0, `${malo.p.atrapados} caras atrapadas`);
   check('y el undercut lo sufre la CAVIDAD (la que no puede bajar)', (malo.p.mitades.find((m) => !m.sube)?.nAtrapados ?? 0) > 0);
 
+  // ══ E4 — LLENADO (cap 5) ══
+  console.log('── E4 · Llenado (cap 5)');
+  const e4 = ed.estacion4Dado(e2.pkg, 60, 2);
+  check('el lazo de velocidad CONVERGE (A-088)', e4.convergio && e4.vueltas > 1, `${e4.escalera[0]} → ${e4.vMs} m/s en ${e4.vueltas} vueltas`);
+  // la escalera tiene que ser MONÓTONA y estabilizarse: si oscila, no convergió de verdad
+  const monotona = e4.escalera.every((x, i) => i === 0 || x >= e4.escalera[i - 1] - 1e-9);
+  const estable = Math.abs(e4.escalera[e4.escalera.length - 1] - e4.escalera[e4.escalera.length - 2]) < 1e-3;
+  check('la escalera es monótona y se estabiliza', monotona && estable);
+  check('L/T dentro de lo que aguanta el ABS', e4.ltRatio <= 150, `L/T = ${e4.ltRatio}`);
+  check('todas las filas del llenado CUMPLEN', e4.filas.every((r) => r.estado === 'CUMPLE'), e4.filas.filter((r) => r.estado !== 'CUMPLE').map((r) => r.titulo).join(', ') || 'todas');
+  // los defectos REALES del dado, anunciados a su estación destino (grafo con retornos)
+  check('anuncia el congelamiento de compuerta a la E6 (§7.1.5)', e4.anuncios.some((a) => a.estacion === 6));
+  check('anuncia el ΔP del bebedero a la E5 (§6.4)', e4.anuncios.some((a) => a.estacion === 5));
+  // CONTROL NEGATIVO: una pared de 0.5 mm sobre la MISMA longitud debe reprobar por L/T
+  const flaco = ed.estacion4Dado(e2.pkg, 60, 0.35);
+  check('CONTROL NEGATIVO: pared de 0.35 mm REPRUEBA por L/T', flaco.ltRatio > 150 && flaco.filas.some((r) => r.id === 'lt' && r.estado === 'VIOLA'), `L/T = ${flaco.ltRatio}`);
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

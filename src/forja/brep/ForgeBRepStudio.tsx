@@ -47,7 +47,7 @@ import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
-import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, computeMoldAlarm } from './MoldScene';
+import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
@@ -6101,7 +6101,8 @@ export default function ForgeBRepStudio() {
                 {alarmCloud && alarmCloud.length > 0 && <AlarmCloud pts={alarmCloud} />}
                 {/* MAPA DEL RAYO: las mitades pintadas por su clase de desmoldeo — el
                     número del panel (atrapadas) es este color sobre el acero. */}
-                {ciclo?.rayo && ciclo.rayo.mitades.map((mi, k) => {
+                {ciclo?.e4paint && <LlenadoPaint part={ciclo.e4paint.part} flow={ciclo.e4paint.flow} max={ciclo.e4paint.max} />}
+                {ciclo?.rayo && ciclo.estacion === 3 && ciclo.rayo.mitades.map((mi, k) => {
                   const pt = moldParts.find((p) => p.role === (mi.sube ? 'nucleo' : 'cavidad'));
                   return pt && !moldHidden[pt.role] ? <RayoPaint key={k} part={pt} clase={mi.clase} /> : null;
                 })}

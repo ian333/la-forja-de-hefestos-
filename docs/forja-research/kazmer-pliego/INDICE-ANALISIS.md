@@ -10,9 +10,9 @@
 
 | estado | qué significa | análisis | % |
 |---|---|---:|---:|
-| 🟩 **SÍ** | implementado y localizable en `src/forja/mold/` | 130 | 44.5 |
+| 🟩 **SÍ** | implementado y localizable en `src/forja/mold/` | 132 | 45.2 |
 | 🟨 **PARCIAL** | existe el cálculo pero le falta salida, criterio o alcance | 97 | 33.2 |
-| 🟥 **FALTA** | el libro lo corre y nosotros no | 64 | 21.9 |
+| 🟥 **FALTA** | el libro lo corre y nosotros no | 62 | 21.2 |
 | ⬛ **DIVERGE** | lo implementamos **distinto** de lo que dice el libro (desviación declarada) | 1 | 0.3 |
 | | **total** | **292** | |
 
@@ -20,7 +20,7 @@
 
 | tomo | caps. | IDs | era | 🟩 | 🟨 | 🟥 | ⬛ |
 |---|---|---|---|---:|---:|---:|---:|
-| [`analisis-caps1-3.md`](./analisis-caps1-3.md) | 1–3 | A-001…A-059 | A-01…A-59 | 27 | 19 | 12 | 1 |
+| [`analisis-caps1-3.md`](./analisis-caps1-3.md) | 1–3 | A-001…A-059 | A-01…A-59 | 29 | 19 | 10 | 1 |
 | [`analisis-caps4-6.md`](./analisis-caps4-6.md) | 4–6 | A-060…A-137 | A-01…A-78 | 34 | 30 | 14 | 0 |
 | [`analisis-caps7-9.md`](./analisis-caps7-9.md) | 7–9 | A-138…A-208 | A-01…A-71 | 38 | 20 | 13 | 0 |
 | [`analisis-caps10-13.md`](./analisis-caps10-13.md) | 10–13 | A-209…A-292 | A-60…A-143 | 31 | 28 | 25 | 0 |
@@ -53,7 +53,7 @@
 | **A-010** | Checklist DFM de 9 puntos (agregador) | 🟨 PARCIAL | A-10 |
 | **A-011** | Checklist DFA de 6 puntos | 🟥 FALTA | A-11 |
 | **A-012** | Uniformidad de pared y dirección de la transición | 🟩 SÍ | A-12 |
-| **A-013** | Trade-off espesor nominal vs pared delgada + costillas | 🟥 FALTA | A-13 |
+| **A-013** | Trade-off espesor nominal vs pared delgada + costillas | 🟩 SÍ | A-13 |
 | **A-014** | Verificación de costilla (rib) | 🟩 SÍ | A-14 |
 | **A-015** | Verificación de boss y gusset | 🟨 PARCIAL | A-15 |
 | **A-016** | Verificación de esquinas (filetes y chaflanes) | 🟩 SÍ | A-16 |
@@ -105,7 +105,7 @@
 |---|---|---|---|
 | **A-048** | Costo total de producción por escenario | 🟩 SÍ | A-48 |
 | **A-049** | Break-even entre arquitecturas | 🟩 SÍ | A-49 |
-| **A-050** | Banda de sensibilidad sobre la cantidad de producción | 🟥 FALTA | A-50 |
+| **A-050** | Banda de sensibilidad sobre la cantidad de producción | 🟩 SÍ | A-50 |
 | **A-051** | Barrido de escenarios (la tabla comparativa) | 🟩 SÍ | A-51 |
 | **A-052** | Payback del hot runner de alta cavitación | 🟥 FALTA | A-52 |
 | **A-053** | Vetos no económicos sobre el ganador | 🟨 PARCIAL | A-53 |
@@ -425,6 +425,6 @@ SALIDA · DECIDE · CRITERIO · INVALIDA · ¿TENEMOS?**. Las `←A-nnn` en ENTR
 grafo: quién alimenta a quién. Los IDs de este índice son los mismos que citan los tomos y el
 código (p. ej. `ejection.ts` cita **A-234**, `feed-layouts.ts` cita **A-136**).
 
-**Lo que este índice dice de nosotros hoy:** 130 de 292 análisis (44.5 %) existen en el código.
-Faltan **64** completos y hay **97** a medias. La suma 🟥+🟨 = **161** es el
+**Lo que este índice dice de nosotros hoy:** 132 de 292 análisis (45.2 %) existen en el código.
+Faltan **62** completos y hay **97** a medias. La suma 🟥+🟨 = **159** es el
 trabajo pendiente medido contra el libro, no contra una opinión.

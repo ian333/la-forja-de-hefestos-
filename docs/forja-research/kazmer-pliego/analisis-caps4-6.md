@@ -118,6 +118,11 @@ construyó sobre el corpus DERIVADO, que sí conserva **citas literales verifica
   **solo el criterio (2)**. El criterio (1) NO entra en la elección, aunque
   `src/forja/mold/dfm-mesh.ts :: projectedAreaMm2` ya calcula el área proyectada. Además solo hay
   3 candidatos alineados a ejes: direcciones oblicuas (Fig 4.5) no se evalúan.
+  **Nuevo 2026-08-11:** lo que sí ganamos es el VEREDICTO de la dirección elegida —
+  `estudio-molde-datos.ts::pruebaDelRayo` prueba que cada mitad SE PUEDE RETIRAR en su dirección
+  (caras que miran a la salida, ocluidas o no, con el z-buffer de `visibilidad.ts`): `atrapadas = 0`
+  es el teorema, con control negativo (draft invertido → 16 caras atrapadas) en el gate. Elegir la
+  dirección sigue siendo parcial; **juzgarla ya no**.
 
 ### A-061 · Ubicación de la línea de partición — prueba de visibilidad
 - **CUÁNDO** — inmediatamente después de A-060.

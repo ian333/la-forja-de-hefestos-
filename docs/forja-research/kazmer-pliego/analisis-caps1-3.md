@@ -332,10 +332,13 @@ porque mueven el factor de complejidad (A-028) y el ciclo (A-042).
   *"the best design may be to use a thinner wall thickness together with vertical ribs."*
 - **CRITERIO:** **[LIBRO]** los dos porcentajes; **[COMPARA]** el costo por pieza resultante.
 - **INVALIDA:** cambio de material (otro módulo → otra rigidez), cambio de requisito de carga.
-- **¿TENEMOS?** **FALTA el comparador.** Las dos piezas del cálculo existen sueltas
-  (`moldcost-detailed.ts::cycleTimeEstimate` da el ciclo con `h²`, `::estimatePartCost` da el material),
-  pero nadie construye las dos alternativas y las contrasta. Es un análisis de **dos escenarios**, y el
-  sistema hoy solo evalúa la pieza que le dieron.
+- **¿TENEMOS?** **SÍ** (desde 2026-08-10, estación 1 del CICLO DEL DADO).
+  `estudio-molde-datos.ts::estacion1Dado` construye LAS DOS alternativas y las contrasta como
+  [COMPARA], que es como el libro lo trata — sin umbral inventado: el macizo se condena con SU
+  número, `tcPlateS` (Eq 9.5) da **88.3 min** contra los **8.5 s** de la pared de 2 mm (**625×**,
+  porque t_c ∝ t²), más el contraste de material (8.4×). El veredicto sale en el CAD con las dos
+  piezas en 3D lado a lado (macizo fantasma rojo REPROBADO / dado verde APROBADO).
+  Gate: `scripts/ciclo-dado-test.cjs` (E1).
 
 ### A-014 · Verificación de costilla (rib)
 - **CUÁNDO:** por cada costilla, en la revisión de pieza.
@@ -991,9 +994,13 @@ termina cuando la especificación converge.
 - **DECIDE:** cuánta confianza tiene la recomendación, y si conviene entregar dos diseños en vez de uno.
 - **CRITERIO:** **[JUICIO]** sobre el riesgo del cliente.
 - **INVALIDA:** A-049.
-- **¿TENEMOS?** **FALTA.** Damos un break-even puntual (`breakEvenReport` imprime un número) sin banda ni
-  análisis de qué pasa si el volumen real es la mitad. Es especialmente grave porque el mismo libro dice
-  que ese número de entrada es el menos confiable de todos.
+- **¿TENEMOS?** **SÍ** (desde 2026-08-10, estación 2 del CICLO DEL DADO).
+  `estudio-molde-datos.ts::estacion2Dado` corre la Máquina COMPLETA en cinco volúmenes y publica la
+  banda con el punto donde el ganador CAMBIA — que es el dato que el libro pide y que un cliente paga
+  por ver. Dado ABS 40³: 50k→×1 · 100k→×1 · **250k→×2** · 500k→×4 · 1M→×4, con la lectura
+  *"antes de 250,000 piezas, pagar más molde es tirar dinero"*. Se pinta en el CAD con las familias
+  en 3D (ganador dorado, perdedores fantasma) y la tabla que SUMA A MANO (amortización + material y
+  proceso = total). Gate: `scripts/ciclo-dado-test.cjs` (E2).
 
 ### A-051 · Barrido de escenarios (la tabla comparativa)
 - **CUÁNDO:** en cuanto la cavitación o el feed son "salida a optimizar" (A-002).

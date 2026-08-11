@@ -548,7 +548,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -608,7 +608,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
         </button>
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
-      {ciclo.estacion >= 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} />}
+      {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} />}
+      {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
 }
@@ -664,7 +665,7 @@ function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estac
         veredicto: {e2.veredicto.viable ? 'VIABLE ✓' : 'REVISAR ⚠'} · precio molde ${e2.veredicto.precioMoldeUSD.toLocaleString()} · {e2.veredicto.entregaSemanas} semanas
       </div>
       {onE3 && (
-        <button className="fb-fea-run" data-testid="btn-ciclo-e3" onClick={onE3} style={{ margin: '4px 6px 6px' }}
+        <button className="fb-fea-run" data-testid="btn-ciclo-e3" onClick={() => onE3()} style={{ margin: '4px 6px 6px' }}
           title="ARQUITECTURA (cap 4): el dado gana su draft REAL (1.5° tallado), splitMold talla cavidad y núcleo, la base se compra con su aritmética a la vista — y los semáforos §4.3.3 despiertan.">
           ▶ estación 3 — ARQUITECTURA: nace el primer acero
         </button>
@@ -678,7 +679,7 @@ function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estac
  *  aritmética que la produjo (la base no "es" 196: NECESITA 184 y 196 es la
  *  primera medida del catálogo). Los retornos van declarados al pie: este acero
  *  se va a REABRIR y el panel lo dice desde hoy. */
-function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3 }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado; e3v?: import('../mold/estudio-molde-datos').VerificacionE3; rayo?: import('../mold/estudio-molde-datos').PruebaRayo; interMm3?: number; cicloEstacion3?: (malo?: boolean) => void }) {
+function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4 }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado; e3v?: import('../mold/estudio-molde-datos').VerificacionE3; rayo?: import('../mold/estudio-molde-datos').PruebaRayo; interMm3?: number; cicloEstacion3?: (malo?: boolean) => void; onE4?: () => void }) {
   const fila = (titulo: string, cuerpo: string, porque: string, testid: string, color = '#9db4d0') => (
     <div className="fb-comp-row feat" data-testid={testid} title={porque}
       style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
@@ -759,9 +760,70 @@ function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3 }: { e3: import('../m
       {e3.retornos.map((r, k) => (
         <div key={k} data-testid={`e3-retorno-${k}`} style={{ fontSize: 10.5, color: '#8fa1b8', padding: '1px 6px' }}>{r}</div>
       ))}
-      <div style={{ fontSize: 10, color: '#66748a', padding: '3px 6px 6px' }}>
-        ▶ estación 4 — LLENADO (cap 5): ¿por dónde entra el plástico? · siguiente orden
+      {onE4 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e4" onClick={onE4} style={{ margin: '4px 6px 6px' }}
+          title="LLENADO (cap 5): la pieza pintada por cuándo le llega el plástico, el lazo de convergencia de la velocidad, y la última zona en llenarse — que es dónde irá el venteo.">
+          ▶ estación 4 — LLENADO: ¿dónde muere el aire?
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 4 — LLENADO (cap 5). El lazo de convergencia se DIBUJA iterando (el libro
+ *  itera; aquí se ve), y los defectos que el dado delata se ANUNCIAN con su estación
+ *  destino: el proceso es un GRAFO CON RETORNOS (§1.5 Fig 1.9), no una fila. */
+function CicloE4({ e4 }: { e4: import('../mold/estudio-molde-datos').Estacion4Dado }) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  const max = Math.max(...e4.escalera, 1e-9);
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 4 — llenado (cap 5): la velocidad no se elige, se RESUELVE iterando
       </div>
+      <div data-testid="e4-escalera" style={{ padding: '2px 6px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 34 }}>
+          {e4.escalera.map((v, i) => (
+            <div key={i} title={`vuelta ${i}: ${v} m/s`} style={{ flex: 1, height: `${(v / max) * 100}%`,
+              background: i === e4.escalera.length - 1 ? GOLD : '#2f4a63', borderRadius: '2px 2px 0 0' }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+          A-088 · {e4.escalera[0]} → {e4.vMs} m/s en {e4.vueltas} vueltas · {e4.convergio ? 'CONVERGE ✓' : 'NO CONVERGE ✗'}
+        </div>
+      </div>
+      {e4.filas.map((r) => (
+        <div key={r.id} className="fb-comp-row feat" data-testid={`e4-${r.id}`} title={r.porque}
+          style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
+            background: r.estado === 'VIOLA' ? 'rgba(242,122,108,0.10)' : 'rgba(255,255,255,0.02)',
+            borderLeft: `2px solid ${COL[r.estado]}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: COL[r.estado] }}>{r.estado} · {r.titulo}</div>
+          <div style={{ fontSize: 10.5, color: '#9fb2c8', fontFamily: "'JetBrains Mono', monospace" }}>{r.valor}</div>
+          <div style={{ fontSize: 10, color: '#7f8da3' }}>vs {r.limite} · {r.seccion}</div>
+        </div>
+      ))}
+      {e4.ultimaZona && (
+        <div data-testid="e4-ultima-zona" style={{ fontSize: 10.5, color: '#c9a6ff', padding: '4px 6px' }}>
+          🟣 <b>A-104 · la ÚLTIMA zona en llenarse</b> ({e4.ultimaZona.x}, {e4.ultimaZona.y}, {e4.ultimaZona.z}) a {e4.ultimaZona.tS} s
+          <div style={{ fontSize: 10, color: '#7f8da3' }}>ahí muere el aire — el cap 5 le pasa la coordenada al cap 8: es DÓNDE VA EL VENTEO (estación 7)</div>
+        </div>
+      )}
+      {e4.anuncios.length > 0 && (
+        <div data-testid="e4-anuncios" style={{ padding: '4px 6px 6px' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>
+            ⟲ lo que este dado YA delata — y NO se arregla aquí ({e4.anuncios.length})
+          </div>
+          {e4.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e4-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
+          <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 3 }}>
+            el proceso del libro es un GRAFO CON RETORNOS (§1.5 Fig 1.9): el defecto se ANUNCIA en la estación que lo descubre y se ARREGLA en la que manda.
+          </div>
+        </div>
+      )}
     </>
   );
 }

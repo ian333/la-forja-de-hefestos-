@@ -619,3 +619,31 @@ export function RayoPaint({ part, clase }: { part: MoldPart; clase: Uint8Array }
     </group>
   );
 }
+
+/** LLENADO POR TIEMPO DE LLEGADA (estación 4) — la pieza pintada por CUÁNDO le llega
+ *  el fundido: amarillo entra primero, morado último. El morado NO es decoración: es
+ *  dónde muere el aire, y ese punto es el dato que la estación 7 (venteo) consume. */
+export function LlenadoPaint({ part, flow, max }: { part: MoldPart; flow: Float32Array; max: number }) {
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(part.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(part.indices, 1));
+    const col = new Float32Array(part.positions.length);
+    for (let i = 0, v = 0; v < flow.length; v++, i += 3) {
+      const t = max > 0 ? Math.min(1, Math.max(0, flow[v] / max)) : 0;
+      // amarillo (llega primero) → naranja → morado (último): rampa de llegada
+      col[i] = 1.0 - 0.55 * t * t;
+      col[i + 1] = 0.85 - 0.72 * t;
+      col[i + 2] = 0.15 + 0.75 * t * t;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return g;
+  }, [part, flow, max]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  return (
+    <mesh geometry={geo} renderOrder={5}>
+      <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.95} />
+    </mesh>
+  );
+}

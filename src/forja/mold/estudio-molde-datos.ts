@@ -1526,3 +1526,83 @@ export function interseccionMitades(oc: any, a: any, b: any): { volMm3: number; 
     return { volMm3: +v.toFixed(4), ok: Math.abs(v) < 1 };
   } catch { return { volMm3: NaN, ok: false }; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 4: LLENADO (cap 5)                            */
+/* (orden 2026-08-11-ciclo-dado-estacion4)                                    */
+/* ══════════════════════════════════════════════════════════════════════════ */
+export interface FilaLlenado {
+  id: string; titulo: string; valor: string; limite: string;
+  estado: 'CUMPLE' | 'ADVIERTE' | 'VIOLA'; seccion: string; porque: string;
+}
+export interface AnuncioRetorno {
+  estacion: number; titulo: string; detalle: string; seccion: string;
+}
+export interface Estacion4Dado {
+  /** el LAZO del libro (A-088): la velocidad se resuelve ITERANDO, y aquí se ve iterar */
+  escalera: number[]; convergio: boolean; vueltas: number; vMs: number;
+  filas: FilaLlenado[];
+  /** A-104: dónde muere el aire — el dato que la estación 7 (venteo) va a consumir */
+  ultimaZona: { x: number; y: number; z: number; tS: number } | null;
+  flujoMm: number; ltRatio: number;
+  /** lo que el dado YA delata y NO se arregla aquí: el grafo con retornos (§1.5 Fig 1.9) */
+  anuncios: AnuncioRetorno[];
+}
+
+/**
+ * El llenado del dado, del pkg que YA corre. Nada de motor nuevo: el cap 5 entero
+ * vive en `pkg.diseno` (velocidad con su escalera, presiones, gate, alimentación).
+ * Esta estación lo VE y lo juzga — y anuncia los defectos que pertenecen a estaciones
+ * posteriores en vez de callarlos o de arreglarlos fuera de su turno.
+ */
+export function estacion4Dado(pkg: MoldPackage, flujoMm: number, wallMm = 2): Estacion4Dado {
+  const d: any = pkg.diseno;
+  const v = d.velocidad, g = d.gate, al = d.alimentacion;
+  const lt = flujoMm / wallMm;
+  const f: FilaLlenado[] = [];
+  const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
+    f.push({ id, titulo, valor, limite, estado, seccion, porque });
+
+  fila('vel', 'velocidad de llenado (lazo cerrado)', `${v.vMs.toFixed(3)} m/s en ${v.vueltas} vueltas`,
+    v.convergio ? 'converge' : 'NO converge', v.convergio ? 'CUMPLE' : 'VIOLA', '§5.4 · A-088',
+    'la velocidad no se elige: se RESUELVE iterando (la viscosidad depende del corte y el corte de la velocidad). La escalera de arriba es esa iteración.');
+  // §5.5: banda de velocidad lineal típica del libro
+  const enBanda = v.vMs >= 0.1 && v.vMs <= 1.0;
+  fila('banda', 'banda de velocidad lineal', `${v.vMs.toFixed(3)} m/s`, '0.1 – 1.0 m/s',
+    enBanda ? 'CUMPLE' : 'ADVIERTE', '§5.5 · A-090',
+    'fuera de la banda: muy lento congela el frente, muy rápido quema por corte.');
+  fila('pfill', 'presión de llenado', `${d.fillMPa} MPa`, 'la máquina da ~140 MPa',
+    d.fillMPa < 100 ? 'CUMPLE' : 'ADVIERTE', '§5.4 · A-093', 'ΔP que exige empujar el fundido hasta el último rincón.');
+  // §5.1/§6.5.1: una ΔP demasiado BAJA también reprueba (anti-sobrediseño)
+  fila('pcav', 'presión media de cavidad', `${d.cavityMPa} MPa`, 'ni tan alta que abra el molde ni tan baja que no empaque',
+    d.cavityMPa >= 2 && d.cavityMPa <= 60 ? 'CUMPLE' : 'ADVIERTE', '§5.5.3 · A-094',
+    'el libro reprueba por los DOS lados: demasiado baja delata sobrediseño (§5.1).');
+  fila('lt', 'longitud de flujo / pared (L/T)', `${flujoMm.toFixed(0)} / ${wallMm} = ${lt.toFixed(0)}`,
+    'ABS aguanta ~150', lt <= 150 ? 'CUMPLE' : 'VIOLA', '§5.5 · A-102',
+    'si L/T excede lo que el material aguanta, el frente se congela antes de llegar: short shot.');
+
+  // ── los RETORNOS anunciados: defectos REALES del dado que son de otras estaciones ──
+  const anuncios: AnuncioRetorno[] = [];
+  if (g?.freezeCorto) anuncios.push({
+    estacion: 6, titulo: 'la compuerta CONGELA antes de terminar de empacar',
+    detalle: `congela a ${g.freezeS.toFixed(2)} s y el empaque necesita ${g.tPackNeededS.toFixed(2)} s — se cierra la puerta con la casa a medio llenar${g.agrandable ? ' (la compuerta es AGRANDABLE: steel-safe, crece en tryout)' : ''}`,
+    seccion: '§7.1.5 · A-149',
+  });
+  if (al && al.dPMPa > al.limDPMPa) anuncios.push({
+    estacion: 5, titulo: 'el bebedero se come el presupuesto de presión',
+    detalle: `${al.dPMPa.toFixed(2)} MPa contra un presupuesto de ${al.limDPMPa.toFixed(2)} — un sprue de ${al.sprueLenMm.toFixed(0)} mm para una pieza de 40 mm: la colada domina a la pieza`,
+    seccion: '§6.4 · A-111',
+  });
+  if (al && al.pctRegrind > (al.limPct ?? 30)) anuncios.push({
+    estacion: 5, titulo: 'demasiado material se va en la colada',
+    detalle: `${al.pctRegrind.toFixed(1)} % del disparo es colada (límite ${al.limPct}) — regrind y costo por pieza`,
+    seccion: '§6.2.3 · A-121',
+  });
+
+  return {
+    escalera: (v.escalera ?? []).map((x: number) => +x.toFixed(4)),
+    convergio: !!v.convergio, vueltas: v.vueltas, vMs: +v.vMs.toFixed(4),
+    filas: f, ultimaZona: null, flujoMm: +flujoMm.toFixed(1), ltRatio: +lt.toFixed(1),
+    anuncios,
+  };
+}
