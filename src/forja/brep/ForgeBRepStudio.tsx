@@ -47,7 +47,7 @@ import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
-import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, computeMoldAlarm } from './MoldScene';
+import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
@@ -6070,6 +6070,12 @@ export default function ForgeBRepStudio() {
                   // con 💧 encendido la colada la dibuja FeedFill (el revelado del
                   // frente) — el mesh estático encima lo tapaba por completo
                   if (flowOn && pt.role === 'colada') return null;
+                  // EL FUNDIDO **ES** LA PIEZA: la superficie del llenado ocupa exactamente
+                  // el volumen de la pieza. Dibujar las dos = la pieza translúcida (que se
+                  // dibuja después, por transparente) tapa al fundido y el frente se ve
+                  // CONGELADO aunque la malla sí esté cambiando. Medido: 29,504 triángulos
+                  // a t=1 vs 5,044 a t=0.33, y la imagen no cambiaba (YAVG 0.02).
+                  if (ciclo?.frenteGrid && pt.role === 'pieza') return null;
                   if (moldHidden[pt.role]) return null;
                   // el TRANSITORIO pinta TODAS las placas por vértice; el FEA cubre B+soporte+rieles
                   if (moldSimOn && moldThermalSim && !pt.role.startsWith('platina')) return null;
@@ -6122,18 +6128,15 @@ export default function ForgeBRepStudio() {
                 {/* MAPA DEL RAYO: las mitades pintadas por su clase de desmoldeo — el
                     número del panel (atrapadas) es este color sobre el acero. */}
                 {ciclo?.e4paint && <LlenadoPaint part={ciclo.e4paint.part} flow={ciclo.e4paint.flow} max={ciclo.e4paint.max} />}
-                {/* EL FRENTE ANIMADO: la pieza se llena en el tiempo, por bandas isócronas */}
-                {/* EL FRENTE DE FUNDIDO = `AlarmCloud` TAL CUAL, con los vóxeles ya
-                    llenados en el instante t. Ocho intentos de componente propio
-                    fallaron (el video salía congelado); la regla de la casa es
-                    COPIAR AL GANADOR LITERAL, no reescribirlo de memoria. Aquí ni se
-                    copia: se REUSA el que ya se sabe que dibuja. */}
-                {ciclo?.frenteVert && ciclo?.voxPos && (() => {
-                  const f = ciclo.frenteVert as Float32Array, P = ciclo.voxPos as Float32Array;
-                  const pts: number[] = [];
-                  for (let i = 0; i < f.length; i++) if (f[i] >= 0 && f[i] <= tFill) pts.push(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
-                  return pts.length ? <AlarmCloud pts={new Float32Array(pts)} /> : null;
-                })()}
+                {/* EL FUNDIDO, COMO LO DIBUJA LA INDUSTRIA: una SUPERFICIE sombreada
+                    coloreada por fill time (el resultado #1 de Moldflow/Moldex3D), no
+                    una nube de bolitas. ian: "se supone que es un líquido… se ve de
+                    juguete". Las bolitas (AlarmCloud reusada) resolvieron el problema
+                    ANTERIOR —que el frente se viera avanzar— y por eso siguen siendo
+                    el ganador de aquel round; lo que no podían era leerse como materia. */}
+                {ciclo?.frenteGrid && ciclo?.grid && (
+                  <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} />
+                )}
                 {ciclo?.rayo && ciclo.estacion === 3 && ciclo.rayo.mitades.map((mi, k) => {
                   const pt = moldParts.find((p) => p.role === (mi.sube ? 'nucleo' : 'cavidad'));
                   return pt && !moldHidden[pt.role] ? <RayoPaint key={k} part={pt} clase={mi.clase} /> : null;

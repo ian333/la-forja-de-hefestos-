@@ -20,6 +20,7 @@ import { type ThermalSim } from '../mold/mold-thermal-fdm';
 // hace typecheck, así que el build pasaba y el componente TRONABA en runtime
 // dentro de un ErrorBoundary (que no dispara pageerror: invisible para el arnés).
 import { isoSurface } from '../../lib/viz/isosurface';
+import { frenteSuperficie } from '../mold/flowlen';
 import { paintTcColors } from '../mold/mold-tc-map';
 
 function thermalRamp(t: number): [number, number, number] {
@@ -649,3 +650,92 @@ export function LlenadoPaint({ part, flow, max }: { part: MoldPart; flow: Float3
 }
 
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EL FUNDIDO COMO SUPERFICIE — el resultado `Fill time` de la industria
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ian: "se supone que es un líquido, no se ve como un líquido… se ve de juguete".
+// Tenía razón: el frente eran ESFERAS planas sin luz (AlarmCloud reusada), y una
+// nube de puntos de color plano no puede leerse como materia.
+//
+// Moldflow / Moldex3D / Sigmasoft dibujan **una superficie sombreada coloreada
+// por fill time**. Aquí igual: la frontera de { 0 ≤ frente ≤ t } sale por surface
+// nets (`frenteSuperficie`), el color es el INSTANTE en que llegó el fundido, y el
+// material es un dieléctrico pulido con clearcoat — el HDRI del estudio se refleja
+// en él y ESE reflejo es lo que lo hace ver mojado y caliente, no el color.
+//
+// La leyenda NO se re-escala con t (como en Moldflow): azul es lo primero que se
+// llenó y rojo lo último de TODA la inyección. Por eso al principio la pieza es
+// azul y el arcoíris completo solo aparece al final.
+//
+// NO se usa `lib/viz/isosurface` (marching tetrahedra, ya en la casa) porque su
+// devanado es INCONSISTENTE: medido, 13,896 aristas dirigidas repetidas de 25,608
+// triángulos → normales revueltas (invisible con DoubleSide y midiendo ÁREA, que
+// es para lo que nació) y volumen −38 %. Con luz e iluminación real eso se ve.
+
+/** rampa FILL TIME (la escala estándar de llenado): azul → cian → verde → amarillo → rojo */
+function rampaFillTime(u: number): [number, number, number] {
+  const S: Array<[number, number, number, number]> = [
+    [0.00, 0.16, 0.24, 0.88], [0.25, 0.13, 0.75, 0.85],
+    [0.50, 0.25, 0.83, 0.35], [0.75, 0.95, 0.83, 0.23], [1.00, 1.00, 0.18, 0.09],
+  ];
+  const x = Math.max(0, Math.min(1, u));
+  for (let i = 0; i < S.length - 1; i++) {
+    if (x <= S[i + 1][0]) {
+      const w = (x - S[i][0]) / (S[i + 1][0] - S[i][0]);
+      return [S[i][1] + w * (S[i + 1][1] - S[i][1]), S[i][2] + w * (S[i + 1][2] - S[i][2]), S[i][3] + w * (S[i + 1][3] - S[i][3])];
+    }
+  }
+  return [S[S.length - 1][1], S[S.length - 1][2], S[S.length - 1][3]];
+}
+
+export function FrenteSuperficie({ frente, grid, t }: {
+  frente: Float32Array;
+  grid: { nx: number; ny: number; nz: number; cellMm: number; x0: number; y0: number; z0: number };
+  t: number;
+}) {
+  const geo = useMemo(() => {
+    // suavizado 0: lo que se DIBUJA es lo que el gate MIDE. Con una pasada de caja
+    // la superficie redondea las esquinas y el volumen cae ~3 % — bonito, pero ya no
+    // es el volumen de los vóxeles, y el gate de ±2 % existe justo para eso.
+    const s = frenteSuperficie({ ...grid, frente, t, suavizado: 0 });
+    if (!s.tris) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(s.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(s.normals, 3));
+    g.setIndex(new THREE.BufferAttribute(s.indices, 1));
+    // ALBEDO, no color final: el estudio tiene HDRI + direccionales, y con la rampa a
+    // full el resultado salía casi BLANCO (medido a ojo en la captura: pasteles). El
+    // albedo se baja para que luz×albedo aterrice EN el color de la rampa en vez de
+    // pasarse. Es la misma regla de la casa: el color se gana bajando brillo, no
+    // sumándolo.
+    const ALB = 0.42;
+    const col = new Float32Array(s.positions.length);
+    for (let v = 0; v < s.fill.length; v++) {
+      const c = rampaFillTime(s.fill[v]);
+      col[v * 3] = c[0] * ALB; col[v * 3 + 1] = c[1] * ALB; col[v * 3 + 2] = c[2] * ALB;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return g;
+  }, [frente, grid, t]);
+  useEffect(() => () => { geo?.dispose(); }, [geo]);
+  if (!geo) return null;
+  return (
+    <mesh geometry={geo} renderOrder={7}>
+      {/* FrontSide a propósito: si el devanado se rompiera, se vería el interior —
+          es un detector de regresión gratis. DoubleSide lo taparía. */}
+      {/* MÁS LUZ NO ES MÁS COLOR. Primera versión: envMapIntensity 1.5 + clearcoat 0.7
+          → el HDRI del estudio se comió el colormap y el fundido salió BLANCO, igualito
+          a los insertos translúcidos. Es la misma lección que ya está escrita arriba en
+          MoldTcPaint ("las luces + ACES pastelean el colormap a blanco"). El ambiente
+          baja hasta que el DATO manda; queda el brillo justo para que se lea mojado. */}
+      <meshPhysicalMaterial
+        vertexColors side={THREE.FrontSide}
+        roughness={0.32} metalness={0.0}
+        clearcoat={0.28} clearcoatRoughness={0.22}
+        envMapIntensity={0.30}
+      />
+    </mesh>
+  );
+}

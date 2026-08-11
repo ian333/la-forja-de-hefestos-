@@ -120,15 +120,79 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const correN1 = (pl) => {
     const campo = fl.measureFlowLength({ x0: -1, y0: -1, z0: -1, x1: W + 1, y1: L + 1, z1: Hc + 1, cellMm: 1.6,
       inCavity: cont(pl), gateMm: { x: 0, y: L / 2, z: Hc - 1 }, wallMm: pl, meltN: 0.348 });
-    return ed.llenadoNivel1(campo, { vMs: lz.vMs, muPaS: lz.muFinalPaS, wallMm: pl, material: f.ABS_MG47 });
+    return { campo, n1: ed.llenadoNivel1(campo, { vMs: lz.vMs, muPaS: lz.muFinalPaS, wallMm: pl, material: f.ABS_MG47 }) };
   };
-  const uni = correN1(2.0), leader = correN1(1.5);
+  const uniR = correN1(2.0), leaderR = correN1(1.5);
+  const uni = uniR.n1, leader = leaderR.n1;
   check('§5.5.4: el contenedor de pared UNIFORME da RACE-TRACKING', uni.raceTracking.hay, uni.raceTracking.detalle.slice(0, 80));
   check('§5.5.5: con FLOW LEADER (1.5 mm) el race-tracking se CURA (Fig 5.19/5.20)', !leader.raceTracking.hay);
   // el llenado se EMPAREJA: la banda más cargada baja respecto al total (§5.2 objetivo)
   const pico = (n1) => Math.max(...n1.bandas.map((b) => b.nVox)) / n1.bandas.reduce((a, b) => a + b.nVox, 0);
   check('y el llenado se EMPAREJA (la banda pico pesa menos)', pico(leader) < pico(uni), `${(pico(uni) * 100).toFixed(0)}% → ${(pico(leader) * 100).toFixed(0)}%`);
   check('el frente sale de RESISTENCIA, no de distancia (bandas isócronas)', uni.bandas.length === 10 && uni.bandas.every((b) => b.tS > 0));
+
+  // ══ LA SUPERFICIE DEL FUNDIDO ══
+  // ian: "se ve de juguete, no se ve real". La industria dibuja una SUPERFICIE
+  // (Moldflow `Fill time`), no bolitas. Una superficie bonita que encierra otro
+  // volumen es una mentira bonita: aquí se mide que encierre EL MISMO volumen que
+  // los vóxeles llenos, en tres instantes, con el suavizado con el que se DIBUJA.
+  console.log('── SUPERFICIE DEL FRENTE · lo que se dibuja es lo que se mide');
+  const G = uniR.campo;
+  const meta = { nx: G.nx, ny: G.ny, nz: G.nz, cellMm: G.cellMm, x0: G.x0, y0: G.y0, z0: G.z0 };
+  const vox = G.cellMm ** 3;
+  // El criterio NO puede ser sólo el %: la pérdida de surface nets es por REDONDEO de
+  // aristas convexas, o sea proporcional al ÁREA, no al volumen. En un cuerpo delgado
+  // (t chico) la misma desviación geométrica pesa mucho más en porcentaje. Así que se
+  // exige ±2 % **o** que la superficie caiga a menos de ¼ de celda de la frontera de
+  // vóxeles (ΔV/A = el desplazamiento medio real) — y se imprimen los dos números.
+  const areaDe = (s) => {
+    let A = 0;
+    for (let e = 0; e < s.indices.length; e += 3) {
+      const a = s.indices[e] * 3, b = s.indices[e + 1] * 3, c = s.indices[e + 2] * 3;
+      const ux = s.positions[b] - s.positions[a], uy = s.positions[b + 1] - s.positions[a + 1], uz = s.positions[b + 2] - s.positions[a + 2];
+      const vx = s.positions[c] - s.positions[a], vy = s.positions[c + 1] - s.positions[a + 1], vz = s.positions[c + 2] - s.positions[a + 2];
+      A += 0.5 * Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx);
+    }
+    return A;
+  };
+  for (const t of [0.25, 0.6, 1.0]) {
+    const s = fl.frenteSuperficie({ ...meta, frente: uni.frente, t, suavizado: 0 });
+    let n = 0;
+    for (let v = 0; v < uni.frente.length; v++) if (uni.frente[v] >= 0 && uni.frente[v] <= t) n++;
+    const esperado = n * vox;
+    const err = (s.volumeMm3 / esperado - 1) * 100;
+    const sesgo = Math.abs(s.volumeMm3 - esperado) / areaDe(s);       // mm de desplazamiento medio
+    check(`t=${t}: la superficie encierra el volumen de los vóxeles (±2 % o <¼ celda)`,
+      s.volumeMm3 > 0 && (Math.abs(err) <= 2 || sesgo <= G.cellMm / 4),
+      `${(s.volumeMm3 / 1000).toFixed(1)} cm³ vs ${(esperado / 1000).toFixed(1)} cm³ · ${err >= 0 ? '+' : ''}${err.toFixed(2)} % · desplazamiento ${sesgo.toFixed(3)} mm (celda ${G.cellMm}) · ${s.tris} tris`);
+  }
+  // ORIENTACIÓN: en una malla cerrada bien orientada cada arista DIRIGIDA a→b sale
+  // 1 vez. Este check es el que destapó que `lib/viz/isosurface` trae 13,896 aristas
+  // repetidas de 25,608 triángulos (normales revueltas → volumen −38 %). Con normales
+  // revueltas NO hay material iluminado que se vea bien: por eso el check vive aquí.
+  {
+    const s = fl.frenteSuperficie({ ...meta, frente: uni.frente, t: 1, suavizado: 0 });
+    const d = new Map(); let rep = 0;
+    for (let e = 0; e < s.indices.length; e += 3) {
+      const [a, b, c] = [s.indices[e], s.indices[e + 1], s.indices[e + 2]];
+      for (const [p, q] of [[a, b], [b, c], [c, a]]) { const k = `${p}>${q}`; d.set(k, (d.get(k) || 0) + 1); }
+    }
+    for (const v of d.values()) if (v !== 1) rep++;
+    check('la malla está ORIENTADA (0 aristas dirigidas repetidas)', rep === 0, `${rep} repetidas en ${s.tris} triángulos`);
+    // CERRADA: cada arista NO dirigida en exactamente 2 triángulos. Un agujero pasa
+    // el check de orientación (una arista de borde sale 1 vez y nunca en reversa) y
+    // solo se delata aquí. Es el check que faltaba cuando el volumen dio −403 %.
+    const u = new Map(); let abiertas = 0;
+    for (const k of d.keys()) { const [a, b] = k.split('>').map(Number); const q = a < b ? `${a}|${b}` : `${b}|${a}`; u.set(q, (u.get(q) || 0) + 1); }
+    for (const v of u.values()) if (v !== 2) abiertas++;
+    check('la malla está CERRADA (toda arista en 2 triángulos)', abiertas === 0, `${abiertas} aristas de borde`);
+  }
+  // CONTROL NEGATIVO: sin fundido no puede haber superficie (ni un cubo espurio)
+  {
+    const vacio = new Float32Array(uni.frente.length).fill(-1);
+    const s = fl.frenteSuperficie({ ...meta, frente: vacio, t: 1, suavizado: 0 });
+    check('CONTROL NEGATIVO: campo vacío → 0 triángulos', s.tris === 0 && s.volumeMm3 === 0, `${s.tris} tris`);
+  }
 
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);

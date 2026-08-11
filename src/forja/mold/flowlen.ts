@@ -429,3 +429,173 @@ export function createFlowFront(f: FlowField) {
     },
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EL FRENTE COMO SUPERFICIE — lo que dibuja la industria
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ian, viendo el video del llenado: "se supone que es un líquido, no se ve como
+// un líquido… se ve de juguete, no se ve real. ¿Qué usan los demás softwares?".
+//
+// Moldflow / Moldex3D / Sigmasoft NO dibujan nubes de puntos: dibujan **una
+// SUPERFICIE sombreada coloreada por `Fill time`**, el resultado #1 de cualquier
+// análisis de llenado. La región llena en el instante t es { 0 ≤ frente ≤ t };
+// su FRONTERA es lo que se ve, y esa frontera incluye tanto el frente que avanza
+// como las paredes ya mojadas.
+//
+// El extractor es **NAIVE SURFACE NETS** (Gibson 1998), no marching cubes:
+//   · un vértice por celda que cruza el nivel, colocado en el promedio de los
+//     cruces de sus 12 aristas → superficie SUAVE, sin el escalón de vóxel;
+//   · quads entre celdas vecinas cuando la arista dual cambia de signo;
+//   · ~60 líneas y CERO tablas de 256 casos (marching cubes necesita triTable).
+//
+// El nivel es 0.5 sobre la OCUPACIÓN (1 lleno / 0 vacío): así la superficie cae
+// a media celda entre el último vóxel lleno y el primero vacío, y el volumen que
+// encierra coincide con n·celda³ — que es justo lo que mide el gate (±2 %).
+// El suavizado de caja NO mueve ese nivel: en una pared plana deja 2/3 dentro y
+// 1/3 fuera, y el cruce 0.5 sigue exactamente a media celda.
+
+export interface SuperficieFrente {
+  positions: Float32Array;
+  normals: Float32Array;
+  indices: Uint32Array;
+  /** llenado (0..1) por VÉRTICE → el colormap de fill time */
+  fill: Float32Array;
+  /** volumen encerrado (mm³) por el teorema de la divergencia. Positivo = normales
+   *  hacia afuera. El gate lo compara contra n·celda³ de los vóxeles llenos. */
+  volumeMm3: number;
+  tris: number;
+}
+
+export function frenteSuperficie(o: {
+  nx: number; ny: number; nz: number; cellMm: number;
+  x0: number; y0: number; z0: number;
+  /** llenado por vóxel de la REJILLA (0..1); <0 = no es fundido (acero o inalcanzable) */
+  frente: Float32Array;
+  /** instante 0..1: se extrae la frontera de { 0 ≤ frente ≤ t } */
+  t: number;
+  /** pasadas de suavizado de caja sobre la ocupación (por defecto 1) */
+  suavizado?: number;
+}): SuperficieFrente {
+  const { nx, ny, nz, cellMm, x0, y0, z0, frente, t } = o;
+  const ISO = 0.5;
+  // RELLENO de 2 celdas VACÍAS alrededor. Sin él, una región llena que TOCA el borde
+  // de la rejilla deja la malla ABIERTA (ahí no se generan quads) y el volumen que
+  // encierra deja de significar nada. Medido antes del relleno, con el contenedor del
+  // libro: −403 % a t=0.6 — y con la ORIENTACIÓN intacta, porque un agujero no se ve
+  // en el devanado, solo en el volumen. Por eso el gate mide las dos cosas.
+  const PAD = 2;
+  const px = nx + 2 * PAD, py = ny + 2 * PAD, pz = nz + 2 * PAD;
+  const N = px * py * pz;
+  const idx = (i: number, j: number, k: number) => (k * py + j) * px + i;
+  /** llenado del vóxel REAL bajo la celda rellenada (−1 = borde de relleno o fuera) */
+  const fre = (i: number, j: number, k: number) => {
+    const a = i - PAD, b = j - PAD, c = k - PAD;
+    return (a < 0 || b < 0 || c < 0 || a >= nx || b >= ny || c >= nz) ? -1 : frente[(c * ny + b) * nx + a];
+  };
+
+  // ── 1. ocupación binaria del instante t (el borde nace en 0 por construcción)
+  let f = new Float32Array(N);
+  for (let k = 0; k < pz; k++) for (let j = 0; j < py; j++) for (let i = 0; i < px; i++) {
+    const v = fre(i, j, k);
+    f[idx(i, j, k)] = (v >= 0 && v <= t) ? 1 : 0;
+  }
+
+  // ── 2. suavizado de caja (redondea el escalón de vóxel, conserva el nivel 0.5)
+  const pasadas = o.suavizado ?? 1;
+  for (let s = 0; s < pasadas; s++) {
+    const g = new Float32Array(N);
+    for (let k = 0; k < pz; k++) for (let j = 0; j < py; j++) for (let i = 0; i < px; i++) {
+      let acc = 0, n = 0;
+      for (let dk = -1; dk <= 1; dk++) for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        const a = i + di, b = j + dj, c = k + dk;
+        if (a < 0 || b < 0 || c < 0 || a >= px || b >= py || c >= pz) continue;
+        acc += f[idx(a, b, c)]; n++;
+      }
+      g[idx(i, j, k)] = acc / n;
+    }
+    f = g;
+  }
+
+  // ── 3. un vértice por celda que cruza (las "esquinas" son CENTROS de vóxel)
+  const NI = px - 1, NJ = py - 1, NK = pz - 1;
+  const cellV = new Int32Array(Math.max(1, NI * NJ * NK)).fill(-1);
+  const ci = (i: number, j: number, k: number) => (k * NJ + j) * NI + i;
+  const CORN = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]];
+  const EDG = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
+  const P: number[] = [], FI: number[] = [];
+  for (let k = 0; k < NK; k++) for (let j = 0; j < NJ; j++) for (let i = 0; i < NI; i++) {
+    const s = new Array(8);
+    let dentro = 0;
+    for (let c = 0; c < 8; c++) {
+      s[c] = f[idx(i + CORN[c][0], j + CORN[c][1], k + CORN[c][2])];
+      if (s[c] > ISO) dentro++;
+    }
+    if (dentro === 0 || dentro === 8) continue;
+    let ax = 0, ay = 0, az = 0, n = 0;
+    for (const [a, b] of EDG) {
+      const fa = s[a], fb = s[b];
+      if ((fa > ISO) === (fb > ISO)) continue;
+      const w = (ISO - fa) / (fb - fa);
+      ax += CORN[a][0] + w * (CORN[b][0] - CORN[a][0]);
+      ay += CORN[a][1] + w * (CORN[b][1] - CORN[a][1]);
+      az += CORN[a][2] + w * (CORN[b][2] - CORN[a][2]);
+      n++;
+    }
+    ax /= n; ay /= n; az /= n;
+    // FILL TIME del vértice: el más RECIENTE de las esquinas ya llenas — en el
+    // frente que avanza vale ≈ t, y por eso el borde caliente se ve caliente.
+    let fill = 0;
+    for (let c = 0; c < 8; c++) {
+      const fv = fre(i + CORN[c][0], j + CORN[c][1], k + CORN[c][2]);
+      if (fv >= 0 && fv <= t && fv > fill) fill = fv;
+    }
+    cellV[ci(i, j, k)] = P.length / 3;
+    // −PAD: las coordenadas vuelven a la rejilla REAL (el relleno es interno)
+    P.push(x0 + (i - PAD + 0.5 + ax) * cellMm, y0 + (j - PAD + 0.5 + ay) * cellMm, z0 + (k - PAD + 0.5 + az) * cellMm);
+    FI.push(fill);
+  }
+
+  // ── 4. quads: por cada arista dual que cambia de signo, las 4 celdas que la rodean
+  const I: number[] = [];
+  const quad = (a: number, b: number, c: number, d: number, flip: boolean) => {
+    if (a < 0 || b < 0 || c < 0 || d < 0) return;
+    // devanado ANTIHORARIO visto desde fuera → normales hacia afuera → volumen POSITIVO.
+    // Al revés el volumen sale negativo (medido: −7941 en vez de +7941) y el material se
+    // ve del lado equivocado. El gate exige el signo, para que una regresión se vea.
+    if (flip) I.push(a, b, c, a, c, d); else I.push(a, c, b, a, d, c);
+  };
+  for (let k = 0; k < pz; k++) for (let j = 0; j < py; j++) for (let i = 0; i < px; i++) {
+    const v0 = f[idx(i, j, k)] > ISO;
+    if (i + 1 < px && j >= 1 && j <= py - 2 && k >= 1 && k <= pz - 2 && v0 !== (f[idx(i + 1, j, k)] > ISO))
+      quad(cellV[ci(i, j - 1, k - 1)], cellV[ci(i, j, k - 1)], cellV[ci(i, j, k)], cellV[ci(i, j - 1, k)], v0);
+    if (j + 1 < py && i >= 1 && i <= px - 2 && k >= 1 && k <= pz - 2 && v0 !== (f[idx(i, j + 1, k)] > ISO))
+      quad(cellV[ci(i - 1, j, k - 1)], cellV[ci(i, j, k - 1)], cellV[ci(i, j, k)], cellV[ci(i - 1, j, k)], !v0);
+    if (k + 1 < pz && i >= 1 && i <= px - 2 && j >= 1 && j <= py - 2 && v0 !== (f[idx(i, j, k + 1)] > ISO))
+      quad(cellV[ci(i - 1, j - 1, k)], cellV[ci(i, j - 1, k)], cellV[ci(i, j, k)], cellV[ci(i - 1, j, k)], v0);
+  }
+
+  // ── 5. normales por acumulación de caras + volumen por divergencia
+  const positions = Float32Array.from(P);
+  const indices = Uint32Array.from(I);
+  const normals = new Float32Array(positions.length);
+  let vol6 = 0;
+  for (let e = 0; e < indices.length; e += 3) {
+    const a = indices[e] * 3, b = indices[e + 1] * 3, c = indices[e + 2] * 3;
+    const ux = positions[b] - positions[a], uy = positions[b + 1] - positions[a + 1], uz = positions[b + 2] - positions[a + 2];
+    const vx = positions[c] - positions[a], vy = positions[c + 1] - positions[a + 1], vz = positions[c + 2] - positions[a + 2];
+    const nx2 = uy * vz - uz * vy, ny2 = uz * vx - ux * vz, nz2 = ux * vy - uy * vx;
+    normals[a] += nx2; normals[a + 1] += ny2; normals[a + 2] += nz2;
+    normals[b] += nx2; normals[b + 1] += ny2; normals[b + 2] += nz2;
+    normals[c] += nx2; normals[c + 1] += ny2; normals[c + 2] += nz2;
+    // V = (1/6)·Σ v0·(v1×v2)
+    vol6 += positions[a] * (positions[b + 1] * positions[c + 2] - positions[b + 2] * positions[c + 1])
+          + positions[a + 1] * (positions[b + 2] * positions[c] - positions[b] * positions[c + 2])
+          + positions[a + 2] * (positions[b] * positions[c + 1] - positions[b + 1] * positions[c]);
+  }
+  for (let v = 0; v < normals.length; v += 3) {
+    const L = Math.hypot(normals[v], normals[v + 1], normals[v + 2]) || 1;
+    normals[v] /= L; normals[v + 1] /= L; normals[v + 2] /= L;
+  }
+  return { positions, normals, indices, fill: Float32Array.from(FI), volumeMm3: vol6 / 6, tris: indices.length / 3 };
+}

@@ -68,7 +68,11 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // propio juicio del video: "arranca casi vacío: 100 %").
   const [tFill, setTFill] = useState(1);
   const tFillRef = useRef(1);
-  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number; e4?: Estacion4Dado; e4paint?: { part: any; flow: Float32Array; max: number }; n1?: any; frenteVert?: Float32Array; frenteQ?: Float32Array; voxPos?: Float32Array; cellMm?: number } | null>(null);
+  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number; e4?: Estacion4Dado; e4paint?: { part: any; flow: Float32Array; max: number }; n1?: any; frenteVert?: Float32Array; frenteQ?: Float32Array; voxPos?: Float32Array; cellMm?: number;
+    /** el campo de llenado en la REJILLA COMPLETA + su geometría: de aquí sale la
+     *  SUPERFICIE del fundido (`frenteSuperficie`). `frenteVert` está compactado a
+     *  los vóxeles de cavidad y no sirve para extraer una isosuperficie. */
+    frenteGrid?: Float32Array; grid?: { nx: number; ny: number; nz: number; cellMm: number; x0: number; y0: number; z0: number } } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
   // armado NO debe barrerlas cuando liveMoldSpec es null.
   const [feedDemo, setFeedDemo] = useState(false);
@@ -583,9 +587,17 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // "falso" el análisis: sin él no se ve la inyección, solo una pieza coloreada.
       const sprue = OCC.makeCone(oc, 4.75, 2.5, 60, { origin: [40, 20, 40], dir: [0, 0, 1] });
       setTFill(1); tFillRef.current = 1;
-      setCiclo({ ...ciclo, estacion: 4, e4, n1, frenteVert: fv, frenteQ, voxPos, cellMm: campo.cellMm, e4paint: undefined });
+      setCiclo({
+        ...ciclo, estacion: 4, e4, n1, frenteVert: fv, frenteQ, voxPos, cellMm: campo.cellMm, e4paint: undefined,
+        frenteGrid: n1.frente,
+        grid: { nx: campo.nx, ny: campo.ny, nz: campo.nz, cellMm: campo.cellMm, x0: campo.x0, y0: campo.y0, z0: campo.z0 },
+      });
       cursoSet(4, [], [...moldParts.filter((p: any) => p.role !== 'colada'),
         cursoPart(sprue, 'colada', 'BEBEDERO — por aquí entra el fundido (§6.3.1)', '#f4a742', 0.55, 0.4)]);
+      // EL ACERO SE HACE FANTASMA: Moldflow enseña la PIEZA, no la herramienta. Con los
+      // insertos a su opacidad normal el fundido queda detrás de TRES capas translúcidas
+      // blancas y sale lavado —medido: se veía blanco aunque el colormap fuera correcto—.
+      setMoldOpacity(Object.fromEntries(moldParts.filter((p: any) => p.role !== 'pieza' && p.role !== 'colada').map((p: any) => [p.role, 0.08])));
       setDocName('EL DADO · estación 4 — LLENADO (cap 5): ¿dónde muere el aire?');
       setCollapsed((c) => ({ ...c, features: false }));
     } catch (e) { console.warn('E4_ERR', e); }
