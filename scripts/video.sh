@@ -119,8 +119,18 @@ import glob, os, sys
 from PIL import Image
 import numpy as np
 fs = sorted(glob.glob(os.path.join(sys.argv[1], '*.png')))
-negros = [os.path.basename(f) for f in fs
-          if np.asarray(Image.open(f).convert('L').resize((96, 96)), dtype=float).mean() < 0.5]
+# QUÉ ES "NEGRO" — la definición importa, y la primera estuvo MAL (2026-08-11).
+# El gate medía sólo la MEDIA (<0.5) y reprobó a atomo-cr y atomo-cu por los cuadros del
+# pull-back: ahí el átomo es una chispa en un cuadro enorme y la media cae a 0.478… con
+# max=255, 9 934 píxeles por encima de 200 y medio megabyte de PNG. O sea cuadros BUENOS,
+# y una toma oscura no es un fallo — la doctrina de cine PIDE negro real de fondo.
+# Un cuadro negro DE VERDAD es un fallo de WebGL: no tiene UN SOLO píxel encendido. Esa es
+# la prueba específica. La media sola confunde "oscuro" con "vacío", y un gate que reprueba
+# lo bueno se termina ignorando, que es peor que no tenerlo.
+def vacio(f):
+    a = np.asarray(Image.open(f).convert('L'), dtype=float)
+    return int((a > 24).sum()) < 64          # <64 px encendidos en 8.3 Mpx = no se dibujó nada
+negros = [os.path.basename(f) for f in fs if vacio(f)]
 if negros:
     print(f'   ✗ {len(negros)} CUADROS NEGROS (primero {negros[0]}, último {negros[-1]})')
     sys.exit(1)
