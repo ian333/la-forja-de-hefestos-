@@ -6069,7 +6069,9 @@ export default function ForgeBRepStudio() {
                 {moldParts.map((pt) => {
                   // con 💧 encendido la colada la dibuja FeedFill (el revelado del
                   // frente) — el mesh estático encima lo tapaba por completo
-                  if (flowOn && pt.role === 'colada') return null;
+                  // en la E5 la colada la dibuja FeedFill (el fundido BAJANDO por ella):
+                  // el mesh estático encima la tapaba y además z-fighteaba.
+                  if ((flowOn || ciclo?.estacion === 5) && pt.role === 'colada') return null;
                   // EL FUNDIDO **ES** LA PIEZA: la superficie del llenado ocupa exactamente
                   // el volumen de la pieza. Dibujar las dos = la pieza translúcida (que se
                   // dibuja después, por transparente) tapa al fundido y el frente se ve
@@ -6137,6 +6139,13 @@ export default function ForgeBRepStudio() {
                 {ciclo?.frenteGrid && ciclo?.grid && (
                   <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} />
                 )}
+                {/* E5 · el fundido BAJA por la colada: bebedero → runner → pozo → compuerta.
+                    `FeedFill` ya existía y ya hacía exactamente esto (Figs 6.13-6.17); se
+                    REUSA tal cual — la lección de las ocho reescrituras del frente. */}
+                {ciclo?.estacion === 5 && (() => {
+                  const col = moldParts.find((p: any) => p.role === 'colada');
+                  return col ? <FeedFill part={col} delayS={1.6} /> : null;
+                })()}
                 {ciclo?.rayo && ciclo.estacion === 3 && ciclo.rayo.mitades.map((mi, k) => {
                   const pt = moldParts.find((p) => p.role === (mi.sube ? 'nucleo' : 'cavidad'));
                   return pt && !moldHidden[pt.role] ? <RayoPaint key={k} part={pt} clase={mi.clase} /> : null;

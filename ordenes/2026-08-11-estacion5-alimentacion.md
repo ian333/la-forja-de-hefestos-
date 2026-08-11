@@ -70,6 +70,11 @@ Si en algún momento me descubro escribiendo una fórmula del cap 6: **ALTO, ya 
 - src/forja/brep/MoldPanels.tsx
 - src/forja/brep/ForgeBRepStudio.tsx
 - scripts/ciclo-dado-test.cjs
+- scripts/llenado-video.cjs
+
+> ENMIENDA: `scripts/llenado-video.cjs` se añadió a TOCA a media obra — el juez de video
+> necesitaba un flag `E5=1` para caminar hasta la estación 5. No estaba declarado y **el
+> orden-gate lo cachó** (ROJO: "MODIFICADO sin declarar en TOCA"). Se declara, no se rodea.
 
 ## CREA
 - (nada)
@@ -102,8 +107,13 @@ panel decía 60/16 y el acero medía 52/14).
 
 - **los radios del sprue MEDIDOS = los que dice `designSprueFeed`** (±0.1 mm), rebanando
   el sólido con OCC como se hizo para diagnosticar. Éste es el bug que originó la orden.
-- **el eje del bebedero CENTRADO sobre la pieza**: medido del bbox del sólido, x=20 y=20
-  para el cubo de 40 (hoy: x=40, y=20 — sobre la arista).
+- **el bebedero ATERRIZA A UN COSTADO, no encima de la pieza.** ENMIENDA de esta orden
+  (2026-08-11, antes de codear): declaré "eje centrado x=20 y=20" y **está mal para esta
+  pieza**. El dado es una caja ABIERTA en la partición: un bebedero centrado caería en la
+  BOCA, donde no hay plástico. Lo correcto —y lo que dibuja el cap 6 para una caja
+  gateada en el labio— es bebedero **al lado** de la pieza sobre el plano de partición →
+  **runner** por la partición → **compuerta de canto** en el labio. Se mide: el eje del
+  bebedero cae FUERA del bbox de la pieza, y el gate TOCA el labio.
 - **LA ALIMENTACIÓN ESTRECHA**: `⌀sprue_base > ⌀runner > ⌀gate`, verificado numéricamente
   sobre los sólidos construidos, no sobre las intenciones. Es el criterio que hace que
   deje de verse "al revés".
@@ -125,5 +135,59 @@ panel decía 60/16 y el acero medía 52/14).
 - `node scripts/ciclo-dado-test.cjs` con los criterios nuevos, y `node scripts/orden-gate.cjs`
   VERDE (sin pipe) · censo IGUAL (0 `<Canvas>` nuevos).
 
-## CIERRE
-- (pendiente)
+## CIERRE (2026-08-11)
+
+- **orden vs entregado**: completo. `CREA: (nada)` se sostuvo — no se escribió UNA sola
+  fórmula del cap 6: todo salió de `feed.ts` y `gating.ts`, que ya estaban.
+
+- **gate `ciclo-dado-test`: 64/64** (eran 53). Lo MEDIDO sobre los sólidos con OCC:
+  - la alimentación ESTRECHA: **⌀8.14 → ⌀4.00 → 2.00 mm** (bebedero → runner → compuerta)
+  - el bebedero cae **fuera de la pieza**: x 46.0..54.1 contra una pieza que acaba en 40
+  - la compuerta **toca** la pieza: arranca en x=40.00 exacto
+  - runner y compuerta **pegados**: 41.00 = 41.00, sin hueco
+  - **CONTROL NEGATIVO**: el bebedero de ayer (⌀9.50 directo, x0=35.2) **REPRUEBA** —
+    ni estrecha ni sale de la pieza. Si el test no distingue el diseño viejo, no es prueba.
+  Y del motor: ⌀ de boquilla 5.00 (orificio + holgura, §6.3.1) · compuerta congela antes
+  que el runner 3.25 s vs 4.30 s (§7.1.5) · ⌀ de fresa estándar (§6.5.4) · regrind 15.8 %
+  ≤ 30 % (§6.2.3) · presión CERRADA 10.7 + 9.2 = 19.9 MPa ≤ 140 (§6.4).
+
+- **EL CRITERIO QUE FALTABA, y lo cazó el propio gate.** Con sólo el presupuesto de ΔP el
+  runner salía ⌀2.07 → steel-safe **⌀2 — el MISMO espesor de la compuerta**: la sección
+  dejaba de bajar y `ESTRECHA` daba VIOLA. O sea: la primera versión de la estación seguía
+  viéndose al revés, y el número lo dijo antes que el ojo. El libro pide más que presión:
+  **la compuerta debe congelar ANTES que el runner (§7.1.5)** — si el runner sella primero,
+  la puerta se queda abierta con la casa a medio empacar. Ese criterio manda sobre el ΔP y
+  sube el runner a ⌀4, que además lo hace mayor que la compuerta. La fila `runner-dia`
+  ahora dice quién manda, en vez de fingir que fue el steel-safe.
+
+- **Y aparece una TENSIÓN REAL del libro, no un error**: al agrandar el runner por el
+  congelamiento, su t_c sube a **16.3 s contra 8.5 s de la pieza** → la COLADA pasa a
+  mandar el ciclo (§6.4.7). La estación lo ADVIERTE y lo anuncia a la **E9**. No se
+  esconde: es el precio de que la puerta selle primero, y le toca decidir a la estación
+  que manda sobre el ciclo.
+
+- **EL SPRUE, cerrado**: ian dijo "se sigue viendo raro" y tenía razón por tres motivos,
+  ninguno la conicidad (que ya estaba medida bien): caía en la ESQUINA, terminaba en su
+  punto más ancho sobre una pared de 2 mm, y sus radios estaban **hardcodeados** mientras
+  `designSprueFeed` ya los calculaba y el resto de la app ya lo consumía. Los tres,
+  arreglados y medidos.
+
+- **ENMIENDA a mi propia orden, antes de codear**: declaré "eje centrado x=20 y=20" y
+  estaba MAL para esta pieza — el dado es una caja abierta en la partición y un bebedero
+  centrado caería en la BOCA. Lo correcto es al costado + runner + compuerta de canto en
+  el labio. Corregido en la orden antes de escribir código, no después.
+
+- **defecto propio cazado antes de que reventara**: `MoldPanels.tsx` NO importa `React`
+  (sólo `useMemo`), y usé `React.Fragment`. Habría tronado dentro del ErrorBoundary —
+  invisible para el arnés, como ya está documentado en la cabecera de `MoldScene`.
+
+- **VIDEO 4K APROBADO 7/7** → `dado-e5-alimentacion-4k.mp4` (3840×2160, 170 frames):
+  monótono · 0.01 % → 100 % · salto máx 0.73 % · avance 25→24.8 / 50→49.7 / 75→74.5 % ·
+  consola limpia · la imagen CAMBIA 0.38 · 0.35 · 0.16. Revisado con OJOS a media
+  película: el bebedero baja al COSTADO, el runner cruza la partición y entra al labio.
+  Entregado a `Downloads\FORJA-DADO` de AMBAS PCs + `/mnt/e/forja-videos`.
+
+- **preguntas abiertas**: (1) el runner que manda el ciclo — decisión de la E9;
+  (2) la regla √n como contraejemplo del libro, declarada y no implementada en esta vuelta;
+  (3) las isócronas como LÍNEAS sobre la superficie (Fig 5.1); (4) `computeWeldMask` sigue
+  sin cablear (weldLines = 0, declarado desde la orden del nivel 1).

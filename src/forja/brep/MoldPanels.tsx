@@ -5,7 +5,7 @@
  * de ARMANDO MOLDE. Reciben la BOLSA de useMoldStudio como prop — cero estado
  * propio, puro render. El grupo del ribbon se queda en el Studio (usa <Ic>).
  */
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
 import { Ic } from './icons';
@@ -548,7 +548,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -608,7 +608,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
         </button>
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
-      {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} />}
+      {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
+      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -773,7 +774,7 @@ function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4 }: { e3: import
 /** Estación 4 — LLENADO (cap 5). El lazo de convergencia se DIBUJA iterando (el libro
  *  itera; aquí se ve), y los defectos que el dado delata se ANUNCIAN con su estación
  *  destino: el proceso es un GRAFO CON RETORNOS (§1.5 Fig 1.9), no una fila. */
-function CicloE4({ e4 }: { e4: import('../mold/estudio-molde-datos').Estacion4Dado }) {
+function CicloE4({ e4, onE5 }: { e4: import('../mold/estudio-molde-datos').Estacion4Dado; onE5?: () => void }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   const max = Math.max(...e4.escalera, 1e-9);
   return (
@@ -822,6 +823,81 @@ function CicloE4({ e4 }: { e4: import('../mold/estudio-molde-datos').Estacion4Da
           <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 3 }}>
             el proceso del libro es un GRAFO CON RETORNOS (§1.5 Fig 1.9): el defecto se ANUNCIA en la estación que lo descubre y se ARREGLA en la que manda.
           </div>
+        </div>
+      )}
+      {onE5 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e5" onClick={() => onE5()} style={{ margin: '4px 6px 6px' }}
+          title="ALIMENTACIÓN (cap 6): bebedero dimensionado desde el orificio de la boquilla, runner steel-safe, pozo de escoria y compuerta de canto — y la cuenta CERRADA de presión que el cap 5 dejó abierta a propósito.">
+          ▶ estación 5 — ALIMENTACIÓN: que la colada ESTRECHE hacia la pieza
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 5 — ALIMENTACIÓN (cap 6). Nació de "se sigue viendo raro el sprue": la
+ *  conicidad estaba bien (medida), pero la colada terminaba en su punto MÁS ANCHO justo
+ *  donde tocaba una pared de 2 mm. Aquí la sección BAJA monótona hasta la compuerta, y
+ *  cada número sale de `feed.ts`/`gating.ts` — esta estación no inventa una sola fórmula. */
+function CicloE5({ e5, e5v }: {
+  e5: import('../mold/estudio-molde-datos').Estacion5Dado;
+  e5v?: { rTopMm: number; rBaseMm: number; runnerDiaMm: number; gateEspesorMm: number; xSprueMm: number; fueraDeLaPieza: boolean; estrechaMedido: boolean };
+}) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  const E = e5.estrecha;
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 5 — alimentación (cap 6): boquilla → bebedero → runner → pozo → compuerta → pieza
+      </div>
+      {/* LA CASCADA: es LO que se veía al revés, y ahora se lee de un golpe */}
+      <div data-testid="e5-cascada" style={{ padding: '4px 6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
+          {[{ n: 'bebedero', v: E.sprueBaseMm }, { n: 'runner', v: E.runnerMm }, { n: 'compuerta', v: E.gateMm }].map((x, i, a) => (
+            <Fragment key={x.n}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: Math.max(6, x.v * 3.2), height: Math.max(6, x.v * 3.2), borderRadius: '50%',
+                  background: GOLD, opacity: 0.85, margin: '0 auto' }} />
+                <div style={{ fontSize: 9.5, color: '#9fb2c8', marginTop: 2 }}>{x.n}</div>
+                <div style={{ fontSize: 10, color: GOLD }}>{x.v.toFixed(1)}</div>
+              </div>
+              {i < a.length - 1 && <span style={{ color: '#7f8da3' }}>▸</span>}
+            </Fragment>
+          ))}
+          <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: E.ok ? '#7ee0a0' : '#f27a6c' }}>
+            {E.ok ? 'ESTRECHA ✓' : 'NO ESTRECHA ✗'}
+          </span>
+        </div>
+      </div>
+      {e5v && (
+        <div data-testid="e5-medido" style={{ fontSize: 10.5, padding: '2px 6px',
+          color: e5v.estrechaMedido && e5v.fueraDeLaPieza ? '#7ee0a0' : '#f27a6c' }}>
+          📏 MEDIDO del sólido: ⌀{(2 * e5v.rBaseMm).toFixed(2)} → ⌀{e5v.runnerDiaMm.toFixed(2)} → {e5v.gateEspesorMm.toFixed(2)} mm ·
+          eje del bebedero en x={e5v.xSprueMm.toFixed(1)} {e5v.fueraDeLaPieza ? '(fuera de la boca ✓)' : '(¡cae sobre la boca!)'}
+          <div style={{ fontSize: 10, color: '#7f8da3' }}>no es lo que declara el panel: es el bbox de la malla que se está dibujando</div>
+        </div>
+      )}
+      {e5.filas.map((r) => (
+        <div key={r.id} className="fb-comp-row feat" data-testid={`e5-${r.id}`} title={r.porque}
+          style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
+            background: r.estado === 'VIOLA' ? 'rgba(242,122,108,0.10)' : 'rgba(255,255,255,0.02)',
+            borderLeft: `2px solid ${COL[r.estado]}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: COL[r.estado] }}>{r.estado} · {r.titulo}</div>
+          <div style={{ fontSize: 10.5, color: '#9fb2c8', fontFamily: "'JetBrains Mono', monospace" }}>{r.valor}</div>
+          <div style={{ fontSize: 10, color: '#7f8da3' }}>vs {r.limite} · {r.seccion}</div>
+        </div>
+      ))}
+      {e5.anuncios.length > 0 && (
+        <div data-testid="e5-anuncios" style={{ padding: '4px 6px 6px' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>
+            ⟲ lo que esta colada delata — y NO se arregla aquí ({e5.anuncios.length})
+          </div>
+          {e5.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e5-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
         </div>
       )}
     </>

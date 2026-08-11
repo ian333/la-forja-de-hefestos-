@@ -57,6 +57,9 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   await clic('btn-ciclo-e2');
   await clic('btn-ciclo-e3');
   await clic('btn-ciclo-e4');
+  // E5 (cap 6): la colada COMPLETA visible mientras la cavidad se llena — sin ella el
+  // fundido aparecía de la nada. Opcional para no romper la corrida de la E4 sola.
+  if (process.env.E5 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e5'); }
   await p.waitForFunction(() => !!(window.__forgeBrep && window.__forgeBrep.llenadoStats && window.__forgeBrep.llenadoStats()), null, { timeout: 300000 });
   await p.waitForTimeout(2500);
 
