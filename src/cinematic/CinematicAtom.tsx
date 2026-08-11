@@ -65,15 +65,27 @@ const BANDA_COLA = 3.4;       // tras la última banda: el campo B y el cierre
 // que viven justo ahí, RELLENABAN el nodo y la mancuerna se leía como una bola alargada
 // (medido en el neón, 2026-08-11). Se queda un rastro para no perder el contexto de dónde
 // vive el orbital, pero la forma manda.
-const BANDA_PISO = 0.05;
-const BANDA_ENCUADRE = 3.2;   // distancia de cámara en radios de la banda (ver bandaRadio)
+// 0.03: el piso es POR CANAL, y el cromo tiene QUINCE. Catorce canales al 0.05 suman 0.70
+// contra el 1.0 del protagonista — o sea que el fondo casi empataba (medido a 1:1: el cuadro
+// del 3p salía tapizado de puntos azules de otras capas y el 3p era una mancha al centro).
+// El piso tiene que valer poco por canal PORQUE SON MUCHOS.
+const BANDA_PISO = 0.03;
+// Distancia de cámara en radios del orbital. 2.0, no 3.2: el radio que se usa es el p90 y el
+// GRUESO de la nube vive mucho más adentro — medido en el cromo (scripts/radios-orbitales.py),
+// el 3p tiene p50=0.93 contra p90=1.50. Encuadrando a 3.2·p90 el orbital ocupaba un quinto del
+// cuadro y el resto lo llenaban los otros canales con su piso.
+const BANDA_ENCUADRE = 2.0;
 // AL MAGNIFICAR UNA BANDA HAY QUE ENGORDAR EL PUNTO. Medido en el cromo: una banda sola
 // aporta ~50 000 puntos y, repartidos en los 8.3 Mpx del cuadro 4K, cubren el 2.4 % — o sea
 // puntitos sueltos sobre negro, no una nube (media 1.5/255 en las ocho bandas). El átomo
 // COMPLETO llena con sus ~200 000. Engordar el sprite ×3 sube la cobertura al orden del 20 %
 // y devuelve la masa luminosa continua del canon, sin inventar puntos que no se calcularon.
-const BANDA_PUNTO = 3.0;
-const BANDA_LUZ = 1.6;        // y un empujón de alfa: menos capas sumando en aditivo
+// 4.6, no 3.0. La cobertura de pantalla NO depende del encuadre —al acercar la cámara el
+// punto se achica en la misma proporción, medido: apretar de 2.0 a 1.3 BAJÓ los píxeles
+// encendidos de 4.4 % a 3.1 %—; depende sólo del ÁREA del sprite. Engordarlo es la única
+// palanca que llena el cuadro, y llenarlo es mandato de la doctrina de cine.
+const BANDA_PUNTO = 4.6;
+const BANDA_LUZ = 2.2;        // y un empujón de alfa: menos capas sumando en aditivo
 
 /**
  * Segundos por banda. Pocas → cada una respira; muchas → barrido ágil (el Gd tiene 14).
@@ -107,7 +119,7 @@ function durationForShells(n: number): number {
  *   · Durante el barrido → 1 si es su turno, BANDA_PISO si le toca a otra.
  *   · Después → todas vuelven a 1 y el átomo se ve COMPLETO para el cierre.
  */
-function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1): number {
+function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1, l = 0): number {
   const nacer = fadeIn(time, shellRevealTime(idx, total), 0.85);
   const mia = win(time, ...bandaWindow(idx, total), 0.45);
   const barrido = win(time, BANDA_T0, bandaWindow(total - 1, total)[1], 0.45);
@@ -117,7 +129,12 @@ function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1): n
   // mientras el 2p⁶ saturaba, y en el turno del 3s² la pantalla se veía ROJA porque el
   // 2p⁶ apagado al piso seguía ganándole. Se compensa con √(eMax/e) — raíz, no lineal:
   // el brillo aditivo ya crece sublinealmente con la densidad de puntos.
-  const gan = Math.min(2.6, Math.sqrt(eMax / Math.max(1, e)));
+  let gan = Math.min(2.6, Math.sqrt(eMax / Math.max(1, e)));
+  // LOS `s` NECESITAN MÁS LUZ. No tienen lóbulos que concentren puntos: reparten los mismos
+  // electrones sobre TODA la esfera, así que a igual encuadre su densidad en pantalla es la
+  // más baja de todas y salen deslavados entre orbitales que sí concentran (medido en el 3s
+  // del cromo). Es una compensación de LEGIBILIDAD por geometría, no un dato cambiado.
+  if (l === 0) gan *= 1.7;
   return nacer * lerp(1, BANDA_PISO + (gan - BANDA_PISO) * mia, barrido);
 }
 
@@ -683,7 +700,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
       // revealAll: nube COMPLETA desde t=0 (átomos que ya existen, p.ej. los dos O
       // que se acercan a formar O₂ — no deben "materializarse" capa por capa).
       mask[i] = revealAll ? 1
-        : bandaMask(time, i, bundle.shells.length, bundle.shells[i].electrons ?? 1, eMax);
+        : bandaMask(time, i, bundle.shells.length, bundle.shells[i].electrons ?? 1, eMax, bundle.shells[i].l);
     }
     // rotRate=0 en moléculas (la nube debe quedar alineada con los núcleos; la
     // cámara orbita). En átomos gira para dar vida al cúmulo.
@@ -973,10 +990,22 @@ export function CameraRig({ extent, time, vertical, tv, seed, shellR, orbs }: {
       const a = camDirOrbital(orbs[i].l, orbs[i].m ?? 0);
       const b = camDirOrbital(orbs[j].l, orbs[j].m ?? 0);
       const d: Vec3 = [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
+      // ⚠ LA CÁMARA TIENE QUE GIRAR CON LA NUBE. camDirOrbital habla en el marco del ORBITAL
+      // (el pₓ apunta a x), pero el shader dibuja la nube ROTADA `rotNube(time)` alrededor de
+      // Y — y aunque el barrido la frena, la deja parada en 18.06 rad ≈ 314°, no en cero. Sin
+      // aplicar esa misma rotación aquí, la cámara apuntaba a un eje del laboratorio donde el
+      // orbital YA NO ESTABA, y salía de frente en vez de perfil: un círculo, no una mancuerna.
+      //
+      // Esto explica el síntoma que llevaba todo el día viendo y no entendía: el p_y SIEMPRE
+      // se veía bien y los otros no. Su eje es Y, que es el EJE DE GIRO — el único invariante.
+      // La pista estaba en los datos desde la primera captura.
+      const rn = rotNube(time);
+      const cr = Math.cos(rn), sr = Math.sin(rn);
+      const wx = cr * d[0] + sr * d[2], wz = -sr * d[0] + cr * d[2];
       // deriva: giro lento alrededor de Y para que la toma respire sin perder el perfil
       const g = 0.20 * Math.sin(time * 0.35);
       const cg = Math.cos(g), sg = Math.sin(g);
-      const dx = cg * d[0] + sg * d[2], dz = -sg * d[0] + cg * d[2];
+      const dx = cg * wx + sg * wz, dz = -sg * wx + cg * wz;
       const L = Math.hypot(dx, d[1], dz) || 1;
       const R = rb * BANDA_ENCUADRE;
       pos = [(dx / L) * R, (d[1] / L) * R, (dz / L) * R];
