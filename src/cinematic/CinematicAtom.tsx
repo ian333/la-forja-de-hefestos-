@@ -36,16 +36,105 @@ import {
 } from '@/lib/chem/quantum/atom-builder';
 import { ORBITALS, sampleOrbital } from '@/lib/chem/quantum/orbitals';
 import { loadAtomAbInitio, bundleFromAbInitio } from '@/lib/chem/quantum/atom-abinitio';
+import { win } from './capas';
 
-// Duración VARIABLE por # de subcapas: el zoom-out (regreso) dura MÁS en átomos
-// con muchas órbitas, para que la cascada de capas/etiquetas alcance a terminar
-// completa antes de disolverse en el logo (lo pidió el user). 18s base, cap 23s.
+// ── EL BEAT DE LAS BANDAS ────────────────────────────────────────────────────
+// Ian, 2026-08-11: "se pueden opacar y mostrar nubes individuales — las nubes SON las
+// bandas y los orbitales". Hasta hoy la cascada de `uRevealMask` encendía cada subcapa
+// y la dejaba PRENDIDA para siempre: al segundo 2 el átomo era una bola con todo
+// encima, que es justo el defecto que Ian ya había cazado en la serie de moléculas
+// ("ACÁ ESTÁ ENCENDIDO TODO TODO EL TIEMPO").
+//
+// El mecanismo es el del GANADOR (O₂/N₂), copiado literal: cuando una nube está en
+// turno sube a 1 y las OTRAS caen a un PISO — no a cero. Las partículas no
+// desaparecen, se OPACAN; así el ojo lee "es la misma nube, ahora miro esta parte"
+// en vez de "apareció otra cosa". Allá era `sigmaMul = lerp(1, ..., solo)`; aquí es
+// `bandaMask`, y la ventana de cada banda es la MISMA que ya usaba su etiqueta, así
+// que el nombre `3d⁷` se enciende exactamente cuando su nube toma el escenario.
+const BANDA_T0 = 15.2;        // arranca el barrido (idéntico al que ya tenían las etiquetas)
+const BANDA_COLA = 3.4;       // tras la última banda: el campo B y el cierre
+const BANDA_PISO = 0.12;      // las nubes que no están en turno
+const BANDA_ENCUADRE = 3.2;   // distancia de cámara en radios de la banda (ver bandaRadio)
+// AL MAGNIFICAR UNA BANDA HAY QUE ENGORDAR EL PUNTO. Medido en el cromo: una banda sola
+// aporta ~50 000 puntos y, repartidos en los 8.3 Mpx del cuadro 4K, cubren el 2.4 % — o sea
+// puntitos sueltos sobre negro, no una nube (media 1.5/255 en las ocho bandas). El átomo
+// COMPLETO llena con sus ~200 000. Engordar el sprite ×3 sube la cobertura al orden del 20 %
+// y devuelve la masa luminosa continua del canon, sin inventar puntos que no se calcularon.
+const BANDA_PUNTO = 3.0;
+const BANDA_LUZ = 1.6;        // y un empujón de alfa: menos capas sumando en aditivo
+
+/** Segundos por banda. Pocas → cada una respira; muchas → barrido ágil (el Gd tiene 14). */
+function bandaDur(total: number): number {
+  return total <= 4 ? 2.4 : total <= 8 ? 1.9 : 1.35;
+}
+/** Ventana [t0,t1] en que la subcapa `idx` es la protagonista. */
+function bandaWindow(idx: number, total: number): [number, number] {
+  const d = bandaDur(total);
+  const t0 = BANDA_T0 + idx * d;
+  return [t0, t0 + d];
+}
+
+// Duración VARIABLE por # de subcapas: ahora la define el BARRIDO DE BANDAS —
+// gancho+viaje+mirada (15.2s, congelados) + una ventana por subcapa + la cola del
+// campo magnético. H (1 banda) ≈ 21s; Fe (7) ≈ 32s; Gd (14) ≈ 37s.
 let RUN_DURATION = 18;
 function durationForShells(n: number): number {
-  // La cola (15s→fin) es el BEAT DE CONTEMPLACIÓN — toma LARGA, lenta y lejana
-  // (la "parte lenta" que pidió Ian) para LEER la forma de la nube + el campo.
-  // Base alta → ~10s de contemplación tras los 15s de gancho+viaje.
-  return Math.min(22, Math.max(18, Math.round((18.5 + n * 0.32) * 10) / 10));
+  return Math.round((BANDA_T0 + Math.max(1, n) * bandaDur(n) + BANDA_COLA) * 10) / 10;
+}
+
+/**
+ * Opacidad de la subcapa `idx` en el instante t.
+ *   · Antes de 15.2s → la cascada de nacimiento de siempre (0.3-2.0s), intacta.
+ *   · Durante el barrido → 1 si es su turno, BANDA_PISO si le toca a otra.
+ *   · Después → todas vuelven a 1 y el átomo se ve COMPLETO para el cierre.
+ */
+function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1): number {
+  const nacer = fadeIn(time, shellRevealTime(idx, total), 0.85);
+  const mia = win(time, ...bandaWindow(idx, total), 0.45);
+  const barrido = win(time, BANDA_T0, bandaWindow(total - 1, total)[1], 0.45);
+  // COMPENSACIÓN DE POBLACIÓN. Los puntos se reparten POR ELECTRÓN, así que una banda
+  // de 1 e⁻ tiene diez veces menos puntos que una de 10 y al mismo alfa se ve diez veces
+  // más tenue. Medido en el cromo: con ganancia plana el 4s¹ salía a media 1.1/255 (negro)
+  // mientras el 2p⁶ saturaba, y en el turno del 3s² la pantalla se veía ROJA porque el
+  // 2p⁶ apagado al piso seguía ganándole. Se compensa con √(eMax/e) — raíz, no lineal:
+  // el brillo aditivo ya crece sublinealmente con la densidad de puntos.
+  const gan = Math.min(2.6, Math.sqrt(eMax / Math.max(1, e)));
+  return nacer * lerp(1, BANDA_PISO + (gan - BANDA_PISO) * mia, barrido);
+}
+
+/**
+ * Posición CONTINUA dentro del barrido: 0 al empezar la banda 0, `total` al acabar
+ * la última. Fuera del barrido devuelve null (la escena usa sus valores de siempre).
+ */
+function bandaFase(time: number, total: number): number | null {
+  const u = (time - BANDA_T0) / bandaDur(total);
+  return u <= 0 || u >= total ? null : u;
+}
+
+/**
+ * EL RADIO QUE LA CÁMARA DEBE MIRAR EN ESTE INSTANTE.
+ *
+ * ⚠ ESTO NO ES ESTÉTICA, ES LO QUE HACE QUE EL BARRIDO EXISTA (medido 2026-08-11):
+ * con la cámara clavada al extent del átomo completo, las bandas internas salían en
+ * cuadros de media 1.0/255 — NEGROS. El 1s del cromo vive dentro del 1 % del radio
+ * atómico: desde afuera es sub-píxel, y soloarlo no muestra nada. Para VER una banda
+ * hay que estar a la escala de esa banda.
+ *
+ * Efecto secundario y honesto: como las subcapas salen de adentro hacia afuera, la
+ * cámara RETROCEDE banda por banda. El espectador viaja hacia afuera por el átomo.
+ */
+function bandaRadio(time: number, shellR: Float32Array, piso = 0): number | null {
+  const n = shellR.length;
+  const u = bandaFase(time, n);
+  if (u === null) return null;
+  const i = Math.min(n - 1, Math.floor(u));
+  const frac = u - i;
+  // Se SOSTIENE el 65 % de la ventana (para leer la forma) y viaja en el 35 % final.
+  const r = lerp(shellR[i], shellR[Math.min(n - 1, i + 1)], smoothstep((frac - 0.65) / 0.35));
+  // PISO: el 1s de un átomo pesado es más chico que el propio cúmulo de nucleones, y sin
+  // tope la cámara se metía DENTRO del núcleo (medido: cuadro amarillo al 90 % de píxeles
+  // encendidos). Una banda se mira desde afuera o no se mira.
+  return Math.max(r, piso);
 }
 const SAMPLES_PER_ELECTRON = 16000;
 
@@ -208,11 +297,10 @@ function shellRevealTime(idx: number, total: number): number {
 // otra conforme la cámara sale. Se reparte sobre todo el regreso variable, así
 // que termina justo antes del cierre sin importar cuántas capas haya.
 function shellLabelTime(idx: number, total: number): number {
-  // TODAS las bandas deben aparecer antes del cierre y SOSTENERSE: termina la
-  // cascada ~4.5s antes del fin de la cinemática (no pegada al corte al outro).
-  const start = 15.2, end = RUN_DURATION - 1.0;
-  if (total <= 1) return start;
-  return start + (idx / Math.max(1, total - 1)) * (end - start);
+  // La etiqueta enciende cuando SU nube toma el escenario: mismo reloj que
+  // `bandaMask`. Antes la cascada de nombres corría por su cuenta y podías estar
+  // leyendo `3d⁷` mientras brillaba el `1s²`.
+  return bandaWindow(idx, total)[0];
 }
 
 // ── Sample bundle ───────────────────────────────────────────────────
@@ -353,6 +441,19 @@ uniform float uPix;
 // la nube se lee como motas separadas. El canon dice "achicar -> SUBIR BRILLO"; esto es el
 // brillo. Vale 1.0 en el render 4K (uPix=1) o sea que el VIDEO NO CAMBIA.
 uniform float uPixGain;
+// uBandScale = EL ENCUADRE POR BANDA. gl_PointSize va como aSize/distancia, y en el barrido
+// la distancia es el radio de la BANDA (no el del átomo): entre el 1s y el 4s del cromo eso
+// son dos ordenes de magnitud. Sin compensar, las bandas internas salian con puntos enormes
+// (CONFETI medido: motas separadas llenando el cuadro) y las externas chocaban contra el
+// piso de 1.2 px y se veian NEGRAS (media 1.07/255). Valiendo 3.2*r_banda/extent, el punto
+// conserva EXACTAMENTE el tamano en pantalla que tiene en la vista del atomo completo, que
+// es el del canon. Vale 1.0 fuera del barrido, o sea que nada mas cambia.
+uniform float uBandScale;
+// uSizeMask = COMPENSACION DE POBLACION EN EL TAMANO, por subcapa. El alfa no basta: subirlo
+// satura los pocos puntos que hay pero la nube sigue siendo puntos sueltos sobre negro. Lo
+// que le falta a una banda flaca es COBERTURA, y eso se compra con area. Medido en el cromo:
+// el 4s tiene UN electron (8 300 puntos) contra los seis del 2p (50 000) y salia invisible.
+uniform float uSizeMask[16];
 uniform float uCoreFloor;
 attribute vec3 aColor;
 attribute float aSize;
@@ -425,7 +526,7 @@ void main() {
   vBokeh = coc;
   float spread = 1.0 + coc * 4.0;
   float maxSz = (uBokeh > 0.0001 ? 58.0 : 22.0) * uPix;
-  gl_PointSize = clamp(aSize * 520.0 * (0.7 + 0.5 * pulse) / -mv.z * spread * uPix, 1.2, maxSz);
+  gl_PointSize = clamp(aSize * uBandScale * uSizeMask[idx] * 520.0 * (0.7 + 0.5 * pulse) / -mv.z * spread * uPix, 1.2, maxSz);
 }
 `;
 const POINTS_FRAG = /* glsl */ `
@@ -462,7 +563,7 @@ function pixGainExp(): number {
   return Number.isFinite(v) ? Math.max(0, Math.min(2, v)) : 1;
 }
 
-export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, brightness = 1, bokeh = 0, rotRate = 0.55, revealAll = false, live = false }: { bundle: AtomBundle; time: number; holeRadius?: number; coreRadius?: number; brightness?: number; bokeh?: number; rotRate?: number; revealAll?: boolean; live?: boolean }) {
+export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, brightness = 1, bokeh = 0, rotRate = 0.55, revealAll = false, live = false, bandScale = 1 }: { bundle: AtomBundle; time: number; holeRadius?: number; coreRadius?: number; brightness?: number; bokeh?: number; rotRate?: number; revealAll?: boolean; live?: boolean; bandScale?: number }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const sprite = useMemo(() => makeSpriteTexture(), []);
   const { gl } = useThree();          // para leer el alto REAL del framebuffer (uPix)
@@ -486,19 +587,36 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     uCoreR:      { value: 0 },
     uPix:        { value: 1 },
     uPixGain:    { value: 1 },
+    uBandScale:  { value: 1 },
+    uSizeMask:   { value: new Float32Array(16).fill(1) },
     uCoreFloor:  { value: 0.16 },
     uBright:     { value: 1 },
     uBokeh:      { value: 0 },
   }), [sprite]);
 
+  // Banda más poblada del átomo: la referencia contra la que se compensan las flacas.
+  const eMax = useMemo(
+    () => bundle.shells.reduce((m, s) => Math.max(m, s.electrons ?? 1), 1),
+    [bundle],
+  );
   useEffect(() => {
     if (!matRef.current) return;
     const mask = matRef.current.uniforms.uRevealMask.value as Float32Array;
+    const smask = matRef.current.uniforms.uSizeMask.value as Float32Array;
+    // El área del sprite crece con el CUADRADO del tamaño, así que para recuperar un factor
+    // `p` de cobertura basta con √p en el radio. Solo se aplica a la banda EN TURNO y solo
+    // dentro del barrido: fuera de él vale 1 y el átomo se ve exactamente como siempre.
+    const fase = bundle.shells.length > 0 ? bandaFase(time, bundle.shells.length) : null;
     for (let i = 0; i < 16; i++) {
-      if (i >= bundle.shells.length) { mask[i] = 0; continue; }
+      if (i >= bundle.shells.length) { mask[i] = 0; smask[i] = 1; continue; }
+      const mia = revealAll || fase === null
+        ? 0 : win(time, ...bandaWindow(i, bundle.shells.length), 0.45);
+      const p = Math.min(4.0, eMax / Math.max(1, bundle.shells[i].electrons ?? 1));
+      smask[i] = 1 + (Math.sqrt(p) - 1) * mia;
       // revealAll: nube COMPLETA desde t=0 (átomos que ya existen, p.ej. los dos O
       // que se acercan a formar O₂ — no deben "materializarse" capa por capa).
-      mask[i] = revealAll ? 1 : fadeIn(time, shellRevealTime(i, bundle.shells.length), 0.85);
+      mask[i] = revealAll ? 1
+        : bandaMask(time, i, bundle.shells.length, bundle.shells[i].electrons ?? 1, eMax);
     }
     // rotRate=0 en moléculas (la nube debe quedar alineada con los núcleos; la
     // cámara orbita). En átomos gira para dar vida al cúmulo.
@@ -517,9 +635,10 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     matRef.current.uniforms.uPixGain.value = gain;
     matRef.current.uniforms.uCoreFloor.value = 0.16 / gain;   // gain=1 (video) ⇒ 0.16 EXACTO
     matRef.current.uniforms.uBright.value = brightness;
+    matRef.current.uniforms.uBandScale.value = bandScale;
     matRef.current.uniforms.uBokeh.value = bokeh;
     matRef.current.uniformsNeedUpdate = true;
-  }, [time, bundle.shells.length, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll, pk]);
+  }, [time, bundle, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll, pk, eMax, bandScale]);
 
   return (
     <points geometry={geo} frustumCulled={false}>
@@ -750,13 +869,28 @@ function trajectoryOffset(seed: number, tv: number): { dAzim: number; dElev: num
   };
 }
 
-export function CameraRig({ extent, time, vertical, tv, seed }: {
+export function CameraRig({ extent, time, vertical, tv, seed, shellR }: {
   extent: number; time: number; vertical: boolean; tv: number; seed: number;
+  shellR?: Float32Array | null;
 }) {
   const { camera } = useThree();
   useEffect(() => {
     const { cut, localT } = findCut(time);
-    const { pos, fov, lookAt } = cut.cam(localT, extent);
+    // Durante el barrido de bandas la cámara vive a la ESCALA DE LA BANDA en turno
+    // (ver bandaRadio). Fuera del barrido, el extent del átomo completo de siempre.
+    // El piso va en radios del cúmulo de nucleones (nucR = extent·0.0010): 14× deja al
+    // núcleo como una perla dentro de la banda, no como una pared.
+    const rb = cut.name === 'regreso' && shellR ? bandaRadio(time, shellR, extent * 0.014) : null;
+    // CÁMARA PROPIA DEL BARRIDO — no puede heredar la curva de `regreso`.
+    // `regreso` arranca PEGADO al núcleo y se abre con pow(143, land); su `land` no llega
+    // a 1 hasta ~3 s después de que empieza el barrido, así que las primeras bandas se
+    // encuadraban al 3.4 % de su distancia y la cámara terminaba DENTRO del cúmulo de
+    // nucleones (medido: cuadro de burbujas naranjas al 90 % de píxeles encendidos).
+    // Aquí la distancia es exactamente el radio de la banda × encuadre, y la órbita es
+    // lenta para leer la forma.
+    const { pos, fov, lookAt } = rb !== null
+      ? { pos: sph(rb * BANDA_ENCUADRE, 0.26, 2.9 + time * 0.17), fov: 34, lookAt: undefined }
+      : cut.cam(localT, extent);
 
     // Perturbación de trayectoria (no-op si tv=0)
     const off = trajectoryOffset(seed, tv);
@@ -786,7 +920,7 @@ export function CameraRig({ extent, time, vertical, tv, seed }: {
       cam.far = Math.max(200, extent * 30);
       cam.updateProjectionMatrix();
     }
-  }, [time, extent, camera, vertical, tv, seed]);
+  }, [time, extent, camera, vertical, tv, seed, shellR]);
   return null;
 }
 
@@ -1014,11 +1148,17 @@ function AtomTitle({ element, shells, time, vertical }: {
           const shOpacity = smoothstep((time - revealAt) / 0.7);
           if (shOpacity < 0.01) return null;
           const hex = subshellColor(sh.n, sh.l);
+          // La banda EN TURNO se agranda y brilla; las ya vistas se quedan de testigo
+          // a media luz. Es el mismo `mia` que gobierna su nube, así que el nombre y
+          // la forma laten juntos — sin eso el ojo no sabe cuál de las dos está leyendo.
+          const mia = win(time, ...bandaWindow(i, shells.length), 0.45);
           return (
             <span key={sh.label} style={{
-              opacity: shOpacity,
+              opacity: shOpacity * (0.42 + 0.58 * mia),
               color: hex,
-              textShadow: `0 0 28px ${hex}99, 0 2px 12px rgba(0,0,0,0.85)`,
+              transform: `scale(${1 + 0.22 * mia})`,
+              display: 'inline-block',
+              textShadow: `0 0 ${28 + 26 * mia}px ${hex}${mia > 0.5 ? 'dd' : '99'}, 0 2px 12px rgba(0,0,0,0.85)`,
             }}>
               {fmtShellLabel(sh.label)}
             </span>
@@ -1059,9 +1199,11 @@ function physOpacity(time: number): number {
 // CONTEMPLACIÓN (cámara lejos, a escala atómica envolviendo la nube), NO encima
 // del núcleo donde leería como nuclear y chocaría. Sale a ~RUN_DURATION-1.2.
 function bFieldOpacity(time: number): number {
-  // El campo entra DESPUÉS del beat de la nube (15-19s = ver la FORMA rotando),
-  // para que no compitan. 19.4s → fin.
-  return smoothstep((time - 17.3) / 0.7) * Math.min(1, Math.max(0, (RUN_DURATION - 0.7 - time) / 0.7));
+  // El campo entra DESPUÉS del barrido de bandas (que ahora dura lo que tenga que
+  // durar: 3 subcapas en el C, 14 en el Gd), para que no compitan. Antes el 17.3
+  // estaba QUEMADO y en un átomo pesado el dipolo aparecía encima de la banda 4.
+  const t0 = RUN_DURATION - BANDA_COLA;
+  return smoothstep((time - t0) / 0.7) * Math.min(1, Math.max(0, (RUN_DURATION - 0.7 - time) / 0.7));
 }
 
 // CAMPO ELÉCTRICO — el núcleo tiene carga +Ze. Líneas de campo radiales (Coulomb,
@@ -1445,6 +1587,29 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
     return RUN_DURATION;
   }, [bundle]);
   const extent = useMemo(() => atomExtent(element), [element]);
+  // RADIO DE CADA BANDA, medido de la MISMA nube que se dibuja (p90 de |r| entre sus
+  // puntos) — así las unidades cuadran solas y no hay una tabla que se pueda desfasar
+  // del .bin. Se fuerza monótono: una capa interna nunca pide más distancia que una
+  // externa, aunque su cola difusa llegue lejos.
+  const shellR = useMemo(() => {
+    if (!bundle) return null;
+    const n = bundle.shells.length;
+    const acc: number[][] = Array.from({ length: n }, () => []);
+    const P = bundle.positions, S = bundle.shellIdx;
+    for (let k = 0; k < S.length; k++) {
+      const i = S[k] | 0;
+      if (i < n) acc[i].push(Math.hypot(P[k * 3], P[k * 3 + 1], P[k * 3 + 2]));
+    }
+    const out = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const a = acc[i];
+      if (!a.length) { out[i] = extent; continue; }
+      a.sort((x, y) => x - y);
+      out[i] = Math.max(1e-4, a[Math.floor(a.length * 0.90)]);
+    }
+    for (let i = 1; i < n; i++) out[i] = Math.max(out[i], out[i - 1]);
+    return out;
+  }, [bundle, extent]);
   const nuc = useMemo(() => nucleusInfo(element), [element]);
   // Radio del núcleo proporcional al átomo (~escala real-ish): de lejos es un
   // punto diminuto, y solo al VIAJAR hasta él se revela como cúmulo de nucleones.
@@ -1561,13 +1726,31 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         {live
           ? <OrbitControls enablePan={false} enableDamping dampingFactor={0.08}
               minDistance={extent * 0.004} maxDistance={extent * 2.2} autoRotate autoRotateSpeed={0.55} />
-          : <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} />}
+          : <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} shellR={shellR} />}
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         {bundle && <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
-          coreRadius={coreR}
+          /* La atenuación del corazón existe para que el centro no reviente a blanco
+             cuando TODAS las capas están encendidas. Durante el barrido solo hay una
+             protagonista, así que no hay nada que reventar — y con el coreR normal se
+             comía justo las bandas internas (1s/2s/3s del Cr viven dentro del 11.8 %
+             del extent, que es exactamente el radio de atenuación). Se acota para que
+             nunca muerda la banda en turno. */
+          coreRadius={(() => {
+            const rb = shellR ? bandaRadio(time, shellR, extent * 0.014) : null;
+            return rb === null ? coreR : Math.min(coreR, rb * 0.30);
+          })()}
+          bandScale={(() => {
+            const rb = shellR ? bandaRadio(time, shellR, extent * 0.014) : null;
+            return rb === null ? 1 : (rb * BANDA_ENCUADRE * BANDA_PUNTO) / extent;
+          })()}
           live={live}
           rotRate={1.15}
-          brightness={Math.min(0.82, 3.4 / Math.sqrt(zBrillo)) * (1 - 0.45 * smoothstep((time - 17.3) / 0.8))} />}
+          /* La nube cede 45 % de brillo para que el campo B se lea — pero SOLO cuando el
+             campo entra, no a un segundo quemado (antes 17.3, que en el Fe caía encima de
+             la banda 2 y apagaba el barrido entero). Mismo reloj que bFieldOpacity. */
+          brightness={Math.min(0.82, 3.4 / Math.sqrt(zBrillo))
+            * (1 - 0.45 * smoothstep((time - (duration - BANDA_COLA)) / 0.8))
+            * (shellR && bandaFase(time, shellR.length) !== null ? BANDA_LUZ : 1)} />}
         {/* Física visible (gated a la mirada al núcleo): campo eléctrico de
             Coulomb, campo magnético dipolar si es paramagnético, y decaimiento
             radiactivo si el isótopo es inestable. Todo determinista en t. */}
