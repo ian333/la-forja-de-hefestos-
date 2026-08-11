@@ -450,8 +450,14 @@ def main():
               f"{len(shells):>9} {size/1024:>6.0f}   {etiquetas}", flush=True)
         # aviso honesto: con sarc-dkh (lantánidos/actínidos) la energía NO es comparable
         energia_fiable = base != 'sarc-dkh'
+        # QUÉ VERSIÓN DESCRIBE ESTA ENTRADA. Sin esto el manifiesto MIENTE por omisión: tras
+        # recalcular sólo unos cuantos con ORB=1, `shells` significa "orbitales" para ésos y
+        # "subcapas" para los demás, sin ninguna marca. Una verificación de configuraciones
+        # contra NIST leería 15 canales en el cromo y concluiría que la config está mal.
         manifiesto.append(dict(Z=Z, sym=SIMBOLO[Z-1], ok=True, basis=base, method=metodo,
                                energia_fiable=energia_fiable,
+                               bin_version=3 if ORB else VERSION_BIN,
+                               por_orbital=bool(ORB),
                                energy_ha=float(mf.e_tot), L_bohr=L, points=len(pts),
                                shells=[dict(n=n, l=l, electrons=ne, m=m) for (n, l), ne, m in shells]))
         _guarda()

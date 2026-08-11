@@ -1,1 +1,4570 @@
-{"seed": 20260731, "posq": 2000.0, "grid": "170x900 esferica", "elements": [{"Z": 1, "sym": "H", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -0.4998098322318889, "L_bohr": 7.386464435146444, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 1}]}, {"Z": 2, "sym": "He", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -2.859895425684442, "L_bohr": 4.7840899581589955, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}]}, {"Z": 3, "sym": "Li", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -7.432675223116751, "L_bohr": 12.670073221757324, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 1}]}, {"Z": 4, "sym": "Be", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -14.572579867409292, "L_bohr": 9.988838912133891, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}]}, {"Z": 5, "sym": "B", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -24.532332765866744, "L_bohr": 7.938483263598326, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 1}]}, {"Z": 6, "sym": "C", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -37.69247882883592, "L_bohr": 7.307604602510461, "points": 110001, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 2}]}, {"Z": 7, "sym": "N", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -54.40274688459071, "L_bohr": 6.203566945606695, "points": 110001, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 3}]}, {"Z": 8, "sym": "O", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -74.81562509133231, "L_bohr": 5.572688284518828, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 4}]}, {"Z": 9, "sym": "F", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -99.41179850040045, "L_bohr": 5.178389121338912, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 5}]}, {"Z": 10, "sym": "Ne", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -128.54149275857569, "L_bohr": 4.626370292887029, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}]}, {"Z": 11, "sym": "Na", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -161.85185350136055, "L_bohr": 12.35463389121339, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 1}]}, {"Z": 12, "sym": "Mg", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -199.6066311340407, "L_bohr": 10.383138075313807, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}]}, {"Z": 13, "sym": "Al", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -241.87434933001776, "L_bohr": 8.332782426778243, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 1}]}, {"Z": 14, "sym": "Si", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -288.8507934926092, "L_bohr": 8.49050209205021, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 2}]}, {"Z": 15, "sym": "P", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -340.70986262433723, "L_bohr": 7.623043933054394, "points": 110001, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 3}]}, {"Z": 16, "sym": "S", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -397.50195505264776, "L_bohr": 7.228744769874477, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 4}]}, {"Z": 17, "sym": "Cl", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -459.47680992241646, "L_bohr": 6.519006276150628, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 5}]}, {"Z": 18, "sym": "Ar", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -526.8027603325261, "L_bohr": 5.966987447698744, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}]}, {"Z": 19, "sym": "K", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -599.1533500105401, "L_bohr": 13.30095188284519, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 4, "l": 0, "electrons": 1}]}, {"Z": 20, "sym": "Ca", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -676.7458009532488, "L_bohr": 11.723755230125525, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 4, "l": 0, "electrons": 2}]}, {"Z": 21, "sym": "Sc", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -759.724439439312, "L_bohr": 11.014016736401674, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 1}, {"n": 4, "l": 0, "electrons": 2}]}, {"Z": 22, "sym": "Ti", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -848.394616467168, "L_bohr": 10.619717573221758, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 2}, {"n": 4, "l": 0, "electrons": 2}]}, {"Z": 23, "sym": "V", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -942.8723272203929, "L_bohr": 10.225418410041842, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 3}, {"n": 4, "l": 0, "electrons": 2}]}, {"Z": 24, "sym": "Cr", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -1043.33452131755, "L_bohr": 9.752259414225941, "points": 110001, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 5}, {"n": 4, "l": 0, "electrons": 1}]}, {"Z": 25, "sym": "Mn", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -1149.7288922379362, "L_bohr": 9.357960251046025, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 6}, {"n": 4, "l": 0, "electrons": 1}]}, {"Z": 26, "sym": "Fe", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -1262.3593750834184, "L_bohr": 9.121380753138077, "points": 110002, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 7}, {"n": 4, "l": 0, "electrons": 1}]}, {"Z": 27, "sym": "Co", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -1381.3357762275161, "L_bohr": 8.963661087866111, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 8}, {"n": 4, "l": 0, "electrons": 1}]}, {"Z": 28, "sym": "Ni", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -1506.795790770334, "L_bohr": 8.727081589958159, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 9}, {"n": 4, "l": 0, "electrons": 1}]}, {"Z": 29, "sym": "Cu", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -1638.9230808057912, "L_bohr": 8.963661087866111, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 1}]}, {"Z": 30, "sym": "Zn", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -1777.8070662737337, "L_bohr": 8.411642259414226, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}]}, {"Z": 31, "sym": "Ga", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -1923.223491207783, "L_bohr": 7.228744769874477, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 1}]}, {"Z": 32, "sym": "Ge", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -2075.3210026213633, "L_bohr": 7.307604602510461, "points": 110000, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 2}]}, {"Z": 33, "sym": "As", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -2234.194167557424, "L_bohr": 7.149884937238494, "points": 110001, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 3}]}, {"Z": 34, "sym": "Se", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -2399.8271910750923, "L_bohr": 6.834445606694561, "points": 110002, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 4}]}, {"Z": 35, "sym": "Br", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -2572.398101170601, "L_bohr": 6.834445606694561, "points": 110001, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 5}]}, {"Z": 36, "sym": "Kr", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -2752.002727578809, "L_bohr": 6.2824267782426775, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}]}, {"Z": 37, "sym": "Rb", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -23.802564669676602, "L_bohr": 15.74560669456067, "points": 109999, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 5, "l": 0, "electrons": 1}]}, {"Z": 38, "sym": "Sr", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -30.347122828392394, "L_bohr": 13.695251046025106, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 5, "l": 0, "electrons": 2}]}, {"Z": 39, "sym": "Y", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -37.819357778236785, "L_bohr": 12.59121338912134, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 1}, {"n": 5, "l": 0, "electrons": 2}]}, {"Z": 40, "sym": "Zr", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -46.4426975252239, "L_bohr": 12.039194560669458, "points": 109999, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 2}, {"n": 5, "l": 0, "electrons": 2}]}, {"Z": 41, "sym": "Nb", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -56.2646380151745, "L_bohr": 8.25392259414226, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 5}]}, {"Z": 42, "sym": "Mo", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -67.5666163894737, "L_bohr": 10.461997907949792, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 5}, {"n": 5, "l": 0, "electrons": 1}]}, {"Z": 43, "sym": "Tc", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -80.08257017346932, "L_bohr": 10.304278242677826, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 6}, {"n": 5, "l": 0, "electrons": 1}]}, {"Z": 44, "sym": "Ru", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -94.12114246550878, "L_bohr": 9.909979079497909, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 7}, {"n": 5, "l": 0, "electrons": 1}]}, {"Z": 45, "sym": "Rh", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -109.74319337825062, "L_bohr": 9.909979079497909, "points": 110001, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 8}, {"n": 5, "l": 0, "electrons": 1}]}, {"Z": 46, "sym": "Pd", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -127.03019417864634, "L_bohr": 6.597866108786611, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}]}, {"Z": 47, "sym": "Ag", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -146.11695833947402, "L_bohr": 9.752259414225941, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 1}]}, {"Z": 48, "sym": "Cd", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -166.8839227962427, "L_bohr": 9.20024058577406, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}]}, {"Z": 49, "sym": "In", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -189.21003318796375, "L_bohr": 11.487175732217574, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 1}]}, {"Z": 50, "sym": "Sn", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -213.33991663482828, "L_bohr": 9.831119246861926, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 2}]}, {"Z": 51, "sym": "Sb", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -239.27727280906453, "L_bohr": 8.727081589958159, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 3}]}, {"Z": 52, "sym": "Te", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -267.00555417004796, "L_bohr": 8.175062761506275, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 4}]}, {"Z": 53, "sym": "I", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -296.6585671152537, "L_bohr": 7.859623430962342, "points": 110000, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 5}]}, {"Z": 54, "sym": "Xe", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -328.2983936756159, "L_bohr": 7.465324267782427, "points": 110002, "shells": [{"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}]}, {"Z": 55, "sym": "Cs", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -19.855195711054733, "L_bohr": 16.0, "points": 109999, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 56, "sym": "Ba", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -25.09489496287755, "L_bohr": 14.957008368200839, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 57, "sym": "La", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -31.075563204654504, "L_bohr": 13.931830543933055, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 1}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 58, "sym": "Ce", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -8556.495214225877, "L_bohr": 11.88147489539749, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 2}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 59, "sym": "Pr", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -8909.795918274638, "L_bohr": 12.512353556485357, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 4}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 60, "sym": "Nd", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -9271.736539396747, "L_bohr": 11.64489539748954, "points": 110001, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 4}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 61, "sym": "Pm", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -9642.050071485713, "L_bohr": 12.275774058577406, "points": 110004, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 6}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 62, "sym": "Sm", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -10021.080435398275, "L_bohr": 11.408315899581591, "points": 109997, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 6}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 63, "sym": "Eu", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -10408.430277037189, "L_bohr": 10.856297071129708, "points": 109998, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 6}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 1}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 64, "sym": "Gd", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -10804.826783010813, "L_bohr": 11.329456066945607, "points": 110002, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 7}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 2}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 65, "sym": "Tb", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -11209.148469299775, "L_bohr": 15.824466527196654, "points": 110002, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 10}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 1}]}, {"Z": 66, "sym": "Dy", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -11622.829604971026, "L_bohr": 5.336108786610878, "points": 109999, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 11}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 1}]}, {"Z": 67, "sym": "Ho", "ok": true, "basis": "sarc-dkh", "method": "UHF", "energia_fiable": false, "energy_ha": -12045.606582530265, "L_bohr": 11.329456066945607, "points": 110003, "shells": [{"n": 1, "l": 0, "electrons": 2}, {"n": 2, "l": 0, "electrons": 2}, {"n": 2, "l": 1, "electrons": 6}, {"n": 3, "l": 0, "electrons": 2}, {"n": 3, "l": 1, "electrons": 6}, {"n": 3, "l": 2, "electrons": 10}, {"n": 4, "l": 0, "electrons": 2}, {"n": 4, "l": 1, "electrons": 6}, {"n": 4, "l": 2, "electrons": 10}, {"n": 4, "l": 3, "electrons": 12}, {"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 68, "sym": "Er", "ok": true, "basis": "crenbl", "method": "UHF", "energia_fiable": true, "energy_ha": -89.52394244377143, "L_bohr": 10.777437238493725, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 1}, {"n": 5, "l": 1, "electrons": 1}, {"n": 5, "l": 3, "electrons": 12}]}, {"Z": 69, "sym": "Tm", "ok": true, "basis": "crenbl", "method": "UHF", "energia_fiable": true, "energy_ha": -107.00314689862148, "L_bohr": 10.540857740585775, "points": 109999, "shells": [{"n": 5, "l": 0, "electrons": 1}, {"n": 5, "l": 1, "electrons": 1}, {"n": 5, "l": 3, "electrons": 13}]}, {"Z": 70, "sym": "Yb", "ok": true, "basis": "crenbl", "method": "RHF", "energia_fiable": true, "energy_ha": -126.46728460049208, "L_bohr": 12.196914225941425, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 3, "electrons": 14}]}, {"Z": 71, "sym": "Lu", "ok": true, "basis": "crenbl", "method": "UHF", "energia_fiable": true, "energy_ha": -145.63563953477444, "L_bohr": 11.329456066945607, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 1}, {"n": 5, "l": 3, "electrons": 14}]}, {"Z": 72, "sym": "Hf", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -47.36787186497332, "L_bohr": 11.329456066945607, "points": 109999, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 2}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 73, "sym": "Ta", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -56.29083003601385, "L_bohr": 10.856297071129708, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 3}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 74, "sym": "W", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -66.15886584893856, "L_bohr": 9.121380753138077, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 6}]}, {"Z": 75, "sym": "Re", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -77.46643927806521, "L_bohr": 9.357960251046025, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 6}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 76, "sym": "Os", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -89.813580747867, "L_bohr": 9.042520920502094, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 7}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 77, "sym": "Ir", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -103.4371330090292, "L_bohr": 8.884801255230126, "points": 110001, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 8}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 78, "sym": "Pt", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -118.39759292491627, "L_bohr": 8.727081589958159, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 9}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 79, "sym": "Au", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -134.78981631496316, "L_bohr": 8.727081589958159, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 1}]}, {"Z": 80, "sym": "Hg", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -152.55432687927458, "L_bohr": 8.49050209205021, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}]}, {"Z": 81, "sym": "Tl", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -171.5149991035349, "L_bohr": 11.092876569037658, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 1}]}, {"Z": 82, "sym": "Pb", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -191.8355222806015, "L_bohr": 8.569361924686193, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 2}]}, {"Z": 83, "sym": "Bi", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -213.59378406908678, "L_bohr": 9.042520920502094, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 3}]}, {"Z": 84, "sym": "Po", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -236.72576161863145, "L_bohr": 8.884801255230126, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 4}]}, {"Z": 85, "sym": "At", "ok": true, "basis": "def2-tzvp", "method": "UHF", "energia_fiable": true, "energy_ha": -261.360359178573, "L_bohr": 8.25392259414226, "points": 110000, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 5}]}, {"Z": 86, "sym": "Rn", "ok": true, "basis": "def2-tzvp", "method": "RHF", "energia_fiable": true, "energy_ha": -287.5429790838831, "L_bohr": 7.859623430962342, "points": 110002, "shells": [{"n": 5, "l": 0, "electrons": 2}, {"n": 5, "l": 1, "electrons": 6}, {"n": 5, "l": 2, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}]}, {"Z": 87, "sym": "Fr", "ok": true, "basis": "crenbl", "method": "UHF", "energia_fiable": true, "energy_ha": -18.941046551087016, "L_bohr": 15.03586820083682, "points": 109999, "shells": [{"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 1}]}, {"Z": 88, "sym": "Ra", "ok": true, "basis": "crenbl", "method": "RHF", "energia_fiable": true, "energy_ha": -23.738260105391817, "L_bohr": 15.272447698744772, "points": 110000, "shells": [{"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 89, "sym": "Ac", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -29.078529896640724, "L_bohr": 12.196914225941425, "points": 110000, "shells": [{"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 6, "l": 2, "electrons": 1}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 90, "sym": "Th", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -35.22980344367736, "L_bohr": 12.906652719665272, "points": 110000, "shells": [{"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 6, "l": 2, "electrons": 1}, {"n": 7, "l": 0, "electrons": 2}, {"n": 8, "l": 0, "electrons": 1}]}, {"Z": 91, "sym": "Pa", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -42.16711640142814, "L_bohr": 13.30095188284519, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 3}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 92, "sym": "U", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -50.281519599743135, "L_bohr": 13.30095188284519, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 4}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 93, "sym": "Np", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -59.54690177232412, "L_bohr": 13.222092050209206, "points": 110001, "shells": [{"n": 5, "l": 3, "electrons": 5}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 94, "sym": "Pu", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -69.80617983465508, "L_bohr": 13.06437238493724, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 7}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 1}]}, {"Z": 95, "sym": "Am", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -81.53428625382848, "L_bohr": 12.433493723849374, "points": 110001, "shells": [{"n": 5, "l": 3, "electrons": 7}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 6, "l": 2, "electrons": 1}, {"n": 7, "l": 0, "electrons": 1}]}, {"Z": 96, "sym": "Cm", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -94.16769020761978, "L_bohr": 10.146558577405859, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 8}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 6, "l": 2, "electrons": 2}]}, {"Z": 97, "sym": "Bk", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -108.1684965377386, "L_bohr": 16.0, "points": 109999, "shells": [{"n": 5, "l": 3, "electrons": 9}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 6, "l": 2, "electrons": 1}, {"n": 7, "l": 1, "electrons": 1}]}, {"Z": 98, "sym": "Cf", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -123.76118226018939, "L_bohr": 11.960334728033473, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 10}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 99, "sym": "Es", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -140.6206603359396, "L_bohr": 11.88147489539749, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 11}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 100, "sym": "Fm", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -158.64072044981015, "L_bohr": 12.039194560669458, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 13}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 6, "l": 2, "electrons": 1}]}, {"Z": 101, "sym": "Md", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -178.6905180752796, "L_bohr": 11.408315899581591, "points": 110001, "shells": [{"n": 5, "l": 3, "electrons": 14}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 1}]}, {"Z": 102, "sym": "No", "ok": true, "basis": "stuttgart-rlc", "method": "RHF", "energia_fiable": true, "energy_ha": -200.3336508083522, "L_bohr": 11.408315899581591, "points": 110001, "shells": [{"n": 5, "l": 3, "electrons": 14}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}]}, {"Z": 103, "sym": "Lr", "ok": true, "basis": "stuttgart-rlc", "method": "UHF", "energia_fiable": true, "energy_ha": -223.27321868916755, "L_bohr": 11.171736401673641, "points": 110000, "shells": [{"n": 5, "l": 3, "electrons": 14}, {"n": 6, "l": 0, "electrons": 2}, {"n": 6, "l": 1, "electrons": 6}, {"n": 7, "l": 0, "electrons": 2}, {"n": 7, "l": 1, "electrons": 1}]}, {"Z": 104, "sym": "Rf", "ok": false, "motivo": "sin base"}, {"Z": 105, "sym": "Db", "ok": false, "motivo": "sin base"}, {"Z": 106, "sym": "Sg", "ok": false, "motivo": "sin base"}, {"Z": 107, "sym": "Bh", "ok": false, "motivo": "sin base"}, {"Z": 108, "sym": "Hs", "ok": false, "motivo": "sin base"}, {"Z": 109, "sym": "Mt", "ok": false, "motivo": "sin base"}, {"Z": 110, "sym": "Ds", "ok": false, "motivo": "sin base"}, {"Z": 111, "sym": "Rg", "ok": false, "motivo": "sin base"}, {"Z": 112, "sym": "Cn", "ok": false, "motivo": "sin base"}, {"Z": 113, "sym": "Nh", "ok": false, "motivo": "sin base"}, {"Z": 114, "sym": "Fl", "ok": false, "motivo": "sin base"}, {"Z": 115, "sym": "Mc", "ok": false, "motivo": "sin base"}, {"Z": 116, "sym": "Lv", "ok": false, "motivo": "sin base"}, {"Z": 117, "sym": "Ts", "ok": false, "motivo": "sin base"}, {"Z": 118, "sym": "Og", "ok": false, "motivo": "sin base"}]}
+{
+ "seed": 20260731,
+ "posq": 2000.0,
+ "version": 2,
+ "grid": "170x900 esferica",
+ "elements": [
+  {
+   "Z": 1,
+   "sym": "H",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -0.4998098322318889,
+   "L_bohr": 7.386464435146444,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 2,
+   "sym": "He",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -2.859895425684442,
+   "L_bohr": 4.7840899581589955,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 3,
+   "sym": "Li",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -7.432675223116751,
+   "L_bohr": 12.670073221757324,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 4,
+   "sym": "Be",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -14.572579867409292,
+   "L_bohr": 9.988838912133891,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 5,
+   "sym": "B",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -24.532332765866744,
+   "L_bohr": 7.938483263598326,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 6,
+   "sym": "C",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -37.69247882883589,
+   "L_bohr": 7.071025104602511,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 1,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 1,
+     "m": 1
+    }
+   ],
+   "bin_version": 3,
+   "por_orbital": true
+  },
+  {
+   "Z": 7,
+   "sym": "N",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -54.40274688459071,
+   "L_bohr": 6.203566945606695,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 3
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 8,
+   "sym": "O",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -74.81562509133231,
+   "L_bohr": 5.572688284518828,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 4
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 9,
+   "sym": "F",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -99.41179850040045,
+   "L_bohr": 5.178389121338912,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 5
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 10,
+   "sym": "Ne",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -128.54149275857569,
+   "L_bohr": 4.626370292887029,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 1
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 2
+    }
+   ],
+   "bin_version": 3,
+   "por_orbital": true
+  },
+  {
+   "Z": 11,
+   "sym": "Na",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -161.85185350136055,
+   "L_bohr": 12.35463389121339,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 12,
+   "sym": "Mg",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -199.6066311340407,
+   "L_bohr": 10.383138075313807,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 13,
+   "sym": "Al",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -241.87434933001776,
+   "L_bohr": 8.332782426778243,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 14,
+   "sym": "Si",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -288.8507934926092,
+   "L_bohr": 8.01734309623431,
+   "points": 109998,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 1
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 2
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 1,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 1,
+     "m": 1
+    }
+   ],
+   "bin_version": 3,
+   "por_orbital": true
+  },
+  {
+   "Z": 15,
+   "sym": "P",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -340.70986262433723,
+   "L_bohr": 7.623043933054394,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 3
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 16,
+   "sym": "S",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -397.50195505264776,
+   "L_bohr": 7.228744769874477,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 4
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 17,
+   "sym": "Cl",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -459.47680992241646,
+   "L_bohr": 6.519006276150628,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 5
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 18,
+   "sym": "Ar",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -526.8027603325261,
+   "L_bohr": 5.966987447698744,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 19,
+   "sym": "K",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -599.1533500105401,
+   "L_bohr": 13.30095188284519,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 20,
+   "sym": "Ca",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -676.7458009532488,
+   "L_bohr": 11.723755230125525,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 21,
+   "sym": "Sc",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -759.724439439312,
+   "L_bohr": 11.014016736401674,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 22,
+   "sym": "Ti",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -848.394616467168,
+   "L_bohr": 10.619717573221758,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 23,
+   "sym": "V",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -942.8723272203929,
+   "L_bohr": 10.225418410041842,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 3
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 24,
+   "sym": "Cr",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -1043.3345213175503,
+   "L_bohr": 9.752259414225941,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 1
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 2
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 2,
+     "m": 1
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 2,
+     "m": 2
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 1,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 1,
+     "m": 1
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 1,
+     "m": 2
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 1,
+     "m": 3
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 1,
+     "m": 4
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 1,
+     "m": 0
+    }
+   ],
+   "bin_version": 3,
+   "por_orbital": true
+  },
+  {
+   "Z": 25,
+   "sym": "Mn",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -1149.7288922379362,
+   "L_bohr": 9.357960251046025,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 26,
+   "sym": "Fe",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -1262.3593750834184,
+   "L_bohr": 9.121380753138077,
+   "points": 110002,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 7
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 27,
+   "sym": "Co",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -1381.3357762275161,
+   "L_bohr": 8.963661087866111,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 8
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 28,
+   "sym": "Ni",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -1506.795790770334,
+   "L_bohr": 8.727081589958159,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 9
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 29,
+   "sym": "Cu",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -1638.9230808057912,
+   "L_bohr": 8.963661087866111,
+   "points": 109997,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 1
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 2,
+     "m": 2
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 2,
+     "m": 1
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 2,
+     "m": 2
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 2,
+     "m": 0
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 2,
+     "m": 1
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 2,
+     "m": 2
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 2,
+     "m": 3
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 2,
+     "m": 4
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 1,
+     "m": 0
+    }
+   ],
+   "bin_version": 3,
+   "por_orbital": true
+  },
+  {
+   "Z": 30,
+   "sym": "Zn",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -1777.8070662737337,
+   "L_bohr": 8.411642259414226,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 31,
+   "sym": "Ga",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -1923.223491207783,
+   "L_bohr": 7.228744769874477,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 32,
+   "sym": "Ge",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -2075.3210026213633,
+   "L_bohr": 7.307604602510461,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 33,
+   "sym": "As",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -2234.194167557424,
+   "L_bohr": 7.149884937238494,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 3
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 34,
+   "sym": "Se",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -2399.8271910750923,
+   "L_bohr": 6.834445606694561,
+   "points": 110002,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 4
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 35,
+   "sym": "Br",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -2572.398101170601,
+   "L_bohr": 6.834445606694561,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 5
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 36,
+   "sym": "Kr",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -2752.002727578809,
+   "L_bohr": 6.2824267782426775,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 37,
+   "sym": "Rb",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -23.802564669676602,
+   "L_bohr": 15.74560669456067,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 38,
+   "sym": "Sr",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -30.347122828392394,
+   "L_bohr": 13.695251046025106,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 39,
+   "sym": "Y",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -37.819357778236785,
+   "L_bohr": 12.59121338912134,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 40,
+   "sym": "Zr",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -46.4426975252239,
+   "L_bohr": 12.039194560669458,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 41,
+   "sym": "Nb",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -56.2646380151745,
+   "L_bohr": 8.25392259414226,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 5
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 42,
+   "sym": "Mo",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -67.5666163894737,
+   "L_bohr": 10.461997907949792,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 5
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 43,
+   "sym": "Tc",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -80.08257017346932,
+   "L_bohr": 10.304278242677826,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 44,
+   "sym": "Ru",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -94.12114246550878,
+   "L_bohr": 9.909979079497909,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 7
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 45,
+   "sym": "Rh",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -109.74319337825062,
+   "L_bohr": 9.909979079497909,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 8
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 46,
+   "sym": "Pd",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -127.03019417864634,
+   "L_bohr": 6.597866108786611,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 47,
+   "sym": "Ag",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -146.11695833947402,
+   "L_bohr": 9.752259414225941,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 48,
+   "sym": "Cd",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -166.8839227962427,
+   "L_bohr": 9.20024058577406,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 49,
+   "sym": "In",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -189.21003318796375,
+   "L_bohr": 11.487175732217574,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 50,
+   "sym": "Sn",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -213.33991663482828,
+   "L_bohr": 9.831119246861926,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 51,
+   "sym": "Sb",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -239.27727280906453,
+   "L_bohr": 8.727081589958159,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 3
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 52,
+   "sym": "Te",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -267.00555417004796,
+   "L_bohr": 8.175062761506275,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 4
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 53,
+   "sym": "I",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -296.6585671152537,
+   "L_bohr": 7.859623430962342,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 5
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 54,
+   "sym": "Xe",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -328.2983936756159,
+   "L_bohr": 7.465324267782427,
+   "points": 110002,
+   "shells": [
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 55,
+   "sym": "Cs",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -19.855195711054733,
+   "L_bohr": 16.0,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 56,
+   "sym": "Ba",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -25.09489496287755,
+   "L_bohr": 14.957008368200839,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 57,
+   "sym": "La",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -31.075563204654504,
+   "L_bohr": 13.931830543933055,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 58,
+   "sym": "Ce",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -8556.495214225877,
+   "L_bohr": 11.88147489539749,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 59,
+   "sym": "Pr",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -8909.795918274638,
+   "L_bohr": 12.512353556485357,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 4
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 60,
+   "sym": "Nd",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -9271.736539396747,
+   "L_bohr": 11.64489539748954,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 4
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 61,
+   "sym": "Pm",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -9642.050071485713,
+   "L_bohr": 12.275774058577406,
+   "points": 110004,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 62,
+   "sym": "Sm",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -10021.080435398275,
+   "L_bohr": 11.408315899581591,
+   "points": 109997,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 63,
+   "sym": "Eu",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -10408.430277037189,
+   "L_bohr": 10.856297071129708,
+   "points": 109998,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 64,
+   "sym": "Gd",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -10804.826783010813,
+   "L_bohr": 11.329456066945607,
+   "points": 110002,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 7
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 65,
+   "sym": "Tb",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -11209.148469299775,
+   "L_bohr": 15.824466527196654,
+   "points": 110002,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 10
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 66,
+   "sym": "Dy",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -11622.829604971026,
+   "L_bohr": 5.336108786610878,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 11
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 67,
+   "sym": "Ho",
+   "ok": true,
+   "basis": "sarc-dkh",
+   "method": "UHF",
+   "energia_fiable": false,
+   "energy_ha": -12045.606582530265,
+   "L_bohr": 11.329456066945607,
+   "points": 110003,
+   "shells": [
+    {
+     "n": 1,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 2,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 3,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 3,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 4,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 4,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 4,
+     "l": 3,
+     "electrons": 12
+    },
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 68,
+   "sym": "Er",
+   "ok": true,
+   "basis": "crenbl",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -89.52394244377143,
+   "L_bohr": 10.777437238493725,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 1
+    },
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 12
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 69,
+   "sym": "Tm",
+   "ok": true,
+   "basis": "crenbl",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -107.00314689862148,
+   "L_bohr": 10.540857740585775,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 1
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 1
+    },
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 13
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 70,
+   "sym": "Yb",
+   "ok": true,
+   "basis": "crenbl",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -126.46728460049208,
+   "L_bohr": 12.196914225941425,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 14
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 71,
+   "sym": "Lu",
+   "ok": true,
+   "basis": "crenbl",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -145.63563953477444,
+   "L_bohr": 11.329456066945607,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 1
+    },
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 14
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 72,
+   "sym": "Hf",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -47.36787186497332,
+   "L_bohr": 11.329456066945607,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 73,
+   "sym": "Ta",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -56.29083003601385,
+   "L_bohr": 10.856297071129708,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 3
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 74,
+   "sym": "W",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -66.15886584893856,
+   "L_bohr": 9.121380753138077,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 6
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 75,
+   "sym": "Re",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -77.46643927806521,
+   "L_bohr": 9.357960251046025,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 76,
+   "sym": "Os",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -89.813580747867,
+   "L_bohr": 9.042520920502094,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 7
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 77,
+   "sym": "Ir",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -103.4371330090292,
+   "L_bohr": 8.884801255230126,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 8
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 78,
+   "sym": "Pt",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -118.39759292491627,
+   "L_bohr": 8.727081589958159,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 9
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 79,
+   "sym": "Au",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -134.78981631496316,
+   "L_bohr": 8.727081589958159,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 80,
+   "sym": "Hg",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -152.55432687927458,
+   "L_bohr": 8.49050209205021,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 81,
+   "sym": "Tl",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -171.5149991035349,
+   "L_bohr": 11.092876569037658,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 82,
+   "sym": "Pb",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -191.8355222806015,
+   "L_bohr": 8.569361924686193,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 83,
+   "sym": "Bi",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -213.59378406908678,
+   "L_bohr": 9.042520920502094,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 3
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 84,
+   "sym": "Po",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -236.72576161863145,
+   "L_bohr": 8.884801255230126,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 4
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 85,
+   "sym": "At",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -261.360359178573,
+   "L_bohr": 8.25392259414226,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 5
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 86,
+   "sym": "Rn",
+   "ok": true,
+   "basis": "def2-tzvp",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -287.5429790838831,
+   "L_bohr": 7.859623430962342,
+   "points": 110002,
+   "shells": [
+    {
+     "n": 5,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 5,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 5,
+     "l": 2,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 87,
+   "sym": "Fr",
+   "ok": true,
+   "basis": "crenbl",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -18.941046551087016,
+   "L_bohr": 15.03586820083682,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 88,
+   "sym": "Ra",
+   "ok": true,
+   "basis": "crenbl",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -23.738260105391817,
+   "L_bohr": 15.272447698744772,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 89,
+   "sym": "Ac",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -29.078529896640724,
+   "L_bohr": 12.196914225941425,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 90,
+   "sym": "Th",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -35.22980344367736,
+   "L_bohr": 12.906652719665272,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 8,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 91,
+   "sym": "Pa",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -42.16711640142814,
+   "L_bohr": 13.30095188284519,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 3
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 92,
+   "sym": "U",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -50.281519599743135,
+   "L_bohr": 13.30095188284519,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 4
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 93,
+   "sym": "Np",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -59.54690177232412,
+   "L_bohr": 13.222092050209206,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 5
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 94,
+   "sym": "Pu",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -69.80617983465508,
+   "L_bohr": 13.06437238493724,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 7
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 95,
+   "sym": "Am",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -81.53428625382848,
+   "L_bohr": 12.433493723849374,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 7
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 96,
+   "sym": "Cm",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -94.16769020761978,
+   "L_bohr": 10.146558577405859,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 8
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 2,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 97,
+   "sym": "Bk",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -108.1684965377386,
+   "L_bohr": 16.0,
+   "points": 109999,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 9
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 2,
+     "electrons": 1
+    },
+    {
+     "n": 7,
+     "l": 1,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 98,
+   "sym": "Cf",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -123.76118226018939,
+   "L_bohr": 11.960334728033473,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 10
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 99,
+   "sym": "Es",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -140.6206603359396,
+   "L_bohr": 11.88147489539749,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 11
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 100,
+   "sym": "Fm",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -158.64072044981015,
+   "L_bohr": 12.039194560669458,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 13
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 6,
+     "l": 2,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 101,
+   "sym": "Md",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -178.6905180752796,
+   "L_bohr": 11.408315899581591,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 14
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 102,
+   "sym": "No",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "RHF",
+   "energia_fiable": true,
+   "energy_ha": -200.3336508083522,
+   "L_bohr": 11.408315899581591,
+   "points": 110001,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 14
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 103,
+   "sym": "Lr",
+   "ok": true,
+   "basis": "stuttgart-rlc",
+   "method": "UHF",
+   "energia_fiable": true,
+   "energy_ha": -223.27321868916755,
+   "L_bohr": 11.171736401673641,
+   "points": 110000,
+   "shells": [
+    {
+     "n": 5,
+     "l": 3,
+     "electrons": 14
+    },
+    {
+     "n": 6,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 6,
+     "l": 1,
+     "electrons": 6
+    },
+    {
+     "n": 7,
+     "l": 0,
+     "electrons": 2
+    },
+    {
+     "n": 7,
+     "l": 1,
+     "electrons": 1
+    }
+   ],
+   "bin_version": 2,
+   "por_orbital": false
+  },
+  {
+   "Z": 104,
+   "sym": "Rf",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 105,
+   "sym": "Db",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 106,
+   "sym": "Sg",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 107,
+   "sym": "Bh",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 108,
+   "sym": "Hs",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 109,
+   "sym": "Mt",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 110,
+   "sym": "Ds",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 111,
+   "sym": "Rg",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 112,
+   "sym": "Cn",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 113,
+   "sym": "Nh",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 114,
+   "sym": "Fl",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 115,
+   "sym": "Mc",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 116,
+   "sym": "Lv",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 117,
+   "sym": "Ts",
+   "ok": false,
+   "motivo": "sin base"
+  },
+  {
+   "Z": 118,
+   "sym": "Og",
+   "ok": false,
+   "motivo": "sin base"
+  }
+ ]
+}
