@@ -63,9 +63,16 @@ const BANDA_ENCUADRE = 3.2;   // distancia de cámara en radios de la banda (ver
 const BANDA_PUNTO = 3.0;
 const BANDA_LUZ = 1.6;        // y un empujón de alfa: menos capas sumando en aditivo
 
-/** Segundos por banda. Pocas → cada una respira; muchas → barrido ágil (el Gd tiene 14). */
+/**
+ * Segundos por banda. Pocas → cada una respira; muchas → barrido ágil (el Gd tiene 14).
+ * Los valores salen de una restricción REAL, no del gusto: la narración tiene que caber.
+ * A 2.21 palabras/segundo (ritmo medido del butírico: 128 palabras en 57.89 s con VEL=1.10
+ * y 0.40 de silencio entre líneas), una banda necesita ~2 s para nombrarse y verse. Con la
+ * tabla anterior (2.4/1.9/1.35) los cinco guiones se pasaban de largo entre 3 y 10 s, y un
+ * video que se queda sin cuadros antes que sin voz congela el último frame.
+ */
 function bandaDur(total: number): number {
-  return total <= 4 ? 2.4 : total <= 8 ? 1.9 : 1.35;
+  return total <= 3 ? 3.2 : total <= 5 ? 2.6 : total <= 8 ? 2.2 : 1.5;
 }
 /** Ventana [t0,t1] en que la subcapa `idx` es la protagonista. */
 function bandaWindow(idx: number, total: number): [number, number] {
@@ -1561,9 +1568,16 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
     [element, live, sinBin],
   );
   const [abin, setAbin] = useState<ReturnType<typeof bundleFromAbInitio> | null>(null);
+  // ¿YA SE SABE QUÉ NUBE ES LA BUENA? El .bin ab initio se baja ASÍNCRONO y mientras tanto
+  // se dibuja el respaldo hidrogenoide. `ready` se exponía en true desde el montaje, así que
+  // el arnés de render podía empezar a capturar ANTES de que llegara el SCF y grabar los
+  // primeros cuadros con la nube de Slater. Justo lo contrario de por qué se re-renderiza
+  // este lote. Ahora `ready` espera a que la carga RESUELVA — haya bin o no lo haya.
+  const [binResuelto, setBinResuelto] = useState(false);
   useEffect(() => {
     let vivo = true;
     setAbin(null);
+    setBinResuelto(false);
     if (live) setSinBin(false);          // mientras carga NO se paga el muestreo síncrono
     loadAtomAbInitio(element.Z).then(d => {
       if (!vivo) return;
@@ -1572,6 +1586,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
       (window as unknown as Record<string, unknown>).__atomFuente =
         d ? { Z: element.Z, fuente: 'abinitio', shells: d.shells.length }
           : { Z: element.Z, fuente: 'hidrogenoide' };
+      setBinResuelto(true);
     });
     return () => { vivo = false; };
   }, [element.Z, live]);
@@ -1668,16 +1683,19 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
     if (live) return;
     const api = {
       renderAt: (t: number) => setTime(Math.max(0, Math.min(duration, t))),
-      ready: true,
+      // NO es `true` de arranque: espera a que se resuelva la carga del .bin ab initio,
+      // porque hasta entonces lo que se dibuja es el respaldo hidrogenoide (ver binResuelto).
+      ready: binResuelto,
       duration,
       Z,
       element: element.symbol,
+      fuente: abin ? 'abinitio' : 'hidrogenoide',
     };
     (window as unknown as { __cinematicAtom: typeof api }).__cinematicAtom = api;
     return () => {
       delete (window as unknown as { __cinematicAtom?: unknown }).__cinematicAtom;
     };
-  }, [Z, element.symbol, duration, live]);
+  }, [Z, element.symbol, duration, live, binResuelto, abin]);
 
   // Modo LIVE (lab): reloj propio que reproduce la coreografía en LOOP eterno.
   useEffect(() => {

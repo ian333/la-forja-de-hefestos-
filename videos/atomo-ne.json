@@ -1,0 +1,104 @@
+{
+  "id": "atomo-ne",
+  "titulo": "El átomo que no reacciona con nada",
+  "subtitulo": "Neón · Ne · Z=10",
+  "nota": "El CONTRASTE del lote: cero electrones desapareados ⇒ el campo magnético NO se dibuja porque no existe. Es el único de los cinco cuya cola no enciende dipolo, y el guion lo dice.",
+  "proposito": {
+    "wtf": "Las capas del neón TOMAN TURNO: cada subcapa se enciende sola mientras las demás se opacan, y la cámara viaja a la escala de la que toca.",
+    "hayQueMostrar": [
+      "que la nube NO es una bola: son bandas, y cada una tiene su tamaño y su forma",
+      "que la forma sale del cálculo — no se dibuja ningún orbital a mano",
+      "el campo eléctrico del núcleo y, si el átomo lo tiene, el magnético"
+    ],
+    "noHacer": [
+      "decir que los electrones son bolitas en órbita — son densidad de probabilidad",
+      "prometer lóbulos donde la subcapa está llena o a medio llenar: ahí es ESFÉRICA por teorema"
+    ]
+  },
+  "fisica": {
+    "metodo": "SCF real (RHF, base def2-tzvp), densidad de CADA subcapa muestreada en malla 3D esférica (170 anillos × 900 direcciones, 110000 puntos). Sin promedio esférico: es lo que conserva los lóbulos.",
+    "configuracion": "1s2 2s2 2p6",
+    "verificacion_config": "COINCIDE con el estado base experimental (NIST ASD). Verificado 2026-08-11 contra los 118 del manifiesto; Mn, Fe y Gd NO coinciden (HF de capa abierta ordena mal 3d/4s) y por eso quedaron FUERA de este lote.",
+    "energia_fiable": true,
+    "bandas": [
+      {
+        "banda": "1s2",
+        "ventana": [
+          15.2,
+          18.4
+        ]
+      },
+      {
+        "banda": "2s2",
+        "ventana": [
+          18.4,
+          21.6
+        ]
+      },
+      {
+        "banda": "2p6",
+        "ventana": [
+          21.6,
+          24.8
+        ]
+      }
+    ],
+    "campoB": "dipolo ∝ electrones desapareados (regla de Hund); si son cero NO se dibuja nada.",
+    "limitacion_declarada": "El átomo aislado es degenerado: el SCF elige UNA orientación del multiplete. Se declara y no se afirma más que eso."
+  },
+  "escena": {
+    "html": "cinematic-atom.html",
+    "query": "z=10",
+    "hook": "__cinematicAtom",
+    "wiring": "bandaMask/bandaRadio/uBandScale/uSizeMask en CinematicAtom.tsx. La duración la fija el número de subcapas (durationForShells), no el manifiesto: si cambian, ACTUALIZA formato.dur."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 28.2,
+    "nota_dur": "3 bandas × 3.2s + 15.2s de gancho/viaje/mirada + 3.4s de cola"
+  },
+  "render": {
+    "shards": 2,
+    "batch": 40,
+    "frames": "dist-video/.atneframes",
+    "nota_shards": "2, NO 5: con 5 shards a 2160×3840 iangpu se cayó (Tailscale 43 min offline)."
+  },
+  "guion": {
+    "archivo": "scripts/guiones/atomo-ne.txt"
+  },
+  "audio": {
+    "dir": "dist-video/atomo-ne-narracion",
+    "narracion": "atomo-ne-narracion.mp3",
+    "segs": "segs.json",
+    "ass": "atomo-ne.ass",
+    "voz": "XTTS Matilda, VEL=1.10. ⚠ pasar scripts/voz-check.py ANTES de rendir.",
+    "musica": null
+  },
+  "salida": {
+    "dir": "/mnt/e/forja-videos",
+    "master": "atomo-ne-4k-master.mp4",
+    "h264": "atomo-ne-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "precomputed/atoms/z010-v2.bin"
+    ],
+    "guion": "atomo-ne.txt",
+    "scripts": [
+      "precompute-atom-orbitals.py",
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py"
+    ],
+    "escenaSrc": [
+      "CinematicAtom.tsx"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "atomos/atomo-ne.mp4",
+    "capsulaRel": "atomos/_code/atomo-ne-capsula.tar.gz",
+    "pieza": "atomo-010"
+  }
+}
