@@ -51,6 +51,13 @@ import { win } from './capas';
 // en vez de "apareció otra cosa". Allá era `sigmaMul = lerp(1, ..., solo)`; aquí es
 // `bandaMask`, y la ventana de cada banda es la MISMA que ya usaba su etiqueta, así
 // que el nombre `3d⁷` se enciende exactamente cuando su nube toma el escenario.
+// CUÁNTOS CANALES CABEN EN EL SHADER. Era 16 y alcanzaba de sobra cuando cada canal era una
+// SUBCAPA (el uranio tenía 4). Con un canal por ORBITAL ya no: el samario sale con 34 y el
+// europio con 35, y todo índice ≥16 caía FUERA del arreglo — en GLSL eso es comportamiento
+// indefinido, o sea una banda que se enciende sola o no se enciende nunca, sin avisar.
+// 64 cubre al oganesón con margen y son 128 uniforms, nada al lado del límite del driver.
+const NCANALES = 64;
+
 const BANDA_T0 = 15.2;        // arranca el barrido (idéntico al que ya tenían las etiquetas)
 const BANDA_COLA = 3.4;       // tras la última banda: el campo B y el cierre
 // Las nubes que NO están en turno. 0.05, no 0.12: con los canales por ORBITAL lo que define
@@ -434,7 +441,7 @@ function makeSpriteTexture(): THREE.Texture {
 }
 
 const POINTS_VERT = /* glsl */ `
-uniform float uRevealMask[16];
+uniform float uRevealMask[${NCANALES}];
 uniform float uGlobalRot;
 uniform float uTime;
 uniform float uHoleR;
@@ -465,7 +472,7 @@ uniform float uBandScale;
 // satura los pocos puntos que hay pero la nube sigue siendo puntos sueltos sobre negro. Lo
 // que le falta a una banda flaca es COBERTURA, y eso se compra con area. Medido en el cromo:
 // el 4s tiene UN electron (8 300 puntos) contra los seis del 2p (50 000) y salia invisible.
-uniform float uSizeMask[16];
+uniform float uSizeMask[${NCANALES}];
 uniform float uCoreFloor;
 attribute vec3 aColor;
 attribute float aSize;
@@ -592,7 +599,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
 
   const uniforms = useMemo(() => ({
     uSprite:     { value: sprite },
-    uRevealMask: { value: new Float32Array(16) },
+    uRevealMask: { value: new Float32Array(NCANALES) },
     uGlobalRot:  { value: 0 },
     uTime:       { value: 0 },
     uHoleR:      { value: 0 },
@@ -600,7 +607,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     uPix:        { value: 1 },
     uPixGain:    { value: 1 },
     uBandScale:  { value: 1 },
-    uSizeMask:   { value: new Float32Array(16).fill(1) },
+    uSizeMask:   { value: new Float32Array(NCANALES).fill(1) },
     uCoreFloor:  { value: 0.16 },
     uBright:     { value: 1 },
     uBokeh:      { value: 0 },
@@ -619,7 +626,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     // `p` de cobertura basta con √p en el radio. Solo se aplica a la banda EN TURNO y solo
     // dentro del barrido: fuera de él vale 1 y el átomo se ve exactamente como siempre.
     const fase = bundle.shells.length > 0 ? bandaFase(time, bundle.shells.length) : null;
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < NCANALES; i++) {
       if (i >= bundle.shells.length) { mask[i] = 0; smask[i] = 1; continue; }
       const mia = revealAll || fase === null
         ? 0 : win(time, ...bandaWindow(i, bundle.shells.length), 0.45);
