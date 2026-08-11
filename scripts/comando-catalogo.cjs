@@ -80,6 +80,16 @@ const SPECIAL = {
   },
 };
 // ── serie "La economía son ideas" (cápsulas de 30 s; #1 = la imprenta) ──
+// LA FORMACIÓN DE UNA GRASA — primera pieza poliatómica con barrido de la serie.
+// La clave la genera comando-scan.cjs del NOMBRE DEL ARCHIVO (mol-grasa-butirico.mp4),
+// así que tiene que ser exactamente 'mol-grasa butirico' o la pieza sale con título genérico.
+SPECIAL['mol-grasa butirico'] = {
+  codigo: 'moleculas/_code/mol-grasa-butirico-capsula.tar.gz',
+  titulo: 'Esto huele a mantequilla',
+  descripcion: `Es ácido butírico: la molécula que hace que la mantequilla huela a mantequilla. Le da su nombre —butyrum— y su olor. 🧈⚛️ Aquí la ves NACER: catorce átomos sueltos, cada uno con su nube de electrones y su propio campo eléctrico, que se juntan hasta que la carga se cae al espacio de en medio. Eso es un enlace.\n\nNada está dibujado. La densidad es un cálculo cuántico real punto por punto, y el enlace EMERGE de ella: la carga en la región de enlace pasa de 0.000 a 0.870 electrones. Trece enlaces, 943 kcal/mol liberadas. Las líneas azules son el campo eléctrico calculado, 420 de ellas, todas cargando el mismo flujo. Hasta el verde del carbono es física: son sus bandas de Swan, el mismo verde del cono de una flama de gas y de las comas de los cometas.\n\nLo único puesto a mano fue juntarlos: es un barrido, no un mecanismo de reacción. Nadie fabrica una grasa así.\n\nEl olor de la mantequilla es esta forma. 🎓 GAIA University.`,
+  hashtags: ['#quimica', '#mantequilla', '#fisicacuantica', '#moleculas', '#enlacequimico', '#ciencia', '#stem', '#4k'],
+};
+
 SPECIAL['idea-imprenta'] = {
   codigo: 'ideas/_code/idea-01-imprenta-capsula.tar.gz',
   titulo: 'Copiar un libro costaba MESES — esta idea lo hizo casi gratis',
