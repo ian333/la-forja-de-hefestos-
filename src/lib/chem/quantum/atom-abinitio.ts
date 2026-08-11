@@ -147,7 +147,7 @@ export function bundleFromAbInitio(data: AtomAbInitio, live = false) {
     positions, colors, sizes, shellIdx,
     shells: shells.map(s => ({
       label: orbLabel(s.n, s.l, s.m),
-      n: s.n, l: s.l,
+      n: s.n, l: s.l, m: s.m,
       color: new THREE.Color(hex(s.n, s.l)),
       electrons: s.electrons,
     })),

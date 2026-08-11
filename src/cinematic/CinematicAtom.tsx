@@ -142,6 +142,54 @@ function bandaFase(time: number, total: number): number | null {
  * Efecto secundario y honesto: como las subcapas salen de adentro hacia afuera, la
  * cámara RETROCEDE banda por banda. El espectador viaja hacia afuera por el átomo.
  */
+/**
+ * DESDE DÓNDE SE VE CADA ORBITAL. Una mancuerna mirada A LO LARGO de su eje es un círculo:
+ * la forma sólo existe DE PERFIL. Con la cámara en una órbita genérica, de los quince canales
+ * del cromo unos salían nítidos y otros como bulto — y no por el cálculo, sino por el ángulo.
+ *
+ *   p_x, p_y, p_z   → cámara PERPENDICULAR al eje del lóbulo
+ *   d_xy, d_x²−y²   → los cuatro lóbulos viven en el plano xy ⇒ se mira DESDE z
+ *   d_yz            → plano yz ⇒ desde x       · d_xz → plano xz ⇒ desde y
+ *   d_z²            → dónut alrededor de z + lóbulos en ±z ⇒ de perfil, desde el plano xy
+ *   s               → da igual: es una esfera
+ *
+ * Se inclina un poco (nunca exactamente sobre un eje) para que el volumen se lea en 3D y no
+ * como un dibujo plano de libro.
+ */
+function camDirOrbital(l: number, m: number): [number, number, number] {
+  const K = 0.34;                                   // inclinación que da volumen
+  const n = (v: [number, number, number]): [number, number, number] => {
+    const d = Math.hypot(v[0], v[1], v[2]);
+    return [v[0] / d, v[1] / d, v[2] / d];
+  };
+  if (l === 1) {                                    // p: perpendicular al eje
+    if (m === 0) return n([K, K, 1]);               // pₓ  → desde z
+    if (m === 1) return n([K, K * 0.6, 1]);         // p_y → desde z (eje vertical en cuadro)
+    return n([1, K, K]);                            // p_z → desde x
+  }
+  if (l === 2) {
+    if (m === 0) return n([K * 0.5, K * 0.5, 1]);   // d_xy    → desde z
+    if (m === 1) return n([1, K * 0.5, K * 0.5]);   // d_yz    → desde x
+    if (m === 2) return n([1, K * 0.35, K * 0.35]); // d_z²    → de perfil (dónut visible)
+    if (m === 3) return n([K * 0.5, 1, K * 0.5]);   // d_xz    → desde y
+    return n([K * 0.5, K * 0.5, 1]);                // d_x²−y² → desde z
+  }
+  if (l === 3) return n([1, 0.62, 0.78]);           // f: vista genérica que abre sus lóbulos
+  return n([0.55, 0.42, 1]);                        // s
+}
+
+/**
+ * ROTACIÓN de la nube. Gira en el gancho/viaje (da vida al cúmulo) y SE FRENA al empezar el
+ * barrido: si la nube sigue girando, el pₓ se vuelve p_y en pantalla y apuntar la cámara a un
+ * eje no significa nada. Se detiene suave (misma velocidad en el empalme, derivada continua),
+ * no de golpe.
+ */
+function rotNube(time: number): number {
+  const R = 1.15;
+  if (time <= BANDA_T0) return R * time;
+  return R * (BANDA_T0 + 0.5 * (1 - Math.exp(-(time - BANDA_T0) / 0.5)));
+}
+
 function bandaRadio(time: number, shellR: Float32Array, piso = 0): number | null {
   const n = shellR.length;
   const u = bandaFase(time, n);
@@ -330,7 +378,7 @@ export interface AtomBundle {
   shellIdx: Float32Array;
   // `electrons` = los que REALMENTE se dibujan en esa subcapa. Importa en los 57 elementos
   // con pseudopotencial (Z≥37): ahí el core no existe y sumarlos NO da Z.
-  shells: { label: string; n: number; l: number; color: THREE.Color; electrons?: number }[];
+  shells: { label: string; n: number; l: number; m?: number; color: THREE.Color; electrons?: number }[];
 }
 
 // `live` = laboratorio interactivo. Cambia SOLO dos cosas y las dos están medidas en la
@@ -639,7 +687,9 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     }
     // rotRate=0 en moléculas (la nube debe quedar alineada con los núcleos; la
     // cámara orbita). En átomos gira para dar vida al cúmulo.
-    matRef.current.uniforms.uGlobalRot.value = time * rotRate;
+    // rotRate>0 (átomos) ⇒ la rotación la manda rotNube: gira en el gancho y SE FRENA al
+    // empezar el barrido. rotRate=0 (moléculas) se respeta tal cual.
+    matRef.current.uniforms.uGlobalRot.value = rotRate > 0 ? rotNube(time) : 0;
     matRef.current.uniforms.uTime.value = time;
     matRef.current.uniforms.uHoleR.value = holeRadius;
     matRef.current.uniforms.uCoreR.value = coreRadius;
@@ -888,9 +938,11 @@ function trajectoryOffset(seed: number, tv: number): { dAzim: number; dElev: num
   };
 }
 
-export function CameraRig({ extent, time, vertical, tv, seed, shellR }: {
+export function CameraRig({ extent, time, vertical, tv, seed, shellR, orbs }: {
   extent: number; time: number; vertical: boolean; tv: number; seed: number;
   shellR?: Float32Array | null;
+  /** (l,m) de cada canal — para poner la cámara de PERFIL a cada orbital (camDirOrbital). */
+  orbs?: { l: number; m?: number }[] | null;
 }) {
   const { camera } = useThree();
   useEffect(() => {
@@ -907,9 +959,34 @@ export function CameraRig({ extent, time, vertical, tv, seed, shellR }: {
     // nucleones (medido: cuadro de burbujas naranjas al 90 % de píxeles encendidos).
     // Aquí la distancia es exactamente el radio de la banda × encuadre, y la órbita es
     // lenta para leer la forma.
-    const { pos, fov, lookAt } = rb !== null
-      ? { pos: sph(rb * BANDA_ENCUADRE, 0.26, 2.9 + time * 0.17), fov: 34, lookAt: undefined }
-      : cut.cam(localT, extent);
+    // LA CÁMARA VUELA AL PERFIL DE CADA ORBITAL. Sostiene el buen ángulo el 65 % de la
+    // ventana —lo que dura la lectura— y VIAJA al siguiente en el 35 % final: el movimiento
+    // no es adorno, está motivado por lo que toca enseñar, y cada corte de banda trae su
+    // propio vuelo. Encima va una deriva lenta para que ninguna toma quede muerta.
+    let pos: Vec3, fov: number, lookAt: Vec3 | undefined;
+    if (rb !== null && orbs && orbs.length) {
+      const nb = orbs.length;
+      const u = Math.min(nb - 1e-6, Math.max(0, bandaFase(time, nb) ?? 0));
+      const i = Math.min(nb - 1, Math.floor(u));
+      const j = Math.min(nb - 1, i + 1);
+      const f = smoothstep((u - i - 0.65) / 0.35);
+      const a = camDirOrbital(orbs[i].l, orbs[i].m ?? 0);
+      const b = camDirOrbital(orbs[j].l, orbs[j].m ?? 0);
+      const d: Vec3 = [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
+      // deriva: giro lento alrededor de Y para que la toma respire sin perder el perfil
+      const g = 0.20 * Math.sin(time * 0.35);
+      const cg = Math.cos(g), sg = Math.sin(g);
+      const dx = cg * d[0] + sg * d[2], dz = -sg * d[0] + cg * d[2];
+      const L = Math.hypot(dx, d[1], dz) || 1;
+      const R = rb * BANDA_ENCUADRE;
+      pos = [(dx / L) * R, (d[1] / L) * R, (dz / L) * R];
+      fov = 34;
+      lookAt = undefined;
+    } else if (rb !== null) {
+      pos = sph(rb * BANDA_ENCUADRE, 0.26, 2.9 + time * 0.17); fov = 34; lookAt = undefined;
+    } else {
+      ({ pos, fov, lookAt } = cut.cam(localT, extent));
+    }
 
     // Perturbación de trayectoria (no-op si tv=0)
     const off = trajectoryOffset(seed, tv);
@@ -939,7 +1016,7 @@ export function CameraRig({ extent, time, vertical, tv, seed, shellR }: {
       cam.far = Math.max(200, extent * 30);
       cam.updateProjectionMatrix();
     }
-  }, [time, extent, camera, vertical, tv, seed, shellR]);
+  }, [time, extent, camera, vertical, tv, seed, shellR, orbs]);
   return null;
 }
 
@@ -1756,7 +1833,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
         {live
           ? <OrbitControls enablePan={false} enableDamping dampingFactor={0.08}
               minDistance={extent * 0.004} maxDistance={extent * 2.2} autoRotate autoRotateSpeed={0.55} />
-          : <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} shellR={shellR} />}
+          : <CameraRig extent={extent} time={time} vertical={vertical} tv={tv} seed={Z} shellR={shellR} orbs={bundle?.shells ?? null} />}
         <Nucleus protons={nuc.protons} neutrons={nuc.neutrons} time={time} clusterRadius={nucR} />
         {bundle && <ElectronCloud bundle={bundle} time={time} holeRadius={holeForTime(time, nucR, extent)}
           /* La atenuación del corazón existe para que el centro no reviente a blanco

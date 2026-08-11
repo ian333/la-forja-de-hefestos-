@@ -16,7 +16,7 @@
     ]
   },
   "fisica": {
-    "metodo": "SCF real (UHF, base def2-tzvp), densidad de CADA subcapa muestreada en malla 3D esférica (170 anillos × 900 direcciones, 110000 puntos). Sin promedio esférico: es lo que conserva los lóbulos.",
+    "metodo": "SCF real (UHF, base def2-tzvp), densidad de CADA ORBITAL (n,l,m) muestreada en malla 3D esférica (170 anillos × 900 direcciones, 110000 puntos). Sin promedio esférico: es lo que conserva los lóbulos.",
     "configuracion": "1s2 2s2 2p6 3s2 3p6 3d10 4s1",
     "verificacion_config": "COINCIDE con el estado base experimental (NIST ASD). Verificado 2026-08-11 contra los 118 del manifiesto; Mn, Fe y Gd NO coinciden (HF de capa abierta ordena mal 3d/4s) y por eso quedaron FUERA de este lote.",
     "energia_fiable": true,
@@ -78,14 +78,14 @@
     "html": "cinematic-atom.html",
     "query": "z=29",
     "hook": "__cinematicAtom",
-    "wiring": "bandaMask/bandaRadio/uBandScale/uSizeMask en CinematicAtom.tsx. La duración la fija el número de subcapas (durationForShells), no el manifiesto: si cambian, ACTUALIZA formato.dur."
+    "wiring": "bandaMask/bandaRadio/camDirOrbital/rotNube en CinematicAtom.tsx. Un canal por ORBITAL (.bin ATM3). La cámara se pone DE PERFIL a cada orbital y la nube deja de girar en el barrido: mirada a lo largo de su eje, una mancuerna es un círculo."
   },
   "formato": {
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 34.0,
-    "nota_dur": "7 bandas × 2.2s + 15.2s de gancho/viaje/mirada + 3.4s de cola"
+    "dur": 41.1,
+    "nota_dur": "15 ORBITALES (n,l,m) × 1.5s + 15.2s de gancho/viaje/mirada + 3.4s de cola"
   },
   "render": {
     "shards": 2,
