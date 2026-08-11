@@ -30,7 +30,7 @@ import { surfaceFlowLength } from '../mold/flowlen-surface';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
@@ -60,7 +60,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // EL CICLO DEL DADO (orden 2026-08-10-ciclo-dado-estacion1): el molde del cubo se
   // construye estación por estación EN ORDEN DE LIBRO. `estacion` = dónde vamos;
   // `e1` = el juicio de la estación 1 (macizo REPROBADO vs dado APROBADO, Eq 9.5).
-  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[] } | null>(null);
+  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
   // armado NO debe barrerlas cuando liveMoldSpec es null.
   const [feedDemo, setFeedDemo] = useState(false);
@@ -439,7 +439,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // flanera, convención boca ARRIBA) talla cavidad+núcleo con ESCALA 1.0 a propósito:
   // la contracción es la estación 9 y ese retorno se declara, no se adelanta.
   // setMoldPkg(pkg) DESPIERTA los semáforos §4.3.3 que ya viven en MoldAnalisisPanel.
-  const cicloEstacion3 = useCallback(() => {
+  const cicloEstacion3 = useCallback((malo = false) => {
     if (!oc || !ciclo?.e2) return;
     try {
       const pkg = ciclo.e2.pkg;
@@ -448,7 +448,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // dims de COMPRA (insertDims — el bug de ian: 60/16 declarados vs 52/14
       // dibujados) y verificacionE3 mide TODO del B-Rep: 17 cotas declarado≈medido,
       // draft por rebanadas, Σ volúmenes = bloque, cuerpos=2. La tabla va al panel.
-      const acero = construirAceroE3(oc, pkg);
+      const acero = construirAceroE3(oc, pkg, malo);
       const dadoD = acero.dadoD;
       const r = acero.r;
       // SIN computeMoldAlarm aquí: congelaba el tab MINUTOS (vóxeles sobre bloques
@@ -458,12 +458,20 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       const e3v = verificacionE3(oc, acero);
       const e3cotas = cotasCicloE3(e3v, acero, 34);   // 34 = el lift con que la escena abre el núcleo
       setCotasOn(true);                               // las dimensiones SE VEN, no se buscan
+      // ── LA PRUEBA DEL RAYO: ¿la pieza SALE? (el teorema, sobre las mitades reales) ──
+      const mallaDe = (sh: any) => { const t = OCC.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
+      const rayo = pruebaDelRayo([
+        { nombre: 'cavidad (baja −Z)', malla: mallaDe(r.cavityPlate), sube: false },
+        { nombre: 'núcleo (sube +Z)', malla: mallaDe(r.macho), sube: true },
+      ], { res: 384 });
+      const interMm3 = interseccionMitades(oc, r.cavityPlate, r.macho).volMm3;
+      setMoldXray(false);                             // 🩻 PELEA con el mapa de color (todo pálido): el mapa manda
       const partPlano = OCC.transformShape(oc, OCC.makeBox(oc, 150, 150, 0.8), { translate: [-55, -55, 39.1] });
       const placaA = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 66), { translate: [-78, -78, -79] });
       const placaB = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 22), { translate: [-78, -78, 96] });
       setMoldPkg(pkg);
-      setCiclo({ ...ciclo, estacion: 3, e3, e3v, e3cotas });
-      setDocName('EL DADO · estación 3 — ARQUITECTURA (cap 4): nace el primer acero');
+      setCiclo({ ...ciclo, estacion: 3, e3, e3v, e3cotas, rayo, interMm3 });
+      setDocName(malo ? 'EL DADO ROTO · draft INVERTIDO — el molde NO abre' : 'EL DADO · estación 3 — ARQUITECTURA (cap 4): nace el primer acero');
       setCollapsed((c) => ({ ...c, features: false }));
       cursoSet(3, [
         'CICLO DEL DADO · estación 3 — ARQUITECTURA (cap 4)',

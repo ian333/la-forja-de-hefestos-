@@ -62,6 +62,28 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check(`${m.componente} · ${m.cota} [${m.vista}]`, m.ok, `declarado ${m.declarado} vs medido ${m.medido} (±${m.tolMm})`);
   check('VERIFICACIÓN E3 completa', v.ok, v.resumen);
 
+  // ══ LA PRUEBA DEL RAYO — el teorema y su CONTROL NEGATIVO ══
+  console.log('── EL RAYO · ¿la pieza SALE? (y ¿el test distingue lo roto?)');
+  const { splitMold } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold.ts'));
+  const malla = (sh) => { const t = occt.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
+  const corre = (shape) => {
+    const r = splitMold(oc, shape, { scale: 1, pinch: 0.5, plateThickness: 16, block: { w: 120, d: 120, h: 60, x: 20, y: 20, z: 39.5 - 30 } });
+    return {
+      p: ed.pruebaDelRayo([
+        { nombre: 'cavidad (baja −Z)', malla: malla(r.cavityPlate), sube: false },
+        { nombre: 'núcleo (sube +Z)', malla: malla(r.macho), sube: true },
+      ], { res: 384 }),
+      inter: ed.interseccionMitades(oc, r.cavityPlate, r.macho),
+    };
+  };
+  const bueno = corre(ed.dadoDraftShape(oc));
+  check('el DADO SALE (atrapadas = 0)', bueno.p.veredicto === 'SALE' && bueno.p.atrapados === 0, bueno.p.resumen.slice(0, 110));
+  check('cavidad ∩ núcleo = ∅', bueno.inter.ok, bueno.inter.volMm3 + ' mm³');
+  // LA REGLA DEL RENDER CORRUPTO: si el test no distingue el molde ROTO, no es evidencia
+  const malo = corre(ed.dadoUndercutShape(oc));
+  check('CONTROL NEGATIVO: el dado con draft INVERTIDO reprueba', malo.p.veredicto === 'NO SALE' && malo.p.atrapados > 0, `${malo.p.atrapados} caras atrapadas`);
+  check('y el undercut lo sufre la CAVIDAD (la que no puede bajar)', (malo.p.mitades.find((m) => !m.sube)?.nAtrapados ?? 0) > 0);
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

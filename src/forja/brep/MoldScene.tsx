@@ -554,3 +554,68 @@ export function computeMoldAlarm(parts: MoldPart[], fitMm = 0.6, volFitMm3 = 15)
   collisions.sort((x, y) => y.volMm3 - x.volMm3);
   return { cloud: new Float32Array(cloud), collisions };
 }
+
+/** MAPA DEL RAYO — pinta una mitad del molde por su clase de desmoldeo
+ *  (orden 2026-08-11-ciclo-dado-el-rayo). Mismo patrón que MoldTcPaint: vertex
+ *  colors + basic material sin luz (un mapa es DATO, no objeto iluminado — las
+ *  luces + ACES pastelean el colormap). Verde = libre · azul = se libera por
+ *  draft · gris = pared vertical · ROJO = ATRAPADA (el undercut que mata el molde). */
+export function RayoPaint({ part, clase }: { part: MoldPart; clase: Uint8Array }) {
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
+    g.setIndex(new THREE.BufferAttribute(part.indices, 1));
+    // 0 libre (verde) · 1 vertical (gris) · 2 ATRAPADA (rojo) · 3 se libera por draft
+    // (azul APAGADO a propósito: es la clase mayoritaria y si grita, tapa al rojo,
+    //  que es lo único que hay que ver. Primera captura: mancha azul ilegible.)
+    const COL = [[0.34, 0.86, 0.52], [0.42, 0.46, 0.53], [1.0, 0.10, 0.14], [0.20, 0.33, 0.46]];
+    const P = part.positions, I = part.indices;
+    const col = new Float32Array(P.length);
+    // SOMBREADO HORNEADO en el color: el material va sin luz (para no pastelear el
+    // colormap con ACES) pero sin sombra el sólido se lee como recorte de papel.
+    // N·L fijo → la FORMA se ve y el color sigue siendo el dato.
+    const L0 = 0.4, L1 = 0.45, L2 = 0.8;
+    for (let t = 0; t * 3 < I.length; t++) {
+      const c = COL[clase[t] ?? 3];
+      const a = I[t * 3] * 3, b = I[t * 3 + 1] * 3, d = I[t * 3 + 2] * 3;
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+      const vx = P[d] - P[a], vy = P[d + 1] - P[a + 1], vz = P[d + 2] - P[a + 2];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const len = Math.hypot(nx, ny, nz) || 1;
+      const sh = 0.55 + 0.45 * Math.abs((nx * L0 + ny * L1 + nz * L2) / len);
+      for (let k = 0; k < 3; k++) {
+        const v = I[t * 3 + k] * 3;
+        col[v] = c[0] * sh; col[v + 1] = c[1] * sh; col[v + 2] = c[2] * sh;
+      }
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.computeVertexNormals();
+    return g;
+  }, [part, clase]);
+  // LAS ATRAPADAS, APARTE y con depthTest OFF — el truco de la nube de alarma: el
+  // undercut vive DENTRO del bloque de acero y quedaba invisible aunque el panel
+  // dijera 16. Un defecto que no se ve no sirve: éste ATRAVIESA el acero.
+  const geoRoja = useMemo(() => {
+    const I = part.indices, P = part.positions;
+    const idx: number[] = [];
+    for (let t = 0; t * 3 < I.length; t++) if (clase[t] === 2) idx.push(I[t * 3], I[t * 3 + 1], I[t * 3 + 2]);
+    if (!idx.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(P, 3));
+    g.setIndex(idx);
+    return g;
+  }, [part, clase]);
+  useEffect(() => () => { geo.dispose(); geoRoja?.dispose(); }, [geo, geoRoja]);
+  return (
+    <group>
+      <mesh geometry={geo} renderOrder={5}>
+        <meshBasicMaterial vertexColors toneMapped={false} transparent opacity={0.88} side={THREE.DoubleSide} />
+      </mesh>
+      {geoRoja && (
+        <mesh geometry={geoRoja} renderOrder={9999}>
+          <meshBasicMaterial color="#ff1030" toneMapped={false} depthTest={false} transparent opacity={0.85} side={THREE.DoubleSide} />
+        </mesh>
+      )}
+    </group>
+  );
+}

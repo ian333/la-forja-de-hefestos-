@@ -1251,8 +1251,9 @@ export function estacion3Dado(pkg: MoldPackage): Estacion3Dado {
  * Doctrina de aquí en adelante (la misma de las cotas del CAD): cada dimensión
  * trae DOS cifras — la declarada y la MEDIDA del B-Rep — y si no cuadran, ROJO.
  */
-import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft } from '../brep/occt';
-import { splitMold, shapeBBox, volume as occVolume, draftAnalysis, type SplitMoldResult } from './mold';
+import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft, common as occCommon, volume as occVolume, tessellate as occTess } from '../brep/occt';
+import { clasificarVisibilidad } from './visibilidad';
+import { splitMold, shapeBBox, draftAnalysis, type SplitMoldResult } from './mold';
 
 /** El dado RECTO de las estaciones 1-2 (boca abajo, sin draft). */
 export function dadoRectoShape(oc: any) {
@@ -1286,10 +1287,10 @@ export interface AceroE3 {
 
 /** El acero de la E3 con las dims de COMPRA reales — el bug de ian era que el
  *  bloque tallado (52/14) no era el acero comprado (60/16). UNA fuente: insertDims. */
-export function construirAceroE3(oc: any, pkg: MoldPackage): AceroE3 {
+export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false): AceroE3 {
   const asm = packageToAssemblySpec(pkg);
   const id = insertDims(asm);
-  const dadoD = dadoDraftShape(oc);
+  const dadoD = undercut ? dadoUndercutShape(oc) : dadoDraftShape(oc);   // control negativo VISIBLE
   const zPart = 39.5;                                        // boca 40 − pinch 0.5
   const r = splitMold(oc, dadoD, {
     scale: 1,                                                // contracción = estación 9 (retorno declarado)
@@ -1418,4 +1419,110 @@ export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number):
     dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', [2.01, 52, zP + L], [37.99, 52, zP + L]),
   ].filter((d): d is import('./mold-dimensions').Dim3D => !!d);
   return [{ role: 'ciclo-e3', dims }];
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* LA PRUEBA DEL RAYO — ¿la pieza SALE? (orden 2026-08-11-ciclo-dado-el-rayo)  */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * El teorema que decide si un molde de 2 placas SIRVE. Las 17 cotas prueban que
+ * el acero tiene el TAMAÑO correcto; ninguna prueba que la pieza SALGA.
+ *
+ * Formulación (la honesta, sobre las MITADES reales, no sobre la pieza):
+ * una mitad se retira en su dirección `d`. Sus caras moldeantes son las que MIRAN
+ * a `d` (n·d > 0). Cada una de ésas tiene que ser VISIBLE desde `d` — si su propia
+ * mitad la tapa, hay material por delante en el camino de salida: ES UN UNDERCUT y
+ * la mitad no se puede retirar. Eso es exactamente lo que mide el z-buffer
+ * ortográfico de `visibilidad.ts` (con oclusión real, no solo el ángulo de la cara).
+ *
+ * `atrapados = 0` ES el teorema. El reparto por triángulo es el MAPA de color.
+ */
+// 0 = mira a la salida y NADA la tapa (libre) · 1 = pared vertical (roza, no traba)
+// 2 = ATRAPADA: mira a la salida y su propia mitad la TAPA → undercut
+// 3 = NO mira a la salida: se libera por deslizamiento/draft (el caso sano del cono)
+export type ClaseRayo = 0 | 1 | 2 | 3;
+export interface RayoMitad {
+  nombre: string; sube: boolean;
+  nTri: number; nSalen: number; nVerticales: number; nAtrapados: number;
+  areaSaleMm2: number; areaAtrapadaMm2: number;
+  clase: Uint8Array;
+}
+export interface PruebaRayo {
+  mitades: RayoMitad[];
+  atrapados: number;
+  veredicto: 'SALE' | 'NO SALE';
+  resumen: string;
+}
+
+export function pruebaDelRayo(
+  mitades: Array<{ nombre: string; malla: { positions: Float32Array | number[]; indices: Uint32Array | number[] }; sube: boolean }>,
+  o?: { res?: number; senoVertical?: number },
+): PruebaRayo {
+  const senoV = o?.senoVertical ?? Math.sin(0.5 * Math.PI / 180);   // <0.5° = pared vertical (roza, no traba)
+  const out: RayoMitad[] = [];
+  for (const m of mitades) {
+    const d: [number, number, number] = m.sube ? [0, 0, 1] : [0, 0, -1];
+    // el observador se para EN la dirección de salida y mira hacia la pieza (w = −d):
+    // el motor conserva las caras con n·w < 0, o sea justo las que miran a `d`.
+    const vis = clasificarVisibilidad(m.malla, {
+      vistas: [{ nombre: m.nombre, dir: [-d[0], -d[1], -d[2]] }],
+      res: o?.res ?? 384,
+    });
+    const P = m.malla.positions, I = m.malla.indices;
+    const nTri = Math.floor(I.length / 3);
+    const clase = new Uint8Array(nTri);
+    let nSalen = 0, nVert = 0, nAtr = 0, aSale = 0, aAtr = 0;
+    for (let t = 0; t < nTri; t++) {
+      const a = I[t * 3] * 3, b = I[t * 3 + 1] * 3, c = I[t * 3 + 2] * 3;
+      const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+      const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const L = Math.hypot(nx, ny, nz);
+      if (L < 1e-12) { clase[t] = 1; nVert++; continue; }
+      const dot = (nx * d[0] + ny * d[1] + nz * d[2]) / L;      // cos con la salida
+      const area = vis.areaTri[t];
+      if (Math.abs(dot) <= senoV) { clase[t] = 1; nVert++; continue; }   // pared vertical: roza, no traba
+      // dot < 0: la cara se ALEJA de su contacto al retirarse — se libera por draft.
+      // (Es el caso SANO del cono: comprobado con el control negativo, al invertir el
+      //  draft estas mismas caras cruzan a dot > 0 y el z-buffer las caza ocluidas.)
+      if (dot < 0) { clase[t] = 3; continue; }
+      if (vis.fracMaxTri[t] > 0.5) { clase[t] = 0; nSalen++; aSale += area; }
+      else { clase[t] = 2; nAtr++; aAtr += area; }                        // OCLUIDA en su ruta de salida
+    }
+    out.push({ nombre: m.nombre, sube: m.sube, nTri, nSalen, nVerticales: nVert, nAtrapados: nAtr, areaSaleMm2: +aSale.toFixed(1), areaAtrapadaMm2: +aAtr.toFixed(1), clase });
+  }
+  const atrapados = out.reduce((s, m) => s + m.nAtrapados, 0);
+  return {
+    mitades: out, atrapados,
+    veredicto: atrapados === 0 ? 'SALE' : 'NO SALE',
+    resumen: atrapados === 0
+      ? `LA PIEZA SALE: ${out.map((m) => `${m.nombre} ${m.nSalen} caras libres`).join(' · ')} · 0 atrapadas`
+      : `✗ NO SALE: ${out.filter((m) => m.nAtrapados).map((m) => `${m.nombre} tiene ${m.nAtrapados} caras ATRAPADAS (${m.areaAtrapadaMm2} mm²)`).join(' · ')} — undercut: esa mitad no se puede retirar`,
+  };
+}
+
+/** El dado con draft INVERTIDO (más ancho ABAJO) — CONTROL NEGATIVO del rayo:
+ *  un molde así NO puede abrir, y si la prueba no lo caza, la prueba no sirve
+ *  (la regla del render corrupto aplicada a la geometría). */
+export function dadoUndercutShape(oc: any) {
+  const t15 = Math.tan(1.5 * Math.PI / 180);
+  const R = (a: number, b: number) => [{ x: a, y: a }, { x: b, y: a }, { x: b, y: b }, { x: a, y: b }];
+  const pl = (z: number) => ({ origin: [0, 0, z] as [number, number, number], uDir: [1, 0, 0] as [number, number, number], vDir: [0, 1, 0] as [number, number, number] });
+  const outer = occLoft(oc, [
+    { pts: R(0, 40), plane: pl(0) },                       // ANCHO abajo  ← al revés
+    { pts: R(40 * t15, 40 - 40 * t15), plane: pl(40) },    // angosto arriba
+  ], { solid: true, ruled: true });
+  const inner = occLoft(oc, [
+    { pts: R(2 - t15, 38 + t15), plane: pl(2) },
+    { pts: R(2 + 38 * t15, 38 - 38 * t15), plane: pl(41) },
+  ], { solid: true, ruled: true });
+  return occCut(oc, outer, inner);
+}
+
+/** cavidad ∩ núcleo = ∅ — la booleana hermana del rayo: los dos aceros no se comen. */
+export function interseccionMitades(oc: any, a: any, b: any): { volMm3: number; ok: boolean } {
+  try {
+    const v = occVolume(oc, occCommon(oc, a, b));
+    return { volMm3: +v.toFixed(4), ok: Math.abs(v) < 1 };
+  } catch { return { volMm3: NaN, ok: false }; }
 }

@@ -47,7 +47,7 @@ import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
-import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, computeMoldAlarm } from './MoldScene';
+import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
@@ -3513,7 +3513,7 @@ export default function ForgeBRepStudio() {
   // (paso 2.3 de la extracción). La llamada va AQUÍ (después de setDocName) porque
   // el hook la recibe como parámetro — moverla arriba = TDZ, el crash ya conocido.
   const mold = useMoldStudio({ oc, setCollapsed, setDocName });
-  const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
+  const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   const [libNames, setLibNames] = useState<string[]>([]);
   const refreshLib = useCallback(() => setLibNames(Object.keys(readLib()).sort()), []);
   const resolvedParams = useMemo<ResolvedParams>(() => resolveParams(params), [params]);
@@ -6099,6 +6099,12 @@ export default function ForgeBRepStudio() {
                 })}
                 {/* 🚨 NUBE DE ALARMA: bolitas rojas donde el acero se comparte (colisión) */}
                 {alarmCloud && alarmCloud.length > 0 && <AlarmCloud pts={alarmCloud} />}
+                {/* MAPA DEL RAYO: las mitades pintadas por su clase de desmoldeo — el
+                    número del panel (atrapadas) es este color sobre el acero. */}
+                {ciclo?.rayo && ciclo.rayo.mitades.map((mi, k) => {
+                  const pt = moldParts.find((p) => p.role === (mi.sube ? 'nucleo' : 'cavidad'));
+                  return pt && !moldHidden[pt.role] ? <RayoPaint key={k} part={pt} clase={mi.clase} /> : null;
+                })}
                 {/* APERTURA ANIMADA: lado A sube y las CORREDERAS se retraen con la
                     cinemática real del perno (u = apertura·tanφ, tope en S) */}
                 <MoldOpenDriver refs={moldAnimRefs} ctl={moldOpenRef} parts={moldParts}

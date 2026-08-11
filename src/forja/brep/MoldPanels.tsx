@@ -608,7 +608,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
         </button>
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
-      {ciclo.estacion >= 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} />}
+      {ciclo.estacion >= 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} />}
     </>
   );
 }
@@ -678,7 +678,7 @@ function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estac
  *  aritmética que la produjo (la base no "es" 196: NECESITA 184 y 196 es la
  *  primera medida del catálogo). Los retornos van declarados al pie: este acero
  *  se va a REABRIR y el panel lo dice desde hoy. */
-function CicloE3({ e3, e3v }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado; e3v?: import('../mold/estudio-molde-datos').VerificacionE3 }) {
+function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3 }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado; e3v?: import('../mold/estudio-molde-datos').VerificacionE3; rayo?: import('../mold/estudio-molde-datos').PruebaRayo; interMm3?: number; cicloEstacion3?: (malo?: boolean) => void }) {
   const fila = (titulo: string, cuerpo: string, porque: string, testid: string, color = '#9db4d0') => (
     <div className="fb-comp-row feat" data-testid={testid} title={porque}
       style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
@@ -707,6 +707,35 @@ function CicloE3({ e3, e3v }: { e3: import('../mold/estudio-molde-datos').Estaci
         ))}
         <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 2 }}>P20 SOLO donde se moldea; C45 donde solo se sujeta — pagar acero de molde en una placa de sujeción es tirar dinero (§4.4.4)</div>
       </div>
+      {rayo && cicloEstacion3 && (
+        <button className="fb-fea-run" data-testid="btn-rayo-undercut" onClick={() => cicloEstacion3(true)} style={{ margin: '4px 6px 0' }}
+          title="Carga el MISMO dado con el draft INVERTIDO — un molde que NO puede abrir. Si el mapa no se pinta de rojo, la prueba no sirve.">
+          🧪 probar el caso ROTO (draft invertido) — ¿el mapa lo caza?
+        </button>
+      )}
+      {rayo && (
+        <div data-testid="e3-rayo" style={{ padding: '5px 6px 2px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: rayo.atrapados === 0 ? '#7ee0a0' : '#f27a6c' }}>
+            🎯 LA PRUEBA DEL RAYO — {rayo.veredicto} · atrapadas: {rayo.atrapados}
+          </div>
+          <div style={{ fontSize: 10, color: '#7f8da3', margin: '1px 0 3px' }}>
+            cada mitad se retira en su dirección; sus caras que MIRAN a la salida tienen que
+            estar libres. Si su propio acero las tapa = undercut = el molde no abre.
+            <b> atrapadas = 0 ES el teorema.</b>
+          </div>
+          {rayo.mitades.map((m, k) => (
+            <div key={k} data-testid={`e3-rayo-${k}`} style={{ fontSize: 10.5, fontFamily: "'JetBrains Mono', monospace", color: m.nAtrapados ? '#f27a6c' : '#9fb2c8' }}>
+              {m.nAtrapados ? '✗' : '✓'} {m.nombre}: {m.nSalen} libres · {m.nVerticales} verticales · {m.nAtrapados} ATRAPADAS{m.nAtrapados ? ` (${m.areaAtrapadaMm2} mm²)` : ''}
+            </div>
+          ))}
+          <div style={{ fontSize: 10.5, fontFamily: "'JetBrains Mono', monospace", color: (interMm3 ?? 1) < 1 ? '#9fb2c8' : '#f27a6c' }}>
+            {(interMm3 ?? 1) < 1 ? '✓' : '✗'} cavidad ∩ núcleo = {interMm3} mm³ (los dos aceros no se comen)
+          </div>
+          <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 2 }}>
+            🟩 libre · 🟦 se libera por draft · ⬜ pared vertical · 🟥 ATRAPADA — el mapa está sobre el acero
+          </div>
+        </div>
+      )}
       {e3v && (
         <div data-testid="e3-medidas" style={{ padding: '4px 6px 2px' }}>
           <div style={{ fontSize: 10.5, color: '#dfe7f2', fontWeight: 700 }}>
