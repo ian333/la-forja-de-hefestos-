@@ -54,7 +54,13 @@ Z_MAX = int(os.environ.get('Z_MAX', '118'))
 # (Ian: "no se parecen en nada a nuestros videos"). A 110 000 el archivo pesa ~800 KB, que
 # con el caché de borde ya encendido se sirve sin dolor, y solo se baja el elemento que se
 # está viendo.
-N_PTS = int(os.environ.get('N_PTS', '110000'))
+# CON UN CANAL POR ORBITAL HAY QUE MUESTREAR MÁS. Los puntos se reparten POR OCUPACIÓN entre
+# los canales, y pasar de subcapas a orbitales multiplica los canales (el cromo: 7 → 15). Con
+# los mismos 110 000, cada orbital queda RALO: medido en el barrido del cromo, 8.4 % de píxeles
+# encendidos contra el 49-82 % de los videos ganadores — o sea pantalla vacía, que es justo lo
+# que la doctrina de cine prohíbe. A 300 000 sube a 18.9 % sin nada de quemado, y el .bin pesa
+# 2.3 MB (sólo se baja el elemento que se está viendo).
+N_PTS = int(os.environ.get('N_PTS', '300000' if ORB else '110000'))
 NR = int(os.environ.get('NR', '170'))             # anillos radiales (log) — resuelven el core
 NDIR = int(os.environ.get('NDIR', '900'))         # direcciones (espiral de Fibonacci)
 
