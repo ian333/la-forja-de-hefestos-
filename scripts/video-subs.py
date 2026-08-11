@@ -26,10 +26,19 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("segs"); ap.add_argument("out")
     ap.add_argument("--w", type=int, default=2160); ap.add_argument("--h", type=int, default=3840)
+    # ALTURA DEL SUBTÍTULO, en unidades de PlayRes. El default es el del canon y NO se toca:
+    # las moléculas siguen saliendo idénticas. Existe porque una escena puede tener su propio
+    # bloque de texto abajo y entonces el default se ENCIMA. Pasó con los átomos (2026-08-11):
+    # el título "Carbono" + Z + la fila de bandas ocupan hasta ~1100 de alto, y el subtítulo,
+    # anclado a 1120, quedaba escrito ENCIMA del nombre. Se declara por pieza en el manifiesto
+    # (audio.marginv) en vez de mover el canon para todos.
+    ap.add_argument("--marginv", type=int, default=0)
     a = ap.parse_args()
 
     vert = a.h >= a.w
-    st = ESTILO["vertical" if vert else "horizontal"]
+    st = dict(ESTILO["vertical" if vert else "horizontal"])
+    if a.marginv > 0:
+        st["marginv"] = a.marginv
     segs = json.load(open(a.segs))
 
     # PlayRes = SIEMPRE la resolución CANÓNICA, no la del render. En ASS, `Fontsize` y

@@ -104,6 +104,49 @@ SPECIAL['idea-brujula'] = {
   hashtags: ['#economia', '#historia', '#brujula', '#navegacion', '#ideas', '#educacion', '#aprendeentiktok', '#4k', '#gaia'],
 };
 
+// ── LA TABLA PERIÓDICA AB INITIO · lote 1 (2026-08-11) ────────────────────────
+// Los 118 átomos publicados hasta hoy se dibujaban con orbitales HIDROGENOIDES +
+// apantallamiento de Slater. Estos NO: son SCF real (def2-TZVP), con la densidad de
+// CADA subcapa muestreada en malla 3D, y las bandas se encienden UNA POR UNA.
+// Los cinco se eligieron con un criterio verificable: su configuración calculada
+// COINCIDE con el estado base experimental (NIST ASD). Mn, Fe y Gd no coinciden
+// —Hartree-Fock ordena mal 3d/4s en capa abierta— y por eso NO están en el lote.
+
+SPECIAL['atomo-006'] = {
+  codigo: 'atomos/_code/atomo-c-capsula.tar.gz',
+  titulo: 'Todo lo que está vivo está hecho de esto',
+  descripcion: `Carbono. Seis protones, seis electrones — y la forma que permite que existas. ⚛️ Aquí caes hasta su núcleo y después ves su nube DESARMADA: cada capa se enciende sola mientras las demás se apagan, para que puedas mirarlas una por una.\n\nLas dos primeras son redondas. La tercera NO: se estira. Y eso no es un dibujo — es lo que sale del cálculo. Una subcapa llena o a medio llenar es esféricamente simétrica (es un teorema), y la forma solo aparece donde está PARCIALMENTE llena, como el 2p² del carbono. Esa asimetría es la que le permite agarrarse de otros cuatro átomos, y por eso hay química orgánica, y por eso hay vida.\n\nNada está pintado a mano: es SCF real (def2-TZVP) con la densidad de cada subcapa muestreada en 3D, sin promediar en esferas — promediar es justo lo que borra los lóbulos. La configuración calculada, 1s² 2s² 2p², coincide con el estado base experimental.\n\n🎓 GAIA University.`,
+  hashtags: ['#carbono', '#quimica', '#orbitales', '#fisicacuantica', '#atomos', '#ciencia', '#stem', '#4k', '#gaia'],
+};
+
+SPECIAL['atomo-010'] = {
+  codigo: 'atomos/_code/atomo-ne-capsula.tar.gz',
+  titulo: 'El átomo que no reacciona con NADA',
+  descripcion: `Neón. Diez electrones, y ni uno de sobra. 💡 Míralo por capas, una por una: dos pegados al centro, dos más lejos, y seis que CIERRAN la última. Completa. Nada que dar, nada que aceptar — por eso no forma compuestos con casi nada.\n\nY fíjate en el final: los otros átomos de esta serie encienden ahí un campo magnético. El neón no enciende nada, y no es que se nos haya olvidado dibujarlo: con todas sus capas llenas no le queda ni un electrón desapareado, así que su momento magnético es CERO. El vacío al final del video es el dato.\n\nSCF real (def2-TZVP), densidad de cada subcapa muestreada en 3D. Configuración calculada 1s² 2s² 2p⁶ — la misma que mide el experimento.\n\n🎓 GAIA University.`,
+  hashtags: ['#neon', '#quimica', '#gasesnobles', '#orbitales', '#fisicacuantica', '#atomos', '#stem', '#4k', '#gaia'],
+};
+
+SPECIAL['atomo-014'] = {
+  codigo: 'atomos/_code/atomo-si-capsula.tar.gz',
+  titulo: 'De esto está hecho cada chip que has usado',
+  descripcion: `Silicio. Catorce electrones repartidos en cinco capas. 💻 Aquí las ves encenderse una por una: las tres de adentro están llenas y quietas; las de afuera, no.\n\nAhí está el truco. Cuatro electrones a medias —ni sueltos como en un metal, ni atados como en un aislante— y esa duda es LITERALMENTE lo que lo hace semiconductor. Ni conduce ni aísla: obedece. Por eso se le puede ordenar, y por eso existe todo lo que tiene pantalla.\n\nNada está dibujado: SCF real (def2-TZVP) con la densidad de cada subcapa muestreada en malla 3D. La configuración calculada, 1s² 2s² 2p⁶ 3s² 3p², coincide con el estado base experimental.\n\n🎓 GAIA University.`,
+  hashtags: ['#silicio', '#semiconductores', '#chips', '#quimica', '#orbitales', '#fisicacuantica', '#stem', '#4k', '#gaia'],
+};
+
+SPECIAL['atomo-024'] = {
+  codigo: 'atomos/_code/atomo-cr-capsula.tar.gz',
+  titulo: 'Este átomo ROMPE la regla que te enseñaron',
+  descripcion: `Cromo. Veinticuatro electrones. 🧲 La regla de llenado que enseñan en la escuela dice que su última capa lleve DOS electrones. Lleva uno.\n\nMíralo por capas, una por una, hasta llegar a la trampa: cinco electrones, cada uno SOLO, en cinco orbitales distintos. A medio llenar le salió más barato que obedecer. Resultado: seis electrones sin pareja — nadie en su fila tiene más, y por eso es tan magnético.\n\nY lo mejor: eso NO se lo escribimos nosotros. El cálculo cuántico cae solo en 3d⁵ 4s¹, que es exactamente el estado base que mide el experimento (NIST). La excepción no está puesta a mano: EMERGE.\n\nFíjate también en que el 3d⁵ se ve REDONDO. No es un error: una subcapa exactamente a medio llenar es esféricamente simétrica, y eso es un teorema. La forma aparece solo donde la física dice.\n\nSCF real (def2-TZVP), densidad de cada subcapa en malla 3D. 🎓 GAIA University.`,
+  hashtags: ['#cromo', '#quimica', '#magnetismo', '#orbitales', '#fisicacuantica', '#atomos', '#ciencia', '#stem', '#4k', '#gaia'],
+};
+
+SPECIAL['atomo-029'] = {
+  codigo: 'atomos/_code/atomo-cu-capsula.tar.gz',
+  titulo: 'Por esto la corriente llega hasta tu casa',
+  descripcion: `Cobre. Veintinueve electrones — y también rompe la regla de llenado. ⚡ Cae hasta su núcleo y míralo por capas: adentro todas llenas, hasta que una se llena COMPLETA con diez electrones, y arriba queda uno. Uno solo.\n\nEse electrón suelto es la electricidad. Salta de átomo en átomo y no se detiene: un cable es exactamente esto, repetido sin fin.\n\nY otra vez la excepción EMERGE del cálculo, no de una tabla escrita a mano: el SCF cae en 3d¹⁰ 4s¹, que es el estado base experimental. Al átomo le convino llenar la capa de adentro y dejar uno arriba — y de esa decisión cuántica depende toda tu instalación eléctrica.\n\nSCF real (def2-TZVP) con la densidad de cada subcapa muestreada en malla 3D, sin promediar en esferas. 🎓 GAIA University.`,
+  hashtags: ['#cobre', '#electricidad', '#quimica', '#orbitales', '#fisicacuantica', '#atomos', '#stem', '#4k', '#gaia'],
+};
+
 SPECIAL['idea-transistor'] = {
   codigo: 'ideas/_code/idea-03-transistor-capsula.tar.gz',
   titulo: 'Hay más de estos en tu bolsillo que estrellas en la galaxia',

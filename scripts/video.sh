@@ -45,7 +45,10 @@ echo "▶ $ID · ${W}×${H} @${FPS} · ${DUR}s (${NFRAMES} frames) · shards=$SH
 
 paso_subs() {
   echo "── SUBTÍTULOS (estilo canónico de la serie) ──"
-  python3 "$ROOT/scripts/video-subs.py" "$SEGS" "$ASS" --w "$W" --h "$H"
+  # audio.marginv (opcional): sube el subtítulo cuando la escena ya tiene texto abajo.
+  # Sin él, el canon manda. Ver el comentario de --marginv en video-subs.py.
+  local MV; MV=$(m audio.marginv)
+  python3 "$ROOT/scripts/video-subs.py" "$SEGS" "$ASS" --w "$W" --h "$H" ${MV:+--marginv "$MV"}
 }
 
 paso_render() {
