@@ -40,8 +40,13 @@ if len(wavs) != len(lines):
 UNI = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve']
 ESP = {10: 'diez', 11: 'once', 12: 'doce', 13: 'trece', 14: 'catorce', 15: 'quince',
        16: 'dieciseis', 17: 'diecisiete', 18: 'dieciocho', 19: 'diecinueve', 20: 'veinte',
+       # LOS VEINTI- VAN COMPLETOS HASTA EL 29. Faltaban 26-29 y el 26-29 caía al caso
+       # genérico `veinte y nueve`, así que el gate reprobó a atomo-cu por decir
+       # "veintinueve" —que es lo correcto en español— contra el "29" que escribe Whisper.
+       # Un falso positivo por FORMATO es justo lo que hace que nadie lea un gate.
        21: 'veintiuno', 22: 'veintidos', 23: 'veintitres', 24: 'veinticuatro',
-       25: 'veinticinco', 30: 'treinta', 40: 'cuarenta', 50: 'cincuenta',
+       25: 'veinticinco', 26: 'veintiseis', 27: 'veintisiete', 28: 'veintiocho',
+       29: 'veintinueve', 30: 'treinta', 40: 'cuarenta', 50: 'cincuenta',
        60: 'sesenta', 70: 'setenta', 80: 'ochenta', 90: 'noventa', 100: 'cien'}
 
 
