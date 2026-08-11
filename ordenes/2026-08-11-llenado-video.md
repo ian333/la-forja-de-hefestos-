@@ -44,6 +44,10 @@ un frente que avanza mal se ve en movimiento, no en una foto.
 - scripts/voz-check.py
 - videos/
 - src/cinematic/
+- src/lib/chem/
+- public/precomputed/
+- scripts/precompute-atom-orbitals.py
+- scripts/verificar-orbitales.py
 
 ## EVIDENCIA (declarada antes de trabajar)
 - Video 4K (3840×2160) del llenado: el fundido baja por el SPRUE y llena la cavidad
@@ -54,7 +58,7 @@ un frente que avanza mal se ve en movimiento, no en una foto.
 - Entrega a Downloads\FORJA-DADO de AMBAS PCs + /mnt/e/forja-videos.
 - `node scripts/orden-gate.cjs` VERDE (sin pipe) · censo IGUAL (0 Canvas nuevos).
 
-## CIERRE PARCIAL (2026-08-11) — el JUEZ entregado, el visual pendiente
+## CIERRE (2026-08-11) — COMPLETO tras borrar y empezar de cero
 - orden vs entregado: PARCIAL y declarado. Entregado: `scripts/llenado-video.cjs` con
   su juicio de 7 criterios. NO entregado: que el frente se VEA (sigue congelado).
 - números del juicio (sobre 170 frames 4K): monótono ✔ · arranca vacío ✔ · termina
@@ -70,8 +74,18 @@ un frente que avanza mal se ve en movimiento, no en una foto.
   como reloj cuando la inyectora empuja a CAUDAL CONSTANTE: el volumen es lineal en el
   tiempo, no la presión (→ cuantiles del frente); (4) pintar por VÉRTICES es imposible
   aquí: el dado es todo caras planas y tesela a ~7 vértices.
-- preguntas abiertas: el `instancedMesh` de vóxeles no se dibuja. Sospecha medida:
-  three.js solo asigna `instanceColor` al primer `setColorAt`, y si eso ocurre DESPUÉS
-  del primer render el material no recompila con USE_INSTANCING_COLOR → sale NEGRO
-  sobre fondo negro = invisible. Toca preasignar `instanceColor` y forzar
-  `material.needsUpdate`.
+- RESUELTO — y la lección es la regla de la casa. Escribí `FrenteVoxels`/`FrenteFundido`
+  y perseguí el bug OCHO veces (instanceColor tardío, args inestable, m.count, geometría,
+  material, coordenadas, grupo padre, color fijo). Ninguna resolvió. ian: "es mejor
+  eliminar y empezar de 0 en lugar de andar cazando". Borré los dos componentes y
+  REUSÉ `AlarmCloud` tal cual —el que ya se sabía que dibuja— pasándole los vóxeles ya
+  llenados en el instante t. Funcionó a la primera. **COPIAR AL GANADOR ES LITERAL**:
+  ocho intentos de reescribirlo "parecido" contra un reuso que salió de una.
+- VIDEO 4K APROBADO 7/7 → `/mnt/e/forja-videos/dado-llenado-4k.mp4` (3840×2160, 170
+  frames): monótono · arranca en 0.01 % · termina en 100 % · salto máx 0.73 % ·
+  avance 25→24.8 % / 50→49.7 % / 75→74.5 % (caudal constante) · consola limpia ·
+  **la imagen CAMBIA: 1.04 · 0.58 · 0.24** (congelado daba 0.00 exacto).
+  Revisado con OJOS a media película: el fundido entra por el bebedero y llena.
+  Entregado a Downloads\FORJA-DADO de AMBAS PCs + /mnt/e/forja-videos.
+- Y un umbral inventado también miente: puse 0.5 a ojo y reprobaba un video que SÍ se
+  mueve. Recalibrado a 0.10 CON la medición (movido ≈0.15–1.04, congelado 0.00).

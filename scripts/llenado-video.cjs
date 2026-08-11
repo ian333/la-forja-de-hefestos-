@@ -109,7 +109,10 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   const tercios = [[0, Math.floor(N / 3)], [Math.floor(N / 3), Math.floor(2 * N / 3)], [Math.floor(2 * N / 3), N - 1]];
   const difs = tercios.map(([a, b]) => difMedia(a, b));
   const peor = Math.min(...difs);
-  chk('LA IMAGEN CAMBIA de verdad (no solo el DOM)', peor > 0.5,
+  // umbral 0.10: con el frente REUSANDO AlarmCloud el tercio que menos cambia mide
+  // ~0.15 y el que más ~0.55; congelado da 0.00 EXACTO. El 0.5 que puse a ojo reprobaba
+  // un video que SÍ se mueve — un umbral inventado también es un juez mentiroso.
+  chk('LA IMAGEN CAMBIA de verdad (no solo el DOM)', peor > 0.10,
     `diferencia media por tercio: ${difs.map((d) => d.toFixed(2)).join(' · ')} (0 = frames idénticos)`);
   const veredicto = jui.every((j) => j.ok);
 

@@ -3513,7 +3513,7 @@ export default function ForgeBRepStudio() {
   // (paso 2.3 de la extracción). La llamada va AQUÍ (después de setDocName) porque
   // el hook la recibe como parámetro — moverla arriba = TDZ, el crash ya conocido.
   const mold = useMoldStudio({ oc, setCollapsed, setDocName });
-  const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
+  const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   const [libNames, setLibNames] = useState<string[]>([]);
   const refreshLib = useCallback(() => setLibNames(Object.keys(readLib()).sort()), []);
   const resolvedParams = useMemo<ResolvedParams>(() => resolveParams(params), [params]);
@@ -5767,6 +5767,24 @@ export default function ForgeBRepStudio() {
       get curso() { return { stage: cursoRef.current.stage, vols: cursoRef.current.vols, report: cursoRef.current.report }; },
       // BBOX numérico de cada parte del molde (para cazar TRASLAPES: dos placas que
       // ocupan la misma Z = imposible en la realidad). El QA lo lee y compara rangos.
+      // API del VIDEO del llenado: el arnés maneja el instante del frente y lee el
+      // avance REAL medido de la malla (no de la intención) para poder juzgarlo.
+      // `u` = FRACCIÓN DE VOLUMEN (0..1) — el reloj real, caudal constante. Se traduce
+      // al umbral de resistencia por cuantil: así el video corre en tiempo físico.
+      llenadoT: (u: number) => {
+        const q = (ciclo as any)?.frenteQ as Float32Array | undefined;
+        const uu = Math.max(0, Math.min(1, u));
+        const t = q && q.length ? q[Math.min(q.length - 1, Math.floor(uu * (q.length - 1)))] : uu;
+        tFillRef.current = t; setTFill(t); return t;
+      },
+      llenadoStats: () => {
+        const f = (ciclo as any)?.frenteVert as Float32Array | undefined;
+        if (!f) return null;
+        const tt = tFillRef.current;                 // el REF, no la clausura
+        let llenos = 0, total = 0;
+        for (let i = 0; i < f.length; i++) { if (f[i] >= 0) { total++; if (f[i] <= tt) llenos++; } }
+        return { t: tt, llenos, total, pct: total ? +(100 * llenos / total).toFixed(2) : 0 };
+      },
       moldGeom: () => moldParts.map((pt) => {
         const P = pt.positions; const mn = [1e18, 1e18, 1e18]; const mx = [-1e18, -1e18, -1e18];
         for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { if (P[i + k] < mn[k]) mn[k] = P[i + k]; if (P[i + k] > mx[k]) mx[k] = P[i + k]; }
@@ -6057,6 +6075,8 @@ export default function ForgeBRepStudio() {
                   if (moldSimOn && moldThermalSim && !pt.role.startsWith('platina')) return null;
                   if (moldFea && (pt.role === 'support' || pt.role === 'rieles' || pt.role === 'B')) return null;
                   if (moldTc && pt.role === 'pieza') return null;   // ⏱ la pinta MoldTcPaint
+                  // (la pieza NO se oculta mientras el frente de vóxeles no se dibuje:
+                  //  esconderla dejaba el dado invisible — peor que antes.)
                   const off = moldOffset[pt.role] ?? [0, 0, 0];
                   const baseOp = moldOpacity[pt.role] ?? pt.opacity;
                   const mesh = (
@@ -6102,6 +6122,18 @@ export default function ForgeBRepStudio() {
                 {/* MAPA DEL RAYO: las mitades pintadas por su clase de desmoldeo — el
                     número del panel (atrapadas) es este color sobre el acero. */}
                 {ciclo?.e4paint && <LlenadoPaint part={ciclo.e4paint.part} flow={ciclo.e4paint.flow} max={ciclo.e4paint.max} />}
+                {/* EL FRENTE ANIMADO: la pieza se llena en el tiempo, por bandas isócronas */}
+                {/* EL FRENTE DE FUNDIDO = `AlarmCloud` TAL CUAL, con los vóxeles ya
+                    llenados en el instante t. Ocho intentos de componente propio
+                    fallaron (el video salía congelado); la regla de la casa es
+                    COPIAR AL GANADOR LITERAL, no reescribirlo de memoria. Aquí ni se
+                    copia: se REUSA el que ya se sabe que dibuja. */}
+                {ciclo?.frenteVert && ciclo?.voxPos && (() => {
+                  const f = ciclo.frenteVert as Float32Array, P = ciclo.voxPos as Float32Array;
+                  const pts: number[] = [];
+                  for (let i = 0; i < f.length; i++) if (f[i] >= 0 && f[i] <= tFill) pts.push(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+                  return pts.length ? <AlarmCloud pts={new Float32Array(pts)} /> : null;
+                })()}
                 {ciclo?.rayo && ciclo.estacion === 3 && ciclo.rayo.mitades.map((mi, k) => {
                   const pt = moldParts.find((p) => p.role === (mi.sube ? 'nucleo' : 'cavidad'));
                   return pt && !moldHidden[pt.role] ? <RayoPaint key={k} part={pt} clase={mi.clase} /> : null;
