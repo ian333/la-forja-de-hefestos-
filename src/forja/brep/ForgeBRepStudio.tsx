@@ -6155,7 +6155,7 @@ export default function ForgeBRepStudio() {
                     ANTERIOR —que el frente se viera avanzar— y por eso siguen siendo
                     el ganador de aquel round; lo que no podían era leerse como materia. */}
                 {ciclo?.frenteGrid && ciclo?.grid && (
-                  <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} />
+                  <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} />
                 )}
                 {/* E5: el fundido en la colada YA NO es FeedFill (reloj de pared en
                     bucle = el PARPADEO que ian vio). El campo CONJUNTO colada∪pieza entra

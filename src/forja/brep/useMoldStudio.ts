@@ -77,6 +77,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     e5?: Estacion5Dado; e5v?: VerificacionColada; e5datums?: DatumsColada;
     /** máscara del campo CONJUNTO: 1 = vóxel de PIEZA, 0 = de COLADA */
     esPieza?: Uint8Array;
+    /** ocupación FRACCIONAL por celda (verdad sub-vóxel) — el cono se ve cono */
+    ocupacion?: Float32Array;
     /** LA ALARMA de tubería única + los volúmenes medidos del campo conjunto */
     e5tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number } } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
@@ -658,11 +660,21 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       const nCavJ = campoJ.cavity.reduce((a: number, b: number) => a + b, 0);
       const posJ = new Float32Array(nCavJ * 3); const fvJ = new Float32Array(nCavJ);
       const esPieza = new Uint8Array(nCavJ);
+      // OCUPACIÓN FRACCIONAL por celda (la verdad SUB-VÓXEL): 9 muestras del predicado
+      // ANALÍTICO — la misma receta del voxelizador. Con ella la superficie interpola el
+      // radio REAL del cono en vez del escalón de retícula ("un perno con 3 diámetros").
+      const ocupacionJ = new Float32Array(campoJ.nx * campoJ.ny * campoJ.nz);
+      const q4J = campoJ.cellMm * 0.25;
       let qJ = 0;
       for (let k2 = 0; k2 < campoJ.nz; k2++) for (let j2 = 0; j2 < campoJ.ny; j2++) for (let i2 = 0; i2 < campoJ.nx; i2++) {
         const id2 = campoJ.idx(i2, j2, k2);
         if (!campoJ.cavity[id2]) continue;
         const X = campoJ.x0 + (i2 + 0.5) * campoJ.cellMm, Y = campoJ.y0 + (j2 + 0.5) * campoJ.cellMm, Z = campoJ.z0 + (k2 + 0.5) * campoJ.cellMm;
+        let hits = dentroTuberia(X, Y, Z) ? 1 : 0;
+        for (let a = -1; a <= 1; a += 2) for (let b = -1; b <= 1; b += 2) for (let d2 = -1; d2 <= 1; d2 += 2) {
+          if (dentroTuberia(X + a * q4J, Y + b * q4J, Z + d2 * q4J)) hits++;
+        }
+        ocupacionJ[id2] = hits / 9;
         posJ[qJ * 3] = X; posJ[qJ * 3 + 1] = Y; posJ[qJ * 3 + 2] = Z;
         fvJ[qJ] = n1J.frente[id2];
         esPieza[qJ] = dentroPiezaBase(X, Y, Z) ? 1 : 0;
@@ -687,7 +699,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         // el campo CONJUNTO reemplaza al de solo-cavidad en la MISMA ranura: la
         // superficie del frente y el reloj del video lo consumen sin tocarlos.
         frenteGrid: n1J.frente, grid: { nx: campoJ.nx, ny: campoJ.ny, nz: campoJ.nz, cellMm: campoJ.cellMm, x0: campoJ.x0, y0: campoJ.y0, z0: campoJ.z0 },
-        frenteVert: fvJ, frenteQ: frenteQJ, voxPos: posJ, cellMm: campoJ.cellMm, esPieza,
+        frenteVert: fvJ, frenteQ: frenteQJ, voxPos: posJ, cellMm: campoJ.cellMm, esPieza, ocupacion: ocupacionJ,
         e5tuberia: { unreachable: campoJ.unreachable, snapMm, volColadaVoxCc, volPiezaCc: partVolCc },
       });
       cursoSet(5, [], [...moldParts.filter((p: any) => p.role !== 'colada'),

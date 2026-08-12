@@ -690,16 +690,18 @@ function rampaFillTime(u: number): [number, number, number] {
   return [S[S.length - 1][1], S[S.length - 1][2], S[S.length - 1][3]];
 }
 
-export function FrenteSuperficie({ frente, grid, t }: {
+export function FrenteSuperficie({ frente, grid, t, ocupacion }: {
   frente: Float32Array;
   grid: { nx: number; ny: number; nz: number; cellMm: number; x0: number; y0: number; z0: number };
   t: number;
+  /** ocupación fraccional (verdad sub-vóxel): sin ella el cono salía escalonado */
+  ocupacion?: Float32Array;
 }) {
   const geo = useMemo(() => {
     // suavizado 0: lo que se DIBUJA es lo que el gate MIDE. Con una pasada de caja
     // la superficie redondea las esquinas y el volumen cae ~3 % — bonito, pero ya no
     // es el volumen de los vóxeles, y el gate de ±2 % existe justo para eso.
-    const s = frenteSuperficie({ ...grid, frente, t, suavizado: 0 });
+    const s = frenteSuperficie({ ...grid, frente, t, suavizado: 0, ocupacion });
     if (!s.tris) return null;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(s.positions, 3));
@@ -718,7 +720,7 @@ export function FrenteSuperficie({ frente, grid, t }: {
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     return g;
-  }, [frente, grid, t]);
+  }, [frente, grid, t, ocupacion]);
   useEffect(() => () => { geo?.dispose(); }, [geo]);
   if (!geo) return null;
   return (

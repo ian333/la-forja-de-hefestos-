@@ -345,6 +345,47 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('ORDEN FÍSICO: la pieza solo arranca tras ≥75 % de la colada',
     minFrentePza >= p75Col, `min(frente pieza) ${minFrentePza.toFixed(3)} ≥ p75(colada) ${p75Col.toFixed(3)}`);
 
+  // ══ EL CONO SE VE CONO — la verdad sub-vóxel, con su control ══
+  // ian: "veo 3 tamaños en el líquido, como un perno con 3 diámetros, en lugar de un
+  // cono". Causa: superficie desde ocupación BINARIA — la huella de vóxeles de la
+  // sección circular solo cambia cuando r(z) cruza una distancia de la retícula. El
+  // arreglo: ocupación FRACCIONAL supermuestreada del predicado ANALÍTICO; el cruce 0.5
+  // interpola el radio real. Se mide el radio del fundido en 3 alturas del bebedero.
+  console.log('── CONICIDAD · el radio del fundido DECRECE continuo (no escalones)');
+  {
+    const metaJ = { nx: campoJ.nx, ny: campoJ.ny, nz: campoJ.nz, cellMm: campoJ.cellMm, x0: campoJ.x0, y0: campoJ.y0, z0: campoJ.z0 };
+    const ocuJ = new Float32Array(campoJ.nx * campoJ.ny * campoJ.nz);
+    const q4J = campoJ.cellMm * 0.25;
+    const denTub = (x, y, z) => dentroPiezaB(x, y, z) || denCol(x, y, z);
+    for (let k = 0; k < campoJ.nz; k++) for (let j = 0; j < campoJ.ny; j++) for (let i = 0; i < campoJ.nx; i++) {
+      const id = campoJ.idx(i, j, k);
+      if (!campoJ.cavity[id]) continue;
+      const X = campoJ.x0 + (i + 0.5) * campoJ.cellMm, Y = campoJ.y0 + (j + 0.5) * campoJ.cellMm, Z = campoJ.z0 + (k + 0.5) * campoJ.cellMm;
+      let hits = denTub(X, Y, Z) ? 1 : 0;
+      for (let a = -1; a <= 1; a += 2) for (let b = -1; b <= 1; b += 2) for (let d2 = -1; d2 <= 1; d2 += 2) {
+        if (denTub(X + a * q4J, Y + b * q4J, Z + d2 * q4J)) hits++;
+      }
+      ocuJ[id] = hits / 9;
+    }
+    const radios = (surf) => [200, 215, 230].map((zc) => {
+      let r = 0;
+      for (let v = 0; v < surf.positions.length; v += 3) {
+        if (Math.abs(surf.positions[v + 2] - zc) > 1) continue;
+        r = Math.max(r, Math.hypot(surf.positions[v] - dC.ejeX, surf.positions[v + 1] - dC.ejeY));
+      }
+      return r;
+    });
+    const sBin = fl2.frenteSuperficie({ ...metaJ, frente: n1J.frente, t: 1, suavizado: 0 });
+    const sFra = fl2.frenteSuperficie({ ...metaJ, frente: n1J.frente, t: 1, suavizado: 0, ocupacion: ocuJ });
+    const rB = radios(sBin), rF = radios(sFra);
+    const dB = Math.min(rB[0] - rB[1], rB[1] - rB[2]), dF = Math.min(rF[0] - rF[1], rF[1] - rF[2]);
+    check('CONICIDAD: el radio decrece estrictamente (Δ ≥ 0.15 mm por tramo de 15 mm; analítico 0.39)',
+      rF[0] > rF[1] && rF[1] > rF[2] && dF >= 0.15,
+      `fraccional: ${rF.map((r) => r.toFixed(2)).join(' → ')} mm (Δmin ${dF.toFixed(2)})`);
+    check('CONTROL: la ocupación BINARIA reprueba conicidad (el perno de 3 diámetros)',
+      dB < 0.15, `binaria: ${rB.map((r) => r.toFixed(2)).join(' → ')} mm (Δmin ${dB.toFixed(2)})`);
+  }
+
   // ══ LA ALARMA DE BALANCE — mover el layout sin que nada grite, nunca más ══
   // ian: "se desplazó TODO y no levantó ninguna alarma". Y peor: el check del marco lo
   // edité YO para que esperara el desplazamiento — coherencia interna, no criterio. El

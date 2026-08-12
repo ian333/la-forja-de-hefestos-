@@ -476,6 +476,13 @@ export function frenteSuperficie(o: {
   t: number;
   /** pasadas de suavizado de caja sobre la ocupación (por defecto 1) */
   suavizado?: number;
+  /** OCUPACIÓN FRACCIONAL por celda (0..1) — la verdad SUB-VÓXEL. Sin ella, la celda
+   *  llena aporta 1 (binario) y una pared que varía menos de una celda sale ESCALONADA:
+   *  el cono del bebedero se veía como "un perno con 3 diámetros" (ian) porque la huella
+   *  de vóxeles de la sección circular solo cambia cuando r(z) cruza una distancia de la
+   *  retícula. Con la fracción (supermuestreada del predicado ANALÍTICO), el cruce 0.5
+   *  interpola el radio REAL y el cono sale continuo con la misma celda. */
+  ocupacion?: Float32Array;
 }): SuperficieFrente {
   const { nx, ny, nz, cellMm, x0, y0, z0, frente, t } = o;
   const ISO = 0.5;
@@ -494,11 +501,18 @@ export function frenteSuperficie(o: {
     return (a < 0 || b < 0 || c < 0 || a >= nx || b >= ny || c >= nz) ? -1 : frente[(c * ny + b) * nx + a];
   };
 
-  // ── 1. ocupación binaria del instante t (el borde nace en 0 por construcción)
+  // ── 1. ocupación del instante t (el borde nace en 0 por construcción). Fraccional
+  // si hay `ocupacion` (celda llena aporta su fracción real); binaria si no.
+  const occ = (i: number, j: number, k: number): number => {
+    if (!o.ocupacion) return 1;
+    const a = i - PAD, b = j - PAD, c2 = k - PAD;
+    if (a < 0 || b < 0 || c2 < 0 || a >= nx || b >= ny || c2 >= nz) return 0;
+    return o.ocupacion[(c2 * ny + b) * nx + a];
+  };
   let f = new Float32Array(N);
   for (let k = 0; k < pz; k++) for (let j = 0; j < py; j++) for (let i = 0; i < px; i++) {
     const v = fre(i, j, k);
-    f[idx(i, j, k)] = (v >= 0 && v <= t) ? 1 : 0;
+    f[idx(i, j, k)] = (v >= 0 && v <= t) ? occ(i, j, k) : 0;
   }
 
   // ── 2. suavizado de caja (redondea el escalón de vóxel, conserva el nivel 0.5)
