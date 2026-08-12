@@ -484,13 +484,15 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // "Σ cavidad+macho+pieza = bloque" ya lo prueba: traslape = suma > 100 %.
       const e3v = verificacionE3(oc, acero);
       _m('verificacion');
-      const e3cotas = cotasCicloE3(e3v, acero, 34);   // 34 = el lift con que la escena abre el núcleo
+      const e3cotas = cotasCicloE3(e3v, acero, 40);   // 40 = el lift con que la escena ABRE el núcleo hacia B (183.5−40 < 146: sin roce)
       setCotasOn(true);                               // las dimensiones SE VEN, no se buscan
       // ── LA PRUEBA DEL RAYO: ¿la pieza SALE? (el teorema, sobre las mitades reales) ──
       const mallaDe = (sh: any) => { const t = OCC.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
+      // VOLTEADO (Fig 7.2): la CAVIDAD vive en el lado A y ABRE hacia ARRIBA; el
+      // NÚCLEO está en B y se aleja hacia ABAJO. Los flags viajan con el molde.
       const rayo = pruebaDelRayo([
-        { nombre: 'cavidad (baja −Z)', malla: mallaDe(r.cavityPlate), sube: false },
-        { nombre: 'núcleo (sube +Z)', malla: mallaDe(r.macho), sube: true },
+        { nombre: 'cavidad (sube +Z, lado A)', malla: mallaDe(r.cavityPlate), sube: true },
+        { nombre: 'núcleo (baja −Z, lado B)', malla: mallaDe(r.macho), sube: false },
       // res 160 en la ruta INTERACTIVA: a 384 el z-buffer congelaba el tab minutos
       // dentro del click (regresión que metí con el rayo). El gate node sí corre a 384;
       // el veredicto es el mismo — se comprobó que atrapadas no cambia con la malla.
@@ -499,9 +501,19 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       const interMm3 = interseccionMitades(oc, r.cavityPlate, r.macho).volMm3;
       _m('interseccion');
       setMoldXray(false);                             // 🩻 PELEA con el mapa de color (todo pálido): el mapa manda
-      const partPlano = OCC.transformShape(oc, OCC.makeBox(oc, 150, 150, 0.8), { translate: [-55, -55, 39.1] });
-      const placaA = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 66), { translate: [-78, -78, -79] });
-      const placaB = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, 22), { translate: [-78, -78, 96] });
+      // EN EL MARCO REAL DEL STACK — estos tres vivían con literales del marco local
+      // (z=39.1 / −79 / 96) y el molde en pantalla quedaba 100+ mm lejos del líquido:
+      // "parece que está todo desconectado — la cavidad y el líquido" (ian). CUARTA
+      // instancia de la familia de coordenadas absolutas. Las cotas salen del stack:
+      // partición en zPartBase; placa A (aloja la cavidad) ARRIBA; placa B ABAJO.
+      // ⚠ `col` NO existe en este scope (vive dentro de construirAceroE3): usarla aquí
+      // fue un ReferenceError silencioso dentro del try — la estación moría sin E4 (la
+      // clase de bug del onE4). La colocación viaja en el resultado: acero.colocacion.
+      const col3 = acero.colocacion!;
+      const zPart3 = col3.zPartBase;
+      const partPlano = OCC.transformShape(oc, OCC.makeBox(oc, 150, 150, 0.8), { translate: [col3.centroX - 75, col3.centroY - 75, zPart3 - 0.4] });
+      const placaA = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, col3.plates.A), { translate: [0, 0, zPart3] });
+      const placaB = OCC.transformShape(oc, OCC.makeBox(oc, 196, 196, col3.plates.B), { translate: [0, 0, zPart3 - col3.plates.B] });
       setMoldPkg(pkg);
       setCiclo({ ...ciclo, estacion: 3, e3, e3v, e3cotas, rayo, interMm3 });
       setDocName(malo ? 'EL DADO ROTO · draft INVERTIDO — el molde NO abre' : 'EL DADO · estación 3 — ARQUITECTURA (cap 4): nace el primer acero');
@@ -513,7 +525,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         'draft 1.5° TALLADO — y los semáforos §4.3.3 despiertan (mira el panel de análisis)',
       ], [
         cursoPart(r.cavityPlate, 'cavidad', 'INSERTO DE CAVIDAD (hembra) · P20 · talla el exterior', '#9db4d0', 0.40, 0.03),
-        cursoPart(OCC.transformShape(oc, r.corePlate, { translate: [0, 0, 34] }), 'nucleo', 'INSERTO DE NÚCLEO + macho · P20 (abierto +34 mm)', '#b8c6da', 0.92, 0.07),
+        // el explode ABRE hacia B (−z): con el volteo, +34 clavaba el núcleo A TRAVÉS
+        // de la cavidad (medido: nucleo z 164..217.5 vs cavidad 146..206 — traslape)
+        cursoPart(OCC.transformShape(oc, r.corePlate, { translate: [0, 0, -40] }), 'nucleo', 'INSERTO DE NÚCLEO + macho · P20 (abierto −40 mm hacia B)', '#b8c6da', 0.92, 0.07),
         cursoPart(dadoD, 'pieza', 'EL DADO v2 — draft 1.5° TALLADO (ya no declarado)', '#7ee0a0', 0.52, 0.06),
         cursoPart(partPlano, 'particion', 'PARTICIÓN plana en la boca — A-061', '#f4d27a', 0.30, 0.04),
         cursoPart(placaA, 'placa-a-ghost', 'placa A 196×196×66 — el acero COMPRADO que aloja la cavidad', '#8fa0b8', 0.07, 0.01),

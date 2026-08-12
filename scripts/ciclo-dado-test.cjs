@@ -336,6 +336,15 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     else { voxCol++; frentesCol.push(n1J.frente[id]); }
   }
   const volVoxCol = voxCol / 1000, volPuroCol = C.volumenColadaCc(dC), volOccCol = occt.volume(oc, solC.fundido) / 1000;
+  // ── EL CRUCE CAVIDAD↔LÍQUIDO (ian: "el llenado es sobre la cavidad; el molde genera
+  // una cavidad con forma — aquí parece todo desconectado"). El acero YA contabiliza su
+  // hueco (splitMold.vols.piezaEscalada, el que cierra Σ=bloque); el campo de llenado
+  // debe encerrar ESE MISMO volumen. Si el molde se rompe, este número delata — cavidad
+  // y líquido conectados por MEDICIÓN, no por fe.
+  const volHuecoAceroCc = acero.r.vols.piezaEscalada / 1000;
+  check('CAVIDAD↔LÍQUIDO: el volumen de pieza del CAMPO ≈ el hueco del ACERO (±5 %)',
+    Math.abs(voxPza / 1000 - volHuecoAceroCc) / volHuecoAceroCc < 0.05,
+    `campo ${(voxPza / 1000).toFixed(2)} cc vs hueco del acero ${volHuecoAceroCc.toFixed(2)} cc`);
   check('V_colada: vóxeles ≈ analítico ≈ OCC (3 fuentes del mismo número)',
     Math.abs(volVoxCol - volOccCol) / volOccCol < 0.12 && Math.abs(volPuroCol - volOccCol) / volOccCol < 0.08,
     `vóxeles ${volVoxCol.toFixed(2)} · puro ${volPuroCol.toFixed(2)} · OCC ${volOccCol.toFixed(2)} cc`);
