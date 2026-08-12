@@ -1311,9 +1311,19 @@ export function colocacionEnLaBase(pkg: MoldPackage) {
   const z = plateStackZ(asm);
   const centroX = asm.widthMm / 2, centroY = (asm.depthMm ?? asm.widthMm) / 2;
   const zPartBase = z.A;                                     // la partición de la base = top de B
+  // ── RETORNO 2026-08-12 (decisión de ian: "hay que desplazar la cavidad") ──
+  // El dado tiene la BOCA en la partición: centrado, el eje del bushing (= centro de la
+  // base, Fig 6.4) caía sobre el hueco y el sprue perforaba el macho (3,997 mm³ medidos).
+  // La cavidad se desplaza en +x el MÍNIMO que ya declaraba `datumsColada.conflictos`:
+  // semiancho + rBase del bebedero + holgura de acero. El rBase sale del MISMO motor
+  // (designSprueFeed) con L_sprue = top clamp + placa A (§6.3.1) — no de una constante.
+  const LsprueMm = asm.plates.topClamp + asm.plates.A;
+  const fd = designSprueFeed({ material: 'ABS', partVolumeCc: 14.14, partWallMm: 2, sprueLenMm: LsprueMm, fillTimeS: 1 });
+  const holguraAceroMm = 4;                                  // EXTENSIÓN DECLARADA (= la de datumsColada)
+  const offsetColadaMm = 20 + fd.rBaseMm + holguraAceroMm;   // semiancho del dado (40/2) + ⌀/2 + acero
   return {
-    dx: centroX - 20, dy: centroY - 20, dz: zPartBase - 39.5,  // 20,20 y 39.5 = el marco local del dado
-    centroX, centroY, zPartBase,
+    dx: centroX - 20 + offsetColadaMm, dy: centroY - 20, dz: zPartBase - 39.5,
+    centroX, centroY, zPartBase, offsetColadaMm,
     baseWmm: asm.widthMm, baseLmm: asm.depthMm ?? asm.widthMm,
     plates: asm.plates,
   };

@@ -254,12 +254,30 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   // orden del generador ("colada ∩ macho = ∅") y nunca se implementó — y su lectura
   // honesta para ESTA pieza es la inversa: la interferencia DEBE existir, porque es la
   // prueba de que el retorno a la E3 (desplazar cavidad / voltear pieza) va en serio.
-  check('el conflicto espacial se DETECTA (eje del bushing sobre la BOCA → requiere-offset)',
-    dC.modo === 'requiere-offset' && dC.conflictos.length > 0,
-    dC.conflictos[0] ? dC.conflictos[0].slice(0, 90) : 'sin conflicto declarado');
+  // ── EL RETORNO 2026-08-12 (ian: "hay que desplazar la cavidad") ──
+  // La cavidad desplazada RESUELVE el conflicto: el eje del bushing queda sobre acero
+  // pleno, el modo cae a sprue+runner sin conflictos, y la evidencia ORIGINAL de la
+  // orden del generador —"colada ∩ macho = ∅"— por fin se cumple de verdad.
+  check('el offset RESUELVE el conflicto (modo sprue+runner, sin conflictos)',
+    dC.modo === 'sprue+runner' && dC.conflictos.length === 0,
+    `modo ${dC.modo} · offset aplicado ${colB.offsetColadaMm.toFixed(1)} mm · ${dC.conflictos.length} conflictos`);
+  check('§6.3.1: L_sprue = top clamp + placa A (el bebedero TERMINA en la partición)',
+    cerca(dC.LsprueMm, asm.plates.topClamp + asm.plates.A, 0.01),
+    `${dC.LsprueMm.toFixed(1)} mm = ${asm.plates.topClamp} + ${asm.plates.A}`);
   const interCM = ed.interseccionMitades(oc, solC.fundido, acero.r.macho);
-  check('y es REAL: colada ∩ macho > 0 (el sprue centrado perfora el núcleo)',
-    interCM.volMm3 > 0, `${interCM.volMm3.toFixed(1)} mm³ de acero compartido — retorno a la E3`);
+  check('colada ∩ macho = ∅ — la evidencia original, por fin medida en verde',
+    interCM.volMm3 < 1, `${interCM.volMm3.toFixed(1)} mm³ (antes del retorno: 3,997.5)`);
+  // el DETECTOR se conserva: la pieza CENTRADA (sin offset) debe seguir acusando el
+  // conflicto — control puro, sin OCC. Si deja de detectar, el retorno borró al juez.
+  const dCentrada = C.datumsColada({
+    plates: asm.plates, moldWidthMm: asm.widthMm, moldDepthMm: asm.depthMm ?? asm.widthMm,
+    zPartMm: zStack.A,
+    pieza: { x0: 78, y0: 78, x1: 118, y1: 118, zBaseCerradaMm: 106.5, bocaEnParticion: true },
+    plastic: 'ABS', partVolCc: 14.14, wallMm: 2, fillTimeS: 1,
+  });
+  check('CONTROL: la pieza CENTRADA sigue acusando requiere-offset',
+    dCentrada.modo === 'requiere-offset' && dCentrada.conflictos.length > 0,
+    dCentrada.conflictos[0] ? dCentrada.conflictos[0].slice(0, 80) : 'no detectó');
   // ⚠ EL DEFECTO REAL, y va como CHECK que FALLA — no como nota al pie. La pieza y el
   // molde viven en MARCOS DISTINTOS: los insertos de la E3 nunca han estado dentro de la
   // base. Mientras no se concilien, la colada no tiene dónde caer. Un gate verde con esto
@@ -268,9 +286,12 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const bbA = occt.shapeBBox ? null : null;
   const bDado = (() => { const b = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(acero.dadoD, b, false);
     const a2 = b.CornerMin(), c2 = b.CornerMax(); return { cx: (a2.X()+c2.X())/2, cy: (a2.Y()+c2.Y())/2, z1: c2.Z() }; })();
-  check('la PIEZA y el MOLDE comparten marco de coordenadas',
-    Math.abs(bDado.cx - centroMolde) < 1 && Math.abs(bDado.cy - centroMolde) < 1 && Math.abs(acero.zPart - zStack.A) < 1,
-    `centro de la pieza MEDIDO (${bDado.cx.toFixed(1)}, ${bDado.cy.toFixed(1)}) vs centro de la base (${centroMolde}, ${centroMolde}) · partición ${acero.zPart} vs stack ${zStack.A}`);
+  // el centro esperado de la pieza YA NO es el centro de la base: lleva el offset de la
+  // colada (retorno 2026-08-12). La fuente única sigue siendo colocacionEnLaBase.
+  const cxEsp = 20 + colB.dx, cyEsp = 20 + colB.dy;
+  check('la PIEZA vive donde la COLOCACIÓN declara (centro base + offset de colada)',
+    Math.abs(bDado.cx - cxEsp) < 1 && Math.abs(bDado.cy - cyEsp) < 1 && Math.abs(acero.zPart - zStack.A) < 1,
+    `centro MEDIDO (${bDado.cx.toFixed(1)}, ${bDado.cy.toFixed(1)}) vs declarado (${cxEsp.toFixed(1)}, ${cyEsp.toFixed(1)}) · offset ${colB.offsetColadaMm.toFixed(1)} · partición ${acero.zPart} vs stack ${zStack.A}`);
   // Fig 4.21 — y CABE en el área utilizable de la partición (reserva de ½⌀ a pilares/retornos)
   const bCav = (() => { const b = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(acero.r.cavityPlate, b, false);
     const a2 = b.CornerMin(), c2 = b.CornerMax(); return { x0: a2.X(), y0: a2.Y(), x1: c2.X(), y1: c2.Y() }; })();

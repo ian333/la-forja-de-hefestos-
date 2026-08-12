@@ -23,8 +23,8 @@
  * Convención del archivo (la misma de `mold-plano-set`): lo que toca el kernel recibe
  * `(K, oc)` por parámetro; el módulo NO importa occt.
  */
-import { designSprueFeed, steelSafeDiaMm, STANDARD_RUNNER_DIAMM } from './feed';
-import { gateDesign } from './gating';
+import { designSprueFeed, steelSafeDiaMm, STANDARD_RUNNER_DIAMM, FEED_MATERIALS } from './feed';
+import { gateDesign, gateFreezeStripS, gateFreezeCylS } from './gating';
 
 // ─────────────────────────────────────────────────────────────────
 // 1 · DATUMS — puros, y cada uno con su procedencia
@@ -84,21 +84,26 @@ export function datumsColada(o: {
   const p = o.plates;
   const zCaraClampMm = p.bottomClamp + p.ejectorHousing + p.support + p.B + p.A + p.topClamp;
   if (!(p.topClamp > 0)) conflictos.push('el stack NO tiene TOP CLAMP PLATE: sin ella §6.3.1 no define L_sprue (el bebedero atraviesa top clamp + placa A). No se inventa el largo.');
-  // §6.3.1 + el bug ya pagado en mold-plano-set: el cono NACE en la base CERRADA de la
-  // pieza, NO en la partición — nacer en zPart lo mete DENTRO del macho (colisión de
-  // 45.8 mm³ documentada). Si la boca mira a la partición, la base cerrada está abajo.
-  const zGateMm = o.pieza.zBaseCerradaMm;
+  // §6.2.1 (p.119), LITERAL: "The sprue is used to guide the polymer melt from the
+  // nozzle TO THE PARTING PLANE. Runners IN the parting plane are then used to guide the
+  // melt ACROSS the parting plane to the cavities". En un layout CON runner el bebedero
+  // TERMINA EN LA PARTICIÓN — la regla "zGate = base cerrada de la pieza" es SOLO del
+  // sprue DIRECTO (la flanera centro-inyectada, §7.2.1). Mezclarlas fue el retorno
+  // 2026-08-12: L_sprue salía 141.5 en vez de 102 y el tramo de más PERFORABA el macho
+  // (los 3,997 mm³ medidos eran exactamente ese sobrante).
   fuente.LsprueMm = '§6.3.1 — "determined by the combined thicknesses of the top clamp plate and the A plate"';
-  fuente.zGateMm = 'base CERRADA de la pieza (no la partición) — bug inserto-core↔colada 45.8 mm³ ya pagado';
-  const LsprueMm = zCaraClampMm - zGateMm;
+  const LsprueParticionMm = zCaraClampMm - o.zPartMm;
 
   // ── los RADIOS: del motor del libro (§6.3.1 + Eq 6.8), nunca a mano
   const fd = designSprueFeed({
     material: (o.plastic ?? 'ABS').toUpperCase().includes('PP') ? 'PP' : 'ABS',
     partVolumeCc: o.partVolCc, partWallMm: o.wallMm,
-    sprueLenMm: Math.max(1, LsprueMm), fillTimeS: o.fillTimeS ?? 1,
+    sprueLenMm: Math.max(1, LsprueParticionMm), fillTimeS: o.fillTimeS ?? 1,
   });
   fuente.radios = '§6.3.1 (orificio de boquilla + holgura) + Eq 6.8 (radio por ΔP asignado)';
+  // el TAPER (1.5°/lado dentro de designSprueFeed) NO es una cota del libro: el cap 6 no
+  // da el valor (el bushing es componente de COMPRA). Se declara, no se disfraza de cita.
+  fuente.taper = 'EXTENSIÓN DECLARADA — 1.5°/lado; el libro no fija el taper del bushing (componente de compra)';
 
   // ── ¿ALCANZA UN SPRUE DIRECTO? Ésta es la pregunta ESPACIAL, la que faltaba.
   // El eje cae en el centro del molde. Si ahí hay BOCA (hueco) en vez de plástico, un
@@ -107,8 +112,11 @@ export function datumsColada(o: {
   const holguraAceroMm = o.holguraAceroMm ?? 4;
   fuente.holguraAceroMm = 'EXTENSIÓN DECLARADA — acero mínimo entre el barreno del bebedero y la cavidad';
   let modo: DatumsColada['modo'] = 'sprue-directo';
+  let zGateMm = o.pieza.zBaseCerradaMm;                      // SOLO sprue directo (§7.2.1)
+  let LsprueMm = zCaraClampMm - zGateMm;
   let destino = { x: ejeX, y: ejeY, z: zGateMm };
   let LrunnerMm = 0;
+  fuente.zGateMm = 'sprue DIRECTO: la base cerrada de la pieza (§7.2.1, el caso de la flanera)';
   if (dentroDeLaHuella && o.pieza.bocaEnParticion) {
     modo = 'requiere-offset';
     const offsetMin = (o.pieza.x1 - o.pieza.x0) / 2 + fd.rBaseMm + holguraAceroMm;
@@ -116,13 +124,23 @@ export function datumsColada(o: {
       `el eje del bushing (${ejeX.toFixed(1)}, ${ejeY.toFixed(1)}) cae SOBRE LA BOCA de la pieza: un sprue directo entraría al hueco. ` +
       `O se desplaza la cavidad ≥ ${offsetMin.toFixed(1)} mm del centro (retorno a la estación 3, que es la del layout), ` +
       `o se voltea la pieza para que su base cerrada mire a la placa A (sprue directo, §6.3.1).`);
-    // la ruta que SÍ se puede construir hoy: bebedero al centro + runner al labio
+    // la ruta-TESTIGO del conflicto (bebedero al centro + runner al labio lejano),
+    // con el bebedero terminando EN LA PARTICIÓN como manda §6.2.1
+    zGateMm = o.zPartMm; LsprueMm = LsprueParticionMm;
+    fuente.zGateMm = '§6.2.1 — el bebedero llega A LA PARTICIÓN; los runners cruzan por ella';
     destino = { x: o.pieza.x1, y: ejeY, z: o.zPartMm };
     LrunnerMm = Math.max(0, destino.x - ejeX);
     fuente.LrunnerMm = '§6.3.1 — "determined by the position of the cavities"';
   } else if (!dentroDeLaHuella) {
     modo = 'sprue+runner';
-    destino = { x: o.pieza.x1, y: ejeY, z: o.zPartMm };
+    zGateMm = o.zPartMm; LsprueMm = LsprueParticionMm;
+    fuente.zGateMm = '§6.2.1 — el bebedero llega A LA PARTICIÓN; los runners cruzan por ella';
+    // el runner va al labio que MIRA al bushing — mandarlo al lejano (x1 siempre) hacía
+    // que con la cavidad desplazada a +x el canal volviera a cruzar POR DEBAJO de la
+    // pieza. Cazado al planear el retorno, antes de construirlo.
+    const labioCercano = ejeX <= o.pieza.x0 ? o.pieza.x0 : o.pieza.x1;
+    if (ejeX > o.pieza.x1) conflictos.push('layout con la pieza a −x del bushing: el generador hoy solo construye el runner hacia +x — reflejar el layout o extenderlo.');
+    destino = { x: labioCercano, y: ejeY, z: o.zPartMm };
     LrunnerMm = Math.max(0, destino.x - ejeX);
     fuente.LrunnerMm = '§6.3.1 — "determined by the position of the cavities"';
   }
@@ -135,8 +153,17 @@ export function datumsColada(o: {
   // el ⌀ del runner: steel-safe (§6.5.5) pero SIEMPRE mayor que la compuerta, o la
   // sección deja de bajar y la puerta no sella primero (§7.1.5).
   const runnerDiaCrudoMm = Math.max(g.thicknessMm * 1.5, 2 * fd.rBaseMm * 0.5);
-  fuente.runnerDiaMm = '§6.5.4 fresa estándar · §6.5.5 steel-safe · §7.1.5 mayor que la compuerta';
-  const runnerDiaMm = STANDARD_RUNNER_DIAMM.find((d) => d > g.thicknessMm && d >= steelSafeDiaMm(runnerDiaCrudoMm)) ?? 4;
+  fuente.runnerDiaMm = '§6.5.4 fresa estándar · §6.5.5 steel-safe · §7.1.5 la compuerta congela ANTES que el runner';
+  // §7.1.5: el ⌀ del runner también debe garantizar que la COMPUERTA selle primero —
+  // este criterio vivía en la vieja estación 5 y se PERDIÓ al mover la selección aquí
+  // (inconsistencia latente cazada en el retorno 2026-08-12: con rBase más chico salía
+  // ⌀5, que congela a 2.99 s contra los 3.25 s de la compuerta).
+  const matK = (o.plastic ?? 'ABS').toUpperCase().includes('PP') ? 'PP' : 'ABS';
+  const mat = FEED_MATERIALS[matK];
+  const freezeCompuertaS = gateFreezeStripS(mat.alpha, g.thicknessMm / 1000, mat.tMelt, mat.tCool, mat.tNoFlow);
+  const runnerDiaMm = STANDARD_RUNNER_DIAMM.find((d) =>
+    d > g.thicknessMm && d >= steelSafeDiaMm(runnerDiaCrudoMm) &&
+    gateFreezeCylS(mat.alpha, d / 1000, mat.tMelt, mat.tCool, mat.tNoFlow) > freezeCompuertaS) ?? 4;
 
   return {
     ejeX, ejeY, zCaraClampMm, zGateMm, zPartMm: o.zPartMm, LsprueMm,
@@ -236,7 +263,7 @@ export function verificacionColada(K: any, oc: any, s: ColadaSolidos, d: DatumsC
   mide('⌀ del bebedero en la partición', 2 * d.rBaseMm, bS.dx, 0.05, '§6.3.1 · Eq 6.8');
   mide('eje X del bebedero = centro del molde', d.ejeX, (bS.x0 + bS.x1) / 2, 0.05, 'Fig 6.4');
   mide('eje Y del bebedero = centro del molde', d.ejeY, (bS.y0 + bS.y1) / 2, 0.05, 'Fig 6.4');
-  mide('el bebedero ARRANCA en la base cerrada de la pieza', d.zGateMm, bS.z0, 0.05, '§6.3.1 (bug 45.8 mm³)');
+  mide('el bebedero ARRANCA en su zGate (partición si hay runner, §6.2.1)', d.zGateMm, bS.z0, 0.05, '§6.2.1 · §7.2.1');
 
   const bR = s.runner ? bb(s.runner) : null;
   const bG = s.compuerta ? bb(s.compuerta) : null;
