@@ -32,7 +32,7 @@ import { convergeVelocityCross, ABS_CROSS } from '../mold/filling';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, llenadoNivel1, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, llenadoNivel1, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
@@ -540,12 +540,17 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         const ii = 2 + 38 * t15 * (1 - (z - 2) / 39);              // inset interior
         return x < ii || x > 38 - ii + 2 || y < ii || y > 38 - ii + 2;
       };
+      // §4.3.2: la pieza ya vive COLOCADA dentro de la base estándar. El campo se mueve
+      // con ella — misma fuente única de offset que la E3, o vuelven los dos marcos.
+      const col = colocacionEnLaBase(ciclo.e2.pkg);
+      const dentroBase = (x: number, y: number, z: number) => dentro(x - col.dx, y - col.dy, z - col.dz);
       const campo = measureFlowLength({
-        x0: -2, y0: -2, z0: -2, x1: 42, y1: 42, z1: 42, cellMm: 1.0,
+        x0: -2 + col.dx, y0: -2 + col.dy, z0: -2 + col.dz,
+        x1: 42 + col.dx, y1: 42 + col.dy, z1: 42 + col.dz, cellMm: 1.0,
         // ⚠ la compuerta tiene que caer DENTRO de la cavidad: en x=40 (la superficie
         // exterior) el predicado da false, el campo nacía VACÍO y el frente salía 100 %
         // desde t=0. Cazado por el propio juicio del video ("arranca casi vacío": 100 %).
-        inCavity: dentro, gateMm: { x: 39, y: 20, z: 38 }, wallMm, meltN: 0.348,
+        inCavity: dentroBase, gateMm: { x: 39 + col.dx, y: 20 + col.dy, z: 38 + col.dz }, wallMm, meltN: 0.348,
       });
       const cw = convergeVelocityCross(ABS_CROSS, 0.19, 60, wallMm / 1000);
       const n1 = llenadoNivel1(campo, { vMs: cw.vMs, muPaS: cw.muFinalPaS, wallMm, material: ABS_MG47 });

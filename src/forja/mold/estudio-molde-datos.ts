@@ -1285,24 +1285,55 @@ export function dadoDraftShape(oc: any) {
 
 export interface AceroE3 {
   dadoD: any; r: SplitMoldResult; zPart: number;
+  /** §4.3.2 — dónde quedó, dentro de la base estándar */
+  colocacion?: ReturnType<typeof colocacionEnLaBase>;
   /** dims de COMPRA (insertDims) — las MISMAS que el bloque tallado usa ahora */
   compra: { ifx: number; ify: number; Hc: number; Hk: number };
 }
 
 /** El acero de la E3 con las dims de COMPRA reales — el bug de ian era que el
  *  bloque tallado (52/14) no era el acero comprado (60/16). UNA fuente: insertDims. */
+/**
+ * §4.3.2 + Fig 4.21 — LA COLOCACIÓN que faltaba.
+ * El libro: *"the shaded area in Figure 4.21 represents the usable area of the parting
+ * plane **into which the core and cavity inserts can be placed**"*. La estación 3
+ * DIMENSIONABA los insertos y SELECCIONABA la base estándar, pero nunca los metía
+ * dentro: quedaban en su marco local (centro 20,20 · partición 39.5) mientras la base
+ * vivía en el suyo (centro 98,98 · partición 146). Desfase medido: (+78, +78, +106.5).
+ * Por eso el bebedero no tenía dónde caer: el eje del bushing es el centro de la BASE.
+ *
+ * FUENTE ÚNICA: la usan `construirAceroE3`, el llenado de la E4 y el gate. Si alguien
+ * calcula el offset por su cuenta, vuelven los dos marcos.
+ */
+export function colocacionEnLaBase(pkg: MoldPackage) {
+  const asm = packageToAssemblySpec(pkg);
+  const z = plateStackZ(asm);
+  const centroX = asm.widthMm / 2, centroY = (asm.depthMm ?? asm.widthMm) / 2;
+  const zPartBase = z.A;                                     // la partición de la base = top de B
+  return {
+    dx: centroX - 20, dy: centroY - 20, dz: zPartBase - 39.5,  // 20,20 y 39.5 = el marco local del dado
+    centroX, centroY, zPartBase,
+    baseWmm: asm.widthMm, baseLmm: asm.depthMm ?? asm.widthMm,
+  };
+}
+
 export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false): AceroE3 {
   const asm = packageToAssemblySpec(pkg);
   const id = insertDims(asm);
-  const dadoD = undercut ? dadoUndercutShape(oc) : dadoDraftShape(oc);   // control negativo VISIBLE
-  const zPart = 39.5;                                        // boca 40 − pinch 0.5
+  const dadoLocal = undercut ? dadoUndercutShape(oc) : dadoDraftShape(oc);   // control negativo VISIBLE
+  // ── COLOCACIÓN EN LA BASE (§4.3.2 · Fig 4.21): la pieza se mueve al ÁREA UTILIZABLE de
+  // la partición ANTES de partir el molde — no después. Transformar los sólidos que
+  // `splitMold` ya consumió revienta el kernel (wasmTable.get is not a function).
+  const col = colocacionEnLaBase(pkg);
+  const dadoD = occTransform(oc, dadoLocal, { translate: [col.dx, col.dy, col.dz] });
+  const zPart = 39.5 + col.dz;                               // boca 40 − pinch 0.5, ya colocada
   const r = splitMold(oc, dadoD, {
     scale: 1,                                                // contracción = estación 9 (retorno declarado)
     pinch: 0.5,
     plateThickness: id.Hk,                                   // respaldo del núcleo = COMPRA
-    block: { w: id.ifx, d: id.ify, h: id.Hc, x: 20, y: 20, z: zPart - id.Hc / 2 },   // cavidad = COMPRA
+    block: { w: id.ifx, d: id.ify, h: id.Hc, x: col.centroX, y: col.centroY, z: zPart - id.Hc / 2 },
   });
-  return { dadoD, r, zPart, compra: { ifx: id.ifx, ify: id.ify, Hc: id.Hc, Hk: id.Hk } };
+  return { dadoD, r, zPart, colocacion: col, compra: { ifx: id.ifx, ify: id.ify, Hc: id.Hc, Hk: id.Hk } };
 }
 
 export interface MedidaE3 {
@@ -1339,17 +1370,22 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
   // arriba → ángulo. NO se usa draftAnalysis para esto: las paredes del loft son
   // superficies REGLADAS (BSpline, no 'plane') y las mandaba a 'curvas' sin medir —
   // el gate cazó ese falso PASA en su primera corrida (8≠0) y por eso está esto.
-  const rebanada = (shape: any, z0: number, z1: number) => {
-    const tapa = occTransform(oc, occMakeBox(oc, 400, 400, 200), { translate: [-180, -180, z1] });
+  // ⚠ LA REBANADA VA ANCLADA AL SÓLIDO, no a z absoluto. Con la pieza COLOCADA en la
+  // base (§4.3.2) sube 106.5 mm: rebanar en z=0 cortaba en el VACÍO y el kernel reventaba
+  // con `wasmTable.get is not a function`. Es la misma familia de bug que el resto del
+  // día — coordenadas absolutas horneadas que asumen que la pieza vive en el origen.
+  const rebanada = (shape: any, zBase: number, alturaMm: number) => {
+    const zCorte = zBase + alturaMm;
+    const tapa = occTransform(oc, occMakeBox(oc, 400, 400, 400), { translate: [-180 + bbD.min[0], -180 + bbD.min[1], zCorte] });
     return shapeBBox(oc, occCut(oc, shape, tapa));
   };
-  const slabExt = rebanada(a.dadoD, 0, 0.4);                 // pie del exterior
+  const slabExt = rebanada(a.dadoD, bbD.min[2], 0.4);        // pie del exterior (desde SU base)
   const wPie = slabExt.max[0] - slabExt.min[0];
-  const draftExt = Math.atan((((bbD.max[0] - bbD.min[0]) - wPie) / 2) / (bbD.max[2] - 0.4)) * 180 / Math.PI;
+  const draftExt = Math.atan((((bbD.max[0] - bbD.min[0]) - wPie) / 2) / ((bbD.max[2] - bbD.min[2]) - 0.4)) * 180 / Math.PI;
   mide('dado', 'draft EXTERIOR medido (°)', 1.5, draftExt, 0.1, 'FRENTE (rebanadas)');
-  const slabInt = rebanada(a.r.macho, 2, 2.4);               // pie del hueco (el macho lo copia)
+  const slabInt = rebanada(a.r.macho, bbM.min[2], 0.4);      // pie del hueco (el macho lo copia)
   const wPieInt = slabInt.max[0] - slabInt.min[0];
-  const draftInt = Math.atan((((bbM.max[0] - bbM.min[0]) - wPieInt) / 2) / (bbM.max[2] - 2.4)) * 180 / Math.PI;
+  const draftInt = Math.atan((((bbM.max[0] - bbM.min[0]) - wPieInt) / 2) / ((bbM.max[2] - bbM.min[2]) - 0.4)) * 180 / Math.PI;
   mide('dado', 'draft INTERIOR del hueco medido (°)', 1.5, draftInt, 0.1, 'FRENTE (rebanadas)');
   // complementario: ninguna cara PLANA casi-vertical sin draft (las regladas ya se midieron arriba)
   const da = draftAnalysis(oc, a.dadoD, [0, 0, 1], 1.4);
@@ -1363,7 +1399,9 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
 
   // ── NÚCLEO ──
   mide('núcleo (respaldo)', 'espesor de placa = Hk de compra', a.compra.Hk, bbK.max[2] - a.zPart, 0.02, 'FRENTE (FRE)');
-  mide('núcleo (macho)', 'entra hasta el piso', 2, bbM.min[2], 0.05, 'SECCIÓN frontal');
+  // el piso del hueco está a 2 mm del fondo de la PIEZA — relativo a ella, no a z=0.
+  // Con la pieza colocada en la base (§4.3.2) el absoluto sube 106.5 mm.
+  mide('núcleo (macho)', 'entra hasta el piso (2 mm sobre el fondo de la pieza)', bbD.min[2] + 2, bbM.min[2], 0.05, 'SECCIÓN frontal');
   mide('núcleo (macho)', 'ancho del hueco en la boca', 36, bbM.max[0] - bbM.min[0], 0.06, 'PLANTA (SUP)');
 
   // ── INVARIANTES DEL CONJUNTO ──

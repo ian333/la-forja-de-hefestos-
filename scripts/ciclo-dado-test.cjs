@@ -243,9 +243,12 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const mps = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-plano-set.ts'));
   const asm = mps.packageToAssemblySpec(e2.pkg);
   const zStack = mps.plateStackZ(asm);
+  const colB = ed.colocacionEnLaBase(e2.pkg);
   const dC = C.datumsColada({
     plates: asm.plates, moldWidthMm: asm.widthMm, moldDepthMm: asm.depthMm ?? asm.widthMm,
-    zPartMm: 39.5, pieza: { x0: 0, y0: 0, x1: 40, y1: 40, zBaseCerradaMm: 0, bocaEnParticion: true },
+    // la pieza ya vive COLOCADA dentro de la base (§4.3.2): la colada la ve donde está
+    zPartMm: zStack.A,
+    pieza: { x0: 0 + colB.dx, y0: 0 + colB.dy, x1: 40 + colB.dx, y1: 40 + colB.dy, zBaseCerradaMm: 0 + colB.dz, bocaEnParticion: true },
     plastic: 'ABS', partVolCc: 14.14, wallMm: 2, fillTimeS: 1,
   });
   const solC = C.construirColada(occt, oc, dC);
@@ -260,9 +263,18 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   // base. Mientras no se concilien, la colada no tiene dónde caer. Un gate verde con esto
   // adentro sería justo la mentira que este proyecto lleva toda la sesión cazando.
   const centroMolde = asm.widthMm / 2;
-  const dxMarco = Math.abs(centroMolde - 20), dzMarco = Math.abs(zStack.A - 39.5);
-  check('la PIEZA y el MOLDE comparten marco de coordenadas', dxMarco < 1 && dzMarco < 1,
-    `centro pieza (20,20) vs centro molde (${centroMolde},${centroMolde}) · partición ciclo 39.5 vs stack ${zStack.A} → desfase (${dxMarco}, ${dxMarco}, ${dzMarco.toFixed(1)}) — RETORNO a la estación 3 (layout)`);
+  const bbA = occt.shapeBBox ? null : null;
+  const bDado = (() => { const b = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(acero.dadoD, b, false);
+    const a2 = b.CornerMin(), c2 = b.CornerMax(); return { cx: (a2.X()+c2.X())/2, cy: (a2.Y()+c2.Y())/2, z1: c2.Z() }; })();
+  check('la PIEZA y el MOLDE comparten marco de coordenadas',
+    Math.abs(bDado.cx - centroMolde) < 1 && Math.abs(bDado.cy - centroMolde) < 1 && Math.abs(acero.zPart - zStack.A) < 1,
+    `centro de la pieza MEDIDO (${bDado.cx.toFixed(1)}, ${bDado.cy.toFixed(1)}) vs centro de la base (${centroMolde}, ${centroMolde}) · partición ${acero.zPart} vs stack ${zStack.A}`);
+  // Fig 4.21 — y CABE en el área utilizable de la partición (reserva de ½⌀ a pilares/retornos)
+  const bCav = (() => { const b = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(acero.r.cavityPlate, b, false);
+    const a2 = b.CornerMin(), c2 = b.CornerMax(); return { x0: a2.X(), y0: a2.Y(), x1: c2.X(), y1: c2.Y() }; })();
+  check('Fig 4.21: el inserto cabe en el ÁREA UTILIZABLE de la partición',
+    bCav.x0 >= 0 && bCav.y0 >= 0 && bCav.x1 <= asm.widthMm && bCav.y1 <= (asm.depthMm ?? asm.widthMm),
+    `inserto x ${bCav.x0.toFixed(1)}..${bCav.x1.toFixed(1)} · base 0..${asm.widthMm}`);
 
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
