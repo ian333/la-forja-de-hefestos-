@@ -235,6 +235,35 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       !(bV.dx > bR.dy && bR.dy > bG.dz && bV.x0 > 40), `⌀${bV.dx.toFixed(2)} entrando directo, x0=${bV.x0.toFixed(1)}`);
   }
 
+  // ══ LA COLADA · generador propio (cap 6) ══
+  // Extraída a `mold/colada.ts` porque estaba enterrada en la línea 1112 de 1619 de
+  // `mold-plano-set` y la E5 no la vio: se inventó otra con L=60 y eje en una esquina.
+  console.log('── LA COLADA · el generador con los DATUMS del libro');
+  const C = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'colada.ts'));
+  const mps = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-plano-set.ts'));
+  const asm = mps.packageToAssemblySpec(e2.pkg);
+  const zStack = mps.plateStackZ(asm);
+  const dC = C.datumsColada({
+    plates: asm.plates, moldWidthMm: asm.widthMm, moldDepthMm: asm.depthMm ?? asm.widthMm,
+    zPartMm: 39.5, pieza: { x0: 0, y0: 0, x1: 40, y1: 40, zBaseCerradaMm: 0, bocaEnParticion: true },
+    plastic: 'ABS', partVolCc: 14.14, wallMm: 2, fillTimeS: 1,
+  });
+  const solC = C.construirColada(occt, oc, dC);
+  const vC = C.verificacionColada(occt, oc, solC, dC);
+  for (const m of vC.medidas) check(`colada · ${m.cota} [${m.seccion}]`, m.ok, `declarado ${m.declarado} vs medido ${m.medido} (±${m.tolMm})`);
+  check('el eje del bebedero es el CENTRO del molde (Fig 6.4)', vC.ejeOk);
+  // CONTROL NEGATIVO: la colada de la E5 de ayer debe REPROBAR
+  const vMala = C.verificacionColada(occt, oc, C.coladaMala(occt, oc, dC), dC);
+  check('CONTROL NEGATIVO: la colada de ayer (⌀9.5 recta, fuera de eje) REPRUEBA', !vMala.ok, vMala.resumen);
+  // ⚠ EL DEFECTO REAL, y va como CHECK que FALLA — no como nota al pie. La pieza y el
+  // molde viven en MARCOS DISTINTOS: los insertos de la E3 nunca han estado dentro de la
+  // base. Mientras no se concilien, la colada no tiene dónde caer. Un gate verde con esto
+  // adentro sería justo la mentira que este proyecto lleva toda la sesión cazando.
+  const centroMolde = asm.widthMm / 2;
+  const dxMarco = Math.abs(centroMolde - 20), dzMarco = Math.abs(zStack.A - 39.5);
+  check('la PIEZA y el MOLDE comparten marco de coordenadas', dxMarco < 1 && dzMarco < 1,
+    `centro pieza (20,20) vs centro molde (${centroMolde},${centroMolde}) · partición ciclo 39.5 vs stack ${zStack.A} → desfase (${dxMarco}, ${dxMarco}, ${dzMarco.toFixed(1)}) — RETORNO a la estación 3 (layout)`);
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);
