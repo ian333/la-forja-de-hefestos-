@@ -1446,21 +1446,30 @@ export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number):
     };
   };
   const zP = a.zPart, L = liftNucleo;
+  // ⚠ LOS ANCLAJES VIAJAN CON LA PIEZA. Estos literales están en el marco LOCAL del dado
+  // (0..40); con la colocación en la base (§4.3.2) la pieza vive en (+78,+78,+106.5) y
+  // las cotas se quedaban flotando sobre espacio VACÍO con la línea guía apuntando a
+  // nada — la revisión con OJOS lo cazó (los números seguían en verde). Es la TERCERA
+  // instancia de la familia "coordenadas absolutas que asumen la pieza en el origen".
+  // Los anclajes que ya usan zP no llevan dz (zP ya viene colocado): solo dx/dy.
+  const { dx, dy, dz } = a.colocacion ?? { dx: 0, dy: 0, dz: 0 };
+  const P = (x: number, y: number, z: number): [number, number, number] => [x + dx, y + dy, z + dz];
+  const PXY = (x: number, y: number, z: number): [number, number, number] => [x + dx, y + dy, z];
   const dims = [
     // ── la pieza ──
-    dim('dado·ancho X en la boca', 'boca X', [0, -12, 40], [40, -12, 40], true),
-    dim('dado·fondo Y en la boca', 'boca Y', [-12, 0, 40], [-12, 40, 40]),
-    dim('dado·alto Z', 'alto', [46, -6, 0], [46, -6, 40]),
-    dim('dado·pared nominal EN la partición', 'pared', [0, 20, 42.5], [2.01, 20, 42.5], true),
-    dim('dado·piso', 'piso', [43, 20, 0], [43, 20, 2]),
+    dim('dado·ancho X en la boca', 'boca X', P(0, -12, 40), P(40, -12, 40), true),
+    dim('dado·fondo Y en la boca', 'boca Y', P(-12, 0, 40), P(-12, 40, 40)),
+    dim('dado·alto Z', 'alto', P(46, -6, 0), P(46, -6, 40)),
+    dim('dado·pared nominal EN la partición', 'pared', P(0, 20, 42.5), P(2.01, 20, 42.5), true),
+    dim('dado·piso', 'piso', P(43, 20, 0), P(43, 20, 2)),
     // el draft como línea INCLINADA siguiendo la pared (se VE la conicidad)
-    dim('dado·draft EXTERIOR medido (°)', 'draft', [40 * 0.0262, -6, 0], [0, -6, 40]),
+    dim('dado·draft EXTERIOR medido (°)', 'draft', P(40 * 0.0262, -6, 0), P(0, -6, 40)),
     // ── el acero ──
-    dim('inserto cavidad·ancho X', 'cavidad X', [-40, -52, -20.5], [80, -52, -20.5]),
-    dim('inserto cavidad·alto = Hc de compra', 'Hc compra', [88, -40, zP - a.compra.Hc], [88, -40, zP], true),
-    dim('inserto cavidad·cara superior EN la partición', 'partición', [84, -46, zP], [84, 86, zP]),
-    dim('núcleo (respaldo)·espesor de placa = Hk de compra', 'Hk compra', [88, 80, zP + L], [88, 80, zP + L + a.compra.Hk], true),
-    dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', [2.01, 52, zP + L], [37.99, 52, zP + L]),
+    dim('inserto cavidad·ancho X', 'cavidad X', P(-40, -52, -20.5), P(80, -52, -20.5)),
+    dim('inserto cavidad·alto = Hc de compra', 'Hc compra', PXY(88, -40, zP - a.compra.Hc), PXY(88, -40, zP), true),
+    dim('inserto cavidad·cara superior EN la partición', 'partición', PXY(84, -46, zP), PXY(84, 86, zP)),
+    dim('núcleo (respaldo)·espesor de placa = Hk de compra', 'Hk compra', PXY(88, 80, zP + L), PXY(88, 80, zP + L + a.compra.Hk), true),
+    dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', PXY(2.01, 52, zP + L), PXY(37.99, 52, zP + L)),
   ].filter((d): d is import('./mold-dimensions').Dim3D => !!d);
   return [{ role: 'ciclo-e3', dims }];
 }

@@ -609,7 +609,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
-      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} />}
+      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -839,9 +839,10 @@ function CicloE4({ e4, onE5 }: { e4: import('../mold/estudio-molde-datos').Estac
  *  conicidad estaba bien (medida), pero la colada terminaba en su punto MÁS ANCHO justo
  *  donde tocaba una pared de 2 mm. Aquí la sección BAJA monótona hasta la compuerta, y
  *  cada número sale de `feed.ts`/`gating.ts` — esta estación no inventa una sola fórmula. */
-function CicloE5({ e5, e5v }: {
+function CicloE5({ e5, e5v, datums }: {
   e5: import('../mold/estudio-molde-datos').Estacion5Dado;
   e5v?: import('../mold/colada').VerificacionColada;
+  datums?: import('../mold/colada').DatumsColada;
 }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   const E = e5.estrecha;
@@ -850,6 +851,24 @@ function CicloE5({ e5, e5v }: {
       <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
         estación 5 — alimentación (cap 6): boquilla → bebedero → runner → pozo → compuerta → pieza
       </div>
+      {/* ⚠ EL CONFLICTO ESPACIAL, PRIMERO. datumsColada lo detecta (el eje del bushing
+          cae sobre la BOCA → el sprue centrado PERFORA el macho) pero el CAD lo dibujaba
+          sin decirlo — la revisión con ojos lo cazó: el bebedero muere DENTRO del hueco.
+          La decisión (desplazar cavidad / voltear pieza) es de ian = retorno a la E3. */}
+      {datums && datums.conflictos.length > 0 && (
+        <div data-testid="e5-conflicto" style={{ margin: '4px 6px', padding: '6px 8px', borderRadius: 6,
+          background: 'rgba(242,122,108,0.14)', border: '1px solid rgba(242,122,108,0.5)' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#f27a6c' }}>
+            ⛔ CONFLICTO ESPACIAL ({datums.modo}) — esta colada NO se puede tallar así
+          </div>
+          {datums.conflictos.map((c, k) => (
+            <div key={k} style={{ fontSize: 10.5, color: '#f4a9a0', marginTop: 3 }}>{c}</div>
+          ))}
+          <div style={{ fontSize: 10, color: '#c9a6ff', marginTop: 3 }}>
+            ⟲ retorno a la ESTACIÓN 3 — el layout decide; mientras, el sólido dibujado es el testigo del conflicto
+          </div>
+        </div>
+      )}
       {/* LA CASCADA: es LO que se veía al revés, y ahora se lee de un golpe */}
       <div data-testid="e5-cascada" style={{ padding: '4px 6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>

@@ -2899,7 +2899,7 @@ function SketchPlane({ plane }: { plane: SketchPlane3D }) {
 /** Salta la cámara a una vista preset (iso/top/front/right/left/back/bottom) — como
  *  el ViewCube de Fusion. `view` = {name, nonce} para poder repetir la misma vista. */
 type SketchCam = { pos: [number, number, number]; target: [number, number, number]; up: [number, number, number]; pxPerMm: number } | null;
-function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name: string; nonce: number } | null; orbit?: { az: number; el: number; r: number; nonce: number } | null; dist: number; target: [number, number, number]; sketchCam?: SketchCam }) {
+function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name: string; nonce: number } | null; orbit?: { az: number; el: number; r: number; nonce: number; target?: [number, number, number] } | null; dist: number; target: [number, number, number]; sketchCam?: SketchCam }) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls) as { target: THREE.Vector3; update: () => void; enabled: boolean } | null;
   // ── EL VIAJE (orden del user, como Fusion): la cámara NUNCA salta — VUELA a su
@@ -2976,7 +2976,11 @@ function ViewController({ view, orbit, dist, target, sketchCam }: { view: { name
     if (!orbit || sketchCam || orbit.nonce === lastOrbitNonce.current) return;
     lastOrbitNonce.current = orbit.nonce;
     const az = (orbit.az * Math.PI) / 180, el = (orbit.el * Math.PI) / 180, r = orbit.r;
-    place(r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az));
+    const off: [number, number, number] = [r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az)];
+    if (orbit.target) {
+      const [tx, ty, tz] = orbit.target;                 // ya viene mapeado CAD→three
+      flyTo([off[0] + tx, off[1] + ty, off[2] + tz], [0, 1, 0], [tx, ty, tz], 850);
+    } else place(off[0], off[1], off[2]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orbit, camera, controls, target, sketchCam]);
   return null;
@@ -4492,8 +4496,13 @@ export default function ForgeBRepStudio() {
     if (wasSketchingRef.current && !sketchOpen) setView('iso');
     wasSketchingRef.current = sketchOpen;
   }, [sketchOpen, setView]);
-  const [orbitReq, setOrbitReq] = useState<{ az: number; el: number; r: number; nonce: number } | null>(null);
-  const orbitTo = useCallback((az: number, el: number, r: number) => setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1 })), []);
+  const [orbitReq, setOrbitReq] = useState<{ az: number; el: number; r: number; nonce: number; target?: [number, number, number] } | null>(null);
+  // target opcional EN COORDENADAS CAD (x,y,z de placa): el ciclo vive colocado dentro
+  // de la base y el bbox global puede arrastrar el centro — el driver de QA/video apunta
+  // EXPLÍCITO a la pieza. Sin target: el viewTarget de siempre (bbox visible).
+  const orbitTo = useCallback((az: number, el: number, r: number, tx?: number, ty?: number, tz?: number) =>
+    setOrbitReq((v) => ({ az, el, r, nonce: (v?.nonce ?? 0) + 1,
+      ...(tx !== undefined && ty !== undefined && tz !== undefined ? { target: [tx, tz, -ty] as [number, number, number] } : {}) })), []);
   const [gbParts, setGbParts] = useState<GearboxMotionData | null>(null);
   // Construye las piezas separadas (centradas) cuando se enciende el movimiento o
   // cambian los parámetros de la caja. Teselación una vez; la animación solo mueve grupos.
@@ -5438,7 +5447,7 @@ export default function ForgeBRepStudio() {
       showAllGbBodies: () => showAllGbBodies(),
       // VISTAS de cámara (ViewCube) — driver de QA / explorar ángulos
       setView: (name: string) => setView(name),
-      orbitTo: (az: number, el: number, r: number) => orbitTo(az, el, r),
+      orbitTo: (az: number, el: number, r: number, tx?: number, ty?: number, tz?: number) => orbitTo(az, el, r, tx, ty, tz),
       // MOVIMIENTO — driver + cinemática de QA
       setGbMotion: (v: boolean) => setGbMotion(v),
       get gbMotion() { return gbMotion; },
@@ -5863,7 +5872,7 @@ export default function ForgeBRepStudio() {
         setMoldHidden(hid); setMoldOpacity({ [a]: 0.4, [b]: 0.4 }); setMoldColors({});
         return { pair: `${a} ↔ ${b}`, volMm3: c.volMm3, penMm: c.penMm, nPoints: (c.cloud || []).length / 3 };
       },
-      orbitTo: (az: number, el: number, r: number) => orbitTo(az, el, r),
+      orbitTo: (az: number, el: number, r: number, tx?: number, ty?: number, tz?: number) => orbitTo(az, el, r, tx, ty, tz),
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     // EL BUS DE COMANDOS: `window.__forja.run('dominio.verbo', {…})` — mismo idioma

@@ -62,6 +62,16 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   if (process.env.E5 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e5'); }
   await p.waitForFunction(() => !!(window.__forgeBrep && window.__forgeBrep.llenadoStats && window.__forgeBrep.llenadoStats()), null, { timeout: 300000 });
   await p.waitForTimeout(2500);
+  // ── ENCUADRE (FILOSOFIA-CINE: ocupar la pantalla). Con la pieza COLOCADA dentro de la
+  // base 196×196×248 la cámara inicial —que nace mirando al ORIGEN y nunca recibe una
+  // vista— dejaba el molde arrinconado y la pieza CHICA: el juez de píxeles REPROBÓ
+  // (0.12·0.11·0.07 vs umbral 0.10). `orbitTo` vuela alrededor del viewTarget, que ya
+  // cae al bbox del MOLDE visible. ORBIT="az,el,r" (grados, grados, mm).
+  // target EXPLÍCITO en CAD: el centro de la pieza colocada (98, 98, ~127) — el bbox
+  // global arrastraba la mira y la pieza salía cortada en la esquina (visto en el still).
+  const orb = (process.env.ORBIT || '38,20,200,98,98,127').split(',').map(Number);
+  await p.evaluate(([az, el, r, tx, ty, tz]) => window.__forgeBrep.orbitTo(az, el, r, tx, ty, tz), orb);
+  await p.waitForTimeout(1400);                        // el vuelo dura ~850 ms + margen
 
   // ── captura: el frente avanza de 0 a 1 ──
   const medidas = [];

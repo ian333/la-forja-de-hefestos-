@@ -247,6 +247,19 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   // CONTROL NEGATIVO: la colada de la E5 de ayer debe REPROBAR
   const vMala = C.verificacionColada(occt, oc, C.coladaMala(occt, oc, dC), dC);
   check('CONTROL NEGATIVO: la colada de ayer (⌀9.5 recta, fuera de eje) REPRUEBA', !vMala.ok, vMala.resumen);
+  // ── EL CONFLICTO ESPACIAL, detectado Y medido ──
+  // La revisión con OJOS lo cazó: el bebedero centrado atraviesa la BOCA y muere dentro
+  // del hueco — en acero, PERFORA el macho. datumsColada lo declara; aquí se exige que
+  // lo declare, y la intersección booleana lo MIDE. Este check estaba DECLARADO en la
+  // orden del generador ("colada ∩ macho = ∅") y nunca se implementó — y su lectura
+  // honesta para ESTA pieza es la inversa: la interferencia DEBE existir, porque es la
+  // prueba de que el retorno a la E3 (desplazar cavidad / voltear pieza) va en serio.
+  check('el conflicto espacial se DETECTA (eje del bushing sobre la BOCA → requiere-offset)',
+    dC.modo === 'requiere-offset' && dC.conflictos.length > 0,
+    dC.conflictos[0] ? dC.conflictos[0].slice(0, 90) : 'sin conflicto declarado');
+  const interCM = ed.interseccionMitades(oc, solC.fundido, acero.r.macho);
+  check('y es REAL: colada ∩ macho > 0 (el sprue centrado perfora el núcleo)',
+    interCM.volMm3 > 0, `${interCM.volMm3.toFixed(1)} mm³ de acero compartido — retorno a la E3`);
   // ⚠ EL DEFECTO REAL, y va como CHECK que FALLA — no como nota al pie. La pieza y el
   // molde viven en MARCOS DISTINTOS: los insertos de la E3 nunca han estado dentro de la
   // base. Mientras no se concilien, la colada no tiene dónde caer. Un gate verde con esto
