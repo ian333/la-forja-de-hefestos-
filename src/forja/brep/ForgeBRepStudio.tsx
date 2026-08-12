@@ -3948,10 +3948,13 @@ export default function ForgeBRepStudio() {
     });
   }, [libNames, docName, loadFromLibrary]);   // libNames refresca al guardar/borrar
   const switcherStarters = useMemo<ProjItem[]>(() => [
+    // EL CICLO DEL DADO como proyecto del lobby — ian lo buscó en el sitio vivo y no
+    // estaba ("no aparece como proyecto aún"): solo existía el botón de la barra.
+    { key: 'st-dado', name: 'EL DADO · ciclo Kazmer (molde de inyección)', type: 'molde', meta: 'E1→E5 · sprue directo Fig 7.2 · alarmas de tubería y balance', status: 'plantilla', action: mold.loadDado },
     { key: 'st-flanera', name: 'Molde Flanera PP', type: 'molde', meta: 'Ø80·H40 · 6 cav · molde completo', status: 'plantilla', action: loadFlaneraMold },
     { key: 'st-percha', name: 'Percha (curso Alwis)', type: 'molde', meta: 'gancho · partición curva', status: 'plantilla', action: cursoInsertar },
     { key: 'st-cicloidal', name: 'Reductor cicloidal 10:1', type: 'mecanismo', meta: 'print-in-place · holgura 0.30', status: 'plantilla', action: () => loadDoc(cycloidalReducerDoc()) },
-  ], [loadFlaneraMold, cursoInsertar, loadDoc]);
+  ], [mold, loadFlaneraMold, cursoInsertar, loadDoc]);
   const exportDocFile = useCallback(() => {
     const safe = (docName.trim() || 'pieza').replace(/[^\w.-]+/g, '_');
     triggerDownload(new Blob([JSON.stringify(serializeDoc(), null, 2)], { type: 'application/json' }), `${safe}.forja.json`);
