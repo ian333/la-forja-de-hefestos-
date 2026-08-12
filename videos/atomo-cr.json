@@ -128,8 +128,9 @@
     ]
   },
   "publicar": {
-    "biblioteca": "atomos/atomo-cr.mp4",
+    "biblioteca": "atomos/atom-024-Cr.mp4",
     "capsulaRel": "atomos/_code/atomo-cr-capsula.tar.gz",
-    "pieza": "atomo-024"
+    "pieza": "atomo-024",
+    "nota": "REEMPLAZA al atom-024-Cr.mp4 viejo (hidrogenoide): la biblioteca nombra los átomos atom-NNN-Simbolo.mp4 y la pieza de Comando (atomo-024, donde vive el SPECIAL) apunta a ese archivo. Otro nombre = pieza basura duplicada."
   }
 }
