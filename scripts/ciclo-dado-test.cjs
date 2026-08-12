@@ -206,9 +206,9 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const colB = ed.colocacionEnLaBase(e2.pkg);
   const dC = C.datumsColada({
     plates: asm.plates, moldWidthMm: asm.widthMm, moldDepthMm: asm.depthMm ?? asm.widthMm,
-    // la pieza ya vive COLOCADA dentro de la base (§4.3.2): la colada la ve donde está
+    // la pieza vive VOLTEADA y CENTRADA (Fig 7.2): boca a B, base cerrada hacia A
     zPartMm: zStack.A,
-    pieza: { x0: 0 + colB.dx, y0: 0 + colB.dy, x1: 40 + colB.dx, y1: 40 + colB.dy, zBaseCerradaMm: 0 + colB.dz, bocaEnParticion: true },
+    pieza: { x0: colB.tx, y0: colB.ty - 40, x1: colB.tx + 40, y1: colB.ty, zBaseCerradaMm: colB.zBaseCerradaMm, bocaHaciaElSprue: false },
     plastic: 'ABS', partVolCc: 14.14, wallMm: 2, fillTimeS: 1,
   });
 
@@ -218,9 +218,14 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('el ⌀ del bebedero SALE del motor, no de un literal', Math.abs(2 * G5.rTopMm - 5.0) < 0.01 && G5.rBaseMm > G5.rTopMm,
     `⌀${(2 * G5.rTopMm).toFixed(2)} (orificio de boquilla + holgura) → ⌀${(2 * G5.rBaseMm).toFixed(2)}`);
   check('§6.3.1: angosto en la boquilla, ancho en la partición', G5.rBaseMm > G5.rTopMm);
-  check('§7.1.5: la COMPUERTA congela ANTES que el runner', e5.filas.find((f) => f.id === 'freeze').estado === 'CUMPLE',
-    e5.filas.find((f) => f.id === 'freeze').valor);
-  check('§6.5.4: el ⌀ del runner es de fresa ESTÁNDAR', fd.STANDARD_RUNNER_DIAMM.includes(G5.runnerDiaMm), `⌀${G5.runnerDiaMm} mm`);
+  if (e5.filas.some((f) => f.id === 'freeze')) {
+    check('§7.1.5: la COMPUERTA congela ANTES que el runner', e5.filas.find((f) => f.id === 'freeze').estado === 'CUMPLE',
+      e5.filas.find((f) => f.id === 'freeze').valor);
+  } else {
+    check('§7.2.1: SPRUE DIRECTO declarado (sin runner ni compuerta tallada)',
+      e5.filas.some((f) => f.id === 'directo' && f.estado === 'CUMPLE'),
+      e5.filas.find((f) => f.id === 'directo')?.valor ?? 'sin fila directo');
+  }
   // §6.2.3 — con L_sprue del STACK REAL (141.5 mm) para una pieza de 14 cc, la colada se
   // lleva el 68 % del disparo. Eso NO es un bug del gate: es el diseño diciendo la verdad.
   // Antes lo "resolvía" inventando un bebedero más corto; el largo lo fija el stack, así
@@ -258,12 +263,12 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   // La cavidad desplazada RESUELVE el conflicto: el eje del bushing queda sobre acero
   // pleno, el modo cae a sprue+runner sin conflictos, y la evidencia ORIGINAL de la
   // orden del generador —"colada ∩ macho = ∅"— por fin se cumple de verdad.
-  check('el offset RESUELVE el conflicto (modo sprue+runner, sin conflictos)',
-    dC.modo === 'sprue+runner' && dC.conflictos.length === 0,
-    `modo ${dC.modo} · offset aplicado ${colB.offsetColadaMm.toFixed(1)} mm · ${dC.conflictos.length} conflictos`);
-  check('§6.3.1: L_sprue = top clamp + placa A (el bebedero TERMINA en la partición)',
-    cerca(dC.LsprueMm, asm.plates.topClamp + asm.plates.A, 0.01),
-    `${dC.LsprueMm.toFixed(1)} mm = ${asm.plates.topClamp} + ${asm.plates.A}`);
+  check('EL VOLTEO da SPRUE DIRECTO sin conflictos (§7.2.1, Fig 7.2)',
+    dC.modo === 'sprue-directo' && dC.conflictos.length === 0,
+    `modo ${dC.modo} · ${dC.conflictos.length} conflictos · pieza centrada`);
+  check('§7.2.1: L_sprue = cara del clamp − base cerrada (el bushing "abuts" la pieza)',
+    cerca(dC.LsprueMm, (zStack.clamp + asm.plates.topClamp) - colB.zBaseCerradaMm, 0.01),
+    `${dC.LsprueMm.toFixed(1)} mm = ${zStack.clamp + asm.plates.topClamp} − ${colB.zBaseCerradaMm}`);
   const interCM = ed.interseccionMitades(oc, solC.fundido, acero.r.macho);
   check('colada ∩ macho = ∅ — la evidencia original, por fin medida en verde',
     interCM.volMm3 < 1, `${interCM.volMm3.toFixed(1)} mm³ (antes del retorno: 3,997.5)`);
@@ -272,7 +277,7 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const dCentrada = C.datumsColada({
     plates: asm.plates, moldWidthMm: asm.widthMm, moldDepthMm: asm.depthMm ?? asm.widthMm,
     zPartMm: zStack.A,
-    pieza: { x0: 78, y0: 78, x1: 118, y1: 118, zBaseCerradaMm: 106.5, bocaEnParticion: true },
+    pieza: { x0: 78, y0: 78, x1: 118, y1: 118, zBaseCerradaMm: 106.5, bocaHaciaElSprue: true },
     plastic: 'ABS', partVolCc: 14.14, wallMm: 2, fillTimeS: 1,
   });
   check('CONTROL: la pieza CENTRADA sigue acusando requiere-offset',
@@ -293,10 +298,12 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   console.log('── UNA TUBERÍA · colada ∪ pieza en un campo, sembrado en la boquilla');
   const fl2 = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'flowlen.ts'));
   const denCol = C.dentroColada(dC);
-  const dentroPiezaB = (x, y, z) => ed.dentroDadoLocal(x - colB.dx, y - colB.dy, z - colB.dz);
+  const dentroPiezaB = (x, y, z) => { const q = colB.aLocal(x, y, z); return ed.dentroDadoLocal(q[0], q[1], q[2]); };
   const gridJ = {
-    x0: dC.ejeX - dC.pozoLargoMm - dC.rBaseMm - 2, y0: colB.dy - 2, z0: colB.dz - dC.puller.largoMm - 2,
-    x1: 40 + colB.dx + 2, y1: 40 + colB.dy + 2, z1: dC.zCaraClampMm + 2, cellMm: 1.0,
+    x0: Math.min(dC.ejeX - dC.rBaseMm, colB.tx) - 2, y0: Math.min(dC.ejeY - dC.rBaseMm, colB.ty - 40) - 2,
+    z0: colB.tz - 41 - 2,
+    x1: Math.max(dC.ejeX + dC.rBaseMm, colB.tx + 40) + 2, y1: Math.max(dC.ejeY + dC.rBaseMm, colB.ty) + 2,
+    z1: dC.zCaraClampMm + 2, cellMm: 1.0,
     gateMm: { x: dC.ejeX, y: dC.ejeY, z: dC.zCaraClampMm - 1 }, wallMm: 2, meltN: 0.348,
   };
   const snapDe = (cf) => Math.hypot(
@@ -346,7 +353,8 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   // Umbral EXTENSIÓN DECLARADA: 5 % del ancho de la base. HOY DEBE SALIR ROJA (29.2 mm):
   // queda declarada hasta que ian decida el layout (voltear la pieza, Fig 7.2).
   {
-    const centroideCavX = (dC.pieza ? 0 : 0) || (20 + colB.dx);          // centroide de la cavidad en la partición
+    const cG = colB.aGlobal(20, 20, 20);                                 // centro de la pieza por el MAPA
+    const centroideCavX = cG[0];
     const desbalanceMm = Math.abs(centroideCavX - asm.widthMm / 2);
     const umbralMm = 0.05 * asm.widthMm;
     check('BALANCE (§6.6 · §4.3 · Fig 7.2): el centroide de la cavidad está en el eje de la máquina',
@@ -359,10 +367,10 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
 
   // el centro esperado de la pieza YA NO es el centro de la base: lleva el offset de la
   // colada (retorno 2026-08-12). La fuente única sigue siendo colocacionEnLaBase.
-  const cxEsp = 20 + colB.dx, cyEsp = 20 + colB.dy;
+  const cEsp = colB.aGlobal(20, 20, 20); const cxEsp = cEsp[0], cyEsp = cEsp[1];
   check('la PIEZA vive donde la COLOCACIÓN declara (centro base + offset de colada)',
     Math.abs(bDado.cx - cxEsp) < 1 && Math.abs(bDado.cy - cyEsp) < 1 && Math.abs(acero.zPart - zStack.A) < 1,
-    `centro MEDIDO (${bDado.cx.toFixed(1)}, ${bDado.cy.toFixed(1)}) vs declarado (${cxEsp.toFixed(1)}, ${cyEsp.toFixed(1)}) · offset ${colB.offsetColadaMm.toFixed(1)} · partición ${acero.zPart} vs stack ${zStack.A}`);
+    `centro MEDIDO (${bDado.cx.toFixed(1)}, ${bDado.cy.toFixed(1)}) vs declarado (${cxEsp.toFixed(1)}, ${cyEsp.toFixed(1)}) · VOLTEADA (Fig 7.2) · partición ${acero.zPart} vs stack ${zStack.A}`);
   // Fig 4.21 — y CABE en el área utilizable de la partición (reserva de ½⌀ a pilares/retornos)
   const bCav = (() => { const b = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(acero.r.cavityPlate, b, false);
     const a2 = b.CornerMin(), c2 = b.CornerMax(); return { x0: a2.X(), y0: a2.Y(), x1: c2.X(), y1: c2.Y() }; })();

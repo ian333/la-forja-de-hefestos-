@@ -1325,19 +1325,21 @@ export function colocacionEnLaBase(pkg: MoldPackage) {
   const z = plateStackZ(asm);
   const centroX = asm.widthMm / 2, centroY = (asm.depthMm ?? asm.widthMm) / 2;
   const zPartBase = z.A;                                     // la partición de la base = top de B
-  // ── RETORNO 2026-08-12 (decisión de ian: "hay que desplazar la cavidad") ──
-  // El dado tiene la BOCA en la partición: centrado, el eje del bushing (= centro de la
-  // base, Fig 6.4) caía sobre el hueco y el sprue perforaba el macho (3,997 mm³ medidos).
-  // La cavidad se desplaza en +x el MÍNIMO que ya declaraba `datumsColada.conflictos`:
-  // semiancho + rBase del bebedero + holgura de acero. El rBase sale del MISMO motor
-  // (designSprueFeed) con L_sprue = top clamp + placa A (§6.3.1) — no de una constante.
-  const LsprueMm = asm.plates.topClamp + asm.plates.A;
-  const fd = designSprueFeed({ material: 'ABS', partVolumeCc: 14.14, partWallMm: 2, sprueLenMm: LsprueMm, fillTimeS: 1 });
-  const holguraAceroMm = 4;                                  // EXTENSIÓN DECLARADA (= la de datumsColada)
-  const offsetColadaMm = 20 + fd.rBaseMm + holguraAceroMm;   // semiancho del dado (40/2) + ⌀/2 + acero
+  // ── EL VOLTEO (Fig 7.2 · decisión de ian 2026-08-12: "VOLTEA LA PIEZA") ──
+  // §7.2.1: para UNA cavidad, el sprue gate cae DIRECTO sobre la cavidad — la pieza se
+  // moldea BOCA ABAJO (hacia B), base cerrada hacia A, y queda CENTRADA. El
+  // desplazamiento de 29.2 mm fue un parche mío con reglas de runner; el libro voltea.
+  // Mapa (rotación 180° sobre X + colocación):  global = (x + tx, ty − y, tz − z)
+  //   boca (z_local 39.5) → partición (146) · base cerrada (z_local 0) → 185.5 (arriba)
+  const tx = centroX - 20;                                   // pieza centrada en x
+  const ty = centroY + 20;                                   // y volteada queda centrada
+  const tz = zPartBase + 39.5;                               // la boca cae EN la partición
+  const aGlobal = (x: number, y: number, z: number): [number, number, number] => [x + tx, ty - y, tz - z];
+  const aLocal = (X: number, Y: number, Z: number): [number, number, number] => [X - tx, ty - Y, tz - Z];
   return {
-    dx: centroX - 20 + offsetColadaMm, dy: centroY - 20, dz: zPartBase - 39.5,
-    centroX, centroY, zPartBase, offsetColadaMm,
+    volteo: true as const, tx, ty, tz, aGlobal, aLocal,
+    centroX, centroY, zPartBase,
+    zBocaMm: zPartBase, zBaseCerradaMm: tz,
     baseWmm: asm.widthMm, baseLmm: asm.depthMm ?? asm.widthMm,
     plates: asm.plates,
   };
@@ -1347,19 +1349,24 @@ export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false): A
   const asm = packageToAssemblySpec(pkg);
   const id = insertDims(asm);
   const dadoLocal = undercut ? dadoUndercutShape(oc) : dadoDraftShape(oc);   // control negativo VISIBLE
-  // ── COLOCACIÓN EN LA BASE (§4.3.2 · Fig 4.21): la pieza se mueve al ÁREA UTILIZABLE de
-  // la partición ANTES de partir el molde — no después. Transformar los sólidos que
-  // `splitMold` ya consumió revienta el kernel (wasmTable.get is not a function).
+  // ── EL VOLTEO: se parte en el marco LOCAL (la convención probada de splitMold, boca
+  // arriba) y se ROTA EL CONJUNTO 180° sobre X + colocación. Así la CAVIDAD queda ARRIBA
+  // (lado A), el MACHO sube desde B, y la boca mira a B — la Fig 7.2 del libro.
   const col = colocacionEnLaBase(pkg);
-  const dadoD = occTransform(oc, dadoLocal, { translate: [col.dx, col.dy, col.dz] });
-  const zPart = 39.5 + col.dz;                               // boca 40 − pinch 0.5, ya colocada
-  const r = splitMold(oc, dadoD, {
+  const r = splitMold(oc, dadoLocal, {
     scale: 1,                                                // contracción = estación 9 (retorno declarado)
     pinch: 0.5,
     plateThickness: id.Hk,                                   // respaldo del núcleo = COMPRA
-    block: { w: id.ifx, d: id.ify, h: id.Hc, x: col.centroX, y: col.centroY, z: zPart - id.Hc / 2 },
+    block: { w: id.ifx, d: id.ify, h: id.Hc, x: 20, y: 20, z: 39.5 - id.Hc / 2 },
   });
-  return { dadoD, r, zPart, colocacion: col, compra: { ifx: id.ifx, ify: id.ify, Hc: id.Hc, Hk: id.Hk } };
+  const volt = (sh: any) => occTransform(oc, sh, {
+    rotateAngle: Math.PI, rotateAxis: { origin: [0, 0, 0], dir: [1, 0, 0] },
+    translate: [col.tx, col.ty, col.tz],
+  });
+  const dadoD = volt(dadoLocal);
+  const rV: SplitMoldResult = { ...r, cavityPlate: volt(r.cavityPlate), macho: volt(r.macho), corePlate: volt(r.corePlate) } as SplitMoldResult;
+  const zPart = col.zPartBase;
+  return { dadoD, r: rV, zPart, colocacion: col, compra: { ifx: id.ifx, ify: id.ify, Hc: id.Hc, Hk: id.Hk } };
 }
 
 export interface MedidaE3 {
@@ -1391,7 +1398,9 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
   mide('dado', 'alto Z', 40, bbD.max[2] - bbD.min[2], 0.02, 'FRENTE (FRE)');
   // pared nominal EN la partición: (exterior − hueco)/2, ambos máximos ocurren arriba
   mide('dado', 'pared nominal EN la partición', 2, ((bbD.max[0] - bbD.min[0]) - (bbM.max[0] - bbM.min[0])) / 2, 0.06, 'SECCIÓN frontal');
-  mide('dado', 'piso', 2, bbM.min[2] - bbD.min[2], 0.05, 'SECCIÓN frontal');
+  // piso: la brecha entre el macho y el dado en el extremo CERRADO — con el VOLTEO el
+  // piso quedó ARRIBA; max() de los dos candidatos lo hace agnóstico de orientación.
+  mide('dado', 'piso', 2, Math.max(bbM.min[2] - bbD.min[2], bbD.max[2] - bbM.max[2]), 0.05, 'SECCIÓN frontal');
   // draft MEDIDO DEL SÓLIDO por rebanadas (dibujo técnico): ancho abajo vs ancho
   // arriba → ángulo. NO se usa draftAnalysis para esto: las paredes del loft son
   // superficies REGLADAS (BSpline, no 'plane') y las mandaba a 'curvas' sin medir —
@@ -1405,14 +1414,19 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
     const tapa = occTransform(oc, occMakeBox(oc, 400, 400, 400), { translate: [-180 + bbD.min[0], -180 + bbD.min[1], zCorte] });
     return shapeBBox(oc, occCut(oc, shape, tapa));
   };
-  const slabExt = rebanada(a.dadoD, bbD.min[2], 0.4);        // pie del exterior (desde SU base)
-  const wPie = slabExt.max[0] - slabExt.min[0];
-  const draftExt = Math.atan((((bbD.max[0] - bbD.min[0]) - wPie) / 2) / ((bbD.max[2] - bbD.min[2]) - 0.4)) * 180 / Math.PI;
-  mide('dado', 'draft EXTERIOR medido (°)', 1.5, draftExt, 0.1, 'FRENTE (rebanadas)');
-  const slabInt = rebanada(a.r.macho, bbM.min[2], 0.4);      // pie del hueco (el macho lo copia)
-  const wPieInt = slabInt.max[0] - slabInt.min[0];
-  const draftInt = Math.atan((((bbM.max[0] - bbM.min[0]) - wPieInt) / 2) / ((bbM.max[2] - bbM.min[2]) - 0.4)) * 180 / Math.PI;
-  mide('dado', 'draft INTERIOR del hueco medido (°)', 1.5, draftInt, 0.1, 'FRENTE (rebanadas)');
+  // AGNÓSTICO de orientación (el volteo puso el extremo angosto ARRIBA): rebanada en
+  // AMBOS extremos, el draft sale de |ancho_max − ancho_min| — sin asumir dónde está el pie.
+  const rebanadaTecho = (shape: any, zTop: number, alturaMm: number) => {
+    const piso2 = occTransform(oc, occMakeBox(oc, 400, 400, 400), { translate: [-180 + bbD.min[0], -180 + bbD.min[1], zTop - alturaMm - 400] });
+    return shapeBBox(oc, occCut(oc, shape, piso2));
+  };
+  const draftDosExtremos = (shape: any, bb: any) => {
+    const wLo = (() => { const sl = rebanada(shape, bb.min[2], 0.4); return sl.max[0] - sl.min[0]; })();
+    const wHi = (() => { const sl = rebanadaTecho(shape, bb.max[2], 0.4); return sl.max[0] - sl.min[0]; })();
+    return Math.atan((Math.abs(wHi - wLo) / 2) / ((bb.max[2] - bb.min[2]) - 0.4)) * 180 / Math.PI;
+  };
+  mide('dado', 'draft EXTERIOR medido (°)', 1.5, draftDosExtremos(a.dadoD, bbD), 0.1, 'FRENTE (rebanadas)');
+  mide('dado', 'draft INTERIOR del hueco medido (°)', 1.5, draftDosExtremos(a.r.macho, bbM), 0.12, 'FRENTE (rebanadas)');
   // complementario: ninguna cara PLANA casi-vertical sin draft (las regladas ya se midieron arriba)
   const da = draftAnalysis(oc, a.dadoD, [0, 0, 1], 1.4);
   mide('dado', 'caras PLANAS sin draft (<1.4°)', 0, da.requiresDraft.length, 0, 'todas las caras');
@@ -1421,13 +1435,14 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
   mide('inserto cavidad', 'ancho X', a.compra.ifx, bbC.max[0] - bbC.min[0], 0.02, 'PLANTA (SUP)');
   mide('inserto cavidad', 'fondo Y', a.compra.ify, bbC.max[1] - bbC.min[1], 0.02, 'PLANTA (SUP)');
   mide('inserto cavidad', 'alto = Hc de compra', a.compra.Hc, bbC.max[2] - bbC.min[2], 0.02, 'FRENTE (FRE)');
-  mide('inserto cavidad', 'cara superior EN la partición', a.zPart, bbC.max[2], 0.02, 'FRENTE (FRE)');
+  // con el VOLTEO la cavidad vive ARRIBA (lado A): su cara INFERIOR toca la partición
+  mide('inserto cavidad', 'cara INFERIOR en la partición (lado A)', a.zPart, bbC.min[2], 0.02, 'FRENTE (FRE)');
 
   // ── NÚCLEO ──
-  mide('núcleo (respaldo)', 'espesor de placa = Hk de compra', a.compra.Hk, bbK.max[2] - a.zPart, 0.02, 'FRENTE (FRE)');
-  // el piso del hueco está a 2 mm del fondo de la PIEZA — relativo a ella, no a z=0.
-  // Con la pieza colocada en la base (§4.3.2) el absoluto sube 106.5 mm.
-  mide('núcleo (macho)', 'entra hasta el piso (2 mm sobre el fondo de la pieza)', bbD.min[2] + 2, bbM.min[2], 0.05, 'SECCIÓN frontal');
+  // el respaldo del macho quedó BAJO la partición (lado B) tras el volteo
+  mide('núcleo (respaldo)', 'espesor de placa = Hk de compra', a.compra.Hk, a.zPart - bbK.min[2], 0.02, 'FRENTE (FRE)');
+  // el macho SUBE hasta 2 mm bajo la base cerrada (que ahora es el TECHO de la pieza)
+  mide('núcleo (macho)', 'sube hasta el piso (2 mm bajo la base cerrada)', bbD.max[2] - 2, bbM.max[2], 0.05, 'SECCIÓN frontal');
   mide('núcleo (macho)', 'ancho del hueco en la boca', 36, bbM.max[0] - bbM.min[0], 0.06, 'PLANTA (SUP)');
 
   // ── INVARIANTES DEL CONJUNTO ──
@@ -1470,17 +1485,15 @@ export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number):
     };
   };
   const zP = a.zPart, L = liftNucleo;
-  // ⚠ LOS ANCLAJES VIAJAN CON LA PIEZA. Estos literales están en el marco LOCAL del dado
-  // (0..40); con la colocación en la base (§4.3.2) la pieza vive en (+78,+78,+106.5) y
-  // las cotas se quedaban flotando sobre espacio VACÍO con la línea guía apuntando a
-  // nada — la revisión con OJOS lo cazó (los números seguían en verde). Es la TERCERA
-  // instancia de la familia "coordenadas absolutas que asumen la pieza en el origen".
-  // Los anclajes que ya usan zP no llevan dz (zP ya viene colocado): solo dx/dy.
-  const { dx, dy, dz } = a.colocacion ?? { dx: 0, dy: 0, dz: 0 };
-  const P = (x: number, y: number, z: number): [number, number, number] => [x + dx, y + dy, z + dz];
-  const PXY = (x: number, y: number, z: number): [number, number, number] => [x + dx, y + dy, z];
+  // ⚠ LOS ANCLAJES VIAJAN CON LA PIEZA — ahora por el MAPA DEL VOLTEO (rotación 180°X +
+  // colocación, Fig 7.2): P() manda el punto local por `aGlobal`. Los anclajes del acero
+  // que ya trabajan en z global (zP) solo voltean su XY. La cavidad quedó ARRIBA de la
+  // partición y el respaldo ABAJO — sus cotas cambian de lado con la pieza.
+  const g = a.colocacion?.aGlobal ?? ((x: number, y: number, z: number): [number, number, number] => [x, y, z]);
+  const P = (x: number, y: number, z: number): [number, number, number] => g(x, y, z);
+  const PXY = (x: number, y: number, z: number): [number, number, number] => { const q = g(x, y, 0); return [q[0], q[1], z]; };
   const dims = [
-    // ── la pieza ──
+    // ── la pieza (anclajes locales; el mapa los voltea con ella) ──
     dim('dado·ancho X en la boca', 'boca X', P(0, -12, 40), P(40, -12, 40), true),
     dim('dado·fondo Y en la boca', 'boca Y', P(-12, 0, 40), P(-12, 40, 40)),
     dim('dado·alto Z', 'alto', P(46, -6, 0), P(46, -6, 40)),
@@ -1488,12 +1501,13 @@ export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number):
     dim('dado·piso', 'piso', P(43, 20, 0), P(43, 20, 2)),
     // el draft como línea INCLINADA siguiendo la pared (se VE la conicidad)
     dim('dado·draft EXTERIOR medido (°)', 'draft', P(40 * 0.0262, -6, 0), P(0, -6, 40)),
-    // ── el acero ──
-    dim('inserto cavidad·ancho X', 'cavidad X', P(-40, -52, -20.5), P(80, -52, -20.5)),
-    dim('inserto cavidad·alto = Hc de compra', 'Hc compra', PXY(88, -40, zP - a.compra.Hc), PXY(88, -40, zP), true),
-    dim('inserto cavidad·cara superior EN la partición', 'partición', PXY(84, -46, zP), PXY(84, 86, zP)),
-    dim('núcleo (respaldo)·espesor de placa = Hk de compra', 'Hk compra', PXY(88, 80, zP + L), PXY(88, 80, zP + L + a.compra.Hk), true),
-    dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', PXY(2.01, 52, zP + L), PXY(37.99, 52, zP + L)),
+    // ── el acero (z global: cavidad ARRIBA de zP, respaldo ABAJO) ──
+    dim('inserto cavidad·ancho X', 'cavidad X', P(-40, -52, 60.5), P(80, -52, 60.5)),
+    dim('inserto cavidad·alto = Hc de compra', 'Hc compra', PXY(88, -40, zP), PXY(88, -40, zP + a.compra.Hc), true),
+    dim('inserto cavidad·cara INFERIOR en la partición (lado A)', 'partición', PXY(84, -46, zP), PXY(84, 86, zP)),
+    dim('núcleo (respaldo)·espesor de placa = Hk de compra', 'Hk compra', PXY(88, 80, zP - L - a.compra.Hk), PXY(88, 80, zP - L), true),
+    dim('núcleo (macho)·sube hasta el piso (2 mm bajo la base cerrada)', 'macho', PXY(43, 80, zP - L), PXY(43, 80, zP - L + 37.5)),
+    dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', PXY(2.01, 52, zP - L), PXY(37.99, 52, zP - L)),
   ].filter((d): d is import('./mold-dimensions').Dim3D => !!d);
   return [{ role: 'ciclo-e3', dims }];
 }
@@ -1866,14 +1880,18 @@ export function estacion5Dado(o: {
 
   // RUNNER y COMPUERTA: los ⌀ vienen del generador; aquí solo se evalúan
   const runnerDiaMm = d.runnerDiaMm, runnerLargoMm = d.LrunnerMm;
-  const segRunner: RunnerSegment = { name: 'runner', L: Math.max(1e-4, runnerLargoMm) / 1000, R: runnerDiaMm / 2000, Vdot: VdotM3s };
-  const dPRunnerMPa = pressureDropRunner(mm, segRunner) / 1e6;
-  const tcRunnerS = runnerCoolingTimeS(m.alpha, runnerDiaMm / 1000, m.tMelt, m.tCool, m.tEject);
-  const volRunnerCc = Math.PI * (runnerDiaMm / 2) ** 2 * runnerLargoMm / 1000;
+  // ⚠ con SPRUE DIRECTO (runner ⌀0) estas fórmulas dividen por R=0 → NaN, y `10.7 + NaN
+  // = NaN` PASABA de largo hasta la cuenta de presión (la familia NaN documentada:
+  // `NaN ?? x` = NaN). Se calculan SOLO si hay runner; si no, cero es la verdad §7.2.1.
+  const hayRunner = runnerLargoMm > 0 && runnerDiaMm > 0;
+  const segRunner: RunnerSegment = { name: 'runner', L: Math.max(1e-4, runnerLargoMm) / 1000, R: Math.max(0.1, runnerDiaMm) / 2000, Vdot: VdotM3s };
+  const dPRunnerMPa = hayRunner ? pressureDropRunner(mm, segRunner) / 1e6 : 0;
+  const tcRunnerS = hayRunner ? runnerCoolingTimeS(m.alpha, runnerDiaMm / 1000, m.tMelt, m.tCool, m.tEject) : 0;
+  const volRunnerCc = hayRunner ? Math.PI * (runnerDiaMm / 2) ** 2 * runnerLargoMm / 1000 : 0;
   const g = gateDesign({ type: 'edge', wallMm: wall, VdotM3s, shearMaxS: m.shearMax });
   const gateFreezeS = gateFreezeStripS(m.alpha, d.gateEspesorMm / 1000, m.tMelt, m.tCool, m.tNoFlow);
   const runnerFreezeS = gateFreezeCylS(m.alpha, runnerDiaMm / 1000, m.tMelt, m.tCool, m.tNoFlow);
-  const dPGateMPa = gateDropStripPL(mm, d.gateLargoMm / 1000, d.gateAnchoMm / 1000, d.gateEspesorMm / 1000, VdotM3s) / 1e6;
+  const dPGateMPa = hayRunner ? gateDropStripPL(mm, d.gateLargoMm / 1000, d.gateAnchoMm / 1000, d.gateEspesorMm / 1000, VdotM3s) / 1e6 : 0;
 
   const estrecha = {
     sprueBaseMm: 2 * d.rBaseMm, runnerMm: runnerDiaMm, gateMm: d.gateEspesorMm,
@@ -1883,7 +1901,7 @@ export function estacion5Dado(o: {
   // REGRIND (Eq 6.6 · §6.2.3). El largo del bebedero NO se acorta a capricho: sale del
   // stack de placas. Si el regrind viola, la decisión es de la ESTACIÓN 3 (placas más
   // delgadas o base más chica) — se ANUNCIA el retorno, no se falsea la cota.
-  const volPozoCc = Math.PI * (runnerDiaMm / 2) ** 2 * d.pozoLargoMm / 1000;
+  const volPozoCc = hayRunner ? Math.PI * (runnerDiaMm / 2) ** 2 * d.pozoLargoMm / 1000 : 0;
   const coladaCc = sprue.volCc + volRunnerCc + volPozoCc;
   const pct = (coladaCc / o.partVolCc) * 100;
   const limPct = 30;
@@ -1899,26 +1917,30 @@ export function estacion5Dado(o: {
   fila('sprue-dia', 'bebedero ⌀ boquilla → partición', `${(2 * d.rTopMm).toFixed(2)} → ${(2 * d.rBaseMm).toFixed(2)} mm`,
     'angosto arriba, ancho abajo', d.rBaseMm > d.rTopMm ? 'CUMPLE' : 'VIOLA', '§6.3.1',
     'la entrada es el orificio de la boquilla + holgura (que la rebaba quede en la boquilla) y el cono abre hacia la partición para que la colada SALGA al abrir. Estos números ya NO están a mano: salen de designSprueFeed.');
-  fila('estrecha', 'la alimentación ESTRECHA hacia la pieza', `⌀${estrecha.sprueBaseMm.toFixed(1)} → ⌀${estrecha.runnerMm} → ${estrecha.gateMm} mm`,
+  if (runnerLargoMm > 0) fila('estrecha', 'la alimentación ESTRECHA hacia la pieza', `⌀${estrecha.sprueBaseMm.toFixed(1)} → ⌀${estrecha.runnerMm} → ${estrecha.gateMm} mm`,
     'bebedero > runner > compuerta', estrecha.ok ? 'CUMPLE' : 'VIOLA', '§6.3 · §7.3.1',
     'esto es lo que se veía "al revés": la colada terminaba en su punto MÁS ANCHO justo donde tocaba una pared de 2 mm. La sección debe caer monótona hasta la compuerta.');
-  fila('runner-dia', '⌀ del runner (del generador)', `⌀${runnerDiaMm} mm · L ${runnerLargoMm.toFixed(1)} mm`,
+  if (runnerLargoMm > 0) fila('runner-dia', '⌀ del runner (del generador)', `⌀${runnerDiaMm} mm · L ${runnerLargoMm.toFixed(1)} mm`,
     'fresa estándar §6.5.4', STANDARD_RUNNER_DIAMM.includes(runnerDiaMm) ? 'CUMPLE' : 'VIOLA', '§6.5.4 · §6.5.5 · §7.1.5',
     'el steel-safe (§6.5.5) redondea HACIA ABAJO —quitar acero en el tryout es fácil, ponerlo no— y por presión bastaba ⌀2. Pero ⌀2 es el MISMO espesor de la compuerta: ni estrecha ni deja que la puerta selle primero. Manda el criterio funcional, y el ⌀ elegido sigue siendo de fresa estándar.');
-  fila('freeze', 'la COMPUERTA congela antes que el runner', `${gateFreezeS.toFixed(2)} s vs ${runnerFreezeS.toFixed(2)} s`,
+  if (runnerLargoMm > 0) fila('freeze', 'la COMPUERTA congela antes que el runner', `${gateFreezeS.toFixed(2)} s vs ${runnerFreezeS.toFixed(2)} s`,
     'compuerta < runner', gateFreezeS < runnerFreezeS ? 'CUMPLE' : 'VIOLA', '§7.1.5 · Tabla 7.4',
     'si el runner sella primero, la puerta se queda abierta con la casa a medio empacar. Este criterio —no el ΔP— es el que fija el ⌀ del runner: con sólo presión salía ⌀2, igualito al espesor de la compuerta, y la sección dejaba de bajar.');
-  fila('gate-shear', 'corte en la compuerta', `${Math.round(g.shear).toLocaleString()} 1/s`,
+  if (runnerLargoMm > 0) fila('gate-shear', 'corte en la compuerta', `${Math.round(g.shear).toLocaleString()} 1/s`,
     `máx ${m.shearMax.toLocaleString()} (Apéndice A)`, g.ok ? 'CUMPLE' : 'VIOLA', '§7.3.2 · Tabla 7.2',
     'pasarse de corte en la compuerta quema el material y deja marcas; el remedio es agrandarla (la de canto SÍ es agrandable, §7.3.5).');
+  if (runnerLargoMm <= 0) fila('directo', 'SPRUE DIRECTO (§7.2.1): el gate es la interfaz', `⌀${(2 * d.rBaseMm).toFixed(1)} mm sobre la base · freeze ${sprue.freezeGateS.toFixed(1)} s`,
+    '"it has no length, there is no pressure drop"', 'CUMPLE', '§7.2.1 · Fig 7.2',
+    'el bushing aterriza DIRECTO en la base cerrada de la pieza: sin runner, sin compuerta tallada, sin pozo. El freeze del propio bebedero fija el tiempo de empaque; el des-gateo deja vestigio en la base (remedios: rim Fig 7.2 / pozo rebajado Fig 7.3).');
   fila('ptotal', 'presión TOTAL (cavidad + alimentación)', `${o.cavidadMPa.toFixed(1)} + ${alimentacionMPa.toFixed(1)} = ${totalMPa.toFixed(1)} MPa`,
     `la máquina da ~${maquinaMPa} MPa`, totalMPa <= maquinaMPa ? 'CUMPLE' : 'VIOLA', '§6.4 · §5.5.2',
     'la E4 dio SOLO la cavidad a propósito (§5.5.2 literal: "does not include the pressure drop through the feed system"). Ésta es la cuenta cerrada, que es la que la inyectora tiene que pagar.');
   fila('regrind', 'colada vs pieza (regrind)', `${coladaCc.toFixed(1)} cc = ${pct.toFixed(1)} %`,
     `≤ ${limPct} %`, resuelto ? 'CUMPLE' : 'VIOLA', '§6.2.3 · Eq 6.6',
     `el bebedero mide ${d.LsprueMm.toFixed(1)} mm porque eso da el STACK (§6.3.1), no porque yo lo eligiera. ${resuelto ? 'Cumple.' : 'NO cumple: acortarlo es decisión de la ESTACIÓN 3 (placas), y por eso se anuncia el retorno en vez de falsear la cota.'}`);
-  fila('tc-runner', 't_c del runner vs el de la pieza', `${tcRunnerS.toFixed(1)} s vs ${sprue.tcPartS.toFixed(1)} s`,
-    'el runner no debe mandar el ciclo', tcRunnerS <= sprue.tcPartS ? 'CUMPLE' : 'ADVIERTE', '§6.4.7 · Eq 9.6',
+  const tcColadaS = hayRunner ? tcRunnerS : sprue.tcSprueS;
+  fila('tc-runner', `t_c ${hayRunner ? 'del runner' : 'del BEBEDERO'} vs el de la pieza`, `${tcColadaS.toFixed(1)} s vs ${sprue.tcPartS.toFixed(1)} s`,
+    'la colada no debe mandar el ciclo', tcColadaS <= sprue.tcPartS ? 'CUMPLE' : 'ADVIERTE', '§6.4.7 · Eq 9.6',
     'si la colada tarda más en enfriar que la pieza, es la colada la que fija el ciclo — y se paga en cada disparo. El remedio es bajar el ⌀ (el runner no necesita la rigidez de la pieza).');
 
   const anuncios: AnuncioRetorno[] = [];
@@ -1927,9 +1949,9 @@ export function estacion5Dado(o: {
     detalle: `${pct.toFixed(1)} % contra el ${limPct} % de §6.2.3 con un bebedero de ${d.LsprueMm.toFixed(0)} mm que sale de top clamp + placa A (§6.3.1) — acortarlo es cambiar PLACAS, decisión de la estación 3`,
     seccion: '§6.2.3 · §4.3.2 · A-121',
   });
-  if (tcRunnerS > sprue.tcPartS) anuncios.push({
+  if (tcColadaS > sprue.tcPartS) anuncios.push({
     estacion: 9, titulo: 'la COLADA manda el ciclo, no la pieza',
-    detalle: `t_c del runner ${tcRunnerS.toFixed(1)} s vs ${sprue.tcPartS.toFixed(1)} s de la pieza (§6.4.7)`,
+    detalle: `t_c ${hayRunner ? 'del runner' : 'del bebedero'} ${tcColadaS.toFixed(1)} s vs ${sprue.tcPartS.toFixed(1)} s de la pieza (§6.4.7; el propio libro en p.149 lo tolera si el sprue no necesita la rigidez de la pieza — o se reduce ⌀ pagando ΔP)`,
     seccion: '§6.4.7 · Eq 9.6',
   });
   if (!g.ok) anuncios.push({

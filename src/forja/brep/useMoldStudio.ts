@@ -540,17 +540,15 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // §4.3.2: la pieza ya vive COLOCADA dentro de la base estándar. El campo se mueve
       // con ella — misma fuente única de offset que la E3, o vuelven los dos marcos.
       const col = colocacionEnLaBase(ciclo.e2.pkg);
-      const dentroBase = (x: number, y: number, z: number) => dentro(x - col.dx, y - col.dy, z - col.dz);
+      // el predicado LOCAL no cambia; el MAPA sí — la pieza vive VOLTEADA (Fig 7.2)
+      const dentroBase = (X: number, Y: number, Z: number) => { const q = col.aLocal(X, Y, Z); return dentro(q[0], q[1], q[2]); };
+      const gSem = col.aGlobal(20, 20, 1);                     // el SPRUE GATE: centro del piso (base cerrada)
       const campo = measureFlowLength({
-        x0: -2 + col.dx, y0: -2 + col.dy, z0: -2 + col.dz,
-        x1: 42 + col.dx, y1: 42 + col.dy, z1: 42 + col.dz, cellMm: 1.0,
-        // ⚠ la compuerta tiene que caer DENTRO de la cavidad: en x=40 (la superficie
-        // exterior) el predicado da false, el campo nacía VACÍO y el frente salía 100 %
-        // desde t=0. Cazado por el propio juicio del video ("arranca casi vacío": 100 %).
-        // la semilla vive en el labio CERCANO al bushing (x local ≈ 1): tras el retorno
-        // la compuerta real quedó ahí, no en x=39. Con la semilla vieja el frente NACÍA
-        // en la esquina opuesta a la colada — parte del "aparece mágicamente" del video.
-        inCavity: dentroBase, gateMm: { x: 1 + col.dx, y: 20 + col.dy, z: 38 + col.dz }, wallMm, meltN: 0.348,
+        x0: col.tx - 2, y0: col.ty - 42, z0: col.tz - 42,
+        x1: col.tx + 42, y1: col.ty + 2, z1: col.tz + 2, cellMm: 1.0,
+        // ⚠ la semilla DEBE caer dentro del plástico (el bug del campo vacío ya se pagó).
+        // Con el VOLTEO la compuerta real es el SPRUE GATE (§7.2.1): el centro de la base.
+        inCavity: dentroBase, gateMm: { x: gSem[0], y: gSem[1], z: gSem[2] }, wallMm, meltN: 0.348,
       });
       const cw = convergeVelocityCross(ABS_CROSS, 0.19, 60, wallMm / 1000);
       const n1 = llenadoNivel1(campo, { vMs: cw.vMs, muPaS: cw.muFinalPaS, wallMm, material: ABS_MG47 });
@@ -629,8 +627,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         plates: col.plates, moldWidthMm: col.baseWmm, moldDepthMm: col.baseLmm,
         zPartMm: col.zPartBase,
         pieza: {
-          x0: col.dx, y0: col.dy, x1: lado + col.dx, y1: lado + col.dy,
-          zBaseCerradaMm: col.dz, bocaEnParticion: true,
+          x0: col.tx, y0: col.ty - lado, x1: col.tx + lado, y1: col.ty,
+          zBaseCerradaMm: col.zBaseCerradaMm,
+          bocaHaciaElSprue: false,                           // VOLTEADA: la boca mira a B
         },
         plastic: 'ABS', partVolCc, wallMm, fillTimeS: 1,
       });
@@ -643,11 +642,13 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // con UN reloj (los cuantiles de volumen del campo conjunto — el caudal constante
       // reparte solo). Y `unreachable` se vuelve LA ALARMA de tubería rota que faltaba.
       const denCol = dentroColada(d);
-      const dentroPiezaBase = (x: number, y: number, z: number) => dentroDadoLocal(x - col.dx, y - col.dy, z - col.dz);
+      const dentroPiezaBase = (X: number, Y: number, Z: number) => { const q = col.aLocal(X, Y, Z); return dentroDadoLocal(q[0], q[1], q[2]); };
       const dentroTuberia = (x: number, y: number, z: number) => dentroPiezaBase(x, y, z) || denCol(x, y, z);
       const campoJ = measureFlowLength({
-        x0: d.ejeX - d.pozoLargoMm - d.rBaseMm - 2, y0: col.dy - 2, z0: col.dz - d.puller.largoMm - 2,
-        x1: lado + col.dx + 2, y1: lado + col.dy + 2, z1: d.zCaraClampMm + 2, cellMm: 1.0,
+        x0: Math.min(d.ejeX - d.rBaseMm, col.tx) - 2, y0: Math.min(d.ejeY - d.rBaseMm, col.ty - lado) - 2,
+        z0: col.tz - 41 - 2,
+        x1: Math.max(d.ejeX + d.rBaseMm, col.tx + lado) + 2, y1: Math.max(d.ejeY + d.rBaseMm, col.ty) + 2,
+        z1: d.zCaraClampMm + 2, cellMm: 1.0,
         inCavity: dentroTuberia,
         gateMm: { x: d.ejeX, y: d.ejeY, z: d.zCaraClampMm - 1 },   // LA BOQUILLA
         wallMm, meltN: 0.348,
@@ -696,7 +697,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         cursoPart(sol.fundido, 'colada',
           `COLADA §6.3.1 — bebedero ⌀${(2 * d.rTopMm).toFixed(1)}→⌀${(2 * d.rBaseMm).toFixed(1)} · L ${d.LsprueMm.toFixed(0)} (del stack) · runner ⌀${d.runnerDiaMm} · compuerta ${d.gateEspesorMm}`,
           '#f4a742', 0.18, 0.25)]);
-      setDocName('EL DADO · estación 5 — ALIMENTACIÓN (cap 6): bebedero → runner → compuerta');
+      setDocName(`EL DADO · estación 5 — ALIMENTACIÓN: ${d.modo === 'sprue-directo' ? 'SPRUE DIRECTO a la base (§7.2.1, Fig 7.2)' : 'bebedero → runner → compuerta (cap 6)'}`);
       setCollapsed((c: any) => ({ ...c, features: false }));
     } catch (e) { console.warn('E5_ERR', e); }
   }, [oc, ciclo, moldParts, cursoPart, cursoSet, setDocName, setCollapsed]);

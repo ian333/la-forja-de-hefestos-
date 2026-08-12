@@ -66,8 +66,10 @@ export function datumsColada(o: {
   plates: { bottomClamp: number; ejectorHousing: number; support: number; B: number; A: number; topClamp: number };
   moldWidthMm: number; moldDepthMm: number;
   zPartMm: number;
-  /** la pieza en coords de placa: su huella y su base CERRADA */
-  pieza: { x0: number; y0: number; x1: number; y1: number; zBaseCerradaMm: number; bocaEnParticion: boolean };
+  /** la pieza en coords de placa: su huella y su base CERRADA. `bocaHaciaElSprue`:
+   *  ¿la BOCA mira hacia el lado A (el del bebedero)? Con el VOLTEO (Fig 7.2) mira a B
+   *  → false → el sprue cae DIRECTO sobre la base cerrada: el caso §7.2.1. */
+  pieza: { x0: number; y0: number; x1: number; y1: number; zBaseCerradaMm: number; bocaHaciaElSprue: boolean };
   plastic?: string; partVolCc: number; wallMm: number; fillTimeS?: number;
   /** EXTENSIÓN DECLARADA: acero mínimo entre el barreno del bebedero y la cavidad. */
   holguraAceroMm?: number;
@@ -116,8 +118,18 @@ export function datumsColada(o: {
   let LsprueMm = zCaraClampMm - zGateMm;
   let destino = { x: ejeX, y: ejeY, z: zGateMm };
   let LrunnerMm = 0;
-  fuente.zGateMm = 'sprue DIRECTO: la base cerrada de la pieza (§7.2.1, el caso de la flanera)';
-  if (dentroDeLaHuella && o.pieza.bocaEnParticion) {
+  fuente.zGateMm = 'sprue DIRECTO (§7.2.1, Fig 7.2): el bushing "directly abuts" la base cerrada de la pieza';
+  // en DIRECTO los radios se recalculan con el largo REAL (clamp → base), no el de partición
+  let rTopUso = fd.rTopMm, rBaseUso = fd.rBaseMm, VdotUso = fd.VdotCcS;
+  if (!(dentroDeLaHuella && o.pieza.bocaHaciaElSprue) && dentroDeLaHuella) {
+    const fdD = designSprueFeed({
+      material: (o.plastic ?? 'ABS').toUpperCase().includes('PP') ? 'PP' : 'ABS',
+      partVolumeCc: o.partVolCc, partWallMm: o.wallMm,
+      sprueLenMm: Math.max(1, LsprueMm), fillTimeS: o.fillTimeS ?? 1,
+    });
+    rTopUso = fdD.rTopMm; rBaseUso = fdD.rBaseMm; VdotUso = fdD.VdotCcS;
+  }
+  if (dentroDeLaHuella && o.pieza.bocaHaciaElSprue) {
     modo = 'requiere-offset';
     const offsetMin = (o.pieza.x1 - o.pieza.x0) / 2 + fd.rBaseMm + holguraAceroMm;
     conflictos.push(
@@ -145,8 +157,10 @@ export function datumsColada(o: {
     fuente.LrunnerMm = '§6.3.1 — "determined by the position of the cavities"';
   }
 
-  // ── la COMPUERTA (§7.3.1-7.3.2) y el RUNNER (§6.5.4/§6.5.5 + §7.1.5)
-  const VdotM3s = fd.VdotCcS * 1e-6;
+  // ── la COMPUERTA (§7.3.1-7.3.2) y el RUNNER (§6.5.4/§6.5.5 + §7.1.5) — SOLO cuando
+  // hay runner; en sprue DIRECTO "the sprue gate itself is the interface… it has no
+  // length, there is no pressure drop" (§7.2.1) → todos los tramos quedan en 0.
+  const VdotM3s = VdotUso * 1e-6;
   const g = gateDesign({ type: 'edge', wallMm: o.wallMm, VdotM3s, shearMaxS: 50000 });
   const gateLargoMm = 1.0;
   fuente.gateLargoMm = 'EXTENSIÓN DECLARADA — land corto para que la compuerta se corte fácil';
@@ -161,22 +175,22 @@ export function datumsColada(o: {
   const matK = (o.plastic ?? 'ABS').toUpperCase().includes('PP') ? 'PP' : 'ABS';
   const mat = FEED_MATERIALS[matK];
   const freezeCompuertaS = gateFreezeStripS(mat.alpha, g.thicknessMm / 1000, mat.tMelt, mat.tCool, mat.tNoFlow);
-  const runnerDiaMm = STANDARD_RUNNER_DIAMM.find((d) =>
+  const runnerDiaMm = LrunnerMm > 0 ? (STANDARD_RUNNER_DIAMM.find((d) =>
     d > g.thicknessMm && d >= steelSafeDiaMm(runnerDiaCrudoMm) &&
-    gateFreezeCylS(mat.alpha, d / 1000, mat.tMelt, mat.tCool, mat.tNoFlow) > freezeCompuertaS) ?? 4;
+    gateFreezeCylS(mat.alpha, d / 1000, mat.tMelt, mat.tCool, mat.tNoFlow) > freezeCompuertaS) ?? 4) : 0;
 
   return {
     ejeX, ejeY, zCaraClampMm, zGateMm, zPartMm: o.zPartMm, LsprueMm,
-    rTopMm: fd.rTopMm, rBaseMm: fd.rBaseMm,
+    rTopMm: rTopUso, rBaseMm: rBaseUso,
     LrunnerMm, runnerDiaMm, runnerDiaCrudoMm,
     pozoLargoMm: runnerDiaMm,                              // §6.3.3: pozo de escoria = 1⌀
-    gateEspesorMm: g.thicknessMm, gateAnchoMm: g.widthMm, gateLargoMm,
+    gateEspesorMm: LrunnerMm > 0 ? g.thicknessMm : 0, gateAnchoMm: LrunnerMm > 0 ? g.widthMm : 0, gateLargoMm: LrunnerMm > 0 ? gateLargoMm : 0,
     destino,
     // §6.3.1: "a reverse taper is usually provided below the sprue" — AL REVÉS que el
     // bebedero: ancho ABAJO no, ancho ARRIBA no… ancho en el FONDO del pozo, para que al
     // jalar hacia B rompa el pequeño undercut y arrastre la colada.
     puller: { diaMenorMm: runnerDiaMm * 0.8, diaMayorMm: runnerDiaMm * 1.25, largoMm: runnerDiaMm * 1.2 },
-    modo, conflictos, fuente, VdotCcS: fd.VdotCcS,
+    modo, conflictos, fuente, VdotCcS: VdotUso,
   };
 }
 
@@ -334,7 +348,8 @@ export function verificacionColada(K: any, oc: any, s: ColadaSolidos, d: DatumsC
 
   const estrecha = {
     bebederoMm: bS.dx, runnerMm: bR ? bR.dy : NaN, compuertaMm: bG ? bG.dz : NaN,
-    ok: !!bR && !!bG && bS.dx > bR.dy && bR.dy > bG.dz,
+    // sin runner (sprue DIRECTO §7.2.1) la monotonía A-129 la cumple el cono solo
+    ok: d.LrunnerMm > 0 ? (!!bR && !!bG && bS.dx > bR.dy && bR.dy > bG.dz) : true,
   };
   const ejeOk = Math.abs((bS.x0 + bS.x1) / 2 - d.ejeX) <= 0.05 && Math.abs((bS.y0 + bS.y1) / 2 - d.ejeY) <= 0.05;
   const ok = M.every((m) => m.ok) && estrecha.ok && ejeOk;
