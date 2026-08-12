@@ -78,14 +78,15 @@
     "html": "cinematic-atom.html",
     "query": "z=24",
     "hook": "__cinematicAtom",
-    "wiring": "bandaMask/bandaRadio/camDirOrbital/rotNube en CinematicAtom.tsx. Un canal por ORBITAL (.bin ATM3). La cámara se pone DE PERFIL a cada orbital y la nube deja de girar en el barrido: mirada a lo largo de su eje, una mancuerna es un círculo."
+    "wiring": "bandaMask/bandaRadio/camDirOrbital/rotNube en CinematicAtom.tsx. Un canal por ORBITAL (.bin ATM3). La cámara se pone DE PERFIL a cada orbital y la nube deja de girar en el barrido: mirada a lo largo de su eje, una mancuerna es un círculo.",
+    "gancho": "CUADRO 0 = el trébol 3d_x²−y² lleno de pantalla (el orbital de mayor l, orbGancho). Ian 2026-08-11: \"toda la coreografía del segundo 16 es lo que debería estar en el 0\"."
   },
   "formato": {
     "w": 2160,
     "h": 3840,
     "fps": 30,
-    "dur": 41.1,
-    "nota_dur": "15 ORBITALES (n,l,m) × 1.5s + 15.2s de gancho/viaje/mirada + 3.4s de cola"
+    "dur": 30.1,
+    "nota_dur": "ABRE EN EL ORBITAL (gancho 0-2.6s = 3d_x²−y², clavado 2.6-4.2s) + 15 orbitales × 1.5s + 3.4s de cola"
   },
   "render": {
     "shards": 2,

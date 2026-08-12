@@ -58,7 +58,7 @@ import { win } from './capas';
 // 64 cubre al oganesón con margen y son 128 uniforms, nada al lado del límite del driver.
 const NCANALES = 64;
 
-const BANDA_T0 = 15.2;        // arranca el barrido (idéntico al que ya tenían las etiquetas)
+const BANDA_T0 = 4.2;         // arranca el barrido, justo al terminar el clavado
 const BANDA_COLA = 3.4;       // tras la última banda: el campo B y el cierre
 // Las nubes que NO están en turno. 0.05, no 0.12: con los canales por ORBITAL lo que define
 // a un p es su NODO —el hueco en el núcleo— y a un d sus lóbulos separados. Las otras nubes,
@@ -95,6 +95,18 @@ const BANDA_LUZ = 2.2;        // y un empujón de alfa: menos capas sumando en a
  * tabla anterior (2.4/1.9/1.35) los cinco guiones se pasaban de largo entre 3 y 10 s, y un
  * video que se queda sin cuadros antes que sin voz congela el último frame.
  */
+/**
+ * EL ORBITAL CON QUE ABRE LA PIEZA: el de mayor momento angular y, entre esos, el último.
+ * Es el más formado que tiene el átomo — un trébol d en los metales, una mancuerna p en los
+ * ligeros — y es lo que va en el CUADRO 0, que el canon exige denso. Los `s` no compiten:
+ * son esferas y no enseñan nada en un gancho.
+ */
+function orbGancho(orbs: { l: number; m?: number }[]): number {
+  let mejor = 0;
+  for (let i = 0; i < orbs.length; i++) if (orbs[i].l >= orbs[mejor].l) mejor = i;
+  return mejor;
+}
+
 function bandaDur(total: number): number {
   return total <= 3 ? 3.2 : total <= 5 ? 2.6 : total <= 8 ? 2.2 : 1.5;
 }
@@ -119,23 +131,22 @@ function durationForShells(n: number): number {
  *   · Durante el barrido → 1 si es su turno, BANDA_PISO si le toca a otra.
  *   · Después → todas vuelven a 1 y el átomo se ve COMPLETO para el cierre.
  */
-function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1, l = 0): number {
-  const nacer = fadeIn(time, shellRevealTime(idx, total), 0.85);
+function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1, l = 0, gancho = -1): number {
   const mia = win(time, ...bandaWindow(idx, total), 0.45);
-  const barrido = win(time, BANDA_T0, bandaWindow(total - 1, total)[1], 0.45);
-  // COMPENSACIÓN DE POBLACIÓN. Los puntos se reparten POR ELECTRÓN, así que una banda
-  // de 1 e⁻ tiene diez veces menos puntos que una de 10 y al mismo alfa se ve diez veces
-  // más tenue. Medido en el cromo: con ganancia plana el 4s¹ salía a media 1.1/255 (negro)
-  // mientras el 2p⁶ saturaba, y en el turno del 3s² la pantalla se veía ROJA porque el
-  // 2p⁶ apagado al piso seguía ganándole. Se compensa con √(eMax/e) — raíz, no lineal:
-  // el brillo aditivo ya crece sublinealmente con la densidad de puntos.
+  // ANTES DEL BARRIDO manda el orbital del gancho, no la cascada de nacimiento: la pieza
+  // ABRE con él ya encendido (cuadro 0 denso) y lo suelta justo cuando arranca el barrido.
+  const enGancho = idx === gancho ? 1 - smoothstep((time - (BANDA_T0 - 0.5)) / 0.5) : 0;
+  const foco = Math.max(mia, enGancho);
+  // COMPENSACIÓN DE POBLACIÓN. Los puntos se reparten POR ELECTRÓN, así que una banda de 1 e⁻
+  // tiene diez veces menos puntos que una de 10 y al mismo alfa se ve diez veces más tenue.
+  // Medido en el cromo: con ganancia plana el 4s salía a media 1.1/255 (negro) mientras el 2p
+  // saturaba. Se compensa con √(eMax/e) — raíz, no lineal: el brillo aditivo ya crece
+  // sublinealmente con la densidad de puntos.
   let gan = Math.min(2.6, Math.sqrt(eMax / Math.max(1, e)));
-  // LOS `s` NECESITAN MÁS LUZ. No tienen lóbulos que concentren puntos: reparten los mismos
-  // electrones sobre TODA la esfera, así que a igual encuadre su densidad en pantalla es la
-  // más baja de todas y salen deslavados entre orbitales que sí concentran (medido en el 3s
-  // del cromo). Es una compensación de LEGIBILIDAD por geometría, no un dato cambiado.
+  // LOS `s` NECESITAN MÁS LUZ: no tienen lóbulos que concentren puntos, reparten los mismos
+  // electrones sobre TODA la esfera y salen deslavados junto a orbitales que sí concentran.
   if (l === 0) gan *= 1.7;
-  return nacer * lerp(1, BANDA_PISO + (gan - BANDA_PISO) * mia, barrido);
+  return BANDA_PISO + (gan - BANDA_PISO) * foco;
 }
 
 /**
@@ -202,14 +213,24 @@ function camDirOrbital(l: number, m: number): [number, number, number] {
  * no de golpe.
  */
 function rotNube(time: number): number {
-  const R = 1.15;
-  if (time <= BANDA_T0) return R * time;
-  return R * (BANDA_T0 + 0.5 * (1 - Math.exp(-(time - BANDA_T0) / 0.5)));
+  void time;
+  // CERO. La nube se queda quieta y TODO el movimiento lo pone la cámara — que además es
+  // mejor cine (objeto quieto, cámara que viaja) y hace EXACTO el apuntado: camDirOrbital
+  // habla en el marco del orbital, así que con rotación cero ese marco y el del mundo son
+  // el mismo. Antes giraba a 1.15 rad/s y frenaba en 314°, y la cámara apuntaba a un eje
+  // donde el orbital ya no estaba: salía de frente en vez de perfil.
+  return 0;
 }
 
-function bandaRadio(time: number, shellR: Float32Array, piso = 0): number | null {
+function bandaRadio(time: number, shellR: Float32Array, piso = 0, gancho = -1): number | null {
   const n = shellR.length;
   const u = bandaFase(time, n);
+  // ANTES del barrido la pieza está ENSEÑANDO el orbital del gancho (abre con él): el radio
+  // efectivo es el suyo, no null. Sin esto, el punto y la atenuación quedaban en modo "átomo
+  // completo" durante el gancho y el cuadro 0 salía ralo (medido: 1.3 % de píxeles encendidos
+  // contra 20 % del barrido — el gancho era la toma MÁS floja del video, justo la que el
+  // canon exige más densa).
+  if (u === null && time < BANDA_T0 && gancho >= 0 && gancho < n) return Math.max(shellR[gancho], piso);
   if (u === null) return null;
   const i = Math.min(n - 1, Math.floor(u));
   const frac = u - i;
@@ -258,83 +279,37 @@ function sph(dist: number, elev: number, azim: number): Vec3 {
 
 const CUTS: CutSpec[] = [
   {
-    // 0.0-3.0s · GOLPE + REVELACIÓN (cold-open EN la simulación).
-    //   0.0-1.3s: el NÚCLEO llena el cuadro y SE ACERCA (looming) — sorpresa +
-    //     1-objeto + contraste desde el frame 0. Front-load del money-shot que el
-    //     detector midió en ~10s con z+11.8 (docs/NEUROCIENCIA-DEL-GANCHO.md).
-    //     bloom alto → el cúmulo REVIENTA; órbita enérgica = movimiento.
-    //   1.3-3.0s: pull-back que REVELA el átomo completo y entrega al 'viaje'
-    //     (termina en ex*0.95 = inicio exacto del viaje, corte invisible).
-    t0: 0.0, t1: 3.0, name: 'golpe', bloom: 0.95, vignette: 0.5,
-    cam: (t, ex) => {
-      // ESTALLIDO @ frame0 (regla #1: el pico debe estar al INICIO, no llegar a él).
-      // En t=0 el núcleo YA llena el cuadro (máx contraste + 1-objeto) y en los
-      // primeros ~0.25s SE ABALANZA hacia la cámara (looming explosivo: dist baja,
-      // fov cierra) → el pico de movimiento+sorpresa cae a ~0.15s, no a 0.75s.
-      if (t < 0.083) {                                  // 0-0.25s · el estallido
-        const u = smoothstep(t / 0.083);
-        const dist = lerp(ex * 0.0110, ex * 0.0058, u); // se abalanza: crece rápido hacia ti
-        const azim = 1.2 + u * 1.3;                      // giro enérgico inmediato
-        return { pos: sph(dist, 0.06, azim), lookAt: [0, 0, 0], fov: lerp(40, 32, u) };
-      }
-      const u = smoothstep((t - 0.083) / 0.917);        // 0.25-3.0s · pull-back revelador
-      const dist = lerp(ex * 0.0058, ex * 0.95, u);
-      const azim = 2.5 + u * 0.7;
-      const elev = lerp(0.06, 0.26, u);
-      return { pos: sph(dist, elev, azim), lookAt: [0, 0, 0], fov: lerp(34, 34, u) };
-    },
+    // 0.0-2.6s · EL TRÉBOL, DESDE EL CUADRO 0.
+    //
+    // Ian, 2026-08-11: "se ve aburrido desde el inicio, son simples círculos; toda la
+    // coreografía del segundo 16 en adelante es lo que debería estar en el 0". Tenía razón y
+    // era el canon el que se estaba incumpliendo: la regla dice que el CUADRO 0 ES EL GANCHO
+    // y tiene que ser DENSO. La estructura vieja gastaba 15.2 s en núcleo + caída + mirada
+    // antes de enseñar el primer orbital — y encima el primero del barrido es el 1s, una
+    // esfera. Quince segundos de círculos antes de lo bueno.
+    //
+    // Ahora abre EN el orbital más formado del átomo (el de mayor l: un trébol d en los
+    // metales, una mancuerna p en los ligeros), ya encendido, llenando el cuadro, con un
+    // push-in lento. Nada que esperar.
+    t0: 0.0, t1: 2.6, name: 'gancho-orbital', bloom: 0.72, vignette: 0.5,
+    cam: (t, ex) => ({ pos: sph(ex * lerp(1.12, 0.92, smoothstep(t)), 0.16, 0.9 + t * 0.30), lookAt: [0, 0, 0], fov: lerp(36, 33, smoothstep(t)) }),
   },
   {
-    // 3.0-10.5s · LA CAÍDA (7.5s) — Powers of Ten honesto. Caída a velocidad
-    // logarítmica casi constante (e≈t): dejas la nube en ~2s y luego cruzas el
-    // VACÍO — segundos de casi-nada donde el núcleo es un puntito lejano que
-    // crece, los electrones son estrellas dispersas. FOV estable = dolly puro.
-    t0: 3.0, t1: 10.5, name: 'viaje', bloom: 0.50, vignette: 0.62,
+    // 2.6-4.2s · EL CLAVADO. Se cae DESDE ese orbital hasta el núcleo: el viaje de siete
+    // segundos y medio comprimido a uno y medio, que es lo que aguanta un reel. Aquí entra
+    // el campo eléctrico (physOpacity) y el cúmulo de nucleones aparece un instante.
+    t0: 2.6, t1: 4.2, name: 'clavado', bloom: 0.95, vignette: 0.62,
     cam: (t, ex) => {
-      // FLY-THROUGH: no es caer radial — la cámara VUELA ATRAVESANDO la nube.
-      // Barrido lateral GRANDE (azim ~195°) + clavado desde el borde de la nube
-      // hasta el núcleo + cruce del plano vertical (+0.28→−0.28) → "viaje POR el
-      // átomo": las capas/electrones pasan ROZANDO la cámara. fov ancho = inmersión.
-      // El núcleo queda de ANCLA (lookAt al centro) para no perder el encuadre.
       const u = smoothstep(t);
-      const az = 0.2 + u * 3.4;                       // de un lado al otro, atravesando
-      // closest = ex·0.18: vuela por la nube RICA (mid), NO se clava al centro
-      // vacío/granulado (ahí el point-cloud tirita en movimiento rápido). El barrido
-      // veloz (u~0.5) queda donde la nube se ve DENSA y suave, no en el hueco.
-      const r  = ex * lerp(1.0, 0.18, Math.pow(u, 0.7));
-      const el = 0.28 * Math.cos(u * Math.PI);        // cruza el plano: arriba → abajo
-      return { pos: sph(r, el, az), lookAt: [0, 0, 0], fov: 44 };
+      return { pos: sph(ex * lerp(0.92, 0.030, Math.pow(u, 0.75)), lerp(0.16, 0.05, u), 1.2 + u * 2.1), lookAt: [0, 0, 0], fov: lerp(33, 44, u) };
     },
   },
   {
-    // 10.5-15.0s · MIRADA (4.5s) — DESDE el núcleo. Órbita lenta, cielo estrellado.
-    t0: 10.5, t1: 15.0, name: 'mirada', bloom: 0.55, vignette: 0.50,
-    cam: (t, ex) => {
-      // SEGUNDO BEAT: órbita ENÉRGICA alrededor del núcleo (swoop) — antes era
-      // demasiado plácida; ahora tiene su propio empuje (feedback: faltaba 2º beat).
-      const nucDist = ex * (0.0090 - 0.0030 * Math.sin(t * Math.PI)); // push-in y sale
-      const azim = 2.2 + t * 1.15;                   // órbita más rápida = movimiento sentido
-      const elev = 0.04 + 0.22 * Math.sin(t * Math.PI); // arco vertical (swoop)
-      return { pos: sph(nucDist, elev, azim), lookAt: [0, 0, 0], fov: lerp(40, 34, t) };
-    },
-  },
-  {
-    // 15.0s → RUN_DURATION · REGRESO (3-8s, VARIABLE) — zoom out; el átomo se
-    // reforma completo, ATERRIZA al 62% del corte, sostiene, y se disuelve en el
-    // logo. Más capas → regreso más largo → la cascada de etiquetas TERMINA.
-    // (t1 es placeholder; findCut usa RUN_DURATION como fin real)
-    // CONTEMPLACIÓN (mantiene name 'regreso' porque findCut usa eso para el fin).
-    // Pull-out RÁPIDO al átomo completo, luego HOLD lento y lejano = el respiro
-    // tranquilo que pediste para LEER la forma de la nube + el campo magnético.
-    // bloom BAJO (0.34): más luz lava a blanco; bajarlo deja ver los lóbulos.
-    t0: 15.0, t1: 99.0, name: 'regreso', bloom: 0.34, vignette: 0.62,
-    cam: (t, ex) => {
-      const land = smoothstep(Math.min(1, t / 0.18));         // llega RÁPIDO a vista lejana (contempl. corta)
-      const dist = ex * 0.007 * Math.pow(143, land);          // → ex·1.00 (se aleja MENOS: feedback)
-      const azim = 2.9 + t * 0.22;                            // órbita LENTA, tranquila
-      const elev = lerp(0.02, 0.28, land);
-      return { pos: sph(dist, elev, azim), lookAt: [0, 0, 0], fov: lerp(38, 31, land) };
-    },
+    // 4.2s → RUN_DURATION · EL BARRIDO. La cámara la manda CameraRig (vuela al perfil de
+    // cada orbital); este `cam` sólo cubre el instante del empalme. Conserva el nombre
+    // 'regreso' porque findCut lo usa para saber dónde termina la pieza.
+    t0: 4.2, t1: 99.0, name: 'regreso', bloom: 0.40, vignette: 0.60,
+    cam: (t, ex) => ({ pos: sph(ex * 0.9, 0.24, 2.9 + t * 0.22), lookAt: [0, 0, 0], fov: 34 }),
   },
 ];
 
@@ -348,12 +323,12 @@ function holeForTime(time: number, nucR: number, ex: number): number {
   const deep = nucR * 3.2;                            // limpia el entorno del cúmulo
   // Cold-open (0-1.3s): hueco PROFUNDO → el cúmulo de nucleones se ve limpio en
   // el golpe. 1.3-2.6s: la nube vuelve conforme la cámara hace pull-back.
-  if (time < 1.3) return deep;
-  if (time < 2.6) return lerp(deep, base, smoothstep((time - 1.3) / 1.3));
-  if (time < 3.5) return base;
-  if (time < 10.5) return lerp(base, deep, smoothstep((time - 3.5) / 6.0));
-  if (time < 15.0) return deep;
-  return lerp(deep, base, smoothstep((time - 15.0) / 2.0));
+  // 0-2.6s: el gancho es un ORBITAL, no el núcleo ⇒ hueco chico (que se vea la nube).
+  // 2.6-4.2s: el clavado vacía el centro para que el cúmulo de nucleones se lea limpio.
+  // 4.2s en adelante: vuelve a chico y ahí se queda todo el barrido.
+  if (time < 2.6) return base;
+  if (time < 4.2) return lerp(base, deep, smoothstep((time - 2.6) / 1.0));
+  return lerp(deep, base, smoothstep((time - 4.2) / 0.8));
 }
 
 function findCut(time: number): { cut: CutSpec; localT: number; isCutBoundary: boolean } {
@@ -683,6 +658,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     () => bundle.shells.reduce((m, s) => Math.max(m, s.electrons ?? 1), 1),
     [bundle],
   );
+  const gancho = useMemo(() => orbGancho(bundle.shells), [bundle]);
   useEffect(() => {
     if (!matRef.current) return;
     const mask = matRef.current.uniforms.uRevealMask.value as Float32Array;
@@ -700,7 +676,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
       // revealAll: nube COMPLETA desde t=0 (átomos que ya existen, p.ej. los dos O
       // que se acercan a formar O₂ — no deben "materializarse" capa por capa).
       mask[i] = revealAll ? 1
-        : bandaMask(time, i, bundle.shells.length, bundle.shells[i].electrons ?? 1, eMax, bundle.shells[i].l);
+        : bandaMask(time, i, bundle.shells.length, bundle.shells[i].electrons ?? 1, eMax, bundle.shells[i].l, gancho);
     }
     // rotRate=0 en moléculas (la nube debe quedar alineada con los núcleos; la
     // cámara orbita). En átomos gira para dar vida al cúmulo.
@@ -724,7 +700,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     matRef.current.uniforms.uBandScale.value = bandScale;
     matRef.current.uniforms.uBokeh.value = bokeh;
     matRef.current.uniformsNeedUpdate = true;
-  }, [time, bundle, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll, pk, eMax, bandScale]);
+  }, [time, bundle, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll, pk, eMax, bandScale, gancho]);
 
   return (
     <points geometry={geo} frustumCulled={false}>
@@ -968,7 +944,7 @@ export function CameraRig({ extent, time, vertical, tv, seed, shellR, orbs }: {
     // (ver bandaRadio). Fuera del barrido, el extent del átomo completo de siempre.
     // El piso va en radios del cúmulo de nucleones (nucR = extent·0.0010): 14× deja al
     // núcleo como una perla dentro de la banda, no como una pared.
-    const rb = cut.name === 'regreso' && shellR ? bandaRadio(time, shellR, extent * 0.014) : null;
+    const rb = cut.name === 'regreso' && shellR ? bandaRadio(time, shellR, extent * 0.014, orbs && orbs.length ? orbGancho(orbs) : -1) : null;
     // CÁMARA PROPIA DEL BARRIDO — no puede heredar la curva de `regreso`.
     // `regreso` arranca PEGADO al núcleo y se abre con pow(143, land); su `land` no llega
     // a 1 hasta ~3 s después de que empieza el barrido, así que las primeras bandas se
@@ -981,34 +957,38 @@ export function CameraRig({ extent, time, vertical, tv, seed, shellR, orbs }: {
     // no es adorno, está motivado por lo que toca enseñar, y cada corte de banda trae su
     // propio vuelo. Encima va una deriva lenta para que ninguna toma quede muerta.
     let pos: Vec3, fov: number, lookAt: Vec3 | undefined;
-    if (rb !== null && orbs && orbs.length) {
+    const dirDe = (i: number): Vec3 => camDirOrbital(orbs![i].l, orbs![i].m ?? 0);
+    const conDeriva = (d: Vec3, R: number): Vec3 => {
+      const g = 0.20 * Math.sin(time * 0.35);
+      const cg = Math.cos(g), sg = Math.sin(g);
+      const dx = cg * d[0] + sg * d[2], dz = -sg * d[0] + cg * d[2];
+      const L = Math.hypot(dx, d[1], dz) || 1;
+      return [(dx / L) * R, (d[1] / L) * R, (dz / L) * R];
+    };
+    if (orbs && orbs.length && shellR && (cut.name === 'gancho-orbital' || cut.name === 'clavado')) {
+      // EL GANCHO Y EL CLAVADO MIRAN AL ORBITAL DEL GANCHO, no al átomo genérico: si la
+      // cámara no está de perfil a ÉL, el cuadro 0 es un círculo y el gancho se cae.
+      const g = orbGancho(orbs);
+      const Rg = shellR[g] * BANDA_ENCUADRE;
+      if (cut.name === 'gancho-orbital') {
+        pos = conDeriva(dirDe(g), Rg * lerp(1.14, 0.94, smoothstep(localT)));
+        fov = lerp(36, 33, smoothstep(localT));
+      } else {
+        // clavado: del orbital al núcleo, cayendo por dentro de la nube
+        const u = Math.pow(smoothstep(localT), 0.75);
+        pos = conDeriva(dirDe(g), lerp(Rg * 0.94, extent * 0.030, u));
+        fov = lerp(33, 44, u);
+      }
+      lookAt = undefined;
+    } else if (rb !== null && orbs && orbs.length) {
       const nb = orbs.length;
       const u = Math.min(nb - 1e-6, Math.max(0, bandaFase(time, nb) ?? 0));
       const i = Math.min(nb - 1, Math.floor(u));
       const j = Math.min(nb - 1, i + 1);
       const f = smoothstep((u - i - 0.65) / 0.35);
-      const a = camDirOrbital(orbs[i].l, orbs[i].m ?? 0);
-      const b = camDirOrbital(orbs[j].l, orbs[j].m ?? 0);
+      const a = dirDe(i), b = dirDe(j);
       const d: Vec3 = [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
-      // ⚠ LA CÁMARA TIENE QUE GIRAR CON LA NUBE. camDirOrbital habla en el marco del ORBITAL
-      // (el pₓ apunta a x), pero el shader dibuja la nube ROTADA `rotNube(time)` alrededor de
-      // Y — y aunque el barrido la frena, la deja parada en 18.06 rad ≈ 314°, no en cero. Sin
-      // aplicar esa misma rotación aquí, la cámara apuntaba a un eje del laboratorio donde el
-      // orbital YA NO ESTABA, y salía de frente en vez de perfil: un círculo, no una mancuerna.
-      //
-      // Esto explica el síntoma que llevaba todo el día viendo y no entendía: el p_y SIEMPRE
-      // se veía bien y los otros no. Su eje es Y, que es el EJE DE GIRO — el único invariante.
-      // La pista estaba en los datos desde la primera captura.
-      const rn = rotNube(time);
-      const cr = Math.cos(rn), sr = Math.sin(rn);
-      const wx = cr * d[0] + sr * d[2], wz = -sr * d[0] + cr * d[2];
-      // deriva: giro lento alrededor de Y para que la toma respire sin perder el perfil
-      const g = 0.20 * Math.sin(time * 0.35);
-      const cg = Math.cos(g), sg = Math.sin(g);
-      const dx = cg * wx + sg * wz, dz = -sg * wx + cg * wz;
-      const L = Math.hypot(dx, d[1], dz) || 1;
-      const R = rb * BANDA_ENCUADRE;
-      pos = [(dx / L) * R, (d[1] / L) * R, (dz / L) * R];
+      pos = conDeriva(d, rb * BANDA_ENCUADRE);
       fov = 34;
       lookAt = undefined;
     } else if (rb !== null) {
@@ -1317,7 +1297,7 @@ function isRadioactive(Z: number): boolean {
 // Ventana de opacidad para el campo ELÉCTRICO (correcto en el núcleo: Coulomb +Ze).
 // Entra en la mirada al núcleo, sale antes de la contemplación.
 function physOpacity(time: number): number {
-  return smoothstep((time - 10.3) / 1.0) * Math.min(1, Math.max(0, (14.6 - time) / 0.9));
+  return smoothstep((time - 2.9) / 0.5) * Math.min(1, Math.max(0, (4.4 - time) / 0.5));
 }
 // Ventana del campo MAGNÉTICO — distinta del E. El magnetismo del átomo es
 // ELECTRÓNICO (e⁻ desapareados), NO nuclear, así que se muestra en la
@@ -1872,11 +1852,11 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
              del extent, que es exactamente el radio de atenuación). Se acota para que
              nunca muerda la banda en turno. */
           coreRadius={(() => {
-            const rb = shellR ? bandaRadio(time, shellR, extent * 0.014) : null;
+            const rb = shellR && bundle ? bandaRadio(time, shellR, extent * 0.014, orbGancho(bundle.shells)) : null;
             return rb === null ? coreR : Math.min(coreR, rb * 0.30);
           })()}
           bandScale={(() => {
-            const rb = shellR ? bandaRadio(time, shellR, extent * 0.014) : null;
+            const rb = shellR && bundle ? bandaRadio(time, shellR, extent * 0.014, orbGancho(bundle.shells)) : null;
             return rb === null ? 1 : (rb * BANDA_ENCUADRE * BANDA_PUNTO) / extent;
           })()}
           live={live}
@@ -1886,7 +1866,7 @@ function CinematicAtomInner({ Z, live = false }: { Z: number; live?: boolean }) 
              la banda 2 y apagaba el barrido entero). Mismo reloj que bFieldOpacity. */
           brightness={Math.min(0.82, 3.4 / Math.sqrt(zBrillo))
             * (1 - 0.45 * smoothstep((time - (duration - BANDA_COLA)) / 0.8))
-            * (shellR && bandaFase(time, shellR.length) !== null ? BANDA_LUZ : 1)} />}
+            * (shellR && (time < BANDA_T0 || bandaFase(time, shellR.length) !== null) ? BANDA_LUZ : 1)} />}
         {/* Física visible (gated a la mirada al núcleo): campo eléctrico de
             Coulomb, campo magnético dipolar si es paramagnético, y decaimiento
             radiactivo si el isótopo es inestable. Todo determinista en t. */}
