@@ -33,6 +33,7 @@ import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, press
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
 import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, llenadoNivel1, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { datumsColada, construirColada, verificacionColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
@@ -73,7 +74,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
      *  SUPERFICIE del fundido (`frenteSuperficie`). `frenteVert` está compactado a
      *  los vóxeles de cavidad y no sirve para extraer una isosuperficie. */
     frenteGrid?: Float32Array; grid?: { nx: number; ny: number; nz: number; cellMm: number; x0: number; y0: number; z0: number };
-    e5?: Estacion5Dado; e5v?: { rTopMm: number; rBaseMm: number; runnerDiaMm: number; gateEspesorMm: number; xSprueMm: number; fueraDeLaPieza: boolean; estrechaMedido: boolean } } | null>(null);
+    e5?: Estacion5Dado; e5v?: VerificacionColada; e5datums?: DatumsColada } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
   // armado NO debe barrerlas cuando liveMoldSpec es null.
   const [feedDemo, setFeedDemo] = useState(false);
@@ -589,17 +590,16 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         x: +pieza.positions[iMax * 3].toFixed(1), y: +pieza.positions[iMax * 3 + 1].toFixed(1),
         z: +pieza.positions[iMax * 3 + 2].toFixed(1), tS: +(sf.maxFlowLenMm / 1000 / e4.vMs).toFixed(3),
       };
-      // EL SPRUE (§6.3.1): bebedero cónico ⌀5→⌀9.5, 60 mm — lo que faltaba y hacía
-      // "falso" el análisis: sin él no se ve la inyección, solo una pieza coloreada.
-      const sprue = OCC.makeCone(oc, 4.75, 2.5, 60, { origin: [40, 20, 40], dir: [0, 0, 1] });
+      // LA COLADA NO SE FABRICA AQUÍ. Este bebedero era ⌀5→⌀9.5 × 60 mm HARDCODEADO, en
+      // el marco viejo de la pieza — la segunda colada del repo. La alimentación es la
+      // ESTACIÓN 5 y su única fuente es `mold/colada.ts`, con los datums del stack.
       setTFill(1); tFillRef.current = 1;
       setCiclo({
         ...ciclo, estacion: 4, e4, n1, frenteVert: fv, frenteQ, voxPos, cellMm: campo.cellMm, e4paint: undefined,
         frenteGrid: n1.frente,
         grid: { nx: campo.nx, ny: campo.ny, nz: campo.nz, cellMm: campo.cellMm, x0: campo.x0, y0: campo.y0, z0: campo.z0 },
       });
-      cursoSet(4, [], [...moldParts.filter((p: any) => p.role !== 'colada'),
-        cursoPart(sprue, 'colada', 'BEBEDERO — por aquí entra el fundido (§6.3.1)', '#f4a742', 0.55, 0.4)]);
+      cursoSet(4, [], moldParts.filter((p: any) => p.role !== 'colada'));
       // EL ACERO SE HACE FANTASMA: Moldflow enseña la PIEZA, no la herramienta. Con los
       // insertos a su opacidad normal el fundido queda detrás de TRES capas translúcidas
       // blancas y sale lavado —medido: se veía blanco aunque el colormap fuera correcto—.
@@ -619,41 +619,30 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   const cicloEstacion5 = useCallback(() => {
     if (!oc || !ciclo?.e2 || !ciclo?.e4) return;
     try {
-      const lado = 40, wallMm = 2;
-      // volumen MEDIDO de la pieza: los vóxeles llenos de la E4, no una estimación
+      const wallMm = 2, lado = 40;
       const partVolCc = ((ciclo.frenteVert?.length ?? 0) * Math.pow(ciclo.cellMm ?? 1, 3)) / 1000;
-      const cavidadMPa = Number((ciclo.e2.pkg as any)?.diseno?.fillMPa) || 83.2;
-      const e5 = estacion5Dado({ partVolCc, wallMm, ladoMm: lado, cavidadMPa, fillTimeS: 1 });
-      const G = e5.geom;
-      // ⚠ los radios YA NO son literales: salen del motor (§6.3.1 + Eq 6.8)
-      const sprue = OCC.makeCone(oc, G.rBaseMm, G.rTopMm, G.sprueLenMm, { origin: [G.xSprue, G.ySprue, G.zParting], dir: [0, 0, 1] });
-      const runner = OCC.makeCylinder(oc, G.runnerDiaMm / 2, G.runnerLargoMm, { origin: [G.xPiezaMax + G.gateLargoMm, G.ySprue, G.zParting], dir: [1, 0, 0] });
-      // POZO DE ESCORIA (cold slug well): prolonga el runner PASADO el bebedero para que
-      // el tapón frío de la boquilla se quede ahí y no entre a la pieza (§6.3.3).
-      const pozo = OCC.makeCylinder(oc, G.runnerDiaMm / 2, G.pozoLargoMm, { origin: [G.xSprue, G.ySprue, G.zParting], dir: [1, 0, 0] });
-      const gate = OCC.transformShape(oc, OCC.makeBox(oc, G.gateLargoMm, G.gateAnchoMm, G.gateEspesorMm),
-        { translate: [G.xPiezaMax, G.ySprue - G.gateAnchoMm / 2, G.zParting - G.gateEspesorMm] });
-      const colada = OCC.fuseAll(oc, [sprue, runner, pozo, gate]);
-      // ── VERIFICACIÓN sobre lo TESELADO (lo que se dibuja es lo que se mide) ──
-      const pSprue = cursoPart(sprue, 'tmp-sprue', '', '#fff', 1, 0.25);
-      const pRunner = cursoPart(runner, 'tmp-runner', '', '#fff', 1, 0.25);
-      const pGate = cursoPart(gate, 'tmp-gate', '', '#fff', 1, 0.25);
-      const bb = (P: Float32Array) => {
-        const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
-        for (let i = 0; i < P.length; i += 3) for (let k = 0; k < 3; k++) { const v = P[i + k]; if (v < mn[k]) mn[k] = v; if (v > mx[k]) mx[k] = v; }
-        return { mn, mx, dx: mx[0] - mn[0], dy: mx[1] - mn[1], dz: mx[2] - mn[2] };
-      };
-      const bS = bb(pSprue.positions), bR = bb(pRunner.positions), bG = bb(pGate.positions);
-      const e5v = {
-        rTopMm: G.rTopMm, rBaseMm: bS.dx / 2,                    // el ⌀ MÁXIMO del cono medido
-        runnerDiaMm: bR.dy, gateEspesorMm: bG.dz,
-        xSprueMm: (bS.mn[0] + bS.mx[0]) / 2,
-        fueraDeLaPieza: bS.mn[0] > lado,                          // el bebedero NO cae sobre la boca
-        estrechaMedido: bS.dx > bR.dy && bR.dy > bG.dz,
-      };
-      setCiclo({ ...ciclo, estacion: 5, e5, e5v });
+      const cavidadMPa = Number((ciclo.e2.pkg as any)?.diseno?.fillMPa) || 10.7;
+      // TODA la geometría viene del GENERADOR. Este handler ya no construye ni mide nada:
+      // antes tenía makeCone/makeCylinder/makeBox/fuseAll y bboxes inline — por eso su
+      // gate no podía medir el sólido como la E3, y por eso nadie la encontraba aquí.
+      const col = colocacionEnLaBase(ciclo.e2.pkg);
+      const d = datumsColada({
+        plates: col.plates, moldWidthMm: col.baseWmm, moldDepthMm: col.baseLmm,
+        zPartMm: col.zPartBase,
+        pieza: {
+          x0: col.dx, y0: col.dy, x1: lado + col.dx, y1: lado + col.dy,
+          zBaseCerradaMm: col.dz, bocaEnParticion: true,
+        },
+        plastic: 'ABS', partVolCc, wallMm, fillTimeS: 1,
+      });
+      const e5 = estacion5Dado({ datums: d, partVolCc, wallMm, cavidadMPa });
+      const sol = construirColada(OCC, oc, d);
+      const e5v = verificacionColada(OCC, oc, sol, d);
+      setCiclo({ ...ciclo, estacion: 5, e5, e5v, e5datums: d });
       cursoSet(5, [], [...moldParts.filter((p: any) => p.role !== 'colada'),
-        cursoPart(colada, 'colada', `COLADA — bebedero ⌀${(2 * G.rTopMm).toFixed(1)}→⌀${(2 * G.rBaseMm).toFixed(1)} · runner ⌀${G.runnerDiaMm} · compuerta ${G.gateEspesorMm} mm (cap 6)`, '#f4a742', 0.9, 0.25)]);
+        cursoPart(sol.fundido, 'colada',
+          `COLADA §6.3.1 — bebedero ⌀${(2 * d.rTopMm).toFixed(1)}→⌀${(2 * d.rBaseMm).toFixed(1)} · L ${d.LsprueMm.toFixed(0)} (del stack) · runner ⌀${d.runnerDiaMm} · compuerta ${d.gateEspesorMm}`,
+          '#f4a742', 0.9, 0.25)]);
       setDocName('EL DADO · estación 5 — ALIMENTACIÓN (cap 6): bebedero → runner → compuerta');
       setCollapsed((c: any) => ({ ...c, features: false }));
     } catch (e) { console.warn('E5_ERR', e); }

@@ -163,11 +163,20 @@ export interface ColadaSolidos {
   fundido: any;
 }
 
+/** EL BEBEDERO, solo — la primitiva que también usa `mold-plano-set` para el molde
+ *  completo. Una sola definición de la conicidad (§6.3.1: r1 ANCHO en el origen, que es
+ *  la partición; r2 angosto arriba, en la boquilla) para todo el repo. */
+export function construirColadaSprue(K: any, oc: any, o: {
+  x: number; y: number; zGate: number; Lsprue: number; rBaseMm: number; rTopMm: number;
+}): any {
+  return K.makeCone(oc, o.rBaseMm, o.rTopMm, o.Lsprue, { origin: [o.x, o.y, o.zGate], dir: [0, 0, 1] });
+}
+
 export function construirColada(K: any, oc: any, d: DatumsColada): ColadaSolidos {
   // §6.3.1: ANGOSTO en la boquilla (arriba), ANCHO en la partición (abajo) — así la
   // colada solidificada se extrae del bushing. r1 va en el ORIGEN del eje.
-  const bebedero = K.makeCone(oc, d.rBaseMm, d.rTopMm, d.LsprueMm,
-    { origin: [d.ejeX, d.ejeY, d.zGateMm], dir: [0, 0, 1] });
+  const bebedero = construirColadaSprue(K, oc, {
+    x: d.ejeX, y: d.ejeY, zGate: d.zGateMm, Lsprue: d.LsprueMm, rBaseMm: d.rBaseMm, rTopMm: d.rTopMm });
   let runner: any = null, pozo: any = null, compuerta: any = null, puller: any = null;
   if (d.LrunnerMm > 0) {
     const x0 = d.ejeX;

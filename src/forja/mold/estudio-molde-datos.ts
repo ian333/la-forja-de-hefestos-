@@ -43,6 +43,7 @@ import { pinBuckling } from './ejection';
 // ESTACIÓN 5 (cap 6): NO se escribe ninguna fórmula nueva — el motor ya existe.
 import { designSprueFeed, minRunnerRadius, steelSafeDiaMm, pressureDropRunner, runnerCoolingTimeS, STANDARD_RUNNER_DIAMM, FEED_MATERIALS, type RunnerSegment } from './feed';
 import { gateDesign, gateDropStripPL, gateFreezeStripS, gateFreezeCylS } from './gating';
+import type { DatumsColada } from './colada';
 import type { MeltMaterial } from './filling';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
 import { PLASTICOS_A, tcPlateS } from './cooling-design';
@@ -1314,6 +1315,7 @@ export function colocacionEnLaBase(pkg: MoldPackage) {
     dx: centroX - 20, dy: centroY - 20, dz: zPartBase - 39.5,  // 20,20 y 39.5 = el marco local del dado
     centroX, centroY, zPartBase,
     baseWmm: asm.widthMm, baseLmm: asm.depthMm ?? asm.widthMm,
+    plates: asm.plates,
   };
 }
 
@@ -1809,89 +1811,51 @@ export interface Estacion5Dado {
  *                   feed system"). Aquí se cierra la cuenta.
  */
 export function estacion5Dado(o: {
-  partVolCc: number; wallMm: number; ladoMm: number; cavidadMPa: number;
-  maquinaMPa?: number; fillTimeS?: number; sprueLenMm?: number;
+  /** LOS DATUMS mandan: la estación ya NO inventa cotas (era `L=60` y
+   *  `xSprue = lado + rBase + 6`). Vienen de `colada.ts::datumsColada`, que los saca del
+   *  stack de placas y de la Fig 6.4. */
+  datums: DatumsColada;
+  partVolCc: number; wallMm: number; cavidadMPa: number;
+  maquinaMPa?: number; fillTimeS?: number;
 }): Estacion5Dado {
   const m = FEED_MATERIALS.ABS;
   const mm = m as unknown as MeltMaterial;
-  const wall = o.wallMm, lado = o.ladoMm;
+  const d = o.datums, wall = o.wallMm;
   const maquinaMPa = o.maquinaMPa ?? 140;
   const tFill = o.fillTimeS ?? 1;
-  const zParting = lado - 0.5;                                     // la partición del dado (39.5)
-  const largoAntes = o.sprueLenMm ?? 60;                           // el bebedero de hoy
 
-  // ── el BEBEDERO sale del motor, no de un número a mano (§6.3.1 + Eq 6.8)
-  const hacerSprue = (LmmM: number) => designSprueFeed({
-    material: 'ABS', partVolumeCc: o.partVolCc, partWallMm: wall, sprueLenMm: LmmM, fillTimeS: tFill,
+  // el ANÁLISIS del bebedero corre sobre el largo REAL del stack (§6.3.1), no sobre 60
+  const sprue = designSprueFeed({
+    material: 'ABS', partVolumeCc: o.partVolCc, partWallMm: wall,
+    sprueLenMm: Math.max(1, d.LsprueMm), fillTimeS: tFill,
   });
-  let sprue = hacerSprue(largoAntes);
   const VdotM3s = sprue.VdotCcS * 1e-6;
 
-  // ── el RUNNER: del eje del bebedero al labio de la pieza, por la partición.
-  // El bebedero aterriza a media base + holgura del costado de la pieza.
-  const holguraMm = 6;
-  const xSprue = lado + sprue.rBaseMm + holguraMm;
-  const gateLargoMm = 1.0;                                         // land corto: se corta fácil
-  const runnerLargoMm = xSprue - lado - gateLargoMm;                // del pozo hasta donde EMPIEZA la compuerta
-  const dPRunnerAlocMPa = 10;                                      // presupuesto del tramo
-  const rCrudo = minRunnerRadius(mm, runnerLargoMm / 1000, VdotM3s, dPRunnerAlocMPa * 1e6);
-  const diaCrudoMm = 2 * rCrudo * 1000;
-  // §6.5.5 STEEL SAFE: se redondea HACIA ABAJO al ⌀ de fresa estándar — quitar acero en
-  // el tryout es fácil, ponerlo no. Eso SUBE el ΔP, y así debe ser.
-  const diaSteelSafeMm = steelSafeDiaMm(diaCrudoMm);
-  // ── la COMPUERTA se dimensiona ANTES, porque ella manda sobre el runner (§7.3.1-7.3.2)
-  const gPre = gateDesign({ type: 'edge', wallMm: wall, VdotM3s, shearMaxS: m.shearMax });
-  const gateFreezeS = gateFreezeStripS(m.alpha, gPre.thicknessMm / 1000, m.tMelt, m.tCool, m.tNoFlow);
-  // ⚠ EL CRITERIO QUE FALTABA, y que el gate de ESTRECHA cazó: con sólo el presupuesto de
-  // ΔP el runner salía ⌀2.18 → steel-safe ⌀2, IGUAL que el espesor de la compuerta: la
-  // sección dejaba de bajar y volvía a verse "al revés". El libro pide más que ΔP: la
-  // COMPUERTA debe congelar ANTES que el runner (§7.1.5) — si no, la puerta no sella y no
-  // hay empaque; y de paso eso garantiza que el runner sea MAYOR que la compuerta.
-  let runnerDiaMm = diaSteelSafeMm;
-  for (const d of STANDARD_RUNNER_DIAMM) {
-    if (d < diaSteelSafeMm) continue;
-    runnerDiaMm = d;
-    if (gateFreezeCylS(m.alpha, d / 1000, m.tMelt, m.tCool, m.tNoFlow) > gateFreezeS && d > gPre.thicknessMm) break;
-  }
-  const runnerFreezeS = gateFreezeCylS(m.alpha, runnerDiaMm / 1000, m.tMelt, m.tCool, m.tNoFlow);
-  const segRunner: RunnerSegment = { name: 'runner', L: runnerLargoMm / 1000, R: runnerDiaMm / 2000, Vdot: VdotM3s };
+  // RUNNER y COMPUERTA: los ⌀ vienen del generador; aquí solo se evalúan
+  const runnerDiaMm = d.runnerDiaMm, runnerLargoMm = d.LrunnerMm;
+  const segRunner: RunnerSegment = { name: 'runner', L: Math.max(1e-4, runnerLargoMm) / 1000, R: runnerDiaMm / 2000, Vdot: VdotM3s };
   const dPRunnerMPa = pressureDropRunner(mm, segRunner) / 1e6;
   const tcRunnerS = runnerCoolingTimeS(m.alpha, runnerDiaMm / 1000, m.tMelt, m.tCool, m.tEject);
   const volRunnerCc = Math.PI * (runnerDiaMm / 2) ** 2 * runnerLargoMm / 1000;
+  const g = gateDesign({ type: 'edge', wallMm: wall, VdotM3s, shearMaxS: m.shearMax });
+  const gateFreezeS = gateFreezeStripS(m.alpha, d.gateEspesorMm / 1000, m.tMelt, m.tCool, m.tNoFlow);
+  const runnerFreezeS = gateFreezeCylS(m.alpha, runnerDiaMm / 1000, m.tMelt, m.tCool, m.tNoFlow);
+  const dPGateMPa = gateDropStripPL(mm, d.gateLargoMm / 1000, d.gateAnchoMm / 1000, d.gateEspesorMm / 1000, VdotM3s) / 1e6;
 
-  // ── la COMPUERTA de canto (§7.3.1-7.3.2)
-  const g = gPre;
-  const dPGateMPa = gateDropStripPL(mm, gateLargoMm / 1000, g.widthMm / 1000, g.thicknessMm / 1000, VdotM3s) / 1e6;
-
-  // ── ¿ESTRECHA? el criterio que hace que deje de verse al revés
   const estrecha = {
-    sprueBaseMm: 2 * sprue.rBaseMm, runnerMm: runnerDiaMm, gateMm: g.thicknessMm,
-    ok: 2 * sprue.rBaseMm > runnerDiaMm && runnerDiaMm > g.thicknessMm,
+    sprueBaseMm: 2 * d.rBaseMm, runnerMm: runnerDiaMm, gateMm: d.gateEspesorMm,
+    ok: 2 * d.rBaseMm > runnerDiaMm && runnerDiaMm > d.gateEspesorMm,
   };
 
-  // ── REGRIND (Eq 6.6 · §6.2.3): la acusación que la E4 ya había hecho
-  const pozoLargoMm = runnerDiaMm;                                 // pozo de escoria = 1⌀
-  const volPozoCc = Math.PI * (runnerDiaMm / 2) ** 2 * pozoLargoMm / 1000;
-  const coladaCc = (L: number, s: ReturnType<typeof designSprueFeed>) => s.volCc + volRunnerCc + volPozoCc;
-  const antesCc = coladaCc(largoAntes, sprue);
-  const antesPct = (antesCc / o.partVolCc) * 100;
+  // REGRIND (Eq 6.6 · §6.2.3). El largo del bebedero NO se acorta a capricho: sale del
+  // stack de placas. Si el regrind viola, la decisión es de la ESTACIÓN 3 (placas más
+  // delgadas o base más chica) — se ANUNCIA el retorno, no se falsea la cota.
+  const volPozoCc = Math.PI * (runnerDiaMm / 2) ** 2 * d.pozoLargoMm / 1000;
+  const coladaCc = sprue.volCc + volRunnerCc + volPozoCc;
+  const pct = (coladaCc / o.partVolCc) * 100;
   const limPct = 30;
-  // EL ARREGLO del libro: el volumen del bebedero crece con su LARGO (cono truncado).
-  // Se acorta hasta cumplir §6.2.3 — o se declara que no alcanza.
-  let largoDespues = largoAntes, sprueDespues = sprue, despuesCc = antesCc;
-  if (antesPct > limPct) {
-    for (let L = largoAntes; L >= 10; L -= 2) {
-      const s2 = hacerSprue(L);
-      const c2 = s2.volCc + volRunnerCc + volPozoCc;
-      if ((c2 / o.partVolCc) * 100 <= limPct) { largoDespues = L; sprueDespues = s2; despuesCc = c2; break; }
-      largoDespues = L; sprueDespues = s2; despuesCc = c2;
-    }
-  }
-  const despuesPct = (despuesCc / o.partVolCc) * 100;
-  const resuelto = despuesPct <= limPct;
-  sprue = sprueDespues;                                            // el diseño que se CONSTRUYE es el corregido
+  const resuelto = pct <= limPct;
 
-  // ── LA CUENTA COMPLETA de presión (lo que la E4 dejó abierto a propósito)
   const alimentacionMPa = sprue.dPMPa + dPRunnerMPa + dPGateMPa;
   const totalMPa = o.cavidadMPa + alimentacionMPa;
 
@@ -1899,13 +1863,13 @@ export function estacion5Dado(o: {
   const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
     filas.push({ id, titulo, valor, limite, estado, seccion, porque });
 
-  fila('sprue-dia', 'bebedero ⌀ boquilla → partición', `${(2 * sprue.rTopMm).toFixed(2)} → ${(2 * sprue.rBaseMm).toFixed(2)} mm`,
-    'angosto arriba, ancho abajo', 2 * sprue.rBaseMm > 2 * sprue.rTopMm ? 'CUMPLE' : 'VIOLA', '§6.3.1',
+  fila('sprue-dia', 'bebedero ⌀ boquilla → partición', `${(2 * d.rTopMm).toFixed(2)} → ${(2 * d.rBaseMm).toFixed(2)} mm`,
+    'angosto arriba, ancho abajo', d.rBaseMm > d.rTopMm ? 'CUMPLE' : 'VIOLA', '§6.3.1',
     'la entrada es el orificio de la boquilla + holgura (que la rebaba quede en la boquilla) y el cono abre hacia la partición para que la colada SALGA al abrir. Estos números ya NO están a mano: salen de designSprueFeed.');
   fila('estrecha', 'la alimentación ESTRECHA hacia la pieza', `⌀${estrecha.sprueBaseMm.toFixed(1)} → ⌀${estrecha.runnerMm} → ${estrecha.gateMm} mm`,
     'bebedero > runner > compuerta', estrecha.ok ? 'CUMPLE' : 'VIOLA', '§6.3 · §7.3.1',
     'esto es lo que se veía "al revés": la colada terminaba en su punto MÁS ANCHO justo donde tocaba una pared de 2 mm. La sección debe caer monótona hasta la compuerta.');
-  fila('runner-dia', '⌀ del runner: quién manda', `ΔP pedía ${diaCrudoMm.toFixed(2)} (steel-safe ⌀${diaSteelSafeMm}) → manda el congelamiento: ⌀${runnerDiaMm}`,
+  fila('runner-dia', '⌀ del runner (del generador)', `⌀${runnerDiaMm} mm · L ${runnerLargoMm.toFixed(1)} mm`,
     'fresa estándar §6.5.4', STANDARD_RUNNER_DIAMM.includes(runnerDiaMm) ? 'CUMPLE' : 'VIOLA', '§6.5.4 · §6.5.5 · §7.1.5',
     'el steel-safe (§6.5.5) redondea HACIA ABAJO —quitar acero en el tryout es fácil, ponerlo no— y por presión bastaba ⌀2. Pero ⌀2 es el MISMO espesor de la compuerta: ni estrecha ni deja que la puerta selle primero. Manda el criterio funcional, y el ⌀ elegido sigue siendo de fresa estándar.');
   fila('freeze', 'la COMPUERTA congela antes que el runner', `${gateFreezeS.toFixed(2)} s vs ${runnerFreezeS.toFixed(2)} s`,
@@ -1917,18 +1881,18 @@ export function estacion5Dado(o: {
   fila('ptotal', 'presión TOTAL (cavidad + alimentación)', `${o.cavidadMPa.toFixed(1)} + ${alimentacionMPa.toFixed(1)} = ${totalMPa.toFixed(1)} MPa`,
     `la máquina da ~${maquinaMPa} MPa`, totalMPa <= maquinaMPa ? 'CUMPLE' : 'VIOLA', '§6.4 · §5.5.2',
     'la E4 dio SOLO la cavidad a propósito (§5.5.2 literal: "does not include the pressure drop through the feed system"). Ésta es la cuenta cerrada, que es la que la inyectora tiene que pagar.');
-  fila('regrind', 'colada vs pieza (regrind)', `${despuesCc.toFixed(1)} cc = ${despuesPct.toFixed(1)} %`,
+  fila('regrind', 'colada vs pieza (regrind)', `${coladaCc.toFixed(1)} cc = ${pct.toFixed(1)} %`,
     `≤ ${limPct} %`, resuelto ? 'CUMPLE' : 'VIOLA', '§6.2.3 · Eq 6.6',
-    `la E4 ya lo había ACUSADO. Un bebedero de ${largoAntes} mm para una pieza de ${lado} mm daba ${antesPct.toFixed(1)} %: la colada dominaba a la pieza. Acortarlo a ${largoDespues} mm ${resuelto ? 'lo resuelve' : 'NO alcanza — se declara, no se esconde bajando el límite'}.`);
+    `el bebedero mide ${d.LsprueMm.toFixed(1)} mm porque eso da el STACK (§6.3.1), no porque yo lo eligiera. ${resuelto ? 'Cumple.' : 'NO cumple: acortarlo es decisión de la ESTACIÓN 3 (placas), y por eso se anuncia el retorno en vez de falsear la cota.'}`);
   fila('tc-runner', 't_c del runner vs el de la pieza', `${tcRunnerS.toFixed(1)} s vs ${sprue.tcPartS.toFixed(1)} s`,
     'el runner no debe mandar el ciclo', tcRunnerS <= sprue.tcPartS ? 'CUMPLE' : 'ADVIERTE', '§6.4.7 · Eq 9.6',
     'si la colada tarda más en enfriar que la pieza, es la colada la que fija el ciclo — y se paga en cada disparo. El remedio es bajar el ⌀ (el runner no necesita la rigidez de la pieza).');
 
   const anuncios: AnuncioRetorno[] = [];
   if (!resuelto) anuncios.push({
-    estacion: 2, titulo: 'la colada sigue pesando demasiado en el disparo',
-    detalle: `${despuesPct.toFixed(1)} % contra el ${limPct} % de §6.2.3 aun con el bebedero al mínimo (${largoDespues} mm) — esto es material y ciclo en CADA pieza, y le pega a la economía de la E2`,
-    seccion: '§6.2.3 · A-121',
+    estacion: 3, titulo: 'la colada pesa demasiado, y el largo lo fija el STACK',
+    detalle: `${pct.toFixed(1)} % contra el ${limPct} % de §6.2.3 con un bebedero de ${d.LsprueMm.toFixed(0)} mm que sale de top clamp + placa A (§6.3.1) — acortarlo es cambiar PLACAS, decisión de la estación 3`,
+    seccion: '§6.2.3 · §4.3.2 · A-121',
   });
   if (tcRunnerS > sprue.tcPartS) anuncios.push({
     estacion: 9, titulo: 'la COLADA manda el ciclo, no la pieza',
@@ -1941,17 +1905,16 @@ export function estacion5Dado(o: {
 
   return {
     sprue,
-    runner: { diaCrudoMm, diaMm: runnerDiaMm, largoMm: runnerLargoMm, dPMPa: dPRunnerMPa, tcS: tcRunnerS, volCc: volRunnerCc },
-    gate: { tipo: 'edge', espesorMm: g.thicknessMm, anchoMm: g.widthMm, shear: g.shear, ok: g.ok, report: g.report, dPMPa: dPGateMPa },
+    runner: { diaCrudoMm: d.runnerDiaCrudoMm, diaMm: runnerDiaMm, largoMm: runnerLargoMm, dPMPa: dPRunnerMPa, tcS: tcRunnerS, volCc: volRunnerCc },
+    gate: { tipo: 'edge', espesorMm: d.gateEspesorMm, anchoMm: d.gateAnchoMm, shear: g.shear, ok: g.ok, report: g.report, dPMPa: dPGateMPa },
     estrecha,
     presion: { cavidadMPa: o.cavidadMPa, alimentacionMPa, totalMPa, maquinaMPa, ok: totalMPa <= maquinaMPa },
-    regrind: { antesCc, antesPct, despuesCc, despuesPct, limPct, largoAntesMm: largoAntes, largoDespuesMm: largoDespues, resuelto },
+    regrind: { antesCc: coladaCc, antesPct: pct, despuesCc: coladaCc, despuesPct: pct, limPct, largoAntesMm: d.LsprueMm, largoDespuesMm: d.LsprueMm, resuelto },
     geom: {
-      xSprue, ySprue: lado / 2, zParting, sprueLenMm: largoDespues,
-      rTopMm: sprue.rTopMm, rBaseMm: sprue.rBaseMm,
-      runnerDiaMm, runnerLargoMm, pozoLargoMm,
-      gateEspesorMm: g.thicknessMm, gateAnchoMm: g.widthMm, gateLargoMm,
-      xPiezaMax: lado, yPieza: lado / 2,
+      xSprue: d.ejeX, ySprue: d.ejeY, zParting: d.zPartMm, sprueLenMm: d.LsprueMm,
+      rTopMm: d.rTopMm, rBaseMm: d.rBaseMm, runnerDiaMm, runnerLargoMm,
+      pozoLargoMm: d.pozoLargoMm, gateEspesorMm: d.gateEspesorMm, gateAnchoMm: d.gateAnchoMm,
+      gateLargoMm: d.gateLargoMm, xPiezaMax: d.destino.x, yPieza: d.ejeY,
     },
     filas, anuncios,
   };

@@ -199,46 +199,6 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   // BAJE monótona hasta la compuerta — y se mide sobre los SÓLIDOS construidos, no sobre
   // el panel (la lección de la E3: declaraba 60/16 y el acero medía 52/14).
   console.log('── E5 · Alimentación (cap 6) — midiendo los sólidos de la colada');
-  const fd = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'feed.ts'));
-  const e5 = ed.estacion5Dado({ partVolCc: 14.14, wallMm: 2, ladoMm: 40, cavidadMPa: 10.7, fillTimeS: 1 });
-  const G5 = e5.geom;
-  check('el ⌀ del bebedero SALE del motor, no de un literal', Math.abs(2 * G5.rTopMm - 5.0) < 0.01 && G5.rBaseMm > G5.rTopMm,
-    `⌀${(2 * G5.rTopMm).toFixed(2)} (orificio de boquilla + holgura) → ⌀${(2 * G5.rBaseMm).toFixed(2)}`);
-  check('§6.3.1: angosto en la boquilla, ancho en la partición', G5.rBaseMm > G5.rTopMm);
-  check('§7.1.5: la COMPUERTA congela ANTES que el runner', e5.filas.find((f) => f.id === 'freeze').estado === 'CUMPLE',
-    e5.filas.find((f) => f.id === 'freeze').valor);
-  check('§6.5.4: el ⌀ del runner es de fresa ESTÁNDAR', fd.STANDARD_RUNNER_DIAMM.includes(G5.runnerDiaMm), `⌀${G5.runnerDiaMm} mm`);
-  check('§6.2.3: regrind bajo el límite', e5.regrind.despuesPct <= e5.regrind.limPct, `${e5.regrind.despuesPct.toFixed(1)} % ≤ ${e5.regrind.limPct} %`);
-  check('§6.4: la cuenta de presión CIERRA (cavidad + alimentación)', e5.presion.ok,
-    `${e5.presion.cavidadMPa.toFixed(1)} + ${e5.presion.alimentacionMPa.toFixed(1)} = ${e5.presion.totalMPa.toFixed(1)} MPa ≤ ${e5.presion.maquinaMPa}`);
-  // ── los SÓLIDOS: se construyen igual que en el CAD y se miden con OCC
-  {
-    const bbox = (sh) => { const b = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(sh, b, false);
-      const a = b.CornerMin(), c = b.CornerMax();
-      return { x0: a.X(), y0: a.Y(), z0: a.Z(), x1: c.X(), y1: c.Y(), z1: c.Z(), dx: c.X() - a.X(), dy: c.Y() - a.Y(), dz: c.Z() - a.Z() }; };
-    const sprue5 = occt.makeCone(oc, G5.rBaseMm, G5.rTopMm, G5.sprueLenMm, { origin: [G5.xSprue, G5.ySprue, G5.zParting], dir: [0, 0, 1] });
-    const runner5 = occt.makeCylinder(oc, G5.runnerDiaMm / 2, G5.runnerLargoMm, { origin: [G5.xPiezaMax + G5.gateLargoMm, G5.ySprue, G5.zParting], dir: [1, 0, 0] });
-    const gate5 = occt.transformShape(oc, occt.makeBox(oc, G5.gateLargoMm, G5.gateAnchoMm, G5.gateEspesorMm),
-      { translate: [G5.xPiezaMax, G5.ySprue - G5.gateAnchoMm / 2, G5.zParting - G5.gateEspesorMm] });
-    const bS = bbox(sprue5), bR = bbox(runner5), bG = bbox(gate5);
-    check('MEDIDO: la alimentación ESTRECHA (bebedero > runner > compuerta)', bS.dx > bR.dy && bR.dy > bG.dz,
-      `⌀${bS.dx.toFixed(2)} → ⌀${bR.dy.toFixed(2)} → ${bG.dz.toFixed(2)} mm`);
-    check('MEDIDO: el bebedero cae FUERA de la pieza (el dado está abierto en la partición)', bS.x0 > 40,
-      `x del bebedero ${bS.x0.toFixed(1)}..${bS.x1.toFixed(1)} vs la pieza que acaba en 40`);
-    check('MEDIDO: la compuerta TOCA la pieza', Math.abs(bG.x0 - 40) < 1e-6, `compuerta arranca en x=${bG.x0.toFixed(2)}`);
-    check('MEDIDO: runner y compuerta van PEGADOS (sin hueco)', Math.abs(bR.x0 - bG.x1) < 1e-6,
-      `runner arranca en ${bR.x0.toFixed(2)}, compuerta acaba en ${bG.x1.toFixed(2)}`);
-    // CONTROL NEGATIVO: el diseño de AYER (bebedero directo ⌀9.5 sobre la pieza) debe REPROBAR
-    const viejo = occt.makeCone(oc, 4.75, 2.5, 60, { origin: [40, 20, 40], dir: [0, 0, 1] });
-    const bV = bbox(viejo);
-    check('CONTROL NEGATIVO: el bebedero de ayer REPRUEBA (ni estrecha ni sale de la pieza)',
-      !(bV.dx > bR.dy && bR.dy > bG.dz && bV.x0 > 40), `⌀${bV.dx.toFixed(2)} entrando directo, x0=${bV.x0.toFixed(1)}`);
-  }
-
-  // ══ LA COLADA · generador propio (cap 6) ══
-  // Extraída a `mold/colada.ts` porque estaba enterrada en la línea 1112 de 1619 de
-  // `mold-plano-set` y la E5 no la vio: se inventó otra con L=60 y eje en una esquina.
-  console.log('── LA COLADA · el generador con los DATUMS del libro');
   const C = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'colada.ts'));
   const mps = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-plano-set.ts'));
   const asm = mps.packageToAssemblySpec(e2.pkg);
@@ -251,6 +211,35 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     pieza: { x0: 0 + colB.dx, y0: 0 + colB.dy, x1: 40 + colB.dx, y1: 40 + colB.dy, zBaseCerradaMm: 0 + colB.dz, bocaEnParticion: true },
     plastic: 'ABS', partVolCc: 14.14, wallMm: 2, fillTimeS: 1,
   });
+
+  const fd = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'feed.ts'));
+  const e5 = ed.estacion5Dado({ datums: dC, partVolCc: 14.14, wallMm: 2, cavidadMPa: 10.7, fillTimeS: 1 });
+  const G5 = e5.geom;
+  check('el ⌀ del bebedero SALE del motor, no de un literal', Math.abs(2 * G5.rTopMm - 5.0) < 0.01 && G5.rBaseMm > G5.rTopMm,
+    `⌀${(2 * G5.rTopMm).toFixed(2)} (orificio de boquilla + holgura) → ⌀${(2 * G5.rBaseMm).toFixed(2)}`);
+  check('§6.3.1: angosto en la boquilla, ancho en la partición', G5.rBaseMm > G5.rTopMm);
+  check('§7.1.5: la COMPUERTA congela ANTES que el runner', e5.filas.find((f) => f.id === 'freeze').estado === 'CUMPLE',
+    e5.filas.find((f) => f.id === 'freeze').valor);
+  check('§6.5.4: el ⌀ del runner es de fresa ESTÁNDAR', fd.STANDARD_RUNNER_DIAMM.includes(G5.runnerDiaMm), `⌀${G5.runnerDiaMm} mm`);
+  // §6.2.3 — con L_sprue del STACK REAL (141.5 mm) para una pieza de 14 cc, la colada se
+  // lleva el 68 % del disparo. Eso NO es un bug del gate: es el diseño diciendo la verdad.
+  // Antes lo "resolvía" inventando un bebedero más corto; el largo lo fija el stack, así
+  // que el remedio es cambiar PLACAS = estación 3. El gate exige que se DETECTE y se
+  // ANUNCIE, no que el número salga bonito.
+  check('§6.2.3: el regrind fuera de límite se DETECTA', e5.regrind.despuesPct > e5.regrind.limPct === !e5.regrind.resuelto,
+    `${e5.regrind.despuesPct.toFixed(1)} % vs límite ${e5.regrind.limPct} % → ${e5.regrind.resuelto ? 'cumple' : 'VIOLA'}`);
+  check('§6.2.3: y se ANUNCIA como retorno a la estación 3 (las placas)',
+    e5.regrind.resuelto || e5.anuncios.some((a) => a.estacion === 3),
+    e5.anuncios.filter((a) => a.estacion === 3).map((a) => a.titulo).join(' · ') || 'sin anuncio');
+  check('§6.4: la cuenta de presión CIERRA (cavidad + alimentación)', e5.presion.ok,
+    `${e5.presion.cavidadMPa.toFixed(1)} + ${e5.presion.alimentacionMPa.toFixed(1)} = ${e5.presion.totalMPa.toFixed(1)} MPa ≤ ${e5.presion.maquinaMPa}`);
+  // (las mediciones inline de la E5 se BORRARON: las hace `verificacionColada`, la misma
+  // que corre el CAD — tener dos formas de medir era la otra cara de tener dos coladas)
+
+  // ══ LA COLADA · generador propio (cap 6) ══
+  // Extraída a `mold/colada.ts` porque estaba enterrada en la línea 1112 de 1619 de
+  // `mold-plano-set` y la E5 no la vio: se inventó otra con L=60 y eje en una esquina.
+  console.log('── LA COLADA · el generador con los DATUMS del libro');
   const solC = C.construirColada(occt, oc, dC);
   const vC = C.verificacionColada(occt, oc, solC, dC);
   for (const m of vC.medidas) check(`colada · ${m.cota} [${m.seccion}]`, m.ok, `declarado ${m.declarado} vs medido ${m.medido} (±${m.tolMm})`);

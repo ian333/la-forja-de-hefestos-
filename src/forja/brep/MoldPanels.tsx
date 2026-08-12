@@ -841,7 +841,7 @@ function CicloE4({ e4, onE5 }: { e4: import('../mold/estudio-molde-datos').Estac
  *  cada número sale de `feed.ts`/`gating.ts` — esta estación no inventa una sola fórmula. */
 function CicloE5({ e5, e5v }: {
   e5: import('../mold/estudio-molde-datos').Estacion5Dado;
-  e5v?: { rTopMm: number; rBaseMm: number; runnerDiaMm: number; gateEspesorMm: number; xSprueMm: number; fueraDeLaPieza: boolean; estrechaMedido: boolean };
+  e5v?: import('../mold/colada').VerificacionColada;
 }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   const E = e5.estrecha;
@@ -870,11 +870,12 @@ function CicloE5({ e5, e5v }: {
         </div>
       </div>
       {e5v && (
-        <div data-testid="e5-medido" style={{ fontSize: 10.5, padding: '2px 6px',
-          color: e5v.estrechaMedido && e5v.fueraDeLaPieza ? '#7ee0a0' : '#f27a6c' }}>
-          📏 MEDIDO del sólido: ⌀{(2 * e5v.rBaseMm).toFixed(2)} → ⌀{e5v.runnerDiaMm.toFixed(2)} → {e5v.gateEspesorMm.toFixed(2)} mm ·
-          eje del bebedero en x={e5v.xSprueMm.toFixed(1)} {e5v.fueraDeLaPieza ? '(fuera de la boca ✓)' : '(¡cae sobre la boca!)'}
-          <div style={{ fontSize: 10, color: '#7f8da3' }}>no es lo que declara el panel: es el bbox de la malla que se está dibujando</div>
+        <div data-testid="e5-medido" style={{ fontSize: 10.5, padding: '2px 6px', color: e5v.ok ? '#7ee0a0' : '#f27a6c' }}>
+          📏 MEDIDO del sólido por <code>verificacionColada</code> — {e5v.resumen}
+          {e5v.medidas.filter((m) => !m.ok).map((m, k) => (
+            <div key={k} style={{ fontSize: 10, color: '#f27a6c' }}>✘ {m.cota}: {m.declarado} vs {m.medido} ({m.seccion})</div>
+          ))}
+          <div style={{ fontSize: 10, color: '#7f8da3' }}>la MISMA verificación que corre el gate — no mediciones sueltas en la pantalla</div>
         </div>
       )}
       {e5.filas.map((r) => (

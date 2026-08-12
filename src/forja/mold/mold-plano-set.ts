@@ -32,6 +32,7 @@ import { partSheet4View, type IsoStyle } from '../brep/isoview';
 import { dfmFromMesh } from './dfm-mesh';
 import { planSideActions, planFromSpec, sideActionVerdicts, type SideActionPlan } from './mold-sideaction-gen';
 import { sprueDesignFromCavity, estPartVolumeCc } from './feed';
+import { construirColadaSprue } from './colada';
 import { layoutForGrid, flowTForSegs } from './feed-layouts';
 
 // ── PALETA de materiales (idéntica al PDF): acero azul-gris, plástico ámbar ──
@@ -1111,9 +1112,12 @@ export function buildFunctionalParts(K: any, oc: any, spec: MoldAssemblySpec, pa
       // de referencia, siempre con los mismos 6.0 mm — la firma de una constante.
       const Lsprue = topZ - zGate;
       const fd = sprueDesignFromCavity(spec.plastic, spec.cavity, Lsprue);
+      // DELEGADO al generador (`mold/colada.ts`): antes esta línea era la ÚNICA colada
+      // bien construida del repo y estaba enterrada aquí, entre el agua y los tornillos.
+      // ian: "debería estar separada como todo lo demás". Ahora hay UNA sola colada.
       const melt = feed.map((f) => {
         try {
-          return K.makeCone(oc, fd.rBaseMm - 0.05, fd.rTopMm - 0.05, Lsprue, { origin: [f.x, f.y, zGate], dir: [0, 0, 1] });
+          return construirColadaSprue(K, oc, { x: f.x, y: f.y, zGate, Lsprue, rBaseMm: fd.rBaseMm - 0.05, rTopMm: fd.rTopMm - 0.05 });
         } catch { return cyl(Math.max(2.5, f.dia / 2), Lsprue, [f.x, f.y, zGate], [0, 0, 1]); }
       });
       push('colada', `Colada FRÍA §6.3.1 · sprue cónico ⌀${(2 * fd.rTopMm).toFixed(1)}→⌀${(2 * fd.rBaseMm).toFixed(1)}`,
