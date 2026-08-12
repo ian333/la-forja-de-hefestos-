@@ -32,8 +32,8 @@ import { convergeVelocityCross, ABS_CROSS } from '../mold/filling';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, llenadoNivel1, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
-import { datumsColada, construirColada, verificacionColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
 
@@ -74,7 +74,11 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
      *  SUPERFICIE del fundido (`frenteSuperficie`). `frenteVert` está compactado a
      *  los vóxeles de cavidad y no sirve para extraer una isosuperficie. */
     frenteGrid?: Float32Array; grid?: { nx: number; ny: number; nz: number; cellMm: number; x0: number; y0: number; z0: number };
-    e5?: Estacion5Dado; e5v?: VerificacionColada; e5datums?: DatumsColada } | null>(null);
+    e5?: Estacion5Dado; e5v?: VerificacionColada; e5datums?: DatumsColada;
+    /** máscara del campo CONJUNTO: 1 = vóxel de PIEZA, 0 = de COLADA */
+    esPieza?: Uint8Array;
+    /** LA ALARMA de tubería única + los volúmenes medidos del campo conjunto */
+    e5tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number } } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
   // armado NO debe barrerlas cuando liveMoldSpec es null.
   const [feedDemo, setFeedDemo] = useState(false);
@@ -532,15 +536,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // ── NIVEL 1: el frente por RESISTENCIA (Eq 5.22), no por distancia ──
       // La cavidad del dado se describe analíticamente (la MISMA del sólido con draft):
       // hueco entre el exterior y el interior, ambos con 1.5° — el voxelizador la come.
-      const t15 = Math.tan(1.5 * Math.PI / 180);
-      const dentro = (x: number, y: number, z: number) => {
-        if (z < 0 || z > 40) return false;
-        const eo = 40 * t15 * (1 - z / 40);                       // inset exterior a esa z
-        if (x < eo || x > 40 - eo || y < eo || y > 40 - eo) return false;
-        if (z < 2) return true;                                    // el piso
-        const ii = 2 + 38 * t15 * (1 - (z - 2) / 39);              // inset interior
-        return x < ii || x > 38 - ii + 2 || y < ii || y > 38 - ii + 2;
-      };
+      const dentro = dentroDadoLocal;                             // fuente única (E4 y E5)
       // §4.3.2: la pieza ya vive COLOCADA dentro de la base estándar. El campo se mueve
       // con ella — misma fuente única de offset que la E3, o vuelven los dos marcos.
       const col = colocacionEnLaBase(ciclo.e2.pkg);
@@ -551,7 +547,10 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         // ⚠ la compuerta tiene que caer DENTRO de la cavidad: en x=40 (la superficie
         // exterior) el predicado da false, el campo nacía VACÍO y el frente salía 100 %
         // desde t=0. Cazado por el propio juicio del video ("arranca casi vacío": 100 %).
-        inCavity: dentroBase, gateMm: { x: 39 + col.dx, y: 20 + col.dy, z: 38 + col.dz }, wallMm, meltN: 0.348,
+        // la semilla vive en el labio CERCANO al bushing (x local ≈ 1): tras el retorno
+        // la compuerta real quedó ahí, no en x=39. Con la semilla vieja el frente NACÍA
+        // en la esquina opuesta a la colada — parte del "aparece mágicamente" del video.
+        inCavity: dentroBase, gateMm: { x: 1 + col.dx, y: 20 + col.dy, z: 38 + col.dz }, wallMm, meltN: 0.348,
       });
       const cw = convergeVelocityCross(ABS_CROSS, 0.19, 60, wallMm / 1000);
       const n1 = llenadoNivel1(campo, { vMs: cw.vMs, muPaS: cw.muFinalPaS, wallMm, material: ABS_MG47 });
@@ -638,11 +637,65 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       const e5 = estacion5Dado({ datums: d, partVolCc, wallMm, cavidadMPa });
       const sol = construirColada(OCC, oc, d);
       const e5v = verificacionColada(OCC, oc, sol, d);
-      setCiclo({ ...ciclo, estacion: 5, e5, e5v, e5datums: d });
+      // ── UNA SOLA TUBERÍA (ian: "son 2 tuberías desconectadas en lugar de 1 — está mal
+      // todo"). Colada ∪ pieza se voxelizan JUNTAS, sembradas en la BOQUILLA: el frente
+      // BAJA por el bebedero, cruza runner y compuerta y entra a la pieza en UN campo,
+      // con UN reloj (los cuantiles de volumen del campo conjunto — el caudal constante
+      // reparte solo). Y `unreachable` se vuelve LA ALARMA de tubería rota que faltaba.
+      const denCol = dentroColada(d);
+      const dentroPiezaBase = (x: number, y: number, z: number) => dentroDadoLocal(x - col.dx, y - col.dy, z - col.dz);
+      const dentroTuberia = (x: number, y: number, z: number) => dentroPiezaBase(x, y, z) || denCol(x, y, z);
+      const campoJ = measureFlowLength({
+        x0: d.ejeX - d.pozoLargoMm - d.rBaseMm - 2, y0: col.dy - 2, z0: col.dz - d.puller.largoMm - 2,
+        x1: lado + col.dx + 2, y1: lado + col.dy + 2, z1: d.zCaraClampMm + 2, cellMm: 1.0,
+        inCavity: dentroTuberia,
+        gateMm: { x: d.ejeX, y: d.ejeY, z: d.zCaraClampMm - 1 },   // LA BOQUILLA
+        wallMm, meltN: 0.348,
+      });
+      const cwJ = convergeVelocityCross(ABS_CROSS, 0.19, 60, wallMm / 1000);
+      const n1J = llenadoNivel1(campoJ, { vMs: cwJ.vMs, muPaS: cwJ.muFinalPaS, wallMm, material: ABS_MG47 });
+      const nCavJ = campoJ.cavity.reduce((a: number, b: number) => a + b, 0);
+      const posJ = new Float32Array(nCavJ * 3); const fvJ = new Float32Array(nCavJ);
+      const esPieza = new Uint8Array(nCavJ);
+      let qJ = 0;
+      for (let k2 = 0; k2 < campoJ.nz; k2++) for (let j2 = 0; j2 < campoJ.ny; j2++) for (let i2 = 0; i2 < campoJ.nx; i2++) {
+        const id2 = campoJ.idx(i2, j2, k2);
+        if (!campoJ.cavity[id2]) continue;
+        const X = campoJ.x0 + (i2 + 0.5) * campoJ.cellMm, Y = campoJ.y0 + (j2 + 0.5) * campoJ.cellMm, Z = campoJ.z0 + (k2 + 0.5) * campoJ.cellMm;
+        posJ[qJ * 3] = X; posJ[qJ * 3 + 1] = Y; posJ[qJ * 3 + 2] = Z;
+        fvJ[qJ] = n1J.frente[id2];
+        esPieza[qJ] = dentroPiezaBase(X, Y, Z) ? 1 : 0;
+        qJ++;
+      }
+      const frenteQJ = Float32Array.from([...fvJ].filter((x) => x >= 0)).sort();
+      const volColadaVoxCc = ([...esPieza].filter((m, i) => !m && fvJ[i] >= 0).length * campoJ.cellMm ** 3) / 1000;
+      // ⚠ LA SEMILLA PUEDE TELEPORTARSE: measureFlowLength ajusta el gate al vóxel de
+      // cavidad MÁS CERCANO si el punto pedido no cae en el dominio (legítimo para
+      // compuertas de frontera). Con la tubería ROTA eso mata la alarma de unreachable
+      // — la boquilla "se muda" a la pieza y todo parece conectado. Cazado por el
+      // CONTROL NEGATIVO del gate. La alarma honesta exige las DOS: 0 inalcanzables Y
+      // la semilla aterrizada donde se pidió.
+      const gm = { x: d.ejeX, y: d.ejeY, z: d.zCaraClampMm - 1 };
+      const snapMm = Math.hypot(
+        campoJ.x0 + (campoJ.gate.i + 0.5) * campoJ.cellMm - gm.x,
+        campoJ.y0 + (campoJ.gate.j + 0.5) * campoJ.cellMm - gm.y,
+        campoJ.z0 + (campoJ.gate.k + 0.5) * campoJ.cellMm - gm.z);
+      setTFill(1); tFillRef.current = 1;
+      setCiclo({
+        ...ciclo, estacion: 5, e5, e5v, e5datums: d,
+        // el campo CONJUNTO reemplaza al de solo-cavidad en la MISMA ranura: la
+        // superficie del frente y el reloj del video lo consumen sin tocarlos.
+        frenteGrid: n1J.frente, grid: { nx: campoJ.nx, ny: campoJ.ny, nz: campoJ.nz, cellMm: campoJ.cellMm, x0: campoJ.x0, y0: campoJ.y0, z0: campoJ.z0 },
+        frenteVert: fvJ, frenteQ: frenteQJ, voxPos: posJ, cellMm: campoJ.cellMm, esPieza,
+        e5tuberia: { unreachable: campoJ.unreachable, snapMm, volColadaVoxCc, volPiezaCc: partVolCc },
+      });
       cursoSet(5, [], [...moldParts.filter((p: any) => p.role !== 'colada'),
+        // FANTASMA a propósito: el tubo se ve, y el FUNDIDO (FrenteSuperficie del campo
+        // conjunto) avanza por DENTRO. El FeedFill de reloj propio salió de esta estación
+        // — con él muere el parpadeo que ian vio.
         cursoPart(sol.fundido, 'colada',
           `COLADA §6.3.1 — bebedero ⌀${(2 * d.rTopMm).toFixed(1)}→⌀${(2 * d.rBaseMm).toFixed(1)} · L ${d.LsprueMm.toFixed(0)} (del stack) · runner ⌀${d.runnerDiaMm} · compuerta ${d.gateEspesorMm}`,
-          '#f4a742', 0.9, 0.25)]);
+          '#f4a742', 0.18, 0.25)]);
       setDocName('EL DADO · estación 5 — ALIMENTACIÓN (cap 6): bebedero → runner → compuerta');
       setCollapsed((c: any) => ({ ...c, features: false }));
     } catch (e) { console.warn('E5_ERR', e); }

@@ -80,7 +80,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
     const st = await p.evaluate((tt) => { window.__forgeBrep.llenadoT(tt); return window.__forgeBrep.llenadoStats(); }, t);
     await p.waitForTimeout(35);
     await p.screenshot({ path: `${DIR}/f${String(i).padStart(4, '0')}.png`, timeout: 30000 });
-    medidas.push({ i, t: +t.toFixed(4), pct: st ? st.pct : null });
+    medidas.push({ i, t: +t.toFixed(4), pct: st ? st.pct : null, llenosPieza: st ? st.llenosPieza : null, llenosColada: st ? st.llenosColada : null, totalColada: st ? st.totalColada : null });
     if (i % 25 === 0) console.log(`  frame ${i}/${N + HOLD} · t=${t.toFixed(2)} · llenado ${st ? st.pct : '?'}%`);
   }
   await browser.close();
@@ -105,6 +105,16 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   const cuartos = [0.25, 0.5, 0.75].map((q) => llenado[Math.floor(q * (llenado.length - 1))].pct);
   chk('el avance se reparte en el tiempo', cuartos.every((c, k) => c > [5, 20, 45][k]), `25% → ${cuartos[0]}% · 50% → ${cuartos[1]}% · 75% → ${cuartos[2]}%`);
   chk('sin errores de página', errs.length === 0, errs.length ? errs[0] : 'consola limpia');
+  // UNA TUBERÍA (solo aplica con E5=1, campo conjunto): el primer frame que moja la
+  // PIEZA debe tener la COLADA ya ≥95 % llena — si el plástico "nace" en la pieza sin
+  // haber bajado por el bebedero, REPRUEBA. (ian: "el llenado lleva al sprue".)
+  const conMask = llenado.some((m) => (m.totalColada ?? 0) > 0);
+  if (conMask) {
+    const primeraPieza = llenado.find((m) => (m.llenosPieza ?? 0) > 0);
+    chk('el fundido ENTRA por la colada ANTES de tocar la pieza (una tubería)',
+      !primeraPieza || (primeraPieza.llenosColada / primeraPieza.totalColada) >= 0.95,
+      primeraPieza ? `primer frame con pieza mojada: colada al ${(100 * primeraPieza.llenosColada / primeraPieza.totalColada).toFixed(1)} %` : 'la pieza nunca mojó');
+  }
   // ⚠ EL CHECK QUE FALTABA: el DOM puede decir que avanza mientras la IMAGEN está
   // congelada. Pasó: 170 frames 4K, 0 píxeles de cambio, y este juez lo APROBÓ porque
   // solo miraba números. Un video que no cambia no es un video.

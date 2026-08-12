@@ -609,7 +609,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
-      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} />}
+      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -839,10 +839,11 @@ function CicloE4({ e4, onE5 }: { e4: import('../mold/estudio-molde-datos').Estac
  *  conicidad estaba bien (medida), pero la colada terminaba en su punto MÁS ANCHO justo
  *  donde tocaba una pared de 2 mm. Aquí la sección BAJA monótona hasta la compuerta, y
  *  cada número sale de `feed.ts`/`gating.ts` — esta estación no inventa una sola fórmula. */
-function CicloE5({ e5, e5v, datums }: {
+function CicloE5({ e5, e5v, datums, tuberia }: {
   e5: import('../mold/estudio-molde-datos').Estacion5Dado;
   e5v?: import('../mold/colada').VerificacionColada;
   datums?: import('../mold/colada').DatumsColada;
+  tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number };
 }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   const E = e5.estrecha;
@@ -869,6 +870,28 @@ function CicloE5({ e5, e5v, datums }: {
           </div>
         </div>
       )}
+      {/* LA ALARMA DE LA TUBERÍA ÚNICA — nació de que NO existía: el llenado y la colada
+          eran dos dominios desconectados y nada gritó (ian: "el hecho de que no haya
+          levantado una alarma quiere decir que está mal todo"). El campo conjunto la
+          hace medible: unreachable = vóxeles que el fundido NO alcanza desde la boquilla. */}
+      {tuberia && (() => {
+        // la alarma exige LAS DOS: 0 inalcanzables Y la semilla en la boquilla pedida —
+        // measureFlowLength teleporta la semilla al vóxel más cercano si el punto no cae
+        // en el dominio, y eso mataría la alarma con la tubería rota.
+        const ok = tuberia.unreachable === 0 && tuberia.snapMm <= 2;
+        return (
+          <div data-testid="e5-tuberia" style={{ fontSize: 10.5, padding: '3px 6px', margin: '2px 6px', borderRadius: 6,
+            background: ok ? 'rgba(126,224,160,0.10)' : 'rgba(242,122,108,0.16)',
+            border: `1px solid ${ok ? 'rgba(126,224,160,0.4)' : 'rgba(242,122,108,0.6)'}`,
+            color: ok ? '#7ee0a0' : '#f27a6c', fontWeight: 700 }}>
+            {ok
+              ? `✓ UNA SOLA TUBERÍA — boquilla → bebedero → runner → compuerta → pieza: 0 vóxeles inalcanzables · semilla EN la boquilla (desvío ${tuberia.snapMm.toFixed(1)} mm) · colada ${tuberia.volColadaVoxCc.toFixed(1)} cc + pieza ${tuberia.volPiezaCc.toFixed(1)} cc en UN campo`
+              : tuberia.snapMm > 2
+                ? `⛔ TUBERÍA ROTA — la semilla se TELEPORTÓ ${tuberia.snapMm.toFixed(0)} mm desde la boquilla (el dominio no la contiene): el fundido no entra por donde debe.`
+                : `⛔ TUBERÍA ROTA — ${tuberia.unreachable} vóxeles NO alcanzables desde la boquilla: el fundido no tiene camino. Revisa compuerta/posición de la cavidad.`}
+          </div>
+        );
+      })()}
       {/* LA CASCADA: es LO que se veía al revés, y ahora se lee de un golpe */}
       <div data-testid="e5-cascada" style={{ padding: '4px 6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>

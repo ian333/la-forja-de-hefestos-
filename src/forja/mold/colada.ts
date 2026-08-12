@@ -180,6 +180,60 @@ export function datumsColada(o: {
   };
 }
 
+/** VOLUMEN de la colada (cc), PURO — para repartir el RELOJ del llenado a caudal
+ *  constante: primero se llena la colada (u_colada = V_colada/V_total del tiempo) y
+ *  después la cavidad. Analítico: SOBREESTIMA un poco al fundido real porque las
+ *  uniones (bebedero∩runner, pozo∩puller) se cuentan dos veces (~2 %); el gate lo
+ *  cruza contra `OCC.volume(fundido)` con esa tolerancia declarada. */
+export function volumenColadaCc(d: DatumsColada): number {
+  const cono = (r1: number, r2: number, L: number) => (Math.PI * L / 3) * (r1 * r1 + r1 * r2 + r2 * r2);
+  let v = cono(d.rBaseMm, d.rTopMm, d.LsprueMm);
+  if (d.LrunnerMm > 0) {
+    const rr = d.runnerDiaMm / 2;
+    v += Math.PI * rr * rr * Math.max(0.1, d.LrunnerMm - d.gateLargoMm);
+    v += Math.PI * rr * rr * d.pozoLargoMm;
+    v += d.gateLargoMm * d.gateAnchoMm * d.gateEspesorMm;
+    v += cono(d.puller.diaMenorMm / 2, d.puller.diaMayorMm / 2, d.puller.largoMm);
+  }
+  return v / 1000;
+}
+
+/** ¿El punto (x,y,z) está DENTRO de la colada? — el predicado que hace de la colada una
+ *  REGIÓN del dominio de llenado y no un adorno. Con él, colada y cavidad se voxelizan
+ *  JUNTAS y `measureFlowLength.unreachable` se vuelve la ALARMA de tubería rota que
+ *  faltaba (ian: "son 2 tuberías desconectadas en lugar de 1 — está mal todo").
+ *  PURO y espejo 1:1 de `construirColada`: misma cota, misma fuente. */
+export function dentroColada(d: DatumsColada) {
+  return (x: number, y: number, z: number): boolean => {
+    // BEBEDERO: cono truncado, ancho en zGate (partición) → angosto arriba (§6.3.1)
+    if (z >= d.zGateMm && z <= d.zGateMm + d.LsprueMm) {
+      const u = (z - d.zGateMm) / d.LsprueMm;
+      const r = d.rBaseMm + u * (d.rTopMm - d.rBaseMm);
+      if ((x - d.ejeX) ** 2 + (y - d.ejeY) ** 2 <= r * r) return true;
+    }
+    if (d.LrunnerMm > 0) {
+      const rr = d.runnerDiaMm / 2;
+      // RUNNER: cilindro por la partición, del eje hacia la compuerta
+      const xr0 = Math.min(d.ejeX, d.destino.x - d.gateLargoMm), xr1 = Math.max(d.ejeX, d.destino.x - d.gateLargoMm);
+      if (x >= xr0 && x <= xr1 && (y - d.ejeY) ** 2 + (z - d.zPartMm) ** 2 <= rr * rr) return true;
+      // POZO DE ESCORIA: prolonga el runner del lado opuesto
+      if (x >= d.ejeX - d.pozoLargoMm && x <= d.ejeX && (y - d.ejeY) ** 2 + (z - d.zPartMm) ** 2 <= rr * rr) return true;
+      // COMPUERTA: caja que TOCA la pieza
+      if (x >= d.destino.x - d.gateLargoMm && x <= d.destino.x &&
+          Math.abs(y - d.ejeY) <= d.gateAnchoMm / 2 &&
+          z >= d.zPartMm - d.gateEspesorMm && z <= d.zPartMm) return true;
+      // SPRUE PULLER: cono invertido bajo el pozo
+      const zp0 = d.zPartMm - d.puller.largoMm;
+      if (z >= zp0 && z <= d.zPartMm) {
+        const u = (z - zp0) / d.puller.largoMm;
+        const r = d.puller.diaMenorMm / 2 + u * (d.puller.diaMayorMm - d.puller.diaMenorMm) / 2;
+        if ((x - (d.ejeX - d.pozoLargoMm / 2)) ** 2 + (y - d.ejeY) ** 2 <= r * r) return true;
+      }
+    }
+    return false;
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────
 // 2 · FORMA — recibe (K, oc), devuelve sólidos
 // ─────────────────────────────────────────────────────────────────

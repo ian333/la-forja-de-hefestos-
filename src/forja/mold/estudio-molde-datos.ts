@@ -1306,6 +1306,20 @@ export interface AceroE3 {
  * FUENTE ÚNICA: la usan `construirAceroE3`, el llenado de la E4 y el gate. Si alguien
  * calcula el offset por su cuenta, vuelven los dos marcos.
  */
+/** ¿El punto está dentro del PLÁSTICO del dado (marco LOCAL 0..40)? — la caja abierta
+ *  con draft 1.5°, paredes 2 y piso 2. FUENTE ÚNICA del predicado: lo usan el campo de
+ *  la E4 (solo cavidad, §5.5.2) y el campo CONJUNTO de la E5 (colada ∪ pieza). Antes
+ *  vivía inline en la E4 y extraerlo evitó la segunda copia. */
+export function dentroDadoLocal(x: number, y: number, z: number): boolean {
+  const t15 = Math.tan(1.5 * Math.PI / 180);
+  if (z < 0 || z > 40) return false;
+  const eo = 40 * t15 * (1 - z / 40);                       // inset exterior a esa z
+  if (x < eo || x > 40 - eo || y < eo || y > 40 - eo) return false;
+  if (z < 2) return true;                                    // el piso
+  const ii = 2 + 38 * t15 * (1 - (z - 2) / 39);              // inset interior
+  return x < ii || x > 38 - ii + 2 || y < ii || y > 38 - ii + 2;
+}
+
 export function colocacionEnLaBase(pkg: MoldPackage) {
   const asm = packageToAssemblySpec(pkg);
   const z = plateStackZ(asm);

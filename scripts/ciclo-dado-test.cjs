@@ -286,6 +286,58 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const bbA = occt.shapeBBox ? null : null;
   const bDado = (() => { const b = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(acero.dadoD, b, false);
     const a2 = b.CornerMin(), c2 = b.CornerMax(); return { cx: (a2.X()+c2.X())/2, cy: (a2.Y()+c2.Y())/2, z1: c2.Z() }; })();
+  // ══ UNA SOLA TUBERÍA — la alarma que faltaba, con su control ══
+  // ian: "se llena de un lado y el sprue está del otro — 2 tuberías desconectadas en
+  // lugar de 1, y ninguna alarma. Eso quiere decir que está mal todo". El campo CONJUNTO
+  // (colada ∪ pieza, sembrado en la BOQUILLA) hace la conectividad MEDIBLE.
+  console.log('── UNA TUBERÍA · colada ∪ pieza en un campo, sembrado en la boquilla');
+  const fl2 = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'flowlen.ts'));
+  const denCol = C.dentroColada(dC);
+  const dentroPiezaB = (x, y, z) => ed.dentroDadoLocal(x - colB.dx, y - colB.dy, z - colB.dz);
+  const gridJ = {
+    x0: dC.ejeX - dC.pozoLargoMm - dC.rBaseMm - 2, y0: colB.dy - 2, z0: colB.dz - dC.puller.largoMm - 2,
+    x1: 40 + colB.dx + 2, y1: 40 + colB.dy + 2, z1: dC.zCaraClampMm + 2, cellMm: 1.0,
+    gateMm: { x: dC.ejeX, y: dC.ejeY, z: dC.zCaraClampMm - 1 }, wallMm: 2, meltN: 0.348,
+  };
+  const snapDe = (cf) => Math.hypot(
+    cf.x0 + (cf.gate.i + 0.5) * cf.cellMm - gridJ.gateMm.x,
+    cf.y0 + (cf.gate.j + 0.5) * cf.cellMm - gridJ.gateMm.y,
+    cf.z0 + (cf.gate.k + 0.5) * cf.cellMm - gridJ.gateMm.z);
+  const campoJ = fl2.measureFlowLength({ ...gridJ, inCavity: (x, y, z) => dentroPiezaB(x, y, z) || denCol(x, y, z) });
+  // LA ALARMA exige LAS DOS condiciones: measureFlowLength TELEPORTA la semilla al vóxel
+  // de cavidad más cercano si el punto pedido no cae en el dominio (flowlen.ts:131, un
+  // ayudador legítimo para compuertas de frontera) — con la tubería rota eso dejaría
+  // unreachable=0 y la alarma muerta. Lo cazó ESTE control negativo en su primera corrida.
+  check('LA ALARMA (1/2): 0 vóxeles inalcanzables desde la BOQUILLA',
+    campoJ.unreachable === 0, `${campoJ.unreachable} inalcanzables de ${campoJ.cavity.reduce((a, b) => a + b, 0)}`);
+  check('LA ALARMA (2/2): la semilla aterrizó EN la boquilla (sin teleporte)',
+    snapDe(campoJ) <= 2, `desvío ${snapDe(campoJ).toFixed(2)} mm`);
+  // CONTROL NEGATIVO: el dominio de AYER (solo la pieza) con la misma semilla en la
+  // boquilla = la tubería rota. La alarma DEBE gritar; si no grita, no es alarma.
+  const campoRoto = fl2.measureFlowLength({ ...gridJ, inCavity: dentroPiezaB });
+  check('CONTROL: el dominio de AYER (solo pieza) DISPARA la alarma (por teleporte de semilla)',
+    campoRoto.unreachable > 1000 || snapDe(campoRoto) > 50,
+    `unreachable ${campoRoto.unreachable} · semilla teleportada ${snapDe(campoRoto).toFixed(0)} mm (boquilla→pieza)`);
+  // tres fuentes del volumen de colada, cruzadas
+  const n1J = ed.llenadoNivel1(campoJ, { vMs: lz.vMs, muPaS: lz.muFinalPaS, wallMm: 2, material: f.ABS_MG47 });
+  let voxCol = 0, voxPza = 0, minFrentePza = Infinity; const frentesCol = [];
+  for (let k = 0; k < campoJ.nz; k++) for (let j = 0; j < campoJ.ny; j++) for (let i = 0; i < campoJ.nx; i++) {
+    const id = campoJ.idx(i, j, k);
+    if (!campoJ.cavity[id] || n1J.frente[id] < 0) continue;
+    const X = campoJ.x0 + (i + 0.5), Y = campoJ.y0 + (j + 0.5), Z = campoJ.z0 + (k + 0.5);
+    if (dentroPiezaB(X, Y, Z)) { voxPza++; if (n1J.frente[id] < minFrentePza) minFrentePza = n1J.frente[id]; }
+    else { voxCol++; frentesCol.push(n1J.frente[id]); }
+  }
+  const volVoxCol = voxCol / 1000, volPuroCol = C.volumenColadaCc(dC), volOccCol = occt.volume(oc, solC.fundido) / 1000;
+  check('V_colada: vóxeles ≈ analítico ≈ OCC (3 fuentes del mismo número)',
+    Math.abs(volVoxCol - volOccCol) / volOccCol < 0.12 && Math.abs(volPuroCol - volOccCol) / volOccCol < 0.08,
+    `vóxeles ${volVoxCol.toFixed(2)} · puro ${volPuroCol.toFixed(2)} · OCC ${volOccCol.toFixed(2)} cc`);
+  // EL ORDEN FÍSICO: la pieza arranca cuando la colada ya casi terminó (caudal constante)
+  frentesCol.sort((a, b) => a - b);
+  const p75Col = frentesCol[Math.floor(frentesCol.length * 0.75)];
+  check('ORDEN FÍSICO: la pieza solo arranca tras ≥75 % de la colada',
+    minFrentePza >= p75Col, `min(frente pieza) ${minFrentePza.toFixed(3)} ≥ p75(colada) ${p75Col.toFixed(3)}`);
+
   // el centro esperado de la pieza YA NO es el centro de la base: lleva el offset de la
   // colada (retorno 2026-08-12). La fuente única sigue siendo colocacionEnLaBase.
   const cxEsp = 20 + colB.dx, cyEsp = 20 + colB.dy;
