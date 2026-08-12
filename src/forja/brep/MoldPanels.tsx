@@ -892,6 +892,30 @@ function CicloE5({ e5, e5v, datums, tuberia }: {
           </div>
         );
       })()}
+      {/* LA ALARMA DE BALANCE (§6.6 "naturally balanced" · §4.3 layouts simétricos ·
+          Fig 7.2: una cavidad = al centro). Nació de que moví TODO el layout 29.2 mm y
+          ningún check gritó — y el del marco lo edité yo para que lo esperara. */}
+      {datums && tuberia && (() => {
+        // centroide de la cavidad desde los datums: en sprue+runner el destino es el
+        // labio CERCANO (x0) → centroide = x0 + semiancho; en requiere-offset el destino
+        // es el labio LEJANO (x1) → centroide = x1 − semiancho; en directo, el eje mismo.
+        const halfW = 20;                                          // semiancho del dado (cota E1)
+        const centroX = datums.modo === 'sprue-directo' ? datums.ejeX
+          : datums.modo === 'requiere-offset' ? datums.destino.x - halfW : datums.destino.x + halfW;
+        const desb = Math.abs(centroX - datums.ejeX);
+        const umbral = 9.8;                                        // 5 % de la base 196 — EXTENSIÓN DECLARADA
+        const ok = desb <= umbral;
+        return (
+          <div data-testid="e5-balance" style={{ fontSize: 10.5, padding: '3px 6px', margin: '2px 6px', borderRadius: 6,
+            background: ok ? 'rgba(126,224,160,0.10)' : 'rgba(242,122,108,0.16)',
+            border: `1px solid ${ok ? 'rgba(126,224,160,0.4)' : 'rgba(242,122,108,0.6)'}`,
+            color: ok ? '#7ee0a0' : '#f27a6c', fontWeight: 700 }}>
+            {ok
+              ? `✓ BALANCE — el centroide de la cavidad está en el eje de la máquina (desbalance ${desb.toFixed(1)} mm ≤ ${umbral} mm)`
+              : `⛔ DESBALANCE — la cavidad está a ${desb.toFixed(1)} mm del eje de la máquina (umbral ${umbral} mm, §6.6/§4.3). La fuerza de cierre queda excéntrica. ⟲ E3: voltear la pieza = sprue directo AL CENTRO (Fig 7.2).`}
+          </div>
+        );
+      })()}
       {/* LA CASCADA: es LO que se veía al revés, y ahora se lee de un golpe */}
       <div data-testid="e5-cascada" style={{ padding: '4px 6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>

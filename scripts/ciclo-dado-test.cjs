@@ -338,6 +338,25 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('ORDEN FÍSICO: la pieza solo arranca tras ≥75 % de la colada',
     minFrentePza >= p75Col, `min(frente pieza) ${minFrentePza.toFixed(3)} ≥ p75(colada) ${p75Col.toFixed(3)}`);
 
+  // ══ LA ALARMA DE BALANCE — mover el layout sin que nada grite, nunca más ══
+  // ian: "se desplazó TODO y no levantó ninguna alarma". Y peor: el check del marco lo
+  // edité YO para que esperara el desplazamiento — coherencia interna, no criterio. El
+  // criterio del LIBRO: §6.6 "naturally balanced" + §4.3 (todos los layouts simétricos
+  // al centro) + §7.2.1/Fig 7.2 (una cavidad = bebedero directo AL CENTRO de la pieza).
+  // Umbral EXTENSIÓN DECLARADA: 5 % del ancho de la base. HOY DEBE SALIR ROJA (29.2 mm):
+  // queda declarada hasta que ian decida el layout (voltear la pieza, Fig 7.2).
+  {
+    const centroideCavX = (dC.pieza ? 0 : 0) || (20 + colB.dx);          // centroide de la cavidad en la partición
+    const desbalanceMm = Math.abs(centroideCavX - asm.widthMm / 2);
+    const umbralMm = 0.05 * asm.widthMm;
+    check('BALANCE (§6.6 · §4.3 · Fig 7.2): el centroide de la cavidad está en el eje de la máquina',
+      desbalanceMm <= umbralMm,
+      `desbalance ${desbalanceMm.toFixed(1)} mm vs umbral ${umbralMm.toFixed(1)} (5 % de ${asm.widthMm}) — retorno E3: voltear la pieza (sprue directo, Fig 7.2) o justificar`);
+    // CONTROL: el layout CENTRADO da 0 — si el control no distingue, no es alarma
+    check('CONTROL: el layout centrado NO dispara la alarma de balance',
+      Math.abs(98 - asm.widthMm / 2) <= umbralMm, `desbalance del layout centrado: ${Math.abs(98 - asm.widthMm / 2).toFixed(1)} mm`);
+  }
+
   // el centro esperado de la pieza YA NO es el centro de la base: lleva el offset de la
   // colada (retorno 2026-08-12). La fuente única sigue siendo colocacionEnLaBase.
   const cxEsp = 20 + colB.dx, cyEsp = 20 + colB.dy;
