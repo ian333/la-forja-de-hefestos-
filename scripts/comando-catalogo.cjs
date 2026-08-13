@@ -314,8 +314,16 @@ for (const v of prod.videos) {
   } else if (fam === 'atomos') {
     familia = 'atomo';
     const m = v.name.match(/(\d{2,3})-([A-Za-z]+)/);
-    const z = m ? parseInt(m[1], 10) : 0; tema = m ? m[2] : v.name.replace('.mp4', '');
-    id = 'atomo-' + (m ? m[1].padStart(3, '0') : tema); elementName = EL[z] || tema; titulo = `Átomo de ${elementName}`;
+    const z = m ? parseInt(m[1], 10) : 0;
+    id = 'atomo-' + (m ? m[1].padStart(3, '0') : v.name.replace('.mp4', ''));
+    elementName = EL[z] || (m ? m[2] : v.name.replace('.mp4', ''));
+    // TEMA = SÍMBOLO **Y NOMBRE**. El buscador de Comando sólo mira `titulo + tema`
+    // (ComandoCenter: `(p.titulo + ' ' + p.tema).includes(busca)`), y con tema='Cr' escribir
+    // "cromo" no encontraba NADA — menos aún cuando el título es un gancho que no nombra al
+    // elemento ("Este átomo ROMPE la regla que te enseñaron"). Le pasó a Ian el 2026-08-12
+    // con una pieza que sí estaba publicada. Vale para los 118.
+    tema = m ? `${m[2]} · ${elementName}` : elementName;
+    titulo = `Átomo de ${elementName}`;
   } else if (fam === 'moleculas') {
     familia = 'molecula'; tema = v.name.replace(/^mol-|^chain-|^\d{2}-|\.mp4$/g, '').replace(/-/g, ' '); id = 'mol-' + tema; titulo = tema;
   } else if (fam === 'adn') {
@@ -337,15 +345,18 @@ for (const v of prod.videos) {
     familia = 'otro'; id = 'otro-' + v.name.replace('.mp4', ''); tema = fam; titulo = v.name.replace('.mp4', '');
   }
 
-  pieces[id] ||= { id, familia, tema, titulo, elementName, formatos: {}, _mb: {} };
+  pieces[id] ||= { id, familia, tema, titulo, elementName, formatos: {}, _mb: {}, ts: 0 };
   const key = v.fmt === '?' ? 'video' : v.fmt;
   if (!pieces[id].formatos[key] || v.mb > (pieces[id]._mb[key] || 0)) { pieces[id].formatos[key] = v.rel; pieces[id]._mb[key] = v.mb; }
+  // La pieza es tan reciente como su archivo MÁS nuevo: re-publicar una versión la sube al
+  // tope, que es lo que se quiere (el cromo de orbitales REEMPLAZÓ al hidrogenoide de mayo).
+  if ((v.ts || 0) > pieces[id].ts) pieces[id].ts = v.ts || 0;
 }
 
 // adjuntar copy
 const out = Object.values(pieces).map(p => {
   const c = copyFor(p);
-  return { id: p.id, familia: p.familia, tema: p.tema, titulo: c.titulo, descripcion: c.descripcion, hashtags: c.hashtags.filter(Boolean), formatos: p.formatos, ...(c.codigo ? { codigo: c.codigo } : {}) };
+  return { id: p.id, familia: p.familia, tema: p.tema, titulo: c.titulo, descripcion: c.descripcion, hashtags: c.hashtags.filter(Boolean), formatos: p.formatos, ts: p.ts || 0, ...(c.codigo ? { codigo: c.codigo } : {}) };
 }).sort((a, b) => a.familia.localeCompare(b.familia) || a.titulo.localeCompare(b.titulo));
 
 fs.writeFileSync(path.join(ROOT, 'public/comando/catalogo.json'), JSON.stringify({ pieces: out, generatedAt: process.env.STAMP || '' }));

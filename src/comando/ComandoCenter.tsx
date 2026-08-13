@@ -32,7 +32,7 @@ const PLATAFORMAS = [
 ];
 const FAMILIAS: Record<string, string> = { tutorial: '🎬 Videotutoriales', clase: '🎓 Clases', atomo: '⚛️ Átomos', molecula: '🧪 Moléculas', adn: '🧬 ADN', astro: '🌌 Astro', otro: '📦 Otros' };
 
-interface Piece { id: string; familia: string; tema: string; titulo: string; descripcion: string; hashtags: string[]; formatos: Record<string, string>; guion?: string; codigo?: string; }
+interface Piece { id: string; familia: string; tema: string; titulo: string; descripcion: string; hashtags: string[]; formatos: Record<string, string>; guion?: string; codigo?: string; ts?: number; }
 interface Cat { pieces: Piece[]; generatedAt: string; }
 interface Video { serie: string; name: string; fmt: string; master: boolean; mb: number; rel: string; }
 interface Limpio { sesiones: number; descartadas: number; c1_segunda_pagina: number; mediana_s: number; p75_s: number; p90_s: number; rebote_3s_pct: number; movil_pct: number; inapp_pct: number; clicks_por_sesion: number; entradas: Record<string, number>; }
@@ -178,7 +178,12 @@ export default function ComandoCenter() {
       if (busca && !(p.titulo + ' ' + p.tema).toLowerCase().includes(busca.toLowerCase())) return false;
       if (pendiente && (registro[p.id]?.plataformas?.[pendiente]?.subido)) return false;
       return true;
-    });
+    // LO MÁS RECIENTE ARRIBA. `ts` = mtime del archivo en la biblioteca, o sea cuándo se
+    // publicó ESA versión — así que re-publicar una pieza la vuelve a subir al tope, que es
+    // justo lo que se quiere cuando se re-renderiza algo viejo. Antes listaba en orden de
+    // catálogo y una pieza recién hecha quedaba enterrada entre 118 átomos (le pasó a Ian
+    // con el cromo el 2026-08-12: publicado, en vivo, e imposible de encontrar).
+    }).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   }, [pieces, familia, busca, pendiente, registro]);
 
   // progreso por plataforma

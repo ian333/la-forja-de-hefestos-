@@ -43,8 +43,8 @@ function videoInventory() {
   const PRIME_BASE = '/mnt/hdd/biblioteca/';
   // usar la fuente MÁS COMPLETA (un espejo a medio correr puede dejar una
   // biblioteca PARCIAL en ATLAS — no dejar que 3 archivos pisen el catálogo real)
-  const rawA = sh(`ssh -o ConnectTimeout=12 ${ATLAS} 'find /mnt/hdd/forja-dist/biblioteca -name "*.mp4" -printf "%p|%s\\n" 2>/dev/null'`);
-  const rawP = sh(`ssh -o ConnectTimeout=10 ${PRIME} 'find /mnt/hdd/biblioteca -name "*.mp4" -printf "%p|%s\\n" 2>/dev/null'`);
+  const rawA = sh(`ssh -o ConnectTimeout=12 ${ATLAS} 'find /mnt/hdd/forja-dist/biblioteca -name "*.mp4" -printf "%p|%s|%T@\\n" 2>/dev/null'`);
+  const rawP = sh(`ssh -o ConnectTimeout=10 ${PRIME} 'find /mnt/hdd/biblioteca -name "*.mp4" -printf "%p|%s|%T@\\n" 2>/dev/null'`);
   const nA = rawA.trim() ? rawA.trim().split('\n').length : 0;
   const nP = rawP.trim() ? rawP.trim().split('\n').length : 0;
   let raw, base;
@@ -53,14 +53,18 @@ function videoInventory() {
   const vids = [];
   for (const line of raw.trim().split('\n')) {
     if (!line.includes('|')) continue;
-    const [p, s] = line.split('|');
+    const [p, s, t] = line.split('|');
     const rel = p.replace(base, '');
     if (rel.startsWith('_masters/') || rel.startsWith('_archivo/')) continue;  // no publicable
     const familia = rel.split('/')[0];                     // economia | atomos | moleculas | adn | astro
     const sub = rel.split('/').slice(0, -1).join('/');       // ruta de carpeta (familia/tema)
     const name = path.basename(p);
     const fmt = /916|9x16|9-16|vertical|1080x1920/.test(name) ? '9:16' : /169|16x9|16-9|2160x3840/.test(name) ? '16:9' : '?';
-    vids.push({ familia, serie: sub, name, fmt, master: false, mb: Math.round((+s || 0) / 1048576), rel });
+    // `ts` = mtime del archivo EN LA BIBLIOTECA, o sea cuándo se publicó esa versión.
+    // Es lo que deja ordenar Comando por lo más reciente arriba (Ian, 2026-08-12: el cromo
+    // recién publicado quedaba enterrado entre 118 átomos en orden alfabético).
+    const ts = t ? Math.round(parseFloat(t)) : 0;
+    vids.push({ familia, serie: sub, name, fmt, master: false, mb: Math.round((+s || 0) / 1048576), rel, ts });
   }
   return vids.sort((a, b) => a.rel.localeCompare(b.rel));
 }
