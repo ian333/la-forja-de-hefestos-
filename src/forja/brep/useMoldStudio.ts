@@ -33,6 +33,7 @@ import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, press
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
 import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { resolverLlenadoFAN } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
 import { mark } from '../telemetry-forja';
@@ -80,7 +81,10 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     /** ocupación FRACCIONAL por celda (verdad sub-vóxel) — el cono se ve cono */
     ocupacion?: Float32Array;
     /** LA ALARMA de tubería única + los volúmenes medidos del campo conjunto */
-    e5tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number } } | null>(null);
+    e5tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number };
+    /** FÍSICA del llenado FAN/Hele-Shaw (orden llenado-desde-el-operador): presión
+     *  real, tiempo real, short-shot real + la auditoría de conservación */
+    e5fan?: { pMaxMPa: number; tFillS: number; shortShot: boolean; incompleto: boolean; conservacionMaxRel: number; etaEffPaS: number; QmmS: number; nNodos: number } } | null>(null);
   // DEMO de redes de colada (Figs 6.14/6.15): partes sin spec — el efecto de
   // armado NO debe barrerlas cuando liveMoldSpec es null.
   const [feedDemo, setFeedDemo] = useState(false);
@@ -670,7 +674,10 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         wallMm, meltN: 0.348,
       });
       const cwJ = convergeVelocityCross(ABS_CROSS, 0.19, 60, wallMm / 1000);
-      const n1J = llenadoNivel1(campoJ, { vMs: cwJ.vMs, muPaS: cwJ.muFinalPaS, wallMm, material: ABS_MG47 });
+      // EL SWAP de la orden llenado-desde-el-operador: el frente deja de ser la
+      // heurística de resistencia (llenadoNivel1) y sale del solver FAN/Hele-Shaw —
+      // presión real, tiempo real, short-shot real. MISMA ranura `frente`.
+      const fanJ = resolverLlenadoFAN(campoJ, { material: ABS_MG47, vMs: cwJ.vMs, wallMm, fillTimeS: 1, pLimitMPa: 140 });
       const nCavJ = campoJ.cavity.reduce((a: number, b: number) => a + b, 0);
       const posJ = new Float32Array(nCavJ * 3); const fvJ = new Float32Array(nCavJ);
       const esPieza = new Uint8Array(nCavJ);
@@ -690,7 +697,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         }
         ocupacionJ[id2] = hits / 9;
         posJ[qJ * 3] = X; posJ[qJ * 3 + 1] = Y; posJ[qJ * 3 + 2] = Z;
-        fvJ[qJ] = n1J.frente[id2];
+        fvJ[qJ] = fanJ.frente[id2];
         esPieza[qJ] = dentroPiezaBase(X, Y, Z) ? 1 : 0;
         qJ++;
       }
@@ -712,7 +719,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         ...ciclo, estacion: 5, e5, e5v, e5datums: d,
         // el campo CONJUNTO reemplaza al de solo-cavidad en la MISMA ranura: la
         // superficie del frente y el reloj del video lo consumen sin tocarlos.
-        frenteGrid: n1J.frente, grid: { nx: campoJ.nx, ny: campoJ.ny, nz: campoJ.nz, cellMm: campoJ.cellMm, x0: campoJ.x0, y0: campoJ.y0, z0: campoJ.z0 },
+        frenteGrid: fanJ.frente, grid: { nx: campoJ.nx, ny: campoJ.ny, nz: campoJ.nz, cellMm: campoJ.cellMm, x0: campoJ.x0, y0: campoJ.y0, z0: campoJ.z0 },
+        e5fan: { pMaxMPa: fanJ.pMaxMPa, tFillS: fanJ.tFillS, shortShot: fanJ.shortShot, incompleto: fanJ.incompleto, conservacionMaxRel: fanJ.conservacionMaxRel, etaEffPaS: fanJ.etaEffPaS, QmmS: fanJ.QmmS, nNodos: fanJ.nNodos },
         frenteVert: fvJ, frenteQ: frenteQJ, voxPos: posJ, cellMm: campoJ.cellMm, esPieza, ocupacion: ocupacionJ,
         e5tuberia: { unreachable: campoJ.unreachable, snapMm, volColadaVoxCc, volPiezaCc: partVolCc },
       });

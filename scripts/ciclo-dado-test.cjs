@@ -325,15 +325,20 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('CONTROL: el dominio de AYER (solo pieza) DISPARA la alarma (por teleporte de semilla)',
     campoRoto.unreachable > 1000 || snapDe(campoRoto) > 50,
     `unreachable ${campoRoto.unreachable} · semilla teleportada ${snapDe(campoRoto).toFixed(0)} mm (boquilla→pieza)`);
-  // tres fuentes del volumen de colada, cruzadas
-  const n1J = ed.llenadoNivel1(campoJ, { vMs: lz.vMs, muPaS: lz.muFinalPaS, wallMm: 2, material: f.ABS_MG47 });
+  // tres fuentes del volumen de colada, cruzadas — con el frente de PRODUCCIÓN:
+  // el FAN/Hele-Shaw de la orden llenado-desde-el-operador (mismo camino que la E5)
+  const fanCjs = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'fan.ts'));
+  const fanJ = fanCjs.resolverLlenadoFAN(campoJ, { material: f.ABS_MG47, vMs: lz.vMs, wallMm: 2, fillTimeS: 1, pLimitMPa: 140 });
+  check('FÍSICA en el dado real: llena completo bajo la máquina de 140 MPa y CONSERVA',
+    !fanJ.shortShot && !fanJ.incompleto && fanJ.conservacionMaxRel <= 1e-6,
+    `p_max ${fanJ.pMaxMPa} MPa · t_fill ${fanJ.tFillS} s · conserv ${fanJ.conservacionMaxRel.toExponential(1)} · ${fanJ.nNodos} nodos`);
   let voxCol = 0, voxPza = 0, minFrentePza = Infinity; const frentesCol = [];
   for (let k = 0; k < campoJ.nz; k++) for (let j = 0; j < campoJ.ny; j++) for (let i = 0; i < campoJ.nx; i++) {
     const id = campoJ.idx(i, j, k);
-    if (!campoJ.cavity[id] || n1J.frente[id] < 0) continue;
+    if (!campoJ.cavity[id] || fanJ.frente[id] < 0) continue;
     const X = campoJ.x0 + (i + 0.5), Y = campoJ.y0 + (j + 0.5), Z = campoJ.z0 + (k + 0.5);
-    if (dentroPiezaB(X, Y, Z)) { voxPza++; if (n1J.frente[id] < minFrentePza) minFrentePza = n1J.frente[id]; }
-    else { voxCol++; frentesCol.push(n1J.frente[id]); }
+    if (dentroPiezaB(X, Y, Z)) { voxPza++; if (fanJ.frente[id] < minFrentePza) minFrentePza = fanJ.frente[id]; }
+    else { voxCol++; frentesCol.push(fanJ.frente[id]); }
   }
   const volVoxCol = voxCol / 1000, volPuroCol = C.volumenColadaCc(dC), volOccCol = occt.volume(oc, solC.fundido) / 1000;
   // ── EL CRUCE CAVIDAD↔LÍQUIDO (ian: "el llenado es sobre la cavidad; el molde genera
@@ -384,8 +389,8 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       }
       return r;
     });
-    const sBin = fl2.frenteSuperficie({ ...metaJ, frente: n1J.frente, t: 1, suavizado: 0 });
-    const sFra = fl2.frenteSuperficie({ ...metaJ, frente: n1J.frente, t: 1, suavizado: 0, ocupacion: ocuJ });
+    const sBin = fl2.frenteSuperficie({ ...metaJ, frente: fanJ.frente, t: 1, suavizado: 0 });
+    const sFra = fl2.frenteSuperficie({ ...metaJ, frente: fanJ.frente, t: 1, suavizado: 0, ocupacion: ocuJ });
     const rB = radios(sBin), rF = radios(sFra);
     const dB = Math.min(rB[0] - rB[1], rB[1] - rB[2]), dF = Math.min(rF[0] - rF[1], rF[1] - rF[2]);
     check('CONICIDAD: el radio decrece estrictamente (Δ ≥ 0.15 mm por tramo de 15 mm; analítico 0.39)',
@@ -427,6 +432,105 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('Fig 4.21: el inserto cabe en el ÁREA UTILIZABLE de la partición',
     bCav.x0 >= 0 && bCav.y0 >= 0 && bCav.x1 <= asm.widthMm && bCav.y1 <= (asm.depthMm ?? asm.widthMm),
     `inserto x ${bCav.x0.toFixed(1)}..${bCav.x1.toFixed(1)} · base 0..${asm.widthMm}`);
+
+  // ══ FAN — EL LLENADO DESDE EL OPERADOR (orden 2026-08-12) ══
+  // El método de PROCESO_CARAS: las SIMETRÍAS del problema dan soluciones cerradas
+  // (caras) que aquí son los ORÁCULOS del solver. Y la lección del ENJAMBRE: la
+  // semilla va solo en la boquilla y el dominio roto DEBE delatar — no se siembra
+  // la respuesta.
+  console.log('── FAN · Hele-Shaw con las caras como oráculos');
+  const fan = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'fan.ts'));
+  // fábrica de dominios SINTÉTICOS (h analítica, sin EDT): geometría exacta para
+  // que el oráculo mida al SOLVER, no al voxelizador
+  const campoSint = (nx, ny, nz, cellMm, dentro, hMm, gate) => {
+    const N = nx * ny * nz;
+    const cavity = new Uint8Array(N), th = new Float32Array(N);
+    const idx = (i, j, k) => (k * ny + j) * nx + i;
+    let vol = 0;
+    for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++)
+      if (dentro(i, j, k)) { const t = idx(i, j, k); cavity[t] = 1; th[t] = hMm; vol += cellMm ** 3; }
+    return { nx, ny, nz, cellMm, cavity, thicknessMm: th, gate, volumeMm3: vol, idx };
+  };
+
+  // ── CARA-1D (traslación): la tira del bezel — el 83.2 MPa impreso del libro ──
+  // 3D-resuelto: el hueco de 1.5 mm son 2 celdas de 0.75 (el modelo de vóxel exige
+  // resolver el espesor, igual que el dado: pared 2.0 a celda 1.0).
+  const cT = 0.75, HT = 1.5, LT = 200.25, nxT = Math.round(LT / cT), nyT = 8;
+  const tira = campoSint(nxT, nyT, 2, cT, () => true, HT, { i: 0, j: 4, k: 0 });
+  const QT = 0.82 * 1000 * HT * (nyT * cT);                  // v̄·H·W (mm³/s)
+  const fanT = fan.resolverLlenadoFAN(tira, { material: f.ABS_MG47, vMs: 0.82, wallMm: HT, QmmS: QT });
+  // Δp entre dos FILAS INTERIORES (x=25 y x=175): el tramo de 150 mm sin el efecto
+  // de entrada de la boquilla puntual — la Eq 5.22 pura sobre ese tramo
+  const filaP = (i0) => { let s = 0, n = 0;
+    for (let k = 0; k < 2; k++) for (let j = 0; j < nyT; j++) { const v2 = fanT.pFieldPa[tira.idx(i0, j, k)]; if (v2 > 0) { s += v2; n++; } }
+    return n ? s / n : NaN; };
+  const dpTramo = (filaP(33) - filaP(233)) / 1e6, dpEsp = 83.2 * 150 / 200;
+  check('CARA-1D: el tramo interior de la tira da la Eq 5.22 (±2.5 %)',
+    cerca(dpTramo, dpEsp, dpEsp * 0.025),
+    `Δp(25→175) ${dpTramo.toFixed(1)} vs ${dpEsp.toFixed(1)} MPa (pMax boquilla ${fanT.pMaxMPa} · η_eff ${fanT.etaEffPaS} Pa·s)`);
+  check('AUDITORÍA: conservación Σflujos = Q en TODOS los pasos (≤1e-6)',
+    fanT.conservacionMaxRel <= 1e-6, `max rel ${fanT.conservacionMaxRel.toExponential(1)} en ${fanT.pasos} pasos`);
+  check('la tira LLENA completa (sin tope de máquina)', !fanT.shortShot && !fanT.incompleto && fanT.volSinLlenarMm3 < 1);
+
+  // ── CARA RADIAL (escala): disco con gate central — el caso del dado volteado ──
+  const RD = 40, cD = 1.0, HD = 2.0;
+  const disco = campoSint(81, 81, 2, cD,
+    (i, j) => ((i + 0.5 - 40.5) ** 2 + (j + 0.5 - 40.5) ** 2) <= RD * RD, HD, { i: 40, j: 40, k: 0 });
+  const fanD = fan.resolverLlenadoFAN(disco, { material: f.ABS_MG47, vMs: 0.82, wallMm: HD, fillTimeS: 1 });
+  const anillo = (arr, r0, tol2) => {
+    let s = 0, n = 0;
+    for (let k = 0; k < 2; k++) for (let j = 0; j < 81; j++) for (let i = 0; i < 81; i++) {
+      const r = Math.hypot(i + 0.5 - 40.5, j + 0.5 - 40.5);
+      if (Math.abs(r - r0) <= tol2) { const v2 = arr[disco.idx(i, j, k)]; if (v2 >= 0) { s += v2; n++; } }
+    }
+    return n ? s / n : NaN;
+  };
+  const t15 = anillo(fanD.tArrivalS, 15, 1), t30 = anillo(fanD.tArrivalS, 30, 1);
+  check('CARA RADIAL: t(2r)/t(r) ≈ 4 — el frente crece como r² (±12 %)',
+    cerca(t30 / t15, 4, 0.48), `t(30)/t(15) = ${(t30 / t15).toFixed(2)}`);
+  const p10 = anillo(fanD.pFieldPa, 10, 0.7), p20 = anillo(fanD.pFieldPa, 20, 0.7);
+  const dpAnalitico = (6 * fanD.etaEffPaS * fanD.QmmS / (Math.PI * HD ** 3)) * Math.log(20 / 10);
+  check('CARA RADIAL: Δp entre anillos = (6ηQ/πh³)·ln(r₂/r₁) (±6 %)',
+    cerca(p10 - p20, dpAnalitico, dpAnalitico * 0.06),
+    `medido ${((p10 - p20) / 1e6).toFixed(2)} vs analítico ${(dpAnalitico / 1e6).toFixed(2)} MPa`);
+
+  // ── PIPELINE COMPLETO: measureFlowLength (EDT) + FAN sobre la misma tira ──
+  // Aquí el espesor viene del EDT (no analítico): el check mide el SESGO del
+  // voxelizador+EDT integrado. Tolerancia DECLARADA de lo medido.
+  const campoE = fl.measureFlowLength({
+    x0: -1.4, y0: -1.4, z0: -1.4, x1: 201.4, y1: 13.4, z1: 2.9, cellMm: 0.7,
+    inCavity: (x, y, z) => x >= 0 && x <= 200 && y >= 0 && y <= 12 && z >= 0 && z <= 1.5,
+    gateMm: { x: 0.5, y: 6, z: 0.75 }, wallMm: 1.5, meltN: 0.348,
+  });
+  const fanE = fan.resolverLlenadoFAN(campoE, { material: f.ABS_MG47, vMs: 0.82, wallMm: 1.5, QmmS: 0.82 * 1000 * 1.5 * 12 });
+  // el voxelizado a c=0.7 hace la placa de 2 celdas = 1.4 mm (no 1.5): el FAN debe
+  // reproducir la física de SU geometría (ΔP ∝ 1/h³ a Q fijo) — y el SESGO del
+  // voxelizador queda MEDIDO y a la vista, no escondido en una tolerancia gorda
+  let hSum = 0, nH = 0;
+  for (let t2 = 0; t2 < campoE.cavity.length; t2++) if (campoE.cavity[t2]) { hSum += campoE.thicknessMm[t2]; nH++; }
+  const hVox = hSum / nH;
+  const dpVox = 83.2 * (1.5 / hVox) ** 3;
+  check('PIPELINE EDT+FAN: la tira real reproduce la física de su h voxelizada (±10 %)',
+    cerca(fanE.pMaxMPa, dpVox, dpVox * 0.10),
+    `${fanE.pMaxMPa} MPa vs ${dpVox.toFixed(1)} esperado con h=${hVox.toFixed(2)} (sesgo del voxelizador: 83.2 nominal a h=1.5)`);
+
+  // ── CONTROL NEGATIVO (ENJAMBRE): dominio PARTIDO — la alarma DEBE saltar ──
+  const roto = campoSint(61, 10, 2, 1.0,
+    (i) => i < 25 || i > 35, 2.0, { i: 2, j: 5, k: 0 });        // dos bloques, 10 mm de acero enmedio
+  const fanR = fan.resolverLlenadoFAN(roto, { material: f.ABS_MG47, vMs: 0.82, wallMm: 2, fillTimeS: 1 });
+  const volB = 25 * 10 * 2;                                      // el bloque huérfano (mm³)
+  check('CONTROL NEGATIVO: tubería rota ⇒ `incompleto` y el bloque huérfano NO llega',
+    fanR.incompleto && cerca(fanR.volSinLlenarMm3, volB, volB * 0.05),
+    `sin llenar ${fanR.volSinLlenarMm3} mm³ vs bloque B ${volB}`);
+  const bTocado = (() => { for (let k = 0; k < 2; k++) for (let j = 0; j < 10; j++) for (let i = 36; i < 61; i++)
+    if (fanR.frente[roto.idx(i, j, k)] >= 0) return true; return false; })();
+  check('y su `frente` queda en −1 (nunca se pinta como lleno)', !bTocado);
+
+  // ── SHORT SHOT FÍSICO: máquina de 40 MPa contra una tira de 83 ──
+  const fanS = fan.resolverLlenadoFAN(tira, { material: f.ABS_MG47, vMs: 0.82, wallMm: HT, QmmS: QT, pLimitMPa: 40 });
+  check('SHORT SHOT: con tope de 40 MPa el frente SE PARA a media tira',
+    fanS.shortShot && fanS.volSinLlenarMm3 > 0.3 * tira.volumeMm3 && fanS.pMaxMPa <= 46,
+    `paró en ${fanS.pMaxMPa} MPa con ${(100 * fanS.volSinLlenarMm3 / tira.volumeMm3).toFixed(0)} % sin llenar`);
 
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
