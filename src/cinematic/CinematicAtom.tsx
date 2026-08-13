@@ -108,7 +108,16 @@ function orbGancho(orbs: { l: number; m?: number }[]): number {
 }
 
 function bandaDur(total: number): number {
-  return total <= 3 ? 3.2 : total <= 5 ? 2.6 : total <= 8 ? 2.2 : 1.5;
+  // EL BARRIDO DURA LO MISMO SIEMPRE (~22 s) y los orbitales se REPARTEN ese tiempo. Antes
+  // era un escalón por número de canales y el video salía tan largo como orbitales tuviera
+  // el átomo: el carbono (4 orbitales) duraba 18 s… con una narración de 25.7 s. Un video
+  // que se queda sin cuadros antes que sin voz CONGELA el último frame — habría pasado en 3
+  // de los 4 átomos del lote (medido antes de rendir, 2026-08-12).
+  //
+  // Efecto secundario que conviene: TODA la serie dura ~30 s, que es la duración de reel que
+  // ya funciona, y el ritmo se adapta solo — el carbono se toma 5.2 s por orbital (tiene 4)
+  // y el cobre 1.5 s (tiene 15). El piso de 1.5 conserva EXACTO el cromo ya publicado.
+  return Math.max(1.5, Math.min(5.2, 22 / Math.max(1, total)));
 }
 /** Ventana [t0,t1] en que la subcapa `idx` es la protagonista. */
 function bandaWindow(idx: number, total: number): [number, number] {
