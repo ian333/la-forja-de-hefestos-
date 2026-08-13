@@ -50,16 +50,21 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   console.log('GPU:', gpu);
   if (/SwiftShader|llvmpipe/i.test(gpu)) { console.log('FATAL: GPU de software — el 4K no sale'); process.exit(1); }
 
-  // caminar el ciclo hasta la estación 4
+  // caminar el ciclo hasta la estación 4 — o directo a LA PROBETA (PROBETA=1)
   const clic = async (id) => { await p.waitForSelector(`[data-testid="${id}"]`, { state: 'attached', timeout: 300000 }); await p.$eval(`[data-testid="${id}"]`, (e) => e.click()); };
-  await p.waitForSelector('[data-testid="btn-dado"]:not([disabled])', { timeout: 240000 });
-  await p.click('[data-testid="btn-dado"]');
-  await clic('btn-ciclo-e2');
-  await clic('btn-ciclo-e3');
-  await clic('btn-ciclo-e4');
-  // E5 (cap 6): la colada COMPLETA visible mientras la cavidad se llena — sin ella el
-  // fundido aparecía de la nada. Opcional para no romper la corrida de la E4 sola.
-  if (process.env.E5 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e5'); }
+  if (process.env.PROBETA === '1') {
+    await p.waitForSelector('[data-testid="btn-probeta"]:not([disabled])', { timeout: 240000 });
+    await p.click('[data-testid="btn-probeta"]');
+  } else {
+    await p.waitForSelector('[data-testid="btn-dado"]:not([disabled])', { timeout: 240000 });
+    await p.click('[data-testid="btn-dado"]');
+    await clic('btn-ciclo-e2');
+    await clic('btn-ciclo-e3');
+    await clic('btn-ciclo-e4');
+    // E5 (cap 6): la colada COMPLETA visible mientras la cavidad se llena — sin ella el
+    // fundido aparecía de la nada. Opcional para no romper la corrida de la E4 sola.
+    if (process.env.E5 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e5'); }
+  }
   await p.waitForFunction(() => !!(window.__forgeBrep && window.__forgeBrep.llenadoStats && window.__forgeBrep.llenadoStats()), null, { timeout: 300000 });
   await p.waitForTimeout(2500);
   // ── ENCUADRE (FILOSOFIA-CINE: ocupar la pantalla). Con la pieza COLOCADA dentro de la
@@ -69,7 +74,9 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   // cae al bbox del MOLDE visible. ORBIT="az,el,r" (grados, grados, mm).
   // target EXPLÍCITO en CAD: el centro de la pieza colocada (98, 98, ~127) — el bbox
   // global arrastraba la mira y la pieza salía cortada en la esquina (visto en el still).
-  const orb = (process.env.ORBIT || '38,20,200,98,98,127').split(',').map(Number);
+  // PROBETA: placa 60×20×2 en el origen — cámara CERCA (se tiene que VER mojar la pared)
+  const orbDef = process.env.PROBETA === '1' ? '35,28,95,30,10,1' : '38,20,200,98,98,127';
+  const orb = (process.env.ORBIT || orbDef).split(',').map(Number);
   await p.evaluate(([az, el, r, tx, ty, tz]) => window.__forgeBrep.orbitTo(az, el, r, tx, ty, tz), orb);
   await p.waitForTimeout(1400);                        // el vuelo dura ~850 ms + margen
 

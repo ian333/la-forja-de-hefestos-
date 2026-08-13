@@ -425,6 +425,56 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       ]);
     } catch (e) { console.warn('DADO_ERR', e); }
   }, [oc, cursoSet, cursoPart, setDocName, setCollapsed]);
+  // ── LA PROBETA (orden la-probeta): la placa mínima — el microscopio del solver ──
+  // ian bajó la escalera: "simplificar el problema e irlo haciendo más grande". Una
+  // placa 60×20×2 con gate en un extremo, por el MISMO enchufe de la E5 (frenteGrid →
+  // FrenteSuperficie continuo). Cero pantalla nueva: un curso más del mismo estudio.
+  const loadProbeta = useCallback(() => {
+    if (!oc) return;
+    try {
+      const e1 = estacion1Dado();
+      const dentroP = (x: number, y: number, z: number) => x >= 0 && x <= 60 && y >= 0 && y <= 20 && z >= 0 && z <= 2;
+      const campo = measureFlowLength({
+        x0: -1.4, y0: -1.4, z0: -1.4, x1: 61.4, y1: 21.4, z1: 3.4, cellMm: 0.7,
+        inCavity: dentroP, gateMm: { x: 0.5, y: 10, z: 1 }, wallMm: 2, meltN: 0.348,
+      });
+      const cw = convergeVelocityCross(ABS_CROSS, 0.19, 60, 0.002);
+      const fanP = resolverLlenadoFAN(campo, { material: ABS_MG47, vMs: cw.vMs, wallMm: 2, fillTimeS: 1, pLimitMPa: 140 });
+      const Np = campo.nx * campo.ny * campo.nz;
+      const ocu = new Float32Array(Np);
+      const q4 = campo.cellMm * 0.25;
+      const nCav = campo.cavity.reduce((a: number, b: number) => a + b, 0);
+      const posP = new Float32Array(nCav * 3); const fvP = new Float32Array(nCav);
+      const esP = new Uint8Array(nCav).fill(1);
+      let q = 0;
+      for (let k = 0; k < campo.nz; k++) for (let j = 0; j < campo.ny; j++) for (let i = 0; i < campo.nx; i++) {
+        const id = campo.idx(i, j, k);
+        if (!campo.cavity[id]) continue;
+        const X = campo.x0 + (i + 0.5) * campo.cellMm, Y = campo.y0 + (j + 0.5) * campo.cellMm, Z = campo.z0 + (k + 0.5) * campo.cellMm;
+        let hits = dentroP(X, Y, Z) ? 1 : 0;
+        for (let a = -1; a <= 1; a += 2) for (let b = -1; b <= 1; b += 2) for (let d2 = -1; d2 <= 1; d2 += 2)
+          if (dentroP(X + a * q4, Y + b * q4, Z + d2 * q4)) hits++;
+        ocu[id] = hits / 9;
+        posP[q * 3] = X; posP[q * 3 + 1] = Y; posP[q * 3 + 2] = Z;
+        fvP[q] = fanP.frente[id]; q++;
+      }
+      const fqP = Float32Array.from([...fvP].filter((x) => x >= 0)).sort();
+      setTFill(1); tFillRef.current = 1;
+      const placa = OCC.makeBox(oc, 60, 20, 2);          // el fantasma de la cavidad
+      setCiclo({
+        estacion: 1, e1,
+        frenteGrid: fanP.frente, grid: { nx: campo.nx, ny: campo.ny, nz: campo.nz, cellMm: campo.cellMm, x0: campo.x0, y0: campo.y0, z0: campo.z0 },
+        frenteVert: fvP, frenteQ: fqP, voxPos: posP, cellMm: campo.cellMm, esPieza: esP, ocupacion: ocu,
+        e5fan: { pMaxMPa: fanP.pMaxMPa, tFillS: fanP.tFillS, shortShot: fanP.shortShot, incompleto: fanP.incompleto, conservacionMaxRel: fanP.conservacionMaxRel, etaEffPaS: fanP.etaEffPaS, QmmS: fanP.QmmS, nNodos: fanP.nNodos },
+      });
+      setDocName('LA PROBETA · placa 60×20×2 — el microscopio del llenado');
+      setCollapsed((c) => ({ ...c, features: false }));
+      cursoSet(1, [
+        'LA PROBETA — el líquido MOJA la pared (frente continuo)',
+        `FAN: p_max ${fanP.pMaxMPa} MPa · t_fill ${fanP.tFillS} s · conservación ${fanP.conservacionMaxRel.toExponential(1)} · ${fanP.nNodos} nodos`,
+      ], [cursoPart(placa, 'probeta', 'PROBETA 60×20×2 — la cavidad de vidrio', '#9fb8d8', 0.10, 0.2)]);
+    } catch (e) { console.warn('PROBETA_ERR', e); }
+  }, [oc, cursoSet, cursoPart, setDocName, setCollapsed]);
   // ── ESTACIÓN 2: ECONOMÍA (cap 3) — las FAMILIAS candidatas en 3D ──
   // "debemos ser espléndidos… todo debe de explicarse" (ian): el ganador ×1 en
   // DORADO y los perdedores ×2/×4 como fantasmas — NO se borran, se ve qué NO
@@ -1023,5 +1073,5 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // props de los paneles — con moldParts (Float32Arrays de millones) eso es el
   // main thread muerto. Cazado con Debugger.pause el 2026-07-27.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => ({ moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
+  return useMemo(() => ({ moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
 }

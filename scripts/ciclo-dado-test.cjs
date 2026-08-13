@@ -532,6 +532,85 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     fanS.shortShot && fanS.volSinLlenarMm3 > 0.3 * tira.volumeMm3 && fanS.pMaxMPa <= 46,
     `paró en ${fanS.pMaxMPa} MPa con ${(100 * fanS.volSinLlenarMm3 / tira.volumeMm3).toFixed(0)} % sin llenar`);
 
+  // ══ LA PROBETA — el líquido MOJA la pared (orden 2026-08-12-la-probeta) ══
+  // ian: "el líquido no llega a las paredes, no funciona como líquido". Medido: a
+  // t=1 el hueco era ±0.23 mm (bien) pero el FRENTE EN AVANCE llevaba un anillo
+  // fantasma (celdas a medio llenar invisibles). El fix: frente CONTINUO — la celda
+  // frontera pesa por su fracción estimada. Aquí se EXIGE en la probeta real (EDT).
+  console.log('── LA PROBETA · el frente continuo MOJA la pared (y avanza monótono)');
+  const probC = fl.measureFlowLength({
+    x0: -1.4, y0: -1.4, z0: -1.4, x1: 61.4, y1: 21.4, z1: 3.4, cellMm: 0.7,
+    inCavity: (x, y, z) => x >= 0 && x <= 60 && y >= 0 && y <= 20 && z >= 0 && z <= 2,
+    gateMm: { x: 0.5, y: 10, z: 1 }, wallMm: 2, meltN: 0.348,
+  });
+  const fanP = fan.resolverLlenadoFAN(probC, { material: f.ABS_MG47, vMs: 0.82, wallMm: 2, fillTimeS: 1 });
+  const metaP = { nx: probC.nx, ny: probC.ny, nz: probC.nz, cellMm: probC.cellMm, x0: probC.x0, y0: probC.y0, z0: probC.z0 };
+  // MOJADO: en 3 instantes, el borde +Y del melt debe quedar a ≤0.6 mm de la pared
+  // ANALÍTICA (y=20) en la zona YA alcanzada por el frente
+  let mojadoPeor = 0, volPrev = -1, monot = true;
+  for (const T of [0.4, 0.7, 1.0]) {
+    const s = fl.frenteSuperficie({ ...metaP, frente: fanP.frente, t: T, suavizado: 0, continuo: true });
+    if (s.volumeMm3 <= volPrev) monot = false;
+    volPrev = s.volumeMm3;
+    // x alcanzada por el frente a este t (borde de avance), con margen de 3 mm
+    let xFrente = 0;
+    for (let v = 0; v < s.positions.length; v += 3) if (s.positions[v] > xFrente) xFrente = s.positions[v];
+    // muestrear el borde +Y en 4 cortes x DETRÁS del frente
+    for (const X of [5, 10, 20, 30]) {
+      if (X > xFrente - 3) continue;
+      let yMelt = -1e9;
+      for (let v = 0; v < s.positions.length; v += 3) {
+        if (Math.abs(s.positions[v] - X) > 0.8 || s.positions[v + 2] < 0.4 || s.positions[v + 2] > 1.6) continue;
+        if (s.positions[v + 1] > yMelt) yMelt = s.positions[v + 1];
+      }
+      const hueco = 20 - yMelt;
+      if (hueco > mojadoPeor) mojadoPeor = hueco;
+    }
+  }
+  check('MOJADO: el melt queda a ≤0.6 mm de la pared analítica en t∈{0.4,0.7,1.0}',
+    mojadoPeor <= 0.6 && mojadoPeor > -0.6, `peor hueco ${mojadoPeor.toFixed(2)} mm`);
+  check('MONOTONÍA: el volumen mojado del frente continuo solo CRECE con t', monot,
+    `vol final ${volPrev.toFixed(0)} mm³`);
+  // el frente continuo debe seguir cerrando volumen razonable a t=1 (vs vóxeles)
+  const volVoxP = probC.volumeMm3;
+  check('el frente continuo a t=1 cierra el volumen de la probeta (±10 %)',
+    Math.abs(volPrev - volVoxP) / volVoxP < 0.10, `${volPrev.toFixed(0)} vs ${volVoxP.toFixed(0)} mm³`);
+
+  // ── LAS TORRES, con su CONTROL: el candado de columna es quien las mata ──
+  console.log('── TORRES · el candado de columna (medido en el dado real)');
+  const torres = (fr, tArr) => {
+    const F2 = 150, Nc = campoJ.nx * campoJ.ny * campoJ.nz;
+    const frameOf = new Int32Array(Nc).fill(-1);
+    for (let t2 = 0; t2 < Nc; t2++) if (campoJ.cavity[t2] && fr[t2] >= 0) frameOf[t2] = Math.min(F2 - 1, Math.floor(fr[t2] * F2));
+    const NB6b = [1, -1, campoJ.nx, -campoJ.nx, campoJ.nx * campoJ.ny, -campoJ.nx * campoJ.ny];
+    const vis = new Uint8Array(Nc);
+    let eventos = 0;
+    for (let k2 = 0; k2 < F2; k2++) {
+      for (let t2 = 0; t2 < Nc; t2++) {
+        if (frameOf[t2] !== k2 || vis[t2]) continue;
+        const stack = [t2]; vis[t2] = 1;
+        let n2 = 0, mnz = 1e9, mxz = -1e9, mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
+        while (stack.length) {
+          const u = stack.pop(); n2++;
+          const zC = Math.floor(u / (campoJ.nx * campoJ.ny)), yC = Math.floor(u / campoJ.nx) % campoJ.ny, xC = u % campoJ.nx;
+          if (zC < mnz) mnz = zC; if (zC > mxz) mxz = zC;
+          if (xC < mnx) mnx = xC; if (xC > mxx) mxx = xC;
+          if (yC < mny) mny = yC; if (yC > mxy) mxy = yC;
+          for (const d of NB6b) { const v = u + d; if (v >= 0 && v < Nc && !vis[v] && frameOf[v] === k2) { vis[v] = 1; stack.push(v); } }
+        }
+        const dz = (mxz - mnz) * campoJ.cellMm, dxy = Math.max(mxx - mnx, mxy - mny) * campoJ.cellMm;
+        if (n2 >= 20 && dz >= 10 && dz >= 2 * dxy) eventos++;
+      }
+    }
+    return eventos;
+  };
+  check('el dado real llena SIN torres (candado de columna puesto)', torres(fanJ.frente) === 0,
+    `${torres(fanJ.frente)} eventos (cluster ≥20 celdas, Δz≥10mm, ≥2×Δxy por ventana 1/150)`);
+  const fanSinCandado = fanCjs.resolverLlenadoFAN(campoJ, { material: f.ABS_MG47, vMs: lz.vMs, wallMm: 2, fillTimeS: 1, pLimitMPa: 140, candadoColumna: false, maxLlenadosPorSolve: 999999 });
+  const evSin = torres(fanSinCandado.frente);
+  check('CONTROL NEGATIVO: sin el candado, las torres REAPARECEN', evSin > 0,
+    `${evSin} eventos con candadoColumna:false (los 16 que ian vio en el video)`);
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

@@ -483,6 +483,13 @@ export function frenteSuperficie(o: {
    *  retícula. Con la fracción (supermuestreada del predicado ANALÍTICO), el cruce 0.5
    *  interpola el radio REAL y el cono sale continuo con la misma celda. */
   ocupacion?: Float32Array;
+  /** FRENTE CONTINUO (orden la-probeta): la celda que AÚN no llega pesa por su
+   *  fracción de llenado estimada en t — arranca cuando su primer vecino llega
+   *  (mín de `frente` de los 6 vecinos) y termina en su propia llegada. Fiel al
+   *  modelo FAN (la frontera recibe flujo de los vecinos llegados). Sin esto, el
+   *  borde de avance lleva un anillo fantasma de ~1 celda ("el líquido no llega a
+   *  las paredes, no funciona como líquido" — ian, viendo el video). */
+  continuo?: boolean;
 }): SuperficieFrente {
   const { nx, ny, nz, cellMm, x0, y0, z0, frente, t } = o;
   const ISO = 0.5;
@@ -509,10 +516,40 @@ export function frenteSuperficie(o: {
     if (a < 0 || b < 0 || c2 < 0 || a >= nx || b >= ny || c2 >= nz) return 0;
     return o.ocupacion[(c2 * ny + b) * nx + a];
   };
+  // el INICIO de cada celda: el instante en que su primer vecino llegó (solo para
+  // el modo continuo) — de ahí a su propia llegada, la fracción crece lineal
+  let inicio: Float32Array | null = null;
+  if (o.continuo) {
+    inicio = new Float32Array(nx * ny * nz).fill(-1);
+    const NB6 = [1, -1, nx, -nx, nx * ny, -nx * ny];
+    for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const id = (k * ny + j) * nx + i;
+      if (frente[id] < 0) continue;
+      let mn = Infinity;
+      for (const d of NB6) {
+        if (d === 1 && i === nx - 1) continue;
+        if (d === -1 && i === 0) continue;
+        if (d === nx && j === ny - 1) continue;
+        if (d === -nx && j === 0) continue;
+        if (d === nx * ny && k === nz - 1) continue;
+        if (d === -nx * ny && k === 0) continue;
+        const v = frente[id + d];
+        if (v >= 0 && v < frente[id] && v < mn) mn = v;
+      }
+      if (Number.isFinite(mn)) inicio[id] = mn;
+    }
+  }
   let f = new Float32Array(N);
   for (let k = 0; k < pz; k++) for (let j = 0; j < py; j++) for (let i = 0; i < px; i++) {
     const v = fre(i, j, k);
-    f[idx(i, j, k)] = (v >= 0 && v <= t) ? occ(i, j, k) : 0;
+    if (v >= 0 && v <= t) { f[idx(i, j, k)] = occ(i, j, k); continue; }
+    if (inicio && v > t) {
+      const a = i - PAD, b = j - PAD, c2 = k - PAD;
+      const ini = inicio[(c2 * ny + b) * nx + a];
+      if (ini >= 0 && ini <= t && v > ini) {
+        f[idx(i, j, k)] = occ(i, j, k) * ((t - ini) / (v - ini));
+      }
+    }
   }
 
   // ── 2. suavizado de caja (redondea el escalón de vóxel, conserva el nivel 0.5)

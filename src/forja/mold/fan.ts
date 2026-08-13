@@ -103,6 +103,13 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   pLimitMPa?: number;
   /** pasos de volumen (resolución temporal del reloj) */
   nPasos?: number;
+  /** tope de nodos completados por solve de presión (seguro anti-lotes); def. 64.
+   *  MEDIDO: el asesino real de las torres es el candado de columna; este tope solo
+   *  es seguro contra lotes patológicos (a 12 el dado tardaba 26 s; a 64, nada). */
+  maxLlenadosPorSolve?: number;
+  /** SOLO PARA EL CONTROL NEGATIVO del gate: apagar el candado de columna
+   *  (reproduce las torres medidas). Jamás en producción. */
+  candadoColumna?: boolean;
   /** ocupación fraccional por vóxel (verdad sub-vóxel) — pesa la CAPACIDAD */
   ocupacion?: Float32Array;
 }): LlenadoFAN {
@@ -144,6 +151,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     tAxis[t] = rx <= ry && rx <= rz ? 0 : ry <= rz ? 1 : 2;
   }
   const uf = new Int32Array(N);
+  const ufN = new Int32Array(N).fill(1);          // tamaño del grupo (candado físico)
   for (let t = 0; t < N; t++) uf[t] = t;
   const find = (a: number): number => { let r = a; while (uf[r] !== r) r = uf[r]; while (uf[a] !== r) { const n2 = uf[a]; uf[a] = r; a = n2; } return r; };
   const stepOf = [1, nx, nx * ny];
@@ -156,7 +164,19 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     const ax = tAxis[t];
     if (canStep(t, ax, +1)) {
       const u = t + stepOf[ax];
-      if (cavity[u] && tAxis[u] === ax) { const ra = find(t), rb = find(u); if (ra !== rb) uf[rb] = ra; }
+      if (cavity[u] && tAxis[u] === ax) {
+        const ra = find(t), rb = find(u);
+        if (ra !== rb) {
+          // CANDADO FÍSICO (orden la-probeta): la columna representa el HUECO local —
+          // no puede medir más celdas que el espesor que colapsa (h/c, +1 de gracia).
+          // Sin él, en esquinas/escalones del draft se formaban columnas de 3+ celdas
+          // de alto que llegaban "de golpe" — las TORRES que ian vio en el video.
+          const capCol = (o.candadoColumna ?? true)
+            ? Math.max(2, Math.round(Math.max(thicknessMm[t], thicknessMm[u]) / c) + 1)
+            : 1e9;
+          if (ufN[ra] + ufN[rb] <= capCol) { uf[rb] = ra; ufN[ra] += ufN[rb]; }
+        }
+      }
     }
   }
   // (c) super-nodos: capacidad Σ, y adyacencia CSR con conductancia SUMADA cara a
@@ -221,7 +241,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   let pMax = 0, conservMax = 0, shortShot = false, pasos = 0;
   const serie: Array<{ tS: number; pMPa: number; volPct: number }> = [];
   const dVpaso = volTotal / nPasos;
-  const maxOuter = nPasos * 4 + 60;
+  const maxOuter = nPasos * 4 + Math.ceil(M / 4) + 60;   // el tope anti-torres pide más solves
   const pos = new Int32Array(M);
 
   for (let outer = 0; outer < maxOuter && volLleno < volTotal - 1e-9; outer++) {
@@ -314,6 +334,8 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     // reproduce t(r) = πr²h/Q analítico). Los flujos deciden el ORDEN; la
     // conservación decide el TIEMPO.
     let dvRem = dVpaso;
+    let llenadosSolve = 0;                        // CANDADO TEMPORAL (orden la-probeta)
+    const tope = o.maxLlenadosPorSolve ?? 64;
     for (let inner = 0; inner < front.length + 4 && dvRem > 1e-12; inner++) {
       let sumFa = 0;
       for (let q = 0; q < front.length; q++) if (fill[front[q]] < 1 && F[q] > 0) sumFa += F[q];
@@ -335,6 +357,10 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       tNow = volLleno / Q;
       for (const j of nuevos) arrivalN[j] = tNow;
       dvRem -= sumFa * dt;
+      llenadosSolve += nuevos.length;
+      // demasiados nodos completados con flujos CONGELADOS = llegadas empaquetadas
+      // (torres). Se corta y se re-resuelve la presión con la frontera fresca.
+      if (llenadosSolve >= tope) break;
     }
   }
 

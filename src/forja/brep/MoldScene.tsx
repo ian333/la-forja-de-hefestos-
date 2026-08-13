@@ -701,7 +701,9 @@ export function FrenteSuperficie({ frente, grid, t, ocupacion }: {
     // suavizado 0: lo que se DIBUJA es lo que el gate MIDE. Con una pasada de caja
     // la superficie redondea las esquinas y el volumen cae ~3 % — bonito, pero ya no
     // es el volumen de los vóxeles, y el gate de ±2 % existe justo para eso.
-    const s = frenteSuperficie({ ...grid, frente, t, suavizado: 0, ocupacion });
+    // continuo: la celda frontera pesa por su fracción de llenado — el frente PLANEA
+    // y MOJA la pared que viene, en vez del anillo fantasma (orden la-probeta)
+    const s = frenteSuperficie({ ...grid, frente, t, suavizado: 0, ocupacion, continuo: true });
     if (!s.tris) return null;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(s.positions, 3));
