@@ -5887,6 +5887,17 @@ export default function ForgeBRepStudio() {
         return { pair: `${a} ↔ ${b}`, volMm3: c.volMm3, penMm: c.penMm, nPoints: (c.cloud || []).length / 3 };
       },
       orbitTo: (az: number, el: number, r: number, tx?: number, ty?: number, tz?: number) => orbitTo(az, el, r, tx, ty, tz),
+      // VISTA DE MOLDE para el arnés de video (orden el-dado-con-su-molde): expone
+      // los setters EXISTENTES — opacidades por rol + rayos-X. La vista "molde de
+      // vidrio" de las referencias (Futaba). ian: "no he visto el molde".
+      // Cero lógica nueva: solo la manija. (El corte en-escena de partes NO existe
+      // — MoldSectionReveal es una experiencia aparte; deuda declarada si el vidrio
+      // no basta.)
+      moldVista: (opac?: Record<string, number>, xray?: boolean) => {
+        if (opac) setMoldOpacity(opac);
+        if (xray !== undefined) setMoldXray(xray);
+        return { roles: moldParts.map((pt) => pt.role) };
+      },
     };
     (window as unknown as { __forgeBrep?: typeof api }).__forgeBrep = api;
     // EL BUS DE COMANDOS: `window.__forja.run('dominio.verbo', {…})` — mismo idioma

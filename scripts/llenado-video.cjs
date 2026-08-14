@@ -72,6 +72,16 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   }
   await p.waitForFunction(() => !!(window.__forgeBrep && window.__forgeBrep.llenadoStats && window.__forgeBrep.llenadoStats()), null, { timeout: 300000 });
   await p.waitForTimeout(2500);
+  // MOLDE=1 (orden el-dado-con-su-molde): la vista "molde de vidrio" de las
+  // referencias — el acero PRESENTE (no fantasma) y el líquido visible adentro.
+  if (process.env.MOLDE === '1') {
+    const vista = await p.evaluate(() => window.__forgeBrep.moldVista({
+      cavidad: 0.34, nucleo: 0.34, particion: 0.10,
+      'placa-a-ghost': 0.26, 'placa-b-ghost': 0.26, colada: 0.22,
+    }, false));
+    console.log('moldVista roles:', (vista && vista.roles || []).join(','));
+    await p.waitForTimeout(600);
+  }
   // ── ENCUADRE (FILOSOFIA-CINE: ocupar la pantalla). Con la pieza COLOCADA dentro de la
   // base 196×196×248 la cámara inicial —que nace mirando al ORIGEN y nunca recibe una
   // vista— dejaba el molde arrinconado y la pieza CHICA: el juez de píxeles REPROBÓ
