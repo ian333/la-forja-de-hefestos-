@@ -2019,6 +2019,13 @@ export interface CampoEspiral {
   vFrenteMs: number;
   wMm: number; hMm: number;
   dentro(x: number, y: number, z: number): boolean;
+  /** la MISMA fórmula que talla el acero (espiralAcero): una sola fuente de forma */
+  geo: { cx: number; cy: number; r0: number; b: number; thMax: number; halfMm: number };
+  /** OCUPACIÓN POR DISTANCIA FIRMADA analítica (enmienda cola-de-puerco-de-acero:
+   *  "se ve pixelado" — ian). occ = clamp(0.5 − sdf/c): el cruce iso-0.5 de la
+   *  superficie aterriza en la pared EXACTA de la fórmula, a cualquier retícula.
+   *  La pared sale de la FÓRMULA, no de la retícula — el programa de precisión. */
+  ocupacionSdf: Float32Array;
 }
 
 export function campoEspiral(o: { TmeltC: number; LtotalMm?: number; pLimitMPa?: number }): CampoEspiral {
@@ -2050,15 +2057,32 @@ export function campoEspiral(o: { TmeltC: number; LtotalMm?: number; pLimitMPa?:
   };
   const dentro = (x: number, y: number, z: number) =>
     z >= 0 && z <= h && arcoDe(x, y) >= 0;
+  // distancia FIRMADA al canal (negativa adentro): en el plano, a la curva
+  // espiral más cercana (|r − r_k| − w/2 sobre las vueltas candidatas); en z, a
+  // las caras 0 y h. Sección caja ⇒ sdf = max(d_xy, d_z).
+  const sdfCanal = (x: number, y: number, z: number): number => {
+    const r = Math.hypot(x - cx, y - cy);
+    let phi = Math.atan2(y - cy, x - cx);
+    if (phi < 0) phi += 2 * Math.PI;
+    let dXY = Infinity;
+    for (let kk = -1; kk <= Math.ceil(thMax / (2 * Math.PI)); kk++) {
+      const th = Math.min(thMax, Math.max(0, phi + 2 * Math.PI * kk));
+      const d = Math.abs(r - (r0 + b * th)) - w / 2;
+      if (d < dXY) dXY = d;
+    }
+    return Math.max(dXY, -z, z - h);
+  };
   const cavity = new Uint8Array(N);
   const thicknessMm = new Float32Array(N);
   const sMm = new Float32Array(N).fill(-1);
+  const ocupacionSdf = new Float32Array(N);
   let vox = 0;
   for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-    const X = (i + 0.5) * c, Y = (j + 0.5) * c;
+    const X = (i + 0.5) * c, Y = (j + 0.5) * c, Z = (k + 0.5) * c;
+    const t = idx(i, j, k);
+    ocupacionSdf[t] = Math.max(0, Math.min(1, 0.5 - sdfCanal(X, Y, Z) / c));
     const s = arcoDe(X, Y);
     if (s < 0) continue;
-    const t = idx(i, j, k);
     cavity[t] = 1; thicknessMm[t] = h; sMm[t] = s; vox++;
   }
   // la boquilla: la celda de cavidad más cercana al ARRANQUE (θ=0 ⇒ x=cx+r₀)
@@ -2082,6 +2106,8 @@ export function campoEspiral(o: { TmeltC: number; LtotalMm?: number; pLimitMPa?:
     QmmS, pLimitMPa: o.pLimitMPa ?? 69,
     vFrenteMs: QmmS / (w * h) / 1000,
     wMm: w, hMm: h, dentro,
+    geo: { cx, cy, r0, b, thMax, halfMm: half },
+    ocupacionSdf,
   };
 }
 
@@ -2091,4 +2117,60 @@ export function longitudEspiralMm(e: CampoEspiral, frente: Float32Array): number
   for (let t = 0; t < frente.length; t++)
     if (frente[t] >= 0 && e.sMm[t] > L) L = e.sMm[t];
   return +L.toFixed(1);
+}
+
+/**
+ * EL ACERO DE LA ESPIRAL (orden 2026-08-13-cola-de-puerco-de-acero).
+ * ian: "un líquido adquiere la forma del RECIPIENTE — aquí es una mágica cola de
+ * puerco". El dominio declarado sin acero es un operador inventado: NINGÚN gate del
+ * solver caza un dominio equivocado. REGLA: ningún llenado sin acero.
+ *
+ * Todo es REUSO del dado: el canal por el patrón de `dadoRectoShape` (occLoft de
+ * dos secciones, polígono espiral ida-por-fuera / vuelta-por-dentro) y la placa por
+ * `occCut` (el mismo boolean de dadoUndercutShape). La MISMA fórmula r(θ)=r₀+bθ
+ * (via `esp.geo`) talla el acero Y voxeliza el campo — una sola fuente de forma,
+ * y el CRUCE de volúmenes ata las dos representaciones por número.
+ */
+export function espiralAcero(oc: any, e: CampoEspiral): {
+  canal: any; placa: any; tapa: any;
+  vols: { canalMm3: number; huecoMm3: number; analiticoMm3: number; placaMm3: number };
+} {
+  const { cx, cy, r0, b, thMax, halfMm } = e.geo;
+  const w = e.wMm, h = e.hMm;
+  const dTh = (6 * Math.PI) / 180;                 // Δθ=6°: sagita ≈ Δθ²/8·r ≪ 0.1 mm
+  const pts: Array<{ x: number; y: number }> = [];
+  const n = Math.ceil(thMax / dTh);
+  for (let q = 0; q <= n; q++) {                   // ida por el borde EXTERIOR
+    const th = Math.min(thMax, q * dTh);
+    const r = r0 + b * th + w / 2;
+    pts.push({ x: cx + r * Math.cos(th), y: cy + r * Math.sin(th) });
+  }
+  for (let q = n; q >= 0; q--) {                   // vuelta por el INTERIOR
+    const th = Math.min(thMax, q * dTh);
+    const r = r0 + b * th - w / 2;
+    pts.push({ x: cx + r * Math.cos(th), y: cy + r * Math.sin(th) });
+  }
+  const pl = (z: number) => ({ origin: [0, 0, z] as [number, number, number], uDir: [1, 0, 0] as [number, number, number], vDir: [0, 1, 0] as [number, number, number] });
+  const canal = occLoft(oc, [
+    { pts, plane: pl(0) },
+    { pts, plane: pl(h) },
+  ], { solid: true, ruled: true });
+  // la PLACA: caja de 2·half × 2·half, fondo 12, el canal HUNDIDO en la cara
+  // superior y ABIERTO en la partición z=h (lo cierra la tapa plana)
+  const lado = 2 * halfMm, fondo = 12;
+  const caja = occTransform(oc, occMakeBox(oc, lado, lado, fondo + h), { translate: [0, 0, -fondo] });
+  const placa = occCut(oc, caja, canal);
+  const tapa = occTransform(oc, occMakeBox(oc, lado, lado, 8), { translate: [0, 0, h] });
+  const canalMm3 = occVolume(oc, canal);
+  const placaMm3 = occVolume(oc, placa);
+  const huecoMm3 = lado * lado * (fondo + h) - placaMm3;   // lo que el acero CONTABILIZA
+  return {
+    canal, placa, tapa,
+    vols: {
+      canalMm3: +canalMm3.toFixed(1),
+      huecoMm3: +huecoMm3.toFixed(1),
+      analiticoMm3: +(e.LtotalMm * w * h).toFixed(1),
+      placaMm3: +placaMm3.toFixed(1),
+    },
+  };
 }

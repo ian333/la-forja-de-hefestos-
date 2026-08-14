@@ -543,6 +543,12 @@ export function frenteSuperficie(o: {
   for (let k = 0; k < pz; k++) for (let j = 0; j < py; j++) for (let i = 0; i < px; i++) {
     const v = fre(i, j, k);
     if (v >= 0 && v <= t) { f[idx(i, j, k)] = occ(i, j, k); continue; }
+    // celda de ACERO (v<0) con ocupación fraccional (rampa SDF): lleva su valor
+    // (<0.5, sigue siendo no-fundido) para que el cruce iso-0.5 aterrice en la
+    // pared EXACTA — sin esto el cruce se corre hacia adentro y la pared sale
+    // dentada (enmienda cola-de-puerco-de-acero: "se ve pixelado" — ian).
+    // SOLO acero: la celda de cavidad aún no alcanzada usa la rampa del frente.
+    if (v < 0 && o.ocupacion) { f[idx(i, j, k)] = Math.min(occ(i, j, k), 0.4999); continue; }
     if (inicio && v > t) {
       const a = i - PAD, b = j - PAD, c2 = k - PAD;
       const ini = inicio[(c2 * ny + b) * nx + a];

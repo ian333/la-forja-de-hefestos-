@@ -81,7 +81,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   // global arrastraba la mira y la pieza salía cortada en la esquina (visto en el still).
   // PROBETA: placa 60×20×2 en el origen — cámara CERCA (se tiene que VER mojar la pared)
   const orbDef = process.env.PROBETA === '1' ? '35,28,95,30,10,1'
-    : process.env.ESPIRAL === '1' ? '20,62,300,94,94,2'
+    : process.env.ESPIRAL === '1' ? '24,44,330,85,85,0'
     : '38,20,200,98,98,127';
   const orb = (process.env.ORBIT || orbDef).split(',').map(Number);
   await p.evaluate(([az, el, r, tx, ty, tz]) => window.__forgeBrep.orbitTo(az, el, r, tx, ty, tz), orb);

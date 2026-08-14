@@ -662,6 +662,23 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('CONTROL: a 6.9 MPa (sin la ×10 declarada) la espiral queda ~10× corta',
       L69 < 100 && r69.shortShot, `${L69} mm — la trampa hidráulica-vs-plástico, medida`);
   }
+  // ══ EL ACERO DE LA ESPIRAL (orden cola-de-puerco-de-acero) ══
+  // ian: "un líquido adquiere la forma del RECIPIENTE — aquí es una mágica cola de
+  // puerco… si damos por bueno esto habrá errores más difíciles de detectar". El
+  // error que nombró: el dominio DECLARADO no lo verifica ningún gate del solver.
+  // REGLA: ningún llenado sin acero — el dominio se ata al sólido por NÚMERO.
+  console.log('── EL ACERO DE LA ESPIRAL · el dominio atado al sólido (regla: sin acero no hay llenado)');
+  {
+    const espA = Lsim[238].esp;
+    const ac = ed.espiralAcero(oc, espA);
+    const dif = (a2, b2) => Math.abs(a2 - b2) / b2;
+    check('3 FUENTES: canal OCC ≈ analítico L·w·h ≈ vóxeles del campo (±3 %)',
+      dif(ac.vols.canalMm3, ac.vols.analiticoMm3) < 0.03 && dif(espA.campo.volumeMm3, ac.vols.analiticoMm3) < 0.03,
+      `canal ${(ac.vols.canalMm3 / 1000).toFixed(2)} · analítico ${(ac.vols.analiticoMm3 / 1000).toFixed(2)} · vóxeles ${(espA.campo.volumeMm3 / 1000).toFixed(2)} cc`);
+    check('CAVIDAD↔ACERO: el hueco TALLADO en la placa ≈ el dominio del campo (±3 %)',
+      dif(espA.campo.volumeMm3, ac.vols.huecoMm3) < 0.03,
+      `hueco del acero ${(ac.vols.huecoMm3 / 1000).toFixed(2)} cc vs campo ${(espA.campo.volumeMm3 / 1000).toFixed(2)} cc — el recipiente CONTABILIZA al líquido`);
+  }
 
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);

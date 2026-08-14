@@ -32,7 +32,7 @@ import { convergeVelocityCross, ABS_CROSS } from '../mold/filling';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { resolverLlenadoFAN } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
@@ -489,9 +489,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         QmmS: esp.QmmS, pLimitMPa: esp.pLimitMPa, nPasos: 120,
       });
       const Lsim = longitudEspiralMm(esp, fanE.frente);
-      const Np = campo.nx * campo.ny * campo.nz;
-      const ocu = new Float32Array(Np);
-      const q4 = campo.cellMm * 0.25;
+      // la pared sale de la FÓRMULA: ocupación por SDF analítica (enmienda "se ve
+      // pixelado") — el iso aterriza en la pared exacta a cualquier retícula
+      const ocu = esp.ocupacionSdf;
       const nCav = campo.cavity.reduce((a: number, b: number) => a + b, 0);
       const posE = new Float32Array(nCav * 3); const fvE = new Float32Array(nCav);
       const esP = new Uint8Array(nCav).fill(1);
@@ -500,17 +500,14 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         const id = campo.idx(i, j, k);
         if (!campo.cavity[id]) continue;
         const X = campo.x0 + (i + 0.5) * campo.cellMm, Y = campo.y0 + (j + 0.5) * campo.cellMm, Z = campo.z0 + (k + 0.5) * campo.cellMm;
-        let hits = esp.dentro(X, Y, Z) ? 1 : 0;
-        for (let a = -1; a <= 1; a += 2) for (let b = -1; b <= 1; b += 2) for (let d2 = -1; d2 <= 1; d2 += 2)
-          if (esp.dentro(X + a * q4, Y + b * q4, Z + d2 * q4)) hits++;
-        ocu[id] = hits / 9;
         posE[q * 3] = X; posE[q * 3 + 1] = Y; posE[q * 3 + 2] = Z;
         fvE[q] = fanE.frente[id]; q++;
       }
       const fqE = Float32Array.from([...fvE].filter((x) => x >= 0)).sort();
       setTFill(1); tFillRef.current = 1;
-      const lado = campo.nx * campo.cellMm;
-      const placa = OCC.makeBox(oc, lado, lado, esp.hMm);   // el fantasma del portamolde
+      // EL RECIPIENTE REAL (orden cola-de-puerco-de-acero): la placa TALLADA por
+      // boolean — la causa de la forma, en cuadro. Y el cruce de volúmenes la ata.
+      const acero = espiralAcero(oc, esp);
       setCiclo({
         estacion: 1, e1,
         frenteGrid: fanE.frente, grid: { nx: campo.nx, ny: campo.ny, nz: campo.nz, cellMm: campo.cellMm, x0: campo.x0, y0: campo.y0, z0: campo.z0 },
@@ -520,9 +517,13 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       setDocName(`LA COLA DE PUERCO · espiral de flujo — L_sim ${Lsim} mm vs 552 medidos (US11230635, ABS 238 °C)`);
       setCollapsed((c) => ({ ...c, features: false }));
       cursoSet(1, [
-        'LA COLA DE PUERCO — la espiral de flujo de la patente',
+        'LA COLA DE PUERCO — la espiral en su ACERO (el recipiente causa la forma)',
         `L_sim ${Lsim} mm vs 552 MEDIDOS (${(100 * (Lsim - 552) / 552).toFixed(1)} %) · pMax ${fanE.pMaxMPa} MPa (69 = 1000 psi ×10 declarado) · short-shot ${fanE.shortShot ? 'SÍ (así se mide la espiral)' : 'no'}`,
-      ], [cursoPart(placa, 'espiral', 'PORTAMOLDE de la espiral — canal 12.7×3.175, L 800', '#9fb8d8', 0.08, 0.2)]);
+        `CAVIDAD↔ACERO: hueco tallado ${(acero.vols.huecoMm3 / 1000).toFixed(2)} cc ≈ campo ${(campo.volumeMm3 / 1000).toFixed(2)} cc ≈ analítico ${(acero.vols.analiticoMm3 / 1000).toFixed(2)} cc`,
+      ], [
+        cursoPart(acero.placa, 'placa-espiral', 'PLACA TALLADA — el canal 12.7×3.175 hundido en el acero (occCut)', '#8fa8c8', 0.30, 0.35),
+        cursoPart(acero.tapa, 'tapa-espiral', 'TAPA plana — cierra el canal en la partición', '#8fa8c8', 0.10, 0.15),
+      ]);
     } catch (e) { console.warn('ESPIRAL_ERR', e); }
   }, [oc, cursoSet, cursoPart, setDocName, setCollapsed]);
   // ── ESTACIÓN 2: ECONOMÍA (cap 3) — las FAMILIAS candidatas en 3D ──
