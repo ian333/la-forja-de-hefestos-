@@ -45,6 +45,7 @@ import { designSprueFeed, minRunnerRadius, steelSafeDiaMm, pressureDropRunner, r
 import { gateDesign, gateDropStripPL, gateFreezeStripS, gateFreezeCylS } from './gating';
 import type { DatumsColada } from './colada';
 import type { MeltMaterial } from './filling';
+import { ABS_MG47, ABS_CROSS, eta0CrossWLF } from './filling';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
 import { PLASTICOS_A, tcPlateS } from './cooling-design';
 import { moldMassKg } from './fasteners';
@@ -1973,4 +1974,121 @@ export function estacion5Dado(o: {
     },
     filas, anuncios,
   };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* LA COLA DE PUERCO — la espiral de flujo de la patente, como campo sintético */
+/* (orden 2026-08-13-la-cola-de-puerco)                                        */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * El ensayo ESTÁNDAR de fluidez de la industria, con números MEDIDOS ajenos:
+ * US11976138 acota la herramienta (canal 12.7 × 3.175 mm, sección rectangular,
+ * espiral plana) y US11230635 Tabla 6 mide ABS a 3 temperaturas (552/635/730 mm
+ * @ 238/249/260 °C, 10 disparos promediados). La longitud reportada EXCLUYE
+ * runner y gate ⇒ aquí la boquilla va AL ARRANQUE de la espiral (fiel).
+ *
+ * Espiral de Arquímedes r(θ) = r₀ + b·θ con paso 20.7 (canal 12.7 + tierra 8).
+ * Campo SINTÉTICO con h ANALÍTICA: 2 capas z de c = 3.175/2 ⇒ el colapso del
+ * espesor suma la conductancia continua h³/12η EXACTA (capas·c = h). Espiral de
+ * 800 mm: cubre 552·1.15 y las COTAS 0.9·635 / 0.9·730 con la mitad de camino
+ * (el CG en un canal cuasi-1D necesita ~O(largo) iteraciones — medido: a 990
+ * celdas de camino la conservación caía a 1e-2 por el tope de iteraciones).
+ *
+ * EXTENSIONES DECLARADAS (la patente calla, aquí se declara):
+ *  · 1000 psi = presión HIDRÁULICA ⇒ plástico ×10 (intensificación de husillo
+ *    estándar): pLimit = 69 MPa. La trampa clásica, de frente.
+ *  · Q del husillo ⌀32 a 1 in/s = 20,430 mm³/s ⇒ v_frente ≈ 507 mm/s.
+ *  · k(T): el power-law del libro (k=17,070 @239 °C) escalado por η₀(T)/η₀(239)
+ *    del Cross-WLF validado; n fijo. El grado difiere (GP22NR vs MG47).
+ */
+export interface CampoEspiral {
+  campo: {
+    nx: number; ny: number; nz: number; cellMm: number;
+    x0: number; y0: number; z0: number;
+    cavity: Uint8Array; thicknessMm: Float32Array;
+    gate: { i: number; j: number; k: number };
+    volumeMm3: number;
+    idx(i: number, j: number, k: number): number;
+  };
+  /** longitud de ARCO (mm) por celda a lo largo de la espiral; −1 fuera */
+  sMm: Float32Array;
+  LtotalMm: number;
+  material: MeltMaterial;
+  QmmS: number;
+  pLimitMPa: number;
+  vFrenteMs: number;
+  wMm: number; hMm: number;
+  dentro(x: number, y: number, z: number): boolean;
+}
+
+export function campoEspiral(o: { TmeltC: number; LtotalMm?: number; pLimitMPa?: number }): CampoEspiral {
+  const w = 12.7, h = 3.175;                      // el canal de la patente
+  const paso = 20.7, r0 = 12;                     // tierra de 8 entre vueltas
+  const L = o.LtotalMm ?? 800;
+  const b = paso / (2 * Math.PI);
+  // s(θ) ≈ r₀θ + bθ²/2  ⇒  θmax de L (la aproximación ∫r dθ, válida r ≫ b)
+  const thMax = (-r0 + Math.sqrt(r0 * r0 + 2 * b * L)) / b;
+  const R = r0 + b * thMax;
+  const c = h / 2;                                // 2 capas EXACTAS: capas·c = h
+  const half = R + w / 2 + 3 * c;
+  const nx = Math.ceil((2 * half) / c), ny = nx, nz = 2;
+  const N = nx * ny * nz;
+  const idx = (i: number, j: number, k: number) => (k * ny + j) * nx + i;
+  const cx = half, cy = half;
+  // ¿(x,y) cae en el canal? — probar las vueltas candidatas k: θ = φ + 2πk
+  const arcoDe = (x: number, y: number): number => {
+    const r = Math.hypot(x - cx, y - cy);
+    if (r > R + w / 2 || r < r0 - w / 2) return -1;
+    let phi = Math.atan2(y - cy, x - cx);
+    if (phi < 0) phi += 2 * Math.PI;
+    for (let kk = -1; kk <= Math.ceil(thMax / (2 * Math.PI)); kk++) {
+      const th = phi + 2 * Math.PI * kk;
+      if (th < -1e-9 || th > thMax) continue;
+      if (Math.abs(r - (r0 + b * th)) <= w / 2) return r0 * th + (b * th * th) / 2;
+    }
+    return -1;
+  };
+  const dentro = (x: number, y: number, z: number) =>
+    z >= 0 && z <= h && arcoDe(x, y) >= 0;
+  const cavity = new Uint8Array(N);
+  const thicknessMm = new Float32Array(N);
+  const sMm = new Float32Array(N).fill(-1);
+  let vox = 0;
+  for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const X = (i + 0.5) * c, Y = (j + 0.5) * c;
+    const s = arcoDe(X, Y);
+    if (s < 0) continue;
+    const t = idx(i, j, k);
+    cavity[t] = 1; thicknessMm[t] = h; sMm[t] = s; vox++;
+  }
+  // la boquilla: la celda de cavidad más cercana al ARRANQUE (θ=0 ⇒ x=cx+r₀)
+  let gi = 0, gj = 0, best = Infinity;
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    if (!cavity[idx(i, j, 1)]) continue;
+    const d = ((i + 0.5) * c - (cx + r0)) ** 2 + ((j + 0.5) * c - cy) ** 2;
+    if (d < best) { best = d; gi = i; gj = j; }
+  }
+  // material a T: k escalada por Cross-WLF (n fija — extensión declarada)
+  const kT = ABS_MG47.k * (eta0CrossWLF(ABS_CROSS, o.TmeltC) / eta0CrossWLF(ABS_CROSS, 239));
+  const QmmS = (Math.PI / 4) * 32 * 32 * 25.4;    // husillo ⌀32 × 1 in/s
+  return {
+    campo: {
+      nx, ny, nz, cellMm: c, x0: 0, y0: 0, z0: 0,
+      cavity, thicknessMm, gate: { i: gi, j: gj, k: 1 },
+      volumeMm3: vox * c * c * c, idx,
+    },
+    sMm, LtotalMm: L,
+    material: { ...ABS_MG47, k: kT },
+    QmmS, pLimitMPa: o.pLimitMPa ?? 69,
+    vFrenteMs: QmmS / (w * h) / 1000,
+    wMm: w, hMm: h, dentro,
+  };
+}
+
+/** la longitud de espiral ALCANZADA por un llenado (max arco mojado, mm) */
+export function longitudEspiralMm(e: CampoEspiral, frente: Float32Array): number {
+  let L = 0;
+  for (let t = 0; t < frente.length; t++)
+    if (frente[t] >= 0 && e.sMm[t] > L) L = e.sMm[t];
+  return +L.toFixed(1);
 }

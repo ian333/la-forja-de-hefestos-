@@ -55,6 +55,11 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   if (process.env.PROBETA === '1') {
     await p.waitForSelector('[data-testid="btn-probeta"]:not([disabled])', { timeout: 240000 });
     await p.click('[data-testid="btn-probeta"]');
+  } else if (process.env.ESPIRAL === '1') {
+    // LA COLA DE PUERCO: el solve tarda ~10 s tras el click — el waitForFunction de
+    // abajo espera a que el llenadoStats exista, así que solo hay que clickear
+    await p.waitForSelector('[data-testid="btn-espiral"]:not([disabled])', { timeout: 240000 });
+    await p.click('[data-testid="btn-espiral"]');
   } else {
     await p.waitForSelector('[data-testid="btn-dado"]:not([disabled])', { timeout: 240000 });
     await p.click('[data-testid="btn-dado"]');
@@ -75,7 +80,9 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   // target EXPLÍCITO en CAD: el centro de la pieza colocada (98, 98, ~127) — el bbox
   // global arrastraba la mira y la pieza salía cortada en la esquina (visto en el still).
   // PROBETA: placa 60×20×2 en el origen — cámara CERCA (se tiene que VER mojar la pared)
-  const orbDef = process.env.PROBETA === '1' ? '35,28,95,30,10,1' : '38,20,200,98,98,127';
+  const orbDef = process.env.PROBETA === '1' ? '35,28,95,30,10,1'
+    : process.env.ESPIRAL === '1' ? '20,62,300,94,94,2'
+    : '38,20,200,98,98,127';
   const orb = (process.env.ORBIT || orbDef).split(',').map(Number);
   await p.evaluate(([az, el, r, tx, ty, tz]) => window.__forgeBrep.orbitTo(az, el, r, tx, ty, tz), orb);
   await p.waitForTimeout(1400);                        // el vuelo dura ~850 ms + margen

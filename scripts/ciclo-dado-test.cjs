@@ -611,6 +611,58 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('CONTROL NEGATIVO: sin el candado, las torres REAPARECEN', evSin > 0,
     `${evSin} eventos con candadoColumna:false (los 16 que ian vio en el video)`);
 
+  // ══ LA COLA DE PUERCO — la espiral de flujo contra números MEDIDOS AJENOS ══
+  // (orden 2026-08-13-la-cola-de-puerco) US11976138 (geometría acotada) +
+  // US11230635 Tabla 6 (ABS medido: 552/635/730 mm @ 238/249/260 °C). Primera vez
+  // que el solver se mide contra números que NO son nuestros. Extensiones
+  // DECLARADAS: 1000 psi hidráulica ×10 = 69 MPa plástico · Q = husillo ⌀32×1in/s
+  // · k(T) por η₀ Cross-WLF · N1 ISOTERMO ⇒ en caliente solo puede SOBRAR
+  // (la térmica frena): 249/260 son ORÁCULOS DE COTA y su delta es el caso del N2.
+  console.log('── LA COLA DE PUERCO · la espiral de la patente (552/635/730 mm medidos)');
+  const Lsim = {};
+  for (const [T, Lexp] of [[238, 552], [249, 635], [260, 730]]) {
+    const esp = ed.campoEspiral({ TmeltC: T });
+    const rE = fanCjs.resolverLlenadoFAN(esp.campo, {
+      material: esp.material, vMs: esp.vFrenteMs, wallMm: esp.hMm,
+      QmmS: esp.QmmS, pLimitMPa: esp.pLimitMPa, nPasos: 120,
+    });
+    Lsim[T] = { L: ed.longitudEspiralMm(esp, rE.frente), r: rE, esp, Lexp };
+  }
+  check('ESPIRAL 238 °C: L_sim ≈ 552 mm medidos (±15 % — grado GP22NR vs MG47, declarado)',
+    cerca(Lsim[238].L, 552, 552 * 0.15),
+    `${Lsim[238].L} mm (${(100 * (Lsim[238].L - 552) / 552).toFixed(1)} %) · pMax ${Lsim[238].r.pMaxMPa} MPa`);
+  check('ESPIRAL: L crece con la temperatura (238 < 249 < 260)',
+    Lsim[238].L < Lsim[249].L && Lsim[249].L < Lsim[260].L,
+    `${Lsim[238].L} → ${Lsim[249].L} → ${Lsim[260].L} mm`);
+  check('COTA ISOTERMA: sin térmica, la espiral SOLO puede sobrar (L_sim ≥ 0.9·L_exp en caliente)',
+    Lsim[249].L >= 0.9 * 635 && Lsim[260].L >= 0.9 * 730,
+    `249°C: ${Lsim[249].L} ≥ ${(0.9 * 635).toFixed(0)} · 260°C: ${Lsim[260].L} ≥ ${(0.9 * 730).toFixed(0)} (el excedente = la térmica del N2)`);
+  // el canal es cuasi-1D de sección constante ⇒ t(s) LINEAL en el arco: Pearson ≈ 1
+  {
+    const e0 = Lsim[238].esp, fr = Lsim[238].r.frente;
+    let n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+    for (let t2 = 0; t2 < fr.length; t2++) {
+      if (fr[t2] < 0 || e0.sMm[t2] < 0) continue;
+      const a = fr[t2], b2 = e0.sMm[t2];
+      n++; sx += a; sy += b2; sxx += a * a; syy += b2 * b2; sxy += a * b2;
+    }
+    const pear = (n * sxy - sx * sy) / Math.sqrt((n * sxx - sx * sx) * (n * syy - sy * sy));
+    check('el frente SIGUE el arco de la espiral (Pearson t↔s ≥ 0.995 — el canal es 1D)',
+      pear >= 0.995, `Pearson ${pear.toFixed(4)} sobre ${n} celdas`);
+  }
+  check('ESPIRAL: conservación ≤ 1e-6 en las tres corridas',
+    [238, 249, 260].every((T) => Lsim[T].r.conservacionMaxRel <= 1e-6),
+    [238, 249, 260].map((T) => Lsim[T].r.conservacionMaxRel.toExponential(1)).join(' · '));
+  // CONTROL: sin la intensificación declarada (6.9 MPa de plástico) la espiral se
+  // queda ~10× corta — la extensión 10:1 IMPORTA y el gate lo enseña
+  {
+    const e69 = ed.campoEspiral({ TmeltC: 238, pLimitMPa: 6.9 });
+    const r69 = fanCjs.resolverLlenadoFAN(e69.campo, { material: e69.material, vMs: e69.vFrenteMs, wallMm: e69.hMm, QmmS: e69.QmmS, pLimitMPa: 6.9, nPasos: 120 });
+    const L69 = ed.longitudEspiralMm(e69, r69.frente);
+    check('CONTROL: a 6.9 MPa (sin la ×10 declarada) la espiral queda ~10× corta',
+      L69 < 100 && r69.shortShot, `${L69} mm — la trampa hidráulica-vs-plástico, medida`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

@@ -436,7 +436,7 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
 /** El grupo del ribbon MOLDE · CURSO ALWIS (Flanera/Vaso/Core-Cav + los 6
  *  pasos del curso). Incluye su separador. */
 export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelReady: boolean }) {
-  const { loadFeedDemo, cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias, loadDado, loadProbeta } = mold;
+  const { loadFeedDemo, cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias, loadDado, loadProbeta, loadEspiral } = mold;
   return (
     <>
             <span className="fb-tb-sep" />
@@ -446,6 +446,8 @@ export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelRe
                   title="EL DADO — el ciclo de Kazmer estación por estación sobre la pieza mínima: cubo hueco 40×40×40 pared 2. Estación 1: el DFM reprueba al macizo (t_c 88 min, Eq 9.5) y aprueba al dado"><Ic name="cajacic" /><span>El DADO</span></button>
                 <button className="fb-big" data-testid="btn-probeta" onClick={loadProbeta} disabled={!kernelReady}
                   title="LA PROBETA — la placa mínima 60×20×2: el microscopio del solver de llenado. El frente continuo MOJA la pared (orden la-probeta)"><Ic name="pieza" /><span>Probeta</span></button>
+                <button className="fb-big" data-testid="btn-espiral" onClick={loadEspiral} disabled={!kernelReady}
+                  title="LA COLA DE PUERCO — la espiral de flujo de la patente US11976138 contra los 552 mm MEDIDOS de ABS (US11230635). El solver contra números ajenos, en vivo"><Ic name="revolucion" /><span>Espiral</span></button>
                 <button className="fb-big" data-testid="btn-flanera" onClick={loadFlaneraMold} disabled={!kernelReady}
                   title="Molde COMPLETO de la flanera (24 partes: placas, insertos sólidos, eyección, agua, guías) — como el del Tupper"><Ic name="revolucion" /><span>Flanera</span></button>
                 <button className="fb-big" data-testid="btn-flanera-vaso" onClick={cursoFlanera} disabled={!kernelReady || cursoBusy}
