@@ -47,7 +47,7 @@ import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
-import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, computeMoldAlarm } from './MoldScene';
+import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
 import { useMoldStudio } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
@@ -6157,7 +6157,10 @@ export default function ForgeBRepStudio() {
                     juguete". Las bolitas (AlarmCloud reusada) resolvieron el problema
                     ANTERIOR —que el frente se viera avanzar— y por eso siguen siendo
                     el ganador de aquel round; lo que no podían era leerse como materia. */}
-                {ciclo?.frenteGrid && ciclo?.grid && (
+                {ciclo?.espiralExacta && (
+                  <EspiralMeltExacta d={ciclo.espiralExacta} t={tFill} />
+                )}
+                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && (
                   <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} />
                 )}
                 {/* E5: el fundido en la colada YA NO es FeedFill (reloj de pared en

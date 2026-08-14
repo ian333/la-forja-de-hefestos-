@@ -743,3 +743,49 @@ export function FrenteSuperficie({ frente, grid, t, ocupacion }: {
     </mesh>
   );
 }
+
+/** RENDER EXACTO de la espiral (enmienda 2 cola-de-puerco-de-acero): el líquido
+ *  VISTE la malla de la fórmula del acero (espiralMalla: 2°, normales analíticas,
+ *  cada triángulo ≤ un paso de arco) y el SOLVER lo recorta por arco: se dibujan
+ *  los triángulos con sV ≤ s_front(t). Cero vóxeles en el render — la retícula ya
+ *  no puede asomar ("se ven los cuadrados" — ian). Física y juez siguen en el
+ *  campo (llenadoStats no cambia). */
+export function EspiralMeltExacta({ d, t }: {
+  d: { positions: Float32Array; normals: Float32Array; indices: Uint32Array; sV: Float32Array; fillV: Float32Array; sFront: Float32Array };
+  t: number;
+}) {
+  const geoBase = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(d.positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(d.normals, 3));
+    const ALB = 0.42;                       // la regla de la casa: color = bajar brillo
+    const col = new Float32Array(d.positions.length);
+    for (let v = 0; v < d.fillV.length; v++) {
+      const c = rampaFillTime(d.fillV[v]);
+      col[v * 3] = c[0] * ALB; col[v * 3 + 1] = c[1] * ALB; col[v * 3 + 2] = c[2] * ALB;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return g;
+  }, [d]);
+  const geo = useMemo(() => {
+    const sF = d.sFront[Math.max(0, Math.min(150, Math.round(t * 150)))];
+    const idx: number[] = [];
+    for (let i = 0; i < d.indices.length; i += 3) {
+      const a = d.indices[i], b = d.indices[i + 1], c = d.indices[i + 2];
+      if (d.sV[a] <= sF && d.sV[b] <= sF && d.sV[c] <= sF) idx.push(a, b, c);
+    }
+    geoBase.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+    return geoBase;
+  }, [geoBase, t, d]);
+  useEffect(() => () => { geoBase.dispose(); }, [geoBase]);
+  return (
+    <mesh geometry={geo} renderOrder={7}>
+      <meshPhysicalMaterial
+        vertexColors side={THREE.FrontSide}
+        roughness={0.32} metalness={0.0}
+        clearcoat={0.28} clearcoatRoughness={0.22}
+        envMapIntensity={0.30}
+      />
+    </mesh>
+  );
+}

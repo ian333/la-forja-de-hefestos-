@@ -38,6 +38,8 @@ Mandato de ian: **reusar lo que ya tenemos del dado**.
 - src/forja/mold/estudio-molde-datos.ts
 - src/forja/mold/flowlen.ts
 - src/forja/brep/useMoldStudio.ts
+- src/forja/brep/MoldScene.tsx
+- src/forja/brep/ForgeBRepStudio.tsx
 - scripts/ciclo-dado-test.cjs
 - scripts/llenado-video.cjs
 
@@ -86,6 +88,16 @@ donde la derivada manda). El solver NO cambia (display + capacidad). TOCA gana
 `flowlen.ts`: la celda de ACERO con rampa SDF lleva su valor (<0.5) para que el
 cruce iso-0.5 aterrice en la pared EXACTA (solo acero; el frente usa su rampa).
 
+## ENMIENDA 2 (2026-08-13 — ian, con el A/B en mano: "no vi ningún cambio")
+Cierto: el SDF puso los cruces EN la pared pero hay UN vértice por celda (1.59 mm)
+⇒ silueta poligonal de ~13 px en 4K. El cuello es la RETÍCULA DEL DISPLAY, no el
+cruce. Fix de fondo (la filosofía de ian, literal): **el líquido VISTE la malla del
+ACERO** — el render del fundido usa el teselado FINO del canal OCC (Δθ=2°, sagita
+0.03 mm) con el frente del SOLVER (s_front(t) del FAN) recortando triángulos por
+arco. Física y juez siguen en el campo voxel (sin tocar); solo el RENDER de la
+espiral cambia. TOCA gana `MoldScene.tsx` (el componente del render exacto) y
+`ForgeBRepStudio.tsx` (el punto de montaje del frente vive ahí, línea ~6160).
+
 ## CIERRE (2026-08-13)
 
 - **gate 105 pasan · 0 fallan** (103 + los 2 cruces del acero) · orden-gate VERDE ·
@@ -118,6 +130,17 @@ cruce iso-0.5 aterrice en la pared EXACTA (solo acero; el frente usa su rampa).
   asoma en la pared. Residual DECLARADO: micro-sierra sub-milimétrica en el filo
   superior (el borde z de la última capa) — candidato para la siguiente vuelta de
   precisión, no se esconde. Video re-renderizado (tercera vez), APROBADO, entregado.
+
+- **ENMIENDA 2 CERRADA ("no vi ningún cambio")**: ian tenía razón — el SDF puso los
+  cruces EN la pared pero con UN vértice por celda la silueta seguía siendo una
+  poligonal de 13 px. El fix de fondo: **el líquido VISTE la malla de la fórmula**
+  (`espiralMalla`: prisma estructurado a 2°, normales analíticas radial/±z, cada
+  triángulo ≤ un paso de arco, PURA sin OCC ni vóxeles) y el FAN lo recorta por
+  arco (sV ≤ s_front(t), 151 muestras del solver). A/B medido con ojos: de dentado
+  a listón de VIDRIO continuo con aristas vivas y corte limpio en la punta muerta.
+  Física y juez intactos (llenadoStats sigue en el campo voxel). Componente
+  `EspiralMeltExacta` en MoldScene; montaje condicional en ForgeBRepStudio
+  (espiralExacta apaga FrenteSuperficie solo en la escena de la espiral).
 
 - **Tropiezo de infra CAZADO EN VIVO**: el timeout local de un ssh NO mata la
   cadena remota (Tailscale ssh sin tty) → quedaron DOS `publicar-sitio.sh`

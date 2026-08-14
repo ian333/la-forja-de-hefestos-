@@ -2019,6 +2019,9 @@ export interface CampoEspiral {
   vFrenteMs: number;
   wMm: number; hMm: number;
   dentro(x: number, y: number, z: number): boolean;
+  /** longitud de arco de la vuelta MÁS CERCANA (siempre definida — para vestir
+   *  vértices del teselado del acero con su posición a lo largo del canal) */
+  arcoCercano(x: number, y: number): number;
   /** la MISMA fórmula que talla el acero (espiralAcero): una sola fuente de forma */
   geo: { cx: number; cy: number; r0: number; b: number; thMax: number; halfMm: number };
   /** OCUPACIÓN POR DISTANCIA FIRMADA analítica (enmienda cola-de-puerco-de-acero:
@@ -2057,6 +2060,18 @@ export function campoEspiral(o: { TmeltC: number; LtotalMm?: number; pLimitMPa?:
   };
   const dentro = (x: number, y: number, z: number) =>
     z >= 0 && z <= h && arcoDe(x, y) >= 0;
+  const arcoCercano = (x: number, y: number): number => {
+    const r = Math.hypot(x - cx, y - cy);
+    let phi = Math.atan2(y - cy, x - cx);
+    if (phi < 0) phi += 2 * Math.PI;
+    let best = Infinity, sBest = 0;
+    for (let kk = -1; kk <= Math.ceil(thMax / (2 * Math.PI)); kk++) {
+      const th = Math.min(thMax, Math.max(0, phi + 2 * Math.PI * kk));
+      const d = Math.abs(r - (r0 + b * th));
+      if (d < best) { best = d; sBest = r0 * th + (b * th * th) / 2; }
+    }
+    return sBest;
+  };
   // distancia FIRMADA al canal (negativa adentro): en el plano, a la curva
   // espiral más cercana (|r − r_k| − w/2 sobre las vueltas candidatas); en z, a
   // las caras 0 y h. Sección caja ⇒ sdf = max(d_xy, d_z).
@@ -2105,7 +2120,7 @@ export function campoEspiral(o: { TmeltC: number; LtotalMm?: number; pLimitMPa?:
     material: { ...ABS_MG47, k: kT },
     QmmS, pLimitMPa: o.pLimitMPa ?? 69,
     vFrenteMs: QmmS / (w * h) / 1000,
-    wMm: w, hMm: h, dentro,
+    wMm: w, hMm: h, dentro, arcoCercano,
     geo: { cx, cy, r0, b, thMax, halfMm: half },
     ocupacionSdf,
   };
@@ -2131,13 +2146,13 @@ export function longitudEspiralMm(e: CampoEspiral, frente: Float32Array): number
  * (via `esp.geo`) talla el acero Y voxeliza el campo — una sola fuente de forma,
  * y el CRUCE de volúmenes ata las dos representaciones por número.
  */
-export function espiralAcero(oc: any, e: CampoEspiral): {
-  canal: any; placa: any; tapa: any;
-  vols: { canalMm3: number; huecoMm3: number; analiticoMm3: number; placaMm3: number };
-} {
-  const { cx, cy, r0, b, thMax, halfMm } = e.geo;
+/** el SÓLIDO del canal espiral (patrón dadoRectoShape): polígono ida-exterior /
+ *  vuelta-interior a Δθ dado + loft de 2 secciones. Δθ=6° para booleanas (sagita
+ *  <0.1); Δθ=2° para el RENDER exacto del fundido (sagita 0.03 — enmienda 2). */
+export function espiralCanalSolido(oc: any, e: CampoEspiral, dThetaDeg = 6): any {
+  const { cx, cy, r0, b, thMax } = e.geo;
   const w = e.wMm, h = e.hMm;
-  const dTh = (6 * Math.PI) / 180;                 // Δθ=6°: sagita ≈ Δθ²/8·r ≪ 0.1 mm
+  const dTh = (dThetaDeg * Math.PI) / 180;
   const pts: Array<{ x: number; y: number }> = [];
   const n = Math.ceil(thMax / dTh);
   for (let q = 0; q <= n; q++) {                   // ida por el borde EXTERIOR
@@ -2151,10 +2166,19 @@ export function espiralAcero(oc: any, e: CampoEspiral): {
     pts.push({ x: cx + r * Math.cos(th), y: cy + r * Math.sin(th) });
   }
   const pl = (z: number) => ({ origin: [0, 0, z] as [number, number, number], uDir: [1, 0, 0] as [number, number, number], vDir: [0, 1, 0] as [number, number, number] });
-  const canal = occLoft(oc, [
+  return occLoft(oc, [
     { pts, plane: pl(0) },
     { pts, plane: pl(h) },
   ], { solid: true, ruled: true });
+}
+
+export function espiralAcero(oc: any, e: CampoEspiral): {
+  canal: any; placa: any; tapa: any;
+  vols: { canalMm3: number; huecoMm3: number; analiticoMm3: number; placaMm3: number };
+} {
+  const { halfMm } = e.geo;
+  const h = e.hMm;
+  const canal = espiralCanalSolido(oc, e, 6);
   // la PLACA: caja de 2·half × 2·half, fondo 12, el canal HUNDIDO en la cara
   // superior y ABIERTO en la partición z=h (lo cierra la tapa plana)
   const lado = 2 * halfMm, fondo = 12;
@@ -2169,8 +2193,72 @@ export function espiralAcero(oc: any, e: CampoEspiral): {
     vols: {
       canalMm3: +canalMm3.toFixed(1),
       huecoMm3: +huecoMm3.toFixed(1),
-      analiticoMm3: +(e.LtotalMm * w * h).toFixed(1),
+      analiticoMm3: +(e.LtotalMm * e.wMm * e.hMm).toFixed(1),
       placaMm3: +placaMm3.toFixed(1),
     },
+  };
+}
+
+/**
+ * LA MALLA EXACTA DEL FUNDIDO (enmienda 2 de cola-de-puerco-de-acero): el líquido
+ * VISTE la forma del recipiente — la malla sale de LA MISMA fórmula r(θ)=r₀+bθ
+ * que talla el acero, estructurada por paso de θ (cada triángulo abarca ≤ un paso
+ * de arco ⇒ el corte del frente es limpio) y con NORMALES ANALÍTICAS (radial en
+ * paredes, ±z en tapas — aristas vivas como el canal real). PURA: sin OCC, sin
+ * vóxeles. El solver FAN sigue mandando el TIEMPO (sV + s_front recortan por arco).
+ */
+export interface MallaEspiral {
+  positions: Float32Array; normals: Float32Array; indices: Uint32Array;
+  /** longitud de arco (mm) por VÉRTICE — el recorte del frente es sV ≤ s_front(t) */
+  sV: Float32Array;
+  tris: number;
+}
+export function espiralMalla(e: CampoEspiral, dThetaDeg = 2): MallaEspiral {
+  const { cx, cy, r0, b, thMax } = e.geo;
+  const w = e.wMm, h = e.hMm;
+  const dTh = (dThetaDeg * Math.PI) / 180;
+  const n = Math.ceil(thMax / dTh);
+  const P: number[] = [], N: number[] = [], S: number[] = [], I: number[] = [];
+  // 8 vértices por anillo (duplicados por CARA para conservar la arista viva):
+  // 0 To(out,top) 1 Ti(in,top) 2 Bo(out,bot) 3 Bi(in,bot)
+  // 4 WoT 5 WoB (pared exterior) · 6 WiT 7 WiB (pared interior)
+  for (let q = 0; q <= n; q++) {
+    const th = Math.min(thMax, q * dTh);
+    const c = Math.cos(th), s = Math.sin(th);
+    const rC = r0 + b * th, ro = rC + w / 2, ri = rC - w / 2;
+    const sArc = r0 * th + (b * th * th) / 2;
+    const xo = cx + ro * c, yo = cy + ro * s, xi = cx + ri * c, yi = cy + ri * s;
+    const put = (x: number, y: number, z: number, nx: number, ny: number, nz: number) => {
+      P.push(x, y, z); N.push(nx, ny, nz); S.push(sArc);
+    };
+    put(xo, yo, h, 0, 0, 1); put(xi, yi, h, 0, 0, 1);        // tapa sup
+    put(xo, yo, 0, 0, 0, -1); put(xi, yi, 0, 0, 0, -1);      // tapa inf
+    put(xo, yo, h, c, s, 0); put(xo, yo, 0, c, s, 0);        // pared ext (radial+)
+    put(xi, yi, h, -c, -s, 0); put(xi, yi, 0, -c, -s, 0);    // pared int (radial−)
+  }
+  const V = (q: number, k: number) => q * 8 + k;
+  for (let q = 0; q < n; q++) {
+    const quad = (a: number, b2: number, c2: number, d: number) => { I.push(a, b2, c2, a, c2, d); };
+    quad(V(q, 0), V(q + 1, 0), V(q + 1, 1), V(q, 1));        // tapa sup (CCW vista +z)
+    quad(V(q, 3), V(q + 1, 3), V(q + 1, 2), V(q, 2));        // tapa inf
+    quad(V(q, 5), V(q + 1, 5), V(q + 1, 4), V(q, 4));        // pared exterior
+    quad(V(q, 6), V(q + 1, 6), V(q + 1, 7), V(q, 7));        // pared interior
+  }
+  // los CABOS (caras radiales en θ=0 y θ=θmax) — normal = ±tangente
+  const cabo = (q: number, dir: number) => {
+    const th = Math.min(thMax, q * dTh);
+    const tx = -Math.sin(th) * dir, ty = Math.cos(th) * dir;
+    const base = P.length / 3;
+    for (const k of [0, 1, 3, 2]) {                           // To Ti Bi Bo
+      P.push(P[V(q, k) * 3], P[V(q, k) * 3 + 1], P[V(q, k) * 3 + 2]);
+      N.push(tx, ty, 0); S.push(S[V(q, k)]);
+    }
+    if (dir > 0) I.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    else I.push(base, base + 2, base + 1, base, base + 3, base + 2);
+  };
+  cabo(0, -1); cabo(n, +1);
+  return {
+    positions: new Float32Array(P), normals: new Float32Array(N),
+    indices: new Uint32Array(I), sV: new Float32Array(S), tris: I.length / 3,
   };
 }

@@ -32,7 +32,7 @@ import { convergeVelocityCross, ABS_CROSS } from '../mold/filling';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, type Estacion4Dado, type Estacion5Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { resolverLlenadoFAN } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
@@ -82,6 +82,9 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     ocupacion?: Float32Array;
     /** LA ALARMA de tubería única + los volúmenes medidos del campo conjunto */
     e5tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number };
+    /** RENDER EXACTO de la espiral (enmienda 2 cola-de-puerco-de-acero): el líquido
+     *  viste la MALLA de la fórmula del acero; el FAN recorta por arco (sV≤sFront) */
+    espiralExacta?: { positions: Float32Array; normals: Float32Array; indices: Uint32Array; sV: Float32Array; fillV: Float32Array; sFront: Float32Array };
     /** FÍSICA del llenado FAN/Hele-Shaw (orden llenado-desde-el-operador): presión
      *  real, tiempo real, short-shot real + la auditoría de conservación */
     e5fan?: { pMaxMPa: number; tFillS: number; shortShot: boolean; incompleto: boolean; conservacionMaxRel: number; etaEffPaS: number; QmmS: number; nNodos: number } } | null>(null);
@@ -504,6 +507,29 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         fvE[q] = fanE.frente[id]; q++;
       }
       const fqE = Float32Array.from([...fvE].filter((x) => x >= 0)).sort();
+      // RENDER EXACTO (enmienda 2): la malla del líquido sale de la MISMA fórmula
+      // que el acero (estructurada a 2°, normales analíticas); el FAN da el reloj:
+      // s_front(t) + el fill-time por arco. La física/juez siguen en el campo voxel.
+      const malla = espiralMalla(esp, 2);
+      const BIN = 4;
+      const nBins = Math.ceil(esp.LtotalMm / BIN) + 1;
+      const frenteBin = new Float32Array(nBins).fill(-1);
+      const sFront = new Float32Array(151);
+      for (let t2 = 0; t2 < fanE.frente.length; t2++) {
+        const fr = fanE.frente[t2];
+        if (fr < 0 || esp.sMm[t2] < 0) continue;
+        const bIdx = Math.min(nBins - 1, Math.floor(esp.sMm[t2] / BIN));
+        if (frenteBin[bIdx] < 0 || fr < frenteBin[bIdx]) frenteBin[bIdx] = fr;
+        const k = Math.max(0, Math.min(150, Math.ceil(fr * 150)));
+        if (esp.sMm[t2] > sFront[k]) sFront[k] = esp.sMm[t2];
+      }
+      for (let bIdx = 1; bIdx < nBins; bIdx++) if (frenteBin[bIdx] < 0) frenteBin[bIdx] = frenteBin[bIdx - 1];
+      for (let k = 1; k <= 150; k++) if (sFront[k] < sFront[k - 1]) sFront[k] = sFront[k - 1];
+      const fillV = new Float32Array(malla.sV.length);
+      for (let v = 0; v < malla.sV.length; v++) {
+        const fb = frenteBin[Math.min(nBins - 1, Math.floor(malla.sV[v] / BIN))];
+        fillV[v] = fb >= 0 ? fb : 1;
+      }
       setTFill(1); tFillRef.current = 1;
       // EL RECIPIENTE REAL (orden cola-de-puerco-de-acero): la placa TALLADA por
       // boolean — la causa de la forma, en cuadro. Y el cruce de volúmenes la ata.
@@ -512,6 +538,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         estacion: 1, e1,
         frenteGrid: fanE.frente, grid: { nx: campo.nx, ny: campo.ny, nz: campo.nz, cellMm: campo.cellMm, x0: campo.x0, y0: campo.y0, z0: campo.z0 },
         frenteVert: fvE, frenteQ: fqE, voxPos: posE, cellMm: campo.cellMm, esPieza: esP, ocupacion: ocu,
+        espiralExacta: { positions: malla.positions, normals: malla.normals, indices: malla.indices, sV: malla.sV, fillV, sFront },
         e5fan: { pMaxMPa: fanE.pMaxMPa, tFillS: fanE.tFillS, shortShot: fanE.shortShot, incompleto: fanE.incompleto, conservacionMaxRel: fanE.conservacionMaxRel, etaEffPaS: fanE.etaEffPaS, QmmS: fanE.QmmS, nNodos: fanE.nNodos },
       });
       setDocName(`LA COLA DE PUERCO · espiral de flujo — L_sim ${Lsim} mm vs 552 medidos (US11230635, ABS 238 °C)`);
