@@ -121,9 +121,13 @@ export function bundleFromAbInitio(data: AtomAbInitio, live = false) {
     const c = new THREE.Color(hex(s.n, s.l));
     const hsl = { h: 0, s: 0, l: 0 };
     c.getHSL(hsl);
-    // Saturación empujada y luminancia acotada: en aditivo el color ES la saturación
-    // (sumar brillo lava a blanco). Mismo tratamiento que el camino hidrogenoide.
-    return new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.3), Math.min(0.60, hsl.l));
+    // CADA ORBITAL SU MATIZ (Ian, 2026-08-14: "juguemos más con los colores"). Dentro de la
+    // familia (todos los p rojos, todos los d verdes) cada m se corre un poco de tono:
+    // pₓ/p_y/p_z ya no son el MISMO rojo — se ve que son tres cuartos distintos, que es
+    // justo lo que el barrido enseña. Centrado en el tono de la familia (Σ corrimientos = 0)
+    // para que la suma de la subcapa siga leyéndose del color canónico.
+    const mShift = (s.m >= 0 && s.l > 0) ? (s.m - s.l) * 0.045 : 0;
+    return new THREE.Color().setHSL((hsl.h + mShift + 1) % 1, Math.min(1, hsl.s * 1.3), Math.min(0.60, hsl.l));
   });
 
   const positions = new Float32Array(M * 3);

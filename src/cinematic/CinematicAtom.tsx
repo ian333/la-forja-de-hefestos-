@@ -140,7 +140,7 @@ function durationForShells(n: number): number {
  *   · Durante el barrido → 1 si es su turno, BANDA_PISO si le toca a otra.
  *   · Después → todas vuelven a 1 y el átomo se ve COMPLETO para el cierre.
  */
-function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1, l = 0, gancho = -1): number {
+function bandaMask(time: number, idx: number, total: number, e = 1, eMax = 1, l = 0, gancho = -1, nPts = 25000): number {
   const mia = win(time, ...bandaWindow(idx, total), 0.45);
   // ANTES DEL BARRIDO manda el orbital del gancho, no la cascada de nacimiento: la pieza
   // ABRE con él ya encendido (cuadro 0 denso) y lo suelta justo cuando arranca el barrido.
@@ -522,6 +522,13 @@ uniform float uBandScale;
 // que le falta a una banda flaca es COBERTURA, y eso se compra con area. Medido en el cromo:
 // el 4s tiene UN electron (8 300 puntos) contra los seis del 2p (50 000) y salia invisible.
 uniform float uSizeMask[${NCANALES}];
+// EL PARPADEO DE LOS GANADORES (O2/N2/C2 + serie del agua v1..v6), portado literal de
+// O2Cloud: cada punto aparece y DESAPARECE a su propia fase — "están aquí, luego allá".
+// Nuestro pulso viejo tenía piso 0.55: respiraba pero nunca se iba, e Ian lo notó
+// ("en los otros videos los electrones aparecen y desaparecen"). Se aplica POR CANAL:
+// a fondo en el orbital EN TURNO (= cuando la voz lo nombra, igual que los ganadores
+// suben su 'parpadeo' cuando se nombran los electrones), cero en el resto.
+uniform float uTwMask[${NCANALES}];
 uniform float uCoreFloor;
 attribute vec3 aColor;
 attribute float aSize;
@@ -582,7 +589,8 @@ void main() {
   float coreAtten = uCoreR > 0.0001
     ? mix(uCoreFloor, 1.0, smoothstep(0.0, uCoreR, length(position)))
     : 1.0;
-  vAlpha = reveal * pulse * uBright * coreAtten * uPixGain;
+  float tw = 1.0 - uTwMask[idx] * (0.5 + 0.5 * sin(uTime * 7.0 + ph));
+  vAlpha = reveal * pulse * tw * uBright * coreAtten * uPixGain;
 
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
@@ -657,6 +665,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     uPixGain:    { value: 1 },
     uBandScale:  { value: 1 },
     uSizeMask:   { value: new Float32Array(NCANALES).fill(1) },
+    uTwMask:     { value: new Float32Array(NCANALES) },
     uCoreFloor:  { value: 0.16 },
     uBright:     { value: 1 },
     uBokeh:      { value: 0 },
@@ -668,24 +677,34 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     [bundle],
   );
   const gancho = useMemo(() => orbGancho(bundle.shells), [bundle]);
+  // PUNTOS POR CANAL, contados de la nube real (no supuestos): gobiernan el anti-quemado.
+  const nPorCanal = useMemo(() => {
+    const n = new Float32Array(NCANALES);
+    for (let k = 0; k < bundle.shellIdx.length; k++) n[bundle.shellIdx[k] | 0]++;
+    return n;
+  }, [bundle]);
   useEffect(() => {
     if (!matRef.current) return;
     const mask = matRef.current.uniforms.uRevealMask.value as Float32Array;
     const smask = matRef.current.uniforms.uSizeMask.value as Float32Array;
+    const tmask = matRef.current.uniforms.uTwMask.value as Float32Array;
     // El área del sprite crece con el CUADRADO del tamaño, así que para recuperar un factor
     // `p` de cobertura basta con √p en el radio. Solo se aplica a la banda EN TURNO y solo
     // dentro del barrido: fuera de él vale 1 y el átomo se ve exactamente como siempre.
     const fase = bundle.shells.length > 0 ? bandaFase(time, bundle.shells.length) : null;
     for (let i = 0; i < NCANALES; i++) {
-      if (i >= bundle.shells.length) { mask[i] = 0; smask[i] = 1; continue; }
+      if (i >= bundle.shells.length) { mask[i] = 0; smask[i] = 1; tmask[i] = 0; continue; }
       const mia = revealAll || fase === null
         ? 0 : win(time, ...bandaWindow(i, bundle.shells.length), 0.45);
       const p = Math.min(4.0, eMax / Math.max(1, bundle.shells[i].electrons ?? 1));
       smask[i] = 1 + (Math.sqrt(p) - 1) * mia;
+      // Parpadeo SOLO cuando la voz lo nombra (profundidad 0.84 = la de los ganadores a
+      // fondo), y nunca en el gancho: el cuadro 0 vende densidad, el barrido vende vida.
+      tmask[i] = revealAll ? 0 : 0.84 * mia * smoothstep((time - BANDA_T0) / 0.8);
       // revealAll: nube COMPLETA desde t=0 (átomos que ya existen, p.ej. los dos O
       // que se acercan a formar O₂ — no deben "materializarse" capa por capa).
       mask[i] = revealAll ? 1
-        : bandaMask(time, i, bundle.shells.length, bundle.shells[i].electrons ?? 1, eMax, bundle.shells[i].l, gancho);
+        : bandaMask(time, i, bundle.shells.length, bundle.shells[i].electrons ?? 1, eMax, bundle.shells[i].l, gancho, nPorCanal[i]);
     }
     // rotRate=0 en moléculas (la nube debe quedar alineada con los núcleos; la
     // cámara orbita). En átomos gira para dar vida al cúmulo.
@@ -709,7 +728,7 @@ export function ElectronCloud({ bundle, time, holeRadius = 0, coreRadius = 0, br
     matRef.current.uniforms.uBandScale.value = bandScale;
     matRef.current.uniforms.uBokeh.value = bokeh;
     matRef.current.uniformsNeedUpdate = true;
-  }, [time, bundle, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll, pk, eMax, bandScale, gancho]);
+  }, [time, bundle, holeRadius, coreRadius, brightness, bokeh, rotRate, revealAll, pk, eMax, bandScale, gancho, nPorCanal]);
 
   return (
     <points geometry={geo} frustumCulled={false}>
@@ -1279,6 +1298,30 @@ function AtomTitle({ element, shells, time, vertical }: {
           );
         })}
       </div>
+      {(() => {
+        // LA PALABRA DE LA FORMA — "explicar qué se ve" (Ian, 2026-08-14). La etiqueta da el
+        // nombre técnico (2pₓ); esta línea da la forma en cristiano, con la MISMA metáfora
+        // que la voz del cuento: cuarto redondo / el moño / los pétalos. Late con el mismo
+        // `mia` que la nube y la etiqueta, así que las tres cosas señalan lo mismo a la vez.
+        const FORMA_DE = ['un cuarto redondo', 'el moño', 'los pétalos', 'la flor'];
+        let best = -1, bmia = 0.05;
+        for (let i = 0; i < shells.length; i++) {
+          const m = win(time, ...bandaWindow(i, shells.length), 0.45);
+          if (m > bmia) { bmia = m; best = i; }
+        }
+        if (best < 0) return null;
+        return (
+          <div style={{
+            marginTop: vertical ? '1.6vw' : 10, opacity: bmia,
+            fontFamily: "'Inter', system-ui, sans-serif", fontStyle: 'italic',
+            fontSize: vertical ? '3.4vw' : '0.95vw', fontWeight: 300,
+            color: 'rgba(255,255,255,0.80)', letterSpacing: '0.02em',
+            textShadow: '0 2px 14px rgba(0,0,0,0.9)',
+          }}>
+            {FORMA_DE[Math.min(shells[best].l, 3)]}
+          </div>
+        );
+      })()}
     </div>
   );
 }
