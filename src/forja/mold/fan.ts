@@ -88,6 +88,8 @@ export interface LlenadoFAN {
   etaEffPaS: number;
   QmmS: number;
   pasos: number;
+  /** la fase de PRESIÓN del switchover V/P, si se activó */
+  fase2: { activada: boolean; tSwitchS: number; volFase2Mm3: number; qFinalFrac: number };
   nota: string;
 }
 
@@ -110,6 +112,12 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   /** SOLO PARA EL CONTROL NEGATIVO del gate: apagar el candado de columna
    *  (reproduce las torres medidas). Jamás en producción. */
   candadoColumna?: boolean;
+  /** SWITCHOVER V/P (orden switchover-vp): al tocar pLimit, en vez de morir en
+   *  seco ('stop', default), rotar la boquilla a su variable CONJUGADA
+   *  ('presion': Dirichlet p=P₀, el caudal responde y decae — Washburn L∝√t).
+   *  El creep isotermo no sabe parar (eso es la térmica del N2): termina por
+   *  tMaxS o por Q < qMinFrac·Q₀. */
+  switchover?: { modo: 'stop' | 'presion'; tMaxS?: number; qMinFrac?: number };
   /** ocupación fraccional por vóxel (verdad sub-vóxel) — pesa la CAPACIDAD */
   ocupacion?: Float32Array;
 }): LlenadoFAN {
@@ -241,14 +249,19 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   let pMax = 0, conservMax = 0, shortShot = false, pasos = 0;
   const serie: Array<{ tS: number; pMPa: number; volPct: number }> = [];
   const dVpaso = volTotal / nPasos;
-  const maxOuter = nPasos * 4 + Math.ceil(M / 4) + 60;   // el tope anti-torres pide más solves
+  // SWITCHOVER V/P: fase 1 = Q impuesto (fuente); fase 2 = P impuesto (Dirichlet)
+  const modoSw = o.switchover?.modo ?? 'stop';
+  const tMaxS = o.switchover?.tMaxS ?? Infinity;
+  const qMin = (o.switchover?.qMinFrac ?? 0.01) * Q;
+  let fase = 1, tSwitch = -1, volSwitch = 0, QinAct = Q;
+  const maxOuter = nPasos * 4 + Math.ceil(M / 4) + 60 + (modoSw === 'presion' ? nPasos * 8 : 0);
   const pos = new Int32Array(M);
 
   for (let outer = 0; outer < maxOuter && volLleno < volTotal - 1e-9; outer++) {
     pasos++;
     const act: number[] = [];
     pos.fill(-1);
-    for (let q = 0; q < M; q++) if (filled[q]) { pos[q] = act.length; act.push(q); }
+    for (let q = 0; q < M; q++) if (filled[q] && !(fase === 2 && q === gNode)) { pos[q] = act.length; act.push(q); }
     const A = act.length;
 
     // ¿queda FRONTERA? Si no, lo alcanzable ya se llenó — resolver aquí sería un
@@ -264,13 +277,24 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     // CG matrix-free: Σ_j k(p_i − p_j) = Q·[i=gate] · p=0 en la frontera (no llenos)
     const x = new Float64Array(A), b2 = new Float64Array(A);
     for (let q = 0; q < A; q++) x[q] = pPrev[act[q]];
-    b2[pos[gNode]] = Q;
+    if (fase === 1) {
+      b2[pos[gNode]] = Q;
+    } else {
+      // LA FRONTERA ROTADA: la boquilla vale P₀ (Dirichlet) — sus vecinos lo
+      // reciben por el vector b; el MISMO operador responde ahora con el caudal
+      for (let e = deg[gNode]; e < deg[gNode + 1]; e++) {
+        const j = adjN[e];
+        if (pos[j] >= 0) b2[pos[j]] += adjK[e] * pLimit;
+      }
+    }
     const Ax = (v: Float64Array, out: Float64Array) => {
       for (let q = 0; q < A; q++) {
         const i = act[q]; let acc = 0;
         for (let e = deg[i]; e < deg[i + 1]; e++) {
           const j = adjN[e], k = adjK[e];
-          acc += filled[j] ? k * (v[q] - v[pos[j]]) : k * v[q];
+          // vecino con incógnita: diferencia; sin incógnita (frontera p=0 o la
+          // boquilla-Dirichlet de fase 2, cuyo P₀ ya viaja en b): solo k·v
+          acc += (filled[j] && pos[j] >= 0) ? k * (v[q] - v[pos[j]]) : k * v[q];
         }
         out[q] = acc;
       }
@@ -302,10 +326,29 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     }
     for (let q = 0; q < A; q++) pPrev[act[q]] = x[q];
 
-    const pInlet = x[pos[gNode]];
+    // Q_in de fase 2: se MIDE del solve (flujo que sale de la boquilla a P₀)
+    if (fase === 2) {
+      let qIn = 0;
+      for (let e = deg[gNode]; e < deg[gNode + 1]; e++) {
+        const j = adjN[e];
+        const pj = (filled[j] && pos[j] >= 0) ? x[pos[j]] : 0;
+        qIn += adjK[e] * (pLimit - pj);
+      }
+      QinAct = qIn;
+      if (QinAct < qMin || tNow >= tMaxS) break;        // el creep ya no aporta / fin de protocolo
+    }
+    const pInlet = fase === 1 ? x[pos[gNode]] : pLimit;
     if (pInlet > pMax) pMax = pInlet;
     serie.push({ tS: +tNow.toFixed(4), pMPa: +(pInlet / 1e6).toFixed(2), volPct: +(100 * volLleno / volTotal).toFixed(1) });
-    if (pInlet > pLimit) { shortShot = true; break; }   // la máquina no da más
+    if (fase === 1 && pInlet > pLimit) {
+      if (modoSw === 'presion') {
+        // EL SWITCHOVER: la frontera rota a su variable conjugada. Mismo operador.
+        fase = 2; tSwitch = tNow; volSwitch = volLleno;
+        pPrev[gNode] = pLimit; pasos--;
+        continue;                                       // re-resolver este paso en fase 2
+      }
+      shortShot = true; break;                          // la máquina no da más (modo stop)
+    }
 
     // flujos hacia la frontera + AUDITORÍA
     const front: number[] = []; const F: number[] = [];
@@ -320,10 +363,21 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
         else F[fIdx[j]] += flujo;
       }
     }
+    if (fase === 2) {
+      for (let e = deg[gNode]; e < deg[gNode + 1]; e++) {
+        const j = adjN[e];
+        if (filled[j]) continue;
+        const flujo = adjK[e] * pLimit;
+        if (fIdx[j] < 0) { fIdx[j] = front.length; front.push(j); F.push(flujo); }
+        else F[fIdx[j]] += flujo;
+      }
+    }
     if (!front.length) break;                           // lo alcanzable ya se llenó
     let sumF = 0;
     for (const fq of F) sumF += fq;
-    const relErr = Math.abs(sumF - Q) / Q;
+    // AUDITORÍA: fase 1 contra el Q impuesto; fase 2 contra el Q MEDIDO en la
+    // boquilla (ambos calculados del mismo solve: consistencia interna)
+    const relErr = Math.abs(sumF - (fase === 1 ? Q : QinAct)) / Math.max(1e-9, fase === 1 ? Q : QinAct);
     if (relErr > conservMax) conservMax = relErr;
 
     // avance FAN: repartir un cuanto ΔV con los flujos congelados de este solve.
@@ -334,6 +388,11 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     // reproduce t(r) = πr²h/Q analítico). Los flujos deciden el ORDEN; la
     // conservación decide el TIEMPO.
     let dvRem = dVpaso;
+    // el RELOJ de fase 2: volumen colocado / Q_in MEDIDO de ESTE solve — el mismo
+    // principio del reloj de volumen (los flujos deciden el ORDEN, la conservación
+    // el TIEMPO). Integrar dt por flujos re-creaba el bug del disco: la cola débil
+    // del lote inflaba el tiempo ×9 (medido en el humo de Washburn).
+    const tIni = tNow, volIni = volLleno;
     let llenadosSolve = 0;                        // CANDADO TEMPORAL (orden la-probeta)
     const tope = o.maxLlenadosPorSolve ?? 64;
     for (let inner = 0; inner < front.length + 4 && dvRem > 1e-12; inner++) {
@@ -354,7 +413,8 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
         volLleno += F[q] * dt;
         if (fill[j] >= 1 - 1e-9) { fill[j] = 1; filled[j] = 1; nuevos.push(j); }
       }
-      tNow = volLleno / Q;
+      if (fase === 1) tNow = volLleno / Q;              // reloj de VOLUMEN (Q fijo)
+      else tNow = tIni + (volLleno - volIni) / QinAct;  // volumen / Q_in del solve
       for (const j of nuevos) arrivalN[j] = tNow;
       dvRem -= sumFa * dt;
       llenadosSolve += nuevos.length;
@@ -385,6 +445,12 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     conservacionMaxRel: conservMax,
     pFieldPa: pField, nNodos: M,
     etaEffPaS: +eta.toFixed(2), QmmS: +Q.toFixed(1), pasos,
+    fase2: {
+      activada: fase === 2,
+      tSwitchS: +Math.max(0, tSwitch).toFixed(4),
+      volFase2Mm3: fase === 2 ? +(volLleno - volSwitch).toFixed(1) : 0,
+      qFinalFrac: fase === 2 ? +(QinAct / Q).toFixed(4) : 1,
+    },
     nota: 'Hele-Shaw/FAN N1 con COLAPSO DEL ESPESOR (p uniforme en el hueco: super-nodos columna; ' +
       'Σ caras = h³/12η exacto). η newtoniana efectiva calibrada a Eq 5.22 en (H=pared, v=lazo §5.5.1). ' +
       'La colada (tubo) va como placas con h=⌀ EDT (~2.7× menos resistiva que Poiseuille tubo). ' +

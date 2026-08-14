@@ -526,6 +526,59 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     if (fanR.frente[roto.idx(i, j, k)] >= 0) return true; return false; })();
   check('y su `frente` queda en −1 (nunca se pinta como lleno)', !bTocado);
 
+  // ══ EL SWITCHOVER V/P (orden 2026-08-14-switchover-vp) ══
+  // La frontera ROTA a su variable conjugada: fase 1 impone Q (la p responde);
+  // al tocar P₀ el control conmuta y se impone P (el Q responde y DECAE). La
+  // física de la fase 2 es Washburn 1921: L² = L₀² + (h²P₀/6η)(t−t₀) ⇒ L ∝ √t.
+  console.log('── SWITCHOVER V/P · la cara de presión contra Washburn (L ∝ √t)');
+  {
+    const rSw = fan.resolverLlenadoFAN(tira, {
+      material: f.ABS_MG47, vMs: 0.82, wallMm: HT, QmmS: QT,
+      pLimitMPa: 8, switchover: { modo: 'presion', tMaxS: 1.0 },
+    });
+    const Lde = (t2) => { let m = 0;
+      for (let k = 0; k < 2; k++) for (let j = 0; j < nyT; j++) for (let i = 0; i < nxT; i++) {
+        const id = tira.idx(i, j, k); const a = rSw.tArrivalS[id];
+        if (a >= 0 && a <= t2) { const x2 = (i + .5) * cT; if (x2 > m) m = x2; }
+      } return m; };
+    const t0 = rSw.fase2.tSwitchS, L0 = Lde(t0) / 1000;
+    const P0 = 8e6, h2 = HT / 1000, eta2 = rSw.etaEffPaS;
+    let peor = 0;
+    for (const dt2 of [0.2, 0.5, 0.9]) {
+      const Lm = Lde(t0 + dt2) / 1000;
+      const Lteo = Math.sqrt(L0 * L0 + (h2 * h2 * P0 * dt2) / (6 * eta2));
+      const err = Math.abs(Lm - Lteo) / Lteo;
+      if (err > peor) peor = err;
+    }
+    check('WASHBURN: en la cara de presión, L sigue √t (±3 % en 3 instantes)',
+      rSw.fase2.activada && peor <= 0.03, `peor error ${(100 * peor).toFixed(1)} % · conmutó en t=${t0}s`);
+    // continuidad: la v̄ medida justo tras conmutar vs la v̄ que Washburn predice
+    // para la MISMA ventana (v decae DENTRO de la ventana — no es discontinuidad)
+    const dtV = 0.01;
+    const vMed = (Lde(t0 + dtV) / 1000 - L0) / dtV;
+    const vTeo = (Math.sqrt(L0 * L0 + (h2 * h2 * P0 * dtV) / (6 * eta2)) - L0) / dtV;
+    check('CONTINUIDAD: v tras la conmutación ≈ Washburn en la misma ventana (±10 %)',
+      Math.abs(vMed - vTeo) / vTeo <= 0.10, `v̄ ${vMed.toFixed(3)} vs ${vTeo.toFixed(3)} m/s`);
+    check('el caudal DECAE (la máquina deja de empujar sola): Q_final < 20 % de Q₀',
+      rSw.fase2.qFinalFrac < 0.20, `Q_final/Q₀ = ${rSw.fase2.qFinalFrac}`);
+    check('AUDITORÍA fase 2: Σflujos = Q_in medido (consistencia interna ≤1e-6)',
+      rSw.conservacionMaxRel <= 1e-6, rSw.conservacionMaxRel.toExponential(1));
+  }
+  // el CREEP DESBOCADO, medido e IMPRESO (el caso de aceptación del N2): sin
+  // térmica, la espiral en modo presión con los 10 s del protocolo REBASA la
+  // herramienta — los 75 mm que nos faltan (552−477) son creep-hasta-congelar.
+  {
+    const espC = ed.campoEspiral({ TmeltC: 238 });
+    const rC = fanCjs.resolverLlenadoFAN(espC.campo, {
+      material: espC.material, vMs: espC.vFrenteMs, wallMm: espC.hMm, QmmS: espC.QmmS,
+      pLimitMPa: espC.pLimitMPa, nPasos: 120, switchover: { modo: 'presion', tMaxS: 10 },
+    });
+    const Lc = ed.longitudEspiralMm(espC, rC.frente);
+    check('CREEP ISOTERMO DESBOCADO (declarado — la térmica del N2, cuantificada)',
+      rC.fase2.activada && Lc >= 799,
+      `con creep: ${Lc} mm (rebasa la herramienta de 800) vs stop: 477 vs medido: 552 — el freno que falta es térmico`);
+  }
+
   // ── SHORT SHOT FÍSICO: máquina de 40 MPa contra una tira de 83 ──
   const fanS = fan.resolverLlenadoFAN(tira, { material: f.ABS_MG47, vMs: 0.82, wallMm: HT, QmmS: QT, pLimitMPa: 40 });
   check('SHORT SHOT: con tope de 40 MPa el frente SE PARA a media tira',
