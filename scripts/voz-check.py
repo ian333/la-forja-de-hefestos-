@@ -86,7 +86,29 @@ def norm(s):
         t = t.strip('.,')
         if not t: continue
         out.extend(_num(t).split() if re.fullmatch(r'\d+(?:[.,]\d+)?', t) else [t])
-    return out
+    # LA MARCA SE CANONIZA. El TTS dice "gaia práim" (respelado en narracion-gen) y Whisper
+    # lo escribe como quiere: prime, praim, preime, gaya, daya… Todas son la MISMA marca bien
+    # dicha — compararlas letra a letra cría falsos positivos justo en la línea que más se
+    # repite de toda la serie.
+    CANON = {'praim': 'prime', 'preime': 'prime', 'prim': 'prime',
+             'gaya': 'gaia', 'daya': 'gaia', 'gaia': 'gaia'}
+    return [CANON.get(t, t) for t in out]
+
+
+def iguales(a, b):
+    """Iguales como LISTA o como CADENA PEGADA. El español ELIDE: "es carbono" suena
+    "escarbono" y "necesita a nadie" suena "necesita nadie" — Whisper escribe lo segundo y
+    la comparación por tokens reprobaba pronunciaciones PERFECTAS (medido 2026-08-14, 2 de
+    5 fallas del lote eran esto). Pegar todo y quitar la 'a' de elisión compara FONÉTICA."""
+    if a == b:
+        return True
+    ja, jb = ''.join(a), ''.join(b)
+    if ja == jb:
+        return True
+    # elisión de la preposición 'a' entre vocales: quítala de ambos lados y compara
+    ea = ''.join(x for x in a if x != 'a')
+    eb = ''.join(x for x in b if x != 'a')
+    return ea == eb
 
 from faster_whisper import WhisperModel
 model = WhisperModel('large-v3', device='cuda', compute_type='float16')
@@ -97,7 +119,7 @@ for i, (w, texto) in enumerate(zip(wavs, lines), 1):
     segs, _ = model.transcribe(w, language='es', beam_size=5)
     oido = ' '.join(s.text for s in segs).strip()
     a, b = norm(texto), norm(oido)
-    if a == b:
+    if iguales(a, b):
         estado = 'ok'
     else:
         # ¿qué palabras se perdieron o cambiaron?

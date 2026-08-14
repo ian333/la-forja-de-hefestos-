@@ -138,6 +138,12 @@ def gen_trim(text, final):
     # conservan el original.
     tts_text = (text.replace('...', ', ').replace('…', ', ').replace(':', ','))
     tts_text = tts_text.replace('enlace', 'enláce').replace('Enlace', 'Enláce')
+    # LA MARCA SE PRONUNCIA "gaia práim", SIEMPRE. XTTS en "es" lee "Prime" a la española y
+    # sale cualquier cosa — medido 2026-08-14 en 3 de 4 tomas del cierre de los cuentos:
+    # "Preime", "Gaia I", "Daya Prime". Es LA línea de recuerdo de marca: o suena idéntica
+    # en todas las piezas o no sirve. Respelado SOLO para el TTS; el guion y los subtítulos
+    # conservan "GAIA Prime".
+    tts_text = tts_text.replace('GAIA Prime', 'Gaia Práim').replace('Gaia Prime', 'Gaia Práim')
     tts_text = tts_text.strip()
     if tts_text.endswith('.'):
         tts_text = tts_text[:-1]
