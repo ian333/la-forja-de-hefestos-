@@ -97,7 +97,17 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
   }
 
   await freshCtx();
-  const dur = durOv > 0 ? durOv : (await page.evaluate((h) => window[h].duration, hook)) || 24;
+  const sceneDur = (await page.evaluate((h) => window[h].duration, hook)) || 24;
+  // CINTURÓN de constantes GEMELAS (2026-08-17): formato.dur del manifiesto y la duración
+  // que calcula la escena DEBEN coincidir — cuando divergen, el render sale con cuadros de
+  // más/menos o congelado al final (pasó al cambiar bandaDur sin tocar los manifiestos; se
+  // cazó a mano con un probe — ahora es automático). ALLOW_DUR_DRIFT=1 lo baja a warning.
+  if (durOv > 0 && Math.abs(durOv - sceneDur) > 0.05) {
+    const msg = `[clip] ✗ duración del manifiesto (${durOv}s) ≠ escena (${sceneDur}s)`;
+    if (process.env.ALLOW_DUR_DRIFT === '1') console.log(msg + ' — permitido por ALLOW_DUR_DRIFT');
+    else { console.error(msg + ' — actualiza formato.dur o la escena'); process.exit(1); }
+  }
+  const dur = durOv > 0 ? durOv : sceneDur;
   const N = Math.round(dur * fps);
   const mine = nshards > 1 ? Math.ceil((N - shard) / nshards) : N;
   console.log(`[clip] ${N} frames · ${dur}s @ ${fps}fps · ${W}x${H} (dsf ${sup}) · lote ${batch} · captura ${captura}`

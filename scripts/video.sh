@@ -101,14 +101,14 @@ paso_render() {
     if [ "$SHARDS" -gt 1 ]; then
       local pids=()
       for k in $(seq 0 $((SHARDS-1))); do
-        node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" \
+        node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" --dur "$DUR" \
           --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH" \
           --nshards "$SHARDS" --shard "$k" > "/tmp/$ID-shard$k.log" 2>&1 &
         pids+=($!)
       done
       wait "${pids[@]}"
     else
-      node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" \
+      node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" --dur "$DUR" \
         --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH"
     fi
     local nf; nf=$(ls "$FRAMES"/*.$FEXT 2>/dev/null | wc -l)

@@ -15,6 +15,13 @@
  *                node scripts/salud-canarios.cjs o2 wpair    # solo esos
  */
 'use strict';
+// EL ENV DE GPU VIAJA EN LA HERRAMIENTA (2026-08-17): llamar esto por ssh sin
+// DISPLAY/GALLIUM/MESA hacía que Chrome no encontrara GL real y —con el respaldo de
+// software bloqueado— los 4 canarios "morían" con "Error creating WebGL context".
+// Una hora de cacería para un env faltante. Nunca más: defaults aquí, no en el caller.
+process.env.DISPLAY = process.env.DISPLAY || ':0';
+process.env.GALLIUM_DRIVER = process.env.GALLIUM_DRIVER || 'd3d12';
+process.env.MESA_D3D12_DEFAULT_ADAPTER_NAME = process.env.MESA_D3D12_DEFAULT_ADAPTER_NAME || 'NVIDIA';
 const { chromium } = require('playwright');
 
 // Los CANARIOS: los ganadores + el canon de átomos. Cada uno declara su página, hook y
@@ -38,8 +45,26 @@ const lista = pedidos.length ? pedidos : Object.keys(CANARIOS);
       '--hide-scrollbars', '--window-size=540,960'],
   });
   const ctx = await browser.newContext({ viewport: { width: 540, height: 960 } });
-  const cdp0 = null;
   let fallas = 0;
+  // CINTURÓN DE GPU REAL: si el renderer no es el D3D12/NVIDIA, todo lo demás es teatro
+  // (SwiftShader pinta distinto y lento). Se verifica UNA vez antes de los canarios.
+  {
+    const p0 = await ctx.newPage();
+    await p0.goto('about:blank');
+    const gl = await p0.evaluate(() => {
+      const c = document.createElement('canvas'); const g = c.getContext('webgl2');
+      if (!g) return 'NULL';
+      const e = g.getExtension('WEBGL_debug_renderer_info');
+      return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : 'masked';
+    });
+    await p0.close();
+    if (!/D3D12.*NVIDIA|NVIDIA.*D3D12/.test(gl)) {
+      console.log(`✗ GPU NO REAL: renderer="${gl}" — ¿falta el env de GPU o el canal D3D12 está caído?`);
+      await browser.close();
+      process.exit(1);
+    }
+    console.log(`  gl: ${gl}`);
+  }
   for (const nombre of lista) {
     const c = CANARIOS[nombre];
     if (!c) { console.log(`✗ ${nombre}: canario desconocido`); fallas++; continue; }

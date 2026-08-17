@@ -74,6 +74,13 @@ export function parseAtomBin(buf: ArrayBuffer): AtomAbInitio {
     });
     o += porOrbital ? 16 : 12;
   }
+  // CINTURÓN (2026-08-17): bin truncado = arrays cortos en silencio. Se verifica ANTES.
+  const cab = 28 + S * (porOrbital ? 16 : 12);
+  // posiciones M×6 + shellOf M + densidad M (ATM2/3). El primer cinturón OLVIDÓ el M de
+  // shellOf y un corte al 99.9 % se colaba — lo cazó el control negativo del test. Un
+  // cinturón sin control negativo es fe, no seguridad.
+  const esperado = cab + M * 6 + M + (magic === 'ATM1' ? 0 : M);
+  if (buf.byteLength < esperado) throw new Error(`bin de átomo truncado: ${buf.byteLength} bytes < ${esperado} esperados (Z=${Z} M=${M} S=${S} ${magic})`);
   // RUTA RÁPIDA: una vista Int16Array sobre el buffer en vez de 330 000 llamadas a
   // getInt16 (con 110 000 puntos eso son 3 lecturas por punto, una por una). El único
   // requisito es alineación a 2 bytes; el encabezado mide 28 + 12·S, siempre par, así que

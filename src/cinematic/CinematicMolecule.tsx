@@ -1260,6 +1260,11 @@ function parseO2AbInitio(buf: ArrayBuffer): O2AbInitio {
   const K = dv.getInt32(off, true); off += 4;
   const Rmin = dv.getFloat32(off, true); off += 4;
   const Rmax = dv.getFloat32(off, true); off += 4;
+  // CINTURÓN (2026-08-17): un .bin TRUNCADO (media copia, disco lleno, rsync cortado)
+  // producía arrays cortos EN SILENCIO — nubes a medias sin ningún error. Ayer un master
+  // a media copia dio "moov not found" en ffmpeg; un bin no tiene ni ese aviso.
+  const esperado = 24 + K * 4 * 5 + Nacc * 3 + (Nacc + Ndep + Nspin) * K * 6;
+  if (buf.byteLength < esperado) throw new Error(`bin WAP truncado: ${buf.byteLength} bytes < ${esperado} esperados (Nacc=${Nacc} Ndep=${Ndep} Nspin=${Nspin} K=${K})`);
   const Rvals = new Float32Array(buf.slice(off, off + K * 4)); off += K * 4;
   // accMass SÍ se usa ahora: en IÓNICOS (NaCl) el brillo se llavea a la carga
   // ACUMULADA EN EL ION (0.7→1.0 e⁻ desde lejos = el robo a distancia), porque
@@ -1485,6 +1490,11 @@ function O2Cloud({ posQ, colors, Rvals, N, K, R, brightness, size, ring = 0, cor
     g.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
     return g;
   }, [colors, N]);
+  // CINTURÓN: el shader tiene uCores[8]/uBondA[6] FIJOS y el clamp de abajo DESCARTA los
+  // que sobren EN SILENCIO — el butírico tiene 14 núcleos, o sea 6 sin anti-quemado y nadie
+  // avisó. GLSL no truena por esto; el que tiene que gritar es JS.
+  if ((cores?.length ?? 0) > 8) console.error(`O2Cloud: ${cores!.length} núcleos > uCores[8] — ${cores!.length - 8} SIN anti-quemado`);
+  if ((bonds?.length ?? 0) > 6) console.error(`O2Cloud: ${bonds!.length} enlaces > uBondA[6] — ${bonds!.length - 6} SIN glow`);
   const uniforms = useMemo(() => ({ uSize: { value: size }, uPix: { value: 1 }, uBright: { value: brightness }, uRing: { value: ring }, uCoreThin: { value: coreThin }, uCores: { value: Array.from({length:8},(_,i)=> new THREE.Vector3(...(cores?.[i] ?? [0,0,0]))) }, uNCores: { value: Math.min(8, cores?.length ?? 0) }, uCoreR: { value: coreR }, uBondA: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[0] ?? [0,0,0]))) }, uBondB: { value: Array.from({length:6},(_,i)=> new THREE.Vector3(...(bonds?.[i]?.[1] ?? [0,0,0]))) }, uNBonds: { value: Math.min(6, bonds?.length ?? 0) }, uBondGlow: { value: bondGlow }, uTime: { value: 0 }, uTwinkle: { value: 0 } }), []);
   useEffect(() => {
     // bracket en Rvals (descendente Rmax→Rmin). frac entre k y k+1.
