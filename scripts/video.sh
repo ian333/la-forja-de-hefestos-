@@ -3,7 +3,7 @@
 # no un script propio. Reemplaza a wpair-full-pipeline.sh / wpairB-* / wpair-assemble.sh /
 # wpair-capsula.sh / render-li2*.sh. Ver docs/CANON-VIDEO.md.
 #
-#   bash scripts/video.sh <id> [paso]      paso = salud|campo|subs|render|ensamble|verificar|capsula|entrega|publicar|todo
+#   bash scripts/video.sh <id> [paso]      paso = salud|voz|campo|subs|render|ensamble|verificar|capsula|entrega|publicar|todo
 #   bash scripts/video.sh mol-h2o-el-puente todo
 #   SHARDS=3 bash scripts/video.sh mol-h2o-el-puente render     # override puntual
 #
@@ -303,6 +303,39 @@ paso_salud() {
   bash "$ROOT/scripts/salud.sh"
 }
 
+paso_voz() {
+  echo "── VOZ (fit-check → TTS con caché → ensamble → whisper) ──"
+  # La voz vivía FUERA del pipeline: cada corrida era un script scratch distinto (6 en
+  # una semana) y sus errores clásicos —guion que no cabe, wavs huérfanos, voz sin
+  # verificar— se repetían. VOZ=0 la salta (p.ej. piezas sin narración).
+  [ "${VOZ:-1}" = "0" ] && { echo "   (VOZ=0: saltada)"; return 0; }
+  local GARCH; GARCH="$ROOT/$(m guion.archivo)"
+  [ -f "$GARCH" ] || { echo "   ✗ no existe el guion $GARCH"; return 1; }
+  local MOLV; MOLV=$(basename "$GARCH" .txt)
+  local VEL; VEL=$(m audio.vel); VEL="${VEL:-1.0}"
+  # FIT-CHECK ANTES DE GASTAR TTS: 0.455 s/palabra medido de los ensambles reales con
+  # VEL=1.10 y gap 0.40. Un guion que no cabe = video CONGELADO en el último cuadro
+  # (habría pasado en 3 de 4 átomos del lote del 2026-08-12; se cazó a mano — ahora es gate).
+  python3 - "$GARCH" "$DUR" <<'PYFIT' || return 1
+import sys
+ls = [l.strip() for l in open(sys.argv[1], encoding='utf-8') if l.strip()]
+w = sum(len(l.split()) for l in ls)
+est = w * 0.455
+tope = float(sys.argv[2]) - 1.5
+print(f"   guion: {len(ls)} líneas · {w} palabras · voz estimada {est:.1f}s · cabe hasta {tope:.1f}s")
+if est > tope:
+    print(f"   ✗ NO CABE (se pasa {est-tope:.1f}s): recorta el guion o alarga formato.dur ANTES de gastar TTS")
+    sys.exit(1)
+PYFIT
+  VEL="$VEL" /home/ian/tts-venv/bin/python "$ROOT/scripts/narracion-gen.py" "$MOLV" 2>&1 | grep -E "CACHÉ|ELEGIDA|huérfano|FALTAN|✗" | tail -12
+  python3 "$ROOT/scripts/assemble-narracion.py" "$MOLV" --gap 0.40 --lead 0.40 2>&1 | tail -1
+  if ! /home/ian/tts-venv/bin/python "$ROOT/scripts/voz-check.py" "$MOLV" 2>&1 | tee /tmp/vozcheck-$ID.txt | grep -q "✓ la voz DICE el guion"; then
+    echo "   ✗ LA VOZ NO DICE EL GUION — no se sigue:"; grep -E "DIFIERE|guion:|oído" /tmp/vozcheck-$ID.txt | head -8
+    return 1
+  fi
+  echo "   ✓ voz verificada por transcripción"
+}
+
 paso_entrega() {
   echo "── ENTREGA (ext4 SIEMPRE; Windows si vive; encola si no) ──"
   [ -f "$OH264" ] || { echo "   ✗ no existe $OH264 — corre 'ensamble' primero"; return 1; }
@@ -329,6 +362,7 @@ paso_entrega() {
 
 case "$PASO" in
   salud)     paso_salud ;;
+  voz)       paso_voz ;;
   entrega)   paso_entrega ;;
   subs)      paso_subs ;;
   render)    paso_render ;;
@@ -337,6 +371,6 @@ case "$PASO" in
   campo)     paso_campo ;;
   verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
-  todo)      paso_salud && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
+  todo)      paso_salud && paso_voz && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
   *) echo "paso inválido: $PASO (subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
 esac
