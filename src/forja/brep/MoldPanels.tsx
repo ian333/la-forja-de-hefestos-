@@ -552,7 +552,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -613,7 +613,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
-      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} />}
+      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={cicloEstacion6} />}
+      {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -843,11 +844,12 @@ function CicloE4({ e4, onE5 }: { e4: import('../mold/estudio-molde-datos').Estac
  *  conicidad estaba bien (medida), pero la colada terminaba en su punto MÁS ANCHO justo
  *  donde tocaba una pared de 2 mm. Aquí la sección BAJA monótona hasta la compuerta, y
  *  cada número sale de `feed.ts`/`gating.ts` — esta estación no inventa una sola fórmula. */
-function CicloE5({ e5, e5v, datums, tuberia }: {
+function CicloE5({ e5, e5v, datums, tuberia, onE6 }: {
   e5: import('../mold/estudio-molde-datos').Estacion5Dado;
   e5v?: import('../mold/colada').VerificacionColada;
   datums?: import('../mold/colada').DatumsColada;
   tuberia?: { unreachable: number; snapMm: number; volColadaVoxCc: number; volPiezaCc: number };
+  onE6?: () => void;
 }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   const E = e5.estrecha;
@@ -965,6 +967,61 @@ function CicloE5({ e5, e5v, datums, tuberia }: {
           </div>
           {e5.anuncios.map((a, k) => (
             <div key={k} data-testid={`e5-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {onE6 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e6" onClick={() => onE6()} style={{ margin: '4px 6px 6px' }}
+          title="EMPAQUE (cap 7): sostener presión hasta que el gate congela — el retorno de la E4 se resuelve aquí, y la contracción pvT entrega su número a la E9">
+          ▶ estación 6 — EMPAQUE: compensar la contracción
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 6 — EMPAQUE (cap 7). El retorno de la E4 CERRADO (el gate real es el
+ *  sprue de la Fig 7.2), la contracción pvT con su número para la E9, y LA BANDERA
+ *  de exageración SIEMPRE visible (pedido de ian: exagerar el encogimiento en
+ *  escena, jamás sin rótulo — el número real manda en filas y gates). */
+function CicloE6({ e6 }: { e6: import('../mold/estudio-molde-datos').Estacion6Dado }) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 6 — empaque (cap 7): sostener presión hasta que el gate congela
+      </div>
+      <div data-testid="e6-bandera" style={{ margin: '4px 6px', padding: '5px 7px', background: '#3a2f14', border: '1px solid #f4d27a', borderRadius: 6, fontSize: 10.5, color: '#f4d27a', fontWeight: 700 }}>
+        ⚠ LA ESCENA EXAGERA LA CONTRACCIÓN ×{e6.contraccion.exag} — real: {e6.contraccion.linealPct} % lineal
+        <div style={{ fontWeight: 400, color: '#e0c98a', fontSize: 10 }}>
+          práctica estándar (Moldflow pinta el warp escalado y rotulado); mueve el reloj 💧 para ver el encogimiento
+        </div>
+      </div>
+      <div style={{ margin: '2px 6px' }}>
+        {e6.filas.map((f) => (
+          <div key={f.id} data-testid={`e6-fila-${f.id}`} style={{ padding: '4px 6px', marginBottom: 3, background: '#141a22', borderRadius: 6, borderLeft: `3px solid ${COL[f.estado]}` }}>
+            <div style={{ fontSize: 10.5, color: '#dfe8f4' }}>
+              <b>{f.titulo}</b> · <span style={{ color: COL[f.estado], fontWeight: 700 }}>{f.estado}</span>
+            </div>
+            <div style={{ fontSize: 10.5, color: '#a8bad0' }}>{f.valor} <span style={{ color: '#6f8199' }}>(límite: {f.limite})</span></div>
+            <div style={{ fontSize: 10, color: '#8fa1b8' }}>{f.porque} · {f.seccion}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ margin: '2px 6px 6px', padding: '5px 7px', background: '#12202b', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9fd0f4' }}>la CADENA del gate (§7.3.4 · el retorno de la E4)</div>
+        {e6.gate.cadena.map((c, k) => (
+          <div key={k} style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>· {c}</div>
+        ))}
+      </div>
+      {e6.anuncios.length > 0 && (
+        <div style={{ margin: '2px 6px 8px', padding: '5px 7px', background: '#241a10', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e6.anuncios.length})</div>
+          {e6.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e6-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
               <b>→ estación {a.estacion}:</b> {a.titulo}
               <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
             </div>

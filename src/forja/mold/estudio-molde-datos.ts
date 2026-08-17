@@ -44,6 +44,8 @@ import { pinBuckling } from './ejection';
 import { designSprueFeed, minRunnerRadius, steelSafeDiaMm, pressureDropRunner, runnerCoolingTimeS, STANDARD_RUNNER_DIAMM, FEED_MATERIALS, type RunnerSegment } from './feed';
 import { gateDesign, gateDropStripPL, gateFreezeStripS, gateFreezeCylS } from './gating';
 import type { DatumsColada } from './colada';
+import { volumenColadaCc } from './colada';
+import { shrinkage, ABS_TAIT } from './shrinkage';
 import type { MeltMaterial } from './filling';
 import { ABS_MG47, ABS_CROSS, eta0CrossWLF } from './filling';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
@@ -2260,5 +2262,154 @@ export function espiralMalla(e: CampoEspiral, dThetaDeg = 2): MallaEspiral {
   return {
     positions: new Float32Array(P), normals: new Float32Array(N),
     indices: new Uint32Array(I), sV: new Float32Array(S), tris: I.length / 3,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 6: EMPAQUE (cap 7)                             */
+/* (orden 2026-08-14-ciclo-dado-estacion6)                                     */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * El empaque compensa la contracción pvT sosteniendo presión hasta que el gate
+ * congela y aísla la cavidad. Como la E5: NINGUNA fórmula nueva — gateFreezeCylS
+ * (Tabla 7.4, validada contra el pin-point del libro), shrinkage/ABS_TAIT (pvT
+ * real, el mismo que usa factory a 0.8·p_fill), tcPartS (Eq 9.5, una fuente).
+ *
+ * EL GATE REAL: tras el volteo Fig 7.2 el gate del dado es el SPRUE DIRECTO —
+ * el freeze manda el ⌀ de la BASE del bebedero (cilindro), no el edge genérico
+ * de la máquina. Y el sprue NO es agrandable en tryout (GATE_AGRANDABLE: lo
+ * fija el bushing) ⇒ la resolución del anuncio de la E4 es de DISEÑO: elegir
+ * el orificio de bushing ESTÁNDAR que aguante el empaque.
+ *
+ * EXTENSIÓN DECLARADA: catálogo de orificios de bushing en pasos de 1/32"
+ * (2.38 / 3.18 / 3.97 / 4.76 / 5.56 / 6.35 / 7.94 mm — DME/estándar comercial).
+ */
+export const BUSHING_ORIFICIOS_MM = [2.38, 3.18, 3.97, 4.76, 5.56, 6.35, 7.94];
+/** T de no-flujo del ABS (la constante de moldmachine §7.3, 132 °C) */
+const T_NOFLOW_ABS_C = 132;
+
+export interface Estacion6Dado {
+  filas: FilaLlenado[];
+  pPackMPa: number;
+  gate: {
+    tipo: string; agrandable: boolean;
+    diaOrigMm: number; freezeOrigS: number; tPackNeededS: number; freezeCortoOrig: boolean;
+    diaResueltoMm: number | null; freezeResueltoS: number | null;
+    cadena: string[];
+  };
+  contraccion: { linealPct: number; moldScale: number; pPackMPa: number; exag: number; pPackBandaMPa: number | null };
+  masa: { piezaG: number; coladaG: number; disparoG: number };
+  anuncios: AnuncioRetorno[];
+}
+
+export function estacion6Dado(pkg: MoldPackage, d: DatumsColada, o?: {
+  partVolCc?: number;
+  /** SOLO VISUAL, siempre con bandera: cuánto exagerar la contracción en escena */
+  exag?: number;
+  /** para el CONTROL NEGATIVO del gate: pared más gruesa exige más empaque */
+  wallMmOverride?: number;
+}): Estacion6Dado {
+  const dz: any = pkg.diseno;
+  const A = PLASTICOS_A.ABS;
+  const exag = o?.exag ?? 20;
+  const partVolCc = o?.partVolCc ?? 14.14;
+
+  // p de empaque: la de factory (0.8·p_llenado) — §7.3 rango típico 50-80 %
+  const pPackMPa = +(0.8 * dz.fillMPa).toFixed(1);
+
+  // el empaque que la PIEZA necesita = t_c de la pared (Eq 9.5, UNA fuente: el feed)
+  const tcBase: number = dz.alimentacion.tcPartS;
+  const tPackNeededS = o?.wallMmOverride
+    ? tcBase * (o.wallMmOverride / 2) ** 2            // Eq 9.5 ∝ h² (control negativo)
+    : tcBase;
+
+  // EL GATE REAL: sprue directo — freeze del CILINDRO al ⌀ base del bebedero
+  const diaOrigMm = +(2 * d.rBaseMm).toFixed(2);
+  const freezeDe = (diaMm: number) =>
+    gateFreezeCylS(A.alphaM2s, diaMm / 1000, A.tMeltC, A.tCoolC, T_NOFLOW_ABS_C);
+  const freezeOrigS = +freezeDe(diaOrigMm).toFixed(2);
+  const freezeCortoOrig = freezeOrigS < tPackNeededS;
+
+  // LA RESOLUCIÓN DE DISEÑO: subir por el catálogo estándar hasta aguantar
+  const cadena: string[] = [
+    `sprue directo (Fig 7.2) — el gate ES la base del bebedero: ⌀${diaOrigMm} → freeze ${freezeOrigS}s ${freezeCortoOrig ? '<' : '≥'} t_pack ${tPackNeededS.toFixed(2)}s`,
+  ];
+  let diaResueltoMm: number | null = freezeCortoOrig ? null : diaOrigMm;
+  let freezeResueltoS: number | null = freezeCortoOrig ? null : freezeOrigS;
+  if (freezeCortoOrig) {
+    for (const dia of BUSHING_ORIFICIOS_MM) {
+      if (dia <= diaOrigMm) continue;
+      const f = +freezeDe(dia).toFixed(2);
+      cadena.push(`bushing estándar ⌀${dia} → freeze ${f}s ${f >= tPackNeededS ? '≥ t_pack ✓ SE ELIGE' : '< t_pack, sigue'}`);
+      if (f >= tPackNeededS) { diaResueltoMm = dia; freezeResueltoS = f; break; }
+    }
+    if (diaResueltoMm == null) cadena.push('ningún orificio del catálogo aguanta — subir p_pack o adelgazar pieza (§7.1.5)');
+  }
+
+  // CONTRACCIÓN pvT (Tait REAL del ABS) a la p_pack elegida — el número de la E9
+  const sh = shrinkage(ABS_TAIT, { tNoFlowK: T_NOFLOW_ABS_C + 273.15, pPackPa: pPackMPa * 1e6 });
+  const linealPct = +(sh.linear * 100).toFixed(2);
+  // si la heurística 0.8·p_fill deja la contracción FUERA de banda (el dado llena
+  // a solo ~11 MPa: 0.8× es empaque débil), buscar la p_pack que SÍ entra — es
+  // perilla de PROCESO (se ajusta en tryout), no de acero
+  let pPackBandaMPa: number | null = null;
+  for (let pp = Math.ceil(pPackMPa); pp <= 80; pp++) {
+    if (shrinkage(ABS_TAIT, { tNoFlowK: T_NOFLOW_ABS_C + 273.15, pPackPa: pp * 1e6 }).linear * 100 <= 0.8) { pPackBandaMPa = pp; break; }
+  }
+
+  // masa del disparo (ρ del Cycolac MG47 a RT)
+  const rhoGcc = A.rhoRTKgM3 / 1000;
+  const coladaCc = volumenColadaCc(d);
+  const masa = {
+    piezaG: +(partVolCc * rhoGcc).toFixed(1),
+    coladaG: +(coladaCc * rhoGcc).toFixed(1),
+    disparoG: +((partVolCc + coladaCc) * rhoGcc).toFixed(1),
+  };
+
+  const filas: FilaLlenado[] = [];
+  const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
+    filas.push({ id, titulo, valor, limite, estado, seccion, porque });
+  fila('ppack', 'presión de empaque', `${pPackMPa} MPa`, `0.8 × p_llenado (${dz.fillMPa} MPa)`,
+    'CUMPLE', '§7.3 · factory', 'el rango típico del libro es 50-80 % de la presión de llenado; la casa usa 0.8 (factory).');
+  fila('freeze', 'freeze del gate REAL (sprue ⌀ base) vs empaque necesario',
+    `${freezeOrigS} s vs ${tPackNeededS.toFixed(2)} s`, 'freeze ≥ t_pack (§7.3.4)',
+    freezeCortoOrig ? 'VIOLA' : 'CUMPLE', 'Tabla 7.4 · §7.1.5',
+    'el gate congela y aísla la cavidad: si congela ANTES de terminar el empaque, la contracción queda sin compensar (rechupes).');
+  fila('retorno', 'EL RETORNO DE LA E4, resuelto en DISEÑO',
+    diaResueltoMm != null ? `bushing ⌀${diaResueltoMm} → freeze ${freezeResueltoS} s` : 'SIN solución en catálogo',
+    'orificio ESTÁNDAR del catálogo (1/32")',
+    diaResueltoMm != null ? 'CUMPLE' : 'VIOLA', '§7.2.1 · GATE_AGRANDABLE',
+    'el sprue NO se agranda en tryout (lo fija el bushing): la solución es elegir el orificio correcto AHORA — la cadena completa abajo.');
+  fila('contraccion', 'contracción pvT (Tait) a p_pack',
+    `${linealPct} % lineal · moldScale ${sh.moldScale.toFixed(4)}`, 'datasheet Cycolac MG47: 0.5–0.8 %',
+    linealPct >= 0.5 && linealPct <= 0.8 ? 'CUMPLE' : 'ADVIERTE', '§10.1 · Eq 10.13',
+    linealPct > 0.8 && pPackBandaMPa != null
+      ? `fuera de banda porque 0.8·p_fill es empaque DÉBIL en una pieza que llena a ${dz.fillMPa} MPa — subir p_pack a ~${pPackBandaMPa} MPa entra a banda (perilla de PROCESO, se ajusta en tryout). La E9 escala con el moldScale del p_pack FINAL.`
+      : 'el número que la E3 dejó en 1.0 DECLARADO: la E9 escalará el acero con ESTE moldScale.');
+  fila('masa', 'masa del disparo', `pieza ${masa.piezaG} g + colada ${masa.coladaG} g = ${masa.disparoG} g`,
+    'ρ = 1.044 g/cc (Cycolac RT)', 'CUMPLE', 'PLASTICOS_A', 'el observable que una báscula puede refutar en tryout.');
+
+  const anuncios: AnuncioRetorno[] = [
+    {
+      estacion: 9, titulo: 'la contracción tiene su número: el acero se escala aquí',
+      detalle: `moldScale ${sh.moldScale.toFixed(4)} (${linealPct} % lineal a ${pPackMPa} MPa) — la escala 1.0 de la E3 era retorno DECLARADO; la E9 talla con éste`,
+      seccion: '§10.1 · Eq 10.13',
+    },
+  ];
+  if (diaResueltoMm != null && diaResueltoMm > diaOrigMm) anuncios.push({
+    estacion: 5, titulo: 'el bushing creció: la colada pesa más',
+    detalle: `⌀base ${diaOrigMm} → ${diaResueltoMm} mm por empaque — recalcular %regrind (§6.2.3) con el sprue nuevo`,
+    seccion: '§6.2.3 · §7.3.4',
+  });
+
+  return {
+    filas, pPackMPa,
+    gate: {
+      tipo: 'sprue directo (Fig 7.2)', agrandable: false,
+      diaOrigMm, freezeOrigS, tPackNeededS: +tPackNeededS.toFixed(2), freezeCortoOrig,
+      diaResueltoMm, freezeResueltoS, cadena,
+    },
+    contraccion: { linealPct, moldScale: +sh.moldScale.toFixed(4), pPackMPa, exag, pPackBandaMPa },
+    masa, anuncios,
   };
 }

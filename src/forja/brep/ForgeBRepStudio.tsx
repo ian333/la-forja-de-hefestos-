@@ -6171,7 +6171,23 @@ export default function ForgeBRepStudio() {
                 {ciclo?.espiralExacta && (
                   <EspiralMeltExacta d={ciclo.espiralExacta} t={tFill} />
                 )}
-                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && (
+                {/* E6 · EMPAQUE: el fundido LLENO (t=1) ENCOGIÉNDOSE dentro del acero
+                    fijo — CONTRACCIÓN EXAGERADA ×N con BANDERA (pedido de ian; el rótulo
+                    vive en docName + panel + curso). k escala sobre el centro de la pieza. */}
+                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && ciclo?.e6 && ciclo?.e5datums && (() => {
+                  const k = Math.max(0.05, 1 - (ciclo.e6.contraccion.linealPct / 100) * ciclo.e6.contraccion.exag * tFill);
+                  // centro de la pieza según el VOLTEO (Fig 7.2): la pieza va de zPartMm
+                  // (la boca, en la partición) a zPartMm+39.5 (base cerrada, hacia A).
+                  // ⚠ e5datums es DatumsColada y NO trae zBaseCerradaMm — usarlo dio NaN
+                  // (posición NaN = fundido invisible; vite build no typechecka).
+                  const cx = ciclo.e5datums.ejeX, cy = ciclo.e5datums.ejeY, cz = ciclo.e5datums.zPartMm + 19.75;
+                  return (
+                    <group position={[cx * (1 - k), cy * (1 - k), cz * (1 - k)]} scale={[k, k, k]}>
+                      <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={1} ocupacion={ciclo.ocupacion} />
+                    </group>
+                  );
+                })()}
+                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && !ciclo?.e6 && (
                   <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} />
                 )}
                 {/* E5: el fundido en la colada YA NO es FeedFill (reloj de pared en

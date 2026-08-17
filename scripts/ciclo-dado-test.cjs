@@ -733,6 +733,44 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `hueco del acero ${(ac.vols.huecoMm3 / 1000).toFixed(2)} cc vs campo ${(espA.campo.volumeMm3 / 1000).toFixed(2)} cc — el recipiente CONTABILIZA al líquido`);
   }
 
+  // ══ ESTACIÓN 6 — EMPAQUE (orden 2026-08-14-ciclo-dado-estacion6) ══
+  console.log('── E6 · Empaque (cap 7) — el retorno de la E4 y la contracción pvT');
+  const sh6 = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'shrinkage.ts'));
+  const g6 = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'gating.ts'));
+  const cool6 = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling-design.ts'));
+  const e6 = ed.estacion6Dado(e2.pkg, dC, { partVolCc: 14.14 });
+  // las filas CUADRAN con los motores (no números fabricados)
+  const A6 = cool6.PLASTICOS_A.ABS;
+  const freezeMotor = g6.gateFreezeCylS(A6.alphaM2s, e6.gate.diaOrigMm / 1000, A6.tMeltC, A6.tCoolC, 132);
+  check('E6: el freeze del gate REAL reproduce la Tabla 7.4 (cilindro al ⌀ base del sprue)',
+    cerca(e6.gate.freezeOrigS, freezeMotor, 0.05), `${e6.gate.freezeOrigS} s vs motor ${freezeMotor.toFixed(2)} s @ ⌀${e6.gate.diaOrigMm}`);
+  check('E6: p_pack = 0.8·p_llenado (la de factory)',
+    cerca(e6.pPackMPa, 0.8 * e2.pkg.diseno.fillMPa, 0.05), `${e6.pPackMPa} MPa`);
+  const shMotor = sh6.shrinkage(sh6.ABS_TAIT, { tNoFlowK: 132 + 273.15, pPackPa: e6.pPackMPa * 1e6 });
+  check('E6: la contracción reproduce shrinkage(ABS_TAIT) al mismo p_pack',
+    cerca(e6.contraccion.linealPct, shMotor.linear * 100, 0.02), `${e6.contraccion.linealPct} % vs motor ${(shMotor.linear * 100).toFixed(2)} %`);
+  // EL RETORNO DE LA E4, CERRADO — y con la historia completa: el edge GENÉRICO de
+  // la máquina seguía en freezeCorto (el anuncio), pero el gate REAL del dado tras
+  // el volteo es el SPRUE de la Fig 7.2 (⌀8.27) — y ÉSE empaca sobrado. La decisión
+  // de libro de la E5 resolvió el conflicto de la E4 sin tocar acero.
+  check('E6 · EL RETORNO: el edge genérico VIOLABA (el anuncio) y el sprue real de la Fig 7.2 CUMPLE',
+    e2.pkg.diseno.gate.freezeCorto === true && e6.gate.freezeCortoOrig === false,
+    `edge genérico freeze ${e2.pkg.diseno.gate.freezeS.toFixed(2)}s < ${e2.pkg.diseno.gate.tPackNeededS.toFixed(2)}s · sprue real ${e6.gate.freezeOrigS}s ≥ ${e6.gate.tPackNeededS}s — la Fig 7.2 lo resolvió`);
+  // la contracción ADVIERTE con razón (0.8·p_fill es empaque débil aquí) y la
+  // perilla de PROCESO está verificada: a pPackBanda la contracción SÍ entra a banda
+  check('E6: contracción FUERA de banda a 0.8·p_fill (empaque débil) + la perilla verificada',
+    e6.contraccion.linealPct > 0.8 && e6.contraccion.pPackBandaMPa != null
+      && sh6.shrinkage(sh6.ABS_TAIT, { tNoFlowK: 132 + 273.15, pPackPa: e6.contraccion.pPackBandaMPa * 1e6 }).linear * 100 <= 0.8,
+    `${e6.contraccion.linealPct} % a ${e6.pPackMPa} MPa → banda con p_pack ~${e6.contraccion.pPackBandaMPa} MPa (perilla de tryout)`);
+  check('E6: masa del disparo cuadra a mano (vol × ρ)',
+    cerca(e6.masa.disparoG, (14.14 + C.volumenColadaCc(dC)) * 1.044, 0.2), `${e6.masa.disparoG} g`);
+  // CONTROL NEGATIVO: pared el doble de gruesa → t_pack ∝ h² se cuadruplica y NI el
+  // catálogo completo de bushings aguanta — el veredicto DISTINGUE lo imposible
+  const e6mal = ed.estacion6Dado(e2.pkg, dC, { partVolCc: 14.14, wallMmOverride: 4 });
+  check('E6 · CONTROL NEGATIVO: pared ×2 → ningún bushing del catálogo aguanta (VIOLA)',
+    e6mal.gate.freezeCortoOrig === true && e6mal.gate.diaResueltoMm == null,
+    `t_pack ${e6mal.gate.tPackNeededS} s vs freeze máx del catálogo — sin solución, como debe`);
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);
