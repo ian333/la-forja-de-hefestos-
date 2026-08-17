@@ -64,6 +64,65 @@ V1/O₂ → hacer UN cambio → mostrar → siguiente. NUNCA rewrites. (Un rewri
 "verguísima"; el paso-a-paso llegó a "me llenas de orgullo".) Que las 2 aguas fueran difíciles
 tiene sentido — es la PRIMERA vez que pasamos a 2 moléculas; pero la ley sigue: copia al ganador.
 
+**Actualización de ganadores (Ian, 2026-08-17: "toda la serie de H₂O fue un boom — esos son
+ganadores; el canon se basa en ESTOS"):** la lista completa es **O₂ · N₂ · C₂ · H₂O v1/v2 ·
+el puente (v3) · el anillo (v4) · el cuarteto (v5) · el hexágono (v6)** — y para ÁTOMOS, el
+canon es **el cromo de ORBITALES** (atomo-cr: abre EN el orbital, barrido (n,l,m) con cámara
+de perfil, cuento con sello GAIA Prime). Todos con cápsula en PRIME. La verificación de
+regresión del 2026-08-17 confirmó que su código vive INTACTO (ver
+`reference_verificacion_regresion_ganadores` en memoria: escalera stills→cápsula→era-test).
+
+---
+
+## 🤖 LA MÁQUINA (2026-08-17) — el pipeline se defiende solo · RENDERIZADOR CONGELADO
+
+La semana del 11-17 de agosto dejó ~15 errores operativos **con todo documentado**. La
+lección de Ian: "la documentación no previene errores — hay que automatizar". La máquina:
+
+```
+bash scripts/video.sh <id> todo
+  = salud → voz → campo → subs → render → ensamble → verificar → capsula → entrega
+    (publicar aparte, con confirmación humana)
+```
+
+- **salud** (`scripts/salud.sh [--completa]`): doctor (GPU/vite-que-se-revive/disco/montajes)
+  + **porteros de canarios** (`salud-canarios.cjs`: o2, wpair, whex6, atomo24 — ready, cero
+  excepciones, cuadro con luz, GPU REAL exigida) + tsc scoped al cine con tolerancia CERO.
+  Nació del qScale: una escena GANADORA muerta días porque nadie la cargaba.
+- **voz**: fit-check (0.455 s/palabra vs formato.dur − 1.5) ANTES de gastar TTS → caché por
+  línea (firma texto+VEL+TAKES+target+refs+PREPRO_V) → whisper como GATE. `VOZ=0` la salta.
+- **render**: captura **cdp-jpeg** (el 97 % del cuadro era el PNG; 4.6× medido con gate de
+  calidad: dif 1.34 < piso de encode 2.8) · shards 4 · guardas de duración/huella · gate de
+  negros POR PÍXELES · `--dur` del manifiesto verificado contra la escena (gemelas).
+- **entrega**: ext4 SIEMPRE (`dist-video/entregas/` + md5) → E:/Downloads si viven → ENCOLA
+  si no. `scripts/traer.sh` (laptop) jala la cola con verificación. **E: está FUERA del
+  camino crítico** — un drvfs muerto ya no rompe nada.
+- **publicar**: el destino se RESUELVE contra la biblioteca de PRIME (pieza basura de nombre
+  inventado = imposible) + scan/catálogo/deploy/verificación EN VIVO en el mismo paso.
+
+**LA LEY DE LOS GATES:** ningún gate entra sin control positivo **Y negativo**. Esta semana
+CUATRO gates reprobaban cosas correctas (negro=media, "veintinueve", orbitales por ejes,
+elisiones) y uno nuevo dejó pasar un corte al 99.9 % por una fórmula corta — todos se
+cazaron con controles. Un gate que reprueba lo correcto se ignora; uno que no truena con
+el mal caso es fe.
+
+**LAS LEYES DE OPERACIÓN** (las 5 apariciones del mismo error en UN día):
+- El env de GPU y el `cd` **viajan DENTRO de la herramienta**, nunca en la memoria del
+  operador. Todo script empieza con su `cd` absoluto; salud-canarios carga su propio env.
+- ssh siempre con rutas ABSOLUTAS. Análisis en archivo `.py`/`.cjs`, NUNCA heredoc inline.
+- Parcheos de código con `assert` de que el ancla prendió (un slice-replace silencioso se
+  tragó dos funciones).
+
+**EL CUENTO** (Ian: "microcápsulas que cuentan un cuento y recuerdan GAIA Prime"): guion =
+personaje/conflicto/final en ~55 palabras; metáfora de la serie: cada electrón tiene su
+**cuarto** (redondo/moño/pétalos); cierre IDÉNTICO en todas: **"GAIA Prime. Aprende a ver
+lo invisible."** (el TTS lo pronuncia "Gaia Práim" — respelado en narracion-gen; en pantalla
+siempre "GAIA Prime"). La física dura vive en la DESCRIPCIÓN de Comando, no en la voz.
+
+**EL FREEZE:** el renderizador (escenas, shaders, coreografía) está **CONGELADO**. Solo los
+pipelines de esta sección lo tocan. Para descongelar: correr la verificación de regresión
+(escalera de la memoria) antes y después.
+
 ---
 
 ## 📦 REGLA #0.5 — UN VIDEO ES UN MANIFIESTO, NO ARCHIVOS NUEVOS
