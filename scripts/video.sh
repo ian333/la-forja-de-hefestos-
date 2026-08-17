@@ -33,6 +33,11 @@ W="${W:-$(m formato.w)}"; H="${H:-$(m formato.h)}"; FPS=$(m formato.fps); DUR=$(
 SUF=""; if [ "$W" != "$(m formato.w)" ] || [ "$H" != "$(m formato.h)" ]; then SUF="-${W}x${H}"; fi
 HTML=$(m escena.html); QUERY=$(m escena.query); HOOK=$(m escena.hook)
 FRAMES="$ROOT/$(m render.frames)$SUF"; BATCH=$(m render.batch); SHARDS="${SHARDS:-$(m render.shards)}"
+# CAPTURA (2026-08-17): cdp-jpeg por default = 3.8× por cuadro (ver render-clip.cjs).
+# Se declara por pieza en render.captura o se fuerza con CAPTURA=. La extensión de los
+# cuadros depende del modo, así que TODO glob de frames usa $FEXT, nunca .png a pelo.
+CAPTURA="${CAPTURA:-$(m render.captura)}"; CAPTURA="${CAPTURA:-cdp-jpeg}"
+FEXT=png; [ "$CAPTURA" = "cdp-jpeg" ] && FEXT=jpg
 ADIR="$ROOT/$(m audio.dir)"; NARR=$(m audio.narracion); MUS=$(m audio.musica)
 MVOL=$(m audio.musicaVol); MFIN=$(m audio.musicaFadeIn); MFOUT=$(m audio.musicaFadeOutAt)
 SEGS="$ADIR/$(m audio.segs)"; ASS="$ADIR/$(m audio.ass)"
@@ -61,7 +66,7 @@ paso_render() {
   local marca="$FRAMES/.dur"
   if [ -f "$marca" ] && [ "$(cat "$marca")" != "$DUR" ]; then
     echo "   duración cambió ($(cat "$marca")s → ${DUR}s): BORRANDO frames viejos para no mezclar"
-    rm -f "$FRAMES"/*.png
+    rm -f "$FRAMES"/*.png "$FRAMES"/*.jpg
   fi
   # HUELLA DE LA ESCENA: la guarda de arriba sólo caza cambios de DURACIÓN. Si cambió la ESCENA
   # (cámara, capas, shaders) con la misma duración, el resume reusa los frames viejos.
@@ -77,12 +82,12 @@ paso_render() {
   local hoy; hoy=$( { cat "$ROOT"/src/cinematic/*.ts "$ROOT"/src/cinematic/*.tsx "$MF" 2>/dev/null; } | md5sum | cut -c1-12)
   if [ -f "$huella" ] && [ "$(cat "$huella")" != "$hoy" ]; then
     echo "   la ESCENA cambió ($(cat "$huella") → $hoy): BORRANDO frames viejos para no mezclar"
-    rm -f "$FRAMES"/*.png
+    rm -f "$FRAMES"/*.png "$FRAMES"/*.jpg
   fi
   echo "$hoy" > "$huella"
   if [ -n "${FRESH:-}" ]; then
-    echo "   FRESH=1: borrando $(ls "$FRAMES"/*.png 2>/dev/null | wc -l) frames para renderizar de cero"
-    rm -f "$FRAMES"/*.png
+    echo "   FRESH=1: borrando $(ls "$FRAMES"/*.png "$FRAMES"/*.jpg 2>/dev/null | wc -l) frames para renderizar de cero"
+    rm -f "$FRAMES"/*.png "$FRAMES"/*.jpg
   fi
   echo "$DUR" > "$marca"
   local t0=$SECONDS
@@ -90,22 +95,22 @@ paso_render() {
     if [ "$SHARDS" -gt 1 ]; then
       local pids=()
       for k in $(seq 0 $((SHARDS-1))); do
-        node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" \
+        node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" \
           --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH" \
           --nshards "$SHARDS" --shard "$k" > "/tmp/$ID-shard$k.log" 2>&1 &
         pids+=($!)
       done
       wait "${pids[@]}"
     else
-      node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" \
+      node "$ROOT/scripts/render-clip.cjs" --url "$BASE_URL/$HTML?$QUERY" --hook "$HOOK" --captura "$CAPTURA" \
         --out "$FRAMES" --fps "$FPS" --w "$W" --h "$H" --batch "$BATCH"
     fi
-    local nf; nf=$(ls "$FRAMES"/*.png 2>/dev/null | wc -l)
+    local nf; nf=$(ls "$FRAMES"/*.$FEXT 2>/dev/null | wc -l)
     echo "   intento $try: $nf/$NFRAMES ($((SECONDS-t0))s)"
     [ "$nf" -ge $((NFRAMES-2)) ] && break
     sleep 5
   done
-  NF=$(ls "$FRAMES"/*.png 2>/dev/null | wc -l)
+  NF=$(ls "$FRAMES"/*.$FEXT 2>/dev/null | wc -l)
   echo "   frames: $NF/$NFRAMES en $((SECONDS-t0))s"
   [ "$NF" -ge $((NFRAMES-2)) ] || { echo "✗ RENDER INCOMPLETO"; return 1; }
   # ── GATE DE CUADRO NEGRO, POR PÍXELES ────────────────────────────────────────────────
@@ -118,7 +123,7 @@ paso_render() {
 import glob, os, sys
 from PIL import Image
 import numpy as np
-fs = sorted(glob.glob(os.path.join(sys.argv[1], '*.png')))
+fs = sorted(glob.glob(os.path.join(sys.argv[1], '*.png')) + glob.glob(os.path.join(sys.argv[1], '*.jpg')))
 # QUÉ ES "NEGRO" — la definición importa, y la primera estuvo MAL (2026-08-11).
 # El gate medía sólo la MEDIA (<0.5) y reprobó a atomo-cr y atomo-cu por los cuadros del
 # pull-back: ahí el átomo es una chispa en un cuadro enorme y la media cae a 0.478… con
@@ -158,11 +163,11 @@ paso_ensamble() {
   # 2331 frames (75.1 s de 77.7) y el corte se comía justo la separación final. El pad deja
   # que -shortest recorte al VIDEO, que es la duración del manifiesto.
   echo "   master 4K 10-bit HEVC"
-  ffmpeg -y -v error -framerate "$FPS" -i "$FRAMES/%05d.png" -i "$mix" -vf "ass=$ASS" \
+  ffmpeg -y -v error -framerate "$FPS" -i "$FRAMES/%05d.$FEXT" -i "$mix" -vf "ass=$ASS" \
     -c:v hevc_nvenc -preset p5 -rc vbr -cq 21 -b:v 55M -maxrate 90M -pix_fmt yuv420p10le \
     -c:a aac -b:a 224k -shortest "$OMASTER" || return 1
   echo "   entrega h264"
-  ffmpeg -y -v error -framerate "$FPS" -i "$FRAMES/%05d.png" -i "$mix" -vf "ass=$ASS" \
+  ffmpeg -y -v error -framerate "$FPS" -i "$FRAMES/%05d.$FEXT" -i "$mix" -vf "ass=$ASS" \
     -c:v h264_nvenc -preset p5 -rc vbr -cq 23 -b:v 40M -maxrate 60M -pix_fmt yuv420p \
     -c:a aac -b:a 192k -shortest "$OH264" || return 1
   ls -la "$OMASTER" "$OH264" | awk '{print "   ",$5,$NF}'
@@ -234,7 +239,7 @@ paso_verificar() {
   [ -d "$FRAMES" ] && python3 - "$FRAMES" <<'EOF'
 import sys, glob, numpy as np
 from PIL import Image
-fs = sorted(glob.glob(sys.argv[1] + "/*.png"))[::max(1, len(glob.glob(sys.argv[1]+"/*.png"))//24)]
+fs = sorted(glob.glob(sys.argv[1] + "/*.png") + glob.glob(sys.argv[1] + "/*.jpg")); fs = fs[::max(1, len(fs)//24)]
 bot=[]; fill=[]
 for f in fs:
     a = np.asarray(Image.open(f).convert('L'), dtype=float)/255.0

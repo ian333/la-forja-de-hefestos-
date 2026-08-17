@@ -12,26 +12,23 @@ Un video de química que dice "popo de nieve" no es un defecto menor: es el vide
 XTTS confunde plosivas (k/p/t) sobre todo en palabras cortas y aisladas. La única forma
 honesta de saberlo sin oídos es TRANSCRIBIR y comparar.
 
-  /home/ian/ytdlp-venv/bin/python scripts/voz-check.py <mol>
+  /home/ian/ytdlp-venv/bin/python scripts/voz-check.py <mol> [<mol2> <mol3>…]
   ... --palabras copo,seis        solo vigila esas palabras (más rápido de leer)
+
+VARIOS MOLS EN UNA CORRIDA (2026-08-17): el modelo large-v3 tarda ~15 s en cargar y el
+lote de 5 átomos lo cargaba 5 veces (75 s de puro arranque). Con N argumentos carga UNA
+vez y verifica todos; sale 1 si CUALQUIERA falla.
 
 Sale 1 si alguna línea no coincide → sirve como gate en un pipeline.
 """
 import os, sys, re, glob, unicodedata
 
-MOL = (sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith('-') else 'whex6').lower()
+MOLS = [a.lower() for a in sys.argv[1:] if not a.startswith('-')] or ['whex6']
 VIGILA = []
 if '--palabras' in sys.argv:
     VIGILA = [w.strip().lower() for w in sys.argv[sys.argv.index('--palabras') + 1].split(',') if w.strip()]
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NAR = os.path.join(ROOT, 'dist-video', f'{MOL}-narracion')
-GUION = os.path.join(ROOT, 'scripts', 'guiones', f'{MOL}.txt')
-
-lines = [l.strip() for l in open(GUION, encoding='utf-8') if l.strip()]
-wavs = sorted(glob.glob(os.path.join(NAR, f'{MOL}_l*.wav')))
-if len(wavs) != len(lines):
-    sys.exit(f'✗ {len(wavs)} wavs vs {len(lines)} líneas del guion')
 
 
 # Whisper ESCRIBE en cifras lo que se DIJO en letra ("2.82", "12%", "H2"). Eso no es un
@@ -113,16 +110,25 @@ def iguales(a, b):
 from faster_whisper import WhisperModel
 model = WhisperModel('large-v3', device='cuda', compute_type='float16')
 
-fallos = 0
-print(f'{MOL}: {len(wavs)} líneas · modelo large-v3 · comparando contra el guion\n')
-for i, (w, texto) in enumerate(zip(wavs, lines), 1):
+fallos_total = 0
+for MOL in MOLS:
+  NAR = os.path.join(ROOT, 'dist-video', f'{MOL}-narracion')
+  GUION = os.path.join(ROOT, 'scripts', 'guiones', f'{MOL}.txt')
+  lines = [l.strip() for l in open(GUION, encoding='utf-8') if l.strip()]
+  wavs = sorted(glob.glob(os.path.join(NAR, f'{MOL}_l*.wav')))
+  if len(wavs) != len(lines):
+    print(f'✗ {MOL}: {len(wavs)} wavs vs {len(lines)} líneas del guion')
+    fallos_total += 1
+    continue
+  fallos = 0
+  print(f'{MOL}: {len(wavs)} líneas · modelo large-v3 · comparando contra el guion\n')
+  for i, (w, texto) in enumerate(zip(wavs, lines), 1):
     segs, _ = model.transcribe(w, language='es', beam_size=5)
     oido = ' '.join(s.text for s in segs).strip()
     a, b = norm(texto), norm(oido)
     if iguales(a, b):
         estado = 'ok'
     else:
-        # ¿qué palabras se perdieron o cambiaron?
         difA = [x for x in a if x not in b]
         difB = [x for x in b if x not in a]
         interesa = (not VIGILA) or any(v in ' '.join(difA + [' '.join(a)]) for v in VIGILA)
@@ -135,6 +141,7 @@ for i, (w, texto) in enumerate(zip(wavs, lines), 1):
         print(f'        oído : {oido}')
     else:
         print(f'  l{i:02d}  ✓ {texto[:58]}')
+  print(f'{MOL}: ' + ('✓ la voz DICE el guion' if not fallos else f'✗ {fallos} líneas no coinciden') + '\n')
+  fallos_total += fallos
 
-print(f'\n{"✓ la voz DICE el guion" if not fallos else f"✗ {fallos} líneas no coinciden"}')
-sys.exit(1 if fallos else 0)
+sys.exit(1 if fallos_total else 0)

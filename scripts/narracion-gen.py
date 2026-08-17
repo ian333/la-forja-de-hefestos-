@@ -144,6 +144,7 @@ def gen_trim(text, final):
     # en todas las piezas o no sirve. Respelado SOLO para el TTS; el guion y los subtítulos
     # conservan "GAIA Prime".
     tts_text = tts_text.replace('GAIA Prime', 'Gaia Práim').replace('Gaia Prime', 'Gaia Práim')
+# ⚠ Si tocas los respelados de arriba, SUBE PREPRO_V (invalida el caché de líneas).
     tts_text = tts_text.strip()
     if tts_text.endswith('.'):
         tts_text = tts_text[:-1]
@@ -234,6 +235,7 @@ def gen_line(text, final):
 # OJO: en zsh "LINES" es variable especial ENTERA (alto del terminal) — asignarle
 # "7,8,9" la evalua como aritmetica (operador coma) y queda solo el ULTIMO numero.
 # Usar LINEAS; LINES se mantiene por compatibilidad para valores de un solo numero.
+PREPRO_V = '3'   # versión del preprocesado TTS (enláce=2, +Práim=3)
 ONLY = os.environ.get('LINEAS') or os.environ.get('LINES')   # "4" o "4,7": regenerar SOLO esas lineas
 VEL = float(os.environ.get('VEL', '1.0'))
 TAKES = int(os.environ.get('TAKES', '1'))  # >1: genera N tomas y se queda con la MEDIANA.
@@ -246,11 +248,37 @@ TARGET = float(os.environ.get('TARGET', '0'))  # >0: elegir la toma mas CERCANA 
                                                 # (para no mover el timing de un video ya rendido)
 TARGETS = os.environ.get('TARGETS')     # "4.86,3.28,...": target POR LINEA (indice 1..n; 0 = sin target)
 _tgts = [float(x) for x in TARGETS.split(',')] if TARGETS else None
+
+# ── HUÉRFANOS FUERA (fix de raíz, 2026-08-17). Este script escribe l01..l0N pero nunca
+# borraba los sobrantes de un guion anterior más largo: un l09.wav huérfano contaminó el
+# conteo del gate Y el ensamble (4/4 cuentos reprobados el 2026-08-14). El fix vivía en un
+# script scratch que se borró — ahora vive donde debe: en la herramienta.
+import glob as _glob, hashlib as _hashlib
+for _w in _glob.glob(os.path.join(OUT, f"{MOL}_l*.wav")):
+    _m = re.search(r'_l(\d+)\.wav$', _w)
+    if _m and int(_m.group(1)) > len(lines):
+        os.remove(_w)
+        print(f"  (huérfano fuera: {os.path.basename(_w)})", flush=True)
+
+# ── CACHÉ POR LÍNEA: si el texto, la velocidad, las tomas, el target, las voces de
+# referencia y la versión del preprocesado no cambiaron, el wav existente se REUSA.
+# Medido: el fix del silicio regeneró 8 líneas para 1 cambio (~8× de TTS tirado).
+# CACHE=0 lo apaga.
+_CACHE = os.environ.get('CACHE', '1') != '0'
+def _firma(texto, tgt):
+    base = '|'.join([texto, str(VEL), str(TAKES), str(tgt), PREPRO_V] + [os.path.basename(r) for r in REFS])
+    return _hashlib.md5(base.encode('utf-8')).hexdigest()[:16]
+
 for i, text in enumerate(lines, 1):
     if ONLY and str(i) not in ONLY.split(','):
         continue
     tgt = (_tgts[i - 1] if _tgts and i <= len(_tgts) else TARGET)
     f = os.path.join(OUT, f"{MOL}_l{i:02d}.wav")
+    _sf = f[:-4] + '.firma'
+    if _CACHE and not ONLY and os.path.exists(f) and os.path.exists(_sf) \
+            and open(_sf).read().strip() == _firma(text, tgt):
+        print(f"  l{i:02d} CACHÉ ({_dur(f):5.2f}s)  {text[:40]}", flush=True)
+        continue
     best = None; tomas = []
     for tk in range(TAKES):
         cand = f[:-4] + f"_take{tk}.wav" if TAKES > 1 else f
@@ -271,4 +299,6 @@ for i, text in enumerate(lines, 1):
             if os.path.exists(c):
                 os.remove(c)
         print(f"  l{i:02d} ELEGIDA: {best[0]:5.2f}s", flush=True)
+    with open(_sf, 'w') as _fh:
+        _fh.write(_firma(text, tgt))
 print("LISTO", flush=True)

@@ -39,6 +39,18 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
   const chrome = arg('--chrome', '/usr/bin/google-chrome-stable');
   const nshards = Math.max(1, parseInt(arg('--nshards', '1'), 10));  // total de workers en paralelo
   const shard = Math.max(0, parseInt(arg('--shard', '0'), 10));      // franja de ESTE worker (0..nshards-1)
+  // ── CAPTURA (2026-08-17, medido en iangpu sobre la o2 a 4K) ──────────────────────────
+  // El 97 % del tiempo de cada cuadro era la CODIFICACIÓN del screenshot, no el render
+  // (GPU: 27 ms · PNG de playwright: 857 ms). CDP Page.captureScreenshot con
+  // optimizeForSpeed (zlib q1/RLE) baja eso SIN tocar la escena:
+  //   cdp-jpeg (default): 225 ms/cuadro, 3.8×. La pérdida del q95 DESAPARECE dentro del
+  //     encode final 4:2:0 del master: tras HEVC, dif png-vs-jpeg = 1.33 global / 3.67 en
+  //     polvo, MENOS que lo que el encode solo ya le hace al PNG (2.11 / 7.91).
+  //   cdp-png: 346 ms/cuadro, 2.5×, PNG sin pérdida (para el purista).
+  //   png: el camino histórico de playwright, por si CDP diera lata en algún Chrome.
+  const captura = arg('--captura', 'cdp-jpeg');                       // cdp-jpeg | cdp-png | png
+  const calidad = parseInt(arg('--calidad', '95'), 10);
+  const FEXT = captura === 'cdp-jpeg' ? 'jpg' : 'png';
   fs.mkdirSync(outdir, { recursive: true });
 
   const launchArgs = [
@@ -51,7 +63,7 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
   // FRESCO POR LOTE = relanzar el BROWSER COMPLETO (no solo el contexto). Cerrar solo el
   // contexto NO libera el contexto WebGL2 de ANGLE en headless → tras ~3 lotes Chrome se
   // queda sin contextos WebGL2 → fallback → frames NEGROS. Relanzar el proceso lo cura.
-  let browser = null, ctx = null, page = null, frameInCtx = 0, glLogged = false;
+  let browser = null, ctx = null, page = null, cdp = null, frameInCtx = 0, glLogged = false;
   async function freshCtx() {
     // REINTENTOS: en WSL headless el relaunch en borde de lote a veces tira
     // "Execution context was destroyed" → reintentar en vez de crashear todo el render.
@@ -62,6 +74,7 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
         browser = await chromium.launch({ headless: false, executablePath: chrome, args: launchArgs });
         ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: sup, bypassCSP: true });
         page = await ctx.newPage();
+        cdp = captura.startsWith('cdp') ? await ctx.newCDPSession(page) : null;
         page.on('pageerror', (e) => console.error('[pageerror]', e.message));
         await page.goto(url, { waitUntil: 'networkidle', timeout: 90000 });
         await page.waitForFunction((h) => window[h] && window[h].ready === true, hook, { timeout: 120000 });
@@ -87,7 +100,7 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
   const dur = durOv > 0 ? durOv : (await page.evaluate((h) => window[h].duration, hook)) || 24;
   const N = Math.round(dur * fps);
   const mine = nshards > 1 ? Math.ceil((N - shard) / nshards) : N;
-  console.log(`[clip] ${N} frames · ${dur}s @ ${fps}fps · ${W}x${H} (dsf ${sup}) · lote ${batch}`
+  console.log(`[clip] ${N} frames · ${dur}s @ ${fps}fps · ${W}x${H} (dsf ${sup}) · lote ${batch} · captura ${captura}`
     + (nshards > 1 ? ` · SHARD ${shard}/${nshards} (${mine} frames de este worker)` : ''));
   const t0 = Date.now();
   // Umbral de "frame negro" POR BYTES. Calibrado para escenas densas (agua, átomos), donde
@@ -96,12 +109,15 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
   // los reprobaba en bucle: 660 de 2883 cuadros tras 6 intentos, con la escena bien.
   // Por eso es configurable: BLACK=<bytes> para escenas de sujeto delgado. El default no
   // cambia, así que ninguna pieza anterior se mueve.
-  const BLACK = parseInt(process.env.BLACK || '150000', 10);
+  // Con cdp-jpeg el mismo umbral NO vale: un 4K con contenido pesa >300 KB en q95 y un
+  // negro-de-WebGL-muerto (uniforme) ~30-80 KB. 100 KB separa limpio; sigue siendo
+  // override-able con BLACK= para escenas de sujeto delgado (la lección de "El codo").
+  const BLACK = parseInt(process.env.BLACK || (FEXT === 'jpg' ? '100000' : '150000'), 10);
   let blacks = 0;
   for (let i = 0; i < N; i++) {
     // PARALELO: cada worker rinde solo su franja por stride (índices disjuntos → sin colisión)
     if (nshards > 1 && (i % nshards) !== shard) continue;
-    const f = path.join(outdir, String(i).padStart(5, '0') + '.png');
+    const f = path.join(outdir, String(i).padStart(5, '0') + '.' + FEXT);
     // RESUME: si el frame ya existe y NO es negro, saltarlo (re-correr continúa donde quedó)
     if (fs.existsSync(f) && fs.statSync(f).size > BLACK) continue;
     if (frameInCtx >= batch) await freshCtx();
@@ -114,7 +130,17 @@ function arg(n, d) { const i = process.argv.indexOf(n); return i >= 0 ? process.
         // dispara ANTES de que el GPU termine → NEGRO. Damos tiempo a que dibuje y vacíe.
         for (let k = 0; k < 5; k++) await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
         await page.waitForTimeout(110);
-        await page.screenshot({ path: f, type: 'png', clip: { x: 0, y: 0, width: W, height: H }, timeout: 60000 });
+        if (cdp) {
+          const r = await cdp.send('Page.captureScreenshot', {
+            format: FEXT === 'jpg' ? 'jpeg' : 'png',
+            ...(FEXT === 'jpg' ? { quality: calidad } : {}),
+            optimizeForSpeed: true,
+            clip: { x: 0, y: 0, width: W, height: H, scale: 1 },
+          });
+          fs.writeFileSync(f, Buffer.from(r.data, 'base64'));
+        } else {
+          await page.screenshot({ path: f, type: 'png', clip: { x: 0, y: 0, width: W, height: H }, timeout: 60000 });
+        }
         const sz = fs.statSync(f).size;
         if (sz > BLACK) { ok = true; }
         else {
