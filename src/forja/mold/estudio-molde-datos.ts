@@ -2465,3 +2465,192 @@ export function estacion6Dado(pkg: MoldPackage, d: DatumsColada, o?: {
     masa, anuncios,
   };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 7: VENTEO (cap 8)                              */
+/* (orden 2026-08-17-ciclo-dado-estacion7)                                     */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * El aire sale por donde el plástico llega AL ÚLTIMO — y nuestro `frente` lo
+ * sabe POR CELDA. El mapa de candidatos se MIDE del campo (la trampa del
+ * §8.2.2: "las ubicaciones pueden parecer obvias pero no son triviales" — el
+ * análisis nominal se equivoca; el nuestro es el campo mismo). Fórmulas TODAS
+ * del libro: Eq 8.2 (h_min: flujo laminar de aire por el land), Eqs 8.3–8.4
+ * (h_max: el vent congela ANTES de flashear — t_flash de Tabla 7.4 al espesor
+ * del vent), §8.2.1 (V̇_aire = V̇_melt, supuesto declarado), §8.2.3 (NO dividir
+ * el caudal entre vents), §8.3.1 (anatomía land→alivio + "pocos y delgados"),
+ * Tabla 8.1 (los handbooks difieren 10× — se citan los tres, nunca un número
+ * mágico único).
+ */
+export interface VentBanda {
+  hMinMm: number; hMaxMm: number; tFlashS: number;
+}
+/** Eq 8.2 + Eqs 8.3–8.4, PURAS — el gate reproduce el ejemplo del bezel del
+ *  libro (100 cc/s, W=10, L=10 → h_min 0.06) con ESTA función. */
+export function ventBandaMm(o: {
+  VdotM3s: number; WMm: number; LlandMm: number;
+  /** t_flash impuesto (el oráculo del libro usa su 0.003 s); si falta, se
+   *  calcula con Tabla 7.4 strip AL espesor propuesto */
+  tFlashS?: number; hPropMm?: number;
+  LflashMm?: number; rampaPaS?: number; muMeltPaS?: number; muAirePaS?: number; dPairPa?: number;
+}): VentBanda {
+  const muAire = o.muAirePaS ?? 1.8e-5;            // §8.2.3
+  const dP = o.dPairPa ?? 1e5;                     // 1 atm: no presurizar el melt
+  const hMin = Math.cbrt((12 * muAire * o.VdotM3s * (o.LlandMm / 1000)) / (dP * (o.WMm / 1000)));
+  const A = PLASTICOS_A.ABS;
+  const tFlash = o.tFlashS ?? gateFreezeStripS(A.alphaM2s, (o.hPropMm ?? 0.02) / 1000, A.tMeltC, A.tCoolC, T_NOFLOW_ABS_C);
+  const rampa = o.rampaPaS ?? 1e8;                 // ≤100 MPa/s (§8.2.3)
+  const muMelt = o.muMeltPaS ?? 10;                // shear-thinned (§8.2.3)
+  const Pmelt = rampa * tFlash;
+  const hMax = Math.sqrt((12 * muMelt) / (Pmelt * tFlash)) * ((o.LflashMm ?? 0.2) / 1000);
+  return { hMinMm: +(hMin * 1000).toFixed(4), hMaxMm: +(hMax * 1000).toFixed(4), tFlashS: +tFlash.toExponential(3) as unknown as number };
+}
+
+export interface Estacion7Dado {
+  filas: FilaLlenado[];
+  /** % del último llenado (top 2 % de llegada) a ≤1.5 celdas de la partición — MEDIDO */
+  pctUltimoEnParticion: number;
+  candidatos: Array<{ lado: string; xMm: number; yMm: number; zMm: number; tipo: 'fin-de-flujo' | 'esquina' | 'knit-interna' | 'dead-pocket'; estado: 'obligatorio' | 'opcional' | 'a-pin (E10)' | 'FUERA-PARTICIÓN' }>;
+  /** los 4 vents elegidos (posición MEDIDA + anatomía §8.3.1); dir = hacia afuera */
+  vents: Array<{ lado: string; xMm: number; yMm: number; zMm: number; dirX: number; dirY: number; WMm: number; LlandMm: number; hPropMm: number; LreliefMm: number }>;
+  banda: { hMinMm: number; hMaxMm: number; hPropMm: number; cumple: boolean; tFlashS: number; VdotLadoM3s: number };
+  aireFueraParticion: boolean;
+  fueraCentroideMm: { x: number; y: number; z: number } | null;
+  /** SOLO VISUAL, siempre con bandera: el espesor del vent en escena va ×exag */
+  exag: number;
+  anuncios: AnuncioRetorno[];
+}
+
+export function estacion7Dado(pkg: MoldPackage, d: DatumsColada, campo: {
+  frente: Float32Array; nx: number; ny: number; nz: number;
+  cellMm: number; x0: number; y0: number; z0: number;
+  /** caudal del llenado (mm³/s) — §8.2.1: V̇_aire = V̇_melt, heredado VIVO */
+  QmmS: number;
+}, o?: { exag?: number }): Estacion7Dado {
+  const exag = o?.exag ?? 20;
+  const col = colocacionEnLaBase(pkg);
+  const c = campo.cellMm;
+  // ── 1 · MEDIR el último llenado entre celdas de PIEZA (membresía por la
+  //   MISMA fuente de forma: volteo + dentroDadoLocal) ──
+  const fs: number[] = [];
+  const celdas: Array<{ f: number; X: number; Y: number; Z: number }> = [];
+  for (let k = 0; k < campo.nz; k++) for (let j = 0; j < campo.ny; j++) for (let i = 0; i < campo.nx; i++) {
+    const t = (k * campo.ny + j) * campo.nx + i;
+    const f = campo.frente[t];
+    if (f < 0) continue;
+    const X = campo.x0 + (i + 0.5) * c, Y = campo.y0 + (j + 0.5) * c, Z = campo.z0 + (k + 0.5) * c;
+    const L = col.aLocal(X, Y, Z);
+    if (!dentroDadoLocal(L[0], L[1], L[2])) continue;
+    fs.push(f); celdas.push({ f, X, Y, Z });
+  }
+  fs.sort((a, b) => a - b);
+  const f98 = fs.length ? fs[Math.floor(0.98 * (fs.length - 1))] : 1;
+  const ultimo = celdas.filter((q) => q.f >= f98);
+  const enPart = ultimo.filter((q) => Math.abs(q.Z - d.zPartMm) <= 1.5 * c);
+  const pctUltimoEnParticion = ultimo.length ? +(100 * enPart.length / ultimo.length).toFixed(1) : 0;
+  const aireFueraParticion = pctUltimoEnParticion < 50;
+  let fueraCentroideMm: Estacion7Dado['fueraCentroideMm'] = null;
+  if (aireFueraParticion) {
+    const fuera = ultimo.filter((q) => Math.abs(q.Z - d.zPartMm) > 1.5 * c);
+    if (fuera.length) {
+      fueraCentroideMm = {
+        x: +(fuera.reduce((a, q) => a + q.X, 0) / fuera.length).toFixed(1),
+        y: +(fuera.reduce((a, q) => a + q.Y, 0) / fuera.length).toFixed(1),
+        z: +(fuera.reduce((a, q) => a + q.Z, 0) / fuera.length).toFixed(1),
+      };
+    }
+  }
+  // ── 2 · candidato por LADO (centroide del último llenado, proyectado a la
+  //   BOCA — la pieza es 40×40 centrada en el eje) ──
+  const semi = 20;                                  // la boca del dado: ±20 del eje
+  const lados = [
+    { lado: '+X', dirX: 1, dirY: 0 }, { lado: '−X', dirX: -1, dirY: 0 },
+    { lado: '+Y', dirX: 0, dirY: 1 }, { lado: '−Y', dirX: 0, dirY: -1 },
+  ];
+  const candidatos: Estacion7Dado['candidatos'] = [];
+  const vents: Estacion7Dado['vents'] = [];
+  const W = 10, Lland = 2, hProp = 0.02;            // §8.3.1: W ANCHO deliberado · land 2 · ~0.02
+  const LreliefMm = 60 - semi - Lland;              // hasta el borde del inserto (120/2)
+  for (const s of lados) {
+    const mios = enPart.filter((q) => {
+      const dx = q.X - d.ejeX, dy = q.Y - d.ejeY;
+      return (Math.abs(dx) > Math.abs(dy)) === (s.dirX !== 0) && (s.dirX !== 0 ? dx * s.dirX > 0 : dy * s.dirY > 0);
+    });
+    // centroide TANGENCIAL del último llenado de este lado (acotado a la boca)
+    const tang = mios.length
+      ? mios.reduce((a, q) => a + (s.dirX !== 0 ? q.Y - d.ejeY : q.X - d.ejeX), 0) / mios.length : 0;
+    const tt = Math.max(-semi + W / 2, Math.min(semi - W / 2, tang));
+    const xv = d.ejeX + (s.dirX !== 0 ? s.dirX * semi : tt);
+    const yv = d.ejeY + (s.dirY !== 0 ? s.dirY * semi : tt);
+    candidatos.push({ lado: s.lado, xMm: +xv.toFixed(1), yMm: +yv.toFixed(1), zMm: d.zPartMm, tipo: 'fin-de-flujo', estado: aireFueraParticion ? 'FUERA-PARTICIÓN' : 'obligatorio' });
+    vents.push({ lado: s.lado, xMm: +xv.toFixed(1), yMm: +yv.toFixed(1), zMm: d.zPartMm, dirX: s.dirX, dirY: s.dirY, WMm: W, LlandMm: Lland, hPropMm: hProp, LreliefMm });
+  }
+  // esquinas de la boca = opcionales (§8.2.2: el flujo no debería atrapar ahí,
+  // pero se pueden especificar "para evitar cambios de molde después")
+  for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as Array<[number, number]>) {
+    candidatos.push({ lado: `esq ${sx > 0 ? '+' : '−'}X${sy > 0 ? '+' : '−'}Y`, xMm: +(d.ejeX + sx * semi).toFixed(1), yMm: +(d.ejeY + sy * semi).toFixed(1), zMm: d.zPartMm, tipo: 'esquina', estado: 'opcional' });
+  }
+  // knit lines INTERNAS (las 4 aristas verticales donde convergen los frentes
+  // de paredes vecinas): §8.2.2 — "usualmente los ejector pins proveen esa
+  // función" → se difieren a la E10 con el claro de fits.ts
+  candidatos.push({ lado: 'aristas internas ×4', xMm: +d.ejeX.toFixed(1), yMm: +d.ejeY.toFixed(1), zMm: +(d.zPartMm + 20).toFixed(1), tipo: 'knit-interna', estado: 'a-pin (E10)' });
+  if (aireFueraParticion && fueraCentroideMm) {
+    candidatos.push({ lado: 'DEAD POCKET', ...{ xMm: fueraCentroideMm.x, yMm: fueraCentroideMm.y, zMm: fueraCentroideMm.z }, tipo: 'dead-pocket', estado: 'FUERA-PARTICIÓN' });
+  }
+  // ── 3 · diseño del vent (§8.2.3): V̇/4 por simetría y CADA vent carga TODO
+  //   su flujo local (NO dividir entre n vents del lado — no sería conservador) ──
+  const VdotLadoM3s = (campo.QmmS / 4) * 1e-9;
+  const b = ventBandaMm({ VdotM3s: VdotLadoM3s, WMm: W, LlandMm: Lland, hPropMm: hProp });
+  const banda = { hMinMm: b.hMinMm, hMaxMm: b.hMaxMm, hPropMm: hProp, cumple: b.hMinMm <= hProp && hProp <= b.hMaxMm, tFlashS: b.tFlashS, VdotLadoM3s };
+
+  const filas: FilaLlenado[] = [];
+  const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
+    filas.push({ id, titulo, valor, limite, estado, seccion, porque });
+  fila('particion', 'último llenado EN la partición (MEDIDO del campo)',
+    `${pctUltimoEnParticion} % del top-2 % de llegada`, '≥90 % a ≤1.5 celdas del plano',
+    pctUltimoEnParticion >= 90 ? 'CUMPLE' : (aireFueraParticion ? 'VIOLA' : 'ADVIERTE'), '§8.2.2 · Fig 7.2',
+    aireFueraParticion
+      ? 'el aire queda atrapado LEJOS de la partición (dead pocket): venteo por pin/inserto (§8.3.2/§8.3.3) — el plano no basta.'
+      : 'el volteo de la Fig 7.2 dejó la boca EN la partición: el melt baja por las 4 paredes y el aire sale por el plano — geometría AUTO-VENTEADA, demostrada por el campo, no supuesta.');
+  fila('mapa', 'mapa de candidatos (§8.2.2)',
+    `4 fin-de-flujo obligatorios (medidos) + 4 esquinas opcionales + knit internas → pins`,
+    'los 3 tipos del libro cubiertos', 'CUMPLE', '§8.2.2 · §8.4',
+    'fin-de-flujo donde el CAMPO dice (no donde "parece obvio" — Fig 8.2); esquinas opcionales para evitar cambios de molde después; knit internas al pin expulsor.');
+  fila('reparto', 'caudal de diseño por vent (§8.2.3, sin dividir)',
+    `V̇/4 = ${(VdotLadoM3s * 1e6).toFixed(1)} cc/s por lado — y CADA vent se diseña para TODO ese flujo`,
+    'V̇_aire = V̇_melt (§8.2.1)', 'CUMPLE', '§8.2.1 · §8.2.3',
+    'el fin de llenado exacto se desconoce: dividir entre n vents no sería conservador — cada vent carga el flujo local completo.');
+  fila('banda', 'espesor del land: h_min ≤ h ≤ h_max',
+    `${banda.hMinMm.toFixed(3)} ≤ ${hProp} ≤ ${banda.hMaxMm.toFixed(3)} mm`,
+    'Eq 8.2 (ventear) · Eqs 8.3–8.4 (no flashear)',
+    banda.cumple ? 'CUMPLE' : 'VIOLA', '§8.2.3',
+    `h_min del flujo de aire laminar (μ=1.8e-5, ΔP=1 atm); h_max porque el vent CONGELA antes de flashear (t_flash ${banda.tFlashS} s de Tabla 7.4 al espesor del vent, rampa ≤100 MPa/s, testigo ≤0.2 mm).`);
+  fila('tabla81', 'los handbooks difieren 10× (Tabla 8.1, ABS = viscosidad media)',
+    'Glanvill 0.2 · Rosato 0.3 · Menges 0.03 mm', 'las TRES fuentes, citadas',
+    'ADVIERTE', 'Tabla 8.1',
+    'nunca un número mágico único: la tendencia (paredes más delgadas + presiones mayores → vents más delgados) favorece el extremo delgado; la casa propone 0.02 con moderación (§8.3.1).');
+  fila('tryout', 'plan de tryout steel-safe (§8.4)',
+    'pocos y delgados PRIMERO; agregar vents o engrosar en tryout', 'previsión declarada, no venteo total',
+    'CUMPLE', '§8.3.1 · §8.4',
+    '"especifica corto, prueba, crece" — el mismo patrón steel-safe del gating; quitar acero es fácil, ponerlo no.');
+
+  const anuncios: AnuncioRetorno[] = [
+    {
+      estacion: 10, titulo: 'las knit internas se ventean con los PINES',
+      detalle: 'claro diametral estándar 0.13 mm (fits.ts, LITERAL) ⇒ vent de 0.065 mm por holgura de pin (§8.3.2) — al posicionar pines en la E10, uno por arista interna',
+      seccion: '§8.2.2 · §8.3.2',
+    },
+    {
+      estacion: 12, titulo: 'venteo al acta: diferidos-a-tryout declarados',
+      detalle: '4 esquinas opcionales sin tallar + la palanca "más vents y más anchos → h_min baja" si el tryout pide — el acta hereda la lista (§8.4, patrón steel-safe 119)',
+      seccion: '§8.4',
+    },
+  ];
+  if (aireFueraParticion) anuncios.push({
+    estacion: 10, titulo: 'AIRE FUERA DE PARTICIÓN: venteo por pin/inserto',
+    detalle: `dead pocket con centroide en (${fueraCentroideMm?.x}, ${fueraCentroideMm?.y}, ${fueraCentroideMm?.z}) — el plano de partición NO lo alcanza (§8.3.2/§8.3.3)`,
+    seccion: '§8.3.2 · §8.3.3',
+  });
+
+  return { filas, pctUltimoEnParticion, candidatos, vents, banda, aireFueraParticion, fueraCentroideMm, exag, anuncios };
+}

@@ -6174,7 +6174,9 @@ export default function ForgeBRepStudio() {
                 {/* E6 · EMPAQUE: el fundido LLENO (t=1) ENCOGIÉNDOSE dentro del acero
                     fijo — CONTRACCIÓN EXAGERADA ×N con BANDERA (pedido de ian; el rótulo
                     vive en docName + panel + curso). k escala sobre el centro de la pieza. */}
-                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && ciclo?.e6 && ciclo?.e5datums && (() => {
+                {/* E6 SOLO en su estación: la E7+ regresa al LLENADO (los vents
+                    se ven con el melt llegando al último justo donde están) */}
+                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && ciclo?.estacion === 6 && ciclo?.e6 && ciclo?.e5datums && (() => {
                   const k = Math.max(0.05, 1 - (ciclo.e6.contraccion.linealPct / 100) * ciclo.e6.contraccion.exag * tFill);
                   // centro de la pieza según el VOLTEO (Fig 7.2): la pieza va de zPartMm
                   // (la boca, en la partición) a zPartMm+39.5 (base cerrada, hacia A).
@@ -6187,7 +6189,7 @@ export default function ForgeBRepStudio() {
                     </group>
                   );
                 })()}
-                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && !ciclo?.e6 && (
+                {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && !(ciclo?.estacion === 6 && ciclo?.e6) && (
                   <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} />
                 )}
                 {/* E5: el fundido en la colada YA NO es FeedFill (reloj de pared en

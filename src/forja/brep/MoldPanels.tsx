@@ -554,7 +554,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -616,7 +616,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
       {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={cicloEstacion6} />}
-      {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} />}
+      {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
+      {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -989,7 +990,7 @@ function CicloE5({ e5, e5v, datums, tuberia, onE6 }: {
  *  sprue de la Fig 7.2), la contracción pvT con su número para la E9, y LA BANDERA
  *  de exageración SIEMPRE visible (pedido de ian: exagerar el encogimiento en
  *  escena, jamás sin rótulo — el número real manda en filas y gates). */
-function CicloE6({ e6 }: { e6: import('../mold/estudio-molde-datos').Estacion6Dado }) {
+function CicloE6({ e6, onE7 }: { e6: import('../mold/estudio-molde-datos').Estacion6Dado; onE7?: () => void }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   return (
     <>
@@ -1024,6 +1025,62 @@ function CicloE6({ e6 }: { e6: import('../mold/estudio-molde-datos').Estacion6Da
           <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e6.anuncios.length})</div>
           {e6.anuncios.map((a, k) => (
             <div key={k} data-testid={`e6-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {onE7 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e7" onClick={() => onE7()} style={{ margin: '4px 6px 6px' }}
+          title="VENTEO (cap 8): el mapa de candidatos MEDIDO del campo — el aire sale por donde el melt llega al último">
+          ▶ estación 7 — VENTEO: dejar salir el aire
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 7 — VENTEO (cap 8). El mapa MEDIDO del campo (fin-de-flujo en la
+ *  partición), la banda h_min/h_max del libro, los 3 handbooks citados, y LA
+ *  BANDERA del espesor exagerado (patrón E6: el 0.02 mm real es invisible). */
+function CicloE7({ e7 }: { e7: import('../mold/estudio-molde-datos').Estacion7Dado }) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 7 — venteo (cap 8): el aire sale por donde el melt llega al último
+      </div>
+      <div data-testid="e7-bandera" style={{ margin: '4px 6px', padding: '5px 7px', background: '#3a2f14', border: '1px solid #f4d27a', borderRadius: 6, fontSize: 10.5, color: '#f4d27a', fontWeight: 700 }}>
+        ⚠ LOS VENTS EN ESCENA VAN ×{e7.exag} DE ESPESOR — real: {e7.banda.hPropMm} mm
+        <div style={{ fontWeight: 400, color: '#e0c98a', fontSize: 10 }}>
+          a escala real el land es invisible (0.02 mm); posición y planta SÍ son las medidas
+        </div>
+      </div>
+      <div style={{ margin: '2px 6px' }}>
+        {e7.filas.map((f) => (
+          <div key={f.id} data-testid={`e7-fila-${f.id}`} style={{ padding: '4px 6px', marginBottom: 3, background: '#141a22', borderRadius: 6, borderLeft: `3px solid ${COL[f.estado]}` }}>
+            <div style={{ fontSize: 10.5, color: '#dfe8f4' }}>
+              <b>{f.titulo}</b> · <span style={{ color: COL[f.estado], fontWeight: 700 }}>{f.estado}</span>
+            </div>
+            <div style={{ fontSize: 10.5, color: '#a8bad0' }}>{f.valor} <span style={{ color: '#6f8199' }}>(límite: {f.limite})</span></div>
+            <div style={{ fontSize: 10, color: '#8fa1b8' }}>{f.porque} · {f.seccion}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ margin: '2px 6px 6px', padding: '5px 7px', background: '#12202b', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9fd0f4' }}>el MAPA (§8.2.2 — posiciones medidas del campo)</div>
+        {e7.candidatos.map((c, k) => (
+          <div key={k} data-testid={`e7-candidato-${k}`} style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>
+            · {c.lado} ({c.xMm}, {c.yMm}, {c.zMm}) — {c.tipo} · <b style={{ color: c.estado === 'obligatorio' ? '#7ee0a0' : c.estado.includes('FUERA') ? '#f27a6c' : '#f4d27a' }}>{c.estado}</b>
+          </div>
+        ))}
+      </div>
+      {e7.anuncios.length > 0 && (
+        <div style={{ margin: '2px 6px 8px', padding: '5px 7px', background: '#241a10', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e7.anuncios.length})</div>
+          {e7.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e7-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
               <b>→ estación {a.estacion}:</b> {a.titulo}
               <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
             </div>

@@ -840,6 +840,57 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     }
   }
 
+  // ══ ESTACIÓN 7 — VENTEO (orden 2026-08-17-ciclo-dado-estacion7) ══
+  // El mapa de venteo sale MEDIDO del campo FAN (el aire está donde el melt
+  // llega al último); las fórmulas son las del cap 8, con el ejemplo del libro
+  // como oráculo.
+  console.log('── E7 · Venteo (cap 8) — el aire sale por donde el campo dice');
+  {
+    // ORÁCULO Eq 8.2 · el ejemplo del bezel del libro: 100 cc/s, W=10, L=10
+    // → h_min 0.06 mm EXACTO; h_max con su t_flash 0.003 s → ~0.073 (el libro
+    // imprime 0.08 — redondeo declarado)
+    const bz = ed.ventBandaMm({ VdotM3s: 1e-4, WMm: 10, LlandMm: 10, tFlashS: 0.003 });
+    check('E7 · ORÁCULO Eq 8.2: el bezel del libro reproduce h_min = 0.06 mm',
+      Math.abs(bz.hMinMm - 0.06) <= 0.002, `${bz.hMinMm} mm (libro: 0.06)`);
+    check('E7 · ORÁCULO Eqs 8.3–8.4: h_max con los números del libro ≈ su 0.08',
+      bz.hMaxMm >= 0.06 && bz.hMaxMm <= 0.09, `${bz.hMaxMm} mm (libro imprime 0.08 — redondeo)`);
+    // EL CAMPO DEMUESTRA la geometría auto-venteada del volteo (Fig 7.2)
+    const e7 = ed.estacion7Dado(e2.pkg, dC, {
+      frente: fanJ.frente, nx: campoJ.nx, ny: campoJ.ny, nz: campoJ.nz,
+      cellMm: campoJ.cellMm, x0: campoJ.x0, y0: campoJ.y0, z0: campoJ.z0,
+      QmmS: fanJ.QmmS,
+    });
+    check('E7 · EL CAMPO DEMUESTRA: ≥90 % del último llenado cae EN la partición',
+      e7.pctUltimoEnParticion >= 90 && !e7.aireFueraParticion,
+      `${e7.pctUltimoEnParticion} % del top-2 % de llegada a ≤1.5 celdas de z=${dC.zPartMm}`);
+    check('E7 · candidato de fin-de-flujo en LOS 4 lados (posiciones medidas)',
+      e7.vents.length === 4 && new Set(e7.vents.map((v) => v.lado)).size === 4,
+      e7.vents.map((v) => `${v.lado}(${v.xMm},${v.yMm})`).join(' · '));
+    check('E7 · banda del dado: h_min ≤ 0.02 ≤ h_max (dos lados)',
+      e7.banda.cumple && e7.banda.hMinMm < 0.02 && e7.banda.hMaxMm > 0.02,
+      `${e7.banda.hMinMm} ≤ ${e7.banda.hPropMm} ≤ ${e7.banda.hMaxMm} mm · t_flash ${e7.banda.tFlashS} s`);
+    check('E7 · reparto §8.2.3: cada vent carga V̇/4 COMPLETO (no V̇/4/n)',
+      Math.abs(e7.banda.VdotLadoM3s - (fanJ.QmmS / 4) * 1e-9) / ((fanJ.QmmS / 4) * 1e-9) < 1e-6,
+      `${(e7.banda.VdotLadoM3s * 1e6).toFixed(2)} cc/s por vent (V̇ = ${(fanJ.QmmS / 1000).toFixed(1)} cc/s)`);
+    // CONTROL NEGATIVO: semilla EN LA BOCA (solo pieza) → el melt sube y el
+    // aire queda atrapado contra la base CERRADA — lejos de la partición. El
+    // detector DEBE reportarlo y anunciar pin/inserto.
+    const campoBoca = fl2.measureFlowLength({
+      ...gridJ, gateMm: { x: dC.ejeX + 19, y: dC.ejeY, z: dC.zPartMm + 1 },
+      inCavity: dentroPiezaB,
+    });
+    const fanBoca = fanCjs.resolverLlenadoFAN(campoBoca, { material: f.ABS_MG47, vMs: lz.vMs, wallMm: 2, fillTimeS: 1, pLimitMPa: 140 });
+    const e7mal = ed.estacion7Dado(e2.pkg, dC, {
+      frente: fanBoca.frente, nx: campoBoca.nx, ny: campoBoca.ny, nz: campoBoca.nz,
+      cellMm: campoBoca.cellMm, x0: campoBoca.x0, y0: campoBoca.y0, z0: campoBoca.z0,
+      QmmS: fanBoca.QmmS,
+    });
+    check('E7 · CONTROL NEGATIVO: gate en LA BOCA → aire atrapado FUERA de partición, detectado',
+      e7mal.aireFueraParticion === true && e7mal.pctUltimoEnParticion < 50
+        && e7mal.anuncios.some((a) => a.titulo.includes('FUERA DE PARTICIÓN')),
+      `${e7mal.pctUltimoEnParticion} % en partición · dead pocket en (${e7mal.fueraCentroideMm?.x}, ${e7mal.fueraCentroideMm?.y}, ${e7mal.fueraCentroideMm?.z}) — el veredicto DISTINGUE`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

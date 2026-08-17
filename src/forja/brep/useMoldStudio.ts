@@ -32,7 +32,7 @@ import { convergeVelocityCross, ABS_CROSS } from '../mold/filling';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, type Estacion7Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { resolverLlenadoFAN } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
@@ -78,6 +78,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     e5?: Estacion5Dado; e5v?: VerificacionColada; e5datums?: DatumsColada;
     /** ESTACIÓN 6 · EMPAQUE (cap 7): el retorno de la E4 resuelto + contracción pvT */
     e6?: Estacion6Dado;
+    /** ESTACIÓN 7 · VENTEO (cap 8): el mapa de venteo MEDIDO del campo */
+    e7?: Estacion7Dado;
     /** máscara del campo CONJUNTO: 1 = vóxel de PIEZA, 0 = de COLADA */
     esPieza?: Uint8Array;
     /** ocupación FRACCIONAL por celda (verdad sub-vóxel) — el cono se ve cono */
@@ -962,6 +964,60 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       ], moldParts);
     } catch (e) { console.warn('E6_ERR', e); }
   }, [ciclo, moldParts, cursoSet, setDocName, setCollapsed]);
+  // ── ESTACIÓN 7: VENTEO (cap 8) — el mapa MEDIDO del campo (el aire está
+  // donde el melt llega al último) + los 4 vents en la partición. El espesor
+  // visual va ×20 SIEMPRE con bandera (patrón E6: el 0.02 mm real es invisible).
+  const cicloEstacion7 = useCallback(() => {
+    if (!oc || !ciclo || ciclo.estacion !== 6 || !ciclo.e5datums || !ciclo.e2 || !ciclo.frenteGrid || !ciclo.grid) return;
+    try {
+      const g = ciclo.grid;
+      const e7 = estacion7Dado(ciclo.e2.pkg, ciclo.e5datums, {
+        frente: ciclo.frenteGrid, nx: g.nx, ny: g.ny, nz: g.nz,
+        cellMm: g.cellMm, x0: g.x0, y0: g.y0, z0: g.z0,
+        QmmS: ciclo.e5fan?.QmmS ?? 25800,
+      });
+      // CUERPOS de los vents en las posiciones MEDIDAS: land dorado + canal de
+      // alivio hacia el borde del inserto (§8.3.1). Sin fuse (revienta pestaña):
+      // land y alivio como partes separadas.
+      const hVis = e7.banda.hPropMm * e7.exag;                 // 0.4 mm visual
+      const ventParts: any[] = [];
+      for (const v of e7.vents) {
+        const alongX = v.dirX !== 0;
+        // el vent se TALLA en la cara de partición de la placa B ⇒ vive DEBAJO
+        // del plano (z de zPart−h a zPart); el alivio es más profundo (§8.3.1)
+        const land = OCC.transformShape(oc, OCC.makeBox(oc,
+          alongX ? v.LlandMm : v.WMm, alongX ? v.WMm : v.LlandMm, hVis), {
+          translate: [
+            alongX ? v.xMm + (v.dirX > 0 ? 0 : -v.LlandMm) : v.xMm - v.WMm / 2,
+            alongX ? v.yMm - v.WMm / 2 : v.yMm + (v.dirY > 0 ? 0 : -v.LlandMm),
+            v.zMm - hVis,
+          ],
+        });
+        const relief = OCC.transformShape(oc, OCC.makeBox(oc,
+          alongX ? v.LreliefMm : v.WMm, alongX ? v.WMm : v.LreliefMm, hVis * 4), {
+          translate: [
+            alongX ? v.xMm + (v.dirX > 0 ? v.LlandMm : -v.LlandMm - v.LreliefMm) : v.xMm - v.WMm / 2,
+            alongX ? v.yMm - v.WMm / 2 : v.yMm + (v.dirY > 0 ? v.LlandMm : -v.LlandMm - v.LreliefMm),
+            v.zMm - hVis * 4,
+          ],
+        });
+        ventParts.push(
+          cursoPart(land, `vent-land-${v.lado}`, `VENT ${v.lado} · land ${v.WMm}×${v.LlandMm} · h ${v.hPropMm} mm (§8.3.1) — posición MEDIDA del último llenado`, '#f4c84a', 0.95, 0.95),
+          cursoPart(relief, `vent-alivio-${v.lado}`, `alivio ${v.lado} → borde del inserto (§8.3.1)`, '#c69b3a', 0.55, 0.6),
+        );
+      }
+      setTFill(1); tFillRef.current = 1;
+      setCiclo({ ...ciclo, estacion: 7, e7 });
+      setDocName(`EL DADO · estación 7 — VENTEO: ${e7.pctUltimoEnParticion} % del último llenado EN la partición · ⚠ vents ×${e7.exag} (real: ${e7.banda.hPropMm} mm)`);
+      setCollapsed((c: any) => ({ ...c, features: false }));
+      cursoSet(7, [
+        'CICLO DEL DADO · estación 7 — VENTEO (cap 8)',
+        `el aire sale por donde el melt llega AL ÚLTIMO: ${e7.pctUltimoEnParticion} % del top-2 % de llegada EN la partición (MEDIDO del campo, §8.2.2)`,
+        `4 vents fin-de-flujo: banda ${e7.banda.hMinMm.toFixed(3)} ≤ ${e7.banda.hPropMm} ≤ ${e7.banda.hMaxMm.toFixed(3)} mm (Eq 8.2 · Eqs 8.3–8.4)`,
+        `⚠ espesor en escena ×${e7.exag} — real: ${e7.banda.hPropMm} mm · knit internas → pins (E10, claro 0.13)`,
+      ], [...moldParts, ...ventParts]);
+    } catch (e) { console.warn('E7_ERR', e); }
+  }, [oc, ciclo, moldParts, cursoPart, cursoSet, setDocName, setCollapsed]);
   // De la flanera → CORE + CAVIDAD (los dos insertos TORNEABLES). El vaso se
   // revoluciona en +Y; el molde parte en Z → rotamos el eje del vaso a +Z (+90° en X),
   // y splitMold (probado en el banco: cup/lid) saca cavidad+núcleo+macho.
@@ -1250,5 +1306,5 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // props de los paneles — con moldParts (Float32Arrays de millones) eso es el
   // main thread muerto. Cazado con Debugger.pause el 2026-07-27.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => ({ moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
+  return useMemo(() => ({ moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
 }
