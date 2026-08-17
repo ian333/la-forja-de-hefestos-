@@ -1530,7 +1530,14 @@ function AtomCloud({ posQ, x, brightness, shellR }:
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     const pos = new Float32Array(N * 3);
-    const inv = 1 / qScale;
+    // ⚠ O2AI_POSQ, NO `qScale`: qScale es un PARÁMETRO de O2Cloud que aquí no existe —
+    // referenciarlo revienta la escena entera con "qScale is not defined" y el hook nunca
+    // llega a ready. Así estuvo ROTO el acto de formación de las diatómicas (O₂ incluido)
+    // desde que se parametrizó O2Cloud; nadie lo notó porque las aguas no pisan esta rama
+    // y el typecheck lo reportaba como "error preexistente" que todos saltábamos. Lo cazó
+    // la verificación de regresión de Ian (2026-08-17). El bin <mol>-atomcloud.bin es
+    // bohr ×5000 (precompute-atom-cloud.py línea 12) = O2AI_POSQ.
+    const inv = 1 / O2AI_POSQ;
     for (let i = 0; i < N * 3; i++) pos[i] = posQ[i] * inv;
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     // COLOR POR CAPA (real): la densidad radial del átomo tiene DOS picos — core 1s
