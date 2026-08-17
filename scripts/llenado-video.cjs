@@ -25,7 +25,8 @@ const W = Number(process.env.W || 3840), H = Number(process.env.H || 2160);
 const N = Number(process.env.FRAMES || 150);          // pasos del frente
 const HOLD = Number(process.env.HOLD || 20);          // frames quietos al final
 const DIR = process.env.DIR || '/home/ian/Orkesta/la-forja/forja-shots/llenado-video';
-const OUT = process.env.OUT || (process.env.E6 === '1' ? '/mnt/e/forja-videos/dado-empaque-4k.mp4' : '/mnt/e/forja-videos/dado-llenado-4k.mp4');
+const OUT = process.env.OUT || (process.env.N2 === '1' ? '/mnt/e/forja-videos/espiral-termica-4k.mp4'
+  : process.env.E6 === '1' ? '/mnt/e/forja-videos/dado-empaque-4k.mp4' : '/mnt/e/forja-videos/dado-llenado-4k.mp4');
 const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
 
 (async () => {
@@ -60,6 +61,12 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
     // abajo espera a que el llenadoStats exista, así que solo hay que clickear
     await p.waitForSelector('[data-testid="btn-espiral"]:not([disabled])', { timeout: 240000 });
     await p.click('[data-testid="btn-espiral"]');
+  } else if (process.env.N2 === '1') {
+    // N2 TÉRMICO: el clic computa LAS 3 ISOTERMAS síncronas (~2 min de hilo
+    // bloqueado). p.click esperaría la respuesta del evento y moriría a los 30 s
+    // — se AGENDA el click y se regresa de inmediato; llenadoStats marca el final.
+    await p.waitForSelector('[data-testid="btn-espiral-n2"]:not([disabled])', { timeout: 240000 });
+    await p.$eval('[data-testid="btn-espiral-n2"]', (e) => { setTimeout(() => e.click(), 30); });
   } else {
     await p.waitForSelector('[data-testid="btn-dado"]:not([disabled])', { timeout: 240000 });
     await p.click('[data-testid="btn-dado"]');
@@ -94,7 +101,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   // global arrastraba la mira y la pieza salía cortada en la esquina (visto en el still).
   // PROBETA: placa 60×20×2 en el origen — cámara CERCA (se tiene que VER mojar la pared)
   const orbDef = process.env.PROBETA === '1' ? '35,28,95,30,10,1'
-    : process.env.ESPIRAL === '1' ? '24,44,330,85,85,0'
+    : process.env.ESPIRAL === '1' || process.env.N2 === '1' ? '24,44,330,85,85,0'
     : '38,20,200,98,98,127';
   const orb = (process.env.ORBIT || orbDef).split(',').map(Number);
   await p.evaluate(([az, el, r, tx, ty, tz]) => window.__forgeBrep.orbitTo(az, el, r, tx, ty, tz), orb);

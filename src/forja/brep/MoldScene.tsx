@@ -751,7 +751,8 @@ export function FrenteSuperficie({ frente, grid, t, ocupacion }: {
  *  no puede asomar ("se ven los cuadrados" — ian). Física y juez siguen en el
  *  campo (llenadoStats no cambia). */
 export function EspiralMeltExacta({ d, t }: {
-  d: { positions: Float32Array; normals: Float32Array; indices: Uint32Array; sV: Float32Array; fillV: Float32Array; sFront: Float32Array };
+  d: { positions: Float32Array; normals: Float32Array; indices: Uint32Array; sV: Float32Array; fillV: Float32Array; sFront: Float32Array;
+    n2?: { tFillS: number; tcS: number } };
   t: number;
 }) {
   const geoBase = useMemo(() => {
@@ -775,17 +776,53 @@ export function EspiralMeltExacta({ d, t }: {
       if (d.sV[a] <= sF && d.sV[b] <= sF && d.sV[c] <= sF) idx.push(a, b, c);
     }
     geoBase.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+    // N2: cada arco ENVEJECE — se tiñe a acero-frío conforme su edad se acerca al
+    // t_congela del canal. frente y t viven normalizados a tFillS ⇒ edad(v) =
+    // (t − fillV[v])·tFillS. El tinte es la ÚNICA física nueva del cuadro: el
+    // frente que muere ya viene del solver (los arcos dejan de aparecer).
+    if (d.n2) {
+      // COLORMAP = DATO, no objeto iluminado (la lección de MoldTcPaint: las
+      // luces + ACES pastelean todo a blanco — medido AQUÍ: la cinta salía
+      // blanca con el material físico). Receta de la casa: meshBasicMaterial
+      // toneMapped=false + el sombreado N·L HORNEADO en el color.
+      const FRIO = [0.22, 0.36, 0.55];               // acero-frío saturado
+      const LX = 0.33, LY = 0.24, LZ = 0.91;         // luz fija (normalizada)
+      const col = geoBase.getAttribute('color') as THREE.BufferAttribute;
+      const arr = col.array as Float32Array;
+      const nrm = d.normals;
+      for (let v = 0; v < d.fillV.length; v++) {
+        const ageS = (t - d.fillV[v]) * d.n2.tFillS;
+        const rz = Math.max(0, Math.min(1, ageS / d.n2.tcS));
+        // la SUPERFICIE (lo que se ve) es la piel: muere antes que el centro —
+        // mapeo ilustrativo declarado (los números del panel mandan): al morir
+        // el caudal (edad ≈ 0.3·t_c del centro) la cinta ya se lee casi fría.
+        const w = Math.min(1, 1.6 * Math.pow(rz, 0.6));
+        const c = rampaFillTime(d.fillV[v]);
+        const ndl = Math.max(0, nrm[v * 3] * LX + nrm[v * 3 + 1] * LY + nrm[v * 3 + 2] * LZ);
+        const sh = (0.55 + 0.45 * ndl) * 0.92;
+        arr[v * 3] = (c[0] * (1 - w) + FRIO[0] * w) * sh;
+        arr[v * 3 + 1] = (c[1] * (1 - w) + FRIO[1] * w) * sh;
+        arr[v * 3 + 2] = (c[2] * (1 - w) + FRIO[2] * w) * sh;
+      }
+      col.needsUpdate = true;
+    }
     return geoBase;
   }, [geoBase, t, d]);
   useEffect(() => () => { geoBase.dispose(); }, [geoBase]);
   return (
     <mesh geometry={geo} renderOrder={7}>
-      <meshPhysicalMaterial
-        vertexColors side={THREE.FrontSide}
-        roughness={0.32} metalness={0.0}
-        clearcoat={0.28} clearcoatRoughness={0.22}
-        envMapIntensity={0.30}
-      />
+      {d.n2 ? (
+        /* N2: el colormap térmico es DATO — sin luces ni ACES (pastelean a
+           blanco, medido); el N·L ya viene horneado en el vértice */
+        <meshBasicMaterial vertexColors toneMapped={false} side={THREE.FrontSide} />
+      ) : (
+        <meshPhysicalMaterial
+          vertexColors side={THREE.FrontSide}
+          roughness={0.32} metalness={0.0}
+          clearcoat={0.28} clearcoatRoughness={0.22}
+          envMapIntensity={0.30}
+        />
+      )}
     </mesh>
   );
 }

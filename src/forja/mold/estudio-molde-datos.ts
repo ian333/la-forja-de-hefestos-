@@ -47,7 +47,8 @@ import type { DatumsColada } from './colada';
 import { volumenColadaCc } from './colada';
 import { shrinkage, ABS_TAIT } from './shrinkage';
 import type { MeltMaterial } from './filling';
-import { ABS_MG47, ABS_CROSS, eta0CrossWLF } from './filling';
+import { ABS_MG47, ABS_CROSS, eta0CrossWLF, viscosityCrossWLF } from './filling';
+import { resolverLlenadoFAN, tCongelaSlabS, type TermicoFAN, type LlenadoFAN } from './fan';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
 import { PLASTICOS_A, tcPlateS } from './cooling-design';
 import { moldMassKg } from './fasteners';
@@ -2109,9 +2110,16 @@ export function campoEspiral(o: { TmeltC: number; LtotalMm?: number; pLimitMPa?:
     const d = ((i + 0.5) * c - (cx + r0)) ** 2 + ((j + 0.5) * c - cy) ** 2;
     if (d < best) { best = d; gi = i; gj = j; }
   }
-  // material a T: k escalada por Cross-WLF (n fija — extensión declarada)
-  const kT = ABS_MG47.k * (eta0CrossWLF(ABS_CROSS, o.TmeltC) / eta0CrossWLF(ABS_CROSS, 239));
+  // material a T: k escalada por el CROSS EN EL PUNTO DE OPERACIÓN (γ̇ = 6v/h).
+  // CORRECCIÓN N2 (2026-08-17): escalar por η₀(T) lineal era físicamente
+  // incorrecto — el límite de alto corte del propio Cross da η = η₀ⁿ·τ*¹⁻ⁿ·γ̇ⁿ⁻¹
+  // ⇒ k(T) ∝ η₀(T)ⁿ: la sensibilidad térmica entra a la n-ésima potencia.
+  // Con η₀ lineal los sobretiros calientes escalaban +38/+61 % (medido). El
+  // punto de operación además CRUZA con el datasheet: η(238 °C, ~960 s⁻¹) ≈
+  // 204 Pa·s vs ~225 del MG47 — el check pendiente del botín de benchmarks.
   const QmmS = (Math.PI / 4) * 32 * 32 * 25.4;    // husillo ⌀32 × 1 in/s
+  const gOp = (6 * (QmmS / (w * h) / 1000)) / (h / 1000);   // γ̇ = 6v̄/h (s⁻¹)
+  const kT = ABS_MG47.k * (viscosityCrossWLF(ABS_CROSS, gOp, o.TmeltC) / viscosityCrossWLF(ABS_CROSS, gOp, 239));
   return {
     campo: {
       nx, ny, nz, cellMm: c, x0: 0, y0: 0, z0: 0,
@@ -2134,6 +2142,50 @@ export function longitudEspiralMm(e: CampoEspiral, frente: Float32Array): number
   for (let t = 0; t < frente.length; t++)
     if (frente[t] >= 0 && e.sMm[t] > L) L = e.sMm[t];
   return +L.toFixed(1);
+}
+
+/** US11230635 Tabla 6 — ABS Terluran medido: la VERDAD AJENA de la espiral */
+export const ESPIRAL_PATENTE_MM: Record<number, number> = { 238: 552, 249: 635, 260: 730 };
+
+export interface EspiralN2Corrida {
+  TC: number; esp: CampoEspiral; r: LlenadoFAN;
+  Lmm: number; Lexp: number | null; dPct: number | null; cumple: boolean | null;
+  /** edad a la que el CENTRO del canal congela (imágenes-erf) — el reloj del freno */
+  tcCanalS: number;
+  termico: TermicoFAN;
+}
+
+/** LA CORRIDA N2 de la espiral (orden 2026-08-17-n2-termico): fase-presión
+ *  SIN reloj de protocolo — la terminan LOS FRENOS (piel erf × WLF × power-law).
+ *  El tMaxS de 30 s es solo un seguro laxo: el centro del canal congela en ~13 s.
+ *  LtotalMm: la herramienta de la CORRIDA se alarga en caliente para que el tope
+ *  del dominio no disfrace el L∞ del modelo (el cap de 800 era artefacto). */
+export function espiralN2Corrida(TC: number, LtotalMm?: number): EspiralN2Corrida {
+  const LexpDef = ESPIRAL_PATENTE_MM[TC];
+  const esp = campoEspiral({ TmeltC: TC, LtotalMm: LtotalMm ?? (LexpDef ? Math.max(800, Math.round(1.5 * LexpDef)) : 800) });
+  const A = PLASTICOS_A.ABS;
+  const termico: TermicoFAN = {
+    TmeltC: TC, TcoolC: A.tCoolC, TnoflowC: T_NOFLOW_ABS_C,
+    alphaM2S: A.alphaM2s, cross: ABS_CROSS,
+  };
+  const r = resolverLlenadoFAN(esp.campo, {
+    material: esp.material, vMs: esp.vFrenteMs, wallMm: esp.hMm, QmmS: esp.QmmS,
+    pLimitMPa: esp.pLimitMPa, nPasos: 120,
+    switchover: { modo: 'presion', tMaxS: 30 },
+    termico,
+  });
+  const Lmm = longitudEspiralMm(esp, r.frente);
+  const Lexp = ESPIRAL_PATENTE_MM[TC] ?? null;
+  return {
+    TC, esp, r, Lmm, Lexp,
+    dPct: Lexp ? +((100 * (Lmm - Lexp)) / Lexp).toFixed(1) : null,
+    // banda ±20 % DOS LADOS — sesgo sistemático +13..16 % DECLARADO (grado
+    // GP22NR vs MG47 + intensificación 10:1 nominal). La física fina se juzga
+    // donde esas incógnitas SE CANCELAN: pendiente dL/dT y cocientes (gate).
+    cumple: Lexp ? Math.abs(Lmm - Lexp) <= 0.20 * Lexp : null,
+    tcCanalS: +tCongelaSlabS(esp.hMm, termico).toFixed(1),
+    termico,
+  };
 }
 
 /**

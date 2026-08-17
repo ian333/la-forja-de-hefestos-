@@ -42,8 +42,107 @@
  * FlowField YA existente (measureFlowLength: voxelizador + espesor EDT + gate) o
  * por un campo SINTÉTICO (los oráculos del gate).
  */
-import type { MeltMaterial } from './filling';
-import { pressureDropSegment } from './filling';
+import type { MeltMaterial, CrossWLF } from './filling';
+import { pressureDropSegment, eta0CrossWLF } from './filling';
+
+// ── N2 TÉRMICO (orden 2026-08-17-n2-termico) ─────────────────────────────────
+// El fundido se CONGELA: cada cara del operador se estrangula por la edad térmica
+// de sus nodos. Perfil 1D de la placa por SUPERPOSICIÓN DE IMÁGENES (erf):
+//   T(z)/(Tm−Tc) = erf((h/2−z)/2√(ατ)) + erf((h/2+z)/2√(ατ)) − 1
+// Da los DOS regímenes bien: piel ∝ √t temprana Y muerte del centro que coincide
+// con el modo 1 (Eq 9.5 / Tabla 7.4 strip) a <1 % SIN compartir fórmula — por eso
+// la Tabla 7.4 sirve de ORÁCULO genuino en el gate, no de espejo.
+// El estrangulador tiene DOS factores físicos (medido en el diseño: la piel sola
+// NO frena — h=3.175 congela el centro hasta ~13 s y el creep ya se fue a ~800):
+//   f = (h_eff/h)³ · η₀(Tm)/η₀(T_centro)     [piel geométrica × Cross-WLF]
+// La WLF cerca de T* EXPLOTA (η₀(132 °C)/η₀(238 °C) ≈ 5e4 en ABS): ése es el
+// freno dominante. DECLARADO: sin convección del melt que pasa ni shear heating
+// (Kazmer §7.3.4: por eso sus freeze son MÍNIMOS — mismo sesgo conservador);
+// edad DE CELDA, no de parcela (en canal largo coinciden; cerca del gate congela
+// de más — mismo lado conservador).
+
+/** erf por Abramowitz-Stegun 7.1.26 (|err| ≤ 1.5e-7) */
+export function erfAS(x: number): number {
+  const s = x < 0 ? -1 : 1; x = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t
+    - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return s * y;
+}
+
+export interface TermicoFAN {
+  TmeltC: number; TcoolC: number; TnoflowC: number;
+  /** difusividad térmica del plástico (m²/s) — PLASTICOS_A.alpha */
+  alphaM2S: number;
+  /** Cross-WLF del material: el freno de viscosidad η₀(Tm)/η₀(T_centro) */
+  cross: CrossWLF;
+}
+
+/** T_centro normalizada g₀(Fo) = 2·erf(1/(4√Fo)) − 1 (imágenes, placa) */
+const g0De = (Fo: number) => 2 * erfAS(0.25 / Math.sqrt(Math.max(1e-12, Fo))) - 1;
+
+/** Fo crítico: el CENTRO de la placa toca T_noflow (g₀ = R). Bisección. */
+function foCritico(R: number): number {
+  let lo = 1e-6, hi = 20;
+  for (let it = 0; it < 80; it++) {
+    const mid = 0.5 * (lo + hi);
+    if (g0De(mid) > R) lo = mid; else hi = mid;
+  }
+  return 0.5 * (lo + hi);
+}
+
+/** Tiempo de CONGELAMIENTO del CENTRO de una placa de espesor hMm (s) — el
+ *  criterio del SOLVER (muere el último carril líquido). Cruce del gate contra
+ *  el modo 1 de línea central h²/(π²α)·ln((4/π)·R⁻¹): fórmula INDEPENDIENTE. */
+export function tCongelaSlabS(hMm: number, o: { TmeltC: number; TcoolC: number; TnoflowC: number; alphaM2S: number }): number {
+  const R = (o.TnoflowC - o.TcoolC) / (o.TmeltC - o.TcoolC);
+  return foCritico(R) * (hMm / 1000) ** 2 / o.alphaM2S;
+}
+
+/** Tiempo a T MEDIA = T_noflow (s) — el CRITERIO DE LA TABLA 7.4 del libro
+ *  (prefactor 8/π² = media del modo 1, no 4/π = centro). Con la MISMA física
+ *  de imágenes-erf: el cruce contra gateFreezeStripS compara criterios IGUALES. */
+export function tCongelaMediaSlabS(hMm: number, o: { TmeltC: number; TcoolC: number; TnoflowC: number; alphaM2S: number }): number {
+  const R = (o.TnoflowC - o.TcoolC) / (o.TmeltC - o.TcoolC);
+  const media = (Fo: number) => {                 // ∫g dζ numérico (64 muestras)
+    const s2 = 2 * Math.sqrt(Math.max(1e-12, Fo));
+    let acc = 0;
+    for (let i = 0; i < 64; i++) {
+      const z = (i + 0.5) / 128;                  // ζ ∈ (0, 0.5), simétrico
+      acc += erfAS((0.5 - z) / s2) + erfAS((0.5 + z) / s2) - 1;
+    }
+    return acc / 64;
+  };
+  let lo = 1e-6, hi = 20;
+  for (let it = 0; it < 80; it++) {
+    const mid = 0.5 * (lo + hi);
+    if (media(mid) > R) lo = mid; else hi = mid;
+  }
+  return 0.5 * (lo + hi) * (hMm / 1000) ** 2 / o.alphaM2S;
+}
+
+/** LUT normalizada en Fo/FoC (el cociente R es del material): ζ*(Fo) — media
+ *  anchura LÍQUIDA normalizada (h_eff = 2ζ*h) — y g₀(Fo) para T_centro. */
+function lutTermica(R: number) {
+  const NL = 256;
+  const FoC = foCritico(R);
+  const zeta = new Float64Array(NL), g0 = new Float64Array(NL);
+  for (let i = 0; i < NL; i++) {
+    const Fo = Math.max(1e-9, (FoC * i) / (NL - 1));
+    const s2 = 2 * Math.sqrt(Fo);
+    g0[i] = g0De(Fo);
+    // g(ζ) decrece de centro a pared; congelado donde g < R ⇒ bisecar ζ*
+    const g = (z: number) => erfAS((0.5 - z) / s2) + erfAS((0.5 + z) / s2) - 1;
+    if (g(0) <= R) { zeta[i] = 0; continue; }
+    let lo = 0, hi = 0.5;
+    for (let it = 0; it < 40; it++) {
+      const mid = 0.5 * (lo + hi);
+      if (g(mid) > R) lo = mid; else hi = mid;
+    }
+    zeta[i] = 0.5 * (lo + hi);
+  }
+  return { NL, FoC, zeta, g0 };
+}
 
 /** η efectiva (Pa·s): la Newtoniana que reproduce EXACTAMENTE la ΔP de la Eq 5.22
  *  en el punto de operación (H, v̄). ΔP_newton = 12ηLv/H² ⇒ η = ΔP·H²/(12·L·v).
@@ -90,6 +189,8 @@ export interface LlenadoFAN {
   pasos: number;
   /** la fase de PRESIÓN del switchover V/P, si se activó */
   fase2: { activada: boolean; tSwitchS: number; volFase2Mm3: number; qFinalFrac: number };
+  /** N2: diagnóstico del freno térmico (solo si `termico` vino) */
+  termico?: { FoC: number; nodosCongeladosFin: number; nodosLlenos: number };
   nota: string;
 }
 
@@ -120,6 +221,9 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   switchover?: { modo: 'stop' | 'presion'; tMaxS?: number; qMinFrac?: number };
   /** ocupación fraccional por vóxel (verdad sub-vóxel) — pesa la CAPACIDAD */
   ocupacion?: Float32Array;
+  /** N2 TÉRMICO (opt-in): el estrangulador por cara — piel erf + freno WLF.
+   *  Apagado ⇒ el camino isotermo de siempre, bit a bit. */
+  termico?: TermicoFAN;
 }): LlenadoFAN {
   const { nx, ny, nz, cellMm: c, cavity, thicknessMm } = campo;
   const N = nx * ny * nz;
@@ -198,11 +302,14 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
   }
   const M = nodes.length;
   const cap = new Float64Array(M);
+  const nodeHm = new Float64Array(M);              // h de la COLUMNA (m) — N2
   let volTotal = 0;
   const mob = (t: number) => { const h = Math.max(0.05, thicknessMm[t]); return (h * h) / (12 * eta); };
   for (let t = 0; t < N; t++) if (cavity[t]) {
     const occ = o.ocupacion ? Math.max(1 / 9, Math.min(1, o.ocupacion[t])) : 1;
     cap[nodeOf[t]] += c3 * occ; volTotal += c3 * occ;
+    const hm = Math.max(0.05, thicknessMm[t]) / 1000;
+    if (hm > nodeHm[nodeOf[t]]) nodeHm[nodeOf[t]] = hm;
   }
   // conductancias entre super-nodos (mapa disperso → CSR)
   const kMap = new Map<number, number>();
@@ -236,6 +343,29 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
 
   const gNode = nodeOf[campo.idx(campo.gate.i, campo.gate.j, campo.gate.k)];
 
+  // ── N2: preparación del estrangulador térmico (solo si termico viene) ────
+  const th = o.termico;
+  const lut = th ? lutTermica((th.TnoflowC - th.TcoolC) / (th.TmeltC - th.TcoolC)) : null;
+  const etaTm = th ? eta0CrossWLF(th.cross, th.TmeltC) : 0;
+  const thrN = th ? new Float64Array(M) : null;    // 1 = caliente · 0 = CONGELADO
+  const kThr = th ? new Float64Array(adjK.length) : null;
+  const rowThr = th ? new Float64Array(M) : null;
+  /** estrangulador del nodo a edad τ: (h_eff/h)³ · η₀(Tm)/η₀(T_centro).
+   *  <1e-5 se trata CONGELADO (corte numérico declarado: flujo despreciable). */
+  const throttleDe = (tauS: number, hM: number): number => {
+    if (!th || !lut) return 1;
+    const Fo = (th.alphaM2S * tauS) / (hM * hM);
+    if (Fo >= lut.FoC) return 0;
+    const x = (Fo / lut.FoC) * (lut.NL - 1);
+    const i0 = Math.min(lut.NL - 2, Math.floor(x)), fx = x - i0;
+    const zeta = lut.zeta[i0] * (1 - fx) + lut.zeta[i0 + 1] * fx;
+    const g0 = lut.g0[i0] * (1 - fx) + lut.g0[i0 + 1] * fx;
+    const Tcore = th.TcoolC + (th.TmeltC - th.TcoolC) * Math.min(1, g0);
+    if (Tcore <= th.TnoflowC) return 0;
+    const f = Math.pow(2 * zeta, 3) * (etaTm / eta0CrossWLF(th.cross, Tcore));
+    return f < 1e-5 ? 0 : Math.min(1, f);
+  };
+
   // ── FAN sobre super-nodos ──────────────────────────────────────────────
   const fill = new Float64Array(M);
   const filled = new Uint8Array(M);
@@ -259,9 +389,41 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
 
   for (let outer = 0; outer < maxOuter && volLleno < volTotal - 1e-9; outer++) {
     pasos++;
+    // ── N2: el estrangulador de ESTE instante — edad de cada nodo lleno →
+    //   thr ∈ [0,1] por nodo; cara = min de sus dos nodos; congelado (0) = PARED
+    //   (kAct=0: la cara no fluye — no es el sumidero p=0 de la frontera).
+    let kAct = adjK, rowAct = rowK;
+    if (th && thrN && kThr && rowThr) {
+      // EL SEGUNDO FRENO del N2 (medido en el diseño: la piel sola no alcanza —
+      // a 69 MPa el creep rebasa la herramienta en 2.3 s): al reptar despacio el
+      // power-law SUBE la viscosidad, η ∝ γ̇^(n−1). En canal ÚNICO γ̇ ∝ Q en
+      // todas partes ⇒ factor GLOBAL (Q/Q₀)^(1−n) EXACTO (la espiral); al
+      // ramificar es aproximado — DECLARADO. Fase 1 (Q impuesto): factor 1,
+      // los llenados existentes no cambian. Picard rezagado (contracción, 1−n<1).
+      const rateFac = fase === 2
+        ? Math.pow(Math.min(1, Math.max(1e-4, QinAct / Q)), 1 - o.material.n) : 1;
+      for (let q = 0; q < M; q++) {
+        if (!filled[q]) { thrN[q] = 1; continue; }
+        const tau = tNow - arrivalN[q];
+        thrN[q] = tau <= 0 ? 1 : throttleDe(tau, nodeHm[q]);
+      }
+      rowThr.fill(0);
+      for (let q = 0; q < M; q++) {
+        for (let e = deg[q]; e < deg[q + 1]; e++) {
+          const kEff = adjK[e] * Math.min(thrN[q], thrN[adjN[e]]) * rateFac;
+          kThr[e] = kEff; rowThr[q] += kEff;
+        }
+      }
+      kAct = kThr; rowAct = rowThr;
+    }
     const act: number[] = [];
     pos.fill(-1);
-    for (let q = 0; q < M; q++) if (filled[q] && !(fase === 2 && q === gNode)) { pos[q] = act.length; act.push(q); }
+    for (let q = 0; q < M; q++) {
+      if (!filled[q] || (fase === 2 && q === gNode)) continue;
+      // nodo CONGELADO o aislado por congelados: sin ecuación (fila cero) — fuera
+      if (th && thrN && (thrN[q] <= 0 || rowAct[q] <= 0)) continue;
+      pos[q] = act.length; act.push(q);
+    }
     const A = act.length;
 
     // ¿queda FRONTERA? Si no, lo alcanzable ya se llenó — resolver aquí sería un
@@ -284,14 +446,14 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       // reciben por el vector b; el MISMO operador responde ahora con el caudal
       for (let e = deg[gNode]; e < deg[gNode + 1]; e++) {
         const j = adjN[e];
-        if (pos[j] >= 0) b2[pos[j]] += adjK[e] * pLimit;
+        if (pos[j] >= 0) b2[pos[j]] += kAct[e] * pLimit;
       }
     }
     const Ax = (v: Float64Array, out: Float64Array) => {
       for (let q = 0; q < A; q++) {
         const i = act[q]; let acc = 0;
         for (let e = deg[i]; e < deg[i + 1]; e++) {
-          const j = adjN[e], k = adjK[e];
+          const j = adjN[e], k = kAct[e];
           // vecino con incógnita: diferencia; sin incógnita (frontera p=0 o la
           // boquilla-Dirichlet de fase 2, cuyo P₀ ya viaja en b): solo k·v
           acc += (filled[j] && pos[j] >= 0) ? k * (v[q] - v[pos[j]]) : k * v[q];
@@ -305,7 +467,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     let rr = 0, rho = 0;
     for (let q = 0; q < A; q++) {
       r[q] = b2[q] - Ap[q]; rr += r[q] * r[q];
-      z[q] = r[q] / rowK[act[q]]; pcg[q] = z[q]; rho += r[q] * z[q];
+      z[q] = r[q] / rowAct[act[q]]; pcg[q] = z[q]; rho += r[q] * z[q];
     }
     const bNorm = Math.max(1e-30, Q * Q);
     for (let it = 0; it < 800 && rr / bNorm > 1e-18; it++) {
@@ -319,7 +481,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       for (let q = 0; q < A; q++) {
         x[q] += alpha * pcg[q]; r[q] -= alpha * Ap[q];
         rr += r[q] * r[q];
-        z[q] = r[q] / rowK[act[q]]; rho2 += r[q] * z[q];
+        z[q] = r[q] / rowAct[act[q]]; rho2 += r[q] * z[q];
       }
       const beta = rho2 / rho; rho = rho2;
       for (let q = 0; q < A; q++) pcg[q] = z[q] + beta * pcg[q];
@@ -332,7 +494,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       for (let e = deg[gNode]; e < deg[gNode + 1]; e++) {
         const j = adjN[e];
         const pj = (filled[j] && pos[j] >= 0) ? x[pos[j]] : 0;
-        qIn += adjK[e] * (pLimit - pj);
+        qIn += kAct[e] * (pLimit - pj);
       }
       QinAct = qIn;
       if (QinAct < qMin || tNow >= tMaxS) break;        // el creep ya no aporta / fin de protocolo
@@ -358,7 +520,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       for (let e = deg[i]; e < deg[i + 1]; e++) {
         const j = adjN[e];
         if (filled[j]) continue;
-        const flujo = adjK[e] * x[q];                   // p_frontera = 0
+        const flujo = kAct[e] * x[q];                   // p_frontera = 0
         if (fIdx[j] < 0) { fIdx[j] = front.length; front.push(j); F.push(flujo); }
         else F[fIdx[j]] += flujo;
       }
@@ -367,7 +529,7 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       for (let e = deg[gNode]; e < deg[gNode + 1]; e++) {
         const j = adjN[e];
         if (filled[j]) continue;
-        const flujo = adjK[e] * pLimit;
+        const flujo = kAct[e] * pLimit;
         if (fIdx[j] < 0) { fIdx[j] = front.length; front.push(j); F.push(flujo); }
         else F[fIdx[j]] += flujo;
       }
@@ -375,6 +537,8 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
     if (!front.length) break;                           // lo alcanzable ya se llenó
     let sumF = 0;
     for (const fq of F) sumF += fq;
+    // N2: el frente existe pero YA NO LE LLEGA flujo — el canal murió congelado.
+    if (th && sumF <= 1e-12) break;
     // AUDITORÍA: fase 1 contra el Q impuesto; fase 2 contra el Q MEDIDO en la
     // boquilla (ambos calculados del mismo solve: consistencia interna)
     const relErr = Math.abs(sumF - (fase === 1 ? Q : QinAct)) / Math.max(1e-9, fase === 1 ? Q : QinAct);
@@ -451,9 +615,19 @@ export function resolverLlenadoFAN(campo: CampoFAN, o: {
       volFase2Mm3: fase === 2 ? +(volLleno - volSwitch).toFixed(1) : 0,
       qFinalFrac: fase === 2 ? +(QinAct / Q).toFixed(4) : 1,
     },
+    termico: th && lut ? (() => {
+      let cong = 0, llen = 0;
+      for (let q = 0; q < M; q++) if (filled[q]) {
+        llen++;
+        const tau = tNow - arrivalN[q];
+        if (tau > 0 && throttleDe(tau, nodeHm[q]) <= 0) cong++;
+      }
+      return { FoC: +lut.FoC.toFixed(4), nodosCongeladosFin: cong, nodosLlenos: llen };
+    })() : undefined,
     nota: 'Hele-Shaw/FAN N1 con COLAPSO DEL ESPESOR (p uniforme en el hueco: super-nodos columna; ' +
       'Σ caras = h³/12η exacto). η newtoniana efectiva calibrada a Eq 5.22 en (H=pared, v=lazo §5.5.1). ' +
       'La colada (tubo) va como placas con h=⌀ EDT (~2.7× menos resistiva que Poiseuille tubo). ' +
-      'Sin térmica: la capa congelada es N2.',
+      (th ? 'N2 TÉRMICO ACTIVO: piel erf (imágenes) × freno WLF por edad de celda — sin convección ni shear heating (sesgo conservador, Kazmer §7.3.4).'
+        : 'Sin térmica: la capa congelada es N2.'),
   };
 }

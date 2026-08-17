@@ -771,6 +771,75 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     e6mal.gate.freezeCortoOrig === true && e6mal.gate.diaResueltoMm == null,
     `t_pack ${e6mal.gate.tPackNeededS} s vs freeze máx del catálogo — sin solución, como debe`);
 
+  // ══ N2 TÉRMICO — el fundido se CONGELA (orden 2026-08-17-n2-termico) ══
+  // El freno = piel erf (imágenes) × η₀ Cross-WLF del corazón × power-law del
+  // creep. Juez EXTERNO: US11230635 Tabla 6 (552/635/730 mm @ 238/249/260 °C).
+  console.log('── N2 TÉRMICO · el freno que mata al creep (contra la patente, 3 isotermas)');
+  {
+    const oN2 = { TmeltC: 239, TcoolC: 60, TnoflowC: 132, alphaM2S: 8.73e-8 };
+    // ORÁCULO 1 · CENTRO: imágenes-erf vs modo 1 de línea central (fórmulas
+    // INDEPENDIENTES, mismo criterio) — h²/(π²α)·ln((4/π)·(Tm−Tc)/(Tnf−Tc))
+    const tCen = fanCjs.tCongelaSlabS(2, oN2);
+    const tCenModo1 = (4e-6 / (Math.PI ** 2 * oN2.alphaM2S)) * Math.log((4 / Math.PI) * (239 - 60) / (132 - 60));
+    check('N2 · ORÁCULO CENTRO: piel erf congela el centro = modo 1 (±2 %, fórmula ajena)',
+      Math.abs(tCen - tCenModo1) <= 0.02 * tCenModo1, `${tCen.toFixed(2)} s vs ${tCenModo1.toFixed(2)} s (placa h=2)`);
+    // ORÁCULO 2 · MEDIA: el criterio de la TABLA 7.4 del libro (prefactor 8/π²)
+    const tMed = fanCjs.tCongelaMediaSlabS(2, oN2);
+    const tTabla = g6.gateFreezeStripS(oN2.alphaM2S, 2 / 1000, 239, 60, 132);
+    check('N2 · ORÁCULO MEDIA: T media = T_noflow reproduce la Tabla 7.4 strip (±2 %)',
+      Math.abs(tMed - tTabla) <= 0.02 * tTabla, `${tMed.toFixed(2)} s vs Tabla 7.4 ${tTabla.toFixed(2)} s`);
+    // EL ORDEN FÍSICO del §7.1.5: la pared muere ANTES que la columna del sprue —
+    // por eso el GATE gobierna el empaque. (El veredicto E6 usa Tabla 7.4 cilindro;
+    // el campo estrangula la columna como PLACA — enfría por 2 caras, no por todo
+    // el perímetro: ~4.9× más lenta que el cilindro. Sesgo DECLARADO del N2.)
+    check('N2 · ORDEN: la pared (h=2) congela mucho antes que la columna del sprue (h=8.27)',
+      tCen < 0.2 * fanCjs.tCongelaSlabS(8.27, oN2),
+      `pared ${tCen.toFixed(1)} s ≪ sprue-placa ${fanCjs.tCongelaSlabS(8.27, oN2).toFixed(0)} s (Tabla 7.4 cil: ${g6.gateFreezeCylS(oN2.alphaM2S, 8.27e-3, 239, 60, 132).toFixed(1)} s)`);
+    // LAS 3 ISOTERMAS con TODO el protocolo (fase-presión, los frenos la terminan).
+    // Herramienta 1.5×L_exp para que el TOPE del dominio jamás disfrace el L∞.
+    const N2r = {};
+    for (const T of [238, 249, 260]) N2r[T] = ed.espiralN2Corrida(T);
+    const LN = (T) => N2r[T].Lmm, LE = (T) => N2r[T].Lexp;
+    check('N2 · ISOTERMAS ±20 % DOS LADOS (sesgo sistemático +13..16 % DECLARADO: grado GP22NR vs MG47 + intensificación 10:1 nominal)',
+      [238, 249, 260].every((T) => Math.abs(LN(T) - LE(T)) <= 0.20 * LE(T)),
+      [238, 249, 260].map((T) => `${T}°: ${LN(T)} vs ${LE(T)} (${N2r[T].dPct > 0 ? '+' : ''}${N2r[T].dPct} %)`).join(' · '));
+    // LA PENDIENTE — la derivada térmica es DEL MODELO (el offset es de las
+    // incógnitas declaradas y aquí NO estorba)
+    const mSim = (LN(260) - LN(238)) / 22, mExp = (730 - 552) / 22;
+    check('N2 · LA PENDIENTE dL/dT ≈ la medida (±15 % — la física térmica del modelo)',
+      Math.abs(mSim - mExp) <= 0.15 * mExp, `${mSim.toFixed(2)} vs ${mExp.toFixed(2)} mm/°C`);
+    // LOS COCIENTES entre isotermas: grado e intensificación SE CANCELAN — la
+    // prueba más limpia de que el modelo entiende la temperatura
+    check('N2 · COCIENTES L(T)/L(238) = los medidos (±5 % — grado y presión se cancelan)',
+      cerca(LN(249) / LN(238), 635 / 552, 0.05) && cerca(LN(260) / LN(238), 730 / 552, 0.05),
+      `249/238: ${(LN(249) / LN(238)).toFixed(3)} vs ${(635 / 552).toFixed(3)} · 260/238: ${(LN(260) / LN(238)).toFixed(3)} vs ${(730 / 552).toFixed(3)}`);
+    check('N2 · MONOTONÍA: L crece con T', LN(238) < LN(249) && LN(249) < LN(260),
+      `${LN(238)} → ${LN(249)} → ${LN(260)} mm`);
+    // EL CREEP MUERE SOLO (ayer: 799.8 desbocado a los 10 s y seguía): fase 2
+    // activada, el caudal muere (<2 % Q₀) y el L∞ NO toca la herramienta
+    check('N2 · EL CREEP MUERE SOLO: Q → <2 % Q₀ sin tocar el tope de la herramienta',
+      [238, 249, 260].every((T) => N2r[T].r.fase2.activada && N2r[T].r.fase2.qFinalFrac < 0.02
+        && LN(T) < 0.95 * N2r[T].esp.LtotalMm),
+      [238, 249, 260].map((T) => `${T}°: Qfin ${(100 * N2r[T].r.fase2.qFinalFrac).toFixed(1)} % · L ${LN(T)}/${N2r[T].esp.LtotalMm}`).join(' · '));
+    check('N2 · AUDITORÍA con estrangulador: conservación ≤1e-6 en las 3',
+      [238, 249, 260].every((T) => N2r[T].r.conservacionMaxRel <= 1e-6),
+      [238, 249, 260].map((T) => N2r[T].r.conservacionMaxRel.toExponential(1)).join(' · '));
+    // CONTROL NEGATIVO · ADIABÁTICO: α×1e-3 (el frío casi no entra) ⇒ el creep NO
+    // muere — vuelve el desbocado de ayer. El freno ES el frío, no el protocolo.
+    {
+      const espAd = ed.campoEspiral({ TmeltC: 238, LtotalMm: 828 });
+      const rAd = fanCjs.resolverLlenadoFAN(espAd.campo, {
+        material: espAd.material, vMs: espAd.vFrenteMs, wallMm: espAd.hMm, QmmS: espAd.QmmS,
+        pLimitMPa: espAd.pLimitMPa, nPasos: 120, switchover: { modo: 'presion', tMaxS: 30 },
+        termico: { ...N2r[238].termico, alphaM2S: 8.73e-11 },
+      });
+      const LAd = ed.longitudEspiralMm(espAd, rAd.frente);
+      check('N2 · CONTROL ADIABÁTICO: α×1e-3 → el creep NO muere (rebasa donde el térmico paró)',
+        LAd >= 0.99 * 828 || (LAd > LN(238) + 80 && rAd.fase2.qFinalFrac > 5 * N2r[238].r.fase2.qFinalFrac),
+        `adiabático ${LAd} mm (térmico: ${LN(238)}) · Qfin ${(100 * rAd.fase2.qFinalFrac).toFixed(1)} % vs ${(100 * N2r[238].r.fase2.qFinalFrac).toFixed(1)} %`);
+    }
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);
