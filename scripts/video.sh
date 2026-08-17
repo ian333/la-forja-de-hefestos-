@@ -3,7 +3,7 @@
 # no un script propio. Reemplaza a wpair-full-pipeline.sh / wpairB-* / wpair-assemble.sh /
 # wpair-capsula.sh / render-li2*.sh. Ver docs/CANON-VIDEO.md.
 #
-#   bash scripts/video.sh <id> [paso]      paso = campo|subs|render|ensamble|verificar|capsula|publicar|todo
+#   bash scripts/video.sh <id> [paso]      paso = salud|campo|subs|render|ensamble|verificar|capsula|publicar|todo
 #   bash scripts/video.sh mol-h2o-el-puente todo
 #   SHARDS=3 bash scripts/video.sh mol-h2o-el-puente render     # override puntual
 #
@@ -267,7 +267,13 @@ paso_publicar() {
   echo "     node scripts/comando-scan.cjs && node scripts/comando-catalogo.cjs → rsync 2 JSONs a ATLAS"
 }
 
+paso_salud() {
+  echo "── SALUD (doctor + porteros de los ganadores) ──"
+  bash "$ROOT/scripts/salud.sh"
+}
+
 case "$PASO" in
+  salud)     paso_salud ;;
   subs)      paso_subs ;;
   render)    paso_render ;;
   ensamble)  paso_ensamble ;;
@@ -275,6 +281,6 @@ case "$PASO" in
   campo)     paso_campo ;;
   verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
-  todo)      paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && echo "✔ $ID LISTO (publicar aparte)" ;;
+  todo)      paso_salud && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && echo "✔ $ID LISTO (publicar aparte)" ;;
   *) echo "paso inválido: $PASO (subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
 esac

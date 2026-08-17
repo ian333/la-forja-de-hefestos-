@@ -369,11 +369,11 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: ringFaceOn({ rMul: 1.34, azim0: Math.PI / 2, span: 0.18, elev: 0.04, fov: 36 }), dur: 7.9, label: 'la SEXTA cierra: 180 de 180 (voz 32.8-40.3)' },
     // "y en el centro el campo vale cero exacto": la cámara SE METE al hueco del hexágono.
     // El cero no se dibuja (Ian lo mandó quitar) — se ve: ahí no pasa NINGUNA línea.
-    { shot: crashIn({ rFrom: 1.00, rTo: 0.62, elev: 0.05, azim0: Math.PI / 2, fov: 34 }), dur: 4.4, label: 'AL CENTRO: el hueco donde E=0 (voz 40.9-44.9)' },
+    { shot: crashIn({ elev: 0.05, azim0: Math.PI / 2, fov: 34 }), dur: 4.4, label: 'AL CENTRO: el hueco donde E=0 (voz 40.9-44.9)' },
     { shot: pullOut({ azim0: 1.0, span: 0.9, rFromMul: 0.72, rTdMul: 1.45, fovFrom: 34, fovTo: 40 }), dur: 4.2, label: '"pero son bolitas ideales" (voz 45.5-49.2)' },
     // EL ÁTOMO: se entra despacio (el sujeto pasa de 11 a 4.6 bohr) y se orbita para que se
     // vea que la nube ENVUELVE al protón en 3D — no es un disco.
-    { shot: crashIn({ rFrom: 1.15, rTo: 0.58, elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.9, label: 'ENTRA el átomo: protón + su nube (voz 49.8-57.6)' },
+    { shot: crashIn({ elev: 0.18, azim0: 0.4, fov: 34 }), dur: 8.9, label: 'ENTRA el átomo: protón + su nube (voz 49.8-57.6)' },
     { shot: heroOrbit({ rMul: 0.72, elev: 0.30, azim0: 1.1, span: 1.2, fov: 33 }), dur: 8.6, label: 'la nube ENVUELVE al protón (voz 58.2-66.3)' },
     { shot: heroOrbit({ rMul: 0.62, elev: -0.18, azim0: 2.6, span: 1.6, fov: 35 }), dur: 11.7, label: 'las líneas SE APAGAN dentro de la nube (voz 66.9-76.4)' },
   ],
@@ -490,7 +490,7 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: ringFaceOn({ rMul: 1.30, azim0: 1.35, span: 0.45, elev: 0.12 }), dur: 4.46, label: 'el anillo CIERRA — se ven las tres' },
     { shot: loomPush({ rFrom: 1.62, rTo: 0.92, elev: 0.34, azim: 1.1, fov: 32 }), dur: 8.49, label: 'COOPERATIVIDAD: SE VIENE ENCIMA' },
     { shot: ringEdgeToFace({ rMul: 1.92, elev: 0.03, span: 0.62 }), dur: 12.27, label: 'FIRMA: DE CANTO real y lejos → se ve que una quedó al revés' },
-    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 7.62, label: 'aguanta más — CRASH IN' },
+    { shot: crashIn(), dur: 7.62, label: 'aguanta más — CRASH IN' },
     { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 11.41, label: 'payoff — SALE del anillo (no de dentro de la nube)' },
   ],
   // EL CUARTETO (tetrámero, 4 aguas / 12 átomos). Cuenta lo que el trímero NO puede:
@@ -535,7 +535,7 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     // los tira sin avisar (vite build NO corre tsc) y esta toma rindió con los DEFAULTS. La
     // pieza entregada es esa, así que los valores se quedan; pero NO los copies: para acercar
     // el crash se usa `rMul`. Ver whex6 más abajo, que ya usa la firma real.
-    { shot: crashIn({ rFrom: 1.34, rTo: 0.74 }), dur: 3.82, label: 'física cuántica real — CRASH IN (rindió con defaults, ver aviso)' },
+    { shot: crashIn(), dur: 3.82, label: 'física cuántica real — CRASH IN (rindió con defaults, ver aviso)' },
     { shot: pullOut({ azim0: 0.9, span: 1.2, rFromMul: 0.72, rTdMul: 1.42 }), dur: 12.52, label: 'payoff — SALE del anillo, gancho abierto al hexámero' },
   ],
   // EL HEXÁGONO (H₂O)₆ — mismos builders que el cuarteto (son genéricos en N), otra SECUENCIA.
