@@ -3,7 +3,7 @@
 # no un script propio. Reemplaza a wpair-full-pipeline.sh / wpairB-* / wpair-assemble.sh /
 # wpair-capsula.sh / render-li2*.sh. Ver docs/CANON-VIDEO.md.
 #
-#   bash scripts/video.sh <id> [paso]      paso = salud|campo|subs|render|ensamble|verificar|capsula|publicar|todo
+#   bash scripts/video.sh <id> [paso]      paso = salud|campo|subs|render|ensamble|verificar|capsula|entrega|publicar|todo
 #   bash scripts/video.sh mol-h2o-el-puente todo
 #   SHARDS=3 bash scripts/video.sh mol-h2o-el-puente render     # override puntual
 #
@@ -41,7 +41,13 @@ FEXT=png; [ "$CAPTURA" = "cdp-jpeg" ] && FEXT=jpg
 ADIR="$ROOT/$(m audio.dir)"; NARR=$(m audio.narracion); MUS=$(m audio.musica)
 MVOL=$(m audio.musicaVol); MFIN=$(m audio.musicaFadeIn); MFOUT=$(m audio.musicaFadeOutAt)
 SEGS="$ADIR/$(m audio.segs)"; ASS="$ADIR/$(m audio.ass)"
-ODIR=$(m salida.dir); OMASTER="$ODIR/$(basename "$(m salida.master)" .mp4)$SUF.mp4"; OH264="$ODIR/$(basename "$(m salida.h264)" .mp4)$SUF.mp4"
+ODIR=$(m salida.dir)
+# E: FUERA DEL CAMINO CRÍTICO (2026-08-17): un drvfs muerto rompía el ensamble en el último
+# paso (pasó con la serie de verificación). salida.dir relativo vive en ext4 bajo ROOT; los
+# discos de Windows son destinos del paso `entrega`, que ENCOLA si están muertos.
+case "$ODIR" in /*) ;; *) ODIR="$ROOT/$ODIR" ;; esac
+mkdir -p "$ODIR"
+OMASTER="$ODIR/$(basename "$(m salida.master)" .mp4)$SUF.mp4"; OH264="$ODIR/$(basename "$(m salida.h264)" .mp4)$SUF.mp4"
 NFRAMES=$(python3 -c "print(round($DUR*$FPS))")
 BASE_URL="${BASE_URL:-http://localhost:5178}"
 export DISPLAY=${DISPLAY:-:0} GALLIUM_DRIVER=d3d12 MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
@@ -252,19 +258,44 @@ EOF
 }
 
 paso_publicar() {
-  echo "── PUBLICAR (PRIME + ATLAS) ──"
+  echo "── PUBLICAR (blindado: nombre RESUELTO + catálogo + verificación en vivo) ──"
   local PRIME=ian@100.110.244.20 ATLAS_LAN=ian@192.168.100.4 ATLAS=ian@100.97.118.117
   local RE="ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes -o ConnectTimeout=8"
   local BIB; BIB=$(m publicar.biblioteca); local CAPREL; CAPREL=$(m publicar.capsulaRel)
   local CAP="$ROOT/dist-video/_capsulas/$ID-capsula.tar.gz"
-  # ATLAS por LAN (9ms) si se puede; si no, por Tailscale. Ver reference_gaia_network_topology.
   local A=$ATLAS; ssh -o BatchMode=yes -o ConnectTimeout=5 $ATLAS_LAN true 2>/dev/null && A=$ATLAS_LAN
+  # EL NOMBRE SE RESUELVE, NO SE INVENTA (2026-08-16: publicar a atomo-cr.mp4 creó una
+  # pieza basura "El átomo de atomo-cr" DOS veces — la biblioteca nombra atom-NNN-Simbolo).
+  # Si el destino NO existe en PRIME, solo pasa con publicar.nueva=true; si no, se aborta
+  # mostrando los vecinos para encontrar el nombre correcto.
+  if ! $RE $PRIME "test -f /mnt/hdd/biblioteca/$BIB" 2>/dev/null; then
+    if [ "$(m publicar.nueva)" != "True" ] && [ "$(m publicar.nueva)" != "true" ]; then
+      echo "   ✗ /mnt/hdd/biblioteca/$BIB NO existe en PRIME y publicar.nueva no es true."
+      echo "     ¿Pieza nueva de verdad? → declara \"nueva\": true en publicar."
+      echo "     ¿Reemplazo? → el nombre correcto anda entre estos vecinos:"
+      $RE $PRIME "ls /mnt/hdd/biblioteca/$(dirname "$BIB")/ 2>/dev/null" | head -12 | sed 's/^/       /'
+      return 1
+    fi
+    echo "   (pieza NUEVA declarada: $BIB)"
+  else
+    echo "   ✓ destino existe en PRIME → REEMPLAZO de $BIB"
+  fi
   rsync -a -e "$RE" "$OH264" "$PRIME:/mnt/hdd/biblioteca/$BIB"              && echo "   ✓ PRIME video"
   rsync -a -e "$RE" "$OH264" "$A:/mnt/hdd/forja-dist/biblioteca/$BIB"       && echo "   ✓ ATLAS video"
-  [ -f "$CAP" ] && { rsync -a -e "$RE" "$CAP" "$PRIME:/mnt/hdd/biblioteca/$CAPREL" && echo "   ✓ PRIME cápsula"
+  [ -f "$CAP" ] && { $RE $PRIME "mkdir -p /mnt/hdd/biblioteca/$(dirname "$CAPREL")"; $RE $A "mkdir -p /mnt/hdd/forja-dist/biblioteca/$(dirname "$CAPREL")"
+                     rsync -a -e "$RE" "$CAP" "$PRIME:/mnt/hdd/biblioteca/$CAPREL" && echo "   ✓ PRIME cápsula"
                      rsync -a -e "$RE" "$CAP" "$A:/mnt/hdd/forja-dist/biblioteca/$CAPREL" && echo "   ✓ ATLAS cápsula"; }
-  echo "   ▸ falta (desde la laptop): SPECIAL '$(m publicar.pieza)' en comando-catalogo.cjs →"
-  echo "     node scripts/comando-scan.cjs && node scripts/comando-catalogo.cjs → rsync 2 JSONs a ATLAS"
+  # CATÁLOGO SOLO (antes: "falta desde la laptop" = tres pasos manuales que se olvidaban)
+  echo "   ▸ catálogo: scan + build + deploy + verificación en vivo"
+  node "$ROOT/scripts/comando-scan.cjs" > /dev/null 2>&1 && node "$ROOT/scripts/comando-catalogo.cjs" | tail -1
+  rsync -a -e "$RE" "$ROOT/public/comando/catalogo.json" "$ROOT/public/comando/produccion.json" "$A:/mnt/hdd/forja-dist/comando/" && echo "   ✓ JSONs en ATLAS"
+  local PIEZA; PIEZA=$(m publicar.pieza)
+  if curl -s --max-time 10 "https://university.gaiaprime.com.mx/comando/catalogo.json" | grep -q "\"id\": \"$PIEZA\""; then
+    echo "   ✓ EN VIVO: la pieza $PIEZA está en el catálogo de producción"
+  else
+    echo "   ✗ la pieza $PIEZA NO aparece en producción — revisar"
+    return 1
+  fi
 }
 
 paso_salud() {
@@ -272,8 +303,33 @@ paso_salud() {
   bash "$ROOT/scripts/salud.sh"
 }
 
+paso_entrega() {
+  echo "── ENTREGA (ext4 SIEMPRE; Windows si vive; encola si no) ──"
+  [ -f "$OH264" ] || { echo "   ✗ no existe $OH264 — corre 'ensamble' primero"; return 1; }
+  local STAGE="$ROOT/dist-video/entregas"; mkdir -p "$STAGE"
+  local NOM; NOM=$(basename "$OH264")
+  cp -f "$OH264" "$STAGE/$NOM" && md5sum "$STAGE/$NOM" | cut -d' ' -f1 > "$STAGE/$NOM.md5"
+  echo "   ✓ ext4: dist-video/entregas/$NOM ($(stat -c%s "$STAGE/$NOM") bytes + md5)"
+  # E: (masters) y C: (Downloads de iangpu) — con verificación de TAMAÑO EXACTO; la
+  # lección de la entrega que "pasó" comparando contra el archivo viejo.
+  local SZ; SZ=$(stat -c%s "$OH264")
+  if ls /mnt/e/forja-videos >/dev/null 2>&1; then
+    cp -f "$OH264" "/mnt/e/forja-videos/$NOM" && cp -f "$OMASTER" "/mnt/e/forja-videos/$(basename "$OMASTER")" 2>/dev/null
+    [ "$(stat -c%s "/mnt/e/forja-videos/$NOM" 2>/dev/null)" = "$SZ" ] && echo "   ✓ E: verificado ($SZ bytes)" || echo "   ✗ E: copia NO verificada"
+  else
+    echo "   ⚠ E: muerto → queda encolado en ext4"; echo "$NOM" >> "$STAGE/PENDIENTES-E.txt"
+  fi
+  if ls "/mnt/c/Users/sebas/Downloads" >/dev/null 2>&1; then
+    cp -f "$OH264" "/mnt/c/Users/sebas/Downloads/$NOM"
+    [ "$(stat -c%s "/mnt/c/Users/sebas/Downloads/$NOM" 2>/dev/null)" = "$SZ" ] && echo "   ✓ Downloads iangpu: verificado" || echo "   ✗ Downloads iangpu: NO verificada"
+  else
+    echo "   ⚠ C: muerto → queda encolado (scripts/traer.sh lo jala desde la laptop)"
+  fi
+}
+
 case "$PASO" in
   salud)     paso_salud ;;
+  entrega)   paso_entrega ;;
   subs)      paso_subs ;;
   render)    paso_render ;;
   ensamble)  paso_ensamble ;;
@@ -281,6 +337,6 @@ case "$PASO" in
   campo)     paso_campo ;;
   verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
-  todo)      paso_salud && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && echo "✔ $ID LISTO (publicar aparte)" ;;
+  todo)      paso_salud && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
   *) echo "paso inválido: $PASO (subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
 esac

@@ -95,9 +95,10 @@
     "nota_marginv": "El canon vertical ancla el subtítulo a MarginV 1120, pero esta escena ya tiene texto abajo: nombre + símbolo/Z + la fila de bandas ocupan hasta ~1020 desde el borde inferior. Medido en un recorte 1:1 del cuadro 4K de atomo-c (t=23.2s): el subtítulo caía a ~1160 y \"Carbono\" arrancaba en ~970 — 100 px de separación, que se lee encimado. 1450 deja ~430 px de aire. Las moléculas NO se tocan: sin este campo, video-subs.py usa el canon."
   },
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "atomo-si-4k-master.mp4",
-    "h264": "atomo-si-4k.mp4"
+    "h264": "atomo-si-4k.mp4",
+    "nota": "ext4 (2026-08-17): E: fuera del camino crítico — un drvfs muerto rompía el ensamble. El paso `entrega` copia a E:/Downloads si viven, o encola en dist-video/entregas/."
   },
   "capsula": {
     "bins": [
