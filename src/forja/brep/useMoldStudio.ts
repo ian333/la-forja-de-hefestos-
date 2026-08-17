@@ -979,12 +979,14 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       // CUERPOS de los vents en las posiciones MEDIDAS: land dorado + canal de
       // alivio hacia el borde del inserto (§8.3.1). Sin fuse (revienta pestaña):
       // land y alivio como partes separadas.
+      // ANATOMÍA Fig 8.6 (enmienda de ian: "ese venteo está ENORME" — la 1ª
+      // versión dibujó el alivio como tablón 10×38; el libro dice canal de
+      // 2 mm + salida ⌀3). SOLO el espesor del land va ×20 con bandera (el
+      // 0.02 real es invisible); alivio y salida van a escala REAL.
       const hVis = e7.banda.hPropMm * e7.exag;                 // 0.4 mm visual
       const ventParts: any[] = [];
       for (const v of e7.vents) {
         const alongX = v.dirX !== 0;
-        // el vent se TALLA en la cara de partición de la placa B ⇒ vive DEBAJO
-        // del plano (z de zPart−h a zPart); el alivio es más profundo (§8.3.1)
         const land = OCC.transformShape(oc, OCC.makeBox(oc,
           alongX ? v.LlandMm : v.WMm, alongX ? v.WMm : v.LlandMm, hVis), {
           translate: [
@@ -993,17 +995,24 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
             v.zMm - hVis,
           ],
         });
+        // canal de alivio CHICO (2 mm de profundo, REAL) tras el land
+        const dL = v.LlandMm, dR = v.reliefLMm;
         const relief = OCC.transformShape(oc, OCC.makeBox(oc,
-          alongX ? v.LreliefMm : v.WMm, alongX ? v.WMm : v.LreliefMm, hVis * 4), {
+          alongX ? dR : v.reliefWMm, alongX ? v.reliefWMm : dR, v.reliefProfMm), {
           translate: [
-            alongX ? v.xMm + (v.dirX > 0 ? v.LlandMm : -v.LlandMm - v.LreliefMm) : v.xMm - v.WMm / 2,
-            alongX ? v.yMm - v.WMm / 2 : v.yMm + (v.dirY > 0 ? v.LlandMm : -v.LlandMm - v.LreliefMm),
-            v.zMm - hVis * 4,
+            alongX ? v.xMm + (v.dirX > 0 ? dL : -dL - dR) : v.xMm - v.reliefWMm / 2,
+            alongX ? v.yMm - v.reliefWMm / 2 : v.yMm + (v.dirY > 0 ? dL : -dL - dR),
+            v.zMm - v.reliefProfMm,
           ],
         });
+        // salida ⌀3 barrenada hacia abajo al final del alivio (Fig 8.6)
+        const sx = v.xMm + v.dirX * (dL + dR - v.salidaDiaMm / 2);
+        const sy = v.yMm + v.dirY * (dL + dR - v.salidaDiaMm / 2);
+        const salida = OCC.makeCylinder(oc, v.salidaDiaMm / 2, 12, { origin: [sx, sy, v.zMm - 12], dir: [0, 0, 1] });
         ventParts.push(
-          cursoPart(land, `vent-land-${v.lado}`, `VENT ${v.lado} · land ${v.WMm}×${v.LlandMm} · h ${v.hPropMm} mm (§8.3.1) — posición MEDIDA del último llenado`, '#f4c84a', 0.95, 0.95),
-          cursoPart(relief, `vent-alivio-${v.lado}`, `alivio ${v.lado} → borde del inserto (§8.3.1)`, '#c69b3a', 0.55, 0.6),
+          cursoPart(land, `vent-land-${v.lado}`, `VENT ${v.lado} · land ${v.WMm}×${v.LlandMm} · h ${v.hPropMm} mm (§8.3.1) — posición MEDIDA del último llenado · ⚠ espesor ×${e7.exag} en escena`, '#f4c84a', 0.95, 0.95),
+          cursoPart(relief, `vent-alivio-${v.lado}`, `alivio ${v.reliefWMm}×${v.reliefLMm}×${v.reliefProfMm} (REAL, Fig 8.6)`, '#c69b3a', 0.6, 0.65),
+          cursoPart(salida, `vent-salida-${v.lado}`, `salida ⌀${v.salidaDiaMm} barrenada (Fig 8.6)`, '#a8823a', 0.5, 0.55),
         );
       }
       setTFill(1); tFillRef.current = 1;

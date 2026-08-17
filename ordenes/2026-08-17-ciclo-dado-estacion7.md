@@ -159,3 +159,17 @@ heredado VIVO del llenado), §8.2.3 (NO dividir el caudal entre vents), §8.3.1
   fresco lanzado (deploy-e7.log).
 - ForgeBRepStudio: el encogimiento E6 quedó atado a `estacion === 6` (antes se
   ataba a `e6` presente y habría contaminado la escena E7).
+
+## ENMIENDA (2026-08-17, caza de ian: "ese venteo está ENORME")
+- Tenía razón: el LAND (10×2×0.02, ×20 rotulado) era del libro, pero el
+  ALIVIO lo dibujé como TABLÓN de 10 mm de ancho corriendo 38 mm al borde —
+  y la Fig 8.6 dice **canal de alivio de 2 mm + salida ⌀3 barrenada**. Eso no
+  era exageración rotulada: era ANATOMÍA INVENTADA. Regla que queda: la
+  bandera de exageración SOLO ampara la dimensión declarada (el espesor del
+  land); el resto de la anatomía va a PROPORCIÓN DE LIBRO.
+- Corregido: alivio 3×12×2 mm (profundo REAL, sin exagerar — 2 mm es su
+  tamaño de verdad) + salida ⌀3×12 barrenada hacia abajo (se ve por el molde
+  de vidrio). El espesor propuesto 0.02 se defendió con cita (§8.3.1 ·
+  Menges 0.015–0.03 en Tabla 8.1) y quedó impreso en la bandera del panel.
+- Re-probe 720 APROBADO + ojos (rayitas de maquinista, no tablones) →
+  re-render 4K + re-entrega con los mismos nombres.

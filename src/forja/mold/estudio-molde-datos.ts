@@ -2511,8 +2511,12 @@ export interface Estacion7Dado {
   /** % del último llenado (top 2 % de llegada) a ≤1.5 celdas de la partición — MEDIDO */
   pctUltimoEnParticion: number;
   candidatos: Array<{ lado: string; xMm: number; yMm: number; zMm: number; tipo: 'fin-de-flujo' | 'esquina' | 'knit-interna' | 'dead-pocket'; estado: 'obligatorio' | 'opcional' | 'a-pin (E10)' | 'FUERA-PARTICIÓN' }>;
-  /** los 4 vents elegidos (posición MEDIDA + anatomía §8.3.1); dir = hacia afuera */
-  vents: Array<{ lado: string; xMm: number; yMm: number; zMm: number; dirX: number; dirY: number; WMm: number; LlandMm: number; hPropMm: number; LreliefMm: number }>;
+  /** los 4 vents elegidos (posición MEDIDA + anatomía Fig 8.6/§8.3.1:
+   *  land ancho y DELGADÍSIMO → canal de alivio CHICO (2 mm de profundo, real)
+   *  → salida ⌀3 barrenada). dir = hacia afuera. Enmienda de ian: la primera
+   *  versión dibujó el alivio como tablón 10×38 — anatomía equivocada, no
+   *  exageración; el alivio del libro es un canal de 2 mm. */
+  vents: Array<{ lado: string; xMm: number; yMm: number; zMm: number; dirX: number; dirY: number; WMm: number; LlandMm: number; hPropMm: number; reliefWMm: number; reliefProfMm: number; reliefLMm: number; salidaDiaMm: number }>;
   banda: { hMinMm: number; hMaxMm: number; hPropMm: number; cumple: boolean; tFlashS: number; VdotLadoM3s: number };
   aireFueraParticion: boolean;
   fueraCentroideMm: { x: number; y: number; z: number } | null;
@@ -2570,7 +2574,9 @@ export function estacion7Dado(pkg: MoldPackage, d: DatumsColada, campo: {
   const candidatos: Estacion7Dado['candidatos'] = [];
   const vents: Estacion7Dado['vents'] = [];
   const W = 10, Lland = 2, hProp = 0.02;            // §8.3.1: W ANCHO deliberado · land 2 · ~0.02
-  const LreliefMm = 60 - semi - Lland;              // hasta el borde del inserto (120/2)
+  // anatomía Fig 8.6 (§8.3.1): tras el land, canal de alivio de 2 mm (profundo
+  // REAL — no se exagera) y salida ⌀3 barrenada. El alivio es un canal CHICO.
+  const reliefWMm = 3, reliefProfMm = 2, reliefLMm = 12, salidaDiaMm = 3;
   for (const s of lados) {
     const mios = enPart.filter((q) => {
       const dx = q.X - d.ejeX, dy = q.Y - d.ejeY;
@@ -2583,7 +2589,7 @@ export function estacion7Dado(pkg: MoldPackage, d: DatumsColada, campo: {
     const xv = d.ejeX + (s.dirX !== 0 ? s.dirX * semi : tt);
     const yv = d.ejeY + (s.dirY !== 0 ? s.dirY * semi : tt);
     candidatos.push({ lado: s.lado, xMm: +xv.toFixed(1), yMm: +yv.toFixed(1), zMm: d.zPartMm, tipo: 'fin-de-flujo', estado: aireFueraParticion ? 'FUERA-PARTICIÓN' : 'obligatorio' });
-    vents.push({ lado: s.lado, xMm: +xv.toFixed(1), yMm: +yv.toFixed(1), zMm: d.zPartMm, dirX: s.dirX, dirY: s.dirY, WMm: W, LlandMm: Lland, hPropMm: hProp, LreliefMm });
+    vents.push({ lado: s.lado, xMm: +xv.toFixed(1), yMm: +yv.toFixed(1), zMm: d.zPartMm, dirX: s.dirX, dirY: s.dirY, WMm: W, LlandMm: Lland, hPropMm: hProp, reliefWMm, reliefProfMm, reliefLMm, salidaDiaMm });
   }
   // esquinas de la boca = opcionales (§8.2.2: el flujo no debería atrapar ahí,
   // pero se pueden especificar "para evitar cambios de molde después")

@@ -1052,9 +1052,9 @@ function CicloE7({ e7 }: { e7: import('../mold/estudio-molde-datos').Estacion7Da
         estación 7 — venteo (cap 8): el aire sale por donde el melt llega al último
       </div>
       <div data-testid="e7-bandera" style={{ margin: '4px 6px', padding: '5px 7px', background: '#3a2f14', border: '1px solid #f4d27a', borderRadius: 6, fontSize: 10.5, color: '#f4d27a', fontWeight: 700 }}>
-        ⚠ LOS VENTS EN ESCENA VAN ×{e7.exag} DE ESPESOR — real: {e7.banda.hPropMm} mm
+        ⚠ SOLO el espesor del LAND va ×{e7.exag} en escena — real: {e7.banda.hPropMm} mm (§8.3.1 · Menges 0.015–0.03)
         <div style={{ fontWeight: 400, color: '#e0c98a', fontSize: 10 }}>
-          a escala real el land es invisible (0.02 mm); posición y planta SÍ son las medidas
+          alivio (canal 3×2 mm) y salida (⌀3) van a escala REAL — anatomía Fig 8.6; posición y planta son las MEDIDAS
         </div>
       </div>
       <div style={{ margin: '2px 6px' }}>
