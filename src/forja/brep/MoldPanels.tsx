@@ -554,7 +554,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -617,7 +617,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
       {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={cicloEstacion6} />}
       {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
-      {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} />}
+      {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
+      {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -1044,7 +1045,7 @@ function CicloE6({ e6, onE7 }: { e6: import('../mold/estudio-molde-datos').Estac
 /** Estación 7 — VENTEO (cap 8). El mapa MEDIDO del campo (fin-de-flujo en la
  *  partición), la banda h_min/h_max del libro, los 3 handbooks citados, y LA
  *  BANDERA del espesor exagerado (patrón E6: el 0.02 mm real es invisible). */
-function CicloE7({ e7 }: { e7: import('../mold/estudio-molde-datos').Estacion7Dado }) {
+function CicloE7({ e7, onE8 }: { e7: import('../mold/estudio-molde-datos').Estacion7Dado; onE8?: () => void }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   return (
     <>
@@ -1081,6 +1082,84 @@ function CicloE7({ e7 }: { e7: import('../mold/estudio-molde-datos').Estacion7Da
           <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e7.anuncios.length})</div>
           {e7.anuncios.map((a, k) => (
             <div key={k} data-testid={`e7-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {onE8 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e8" onClick={() => onE8()} style={{ margin: '4px 6px 6px' }}
+          title="ENFRIAMIENTO (cap 9): el rey del ciclo — el agua, y el hallazgo de que el BEBEDERO manda el tiempo de ciclo">
+          ▶ estación 8 — ENFRIAMIENTO: el agua (el rey del ciclo)
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 8 — ENFRIAMIENTO (cap 9). El rey del ciclo: los 7 pasos NARRADOS
+ *  (fórmula → sustitución → resultado, la pantalla que hace que los errores
+ *  salten), el veredicto del ciclo (el bebedero manda ×8.2) y EL RETORNO A LA
+ *  E2 con DINERO — la única estación que cambia el precio de la pieza. */
+function CicloE8({ e8 }: { e8: import('../mold/estudio-molde-datos').Estacion8Dado }) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 8 — enfriamiento (cap 9): el rey del ciclo
+      </div>
+      <div data-testid="e8-ciclo" style={{ margin: '4px 6px', padding: '5px 7px', background: e8.ciclo.manda === 'bebedero' ? '#3a2f14' : '#12281c', border: `1px solid ${e8.ciclo.manda === 'bebedero' ? '#f4d27a' : '#7ee0a0'}`, borderRadius: 6, fontSize: 10.5, color: e8.ciclo.manda === 'bebedero' ? '#f4d27a' : '#7ee0a0', fontWeight: 700 }}>
+        ⏱ MANDA EL {e8.ciclo.manda.toUpperCase()}: pieza {e8.ciclo.tcPiezaS} s (Eq 9.5) vs bebedero ⌀{e8.bushing.diaActualMm} {e8.ciclo.tcSprueS} s (Eq 9.6) = ×{e8.ciclo.factor}
+        <div style={{ fontWeight: 400, color: '#e0c98a', fontSize: 10 }}>
+          §9.2.1: "the cycle time can be dominated by the cooling of the cold runners" — el ciclo del dado NO es el de su pared
+        </div>
+      </div>
+      <div style={{ margin: '2px 6px' }}>
+        {e8.filas.map((f) => (
+          <div key={f.id} data-testid={`e8-fila-${f.id}`} style={{ padding: '4px 6px', marginBottom: 3, background: '#141a22', borderRadius: 6, borderLeft: `3px solid ${COL[f.estado]}` }}>
+            <div style={{ fontSize: 10.5, color: '#dfe8f4' }}>
+              <b>{f.titulo}</b> · <span style={{ color: COL[f.estado], fontWeight: 700 }}>{f.estado}</span>
+            </div>
+            <div style={{ fontSize: 10.5, color: '#a8bad0' }}>{f.valor} <span style={{ color: '#6f8199' }}>(límite: {f.limite})</span></div>
+            <div style={{ fontSize: 10, color: '#8fa1b8' }}>{f.porque} · {f.seccion}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ margin: '2px 6px 6px', padding: '5px 7px', background: '#12202b', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9fd0f4' }}>EL CRUCE E6↔E8 — la cadena del bushing</div>
+        {e8.bushing.cadena.map((c, k) => (
+          <div key={k} data-testid={`e8-cadena-${k}`} style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>· {c}</div>
+        ))}
+      </div>
+      <div style={{ margin: '2px 6px 6px', padding: '5px 7px', background: '#1b2416', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#a8e07e' }}>
+          💵 EL RETORNO A LA E2 — la E2 cotizó {e8.dinero.cicloEq323S} s (Eq 3.23, ciega a la colada) → ${e8.dinero.partUSDdeclarado}/pza
+        </div>
+        {e8.dinero.salidas.map((x) => (
+          <div key={x.id} data-testid={`e8-salida-${x.id}`} style={{ fontSize: 10.5, color: '#c8d8a8', marginTop: 3 }}>
+            <b>({x.id}) {x.titulo}</b> — ciclo {x.cicloS} s → <b>${x.partUSD.toFixed(3)}/pza</b> ({x.deltaUSD >= 0 ? '+' : ''}${x.deltaUSD.toFixed(3)})
+            <div style={{ fontSize: 10, color: '#8fa1b8' }}>{x.nota}</div>
+          </div>
+        ))}
+      </div>
+      <details style={{ margin: '2px 6px 6px' }}>
+        <summary style={{ fontSize: 10.5, color: '#9fd0f4', cursor: 'pointer' }}>los {e8.cd.pasos.length} PASOS del §9.2 — fórmula → sustitución → resultado</summary>
+        {e8.cd.pasos.map((p, k) => (
+          <div key={k} data-testid={`e8-paso-${k}`} style={{ padding: '4px 6px', marginTop: 3, background: '#0f151c', borderRadius: 6, borderLeft: `3px solid ${p.ok === false ? '#f27a6c' : '#3d5a72'}` }}>
+            <div style={{ fontSize: 10.5, color: '#dfe8f4' }}><b>{p.titulo}</b> <span style={{ color: '#6f8199' }}>{p.ref}</span></div>
+            <div style={{ fontSize: 10, color: '#9fd0f4', fontFamily: 'monospace' }}>{p.formula}</div>
+            <div style={{ fontSize: 10, color: '#a8bad0', fontFamily: 'monospace' }}>{p.sustitucion}</div>
+            <div style={{ fontSize: 10.5, color: '#a8e07e', fontFamily: 'monospace' }}>= {p.resultado}</div>
+            {p.nota && <div style={{ fontSize: 10, color: '#8fa1b8' }}>{p.nota}</div>}
+          </div>
+        ))}
+      </details>
+      {e8.anuncios.length > 0 && (
+        <div style={{ margin: '2px 6px 8px', padding: '5px 7px', background: '#241a10', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e8.anuncios.length})</div>
+          {e8.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e8-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
               <b>→ estación {a.estacion}:</b> {a.titulo}
               <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
             </div>

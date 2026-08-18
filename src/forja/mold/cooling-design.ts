@@ -389,3 +389,23 @@ export function coolingDesign(o: CoolingDesignIn): CoolingDesignOut {
     iters, rows, fallas, pasos,
   };
 }
+
+/**
+ * Tabla 9.3 (§9.3.5) — SELECTOR de enfriamiento de cores esbeltos POR DIÁMETRO.
+ * El libro tabula tasa de transferencia y rango de diámetro; la decisión entra
+ * por el ⌀ del core. §9.3.5.1-2: entre baffle y cooling insert custom "the
+ * baffle is clearly preferred when the application allows" (componente ESTÁNDAR
+ * de proveedor vs diseño+manufactura propios).
+ */
+export const TABLA_9_3: Array<{ tipo: string; minMm: number; maxMm: number; tasa: string; nota: string }> = [
+  { tipo: 'cooling insert', minMm: 50, maxMm: 1e9, tasa: 'muy alta', nota: 'custom: diseño+manufactura propios; puede ajustarse a la cara trasera para transmitir la carga a la support plate' },
+  { tipo: 'baffle', minMm: 12, maxMm: 75, tasa: 'muy alta', nota: 'COMPONENTE ESTÁNDAR de proveedor — el preferido cuando la aplicación lo permite (§9.3.5.2); no carga axial: checar pared del core (cap 12)' },
+  { tipo: 'bubbler', minMm: 6, maxMm: 30, tasa: 'alta', nota: 'más compacto (⌀<2 en barreno de 3) y no toca el core; el barreno chico se paga con instalación más cara (dos canales)' },
+  { tipo: 'heat pipe', minMm: 5, maxMm: 20, tasa: 'media', nota: 'estándar y fácil de instalar, pero sin transporte masivo de coolant: respuesta inicial lenta' },
+  { tipo: 'pin conductivo', minMm: 0, maxMm: 5, tasa: 'baja', nota: 'con L/D alto "actúa primordialmente como AISLANTE" (§9.3.5.5)' },
+];
+/** el candidato de MAYOR tasa cuyo rango contiene al ⌀ del core (Tabla 9.3). */
+export function seleccionCoreTabla93(diaCoreMm: number) {
+  const cand = TABLA_9_3.filter((t) => diaCoreMm >= t.minMm && diaCoreMm <= t.maxMm);
+  return { elegido: cand[0] ?? null, candidatos: cand };
+}

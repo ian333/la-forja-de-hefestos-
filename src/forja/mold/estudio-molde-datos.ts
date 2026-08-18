@@ -50,7 +50,8 @@ import type { MeltMaterial } from './filling';
 import { ABS_MG47, ABS_CROSS, eta0CrossWLF, viscosityCrossWLF } from './filling';
 import { resolverLlenadoFAN, tCongelaSlabS, type TermicoFAN, type LlenadoFAN } from './fan';
 import { checkDFM, type DFMPart, type DFMReport } from './dfm';
-import { PLASTICOS_A, tcPlateS } from './cooling-design';
+import { PLASTICOS_A, tcPlateS, coolingDesign, ACEROS_MOLDE, seleccionCoreTabla93, heatFluxVariation, AGUA, CONTROLADORES, type CoolingDesignOut } from './cooling-design';
+import { coolingTimeRod } from './cooling';
 import { moldMassKg } from './fasteners';
 import { MOLD_METALS } from './moldbase';
 import { material as materialProps } from './materials';
@@ -2659,4 +2660,253 @@ export function estacion7Dado(pkg: MoldPackage, d: DatumsColada, campo: {
   });
 
   return { filas, pctUltimoEnParticion, candidatos, vents, banda, aireFueraParticion, fueraCentroideMm, exag, anuncios };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 8: ENFRIAMIENTO (cap 9) — EL REY DEL CICLO     */
+/* (orden 2026-08-17-ciclo-dado-estacion8)                                     */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * NINGUNA física nueva: `coolingDesign()` ya es el proceso de 7 pasos del §9.2
+ * con fórmula + sustitución + resultado narrados y `fallas` como veredicto.
+ * Esta estación lo ATA al dado y cobra el hallazgo que el libro anticipa en
+ * §9.2.1: *"the cycle time can be dominated by the cooling of the cold
+ * runners"*. En el dado el bebedero ⌀8.27 pide 69.7 s contra los 8.5 s de la
+ * pared — ×8.2. El ciclo del dado NO es el de su pieza.
+ *
+ * EL CRUCE E6↔E8 (dos estaciones tirando en direcciones opuestas, resuelto por
+ * número): la E6 quiere el bebedero GRUESO (freeze ≥ t_pack o hay rechupes);
+ * la E8 lo quiere DELGADO (ciclo = dinero). La solución no se inventa: se
+ * recorre el catálogo de bushings y se toma el MÍNIMO que todavía empaca.
+ */
+export interface Estacion8Dado {
+  filas: FilaLlenado[];
+  cd: CoolingDesignOut;
+  ciclo: { tcPiezaS: number; tcSprueS: number; mandaS: number; manda: 'pieza' | 'bebedero'; factor: number };
+  bushing: {
+    diaActualMm: number; tcActualS: number; freezeActualS: number; tPackNeededS: number;
+    diaOptimoMm: number | null; tcOptimoS: number | null; freezeOptimoS: number | null;
+    ahorroPct: number | null; cadena: string[];
+  };
+  dinero: {
+    cicloEq323S: number; tarifaUSDh: number; nCav: number; partUSDdeclarado: number;
+    salidas: Array<{ id: string; titulo: string; cicloS: number; procesoUSD: number; partUSD: number; deltaUSD: number; nota: string }>;
+  };
+  core: { diaMm: number; alturaMm: number; LsobreD: number; elegido: string | null; porQue: string };
+  lineas: { nPorLado: number; diaMm: number; plug: string; hMm: number; wMm: number; largoMm: number; variacionFlujoPct: number };
+  caudal: { termicoGPM: number; turbulentoGPM: number; manda: 'turbulencia' | 'ΔT'; dTrealC: number; totalGPM: number; controladorOk: boolean };
+  ruteo: { claroMinMm: number; claroSinCorrerMm: number; corrimientoMm: number; claroFinalMm: number; ok: boolean; ysA: number[] };
+  anuncios: AnuncioRetorno[];
+}
+
+export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
+  partVolCc?: number; tPackNeededS?: number;
+  /** CONTROL NEGATIVO del gate: forzar profundidad/pitch fuera de las reglas */
+  hOverD?: number; wOverH?: number;
+}): Estacion8Dado {
+  const dz: any = pkg.diseno;
+  const A = PLASTICOS_A.ABS;
+  const partVolCc = o?.partVolCc ?? 14.14;
+  const matCool = { alpha: A.alphaM2s, tMelt: A.tMeltC, tCoolant: A.tCoolC, tEject: A.tEjectC };
+
+  // ── PASO 1 · el t_c de CADA sección (Eq 9.5 placa · Eq 9.6 cilindro) ──
+  const tcPiezaS = +tcPlateS(2 / 1000, A.alphaM2s, A.tMeltC, A.tEjectC, A.tCoolC).toFixed(1);
+  const diaActualMm = +(2 * d.rBaseMm).toFixed(2);
+  const tcDe = (diaMm: number) => +coolingTimeRod(diaMm / 1000, matCool).toFixed(1);
+  const tcSprueS = tcDe(diaActualMm);
+  const mandaS = Math.max(tcPiezaS, tcSprueS);
+  const manda: 'pieza' | 'bebedero' = tcSprueS > tcPiezaS ? 'bebedero' : 'pieza';
+
+  // ── el DISEÑO del agua, con el ciclo que MANDA (Q̇ = Q/t_c) ──
+  const acero = ACEROS_MOLDE.P20;
+  const cd = coolingDesign({
+    nCav: 1, partVolCc, runnerVolCc: volumenColadaCc(d), thickestMm: 2,
+    rhoRTKgM3: A.rhoRTKgM3, cpJkgC: A.cpJkgC, alphaM2s: A.alphaM2s,
+    tMeltC: A.tMeltC, tEjectC: A.tEjectC, tCoolantC: A.tCoolC,
+    kMoldWmC: acero.kWmC, sigmaEnduranceMPa: acero.sigmaEnduranceMPa,
+    bandMm: 40,                                   // la huella del dado
+    lineLenMm: 196,                               // barreno de lado a lado de la base
+    tcS: mandaS,                                  // el ciclo REAL, no el de la pared
+    hOverD: o?.hOverD, wOverH: o?.wOverH,
+  });
+
+  // ── EL CRUCE E6↔E8: el bushing MÍNIMO que todavía empaca ──
+  const tPackNeededS = o?.tPackNeededS ?? dz.alimentacion.tcPartS;
+  const freezeDe = (diaMm: number) => +gateFreezeCylS(A.alphaM2s, diaMm / 1000, A.tMeltC, A.tCoolC, T_NOFLOW_ABS_C).toFixed(2);
+  const freezeActualS = freezeDe(diaActualMm);
+  const cadena: string[] = [
+    `bebedero de la E5/E6: ⌀${diaActualMm} → empaca ${freezeActualS}s ≥ t_pack ${tPackNeededS.toFixed(2)}s ✓ pero ENFRÍA en ${tcSprueS}s (Eq 9.6) vs ${tcPiezaS}s de la pieza`,
+  ];
+  let diaOptimoMm: number | null = null, tcOptimoS: number | null = null, freezeOptimoS: number | null = null;
+  for (const dia of BUSHING_ORIFICIOS_MM) {
+    if (dia >= diaActualMm) continue;                       // sólo tiene sentido ACHICAR
+    const f = freezeDe(dia), t = tcDe(dia);
+    const ok = f >= tPackNeededS;
+    cadena.push(`⌀${dia} → empaca ${f}s ${ok ? '≥' : '<'} ${tPackNeededS.toFixed(2)}s ${ok ? '✓' : '✗ VIOLA el empaque (rechupes)'} · enfría ${t}s`);
+    if (ok && (diaOptimoMm == null || dia < diaOptimoMm)) { diaOptimoMm = dia; tcOptimoS = t; freezeOptimoS = f; }
+  }
+  const cicloOptimoS = diaOptimoMm != null ? Math.max(tcPiezaS, tcOptimoS!) : mandaS;
+  const ahorroPct = diaOptimoMm != null ? +(100 * (mandaS - cicloOptimoS) / mandaS).toFixed(1) : null;
+  if (diaOptimoMm != null) cadena.push(`SE ELIGE ⌀${diaOptimoMm}: el MÍNIMO del catálogo que aún empaca — ciclo ${mandaS}s → ${cicloOptimoS}s (−${ahorroPct} %)`);
+
+  // ── EL RETORNO A LA E2, CON DINERO ──
+  // la economía del cap 3 estima el ciclo con Eq 3.23 (4·h²·eff): SÓLO VE LA
+  // PARED. Es ciega a la colada — por eso el cap 9 REGRESA. Aquí se imprime el
+  // delta con la MISMA tarifa de máquina que usó la E2.
+  const cp: any = pkg.costoPieza;
+  const nCav = pkg.recomendacion.nCav;
+  const cicloEq323S = +cp.cycleTimeS.toFixed(1);
+  const tarifaUSDh = cp.machineRateUSDh;
+  const YIELD = 0.98;
+  const usdDe = (cicloS: number, moldPP = cp.moldPerPart, matPP = cp.materialPerPart) => {
+    const proceso = (cicloS / nCav) * (tarifaUSDh / 3600);
+    return { proceso, part: (moldPP + matPP + proceso) / YIELD };
+  };
+  const base = usdDe(cicloEq323S);
+  const salidas: Estacion8Dado['dinero']['salidas'] = [];
+  const pushSalida = (id: string, titulo: string, cicloS: number, nota: string, moldPP?: number, matPP?: number) => {
+    const u = usdDe(cicloS, moldPP, matPP);
+    salidas.push({ id, titulo, cicloS: +cicloS.toFixed(1), procesoUSD: +u.proceso.toFixed(4), partUSD: +u.part.toFixed(4), deltaUSD: +(u.part - base.part).toFixed(4), nota });
+  };
+  pushSalida('a', `vivir con el bebedero ⌀${diaActualMm}`, mandaS,
+    'no se toca nada; el ciclo real es el del bebedero y el costo lo paga cada pieza');
+  if (diaOptimoMm != null) pushSalida('b', `achicar el bushing a ⌀${diaOptimoMm} (el mínimo que empaca)`, cicloOptimoS,
+    'decisión de DISEÑO, costo cero de molde: sólo cambia el bushing estándar — pero sube la ΔP de llenado (verificar con el solver)');
+  // (c) SPRUE CALIENTE: la colada sale del ciclo ⇒ manda la pieza. Se usa la
+  // variante hot-runner que la E2 YA evaluó (su molde y su desperdicio reales).
+  const vHot = pkg.variantes.find((v: any) => v.arch === 'hot-runner' && v.nCav === nCav);
+  if (vHot) pushSalida('c', 'bebedero CALIENTE (hot sprue bushing)', tcPiezaS,
+    `la colada deja de enfriarse en el molde ⇒ manda la pieza; molde más caro (la E2 lo evaluó: $${Math.round(vHot.moldUSD).toLocaleString()}) pero cero colada que enfriar ni regrind`,
+    vHot.part.moldPerPart, vHot.part.materialPerPart);
+
+  // ── el CORE del dado: profundo y con líneas sólo en la base (§9.2.7) ──
+  const diaCoreMm = 36, alturaCoreMm = 37.5;
+  const sel = seleccionCoreTabla93(diaCoreMm);
+  const core = {
+    diaMm: diaCoreMm, alturaMm: alturaCoreMm, LsobreD: +(alturaCoreMm / diaCoreMm).toFixed(2),
+    elegido: sel.elegido?.tipo ?? null,
+    porQue: sel.elegido
+      ? `Tabla 9.3 (${sel.elegido.minMm}–${sel.elegido.maxMm === 1e9 ? '∞' : sel.elegido.maxMm} mm, tasa ${sel.elegido.tasa}): ${sel.elegido.nota}`
+      : 'fuera de los rangos de la Tabla 9.3',
+  };
+
+  // ── EL CAUDAL LO FIJA LA TURBULENCIA, no el ΔT (hallazgo del propio motor) ──
+  // El libro fija V̇ por el ΔT admisible (Eq 9.13) y DESPUÉS checa el ⌀ contra
+  // Re>4000 — porque en sus ejemplos la carga es grande (62.6 g, 1050 W) y
+  // "the turbulence comes almost for free". En el dado la carga es DIMINUTA
+  // (17 g cada ~70 s ⇒ decenas de W) y el caudal térmico deja el agua LAMINAR
+  // (el motor lo cazó: Re 865). La restricción que MANDA se INVIERTE: el caudal
+  // se fija por turbulencia. EXTENSIÓN DECLARADA (Eq 9.14 despejada en V̇):
+  //     V̇_min = Re_c·π·μ·D/(4ρ)   con Re_c = 4000
+  const RE_C = 4000;
+  const vDotTurbM3s = (RE_C * Math.PI * AGUA.muPaS * (cd.diaMm / 1000)) / (4 * AGUA.rhoKgM3);
+  const dTrealC = cd.qLineW / (vDotTurbM3s * AGUA.rhoKgM3 * AGUA.cpJkgC);
+  const vDotTotTurbM3s = vDotTurbM3s * cd.nLines;
+  const ctrlOk = CONTROLADORES.some((k) => k.name.includes('agua') && vDotTotTurbM3s <= k.flowM3s);
+  const caudal = {
+    termicoGPM: +cd.vDotLineGPM.toFixed(3), turbulentoGPM: +(vDotTurbM3s * 15850.3).toFixed(3),
+    manda: (vDotTurbM3s > cd.vDotLineM3s ? 'turbulencia' : 'ΔT') as 'turbulencia' | 'ΔT',
+    dTrealC: +dTrealC.toFixed(3), totalGPM: +(vDotTotTurbM3s * 15850.3).toFixed(2), controladorOk: ctrlOk,
+  };
+
+  // ── §9.2.7 · RUTEO con CHECK DE INTERFERENCIA VIVO ──────────────────────
+  // La trampa de la Fig 9.9, y en el dado es literal: con n IMPAR y el patrón
+  // centrado en el eje, la línea del MEDIO va derecho por el BEBEDERO. El libro
+  // da dos estrategias; se aplica la (B) —alejar las líneas MANTENIENDO la
+  // relación pitch:profundidad— en su forma mínima: correr el patrón MEDIO
+  // PITCH para que el bebedero quede ENTRE dos líneas, no dentro de una.
+  // Claro exigido: ½⌀ de acero entre la superficie de la línea y el componente
+  //   d_centros ≥ r_bebedero + ½D (acero) + ½D (radio de la línea) = r + D
+  const claroMinMm = d.rBaseMm + cd.diaMm;
+  const ysDe = (offset: number) => Array.from({ length: cd.nPerSide }, (_, k) => d.ejeY + (k - (cd.nPerSide - 1) / 2) * cd.wLineMm + offset);
+  const peorClaro = (offset: number) => Math.min(...ysDe(offset).map((y) => Math.abs(y - d.ejeY)));
+  const claroSinCorrer = peorClaro(0);
+  const corrimientoMm = claroSinCorrer < claroMinMm ? cd.wLineMm / 2 : 0;
+  const claroFinal = peorClaro(corrimientoMm);
+  const ruteo = {
+    claroMinMm: +claroMinMm.toFixed(2), claroSinCorrerMm: +claroSinCorrer.toFixed(2),
+    corrimientoMm: +corrimientoMm.toFixed(2), claroFinalMm: +claroFinal.toFixed(2),
+    ok: claroFinal >= claroMinMm, ysA: ysDe(corrimientoMm).map((y) => +y.toFixed(1)),
+  };
+
+  const filas: FilaLlenado[] = [];
+  const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
+    filas.push({ id, titulo, valor, limite, estado, seccion, porque });
+  fila('tc', 'EL CICLO: t_c de cada sección, y quién MANDA',
+    `pieza ${tcPiezaS} s (Eq 9.5) · bebedero ⌀${diaActualMm} ${tcSprueS} s (Eq 9.6) → manda EL ${manda.toUpperCase()} (${(tcSprueS / tcPiezaS).toFixed(1)}×)`,
+    'max sobre TODAS las secciones (§9.2.1)',
+    manda === 'pieza' ? 'CUMPLE' : 'ADVIERTE', '§9.2.1 · A-179',
+    'literal del libro: "the cycle time can be dominated by the cooling of the cold runners… minimize the runner diameters not just for material savings but also to maintain a productive molding process". Matiz honesto del libro: el runner NO necesita la rigidez de la pieza, así que el veredicto admite descuento con juicio.');
+  fila('bushing', 'EL CRUCE E6↔E8: el bushing mínimo que TODAVÍA empaca',
+    diaOptimoMm != null ? `⌀${diaActualMm} → ⌀${diaOptimoMm}: ciclo ${mandaS} → ${cicloOptimoS} s (−${ahorroPct} %)` : 'ninguno más chico empaca: se queda',
+    `freeze ≥ t_pack ${tPackNeededS.toFixed(2)} s (criterio de la E6)`,
+    diaOptimoMm != null ? 'CUMPLE' : 'ADVIERTE', '§7.3.5 · §9.2.1',
+    'la E6 quiere el bebedero GRUESO (o hay rechupes) y la E8 lo quiere DELGADO (ciclo = dinero): el conflicto se resuelve con el catálogo, no con opinión.');
+  fila('potencia', 'carga térmica y caudal',
+    `${cd.qShotJ.toFixed(0)} J/disparo → ${cd.qCoolingW.toFixed(0)} W · ${cd.nLines} líneas × ${cd.qLineW.toFixed(0)} W · ${cd.vDotLineGPM.toFixed(2)} GPM/línea`,
+    `ΔT del coolant 1 °C (§9.2.3) · controlador ${cd.controlador ?? 'ninguno compatible'}`,
+    cd.controlador ? 'CUMPLE' : 'VIOLA', '§9.2.2 · Eq 9.13 · Tabla 9.1',
+    'la masa INCLUYE la colada (§9.2.2): el bebedero no sólo alarga el ciclo, también carga el circuito.');
+  // las fallas de TURBULENCIA no son de geometría: las resuelve la fila del
+  // caudal (se bombea por Re, no por ΔT). Se separan para no contarlas dos
+  // veces — y se dice de dónde salieron, no se esconden.
+  const fallasGeom = cd.fallas.filter((f) => !/turbulen|LAMINAR|Re /i.test(f));
+  fila('lineas', 'las líneas: ⌀, profundidad y pitch',
+    `⌀${cd.diaMm} (${cd.plug}) · H ${cd.hLineMm.toFixed(1)} mm · W ${cd.wLineMm.toFixed(1)} mm · ${cd.nPerSide}/lado`,
+    `D∈[${cd.dMinMm.toFixed(2)}, ${cd.dMaxMm.toFixed(1)}] · 2D<H<5D y H<k/1000=${cd.hLineMaxMm.toFixed(0)} · H<W<2H`,
+    fallasGeom.length === 0 ? 'CUMPLE' : 'VIOLA', '§9.2.4-9.2.6 · Eqs 9.15-9.24',
+    `Re ${cd.reynolds.toFixed(0)} (turbulento >4000, "casi regalado") · ΔP ${cd.dPKPa.toFixed(0)} kPa · P_melt máx por fatiga ${cd.pMeltMaxMPa.toFixed(0)} MPa (σ_P20/SCF ${cd.scf.toFixed(1)}). Variación de flujo de calor por el pitch (Menges Eq 9.23): ${heatFluxVariation(cd.wOverH).toFixed(1)} % (el libro: <5 % hasta W=2H, después SE DISPARA). Las fallas de TURBULENCIA que reporta el motor (${cd.fallas.length - fallasGeom.length}) no son de geometría: las resuelve la fila del caudal.`);
+  fila('caudal', 'el caudal lo fija LA TURBULENCIA, no el ΔT',
+    `térmico ${caudal.termicoGPM} GPM/línea (Re ${cd.reynolds.toFixed(0)} = LAMINAR) → se bombea ${caudal.turbulentoGPM} GPM/línea para Re ${RE_C} · ΔT real ${caudal.dTrealC} °C`,
+    `Re > 4000 (Eq 9.14) · total ${caudal.totalGPM} GPM ${caudal.controladorOk ? '≤' : '>'} controlador`,
+    caudal.controladorOk ? 'CUMPLE' : 'VIOLA', '§9.2.3 · Eq 9.14 · EXTENSIÓN DECLARADA',
+    'el libro fija V̇ por el ΔT y luego checa el ⌀ porque en sus ejemplos la carga es grande ("turbulence comes almost for free"). Con 17 g cada ~70 s la carga es diminuta y el ΔT deja el agua LAMINAR: la restricción se INVIERTE y manda la turbulencia. El ΔT real cae muy por debajo de 1 °C — uniformidad regalada.');
+  fila('ruteo', 'RUTEO: ninguna línea puede atravesar el bebedero (§9.2.7)',
+    `claro al eje ${ruteo.claroSinCorrerMm} mm ${corrimientoMm ? `→ se corre el patrón ${ruteo.corrimientoMm} mm (½ pitch) → ${ruteo.claroFinalMm} mm` : '(sin corrimiento)'}`,
+    `≥ r_bebedero ${d.rBaseMm.toFixed(2)} + ⌀${cd.diaMm} = ${ruteo.claroMinMm} mm (½⌀ de acero por lado)`,
+    ruteo.ok ? 'CUMPLE' : 'VIOLA', '§9.2.7 · Fig 9.9',
+    corrimientoMm
+      ? 'con n impar y el patrón centrado, la línea del MEDIO iba DERECHO por el bushing — la trampa de la Fig 9.9, literal. Estrategia (B) del libro: alejar las líneas MANTENIENDO pitch:profundidad; aquí basta correr medio pitch y el bebedero queda ENTRE dos líneas.'
+      : 'el patrón centrado ya libra el bushing con el claro de ½⌀ de acero.');
+  fila('core', 'el CORE del dado: líneas rectas sólo en la base (§9.2.7)',
+    `core ${diaCoreMm}×${alturaCoreMm} mm (L/D ${core.LsobreD}) → Tabla 9.3: ${core.elegido ?? '—'}`,
+    'gradiente base↔punta si sólo hay líneas rectas',
+    'ADVIERTE', '§9.2.7 · §9.3.5 · Tabla 9.3',
+    `${core.porQue} — el libro navega de la alarma del core (Fig 9.11: ~6 °C de gradiente) a los remedios del §9.3.`);
+  fila('dinero', 'EL RETORNO A LA E2: el ciclo de cap 3 es CIEGO a la colada',
+    salidas.map((s) => `(${s.id}) ${s.cicloS}s → $${s.partUSD.toFixed(3)}/pza`).join(' · '),
+    `la E2 cotizó con Eq 3.23 = ${cicloEq323S} s → $${cp.partUSD.toFixed(3)}/pza`,
+    'VIOLA', '§3.4 Eq 3.22-3.23 · §9.2.1',
+    `Eq 3.23 (4·h²·eff) sólo mira la PARED: no puede ver el bebedero. Con el ciclo REAL el costo por pieza cambia — tarifa de máquina $${tarifaUSDh.toFixed(0)}/h, ${nCav} cav.`);
+
+  const anuncios: AnuncioRetorno[] = [
+    {
+      estacion: 2, titulo: 'la economía se cotizó con un ciclo CIEGO a la colada',
+      detalle: `Eq 3.23 dio ${cicloEq323S} s; el real es ${mandaS} s (bebedero) o ${cicloOptimoS} s con el bushing mínimo. Δ$/pza hasta $${salidas[0].deltaUSD.toFixed(3)} — recotizar con el ciclo de cap 9`,
+      seccion: '§3.4 · §9.2.1',
+    },
+    {
+      estacion: 5, titulo: 'el ⌀ del bebedero ya no lo fija sólo el empaque',
+      detalle: diaOptimoMm != null
+        ? `⌀${diaActualMm} → ⌀${diaOptimoMm} (mínimo que empaca): −${ahorroPct} % de ciclo. Verificar la ΔP de llenado con el solver ANTES de fijarlo`
+        : 'ningún ⌀ menor del catálogo empaca: el bebedero se queda y el ciclo lo paga',
+      seccion: '§6.3.1 · §9.2.1',
+    },
+  ];
+  if (core.elegido && core.elegido !== 'cooling insert') anuncios.push({
+    estacion: 10, titulo: `el core pide ${core.elegido} — y comparte espacio con los pines`,
+    detalle: `${core.porQue.split(':')[0]}; al colocar pines en la E10, checar interferencia contra el ${core.elegido} y contra las líneas (§9.2.7: mínimo ½⌀ de acero)`,
+    seccion: '§9.3.5 · §9.2.7',
+  });
+
+  return {
+    filas, cd,
+    ciclo: { tcPiezaS, tcSprueS, mandaS, manda, factor: +(tcSprueS / tcPiezaS).toFixed(1) },
+    bushing: { diaActualMm, tcActualS: tcSprueS, freezeActualS, tPackNeededS: +tPackNeededS.toFixed(2), diaOptimoMm, tcOptimoS, freezeOptimoS, ahorroPct, cadena },
+    dinero: { cicloEq323S, tarifaUSDh: +tarifaUSDh.toFixed(2), nCav, partUSDdeclarado: +cp.partUSD.toFixed(4), salidas },
+    core,
+    lineas: { nPorLado: cd.nPerSide, diaMm: cd.diaMm, plug: cd.plug, hMm: +cd.hLineMm.toFixed(1), wMm: +cd.wLineMm.toFixed(1), largoMm: 196, variacionFlujoPct: +heatFluxVariation(cd.wOverH).toFixed(1) },
+    caudal, ruteo,
+    anuncios,
+  };
 }

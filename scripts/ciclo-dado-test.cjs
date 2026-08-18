@@ -891,6 +891,73 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `${e7mal.pctUltimoEnParticion} % en partición · dead pocket en (${e7mal.fueraCentroideMm?.x}, ${e7mal.fueraCentroideMm?.y}, ${e7mal.fueraCentroideMm?.z}) — el veredicto DISTINGUE`);
   }
 
+  // ══ ESTACIÓN 8 — ENFRIAMIENTO (orden 2026-08-17-ciclo-dado-estacion8) ══
+  // EL REY DEL CICLO. El motor (coolingDesign, 7 pasos §9.2) ya existía; lo que
+  // se juzga aquí es que reproduce los EJEMPLOS IMPRESOS del libro y que el
+  // hallazgo del dado (el bebedero manda) sale con su cadena de decisión.
+  console.log('── E8 · Enfriamiento (cap 9) — el rey del ciclo');
+  {
+    const cool = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling.ts'));
+    const cdm = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling-design.ts'));
+    const K = cool.ABS_KAZMER;
+    // ORÁCULOS 1-3 · los tres tiempos IMPRESOS del ejemplo cup/lid (§9.2.1).
+    // T_eject 97.6 y no 96.7: errata del libro ya cazada y documentada en
+    // cooling.ts (con 97.6 sus propios números reproducen EXACTO).
+    const oLid = cool.coolingTimePlate(2 / 1000, K), oCup = cool.coolingTimePlate(3 / 1000, K);
+    const oRun = cool.coolingTimeRod(4.76 / 1000, K);
+    check('E8 · ORÁCULO Eq 9.5: lid 2 mm = 8.4 s y cup 3 mm = 18.9 s (impresos)',
+      Math.abs(oLid - 8.4) <= 0.05 && Math.abs(oCup - 18.9) <= 0.05,
+      `${oLid.toFixed(1)} s · ${oCup.toFixed(1)} s`);
+    check('E8 · ORÁCULO Eq 9.6: el runner del libro = 22.9 s (⌀4.76 = 3/16" DME, despejado de su propia ecuación)',
+      Math.abs(oRun - 22.9) <= 0.05, `${oRun.toFixed(1)} s — el pliego-UI decía "⌀6.25" (daría ${cool.coolingTimeRod(6.25 / 1000, K).toFixed(1)} s): el resumen estaba mal, el libro manda`);
+    // ORÁCULOS 4-6 · §9.2.5 y §9.2.6, los otros números impresos
+    check('E8 · ORÁCULO §9.2.5: SCF 3.3 a H=1D y 2.6 a H=4D · P20 a 4D = 175 MPa',
+      Math.abs(cdm.stressConcentration(1) - 3.3) <= 0.02 && Math.abs(cdm.stressConcentration(4) - 2.6) <= 0.02
+        && Math.abs(cdm.maxMeltPressureMPa(456, cdm.stressConcentration(4)) - 175) <= 1,
+      `${cdm.stressConcentration(1).toFixed(2)} · ${cdm.stressConcentration(4).toFixed(2)} · ${cdm.maxMeltPressureMPa(456, cdm.stressConcentration(4)).toFixed(0)} MPa`);
+    check('E8 · ORÁCULO trampa del ALUMINIO (§9.2.5): QC-7 a 1D → P_max 50 MPa',
+      Math.abs(cdm.maxMeltPressureMPa(cdm.ACEROS_MOLDE['QC-7'].sigmaEnduranceMPa, cdm.stressConcentration(1)) - 50) <= 1,
+      `${cdm.maxMeltPressureMPa(cdm.ACEROS_MOLDE['QC-7'].sigmaEnduranceMPa, cdm.stressConcentration(1)).toFixed(1)} MPa — "no vivirá una vida larga sin grietas"`);
+    check('E8 · ORÁCULO Menges (Eq 9.23): <5 % hasta W=2H y SE DISPARA después',
+      cdm.heatFluxVariation(2) < 5 && cdm.heatFluxVariation(4) > 50,
+      `W=2H: ${cdm.heatFluxVariation(2).toFixed(1)} % · W=3H: ${cdm.heatFluxVariation(3).toFixed(1)} % · W=4H: ${cdm.heatFluxVariation(4).toFixed(1)} %`);
+    // ── EL DADO ──
+    const e8 = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14 });
+    check('E8 · EL BEBEDERO MANDA EL CICLO (§9.2.1, el retorno que el libro anticipa)',
+      e8.ciclo.manda === 'bebedero' && e8.ciclo.factor >= 5,
+      `pieza ${e8.ciclo.tcPiezaS} s vs bebedero ⌀${e8.bushing.diaActualMm} ${e8.ciclo.tcSprueS} s = ×${e8.ciclo.factor}`);
+    check('E8 · EL CRUCE E6↔E8: se elige el ⌀ MÍNIMO que todavía empaca (y el anterior VIOLA)',
+      e8.bushing.diaOptimoMm === 6.35 && e8.bushing.freezeOptimoS >= e8.bushing.tPackNeededS
+        && cdm.PLUGS_DME && e8.bushing.cadena.some((c) => c.includes('⌀5.56') && c.includes('VIOLA')),
+      `⌀${e8.bushing.diaOptimoMm} empaca ${e8.bushing.freezeOptimoS}s ≥ ${e8.bushing.tPackNeededS}s · el ⌀5.56 falla por 0.16 s · ciclo −${e8.bushing.ahorroPct} %`);
+    check('E8 · las líneas respetan los rangos del libro (2D<H<5D · H<W<2H · H<k/1000)',
+      e8.cd.hLineMm >= 2 * e8.cd.diaMm && e8.cd.hLineMm <= 5 * e8.cd.diaMm
+        && e8.cd.wLineMm >= e8.cd.hLineMm && e8.cd.wLineMm <= 2 * e8.cd.hLineMm + 1e-9
+        && e8.cd.hLineMm <= e8.cd.hLineMaxMm && e8.lineas.variacionFlujoPct < 5,
+      `⌀${e8.lineas.diaMm} (${e8.lineas.plug}) · H ${e8.cd.hLineMm.toFixed(2)} (${(e8.cd.hLineMm / e8.cd.diaMm).toFixed(2)}D) · W ${e8.cd.wLineMm.toFixed(2)} (${(e8.cd.wLineMm / e8.cd.hLineMm).toFixed(2)}H) · variación ${e8.lineas.variacionFlujoPct} %`);
+    check('E8 · el caudal lo fija LA TURBULENCIA, no el ΔT (carga diminuta) y el controlador lo surte',
+      e8.caudal.manda === 'turbulencia' && e8.caudal.dTrealC < 1 && e8.caudal.controladorOk,
+      `térmico ${e8.caudal.termicoGPM} → turbulento ${e8.caudal.turbulentoGPM} GPM/línea · ΔT real ${e8.caudal.dTrealC} °C · total ${e8.caudal.totalGPM} GPM`);
+    check('E8 · el CORE del dado cae en el rango del BAFFLE (Tabla 9.3)',
+      e8.core.elegido === 'baffle', `core ⌀${e8.core.diaMm}×${e8.core.alturaMm} (L/D ${e8.core.LsobreD}) → ${e8.core.elegido}`);
+    // EL RETORNO CON DINERO: el ciclo de cap 3 es ciego a la colada, y con el
+    // ciclo REAL la arquitectura que ganó en la E2 DEJA DE SER la más barata.
+    const sa = e8.dinero.salidas.find((x) => x.id === 'a'), sc = e8.dinero.salidas.find((x) => x.id === 'c');
+    check('E8 · RETORNO A LA E2: con el ciclo REAL el bebedero CALIENTE es más barato que el frío',
+      sa && sc && sc.partUSD < sa.partUSD && sa.partUSD > 2 * e8.dinero.partUSDdeclarado * 0.9,
+      `Eq 3.23 cotizó ${e8.dinero.cicloEq323S}s → $${e8.dinero.partUSDdeclarado}/pza · real (a) ${sa.cicloS}s → $${sa.partUSD} · (c) caliente ${sc.cicloS}s → $${sc.partUSD}`);
+    check('E8 · RUTEO §9.2.7: la línea del medio IBA por el bebedero (Fig 9.9) y el corrimiento la libra',
+      e8.ruteo.claroSinCorrerMm < e8.ruteo.claroMinMm && e8.ruteo.corrimientoMm > 0 && e8.ruteo.ok,
+      `claro ${e8.ruteo.claroSinCorrerMm} mm (¡el eje!) → corrido ½ pitch ${e8.ruteo.corrimientoMm} mm → ${e8.ruteo.claroFinalMm} mm ≥ ${e8.ruteo.claroMinMm} exigido`);
+    // CONTROL NEGATIVO: pedirle al motor que viole Eq 9.22 (H=1D) — NO se deja:
+    // recorta al rango legal. Y con pitch ancho (W=4H) la variación se dispara.
+    const e8h = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14, hOverD: 1 });
+    const e8w = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14, wOverH: 4 });
+    check('E8 · CONTROL NEGATIVO: H=1D se RECORTA al rango legal (Eq 9.22) y W=4H dispara la variación',
+      e8h.cd.hLineMm >= 2 * e8h.cd.diaMm - 1e-9 && e8w.lineas.variacionFlujoPct > 50,
+      `H pedido 1D → entregado ${(e8h.cd.hLineMm / e8h.cd.diaMm).toFixed(2)}D · W=4H → variación ${e8w.lineas.variacionFlujoPct} % (vs ${e8.lineas.variacionFlujoPct} % del diseño)`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

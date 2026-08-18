@@ -26,6 +26,7 @@ const N = Number(process.env.FRAMES || 150);          // pasos del frente
 const HOLD = Number(process.env.HOLD || 20);          // frames quietos al final
 const DIR = process.env.DIR || '/home/ian/Orkesta/la-forja/forja-shots/llenado-video';
 const OUT = process.env.OUT || (process.env.N2 === '1' ? '/mnt/e/forja-videos/espiral-termica-4k.mp4'
+  : process.env.E8 === '1' ? '/mnt/e/forja-videos/dado-enfriamiento-4k.mp4'
   : process.env.E7 === '1' ? '/mnt/e/forja-videos/dado-venteo-4k.mp4'
   : process.env.E6 === '1' ? '/mnt/e/forja-videos/dado-empaque-4k.mp4' : '/mnt/e/forja-videos/dado-llenado-4k.mp4');
 const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
@@ -76,12 +77,14 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
     await clic('btn-ciclo-e4');
     // E5 (cap 6): la colada COMPLETA visible mientras la cavidad se llena — sin ella el
     // fundido aparecía de la nada. Opcional para no romper la corrida de la E4 sola.
-    if (process.env.E5 === '1' || process.env.E6 === '1' || process.env.E7 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e5'); }
+    if (process.env.E5 === '1' || process.env.E6 === '1' || process.env.E7 === '1' || process.env.E8 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e5'); }
     // E6 (cap 7): el EMPAQUE — la E5 tarda ~15 s en armar su campo; esperar a que
     // el botón e6 exista (vive en el panel de la E5) y clickear
-    if (process.env.E6 === '1' || process.env.E7 === '1') { await p.waitForTimeout(16000); await clic('btn-ciclo-e6'); }
+    if (process.env.E6 === '1' || process.env.E7 === '1' || process.env.E8 === '1') { await p.waitForTimeout(16000); await clic('btn-ciclo-e6'); }
     // E7 (cap 8): el VENTEO — la E6 es instantánea; el botón e7 vive en su panel
-    if (process.env.E7 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e7'); }
+    if (process.env.E7 === '1' || process.env.E8 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e7'); }
+    // E8 (cap 9): el AGUA — el botón e8 vive en el panel de la E7
+    if (process.env.E8 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e8'); }
   }
   await p.waitForFunction(() => !!(window.__forgeBrep && window.__forgeBrep.llenadoStats && window.__forgeBrep.llenadoStats()), null, { timeout: 300000 });
   await p.waitForTimeout(2500);
