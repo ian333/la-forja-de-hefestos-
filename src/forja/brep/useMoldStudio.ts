@@ -1042,26 +1042,40 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
         partVolCc: ciclo.e5tuberia?.volPiezaCc ?? 14.14,
         tPackNeededS: ciclo.e6?.gate.tPackNeededS,
       });
-      const R = e8.lineas.diaMm / 2, L = e8.lineas.largoMm, W = e8.cd.wLineMm, H = e8.cd.hLineMm;
-      // las Y salen del RUTEO (§9.2.7): el patrón va corrido medio pitch para
-      // que el bebedero quede ENTRE dos líneas y no dentro de una (Fig 9.9).
-      // Se usa la misma rejilla en los dos lados: el eje es también donde caería
-      // un pin central de expulsión (E10).
-      const ys = e8.ruteo.ysA;
-      // lado A (cavidad): sobre la base cerrada de la pieza · lado B (núcleo):
-      // bajo la partición — el caso "líneas rectas sólo en la base" del §9.2.7
-      // que dispara el anuncio del baffle.
-      const zA = d.zBaseCerradaMm != null ? d.zBaseCerradaMm + H : d.zPartMm + 39.5 + H;
-      const zB = d.zPartMm - H;
+      // E8b (orden e8b-circuito-real): la escena SALE DEL CIRCUITO — segmentos
+      // reales (líneas, cruces, extensiones, baffle), tapones NPT en los
+      // extremos muertos, O-rings donde el agua cruza una interfaz, y la
+      // lámina del baffle dentro del macho. Un diagrama no es un circuito.
+      const cir = e8.circuito;
       const parts: any[] = [];
-      for (const [lado, zc, col] of [['A', zA, '#5fd0f0'], ['B', zB, '#4bb8dc']] as Array<[string, number, string]>) {
-        for (let k = 0; k < ys.length; k++) {
-          const y = ys[k];
-          const cil = OCC.makeCylinder(oc, R, L, { origin: [d.ejeX - L / 2, y, zc], dir: [1, 0, 0] });
-          parts.push(cursoPart(cil, `agua-${lado}${k}`,
-            `LÍNEA DE AGUA ${lado}${k} · ⌀${e8.lineas.diaMm} (${e8.lineas.plug}) a H ${H.toFixed(1)} mm de la cara · pitch W ${W.toFixed(1)} (§9.2.4-9.2.6)`,
-            col, 0.85, 0.9));
-        }
+      for (const sg of cir.segmentos) {
+        const dx = sg.p1[0] - sg.p0[0], dy = sg.p1[1] - sg.p0[1], dz = sg.p1[2] - sg.p0[2];
+        const len = Math.hypot(dx, dy, dz);
+        if (len < 1e-6) continue;
+        const cil = OCC.makeCylinder(oc, sg.diaMm / 2, len, { origin: sg.p0 as [number, number, number], dir: [dx / len, dy / len, dz / len] });
+        const col = sg.tipo === 'baffle' ? '#7fe0c8' : sg.tipo === 'cruce' ? '#57c4e8' : sg.tipo === 'extension' ? '#4aa8d8' : '#5fd0f0';
+        parts.push(cursoPart(cil, `agua-${sg.id}`,
+          sg.tipo === 'baffle'
+            ? `BAFFLE del macho · bore ⌀${sg.diaMm} (Tabla 9.3) sube hasta ${cir.baffle.claroApiceMm} mm del ápice — el agua sube-y-baja DENTRO del core`
+            : `${sg.id} · ⌀${sg.diaMm} · ${sg.tipo} (§9.2.4-9.2.7)`,
+          col, sg.tipo === 'baffle' ? 0.9 : 0.85, 0.9));
+      }
+      // la LÁMINA del baffle (latón): divide el bore en dos medias lunas
+      const bl = cir.baffle;
+      const lamina = OCC.transformShape(oc, OCC.makeBox(oc, bl.boreDiaMm * 0.92, 1.0, bl.zTop - bl.zBot - 2), {
+        translate: [bl.x - bl.boreDiaMm * 0.46, bl.y - 0.5, bl.zBot + 1] });
+      parts.push(cursoPart(lamina, 'agua-baffle-lamina', 'LÁMINA del baffle (latón): fuerza al agua a subir por un lado y bajar por el otro', '#d8b45a', 0.95, 0.95));
+      // tapones NPT (bronce) en los extremos muertos
+      for (let k = 0; k < cir.tapones.length; k++) {
+        const t = cir.tapones[k];
+        const tp = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 1.2, 6, { origin: [t.x - t.dir[0] * 3, t.y - t.dir[1] * 3, t.z - t.dir[2] * 3], dir: t.dir });
+        parts.push(cursoPart(tp, `agua-tapon-${k}`, `tapón NPT (${e8.lineas.plug}) — extremo muerto del barreno`, '#8a6a3a', 0.95, 0.95));
+      }
+      // O-RINGS (rojos) donde el agua cruza una interfaz (§9.3.2: fuga esperada sin sello)
+      for (let k = 0; k < cir.sellos.length; k++) {
+        const sl = cir.sellos[k];
+        const or_ = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 2.2, 1.6, { origin: [sl.x, sl.y, sl.z - 0.8], dir: [0, 0, 1] });
+        parts.push(cursoPart(or_, `agua-oring-${k}`, sl.nota, '#e05050', 0.95, 0.95));
       }
       setTFill(1); tFillRef.current = 1;
       setCiclo({ ...ciclo, estacion: 8, e8 });
@@ -1070,7 +1084,7 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       cursoSet(8, [
         'CICLO DEL DADO · estación 8 — ENFRIAMIENTO (cap 9): el rey del ciclo',
         `t_c pieza ${e8.ciclo.tcPiezaS}s (Eq 9.5) vs bebedero ⌀${e8.bushing.diaActualMm} ${e8.ciclo.tcSprueS}s (Eq 9.6) → MANDA EL ${e8.ciclo.manda.toUpperCase()} (×${e8.ciclo.factor})`,
-        `agua: ${e8.cd.nLines} líneas ⌀${e8.lineas.diaMm} (${e8.lineas.plug}) · H ${H.toFixed(1)} · W ${W.toFixed(1)} · ${e8.caudal.turbulentoGPM} GPM/línea (manda la TURBULENCIA, no el ΔT)`,
+        `CIRCUITO REAL: anillo A en el inserto (H ${e8.circuito.ladoA.hMm} recortada por el techo) + serpentina B + BAFFLE en el macho · ${e8.circuito.tapones.length} tapones · ${e8.circuito.sellos.length} sellos · IN/OUT ×4 · juez ${e8.circuito.juez.ok ? 'VERDE' : 'ROJO'}`,
         `RETORNO a la E2: cotizó ${e8.dinero.cicloEq323S}s → $${e8.dinero.partUSDdeclarado}/pza; con el ciclo real ${e8.dinero.salidas.map((x) => `(${x.id}) $${x.partUSD}`).join(' · ')}`,
       ], [...moldParts, ...parts]);
     } catch (e) { console.warn('E8_ERR', e); }

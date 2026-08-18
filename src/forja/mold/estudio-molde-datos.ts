@@ -2694,6 +2694,7 @@ export interface Estacion8Dado {
   };
   core: { diaMm: number; alturaMm: number; LsobreD: number; elegido: string | null; porQue: string };
   lineas: { nPorLado: number; diaMm: number; plug: string; hMm: number; wMm: number; largoMm: number; variacionFlujoPct: number };
+  circuito: CircuitoAgua;
   caudal: { termicoGPM: number; turbulentoGPM: number; manda: 'turbulencia' | 'ΔT'; dTrealC: number; totalGPM: number; controladorOk: boolean };
   ruteo: { claroMinMm: number; claroSinCorrerMm: number; corrimientoMm: number; claroFinalMm: number; ok: boolean; ysA: number[] };
   anuncios: AnuncioRetorno[];
@@ -2906,7 +2907,134 @@ export function estacion8Dado(pkg: MoldPackage, d: DatumsColada, o?: {
     dinero: { cicloEq323S, tarifaUSDh: +tarifaUSDh.toFixed(2), nCav, partUSDdeclarado: +cp.partUSD.toFixed(4), salidas },
     core,
     lineas: { nPorLado: cd.nPerSide, diaMm: cd.diaMm, plug: cd.plug, hMm: +cd.hLineMm.toFixed(1), wMm: +cd.wLineMm.toFixed(1), largoMm: 196, variacionFlujoPct: +heatFluxVariation(cd.wOverH).toFixed(1) },
+    circuito: estacion8Circuito(pkg, d, cd),
     caudal, ruteo,
     anuncios,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* E8b — EL CIRCUITO DE AGUA REAL (orden 2026-08-18-e8b-circuito-real)         */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * ian: "las tuberías de agua están MAL" — y midió bien el ojo: la E8a dibujó
+ * un DIAGRAMA (cilindros flotando que cruzaban interfaces y hasta ROMPÍAN el
+ * acero: línea A con claro −0.92 mm contra el techo del inserto), no un
+ * CIRCUITO. Un circuito real es: barrenos RECTOS que se cruzan, tapones NPT
+ * en los extremos muertos, sellos donde el agua cruza una interfaz, y DOS
+ * conexiones por mitad etiquetadas (§9.1.6). La lección de la casa aplica
+ * otra vez: la geometría se dibuja CON la figura del libro, no con la idea.
+ */
+export interface SegmentoAgua {
+  id: string;
+  p0: [number, number, number]; p1: [number, number, number];
+  diaMm: number;
+  tipo: 'linea' | 'cruce' | 'extension' | 'baffle';
+}
+export interface CircuitoAgua {
+  segmentos: SegmentoAgua[];
+  tapones: Array<{ x: number; y: number; z: number; dir: [number, number, number] }>;
+  sellos: Array<{ x: number; y: number; z: number; nota: string }>;
+  inOut: Array<{ etiqueta: string; x: number; y: number; z: number }>;
+  baffle: { x: number; y: number; zBot: number; zTop: number; boreDiaMm: number; claroApiceMm: number };
+  ladoA: { zMm: number; hMm: number; hOverD: number; semiMm: number; nBarrenos: number; nTapones: number; nSellos: number };
+  ladoB: { zMm: number; hMm: number; hOverD: number; nBarrenos: number; nTapones: number; nSellos: number };
+  /** el JUEZ: claros MEDIDOS contra todo (½⌀ de acero mínimo, §9.2.7) */
+  juez: { claros: Array<{ contra: string; claroMm: number; minMm: number; ok: boolean }>; ok: boolean };
+  recortes: string[];
+  conexionesPorMitad: number;
+}
+
+export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: CoolingDesignOut): CircuitoAgua {
+  const asm = packageToAssemblySpec(pkg);
+  const idm = insertDims(asm);
+  const D = cd.diaMm, r = D / 2, medio = D / 2;          // claro mínimo = ½⌀ (§9.2.7)
+  const W = cd.wLineMm, hDis = cd.hLineMm;
+  const zPart = d.zPartMm;
+  const zBase = zPart + 39.5;                            // base cerrada (volteo Fig 7.2)
+  const techoInsA = zPart + idm.Hc;                      // tope del inserto de cavidad
+  const pisoInsB = zPart - idm.Hk;                       // piso del bolsillo del inserto B
+  const baseW = asm.widthMm, baseL = asm.depthMm ?? asm.widthMm;
+  const recortes: string[] = [];
+
+  // ── LADO A · anillo perimetral (§9.3.1d) EN el inserto de cavidad ──
+  // z de diseño (H de la superficie) vs el TECHO del inserto: manda el techo.
+  const zAdiseno = zBase + hDis;
+  const zA = Math.min(zAdiseno, techoInsA - D);          // r de barreno + ½⌀ de acero
+  const hA = zA - zBase;
+  if (zA < zAdiseno) recortes.push(
+    `lado A: H ${hDis.toFixed(2)} pedía z=${zAdiseno.toFixed(2)} pero el TECHO del inserto está en ${techoInsA} ⇒ z=${zA.toFixed(2)} (H ${hA.toFixed(2)} = ${(hA / D).toFixed(2)}D, sigue en 2D..5D) — en la E8a esto ROMPÍA el acero (claro −${(zAdiseno + r - techoInsA).toFixed(2)} mm)`);
+  const semi = 30;                                       // libra bebedero y rodea la huella 40
+  const cx = d.ejeX, cy = d.ejeY;
+  const x0 = cx - semi, x1 = cx + semi, y0 = cy - semi, y1 = cy + semi;
+  const segs: SegmentoAgua[] = [
+    { id: 'A-norte', p0: [x0, y1, zA], p1: [x1, y1, zA], diaMm: D, tipo: 'linea' },
+    { id: 'A-sur', p0: [x0, y0, zA], p1: [x1, y0, zA], diaMm: D, tipo: 'linea' },
+    { id: 'A-este', p0: [x1, y0, zA], p1: [x1, y1, zA], diaMm: D, tipo: 'linea' },
+    { id: 'A-oeste', p0: [x0, y0, zA], p1: [x0, y1, zA], diaMm: D, tipo: 'linea' },
+    // extensiones por la placa A hasta la cara exterior (cruzan placa↔inserto: O-RING)
+    { id: 'A-ext-in', p0: [0, y0, zA], p1: [x0, y0, zA], diaMm: D, tipo: 'extension' },
+    { id: 'A-ext-out', p0: [x1, y1, zA], p1: [baseW, y1, zA], diaMm: D, tipo: 'extension' },
+  ];
+  const bordeInsX0 = cx - idm.ifx / 2, bordeInsX1 = cx + idm.ifx / 2;
+  const tapones: CircuitoAgua['tapones'] = [
+    // el anillo se barrena de cara a cara del INSERTO: bocas sobrantes tapadas
+    { x: bordeInsX0, y: y1, z: zA, dir: [-1, 0, 0] }, { x: bordeInsX1, y: y0, z: zA, dir: [1, 0, 0] },
+    { x: x1, y: cy - idm.ify / 2, z: zA, dir: [0, -1, 0] }, { x: x1, y: cy + idm.ify / 2, z: zA, dir: [0, 1, 0] },
+    { x: x0, y: cy - idm.ify / 2, z: zA, dir: [0, -1, 0] }, { x: x0, y: cy + idm.ify / 2, z: zA, dir: [0, 1, 0] },
+  ];
+  const sellos: CircuitoAgua['sellos'] = [
+    { x: bordeInsX0, y: y0, z: zA, nota: 'O-ring: extensión IN cruza placa A↔inserto (§9.3.2 — fuga esperada sin sello)' },
+    { x: bordeInsX1, y: y1, z: zA, nota: 'O-ring: extensión OUT cruza placa A↔inserto' },
+  ];
+  const inOut: CircuitoAgua['inOut'] = [
+    { etiqueta: 'A-IN', x: 0, y: y0, z: zA }, { etiqueta: 'A-OUT', x: baseW, y: y1, z: zA },
+  ];
+
+  // ── LADO B · serpentina en la placa B + BAFFLE al centro del core ──
+  const zBdiseno = zPart - hDis;
+  const zB = Math.min(zBdiseno, pisoInsB - D);
+  const hB = zPart - zB;
+  if (zB < zBdiseno + 1e-9 && Math.abs(zB - zBdiseno) > 1e-9) recortes.push(
+    `lado B: H ${hDis.toFixed(2)} pedía z=${zBdiseno.toFixed(2)} pero el PISO del bolsillo del inserto B está en ${pisoInsB} ⇒ z=${zB.toFixed(2)} (H ${hB.toFixed(2)} = ${(hB / D).toFixed(2)}D, sigue en 2D..5D) — en la E8a el claro era ${(pisoInsB - (zBdiseno + r)).toFixed(2)} mm < ${medio.toFixed(2)}`);
+  const xs = [cx - W, cx, cx + W];
+  const yCr0 = 20, yCr1 = baseL - 20;
+  for (let k = 0; k < 3; k++) segs.push({ id: `B-linea${k}`, p0: [xs[k], 0, zB], p1: [xs[k], baseL, zB], diaMm: D, tipo: 'linea' });
+  segs.push({ id: 'B-cruce-lejos', p0: [xs[0], yCr1, zB], p1: [xs[1], yCr1, zB], diaMm: D, tipo: 'cruce' });
+  segs.push({ id: 'B-cruce-cerca', p0: [xs[1], yCr0, zB], p1: [xs[2], yCr0, zB], diaMm: D, tipo: 'cruce' });
+  tapones.push(
+    { x: xs[0], y: baseL, z: zB, dir: [0, 1, 0] },       // línea 0: entra por y=0 (IN), muere tras el cruce
+    { x: xs[1], y: 0, z: zB, dir: [0, -1, 0] }, { x: xs[1], y: baseL, z: zB, dir: [0, 1, 0] },
+    { x: xs[2], y: 0, z: zB, dir: [0, -1, 0] },          // línea 2: sale por y=baseL (OUT)
+    { x: xs[0] - r, y: yCr1, z: zB, dir: [-1, 0, 0] },   // bocas de los cruces (se barrenan desde x)
+    { x: xs[2] + r, y: yCr0, z: zB, dir: [1, 0, 0] },
+  );
+  inOut.push({ etiqueta: 'B-IN', x: xs[0], y: 0, z: zB }, { etiqueta: 'B-OUT', x: xs[2], y: baseL, z: zB });
+
+  // el BAFFLE (Tabla 9.3): bore que SUBE por el macho desde la línea central
+  const boreDiaMm = 9.53;                                // JP-352 (3/8")
+  const apiceInteriorZ = zBase - 2;                      // techo interior del hueco (piso 2)
+  const zTopBaffle = apiceInteriorZ - 0.55 * boreDiaMm;  // ½⌀bore de acero al ápice, con margen
+  segs.push({ id: 'B-baffle', p0: [cx, cy, zB], p1: [cx, cy, zTopBaffle], diaMm: boreDiaMm, tipo: 'baffle' });
+  sellos.push({ x: cx, y: cy, z: pisoInsB, nota: 'sello del bore del baffle al cruzar placa B↔inserto del núcleo' });
+  const baffle = { x: cx, y: cy, zBot: zB, zTop: zTopBaffle, boreDiaMm, claroApiceMm: +(apiceInteriorZ - zTopBaffle).toFixed(2) };
+
+  // ── EL JUEZ: claros medidos (½⌀ de acero contra TODO, §9.2.7) ──
+  const claros: CircuitoAgua['juez']['claros'] = [];
+  const mide = (contra: string, claroMm: number, minMm = medio) =>
+    claros.push({ contra, claroMm: +claroMm.toFixed(2), minMm: +minMm.toFixed(2), ok: claroMm >= minMm - 1e-9 });
+  mide('anillo A ↔ bebedero (radial al eje)', semi - d.rBaseMm - r);
+  mide('anillo A ↔ techo del inserto de cavidad', techoInsA - (zA + r));
+  mide('anillo A ↔ techo de la pieza (base cerrada)', zA - r - zBase);
+  mide('serpentina B ↔ piso del bolsillo del inserto B', pisoInsB - (zB + r));
+  mide('baffle ↔ ápice interior del macho', apiceInteriorZ - zTopBaffle, boreDiaMm / 2);
+  mide('extensión A-IN ↔ borde de la base (sale a cara)', y0 - 0 > 0 ? y0 : 0, D);
+  const juez = { claros, ok: claros.every((c) => c.ok) };
+
+  return {
+    segmentos: segs, tapones, sellos, inOut, baffle,
+    ladoA: { zMm: +zA.toFixed(2), hMm: +hA.toFixed(2), hOverD: +(hA / D).toFixed(2), semiMm: semi, nBarrenos: 6, nTapones: 6, nSellos: 2 },
+    ladoB: { zMm: +zB.toFixed(2), hMm: +hB.toFixed(2), hOverD: +(hB / D).toFixed(2), nBarrenos: 6, nTapones: 6, nSellos: 1 },
+    juez, recortes, conexionesPorMitad: 2,
   };
 }

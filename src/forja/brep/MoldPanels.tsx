@@ -1132,6 +1132,25 @@ function CicloE8({ e8 }: { e8: import('../mold/estudio-molde-datos').Estacion8Da
           <div key={k} data-testid={`e8-cadena-${k}`} style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>· {c}</div>
         ))}
       </div>
+      <div data-testid="e8-circuito" style={{ margin: '2px 6px 6px', padding: '5px 7px', background: '#102028', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#7fd8f0' }}>
+          💧 EL CIRCUITO REAL (E8b) — juez {e8.circuito.juez.ok ? '✓ VERDE' : '✗ ROJO'} · {e8.circuito.conexionesPorMitad} conexiones por mitad (§9.1.6)
+        </div>
+        <div style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>
+          A: anillo perimetral en el inserto (H {e8.circuito.ladoA.hMm} = {e8.circuito.ladoA.hOverD}D) · {e8.circuito.ladoA.nBarrenos} barrenos · {e8.circuito.ladoA.nTapones} tapones · {e8.circuito.ladoA.nSellos} O-rings — trampa §9.3.1(d) declarada: con runner frío el centro genera calor (la salida (c) hot-sprue la elimina)
+        </div>
+        <div style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>
+          B: serpentina (H {e8.circuito.ladoB.hMm} = {e8.circuito.ladoB.hOverD}D) + BAFFLE ⌀{e8.circuito.baffle.boreDiaMm} hasta {e8.circuito.baffle.claroApiceMm} mm del ápice · {e8.circuito.ladoB.nBarrenos} barrenos · {e8.circuito.ladoB.nTapones} tapones · {e8.circuito.ladoB.nSellos} sello
+        </div>
+        {e8.circuito.recortes.map((r, k) => (
+          <div key={k} data-testid={`e8-recorte-${k}`} style={{ fontSize: 10, color: '#f4d27a', marginTop: 2 }}>✂ {r}</div>
+        ))}
+        {e8.circuito.juez.claros.map((c, k) => (
+          <div key={k} style={{ fontSize: 10, color: c.ok ? '#7ee0a0' : '#f27a6c', marginTop: 1 }}>
+            {c.ok ? '✓' : '✗'} {c.contra}: {c.claroMm} ≥ {c.minMm} mm
+          </div>
+        ))}
+      </div>
       <div style={{ margin: '2px 6px 6px', padding: '5px 7px', background: '#1b2416', borderRadius: 6 }}>
         <div style={{ fontSize: 10.5, fontWeight: 700, color: '#a8e07e' }}>
           💵 EL RETORNO A LA E2 — la E2 cotizó {e8.dinero.cicloEq323S} s (Eq 3.23, ciega a la colada) → ${e8.dinero.partUSDdeclarado}/pza

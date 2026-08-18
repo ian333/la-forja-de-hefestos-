@@ -899,6 +899,8 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   {
     const cool = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling.ts'));
     const cdm = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'cooling-design.ts'));
+    const mps = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-plano-set.ts'));
+    const mds = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold-drawing-set.ts'));
     const K = cool.ABS_KAZMER;
     // ORÁCULOS 1-3 · los tres tiempos IMPRESOS del ejemplo cup/lid (§9.2.1).
     // T_eject 97.6 y no 96.7: errata del libro ya cazada y documentada en
@@ -949,6 +951,42 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('E8 · RUTEO §9.2.7: la línea del medio IBA por el bebedero (Fig 9.9) y el corrimiento la libra',
       e8.ruteo.claroSinCorrerMm < e8.ruteo.claroMinMm && e8.ruteo.corrimientoMm > 0 && e8.ruteo.ok,
       `claro ${e8.ruteo.claroSinCorrerMm} mm (¡el eje!) → corrido ½ pitch ${e8.ruteo.corrimientoMm} mm → ${e8.ruteo.claroFinalMm} mm ≥ ${e8.ruteo.claroMinMm} exigido`);
+    // ══ E8b — EL CIRCUITO REAL (orden 2026-08-18-e8b-circuito-real) ══
+    // ian: "las tuberías están MAL" — y el juez nuevo lo confirma con números.
+    const cir = e8.circuito;
+    check('E8b · CONEXIONES §9.1.6: exactamente 2 por mitad, etiquetadas, tapones y sellos CONTADOS',
+      cir.conexionesPorMitad === 2 && cir.inOut.length === 4
+        && new Set(cir.inOut.map((i) => i.etiqueta)).size === 4
+        && cir.tapones.length === 12 && cir.sellos.length === 3,
+      `${cir.inOut.map((i) => i.etiqueta).join(' · ')} · ${cir.tapones.length} tapones NPT · ${cir.sellos.length} sellos (cada O-ring es una fuga futura — se declaran, no se esconden)`);
+    check('E8b · EL JUEZ DE INTERFERENCIA TOTAL: todos los claros ≥ ½⌀ de acero (§9.2.7)',
+      cir.juez.ok && cir.juez.claros.length >= 5,
+      cir.juez.claros.map((c) => `${c.contra.split(' ↔ ')[1] ?? c.contra}: ${c.claroMm}≥${c.minMm}`).join(' · '));
+    check('E8b · LOS RECORTES: la interferencia RECORTA H en ambos lados y AMBOS siguen en 2D..5D',
+      cir.recortes.length === 2
+        && cir.ladoA.hOverD >= 2 && cir.ladoA.hOverD <= 5
+        && cir.ladoB.hOverD >= 2 && cir.ladoB.hOverD <= 5,
+      `A: H ${cir.ladoA.hMm} (${cir.ladoA.hOverD}D, techo del inserto) · B: H ${cir.ladoB.hMm} (${cir.ladoB.hOverD}D, piso del bolsillo)`);
+    // CONTROL NEGATIVO — la escena de AYER (E8a): con los z de diseño sin
+    // recortar, el juez mide claro NEGATIVO en A (rompía el acero) y <½⌀ en B.
+    {
+      const asmN = mps.packageToAssemblySpec(e2.pkg);
+      const idmN = mds.insertDims(asmN);
+      const rN = e8.cd.diaMm / 2;
+      const claroAviejo = (dC.zPartMm + idmN.Hc) - ((dC.zPartMm + 39.5 + e8.cd.hLineMm) + rN);
+      const claroBviejo = (dC.zPartMm - idmN.Hk) - ((dC.zPartMm - e8.cd.hLineMm) + rN);
+      check('E8b · CONTROL NEGATIVO: la escena de la E8a REPRUEBA con números (A rompía el acero)',
+        claroAviejo < 0 && claroBviejo < rN,
+        `A: claro ${claroAviejo.toFixed(2)} mm (NEGATIVO = el barreno salía del inserto) · B: ${claroBviejo.toFixed(2)} < ${rN.toFixed(2)} — el ojo de ian tenía razón`);
+    }
+    check('E8b · ANILLO A: libra el bebedero y la trampa §9.3.1(d) queda declarada con su anuncio',
+      cir.juez.claros[0].ok && cir.ladoA.semiMm - dC.rBaseMm - e8.cd.diaMm / 2 >= e8.cd.diaMm / 2,
+      `semi ${cir.ladoA.semiMm} − r_sprue ${dC.rBaseMm.toFixed(2)} − r_línea = ${cir.juez.claros[0].claroMm} mm de acero`);
+    check('E8b · BAFFLE: bore ⌀9.53 en rango de Tabla 9.3, claro al ápice ≥ ½⌀bore, sello contado',
+      cir.baffle.boreDiaMm === 9.53 && e8.core.elegido === 'baffle'
+        && cir.baffle.claroApiceMm >= cir.baffle.boreDiaMm / 2
+        && cir.sellos.some((x) => x.nota.includes('baffle')),
+      `bore ⌀${cir.baffle.boreDiaMm} sube a ${cir.baffle.claroApiceMm} mm del ápice del macho — el core POR FIN se enfría por dentro (Fig 9.11 resuelta)`);
     // CONTROL NEGATIVO: pedirle al motor que viole Eq 9.22 (H=1D) — NO se deja:
     // recorta al rango legal. Y con pitch ancho (W=4H) la variación se dispara.
     const e8h = ed.estacion8Dado(e2.pkg, dC, { partVolCc: 14.14, hOverD: 1 });
