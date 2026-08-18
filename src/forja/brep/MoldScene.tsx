@@ -237,10 +237,17 @@ export function MoldFlowPaint({ part, gate, wallMm, speed = 0.35, delayS = 0 }: 
 // componente ('tornillos') con las dos mitades, ninguno se movía y los de cavidad quedaban
 // flotando en el hueco, como si amarraran A con B — lo que el user cazó a ojo.
 const MOLD_A_SIDE = new Set(['clamp', 'A', 'inserto-cav', 'agua-a', 'colada', 'anillo', 'bujes', 'platina-fija', 'tornillos-cav']);
-export function MoldOpenDriver({ refs, ctl, parts, openMm, ejectMm, stripperRing }: {
+export function MoldOpenDriver({ refs, ctl, parts, openMm, ejectMm, stripperRing, aSideRoles, aSidePrefixes, ejectRoles, ejectPrefixes, pieceRef }: {
   refs: React.MutableRefObject<Record<string, THREE.Group | null>>;
   ctl: React.MutableRefObject<{ on: boolean; manual: number | null; manualE: number | null; t0: number }>;
   parts: MoldPart[];
+  /** E10b (orden el-ciclo-en-movimiento): enrutamiento EXTENSIBLE por molde —
+   *  el dado manda su cavidad/placa-A/agua-A al lado A y sus pines + COLADA
+   *  (sprue directo: viaja CON la pieza) + la PIEZA (pieceRef) a la eyección.
+   *  ian: "nunca los veo funcionando" — ahora sí. */
+  aSideRoles?: string[]; aSidePrefixes?: string[];
+  ejectRoles?: string[]; ejectPrefixes?: string[];
+  pieceRef?: React.MutableRefObject<THREE.Group | null>;
   /** carrera REAL de la partición (§6.3.2 = 2.5 × altura de pieza), NO un número fijo */
   openMm: number;
   /** carrera de EXPULSIÓN (≥ profundidad de pieza, cap 11: para LIBRAR el núcleo) */
@@ -276,10 +283,16 @@ export function MoldOpenDriver({ refs, ctl, parts, openMm, ejectMm, stripperRing
       eFrac = eFrac * eFrac * (3 - 2 * eFrac);
     }
     const O = OPEN * frac, E = ejectMm * eFrac;
+    if (pieceRef?.current) pieceRef.current.position.set(0, 0, E);   // LA PIEZA viaja empujada
+    const esEject = (role: string) => (ejectRoles?.includes(role) ?? false)
+      || (ejectPrefixes?.some((px) => role.startsWith(px)) ?? false);
+    const esASide = (role: string) => (aSideRoles?.includes(role) ?? false)
+      || (aSidePrefixes?.some((px) => role.startsWith(px)) ?? false);
     for (const pt of parts) {
       const g = refs.current[pt.role];
       if (!g) continue;
-      if (MOLD_A_SIDE.has(pt.role) || pt.role.endsWith('-fijo')) {
+      if (esEject(pt.role)) { g.position.set(0, 0, E); continue; }   // ANTES que A (la colada del dado)
+      if (esASide(pt.role) || MOLD_A_SIDE.has(pt.role) || pt.role.endsWith('-fijo')) {
         g.position.set(0, 0, O);                                 // perno/inserto/talón van con A
       } else if (pt.role === 'pines' || pt.role === 'ejector' || pt.role === 'ejector-ret' || pt.role === 'pieza'
         || pt.role === 'pines-retorno' || (stripperRing && pt.role === 'B')) {

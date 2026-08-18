@@ -1073,13 +1073,13 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
       for (let k = 0; k < cir.tapones.length; k++) {
         const t = cir.tapones[k];
         const tp = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 1.2, 6, { origin: [t.x - t.dir[0] * 3, t.y - t.dir[1] * 3, t.z - t.dir[2] * 3], dir: t.dir });
-        parts.push(cursoPart(tp, `agua-tapon-${k}`, `tapón NPT (${e8.lineas.plug}) — extremo muerto del barreno`, '#8a6a3a', 0.95, 0.95));
+        parts.push(cursoPart(tp, `agua-tapon-${k < 6 ? 'A' : 'B'}-${k}`, `tapón NPT (${e8.lineas.plug}) — extremo muerto del barreno (lado ${k < 6 ? 'A' : 'B'})`, '#8a6a3a', 0.95, 0.95));
       }
       // O-RINGS (rojos) donde el agua cruza una interfaz (§9.3.2: fuga esperada sin sello)
       for (let k = 0; k < cir.sellos.length; k++) {
         const sl = cir.sellos[k];
         const or_ = OCC.makeCylinder(oc, e8.lineas.diaMm / 2 + 2.2, 1.6, { origin: [sl.x, sl.y, sl.z - 0.8], dir: [0, 0, 1] });
-        parts.push(cursoPart(or_, `agua-oring-${k}`, sl.nota, '#e05050', 0.95, 0.95));
+        parts.push(cursoPart(or_, `agua-oring-${k < 2 ? 'A' : 'B'}-${k}`, sl.nota, '#e05050', 0.95, 0.95));
       }
       setTFill(1); tFillRef.current = 1;
       setCiclo({ ...ciclo, estacion: 8, e8 });

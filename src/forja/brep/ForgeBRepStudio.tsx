@@ -4655,6 +4655,8 @@ export default function ForgeBRepStudio() {
   // three a veces no recompila y "no corta" — el bug que el workflow detectó). La
   // flecha lo MUTA al plano real cuando la sección está activa; al apagar, se aleja.
   const sectionClip = useMemo(() => [new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e6)], []);
+  // E10b: LA PIEZA (el melt) viaja con la eyección — el driver la empuja por aquí
+  const piezaEjectRef = useRef<THREE.Group>(null);
   // Computa el plano de corte EN MUNDO desde el estado (eje/offset/flip), no solo
   // desde la flecha — así el corte también funciona en MODO MOVIMIENTO (donde el
   // gizmo no se renderiza). Modelo→mundo: (x,y,z)→(x,z,−y) por la rotación −90°X.
@@ -5783,6 +5785,9 @@ export default function ForgeBRepStudio() {
       // avance REAL medido de la malla (no de la intención) para poder juzgarlo.
       // `u` = FRACCIÓN DE VOLUMEN (0..1) — el reloj real, caudal constante. Se traduce
       // al umbral de resistencia por cuantil: así el video corre en tiempo físico.
+      // E10b: posición ANIMADA por rol — moldGeom lee geometría cruda (no la
+      // animación), así que el juez del video mide por aquí
+      animZ: (role: string) => (role === 'pieza' ? piezaEjectRef.current?.position.z : moldAnimRefs.current[role]?.position.z) ?? null,
       llenadoT: (u: number) => {
         const q = (ciclo as any)?.frenteQ as Float32Array | undefined;
         const uu = Math.max(0, Math.min(1, u));
@@ -6190,7 +6195,9 @@ export default function ForgeBRepStudio() {
                   );
                 })()}
                 {ciclo?.frenteGrid && ciclo?.grid && !ciclo?.espiralExacta && !(ciclo?.estacion === 6 && ciclo?.e6) && (
-                  <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} />
+                  <group ref={piezaEjectRef}>
+                    <FrenteSuperficie frente={ciclo.frenteGrid} grid={ciclo.grid} t={tFill} ocupacion={ciclo.ocupacion} />
+                  </group>
                 )}
                 {/* E5: el fundido en la colada YA NO es FeedFill (reloj de pared en
                     bucle = el PARPADEO que ian vio). El campo CONJUNTO colada∪pieza entra
@@ -6203,9 +6210,14 @@ export default function ForgeBRepStudio() {
                 {/* APERTURA ANIMADA: lado A sube y las CORREDERAS se retraen con la
                     cinemática real del perno (u = apertura·tanφ, tope en S) */}
                 <MoldOpenDriver refs={moldAnimRefs} ctl={moldOpenRef} parts={moldParts}
-                  openMm={moldOpenStrokeMm}
-                  ejectMm={(liveMoldSpec?.cavity.depthMm ?? 30) + 8}
-                  stripperRing={liveMoldSpec?.ejectors?.type === 'stripper'} />
+                  openMm={moldOpenStrokeMm || (ciclo?.e5datums ? 100 : 0)}
+                  ejectMm={ciclo?.e5datums ? 48 : (liveMoldSpec?.cavity.depthMm ?? 30) + 8}
+                  stripperRing={liveMoldSpec?.ejectors?.type === 'stripper'}
+                  aSideRoles={ciclo?.e5datums ? ['cavidad', 'placa-a-ghost'] : undefined}
+                  aSidePrefixes={ciclo?.e5datums ? ['agua-A-', 'agua-tapon-A-', 'agua-oring-A-'] : undefined}
+                  ejectRoles={ciclo?.e5datums ? ['colada'] : undefined}
+                  ejectPrefixes={ciclo?.e5datums ? ['pin-'] : undefined}
+                  pieceRef={ciclo?.e5datums ? piezaEjectRef : undefined} />
                 {/* 📐 LA CARRERA, COTADA: lee la placa A real y la enfrenta con el estudio */}
                 {cotasOn && liveMoldSpec && moldOpenStrokeMm > 0 && (
                   <CotaApertura refs={moldAnimRefs} openMm={moldOpenStrokeMm}

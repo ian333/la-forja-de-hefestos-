@@ -25,7 +25,8 @@ const W = Number(process.env.W || 3840), H = Number(process.env.H || 2160);
 const N = Number(process.env.FRAMES || 150);          // pasos del frente
 const HOLD = Number(process.env.HOLD || 20);          // frames quietos al final
 const DIR = process.env.DIR || '/home/ian/Orkesta/la-forja/forja-shots/llenado-video';
-const OUT = process.env.OUT || (process.env.N2 === '1' ? '/mnt/e/forja-videos/espiral-termica-4k.mp4'
+const OUT = process.env.OUT || (process.env.CICLO === '1' ? '/mnt/e/forja-videos/dado-ciclo-completo-4k.mp4'
+  : process.env.N2 === '1' ? '/mnt/e/forja-videos/espiral-termica-4k.mp4'
   : process.env.E10 === '1' ? '/mnt/e/forja-videos/dado-expulsion-4k.mp4'
   : process.env.E9 === '1' ? '/mnt/e/forja-videos/dado-contraccion-4k.mp4'
   : process.env.E8 === '1' ? '/mnt/e/forja-videos/dado-enfriamiento-4k.mp4'
@@ -57,6 +58,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
 
   // caminar el ciclo hasta la estación 4 — o directo a LA PROBETA (PROBETA=1)
   const clic = async (id) => { await p.waitForSelector(`[data-testid="${id}"]`, { state: 'attached', timeout: 300000 }); await p.$eval(`[data-testid="${id}"]`, (e) => e.click()); };
+  if (process.env.CICLO === '1') process.env.E10 = '1';
   if (process.env.PROBETA === '1') {
     await p.waitForSelector('[data-testid="btn-probeta"]:not([disabled])', { timeout: 240000 });
     await p.click('[data-testid="btn-probeta"]');
@@ -119,21 +121,39 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   await p.evaluate(([az, el, r, tx, ty, tz]) => window.__forgeBrep.orbitTo(az, el, r, tx, ty, tz), orb);
   await p.waitForTimeout(1400);                        // el vuelo dura ~850 ms + margen
 
-  // ── captura: el frente avanza de 0 a 1 ──
+  // ── captura: el frente avanza de 0 a 1 — o EL CICLO COMPLETO (E10b) ──
+  // CICLO=1: 3 actos — llenar (0..55 %), abrir (62..82 %), expulsar (84..100 %).
+  // ian: "nunca los veo funcionando" — la máquina TRABAJANDO, por fin.
+  const CICLO = process.env.CICLO === '1';
+  const suave = (x) => x * x * (3 - 2 * x);
   const medidas = [];
   for (let i = 0; i < N + HOLD; i++) {
     const t = Math.min(1, i / (N - 1));
-    const st = await p.evaluate((tt) => { window.__forgeBrep.llenadoT(tt); return window.__forgeBrep.llenadoStats(); }, t);
+    let st;
+    if (CICLO) {
+      const fill = Math.min(1, t / 0.55);
+      const open = t < 0.62 ? 0 : suave(Math.min(1, (t - 0.62) / 0.20));
+      const eject = t < 0.84 ? 0 : suave(Math.min(1, (t - 0.84) / 0.16));
+      st = await p.evaluate(([ff, oo, ee]) => {
+        window.__forgeBrep.llenadoT(ff);
+        window.__moldOpen(oo, ee);
+        return { ...window.__forgeBrep.llenadoStats(), zCav: window.__forgeBrep.animZ('cavidad'), zPin: window.__forgeBrep.animZ('pin-punta-0'), zPza: window.__forgeBrep.animZ('pieza') };
+      }, [fill, open, eject]);
+    } else {
+      st = await p.evaluate((tt) => { window.__forgeBrep.llenadoT(tt); return window.__forgeBrep.llenadoStats(); }, t);
+    }
     await p.waitForTimeout(35);
     await p.screenshot({ path: `${DIR}/f${String(i).padStart(4, '0')}.png`, timeout: 30000 });
-    medidas.push({ i, t: +t.toFixed(4), pct: st ? st.pct : null, llenosPieza: st ? st.llenosPieza : null, llenosColada: st ? st.llenosColada : null, totalColada: st ? st.totalColada : null });
+    medidas.push({ i, t: +t.toFixed(4), pct: st ? st.pct : null, llenosPieza: st ? st.llenosPieza : null, llenosColada: st ? st.llenosColada : null, totalColada: st ? st.totalColada : null, zCav: st ? st.zCav : null, zPin: st ? st.zPin : null, zPza: st ? st.zPza : null });
     if (i % 25 === 0) console.log(`  frame ${i}/${N + HOLD} · t=${t.toFixed(2)} · llenado ${st ? st.pct : '?'}%`);
   }
   await browser.close();
 
   // ── EL JUICIO, con números sacados de los FRAMES ──
   console.log('\n── JUICIO DEL FLUIDO (medido de la corrida, no de la intención)');
-  const llenado = medidas.slice(0, N);
+  // ceil, no floor: el primer frame con fill=1 es ceil(0.55·(N−1)) — con floor
+  // el acto cerraba UN frame antes del lleno (pct 98.98, cazado por el juez)
+  const llenado = CICLO ? medidas.slice(0, Math.ceil(0.55 * (N - 1)) + 1) : medidas.slice(0, N);
   let retrocesos = 0, maxSalto = 0;
   for (let i = 1; i < llenado.length; i++) {
     const d = llenado[i].pct - llenado[i - 1].pct;
@@ -183,6 +203,14 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   // un video que SÍ se mueve — un umbral inventado también es un juez mentiroso.
   chk('LA IMAGEN CAMBIA de verdad (no solo el DOM)', peor > 0.10,
     `diferencia media por tercio: ${difs.map((d) => d.toFixed(2)).join(' · ')} (0 = frames idénticos)`);
+  if (CICLO) {
+    const fin = medidas[medidas.length - 1];
+    chk('ACTO 2 · EL MOLDE ABRE (el lado A sube su carrera completa)',
+      fin.zCav != null && fin.zCav > 90, `animZ(cavidad) final = ${fin.zCav?.toFixed(1)} mm (carrera 100 §6.3.2)`);
+    chk('ACTO 3 · LOS PINES EXPULSAN (y la pieza viaja con ellos)',
+      fin.zPin != null && fin.zPin > 40 && Math.abs((fin.zPza ?? 0) - fin.zPin) < 1,
+      `animZ(pin) = ${fin.zPin?.toFixed(1)} mm · pieza = ${fin.zPza?.toFixed(1)} mm (viajan JUNTOS, carrera 48 cap 11)`);
+  }
   const veredicto = jui.every((j) => j.ok);
 
   // ── encode NVENC 4K 10-bit ──
