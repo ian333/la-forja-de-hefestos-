@@ -45,7 +45,7 @@ import { designSprueFeed, minRunnerRadius, steelSafeDiaMm, pressureDropRunner, r
 import { gateDesign, gateDropStripPL, gateFreezeStripS, gateFreezeCylS } from './gating';
 import type { DatumsColada } from './colada';
 import { volumenColadaCc } from './colada';
-import { shrinkage, ABS_TAIT } from './shrinkage';
+import { shrinkage, shrinkageRecommendation, specificVolume, ABS_TAIT } from './shrinkage';
 import type { MeltMaterial } from './filling';
 import { ABS_MG47, ABS_CROSS, eta0CrossWLF, viscosityCrossWLF } from './filling';
 import { resolverLlenadoFAN, tCongelaSlabS, type TermicoFAN, type LlenadoFAN } from './fan';
@@ -1350,7 +1350,7 @@ export function colocacionEnLaBase(pkg: MoldPackage) {
   };
 }
 
-export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false): AceroE3 {
+export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false, escala?: { cav: number; core: number }): AceroE3 {
   const asm = packageToAssemblySpec(pkg);
   const id = insertDims(asm);
   const dadoLocal = undercut ? dadoUndercutShape(oc) : dadoDraftShape(oc);   // control negativo VISIBLE
@@ -1358,12 +1358,22 @@ export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false): A
   // arriba) y se ROTA EL CONJUNTO 180° sobre X + colocación. Así la CAVIDAD queda ARRIBA
   // (lado A), el MACHO sube desde B, y la boca mira a B — la Fig 7.2 del libro.
   const col = colocacionEnLaBase(pkg);
-  const r = splitMold(oc, dadoLocal, {
-    scale: 1,                                                // contracción = estación 9 (retorno declarado)
-    pinch: 0.5,
+  // E9 (orden ciclo-dado-estacion9): EL GANCHO SE JALA. splitMold corre DOS
+  // veces con escalas steel-safe distintas (§10.2.2 opción A: cavidad s BAJO,
+  // macho s ALTO — corregir siempre es QUITAR acero) y se MEZCLAN mitades. El
+  // descalce que eso crea en el shutoff es LA RESERVA, se mide y se ajusta en
+  // banco (spotting) — así se hace en el taller. Default escala 1.0: la E3 no
+  // se mueve.
+  const opts = (scale: number) => ({
+    scale, pinch: 0.5,
     plateThickness: id.Hk,                                   // respaldo del núcleo = COMPRA
     block: { w: id.ifx, d: id.ify, h: id.Hc, x: 20, y: 20, z: 39.5 - id.Hc / 2 },
   });
+  const r = splitMold(oc, dadoLocal, opts(escala?.cav ?? 1));
+  if (escala && Math.abs(escala.core - escala.cav) > 1e-9) {
+    const rCore = splitMold(oc, dadoLocal, opts(escala.core));
+    r.macho = rCore.macho; r.corePlate = rCore.corePlate;
+  }
   const volt = (sh: any) => occTransform(oc, sh, {
     rotateAngle: Math.PI, rotateAxis: { origin: [0, 0, 0], dir: [1, 0, 0] },
     translate: [col.tx, col.ty, col.tz],
@@ -3037,4 +3047,134 @@ export function estacion8Circuito(pkg: MoldPackage, d: DatumsColada, cd: Cooling
     ladoB: { zMm: +zB.toFixed(2), hMm: +hB.toFixed(2), hOverD: +(hB / D).toFixed(2), nBarrenos: 6, nTapones: 6, nSellos: 1 },
     juez, recortes, conexionesPorMitad: 2,
   };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 9: CONTRACCIÓN (cap 10)                        */
+/* (orden 2026-08-18-ciclo-dado-estacion9)                                     */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * La deuda más vieja del tren se paga: la escala 1.0 que la E3 declaró como
+ * retorno. Pero el cap 10 NO entrega un número — entrega un PROCESO: fuentes
+ * confrontadas (§10.1.7, nunca auto-corregir en silencio), banda §10.1.6,
+ * decisión steel-safe §10.2.2 con responsable registrado, y el acero tallado
+ * con las cotas MEDIDAS del sólido (la regla de ian desde la E3).
+ */
+export interface Estacion9Dado {
+  filas: FilaLlenado[];
+  decision: {
+    fuentes: Array<{ fuente: string; sPct: string; nota: string }>;
+    elegida: string; sEsperadaPct: number; sCavPct: number; sCorePct: number;
+    opcion: 'A' | 'B' | 'C'; responsable: string;
+  };
+  escala: { cav: number; core: number };
+  banda: ReturnType<typeof shrinkageRecommendation>;
+  brecha: { taitDebilPct: number; taitPerillaPct: number; provLoPct: number; provHiPct: number; pPerillaMPa: number };
+  pTechoMPa: number;
+  pandeo: { dsCritPct: number; alfaLinPorC: number; dTcritC: number; warp2C_mm: number };
+  spi: { tolEstdPct: number; tolApretadaPct: number; incertPct: number; estdOk: boolean; apretadaOk: boolean };
+  descalceShutoffMm: number;
+  anuncios: AnuncioRetorno[];
+}
+
+export function estacion9Dado(pkg: MoldPackage, o?: { sCavPct?: number; sCorePct?: number }): Estacion9Dado {
+  const dz: any = pkg.diseno;
+  const banda = dz.contraccion as ReturnType<typeof shrinkageRecommendation>;
+  const K405 = T_NOFLOW_ABS_C + 273.15;
+
+  // ── LAS FUENTES CONFRONTADAS (§10.1.7 · R7: la brecha SE MUESTRA) ──
+  const taitDebil = shrinkage(ABS_TAIT, { tNoFlowK: K405, pPackPa: 0.8 * dz.fillMPa * 1e6 });
+  // la perilla de la E6: el p_pack que mete la contracción a banda del proveedor
+  let pPerillaMPa = Math.ceil(0.8 * dz.fillMPa);
+  for (let pp = pPerillaMPa; pp <= 80; pp++) {
+    if (shrinkage(ABS_TAIT, { tNoFlowK: K405, pPackPa: pp * 1e6 }).linear * 100 <= 0.8) { pPerillaMPa = pp; break; }
+  }
+  const taitPerilla = shrinkage(ABS_TAIT, { tNoFlowK: K405, pPackPa: pPerillaMPa * 1e6 });
+  const provLo = 0.5, provHi = 0.8;                        // Cycolac MG47 (datasheet)
+  const brecha = {
+    taitDebilPct: +(taitDebil.linear * 100).toFixed(2),
+    taitPerillaPct: +(taitPerilla.linear * 100).toFixed(2),
+    provLoPct: provLo, provHiPct: provHi, pPerillaMPa,
+  };
+
+  // ── LA DECISIÓN (registrada, con responsable — R12/R13/R18) ──
+  const sCavPct = o?.sCavPct ?? provLo;                    // steel-safe A: cavidad s BAJO
+  const sCorePct = o?.sCorePct ?? provHi;                  //               macho s ALTO
+  const sEsperadaPct = +((provLo + provHi) / 2).toFixed(2);
+  const decision: Estacion9Dado['decision'] = {
+    fuentes: [
+      { fuente: 'PROVEEDOR (Cycolac MG47, datasheet)', sPct: `${provLo}–${provHi} %`, nota: 'R12: "a veces ni probaron el material real" — se registra con esa advertencia' },
+      { fuente: `TAIT nuestro a 0.8·p_fill (${(0.8 * dz.fillMPa).toFixed(1)} MPa)`, sPct: `${brecha.taitDebilPct} %`, nota: 'LA BRECHA (R7): fuera del proveedor — "no es necesariamente un error": nuestro fill es bajito ⇒ pack débil. NUNCA se auto-corrige en silencio' },
+      { fuente: `TAIT a la PERILLA de la E6 (${pPerillaMPa} MPa)`, sPct: `${brecha.taitPerillaPct} %`, nota: 'cae EN el tope del proveedor: las fuentes CONVERGEN si el proceso empaca como la E6 pidió' },
+    ],
+    elegida: `banda del PROVEEDOR con proceso a la perilla E6 (${pPerillaMPa} MPa)`,
+    sEsperadaPct, sCavPct, sCorePct, opcion: 'A',
+    responsable: 'ian (diseñador) — el acta E12 hereda la decisión y su riesgo (R13)',
+  };
+  const escala = { cav: 1 + sCavPct / 100, core: 1 + sCorePct / 100 };
+  const descalceShutoffMm = +((40 * (sCorePct - sCavPct)) / 100 / 2).toFixed(3);
+
+  // ── EL TECHO DEL PROCESO (hallazgo del propio motor): el límite práctico de
+  // pack del §10.1.6 (max(1.2·P_iny, 100 MPa)) SOBRE-EMPACA a esta pieza (el
+  // dado llena a ~11 MPa) — la banda cruza s=0. Se calcula DÓNDE cruza: ese es
+  // el techo real de la perilla del moldeador; arriba de él la pieza abraza la
+  // cavidad y no suelta.
+  let pTechoMPa = 100;
+  for (let pp = 40; pp <= 120; pp++) {
+    if (shrinkage(ABS_TAIT, { tNoFlowK: K405, pPackPa: pp * 1e6 }).linear <= 0) { pTechoMPa = pp; break; }
+  }
+
+  // ── PANDEO de la tapa (Eq 10.19) + warp (Eqs 10.17-10.18) ──
+  // CVTE del Tait (Eq 10.8) por derivada numérica en el dominio sólido (60 °C, p=0)
+  const v60 = specificVolume(ABS_TAIT, 333.15, 0), v61 = specificVolume(ABS_TAIT, 334.15, 0);
+  const cvtePorC = (v61 - v60) / v60;
+  const alfaLinPorC = cvtePorC / 3;                        // lineal ≈ volumétrico/3
+  const h = 2, Wt = 40;                                    // la tapa cerrada del dado
+  const dsCrit = 0.44 * (h / Wt) ** 2;                     // Eq 10.19
+  const dTcritC = dsCrit / alfaLinPorC;
+  const ds2C = alfaLinPorC * 2;                            // el ΔT=2 °C del ejemplo del libro
+  const Rw = (2 * h) / ds2C;                               // Eq 10.17 (mm)
+  const warp2C = Wt * Math.sin(Wt / Rw);                   // Eq 10.18
+  const pandeo = { dsCritPct: +(dsCrit * 100).toFixed(3), alfaLinPorC: +alfaLinPorC.toExponential(3) as unknown as number, dTcritC: +dTcritC.toFixed(1), warp2C_mm: +warp2C.toFixed(3) };
+
+  // ── SPI §10.1: la incertidumbre de s contra la tolerancia comercial ──
+  const incertPct = +((provHi - provLo) / 2).toFixed(2);   // ±0.15 del proveedor
+  const spi = { tolEstdPct: 0.4, tolApretadaPct: 0.1, incertPct, estdOk: incertPct <= 0.4, apretadaOk: incertPct <= 0.1 };
+
+  const filas: FilaLlenado[] = [];
+  const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
+    filas.push({ id, titulo, valor, limite, estado, seccion, porque });
+  fila('fuentes', 'LAS FUENTES CONFRONTADAS (nunca auto-corregir en silencio)',
+    `proveedor ${provLo}–${provHi} % · Tait débil ${brecha.taitDebilPct} % · Tait perilla ${brecha.taitPerillaPct} %`,
+    'al menos una fuente externa registrada (§10.1.7)',
+    'CUMPLE', '§10.1.7 · R7/R12',
+    `la brecha del Tait débil se MUESTRA (pack flojo, no error); a la perilla de la E6 (${pPerillaMPa} MPa) las fuentes convergen en el tope del proveedor. Fuente elegida: ${decision.elegida}. Responsable: ${decision.responsable}.`);
+  fila('banda', 'la banda §10.1.6 — y LA ALARMA del libro disparando en NUESTRO dado',
+    `${banda.lowPct.toFixed(2)} – ${banda.nominalPct.toFixed(2)} – ${banda.highPct.toFixed(2)} % (span ${banda.spanPct.toFixed(2)}) · s=0 a ~${pTechoMPa} MPa`,
+    'techo del proceso: p_pack < p(s=0)',
+    'ADVIERTE', '§10.1.6 · R11',
+    `el límite práctico de pack del libro (100 MPa) SOBRE-EMPACA esta pieza (llena a ${dz.fillMPa} MPa): s cruza CERO a ~${pTechoMPa} MPa — arriba de eso la pieza abraza la cavidad y NO SUELTA ("contracción cero parece perfecto y es defecto"). El techo real de la perilla queda registrado; la perilla E6 (${pPerillaMPa} MPa) trae margen ${(pTechoMPa / pPerillaMPa).toFixed(1)}×.`);
+  fila('steelsafe', 'STEEL-SAFE §10.2.2 opción (A): cavidad s bajo · macho s alto',
+    `cavidad ×${escala.cav.toFixed(4)} (${sCavPct} %) · macho ×${escala.core.toFixed(4)} (${sCorePct} %)`,
+    'corregir SIEMPRE es quitar acero',
+    'ADVIERTE', '§10.2.2 · R18',
+    `advertencia LITERAL del libro: (A) "garantiza maquinado posterior" porque el nominal saldrá fuera — es el precio de la reserva. El DESCALCE del shutoff que crea la mezcla (${descalceShutoffMm} mm/lado) ES la reserva en la arista: se ajusta en banco (spotting), como en el taller.`);
+  fila('spi', 'tolerancia comercial SPI vs la incertidumbre de s',
+    `incertidumbre ±${incertPct} % vs estándar ±${spi.tolEstdPct} % · apretada ±${spi.tolApretadaPct} %`,
+    'la cavidad DEBE ir escalada antes de maquinar (§10.1)',
+    spi.estdOk ? (spi.apretadaOk ? 'CUMPLE' : 'ADVIERTE') : 'VIOLA', '§10.1 · A-140',
+    spi.apretadaOk ? 'entra hasta en tolerancia apretada.' : 'entra en tolerancia ESTÁNDAR; para apretada (±0.1 %) el camino es prototipo + caracterizar (R12/R20) — registrado al acta.');
+  fila('pandeo', 'PANDEO de la tapa cerrada (Eq 10.19) — el lazo con el agua',
+    `Δs_crit ${pandeo.dsCritPct} % ⇒ ΔT crítico core↔cavidad ${pandeo.dTcritC} °C · warp a 2 °C: ${pandeo.warp2C_mm} mm (Eqs 10.17-18)`,
+    '(s_borde−s_centro) > 0.44(h/W)² pandea',
+    'CUMPLE', '§10.3.1 · R22-R24',
+    `la tapa 40×40×2 pandea si el gradiente pasa ~${pandeo.dTcritC} °C. LA DEFENSA es la E8b: pitch W=2H (variación <5 % Menges) + BAFFLE en el macho — de diseño, cerrada; el número FINO del gradiente es del N3 (campo térmico del molde), anunciado. R23: el alabeo depende del GRADIENTE, no de la temperatura absoluta — enfriar parejo sí, enfriar más frío no.`);
+
+  const anuncios: AnuncioRetorno[] = [
+    { estacion: 3, titulo: 'EL RETORNO DE LA E3, CERRADO: la escala 1.0 se paga hoy', detalle: `splitMold corre con ×${escala.cav.toFixed(4)}/${escala.core.toFixed(4)} — el gancho declarado en la E3 ("la E9 reabre este acero") se jala`, seccion: 'E3 · §10.2.2' },
+    { estacion: 10, titulo: 's alimenta la fuerza de expulsión (el dato viaja, no se reteclea)', detalle: `R30/§10.4: la contracción elegida (${sCorePct} % en el macho) entra al cap 11 — la pieza ABRAZA al macho con ese s y de ahí sale la fuerza de los pines`, seccion: '§10.4 · R30' },
+    { estacion: 12, titulo: 'acta de contracción: fuente + opción + responsable', detalle: `fuente: ${decision.elegida} · opción steel-safe: A · responsable: ${decision.responsable}`, seccion: '§10.1.7 · R13' },
+  ];
+
+  return { filas, decision, escala, banda, brecha, pTechoMPa, pandeo, spi, descalceShutoffMm, anuncios };
 }

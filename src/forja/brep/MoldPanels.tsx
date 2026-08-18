@@ -554,7 +554,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -618,7 +618,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={cicloEstacion6} />}
       {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
       {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
-      {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} />}
+      {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
+      {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -1102,7 +1103,7 @@ function CicloE7({ e7, onE8 }: { e7: import('../mold/estudio-molde-datos').Estac
  *  (fórmula → sustitución → resultado, la pantalla que hace que los errores
  *  salten), el veredicto del ciclo (el bebedero manda ×8.2) y EL RETORNO A LA
  *  E2 con DINERO — la única estación que cambia el precio de la pieza. */
-function CicloE8({ e8 }: { e8: import('../mold/estudio-molde-datos').Estacion8Dado }) {
+function CicloE8({ e8, onE9 }: { e8: import('../mold/estudio-molde-datos').Estacion8Dado; onE9?: () => void }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   return (
     <>
@@ -1179,6 +1180,61 @@ function CicloE8({ e8 }: { e8: import('../mold/estudio-molde-datos').Estacion8Da
           <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e8.anuncios.length})</div>
           {e8.anuncios.map((a, k) => (
             <div key={k} data-testid={`e8-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {onE9 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e9" onClick={() => onE9()} style={{ margin: '4px 6px 6px' }}
+          title="CONTRACCIÓN (cap 10): el acero SE TALLA ESCALADO — la escala 1.0 que la E3 dejó declarada se paga aquí, steel-safe">
+          ▶ estación 9 — CONTRACCIÓN: tallar el acero escalado
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 9 — CONTRACCIÓN (cap 10). Las fuentes CONFRONTADAS (nunca
+ *  auto-corregir en silencio), la banda §10.1.6 con la alarma de sobre-empaque
+ *  VIVA (el techo del proceso), la decisión steel-safe con responsable, y el
+ *  acero tallado con cotas MEDIDAS. */
+function CicloE9({ e9 }: { e9: import('../mold/estudio-molde-datos').Estacion9Dado }) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 9 — contracción (cap 10): el acero escalado, con responsable
+      </div>
+      <div data-testid="e9-decision" style={{ margin: '4px 6px', padding: '5px 7px', background: '#12202b', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9fd0f4' }}>LAS FUENTES CONFRONTADAS (§10.1.7 — la brecha SE MUESTRA)</div>
+        {e9.decision.fuentes.map((f, k) => (
+          <div key={k} data-testid={`e9-fuente-${k}`} style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>
+            · <b>{f.fuente}</b>: {f.sPct} — {f.nota}
+          </div>
+        ))}
+        <div style={{ fontSize: 10.5, color: '#a8e07e', marginTop: 3 }}>
+          ELEGIDA: {e9.decision.elegida} · s esperada {e9.decision.sEsperadaPct} % · <b>opción {e9.decision.opcion}</b>: cavidad {e9.decision.sCavPct} % / macho {e9.decision.sCorePct} %
+        </div>
+        <div style={{ fontSize: 10, color: '#8fa1b8' }}>{e9.decision.responsable}</div>
+      </div>
+      <div style={{ margin: '2px 6px' }}>
+        {e9.filas.map((f) => (
+          <div key={f.id} data-testid={`e9-fila-${f.id}`} style={{ padding: '4px 6px', marginBottom: 3, background: '#141a22', borderRadius: 6, borderLeft: `3px solid ${COL[f.estado]}` }}>
+            <div style={{ fontSize: 10.5, color: '#dfe8f4' }}>
+              <b>{f.titulo}</b> · <span style={{ color: COL[f.estado], fontWeight: 700 }}>{f.estado}</span>
+            </div>
+            <div style={{ fontSize: 10.5, color: '#a8bad0' }}>{f.valor} <span style={{ color: '#6f8199' }}>(límite: {f.limite})</span></div>
+            <div style={{ fontSize: 10, color: '#8fa1b8' }}>{f.porque} · {f.seccion}</div>
+          </div>
+        ))}
+      </div>
+      {e9.anuncios.length > 0 && (
+        <div style={{ margin: '2px 6px 8px', padding: '5px 7px', background: '#241a10', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e9.anuncios.length})</div>
+          {e9.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e9-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
               <b>→ estación {a.estacion}:</b> {a.titulo}
               <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
             </div>

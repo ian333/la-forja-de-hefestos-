@@ -996,6 +996,57 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `H pedido 1D → entregado ${(e8h.cd.hLineMm / e8h.cd.diaMm).toFixed(2)}D · W=4H → variación ${e8w.lineas.variacionFlujoPct} % (vs ${e8.lineas.variacionFlujoPct} % del diseño)`);
   }
 
+  // ══ ESTACIÓN 9 — CONTRACCIÓN (orden 2026-08-18-ciclo-dado-estacion9) ══
+  // La deuda más vieja del tren (escala 1.0 de la E3) se paga con el PROCESO
+  // del cap 10: fuentes confrontadas, banda con la alarma VIVA, steel-safe con
+  // responsable, y el acero re-tallado MEDIDO.
+  console.log('── E9 · Contracción (cap 10) — el acero escalado');
+  {
+    const sh9 = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'shrinkage.ts'));
+    const mold9 = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold.ts'));
+    // ORÁCULO §10.1.4: el ejemplo impreso (66 MPa → 0.31 %). Con precisión
+    // completa da 0.293: el 0.31 del libro sale de SU rv redondeado a 4 cifras
+    // (0.9907 → 0.311 %) — misma familia de las erratas ya cazadas. Banda ±0.03.
+    const s66 = sh9.shrinkage(sh9.ABS_TAIT, { tNoFlowK: 405.15, pPackPa: 66e6 }).linear * 100;
+    check('E9 · ORÁCULO §10.1.4: el ejemplo del libro (66 MPa) reproduce su 0.31 % (±0.03 — rv redondeado, declarado)',
+      Math.abs(s66 - 0.31) <= 0.03, `${s66.toFixed(3)} % con precisión completa vs 0.31 impreso`);
+    const e9 = ed.estacion9Dado(e2.pkg);
+    check('E9 · LA BRECHA R7 + convergencia vía la perilla E6: Tait débil FUERA del proveedor, Tait a la perilla EN el tope',
+      e9.brecha.taitDebilPct > 0.8 && e9.brecha.taitPerillaPct >= 0.7 && e9.brecha.taitPerillaPct <= 0.85,
+      `débil ${e9.brecha.taitDebilPct} % (se muestra, no se auto-corrige) · perilla ${e9.brecha.pPerillaMPa} MPa → ${e9.brecha.taitPerillaPct} % ∈ [0.5, 0.8] proveedor`);
+    check('E9 · LA ALARMA §10.1.6 VIVA en nuestro dado: el techo práctico del libro SOBRE-EMPACA esta pieza',
+      e9.banda.positiva === false && e9.pTechoMPa > 1.5 * e9.brecha.pPerillaMPa && e9.pTechoMPa < 100,
+      `s=0 a ~${e9.pTechoMPa} MPa (el techo REAL del proceso) · la perilla ${e9.brecha.pPerillaMPa} MPa trae margen ${(e9.pTechoMPa / e9.brecha.pPerillaMPa).toFixed(1)}× · banda low ${e9.banda.lowPct.toFixed(2)} %`);
+    // EL TALLADO, MEDIDO del B-Rep (el gancho de splitMold jalado)
+    const a1 = ed.construirAceroE3(oc, e2.pkg);
+    const a9 = ed.construirAceroE3(oc, e2.pkg, false, e9.escala);
+    const b1 = mold9.shapeBBox(oc, a1.r.macho), b9 = mold9.shapeBBox(oc, a9.r.macho);
+    const mx1 = b1.max[0] - b1.min[0], mx9 = b9.max[0] - b9.min[0];
+    const blockVol = 120 * 120 * 60;
+    const h1 = blockVol - occt.volume(oc, a1.r.cavityPlate);
+    const h9 = blockVol - occt.volume(oc, a9.r.cavityPlate);
+    const rMacho = mx9 / mx1, rHueco = h9 / h1;
+    check('E9 · EL ACERO TALLADO Y MEDIDO: macho ×1.0080 (bbox) y hueco de cavidad ×1.0050³ (volumen)',
+      Math.abs(rMacho - e9.escala.core) < 0.0015 && Math.abs(rHueco - e9.escala.cav ** 3) < 0.004,
+      `macho ${mx1.toFixed(2)} → ${mx9.toFixed(2)} mm (×${rMacho.toFixed(4)} vs ${e9.escala.core}) · hueco ×${rHueco.toFixed(4)} vs ${(e9.escala.cav ** 3).toFixed(4)} — el retorno de la E3 CERRADO`);
+    // CONTROL NEGATIVO anti-steel-safe: escala invertida ⇒ descalce NEGATIVO
+    // (la corrección sería AGREGAR acero — imposible). El veredicto distingue.
+    const e9mal = ed.estacion9Dado(e2.pkg, { sCavPct: 0.8, sCorePct: 0.5 });
+    check('E9 · CONTROL NEGATIVO: la escala invertida (anti-steel-safe) da descalce NEGATIVO y se DISTINGUE',
+      e9.descalceShutoffMm > 0 && e9mal.descalceShutoffMm < 0,
+      `steel-safe A: +${e9.descalceShutoffMm} mm/lado (quitar acero = spotting) · invertida: ${e9mal.descalceShutoffMm} mm (agregar acero = imposible)`);
+    // PANDEO Eq 10.19 + warp Eqs 10.17-18: números consistentes entre sí
+    const warpAprox = 40 * 40 / ((2 * 2) / (e9.pandeo.alfaLinPorC * 2));
+    check('E9 · PANDEO de la tapa: ΔT crítico ~9 °C (Eq 10.19 con CVTE de Tait) y el warp de 2 °C consistente',
+      e9.pandeo.dTcritC > 5 && e9.pandeo.dTcritC < 15
+        && Math.abs(e9.pandeo.warp2C_mm - warpAprox) / warpAprox < 0.05
+        && Math.abs(e9.pandeo.dsCritPct - 0.11) < 0.005,
+      `Δs_crit ${e9.pandeo.dsCritPct} % ⇒ ΔT_crit ${e9.pandeo.dTcritC} °C (defensa: E8b baffle+pitch) · warp(2°C) ${e9.pandeo.warp2C_mm} ≈ W²/R ${warpAprox.toFixed(3)} mm`);
+    check('E9 · SPI §10.1: entra en tolerancia ESTÁNDAR (±0.4 %) y la apretada exige prototipo (registrado)',
+      e9.spi.estdOk && !e9.spi.apretadaOk,
+      `incertidumbre ±${e9.spi.incertPct} % vs ±0.4 estándar ✓ · ±0.1 apretada ✗ → R12/R20 al acta`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);
