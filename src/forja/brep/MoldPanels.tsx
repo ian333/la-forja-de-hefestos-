@@ -554,7 +554,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -619,7 +619,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
       {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
       {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
-      {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} />}
+      {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} onE10={cicloEstacion10} />}
+      {ciclo.estacion === 10 && ciclo.e10 && <CicloE10 e10={ciclo.e10} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -1200,7 +1201,7 @@ function CicloE8({ e8, onE9 }: { e8: import('../mold/estudio-molde-datos').Estac
  *  auto-corregir en silencio), la banda §10.1.6 con la alarma de sobre-empaque
  *  VIVA (el techo del proceso), la decisión steel-safe con responsable, y el
  *  acero tallado con cotas MEDIDAS. */
-function CicloE9({ e9 }: { e9: import('../mold/estudio-molde-datos').Estacion9Dado }) {
+function CicloE9({ e9, onE10 }: { e9: import('../mold/estudio-molde-datos').Estacion9Dado; onE10?: () => void }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   return (
     <>
@@ -1235,6 +1236,61 @@ function CicloE9({ e9 }: { e9: import('../mold/estudio-molde-datos').Estacion9Da
           <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e9.anuncios.length})</div>
           {e9.anuncios.map((a, k) => (
             <div key={k} data-testid={`e9-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {onE10 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e10" onClick={() => onE10()} style={{ margin: '4px 6px 6px' }}
+          title="EXPULSIÓN (cap 11): los pines — con juzgarPines esperando desde la E1, las knit de la E7 y el s de la E9">
+          ▶ estación 10 — EXPULSIÓN: los pines (los ciclos)
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 10 — EXPULSIÓN (cap 11). Los CICLOS ejercidos: R34→R46 (pared),
+ *  R52 (pandeo→escalonado), A-239 al revés (los pines ceden el carril del
+ *  baffle). Con juzgarPines convocado y el juez contra el agua REAL. */
+function CicloE10({ e10 }: { e10: import('../mold/estudio-molde-datos').Estacion10Dado }) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 10 — expulsión (cap 11): los ciclos de decisión, no el pipeline
+      </div>
+      <div data-testid="e10-ciclo" style={{ margin: '4px 6px', padding: '5px 7px', background: '#12202b', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9fd0f4' }}>EL CICLO DE DECISIÓN (cada conflicto, real)</div>
+        {e10.cicloDecision.map((c, k) => (
+          <div key={k} data-testid={`e10-paso-${k}`} style={{ fontSize: 10, color: c.startsWith('⚠') ? '#f4d27a' : '#a8bad0', marginTop: 2 }}>· {c}</div>
+        ))}
+      </div>
+      <div style={{ margin: '2px 6px' }}>
+        {e10.filas.map((f) => (
+          <div key={f.id} data-testid={`e10-fila-${f.id}`} style={{ padding: '4px 6px', marginBottom: 3, background: '#141a22', borderRadius: 6, borderLeft: `3px solid ${COL[f.estado]}` }}>
+            <div style={{ fontSize: 10.5, color: '#dfe8f4' }}>
+              <b>{f.titulo}</b> · <span style={{ color: COL[f.estado], fontWeight: 700 }}>{f.estado}</span>
+            </div>
+            <div style={{ fontSize: 10.5, color: '#a8bad0' }}>{f.valor} <span style={{ color: '#6f8199' }}>(límite: {f.limite})</span></div>
+            <div style={{ fontSize: 10, color: '#8fa1b8' }}>{f.porque} · {f.seccion}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ margin: '2px 6px 6px', padding: '5px 7px', background: '#102028', borderRadius: 6 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#7fd8f0' }}>el JUEZ pines↔todo — {e10.juez.ok ? '✓ VERDE' : '✗ LA E8 SE REABRE'}</div>
+        {e10.juez.claros.slice(0, 8).map((c, k) => (
+          <div key={k} style={{ fontSize: 10, color: c.ok ? '#7ee0a0' : '#f27a6c', marginTop: 1 }}>{c.ok ? '✓' : '✗'} {c.contra}: {c.claroMm} ≥ {c.minMm} mm</div>
+        ))}
+        <div style={{ fontSize: 10, color: '#6f8199', marginTop: 2 }}>({e10.juez.claros.length} claros medidos · juzgarPines: {e10.juicioPines.peor})</div>
+      </div>
+      {e10.anuncios.length > 0 && (
+        <div style={{ margin: '2px 6px 8px', padding: '5px 7px', background: '#241a10', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e10.anuncios.length})</div>
+          {e10.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e10-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
               <b>→ estación {a.estacion}:</b> {a.titulo}
               <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
             </div>

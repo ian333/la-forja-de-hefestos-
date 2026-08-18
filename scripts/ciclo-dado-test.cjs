@@ -1047,6 +1047,43 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `incertidumbre ±${e9.spi.incertPct} % vs ±0.4 estándar ✓ · ±0.1 apretada ✗ → R12/R20 al acta`);
   }
 
+  // ══ ESTACIÓN 10 — EXPULSIÓN (orden 2026-08-18-ciclo-dado-estacion10) ══
+  // ian: "el molde no es un pipeline, son ciclos de decisión y rediseño" — y
+  // esta estación los EJERCIÓ de verdad: R34→R46 (el catálogo violaba la
+  // pared), R52 (el recto pandeaba → escalonado) y A-239 al revés (los pines
+  // cedieron el carril central al baffle).
+  console.log('── E10 · Expulsión (cap 11) — los ciclos ejercidos');
+  {
+    const ej = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'ejection.ts'));
+    const e8x = ed.estacion8Dado(e2.pkg, dC);
+    const e10 = ed.estacion10Dado(e2.pkg, dC, e8x.circuito);
+    check('E10 · F_eject cruza con el motor del paquete (±2 %) y R41 sanity (clamp + eyector de máquina)',
+      e10.fuerza.cruceOkPct < 2 && e10.fuerza.pctClamp < 2 && e10.fuerza.pctEyectorMaq < 100,
+      `${e10.fuerza.fEjectN} N vs pkg ${e10.fuerza.fPkgN} (Δ ${e10.fuerza.cruceOkPct} %) · ${e10.fuerza.pctClamp} % del clamp (libro ~0.5) · ${e10.fuerza.pctEyectorMaq} % del eyector IM-50`);
+    check('E10 · EL CICLO R34→R46: con 4 pines el catálogo VIOLA la pared y con 8 CUMPLE',
+      e10.cicloDecision.some((c) => c.includes('2.381 > pared 2')) && e10.pines.diaMm <= 2,
+      `4 pines → ⌀2.381 > 2 (punto caliente R34) · 8 pines → ⌀${e10.pines.diaMm} ≤ 2 ✓ — y R46 regala venteo uniforme`);
+    check('E10 · R52 EJERCIDO: el recto PANDEA (SF<1) y el ESCALONADO del libro resuelve (con ambas K impresas)',
+      e10.pines.escalonado.sfRectoK2 < 1 && e10.pines.pandeoNuestro.sf >= 2 && e10.pines.pandeoLibro.sf >= 2,
+      `recto ⌀${e10.pines.escalonado.puntaDiaMm}×${e10.pines.libreMm}: SF ${e10.pines.escalonado.sfRectoK2} → escalonado punta×${e10.pines.escalonado.puntaMm} guiada + cuerpo ⌀${e10.pines.escalonado.cuerpoDiaMm}: SF ${e10.pines.pandeoNuestro.sf} (K=2) / ${e10.pines.pandeoLibro.sf} (K=0.7)`);
+    check('E10 · la desviación K documentada: fCrit(0.7)/fCrit(2) = (2/0.7)² = 8.16 EXACTO',
+      Math.abs(ej.pinBuckling({ diaMm: 3, freeLenMm: 50, fPerPinN: 100, K: 0.7 }).fCritN
+        / ej.pinBuckling({ diaMm: 3, freeLenMm: 50, fPerPinN: 100 }).fCritN - (2 / 0.7) ** 2) < 0.01,
+      `la razón de la desviación declarada en ejection.ts, verificada por fórmula`);
+    check('E10 · cortante GOBIERNA sobre compresión (la trampa R45)',
+      e10.pines.gobierna === 'cortante' && e10.pines.dMinCorteMm > e10.pines.dMinCompMm,
+      `compresión ⌀${e10.pines.dMinCompMm} < cortante ⌀${e10.pines.dMinCorteMm} — gobierna el plástico, no el acero`);
+    check('E10 · A-239 EJERCIDO AL REVÉS: los pines CEDEN el carril central (el baffle no se mueve) y el juez queda VERDE',
+      e10.juez.ok && e10.pines.posiciones.filter((q) => Math.abs(q.x - dC.ejeX) < 1 && Math.abs(q.y - dC.ejeY) > 10).length === 0
+        && e10.cicloDecision.some((c) => c.includes('CEDEN LOS PINES')),
+      `${e10.juez.claros.length} claros medidos · peor ${Math.min(...e10.juez.claros.map((c) => c.claroMm)).toFixed(2)} mm · cero pines sobre x=eje en las paredes Y`);
+    check('E10 · CONTROL NEGATIVO: un pin forzado SOBRE la línea B-0 REPRUEBA (el juez muerde)',
+      !ed.estacion10Dado(e2.pkg, dC, e8x.circuito, { pinExtra: { x: 60, y: 98 } }).juez.ok,
+      'pin en (60, 98) → claro negativo contra la serpentina — esto es lo que REABRIRÍA la E8');
+    check('E10 · juzgarPines CONVOCADO (esperaba desde la E1) sin VIOLA',
+      e10.juicioPines.peor !== 'VIOLA', `veredicto ${e10.juicioPines.peor} · ${e10.juicioPines.avisosAgua.length} avisos de agua`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);
