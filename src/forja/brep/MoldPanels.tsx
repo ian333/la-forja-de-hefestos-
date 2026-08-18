@@ -554,7 +554,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -620,7 +620,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
       {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
       {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} onE10={cicloEstacion10} />}
-      {ciclo.estacion === 10 && ciclo.e10 && <CicloE10 e10={ciclo.e10} />}
+      {ciclo.estacion === 10 && ciclo.e10 && <CicloE10 e10={ciclo.e10} onE11={cicloEstacion11} />}
+      {ciclo.estacion === 11 && ciclo.e11 && <CicloE11 e11={ciclo.e11} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -1255,7 +1256,7 @@ function CicloE9({ e9, onE10 }: { e9: import('../mold/estudio-molde-datos').Esta
 /** Estación 10 — EXPULSIÓN (cap 11). Los CICLOS ejercidos: R34→R46 (pared),
  *  R52 (pandeo→escalonado), A-239 al revés (los pines ceden el carril del
  *  baffle). Con juzgarPines convocado y el juez contra el agua REAL. */
-function CicloE10({ e10 }: { e10: import('../mold/estudio-molde-datos').Estacion10Dado }) {
+function CicloE10({ e10, onE11 }: { e10: import('../mold/estudio-molde-datos').Estacion10Dado; onE11?: () => void }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   return (
     <>
@@ -1291,6 +1292,50 @@ function CicloE10({ e10 }: { e10: import('../mold/estudio-molde-datos').Estacion
           <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e10.anuncios.length})</div>
           {e10.anuncios.map((a, k) => (
             <div key={k} data-testid={`e10-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
+              <b>→ estación {a.estacion}:</b> {a.titulo}
+              <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {onE11 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e11" onClick={() => onE11()} style={{ margin: '4px 6px 6px' }}
+          title="ESTRUCTURA (cap 12): todo lo perforado rinde cuentas — K de los barrenos, hoop del macho, deflexión vs venteo, R90">
+          ▶ estación 11 — ESTRUCTURA: ¿el acero aguanta?
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 11 — ESTRUCTURA (cap 12). Los K de NUESTROS barrenos, la alarma
+ *  maestra de deflexión-vs-venteo, el hoop del macho y el checklist R90. */
+function CicloE11({ e11 }: { e11: import('../mold/estudio-molde-datos').Estacion11Dado }) {
+  const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
+  return (
+    <>
+      <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
+        estación 11 — estructura (cap 12): el acero que quedó, rindiendo cuentas
+      </div>
+      <div data-testid="e11-r90" style={{ margin: '4px 6px', padding: '5px 7px', background: e11.r90.yieldOk && e11.r90.fatigaOk && e11.r90.flashOk ? '#12281c' : '#3a1414', border: `1px solid ${e11.r90.yieldOk && e11.r90.fatigaOk && e11.r90.flashOk ? '#7ee0a0' : '#f27a6c'}`, borderRadius: 6, fontSize: 10.5, fontWeight: 700, color: e11.r90.yieldOk && e11.r90.fatigaOk && e11.r90.flashOk ? '#7ee0a0' : '#f27a6c' }}>
+        R90 · (1) sobrepresión {e11.r90.yieldOk ? '✓' : '✗'} · (2) fatiga {e11.r90.fatigaOk ? '✓' : '✗'} · (3) flash {e11.r90.flashOk ? '✓' : '✗'} — tres veredictos INDEPENDIENTES
+      </div>
+      <div style={{ margin: '2px 6px' }}>
+        {e11.filas.map((f) => (
+          <div key={f.id} data-testid={`e11-fila-${f.id}`} style={{ padding: '4px 6px', marginBottom: 3, background: '#141a22', borderRadius: 6, borderLeft: `3px solid ${COL[f.estado]}` }}>
+            <div style={{ fontSize: 10.5, color: '#dfe8f4' }}>
+              <b>{f.titulo}</b> · <span style={{ color: COL[f.estado], fontWeight: 700 }}>{f.estado}</span>
+            </div>
+            <div style={{ fontSize: 10.5, color: '#a8bad0' }}>{f.valor} <span style={{ color: '#6f8199' }}>(límite: {f.limite})</span></div>
+            <div style={{ fontSize: 10, color: '#8fa1b8' }}>{f.porque} · {f.seccion}</div>
+          </div>
+        ))}
+      </div>
+      {e11.anuncios.length > 0 && (
+        <div style={{ margin: '2px 6px 8px', padding: '5px 7px', background: '#241a10', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>⟲ anuncios ({e11.anuncios.length})</div>
+          {e11.anuncios.map((a, k) => (
+            <div key={k} data-testid={`e11-anuncio-${k}`} style={{ fontSize: 10.5, color: '#e0c98a', marginTop: 3 }}>
               <b>→ estación {a.estacion}:</b> {a.titulo}
               <div style={{ fontSize: 10, color: '#8fa1b8' }}>{a.detalle} · {a.seccion}</div>
             </div>

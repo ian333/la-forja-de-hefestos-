@@ -25,7 +25,8 @@ const W = Number(process.env.W || 3840), H = Number(process.env.H || 2160);
 const N = Number(process.env.FRAMES || 150);          // pasos del frente
 const HOLD = Number(process.env.HOLD || 20);          // frames quietos al final
 const DIR = process.env.DIR || '/home/ian/Orkesta/la-forja/forja-shots/llenado-video';
-const OUT = process.env.OUT || (process.env.CICLO === '1' ? '/mnt/e/forja-videos/dado-ciclo-completo-4k.mp4'
+const OUT = process.env.OUT || (process.env.E11 === '1' ? '/mnt/e/forja-videos/dado-estructura-4k.mp4'
+  : process.env.CICLO === '1' ? '/mnt/e/forja-videos/dado-ciclo-completo-4k.mp4'
   : process.env.N2 === '1' ? '/mnt/e/forja-videos/espiral-termica-4k.mp4'
   : process.env.E10 === '1' ? '/mnt/e/forja-videos/dado-expulsion-4k.mp4'
   : process.env.E9 === '1' ? '/mnt/e/forja-videos/dado-contraccion-4k.mp4'
@@ -58,6 +59,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
 
   // caminar el ciclo hasta la estación 4 — o directo a LA PROBETA (PROBETA=1)
   const clic = async (id) => { await p.waitForSelector(`[data-testid="${id}"]`, { state: 'attached', timeout: 300000 }); await p.$eval(`[data-testid="${id}"]`, (e) => e.click()); };
+  if (process.env.E11 === '1') process.env.CICLO = '1';
   if (process.env.CICLO === '1') process.env.E10 = '1';
   if (process.env.PROBETA === '1') {
     await p.waitForSelector('[data-testid="btn-probeta"]:not([disabled])', { timeout: 240000 });
@@ -93,6 +95,8 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
     if (process.env.E9 === '1' || process.env.E10 === '1') { await p.waitForTimeout(2500); await p.$eval('[data-testid="btn-ciclo-e9"]', (e) => { setTimeout(() => e.click(), 30); }); await p.waitForTimeout(12000); }
     // E10 (cap 11): los pines — instantánea; el botón vive en CicloE9
     if (process.env.E10 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e10'); }
+    // E11 (cap 12): la estructura — instantánea; el botón vive en CicloE10
+    if (process.env.E11 === '1') { await p.waitForTimeout(2000); await clic('btn-ciclo-e11'); }
   }
   await p.waitForFunction(() => !!(window.__forgeBrep && window.__forgeBrep.llenadoStats && window.__forgeBrep.llenadoStats()), null, { timeout: 300000 });
   await p.waitForTimeout(2500);

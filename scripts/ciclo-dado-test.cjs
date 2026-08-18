@@ -1084,6 +1084,42 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       e10.juicioPines.peor !== 'VIOLA', `veredicto ${e10.juicioPines.peor} · ${e10.juicioPines.avisosAgua.length} avisos de agua`);
   }
 
+  // ══ ESTACIÓN 11 — ESTRUCTURA (orden 2026-08-18-ciclo-dado-estacion11) ══
+  console.log('── E11 · Estructura (cap 12) — lo perforado rinde cuentas');
+  {
+    const lv = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'lamina-vonmises.ts'));
+    const e8x = ed.estacion8Dado(e2.pkg, dC);
+    const e10x = ed.estacion10Dado(e2.pkg, dC, e8x.circuito);
+    const e11 = ed.estacion11Dado(e2.pkg, dC, e8x.circuito, e10x);
+    check('E11 · ORÁCULO R79: K a 1.5⌀ = 3.40 EXACTO (el FEA impreso del libro)',
+      Math.abs(lv.kBarrenoLibro(1, 1.5) - 3.4) < 0.005, `${lv.kBarrenoLibro(1, 1.5).toFixed(3)} vs "3.4" impreso`);
+    // ORÁCULO R75: el pilar del libro — UNA F inferida, DOS diámetros impresos
+    const F75 = 297e6 * Math.PI * (37.5e-3 / 2) ** 2;
+    const s50 = F75 / (Math.PI * (50e-3 / 2) ** 2) / 1e6;
+    check('E11 · ORÁCULO R75: pilar ⌀37.5→297 MPa y ⌀50→167 (consistencia DOBLE, F inferida)',
+      Math.abs(s50 - 167) < 1.5, `F=${(F75 / 1e3).toFixed(0)} kN ⇒ ⌀50 → ${s50.toFixed(1)} MPa (libro: 167)`);
+    check('E11 · R70 la ALARMA MAESTRA: δ del soporte < EL VENTEO DE LA E7 (flashOk, lazo cableado)',
+      e11.soporte.flashOk && e11.soporte.deltaMm < e11.soporte.ventGapMm && Math.abs(e11.soporte.ventGapMm - 0.02) < 1e-9,
+      `δ ${e11.soporte.deltaMm} < ${e11.soporte.ventGapMm} mm (ventGap del motor == vent h de la E7) · ${e11.soporte.nPillars} pilares`);
+    check('E11 · K de NUESTROS barrenos: agua-A y baffle CUMPLEN fatiga+sobrepresión; el pin es R81 (ADVIERTE honesto)',
+      e11.barrenos[0].fatigaOk && e11.barrenos[0].yieldOk && e11.barrenos[1].fatigaOk && e11.barrenos[1].yieldOk
+        && e11.barrenos[2].r81 === true && e11.barrenos[2].K > 10
+        && e11.filas.find((f) => f.id === 'k-pin').estado === 'ADVIERTE',
+      `agua-A K ${e11.barrenos[0].K} σ ${e11.barrenos[0].sigmaEsperadaMPa}<456 · baffle K ${e11.barrenos[1].K} · pin K ${e11.barrenos[2].K} → R81: la grieta se frena en el pin, el riesgo es binding`);
+    check('E11 · HOOP del macho: doble veredicto (fatiga@39 + yield@200) y regla P20',
+      e11.hoop.fatigaOk && e11.hoop.yieldOk && e11.hoop.reglaP20Ok && e11.hoop.huecoMaxMm > e11.hoop.boreMm,
+      `${e11.hoop.sigmaEsperada}/${e11.hoop.sigmaSobre} MPa · hueco máx ${e11.hoop.huecoMaxMm} ≫ bore ${e11.hoop.boreMm}`);
+    check('E11 · R90: los TRES veredictos independientes en verde y la E3 NO se reabre',
+      e11.r90.yieldOk && e11.r90.fatigaOk && e11.r90.flashOk && !e11.retornoE3.reabre,
+      `sobrepresión ✓ fatiga ✓ flash ✓ · soporte ${e11.retornoE3.soporteStackMm} == ${e11.retornoE3.soportePkgMm} mm`);
+    // CONTROL NEGATIVO R69: la trampa del aluminio — sin ciclos NO hay σ_limit
+    const qc7 = lv.limiteMaterial('QC7');
+    const qc7M = lv.limiteMaterial('QC7', 1e6);
+    check('E11 · CONTROL NEGATIVO (trampa R69): QC7 sin ciclos = SIN límite de fatiga; a 1M cae a 170',
+      qc7.sinLimiteFatiga === true && qc7.sigmaLimitMPa == null && qc7M.sigmaLimitMPa === 170,
+      `"[aluminum alloys] do not exhibit an endurance stress limit" · a 1M ciclos: ${qc7M.sigmaLimitMPa} MPa — el veredicto DISTINGUE`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

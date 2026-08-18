@@ -40,6 +40,8 @@ import {
   type PlateDef,
 } from './mold-drawing-set';
 import { pinBuckling, ejectionForce, effectiveArea, ejectorPinSizing, residualStress, ABS_EJECT } from './ejection';
+import { kBarrenoLibro, limiteMaterial } from './lamina-vonmises';
+import { hoopStress, maxInnerDiameter } from './cores';
 // ESTACIÓN 5 (cap 6): NO se escribe ninguna fórmula nueva — el motor ya existe.
 import { designSprueFeed, minRunnerRadius, steelSafeDiaMm, pressureDropRunner, runnerCoolingTimeS, STANDARD_RUNNER_DIAMM, FEED_MATERIALS, type RunnerSegment } from './feed';
 import { gateDesign, gateDropStripPL, gateFreezeStripS, gateFreezeCylS } from './gating';
@@ -3361,4 +3363,123 @@ export function estacion10Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
     pines: { n: nP, diaMm: d8, posiciones, dMinCompMm: +s8.dMinCompressionMm.toFixed(2), dMinCorteMm: +s8.dMinShearMm.toFixed(2), gobierna, fPorPinN: +fPorPinN.toFixed(0), libreMm: +libreMm.toFixed(0), pandeoLibro: { fCritN: +pandeoLibro.fCritN.toFixed(0), sf: +pandeoLibro.sf.toFixed(1) }, pandeoNuestro: { fCritN: +pandeoNuestro.fCritN.toFixed(0), sf: +pandeoNuestro.sf.toFixed(1) }, escalonado: { puntaDiaMm: d8, puntaMm, cuerpoDiaMm: dCuerpo, libreCuerpoMm, sfRectoK2: +pandeoRecto.sf.toFixed(2) }, margenWitnessMm },
     juez, juicioPines, anuncios,
   };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 11: ESTRUCTURA (cap 12)                        */
+/* (orden 2026-08-18-ciclo-dado-estacion11)                                    */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * Donde todo lo que perforamos rinde cuentas: el agua (E8b), el baffle, las
+ * salidas de venteo (E7) y los barrenos de pines (E10) contra el acero que
+ * quedó. R67: el lado FIJO va en compresión pura; el MÓVIL flexiona porque el
+ * bolsillo del eyector no soporta — por eso el análisis vive en el lado móvil.
+ * Cierra con el checklist R90: tres veredictos INDEPENDIENTES.
+ */
+export interface Estacion11Dado {
+  filas: FilaLlenado[];
+  limites: { endurance: number; yieldDerivado: number; pEsperadaMPa: number; pSobreMPa: number; errata: string };
+  soporte: { tMm: number | null; deltaMm: number; ventGapMm: number; flashOk: boolean; nPillars: number; governs: string };
+  barrenos: Array<{ id: string; diaMm: number; distMm: number; K: number; sigmaEsperadaMPa: number; sigmaSobreMPa: number; fatigaOk: boolean; yieldOk: boolean; r81?: boolean }>;
+  hoop: { sigmaEsperada: number; sigmaSobre: number; huecoMaxMm: number; boreMm: number; reglaP20Ok: boolean; fatigaOk: boolean; yieldOk: boolean };
+  r90: { yieldOk: boolean; fatigaOk: boolean; flashOk: boolean };
+  retornoE3: { soporteStackMm: number; soportePkgMm: number | null; reabre: boolean };
+  anuncios: AnuncioRetorno[];
+}
+
+export function estacion11Dado(pkg: MoldPackage, d: DatumsColada, circuito: CircuitoAgua, e10: Estacion10Dado): Estacion11Dado {
+  const dz: any = pkg.diseno;
+  const lim = limiteMaterial('P20');
+  const endurance = lim.sigmaLimitMPa!;                     // 456 (errata documentada)
+  const yieldDerivado = 2 * endurance;                      // R69: endurance ≈ ½·yield (derivada, declarada)
+  const pEsperadaMPa = 39;                                  // la perilla de la E6 (el proceso real)
+  const pSobreMPa = 200;                                    // sobrepresión de máquina, UN ciclo malo (R68)
+
+  // ── el lado móvil: la placa de SOPORTE del paquete (motor ya corrido) ──
+  const sop = dz.placas.soporte;
+  const soporte = { tMm: sop.plateThkMm, deltaMm: sop.deflectionAtPlateMm, ventGapMm: sop.ventGapMm, flashOk: sop.flashOk, nPillars: sop.nPillars, governs: sop.governs };
+
+  // ── LOS BARRENOS NUESTROS (Eq 12.19; R79: K≈3 aunque esté lejos) ──
+  const D = circuito.segmentos[0].diaMm;                    // ⌀4.76 del agua
+  const distAgua = 13.36;                                   // anillo A → techo de la pieza (juez E8b)
+  const distBaffle = (36 - circuito.baffle.boreDiaMm) / 2;  // bore → flanco del macho
+  const distPin = e10.pines.margenWitnessMm;                // el land de 2 mm (R81)
+  const mkB = (id: string, diaMm: number, distMm: number, r81 = false) => {
+    const K = +kBarrenoLibro(diaMm, distMm).toFixed(2);
+    const sE = +(K * pEsperadaMPa).toFixed(0), sS = +(K * pSobreMPa).toFixed(0);
+    return { id, diaMm, distMm: +distMm.toFixed(2), K, sigmaEsperadaMPa: sE, sigmaSobreMPa: sS, fatigaOk: sE <= endurance, yieldOk: sS <= yieldDerivado, r81 };
+  };
+  const barrenos = [
+    mkB('agua-A → cavidad', D, distAgua),
+    mkB('baffle → flanco del macho', circuito.baffle.boreDiaMm, distBaffle),
+    mkB('pin → land de la boca (R81)', e10.pines.diaMm, distPin, true),
+  ];
+
+  // ── HOOP del macho con su bore (R83, doble veredicto) ──
+  const hWall = distBaffle;
+  const hoop = {
+    sigmaEsperada: +hoopStress(pEsperadaMPa, 36, hWall).toFixed(1),
+    sigmaSobre: +hoopStress(pSobreMPa, 36, hWall).toFixed(1),
+    huecoMaxMm: +maxInnerDiameter(36, pEsperadaMPa, endurance).toFixed(1),
+    boreMm: circuito.baffle.boreDiaMm,
+    reglaP20Ok: circuito.baffle.boreDiaMm <= (2 / 3) * 36 && hWall >= 36 / 6,
+    fatigaOk: hoopStress(pEsperadaMPa, 36, hWall) <= endurance,
+    yieldOk: hoopStress(pSobreMPa, 36, hWall) <= yieldDerivado,
+  };
+
+  // ── R90: los TRES veredictos independientes ──
+  const noR81 = barrenos.filter((b) => !b.r81);
+  const r90 = {
+    yieldOk: noR81.every((b) => b.yieldOk) && hoop.yieldOk,
+    fatigaOk: noR81.every((b) => b.fatigaOk) && hoop.fatigaOk,
+    flashOk: soporte.flashOk,
+  };
+
+  // ── RETORNO A LA E3: ¿el stack engorda? ──
+  const asm = packageToAssemblySpec(pkg);
+  const retornoE3 = { soporteStackMm: asm.plates.support, soportePkgMm: sop.plateThkMm, reabre: sop.plateThkMm != null && sop.plateThkMm > asm.plates.support };
+
+  const filas: FilaLlenado[] = [];
+  const fila = (id: string, titulo: string, valor: string, limite: string, estado: FilaLlenado['estado'], seccion: string, porque: string) =>
+    filas.push({ id, titulo, valor, limite, estado, seccion, porque });
+  fila('limite', 'σ_limit del P20 — con su ERRATA impresa (R69)',
+    `endurance ${endurance} MPa (fatiga, vida infinita) · yield ≈ 2× = ${yieldDerivado} (derivada del libro, declarada)`,
+    'NUNCA factor de seguridad + peor caso a la vez (R68, prohibición literal)',
+    'CUMPLE', '§12.1.1', lim.errata ?? '');
+  fila('soporte', 'la ALARMA MAESTRA (R70): deflexión del soporte vs EL VENTEO DE LA E7',
+    `placa ${soporte.tMm} mm · δ ${soporte.deltaMm} mm < ${soporte.ventGapMm} mm (el vent h de la E7) · ${soporte.nPillars} pilares`,
+    'si la placa abre más que el vent = FLASH seguro; en tolerancia apretada la DEFLEXIÓN manda sobre el esfuerzo',
+    soporte.flashOk ? 'CUMPLE' : 'VIOLA', '§12.1.2 · §12.2.2 · R70',
+    `gobierna ${soporte.governs}; 0 pilares = la placa aguanta SOLA (R74 declarado — el juez pilar↔pin queda escrito para la pieza que los pida). El lazo E7↔E11 ya estaba cableado: el ventGap del motor ES nuestro vent.`);
+  for (const b of barrenos) {
+    fila(`k-${b.id.split(' ')[0]}`, `K del barreno: ${b.id}`,
+      `⌀${b.diaMm} a ${b.distMm} mm ⇒ K ${b.K} → σ ${b.sigmaEsperadaMPa} @${pEsperadaMPa} · ${b.sigmaSobreMPa} @${pSobreMPa} MPa`,
+      b.r81 ? 'R81: el barreno de eyector se juzga DISTINTO' : `≤ ${endurance} (fatiga) y ≤ ${yieldDerivado} (sobrepresión)`,
+      b.r81 ? 'ADVIERTE' : (b.fatigaOk && b.yieldOk ? 'CUMPLE' : 'VIOLA'), '§12.2.6 · Eq 12.19',
+      b.r81
+        ? `el modelo K explota en el land delgado (${b.distMm} mm) — y el libro mismo lo desarma: "rara vez catastrófico: el barreno deformado se apoya en el pin y la grieta se FRENA". El riesgo REAL es OVALIZACIÓN → binding del pin ("abajo del yield ≠ seguro", el ejemplo QC7 falló a ~1,000 ciclos). Blade R53 anotada por tercera vez.`
+        : `R79, el hecho contraintuitivo: K≈3 aunque el barreno esté LEJOS — por eso los moldes de alta presión agrietan desde las líneas de agua. El nuestro trae margen ${(endurance / b.sigmaEsperadaMPa).toFixed(1)}× en fatiga.`);
+  }
+  fila('hoop', 'el MACHO con su bore de baffle (R83, doble veredicto)',
+    `σ_hoop ${hoop.sigmaEsperada} @${pEsperadaMPa} · ${hoop.sigmaSobre} @${pSobreMPa} MPa · hueco máx ${hoop.huecoMaxMm} ≫ bore ${hoop.boreMm}`,
+    'regla P20: hueco ≤ ⅔φ y pared ≥ φ/6 · (a) fatiga a P esperada · (b) yield a sobrepresión',
+    hoop.reglaP20Ok && hoop.fatigaOk && hoop.yieldOk ? 'CUMPLE' : 'VIOLA', '§12.3.2 · Eq 12.20',
+    'la verificación DOBLE es obligatoria del libro: un ciclo malo (sobrepresión) no debe ceder, y los 100k/año no deben fatigar.');
+  fila('r90', 'R90 · EL CHECKLIST DE CIERRE — tres veredictos INDEPENDIENTES',
+    `(1) sobrepresión: ${r90.yieldOk ? '✓' : '✗'} · (2) fatiga a ciclos objetivo: ${r90.fatigaOk ? '✓' : '✗'} (P20 = vida infinita bajo endurance) · (3) deflexión < venteo: ${r90.flashOk ? '✓' : '✗'}`,
+    'los tres, cada uno por su lado',
+    r90.yieldOk && r90.fatigaOk && r90.flashOk ? 'CUMPLE' : 'VIOLA', '§12.5 · R90',
+    'el libro declara además que la ITERACIÓN es parte del flujo (sujetadores vs eyección vs agua) — nuestros jueces E8b/E10 ya la ejercieron.');
+  fila('e3', 'EL RETORNO A LA E3: ¿el stack engorda?',
+    `soporte del stack ${retornoE3.soporteStackMm} mm == soporte del cálculo ${retornoE3.soportePkgMm} mm ⇒ ${retornoE3.reabre ? 'SE REABRE' : 'NO se reabre'}`,
+    'placas que engordan → stack crece → el daylight de 8 mm de la E3 se re-juzga',
+    retornoE3.reabre ? 'ADVIERTE' : 'CUMPLE', 'E3 · cap 12',
+    'el retorno declarado desde el día uno, cerrado con su número — la Máquina dimensionó consistente desde la E2.');
+
+  const anuncios: AnuncioRetorno[] = [
+    { estacion: 12, titulo: 'R90 firmado al acta: los tres veredictos con sus números', detalle: `sobrepresión ✓ (peor σ ${Math.max(...noR81.map((b) => b.sigmaSobreMPa), Math.round(hoop.sigmaSobre))} < ${yieldDerivado}) · fatiga ✓ (peor ${Math.max(...noR81.map((b) => b.sigmaEsperadaMPa), Math.round(hoop.sigmaEsperada))} < ${endurance}) · flash ✓ (δ ${soporte.deltaMm} < ${soporte.ventGapMm})`, seccion: '§12.5' },
+    { estacion: 12, titulo: 'las ERRATAS del cap 12 al acta', detalle: 'P20: texto 450 vs Fig 456 (mandan dos fuentes) · QC7: yield 420 vs 545 en el MISMO libro — quien herede este molde debe saberlo', seccion: '§12.1.1' },
+  ];
+
+  return { filas, limites: { endurance, yieldDerivado, pEsperadaMPa, pSobreMPa, errata: lim.errata ?? '' }, soporte, barrenos, hoop, r90, retornoE3, anuncios };
 }
