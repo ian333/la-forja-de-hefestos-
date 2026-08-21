@@ -554,7 +554,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -623,6 +623,30 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 10 && ciclo.e10 && <CicloE10 e10={ciclo.e10} onE11={cicloEstacion11} />}
       {ciclo.estacion === 11 && ciclo.e11 && <CicloE11 e11={ciclo.e11} onE12={cicloEstacion12} />}
       {ciclo.estacion === 12 && ciclo.e12 && <CicloE12 acta={ciclo.e12} />}
+      {/* ▶ EL CICLO COMPLETO — caza de ian: "en prod no hay manera de animar esto".
+          El ▶ del árbol solo ABRE y EXPULSA; el LLENADO vivía nada más en
+          window.__forgeBrep, o sea que la máquina trabajando era del ARNÉS, no del
+          producto. Misma línea de tiempo que el video: llenar → abrir → expulsar. */}
+      {ciclo.frenteGrid && (
+        <div style={{ padding: '6px 6px 2px' }}>
+          <button className="fb-fea-run" data-testid="btn-ciclo-play" onClick={cicloPlayToggle}
+            style={{ width: '100%', background: cicloPlaying ? 'rgba(244,210,122,0.16)' : undefined,
+              borderColor: cicloPlaying ? GOLD : undefined, color: cicloPlaying ? GOLD : undefined }}
+            title="El CICLO COMPLETO en tiempo real (12 s, en bucle): llena por la colada, empaca, abre la carrera del estudio y los pines expulsan la pieza. Vuelve a pulsar para soltar el molde.">
+            {cicloPlaying ? '⏸ PARAR EL CICLO' : '▶ VER EL CICLO COMPLETO (llenar · abrir · expulsar)'}
+          </button>
+          {cicloPlaying && (
+            <div data-testid="ciclo-play-prog" style={{ marginTop: 4 }}>
+              <div style={{ height: 4, background: '#1b2432', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${(cicloProg * 100).toFixed(1)}%`, background: GOLD }} />
+              </div>
+              <div style={{ fontSize: 10, color: GOLD, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                {cicloActo} · {(cicloProg * 100).toFixed(0)} %
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );

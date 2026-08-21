@@ -3517,7 +3517,7 @@ export default function ForgeBRepStudio() {
   // (paso 2.3 de la extracción). La llamada va AQUÍ (después de setDocName) porque
   // el hook la recibe como parámetro — moverla arriba = TDZ, el crash ya conocido.
   const mold = useMoldStudio({ oc, setCollapsed, setDocName });
-  const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
+  const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   const [libNames, setLibNames] = useState<string[]>([]);
   const refreshLib = useCallback(() => setLibNames(Object.keys(readLib()).sort()), []);
   const resolvedParams = useMemo<ResolvedParams>(() => resolveParams(params), [params]);
@@ -5788,12 +5788,9 @@ export default function ForgeBRepStudio() {
       // E10b: posición ANIMADA por rol — moldGeom lee geometría cruda (no la
       // animación), así que el juez del video mide por aquí
       animZ: (role: string) => (role === 'pieza' ? piezaEjectRef.current?.position.z : moldAnimRefs.current[role]?.position.z) ?? null,
-      llenadoT: (u: number) => {
-        const q = (ciclo as any)?.frenteQ as Float32Array | undefined;
-        const uu = Math.max(0, Math.min(1, u));
-        const t = q && q.length ? q[Math.min(q.length - 1, Math.floor(uu * (q.length - 1)))] : uu;
-        tFillRef.current = t; setTFill(t); return t;
-      },
+      // UNA sola fuente del mapeo por cuantil: `fillAt` (useMoldStudio). El botón
+      // PLAY de la UI y este arnés animan lo MISMO — dos copias se despegan.
+      llenadoT: (u: number) => fillAt(u),
       llenadoStats: () => {
         const f = (ciclo as any)?.frenteVert as Float32Array | undefined;
         if (!f) return null;

@@ -60,6 +60,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
 
   // caminar el ciclo hasta la estación 4 — o directo a LA PROBETA (PROBETA=1)
   const clic = async (id) => { await p.waitForSelector(`[data-testid="${id}"]`, { state: 'attached', timeout: 300000 }); await p.$eval(`[data-testid="${id}"]`, (e) => e.click()); };
+  if (process.env.PLAY === '1') process.env.E10 = '1';   // el PLAY necesita molde armado + campo de llenado
   if (process.env.E12 === '1') process.env.E11 = '1';
   if (process.env.E11 === '1') process.env.CICLO = '1';
   if (process.env.CICLO === '1') process.env.E10 = '1';
@@ -152,6 +153,71 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
     });
     console.log('ACTA en pantalla:', JSON.stringify(actaEnPantalla));
   }
+  // ── PLAY=1 · EL CICLO SE ANIMA EN PROD (orden 2026-08-21) ────────────────────
+  // No renderiza video: comprueba que el PRODUCTO anima solo. Aquí el arnés NO
+  // maneja nada — clickea el botón y mira el reloj de pared. Si esto pasa, un
+  // visitante de university.gaiaprime.com.mx ve la máquina trabajar sin consola.
+  if (process.env.PLAY === '1') {
+    const leer = () => p.evaluate(() => ({
+      zCav: window.__forgeBrep.animZ('cavidad'),
+      zPin: window.__forgeBrep.animZ('pin-punta-0'),
+      zPza: window.__forgeBrep.animZ('pieza'),
+      pct: (window.__forgeBrep.llenadoStats() || {}).pct ?? null,
+      manual: !!(document.querySelector('[data-testid="ciclo-play-prog"]')),
+    }));
+    const juicio = [];
+    const chk2 = (n, ok, d) => { juicio.push({ n, ok, d }); console.log(`  ${ok ? '✔' : '✘'} ${n} — ${d}`); };
+
+    // CONTROL NEGATIVO: sin tocar el botón, 2.5 s de reloj y NADA se mueve.
+    await p.evaluate(() => window.__forgeBrep.llenadoT(0));
+    const q0 = await leer(); await p.waitForTimeout(2500); const q1 = await leer();
+    const quieto = Math.abs((q1.zCav ?? 0) - (q0.zCav ?? 0)) < 0.5
+      && Math.abs((q1.pct ?? 0) - (q0.pct ?? 0)) < 0.5;
+    chk2('CONTROL NEGATIVO: sin pulsar, la escena está QUIETA (no hay residuo del arnés)',
+      quieto, `Δz ${((q1.zCav ?? 0) - (q0.zCav ?? 0)).toFixed(2)} mm · Δllenado ${((q1.pct ?? 0) - (q0.pct ?? 0)).toFixed(2)} %`);
+
+    await clic('btn-ciclo-play');
+    // muestrear un ciclo entero (12 s) contra el reloj de pared, sin manejar nada
+    const traza = [];
+    for (let i = 0; i < 48; i++) { await p.waitForTimeout(350); traza.push(await leer()); }
+    const maxPct = Math.max(...traza.map((t) => t.pct ?? 0));
+    const minPct = Math.min(...traza.map((t) => t.pct ?? 0));
+    const maxCav = Math.max(...traza.map((t) => t.zCav ?? 0));
+    const maxPin = Math.max(...traza.map((t) => t.zPin ?? 0));
+    const parEjecta = traza.filter((t) => (t.zPin ?? 0) > 40);
+    chk2('EL LLENADO corre SOLO (nadie maneja llenadoT)', minPct < 10 && maxPct > 95,
+      `llenado ${minPct.toFixed(1)} % → ${maxPct.toFixed(1)} % en 13 s de reloj`);
+    chk2('ABRE SOLO su carrera del estudio (§6.3.2)', maxCav > 90, `animZ(cavidad) máx = ${maxCav.toFixed(1)} mm`);
+    chk2('EXPULSA SOLO y la pieza viaja con los pines (cap 11)',
+      maxPin > 46 && parEjecta.length > 0 && parEjecta.every((t) => Math.abs((t.zPza ?? 0) - (t.zPin ?? 0)) < 1),
+      `animZ(pin) máx = ${maxPin.toFixed(1)} mm · ${parEjecta.length} muestras con la pieza pegada al pin`);
+    chk2('el ACTO se rotula en la UI (el usuario sabe qué está viendo)', traza.some((t) => t.manual),
+      'barra de progreso + rótulo del acto presentes durante el ciclo');
+    // ES UN CICLO, NO UNA RAMPA: después de abrir del todo, tiene que VOLVER a cerrar
+    // por sí solo. La primera versión saltaba de pieza-expulsada a molde-cerrado en un
+    // frame; en este proyecto el molde no es un pipeline, son ciclos.
+    const iAbierto = traza.findIndex((t) => (t.zCav ?? 0) > 90);
+    const cierraSolo = iAbierto >= 0 && traza.slice(iAbierto + 1).some((t) => (t.zCav ?? 99) < 10);
+    chk2('ES UN CICLO: retrae y CIERRA solo (no una rampa que se rebobina)', cierraSolo,
+      iAbierto < 0 ? 'nunca abrió' : `abre en la muestra ${iAbierto} y vuelve a cerrar sin que nadie lo toque`);
+
+    // PARAR debe SOLTAR el molde (si no, queda secuestrado en la última pose)
+    await clic('btn-ciclo-play');
+    await p.waitForTimeout(400);
+    const libre = await p.evaluate(() => {
+      window.__moldOpen(0, 0);                      // si el manual quedó tomado, esto no manda
+      return new Promise((r) => setTimeout(() => r(window.__forgeBrep.animZ('cavidad')), 400));
+    });
+    chk2('al PARAR, el molde queda LIBRE (control manual soltado)', Math.abs(libre ?? 99) < 1,
+      `animZ(cavidad) tras soltar y mandar 0 = ${(libre ?? -1).toFixed(2)} mm`);
+
+    const ok = juicio.every((j) => j.ok);
+    console.log(`\n${ok ? '✅' : '❌'} PLAY EN PROD ${ok ? 'APROBADO' : 'REPROBADO'} — ${juicio.filter((j) => j.ok).length}/${juicio.length}`);
+    console.log(`VERIFY_RESULT={"pass":${ok},"checks":${juicio.length}}`);
+    await browser.close();
+    process.exit(ok ? 0 : 1);
+  }
+
   // ── captura: el frente avanza de 0 a 1 — o EL CICLO COMPLETO (E10b) ──
   // CICLO=1: 3 actos — llenar (0..55 %), abrir (62..82 %), expulsar (84..100 %).
   // ian: "nunca los veo funcionando" — la máquina TRABAJANDO, por fin.

@@ -112,6 +112,8 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // solo ve una página muerta y le da Ctrl+Shift+R (freeze del 2026-07-24).
   const [moldBuilding, setMoldBuilding] = useState(false);
   const [moldHidden, setMoldHidden] = useState<Record<string, boolean>>({});
+  const cicloRef = useRef<any>(null);   // espejo de `ciclo` para clausuras estables
+  useEffect(() => { cicloRef.current = ciclo; }, [ciclo]);
   const [moldOpacity, setMoldOpacity] = useState<Record<string, number>>({});
   const [moldSelected, setMoldSelected] = useState<string | null>(null);   // componente resaltado desde el árbol
   const [moldHover, setMoldHover] = useState<string | null>(null);         // placa bajo el cursor en 3D (feedback de pick)
@@ -121,6 +123,80 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   const moldAnimRefs = useRef<Record<string, THREE.Group | null>>({});
   const moldOpenRef = useRef<{ on: boolean; manual: number | null; manualE: number | null; t0: number }>({ on: false, manual: null, manualE: null, t0: 0 });
   const [moldOpenOn, setMoldOpenOn] = useState(false);
+
+  // ── EL CICLO SE ANIMA EN PROD (orden 2026-08-21) ────────────────────────────
+  // Caza de ian: "en prod no hay manera de animar esto". Era cierto — el ▶ viejo
+  // solo ABRÍA y EXPULSABA, y el LLENADO existía nada más en
+  // `window.__forgeBrep.llenadoT()`, o sea que la máquina trabajando era una
+  // capacidad del ARNÉS de video, no del producto. Aquí se vuelve producto.
+
+  /** u = fracción de VOLUMEN (0..1) → umbral del frente, por CUANTIL. Vivía dentro
+   *  de `llenadoT` en el studio; se sube aquí para que el botón y el arnés de video
+   *  animen EXACTAMENTE lo mismo (una sola fuente, no dos copias que se despeguen). */
+  //  ⚠ ESTABLE A PROPÓSITO (deps []): `window.__forgeBrep` se arma en un efecto cuya
+  //  lista de deps NO incluye `ciclo` — el `llenadoT` viejo leía un `ciclo` rancio y
+  //  funcionaba DE SUERTE (cada estación cambia `docName`, que sí está en las deps, y
+  //  eso rearmaba la API). Con el ref no depende de esa casualidad.
+  const fillAt = useCallback((u: number) => {
+    const q = (cicloRef.current as any)?.frenteQ as Float32Array | undefined;
+    const uu = Math.max(0, Math.min(1, u));
+    const t = q && q.length ? q[Math.min(q.length - 1, Math.floor(uu * (q.length - 1)))] : uu;
+    tFillRef.current = t; setTFill(t); return t;
+  }, []);
+
+  const [cicloPlaying, setCicloPlaying] = useState(false);
+  const [cicloProg, setCicloProg] = useState(0);
+  const cicloRafRef = useRef<number | null>(null);
+  const cicloT0Ref = useRef(0);
+  /** LA MISMA línea de tiempo del video (llenado-video.cjs, CICLO=1): llenar
+   *  0–55 % · abrir 62–82 % · expulsar 84–100 %. Si esto se despega, el video y el
+   *  producto cuentan historias distintas. */
+  const CICLO_DUR_S = 14;
+  /** UN CICLO CERRADO, no una rampa que se rebobina. El primer intento acababa con la
+   *  pieza expulsada y SALTABA a molde-cerrado-vacío en un frame: eso no es un ciclo,
+   *  y este proyecto entero se para sobre que el molde NO es un pipeline. La máquina
+   *  real retrae los pines y CIERRA para volver a disparar (el ▶ viejo ya lo hacía;
+   *  lo que le faltaba era el LLENADO). El video muestra un solo paso —llenar, abrir,
+   *  expulsar— porque un video termina; el producto tiene que dar la vuelta. */
+  const cicloFases = useCallback((u: number) => {
+    const suave = (x: number) => x * x * (3 - 2 * x);
+    const rampa = (a: number, b: number) => suave(Math.max(0, Math.min(1, (u - a) / (b - a))));
+    const fill = u < 0.45 ? Math.min(1, u / 0.45) : u < 0.90 ? 1 : 0;   // al cerrar, cavidad vacía otra vez
+    const open = u < 0.55 ? 0 : u < 0.94 ? rampa(0.55, 0.72) : 1 - rampa(0.94, 1.0);
+    const eject = u < 0.72 ? 0 : u < 0.90 ? rampa(0.72, 0.84) : 1 - rampa(0.90, 0.94);
+    return { fill, open, eject };
+  }, []);
+  const cicloActo = cicloProg < 0.45 ? 'LLENANDO' : cicloProg < 0.55 ? 'EMPACANDO · ENFRIANDO'
+    : cicloProg < 0.72 ? 'ABRIENDO' : cicloProg < 0.84 ? 'EXPULSANDO'
+    : cicloProg < 0.90 ? 'PIEZA FUERA' : cicloProg < 0.94 ? 'RETRAYENDO' : 'CERRANDO';
+
+  const cicloPlayStop = useCallback(() => {
+    if (cicloRafRef.current != null) cancelAnimationFrame(cicloRafRef.current);
+    cicloRafRef.current = null;
+    // SOLTAR el control manual: si no, el molde queda secuestrado en la última
+    // pose y el ▶ de apertura (y el arrastre del usuario) dejan de responder.
+    moldOpenRef.current.manual = null; moldOpenRef.current.manualE = null;
+    setCicloPlaying(false);
+  }, []);
+
+  const cicloPlayToggle = useCallback(() => {
+    if (cicloRafRef.current != null) { cicloPlayStop(); return; }
+    cicloT0Ref.current = performance.now();
+    setCicloPlaying(true);
+    const paso = () => {
+      const u = ((performance.now() - cicloT0Ref.current) / 1000 / CICLO_DUR_S) % 1;
+      const { fill, open, eject } = cicloFases(u);
+      fillAt(fill);
+      moldOpenRef.current.manual = open;
+      moldOpenRef.current.manualE = eject;
+      setCicloProg(u);
+      cicloRafRef.current = requestAnimationFrame(paso);
+    };
+    cicloRafRef.current = requestAnimationFrame(paso);
+  }, [cicloFases, fillAt, cicloPlayStop]);
+
+  // el lazo NO debe sobrevivir al desmontaje (rAF huérfano = fuga + molde secuestrado)
+  useEffect(() => () => { if (cicloRafRef.current != null) cancelAnimationFrame(cicloRafRef.current); }, []);
   const moldMoveRef = useRef<THREE.Group>(null);                            // grupo que arrastra el gizmo
   const [moldColors, setMoldColors] = useState<Record<string, string>>({});  // color por componente (override del usuario)
   // NUBE DE ALARMA: puntos ROJOS exactamente donde dos sólidos comparten acero — se ve
@@ -1528,5 +1604,5 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // props de los paneles — con moldParts (Float32Arrays de millones) eso es el
   // main thread muerto. Cazado con Debugger.pause el 2026-07-27.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => ({ moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
+  return useMemo(() => ({ moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity }), [moldSim, moldThermalSim, liveCotas, loadFeedDemo, feedDemo, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, moldPkg, setMoldPkg, ciclo, loadDado, loadProbeta, loadEspiral, loadEspiralN2, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity]);
 }
