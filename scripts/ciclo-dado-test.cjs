@@ -1120,6 +1120,29 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `"[aluminum alloys] do not exhibit an endurance stress limit" · a 1M ciclos: ${qc7M.sigmaLimitMPa} MPa — el veredicto DISTINGUE`);
   }
 
+  // ══ ESTACIÓN 12 — EL ACTA (orden 2026-08-18-ciclo-dado-estacion12) ══
+  console.log('── E12 · EL ACTA (§13.10) — el cubo se firma');
+  {
+    const acta = ed.estacion12Dado(e2.pkg, dC);
+    check('E12 · EL ACTA FIRMA con las 11 estaciones (R92: aprobadas y documentadas)',
+      acta.veredicto === 'FIRMADO' && acta.faltantes.length === 0,
+      `${acta.conteo.estaciones} estaciones · ${acta.decisiones.length} decisiones · ${acta.conteo.checksGate} checks`);
+    check('E12 · LA ARQUITECTURA con los DOS números (el dinero decide, no la opinión)',
+      acta.decisiones[0].id === 'arquitectura' && acta.decisiones[0].beneficio.includes('$0.423') && acta.decisiones[0].beneficio.includes('$1.162'),
+      acta.decisiones[0].decision + ' — con PLAN B frío documentado');
+    check('E12 · toda decisión lleva costo/beneficio/riesgo/responsable (R92 literal)',
+      acta.decisiones.length >= 6 && acta.decisiones.every((x) => x.costo && x.beneficio && x.riesgo && x.responsable && x.seccion),
+      `${acta.decisiones.length} decisiones, todas firmadas`);
+    check('E12 · los RETORNOS CERRADOS contados (ciclos, no pipeline — el mandato de ian)',
+      acta.retornosCerrados.length >= 8, `${acta.retornosCerrados.length}: ${acta.retornosCerrados.map((r) => r.de + '→' + r.a).join(' · ')}`);
+    check('E12 · tryout steel-safe R119 (≥5 pasos) + erratas del libro (≥5) + pendientes DECLARADOS',
+      acta.tryout.length >= 5 && acta.erratas.length >= 5 && acta.pendientes.length >= 3,
+      `tryout ${acta.tryout.length} · erratas ${acta.erratas.length} · pendientes ${acta.pendientes.length}`);
+    check('E12 · CONTROL NEGATIVO: el acta NO firma huecos (sin E10 ⇒ INCOMPLETO)',
+      ed.estacion12Dado(e2.pkg, dC, { omitir: 'e10' }).veredicto === 'INCOMPLETO',
+      'un acta con estaciones faltantes se declara INCOMPLETA — no se firma lo que no se hizo');
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

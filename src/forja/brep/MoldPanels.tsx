@@ -554,7 +554,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11 } = mold;
+  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12 } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -621,7 +621,8 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
       {ciclo.estacion === 9 && ciclo.e9 && <CicloE9 e9={ciclo.e9} onE10={cicloEstacion10} />}
       {ciclo.estacion === 10 && ciclo.e10 && <CicloE10 e10={ciclo.e10} onE11={cicloEstacion11} />}
-      {ciclo.estacion === 11 && ciclo.e11 && <CicloE11 e11={ciclo.e11} />}
+      {ciclo.estacion === 11 && ciclo.e11 && <CicloE11 e11={ciclo.e11} onE12={cicloEstacion12} />}
+      {ciclo.estacion === 12 && ciclo.e12 && <CicloE12 acta={ciclo.e12} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
     </>
   );
@@ -1310,7 +1311,7 @@ function CicloE10({ e10, onE11 }: { e10: import('../mold/estudio-molde-datos').E
 
 /** Estación 11 — ESTRUCTURA (cap 12). Los K de NUESTROS barrenos, la alarma
  *  maestra de deflexión-vs-venteo, el hoop del macho y el checklist R90. */
-function CicloE11({ e11 }: { e11: import('../mold/estudio-molde-datos').Estacion11Dado }) {
+function CicloE11({ e11, onE12 }: { e11: import('../mold/estudio-molde-datos').Estacion11Dado; onE12?: () => void }) {
   const COL: Record<string, string> = { CUMPLE: '#7ee0a0', ADVIERTE: '#f4d27a', VIOLA: '#f27a6c' };
   return (
     <>
@@ -1342,6 +1343,58 @@ function CicloE11({ e11 }: { e11: import('../mold/estudio-molde-datos').Estacion
           ))}
         </div>
       )}
+      {onE12 && (
+        <button className="fb-fea-run" data-testid="btn-ciclo-e12" onClick={() => onE12()} style={{ margin: '4px 6px 6px' }}
+          title="EL ACTA (§13.10): las decisiones aprobadas y documentadas — el cubo se firma">
+          ✍ estación 12 — EL ACTA: firmar el molde
+        </button>
+      )}
+    </>
+  );
+}
+
+/** Estación 12 — EL ACTA (§13.10). R92: decisiones con costo/beneficio/riesgo
+ *  y responsable · retornos cerrados · tryout steel-safe (R119) · erratas. */
+function CicloE12({ acta }: { acta: import('../mold/estudio-molde-datos').ActaDado }) {
+  const ok = acta.veredicto === 'FIRMADO';
+  return (
+    <>
+      <div data-testid="e12-veredicto" style={{ margin: '4px 6px', padding: '7px 9px', background: ok ? '#12281c' : '#3a1414', border: `2px solid ${ok ? '#7ee0a0' : '#f27a6c'}`, borderRadius: 6, fontSize: 12, fontWeight: 800, color: ok ? '#7ee0a0' : '#f27a6c', textAlign: 'center' }}>
+        {ok ? `✍ EL ACTA — FIRMADO · el molde del dado está CERRADO` : `ACTA INCOMPLETA — faltan: ${acta.faltantes.join(', ')}`}
+      </div>
+      {ok && (<>
+        <div style={{ fontSize: 10, color: '#8fa1b8', padding: '0 8px 4px', textAlign: 'center' }}>
+          {acta.conteo.estaciones} estaciones · {acta.conteo.checksGate} checks del gate · {acta.retornosCerrados.length} retornos cerrados · {acta.erratas.length} erratas cazadas
+        </div>
+        {acta.decisiones.map((dd, k) => (
+          <div key={k} data-testid={`e12-decision-${dd.id}`} style={{ margin: '3px 6px', padding: '5px 7px', background: '#141a22', borderRadius: 6, borderLeft: '3px solid #9fd0f4' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: '#dfe8f4' }}>{dd.titulo}</div>
+            <div style={{ fontSize: 10.5, color: '#a8e07e' }}>{dd.decision}</div>
+            <div style={{ fontSize: 10, color: '#a8bad0' }}>costo: {dd.costo}</div>
+            <div style={{ fontSize: 10, color: '#a8bad0' }}>beneficio: {dd.beneficio}</div>
+            <div style={{ fontSize: 10, color: '#f4d27a' }}>riesgo: {dd.riesgo}</div>
+            <div style={{ fontSize: 10, color: '#6f8199' }}>firma: {dd.responsable} · {dd.seccion}</div>
+          </div>
+        ))}
+        <div style={{ margin: '3px 6px', padding: '5px 7px', background: '#12202b', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9fd0f4' }}>⟲ LOS RETORNOS CERRADOS (ciclos, no pipeline)</div>
+          {acta.retornosCerrados.map((r, k) => (
+            <div key={k} style={{ fontSize: 10, color: '#a8bad0', marginTop: 2 }}>· {r.de}→{r.a}: {r.historia}</div>
+          ))}
+        </div>
+        <div style={{ margin: '3px 6px', padding: '5px 7px', background: '#1b2416', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#a8e07e' }}>PLAN DE TRYOUT steel-safe (R119: "especifica corto, prueba, crece")</div>
+          {acta.tryout.map((t, k) => (<div key={k} style={{ fontSize: 10, color: '#c8d8a8', marginTop: 2 }}>{k + 1}. {t}</div>))}
+        </div>
+        <div style={{ margin: '3px 6px', padding: '5px 7px', background: '#241a10', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>ERRATAS DEL LIBRO cazadas (quien herede el molde debe saberlas)</div>
+          {acta.erratas.map((e, k) => (<div key={k} style={{ fontSize: 10, color: '#e0c98a', marginTop: 2 }}>· {e}</div>))}
+        </div>
+        <div style={{ margin: '3px 6px 8px', padding: '5px 7px', background: '#1a1522', borderRadius: 6 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#c8a8e0' }}>PENDIENTES DECLARADOS (un hueco declarado vale más que un número inventado)</div>
+          {acta.pendientes.map((pp, k) => (<div key={k} style={{ fontSize: 10, color: '#b8a8d0', marginTop: 2 }}>· {pp}</div>))}
+        </div>
+      </>)}
     </>
   );
 }

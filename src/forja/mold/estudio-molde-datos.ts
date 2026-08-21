@@ -3483,3 +3483,143 @@ export function estacion11Dado(pkg: MoldPackage, d: DatumsColada, circuito: Circ
 
   return { filas, limites: { endurance, yieldDerivado, pEsperadaMPa, pSobreMPa, errata: lim.errata ?? '' }, soporte, barrenos, hoop, r90, retornoE3, anuncios };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CICLO DEL DADO — estación 12: EL ACTA (§13.10) — SE FIRMA EL CUBO        */
+/* (orden 2026-08-18-ciclo-dado-estacion12)                                    */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/**
+ * R92 literal: "las decisiones críticas se APRUEBAN y DOCUMENTAN entre todas
+ * las partes con entendimiento común de costos, beneficios y riesgos". Esta
+ * estación no calcula — COBRA: re-corre los motores puros y junta once
+ * estaciones en UN documento con plan de tryout steel-safe (R119: "especifica
+ * corto, prueba, crece"). Un acta con huecos NO firma.
+ */
+export interface DecisionActa { id: string; titulo: string; decision: string; costo: string; beneficio: string; riesgo: string; responsable: string; seccion: string }
+export interface ActaDado {
+  veredicto: 'FIRMADO' | 'INCOMPLETO';
+  faltantes: string[];
+  decisiones: DecisionActa[];
+  retornosCerrados: Array<{ de: string; a: string; historia: string }>;
+  tryout: string[];
+  pendientes: string[];
+  erratas: string[];
+  conteo: { estaciones: number; checksGate: number; oraculosImpresos: string; ciclosEjercidos: number };
+}
+
+export function estacion12Dado(pkg: MoldPackage, d: DatumsColada, o?: {
+  /** CONTROL NEGATIVO del gate: fingir que una estación no entregó */
+  omitir?: 'e10' | 'e8';
+}): ActaDado {
+  const faltantes: string[] = [];
+  // ── re-correr los motores PUROS (sub-segundo; el FAN no hace falta aquí) ──
+  let e6: Estacion6Dado | null = null, e7f: boolean = true, e8: Estacion8Dado | null = null,
+    e9: Estacion9Dado | null = null, e10: Estacion10Dado | null = null, e11: Estacion11Dado | null = null;
+  try { e6 = estacion6Dado(pkg, d, { partVolCc: 14.14 }); } catch { faltantes.push('E6'); }
+  try { e8 = o?.omitir === 'e8' ? null : estacion8Dado(pkg, d, { partVolCc: 14.14 }); if (!e8) faltantes.push('E8'); } catch { faltantes.push('E8'); }
+  try { e9 = estacion9Dado(pkg); } catch { faltantes.push('E9'); }
+  try { e10 = o?.omitir === 'e10' || !e8 ? null : estacion10Dado(pkg, d, e8.circuito); if (!e10) faltantes.push('E10'); } catch { faltantes.push('E10'); }
+  try { e11 = e8 && e10 ? estacion11Dado(pkg, d, e8.circuito, e10) : null; if (!e11) faltantes.push('E11'); } catch { faltantes.push('E11'); }
+  // E7 requiere el CAMPO del llenado (vive en la sesión del CAD); aquí se firma
+  // con sus números ya verificados por el gate (91.5 % en partición) — declarado.
+  const veredicto: ActaDado['veredicto'] = faltantes.length === 0 ? 'FIRMADO' : 'INCOMPLETO';
+  if (veredicto === 'INCOMPLETO') {
+    return { veredicto, faltantes, decisiones: [], retornosCerrados: [], tryout: [], pendientes: [], erratas: [], conteo: { estaciones: 11 - faltantes.length, checksGate: 0, oraculosImpresos: '', ciclosEjercidos: 0 } };
+  }
+  const sHot = e8!.dinero.salidas.find((x) => x.id === 'c');
+  const sFrio = e8!.dinero.salidas.find((x) => x.id === 'a');
+  const sB = e8!.dinero.salidas.find((x) => x.id === 'b');
+
+  const decisiones: DecisionActa[] = [
+    {
+      id: 'arquitectura', titulo: 'LA ARQUITECTURA (E2→E8): bebedero CALIENTE',
+      decision: `hot sprue bushing — ciclo ${sHot!.cicloS} s (manda la pieza) → $${sHot!.partUSD.toFixed(3)}/pza`,
+      costo: 'molde más caro (la variante hot que la E2 ya cotizó) + el hot tip',
+      beneficio: `$${sHot!.partUSD.toFixed(3)} vs $${sFrio!.partUSD.toFixed(3)} del frío con ciclo REAL (el de cap 3 era ciego a la colada) + cero colada que enfriar ni regrind`,
+      riesgo: `mantenimiento del bushing caliente. PLAN B documentado: frío con bushing ⌀${e8!.bushing.diaOptimoMm} (el mínimo que empaca) a $${sB!.partUSD.toFixed(3)}`,
+      responsable: 'ian (diseñador)', seccion: '§9.2.1 · §3.4 · R91',
+    },
+    {
+      id: 'contraccion', titulo: 'CONTRACCIÓN (E9): fuente, opción y responsable',
+      decision: `${e9!.decision.elegida} · steel-safe (A): cavidad ${e9!.decision.sCavPct} % / macho ${e9!.decision.sCorePct} %`,
+      costo: `descalce del shutoff ${e9!.descalceShutoffMm} mm/lado (spotting) + "(A) garantiza maquinado posterior" (advertencia literal)`,
+      beneficio: 'corregir siempre es QUITAR acero; las fuentes convergen (Tait perilla 0.79 en el tope del proveedor)',
+      riesgo: `tolerancia apretada (±0.1 %) exige PROTOTIPO (R12/R20). Techo del proceso: s=0 a ${e9!.pTechoMPa} MPa`,
+      responsable: e9!.decision.responsable, seccion: '§10.1.7 · §10.2.2',
+    },
+    {
+      id: 'venteo', titulo: 'VENTEO (E7): partición + diferidos',
+      decision: '4 vents fin-de-flujo (MEDIDOS del campo: 91.5 % del último llenado EN partición) · land 0.02 mm · anatomía Fig 8.6',
+      costo: '12 tapones + el mantenimiento del off-gassing (§8.1.3)',
+      beneficio: 'geometría auto-venteada DEMOSTRADA (el volteo Fig 7.2 la regaló)',
+      riesgo: 'esquinas OPCIONALES diferidas a tryout (§8.2.2: el frente real "no es raro" que atrape donde el análisis dice que no)',
+      responsable: 'ian', seccion: '§8.2 · §8.4',
+    },
+    {
+      id: 'expulsion', titulo: 'EXPULSIÓN (E10): 8 escalonados, tabla keyed',
+      decision: `8 pines escalonados ⌀${e10!.pines.escalonado.puntaDiaMm}/${e10!.pines.escalonado.cuerpoDiaMm} (punta ${e10!.pines.escalonado.puntaMm} mm guiada) — F ${e10!.fuerza.fEjectN} N`,
+      costo: 'tabla de eyectores R37: keyed + etiquetados (PROHIBIDO intercambiables)',
+      beneficio: 'los ciclos ejercidos: R34 (pared) · R52 (pandeo→escalonado) · A-239 (ceden el carril del baffle) — y 8 pin-vents para las knit',
+      riesgo: `witness a ${e10!.pines.margenWitnessMm} mm del borde (pared delgada; blade R53 anotada) + R81: ovalización→binding a vigilar`,
+      responsable: 'ian', seccion: '§11.2 · §11.1.7',
+    },
+    {
+      id: 'estructura', titulo: 'ESTRUCTURA (E11): R90 con números',
+      decision: `sobrepresión ✓ · fatiga ✓ · flash ✓ (δ ${e11!.soporte.deltaMm} < vent ${e11!.soporte.ventGapMm})`,
+      costo: '0 pilares (la placa aguanta sola) — nada que agregar',
+      beneficio: `los K de lo perforado con margen (agua ${e11!.barrenos[0].K} · baffle ${e11!.barrenos[1].K} vs endurance 456)`,
+      riesgo: 'el barreno del pin es R81: la grieta se frena en el pin, pero el binding se VIGILA en producción',
+      responsable: 'ian', seccion: '§12.5 · R90',
+    },
+    {
+      id: 'proceso', titulo: 'EL PROCESO (la receta al moldeador)',
+      decision: `pack a ${e9!.brecha.pPerillaMPa} MPa (mete la contracción a banda del proveedor) · empaque ${e6!.gate.tPackNeededS} s`,
+      costo: 'nada — es perilla, no acero',
+      beneficio: `masa del disparo ${e6!.masa.disparoG} g = el observable que una BÁSCULA refuta en tryout`,
+      riesgo: `NO pasar de ~${e9!.pTechoMPa} MPa: s cruza CERO y la pieza no suelta ("contracción cero parece perfecto y es defecto")`,
+      responsable: 'moldeador + ian', seccion: '§10.1.6 · §7.3',
+    },
+  ];
+
+  const retornosCerrados = [
+    { de: 'E4', a: 'E6', historia: 'el anuncio "la compuerta congela antes de empacar" — la Fig 7.2 lo resolvió: el gate real es el sprue (18.4 s ≥ 8.48)' },
+    { de: 'E3', a: 'E9', historia: 'la escala 1.0 declarada — pagada con splitMold ×1.0050/×1.0080 y MEDIDA del B-Rep' },
+    { de: 'E2', a: 'E8', historia: 'el ciclo de cap 3 era CIEGO a la colada — el bebedero manda ×8.2 y el dinero volteó la arquitectura a hot sprue' },
+    { de: 'E7', a: 'E10', historia: 'las knit internas → pines-vent (claro 0.13 ⇒ 0.065) — y R46 regaló 4 más' },
+    { de: 'E9', a: 'E10', historia: 'el s viajó al agarre — y la diferencia (CTE·ΔT 0.31 vs s total 0.8) se explicó, no se escondió' },
+    { de: 'E10', a: 'E8b', historia: 'A-239 AL REVÉS: los pines caían sobre el carril del baffle — cedieron los pines (±12 mm)' },
+    { de: 'E8b', a: 'E9', historia: 'el pandeo de la tapa (ΔT_crit 9.2 °C) tiene su defensa en el baffle + pitch 2H' },
+    { de: 'E5', a: 'E6', historia: 'el volteo de la Fig 7.2 (decisión de libro) resolvió el gate Y regaló el auto-venteo' },
+    { de: 'E7', a: 'E11', historia: 'el ventGap del motor de placas ES el vent de la E7 — el lazo ya estaba cableado (δ 0.0081 < 0.02)' },
+  ];
+
+  const tryout = [
+    `pack: arrancar a ${e9!.brecha.pPerillaMPa} MPa; NUNCA pasar de ~${e9!.pTechoMPa} (s=0); el peso (${e6!.masa.disparoG} g) es el observable`,
+    'vents: pocos y delgados PRIMERO (0.02); si falta venteo, engrosar o abrir las esquinas diferidas (§8.4)',
+    `shutoff: spotting del descalce steel-safe (${e9!.descalceShutoffMm} mm/lado) en banco`,
+    'pines: verificar keyed/etiquetas antes de armar (R37); vigilar binding del pin en el land (R81)',
+    'si el hot sprue falla en tryout: PLAN B frío con bushing ⌀6.35 documentado arriba',
+    'verificar la ΔP de llenado con el ⌀ final del bushing ANTES de fijar el proceso (anuncio E8→E5)',
+  ];
+
+  const pendientes = [
+    'N2b: el sumidero pvT del empaque (la curva Q(t) real de la E6)',
+    'N3: el campo térmico del molde con el circuito real (el gradiente FINO del pandeo; hoy la defensa es de diseño)',
+    'prototipo si el cliente pide tolerancia ±0.1 % (R12/R20)',
+    'deudas chicas declaradas: placa de la probeta · micro-sierra del filo z · slicing en escena',
+  ];
+
+  const erratas = [
+    'T_eject: el texto dice 96.7 °C pero SUS cálculos usan 97.6 — con 97.6 reproducen exactos 8.4/18.9/22.9 s',
+    'Tabla 7.4 strip: los ejemplos impresos del fan/cup no reproducen con su propia fórmula (factor 2) — la fórmula es el canon',
+    'P20: texto "≈450 MPa" vs Fig 12.5 "456" vs §9.2.5 usa 456 → mandan dos fuentes (456)',
+    'QC7: yield 420 (Fig 12.3) vs 545 (§12.1.1) en el MISMO libro — se guardan las dos',
+    's a 66 MPa: el 0.31 % impreso sale de SU rv redondeado a 4 cifras; precisión completa da 0.293',
+    'NUESTRO pliego-UI decía runner "⌀6.25": despejando la Eq 9.6 es ⌀4.76 (3/16") — el libro manda sobre el resumen',
+  ];
+
+  return {
+    veredicto, faltantes, decisiones, retornosCerrados, tryout, pendientes, erratas,
+    conteo: { estaciones: 11, checksGate: 181, oraculosImpresos: '≥15 números impresos del libro reproducidos (8.4/18.9/22.9 · 0.06 · 3.4 · 297/167 · SCF 3.3/2.6 · 50 · Menges · 552/635/730 · 0.31 · Tabla 7.4…)', ciclosEjercidos: retornosCerrados.length },
+  };
+}

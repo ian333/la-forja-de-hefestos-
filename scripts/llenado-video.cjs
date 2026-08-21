@@ -25,7 +25,8 @@ const W = Number(process.env.W || 3840), H = Number(process.env.H || 2160);
 const N = Number(process.env.FRAMES || 150);          // pasos del frente
 const HOLD = Number(process.env.HOLD || 20);          // frames quietos al final
 const DIR = process.env.DIR || '/home/ian/Orkesta/la-forja/forja-shots/llenado-video';
-const OUT = process.env.OUT || (process.env.E11 === '1' ? '/mnt/e/forja-videos/dado-estructura-4k.mp4'
+const OUT = process.env.OUT || (process.env.E12 === '1' ? '/mnt/e/forja-videos/dado-acta-4k.mp4'
+  : process.env.E11 === '1' ? '/mnt/e/forja-videos/dado-estructura-4k.mp4'
   : process.env.CICLO === '1' ? '/mnt/e/forja-videos/dado-ciclo-completo-4k.mp4'
   : process.env.N2 === '1' ? '/mnt/e/forja-videos/espiral-termica-4k.mp4'
   : process.env.E10 === '1' ? '/mnt/e/forja-videos/dado-expulsion-4k.mp4'
@@ -59,6 +60,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
 
   // caminar el ciclo hasta la estación 4 — o directo a LA PROBETA (PROBETA=1)
   const clic = async (id) => { await p.waitForSelector(`[data-testid="${id}"]`, { state: 'attached', timeout: 300000 }); await p.$eval(`[data-testid="${id}"]`, (e) => e.click()); };
+  if (process.env.E12 === '1') process.env.E11 = '1';
   if (process.env.E11 === '1') process.env.CICLO = '1';
   if (process.env.CICLO === '1') process.env.E10 = '1';
   if (process.env.PROBETA === '1') {
@@ -97,6 +99,8 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
     if (process.env.E10 === '1') { await p.waitForTimeout(2500); await clic('btn-ciclo-e10'); }
     // E11 (cap 12): la estructura — instantánea; el botón vive en CicloE10
     if (process.env.E11 === '1') { await p.waitForTimeout(2000); await clic('btn-ciclo-e11'); }
+    // E12 (§13.10): EL ACTA — instantánea; el botón vive en CicloE11
+    if (process.env.E12 === '1') { await p.waitForTimeout(2000); await clic('btn-ciclo-e12'); }
   }
   await p.waitForFunction(() => !!(window.__forgeBrep && window.__forgeBrep.llenadoStats && window.__forgeBrep.llenadoStats()), null, { timeout: 300000 });
   await p.waitForTimeout(2500);
@@ -125,6 +129,29 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   await p.evaluate(([az, el, r, tx, ty, tz]) => window.__forgeBrep.orbitTo(az, el, r, tx, ty, tz), orb);
   await p.waitForTimeout(1400);                        // el vuelo dura ~850 ms + margen
 
+  // ── EL ACTA EN EL CUADRO (E12) ──────────────────────────────────────────────
+  // La sonda 720p me enseñó el defecto con los ojos: el acta vivía en el registro
+  // del curso — 11 px, gris sobre gris y CORTADO por el panel de abajo. Un acta
+  // que no se lee no cobra. Ahora se rotula en la escena (mismo mecanismo de la
+  // E11) y AQUÍ se mide que de verdad esté visible, no solo montada en el DOM.
+  let actaEnPantalla = null;
+  if (process.env.E12 === '1') {
+    actaEnPantalla = await p.evaluate(() => {
+      const nodos = Array.from(document.querySelectorAll('[data-testid^="cota-nucleo-e12-"]'));
+      return nodos.map((n) => {
+        const r = n.getBoundingClientRect();
+        const st = getComputedStyle(n);
+        return {
+          id: n.getAttribute('data-testid'),
+          texto: (n.textContent || '').trim(),
+          visible: st.display !== 'none' && st.visibility !== 'hidden' && r.width > 0 && r.height > 0,
+          px: parseFloat(st.fontSize) || 0,
+          dentro: r.left >= 0 && r.top >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight,
+        };
+      });
+    });
+    console.log('ACTA en pantalla:', JSON.stringify(actaEnPantalla));
+  }
   // ── captura: el frente avanza de 0 a 1 — o EL CICLO COMPLETO (E10b) ──
   // CICLO=1: 3 actos — llenar (0..55 %), abrir (62..82 %), expulsar (84..100 %).
   // ian: "nunca los veo funcionando" — la máquina TRABAJANDO, por fin.
@@ -214,6 +241,16 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
     chk('ACTO 3 · LOS PINES EXPULSAN (y la pieza viaja con ellos)',
       fin.zPin != null && fin.zPin > 40 && Math.abs((fin.zPza ?? 0) - fin.zPin) < 1,
       `animZ(pin) = ${fin.zPin?.toFixed(1)} mm · pieza = ${fin.zPza?.toFixed(1)} mm (viajan JUNTOS, carrera 48 cap 11)`);
+  }
+  if (actaEnPantalla) {
+    const vis = actaEnPantalla.filter((a) => a.visible && a.dentro);
+    chk('EL ACTA SE LEE EN EL CUADRO (§13.10 rotulada, no gris sobre gris)',
+      vis.length === 3 && vis.every((a) => a.px >= 11 && a.texto.length > 30),
+      `${vis.length}/3 etiquetas visibles y dentro del cuadro · ${vis.map((a) => a.px + 'px').join(' · ')}`);
+    chk('EL ACTA dice FIRMADO y trae LOS DOS números de la arquitectura',
+      actaEnPantalla.some((a) => /FIRMADO/.test(a.texto))
+      && actaEnPantalla.some((a) => /ARQUITECTURA/.test(a.texto) && /\$\d/.test(a.texto)),
+      actaEnPantalla.map((a) => a.texto.slice(0, 64)).join(' | '));
   }
   const veredicto = jui.every((j) => j.ok);
 
