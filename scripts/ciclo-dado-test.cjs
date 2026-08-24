@@ -50,6 +50,19 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('A-050: el ganador CAMBIA dentro de la banda', cambio > 0, cambio > 0 ? `en ${e2.banda[cambio].q.toLocaleString()} pzas → ×${e2.banda[cambio].nCav}` : 'nunca cambia');
   check('A-054: proporción sana (<30 %)', e2.proporcion.pct < 30, e2.proporcion.pct + ' %');
 
+  // ══ SEPARACIÓN — la MISMA máquina corre el VASO, no solo el cubo ══
+  // (orden 2026-08-21-separar-maquina-del-cubo · ian: "debe funcionar para ambos")
+  console.log('── SEPARACIÓN · la máquina del molde, ya no la del cubo');
+  const v1 = ed.estacion1(ed.VASO_PIEZA);
+  check('VASO E1: macizo REPROBADO (⌀80×20 sólido, t_c enorme)', v1.macizo.veredicto === 'REPROBADO', `${v1.macizo.veredicto} · ${(v1.macizo.tcS / 60).toFixed(1)} min`);
+  check('VASO E1: pieza APROBADA (pared 3 · draft 1.5° · redonda)', v1.dado.veredicto === 'APROBADO' && v1.dado.dfm.errors === 0, `${v1.dado.veredicto} · ${v1.dado.dfm.errors} err`);
+  check('VASO E1: su t_c ≠ el del cubo (pared 3 vs 2 — juzga SU forma)', !cerca(v1.dado.tcS, e1.dado.tcS, 0.5), `vaso ${v1.dado.tcS.toFixed(1)} s vs cubo ${e1.dado.tcS.toFixed(1)} s`);
+  const v2 = ed.estacion2(ed.VASO_PIEZA);
+  const vgana = v2.variantes.find((v) => v.ganadora);
+  check('VASO E2: cotiza el vaso REDONDO por moldMachine', !!vgana, vgana ? `gana ${vgana.arch}×${vgana.nCav} · $${vgana.totalPzaUSD}/pza` : 'sin ganadora');
+  check('CONTROL: el molde del vaso ≠ el del cubo (separó de verdad)', v2.veredicto.precioMoldeUSD !== e2.veredicto.precioMoldeUSD, `vaso $${v2.veredicto.precioMoldeUSD.toLocaleString()} vs cubo $${e2.veredicto.precioMoldeUSD.toLocaleString()}`);
+  check('ALIAS: el cubo llama el MISMO camino (estacion1Dado == estacion1(DADO_PIEZA))', ed.estacion1Dado().dado.tcS === ed.estacion1(ed.DADO_PIEZA).dado.tcS && ed.estacion2Dado().veredicto.precioMoldeUSD === ed.estacion2(ed.DADO_PIEZA).veredicto.precioMoldeUSD);
+
   // ══ E3 — ARQUITECTURA con OCC REAL ══
   console.log('── E3 · Arquitectura (cap 4) — midiendo el B-Rep');
   const oc = await factory({ wasmBinary: wasmBin });

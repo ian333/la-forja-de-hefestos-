@@ -1056,48 +1056,35 @@ export interface CandidatoDado {
 }
 export interface Estacion1Dado { macizo: CandidatoDado; dado: CandidatoDado; comparacion: string[] }
 
-export function estacion1Dado(): Estacion1Dado {
-  const abs = PLASTICOS_A.ABS;
-  const tc = (wallMm: number) => tcPlateS(wallMm / 1000, abs.alphaM2s, abs.tMeltC, abs.tEjectC, abs.tCoolC);
-  const juzga = (nombre: string, wallMm: number, p: DFMPart): CandidatoDado => {
-    const dfm = checkDFM(p);
-    const tcS = tc(wallMm);
+// ── ESTACIÓN 1 GENÉRICA (separada del cubo, orden 2026-08-21) ────────────────
+// El DFM del libro (§2.3) es idéntico para cubo y vaso: solo cambian los números.
+// Recibe un `PiezaSpec` (el contrato de intake §2.1.5: tamaño/pared/cantidad/
+// material) en vez de leer el cubo. `estacion1Dado()` queda como alias del cubo.
+export function estacion1(pieza: PiezaSpec): Estacion1Dado {
+  const m = PLASTICOS_A[pieza.material] ?? PLASTICOS_A.ABS;
+  const rho = m.rhoRTKgM3 / 1000;                              // g/cc (ABS 1.044)
+  const tc = (wallMm: number) => tcPlateS(wallMm / 1000, m.alphaM2s, m.tMeltC, m.tEjectC, m.tCoolC);
+  const juzga = (d: PiezaDFM): CandidatoDado => {
+    const dfm = checkDFM(d.part);
+    const tcS = tc(d.wallMm);
     const porque: string[] = [...dfm.resumen];
     // A-013 [COMPARA]: la sección se condena por su CONSECUENCIA térmica, no por adjetivo
     const factor = tcS / tc(2);
-    if (factor > 4) porque.push(`sección ${wallMm} mm: t_c = ${tcS > 120 ? (tcS / 60).toFixed(1) + ' MINUTOS' : tcS.toFixed(1) + ' s'} (Eq 9.5, t²) = ${factor.toFixed(0)}× el de una pared de 2 mm — el libro manda pared delgada + costillas (§2.3.1, A-013)`);
+    if (factor > 4) porque.push(`sección ${d.wallMm} mm: t_c = ${tcS > 120 ? (tcS / 60).toFixed(1) + ' MINUTOS' : tcS.toFixed(1) + ' s'} (Eq 9.5, t²) = ${factor.toFixed(0)}× el de una pared de 2 mm — el libro manda pared delgada + costillas (§2.3.1, A-013)`);
     const veredicto = dfm.errors > 0 || factor > 4 ? 'REPROBADO' : 'APROBADO';
-    return { nombre, wallMm, dfm, tcS, veredicto, porque };
+    return { nombre: d.nombre, wallMm: d.wallMm, dfm, tcS, veredicto, porque };
   };
-  const macizo = juzga('cubo MACIZO 50×50×50', 50, {
-    nominalWallMm: 50,
-    walls: [{ label: 'sección completa', thicknessMm: 50 }],
-    corners: [{ label: 'aristas', kind: 'externo' }],           // vivas: sin filete declarado
-    surface: { finish: 'SPI B-3', roughnessUm: 12 },
-    draftDeg: 0,                                                 // un cubo "puro" no trae draft
-    material: { resin: 'ABS' },
-  });
-  const dado = juzga('DADO hueco 40×40×40 · pared 2', 2, {
-    nominalWallMm: 2,
-    walls: [
-      { label: 'paredes laterales', thicknessMm: 2 },
-      { label: 'techo', thicknessMm: 2 },
-    ],
-    corners: [
-      { label: 'esquinas internas', kind: 'interno', radiusMm: 1 },   // 0.5·t ✓
-      { label: 'esquinas externas', kind: 'externo', radiusMm: 3 },   // 1.5·t ✓
-    ],
-    surface: { finish: 'SPI B-3', roughnessUm: 12 },
-    draftDeg: 1.5,                                               // Tabla 2.14: B-3/ABS → 1.5°
-    material: { resin: 'ABS' },
-  });
+  const macizo = juzga(pieza.macizo);
+  const dado = juzga(pieza.pieza);
   const comparacion = [
-    `t_c macizo ${(macizo.tcS / 60).toFixed(1)} min vs dado ${dado.tcS.toFixed(1)} s → ${(macizo.tcS / dado.tcS).toFixed(0)}× (Eq 9.5: el enfriamiento escala con t²)`,
-    `masa: macizo ~${(125 * 1.044).toFixed(0)} g vs dado ~${(14.8 * 1.044).toFixed(1)} g de ABS → ${(125 / 14.8).toFixed(1)}× material`,
-    'el remedio del libro (§2.3.1): pared delgada UNIFORME + costillas si falta rigidez — el dado ES el cubo tras esa regla',
+    `t_c macizo ${(macizo.tcS / 60).toFixed(1)} min vs pieza ${dado.tcS.toFixed(1)} s → ${(macizo.tcS / dado.tcS).toFixed(0)}× (Eq 9.5: el enfriamiento escala con t²)`,
+    `masa: macizo ~${(pieza.macizo.volCc * rho).toFixed(0)} g vs pieza ~${(pieza.pieza.volCc * rho).toFixed(1)} g de ${pieza.material} → ${(pieza.macizo.volCc / pieza.pieza.volCc).toFixed(1)}× material`,
+    'el remedio del libro (§2.3.1): pared delgada UNIFORME + costillas si falta rigidez — la pieza ES el macizo tras esa regla',
   ];
   return { macizo, dado, comparacion };
 }
+/** ALIAS del cubo — el ciclo del dado llama exactamente el mismo camino. */
+export const estacion1Dado = (): Estacion1Dado => estacion1(DADO_PIEZA);
 
 /* ══════════════════════════════════════════════════════════════════════════ */
 /* EL CICLO DEL DADO — estación 2: ECONOMÍA (cap 3)                           */
@@ -1110,6 +1097,122 @@ export const DADO_SPEC: MachineSpec = {
   surfaceMm2: 14500, volumeMm3: 14800, wallMm: 2,
   annualVolume: 100_000, totalVolume: 100_000, plastic: 'ABS', finish: 'SPI B-3',
 } as MachineSpec;
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL CONTRATO DE PIEZA — separar la máquina de moldes del cubo                */
+/* (orden 2026-08-21-separar-maquina-del-cubo · ian: "debe funcionar para      */
+/*  ambos"). El repaso de pliegos lo aterriza en el INTAKE del libro:          */
+/*  §2.1.5 "part size, wall thickness, and expected production quantity" +      */
+/*  §1.5/§2.2.5 material (ficha Tabla 2.10). Cada estación recibe un PiezaSpec  */
+/*  en vez de leer el cubo. Los CÁLCULOS (economía, llenado, contracción,      */
+/*  enfriamiento, venteo, estructura) son idénticos cubo/vaso; solo divergen   */
+/*  por FORMA la partición (§4.1/§11.2.1), el draft (§2.3.6) y el tipo de      */
+/*  expulsión (§11.2.4/§11.3.4) — esos handles geométricos van aquí también.   */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/** Una comparación DFM de la estación 1: la pieza y su control negativo (macizo). */
+export interface PiezaDFM { nombre: string; wallMm: number; volCc: number; part: DFMPart }
+export interface PiezaSpec {
+  nombre: string;
+  /** §2.1.5 intake — dims/pared/cantidad/material. Ya es genérico (round/rect). */
+  spec: MachineSpec;
+  /** llave de PLASTICOS_A (§2.2.5 ficha del material). */
+  material: string;
+  /** el control negativo de la E1: la misma huella HECHA MACIZA (§2.3.1). */
+  macizo: PiezaDFM;
+  /** la pieza real (§2.3 DFM). */
+  pieza: PiezaDFM;
+  // ── handles geométricos que E3→E12 consumen SIN conocer la forma ──
+  // (se cablean por incremento; el vaso redondo entra por el camino
+  //  cavityShape:'round' de moldMachine ya probado por la flanera).
+  solidRecto?: (oc: any) => any;
+  solidDraft?: (oc: any) => any;
+  solidUndercut?: (oc: any) => any;
+  inCavity?: (x: number, y: number, z: number) => boolean;
+  /** dims LOCALES para colocacionEnLaBase (hoy el 20/20/39.5 del cubo). */
+  local?: { semiXmm: number; semiYmm: number; alturaMm: number; bocaZmm: number };
+}
+
+/** EL CUBO como PiezaSpec — captura EXACTA de lo que estacion1Dado/estacion2Dado
+ *  tenían inline, para que el ciclo del dado NO cambie ni un número (gate 181). */
+export const DADO_PIEZA: PiezaSpec = {
+  nombre: 'EL DADO', spec: DADO_SPEC, material: 'ABS',
+  macizo: {
+    nombre: 'cubo MACIZO 50×50×50', wallMm: 50, volCc: 125,   // 50³/1000
+    part: {
+      nominalWallMm: 50,
+      walls: [{ label: 'sección completa', thicknessMm: 50 }],
+      corners: [{ label: 'aristas', kind: 'externo' }],        // vivas: sin filete declarado
+      surface: { finish: 'SPI B-3', roughnessUm: 12 },
+      draftDeg: 0,                                             // un cubo "puro" no trae draft
+      material: { resin: 'ABS' },
+    },
+  },
+  pieza: {
+    nombre: 'DADO hueco 40×40×40 · pared 2', wallMm: 2, volCc: 14.8,
+    part: {
+      nominalWallMm: 2,
+      walls: [
+        { label: 'paredes laterales', thicknessMm: 2 },
+        { label: 'techo', thicknessMm: 2 },
+      ],
+      corners: [
+        { label: 'esquinas internas', kind: 'interno', radiusMm: 1 },   // 0.5·t ✓
+        { label: 'esquinas externas', kind: 'externo', radiusMm: 3 },   // 1.5·t ✓
+      ],
+      surface: { finish: 'SPI B-3', roughnessUm: 12 },
+      draftDeg: 1.5,                                           // Tabla 2.14: B-3/ABS → 1.5°
+      material: { resin: 'ABS' },
+    },
+  },
+  solidRecto: dadoRectoShape, solidDraft: dadoDraftShape, solidUndercut: dadoUndercutShape,
+  inCavity: dentroDadoLocal,
+  local: { semiXmm: 20, semiYmm: 20, alturaMm: 40, bocaZmm: 39.5 },
+};
+
+/** EL VASO como spec de la Máquina — ⌀80×20 pared 3, REDONDO (cavityShape round,
+ *  como la flanera). El vaso demo lleva draft 1.5° (moldeable §2.3.6); el vaso
+ *  RECTO a 0° del árbol reprueba por draft — ese es el hallazgo #2, aparte. */
+export const VASO_SPEC: MachineSpec = {
+  name: 'EL VASO', Lmm: 80, Wmm: 80, Hmm: 20, cavityShape: 'round',
+  surfaceMm2: 19033, volumeMm3: 27417, wallMm: 3,
+  annualVolume: 100_000, totalVolume: 100_000, plastic: 'ABS', finish: 'SPI B-3',
+} as MachineSpec;
+
+export const VASO_PIEZA: PiezaSpec = {
+  nombre: 'EL VASO', spec: VASO_SPEC, material: 'ABS',
+  macizo: {
+    nombre: 'VASO MACIZO ⌀80×20', wallMm: 20, volCc: 100.5,   // π·40²·20/1000
+    part: {
+      nominalWallMm: 20,
+      walls: [{ label: 'sección maciza', thicknessMm: 20 }],
+      corners: [{ label: 'aristas', kind: 'externo' }],        // vivas
+      surface: { finish: 'SPI B-3', roughnessUm: 12 },
+      draftDeg: 0,
+      material: { resin: 'ABS' },
+    },
+  },
+  pieza: {
+    nombre: 'VASO ⌀80×20 · pared 3', wallMm: 3, volCc: 27.4,
+    part: {
+      nominalWallMm: 3,
+      walls: [
+        { label: 'pared lateral', thicknessMm: 3 },
+        { label: 'piso', thicknessMm: 3 },
+      ],
+      corners: [
+        { label: 'unión pared-piso (interna)', kind: 'interno', radiusMm: 1.5 },  // 0.5·t ✓
+        { label: 'borde inferior (externo)', kind: 'externo', radiusMm: 4.5 },    // 1.5·t ✓
+      ],
+      surface: { finish: 'SPI B-3', roughnessUm: 12 },
+      draftDeg: 1.5,                                           // vaso MOLDEABLE (§2.3.6)
+      material: { resin: 'ABS' },
+    },
+  },
+  // handles geométricos E3→E12: PENDIENTES (siguiente incremento).
+};
+
+/** ALIAS del cubo para la economía — el ciclo del dado no cambia. */
+export const estacion2Dado = (): Estacion2Dado => estacion2(DADO_PIEZA);
 
 export interface VarianteE2 {
   arch: string; nCav: number; ganadora: boolean;
@@ -1134,9 +1237,13 @@ export interface Estacion2Dado {
   veredicto: { viable: boolean; precioMoldeUSD: number; entregaSemanas: number };
 }
 
-export function estacion2Dado(): Estacion2Dado {
-  const Q = (DADO_SPEC as any).totalVolume ?? 100_000;
-  const pkg = moldMachine(DADO_SPEC);
+// ── ESTACIÓN 2 GENÉRICA (separada del cubo). La economía (cap 3) es idéntica
+// para cubo y vaso: `moldMachine(pieza.spec)` corre la spec de CUALQUIER pieza
+// (round o rect). `estacion2Dado()` queda como alias del cubo.
+export function estacion2(pieza: PiezaSpec): Estacion2Dado {
+  const spec = pieza.spec;
+  const Q = (spec as any).totalVolume ?? 100_000;
+  const pkg = moldMachine(spec);
   const win = pkg.recomendacion;
   const filas = pkg.variantes
     .filter((v: any) => v.factible)
@@ -1159,7 +1266,7 @@ export function estacion2Dado(): Estacion2Dado {
     });
   // A-050: correr la MISMA máquina en 5 volúmenes — sin fórmula nueva
   const banda = [50_000, 100_000, 250_000, 500_000, 1_000_000].map((q) => {
-    const p = moldMachine({ ...(DADO_SPEC as any), annualVolume: q, totalVolume: q } as MachineSpec);
+    const p = moldMachine({ ...(spec as any), annualVolume: q, totalVolume: q } as MachineSpec);
     const v = p.variantes.find((x: any) => x.arch === p.recomendacion.arch && x.nCav === p.recomendacion.nCav);
     return { q, arch: p.recomendacion.arch, nCav: p.recomendacion.nCav, pzaUSD: +(v?.partUSD ?? 0).toFixed(3) };
   });
