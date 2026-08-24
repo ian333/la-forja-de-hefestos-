@@ -89,3 +89,38 @@ real: el cubo NO cambia (gate 181/181 por aliases) y el vaso SÍ entra a E1/E2.
 - gate: 181 del cubo VERDES (aliases, cero cambio) + bloque del vaso (E1/E2
   con números PROPIOS ≠ cubo) · orden-gate VERDE
 - repaso de pliegos citado en el diseño del contrato · deploy
+
+---
+
+## CIERRE (lo que de verdad pasó)
+
+**LA MÁQUINA YA NO ES LA DEL CUBO.** `PiezaSpec` es el contrato de intake
+(§2.1.5) que las estaciones reciben; `estacion1`/`estacion2` son genéricas.
+`DADO_PIEZA` captura el cubo exacto (aliases = mismo camino), `VASO_PIEZA` el
+vaso redondo.
+
+**Gate 181 → 187** (los 181 del cubo intactos por alias + 6 de separación):
+- VASO E1: macizo REPROBADO (14.1 min), pieza APROBADA (0 err), **t_c 19.1 s ≠
+  cubo 8.5 s** — juzga SU forma (pared 3 vs 2).
+- VASO E2: cotiza el vaso **REDONDO** por moldMachine → cold-2placas×1 $0.7147/pza.
+- CONTROL: molde del vaso **$11,343 ≠ $9,259** del cubo — separó de verdad.
+- ALIAS: `estacion1Dado()==estacion1(DADO_PIEZA)` — el cubo intacto.
+
+**REPASO DE PLIEGOS (subagente, citado en el diseño):** el intake del libro son
+4 campos (§2.1.5 + §1.5: tamaño/pared/cantidad/material), cada campo con flag
+restricción|salida (§2.2.2 Tabla 2.3). Los CÁLCULOS (economía, contracción,
+enfriamiento, llenado, alimentación, compuerta, venteo, estructura) son
+idénticos cubo/vaso. Divergen por FORMA **solo 3 decisiones**: partición
+(§4.1/§11.2.1 A-227), draft (§2.3.6), tipo de expulsión (§11.2.4/§11.3.4
+A-236/A-246) — los 3 bloqueadores ya cazados. El grafo tiene ~20 aristas de
+retorno (R1–R14 + R-a…R-f) que la máquina generalizada debe respetar.
+
+**LO QUE SIGUE (incrementos, mismo patrón):**
+1. E3 parametrizada: `construirAceroE3` con `pieza.solidDraft` +
+   `colocacionEnLaBase(pkg, pieza)` (quitar el 20/20/39.5 del cubo). AQUÍ el
+   vaso y el cubo divergen: el vaso redondo entra por cavityShape:'round'.
+2. E5/E7: `pieza.inCavity` en vez de `dentroDadoLocal`.
+3. E10: el check §11.2.5 (stripper-vs-pin por forma) + `pieza.aEffM2`.
+4. El puente pieza-del-árbol → `cursoRef.pieza` (bloqueador #0).
+
+NO se hizo un rewrite de las 12 (regla del proyecto). Cubo intacto, vaso adentro.
