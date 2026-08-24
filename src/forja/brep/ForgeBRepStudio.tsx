@@ -3361,6 +3361,25 @@ function vasoDoc(): DocState {
   };
 }
 
+// ── LA JABONERA (producto #3 del ciclo) — ejemplo del libro (banco del kernel:
+// box 120×80×30 + shell 2 + fillet). rect como el cubo pero con costillas+bosses
+// en su PiezaSpec (§2.3.2/§2.3.3). El sólido cargable es el box+shell (base
+// literal del banco); las costillas/bosses viven en la DFM (JABONERA_PIEZA),
+// como el draft del vaso vive en su spec y no en el sólido 0°.
+// TOP_FACE_JABONERA: la cara de la tapa se CONFIRMÓ con __forgeBrep.listFaces().
+const TOP_FACE_JABONERA = 5;
+function jaboneraDoc(): DocState {
+  const base = makeDefaultDoc('LA JABONERA · 120×80×30 pared 2');
+  return {
+    ...base, name: 'LA JABONERA · 120×80×30 pared 2',
+    sketch: { ...DEFAULT_SKETCH, kind: 'rect', width: 120, height: 80, gear: { ...GEAR_DEFAULTS } },
+    ops: [
+      { id: newId('extrude'), type: 'extrude', depth: 30, symmetric: false },
+      { id: newId('shell'), type: 'shell', thickness: 2, faces: [TOP_FACE_JABONERA] },
+    ],
+  };
+}
+
 function makeExamples(): Array<{ name: string; doc: () => DocState }> {
   return [{ name: '⚙ Reductor cicloidal 10:1', doc: cycloidalReducerDoc }];
 }
@@ -3974,6 +3993,8 @@ export default function ForgeBRepStudio() {
     { key: 'st-flanera', name: 'Molde Flanera PP', type: 'molde', meta: 'Ø80·H40 · 6 cav · molde completo', status: 'plantilla', action: loadFlaneraMold },
     // PRODUCTO #2 del ciclo — el vaso hecho a mano con la interfaz, cargable como el dado.
     { key: 'st-vaso', name: 'EL VASO · ⌀80×20 (botadores)', type: 'molde', meta: 'pared 3 · shell tapa abierta · pin §11.2.5', status: 'plantilla', action: () => loadDoc(vasoDoc()) },
+    // PRODUCTO #3 del ciclo — la jabonera del libro: rect + costillas §2.3.2 + bosses §2.3.3.
+    { key: 'st-jabonera', name: 'LA JABONERA · 120×80×30', type: 'molde', meta: 'pared 2 · costillas §2.3.2 · bosses §2.3.3', status: 'plantilla', action: () => loadDoc(jaboneraDoc()) },
     { key: 'st-percha', name: 'Percha (curso Alwis)', type: 'molde', meta: 'gancho · partición curva', status: 'plantilla', action: cursoInsertar },
     { key: 'st-cicloidal', name: 'Reductor cicloidal 10:1', type: 'mecanismo', meta: 'print-in-place · holgura 0.30', status: 'plantilla', action: () => loadDoc(cycloidalReducerDoc()) },
   ], [mold, loadFlaneraMold, cursoInsertar, loadDoc]);

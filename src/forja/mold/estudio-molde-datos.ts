@@ -1211,6 +1211,64 @@ export const VASO_PIEZA: PiezaSpec = {
   // handles geométricos E3→E12: PENDIENTES (siguiente incremento).
 };
 
+/** LA JABONERA — tercera figura (orden 2026-08-21). Ejemplo del libro (banco
+ *  del kernel: box 120×80×30 + shell 2 + fillet R3). rect como el cubo, pero
+ *  con COSTILLAS (§2.3.2) y BOSSES (§2.3.3) — el eje de forma que ni cubo ni
+ *  vaso ejercen. Base LITERAL del libro + costillas/bosses DECLARADOS (una
+ *  jabonera real los lleva). */
+export const JABONERA_SPEC: MachineSpec = {
+  name: 'LA JABONERA', Lmm: 120, Wmm: 80, Hmm: 30, cavityShape: 'rect',
+  surfaceMm2: 44000, volumeMm3: 45193, wallMm: 2,
+  annualVolume: 100_000, totalVolume: 100_000, plastic: 'ABS', finish: 'SPI B-3',
+} as MachineSpec;
+
+export const JABONERA_PIEZA: PiezaSpec = {
+  nombre: 'LA JABONERA', spec: JABONERA_SPEC, material: 'ABS',
+  macizo: {
+    nombre: 'JABONERA MACIZA 120×80×30', wallMm: 30, volCc: 288,   // 120·80·30/1000
+    part: {
+      nominalWallMm: 30,
+      walls: [{ label: 'bloque completo', thicknessMm: 30 }],
+      corners: [{ label: 'aristas', kind: 'externo' }],            // vivas
+      surface: { finish: 'SPI B-3', roughnessUm: 12 },
+      draftDeg: 0,
+      material: { resin: 'ABS' },
+    },
+  },
+  pieza: {
+    nombre: 'JABONERA 120×80×30 · pared 2 · 3 costillas + 4 bosses', wallMm: 2, volCc: 45.2,
+    part: {
+      nominalWallMm: 2,
+      walls: [
+        { label: 'paredes laterales', thicknessMm: 2 },
+        { label: 'piso', thicknessMm: 2 },
+      ],
+      // §2.3.2 — costillas de rigidez del piso: base 0.6·pared, alto 3·pared,
+      //   paso 12.5·pared, draft 1.5° → todas dentro de regla
+      ribs: [
+        { label: 'costilla longitudinal 1', baseMm: 1.2, heightMm: 6, spacingMm: 25, draftDeg: 1.5 },
+        { label: 'costilla longitudinal 2', baseMm: 1.2, heightMm: 6, spacingMm: 25, draftDeg: 1.5 },
+        { label: 'costilla longitudinal 3', baseMm: 1.2, heightMm: 6, spacingMm: 25, draftDeg: 1.5 },
+      ],
+      // §2.3.3 — 4 bosses de montaje (postes ⌀6 para tornillos): pared 0.6·nominal
+      bosses: [
+        { label: 'boss esquina A', wallMm: 1.2, gussetMm: 1.2 },
+        { label: 'boss esquina B', wallMm: 1.2, gussetMm: 1.2 },
+        { label: 'boss esquina C', wallMm: 1.2, gussetMm: 1.2 },
+        { label: 'boss esquina D', wallMm: 1.2, gussetMm: 1.2 },
+      ],
+      corners: [
+        { label: 'esquinas internas', kind: 'interno', radiusMm: 1 },   // 0.5·t ✓
+        { label: 'esquinas externas', kind: 'externo', radiusMm: 3 },   // 1.5·t ✓ (banco R3)
+      ],
+      surface: { finish: 'SPI B-3', roughnessUm: 12 },
+      draftDeg: 1.5,
+      material: { resin: 'ABS' },
+    },
+  },
+  // handles geométricos E3→E12: PENDIENTES (siguiente incremento).
+};
+
 /** ALIAS del cubo para la economía — el ciclo del dado no cambia. */
 export const estacion2Dado = (): Estacion2Dado => estacion2(DADO_PIEZA);
 

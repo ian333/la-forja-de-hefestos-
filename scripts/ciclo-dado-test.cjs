@@ -63,6 +63,19 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   check('CONTROL: el molde del vaso ≠ el del cubo (separó de verdad)', v2.veredicto.precioMoldeUSD !== e2.veredicto.precioMoldeUSD, `vaso $${v2.veredicto.precioMoldeUSD.toLocaleString()} vs cubo $${e2.veredicto.precioMoldeUSD.toLocaleString()}`);
   check('ALIAS: el cubo llama el MISMO camino (estacion1Dado == estacion1(DADO_PIEZA))', ed.estacion1Dado().dado.tcS === ed.estacion1(ed.DADO_PIEZA).dado.tcS && ed.estacion2Dado().veredicto.precioMoldeUSD === ed.estacion2(ed.DADO_PIEZA).veredicto.precioMoldeUSD);
 
+  // ══ TERCERA FIGURA — LA JABONERA (costillas §2.3.2 + bosses §2.3.3) ══
+  console.log('── TERCERA FIGURA · la jabonera (un eje de forma nuevo)');
+  const refs = (dfm) => new Set((dfm.findings ?? []).map((f) => f.ref));
+  const j1 = ed.estacion1(ed.JABONERA_PIEZA);
+  check('JABONERA E1: macizo REPROBADO (bloque 120×80×30)', j1.macizo.veredicto === 'REPROBADO', `${j1.macizo.veredicto} · ${(j1.macizo.tcS / 60).toFixed(1)} min`);
+  check('JABONERA E1: pieza APROBADA (costillas+bosses en regla)', j1.dado.veredicto === 'APROBADO' && j1.dado.dfm.errors === 0, `${j1.dado.veredicto} · ${j1.dado.dfm.errors} err`);
+  const jrefs = refs(j1.dado.dfm);
+  check('JABONERA E1: la máquina EJERCE §2.3.2 (costillas) + §2.3.3 (bosses)', jrefs.has('§2.3.2') && jrefs.has('§2.3.3'), [...jrefs].sort().join(' '));
+  const crefs = refs(e1.dado.dfm);
+  check('CONTROL: el cubo NO trae costillas/bosses (eje NUEVO de la jabonera)', !crefs.has('§2.3.2') && !crefs.has('§2.3.3'), [...crefs].sort().join(' ') || '(sin §2.3.2/§2.3.3)');
+  const j2 = ed.estacion2(ed.JABONERA_PIEZA);
+  check('JABONERA E2: el molde ≠ cubo Y ≠ vaso (tres piezas, tres costos)', j2.veredicto.precioMoldeUSD !== e2.veredicto.precioMoldeUSD && j2.veredicto.precioMoldeUSD !== v2.veredicto.precioMoldeUSD, `jabonera $${j2.veredicto.precioMoldeUSD.toLocaleString()} · cubo $${e2.veredicto.precioMoldeUSD.toLocaleString()} · vaso $${v2.veredicto.precioMoldeUSD.toLocaleString()}`);
+
   // ══ E3 — ARQUITECTURA con OCC REAL ══
   console.log('── E3 · Arquitectura (cap 4) — midiendo el B-Rep');
   const oc = await factory({ wasmBinary: wasmBin });
