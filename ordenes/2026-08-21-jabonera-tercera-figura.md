@@ -87,3 +87,25 @@ propios números y carga como proyecto del lobby.
   §2.3.3 presentes, ausentes en cubo/vaso; molde ≠ cubo ≠ vaso) · los 187
   previos verdes · orden-gate VERDE
 - la jabonera CARGA como proyecto #3 en el lobby (screenshot) · deploy
+
+---
+
+## CIERRE (lo que de verdad pasó)
+
+**TRES FIGURAS EN LA MÁQUINA.** `JABONERA_PIEZA` corre E1/E2 por el mismo camino
+que el vaso. Gate **187 → 192**:
+- E1: macizo REPROBADO (bloque 120×80×30, 31.8 min), pieza APROBADA (0 err).
+- E1: la máquina **EJERCE §2.3.2 (costillas) + §2.3.3 (bosses)** — presentes en
+  su DFM, AUSENTES en el cubo (control: rama nueva de forma).
+- E2: molde **$19,294 ≠ $9,259 cubo ≠ $11,343 vaso** — tres piezas, tres costos.
+
+**PROYECTO #3 CARGABLE.** `jaboneraDoc()` + tarjeta `st-jabonera`. La cara de la
+tapa se CONFIRMÓ manejando la UI (`listFaces` → 11 caras: rim 784 mm² en z=30,
+piso interno 8816 mm² en z=2 → shell abierto arriba, pared 2). Carga como pieza
+editable, **vol 41,152 mm³ exacto** (box+shell del banco). Las costillas/bosses
+viven en la DFM (JABONERA_PIEZA), no en el sólido cargable — mismo criterio que
+el vaso (draft en spec, no en el sólido 0°).
+
+**El eje nuevo:** cubo (rect grueso) · vaso (round, stripper) · jabonera (rect +
+costillas/bosses §2.3.2/§2.3.3). Cada una juzgada por SU forma. E3→E12 siguen
+bindeadas al cubo — el incremento que sigue es E3 (partición/split por pieza).
