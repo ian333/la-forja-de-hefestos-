@@ -3341,6 +3341,26 @@ function cycloidalReducerDoc(): DocState {
     components,
   };
 }
+// ── EL VASO (producto #2 del ciclo) — la pieza que se hizo A MANO con la interfaz
+// (orden 2026-08-21-vaso-con-botadores). Se registra como PROYECTO cargable, igual
+// que el cicloidal: sketch círculo ⌀80 → extrude 20 → shell 3 con la TAPA abierta.
+// Es la geometría que SÍ pasó el juez de eyección (⌀80×20 pared 3 → pin, 8×⌀10,
+// 628 mm² de pin ≤ 726 mm² de borde; las hondas piden pines que NO caben §11.2.5).
+// SIN draft: el draft del árbol es ciego a caras cilíndricas (hallazgo declarado);
+// el camino recto de un vaso es stripper o revolución — se REVISA, no se disimula.
+function vasoDoc(): DocState {
+  const base = makeDefaultDoc('EL VASO · ⌀80×20 pared 3');
+  return {
+    ...base, name: 'EL VASO · ⌀80×20 pared 3',
+    sketch: { ...DEFAULT_SKETCH, kind: 'circle', radius: 40, gear: { ...GEAR_DEFAULTS } },
+    ops: [
+      { id: newId('extrude'), type: 'extrude', depth: 20, symmetric: false },
+      // shell: caras del cilindro = 0 lateral, 1 tapa inferior, 2 tapa superior → abrimos la 2
+      { id: newId('shell'), type: 'shell', thickness: 3, faces: [2] },
+    ],
+  };
+}
+
 function makeExamples(): Array<{ name: string; doc: () => DocState }> {
   return [{ name: '⚙ Reductor cicloidal 10:1', doc: cycloidalReducerDoc }];
 }
@@ -3952,6 +3972,8 @@ export default function ForgeBRepStudio() {
     // estaba ("no aparece como proyecto aún"): solo existía el botón de la barra.
     { key: 'st-dado', name: 'EL DADO · ciclo Kazmer (molde de inyección)', type: 'molde', meta: 'E1→E5 · sprue directo Fig 7.2 · alarmas de tubería y balance', status: 'plantilla', action: mold.loadDado },
     { key: 'st-flanera', name: 'Molde Flanera PP', type: 'molde', meta: 'Ø80·H40 · 6 cav · molde completo', status: 'plantilla', action: loadFlaneraMold },
+    // PRODUCTO #2 del ciclo — el vaso hecho a mano con la interfaz, cargable como el dado.
+    { key: 'st-vaso', name: 'EL VASO · ⌀80×20 (botadores)', type: 'molde', meta: 'pared 3 · shell tapa abierta · pin §11.2.5', status: 'plantilla', action: () => loadDoc(vasoDoc()) },
     { key: 'st-percha', name: 'Percha (curso Alwis)', type: 'molde', meta: 'gancho · partición curva', status: 'plantilla', action: cursoInsertar },
     { key: 'st-cicloidal', name: 'Reductor cicloidal 10:1', type: 'mecanismo', meta: 'print-in-place · holgura 0.30', status: 'plantilla', action: () => loadDoc(cycloidalReducerDoc()) },
   ], [mold, loadFlaneraMold, cursoInsertar, loadDoc]);
