@@ -87,3 +87,26 @@ SIN arreglar nada de la máquina.
 - screenshots del ciclo: qué se habilita y qué NO con el vaso cargado
 - REVISION-VASO-CICLO.md con el mapa estación×estación (qué cambiar para 10 productos)
 - los 181 del cubo SIGUEN verdes (no toqué la máquina) · orden-gate VERDE · deploy
+
+---
+
+## CIERRE (lo que de verdad pasó)
+
+**EL VASO ES PRODUCTO #2, cargable.** `vasoDoc()` + tarjeta `st-vaso` en el
+lobby (patrón ProjectSwitcher, NO botón de cinta). Carga como pieza EDITABLE
+(Boceto→Extrude→Shell), volumen **27,416.679 mm³** = π·40²·20 − π·37²·17 exacto.
+Verificado EN VIVO en university.gaiaprime.com.mx: tarjeta presente, carga,
+`docName="EL VASO · ⌀80×20 pared 3"`, cero errores de página. Deploy 25/25.
+
+**LA REVISIÓN (docs/forja-research/REVISION-VASO-CICLO.md):** el vaso carga pero
+NO tiene el ciclo, porque la máquina E1→E12 es la máquina DEL CUBO. Mapa
+motor×motor con archivo y línea: `DADO_SPEC`, `dadoRectoShape`,
+`dentroDadoLocal`, y las dos estaciones sin-args (`estacion1Dado`/
+`estacion2Dado`). Bloqueador #0: el puente pieza-del-árbol → `cursoRef.pieza`.
+Punto de divergencia real: E3 (el vaso recto sin draft no parte con splitMold).
+
+**NO se tocó ningún motor** (revisión, no cambios). Gate del cubo **181/181**
+intacto (prueba de que la máquina no se movió). 3 screenshots entregados a ian.
+
+**SIGUIENTE (próximo turno, ya con luz verde de cambios):** el puente, luego
+`PartSpec` + E1/E2 parametrizados, luego E3 (stripper/revolución del vaso).
