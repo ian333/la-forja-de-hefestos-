@@ -91,6 +91,28 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   // ══ LA PRUEBA DEL RAYO — el teorema y su CONTROL NEGATIVO ══
   console.log('── EL RAYO · ¿la pieza SALE? (y ¿el test distingue lo roto?)');
   const { splitMold } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold.ts'));
+
+  // ══ EL PUENTE (orden v1·1) — la pieza del ÁRBOL entra a la máquina ══
+  // piezaDesdeArbol: bbox/volumen/área MEDIDOS del sólido OCC + pared/draft/filete
+  // DECLARADOS por los features. La máquina juzga LA PIEZA REAL y dice la verdad.
+  console.log('── EL PUENTE · piezaDesdeArbol: el sólido del usuario → PiezaSpec');
+  {
+    const outer = occt.makeCylinder(oc, 40, 20);
+    const inner = occt.transformShape(oc, occt.makeCylinder(oc, 37, 18), { translate: [0, 0, 3] });
+    const vasoArbol = occt.cut(oc, outer, inner);            // = vasoDoc(): ⌀80×20, cascarón 3, tapa abierta
+    const pz = ed.piezaDesdeArbol(oc, vasoArbol, { nombre: 'VASO DEL ÁRBOL', wallMm: 3, round: true });
+    check('PUENTE: bbox MEDIDA del sólido = 80×80×20', cerca(pz.spec.Lmm, 80, 0.1) && cerca(pz.spec.Wmm, 80, 0.1) && cerca(pz.spec.Hmm, 20, 0.1), `${pz.spec.Lmm}×${pz.spec.Wmm}×${pz.spec.Hmm}`);
+    check('PUENTE: volumen MEDIDO ≈ 27,417 mm³ (π·40²·20 − π·37²·17, ±1 %) y redondo', cerca(pz.spec.volumeMm3, 27417, 275) && pz.spec.cavityShape === 'round', `${pz.spec.volumeMm3} mm³ · ${pz.spec.cavityShape}`);
+    const p1 = ed.estacion1(pz);
+    const refs1 = new Set(p1.dado.dfm.findings.filter((f) => f.severity === 'error').map((f) => f.ref));
+    check('PUENTE E1 dice la VERDAD: el vaso del árbol sin Draft ni Redondeo REPRUEBA §2.3.6 + §2.3.4', p1.dado.veredicto === 'REPROBADO' && refs1.has('§2.3.6') && refs1.has('§2.3.4'), `${p1.dado.veredicto} · errores: ${[...refs1].join(' ')}`);
+    const p1ok = ed.estacion1(ed.piezaDesdeArbol(oc, vasoArbol, { nombre: 'VASO DEL ÁRBOL', wallMm: 3, round: true, draftDeg: 1.5, filletMm: 4.5 }));
+    check('PUENTE CONTROL: con Draft 1.5° + Redondeo declarados, la MISMA pieza APRUEBA', p1ok.dado.veredicto === 'APROBADO' && p1ok.dado.dfm.errors === 0, `${p1ok.dado.veredicto} · ${p1ok.dado.dfm.errors} err`);
+    const p2 = ed.estacion2(pz), v2b = ed.estacion2(ed.VASO_PIEZA);
+    check('PUENTE E2: el vaso MEDIDO del árbol cotiza como el vaso ESCRITO a mano (±2 %) — misma pieza, dos orígenes', cerca(p2.veredicto.precioMoldeUSD, v2b.veredicto.precioMoldeUSD, 0.02 * v2b.veredicto.precioMoldeUSD), `árbol $${p2.veredicto.precioMoldeUSD.toLocaleString()} vs escrito $${v2b.veredicto.precioMoldeUSD.toLocaleString()}`);
+    const pc = ed.estacion1(ed.piezaDesdeArbol(oc, occt.makeBox(oc, 40, 40, 40), { nombre: 'CAJA SIN CASCARÓN' }));
+    check('PUENTE CONTROL: sin cascarón la pieza es MACIZA (pared 40) → E1 la REPRUEBA', pc.dado.veredicto === 'REPROBADO' && pc.dado.wallMm === 40, `${pc.dado.veredicto} · pared ${pc.dado.wallMm} · t_c ${(pc.dado.tcS / 60).toFixed(1)} min`);
+  }
   const malla = (sh) => { const t = occt.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
   const corre = (shape) => {
     const r = splitMold(oc, shape, { scale: 1, pinch: 0.5, plateThickness: 16, block: { w: 120, d: 120, h: 60, x: 20, y: 20, z: 39.5 - 30 } });

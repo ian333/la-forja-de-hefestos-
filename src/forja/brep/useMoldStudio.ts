@@ -8,7 +8,7 @@
  * Compone useMoldLive (la sesión viva) y re-exporta su bolsa.
  * Interfaz angosta: { oc, setCollapsed, setDocName } — nada más del Studio.
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction, type MutableRefObject } from 'react';
 import * as THREE from 'three';
 import * as OCC from './occt';
 import { tessellate, makeCompound } from './occt';
@@ -32,7 +32,7 @@ import { convergeVelocityCross, ABS_CROSS } from '../mold/filling';
 import { ABS_MG47, convergeVelocity, shearRatePowerLaw, viscosityPowerLaw, pressureDropSegment } from '../mold/filling';
 import { runMoldFea, type MoldFeaOverlay } from '../mold/mold-fea';
 import { moldMachine, type MoldPackage } from '../mold/moldmachine';
-import { estacion1Dado, estacion2Dado, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
+import { estacion1Dado, estacion2Dado, estacion1, estacion2, piezaDesdeArbol, DADO_PIEZA, type PiezaSpec, estacion3Dado, dadoRectoShape, construirAceroE3, verificacionE3, cotasCicloE3, pruebaDelRayo, interseccionMitades, estacion4Dado, estacion5Dado, estacion6Dado, colocacionEnLaBase, dentroDadoLocal, llenadoNivel1, campoEspiral, longitudEspiralMm, espiralAcero, espiralMalla, espiralN2Corrida, estacion7Dado, estacion8Dado, estacion9Dado, estacion10Dado, estacion11Dado, estacion12Dado, type ActaDado, type Estacion11Dado, type Estacion10Dado, type Estacion7Dado, type Estacion8Dado, type Estacion9Dado, type Estacion4Dado, type Estacion5Dado, type Estacion6Dado, type PruebaRayo, type Estacion1Dado, type Estacion2Dado, type Estacion3Dado, type VerificacionE3 } from '../mold/estudio-molde-datos';
 import { resolverLlenadoFAN } from '../mold/fan';
 import { datumsColada, construirColada, verificacionColada, dentroColada, type VerificacionColada, type DatumsColada } from '../mold/colada';
 import { layoutBranched, layoutRadial, layoutSeries, layoutHybrid, applyResistanceNetwork, type FeedNetwork } from '../mold/feed-layouts';
@@ -46,10 +46,21 @@ function dadoShape(oc: any) {
   return OCC.cut(oc, outer, inner);
 }
 
-export function useMoldStudio({ oc, setCollapsed, setDocName }: {
+/** EL PUENTE (orden v1·1): lo que el estudio conserva del árbol para la máquina de
+ *  moldes — el Shape OCC (antes se liberaba al teselar) + lo que sus features
+ *  DECLARAN. El estudio lo escribe en cada rebuild y sube `arbolRev`. */
+export interface ArbolPieza {
+  shape: any; nombre?: string; volMm3: number; areaMm2: number;
+  wallMm?: number; draftDeg?: number; filletMm?: number; round: boolean; material?: string;
+}
+
+export function useMoldStudio({ oc, setCollapsed, setDocName, arbol, arbolRev = 0 }: {
   oc: any;
   setCollapsed: Dispatch<SetStateAction<Record<string, boolean>>>;
   setDocName: (name: string) => void;
+  /** EL PUENTE: el sólido del árbol (ref) + su revisión (cambia en cada rebuild) */
+  arbol?: MutableRefObject<ArbolPieza | null>;
+  arbolRev?: number;
 }) {
   const { liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm,
     liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev } = useMoldLive();
@@ -70,7 +81,10 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   // propio juicio del video: "arranca casi vacío: 100 %").
   const [tFill, setTFill] = useState(1);
   const tFillRef = useRef(1);
-  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado; e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number; e4?: Estacion4Dado; e4paint?: { part: any; flow: Float32Array; max: number }; n1?: any; frenteVert?: Float32Array; frenteQ?: Float32Array; voxPos?: Float32Array; cellMm?: number;
+  const [ciclo, setCiclo] = useState<{ estacion: number; e1: Estacion1Dado;
+    /** EL PUENTE: la pieza del ÁRBOL y su sólido. Ausentes = el ciclo es del cubo (los demos). */
+    pieza?: PiezaSpec; piezaShape?: any;
+    e2?: Estacion2Dado; e3?: Estacion3Dado; e3v?: VerificacionE3; e3cotas?: CotaSet[]; rayo?: PruebaRayo; interMm3?: number; e4?: Estacion4Dado; e4paint?: { part: any; flow: Float32Array; max: number }; n1?: any; frenteVert?: Float32Array; frenteQ?: Float32Array; voxPos?: Float32Array; cellMm?: number;
     /** el campo de llenado en la REJILLA COMPLETA + su geometría: de aquí sale la
      *  SUPERFICIE del fundido (`frenteSuperficie`). `frenteVert` está compactado a
      *  los vóxeles de cavidad y no sirve para extraer una isosuperficie. */
@@ -482,6 +496,37 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
     cursoRef.current.stage = stage; cursoRef.current.report = report;
     setCursoStage(stage); setCursoReport(report); setMoldParts(parts);
   }, []);
+  // ── EL PUENTE (orden v1·1): la pieza del ÁRBOL entra a la máquina ──────────
+  // AUTOMÁTICO (ian: "más cosas automáticas que de llenado"): cada vez que el
+  // estudio reconstruye un sólido (arbolRev) y NO hay un demo cargado, la pieza
+  // del usuario se vuelve `cursoRef.pieza` (MOLD TOOLS se habilita: Escala ya no
+  // sale gris) y siembra el ciclo en E1 con SU PiezaSpec — medido del sólido y
+  // declarado por sus features. Editar el árbol re-siembra (el sólido viejo ya se
+  // liberó en el estudio, por eso se re-apunta aquí). Silencioso: sin reporte del
+  // curso, sin abrir paneles — la señal es el ribbon que se enciende y el ciclo.
+  useEffect(() => {
+    const a = arbol?.current;
+    if (!oc) return;
+    if (!a?.shape) {
+      // CONTROL NEGATIVO vivo: el árbol se quedó sin sólido → la pieza del árbol se
+      // va (Escala vuelve a gris, el ciclo desaparece). Los demos no se tocan.
+      if (ciclo?.pieza) { cursoRef.current = { ...cursoRef.current, pieza: undefined, stage: 0 }; setCursoStage(0); setCiclo(null as any); }
+      return;
+    }
+    const esDemo = (!!ciclo && !ciclo.pieza) || (moldParts.length > 0 && !ciclo?.pieza);
+    if (esDemo) return;
+    if (ciclo?.pieza && ciclo.piezaShape === a.shape) return;   // mismo sólido: nada que hacer
+    try {
+      const pieza = piezaDesdeArbol(oc, a.shape, {
+        nombre: a.nombre || 'PIEZA DEL ÁRBOL', wallMm: a.wallMm, draftDeg: a.draftDeg,
+        filletMm: a.filletMm, round: a.round, material: 'ABS',            // intake de material: v1·5
+      });
+      const e1 = estacion1(pieza);
+      cursoRef.current = { ...cursoRef.current, pieza: a.shape, vols: { ...cursoRef.current.vols, pieza: a.volMm3 }, stage: Math.max(1, cursoRef.current.stage) };
+      setCursoStage((s) => Math.max(1, s));
+      setCiclo({ estacion: 1, e1, pieza, piezaShape: a.shape });
+    } catch (e) { console.warn('PUENTE_ERR', e); }
+  }, [oc, arbolRev]);  // eslint-disable-line react-hooks/exhaustive-deps -- ciclo/moldParts se leen como guardas, no disparan
   const cursoInsertar = useCallback(() => cursoRun(() => {
     const r = insertarPercha(oc!);
     cursoRef.current = { ...cursoRef.current, pieza: r.shape, vols: { pieza: r.volMm3 } };
@@ -725,27 +770,33 @@ export function useMoldStudio({ oc, setCollapsed, setDocName }: {
   const cicloEstacion2 = useCallback(() => {
     if (!oc || !ciclo) return;
     try {
-      const e2 = estacion2Dado();
-      const d = dadoShape(oc);
+      // EL PUENTE: la pieza del árbol si la hay; si no, el cubo — bit a bit como antes
+      const pieza = ciclo.pieza ?? DADO_PIEZA;
+      const e2 = ciclo.pieza ? estacion2(pieza) : estacion2Dado();
+      const d = ciclo.piezaShape ?? dadoShape(oc);
+      // separación del layout ×2/×4 por la HUELLA real (80/170/220 eran del cubo de 40)
+      const bb = ciclo.piezaShape ? shapeBBox(oc, d) : null;
+      const Lx = bb ? bb.max[0] - bb.min[0] : 40, Ly = bb ? bb.max[1] - bb.min[1] : 40;
+      const P = bb ? { a: Lx + 20, b: 2 * (Lx + 20) + 10, c: 2 * (Lx + 20) + 10 + Lx + 10, sy: Ly / 2 + 5 } : { a: 80, b: 170, c: 220, sy: 25 };
       const at = (x: number, y: number) => OCC.transformShape(oc, d, { translate: [x, y, 0] });
       const gana = e2.variantes.find((v) => v.ganadora);
       const v2 = e2.variantes.find((v) => v.nCav === 2 && v.arch === 'cold-2placas');
       const v4 = e2.variantes.find((v) => v.nCav === 4 && v.arch === 'cold-2placas');
       setCiclo({ ...ciclo, estacion: 2, e2 });
-      setDocName('EL DADO · estación 2 — ECONOMÍA (cap 3): ¿cuántas cavidades?');
+      setDocName(`${ciclo.pieza ? pieza.nombre : 'EL DADO'} · estación 2 — ECONOMÍA (cap 3): ¿cuántas cavidades?`);
       setCollapsed((c) => ({ ...c, features: false }));
       cursoSet(2, [
-        'CICLO DEL DADO · estación 2 — ECONOMÍA (cap 3)',
+        `CICLO DE ${ciclo.pieza ? pieza.nombre : 'EL DADO'} · estación 2 — ECONOMÍA (cap 3)`,
         `GANA ×${gana?.nCav}: molde $${gana?.moldeUSD.toLocaleString()} · $${gana?.totalPzaUSD}/pza a 100k`,
         e2.bandaLectura,
       ], [
         cursoPart(at(0, 0), 'pieza', `×1 GANADOR — $${gana?.totalPzaUSD}/pza`, '#f4d27a', 0.98, 0.1),
-        cursoPart(at(80, -25), 'fam2a', `×2 pierde — $${v2?.totalPzaUSD}/pza`, '#8fa0b8', 0.22, 0.02),
-        cursoPart(at(80, 25), 'fam2b', '×2 (la otra cavidad)', '#8fa0b8', 0.22, 0.02),
-        cursoPart(at(170, -25), 'fam4a', `×4 pierde — $${v4?.totalPzaUSD}/pza`, '#8fa0b8', 0.16, 0.02),
-        cursoPart(at(170, 25), 'fam4b', '×4', '#8fa0b8', 0.16, 0.02),
-        cursoPart(at(220, -25), 'fam4c', '×4', '#8fa0b8', 0.16, 0.02),
-        cursoPart(at(220, 25), 'fam4d', '×4', '#8fa0b8', 0.16, 0.02),
+        cursoPart(at(P.a, -P.sy), 'fam2a', `×2 pierde — $${v2?.totalPzaUSD}/pza`, '#8fa0b8', 0.22, 0.02),
+        cursoPart(at(P.a, P.sy), 'fam2b', '×2 (la otra cavidad)', '#8fa0b8', 0.22, 0.02),
+        cursoPart(at(P.b, -P.sy), 'fam4a', `×4 pierde — $${v4?.totalPzaUSD}/pza`, '#8fa0b8', 0.16, 0.02),
+        cursoPart(at(P.b, P.sy), 'fam4b', '×4', '#8fa0b8', 0.16, 0.02),
+        cursoPart(at(P.c, -P.sy), 'fam4c', '×4', '#8fa0b8', 0.16, 0.02),
+        cursoPart(at(P.c, P.sy), 'fam4d', '×4', '#8fa0b8', 0.16, 0.02),
       ]);
     } catch (e) { console.warn('E2_ERR', e); }
   }, [oc, ciclo, cursoSet, cursoPart, setDocName, setCollapsed]);

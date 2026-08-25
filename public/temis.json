@@ -1,41 +1,19 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-25 19:11",
+ "generado": "2026-08-25 20:11",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
-  "proximo": 6,
+  "proximo": 5,
   "enCurso": 0,
-  "cerrado": 48,
+  "cerrado": 49,
   "despues": 15
  },
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-08-21-v1-1-puente.md",
-    "slug": "2026-08-21-v1-1-puente",
-    "titulo": "v1·1 — EL PUENTE: la pieza del árbol (o el STEP) entra a la máquina",
-    "fecha": "2026-08-21",
-    "estado": "proximo",
-    "prioridad": 1,
-    "objetivo": "que cursoRef.current.pieza y PiezaSpec se alimenten del sólido que el usuario modeló o importó — no de las 4 piezas hardcodeadas (percha, flanera, dado, probeta). Es el bloqueador #0 del vaso: con la pieza del usuario en el árbol, MOLD TOO…",
-    "toca": 2,
-    "crea": 0,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "con el VASO cargado del lobby, MOLD TOOLS se HABILITA y estacion1/2 corren",
-     "control negativo: sin sólido en el árbol, sigue gris",
-     "192 del ciclo verdes · orden-gate VERDE"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "commit": ""
-   },
    {
     "file": "ordenes/2026-08-21-v1-2-higiene-recorrido.md",
     "slug": "2026-08-21-v1-2-higiene-recorrido",
@@ -276,6 +254,32 @@
     "evidenciaSS": [],
     "revisable": false,
     "commit": "5f574d5"
+   },
+   {
+    "file": "ordenes/2026-08-21-v1-1-puente.md",
+    "slug": "2026-08-21-v1-1-puente",
+    "titulo": "v1·1 — EL PUENTE: la pieza del árbol (o el STEP) entra a la máquina",
+    "fecha": "2026-08-21",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "objetivo": "que cursoRef.current.pieza y PiezaSpec se alimenten del sólido que el usuario modeló o importó — no de las 4 piezas hardcodeadas (percha, flanera, dado, probeta). Es el bloqueador #0 del vaso: con la pieza del usuario en el árbol, MOLD TOO…",
+    "toca": 6,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "con el VASO cargado del lobby, MOLD TOOLS se HABILITA y estacion1/2 corren",
+     "control negativo: sin sólido en el árbol, sigue gris",
+     "192 del ciclo verdes · orden-gate VERDE"
+    ],
+    "cierre": "EL PUENTE EXISTE. El hallazgo de raíz: el rebuild del estudio hacía shape.delete?.() en cuanto teselaba — el sólido OCC del árbol NUNCA sobrevivía, por eso no había qué pasarle a la máquina. Ahora el…",
+    "cierreCompleto": "EL PUENTE EXISTE. El hallazgo de raíz: el rebuild del estudio hacía shape.delete?.() en cuanto teselaba — el sólido OCC del árbol NUNCA sobrevivía, por eso no había qué pasarle a la máquina. Ahora el estudio lo CONSERVA (arbolRef, libera el anterior) junto con lo que los features DECLARAN (cascarón→pared, Draft→ángulo, Redondeo→radio, croquis circular→redondo) y avisa al hook con arbolRev. Automático, sin botón (regla de ian: prohibido crear botones; \"más cosas automáticas\"): cada rebuild sin demo cargado vuelve la pieza del usuario cursoRef.pieza (MOLD TOOLS se enciende: Escala ya no sale gris) y siembra el ciclo en E1 con SU PiezaSpec — piezaDesdeArbol(): bbox/volumen/área MEDIDOS del sólido, pared/draft/filete declarados. E2 cotiza la pieza del árbol (layout ×2/×4 por su huella real). E3 sale BLOQUEADA con nota honesta (sigue cableada al cubo; llega con v1·3). Sin sólido en el árbol: Escala gris, ciclo fuera. Gate: ciclo del dado: 198 pasan · 0 fallan (6 checks nuevos del PUENTE): bbox 80×80×20 EXACTA · vol 27,417 mm³ · E1 dice la verdad (el vaso del árbol sin Draft ni Redondeo REPRUEBA §2.3.6 + §2.3.4; con ambos declarados, la MISMA pieza APRUEBA — control) · E2 del vaso MEDIDO $11,342 vs el ESCRITO a mano $11,343 (misma pieza, dos orígenes) · sin cascarón = macizo (pared 40, 56.5 min). Los 192 previos intactos. Cazado por los gates/ojos, arreglado: (1) shapeBBox mide sobre la MALLA — el cilindro ⌀80 salía 79.77 (el gate lo cazó con ±0.1): bbox exacta de OCC (Bnd_Box, sin triangulación); (2) import duplicado de occVolume — el bundle lo toleró pero el ESM del dev NO mon…",
+    "evidenciaSS": [
+     "evidencia/2026-08-21-v1-1-puente/01-vaso-cargado-E1-de-la-pieza-del-arbol.jpg",
+     "evidencia/2026-08-21-v1-1-puente/02-E2-economia-del-vaso-E3-bloqueada.jpg",
+     "evidencia/2026-08-21-v1-1-puente/03-control-negativo-sin-solido-escala-gris.jpg"
+    ],
+    "revisable": true,
+    "commit": "28ec3af"
    },
    {
     "file": "ordenes/2026-08-21-temis-tablero.md",

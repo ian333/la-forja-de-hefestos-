@@ -613,7 +613,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           ▶ estación 2 — ECONOMÍA: ¿cuántos dados por disparo?
         </button>
       )}
-      {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
+      {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={ciclo.pieza ? undefined : cicloEstacion3} piezaDelArbol={!!ciclo.pieza} />}
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
       {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={cicloEstacion6} />}
       {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
@@ -656,7 +656,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
  *  La columna clave es el DESGLOSE: amortización (molde$/Q, declarando que ignora el
  *  factor de mantenimiento §3.4.1) + material/proceso = total. La tabla ES la prueba:
  *  se puede sumar a mano. */
-function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estacion2Dado; onE3?: () => void }) {
+function CicloE2({ e2, onE3, piezaDelArbol }: { e2: import('../mold/estudio-molde-datos').Estacion2Dado; onE3?: () => void; piezaDelArbol?: boolean }) {
   return (
     <>
       <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
@@ -707,6 +707,14 @@ function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estac
           title="ARQUITECTURA (cap 4): el dado gana su draft REAL (1.5° tallado), splitMold talla cavidad y núcleo, la base se compra con su aritmética a la vista — y los semáforos §4.3.3 despiertan.">
           ▶ estación 3 — ARQUITECTURA: nace el primer acero
         </button>
+      )}
+      {!onE3 && piezaDelArbol && (
+        // EL PUENTE (v1·1) trae la pieza del árbol hasta E2. E3 sigue cableada al cubo
+        // (splitMold sobre dadoDraftShape): decirlo es más honesto que tallar el cubo
+        // con el nombre de tu pieza. Llega con v1·3.
+        <div data-testid="ciclo-e3-bloqueada" style={{ margin: '4px 6px 6px', padding: '7px 9px', borderRadius: 6, border: '1px dashed #3a4a60', fontSize: 10.5, color: '#8fa1b8', lineHeight: 1.4 }}>
+          ⏸ estación 3 — ARQUITECTURA aún está cableada al CUBO. Para TU pieza llega con el ticket <b style={{ color: '#f4d27a' }}>v1·3 E3 por pieza</b>. Hasta aquí, DFM (E1) y economía (E2) son de tu pieza, medidas de tu sólido.
+        </div>
       )}
     </>
   );

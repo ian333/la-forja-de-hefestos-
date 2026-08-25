@@ -48,7 +48,7 @@ import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
 import { CotaLines, CotaDriver, CotaLabels, CotaApertura, CotaAperturaLabel, type CotaSet } from './MoldCotas3D';
 import { MoldTcPaint, MoldFlowPaint, FeedFill, MoldOpenDriver, MoldTransientThermal, MoldFeaMesh, MoldEdges, AlarmCloud, RayoPaint, LlenadoPaint, FrenteSuperficie, EspiralMeltExacta, computeMoldAlarm } from './MoldScene';
-import { useMoldStudio } from './useMoldStudio';
+import { useMoldStudio, type ArbolPieza } from './useMoldStudio';
 import { MoldBuildingBanner, CursoPanel, MoldTreePanel, MoldRibbonGroup, MoldAnalisisPanel, CicloPanel } from './MoldPanels';
 import { moldAnalysis, componentAnalysis, type MoldAnalysis } from '../mold/mold-analysis';
 import { createThermalSim, type ThermalSim } from '../mold/mold-thermal-fdm';
@@ -3555,7 +3555,14 @@ export default function ForgeBRepStudio() {
   // EL MOLDE completo (estado+armado+alarma+curso+flanera) vive en useMoldStudio
   // (paso 2.3 de la extracción). La llamada va AQUÍ (después de setDocName) porque
   // el hook la recibe como parámetro — moverla arriba = TDZ, el crash ya conocido.
-  const mold = useMoldStudio({ oc, setCollapsed, setDocName });
+  // EL PUENTE (orden v1·1): el sólido OCC del árbol se CONSERVA para la máquina de
+  // moldes — antes el rebuild lo liberaba al teselar (`shape.delete()`), así que
+  // nunca hubo qué pasar. Lo escribe el rebuild; `arbolRev` avisa al hook.
+  const arbolRef = useRef<ArbolPieza | null>(null);
+  const [arbolRev, setArbolRev] = useState(0);
+  const docNameRef = useRef(docName);
+  useEffect(() => { docNameRef.current = docName; }, [docName]);
+  const mold = useMoldStudio({ oc, setCollapsed, setDocName, arbol: arbolRef, arbolRev });
   const { moldSim, moldThermalSim, liveCotas, liveMoldSpec, setLiveMoldSpec, liveMoldMesh, setLiveMoldMesh, liveDfm, liveRealSolidsRef, liveRealSolidsRev, setLiveRealSolidsRev, moldParts, setMoldParts, ciclo, tFill, setTFill, tFillRef, moldBuilding, setMoldBuilding, moldHidden, setMoldHidden, moldOpacity, setMoldOpacity, moldSelected, setMoldSelected, moldHover, setMoldHover, moldMoveMode, setMoldMoveMode, moldOffset, setMoldOffset, moldAnimRefs, moldOpenRef, moldOpenOn, setMoldOpenOn, fillAt, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle, cicloPlayStop, moldMoveRef, moldColors, setMoldColors, alarmCloud, setAlarmCloud, moldExpanded, setMoldExpanded, moldCompAnalysis, flowOn, setFlowOn, liveFlow, moldOpenStrokeMm, liveFastener, fastHalf, setFastHalf, cotasOn, setCotasOn, cotaRefs, cotaAperturaRef, cotaErrors, moldSimOn, setMoldSimOn, moldPartingZ, moldXray, setMoldXray, moldSliceAxis, setMoldSliceAxis, moldSliceFrac, setMoldSliceFrac, moldTcOn, setMoldTcOn, moldTc, moldFea, setMoldFea, moldFeaBusy, setMoldFeaBusy, runMoldFeaNow, toggleMoldPlate, showAllMold, toggleMoldAlarm, cursoStage, setCursoStage, cursoBusy, setCursoBusy, cursoReport, setCursoReport, cursoCollapsed, setCursoCollapsed, cursoRef, cursoPart, cursoLoopPart, cursoRun, cursoSet, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, meshToMoldPart, cursoSplit, cursoGuias, isolateMoldPlate, setMoldPlateOpacity } = mold;
   const [libNames, setLibNames] = useState<string[]>([]);
   const refreshLib = useCallback(() => setLibNames(Object.keys(readLib()).sort()), []);
@@ -3842,7 +3849,18 @@ export default function ForgeBRepStudio() {
         resultRef.current = built;
         setResult(built);
         mark('rebuild', performance.now() - tRebuild0, { ops: boundDoc.ops.length, tris: Math.round(mesh.indices.length / 3) });
-        shape.delete?.();
+        // EL PUENTE: CONSERVAR el sólido (libera el anterior) + lo que los features declaran
+        arbolRef.current?.shape?.delete?.();
+        const opsB = boundDoc.ops as Op[];
+        const shellB = opsB.find((o) => o.type === 'shell') as ShellOp | undefined;
+        const draftB = opsB.find((o) => o.type === 'draft') as DraftOp | undefined;
+        const filB = opsB.find((o) => o.type === 'fillet') as FilletOp | undefined;
+        arbolRef.current = {
+          shape, nombre: docNameRef.current, volMm3: volKernel, areaMm2: area,
+          wallMm: shellB?.thickness, draftDeg: draftB?.angleDeg, filletMm: filB?.radius,
+          round: sketch.kind === 'circle' || !!sketch.customCircle, material,
+        };
+        setArbolRev((v) => v + 1);
       } catch (e) {
         // console.error VISIBLE para el arnés (meta.errors): sin esto, un component que
         // lanza (p.ej. revolve inválido) muere en silencio y el operador no se entera.
@@ -3855,7 +3873,10 @@ export default function ForgeBRepStudio() {
         const noSolid = !importedStep && components.length === 0
           && !(assembly.enabled && sketch.kind === 'gear')
           && boundDoc.ops.length === 0;
-        if (noSolid) { resultRef.current = null; setResult(null); }
+        if (noSolid) {
+          resultRef.current = null; setResult(null);
+          arbolRef.current?.shape?.delete?.(); arbolRef.current = null; setArbolRev((v) => v + 1);   // EL PUENTE: sin sólido, sin pieza
+        }
       } finally {
         setBuilding(false);
       }

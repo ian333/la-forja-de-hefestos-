@@ -1269,6 +1269,86 @@ export const JABONERA_PIEZA: PiezaSpec = {
   // handles geométricos E3→E12: PENDIENTES (siguiente incremento).
 };
 
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* EL PUENTE (orden v1·1) — la pieza del ÁRBOL entra a la máquina              */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/** Lo que el árbol del CAD sabe de su sólido: el Shape OCC (conservado por el
+ *  estudio — antes se liberaba al teselar) + lo que sus features DECLARAN
+ *  (cascarón → pared, draft → ángulo, redondeo → radio, croquis circular → redondo). */
+export interface ArbolPiezaMeta {
+  nombre: string;
+  /** pared del cascarón; sin cascarón la pieza es MACIZA (pared = su menor dimensión) */
+  wallMm?: number;
+  /** ángulo del feature Draft; sin Draft = 0° (§2.3.6 reprueba — honesto) */
+  draftDeg?: number;
+  /** radio del Redondeo; sin él las aristas son VIVAS (§2.3.4 reprueba — honesto) */
+  filletMm?: number;
+  /** croquis circular → cavityShape 'round' (el camino de la flanera) */
+  round?: boolean;
+  /** llave de PLASTICOS_A. Default ABS DECLARADO: el intake de material es v1·5 */
+  material?: string;
+  annualVolume?: number;
+}
+
+/** De un Shape OCC del árbol → el PiezaSpec que consumen estacion1/estacion2.
+ *  bbox/volumen/área MEDIDOS del sólido (occt); pared/draft/filete DECLARADOS por
+ *  los features. La máquina juzga LA PIEZA REAL: un vaso sin draft reprueba §2.3.6
+ *  y con aristas vivas reprueba §2.3.4 — eso es el puente diciendo la verdad. */
+export function piezaDesdeArbol(oc: any, shape: any, m: ArbolPiezaMeta): PiezaSpec {
+  // bbox EXACTA de OCC (Bnd_Box sin triangulación). `shapeBBox` (mold.ts) mide sobre
+  // la MALLA: un cilindro ⌀80 salía 79.77 (polígono inscrito) — el gate lo cazó.
+  // Para un cubo da igual; para el acero de un redondo, 0.23 mm no da igual.
+  const bb = arbolBBoxExacta(oc, shape);
+  const r2 = (x: number) => Math.round(x * 100) / 100;
+  const L = r2(bb.max[0] - bb.min[0]), W = r2(bb.max[1] - bb.min[1]), H = r2(bb.max[2] - bb.min[2]);
+  const vol = occVolume(oc, shape), area = occSurfaceArea(oc, shape);
+  const minDim = Math.min(L, W, H);
+  const wall = m.wallMm ?? minDim;                               // sin cascarón = macizo
+  const material = m.material ?? 'ABS';
+  const Q = m.annualVolume ?? 100_000;
+  const spec: MachineSpec = {
+    name: m.nombre, Lmm: L, Wmm: W, Hmm: H, cavityShape: m.round ? 'round' : 'rect',
+    surfaceMm2: Math.round(area), volumeMm3: Math.round(vol), wallMm: wall,
+    annualVolume: Q, totalVolume: Q, plastic: material, finish: 'SPI B-3',
+  } as MachineSpec;
+  const surface = { finish: 'SPI B-3', roughnessUm: 12 };
+  return {
+    nombre: m.nombre, spec, material,
+    macizo: {
+      nombre: `${m.nombre} MACIZO ${L}×${W}×${H}`, wallMm: minDim, volCc: +(L * W * H / 1000).toFixed(1),
+      part: {
+        nominalWallMm: minDim,
+        walls: [{ label: 'sección completa', thicknessMm: minDim }],
+        corners: [{ label: 'aristas', kind: 'externo' }],
+        surface, draftDeg: 0, material: { resin: material },
+      },
+    },
+    pieza: {
+      // sin repetir "pared" si el nombre del doc ya lo trae ("EL VASO · ⌀80×20 pared 3")
+      nombre: /pared/i.test(m.nombre) ? m.nombre : `${m.nombre} · pared ${wall}`, wallMm: wall, volCc: +(vol / 1000).toFixed(1),
+      part: {
+        nominalWallMm: wall,
+        walls: [{ label: m.wallMm != null ? 'pared del cascarón' : 'sección (sin cascarón)', thicknessMm: wall }],
+        corners: m.filletMm != null
+          ? [{ label: 'aristas (Redondeo)', kind: 'externo', radiusMm: m.filletMm }]
+          : [{ label: 'aristas', kind: 'externo' }],                // vivas: §2.3.4 lo dirá
+        surface, draftDeg: m.draftDeg ?? 0,                          // sin Draft: §2.3.6 lo dirá
+        material: { resin: material },
+      },
+    },
+    solidRecto: () => shape, solidDraft: () => shape,
+    local: { semiXmm: L / 2, semiYmm: W / 2, alturaMm: H, bocaZmm: Math.max(0, H - 0.5) },
+  };
+}
+function arbolBBoxExacta(oc: any, shape: any): { min: [number, number, number]; max: [number, number, number] } {
+  const box = new oc.Bnd_Box_1();
+  oc.BRepBndLib.Add(shape, box, false);                            // false = geometría exacta, no la malla
+  const mn = box.CornerMin(), mx = box.CornerMax();
+  const out = { min: [mn.X(), mn.Y(), mn.Z()] as [number, number, number], max: [mx.X(), mx.Y(), mx.Z()] as [number, number, number] };
+  box.delete?.(); mn.delete?.(); mx.delete?.();
+  return out;
+}
+
 /** ALIAS del cubo para la economía — el ciclo del dado no cambia. */
 export const estacion2Dado = (): Estacion2Dado => estacion2(DADO_PIEZA);
 
@@ -1431,6 +1511,7 @@ export function estacion3Dado(pkg: MoldPackage): Estacion3Dado {
 import { makeBox as occMakeBox, transformShape as occTransform, cut as occCut, loftSections as occLoft, common as occCommon, volume as occVolume, tessellate as occTess } from '../brep/occt';
 import { clasificarVisibilidad } from './visibilidad';
 import { splitMold, shapeBBox, draftAnalysis, type SplitMoldResult } from './mold';
+import { surfaceArea as occSurfaceArea } from '../brep/occt';   // EL PUENTE: área del sólido del árbol (occVolume ya viene arriba)
 
 /** El dado RECTO de las estaciones 1-2 (boca abajo, sin draft). */
 export function dadoRectoShape(oc: any) {
