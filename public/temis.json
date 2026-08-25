@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-25 19:04",
+ "generado": "2026-08-25 19:11",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -174,7 +174,7 @@
      "evidencia/2026-08-25-temis-evidencia/03-galeria-6-capturas-cargan.jpg"
     ],
     "revisable": true,
-    "commit": ""
+    "commit": "d80ac77"
    },
    {
     "file": "ordenes/2026-08-21-vaso-proyecto-revision.md",
