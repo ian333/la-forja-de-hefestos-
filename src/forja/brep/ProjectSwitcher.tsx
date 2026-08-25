@@ -17,6 +17,45 @@ interface TemisCard {
   file: string; slug: string; titulo: string; fecha: string;
   estado: 'proximo' | 'en-curso' | 'cerrado'; prioridad: number;
   objetivo: string; toca: number; crea: number; evidencia: number; cierre: string; commit: string;
+  // LA PANTALLA DE EVIDENCIA (ian: "sí o sí deben estar los ss de que funciona")
+  evidenciaDeclarada: string[]; cierreCompleto: string; evidenciaSS: string[]; revisable: boolean;
+}
+
+/** nombre de archivo → pie de foto legible: "02-acta-rotulada-en-escena.jpg" → "acta rotulada en escena" */
+const pieDeFoto = (ruta: string) => ruta.split('/').pop()!.replace(/\.(jpe?g|png|webp)$/i, '').replace(/^\d+-/, '').replace(/-/g, ' ');
+
+function TemisDetalle({ c, onVolver }: { c: TemisCard; onVolver: () => void }) {
+  const tit = c.titulo.replace(/^v1·\d+[a-z]?\s*—\s*/, '');
+  return (
+    <div className="tm-det" data-testid="temis-detalle">
+      <button className="tm-volver" data-testid="temis-volver" onClick={onVolver}>← Tablero</button>
+      <div className="tm-det-head">
+        <span className={`tm-estado ${c.estado}`}>{c.estado === 'cerrado' ? 'cerrada' : c.estado === 'en-curso' ? 'en curso' : `próximo #${c.prioridad}`}</span>
+        <h3>{tit}</h3>
+        <p className="tm-meta">{c.fecha} · <code>{c.file}</code>{c.commit && <span className="tm-commit"> · {c.commit}</span>}</p>
+      </div>
+      {c.estado === 'cerrado' && !c.revisable && (
+        <div className="tm-viol" data-testid="temis-sin-evidencia">✘ SIN EVIDENCIA VISUAL — cerrada sin screenshots. No se puede pedir revisión de esto.</div>
+      )}
+      {c.objetivo && <><h5>Objetivo</h5><p className="tm-txt">{c.objetivo}</p></>}
+      {c.evidenciaDeclarada.length > 0 && <>
+        <h5>Evidencia declarada (antes de trabajar)</h5>
+        <ul className="tm-ul">{c.evidenciaDeclarada.map((e, i) => <li key={i}>{e}</li>)}</ul>
+      </>}
+      {c.cierreCompleto && <><h5>Cierre (lo que de verdad pasó)</h5><p className="tm-txt">{c.cierreCompleto}</p></>}
+      {c.evidenciaSS.length > 0 && <>
+        <h5>Evidencia visual <b>{c.evidenciaSS.length}</b></h5>
+        <div className="tm-gal" data-testid="temis-galeria">
+          {c.evidenciaSS.map((src) => (
+            <figure key={src}>
+              <a href={src} target="_blank" rel="noreferrer" title="abrir a tamaño real"><img src={src} alt={pieDeFoto(src)} loading="lazy" /></a>
+              <figcaption>{pieDeFoto(src)}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </>}
+    </div>
+  );
 }
 interface TemisJson {
   nombre: string; generado: string;
@@ -27,10 +66,10 @@ interface TemisJson {
   despues: Array<{ grupo: string; texto: string }>;
 }
 
-function TemisCardView({ c }: { c: TemisCard }) {
-  const tit = c.titulo.replace(/^v1·\d+\s*—\s*/, '');
+function TemisCardView({ c, onOpen }: { c: TemisCard; onOpen: (c: TemisCard) => void }) {
+  const tit = c.titulo.replace(/^v1·\d+[a-z]?\s*—\s*/, '');
   return (
-    <div className={`tm-card ${c.estado}`} data-testid={`temis-card-${c.slug}`} title={c.file}>
+    <button className={`tm-card ${c.estado}`} data-testid={`temis-card-${c.slug}`} title={`${c.file} — abrir evidencia`} onClick={() => onOpen(c)}>
       <div className="tm-top">
         {c.estado === 'proximo' && <span className="tm-n">{c.prioridad}</span>}
         {c.estado === 'en-curso' && <span className="tm-n live">▶</span>}
@@ -43,14 +82,21 @@ function TemisCardView({ c }: { c: TemisCard }) {
         {c.fecha}{c.toca ? ` · toca ${c.toca}` : ''}{c.crea ? ` · crea ${c.crea}` : ''}{c.evidencia ? ` · evidencia ${c.evidencia}` : ''}
         {c.commit && <span className="tm-commit"> · {c.commit}</span>}
       </p>
-    </div>
+      {c.estado === 'cerrado' && (
+        c.revisable
+          ? <span className="tm-badge ok" data-testid={`temis-ss-${c.slug}`}>📷 {c.evidenciaSS.length} — revisable</span>
+          : <span className="tm-badge no">sin evidencia visual</span>
+      )}
+    </button>
   );
 }
 
 function TemisBoard({ data }: { data: TemisJson | null | { error: true } }) {
   const [verCerradas, setVerCerradas] = useState(false);
+  const [detalle, setDetalle] = useState<TemisCard | null>(null);
   if (!data) return <div className="ps-empty">Temis está leyendo las órdenes…</div>;
   if ('error' in data) return <div className="ps-empty">No encontré <code>temis.json</code> — corre <code>node scripts/temis-tablero.cjs</code>.</div>;
+  if (detalle) return <div className="tm"><TemisDetalle c={detalle} onVolver={() => setDetalle(null)} /></div>;
   const { columnas, wip, conteo, violaciones, despues } = data;
   const cerradasVis = verCerradas ? columnas.cerrado : columnas.cerrado.slice(0, 6);
   const grupos = Array.from(new Set(despues.map((d) => d.grupo)));
@@ -64,17 +110,17 @@ function TemisBoard({ data }: { data: TemisJson | null | { error: true } }) {
       <div className="tm-cols">
         <section className="tm-col" data-testid="temis-col-proximo">
           <h4>Próximo <b className={conteo.proximo > wip.proximo ? 'bad' : ''}>{conteo.proximo}/{wip.proximo}</b></h4>
-          {columnas.proximo.map((c) => <TemisCardView key={c.slug} c={c} />)}
+          {columnas.proximo.map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
           {columnas.proximo.length === 0 && <div className="tm-vacio">nada en cola — escribe una orden con <code>ESTADO: proximo</code></div>}
         </section>
         <section className="tm-col" data-testid="temis-col-en-curso">
           <h4>En curso <b className={conteo.enCurso > wip.enCurso ? 'bad' : ''}>{conteo.enCurso}/{wip.enCurso}</b></h4>
-          {columnas.enCurso.map((c) => <TemisCardView key={c.slug} c={c} />)}
+          {columnas.enCurso.map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
           {columnas.enCurso.length === 0 && <div className="tm-vacio">libre — toma la #1 de Próximo</div>}
         </section>
         <section className="tm-col" data-testid="temis-col-cerrado">
           <h4>Cerrado <b>{conteo.cerrado}</b></h4>
-          {cerradasVis.map((c) => <TemisCardView key={c.slug} c={c} />)}
+          {cerradasVis.map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
           {columnas.cerrado.length > 6 && (
             <button className="tm-mas" onClick={() => setVerCerradas((v) => !v)}>
               {verCerradas ? 'ver menos' : `y ${columnas.cerrado.length - 6} más`}
@@ -226,6 +272,28 @@ const CSS = `
 .tm-grupo h5{margin:0 0 4px;font-size:11.5px;color:var(--ds-text,#DCE7F5)}
 .tm-grupo p{margin:0 0 3px 10px;font-size:11.5px;line-height:1.4;color:var(--ds-dim,#A6B4C8)}
 .tm-pie{margin:0;font-size:10.5px;color:var(--ds-faint,#7E90A9)}
+.tm-card{appearance:none;box-sizing:border-box;cursor:pointer;font:inherit;color:inherit;text-align:left;width:100%;transition:border-color .12s,transform .12s}
+.tm-card:hover{border-color:var(--ds-line2,rgba(140,180,255,.22));transform:translateY(-1px)}
+.tm-card:focus-visible{outline:2px solid #FDB813;outline-offset:2px}
+.tm-badge{align-self:flex-start;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;padding:2px 7px;border-radius:6px;border:1px solid transparent;margin-top:2px}
+.tm-badge.ok{color:#7ee0a0;background:rgba(126,224,160,.10);border-color:rgba(126,224,160,.35)}
+.tm-badge.no{color:var(--ds-faint,#7E90A9);background:transparent;border-color:var(--ds-line,rgba(140,180,255,.1))}
+/* la pantalla de evidencia */
+.tm-det{display:flex;flex-direction:column;gap:8px}
+.tm-volver{all:unset;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:#FDB813;align-self:flex-start;padding:2px 0}
+.tm-det-head{display:flex;flex-direction:column;gap:3px;padding-bottom:8px;border-bottom:1px solid var(--ds-line,rgba(140,180,255,.1))}
+.tm-det-head h3{margin:0;font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--ds-text,#DCE7F5);line-height:1.25}
+.tm-estado{align-self:flex-start;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--ds-panel2,#16202F);color:var(--ds-dim,#A6B4C8);border:1px solid var(--ds-line,rgba(140,180,255,.1))}
+.tm-estado.cerrado{color:#7ee0a0;border-color:rgba(126,224,160,.35)}
+.tm-estado.en-curso{color:#FDB813;border-color:rgba(253,184,19,.45)}
+.tm-det h5{margin:6px 0 0;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ds-faint,#7E90A9);font-weight:700;display:flex;gap:8px;align-items:center}
+.tm-det h5 b{font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:0;color:var(--ds-dim,#A6B4C8)}
+.tm-txt{margin:0;font-size:12.5px;line-height:1.5;color:var(--ds-dim,#A6B4C8);max-width:78ch}
+.tm-ul{margin:0;padding-left:18px;font-size:12px;line-height:1.5;color:var(--ds-dim,#A6B4C8);max-width:78ch}
+.tm-gal{display:grid;grid-template-columns:1fr;gap:12px}
+.tm-gal figure{margin:0;border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:10px;overflow:hidden;background:#070d16}
+.tm-gal img{display:block;width:100%;height:auto}
+.tm-gal figcaption{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--ds-dim,#A6B4C8);padding:7px 10px;border-top:1px solid var(--ds-line,rgba(140,180,255,.1))}
 .tm code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--ds-dim,#A6B4C8)}
 `;
 

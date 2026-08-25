@@ -62,10 +62,20 @@ function commitDe(rel) {
   try { return execSync(`git log -1 --format=%h -- "${rel}"`, { cwd: REPO, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); }
   catch { return ''; }
 }
+// LA PANTALLA DE EVIDENCIA (ian: "para que me pidas que revise uno, SÍ O SÍ
+// deben estar los ss de que funciona"). Los screenshots viven en
+// public/evidencia/<slug>/*.jpg — el generador los DESCUBRE, nadie los registra.
+const EVID = path.join(REPO, 'public', 'evidencia');
+function ssDe(slug) {
+  const d = path.join(EVID, slug);
+  if (!fs.existsSync(d)) return [];
+  return fs.readdirSync(d).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).sort().map((f) => `evidencia/${slug}/${f}`);
+}
 
 const archivos = fs.readdirSync(DIR).filter((f) => f.endsWith('.md') && f !== 'PLANTILLA.md' && f !== 'DESPUES-DE-V1.md').sort();
 const tarjetas = archivos.map((f) => {
   const rel = `ordenes/${f}`;
+  const slug = f.replace(/\.md$/, '');
   const txt = fs.readFileSync(path.join(DIR, f), 'utf8');
   const titulo = (txt.match(/^# ORDEN:\s*(.+)$/m) || [, f])[1].trim();
   const fecha = (f.match(/^(\d{4}-\d{2}-\d{2})/) || [, ''])[1];
@@ -74,13 +84,21 @@ const tarjetas = archivos.map((f) => {
   const tieneCierre = cierre.some((l) => l.trim());
   const estado = estadoDecl === 'proximo' ? 'proximo' : tieneCierre ? 'cerrado' : 'en-curso';
   const prioridad = +campo(txt, 'PRIORIDAD') || 999;
+  const evidenciaSS = ssDe(slug);
+  // fuera las tablas markdown (| a | b |) y sus rayas: aplanadas son ilegibles — la orden completa queda en el .md
+  const cierreLimpio = cierre.filter((l) => !/^\s*-\s*orden vs/i.test(l) && !/^\s*\|/.test(l) && !/^\s*-{3,}\s*$/.test(l));
   return {
-    file: rel, slug: f.replace(/\.md$/, ''), titulo, fecha, estado, prioridad,
+    file: rel, slug, titulo, fecha, estado, prioridad,
     objetivo: objetivo(txt),
     toca: bullets(seccion(txt, 'TOCA')).length,
     crea: bullets(seccion(txt, 'CREA')).length,
     evidencia: bullets(seccion(txt, 'EVIDENCIA')).length,
-    cierre: tieneCierre ? unaLinea(cierre.filter((l) => !/^\s*-\s*orden vs/i.test(l)), 200) : '',
+    evidenciaDeclarada: bullets(seccion(txt, 'EVIDENCIA')).map(plano),
+    cierre: tieneCierre ? unaLinea(cierreLimpio, 200) : '',
+    cierreCompleto: tieneCierre ? unaLinea(cierreLimpio, 1600) : '',
+    evidenciaSS,
+    // revisable = cerrada CON screenshots. Sin ss no se le pide a ian que revise.
+    revisable: estado === 'cerrado' && evidenciaSS.length > 0,
     commit: estado === 'cerrado' ? commitDe(rel) : '',
   };
 });
@@ -106,6 +124,19 @@ const cerrado = tarjetas.filter((t) => t.estado === 'cerrado').sort((a, b) => (b
 const violaciones = [];
 if (proximo.length > WIP.proximo) violaciones.push(`PRÓXIMO tiene ${proximo.length} > ${WIP.proximo}: para meter uno, saca uno`);
 if (enCurso.length > WIP.enCurso) violaciones.push(`EN CURSO tiene ${enCurso.length} > ${WIP.enCurso}: una orden a la vez — cierra o degrada a PRÓXIMO`);
+// SÍ O SÍ: una orden que se está CERRANDO en este working tree (su archivo está
+// modificado o nuevo en git) sin carpeta de screenshots = se niega. Las cerradas
+// de antes de Temis solo se marcan "sin evidencia visual" (no se reescribe la historia).
+let tocadas = [];
+try {
+  tocadas = execSync('git status --porcelain -- ordenes/', { cwd: REPO, stdio: ['ignore', 'pipe', 'ignore'] })
+    .toString().split('\n').map((l) => l.slice(3).trim()).filter(Boolean);
+} catch { /* sin git: no se puede saber qué se cierra ahora */ }
+for (const t of cerrado) {
+  if (t.evidenciaSS.length === 0 && tocadas.includes(t.file))
+    violaciones.push(`CERRADA SIN EVIDENCIA VISUAL: ${t.slug} — pon los ss en public/evidencia/${t.slug}/ antes de pedir revisión`);
+}
+const revisables = cerrado.filter((t) => t.revisable).length;
 
 const json = {
   nombre: 'TEMIS', generado: new Date().toISOString().slice(0, 16).replace('T', ' '),
@@ -115,7 +146,7 @@ const json = {
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(json, null, 1));
 
-console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCurso.length}/${WIP.enCurso} · cerrado ${cerrado.length} · después ${despues.length}`);
+console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCurso.length}/${WIP.enCurso} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · después ${despues.length}`);
 for (const t of proximo) console.log(`  ${String(t.prioridad).padStart(2)} · ${t.titulo}`);
 for (const t of enCurso) console.log(`  ▶ EN CURSO · ${t.titulo}`);
 for (const v of violaciones) console.log(`  ✘ ${v}`);
