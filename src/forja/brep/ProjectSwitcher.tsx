@@ -4,9 +4,97 @@
  * UNIVERSAL: moldes, robots y mecanismos (no solo moldes). El estudio le pasa la
  * lista (biblioteca + plantillas) ya con su tipo y acción; esto sólo la pinta.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export type ProjType = 'molde' | 'robot' | 'mecanismo' | 'pieza';
+
+// ── TEMIS — el tablero de órdenes (nuestro Jira, sin el impuesto) ─────────────
+// La diosa del orden, madre de las Moiras (hilan, miden, CORTAN). Lee
+// `public/temis.json`, que `scripts/temis-tablero.cjs` genera de `ordenes/*.md`:
+// nadie teclea un ticket — la orden ES el ticket. Tres columnas con TAPA
+// (PRÓXIMO ≤7 · EN CURSO ≤1): el tablero se niega, no lista.
+interface TemisCard {
+  file: string; slug: string; titulo: string; fecha: string;
+  estado: 'proximo' | 'en-curso' | 'cerrado'; prioridad: number;
+  objetivo: string; toca: number; crea: number; evidencia: number; cierre: string; commit: string;
+}
+interface TemisJson {
+  nombre: string; generado: string;
+  wip: { proximo: number; enCurso: number };
+  conteo: { proximo: number; enCurso: number; cerrado: number; despues: number };
+  violaciones: string[];
+  columnas: { proximo: TemisCard[]; enCurso: TemisCard[]; cerrado: TemisCard[] };
+  despues: Array<{ grupo: string; texto: string }>;
+}
+
+function TemisCardView({ c }: { c: TemisCard }) {
+  const tit = c.titulo.replace(/^v1·\d+\s*—\s*/, '');
+  return (
+    <div className={`tm-card ${c.estado}`} data-testid={`temis-card-${c.slug}`} title={c.file}>
+      <div className="tm-top">
+        {c.estado === 'proximo' && <span className="tm-n">{c.prioridad}</span>}
+        {c.estado === 'en-curso' && <span className="tm-n live">▶</span>}
+        {c.estado === 'cerrado' && <span className="tm-n done">✓</span>}
+        <p className="tm-tit">{tit}</p>
+      </div>
+      {c.estado !== 'cerrado' && c.objetivo && <p className="tm-obj">{c.objetivo}</p>}
+      {c.estado === 'cerrado' && c.cierre && <p className="tm-obj">{c.cierre}</p>}
+      <p className="tm-meta">
+        {c.fecha}{c.toca ? ` · toca ${c.toca}` : ''}{c.crea ? ` · crea ${c.crea}` : ''}{c.evidencia ? ` · evidencia ${c.evidencia}` : ''}
+        {c.commit && <span className="tm-commit"> · {c.commit}</span>}
+      </p>
+    </div>
+  );
+}
+
+function TemisBoard({ data }: { data: TemisJson | null | { error: true } }) {
+  const [verCerradas, setVerCerradas] = useState(false);
+  if (!data) return <div className="ps-empty">Temis está leyendo las órdenes…</div>;
+  if ('error' in data) return <div className="ps-empty">No encontré <code>temis.json</code> — corre <code>node scripts/temis-tablero.cjs</code>.</div>;
+  const { columnas, wip, conteo, violaciones, despues } = data;
+  const cerradasVis = verCerradas ? columnas.cerrado : columnas.cerrado.slice(0, 6);
+  const grupos = Array.from(new Set(despues.map((d) => d.grupo)));
+  return (
+    <div className="tm" data-testid="temis-board">
+      {violaciones.length > 0 && (
+        <div className="tm-viol" data-testid="temis-violaciones">
+          {violaciones.map((v, i) => <div key={i}>✘ {v}</div>)}
+        </div>
+      )}
+      <div className="tm-cols">
+        <section className="tm-col" data-testid="temis-col-proximo">
+          <h4>Próximo <b className={conteo.proximo > wip.proximo ? 'bad' : ''}>{conteo.proximo}/{wip.proximo}</b></h4>
+          {columnas.proximo.map((c) => <TemisCardView key={c.slug} c={c} />)}
+          {columnas.proximo.length === 0 && <div className="tm-vacio">nada en cola — escribe una orden con <code>ESTADO: proximo</code></div>}
+        </section>
+        <section className="tm-col" data-testid="temis-col-en-curso">
+          <h4>En curso <b className={conteo.enCurso > wip.enCurso ? 'bad' : ''}>{conteo.enCurso}/{wip.enCurso}</b></h4>
+          {columnas.enCurso.map((c) => <TemisCardView key={c.slug} c={c} />)}
+          {columnas.enCurso.length === 0 && <div className="tm-vacio">libre — toma la #1 de Próximo</div>}
+        </section>
+        <section className="tm-col" data-testid="temis-col-cerrado">
+          <h4>Cerrado <b>{conteo.cerrado}</b></h4>
+          {cerradasVis.map((c) => <TemisCardView key={c.slug} c={c} />)}
+          {columnas.cerrado.length > 6 && (
+            <button className="tm-mas" onClick={() => setVerCerradas((v) => !v)}>
+              {verCerradas ? 'ver menos' : `y ${columnas.cerrado.length - 6} más`}
+            </button>
+          )}
+        </section>
+      </div>
+      <details className="tm-despues" data-testid="temis-despues">
+        <summary>Después de v1 <b>{conteo.despues}</b> <span>— congelado, no muerto. No recibe orden.</span></summary>
+        {grupos.map((g) => (
+          <div key={g} className="tm-grupo">
+            <h5>{g}</h5>
+            {despues.filter((d) => d.grupo === g).map((d, i) => <p key={i}>{d.texto}</p>)}
+          </div>
+        ))}
+      </details>
+      <p className="tm-pie">La orden es el ticket. Nadie teclea nada: <code>ordenes/*.md</code> → <code>temis-tablero.cjs</code> → aquí. Generado {data.generado}.</p>
+    </div>
+  );
+}
 
 export interface ProjItem {
   key: string;
@@ -103,6 +191,42 @@ const CSS = `
 .ps-add .p{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,#FDB813 15%,transparent);color:#FDB813;font-size:22px;flex:0 0 auto}
 .ps-add small{display:block;color:var(--ds-faint,#7E90A9);font-size:10.5px;margin-top:1px}
 .ps-empty{grid-column:1/-1;color:var(--ds-faint,#7E90A9);font-size:12.5px;padding:14px 2px;text-align:center}
+.ps-panel.wide{width:min(1040px,calc(100vw - 24px))}
+.ps-tabs{display:flex;gap:2px;background:var(--ds-panel2,#16202F);border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:9px;padding:3px}
+.ps-tabs button{all:unset;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.01em;padding:6px 12px;border-radius:7px;color:var(--ds-faint,#7E90A9)}
+.ps-tabs button span{color:var(--ds-faint,#7E90A9);font-weight:500;margin-left:5px}
+.ps-tabs button.on{background:var(--ds-raise,#1D2A3D);color:var(--ds-text,#DCE7F5)}
+.ps-tabs button.on span{color:#FDB813}
+/* ── TEMIS ── */
+.tm{padding:10px 16px 14px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.tm-viol{border:1px solid rgba(242,122,108,.55);background:rgba(242,122,108,.10);color:#f8b4aa;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;display:flex;flex-direction:column;gap:3px}
+.tm-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;align-items:start}
+.tm-col{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tm-col h4{margin:0 0 2px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ds-faint,#7E90A9);font-weight:700;display:flex;align-items:center;gap:8px}
+.tm-col h4 b{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:0;color:var(--ds-dim,#A6B4C8);background:var(--ds-panel2,#16202F);border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:6px;padding:1px 7px}
+.tm-col h4 b.bad{color:#f8b4aa;border-color:rgba(242,122,108,.55)}
+.tm-card{border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:10px;background:var(--ds-panel2,#16202F);padding:9px 10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tm-card.en-curso{border-color:rgba(253,184,19,.55);background:rgba(253,184,19,.07)}
+.tm-card.cerrado{opacity:.78}
+.tm-top{display:flex;gap:8px;align-items:flex-start}
+.tm-n{flex:0 0 auto;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:700;color:#1a1206;background:#FDB813}
+.tm-n.live{background:#FDB813;color:#1a1206}
+.tm-n.done{background:rgba(126,224,160,.18);color:#7ee0a0;border:1px solid rgba(126,224,160,.4)}
+.tm-tit{margin:1px 0 0;font-size:12.5px;font-weight:700;line-height:1.25;color:var(--ds-text,#DCE7F5);min-width:0}
+.tm-obj{margin:0;font-size:11.5px;line-height:1.4;color:var(--ds-dim,#A6B4C8);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tm-meta{margin:0;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-faint,#7E90A9);font-variant-numeric:tabular-nums}
+.tm-commit{color:#7ee0a0}
+.tm-vacio{font-size:11.5px;color:var(--ds-faint,#7E90A9);border:1px dashed var(--ds-line,rgba(140,180,255,.1));border-radius:10px;padding:12px;text-align:center}
+.tm-mas{all:unset;cursor:pointer;font-family:inherit;font-size:11.5px;color:#FDB813;padding:4px 2px}
+.tm-despues{border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:10px;padding:8px 12px;background:transparent}
+.tm-despues summary{cursor:pointer;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ds-faint,#7E90A9);display:flex;gap:8px;align-items:center}
+.tm-despues summary b{font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:0;color:var(--ds-dim,#A6B4C8)}
+.tm-despues summary span{text-transform:none;letter-spacing:0;font-weight:500}
+.tm-grupo{padding:8px 0 2px}
+.tm-grupo h5{margin:0 0 4px;font-size:11.5px;color:var(--ds-text,#DCE7F5)}
+.tm-grupo p{margin:0 0 3px 10px;font-size:11.5px;line-height:1.4;color:var(--ds-dim,#A6B4C8)}
+.tm-pie{margin:0;font-size:10.5px;color:var(--ds-faint,#7E90A9)}
+.tm code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--ds-dim,#A6B4C8)}
 `;
 
 function Card({ p, onPick }: { p: ProjItem; onPick: (p: ProjItem) => void }) {
@@ -132,6 +256,16 @@ export default function ProjectSwitcher({ open, onClose, projects, starters, onN
 }) {
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<ProjType | 'todos'>('todos');
+  // TEMIS: la pestaña del tablero. Se lee al abrirla (JSON generado en el repo).
+  const [view, setView] = useState<'proyectos' | 'temis'>('proyectos');
+  const [temis, setTemis] = useState<TemisJson | null | { error: true }>(null);
+  useEffect(() => {
+    if (!open || view !== 'temis' || temis) return;
+    fetch('temis.json', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((j: TemisJson) => setTemis(j))
+      .catch(() => setTemis({ error: true }));
+  }, [open, view, temis]);
   if (!open) return null;
   const match = (p: ProjItem) =>
     (filter === 'todos' || p.type === filter) &&
@@ -144,14 +278,26 @@ export default function ProjectSwitcher({ open, onClose, projects, starters, onN
     <>
       <style>{CSS}</style>
       <div className="ps-scrim" data-testid="ps-scrim" onClick={onClose} />
-      <div className="ps-panel" role="dialog" aria-label="Proyectos" data-testid="project-switcher">
+      <div className={`ps-panel ${view === 'temis' ? 'wide' : ''}`} role="dialog" aria-label="Proyectos" data-testid="project-switcher">
         <div className="ps-head">
-          <h2>Proyectos <span>· {projects.length}</span></h2>
+          <div className="ps-tabs" role="tablist">
+            <button role="tab" className={view === 'proyectos' ? 'on' : ''} data-testid="ps-tab-proyectos" onClick={() => setView('proyectos')}>
+              Proyectos<span>{projects.length}</span>
+            </button>
+            <button role="tab" className={view === 'temis' ? 'on' : ''} data-testid="ps-tab-temis" onClick={() => setView('temis')}
+              title="TEMIS — el tablero de órdenes: próximo ≤7 · en curso ≤1 · cerrado. La orden es el ticket.">
+              Temis{temis && !('error' in temis) && <span>{temis.conteo.enCurso}/{temis.wip.enCurso} · {temis.conteo.proximo}/{temis.wip.proximo}</span>}
+            </button>
+          </div>
           <div className="ps-sp" />
-          <label className="ps-find">🔍<input data-testid="ps-search" value={q} autoFocus
-            placeholder="Buscar…" onChange={(e) => setQ(e.target.value)} /></label>
+          {view === 'proyectos' && (
+            <label className="ps-find">🔍<input data-testid="ps-search" value={q} autoFocus
+              placeholder="Buscar…" onChange={(e) => setQ(e.target.value)} /></label>
+          )}
           <button className="ps-new" data-testid="ps-new" onClick={() => { onNew(); onClose(); }}>＋ Nuevo</button>
         </div>
+        {view === 'temis' && <TemisBoard data={temis} />}
+        {view === 'proyectos' && (<>
         <div className="ps-types">
           {(['todos', 'molde', 'robot', 'mecanismo'] as const).map((t) => (
             <button key={t} className={filter === t ? 'on' : ''} data-testid={`ps-filter-${t}`}
@@ -174,6 +320,7 @@ export default function ProjectSwitcher({ open, onClose, projects, starters, onN
             <div><b>En blanco</b><small>Molde · Robot · Mecanismo</small></div>
           </button>
         </div>
+        </>)}
       </div>
     </>
   );
