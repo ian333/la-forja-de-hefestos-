@@ -1,14 +1,14 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-25 18:06",
+ "generado": "2026-08-25 18:14",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
   "proximo": 6,
-  "enCurso": 1,
-  "cerrado": 46,
+  "enCurso": 0,
+  "cerrado": 47,
   "despues": 15
  },
  "violaciones": [],
@@ -99,22 +99,7 @@
     "commit": ""
    }
   ],
-  "enCurso": [
-   {
-    "file": "ordenes/2026-08-21-temis-tablero.md",
-    "slug": "2026-08-21-temis-tablero",
-    "titulo": "v1·0 — TEMIS: el tablero de órdenes (nuestro Jira, sin el impuesto)",
-    "fecha": "2026-08-21",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "objetivo": "ian ratificó la v1 (\"Tu primera pieza, tu primer molde\") y pidió el quick win primero: nuestro Jira, EN el lobby, ultra-mínimo y bien hecho, con otro nombre y respetando la ideología de los dioses griegos. TEMIS: la diosa del orden, madre …",
-    "toca": 1,
-    "crea": 9,
-    "evidencia": 3,
-    "cierre": "",
-    "commit": ""
-   }
-  ],
+  "enCurso": [],
   "cerrado": [
    {
     "file": "ordenes/2026-08-21-vaso-proyecto-revision.md",
@@ -171,6 +156,20 @@
     "evidencia": 3,
     "cierre": "RECIBO v2 FIRMA. El recibo ahora valida la longitud de flujo contra DOS fuentes independientes: patente Terluran (730 mm) + ficha SABIC Cycolac BDT5510 (736.6 mm) @ 260 °C/3.175 mm — coinciden al 0.9…",
     "commit": "5f574d5"
+   },
+   {
+    "file": "ordenes/2026-08-21-temis-tablero.md",
+    "slug": "2026-08-21-temis-tablero",
+    "titulo": "v1·0 — TEMIS: el tablero de órdenes (nuestro Jira, sin el impuesto)",
+    "fecha": "2026-08-21",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "objetivo": "ian ratificó la v1 (\"Tu primera pieza, tu primer molde\") y pidió el quick win primero: nuestro Jira, EN el lobby, ultra-mínimo y bien hecho, con otro nombre y respetando la ideología de los dioses griegos. TEMIS: la diosa del orden, madre …",
+    "toca": 1,
+    "crea": 9,
+    "evidencia": 3,
+    "cierre": "TEMIS VIVE EN EL LOBBY, EN PROD. Pestaña Proyectos | Temis en el lobby que ya existía; cero html, cero vite, cero Canvas (censo 46/41/8 igual). Tres columnas leídas de ordenes/*.md: PRÓXIMO 6/7 (la v…",
+    "commit": "28ec3af"
    },
    {
     "file": "ordenes/2026-08-21-separar-maquina-del-cubo.md",
