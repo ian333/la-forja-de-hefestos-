@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-25 20:11",
+ "generado": "2026-08-25 20:12",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -279,7 +279,7 @@
      "evidencia/2026-08-21-v1-1-puente/03-control-negativo-sin-solido-escala-gris.jpg"
     ],
     "revisable": true,
-    "commit": "28ec3af"
+    "commit": "956de96"
    },
    {
     "file": "ordenes/2026-08-21-temis-tablero.md",
