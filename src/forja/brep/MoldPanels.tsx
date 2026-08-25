@@ -436,29 +436,16 @@ export function MoldTreePanel({ mold, kernelReady }: { mold: MoldBag; kernelRead
 /** El grupo del ribbon MOLDE · CURSO ALWIS (Flanera/Vaso/Core-Cav + los 6
  *  pasos del curso). Incluye su separador. */
 export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelReady: boolean }) {
-  const { loadFeedDemo, cursoStage, cursoBusy, cursoInsertar, cursoFlanera, loadFlaneraMold, cursoFlaneraMold, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias, loadDado, loadProbeta, loadEspiral, loadEspiralN2 } = mold;
+  // HIGIENE (v1·2): los CARGADORES de demo (dado, probeta, espiral, N2, flanera,
+  // vaso, core/cav, percha, redes) viven en el LOBBY — sección "Banco de pruebas".
+  // El ribbon es para OPERAR la pieza: aquí solo quedan los MOLD TOOLS.
+  const { cursoStage, cursoBusy, cursoEscala, cursoLayout, cursoParting, cursoSplit, cursoGuias } = mold;
   return (
     <>
             <span className="fb-tb-sep" />
             <div className="fb-group">
               <div className="fb-group-row">
-                <button className="fb-big" data-testid="btn-dado" onClick={loadDado} disabled={!kernelReady}
-                  title="EL DADO — el ciclo de Kazmer estación por estación sobre la pieza mínima: cubo hueco 40×40×40 pared 2. Estación 1: el DFM reprueba al macizo (t_c 88 min, Eq 9.5) y aprueba al dado"><Ic name="cajacic" /><span>El DADO</span></button>
-                <button className="fb-big" data-testid="btn-probeta" onClick={loadProbeta} disabled={!kernelReady}
-                  title="LA PROBETA — la placa mínima 60×20×2: el microscopio del solver de llenado. El frente continuo MOJA la pared (orden la-probeta)"><Ic name="pieza" /><span>Probeta</span></button>
-                <button className="fb-big" data-testid="btn-espiral" onClick={loadEspiral} disabled={!kernelReady}
-                  title="LA COLA DE PUERCO — la espiral de flujo de la patente US11976138 contra los 552 mm MEDIDOS de ABS (US11230635). El solver contra números ajenos, en vivo"><Ic name="revolucion" /><span>Espiral</span></button>
-                <button className="fb-big" data-testid="btn-espiral-n2" onClick={loadEspiralN2} disabled={!kernelReady}
-                  title="N2 TÉRMICO — la cola de puerco MUERE CONGELADA: piel erf × Cross-WLF × power-law. Corre las 3 isotermas de la patente (238/249/260 °C) con veredicto — tarda ~2 min"><Ic name="revolucion" /><span>N2 🧊</span></button>
-                <button className="fb-big" data-testid="btn-flanera" onClick={loadFlaneraMold} disabled={!kernelReady}
-                  title="Molde COMPLETO de la flanera (24 partes: placas, insertos sólidos, eyección, agua, guías) — como el del Tupper"><Ic name="revolucion" /><span>Flanera</span></button>
-                <button className="fb-big" data-testid="btn-flanera-vaso" onClick={cursoFlanera} disabled={!kernelReady || cursoBusy}
-                  title="Solo el VASO de la flanera (revolución torneable — el producto)"><Ic name="pieza" /><span>Vaso</span></button>
-                <button className="fb-big" data-testid="btn-flanera-mold" onClick={cursoFlaneraMold} disabled={!kernelReady || cursoBusy}
-                  title="Core/Cavidad de la flanera: los dos insertos torneables (splitMold) — el molde del vaso"><Ic name="extrude" /><span>Core/Cav</span></button>
-                <button className="fb-big" data-testid="btn-curso-pieza" onClick={cursoInsertar} disabled={!kernelReady || cursoBusy}
-                  title="Insert > Part: la percha del curso (silueta declarada a proporción)"><Ic name="pieza" /><span>Pieza</span></button>
-                <button className="fb-big" data-testid="btn-curso-escala" onClick={cursoEscala} disabled={cursoBusy || cursoStage < 1}
+                <button className="fb-big" data-testid="btn-curso-escala" onClick={cursoEscala} disabled={!kernelReady || cursoBusy || cursoStage < 1}
                   title="Scale: about Origin, uniforme ×1.015 (PP 1.5% — cota del curso)"><Ic name="escala" /><span>Escala</span></button>
                 <button className="fb-big" data-testid="btn-curso-layout" onClick={cursoLayout} disabled={cursoBusy || cursoStage < 2}
                   title="Move/Copy Body: layout de 2 cavidades (copia rotada, sin traslape)"><Ic name="pattern" /><span>Move/Copy</span></button>
@@ -468,16 +455,8 @@ export function MoldRibbonGroup({ mold, kernelReady }: { mold: MoldBag; kernelRe
                   title="Tooling Split: bloque 350×630, placas 145/90 (cotas del curso) — split + placa rectangular en UNA operación"><Ic name="extrude" /><span>Tooling Split</span></button>
                 <button className="fb-big" data-testid="btn-curso-guias" onClick={cursoGuias} disabled={cursoBusy || cursoStage < 5}
                   title="Hole Wizard: bushings ⌀48+caja ⌀54×10 y pernos ⌀35+caja ⌀40×8 en ±142/±277 (cotas del curso)"><Ic name="hole" /><span>Guías</span></button>
-                <button className="fb-big" data-testid="btn-red-6-14" onClick={() => loadFeedDemo('ramificada')} disabled={!kernelReady}
-                  title="RED RAMIFICADA (Fig 6.14): sprue → 2 primarios → 4 secundarios → 8 gates sumergidos §7.2.7 — la carga se REPARTE ½ en cada unión (Eq 6.1). Prende 💧 para verla fluir."><Ic name="patron" /><span>Red 6.14</span></button>
-                <button className="fb-big" data-testid="btn-red-6-15" onClick={() => loadFeedDemo('radial')} disabled={!kernelReady}
-                  title="RED RADIAL (Fig 6.15): N brazos desde el diafragma del sprue — balanceada, poco volumen (Eq 6.1 con n=N)."><Ic name="engrane" /><span>Red 6.15</span></button>
-                <button className="fb-big" data-testid="btn-red-6-13" onClick={() => loadFeedDemo('serie')} disabled={!kernelReady}
-                  title="RED EN SERIE (Fig 6.13): compacta pero DESBALANCEADA — mira en 💧 cómo las cavidades lejanas llenan TARDE; el libro la balancea artificialmente adelgazando los secundarios cercanos."><Ic name="careado" /><span>Red 6.13</span></button>
-                <button className="fb-big" data-testid="btn-red-6-16" onClick={() => loadFeedDemo('hibrida')} disabled={!kernelReady}
-                  title="RED HÍBRIDA (Fig 6.16): ramificada → 4 clusters RADIALES ×4 = 16 cavidades — menos material que la ramificada pura con balance natural (p.136)."><Ic name="cajacic" /><span>Red 6.16</span></button>
               </div>
-              <div className="fb-group-cap">MOLDE · CURSO ALWIS</div>
+              <div className="fb-group-cap">MOLD TOOLS</div>
             </div>
     </>
   );

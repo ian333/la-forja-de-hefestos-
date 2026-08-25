@@ -1,41 +1,19 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-25 20:12",
+ "generado": "2026-08-25 21:13",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
-  "proximo": 5,
+  "proximo": 4,
   "enCurso": 0,
-  "cerrado": 49,
+  "cerrado": 50,
   "despues": 15
  },
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-08-21-v1-2-higiene-recorrido.md",
-    "slug": "2026-08-21-v1-2-higiene-recorrido",
-    "titulo": "v1·2 — HIGIENE DEL RECORRIDO: lo que \"juguete\" significa",
-    "fecha": "2026-08-21",
-    "estado": "proximo",
-    "prioridad": 2,
-    "objetivo": "quitar del ribbon los cargadores de demo (El DADO, Probeta, Espiral, N2, Flanera, Vaso, Core/Cav, Pieza, Escala…) — viven en el lobby, que ya existe — y que el estado vacío reciba con un arranque guiado, no con \"Error: el documento no tien…",
-    "toca": 2,
-    "crea": 0,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "captura del ribbon SIN cargadores; los demos siguen en el lobby (drive: abrir",
-     "captura del estado vacío con arranque guiado, sin \"Error:\" en la barra",
-     "192 del ciclo verdes · orden-gate VERDE"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "commit": ""
-   },
    {
     "file": "ordenes/2026-08-21-v1-3-e3-por-pieza.md",
     "slug": "2026-08-21-v1-3-e3-por-pieza",
@@ -254,6 +232,32 @@
     "evidenciaSS": [],
     "revisable": false,
     "commit": "5f574d5"
+   },
+   {
+    "file": "ordenes/2026-08-21-v1-2-higiene-recorrido.md",
+    "slug": "2026-08-21-v1-2-higiene-recorrido",
+    "titulo": "v1·2 — HIGIENE DEL RECORRIDO: lo que \"juguete\" significa",
+    "fecha": "2026-08-21",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "objetivo": "quitar del ribbon los cargadores de demo (El DADO, Probeta, Espiral, N2, Flanera, Vaso, Core/Cav, Pieza, Escala…) — viven en el lobby, que ya existe — y que el estado vacío reciba con un arranque guiado, no con \"Error: el documento no tien…",
+    "toca": 5,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "captura del ribbon SIN cargadores; los demos siguen en el lobby (drive: abrir",
+     "captura del estado vacío con arranque guiado, sin \"Error:\" en la barra",
+     "192 del ciclo verdes · orden-gate VERDE"
+    ],
+    "cierre": "EL RIBBON YA NO ES EL LOBBY. Salieron los 12 cargadores (El DADO, Probeta, Espiral, N2, Flanera, Vaso, Core/Cav, Pieza y las 4 redes 6.13–6.16); quedan los 5 MOLD TOOLS (Escala · Move/Copy · Parting …",
+    "cierreCompleto": "EL RIBBON YA NO ES EL LOBBY. Salieron los 12 cargadores (El DADO, Probeta, Espiral, N2, Flanera, Vaso, Core/Cav, Pieza y las 4 redes 6.13–6.16); quedan los 5 MOLD TOOLS (Escala · Move/Copy · Parting Line · Tooling Split · Guías), que ahora también esperan al kernel. El ribbon cabe entero a 1900 px — antes \"Escala…\" se cortaba en el borde. Los demos viven en el lobby, en la sección propia \"Banco de pruebas · validación del solver\" (9 tarjetas nuevas + las 6 plantillas = 15). Sonda DOM: demosEnRibbon: [], moldTools: 5, secBanco: true. EL LIENZO VACÍO YA NO GRITA \"Error\". Un documento sin ops no es un error: la barra dice *\"Lienzo vacío — Boceto → Extruir, o abre un proyecto\"* y el viewport recibe con la tarjeta *\"Tu primera pieza, tu primer molde · 1 Boceto · 2 Extruir · 3 Cascarón + Draft\"* + \"o abre un proyecto ▸\" (abre el lobby que ya existe). REBUILD_ERR al arrancar: 0 (antes 2 por corrida del arnés). Los arneses no se rompen a escondidas: __forgeBrep.demo('dado' | 'probeta' | 'espiral' | 'espiral-n2' | …) carga un starter por llave (misma acción que la tarjeta). llenado-video.cjs (el pipeline canónico de videos) ya usa demo() esperando al kernel por el splash — OJO: __forgeBrep.ready exige un SÓLIDO y en lienzo vacío nunca llega. Los 12 scripts históricos que clickeaban btn-dado / btn-flanera / btn-red-* (probe-*, flanera-*, mold-inspect, m1-agua-verify, audit-fixes-verify, mold-eject-frames) se arreglan con esa línea cuando se necesiten — se DECLARA, no se disimula con botones invisibles. Regresión probada: el dado cargado desde el lobby conserva su ciclo (E1 \"DADO hue…",
+    "evidenciaSS": [
+     "evidencia/2026-08-21-v1-2-higiene-recorrido/01-estado-vacio-guiado-ribbon-sin-demos.jpg",
+     "evidencia/2026-08-21-v1-2-higiene-recorrido/02-lobby-con-banco-de-pruebas.jpg",
+     "evidencia/2026-08-21-v1-2-higiene-recorrido/03-dado-cargado-desde-el-lobby-ciclo-intacto.jpg"
+    ],
+    "revisable": true,
+    "commit": "28ec3af"
    },
    {
     "file": "ordenes/2026-08-21-v1-1-puente.md",

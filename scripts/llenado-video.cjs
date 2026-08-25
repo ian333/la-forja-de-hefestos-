@@ -64,23 +64,29 @@ const URL = process.env.URL || 'http://127.0.0.1:5178/forja-brep.html';
   if (process.env.E12 === '1') process.env.E11 = '1';
   if (process.env.E11 === '1') process.env.CICLO = '1';
   if (process.env.CICLO === '1') process.env.E10 = '1';
+  // HIGIENE (v1·2): los cargadores de demo ya NO viven en el ribbon — se abren por
+  // el lobby vía `__forgeBrep.demo(key)` (misma acción que la tarjeta). Se AGENDA el
+  // click (setTimeout) y se regresa: los demos pesados (N2 ~2 min) bloquean el hilo.
+  const demo = async (key) => {
+    // OJO: `__forgeBrep.ready` exige un SÓLIDO (oc && result) — en un lienzo VACÍO
+    // nunca llega. El kernel está listo cuando el splash del motor se va.
+    await p.waitForFunction(() => !!window.__forgeBrep && !/CARGANDO EL MOTOR/i.test(document.body.innerText), null, { timeout: 300000 });
+    await p.evaluate((k) => { setTimeout(() => window.__forgeBrep.demo(k), 30); }, key);
+  };
   if (process.env.PROBETA === '1') {
-    await p.waitForSelector('[data-testid="btn-probeta"]:not([disabled])', { timeout: 240000 });
-    await p.click('[data-testid="btn-probeta"]');
+    await demo('probeta');
   } else if (process.env.ESPIRAL === '1') {
     // LA COLA DE PUERCO: el solve tarda ~10 s tras el click — el waitForFunction de
     // abajo espera a que el llenadoStats exista, así que solo hay que clickear
-    await p.waitForSelector('[data-testid="btn-espiral"]:not([disabled])', { timeout: 240000 });
-    await p.click('[data-testid="btn-espiral"]');
+    await demo('espiral');
   } else if (process.env.N2 === '1') {
     // N2 TÉRMICO: el clic computa LAS 3 ISOTERMAS síncronas (~2 min de hilo
     // bloqueado). p.click esperaría la respuesta del evento y moriría a los 30 s
     // — se AGENDA el click y se regresa de inmediato; llenadoStats marca el final.
-    await p.waitForSelector('[data-testid="btn-espiral-n2"]:not([disabled])', { timeout: 240000 });
-    await p.$eval('[data-testid="btn-espiral-n2"]', (e) => { setTimeout(() => e.click(), 30); });
+    await demo('espiral-n2');
   } else {
-    await p.waitForSelector('[data-testid="btn-dado"]:not([disabled])', { timeout: 240000 });
-    await p.click('[data-testid="btn-dado"]');
+    await demo('dado');
+    await p.waitForSelector('[data-testid="btn-ciclo-e2"]', { state: 'attached', timeout: 240000 });
     await clic('btn-ciclo-e2');
     await clic('btn-ciclo-e3');
     await clic('btn-ciclo-e4');

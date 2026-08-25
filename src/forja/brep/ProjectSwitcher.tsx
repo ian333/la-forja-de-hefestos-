@@ -151,6 +151,9 @@ export interface ProjItem {
   statusColor?: string;
   current?: boolean;
   action: () => void;     // qué hace al abrirlo (loadDoc / loadFromLibrary / curso…)
+  /** HIGIENE (v1·2): 'banco' = demos de validación del solver (probeta, espiral,
+   *  N2, redes…) que antes vivían en el ribbon. Sección propia, abajo de "Empezar de". */
+  section?: 'plantilla' | 'banco';
 }
 
 const TYPE: Record<ProjType, { label: string; color: string }> = {
@@ -381,8 +384,10 @@ export default function ProjectSwitcher({ open, onClose, projects, starters, onN
           {pj.length === 0 && projects.length === 0 && (
             <div className="ps-empty">Aún no guardas proyectos — empieza de una plantilla 👇</div>
           )}
-          {st.length > 0 && <div className="ps-sec">Empezar de</div>}
-          {st.map((p) => <Card key={p.key} p={p} onPick={pick} />)}
+          {st.some((p) => p.section !== 'banco') && <div className="ps-sec">Empezar de</div>}
+          {st.filter((p) => p.section !== 'banco').map((p) => <Card key={p.key} p={p} onPick={pick} />)}
+          {st.some((p) => p.section === 'banco') && <div className="ps-sec" data-testid="ps-sec-banco">Banco de pruebas · validación del solver</div>}
+          {st.filter((p) => p.section === 'banco').map((p) => <Card key={p.key} p={p} onPick={pick} />)}
           <button className="ps-card ps-add" data-testid="ps-blank" onClick={() => { onNew(); onClose(); }}>
             <div className="p">＋</div>
             <div><b>En blanco</b><small>Molde · Robot · Mecanismo</small></div>

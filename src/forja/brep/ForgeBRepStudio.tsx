@@ -3426,6 +3426,10 @@ export default function ForgeBRepStudio() {
   const [oc, setOc] = useState<OC | null>(null);
   const [bootErr, setBootErr] = useState<string | null>(null);
   const [opErr, setOpErr] = useState<string | null>(null);
+  // HIGIENE (v1·2): un documento SIN ops no es un error — es un lienzo vacío. Antes
+  // recibía con "Error: El documento no tiene sólido…" en rojo (la crítica de ian:
+  // "se ve de juguete"). Ahora es un arranque guiado.
+  const [vacio, setVacio] = useState(false);
 
   const [sketch, setSketch] = useState<SketchFeature>({
     id: 'sketch', kind: 'rect', width: 40, height: 24, radius: 14, legW: 10,
@@ -3861,11 +3865,8 @@ export default function ForgeBRepStudio() {
           round: sketch.kind === 'circle' || !!sketch.customCircle, material,
         };
         setArbolRev((v) => v + 1);
+        setVacio(false);
       } catch (e) {
-        // console.error VISIBLE para el arnés (meta.errors): sin esto, un component que
-        // lanza (p.ej. revolve inválido) muere en silencio y el operador no se entera.
-        console.error('REBUILD_ERR:', String((e as Error)?.message ?? e));
-        setOpErr(String((e as Error)?.message ?? e));
         // Si el documento ya NO produce sólido (sin ops, sin STEP, sin componentes,
         // sin ensamble), limpia el resultado para que el viewport y la topología no
         // queden con la malla/volumen del sólido anterior. (Bug de desync: borrar el
@@ -3873,6 +3874,16 @@ export default function ForgeBRepStudio() {
         const noSolid = !importedStep && components.length === 0
           && !(assembly.enabled && sketch.kind === 'gear')
           && boundDoc.ops.length === 0;
+        if (noSolid) {
+          // HIGIENE (v1·2): lienzo vacío ≠ error. Nada en rojo, nada en la consola:
+          // el estado vacío guía ("Boceto → Extruir, o abre un proyecto").
+          setOpErr(null); setVacio(true);
+        } else {
+          // console.error VISIBLE para el arnés (meta.errors): sin esto, un component que
+          // lanza (p.ej. revolve inválido) muere en silencio y el operador no se entera.
+          console.error('REBUILD_ERR:', String((e as Error)?.message ?? e));
+          setOpErr(String((e as Error)?.message ?? e));
+        }
         if (noSolid) {
           resultRef.current = null; setResult(null);
           arbolRef.current?.shape?.delete?.(); arbolRef.current = null; setArbolRev((v) => v + 1);   // EL PUENTE: sin sólido, sin pieza
@@ -4018,7 +4029,22 @@ export default function ForgeBRepStudio() {
     { key: 'st-jabonera', name: 'LA JABONERA · 120×80×30', type: 'molde', meta: 'pared 2 · costillas §2.3.2 · bosses §2.3.3', status: 'plantilla', action: () => loadDoc(jaboneraDoc()) },
     { key: 'st-percha', name: 'Percha (curso Alwis)', type: 'molde', meta: 'gancho · partición curva', status: 'plantilla', action: cursoInsertar },
     { key: 'st-cicloidal', name: 'Reductor cicloidal 10:1', type: 'mecanismo', meta: 'print-in-place · holgura 0.30', status: 'plantilla', action: () => loadDoc(cycloidalReducerDoc()) },
+    // HIGIENE (v1·2): el BANCO DE PRUEBAS — los demos de validación del solver que
+    // vivían en el ribbon ("se ve de juguete"). El ribbon opera la pieza; el lobby carga.
+    { key: 'st-probeta', name: 'LA PROBETA · placa 60×20×2', type: 'molde', section: 'banco', meta: 'el microscopio del solver de llenado', status: 'banco', action: mold.loadProbeta },
+    { key: 'st-espiral', name: 'LA COLA DE PUERCO · espiral de la patente', type: 'molde', section: 'banco', meta: 'US11230635 · 552/635/730 mm medidos', status: 'banco', action: mold.loadEspiral },
+    { key: 'st-espiral-n2', name: 'N2 TÉRMICO · la espiral se congela', type: 'molde', section: 'banco', meta: 'piel erf × Cross-WLF · 3 isotermas · ~2 min', status: 'banco', action: mold.loadEspiralN2 },
+    { key: 'st-flanera-vaso', name: 'Flanera · solo el VASO', type: 'molde', section: 'banco', meta: 'revolución torneable · PP', status: 'banco', action: mold.cursoFlanera },
+    { key: 'st-flanera-mold', name: 'Flanera · Core / Cavidad', type: 'molde', section: 'banco', meta: 'los dos insertos torneables (splitMold)', status: 'banco', action: mold.cursoFlaneraMold },
+    { key: 'st-red-6-13', name: 'Red en SERIE · Fig 6.13', type: 'molde', section: 'banco', meta: 'compacta pero DESBALANCEADA', status: 'banco', action: () => mold.loadFeedDemo('serie') },
+    { key: 'st-red-6-14', name: 'Red RAMIFICADA · Fig 6.14', type: 'molde', section: 'banco', meta: 'sprue → 2 → 4 → 8 gates · Eq 6.1', status: 'banco', action: () => mold.loadFeedDemo('ramificada') },
+    { key: 'st-red-6-15', name: 'Red RADIAL · Fig 6.15', type: 'molde', section: 'banco', meta: 'N brazos desde el diafragma', status: 'banco', action: () => mold.loadFeedDemo('radial') },
+    { key: 'st-red-6-16', name: 'Red HÍBRIDA · Fig 6.16', type: 'molde', section: 'banco', meta: 'ramificada → 4 clusters radiales = 16 cav', status: 'banco', action: () => mold.loadFeedDemo('hibrida') },
   ], [mold, loadFlaneraMold, cursoInsertar, loadDoc]);
+  // API para arneses: `__forgeBrep.demo('dado')` = abrir el starter por su llave sin
+  // adivinar pixeles (los scripts viejos clickeaban botones del ribbon que ya no existen).
+  const startersRef = useRef<ProjItem[]>([]);
+  useEffect(() => { startersRef.current = switcherStarters; }, [switcherStarters]);
   const exportDocFile = useCallback(() => {
     const safe = (docName.trim() || 'pieza').replace(/[^\w.-]+/g, '_');
     triggerDownload(new Blob([JSON.stringify(serializeDoc(), null, 2)], { type: 'application/json' }), `${safe}.forja.json`);
@@ -5851,6 +5877,8 @@ export default function ForgeBRepStudio() {
       // al umbral de resistencia por cuantil: así el video corre en tiempo físico.
       // E10b: posición ANIMADA por rol — moldGeom lee geometría cruda (no la
       // animación), así que el juez del video mide por aquí
+      // HIGIENE (v1·2): cargar un starter del lobby por llave ('dado', 'probeta', 'espiral-n2'…)
+      demo: (key: string) => { const st = startersRef.current.find((s) => s.key === `st-${key}` || s.key === key); if (!st) return false; st.action(); return true; },
       animZ: (role: string) => (role === 'pieza' ? piezaEjectRef.current?.position.z : moldAnimRefs.current[role]?.position.z) ?? null,
       // UNA sola fuente del mapeo por cuantil: `fillAt` (useMoldStudio). El botón
       // PLAY de la UI y este arnés animan lo MISMO — dos copias se despegan.
@@ -6132,6 +6160,26 @@ export default function ForgeBRepStudio() {
           setRadial({ x: e.clientX, y: e.clientY });
         }}
       >
+        {/* HIGIENE (v1·2): el LIENZO VACÍO guía en vez de gritar "Error". DOM sobre el
+            viewport, sin Canvas nuevo. Desaparece con el primer sólido o al bocetar. */}
+        {vacio && !building && !sketchOpen && !moldParts.length && !result && (
+          <div data-testid="lienzo-vacio" style={{
+            position: 'absolute', left: '50%', top: '46%', transform: 'translate(-50%,-50%)', zIndex: 4,
+            width: 'min(520px, calc(100% - 48px))', padding: '22px 26px', borderRadius: 14, pointerEvents: 'none',
+            background: 'rgba(9,14,21,0.72)', border: '1px solid rgba(140,180,255,0.16)', backdropFilter: 'blur(3px)',
+            color: '#DCE7F5', textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif',
+          }}>
+            <div style={{ fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase', color: '#FDB813', fontWeight: 700 }}>Tu primera pieza, tu primer molde</div>
+            <div style={{ fontSize: 15, marginTop: 8, lineHeight: 1.5, color: '#A6B4C8' }}>
+              <b style={{ color: '#DCE7F5' }}>1</b> Boceto — dibuja a ojo y acota &nbsp;·&nbsp; <b style={{ color: '#DCE7F5' }}>2</b> Extruir &nbsp;·&nbsp; <b style={{ color: '#DCE7F5' }}>3</b> Cascarón + Draft
+            </div>
+            <div style={{ fontSize: 12.5, marginTop: 6, color: '#7E90A9' }}>La máquina de moldes juzga tu pieza sola en cuanto hay sólido.</div>
+            <button data-testid="lienzo-vacio-abrir" onClick={() => setSwitcherOpen(true)} style={{
+              pointerEvents: 'auto', marginTop: 14, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700,
+              color: '#1a1206', background: 'linear-gradient(150deg,#FDB813,#d1930b)', border: 0, borderRadius: 9, padding: '8px 14px',
+            }}>o abre un proyecto ▸</button>
+          </div>
+        )}
         <CadViewport
           cameraDistance={cameraDist}
           autoRotate={false}
@@ -8279,7 +8327,7 @@ export default function ForgeBRepStudio() {
             ) : (
               <div className="inv">
                 <span className="k">Estado</span>
-                <span className="v">{opErr ? `Error: ${opErr}` : bootErr ? `Kernel: ${bootErr}` : 'Construyendo…'}</span>
+                <span className="v" data-testid="estado-texto">{opErr ? `Error: ${opErr}` : bootErr ? `Kernel: ${bootErr}` : vacio ? 'Lienzo vacío — Boceto → Extruir, o abre un proyecto (▾ arriba a la izquierda)' : 'Construyendo…'}</span>
               </div>
             )}
             {opErr && result && (
