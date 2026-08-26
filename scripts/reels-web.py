@@ -39,6 +39,7 @@ CRF = os.environ.get('CRF', '32')
 DESDE = {
     'mol-grasa-butirico': 0.0,      # abre YA con la molécula hecha (el gancho es el cuadro 0)
     'mol-h2o-el-hexamero': 0.0,     # el campo ENCENDIÉNDOSE es el gancho (canon)
+    'mol-h2o-el-sudor': 0.0,        # abre con las dos aguas y el campo (ley #6 del rey: 7 s sin corte)
 }
 
 

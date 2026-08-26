@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 04:40",
+ "generado": "2026-08-26 17:22",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -11,7 +11,12 @@
   "cerrado": 56,
   "probado": 0,
   "porProbar": 23,
+  "sinDesplegar": 0,
   "despues": 15
+ },
+ "deploy": {
+  "commit": "6f70032",
+  "fecha": "2026-08-26 04:41"
  },
  "violaciones": [],
  "columnas": {
@@ -36,22 +41,26 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": ""
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "enCurso": [
    {
     "file": "ordenes/2026-08-25-temis-modulo-comando.md",
     "slug": "2026-08-25-temis-modulo-comando",
-    "titulo": "TEMIS como módulo + en Comando + estado de DESPLIEGUE",
+    "titulo": "TEMIS como módulo + en Comando + estado de DESPLIEGUE + CINE 1/día + release programada",
     "fecha": "2026-08-25",
     "estado": "en-curso",
     "prioridad": 999,
     "objetivo": "Reutilizar el tablero TEMIS como MÓDULO (hoy vive embebido en ProjectSwitcher) y montarlo también en comando.html. Y darle a cada tarjeta un ESTADO DE DESPLIEGUE derivado (en-vivo / sin-desplegar / n-a) para coordinar los deploys — que ya …",
-    "toca": 5,
-    "crea": 4,
-    "evidencia": 3,
+    "toca": 8,
+    "crea": 8,
+    "evidencia": 6,
     "evidenciaDeclarada": [
+     "Tira CINE (1/día) en Temis con 'hoy' y 'publicado' derivado del catálogo.",
+     "Atrio: el rey primero (telemetría: 2,663 vistas al reel #0 que era el butírico).",
+     "forja-release.sh: release programada desde worktree limpio + candado Redis (--lock-check SANO).",
      "Lobby Temis idéntico (DOM: mismas testids temis-board/col-*).",
      "comando.html con pestaña Temis mostrando el tablero.",
      "Banner \"N sin desplegar\" cuando hay tarjetas cerradas tras el último deploy."
@@ -62,7 +71,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": ""
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -90,7 +100,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "77d8797"
+    "commit": "77d8797",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-25-temis-evidencia.md",
@@ -119,7 +130,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "d80ac77"
+    "commit": "d80ac77",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-25-kernel-llega.md",
@@ -145,7 +157,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "98aa021"
+    "commit": "98aa021",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-vaso-proyecto-revision.md",
@@ -174,7 +187,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "726841d"
+    "commit": "726841d",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-08-21-vaso-con-botadores.md",
@@ -206,7 +220,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "1113722"
+    "commit": "1113722",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-08-21-validacion-industria.md",
@@ -230,7 +245,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "ba1c460"
+    "commit": "ba1c460",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-08-21-validacion-2a-fuente.md",
@@ -254,7 +270,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "5f574d5"
+    "commit": "5f574d5",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-08-21-v1-6-leccion1-v1-gate.md",
@@ -281,7 +298,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "2a510db"
+    "commit": "2a510db",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-v1-5-base-cotizacion.md",
@@ -309,7 +327,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "a076f6f"
+    "commit": "a076f6f",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-v1-4-draft-cilindros.md",
@@ -336,7 +355,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "11ce23b"
+    "commit": "11ce23b",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-v1-3-e3-por-pieza.md",
@@ -365,7 +385,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "bcb703f"
+    "commit": "bcb703f",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-v1-2-higiene-recorrido.md",
@@ -393,7 +414,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "a8848f3"
+    "commit": "a8848f3",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-v1-1-puente.md",
@@ -421,7 +443,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "956de96"
+    "commit": "956de96",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-temis-tablero.md",
@@ -448,7 +471,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "1cf4bc8"
+    "commit": "1cf4bc8",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-21-separar-maquina-del-cubo.md",
@@ -472,7 +496,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "54d98d3"
+    "commit": "54d98d3",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-08-21-jabonera-tercera-figura.md",
@@ -497,7 +522,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "97a8446"
+    "commit": "97a8446",
+    "despliegue": "n-a"
    },
    {
     "file": "ordenes/2026-08-21-ciclo-en-prod.md",
@@ -519,7 +545,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "62e12d8"
+    "commit": "62e12d8",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-18-el-ciclo-en-movimiento.md",
@@ -544,7 +571,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "c68c2fd"
+    "commit": "c68c2fd",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-18-e8b-circuito-real.md",
@@ -569,7 +597,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "e4e2713"
+    "commit": "e4e2713",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-18-ciclo-dado-estacion9.md",
@@ -594,7 +623,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "7a93683"
+    "commit": "7a93683",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-18-ciclo-dado-estacion12.md",
@@ -621,7 +651,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "2d564e8"
+    "commit": "2d564e8",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-18-ciclo-dado-estacion11.md",
@@ -646,7 +677,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "79d5505"
+    "commit": "79d5505",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-18-ciclo-dado-estacion10.md",
@@ -672,7 +704,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "50e89d4"
+    "commit": "50e89d4",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-17-n2-termico.md",
@@ -698,7 +731,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "fcae584"
+    "commit": "fcae584",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-17-ciclo-dado-estacion8.md",
@@ -724,7 +758,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "293f71e"
+    "commit": "293f71e",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-17-ciclo-dado-estacion7.md",
@@ -751,7 +786,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "8f0420b"
+    "commit": "8f0420b",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-14-switchover-vp.md",
@@ -775,7 +811,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "224445a"
+    "commit": "224445a",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-14-el-dado-con-su-molde.md",
@@ -799,7 +836,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "d6b66ff"
+    "commit": "d6b66ff",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-14-ciclo-dado-estacion6.md",
@@ -826,7 +864,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "1e16363"
+    "commit": "1e16363",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-13-la-cola-de-puerco.md",
@@ -851,7 +890,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "1d4e4ae"
+    "commit": "1d4e4ae",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-13-cola-de-puerco-de-acero.md",
@@ -874,7 +914,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "7e155e0"
+    "commit": "7e155e0",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-voltear-la-pieza.md",
@@ -901,7 +942,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "74de4b8"
+    "commit": "74de4b8",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-una-sola-tuberia.md",
@@ -930,7 +972,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "5a39b65"
+    "commit": "5a39b65",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-retorno-e3-desplazar-cavidad.md",
@@ -960,7 +1003,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "819985a"
+    "commit": "819985a",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-llenado-desde-el-operador.md",
@@ -986,7 +1030,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "ad10158"
+    "commit": "ad10158",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-la-probeta.md",
@@ -1010,7 +1055,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "2f8a1fc"
+    "commit": "2f8a1fc",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-el-cono-se-ve-cono.md",
@@ -1036,7 +1082,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "e7e8449"
+    "commit": "e7e8449",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-dado-en-el-lobby.md",
@@ -1059,7 +1106,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "f6cdc0e"
+    "commit": "f6cdc0e",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-cavidad-y-liquido.md",
@@ -1086,7 +1134,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "7fcc71a"
+    "commit": "7fcc71a",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-12-alarma-de-balance.md",
@@ -1111,7 +1160,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "f7c0df9"
+    "commit": "f7c0df9",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-llenado-video.md",
@@ -1136,7 +1186,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "917304f"
+    "commit": "917304f",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-llenado-nivel1-crosswlf.md",
@@ -1163,7 +1214,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "fda3464"
+    "commit": "fda3464",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-frente-superficie.md",
@@ -1190,7 +1242,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "b3bdd2d"
+    "commit": "b3bdd2d",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-estacion5-alimentacion.md",
@@ -1221,7 +1274,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "975673b"
+    "commit": "975673b",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-e5-usa-el-generador.md",
@@ -1248,7 +1302,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "279cda5"
+    "commit": "279cda5",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-cotas-colocadas-y-conflicto-visible.md",
@@ -1274,7 +1329,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "a4631af"
+    "commit": "a4631af",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-colocar-insertos-en-la-base.md",
@@ -1304,7 +1360,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "94be46b"
+    "commit": "94be46b",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-colada-generador.md",
@@ -1337,7 +1394,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "e1c403e"
+    "commit": "e1c403e",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-ciclo-dado-estacion4.md",
@@ -1362,7 +1420,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "c03fd0b"
+    "commit": "c03fd0b",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-11-ciclo-dado-el-rayo.md",
@@ -1387,7 +1446,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "991fa09"
+    "commit": "991fa09",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-10-limpieza-molde.md",
@@ -1413,7 +1473,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "9eedc7a"
+    "commit": "9eedc7a",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-10-juicio-pines-3d.md",
@@ -1438,7 +1499,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "c6e3c62"
+    "commit": "c6e3c62",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-10-ciclo-dado-estacion3.md",
@@ -1463,7 +1525,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "6166610"
+    "commit": "6166610",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-10-ciclo-dado-estacion2.md",
@@ -1487,7 +1550,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "da5e270"
+    "commit": "da5e270",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-10-ciclo-dado-estacion1.md",
@@ -1513,7 +1577,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "3cd6b52"
+    "commit": "3cd6b52",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-10-ciclo-dado-e3-verificacion.md",
@@ -1537,7 +1602,8 @@
     "revisable": false,
     "probado": "",
     "falla": "",
-    "commit": "bb06b01"
+    "commit": "bb06b01",
+    "despliegue": "en-vivo"
    }
   ],
   "probado": []
@@ -1603,5 +1669,80 @@
    "grupo": "Otros dominios (congelados, no muertos)",
    "texto": "Hub Nobel / labs de física / masterclass: fuera del lobby de v1."
   }
- ]
+ ],
+ "cine": {
+  "nota": "CINE: 1 video por día, SIN desviarnos (Ian, 2026-08-26). El rey y la base NO se mueven: todo sale del mismo motor, mismos bins, guion cotidiano + sello GAIA. `estado` lo pone la mano (hoy/proximo/hecho); `publicado` lo DERIVA temis-tablero.cjs del catálogo de Comando (public/comando/catalogo.json). Regla: no hay dos 'hoy'.",
+  "dias": [
+   {
+    "fecha": "2026-08-25",
+    "id": "mol-h2o-el-sudor",
+    "titulo": "El sudor — por qué te enfría",
+    "base": "puente (dímero) · cam=c",
+    "tipo": "quick-win",
+    "estado": "hecho",
+    "manifiesto": true,
+    "publicado": true
+   },
+   {
+    "fecha": "2026-08-26",
+    "id": "mol-h2o-el-hielo",
+    "titulo": "El hielo — por qué flota",
+    "base": "hexágono (6 aguas)",
+    "tipo": "quick-win",
+    "estado": "hoy",
+    "manifiesto": true,
+    "publicado": false
+   },
+   {
+    "fecha": "2026-08-27",
+    "id": "mol-h2o-la-gota",
+    "titulo": "La gota — por qué es redonda",
+    "base": "puente (dímero) · cam nueva",
+    "tipo": "quick-win",
+    "estado": "proximo",
+    "manifiesto": false,
+    "publicado": false
+   },
+   {
+    "fecha": "2026-08-28",
+    "id": "mol-h2o-el-hervor",
+    "titulo": "Hervir — por qué tarda tanto",
+    "base": "cuarteto (4 aguas)",
+    "tipo": "quick-win",
+    "estado": "proximo",
+    "manifiesto": false,
+    "publicado": false
+   },
+   {
+    "fecha": "2026-08-29",
+    "id": "mol-h2o-aceite",
+    "titulo": "El agua contra el aceite (no hay puente)",
+    "base": "dímero NUEVO: H₂O + hexano",
+    "tipo": "sim ~1h",
+    "estado": "proximo",
+    "manifiesto": false,
+    "publicado": false
+   },
+   {
+    "fecha": "2026-08-30",
+    "id": "mol-h2o-sal",
+    "titulo": "El agua contra la sal (Na⁺)",
+    "base": "dímero NUEVO: H₂O + Na⁺",
+    "tipo": "sim ~1h",
+    "estado": "proximo",
+    "manifiesto": false,
+    "publicado": false
+   },
+   {
+    "fecha": "2026-08-31",
+    "id": "mol-h2o-alcohol",
+    "titulo": "El agua contra el alcohol",
+    "base": "dímero NUEVO: H₂O + etanol",
+    "tipo": "sim ~1h",
+    "estado": "proximo",
+    "manifiesto": false,
+    "publicado": false
+   }
+  ]
+ }
 }

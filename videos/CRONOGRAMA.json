@@ -1,0 +1,12 @@
+{
+  "nota": "CINE: 1 video por día, SIN desviarnos (Ian, 2026-08-26). El rey y la base NO se mueven: todo sale del mismo motor, mismos bins, guion cotidiano + sello GAIA. `estado` lo pone la mano (hoy/proximo/hecho); `publicado` lo DERIVA temis-tablero.cjs del catálogo de Comando (public/comando/catalogo.json). Regla: no hay dos 'hoy'.",
+  "dias": [
+    { "fecha": "2026-08-25", "id": "mol-h2o-el-sudor",  "titulo": "El sudor — por qué te enfría",          "base": "puente (dímero) · cam=c",      "tipo": "quick-win", "estado": "hecho" },
+    { "fecha": "2026-08-26", "id": "mol-h2o-el-hielo",  "titulo": "El hielo — por qué flota",             "base": "hexágono (6 aguas)",           "tipo": "quick-win", "estado": "hoy" },
+    { "fecha": "2026-08-27", "id": "mol-h2o-la-gota",   "titulo": "La gota — por qué es redonda",         "base": "puente (dímero) · cam nueva",  "tipo": "quick-win", "estado": "proximo" },
+    { "fecha": "2026-08-28", "id": "mol-h2o-el-hervor", "titulo": "Hervir — por qué tarda tanto",         "base": "cuarteto (4 aguas)",           "tipo": "quick-win", "estado": "proximo" },
+    { "fecha": "2026-08-29", "id": "mol-h2o-aceite",    "titulo": "El agua contra el aceite (no hay puente)", "base": "dímero NUEVO: H₂O + hexano",  "tipo": "sim ~1h",   "estado": "proximo" },
+    { "fecha": "2026-08-30", "id": "mol-h2o-sal",       "titulo": "El agua contra la sal (Na⁺)",          "base": "dímero NUEVO: H₂O + Na⁺",      "tipo": "sim ~1h",   "estado": "proximo" },
+    { "fecha": "2026-08-31", "id": "mol-h2o-alcohol",   "titulo": "El agua contra el alcohol",            "base": "dímero NUEVO: H₂O + etanol",   "tipo": "sim ~1h",   "estado": "proximo" }
+  ]
+}

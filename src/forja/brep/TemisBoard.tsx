@@ -71,6 +71,8 @@ export interface TemisJson {
   wip: { proximo: number; enCurso: number };
   conteo: { proximo: number; enCurso: number; cerrado: number; probado: number; porProbar: number; sinDesplegar: number; despues: number };
   deploy: { commit: string; fecha: string } | null;
+  /** CINE — 1 video por día (videos/CRONOGRAMA.json); `publicado` derivado del catálogo de Comando */
+  cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string; estado: 'hecho' | 'hoy' | 'proximo'; manifiesto: boolean; publicado: boolean }> } | null;
   violaciones: string[];
   columnas: { proximo: TemisCard[]; enCurso: TemisCard[]; cerrado: TemisCard[]; probado: TemisCard[] };
   despues: Array<{ grupo: string; texto: string }>;
@@ -113,7 +115,7 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
   if (!data) return <div className="ps-empty">Temis está leyendo las órdenes…</div>;
   if ('error' in data) return <div className="ps-empty">No encontré <code>temis.json</code> — corre <code>node scripts/temis-tablero.cjs</code>.</div>;
   if (detalle) return <div className="tm"><TemisDetalle c={detalle} onVolver={() => setDetalle(null)} /></div>;
-  const { columnas, wip, conteo, violaciones, despues, deploy } = data;
+  const { columnas, wip, conteo, violaciones, despues, deploy, cine } = data;
   const cerradasVis = verCerradas ? columnas.cerrado : columnas.cerrado.slice(0, 6);
   const grupos = Array.from(new Set(despues.map((d) => d.grupo)));
   return (
@@ -131,6 +133,20 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
         <div className="tm-viol" data-testid="temis-violaciones">
           {violaciones.map((v, i) => <div key={i}>✘ {v}</div>)}
         </div>
+      )}
+      {cine && cine.dias.length > 0 && (
+        <section className="tm-cine" data-testid="temis-cine">
+          <h4>Cine · 1 por día <span>{cine.dias.filter((d) => d.publicado).length} publicados · {cine.dias.filter((d) => d.estado === 'proximo').length} en cola</span></h4>
+          <div className="tm-cine-tira">
+            {cine.dias.map((d) => (
+              <div key={d.id} className={`tm-dia ${d.estado} ${d.publicado ? 'pub' : ''}`} data-testid={`temis-cine-${d.id}`} title={`${d.id} · ${d.base} · ${d.tipo}`}>
+                <div className="tm-dia-f">{d.fecha.slice(5)}{d.estado === 'hoy' && <b> HOY</b>}</div>
+                <div className="tm-dia-t">{d.titulo}</div>
+                <div className="tm-dia-m">{d.publicado ? '● publicado' : d.estado === 'hecho' ? '✓ hecho · sin publicar' : d.manifiesto ? '▶ manifiesto listo' : d.tipo}</div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
       <div className="tm-cols">
         <section className="tm-col" data-testid="temis-col-proximo">
@@ -248,5 +264,18 @@ export const TEMIS_CSS = `
 .tm-dep-ok{font-size:11px;color:#7ee0a0;font-weight:600}
 .tm-badge.dep-no{color:#f4cf7a;background:rgba(253,184,19,.10);border-color:rgba(253,184,19,.45)}
 .tm-badge.dep-si{color:#7ee0a0;background:transparent;border-color:rgba(126,224,160,.30)}
+.tm-cine{border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:10px;padding:8px 12px 10px;background:transparent}
+.tm-cine h4{margin:0 0 8px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ds-faint,#7E90A9);font-weight:700;display:flex;gap:8px;align-items:center}
+.tm-cine h4 span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--ds-dim,#A6B4C8);font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px}
+.tm-cine-tira{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.tm-dia{border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:9px;padding:7px 9px;background:var(--ds-panel2,#16202F);min-width:0}
+.tm-dia.hoy{border-color:rgba(253,184,19,.6);background:rgba(253,184,19,.08)}
+.tm-dia.hecho{opacity:.8}
+.tm-dia.pub{border-color:rgba(126,224,160,.4)}
+.tm-dia-f{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-faint,#7E90A9)}
+.tm-dia-f b{color:#FDB813}
+.tm-dia-t{font-size:11.5px;font-weight:700;line-height:1.25;color:var(--ds-text,#DCE7F5);margin:3px 0}
+.tm-dia-m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-dim,#A6B4C8)}
+.tm-dia.pub .tm-dia-m{color:#7ee0a0}
 .tm code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--ds-dim,#A6B4C8)}
 `;

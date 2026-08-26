@@ -95,10 +95,13 @@
   /* EL ATRIO. JS plano a propósito: si esperara al bundle, el primer cuadro llegaría a los
      ~1.7 s y la mediana de sesión es 0.9 s — la mitad de la gente ya se fue. */
   (function(){
+    /* ORDEN = EL REY PRIMERO (2026-08-26). La telemetría lo gritó: 2,663 de 3,372 vistas del
+       atrio fueron al reel #0 y era el butírico (la pieza más floja); el rey (+3.5k seguidores)
+       iba TERCERO y solo lo vieron 260. El primer cuadro decide la sesión (mediana 3.4 s). */
     var REELS = [
-      {id:'mol-grasa-butirico', t:'Esto huele a mantequilla', s:'Ácido butírico naciendo · catorce átomos'},
-      {id:'mol-h2o-el-hexamero', t:'Cuenta las puntas de un copo', s:'Seis aguas en anillo · por eso el hielo es hexagonal'},
-      {id:'mol-h2o-el-puente',   t:'El puente invisible del agua', s:'Lo que mantiene junta cada gota'}
+      {id:'mol-h2o-el-puente',   t:'El puente invisible del agua', s:'Dos aguas se agarran · por esto existen las gotas, y tú'},
+      {id:'mol-h2o-el-sudor',    t:'Por qué el sudor te enfría',   s:'Para evaporarse tiene que romper el puente · y te roba el calor'},
+      {id:'mol-h2o-el-hexamero', t:'Cuenta las puntas de un copo', s:'Seis aguas en anillo · por eso el hielo es hexagonal'}
     ];
     var v=document.getElementById('av'), ap=document.getElementById('ap'),
         at=document.getElementById('at'), as=document.getElementById('as'),

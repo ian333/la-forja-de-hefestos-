@@ -169,11 +169,31 @@ for (const t of cerrado) {
 }
 const revisables = cerrado.filter((t) => t.revisable).length;
 
+// ── CINE: 1 video por día (videos/CRONOGRAMA.json). `publicado` se DERIVA del catálogo de
+// Comando (public/comando/catalogo.json): si la pieza está ahí, está en vivo. Nadie lo teclea.
+const cine = (() => {
+  try {
+    const cr = JSON.parse(fs.readFileSync(path.join(REPO, 'videos', 'CRONOGRAMA.json'), 'utf8'));
+    let cat = [];
+    try { cat = JSON.parse(fs.readFileSync(path.join(REPO, 'public', 'comando', 'catalogo.json'), 'utf8')).pieces || []; } catch {}
+    const ids = new Set(cat.map((p) => p.id));
+    const dias = (cr.dias || []).map((d) => {
+      let pieza = '';
+      try { pieza = JSON.parse(fs.readFileSync(path.join(REPO, 'videos', `${d.id}.json`), 'utf8')).publicar?.pieza || ''; } catch {}
+      return { ...d, manifiesto: fs.existsSync(path.join(REPO, 'videos', `${d.id}.json`)), publicado: !!(pieza && ids.has(pieza)) };
+    });
+    const hoy = dias.filter((d) => d.estado === 'hoy');
+    if (hoy.length > 1) violaciones.push(`CINE: hay ${hoy.length} videos marcados "hoy" — es UNO por día`);
+    return { nota: cr.nota || '', dias };
+  } catch { return null; }
+})();
+
 const json = {
   nombre: 'TEMIS', generado: new Date().toISOString().slice(0, 16).replace('T', ' '),
   wip: WIP, conteo: { proximo: proximo.length, enCurso: enCurso.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, sinDesplegar: [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length, despues: despues.length },
   deploy: DEPLOY ? { commit: DEPLOY.commit, fecha: DEPLOY.fecha } : null,
   violaciones, columnas: { proximo, enCurso, cerrado, probado: probadas }, despues,
+  cine,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(json, null, 1));
