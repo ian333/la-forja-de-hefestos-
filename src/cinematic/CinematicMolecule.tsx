@@ -42,6 +42,8 @@ const FARADAY_DURATION = 46.0;  // primer corte MUDO para aprobar a ojo (sin voz
 const WTRI_DURATION = 77.7;
 const WTET_DURATION = 88.0;   // EL CUARTETO: voz 85.51s (segs.json, 27 líneas) + 2.5s de cola
 const WHEX6_DURATION = 97.74; // EL HEXÁGONO v2: voz 95.24s (segs.json, 31 líneas) + 2.5s de cola
+const HEMO_DURATION = 77;
+const WSAL_DURATION = 77;     // LA SAL (Na⁺ + H₂O): provisional = la del rey; recalibrar con segs.json     // LA CAZADORA (hemoglobina): corte de STILLS — recalibrar con segs.json
 // (WTRI_DURATION: voz 91.0s + 3s de cola · WPAIR_DURATION: 1 min, beats sincronizados al guion)
 // SLOW-MO de la formación O₂: el choque de Morse REAL dura ~1.1s (rapidísimo a
 // escala atómica). Para PODER VER cómo se forma el enlace lo vemos en cámara
@@ -456,6 +458,33 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 9, label: 'el puente=nube — el enlace llena el cuadro (l17-18)' },
     { shot: pullOut({}), dur: 10, label: 'payoff (l19-20)' },
   ],
+  // LA SAL (2026-08-26): Na⁺ (índice 0, en −x) + agua (O en +x). Hermana literal del rey: mismo
+  // eje, mismo régimen (~13 bohr), mismas 9 tomas. `orbitOne(side:-1)` mira al ION, `side:+1` al agua.
+  wsal: [
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.4, elev: 0.15, rMul: 1.58 }), dur: 7, label: 'espectáculo — el ion y el agua (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 2.0, rMul: 0.5 }), dur: 9, label: 'EL ION solo: un electrón de menos (l3-4)' },
+    { shot: orbitOne({ side: 1, azim0: 2.5, span: 1.3, rMul: 0.5 }), dur: 4, label: 'el agua (l5-6)' },
+    { shot: orbitOne({ side: 1, azim0: 1.6, span: 1.8, rMul: 0.5 }), dur: 8, label: 'el corazón dorado O (l7-8)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 11, label: 'el campo del ion — ángulo bajo (l9-11)' },
+    { shot: twoShot({ dir: -1, azim0: 2.4, span: 1.7, elev: 0.22, rMul: 1.5 }), dur: 10, label: 'el agua se voltea — órbita (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 9, label: 'se acercan — looming (l15-16)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 9, label: 'se pega — la nube llena el cuadro (l17-18)' },
+    { shot: pullOut({}), dur: 10, label: 'payoff (l19-20)' },
+  ],
+  // LA CAZADORA (v10, sitio activo) — tomas del PUENTE, porque es su hermana literal: el
+  // Fe en el ORIGEN y el O₂ sobre +X = la convención `nucX` que ya usa el dímero. `pts` =
+  // el trío (Fe,O,O), así que orbitOne(side:-1) mira al HIERRO y side:+1 a la presa.
+  // Duraciones PROVISIONALES (Σ = 77): recalibrar a los segundos reales de segs.json.
+  hemo: [
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.3, elev: 0.16, rMul: 1.50 }), dur: 8, label: 'espectáculo: hierro y presa (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.9, span: 1.9, rMul: 0.50 }), dur: 8, label: 'EL HIERRO solo, close (l3-4)' },
+    { shot: craneOverPair({ azim0: 1.2, span: 1.0, elevTo: -0.40, rMul: 1.45 }), dur: 10, label: 'el imán que no cabe — ángulo bajo (l5-7)' },
+    { shot: twoShot({ dir: -1, azim0: 2.3, span: 1.6, elev: 0.22, rMul: 1.45 }), dur: 9, label: 'llega la presa (l8-9)' },
+    { shot: pushToBridge({ rFrom: 1.65, rTo: 0.80, azim: 1.10 }), dur: 11, label: 'LA NUBE MORADA — looming al enlace (l10-12)' },
+    { shot: crashIn({ rMul: 1.00, azim0: 1.3, span: 1.1, elev: 0.05 }), dur: 12, label: 'CLÍMAX: los imanes se apagan, el Fe entra (l13-15)' },
+    { shot: orbitOne({ side: -1, azim0: 2.6, span: 1.5, rMul: 0.58 }), dur: 10, label: 'la palanca: jala la histidina (l16-17)' },
+    { shot: pullOut({ rFromMul: 0.7 }), dur: 9, label: 'payoff: y esto pasó en ti (l18-20)' },
+  ],
   // EL ANILLO (trímero, 3 aguas / 9 átomos). Cuenta lo que 2 aguas NO pueden:
   //  · COOPERATIVIDAD — los 3 puentes juntos ligan MÁS que la suma de los pares
   //    (medido: −2.05 kcal/mol = 11.8% del enlace; nace de 0.5% al cerrarse el anillo)
@@ -657,6 +686,20 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: pushToBridge({ rFrom: 1.95, rTo: 0.8, azim: 2.6, elev: 0.12 }), dur: 9, label: 'se acercan — looming otro lado (l15-16)' },
     { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 9, label: 'el puente=nube — otro ángulo de choque (l17-18)' },
     { shot: pullOut({ azim0: 1.0, span: 1.4 }), dur: 10, label: 'payoff con órbita (l19-20)' },
+  ],
+  // EL SUDOR (2026-08-25): las 8 tomas de B + la SALIDA del rey. El pullOut con órbita de B
+  // cruzaba un VACÍO del campo justo bajo la línea del payoff: 4.5 s al 8-13 % de pantalla
+  // (medido en el master). La salida del rey (pullOut({})) remata al 80 %, que es la ley #5.
+  'wpair-c': [
+    { shot: twoShot({ dir: -1, azim0: 2.7, span: 1.9, elev: 0.5, rMul: 1.75 }), dur: 7, label: 'espectáculo — plano alto opuesto (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 3.4, span: 2.4, rMul: 0.44, elev: -0.15 }), dur: 9, label: 'electrones de la OTRA, close bajo (l3-4)' },
+    { shot: orbitOne({ side: 1, azim0: 0.3, span: 1.7, rMul: 0.42, elev: 0.2 }), dur: 4, label: 'probabilidad — flip de molécula (l5-6)' },
+    { shot: orbitOne({ side: 1, azim0: 2.2, span: 2.2, rMul: 0.48, elev: 0.35 }), dur: 8, label: 'el corazón dorado O — elevado (l7-8)' },
+    { shot: craneOverPair({ azim0: 2.9, span: 1.5, elevFrom: 0.5, elevTo: -0.55, rMul: 1.35 }), dur: 11, label: 'cargas parciales — grúa profunda otro azimut (l9-11)' },
+    { shot: twoShot({ dir: 1, azim0: 0.5, span: 2.3, elev: -0.12, rMul: 1.42 }), dur: 10, label: 'el campo — barrido bajo opuesto (l12-14)' },
+    { shot: pushToBridge({ rFrom: 1.95, rTo: 0.8, azim: 2.6, elev: 0.12 }), dur: 9, label: 'se acercan — looming otro lado (l15-16)' },
+    { shot: crashIn({ rMul: 1.05, azim0: 2.7, span: 1.5, elev: 0.2 }), dur: 9, label: 'el puente=nube — otro ángulo de choque (l17-18)' },
+    { shot: pullOut({}), dur: 10, label: 'payoff — la salida del REY (B caía en un vacío)' },
   ],
 };
 
@@ -1058,7 +1101,9 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   whex: { name: 'El hexágono', formula: '(H₂O)₆', fact: 'Seis aguas en anillo: por esto el hielo es hexagonal y el copo de nieve tiene 6 puntas.' },
   wsingle: { name: 'El agua', formula: 'H₂O', fact: 'Su campo eléctrico: del hidrógeno positivo al oxígeno negativo.' },
   wmd: { name: 'Se buscan', formula: '(H₂O)₁₀', fact: 'Diez moléculas de agua, sueltas en el vacío, se encuentran SOLAS: sus campos eléctricos las pegan.' },
+  wsal:  { name: 'La sal', formula: 'Na⁺···H₂O', fact: 'Un ion con carga ENTERA: su campo es radial y ~10× el del agua. El agua le apunta el oxígeno y se pega (−24 kcal/mol, exacto al experimento).' },
   wpair: { name: 'El puente', formula: 'H₂O···H₂O', fact: 'El campo de una molécula JALA los electrones de la otra: los ves llegar (morado) al lugar exacto que dice la cuántica.' },
+  hemo: { name: 'La cazadora', formula: 'Hb·4O₂', fact: 'Una proteína de tu sangre caza cuatro oxígenos: cuando cae el primero, la máquina ENTERA se reacomoda (14° medidos) y los demás entran más fácil.' },
   no:   { name: 'El mensajero', formula: 'NO', fact: 'Un electrón suelto: por eso tu cuerpo lo usa para hablarle a tus arterias.' },
   // ── CADENAS — la cámara las ATRAVIESA ──
   butane:       { name: 'Butano', formula: 'C₄H₁₀', fact: 'Cuatro carbonos en zig-zag: el gas del encendedor.' },
@@ -2303,11 +2348,38 @@ const WHEX6_CAPAS: CapasSpec = {
   // separarse el Δρ del puente desaparece — correcto en física, muerto en pantalla.
   apertura: { base: 0.10, mods: [] },
 };
+// CAPAS DE LA CAZADORA (hemoglobina, primera PROTEÍNA de la serie) — corte de STILLS, sin
+// voz aún: fronteras provisionales, recalibrar con segs.json (canon §sincronía).
+// `apertura` = la coordenada T→R del bin (1 = deoxi con los O₂ LEJOS, 0 = oxi capturado).
+// Estructura del rey (el puente): abre en el CLÍMAX (todo unido, ardiendo), rebobina a T,
+// caza ESCALONADA (α1 primero — la cooperatividad viene EN los datos del bin), clímax ~78%.
+const HEMO_CAPAS: CapasSpec = {
+  // v10: coreografía calcada de WPAIR_CAPAS (el rey) con las ventanas del guion del sitio
+  // activo (20 líneas / ~69 s). Bases = las del agua: a esta escala el motor ya está en su
+  // régimen, así que los realces de brillo de la v6-v9 sobran.
+  // `apertura` recorre la coordenada Fe–O₂ del bin: 1 = el O₂ lejos (4.6 Å), 0 = CAPTURADO
+  // (1.796 Å, la distancia del cristal).
+  campo:    { base: 1, mods: [{ wins: [[14, 26]], a: -0.75, label: 'el campo baja mientras se mira el HIERRO solo' }] },
+  nubes:    { base: 1, mods: [{ wins: [[38, 52]], a: -0.35, label: 'la nube cede para LEER el morado llegando' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[14, 26]], a: 0.42, label: 'el hierro esperando: los electrones respiran' }] },
+  spin:     { base: 1, mods: [{ wins: [[38, 62]], a: 0.95, label: 'Δρ ARDE: los electrones LLEGAN al enlace Fe–O₂' }] },
+  acc:      { base: 1, mods: [{ wins: [[14, 26]], a: 0.5, label: 'ORO del hierro y su anillo' }] },
+  apertura: { base: 0.06, mods: [
+    { wins: [[0, 6]],   a: 0.30, label: 'FRAME 0 = EL PICO: casi capturado, ardiendo' },
+    { wins: [[8, 34]],  a: 0.90, label: 'REBOBINA: el O₂ lejos, el hierro esperando' },
+    { wins: [[34, 46]], a: 0.45, label: 'LA CAZA: se acerca' },
+    // 46→: cae a 0.06 = CAPTURADO. El clímax (imanes apagados, Fe al plano) al ~78 %.
+  ] },
+};
+// LA SAL: coreografía provisional = la del rey; recalibrar a segs.json cuando exista la voz.
+const WSAL_CAPAS: CapasSpec = WPAIR_CAPAS;
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
 // Las tomas salen del REGISTRO (datos), no de constantes por video. Variante nueva =
 // otra entrada en CAMERA_SHOTS + ?cam=<x>, sin tocar este componente. Ver docs/CANON-VIDEO.md.
-const WPAIR_SHOTS_ACTIVE = CAMERA_SHOTS[WPAIR_CAM === 'b' ? 'wpair-b' : 'wpair'];
+// ?cam=<x> → CAMERA_SHOTS['wpair-<x>'], sin tocar este archivo por cada variante (canon Regla #0.5).
+// 'a' (o sin cam) cae a 'wpair' = el rey; 'b' = 'wpair-b': idéntico a antes del 2026-08-25.
+const WPAIR_SHOTS_ACTIVE = CAMERA_SHOTS[`wpair-${WPAIR_CAM}`] ?? CAMERA_SHOTS.wpair;
 function WaterPairCamera({ time, R, shots, ex, pts }: { time: number; R: number; shots: ShotEntry[]; ex: number; pts?: Vec3[] }) {
   const { camera } = useThree();
   useEffect(() => {
@@ -2352,9 +2424,28 @@ type WaterEntry = {
   ceros?: string;            // json de los ceros del campo, si la pieza los calculó
   capas?: CapasSpec;         // coreografía (si falta, la de EL PUENTE)
   dur?: number;              // duración de la pieza
+  /** multiplicador del TAMAÑO de sprite de las 3 nubes. La hemoglobina ocupa ~100× el
+   *  volumen del dímero: con el sprite del agua los puntos son polvo suelto, no nube
+   *  (ley de N₂: sprites GRANDES y TENUES = densidad luminosa continua). Default 1 =
+   *  todas las piezas entregadas quedan bit-idénticas. */
+  sizeMul?: number;
+  /** alcance (bohr) del ORO alrededor de los núcleos cálidos en accColorWarm. Default 2.4
+   *  (el del agua, sin cambio). La hemoglobina usa ~7: el bolsillo del hemo ES el corazón
+   *  dorado — a escala de proteína 2.4 bohr deja el 99% de la nube en ámbar plano. */
+  warmReach?: number;
+  /** multiplicador del radio de los cúmulos de Nucleus. Default 1. A escala de proteína
+   *  los 0.05 bohr del agua son SUBPÍXEL: el hierro desaparece. */
+  nucMul?: number;
+  /** usar los colores del BIN para la nube acc (el precompute manda la paleta: en la
+   *  hemoglobina α=oro y β=morado — la arquitectura 2+2 se vuelve CONTABLE). Default
+   *  false = accColorWarm de siempre; las piezas entregadas no cambian. */
+  binColors?: boolean;
 };
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
+  // LA SAL (2026-08-26): Na⁺ + H₂O con PAR=na de precompute-water-approach.py. Mismo formato WAP2
+  // (4 núcleos: Na, O, H, H), mismo eje, mismo régimen. Gate: −24.0 kcal/mol a 2.25 Å = experimento.
+  wsal:  { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSAL_CAPAS, dur: WSAL_DURATION },
   // nube ±6.6 bohr: ex=15 dejaba void muerto
   wtri:  { bin: 'water-trimer',   ef: 'water-trimer-efield',   ex: 10, anillo: true,
            ceros: 'water-trimer-ceros', capas: WTRI_CAPAS, dur: WTRI_DURATION },
@@ -2371,6 +2462,19 @@ const WATER_BINS: Record<string, WaterEntry> = {
   // ⚠ La clave es `whex6` y no `whex`: `whex` ya la ocupa la escena vieja de agua MD.
   whex6: { bin: 'water-hexamer', ef: 'water-hexamer-efield', ex: 15.5, anillo: true,
            capas: WHEX6_CAPAS, dur: WHEX6_DURATION },
+  // LA CAZADORA — hemoglobina + 4 O₂ (primera PROTEÍNA; precompute-hemoglobin.py, gates
+  // 5/5: rotación cuaternaria 14.12° vs 12-15° de Baldwin-Chothia, Fe–O₂ 1.796 Å). El bin
+  // es WAP2 puro: acc=proteína (4,344 átomos de 4HHB→2DN1), dep=los 4 hemos, spin=los 4 O₂
+  // que LLEGAN, núcleos = tríos (Fe,O,O)×4 — así accColorWarm pinta ORO junto a los Fe,
+  // los cores arden en los hierros y la cámara (pts=i%3==0) apunta a los 4 hemos SIN tocar
+  // código. R = distancia media Fe–O₂ (33.3→3.4 bohr) = la coordenada T→R del video.
+  // v10 — EL SITIO ACTIVO ab initio (precompute-heme-approach.py). Al dejar de estirar la
+  // proteína y calcular lo que SÍ se puede, la pieza vuelve a ser hermana LITERAL del
+  // puente: ~13 bohr = el régimen nativo del motor. Cero trucos de escala, cero
+  // multiplicadores — los defaults del ganador. `binColors` porque el precompute manda la
+  // paleta oro→morado igual que el agua, y las líneas son CAMPO ELÉCTRICO DE VERDAD (MEP).
+  hemo:  { bin: 'hemoglobina', ef: 'hemoglobina-efield', ex: 9, binColors: true,
+           capas: HEMO_CAPAS, dur: HEMO_DURATION },
 };
 /** ¿Es un anillo cíclico de N aguas? (wtri, wtet, …) — NO el dímero. */
 const esAnillo = (mk: string) => !!WATER_BINS[mk]?.anillo;
@@ -2502,14 +2606,14 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
       const x = wd.accPos[pb + i * 3] * inv, y = wd.accPos[pb + i * 3 + 1] * inv, z = wd.accPos[pb + i * 3 + 2] * inv;
       let dO = Infinity;
       for (const O of Os) { const d = Math.hypot(x - O[0], y - O[1], z - O[2]); if (d < dO) dO = d; }
-      const t = Math.min(1, dO / 2.4);
+      const t = Math.min(1, dO / (W.warmReach ?? 2.4));
       let col: number[];
       if (dO < 0.9) col = whitegold;
       else col = [gold[0] * (1 - t) + amber[0] * t, gold[1] * (1 - t) + amber[1] * t, gold[2] * (1 - t) + amber[2] * t];
       c[i * 3] = col[0]; c[i * 3 + 1] = col[1]; c[i * 3 + 2] = col[2];
     }
     return c;
-  }, [wd]);
+  }, [wd, W.warmReach]);
   if (!wd) return null;
   // ── BEATS SINCRONIZADOS AL GUION (narración 77s, ver scripts/guiones/wpair.txt) ──
   // Hook pegadas (0-4) → separan (revelan 2, 4-9) → APART mientras explica electrones/oxígeno/
@@ -2585,6 +2689,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   // cae ~4× y el cuadro se va a meanY 8 (rala y apagada). La masa la da la DENSIDAD y el BRILLO
   // del punto, no el radio: 0.34 → 0.85. Medido en el master 4K, no en un preview.
   const bF = anillo ? 1.5 : 1.0;
+  const szM = W.sizeMul ?? 1;   // sprites a escala de la pieza (ver WaterEntry.sizeMul)
   const pulse = 0.92 + 0.08 * Math.sin(time * 2.0);   // el nebuloso RESPIRA (espectáculo vivo)
   // COREOGRAFÍA sincronizada al guion (segundos de segs.json):
   // CAPAS COMO OBJETOS (capas.ts): la coreografía vive en DATOS (WPAIR_CAPAS), no aquí.
@@ -2596,7 +2701,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   return (
     <>
       <WaterPairCamera time={time} R={R} ex={W.ex}
-        shots={CAMERA_SHOTS[mk === 'wpair' && WPAIR_CAM === 'b' ? 'wpair-b' : mk] ?? CAMERA_SHOTS.wpair}
+        shots={mk === 'wpair' ? WPAIR_SHOTS_ACTIVE : (CAMERA_SHOTS[mk] ?? CAMERA_SHOTS.wpair)}
         pts={nucP.filter((_, i) => i % 3 === 0)} />
       {/* TAMAÑO EN FRACCIÓN DE CUADRO, no en píxeles. Antes esto se compensaba A MANO por
           resolución ("×1.85 para 4K") y quedaba a medias: el 16:9 de 1080 salió con electrones
@@ -2607,9 +2712,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
           estos tamaños son PUNTOS, y al duplicarlos se vuelven manchas suaves (el sprite tiene
           borde degradado: agrandarlo muestra la degradación, no el punto). O sea el look bueno
           era el del master; el preview de 1080 era el que mentía. */}
-      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={anillo ? 0.47 : 0.35} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
-      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={anillo ? 0.59 : 0.44} coreThin={0.72} twinkle={twk} tw_time={time} bonds={anillo ? ohBonds : undefined} bondGlow={anillo ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
-      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={anillo ? 0.62 : 0.46} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
+      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.depPos} colors={depColors} Rvals={wd.Rvals} N={wd.Ndep} K={wd.K} R={R} brightness={0.26 * bF * (0.3 + 0.7 * glow) * cloudGate} size={(anillo ? 0.47 : 0.35) * szM} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.55} />
+      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.accPos} colors={W.binColors ? wd.accColor : accColorWarm} Rvals={wd.Rvals} N={wd.Nacc} K={wd.K} R={R} brightness={0.30 * bF * pulse * cloudGate * accB} size={(anillo ? 0.59 : 0.44) * szM} coreThin={0.72} twinkle={twk} tw_time={time} bonds={anillo ? ohBonds : undefined} bondGlow={anillo ? (C.enlaces ?? 0) * 2.6 : 0} cores={oCores} coreR={0.55} />
+      <O2Cloud premul={anillo} qScale={wd.posq || O2AI_POSQ} posQ={wd.spinPos} colors={spinColors} Rvals={wd.Rvals} N={wd.Nspin} K={wd.K} R={R} brightness={(0.34 + 1.05 * glow) * bF * pulse * cloudGate * spinB} size={(anillo ? 0.62 : 0.46) * szM} twinkle={twk} tw_time={time} cores={oCores} coreR={0.9} coreThin={0.80} />
       {/* EL CAMPO ELÉCTRICO (como Li₂): muchas líneas del MEP real que se CONECTAN al unirse.
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
@@ -2624,10 +2729,10 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
               hidrógenos" y "una queda al revés" eran INDECIDIBLES. En el anillo los H se
               agrandan y se pintan CÁLIDOS (el O queda frío) para que se cuenten 3 átomos
               por molécula y se LEA hacia dónde apunta cada H (= el volteo). */}
-          <Nucleus protons={wd.Z[i]} neutrons={wd.Z[i] === 8 ? 8 : 0} time={time}
-            clusterRadius={wd.Z[i] === 8 ? (anillo ? 0.165 : 0.10) : (anillo ? 0.068 : 0.05)}
-            nHot={wd.Z[i] === 8 || !anillo ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
-            nHue={wd.Z[i] === 8 || !anillo ? 0.55 : 0.08} />
+          <Nucleus protons={wd.Z[i]} neutrons={wd.Z[i] === 8 ? 8 : wd.Z[i] === 11 ? 12 : 0} time={time}
+            clusterRadius={(wd.Z[i] === 11 ? 0.13 : wd.Z[i] === 8 ? (anillo ? 0.165 : 0.10) : (anillo ? 0.068 : 0.05)) * (W.nucMul ?? 1)}
+            nHot={wd.Z[i] === 11 ? [1.5, 0.95, 0.35] : wd.Z[i] === 8 || !anillo ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
+            nHue={wd.Z[i] === 11 ? 0.10 : wd.Z[i] === 8 || !anillo ? 0.55 : 0.08} />
         </group>
       ))}
     </>
@@ -3374,7 +3479,12 @@ function ForceDuel({ R, nx, op }: { R: number; nx: number; op: number }) {
 }
 
 function MoleculeTitle({ mkey, time, vertical }: { mkey: string; time: number; vertical: boolean }) {
-  const m = META[mkey] ?? META.h2o;
+  // RÓTULO POR MANIFIESTO (2026-08-25, EL SUDOR): `?titulo=` y `?formula=` sobreescriben el
+  // nombre de BASE_META para una pieza que reusa la escena de otra (mismo bin, otra historia).
+  // Sin query = idéntico a siempre (el rey no cambia ni un pixel).
+  const qs = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
+  const base = META[mkey] ?? META.h2o;
+  const m = { ...base, name: qs?.get('titulo') || base.name, formula: qs?.get('formula') || base.formula };
   const opacity = Math.min(1, Math.max(0, (time - 2.4) / 0.9)) * Math.min(1, Math.max(0, (21.3 - time) / 0.7));
   if (opacity < 0.01) return null;
   return (

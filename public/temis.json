@@ -1,13 +1,13 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 18:17",
+ "generado": "2026-08-26 19:19",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
   "proximo": 1,
-  "enCurso": 0,
+  "enCurso": 1,
   "cerrado": 57,
   "probado": 0,
   "porProbar": 24,
@@ -45,7 +45,33 @@
     "despliegue": ""
    }
   ],
-  "enCurso": [],
+  "enCurso": [
+   {
+    "file": "ordenes/2026-08-26-la-sal.md",
+    "slug": "2026-08-26-la-sal",
+    "titulo": "LA SAL — Na⁺ + H₂O, la primera CARGA ENTERA de la serie",
+    "fecha": "2026-08-26",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "objetivo": "Un video nuevo con simulación nueva sobre la superbase del rey: Na⁺ acercándose al agua (RHF/aug-cc-pVDZ, Δρ + campo MEP), mismo motor, misma gramática. Gate de física medido ANTES de escribir: −24.0 kcal/mol a 2.25 Å = experimento (Dzidic…",
+    "toca": 4,
+    "crea": 5,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "Gate ab initio: E_enlace y d(Na–O) del run completo vs experimento (−24.0 / 2.2–2.3 Å).",
+     "GATE_APPROACH_OK (∫Δρ>0 monótono creciente) en el log del run.",
+     "Stills 4K de la escena ?m=wsal + hoja de contactos del master."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   }
+  ],
   "cerrado": [
    {
     "file": "ordenes/2026-08-25-temis-probado.md",
@@ -101,7 +127,7 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "154fbaa",
+    "commit": "6353a4d",
     "despliegue": "sin-desplegar"
    },
    {
@@ -1696,6 +1722,16 @@
    },
    {
     "fecha": "2026-08-27",
+    "id": "mol-h2o-la-sal",
+    "titulo": "La sal — el agua contra un ion (Na⁺)",
+    "base": "dímero NUEVO: Na⁺ + H₂O (PAR=na)",
+    "tipo": "sim (RHF/aug-cc-pVDZ, gate −24.0 kcal/mol)",
+    "estado": "proximo",
+    "manifiesto": false,
+    "publicado": false
+   },
+   {
+    "fecha": "2026-08-28",
     "id": "mol-h2o-la-gota",
     "titulo": "La gota — por qué es redonda",
     "base": "puente (dímero) · cam nueva",
@@ -1705,7 +1741,17 @@
     "publicado": false
    },
    {
-    "fecha": "2026-08-28",
+    "fecha": "2026-08-29",
+    "id": "mol-h2o-el-cloro",
+    "titulo": "El cloro — la otra cara del agua (Cl⁻)",
+    "base": "dímero NUEVO: Cl⁻ + H₂O (PAR=cl)",
+    "tipo": "sim (gate −13.1 kcal/mol)",
+    "estado": "proximo",
+    "manifiesto": false,
+    "publicado": false
+   },
+   {
+    "fecha": "2026-08-30",
     "id": "mol-h2o-el-hervor",
     "titulo": "Hervir — por qué tarda tanto",
     "base": "cuarteto (4 aguas)",
@@ -1715,31 +1761,11 @@
     "publicado": false
    },
    {
-    "fecha": "2026-08-29",
-    "id": "mol-h2o-aceite",
-    "titulo": "El agua contra el aceite (no hay puente)",
-    "base": "dímero NUEVO: H₂O + hexano",
-    "tipo": "sim ~1h",
-    "estado": "proximo",
-    "manifiesto": false,
-    "publicado": false
-   },
-   {
-    "fecha": "2026-08-30",
-    "id": "mol-h2o-sal",
-    "titulo": "El agua contra la sal (Na⁺)",
-    "base": "dímero NUEVO: H₂O + Na⁺",
-    "tipo": "sim ~1h",
-    "estado": "proximo",
-    "manifiesto": false,
-    "publicado": false
-   },
-   {
     "fecha": "2026-08-31",
-    "id": "mol-h2o-alcohol",
-    "titulo": "El agua contra el alcohol",
-    "base": "dímero NUEVO: H₂O + etanol",
-    "tipo": "sim ~1h",
+    "id": "mol-h2o-la-sal-completa",
+    "titulo": "La sal completa — Na⁺ y Cl⁻ separados por el agua",
+    "base": "los dos bins de la sal",
+    "tipo": "montaje",
     "estado": "proximo",
     "manifiesto": false,
     "publicado": false

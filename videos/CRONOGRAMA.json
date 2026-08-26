@@ -19,6 +19,14 @@
     },
     {
       "fecha": "2026-08-27",
+      "id": "mol-h2o-la-sal",
+      "titulo": "La sal — el agua contra un ion (Na⁺)",
+      "base": "dímero NUEVO: Na⁺ + H₂O (PAR=na)",
+      "tipo": "sim (RHF/aug-cc-pVDZ, gate −24.0 kcal/mol)",
+      "estado": "proximo"
+    },
+    {
+      "fecha": "2026-08-28",
       "id": "mol-h2o-la-gota",
       "titulo": "La gota — por qué es redonda",
       "base": "puente (dímero) · cam nueva",
@@ -26,7 +34,15 @@
       "estado": "proximo"
     },
     {
-      "fecha": "2026-08-28",
+      "fecha": "2026-08-29",
+      "id": "mol-h2o-el-cloro",
+      "titulo": "El cloro — la otra cara del agua (Cl⁻)",
+      "base": "dímero NUEVO: Cl⁻ + H₂O (PAR=cl)",
+      "tipo": "sim (gate −13.1 kcal/mol)",
+      "estado": "proximo"
+    },
+    {
+      "fecha": "2026-08-30",
       "id": "mol-h2o-el-hervor",
       "titulo": "Hervir — por qué tarda tanto",
       "base": "cuarteto (4 aguas)",
@@ -34,28 +50,19 @@
       "estado": "proximo"
     },
     {
-      "fecha": "2026-08-29",
-      "id": "mol-h2o-aceite",
-      "titulo": "El agua contra el aceite (no hay puente)",
-      "base": "dímero NUEVO: H₂O + hexano",
-      "tipo": "sim ~1h",
-      "estado": "proximo"
-    },
-    {
-      "fecha": "2026-08-30",
-      "id": "mol-h2o-sal",
-      "titulo": "El agua contra la sal (Na⁺)",
-      "base": "dímero NUEVO: H₂O + Na⁺",
-      "tipo": "sim ~1h",
-      "estado": "proximo"
-    },
-    {
       "fecha": "2026-08-31",
-      "id": "mol-h2o-alcohol",
-      "titulo": "El agua contra el alcohol",
-      "base": "dímero NUEVO: H₂O + etanol",
-      "tipo": "sim ~1h",
+      "id": "mol-h2o-la-sal-completa",
+      "titulo": "La sal completa — Na⁺ y Cl⁻ separados por el agua",
+      "base": "los dos bins de la sal",
+      "tipo": "montaje",
       "estado": "proximo"
+    }
+  ],
+  "despues": [
+    {
+      "id": "mol-h2o-aceite",
+      "titulo": "El agua contra el aceite",
+      "por_que": "RHF no tiene dispersión: CH₄···H₂O da +5.7…−0.1 kcal/mol y lo real (−0.5…−1.0) ES dispersión. Necesita DFT-D3/MP2 = otro motor. Medido 2026-08-26."
     }
   ]
 }

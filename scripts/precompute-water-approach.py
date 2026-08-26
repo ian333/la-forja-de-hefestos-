@@ -49,6 +49,40 @@ MID0 = 0.5 * (O_don0 + O_acc0)
 R_MAX_A = 5.6      # lejos (interacción débil)
 R_MIN_A = 2.78     # pegadas (puente formado, ligeramente comprimido)
 
+# ── EL PAR (2026-08-26): la misma máquina para AGUA + X. Default = agua-agua (EL REY, bit-idéntico:
+# ninguna rama de abajo toca el camino original). PAR=na → LA SAL: Na⁺ + H₂O. Gate ab initio
+# medido antes de escribir esto: RHF/aug-cc-pVDZ da −24.0 kcal/mol a 2.25 Å; experimento
+# (Dzidic & Kebarle 1970) −24.0 kcal/mol, 2.2–2.3 Å. Ion–dipolo = electrostática: RHF lo clava.
+# (El aceite NO: su −0.5 kcal/mol es dispersión, que RHF no tiene → otro motor, no este.)
+PAR = os.environ.get('PAR', 'agua')
+CHARGE = 0; CHARGE_DON = 0; CHARGE_ACC = 0
+NOMBRE = 'AGUA-AGUA'; BIN_ID = 'water-approach'
+O_IDX = [0, 3]                      # oxígenos (color morado de pares / figura)
+H_IDX = [1, 2, 4, 5]
+if PAR == 'na':
+    # Na⁺ (fragmento DON, carga +1) sobre −x; agua (ACC) con el O apuntándole: los H hacia +x.
+    # Agua experimental: O–H 0.9578 Å, HOH 104.478°. Acercamiento simétrico al centro, como el rey.
+    _a = np.deg2rad(104.478 / 2.0); _r = 0.9578
+    DIMER_A = np.array([
+        [-1.125, 0.0, 0.0],                                  # 0 Na⁺
+        [ 1.125, 0.0, 0.0],                                  # 1 O
+        [ 1.125 + _r * np.cos(_a),  _r * np.sin(_a), 0.0],   # 2 H
+        [ 1.125 + _r * np.cos(_a), -_r * np.sin(_a), 0.0],   # 3 H
+    ])
+    Z = np.array([11, 8, 1, 1])
+    DON = [0]; ACC = [1, 2, 3]
+    O_don0, O_acc0 = DIMER_A[0], DIMER_A[1]                  # "eje" = Na···O
+    AXIS = (O_don0 - O_acc0); RE_A = np.linalg.norm(AXIS); AXIS = AXIS / RE_A
+    MID0 = 0.5 * (O_don0 + O_acc0)
+    R_MAX_A = 7.0      # lejos: el campo del ion ya se siente, el agua casi no se deforma
+    R_MIN_A = 2.25     # el mínimo ab initio = el experimento
+    CHARGE = 1; CHARGE_DON = 1; CHARGE_ACC = 0
+    NOMBRE = 'LA SAL · Na⁺ + H₂O'; BIN_ID = 'water-sodium'
+    O_IDX = [1]; H_IDX = [2, 3]
+    # Base con difusas para el ION: cc-pVDZ sobre-liga −29 kcal/mol (BSSE); aug-cc-pVDZ da −24.0 = experimento.
+    BASIS = 'aug-cc-pvdz'
+NNUC = len(Z)
+
 if QUICK:
     K = 8;  N_ACC, N_DEP, N_SPIN = 6000, 3000, 3000;  NX, NY, NZ = 80, 56, 56
 else:
@@ -71,7 +105,7 @@ GX, GY, GZ = np.meshgrid(xs, ys, zs, indexing='ij')
 GRID = np.stack([GX.ravel(), GY.ravel(), GZ.ravel()], axis=1)   # bohr
 dV = dx * dy * dz
 
-OUT = os.path.join(os.path.dirname(__file__), '..', 'public', 'precomputed', 'water-approach.bin')
+OUT = os.path.join(os.path.dirname(__file__), '..', 'public', 'precomputed', f'{BIN_ID}.bin')
 PROOF = os.path.join(os.path.dirname(__file__), '..', '_o2_proof')
 
 
@@ -188,19 +222,19 @@ def build():
     LP = 40; SEEDS = field_grid(); NL_EF = len(SEEDS)       # campo MEP: REJILLA densa (como Li₂)
     accPos = np.zeros((K, N_ACC, 3)); depPos = np.zeros((K, N_DEP, 3)); spinPos = np.zeros((K, N_SPIN, 3))
     bondMass = np.zeros(K)
-    nucPos = np.zeros((K, 6, 3)); efield = np.zeros((K, NL_EF, LP, 3))
-    print(f"=== ACERCAMIENTO AGUA-AGUA · {K} separaciones · {BASIS} · malla {NX}×{NY}×{NZ} ===", flush=True)
+    nucPos = np.zeros((K, NNUC, 3)); efield = np.zeros((K, NL_EF, LP, 3))
+    print(f"=== ACERCAMIENTO {NOMBRE} · {K} separaciones · {BASIS} · malla {NX}×{NY}×{NZ} ===", flush=True)
     print("k   R(Å)    E(Ha)        Ebind(kcal)  ∫Δρ>0", flush=True)
     for k in range(K):
         R = float(Rvals[k]); R_A = R * BOHR
         gb = geom_at(R_A)                                  # bohr, centrada
-        atoms = [[int(Z[i]), tuple(gb[i])] for i in range(6)]
-        mol = gto.M(atom=atoms, basis=BASIS, unit='Bohr', verbose=0)
+        atoms = [[int(Z[i]), tuple(gb[i])] for i in range(NNUC)]
+        mol = gto.M(atom=atoms, basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE)
         mf = scf.RHF(mol); mf.max_cycle = 200; mf.kernel()
         dm = mf.make_rdm1()
         # monómeros aislados a SU posición (promolécula) → Δρ de interacción
-        md = gto.M(atom=[atoms[i] for i in DON], basis=BASIS, unit='Bohr', verbose=0)
-        ma = gto.M(atom=[atoms[i] for i in ACC], basis=BASIS, unit='Bohr', verbose=0)
+        md = gto.M(atom=[atoms[i] for i in DON], basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE_DON)
+        ma = gto.M(atom=[atoms[i] for i in ACC], basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE_ACC)
         ed = scf.RHF(md).kernel(); ea = scf.RHF(ma).kernel()
         ebind = (mf.e_tot - ed - ea) * HART2KCAL
         dm_d = md.RHF().run(verbose=0).make_rdm1(); dm_a = ma.RHF().run(verbose=0).make_rdm1()
@@ -223,7 +257,7 @@ def build():
     # Se fija en el frame de EQUILIBRIO (kEq), como O2. Oro cálido de base + tinte morado en los O.
     kEq = int(np.argmin(np.abs(Rvals - RE)))
     P = accPos[kEq]
-    dO = np.minimum(np.linalg.norm(P - nucPos[kEq, 0], axis=1), np.linalg.norm(P - nucPos[kEq, 3], axis=1))
+    dO = np.min(np.stack([np.linalg.norm(P - nucPos[kEq, i], axis=1) for i in O_IDX]), axis=0)
     pw = np.clip(1.0 - dO / 1.4, 0, 1)                    # 1 pegado a un O (morado) → 0 lejos (oro)
     gold = np.array([1.0, 0.72, 0.30]); purple = np.array([0.82, 0.28, 1.0])
     col = gold[None, :] * (1 - pw[:, None]) + purple[None, :] * pw[:, None]
@@ -231,12 +265,12 @@ def build():
     return accPos, depPos, spinPos, bondMass, accColor, nucPos, efield, NL_EF, LP
 
 
-OUT_EF = os.path.join(os.path.dirname(__file__), '..', 'public', 'precomputed', 'water-approach-efield.bin')
+OUT_EF = os.path.join(os.path.dirname(__file__), '..', 'public', 'precomputed', f'{BIN_ID}-efield.bin')
 def write_bin(accPos, depPos, spinPos, bondMass, accColor, nucPos):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     q = lambda a: np.clip(np.round(a * POSQ), -32767, 32767).astype('<i2')
     with open(OUT, 'wb') as fp:                              # WAP2: nubes + núcleos (SIN campo, NL=0)
-        fp.write(struct.pack('<4s7i', b'WAP2', N_ACC, N_DEP, N_SPIN, K, 6, 0, 0))
+        fp.write(struct.pack('<4s7i', b'WAP2', N_ACC, N_DEP, N_SPIN, K, NNUC, 0, 0))
         fp.write(struct.pack('<3f', float(POSQ), float(R_MIN), float(R_MAX)))
         fp.write(Rvals.astype('<f4').tobytes())
         fp.write(bondMass.astype('<f4').tobytes())
@@ -272,13 +306,14 @@ def validate(accPos, depPos, spinPos, bondMass, nucPos, efield):
                 ax.plot(ln[:, 0], ln[:, 1], c='#7ac8ff', alpha=0.5, lw=0.8)   # campo MEP (cian, Li₂)
             ax.scatter(accPos[k, :, 0], accPos[k, :, 1], s=1, c='#ffb43c', alpha=0.22)
             ax.scatter(spinPos[k, :, 0], spinPos[k, :, 1], s=2, c='#b04cff', alpha=0.5)
-            ax.scatter(nucPos[k, [0, 3], 0], nucPos[k, [0, 3], 1], s=80, c='#e0c0ff', zorder=5)
-            ax.scatter(nucPos[k, [1, 2, 4, 5], 0], nucPos[k, [1, 2, 4, 5], 1], s=40, c='#ffd27a', zorder=5)
+            ax.scatter(nucPos[k, O_IDX, 0], nucPos[k, O_IDX, 1], s=80, c='#e0c0ff', zorder=5)
+            ax.scatter(nucPos[k, H_IDX, 0], nucPos[k, H_IDX, 1], s=40, c='#ffd27a', zorder=5)
+            if PAR == 'na': ax.scatter(nucPos[k, 0, 0], nucPos[k, 0, 1], s=140, c='#ffe08a', zorder=6)
             ax.set_aspect('equal'); ax.set_xlim(-9, 9); ax.set_ylim(-6, 6); ax.axis('off')
             ax.set_title(f"{lab}  R={Rvals[k]*BOHR:.2f}Å", color='white')
         fig.suptitle("EL PUENTE — nube (oro/morado=Δρ) + CAMPO MEP real (cian, como Li₂, se conecta)", color='white')
         fig.tight_layout(); os.makedirs(PROOF, exist_ok=True)
-        f = os.path.join(PROOF, 'water-approach.png'); fig.savefig(f, dpi=95, facecolor='black'); plt.close(fig)
+        f = os.path.join(PROOF, f'{BIN_ID}.png'); fig.savefig(f, dpi=95, facecolor='black'); plt.close(fig)
         print("figura:", f, flush=True)
     except Exception as e:
         print("fig falló:", e, flush=True)
@@ -302,7 +337,7 @@ def solo_campo():
 
     def mol_en(R_A):
         gb = geom_at(R_A)
-        m = gto.M(atom=[[int(Z[i]), tuple(gb[i])] for i in range(6)], basis=BASIS, unit='Bohr', verbose=0)
+        m = gto.M(atom=[[int(Z[i]), tuple(gb[i])] for i in range(NNUC)], basis=BASIS, unit='Bohr', verbose=0, charge=CHARGE)
         f = scf.RHF(m); f.max_cycle = 200; f.kernel()
         return m, f.make_rdm1()
 
@@ -321,7 +356,7 @@ def solo_campo():
         m, dm = mol_en(R_A)
         c = CampoMEP(m, dm)
         S, hay, _ = superficie_en_rayos(c, ia_r, id_r, N_DIR)
-        L, largo, viva, mf_, mb_ = trazar_bidireccional(c, S, LP=LP, e_dibujo=E_PUENTE, **TZ)
+        L, largo, viva, _nE, mf_, mb_ = trazar_bidireccional(c, S, LP=LP, e_dibujo=E_PUENTE, **TZ)   # firma actual (6 valores)
         ef[k] = L
         rr = np.linalg.norm(L[viva].reshape(-1, 3), axis=1)
         print(f"  {k+1}/{K}  R {R_A:.2f} Å · {int(viva.sum())}/{len(ia_r)} vivas · largo mediano "
