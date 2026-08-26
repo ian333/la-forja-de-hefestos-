@@ -1,0 +1,89 @@
+{
+  "id": "mol-h2o-el-sudor",
+  "titulo": "El sudor — H₂O···H₂O (por qué te enfría)",
+  "nota": "QUICK WIN del rey (canon §LAS LEYES DEL REY): mismo bin, mismos átomos, cámara B del registro, guion NUEVO con otro payoff cotidiano + sello GAIA. Cero simulación, cero escena nueva. Ver docs/CANON-VIDEO.md. cam=c = las 8 tomas de camB + la salida del rey (la de B caía en un vacío bajo el payoff).",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wpair&cam=c&titulo=El%20sudor",
+    "hook": "__cinematicAtom",
+    "nota_titulo": "titulo= sobreescribe BASE_META.wpair.name (\"El puente\") en el rótulo de escena (s 2.4-21.3); formula queda H₂O···H₂O."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 77
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.wsudorframes"
+  },
+  "audio": {
+    "dir": "dist-video/sudor-narracion",
+    "narracion": "sudor-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 74,
+    "segs": "segs.json",
+    "ass": "sudor.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-el-sudor-4k-master.mp4",
+    "h264": "agua-el-sudor-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
+    "guion": "sudor.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-water-approach.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-el-sudor.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-el-sudor-capsula.tar.gz",
+    "pieza": "mol-h2o el sudor",
+    "nueva": true,
+    "copy": {
+      "titulo": "Por qué el sudor te enfría (y por qué tiritas al salir de bañarte)",
+      "descripcion": "Nunca habías visto POR QUÉ el sudor te enfría. Esto no es una animación: son DOS moléculas de agua resueltas con física cuántica (ab initio), y lo que ves es lo que dicen las ecuaciones. 💧 Cada puntito que parpadea es un electrón —una nube de probabilidad, no una bolita—. El oxígeno (el corazón dorado) es codicioso: jala los electrones y deja un lado negativo y otro positivo, como una pila chiquita. Esas cargas encienden el campo eléctrico REAL (las líneas azules, calculadas línea por línea) y cuando dos aguas se acercan, el campo de una jala los electrones de la otra: nace el puente de hidrógeno, esa nube morada que se enciende entre las dos. Y aquí está el truco: para EVAPORARSE, cada molécula tiene que ROMPER ese puente. Romperlo cuesta energía… y esa energía la roba de tu piel. Por eso el sudor te enfría. Por eso tiritas al secarte. Por eso soplarle a la sopa funciona. Nada está inventado: el calor que se lleva cada gota (unos 10 kcal por mol) es exactamente el de los puentes que rompe.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#agua",
+        "#sudor",
+        "#química",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#ciencia",
+        "#física",
+        "#calor",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "nota": "El copy se escribe en el paso del GUION, no al final (canon, 2026-08-25). Mismo texto que SPECIAL['mol-h2o el sudor'] en comando-catalogo.cjs."
+    }
+  },
+  "guion": {
+    "archivo": "scripts/guiones/sudor.txt",
+    "lineas": 21,
+    "palabras": 147,
+    "nota": "v2 COTIDIANO (Ian 2026-08-25: \"se escucha chingón pero más cotidiano\"): abre en el cuerpo (regadera/frío), la pila como analogía, cierra en sudor+tiritar. Palabras por línea calcadas al rey para caer en las ventanas de capas."
+  }
+}
