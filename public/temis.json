@@ -1,16 +1,16 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 02:22",
+ "generado": "2026-08-26 02:58",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
-  "proximo": 4,
-  "enCurso": 0,
-  "cerrado": 51,
+  "proximo": 5,
+  "enCurso": 1,
+  "cerrado": 52,
   "probado": 0,
-  "porProbar": 18,
+  "porProbar": 19,
   "despues": 15
  },
  "violaciones": [],
@@ -111,9 +111,56 @@
     "probado": "",
     "falla": "",
     "commit": ""
+   },
+   {
+    "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
+    "slug": "2026-08-25-v1-7-kernel-rapido",
+    "titulo": "v1·7 — EL KERNEL RÁPIDO: 65 MB no pueden cruzar un túnel de 150 KB/s",
+    "fecha": "2026-08-25",
+    "estado": "proximo",
+    "prioridad": 7,
+    "objetivo": "hoy el kernel CAD (opencascade.wasm, 65 MB) llega COMPLETO pero LENTO a usuarios nuevos (~12 min: uplink de ATLAS ~150 KB/s y Cloudflare no cachea .wasm — cf-cache-status: DYNAMIC). Los navegadores que ya lo tienen (ian) lo sirven de su ca…",
+    "toca": 1,
+    "crea": 0,
+    "evidencia": 1,
+    "evidenciaDeclarada": [
+     "primera carga del kernel en prod < 60 s desde un navegador SIN caché"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": ""
    }
   ],
-  "enCurso": [],
+  "enCurso": [
+   {
+    "file": "ordenes/2026-08-25-temis-modulo-comando.md",
+    "slug": "2026-08-25-temis-modulo-comando",
+    "titulo": "TEMIS como módulo + en Comando + estado de DESPLIEGUE",
+    "fecha": "2026-08-25",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "objetivo": "Reutilizar el tablero TEMIS como MÓDULO (hoy vive embebido en ProjectSwitcher) y montarlo también en comando.html. Y darle a cada tarjeta un ESTADO DE DESPLIEGUE derivado (en-vivo / sin-desplegar / n-a) para coordinar los deploys — que ya …",
+    "toca": 5,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "Lobby Temis idéntico (DOM: mismas testids temis-board/col-*).",
+     "comando.html con pestaña Temis mostrando el tablero.",
+     "Banner \"N sin desplegar\" cuando hay tarjetas cerradas tras el último deploy."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": ""
+   }
+  ],
   "cerrado": [
    {
     "file": "ordenes/2026-08-25-temis-probado.md",
@@ -139,7 +186,7 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "0e58de6"
+    "commit": "77d8797"
    },
    {
     "file": "ordenes/2026-08-25-temis-evidencia.md",
@@ -169,6 +216,32 @@
     "probado": "",
     "falla": "",
     "commit": "d80ac77"
+   },
+   {
+    "file": "ordenes/2026-08-25-kernel-llega.md",
+    "slug": "2026-08-25-kernel-llega",
+    "titulo": "v1·0d — EL KERNEL LLEGA: Cloudflare cachea el .wasm en el borde",
+    "fecha": "2026-08-25",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "objetivo": "hoy el kernel CAD (opencascade.wasm, 65 MB) NO llega al usuario en prod: baja a ~95 KB/s porque el uplink de ATLAS es ~150 KB/s (medido por Tailscale, sin túnel) y Cloudflare NO cachea .wasm (cf-cache-status: DYNAMIC; los .js sí, HIT). Un …",
+    "toca": 3,
+    "crea": 2,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "cf-cache-status: HIT en el .wasm tras calentar; descarga completa desde la",
+     "el kernel carga en prod desde iangpu y la barra dice \"Lienzo vacío\" (no",
+     "orden-gate VERDE · sin deploy (es infra), regen de Temis"
+    ],
+    "cierre": "La meta original (CF HIT + <90 s) NO se logró — el objetivo REAL de la noche sí: el kernel LLEGA COMPLETO a prod y mañana ian puede probar los 7 tickets. Lo medido y lo hecho, honesto: - Causa raíz M…",
+    "cierreCompleto": "La meta original (CF HIT + <90 s) NO se logró — el objetivo REAL de la noche sí: el kernel LLEGA COMPLETO a prod y mañana ian puede probar los 7 tickets. Lo medido y lo hecho, honesto: - Causa raíz MEDIDA: uplink de ATLAS ~150 KB/s (Tailscale, sin túnel) + CF no cachea .wasm (DYNAMIC por extensión). No es bug del código: es tubería. - Cache Rule por API: el token de CF solo alcanza DNS → no autorizado. - Truco .wasm.js: CF cacheó TRUNCADO (~14 MB de 65) y sin purga quedó envenenado → REVERT COMPLETO (occt.ts + deploy + dist), redeploy 25/25, bundle con 0 referencias a .wasm.js. NO repetir este camino. - PRUEBA DE ACEPTACIÓN (post-revert, browser sin caché desde iangpu contra prod): el kernel cargó COMPLETO en 191 s; barra de estado \"Lienzo vacío — Boceto → Extruir, o abre un proyecto\"; 0 errores de página. Captura: 01-kernel-carga-prod-completa.jpg. - El browser de ian ya lo tiene en caché (immutable 30d) → sus pruebas de mañana cargan al instante. - El \"kernel rápido\" (<60 s primera carga) queda como v1·7 (2026-08-25-v1-7-kernel-rapido.md): token CF con Cache Rules+Purge (5 min de ian en el dashboard, el más barato), R2/CDN, o build chico de OCC.",
+    "evidenciaSS": [
+     "evidencia/2026-08-25-kernel-llega/01-kernel-carga-prod-completa.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": ""
    },
    {
     "file": "ordenes/2026-08-21-vaso-proyecto-revision.md",

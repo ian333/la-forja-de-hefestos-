@@ -108,6 +108,12 @@ export async function initOCCT(opts: InitOptions = {}): Promise<OC> {
             /* @vite-ignore */ 'opencascade.js/dist/opencascade.wasm.wasm?url'
           )
         ).default as string;
+        // NOTA (orden 2026-08-25-kernel-llega, REVERTIDA): se probó pedir el .wasm
+        // como `X.wasm.js` para que Cloudflare lo cacheara en el borde (cachea por
+        // extensión de URL; `.wasm` sale DYNAMIC). Salió PEOR: CF guardó una copia
+        // TRUNCADA (~14 MB de 65) y no hay permiso para purgar su caché. El .wasm a
+        // secas carga (lento pero completo). El "kernel rápido" queda como ticket
+        // aparte (chunkear el wasm, o servirlo desde R2/CDN, o partir el build OCC).
         locateFile = (p: string) =>
           p.endsWith('.wasm') ? wasmUrl : p;
       }
