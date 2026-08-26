@@ -1101,7 +1101,7 @@ const BASE_META: Record<string, { name: string; formula: string; fact: string }>
   whex: { name: 'El hexágono', formula: '(H₂O)₆', fact: 'Seis aguas en anillo: por esto el hielo es hexagonal y el copo de nieve tiene 6 puntas.' },
   wsingle: { name: 'El agua', formula: 'H₂O', fact: 'Su campo eléctrico: del hidrógeno positivo al oxígeno negativo.' },
   wmd: { name: 'Se buscan', formula: '(H₂O)₁₀', fact: 'Diez moléculas de agua, sueltas en el vacío, se encuentran SOLAS: sus campos eléctricos las pegan.' },
-  wsal:  { name: 'La sal', formula: 'Na⁺···H₂O', fact: 'Un ion con carga ENTERA: su campo es radial y ~10× el del agua. El agua le apunta el oxígeno y se pega (−24 kcal/mol, exacto al experimento).' },
+  wsal:  { name: 'La sal', formula: 'Na⁺···H₂O', fact: 'Un ion con carga ENTERA: su campo es radial y ~10× el del agua. El agua le apunta el oxígeno y se pega (−24 kcal/mol, exacto al experimento). El celeste del ion es evocativo: Na⁺ es incoloro.' },
   wpair: { name: 'El puente', formula: 'H₂O···H₂O', fact: 'El campo de una molécula JALA los electrones de la otra: los ves llegar (morado) al lugar exacto que dice la cuántica.' },
   hemo: { name: 'La cazadora', formula: 'Hb·4O₂', fact: 'Una proteína de tu sangre caza cuatro oxígenos: cuando cae el primero, la máquina ENTERA se reacomoda (14° medidos) y los demás entran más fácil.' },
   no:   { name: 'El mensajero', formula: 'NO', fact: 'Un electrón suelto: por eso tu cuerpo lo usa para hablarle a tus arterias.' },
@@ -2601,6 +2601,9 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
     }
     // MÁS SATURACIÓN: tonos más profundos (menos verde/azul) + núcleo menos blanco
     const gold = [1.0, 0.70, 0.14], amber = [1.0, 0.24, 0.03], whitegold = [1.0, 0.82, 0.42];
+    const celeste = [0.55, 0.90, 1.0];
+    const Nas: number[][] = [];
+    for (let m = 0; m < wd.NNUC; m++) if (wd.Z[m] === 11) Nas.push([wd.nucPos[nb + m * 3] * inv, wd.nucPos[nb + m * 3 + 1] * inv, wd.nucPos[nb + m * 3 + 2] * inv]);
     const c = new Float32Array(wd.Nacc * 3);
     for (let i = 0; i < wd.Nacc; i++) {
       const x = wd.accPos[pb + i * 3] * inv, y = wd.accPos[pb + i * 3 + 1] * inv, z = wd.accPos[pb + i * 3 + 2] * inv;
@@ -2610,10 +2613,50 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
       let col: number[];
       if (dO < 0.9) col = whitegold;
       else col = [gold[0] * (1 - t) + amber[0] * t, gold[1] * (1 - t) + amber[1] * t, gold[2] * (1 - t) + amber[2] * t];
+      // EL ION ES CELESTE (LA SAL, 2026-08-26). Na⁺ perdió el electrón de la línea D: el ion es
+      // INCOLORO (evocativo, se declara). Paleta por lo investigado (Palmer&Schloss, firma O₂):
+      // figura cálida (el oro del O) contra un rival FRÍO-BRILLANTE = los dos ejes oponentes a
+      // la vez. Sus 10 electrones, celestes; el agua conserva oro/ámbar. Solo si hay Na (Z=11).
+      for (const N of Nas) { if (Math.hypot(x - N[0], y - N[1], z - N[2]) < 1.9) { col = celeste; break; } }
       c[i * 3] = col[0]; c[i * 3 + 1] = col[1]; c[i * 3 + 2] = col[2];
     }
     return c;
   }, [wd, W.warmReach]);
+  // Partición del campo por PROTAGONISTA (solo piezas con ion, Z=11): cada línea se asigna al
+  // núcleo (Na o O) más cercano a su primer punto en el cuadro de referencia.
+  const efIon = useMemo(() => {
+    if (!wd || !bondEf) return null;
+    const inv = 1 / (wd.posq || O2AI_POSQ), kRef = wd.K - 1, nb = kRef * wd.NNUC * 3;
+    const nas: number[][] = [], os: number[][] = [];
+    for (let m = 0; m < wd.NNUC; m++) {
+      const P = [wd.nucPos[nb + m * 3] * inv, wd.nucPos[nb + m * 3 + 1] * inv, wd.nucPos[nb + m * 3 + 2] * inv];
+      if (wd.Z[m] === 11) nas.push(P); else if (wd.Z[m] === 8) os.push(P);
+    }
+    if (!nas.length) return null;
+    const { K, NL, LP, frames, inten } = bondEf;
+    const fr = frames[Math.min(kRef, frames.length - 1)];
+    const esIon = new Array<boolean>(NL);
+    for (let l = 0; l < NL; l++) {
+      // punto medio de la línea (el primero puede estar en cualquiera de los dos extremos)
+      const o = (l * LP + (LP >> 1)) * 3, x = fr[o], y = fr[o + 1], z = fr[o + 2];
+      const dN = Math.min(...nas.map((N) => Math.hypot(x - N[0], y - N[1], z - N[2])));
+      const dO = Math.min(...os.map((O) => Math.hypot(x - O[0], y - O[1], z - O[2])));
+      esIon[l] = dN < dO;
+    }
+    const sub = (keep: boolean): BondEFieldData => {
+      const idx: number[] = []; for (let l = 0; l < NL; l++) if (esIon[l] === keep) idx.push(l);
+      const nl = idx.length;
+      const fs: Float32Array[] = [], its: Uint8Array[] | null = inten ? [] : null;
+      for (let k = 0; k < K; k++) {
+        const f = new Float32Array(nl * LP * 3), src = frames[k];
+        idx.forEach((l, j) => f.set(src.subarray(l * LP * 3, (l + 1) * LP * 3), j * LP * 3));
+        fs.push(f);
+        if (its && inten) { const t = new Uint8Array(nl * LP), si = inten[k]; idx.forEach((l, j) => t.set(si.subarray(l * LP, (l + 1) * LP), j * LP)); its.push(t); }
+      }
+      return { K, NL: nl, LP, Rvals: bondEf.Rvals, frames: fs, inten: its };
+    };
+    return { ion: sub(true), agua: sub(false) };
+  }, [wd, bondEf]);
   if (!wd) return null;
   // ── BEATS SINCRONIZADOS AL GUION (narración 77s, ver scripts/guiones/wpair.txt) ──
   // Hook pegadas (0-4) → separan (revelan 2, 4-9) → APART mientras explica electrones/oxígeno/
@@ -2719,7 +2762,12 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
           NO es el enlace (eso es la nube) — es el campo, la estructura completa. Se intensifica
           al conectarse (glow). Cian-violeta para combinar con oro+morado. */}
       {ceros && <FieldNulls data={ceros} R={R} reveal={C.ceros ?? 0} time={time} />}
-      {bondEf && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
+      {bondEf && !efIon && <BondEField data={bondEf} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
+      {/* LA SAL: el campo se parte en DOS instancias del mismo BondEField — las líneas que nacen
+          en el ION, celestes (el erizo radial de una carga entera); las del agua, el azul de la
+          serie. Cero shader nuevo: es el mismo componente con otro `col` y un subconjunto. */}
+      {efIon && <BondEField data={efIon.agua} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.42, 0.72, 1.6]} />}
+      {efIon && <BondEField data={efIon.ion} R={R} time={time * 8} reveal={Math.min(1.15, 0.78 + 0.4 * glow) * fieldGate} col={[0.70, 1.30, 1.75]} />}
       {/* ENLACES O–H + DIPOLO — solo el anillo, y gobernados por las capas (datos):
           se PRENDEN en "un oxígeno y dos hidrógenos" y en la firma "una queda al revés". */}
       {anillo && <WaterSticks nuc={nucP} show={C.enlaces ?? 0} showDip={C.dipolo ?? 0} />}
@@ -2731,8 +2779,8 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
               por molécula y se LEA hacia dónde apunta cada H (= el volteo). */}
           <Nucleus protons={wd.Z[i]} neutrons={wd.Z[i] === 8 ? 8 : wd.Z[i] === 11 ? 12 : 0} time={time}
             clusterRadius={(wd.Z[i] === 11 ? 0.13 : wd.Z[i] === 8 ? (anillo ? 0.165 : 0.10) : (anillo ? 0.068 : 0.05)) * (W.nucMul ?? 1)}
-            nHot={wd.Z[i] === 11 ? [1.5, 0.95, 0.35] : wd.Z[i] === 8 || !anillo ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
-            nHue={wd.Z[i] === 11 ? 0.10 : wd.Z[i] === 8 || !anillo ? 0.55 : 0.08} />
+            nHot={wd.Z[i] === 11 ? [0.95, 1.30, 1.75] : wd.Z[i] === 8 || !anillo ? [0.62, 0.9, 1.35] : [1.5, 0.72, 0.22]}
+            nHue={wd.Z[i] === 11 ? 0.52 : wd.Z[i] === 8 || !anillo ? 0.55 : 0.08} />
         </group>
       ))}
     </>
