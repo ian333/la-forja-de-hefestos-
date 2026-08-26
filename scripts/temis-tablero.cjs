@@ -72,6 +72,30 @@ function ssDe(slug) {
   return fs.readdirSync(d).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).sort().map((f) => `evidencia/${slug}/${f}`);
 }
 
+// ── ESTADO DE DESPLIEGUE (coordinar deploys — deploy_gotchas: nunca dos a la vez) ──
+// El deploy estampa public/temis-deploy.json = {commitFull} = lo que está EN VIVO.
+// Cada tarjeta cerrada se deriva sola: su commit es ancestro del desplegado → 'en-vivo';
+// más nueva y tocó el sitio → 'sin-desplegar'; no tocó el sitio (video/física/docs) → 'n-a'.
+const DEPLOY = (() => {
+  try { return JSON.parse(fs.readFileSync(path.join(REPO, 'public', 'temis-deploy.json'), 'utf8')); }
+  catch { return null; }
+})();
+const SITE = /^(src\/|public\/|index\.html|[^/]*\.html|vite\.config|.*\.css)/;
+function tocaSitio(commit) {
+  if (!commit) return false;
+  const f = (() => { try { return execSync(`git show --name-only --format= ${commit}`, { cwd: REPO, stdio: ['ignore','pipe','ignore'] }).toString(); } catch { return ''; } })();
+  return f.split('\n').some((l) => l && SITE.test(l.trim()));
+}
+function despliegueDe(commit, decl) {
+  const d = (decl || '').toLowerCase().replace(/\s.*$/, '');
+  if (['en-vivo','sin-desplegar','n-a','pendiente'].includes(d)) return d === 'pendiente' ? 'sin-desplegar' : d;  // override de la orden
+  if (!commit) return '';
+  if (!tocaSitio(commit)) return 'n-a';
+  if (!DEPLOY || !DEPLOY.commitFull) return 'sin-desplegar';    // nunca se ha desplegado
+  const anc = (() => { try { execSync(`git merge-base --is-ancestor ${commit} ${DEPLOY.commitFull}`, { cwd: REPO, stdio: 'ignore' }); return true; } catch { return false; } })();
+  return anc ? 'en-vivo' : 'sin-desplegar';
+}
+
 const archivos = fs.readdirSync(DIR).filter((f) => f.endsWith('.md') && f !== 'PLANTILLA.md' && f !== 'DESPUES-DE-V1.md').sort();
 const tarjetas = archivos.map((f) => {
   const rel = `ordenes/${f}`;
@@ -105,6 +129,7 @@ const tarjetas = archivos.map((f) => {
     revisable: (estado === 'cerrado' || estado === 'probado') && evidenciaSS.length > 0,
     probado: plano(probado), falla: plano(falla),
     commit: (estado === 'cerrado' || estado === 'probado') ? commitDe(rel) : '',
+    despliegue: (estado === 'cerrado' || estado === 'probado') ? despliegueDe(commitDe(rel), campo(txt, 'DESPLIEGUE')) : '',
   };
 });
 
@@ -146,12 +171,15 @@ const revisables = cerrado.filter((t) => t.revisable).length;
 
 const json = {
   nombre: 'TEMIS', generado: new Date().toISOString().slice(0, 16).replace('T', ' '),
-  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCurso.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, despues: despues.length },
+  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCurso.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, sinDesplegar: [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length, despues: despues.length },
+  deploy: DEPLOY ? { commit: DEPLOY.commit, fecha: DEPLOY.fecha } : null,
   violaciones, columnas: { proximo, enCurso, cerrado, probado: probadas }, despues,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(json, null, 1));
 
+const _sd = [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length;
+if (_sd > 0) console.log(`  ⬆ ${_sd} cerrada(s) SIN DESPLEGAR — coordina el deploy (nunca dos a la vez)`);
 console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCurso.length}/${WIP.enCurso} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · probado ${probadas.length} · después ${despues.length}`);
 for (const t of proximo) console.log(`  ${String(t.prioridad).padStart(2)} · ${t.titulo}`);
 for (const t of enCurso) console.log(`  ▶ EN CURSO · ${t.titulo}`);

@@ -202,6 +202,10 @@ stage_end
 #       — JSON ya gigante, MP3/WASM binarios: comprimir es contraproducente.
 #       — --size-only salta archivos cuyo tamaño no cambió (instant).
 # ───────────────────────────────────────────────────────────────────────
+# ── TEMIS: estampar QUÉ se despliega (coordinación de deploys) ANTES de sincronizar,
+#    para que el public/ que sube ya traiga el stamp de ESTE deploy + un tablero coherente.
+node scripts/temis-deploy-stamp.cjs "$COMMIT" 2>/dev/null || echo "  (temis stamp: omitido)"
+
 banner "5/10" "Sincronizando fuente con ATLAS (2 pasos)…"
 stage_begin "rsync"
 

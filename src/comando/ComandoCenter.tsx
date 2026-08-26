@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { NOBEL_CATALOG, type NobelLaureate } from '@/economia/nobel-catalog';
 import { CINE_CLASES } from '@/economia/labs/registry';
 
+import { TemisBoard, useTemis, TEMIS_CSS } from '../forja/brep/TemisBoard';
 const GOLD = '#FDB813';
 const VIDEO_BASE = '/biblioteca/';
 const REG_API = '/api/telemetry/registro';      // persistencia server-side (proxy nginx → telemetry)
@@ -85,7 +86,8 @@ export default function ComandoCenter() {
   const [calGrade, setCalGrade] = useState('todos');
   const [calFlag, setCalFlag] = useState(false);
   const [registro, setRegistro] = useState<Registro>({});
-  const [tab, setTab] = useState<'publicar' | 'cad' | 'calidad' | 'prod' | 'tele'>('publicar');
+  const [tab, setTab] = useState<'publicar' | 'cad' | 'calidad' | 'prod' | 'tele' | 'temis'>('publicar');
+  const temis = useTemis(tab === 'temis');   // TEMIS = el MISMO módulo del lobby de La Forja
   const [inicio, setInicio] = useState<string>(() => { try { return localStorage.getItem('comando_cad_inicio') || new Date().toISOString().slice(0, 10); } catch { return new Date().toISOString().slice(0, 10); } });
   const [familia, setFamilia] = useState<string>('todas');
   const [pendiente, setPendiente] = useState<string>('');   // plataforma k para filtrar pendientes
@@ -230,7 +232,7 @@ export default function ComandoCenter() {
           <span style={{ fontSize: 11, color: '#5A6678', fontFamily: 'monospace' }}>{cat.pieces.length} piezas · {cat.generatedAt || '—'}</span>
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
-          {([['publicar', '📤 Publicar'], ['cad', '📅 Cadencia'], ['calidad', '🏆 Calidad'], ['prod', '🎬 Producción'], ['tele', '📊 Telemetría']] as const).map(([k, l]) => (
+          {([['publicar', '📤 Publicar'], ['cad', '📅 Cadencia'], ['calidad', '🏆 Calidad'], ['prod', '🎬 Producción'], ['tele', '📊 Telemetría'], ['temis', '⚖️ Temis']] as const).map(([k, l]) => (
             <button key={k} onClick={() => setTab(k)} style={{ padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: tab === k ? GOLD : 'rgba(255,255,255,0.05)', color: tab === k ? '#06070D' : '#B8C2D6', border: '1px solid ' + (tab === k ? GOLD : 'rgba(255,255,255,0.08)') }}>{l}</button>
           ))}
         </div>
@@ -557,6 +559,12 @@ export default function ComandoCenter() {
                 })}
               </>
             )}
+          </div>
+        )}
+        {tab === 'temis' && (
+          <div data-testid="comando-temis">
+            <style>{TEMIS_CSS}</style>
+            <TemisBoard data={temis} />
           </div>
         )}
       </div>
