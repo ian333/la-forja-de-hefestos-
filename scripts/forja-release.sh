@@ -16,6 +16,13 @@ HEAD=$(git rev-parse --short main 2>/dev/null) || { echo "✗ sin rama main"; ex
 if [ ! -d "$WT/.git" ] && [ ! -f "$WT/.git" ]; then git worktree add -q --detach "$WT" main || { echo "✗ worktree"; exit 1; }; fi
 git -C "$WT" checkout -q --detach main 2>/dev/null || git -C "$WT" reset -q --hard main
 [ -z "$(git -C "$WT" status --porcelain)" ] || { echo "✗ el worktree de release está SUCIO — no despliego"; exit 2; }
+# ENTREGABLES FUERA DE GIT (política: *.mp4 nunca a git — reels del atrio, etc.). El deploy
+# publica `dist/` con --delete: si el worktree limpio no los trae, la release los BORRARÍA de
+# prod. Se espejan desde el árbol principal SOLO los ignorados bajo public/.
+git -C "$REPO" ls-files --others --ignored --exclude-standard -- public/ | while read -r f; do
+  mkdir -p "$WT/$(dirname "$f")"; cp -f "$REPO/$f" "$WT/$f"
+done
+echo "· entregables fuera de git espejados: $(git -C "$REPO" ls-files --others --ignored --exclude-standard -- public/ | wc -l)"
 echo "· main=$HEAD · worktree limpio"
 # node_modules del worktree: el deploy hace build REMOTO en ATLAS, no hace falta local.
 bash "$WT/scripts/forja-deploy.sh" --if-pending --quiet; rc=$?
