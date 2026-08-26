@@ -1270,6 +1270,160 @@ export const JABONERA_PIEZA: PiezaSpec = {
 };
 
 /* ══════════════════════════════════════════════════════════════════════════ */
+/* LA COTIZACIÓN (orden v1·5) — E1+E2+E3+base → la hoja que un taller LEE      */
+/* ══════════════════════════════════════════════════════════════════════════ */
+/** El entregable de la v1: "cuánto cuesta moldear MI pieza". PURA (sin OCC):
+ *  la Máquina ya corrió todo; aquí solo se ARMA la hoja con cada número y su §.
+ *  No es el acta de 12 estaciones (esa la muestra el cubo): es lo que un taller
+ *  o un diseñador de producto lee en 5 minutos. */
+export interface CotizacionPieza {
+  fecha: string;
+  pieza: { nombre: string; dims: string; material: string; wallMm: number; volCc: number; Q: number };
+  dfm: { veredicto: string; tcS: number; errores: number; notas: string[] };
+  molde: { arch: string; nCav: number; baseNombre: string; baseAritmetica: string; insertos: string[]; stackMm: number; aceroNota: string };
+  dinero: { moldeUSD: number; amortPzaUSD: number; restoPzaUSD: number; totalPzaUSD: number; entregaSemanas: number; proporcionPct: number; proporcionLectura: string };
+  banda: Array<{ q: number; arch: string; nCav: number; pzaUSD: number }>;
+  supuestos: string[];
+}
+export function cotizacionPieza(pieza: PiezaSpec, o?: { fecha?: string }): CotizacionPieza {
+  const e1 = estacion1(pieza);
+  const e2x = estacion2(pieza);
+  const g = e2x.variantes.find((v) => v.ganadora)!;
+  const e3 = estacion3Dado(e2x.pkg, pieza);
+  const b = e2x.pkg.base;
+  const sp = pieza.spec;
+  return {
+    fecha: o?.fecha ?? '',
+    pieza: {
+      nombre: pieza.nombre,
+      dims: sp.cavityShape === 'round' ? `⌀${sp.Lmm}×${sp.Hmm} mm` : `${sp.Lmm}×${sp.Wmm}×${sp.Hmm} mm`,
+      material: pieza.material, wallMm: pieza.pieza.wallMm, volCc: pieza.pieza.volCc, Q: (sp as any).annualVolume ?? 100000,
+    },
+    dfm: {
+      veredicto: e1.dado.veredicto, tcS: e1.dado.tcS, errores: e1.dado.dfm?.errors ?? 0,
+      notas: (e1.comparacion ?? []).slice(0, 2),
+    },
+    molde: {
+      arch: g.arch, nCav: g.nCav,
+      baseNombre: `${b.base.wmm}×${b.base.lmm} mm (catálogo §4.3.2)`,
+      baseAritmetica: e3.base.aritmetica,
+      insertos: e3.insertos.map((i) => `${i.nombre.replace(/\s*\(.*$/, '')}: ${i.dims}`),
+      stackMm: e3.stackMm,
+      aceroNota: 'P20 SOLO donde se moldea; C45 donde solo se sujeta (§4.4.4)',
+    },
+    dinero: {
+      moldeUSD: e2x.veredicto.precioMoldeUSD,
+      amortPzaUSD: g.amortPzaUSD, restoPzaUSD: g.restoPzaUSD, totalPzaUSD: g.totalPzaUSD,
+      entregaSemanas: e2x.veredicto.entregaSemanas,
+      proporcionPct: e2x.proporcion.pct, proporcionLectura: e2x.proporcion.lectura,
+    },
+    banda: e2x.banda.slice(0, 4),
+    supuestos: [
+      'amortización = molde$/Q — IGNORA el factor de mantenimiento §3.4.1 (declarado)',
+      'la base SE COMPRA, no se fabrica (§4.3.2): primera medida comercial que aloja la necesidad',
+      'insertos con borde §4.2.1 y alturas Fig 4.13 — dims de COMPRA, no de dibujo',
+      `t_c por Eq 9.5 con pared ${pieza.pieza.wallMm} mm y ${pieza.material} declarado (intake §2.1.5)`,
+      'la banda A-050 dice DÓNDE cambia el ganador: la cotización vale en su volumen',
+    ],
+  };
+}
+
+/** La hoja IMPRIMIBLE (SVG, como el plano): título, pieza, DFM, molde, dinero,
+ *  banda y supuestos — cada número con su §. El juez de abajo la vigila. */
+export function cotizacionSvg(c: CotizacionPieza): string {
+  const esc = (t: string) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const T: string[] = [];
+  const tx = (x: number, y: number, size: number, texto: string, opts?: { peso?: number; fill?: string; mono?: boolean }) =>
+    T.push(`<text x="${x}" y="${y}" font-size="${size}" font-weight="${opts?.peso ?? 400}" fill="${opts?.fill ?? '#1a222c'}" font-family="${opts?.mono ? "'JetBrains Mono',monospace" : 'Inter,system-ui,sans-serif'}">${esc(texto)}</text>`);
+  const wrap = (t: string, n: number): string[] => {
+    const out: string[] = []; let cur = '';
+    for (const w of t.split(/\s+/)) { if ((cur + ' ' + w).trim().length > n) { out.push(cur.trim()); cur = w; } else cur += ' ' + w; }
+    if (cur.trim()) out.push(cur.trim());
+    return out;
+  };
+  const money = (v: number) => '$' + v.toLocaleString('en-US');
+  // encabezado
+  tx(40, 46, 22, 'COTIZACIÓN DE MOLDE', { peso: 800 });
+  // sin duplicar: si el NOMBRE ya trae las dims ("EL VASO · ⌀80×20 pared 3"), no se repiten
+  const yaTraeDims = /[×⌀]/.test(c.pieza.nombre);
+  tx(40, 68, 13, yaTraeDims ? `${c.pieza.nombre} · ${c.pieza.material}` : `${c.pieza.nombre} · ${c.pieza.dims} · ${c.pieza.material}`, { peso: 600, fill: '#5a4a10' });
+  tx(760, 46, 12, 'LA FORJA · Máquina de Moldes', { peso: 700, fill: '#8a7430' });
+  tx(760, 62, 11, c.fecha ? `fecha: ${c.fecha}` : 'cotización de referencia', { fill: '#66707e' });
+  // ── columna 1: LA PIEZA + DFM ──
+  let y = 108;
+  tx(40, y, 13, 'LA PIEZA (intake §2.1.5)', { peso: 800, fill: '#8a7430' }); y += 18;
+  for (const l of [
+    `dims: ${c.pieza.dims}`, `pared nominal: ${c.pieza.wallMm} mm`,
+    `volumen: ${c.pieza.volCc} cc`, `volumen anual: ${c.pieza.Q.toLocaleString('en-US')} pzas`,
+    `material: ${c.pieza.material}`,
+  ]) { tx(46, y, 12, l, { mono: true }); y += 16; }
+  y += 10;
+  tx(40, y, 13, 'DFM — estación 1 (cap 2)', { peso: 800, fill: '#8a7430' }); y += 18;
+  tx(46, y, 12, `veredicto: ${c.dfm.veredicto} · ${c.dfm.errores} errores §2.3`, { mono: true, fill: c.dfm.veredicto === 'APROBADO' ? '#1d6b3c' : '#a33220', peso: 700 }); y += 16;
+  tx(46, y, 12, `t_c = ${(+c.dfm.tcS).toFixed(1)} s (Eq 9.5)`, { mono: true }); y += 16;
+  for (const n of c.dfm.notas) for (const l of wrap(n, 42)) { tx(46, y, 10.5, l, { fill: '#66707e' }); y += 13; }
+  // ── columna 2: EL MOLDE ──
+  let y2 = 108;
+  tx(370, y2, 13, 'EL MOLDE — estaciones 2-3', { peso: 800, fill: '#8a7430' }); y2 += 18;
+  tx(376, y2, 12, `arquitectura: ${c.molde.arch} ×${c.molde.nCav} cav`, { mono: true, peso: 700 }); y2 += 16;
+  tx(376, y2, 12, `base: ${c.molde.baseNombre}`, { mono: true, peso: 700 }); y2 += 15;
+  for (const l of wrap(c.molde.baseAritmetica, 42)) { tx(376, y2, 10.5, l, { fill: '#66707e' }); y2 += 13; }
+  y2 += 5;
+  for (const i of c.molde.insertos) for (const l of wrap(i, 40)) { tx(376, y2, 11, l, { mono: true }); y2 += 14; }
+  y2 += 4;
+  tx(376, y2, 11, `stack: ${c.molde.stackMm} mm`, { mono: true }); y2 += 15;
+  for (const l of wrap(c.molde.aceroNota, 42)) { tx(376, y2, 10.5, l, { fill: '#66707e' }); y2 += 13; }
+  // ── columna 3: EL DINERO + LA BANDA (x=660: el juez cazó el desborde en 700) ──
+  let y3 = 108;
+  tx(660, y3, 13, 'EL DINERO (cap 3)', { peso: 800, fill: '#8a7430' }); y3 += 22;
+  tx(666, y3, 19, `${money(c.dinero.moldeUSD)}`, { peso: 800, fill: '#1d3a6b' }); y3 += 16;
+  tx(666, y3, 10.5, `el molde · entrega ${c.dinero.entregaSemanas} semanas`, { fill: '#66707e' }); y3 += 20;
+  tx(666, y3, 12, `amortización ${money(c.dinero.amortPzaUSD)}/pza (§3.4.1)`, { mono: true }); y3 += 16;
+  tx(666, y3, 12, `material+proceso ${money(c.dinero.restoPzaUSD)}/pza`, { mono: true }); y3 += 16;
+  tx(666, y3, 13, `TOTAL ${money(c.dinero.totalPzaUSD)}/pza`, { mono: true, peso: 800, fill: '#1d6b3c' }); y3 += 18;
+  tx(666, y3, 11, `molde/producción: ${c.dinero.proporcionPct} % (§3.4.4)`, { mono: true }); y3 += 20;
+  tx(660, y3, 13, 'LA BANDA (A-050)', { peso: 800, fill: '#8a7430' }); y3 += 14;
+  tx(660, y3, 10.5, 'dónde cambia el ganador (vale en su volumen)', { fill: '#66707e' }); y3 += 15;
+  const kq = (q: number) => (q >= 1000 ? `${q / 1000}k` : String(q));
+  for (const bnd of c.banda) { tx(666, y3, 11, `${kq(bnd.q)} pzas → ${bnd.arch}×${bnd.nCav} · $${bnd.pzaUSD}`, { mono: true }); y3 += 14; }
+  // ── pie: SUPUESTOS ──
+  let yf = 610;
+  tx(40, yf, 12, 'SUPUESTOS — cada número con su § (Kazmer)', { peso: 800, fill: '#8a7430' }); yf += 15;
+  for (const sn of c.supuestos) { tx(46, yf, 10.5, '· ' + sn, { fill: '#4a5462' }); yf += 13; }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 707" width="100%" style="background:#fdfcf8">` +
+    `<rect x="0" y="0" width="1000" height="707" fill="#fdfcf8"/>` +
+    `<rect x="24" y="20" width="952" height="667" fill="none" stroke="#c8bd9a" stroke-width="1.5"/>` +
+    `<line x1="24" y1="82" x2="976" y2="82" stroke="#c8bd9a" stroke-width="1"/>` +
+    `<line x1="24" y1="596" x2="976" y2="596" stroke="#c8bd9a" stroke-width="1"/>` +
+    T.join('') + `</svg>`;
+}
+
+/** EL JUEZ DE LEGIBILIDAD — la lección del acta (E12): el gate daba verde y la
+ *  hoja era ilegible. Este juez MIDE el documento: letra ≥10, nada se desborda
+ *  del marco, y los números/§§ que cobran están presentes. Con control negativo
+ *  en el gate (una hoja saboteada tiene que REPROBAR). */
+export function juezLegibilidadCotizacion(svg: string): { ok: boolean; fallas: string[] } {
+  const fallas: string[] = [];
+  const textos = [...svg.matchAll(/<text x="([\d.]+)" y="([\d.]+)" font-size="([\d.]+)"[^>]*>([^<]*)<\/text>/g)];
+  if (textos.length < 20) fallas.push(`solo ${textos.length} líneas de texto (hoja vacía)`);
+  for (const m of textos) {
+    const x = +m[1], y = +m[2], fs = +m[3], t = m[4];
+    if (fs < 10) fallas.push(`letra ${fs}px < 10 en "${t.slice(0, 30)}"`);
+    if (x + t.length * fs * 0.62 > 985) fallas.push(`desborde horizontal en "${t.slice(0, 30)}"`);
+    if (y > 695) fallas.push(`desborde vertical en "${t.slice(0, 30)}"`);
+    // colisión de COLUMNAS (el "cavidad(es" ENCIMA del $9,259 lo cazaron OJOS, no este
+    // juez): col 1 termina en 360, col 2 en 655. Solo ARRIBA del divisor del pie
+    // (y<596): los SUPUESTOS van a lo ancho por diseño.
+    if (y < 596 && x < 360 && x + t.length * fs * 0.62 > 356) fallas.push(`col 1 invade col 2 en "${t.slice(0, 30)}"`);
+    if (y < 596 && x >= 360 && x < 655 && x + t.length * fs * 0.62 > 651) fallas.push(`col 2 invade EL DINERO en "${t.slice(0, 30)}"`);
+  }
+  for (const req of ['COTIZACIÓN', '§4.3.2', '§3.4.1', 'Eq 9.5', '/pza', 'A-050', 'base']) {
+    if (!svg.includes(req)) fallas.push(`falta "${req}" en la hoja`);
+  }
+  return { ok: fallas.length === 0, fallas };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
 /* EL PUENTE (orden v1·1) — la pieza del ÁRBOL entra a la máquina              */
 /* ══════════════════════════════════════════════════════════════════════════ */
 /** Lo que el árbol del CAD sabe de su sólido: el Shape OCC (conservado por el

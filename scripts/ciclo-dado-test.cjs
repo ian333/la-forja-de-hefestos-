@@ -76,6 +76,31 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
   const j2 = ed.estacion2(ed.JABONERA_PIEZA);
   check('JABONERA E2: el molde ≠ cubo Y ≠ vaso (tres piezas, tres costos)', j2.veredicto.precioMoldeUSD !== e2.veredicto.precioMoldeUSD && j2.veredicto.precioMoldeUSD !== v2.veredicto.precioMoldeUSD, `jabonera $${j2.veredicto.precioMoldeUSD.toLocaleString()} · cubo $${e2.veredicto.precioMoldeUSD.toLocaleString()} · vaso $${v2.veredicto.precioMoldeUSD.toLocaleString()}`);
 
+  // ══ v1·5 — LA COTIZACIÓN: E1+E2+E3+base → la hoja que un taller LEE ══
+  console.log('── v1·5 · LA COTIZACIÓN — las 3 figuras, con juez de legibilidad');
+  {
+    const cots = [ed.DADO_PIEZA, ed.VASO_PIEZA, ed.JABONERA_PIEZA].map((pp) => ed.cotizacionPieza(pp, { fecha: '2026-08-25' }));
+    check('v1·5: las 3 figuras emiten cotización con BASE NOMBRADA (§4.3.2)',
+      cots.every((c) => /\d+×\d+ mm/.test(c.molde.baseNombre)),
+      cots.map((c) => `${c.pieza.nombre.split(' ·')[0]}: ${c.molde.baseNombre.split(' (')[0]}`).join(' · '));
+    check('v1·5: tres piezas, tres moldes, tres $/pza (todos distintos)',
+      new Set(cots.map((c) => c.dinero.moldeUSD)).size === 3 && new Set(cots.map((c) => c.dinero.totalPzaUSD)).size === 3,
+      cots.map((c) => `$${c.dinero.moldeUSD.toLocaleString()} · $${c.dinero.totalPzaUSD}/pza`).join(' · '));
+    check('v1·5: el dinero CUADRA al centavo (amortización + resto = total)',
+      cots.every((c) => Math.abs(c.dinero.amortPzaUSD + c.dinero.restoPzaUSD - c.dinero.totalPzaUSD) < 0.005),
+      cots.map((c) => `${c.dinero.amortPzaUSD}+${c.dinero.restoPzaUSD}=${c.dinero.totalPzaUSD}`).join(' · '));
+    check('v1·5: la cotización del cubo = la E2 del ciclo (misma Máquina, mismo número)',
+      cots[0].dinero.moldeUSD === e2.veredicto.precioMoldeUSD,
+      `hoja $${cots[0].dinero.moldeUSD.toLocaleString()} vs ciclo $${e2.veredicto.precioMoldeUSD.toLocaleString()}`);
+    const juicios = cots.map((c) => ed.juezLegibilidadCotizacion(ed.cotizacionSvg(c)));
+    check('v1·5: el JUEZ DE LEGIBILIDAD (lección del acta) aprueba las 3 hojas',
+      juicios.every((j) => j.ok), juicios.map((j) => (j.ok ? 'ok' : j.fallas.slice(0, 2).join(','))).join(' · '));
+    // CONTROL NEGATIVO: una hoja saboteada (letra 6px + sin los §§) tiene que REPROBAR
+    const rota = '<svg viewBox="0 0 1000 707"><text x="20" y="30" font-size="6" fill="#000">cotización chiquita sin secciones</text></svg>';
+    const jr = ed.juezLegibilidadCotizacion(rota);
+    check('v1·5 CONTROL: el juez REPRUEBA la hoja ilegible (letra 6px, sin §§)', !jr.ok, jr.fallas.slice(0, 3).join(' · '));
+  }
+
   // ══ E3 — ARQUITECTURA con OCC REAL ══
   console.log('── E3 · Arquitectura (cap 4) — midiendo el B-Rep');
   const oc = await factory({ wasmBinary: wasmBin });

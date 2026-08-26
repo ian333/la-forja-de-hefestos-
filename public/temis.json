@@ -1,45 +1,21 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 03:51",
+ "generado": "2026-08-26 04:24",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
-  "proximo": 3,
+  "proximo": 2,
   "enCurso": 1,
-  "cerrado": 54,
+  "cerrado": 55,
   "probado": 0,
-  "porProbar": 21,
+  "porProbar": 22,
   "despues": 15
  },
  "violaciones": [],
  "columnas": {
   "proximo": [
-   {
-    "file": "ordenes/2026-08-21-v1-5-base-cotizacion.md",
-    "slug": "2026-08-21-v1-5-base-cotizacion",
-    "titulo": "v1·5 — BASE DE CATÁLOGO + LA COTIZACIÓN (E1+E2+E3+base → PDF)",
-    "fecha": "2026-08-21",
-    "estado": "proximo",
-    "prioridad": 5,
-    "objetivo": "el entregable de la v1: \"cuánto cuesta moldear MI pieza\". De la pieza del usuario → DFM (E1) → cavidades/arquitectura (E2) → cavidad+macho (E3) → base ESTÁNDAR seleccionada (§4.3.2: se compra, no se modela — el 48 %) → cotización imprimibl…",
-    "toca": 3,
-    "crea": 0,
-    "evidencia": 3,
-    "evidenciaDeclarada": [
-     "las 3 figuras emiten cotización con base nombrada y $/pza distinto (ya medido:",
-     "la cotización se LEE en el cuadro (juez de legibilidad, como el acta)",
-     "orden-gate VERDE"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": ""
-   },
    {
     "file": "ordenes/2026-08-21-v1-6-leccion1-v1-gate.md",
     "slug": "2026-08-21-v1-6-leccion1-v1-gate",
@@ -303,6 +279,34 @@
     "probado": "",
     "falla": "",
     "commit": "5f574d5"
+   },
+   {
+    "file": "ordenes/2026-08-21-v1-5-base-cotizacion.md",
+    "slug": "2026-08-21-v1-5-base-cotizacion",
+    "titulo": "v1·5 — BASE DE CATÁLOGO + LA COTIZACIÓN (E1+E2+E3+base → PDF)",
+    "fecha": "2026-08-21",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "objetivo": "el entregable de la v1: \"cuánto cuesta moldear MI pieza\". De la pieza del usuario → DFM (E1) → cavidades/arquitectura (E2) → cavidad+macho (E3) → base ESTÁNDAR seleccionada (§4.3.2: se compra, no se modela — el 48 %) → cotización imprimibl…",
+    "toca": 5,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "las 3 figuras emiten cotización con base nombrada y $/pza distinto (ya medido:",
+     "la cotización se LEE en el cuadro (juez de legibilidad, como el acta)",
+     "orden-gate VERDE"
+    ],
+    "cierre": "EL ENTREGABLE DE LA v1 EXISTE: \"cuánto cuesta moldear MI pieza\" es una HOJA. cotizacionPieza(pieza) (PURA, sin OCC) + cotizacionSvg (documento imprimible/descargable) + juezLegibilidadCotizacion (la …",
+    "cierreCompleto": "EL ENTREGABLE DE LA v1 EXISTE: \"cuánto cuesta moldear MI pieza\" es una HOJA. cotizacionPieza(pieza) (PURA, sin OCC) + cotizacionSvg (documento imprimible/descargable) + juezLegibilidadCotizacion (la lección del acta, ahora con dientes) + panel CotizacionE3 en la estación 3 del ciclo. Gate 228/228 (+6): - las 3 figuras con BASE NOMBRADA: cubo/vaso 196×196 · jabonera 246×246 - tres piezas, tres moldes, tres $/pza — specs escritos: $9,259 / $11,343 / $19,294; EN LA APP (pieza del árbol, MEDIDA): $9,259 / $11,342 / $19,361 — misma pieza, dos orígenes, ±0.35 % - el dinero CUADRA al centavo (amortización §3.4.1 + resto = total) - cotización del cubo == E2 del ciclo (misma Máquina, mismo número) - el juez aprueba las 3 hojas y REPRUEBA la saboteada (control negativo) EL JUEZ APRENDIÓ DE MIS OJOS (3 iteraciones REALES esta noche): 1. desborde de LA BANDA → lo cazó el juez (regla de marco) ✓ 2. \"×1 cavidad(es\" ENCIMADO al $9,259 → lo cazaron los OJOS, el juez NO → regla NUEVA de colisión de columnas (c1<360, c2<655; el pie y=596+ exento) 3. t_c = 8.477895220882502 s crudo → toFixed(1) La regla de siempre: el gate verde no sustituye mirar la hoja. DEUDA OBSERVADA (fuera de TOCA — useMoldStudio): tras cargar un DEMO, abrir una pieza del árbol NO re-siembra el ciclo (guard esDemo del puente): el panel se queda en la estación del demo. El arnés lo rodeó con página fresca por figura. Candidato a ticket. Evidencia: las 3 hojas a página completa (dev iangpu, GPU real) — cada una con SU DFM honesto (vaso/jabonera del árbol REPROBADOS §2.3.4/§2.3.6: el árbol no trae filete, y ESO es el puen…",
+    "evidenciaSS": [
+     "evidencia/2026-08-21-v1-5-base-cotizacion/01-cubo-cotizacion.jpg",
+     "evidencia/2026-08-21-v1-5-base-cotizacion/02-vaso-cotizacion.jpg",
+     "evidencia/2026-08-21-v1-5-base-cotizacion/03-jabonera-cotizacion.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "28ec3af"
    },
    {
     "file": "ordenes/2026-08-21-v1-4-draft-cilindros.md",

@@ -5,7 +5,7 @@
  * de ARMANDO MOLDE. Reciben la BOLSA de useMoldStudio como prop — cero estado
  * propio, puro render. El grupo del ribbon se queda en el Studio (usa <Ic>).
  */
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
 import { Ic } from './icons';
@@ -13,7 +13,7 @@ import { moldThermalResistanceStudy, heatToExtractW } from '../mold/thermal-resi
 import { estPartVolumeCc } from '../mold/feed';
 import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 import type { CalcPaso } from '../mold/cooling-design';
-import { construirMolde, CICLO_KAZMER } from '../mold/estudio-molde-datos';
+import { construirMolde, CICLO_KAZMER, cotizacionPieza, cotizacionSvg, DADO_PIEZA, type PiezaSpec } from '../mold/estudio-molde-datos';
 import { mallaCaja } from '../mold/lamina-seccion';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
@@ -627,6 +627,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
         </div>
       )}
       {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={ciclo.pieza ? undefined : cicloEstacion4} piezaDelArbol={!!ciclo.pieza} />}
+      {ciclo.estacion === 3 && ciclo.e3 && <CotizacionE3 pieza={ciclo.pieza} />}
     </>
   );
 }
@@ -788,6 +789,46 @@ function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4, piezaDelArbol 
         // cableado al cubo (dentroDadoLocal). Decirlo > fingir.
         <div data-testid="ciclo-e4-bloqueada" style={{ margin: '4px 6px 6px', padding: '7px 9px', borderRadius: 6, border: '1px dashed #3a4a60', fontSize: 10.5, color: '#8fa1b8', lineHeight: 1.4 }}>
           ⏸ estación 4 — LLENADO en adelante sigue cableado al CUBO; para TU pieza llega en un ticket posterior. Hasta aquí YA son tuyos: DFM (E1), economía (E2) y el ACERO con sus medidas y su rayo (E3) — medidos de TU sólido.
+        </div>
+      )}
+    </>
+  );
+}
+
+/** LA COTIZACIÓN (v1·5) — el entregable de la v1: "cuánto cuesta moldear MI
+ *  pieza". Vive en la estación 3 (la base ya existe §4.3.2). Hoja SVG imprimible
+ *  en el cuadro + descarga; el juez de legibilidad la vigila en el gate. */
+function CotizacionE3({ pieza }: { pieza?: PiezaSpec }) {
+  const [abierta, setAbierta] = useState(false);
+  const cot = useMemo(() => {
+    if (!abierta) return null;
+    try { return cotizacionPieza(pieza ?? DADO_PIEZA, { fecha: new Date().toISOString().slice(0, 10) }); }
+    catch (e) { console.warn('COTIZACION_ERR', e); return null; }
+  }, [abierta, pieza]);
+  const svg = useMemo(() => (cot ? cotizacionSvg(cot) : ''), [cot]);
+  return (
+    <>
+      {!abierta && (
+        <button className="fb-fea-run" data-testid="btn-cotizacion" onClick={() => setAbierta(true)} style={{ margin: '4px 6px 6px' }}
+          title="E1+E2+E3+base → la hoja que un taller lee en 5 minutos: DFM, arquitectura, base de catálogo, molde $, $/pza con desglose, la banda A-050 y los supuestos con su §.">
+          💰 LA COTIZACIÓN — ¿cuánto cuesta moldear {pieza ? 'TU pieza' : 'el dado'}?
+        </button>
+      )}
+      {cot && (
+        <div data-testid="cotizacion-hoja" style={{ margin: '4px 6px 6px' }}>
+          <div style={{ background: '#fdfcf8', borderRadius: 6, overflow: 'auto', maxHeight: 430, border: '1px solid #3a4a60' }}
+            dangerouslySetInnerHTML={{ __html: svg }} />
+          <button className="fb-fea-run" data-testid="btn-cotizacion-svg" style={{ marginTop: 4 }}
+            onClick={() => {
+              const bl = new Blob([svg], { type: 'image/svg+xml' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(bl);
+              a.download = `cotizacion-${(pieza?.nombre ?? 'el-dado').toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.svg`;
+              a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+            }}
+            title="La misma hoja, como archivo SVG — se imprime o se manda tal cual.">
+            ⬇ descargar la hoja (SVG imprimible)
+          </button>
         </div>
       )}
     </>
