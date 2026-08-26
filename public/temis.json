@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 02:58",
+ "generado": "2026-08-26 02:59",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -241,7 +241,7 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": ""
+    "commit": "98aa021"
    },
    {
     "file": "ordenes/2026-08-21-vaso-proyecto-revision.md",
