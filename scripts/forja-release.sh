@@ -14,7 +14,9 @@ cd "$REPO" || exit 1
 HEAD=$(git rev-parse --short main 2>/dev/null) || { echo "✗ sin rama main"; exit 1; }
 # worktree limpio en main (crear o actualizar)
 if [ ! -d "$WT/.git" ] && [ ! -f "$WT/.git" ]; then git worktree add -q --detach "$WT" main || { echo "✗ worktree"; exit 1; }; fi
-git -C "$WT" checkout -q --detach main 2>/dev/null || git -C "$WT" reset -q --hard main
+# reset --hard SIEMPRE: el propio deploy (temis-deploy-stamp) reescribe public/temis*.json en el
+# worktree; sin esto la siguiente release se ve a sí misma como "sucia".
+git -C "$WT" checkout -q --detach main 2>/dev/null; git -C "$WT" reset -q --hard main
 # "sucio" = archivos RASTREADOS modificados (WIP). Los espejados fuera de git (mp4) no cuentan.
 [ -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ] || { echo "✗ el worktree de release está SUCIO — no despliego"; exit 2; }
 # ENTREGABLES FUERA DE GIT (política: *.mp4 nunca a git — reels del atrio, etc.). El deploy
