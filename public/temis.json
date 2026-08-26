@@ -1,14 +1,16 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-25 21:13",
+ "generado": "2026-08-26 01:51",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
   "proximo": 4,
-  "enCurso": 0,
+  "enCurso": 1,
   "cerrado": 50,
+  "probado": 0,
+  "porProbar": 17,
   "despues": 15
  },
  "violaciones": [],
@@ -34,6 +36,8 @@
     "cierreCompleto": "",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": ""
    },
    {
@@ -56,6 +60,8 @@
     "cierreCompleto": "",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": ""
    },
    {
@@ -78,6 +84,8 @@
     "cierreCompleto": "",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": ""
    },
    {
@@ -100,10 +108,37 @@
     "cierreCompleto": "",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": ""
    }
   ],
-  "enCurso": [],
+  "enCurso": [
+   {
+    "file": "ordenes/2026-08-25-temis-probado.md",
+    "slug": "2026-08-25-temis-probado",
+    "titulo": "v1·0c — TEMIS: la columna PROBADO (lo que ian ya probó)",
+    "fecha": "2026-08-25",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "objetivo": "ian — \"mañana los pruebo, añade una columna de testeado y probado\". CERRADO = lo terminé yo con evidencia; PROBADO = ian lo probó y lo acepta. Sin formulario: la orden recibe una línea PROBADO: <fecha> · <nota> cuando ian lo dice (o FALLA:…",
+    "toca": 3,
+    "crea": 1,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "generador: PROBADO: mueve la orden a la columna PROBADO; FALLA: la deja en",
+     "captura del tablero con la 4ª columna (en prod)",
+     "orden-gate VERDE · deploy"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": ""
+   }
+  ],
   "cerrado": [
    {
     "file": "ordenes/2026-08-25-temis-evidencia.md",
@@ -130,6 +165,8 @@
      "evidencia/2026-08-25-temis-evidencia/03-galeria-6-capturas-cargan.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "d80ac77"
    },
    {
@@ -157,6 +194,8 @@
      "evidencia/2026-08-21-vaso-proyecto-revision/03-contraste-cubo-12-estaciones.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "726841d"
    },
    {
@@ -187,6 +226,8 @@
      "evidencia/2026-08-21-vaso-con-botadores/06-vaso-d80x20-pared3.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "1113722"
    },
    {
@@ -209,6 +250,8 @@
     "cierreCompleto": "EL RECIBO FIRMA. scripts/validacion-industria.cjs corre el solver (modelo térmico N2) contra la espiral MEDIDA de US11230635 y emite predicho vs medido: 640/730/826 vs 552/635/730 mm. La física fina (sin sesgo) cuadra: cociente L(249)/L(238) 1.141 vs 1.150 medido (±5 %), pendiente 8.5 vs 8.1 mm/°C (±15 %), monotónica. Offset absoluto +14.7 % DECLARADO (grado GP22NR vs MG47 + 10:1). VERIFY_RESULT verde. HONESTO SOBRE LO QUE FALTA (VALIDACION-INDUSTRIA.md): una observable (flujo) contra una fuente (patente). El roadmap para SUPERAR: traza de presión medida (el MDPI no sirve — gráficas sin T_melt), warp en CMM, 2ª fuente de flujo, tryout científico. La presión hoy es PREDICCIÓN (~69 MPa fill-limited). No se tocó el solver ni los motores — solo se añadieron 2 archivos nuevos (script + doc). Los 192 del ciclo quedan intactos POR CONSTRUCCIÓN (cero ediciones a lo que el gate importa). Sin cambio prod-facing → sin deploy. SIGUIENTE: conseguir un dataset de presión medida (o instrumentar uno) para añadir la 2ª observable; y/o surface el recibo como panel \"recibos vs realidad\" en el CAD (escuela vive en el CAD).",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "ba1c460"
    },
    {
@@ -231,6 +274,8 @@
     "cierreCompleto": "RECIBO v2 FIRMA. El recibo ahora valida la longitud de flujo contra DOS fuentes independientes: patente Terluran (730 mm) + ficha SABIC Cycolac BDT5510 (736.6 mm) @ 260 °C/3.175 mm — coinciden al 0.9 %. El ground truth es sólido; nuestro solver (826 mm) sobrepredice ambas ~12-13 % (el sesgo del método, confirmado: los comerciales también sobrepredicen). La VARA de la industria quedó registrada: ≤5 %, y nuestra física fina (cocientes ±5 %, pendiente ±15 %) ya está dentro. BENCHMARK DE PRESIÓN ENCOLADO (SABIC PP 576P) con su geometría, Cross-WLF y presión medida (21/34/48/61/68 MPa) ENCODEADOS y citados — pero NO corrido: los 3 supuestos (D2 default, Cross→power-law k, sensor cavidad-vs-inyección) se declaran; correrlo a ciegas con 3 supuestos apilados sería un recibo engañoso. Es el siguiente build. No se tocó el solver. Los 192 del ciclo intactos.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "5f574d5"
    },
    {
@@ -257,6 +302,8 @@
      "evidencia/2026-08-21-v1-2-higiene-recorrido/03-dado-cargado-desde-el-lobby-ciclo-intacto.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "a8848f3"
    },
    {
@@ -283,6 +330,8 @@
      "evidencia/2026-08-21-v1-1-puente/03-control-negativo-sin-solido-escala-gris.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "956de96"
    },
    {
@@ -308,6 +357,8 @@
      "evidencia/2026-08-21-temis-tablero/02-temis-en-prod.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "1cf4bc8"
    },
    {
@@ -330,6 +381,8 @@
     "cierreCompleto": "LA MÁQUINA YA NO ES LA DEL CUBO. PiezaSpec es el contrato de intake (§2.1.5) que las estaciones reciben; estacion1/estacion2 son genéricas. DADO_PIEZA captura el cubo exacto (aliases = mismo camino), VASO_PIEZA el vaso redondo. Gate 181 → 187 (los 181 del cubo intactos por alias + 6 de separación): - VASO E1: macizo REPROBADO (14.1 min), pieza APROBADA (0 err), t_c 19.1 s ≠ cubo 8.5 s — juzga SU forma (pared 3 vs 2). - VASO E2: cotiza el vaso REDONDO por moldMachine → cold-2placas×1 $0.7147/pza. - CONTROL: molde del vaso $11,343 ≠ $9,259 del cubo — separó de verdad. - ALIAS: estacion1Dado()==estacion1(DADO_PIEZA) — el cubo intacto. REPASO DE PLIEGOS (subagente, citado en el diseño): el intake del libro son 4 campos (§2.1.5 + §1.5: tamaño/pared/cantidad/material), cada campo con flag restricción|salida (§2.2.2 Tabla 2.3). Los CÁLCULOS (economía, contracción, enfriamiento, llenado, alimentación, compuerta, venteo, estructura) son idénticos cubo/vaso. Divergen por FORMA solo 3 decisiones: partición (§4.1/§11.2.1 A-227), draft (§2.3.6), tipo de expulsión (§11.2.4/§11.3.4 A-236/A-246) — los 3 bloqueadores ya cazados. El grafo tiene ~20 aristas de retorno (R1–R14 + R-a…R-f) que la máquina generalizada debe respetar. LO QUE SIGUE (incrementos, mismo patrón): 1. E3 parametrizada: construirAceroE3 con pieza.solidDraft + colocacionEnLaBase(pkg, pieza) (quitar el 20/20/39.5 del cubo). AQUÍ el vaso y el cubo divergen: el vaso redondo entra por cavityShape:'round'. 2. E5/E7: pieza.inCavity en vez de dentroDadoLocal. 3. E10: el check §11.2.5 (stripper-vs-pin por forma) + pieza.aEffM2. 4…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "54d98d3"
    },
    {
@@ -353,6 +406,8 @@
      "evidencia/2026-08-21-jabonera-tercera-figura/01-jabonera-cargada.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "97a8446"
    },
    {
@@ -373,6 +428,8 @@
     "cierreCompleto": "El hueco era real y el código lo confirmó: el ▶ (mold-open-toggle) solo abría y expulsaba; llenadoT existía únicamente en window.__forgeBrep. La máquina trabajando era una capacidad del ARNÉS DE VIDEO, no del producto. Ahora es producto. btn-ciclo-play en el panel del ciclo, con barra de progreso y rótulo del acto. PLAY=1 en el arnés lo juzga 7/7, incluido el control negativo (sin pulsar, la escena está quieta: nadie está animando por detrás). LO QUE CAMBIÓ RESPECTO A LO DECLARADO (y por qué): la orden decía \"la MISMA línea de tiempo que el video\". La primera versión lo cumplía al pie de la letra… y estaba mal: terminaba con la pieza expulsada y saltaba a molde-cerrado-vacío en un frame. Eso no es un ciclo, es una rampa que se rebobina — y este proyecto entero se para sobre que el molde no es un pipeline, son ciclos. El producto ahora da la vuelta completa (14 s): LLENANDO → EMPACANDO·ENFRIANDO → ABRIENDO → EXPULSANDO → PIEZA FUERA → RETRAYENDO → CERRANDO. El video conserva sus tres actos porque un video termina; el producto tiene que volver a disparar. El juez ganó el check correspondiente (\"retrae y CIERRA solo\") y el de expulsión subió su umbral a 46 mm (con el muestreo viejo se perdía el pico: marcaba 44.6 de 48). Deuda de suerte pagada de paso: llenadoT leía un ciclo rancio y funcionaba porque docName (que sí está en las deps del efecto de window.__forgeBrep) cambia en cada estación y rearmaba la API. Ahora fillAt es estable (deps []) y lee un ref espejo — y es la única fuente del mapeo por cuantil: el botón y el arnés animan lo mismo, no dos copias que se despegan. E…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "62e12d8"
    },
    {
@@ -396,6 +453,8 @@
      "evidencia/2026-08-18-el-ciclo-en-movimiento/01-llenar-abrir-expulsar.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "c68c2fd"
    },
    {
@@ -419,6 +478,8 @@
      "evidencia/2026-08-18-e8b-circuito-real/01-circuito-real-anillo-baffle.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "e4e2713"
    },
    {
@@ -442,6 +503,8 @@
      "evidencia/2026-08-18-ciclo-dado-estacion9/01-contraccion-acero-escalado.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "7a93683"
    },
    {
@@ -467,6 +530,8 @@
      "evidencia/2026-08-18-ciclo-dado-estacion12/03-crop-1a1-del-master-4k.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "2d564e8"
    },
    {
@@ -490,6 +555,8 @@
      "evidencia/2026-08-18-ciclo-dado-estacion11/01-estructura-r90.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "79d5505"
    },
    {
@@ -514,6 +581,8 @@
      "evidencia/2026-08-18-ciclo-dado-estacion10/02-sonda-expulsion.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "50e89d4"
    },
    {
@@ -538,6 +607,8 @@
      "evidencia/2026-08-17-n2-termico/02-espiral-n2-congela.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "fcae584"
    },
    {
@@ -562,6 +633,8 @@
      "evidencia/2026-08-17-ciclo-dado-estacion8/01-agua-e8.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "293f71e"
    },
    {
@@ -587,6 +660,8 @@
      "evidencia/2026-08-17-ciclo-dado-estacion7/03-sonda-venteo.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "8f0420b"
    },
    {
@@ -609,6 +684,8 @@
     "cierreCompleto": "- gate 110 pasan · 0 fallan (105 + 5 del switchover) · orden-gate VERDE · build+deploy de paridad. - WASHBURN CLAVADO: en la cara de presión, L sigue √t con peor error 0.5 % en 3 instantes · continuidad en la conmutación 0.675 vs 0.697 m/s (la v decae DENTRO de la ventana — no hay salto) · el caudal decae a 10.8 % de Q₀ · auditoría fase 2 (Σflujos = Q_in MEDIDO) 9.4e-10. - UN BUG PROPIO CAZADO POR EL ORÁCULO ANTES DE ENTREGAR: la primera versión del reloj de fase 2 integraba dt por flujos y salió 10× lenta contra Washburn (−62 %) — EL MISMO bug del disco que ya habíamos matado (la cola débil del lote infla el tiempo), reintroducido por mí. Fix: el reloj de fase 2 es volumen colocado / Q_in medido del solve — \"los flujos deciden el ORDEN; la conservación decide el TIEMPO\", segunda vez que la regla cobra. El oráculo cerrado pagó su boleto en la misma sesión en que nació. - EL CREEP DESBOCADO, IMPRESO: espiral 238 °C en modo presión con los 10 s del protocolo → 799.8 mm (rebasa la herramienta) vs 477 en stop vs 552 medidos. El reparto queda cuantificado con nombre: fase de velocidad = 477 (nuestro), creep-hasta-congelar = los ~75 mm que faltan, y el freno es TÉRMICO — el caso de aceptación del N2, medido antes de escribirse. - El dado NO conmuta (2.83 ≪ 140): los 105 porteros previos idénticos, como exigía el alcance. La fase-presión queda lista como infraestructura de la estación 6 (empaque ES control por presión) y del benchmark de Ljubljana (P1 impuesta + 1,075 muestras de sensores).",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "224445a"
    },
    {
@@ -631,6 +708,8 @@
     "cierreCompleto": "- VIDEO 4K APROBADO (8/8 del juez: monótono · arranca 0.02 % · TERMINA 100 % · sin saltos · repartido · consola limpia · una-tubería · imagen cambia) → dado-llenado-4k.mp4 a AMBAS PCs. Gate 110 verdes (sin tocar lógica) · orden-gate VERDE. - Con OJOS: el molde POR FIN se lee como molde — el bloque de la cavidad translúcido abrazando al dado, la base debajo, el bebedero atravesando el acero, el líquido bajando ADENTRO y el cubo formándose completo con su gradiente de llenado (cian arriba → ámbar en las patas, lo último). Sonda 720p ANTES del 4K (regla peek) — el encuadre se aprobó con ojos en baja resolución. - ENMIENDA de honestidad ejecutada: el CORTE en-escena de las partes E5 NO existe (MoldSectionReveal es experiencia aparte; el slice solo corta la vista térmica) → la vista entregada es \"MOLDE DE VIDRIO\" (opacidades por rol vía moldVista, ~8 líneas de manija sobre setters existentes), como las referencias de Futaba que ian acaba de calibrar. El corte de partes queda como deuda declarada si algún día el vidrio no basta.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "d6b66ff"
    },
    {
@@ -656,6 +735,8 @@
      "evidencia/2026-08-14-ciclo-dado-estacion6/02-contraccion-final.jpg"
     ],
     "revisable": true,
+    "probado": "",
+    "falla": "",
     "commit": "1e16363"
    },
    {
@@ -679,6 +760,8 @@
     "cierreCompleto": "- gate 103 pasan · 0 fallan (97 + 6 de la espiral) · orden-gate VERDE · VIDEO 4K APROBADO (cola-de-puerco-4k.mp4) → AMBAS PCs · sitio publicado con btn-espiral. - LA TABLA HONESTA (primera medición contra números ajenos): Pearson t↔arco 0.9997 (el canal es 1D y el solver lo sigue) · conservación 6.6e-10 en las tres · CONTROL: a 6.9 MPa de plástico (sin la ×10 declarada) L = 51.4 mm — la trampa hidráulica-vs-plástico, medida y a la vista. - La física del ensayo salió sola: la espiral se mide por SHORT-SHOT (el frente se detiene cuando p toca el límite de máquina) — y así se ve en el video: la punta naranja muere a media bobina, como la pieza real al sacarla del molde. - Afinación medida a medio camino: con 3 capas z y espiral de 1050 mm el CG se quedaba sin iteraciones en caminos ≥ ~750 celdas (conservación caía a 1e-2) y la corrida de 260 °C tardaba 3 min. Fix: 2 capas z (colapso sigue EXACTO: 2·1.588 = 3.175) + herramienta de 800 mm ⇒ conservación 6.6e-10 en todas y ~7-22 s por T. - El N2 quedó cuantificado por un experimento ajeno: a 238 °C (donde el k del libro es literal) el isotermo queda a −13.5 %; el sobredisparo en caliente (+20 % / +10 %) es EXACTAMENTE el freno térmico que falta. La siguiente orden del simulador tiene su caso de aceptación medido antes de escribirse.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "1d4e4ae"
    },
    {
@@ -700,6 +783,8 @@
     "cierreCompleto": "- gate 105 pasan · 0 fallan (103 + los 2 cruces del acero) · orden-gate VERDE · VIDEO 4K APROBADO re-renderizado → AMBAS PCs · SITIO_PUBLICADO_OK. - El dominio quedó ATADO al sólido, por número: canal OCC 32.20 cc = hueco tallado en la placa 32.20 cc (el cut contabiliza al decimal) ≈ analítico L·w·h 32.26 ≈ vóxeles del campo 32.29 — cuatro representaciones de la misma forma, cruzadas. La MISMA fórmula r(θ)=r₀+bθ (esp.geo) talla el acero Y voxeliza el campo: una sola fuente de forma. - Con OJOS, lo que ian pedía: el bloque translúcido con el canal HUNDIDO, la tierra entre vueltas, y — lo mejor — la vuelta exterior del canal VACÍA delante de la punta muerta: el short-shot ya tiene su causa en cuadro. El recipiente existe; el líquido llenó lo que 69 MPa dieron y se detuvo a 477 mm. - REUSO literal del dado (mandato de ian): el canal por el patrón occLoft de dadoRectoShape (polígono espiral ida-exterior/vuelta-interior, Δθ=6°, sagita <0.1 mm), la placa por el occCut de dadoUndercutShape, los cruces por los patrones V_colada (3 fuentes) y CAVIDAD↔LÍQUIDO. Cero motor nuevo. - La regla queda escrita en el gate: \"ningún llenado sin acero\" — el error que ian nombró (dominio declarado = operador inventado, invisible para los gates del solver) ahora tiene su clase de gate propia. La probeta debe ganar el suyo cuando se le talle placa (pendiente declarado). - ENMIENDA CERRADA (\"se ve pixelado\"): con ocupacionSdf (pared por DISTANCIA FIRMADA analítica + la celda de acero llevando su rampa <0.5), las orillas del canal salen como CURVAS continuas en el crop 1:1 — la retícula de 1.59 mm y…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "7e155e0"
    },
    {
@@ -725,6 +810,8 @@
     "cierreCompleto": "- gate 79 pasan · 0 fallan · orden-gate VERDE · VIDEO 4K APROBADO 8/8 → dado-volteado-4k.mp4, entregado a AMBAS PCs + /mnt/e/forja-videos. - TODO LO QUE DEBÍA PASAR SOLO, PASÓ SOLO (sin tocar los checks): - la mecánica del volteo: se parte en el marco LOCAL (la convención probada de splitMold) y se rota EL CONJUNTO 180° sobre X + colocación — cavidad ARRIBA (lado A), macho subiendo desde B con su respaldo Hk debajo, boca a B en la partición. Las 17 cotas E3 se re-anclaron (cara INFERIOR de la cavidad en la partición, piso arriba, draft por AMBOS extremos = agnóstico de orientación) y siguen 17/17. - el video, visto con ojos: el fundido baja por el bebedero corto, entra por el CENTRO de la base y desciende por las cuatro paredes SIMÉTRICAMENTE — el llenado radial de una pieza centro-inyectada, que es la física que la Fig 7.2 promete. El juez de tubería: \"primer frame con pieza mojada: colada al 98.3 %\". - la familia NaN volvió y se cazó en el gate: con runner ⌀0, pressureDropRunner divide por R=0 y 10.7 + NaN = NaN llegó hasta la cuenta de presión (78/1). Los cálculos de runner ahora corren SOLO si hay runner; en directo, cero es la verdad §7.2.1 (\"it has no length, there is no pressure drop\"). - el t_c que manda ahora es el del BEBEDERO (⌀8.3 en la base): la fila y el anuncio a la E9 usan el número correcto según el modo, con la nota de p.149 (el sprue no necesita la rigidez de la pieza; o se reduce ⌀ pagando ΔP). - trade-off declarado en pantalla (fila directo): el des-gateo deja VESTIGIO en la base — remedios del libro: rim perimetral (Fig 7.2) o pozo rebajado (Fig 7.3).…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "74de4b8"
    },
    {
@@ -752,6 +839,8 @@
     "cierreCompleto": "- gate 82 pasan · 0 fallan · orden-gate VERDE · VIDEO 4K APROBADO 8/8 (el juez ganó su octavo criterio y lo pasó): dado-tuberia-unica-4k.mp4, entregado a AMBAS PCs. - LA TUBERÍA ES UNA: colada ∪ pieza voxelizadas juntas (19,362 vóxeles), sembradas en la BOQUILLA. El frente BAJA por el bebedero, cruza runner y compuerta y entra a la pieza — revisado con ojos en frames del MP4: primer tercio = el fundido descendiendo por el tubo; a media película el bebedero lleno y la pieza llenándose DESDE el lado de la compuerta (ya no desde la esquina opuesta). El parpadeo murió con FeedFill fuera de la E5 (su reloj de pared en bucle era el parpadeo). - EL RELOJ ÚNICO SALIÓ GRATIS, como se predijo: los cuantiles de volumen del campo conjunto reparten el tiempo solos — el juez midió *\"primer frame con pieza mojada: colada al 100.0 %\"* sin que ningún código reparta nada a mano. - LA ALARMA QUE FALTABA existe y tiene DOS condiciones — y la segunda la cazó su propio control negativo en la primera corrida: measureFlowLength TELEPORTA la semilla al vóxel de cavidad más cercano cuando el punto pedido no cae en el dominio (flowlen.ts:131, ayudador legítimo para compuertas de frontera). Con la tubería ROTA eso dejaba unreachable = 0 y la alarma muerta — otro ayudador silencioso comiéndose una alarma, la familia exacta que ian señaló. La alarma honesta: unreachable = 0 Y desvío de semilla ≤ 2 mm. El control del dominio de AYER (solo pieza) dispara por teleporte: 101 mm de boquilla a pieza. - TRES FUENTES DEL MISMO NÚMERO cruzadas: V_colada por vóxeles 5.19 · analítico (volumenColadaCc, puro) 5.30 …",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "5a39b65"
    },
    {
@@ -780,6 +869,8 @@
     "cierreCompleto": "- gate 77 pasan · 0 fallan, y el arco que la lectura predijo se cumplió medido: - offset aplicado: 29.17 mm = semiancho 20 + rBase 5.17 (del MISMO motor, con L=102) + holgura 4 — el mínimo que datumsColada ya declaraba en su conflicto. colocacionEnLaBase lo calcula y es fuente única: E3, E4, cotas y gate lo heredaron sin tocarlos. - el DETECTOR se conservó: control sintético con la pieza CENTRADA → sigue acusando requiere-offset con su texto. El retorno no borró al juez. - inconsistencia latente cazada al planear (no en producción): al mover la selección del ⌀ de runner a datumsColada se había PERDIDO el criterio de congelamiento §7.1.5 que la vieja E5 sí tenía — con el rBase nuevo habría elegido ⌀5 con freeze 2.99 s… no: medido 6.73 s > 3.25 ✓. El criterio quedó restaurado DONDE vive la decisión, y la fila freeze del panel lo sigue vigilando. - bug latente del destino, cazado al planear: el runner iba SIEMPRE a pieza.x1 (labio lejano) — con la cavidad desplazada habría cruzado por debajo de la pieza otra vez. Ahora va al labio que MIRA al bushing, y el caso a −x se declara como conflicto en vez de construirse mal. - honestidad de citas: el taper 1.5°/lado citaba \"§6.3.1\" y el capítulo NO da ese número (el bushing es componente de compra). Re-etiquetado EXTENSIÓN DECLARADA en fuente.taper. - VISUAL con ojos: banner e5-conflicto AUSENTE (se apagó solo, sin tocarlo) y la captura muestra la pieza desplazada, el bebedero sobre acero pleno terminando EN la partición, sin columna dentro del hueco. - regrind 36.7 %: como la lectura predijo (~36 %), el cono del bebedero (fijado po…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "819985a"
    },
    {
@@ -804,6 +895,8 @@
     "cierreCompleto": "- gate 92 pasan · 0 fallan (los 82 existentes intactos + 10 del FAN) · orden-gate VERDE · VIDEO 4K APROBADO 8/8 → dado-llenado-4k.mp4, entregado a AMBAS PCs (Downloads\\FORJA-DADO) + /mnt/e/forja-videos. Con OJOS: el bebedero llena de arriba abajo y al tocar la base el frente se abre RADIAL (la cara radial EN VIVO, Fig 7.2 literal) → baja por las 4 paredes → las patas al final. - TRES bugs reales cazados por los ORÁCULOS (las caras), en secuencia: 1. El desfase de capas (1.69×) — con el hueco resuelto por 2 vóxeles, cada capa como celda FAN independiente (frontera p=0) se desfasaba y la presión salía 140 vs 83 MPa. Fix = EL COLAPSO DEL ESPESOR: p es constante a través del hueco (Hele-Shaw) ⇒ super-nodos columna por el eje local de espesor (la corrida más corta); Σ caras discretas = h³/12η EXACTO. Después: Δp 62.4 vs 62.4 MPa. 2. El reloj de flujos se inflaba 40 % — al saturarse la frontera se perdía el flujo del anillo nuevo. Fix = RELOJ DE VOLUMEN (incompresible: t = V/Q exacto); el disco clavó t(r) = πr²h/Q en todos los radios. Los flujos deciden el ORDEN; la conservación decide el TIEMPO. 3. CG estancado en el dado real (conservación 9.4e-4) — rango de conductancias 16× (bebedero ⌀8 vs pared 2). Fix = PCG Jacobi (diagonal estática rowK): conservación 1.6e-9. Lo delató la AUDITORÍA del paso 6, no un tester externo. - la física del dado real: p_max 2.83 MPa (máquina de 140: sobra) · t_fill 1.0 s · 7,620 super-nodos · conservación ≤ 1.6e-9 · una tubería (colada 98.3 % antes de que la pieza moje — criterio del juez). - el primer render REPROBÓ por el criterio de ojos (primer…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "ad10158"
    },
    {
@@ -826,6 +919,8 @@
     "cierreCompleto": "- gate 97 pasan · 0 fallan (los 92 + 5 de la probeta/torres) · orden-gate VERDE · 2 VIDEOS 4K APROBADOS (probeta-4k.mp4 + dado-llenado-4k.mp4 re-render), entregados a AMBAS PCs. - MOJADO: peor hueco 0.00 mm — el frente continuo toca la pared analítica EXACTO en t∈{0.4, 0.7, 1.0}. Con OJOS en la probeta: la lengua curva clásica del gate puntual, mojando ambas paredes a su paso, flancos apenas rezagados (la pared frena — física, no artefacto). En el dado: la cortina del frente DRAPEA continua por las 4 paredes, esquinas apenas adelante (race-tracking visible pero continuo). - TORRES: 0 eventos en el dado real — y el asesino resultó ser el CANDADO DE COLUMNA (una columna colapsada no puede medir más celdas que el espesor que representa, h/c+1): con solo ese candado, 0 eventos; el tope temporal de nodos por solve quedó como seguro laxo (64 — a 12 el dado tardaba 26 s, medido). CONTROL NEGATIVO: con candadoColumna:false reaparecen EXACTAMENTE los 16 eventos que ian vio en el video. El gate distingue lo roto. - La escalera de ian quedó instalada: LA PROBETA es botón del ribbon (btn-probeta, junto a El DADO) por el MISMO enchufe de la E5 — cero Canvas nuevo. Siguiente peldaño: LA ESPIRAL (la geometría de la patente US11976138 contra sus 552/635/730 mm medidos — botín en /home/ian/benchmarks-llenado/), y el dado regresa al final. - Enmienda declarada a medio camino: el botón vive en MoldPanels.tsx (ribbon) y la llamada de superficie en MoldScene.tsx, no en ForgeBRepStudio como decía la orden — mismo trabajo, archivos corregidos ANTES de tocarlos. - Un tropiezo de infra: el vite :5…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "2f8a1fc"
    },
    {
@@ -850,6 +945,8 @@
     "cierreCompleto": "- gate 81 pasan · 0 fallan · orden-gate VERDE · VIDEO 4K APROBADO 8/8 → dado-cono-4k.mp4, entregado a AMBAS PCs + /mnt/e/forja-videos. - EL PERNO DE ian, MEDIDO — el check de conicidad retrata exactamente lo que su ojo vio, y su control lo confirma: - ocupación BINARIA (el método de ayer): radios 4.00 → 3.26 → 3.26 mm — dos alturas IDÉNTICAS (Δmin 0.00) = el perno de 3 diámetros. REPRUEBA. - ocupación FRACCIONAL (9 muestras del predicado analítico): 3.80 → 3.26 → 3.00 mm, estrictamente decreciente (Δmin 0.26; el analítico da 0.39 por tramo). CUMPLE. - la causa, con precisión: la superficie se construía desde ocupación binaria (¿el CENTRO del vóxel cae dentro?) — la huella de la sección circular solo cambia cuando r(z) cruza una distancia de la retícula (~3 cruces en 62.5 mm) → cilindro → escalón → cilindro. El diagnóstico de ian (\"no hay suficiente resolución\") era la causa; el arreglo bueno no fue fuerza bruta de celdas (0.5 mm = 8× vóxeles y escalones más chicos) sino la VERDAD SUB-VÓXEL que ya era gratis: dentroColada/dentroDadoLocal son analíticos → ocupación fraccional → el cruce 0.5 interpola el radio REAL. - opt-in limpio: sin ocupacion, frenteSuperficie se comporta idéntico — los checks existentes (volumen, ORIENTADA, CERRADA, control vacío) siguen intactos. - visto con ojos (peek + frame del MP4): el cono del fundido baja CONTINUO, y al tocar la base se abre en el DISCO RADIAL clásico del centro-inyectado — la física del sprue gate §7.2.1 dibujada bien.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "e7e8449"
    },
    {
@@ -871,6 +968,8 @@
     "cierreCompleto": "- EN VIVO, verificado con el arnés sobre el sitio publicado: el lobby lista \"EL DADO · ciclo Kazmer (molde de inyección)\" como PRIMERA plantilla (tarjeta MOLDE, meta \"E1→E5 · sprue directo Fig 7.2 · alarmas de tubería y balance\") y al elegirla carga la estación 1 con el botón de la E2 presente. Captura tomada del sitio vivo. - bug de la clase col cazado ANTES de servir: loadDado no estaba en el destructure del Studio (vive en el objeto mold) — habría sido otro ReferenceError silencioso. El starter usa mold.loadDado explícito. - build 27.9 s (iangpu) · SITIO_PUBLICADO_OK · orden-gate VERDE. - ruta para humanos: university.gaiaprime.com.mx/forja-brep.html → clic al TÍTULO del documento (esquina superior izquierda) → el lobby baja → tarjeta EL DADO.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "f6cdc0e"
    },
    {
@@ -896,6 +995,8 @@
     "cierreCompleto": "- gate 82 pasan · 0 fallan · orden-gate VERDE · VIDEO 4K APROBADO 8/8 → dado-cavidad-4k.mp4, entregado a AMBAS PCs + /mnt/e/forja-videos. - moldGeom() DESPUÉS, un solo marco (antes: tres marcos conviviendo): particion z 145.6..146.4 (EN la partición real) · placa A 146..212 (abraza la cavidad) · placa B 124..146 · nucleo abierto hacia B sin roce (explode −40; 183.5−40 < 146) · cavidad 146..206 · pieza 145.5..185.5 · colada 185.5..248. - EL CRUCE CAVIDAD↔LÍQUIDO, medido: volumen de pieza del CAMPO 14.10 cc vs hueco del ACERO (splitMold.vols.piezaEscalada) 14.13 cc — 0.2 % de diferencia. El molde genera la cavidad; el líquido la llena; y ahora un NÚMERO los ata: si el acero se rompe, el check delata. - el RAYO volteó con el molde: cavidad sube (+Z, lado A) · núcleo baja (−Z) — sigue SALE, 0 atrapadas y el control del draft invertido sigue reprobando. - DOS bugs míos cazados en esta orden: 1. los display-parts con literales del marco local (z=39.1 / −79 / 96) — la CUARTA instancia de la familia de coordenadas absolutas, y la causa literal del \"parece todo desconectado\"; 2. col usada fuera de su scope en el handler (vive dentro de construirAceroE3) — ReferenceError silencioso dentro del try: la E3 moría sin botón de E4. La clase del bug del onE4. La colocación viaja en acero.colocacion. - la respuesta de industria/física (lo que pidió ian): el dominio del flujo ES la cavidad; en Moldflow/Moldex3D nace del MODELO de la pieza (escalado) y el acero entra como frontera térmica — la coherencia pieza↔acero la garantiza el proceso (el acero se talla DE la pieza) y aquí, además, se MI…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "7fcc71a"
    },
    {
@@ -919,6 +1020,8 @@
     "cierreCompleto": "- LA ALARMA EXISTE Y ESTÁ ROJA, a propósito: gate 83 pasan · 1 falla = BALANCE: desbalance 29.2 mm vs umbral 9.8 (5 % de 196), con el retorno anunciado (E3: voltear la pieza —Fig 7.2— o justificar el desbalance). El CONTROL centrado da 0.0 mm y pasa: la alarma distingue. - En el panel E5, la fila de BALANCE vive junto a la de tubería: roja hoy, con el número y el umbral declarado (EXTENSIÓN — el libro da el principio §6.6/§4.3, no el número). - Se confiesa el patrón: el check del marco lo edité yo ('comparten marco' → 'vive donde la COLOCACIÓN declara') para que ESPERARA el desplazamiento — coherencia interna, no criterio externo. La alarma nueva ancla a un criterio del LIBRO (el eje de la máquina), no a lo que declare mi propio código de colocación. - PENDIENTE — la decisión de ian: el libro dice que para UNA cavidad de caja abierta no se desplaza la cavidad: se VOLTEA la pieza (boca a B) y el bebedero cae directo al centro de la base (§7.2.1, Fig 7.2 — que es literalmente nuestra pieza dibujada). Estimado si se voltea: balance 0 · cero runner/compuerta/pozo · L_sprue ≈ 62 mm · regrind ≈ 15 % (CUMPLE §6.2.3) · y el artefacto visual del sprue casi desaparece. Trade-off honesto (p.164): vestigio en la base y des-gateo del ⌀ grande — remedios del libro: rim perimetral (Fig 7.2) o pozo rebajado (Fig 7.3).",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "f7c0df9"
    },
    {
@@ -942,6 +1045,8 @@
     "cierreCompleto": "su juicio de 7 criterios. NO entregado: que el frente se VEA (sigue congelado). - números del juicio (sobre 170 frames 4K): monótono ✔ · arranca vacío ✔ · termina lleno ✔ · sin saltos ✔ · avance repartido 25→27 % / 50→50 % / 75→75 % ✔ · consola limpia ✔ · LA IMAGEN CAMBIA ✘ (0.00 de diferencia por tercio). - EL JUEZ APRENDIÓ A VER: su primera versión APROBÓ un video 4K de 170 frames completamente congelado, porque medía el DOM y no los píxeles. Ahora compara frames con ffmpeg (blend=difference + signalstats) y reprueba. Ése check es el que evitó entregar un video muerto con sello de aprobado. - CUATRO defectos reales cazados por el propio juicio, en cadena: (1) la compuerta caía FUERA de la cavidad y el campo nacía vacío; (2) clausura vieja de React — la API congelaba tFill en 1 y reportaba 100 % siempre (→ ref); (3) usaba la RESISTENCIA como reloj cuando la inyectora empuja a CAUDAL CONSTANTE: el volumen es lineal en el tiempo, no la presión (→ cuantiles del frente); (4) pintar por VÉRTICES es imposible aquí: el dado es todo caras planas y tesela a ~7 vértices. - RESUELTO — y la lección es la regla de la casa. Escribí FrenteVoxels/FrenteFundido y perseguí el bug OCHO veces (instanceColor tardío, args inestable, m.count, geometría, material, coordenadas, grupo padre, color fijo). Ninguna resolvió. ian: \"es mejor eliminar y empezar de 0 en lugar de andar cazando\". Borré los dos componentes y REUSÉ AlarmCloud tal cual —el que ya se sabía que dibuja— pasándole los vóxeles ya llenados en el instante t. Funcionó a la primera. COPIAR AL GANADOR ES LITERAL: ocho intentos de reesc…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "917304f"
    },
    {
@@ -967,6 +1072,8 @@
     "cierreCompleto": "3D + sprue visible) queda para la siguiente vuelta — se declara, no se simula hecha. - números: gate ciclo-dado-test 47/47 con OCC real. Cross-WLF reproduce el libro LÍNEA POR LÍNEA: η₀(239 °C) = 2190 vs 2210 tabulado · η(γ̇=2000) = 119.9 vs los \"120 Pa s\" de §5.5.1 · el lazo 0.5 → 0.8214 m/s en 7 vueltas vs \"0.82\" del libro · lay-flat del bezel = 83.2 MPa exacto (el número impreso de §5.5.2). Y el par bueno/malo DEL PROPIO LIBRO reproducido con nuestro motor: contenedor 100×160×60 de pared uniforme → race-tracking SÍ (el último punto por resistencia está a 107 mm del más lejano por distancia, Fig 5.17); con laterales a 1.5 mm (flow leader, Fig 5.19/5.20) → curado, y el llenado se EMPAREJA: la banda pico baja de 22 % a 14 % del total, que es el objetivo declarado de §5.2. - evidencia: el gate ES la evidencia numérica (reproduce tres ejemplos resueltos y un par de figuras del libro). Capturas del 3D: PENDIENTES. - LO QUE ESTA ORDEN CORRIGE de mí: usé distancia geodésica cuando flowlen.ts advierte POR ESCRITO que el orden real de llenado es resistance; y fillingPressure(segments) —el lay-flat de §5.5.2— ya existía sin usar. El motor de fluidos estaba en casa. - preguntas abiertas: (1) pintar las isócronas NUMERADAS en el 3D y hacer visible el sprue (lo que ian pidió VER); (2) computeWeldMask aún no está cableado — weldLines sale 0 y eso está declarado en la estructura, no escondido; (3) el nivel 2 (Hele-Shaw ∇·(S∇p)=0) como estación propia con MMS y flujo radial analítico.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "fda3464"
    },
    {
@@ -992,6 +1099,8 @@
     "cierreCompleto": "- orden vs entregado: entregado lo declarado — extractor de superficie, material con luz, colormap de fill time, gate de volumen y video 4K juzgado. El SPRUE no se \"corrigió\" porque medido resultó correcto (ver abajo); lo que falta es runner+compuerta = E5. - EL SPRUE: ian tenía razón en el síntoma, no en la causa — y yo me equivoqué a media investigación. Medido con OCC rebanando el sólido: ⌀9.43 mm en la partición → ⌀5.08 mm en la boquilla. Contando PÍXELES del render por filas: 22 px arriba → 31 px abajo. La conicidad está bien en los dos lados (§6.3.1). En medio de esto afirmé lo contrario leyendo a ojo un crop a 6× — y el conteo de píxeles me desmintió. Lo que sí falta y se lee como \"al revés\": la alimentación TERMINA en su punto más ancho justo donde toca la pieza, porque no hay runner ni compuerta. Cap 6 = estación 5, declarado como deuda. - HALLAZGO: src/lib/viz/isosurface.ts produce mallas SIN ORIENTACIÓN CONSISTENTE. Medido: 13,896 aristas dirigidas repetidas de 25,608 triángulos → volumen −38 % contra la esfera analítica. Es CERRADA (0 aristas de borde), por eso nunca se notó: nació para la burbuja térmica, que se dibuja a DoubleSide y se validó por ÁREA. Con luz real y con un gate de volumen, se ve. NO se arregló aquí (tiene su propio consumidor y está fuera de esta orden) — queda anotado con su medición para quien lo tome. - números del gate: ciclo-dado-test 53/53 (eran 47). La superficie encierra el volumen de los vóxeles: −3.54 % / −1.26 % / −0.74 % a t = 0.25 / 0.6 / 1.0, con desplazamiento geométrico real de 0.028 / 0.011 / 0.007 mm sobre celda de 1.6 mm. …",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "b3bdd2d"
    },
    {
@@ -1021,6 +1130,8 @@
     "cierreCompleto": "- orden vs entregado: completo. CREA: (nada) se sostuvo — no se escribió UNA sola fórmula del cap 6: todo salió de feed.ts y gating.ts, que ya estaban. - gate ciclo-dado-test: 64/64 (eran 53). Lo MEDIDO sobre los sólidos con OCC: - la alimentación ESTRECHA: ⌀8.14 → ⌀4.00 → 2.00 mm (bebedero → runner → compuerta) - el bebedero cae fuera de la pieza: x 46.0..54.1 contra una pieza que acaba en 40 - la compuerta toca la pieza: arranca en x=40.00 exacto - runner y compuerta pegados: 41.00 = 41.00, sin hueco - CONTROL NEGATIVO: el bebedero de ayer (⌀9.50 directo, x0=35.2) REPRUEBA — ni estrecha ni sale de la pieza. Si el test no distingue el diseño viejo, no es prueba. Y del motor: ⌀ de boquilla 5.00 (orificio + holgura, §6.3.1) · compuerta congela antes que el runner 3.25 s vs 4.30 s (§7.1.5) · ⌀ de fresa estándar (§6.5.4) · regrind 15.8 % ≤ 30 % (§6.2.3) · presión CERRADA 10.7 + 9.2 = 19.9 MPa ≤ 140 (§6.4). - EL CRITERIO QUE FALTABA, y lo cazó el propio gate. Con sólo el presupuesto de ΔP el runner salía ⌀2.07 → steel-safe ⌀2 — el MISMO espesor de la compuerta: la sección dejaba de bajar y ESTRECHA daba VIOLA. O sea: la primera versión de la estación seguía viéndose al revés, y el número lo dijo antes que el ojo. El libro pide más que presión: la compuerta debe congelar ANTES que el runner (§7.1.5) — si el runner sella primero, la puerta se queda abierta con la casa a medio empacar. Ese criterio manda sobre el ΔP y sube el runner a ⌀4, que además lo hace mayor que la compuerta. La fila runner-dia ahora dice quién manda, en vez de fingir que fue el steel-safe. - Y aparece una T…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "975673b"
    },
    {
@@ -1046,6 +1157,8 @@
     "cierreCompleto": "- UNA SOLA COLADA. Quedan dos makeCone(4.75, 2.5, 60) en el repo y ninguno es producción: uno es coladaMala —el control negativo, a propósito— y el otro es un comentario. Se borraron las dos reales: 1. la geometría inline de la E5 en useMoldStudio (makeCone/makeCylinder/makeBox/ fuseAll + bboxes en el handler de React); 2. el bebedero hardcodeado de la E4, que yo había metido \"para que se viera la inyección\" — ⌀5→⌀9.5 × 60 mm en el marco viejo de la pieza. La alimentación es la estación 5; la 4 es el llenado de CAVIDAD (§5.5.2 lo dice literal). Y mold-plano-set DELEGA: su cono ahora lo hace construirColadaSprue. - la E5 dejó de inventar cotas. estacion5Dado recibe datums: DatumsColada; ya no calcula xSprue, ni L_sprue, ni la holgura. Y verifica con verificacionColada — la MISMA función que corre el gate, no mediciones sueltas en la pantalla. - gate 73 pasan · 0 fallan, con dos checks que cambiaron de forma por ser más honestos: - se borraron las mediciones inline viejas de la E5 (las hace verificacionColada); tener dos formas de medir era la otra cara de tener dos coladas. - el regrind dejó de exigir que el número salga bonito. - EL REGRIND AHORA DICE LA VERDAD, y es fea: 68.4 %. Con L_sprue = 141.5 mm del stack real para una pieza de 14 cc, la colada se lleva más de dos tercios del disparo, contra el 30 % de §6.2.3. Antes yo lo \"resolvía\" acortando el bebedero — pero el largo lo fija el stack (§6.3.1), así que acortarlo es cambiar PLACAS. El gate ahora exige que la estación lo DETECTE y lo ANUNCIE como retorno a la estación 3, no que el número se vea bien. Es el mismo dad…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "279cda5"
    },
    {
@@ -1070,6 +1183,8 @@
     "cierreCompleto": "- iangpu estaba MUERTO, no lento. El SSH por Tailscale daba Connection timed out desde el cierre anterior. Diagnóstico por el host Windows (sebas@100.116.134.86): wsl -l -v → Ubuntu Stopped. Al arrancarlo, ni ssh ni tailscaled levantaron solos. Se revivió con wsl -d Ubuntu -u root -- systemctl start ssh tailscaled. Receta guardada: si iangpu no responde, entrar por el host y revisar el estado de WSL ANTES de dar por perdida la sesión — no es sobrecarga SSH, es la VM apagada. (Y vite hay que lanzarlo con cd al repo: sin él sirve $HOME y da 404 en :5178.) - LAS TRES COSAS QUE SÓLO SE VEN CON OJOS, ninguna la enseñaban los números: 1. Cotas huérfanas — boca X, draft, alto, piso, pared, Hc compra, cavidad X flotando sobre vacío con las guías apuntando a nada. cotasCicloE3 horneaba literales del marco viejo ([0,-12,40], [46,-6,0]…). Ahora los anclajes pasan por P()/PXY() con la colocación. TERCERA instancia de la familia \"coordenadas absolutas que asumen la pieza en el origen\" (van: rebanadas del draft, piso del macho, y estas cotas). 2. El conflicto era mudo. datumsColada lo declaraba desde su primer commit y ni el panel ni el gate lo enseñaban: el CAD dibujaba un bebedero que PERFORA el macho sin decir nada. Ahora el panel abre con una banda roja (⛔ CONFLICTO ESPACIAL (requiere-offset)) con las dos salidas del libro, y el gate lo exige. 3. Un check DECLARADO y nunca implementado: la orden del generador prometía \"colada ∩ macho = ∅\" como evidencia y se me fue. Implementado — y su lectura honesta es la inversa: 3,997.5 mm³ de acero compartido. La interferencia DEBE existir para…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "a4631af"
    },
    {
@@ -1098,6 +1213,8 @@
     "cierreCompleto": "- el check rojo se puso VERDE SOLO. No lo edité: arreglé la colocación y pasó. la PIEZA y el MOLDE comparten marco de coordenadas — centro de la pieza MEDIDO (98.0, 98.0) vs centro de la base (98, 98) · partición 146 vs stack 146. Gate: 77 pasan · 0 fallan (venía de 71/1). - colocacionEnLaBase(pkg) es FUENTE ÚNICA del offset (+78, +78, +106.5): la usan construirAceroE3, el campo de llenado de la E4 y el gate. Si alguien lo recalcula por su cuenta, vuelven los dos marcos — por eso vive en un solo lugar. - la colada entró SIN TOCARLE UNA LÍNEA, como estaba previsto, y sus números dejaron de ser absurdos porque el marco por fin es uno solo: - Fig 4.21 verificada: el inserto colocado ocupa x 38..158 dentro de una base 0..196. - DOS DEFECTOS de la misma familia, cazados al colocar — coordenadas absolutas horneadas que asumían que la pieza vive en el origen: 1. verificacionE3 rebanaba el sólido en z absoluto 0 y 2 para medir el draft. Con la pieza 106.5 mm arriba, las rebanadas cortaban en el VACÍO y el kernel reventaba con wasmTable.get is not a function. Ahora la rebanada va anclada al bbox del sólido. Aislado paso por paso: transformShape OK, splitMold desplazado OK — el crash era la medición, no la colocación. 2. La cota núcleo entra hasta el piso estaba declarada como 2 absoluto; es 2 mm sobre el fondo de la PIEZA. Ahora se declara relativa (bbD.min[2] + 2). - PENDIENTE Y DECLARADO — no se hizo la revisión visual. iangpu dejó de responder (Connection timed out, el gotcha de sobrecarga SSH ya documentado) justo al ir por la captura. La evidencia de esta orden es NUMÉRICA (77…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "94be46b"
    },
    {
@@ -1129,6 +1246,8 @@
     "cierreCompleto": "- entregado: src/forja/mold/colada.ts (283 líneas, un solo tema) con las cuatro capas: datumsColada (pura) · construirColada(K, oc, d) · verificacionColada · coladaMala (control negativo). Gate: 71 pasan · 1 falla. - NO entregado, y se declara: el cableado al ciclo y a mold-plano-set. No se hizo porque sería construir sobre marcos que no coinciden — ver abajo. Cablearlo hoy habría dado otra geometría verde sobre un cimiento falso, que es exactamente el error que esta sesión lleva cazando. - CADA COTA TRAE SU PROCEDENCIA. El módulo expone fuente, y ahí se ve qué es del libro y qué es extensión mía: - L_sprue → §6.3.1 literal, del STACK (zCaraClamp − zGate). El 60 inventado murió. - eje → Fig 6.4, el centro del molde (bushing + anillo centrador). El lado+rBase+6 murió. - zGate → la base CERRADA de la pieza, no la partición — el bug de 45.8 mm³ que mold-plano-set ya había pagado y que la E5 volvió a cometer. - L_runner → §6.3.1, \"determined by the position of the cavities\". - holguraAceroMm y gateLargoMm → EXTENSIÓN DECLARADA, dicho en el código. - EL HALLAZGO QUE ORDENA TODO LO DEMÁS — dos marcos de coordenadas que nunca se encuentran. Medido: Desfase (+78, +78, +106.5). Los insertos del ciclo NUNCA han estado dentro de la base del molde. Por eso el bebedero no tenía dónde caer, por eso L_sprue sale 248 mm (el molde entero en vez de top clamp + placa A = 102) y por eso el runner sale degenerado. ian lo venía diciendo con otras palabras desde el principio: *\"mi problema sigue siendo lo espacial, no es código\"*. La colada no lo causó: lo hizo visible. - EL GATE QUEDA EN ROJO, …",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "e1c403e"
    },
    {
@@ -1152,6 +1271,8 @@
     "cierreCompleto": "- números: gate ciclo-dado-test 39/39 con OCC real. Lazo A-088: 0.5 → 0.6965 m/s en 8 vueltas, monótono y estable · L/T = 30 (ABS aguanta 150) · presiones 10.7 / 5.3 MPa en banda · última zona en llenarse (0.8, 10.4, 10) a 0.112 s → coordenada para el cap 8 · 2 defectos REALES anunciados a su estación: compuerta congela 3.25 s vs 8.48 s de empaque (→E6, §7.1.5) y sprue 7.61 MPa vs presupuesto 5.34 (→E5, §6.4). CONTROL NEGATIVO: pared 0.35 mm → L/T 171 → VIOLA ✓. - evidencia: forja-shots/dado-e4/*.png revisadas con ojos → Downloads\\FORJA-DADO en la laptop Y en iangpu + /mnt/e/forja-videos. - CUATRO bugs míos cazados en este tramo, todos por medir en vez de suponer: (1) las imágenes iban solo a la Downloads de la LAPTOP y ian estaba en iangpu (gotcha ya documentado que volví a cometer) → ahora van a las dos, en carpeta con nombre; (2) onClick={onE3} pasa el EVENTO de React como 1er argumento → con un flag opcional ahí, la E3 armaba el dado ROTO en CADA clic, en silencio; (3) onE4 quedó en el TIPO de CicloE3 pero no en el DESTRUCTURING → ReferenceError que tumbó la app entera. Ni tsx ni vite build tipan: compiló perfecto y explotó en runtime. Mi humo de \"importa el módulo\" NO prueba que el componente RENDERICE; (4) cursoSet(4, …, []) BORRABA la escena (los botones de vista en gris por falta de sólido) — la E4 no construye acero: conserva el de la E3 y solo lo pinta. Y una medición que mató una suposición: instrumenté E3 y corre en 697 ms — el rayo tarda 25-61 ms. Nunca hubo problema de rendimiento; era el ReferenceError. - preguntas abiertas: el veredicto del rayo a res 160 v…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "c03fd0b"
    },
    {
@@ -1175,6 +1296,8 @@
     "cierreCompleto": "«🧪 probar el caso ROTO» (mismo TOCA) — el control negativo no puede vivir solo en el gate: ian tiene que VER el rojo para creerle a la herramienta. - números: gate ciclo-dado-test 32/32 con OCC real. Dado bueno: SALE, atrapadas = 0, cavidad ∩ núcleo = 0 mm³. CONTROL NEGATIVO (draft invertido): NO SALE, 16 caras ATRAPADAS, 6,158.7 mm², y el undercut lo sufre LA CAVIDAD (la mitad que no puede bajar) — el núcleo sigue limpio, como debe ser. En pantalla el mismo veredicto y la cota draft 1.5 ≠ 0 ✗ se pone ROJA sola. - evidencia: forja-shots/dado-rayo/{01-ISO,02-FRENTE,03-panel,04-ROTO}.png revisadas con ojos → Downloads (dado-rayo-*.png) + /mnt/e/forja-videos. - DOS defectos VISUALES cazados mirando, no midiendo: (1) el material sin luz volvía el mapa un recorte de papel → sombreado N·L HORNEADO en el color (el material sigue sin luz para no pastelear el colormap); (2) las 16 atrapadas vivían DENTRO del bloque y eran invisibles aunque el panel las contara → mesh aparte con depthTest: false (el truco de la nube de alarma): el defecto ATRAVIESA el acero. Un defecto que no se ve no sirve. Y el 🩻 se apaga con el mapa: peleaban y dejaban todo pálido. - preguntas abiertas: faltan los otros dos modos que ian pidió (ESPESOR y DRAFT por color) y el slider de sección conectado al ciclo; meter ciclo-dado-test a forja-gate.cjs; el deploy final del turno anterior quedó cortado — relanzar.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "991fa09"
    },
    {
@@ -1199,6 +1322,8 @@
     "cierreCompleto": "sucios de OTRA sesión (public/comando/produccion.json, scripts/comando-catalogo.cjs) que no estaban en PREEXISTENTE — se declararon (no se commitean, no son de esta orden). - números: ORDEN_GATE VERDE (44 cambios, todos amparados) · censo canvas 11→8, vite 45→41, html 52→46 (todo BAJA, exacto a lo declarado) · vite build en iangpu ✓ 39.08 s · panel en el CAD real con GPU D3D12: 5 semáforos (2 ADVIERTE legítimos: daylight holgura 8 mm, shot 24 %), invariantes 8/8, flanera $5,700→$9,119 · $0.1173/pza. - evidencia: forja-shots/orden-limpieza/{01-cad-con-panel,03-panel-scrolled}.png · los 404 de consola son el poll conocido de /mold-live.json y el REBUILD_ERR es el documento vacío pre-flanera (ruido preexistente del flujo, no del panel). - preguntas abiertas: (1) useMoldLive.ts:62 también tira su pkg (mismo patrón) — se dejó fuera a propósito, es enmienda de una línea si se quiere la sesión viva con semáforos; (2) el eje de tiempo del CICLO murió con su pantalla — si se quiere en el CAD es otra orden (git show 26bdd63:src/forja/mold/ciclo-datos.ts).",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "9eedc7a"
    },
    {
@@ -1222,6 +1347,8 @@
     "cierreCompleto": "correcto: me salté el paso de aprobación de MI PROPIO flujo) y redirigió el ejercicio al CICLO COMPLETO sobre una pieza mínima (el dado). Queda ENTREGADO solo el MOTOR: estudio-molde-datos::juzgarPines — cada pin juzgado en su vecindario (⌀ A-232/233/235, pandeo A-234, agua A-239 §9.2.7, pared de cavidad §11.2.5, holgura-venteo A-168) con nubes XYZ. La UI demo (botón caja, juicio en el bag) se REVIRTIÓ: los pines son la estación 10 del ciclo, no la entrada. - números: sonda en 3 cajas — los pines individuales CUMPLEN pero el CAMPO estrangula el agua (trazo 2/3 líneas/lado · paso 88 > 2H=64 Eq 9.24) → el RETORNO A-239 medible, con 62-95 puntos ámbar exactamente en los pines culpables. La tesis de ian (\"todo tiene que ver con todo\") validada en números. - evidencia: sonda-pines.cjs (scratchpad de la sesión) · juzgarPines queda con export y compila · sin UI que lo consuma AÚN (lo consumirá la estación 10 del ciclo del dado). - preguntas abiertas: ninguna — sustituida por ordenes/2026-08-10-ciclo-dado-estacion1.md.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "c6e3c62"
    },
    {
@@ -1245,6 +1372,8 @@
     "cierreCompleto": "- números: draft 1.5° TALLADO por loft (pared nominal 2 medida EN la partición) · splitMold escala 1.0 (contracción = estación 9, retorno declarado) · insertos 120×120×60 / ×16 P20 · base 196×196 con su aritmética (120 + 2×32 = 184 → 196 catálogo) · stack 248 con acero por placa (P20 solo moldeantes) · semáforos DESPIERTOS: 4 CUMPLE + daylight ADVIERTE 8 mm · chips ✓✓✓▶ · gate VERDE EXIT=0 · censo IGUAL · build iangpu ✓ 46 s. - evidencia: forja-shots/dado-e3/{01-acero-3d,02-panel-e3,03-semaforos-despiertos}.png revisadas con ojos → Downloads laptop (dado-e3-*.png) + /mnt/e/forja-videos. - preguntas abiertas: estación 4 — LLENADO (cap 5): el toggle 💧 ya existe (flowlen sobre la pieza real); la estación lo suma al ciclo con sus números del cap 5.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "6166610"
    },
    {
@@ -1267,6 +1396,8 @@
     "cierreCompleto": "- números: gana cold-2placas×1 ($5,787 · $0.0579 amort + $0.3782 mat/proc = $0.4361/pza, CUADRA al centavo en las 5 filas) · A-050 estrenado: 50k→×1 · 100k→×1 · 250k→×2 · 500k→×4 · 1M→×4 — el ganador CAMBIA en ~250k · A-054: molde = 13 % del total → SANO · chips ✓✓▶ · gate VERDE EXIT=0 · censo IGUAL · build iangpu ✓ 42 s. - evidencia: forja-shots/dado-e2/{01-familias-3d,02-panel-e2}.png revisadas con ojos → Downloads laptop (dado-e2-*.png) + /mnt/e/forja-videos. - preguntas abiertas: estación 3 — ARQUITECTURA (cap 4): nace el primer acero (partición, insertos, base, semáforos de máquina que YA existen). El draft declarado del dado se talla ahí.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "da5e270"
    },
    {
@@ -1291,6 +1422,8 @@
     "cierreCompleto": "(1) dfm.ts no se tocó (A-013 va como [COMPARA] en estacion1Dado, sin umbral inventado) — TOCA se corrigió; (2) el gate ganó mtime + prefijos en PREEXISTENTE (sus dos defectos los destapó ESTA orden: juzgaba contra la orden equivocada por sort alfabético, y la otra sesión pare archivos en public/atrio/). - números: macizo REPROBADO — t_c 88.3 MIN (Eq 9.5, 625× vs pared 2) + 2 errores §2.3 (arista viva §2.3.4, draft 0° §2.3.6) · dado APROBADO — t_c 8.5 s (≈ el 8.4 s del libro que el gate ya validaba), 0 errores, draft 1.5° Tabla 2.14 · 13 estaciones visibles (0-12), la 1 activa · ORDEN_GATE VERDE EXIT=0 · censo IGUAL (8/41/46) · build iangpu ✓ 27 s. - evidencia: forja-shots/dado-e1/{01-dado-macizo-viewport,02-ciclo-panel}.png — revisadas con ojos (un artefacto del arnés cazado y retomado: press('f') activaba FILLET) · entregadas a /mnt/c/Users/sebas/Downloads (dado-e1-*.png) y /mnt/e/forja-videos de iangpu. - preguntas abiertas: estación 2 (economía: ¿cuántas cavidades para 100k/año?) es la siguiente orden natural; el TDZ del primer intento (loadDado antes de cursoSet) se cazó ANTES de romper nada — la regla del archivo lo advertía.",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "3cd6b52"
    },
    {
@@ -1313,9 +1446,12 @@
     "cierreCompleto": "(1) las paredes del loft son REGLADAS (BSpline) y draftAnalysis las mandaba a 'curvas' sin medir — el falso PASA lo delató la fila gemela en la 1ª corrida del gate; el draft ahora se mide POR REBANADAS del sólido (dibujo técnico), y da 1.5° exactos; (2) computeMoldAlarm síncrono en el click congelaba el tab MINUTOS — se quitó por REDUNDANTE: las 3 piezas parten el bloque por construcción y la fila Σ=bloque ya prueba la no-interferencia. - números: gate ciclo-dado-test 28/28 con OCC real (E1 t_c 88.3 min/8.5 s · E2 cuadre al centavo + banda 250k · E3 17/17 medidas declarado≈medido, draft ext/int 1.5°±0.1 medido de rebanadas, Σ vol = 100.018 % del bloque, cuerpos=2, compra=tallado 60/16) · en pantalla 17/17 verdes · orden-gate VERDE EXIT=0 · censo IGUAL. - evidencia: vistas FRE/PLANTA/ISO + tabla MEDIDAS (dado-e3v-*.png) → Downloads laptop + /mnt/e/forja-videos. La FRENTE muestra lo que la ISO escondía: el núcleo en T entrando por la boca hasta el piso. - ENMIENDA 2 (ian: \"quiero las dimensiones VISUALES en el 3D, no quiero entrar al plano\"): cotasCicloE3 convierte las medidas geométricas en Dim3D con extremos EN LA ESCENA y las sirve por la MISMA tubería del 📐 (CotaLines+CotaLabels, doble cifra, rojo si no cuadra). cicloEstacion3 PRENDE el 📐 solo. 11 cotas vivas en pantalla verificadas por el arnés: boca X/Y, alto, pared, piso, draft (línea inclinada que ENSEÑA la conicidad), cavidad X, Hc compra, partición, Hk compra, hueco. Evidencia: dado-e3-cotas-*.png en Downloads. - preguntas abiertas: el gate del ciclo aún no está en forja-gate.cjs (siguiente orden chica); afinar e…",
     "evidenciaSS": [],
     "revisable": false,
+    "probado": "",
+    "falla": "",
     "commit": "bb06b01"
    }
-  ]
+  ],
+  "probado": []
  },
  "despues": [
   {

@@ -82,7 +82,11 @@ const tarjetas = archivos.map((f) => {
   const estadoDecl = campo(txt, 'ESTADO').toLowerCase();
   const cierre = seccion(txt, 'CIERRE');
   const tieneCierre = cierre.some((l) => l.trim());
-  const estado = estadoDecl === 'proximo' ? 'proximo' : tieneCierre ? 'cerrado' : 'en-curso';
+  // PROBADO (ian): `PROBADO: <fecha> · <nota>` = ian lo probó y lo acepta → 4ª columna.
+  // `FALLA: <nota>` = lo probó y NO pasó → sigue en CERRADO con insignia roja y la nota.
+  const probado = campo(txt, 'PROBADO');
+  const falla = campo(txt, 'FALLA');
+  const estado = estadoDecl === 'proximo' ? 'proximo' : tieneCierre ? (probado ? 'probado' : 'cerrado') : 'en-curso';
   const prioridad = +campo(txt, 'PRIORIDAD') || 999;
   const evidenciaSS = ssDe(slug);
   // fuera las tablas markdown (| a | b |) y sus rayas: aplanadas son ilegibles — la orden completa queda en el .md
@@ -98,8 +102,9 @@ const tarjetas = archivos.map((f) => {
     cierreCompleto: tieneCierre ? unaLinea(cierreLimpio, 1600) : '',
     evidenciaSS,
     // revisable = cerrada CON screenshots. Sin ss no se le pide a ian que revise.
-    revisable: estado === 'cerrado' && evidenciaSS.length > 0,
-    commit: estado === 'cerrado' ? commitDe(rel) : '',
+    revisable: (estado === 'cerrado' || estado === 'probado') && evidenciaSS.length > 0,
+    probado: plano(probado), falla: plano(falla),
+    commit: (estado === 'cerrado' || estado === 'probado') ? commitDe(rel) : '',
   };
 });
 
@@ -120,6 +125,7 @@ const despues = [];
 const proximo = tarjetas.filter((t) => t.estado === 'proximo').sort((a, b) => a.prioridad - b.prioridad);
 const enCurso = tarjetas.filter((t) => t.estado === 'en-curso');
 const cerrado = tarjetas.filter((t) => t.estado === 'cerrado').sort((a, b) => (b.fecha + b.slug).localeCompare(a.fecha + a.slug));
+const probadas = tarjetas.filter((t) => t.estado === 'probado').sort((a, b) => (b.fecha + b.slug).localeCompare(a.fecha + a.slug));
 
 const violaciones = [];
 if (proximo.length > WIP.proximo) violaciones.push(`PRÓXIMO tiene ${proximo.length} > ${WIP.proximo}: para meter uno, saca uno`);
@@ -140,13 +146,13 @@ const revisables = cerrado.filter((t) => t.revisable).length;
 
 const json = {
   nombre: 'TEMIS', generado: new Date().toISOString().slice(0, 16).replace('T', ' '),
-  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCurso.length, cerrado: cerrado.length, despues: despues.length },
-  violaciones, columnas: { proximo, enCurso, cerrado }, despues,
+  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCurso.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, despues: despues.length },
+  violaciones, columnas: { proximo, enCurso, cerrado, probado: probadas }, despues,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(json, null, 1));
 
-console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCurso.length}/${WIP.enCurso} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · después ${despues.length}`);
+console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCurso.length}/${WIP.enCurso} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · probado ${probadas.length} · después ${despues.length}`);
 for (const t of proximo) console.log(`  ${String(t.prioridad).padStart(2)} · ${t.titulo}`);
 for (const t of enCurso) console.log(`  ▶ EN CURSO · ${t.titulo}`);
 for (const v of violaciones) console.log(`  ✘ ${v}`);

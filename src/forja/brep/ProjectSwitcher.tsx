@@ -15,10 +15,12 @@ export type ProjType = 'molde' | 'robot' | 'mecanismo' | 'pieza';
 // (PRÓXIMO ≤7 · EN CURSO ≤1): el tablero se niega, no lista.
 interface TemisCard {
   file: string; slug: string; titulo: string; fecha: string;
-  estado: 'proximo' | 'en-curso' | 'cerrado'; prioridad: number;
+  estado: 'proximo' | 'en-curso' | 'cerrado' | 'probado'; prioridad: number;
   objetivo: string; toca: number; crea: number; evidencia: number; cierre: string; commit: string;
   // LA PANTALLA DE EVIDENCIA (ian: "sí o sí deben estar los ss de que funciona")
   evidenciaDeclarada: string[]; cierreCompleto: string; evidenciaSS: string[]; revisable: boolean;
+  // PROBADO (ian): `PROBADO: fecha · nota` en la orden → 4ª columna; `FALLA: nota` → insignia roja
+  probado: string; falla: string;
 }
 
 /** nombre de archivo → pie de foto legible: "02-acta-rotulada-en-escena.jpg" → "acta rotulada en escena" */
@@ -30,13 +32,14 @@ function TemisDetalle({ c, onVolver }: { c: TemisCard; onVolver: () => void }) {
     <div className="tm-det" data-testid="temis-detalle">
       <button className="tm-volver" data-testid="temis-volver" onClick={onVolver}>← Tablero</button>
       <div className="tm-det-head">
-        <span className={`tm-estado ${c.estado}`}>{c.estado === 'cerrado' ? 'cerrada' : c.estado === 'en-curso' ? 'en curso' : `próximo #${c.prioridad}`}</span>
+        <span className={`tm-estado ${c.estado}`}>{c.estado === 'cerrado' ? 'cerrada' : c.estado === 'probado' ? `probada · ${c.probado}` : c.estado === 'en-curso' ? 'en curso' : `próximo #${c.prioridad}`}</span>
         <h3>{tit}</h3>
         <p className="tm-meta">{c.fecha} · <code>{c.file}</code>{c.commit && <span className="tm-commit"> · {c.commit}</span>}</p>
       </div>
-      {c.estado === 'cerrado' && !c.revisable && (
+      {(c.estado === 'cerrado' || c.estado === 'probado') && !c.revisable && (
         <div className="tm-viol" data-testid="temis-sin-evidencia">✘ SIN EVIDENCIA VISUAL — cerrada sin screenshots. No se puede pedir revisión de esto.</div>
       )}
+      {c.falla && <div className="tm-viol" data-testid="temis-falla-detalle">✘ FALLÓ LA PRUEBA DE IAN — {c.falla}</div>}
       {c.objetivo && <><h5>Objetivo</h5><p className="tm-txt">{c.objetivo}</p></>}
       {c.evidenciaDeclarada.length > 0 && <>
         <h5>Evidencia declarada (antes de trabajar)</h5>
@@ -60,9 +63,9 @@ function TemisDetalle({ c, onVolver }: { c: TemisCard; onVolver: () => void }) {
 interface TemisJson {
   nombre: string; generado: string;
   wip: { proximo: number; enCurso: number };
-  conteo: { proximo: number; enCurso: number; cerrado: number; despues: number };
+  conteo: { proximo: number; enCurso: number; cerrado: number; probado: number; porProbar: number; despues: number };
   violaciones: string[];
-  columnas: { proximo: TemisCard[]; enCurso: TemisCard[]; cerrado: TemisCard[] };
+  columnas: { proximo: TemisCard[]; enCurso: TemisCard[]; cerrado: TemisCard[]; probado: TemisCard[] };
   despues: Array<{ grupo: string; texto: string }>;
 }
 
@@ -74,19 +77,23 @@ function TemisCardView({ c, onOpen }: { c: TemisCard; onOpen: (c: TemisCard) => 
         {c.estado === 'proximo' && <span className="tm-n">{c.prioridad}</span>}
         {c.estado === 'en-curso' && <span className="tm-n live">▶</span>}
         {c.estado === 'cerrado' && <span className="tm-n done">✓</span>}
+        {c.estado === 'probado' && <span className="tm-n done">✓✓</span>}
         <p className="tm-tit">{tit}</p>
       </div>
-      {c.estado !== 'cerrado' && c.objetivo && <p className="tm-obj">{c.objetivo}</p>}
-      {c.estado === 'cerrado' && c.cierre && <p className="tm-obj">{c.cierre}</p>}
+      {(c.estado === 'proximo' || c.estado === 'en-curso') && c.objetivo && <p className="tm-obj">{c.objetivo}</p>}
+      {(c.estado === 'cerrado' || c.estado === 'probado') && c.cierre && <p className="tm-obj">{c.cierre}</p>}
       <p className="tm-meta">
         {c.fecha}{c.toca ? ` · toca ${c.toca}` : ''}{c.crea ? ` · crea ${c.crea}` : ''}{c.evidencia ? ` · evidencia ${c.evidencia}` : ''}
         {c.commit && <span className="tm-commit"> · {c.commit}</span>}
       </p>
       {c.estado === 'cerrado' && (
-        c.revisable
-          ? <span className="tm-badge ok" data-testid={`temis-ss-${c.slug}`}>📷 {c.evidenciaSS.length} — revisable</span>
-          : <span className="tm-badge no">sin evidencia visual</span>
+        c.falla
+          ? <span className="tm-badge falla" data-testid={`temis-falla-${c.slug}`}>✘ falló la prueba — {c.falla}</span>
+          : c.revisable
+            ? <span className="tm-badge ok" data-testid={`temis-ss-${c.slug}`}>📷 {c.evidenciaSS.length} — por probar</span>
+            : <span className="tm-badge no">sin evidencia visual</span>
       )}
+      {c.estado === 'probado' && <span className="tm-badge ok" data-testid={`temis-probado-${c.slug}`}>✓✓ probado · {c.probado}</span>}
     </button>
   );
 }
@@ -119,13 +126,19 @@ function TemisBoard({ data }: { data: TemisJson | null | { error: true } }) {
           {columnas.enCurso.length === 0 && <div className="tm-vacio">libre — toma la #1 de Próximo</div>}
         </section>
         <section className="tm-col" data-testid="temis-col-cerrado">
-          <h4>Cerrado <b>{conteo.cerrado}</b></h4>
+          <h4>Cerrado <b>{conteo.cerrado}</b>{conteo.porProbar > 0 && <span className="tm-sub">{conteo.porProbar} por probar</span>}</h4>
           {cerradasVis.map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
           {columnas.cerrado.length > 6 && (
             <button className="tm-mas" onClick={() => setVerCerradas((v) => !v)}>
               {verCerradas ? 'ver menos' : `y ${columnas.cerrado.length - 6} más`}
             </button>
           )}
+        </section>
+        {/* PROBADO (ian): lo que ya probó y acepta. Se marca con `PROBADO:` en la orden. */}
+        <section className="tm-col" data-testid="temis-col-probado">
+          <h4>Probado <b>{conteo.probado ?? 0}</b></h4>
+          {(columnas.probado ?? []).map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
+          {(columnas.probado ?? []).length === 0 && <div className="tm-vacio">nada probado aún — di "probado &lt;ticket&gt;" y la orden recibe <code>PROBADO:</code></div>}
         </section>
       </div>
       <details className="tm-despues" data-testid="temis-despues">
@@ -249,7 +262,11 @@ const CSS = `
 /* ── TEMIS ── */
 .tm{padding:10px 16px 14px;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .tm-viol{border:1px solid rgba(242,122,108,.55);background:rgba(242,122,108,.10);color:#f8b4aa;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;display:flex;flex-direction:column;gap:3px}
-.tm-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;align-items:start}
+.tm-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;align-items:start}
+.tm-col h4 .tm-sub{margin-left:auto;font-size:10px;letter-spacing:0;text-transform:none;color:#FDB813;font-weight:600}
+.tm-badge.falla{color:#f8b4aa;background:rgba(242,122,108,.10);border-color:rgba(242,122,108,.45)}
+.tm-card.probado{border-color:rgba(126,224,160,.35)}
+.tm-estado.probado{color:#7ee0a0;border-color:rgba(126,224,160,.5)}
 .tm-col{display:flex;flex-direction:column;gap:8px;min-width:0}
 .tm-col h4{margin:0 0 2px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ds-faint,#7E90A9);font-weight:700;display:flex;align-items:center;gap:8px}
 .tm-col h4 b{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:0;color:var(--ds-dim,#A6B4C8);background:var(--ds-panel2,#16202F);border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:6px;padding:1px 7px}
