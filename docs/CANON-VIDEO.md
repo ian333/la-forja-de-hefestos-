@@ -391,6 +391,31 @@ Detalle de guion (MX): revisar doble sentido ANTES del TTS ("míralos correrse" 
 - El dim del contenido y la cámara **se diseñan JUNTOS por pieza** cuando el clímax no es el núcleo
   (ej. H₂O: el payoff es la molécula entera, no el buceo al O).
 
+## ✍️ GUION FLUIDO + VOZ POR BEATS (Ian, 2026-08-26 — el oído mandó)
+
+Ian, escuchando la voz continua: *"suena raro, se traba al hablar; el problema son las comas y
+los espacios — 'echa sal al agua'… y me quedo esperando hasta que dice 'desaparece'. Tiene que
+ser continuo: 'si echas un poco de sal al agua, esta desaparece'."* Dos reglas nuevas:
+
+1. **El guion se escribe en PROSA FLUIDA, no en fragmentos telegráficos.** Cada beat es una
+   oración con conectores ("si…, entonces…", "y", "hasta que"); las líneas del archivo siguen
+   siendo los cortes de SUBTÍTULO, pero el TTS no debe ver un punto en cada una. Las pausas
+   dramáticas las pone la ESCENA (capas/cámara), no la puntuación. Los ganadores viejos
+   (fragmentos cortos, XTTS línea por línea) no se reescriben; lo nuevo sí.
+2. **La unidad de síntesis es el BEAT, no la frase ni el guion entero.** Medido (LA SAL): frase
+   por frase = 20 finales de oración en 77 s = "lista", no cuento; el guion entero de una vez NO
+   aguanta (Fish omite el final y pide 11 GB; Cosy se detiene a los 43 s). Por beats (2-4
+   líneas) la prosodia es continua, y los tiempos por línea se RECUPERAN con alineación forzada
+   (faster-whisper `word_timestamps` → `segs.json`, error 0.2 s medio / 0.7 máx). Además se
+   recortan silencios internos > 0.35 s (el motor obedece la puntuación; el recorte quita las trabas).
+
+**Motores (tarjetas de HF, 2026-08-26):** XTTS-v2 = Coqui Public Model License (**NO comercial**
+— la voz de los ganadores vive en zona gris); Fish `openaudio-s1-mini` = **CC-BY-NC-SA** (NO
+comercial; Fish Audio vende licencia); **CosyVoice3 = Apache-2.0**. Con lo medible gana Cosy
+(20/21, RTF≈1); de oído Ian prefirió Fish (semilla 43 — Fish FALLA POR SEMILLA: la 42 se comía
+"En ti."). El portero de whisper sigue siendo obligatorio con cualquiera. Reporte completo:
+`dist-video/_tts-shootout/continuo/REPORTE.md` (iangpu).
+
 ## 🎙️ VOZ (XTTS Matilda — gotchas ya pagados)
 
 - `/home/ian/tts-venv/bin/python` en iangpu (torch no está en el python del sistema). One-shot, NO server.
