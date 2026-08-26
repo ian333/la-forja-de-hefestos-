@@ -116,7 +116,29 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
   const bOut = 20 + 2 * 10 * Math.tan((3 * Math.PI) / 180);
   const volDraftOut = (10 / 3) * (400 + 20 * bOut + bOut * bOut);      // paredes se abren
 
+  // ── 8b. DRAFT EN CILINDROS (v1·4, orden draft-cilindros): cilindro→CONO ──
+  //  R40×20, 1.5°, pull +Z, neutro z=0: la pared EXTERIOR se ABRE hacia el pull
+  //  (misma convención que la caja) → V = π(R²H + RH²t + H³t²/3), trig exacta.
+  const t15d = Math.tan((1.5 * Math.PI) / 180);
+  const cylD = occt.draftFaces(oc, occt.makeCylinder(oc, 40, 20), 1.5, [0, 0, 1], 0);
+  const volCylD = occt.volume(oc, cylD);
+  const volCylTrig = Math.PI * (1600 * 20 + 40 * 400 * t15d + 8000 * t15d * t15d / 3);
+  const kindsCylD = occt.enumerateFaces(oc, cylD).map((x) => x.kind);
+  //  EL VASO (cilindro − cilindro, pared 3): las DOS paredes giran EN BLOQUE
+  //  (exterior −α, interior acompaña) → 2 conos y la pared se CONSERVA.
+  const vasoRecto = occt.cut(oc, occt.makeCylinder(oc, 40, 20),
+    occt.transformShape(oc, occt.makeCylinder(oc, 37, 18), { translate: [0, 0, 3] }));
+  const vasoD = occt.draftFaces(oc, vasoRecto, 1.5, [0, 0, 1], 0);
+  const volVasoD = occt.volume(oc, vasoD);
+  const Ifr = (R, z0, z1) => R * R * (z1 - z0) + R * t15d * (z1 * z1 - z0 * z0) + t15d * t15d * (z1 ** 3 - z0 ** 3) / 3;
+  const volVasoTrig = Math.PI * (Ifr(40, 0, 20) - Ifr(37, 3, 20));
+  const conesVaso = occt.enumerateFaces(oc, vasoD).filter((x) => x.kind === 'cone').length;
+  //  control: 0° = identidad
+  const volCyl0 = occt.volume(oc, occt.draftFaces(oc, occt.makeCylinder(oc, 40, 20), 0, [0, 0, 1], 0));
+
   const inv = {
+    vol_cyl_draft: volCylD, vol_cyl_trig: volCylTrig, kinds_cyl_draft: kindsCylD,
+    vol_vaso_draft: volVasoD, vol_vaso_trig: volVasoTrig, conos_vaso: conesVaso, vol_cyl_0: volCyl0,
     vol_plate: volPlate, vol_drilled: volDrilled, hole_removed: holeRemoved, hole_exact: holeExact,
     vol_scaled: volScaled, com_scaled: comScaled,
     vol_draft: volDraft, vol_draft_in: volDraftIn, vol_draft_out: volDraftOut,
@@ -149,6 +171,12 @@ const wasmBin = readFileSync(path.join(distDir, 'opencascade.wasm.wasm'));
     // sale de la hembra) → el cubo se ensancha arriba = tronco invertido EXACTO
     draft_frustum_exact: approx(volDraft, volDraftOut, 1e-4),
     draft_valid: occt.topology(oc, drafted).faces === 6,
+    // v1·4 — el vaso POR FIN se desmoldea desde el árbol (§2.3.6):
+    draft_cyl_es_cono: kindsCylD.includes('cone') && !kindsCylD.includes('cylinder'),
+    draft_cyl_trig_exact: approx(volCylD, volCylTrig, 1e-2),
+    draft_vaso_dos_conos: conesVaso === 2,
+    draft_vaso_trig_exact: approx(volVasoD, volVasoTrig, 1e-2),
+    draft_cero_identidad: approx(volCyl0, Math.PI * 1600 * 20, 1e-6),
   };
 
   const allPass = Object.values(checks).every(Boolean);

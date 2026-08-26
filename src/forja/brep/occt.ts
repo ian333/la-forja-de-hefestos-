@@ -592,15 +592,21 @@ export function draftFaces(
   // (bisecado: las 4 caras de 105-120mm² del óvalo del tut1 matan el Build aunque
   // solas pasen). El libro exime del draft a las caras pequeñas — si el Build
   // truena, reintenta subiendo el umbral de área (100 → 300 → 1000).
+  if (Math.abs(angleDeg) < 1e-9) return shape;                 // 0° = identidad (control)
   if (!faceIndices) {
+    // v1·4: PRIMERO con cilindros (el vaso: cilindro→CONO, §2.3.6). Si el Build
+    // truena en esa topología, la 2ª escalera reintenta SIN cilindros — el
+    // comportamiento previo EXACTO: tut1/tina caen ahí y nada regresa roto.
     let lastErr: unknown;
-    for (const minArea of [100, 300, 1000]) {
-      try { return draftFacesMin(oc, shape, angleDeg, pullDir, neutralAt, undefined, minArea); }
-      catch (e) { lastErr = e; }
+    for (const conCil of [true, false]) {
+      for (const minArea of [100, 300, 1000]) {
+        try { return draftFacesMin(oc, shape, angleDeg, pullDir, neutralAt, undefined, minArea, conCil); }
+        catch (e) { lastErr = e; }
+      }
     }
     throw lastErr;
   }
-  return draftFacesMin(oc, shape, angleDeg, pullDir, neutralAt, faceIndices, 0);
+  return draftFacesMin(oc, shape, angleDeg, pullDir, neutralAt, faceIndices, 0, true);
 }
 
 function draftFacesMin(
@@ -609,6 +615,7 @@ function draftFacesMin(
   neutralAt: number,
   faceIndices: number[] | undefined,
   minArea: number,
+  incluirCilindros = false,
 ): Shape {
   const faces = uniqueSubShapes(oc, shape, oc.TopAbs_ShapeEnum.TopAbs_FACE);
   const dir = new oc.gp_Dir_4(pullDir[0], pullDir[1], pullDir[2]);
@@ -633,13 +640,23 @@ function draftFacesMin(
     if (faceIndices && !faceIndices.includes(i)) continue;
     const f = oc.TopoDS.Face_1(faces[i]);
     const ad = new oc.BRepAdaptor_Surface_2(f, true);
-    const isPlane = ad.GetType().value === oc.GeomAbs_SurfaceType.GeomAbs_Plane.value;
-    if (!isPlane) { ad.delete?.(); continue; }
+    const tipo = ad.GetType().value;
+    const isPlane = tipo === oc.GeomAbs_SurfaceType.GeomAbs_Plane.value;
+    // v1·4: DraftAngle de OCC también come CILINDROS (cilindro→CONO) — el vaso,
+    // la pieza moldeada más clásica, por fin se desmoldea desde el árbol.
+    const isCyl = incluirCilindros && tipo === oc.GeomAbs_SurfaceType.GeomAbs_Cylinder.value;
+    if (!isPlane && !isCyl) { ad.delete?.(); continue; }
     if (!faceIndices) {
-      // Solo PAREDES: normal perpendicular al desmoldeo. Caras tapa/base quedan.
-      const n = ad.Plane().Axis().Direction();
-      const dot = Math.abs(n.X() * pullDir[0] + n.Y() * pullDir[1] + n.Z() * pullDir[2]);
-      if (dot > 1e-3) { ad.delete?.(); continue; }
+      // Pared: plano con normal ⊥ al desmoldeo, o cilindro con EJE ∥ (pared vertical).
+      if (isPlane) {
+        const n = ad.Plane().Axis().Direction();
+        const dot = Math.abs(n.X() * pullDir[0] + n.Y() * pullDir[1] + n.Z() * pullDir[2]);
+        if (dot > 1e-3) { ad.delete?.(); continue; }
+      } else {
+        const ax = ad.Cylinder().Axis().Direction();
+        const dot = Math.abs(ax.X() * pullDir[0] + ax.Y() * pullDir[1] + ax.Z() * pullDir[2]);
+        if (dot < 1 - 1e-3) { ad.delete?.(); continue; }     // cilindro tumbado (filete): no es pared
+      }
       // Regla del libro (cap 6): a las caras MUY chicas no se les exige draft
       // (facetas de recortes teselados) — inclinar microfacetas revienta el Build.
       const props = new oc.GProp_GProps_1();
@@ -655,14 +672,46 @@ function draftFacesMin(
       const props = new oc.GProp_GProps_1();
       oc.BRepGProp.SurfaceProperties_1(faces[i], props, false, false);
       const fc = props.CentreOfMass();
-      const n = ad.Plane().Axis().Direction();
-      // Normal ORIENTADA: el plano subyacente no sabe de la orientación de la
-      // cara (dos paredes opuestas reportan la MISMA dirección) — sin esto la
-      // mitad de las paredes recibe el signo equivocado y el draft se anula.
       const rev = (typeof f.Orientation_1 === 'function' ? f.Orientation_1() : f.Orientation())
         === oc.TopAbs_Orientation.TopAbs_REVERSED;
       const flip = rev ? -1 : 1;
-      const dotOut = flip * (n.X() * (fc.X() - com0[0]) + n.Y() * (fc.Y() - com0[1]) + n.Z() * (fc.Z() - com0[2]));
+      let dotOut: number;
+      if (isPlane) {
+        // Normal ORIENTADA: el plano subyacente no sabe de la orientación de la
+        // cara (dos paredes opuestas reportan la MISMA dirección) — sin esto la
+        // mitad de las paredes recibe el signo equivocado y el draft se anula.
+        const n = ad.Plane().Axis().Direction();
+        dotOut = flip * (n.X() * (fc.X() - com0[0]) + n.Y() * (fc.Y() - com0[1]) + n.Z() * (fc.Z() - com0[2]));
+      } else {
+        // Cilindro: el signo NO se fía de la orientación topológica — el MISMO vaso
+        // reporta orientaciones distintas por croquis+shell que por booleana (medido
+        // en el drive: 27290 vs 27543 mm³, signo invertido). La verdad es GEOMÉTRICA:
+        // ¿hay MATERIAL justo afuera de la pared? Sonda de 0.2 mm a 0.35 mm del radio
+        // + common(): material → pared INTERIOR (+α, acompaña); aire → EXTERIOR
+        // (−α: se ABRE hacia el pull, la convención de la caja del features-test).
+        const cil = ad.Cylinder();
+        const axP = cil.Axis().Location(), axD = cil.Axis().Direction();
+        const R = cil.Radius();
+        const vx = fc.X() - axP.X(), vy = fc.Y() - axP.Y(), vz = fc.Z() - axP.Z();
+        const tt = vx * axD.X() + vy * axD.Y() + vz * axD.Z();
+        let rx = vx - tt * axD.X(), ry = vy - tt * axD.Y(), rz = vz - tt * axD.Z();
+        const L = Math.hypot(rx, ry, rz);
+        if (L > 1e-3) { rx /= L; ry /= L; rz /= L; }
+        else {
+          // cilindro COMPLETO (centroide EN el eje): cualquier radial ⊥ al eje sirve
+          const cand = Math.abs(axD.X()) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+          const d0 = cand[0] * axD.X() + cand[1] * axD.Y() + cand[2] * axD.Z();
+          rx = cand[0] - d0 * axD.X(); ry = cand[1] - d0 * axD.Y(); rz = cand[2] - d0 * axD.Z();
+          const L2 = Math.hypot(rx, ry, rz); rx /= L2; ry /= L2; rz /= L2;
+        }
+        const px = axP.X() + tt * axD.X() + (R + 0.35) * rx;
+        const py = axP.Y() + tt * axD.Y() + (R + 0.35) * ry;
+        const pz = axP.Z() + tt * axD.Z() + (R + 0.35) * rz;
+        const sonda = transformShape(oc, makeBox(oc, 0.2, 0.2, 0.2), { translate: [px - 0.1, py - 0.1, pz - 0.1] });
+        let hayMaterial = false;
+        try { hayMaterial = volume(oc, common(oc, shape, sonda)) > 1e-6; } catch { hayMaterial = false; }
+        dotOut = hayMaterial ? -1 : 1;
+      }
       sign = dotOut > 0 ? -1 : 1;
       props.delete?.();
     }
@@ -670,7 +719,8 @@ function draftFacesMin(
     added++;
     ad.delete?.();
   }
-  if (!added) throw new Error('draftFaces: ninguna cara aplicable (paredes ⟂ pullDir)');
+  if (!added) throw new Error(
+    'draftFaces: ninguna pared aplicable — el draft toma planos ⟂ al desmoldeo y cilindros con eje ∥ (cilindro→cono, §2.3.6). Esferas/BSpline no: modela la conicidad en el croquis (Revolución) o excluye esas caras.');
   if (typeof mk.Build === 'function') mk.Build();
   const out = mk.Shape();
   mk.delete?.();
