@@ -11,7 +11,7 @@
   "cerrado": 59,
   "probado": 0,
   "porProbar": 26,
-  "sinDesplegar": 2,
+  "sinDesplegar": 3,
   "despues": 15
  },
  "deploy": {
@@ -76,8 +76,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "96fbaf0",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
