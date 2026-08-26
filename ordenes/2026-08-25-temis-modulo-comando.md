@@ -17,6 +17,7 @@ deploys — que ya vimos que no pueden encimarse (deploy_gotchas).
 
 ## TOCA
 - index.html
+- deploy/nginx-forja.conf
 - public/atrio/index.json
 - scripts/reels-web.py
 - src/forja/brep/ProjectSwitcher.tsx
@@ -40,6 +41,7 @@ deploys — que ya vimos que no pueden encimarse (deploy_gotchas).
 - (nada)
 
 ## PREEXISTENTE
+- scripts/v1-gate.cjs, src/forja/brep/ForgeBRepStudio.tsx (WIP de la otra sesión, 2026-08-26)
 - videos/*.json, scripts/comando-catalogo.cjs, scripts/narracion-gen.py,
   scripts/salud.sh, docs/*, src/forja/brep/occt.ts (otra sesión), src/cinematic/*
   (sudor), y demás sin commitear antes de esta orden.

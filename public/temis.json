@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 18:16",
+ "generado": "2026-08-26 18:17",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -82,7 +82,7 @@
     "estado": "cerrado",
     "prioridad": 999,
     "objetivo": "Reutilizar el tablero TEMIS como MÓDULO (hoy vive embebido en ProjectSwitcher) y montarlo también en comando.html. Y darle a cada tarjeta un ESTADO DE DESPLIEGUE derivado (en-vivo / sin-desplegar / n-a) para coordinar los deploys — que ya …",
-    "toca": 8,
+    "toca": 9,
     "crea": 9,
     "evidencia": 6,
     "evidenciaDeclarada": [
