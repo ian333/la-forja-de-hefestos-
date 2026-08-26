@@ -11,7 +11,7 @@
   "cerrado": 58,
   "probado": 0,
   "porProbar": 25,
-  "sinDesplegar": 1,
+  "sinDesplegar": 2,
   "despues": 15
  },
  "deploy": {
@@ -73,8 +73,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "98aa021",
-    "despliegue": "en-vivo"
+    "commit": "20be116",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-25-temis-probado.md",
