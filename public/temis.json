@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 19:36",
+ "generado": "2026-08-26 21:57",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,9 +8,9 @@
  "conteo": {
   "proximo": 0,
   "enCurso": 1,
-  "cerrado": 58,
+  "cerrado": 59,
   "probado": 0,
-  "porProbar": 25,
+  "porProbar": 26,
   "sinDesplegar": 2,
   "despues": 15
  },
@@ -49,6 +49,36 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-08-26-temis-galeria-panel.md",
+    "slug": "2026-08-26-temis-galeria-panel",
+    "titulo": "TEMIS — la evidencia se recorre A LO ANCHO y el panel deja de ser chico",
+    "fecha": "2026-08-26",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "objetivo": "caza de ian (2026-08-26, mientras probaba): «las imágenes, las pueda recorrer hacia la derecha y no hacia abajo, también el panel está muy pequeño». Hoy la galería de evidencia es una COLUMNA (grid-template-columns:1fr): con 3-6 capturas d…",
+    "toca": 3,
+    "crea": 3,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "la galería de una tarjeta con 3+ capturas se recorre A LO ANCHO (snap), con",
+     "el panel de Temis usa el ancho real de la pantalla (medido en 1900 px)",
+     "las 4 columnas del tablero siguen intactas (mismos testids)",
+     "orden-gate VERDE"
+    ],
+    "cierre": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-…",
+    "cierreCompleto": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-type:x mandatory. Prueba MECÁNICA en el arnés: las 3 figuras tienen la MISMA Y, X distintas, scrollWidth > clientWidth y scrollHeight <= clientHeight — o sea, en FILA de verdad, no apiladas. - Flechas ‹ › + contador n/N, con el índice derivado del scroll REAL (si arrastras con el trackpad el contador sigue). Probado: 1/3 → clic › → 2/3 y el carril avanzó de verdad (scrollLeft subió). - El panel de Temis usa la pantalla: .ps-panel.wide de min(1040px…) a calc(100vw - 24px) con tope 1760. Medido en 1900 px: 1760×938 (antes 1040). LO QUE CAZARON LOS OJOS (el arnés daba verde en los 3 checks): 1. La foto se cortaba abajo y el nav quedaba fuera del panel → tope max-height:42vh + object-fit:contain. 2. La galería vivía al FINAL, debajo de un CIERRE de 30 líneas: para revisar había que scrollear hasta el fondo. La evidencia ahora va ARRIBA, lo primero tras el título, y el nav va sobre el carril. Es la regla de la orden de evidencia aplicada a sí misma: si revisar cansa, no se revisa. GOTCHA NUEVO (costó una vuelta): vite dev cachea el índice de public/ al arrancar — las capturas copiadas DESPUÉS salen 200 pero con el HTML del fallback (Content-Type: text/html, naturalWidth 0 = imagen rota). Cura: reiniciar vite. Es hermano del gotcha de VITE_NO_WATCH con los módulos viejos. Sin deploy: la sesión paralela tiene LA SAL en curso y los deploys no se encinman. Entra en el próximo publish.",
+    "evidenciaSS": [
+     "evidencia/2026-08-26-temis-galeria-panel/01-galeria-horizontal.jpg",
+     "evidencia/2026-08-26-temis-galeria-panel/02-panel-ancho.jpg",
+     "evidencia/2026-08-26-temis-galeria-panel/03-galeria-siguiente.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
     "slug": "2026-08-25-v1-7-kernel-rapido",
@@ -1730,7 +1760,7 @@
     "base": "dímero NUEVO: Na⁺ + H₂O (PAR=na)",
     "tipo": "sim (RHF/aug-cc-pVDZ, gate −24.0 kcal/mol)",
     "estado": "proximo",
-    "manifiesto": false,
+    "manifiesto": true,
     "publicado": false
    },
    {
@@ -1770,6 +1800,7 @@
     "base": "los dos bins de la sal",
     "tipo": "montaje",
     "estado": "proximo",
+    "nota": "IDEA DE IAN (2026-08-26): pintar la NUBE por el POTENCIAL que siente cada punto (signo y fuerza del MEP), en vez de por distancia al O (cosmético). Aquí es donde significa algo: dos iones opuestos y el agua entre ellos, el potencial cambia de signo en medio de la nube. Regla: cada color es dueño de UNA cantidad — reemplaza al oro-por-distancia, no se suma.",
     "manifiesto": false,
     "publicado": false
    }

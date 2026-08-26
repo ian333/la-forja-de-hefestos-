@@ -107,7 +107,9 @@ const CSS = `
 .ps-add .p{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,#FDB813 15%,transparent);color:#FDB813;font-size:22px;flex:0 0 auto}
 .ps-add small{display:block;color:var(--ds-faint,#7E90A9);font-size:10.5px;margin-top:1px}
 .ps-empty{grid-column:1/-1;color:var(--ds-faint,#7E90A9);font-size:12.5px;padding:14px 2px;text-align:center}
-.ps-panel.wide{width:min(1040px,calc(100vw - 24px))}
+/* TEMIS usa la pantalla REAL (caza de ian: «el panel está muy pequeño») — en
+   1900 px el tablero de 4 columnas + la evidencia a lo ancho lo necesitan. */
+.ps-panel.wide{width:calc(100vw - 24px);max-width:1760px;max-height:calc(100vh - 62px)}
 .ps-tabs{display:flex;gap:2px;background:var(--ds-panel2,#16202F);border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:9px;padding:3px}
 .ps-tabs button{all:unset;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;letter-spacing:.01em;padding:6px 12px;border-radius:7px;color:var(--ds-faint,#7E90A9)}
 .ps-tabs button span{color:var(--ds-faint,#7E90A9);font-weight:500;margin-left:5px}

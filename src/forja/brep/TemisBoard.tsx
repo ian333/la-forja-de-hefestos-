@@ -10,7 +10,7 @@
  * comparando su commit contra public/temis-deploy.json. El tablero avisa arriba cuántas hay
  * sin desplegar.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ── TEMIS — el tablero de órdenes (nuestro Jira, sin el impuesto) ─────────────
 // La diosa del orden, madre de las Moiras (hilan, miden, CORTAN). Lee
@@ -46,26 +46,70 @@ function TemisDetalle({ c, onVolver }: { c: TemisCard; onVolver: () => void }) {
         <div className="tm-viol" data-testid="temis-sin-evidencia">✘ SIN EVIDENCIA VISUAL — cerrada sin screenshots. No se puede pedir revisión de esto.</div>
       )}
       {c.falla && <div className="tm-viol" data-testid="temis-falla-detalle">✘ FALLÓ LA PRUEBA DE IAN — {c.falla}</div>}
+      {/* LA EVIDENCIA VA ARRIBA: se abre la tarjeta y SE VE. Antes vivía al final,
+          debajo de un CIERRE de 30 líneas — para revisar había que scrollear hasta
+          el fondo y las flechas quedaban fuera del panel (cazado con los ojos). */}
+      {c.evidenciaSS.length > 0 && <>
+        <h5>Evidencia visual <b>{c.evidenciaSS.length}</b></h5>
+        <Galeria fotos={c.evidenciaSS} />
+      </>}
       {c.objetivo && <><h5>Objetivo</h5><p className="tm-txt">{c.objetivo}</p></>}
       {c.evidenciaDeclarada.length > 0 && <>
         <h5>Evidencia declarada (antes de trabajar)</h5>
         <ul className="tm-ul">{c.evidenciaDeclarada.map((e, i) => <li key={i}>{e}</li>)}</ul>
       </>}
       {c.cierreCompleto && <><h5>Cierre (lo que de verdad pasó)</h5><p className="tm-txt">{c.cierreCompleto}</p></>}
-      {c.evidenciaSS.length > 0 && <>
-        <h5>Evidencia visual <b>{c.evidenciaSS.length}</b></h5>
-        <div className="tm-gal" data-testid="temis-galeria">
-          {c.evidenciaSS.map((src) => (
-            <figure key={src}>
-              <a href={src} target="_blank" rel="noreferrer" title="abrir a tamaño real"><img src={src} alt={pieDeFoto(src)} loading="lazy" /></a>
-              <figcaption>{pieDeFoto(src)}</figcaption>
-            </figure>
-          ))}
-        </div>
-      </>}
     </div>
   );
 }
+/** LA EVIDENCIA SE RECORRE A LO ANCHO (caza de ian 2026-08-26: «que las imágenes
+ *  las pueda recorrer hacia la derecha y no hacia abajo»). Carrusel con
+ *  scroll-snap: el scroll horizontal nativo (trackpad / shift+rueda) sigue vivo;
+ *  las flechas son para el mouse. El contador dice DÓNDE vas — con 6 capturas
+ *  uno se pierde. */
+function Galeria({ fotos }: { fotos: string[] }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [i, setI] = useState(0);
+  const irA = (n: number) => {
+    const el = ref.current; if (!el) return;
+    const k = Math.max(0, Math.min(fotos.length - 1, n));
+    const hijo = el.children[k] as HTMLElement | undefined;
+    if (hijo) el.scrollTo({ left: hijo.offsetLeft - el.offsetLeft, behavior: 'smooth' });
+    setI(k);
+  };
+  // el índice sale del SCROLL REAL (si arrastras con el trackpad, el contador sigue)
+  const alScroll = () => {
+    const el = ref.current; if (!el) return;
+    let mejor = 0, dmin = Infinity;
+    for (let k = 0; k < el.children.length; k++) {
+      const h = el.children[k] as HTMLElement;
+      const d = Math.abs((h.offsetLeft - el.offsetLeft) - el.scrollLeft);
+      if (d < dmin) { dmin = d; mejor = k; }
+    }
+    setI(mejor);
+  };
+  return (
+    <div className="tm-galwrap">
+      {fotos.length > 1 && (
+        <div className="tm-galnav">
+          <button data-testid="temis-gal-prev" onClick={() => irA(i - 1)} disabled={i === 0} title="anterior (o arrastra a los lados)">‹</button>
+          <span data-testid="temis-gal-pos">{i + 1}/{fotos.length}</span>
+          <button data-testid="temis-gal-next" onClick={() => irA(i + 1)} disabled={i >= fotos.length - 1} title="siguiente">›</button>
+          <span className="tm-galhint">— arrastra a los lados o usa las flechas</span>
+        </div>
+      )}
+      <div className="tm-gal" data-testid="temis-galeria" ref={ref} onScroll={alScroll}>
+        {fotos.map((src) => (
+          <figure key={src}>
+            <a href={src} target="_blank" rel="noreferrer" title="abrir a tamaño real"><img src={src} alt={pieDeFoto(src)} loading="lazy" /></a>
+            <figcaption>{pieDeFoto(src)}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export interface TemisJson {
   nombre: string; generado: string;
   wip: { proximo: number; enCurso: number };
@@ -254,9 +298,17 @@ export const TEMIS_CSS = `
 .tm-det h5 b{font-family:'JetBrains Mono',ui-monospace,monospace;letter-spacing:0;color:var(--ds-dim,#A6B4C8)}
 .tm-txt{margin:0;font-size:12.5px;line-height:1.5;color:var(--ds-dim,#A6B4C8);max-width:78ch}
 .tm-ul{margin:0;padding-left:18px;font-size:12px;line-height:1.5;color:var(--ds-dim,#A6B4C8);max-width:78ch}
-.tm-gal{display:grid;grid-template-columns:1fr;gap:12px}
-.tm-gal figure{margin:0;border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:10px;overflow:hidden;background:#070d16}
-.tm-gal img{display:block;width:100%;height:auto}
+.tm-galwrap{display:flex;flex-direction:column;gap:6px;min-width:0}
+.tm-gal{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;padding-bottom:4px;scrollbar-width:thin}
+.tm-gal figure{margin:0;flex:0 0 min(720px,92%);scroll-snap-align:start;border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:10px;overflow:hidden;background:#070d16}
+/* la foto CABE ENTERA con su pie y sus flechas: sin tope se cortaba abajo y el
+   nav quedaba fuera del panel (cazado con los ojos, no por el arnés) */
+.tm-gal img{display:block;width:100%;height:auto;max-height:42vh;object-fit:contain;background:#070d16}
+.tm-galnav{display:flex;align-items:center;gap:8px}
+.tm-galnav button{appearance:none;cursor:pointer;font:inherit;font-size:16px;line-height:1;width:30px;height:26px;border-radius:7px;border:1px solid var(--ds-line,rgba(140,180,255,.1));background:var(--ds-panel2,#16202F);color:var(--ds-text,#DCE7F5)}
+.tm-galnav button:disabled{opacity:.35;cursor:default}
+.tm-galnav span{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--ds-dim,#A6B4C8)}
+.tm-galhint{font-family:inherit !important;color:var(--ds-faint,#7E90A9) !important}
 .tm-gal figcaption{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:var(--ds-dim,#A6B4C8);padding:7px 10px;border-top:1px solid var(--ds-line,rgba(140,180,255,.1))}
 .tm-dep-aviso{border:1px solid rgba(253,184,19,.5);background:rgba(253,184,19,.10);color:#f4cf7a;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:600}
 .tm-dep-aviso b{font-family:'JetBrains Mono',ui-monospace,monospace}
