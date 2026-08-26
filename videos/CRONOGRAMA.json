@@ -55,7 +55,8 @@
       "titulo": "La sal completa — Na⁺ y Cl⁻ separados por el agua",
       "base": "los dos bins de la sal",
       "tipo": "montaje",
-      "estado": "proximo"
+      "estado": "proximo",
+      "nota": "IDEA DE IAN (2026-08-26): pintar la NUBE por el POTENCIAL que siente cada punto (signo y fuerza del MEP), en vez de por distancia al O (cosmético). Aquí es donde significa algo: dos iones opuestos y el agua entre ellos, el potencial cambia de signo en medio de la nube. Regla: cada color es dueño de UNA cantidad — reemplaza al oro-por-distancia, no se suma."
     }
   ],
   "despues": [

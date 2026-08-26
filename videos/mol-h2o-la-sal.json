@@ -1,0 +1,97 @@
+{
+  "id": "mol-h2o-la-sal",
+  "titulo": "La sal — el agua contra un ion (Na⁺···H₂O)",
+  "nota": "LA SAL (2026-08-26): primera SIMULACIÓN nueva sobre la superbase — Na⁺ + H₂O con PAR=na de precompute-water-approach.py (RHF/aug-cc-pVDZ, K=30; gate −24.03 kcal/mol a 2.25 Å = experimento Dzidic&Kebarle 1970; ∫Δρ>0 monótono 0.0159→0.1271). Escena wsal: tomas y capas del rey; el ion es CELESTE (evocativo: Na⁺ es incoloro). Copy escrito PRIMERO.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wsal",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 77
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.wsalframes"
+  },
+  "audio": {
+    "dir": "dist-video/sal-narracion",
+    "narracion": "sal-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey, copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 74,
+    "segs": "segs.json",
+    "ass": "sal.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-la-sal-4k-master.mp4",
+    "h264": "agua-la-sal-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
+  },
+  "capsula": {
+    "bins": [
+      "water-sodium.bin",
+      "water-sodium-efield.bin"
+    ],
+    "guion": "sal.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-water-approach.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-la-sal.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-la-sal-capsula.tar.gz",
+    "pieza": "mol-h2o la sal",
+    "nueva": true,
+    "copy": {
+      "titulo": "A dónde se va la sal cuando desaparece en el agua",
+      "descripcion": "Nunca habías visto A DÓNDE se va la sal. Esto no es una animación: es un ion de sodio y una molécula de agua resueltos con física cuántica (ab initio), y lo que ves es lo que dicen las ecuaciones. 🧂 Cuando echas sal al agua, cada grano se parte en iones. Este es uno: un sodio al que le falta un electrón — once protones, diez electrones, una carga ENTERA (no \"un poquito\", como el agua). Mira su campo eléctrico: sale radial, igual hacia todos lados, perfecto — el campo de un punto, que existe de verdad (las líneas celestes; las azules son las del agua; todo calculado). Y mira al agua sentirlo desde lejos, apuntarle el oxígeno, y deformarse: ese morado son sus electrones jalados hacia el ion. Se pega, cinco veces más fuerte que un puente de hidrógeno. Así el agua lo viste, y por eso la sal desaparece: no se fue, se vistió de agua. Por eso el mar es salado, y ahora mismo pasa en tu sangre. Nada está inventado: la energía calculada (−24.0 kcal/mol a 2.25 Å) es exactamente la medida en el laboratorio (Dzidic & Kebarle, 1970).\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#sal",
+        "#agua",
+        "#química",
+        "#cuántica",
+        "#iones",
+        "#ciencia",
+        "#física",
+        "#mar",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ]
+    }
+  },
+  "guion": {
+    "archivo": "scripts/guiones/sal.txt",
+    "lineas": 21,
+    "palabras": 146,
+    "nota": "20 líneas calcadas al ritmo del rey (7,6,5,6,9,5,6,10,8,6,8,6,6,8,15,7,6,8,8,9) + sello; ≤147 palabras por la cadencia medida de Matilda (0.52 s/pal)"
+  },
+  "fisica": {
+    "metodo": "RHF/aug-cc-pVDZ (PySCF), promolécula Na⁺ + H₂O, Δρ = ρ(complejo) − ρ(Na⁺) − ρ(H₂O); campo MEP real (motor campo_lineas, siembra por flujo)",
+    "gate": {
+      "E_enlace_kcal": -24.03,
+      "d_NaO_A": 2.25,
+      "experimento": "−24.0 kcal/mol, 2.2–2.3 Å (Dzidic & Kebarle, J. Phys. Chem. 1970)",
+      "drho_monotono": true
+    },
+    "color_ion": "celeste = EVOCATIVO (Na⁺ es incoloro; la línea D amarilla es del átomo neutro)"
+  }
+}
