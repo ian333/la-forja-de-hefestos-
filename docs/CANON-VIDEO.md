@@ -171,7 +171,12 @@ frames idénticos en composición. Estandarizar NO cambió ni un pixel del entre
                      ├ triatómico: precompute-triatomic.py
                      └ 2 moléculas: precompute-water-approach.py (dímero, Δρ, campo MEP)
                    GATE de física: observable vs experimento (μ, Re, ⟨S²⟩, E_enlace) ANTES de seguir.
-2. GUION           scripts/guiones/<mol>.txt — frases CORTAS, 1/línea, español MX, CON acentos.
+2. GUION + COPY    scripts/guiones/<mol>.txt — frases CORTAS, 1/línea, español MX, CON acentos.
+                   ⚡ EN EL MISMO PASO se escribe el COPY de publicación (título + descripción +
+                   hashtags = el SPECIAL de comando-catalogo.cjs y `publicar.copy` del manifiesto).
+                   Ian, 2026-08-25: "el título y la descripción deberían estar PRIMERO, sin esperar
+                   el video" — el copy no depende de un solo pixel; esperar al render para
+                   escribirlo dejó a Ian sin nada que pegar en Comando mientras subía 620 MB.
 3. VOZ (Matilda)   narracion-gen.py <mol>  (iangpu, /home/ian/tts-venv/bin/python) → wavs
 4. AUDIO+TIMINGS   assemble-narracion.py <mol> → segs.json (duraciones REALES de cada línea)
 5. BEATS↔VOZ       recalibrar cámara/gates/bondR a los segundos de segs.json (§sincronía). SIEMPRE.
@@ -235,6 +240,74 @@ TODAS las interacciones "Más alto" y las omisiones "Más bajo".
   video NUEVO (p.ej. el video-respuesta a los comentarios), no como post independiente.
 - **Los comentarios son el brief del siguiente video**: la duda que se repite (≥3 veces) ya tiene
   demanda probada y el algoritmo ya validó el tema.
+
+## 👑 LAS LEYES DEL REY (medidas en EL PUENTE, 2026-08-25 — la base de TODO lo que sigue)
+
+**EL PUENTE es el rey** (~120k vistas, +3.5k seguidores con campaña encima; el dato limpio
+a 3 días: 2.7 % de conversión, el DOBLE que O₂). Ian, 2026-08-25: *"el rey será la base de
+todo lo que hagamos"*. Se desarmó cuadro a cuadro (2 fps: ocupación, luminancia, movimiento,
+color dominante) cruzado con las 20 líneas, las 9 tomas y las capas. Esto es lo que dice, y
+en tres puntos **contradice a los docs de neurociencia** — gana el rey, no el doc.
+
+1. **Dos MUNDOS que se ALTERNAN, no se mezclan.** AZUL (campo, las DOS, plano abierto,
+   fill 50-85 %, frío 90-99 %) ↔ MAGENTA (nube, UNA sola, close-up, fill 22-37 %, magenta
+   73-80 %). AZUL = 56 % del video, MAGENTA = 26 %, ORO = 10 %. Cada brinco de mundo es un
+   corte seco con cambio de color COMPLETO — resetea la habituación mejor que un corte dentro
+   del mismo look. ⚠ `atencion-verify` mide "firma cálido+frío SIMULTÁNEA" (la del O₂ viral,
+   98 %) y al rey le da 2-7 % → lo REPRUEBA (55.0 y 58.8 < 60). Son dos gramáticas ganadoras
+   distintas; el verificador solo conoce una. Ley de los gates: un gate que reprueba al rey
+   no decide nada.
+2. **El hueco lo abre la VOZ y lo cierra un CORTE.** l2 a los 4.2 s ("Pero mira lo que
+   traen dentro") → corte a los 7.0 s al mundo MAGENTA, una molécula de cerca. La respuesta
+   llega como IMAGEN 3 s después, no como frase.
+3. **El color es una PALABRA.** Los únicos 8 s con cálido ≥10 % son t=20-28: "El corazón
+   dorado es el oxígeno". Antes y después, cálido = 0 %. El oro no es paleta: es el sustantivo
+   de ESA línea (capa `acc` 19.8-28.6).
+4. **El clímax es una RAMPA de ~7 s montada sobre la línea MÁS LARGA.** fill 51 → 85 % entre
+   t=49 y 56 (pushToBridge = looming) bajo l15 (15 palabras; promedio 7.5). Pico 85 % en
+   **t=60 = 78 %** del video, sobre "Míralos correrse".
+5. **Después del clímax el video se VACÍA para probar la frase.** t=62-68: `campo` apagado,
+   fill 33 %, solo nube — mientras la voz dice "No es una línea. Es la nube reacomodándose".
+   Apagar una capa ES la demostración. Luego pullOut, vuelve al AZUL y termina en **80 % de
+   fill sobre "y tú"**: el último segundo es el 2º pico del video (peak-end, literal).
+6. **Los primeros 7 s NO cortan.** Una toma, las dos moléculas, campo encendido, fill 54-56 %,
+   movimiento 17/s, voz a los 0.4 s — y retuvo 55 % a los 5 s. Los docs piden pattern-interrupt
+   cada 3-5 s; el rey dice: **la estructura necesita 7 s para leerse.** El gancho es
+   legibilidad + movimiento + voz temprana, no un corte.
+
+**Reparto medido por acto:** presentación 9 % · explicación (electrones/oxígeno/campo) **58 %**
+· evento (se acercan + puente) 22 % · payoff 11 %. El rey es una CLASE disfrazada de
+espectáculo: por eso los guardados (3.4 %) y por eso la curva es plana después de los 5 s.
+**Guion:** 20 líneas · 149 palabras · 7.5 pal/línea (5-15) · 2.3 pal/s · huecos 0.55 s · la
+voz ocupa el 85 % del tiempo · una idea por línea · verbos emocionales (codicioso, jala,
+se agarra) · "y tú" es la última palabra.
+
+**LA PLANTILLA (esto es lo que se copia — no el agua):**
+```
+0.0-0.4   silencio; frame 0 = los DOS protagonistas, mundo AZUL, fill ≥54 %, moviéndose
+0.4-9 %   l1-2: qué es (COTIDIANO, en las manos del público) + el HUECO
+9 %       CORTE → mundo MAGENTA: UNO solo, de cerca (responde el hueco con imagen)
+9-26 %    l3-6: qué es la nube (una idea por línea, 5-9 palabras)
+26-36 %   la palabra-color ("dorado") — el único cálido del video
+36-53 %   ángulo bajo + spin ardiendo: el conflicto (verbos: codicioso, jala)
+53-67 %   mundo AZUL, nube al 58 %: "estas líneas no son adorno, son el campo calculado"
+67-78 %   RAMPA de fill 50→85 % en ~7 s (looming) bajo la línea MÁS LARGA → clímax al 78 %
+78-88 %   apagar una capa para PROBAR la frase ("no es una línea")
+88-100 %  pullOut, vuelve al AZUL al 80 %, "y tú" + sello "GAIA Prime. Aprende a ver lo invisible."
+requisitos: DOS protagonistas distintos · cotidiano · un campo que JALA · el puente es NUBE ·
+            ~13 bohr (régimen nativo del motor) · 20 líneas / ~150 palabras / 77 s
+```
+Lo que NO cumple la plantilla y por eso convirtió menos: N objetos iguales (gauss, hexágono —
+no hay drama entre seis iguales), nombre de ley como gancho, cierre técnico.
+
+**Decisiones (Ian, 2026-08-25):** (a) el sello **GAIA Prime va al final de toda pieza
+nueva** — el rey no lo tenía, se agrega DESPUÉS del "y tú", nunca en su lugar. (b) **Loop**
+("que empiece como termina", rewatch = señal #1 de IG): PREGUNTA ABIERTA — el rey ya cierra
+en el mismo mundo (AZUL→AZUL) y da `loop` 0.886 en atencion-verify; empatar la pose final con
+la inicial es un cambio de 1 parámetro en `pullOut` y se mide contra ese 0.886. No se toca
+sin A/B. (c) Los **quick wins** salen del rey: mismo bin, mismos átomos, otra cámara del
+registro (`?cam=`), otro guion con otro payoff cotidiano — cero simulación, cero escena
+nueva. El primero: EL SUDOR (camB + "por qué el sudor te enfría").
 
 ## 👁️ LEGIBILIDAD: si se puede contar mal, el encuadre falló
 
@@ -416,9 +489,14 @@ Componer nueva = Workflow de compositores + jueces + refine.
 El Centro de Comando cura los videos crudos (`produccion.json`) en piezas publicables
 (`catalogo.json`) vía `scripts/comando-catalogo.cjs`. Para publicar una pieza NARRADA de la serie:
 
-1. **Master a PRIME**: `/mnt/hdd/biblioteca/moleculas/mol-<mol>-<tema>.mp4` (desde la laptop; iangpu
-   no tiene llave a PRIME).
-2. **Añadir el `SPECIAL`** en `scripts/comando-catalogo.cjs` — un objeto por `piece.id` con:
+1. **Master a PRIME**: `/mnt/hdd/biblioteca/moleculas/mol-<mol>-<tema>.mp4`. **Desde iangpu** (verificado
+   2026-08-25: iangpu SÍ tiene llave a PRIME y a ATLAS, incluso por LAN 192.168.100.4 — la nota vieja
+   "iangpu no tiene llave" era falsa y costó un intento de subir 620 MB por la laptop). PRIME va por
+   Tailscale: 587 MB tardan >10 min → lanzar DETACHED con log, nunca en un ssh en foreground.
+2. **El copy YA está en el manifiesto** (`publicar.copy` = título + descripción + hashtags, escrito en el
+   paso 2 con el guion). `comando-catalogo.cjs` lo lee de `videos/*.json` por `publicar.pieza` — el
+   `SPECIAL` del script queda solo para piezas viejas sin manifiesto. Cero edición de código por pieza.
+   El copy sigue la fórmula de O₂ — un objeto con:
    `codigo` (ruta de la cápsula), `titulo`, `descripcion` (la FÓRMULA de copy de O₂: gancho "nunca
    habías…" + qué VES + wtf real + "Nada está inventado" + identidad "es el aire que respiras"),
    `hashtags[]`. Los `piece.id` salen de `produccion.json` (ej. `mol-h2o agua v2`).

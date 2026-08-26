@@ -217,6 +217,13 @@ SPECIAL['mol-h2o el puente'] = {
   hashtags: ['#agua', '#química', '#cuántica', '#enlacedehidrógeno', '#ciencia', '#física', '#biología', '#aprendeentiktok', '#4k', '#gaia'],
 };
 
+SPECIAL['mol-h2o el sudor'] = {
+  codigo: 'moleculas/_code/mol-h2o-el-sudor-capsula.tar.gz',
+  titulo: 'Por qué el sudor te enfría (y por qué tiritas al salir de bañarte)',
+  descripcion: `Nunca habías visto POR QUÉ el sudor te enfría. Esto no es una animación: son DOS moléculas de agua resueltas con física cuántica (ab initio), y lo que ves es lo que dicen las ecuaciones. 💧 Cada puntito que parpadea es un electrón —una nube de probabilidad, no una bolita—. El oxígeno (el corazón dorado) es codicioso: jala los electrones y deja un lado negativo y otro positivo, como una pila chiquita. Esas cargas encienden el campo eléctrico REAL (las líneas azules, calculadas línea por línea) y cuando dos aguas se acercan, el campo de una jala los electrones de la otra: nace el puente de hidrógeno, esa nube morada que se enciende entre las dos. Y aquí está el truco: para EVAPORARSE, cada molécula tiene que ROMPER ese puente. Romperlo cuesta energía… y esa energía la roba de tu piel. Por eso el sudor te enfría. Por eso tiritas al secarte. Por eso soplarle a la sopa funciona. Nada está inventado: el calor que se lleva cada gota (unos 10 kcal por mol) es exactamente el de los puentes que rompe.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.`,
+  hashtags: ['#agua', '#sudor', '#química', '#cuántica', '#enlacedehidrógeno', '#ciencia', '#física', '#calor', '#aprendeentiktok', '#4k', '#gaia'],
+};
+
 SPECIAL['mol-h2o el anillo'] = {
   codigo: 'moleculas/_code/mol-h2o-el-anillo-capsula.tar.gz',
   titulo: 'TRES gotas de agua hacen un anillo — y juntas jalan 12% más fuerte que en pareja',
@@ -255,7 +262,29 @@ SPECIAL['fisica-cargas gauss'] = {
 };
 
 
+// EL COPY VIVE EN EL MANIFIESTO (canon 2026-08-26: título+descripción+hashtags se escriben en
+// el paso del GUION, no al final). `videos/<id>.json → publicar.copy` manda; SPECIAL queda
+// para las piezas viejas sin manifiesto. Así el copy nace ANTES que el video y Comando lo
+// muestra en cuanto la pieza aparece en el catálogo, sin tocar este archivo por pieza.
+const MANIFIESTO_COPY = (() => {
+  const out = {};
+  try {
+    const dir = path.join(__dirname, '..', 'videos');
+    for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.json') && x !== 'CRONOGRAMA.json')) {
+      try {
+        const m = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+        const c = m.publicar && m.publicar.copy;
+        if (m.publicar && m.publicar.pieza && c && c.titulo) {
+          out[m.publicar.pieza] = { titulo: c.titulo, descripcion: c.descripcion || '', hashtags: c.hashtags || [],
+            ...(m.publicar.capsulaRel ? { codigo: m.publicar.capsulaRel } : {}) };
+        }
+      } catch {}
+    }
+  } catch {}
+  return out;
+})();
 function copyFor(piece) {
+  if (MANIFIESTO_COPY[piece.id]) return MANIFIESTO_COPY[piece.id];
   if (SPECIAL[piece.id]) return SPECIAL[piece.id];
   const f = piece.familia;
   if (f === 'clase') {
