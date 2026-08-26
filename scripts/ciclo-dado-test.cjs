@@ -112,6 +112,53 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('PUENTE E2: el vaso MEDIDO del árbol cotiza como el vaso ESCRITO a mano (±2 %) — misma pieza, dos orígenes', cerca(p2.veredicto.precioMoldeUSD, v2b.veredicto.precioMoldeUSD, 0.02 * v2b.veredicto.precioMoldeUSD), `árbol $${p2.veredicto.precioMoldeUSD.toLocaleString()} vs escrito $${v2b.veredicto.precioMoldeUSD.toLocaleString()}`);
     const pc = ed.estacion1(ed.piezaDesdeArbol(oc, occt.makeBox(oc, 40, 40, 40), { nombre: 'CAJA SIN CASCARÓN' }));
     check('PUENTE CONTROL: sin cascarón la pieza es MACIZA (pared 40) → E1 la REPRUEBA', pc.dado.veredicto === 'REPROBADO' && pc.dado.wallMm === 40, `${pc.dado.veredicto} · pared ${pc.dado.wallMm} · t_c ${(pc.dado.tcS / 60).toFixed(1)} min`);
+
+    // ══ v1·3 — E3 POR PIEZA: el acero talla TU sólido, colocado en SU base ══
+    console.log('── v1·3 · E3 POR PIEZA — el acero del vaso del árbol');
+    const mm = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'mold.ts'));
+    const e2v = ed.estacion2(pz);                          // pz = el vaso del árbol (pared 3, redondo, SIN draft)
+    const av = ed.construirAceroE3(oc, e2v.pkg, false, undefined, pz);
+    check('v1·3: el acero del vaso usa SUS dims de COMPRA (≠ cubo)',
+      av.compra.ifx !== acero.compra.ifx || av.compra.Hc !== acero.compra.Hc,
+      `vaso ${av.compra.ifx}×${av.compra.ify}×${av.compra.Hc}/${av.compra.Hk} vs cubo ${acero.compra.ifx}×${acero.compra.ify}×${acero.compra.Hc}/${acero.compra.Hk}`);
+    check('v1·3: cuerpos = 2 y cavidad ∩ núcleo = ∅', av.r.bodies === 2 && ed.interseccionMitades(oc, av.r.cavityPlate, av.r.macho).ok,
+      `bodies ${av.r.bodies}`);
+    // bbox EXACTA (Bnd_Box): shapeBBox mide la MALLA y la cuerda del cilindro
+    // teselado corre el centro 0.12 mm en X (medido) — el instrumento mentía, no la colocación.
+    const exacto = (sh) => {
+      const box = new oc.Bnd_Box_1(); oc.BRepBndLib.Add(sh, box, false);
+      const mn = box.CornerMin(), mx = box.CornerMax();
+      const r = { min: [mn.X(), mn.Y(), mn.Z()], max: [mx.X(), mx.Y(), mx.Z()] };
+      box.delete?.(); mn.delete?.(); mx.delete?.(); return r;
+    };
+    const bbVd = exacto(av.dadoD);
+    const colV = av.colocacion;
+    check('v1·3: la pieza queda CENTRADA en su base (el volteo ya no asume la esquina 20/20)',
+      Math.abs((bbVd.max[0] + bbVd.min[0]) / 2 - colV.centroX) < 0.1 && Math.abs((bbVd.max[1] + bbVd.min[1]) / 2 - colV.centroY) < 0.1,
+      `centro (${((bbVd.max[0] + bbVd.min[0]) / 2).toFixed(2)}, ${((bbVd.max[1] + bbVd.min[1]) / 2).toFixed(2)}) vs base (${colV.centroX}, ${colV.centroY})`);
+    check('v1·3: la BOCA de la pieza cae EN la partición de SU base',
+      Math.abs((bbVd.max[2] - colV.zPartBase) - pz.local.bocaZmm) < 0.25,
+      `top pieza ${bbVd.max[2].toFixed(2)} − partición ${colV.zPartBase} = ${(bbVd.max[2] - colV.zPartBase).toFixed(2)} ≈ boca ${pz.local.bocaZmm}`);
+    const vv = ed.verificacionE3(oc, av, ed.declDePieza(pz));
+    for (const m of vv.medidas)
+      check(`v1·3 vaso · ${m.componente} · ${m.cota} [${m.vista}]`, m.ok, `declarado ${m.declarado} vs medido ${m.medido} (±${m.tolMm})`);
+    check('v1·3: VERIFICACIÓN del vaso completa (declarado≈medido de SU sólido)', vv.ok, vv.resumen);
+    // MEDIDO, no supuesto: el vaso RECTO (draft 0) — paredes verticales ROZAN, no traban.
+    const mallaV = (sh) => { const t = occt.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
+    const rayoV = ed.pruebaDelRayo([
+      { nombre: 'cavidad (sube +Z, lado A)', malla: mallaV(av.r.cavityPlate), sube: true },
+      { nombre: 'núcleo (baja −Z, lado B)', malla: mallaV(av.r.macho), sube: false },
+    ], { res: 384 });
+    check('v1·3 MEDIDO: el vaso recto SALE con paredes VERTICALES (rozan, no traban — §2.3.6 vive en E1)',
+      rayoV.atrapados === 0 && rayoV.mitades.some((h) => h.nVerticales > 0),
+      `${rayoV.veredicto} · atrapadas ${rayoV.atrapados} · verticales ${rayoV.mitades.map((h) => h.nVerticales).join('/')}`);
+    // CONTROL: el CUBO con pieza=DADO_PIEZA es BIT-IGUAL al camino clásico.
+    const aD = ed.construirAceroE3(oc, e2.pkg, false, undefined, ed.DADO_PIEZA);
+    const bb1 = mm.shapeBBox(oc, acero.r.cavityPlate), bb2 = mm.shapeBBox(oc, aD.r.cavityPlate);
+    const dMax = Math.max(...[0, 1, 2].flatMap((i) => [Math.abs(bb1.min[i] - bb2.min[i]), Math.abs(bb1.max[i] - bb2.max[i])]));
+    check('v1·3 CONTROL: el cubo con pieza=DADO_PIEZA es BIT-IGUAL al camino clásico',
+      dMax < 1e-9 && Math.abs(acero.r.vols.cavity - aD.r.vols.cavity) < 1e-6 && Math.abs(acero.r.vols.macho - aD.r.vols.macho) < 1e-6,
+      `Δbbox ${dMax.toExponential(1)} · Δvol cavity ${Math.abs(acero.r.vols.cavity - aD.r.vols.cavity).toExponential(1)}`);
   }
   const malla = (sh) => { const t = occt.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
   const corre = (shape) => {

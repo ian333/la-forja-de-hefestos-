@@ -1129,7 +1129,7 @@ export interface PiezaSpec {
   solidUndercut?: (oc: any) => any;
   inCavity?: (x: number, y: number, z: number) => boolean;
   /** dims LOCALES para colocacionEnLaBase (hoy el 20/20/39.5 del cubo). */
-  local?: { semiXmm: number; semiYmm: number; alturaMm: number; bocaZmm: number };
+  local?: { semiXmm: number; semiYmm: number; alturaMm: number; bocaZmm: number; cxMm: number; cyMm: number };
 }
 
 /** EL CUBO como PiezaSpec — captura EXACTA de lo que estacion1Dado/estacion2Dado
@@ -1166,7 +1166,7 @@ export const DADO_PIEZA: PiezaSpec = {
   },
   solidRecto: dadoRectoShape, solidDraft: dadoDraftShape, solidUndercut: dadoUndercutShape,
   inCavity: dentroDadoLocal,
-  local: { semiXmm: 20, semiYmm: 20, alturaMm: 40, bocaZmm: 39.5 },
+  local: { semiXmm: 20, semiYmm: 20, alturaMm: 40, bocaZmm: 39.5, cxMm: 20, cyMm: 20 },
 };
 
 /** EL VASO como spec de la Máquina — ⌀80×20 pared 3, REDONDO (cavityShape round,
@@ -1337,7 +1337,12 @@ export function piezaDesdeArbol(oc: any, shape: any, m: ArbolPiezaMeta): PiezaSp
       },
     },
     solidRecto: () => shape, solidDraft: () => shape,
-    local: { semiXmm: L / 2, semiYmm: W / 2, alturaMm: H, bocaZmm: Math.max(0, H - 0.5) },
+    // v1·3: centro REAL del marco local (el vaso vive centrado en 0,0 — el cubo en su
+    // esquina 20,20) y la boca en la Z ABSOLUTA del bbox (piezas con z0≠0 no se corren).
+    local: {
+      semiXmm: L / 2, semiYmm: W / 2, alturaMm: H, bocaZmm: Math.max(bb.min[2], bb.max[2] - 0.5),
+      cxMm: r2((bb.min[0] + bb.max[0]) / 2), cyMm: r2((bb.min[1] + bb.max[1]) / 2),
+    },
   };
 }
 function arbolBBoxExacta(oc: any, shape: any): { min: [number, number, number]; max: [number, number, number] } {
@@ -1445,7 +1450,7 @@ export interface Estacion3Dado {
 /** La arquitectura del molde del dado, EXPLICADA — cada dimensión con la
  *  aritmética que la produjo, nada de números caídos del cielo. Todo sale del
  *  MISMO pkg de la estación 2 (una sola corrida de la Máquina por ciclo). */
-export function estacion3Dado(pkg: MoldPackage): Estacion3Dado {
+export function estacion3Dado(pkg: MoldPackage, pieza?: PiezaSpec): Estacion3Dado {
   const asm = packageToAssemblySpec(pkg);
   const id = insertDims(asm);
   const b = pkg.base;
@@ -1469,9 +1474,13 @@ export function estacion3Dado(pkg: MoldPackage): Estacion3Dado {
   ];
   const need = Math.max(b.envelope.wmm, b.envelope.lmm) + 2 * b.reserveMm;
   return {
-    apertura: 'Z — la decide LA BOCA del dado (única dirección sin undercuts; el DFM de la estación 1 ya lo garantizó)',
+    apertura: pieza
+      ? `Z — la decide LA BOCA de ${pieza.nombre} (única dirección sin undercuts; el DFM de la estación 1 ya la juzgó)`
+      : 'Z — la decide LA BOCA del dado (única dirección sin undercuts; el DFM de la estación 1 ya lo garantizó)',
     particion: `PLANA, en la boca (z=0 de la pieza): la partición más simple que existe — complejidad mínima, sello perfecto (A-061/A-062)`,
-    draft: 'el dado gana su draft REAL: 1.5° tallado (Tabla 2.14, ABS·SPI B-3) — hasta la estación 2 iba DECLARADO; aquí el acero se lo impone a la pieza',
+    draft: pieza
+      ? `pieza del ÁRBOL: el acero talla TU sólido TAL CUAL — el draft es el que TU pieza trae (${pieza.pieza.part.draftDeg ?? 0}° declarado; la E1 lo juzgó §2.3.6 y aquí se MIDE del B-Rep)`
+      : 'el dado gana su draft REAL: 1.5° tallado (Tabla 2.14, ABS·SPI B-3) — hasta la estación 2 iba DECLARADO; aquí el acero se lo impone a la pieza',
     insertos: [
       {
         nombre: 'INSERTO DE CAVIDAD (hembra — talla el exterior)',
@@ -1573,7 +1582,7 @@ export function dentroDadoLocal(x: number, y: number, z: number): boolean {
   return x < ii || x > 38 - ii + 2 || y < ii || y > 38 - ii + 2;
 }
 
-export function colocacionEnLaBase(pkg: MoldPackage) {
+export function colocacionEnLaBase(pkg: MoldPackage, local?: { cxMm: number; cyMm: number; bocaZmm: number }) {
   const asm = packageToAssemblySpec(pkg);
   const z = plateStackZ(asm);
   const centroX = asm.widthMm / 2, centroY = (asm.depthMm ?? asm.widthMm) / 2;
@@ -1584,9 +1593,12 @@ export function colocacionEnLaBase(pkg: MoldPackage) {
   // desplazamiento de 29.2 mm fue un parche mío con reglas de runner; el libro voltea.
   // Mapa (rotación 180° sobre X + colocación):  global = (x + tx, ty − y, tz − z)
   //   boca (z_local 39.5) → partición (146) · base cerrada (z_local 0) → 185.5 (arriba)
-  const tx = centroX - 20;                                   // pieza centrada en x
-  const ty = centroY + 20;                                   // y volteada queda centrada
-  const tz = zPartBase + 39.5;                               // la boca cae EN la partición
+  // v1·3 — POR PIEZA: el 20/20/39.5 era el marco local del CUBO horneado. La pieza
+  // trae su centro (cxMm/cyMm) y su boca (bocaZmm); sin pieza, el cubo (bit-igual).
+  const lo = local ?? { cxMm: 20, cyMm: 20, bocaZmm: 39.5 };
+  const tx = centroX - lo.cxMm;                              // pieza centrada en x
+  const ty = centroY + lo.cyMm;                              // y volteada queda centrada
+  const tz = zPartBase + lo.bocaZmm;                         // la boca cae EN la partición
   const aGlobal = (x: number, y: number, z: number): [number, number, number] => [x + tx, ty - y, tz - z];
   const aLocal = (X: number, Y: number, Z: number): [number, number, number] => [X - tx, ty - Y, tz - Z];
   return {
@@ -1598,14 +1610,22 @@ export function colocacionEnLaBase(pkg: MoldPackage) {
   };
 }
 
-export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false, escala?: { cav: number; core: number }): AceroE3 {
+export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false, escala?: { cav: number; core: number }, pieza?: PiezaSpec): AceroE3 {
   const asm = packageToAssemblySpec(pkg);
   const id = insertDims(asm);
-  const dadoLocal = undercut ? dadoUndercutShape(oc) : dadoDraftShape(oc);   // control negativo VISIBLE
+  // v1·3 — E3 POR PIEZA: el sólido y el marco local vienen de la PIEZA; sin pieza,
+  // el cubo clásico (bit-igual — el gate lo compara). El undercut de control es del
+  // cubo salvo que la pieza traiga el suyo.
+  const mkSolid = pieza ? (pieza.solidDraft ?? pieza.solidRecto) : undefined;
+  if (pieza && !mkSolid) throw new Error(`E3: ${pieza.nombre} no trae sólido (solidDraft/solidRecto)`);
+  const dadoLocal = pieza
+    ? (undercut && pieza.solidUndercut ? pieza.solidUndercut(oc) : mkSolid!(oc))
+    : (undercut ? dadoUndercutShape(oc) : dadoDraftShape(oc));   // control negativo VISIBLE
+  const lo = pieza?.local;
   // ── EL VOLTEO: se parte en el marco LOCAL (la convención probada de splitMold, boca
   // arriba) y se ROTA EL CONJUNTO 180° sobre X + colocación. Así la CAVIDAD queda ARRIBA
   // (lado A), el MACHO sube desde B, y la boca mira a B — la Fig 7.2 del libro.
-  const col = colocacionEnLaBase(pkg);
+  const col = colocacionEnLaBase(pkg, lo);
   // E9 (orden ciclo-dado-estacion9): EL GANCHO SE JALA. splitMold corre DOS
   // veces con escalas steel-safe distintas (§10.2.2 opción A: cavidad s BAJO,
   // macho s ALTO — corregir siempre es QUITAR acero) y se MEZCLAN mitades. El
@@ -1615,7 +1635,7 @@ export function construirAceroE3(oc: any, pkg: MoldPackage, undercut = false, es
   const opts = (scale: number) => ({
     scale, pinch: 0.5,
     plateThickness: id.Hk,                                   // respaldo del núcleo = COMPRA
-    block: { w: id.ifx, d: id.ify, h: id.Hc, x: 20, y: 20, z: 39.5 - id.Hc / 2 },
+    block: { w: id.ifx, d: id.ify, h: id.Hc, x: lo?.cxMm ?? 20, y: lo?.cyMm ?? 20, z: (lo?.bocaZmm ?? 39.5) - id.Hc / 2 },
   });
   const r = splitMold(oc, dadoLocal, opts(escala?.cav ?? 1));
   if (escala && Math.abs(escala.core - escala.cav) > 1e-9) {
@@ -1645,25 +1665,45 @@ export interface VerificacionE3 { medidas: MedidaE3[]; ok: boolean; resumen: str
  *  técnico donde se comprueba. El draft no se lee del parámetro: se mide de las
  *  NORMALES de las caras (draftAnalysis). La conservación de volumen ata las tres
  *  piezas al bloque: si algo se tallo mal, la suma delata. */
-export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
+/** v1·3 — lo DECLARADO ya no es el cubo horneado: viene de la pieza (default = el cubo). */
+export interface DeclE3 { Lmm: number; Wmm: number; Hmm: number; wallMm: number; pisoMm: number; draftDeg: number }
+export function declDePieza(p: PiezaSpec): DeclE3 {
+  return {
+    Lmm: p.spec.Lmm, Wmm: p.spec.Wmm, Hmm: p.spec.Hmm,
+    wallMm: p.pieza.wallMm, pisoMm: p.pieza.wallMm,           // cascarón: piso = pared
+    draftDeg: p.pieza.part.draftDeg ?? 0,                     // el draft REAL de su sólido (0 si no trae feature)
+  };
+}
+export function verificacionE3(oc: any, a: AceroE3, decl?: DeclE3): VerificacionE3 {
+  const d = decl ?? { Lmm: 40, Wmm: 40, Hmm: 40, wallMm: 2, pisoMm: 2, draftDeg: 1.5 };   // el cubo
+  const comp = decl ? 'pieza' : 'dado';
   const M: MedidaE3[] = [];
   const mide = (componente: string, cota: string, declarado: number, medido: number, tolMm: number, vista: string) =>
     M.push({ componente, cota, declarado: +declarado.toFixed(3), medido: +medido.toFixed(3), tolMm, ok: Math.abs(medido - declarado) <= tolMm, vista });
 
-  const bbD = shapeBBox(oc, a.dadoD);
-  const bbC = shapeBBox(oc, a.r.cavityPlate);
-  const bbM = shapeBBox(oc, a.r.macho);
-  const bbK = shapeBBox(oc, a.r.corePlate);
+  // v1·3: para la pieza del ÁRBOL la bbox es EXACTA (Bnd_Box) — shapeBBox mide la
+  // MALLA y a un cilindro ⌀80 lo lee 79.77 (la lección del PUENTE). El cubo clásico
+  // se queda con la malla: la exacta REVIENTA en el loft BSpline del dado
+  // (wasmTable.get — excepción C++ de OCC, medida en el gate) y para cajas la malla
+  // ES exacta. Fallback a malla si la exacta no come una superficie (fillet/loft).
+  const bb = (sh: any) => {
+    if (!decl) return shapeBBox(oc, sh);
+    try { return arbolBBoxExacta(oc, sh); } catch { return shapeBBox(oc, sh); }
+  };
+  const bbD = bb(a.dadoD);
+  const bbC = bb(a.r.cavityPlate);
+  const bbM = bb(a.r.macho);
+  const bbK = bb(a.r.corePlate);
 
-  // ── EL DADO (la pieza) ──
-  mide('dado', 'ancho X en la boca', 40, bbD.max[0] - bbD.min[0], 0.02, 'PLANTA (SUP)');
-  mide('dado', 'fondo Y en la boca', 40, bbD.max[1] - bbD.min[1], 0.02, 'PLANTA (SUP)');
-  mide('dado', 'alto Z', 40, bbD.max[2] - bbD.min[2], 0.02, 'FRENTE (FRE)');
+  // ── LA PIEZA (el dado o la del árbol — decl manda) ──
+  mide(comp, 'ancho X en la boca', d.Lmm, bbD.max[0] - bbD.min[0], 0.02, 'PLANTA (SUP)');
+  mide(comp, 'fondo Y en la boca', d.Wmm, bbD.max[1] - bbD.min[1], 0.02, 'PLANTA (SUP)');
+  mide(comp, 'alto Z', d.Hmm, bbD.max[2] - bbD.min[2], 0.02, 'FRENTE (FRE)');
   // pared nominal EN la partición: (exterior − hueco)/2, ambos máximos ocurren arriba
-  mide('dado', 'pared nominal EN la partición', 2, ((bbD.max[0] - bbD.min[0]) - (bbM.max[0] - bbM.min[0])) / 2, 0.06, 'SECCIÓN frontal');
+  mide(comp, 'pared nominal EN la partición', d.wallMm, ((bbD.max[0] - bbD.min[0]) - (bbM.max[0] - bbM.min[0])) / 2, 0.06, 'SECCIÓN frontal');
   // piso: la brecha entre el macho y el dado en el extremo CERRADO — con el VOLTEO el
   // piso quedó ARRIBA; max() de los dos candidatos lo hace agnóstico de orientación.
-  mide('dado', 'piso', 2, Math.max(bbM.min[2] - bbD.min[2], bbD.max[2] - bbM.max[2]), 0.05, 'SECCIÓN frontal');
+  mide(comp, 'piso', d.pisoMm, Math.max(bbM.min[2] - bbD.min[2], bbD.max[2] - bbM.max[2]), 0.05, 'SECCIÓN frontal');
   // draft MEDIDO DEL SÓLIDO por rebanadas (dibujo técnico): ancho abajo vs ancho
   // arriba → ángulo. NO se usa draftAnalysis para esto: las paredes del loft son
   // superficies REGLADAS (BSpline, no 'plane') y las mandaba a 'curvas' sin medir —
@@ -1688,11 +1728,11 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
     const wHi = (() => { const sl = rebanadaTecho(shape, bb.max[2], 0.4); return sl.max[0] - sl.min[0]; })();
     return Math.atan((Math.abs(wHi - wLo) / 2) / ((bb.max[2] - bb.min[2]) - 0.4)) * 180 / Math.PI;
   };
-  mide('dado', 'draft EXTERIOR medido (°)', 1.5, draftDosExtremos(a.dadoD, bbD), 0.1, 'FRENTE (rebanadas)');
-  mide('dado', 'draft INTERIOR del hueco medido (°)', 1.5, draftDosExtremos(a.r.macho, bbM), 0.12, 'FRENTE (rebanadas)');
+  mide(comp, 'draft EXTERIOR medido (°)', d.draftDeg, draftDosExtremos(a.dadoD, bbD), 0.1, 'FRENTE (rebanadas)');
+  mide(comp, 'draft INTERIOR del hueco medido (°)', d.draftDeg, draftDosExtremos(a.r.macho, bbM), 0.12, 'FRENTE (rebanadas)');
   // complementario: ninguna cara PLANA casi-vertical sin draft (las regladas ya se midieron arriba)
   const da = draftAnalysis(oc, a.dadoD, [0, 0, 1], 1.4);
-  mide('dado', 'caras PLANAS sin draft (<1.4°)', 0, da.requiresDraft.length, 0, 'todas las caras');
+  mide(comp, 'caras PLANAS sin draft (<1.4°)', 0, da.requiresDraft.length, 0, 'todas las caras');
 
   // ── INSERTO DE CAVIDAD = acero de COMPRA ──
   mide('inserto cavidad', 'ancho X', a.compra.ifx, bbC.max[0] - bbC.min[0], 0.02, 'PLANTA (SUP)');
@@ -1705,8 +1745,8 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
   // el respaldo del macho quedó BAJO la partición (lado B) tras el volteo
   mide('núcleo (respaldo)', 'espesor de placa = Hk de compra', a.compra.Hk, a.zPart - bbK.min[2], 0.02, 'FRENTE (FRE)');
   // el macho SUBE hasta 2 mm bajo la base cerrada (que ahora es el TECHO de la pieza)
-  mide('núcleo (macho)', 'sube hasta el piso (2 mm bajo la base cerrada)', bbD.max[2] - 2, bbM.max[2], 0.05, 'SECCIÓN frontal');
-  mide('núcleo (macho)', 'ancho del hueco en la boca', 36, bbM.max[0] - bbM.min[0], 0.06, 'PLANTA (SUP)');
+  mide('núcleo (macho)', `sube hasta el piso (${d.pisoMm} mm bajo la base cerrada)`, bbD.max[2] - d.pisoMm, bbM.max[2], 0.05, 'SECCIÓN frontal');
+  mide('núcleo (macho)', 'ancho del hueco en la boca', d.Lmm - 2 * d.wallMm, bbM.max[0] - bbM.min[0], 0.06, 'PLANTA (SUP)');
 
   // ── INVARIANTES DEL CONJUNTO ──
   mide('conjunto', 'cuerpos del molde (cavity + macho)', 2, a.r.bodies, 0, 'booleana');
@@ -1732,7 +1772,8 @@ export function verificacionE3(oc: any, a: AceroE3): VerificacionE3 {
  * ROJO si no cuadra. liftNucleo = el desplazamiento con que la escena muestra
  * el núcleo abierto (la cota apunta a lo que VES).
  */
-export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number): Array<{ role: string; dims: import('./mold-dimensions').Dim3D[] }> {
+export interface MarcoCotasE3 { comp: string; x0: number; y0: number; L: number; W: number; H: number; wall: number; piso: number; draftDeg: number }
+export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number, marco?: MarcoCotasE3): Array<{ role: string; dims: import('./mold-dimensions').Dim3D[] }> {
   const M = new Map(v.medidas.map((m) => [m.componente + '·' + m.cota, m]));
   const dim = (
     key: string, label: string, pa: [number, number, number], pb: [number, number, number],
@@ -1748,6 +1789,10 @@ export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number):
     };
   };
   const zP = a.zPart, L = liftNucleo;
+  // v1·3 — los ANCLAJES salen del MARCO de la pieza (default = el cubo, mismos números).
+  const c = marco ?? { comp: 'dado', x0: 0, y0: 0, L: 40, W: 40, H: 40, wall: 2, piso: 2, draftDeg: 1.5 };
+  const cx = c.x0 + c.L / 2, cy = c.y0 + c.W / 2;
+  const ifx = a.compra.ifx, ify = a.compra.ify;
   // ⚠ LOS ANCLAJES VIAJAN CON LA PIEZA — ahora por el MAPA DEL VOLTEO (rotación 180°X +
   // colocación, Fig 7.2): P() manda el punto local por `aGlobal`. Los anclajes del acero
   // que ya trabajan en z global (zP) solo voltean su XY. La cavidad quedó ARRIBA de la
@@ -1757,20 +1802,20 @@ export function cotasCicloE3(v: VerificacionE3, a: AceroE3, liftNucleo: number):
   const PXY = (x: number, y: number, z: number): [number, number, number] => { const q = g(x, y, 0); return [q[0], q[1], z]; };
   const dims = [
     // ── la pieza (anclajes locales; el mapa los voltea con ella) ──
-    dim('dado·ancho X en la boca', 'boca X', P(0, -12, 40), P(40, -12, 40), true),
-    dim('dado·fondo Y en la boca', 'boca Y', P(-12, 0, 40), P(-12, 40, 40)),
-    dim('dado·alto Z', 'alto', P(46, -6, 0), P(46, -6, 40)),
-    dim('dado·pared nominal EN la partición', 'pared', P(0, 20, 42.5), P(2.01, 20, 42.5), true),
-    dim('dado·piso', 'piso', P(43, 20, 0), P(43, 20, 2)),
+    dim(`${c.comp}·ancho X en la boca`, 'boca X', P(c.x0, c.y0 - 12, c.H), P(c.x0 + c.L, c.y0 - 12, c.H), true),
+    dim(`${c.comp}·fondo Y en la boca`, 'boca Y', P(c.x0 - 12, c.y0, c.H), P(c.x0 - 12, c.y0 + c.W, c.H)),
+    dim(`${c.comp}·alto Z`, 'alto', P(c.x0 + c.L + 6, c.y0 - 6, 0), P(c.x0 + c.L + 6, c.y0 - 6, c.H)),
+    dim(`${c.comp}·pared nominal EN la partición`, 'pared', P(c.x0, cy, c.H + 2.5), P(c.x0 + c.wall + 0.01, cy, c.H + 2.5), true),
+    dim(`${c.comp}·piso`, 'piso', P(c.x0 + c.L + 3, cy, 0), P(c.x0 + c.L + 3, cy, c.piso)),
     // el draft como línea INCLINADA siguiendo la pared (se VE la conicidad)
-    dim('dado·draft EXTERIOR medido (°)', 'draft', P(40 * 0.0262, -6, 0), P(0, -6, 40)),
+    dim(`${c.comp}·draft EXTERIOR medido (°)`, 'draft', P(c.x0 + c.H * Math.tan(c.draftDeg * Math.PI / 180), c.y0 - 6, 0), P(c.x0, c.y0 - 6, c.H)),
     // ── el acero (z global: cavidad ARRIBA de zP, respaldo ABAJO) ──
-    dim('inserto cavidad·ancho X', 'cavidad X', P(-40, -52, 60.5), P(80, -52, 60.5)),
-    dim('inserto cavidad·alto = Hc de compra', 'Hc compra', PXY(88, -40, zP), PXY(88, -40, zP + a.compra.Hc), true),
-    dim('inserto cavidad·cara INFERIOR en la partición (lado A)', 'partición', PXY(84, -46, zP), PXY(84, 86, zP)),
-    dim('núcleo (respaldo)·espesor de placa = Hk de compra', 'Hk compra', PXY(88, 80, zP - L - a.compra.Hk), PXY(88, 80, zP - L), true),
-    dim('núcleo (macho)·sube hasta el piso (2 mm bajo la base cerrada)', 'macho', PXY(43, 80, zP - L), PXY(43, 80, zP - L + 37.5)),
-    dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', PXY(2.01, 52, zP - L), PXY(37.99, 52, zP - L)),
+    dim('inserto cavidad·ancho X', 'cavidad X', P(cx - ifx / 2, cy - ify / 2 - 12, a.compra.Hc + 0.5), P(cx + ifx / 2, cy - ify / 2 - 12, a.compra.Hc + 0.5)),
+    dim('inserto cavidad·alto = Hc de compra', 'Hc compra', PXY(cx + ifx / 2 + 8, cy - ify / 2, zP), PXY(cx + ifx / 2 + 8, cy - ify / 2, zP + a.compra.Hc), true),
+    dim('inserto cavidad·cara INFERIOR en la partición (lado A)', 'partición', PXY(cx + ifx / 2 + 4, cy - ify / 2 - 6, zP), PXY(cx + ifx / 2 + 4, cy + ify / 2 + 6, zP)),
+    dim('núcleo (respaldo)·espesor de placa = Hk de compra', 'Hk compra', PXY(cx + ifx / 2 + 8, cy + ify / 2, zP - L - a.compra.Hk), PXY(cx + ifx / 2 + 8, cy + ify / 2, zP - L), true),
+    dim(`núcleo (macho)·sube hasta el piso (${c.piso} mm bajo la base cerrada)`, 'macho', PXY(c.x0 + c.L + 3, cy + ify / 2, zP - L), PXY(c.x0 + c.L + 3, cy + ify / 2, zP - L + (c.H - c.piso - 0.5))),
+    dim('núcleo (macho)·ancho del hueco en la boca', 'hueco', PXY(c.x0 + c.wall + 0.01, c.y0 + c.W + 12, zP - L), PXY(c.x0 + c.L - c.wall - 0.01, c.y0 + c.W + 12, zP - L)),
   ].filter((d): d is import('./mold-dimensions').Dim3D => !!d);
   return [{ role: 'ciclo-e3', dims }];
 }

@@ -592,7 +592,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           ▶ estación 2 — ECONOMÍA: ¿cuántos dados por disparo?
         </button>
       )}
-      {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={ciclo.pieza ? undefined : cicloEstacion3} piezaDelArbol={!!ciclo.pieza} />}
+      {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
       {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={cicloEstacion6} />}
       {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
@@ -626,7 +626,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           )}
         </div>
       )}
-      {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} />}
+      {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={ciclo.pieza ? undefined : cicloEstacion4} piezaDelArbol={!!ciclo.pieza} />}
     </>
   );
 }
@@ -635,7 +635,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
  *  La columna clave es el DESGLOSE: amortización (molde$/Q, declarando que ignora el
  *  factor de mantenimiento §3.4.1) + material/proceso = total. La tabla ES la prueba:
  *  se puede sumar a mano. */
-function CicloE2({ e2, onE3, piezaDelArbol }: { e2: import('../mold/estudio-molde-datos').Estacion2Dado; onE3?: () => void; piezaDelArbol?: boolean }) {
+function CicloE2({ e2, onE3 }: { e2: import('../mold/estudio-molde-datos').Estacion2Dado; onE3?: () => void }) {
   return (
     <>
       <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
@@ -687,14 +687,6 @@ function CicloE2({ e2, onE3, piezaDelArbol }: { e2: import('../mold/estudio-mold
           ▶ estación 3 — ARQUITECTURA: nace el primer acero
         </button>
       )}
-      {!onE3 && piezaDelArbol && (
-        // EL PUENTE (v1·1) trae la pieza del árbol hasta E2. E3 sigue cableada al cubo
-        // (splitMold sobre dadoDraftShape): decirlo es más honesto que tallar el cubo
-        // con el nombre de tu pieza. Llega con v1·3.
-        <div data-testid="ciclo-e3-bloqueada" style={{ margin: '4px 6px 6px', padding: '7px 9px', borderRadius: 6, border: '1px dashed #3a4a60', fontSize: 10.5, color: '#8fa1b8', lineHeight: 1.4 }}>
-          ⏸ estación 3 — ARQUITECTURA aún está cableada al CUBO. Para TU pieza llega con el ticket <b style={{ color: '#f4d27a' }}>v1·3 E3 por pieza</b>. Hasta aquí, DFM (E1) y economía (E2) son de tu pieza, medidas de tu sólido.
-        </div>
-      )}
     </>
   );
 }
@@ -704,7 +696,7 @@ function CicloE2({ e2, onE3, piezaDelArbol }: { e2: import('../mold/estudio-mold
  *  aritmética que la produjo (la base no "es" 196: NECESITA 184 y 196 es la
  *  primera medida del catálogo). Los retornos van declarados al pie: este acero
  *  se va a REABRIR y el panel lo dice desde hoy. */
-function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4 }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado; e3v?: import('../mold/estudio-molde-datos').VerificacionE3; rayo?: import('../mold/estudio-molde-datos').PruebaRayo; interMm3?: number; cicloEstacion3?: (malo?: boolean) => void; onE4?: () => void }) {
+function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4, piezaDelArbol }: { e3: import('../mold/estudio-molde-datos').Estacion3Dado; e3v?: import('../mold/estudio-molde-datos').VerificacionE3; rayo?: import('../mold/estudio-molde-datos').PruebaRayo; interMm3?: number; cicloEstacion3?: (malo?: boolean) => void; onE4?: () => void; piezaDelArbol?: boolean }) {
   const fila = (titulo: string, cuerpo: string, porque: string, testid: string, color = '#9db4d0') => (
     <div className="fb-comp-row feat" data-testid={testid} title={porque}
       style={{ display: 'block', padding: '4px 6px', marginTop: 2, borderRadius: 6,
@@ -733,7 +725,7 @@ function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4 }: { e3: import
         ))}
         <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 2 }}>P20 SOLO donde se moldea; C45 donde solo se sujeta — pagar acero de molde en una placa de sujeción es tirar dinero (§4.4.4)</div>
       </div>
-      {rayo && cicloEstacion3 && (
+      {rayo && cicloEstacion3 && !piezaDelArbol && (
         <button className="fb-fea-run" data-testid="btn-rayo-undercut" onClick={() => cicloEstacion3(true)} style={{ margin: '4px 6px 0' }}
           title="Carga el MISMO dado con el draft INVERTIDO — un molde que NO puede abrir. Si el mapa no se pinta de rojo, la prueba no sirve.">
           🧪 probar el caso ROTO (draft invertido) — ¿el mapa lo caza?
@@ -790,6 +782,13 @@ function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4 }: { e3: import
           title="LLENADO (cap 5): la pieza pintada por cuándo le llega el plástico, el lazo de convergencia de la velocidad, y la última zona en llenarse — que es dónde irá el venteo.">
           ▶ estación 4 — LLENADO: ¿dónde muere el aire?
         </button>
+      )}
+      {!onE4 && piezaDelArbol && (
+        // v1·3 desbloqueó la E3 para la pieza del árbol; el LLENADO (E4+) sigue
+        // cableado al cubo (dentroDadoLocal). Decirlo > fingir.
+        <div data-testid="ciclo-e4-bloqueada" style={{ margin: '4px 6px 6px', padding: '7px 9px', borderRadius: 6, border: '1px dashed #3a4a60', fontSize: 10.5, color: '#8fa1b8', lineHeight: 1.4 }}>
+          ⏸ estación 4 — LLENADO en adelante sigue cableado al CUBO; para TU pieza llega en un ticket posterior. Hasta aquí YA son tuyos: DFM (E1), economía (E2) y el ACERO con sus medidas y su rayo (E3) — medidos de TU sólido.
+        </div>
       )}
     </>
   );
