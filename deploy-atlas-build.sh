@@ -429,6 +429,21 @@ server {
         gzip_min_length 4096;
     }
 
+    # REELS DEL ATRIO (mp4 540p, 2-3 MB). Medido 2026-08-26: el gateway los mandaba con
+    # `no-cache, no-store` → cf-cache-status BYPASS → cada teléfono (95 % del tráfico, IG
+    # in-app, sesión mediana 3.4 s) bajaba el video por el túnel de casa a ~150 KB/s = 12-20 s.
+    # El póster jpg sí era HIT. Un día en el borde; el nombre no lleva hash → un reel
+    # regenerado se propaga en ≤24 h (o purge en Cloudflare).
+    location ~* \.(mp4|webm)$ {
+        proxy_pass http://gaia_forja_atlas:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_hide_header Cache-Control;
+        expires 1d;
+    }
+
     # Asset caching para los MP3 grandes y los JS de la app
     location ~* \.(mp3|js|css|woff2?|wasm|bin)$ {
         proxy_pass http://gaia_forja_atlas:80;
