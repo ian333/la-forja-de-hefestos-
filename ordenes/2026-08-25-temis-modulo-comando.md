@@ -34,6 +34,7 @@ deploys — que ya vimos que no pueden encimarse (deploy_gotchas).
 - videos/CRONOGRAMA.json
 - public/atrio/mol-h2o-el-sudor.mp4
 - public/atrio/mol-h2o-el-sudor.jpg
+- public/evidencia/2026-08-25-temis-modulo-comando/01-comando-temis-cine.jpg
 
 ## BORRA
 - (nada)
@@ -50,3 +51,18 @@ deploys — que ya vimos que no pueden encimarse (deploy_gotchas).
 - Lobby Temis idéntico (DOM: mismas testids temis-board/col-*).
 - comando.html con pestaña Temis mostrando el tablero.
 - Banner "N sin desplegar" cuando hay tarjetas cerradas tras el último deploy.
+
+## CIERRE
+Hecho y en vivo (release ca44e03, 2026-08-26 18:02; stamp en prod). TEMIS es un MÓDULO
+(`TemisBoard.tsx`: TemisBoard + useTemis + TEMIS_CSS) que montan el lobby (DOM idéntico,
+mismas testids) y comando.html (pestaña ⚖️ Temis — evidencia 01). Estado de DESPLIEGUE por
+tarjeta derivado del stamp del deploy (badge "● en vivo" / "⬆ sin desplegar" + aviso arriba:
+"✓ todo desplegado · ca44e03"). CINE 1/día: tira con el cronograma; `publicado` derivado del
+catálogo (hielo ● publicado; sudor lo será en la siguiente release: su manifiesto entró a
+git en 8e277e8). Deploy coordinado: candado Redis (--lock-check SANO), release programada
+desde worktree limpio (scripts/forja-release.sh, cron horario instalado — cron NO corre en
+WSL sin `sudo service cron start`, pendiente de ian). Lo que se cazó en el camino y se
+arregló: los reels del atrio NUNCA llegaron a prod (404 HTML; el deploy excluye *.mp4) →
+suben explícitos; el mp4 era BYPASS en Cloudflare → HIT; el rey primero en el atrio.
+Lo que NO: staging (parte 3) y el screenshot del lobby (el arnés headless no abre el
+switcher sin GPU; el módulo es el mismo — evidencia de Comando).
