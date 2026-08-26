@@ -265,6 +265,15 @@ rsync -a --size-only $RSYNC_OUT_FLAGS \
   -e "$SSH_FAST" \
   public/viz-data/ "${ATLAS_USER}@${ATLAS_IP}:${REMOTE_BUILD}/public/viz-data/"
 
+# REELS DEL ATRIO (public/atrio/*.mp4, 1.5-3 MB c/u). El rsync 5a EXCLUYE *.mp4 (política:
+# nunca a git ni al deploy grueso) → los reels de la portada NUNCA llegaban a prod: el SPA
+# devolvía index.html en su lugar y el atrio se veía como póster fijo (2026-08-26, telemetría:
+# 0 reproducciones reales). Van explícitos, como viz-data/hdri.
+ssh "${ATLAS_USER}@${ATLAS_IP}" "mkdir -p ${REMOTE_BUILD}/public/atrio"
+# shellcheck disable=SC2086
+rsync -a --size-only --include='*.mp4' --include='*.jpg' --include='index.json' --exclude='*' \
+  -e "$SSH_FAST" \
+  public/atrio/ "${ATLAS_USER}@${ATLAS_IP}:${REMOTE_BUILD}/public/atrio/"
 # hdri (1.7 MB) y wasm (7.6 MB) — chicos pero también binarios
 # shellcheck disable=SC2086
 rsync -a --size-only \
