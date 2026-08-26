@@ -15,7 +15,8 @@ HEAD=$(git rev-parse --short main 2>/dev/null) || { echo "✗ sin rama main"; ex
 # worktree limpio en main (crear o actualizar)
 if [ ! -d "$WT/.git" ] && [ ! -f "$WT/.git" ]; then git worktree add -q --detach "$WT" main || { echo "✗ worktree"; exit 1; }; fi
 git -C "$WT" checkout -q --detach main 2>/dev/null || git -C "$WT" reset -q --hard main
-[ -z "$(git -C "$WT" status --porcelain)" ] || { echo "✗ el worktree de release está SUCIO — no despliego"; exit 2; }
+# "sucio" = archivos RASTREADOS modificados (WIP). Los espejados fuera de git (mp4) no cuentan.
+[ -z "$(git -C "$WT" status --porcelain --untracked-files=no)" ] || { echo "✗ el worktree de release está SUCIO — no despliego"; exit 2; }
 # ENTREGABLES FUERA DE GIT (política: *.mp4 nunca a git — reels del atrio, etc.). El deploy
 # publica `dist/` con --delete: si el worktree limpio no los trae, la release los BORRARÍA de
 # prod. Se espejan desde el árbol principal SOLO los ignorados bajo public/.
