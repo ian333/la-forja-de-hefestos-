@@ -5,7 +5,7 @@
  * de ARMANDO MOLDE. Reciben la BOLSA de useMoldStudio como prop — cero estado
  * propio, puro render. El grupo del ribbon se queda en el Studio (usa <Ic>).
  */
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
 import { Ic } from './icons';
@@ -15,6 +15,7 @@ import { coolingCircuit, plateDepth } from '../mold/mold-drawing-set';
 import type { CalcPaso } from '../mold/cooling-design';
 import { construirMolde, CICLO_KAZMER, cotizacionPieza, cotizacionSvg, DADO_PIEZA, type PiezaSpec } from '../mold/estudio-molde-datos';
 import { mallaCaja } from '../mold/lamina-seccion';
+import { mark } from '../telemetry-forja';
 
 type MoldBag = ReturnType<typeof useMoldStudio>;
 
@@ -806,6 +807,11 @@ function CotizacionE3({ pieza }: { pieza?: PiezaSpec }) {
     catch (e) { console.warn('COTIZACION_ERR', e); return null; }
   }, [abierta, pieza]);
   const svg = useMemo(() => (cot ? cotizacionSvg(cot) : ''), [cot]);
+  // LECCIÓN 1 (v1·6): abrir LA COTIZACIÓN de una pieza del ÁRBOL es el final del
+  // recorrido "Tu primera pieza, tu primer molde" — se marca en telemetría.
+  useEffect(() => {
+    if (cot && pieza) mark('leccion.completa', 0, { pieza: pieza.nombre, moldeUSD: cot.dinero.moldeUSD, totalPza: cot.dinero.totalPzaUSD });
+  }, [cot, pieza]);
   return (
     <>
       {!abierta && (

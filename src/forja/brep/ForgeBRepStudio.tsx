@@ -3969,7 +3969,9 @@ export default function ForgeBRepStudio() {
     histRef.current = { past: [], future: [], last: null };
     applyingRef.current = true;
     setSketch(d.sketch ?? { ...DEFAULT_SKETCH, gear: { ...GEAR_DEFAULTS } });
-    const nops = d.ops && d.ops.length ? d.ops : makeDefaultDoc().ops;
+    // ops [] EXPLÍCITO se respeta (LECCIÓN 1 abre lienzo VACÍO — v1·6);
+    // undefined sigue cayendo al default (docs viejos de la biblioteca).
+    const nops = d.ops && d.ops.length ? d.ops : (Array.isArray(d.ops) ? [] : makeDefaultDoc().ops);
     setOps(nops);
     setMaterial(d.material ?? 'alu');
     setAssembly(d.assembly ?? { ...ASSEMBLY_DEFAULTS });
@@ -4019,6 +4021,13 @@ export default function ForgeBRepStudio() {
     });
   }, [libNames, docName, loadFromLibrary]);   // libNames refresca al guardar/borrar
   const switcherStarters = useMemo<ProjItem[]>(() => [
+    // LECCIÓN 1 (v1·6) — el recorrido de la v1 empacado: lienzo VACÍO (la tarjeta
+    // guiada de v1·2 es el paso 1-3) y el ciclo E1→E3→💰 es el resto. El final
+    // (abrir LA COTIZACIÓN de tu pieza) marca `leccion.completa` en telemetría.
+    { key: 'st-leccion-1', name: 'LECCIÓN 1 · Tu primera pieza, tu primer molde', type: 'molde',
+      meta: 'boceto → extruir → cascarón + draft → la Máquina te la cotiza (E1→E3→💰)',
+      status: 'lección', statusColor: '#f4d27a',
+      action: () => loadDoc({ ...makeDefaultDoc('LECCIÓN 1 · tu primera pieza'), ops: [] }) },
     // EL CICLO DEL DADO como proyecto del lobby — ian lo buscó en el sitio vivo y no
     // estaba ("no aparece como proyecto aún"): solo existía el botón de la barra.
     { key: 'st-dado', name: 'EL DADO · ciclo Kazmer (molde de inyección)', type: 'molde', meta: 'E1→E5 · sprue directo Fig 7.2 · alarmas de tubería y balance', status: 'plantilla', action: mold.loadDado },

@@ -1288,20 +1288,36 @@ export interface CotizacionPieza {
 export function cotizacionPieza(pieza: PiezaSpec, o?: { fecha?: string }): CotizacionPieza {
   const e1 = estacion1(pieza);
   const e2x = estacion2(pieza);
-  const g = e2x.variantes.find((v) => v.ganadora)!;
+  const sp = pieza.spec;
+  const Qv = (sp as any).annualVolume ?? 100000;
+  // Una pieza SIN variante ganadora (maciza, STEP sin pared declarada, DFM roto)
+  // TAMBIÉN se cotiza — desde la RECOMENDACIÓN de la Máquina (pkg.veredicto),
+  // con la amortización derivada de la MISMA fórmula §3.4.1 (molde$/Q). Medido:
+  // un STEP maciza de 62×62×34 cotiza $188,830 · hot-runner×1 · 21 semanas, con
+  // sus banderas ("EDM domina el costo") a la vista. Cotizar feo ≠ tronar.
+  const gWin = e2x.variantes.find((v) => v.ganadora);
+  const totalSin = +(+e2x.pkg.veredicto.costoPiezaUSD).toFixed(4);
+  const amortSin = +(e2x.veredicto.precioMoldeUSD / Qv).toFixed(4);
+  const g = gWin ?? {
+    arch: e2x.pkg.recomendacion.arch, nCav: e2x.pkg.recomendacion.nCav,
+    moldeUSD: e2x.veredicto.precioMoldeUSD,
+    amortPzaUSD: amortSin, restoPzaUSD: +(totalSin - amortSin).toFixed(4), totalPzaUSD: totalSin,
+  };
   const e3 = estacion3Dado(e2x.pkg, pieza);
   const b = e2x.pkg.base;
-  const sp = pieza.spec;
   return {
     fecha: o?.fecha ?? '',
     pieza: {
       nombre: pieza.nombre,
       dims: sp.cavityShape === 'round' ? `⌀${sp.Lmm}×${sp.Hmm} mm` : `${sp.Lmm}×${sp.Wmm}×${sp.Hmm} mm`,
-      material: pieza.material, wallMm: pieza.pieza.wallMm, volCc: pieza.pieza.volCc, Q: (sp as any).annualVolume ?? 100000,
+      material: pieza.material, wallMm: pieza.pieza.wallMm, volCc: pieza.pieza.volCc, Q: Qv,
     },
     dfm: {
       veredicto: e1.dado.veredicto, tcS: e1.dado.tcS, errores: e1.dado.dfm?.errors ?? 0,
-      notas: (e1.comparacion ?? []).slice(0, 2),
+      notas: [
+        ...(e1.comparacion ?? []).slice(0, 2),
+        ...(gWin ? [] : (e2x.pkg.veredicto.banderas ?? []).slice(0, 1).map((x: string) => '⚠ ' + x)),
+      ],
     },
     molde: {
       arch: g.arch, nCav: g.nCav,
