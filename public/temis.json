@@ -1,16 +1,16 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 19:19",
+ "generado": "2026-08-26 19:36",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
-  "proximo": 1,
+  "proximo": 0,
   "enCurso": 1,
-  "cerrado": 57,
+  "cerrado": 58,
   "probado": 0,
-  "porProbar": 24,
+  "porProbar": 25,
   "sinDesplegar": 1,
   "despues": 15
  },
@@ -20,31 +20,7 @@
  },
  "violaciones": [],
  "columnas": {
-  "proximo": [
-   {
-    "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
-    "slug": "2026-08-25-v1-7-kernel-rapido",
-    "titulo": "v1·7 — EL KERNEL RÁPIDO: 65 MB no pueden cruzar un túnel de 150 KB/s",
-    "fecha": "2026-08-25",
-    "estado": "proximo",
-    "prioridad": 7,
-    "objetivo": "hoy el kernel CAD (opencascade.wasm, 65 MB) llega COMPLETO pero LENTO a usuarios nuevos (~12 min: uplink de ATLAS ~150 KB/s y Cloudflare no cachea .wasm — cf-cache-status: DYNAMIC). Los navegadores que ya lo tienen (ian) lo sirven de su ca…",
-    "toca": 1,
-    "crea": 0,
-    "evidencia": 1,
-    "evidenciaDeclarada": [
-     "primera carga del kernel en prod < 60 s desde un navegador SIN caché"
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   }
-  ],
+  "proximo": [],
   "enCurso": [
    {
     "file": "ordenes/2026-08-26-la-sal.md",
@@ -73,6 +49,33 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
+    "slug": "2026-08-25-v1-7-kernel-rapido",
+    "titulo": "v1·7 — EL KERNEL RÁPIDO: 65 MB no pueden cruzar un túnel de 150 KB/s",
+    "fecha": "2026-08-25",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "objetivo": "hoy el kernel CAD (opencascade.wasm, 65 MB) llega COMPLETO pero LENTO a usuarios nuevos (~12 min: uplink de ATLAS ~150 KB/s y Cloudflare no cachea .wasm — cf-cache-status: DYNAMIC). Los navegadores que ya lo tienen (ian) lo sirven de su ca…",
+    "toca": 2,
+    "crea": 1,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "cf-cache-status: HIT en el .wasm de prod (medido con curl, dos veces)",
+     "primera carga del kernel en prod < 60 s desde un navegador SIN caché",
+     "orden-gate VERDE · regen de Temis"
+    ],
+    "cierre": "EL KERNEL YA LLEGA RÁPIDO: 191 s → 9 s (la meta era < 60 s). Lo que se hizo (infra, cero código): 1. ian creó los permisos Cache Rules · Edit + Cache Purge · Purge sobre el token de CF que ya vive en…",
+    "cierreCompleto": "EL KERNEL YA LLEGA RÁPIDO: 191 s → 9 s (la meta era < 60 s). Lo que se hizo (infra, cero código): 1. ian creó los permisos Cache Rules · Edit + Cache Purge · Purge sobre el token de CF que ya vive en ATLAS. Verificado por API: el token que ANOCHE daba \"Authentication error\" hoy LEE y ESCRIBE rulesets. 2. Cache Rule creada — ruleset 8c79ece280c2401e90cdb1c2828524ab, fase http_request_cache_settings, regla 5de7acd96127400cb1d3579f7a6d3e65: http.host eq \"university.gaiaprime.com.mx\" and (ends_with(path,\".wasm\") or ends_with(path,\".hdr\")) → cache: true, edge_ttl y browser_ttl 30 d (override_origin — el asset trae hash en el nombre: inmutable por construcción). 3. PURGE de la URL .wasm.js ENVENENADA de anoche (la copia truncada de ~14 MB que quedó sin poder borrarse). Ya está limpia. MEDIDO (iangpu, colo ATL, opencascade.wasm-DEAxFiks.wasm, 65,864,037 B): - 1er GET (llena el borde): cf-cache-status: MISS · 18.96 s · 3.47 MB/s - 2º GET: cf-cache-status: HIT · 4.73 s · 13.94 MB/s · age: 18 - 3er GET: HIT · 4.90 s · 13.44 MB/s - Navegador SIN caché contra prod: 9 s hasta \"Lienzo vacío — Boceto → Extruir…\", 0 errores de página (anoche, mismo arnés: 191 s). CORRECCIÓN HONESTA AL DIAGNÓSTICO DE ANOCHE: el .wasm sí salía DYNAMIC (eso era real y la regla lo arregló), pero el \"uplink de ATLAS ~150 KB/s\" NO se reprodujo hoy: el MISS bajó 65 MB del origen a 3.47 MB/s. O sea que anoche había además congestión/mal momento de red, y el número de 95 KB/s no era la capacidad del enlace. La regla vale por sí sola (HIT = 3-4× más rápido que el MISS y el origen ya no se toca en 30 días), pero el …",
+    "evidenciaSS": [
+     "evidencia/2026-08-25-v1-7-kernel-rapido/01-kernel-9s-lienzo-vacio.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "98aa021",
+    "despliegue": "en-vivo"
+   },
    {
     "file": "ordenes/2026-08-25-temis-probado.md",
     "slug": "2026-08-25-temis-probado",
