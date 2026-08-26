@@ -1,16 +1,16 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 01:51",
+ "generado": "2026-08-26 02:22",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
   "proximo": 4,
-  "enCurso": 1,
-  "cerrado": 50,
+  "enCurso": 0,
+  "cerrado": 51,
   "probado": 0,
-  "porProbar": 17,
+  "porProbar": 18,
   "despues": 15
  },
  "violaciones": [],
@@ -113,13 +113,14 @@
     "commit": ""
    }
   ],
-  "enCurso": [
+  "enCurso": [],
+  "cerrado": [
    {
     "file": "ordenes/2026-08-25-temis-probado.md",
     "slug": "2026-08-25-temis-probado",
     "titulo": "v1·0c — TEMIS: la columna PROBADO (lo que ian ya probó)",
     "fecha": "2026-08-25",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 999,
     "objetivo": "ian — \"mañana los pruebo, añade una columna de testeado y probado\". CERRADO = lo terminé yo con evidencia; PROBADO = ian lo probó y lo acepta. Sin formulario: la orden recibe una línea PROBADO: <fecha> · <nota> cuando ian lo dice (o FALLA:…",
     "toca": 3,
@@ -130,16 +131,16 @@
      "captura del tablero con la 4ª columna (en prod)",
      "orden-gate VERDE · deploy"
     ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
+    "cierre": "LA 4ª COLUMNA VIVE EN PROD. PROBADO: <fecha> · <nota> en la orden la mueve a PROBADO; FALLA: <nota> la deja en CERRADO con insignia roja y la nota. Las cerradas con evidencia dicen \"📷 N — por probar…",
+    "cierreCompleto": "LA 4ª COLUMNA VIVE EN PROD. PROBADO: <fecha> · <nota> en la orden la mueve a PROBADO; FALLA: <nota> la deja en CERRADO con insignia roja y la nota. Las cerradas con evidencia dicen \"📷 N — por probar\" y el encabezado de CERRADO cuenta cuántas esperan (hoy 17 por probar). Sin formulario: ian dice \"probado <ticket>\" y la orden recibe la línea. Captura en prod: 4 columnas, PRÓXIMO 4/7 · EN CURSO 1/1 · CERRADO 50 (17 por probar) · PROBADO 0. HALLAZGO GRAVE al capturar (no es de esta orden, pero es de mañana): el kernel NO carga en prod ahora mismo — el .wasm de 65 MB baja a ~95 KB/s (uplink de ATLAS ≈150 KB/s medido por Tailscale) y Cloudflare NO lo cachea (cf-cache-status: DYNAMIC; los .js sí, HIT). Un usuario nuevo tarda ~12 min; al mediodía coló por poco. Se abre orden propia (v1·0d) antes de seguir con la v1: sin kernel no hay pruebas mañana. Deploy 24/25 (/nova.html 000 transitorio; todo 200 al recheck). Commit 0e58de6.",
+    "evidenciaSS": [
+     "evidencia/2026-08-25-temis-probado/01-columna-probado-en-prod.jpg"
+    ],
+    "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": ""
-   }
-  ],
-  "cerrado": [
+    "commit": "0e58de6"
+   },
    {
     "file": "ordenes/2026-08-25-temis-evidencia.md",
     "slug": "2026-08-25-temis-evidencia",
