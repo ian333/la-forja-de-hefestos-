@@ -25,5 +25,7 @@ done
 echo "· entregables fuera de git espejados: $(git -C "$REPO" ls-files --others --ignored --exclude-standard -- public/ | wc -l)"
 echo "· main=$HEAD · worktree limpio"
 # node_modules del worktree: el deploy hace build REMOTO en ATLAS, no hace falta local.
-bash "$WT/scripts/forja-deploy.sh" --if-pending --quiet; rc=$?
+# FORZAR=1 = release manual (Ian lo pide): despliega main aunque Temis no reporte pendientes.
+if [ "${FORZAR:-0}" = "1" ]; then bash "$WT/scripts/forja-deploy.sh" --quiet; rc=$?
+else bash "$WT/scripts/forja-deploy.sh" --if-pending --quiet; rc=$?; fi
 echo "· rc=$rc"; exit $rc
