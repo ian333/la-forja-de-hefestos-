@@ -82,7 +82,7 @@
   "guion": {
     "archivo": "scripts/guiones/silla.txt",
     "lineas": 12,
-    "palabras": 104,
-    "nota": "50 s (ian, 2026-08-27: \"clips de 50 segundos\"). Enseña lo que h2o.txt NO enseñó: el puente aterriza en los pares solitarios (la silla), y de ahí el tetraedro y el hielo que flota. Sin línea de una sola palabra (XTTS se las come: \"Flota.\"→\"plota\")."
+    "palabras": 105,
+    "nota": "50 s (ian, 2026-08-27: \"clips de 50 segundos\"). Enseña lo que h2o.txt NO enseñó: el puente aterriza en los pares solitarios (la silla), y de ahí el tetraedro y el hielo que flota. Sin línea de una sola palabra (XTTS se las come: \"Flota.\"→\"plota\"). l09 \"recibe en dos sillas\"→\"ofrece dos sillas\": el oído (whisper) no cazaba el \"en\"."
   }
 }

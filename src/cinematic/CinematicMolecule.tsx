@@ -477,13 +477,16 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
   // se ve claro en el oxígeno de side:-1 → esa es "la silla"; orbitOne(side:-1) la mira.
   // Σ = 50. Duraciones PROVISIONALES (recalibrar a los arranques reales de segs.json).
   wsilla: [
-    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.0, elev: 0.15, rMul: 1.58 }), dur: 4.5, label: 'las dos se jalan (l1-2)' },
-    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.6, rMul: 0.5 }), dur: 8, label: 'MAGENTA: el oxígeno, sus dos nubes, las sillas (l3-5)' },
-    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 8, label: 'el hidrógeno apunta justo ahí (l6)' },
-    { shot: eyeLevelLock({ rMul: 1.15, azim: 1.2 }), dur: 5, label: 'QUITA LAS NUBES: núcleos pelones, nada (l7)' },
-    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 8, label: 'PRÉNDELAS: looming al puente (l8)' },
-    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 6, label: 'clímax ~78 %: carga en la silla' },
-    { shot: pullOut({}), dur: 10.5, label: 'cuatro · tetraedro · flota · y tú (l9-11)' },
+    // Arranques REALES de segs.json (voz 49.3 s): l1 0.4 · l2 4.2 · l3 7.0 · l4 9.7 · l5 13.7 ·
+    // l6 16.2 · l7 20.2 · l8 25.2 · l9 30.7 · l10 35.6 · l11 40.6 · l12 46.1. Σ = 50.
+    // Los primeros 7 s NO cortan (ley #6 del rey) y caen EXACTO en el arranque de l3.
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.0, elev: 0.15, rMul: 1.58 }), dur: 7.0, label: 'las dos se jalan · el jalón tiene domicilio (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.6, rMul: 0.5 }), dur: 9.2, label: 'MAGENTA: el oxígeno de cerca, sus dos nubes, las sillas (l3-5)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 4.0, label: 'el hidrógeno de la otra apunta justo ahí (l6)' },
+    { shot: eyeLevelLock({ rMul: 1.15, azim: 1.2 }), dur: 5.0, label: 'QUITA LAS NUBES: nada, ni palito ni resorte (l7)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 5.5, label: 'PRÉNDELAS: looming al puente, carga llegando a la silla (l8)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.3, label: 'dos manos, dos sillas: cuatro (l9)' },
+    { shot: pullOut({}), dur: 14.0, label: 'tetraedro · flota · y tú · GAIA (l10-12)' },
   ],
   // LA SAL (2026-08-26): Na⁺ (índice 0, en −x) + agua (O en +x). Hermana literal del rey: mismo
   // eje, mismo régimen (~13 bohr), mismas 9 tomas. `orbitOne(side:-1)` mira al ION, `side:+1` al agua.
@@ -2407,21 +2410,23 @@ const WSAL_CAPAS: CapasSpec = WPAIR_CAPAS;
 // con el Δρ ardiendo. `apertura` la trae la pieza (0 = pegadas): arranca moderado, cierra
 // en escalera desde "préndelas" para que el puente NAZCA bajo la voz que lo nombra.
 const WSILLA_CAPAS: CapasSpec = {
+  // Ventanas = arranques REALES de segs.json (ver CAMERA_SHOTS.wsilla). El corte de capa cae
+  // en el ARRANQUE de la línea, no en su final (regla de §LA MECÁNICA DEL O₂).
   apertura: { base: 0.55, mods: [
-    { wins: [[0, 3.0]], a: -0.30, label: 'arranque: casi pegadas, espectáculo' },
-    { wins: [[25.5, 50]], a: -0.20, combine: 'sum', label: 'préndelas: empiezan a cerrar' },
-    { wins: [[28.5, 50]], a: -0.20, combine: 'sum', label: '…más cerca' },
-    { wins: [[31.5, 50]], a: -0.15, combine: 'sum', label: 'pegadas: el puente' },
+    { wins: [[0, 3.0]], a: -0.30, label: 'arranque: casi pegadas, espectáculo (l1)' },
+    { wins: [[25.2, 50]], a: -0.20, label: 'préndelas: empiezan a cerrar (l8)' },
+    { wins: [[27.5, 50]], a: -0.20, label: '…más cerca' },
+    { wins: [[29.5, 50]], a: -0.15, label: 'pegadas: "carga llegando a la silla"' },
   ] },
-  nubes:    { base: 1,    mods: [{ wins: [[20.5, 24.5]], a: -1.0, label: 'QUITA LAS NUBES: nada (l7)' }] },
+  nubes:    { base: 1,    mods: [{ wins: [[20.4, 24.6]], a: -1.0, label: 'QUITA LAS NUBES: nada — la NADA como argumento (l7)' }] },
   campo:    { base: 1,    mods: [
-    { wins: [[4.5, 20.0]], a: -0.85, label: 'MAGENTA: el oxígeno de cerca (l3-6)' },
-    { wins: [[20.5, 24.5]], a: -1.0, label: 'ni palito ni resorte (l7)' },
-    { wins: [[24.5, 39.5]], a: -0.60, label: 'préndelas: el puente es NUBE, campo bajo (l8)' },
+    { wins: [[7.0, 16.0]], a: -0.85, label: 'MAGENTA: el oxígeno de cerca (l3-5); vuelve en l6 para que el H APUNTE' },
+    { wins: [[20.4, 24.6]], a: -1.0, label: 'ni palito ni resorte (l7)' },
+    { wins: [[25.2, 36.0]], a: -0.60, label: 'préndelas: el puente es NUBE, campo bajo (l8-9)' },
   ] },
-  parpadeo: { base: 0.42, mods: [{ wins: [[4.5, 12.5]], a: 0.42, label: 'las dos nubes suyas parpadean' }] },
-  spin:     { base: 1,    mods: [{ wins: [[24.5, 41.0]], a: 0.9, label: 'ARDE: carga llegando a la silla (l8)' }] },
-  acc:      { base: 1,    mods: [{ wins: [[4.5, 12.5]], a: 0.5, label: 'ORO: mira el oxígeno de cerca (l3)' }] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[9.7, 15.8]], a: 0.42, label: 'estas dos nubes son suyas (l4-5)' }] },
+  spin:     { base: 1,    mods: [{ wins: [[25.2, 36.0]], a: 0.9, label: 'ARDE: carga llegando a la silla (l8-9)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[7.0, 13.3]], a: 0.5, label: 'ORO: mira el oxígeno de cerca (l3-4)' }] },
 };
 const WSILLA_DURATION = 50;
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
