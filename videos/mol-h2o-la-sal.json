@@ -81,12 +81,19 @@
       "yt": {
         "id": "IcQmByHafE0",
         "url": "https://youtu.be/IcQmByHafE0",
-        "privacidad": "private",
+        "privacidad": "public",
         "publishAt": "",
         "captions": "AUieDaZnADLhYfuyemaoVsbQ7o-LdFbDy14r7d40S7IcJdsAp3Jeg_PHNg",
         "fecha": "2026-08-26T21:27"
+      },
+      "ig": {
+        "id": "18084851060356402",
+        "url": "https://www.instagram.com/reel/Dch6t-ojl-z/",
+        "fecha": "2026-08-26T22:22"
       }
-    }
+    },
+    "autorizado": "2026-08-26 yt,ig — dicho por ian en sesión: \"el de la sal está perfecto, ese súbelo\"",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-sal.mp4"
   },
   "guion": {
     "archivo": "scripts/guiones/sal.txt",

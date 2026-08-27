@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 03:32",
+ "generado": "2026-08-27 04:23",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -94,37 +94,37 @@
       "titulo": "Tu pieza se LLENA: E4 (llenado) y E5 (alimentación) para la pieza del árbol",
       "herramientas": "predicadoDeMalla measureFlowLength FAN",
       "oraculo": "vol de vóxeles = vol del kernel ±5 % y 0 inalcanzables desde la boquilla",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
+      "estado": "verde",
+      "checks": "5/5",
+      "video": "/mnt/e/forja-videos/escuela/moldes/LA-FORJA-MOLDES-S1-tu-pieza-se-llena-4K.mp4",
+      "still": "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s1-llenado-por-pieza-still.jpg",
+      "nota": "drive OK (intento 1) · checks 5/5 · E: cp · PRIME ok"
      },
      {
       "id": "mol-s2-intake",
       "titulo": "Declara tu pieza: intake §2.1.5 (pared · material · volumen anual) en la E1",
       "herramientas": "intake-pared intake-material intake-q",
       "oraculo": "la cotización del STEP maciza ($188,830) cae a la del v1-gate al declarar la pared",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
+      "estado": "verde",
+      "checks": "5/5",
+      "video": "/mnt/e/forja-videos/escuela/moldes/LA-FORJA-MOLDES-S2-declara-tu-pieza-4K.mp4",
+      "still": "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s2-intake-still.jpg",
+      "nota": "drive OK (intento 1) · checks 5/5 · E: cp · PRIME ok"
      },
      {
       "id": "mol-s3-base-catalogo",
       "titulo": "La base se COMPRA: retículo HASCO/DME nominal con espesores de placa de catálogo",
       "herramientas": "selectMoldBase cotizacionSvg",
       "oraculo": "el cubo sigue en 196×196 (bit-igual) y una pieza chica cae en 156×156",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
+      "estado": "verde",
+      "checks": "3/3",
+      "video": "/mnt/e/forja-videos/escuela/moldes/LA-FORJA-MOLDES-S3-la-base-se-compra-4K.mp4",
+      "still": "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s3-base-catalogo-still.jpg",
+      "nota": "drive OK (intento 1) · checks 3/3 · E: cp · PRIME ok"
      }
     ],
     "progreso": {
-     "verdes": 0,
+     "verdes": 3,
      "rojos": 0,
      "total": 3
     },
@@ -139,7 +139,11 @@
     ],
     "cierre": "",
     "cierreCompleto": "",
-    "evidenciaSS": [],
+    "evidenciaSS": [
+     "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s1-llenado-por-pieza-still.jpg",
+     "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s2-intake-still.jpg",
+     "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s3-base-catalogo-still.jpg"
+    ],
     "revisable": false,
     "probado": "",
     "falla": "",
@@ -2269,7 +2273,7 @@
     "titulo": "La sal — el agua contra un ion (Na⁺)",
     "base": "dímero NUEVO: Na⁺ + H₂O (PAR=na)",
     "tipo": "sim (RHF/aug-cc-pVDZ, gate −24.0 kcal/mol)",
-    "estado": "proximo",
+    "estado": "hecho",
     "manifiesto": true,
     "publicado": false
    },
