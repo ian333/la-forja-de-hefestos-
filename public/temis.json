@@ -1,19 +1,19 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 04:53",
+ "generado": "2026-08-27 22:07",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
-  "proximo": 1,
+  "proximo": 3,
   "enCurso": 1,
   "supertickets": 0,
   "cerrado": 62,
   "probado": 0,
   "porProbar": 29,
   "sinDesplegar": 6,
-  "despues": 15
+  "despues": 17
  },
  "deploy": {
   "commit": "6f70032",
@@ -40,6 +40,59 @@
      "Gate ab initio: E_enlace y d(Na–O) del run completo vs experimento (−24.0 / 2.2–2.3 Å).",
      "GATE_APPROACH_OK (∫Δρ>0 monótono creciente) en el log del run.",
      "Stills 4K de la escena ?m=wsal + hoja de contactos del master."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-27-forja-analitica-conectada.md",
+    "slug": "2026-08-27-forja-analitica-conectada",
+    "titulo": "conectar TODA La Forja y su analítica",
+    "fecha": "2026-08-27",
+    "estado": "proximo",
+    "prioridad": 2,
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "que exista UN solo lugar donde se vea el estado real de todo lo publicado — qué video, en qué plataforma, con qué números y con qué archivo— y que Temis lo lea sin doble captura. Hoy el dato vive partido: métricas en public/comando/metrica…",
+    "toca": 3,
+    "crea": 0,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "Captura del tablero mostrando, por video publicado: plataforma, vistas, guardados,",
+     "public/evidencia/forja-analitica/ con las capturas."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-27-temis-compartido.md",
+    "slug": "2026-08-27-temis-compartido",
+    "titulo": "Temis compartido entre instancias de Claude",
+    "fecha": "2026-08-27",
+    "estado": "proximo",
+    "prioridad": 3,
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "que ian pueda decirle a CUALQUIER Claude (el de esta máquina, el de Sinué, el que sea) \"revisa los tickets\" y todos vean el MISMO tablero, tomen trabajo de ahí y escriban de vuelta su avance — sin que ian tenga que repetir el contexto en c…",
+    "toca": 2,
+    "crea": 0,
+    "evidencia": 1,
+    "evidenciaDeclarada": [
+     "Dos sesiones distintas de Claude leyendo el mismo tablero y una tomando un ticket"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -2242,6 +2295,14 @@
   {
    "grupo": "Otros dominios (congelados, no muertos)",
    "texto": "Hub Nobel / labs de física / masterclass: fuera del lobby de v1."
+  },
+  {
+   "grupo": "Video ya publicado — recuperar calidad (ian, 2026-08-27)",
+   "texto": "Volver a subir a YouTube, en 16:9 y ULTRA alta calidad, TODOS los videos ya publicados. Hoy suben en 9:16 porque nacieron para reels; YouTube sí sirve 4K real y ahí no aplica ningún tope de peso ni bitrate (medido: el de Instagram sí — 588 MB rechazado, 128 MB aceptado). Es recuperar audiencia de escritorio con material que ya está pagado."
+  },
+  {
+   "grupo": "Video ya publicado — recuperar calidad (ian, 2026-08-27)",
+   "texto": "El master sale etiquetado `color_space=bt470bg` (BT.601 de PAL) y `profile=Main`. Decidir con ian si se corrige: arreglarlo MUEVE el color de toda la serie."
   }
  ],
  "cine": {

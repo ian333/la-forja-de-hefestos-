@@ -33,3 +33,12 @@
 - Cine científico (BH, TDE, pulsar, hemoglobina, saga, tabla periódica): sigue
   como MARKETING, no como producto — cero órdenes nuevas hasta v1.
 - Hub Nobel / labs de física / masterclass: fuera del lobby de v1.
+
+## Video ya publicado — recuperar calidad (ian, 2026-08-27)
+- Volver a subir a YouTube, en 16:9 y ULTRA alta calidad, TODOS los videos ya
+  publicados. Hoy suben en 9:16 porque nacieron para reels; YouTube sí sirve 4K
+  real y ahí no aplica ningún tope de peso ni bitrate (medido: el de Instagram
+  sí — 588 MB rechazado, 128 MB aceptado). Es recuperar audiencia de escritorio
+  con material que ya está pagado.
+- El master sale etiquetado `color_space=bt470bg` (BT.601 de PAL) y `profile=Main`.
+  Decidir con ian si se corrige: arreglarlo MUEVE el color de toda la serie.

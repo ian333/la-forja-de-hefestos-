@@ -458,6 +458,33 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 9, label: 'el puente=nube — el enlace llena el cuadro (l17-18)' },
     { shot: pullOut({}), dur: 10, label: 'payoff (l19-20)' },
   ],
+  // EL VIAJE ENTRE LOS ÁTOMOS (2026-08-27, spike de ian): MISMA simulación del rey, cero
+  // re-cálculo — solo otra coreografía. Se activa con ?cam=viaje. La diferencia con el rey:
+  // el rey MIRA desde fuera; este ATRAVIESA. `throughBridge` cruza el hueco entre las dos
+  // moléculas (es el único plano que una diatómica no puede tener), y se usa DOS veces:
+  // entrando y saliendo por el otro lado. Σ = 50 s (clip corto, no los 77 del rey).
+  'wpair-viaje': [
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.0, elev: 0.15, rMul: 1.58 }), dur: 6, label: 'gancho: las dos' },
+    { shot: throughBridge({ side: 1, rSpan: 0.78, off: 0.30 }), dur: 7, label: 'VIAJE: cruza entre ellas' },
+    { shot: orbitOne({ side: 1, azim0: 0.8, span: 1.6, rMul: 0.5 }), dur: 8, label: 'qué ES una nube' },
+    { shot: diveToNucleus({ spin: 1.6 }), dur: 7, label: 'clavado al corazón' },
+    { shot: nucleusOrbit({}), dur: 7, label: 'por dentro del núcleo' },
+    { shot: throughBridge({ side: -1, rSpan: 0.78, off: 0.30 }), dur: 6, label: 'sale volando por el otro lado' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 9, label: 'el ángulo: por qué 104.5°' },
+  ],
+  // LA SILLA VACÍA (2026-08-27): quick win del rey en 50 s. Verificado con 14 stills (vuelta
+  // completa a cada oxígeno con el campo al 15 %): el lóbulo magenta de Δρ que RECIBE el puente
+  // se ve claro en el oxígeno de side:-1 → esa es "la silla"; orbitOne(side:-1) la mira.
+  // Σ = 50. Duraciones PROVISIONALES (recalibrar a los arranques reales de segs.json).
+  wsilla: [
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.0, elev: 0.15, rMul: 1.58 }), dur: 4.5, label: 'las dos se jalan (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.6, rMul: 0.5 }), dur: 8, label: 'MAGENTA: el oxígeno, sus dos nubes, las sillas (l3-5)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 1.5 }), dur: 8, label: 'el hidrógeno apunta justo ahí (l6)' },
+    { shot: eyeLevelLock({ rMul: 1.15, azim: 1.2 }), dur: 5, label: 'QUITA LAS NUBES: núcleos pelones, nada (l7)' },
+    { shot: pushToBridge({ rFrom: 1.7, rTo: 0.86, azim: 1.15 }), dur: 8, label: 'PRÉNDELAS: looming al puente (l8)' },
+    { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 6, label: 'clímax ~78 %: carga en la silla' },
+    { shot: pullOut({}), dur: 10.5, label: 'cuatro · tetraedro · flota · y tú (l9-11)' },
+  ],
   // LA SAL (2026-08-26): Na⁺ (índice 0, en −x) + agua (O en +x). Hermana literal del rey: mismo
   // eje, mismo régimen (~13 bohr), mismas 9 tomas. `orbitOne(side:-1)` mira al ION, `side:+1` al agua.
   wsal: [
@@ -1074,6 +1101,7 @@ interface MolData { bundle: AtomBundle; nuclei: Nuc[]; extent: number; bonds: [n
 
 const BASE_META: Record<string, { name: string; formula: string; fact: string }> = {
   h2o:  { name: 'El agua', formula: 'H₂O', fact: 'Un ángulo de 104.5° decide que estés vivo.' },
+  wsilla: { name: 'La silla vacía', formula: 'H₂O···H₂O', fact: 'El puente no cae en cualquier lado: cae donde el oxígeno guarda sus dos nubes.' },
   wtri: { name: 'El anillo', formula: '(H₂O)₃', fact: 'Tres aguas se agarran MÁS fuerte que la suma de sus pares.' },
   wtet: { name: 'El cuarteto', formula: '(H₂O)₄', fact: 'Tres no encajaban. Cuatro sí: los cuatro puentes salen idénticos.' },
   whex6: { name: 'El hexágono', formula: '(H₂O)₆', fact: 'Cuenta los lados: seis. Es la misma forma que el agua repite al congelarse.' },
@@ -2373,6 +2401,29 @@ const HEMO_CAPAS: CapasSpec = {
 };
 // LA SAL: coreografía provisional = la del rey; recalibrar a segs.json cuando exista la voz.
 const WSAL_CAPAS: CapasSpec = WPAIR_CAPAS;
+// CAPAS DE LA SILLA VACÍA (2026-08-27) — 50 s. Ventanas PROVISIONALES desde el plan del
+// guion; recalibrar a los arranques reales de segs.json. Figura 3 de §LA MECÁNICA DEL O₂:
+// "quita las nubes" apaga TODO (≤3 s, la NADA como argumento) y "préndelas" lo devuelve
+// con el Δρ ardiendo. `apertura` la trae la pieza (0 = pegadas): arranca moderado, cierra
+// en escalera desde "préndelas" para que el puente NAZCA bajo la voz que lo nombra.
+const WSILLA_CAPAS: CapasSpec = {
+  apertura: { base: 0.55, mods: [
+    { wins: [[0, 3.0]], a: -0.30, label: 'arranque: casi pegadas, espectáculo' },
+    { wins: [[25.5, 50]], a: -0.20, combine: 'sum', label: 'préndelas: empiezan a cerrar' },
+    { wins: [[28.5, 50]], a: -0.20, combine: 'sum', label: '…más cerca' },
+    { wins: [[31.5, 50]], a: -0.15, combine: 'sum', label: 'pegadas: el puente' },
+  ] },
+  nubes:    { base: 1,    mods: [{ wins: [[20.5, 24.5]], a: -1.0, label: 'QUITA LAS NUBES: nada (l7)' }] },
+  campo:    { base: 1,    mods: [
+    { wins: [[4.5, 20.0]], a: -0.85, label: 'MAGENTA: el oxígeno de cerca (l3-6)' },
+    { wins: [[20.5, 24.5]], a: -1.0, label: 'ni palito ni resorte (l7)' },
+    { wins: [[24.5, 39.5]], a: -0.60, label: 'préndelas: el puente es NUBE, campo bajo (l8)' },
+  ] },
+  parpadeo: { base: 0.42, mods: [{ wins: [[4.5, 12.5]], a: 0.42, label: 'las dos nubes suyas parpadean' }] },
+  spin:     { base: 1,    mods: [{ wins: [[24.5, 41.0]], a: 0.9, label: 'ARDE: carga llegando a la silla (l8)' }] },
+  acc:      { base: 1,    mods: [{ wins: [[4.5, 12.5]], a: 0.5, label: 'ORO: mira el oxígeno de cerca (l3)' }] },
+};
+const WSILLA_DURATION = 50;
 const WPAIR_EX = 13;   // escala maestra del par (bohr) para la gramática de tomas
 const WPAIR_CAM = (typeof location !== 'undefined' ? new URLSearchParams(location.search).get('cam') : '') || 'a';
 // Las tomas salen del REGISTRO (datos), no de constantes por video. Variante nueva =
@@ -2443,6 +2494,8 @@ type WaterEntry = {
 };
 const WATER_BINS: Record<string, WaterEntry> = {
   wpair: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WPAIR_DURATION },
+  // LA SILLA VACÍA: el bin del rey con SU coreografía y SU duración (quick win, 2026-08-27).
+  wsilla: { bin: 'water-approach', ef: 'water-approach-efield', ex: 13, dur: WSILLA_DURATION, capas: WSILLA_CAPAS },
   // LA SAL (2026-08-26): Na⁺ + H₂O con PAR=na de precompute-water-approach.py. Mismo formato WAP2
   // (4 núcleos: Na, O, H, H), mismo eje, mismo régimen. Gate: −24.0 kcal/mol a 2.25 Å = experimento.
   wsal:  { bin: 'water-sodium', ef: 'water-sodium-efield', ex: 13, capas: WSAL_CAPAS, dur: WSAL_DURATION },

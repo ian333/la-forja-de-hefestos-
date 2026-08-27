@@ -309,6 +309,40 @@ sin A/B. (c) Los **quick wins** salen del rey: mismo bin, mismos átomos, otra c
 registro (`?cam=`), otro guion con otro payoff cotidiano — cero simulación, cero escena
 nueva. El primero: EL SUDOR (camB + "por qué el sudor te enfría").
 
+## 🔛 LA MECÁNICA DEL O₂: PRENDER/APAGAR ES LA DEMOSTRACIÓN (canonizada 2026-08-27)
+
+Ian, pidiendo el viaje entre los átomos: *"revisa el del O₂: ahí lo que hacíamos es que
+apagábamos las nubes y las prendíamos. Me gustaría eso mismo acá."* Es la mecánica que
+hizo viral al O₂ y que el rey repite en su ley #5 — y hasta hoy vivía repartida en dos
+lugares sin nombre. Este es el nombre.
+
+**LA LEY: cada afirmación del guion sobre una capa se PRUEBA prendiéndola o apagándola
+SOLA, en la ventana exacta de la voz.** No se dice "son tres enlaces": se prende σ, luego
+π¹, luego π² (`piSplit` en O₂/N₂/C₂: la nube π se DIVIDE en sus dos MOs reales y cada una
+tiene su `pi1Mul`/`pi2Mul`). No se dice "no es una línea, es la nube": se APAGA el campo
+(rey, t=62-68, `campo` a 15 %) y queda solo la nube. La ausencia demuestra lo que la
+presencia solo afirma.
+
+**Cómo se ejecuta (ya existe, no se reinventa):** la coreografía es DATO en `capas.ts` —
+un `CapasSpec` por pieza (`WPAIR_CAPAS`, `WTET_CAPAS`…), cada capa un objeto con `base` +
+`mods[{wins, a, label}]`. Las ventanas salen de `segs.json` (los ARRANQUES reales de la voz,
+`recalibrar-beats.py`), nunca a mano. Cada `mod` lleva `label` con la frase que prueba.
+
+**Las tres figuras que ya ganaron:**
+1. **Encender por partes** (O₂/N₂): "son tres a la vez" → σ, π¹, π² entran una por una.
+   Cada entrada cae en su palabra.
+2. **Apagar para probar** (rey, ley #5): "no es una línea" → campo fuera, la nube sola.
+3. **Apagar TODO y volver a prender** (la silla, 2026-08-27): "quita las nubes: no hay
+   nada, ni palito ni resorte" → `nubes` y `campo` a cero, quedan los núcleos pelones →
+   "préndelas: ahí está el puente" → vuelven. Es la #2 llevada al límite: la nada como
+   argumento.
+
+**Reglas ganadas a sangre:** apagar a 0 absoluto deja "alambre azul" o vacío muerto — el
+rey baja a 58 %/15 %, no a 0, salvo cuando la NADA es el argumento (figura 3) y dura ≤3 s.
+El corte de capa cae en el ARRANQUE de la línea, no en su final (2.5 s tarde = el
+verificador lo cazó en el cuarteto). Y una capa apagada mientras la voz habla de OTRA
+cosa es ruido, no demostración.
+
 ## 👁️ LEGIBILIDAD: si se puede contar mal, el encuadre falló
 
 **Narración correcta + visual ambiguo = el público cree lo que VE.** En "El puente" la voz dice

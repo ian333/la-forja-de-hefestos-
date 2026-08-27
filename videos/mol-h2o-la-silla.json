@@ -1,0 +1,88 @@
+{
+  "id": "mol-h2o-la-silla",
+  "titulo": "La silla vacía — H₂O···H₂O (por qué el hielo flota)",
+  "nota": "QUICK WIN del rey (canon §LAS LEYES DEL REY + §LA MECÁNICA DEL O₂): mismo bin, mismos átomos, pieza wsilla (entrada de WATER_BINS con SU coreografía de capas y SUS tomas), guion NUEVO de 50 s. Enseña que el puente tiene DOMICILIO (cae en los pares solitarios del oxígeno) y de ahí el tetraedro del hielo y por qué flota. Figura 3 de la mecánica del O₂: apagar TODO y volver a prender. Cero simulación, cero escena nueva.",
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wsilla",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 50
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.wsillaframes"
+  },
+  "audio": {
+    "dir": "dist-video/silla-narracion",
+    "narracion": "silla-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey (dist-video/wpair-narracion/wpair-music.wav), copiada",
+    "musicaVol": 0.17,
+    "musicaFadeIn": 2.5,
+    "musicaFadeOutAt": 47,
+    "segs": "segs.json",
+    "ass": "silla.ass",
+    "voz": "XTTS Matilda, TAKES=4 (mediana)"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "agua-la-silla-4k-master.mp4",
+    "h264": "agua-la-silla-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
+  },
+  "capsula": {
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
+    "guion": "silla.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-h2o-la-silla.mp4",
+    "capsulaRel": "moleculas/_code/mol-h2o-la-silla-capsula.tar.gz",
+    "pieza": "mol-h2o la silla",
+    "nueva": true,
+    "copy": {
+      "titulo": "Por qué el hielo flota (el puente del agua tiene domicilio)",
+      "descripcion": "Ya viste que dos aguas se jalan. Lo que nunca te enseñaron es que ese jalón tiene DIRECCIÓN y DOMICILIO. Esto no es una animación: son dos moléculas de agua resueltas con física cuántica (ab initio), y lo que ves es lo que dicen las ecuaciones. 💧 El oxígeno guarda dos nubes de electrones que no comparte con nadie —dos sillas vacías— y el hidrógeno de la otra agua apunta exactamente ahí. Quita las nubes y no queda nada: ni palito, ni resorte. Préndelas y ahí está el puente: carga llegando a la silla. Y de eso sale la consecuencia grande: cada agua da dos manos y recibe en dos sillas. Cuatro. Por eso el hielo arma un tetraedro, queda hueco, y flota. El ángulo de 104.5° no es un dato curioso: es la razón de que el hielo flote, de que los lagos no se congelen hasta el fondo, y de que exista la vida. Nada está inventado.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#agua",
+        "#hielo",
+        "#química",
+        "#cuántica",
+        "#enlacedehidrógeno",
+        "#ciencia",
+        "#física",
+        "#tetraedro",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ],
+      "nota": "El copy se escribe en el paso del GUION, no al final (canon)."
+    }
+  },
+  "guion": {
+    "archivo": "scripts/guiones/silla.txt",
+    "lineas": 12,
+    "palabras": 104,
+    "nota": "50 s (ian, 2026-08-27: \"clips de 50 segundos\"). Enseña lo que h2o.txt NO enseñó: el puente aterriza en los pares solitarios (la silla), y de ahí el tetraedro y el hielo que flota. Sin línea de una sola palabra (XTTS se las come: \"Flota.\"→\"plota\")."
+  }
+}

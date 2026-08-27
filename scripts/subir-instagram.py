@@ -149,7 +149,51 @@ def publicar(vid, forzar, via_url=False):
     m = requests.get(f'https://graph.instagram.com/{V}/{pub["id"]}', params={'fields': 'permalink', 'access_token': t['access_token']}).json()
     registrar(p, d, 'ig', {'id': pub['id'], 'url': m.get('permalink', '')}); print(f'✓ Reel publicado: {m.get("permalink")}')
 
+
+def probar(archivo):
+    """SONDA: sube un archivo por resumable y ve si Instagram lo ACEPTA — sin publicar nunca.
+
+    Existe porque el 2026-08-27 ian preguntó lo correcto: "si ya se tiene tope, pero ¿en verdad
+    lo has intentado?". Los topes de la tabla (300 MB, 25 Mbps, 1920 columnas) estaban tomados
+    de la documentación, no medidos. Esta sonda crea el contenedor, espera el veredicto de Meta
+    y SE DETIENE: nunca llama a media_publish, así que no aparece nada en el perfil. El
+    contenedor caduca solo en 24 h. Salta gate_calidad y specs_reel a propósito: el juez aquí
+    es Instagram, no nuestros validadores.
+
+      subir-instagram.py probar <ruta-al-archivo>
+    """
+    import subprocess
+    t = token()
+    if not os.path.exists(archivo): sys.exit(f'✗ no existe {archivo}')
+    r = subprocess.run(['ffprobe','-v','error','-select_streams','v:0','-show_entries',
+                        'stream=width,height,bit_rate','-of','csv=p=0',archivo], capture_output=True, text=True)
+    mb = os.path.getsize(archivo) / 1e6
+    print(f'▶ SONDA (no publica): {os.path.basename(archivo)}')
+    print(f'   {r.stdout.strip()} · {mb:.0f} MB')
+    print(f'   la tabla dice: ancho ≤1920, ≤25 Mbps, ≤300 MB. Veamos qué dice Instagram.')
+    base = f'https://graph.instagram.com/{V}/{t["ig_id"]}'
+    r = requests.post(f'{base}/media', data={'media_type': 'REELS', 'upload_type': 'resumable',
+                                             'caption': 'sonda', 'access_token': t['access_token']}).json()
+    if 'id' not in r: sys.exit(f'✗ RECHAZADO al crear el contenedor: {r}')
+    cid = r['id']; uri = r.get('uri') or f'https://rupload.facebook.com/ig-api-upload/{V}/{cid}'
+    print(f'   contenedor {cid} — subiendo los bytes...')
+    subir_bytes(uri, t['access_token'], archivo)
+    for i in range(15):
+        time.sleep(30)
+        s = requests.get(f'https://graph.instagram.com/{V}/{cid}',
+                         params={'fields': 'status_code,status,video_status', 'access_token': t['access_token']}).json()
+        sc = s.get('status_code')
+        print(f'   {(i+1)*30:4d}s: {sc} — {str(s.get("status",""))[:120]}')
+        if sc == 'FINISHED':
+            print(f'\n✓✓ INSTAGRAM LO ACEPTÓ. El tope documentado NO se aplica a este archivo.')
+            print(f'   (contenedor {cid} sin publicar; caduca solo en 24 h)')
+            return
+        if sc in ('ERROR', 'EXPIRED'):
+            print(f'\n✗ RECHAZADO por Instagram: {json.dumps(s, ensure_ascii=False)}')
+            return
+    print('\n? sin veredicto en 7.5 min — el contenedor sigue procesando')
+
 if __name__ == '__main__':
     a = sys.argv[1:]
     if not a: sys.exit(__doc__)
-    {'login': login, 'refresh': refresh}.get(a[0], lambda: publicar(a[0], '--yo-autorizo' in a, '--via-url' in a))()
+    {'login': login, 'refresh': refresh, 'probar': lambda: probar(a[1])}.get(a[0], lambda: publicar(a[0], '--yo-autorizo' in a, '--via-url' in a))()
