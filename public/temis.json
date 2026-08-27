@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 04:23",
+ "generado": "2026-08-27 04:34",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -2275,7 +2275,7 @@
     "tipo": "sim (RHF/aug-cc-pVDZ, gate −24.0 kcal/mol)",
     "estado": "hecho",
     "manifiesto": true,
-    "publicado": false
+    "publicado": true
    },
    {
     "fecha": "2026-08-28",
