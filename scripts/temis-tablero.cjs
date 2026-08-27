@@ -22,6 +22,15 @@
  *   con `## CIERRE`                      → CERRADO (commit = último que la tocó)
  *   `ordenes/DESPUES-DE-V1.md`           → DESPUÉS (bullets, agrupados por ##)
  *
+ * SUPERTICKET (2026-08-26): una orden con sección `## EJERCICIOS` es un superticket —
+ * una matriz herramienta × lección donde cada línea `- <id> · <título> · <herramientas>
+ * · <oráculo>` es un ejercicio (video con voz + oráculo del kernel + veredicto). El estado
+ * de cada ejercicio NO se teclea: lo escribe la PRODUCCIÓN en
+ * `public/evidencia/<slug>/resultados.json` ({<id>:{estado,checks,video,still,nota}}) y
+ * aquí solo se LEE. Sin resultados = todo `pendiente`. La tarjeta trae `superticket:true`,
+ * `ejercicios[]` y `progreso:{verdes,rojos,total}`. Sin CIERRE sigue siendo EN CURSO, pero NO
+ * cuenta para la tapa (ver `enCursoTapa`).
+ *
  * Uso:  node scripts/temis-tablero.cjs        → escribe public/temis.json
  */
 const fs = require('fs');
@@ -72,6 +81,37 @@ function ssDe(slug) {
   return fs.readdirSync(d).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).sort().map((f) => `evidencia/${slug}/${f}`);
 }
 
+// ── SUPERTICKET: `## EJERCICIOS` + resultados.json ───────────────────────────
+// Una línea = `- <id> · <título> · <herramientas> · <oráculo>`. Se parte por ' · ':
+// id es lo primero, herramientas y oráculo lo ÚLTIMO — así un título con '·' adentro
+// no rompe la fila. Estados válidos: verde | rojo | pendiente (cualquier otra cosa
+// → pendiente: el tablero no inventa verdes).
+const ESTADOS_EJ = new Set(['verde', 'rojo', 'pendiente']);
+function resultadosDe(slug) {
+  const p = path.join(EVID, slug, 'resultados.json');
+  if (!fs.existsSync(p)) return {};
+  try { const j = JSON.parse(fs.readFileSync(p, 'utf8')); return j && typeof j === 'object' ? j : {}; }
+  catch (e) { console.log(`  ⚠ ${slug}/resultados.json ilegible (${e.message}) — se trata como sin resultados`); return {}; }
+}
+function ejerciciosDe(txt, slug) {
+  const filas = bullets(seccion(txt, 'EJERCICIOS'));
+  if (!filas.length) return null;
+  const res = resultadosDe(slug);
+  return filas.map((f) => {
+    const p = f.split(' · ').map((x) => x.trim());
+    const id = p[0] || '';
+    const titulo = p.length >= 4 ? p.slice(1, -2).join(' · ') : (p[1] || '');
+    const herramientas = p.length >= 4 ? p[p.length - 2] : (p[2] || '');
+    const oraculo = p.length >= 4 ? p[p.length - 1] : (p[3] || '');
+    const r = (res[id] && typeof res[id] === 'object') ? res[id] : {};
+    const estado = ESTADOS_EJ.has(String(r.estado || '').toLowerCase()) ? String(r.estado).toLowerCase() : 'pendiente';
+    return {
+      id, titulo: plano(titulo), herramientas: plano(herramientas), oraculo: plano(oraculo),
+      estado, checks: String(r.checks || ''), video: String(r.video || ''), still: String(r.still || ''), nota: plano(String(r.nota || '')),
+    };
+  });
+}
+
 // ── ESTADO DE DESPLIEGUE (coordinar deploys — deploy_gotchas: nunca dos a la vez) ──
 // El deploy estampa public/temis-deploy.json = {commitFull} = lo que está EN VIVO.
 // Cada tarjeta cerrada se deriva sola: su commit es ancestro del desplegado → 'en-vivo';
@@ -115,8 +155,15 @@ const tarjetas = archivos.map((f) => {
   const evidenciaSS = ssDe(slug);
   // fuera las tablas markdown (| a | b |) y sus rayas: aplanadas son ilegibles — la orden completa queda en el .md
   const cierreLimpio = cierre.filter((l) => !/^\s*-\s*orden vs/i.test(l) && !/^\s*\|/.test(l) && !/^\s*-{3,}\s*$/.test(l));
+  // SUPERTICKET: `## EJERCICIOS` → ejercicios[] (estado lo pone resultados.json, no la orden)
+  const ejercicios = ejerciciosDe(txt, slug);
+  const superticket = !!ejercicios;
+  // rojos también cuentan: un ejercicio producido y reprobado (por el kernel O por el juez con ojos)
+  // es trabajo hecho que falló — la barra lo pinta rojo en vez de esconderlo como 'pendiente'.
+  const progreso = superticket ? { verdes: ejercicios.filter((e) => e.estado === 'verde').length, rojos: ejercicios.filter((e) => e.estado === 'rojo').length, total: ejercicios.length } : null;
   return {
     file: rel, slug, titulo, fecha, estado, prioridad,
+    superticket, ejercicios: ejercicios || [], progreso,
     objetivo: objetivo(txt),
     toca: bullets(seccion(txt, 'TOCA')).length,
     crea: bullets(seccion(txt, 'CREA')).length,
@@ -154,7 +201,15 @@ const probadas = tarjetas.filter((t) => t.estado === 'probado').sort((a, b) => (
 
 const violaciones = [];
 if (proximo.length > WIP.proximo) violaciones.push(`PRÓXIMO tiene ${proximo.length} > ${WIP.proximo}: para meter uno, saca uno`);
-if (enCurso.length > WIP.enCurso) violaciones.push(`EN CURSO tiene ${enCurso.length} > ${WIP.enCurso}: una orden a la vez — cierra o degrada a PRÓXIMO`);
+// LA TAPA DE EN CURSO mide lo que ESPERA A IAN (una orden abierta a la vez para que
+// algo cruce la meta), no lo que trabajan los agentes en paralelo. Un superticket es
+// una parrilla de producción que corre sola en iangpu (video tras video, verde tras
+// verde) — puede haber dos o tres vivos sin que nadie esté esperando a ian. Por eso
+// los supertickets se LISTAN en EN CURSO (así se ve su n/N) pero NO cuentan para la
+// tapa; si contaran, dos supertickets + la orden de otra sesión = tablero rojo por
+// diseño, y una tapa que siempre está roja no mide nada.
+const enCursoTapa = enCurso.filter((t) => !t.superticket);
+if (enCursoTapa.length > WIP.enCurso) violaciones.push(`EN CURSO tiene ${enCursoTapa.length} > ${WIP.enCurso} (sin contar supertickets): una orden a la vez — cierra o degrada a PRÓXIMO`);
 // SÍ O SÍ: una orden que se está CERRANDO en este working tree (su archivo está
 // modificado o nuevo en git) sin carpeta de screenshots = se niega. Las cerradas
 // de antes de Temis solo se marcan "sin evidencia visual" (no se reescribe la historia).
@@ -190,7 +245,7 @@ const cine = (() => {
 
 const json = {
   nombre: 'TEMIS', generado: new Date().toISOString().slice(0, 16).replace('T', ' '),
-  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCurso.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, sinDesplegar: [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length, despues: despues.length },
+  wip: WIP, conteo: { proximo: proximo.length, enCurso: enCursoTapa.length, supertickets: enCurso.length - enCursoTapa.length, cerrado: cerrado.length, probado: probadas.length, porProbar: cerrado.filter((t) => t.revisable && !t.falla).length, sinDesplegar: [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length, despues: despues.length },
   deploy: DEPLOY ? { commit: DEPLOY.commit, fecha: DEPLOY.fecha } : null,
   violaciones, columnas: { proximo, enCurso, cerrado, probado: probadas }, despues,
   cine,
@@ -200,9 +255,9 @@ fs.writeFileSync(OUT, JSON.stringify(json, null, 1));
 
 const _sd = [...cerrado, ...probadas].filter((t) => t.despliegue === 'sin-desplegar').length;
 if (_sd > 0) console.log(`  ⬆ ${_sd} cerrada(s) SIN DESPLEGAR — coordina el deploy (nunca dos a la vez)`);
-console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCurso.length}/${WIP.enCurso} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · probado ${probadas.length} · después ${despues.length}`);
+console.log(`TEMIS · próximo ${proximo.length}/${WIP.proximo} · en curso ${enCursoTapa.length}/${WIP.enCurso}${enCurso.length - enCursoTapa.length ? ` (+${enCurso.length - enCursoTapa.length} superticket)` : ''} · cerrado ${cerrado.length} (${revisables} con evidencia visual) · probado ${probadas.length} · después ${despues.length}`);
 for (const t of proximo) console.log(`  ${String(t.prioridad).padStart(2)} · ${t.titulo}`);
-for (const t of enCurso) console.log(`  ▶ EN CURSO · ${t.titulo}`);
+for (const t of enCurso) console.log(`  ▶ EN CURSO · ${t.titulo}${t.superticket ? ` · superticket ${t.progreso.verdes}/${t.progreso.total} ejercicios${t.progreso.rojos ? ` · ${t.progreso.rojos} rojo` : ''}` : ''}`);
 for (const v of violaciones) console.log(`  ✘ ${v}`);
 console.log(`→ ${path.relative(REPO, OUT)}`);
 process.exit(violaciones.length ? 1 : 0);

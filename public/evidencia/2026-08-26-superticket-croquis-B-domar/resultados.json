@@ -1,0 +1,9 @@
+{
+  "mec-u2-l4": {
+    "estado": "rojo",
+    "checks": "2/2",
+    "video": "/mnt/e/forja-videos/escuela/bethune/U02/ESCUELA-MECANICA-U2L4-redondeos-de-boceto-4K.mp4",
+    "still": "evidencia/2026-08-26-superticket-croquis-B-domar/01-mec-u2-l4-still.jpg",
+    "nota": "kernel 2/2 (vol 23542.453 mm³ exacto) · 4K en E: y PRIME · JUEZ CON OJOS REPRUEBA: rectángulo ~9% del ancho (fillet R8 = arco de ~17 px), en p03 la voz manda 'radio de ocho' y en pantalla no hay fillet ni campo de radio (voz adelantada a la acción), sin cotas 60/40 visibles, tarjeta de onboarding encimada al chyron de apertura → re-render con zoom-fit del croquis"
+  }
+}

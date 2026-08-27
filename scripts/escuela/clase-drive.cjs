@@ -105,14 +105,18 @@ const CPUVID = process.env.CPUVID === '1';
     const TARGET = lec.url ? URL.replace(/\/[^/]*$/, '/') + lec.url : URL;
     await page.goto(TARGET, { waitUntil: 'domcontentloaded', timeout: 60000 });
     // El doc por defecto arranca VACÍO (sin sólido) → `ready` (build exitoso) jamás
-    // llega; el kernel cargado se detecta por ready O por el error de "sin sólido".
+    // llega; el kernel cargado se detecta por ready O por el error de "sin sólido"
+    // O (desde v1·2 HIGIENE, 2026-08-25: el doc vacío ya NO reporta error) por la
+    // tarjeta `lienzo-vacio` / el estado-texto "Lienzo vacío".
     // El ready-wait depende de la PÁGINA (no del curso): las lecciones del CAD
     // (forja-brep.html) esperan el kernel B-Rep; las de labs (physics.html)
     // esperan window.__aeroLab. La escuela AERO vive en el CAD por defecto.
     const READY = /physics\.html/.test(TARGET)
       ? 'window.__aeroLab && !!window.__aeroLab.estado'
-      : 'window.__forgeBrep && (window.__forgeBrep.ready || !!window.__forgeBrep.error)';
-    await page.waitForFunction(READY, { timeout: 60000 });
+      : 'window.__forgeBrep && (window.__forgeBrep.ready || !!window.__forgeBrep.error || !!document.querySelector(\'[data-testid="lienzo-vacio"]\') || /Lienzo vacío/.test((document.querySelector(\'[data-testid="estado-texto"]\') || {}).textContent || ""))';
+    // Las opciones iban en la posición del ARG de waitForFunction (timeout real = 30 s
+    // default); en dev de iangpu el kernel tarda 20-40 s → 180 s (READY_MS para ajustar).
+    await page.waitForFunction(READY, null, { timeout: parseInt(process.env.READY_MS || '180000', 10) });
     await page.waitForTimeout(1500);
 
     // ── Overlays quemados en el video: cursor + pulso de clic + hint bar

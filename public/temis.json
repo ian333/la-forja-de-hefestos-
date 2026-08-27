@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 02:51",
+ "generado": "2026-08-27 03:31",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,10 +8,10 @@
  "conteo": {
   "proximo": 1,
   "enCurso": 1,
-  "supertickets": 2,
-  "cerrado": 59,
+  "supertickets": 1,
+  "cerrado": 61,
   "probado": 0,
-  "porProbar": 26,
+  "porProbar": 28,
   "sinDesplegar": 3,
   "despues": 15
  },
@@ -81,19 +81,19 @@
     "despliegue": ""
    },
    {
-    "file": "ordenes/2026-08-26-superticket-croquis-A-dibujar.md",
-    "slug": "2026-08-26-superticket-croquis-A-dibujar",
-    "titulo": "SUPERTICKET CROQUIS A — DIBUJAR (círculo · polígono · arco · elipse · punto · lazo)",
+    "file": "ordenes/2026-08-26-superticket-moldes-por-pieza.md",
+    "slug": "2026-08-26-superticket-moldes-por-pieza",
+    "titulo": "SUPERTICKET MOLDES · la Máquina de TU pieza (3 sprints con video)",
     "fecha": "2026-08-26",
     "estado": "en-curso",
     "prioridad": 999,
     "superticket": true,
     "ejercicios": [
      {
-      "id": "mec-u2-l1",
-      "titulo": "La tuerca hexagonal (círculos, polígono, origen)",
-      "herramientas": "circle poly fix",
-      "oraculo": "vol ≈ 1,435 mm³ (checks del kernel de la lección)",
+      "id": "mol-s1-llenado-por-pieza",
+      "titulo": "Tu pieza se LLENA: E4 (llenado) y E5 (alimentación) para la pieza del árbol",
+      "herramientas": "predicadoDeMalla measureFlowLength FAN",
+      "oraculo": "vol de vóxeles = vol del kernel ±5 % y 0 inalcanzables desde la boquilla",
       "estado": "pendiente",
       "checks": "",
       "video": "",
@@ -101,10 +101,10 @@
       "nota": ""
      },
      {
-      "id": "mec-u2-l2",
-      "titulo": "La biela del examen (arcos y líneas)",
-      "herramientas": "arc line circle",
-      "oraculo": "vol 21,036",
+      "id": "mol-s2-intake",
+      "titulo": "Declara tu pieza: intake §2.1.5 (pared · material · volumen anual) en la E1",
+      "herramientas": "intake-pared intake-material intake-q",
+      "oraculo": "la cotización del STEP maciza ($188,830) cae a la del v1-gate al declarar la pared",
       "estado": "pendiente",
       "checks": "",
       "video": "",
@@ -112,54 +112,10 @@
       "nota": ""
      },
      {
-      "id": "mec-u2-l3",
-      "titulo": "El polígono: la llave del 13",
-      "herramientas": "poly",
-      "oraculo": "checks de la lección",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "mec-u2-l7",
-      "titulo": "Arco por 3 puntos: el ojal (NUEVA)",
-      "herramientas": "arc3",
-      "oraculo": "oráculo por definir",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "mec-u2-l8",
-      "titulo": "La leva elíptica (NUEVA)",
-      "herramientas": "ellipse",
-      "oraculo": "vol = π·a·b·h exacto",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "mec-u2-l9",
-      "titulo": "Punto de referencia (NUEVA)",
-      "herramientas": "point",
-      "oraculo": "oráculo por definir",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "mec-u2-l10",
-      "titulo": "La ranura como lazo (NUEVA)",
-      "herramientas": "line arc",
-      "oraculo": "oráculo por definir",
+      "id": "mol-s3-base-catalogo",
+      "titulo": "La base se COMPRA: retículo HASCO/DME nominal con espesores de placa de catálogo",
+      "herramientas": "selectMoldBase cotizacionSvg",
+      "oraculo": "el cubo sigue en 196×196 (bit-igual) y una pieza chica cae en 156×156",
       "estado": "pendiente",
       "checks": "",
       "video": "",
@@ -169,20 +125,17 @@
     ],
     "progreso": {
      "verdes": 0,
-     "total": 7
+     "rojos": 0,
+     "total": 3
     },
-    "objetivo": "La postura: los ejercicios del libro (Bethune cap. 2, el idioma del boceto) se organizan como una MATRIZ herramienta × lección — cada herramienta del croquis tiene SU lección y cada lección es UN ejercicio. Un ejercicio = video con voz (Ma…",
-    "toca": 5,
-    "crea": 3,
-    "evidencia": 7,
+    "objetivo": "ian (2026-08-26): «quiero un video funcionando de los 3 sprints que vas a terminar». Los tres son las deudas que cualquiera topa en 5 minutos con SU pieza: (1) la pieza del árbol muere en E3 («⏸ estación 4 sigue cableada al CUBO»); (2) un …",
+    "toca": 8,
+    "crea": 7,
+    "evidencia": 3,
     "evidenciaDeclarada": [
-     "video de mec-u2-l1 entregado en 4K a E: (iangpu) y a PRIME; ruta en resultados.json",
-     "oráculo del kernel VERDE en el drive: meta.json con todos los checks de la lección en",
-     "still del video (frame del sólido terminado) en 01-mec-u2-l1-still.jpg",
-     "tarjeta de Temis en el lobby con la barra 1/7 ejercicios y la lista temis-ejercicios con",
-     "node scripts/temis-tablero.cjs sale 0 y public/temis.json trae superticket:true,",
-     "orden-gate VERDE con esta orden vigente",
-     "censo esperado: igual (canvas 8 / vite 41 / html 46)"
+     "gate del ciclo VERDE con los checks nuevos: predicado de malla vs kernel (vaso",
+     "3 lecciones con CLASE_OK (checks del kernel dentro del video) y 3 videos 4K",
+     "juez con ojos sobre los stills · orden-gate VERDE · Temis muestra 3/3"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -192,13 +145,48 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   }
+  ],
+  "cerrado": [
+   {
+    "file": "ordenes/2026-08-26-temis-galeria-panel.md",
+    "slug": "2026-08-26-temis-galeria-panel",
+    "titulo": "TEMIS — la evidencia se recorre A LO ANCHO y el panel deja de ser chico",
+    "fecha": "2026-08-26",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "caza de ian (2026-08-26, mientras probaba): «las imágenes, las pueda recorrer hacia la derecha y no hacia abajo, también el panel está muy pequeño». Hoy la galería de evidencia es una COLUMNA (grid-template-columns:1fr): con 3-6 capturas d…",
+    "toca": 3,
+    "crea": 3,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "la galería de una tarjeta con 3+ capturas se recorre A LO ANCHO (snap), con",
+     "el panel de Temis usa el ancho real de la pantalla (medido en 1900 px)",
+     "las 4 columnas del tablero siguen intactas (mismos testids)",
+     "orden-gate VERDE"
+    ],
+    "cierre": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-…",
+    "cierreCompleto": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-type:x mandatory. Prueba MECÁNICA en el arnés: las 3 figuras tienen la MISMA Y, X distintas, scrollWidth > clientWidth y scrollHeight <= clientHeight — o sea, en FILA de verdad, no apiladas. - Flechas ‹ › + contador n/N, con el índice derivado del scroll REAL (si arrastras con el trackpad el contador sigue). Probado: 1/3 → clic › → 2/3 y el carril avanzó de verdad (scrollLeft subió). - El panel de Temis usa la pantalla: .ps-panel.wide de min(1040px…) a calc(100vw - 24px) con tope 1760. Medido en 1900 px: 1760×938 (antes 1040). LO QUE CAZARON LOS OJOS (el arnés daba verde en los 3 checks): 1. La foto se cortaba abajo y el nav quedaba fuera del panel → tope max-height:42vh + object-fit:contain. 2. La galería vivía al FINAL, debajo de un CIERRE de 30 líneas: para revisar había que scrollear hasta el fondo. La evidencia ahora va ARRIBA, lo primero tras el título, y el nav va sobre el carril. Es la regla de la orden de evidencia aplicada a sí misma: si revisar cansa, no se revisa. GOTCHA NUEVO (costó una vuelta): vite dev cachea el índice de public/ al arrancar — las capturas copiadas DESPUÉS salen 200 pero con el HTML del fallback (Content-Type: text/html, naturalWidth 0 = imagen rota). Cura: reiniciar vite. Es hermano del gotcha de VITE_NO_WATCH con los módulos viejos. Sin deploy: la sesión paralela tiene LA SAL en curso y los deploys no se encinman. Entra en el próximo publish.",
+    "evidenciaSS": [
+     "evidencia/2026-08-26-temis-galeria-panel/01-galeria-horizontal.jpg",
+     "evidencia/2026-08-26-temis-galeria-panel/02-panel-ancho.jpg",
+     "evidencia/2026-08-26-temis-galeria-panel/03-galeria-siguiente.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "96fbaf0",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-26-superticket-croquis-B-domar.md",
     "slug": "2026-08-26-superticket-croquis-B-domar",
     "titulo": "SUPERTICKET CROQUIS B — DOMAR (fillet · chaflán · trim · patrón · restricciones · offset · espejo · escala)",
     "fecha": "2026-08-26",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 999,
     "superticket": true,
     "ejercicios": [
@@ -207,11 +195,11 @@
       "titulo": "Redondeos de boceto (fillet R8 + chaflán 8)",
       "herramientas": "line sfillet schamfer",
       "oraculo": "vol 23,542.45 EXACTO",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
+      "estado": "rojo",
+      "checks": "2/2",
+      "video": "/mnt/e/forja-videos/escuela/bethune/U02/ESCUELA-MECANICA-U2L4-redondeos-de-boceto-4K.mp4",
+      "still": "evidencia/2026-08-26-superticket-croquis-B-domar/01-mec-u2-l4-still.jpg",
+      "nota": "kernel 2/2 (vol 23542.453 mm³ exacto) · 4K en E: y PRIME · JUEZ CON OJOS REPRUEBA: rectángulo ~9% del ancho (fillet R8 = arco de ~17 px), en p03 la voz manda 'radio de ocho' y en pantalla no hay fillet ni campo de radio (voz adelantada a la acción), sin cotas 60/40 visibles, tarjeta de onboarding encimada al chyron de apertura → re-render con zoom-fit del croquis"
      },
      {
       "id": "mec-u2-l5",
@@ -282,6 +270,7 @@
     ],
     "progreso": {
      "verdes": 0,
+     "rojos": 1,
      "total": 7
     },
     "objetivo": "La postura: los ejercicios del libro (Bethune cap. 2) como MATRIZ herramienta × lección — A dibuja el perfil, B lo DOMA: redondeos, recortes, patrones, restricciones (⊥ ∥ = tangente coincidente simetría hasta DOF=0), offset, espejo/copia y…",
@@ -297,49 +286,134 @@
      "orden-gate VERDE con esta orden vigente",
      "censo esperado: igual (canvas 8 / vite 41 / html 46)"
     ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   }
-  ],
-  "cerrado": [
-   {
-    "file": "ordenes/2026-08-26-temis-galeria-panel.md",
-    "slug": "2026-08-26-temis-galeria-panel",
-    "titulo": "TEMIS — la evidencia se recorre A LO ANCHO y el panel deja de ser chico",
-    "fecha": "2026-08-26",
-    "estado": "cerrado",
-    "prioridad": 999,
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "caza de ian (2026-08-26, mientras probaba): «las imágenes, las pueda recorrer hacia la derecha y no hacia abajo, también el panel está muy pequeño». Hoy la galería de evidencia es una COLUMNA (grid-template-columns:1fr): con 3-6 capturas d…",
-    "toca": 3,
-    "crea": 3,
-    "evidencia": 4,
-    "evidenciaDeclarada": [
-     "la galería de una tarjeta con 3+ capturas se recorre A LO ANCHO (snap), con",
-     "el panel de Temis usa el ancho real de la pantalla (medido en 1900 px)",
-     "las 4 columnas del tablero siguen intactas (mismos testids)",
-     "orden-gate VERDE"
-    ],
-    "cierre": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-…",
-    "cierreCompleto": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-type:x mandatory. Prueba MECÁNICA en el arnés: las 3 figuras tienen la MISMA Y, X distintas, scrollWidth > clientWidth y scrollHeight <= clientHeight — o sea, en FILA de verdad, no apiladas. - Flechas ‹ › + contador n/N, con el índice derivado del scroll REAL (si arrastras con el trackpad el contador sigue). Probado: 1/3 → clic › → 2/3 y el carril avanzó de verdad (scrollLeft subió). - El panel de Temis usa la pantalla: .ps-panel.wide de min(1040px…) a calc(100vw - 24px) con tope 1760. Medido en 1900 px: 1760×938 (antes 1040). LO QUE CAZARON LOS OJOS (el arnés daba verde en los 3 checks): 1. La foto se cortaba abajo y el nav quedaba fuera del panel → tope max-height:42vh + object-fit:contain. 2. La galería vivía al FINAL, debajo de un CIERRE de 30 líneas: para revisar había que scrollear hasta el fondo. La evidencia ahora va ARRIBA, lo primero tras el título, y el nav va sobre el carril. Es la regla de la orden de evidencia aplicada a sí misma: si revisar cansa, no se revisa. GOTCHA NUEVO (costó una vuelta): vite dev cachea el índice de public/ al arrancar — las capturas copiadas DESPUÉS salen 200 pero con el HTML del fallback (Content-Type: text/html, naturalWidth 0 = imagen rota). Cura: reiniciar vite. Es hermano del gotcha de VITE_NO_WATCH con los módulos viejos. Sin deploy: la sesión paralela tiene LA SAL en curso y los deploys no se encinman. Entra en el próximo publish.",
+    "cierre": "Ejercicio 1 (mec-u2-l4, redondeos de boceto) = ROJO. El kernel dio 2/2 con el volumen EXACTO (23,542.453 mm³ = 60×40×10 − 64·(1−π/4)·10 − 32·10) y el 4K está en E: y PRIME, pero el JUEZ CON OJOS lo r…",
+    "cierreCompleto": "Ejercicio 1 (mec-u2-l4, redondeos de boceto) = ROJO. El kernel dio 2/2 con el volumen EXACTO (23,542.453 mm³ = 60×40×10 − 64·(1−π/4)·10 − 32·10) y el 4K está en E: y PRIME, pero el JUEZ CON OJOS lo reprobó: el paso que enseña (el fillet y el chaflán) no se ve. Verde = kernel Y ojos; aquí pasó uno. El formato de superticket quedó probado de punta a punta (comparte código con la orden A: mismo temis-tablero.cjs/TemisBoard.tsx/parrilla.sh). - orden vs entregado: desviaciones compartidas con A: clase-drive.cjs parchado (declarado en TOCA de A, un solo agente lo aplicó: ready-wait + timeout real); mec-u2-l4.json sin cambios (0 líneas: btn-sketch → chooser-plane-xy, sk-tool-line + sk-dyn-a/b/go, sk-tool-sfillet + sk-fillet-r, sk-tool-schamfer + sk-chamfer-d, sk-finish, btn-extrude, input-altura siguen vivos); still de parrilla.sh al 90 % (PARRILLA_STILL_FRAC) porque el 40 % caía a MEDIO trazo del rectángulo; barra de Temis con rojos. - sonda (laptop, prod, SOFTGL): runner del repo → CLASE_FATAL pasos=0 (mismo Timeout 30000ms en clase-drive.cjs:115; probe de 130 s: ready=false, error=null, estado-texto \"Lienzo vacío\"). Con el parche: CLASE_OK 6/6 pasos, 2/2 checks (p02 rectángulo dof=4; p05 vol 23542.45298511276 mm³ en la ventana 23300..23900), euler 2, ops [extrude]. Ritmo: en SwiftShader p02 tarda 216 s (18 gestos con glide); la clase ~7 min. El probe de p05 imprime 28250.94 (altura default 12) antes de que asiente altura=10 — cosmético, el check reintenta y lo cacha. - grabación (iangpu, dev :5178, GPU real): voz XTTS 6 wavs → CLASE_OK intento 1, 2/2 checks, 0 errores → 4K NVE…",
     "evidenciaSS": [
-     "evidencia/2026-08-26-temis-galeria-panel/01-galeria-horizontal.jpg",
-     "evidencia/2026-08-26-temis-galeria-panel/02-panel-ancho.jpg",
-     "evidencia/2026-08-26-temis-galeria-panel/03-galeria-siguiente.jpg"
+     "evidencia/2026-08-26-superticket-croquis-B-domar/01-mec-u2-l4-still.jpg",
+     "evidencia/2026-08-26-superticket-croquis-B-domar/02-temis-superticket.jpg"
     ],
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "96fbaf0",
-    "despliegue": "sin-desplegar"
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-26-superticket-croquis-A-dibujar.md",
+    "slug": "2026-08-26-superticket-croquis-A-dibujar",
+    "titulo": "SUPERTICKET CROQUIS A — DIBUJAR (círculo · polígono · arco · elipse · punto · lazo)",
+    "fecha": "2026-08-26",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "mec-u2-l1",
+      "titulo": "La tuerca hexagonal (círculos, polígono, origen)",
+      "herramientas": "circle poly fix",
+      "oraculo": "vol ≈ 1,435 mm³ (checks del kernel de la lección)",
+      "estado": "rojo",
+      "checks": "4/4",
+      "video": "/mnt/e/forja-videos/escuela/bethune/U02/ESCUELA-MECANICA-U2L1-tuerca-hexagonal-4K.mp4",
+      "still": "evidencia/2026-08-26-superticket-croquis-A-dibujar/01-mec-u2-l1-still.jpg",
+      "nota": "kernel 4/4 (vol 1435.477 mm³) · 4K en E: y PRIME · JUEZ CON OJOS REPRUEBA: el boceto (hexágono+círculo) mide ~3% del ancho del cuadro, la cota Ø10 no se ve, la herramienta círculo sigue armada mientras la voz acota, estado-texto 'Lienzo vacío' dentro del boceto, la tuerca final ~8% del cuadro y el volumen en letra de 9 px → re-render con zoom-fit del croquis"
+     },
+     {
+      "id": "mec-u2-l2",
+      "titulo": "La biela del examen (arcos y líneas)",
+      "herramientas": "arc line circle",
+      "oraculo": "vol 21,036",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "mec-u2-l3",
+      "titulo": "El polígono: la llave del 13",
+      "herramientas": "poly",
+      "oraculo": "checks de la lección",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "mec-u2-l7",
+      "titulo": "Arco por 3 puntos: el ojal (NUEVA)",
+      "herramientas": "arc3",
+      "oraculo": "oráculo por definir",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "mec-u2-l8",
+      "titulo": "La leva elíptica (NUEVA)",
+      "herramientas": "ellipse",
+      "oraculo": "vol = π·a·b·h exacto",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "mec-u2-l9",
+      "titulo": "Punto de referencia (NUEVA)",
+      "herramientas": "point",
+      "oraculo": "oráculo por definir",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "mec-u2-l10",
+      "titulo": "La ranura como lazo (NUEVA)",
+      "herramientas": "line arc",
+      "oraculo": "oráculo por definir",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 1,
+     "total": 7
+    },
+    "objetivo": "La postura: los ejercicios del libro (Bethune cap. 2, el idioma del boceto) se organizan como una MATRIZ herramienta × lección — cada herramienta del croquis tiene SU lección y cada lección es UN ejercicio. Un ejercicio = video con voz (Ma…",
+    "toca": 6,
+    "crea": 3,
+    "evidencia": 7,
+    "evidenciaDeclarada": [
+     "video de mec-u2-l1 entregado en 4K a E: (iangpu) y a PRIME; ruta en resultados.json",
+     "oráculo del kernel VERDE en el drive: meta.json con todos los checks de la lección en",
+     "still del video (frame del sólido terminado) en 01-mec-u2-l1-still.jpg",
+     "tarjeta de Temis en el lobby con la barra 1/7 ejercicios y la lista temis-ejercicios con",
+     "node scripts/temis-tablero.cjs sale 0 y public/temis.json trae superticket:true,",
+     "orden-gate VERDE con esta orden vigente",
+     "censo esperado: igual (canvas 8 / vite 41 / html 46)"
+    ],
+    "cierre": "Ejercicio 1 (mec-u2-l1, la tuerca) = ROJO. El gate del kernel dio 4/4 y el video 4K existe en E: y PRIME, pero el JUEZ CON OJOS lo reprobó: pasa el gate y no enseña. Un ejercicio es verde cuando pasa…",
+    "cierreCompleto": "Ejercicio 1 (mec-u2-l1, la tuerca) = ROJO. El gate del kernel dio 4/4 y el video 4K existe en E: y PRIME, pero el JUEZ CON OJOS lo reprobó: pasa el gate y no enseña. Un ejercicio es verde cuando pasan LOS DOS (kernel Y ojos); aquí pasó uno. El formato de superticket sí quedó probado de punta a punta (lección → parrilla en iangpu → 4K → still → resultados.json → tarjeta de Temis con barra y lista): lo que reprobó es el video, no el formato. - orden vs entregado: desviaciones. (1) scripts/escuela/clase-drive.cjs NO estaba en TOCA y se tocó (ENMIENDA, +7/−3): sin ese parche la parrilla es CLASE_FATAL ×3 en TODA lección del CAD. (2) La lección mec-u2-l1.json NO cambió ni una línea (todos sus testids siguen vivos tras la UI de agosto: btn-sketch → chooser-plane-xy, sk-tool-poly/circle/fix, sk-dim-input, sk-finish, btn-extrude, input-altura; la tarjeta guiada del doc vacío no estorba). (3) parrilla.sh: el still al 40% caía a medio croquis, no al sólido terminado que pide EVIDENCIA → PARRILLA_STILL_FRAC (default 0.9) y el still de esta orden se regeneró del master al 90% con el mismo filtro. (4) TemisBoard.tsx/temis-tablero.cjs: la barra también pinta ROJOS (progreso:{verdes,rojos,total}) para que un ejercicio producido y reprobado no se esconda como \"pendiente\". - sonda (laptop, prod, SOFTGL, sin video): con el runner del repo tal cual → CLASE_FAIL TimeoutError: page.waitForFunction: Timeout 30000ms exceeded (clase-drive.cjs:115) → CLASE_FATAL pasos=0. Causa medida (probe propio, 16 muestras): desde v1·2 HIGIENE (a8848f3, ForgeBRepStudio.tsx:3878-3880 setOpErr(null); setVacio(tr…",
+    "evidenciaSS": [
+     "evidencia/2026-08-26-superticket-croquis-A-dibujar/01-mec-u2-l1-still.jpg",
+     "evidencia/2026-08-26-superticket-croquis-A-dibujar/02-temis-superticket.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    },
    {
     "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",

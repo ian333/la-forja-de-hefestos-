@@ -27,6 +27,13 @@ export interface TemisCard {
   probado: string; falla: string;
   /** estado de DESPLIEGUE (coordinar deploys) — lo deriva temis-tablero.cjs contra public/temis-deploy.json */
   despliegue: 'en-vivo' | 'sin-desplegar' | 'n-a' | '';
+  /** SUPERTICKET: la orden trae `## EJERCICIOS` (matriz herramienta × lección). El estado de cada
+   *  ejercicio lo escribe la PRODUCCIÓN en public/evidencia/<slug>/resultados.json — nadie lo teclea. */
+  superticket: boolean; ejercicios: TemisEjercicio[]; progreso: { verdes: number; rojos?: number; total: number } | null;
+}
+export interface TemisEjercicio {
+  id: string; titulo: string; herramientas: string; oraculo: string;
+  estado: 'verde' | 'rojo' | 'pendiente'; checks: string; video: string; still: string; nota: string;
 }
 
 /** nombre de archivo → pie de foto legible: "02-acta-rotulada-en-escena.jpg" → "acta rotulada en escena" */
@@ -49,6 +56,23 @@ function TemisDetalle({ c, onVolver }: { c: TemisCard; onVolver: () => void }) {
       {/* LA EVIDENCIA VA ARRIBA: se abre la tarjeta y SE VE. Antes vivía al final,
           debajo de un CIERRE de 30 líneas — para revisar había que scrollear hasta
           el fondo y las flechas quedaban fuera del panel (cazado con los ojos). */}
+      {/* SUPERTICKET: los ejercicios van ANTES de la galería — el veredicto de cada uno
+          (verde/rojo/gris) es lo que se revisa; la foto es su prueba. */}
+      {c.superticket && c.progreso && <>
+        <h5>Ejercicios <b>{c.progreso.verdes}/{c.progreso.total}</b><span className="tm-ej-leyenda">verde = kernel Y juez con ojos pasaron · rojo = falló uno (el gate del kernel no basta) · gris = sin producir</span></h5>
+        <ol className="tm-ej" data-testid="temis-ejercicios">
+          {c.ejercicios.map((e) => (
+            <li key={e.id} className={`tm-ej-fila ${e.estado}`} data-testid={`temis-ej-${e.id}`} title={`${e.id} · oráculo: ${e.oraculo}`}>
+              <span className={`tm-ej-punto ${e.estado}`} aria-label={e.estado} />
+              <span className="tm-ej-id">{e.id}</span>
+              <span className="tm-ej-tit">{e.titulo}</span>
+              <code className="tm-ej-tools">{e.herramientas}</code>
+              <span className="tm-ej-checks">{e.checks || (e.estado === 'pendiente' ? '—' : '')}</span>
+              <span className="tm-ej-nota">{e.nota || e.oraculo}</span>
+            </li>
+          ))}
+        </ol>
+      </>}
       {c.evidenciaSS.length > 0 && <>
         <h5>Evidencia visual <b>{c.evidenciaSS.length}</b></h5>
         <Galeria fotos={c.evidenciaSS} />
@@ -113,7 +137,8 @@ function Galeria({ fotos }: { fotos: string[] }) {
 export interface TemisJson {
   nombre: string; generado: string;
   wip: { proximo: number; enCurso: number };
-  conteo: { proximo: number; enCurso: number; cerrado: number; probado: number; porProbar: number; sinDesplegar: number; despues: number };
+  /** enCurso = lo que cuenta para la TAPA (espera a ian); supertickets = los que corren solos y se listan aparte del conteo */
+  conteo: { proximo: number; enCurso: number; supertickets?: number; cerrado: number; probado: number; porProbar: number; sinDesplegar: number; despues: number };
   deploy: { commit: string; fecha: string } | null;
   /** CINE — 1 video por día (videos/CRONOGRAMA.json); `publicado` derivado del catálogo de Comando */
   cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string; estado: 'hecho' | 'hoy' | 'proximo'; manifiesto: boolean; publicado: boolean }> } | null;
@@ -135,6 +160,16 @@ function TemisCardView({ c, onOpen }: { c: TemisCard; onOpen: (c: TemisCard) => 
       </div>
       {(c.estado === 'proximo' || c.estado === 'en-curso') && c.objetivo && <p className="tm-obj">{c.objetivo}</p>}
       {(c.estado === 'cerrado' || c.estado === 'probado') && c.cierre && <p className="tm-obj">{c.cierre}</p>}
+      {c.superticket && c.progreso && (
+        <div className="tm-barra" data-testid={`temis-progreso-${c.slug}`} title="ejercicios con oráculo del kernel en verde">
+          <div className="tm-barra-pista">
+            <div className="tm-barra-llena" style={{ width: `${c.progreso.total ? Math.round(100 * c.progreso.verdes / c.progreso.total) : 0}%` }} />
+            {/* rojo = producido y reprobado (kernel o juez): trabajo hecho que falló, no se esconde */}
+            {(c.progreso.rojos ?? 0) > 0 && <div className="tm-barra-roja" style={{ width: `${c.progreso.total ? Math.round(100 * (c.progreso.rojos ?? 0) / c.progreso.total) : 0}%` }} />}
+          </div>
+          <span className="tm-barra-n">{c.progreso.verdes}/{c.progreso.total} ejercicios{(c.progreso.rojos ?? 0) > 0 ? ` · ${c.progreso.rojos} rojo` : ''}</span>
+        </div>
+      )}
       <p className="tm-meta">
         {c.fecha}{c.toca ? ` · toca ${c.toca}` : ''}{c.crea ? ` · crea ${c.crea}` : ''}{c.evidencia ? ` · evidencia ${c.evidencia}` : ''}
         {c.commit && <span className="tm-commit"> · {c.commit}</span>}
@@ -199,7 +234,7 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
           {columnas.proximo.length === 0 && <div className="tm-vacio">nada en cola — escribe una orden con <code>ESTADO: proximo</code></div>}
         </section>
         <section className="tm-col" data-testid="temis-col-en-curso">
-          <h4>En curso <b className={conteo.enCurso > wip.enCurso ? 'bad' : ''}>{conteo.enCurso}/{wip.enCurso}</b></h4>
+          <h4>En curso <b className={conteo.enCurso > wip.enCurso ? 'bad' : ''}>{conteo.enCurso}/{wip.enCurso}</b>{(conteo.supertickets ?? 0) > 0 && <span className="tm-sub" title="los supertickets corren solos en iangpu; no cuentan para la tapa">+{conteo.supertickets} superticket</span>}</h4>
           {columnas.enCurso.map((c) => <TemisCardView key={c.slug} c={c} onOpen={setDetalle} />)}
           {columnas.enCurso.length === 0 && <div className="tm-vacio">libre — toma la #1 de Próximo</div>}
         </section>
@@ -330,4 +365,28 @@ export const TEMIS_CSS = `
 .tm-dia-m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-dim,#A6B4C8)}
 .tm-dia.pub .tm-dia-m{color:#7ee0a0}
 .tm code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--ds-dim,#A6B4C8)}
+/* SUPERTICKET: barra n/N en la tarjeta + lista de ejercicios en el detalle */
+.tm-barra{display:flex;align-items:center;gap:8px;margin-top:2px;min-width:0}
+.tm-barra-pista{flex:1 1 auto;height:5px;border-radius:3px;background:var(--ds-line,rgba(140,180,255,.1));overflow:hidden;display:flex}
+.tm-barra-llena{height:100%;background:#7ee0a0;border-radius:3px;transition:width .2s;flex:0 0 auto}
+.tm-barra-roja{height:100%;background:#f27a6c;border-radius:3px;transition:width .2s;flex:0 0 auto}
+.tm-barra-n{flex:0 0 auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-dim,#A6B4C8);font-variant-numeric:tabular-nums}
+.tm-ej-leyenda{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;font-size:10px;color:var(--ds-faint,#7E90A9)}
+.tm-ej{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:10px;overflow:hidden;background:var(--ds-panel2,#16202F)}
+.tm-ej-fila{display:grid;grid-template-columns:12px 86px minmax(160px,1.4fr) minmax(120px,.8fr) 52px minmax(140px,1fr);gap:10px;align-items:center;padding:7px 10px;border-top:1px solid var(--ds-line,rgba(140,180,255,.1));font-size:12px;color:var(--ds-dim,#A6B4C8);min-width:0}
+.tm-ej-fila:first-child{border-top:0}
+.tm-ej-fila.verde{background:rgba(126,224,160,.05)}
+.tm-ej-fila.rojo{background:rgba(242,122,108,.06)}
+.tm-ej-punto{width:9px;height:9px;border-radius:50%;background:var(--ds-faint,#7E90A9);opacity:.55;flex:0 0 auto}
+.tm-ej-punto.verde{background:#7ee0a0;opacity:1;box-shadow:0 0 6px rgba(126,224,160,.6)}
+.tm-ej-punto.rojo{background:#f27a6c;opacity:1;box-shadow:0 0 6px rgba(242,122,108,.6)}
+.tm-ej-id{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--ds-faint,#7E90A9)}
+.tm-ej-tit{font-weight:600;color:var(--ds-text,#DCE7F5);line-height:1.3;min-width:0}
+.tm-ej-fila.pendiente .tm-ej-tit{color:var(--ds-dim,#A6B4C8);font-weight:500}
+.tm-ej-tools{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:#FDB813;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-ej-checks{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-variant-numeric:tabular-nums;text-align:right;color:var(--ds-dim,#A6B4C8)}
+.tm-ej-fila.verde .tm-ej-checks{color:#7ee0a0}
+.tm-ej-fila.rojo .tm-ej-checks{color:#f8b4aa}
+.tm-ej-nota{font-size:11px;color:var(--ds-faint,#7E90A9);line-height:1.3;min-width:0;overflow-wrap:anywhere}
+@media (max-width:980px){.tm-ej-fila{grid-template-columns:12px 1fr;grid-auto-flow:row}.tm-ej-id,.tm-ej-tools,.tm-ej-checks,.tm-ej-nota{grid-column:2}.tm-ej-checks{text-align:left}}
 `;

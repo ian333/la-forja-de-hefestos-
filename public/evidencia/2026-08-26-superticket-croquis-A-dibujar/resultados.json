@@ -1,0 +1,9 @@
+{
+  "mec-u2-l1": {
+    "estado": "rojo",
+    "checks": "4/4",
+    "video": "/mnt/e/forja-videos/escuela/bethune/U02/ESCUELA-MECANICA-U2L1-tuerca-hexagonal-4K.mp4",
+    "still": "evidencia/2026-08-26-superticket-croquis-A-dibujar/01-mec-u2-l1-still.jpg",
+    "nota": "kernel 4/4 (vol 1435.477 mm³) · 4K en E: y PRIME · JUEZ CON OJOS REPRUEBA: el boceto (hexágono+círculo) mide ~3% del ancho del cuadro, la cota Ø10 no se ve, la herramienta círculo sigue armada mientras la voz acota, estado-texto 'Lienzo vacío' dentro del boceto, la tuerca final ~8% del cuadro y el volumen en letra de 9 px → re-render con zoom-fit del croquis"
+  }
+}
