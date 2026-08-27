@@ -1,12 +1,12 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-26 21:57",
+ "generado": "2026-08-27 02:41",
  "wip": {
   "proximo": 7,
   "enCurso": 1
  },
  "conteo": {
-  "proximo": 0,
+  "proximo": 1,
   "enCurso": 1,
   "cerrado": 59,
   "probado": 0,
@@ -20,7 +20,33 @@
  },
  "violaciones": [],
  "columnas": {
-  "proximo": [],
+  "proximo": [
+   {
+    "file": "ordenes/2026-08-26-subida-automatizada.md",
+    "slug": "2026-08-26-subida-automatizada",
+    "titulo": "SUBIDA AUTOMATIZADA — Instagram · YouTube · TikTok desde la PC de ian (con autorización por video)",
+    "fecha": "2026-08-26",
+    "estado": "proximo",
+    "prioridad": 2,
+    "objetivo": "Que subir un video ya aprobado (el master + el copy del manifiesto) a IG, YouTube y TikTok sea UN comando que corre solo — ian solo dice \"autorizado <pieza> <plataformas>\". Con evidencia (screenshot/URL del post publicado) que cae en el re…",
+    "toca": 4,
+    "crea": 3,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "Un video subido a YouTube por API con su URL en el registro de Comando.",
+     "Un Reel subido a IG (API o Brave) con screenshot del post.",
+     "registro.json marcado solo (sin togglePlat a mano)."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   }
+  ],
   "enCurso": [
    {
     "file": "ordenes/2026-08-26-la-sal.md",
