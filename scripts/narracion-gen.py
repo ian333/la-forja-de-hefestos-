@@ -275,6 +275,13 @@ for i, text in enumerate(lines, 1):
     tgt = (_tgts[i - 1] if _tgts and i <= len(_tgts) else TARGET)
     f = os.path.join(OUT, f"{MOL}_l{i:02d}.wav")
     _sf = f[:-4] + '.firma'
+    # LEGADO = CONGELADO (2026-08-17): un wav SIN .firma es anterior al sistema de caché —
+    # la voz de un GANADOR. Tratarlo como MISS lo regeneraba con una toma nueva de XTTS
+    # (pasó: la corrida total sobrescribió las 25+27+31 líneas de anillo/cuarteto/hexámero;
+    # se restauraron de las cápsulas de PRIME). Sin firma = se CONSERVA, salvo FORCE=1.
+    if os.path.exists(f) and not os.path.exists(_sf) and os.environ.get('FORCE') != '1':
+        print(f"  l{i:02d} LEGADO congelado ({_dur(f):5.2f}s) — se conserva (FORCE=1 regenera)  {text[:40]}", flush=True)
+        continue
     if _CACHE and not ONLY and os.path.exists(f) and os.path.exists(_sf) \
             and open(_sf).read().strip() == _firma(text, tgt):
         print(f"  l{i:02d} CACHÉ ({_dur(f):5.2f}s)  {text[:40]}", flush=True)

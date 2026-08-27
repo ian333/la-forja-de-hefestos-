@@ -21,6 +21,16 @@ if /usr/lib/wsl/lib/nvidia-smi --query-gpu=name --format=csv,noheader >/dev/null
 else
   echo "✗ GPU: nvidia-smi no responde"; FALLAS=$((FALLAS+1))
 fi
+# VITE FRESCO SIEMPRE (2026-08-25): el watcher de vite dev NO invalida en iangpu (inotify
+# agotado, ver memoria vite_persistence) → tras un rsync de src/ sirve el módulo VIEJO en
+# silencio. El sudor v2 se rindió 7 min con la cámara y el título anteriores aunque el disco
+# ya tenía el cambio. Relanzar cuesta ~200 ms; solo se respeta un render en curso.
+if [ "$(ps -eo pid,comm,args --no-headers | awk '$2=="node" && /render-clip/' | wc -l)" -eq 0 ]; then
+  for p in $(ps -eo pid,args --no-headers | awk '/node .*vite --port 5178/ && !/awk/ {print $1}'); do
+    kill "$p" 2>/dev/null && echo "… vite relanzado (pid $p) para servir el source ACTUAL"
+  done
+  sleep 1
+fi
 # vite (se intenta REVIVIR antes de reprobar: el 80% de las veces solo está muerto por un reinicio)
 if ! curl -s -o /dev/null --max-time 5 "$BASE_URL/cinematic-molecule.html"; then
   echo "… vite no responde: intentando levantarlo"
