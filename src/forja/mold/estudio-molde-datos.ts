@@ -33,6 +33,7 @@
  */
 import type { MoldAssemblySpec } from './mold-assembly';
 import { moldMachine, type MoldPackage, type MachineSpec, type Arch } from './moldmachine';
+import { CATALOGO_BASES } from './moldbase';   // sprint 3: la base con fuente declarada
 import { packageToAssemblySpec, plateStackZ } from './mold-plano-set';
 import {
   plateDefs, plateDepth, moldStackHeight, coolingCircuit, standardHoles, moldBoltSizing,
@@ -1280,7 +1281,7 @@ export interface CotizacionPieza {
   fecha: string;
   pieza: { nombre: string; dims: string; material: string; wallMm: number; volCc: number; Q: number };
   dfm: { veredicto: string; tcS: number; errores: number; notas: string[] };
-  molde: { arch: string; nCav: number; baseNombre: string; baseAritmetica: string; insertos: string[]; stackMm: number; aceroNota: string };
+  molde: { arch: string; nCav: number; baseNombre: string; catalogo: string; baseAritmetica: string; insertos: string[]; stackMm: number; aceroNota: string };
   dinero: { moldeUSD: number; amortPzaUSD: number; restoPzaUSD: number; totalPzaUSD: number; entregaSemanas: number; proporcionPct: number; proporcionLectura: string };
   banda: Array<{ q: number; arch: string; nCav: number; pzaUSD: number }>;
   supuestos: string[];
@@ -1322,6 +1323,7 @@ export function cotizacionPieza(pieza: PiezaSpec, o?: { fecha?: string }): Cotiz
     molde: {
       arch: g.arch, nCav: g.nCav,
       baseNombre: `${b.base.wmm}×${b.base.lmm} mm (catálogo §4.3.2)`,
+      catalogo: CATALOGO_BASES,
       baseAritmetica: e3.base.aritmetica,
       insertos: e3.insertos.map((i) => `${i.nombre.replace(/\s*\(.*$/, '')}: ${i.dims}`),
       stackMm: e3.stackMm,
@@ -1336,7 +1338,7 @@ export function cotizacionPieza(pieza: PiezaSpec, o?: { fecha?: string }): Cotiz
     banda: e2x.banda.slice(0, 4),
     supuestos: [
       'amortización = molde$/Q — IGNORA el factor de mantenimiento §3.4.1 (declarado)',
-      'la base SE COMPRA, no se fabrica (§4.3.2): primera medida comercial que aloja la necesidad',
+      'la base SE COMPRA, no se fabrica (§4.3.2): retículo nominal HASCO/DME; números de pieza y precio del proveedor: PENDIENTES',
       'insertos con borde §4.2.1 y alturas Fig 4.13 — dims de COMPRA, no de dibujo',
       `t_c por Eq 9.5 con pared ${pieza.pieza.wallMm} mm y ${pieza.material} declarado (intake §2.1.5)`,
       'la banda A-050 dice DÓNDE cambia el ganador: la cotización vale en su volumen',
@@ -1383,6 +1385,7 @@ export function cotizacionSvg(c: CotizacionPieza): string {
   tx(370, y2, 13, 'EL MOLDE — estaciones 2-3', { peso: 800, fill: '#8a7430' }); y2 += 18;
   tx(376, y2, 12, `arquitectura: ${c.molde.arch} ×${c.molde.nCav} cav`, { mono: true, peso: 700 }); y2 += 16;
   tx(376, y2, 12, `base: ${c.molde.baseNombre}`, { mono: true, peso: 700 }); y2 += 15;
+  tx(376, y2, 10.5, c.molde.catalogo, { fill: '#66707e' }); y2 += 13;
   for (const l of wrap(c.molde.baseAritmetica, 42)) { tx(376, y2, 10.5, l, { fill: '#66707e' }); y2 += 13; }
   y2 += 5;
   for (const i of c.molde.insertos) for (const l of wrap(i, 40)) { tx(376, y2, 11, l, { mono: true }); y2 += 14; }
@@ -1405,7 +1408,7 @@ export function cotizacionSvg(c: CotizacionPieza): string {
   // ── pie: SUPUESTOS ──
   let yf = 610;
   tx(40, yf, 12, 'SUPUESTOS — cada número con su § (Kazmer)', { peso: 800, fill: '#8a7430' }); yf += 15;
-  for (const sn of c.supuestos) { tx(46, yf, 10.5, '· ' + sn, { fill: '#4a5462' }); yf += 13; }
+  for (const sn of c.supuestos) for (const l of wrap('· ' + sn, 120)) { tx(46, yf, 10.5, l, { fill: '#4a5462' }); yf += 13; }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 707" width="100%" style="background:#fdfcf8">` +
     `<rect x="0" y="0" width="1000" height="707" fill="#fdfcf8"/>` +
     `<rect x="24" y="20" width="952" height="667" fill="none" stroke="#c8bd9a" stroke-width="1.5"/>` +
@@ -2114,6 +2117,8 @@ export interface Estacion4Dado {
   /** A-104: dónde muere el aire — el dato que la estación 7 (venteo) va a consumir */
   ultimaZona: { x: number; y: number; z: number; tS: number } | null;
   flujoMm: number; ltRatio: number;
+  /** sprint 2: qué reología corrió (sigue al intake; si el Apéndice A no tiene el material, lo dice) */
+  reologia?: string;
   /** lo que el dado YA delata y NO se arregla aquí: el grafo con retornos (§1.5 Fig 1.9) */
   anuncios: AnuncioRetorno[];
 }

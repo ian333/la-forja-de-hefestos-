@@ -64,6 +64,77 @@ export interface FlowField {
 }
 
 /**
+ * EL PREDICADO DE UNA MALLA CERRADA (superticket moldes, sprint 1 — E4/E5 POR PIEZA).
+ * Antes el llenado solo sabía del CUBO (`dentroDadoLocal`, analítico). Aquí la figura
+ * la da el SÓLIDO teselado del CAD, sea el que sea: (x,y,z) ∈ pieza por PARIDAD de un
+ * rayo +X (Möller–Trumbore) contra los triángulos que cruzan la fila (y,z) del punto.
+ * Cubetas por (y,z) en bins de `binMm`: cada consulta toca ~T/bins triángulos, no T —
+ * measureFlowLength pregunta 9 veces por vóxel y un vaso de 1 mm son ~170k vóxeles.
+ * Jitter fijo de 1e-4 mm en y,z: un rayo que pasa EXACTO por una arista compartida
+ * cuenta dos triángulos y rompe la paridad (los empates son el bug clásico de este
+ * método). Malla unwelded (OCC tesela por cara) no importa: la superficie es cerrada.
+ * Verificado en el gate: vaso ⌀80 → vóxeles = kernel ±5 %; cubo → coincide con el
+ * predicado analítico en >98 % de las celdas.
+ */
+export function predicadoDeMalla(
+  positions: ArrayLike<number>, indices: ArrayLike<number>, binMm = 2,
+): (x: number, y: number, z: number) => boolean {
+  const nT = Math.floor(indices.length / 3);
+  const tri = new Float64Array(nT * 9);
+  let ymin = Infinity, ymax = -Infinity, zmin = Infinity, zmax = -Infinity;
+  for (let t = 0; t < nT; t++) {
+    for (let k = 0; k < 3; k++) {
+      const v = indices[t * 3 + k] * 3;
+      const x = positions[v], y = positions[v + 1], z = positions[v + 2];
+      tri[t * 9 + k * 3] = x; tri[t * 9 + k * 3 + 1] = y; tri[t * 9 + k * 3 + 2] = z;
+      if (y < ymin) ymin = y; if (y > ymax) ymax = y; if (z < zmin) zmin = z; if (z > zmax) zmax = z;
+    }
+  }
+  const ny = Math.max(1, Math.ceil((ymax - ymin) / binMm) + 1);
+  const nz = Math.max(1, Math.ceil((zmax - zmin) / binMm) + 1);
+  const bins: number[][] = new Array(ny * nz);
+  const by = (y: number) => Math.min(ny - 1, Math.max(0, Math.floor((y - ymin) / binMm)));
+  const bz = (z: number) => Math.min(nz - 1, Math.max(0, Math.floor((z - zmin) / binMm)));
+  for (let t = 0; t < nT; t++) {
+    const o = t * 9;
+    const y0 = Math.min(tri[o + 1], tri[o + 4], tri[o + 7]), y1 = Math.max(tri[o + 1], tri[o + 4], tri[o + 7]);
+    const z0 = Math.min(tri[o + 2], tri[o + 5], tri[o + 8]), z1 = Math.max(tri[o + 2], tri[o + 5], tri[o + 8]);
+    for (let j = by(y0); j <= by(y1); j++) for (let k = bz(z0); k <= bz(z1); k++) {
+      const id = k * ny + j;
+      (bins[id] ??= []).push(t);
+    }
+  }
+  const EPS = 1e-9;
+  return (x: number, y: number, z: number): boolean => {
+    const yy = y + 1e-4, zz = z + 2e-4;
+    if (yy < ymin || yy > ymax || zz < zmin || zz > zmax) return false;
+    const lista = bins[bz(zz) * ny + by(yy)];
+    if (!lista) return false;
+    let cruces = 0;
+    for (let n = 0; n < lista.length; n++) {
+      const o = lista[n] * 9;
+      const v0x = tri[o], v0y = tri[o + 1], v0z = tri[o + 2];
+      const e1x = tri[o + 3] - v0x, e1y = tri[o + 4] - v0y, e1z = tri[o + 5] - v0z;
+      const e2x = tri[o + 6] - v0x, e2y = tri[o + 7] - v0y, e2z = tri[o + 8] - v0z;
+      // dir = (1,0,0): h = dir × e2 = (0, −e2z, e2y)
+      const a = -e1y * e2z + e1z * e2y;
+      if (a > -EPS && a < EPS) continue;                        // paralelo al rayo
+      const f = 1 / a;
+      const sx = x - v0x, sy = yy - v0y, sz = zz - v0z;
+      const u = f * (-sy * e2z + sz * e2y);
+      if (u < 0 || u > 1) continue;
+      // q = s × e1 ; v = f·(dir·q) = f·q.x ; t = f·(e2·q)
+      const qx = sy * e1z - sz * e1y, qy = sz * e1x - sx * e1z, qz = sx * e1y - sy * e1x;
+      const v = f * qx;
+      if (v < 0 || u + v > 1) continue;
+      const tt = f * (e2x * qx + e2y * qy + e2z * qz);
+      if (tt > EPS) cruces++;
+    }
+    return (cruces & 1) === 1;
+  };
+}
+
+/**
  * VOXELIZA el hueco A/B y mide L desde la compuerta.
  * `inCavity(x,y,z)` responde si ese punto (mm, coords de placa) está en el HUECO —
  * de ahí sale la figura, sea la que sea. La da el molde, no una fórmula.

@@ -1,0 +1,134 @@
+{
+  "id": "mol-s3-base-catalogo",
+  "curso": "moldes",
+  "unidad": "S",
+  "n": 3,
+  "titulo": "La base se compra",
+  "subtitulo": "§4.3.2: retículo nominal HASCO/DME con fuente declarada",
+  "fuente": "Kazmer §4.3.2 · superticket moldes, sprint 3",
+  "descripcion": "La base del molde es casi la mitad del costo y no se fabrica: se compra. La Máquina elige la primera medida comercial que aloja la necesidad — ahora sobre el retículo nominal de HASCO/DME, con su fuente escrita en la hoja y lo que no tiene declarado pendiente.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El libro lo dice sin rodeos: la base se compra, no se modela. Es el cuarenta y ocho por ciento del molde. Entonces la pregunta es cuál base, del catálogo de quién.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 600
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Abrimos la jabonera: ciento veinte por ochenta por treinta, pared de dos, con sus costillas y sus bosses.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "doc-switcher",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "ps-open-st-jabonera",
+          "settle": 9000
+        },
+        {
+          "type": "main",
+          "fn": "toggleCollapse",
+          "args": [
+            "features"
+          ]
+        },
+        {
+          "type": "wait",
+          "ms": 900
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 30000"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Economía y arquitectura.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e2",
+          "settle": 5500
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e3",
+          "settle": 40000
+        },
+        {
+          "type": "main",
+          "fn": "orbitTo",
+          "args": [
+            0.7,
+            0.45,
+            460,
+            123,
+            123,
+            175
+          ]
+        },
+        {
+          "type": "wait",
+          "ms": 1500
+        },
+        {
+          "type": "probe",
+          "label": "e3-jabonera"
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"e3-base\"]')"
+      }
+    },
+    {
+      "id": "p03b",
+      "dice": "Fíjate en la aritmética de la base: envolvente, más la reserva de los pilares, igual a lo que necesita — y de ahí, la primera medida comercial que la aloja.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 700
+        }
+      ]
+    },
+    {
+      "id": "p04",
+      "dice": "La cotización.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-cotizacion",
+          "settle": 2500
+        },
+        {
+          "type": "tclick",
+          "testid": "cotizacion-preview",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "hoja-base"
+        }
+      ],
+      "check": {
+        "js": "(function(){var s=document.querySelector('[data-testid=\"cotizacion-grande\"] svg');var t=s?s.textContent:'';return /246×246/.test(t) && /HASCO\\/DME/.test(t) && /PENDIENTES/.test(t);})()"
+      }
+    },
+    {
+      "id": "p04b",
+      "dice": "Lee la base: doscientos cuarenta y seis por doscientos cuarenta y seis, retículo nominal HASCO DME. Y abajo, en los supuestos, lo que NO tenemos todavía: los números de pieza y el precio del proveedor. Eso se declara pendiente; no se inventa.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 700
+        }
+      ]
+    }
+  ]
+}

@@ -101,6 +101,17 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('v1·5 CONTROL: el juez REPRUEBA la hoja ilegible (letra 6px, sin §§)', !jr.ok, jr.fallas.slice(0, 3).join(' · '));
   }
 
+  // ══ SPRINT 2/3 (superticket moldes) — el INTAKE cambia la cotización · la base con fuente ══
+  console.log('── SPRINT 2/3 · intake §2.1.5 y el retículo de bases');
+  {
+    const mb = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'moldbase.ts'));
+    const chica = mb.selectMoldBase({ insertLmm: 60, insertWmm: 50, insertHcavityMm: 30, insertHcoreMm: 20, coolingDiaMm: 6, extraHmm: 15, cheekMm: 15, driver: 'refrigeración' }, { nx: 1, ny: 1 });
+    check('SPRINT 3: una pieza chica cae en la base 156×156 (antes: 196 sin necesitarlo)', chica.base.wmm === 156 && chica.base.lmm === 156, `${chica.base.wmm}×${chica.base.lmm} · necesita ${chica.envelope.wmm + 2 * chica.reserveMm}`);
+    check('SPRINT 3: el cubo sigue en 196×196 (bit-igual) y la hoja declara su fuente', e2.pkg.base.base.wmm === 196 && e2.pkg.base.base.lmm === 196 && /HASCO\/DME/.test(mb.CATALOGO_BASES), `${e2.pkg.base.base.wmm}×${e2.pkg.base.base.lmm} · ${mb.CATALOGO_BASES}`);
+    const cotC = ed.cotizacionPieza(ed.DADO_PIEZA, { fecha: '2026-08-26' });
+    check('SPRINT 3: la hoja imprime el catálogo y deja PENDIENTE lo que no tiene (números de pieza)', cotC.molde.catalogo === mb.CATALOGO_BASES && cotC.supuestos.some((x) => /PENDIENTES/.test(x)) && ed.juezLegibilidadCotizacion(ed.cotizacionSvg(cotC)).ok, cotC.molde.catalogo);
+  }
+
   // ══ E3 — ARQUITECTURA con OCC REAL ══
   console.log('── E3 · Arquitectura (cap 4) — midiendo el B-Rep');
   const oc = await factory({ wasmBinary: wasmBin });
@@ -184,6 +195,43 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
     check('v1·3 CONTROL: el cubo con pieza=DADO_PIEZA es BIT-IGUAL al camino clásico',
       dMax < 1e-9 && Math.abs(acero.r.vols.cavity - aD.r.vols.cavity) < 1e-6 && Math.abs(acero.r.vols.macho - aD.r.vols.macho) < 1e-6,
       `Δbbox ${dMax.toExponential(1)} · Δvol cavity ${Math.abs(acero.r.vols.cavity - aD.r.vols.cavity).toExponential(1)}`);
+
+    // ══ SPRINT 1 (superticket moldes) — E4/E5 POR PIEZA: el predicado de la MALLA ══
+    console.log('── SPRINT 1 · el predicado de malla: la figura la da el sólido, no una fórmula');
+    const fl = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'flowlen.ts'));
+    const tessV = occt.tessellate(oc, av.dadoD, 0.06, 0.06);
+    const predV = fl.predicadoDeMalla(tessV.positions, tessV.indices);
+    const bbV = mm.shapeBBox(oc, av.dadoD);
+    // la receta de la E4: vóxeles de 1 mm con 9 muestras; semilla = centro del piso (VOLTEADO: arriba)
+    const campoV = fl.measureFlowLength({
+      x0: bbV.min[0] - 2, y0: bbV.min[1] - 2, z0: bbV.min[2] - 2, x1: bbV.max[0] + 2, y1: bbV.max[1] + 2, z1: bbV.max[2] + 2, cellMm: 1,
+      inCavity: predV, gateMm: { x: (bbV.min[0] + bbV.max[0]) / 2, y: (bbV.min[1] + bbV.max[1]) / 2, z: bbV.max[2] - 1.5 }, wallMm: 3, meltN: 0.348,
+    });
+    const volVoxV = campoV.cavity.reduce((a, b) => a + b, 0);            // mm³ (celda de 1 mm)
+    const volKerV = occt.volume(oc, av.dadoD);
+    check('SPRINT 1: vóxeles del VASO (malla) = volumen del kernel (±5 %)', Math.abs(volVoxV - volKerV) / volKerV < 0.05,
+      `${volVoxV.toFixed(0)} vs ${volKerV.toFixed(0)} mm³ (${(100 * (volVoxV / volKerV - 1)).toFixed(1)} %)`);
+    check('SPRINT 1: desde la boquilla en el piso TODO el vaso se alcanza (0 inalcanzables)', campoV.unreachable === 0,
+      `${campoV.unreachable} inalcanzables · L máx ${campoV.maxFlowLenMm.toFixed(1)} mm · ${campoV.warnings.length} avisos`);
+    // CONTROL: en el CUBO el predicado de malla coincide con el analítico de siempre
+    const tessD = occt.tessellate(oc, acero.dadoD, 0.06, 0.06);
+    const predD = fl.predicadoDeMalla(tessD.positions, tessD.indices);
+    const colD = acero.colocacion;
+    let agree = 0, tot = 0;
+    for (let X = colD.tx + 0.5; X < colD.tx + 40; X += 1) for (let Y = colD.ty - 39.5; Y < colD.ty; Y += 1) for (let Z = colD.tz - 39.5; Z < colD.tz; Z += 1) {
+      const q = colD.aLocal(X, Y, Z);
+      const a = ed.dentroDadoLocal(q[0], q[1], q[2]), b = predD(X, Y, Z);
+      tot++; if (a === b) agree++;
+    }
+    check('SPRINT 1 CONTROL: en el cubo, malla ≡ analítico (>98 % de las celdas)', agree / tot > 0.98, `${agree}/${tot} = ${(100 * agree / tot).toFixed(2)} %`);
+
+    // ══ SPRINT 2 — EL INTAKE §2.1.5: declarar la pared cambia el veredicto y el dinero ══
+    console.log('── SPRINT 2 · el intake: lo que el árbol no sabe, lo declaras tú');
+    const macizaV = ed.piezaDesdeArbol(oc, vasoArbol, { nombre: 'VASO STEP (sin intake)' });                         // un STEP: sin cascarón declarado
+    const declV = ed.piezaDesdeArbol(oc, vasoArbol, { nombre: 'VASO STEP (intake)', wallMm: 3, material: 'PP', annualVolume: 250000, round: true });
+    const cM = ed.cotizacionPieza(macizaV, { fecha: '2026-08-26' }), cD = ed.cotizacionPieza(declV, { fecha: '2026-08-26' });
+    check('SPRINT 2: sin intake el STEP se lee MACIZO (pared = menor dimensión) y cotiza caro', macizaV.pieza.wallMm === 20 && cM.dinero.moldeUSD > 3 * cD.dinero.moldeUSD, `pared ${macizaV.pieza.wallMm} · $${cM.dinero.moldeUSD.toLocaleString()} vs declarado $${cD.dinero.moldeUSD.toLocaleString()}`);
+    check('SPRINT 2: el intake se PROPAGA — pared 3 · PP · 250k llegan a la pieza, al spec y a la hoja', declV.pieza.wallMm === 3 && declV.material === 'PP' && declV.spec.plastic === 'PP' && cD.pieza.Q === 250000 && cD.pieza.material === 'PP', `${declV.pieza.wallMm} mm · ${declV.spec.plastic} · Q ${cD.pieza.Q}`);
   }
   const malla = (sh) => { const t = occt.tessellate(oc, sh, 0.15); return { positions: t.positions, indices: t.indices }; };
   const corre = (shape) => {

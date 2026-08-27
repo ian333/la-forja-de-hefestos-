@@ -129,10 +129,18 @@ export function sizeInserts(part: { Lmm: number; Wmm: number; depthMm: number })
 }
 
 // ── §4.3: base estándar ──────────────────────────────────────────────
-/** Catálogo métrico estilo HASCO/DME (el libro: estándar de 200 a 1000 mm/lado). */
+/** RETÍCULO NOMINAL de bases estándar (sprint 3 del superticket moldes).
+ *  FUENTE DECLARADA: la serie métrica de HASCO (K-Normalien) y DME Europa comparte el
+ *  retículo nominal 156 · 196 · 246 · 296 · 346 · 396 · 446 · 496 · 546 · 596 · 696 · 796 ·
+ *  996 mm por lado (el libro, §4.3.2: "estándar de 200 a 1000 mm/lado"). Se agregan 156 y
+ *  546, que faltaban (una tapa chica caía en 196 sin necesitarlo). Lo que NO está aquí:
+ *  NÚMEROS DE PIEZA ni precios de catálogo — eso exige el catálogo oficial del proveedor
+ *  y se declara pendiente en la hoja de cotización. Los espesores de placa ya salen de
+ *  `snapToCommercialPlate` (serie comercial). */
+export const CATALOGO_BASES = 'retículo nominal HASCO/DME (métrico)';
 export const STANDARD_BASES: Array<{ wmm: number; lmm: number }> = [];
 {
-  const sizes = [196, 246, 296, 346, 396, 446, 496, 596, 696, 796, 996];
+  const sizes = [156, 196, 246, 296, 346, 396, 446, 496, 546, 596, 696, 796, 996];
   for (let i = 0; i < sizes.length; i++)
     for (let j = i; j < Math.min(i + 3, sizes.length); j++)
       STANDARD_BASES.push({ wmm: sizes[i], lmm: sizes[j] });

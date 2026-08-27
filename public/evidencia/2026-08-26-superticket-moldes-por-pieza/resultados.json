@@ -1,0 +1,23 @@
+{
+  "mol-s1-llenado-por-pieza": {
+    "estado": "verde",
+    "checks": "5/5",
+    "video": "/mnt/e/forja-videos/escuela/moldes/LA-FORJA-MOLDES-S1-tu-pieza-se-llena-4K.mp4",
+    "still": "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s1-llenado-por-pieza-still.jpg",
+    "nota": "drive OK (intento 1) · checks 5/5 · E: cp · PRIME ok"
+  },
+  "mol-s2-intake": {
+    "estado": "verde",
+    "checks": "5/5",
+    "video": "/mnt/e/forja-videos/escuela/moldes/LA-FORJA-MOLDES-S2-declara-tu-pieza-4K.mp4",
+    "still": "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s2-intake-still.jpg",
+    "nota": "drive OK (intento 1) · checks 5/5 · E: cp · PRIME ok"
+  },
+  "mol-s3-base-catalogo": {
+    "estado": "verde",
+    "checks": "3/3",
+    "video": "/mnt/e/forja-videos/escuela/moldes/LA-FORJA-MOLDES-S3-la-base-se-compra-4K.mp4",
+    "still": "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s3-base-catalogo-still.jpg",
+    "nota": "drive OK (intento 1) · checks 3/3 · E: cp · PRIME ok"
+  }
+}

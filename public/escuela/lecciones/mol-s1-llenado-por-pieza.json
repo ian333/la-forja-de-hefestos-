@@ -1,0 +1,180 @@
+{
+  "id": "mol-s1-llenado-por-pieza",
+  "curso": "moldes",
+  "unidad": "S",
+  "n": 1,
+  "titulo": "Tu pieza se llena",
+  "subtitulo": "E4 llenado · E5 alimentación — para TU pieza, no para el cubo",
+  "fuente": "Kazmer caps 5 y 6 · superticket moldes, sprint 1",
+  "descripcion": "Hasta hoy la Máquina de Moldes solo sabía llenar el cubo. Ahora el llenado y la alimentación salen de la malla de TU sólido: el fundido entra por la boquilla, cruza el bebedero y llena tu vaso — y el kernel mide que no queda ni un rincón sin plástico.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "Un molde no llena una fórmula: llena una pieza. Hasta ayer la Máquina solo conocía el cubo. Hoy le enseñamos a leer la tuya.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 600
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Abrimos el vaso del lobby: ochenta de diámetro, veinte de alto, pared de tres. Es un sólido del árbol, no un demo.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "doc-switcher",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "ps-open-st-vaso",
+          "settle": 7000
+        },
+        {
+          "type": "probe",
+          "label": "vaso-cargado"
+        }
+      ],
+      "check": {
+        "js": "inv && inv.vol_kernel > 27000 && inv.vol_kernel < 27600"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "La estación uno ya la juzgó sola: pared de tres, diecinueve segundos de enfriamiento. Ahora la economía: cuántas cavidades conviene.",
+      "gestos": [
+        {
+          "type": "main",
+          "fn": "toggleCollapse",
+          "args": [
+            "features"
+          ]
+        },
+        {
+          "type": "wait",
+          "ms": 900
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e2",
+          "settle": 5500
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"btn-ciclo-e3\"]')"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y el acero.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e3",
+          "settle": 30000
+        },
+        {
+          "type": "main",
+          "fn": "orbitTo",
+          "args": [
+            0.7,
+            0.45,
+            380,
+            98,
+            98,
+            170
+          ]
+        },
+        {
+          "type": "wait",
+          "ms": 1800
+        },
+        {
+          "type": "probe",
+          "label": "e3-acero"
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"e3-medidas\"]') && !!document.querySelector('[data-testid=\"btn-ciclo-e4\"]')"
+      }
+    },
+    {
+      "id": "p04b",
+      "dice": "Cavidad y núcleo tallados de tu sólido, colocados en su base de catálogo. Diecisiete medidas, declarado contra medido.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 700
+        }
+      ]
+    },
+    {
+      "id": "p05",
+      "dice": "Estación cuatro: el llenado.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e4",
+          "settle": 16000
+        },
+        {
+          "type": "probe",
+          "label": "e4-llenado"
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"btn-ciclo-e5\"]')"
+      }
+    },
+    {
+      "id": "p05b",
+      "dice": "Aquí está lo nuevo. El campo ya no es del cubo — se voxeliza la malla de TU vaso, celda por celda, y el frente avanza por resistencia, ecuación cinco punto veintidós.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 700
+        }
+      ]
+    },
+    {
+      "id": "p06",
+      "dice": "Estación cinco: la alimentación.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e5",
+          "settle": 26000
+        },
+        {
+          "type": "probe",
+          "label": "e5-alimentacion"
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"ciclo-e6-bloqueada\"]')"
+      }
+    },
+    {
+      "id": "p06b",
+      "dice": "Boquilla, bebedero, compuerta y tu pieza se llenan como UN solo campo, desde la boquilla. Si algún rincón no se alcanza, la máquina lo acusa.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 700
+        }
+      ]
+    },
+    {
+      "id": "p07",
+      "dice": "Y la máquina dice la verdad: de la estación seis en adelante todavía habla del cubo. Ese es el siguiente sprint. Hasta aquí, todo lo que ves es tuyo — medido de tu sólido.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 1500
+        }
+      ]
+    }
+  ]
+}

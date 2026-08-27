@@ -61,6 +61,11 @@ declare -A NOMBRE=(
   [mec-u8-l3]="ESCUELA-MECANICA-U8L3-estudio-de-tolerancias-4K"
   [mec-u7-l3]="ESCUELA-MECANICA-U7L3-lenguaje-del-barreno-4K"
   [mec-u7-l4]="ESCUELA-MECANICA-U7L4-escala-unidades-redondeos-4K"
+  # SUPERTICKET MOLDES (2026-08-26): los 3 sprints de la Máquina de TU pieza — se
+  # entregan con ENTREGA_SUB=escuela/moldes (no en bethune/U02)
+  [mol-s1-llenado-por-pieza]="LA-FORJA-MOLDES-S1-tu-pieza-se-llena-4K"
+  [mol-s2-intake]="LA-FORJA-MOLDES-S2-declara-tu-pieza-4K"
+  [mol-s3-base-catalogo]="LA-FORJA-MOLDES-S3-la-base-se-compra-4K"
   [mec-u7-l5]="ESCUELA-MECANICA-U7L5-taquigrafia-del-plano-4K"
   [mec-u5-l2]="ESCUELA-MECANICA-U5L2-bottom-up-4K"
   [mec-u5-l3]="ESCUELA-MECANICA-U5L3-vista-explosionada-4K"

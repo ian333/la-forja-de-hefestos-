@@ -6,6 +6,7 @@
  * propio, puro render. El grupo del ribbon se queda en el Studio (usa <Ic>).
  */
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { useMoldStudio } from './useMoldStudio';
 import { GOLD } from './ui-theme';
 import { Ic } from './icons';
@@ -534,7 +535,7 @@ export function MoldAnalisisPanel({ mold }: { mold: MoldBag }) {
  * corrige la pieza ANTES de gastar un gramo de acero".
  */
 export function CicloPanel({ mold }: { mold: MoldBag }) {
-  const { ciclo, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle } = mold;
+  const { ciclo, intake, setIntake, cicloEstacion2, cicloEstacion3, cicloEstacion4, cicloEstacion5, cicloEstacion6, cicloEstacion7, cicloEstacion8, cicloEstacion9, cicloEstacion10, cicloEstacion11, cicloEstacion12, cicloPlaying, cicloProg, cicloActo, cicloPlayToggle } = mold;
   if (!ciclo) return null;
   const cand = (c: { nombre: string; veredicto: string; tcS: number; porque: string[] }, testid: string) => {
     const mal = c.veredicto === 'REPROBADO';
@@ -579,6 +580,35 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '3px 6px' }}>
         estación 1 — DFM de la pieza (cap 2): dos entradas, un juez
       </div>
+      {ciclo.pieza && (
+        // INTAKE §2.1.5 (sprint 2): lo que el árbol no sabe, lo declaras tú. Cada campo
+        // re-siembra la E1 (y todo lo que sigue) — un STEP sin cascarón se leía MACIZO y
+        // cotizaba $188,830; con la pared declarada cotiza lo que el v1-gate mide.
+        <div data-testid="intake-pieza" style={{ margin: '2px 6px 6px', padding: '6px 8px', borderRadius: 6, border: '1px solid #2c3a50', background: 'rgba(255,255,255,0.02)' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f4d27a' }}>INTAKE §2.1.5 — declara tu pieza</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginTop: 4 }}>
+            <label style={{ fontSize: 10, color: '#8fa1b8' }}>pared (mm)
+              <input data-testid="intake-pared" type="number" step={0.1} min={0.3} defaultValue={ciclo.pieza.pieza.wallMm}
+                onBlur={(e) => { const v = parseFloat(e.target.value); if (Number.isFinite(v) && v > 0 && v !== ciclo.pieza!.pieza.wallMm) setIntake({ wallMm: v }); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                style={{ width: '100%', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }} />
+            </label>
+            <label style={{ fontSize: 10, color: '#8fa1b8' }}>material
+              <select data-testid="intake-material" value={intake.material ?? ciclo.pieza.material}
+                onChange={(e) => setIntake({ material: e.target.value })} style={{ width: '100%', marginTop: 2 }}>
+                {['ABS', 'PP', 'PS', 'PC', 'POM', 'PA6'].map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </label>
+            <label style={{ fontSize: 10, color: '#8fa1b8' }}>pzas/año
+              <input data-testid="intake-q" type="number" step={1000} min={100} defaultValue={ciclo.pieza.pieza ? (ciclo.pieza.spec as any).annualVolume ?? 100000 : 100000}
+                onBlur={(e) => { const v = parseInt(e.target.value, 10); if (Number.isFinite(v) && v > 0 && v !== ((ciclo.pieza!.spec as any).annualVolume ?? 100000)) setIntake({ annualVolume: v }); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                style={{ width: '100%', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }} />
+            </label>
+          </div>
+          <div style={{ fontSize: 10, color: '#7f8da3', marginTop: 3 }}>sin cascarón en el árbol la pared se lee MACIZA (la menor dimensión) — un STEP siempre necesita declararla</div>
+        </div>
+      )}
       {cand(ciclo.e1.macizo, 'ciclo-macizo')}
       {cand(ciclo.e1.dado, 'ciclo-dado')}
       <div data-testid="ciclo-comparacion" style={{ padding: '2px 6px' }}>
@@ -595,7 +625,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
       )}
       {ciclo.estacion === 2 && ciclo.e2 && <CicloE2 e2={ciclo.e2} onE3={cicloEstacion3} />}
       {ciclo.estacion === 4 && ciclo.e4 && <CicloE4 e4={ciclo.e4} onE5={cicloEstacion5} />}
-      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={cicloEstacion6} />}
+      {ciclo.estacion === 5 && ciclo.e5 && <CicloE5 e5={ciclo.e5} e5v={ciclo.e5v} datums={ciclo.e5datums} tuberia={ciclo.e5tuberia} onE6={ciclo.pieza ? undefined : cicloEstacion6} piezaDelArbol={!!ciclo.pieza} />}
       {ciclo.estacion === 6 && ciclo.e6 && <CicloE6 e6={ciclo.e6} onE7={cicloEstacion7} />}
       {ciclo.estacion === 7 && ciclo.e7 && <CicloE7 e7={ciclo.e7} onE8={cicloEstacion8} />}
       {ciclo.estacion === 8 && ciclo.e8 && <CicloE8 e8={ciclo.e8} onE9={cicloEstacion9} />}
@@ -627,7 +657,7 @@ export function CicloPanel({ mold }: { mold: MoldBag }) {
           )}
         </div>
       )}
-      {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={ciclo.pieza ? undefined : cicloEstacion4} piezaDelArbol={!!ciclo.pieza} />}
+      {ciclo.estacion === 3 && ciclo.e3 && <CicloE3 e3={ciclo.e3} e3v={ciclo.e3v} rayo={ciclo.rayo} interMm3={ciclo.interMm3} cicloEstacion3={cicloEstacion3} onE4={cicloEstacion4} piezaDelArbol={!!ciclo.pieza} />}
       {ciclo.estacion === 3 && ciclo.e3 && <CotizacionE3 pieza={ciclo.pieza} />}
     </>
   );
@@ -785,13 +815,6 @@ function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4, piezaDelArbol 
           ▶ estación 4 — LLENADO: ¿dónde muere el aire?
         </button>
       )}
-      {!onE4 && piezaDelArbol && (
-        // v1·3 desbloqueó la E3 para la pieza del árbol; el LLENADO (E4+) sigue
-        // cableado al cubo (dentroDadoLocal). Decirlo > fingir.
-        <div data-testid="ciclo-e4-bloqueada" style={{ margin: '4px 6px 6px', padding: '7px 9px', borderRadius: 6, border: '1px dashed #3a4a60', fontSize: 10.5, color: '#8fa1b8', lineHeight: 1.4 }}>
-          ⏸ estación 4 — LLENADO en adelante sigue cableado al CUBO; para TU pieza llega en un ticket posterior. Hasta aquí YA son tuyos: DFM (E1), economía (E2) y el ACERO con sus medidas y su rayo (E3) — medidos de TU sólido.
-        </div>
-      )}
     </>
   );
 }
@@ -801,6 +824,7 @@ function CicloE3({ e3, e3v, rayo, interMm3, cicloEstacion3, onE4, piezaDelArbol 
  *  en el cuadro + descarga; el juez de legibilidad la vigila en el gate. */
 function CotizacionE3({ pieza }: { pieza?: PiezaSpec }) {
   const [abierta, setAbierta] = useState(false);
+  const [grande, setGrande] = useState(false);   // la hoja a pantalla completa (clic en la miniatura)
   const cot = useMemo(() => {
     if (!abierta) return null;
     try { return cotizacionPieza(pieza ?? DADO_PIEZA, { fecha: new Date().toISOString().slice(0, 10) }); }
@@ -822,8 +846,23 @@ function CotizacionE3({ pieza }: { pieza?: PiezaSpec }) {
       )}
       {cot && (
         <div data-testid="cotizacion-hoja" style={{ margin: '4px 6px 6px' }}>
-          <div style={{ background: '#fdfcf8', borderRadius: 6, overflow: 'auto', maxHeight: 430, border: '1px solid #3a4a60' }}
+          {/* la miniatura ES el control: clic → la hoja llena el viewport (juez con ojos:
+              a 150 px de ancho en el panel no se lee ni en video ni en pantalla) */}
+          <div data-testid="cotizacion-preview" title="clic para ver la hoja GRANDE" onClick={() => setGrande(true)}
+            style={{ background: '#fdfcf8', borderRadius: 6, overflow: 'auto', maxHeight: 430, border: '1px solid #3a4a60', cursor: 'zoom-in' }}
             dangerouslySetInnerHTML={{ __html: svg }} />
+          {grande && createPortal(
+            // PORTAL a document.body: dentro del panel, `position: fixed` queda atrapado por el
+            // stacking context del panel (existía en el DOM — el check lo veía — pero no se
+            // pintaba; el juez con ojos lo cazó). Cierra SOLO con clic en el fondo o Esc.
+            <div data-testid="cotizacion-grande" onClick={(e) => { if (e.target === e.currentTarget) setGrande(false); }} title="clic en el fondo (o Esc) para cerrar"
+              onKeyDown={(e) => { if (e.key === 'Escape') setGrande(false); }} tabIndex={-1}
+              style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5,10,17,0.86)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: 24 }}>
+              <div style={{ width: 'min(1400px, 96vw)', background: '#fdfcf8', borderRadius: 10, boxShadow: '0 30px 80px rgba(0,0,0,.7)' }}
+                dangerouslySetInnerHTML={{ __html: svg }} />
+            </div>,
+            document.body,
+          )}
           <button className="fb-fea-run" data-testid="btn-cotizacion-svg" style={{ marginTop: 4 }}
             onClick={() => {
               const bl = new Blob([svg], { type: 'image/svg+xml' });
@@ -852,6 +891,12 @@ function CicloE4({ e4, onE5 }: { e4: import('../mold/estudio-molde-datos').Estac
       <div style={{ fontSize: 10.5, color: '#8fa1b8', padding: '5px 6px 2px' }}>
         estación 4 — llenado (cap 5): la velocidad no se elige, se RESUELVE iterando
       </div>
+      {e4.reologia && (
+        // sprint 2: la reología SIGUE al intake — y si el Apéndice A no trae el material, aquí se ve
+        <div data-testid="e4-reologia" style={{ fontSize: 10.5, color: e4.reologia.startsWith('⚠') ? '#f4d27a' : '#9fb2c8', padding: '0 6px 3px', fontFamily: "'JetBrains Mono', monospace" }}>
+          reología: {e4.reologia}
+        </div>
+      )}
       <div data-testid="e4-escalera" style={{ padding: '2px 6px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 34 }}>
           {e4.escalera.map((v, i) => (
@@ -909,7 +954,8 @@ function CicloE4({ e4, onE5 }: { e4: import('../mold/estudio-molde-datos').Estac
  *  conicidad estaba bien (medida), pero la colada terminaba en su punto MÁS ANCHO justo
  *  donde tocaba una pared de 2 mm. Aquí la sección BAJA monótona hasta la compuerta, y
  *  cada número sale de `feed.ts`/`gating.ts` — esta estación no inventa una sola fórmula. */
-function CicloE5({ e5, e5v, datums, tuberia, onE6 }: {
+function CicloE5({ e5, e5v, datums, tuberia, onE6, piezaDelArbol }: {
+  piezaDelArbol?: boolean;
   e5: import('../mold/estudio-molde-datos').Estacion5Dado;
   e5v?: import('../mold/colada').VerificacionColada;
   datums?: import('../mold/colada').DatumsColada;
@@ -1043,6 +1089,14 @@ function CicloE5({ e5, e5v, datums, tuberia, onE6 }: {
           title="EMPAQUE (cap 7): sostener presión hasta que el gate congela — el retorno de la E4 se resuelve aquí, y la contracción pvT entrega su número a la E9">
           ▶ estación 6 — EMPAQUE: compensar la contracción
         </button>
+      )}
+      {!onE6 && piezaDelArbol && (
+        // Sprint 1 del superticket moldes desbloqueó E4/E5 para la pieza del árbol (el
+        // llenado y la alimentación ya salen de SU malla). E6 en adelante sigue con
+        // literales del cubo. Decirlo > fingir.
+        <div data-testid="ciclo-e6-bloqueada" style={{ margin: '4px 6px 6px', padding: '7px 9px', borderRadius: 6, border: '1px dashed #3a4a60', fontSize: 10.5, color: '#8fa1b8', lineHeight: 1.4 }}>
+          ⏸ estación 6 — EMPAQUE en adelante sigue cableado al CUBO; para TU pieza llega en el siguiente sprint. Hasta aquí YA son tuyos: DFM, economía, el ACERO, el LLENADO y la ALIMENTACIÓN — medidos de TU sólido.
+        </div>
       )}
     </>
   );

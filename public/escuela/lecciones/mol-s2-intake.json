@@ -1,0 +1,180 @@
+{
+  "id": "mol-s2-intake",
+  "curso": "moldes",
+  "unidad": "S",
+  "n": 2,
+  "titulo": "Declara tu pieza",
+  "subtitulo": "Intake §2.1.5: pared · material · volumen anual — lo que el árbol no sabe",
+  "fuente": "Kazmer §2.1.5 (el intake) · superticket moldes, sprint 2",
+  "descripcion": "Un STEP no trae cascarón ni material: la Máquina lo leía macizo y cotizaba una barbaridad. Ahora tú declaras la pared, el material y el volumen anual en la estación uno — y todo el ciclo se re-siembra con tu verdad.",
+  "pasos": [
+    {
+      "id": "p01",
+      "dice": "El libro lo llama intake: antes de diseñar un molde se declara la pieza. Pared, material, cuántas al año. Sin eso, todo número es un invento.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 600
+        }
+      ]
+    },
+    {
+      "id": "p02",
+      "dice": "Abrimos el vaso. La estación uno ya lo juzgó con lo que el árbol sabe: pared tres, y el material que el puente asumía: ABS.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "doc-switcher",
+          "settle": 1200
+        },
+        {
+          "type": "tclick",
+          "testid": "ps-open-st-vaso",
+          "settle": 7000
+        },
+        {
+          "type": "main",
+          "fn": "toggleCollapse",
+          "args": [
+            "features"
+          ]
+        },
+        {
+          "type": "wait",
+          "ms": 900
+        },
+        {
+          "type": "probe",
+          "label": "intake-visible"
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"intake-pieza\"]')"
+      }
+    },
+    {
+      "id": "p03",
+      "dice": "Cambiamos el material a polipropileno. Mira cómo la estación uno se vuelve a correr: otro tiempo de enfriamiento, porque otra difusividad.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "intake-material",
+          "settle": 600
+        },
+        {
+          "type": "key",
+          "key": "ArrowDown"
+        },
+        {
+          "type": "wait",
+          "ms": 400
+        },
+        {
+          "type": "key",
+          "key": "Enter"
+        },
+        {
+          "type": "wait",
+          "ms": 3500
+        },
+        {
+          "type": "probe",
+          "label": "material-pp"
+        }
+      ],
+      "check": {
+        "js": "(document.querySelector('[data-testid=\"intake-material\"]')||{}).value === 'PP'"
+      }
+    },
+    {
+      "id": "p04",
+      "dice": "Y el volumen: doscientas cincuenta mil piezas al año. Ese número decide cuántas cavidades paga el molde.",
+      "gestos": [
+        {
+          "type": "fill",
+          "testid": "intake-q",
+          "text": "250000"
+        },
+        {
+          "type": "key",
+          "key": "Enter"
+        },
+        {
+          "type": "wait",
+          "ms": 3500
+        }
+      ],
+      "check": {
+        "js": "(document.querySelector('[data-testid=\"intake-q\"]')||{}).value === '250000'"
+      }
+    },
+    {
+      "id": "p05",
+      "dice": "Economía y acero, con tu pieza declarada.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e2",
+          "settle": 5500
+        },
+        {
+          "type": "tclick",
+          "testid": "btn-ciclo-e3",
+          "settle": 30000
+        },
+        {
+          "type": "main",
+          "fn": "orbitTo",
+          "args": [
+            0.7,
+            0.45,
+            380,
+            98,
+            98,
+            170
+          ]
+        },
+        {
+          "type": "wait",
+          "ms": 1500
+        }
+      ],
+      "check": {
+        "js": "!!document.querySelector('[data-testid=\"btn-cotizacion\"]')"
+      }
+    },
+    {
+      "id": "p06",
+      "dice": "Abrimos la cotización.",
+      "gestos": [
+        {
+          "type": "tclick",
+          "testid": "btn-cotizacion",
+          "settle": 2500
+        },
+        {
+          "type": "tclick",
+          "testid": "cotizacion-preview",
+          "settle": 1800
+        },
+        {
+          "type": "probe",
+          "label": "hoja"
+        }
+      ],
+      "check": {
+        "js": "(function(){var s=document.querySelector('[data-testid=\"cotizacion-grande\"] svg');var t=s?s.textContent:'';return /material: PP/.test(t) && /250,000 pzas/.test(t);})()"
+      }
+    },
+    {
+      "id": "p06b",
+      "dice": "Lee la hoja: material PP, doscientas cincuenta mil piezas, y una banda donde el ganador ya no es una cavidad. Lo declaraste tú; la máquina no adivinó nada.",
+      "gestos": [
+        {
+          "type": "wait",
+          "ms": 700
+        }
+      ]
+    }
+  ]
+}

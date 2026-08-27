@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 04:34",
+ "generado": "2026-08-27 04:53",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,10 +8,10 @@
  "conteo": {
   "proximo": 1,
   "enCurso": 1,
-  "supertickets": 1,
-  "cerrado": 61,
+  "supertickets": 0,
+  "cerrado": 62,
   "probado": 0,
-  "porProbar": 28,
+  "porProbar": 29,
   "sinDesplegar": 5,
   "despues": 15
  },
@@ -79,13 +79,48 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   }
+  ],
+  "cerrado": [
+   {
+    "file": "ordenes/2026-08-26-temis-galeria-panel.md",
+    "slug": "2026-08-26-temis-galeria-panel",
+    "titulo": "TEMIS — la evidencia se recorre A LO ANCHO y el panel deja de ser chico",
+    "fecha": "2026-08-26",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": false,
+    "ejercicios": [],
+    "progreso": null,
+    "objetivo": "caza de ian (2026-08-26, mientras probaba): «las imágenes, las pueda recorrer hacia la derecha y no hacia abajo, también el panel está muy pequeño». Hoy la galería de evidencia es una COLUMNA (grid-template-columns:1fr): con 3-6 capturas d…",
+    "toca": 3,
+    "crea": 3,
+    "evidencia": 4,
+    "evidenciaDeclarada": [
+     "la galería de una tarjeta con 3+ capturas se recorre A LO ANCHO (snap), con",
+     "el panel de Temis usa el ancho real de la pantalla (medido en 1900 px)",
+     "las 4 columnas del tablero siguen intactas (mismos testids)",
+     "orden-gate VERDE"
+    ],
+    "cierre": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-…",
+    "cierreCompleto": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-type:x mandatory. Prueba MECÁNICA en el arnés: las 3 figuras tienen la MISMA Y, X distintas, scrollWidth > clientWidth y scrollHeight <= clientHeight — o sea, en FILA de verdad, no apiladas. - Flechas ‹ › + contador n/N, con el índice derivado del scroll REAL (si arrastras con el trackpad el contador sigue). Probado: 1/3 → clic › → 2/3 y el carril avanzó de verdad (scrollLeft subió). - El panel de Temis usa la pantalla: .ps-panel.wide de min(1040px…) a calc(100vw - 24px) con tope 1760. Medido en 1900 px: 1760×938 (antes 1040). LO QUE CAZARON LOS OJOS (el arnés daba verde en los 3 checks): 1. La foto se cortaba abajo y el nav quedaba fuera del panel → tope max-height:42vh + object-fit:contain. 2. La galería vivía al FINAL, debajo de un CIERRE de 30 líneas: para revisar había que scrollear hasta el fondo. La evidencia ahora va ARRIBA, lo primero tras el título, y el nav va sobre el carril. Es la regla de la orden de evidencia aplicada a sí misma: si revisar cansa, no se revisa. GOTCHA NUEVO (costó una vuelta): vite dev cachea el índice de public/ al arrancar — las capturas copiadas DESPUÉS salen 200 pero con el HTML del fallback (Content-Type: text/html, naturalWidth 0 = imagen rota). Cura: reiniciar vite. Es hermano del gotcha de VITE_NO_WATCH con los módulos viejos. Sin deploy: la sesión paralela tiene LA SAL en curso y los deploys no se encinman. Entra en el próximo publish.",
+    "evidenciaSS": [
+     "evidencia/2026-08-26-temis-galeria-panel/01-galeria-horizontal.jpg",
+     "evidencia/2026-08-26-temis-galeria-panel/02-panel-ancho.jpg",
+     "evidencia/2026-08-26-temis-galeria-panel/03-galeria-siguiente.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "96fbaf0",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-26-superticket-moldes-por-pieza.md",
     "slug": "2026-08-26-superticket-moldes-por-pieza",
     "titulo": "SUPERTICKET MOLDES · la Máquina de TU pieza (3 sprints con video)",
     "fecha": "2026-08-26",
-    "estado": "en-curso",
+    "estado": "cerrado",
     "prioridad": 999,
     "superticket": true,
     "ejercicios": [
@@ -137,53 +172,18 @@
      "3 lecciones con CLASE_OK (checks del kernel dentro del video) y 3 videos 4K",
      "juez con ojos sobre los stills · orden-gate VERDE · Temis muestra 3/3"
     ],
-    "cierre": "",
-    "cierreCompleto": "",
+    "cierre": "3/3 EJERCICIOS EN VERDE — con video, oráculo y juez. resultados.json: mol-s1 5/5 · mol-s2 5/5 · mol-s3 3/3 (checks del kernel dentro del video). Videos 4K HEVC 10-bit con voz Matilda, en E: de iangpu…",
+    "cierreCompleto": "3/3 EJERCICIOS EN VERDE — con video, oráculo y juez. resultados.json: mol-s1 5/5 · mol-s2 5/5 · mol-s3 3/3 (checks del kernel dentro del video). Videos 4K HEVC 10-bit con voz Matilda, en E: de iangpu (/mnt/e/forja-videos/escuela/moldes/) y en PRIME (/mnt/hdd/forja-videos/escuela/moldes/): - LA-FORJA-MOLDES-S1-tu-pieza-se-llena-4K.mp4 — 221.5 s. Vaso del lobby → E1 → E2 → E3 (acero + 17 medidas) → E4 llenado de SU malla (vaso pintado por el frente, «reología: ABS Cycolac MG47 — Apéndice A») → E5 alimentación (una sola tubería desde la boquilla, 0 inalcanzables) → nota honesta: E6+ sigue del cubo. - LA-FORJA-MOLDES-S2-declara-tu-pieza-4K.mp4 — 153.8 s. Intake §2.1.5 con clicks reales: material → PP, volumen → 250,000 → la E1 se re-siembra (t_c 19.1 → 18.5 s) y la hoja GRANDE dice lo declarado: PP · 250,000 pzas · base 396×396 · cold-2placas ×4 · $29,850 · $0.366/pza (con ABS·100k era 196×196 ×1 · $11,342 · $0.715). - LA-FORJA-MOLDES-S3-la-base-se-compra-4K.mp4 — 151.4 s. Jabonera → E3 → hoja: 246×246 · retículo nominal HASCO/DME · «números de pieza y precio: PENDIENTES» · $19,361 · $0.649/pza. Código (gate del ciclo 236/236, v1-gate 10/10/10, esbuild OK): - S1 predicadoDeMalla (flowlen.ts) + E4/E5 por pieza en useMoldStudio (cubo bit-igual por construcción: huella/semilla salen de DADO_PIEZA.local). - S2 intake/setIntake en la bolsa del estudio + campos intake-pared/material/q en la E1 + reologiaDe (ABS/PP del Apéndice A; otros → ABS DECLARADO en e4-reologia). - S3 CATALOGO_BASES + retículo 156…996 (moldbase.ts) + fuente y PENDIENTES en la hoja. - Producto que nació del juez…",
     "evidenciaSS": [
      "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s1-llenado-por-pieza-still.jpg",
      "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s2-intake-still.jpg",
      "evidencia/2026-08-26-superticket-moldes-por-pieza/01-mol-s3-base-catalogo-still.jpg"
     ],
-    "revisable": false,
+    "revisable": true,
     "probado": "",
     "falla": "",
     "commit": "",
     "despliegue": ""
-   }
-  ],
-  "cerrado": [
-   {
-    "file": "ordenes/2026-08-26-temis-galeria-panel.md",
-    "slug": "2026-08-26-temis-galeria-panel",
-    "titulo": "TEMIS — la evidencia se recorre A LO ANCHO y el panel deja de ser chico",
-    "fecha": "2026-08-26",
-    "estado": "cerrado",
-    "prioridad": 999,
-    "superticket": false,
-    "ejercicios": [],
-    "progreso": null,
-    "objetivo": "caza de ian (2026-08-26, mientras probaba): «las imágenes, las pueda recorrer hacia la derecha y no hacia abajo, también el panel está muy pequeño». Hoy la galería de evidencia es una COLUMNA (grid-template-columns:1fr): con 3-6 capturas d…",
-    "toca": 3,
-    "crea": 3,
-    "evidencia": 4,
-    "evidenciaDeclarada": [
-     "la galería de una tarjeta con 3+ capturas se recorre A LO ANCHO (snap), con",
-     "el panel de Temis usa el ancho real de la pantalla (medido en 1900 px)",
-     "las 4 columnas del tablero siguen intactas (mismos testids)",
-     "orden-gate VERDE"
-    ],
-    "cierre": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-…",
-    "cierreCompleto": "HECHO, con Playwright y con los OJOS (el arnés solo no bastó — dos defectos los cazó la vista). - La evidencia se recorre A LO ANCHO: .tm-gal pasó de grid 1fr (columna) a carril flex con scroll-snap-type:x mandatory. Prueba MECÁNICA en el arnés: las 3 figuras tienen la MISMA Y, X distintas, scrollWidth > clientWidth y scrollHeight <= clientHeight — o sea, en FILA de verdad, no apiladas. - Flechas ‹ › + contador n/N, con el índice derivado del scroll REAL (si arrastras con el trackpad el contador sigue). Probado: 1/3 → clic › → 2/3 y el carril avanzó de verdad (scrollLeft subió). - El panel de Temis usa la pantalla: .ps-panel.wide de min(1040px…) a calc(100vw - 24px) con tope 1760. Medido en 1900 px: 1760×938 (antes 1040). LO QUE CAZARON LOS OJOS (el arnés daba verde en los 3 checks): 1. La foto se cortaba abajo y el nav quedaba fuera del panel → tope max-height:42vh + object-fit:contain. 2. La galería vivía al FINAL, debajo de un CIERRE de 30 líneas: para revisar había que scrollear hasta el fondo. La evidencia ahora va ARRIBA, lo primero tras el título, y el nav va sobre el carril. Es la regla de la orden de evidencia aplicada a sí misma: si revisar cansa, no se revisa. GOTCHA NUEVO (costó una vuelta): vite dev cachea el índice de public/ al arrancar — las capturas copiadas DESPUÉS salen 200 pero con el HTML del fallback (Content-Type: text/html, naturalWidth 0 = imagen rota). Cura: reiniciar vite. Es hermano del gotcha de VITE_NO_WATCH con los módulos viejos. Sin deploy: la sesión paralela tiene LA SAL en curso y los deploys no se encinman. Entra en el próximo publish.",
-    "evidenciaSS": [
-     "evidencia/2026-08-26-temis-galeria-panel/01-galeria-horizontal.jpg",
-     "evidencia/2026-08-26-temis-galeria-panel/02-panel-ancho.jpg",
-     "evidencia/2026-08-26-temis-galeria-panel/03-galeria-siguiente.jpg"
-    ],
-    "revisable": true,
-    "probado": "",
-    "falla": "",
-    "commit": "96fbaf0",
-    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-26-superticket-croquis-B-domar.md",
