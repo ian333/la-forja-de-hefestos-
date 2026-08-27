@@ -21,10 +21,24 @@ subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src, '-c:v', 'h264_nvenc', 
 mb = os.path.getsize(out) / 1e6; print(f'✓ {out} · {mb:.0f} MB (tope IG 300)')
 assert mb <= 295, f'✗ {mb:.0f} MB > 295: recorta maxrate, el tope de la API es 300 MB'
 if '--subir' in sys.argv:
+    # La URL lleva VERSIÓN (hash del archivo): Cloudflare cachea los .mp4 1 día, así que sin
+    # esto un re-render sirve el archivo VIEJO durante 24 h — le pasó a LA SAL (35 MB viejos
+    # contra 221 MB nuevos) y estuvo a punto de publicarse el malo a Instagram.
+    import hashlib, urllib.request
+    h = hashlib.sha256(open(out, 'rb').read()).hexdigest()[:10]
     rel = f'moleculas/reels/{vid}.mp4'
     for host, base in (('ian@100.110.244.20', '/mnt/hdd/biblioteca'), ('ian@100.97.118.117', '/mnt/hdd/forja-dist/biblioteca')):
         subprocess.run(['ssh', '-o', 'BatchMode=yes', host, f'mkdir -p {base}/moleculas/reels'], check=False)
         subprocess.run(['rsync', '-a', '--partial', out, f'{host}:{base}/{rel}'], check=True)
-    url = f'https://university.gaiaprime.com.mx/biblioteca/{rel}'
-    d.setdefault('publicar', {})['reel_url'] = url; json.dump(d, open(os.path.join(ROOT, 'videos', f'{vid}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
-    print(f'✓ URL pública (para IG por API): {url}')
+    url = f'https://university.gaiaprime.com.mx/biblioteca/{rel}?v={h}'
+    # VERIFICAR que la URL pública sirve ESTE archivo, no uno cacheado: si no coincide el tamaño,
+    # Instagram bajaría el equivocado. Falla ruidoso antes de publicar.
+    req = urllib.request.Request(url, method='HEAD')
+    with urllib.request.urlopen(req, timeout=60) as r:
+        remoto = int(r.headers.get('content-length', -1)); cache = r.headers.get('cf-cache-status', '?')
+    local = os.path.getsize(out)
+    if remoto != local:
+        sys.exit(f'✗ la URL sirve {remoto} B pero el archivo local tiene {local} B (cf-cache-status: {cache}) — NO se publica')
+    print(f'✓ URL verificada ({remoto} B, cf-cache-status: {cache}): {url}')
+    d.setdefault('publicar', {})['reel_url'] = url
+    json.dump(d, open(os.path.join(ROOT, 'videos', f'{vid}.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=2)

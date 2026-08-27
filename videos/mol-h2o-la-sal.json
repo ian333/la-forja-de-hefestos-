@@ -87,11 +87,13 @@
         "fecha": "2026-08-26T21:27"
       },
       "ig": {
-        "borrado": "2026-08-26 — LEY ABSOLUTA: salió a 3.5 Mbps por el túnel y se veía mal; ian lo bajó a mano. No se resube hasta tener fuente 4K (y de preferencia R2).",
-        "id_borrado": "18084851060356402"
+        "borrado": "2026-08-27 — publicado con el archivo VIEJO de 35 MB (Cloudflare servia cache de 24 h); ian lo borro a mano: se veia pixeleado. La API de IG no soporta DELETE.",
+        "id_borrado": "18018733205870780",
+        "url_borrada": "https://www.instagram.com/reel/Dch9QqXjppK/"
       }
     },
-    "autorizado": "2026-08-26 yt,ig — dicho por ian en sesión: \"el de la sal está perfecto, ese súbelo\""
+    "autorizado": "2026-08-26 yt,ig — dicho por ian en sesión: \"el de la sal está perfecto, ese súbelo\"",
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-sal.mp4?v=08060f7360"
   },
   "guion": {
     "archivo": "scripts/guiones/sal.txt",
