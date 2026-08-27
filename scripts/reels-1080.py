@@ -13,8 +13,10 @@ vid = sys.argv[1]; d = json.load(open(os.path.join(ROOT, 'videos', f'{vid}.json'
 s = d['salida']; dirr = s.get('dir', 'dist-video/masters'); dirr = dirr if dirr.startswith('/') else os.path.join(ROOT, dirr)
 src = os.path.join(dirr, s['h264']); out_d = os.path.join(ROOT, 'dist-video', 'reels'); os.makedirs(out_d, exist_ok=True)
 out = os.path.join(out_d, f'{vid}.mp4')
-subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src, '-c:v', 'libx264', '-preset', 'slow',
-                '-crf', '17', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-g', '60', '-maxrate', '22M', '-bufsize', '44M',
+# NVENC (GPU): a 4K la CPU tarda 30+ min y el resultado a tope de bitrate es igual. AL FILO de
+# la API de IG (topes documentados: 25 Mbps / 300 MB): ~24 Mbps → 77 s ≈ 235 MB.
+subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src, '-c:v', 'h264_nvenc', '-preset', 'p5', '-rc', 'vbr',
+                '-b:v', '23M', '-maxrate', '25M', '-bufsize', '50M', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-g', '60',
                 '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out], check=True)
 mb = os.path.getsize(out) / 1e6; print(f'✓ {out} · {mb:.0f} MB (tope IG 300)')
 assert mb <= 295, f'✗ {mb:.0f} MB > 295: recorta maxrate, el tope de la API es 300 MB'
