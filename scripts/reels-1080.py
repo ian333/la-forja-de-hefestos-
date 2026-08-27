@@ -19,27 +19,32 @@ s = d['salida']; dirr = s.get('dir', 'dist-video/masters'); dirr = dirr if dirr.
 src = os.path.join(dirr, s['h264']); out_d = os.path.join(ROOT, 'dist-video', 'reels'); os.makedirs(out_d, exist_ok=True)
 out = os.path.join(out_d, f'{vid}.mp4')
 # ── RECETA PARA INSTAGRAM (medida el 2026-08-27, no supuesta) ────────────────────────────
-# 1) HEVC, no H.264. Mismo tramo, bits comparables, contra el master: x265 25.4 Mbps → SSIM
-#    0.816 / PSNR 27.46 dB, contra NVENC-H264 28.0 Mbps → 0.751 / 26.00 dB. HEVC gana con
-#    MENOS bitrate. La tabla oficial de Meta admite "HEVC o H264". Nunca lo estábamos usando.
-# 2) ANCHO 1920, no 2160. La spec de Reels topa en 1920 COLUMNAS horizontales, así que el
-#    vertical 4K (2160 de ancho) NO cabe por API — no es que degrademos, es el techo. 1920 de
-#    ancho es el máximo legal y da 3.2x los píxeles de un 1080x1920.
-# 3) Resolución alta gana aunque el espectador vea menos: al reducir, el promediado de píxeles
-#    BORRA los artefactos de compresión. Medido: 4K@22.7 bajado a 1080 (SSIM 0.857) le gana a
-#    un 1080@22 nativo (0.797). Por eso se entrega en el máximo que la plataforma acepta.
-# 4) Audio 128 kbps: es el tope de la tabla; a 192 kbps arriesgábamos rechazo.
-# 24 Mbps x 77 s ~ 231 MB, bajo los topes de 300 MB / 25 Mbps.
-CPU = os.environ.get('CPU') == '1'   # CPU=1 → x265 (lo mejor, ~20 min); por omisión GPU
-vcodec = (['-c:v', 'libx265', '-preset', 'slow', '-x265-params', 'aq-mode=3:rc-lookahead=40']
-          if CPU else
-          ['-c:v', 'hevc_nvenc', '-preset', 'p7', '-tune', 'hq', '-spatial-aq', '1',
-           '-aq-strength', '8', '-temporal-aq', '1', '-rc-lookahead', '32', '-bf', '3'])
+# 1) 1080x1920, NO 4K. Dos razones independientes:
+#    a) La tabla oficial de Reels topa en 1920 COLUMNAS horizontales; el vertical 4K tiene 2160
+#       de ancho y Instagram lo RECHAZA (error 352, "format that we don't support").
+#    b) Simulando el re-encode de IG y midiendo la cadena COMPLETA, subir 1080 gana sobre subir
+#       4K: VMAF 41.2 vs 39.4 y CAMBI (banding) 6.77 vs 7.05 a 6 Mbps. Meta entrega 1080p30 como
+#       techo (su propia doc de ingeniería), así que dándole 1080 exacto no resamplea.
+# 2) H.264 HIGH profile, no Main: el master sale en Main porque video.sh no pasa -profile:v, y
+#    se pierde el transform 8x8 (+1.5 VMAF gratis, medido).
+# 3) BT.709 explícito con setparams. Sin setparams, color_trc y color_primaries salen `unknown`
+#    aunque pases las banderas (comprobado). El master hoy sale etiquetado bt470bg = BT.601 de PAL.
+# 4) closed GOP: la spec lo exige y NVENC no lo hace por omisión → open_gop=0 + sc_threshold=0.
+# 5) aq-mode=3 = cuantización adaptativa con sesgo a escenas OSCURAS, documentada contra banding.
+# 6) Audio 128 kbps: es el tope de la tabla; a 192 arriesgábamos rechazo.
+# 20 Mbps x 77 s ~ 200 MB, con margen bajo los topes de 300 MB / 25 Mbps.
+# NOTA: esto re-encodea el H.264 del master (una generación de pérdida). Lo ideal es encodear
+# desde los PNG en video.sh; pendiente de decidir con ian.
 subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src,
-                '-vf', 'scale=1920:-2:flags=lanczos', '-r', '30',
-                *vcodec, '-rc', 'vbr', '-b:v', '24M', '-maxrate', '25M', '-bufsize', '50M',
-                '-pix_fmt', 'yuv420p', '-tag:v', 'hvc1', '-g', '60',
-                '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', out], check=True)
+                '-vf', ('scale=1080:1920:flags=lanczos,format=yuv420p,'
+                        'setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv'),
+                '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow',
+                '-b:v', '20M', '-maxrate', '22M', '-bufsize', '24M',
+                '-g', '60', '-keyint_min', '60', '-sc_threshold', '0', '-bf', '3',
+                '-x264-params', 'open_gop=0:aq-mode=3:colorprim=bt709:transfer=bt709:colormatrix=bt709',
+                '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-color_range', 'tv',
+                '-c:a', 'aac', '-b:a', '128k', '-ar', '48000', '-ac', '2',
+                '-movflags', '+faststart', out], check=True)
 mb = os.path.getsize(out) / 1e6; print(f'✓ {out} · {mb:.0f} MB (tope IG 300)')
 assert mb <= 295, f'✗ {mb:.0f} MB > 295: recorta maxrate, el tope de la API es 300 MB'
 if '--subir' in sys.argv:

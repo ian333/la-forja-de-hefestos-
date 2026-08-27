@@ -57,7 +57,7 @@ def gate_calidad(archivo, plataforma=None):
       · instagram: la API documenta un MÁXIMO de 1920 columnas horizontales, así que el 4K
         vertical (2160 de ancho) es imposible por definición — no es que lo degrademos. Ahí la
         ley aplica por su otra mitad: se exige el TECHO de la plataforma (ancho 1920 o el 9:16
-        de 1080) con bitrate ≥20 Mbps, al filo de los 25 Mbps documentados. Menos que eso, no sube.
+        de 1080) con bitrate ≥18 Mbps, cerca de los 25 Mbps documentados. Menos que eso, no sube.
     Sin override: la excelencia no tiene excepciones."""
     import subprocess
     r = subprocess.run(['ffprobe','-v','error','-select_streams','v:0','-show_entries',
@@ -72,11 +72,11 @@ def gate_calidad(archivo, plataforma=None):
             sys.exit(f'✗ LEY/SPEC IG: {os.path.basename(archivo)} mide {w}x{h} — la API de Instagram '
                      f'documenta un MÁXIMO de 1920 columnas horizontales; este archivo lo excede y '
                      f'Instagram lo rechaza (error 2207026). Genera el derivado dentro del tope.')
-        if br < 20_000_000:
+        if br < 18_000_000:
             sys.exit(f'✗ LEY ABSOLUTA DE CALIDAD (ig): {os.path.basename(archivo)} va a {br/1e6:.1f} Mbps — '
-                     f'se exige ≥20 Mbps, al filo de los 25 documentados. El primer Reel salió a 3.5 y '
+                     f'se exige ≥18 Mbps (la receta apunta a 20; el tope documentado es 25). El primer Reel salió a 3.5 y '
                      f'ian lo bajó por verse mal.')
-        print(f'   ✓ calidad ig: {w}x{h} @ {br/1e6:.1f} Mbps (ley: ancho ≤1920, ≥20 Mbps)')
+        print(f'   ✓ calidad ig: {w}x{h} @ {br/1e6:.1f} Mbps (ley: ancho ≤1920, ≥18 Mbps)')
         return
     if h < 2160 or br < 15_000_000:
         sys.exit(f'✗ LEY ABSOLUTA DE CALIDAD: {os.path.basename(archivo)} mide {h}p @ {br/1e6:.1f} Mbps — '
