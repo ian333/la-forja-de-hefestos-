@@ -3,7 +3,7 @@
 # no un script propio. Reemplaza a wpair-full-pipeline.sh / wpairB-* / wpair-assemble.sh /
 # wpair-capsula.sh / render-li2*.sh. Ver docs/CANON-VIDEO.md.
 #
-#   bash scripts/video.sh <id> [paso]      paso = salud|voz|campo|subs|render|ensamble|verificar|capsula|entrega|publicar|todo
+#   bash scripts/video.sh <id> [paso]      paso = salud|voz|campo|subs|render|ensamble|verificar|capsula|entrega|publicar|subir|todo
 #   bash scripts/video.sh mol-h2o-el-puente todo
 #   SHARDS=3 bash scripts/video.sh mol-h2o-el-puente render     # override puntual
 #
@@ -309,7 +309,21 @@ paso_voz() {
   # una semana) y sus errores clásicos —guion que no cabe, wavs huérfanos, voz sin
   # verificar— se repetían. VOZ=0 la salta (p.ej. piezas sin narración).
   [ "${VOZ:-1}" = "0" ] && { echo "   (VOZ=0: saltada)"; return 0; }
-  local GARCH; GARCH="$ROOT/$(m guion.archivo)"
+  # AUDIO CONGELADO (2026-08-17): los ganadores declaran audio.congelada=true — su voz es
+  # parte del ganador: ni se regenera ni se re-verifica con el canon de HOY (voz-check
+  # reprobaba al anillo por "H2O"/"Esa": su voz embarcada dice eso, y GANÓ diciéndolo).
+  if [ "$(m audio.congelada)" = "True" ]; then
+    local NARR; NARR="$ROOT/$(m audio.dir)/$(m audio.narracion)"
+    [ -s "$NARR" ] || { echo "   ✗ audio.congelada=true pero falta $NARR"; return 1; }
+    echo "   (audio CONGELADO — se usa $(basename "$NARR") tal cual)"
+    return 0
+  fi
+  # Ganadores viejos (puente/camB) NO declaran guion: su narración ya está construida y
+  # congelada — regenerarla sería tocar al ganador. Sin declarar = saltar, NO error.
+  # (Cazado por la corrida total 2026-08-17: voz tronaba con "no existe el guion $ROOT/".)
+  local GREL; GREL="$(m guion.archivo)"
+  [ -n "$GREL" ] || { echo "   (esta pieza no declara guion — narración congelada, nada que generar)"; return 0; }
+  local GARCH; GARCH="$ROOT/$GREL"
   [ -f "$GARCH" ] || { echo "   ✗ no existe el guion $GARCH"; return 1; }
   local MOLV; MOLV=$(basename "$GARCH" .txt)
   local VEL; VEL=$(m audio.vel); VEL="${VEL:-1.0}"
@@ -327,7 +341,8 @@ if est > tope:
     print(f"   ✗ NO CABE (se pasa {est-tope:.1f}s): recorta el guion o alarga formato.dur ANTES de gastar TTS")
     sys.exit(1)
 PYFIT
-  VEL="$VEL" /home/ian/tts-venv/bin/python "$ROOT/scripts/narracion-gen.py" "$MOLV" 2>&1 | grep -E "CACHÉ|ELEGIDA|huérfano|FALTAN|✗" | tail -12
+  # TAKES=4 SIEMPRE (canon §VOZ): el default de narracion-gen es 1 = CERO selección (Gauss 2026-07-30).
+  TAKES="${TAKES:-4}" VEL="$VEL" /home/ian/tts-venv/bin/python "$ROOT/scripts/narracion-gen.py" "$MOLV" 2>&1 | grep -E "CACHÉ|ELEGIDA|huérfano|FALTAN|✗" | tail -12
   python3 "$ROOT/scripts/assemble-narracion.py" "$MOLV" --gap 0.40 --lead 0.40 2>&1 | tail -1
   if ! /home/ian/tts-venv/bin/python "$ROOT/scripts/voz-check.py" "$MOLV" 2>&1 | tee /tmp/vozcheck-$ID.txt | grep -q "✓ la voz DICE el guion"; then
     echo "   ✗ LA VOZ NO DICE EL GUION — no se sigue:"; grep -E "DIFIERE|guion:|oído" /tmp/vozcheck-$ID.txt | head -8
@@ -360,6 +375,19 @@ paso_entrega() {
   fi
 }
 
+paso_subir() {
+  # SUBIDA AUTOMATIZADA (orden 2026-08-26): API oficial de YouTube e Instagram. NADA se publica sin
+  # publicar.autorizado en el manifiesto (el gate vive en scripts/pub_comun.py). Uso:
+  #   bash scripts/video.sh <id> subir yt,ig      (PLAT en $3)
+  echo "── SUBIR (API oficial · gate publicar.autorizado) ──"
+  local PLAT="${3:-yt}"; local PY=/home/ian/pub-venv/bin/python
+  [ -x "$PY" ] || { echo "   ✗ falta $PY (venv de publicación en iangpu)"; return 1; }
+  case ",$PLAT," in *,yt,*) $PY "$ROOT/scripts/subir-youtube.py" "$ID" --publico ${PROGRAMAR:+--programar "$PROGRAMAR"} || return 1;; esac
+  case ",$PLAT," in *,ig,*)
+    [ -n "$(m publicar.reel_url)" ] || python3 "$ROOT/scripts/reels-1080.py" "$ID" --subir || return 1
+    $PY "$ROOT/scripts/subir-instagram.py" "$ID" || return 1;; esac
+}
+
 case "$PASO" in
   salud)     paso_salud ;;
   voz)       paso_voz ;;
@@ -371,6 +399,7 @@ case "$PASO" in
   campo)     paso_campo ;;
   verificar) paso_verificar ;;
   publicar)  paso_publicar ;;
+  subir)     paso_subir "$@" ;;
   todo)      paso_salud && paso_voz && paso_campo && paso_subs && paso_render && paso_ensamble && paso_verificar && paso_capsula && paso_entrega && echo "✔ $ID LISTO (publicar aparte)" ;;
   *) echo "paso inválido: $PASO (subs|render|ensamble|verificar|capsula|publicar|todo)"; exit 2 ;;
 esac

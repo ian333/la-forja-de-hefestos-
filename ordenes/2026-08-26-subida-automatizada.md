@@ -1,7 +1,5 @@
 # ORDEN: SUBIDA AUTOMATIZADA — Instagram · YouTube · TikTok desde la PC de ian (con autorización por video)
 
-ESTADO: proximo
-PRIORIDAD: 2
 BASE: c43a93a6694dc568c7864cf0e002dab936ca730e
 
 OBJETIVO: Que subir un video ya aprobado (el master + el copy del manifiesto) a IG, YouTube y
@@ -37,7 +35,11 @@ hay muchos que ya vi y no he subido (tutoriales de GAIA)".
 
 ## CREA
 - docs/SUBIDA-AUTOMATIZADA.md
-- scripts/subir.cjs
+- scripts/pub_comun.py
+- scripts/subir-youtube.py
+- scripts/metricas-youtube.py
+- scripts/subir-instagram.py
+- scripts/metricas-instagram.py
 - scripts/reels-1080.py
 
 ## BORRA
