@@ -68,15 +68,13 @@ def gate_calidad(archivo, plataforma=None):
     w = int(st.get('width') or 0); h = int(st.get('height') or 0)
     br = int(st.get('bit_rate') or (j.get('format') or {}).get('bit_rate') or 0)
     if plataforma == 'ig':
-        if w > 1920:
-            sys.exit(f'✗ LEY/SPEC IG: {os.path.basename(archivo)} mide {w}x{h} — la API de Instagram '
-                     f'documenta un MÁXIMO de 1920 columnas horizontales; este archivo lo excede y '
-                     f'Instagram lo rechaza (error 2207026). Genera el derivado dentro del tope.')
-        if br < 18_000_000:
-            sys.exit(f'✗ LEY ABSOLUTA DE CALIDAD (ig): {os.path.basename(archivo)} va a {br/1e6:.1f} Mbps — '
-                     f'se exige ≥18 Mbps (la receta apunta a 20; el tope documentado es 25). El primer Reel salió a 3.5 y '
-                     f'ian lo bajó por verse mal.')
-        print(f'   ✓ calidad ig: {w}x{h} @ {br/1e6:.1f} Mbps (ley: ancho ≤1920, ≥18 Mbps)')
+        # MEDIDO 2026-08-27 con `subir-instagram.py probar`: la API ACEPTA 2160x3840 (el "máx
+        # 1920 columnas" de la tabla no se aplica) y hasta 60.8 Mbps; rechaza por PESO (>300 MB).
+        # Así que a Instagram también se le exige 4K real, y el peso lo vigila specs_reel().
+        if h < 2160 or br < 15_000_000:
+            sys.exit(f'✗ LEY ABSOLUTA DE CALIDAD (ig): {os.path.basename(archivo)} mide {h}p @ {br/1e6:.1f} Mbps — '
+                     f'se exige ≥2160p y ≥15 Mbps. La API acepta 4K (medido); no hay excusa para bajar.')
+        print(f'   ✓ calidad ig: {w}x{h} @ {br/1e6:.1f} Mbps (ley: ≥2160p, ≥15 Mbps; tope real = peso ≤300 MB)')
         return
     if h < 2160 or br < 15_000_000:
         sys.exit(f'✗ LEY ABSOLUTA DE CALIDAD: {os.path.basename(archivo)} mide {h}p @ {br/1e6:.1f} Mbps — '

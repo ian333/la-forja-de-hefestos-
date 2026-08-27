@@ -50,8 +50,9 @@ def refresh():
 
 # ── Reel Specifications (tabla oficial, developers.facebook.com/docs/instagram-platform/
 #    instagram-graph-api/reference/ig-user/media/#reels-specs — leída 2026-08-27) ──────────
-#    El tope que nos truena NO es el peso: es el ANCHO. Máximo 1920 COLUMNAS horizontales,
-#    así que un vertical 4K (2160 de ancho) lo excede por diseño → error 2207026.
+#    OJO: la tabla dice máx 1920 columnas y 25 Mbps, pero las SONDAS reales (2026-08-27, modo
+#    `probar`) aceptaron 2160x3840 @ 60.8 Mbps y solo rechazaron por PESO (588 MB) y por
+#    bitrate extremo (101.7). La tabla se lee; el comportamiento se MIDE.
 SPEC = dict(ancho_max=1920, mb_max=300, vbr_max=25_000_000, fps=(23, 60),
             dur=(3, 900), audio_kbps_max=128, codecs=('h264', 'hevc'))
 
@@ -76,11 +77,12 @@ def specs_reel(archivo):
     fallas = []
     if v.get('codec_name') not in SPEC['codecs']: fallas.append(f"códec {v.get('codec_name')} (se admite {'/'.join(SPEC['codecs'])})")
     if v.get('pix_fmt') != 'yuv420p':            fallas.append(f"pix_fmt {v.get('pix_fmt')} (la tabla pide croma 4:2:0)")
-    if int(v.get('width') or 0) > SPEC['ancho_max']: fallas.append(f"ancho {v.get('width')} > {SPEC['ancho_max']} columnas ← ESTE es el tope que mata el 4K vertical")
+    # ancho: la tabla dice ≤1920 pero la sonda real ACEPTÓ 2160x3840 (2026-08-27) → no se exige
     if not (SPEC['fps'][0] <= fps <= SPEC['fps'][1]): fallas.append(f'{fps:.2f} fps fuera de {SPEC["fps"]}')
     if not (SPEC['dur'][0] <= dur <= SPEC['dur'][1]): fallas.append(f'{dur:.1f} s fuera de {SPEC["dur"]}')
     if mb > SPEC['mb_max']:                      fallas.append(f'{mb:.0f} MB > {SPEC["mb_max"]}')
-    if vbr > SPEC['vbr_max']:                    fallas.append(f'{vbr/1e6:.1f} Mbps > {SPEC["vbr_max"]/1e6:.0f}')
+    # bitrate: la tabla dice ≤25 Mbps pero la sonda aceptó 60.8 y rechazó 101.7 → se avisa, no se exige
+    if vbr > 60_000_000:                          fallas.append(f'{vbr/1e6:.1f} Mbps > 60 (la sonda rechazó 101.7; 60.8 pasó)')
     if abr > SPEC['audio_kbps_max'] * 1000 * 1.05: fallas.append(f'audio {abr/1000:.0f} kbps > {SPEC["audio_kbps_max"]}')
     if not faststart:                            fallas.append('moov NO está al frente (falta -movflags +faststart)')
     print(f'   spec: {v.get("width")}x{v.get("height")} {v.get("codec_name")} {fps:.0f}fps '
