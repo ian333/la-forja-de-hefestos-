@@ -84,5 +84,17 @@
     "lineas": 12,
     "palabras": 105,
     "nota": "50 s (ian, 2026-08-27: \"clips de 50 segundos\"). Enseña lo que h2o.txt NO enseñó: el puente aterriza en los pares solitarios (la silla), y de ahí el tetraedro y el hielo que flota. Sin línea de una sola palabra (XTTS se las come: \"Flota.\"→\"plota\"). l09 \"recibe en dos sillas\"→\"ofrece dos sillas\": el oído (whisper) no cazaba el \"en\"."
+  },
+  "verificador": {
+    "atencion": {
+      "score_v0": 59.5,
+      "gancho_0_5s": 98.9,
+      "interes_medio": 0.743,
+      "retencion_predicha": 0.51,
+      "loop": 0.737,
+      "fill": 0.434,
+      "void_max": 0.236,
+      "nota": "2026-08-27: render 1500/1500 en 1070 s, cero negros; 12 cuadros por toda la línea juzgados (Downloads/la-silla/RENDER-HOJA.png). Tramo más flojo 36-44 s (dentro de la nube bajo el payoff hablado)."
+    }
   }
 }

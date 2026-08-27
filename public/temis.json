@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 22:35",
+ "generado": "2026-08-27 22:59",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,7 +8,7 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "supertickets": 0,
+  "supertickets": 1,
   "cerrado": 62,
   "probado": 0,
   "porProbar": 29,
@@ -123,6 +123,206 @@
      "Un video subido a YouTube por API con su URL en el registro de Comando.",
      "Un Reel subido a IG (API o Brave) con screenshot del post.",
      "registro.json marcado solo (sin togglePlat a mano)."
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-27-roadmap-suite-desde-libros.md",
+    "slug": "2026-08-27-roadmap-suite-desde-libros",
+    "titulo": "SUPERTICKET ROADMAP — la suite de diseño construida DESDE LOS LIBROS (planeación + sprints + supertickets)",
+    "fecha": "2026-08-27",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "lib-bethune",
+      "titulo": "Bethune (SolidWorks 2023) leído: catálogo + supertickets",
+      "herramientas": "lector×4 sintetizador",
+      "oraculo": "docs/forja-research/libros/bethune.md + .json con ≥40 ejercicios y ≥3 supertickets",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "lib-kazmer",
+      "titulo": "Kazmer (Injection Mold Design) leído",
+      "herramientas": "lector×3 sintetizador",
+      "oraculo": "libros/kazmer.md + .json con ≥30 ejercicios y ≥3 supertickets",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "lib-shigley",
+      "titulo": "Shigley (Mechanical Engineering Design 2024) leído",
+      "herramientas": "lector×12 sintetizador",
+      "oraculo": "libros/shigley.md + .json con ≥80 ejercicios y ≥5 supertickets",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "lib-anderson",
+      "titulo": "Anderson (Fundamentals of Aerodynamics) leído",
+      "herramientas": "lector×10 sintetizador",
+      "oraculo": "libros/anderson.md + .json con ≥40 ejercicios y ≥3 supertickets",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "lib-bertin",
+      "titulo": "Bertin & Cummings (Aerodynamics for Engineers) leído",
+      "herramientas": "lector×8 sintetizador",
+      "oraculo": "libros/bertin.md + .json con ≥40 ejercicios y ≥3 supertickets",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "lib-raymer",
+      "titulo": "Raymer (Aircraft Design) leído",
+      "herramientas": "lector×9 sintetizador",
+      "oraculo": "libros/raymer.md + .json con ≥40 ejercicios y ≥3 supertickets",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "lib-herath",
+      "titulo": "Herath (Foundations of Robotics) leído",
+      "herramientas": "lector×4 sintetizador",
+      "oraculo": "libros/herath.md + .json con ≥30 ejercicios y ≥3 supertickets",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-fea-lineal",
+      "titulo": "FEA lineal + NAFEMS (Felippa, CalculiX, Code_Aster)",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/fea-lineal.md + .json con ≥10 benchmarks y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-fea-nolineal",
+      "titulo": "FEA no lineal (plasticidad, contacto, grandes deformaciones)",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/fea-nolineal.md + .json con ≥8 benchmarks y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-kernel-nurbs",
+      "titulo": "Kernel CAD: NURBS, RMF, loft, IGA, FreeCAD",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/kernel-nurbs.md + .json con ≥8 ejercicios y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-termica-cfd",
+      "titulo": "Térmico + CFD + CHT",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/termica-cfd.md + .json con ≥8 benchmarks y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-cam-chapa",
+      "titulo": "CAM (RS274) + chapa (factor K, springback)",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/cam-chapa.md + .json con ≥8 ejercicios y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-dibujo-gdt",
+      "titulo": "Dibujo + GD&T ASME Y14.5-2018",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/dibujo-gdt.md + .json con ≥8 ejercicios y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-moldflow-benchmarks",
+      "titulo": "Validación del solver de inyección (Moldflow + benchmarks reales)",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/moldflow-benchmarks.md + .json con ≥8 benchmarks y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "dom-generativo-fatiga-dinamica",
+      "titulo": "TopOpt + fatiga + modal + multicuerpo",
+      "herramientas": "agente de dominio",
+      "oraculo": "libros/generativo-fatiga-dinamica.md + .json con ≥8 ejercicios y ≥1 superticket",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 15
+    },
+    "objetivo": "ian (2026-08-27): «todas las empresas allá afuera tienen miles de ingenieros y ya tienen tu misma capacidad; ellos nos llevan ventaja en PLANEACIÓN». Quiere que con los libros descargados se construya la nueva suite de diseño en el navegad…",
+    "toca": 2,
+    "crea": 36,
+    "evidencia": 5,
+    "evidenciaDeclarada": [
+     "15/15 ejercicios verdes por oráculo mecánico: cada libros/<x>.json parsea y cumple los",
+     "node scripts/temis-tablero.cjs sale VERDE (sin violaciones de tapa) con los supertickets",
+     "node scripts/orden-gate.cjs VERDE contra esta orden.",
+     "docs/ROADMAP-SUITE.md trae: diagrama (mermaid) libro→módulo→sprint, tabla de sprints con",
+     "censo esperado: canvas/vite/html IGUAL (esta orden no toca código)."
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -2344,7 +2544,7 @@
     "titulo": "La silla vacía — el puente tiene domicilio (por qué el hielo flota)",
     "base": "puente (dímero) · pieza wsilla: capas + 7 tomas propias · 50 s",
     "tipo": "quick-win",
-    "estado": "hoy",
+    "estado": "hecho",
     "nota": "Ian 2026-08-27: 'viajemos entre los átomos… expliquemos las nubes… la mecánica del O₂ de apagar y prender'. Enseña lo que h2o.txt no: el jalón cae en los pares solitarios (las sillas) → cuatro por agua → tetraedro → flota. §LA MECÁNICA DEL O₂ canonizada.",
     "manifiesto": true,
     "publicado": false
