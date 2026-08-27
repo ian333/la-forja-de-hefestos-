@@ -48,6 +48,10 @@ hay muchos que ya vi y no he subido (tutoriales de GAIA)".
 ## PREEXISTENTE
 - WIP de la otra sesión y lo de cine sin commitear.
 
+## SIGUIENTE (2026-08-27)
+- **Cloudflare R2** para servir los reels 4K@22Mbps a IG sin el túnel (10 GB gratis, sin egreso).
+  La LEY ABSOLUTA exige fuente 4K; el túnel es el único motivo para no dársela ya.
+
 ## EVIDENCIA
 - Un video subido a YouTube por API con su URL en el registro de Comando.
 - Un Reel subido a IG (API o Brave) con screenshot del post.
