@@ -78,7 +78,8 @@
         "#gaia"
       ],
       "nota": "El copy se escribe en el paso del GUION, no al final (canon, 2026-08-25). Mismo texto que SPECIAL['mol-h2o el sudor'] en comando-catalogo.cjs."
-    }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-el-sudor.mp4"
   },
   "guion": {
     "archivo": "scripts/guiones/sudor.txt",
