@@ -26,12 +26,22 @@
       "estado": "hecho"
     },
     {
+      "fecha": "2026-08-27",
+      "id": "mol-h2o-la-silla",
+      "titulo": "La silla vacía — el puente tiene domicilio (por qué el hielo flota)",
+      "base": "puente (dímero) · pieza wsilla: capas + 7 tomas propias · 50 s",
+      "tipo": "quick-win",
+      "estado": "hoy",
+      "nota": "Ian 2026-08-27: 'viajemos entre los átomos… expliquemos las nubes… la mecánica del O₂ de apagar y prender'. Enseña lo que h2o.txt no: el jalón cae en los pares solitarios (las sillas) → cuatro por agua → tetraedro → flota. §LA MECÁNICA DEL O₂ canonizada."
+    },
+    {
       "fecha": "2026-08-28",
       "id": "mol-h2o-la-gota",
       "titulo": "La gota — por qué es redonda",
       "base": "puente (dímero) · cam nueva",
       "tipo": "quick-win",
-      "estado": "proximo"
+      "estado": "proximo",
+      "nota": "corrida al 28 (el 27 salió LA SILLA)"
     },
     {
       "fecha": "2026-08-29",
