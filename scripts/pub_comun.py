@@ -48,6 +48,23 @@ def segs_a_srt(d):
         out.append(f'{i}\n{t(sg["start"])} --> {t(sg["end"])}\n{sg["text"].strip()}\n')
     srt = os.path.join(ROOT, dirr, 'captions.srt'); open(srt, 'w', encoding='utf-8').write('\n'.join(out)); return srt
 
+def gate_calidad(archivo):
+    """LEY ABSOLUTA (ian, 2026-08-26, tras bajar el primer Reel API por verse mal): NO SE SUBE
+    NADA que no sea 4K o de bitrate estúpidamente alto. Se mide con ffprobe, no se confía:
+    altura ≥ 2160 Y bitrate ≥ 15 Mbps. Sin override: la excelencia no tiene excepciones."""
+    import subprocess
+    r = subprocess.run(['ffprobe','-v','error','-select_streams','v:0','-show_entries',
+                        'stream=height,bit_rate','-show_entries','format=bit_rate','-of','json',archivo],
+                       capture_output=True, text=True)
+    j = json.loads(r.stdout or '{}')
+    h = int((j.get('streams') or [{}])[0].get('height') or 0)
+    br = int((j.get('streams') or [{}])[0].get('bit_rate') or (j.get('format') or {}).get('bit_rate') or 0)
+    if h < 2160 or br < 15_000_000:
+        sys.exit(f'✗ LEY ABSOLUTA DE CALIDAD: {os.path.basename(archivo)} mide {h}p @ {br/1e6:.1f} Mbps — '
+                 f'se exige ≥2160p y ≥15 Mbps. El primer Reel de la sal salió a 3.5 Mbps y ian lo bajó '
+                 f'por verse mal. Genera la fuente 4K (reels-1080.py ya la hace) o no se publica.')
+    print(f'   ✓ calidad: {h}p @ {br/1e6:.1f} Mbps (ley: ≥2160p, ≥15 Mbps)')
+
 def registrar(p, d, plataforma, info):
     """Escribe el resultado en el manifiesto (publicar.subidas.<plataforma>) = la evidencia."""
     d.setdefault('publicar', {}).setdefault('subidas', {})[plataforma] = {**info, 'fecha': dt.datetime.now().isoformat(timespec='minutes')}

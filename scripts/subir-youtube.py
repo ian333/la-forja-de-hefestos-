@@ -12,7 +12,7 @@ los 7 días). Resumable con reintentos (500/502/503/504).
 """
 import os, sys, time, random, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pub_comun import manifiesto, copy_de, gate_autorizado, archivo_master, segs_a_srt, registrar, CONF
+from pub_comun import manifiesto, copy_de, gate_autorizado, gate_calidad, archivo_master, segs_a_srt, registrar, CONF
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -40,6 +40,7 @@ def credenciales():
 def subir(vid, privacidad, programar, con_captions, forzar):
     p, d = manifiesto(vid); c = copy_de(d); gate_autorizado(d, 'yt', forzar)
     archivo = archivo_master(d, 'h264')
+    gate_calidad(archivo)   # LEY ABSOLUTA: solo 4K / bitrate altísimo
     yt = build('youtube', 'v3', credentials=credenciales())
     tags = [h.lstrip('#') for h in c.get('hashtags', [])][:30]
     status = {'privacyStatus': privacidad, 'selfDeclaredMadeForKids': False}

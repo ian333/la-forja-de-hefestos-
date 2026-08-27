@@ -16,7 +16,7 @@ Token: Business Login → code → api.instagram.com/oauth/access_token (1 h) �
 """
 import os, sys, json, time, urllib.parse, requests
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pub_comun import manifiesto, copy_de, gate_autorizado, registrar, CONF
+from pub_comun import manifiesto, copy_de, gate_autorizado, gate_calidad, registrar, CONF
 V = 'v25.0'; APP = os.path.join(CONF, 'instagram-app.json'); TOK = os.path.join(CONF, 'instagram-token.json')
 SCOPES = 'instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights,instagram_business_manage_comments'
 
@@ -46,6 +46,8 @@ def refresh():
 def publicar(vid, forzar):
     p, d = manifiesto(vid); c = copy_de(d); gate_autorizado(d, 'ig', forzar); t = token()
     url = (d.get('publicar') or {}).get('reel_url')
+    _local = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dist-video', 'reels', f'{vid}.mp4')
+    if os.path.exists(_local): gate_calidad(_local)   # LEY: se mide el archivo que IG va a bajar
     if not url: sys.exit('✗ falta publicar.reel_url: corre `python3 scripts/reels-1080.py <id> --subir` (IG baja el video de una URL pública)')
     caption = (c['titulo'] + '\n\n' + c.get('descripcion', '') + '\n\n' + ' '.join(c.get('hashtags', [])[:30]))[:2200]
     base = f'https://graph.instagram.com/{V}/{t["ig_id"]}'

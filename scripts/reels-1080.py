@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""reels-1080.py — derivado 1080×1920 H.264 para Instagram/TikTok (doc IG: MP4, H264/HEVC, moov al frente
+"""reels-1080.py — derivado 4K (2160×3840) H.264 ~22 Mbps para Instagram/TikTok.
+LEY ABSOLUTA (ian, 2026-08-26): NADA se sube que no sea 4K o bitrate estúpidamente alto — el
+primer Reel salió a 3.5 Mbps y se bajó por verse mal. 22 Mbps × 77 s ≈ 212 MB ≤ 300 MB del tope IG. (doc IG: MP4, H264/HEVC, moov al frente
 (faststart), ≤300 MB, ≤25 Mbps, 9:16, 3 s–15 min). El master 4K (587 MB) NO cabe. Salida: dist-video/reels/<id>.mp4
 y, para IG por API, el archivo debe estar en URL PÚBLICA → se sube a ATLAS /biblioteca/reels/ (Cloudflare lo cachea).
   python3 scripts/reels-1080.py <id> [--subir]
@@ -11,10 +13,11 @@ vid = sys.argv[1]; d = json.load(open(os.path.join(ROOT, 'videos', f'{vid}.json'
 s = d['salida']; dirr = s.get('dir', 'dist-video/masters'); dirr = dirr if dirr.startswith('/') else os.path.join(ROOT, dirr)
 src = os.path.join(dirr, s['h264']); out_d = os.path.join(ROOT, 'dist-video', 'reels'); os.makedirs(out_d, exist_ok=True)
 out = os.path.join(out_d, f'{vid}.mp4')
-subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src, '-vf', 'scale=1080:1920:flags=lanczos', '-c:v', 'libx264', '-preset', 'slow',
-                '-crf', '20', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-g', '60', '-maxrate', '12M', '-bufsize', '24M',
+subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src, '-c:v', 'libx264', '-preset', 'slow',
+                '-crf', '17', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-g', '60', '-maxrate', '22M', '-bufsize', '44M',
                 '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', out], check=True)
-mb = os.path.getsize(out) / 1e6; print(f'✓ {out} · {mb:.0f} MB (IG exige ≤300)')
+mb = os.path.getsize(out) / 1e6; print(f'✓ {out} · {mb:.0f} MB (tope IG 300)')
+assert mb <= 295, f'✗ {mb:.0f} MB > 295: recorta maxrate, el tope de la API es 300 MB'
 if '--subir' in sys.argv:
     rel = f'moleculas/reels/{vid}.mp4'
     for host, base in (('ian@100.110.244.20', '/mnt/hdd/biblioteca'), ('ian@100.97.118.117', '/mnt/hdd/forja-dist/biblioteca')):

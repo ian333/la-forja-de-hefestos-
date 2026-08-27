@@ -321,6 +321,14 @@ Detalle de guion (MX): revisar doble sentido ANTES del TTS ("míralos correrse" 
 
 ## 🔒 REGLAS DURAS (no negociables)
 
+0. **LEY ABSOLUTA DE SUBIDA (ian, 2026-08-26): NO SE SUBE NADA A NINGUNA PLATAFORMA que no sea
+   4K o de bitrate estúpidamente alto (≥2160p Y ≥15 Mbps, medidos con ffprobe — el gate vive en
+   `scripts/pub_comun.gate_calidad` y NO tiene override).** Origen: el primer Reel por API salió
+   a 3.5 Mbps "para que pasara por el túnel" y se veía horrible; ian lo bajó a mano en minutos.
+   La lección: la restricción de infraestructura NUNCA degrada el entregable — se arregla la
+   infraestructura (R2/CDN), no la calidad. "Nada puede salir con calidad buena: todo debe ser
+   excelencia."
+
 1. **FÍSICA REAL, cero inventado.** PySCF/Schrödinger, fórmulas reales (Kepler, Shakura-Sunyaev,
    Δρ ab initio, MEP…). Datos reales (NASA/USGS/PDB). Lo evocativo se ETIQUETA. El wow EMERGE de
    la corrección. La credibilidad es el pilar (un químico valida en público). **La forma EMERGE de
