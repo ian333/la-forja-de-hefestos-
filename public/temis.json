@@ -12,7 +12,7 @@
   "cerrado": 62,
   "probado": 0,
   "porProbar": 29,
-  "sinDesplegar": 5,
+  "sinDesplegar": 6,
   "despues": 15
  },
  "deploy": {
@@ -182,8 +182,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "f8a8713",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-26-superticket-croquis-B-domar.md",
