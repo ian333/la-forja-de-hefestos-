@@ -329,6 +329,15 @@ Detalle de guion (MX): revisar doble sentido ANTES del TTS ("míralos correrse" 
    infraestructura (R2/CDN), no la calidad. "Nada puede salir con calidad buena: todo debe ser
    excelencia."
 
+   **0.1 — MIDE LO QUE LA URL ENTREGA, NO LO QUE TIENES EN DISCO (2026-08-27).** Instagram no
+   recibe tu archivo: *descarga* `publicar.reel_url`. Cloudflare cachea los `.mp4` 24 h, así que
+   un re-render deja la URL sirviendo el archivo VIEJO (`cf-cache-status: HIT`) y el Reel sale con
+   el malo. Pasó con LA SAL: en disco había 4K/22.7 Mbps y la URL entregaba los 35 MB de la víspera;
+   `gate_calidad` midió el disco, dio PASA, y se publicó basura. Cura (ya en `scripts/reels-1080.py`):
+   la URL lleva `?v=<sha256[:10]>` del archivo, y **antes de publicar se hace HEAD y se compara
+   `content-length` contra el tamaño local — si no coinciden, `sys.exit`**. Regla general: un gate
+   que mide el artefacto local no prueba nada sobre el artefacto que el tercero consume.
+
 1. **FÍSICA REAL, cero inventado.** PySCF/Schrödinger, fórmulas reales (Kepler, Shakura-Sunyaev,
    Δρ ab initio, MEP…). Datos reales (NASA/USGS/PDB). Lo evocativo se ETIQUETA. El wow EMERGE de
    la corrección. La credibilidad es el pilar (un químico valida en público). **La forma EMERGE de
