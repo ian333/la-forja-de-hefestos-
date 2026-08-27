@@ -35,11 +35,17 @@ out = os.path.join(out_d, f'{vid}.mp4')
 # 20 Mbps x 77 s ~ 200 MB, con margen bajo los topes de 300 MB / 25 Mbps.
 # NOTA: esto re-encodea el H.264 del master (una generación de pérdida). Lo ideal es encodear
 # desde los PNG en video.sh; pendiente de decidir con ian.
+# CALIDAD con techo, no bitrate promedio (ian, 2026-08-27, viendo la toma del sodio):
+# el defecto vive SOLO en la escena de mayor entropía —cientos de líneas de 1 px convergiendo—
+# y con bitrate promedio esa toma recibe lo mismo que una calma. Con -crf + -maxrate, las
+# escenas fáciles gastan poco y LA DIFÍCIL SE PEGA AL TOPE DE 25 Mbps, que es donde se necesita.
+# Con búfer de 1.5 s se colaban picos de 27.5 Mbps (medido) por encima del tope documentado
+# de 25; con búfer de 1 s a 24 Mbps ningún segundo lo pasa. ~24 Mbps x 77 s = 231 MB < 300 MB.
 subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', src,
                 '-vf', ('scale=1080:1920:flags=lanczos,format=yuv420p,'
                         'setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv'),
                 '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow',
-                '-b:v', '20M', '-maxrate', '22M', '-bufsize', '24M',
+                '-crf', '15', '-maxrate', '24M', '-bufsize', '24M',   # búfer de 1 s: NINGUNA ventana pasa de 25
                 '-g', '60', '-keyint_min', '60', '-sc_threshold', '0', '-bf', '3',
                 '-x264-params', 'open_gop=0:aq-mode=3:colorprim=bt709:transfer=bt709:colormatrix=bt709',
                 '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-color_range', 'tv',
