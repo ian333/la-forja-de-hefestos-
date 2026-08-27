@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-27 03:31",
+ "generado": "2026-08-27 03:32",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -12,7 +12,7 @@
   "cerrado": 61,
   "probado": 0,
   "porProbar": 28,
-  "sinDesplegar": 3,
+  "sinDesplegar": 5,
   "despues": 15
  },
  "deploy": {
@@ -295,8 +295,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "4304262",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-26-superticket-croquis-A-dibujar.md",
@@ -412,8 +412,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "4304262",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
