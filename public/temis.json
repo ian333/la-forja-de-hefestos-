@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 19:00",
+ "generado": "2026-08-28 19:05",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -2582,11 +2582,11 @@
     "ig": {
      "url": "https://www.instagram.com/reel/Dcl3S1Ugnfu/"
     },
-    "ancho": null,
+    "ancho": {
+     "url": "https://youtu.be/k5XMYQHSPOc"
+    },
     "entregado": "1080x1920 @ 9.5 Mbps",
-    "falta": [
-     "16:9"
-    ]
+    "falta": []
    },
    {
     "fecha": "2026-08-28",
