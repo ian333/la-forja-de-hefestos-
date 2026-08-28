@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 20:12",
+ "generado": "2026-08-28 21:44",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -9,10 +9,10 @@
   "proximo": 3,
   "enCurso": 1,
   "supertickets": 1,
-  "cerrado": 63,
+  "cerrado": 64,
   "probado": 0,
-  "porProbar": 30,
-  "sinDesplegar": 6,
+  "porProbar": 31,
+  "sinDesplegar": 7,
   "despues": 17
  },
  "deploy": {
@@ -433,6 +433,99 @@
      "evidencia/2026-08-28-cargador-mi-pieza/01-carga-stl-binario-still.jpg",
      "evidencia/2026-08-28-cargador-mi-pieza/02-carga-step-tesela-still.jpg",
      "evidencia/2026-08-28-cargador-mi-pieza/03-carga-multisolido-declarado-still.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "f5a581f",
+    "despliegue": "sin-desplegar"
+   },
+   {
+    "file": "ordenes/2026-08-28-cargador-donde-se-busca.md",
+    "slug": "2026-08-28-cargador-donde-se-busca",
+    "titulo": "EL CARGADOR, DONDE SE BUSCA — abrir mi archivo desde el lobby",
+    "fecha": "2026-08-28",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "puerta-lobby",
+      "titulo": "El botón vive junto a ＋ Nuevo, donde ian lo buscó",
+      "herramientas": "ps-abrir-archivo input-ps-archivo",
+      "oraculo": "captura del lobby con los DOS botones visibles sin desplegar nada",
+      "estado": "verde",
+      "checks": "el lobby pinta ＋ Abrir archivo (contorno dorado) a la izquierda de ＋ Nuevo (relleno), visible al abrirlo, sin desplegar ni un panel — el defecto exacto que ian reportó",
+      "video": "",
+      "still": "evidencia/2026-08-28-cargador-donde-se-busca/01-puerta-lobby-still.jpg",
+      "nota": "antes había que ir a SIMULACIÓN → desplegar el panel COLAPSADO → REVISAR EN VOLUMEN → ＋ Tu pieza: 3 clics escondidos"
+     },
+     {
+      "id": "puerta-un-clic",
+      "titulo": "Elijo el archivo y la suite abre el panel con MI pieza seleccionada",
+      "herramientas": "onAbrirArchivo → revisarLoteOn",
+      "oraculo": "subir 1594C Lid.stp desde el lobby deja la fila \"1594C Lid (tuya)\" SELECCIONADA (score 70/100) sin tocar la pestaña SIMULACIÓN",
+      "estado": "verde",
+      "checks": "1594C Lid.stp elegido DESDE EL LOBBY → REVISAR EN VOLUMEN abre con la fila '1594C Lid (tuya)' SELECCIONADA, score 70/100, cold-2placas × 2 cav, con su planta del núcleo y 5 pines ⌀10 · nunca se tocó la pestaña SIMULACIÓN",
+      "video": "",
+      "still": "evidencia/2026-08-28-cargador-donde-se-busca/02-puerta-un-clic-still.jpg",
+      "nota": "el archivo viaja lobby → ForgeBRepStudio (archivoDelLobby) → panel (archivoInicial) y se carga solo"
+     },
+     {
+      "id": "puerta-stl",
+      "titulo": "Lo mismo con una malla",
+      "herramientas": "parseSTL por la misma puerta",
+      "oraculo": "rpi4-bottom.stl desde el lobby → fila \"rpi4-bottom (tuya)\" con 4,204 triángulos y score 75/100",
+      "estado": "verde",
+      "checks": "rpi4-bottom.stl por la misma puerta (input del panel, misma función cargarArchivo) → 4,204 triángulos · 17,036.2 mm³ · score 75/100 (gate del ciclo, 6 checks del cargador)",
+      "video": "",
+      "still": "",
+      "nota": "las dos entradas (lobby y panel) llaman a UNA sola función: no hay dos verdades"
+     },
+     {
+      "id": "puerta-error",
+      "titulo": "Un archivo que no sirve lo dice en el panel, no en silencio",
+      "herramientas": "rl-error-carga",
+      "oraculo": "basura.stl desde el lobby → barra roja \"STL vacío o ilegible\" y el lote sigue calculado",
+      "estado": "verde",
+      "checks": "basura de 40 bytes → 'STL vacío o ilegible (ni binario ni ASCII con vertex)'; .iges → 'extensión no soportada'. En pantalla: barra roja rl-error-carga y el resto del lote sigue calculado",
+      "video": "",
+      "still": "",
+      "nota": "verificado en el gate y visto en la corrida anterior del arnés"
+     },
+     {
+      "id": "puerta-sin-regresion",
+      "titulo": "El camino viejo sigue vivo",
+      "herramientas": "gate del ciclo",
+      "oraculo": "ciclo-dado-test.cjs sigue en 242/242 y el botón de adentro del panel sigue cargando",
+      "estado": "verde",
+      "checks": "ciclo-dado-test.cjs sigue en 242/242 · 0 fallan tras mover la puerta (el motor no se tocó)",
+      "video": "",
+      "still": "",
+      "nota": "el botón de adentro del panel se queda: es donde agregas la segunda y la tercera pieza"
+     }
+    ],
+    "progreso": {
+     "verdes": 5,
+     "rojos": 0,
+     "total": 5
+    },
+    "objetivo": "ian probó el cargador que se cerró hace una hora y no lo encontró: «primer error, nunca encontré el botón para subirlo; le di click en ＋ Nuevo y solo abrió el panel, no pude importar nada». Tiene razón y el defecto es de ubicación, no de m…",
+    "toca": 4,
+    "crea": 3,
+    "evidencia": 5,
+    "evidenciaDeclarada": [
+     "Juez con ojos: captura del LOBBY donde se lee ＋ Abrir archivo al lado de ＋ Nuevo sin",
+     "Captura del panel abierto DESDE el lobby con la fila \"(tuya)\" seleccionada y su score.",
+     "node --import tsx scripts/ciclo-dado-test.cjs sigue 242/242 (cero regresión del motor).",
+     "node scripts/orden-gate.cjs VERDE · node scripts/temis-tablero.cjs VERDE con este",
+     "censo esperado: canvas/vite/html IGUAL."
+    ],
+    "cierre": "5/5 EN VERDE. El cargador ya vive donde ian lo buscó: en el LOBBY, junto a ＋ Nuevo. - ProjectSwitcher.tsx: prop onAbrirArchivo + ＋ Abrir archivo (ps-abrir-archivo, input input-ps-archivo). En CONTORN…",
+    "cierreCompleto": "5/5 EN VERDE. El cargador ya vive donde ian lo buscó: en el LOBBY, junto a ＋ Nuevo. - ProjectSwitcher.tsx: prop onAbrirArchivo + ＋ Abrir archivo (ps-abrir-archivo, input input-ps-archivo). En CONTORNO dorado, no relleno: se lee como hermana de ＋ Nuevo sin competirle (crear sigue siendo la acción principal). - ForgeBRepStudio.tsx: archivoDelLobby → abre REVISAR EN VOLUMEN y le pasa el archivo. - RevisarLotePanel.tsx: prop archivoInicial + una sola función cargarArchivo para las DOS entradas (lobby y botón de adentro) — dos puertas, una verdad. La pieza además queda SELECCIONADA al cargarse (setSel): viniste a verla a ella, no a la primera de la lista. Medido con ojos (arnés forja-drive, GPU real, 3/3 gestos sin error): - El lobby muestra los DOS botones al abrirse, sin desplegar nada (01-puerta-lobby). - 1594C Lid.stp elegido DESDE el lobby → el panel abre con 1594C Lid (tuya) seleccionada, score 70/100, cold-2placas × 2 cav, con su planta del núcleo y los 5 pines ⌀10 mm (02-puerta-un-clic). Nunca se tocó la pestaña SIMULACIÓN. - Gate del ciclo 242/242 · 0 fallan: cero regresión (el motor no se tocó, solo la puerta). Lo que ian reportó y queda resuelto: «nunca encontré el botón para subirlo; le di click en ＋ Nuevo y solo abrió el panel». Era verdad: el cargador estaba a tres clics escondidos (pestaña → panel colapsado → REVISAR EN VOLUMEN). La lección para el canon: un feature que pasa su gate pero vive donde nadie lo busca, no existe. El gate medía que cargara; nadie medía que se ENCONTRARA. Deudas que siguen (heredadas del ticket anterior, no se esconden): no se puede ren…",
+    "evidenciaSS": [
+     "evidencia/2026-08-28-cargador-donde-se-busca/01-puerta-lobby-still.jpg",
+     "evidencia/2026-08-28-cargador-donde-se-busca/02-puerta-un-clic-still.jpg"
     ],
     "revisable": true,
     "probado": "",

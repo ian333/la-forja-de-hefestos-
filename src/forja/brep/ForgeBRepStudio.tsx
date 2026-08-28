@@ -3516,6 +3516,9 @@ export default function ForgeBRepStudio() {
   const [tpSimOn, setTpSimOn] = useState(false);
   const [moldMachineOn, setMoldMachineOn] = useState(false);
   const [revisarLoteOn, setRevisarLoteOn] = useState(false);
+  // el archivo que el operador eligió DESDE EL LOBBY: viaja al panel de revisión y se
+  // carga solo (ian 2026-08-28: "nunca encontré el botón para subirlo").
+  const [archivoDelLobby, setArchivoDelLobby] = useState<File | null>(null);
   const [unscrewOn, setUnscrewOn] = useState(false);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
@@ -6526,7 +6529,8 @@ export default function ForgeBRepStudio() {
         )}
         {revisarLoteOn && (
           <Suspense fallback={null}>
-            <RevisarLotePanel onClose={() => setRevisarLoteOn(false)} />
+            <RevisarLotePanel onClose={() => { setRevisarLoteOn(false); setArchivoDelLobby(null); }}
+              archivoInicial={archivoDelLobby} />
           </Suspense>
         )}
         {unscrewOn && (
@@ -6702,7 +6706,8 @@ export default function ForgeBRepStudio() {
             </button>
             <ProjectSwitcher open={switcherOpen} onClose={() => setSwitcherOpen(false)}
               projects={switcherProjects} starters={switcherStarters}
-              onNew={newDoc} onPick={(p) => p.action()} />
+              onNew={newDoc} onPick={(p) => p.action()}
+              onAbrirArchivo={(f) => { setArchivoDelLobby(f); setRevisarLoteOn(true); }} />
             <div className="fb-ws-tabs" role="tablist">
               <button className={workspace === 'diseno' ? 'on' : ''} data-testid="tab-diseno" role="tab"
                 onClick={() => setWorkspace('diseno')}>DISEÑO</button>

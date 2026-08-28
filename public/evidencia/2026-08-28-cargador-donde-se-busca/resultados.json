@@ -1,0 +1,37 @@
+{
+ "puerta-lobby": {
+  "estado": "verde",
+  "checks": "el lobby pinta ＋ Abrir archivo (contorno dorado) a la izquierda de ＋ Nuevo (relleno), visible al abrirlo, sin desplegar ni un panel — el defecto exacto que ian reportó",
+  "video": "",
+  "still": "evidencia/2026-08-28-cargador-donde-se-busca/01-puerta-lobby-still.jpg",
+  "nota": "antes había que ir a SIMULACIÓN → desplegar el panel COLAPSADO → REVISAR EN VOLUMEN → ＋ Tu pieza: 3 clics escondidos"
+ },
+ "puerta-un-clic": {
+  "estado": "verde",
+  "checks": "1594C Lid.stp elegido DESDE EL LOBBY → REVISAR EN VOLUMEN abre con la fila '1594C Lid (tuya)' SELECCIONADA, score 70/100, cold-2placas × 2 cav, con su planta del núcleo y 5 pines ⌀10 · nunca se tocó la pestaña SIMULACIÓN",
+  "video": "",
+  "still": "evidencia/2026-08-28-cargador-donde-se-busca/02-puerta-un-clic-still.jpg",
+  "nota": "el archivo viaja lobby → ForgeBRepStudio (archivoDelLobby) → panel (archivoInicial) y se carga solo"
+ },
+ "puerta-stl": {
+  "estado": "verde",
+  "checks": "rpi4-bottom.stl por la misma puerta (input del panel, misma función cargarArchivo) → 4,204 triángulos · 17,036.2 mm³ · score 75/100 (gate del ciclo, 6 checks del cargador)",
+  "video": "",
+  "still": "",
+  "nota": "las dos entradas (lobby y panel) llaman a UNA sola función: no hay dos verdades"
+ },
+ "puerta-error": {
+  "estado": "verde",
+  "checks": "basura de 40 bytes → 'STL vacío o ilegible (ni binario ni ASCII con vertex)'; .iges → 'extensión no soportada'. En pantalla: barra roja rl-error-carga y el resto del lote sigue calculado",
+  "video": "",
+  "still": "",
+  "nota": "verificado en el gate y visto en la corrida anterior del arnés"
+ },
+ "puerta-sin-regresion": {
+  "estado": "verde",
+  "checks": "ciclo-dado-test.cjs sigue en 242/242 · 0 fallan tras mover la puerta (el motor no se tocó)",
+  "video": "",
+  "still": "",
+  "nota": "el botón de adentro del panel se queda: es donde agregas la segunda y la tercera pieza"
+ }
+}

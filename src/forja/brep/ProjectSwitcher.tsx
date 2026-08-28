@@ -76,6 +76,10 @@ const CSS = `
 .ps-new{border:0;cursor:pointer;background:linear-gradient(150deg,#FDB813,#d1930b);color:#1a1206;
   font-weight:700;font-size:12.5px;padding:8px 13px;border-radius:9px;white-space:nowrap}
 .ps-new:hover{filter:brightness(1.06)}
+/* la puerta de "abrir mi archivo": mismo tamaño que ＋ Nuevo pero en contorno, para que
+   se lea como HERMANA suya y no como la acción principal (crear sigue mandando). */
+.ps-abrir{background:transparent;border:1px solid #FDB81388;color:#FDB813;display:inline-flex;align-items:center}
+.ps-abrir:hover{background:rgba(253,184,19,0.12);filter:none}
 .ps-types{display:flex;gap:7px;padding:11px 16px 0;flex-wrap:wrap}
 .ps-types button{font-size:12px;cursor:pointer;padding:6px 12px;border-radius:20px;font-weight:600;
   border:1px solid var(--ds-line,rgba(140,180,255,.1));color:var(--ds-dim,#A6B4C8);background:transparent;
@@ -135,13 +139,15 @@ function Card({ p, onPick }: { p: ProjItem; onPick: (p: ProjItem) => void }) {
   );
 }
 
-export default function ProjectSwitcher({ open, onClose, projects, starters, onNew, onPick }: {
+export default function ProjectSwitcher({ open, onClose, projects, starters, onNew, onPick, onAbrirArchivo }: {
   open: boolean;
   onClose: () => void;
   projects: ProjItem[];
   starters: ProjItem[];
   onNew: () => void;
   onPick: (p: ProjItem) => void;
+  /** abrir una pieza del disco (.stl/.step) y mandarla a REVISAR EN VOLUMEN */
+  onAbrirArchivo?: (f: File) => void;
 }) {
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<ProjType | 'todos'>('todos');
@@ -175,6 +181,17 @@ export default function ProjectSwitcher({ open, onClose, projects, starters, onN
           {view === 'proyectos' && (
             <label className="ps-find">🔍<input data-testid="ps-search" value={q} autoFocus
               placeholder="Buscar…" onChange={(e) => setQ(e.target.value)} /></label>
+          )}
+          {/* LA PUERTA DONDE SE BUSCA (ian, 2026-08-28: "nunca encontré el botón para subirlo;
+              le di click en ＋ Nuevo"). El cargador existía pero vivía a tres clics escondidos;
+              aquí está donde el operador ya está parado, junto a ＋ Nuevo. */}
+          {onAbrirArchivo && (
+            <label className="ps-new ps-abrir" data-testid="ps-abrir-archivo" style={{ cursor: 'pointer', marginRight: 8 }}
+              title="Abre TU pieza del disco (.stl o .step) y la revisa con los contratos de Kazmer">
+              ＋ Abrir archivo
+              <input type="file" accept=".stl,.step,.stp" data-testid="input-ps-archivo" style={{ display: 'none' }}
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) { onAbrirArchivo(f); onClose(); } }} />
+            </label>
           )}
           <button className="ps-new" data-testid="ps-new" onClick={() => { onNew(); onClose(); }}>＋ Nuevo</button>
         </div>

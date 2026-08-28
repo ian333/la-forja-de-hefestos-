@@ -62,7 +62,11 @@ const ordenar = (filas: FilaRevision[]) => [...filas]
 
 const box: React.CSSProperties = { background: 'rgba(14,20,30,0.8)', border: '1px solid #223046', borderRadius: 10, padding: '12px 15px' };
 
-export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
+export default function RevisarLotePanel({ onClose, archivoInicial }: {
+  onClose: () => void;
+  /** pieza que el operador eligió DESDE EL LOBBY: se carga sola al abrir el panel */
+  archivoInicial?: File | null;
+}) {
   const [activos, setActivos] = useState<Record<string, boolean>>(Object.fromEntries(LOTE.map((p) => [p.label, true])));
   // ── TU PIEZA: lo que el operador suelta desde su disco (orden 2026-08-28-cargador-mi-pieza).
   //    Entra por el MISMO camino que el lote de arranque: su malla se deja en meshCache y el
@@ -134,6 +138,40 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
     })();
   }, [activos]);
 
+  /**
+   * CARGAR UN ARCHIVO DEL OPERADOR — una sola puerta para las DOS entradas:
+   * el botón de este panel y el `＋ Abrir archivo` del LOBBY (ian no encontró el
+   * primero: "le di click en ＋ Nuevo y solo abrió el panel"). Deja la malla en
+   * meshCache y prende su toggle: el corredor hace el resto, igual que con el lote.
+   */
+  const cargarArchivo = async (f: File) => {
+    setErrCarga('');
+    const label = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 22);
+    if (piezasRef.current.some((p) => p.label === label)) { setErrCarga(`"${label}" ya está cargada`); setSel(`${label} (tuya)`); return; }
+    setEstado((s2) => ({ ...s2, [label]: 'leyendo archivo' }));
+    try {
+      const { mesh, fuente, notas } = await mallaDesdeArchivo(f.name, await f.arrayBuffer());
+      meshCache.current[label] = mesh;                            // el corredor la toma de aquí: NO re-fetch
+      setNotasMias((n) => ({ ...n, [label]: [`cargada por ti: ${f.name} (${(f.size / 1024).toFixed(0)} KB, ${fuente.toUpperCase()})`, ...notas] }));
+      setMias((m) => [...m, { label, nombre: `${label} (tuya)`, stl: f.name, annualVolume: 200_000 }]);
+      setActivos((a) => ({ ...a, [label]: true }));               // dispara el corredor
+      setSel(`${label} (tuya)`);                                  // y queda SELECCIONADA: viniste a verla a ella
+      setEstado((s2) => { const { [label]: _x, ...resto } = s2; return resto; });
+    } catch (err) {
+      delete meshCache.current[label];
+      setEstado((s2) => { const { [label]: _x, ...resto } = s2; return resto; });
+      setErrCarga(`${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
+    }
+  };
+
+  // EL ARCHIVO QUE VIENE DEL LOBBY: se carga solo al abrir el panel (una vez).
+  const yaCargoInicial = useRef(false);
+  useEffect(() => {
+    if (!archivoInicial || yaCargoInicial.current) return;
+    yaCargoInicial.current = true;
+    cargarArchivo(archivoInicial);
+  }, [archivoInicial]);
+
   const revisiones = piezas.filter((e) => activos[e.label] && revs[e.label]).map((e) => revs[e.label]);
   const filas = ordenar(revisiones.map((r) => r.fila));
   const pendCalc = piezas.filter((e) => activos[e.label] && !revs[e.label]);
@@ -165,26 +203,7 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
             style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, cursor: 'pointer', background: 'rgba(201,162,39,0.14)', border: `1px solid ${GOLD}66`, color: '#f0e2b8', borderRadius: 7, padding: '7px 12px' }}>
             ＋ Tu pieza <em style={{ opacity: 0.6, fontStyle: 'normal', fontSize: 10 }}>(.stl · .step)</em>
             <input type="file" accept=".stl,.step,.stp" data-testid="input-mi-pieza" style={{ display: 'none' }}
-              onChange={async (ev) => {
-                const f = ev.target.files?.[0]; ev.target.value = '';        // permite recargar el MISMO archivo
-                if (!f) return;
-                setErrCarga('');
-                const label = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 22);
-                if (piezasRef.current.some((p) => p.label === label)) { setErrCarga(`"${label}" ya está cargada`); return; }
-                setEstado((s2) => ({ ...s2, [label]: 'leyendo archivo' }));
-                try {
-                  const { mesh, fuente, notas } = await mallaDesdeArchivo(f.name, await f.arrayBuffer());
-                  meshCache.current[label] = mesh;                            // el corredor la toma de aquí: NO re-fetch
-                  setNotasMias((n) => ({ ...n, [label]: [`cargada por ti: ${f.name} (${(f.size / 1024).toFixed(0)} KB, ${fuente.toUpperCase()})`, ...notas] }));
-                  setMias((m) => [...m, { label, nombre: `${label} (tuya)`, stl: f.name, annualVolume: 200_000 }]);
-                  setActivos((a) => ({ ...a, [label]: true }));               // dispara el corredor
-                  setEstado((s2) => { const { [label]: _x, ...resto } = s2; return resto; });
-                } catch (err) {
-                  delete meshCache.current[label];
-                  setEstado((s2) => { const { [label]: _x, ...resto } = s2; return resto; });
-                  setErrCarga(`${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
-                }
-              }} />
+              onChange={(ev) => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) cargarArchivo(f); }} />
           </label>
           <button data-testid="rl-close" onClick={onClose} style={{ background: 'rgba(20,28,40,0.9)', border: '1px solid #2c3a50', color: '#dfe7f2', cursor: 'pointer', borderRadius: 7, padding: '7px 14px', fontSize: 12 }}>✕ Cerrar</button>
         </div>
