@@ -54,9 +54,14 @@ if '--subir' in sys.argv:
     url = f'https://university.gaiaprime.com.mx/biblioteca/{rel}?v={h}'
     # VERIFICAR que la URL pública sirve ESTE archivo, no uno cacheado: si no coincide el tamaño,
     # Instagram bajaría el equivocado. Falla ruidoso antes de publicar.
-    req = urllib.request.Request(url, method='HEAD')
-    with urllib.request.urlopen(req, timeout=60) as r:
-        remoto = int(r.headers.get('content-length', -1)); cache = r.headers.get('cf-cache-status', '?')
+    # Cloudflare responde 403 al User-Agent de urllib (Bot Fight Mode) — pasó el 2026-08-28 con
+    # LA SILLA y tumbó el estreno en IG. Con UA de navegador pasa; curl también pasa.
+    req = urllib.request.Request(url, method='HEAD', headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) Chrome/128'})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            remoto = int(r.headers.get('content-length', -1)); cache = r.headers.get('cf-cache-status', '?')
+    except urllib.error.HTTPError as e:
+        sys.exit(f'✗ la URL pública responde {e.code} ({e.reason}) — no se publica. URL: {url}')
     local = os.path.getsize(out)
     if remoto != local:
         sys.exit(f'✗ la URL sirve {remoto} B pero el archivo local tiene {local} B (cf-cache-status: {cache}) — NO se publica')

@@ -115,7 +115,7 @@ def bytes_recibidos(uri, tok):
                      params={'fields': 'status_code,video_status', 'access_token': tok}).json()
     return (((s.get('video_status') or {}).get('uploading_phase') or {}).get('bytes_transferred'))
 
-def publicar(vid, forzar, via_url=False):
+def publicar(vid, forzar, via_url=True):
     p, d = manifiesto(vid); c = copy_de(d); gate_autorizado(d, 'ig', forzar); t = token()
     local = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dist-video', 'reels', f'{vid}.mp4')
     if not os.path.exists(local): sys.exit(f'✗ no existe {local}: corre `python3 scripts/reels-1080.py {vid}`')
@@ -125,8 +125,10 @@ def publicar(vid, forzar, via_url=False):
     base = f'https://graph.instagram.com/{V}/{t["ig_id"]}'
     campos = {'media_type': 'REELS', 'caption': caption, 'share_to_feed': 'true', 'access_token': t['access_token']}
     if via_url:
-        # Camino viejo: IG DESCARGA una URL nuestra. Frágil (el CDN puede servir una versión
-        # cacheada distinta a la del disco — así se publicó el Reel malo de LA SAL el 2026-08-27).
+        # EL camino (2026-08-28): IG DESCARGA una URL nuestra. `upload_type=resumable` NO existe
+        # en Instagram Login (medido en v21/v23/v25: "The parameter video_url is required") —
+        # `--resumable` queda solo como experimento. El riesgo del CDN cacheado lo cubre
+        # reels-1080.py (URL versionada + HEAD verificado).
         url = (d.get('publicar') or {}).get('reel_url')
         if not url: sys.exit('✗ falta publicar.reel_url')
         campos['video_url'] = url
@@ -198,4 +200,4 @@ def probar(archivo):
 if __name__ == '__main__':
     a = sys.argv[1:]
     if not a: sys.exit(__doc__)
-    {'login': login, 'refresh': refresh, 'probar': lambda: probar(a[1])}.get(a[0], lambda: publicar(a[0], '--yo-autorizo' in a, '--via-url' in a))()
+    {'login': login, 'refresh': refresh, 'probar': lambda: probar(a[1])}.get(a[0], lambda: publicar(a[0], '--yo-autorizo' in a, '--resumable' not in a))()
