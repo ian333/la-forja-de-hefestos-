@@ -109,3 +109,17 @@ Deudas que siguen (heredadas del ticket anterior, no se esconden): no se puede r
 pieza ni declararle pared/material desde la UI; las cargadas viven en la sesión (sin
 biblioteca); y **elegir cuál sólido moldear** sigue siendo el siguiente ticket — es la causa
 medida de que el v1-gate con las 20 Hammond dé `parten 2/20`.
+
+## ENMIENDA (mismo día, tras la 2ª prueba de ian)
+ian, viendo PRODUCCIÓN (que aún no tenía nada de esto): «no has hecho deploy o sí — está muy
+pequeño también el panel». Las dos cosas ciertas:
+1. **No había deploy.** Todo vivía en el dev de iangpu. Se despliega en esta misma corrida.
+2. **El lobby cortaba su segunda columna** — y no era "chico": la rejilla `1fr 1fr` (= `minmax(
+   auto,1fr)`) NO puede encoger por debajo del min-content, así que una fila que ocupa las dos
+   columnas y no parte (la línea "Aún no guardas proyectos…", los encabezados de sección)
+   empujaba la rejilla más ancha que el panel y la 2ª columna quedaba fuera del `overflow:hidden`.
+   Se veía igual en MI captura del arnés y no lo cacé: miré si el botón estaba, no si la
+   pantalla estaba entera.
+   Fix: `repeat(2,minmax(0,1fr))` + `min-width:0` en tarjetas y filas anchas + panel 720 → 980 px
+   + una sola columna abajo de 820 px. Verificado a ojo: las 8 plantillas y el banco completos,
+   metas con elipsis, `＋ Abrir archivo` visible.

@@ -61,7 +61,7 @@ function Glyph({ type }: { type: ProjType }) {
 const CSS = `
 .ps-scrim{position:fixed;inset:46px 0 0 0;z-index:44;background:rgba(4,8,14,.52);backdrop-filter:blur(2px);animation:ps-fade .16s ease}
 @keyframes ps-fade{from{opacity:0}to{opacity:1}}
-.ps-panel{position:fixed;z-index:45;top:52px;left:12px;width:min(720px,calc(100vw - 24px));
+.ps-panel{position:fixed;z-index:45;top:52px;left:12px;width:min(980px,calc(100vw - 24px));
   max-height:calc(100vh - 66px);display:flex;flex-direction:column;
   background:var(--ds-panel,#0F1725);border:1px solid var(--ds-line2,rgba(140,180,255,.22));border-radius:14px;
   box-shadow:0 30px 70px rgba(0,0,0,.6);overflow:hidden;animation:ps-drop .18s ease}
@@ -87,9 +87,11 @@ const CSS = `
 .ps-types button.on{background:var(--ds-raise,#1D2A3D);color:var(--ds-text,#DCE7F5);border-color:var(--ds-line2,rgba(140,180,255,.22))}
 .ps-types button i{width:7px;height:7px;border-radius:2px;display:inline-block}
 .ps-sec{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ds-faint,#7E90A9);
-  font-weight:700;padding:14px 16px 2px;grid-column:1/-1}
-.ps-list{padding:6px 16px 16px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.ps-card{display:flex;gap:12px;padding:11px;border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:11px;
+  font-weight:700;padding:14px 16px 2px;grid-column:1/-1;min-width:0;overflow-wrap:anywhere}
+.ps-list{padding:6px 16px 16px;overflow-y:auto;overflow-x:hidden;display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+@media (max-width:820px){.ps-list{grid-template-columns:minmax(0,1fr)}}
+.ps-card{display:flex;gap:12px;padding:11px;min-width:0;border:1px solid var(--ds-line,rgba(140,180,255,.1));border-radius:11px;
   cursor:pointer;background:var(--ds-panel2,#16202F);text-align:left;font-family:inherit;
   transition:border-color .12s ease,transform .12s ease,background .12s}
 .ps-card:hover{border-color:var(--ds-line2,rgba(140,180,255,.22));transform:translateY(-2px)}
@@ -110,7 +112,7 @@ const CSS = `
 .ps-add:hover{border-color:#FDB813;color:var(--ds-text,#DCE7F5)}
 .ps-add .p{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,#FDB813 15%,transparent);color:#FDB813;font-size:22px;flex:0 0 auto}
 .ps-add small{display:block;color:var(--ds-faint,#7E90A9);font-size:10.5px;margin-top:1px}
-.ps-empty{grid-column:1/-1;color:var(--ds-faint,#7E90A9);font-size:12.5px;padding:14px 2px;text-align:center}
+.ps-empty{grid-column:1/-1;min-width:0;color:var(--ds-faint,#7E90A9);font-size:12.5px;padding:14px 2px;text-align:center}
 /* TEMIS usa la pantalla REAL (caza de ian: «el panel está muy pequeño») — en
    1900 px el tablero de 4 columnas + la evidencia a lo ancho lo necesitan. */
 .ps-panel.wide{width:calc(100vw - 24px);max-width:1760px;max-height:calc(100vh - 62px)}
