@@ -1,0 +1,75 @@
+{
+  "id": "econ-ostrom",
+  "titulo": "La tragedia que no fue — Ostrom (Nobel 2009)",
+  "nota": "QUICK WIN DE INVENTARIO (ian, 2026-08-28): la clase de Ostrom ya estaba renderizada en 9:16 4K desde junio y MUDA. El trabajo fue el guion + la voz; cero GPU. El metraje trae sus subtítulos QUEMADOS, así que no se le encima ASS y la voz narra lo que la imagen ya muestra. Simulación real detrás: dS/dt = g·S·(1−S) − c·N·S (OstromClase.tsx).",
+  "escena": {
+    "html": "(metraje existente)",
+    "query": "clase-ostrom-916-4k.mp4",
+    "nota": "no se re-renderiza: dist-video/_ostrom/clase-ostrom-916-4k.mp4 desde PRIME"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 24,
+    "dur": 52
+  },
+  "audio": {
+    "dir": "dist-video/ostrom-narracion",
+    "narracion": "ostrom-narracion.mp3",
+    "musica": "wpair-music.wav",
+    "musicaFuente": "la cama del rey, copiada",
+    "musicaVol": 0.17,
+    "segs": "segs.json",
+    "voz": "XTTS Matilda, TAKES=4"
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "h264": "econ-ostrom-4k.mp4",
+    "master": "econ-ostrom-4k.mp4"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/ostrom.txt",
+    "lineas": 13,
+    "palabras": 106,
+    "nota": "Ritmo REAL medido en esta pieza: 0.458 s/palabra (el fit-check del canon usa 0.52 y se quedó corto: sobraron 10 s en la 1ª pasada). Gotcha XTTS pagado tres veces: se traga la COLA de la línea — 'riego' y 'vivo' desaparecieron; se arregla cerrando en palabra larga y acentuada ('acabado')."
+  },
+  "publicar": {
+    "biblioteca": "economia/reels/econ-ostrom.mp4",
+    "pieza": "econ ostrom",
+    "nueva": true,
+    "autorizado": "2026-08-28 yt,ig — dicho por ian en sesión: \"chingue su madre súbelos a ambos\"",
+    "copy": {
+      "titulo": "Te enseñaron que lo de todos se destruye. Ella fue a ver si era cierto.",
+      "descripcion": "Un pasto que no es de nadie: es de todos. A ti te conviene meter una vaca más, porque el pasto se gasta entre todos pero la vaca es tuya. Eso mismo pensó cada uno… y el suelo se quedó pelón. 🐄 Garrett Hardin le puso nombre en 1968 —la tragedia de los comunes— y dijo que era inevitable: o lo privatizas o lo controla el Estado. Esa idea dominó la política ambiental durante décadas.\n\nPero Elinor Ostrom fue a ver si era cierto. Visitó pesquerías, ejidos y sistemas de riego que llevaban SIGLOS compartiendo el mismo recurso sin dueño y sin gobierno, y seguían vivos. ¿El secreto? La gente se conocía las caras: el que tomaba de más tenía que darla. Reglas hechas por los propios usuarios, monitoreo mutuo y sanciones que empiezan chiquitas.\n\nEn 2009 se convirtió en la primera mujer en ganar el Nobel de Economía — por ir a mirar en vez de suponer. Lo que ves no es una animación: es la ecuación del recurso corriendo (el pasto se regenera y se consume) mientras las vacas se multiplican.\n\n🎓 GAIA Prime. Aprende a ver lo invisible.",
+      "hashtags": [
+        "#economía",
+        "#nobel",
+        "#ostrom",
+        "#comunes",
+        "#ejido",
+        "#cooperación",
+        "#ciencia",
+        "#educación",
+        "#aprendeentiktok",
+        "#4k",
+        "#gaia"
+      ]
+    },
+    "subidas": {
+      "yt": {
+        "id": "zJnB9rVugrU",
+        "url": "https://youtu.be/zJnB9rVugrU",
+        "privacidad": "public",
+        "publishAt": "",
+        "fecha": "2026-08-28T16:40"
+      },
+      "ig": {
+        "id": "18127350592690555",
+        "url": "https://www.instagram.com/reel/Dcmd1EmDBZN/",
+        "fecha": "2026-08-28T16:53"
+      }
+    },
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/econ-ostrom.mp4?v=e758c46ba0",
+    "nota_gotcha": "El poll de status_code devuelve None en v25.0 y aun así media_publish funciona (el loop cae al publish al agotar los 10 intentos). Pasó igual con LA SILLA. Pendiente: revisar qué campo trae el estado real en esta versión."
+  }
+}
