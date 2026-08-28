@@ -343,6 +343,65 @@ El corte de capa cae en el ARRANQUE de la línea, no en su final (2.5 s tarde = 
 verificador lo cazó en el cuarteto). Y una capa apagada mientras la voz habla de OTRA
 cosa es ruido, no demostración.
 
+## 📈 LAS TRES COLUMNAS (medidas sobre 77 reels, 2026-08-28 — reemplazan a la intuición)
+
+Dataset completo de @gaiaprime_mx vía Graph API (`scripts/analisis-reels.py` → artefacto
+`public/comando/analisis-ig.json`, pintado en Comando → Telemetría, ordenable). n=77,
+271,172 vistas. **Esto no son opiniones sobre qué funciona: es lo que el canal hizo.**
+
+**LA DISTRIBUCIÓN ES UNA LOTERÍA CON BOLETOS SESGADOS.** top 2 videos = **57.4 %** de TODAS
+las vistas; top 8 = **75.5 %**. La mediana es 384 vistas. Corolario duro para la estrategia:
+no se llega a una meta de seguidores con cadencia — **se llega con un outlier más**. Cincuenta
+videos medianos ≈ 20 mil vistas ≈ 440 seguidores. Un outlier ≈ 92 mil vistas él solo.
+
+**LAS TRES COLUMNAS que predicen (correlación con log10 vistas):**
+```
+seg_vistos (tiempo medio)  +0.797     ← la más fuerte
+guardados / 1000 alcance   +0.768
+compartidos / 1000 alcance +0.767
+skip3s                     −0.610
+R² skip SOLO           0.372     ← el gancho explica solo un tercio
+R² skip+guard+compart  0.770     ← y COMPARTIR pesa 2.0× lo que guardar
+```
+**Los DOS outliers son los únicos videos del dataset con las tres columnas altas a la vez**
+(skip <42 · seg_vistos >30 · compartidos >20 por mil). Tener una sola no alcanza, y hay
+prueba de las dos direcciones: el copo de nieve tiene MEJOR skip que el rey (36.6 vs 41.9) y
+hizo 11.8k contra 63k porque compartió la mitad; "el ácido en tu estómago" comparte 21.6 (casi
+como el rey) con skip de 42.8 y se quedó en 2,711 porque nadie lo vio completo.
+
+**EL METRAJE NO DECIDE NADA.** Mismo bin del rey, cuatro guiones y cuatro cámaras:
+```
+El puente invisible  63,325 vistas · 35.4 s vistos
+Por qué el sudor      4,425 vistas · 27.0 s
+A dónde se va la sal  2,623 vistas · 22.7 s
+La silla vacía          478 vistas ·  9.2 s
+```
+**132× con el mismo bin.** Copiar al rey NO es copiar su bin: es copiar que la gente aguante
+35 segundos. Un bin nuevo no compra nada por sí solo (ver Regla #0: copiar al ganador es
+copiar lo que lo hizo ganar, no su materia prima).
+
+**QUÉ SE COMPARTE (c/1000 de alcance, medido):** lo que habla del CUERPO o la vida diaria del
+espectador y le entrega **una frase que puede repetirle a alguien**.
+```
+30.6  El puente invisible que mantiene junta cada gota de AGUA
+21.6  Tienes un ÁCIDO que disuelve metal — ahorita, en TU estómago
+20.0  Por qué el SUDOR te enfría (y por qué tiritas al bañarte)
+19.8  Un ángulo de 104.5° decide que ESTÉS VIVO
+ 0.0  Esto es la GASOLINA, molécula real
+ 0.0  Un átomo de ORO de verdad  (×2 intentos)
+ 0.0  Un pedazo REAL de tu gen BRCA1
+```
+Gasolina, oro y un gen son *interesantes*; nadie los reenvía. La regla: **el sujeto es el
+espectador, no la molécula.** Un dato no se comparte; una frase que puedes decir en la cena, sí.
+
+**CONVERSIÓN:** ~22 seguidores por cada 1000 vistas (promedio de cuenta; la API NO expone
+seguidores por video, e incluye la campaña pagada — es techo, no ley).
+
+**CAVEAT que va siempre pegado a estos números:** guardados y compartidos son en parte
+CONSECUENCIA de la distribución, no solo causa — la flecha va en los dos sentidos. Y n=77 con
+2 outliers: cualquier modelo está dominado por esos dos puntos. Sirven para DECIDIR, no para
+predecir. Ver [[feedback_gates_no_miden_verdad]].
+
 ## 👁️ LEGIBILIDAD: si se puede contar mal, el encuadre falló
 
 **Narración correcta + visual ambiguo = el público cree lo que VE.** En "El puente" la voz dice
