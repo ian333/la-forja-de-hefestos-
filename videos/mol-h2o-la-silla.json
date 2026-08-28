@@ -83,10 +83,11 @@
       "yt": {
         "id": "9QpQJ5mcuYg",
         "url": "https://youtu.be/9QpQJ5mcuYg",
-        "privacidad": "private",
+        "privacidad": "public",
         "publishAt": "",
         "captions": "AUieDaY0nIEA7znoUEMsouvnSQQHhihvSI5Cnq0-brd5iC7yRspfi9B7ag",
-        "fecha": "2026-08-28T10:57"
+        "fecha": "2026-08-28T10:57",
+        "nota": "subido privado (default del script), hecho PÚBLICO con videos.update el 2026-08-28 11:00 (estreno)"
       },
       "ig": {
         "id": "18147040033550977",
@@ -94,7 +95,12 @@
         "fecha": "2026-08-28T11:16"
       }
     },
-    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-silla.mp4?v=3d548c8df3"
+    "reel_url": "https://university.gaiaprime.com.mx/biblioteca/moleculas/reels/mol-h2o-la-silla.mp4?v=3d548c8df3",
+    "entregado_ig": {
+      "medido": "2026-08-28 11:20 con ig-calidad-entregada.cjs",
+      "rendition": "1080x1920 @ 9.5 Mbps",
+      "nota": "IGUAL que el rey (9.63) y que la subida WEB manual del master de 588 MB (9.86): por API con el reel 4K nativo se llega al mismo entregado. Cerrado el debate web vs API."
+    }
   },
   "guion": {
     "archivo": "scripts/guiones/silla.txt",
