@@ -232,10 +232,37 @@ const cine = (() => {
     let cat = [];
     try { cat = JSON.parse(fs.readFileSync(path.join(REPO, 'public', 'comando', 'catalogo.json'), 'utf8')).pieces || []; } catch {}
     const ids = new Set(cat.map((p) => p.id));
+    // DÓNDE VIVE CADA PIEZA (2026-08-28): el manifiesto ya trae `publicar.subidas` desde que
+    // las subidas son por API — se registra solo al publicar. Aquí solo se LEE: cero doble
+    // captura, igual que las órdenes. `falta` es la lista de lo que aún no existe, y es lo
+    // que convierte la tira en un tablero de control en vez de un calendario bonito.
     const dias = (cr.dias || []).map((d) => {
-      let pieza = '';
-      try { pieza = JSON.parse(fs.readFileSync(path.join(REPO, 'videos', `${d.id}.json`), 'utf8')).publicar?.pieza || ''; } catch {}
-      return { ...d, manifiesto: fs.existsSync(path.join(REPO, 'videos', `${d.id}.json`)), publicado: !!(pieza && ids.has(pieza)) };
+      const mp = path.join(REPO, 'videos', `${d.id}.json`);
+      let pieza = '', pub = {};
+      try { pub = JSON.parse(fs.readFileSync(mp, 'utf8')).publicar || {}; pieza = pub.pieza || ''; } catch {}
+      const sub = pub.subidas || {};
+      const yt = sub.yt ? { url: sub.yt.url, privacidad: sub.yt.privacidad || '' } : null;
+      const ig = sub.ig && sub.ig.url ? { url: sub.ig.url } : null;
+      const ancho = sub.yt16x9 ? { url: sub.yt16x9.url } : null;
+      // "sin registrar" ≠ "sin publicar": el sudor y el hielo se subieron A MANO antes de que
+      // existiera la API, así que están en vivo pero el manifiesto no los tiene. Marcarlos como
+      // "falta YouTube" sería mentir — y un tablero que miente no sirve para ordenar nada.
+      // EN VIVO = está en el catálogo de Comando O el manifiesto ya trae una subida registrada.
+      // Solo con el catálogo, LA SILLA salía 'sin publicar' mientras enseñaba sus chips de
+      // YouTube e Instagram — el tablero se contradecía a sí mismo (cazado a ojo en la captura).
+      const enVivo = !!(pieza && ids.has(pieza)) || !!(sub.yt || sub.ig);
+      const falta = [];
+      if (d.estado === 'hecho' || d.estado === 'hoy') {
+        if (!yt && !ig) falta.push(enVivo ? 'sin registrar' : 'sin publicar');
+        else {
+          if (!yt) falta.push('YouTube');
+          else if (yt.privacidad && yt.privacidad !== 'public') falta.push(`YouTube ${yt.privacidad}`);
+          if (!ig) falta.push('Instagram');
+        }
+        if (!ancho) falta.push('16:9');
+      }
+      return { ...d, manifiesto: fs.existsSync(mp), publicado: enVivo,
+               yt, ig, ancho, entregado: pub.entregado_ig?.rendition || '', falta };
     });
     const hoy = dias.filter((d) => d.estado === 'hoy');
     if (hoy.length > 1) violaciones.push(`CINE: hay ${hoy.length} videos marcados "hoy" — es UNO por día`);

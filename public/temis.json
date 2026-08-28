@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 18:34",
+ "generado": "2026-08-28 18:48",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -2516,7 +2516,15 @@
     "tipo": "quick-win",
     "estado": "hecho",
     "manifiesto": true,
-    "publicado": true
+    "publicado": true,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "sin registrar",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-08-26",
@@ -2526,7 +2534,15 @@
     "tipo": "quick-win",
     "estado": "hecho",
     "manifiesto": true,
-    "publicado": true
+    "publicado": true,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "sin registrar",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-08-27",
@@ -2536,7 +2552,18 @@
     "tipo": "sim (RHF/aug-cc-pVDZ, gate −24.0 kcal/mol)",
     "estado": "hecho",
     "manifiesto": true,
-    "publicado": true
+    "publicado": true,
+    "yt": {
+     "url": "https://youtu.be/IcQmByHafE0",
+     "privacidad": "public"
+    },
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": [
+     "Instagram",
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-08-27",
@@ -2547,7 +2574,19 @@
     "estado": "hecho",
     "nota": "Ian 2026-08-27: 'viajemos entre los átomos… expliquemos las nubes… la mecánica del O₂ de apagar y prender'. Enseña lo que h2o.txt no: el jalón cae en los pares solitarios (las sillas) → cuatro por agua → tetraedro → flota. §LA MECÁNICA DEL O₂ canonizada.",
     "manifiesto": true,
-    "publicado": false
+    "publicado": true,
+    "yt": {
+     "url": "https://youtu.be/9QpQJ5mcuYg",
+     "privacidad": "public"
+    },
+    "ig": {
+     "url": "https://www.instagram.com/reel/Dcl3S1Ugnfu/"
+    },
+    "ancho": null,
+    "entregado": "1080x1920 @ 9.5 Mbps",
+    "falta": [
+     "16:9"
+    ]
    },
    {
     "fecha": "2026-08-28",
@@ -2558,7 +2597,12 @@
     "estado": "proximo",
     "nota": "corrida al 28 (el 27 salió LA SILLA)",
     "manifiesto": false,
-    "publicado": false
+    "publicado": false,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
    },
    {
     "fecha": "2026-08-29",
@@ -2568,7 +2612,12 @@
     "tipo": "sim (gate −13.1 kcal/mol)",
     "estado": "proximo",
     "manifiesto": false,
-    "publicado": false
+    "publicado": false,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
    },
    {
     "fecha": "2026-08-30",
@@ -2578,7 +2627,12 @@
     "tipo": "quick-win",
     "estado": "proximo",
     "manifiesto": false,
-    "publicado": false
+    "publicado": false,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
    },
    {
     "fecha": "2026-08-31",
@@ -2589,7 +2643,12 @@
     "estado": "proximo",
     "nota": "IDEA DE IAN (2026-08-26): pintar la NUBE por el POTENCIAL que siente cada punto (signo y fuerza del MEP), en vez de por distancia al O (cosmético). Aquí es donde significa algo: dos iones opuestos y el agua entre ellos, el potencial cambia de signo en medio de la nube. Regla: cada color es dueño de UNA cantidad — reemplaza al oro-por-distancia, no se suma.",
     "manifiesto": false,
-    "publicado": false
+    "publicado": false,
+    "yt": null,
+    "ig": null,
+    "ancho": null,
+    "entregado": "",
+    "falta": []
    }
   ]
  }

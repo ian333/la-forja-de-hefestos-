@@ -141,7 +141,12 @@ export interface TemisJson {
   conteo: { proximo: number; enCurso: number; supertickets?: number; cerrado: number; probado: number; porProbar: number; sinDesplegar: number; despues: number };
   deploy: { commit: string; fecha: string } | null;
   /** CINE — 1 video por día (videos/CRONOGRAMA.json); `publicado` derivado del catálogo de Comando */
-  cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string; estado: 'hecho' | 'hoy' | 'proximo'; manifiesto: boolean; publicado: boolean }> } | null;
+  cine: { nota: string; dias: Array<{ fecha: string; id: string; titulo: string; base: string; tipo: string;
+    estado: 'hecho' | 'hoy' | 'proximo'; manifiesto: boolean; publicado: boolean;
+    /** dónde vive la pieza: se LEE de publicar.subidas del manifiesto (lo escribe la subida por API) */
+    yt: { url: string; privacidad: string } | null; ig: { url: string } | null; ancho: { url: string } | null;
+    /** rendition que Instagram ENTREGA de verdad (ig-calidad-entregada.cjs), no el archivo local */
+    entregado: string; falta: string[] }> } | null;
   violaciones: string[];
   columnas: { proximo: TemisCard[]; enCurso: TemisCard[]; cerrado: TemisCard[]; probado: TemisCard[] };
   despues: Array<{ grupo: string; texto: string }>;
@@ -215,13 +220,25 @@ export function TemisBoard({ data }: { data: TemisJson | null | { error: true } 
       )}
       {cine && cine.dias.length > 0 && (
         <section className="tm-cine" data-testid="temis-cine">
-          <h4>Cine · 1 por día <span>{cine.dias.filter((d) => d.publicado).length} publicados · {cine.dias.filter((d) => d.estado === 'proximo').length} en cola</span></h4>
+          <h4>Cine · 1 por día <span>{cine.dias.filter((d) => d.publicado).length} publicados · {cine.dias.filter((d) => d.estado === 'proximo').length} en cola{' '}
+            {cine.dias.reduce((n, d) => n + d.falta.length, 0) > 0 &&
+              <b className="tm-pend">{cine.dias.reduce((n, d) => n + d.falta.length, 0)} pendientes</b>}</span></h4>
           <div className="tm-cine-tira">
             {cine.dias.map((d) => (
               <div key={d.id} className={`tm-dia ${d.estado} ${d.publicado ? 'pub' : ''}`} data-testid={`temis-cine-${d.id}`} title={`${d.id} · ${d.base} · ${d.tipo}`}>
                 <div className="tm-dia-f">{d.fecha.slice(5)}{d.estado === 'hoy' && <b> HOY</b>}</div>
                 <div className="tm-dia-t">{d.titulo}</div>
                 <div className="tm-dia-m">{d.publicado ? '● publicado' : d.estado === 'hecho' ? '✓ hecho · sin publicar' : d.manifiesto ? '▶ manifiesto listo' : d.tipo}</div>
+                {(d.yt || d.ig || d.ancho || d.falta.length > 0) && (
+                  <div className="tm-dia-plats">
+                    {d.yt && <a className={`tm-chip yt ${d.yt.privacidad !== 'public' ? 'tibio' : ''}`} href={d.yt.url} target="_blank" rel="noreferrer"
+                                title={`YouTube · ${d.yt.privacidad || 'público'}`}>YT</a>}
+                    {d.ig && <a className="tm-chip ig" href={d.ig.url} target="_blank" rel="noreferrer" title={`Instagram${d.entregado ? ` · entrega ${d.entregado}` : ''}`}>IG</a>}
+                    {d.ancho && <a className="tm-chip w" href={d.ancho.url} target="_blank" rel="noreferrer" title="YouTube 16:9">16:9</a>}
+                    {/* "falta X" solo cuando X es una plataforma; "sin registrar"/"sin publicar" ya son frases */}
+                    {d.falta.map((f) => <span key={f} className="tm-chip falta" title="pendiente">{/^sin /.test(f) ? f : `falta ${f}`}</span>)}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -364,6 +381,19 @@ export const TEMIS_CSS = `
 .tm-dia-t{font-size:11.5px;font-weight:700;line-height:1.25;color:var(--ds-text,#DCE7F5);margin:3px 0}
 .tm-dia-m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;color:var(--ds-dim,#A6B4C8)}
 .tm-dia.pub .tm-dia-m{color:#7ee0a0}
+/* DÓNDE VIVE CADA PIEZA: chips con enlace a lo publicado + en rojo lo que falta. El dato sale
+   de publicar.subidas del manifiesto (lo escribe la subida por API) — cero doble captura. */
+.tm-dia-plats{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tm-chip{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;font-weight:700;letter-spacing:.04em;
+  padding:2px 6px;border-radius:5px;border:1px solid transparent;text-decoration:none;line-height:1.5}
+.tm-chip.yt{background:rgba(255,80,80,.14);border-color:rgba(255,80,80,.45);color:#ff8b8b}
+.tm-chip.yt.tibio{background:rgba(253,184,19,.13);border-color:rgba(253,184,19,.45);color:#FDB813}
+.tm-chip.ig{background:rgba(214,110,220,.14);border-color:rgba(214,110,220,.45);color:#e29bea}
+.tm-chip.w{background:rgba(126,224,160,.13);border-color:rgba(126,224,160,.4);color:#7ee0a0}
+/* el hueco NO puede parecerse al enlace: punteado, sin relleno y rotulado 'falta' */
+.tm-chip.falta{background:transparent;border-style:dashed;border-color:rgba(242,122,108,.55);color:#f27a6c;font-weight:600}
+.tm-chip:hover{filter:brightness(1.25)}
+.tm-pend{text-transform:none;letter-spacing:0;color:#f27a6c;font-weight:700;margin-left:2px}
 .tm code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;color:var(--ds-dim,#A6B4C8)}
 /* SUPERTICKET: barra n/N en la tarjeta + lista de ejercicios en el detalle */
 .tm-barra{display:flex;align-items:center;gap:8px;margin-top:2px;min-width:0}
