@@ -6,8 +6,17 @@
     "query": "m=cargas",
     "hook": "__cinematicAtom"
   },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 83.2 },
-  "render": { "shards": 5, "batch": 40, "frames": "dist-video/.cargasframes" },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 83.2
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.cargasframes"
+  },
   "audio": {
     "dir": "dist-video/cargas-narracion",
     "narracion": "cargas-narracion.mp3",
@@ -19,19 +28,34 @@
     "ass": "cargas.ass"
   },
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "cargas-gauss-4k-master.mp4",
-    "h264": "cargas-gauss-4k.mp4"
+    "h264": "cargas-gauss-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
   },
   "campo": {
     "bin": "cargas-gauss-efield.bin",
     "nota": "Motor campo_lineas.py: Cash-Karp adaptativo, siembra ISOTRÓPICA 3D (Fibonacci) para que cada línea lleve el mismo ángulo sólido = el mismo flujo. Medido en los 77 cuadros: error medio 0.50 líneas contra POR_CARGA·Q, máximo 2, cero indeterminadas. El átomo se traza con corte térmico (9.5e-4 u.a.) y sus 60 líneas SE APAGAN a 3.95 bohr = 2.09 Å."
   },
   "capsula": {
-    "bins": ["cargas-gauss-efield.bin", "cargas-gauss.json"],
+    "bins": [
+      "cargas-gauss-efield.bin",
+      "cargas-gauss.json"
+    ],
     "guion": "cargas.txt",
-    "scripts": ["render-clip.cjs", "video.sh", "video-subs.py", "precompute-cargas.py", "campo_lineas.py", "atencion-verify.py"],
-    "escenaSrc": ["CinematicMolecule.tsx", "camera-shots.ts", "capas.ts"]
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-cargas.py",
+      "campo_lineas.py",
+      "atencion-verify.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "capas.ts"
+    ]
   },
   "publicar": {
     "biblioteca": "fisica/cargas-gauss.mp4",

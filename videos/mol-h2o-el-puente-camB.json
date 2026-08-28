@@ -2,11 +2,22 @@
   "id": "mol-h2o-el-puente-camB",
   "titulo": "El puente — variante B de cámara",
   "nota": "PRUEBA de que una variante es DATOS: mismo guion/voz/subtítulos, solo cambia ?cam=b (otra secuencia de tomas en el registro CAMERA_SHOTS). Antes esto era wpairB-full-pipeline.sh, una copia de 50 líneas. NO se publicó como reel (canibaliza a la A); su metraje alimenta el video-respuesta.",
-
-  "escena":  { "html": "cinematic-molecule.html", "query": "m=wpair&cam=b", "hook": "__cinematicAtom" },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 77 },
-  "render":  { "shards": 5, "batch": 40, "frames": "dist-video/.wpairBframes" },
-
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wpair&cam=b",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 77
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.wpairBframes"
+  },
   "audio": {
     "dir": "dist-video/wpair-narracion",
     "narracion": "wpair-narracion.mp3",
@@ -17,20 +28,29 @@
     "segs": "segs.json",
     "ass": "wpair.ass"
   },
-
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "agua-el-puente-camB-4k-master.mp4",
-    "h264": "agua-el-puente-camB-4k.mp4"
+    "h264": "agua-el-puente-camB-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
   },
-
   "capsula": {
-    "bins": ["water-approach.bin", "water-approach-efield.bin"],
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
     "guion": "wpair.txt",
-    "scripts": ["render-clip.cjs", "video.sh", "video-subs.py", "precompute-water-approach.py"],
-    "escenaSrc": ["CinematicMolecule.tsx", "camera-shots.ts"]
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-water-approach.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts"
+    ]
   },
-
   "publicar": {
     "biblioteca": "moleculas/mol-h2o-el-puente-camB.mp4",
     "capsulaRel": "moleculas/_code/mol-h2o-el-puente-camB-capsula.tar.gz",

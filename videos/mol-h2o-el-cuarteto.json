@@ -98,7 +98,9 @@
     "musicaFadeOutAt": 74,
     "segs": "segs.json",
     "ass": "wtet.ass",
-    "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (el default TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')"
+    "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (el default TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')",
+    "congelada": true,
+    "nota_congelada": "GANADOR (2026-08-17): su voz es parte del ganador. paso_voz la usa tal cual — ni TTS ni voz-check. La corrida total regeneró las voces por caché sin firma; se restauró de las cápsulas de PRIME."
   },
   "campo": {
     "bin": "water-tetramer-efield.bin",
@@ -107,9 +109,10 @@
     "medido": "siembra por flujo: 733 líneas, 0 duplicadas, ∮E·n̂dA = +0.467"
   },
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "agua-el-cuarteto-4k-master.mp4",
-    "h264": "agua-el-cuarteto-4k.mp4"
+    "h264": "agua-el-cuarteto-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
   },
   "capsula": {
     "bins": [

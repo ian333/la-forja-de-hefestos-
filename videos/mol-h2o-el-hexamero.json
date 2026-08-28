@@ -78,7 +78,9 @@
     "musicaFuente": "cama del cuarteto RECUPERADA de su cápsula en PRIME (dist-video se borró completo el 2026-08-04; la cápsula del cuarteto sí traía su audio y la del hexágono salió VACÍA — ver el arreglo de la auditoría en video.sh).",
     "segs": "segs.json",
     "ass": "whex6.ass",
-    "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')"
+    "voz": "XTTS Matilda, TAKES=4 con selección por MEDIANA (TAKES=1 no selecciona nada y ya se oyó en 'La ley de Gauss')",
+    "congelada": true,
+    "nota_congelada": "GANADOR (2026-08-17): su voz es parte del ganador. paso_voz la usa tal cual — ni TTS ni voz-check. La corrida total regeneró las voces por caché sin firma; se restauró de las cápsulas de PRIME."
   },
   "campo": {
     "bin": "water-hexamer-efield.bin",
@@ -86,9 +88,10 @@
     "lineas": "1100 = 550·N/3"
   },
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "agua-el-hexagono-4k-master.mp4",
-    "h264": "agua-el-hexagono-4k.mp4"
+    "h264": "agua-el-hexagono-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
   },
   "capsula": {
     "bins": [

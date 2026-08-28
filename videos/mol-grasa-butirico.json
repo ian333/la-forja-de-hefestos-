@@ -63,12 +63,15 @@
     "segs": "segs.json",
     "ass": "butirico.ass",
     "voz": "XTTS Matilda, TAKES=4 mediana, VEL=1.10 (Ian: sonaba lento). ⚠ pasar scripts/voz-check.py ANTES de rendir.",
-    "musica": null
+    "musica": null,
+    "congelada": true,
+    "nota_congelada": "GANADOR (2026-08-17): su voz es parte del ganador. paso_voz la usa tal cual — ni TTS ni voz-check. La corrida total regeneró las voces por caché sin firma; se restauró de las cápsulas de PRIME."
   },
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "grasa-butirico-4k-master.mp4",
-    "h264": "grasa-butirico-4k.mp4"
+    "h264": "grasa-butirico-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
   },
   "capsula": {
     "bins": [

@@ -1,0 +1,81 @@
+{
+  "id": "mol-hemo-la-cazadora",
+  "titulo": "La cazadora — el hierro de tu sangre atrapando oxígeno",
+  "nota": "MANIFIESTO copiado de mol-h2o-el-puente.json (Regla #0: el video nuevo es DATOS, y la hermana de esta pieza es EL PUENTE). Cero scripts nuevos, cero constantes en la escena.",
+  "fisica": {
+    "metodo": "SITIO ACTIVO ab initio: Fe-porfina del cristal 2DN1 (oxihemoglobina humana, 1.25 Å) + la HISTIDINA PROXIMAL His87 como imidazol + O₂, 48 átomos, RKS B3LYP/def2-SVP en gpu4pyscf. Escaneo rígido de 8 separaciones Fe–O₂ (4.60 → 1.796 Å, la distancia del cristal). Δρ = ρ(complejo) − [ρ(FeP) + ρ(O₂)] con los fragmentos por PARTICIÓN ATÓMICA de la referencia a 8 Å (misma superficie de espín). Campo = MEP real trazado con campo_lineas.py (siembra por flujo).",
+    "por_que_el_sitio_activo": "La proteína entera (4,344 átomos) NO es computable ab initio. Un intento previo la dibujó con ÁTOMOS vestidos de electrones y el esqueleto disfrazado de líneas de campo — Ian: 'no entiendo qué estoy viendo'. Aquí cada capa significa LO MISMO que en el puente: oro = ρ real, morado = Δρ>0 (carga llegando), azul = Δρ<0, líneas = campo eléctrico de verdad.",
+    "gates": {
+      "energia": "el O₂ unido está −37.7 kcal/mol por debajo de lejos (atractivo). Curva RELATIVA a la referencia de 8 Å — el valor absoluto contra fragmentos aislados NO se cita: arrastra el sesgo del cambio de superficie de espín.",
+      "delta_rho": "∫Δρ>0 de 0.022 e⁻ (lejos) a 0.748 e⁻ (unido) = 34× (control positivo Y negativo)",
+      "campo": "120/120 líneas vivas en todos los cuadros",
+      "cristalografia": "Fe–O₂ 1.796 Å (Shaanan 1.8-1.9) · Fe fuera del plano 0.385 Å en deoxi → 0.036 Å en oxi (Perutz) · rotación cuaternaria α2β2 14.12° (Baldwin & Chothia 12-15°) — medidos por precompute-hemoglobin.py sobre 4HHB/2DN1"
+    },
+    "declarado": "El escaneo es RÍGIDO (la geometría del anillo no se relaja al alejar el O₂) y el modelo trunca los sustituyentes del hemo a H — práctica estándar de QM en hemoproteínas. La profundidad del pozo (−37.7) es mayor que el experimental (~−10 a −15 kcal) por B3LYP sin corrección de dispersión ni BSSE: se muestra la FORMA de la captura, no se cita el número."
+  },
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=hemo",
+    "hook": "__cinematicAtom",
+    "wiring": "WATER_BINS.hemo + HEMO_CAPAS + CAMERA_SHOTS.hemo en CinematicMolecule.tsx. Es hermana LITERAL del puente: ex=13, sin multiplicadores, tomas twoShot/orbitOne/pushToBridge/crashIn. El Fe va en el ORIGEN y el O₂ sobre +X = la convención nucX del dímero."
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 77
+  },
+  "render": {
+    "shards": 4,
+    "batch": 40,
+    "frames": "dist-video/.hemoframes",
+    "captura": "cdp-jpeg"
+  },
+  "guion": {
+    "archivo": "scripts/guiones/hemo.txt"
+  },
+  "audio": {
+    "dir": "dist-video/hemo-narracion",
+    "narracion": "hemo-narracion.mp3",
+    "musica": null,
+    "segs": "segs.json",
+    "ass": "hemo.ass",
+    "vel": 1.1,
+    "voz": "XTTS Matilda, VEL=1.10. ⚠ pasar voz-check ANTES de rendir."
+  },
+  "salida": {
+    "dir": "dist-video/masters",
+    "master": "hemo-la-cazadora-4k-master.mp4",
+    "h264": "hemo-la-cazadora-4k.mp4"
+  },
+  "capsula": {
+    "bins": [
+      "hemoglobina.bin",
+      "hemoglobina-efield.bin"
+    ],
+    "guion": "hemo.txt",
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-heme-approach.py",
+      "precompute-hemoglobin.py",
+      "campo_lineas.py",
+      "narracion-gen.py",
+      "assemble-narracion.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "CinematicCamera.tsx",
+      "CinematicPostFX.tsx",
+      "cinematic-molecule-main.tsx"
+    ]
+  },
+  "publicar": {
+    "biblioteca": "moleculas/mol-hemo-la-cazadora.mp4",
+    "capsulaRel": "moleculas/_code/mol-hemo-la-cazadora-capsula.tar.gz",
+    "pieza": "mol-hemo la cazadora",
+    "nueva": true
+  }
+}

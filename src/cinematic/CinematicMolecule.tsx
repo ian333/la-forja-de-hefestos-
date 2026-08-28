@@ -488,6 +488,20 @@ const CAMERA_SHOTS: Record<string, ShotEntry[]> = {
     { shot: crashIn({ rMul: 1.02, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.3, label: 'dos manos, dos sillas: cuatro (l9)' },
     { shot: pullOut({}), dur: 14.0, label: 'tetraedro · flota · y tú · GAIA (l10-12)' },
   ],
+  // LA SILLA EN 16:9 (?cam=w, 2026-08-28): MISMAS tomas y MISMAS duraciones, radios apretados.
+  // Por qué: la FOV de three.js es VERTICAL, así que al pasar de 9:16 a 16:9 el cuadro pierde
+  // altura y el sujeto se queda del mismo tamaño angular con negro a los lados. Medido en el
+  // primer render ancho: fill 0.252 y void máx 46.6 % (el vertical da 0.434/23.6 %; los
+  // ganadores 0.74-0.82). Acercar es la cura; el canon prohíbe el void muerto.
+  'wsilla-w': [
+    { shot: twoShot({ dir: 1, azim0: 0.7, span: 1.0, elev: 0.15, rMul: 0.95 }), dur: 7.0, label: 'las dos se jalan · el jalón tiene domicilio (l1-2)' },
+    { shot: orbitOne({ side: -1, azim0: 0.8, span: 1.6, rMul: 0.32 }), dur: 9.2, label: 'MAGENTA: el oxígeno de cerca, sus dos nubes (l3-5)' },
+    { shot: craneOverPair({ azim0: 1.3, span: 1.0, elevTo: -0.42, rMul: 0.92 }), dur: 4.0, label: 'el hidrógeno de la otra apunta justo ahí (l6)' },
+    { shot: eyeLevelLock({ rMul: 0.72, azim: 1.2 }), dur: 5.0, label: 'QUITA LAS NUBES: nada (l7)' },
+    { shot: pushToBridge({ rFrom: 1.05, rTo: 0.55, azim: 1.15 }), dur: 5.5, label: 'PRÉNDELAS: looming al puente (l8)' },
+    { shot: crashIn({ rMul: 0.66, azim0: 1.3, span: 1.1, elev: 0.06 }), dur: 5.3, label: 'dos manos, dos sillas: cuatro (l9)' },
+    { shot: pullOut({ rTdMul: 0.85 }), dur: 14.0, label: 'tetraedro · flota · y tú · GAIA (l10-12) — mismo arranque que el vertical, cierre MÁS CERCA (1.30→0.85) para no vaciar el cuadro ancho' },
+  ],
   // LA SAL (2026-08-26): Na⁺ (índice 0, en −x) + agua (O en +x). Hermana literal del rey: mismo
   // eje, mismo régimen (~13 bohr), mismas 9 tomas. `orbitOne(side:-1)` mira al ION, `side:+1` al agua.
   wsal: [
@@ -2802,7 +2816,7 @@ function WaterPair({ time, onReady, mk = 'wpair' }: { time: number; onReady?: (r
   return (
     <>
       <WaterPairCamera time={time} R={R} ex={W.ex}
-        shots={mk === 'wpair' ? WPAIR_SHOTS_ACTIVE : (CAMERA_SHOTS[mk] ?? CAMERA_SHOTS.wpair)}
+        shots={CAMERA_SHOTS[`${mk}-${WPAIR_CAM}`] ?? (mk === 'wpair' ? WPAIR_SHOTS_ACTIVE : (CAMERA_SHOTS[mk] ?? CAMERA_SHOTS.wpair))}
         pts={nucP.filter((_, i) => i % 3 === 0)} />
       {/* TAMAÑO EN FRACCIÓN DE CUADRO, no en píxeles. Antes esto se compensaba A MANO por
           resolución ("×1.85 para 4K") y quedaba a medias: el 16:9 de 1080 salió con electrones

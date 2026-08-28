@@ -341,9 +341,10 @@
     }
   },
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "agua-el-anillo-4k-master.mp4",
-    "h264": "agua-el-anillo-4k.mp4"
+    "h264": "agua-el-anillo-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
   },
   "capsula": {
     "bins": [
@@ -439,7 +440,9 @@
     "musicaFadeIn": 2.5,
     "musicaFadeOutAt": 88,
     "segs": "segs.json",
-    "ass": "wtri.ass"
+    "ass": "wtri.ass",
+    "congelada": true,
+    "nota_congelada": "GANADOR (2026-08-17): su voz es parte del ganador. paso_voz la usa tal cual — ni TTS ni voz-check. La corrida total regeneró las voces por caché sin firma; se restauró de las cápsulas de PRIME."
   },
   "campo": {
     "bin": "water-trimer-efield.bin",

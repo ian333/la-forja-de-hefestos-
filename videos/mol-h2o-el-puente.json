@@ -2,11 +2,22 @@
   "id": "mol-h2o-el-puente",
   "titulo": "El puente — H₂O···H₂O",
   "nota": "MANIFIESTO = el video es DATOS. Un video nuevo se hace copiando este archivo y cambiando valores. NO se crean scripts nuevos ni constantes en la escena. Ver docs/CANON-VIDEO.md.",
-
-  "escena":  { "html": "cinematic-molecule.html", "query": "m=wpair", "hook": "__cinematicAtom" },
-  "formato": { "w": 2160, "h": 3840, "fps": 30, "dur": 77 },
-  "render":  { "shards": 5, "batch": 40, "frames": "dist-video/.wpairframes" },
-
+  "escena": {
+    "html": "cinematic-molecule.html",
+    "query": "m=wpair",
+    "hook": "__cinematicAtom"
+  },
+  "formato": {
+    "w": 2160,
+    "h": 3840,
+    "fps": 30,
+    "dur": 77
+  },
+  "render": {
+    "shards": 5,
+    "batch": 40,
+    "frames": "dist-video/.wpairframes"
+  },
   "audio": {
     "dir": "dist-video/wpair-narracion",
     "narracion": "wpair-narracion.mp3",
@@ -17,22 +28,36 @@
     "segs": "segs.json",
     "ass": "wpair.ass"
   },
-
   "salida": {
-    "dir": "/mnt/e/forja-videos",
+    "dir": "dist-video/masters",
     "master": "agua-el-puente-4k-master.mp4",
-    "h264": "agua-el-puente-4k.mp4"
+    "h264": "agua-el-puente-4k.mp4",
+    "nota_ext4": "ext4 (2026-08-17, corrida total): antes dir=/mnt/e/forja-videos — drvfs en el camino crítico. Los originales pre-corrida: /mnt/e/forja-videos/_originales-20260817/."
   },
-
   "capsula": {
-    "bins": ["water-approach.bin", "water-approach-efield.bin"],
+    "bins": [
+      "water-approach.bin",
+      "water-approach-efield.bin"
+    ],
     "guion": "wpair.txt",
-    "scripts": ["render-clip.cjs", "video.sh", "video-subs.py", "precompute-water-approach.py",
-                "narracion-gen.py", "assemble-narracion.py", "musica-eterea.py"],
-    "escenaSrc": ["CinematicMolecule.tsx", "camera-shots.ts", "CinematicCamera.tsx",
-                  "CinematicPostFX.tsx", "cinematic-molecule-main.tsx", "CinematicAtom.tsx"]
+    "scripts": [
+      "render-clip.cjs",
+      "video.sh",
+      "video-subs.py",
+      "precompute-water-approach.py",
+      "narracion-gen.py",
+      "assemble-narracion.py",
+      "musica-eterea.py"
+    ],
+    "escenaSrc": [
+      "CinematicMolecule.tsx",
+      "camera-shots.ts",
+      "CinematicCamera.tsx",
+      "CinematicPostFX.tsx",
+      "cinematic-molecule-main.tsx",
+      "CinematicAtom.tsx"
+    ]
   },
-
   "publicar": {
     "biblioteca": "moleculas/mol-h2o-el-puente.mp4",
     "capsulaRel": "moleculas/_code/mol-h2o-el-puente-capsula.tar.gz",
