@@ -590,7 +590,8 @@ function AnalisisReels({ ana, ord, setOrd }: { ana: any; ord: string; setOrd: (s
   const vids = [...(ana.videos || [])].sort((a: any, b: any) =>
     ord === 'fecha' ? (a.fecha < b.fecha ? 1 : -1) : (b[ord] ?? 0) - (a[ord] ?? 0));
   const cols: Array<[string, string]> = [['fecha', 'fecha'], ['vistas', 'vistas'], ['alcance', 'alcance'],
-    ['skip3s', 'skip 3s'], ['seg_vistos', 'seg vistos'], ['g_por_mil', 'guard/1000'], ['c_por_mil', 'comp/1000']];
+    ['skip3s', 'skip 3s'], ['seg_vistos', 'seg vistos'], ['g_por_mil', 'guard/1000'], ['c_por_mil', 'comp/1000'],
+    ['razon_cg', 'comp/guard'], ['horas_atencion', 'horas atención']];
   const R = ana.correlaciones_log_vistas || {};
   const mx = Math.max(...vids.map((v: any) => v.vistas || 0), 1);
   return (
@@ -614,6 +615,7 @@ function AnalisisReels({ ana, ord, setOrd }: { ana: any; ord: string; setOrd: (s
         R² skip solo <b>{ana.modelo_skip?.r2}</b> · R² skip+guardados+compartidos <b style={{ color: '#7ee0a0' }}>{ana.modelo_3?.r2}</b>
         {' '}(compartir pesa {ana.modelo_3?.b_compartidos && ana.modelo_3?.b_guardados ? (ana.modelo_3.b_compartidos / ana.modelo_3.b_guardados).toFixed(1) : '?'}× lo que guardar)
       </div>
+      {ana.nash_1994 && <NobelBloques ana={ana} />}
       <div style={{ maxHeight: 420, overflow: 'auto', border: '1px solid rgba(140,180,255,.08)', borderRadius: 8 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, fontFamily: "'JetBrains Mono',ui-monospace,monospace" }}>
           <thead><tr>
@@ -636,6 +638,8 @@ function AnalisisReels({ ana, ord, setOrd }: { ana: any; ord: string; setOrd: (s
                 <td style={{ padding: '4px 8px', textAlign: 'right', color: v.seg_vistos > 25 ? '#7ee0a0' : '#A6B4C8' }}>{v.seg_vistos}</td>
                 <td style={{ padding: '4px 8px', textAlign: 'right', color: '#A6B4C8' }}>{v.g_por_mil}</td>
                 <td style={{ padding: '4px 8px', textAlign: 'right', color: v.c_por_mil >= 15 ? '#7ee0a0' : v.c_por_mil === 0 ? '#f27a6c' : '#A6B4C8', fontWeight: 700 }}>{v.c_por_mil}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: v.razon_cg == null ? '#4A5568' : v.razon_cg >= 0.5 ? '#7ee0a0' : '#f27a6c' }}>{v.razon_cg ?? '·'}</td>
+                <td style={{ padding: '4px 8px', textAlign: 'right', color: '#c9a6ff' }}>{v.horas_atencion}</td>
                 <td style={{ padding: '4px 8px', color: '#A6B4C8', maxWidth: 380, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   <a href={v.url} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{v.titulo}</a></td>
               </tr>
@@ -644,6 +648,53 @@ function AnalisisReels({ ana, ord, setOrd }: { ana: any; ord: string; setOrd: (s
         </table>
       </div>
       <div style={{ fontSize: 10.5, color: '#7E90A9', marginTop: 8, lineHeight: 1.5 }}>{ana.nota}</div>
+    </div>
+  );
+}
+
+/** LOS NOBEL APLICADOS A NUESTROS DATOS (ian: "que Nash analice nuestros datos").
+ *  No es decoración: cada bloque es un marco premiado que hace una PREDICCIÓN sobre estos
+ *  números, y aquí se ve si se cumple o no. */
+function NobelBloques({ ana }: { ana: any }) {
+  const S = ana.simon_1978, P = ana.spence_2001, N = ana.nash_1994;
+  const caja: React.CSSProperties = { flex: '1 1 300px', minWidth: 280, border: '1px solid rgba(140,180,255,.12)',
+    borderRadius: 8, padding: '9px 11px', fontFamily: "'JetBrains Mono',ui-monospace,monospace", fontSize: 11 };
+  const tit: React.CSSProperties = { fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: '#FDB813', fontWeight: 700, marginBottom: 6 };
+  const fila = (a: string, b: any, col = '#DCE7F5') => (
+    <div key={a} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, color: '#8893A8', lineHeight: 1.7 }}>
+      <span>{a}</span><b style={{ color: col }}>{b}</b></div>);
+  return (
+    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '10px 0 12px' }}>
+      <div style={caja}>
+        <div style={tit}>Simon 1978 · atención escasa</div>
+        {fila('atención cosechada', `${(S.horas_totales || 0).toLocaleString('es-MX')} h`)}
+        {fila('= días humanos', S.dias, '#c9a6ff')}
+        {fila('de 5 piezas', `${S.top5_pct}%`, '#f27a6c')}
+        <div style={{ marginTop: 6, color: '#7E90A9' }}>
+          {(S.top5 || []).map((t: any) => <div key={t.titulo} style={{ lineHeight: 1.6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.pct}% · {t.titulo}</div>)}
+        </div>
+      </div>
+      <div style={caja}>
+        <div style={tit}>Spence 2001 · la señal cara informa más</div>
+        {fila('guardar (barato, privado)', (P.guardados_totales || 0).toLocaleString('es-MX'))}
+        {fila('compartir (cuesta reputación)', (P.compartidos_totales || 0).toLocaleString('es-MX'))}
+        {fila('compartir informa', `${P.compartir_informa_x}×`, '#7ee0a0')}
+        {fila(`razón ≥0.5 (n=${P.razon_alta?.n})`, `${(P.razon_alta?.vistas_mediana || 0).toLocaleString('es-MX')} v`, '#7ee0a0')}
+        {fila(`razón <0.5 (n=${P.razon_baja?.n})`, `${(P.razon_baja?.vistas_mediana || 0).toLocaleString('es-MX')} v`, '#f27a6c')}
+      </div>
+      <div style={caja}>
+        <div style={tit}>Nash 1994 · dónde rinde el esfuerzo</div>
+        {fila('1 comp/mil vale', `${N['1_compartido_en_puntos_skip']} pts de skip`)}
+        {fila('1 comp/mil vale', `${N['1_compartido_en_guardados']} guardados/mil`)}
+        {fila('+10 compartidos/mil', `×${N.x_vistas_por_10_compartidos} vistas`, '#7ee0a0')}
+        {fila('+10 guardados/mil', `×${N.x_vistas_por_10_guardados} vistas`)}
+        {fila('−10 puntos de skip', `×${N.x_vistas_por_bajar_10_skip} vistas`, '#f27a6c')}
+      </div>
+      <div style={caja}>
+        <div style={tit}>Control de época · el canal creció</div>
+        <div style={{ color: '#7E90A9', marginBottom: 4 }}>comparar meses distintos es trampa:</div>
+        {(ana.epoca || []).map((e: any) => fila(`${e.mes} (n=${e.n})`, `alc ${e.alcance_mediano.toLocaleString('es-MX')} · c/mil ${e.c_por_mil_mediana}`))}
+      </div>
     </div>
   );
 }
