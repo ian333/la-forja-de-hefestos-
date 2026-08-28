@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 22:12",
+ "generado": "2026-08-28 22:31",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,11 +8,11 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "supertickets": 1,
+  "supertickets": 8,
   "cerrado": 64,
   "probado": 0,
   "porProbar": 31,
-  "sinDesplegar": 0,
+  "sinDesplegar": 1,
   "despues": 17
  },
  "deploy": {
@@ -332,6 +332,700 @@
     "falla": "",
     "commit": "",
     "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-28-t1-revisar-esta-pieza.md",
+    "slug": "2026-08-28-t1-revisar-esta-pieza",
+    "titulo": "T1 · REVISAR ESTA PIEZA — la revisión vive DENTRO del CAD, de una en una",
+    "fecha": "2026-08-28",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "una-pieza-visor",
+      "titulo": "Mi STL se vuelve la pieza del visor, orbitable",
+      "herramientas": "malla en el Canvas",
+      "oraculo": "gear.stl entra y el visor muestra 4,204+ triángulos girables (no una estampa); el bbox en pantalla = el bbox real ±2 %",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "una-pieza-panel",
+      "titulo": "La revisión vive en el panel lateral, no encima del CAD",
+      "herramientas": "RevisarPiezaPanel",
+      "oraculo": "con el panel abierto el viewport sigue visible y orbitando (área de canvas ≥60 % del cuadro)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "una-pieza-severidad",
+      "titulo": "Los hallazgos de ESA pieza, del más grave al menos",
+      "herramientas": "fila por criterio",
+      "oraculo": "el engrane lista sus 7 violaciones antes que sus advertencias, con su § cada una",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "una-pieza-step",
+      "titulo": "Un STEP también se vuelve la pieza (camino del kernel)",
+      "herramientas": "importedStep",
+      "oraculo": "1594C Lid.stp entra por la misma puerta y el volumen del visor = 33,294.3 mm³ ±0.5 %",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "lote-degradado",
+      "titulo": "El lote deja de ser la puerta y queda como botón de regresiones",
+      "herramientas": "demote",
+      "oraculo": "abrir \"Abrir archivo\" NUNCA abre el lote; el lote sigue disponible y sigue corriendo las 12+N piezas",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "una-pieza-sin-regresion",
+      "titulo": "Nada de lo que ya servía se rompe · gate del ciclo",
+      "herramientas": "242/242",
+      "oraculo": "0 fallan y el cargador (6 checks) sigue verde",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, con el panel de lote abierto encima del CAD: «ME ESTORBA Y NO ME SIRVE DE NADA REVISAR EN VOLUMEN. PREFERIRÍA REVISAR DE 1 EN 1 Y ME GUSTARÍA SEGUIR DENTRO DE LA FORJA, NO EN OTRA PANTALLA — pues ¿para qué hicimos un sistema CAD?».",
+    "toca": 6,
+    "crea": 4,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "node --import tsx scripts/ciclo-dado-test.cjs VERDE (242 + los checks nuevos)",
+     "juez con ojos: still del engrane de ian VIVO en el visor con el panel al lado (no encima)",
+     "still del panel lateral con los hallazgos por severidad",
+     "node scripts/orden-gate.cjs --orden ordenes/2026-08-28-t1-revisar-esta-pieza.md VERDE",
+     "Temis VERDE con este superticket en su n/6",
+     "censo esperado: canvas IGUAL (el panel es DOM; la malla va dentro del Canvas que ya existe)"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-28-t2-capas-sobre-el-solido.md",
+    "slug": "2026-08-28-t2-capas-sobre-el-solido",
+    "titulo": "T2 · LAS CAPAS SOBRE EL SÓLIDO — el espesor y los expulsores dejan de ser estampas",
+    "fecha": "2026-08-28",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "capa-espesor",
+      "titulo": "El espesor se pinta en el sólido, no en una planta",
+      "herramientas": "thickMap → feaColors",
+      "oraculo": "el vaso pinta p95/nominal = el mismo ratio que reporta dfmFromMesh (±1 %) y la leyenda dice los mm",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "capa-escala-fija",
+      "titulo": "La escala NO se auto-normaliza (una pieza pésima se vería uniforme)",
+      "herramientas": "múltiplos del nominal",
+      "oraculo": "dos piezas distintas con el mismo nominal dan el MISMO color para el mismo espesor",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "capa-expulsores",
+      "titulo": "Los pines se ven donde empujan, en 3D",
+      "herramientas": "gripEjectorLayout → marcadores",
+      "oraculo": "los 5 pines del rpi4 caen sobre las zonas de agarre y su ⌀ en pantalla = ⌀ real ±2 px",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "capa-visibilidad",
+      "titulo": "Claro/oscuro (a la vista / escondido) sobre la pieza girable",
+      "herramientas": "clasificarVisibilidad",
+      "oraculo": "la cara marcada \"no visible\" en la lámina es la misma que se pinta oscura en el visor",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "capa-toggles",
+      "titulo": "Cada capa se prende y apaga sin recalcular",
+      "herramientas": "estado de capas",
+      "oraculo": "alternar 10 veces no dispara ningún recálculo (contador de raster estable)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "capa-sin-regresion",
+      "titulo": "von Mises y el estudio de Viento siguen pintando igual",
+      "herramientas": "feaColors compartido",
+      "oraculo": "gate del ciclo verde + still del FEA idéntico al de antes",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, viendo el mapa de espesor: «eso está bien verga pero de nada me sirve verlo en 2D». Y de la planta del núcleo: «si me enseñaras algo plano… y todas las piezas serán complejas». Tiene razón: hoy esas figuras son SVG dibujados (laminas-…",
+    "toca": 5,
+    "crea": 1,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "gate del ciclo VERDE con los checks de capas · stills 1600×1000 de cada capa sobre el engrane",
+     "juez con ojos: el mismo defecto se ve en el 3D y en la lámina (no dos verdades)",
+     "orden-gate VERDE · Temis n/6 · censo canvas IGUAL (las capas van DENTRO del Canvas que ya existe)"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-28-t3-texto-con-hilo.md",
+    "slug": "2026-08-28-t3-texto-con-hilo",
+    "titulo": "T3 · TEXTO CON HILO A LA GEOMETRÍA — los § dejan de flotar",
+    "fecha": "2026-08-28",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "hilo-ancla",
+      "titulo": "Cada hallazgo trae su punto 3D (no solo texto)",
+      "herramientas": "findings con ancla",
+      "oraculo": "≥80 % de los hallazgos del engrane traen ancla; los que no, lo DICEN (\"sin ancla: es global\")",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "hilo-proyeccion",
+      "titulo": "La etiqueta sigue al punto al orbitar",
+      "herramientas": "proyección DOM",
+      "oraculo": "girar 90° mantiene la etiqueta sobre su ancla (error ≤4 px medido en dos ángulos)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "hilo-hover",
+      "titulo": "Pasar el mouse resalta la zona en la pieza",
+      "herramientas": "hover → highlight",
+      "oraculo": "el hallazgo de pared delgada resalta EXACTAMENTE los vóxeles bajo el mínimo",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "hilo-clic",
+      "titulo": "Clic vuela la cámara y prende la capa que lo explica",
+      "herramientas": "orbitTo + capa",
+      "oraculo": "clic en \"pines lejos del agarre\" deja los pines visibles en cuadro",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "hilo-sin-tapar",
+      "titulo": "Las etiquetas no se encinan ni tapan la pieza",
+      "herramientas": "reparto anti-colisión",
+      "oraculo": "con 12 hallazgos, cero solapes y la pieza ocupa ≥50 % del cuadro",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "hilo-textos-completos",
+      "titulo": "NINGÚN texto se pierde en el camino",
+      "herramientas": "paridad",
+      "oraculo": "los § y QUÉ MIRAR de la lámina siguen todos presentes (conteo igual)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian: «todos los demás textos déjalos ahí, pero no me sirven si no está relacionado directamente a la figura». Los textos son buenos (citan § del libro, dicen QUÉ MIRAR) pero están al lado de la imagen, no ATADOS a ella.",
+    "toca": 5,
+    "crea": 1,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "gate VERDE + stills con las etiquetas ancladas en 2 ángulos distintos (la prueba del error ≤4 px)",
+     "juez con ojos: la pieza no queda tapada por su propia explicación",
+     "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-28-t4-la-voz-que-guia.md",
+    "slug": "2026-08-28-t4-la-voz-que-guia",
+    "titulo": "T4 · LA VOZ QUE TE GUÍA — Matilda dicta el veredicto mientras la pieza gira",
+    "fecha": "2026-08-28",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "voz-durante",
+      "titulo": "La síntesis arranca con el PRIMER hallazgo, no al final",
+      "herramientas": "cola en segundo plano",
+      "oraculo": "el cálculo no se retrasa (Δt del análisis ≤3 % vs sin voz) y hay audio listo antes de terminar",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "voz-orden",
+      "titulo": "Dicta por severidad: lo más grave primero",
+      "herramientas": "orden de la tabla",
+      "oraculo": "el primer audio corresponde al hallazgo con más críticos",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "voz-cache",
+      "titulo": "La misma frase no se sintetiza dos veces",
+      "herramientas": "hash del texto",
+      "oraculo": "la 2ª pieza igual reproduce en <100 ms (0 llamadas a iangpu)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "voz-precalienta",
+      "titulo": "El catálogo se pre-genera en lote",
+      "herramientas": "las 20 Hammond + las 12 del lote",
+      "oraculo": "≥200 frases cacheadas como assets tras una corrida nocturna",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "voz-sin-iangpu",
+      "titulo": "Sin iangpu no se rompe nada",
+      "herramientas": "degradación honesta",
+      "oraculo": "con la máquina apagada el panel sigue, el texto se lee, y NO suena voz robótica",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "voz-senala",
+      "titulo": "Lo que nombra, se ilumina",
+      "herramientas": "sincronía con T3",
+      "oraculo": "al sonar \"pines lejos del agarre\" los pines quedan resaltados (still en el instante del audio)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian: «añádele generación de voz para que sea más llevable… mientras se calcula todo se pueden ir generando voces; así sentirán una UX diferente — ¿cuándo has escuchado un CAD hablarte? JAMÁS».",
+    "toca": 4,
+    "crea": 2,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "medición del Δt del análisis con y sin voz · conteo de frases cacheadas",
+     "VIDEO (no solo still): la pieza girando mientras Matilda dicta y el resaltado la sigue",
+     "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-28-t5-expediente-que-se-ve.md",
+    "slug": "2026-08-28-t5-expediente-que-se-ve",
+    "titulo": "T5 · EL EXPEDIENTE QUE SE VE — \"no sé qué afecta si no lo veo\"",
+    "fecha": "2026-08-28",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "exp-consecuencia",
+      "titulo": "Cada decisión dice qué NÚMERO mueve",
+      "herramientas": "costo/beneficio vivo",
+      "oraculo": "las 5 decisiones del engrane traen su \"si eliges A: X; si eliges B: Y\" con números reales",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "exp-fantasma",
+      "titulo": "La alternativa se VE sobre la pieza",
+      "herramientas": "overlay comparativo",
+      "oraculo": "elegir el ⌀ de colada más chico dibuja el fantasma del actual y la diferencia en mm",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "exp-ayuda",
+      "titulo": "Cada decisión trae su ayuda del libro (no solo el §)",
+      "herramientas": "texto del pliego",
+      "oraculo": "las 5 traen 2-4 líneas de \"qué está en juego\" citando el libro",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "exp-orden",
+      "titulo": "Los remedios salen EN SU ORDEN (§7.3.5)",
+      "herramientas": "orden del libro",
+      "oraculo": "el conflicto del gate lista sus remedios en el orden impreso, no alfabético",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "exp-firma",
+      "titulo": "Firmar cierra y queda en el expediente",
+      "herramientas": "registrarDecision",
+      "oraculo": "tras firmar 5/5 el expediente pasa de \"NO CIERRA sin firmas\" a cerrado, con responsable y fecha",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "exp-no-inventa",
+      "titulo": "Donde el libro NO elige, se DICE",
+      "herramientas": "honestidad",
+      "oraculo": "\"many mold designers prefer…\" se muestra como lo que es: el libro no decide, decides tú",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, sobre el expediente §13.10 (las 5 decisiones que esperan su firma): «esto debería tener ayuda y más información… no está mal, pero no sé qué afecta si no lo veo».",
+    "toca": 5,
+    "crea": 1,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "gate VERDE · stills del antes/después de una decisión (el fantasma visible)",
+     "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-28-t6-piezas-complejas.md",
+    "slug": "2026-08-28-t6-piezas-complejas",
+    "titulo": "T6 · PIEZAS COMPLEJAS DE VERDAD — \"todas las piezas serán complejas\"",
+    "fecha": "2026-08-28",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "cplx-resolucion",
+      "titulo": "El raster se adapta a la pieza, no al revés",
+      "herramientas": "vóxeles por rasgo mínimo",
+      "oraculo": "el engrane resuelve sus dientes (nº de dientes contado del raster = el real)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "cplx-limite-honesto",
+      "titulo": "Cuando la malla no alcanza, se DICE",
+      "herramientas": "aviso de resolución",
+      "oraculo": "una pieza que necesita más vóxeles que el tope muestra \"resolución insuficiente para X\", no un dibujo liso",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "cplx-banco",
+      "titulo": "El banco deja de ser solo cajas",
+      "herramientas": "gear + Hammond + benchy",
+      "oraculo": "el gate corre ≥5 piezas complejas y publica su tabla",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "cplx-tiempo",
+      "titulo": "Complejo no significa colgado",
+      "herramientas": "presupuesto de tiempo",
+      "oraculo": "ninguna pieza del banco pasa de 20 s de análisis en iangpu",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "cplx-fidelidad",
+      "titulo": "El volumen del raster cuadra con el de la malla",
+      "herramientas": "±5 %",
+      "oraculo": "las 5 piezas complejas cuadran (hoy medido: vaso −0.4 %, cubo exacto)",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "cplx-control",
+      "titulo": "CONTROL NEGATIVO: bajarle la resolución REPRUEBA",
+      "herramientas": "el gate detecta la degradación",
+      "oraculo": "con la mitad de vóxeles el engrane falla su propio check de dientes",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, mirando la planta de su engrane: «si me enseñaras algo plano… y todas las piezas serán complejas». Es la advertencia correcta: nuestro banco está lleno de cajas (vaso, bezel, LEGO, charola) y los análisis se ven bien porque las cajas …",
+    "toca": 5,
+    "crea": 1,
+    "evidencia": 2,
+    "evidenciaDeclarada": [
+     "tabla del banco complejo con tiempos y error de volumen · control negativo en rojo",
+     "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
+   {
+    "file": "ordenes/2026-08-28-t7-linea-de-particion.md",
+    "slug": "2026-08-28-t7-linea-de-particion",
+    "titulo": "T7 · LA LÍNEA DE PARTICIÓN — hoy dice \"SIN CABLEAR\" en la cara del cliente",
+    "fecha": "2026-08-28",
+    "estado": "en-curso",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "part-silueta",
+      "titulo": "La silueta de partición se calcula desde la malla",
+      "herramientas": "clasificarVisibilidad n·d + contorno",
+      "oraculo": "la silueta del vaso cierra (curva cerrada) y su área proyectada = área proyectada del kernel ±2 %",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "part-direccion",
+      "titulo": "La dirección de apertura se elige por área proyectada y expulsabilidad",
+      "herramientas": "§4.1.2",
+      "oraculo": "el cubo elige +Z (bit-igual con el ciclo actual) y el 1594C Lid elige su eje mayor",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "part-no-plana",
+      "titulo": "Superficie de partición NO plana por loft ≥5°",
+      "herramientas": "MakeFilling/loft",
+      "oraculo": "el 1591XXCBK (esquinas redondeadas) cierra sin auto-intersección y el volumen cavidad+macho = bloque ±0.1 %",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "part-undercut",
+      "titulo": "Los undercuts se detectan y se DICEN (n·d invertido)",
+      "herramientas": "signo por sonda geométrica",
+      "oraculo": "el engrane de ian lista sus caras atrapadas con su área",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "part-parte-de-verdad",
+      "titulo": "El acero se separa en DOS cuerpos con piezas reales",
+      "herramientas": "construirAceroE3 + interseccionMitades",
+      "oraculo": "el v1-gate con /tmp/v1-reales sube de 2/20 a ≥12/20 parten",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     },
+     {
+      "id": "part-en-la-lamina",
+      "titulo": "La lámina deja de decir SIN CABLEAR",
+      "herramientas": "V4.3 medida",
+      "oraculo": "la línea roja aparece sobre la pieza y el check pasa de ⚠ a ✓",
+      "estado": "pendiente",
+      "checks": "",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 0,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "la propia lámina de ian lo confesó: «⚠ Línea de partición · §4.1.2 Fig 4.6 — SIN CABLEAR: la silueta de partición no llega a esta lámina todavía — V4.3 no está medida». Es la deuda más cara que tenemos y no es cosmética: es la causa medida…",
+    "toca": 6,
+    "crea": 1,
+    "evidencia": 3,
+    "evidenciaDeclarada": [
+     "gate del ciclo VERDE con los checks nuevos · v1-gate con las 20 Hammond ≥12/20 parten",
+     "still de la línea de partición sobre el engrane de ian",
+     "orden-gate VERDE · Temis n/6"
+    ],
+    "cierre": "",
+    "cierreCompleto": "",
+    "evidenciaSS": [],
+    "revisable": false,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
    }
   ],
   "cerrado": [
@@ -530,8 +1224,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "d3b6e6f",
-    "despliegue": "en-vivo"
+    "commit": "3f86e47",
+    "despliegue": "sin-desplegar"
    },
    {
     "file": "ordenes/2026-08-26-temis-galeria-panel.md",
