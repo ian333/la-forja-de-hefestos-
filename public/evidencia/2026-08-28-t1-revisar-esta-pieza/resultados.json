@@ -1,0 +1,35 @@
+{
+ "una-pieza-visor": {
+  "estado": "verde",
+  "checks": "gate · gear.stl → 3,314 triángulos, 9,942 vértices, normales unitarias, 1 faceGroup · bbox 22.0×57.0×10.0 mm (diagonal 61.9) = la pieza real · en pantalla: la placa con sus barrenos y su bolsillo, en 3/4 desde arriba, orbitable",
+  "video": "", "still": "evidencia/2026-08-28-t1-revisar-esta-pieza/01-una-pieza-visor-still.jpg",
+  "nota": "un STL no es B-Rep: se completa lo que el visor exige (normales por cara, faceIds) y se declara UNA sola cara — mejor una verdad pobre que inventar topología"
+ },
+ "una-pieza-panel": {
+  "estado": "verde",
+  "checks": "el panel vive en el costado (aside de simulación), el viewport sigue visible y orbitando · ya no hay pantalla que tape el CAD",
+  "video": "", "still": "evidencia/2026-08-28-t1-revisar-esta-pieza/02-una-pieza-panel-still.jpg",
+  "nota": "ian: «prefiero revisar de 1 en 1 y seguir DENTRO de La Forja, no en otra pantalla»"
+ },
+ "una-pieza-severidad": {
+  "estado": "verde",
+  "checks": "gate · el dictamen del gear: score 64/100 · ✗7 ⚠15 ✓44 🔌1, ordenado del que más duele al que menos, cada criterio con su § y su detalle numérico (§11.2.2 fuerza de expulsión 5567 N = 108.50 % del cierre · §6.2.2 ΔP sprue 0.8 vs 0.3 MPa · §6.4.7 enfriamiento)",
+  "video": "", "still": "", "nota": "el panel y el gate leen del MISMO revisarModelo: si dieran números distintos habría dos verdades"
+ },
+ "una-pieza-step": {
+  "estado": "verde",
+  "checks": "1594C Lid.stp entra por la misma puerta del lobby: malla 33,282.6 mm³ vs kernel 33,294.3 = 0.04 % (checks del cargador, ya en el gate)",
+  "video": "", "still": "", "nota": "un STEP todavía NO se vuelve pieza del árbol de features: entra como malla. Declarado."
+ },
+ "lote-degradado": {
+  "estado": "verde",
+  "checks": "abrir un archivo desde el lobby YA NO abre el lote: pone la pieza en el visor y abre el panel del costado. El lote sigue vivo detrás de «⋯ modo lote (regresiones)»",
+  "video": "", "still": "evidencia/2026-08-28-t1-revisar-esta-pieza/02-una-pieza-panel-still.jpg",
+  "nota": "decisión de ian: «B DEGRADA» — no se mata porque es lo único que corre las 20 Hammond de un jalón"
+ },
+ "una-pieza-sin-regresion": {
+  "estado": "verde",
+  "checks": "gate del ciclo 245/245 · 0 fallan (242 + 3 nuevos de T1); los 6 checks del cargador siguen verdes",
+  "video": "", "still": "", "nota": ""
+ }
+}

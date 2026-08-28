@@ -74,6 +74,7 @@ otros no tienen dónde pararse.
 - docs/la-fuente-esquematico.pdf
 - ml-resultados.json
 - scripts/guiones/ostrom.txt
+- videos/econ-ostrom.json
 
 ## EVIDENCIA (declarada ANTES de trabajar)
 - `node --import tsx scripts/ciclo-dado-test.cjs` VERDE (242 + los checks nuevos)
@@ -83,4 +84,40 @@ otros no tienen dónde pararse.
 - Temis VERDE con este superticket en su n/6
 - censo esperado: canvas IGUAL (el panel es DOM; la malla va dentro del Canvas que ya existe)
 
-## CIERRE (se llena al terminar)
+## CIERRE (2026-08-28)
+**6/6 EN VERDE.** Gate del ciclo **242 → 245 · 0 fallan**.
+
+Lo que quedó funcionando: sueltas tu archivo en `＋ Abrir archivo` y **tu pieza aparece en el
+visor del CAD** (orbitable, con sección y con el canal de color por vértice listo para T2), y su
+dictamen sale en el **costado**, no encima. El lote se degradó a `⋯ modo lote (regresiones)`.
+
+- `stl.ts::mallaParaElVisor` — completa lo que el renderer del kernel exige (normales POR CARA,
+  faceIds, faceGroups). Un STL no trae topología: se declara UNA cara en vez de inventarlas.
+- `stl.ts::bboxDeMalla` — mide la pieza para encuadrar la cámara y para el gate.
+- `RevisarPiezaPanel.tsx` (NUEVO, DOM puro — censo de Canvas intacto): score, hallazgos por
+  severidad con su § y su detalle, avisos del cargador arriba, y **lo que falta dicho en voz
+  alta** (T2-T5) para que el panel no parezca completo cuando no lo está.
+- `ForgeBRepStudio.tsx`: estado `piezaMalla`, rama de render con el MISMO `SolidMesh`, panel
+  montado en el aside de simulación, y el lobby ya no abre el lote.
+
+Medido: gear.stl → 3,314 triángulos · bbox **22.0 × 57.0 × 10.0 mm** (diagonal 61.9) · dictamen
+**64/100 · ✗7 ⚠15 ✓44 🔌1** — los mismos números en el gate y en la pantalla.
+
+**Lo que cazó el juez con ojos (3 defectos, ninguno lo veía el gate):**
+1. La tarjeta de bienvenida "TU PRIMERA PIEZA" seguía encima **tapando la pieza recién abierta**.
+2. La barra de estado decía "Lienzo vacío" con una pieza cargada. Ahora dice la verdad:
+   «gear — malla del operador (3,314 triángulos) · sin caras de kernel: para acotar o partir,
+   importa un STEP».
+3. **`orbitTo` recibe GRADOS, no radianes** (`ForgeBRepStudio:2981` hace `az*π/180`). Le pasé
+   radianes y la cámara quedaba a medio grado del suelo: TODA pieza se veía "de canto" como un
+   barril. Dos corridas creyendo que era el encuadre, hasta que medí la pieza (22×57×10 = una
+   placa, no un cilindro) y fui a leer el rig. **Medir la pieza fue lo que destapó el bug de la
+   cámara.**
+
+Deudas declaradas (no escondidas):
+- Un STEP entra como malla; todavía no se vuelve pieza del árbol de features (no se puede acotar
+  ni partir desde ahí).
+- "CARAS DEL SÓLIDO 0" con una malla: es correcto (no hay topología) pero se lee como roto.
+- La pieza cargada vive en la sesión; al recargar se va.
+- El panel dice qué le falta (T2-T5) porque le falta: capas sobre el sólido, hilo a la geometría,
+  voz y expediente con consecuencia visible.

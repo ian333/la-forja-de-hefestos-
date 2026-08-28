@@ -1371,6 +1371,38 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       `score ${revMia.fila.score} · cumple ${revMia.fila.cumple} · viola ${revMia.fila.viola} · advierte ${revMia.fila.advierte}`);
   }
 
+  // ══ T1 · REVISAR ESTA PIEZA — la malla del operador ES la pieza del visor ══
+  console.log('── T1 · la malla como pieza del CAD');
+  {
+    const { mallaParaElVisor, bboxDeMalla, parseSTL } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'stl.ts'));
+    const rm = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'revisar-modelo.ts'));
+    const bg = readFileSync(path.resolve(__dirname, '..', 'test-parts', 'gear.stl'));
+    const gear = parseSTL(bg.buffer.slice(bg.byteOffset, bg.byteOffset + bg.byteLength));
+
+    const vis = mallaParaElVisor(gear);
+    let normalesOk = true;
+    for (let i = 0; i < vis.normals.length; i += 3) {
+      const L = Math.hypot(vis.normals[i], vis.normals[i + 1], vis.normals[i + 2]);
+      if (!(Math.abs(L - 1) < 1e-3)) { normalesOk = false; break; }
+    }
+    check('T1 · la malla se vuelve lo que el visor dibuja (posiciones, normales unitarias, índices)',
+      vis.triangleCount === 3314 && vis.vertexCount === gear.positions.length / 3 && normalesOk && vis.faceGroups.length === 1,
+      `${vis.triangleCount} tris · ${vis.vertexCount} vértices · normales unitarias ${normalesOk}`);
+
+    const bb = bboxDeMalla(gear);
+    const dim = [bb.max[0] - bb.min[0], bb.max[1] - bb.min[1], bb.max[2] - bb.min[2]];
+    check('T1 · el bbox mide la pieza REAL (encuadra la cámara y no miente del tamaño)',
+      cerca(dim[0], 22, 0.5) && cerca(dim[1], 57, 0.5) && cerca(dim[2], 10, 0.5) && cerca(bb.diagonal, 61.9, 0.5),
+      `${dim.map((d) => d.toFixed(1)).join(' × ')} mm · diagonal ${bb.diagonal.toFixed(1)}`);
+
+    const rGear = rm.revisarModelo({ mesh: gear, nombre: 'gear', annualVolume: 200_000, flowMaxVoxels: 40_000 });
+    const crit = rGear.contratos.subsistemas.flatMap((x) => x.criterios);
+    const viola = crit.filter((c) => c.estado === 'VIOLA').length;
+    check('T1 · el dictamen de ESA pieza cuadra con lo que se ve en el panel (7 violaciones, score 64)',
+      viola === 7 && rGear.fila.score === 64 && crit.every((c) => c.cita && c.detalle),
+      `score ${rGear.fila.score} · ✗${viola} ⚠${crit.filter((c) => c.estado === 'ADVIERTE').length} ✓${crit.filter((c) => c.estado === 'CUMPLE').length} · todos con § y detalle`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

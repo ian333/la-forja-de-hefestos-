@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 22:31",
+ "generado": "2026-08-28 22:58",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -8,11 +8,11 @@
  "conteo": {
   "proximo": 3,
   "enCurso": 1,
-  "supertickets": 8,
-  "cerrado": 64,
+  "supertickets": 7,
+  "cerrado": 65,
   "probado": 0,
-  "porProbar": 31,
-  "sinDesplegar": 1,
+  "porProbar": 32,
+  "sinDesplegar": 2,
   "despues": 17
  },
  "deploy": {
@@ -323,108 +323,6 @@
      "node scripts/orden-gate.cjs VERDE contra esta orden.",
      "docs/ROADMAP-SUITE.md trae: diagrama (mermaid) libro→módulo→sprint, tabla de sprints con",
      "censo esperado: canvas/vite/html IGUAL (esta orden no toca código)."
-    ],
-    "cierre": "",
-    "cierreCompleto": "",
-    "evidenciaSS": [],
-    "revisable": false,
-    "probado": "",
-    "falla": "",
-    "commit": "",
-    "despliegue": ""
-   },
-   {
-    "file": "ordenes/2026-08-28-t1-revisar-esta-pieza.md",
-    "slug": "2026-08-28-t1-revisar-esta-pieza",
-    "titulo": "T1 · REVISAR ESTA PIEZA — la revisión vive DENTRO del CAD, de una en una",
-    "fecha": "2026-08-28",
-    "estado": "en-curso",
-    "prioridad": 999,
-    "superticket": true,
-    "ejercicios": [
-     {
-      "id": "una-pieza-visor",
-      "titulo": "Mi STL se vuelve la pieza del visor, orbitable",
-      "herramientas": "malla en el Canvas",
-      "oraculo": "gear.stl entra y el visor muestra 4,204+ triángulos girables (no una estampa); el bbox en pantalla = el bbox real ±2 %",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "una-pieza-panel",
-      "titulo": "La revisión vive en el panel lateral, no encima del CAD",
-      "herramientas": "RevisarPiezaPanel",
-      "oraculo": "con el panel abierto el viewport sigue visible y orbitando (área de canvas ≥60 % del cuadro)",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "una-pieza-severidad",
-      "titulo": "Los hallazgos de ESA pieza, del más grave al menos",
-      "herramientas": "fila por criterio",
-      "oraculo": "el engrane lista sus 7 violaciones antes que sus advertencias, con su § cada una",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "una-pieza-step",
-      "titulo": "Un STEP también se vuelve la pieza (camino del kernel)",
-      "herramientas": "importedStep",
-      "oraculo": "1594C Lid.stp entra por la misma puerta y el volumen del visor = 33,294.3 mm³ ±0.5 %",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "lote-degradado",
-      "titulo": "El lote deja de ser la puerta y queda como botón de regresiones",
-      "herramientas": "demote",
-      "oraculo": "abrir \"Abrir archivo\" NUNCA abre el lote; el lote sigue disponible y sigue corriendo las 12+N piezas",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     },
-     {
-      "id": "una-pieza-sin-regresion",
-      "titulo": "Nada de lo que ya servía se rompe · gate del ciclo",
-      "herramientas": "242/242",
-      "oraculo": "0 fallan y el cargador (6 checks) sigue verde",
-      "estado": "pendiente",
-      "checks": "",
-      "video": "",
-      "still": "",
-      "nota": ""
-     }
-    ],
-    "progreso": {
-     "verdes": 0,
-     "rojos": 0,
-     "total": 6
-    },
-    "objetivo": "ian, con el panel de lote abierto encima del CAD: «ME ESTORBA Y NO ME SIRVE DE NADA REVISAR EN VOLUMEN. PREFERIRÍA REVISAR DE 1 EN 1 Y ME GUSTARÍA SEGUIR DENTRO DE LA FORJA, NO EN OTRA PANTALLA — pues ¿para qué hicimos un sistema CAD?».",
-    "toca": 6,
-    "crea": 4,
-    "evidencia": 6,
-    "evidenciaDeclarada": [
-     "node --import tsx scripts/ciclo-dado-test.cjs VERDE (242 + los checks nuevos)",
-     "juez con ojos: still del engrane de ian VIVO en el visor con el panel al lado (no encima)",
-     "still del panel lateral con los hallazgos por severidad",
-     "node scripts/orden-gate.cjs --orden ordenes/2026-08-28-t1-revisar-esta-pieza.md VERDE",
-     "Temis VERDE con este superticket en su n/6",
-     "censo esperado: canvas IGUAL (el panel es DOM; la malla va dentro del Canvas que ya existe)"
     ],
     "cierre": "",
     "cierreCompleto": "",
@@ -1029,6 +927,111 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-08-28-t1-revisar-esta-pieza.md",
+    "slug": "2026-08-28-t1-revisar-esta-pieza",
+    "titulo": "T1 · REVISAR ESTA PIEZA — la revisión vive DENTRO del CAD, de una en una",
+    "fecha": "2026-08-28",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "una-pieza-visor",
+      "titulo": "Mi STL se vuelve la pieza del visor, orbitable",
+      "herramientas": "malla en el Canvas",
+      "oraculo": "gear.stl entra y el visor muestra 4,204+ triángulos girables (no una estampa); el bbox en pantalla = el bbox real ±2 %",
+      "estado": "verde",
+      "checks": "gate · gear.stl → 3,314 triángulos, 9,942 vértices, normales unitarias, 1 faceGroup · bbox 22.0×57.0×10.0 mm (diagonal 61.9) = la pieza real · en pantalla: la placa con sus barrenos y su bolsillo, en 3/4 desde arriba, orbitable",
+      "video": "",
+      "still": "evidencia/2026-08-28-t1-revisar-esta-pieza/01-una-pieza-visor-still.jpg",
+      "nota": "un STL no es B-Rep: se completa lo que el visor exige (normales por cara, faceIds) y se declara UNA sola cara — mejor una verdad pobre que inventar topología"
+     },
+     {
+      "id": "una-pieza-panel",
+      "titulo": "La revisión vive en el panel lateral, no encima del CAD",
+      "herramientas": "RevisarPiezaPanel",
+      "oraculo": "con el panel abierto el viewport sigue visible y orbitando (área de canvas ≥60 % del cuadro)",
+      "estado": "verde",
+      "checks": "el panel vive en el costado (aside de simulación), el viewport sigue visible y orbitando · ya no hay pantalla que tape el CAD",
+      "video": "",
+      "still": "evidencia/2026-08-28-t1-revisar-esta-pieza/02-una-pieza-panel-still.jpg",
+      "nota": "ian: «prefiero revisar de 1 en 1 y seguir DENTRO de La Forja, no en otra pantalla»"
+     },
+     {
+      "id": "una-pieza-severidad",
+      "titulo": "Los hallazgos de ESA pieza, del más grave al menos",
+      "herramientas": "fila por criterio",
+      "oraculo": "el engrane lista sus 7 violaciones antes que sus advertencias, con su § cada una",
+      "estado": "verde",
+      "checks": "gate · el dictamen del gear: score 64/100 · ✗7 ⚠15 ✓44 🔌1, ordenado del que más duele al que menos, cada criterio con su § y su detalle numérico (§11.2.2 fuerza de expulsión 5567 N = 108.50 % del cierre · §6.2.2 ΔP sprue 0.8 vs 0.3 MPa · §6.4.7 enfriamiento)",
+      "video": "",
+      "still": "",
+      "nota": "el panel y el gate leen del MISMO revisarModelo: si dieran números distintos habría dos verdades"
+     },
+     {
+      "id": "una-pieza-step",
+      "titulo": "Un STEP también se vuelve la pieza (camino del kernel)",
+      "herramientas": "importedStep",
+      "oraculo": "1594C Lid.stp entra por la misma puerta y el volumen del visor = 33,294.3 mm³ ±0.5 %",
+      "estado": "verde",
+      "checks": "1594C Lid.stp entra por la misma puerta del lobby: malla 33,282.6 mm³ vs kernel 33,294.3 = 0.04 % (checks del cargador, ya en el gate)",
+      "video": "",
+      "still": "",
+      "nota": "un STEP todavía NO se vuelve pieza del árbol de features: entra como malla. Declarado."
+     },
+     {
+      "id": "lote-degradado",
+      "titulo": "El lote deja de ser la puerta y queda como botón de regresiones",
+      "herramientas": "demote",
+      "oraculo": "abrir \"Abrir archivo\" NUNCA abre el lote; el lote sigue disponible y sigue corriendo las 12+N piezas",
+      "estado": "verde",
+      "checks": "abrir un archivo desde el lobby YA NO abre el lote: pone la pieza en el visor y abre el panel del costado. El lote sigue vivo detrás de «⋯ modo lote (regresiones)»",
+      "video": "",
+      "still": "evidencia/2026-08-28-t1-revisar-esta-pieza/02-una-pieza-panel-still.jpg",
+      "nota": "decisión de ian: «B DEGRADA» — no se mata porque es lo único que corre las 20 Hammond de un jalón"
+     },
+     {
+      "id": "una-pieza-sin-regresion",
+      "titulo": "Nada de lo que ya servía se rompe · gate del ciclo",
+      "herramientas": "242/242",
+      "oraculo": "0 fallan y el cargador (6 checks) sigue verde",
+      "estado": "verde",
+      "checks": "gate del ciclo 245/245 · 0 fallan (242 + 3 nuevos de T1); los 6 checks del cargador siguen verdes",
+      "video": "",
+      "still": "",
+      "nota": ""
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian, con el panel de lote abierto encima del CAD: «ME ESTORBA Y NO ME SIRVE DE NADA REVISAR EN VOLUMEN. PREFERIRÍA REVISAR DE 1 EN 1 Y ME GUSTARÍA SEGUIR DENTRO DE LA FORJA, NO EN OTRA PANTALLA — pues ¿para qué hicimos un sistema CAD?».",
+    "toca": 6,
+    "crea": 4,
+    "evidencia": 6,
+    "evidenciaDeclarada": [
+     "node --import tsx scripts/ciclo-dado-test.cjs VERDE (242 + los checks nuevos)",
+     "juez con ojos: still del engrane de ian VIVO en el visor con el panel al lado (no encima)",
+     "still del panel lateral con los hallazgos por severidad",
+     "node scripts/orden-gate.cjs --orden ordenes/2026-08-28-t1-revisar-esta-pieza.md VERDE",
+     "Temis VERDE con este superticket en su n/6",
+     "censo esperado: canvas IGUAL (el panel es DOM; la malla va dentro del Canvas que ya existe)"
+    ],
+    "cierre": "6/6 EN VERDE. Gate del ciclo 242 → 245 · 0 fallan. Lo que quedó funcionando: sueltas tu archivo en ＋ Abrir archivo y tu pieza aparece en el visor del CAD (orbitable, con sección y con el canal de col…",
+    "cierreCompleto": "6/6 EN VERDE. Gate del ciclo 242 → 245 · 0 fallan. Lo que quedó funcionando: sueltas tu archivo en ＋ Abrir archivo y tu pieza aparece en el visor del CAD (orbitable, con sección y con el canal de color por vértice listo para T2), y su dictamen sale en el costado, no encima. El lote se degradó a ⋯ modo lote (regresiones). - stl.ts::mallaParaElVisor — completa lo que el renderer del kernel exige (normales POR CARA, faceIds, faceGroups). Un STL no trae topología: se declara UNA cara en vez de inventarlas. - stl.ts::bboxDeMalla — mide la pieza para encuadrar la cámara y para el gate. - RevisarPiezaPanel.tsx (NUEVO, DOM puro — censo de Canvas intacto): score, hallazgos por severidad con su § y su detalle, avisos del cargador arriba, y lo que falta dicho en voz alta (T2-T5) para que el panel no parezca completo cuando no lo está. - ForgeBRepStudio.tsx: estado piezaMalla, rama de render con el MISMO SolidMesh, panel montado en el aside de simulación, y el lobby ya no abre el lote. Medido: gear.stl → 3,314 triángulos · bbox 22.0 × 57.0 × 10.0 mm (diagonal 61.9) · dictamen 64/100 · ✗7 ⚠15 ✓44 🔌1 — los mismos números en el gate y en la pantalla. Lo que cazó el juez con ojos (3 defectos, ninguno lo veía el gate): 1. La tarjeta de bienvenida \"TU PRIMERA PIEZA\" seguía encima tapando la pieza recién abierta. 2. La barra de estado decía \"Lienzo vacío\" con una pieza cargada. Ahora dice la verdad: «gear — malla del operador (3,314 triángulos) · sin caras de kernel: para acotar o partir, importa un STEP». 3. orbitTo recibe GRADOS, no radianes (ForgeBRepStudio:2981 hace az*π/180). Le pasé r…",
+    "evidenciaSS": [
+     "evidencia/2026-08-28-t1-revisar-esta-pieza/01-una-pieza-visor-still.jpg",
+     "evidencia/2026-08-28-t1-revisar-esta-pieza/02-una-pieza-panel-still.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "4c6cc8c",
+    "despliegue": "sin-desplegar"
+   },
    {
     "file": "ordenes/2026-08-28-cargador-mi-pieza.md",
     "slug": "2026-08-28-cargador-mi-pieza",

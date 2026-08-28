@@ -105,3 +105,67 @@ export async function mallaDesdeArchivo(nombre: string, buf: ArrayBuffer): Promi
   }
   throw new Error(`extensión no soportada: "${ext || nombre}". El cargador acepta .stl, .step y .stp`);
 }
+
+/**
+ * MALLA → LO QUE DIBUJA EL VISOR (T1: "revisar ESTA pieza, dentro del CAD").
+ * ============================================================================
+ * El renderer del CAD (`SolidMesh`) consume un `TessellatedMesh` del kernel:
+ * posiciones + NORMALES + índices + faceIds/faceGroups. Un STL trae la sopa de
+ * triángulos y nada más, así que aquí se completa lo que falta:
+ *  · normales POR CARA replicadas a sus 3 vértices — que es exactamente lo
+ *    correcto para un STL (facetado plano; suavizar mentiría sobre la malla).
+ *  · un faceId por triángulo. Un STL NO tiene caras topológicas, así que se
+ *    declara UNA sola "cara" (0): mejor una verdad pobre que inventar caras
+ *    que el archivo no trae. Lo que dependa de caras reales pedirá un STEP.
+ * Sin esto, una malla del operador no puede mostrarse en el visor y la revisión
+ * se queda en una estampa al lado del CAD — el defecto que ian reportó.
+ */
+export interface MallaVisor {
+  positions: Float32Array; normals: Float32Array; indices: Uint32Array;
+  vertexCount: number; triangleCount: number;
+  faceIds: Uint32Array;
+  faceGroups: Array<{ faceId: number; start: number; count: number }>;
+}
+export function mallaParaElVisor(mesh: MeshLike): MallaVisor {
+  const P = mesh.positions instanceof Float32Array ? mesh.positions : new Float32Array(mesh.positions);
+  const I = mesh.indices instanceof Uint32Array ? mesh.indices : new Uint32Array(mesh.indices);
+  const nTri = Math.floor(I.length / 3);
+  const normals = new Float32Array(P.length);
+  for (let t = 0; t < nTri; t++) {
+    const a = I[t * 3] * 3, b = I[t * 3 + 1] * 3, c = I[t * 3 + 2] * 3;
+    const ux = P[b] - P[a], uy = P[b + 1] - P[a + 1], uz = P[b + 2] - P[a + 2];
+    const vx = P[c] - P[a], vy = P[c + 1] - P[a + 1], vz = P[c + 2] - P[a + 2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const L = Math.hypot(nx, ny, nz) || 1;
+    nx /= L; ny /= L; nz /= L;
+    for (const o of [a, b, c]) { normals[o] += nx; normals[o + 1] += ny; normals[o + 2] += nz; }
+  }
+  // normalizar el acumulado (vértices compartidos promedian; en STL crudo cada
+  // vértice pertenece a UN triángulo, así que queda la normal de su cara)
+  for (let i = 0; i < normals.length; i += 3) {
+    const L = Math.hypot(normals[i], normals[i + 1], normals[i + 2]) || 1;
+    normals[i] /= L; normals[i + 1] /= L; normals[i + 2] /= L;
+  }
+  return {
+    positions: P, normals, indices: I,
+    vertexCount: Math.floor(P.length / 3), triangleCount: nTri,
+    faceIds: new Uint32Array(nTri),                                  // una sola "cara": el STL no trae topología
+    faceGroups: [{ faceId: 0, start: 0, count: I.length }],
+  };
+}
+
+/** Caja mínima de una malla (mm) — para encuadrar la cámara y para el gate. */
+export function bboxDeMalla(mesh: MeshLike): { min: [number, number, number]; max: [number, number, number]; centro: [number, number, number]; diagonal: number } {
+  const P = mesh.positions;
+  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+  for (let i = 0; i < P.length; i += 3) {
+    if (P[i] < x0) x0 = P[i]; if (P[i] > x1) x1 = P[i];
+    if (P[i + 1] < y0) y0 = P[i + 1]; if (P[i + 1] > y1) y1 = P[i + 1];
+    if (P[i + 2] < z0) z0 = P[i + 2]; if (P[i + 2] > z1) z1 = P[i + 2];
+  }
+  return {
+    min: [x0, y0, z0], max: [x1, y1, z1],
+    centro: [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2],
+    diagonal: Math.hypot(x1 - x0, y1 - y0, z1 - z0),
+  };
+}

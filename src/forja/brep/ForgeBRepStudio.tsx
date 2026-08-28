@@ -29,7 +29,8 @@ import ShortcutOverlay from '../../components/ShortcutOverlay';
 const MoldCycleSim = lazy(() => import('../sim/MoldCycleSim'));   // simulación del ciclo de inyección (chunk aparte)
 const MoldThreePlateSim = lazy(() => import('../sim/MoldThreePlateSim'));  // 3 placas: construcción + doble apertura
 const MoldMachinePanel = lazy(() => import('../mold/MoldMachinePanel'));   // LA MÁQUINA: cliente sube pieza → cotización
-const RevisarLotePanel = lazy(() => import('../mold/RevisarLotePanel'));   // REVISAR EN VOLUMEN (N-29): contratos sobre un lote
+const RevisarLotePanel = lazy(() => import('../mold/RevisarLotePanel'));
+const RevisarPiezaPanel = lazy(() => import('../mold/RevisarPiezaPanel'));      // T1: la revisión de UNA pieza, en el costado   // REVISAR EN VOLUMEN (N-29): contratos sobre un lote
 // (EstudioVivo/EstudioCiclo/EstudioMolde MURIERON — orden 2026-08-10-limpieza-molde:
 //  eran visores DUPLICADOS de este mismo CAD; su análisis vive en MoldAnalisisPanel.)
 const MoldUnscrewSim = lazy(() => import('../sim/MoldUnscrewSim'));        // molde que desenrosca (núcleo rotativo)
@@ -43,6 +44,8 @@ import { flanera } from '../mold/flanera';   // el VASO de la flanera (producto 
 import { splitMold, shapeBBox, scaleForShrinkage } from '../mold/mold';    // core/cavidad genérico (probado en el banco: cup/lid/…)
 import { analyzeAssembly, meshesInterfere, meshPenetration, meshContact } from '../mold/collision';   // solver de colisiones (fits + térmico + sólidos)
 import ProjectSwitcher, { inferType, type ProjItem } from './ProjectSwitcher';   // el LOBBY integrado
+import { mallaDesdeArchivo, mallaParaElVisor, bboxDeMalla, type MallaVisor } from '../mold/stl';
+import type { MeshLike } from '../mold/flowlen-mesh';
 import { fastenerPlan } from '../mold/mold-fasteners';
 import { moldRecipe } from '../mold/mold-recipe';
 import { componentDims, verifyDims } from '../mold/mold-dimensions';
@@ -3519,6 +3522,11 @@ export default function ForgeBRepStudio() {
   // el archivo que el operador eligió DESDE EL LOBBY: viaja al panel de revisión y se
   // carga solo (ian 2026-08-28: "nunca encontré el botón para subirlo").
   const [archivoDelLobby, setArchivoDelLobby] = useState<File | null>(null);
+  // T1 · LA MALLA COMO PIEZA: un STL no es B-Rep, así que no puede pasar por el
+  // kernel; pero el visor sí sabe dibujar un TessellatedMesh. Aquí vive la malla
+  // que el operador soltó, para que su pieza esté EN el CAD y no en una estampa.
+  const [piezaMalla, setPiezaMalla] = useState<{ visor: MallaVisor; mesh: MeshLike; nombre: string; notas: string[] } | null>(null);
+  const [errPieza, setErrPieza] = useState<string>('');
   const [unscrewOn, setUnscrewOn] = useState(false);
   // (sectionOn ya se declara con la feature de SECCIÓN abajo — este duplicado del
   //  trabajo paralelo del molde rompía el build; es el mismo estado compartido.)
@@ -6174,7 +6182,7 @@ export default function ForgeBRepStudio() {
       >
         {/* HIGIENE (v1·2): el LIENZO VACÍO guía en vez de gritar "Error". DOM sobre el
             viewport, sin Canvas nuevo. Desaparece con el primer sólido o al bocetar. */}
-        {vacio && !building && !sketchOpen && !moldParts.length && !result && (
+        {vacio && !building && !sketchOpen && !moldParts.length && !result && !piezaMalla && (
           <div data-testid="lienzo-vacio" style={{
             position: 'absolute', left: '50%', top: '46%', transform: 'translate(-50%,-50%)', zIndex: 4,
             width: 'min(520px, calc(100% - 48px))', padding: '22px 26px', borderRadius: 14, pointerEvents: 'none',
@@ -6212,7 +6220,15 @@ export default function ForgeBRepStudio() {
             {/* El fantasma del perfil VIEJO se esconde mientras el croquis está
                 abierto: el SVG en vivo ES la verdad ahí; dos versiones confunden. */}
             {!(gbMotion && gbParts) && !moldParts.length && showSketch && !sketchOpen && <ProfileGhost pts={profilePts} />}
-            {moldParts.length ? (
+            {piezaMalla ? (
+              /* T1 · TU PIEZA, EN EL VISOR. Mismo `SolidMesh` que el sólido del
+                 kernel: por eso hereda picking, sección y —en T2— el canal de
+                 colores por vértice para pintarle el espesor encima. */
+              <SolidMesh mesh={piezaMalla.visor as unknown as TessellatedMesh} faded={false} matKey={material} tint={partColor}
+                faces={[]} edgeGeoms={[]} selFaces={[]} selEdges={[]}
+                pickMode="none" onPickFace={() => {}} onPickEdge={() => {}}
+                feaColors={null} overhangColors={null} clip={sectionPlanes} />
+            ) : moldParts.length ? (
               // MOLDE EN VIVO: cada PLACA es un componente separado (aislar/ocultar/
               // opacidad desde el árbol; la SECCIÓN los corta a todos). Se LEVANTA sobre
               //  la cuadrícula (+8mm) para que su base no z-fightee con el piso (parpadeo).
@@ -6707,7 +6723,27 @@ export default function ForgeBRepStudio() {
             <ProjectSwitcher open={switcherOpen} onClose={() => setSwitcherOpen(false)}
               projects={switcherProjects} starters={switcherStarters}
               onNew={newDoc} onPick={(p) => p.action()}
-              onAbrirArchivo={(f) => { setArchivoDelLobby(f); setRevisarLoteOn(true); }} />
+              onAbrirArchivo={async (f) => {
+                // T1 · la puerta del lobby ya NO abre el lote (ian: «me estorba»):
+                // el archivo se vuelve LA PIEZA del visor y la revisión sale al costado.
+                try {
+                  const { mesh, notas } = await mallaDesdeArchivo(f.name, await f.arrayBuffer());
+                  const nombre = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 28);
+                  setErrPieza('');
+                  setPiezaMalla({ visor: mallaParaElVisor(mesh), mesh, nombre, notas });
+                  setWorkspace('simulacion');
+                  setCollapsed((c) => ({ ...c, sim: false }));      // el panel arranca colapsado: se abre
+                  const bb = bboxDeMalla(mesh);
+                  // ENCUADRE DELIBERADO (doctrina de cámara): 3/4 desde ARRIBA, no de canto,
+                  // con aire alrededor (1.35× la diagonal). OJO: `orbitTo` recibe GRADOS
+                  // (ForgeBRepStudio:2981 hace az*π/180) — pasarle radianes deja la cámara
+                  // a medio grado del suelo y toda pieza se ve "de canto". Cazado a ojo.
+                  orbitTo(40, 30, Math.max(bb.diagonal * 1.35, 40), bb.centro[0], bb.centro[1], bb.centro[2]);
+                } catch (err) {
+                  setPiezaMalla(null);
+                  setErrPieza(`no se pudo abrir ${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 110)}`);
+                }
+              }} />
             <div className="fb-ws-tabs" role="tablist">
               <button className={workspace === 'diseno' ? 'on' : ''} data-testid="tab-diseno" role="tab"
                 onClick={() => setWorkspace('diseno')}>DISEÑO</button>
@@ -7161,6 +7197,30 @@ export default function ForgeBRepStudio() {
           <aside className={`fb-sim ${collapsed.sim ? 'collapsed' : ''} ${winPos.sim ? 'floating' : ''}`} data-testid="sim-panel" onPointerDown={winDrag('sim')} onDoubleClick={winUndock('sim')} style={winStyle('sim')}>
             <CollapseHead id="sim" title="Simulación · von Mises (FEA real)" collapsed={!!collapsed.sim}
               onToggle={() => toggleCollapse('sim')} />
+            {/* T1 · REVISAR ESTA PIEZA — la revisión de UNA pieza, en el costado del CAD.
+                Va ARRIBA del resto del panel porque es lo que el operador vino a ver
+                cuando soltó su archivo (ian: «prefiero revisar de 1 en 1 y seguir DENTRO
+                de La Forja»). El lote quedó degradado a un botón de regresiones. */}
+            {!collapsed.sim && (piezaMalla || result) && (
+              <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${GOLD}22` }}>
+                {errPieza && (
+                  <div data-testid="rp-error" style={{ fontSize: 10.5, color: '#ffb3b3', background: 'rgba(255,92,92,0.12)', border: '1px solid #ff5c5c55', borderRadius: 6, padding: '5px 8px', marginBottom: 6 }}>✗ {errPieza}</div>
+                )}
+                <Suspense fallback={<div style={{ fontSize: 11, opacity: 0.6 }}>cargando la revisión…</div>}>
+                  <RevisarPiezaPanel
+                    pieza={piezaMalla
+                      ? { mesh: piezaMalla.mesh, nombre: piezaMalla.nombre, notas: piezaMalla.notas }
+                      : result ? { mesh: { positions: result.mesh.positions, indices: result.mesh.indices }, nombre: docName } : null}
+                    onAbrirLote={() => setRevisarLoteOn(true)} />
+                </Suspense>
+                {piezaMalla && (
+                  <button data-testid="rp-quitar" onClick={() => { setPiezaMalla(null); setErrPieza(''); }}
+                    style={{ marginTop: 6, background: 'transparent', border: '1px solid #2c3a50', color: '#8a93a3', borderRadius: 7, padding: '4px 9px', fontSize: 10, cursor: 'pointer' }}>
+                    ✕ quitar «{piezaMalla.nombre}» del visor
+                  </button>
+                )}
+              </div>
+            )}
             {/* ── CICLO DE INYECCIÓN: la simulación VIVA del molde (motor Kazmer) ── */}
             <div style={{ marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${GOLD}22` }}>
               <p className="fb-hint-txt">
@@ -8341,7 +8401,7 @@ export default function ForgeBRepStudio() {
             ) : (
               <div className="inv">
                 <span className="k">Estado</span>
-                <span className="v" data-testid="estado-texto">{opErr ? `Error: ${opErr}` : bootErr ? `Kernel: ${bootErr}` : vacio ? 'Lienzo vacío — Boceto → Extruir, o abre un proyecto (▾ arriba a la izquierda)' : 'Construyendo…'}</span>
+                <span className="v" data-testid="estado-texto">{opErr ? `Error: ${opErr}` : bootErr ? `Kernel: ${bootErr}` : piezaMalla ? `${piezaMalla.nombre} — malla del operador (${piezaMalla.visor.triangleCount.toLocaleString('es-MX')} triángulos) · sin caras de kernel: para acotar o partir, importa un STEP` : vacio ? 'Lienzo vacío — Boceto → Extruir, o abre un proyecto (▾ arriba a la izquierda)' : 'Construyendo…'}</span>
               </div>
             )}
             {opErr && result && (
