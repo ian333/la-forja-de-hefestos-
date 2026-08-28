@@ -123,3 +123,10 @@ pequeño también el panel». Las dos cosas ciertas:
    Fix: `repeat(2,minmax(0,1fr))` + `min-width:0` en tarjetas y filas anchas + panel 720 → 980 px
    + una sola columna abajo de 820 px. Verificado a ojo: las 8 plantillas y el banco completos,
    metas con elipsis, `＋ Abrir archivo` visible.
+
+## DEPLOY (2026-08-28)
+`bash deploy-atlas-build.sh` — **10/10 etapas, 8 min 42 s**, smoke tests todos 200 (incluidos
+`/forja-brep.html` y los `/test-parts/*.stl` que come el panel).
+Verificado contra el bundle EN VIVO (`assets/forja-brep-CJfyALdd.js`, 1,096,216 bytes descargado
+de university.gaiaprime.com.mx): contiene `ps-abrir-archivo`, `input-ps-archivo`, "Abrir archivo",
+`minmax(0,1fr)` y `min(980px`. Ya no hace falta creerle al log: está en el archivo servido.

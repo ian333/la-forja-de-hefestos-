@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 21:44",
+ "generado": "2026-08-28 22:12",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -12,12 +12,12 @@
   "cerrado": 64,
   "probado": 0,
   "porProbar": 31,
-  "sinDesplegar": 7,
+  "sinDesplegar": 0,
   "despues": 17
  },
  "deploy": {
-  "commit": "6f70032",
-  "fecha": "2026-08-26 04:41"
+  "commit": "d3b6e6f",
+  "fecha": "2026-08-28 22:03"
  },
  "violaciones": [],
  "columnas": {
@@ -438,7 +438,7 @@
     "probado": "",
     "falla": "",
     "commit": "f5a581f",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-28-cargador-donde-se-busca.md",
@@ -530,8 +530,8 @@
     "revisable": true,
     "probado": "",
     "falla": "",
-    "commit": "",
-    "despliegue": ""
+    "commit": "d3b6e6f",
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-26-temis-galeria-panel.md",
@@ -564,7 +564,7 @@
     "probado": "",
     "falla": "",
     "commit": "96fbaf0",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-26-superticket-moldes-por-pieza.md",
@@ -634,7 +634,7 @@
     "probado": "",
     "falla": "",
     "commit": "f8a8713",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-26-superticket-croquis-B-domar.md",
@@ -751,7 +751,7 @@
     "probado": "",
     "falla": "",
     "commit": "4304262",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-26-superticket-croquis-A-dibujar.md",
@@ -868,7 +868,7 @@
     "probado": "",
     "falla": "",
     "commit": "4304262",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-25-v1-7-kernel-rapido.md",
@@ -898,7 +898,7 @@
     "probado": "",
     "falla": "",
     "commit": "20be116",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-25-temis-probado.md",
@@ -961,7 +961,7 @@
     "probado": "",
     "falla": "",
     "commit": "6353a4d",
-    "despliegue": "sin-desplegar"
+    "despliegue": "en-vivo"
    },
    {
     "file": "ordenes/2026-08-25-temis-evidencia.md",
