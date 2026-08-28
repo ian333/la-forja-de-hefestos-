@@ -1311,6 +1311,66 @@ const cerca = (a, b, tol) => Math.abs(a - b) <= tol;
       'un acta con estaciones faltantes se declara INCOMPLETA — no se firma lo que no se hizo');
   }
 
+  // ══ EL CARGADOR — "suelta TU pieza" (orden 2026-08-28-cargador-mi-pieza) ══
+  // El camino que corre la UI cuando el operador suelta un archivo: MISMO módulo,
+  // MISMOS números. Los oráculos se midieron ANTES de construirlo (2026-08-28).
+  console.log('── EL CARGADOR · archivo del operador → malla → revisarModelo');
+  {
+    const { mallaDesdeArchivo } = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'stl.ts'));
+    const rm = await import(path.resolve(__dirname, '..', 'src', 'forja', 'mold', 'revisar-modelo.ts'));
+    const TP = path.resolve(__dirname, '..', 'test-parts');
+    const leer = (rel) => { const b = readFileSync(path.join(TP, rel)); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); };
+
+    // 1 · STL BINARIO: la carcasa RPi4 del banco
+    const bin = await mallaDesdeArchivo('rpi4-bottom.stl', leer('rpi4-bottom.stl'));
+    const vaBin = rm.meshVolumeArea(bin.mesh);
+    check('CARGADOR · STL binario: triángulos, volumen y área medidos (rpi4-bottom)',
+      bin.fuente === 'stl' && bin.mesh.indices.length / 3 === 4204 && cerca(vaBin.volumeMm3, 17036.2, 17036.2 * 0.005) && cerca(vaBin.areaMm2, 24028.3, 24028.3 * 0.005),
+      `${bin.mesh.indices.length / 3} tris · ${vaBin.volumeMm3.toFixed(1)} mm³ · ${vaBin.areaMm2.toFixed(1)} mm²`);
+
+    // 2 · STL ASCII: el MISMO sólido escrito en texto da el MISMO número
+    const P = bin.mesh.positions;
+    let ascii = 'solid mia\n';
+    for (let i = 0; i < P.length; i += 9) {
+      ascii += 'facet normal 0 0 0\n outer loop\n';
+      for (let v = 0; v < 9; v += 3) ascii += `  vertex ${P[i + v]} ${P[i + v + 1]} ${P[i + v + 2]}\n`;
+      ascii += ' endloop\nendfacet\n';
+    }
+    ascii += 'endsolid mia\n';
+    const asc = await mallaDesdeArchivo('mia-ascii.stl', new TextEncoder().encode(ascii).buffer);
+    const vaAsc = rm.meshVolumeArea(asc.mesh);
+    check('CARGADOR · STL ASCII: mismo sólido ⇒ mismo volumen (±0.1 %)',
+      asc.mesh.indices.length === bin.mesh.indices.length && cerca(vaAsc.volumeMm3, vaBin.volumeMm3, vaBin.volumeMm3 * 0.001),
+      `${vaAsc.volumeMm3.toFixed(1)} vs ${vaBin.volumeMm3.toFixed(1)} mm³`);
+
+    // 3 · STEP: se tesela con el kernel y la malla NO miente sobre el volumen exacto
+    const lid = await mallaDesdeArchivo('1594C Lid.stp', leer('inyeccion-reales/1594C Lid.stp'));
+    const vaLid = rm.meshVolumeArea(lid.mesh);
+    check('CARGADOR · STEP: la malla teselada queda dentro de 0.5 % del volumen EXACTO del kernel',
+      lid.fuente === 'step' && lid.solidos === 1 && cerca(vaLid.volumeMm3, lid.volKernelMm3, lid.volKernelMm3 * 0.005),
+      `malla ${vaLid.volumeMm3.toFixed(1)} vs kernel ${lid.volKernelMm3.toFixed(1)} mm³ (${(100 * Math.abs(vaLid.volumeMm3 - lid.volKernelMm3) / lid.volKernelMm3).toFixed(2)} %)`);
+
+    // 4 · MULTI-SÓLIDO DECLARADO: el defecto que el v1-gate destapó, dicho en voz alta
+    const multi = await mallaDesdeArchivo('1553B.stp', leer('inyeccion-reales/1553B.stp'));
+    check('CARGADOR · un STEP con varios sólidos lo DICE (no cotiza el conjunto en silencio)',
+      multi.solidos === 10 && multi.notas.some((n) => /10 sólidos/.test(n) && /FUSIONADOS/i.test(n)),
+      `${multi.solidos} sólidos · nota: ${(multi.notas.find((n) => /sólidos/.test(n)) || '').slice(0, 90)}`);
+
+    // 5 · CONTROL NEGATIVO: basura y extensión ajena fallan con mensaje LEGIBLE
+    let msgBasura = '', msgExt = '';
+    try { await mallaDesdeArchivo('basura.stl', new Uint8Array(40).fill(7).buffer); } catch (e) { msgBasura = String(e.message || e); }
+    try { await mallaDesdeArchivo('pieza.iges', new Uint8Array(40).buffer); } catch (e) { msgExt = String(e.message || e); }
+    check('CARGADOR · CONTROL NEGATIVO: basura y extensión ajena dan mensaje legible (no crash mudo)',
+      /ilegible|vacío/i.test(msgBasura) && /no soportada/i.test(msgExt) && /\.stl/.test(msgExt),
+      `basura: "${msgBasura.slice(0, 40)}" · ext: "${msgExt.slice(0, 60)}"`);
+
+    // 6 · EL CAMINO COMPLETO: la malla cargada entra a revisarModelo como una fila más
+    const revMia = rm.revisarModelo({ mesh: bin.mesh, nombre: 'rpi4-bottom (tuya)', annualVolume: 200_000, flowMaxVoxels: 40_000 });
+    check('CARGADOR · la pieza cargada RECORRE el motor de revisión (contratos + fila con score)',
+      revMia.fila && revMia.fila.nombre === 'rpi4-bottom (tuya)' && revMia.fila.score > 0 && (revMia.fila.cumple + revMia.fila.viola + revMia.fila.advierte) > 20,
+      `score ${revMia.fila.score} · cumple ${revMia.fila.cumple} · viola ${revMia.fila.viola} · advierte ${revMia.fila.advierte}`);
+  }
+
   console.log(`\n${fallan === 0 ? '✅' : '❌'} ciclo del dado: ${pasan} pasan · ${fallan} fallan`);
   console.log(`VERIFY_RESULT={"pass":${fallan === 0},"pasan":${pasan},"fallan":${fallan}}`);
   process.exit(fallan ? 1 : 0);

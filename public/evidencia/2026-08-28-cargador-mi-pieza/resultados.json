@@ -1,0 +1,44 @@
+{
+ "carga-stl-binario": {
+  "estado": "verde",
+  "checks": "gate 6/6 · rpi4-bottom.stl → 4204 triángulos · 17036.2 mm³ · 24028.3 mm² (oráculo medido antes de construir, ±0.5 %) · en pantalla: fila 'rpi4-bottom (tuya)' con score 75/100, cold-2placas × 1 cav",
+  "video": "",
+  "still": "evidencia/2026-08-28-cargador-mi-pieza/01-carga-stl-binario-still.jpg",
+  "nota": "la malla del operador entra por el MISMO revisarModelo del lote: 52 contratos cumplen, 4 violan, 11 advierten"
+ },
+ "carga-stl-ascii": {
+  "estado": "verde",
+  "checks": "gate · el mismo sólido escrito en ASCII da 17036.2 vs 17036.2 mm³ (idéntico, tolerancia 0.1 %) y el mismo número de índices",
+  "video": "",
+  "still": "",
+  "nota": "el ASCII se genera desde la malla binaria dentro del gate: si el parser tuviera dos verdades, el número se partiría"
+ },
+ "carga-step-tesela": {
+  "estado": "verde",
+  "checks": "gate · 1594C Lid.stp → 1 sólido · malla 33282.6 mm³ vs volumen EXACTO del kernel 33294.3 mm³ = 0.04 % (tolerancia 0.5 %) · en pantalla: fila '1594C Lid (tuya)' score 70/100",
+  "video": "",
+  "still": "evidencia/2026-08-28-cargador-mi-pieza/02-carga-step-tesela-still.jpg",
+  "nota": "la tesela (deflexión 0.1 mm) NO es la fuente del error de una cotización: medido también 0.09 % en 1594C Box y 0.19 % en 1553B"
+ },
+ "carga-multisolido-declarado": {
+  "estado": "verde",
+  "checks": "gate · 1553B.stp → 10 sólidos contados con TopExp_Explorer y nota con 'FUSIONADOS' · en pantalla: aviso ámbar ARRIBA del drill-down, no bajo el pliegue",
+  "video": "",
+  "still": "evidencia/2026-08-28-cargador-mi-pieza/03-carga-multisolido-declarado-still.jpg",
+  "nota": "JUEZ CON OJOS: la primera versión SÍ traía la nota, pero al fondo del panel — el gate la daba por buena porque mira el objeto, no el píxel. Se subió al encabezado."
+ },
+ "carga-basura": {
+  "estado": "verde",
+  "checks": "gate · basura de 40 bytes → 'STL vacío o ilegible (ni binario ni ASCII con vertex)' · .iges → 'extensión no soportada: iges. El cargador acepta .stl, .step y .stp' · en pantalla: barra roja con el mensaje y el resto del lote sigue calculado",
+  "video": "",
+  "still": "",
+  "nota": "control negativo: el panel no se cae ni se queda mudo"
+ },
+ "carga-con-ojos": {
+  "estado": "verde",
+  "checks": "forja-drive (acción 'upload' nueva) sube 4 archivos REALES contra el vite dev de iangpu con GPU: 10/10 gestos sin error · 3 stills 1600×1000 juzgados a ojo",
+  "video": "",
+  "still": "evidencia/2026-08-28-cargador-mi-pieza/01-carga-stl-binario-still.jpg",
+  "nota": "primera corrida REPROBADA por los ojos: el panel de simulación estaba colapsado (el botón no existía) — se agregó el paso 'collapse-sim' al manejo"
+ }
+}

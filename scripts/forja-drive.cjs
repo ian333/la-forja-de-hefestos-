@@ -38,6 +38,7 @@
  */
 const { chromium } = require('playwright');
 const fs = require('fs');
+const path = require('path');            // ruta del archivo a subir (acción 'upload')
 const URL = process.env.URL || 'http://localhost:5001/forja-brep.html';
 const ACTIONS = process.argv[2] || '/tmp/forja-drive/actions.json';
 const OUT = process.argv[3] || '/tmp/forja-drive/out';
@@ -146,6 +147,15 @@ const actions = fs.existsSync(ACTIONS) ? JSON.parse(fs.readFileSync(ACTIONS, 'ut
         // El cursor GLIDE al elemento antes, para que se vea en el video.
         else if (a.type === 'fill') { const loc = await glideEl(a.testid); await loc.fill(String(a.text), { timeout: 8000 }); }
         else if (a.type === 'tclick') { const loc = await glideEl(a.testid); await loc.click({ timeout: 8000 }); }
+        // SUBIR UN ARCHIVO REAL a un <input type="file"> (orden 2026-08-28-cargador-mi-pieza).
+        // El input del cargador vive oculto (display:none) dentro de su <label>, así que NO se
+        // le puede dar clic: setInputFiles lo alimenta directo, que es lo que hace el navegador
+        // cuando el humano suelta el archivo. `file` es ruta absoluta o relativa al repo.
+        else if (a.type === 'upload') {
+          const abs = path.isAbsolute(a.file) ? a.file : path.resolve(__dirname, '..', a.file);
+          if (!fs.existsSync(abs)) throw new Error(`upload: no existe ${abs}`);
+          await page.locator(`[data-testid="${a.testid}"]`).setInputFiles(abs, { timeout: 15000 });
+        }
         // Selección/cota PROGRAMÁTICA por nombre de método del hook (fiable, sin pixeles).
         // Ej: {type:'hook',fn:'pick',args:['line',0]} o {fn:'dimAngle',args:[0,1]}.
         else if (a.type === 'hook') {

@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { revisarModelo, laminasDeRevision, type RevisionModelo, type RevisionInput, type FilaRevision } from './revisar-modelo';
 import { registrarDecision, type Expediente } from './expediente';
-import { parseSTL } from './stl';
+import { parseSTL, mallaDesdeArchivo } from './stl';
 import type { MeshLike } from './flowlen-mesh';
 import type { MachineSpec } from './moldmachine';
 import type { ContratoEstado } from './mold-contratos';
@@ -64,6 +64,14 @@ const box: React.CSSProperties = { background: 'rgba(14,20,30,0.8)', border: '1p
 
 export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
   const [activos, setActivos] = useState<Record<string, boolean>>(Object.fromEntries(LOTE.map((p) => [p.label, true])));
+  // ── TU PIEZA: lo que el operador suelta desde su disco (orden 2026-08-28-cargador-mi-pieza).
+  //    Entra por el MISMO camino que el lote de arranque: su malla se deja en meshCache y el
+  //    corredor la trata como una fila más — cero física nueva, cero rama paralela. ──
+  const [mias, setMias] = useState<Entrada[]>([]);
+  const [notasMias, setNotasMias] = useState<Record<string, string[]>>({});
+  const [errCarga, setErrCarga] = useState<string>('');
+  const piezas = useMemo(() => [...LOTE, ...mias], [mias]);
+  const piezasRef = useRef(piezas); piezasRef.current = piezas;
   const [sel, setSel] = useState<string | null>(null);
   // firmas del expediente por modelo (la revisión es pura; la firma vive en la sesión)
   const [firmas, setFirmas] = useState<Record<string, Expediente>>({});
@@ -90,7 +98,7 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
         let hubo = true;
         while (hubo) {                                    // barre hasta que no quede nada activable
           hubo = false;
-          for (const e of LOTE) {
+          for (const e of piezasRef.current) {
             if (!activosRef.current[e.label] || revsRef.current[e.label] || errores.current[e.label]) continue;
             hubo = true;
             try {
@@ -126,9 +134,9 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
     })();
   }, [activos]);
 
-  const revisiones = LOTE.filter((e) => activos[e.label] && revs[e.label]).map((e) => revs[e.label]);
+  const revisiones = piezas.filter((e) => activos[e.label] && revs[e.label]).map((e) => revs[e.label]);
   const filas = ordenar(revisiones.map((r) => r.fila));
-  const pendCalc = LOTE.filter((e) => activos[e.label] && !revs[e.label]);
+  const pendCalc = piezas.filter((e) => activos[e.label] && !revs[e.label]);
   const rev = revisiones.find((r) => r.nombre === sel) ?? revisiones[0];
   const exp = rev ? (firmas[rev.nombre] ?? rev.expediente) : null;
 
@@ -148,14 +156,48 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
           <div style={{ fontSize: 11, opacity: 0.6 }}>tabla por severidad → drill-down: cada criterio con su § y sus números vivos · expediente §13.10 con firmas</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {LOTE.map((p) => (
+          {piezas.map((p) => (
             <label key={p.label} data-testid={`rl-toggle-${p.label}`} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, cursor: 'pointer', opacity: activos[p.label] ? 1 : 0.45 }}>
               <input type="checkbox" checked={!!activos[p.label]} onChange={(e) => setActivos((a) => ({ ...a, [p.label]: e.target.checked }))} />{p.label}
             </label>
           ))}
+          <label data-testid="rl-cargar" title="Suelta TU pieza: .stl (malla) o .step/.stp (se tesela con el kernel)"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, cursor: 'pointer', background: 'rgba(201,162,39,0.14)', border: `1px solid ${GOLD}66`, color: '#f0e2b8', borderRadius: 7, padding: '7px 12px' }}>
+            ＋ Tu pieza <em style={{ opacity: 0.6, fontStyle: 'normal', fontSize: 10 }}>(.stl · .step)</em>
+            <input type="file" accept=".stl,.step,.stp" data-testid="input-mi-pieza" style={{ display: 'none' }}
+              onChange={async (ev) => {
+                const f = ev.target.files?.[0]; ev.target.value = '';        // permite recargar el MISMO archivo
+                if (!f) return;
+                setErrCarga('');
+                const label = f.name.replace(/\.(stl|step|stp)$/i, '').slice(0, 22);
+                if (piezasRef.current.some((p) => p.label === label)) { setErrCarga(`"${label}" ya está cargada`); return; }
+                setEstado((s2) => ({ ...s2, [label]: 'leyendo archivo' }));
+                try {
+                  const { mesh, fuente, notas } = await mallaDesdeArchivo(f.name, await f.arrayBuffer());
+                  meshCache.current[label] = mesh;                            // el corredor la toma de aquí: NO re-fetch
+                  setNotasMias((n) => ({ ...n, [label]: [`cargada por ti: ${f.name} (${(f.size / 1024).toFixed(0)} KB, ${fuente.toUpperCase()})`, ...notas] }));
+                  setMias((m) => [...m, { label, nombre: `${label} (tuya)`, stl: f.name, annualVolume: 200_000 }]);
+                  setActivos((a) => ({ ...a, [label]: true }));               // dispara el corredor
+                  setEstado((s2) => { const { [label]: _x, ...resto } = s2; return resto; });
+                } catch (err) {
+                  delete meshCache.current[label];
+                  setEstado((s2) => { const { [label]: _x, ...resto } = s2; return resto; });
+                  setErrCarga(`${f.name}: ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
+                }
+              }} />
+          </label>
           <button data-testid="rl-close" onClick={onClose} style={{ background: 'rgba(20,28,40,0.9)', border: '1px solid #2c3a50', color: '#dfe7f2', cursor: 'pointer', borderRadius: 7, padding: '7px 14px', fontSize: 12 }}>✕ Cerrar</button>
         </div>
       </div>
+
+      {/* EL ERROR DE CARGA, VISIBLE: un archivo que no se puede leer lo DICE aquí
+          y el resto del lote sigue calculado (no se cae la pantalla). */}
+      {errCarga && (
+        <div data-testid="rl-error-carga" style={{ padding: '8px 22px', background: 'rgba(255,92,92,0.12)', borderBottom: '1px solid #ff5c5c55', color: '#ffb3b3', fontSize: 11.5, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <span>✗ no se pudo cargar — {errCarga}</span>
+          <button onClick={() => setErrCarga('')} style={{ background: 'none', border: 'none', color: '#ffb3b3', cursor: 'pointer', fontSize: 11 }}>✕</button>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '460px 1fr', gap: 0, flex: 1, minHeight: 0 }}>
         {/* ── LA TABLA (ya viene ordenada por severidad de revisarLote) ── */}
@@ -209,6 +251,15 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
               <div style={{ fontSize: 15, fontWeight: 800 }}>{rev.nombre}</div>
               <div style={{ fontSize: 11, opacity: 0.65 }}>{rev.pkg.recomendacion.arch} × {rev.pkg.recomendacion.nCav} cav · acero {rev.pkg.metal.metal.key} · score <b style={{ color: GOLD }}>{rev.fila.score}</b>/100</div>
+              {/* LA ADVERTENCIA DEL CARGADOR, ARRIBA. Los ojos la cazaron (2026-08-28): vivía
+                  al fondo del drill-down, bajo el pliegue, y el operador cotizaba un conjunto
+                  fusionado sin enterarse. El gate la daba por buena porque MIRABA EL OBJETO,
+                  no el píxel. Aquí no se puede no verla. */}
+              {(notasMias[piezas.find((e) => e.nombre === rev.nombre)?.label ?? ''] ?? [])
+                .filter((n) => n.startsWith('⚠'))
+                .map((n, i) => (
+                  <div key={i} data-testid="rl-aviso-carga" style={{ marginTop: 6, fontSize: 11, color: '#ffcf8a', background: 'rgba(255,179,71,0.12)', border: '1px solid #ffb34755', borderRadius: 7, padding: '6px 10px', maxWidth: 760 }}>{n}</div>
+                ))}
             </div>
 
             {/* críticos del ensamble */}
@@ -222,7 +273,7 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
             {/* EL OJO: las figuras del libro con los datos de ESTE modelo (§ propia
                 cada una). Es el modo APRENDER: no un número, la vista que Kazmer
                 juzga. Se generan bajo demanda — solo del modelo abierto. */}
-            <LaminasDelModelo rev={rev} mesh={meshCache.current[LOTE.find((e) => e.nombre === rev.nombre)?.label ?? '']} />
+            <LaminasDelModelo rev={rev} mesh={meshCache.current[piezas.find((e) => e.nombre === rev.nombre)?.label ?? '']} />
 
             {/* contratos por subsistema — cada criterio con su § y su detalle vivo */}
             <div style={{ ...box }}>
@@ -267,13 +318,19 @@ export default function RevisarLotePanel({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* notas de la revisión (supuestos declarados) */}
-            {rev.notas.length > 0 && (
-              <div style={{ ...box }}>
-                <div style={{ fontSize: 10.5, opacity: 0.6, marginBottom: 4 }}>SUPUESTOS Y DERIVACIONES DECLARADOS</div>
-                {rev.notas.map((n, i) => <div key={i} style={{ fontSize: 10.5, opacity: 0.75, padding: '2px 0' }}>· {n}</div>)}
-              </div>
-            )}
+            {/* notas de la revisión (supuestos declarados) + las del CARGADOR
+                (multi-sólido, triángulos, volumen del kernel): se leen juntas
+                porque son el mismo tipo de verdad — lo que se supuso por ti. */}
+            {(() => {
+              const lbl = piezas.find((e) => e.nombre === rev.nombre)?.label ?? '';
+              const todas = [...(notasMias[lbl] ?? []), ...rev.notas];
+              return todas.length > 0 && (
+                <div style={{ ...box }} data-testid="rl-notas">
+                  <div style={{ fontSize: 10.5, opacity: 0.6, marginBottom: 4 }}>SUPUESTOS Y DERIVACIONES DECLARADOS</div>
+                  {todas.map((n, i) => <div key={i} style={{ fontSize: 10.5, opacity: 0.75, padding: '2px 0' }}>· {n}</div>)}
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4, fontSize: 13 }}>activa un modelo del lote</div>

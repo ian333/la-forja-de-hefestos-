@@ -1,6 +1,6 @@
 {
  "nombre": "TEMIS",
- "generado": "2026-08-28 19:05",
+ "generado": "2026-08-28 20:12",
  "wip": {
   "proximo": 7,
   "enCurso": 1
@@ -9,9 +9,9 @@
   "proximo": 3,
   "enCurso": 1,
   "supertickets": 1,
-  "cerrado": 62,
+  "cerrado": 63,
   "probado": 0,
-  "porProbar": 29,
+  "porProbar": 30,
   "sinDesplegar": 6,
   "despues": 17
  },
@@ -335,6 +335,111 @@
    }
   ],
   "cerrado": [
+   {
+    "file": "ordenes/2026-08-28-cargador-mi-pieza.md",
+    "slug": "2026-08-28-cargador-mi-pieza",
+    "titulo": "SUPERTICKET CARGADOR · suelta TU pieza (.stl · .step) y la máquina corre",
+    "fecha": "2026-08-28",
+    "estado": "cerrado",
+    "prioridad": 999,
+    "superticket": true,
+    "ejercicios": [
+     {
+      "id": "carga-stl-binario",
+      "titulo": "Sueltas un STL binario y la máquina lo revisa · input-mi-pieza parseSTL revisarModelo · rpi4-bottom.stl → 4,204 triángulos · volumen 17,036.2 mm³ ±0.5 %",
+      "herramientas": "área 24,028.3 mm²",
+      "oraculo": "aparece fila con score",
+      "estado": "verde",
+      "checks": "gate 6/6 · rpi4-bottom.stl → 4204 triángulos · 17036.2 mm³ · 24028.3 mm² (oráculo medido antes de construir, ±0.5 %) · en pantalla: fila 'rpi4-bottom (tuya)' con score 75/100, cold-2placas × 1 cav",
+      "video": "",
+      "still": "evidencia/2026-08-28-cargador-mi-pieza/01-carga-stl-binario-still.jpg",
+      "nota": "la malla del operador entra por el MISMO revisarModelo del lote: 52 contratos cumplen, 4 violan, 11 advierten"
+     },
+     {
+      "id": "carga-stl-ascii",
+      "titulo": "El MISMO sólido en ASCII entra igual",
+      "herramientas": "rama ASCII de parseSTL",
+      "oraculo": "el ASCII derivado del binario da 17,036.2 mm³ ±0.1 % (misma pieza, mismo número)",
+      "estado": "verde",
+      "checks": "gate · el mismo sólido escrito en ASCII da 17036.2 vs 17036.2 mm³ (idéntico, tolerancia 0.1 %) y el mismo número de índices",
+      "video": "",
+      "still": "",
+      "nota": "el ASCII se genera desde la malla binaria dentro del gate: si el parser tuviera dos verdades, el número se partiría"
+     },
+     {
+      "id": "carga-step-tesela",
+      "titulo": "Sueltas un STEP y se tesela solo",
+      "herramientas": "getOCCT importSTEP tessellate",
+      "oraculo": "1594C Lid.stp → malla 33,282.6 mm³ dentro de 0.5 % del volumen exacto del kernel 33,294.3 mm³ (medido: 0.04 %)",
+      "estado": "verde",
+      "checks": "gate · 1594C Lid.stp → 1 sólido · malla 33282.6 mm³ vs volumen EXACTO del kernel 33294.3 mm³ = 0.04 % (tolerancia 0.5 %) · en pantalla: fila '1594C Lid (tuya)' score 70/100",
+      "video": "",
+      "still": "evidencia/2026-08-28-cargador-mi-pieza/02-carga-step-tesela-still.jpg",
+      "nota": "la tesela (deflexión 0.1 mm) NO es la fuente del error de una cotización: medido también 0.09 % en 1594C Box y 0.19 % en 1553B"
+     },
+     {
+      "id": "carga-multisolido-declarado",
+      "titulo": "Un STEP con varios sólidos lo DICE, no lo esconde",
+      "herramientas": "TopExp_Explorer SOLID",
+      "oraculo": "1553B.stp → la nota dice \"10 sólidos fusionados\" y la malla da 74,775.5 mm³ ±0.5 % del kernel 74,920.6",
+      "estado": "verde",
+      "checks": "gate · 1553B.stp → 10 sólidos contados con TopExp_Explorer y nota con 'FUSIONADOS' · en pantalla: aviso ámbar ARRIBA del drill-down, no bajo el pliegue",
+      "video": "",
+      "still": "evidencia/2026-08-28-cargador-mi-pieza/03-carga-multisolido-declarado-still.jpg",
+      "nota": "JUEZ CON OJOS: la primera versión SÍ traía la nota, pero al fondo del panel — el gate la daba por buena porque mira el objeto, no el píxel. Se subió al encabezado."
+     },
+     {
+      "id": "carga-basura",
+      "titulo": "Un archivo corrupto da mensaje claro y el panel sigue vivo",
+      "herramientas": "manejo de error",
+      "oraculo": "un .stl de 40 bytes de basura → error legible en pantalla, cero excepción sin capturar, las otras filas siguen calculadas",
+      "estado": "verde",
+      "checks": "gate · basura de 40 bytes → 'STL vacío o ilegible (ni binario ni ASCII con vertex)' · .iges → 'extensión no soportada: iges. El cargador acepta .stl, .step y .stp' · en pantalla: barra roja con el mensaje y el resto del lote sigue calculado",
+      "video": "",
+      "still": "",
+      "nota": "control negativo: el panel no se cae ni se queda mudo"
+     },
+     {
+      "id": "carga-con-ojos",
+      "titulo": "El JUEZ CON OJOS ve tu pieza en la tabla",
+      "herramientas": "forja-drive upload + still 1600×1000",
+      "oraculo": "captura donde se lee el nombre del archivo cargado y su score, sin que el panel tape la tabla",
+      "estado": "verde",
+      "checks": "forja-drive (acción 'upload' nueva) sube 4 archivos REALES contra el vite dev de iangpu con GPU: 10/10 gestos sin error · 3 stills 1600×1000 juzgados a ojo",
+      "video": "",
+      "still": "evidencia/2026-08-28-cargador-mi-pieza/01-carga-stl-binario-still.jpg",
+      "nota": "primera corrida REPROBADA por los ojos: el panel de simulación estaba colapsado (el botón no existía) — se agregó el paso 'collapse-sim' al manejo"
+     }
+    ],
+    "progreso": {
+     "verdes": 6,
+     "rojos": 0,
+     "total": 6
+    },
+    "objetivo": "ian (2026-08-28), después de ver el kit de piezas en su Downloads: «le entro a ese cargador (soltar tu STL/STEP y que corra) — esto ya debería haber estado en Temis como un ticket». Hoy NO hay forma de que ian cargue SU archivo al camino d…",
+    "toca": 5,
+    "crea": 4,
+    "evidencia": 5,
+    "evidenciaDeclarada": [
+     "node --import tsx scripts/ciclo-dado-test.cjs en iangpu: VERDE con los checks nuevos del",
+     "Juez con ojos: 3 stills 1600×1000 tomados con forja-drive.cjs subiendo archivos REALES",
+     "node scripts/orden-gate.cjs --orden ordenes/2026-08-28-cargador-mi-pieza.md VERDE.",
+     "node scripts/temis-tablero.cjs VERDE, este superticket visible con su n/6.",
+     "censo esperado: canvas/vite/html IGUAL (cero pantallas nuevas — es un input en un panel que"
+    ],
+    "cierre": "6/6 EJERCICIOS EN VERDE — con números y con ojos. Gate del molde 236 → 242 · 0 fallan. Lo que quedó funcionando: en 📋 REVISAR EN VOLUMEN hay un botón ＋ Tu pieza (.stl · .step). Sueltas un archivo de…",
+    "cierreCompleto": "6/6 EJERCICIOS EN VERDE — con números y con ojos. Gate del molde 236 → 242 · 0 fallan. Lo que quedó funcionando: en 📋 REVISAR EN VOLUMEN hay un botón ＋ Tu pieza (.stl · .step). Sueltas un archivo de tu disco y aparece como una fila más del lote, con sus contratos de Kazmer, su DFM, su campo de flujo, sus láminas del libro y su expediente. Cero física nueva: la malla entra al MISMO revisarModelo que ya corría el lote de arranque. - stl.ts::mallaDesdeArchivo decide por extensión: .stl → parseSTL (rama ligera, sin kernel); .step/.stp → getOCCT + importSTEP + tessellate por import DINÁMICO (el módulo lo usan scripts de node que no arrancan OCCT). Devuelve malla + fuente + sólidos contados + volumen exacto del kernel + notas. - RevisarLotePanel.tsx: LOTE (const) pasó a piezas = [...LOTE, ...mias]; la malla cargada se deja en meshCache y el corredor la toma de ahí (no re-fetch). Input oculto input-mi-pieza dentro de su label, barra de error rl-error-carga, aviso ámbar rl-aviso-carga. - forja-drive.cjs: acción upload (setInputFiles) — el input vive display:none dentro del label, así que un clic no lo abre; se le alimenta el archivo como hace el navegador. - ciclo-dado-test.cjs: 6 checks nuevos con los oráculos medidos ANTES de construir. Números (los 3 primeros se midieron el 2026-08-28 antes de escribir una línea de UI): - rpi4-bottom.stl → 4,204 tris · 17,036.2 mm³ · 24,028.3 mm² · score 75/100 en pantalla. - el MISMO sólido en ASCII → 17,036.2 mm³ (idéntico). - 1594C Lid.stp → 1 sólido · malla 33,282.6 vs kernel 33,294.3 = 0.04 % · score 70/100. - 1553B.stp → 10 sólidos · avi…",
+    "evidenciaSS": [
+     "evidencia/2026-08-28-cargador-mi-pieza/01-carga-stl-binario-still.jpg",
+     "evidencia/2026-08-28-cargador-mi-pieza/02-carga-step-tesela-still.jpg",
+     "evidencia/2026-08-28-cargador-mi-pieza/03-carga-multisolido-declarado-still.jpg"
+    ],
+    "revisable": true,
+    "probado": "",
+    "falla": "",
+    "commit": "",
+    "despliegue": ""
+   },
    {
     "file": "ordenes/2026-08-26-temis-galeria-panel.md",
     "slug": "2026-08-26-temis-galeria-panel",

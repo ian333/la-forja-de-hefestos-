@@ -43,3 +43,65 @@ export function parseSTL(buf: ArrayBuffer): MeshLike {
   if (!indices.length) throw new Error('STL vacío o ilegible (ni binario ni ASCII con vertex)');
   return { positions, indices };
 }
+
+/** Lo que trae una pieza cargada por el operador, además de su malla. */
+export interface MallaCargada {
+  mesh: MeshLike;
+  /** 'stl' | 'step' — de dónde salió la malla */
+  fuente: 'stl' | 'step';
+  /** sólidos que traía el STEP (1 = pieza limpia; >1 = vienen FUSIONADOS, ver notas) */
+  solidos: number;
+  /** volumen exacto del kernel (solo STEP; la malla no tiene "exacto" contra qué compararse) */
+  volKernelMm3?: number;
+  /** supuestos y advertencias DECLARADOS — se pintan, no se esconden */
+  notas: string[];
+}
+
+/**
+ * ARCHIVO → MALLA: el cargador de "suelta TU pieza".
+ * ============================================================================
+ * Decide por extensión y devuelve SIEMPRE la misma `MeshLike` que consume
+ * `revisarModelo` (camino B). Es la única pieza que faltaba: el parser de STL,
+ * el tesela del kernel y el motor de revisión ya existían por separado.
+ *
+ * · `.stl` → `parseSTL` (binario o ASCII, sin kernel: la rama ligera).
+ * · `.step`/`.stp` → `importSTEP` + `tessellate` del kernel, que se carga por
+ *   import DINÁMICO para que el camino STL siga sin dependencias (este módulo
+ *   lo usan scripts de node que no arrancan OCCT).
+ *
+ * Medido 2026-08-28 (deflexión 0.1 / ángulo 0.5): el volumen de la malla queda
+ * a 0.04 % del volumen exacto del kernel en 1594C Lid, 0.09 % en 1594C Box y
+ * 0.19 % en 1553B — la tesela NO es la fuente del error de una cotización.
+ *
+ * HONESTIDAD SOBRE EL MULTI-SÓLIDO: un STEP de fabricante casi nunca trae UNA
+ * pieza (1553B trae 10 sólidos: la caja, su tapa y sus postes). Aquí se cuentan
+ * y se DECLARAN en `notas`; escoger cuál se moldea es otro ticket. Sin esta nota
+ * la máquina cotizaría el conjunto fusionado como si fuera una sola pieza — que
+ * es exactamente el defecto que el v1-gate destapó (base 996×996, $502,286).
+ */
+export async function mallaDesdeArchivo(nombre: string, buf: ArrayBuffer): Promise<MallaCargada> {
+  const ext = (nombre.match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+  if (ext === 'stl') {
+    const mesh = parseSTL(buf);
+    return { mesh, fuente: 'stl', solidos: 1, notas: [`STL: ${mesh.indices.length / 3} triángulos (malla tal cual, sin decimar)`] };
+  }
+  if (ext === 'step' || ext === 'stp') {
+    const K = await import('../brep/occt');
+    const oc = await K.getOCCT();
+    const shape = K.importSTEP(oc, new TextDecoder().decode(buf));
+    const volKernelMm3 = K.volume(oc, shape);
+    if (!(volKernelMm3 > 0)) throw new Error('STEP importado sin volumen (¿superficies sueltas, no un sólido?)');
+    const t = K.tessellate(oc, shape, 0.1, 0.5);
+    if (!t.triangleCount) throw new Error('STEP importado pero la tesela salió vacía');
+    let solidos = 0;
+    try {
+      const ex = new oc.TopExp_Explorer_2(shape, oc.TopAbs_ShapeEnum.TopAbs_SOLID, oc.TopAbs_ShapeEnum.TopAbs_SHAPE);
+      while (ex.More()) { solidos++; ex.Next(); }
+    } catch { solidos = 0; }
+    const notas = [`STEP: ${t.triangleCount} triángulos teselados (deflexión 0.1 mm) · volumen exacto del kernel ${volKernelMm3.toFixed(1)} mm³`];
+    if (solidos > 1) notas.push(`⚠ el archivo trae ${solidos} sólidos y se están midiendo FUSIONADOS (caja + tapa + postes cuentan como una pieza): la cotización sale de más. Elegir cuál moldear es otro ticket.`);
+    else if (solidos === 0) notas.push('⚠ no se pudo contar sólidos en este STEP (se mide la forma completa)');
+    return { mesh: { positions: t.positions, indices: t.indices }, fuente: 'step', solidos, volKernelMm3, notas };
+  }
+  throw new Error(`extensión no soportada: "${ext || nombre}". El cargador acepta .stl, .step y .stp`);
+}
